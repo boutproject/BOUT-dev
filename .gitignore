@@ -21,6 +21,7 @@
 .CVS/
 .DS_Store
 .svn/
+.ipynb_checkpoints/
 .tmtags
 autom4te.cache/
 data_*

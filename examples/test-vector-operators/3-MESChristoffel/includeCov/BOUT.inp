@@ -1,0 +1,102 @@
+#
+# Input file for 3-MESChristoffel/includeCov
+#
+
+# Root options
+###############################################################################
+nout = 0             # Number of output timesteps
+timestep = 1e-3      # Time between outputs
+
+dump_format="nc"   # Write NetCDF format files
+
+# Setting the z coordinate
+ZMIN = 0.0
+ZMAX = 1.0 # dz = 2*pi(ZMAX - ZMIN)/(MZ - 1)
+
+# Number of guard cells
+MXG = 1
+MYG = 1
+###############################################################################
+
+
+# Mesh options
+###############################################################################
+[mesh]
+# Number of points
+nx = 32 + 2*MXG
+ny = 32
+nz = 32
+# The grid spacing
+# As the points are located half between grid points, there will be as many
+# line segments as points
+# NOTE: We must divide by INNER POINTS (different definition of nx and ny)
+dx = geom:Lx/(nx-2*MXG)
+dy = geom:Ly/(ny)
+# Puts the boundaries half a step outside the last gridpoints
+symmetricGlobalY=true
+symmetricGlobalX=true
+# Position of the separatrix (-1 is non periodic, >ny is periodic)
+# --------Non-periodic----------
+ixseps1 = -1
+ixseps2 = -1
+# ------------------------------
+# Contravariant metric components
+# ------------------------------
+g11 = 2
+g12 = 4*geom:xl
+g13 = 4*geom:xl - 2
+g22 = 8*geom:xl^2 + 1
+g23 = 8*geom:xl^2 - 4*geom:xl + 1
+g33 = 8*geom:xl^2 - 8*geom:xl + 5
+# ------------------------------
+# Covariant metric components
+# ------------------------------
+g_11 = 4*geom:xl^2 + 1
+g_12 = -2*geom:xl - 1/2
+g_13 = 1/2
+g_22 = 3/2
+g_23 = -1/2
+g_33 = 1/2
+# ------------------------------
+###############################################################################
+
+
+# Methods options
+###############################################################################
+# Methods used for the radial (x) derivative terms
+[ddx]
+first  = C2 # d/dx (f)
+second = C2 # d^2/dx^2 (f)
+upwind = U1 # u*d/dx (f)
+
+#Methods used for the axial (y) derivative terms
+[ddy]
+first  = C2 # d/dy (f)
+second = C2 # d^2/dy^2 (f)
+upwind = U1 # u*d/dy (f)
+
+#Methods used for the azimuthal (z) derivative terms
+[ddz]
+first  = FFT # d/dz (f)
+second = FTT # d^2/dz^2 (f)
+###############################################################################
+
+
+# Specifying the output
+###############################################################################
+[output]
+floats = false # floats = false => output in double
+###############################################################################
+
+
+# Settings for the variables
+###############################################################################
+# Geometry
+# =============================================================================
+[geom]
+Lx = 2*pi                # The length of x from boundary to boundary
+Ly = 2*pi                # The length of y from boundary to boundary
+xl = x * geom:Lx         # x in range [0,Lx]
+yl = y * geom:Ly/(2*pi)  # y in range [0,Ly]
+# =============================================================================
+##############################################################################

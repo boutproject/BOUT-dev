@@ -1,0 +1,134 @@
+#
+# Input file for 2-initialCheckCovariant/cylindrical
+#
+# x - The radial coordinate (rho)
+# y - The height of the cylinder (z)
+# z - The azimuthal coordinate (theta)
+
+# Root options
+###############################################################################
+nout = 0             # Number of output timesteps
+timestep = 1e-3      # Time between outputs
+
+dump_format="nc"   # Write NetCDF format files
+
+# Setting the z coordinate
+ZMIN = 0.0
+ZMAX = 1.0 # dz = 2*pi(ZMAX - ZMIN)/(MZ - 1)
+
+# Number of guard cells
+MXG = 1
+MYG = 1
+###############################################################################
+
+
+# Mesh options
+###############################################################################
+[mesh]
+# Number of points
+nx = 16*2 + 2*MXG
+ny = 16*2
+nz = 16*2
+# The grid spacing
+# As the points are located half between grid points, there will be as many
+# line segments as points
+# NOTE: We must divide by INNER POINTS (different definition of nx and ny)
+dx = geom:Lx/(nx-2*MXG)
+dy = geom:Ly/(ny)
+# The metrics
+g33 = 1/(geom:xl^2)
+J = geom:xl
+# Puts the boundaries half a step outside the last gridpoints
+symmetricGlobalY=true
+symmetricGlobalX=true
+# Position of the separatrix (-1 is non periodic, >ny is periodic)
+# --------Non-periodic----------
+ixseps1 = -1
+ixseps2 = -1
+# ------------------------------
+###############################################################################
+
+
+# Methods options
+###############################################################################
+# Methods used for the radial (x) derivative terms
+[ddx]
+first  = C2 # d/dx (f)
+second = C2 # d^2/dx^2 (f)
+upwind = U1 # u*d/dx (f)
+
+#Methods used for the axial (y) derivative terms
+[ddy]
+first  = C2 # d/dy (f)
+second = C2 # d^2/dy^2 (f)
+upwind = U1 # u*d/dy (f)
+
+#Methods used for the azimuthal (z) derivative terms
+[ddz]
+first  = FFT # d/dz (f)
+second = FTT # d^2/dz^2 (f)
+###############################################################################
+
+
+# Solver settings
+###############################################################################
+[solver]
+# The solver advances the system in time
+type = pvode             # Which solver to use (cvode should be same as pvode)
+mms  = false             # false by default
+
+atol = 1.0e-10 # absolute tolerance
+rtol = 1.0e-5  # relative tolerance
+
+# cvode, pvode and rk4 options
+# NOTE: If this is set too high, the computer MIGHT interpret it as 0
+mxstep = 100000000
+###############################################################################
+
+
+# Specifying the output
+###############################################################################
+[output]
+floats = false # floats = false => output in double
+###############################################################################
+
+
+# Settings for the variables
+###############################################################################
+# Geometry
+# =============================================================================
+[geom]
+Lx = 30                  # The length of x from boundary to boundary
+Ly = 150                 # The length of y from boundary to boundary
+xl = x * geom:Lx         # x in range [0,Lx]
+yl = y * geom:Ly/(2*pi)  # y in range [0,Ly]
+# =============================================================================
+
+# Constants
+# =============================================================================
+[cst]
+rho0   = geom:Lx/4
+z0     = geom:Ly/2
+theta0 = 0
+mu     = geom:Lx*5e-1
+# =============================================================================
+
+
+# The vector function
+# =============================================================================
+[myVec_x]
+scale       = 1.0
+function    = 2*(-geom:xl + cst:rho0*cos(z - cst:theta0))*exp((-geom:xl^2 + 2*geom:xl*cst:rho0*cos(z - cst:theta0) - cst:rho0^2 - geom:yl^2 + 2*geom:yl*cst:z0 - cst:z0^2)/cst:mu^2)/cst:mu^2
+bndry_all   = dirichlet_o4(0)
+
+[myVec_y]
+scale       = 1.0
+function    = 2*(-geom:yl + cst:z0)*exp((-geom:xl^2 + 2*geom:xl*cst:rho0*cos(z - cst:theta0) - cst:rho0^2 - geom:yl^2 + 2*geom:yl*cst:z0 - cst:z0^2)/cst:mu^2)/cst:mu^2
+bndry_all   = dirichlet_o4(0)
+
+[myVec_z]
+scale       = 1.0
+function    = -2*geom:xl*cst:rho0*exp(-(geom:xl^2 - 2*geom:xl*cst:rho0*cos(z - cst:theta0) + cst:rho0^2 + geom:yl^2 - 2*geom:yl*cst:z0 + cst:z0^2)/cst:mu^2)*sin(z - cst:theta0)/cst:mu^2
+bndry_all   = dirichlet_o4(0)
+# =============================================================================
+##############################################################################
