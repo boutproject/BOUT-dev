@@ -33,7 +33,7 @@ void ZFFT(dcomplex *cv, BoutReal zoffset, int isign, bool shift = true);
 
 // more optimised code (for BoutReals)
 
-void rfft(BoutReal *in, int length, dcomplex *out);
+void rfft(const BoutReal *in, int length, dcomplex *out);
 void irfft(dcomplex *in, int length, BoutReal *out);
 void rfft(BoutReal **in, const int length1, const int length2, dcomplex **out, bool transpose=false);
 void irfft(dcomplex **in, const int length1, const int length2, BoutReal **out, bool transpose=false);
@@ -44,7 +44,7 @@ void rfft(Field3D &fld, bool transpose=false);
 void irfft(Field3D &fld, dcomplex ***in, bool transpose=false);
 void irfft(Field3D &fld, bool transpose=false);
 
-void ZFFT(BoutReal *in, BoutReal zoffset, dcomplex *cv, bool shift = true);
+void ZFFT(const BoutReal *in, BoutReal zoffset, dcomplex *cv, bool shift = true);
 void ZFFT_rev(dcomplex *cv, BoutReal zoffset, BoutReal *out, bool shift = true);
 
 void ZFFT(BoutReal *in, int ix, int iy, dcomplex *cv, bool shift = true);
