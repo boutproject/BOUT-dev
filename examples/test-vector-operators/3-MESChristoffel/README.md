@@ -5,15 +5,18 @@ to verify the Christoffel symbols
 
 Folders present are:
 
-* [calculations](/calculations/) contains a ipython notebook (see
-  [jupyter](http://jupyter.org/) for more details (can by the way be viewed on
-  the github page)) of derivation of the coordinate system used in this folder
-* [data](/data/) contains the standard BOUT.inp file.
-* [includeCov](/includeCov/) contains same as in [data](/data/), but the
+* [calculations](./calculations/) contains a ipython notebook of derivation of
+  the coordinate system used in this folder.
+    * The files can be viewed on the github page
+    * If the equations does not render properly, try copying the url of the
+      file to http://nbviewer.ipython.org/
+* [cartesian](./cartesian/) contains the input file using cartesian geometry
+* [data](./data/) contains the standard BOUT.inp file.
+* [includeCov](./includeCov/) contains same as in [data](./data/), but the
   covariant metric tensors are also explicitly written (this is good if the
   BOUT++ inversion routine has trouble inverting the contravariant metric
   tensor)
-* [pythonRoutines](/pythonRoutines/) contains post-processing routines
+* [pythonRoutines](./pythonRoutines/) contains post-processing routines
 
 Driver files present are:
 

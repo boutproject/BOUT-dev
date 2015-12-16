@@ -89,7 +89,6 @@ def sort_data(data):
 
 #{{{get_order
 def get_order(data):
-    # TODO: Check this
     # Initialize the orders
     order_2 = [np.nan]
     order_inf = [np.nan]

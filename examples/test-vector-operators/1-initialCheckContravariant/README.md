@@ -6,14 +6,15 @@ identical result as in [2-initialCheckCovariant/](../2-initialCheckCovariant/)
 
 Folders present are:
 
-* [calculations](/calculations/) contains ipython notebooks (see
-  [jupyter](http://jupyter.org/) for more details (can by the way be viewed on
-  the github page)) of calculations of the gradient in cylindrical coordinates,
-  and the mapping between contravariant cylindrical vectors and cartesian
-  vectors.
-* [cartesian](/cartesian/) contains the input file using cartesian geometry
-* [cylindrical](/cylindrical/) contains the input file using cylindrical geometry
-* [pythonRoutines](/pythonRoutines/) contains post-processing routines
+* [calculations](./calculations/) contains ipython notebooks (.ipynb) of calculations of
+  the gradient in cylindrical coordinates, and the mapping between
+  contravariant cylindrical vectors and cartesian vectors.
+    * The files can be viewed on the github page
+    * If the equations does not render properly, try copying the url of the
+      file to http://nbviewer.ipython.org/
+* [cartesian](./cartesian/) contains the input file using cartesian geometry
+* [cylindrical](./cylindrical/) contains the input file using cylindrical geometry
+* [pythonRoutines](./pythonRoutines/) contains post-processing routines
 
 Driver files present are:
 
