@@ -48,6 +48,7 @@
  * LaplaceXY is used.
  */
 class LaplaceXY {
+ public:
   LaplaceXY(Mesh *m, Options *opt = NULL) {
     throw BoutException("LaplaceXY requires PETSc. No LaplaceXY available");
   }
