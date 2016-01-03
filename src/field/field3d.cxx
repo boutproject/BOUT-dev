@@ -57,24 +57,7 @@ Field3D::Field3D(const Field3D& f) : background(NULL), deriv(NULL), yup_field(0)
 #ifdef MEMDEBUG
   output.write("Field3D %u: Copy constructor from %u\n", (unsigned int) this, (unsigned int) &f);
 #endif
-
-#ifdef CHECK
-  msg_stack.push("Field3D: Copy constructor");
-  f.checkData();
-#endif
-
-  /// Copy a reference to the block
-  block = f.block;
-  /// Increase reference count
-  block->refs++;
-
-  location = f.location;
- 
-  boundaryIsSet = false;
- 
-#ifdef CHECK
-  msg_stack.pop();
-#endif
+  * this=f;  
 }
 
 Field3D::Field3D(const Field2D& f) : background(NULL), block(NULL), deriv(NULL), yup_field(0), ydown_field(0) {
