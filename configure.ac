@@ -99,12 +99,13 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
 	bout_save_LIBS=$LIBS
 	bout_adp_found=no
 	dnl let's see whether it's in the default paths
-	LIBS="-l$1 $bout_save_LIBS"
+	dnl LIBS="-l$1 $bout_save_LIBS"
+	LDFLAGS="-l$1 $bout_save_LDFLAGS"
 	AC_LINK_IFELSE([AC_LANG_CALL([],[$2])],[bout_adp_found=yes],[])
 
 	if test .$bout_adp_found = .no; then
 		for path in $5 $HOME/lib $HOME/local/lib /usr/lib64 /usr/local/lib64 /opt/lib64 /sw/lib /opt/local/lib /usr/lib /usr/local/lib /opt/lib; do
-			LDFLAGS="$bout_save_LDFLAGS -L$path"
+			LDFLAGS="$bout_save_LDFLAGS -l$1 -L$path"
 			AC_LINK_IFELSE([AC_LANG_CALL([],[$2])],[bout_adp_found=yes],[])
 			if test .$bout_adp_found = .yes; then break; fi
 		done

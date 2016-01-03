@@ -5335,7 +5335,6 @@ fi
 
 echo "Searching for FFTW library"
 
-# first only look for header file
 if type fftw-wisdom > /dev/null 2>&1; then
   echo " -> Found fftw-wisdom executable"
   # Path to fftw-wisdom, then remove fft-wisdom and bin/
@@ -5902,7 +5901,7 @@ $as_echo_n "checking for libfftw3... " >&6; }
 	bout_save_LDFLAGS=$LDFLAGS
 	bout_save_LIBS=$LIBS
 	bout_adp_found=no
-		LIBS="-lfftw3 $bout_save_LIBS"
+			LDFLAGS="-lfftw3 $bout_save_LDFLAGS"
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -5929,7 +5928,7 @@ rm -f core conftest.err conftest.$ac_objext \
 
 	if test .$bout_adp_found = .no; then
 		for path in $with_fftw $HOME/lib $HOME/local/lib /usr/lib64 /usr/local/lib64 /opt/lib64 /sw/lib /opt/local/lib /usr/lib /usr/local/lib /opt/lib; do
-			LDFLAGS="$bout_save_LDFLAGS -L$path"
+			LDFLAGS="$bout_save_LDFLAGS -lfftw3 -L$path"
 			cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -5997,7 +5996,7 @@ $as_echo_n "checking for libblas... " >&6; }
 	bout_save_LDFLAGS=$LDFLAGS
 	bout_save_LIBS=$LIBS
 	bout_adp_found=no
-		LIBS="-lblas $bout_save_LIBS"
+			LDFLAGS="-lblas $bout_save_LDFLAGS"
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -6024,7 +6023,7 @@ rm -f core conftest.err conftest.$ac_objext \
 
 	if test .$bout_adp_found = .no; then
 		for path in $lapack_path $HOME/lib $HOME/local/lib /usr/lib64 /usr/local/lib64 /opt/lib64 /sw/lib /opt/local/lib /usr/lib /usr/local/lib /opt/lib; do
-			LDFLAGS="$bout_save_LDFLAGS -L$path"
+			LDFLAGS="$bout_save_LDFLAGS -lblas -L$path"
 			cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -6068,7 +6067,7 @@ $as_echo_n "checking for liblapack... " >&6; }
 	bout_save_LDFLAGS=$LDFLAGS
 	bout_save_LIBS=$LIBS
 	bout_adp_found=no
-		LIBS="-llapack $bout_save_LIBS"
+			LDFLAGS="-llapack $bout_save_LDFLAGS"
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -6095,7 +6094,7 @@ rm -f core conftest.err conftest.$ac_objext \
 
 	if test .$bout_adp_found = .no; then
 		for path in $lapack_path  $HOME/lib $HOME/local/lib /usr/lib64 /usr/local/lib64 /opt/lib64 /sw/lib /opt/local/lib /usr/lib /usr/local/lib /opt/lib; do
-			LDFLAGS="$bout_save_LDFLAGS -L$path"
+			LDFLAGS="$bout_save_LDFLAGS -llapack -L$path"
 			cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -6502,7 +6501,7 @@ $as_echo_n "checking for libnetcdf... " >&6; }
 	bout_save_LDFLAGS=$LDFLAGS
 	bout_save_LIBS=$LIBS
 	bout_adp_found=no
-		LIBS="-lnetcdf $bout_save_LIBS"
+			LDFLAGS="-lnetcdf $bout_save_LDFLAGS"
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -6529,7 +6528,7 @@ rm -f core conftest.err conftest.$ac_objext \
 
 	if test .$bout_adp_found = .no; then
 		for path in $with_netcdf $with_netcdf/lib $with_netcdf/lib64  $HOME/lib $HOME/local/lib /usr/lib64 /usr/local/lib64 /opt/lib64 /sw/lib /opt/local/lib /usr/lib /usr/local/lib /opt/lib; do
-			LDFLAGS="$bout_save_LDFLAGS -L$path"
+			LDFLAGS="$bout_save_LDFLAGS -lnetcdf -L$path"
 			cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -6572,7 +6571,7 @@ $as_echo_n "checking for libnetcdf_c++... " >&6; }
 	bout_save_LDFLAGS=$LDFLAGS
 	bout_save_LIBS=$LIBS
 	bout_adp_found=no
-		LIBS="-lnetcdf_c++ $bout_save_LIBS"
+			LDFLAGS="-lnetcdf_c++ $bout_save_LDFLAGS"
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -6599,7 +6598,7 @@ rm -f core conftest.err conftest.$ac_objext \
 
 	if test .$bout_adp_found = .no; then
 		for path in $with_netcdf $with_netcdf/lib $with_netcdf/lib64  $HOME/lib $HOME/local/lib /usr/lib64 /usr/local/lib64 /opt/lib64 /sw/lib /opt/local/lib /usr/lib /usr/local/lib /opt/lib; do
-			LDFLAGS="$bout_save_LDFLAGS -L$path"
+			LDFLAGS="$bout_save_LDFLAGS -lnetcdf_c++ -L$path"
 			cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
