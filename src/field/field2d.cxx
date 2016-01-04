@@ -914,7 +914,7 @@ int Field2D::getData(int x, int y, int z, void *vptr) const {
     throw BoutException("Field2D: getData on empty data\n");
   
   // check ranges
-  if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngx)) {
+  if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngz)) {
     throw BoutException("Field2D: getData (%d,%d,%d) out of bounds\n", x, y, z);
   }
 #endif
