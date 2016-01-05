@@ -20,10 +20,11 @@ except ImportError:
     print("=> Set $PYTHONPATH variable to include BOUT++ pylib")
     raise SystemExit
 
-def pol_slice(var3d, gridfile, n=1, zangle=0.0, withRepeat=False):
+def pol_slice(var3d, gridfile, n=1, zangle=0.0, withRepeat=False, nyInterp=None):
     """ data2d = pol_slice(data3d, 'gridfile', n=1, zangle=0.0) 
     By default data3d will not include the repeated z point. If it does
-    contain this point one should set withRepeat=True to get the correct result
+    contain this point one should set withRepeat=True to get the correct result.
+    Set nyInterp to the number of y (theta) points you wish to use in the final result.
     """
     n = int(n)
     zangle = float(zangle)
@@ -70,6 +71,50 @@ def pol_slice(var3d, gridfile, n=1, zangle=0.0, withRepeat=False):
     except:
         print("ERROR: pol_slice couldn't read grid file")
         return None
+
+    #Decide if we've asked to do interpolation
+    doInterp = False
+    if nyInterp is not None:
+        if ny != nyInterp:
+            doInterp = True
+
+    #Setup interpolation if requested
+    if doInterp:
+        try:
+            from numpy import linspace, meshgrid, append, newaxis
+        except ImportError:
+            print("ERROR: NumPy module not available")
+            raise
+        try:
+            from scipy.ndimage import map_coordinates
+        except ImportError:
+            print("ERROR: SciPy module not available")
+            raise
+
+        #print("Interpolating in y")
+        #Create a copy of first point at end of array, we'd then drop the last y point
+        #in the interpolated data. This is in effort to encourage periodicity at the inboard
+        #side, though it doesn't seem to work (possibly because it doesn't do the z-shifting
+        #that is really required to achieve this).
+#        varTmp = append(var3d,var3d[:,0,newaxis,:],axis=1)
+
+        varTmp = var3d
+        #These are the index space co-ordinates of the output arrays
+        xOut = linspace(0,nx-1,nx)
+        yOut = linspace(0,ny-1,nyInterp)
+        zOut = linspace(0,nz-1,nz)
+
+        #Use meshgrid to create 3 length N arrays (N=total number of points)
+        xx,yy,zz = meshgrid(xOut,yOut,zOut,indexing='ij')
+        #Interpolate to output positions and make the correct shape
+        var3d = map_coordinates(input=varTmp,coordinates=[xx,yy,zz],cval=-999)
+
+        #As above
+        xx,yy = meshgrid(xOut,yOut,indexing='ij')
+        zShift = map_coordinates(zShift,[xx,yy],cval=-999)
+
+        #Update shape
+        ny = nyInterp
 
     var2d = np.zeros([nx, ny])
 
