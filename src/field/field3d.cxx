@@ -53,7 +53,7 @@ Field3D::Field3D() : background(NULL), block(NULL), deriv(NULL), yup_field(0), y
 }
 
 /// Doesn't copy any data, just create a new reference to the same data (copy on change later)
-Field3D::Field3D(const Field3D& f) : background(NULL), deriv(NULL), yup_field(0), ydown_field(0) {
+Field3D::Field3D(const Field3D& f) : background(NULL), deriv(NULL), yup_field(0), ydown_field(0), block(NULL) {
 #ifdef MEMDEBUG
   output.write("Field3D %u: Copy constructor from %u\n", (unsigned int) this, (unsigned int) &f);
 #endif
@@ -1907,6 +1907,9 @@ const Field3D Field3D::shiftZ(const BoutReal zangle) const {
 }
 
 const Field3D Field3D::shiftZ(bool toBoutReal) const {
+  if(!mesh->ShiftXderivs)
+    return *this;
+  
   if(toBoutReal) {
     return shiftZ(mesh->zShift);
   }
