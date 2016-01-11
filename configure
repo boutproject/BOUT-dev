@@ -6480,7 +6480,77 @@ if test "$with_netcdf" != "no"
 then
   ##########################################
   # Try to find a valid NetCDF configuration
+  #
+  # at first, try to find ncconf script
 
+
+  #echo "Searching for NetCDF configuration"
+
+  OLDNCDF="0" # Indicates whether nc-config or ncxx4-config
+
+	if (test "$with_netcdf" = "yes") || (test "$with_netcdf" = "")
+  	then
+		NCCONF=""
+ 		# No path specified. Try using nc-config
+		if type ncxx4-config &> /dev/null ; then
+			NCCONF=`which ncxx4-config` # New interface
+		elif type nc-config &> /dev/null ; then
+			# Older interface. May or may not have C++ support
+			echo " -> nc-config script found:" `which nc-config`
+			if test `nc-config --has-c++` = "yes"
+			then
+				echo " -> C++ support included"
+				NCCONF=`which nc-config`
+				OLDNCDF="1"
+			else
+				echo " -> NO C++ SUPPORT"
+			fi
+		else
+        		echo " -> No configure script found. Specify using --with-netcdf option"
+		fi
+	else
+		# see if configure scripts are in path
+		if type $with_netcdf/ncxx4-config > /dev/null 2>&1; then
+			NCCONF="$with_netcdf/ncxx4-config"
+		elif type $with_netcdf/bin/ncxx4-config > /dev/null 2>&1; then
+			NCCONF="$with_netcdf/bin/ncxx4-config"
+		elif type $with_netcdf/nc-config > /dev/null 2>&1; then
+			NCCONF="$with_netcdf/nc-config"
+			OLDNCDF="1"
+		elif type $with_netcdf/bin/nc-config > /dev/null 2>&1; then
+			NCCONF="$with_netcdf/bin/nc-config"
+			OLDNCDF="1"
+		fi
+	fi
+
+    ##########################################
+    # Get configuration
+    if test "$NCCONF" != ""; then
+      echo " -> NetCDF config script found: $NCCONF"
+
+      NCINC=`$NCCONF --cflags`
+      EXTRA_INCS="$EXTRA_INCS $NCINC"
+
+      if test "$OLDNCDF" == "1"; then
+        NCLIB=`$NCCONF --libs | sed s/-lnetcdf/-lnetcdf_c++\ -lnetcdf/` # Note netcdf_c++ needed
+        LDFLAGS="$LDFLAGS -Wl,-rpath,`nc-config --prefix`/lib"
+
+        CXXFLAGS="$CXXFLAGS -DNCDF"
+        echo " -> NetCDF support enabled"
+      else
+        NCLIB=`$NCCONF --libs`
+
+        CXXFLAGS="$CXXFLAGS -DNCDF4"
+        echo " -> NetCDF-4 support enabled"
+      fi
+      EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
+
+      file_formats="$file_formats netCDF"
+      NCPATH="found"
+      NCFOUND=yes
+    fi
+
+    if test .$NCFOUND != ".yes" ; then
 
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for netcdfcpp.h" >&5
 $as_echo_n "checking for netcdfcpp.h... " >&6; }
@@ -6555,7 +6625,7 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
 	if test .$bout_adp_found = .no; then
-		for prefix in $with_netcdf $with_netcdf/lib $with_netcdf/lib64  $HOME $HOME/local /usr /usr/local /opt /sw /opt/local ; do
+		for prefix in $with_netcdf  $HOME $HOME/local /usr /usr/local /opt /sw /opt/local ; do
 			for path in $prefix $prefix/lib $prefix/lib64 $prefix/lib/x86_64-linux-gnu ; do
 				LDFLAGS="$bout_save_LDFLAGS -lnetcdf -L$path"
 				cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -6628,7 +6698,8 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
 	if test .$bout_adp_found = .no; then
-		for prefix in $with_netcdf $with_netcdf/lib $with_netcdf/lib64  $HOME $HOME/local /usr /usr/local /opt /sw /opt/local ; do
+		for prefix in \
+				$with_netcdf  $HOME $HOME/local /usr /usr/local /opt /sw /opt/local ; do
 			for path in $prefix $prefix/lib $prefix/lib64 $prefix/lib/x86_64-linux-gnu ; do
 				LDFLAGS="$bout_save_LDFLAGS -lnetcdf_c++ -L$path"
 				cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -6685,76 +6756,11 @@ fi
 
 
   if test $NCFOUND = yes; then :
-  file_formats="$file_formats netCDF";echo $file_formats; echo " -> NetCDF support enabled"
+  file_formats="$file_formats netCDF";
+  	echo $file_formats; echo " -> NetCDF support enabled";NCPATH="found";
+	CXXFLAGS="$CXXFLAGS -DNCDF"
+
 fi
-
-	  echo "Searching for NetCDF configuration"
-
-  OLDNCDF="0" # Indicates whether nc-config or ncxx4-config
-
-  if (test .$NCFOUND = .no)
-	then
-		if (test "$with_netcdf" = "yes") || (test "$with_netcdf" = "")
-  	then
-			NCCONF=""
- 			# No path specified. Try using nc-config
-			if type ncxx4-config &> /dev/null ; then
-        NCCONF=`which ncxx4-config` # New interface
-			elif type nc-config &> /dev/null ; then
-        # Older interface. May or may not have C++ support
-        echo " -> nc-config script found:" `which nc-config`
-        if test `nc-config --has-c++` = "yes"
-        then
-          echo " -> C++ support included"
-          NCCONF=`which nc-config`
-				  OLDNCDF="1"
-        else
-          echo " -> NO C++ SUPPORT"
-        fi
-      else
-        echo " -> No configure script found. Specify using --with-netcdf option"
-      fi
-    else
-      # see if configure scripts are in path
-      if type $with_netcdf/ncxx4-config > /dev/null 2>&1; then
-        NCCONF="$with_netcdf/ncxx4-config"
-      elif type $with_netcdf/bin/ncxx4-config > /dev/null 2>&1; then
-        NCCONF="$with_netcdf/bin/ncxx4-config"
-      elif type $with_netcdf/nc-config > /dev/null 2>&1; then
-        NCCONF="$with_netcdf/nc-config"
-        OLDNCDF="1"
-      elif type $with_netcdf/bin/nc-config > /dev/null 2>&1; then
-        NCCONF="$with_netcdf/bin/nc-config"
-        OLDNCDF="1"
-      fi
-    fi
-
-    ##########################################
-    # Get configuration
-    if test "$NCCONF" != ""; then
-      echo " -> NetCDF config script found: $NCCONF"
-
-      NCINC=`$NCCONF --cflags`
-      EXTRA_INCS="$EXTRA_INCS $NCINC"
-
-      if test "$OLDNCDF" == "1"; then
-        NCLIB=`$NCCONF --libs | sed s/-lnetcdf/-lnetcdf_c++\ -lnetcdf/` # Note netcdf_c++ needed
-        LDFLAGS="$LDFLAGS -Wl,-rpath,`nc-config --prefix`/lib"
-
-        CXXFLAGS="$CXXFLAGS -DNCDF"
-        echo " -> NetCDF support enabled"
-      else
-        NCLIB=`$NCCONF --libs`
-
-        CXXFLAGS="$CXXFLAGS -DNCDF4"
-        echo " -> NetCDF-4 support enabled"
-      fi
-      EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
-
-      file_formats="$file_formats netCDF"
-      NCPATH="found"
-      NCFOUND=yes
-    fi
   fi
 
   if test $with_netcdf && test $NCFOUND != yes  ; then :
