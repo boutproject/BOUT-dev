@@ -5919,7 +5919,8 @@ $as_echo_n "checking for libfftw3... " >&6; }
 	bout_save_LDFLAGS=$LDFLAGS
 	bout_save_LIBS=$LIBS
 	bout_adp_found=no
-			LDFLAGS="-lfftw3 $bout_save_LDFLAGS"
+		LIBS="-lfftw3 $bout_save_LIBS"
+	LDFLAGS="-lfftw3 $bout_save_LDFLAGS"
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -6016,7 +6017,8 @@ $as_echo_n "checking for libblas... " >&6; }
 	bout_save_LDFLAGS=$LDFLAGS
 	bout_save_LIBS=$LIBS
 	bout_adp_found=no
-			LDFLAGS="-lblas $bout_save_LDFLAGS"
+		LIBS="-lblas $bout_save_LIBS"
+	LDFLAGS="-lblas $bout_save_LDFLAGS"
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -6089,7 +6091,8 @@ $as_echo_n "checking for liblapack... " >&6; }
 	bout_save_LDFLAGS=$LDFLAGS
 	bout_save_LIBS=$LIBS
 	bout_adp_found=no
-			LDFLAGS="-llapack $bout_save_LDFLAGS"
+		LIBS="-llapack $bout_save_LIBS"
+	LDFLAGS="-llapack $bout_save_LDFLAGS"
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -6525,7 +6528,8 @@ $as_echo_n "checking for libnetcdf... " >&6; }
 	bout_save_LDFLAGS=$LDFLAGS
 	bout_save_LIBS=$LIBS
 	bout_adp_found=no
-			LDFLAGS="-lnetcdf $bout_save_LDFLAGS"
+		LIBS="-lnetcdf $bout_save_LIBS"
+	LDFLAGS="-lnetcdf $bout_save_LDFLAGS"
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -6597,7 +6601,8 @@ $as_echo_n "checking for libnetcdf_c++... " >&6; }
 	bout_save_LDFLAGS=$LDFLAGS
 	bout_save_LIBS=$LIBS
 	bout_adp_found=no
-			LDFLAGS="-lnetcdf_c++ $bout_save_LDFLAGS"
+		LIBS="-lnetcdf_c++ $bout_save_LIBS"
+	LDFLAGS="-lnetcdf_c++ $bout_save_LDFLAGS"
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 

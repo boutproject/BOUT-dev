@@ -119,7 +119,7 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
 	bout_save_LIBS=$LIBS
 	bout_adp_found=no
 	dnl let's see whether it's in the default paths
-	dnl LIBS="-l$1 $bout_save_LIBS"
+	LIBS="-l$1 $bout_save_LIBS"
 	LDFLAGS="-l$1 $bout_save_LDFLAGS"
 	AC_LINK_IFELSE([AC_LANG_CALL([],[$2])],[bout_adp_found=yes],[])
 
