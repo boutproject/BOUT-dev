@@ -3142,7 +3142,7 @@ fi
 $as_echo_n "checking for mpi.h... " >&6; }
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include &lt;mpi.h&gt;
+#include <mpi.h>
 int
 main ()
 {

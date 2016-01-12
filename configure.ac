@@ -126,7 +126,7 @@ AC_LANG_CASE([C++], [
   if test x != x"$MPILIBS";
   then
     AC_MSG_CHECKING([for mpi.h])
-    AC_TRY_COMPILE([#include &lt;mpi.h&gt;],[],[AC_MSG_RESULT(yes)], [MPILIBS=""
+    AC_TRY_COMPILE([#include <mpi.h>],[],[AC_MSG_RESULT(yes)], [MPILIBS=""
       AC_MSG_RESULT(no)])
   fi
 ])
