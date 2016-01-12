@@ -84,6 +84,7 @@ AC_DEFUN([CREATE_DIR],
           fi
         ])
 
+
 #############################################################
 # General Options
 #############################################################
@@ -96,13 +97,14 @@ then
 elif test $with_optimize ; then
   optimize=$with_optimize
   test $optimize -eq 0 2>/dev/null
-  if [ $? -eq 2 ]; then
+  if test $? -eq 2 ; then
     if test $optimize == "default"
     then
       CXXFLAGS="$CXXFLAGS -O"
     elif test $optimize == "fast"
     then
       CXXFLAGS="$CXXFLAGS -Ofast -flto -march=native -funroll-loops"
+      DISABLE_CHECK=probably
     else
       AC_MSG_ERROR([unrecognized option: --with=optimize=$optimize])
     fi
@@ -110,9 +112,11 @@ elif test $with_optimize ; then
     if test $optimize -gt 3
     then
       CXXFLAGS="$CXXFLAGS -Ofast -flto -march=native -funroll-loops"
+      DISABLE_CHECK=probably
     elif test $optimize -gt 2
     then
       CXXFLAGS="$CXXFLAGS -O3 -flto -march=native -funroll-loops"
+      DISABLE_CHECK=probably
     elif test $optimize -gt 1
     then
       CXXFLAGS="$CXXFLAGS -O2 -march=native"
@@ -125,6 +129,12 @@ elif test $with_optimize ; then
   fi
 else
   CXXFLAGS="$CXXFLAGS -O"
+fi
+
+# disable checks if optimization > 2 is used
+if test -z $with_checks && test .$DISABLE_CHECK = ."probably"
+then
+  with_checks=no
 fi
 
 CHECK_LEVEL="0"
