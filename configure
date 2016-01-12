@@ -5860,6 +5860,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 $as_echo_n "checking for fftw3.h... " >&6; }
 	CPPFLAGS_save=$CPPFLAGS
 	BACH_found=no
+	AC_IF(test .$with_fftw != .yes, extra_prefix="$with_fftw",extra_prefix="")
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <fftw3.h>
@@ -5879,7 +5880,7 @@ if ac_fn_cxx_try_compile "$LINENO"; then :
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 	if test $BACH_found != yes ; then
-		for prefix in  /usr /opt $HOME $HOME/local /usr/local ; do
+		for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
 			for path in $prefix $prefix/include ; do
 				CPPFLAGS="$CPPFLAGS_save -I$path"
 
@@ -5928,6 +5929,7 @@ $as_echo_n "checking for libfftw3... " >&6; }
 	LDFLAGS_save=$LDFLAGS
 	LIBS="$EXTRA_LIBS -lfftw3"
 	BACL_found=no
+	AC_IF(test ."$with_fftw" != .yes, extra_prefix="$with_fftw",extra_prefix="")
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 extern "C"
@@ -5949,7 +5951,7 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 	if test $BACL_found != yes ; then
-		for prefix in $with_fftw /usr /opt $HOME $HOME/local /usr/local ; do
+		for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
 			for path in $prefix $prefix/lib $prefix/lib64 $prefix/theLongOne ; do
 				LDFLAGS="-L$path $LDFLAGS_save"
 
@@ -6021,6 +6023,7 @@ $as_echo_n "checking for libblas... " >&6; }
 	LDFLAGS_save=$LDFLAGS
 	LIBS="$EXTRA_LIBS -lblas"
 	BACL_found=no
+	AC_IF(test ."$lapack_path" != .yes, extra_prefix="$lapack_path",extra_prefix="")
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 extern "C"
@@ -6042,7 +6045,7 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 	if test $BACL_found != yes ; then
-		for prefix in $lapack_path /usr /opt $HOME $HOME/local /usr/local ; do
+		for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
 			for path in $prefix $prefix/lib $prefix/lib64 $prefix/theLongOne ; do
 				LDFLAGS="-L$path $LDFLAGS_save"
 
@@ -6090,6 +6093,7 @@ $as_echo_n "checking for liblapack... " >&6; }
 	LDFLAGS_save=$LDFLAGS
 	LIBS="$EXTRA_LIBS -llapack"
 	BACL_found=no
+	AC_IF(test ."$lapack_path " != .yes, extra_prefix="$lapack_path ",extra_prefix="")
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 extern "C"
@@ -6111,7 +6115,7 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 	if test $BACL_found != yes ; then
-		for prefix in $lapack_path  /usr /opt $HOME $HOME/local /usr/local ; do
+		for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
 			for path in $prefix $prefix/lib $prefix/lib64 $prefix/theLongOne ; do
 				LDFLAGS="-L$path $LDFLAGS_save"
 
@@ -6552,6 +6556,7 @@ then
 $as_echo_n "checking for netcdfcpp.h... " >&6; }
 	CPPFLAGS_save=$CPPFLAGS
 	BACH_found=no
+	AC_IF(test .$with_netcdf != .yes, extra_prefix="$with_netcdf",extra_prefix="")
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <netcdfcpp.h>
@@ -6571,7 +6576,7 @@ if ac_fn_cxx_try_compile "$LINENO"; then :
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 	if test $BACH_found != yes ; then
-		for prefix in  /usr /opt $HOME $HOME/local /usr/local ; do
+		for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
 			for path in $prefix $prefix/include ; do
 				CPPFLAGS="$CPPFLAGS_save -I$path"
 
@@ -6615,6 +6620,7 @@ $as_echo_n "checking for libnetcdf... " >&6; }
 	LDFLAGS_save=$LDFLAGS
 	LIBS="$EXTRA_LIBS -lnetcdf"
 	BACL_found=no
+	AC_IF(test ."$with_netcdf " != .yes, extra_prefix="$with_netcdf ",extra_prefix="")
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 extern "C"
@@ -6636,7 +6642,7 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 	if test $BACL_found != yes ; then
-		for prefix in $with_netcdf  /usr /opt $HOME $HOME/local /usr/local ; do
+		for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
 			for path in $prefix $prefix/lib $prefix/lib64 $prefix/theLongOne ; do
 				LDFLAGS="-L$path $LDFLAGS_save"
 
@@ -6683,6 +6689,9 @@ $as_echo_n "checking for libnetcdf_c++... " >&6; }
 	LDFLAGS_save=$LDFLAGS
 	LIBS="$EXTRA_LIBS -lnetcdf_c++"
 	BACL_found=no
+	AC_IF(test ."\
+				$with_netcdf " != .yes, extra_prefix="\
+				$with_netcdf ",extra_prefix="")
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 extern "C"
@@ -6704,8 +6713,7 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 	if test $BACL_found != yes ; then
-		for prefix in \
-				$with_netcdf  /usr /opt $HOME $HOME/local /usr/local ; do
+		for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
 			for path in $prefix $prefix/lib $prefix/lib64 $prefix/theLongOne ; do
 				LDFLAGS="-L$path $LDFLAGS_save"
 

@@ -107,12 +107,13 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
 	LDFLAGS_save=$LDFLAGS
 	LIBS="$EXTRA_LIBS -l$1"
 	BACL_found=no
+	AC_IF([test ."$5" != .yes], extra_prefix="$5",extra_prefix="")
 	AC_TRY_LINK([extern "C"
 	char $2();] ,[return $2();], [BACL_found=yes ; break;
      		  BOUT_MSG_DEBUG([found $1 without path])
 		],)
 	if test $BACL_found != yes ; then
-		for prefix in $5 /usr /opt $HOME $HOME/local /usr/local ; do
+		for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
 			for path in $prefix $prefix/lib $prefix/lib64 $prefix/theLongOne ; do
 				LDFLAGS="-L$path $LDFLAGS_save"
 				BOUT_MSG_DEBUG([try link $1 with $path])
@@ -139,11 +140,12 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_HEADER],[
 	AC_MSG_CHECKING([for $1])
 	CPPFLAGS_save=$CPPFLAGS
 	BACH_found=no
+	AC_IF([test .$4 != .yes], extra_prefix="$4",extra_prefix="")
 	AC_TRY_COMPILE([#include <$1>] ,, [BACH_found=yes ; break;
      		BOUT_MSG_DEBUG([found $1 without path])
 		],)
 	if test $BACH_found != yes ; then
-		for prefix in $5 /usr /opt $HOME $HOME/local /usr/local ; do
+		for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
 			for path in $prefix $prefix/include ; do
 				CPPFLAGS="$CPPFLAGS_save -I$path"
 				BOUT_MSG_DEBUG([try compile $1 with $path])
