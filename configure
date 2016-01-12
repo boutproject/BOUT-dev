@@ -666,6 +666,7 @@ PETSC
 FACETS_SOURCE
 PRECON_SOURCE
 MKDIR
+LDLIBS
 LDFLAGS
 CXXFLAGS
 EXTRA_LIBS
@@ -740,6 +741,7 @@ EXTRA_INCS
 EXTRA_LIBS
 CXXFLAGS
 LDFLAGS
+LDLIBS
 CXX
 LIBS
 CPPFLAGS
@@ -1382,6 +1384,7 @@ Some influential environment variables:
   EXTRA_LIBS  Extra linking flags
   CXXFLAGS    Extra compile flags
   LDFLAGS     Extra linking flags
+  LDLIBS      Extra linking libraries
   CXX         C++ compiler command
   LIBS        libraries to pass to the linker, e.g. -l<library>
   CPPFLAGS    (Objective) C/C++ preprocessor flags, e.g. -I<include dir> if
@@ -2308,6 +2311,7 @@ file_formats=""  # Record which file formats are being supported
 
 # Delete the build log from last time
 rm config-build.log
+
 
 
 
@@ -5917,10 +5921,9 @@ fi
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libfftw3" >&5
 $as_echo_n "checking for libfftw3... " >&6; }
 	bout_save_LDFLAGS=$LDFLAGS
-	bout_save_LIBS=$LIBS
 	bout_adp_found=no
-		LIBS="-lfftw3 $bout_save_LIBS"
-	LDFLAGS="-lfftw3 $bout_save_LDFLAGS"
+		LIBS="-lfftw3 $EXTRA_LIBS"
+	LDFLAGS="$bout_save_LDFLAGS"
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -5948,7 +5951,7 @@ rm -f core conftest.err conftest.$ac_objext \
 	if test .$bout_adp_found = .no; then
 		for prefix in $with_fftw $HOME $HOME/local /usr /usr/local /opt /sw /opt/local ; do
 			for path in $prefix $prefix/lib $prefix/lib64 $prefix/lib/x86_64-linux-gnu ; do
-				LDFLAGS="$bout_save_LDFLAGS -lfftw3 -L$path"
+				LDFLAGS="$bout_save_LDFLAGS -L$path"
 				cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -5979,11 +5982,11 @@ rm -f core conftest.err conftest.$ac_objext \
 	if test .$bout_adp_found = .yes; then
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
+		EXTRA_LIBS=$LIBS
 	else
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 		LDFLAGS=$bout_save_LDFLAGS
-		LIBS=$bout_save_LIBS
 	fi
 	if test .$bout_adp_found = .yes; then :
 
@@ -6015,10 +6018,9 @@ fi
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libblas" >&5
 $as_echo_n "checking for libblas... " >&6; }
 	bout_save_LDFLAGS=$LDFLAGS
-	bout_save_LIBS=$LIBS
 	bout_adp_found=no
-		LIBS="-lblas $bout_save_LIBS"
-	LDFLAGS="-lblas $bout_save_LDFLAGS"
+		LIBS="-lblas $EXTRA_LIBS"
+	LDFLAGS="$bout_save_LDFLAGS"
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -6046,7 +6048,7 @@ rm -f core conftest.err conftest.$ac_objext \
 	if test .$bout_adp_found = .no; then
 		for prefix in $lapack_path $HOME $HOME/local /usr /usr/local /opt /sw /opt/local ; do
 			for path in $prefix $prefix/lib $prefix/lib64 $prefix/lib/x86_64-linux-gnu ; do
-				LDFLAGS="$bout_save_LDFLAGS -lblas -L$path"
+				LDFLAGS="$bout_save_LDFLAGS -L$path"
 				cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -6077,11 +6079,11 @@ rm -f core conftest.err conftest.$ac_objext \
 	if test .$bout_adp_found = .yes; then
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
+		EXTRA_LIBS=$LIBS
 	else
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 		LDFLAGS=$bout_save_LDFLAGS
-		LIBS=$bout_save_LIBS
 	fi
 	if test .$bout_adp_found = .yes; then :
   HAS_BLAS=yes
@@ -6089,10 +6091,9 @@ $as_echo "no" >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for liblapack" >&5
 $as_echo_n "checking for liblapack... " >&6; }
 	bout_save_LDFLAGS=$LDFLAGS
-	bout_save_LIBS=$LIBS
 	bout_adp_found=no
-		LIBS="-llapack $bout_save_LIBS"
-	LDFLAGS="-llapack $bout_save_LDFLAGS"
+		LIBS="-llapack $EXTRA_LIBS"
+	LDFLAGS="$bout_save_LDFLAGS"
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -6120,7 +6121,7 @@ rm -f core conftest.err conftest.$ac_objext \
 	if test .$bout_adp_found = .no; then
 		for prefix in $lapack_path  $HOME $HOME/local /usr /usr/local /opt /sw /opt/local ; do
 			for path in $prefix $prefix/lib $prefix/lib64 $prefix/lib/x86_64-linux-gnu ; do
-				LDFLAGS="$bout_save_LDFLAGS -llapack -L$path"
+				LDFLAGS="$bout_save_LDFLAGS -L$path"
 				cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -6151,11 +6152,11 @@ rm -f core conftest.err conftest.$ac_objext \
 	if test .$bout_adp_found = .yes; then
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
+		EXTRA_LIBS=$LIBS
 	else
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 		LDFLAGS=$bout_save_LDFLAGS
-		LIBS=$bout_save_LIBS
 	fi
 	if test .$bout_adp_found = .yes; then :
   HAS_LAPACK=yes
@@ -6596,10 +6597,9 @@ $as_echo "no" >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libnetcdf" >&5
 $as_echo_n "checking for libnetcdf... " >&6; }
 	bout_save_LDFLAGS=$LDFLAGS
-	bout_save_LIBS=$LIBS
 	bout_adp_found=no
-		LIBS="-lnetcdf $bout_save_LIBS"
-	LDFLAGS="-lnetcdf $bout_save_LDFLAGS"
+		LIBS="-lnetcdf $EXTRA_LIBS"
+	LDFLAGS="$bout_save_LDFLAGS"
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -6627,7 +6627,7 @@ rm -f core conftest.err conftest.$ac_objext \
 	if test .$bout_adp_found = .no; then
 		for prefix in $with_netcdf  $HOME $HOME/local /usr /usr/local /opt /sw /opt/local ; do
 			for path in $prefix $prefix/lib $prefix/lib64 $prefix/lib/x86_64-linux-gnu ; do
-				LDFLAGS="$bout_save_LDFLAGS -lnetcdf -L$path"
+				LDFLAGS="$bout_save_LDFLAGS -L$path"
 				cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -6658,21 +6658,20 @@ rm -f core conftest.err conftest.$ac_objext \
 	if test .$bout_adp_found = .yes; then
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
+		EXTRA_LIBS=$LIBS
 	else
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 		LDFLAGS=$bout_save_LDFLAGS
-		LIBS=$bout_save_LIBS
 	fi
 	if test .$bout_adp_found = .yes; then :
 
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libnetcdf_c++" >&5
 $as_echo_n "checking for libnetcdf_c++... " >&6; }
 	bout_save_LDFLAGS=$LDFLAGS
-	bout_save_LIBS=$LIBS
 	bout_adp_found=no
-		LIBS="-lnetcdf_c++ $bout_save_LIBS"
-	LDFLAGS="-lnetcdf_c++ $bout_save_LDFLAGS"
+		LIBS="-lnetcdf_c++ $EXTRA_LIBS"
+	LDFLAGS="$bout_save_LDFLAGS"
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -6701,7 +6700,7 @@ rm -f core conftest.err conftest.$ac_objext \
 		for prefix in \
 				$with_netcdf  $HOME $HOME/local /usr /usr/local /opt /sw /opt/local ; do
 			for path in $prefix $prefix/lib $prefix/lib64 $prefix/lib/x86_64-linux-gnu ; do
-				LDFLAGS="$bout_save_LDFLAGS -lnetcdf_c++ -L$path"
+				LDFLAGS="$bout_save_LDFLAGS -L$path"
 				cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -6732,11 +6731,11 @@ rm -f core conftest.err conftest.$ac_objext \
 	if test .$bout_adp_found = .yes; then
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
+		EXTRA_LIBS=$LIBS
 	else
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 		LDFLAGS=$bout_save_LDFLAGS
-		LIBS=$bout_save_LIBS
 	fi
 	if test .$bout_adp_found = .yes; then :
   NCFOUND=yes

@@ -66,6 +66,7 @@ rm config-build.log
 
 AC_ARG_VAR(CXXFLAGS,[Extra compile flags])
 AC_ARG_VAR(LDFLAGS,[Extra linking flags])
+AC_ARG_VAR(LDLIBS,[Extra linking libraries])
 
 AC_SUBST(MKDIR)
 AC_SUBST(EXTRA_INCS)
@@ -116,17 +117,16 @@ dnl fifth  arg is an additional path to check
 AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
 	AC_MSG_CHECKING([for lib$1])
 	bout_save_LDFLAGS=$LDFLAGS
-	bout_save_LIBS=$LIBS
 	bout_adp_found=no
 	dnl let's see whether it's in the default paths
-	LIBS="-l$1 $bout_save_LIBS"
-	LDFLAGS="-l$1 $bout_save_LDFLAGS"
+	LIBS="-l$1 $EXTRA_LIBS"
+	LDFLAGS="$bout_save_LDFLAGS"
 	AC_LINK_IFELSE([AC_LANG_CALL([],[$2])],[bout_adp_found=yes],[])
 
 	if test .$bout_adp_found = .no; then
 		for prefix in $5 $HOME $HOME/local /usr /usr/local /opt /sw /opt/local ; do
 			for path in $prefix $prefix/lib $prefix/lib64 $prefix/lib/x86_64-linux-gnu ; do
-				LDFLAGS="$bout_save_LDFLAGS -l$1 -L$path"
+				LDFLAGS="$bout_save_LDFLAGS -L$path"
 				AC_LINK_IFELSE([AC_LANG_CALL([],[$2])],[bout_adp_found=yes],[])
 				if test .$bout_adp_found = .yes; then break; fi
 			done
@@ -134,10 +134,10 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
 	fi
 	if test .$bout_adp_found = .yes; then
 		AC_MSG_RESULT(yes)
+		EXTRA_LIBS=$LIBS
 	else
 		AC_MSG_RESULT(no)
 		LDFLAGS=$bout_save_LDFLAGS
-		LIBS=$bout_save_LIBS
 	fi
 	AS_IF([test .$bout_adp_found = .yes], [$3],[$4])
 ])
