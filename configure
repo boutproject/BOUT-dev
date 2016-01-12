@@ -720,6 +720,7 @@ with_hdf5
 with_parallelhdf5
 with_pnetcdf
 with_debug
+with_optimize
 with_ida
 with_cvode
 with_sundials
@@ -1364,6 +1365,7 @@ Optional Packages:
   --with-parallelhdf5    Enable support for parallel HDF5 files
   --with-pnetcdf              Set path to Parallel NetCDF library
   --with-debug            	   Enable all debugging flags
+ --with-optimize=default/1/2/3  Enable optimization
   --with-ida=/path/to/ida 	   Use the SUNDIALS IDA solver
   --with-cvode            	   Use the SUNDIALS CVODE solver
   --with-sundals              Use CVODE and IDA
@@ -2226,6 +2228,12 @@ fi
 # Check whether --with-debug was given.
 if test "${with_debug+set}" = set; then :
   withval=$with_debug;
+fi
+
+
+# Check whether --with-optimize was given.
+if test "${with_optimize+set}" = set; then :
+  withval=$with_optimize;
 fi
 
 

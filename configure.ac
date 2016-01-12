@@ -43,6 +43,7 @@ AC_ARG_WITH(hdf5,   [  --with-hdf5                 Enable support for HDF5 files
 AC_ARG_WITH(parallelhdf5,[  --with-parallelhdf5    Enable support for parallel HDF5 files])
 AC_ARG_WITH(pnetcdf,[  --with-pnetcdf              Set path to Parallel NetCDF library])
 AC_ARG_WITH(debug,  [  --with-debug            	   Enable all debugging flags])
+AC_ARG_WITH(optimize,[ --with-optimize=default/1/2/3  Enable optimization])
 AC_ARG_WITH(ida,    [  --with-ida=/path/to/ida 	   Use the SUNDIALS IDA solver])
 AC_ARG_WITH(cvode,  [  --with-cvode            	   Use the SUNDIALS CVODE solver])
 AC_ARG_WITH(sundials, [  --with-sundials           Use CVODE and IDA])
@@ -91,7 +92,37 @@ if test "$with_debug" != ""
 then
   echo "Enabling all debug options"
   with_checks="3"
-  CXXFLAGS="$CXXFLAGS -g -O0"
+  CXXFLAGS="$CXXFLAGS -g -Og"
+elif test $with_optimize ; then
+  optimize=$with_optimize
+  test $optimize -eq 0 2>/dev/null
+  if [ $? -eq 2 ]; then
+    if test $optimize == "default"
+    then
+      CXXFLAGS="$CXXFLAGS -O"
+    elif test $optimize == "fast"
+    then
+      CXXFLAGS="$CXXFLAGS -Ofast -flto -march=native -funroll-loops"
+    else
+      AC_MSG_ERROR([unrecognized option: --with=optimize=$optimize])
+    fi
+  else
+    if test $optimize -gt 3
+    then
+      CXXFLAGS="$CXXFLAGS -Ofast -flto -march=native -funroll-loops"
+    elif test $optimize -gt 2
+    then
+      CXXFLAGS="$CXXFLAGS -O3 -flto -march=native -funroll-loops"
+    elif test $optimize -gt 1
+    then
+      CXXFLAGS="$CXXFLAGS -O2 -march=native"
+    elif test $optimze -ge 0
+    then
+      CXXFLAGS="$CXXFLAGS -O$optimize"
+    else
+      AC_MSG_ERROR([unrecognized option: --with=optimize=$optimize])
+    fi
+  fi
 else
   CXXFLAGS="$CXXFLAGS -O"
 fi
