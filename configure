@@ -5860,7 +5860,11 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 $as_echo_n "checking for fftw3.h... " >&6; }
 	CPPFLAGS_save=$CPPFLAGS
 	BACH_found=no
-	AC_IF(test .$with_fftw != .yes, extra_prefix="$with_fftw",extra_prefix="")
+	if test .$with_fftw != .yes; then :
+  extra_prefix="$with_fftw"
+else
+  extra_prefix=""
+fi
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <fftw3.h>
@@ -5929,7 +5933,11 @@ $as_echo_n "checking for libfftw3... " >&6; }
 	LDFLAGS_save=$LDFLAGS
 	LIBS="$EXTRA_LIBS -lfftw3"
 	BACL_found=no
-	AC_IF(test ."$with_fftw" != .yes, extra_prefix="$with_fftw",extra_prefix="")
+	if test ."$with_fftw" = .yes; then :
+  extra_prefix=""
+else
+  extra_prefix="$with_fftw"
+fi
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 extern "C"
@@ -6023,7 +6031,11 @@ $as_echo_n "checking for libblas... " >&6; }
 	LDFLAGS_save=$LDFLAGS
 	LIBS="$EXTRA_LIBS -lblas"
 	BACL_found=no
-	AC_IF(test ."$lapack_path" != .yes, extra_prefix="$lapack_path",extra_prefix="")
+	if test ."$lapack_path" = .yes; then :
+  extra_prefix=""
+else
+  extra_prefix="$lapack_path"
+fi
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 extern "C"
@@ -6093,7 +6105,11 @@ $as_echo_n "checking for liblapack... " >&6; }
 	LDFLAGS_save=$LDFLAGS
 	LIBS="$EXTRA_LIBS -llapack"
 	BACL_found=no
-	AC_IF(test ."$lapack_path " != .yes, extra_prefix="$lapack_path ",extra_prefix="")
+	if test ."$lapack_path " = .yes; then :
+  extra_prefix=""
+else
+  extra_prefix="$lapack_path "
+fi
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 extern "C"
@@ -6556,7 +6572,11 @@ then
 $as_echo_n "checking for netcdfcpp.h... " >&6; }
 	CPPFLAGS_save=$CPPFLAGS
 	BACH_found=no
-	AC_IF(test .$with_netcdf != .yes, extra_prefix="$with_netcdf",extra_prefix="")
+	if test .$with_netcdf != .yes; then :
+  extra_prefix="$with_netcdf"
+else
+  extra_prefix=""
+fi
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <netcdfcpp.h>
@@ -6620,7 +6640,11 @@ $as_echo_n "checking for libnetcdf... " >&6; }
 	LDFLAGS_save=$LDFLAGS
 	LIBS="$EXTRA_LIBS -lnetcdf"
 	BACL_found=no
-	AC_IF(test ."$with_netcdf " != .yes, extra_prefix="$with_netcdf ",extra_prefix="")
+	if test ."$with_netcdf " = .yes; then :
+  extra_prefix=""
+else
+  extra_prefix="$with_netcdf "
+fi
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 extern "C"
@@ -6689,9 +6713,13 @@ $as_echo_n "checking for libnetcdf_c++... " >&6; }
 	LDFLAGS_save=$LDFLAGS
 	LIBS="$EXTRA_LIBS -lnetcdf_c++"
 	BACL_found=no
-	AC_IF(test ."\
-				$with_netcdf " != .yes, extra_prefix="\
-				$with_netcdf ",extra_prefix="")
+	if test ."\
+				$with_netcdf " = .yes; then :
+  extra_prefix=""
+else
+  extra_prefix="\
+				$with_netcdf "
+fi
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 extern "C"
