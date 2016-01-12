@@ -87,27 +87,15 @@ AC_DEFUN([CREATE_DIR],
 dnl#############################################################
 dnl# Define functions
 dnl#############################################################
-# Functions taken from from ESPResSo (espressomd.org):
-# Copyright (C) 2012,2013,2014 The ESPResSo project
-# Copyright (C) 2006,2007,2008,2009,2010,2011 Olaf Lenz, Axel Arnold
-# Copyright (C) 2008,2009,2010
-#   Max-Planck-Institute for Polymer Research, Theory Group
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# Functions inspired by ESPResSo (espressomd.org)
 dnl
 dnl Try whether the linker / compiler can find the header / libraries
 AC_LANG(C++)
+
+AC_DEFUN([BOUT_MSG_DEBUG],[
+	dnl Uncomment line below to enable debugging
+	dnl AC_MSG_NOTICE([debug: $1])
+	])
 dnl define the macro to check for libraries
 dnl first  argument is the name of the library
 dnl second arg is a function of that library
@@ -116,61 +104,64 @@ dnl forth  arg is to be executed if not found
 dnl fifth  arg is an additional path to check
 AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
 	AC_MSG_CHECKING([for lib$1])
-	bout_save_LDFLAGS=$LDFLAGS
-	bout_adp_found=no
-	dnl let's see whether it's in the default paths
-	LIBS="-l$1 $EXTRA_LIBS"
-	LDFLAGS="$bout_save_LDFLAGS"
-	AC_LINK_IFELSE([AC_LANG_CALL([],[$2])],[bout_adp_found=yes],[])
-
-	if test .$bout_adp_found = .no; then
-		for prefix in $5 $HOME $HOME/local /usr /usr/local /opt /sw /opt/local ; do
-			for path in $prefix $prefix/lib $prefix/lib64 $prefix/lib/x86_64-linux-gnu ; do
-				LDFLAGS="$bout_save_LDFLAGS -L$path"
-				AC_LINK_IFELSE([AC_LANG_CALL([],[$2])],[bout_adp_found=yes],[])
-				if test .$bout_adp_found = .yes; then break; fi
+	LDFLAGS_save=$LDFLAGS
+	LIBS="$EXTRA_LIBS -l$1"
+	BACL_found=no
+	AC_TRY_LINK([extern "C"
+	char $2();] ,[return $2();], [BACL_found=yes ; break;
+     		  BOUT_MSG_DEBUG([found $1 without path])
+		],)
+	if test $BACL_found != yes ; then
+		for prefix in $5 /usr /opt $HOME $HOME/local /usr/local ; do
+			for path in $prefix $prefix/lib $prefix/lib64 $prefix/theLongOne ; do
+				LDFLAGS="-L$path $LDFLAGS_save"
+				BOUT_MSG_DEBUG([try link $1 with $path])
+				AC_TRY_LINK([extern "C"
+					char $2();] ,[return $2();], [BACL_found=yes ; break;
+						BOUT_MSG_DEBUG([found $1 with $path])
+						],)
 			done
+			AS_IF([test .$BACL_found = .yes],break;)
 		done
 	fi
-	if test .$bout_adp_found = .yes; then
-		AC_MSG_RESULT(yes)
+	if test $BACL_found = yes ; then
 		EXTRA_LIBS=$LIBS
+		AC_MSG_RESULT(yes)
 	else
+		LDFLAGS=$LDFLAGS_save
 		AC_MSG_RESULT(no)
-		LDFLAGS=$bout_save_LDFLAGS
 	fi
-	AS_IF([test .$bout_adp_found = .yes], [$3],[$4])
+	AS_IF([test .$BACL_found = .yes], [$3],[$4])
 ])
 
-dnl search for a header file in additional paths
+
 AC_DEFUN([BOUT_ADDPATH_CHECK_HEADER],[
 	AC_MSG_CHECKING([for $1])
-	bout_save_CPPFLAGS=$CPPFLAGS
-	bout_adp_found=no
-	dnl let's see whether it's in the default paths
-	AC_COMPILE_IFELSE([AC_LANG_SOURCE([
-		#include <$1>
-	])],[bout_adp_found=yes],[])
-
-	if test .$bout_adp_found = .no; then
-		for path in $4 $HOME/include $HOME/local/include /sw/include /opt/local/include /usr/include /usr/local/include /opt/include; do
-			CPPFLAGS="$bout_save_CPPFLAGS -I$path"
-			AC_COMPILE_IFELSE([AC_LANG_SOURCE([
-				#include <$1>
-			])],[bout_adp_found=yes],[])
-			if test .$bout_adp_found = .yes; then break; fi
+	CPPFLAGS_save=$CPPFLAGS
+	BACH_found=no
+	AC_TRY_COMPILE([#include <$1>] ,, [BACH_found=yes ; break;
+     		BOUT_MSG_DEBUG([found $1 without path])
+		],)
+	if test $BACH_found != yes ; then
+		for prefix in $5 /usr /opt $HOME $HOME/local /usr/local ; do
+			for path in $prefix $prefix/include ; do
+				CPPFLAGS="$CPPFLAGS_save -I$path"
+				BOUT_MSG_DEBUG([try compile $1 with $path])
+				AC_TRY_COMPILE([#include <$1>] ,, [BACH_found=yes ; break;
+						BOUT_MSG_DEBUG([found $1 with $path])
+						],)
+			done
+			AS_IF([test .$BACH_found = .yes],break;)
 		done
 	fi
-	if test .$bout_adp_found = .yes; then
+	if test $BACH_found = yes ; then
 		AC_MSG_RESULT(yes)
 	else
+		CPPFLAGS=$CPPFLAGS_save
 		AC_MSG_RESULT(no)
-		CPPFLAGS=$bout_save_CPPFLAGS
 	fi
-	AS_IF([test .$bout_adp_found = .yes], [$2],[$3])
+	AS_IF([test .$BACH_found = .yes], [$2],[$3])
 ])
-
-
 
 
 
@@ -927,40 +918,40 @@ then
 
   OLDNCDF="0" # Indicates whether nc-config or ncxx4-config
 
-	if (test "$with_netcdf" = "yes") || (test "$with_netcdf" = "")
-  	then
-		NCCONF=""
- 		# No path specified. Try using nc-config
-		if type ncxx4-config &> /dev/null ; then
-			NCCONF=`which ncxx4-config` # New interface
-		elif type nc-config &> /dev/null ; then
-			# Older interface. May or may not have C++ support
-			echo " -> nc-config script found:" `which nc-config`
-			if test `nc-config --has-c++` = "yes"
-			then
-				echo " -> C++ support included"
-				NCCONF=`which nc-config`
-				OLDNCDF="1"
-			else
-				echo " -> NO C++ SUPPORT"
-			fi
-		else
-        		echo " -> No configure script found. Specify using --with-netcdf option"
-		fi
-	else
-		# see if configure scripts are in path
-		if type $with_netcdf/ncxx4-config > /dev/null 2>&1; then
-			NCCONF="$with_netcdf/ncxx4-config"
-		elif type $with_netcdf/bin/ncxx4-config > /dev/null 2>&1; then
-			NCCONF="$with_netcdf/bin/ncxx4-config"
-		elif type $with_netcdf/nc-config > /dev/null 2>&1; then
-			NCCONF="$with_netcdf/nc-config"
-			OLDNCDF="1"
-		elif type $with_netcdf/bin/nc-config > /dev/null 2>&1; then
-			NCCONF="$with_netcdf/bin/nc-config"
-			OLDNCDF="1"
-		fi
-	fi
+    if (test "$with_netcdf" = "yes") || (test "$with_netcdf" = "")
+    then
+      NCCONF=""
+      # No path specified. Try using nc-config
+      if type ncxx4-config &> /dev/null ; then
+        NCCONF=`which ncxx4-config` # New interface
+      elif type nc-config &> /dev/null ; then
+        # Older interface. May or may not have C++ support
+        echo " -> nc-config script found:" `which nc-config`
+        if test `nc-config --has-c++` = "yes"
+        then
+          echo " -> C++ support included"
+          NCCONF=`which nc-config`
+          OLDNCDF="1"
+        else
+          echo " -> NO C++ SUPPORT"
+        fi
+      else
+            echo " -> No configure script found. Specify using --with-netcdf option"
+      fi
+    else
+      # see if configure scripts are in path
+      if type $with_netcdf/ncxx4-config > /dev/null 2>&1; then
+        NCCONF="$with_netcdf/ncxx4-config"
+      elif type $with_netcdf/bin/ncxx4-config > /dev/null 2>&1; then
+        NCCONF="$with_netcdf/bin/ncxx4-config"
+      elif type $with_netcdf/nc-config > /dev/null 2>&1; then
+        NCCONF="$with_netcdf/nc-config"
+        OLDNCDF="1"
+      elif type $with_netcdf/bin/nc-config > /dev/null 2>&1; then
+        NCCONF="$with_netcdf/bin/nc-config"
+        OLDNCDF="1"
+      fi
+    fi
 
     ##########################################
     # Get configuration
@@ -990,16 +981,17 @@ then
     fi
 
   dnl if nc-config / ncxx4-config is not found, try to find library directly
-  if test .$NCFOUND != ".yes" ; then 
-	BOUT_ADDPATH_CHECK_HEADER(netcdfcpp.h,
-		BOUT_ADDPATH_CHECK_LIB(netcdf,nc_get_att,
-			BOUT_ADDPATH_CHECK_LIB(netcdf_c++,nc_close, NCFOUND=yes ,NCFOUND=no, \
+  if test .$NCFOUND != ".yes" ; then
+    BOUT_MSG_DEBUG([calling bout addpath])
+    BOUT_ADDPATH_CHECK_HEADER(netcdfcpp.h,
+      BOUT_ADDPATH_CHECK_LIB(netcdf,nc_get_att,
+	BOUT_ADDPATH_CHECK_LIB(netcdf_c++,nc_close, NCFOUND=yes ,NCFOUND=no, \
 				$with_netcdf )
-		,NCFOUND=no, $with_netcdf )
-	,NCFOUND=no, $with_netcdf $with_netcdf/include)
-	
+      ,NCFOUND=no, $with_netcdf )
+    ,NCFOUND=no, $with_netcdf)
+
   AS_IF( test $NCFOUND = yes, [file_formats="$file_formats netCDF";
-  	echo $file_formats; echo " -> NetCDF support enabled";NCPATH="found";
+    echo " -> NetCDF support enabled";NCPATH="found";
 	CXXFLAGS="$CXXFLAGS -DNCDF"]
 	,)
   fi

@@ -2326,29 +2326,13 @@ rm config-build.log
 
 
 
-# Functions taken from from ESPResSo (espressomd.org):
-# Copyright (C) 2012,2013,2014 The ESPResSo project
-# Copyright (C) 2006,2007,2008,2009,2010,2011 Olaf Lenz, Axel Arnold
-# Copyright (C) 2008,2009,2010
-#   Max-Planck-Institute for Polymer Research, Theory Group
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# Functions inspired by ESPResSo (espressomd.org)
 ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
 
 
 
@@ -5874,44 +5858,65 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for fftw3.h" >&5
 $as_echo_n "checking for fftw3.h... " >&6; }
-	bout_save_CPPFLAGS=$CPPFLAGS
-	bout_adp_found=no
-		cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+	CPPFLAGS_save=$CPPFLAGS
+	BACH_found=no
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
+#include <fftw3.h>
+int
+main ()
+{
 
-		#include <fftw3.h>
-
+  ;
+  return 0;
+}
 _ACEOF
 if ac_fn_cxx_try_compile "$LINENO"; then :
-  bout_adp_found=yes
+  BACH_found=yes ; break;
+
+
+
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+	if test $BACH_found != yes ; then
+		for prefix in  /usr /opt $HOME $HOME/local /usr/local ; do
+			for path in $prefix $prefix/include ; do
+				CPPFLAGS="$CPPFLAGS_save -I$path"
 
-	if test .$bout_adp_found = .no; then
-		for path in $with_fftw $HOME/include $HOME/local/include /sw/include /opt/local/include /usr/include /usr/local/include /opt/include; do
-			CPPFLAGS="$bout_save_CPPFLAGS -I$path"
-			cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+				cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
+#include <fftw3.h>
+int
+main ()
+{
 
-				#include <fftw3.h>
-
+  ;
+  return 0;
+}
 _ACEOF
 if ac_fn_cxx_try_compile "$LINENO"; then :
-  bout_adp_found=yes
+  BACH_found=yes ; break;
+
+
+
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-			if test .$bout_adp_found = .yes; then break; fi
+			done
+			if test .$BACH_found = .yes; then :
+  break;
+fi
 		done
 	fi
-	if test .$bout_adp_found = .yes; then
+	if test $BACH_found = yes ; then
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 	else
+		CPPFLAGS=$CPPFLAGS_save
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-		CPPFLAGS=$bout_save_CPPFLAGS
 	fi
-	if test .$bout_adp_found = .yes; then :
+	if test .$BACH_found = .yes; then :
 
 else
   as_fn_error $? "'FFTW3 is needed by BOUT++'" "$LINENO" 5
@@ -5920,75 +5925,71 @@ fi
 
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libfftw3" >&5
 $as_echo_n "checking for libfftw3... " >&6; }
-	bout_save_LDFLAGS=$LDFLAGS
-	bout_adp_found=no
-		LIBS="-lfftw3 $EXTRA_LIBS"
-	LDFLAGS="$bout_save_LDFLAGS"
+	LDFLAGS_save=$LDFLAGS
+	LIBS="$EXTRA_LIBS -lfftw3"
+	BACL_found=no
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
 extern "C"
-#endif
-char fftw_plan_dft_r2c_1d ();
+	char fftw_plan_dft_r2c_1d();
 int
 main ()
 {
-return fftw_plan_dft_r2c_1d ();
+return fftw_plan_dft_r2c_1d();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
-  bout_adp_found=yes
+  BACL_found=yes ; break;
+
+
+
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
+	if test $BACL_found != yes ; then
+		for prefix in $with_fftw /usr /opt $HOME $HOME/local /usr/local ; do
+			for path in $prefix $prefix/lib $prefix/lib64 $prefix/theLongOne ; do
+				LDFLAGS="-L$path $LDFLAGS_save"
 
-	if test .$bout_adp_found = .no; then
-		for prefix in $with_fftw $HOME $HOME/local /usr /usr/local /opt /sw /opt/local ; do
-			for path in $prefix $prefix/lib $prefix/lib64 $prefix/lib/x86_64-linux-gnu ; do
-				LDFLAGS="$bout_save_LDFLAGS -L$path"
+
 				cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
 extern "C"
-#endif
-char fftw_plan_dft_r2c_1d ();
+					char fftw_plan_dft_r2c_1d();
 int
 main ()
 {
-return fftw_plan_dft_r2c_1d ();
+return fftw_plan_dft_r2c_1d();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
-  bout_adp_found=yes
+  BACL_found=yes ; break;
+
+
+
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-				if test .$bout_adp_found = .yes; then break; fi
 			done
+			if test .$BACL_found = .yes; then :
+  break;
+fi
 		done
 	fi
-	if test .$bout_adp_found = .yes; then
+	if test $BACL_found = yes ; then
+		EXTRA_LIBS=$LIBS
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-		EXTRA_LIBS=$LIBS
 	else
+		LDFLAGS=$LDFLAGS_save
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-		LDFLAGS=$bout_save_LDFLAGS
 	fi
-	if test .$bout_adp_found = .yes; then :
+	if test .$BACL_found = .yes; then :
 
 else
   as_fn_error $? "\"FFTW3 is needed by BOUT++\"" "$LINENO" 5
@@ -6017,148 +6018,140 @@ fi
 
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libblas" >&5
 $as_echo_n "checking for libblas... " >&6; }
-	bout_save_LDFLAGS=$LDFLAGS
-	bout_adp_found=no
-		LIBS="-lblas $EXTRA_LIBS"
-	LDFLAGS="$bout_save_LDFLAGS"
+	LDFLAGS_save=$LDFLAGS
+	LIBS="$EXTRA_LIBS -lblas"
+	BACL_found=no
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
 extern "C"
-#endif
-char zgemm_  ();
+	char zgemm_ ();
 int
 main ()
 {
-return zgemm_  ();
+return zgemm_ ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
-  bout_adp_found=yes
+  BACL_found=yes ; break;
+
+
+
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
+	if test $BACL_found != yes ; then
+		for prefix in $lapack_path /usr /opt $HOME $HOME/local /usr/local ; do
+			for path in $prefix $prefix/lib $prefix/lib64 $prefix/theLongOne ; do
+				LDFLAGS="-L$path $LDFLAGS_save"
 
-	if test .$bout_adp_found = .no; then
-		for prefix in $lapack_path $HOME $HOME/local /usr /usr/local /opt /sw /opt/local ; do
-			for path in $prefix $prefix/lib $prefix/lib64 $prefix/lib/x86_64-linux-gnu ; do
-				LDFLAGS="$bout_save_LDFLAGS -L$path"
+
 				cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
 extern "C"
-#endif
-char zgemm_  ();
+					char zgemm_ ();
 int
 main ()
 {
-return zgemm_  ();
+return zgemm_ ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
-  bout_adp_found=yes
+  BACL_found=yes ; break;
+
+
+
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-				if test .$bout_adp_found = .yes; then break; fi
 			done
+			if test .$BACL_found = .yes; then :
+  break;
+fi
 		done
 	fi
-	if test .$bout_adp_found = .yes; then
+	if test $BACL_found = yes ; then
+		EXTRA_LIBS=$LIBS
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-		EXTRA_LIBS=$LIBS
 	else
+		LDFLAGS=$LDFLAGS_save
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-		LDFLAGS=$bout_save_LDFLAGS
 	fi
-	if test .$bout_adp_found = .yes; then :
+	if test .$BACL_found = .yes; then :
   HAS_BLAS=yes
 
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for liblapack" >&5
 $as_echo_n "checking for liblapack... " >&6; }
-	bout_save_LDFLAGS=$LDFLAGS
-	bout_adp_found=no
-		LIBS="-llapack $EXTRA_LIBS"
-	LDFLAGS="$bout_save_LDFLAGS"
+	LDFLAGS_save=$LDFLAGS
+	LIBS="$EXTRA_LIBS -llapack"
+	BACL_found=no
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
 extern "C"
-#endif
-char zgbsv_  ();
+	char zgbsv_ ();
 int
 main ()
 {
-return zgbsv_  ();
+return zgbsv_ ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
-  bout_adp_found=yes
+  BACL_found=yes ; break;
+
+
+
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
+	if test $BACL_found != yes ; then
+		for prefix in $lapack_path  /usr /opt $HOME $HOME/local /usr/local ; do
+			for path in $prefix $prefix/lib $prefix/lib64 $prefix/theLongOne ; do
+				LDFLAGS="-L$path $LDFLAGS_save"
 
-	if test .$bout_adp_found = .no; then
-		for prefix in $lapack_path  $HOME $HOME/local /usr /usr/local /opt /sw /opt/local ; do
-			for path in $prefix $prefix/lib $prefix/lib64 $prefix/lib/x86_64-linux-gnu ; do
-				LDFLAGS="$bout_save_LDFLAGS -L$path"
+
 				cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
 extern "C"
-#endif
-char zgbsv_  ();
+					char zgbsv_ ();
 int
 main ()
 {
-return zgbsv_  ();
+return zgbsv_ ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
-  bout_adp_found=yes
+  BACL_found=yes ; break;
+
+
+
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-				if test .$bout_adp_found = .yes; then break; fi
 			done
+			if test .$BACL_found = .yes; then :
+  break;
+fi
 		done
 	fi
-	if test .$bout_adp_found = .yes; then
+	if test $BACL_found = yes ; then
+		EXTRA_LIBS=$LIBS
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-		EXTRA_LIBS=$LIBS
 	else
+		LDFLAGS=$LDFLAGS_save
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-		LDFLAGS=$bout_save_LDFLAGS
 	fi
-	if test .$bout_adp_found = .yes; then :
+	if test .$BACL_found = .yes; then :
   HAS_LAPACK=yes
 			echo "Using LAPACK"
 			CXXFLAGS="$CXXFLAGS -DLAPACK"
@@ -6489,40 +6482,40 @@ then
 
   OLDNCDF="0" # Indicates whether nc-config or ncxx4-config
 
-	if (test "$with_netcdf" = "yes") || (test "$with_netcdf" = "")
-  	then
-		NCCONF=""
- 		# No path specified. Try using nc-config
-		if type ncxx4-config &> /dev/null ; then
-			NCCONF=`which ncxx4-config` # New interface
-		elif type nc-config &> /dev/null ; then
-			# Older interface. May or may not have C++ support
-			echo " -> nc-config script found:" `which nc-config`
-			if test `nc-config --has-c++` = "yes"
-			then
-				echo " -> C++ support included"
-				NCCONF=`which nc-config`
-				OLDNCDF="1"
-			else
-				echo " -> NO C++ SUPPORT"
-			fi
-		else
-        		echo " -> No configure script found. Specify using --with-netcdf option"
-		fi
-	else
-		# see if configure scripts are in path
-		if type $with_netcdf/ncxx4-config > /dev/null 2>&1; then
-			NCCONF="$with_netcdf/ncxx4-config"
-		elif type $with_netcdf/bin/ncxx4-config > /dev/null 2>&1; then
-			NCCONF="$with_netcdf/bin/ncxx4-config"
-		elif type $with_netcdf/nc-config > /dev/null 2>&1; then
-			NCCONF="$with_netcdf/nc-config"
-			OLDNCDF="1"
-		elif type $with_netcdf/bin/nc-config > /dev/null 2>&1; then
-			NCCONF="$with_netcdf/bin/nc-config"
-			OLDNCDF="1"
-		fi
-	fi
+    if (test "$with_netcdf" = "yes") || (test "$with_netcdf" = "")
+    then
+      NCCONF=""
+      # No path specified. Try using nc-config
+      if type ncxx4-config &> /dev/null ; then
+        NCCONF=`which ncxx4-config` # New interface
+      elif type nc-config &> /dev/null ; then
+        # Older interface. May or may not have C++ support
+        echo " -> nc-config script found:" `which nc-config`
+        if test `nc-config --has-c++` = "yes"
+        then
+          echo " -> C++ support included"
+          NCCONF=`which nc-config`
+          OLDNCDF="1"
+        else
+          echo " -> NO C++ SUPPORT"
+        fi
+      else
+            echo " -> No configure script found. Specify using --with-netcdf option"
+      fi
+    else
+      # see if configure scripts are in path
+      if type $with_netcdf/ncxx4-config > /dev/null 2>&1; then
+        NCCONF="$with_netcdf/ncxx4-config"
+      elif type $with_netcdf/bin/ncxx4-config > /dev/null 2>&1; then
+        NCCONF="$with_netcdf/bin/ncxx4-config"
+      elif type $with_netcdf/nc-config > /dev/null 2>&1; then
+        NCCONF="$with_netcdf/nc-config"
+        OLDNCDF="1"
+      elif type $with_netcdf/bin/nc-config > /dev/null 2>&1; then
+        NCCONF="$with_netcdf/bin/nc-config"
+        OLDNCDF="1"
+      fi
+    fi
 
     ##########################################
     # Get configuration
@@ -6553,191 +6546,206 @@ then
 
     if test .$NCFOUND != ".yes" ; then
 
+
+
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for netcdfcpp.h" >&5
 $as_echo_n "checking for netcdfcpp.h... " >&6; }
-	bout_save_CPPFLAGS=$CPPFLAGS
-	bout_adp_found=no
-		cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+	CPPFLAGS_save=$CPPFLAGS
+	BACH_found=no
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
+#include <netcdfcpp.h>
+int
+main ()
+{
 
-		#include <netcdfcpp.h>
-
+  ;
+  return 0;
+}
 _ACEOF
 if ac_fn_cxx_try_compile "$LINENO"; then :
-  bout_adp_found=yes
+  BACH_found=yes ; break;
+
+
+
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+	if test $BACH_found != yes ; then
+		for prefix in  /usr /opt $HOME $HOME/local /usr/local ; do
+			for path in $prefix $prefix/include ; do
+				CPPFLAGS="$CPPFLAGS_save -I$path"
 
-	if test .$bout_adp_found = .no; then
-		for path in $with_netcdf $with_netcdf/include $HOME/include $HOME/local/include /sw/include /opt/local/include /usr/include /usr/local/include /opt/include; do
-			CPPFLAGS="$bout_save_CPPFLAGS -I$path"
-			cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+				cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
+#include <netcdfcpp.h>
+int
+main ()
+{
 
-				#include <netcdfcpp.h>
-
+  ;
+  return 0;
+}
 _ACEOF
 if ac_fn_cxx_try_compile "$LINENO"; then :
-  bout_adp_found=yes
+  BACH_found=yes ; break;
+
+
+
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-			if test .$bout_adp_found = .yes; then break; fi
+			done
+			if test .$BACH_found = .yes; then :
+  break;
+fi
 		done
 	fi
-	if test .$bout_adp_found = .yes; then
+	if test $BACH_found = yes ; then
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 	else
+		CPPFLAGS=$CPPFLAGS_save
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-		CPPFLAGS=$bout_save_CPPFLAGS
 	fi
-	if test .$bout_adp_found = .yes; then :
+	if test .$BACH_found = .yes; then :
 
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libnetcdf" >&5
 $as_echo_n "checking for libnetcdf... " >&6; }
-	bout_save_LDFLAGS=$LDFLAGS
-	bout_adp_found=no
-		LIBS="-lnetcdf $EXTRA_LIBS"
-	LDFLAGS="$bout_save_LDFLAGS"
+	LDFLAGS_save=$LDFLAGS
+	LIBS="$EXTRA_LIBS -lnetcdf"
+	BACL_found=no
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
 extern "C"
-#endif
-char nc_get_att ();
+	char nc_get_att();
 int
 main ()
 {
-return nc_get_att ();
+return nc_get_att();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
-  bout_adp_found=yes
+  BACL_found=yes ; break;
+
+
+
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
+	if test $BACL_found != yes ; then
+		for prefix in $with_netcdf  /usr /opt $HOME $HOME/local /usr/local ; do
+			for path in $prefix $prefix/lib $prefix/lib64 $prefix/theLongOne ; do
+				LDFLAGS="-L$path $LDFLAGS_save"
 
-	if test .$bout_adp_found = .no; then
-		for prefix in $with_netcdf  $HOME $HOME/local /usr /usr/local /opt /sw /opt/local ; do
-			for path in $prefix $prefix/lib $prefix/lib64 $prefix/lib/x86_64-linux-gnu ; do
-				LDFLAGS="$bout_save_LDFLAGS -L$path"
+
 				cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
 extern "C"
-#endif
-char nc_get_att ();
+					char nc_get_att();
 int
 main ()
 {
-return nc_get_att ();
+return nc_get_att();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
-  bout_adp_found=yes
+  BACL_found=yes ; break;
+
+
+
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-				if test .$bout_adp_found = .yes; then break; fi
 			done
+			if test .$BACL_found = .yes; then :
+  break;
+fi
 		done
 	fi
-	if test .$bout_adp_found = .yes; then
+	if test $BACL_found = yes ; then
+		EXTRA_LIBS=$LIBS
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-		EXTRA_LIBS=$LIBS
 	else
+		LDFLAGS=$LDFLAGS_save
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-		LDFLAGS=$bout_save_LDFLAGS
 	fi
-	if test .$bout_adp_found = .yes; then :
+	if test .$BACL_found = .yes; then :
 
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libnetcdf_c++" >&5
 $as_echo_n "checking for libnetcdf_c++... " >&6; }
-	bout_save_LDFLAGS=$LDFLAGS
-	bout_adp_found=no
-		LIBS="-lnetcdf_c++ $EXTRA_LIBS"
-	LDFLAGS="$bout_save_LDFLAGS"
+	LDFLAGS_save=$LDFLAGS
+	LIBS="$EXTRA_LIBS -lnetcdf_c++"
+	BACL_found=no
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
 extern "C"
-#endif
-char nc_close ();
+	char nc_close();
 int
 main ()
 {
-return nc_close ();
+return nc_close();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
-  bout_adp_found=yes
+  BACL_found=yes ; break;
+
+
+
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-
-	if test .$bout_adp_found = .no; then
+	if test $BACL_found != yes ; then
 		for prefix in \
-				$with_netcdf  $HOME $HOME/local /usr /usr/local /opt /sw /opt/local ; do
-			for path in $prefix $prefix/lib $prefix/lib64 $prefix/lib/x86_64-linux-gnu ; do
-				LDFLAGS="$bout_save_LDFLAGS -L$path"
+				$with_netcdf  /usr /opt $HOME $HOME/local /usr/local ; do
+			for path in $prefix $prefix/lib $prefix/lib64 $prefix/theLongOne ; do
+				LDFLAGS="-L$path $LDFLAGS_save"
+
+
 				cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
 extern "C"
-#endif
-char nc_close ();
+					char nc_close();
 int
 main ()
 {
-return nc_close ();
+return nc_close();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
-  bout_adp_found=yes
+  BACL_found=yes ; break;
+
+
+
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-				if test .$bout_adp_found = .yes; then break; fi
 			done
+			if test .$BACL_found = .yes; then :
+  break;
+fi
 		done
 	fi
-	if test .$bout_adp_found = .yes; then
+	if test $BACL_found = yes ; then
+		EXTRA_LIBS=$LIBS
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-		EXTRA_LIBS=$LIBS
 	else
+		LDFLAGS=$LDFLAGS_save
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-		LDFLAGS=$bout_save_LDFLAGS
 	fi
-	if test .$bout_adp_found = .yes; then :
+	if test .$BACL_found = .yes; then :
   NCFOUND=yes
 else
   NCFOUND=no
@@ -6756,7 +6764,7 @@ fi
 
   if test $NCFOUND = yes; then :
   file_formats="$file_formats netCDF";
-  	echo $file_formats; echo " -> NetCDF support enabled";NCPATH="found";
+    echo " -> NetCDF support enabled";NCPATH="found";
 	CXXFLAGS="$CXXFLAGS -DNCDF"
 
 fi
