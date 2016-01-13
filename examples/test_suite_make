@@ -48,6 +48,8 @@ if nfailed > 0:
     print("The following make tests failed")
     for t in failed:
         print("   "+t)
+    import sys
+    sys.exit(1)
 else:
     print(" => All make tests passed <=")
 
