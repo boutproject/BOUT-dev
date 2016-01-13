@@ -365,6 +365,9 @@ class VMEC(object):
         grid.xcentre = grid.xarray[0] + 0.5*grid.Lx
         grid.zcentre = grid.zarray[0] + 0.5*grid.Lz
 
+        grid.x_3d, grid.y_3d, grid.z_3d = np.meshgrid(grid.xarray, grid.yarray, grid.zarray,
+                                                      indexing='ij')
+
         def Rmaj(x,z,phi):
             return x
 
