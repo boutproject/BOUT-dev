@@ -1,5 +1,15 @@
 language: cpp
-compiler: gcc
+compiler:
+  - gcc
+
+matrix:
+  include:
+  - env: CONFIGURE_OPTIONS='--with-optimize=fast'
+  - env: CONFIGURE_OPTIONS='' MPICH_CC=clang MPICH_CXX=clang++
+    compiler: clang
+  - env: CONFIGURE_OPTIONS='--with-optimize=fast' MPICH_CC=clang MPICH_CXX=clang++
+    compiler: clang
+
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -y mpich2 libmpich2-dev
@@ -7,4 +17,4 @@ before_install:
   - sudo apt-get install -y python-numpy python-netcdf python-scipy
   - sudo apt-get install -y python-matplotlib
 script:
-  - ./configure && make && ./.travis_script.sh
+  - ./configure $CONFIGURE_OPTIONS && make && ./.travis_script.sh
