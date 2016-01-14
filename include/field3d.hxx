@@ -254,7 +254,7 @@ class Field3D : public Field, public FieldData {
   void doneComms() { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
 #else
   // Define the above functions to do nothing
-  bool checkData(bool vital = false) const {}
+  bool checkData(bool vital = false) const {return false;}
   void doneComms() {}
 #endif
 

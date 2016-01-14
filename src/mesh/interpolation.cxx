@@ -28,6 +28,7 @@
 #include <stencils.hxx>
 #include <output.hxx>
 #include <msg_stack.hxx>
+#include <boutexception.hxx>
 
 /// Perform interpolation between centre -> shifted or vice-versa
 /*!
@@ -164,8 +165,14 @@ const char* strLocation(CELL_LOC loc)
   case CELL_ZLOW: {
     return " Lower Z";
   }
+  case CELL_VSHIFT: {
+    return " V-Shifted"; // maybe?
+  }
+  case CELL_DEFAULT: {
+    return " Default (Unknown)";
+  }
   };
-  return " Default (Unknown)";
+  throw BoutException("failed to determine location\n");
 }
 
 // 4-point Lagrangian interpolation

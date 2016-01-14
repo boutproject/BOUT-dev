@@ -740,6 +740,7 @@ int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, co
 
   x.setLocation(b.getLocation());
 
+  return 0;
 }
 const Field3D invert_laplace(const Field3D &b, int flags, const Field2D *a, const Field2D *c, const Field2D *d) {
 
