@@ -254,11 +254,12 @@ FUNCTION analyse_equil, F, R, Z
 
   ;;;;;;;;;;;;;;; Find plasma centre ;;;;;;;;;;;;;;;;;;;
   ; Find the O-point closest to the middle of the grid
-  
-  mind = (opt_ri[0] - (FLOAT(nx)/2.))^2 + (opt_zi[0] - (FLOAT(ny)/2.))^2
+  dR = R[1] - R[0]
+  dZ = Z[1] - Z[0]
+  mind = dR^2 * (opt_ri[0] - (FLOAT(nx)/2.))^2 + dZ^2*(opt_zi[0] - (FLOAT(ny)/2.))^2
   ind = 0
   FOR i=1, n_opoint-1 DO BEGIN
-    d = (opt_ri[i] - (FLOAT(nx)/2.))^2 + (opt_zi[i] - (FLOAT(ny)/2.))^2
+    d = dR^2*(opt_ri[i] - (FLOAT(nx)/2.))^2 + dZ^2*(opt_zi[i] - (FLOAT(ny)/2.))^2
     IF d LT mind THEN BEGIN
       ind = i
       mind = d
