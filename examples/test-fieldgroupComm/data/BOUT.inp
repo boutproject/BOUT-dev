@@ -1,0 +1,11 @@
+NOUT = 1  # No timesteps
+MZ = 9    # Z size
+ZPERIOD = 10
+dump_format = "nc"  # NetCDF format. Alternative is "pdb"
+
+TwistShift = true
+Ballooning = true
+grid = "cyclone_68x32.nc"
+
+[all]
+scale = 1.0
