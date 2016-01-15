@@ -191,6 +191,7 @@ PRO event_handler, event
                    pres:g.pres, $ ; Plasma pressure in nt/m^2 on uniform flux grid
                    qpsi:g.qpsi, $ ; q values on uniform flux grid
                    nlim:g.nlim, rlim:g.xlim, zlim:g.ylim, $ ; Wall boundary
+                   ;nlim:g.nbdry, rlim:g.rbdry, zlim:g.zbdry, $
                    critical:critical} ; Critical point structure
         
         
@@ -222,8 +223,16 @@ PRO event_handler, event
       ; Restore a file containing rz_grid
       filename = DIALOG_PICKFILE(dialog_parent=event.top, /read, path=info.path, get_path=newpath)
       info.path = newpath
-      
-      RESTORE, filename
+
+      CATCH, err
+      IF err NE 0 THEN BEGIN
+        PRINT, "ERROR: Failed to restore state"
+        WIDGET_CONTROL, info.status, set_value="   *** Failed to restore file "+filename+" ***"
+        PRINT, 'Error message: ', !ERROR_STATE.MSG
+      ENDIF ELSE BEGIN
+        RESTORE, filename
+      ENDELSE
+      CATCH, /cancel
       
       IF SIZE(rz_grid, /type) NE 8 THEN BEGIN
         PRINT, "Error: File does not contain a variable called 'rz_grid'"
