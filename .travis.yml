@@ -4,10 +4,10 @@ compiler:
 
 matrix:
   include:
-  - env: CONFIGURE_OPTIONS='--with-optimize=fast'
+  - env: CONFIGURE_OPTIONS='--with-optimize=3'
   - env: CONFIGURE_OPTIONS='' MPICH_CC=clang MPICH_CXX=clang++
     compiler: clang
-  - env: CONFIGURE_OPTIONS='--with-optimize=fast' MPICH_CC=clang MPICH_CXX=clang++
+  - env: CONFIGURE_OPTIONS='--with-optimize=3' MPICH_CC=clang MPICH_CXX=clang++
     compiler: clang
 
 before_install:
