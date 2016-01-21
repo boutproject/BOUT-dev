@@ -2640,7 +2640,7 @@ The
  class is defined in \texttt{invert\_laplace.hxx} and solves problems
  formulated like equation (
 %
-\label{eq:full_laplace_inv}
+\ref{eq:full_laplace_inv}
 %
 )
 %
@@ -4715,7 +4715,9 @@ Neumann condition desired.
 
 \subsection{Boundary regions}
 %
-The boundary condition code (see section~\ref{sec:boundaries}) needs ways to
+The boundary condition code
+% (see section~\ref{sec:boundaries}) <-- Deadlink
+needs ways to
 loop over the boundary regions, without needing to know the details of the
 mesh.
 
@@ -4742,8 +4744,10 @@ The \code{RangeIterator} class is an iterator
 %
 \index{RangeIterator}
 %
-which allows looping over a set of indices. Details are given in
-section~\ref{sec:rangeiterator}. For example, in \file{src/solver/solver.cxx}
+which allows looping over a set of indices.
+%Details are given in section~\ref{sec:rangeiterator}. <-- Deadlink
+For example, in 
+\file{src/solver/solver.cxx}
 to loop over the upper Y boundary of a 2D variable \code{var}:
 %
 \begin{lstlisting}
@@ -7310,7 +7314,7 @@ Perpendicular Laplacian solver in X-Y.
     \left(\frac{\partial f}{\partial x} - \frac{g_{xy}}{g_{yy}}\frac{\partial
     f}{\partial y}\right)\nabla x + \left(\frac{\partial f}{\partial z} -
     \frac{g_{yz}}{g_{yy}}\frac{\partial f}{\partial y}\right)\nabla z
-\end{aling*}
+\end{align*}
 %
 In 2D (X-Y), the $g_{xy}$ component can be dropped since this depends on
 integrated shear $I$ which will cancel with the $g_{xz}$ component. The $z$
@@ -7345,7 +7349,7 @@ g^{yz}\frac{g_{yz}}{g_{yy}} = \frac{B_{tor}}{B^2}\frac{1}{h_\theta^2}
 %
 In the LaplaceXY operator this is implemented in terms of fluxes at cell faces.
 %
-\begin{aling*}
+\begin{align*}
 \frac{1}{J}\frac{\partial}{\partial x}\left(Jg^{xx}\frac{\partial f}{\partial
 x}\right) &\rightarrow&
         \frac{1}{J_i\mathrm{dx_i}}\left[J_{i+1/2}g^{xx}_{i+1/2}\left(\frac{f_{i+1}
