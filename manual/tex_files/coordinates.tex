@@ -1441,14 +1441,14 @@ so that
     \partial_z - \frac{\ve{e}_y}{g_{yy}} \partial_y\\
 %
                 =& \ve{e}^x \partial_x + \ve{e}^y \partial_y + \ve{e}^z
-    \partial_z - \frac{g_{2i}\ve{e}^i}{g_{22}} \partial_y\\
+    \partial_z - \frac{g_{yi}\ve{e}^i}{g_{yy}} \partial_y\\
 %
                 =& \ve{e}^x \partial_x + \ve{e}^y \partial_y + \ve{e}^z
-    \partial_z - \frac{g_{21}\ve{e}^x +g_{22}\ve{e}^y +g_{23}\ve{e}^z
-    }{g_{22}}\partial_y\\
+    \partial_z - \frac{g_{yx}\ve{e}^x +g_{yy}\ve{e}^y +g_{yz}\ve{e}^z
+    }{g_{yy}}\partial_y\\
 %
-                =& \ve{e}^x \L(\partial_x - \frac{g_{21}}{g_{22}}\partial_y\R)
-    +  \ve{e}^z \L(\partial_z - \frac{g_{23}}{g_{22}}\partial_y\R)
+                =& \ve{e}^x \L(\partial_x - \frac{g_{yx}}{g_{yy}}\partial_y\R)
+    +  \ve{e}^z \L(\partial_z - \frac{g_{yz}}{g_{yy}}\partial_y\R)
 \end{align*}
 %
 
@@ -1778,10 +1778,10 @@ collecting point by point
     \frac{g^{xx}}{c_{n}} \frac{-c_{n-1} + c_{n+1}}{4\text{d}x^2} - i\frac{d
     k2g^{xz}}{2\text{d}x} \R) F_{z,n-1} \\
     %
-    &\L( - \frac{ dg^{xx} }{\text{d}x^2} - dk^2 g^{zz} + a + idkG^z \R) F_{z,n}
+    +&\L( - \frac{ dg^{xx} }{\text{d}x^2} - dk^2 g^{zz} + a + idkG^z \R) F_{z,n}
     \\
     %
-    &\L( \frac{dg^{xx}}{\text{d}x^2} + \frac{dG^x}{2\text{d}x} +
+    +&\L( \frac{dg^{xx}}{\text{d}x^2} + \frac{dG^x}{2\text{d}x} +
     \frac{g^{xx}}{c_{n}} \frac{-c_{n-1} + c_{n+1}}{4\text{d}x^2} +
     i\frac{dk2g^{xz}}{2\text{d}x} \R) F_{z, n+1} \\
 %
@@ -1802,9 +1802,9 @@ which inserted in equation (\ref{eq:discretized_laplace}) gives
 \begin{align*}
     &\L( c_1 - c_4 -ikc_3 \R) F_{z,n-1} \\
     %
-    &\L( -2c_1 - k^2c_2 +ikc_5 + a \R) F_{z,n} \\
+    +&\L( -2c_1 - k^2c_2 +ikc_5 + a \R) F_{z,n} \\
     %
-    &\L( c_1 + c_4 + ikc_3 \R) F_{z, n+1} \\
+    +&\L( c_1 + c_4 + ikc_3 \R) F_{z, n+1} \\
 %
      =& B_{z,n}
 \end{align*}

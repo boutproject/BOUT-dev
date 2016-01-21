@@ -4746,7 +4746,7 @@ The \code{RangeIterator} class is an iterator
 %
 which allows looping over a set of indices.
 %Details are given in section~\ref{sec:rangeiterator}. <-- Deadlink
-For example, in 
+For example, in
 \file{src/solver/solver.cxx}
 to loop over the upper Y boundary of a 2D variable \code{var}:
 %
@@ -7307,45 +7307,45 @@ See the example \file{examples/test-globalfield} for more examples.
 \subsection{LaplaceXY}
 %
 Perpendicular Laplacian solver in X-Y.
-
 %
-\begin{align*}
-\nabla_\perp f =& \nabla f - \mathbf{b}\left(\mathbf{b}\cdot\nabla\right) \\ =&
-    \left(\frac{\partial f}{\partial x} - \frac{g_{xy}}{g_{yy}}\frac{\partial
-    f}{\partial y}\right)\nabla x + \left(\frac{\partial f}{\partial z} -
-    \frac{g_{yz}}{g_{yy}}\frac{\partial f}{\partial y}\right)\nabla z
-\end{align*}
+\begin{align}
+\nabla_\perp f =& \nabla f - \mathbf{b}\left(\mathbf{b}\cdot\nabla\right)
+    \nonumber \\ =& \left(\frac{\partial f}{\partial x} -
+\frac{g_{xy}}{g_{yy}}\frac{\partial f}{\partial y}\right)\nabla x +
+\left(\frac{\partial f}{\partial z} - \frac{g_{yz}}{g_{yy}}\frac{\partial
+f}{\partial y}\right)\nabla z \label{eq:nabl_perp_f}
+\end{align}
 %
 In 2D (X-Y), the $g_{xy}$ component can be dropped since this depends on
 integrated shear $I$ which will cancel with the $g_{xz}$ component. The $z$
 derivative is zero and so this simplifies to
 %
-\begin{align}
+\begin{align*}
 \nabla_\perp f = \frac{\partial f}{\partial x}\nabla x -
 \frac{g_{yz}}{g_{yy}}\frac{\partial f}{\partial y}\nabla z
-\end{align}
+\end{align*}
 %
 The divergence operator in conservative form is
 %
-\begin{align}
+\begin{align*}
 \nabla\cdot\mathbf{A} = \frac{1}{J}\frac{\partial}{\partial
 u^i}\left(Jg^{ij}A_j\right)
-\end{align}
+\end{align*}
 %
 and so the perpendicular Laplacian in X-Y is
 %
-\begin{align}
-\nabla_\perp^2 = \frac{1}{J}\frac{\partial}{\partial
+\begin{align*}
+\nabla_\perp^2f = \frac{1}{J}\frac{\partial}{\partial
 x}\left(Jg^{xx}\frac{\partial f}{\partial x}\right) -
 \frac{1}{J}\frac{\partial}{\partial
 y}\left(Jg^{yz}\frac{g_{yz}}{g_{yy}}\frac{\partial f}{\partial y}\right)
-\end{align}
+\end{align*}
 %
 In field-aligned coordinates, the metrics in the $y$ derivative term become:
 %
-\begin{align}
+\begin{align*}
 g^{yz}\frac{g_{yz}}{g_{yy}} = \frac{B_{tor}}{B^2}\frac{1}{h_\theta^2}
-\end{align}
+\end{align*}
 %
 In the LaplaceXY operator this is implemented in terms of fluxes at cell faces.
 %
@@ -7375,19 +7375,22 @@ solver described in section~\ref{sec:laplacian}.  The difference is in the form
 of the Laplacian equation solved, and the approach used to derive the finite
 difference formulae.  The equation solved is:
 %
-\begin{align}
+\begin{align*}
   \nabla\cdot\left( A \nabla_\perp f \right) + Bf = b
-\end{align}
+\end{align*}
 %
 where $A$ and $B$ are coefficients, $b$ is the known RHS vector (e.g.
-vorticity), and $f$ is the unknown quantity to be calculated (e.g. potential).
+vorticity), and $f$ is the unknown quantity to be calculated (e.g. potential),
+and $\nabla_\perp f$ is the same as equation (\ref{eq:nabl_perp_f}), but with
+negligible $y$-parallel derivatives if $g_{xy}$ and $g_{yz}$ is non-vanishing.
 The Laplacian is written in conservative form like the \texttt{LaplaceXY}
 solver, and discretised in terms of fluxes through cell faces.
 %
-\begin{align}
-  \frac{1}{J}\left(J A g^{xx}\frac{\partial f}{\partial x}\right) +
-  \frac{1}{J}\left(J A g^{zz}\frac{\partial f}{\partial z}\right) + B f = b
-\end{align}
+\begin{align*}
+  \frac{1}{J}\frac{\partial}{\partial x}\left(J A g^{xx}\frac{\partial
+  f}{\partial x}\right) + \frac{1}{J}\frac{\partial}{\partial z}\left(J A
+  g^{zz}\frac{\partial f}{\partial z}\right) + B f = b
+\end{align*}
 %
 The header file is \texttt{include/bout/invert/laplacexz.hxx}. The solver is
 constructed by using the \texttt{LaplaceXZ::create} function:
