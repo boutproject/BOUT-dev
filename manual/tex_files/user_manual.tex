@@ -60,9 +60,7 @@
 \newcommand{\code}[1]{\texttt{#1}}
 \newcommand{\file}[1]{\texttt{\bf #1}}
 \newcommand{\bfile}[1]{\texttt{\bf 1}}
-
 \newcommand{\bb}[1]{\mathbf{#1}}
-\newcommand{\ve}[1]{\ensuremath{\boldsymbol{#1}}}
 
 %% commands for boxes with important notes
 \newlength{\notewidth}
@@ -83,15 +81,17 @@
 \def\Rarrow{\rightarrow}
 \newcommand{\pow}{\ensuremath{\wedge} }
 \newcommand{\poweq}{\ensuremath{\wedge =} }
-
 \newcommand{\deriv}[2]{\ensuremath{\frac{\partial #1}{\partial #2}}}
-
 \newcommand{\rbtsq}{\ensuremath{\left(RB_\theta\right)^2}}
 \newcommand{\sbt}{\ensuremath{\sigma_{B\theta}}}
 \newcommand{\apar}{\ensuremath{A_{||}}}
 \newcommand{\Bthe}{\ensuremath{B_\theta}}
 \newcommand{\Bzeta}{\ensuremath{B_\zeta}}
 \newcommand{\hthe}{\ensuremath{h_\theta}}
+\newcommand{\ve}[1]{\ensuremath{\boldsymbol{#1}}}
+\newcommand{\defi}[4]{\int_{#1}^{#2} {#3} \; \text{d} {#4}} %Definite integral
+\newcommand\numberthis{\addtocounter{equation}{1}\tag{\theequation}}
+
 
 %
 \begin{document}
@@ -451,8 +451,10 @@ finishes successfully, then skip to the next section, but if you see a message
 library. Unless you have PACT or pnetcdf installed, this will be followed by a
 message \texttt{ERROR: At least one file format must be supported}.
 
-Download the 4.1.3 {\bf bundled}\footnote{Support for the more recent unbundled
-versions is coming soon} release of NetCDF from
+Download the 4.1.3 {\bf bundled}
+%
+\footnote{Support for the more recent unbundled versions is coming soon}
+release of NetCDF from
 \url{http://www.unidata.ucar.edu/downloads/netcdf/netcdf-4_1_3/} and put the
 \texttt{netcdf-4.1.3.tar.gz} file into your ``install'' directory. Untar the
 file and 'cd' into the resulting directory:
@@ -684,10 +686,12 @@ PETSc.
 \subsection{File formats}
 %
 BOUT++ can currently use four different file formats: Portable Data Binary
-(PDB) which is part of PACT\footnote{\url{http://pact.llnl.gov}},
-NetCDF-4\footnote{\url{http://www.unidata.ucar.edu/software/netcdf/}},
-HDF5\footnote{\url{https://www.hdfgroup.org/HDF5/}} and experimental support
-for Parallel NetCDF.  PDB was developed at LLNL, was used in the UEDGE and BOUT
+(PDB) which is part of PACT
+%
+\footnote{\url{http://pact.llnl.gov}}, NetCDF-4%
+\footnote{\url{http://www.unidata.ucar.edu/software/netcdf/}}, HDF5%
+\footnote{\url{https://www.hdfgroup.org/HDF5/}} and experimental support for
+Parallel NetCDF.  PDB was developed at LLNL, was used in the UEDGE and BOUT
 codes, and was the original format used by BOUT++. NetCDF is a more widely used
 format and so has many more tools for viewing and manipulating files.  In
 particular, the NetCDF-4 library can produce files in either NetCDF3
@@ -2516,6 +2520,56 @@ grid = "data/cbm18_8_y064_x260.pdb"
 
 
 
+\subsection{Communications}
+%
+\index{communication}
+%
+The communication system has a section \code{[comms]}, with a true/false option
+\code{async}. This determines whether asynchronous MPI sends are used; which
+method is faster varies (though not by much) with machine and problem.
+
+
+
+\subsection{Differencing methods}
+%
+\label{sec:diffmethodoptions}
+%
+\index{differencing}
+%
+Differencing methods are specified in three section (\code{[ddx]}, \code{[ddy]}
+and \code{[ddz]}), one for each dimension.
+%
+\begin{itemize}
+\item \code{first}, the method used for first derivatives
+\item \code{second}, method for second derivatives
+\item \code{upwind}, method for upwinding terms
+\item \code{flux}, for conservation law terms
+\end{itemize}
+%
+The methods which can be specified are U1, U4, C2, C4, W2, W3, FFT Apart from
+FFT, the first letter gives the type of method (U = upwind, C = central, W =
+WENO), and the number gives the order.
+
+
+
+\subsection{Model-specific options}
+%
+The options which affect a specific physics model vary, since they are defined
+in the physics module itself (see section~\ref{sec:inputopts}). They should
+have a separate section, for example the high-$\beta$ reduced MHD code uses
+options in a section called \code{[highbeta]}.
+
+There are three places to look for these options: the BOUT.inp file; the
+physics model C++ code, and the output logs. The physics module author should
+ideally have an example input file, with commented options explaining what they
+do; alternately they may have put comments in the C++ code for the module.
+Another way is to look at the output logs: when BOUT++ is run, (nearly) all
+options used are printed out with their default values. This won't provide much
+explanation of what they do, but may be useful anyway.  See
+section~\ref{sec:output} for more details.
+
+
+
 \subsection{Input and Output}
 %
 \label{sec:iooptions}
@@ -2579,437 +2633,6 @@ the same file. For restart files this is particularly useful, as it means that
 you can restart a job with a different number of processors.  Note that this
 feature is still experimental, and incomplete: output dump files are not yet
 supported by the collect routines.
-
-
-
-\subsection{Laplacian inversion}
-%
-\label{sec:laplacian}
-%
-\index{Laplacian inversion}
-%
-A common problem in plasma models is to solve an equation of the form
-%
-\begin{align}
-   d\nabla^2_\perp x + \frac{1}{c_1}\L(\nabla_\perp c_2\R)\cdot\nabla_\perp x +
-   a x = b
-%
-\label{eq:full_laplace_inv}
-%
-\end{align}
-%
-For example,
-%
-\begin{align}
-\nabla_\perp^2 x + a x = b
-\end{align}
-%
-appears in reduced MHD for the vorticity inversion and $j_{||}$.
-
-In BOUT++, these equations can be solved in two ways. One method fourier
-transforms in the $z$-direction, whilst the other is solving the full two
-dimensional problem by matrix inversion (see the coordinates manual for
-details). However, if $g_{xy}$ and $g_{yz}$ are non-zero, BOUT++ is currently
-neglecting the $y$-parallel derivatives when using the solvers
-\texttt{Laplacian} and \texttt{LaplaceXZ}.\\ \\
-%
-\note{Current implementations of Laplace inversion neglects derivatives in the
-parallel direction if $g_{xy}$ and $g_{yz}$ are non-zero when using the solvers
-\texttt{Laplacian} and \texttt{LaplaceXZ})}\\
-\\
-%
-By neglecting the $y$-derivatives, one can solve equation
-(\ref{eq:full_laplace_inv}) $y$ plane by $y$ plane.
-
-The first approach utilizes that it is possible fourier transform the equation
-in $z$ (using some assumptions, see the \code{coordinates} manual for details),
-and solve a tridiagonal system for each mode.  These inversion problems are
-band-diagonal (tri-diagonal in the case of 2nd-order differencing) and so
-inversions can be very efficient: $O\L(n_z \log n_z\R)$ for the FFTs,
-$O\L(n_x\R)$ for tridiagonal inversion using the Thomas algorithm
-\cite{press-1999}, where $n_x$ and $n_z$ are the number of grid-points in the
-$x$ and $z$ directions respectively.
-
-In the second approach, the full $2$-D system is being solved. This requires
-PETSc to be built with BOUT++
-
-The
-%
-\lstinline!Laplacian!
-%
- class is defined in \texttt{invert\_laplace.hxx} and solves problems
- formulated like equation (
-%
-\ref{eq:full_laplace_inv}
-%
-)
-%
-To use this class, first create an instance of it:
-%
-\begin{lstlisting}
-Laplacian *lap = Laplacian::create();
-\end{lstlisting}
-%
-By default, this will use the options in a section called ``laplace'', but can
-be given a different section as an argument.  By default $d = 1$, $a = 0$, and
-the $c=1$. To set the values of these coefficients, there are the
-%
-\lstinline!setCoefA()!, \lstinline!setCoefC()!, and \lstinline!setCoefD()!
-%
-methods:
-%
-\begin{lstlisting}
-Field2D a = ...;
-lap->setCoefA(a);
-lap->setCoefC(0.5);
-\end{lstlisting}
-%
-arguments can be
-%
-\lstinline!Field2D!, \lstinline!Field3D!
-%
-, or real values.
-
-Settings for the inversion can be set in the input file under the section
-\code{laplace} (default) or whichever settings section name was specified when
-the
-%
-\lstinline!Laplacian!
-%
- class was created.  Commonly used settings are listed in
- tables~\ref{tab:laplacesettings} to \ref{tab:laplaceflags}.
-
-In particular boundary conditions on the $x$ boundaries can be set using the
-\path{inner_boundary_flags} and \code{outer\_boundary\_flags} variables, as
-detailed in table \ref{tab:laplaceBCflags}.  Note that DC (`direct-current')
-refers to $k = 0$ Fourier component, AC (`alternating-current') refers to $k
-\neq 0$ Fourier components.  Non-Fourier solvers use AC options (and ignore DC
-ones).  Multiple boundary conditions can be selected by adding together the
-required boundary condition flag values together.  For example,
-%
-\lstinline!inner_boundary_flags = 3!
-%
- will set a Neumann boundary condition on both AC and DC components.
-
-It is pertinent to note here that the boundary in BOUT++ is defined by default
-to be located half way between the first guard point and first point inside the
-domain.  For example, when a Dirichlet boundary condition is set, using
-%
-\lstinline!inner_boundary_flags = 0!
-%
-, \code{16}, or \code{32}, then the first guard point, $f_{-}$ will be set to
-$f_{-} = 2v - f_+$, where $f_+$ is the first grid point inside the domain, and
-$v$ is the value to which the boundary is being set to.  \\ \\ \note{The
-    current implementation of the tridiagonal solvers are using $2$ points to
-    set the boundaries for the cases where we are not using \texttt{dirichlet}
-    or \texttt{neumann} condition with a non-zero value.  In order to just have
-    one point setting the boundary, the \texttt{global\_flags = 4} should be
-used.} \\ \\ The \code{global\_flags}, \code{inner\_boundary\_flags},
-\code{outer\_boundary\_flags} and \code{flags} values can also be set from
-within the physics module using
-%
-\lstinline!setGlobalFlags!,  \lstinline!setInnerBoundaryFlags!
-%
-,
-%
-\lstinline!setOuterBoundaryFlags! and  \lstinline!setFlags!
-%
-.
-%
-\begin{lstlisting}
-lap->setGlobalFlags(Global_Flags_Value);
-lap->setInnerBoundaryFlags(Inner_Flags_Value);
-lap->setOuterBoundaryFlags(Outer_Flags_Value);
-lap->setFlags(Flags_Value);
-\end{lstlisting}
-%
-\begin{table}
-\caption{Laplacian inversion options}
-%
-\label{tab:laplacesettings}
-%
-\centering
-%
-\begin{tabular}[c]{c | p{8cm} | p{2.5cm}}
-\hline
-Name & Meaning & Default value\\
-\hline
-\code{type} & Which implementation to use & \code{tri} (serial),  \code{spt}
-(parallel) \\
-\code{filter} & Filter out modes above $(1-$\code{filter}$)\times k_{max}$,
-if using Fourier solver & 0\\
-\code{maxmode} & Filter modes with $n >$\code{maxmode} & \code{MZ}/2 \\
-\code{all\_terms} & Include first derivative terms & \code{true}\\
-\code{global\_flags} & Sets global inversion options See table
-\ref{tab:laplaceglobalflags}& \code{0}\\
-\code{inner\_boundary\_flags} & Sets boundary conditions on inner boundary.
-See table \ref{tab:laplaceBCflags} & \code{0}\\
-\code{outer\_boundary\_flags} & Sets boundary conditions on outer boundary.
-See table \ref{tab:laplaceBCflags}& \code{0}\\
-\code{flags} & DEPRECATED. Sets global solver options and boundary conditions.
-See table~\ref{tab:laplaceflags} or \code{invert\_laplace.hxx} & \code{0} \\
-\code{include\_yguards} & Perform inversion in $y$-boundary guard
-cells & \code{true}\\
-\hline
-\end{tabular}
-%
-\end{table}
-%
-\begin{table}
-\caption{Laplacian inversion \code{global\_flags} values: add the required
-quantities together.}
-%
-\label{tab:laplaceglobalflags}
-%
-\centering
-%
-\begin{tabular}[c]{c|p{10cm}|c}
-\hline
-Flag & Meaning & Code variable\\
-\hline
-    0 &
-    No global option set &
-    $-$
-    \\
-    %
-    1 &
-    zero DC component (Fourier solvers) &
-    \code{INVERT\_ZERO\_DC}
-    \\
-    %
-    2 &
-    set initial guess to 0 (iterative solvers) &
-    \code{INVERT\_START\_NEW}
-    \\
-    %
-    4 &
-    equivalent to
-        % Manual line break
-        & \code{INVERT\_BOTH\_BNDRY\_ONE}
-        \\
-        &
-    \code{outer\_boundary\_flags = 128},
-        % Manual line break
-        &\\
-        &
-    \code{inner\_boundary\_flags = 128} &
-    \\
-    %
-    8 &
-    Use 4th order differencing (Apparently not actually implemented
-    anywhere!!!) &
-    \code{INVERT\_4TH\_ORDER}
-    \\
-    %
-    16 &
-    Set constant component ($k_x = k_z = 0$) to zero &
-    \code{INVERT\_KX\_ZERO}
-    \\
-\hline
-\end{tabular}
-%
-\end{table}
-%
-\begin{table}
-\caption{Laplacian inversion \code{outer\_boundary\_flags} or
-\code{inner\_boundary\_flags} values: add the required quantities together.}
-%
-\label{tab:laplaceBCflags}
-%
-\centering
-%
-\begin{tabular}[c]{c|p{10cm}|c}
-    \hline
-    Flag & Meaning & Code variable\\
-    \hline
-    0 &
-    Dirichlet (Set boundary to 0) &
-    $-$
-    \\
-    %
-    1 &
-    Neumann on DC component (set gradient to 0) &
-    \code{INVERT\_DC\_GRAD}
-    \\
-    %
-    2 &
-    Neumann on AC component (set gradient to 0) &
-    \code{INVERT\_AC\_GRAD}
-    \\
-    %
-    4 &
-    Zero or decaying Laplacian on AC components ( $\frac{\partial^2}{\partial
-    x^2}+k_z^2$ vanishes/decays) &
-    \code{INVERT\_AC\_LAP}
-    \\
-    %
-    8 &
-    Use symmetry to enforce zero value or gradient (redundant for 2nd order
-    now) &
-    \code{INVERT\_SYM}
-    \\
-    %
-    16 &
-    Set boundary condition to values in boundary guard cells of second
-    argument, \code{x0}, of
-    %
-\lstinline!Laplacian::solve(const Field3D &b, const Field3D &x0)!
-%
-    .  May be combined with any combination of 0, 1 and 2, i.e.\ a Dirichlet or
-    Neumann boundary condition set to values which are $\neq 0$ or $f(y)$ &
-    \code{INVERT\_SET}
-    \\
-    %
-    32 &
-    Set boundary condition to values in boundary guard cells of RHS, \code{b}
-    in
-    %
-\lstinline!Laplacian::solve(const Field3D &b, const Field3D &x0)!
-%
-    .  May be combined with any combination of 0, 1 and 2, i.e.\ a Dirichlet or
-    Neumann boundary condition set to values which are $\neq 0$ or $f(y)$ &
-    \code{INVERT\_RHS}
-    \\
-    %
-    64 &
-    Zero or decaying Laplacian on DC components ($\frac{\partial^2}{\partial
-    x^2}$ vanishes/decays) &
-    \code{INVERT\_DC\_LAP}
-    \\
-    %
-    128 &
-    Assert that there is only one guard cell in the $x$-boundary &
-    \code{INVERT\_BNDRY\_ONE}
-    \\
-    %
-    256 &
-    DC value is set to parallel gradient, $\nabla_\parallel f$ &
-    \code{INVERT\_DC\_GRADPAR}
-    \\
-    %
-    512 &
-    DC value is set to inverse of parallel gradient $1/\nabla_\parallel f$ &
-    \code{INVERT\_DC\_GRADPARINV}
-    \\
-    %
-    1024 &
-    Boundary condition for inner `boundary' of cylinder &
-    \code{INVERT\_IN\_CYLINDER}
-    \\
-    \hline
-\end{tabular}
-%
-\end{table}
-%
-\begin{table}
-\caption{Laplacian inversion \code{flags} values (DEPRECATED!): add the
-required quantities together.}
-%
-\label{tab:laplaceflags}
-%
-\centering
-%
-\begin{tabular}[c]{c | l}
-\hline
-Flag & Meaning \\
-\hline
-1 & Zero-gradient DC on inner (X) boundary. Default is zero-value \\
-2 & Zero-gradient AC on inner boundary \\
-4 & Zero-gradient DC on outer boundary \\
-8 & Zero-gradient AC on outer boundary \\
-16 & Zero DC component everywhere \\
-32 & Not used currently \\
-64 & Set width of boundary to 1 (default is \code{MXG}) \\
-128 & Use 4$^{th}$-order band solver (default is 2$^{nd}$ order tridiagonal) \\
-256 & Attempt to set zero laplacian AC component on inner boundary by combining
-\\
-    & 2nd and 4th-order differencing at the boundary. \\
-    & Ignored if tridiagonal solver used. \\
-512 & Zero laplacian AC on outer boundary \\
-1024 & Symmetric boundary condition on inner boundary \\
-2048 & Symmetric outer boundary condition \\
-\hline
-\end{tabular}
-%
-\end{table}
-%
-To perform the inversion, there's the
-%
-\lstinline!solve!
-%
- method
-%
-\begin{lstlisting}
-x = lap->solve(b);
-\end{lstlisting}
-%
-If you prefer, there are functions compatible with older versions of the BOUT++
-code:
-%
-\begin{lstlisting}
-Field2D a, c, d;
-invert_laplace(b, x, flags, &a, &c, &d);
-\end{lstlisting}
-%
-and
-%
-\begin{lstlisting}
-x = invert_laplace(b, flags, &a, &c, &d);
-\end{lstlisting}
-%
-The input \code{b} and output \code{x} are 3D fields, and the coefficients
-\code{a}, \code{c}, and \code{d} are pointers to 2D fields. To omit any of the
-three coefficients, set them to NULL.
-
-
-
-\subsection{Communications}
-%
-\index{communication}
-%
-The communication system has a section \code{[comms]}, with a true/false option
-\code{async}. This determines whether asynchronous MPI sends are used; which
-method is faster varies (though not by much) with machine and problem.
-
-
-
-\subsection{Differencing methods}
-%
-\label{sec:diffmethodoptions}
-%
-\index{differencing}
-%
-Differencing methods are specified in three section (\code{[ddx]}, \code{[ddy]}
-and \code{[ddz]}), one for each dimension.
-%
-\begin{itemize}
-\item \code{first}, the method used for first derivatives
-\item \code{second}, method for second derivatives
-\item \code{upwind}, method for upwinding terms
-\item \code{flux}, for conservation law terms
-\end{itemize}
-%
-The methods which can be specified are U1, U4, C2, C4, W2, W3, FFT Apart from
-FFT, the first letter gives the type of method (U = upwind, C = central, W =
-WENO), and the number gives the order.
-
-
-
-\subsection{Model-specific options}
-%
-The options which affect a specific physics model vary, since they are defined
-in the physics module itself (see section~\ref{sec:inputopts}). They should
-have a separate section, for example the high-$\beta$ reduced MHD code uses
-options in a section called \code{[highbeta]}.
-
-There are three places to look for these options: the BOUT.inp file; the
-physics model C++ code, and the output logs. The physics module author should
-ideally have an example input file, with commented options explaining what they
-do; alternately they may have put comments in the C++ code for the module.
-Another way is to look at the output logs: when BOUT++ is run, (nearly) all
-options used are printed out with their default values. This won't provide much
-explanation of what they do, but may be useful anyway.  See
-section~\ref{sec:output} for more details.
 
 
 
@@ -4053,7 +3676,10 @@ preconditioner only affects the convergence rate and not the final solution. A
 good preconditioner can therefore concentrate on solving the parts of the
 problem with the fastest time-scales.
 
-A simple example\footnote{Taken from a talk by L.Chacon available here
+A simple example
+%
+%
+\footnote{Taken from a talk by L.Chacon available here
 \url{https://bout.llnl.gov/pdf/workshops/2011/talks/Chacon_bout2011.pdf}} is a
 coupled wave equation, solved in the \texttt{test-precon} example code:
 %
@@ -4127,8 +3753,10 @@ the simple wave equation problem, this is
 \R)
 \end{align}
 %
-This matrix can be block inverted using Schur factorisation\footnote{See paper
-\url{http://arxiv.org/abs/1209.2054} for an application to 2-fluid equations}
+This matrix can be block inverted using Schur factorisation
+%
+\footnote{See paper \url{http://arxiv.org/abs/1209.2054} for an application to
+2-fluid equations}
 %
 \begin{align}
 \L(%
@@ -4290,9 +3918,10 @@ equation $\L(A + B\partial_{||}^2\R)x = b$ where $A$ and $B$ are
 %
 \lstinline!Field2D!
 %
- or constants\footnote{This \texttt{InvertPar} class can handle cases with
- closed field-lines and twist-shift boundary conditions for tokamak
- simulations}. In
+ or constants
+%
+\footnote{This \texttt{InvertPar} class can handle cases with closed
+field-lines and twist-shift boundary conditions for tokamak simulations}. In
 %
 \lstinline!physics_init!
 %
@@ -4717,9 +4346,8 @@ Neumann condition desired.
 %
 The boundary condition code
 % (see section~\ref{sec:boundaries}) <-- Deadlink
-needs ways to
-loop over the boundary regions, without needing to know the details of the
-mesh.
+needs ways to loop over the boundary regions, without needing to know the
+details of the mesh.
 
 At the moment two mechanisms are provided: A RangeIterator over upper and lower
 Y boundaries, and a vector of BoundaryRegion
@@ -4746,9 +4374,8 @@ The \code{RangeIterator} class is an iterator
 %
 which allows looping over a set of indices.
 %Details are given in section~\ref{sec:rangeiterator}. <-- Deadlink
-For example, in
-\file{src/solver/solver.cxx}
-to loop over the upper Y boundary of a 2D variable \code{var}:
+For example, in \file{src/solver/solver.cxx} to loop over the upper Y boundary
+of a 2D variable \code{var}:
 %
 \begin{lstlisting}
 for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); xi++) {
@@ -5665,6 +5292,734 @@ Cannot write 2 dimensional double dx. Writing as float
 These warnings are because the PDB2IDL library currently doesn't have any
 functions for writing doubles, and pdb2bout does calculations in double
 precision. The output is therefore converted to single-precision floats.
+
+
+
+
+
+\section{Laplacian inversion}
+%
+\label{sec:laplacian}
+%
+\index{Laplacian inversion}
+%
+A common problem in plasma models is to solve an equation of the form
+%
+\begin{align}
+   d\nabla^2_\perp x + \frac{1}{c_1}\L(\nabla_\perp c_2\R)\cdot\nabla_\perp x +
+   a x = b
+%
+\label{eq:full_laplace_inv}
+%
+\end{align}
+%
+For example,
+%
+\begin{align}
+\nabla_\perp^2 x + a x = b
+\end{align}
+%
+appears in reduced MHD for the vorticity inversion and $j_{||}$.
+
+Alternative formulations and ways to invert equation (
+%
+\ref{eq:full_laplace_inv}) can be found in section \ref{sec:LaplaceXY}
+%
+ and \ref{sec:LaplaceXZ}
+
+
+
+\subsection{Usage of the laplacian inversion}
+%
+In BOUT++, these equations can be solved in two ways. One method fourier
+transforms in the $z$-direction, whilst the other is solving the full two
+dimensional problem by matrix inversion (see the coordinates manual for
+details). However, if $g_{xy}$ and $g_{yz}$ are non-zero, BOUT++ is currently
+neglecting the $y$-parallel derivatives when using the solvers
+\texttt{Laplacian} and \texttt{LaplaceXZ}.\\ \\
+%
+\note{Current implementations of Laplace inversion neglects derivatives in the
+parallel direction if $g_{xy}$ and $g_{yz}$ are non-zero when using the solvers
+\texttt{Laplacian} and \texttt{LaplaceXZ})}\\ \\
+%
+By neglecting the $y$-derivatives, one can solve equation
+(\ref{eq:full_laplace_inv}) $y$ plane by $y$ plane.
+
+The first approach utilizes that it is possible fourier transform the equation
+in $z$ (using some assumptions, see the \code{coordinates} manual for details),
+and solve a tridiagonal system for each mode.  These inversion problems are
+band-diagonal (tri-diagonal in the case of 2nd-order differencing) and so
+inversions can be very efficient: $O\L(n_z \log n_z\R)$ for the FFTs,
+$O\L(n_x\R)$ for tridiagonal inversion using the Thomas algorithm
+\cite{press-1999}, where $n_x$ and $n_z$ are the number of grid-points in the
+$x$ and $z$ directions respectively.
+
+In the second approach, the full $2$-D system is being solved. This requires
+PETSc to be built with BOUT++
+
+The
+%
+\lstinline!Laplacian!
+%
+ class is defined in \texttt{invert\_laplace.hxx} and solves problems
+ formulated like equation (
+%
+\ref{eq:full_laplace_inv}
+%
+)
+%
+To use this class, first create an instance of it:
+%
+\begin{lstlisting}
+Laplacian *lap = Laplacian::create();
+\end{lstlisting}
+%
+By default, this will use the options in a section called ``laplace'', but can
+be given a different section as an argument.  By default $d = 1$, $a = 0$, and
+the $c=1$. To set the values of these coefficients, there are the
+%
+\lstinline!setCoefA()!, \lstinline!setCoefC()!, and \lstinline!setCoefD()!
+%
+methods:
+%
+\begin{lstlisting}
+Field2D a = ...;
+lap->setCoefA(a);
+lap->setCoefC(0.5);
+\end{lstlisting}
+%
+arguments can be
+%
+\lstinline!Field2D!, \lstinline!Field3D!
+%
+, or real values.
+
+Settings for the inversion can be set in the input file under the section
+\code{laplace} (default) or whichever settings section name was specified when
+the
+%
+\lstinline!Laplacian!
+%
+ class was created.  Commonly used settings are listed in
+ tables~\ref{tab:laplacesettings} to \ref{tab:laplaceflags}.
+
+In particular boundary conditions on the $x$ boundaries can be set using the
+\path{inner_boundary_flags} and \code{outer\_boundary\_flags} variables, as
+detailed in table \ref{tab:laplaceBCflags}.  Note that DC (`direct-current')
+refers to $k = 0$ Fourier component, AC (`alternating-current') refers to $k
+\neq 0$ Fourier components.  Non-Fourier solvers use AC options (and ignore DC
+ones).  Multiple boundary conditions can be selected by adding together the
+required boundary condition flag values together.  For example,
+%
+\lstinline!inner_boundary_flags = 3!
+%
+ will set a Neumann boundary condition on both AC and DC components.
+
+It is pertinent to note here that the boundary in BOUT++ is defined by default
+to be located half way between the first guard point and first point inside the
+domain.  For example, when a Dirichlet boundary condition is set, using
+%
+\lstinline!inner_boundary_flags = 0!
+%
+, \code{16}, or \code{32}, then the first guard point, $f_{-}$ will be set to
+$f_{-} = 2v - f_+$, where $f_+$ is the first grid point inside the domain, and
+$v$ is the value to which the boundary is being set to.  \\ \\ \note{The
+    current implementation of the tridiagonal solvers are using $2$ points to
+    set the boundaries for the cases where we are not using \texttt{dirichlet}
+    or \texttt{neumann} condition with a non-zero value.  In order to just have
+    one point setting the boundary, the \texttt{global\_flags = 4} should be
+used.} \\ \\ The \code{global\_flags}, \code{inner\_boundary\_flags},
+\code{outer\_boundary\_flags} and \code{flags} values can also be set from
+within the physics module using
+%
+\lstinline!setGlobalFlags!,  \lstinline!setInnerBoundaryFlags!
+%
+,
+%
+\lstinline!setOuterBoundaryFlags! and  \lstinline!setFlags!
+%
+.
+%
+\begin{lstlisting}
+lap->setGlobalFlags(Global_Flags_Value);
+lap->setInnerBoundaryFlags(Inner_Flags_Value);
+lap->setOuterBoundaryFlags(Outer_Flags_Value);
+lap->setFlags(Flags_Value);
+\end{lstlisting}
+%
+\begin{table}
+\caption{Laplacian inversion options}
+%
+\label{tab:laplacesettings}
+%
+\centering
+%
+\begin{tabular}[c]{c | p{8cm} | p{2.5cm}}
+\hline
+Name & Meaning & Default value\\
+\hline
+\code{type} & Which implementation to use & \code{tri} (serial),  \code{spt}
+(parallel) \\
+\code{filter} & Filter out modes above $(1-$\code{filter}$)\times k_{max}$,
+if using Fourier solver & 0\\
+\code{maxmode} & Filter modes with $n >$\code{maxmode} & \code{MZ}/2 \\
+\code{all\_terms} & Include first derivative terms & \code{true}\\
+\code{global\_flags} & Sets global inversion options See table
+\ref{tab:laplaceglobalflags}& \code{0}\\
+\code{inner\_boundary\_flags} & Sets boundary conditions on inner boundary.
+See table \ref{tab:laplaceBCflags} & \code{0}\\
+\code{outer\_boundary\_flags} & Sets boundary conditions on outer boundary.
+See table \ref{tab:laplaceBCflags}& \code{0}\\
+\code{flags} & DEPRECATED. Sets global solver options and boundary conditions.
+See table~\ref{tab:laplaceflags} or \code{invert\_laplace.hxx} & \code{0} \\
+\code{include\_yguards} & Perform inversion in $y$-boundary guard
+cells & \code{true}\\
+\hline
+\end{tabular}
+%
+\end{table}
+%
+\begin{table}
+\caption{Laplacian inversion \code{global\_flags} values: add the required
+quantities together.}
+%
+\label{tab:laplaceglobalflags}
+%
+\centering
+%
+\begin{tabular}[c]{c|p{10cm}|c}
+\hline
+Flag & Meaning & Code variable\\
+\hline
+    0 &
+    No global option set &
+    $-$
+    \\
+    %
+    1 &
+    zero DC component (Fourier solvers) &
+    \code{INVERT\_ZERO\_DC}
+    \\
+    %
+    2 &
+    set initial guess to 0 (iterative solvers) &
+    \code{INVERT\_START\_NEW}
+    \\
+    %
+    4 &
+    equivalent to
+        % Manual line break
+        & \code{INVERT\_BOTH\_BNDRY\_ONE}
+        \\
+        &
+    \code{outer\_boundary\_flags = 128},
+        % Manual line break
+        &\\
+        &
+    \code{inner\_boundary\_flags = 128} &
+    \\
+    %
+    8 &
+    Use 4th order differencing (Apparently not actually implemented
+    anywhere!!!) &
+    \code{INVERT\_4TH\_ORDER}
+    \\
+    %
+    16 &
+    Set constant component ($k_x = k_z = 0$) to zero &
+    \code{INVERT\_KX\_ZERO}
+    \\
+\hline
+\end{tabular}
+%
+\end{table}
+%
+\begin{table}
+\caption{Laplacian inversion \code{outer\_boundary\_flags} or
+\code{inner\_boundary\_flags} values: add the required quantities together.}
+%
+\label{tab:laplaceBCflags}
+%
+\centering
+%
+\begin{tabular}[c]{c|p{10cm}|c}
+    \hline
+    Flag & Meaning & Code variable\\
+    \hline
+    0 &
+    Dirichlet (Set boundary to 0) &
+    $-$
+    \\
+    %
+    1 &
+    Neumann on DC component (set gradient to 0) &
+    \code{INVERT\_DC\_GRAD}
+    \\
+    %
+    2 &
+    Neumann on AC component (set gradient to 0) &
+    \code{INVERT\_AC\_GRAD}
+    \\
+    %
+    4 &
+    Zero or decaying Laplacian on AC components ( $\frac{\partial^2}{\partial
+    x^2}+k_z^2$ vanishes/decays) &
+    \code{INVERT\_AC\_LAP}
+    \\
+    %
+    8 &
+    Use symmetry to enforce zero value or gradient (redundant for 2nd order
+    now) &
+    \code{INVERT\_SYM}
+    \\
+    %
+    16 &
+    Set boundary condition to values in boundary guard cells of second
+    argument, \code{x0}, of
+    %
+\lstinline!Laplacian::solve(const Field3D &b, const Field3D &x0)!
+%
+    .  May be combined with any combination of 0, 1 and 2, i.e.\ a Dirichlet or
+    Neumann boundary condition set to values which are $\neq 0$ or $f(y)$ &
+    \code{INVERT\_SET}
+    \\
+    %
+    32 &
+    Set boundary condition to values in boundary guard cells of RHS, \code{b}
+    in
+    %
+\lstinline!Laplacian::solve(const Field3D &b, const Field3D &x0)!
+%
+    .  May be combined with any combination of 0, 1 and 2, i.e.\ a Dirichlet or
+    Neumann boundary condition set to values which are $\neq 0$ or $f(y)$ &
+    \code{INVERT\_RHS}
+    \\
+    %
+    64 &
+    Zero or decaying Laplacian on DC components ($\frac{\partial^2}{\partial
+    x^2}$ vanishes/decays) &
+    \code{INVERT\_DC\_LAP}
+    \\
+    %
+    128 &
+    Assert that there is only one guard cell in the $x$-boundary &
+    \code{INVERT\_BNDRY\_ONE}
+    \\
+    %
+    256 &
+    DC value is set to parallel gradient, $\nabla_\parallel f$ &
+    \code{INVERT\_DC\_GRADPAR}
+    \\
+    %
+    512 &
+    DC value is set to inverse of parallel gradient $1/\nabla_\parallel f$ &
+    \code{INVERT\_DC\_GRADPARINV}
+    \\
+    %
+    1024 &
+    Boundary condition for inner `boundary' of cylinder &
+    \code{INVERT\_IN\_CYLINDER}
+    \\
+    \hline
+\end{tabular}
+%
+\end{table}
+%
+\begin{table}
+\caption{Laplacian inversion \code{flags} values (DEPRECATED!): add the
+required quantities together.}
+%
+\label{tab:laplaceflags}
+%
+\centering
+%
+\begin{tabular}[c]{c | l}
+\hline
+Flag & Meaning \\
+\hline
+1 & Zero-gradient DC on inner (X) boundary. Default is zero-value \\
+2 & Zero-gradient AC on inner boundary \\
+4 & Zero-gradient DC on outer boundary \\
+8 & Zero-gradient AC on outer boundary \\
+16 & Zero DC component everywhere \\
+32 & Not used currently \\
+64 & Set width of boundary to 1 (default is \code{MXG}) \\
+128 & Use 4$^{th}$-order band solver (default is 2$^{nd}$ order tridiagonal) \\
+256 & Attempt to set zero laplacian AC component on inner boundary by combining
+\\
+    & 2nd and 4th-order differencing at the boundary. \\
+    & Ignored if tridiagonal solver used. \\
+512 & Zero laplacian AC on outer boundary \\
+1024 & Symmetric boundary condition on inner boundary \\
+2048 & Symmetric outer boundary condition \\
+\hline
+\end{tabular}
+%
+\end{table}
+%
+To perform the inversion, there's the
+%
+\lstinline!solve!
+%
+ method
+%
+\begin{lstlisting}
+x = lap->solve(b);
+\end{lstlisting}
+%
+If you prefer, there are functions compatible with older versions of the BOUT++
+code:
+%
+\begin{lstlisting}
+Field2D a, c, d;
+invert_laplace(b, x, flags, &a, &c, &d);
+\end{lstlisting}
+%
+and
+%
+\begin{lstlisting}
+x = invert_laplace(b, flags, &a, &c, &d);
+\end{lstlisting}
+%
+The input \code{b} and output \code{x} are 3D fields, and the coefficients
+\code{a}, \code{c}, and \code{d} are pointers to 2D fields. To omit any of the
+three coefficients, set them to NULL.
+% Clear page in order to have the tables at the same page. There are more
+% clever ways, but they need external packages, see
+% http://tex.stackexchange.com/questions/4666/how-to-avoid-splitting-tables-between-sections
+\clearpage
+
+
+
+\subsection{Numerical implimentation}
+%
+We will here go through the calulations of the laplacian inversion algorithm,
+as it is performed in BOUT++. We would like to solve the following equation for
+$f$
+%
+\begin{align}
+    d&\nabla_\perp^2f + \frac{1}{c_1}(\nabla_\perp c_2)\cdot\nabla_\perp f + af =
+    b
+%
+\label{eq:to_invert}
+%
+\end{align}
+%
+In all currently implemented solvers, the parallel $y$-derivatives are
+neglected if $g_{xy}$ and $g_{yz}$ are non-zero, BOUT++ is currently neglecting
+the $y$-parallel derivatives when using the solvers \texttt{Laplacian} and
+\texttt{LaplaceXZ}.  For these two solvers, equation (\ref{eq:to_invert})
+becomes
+%
+\begin{align*}
+    \, &d \L(    g^{xx} \partial_x^2 + G^x \partial_x + g^{zz} \partial_z^2 +
+    G^z \partial_z + 2g^{xz} \partial_x \partial_z \R) f \\
+%
+    +& \frac{1}{c_1}\L( \ve{e}^x \partial_x +  \ve{e}^z \partial_z \R) c_2
+    \cdot \L( \ve{e}^x \partial_x +  \ve{e}^z \partial_z \R) f \\
+%
+    +& af = b \numberthis
+%
+\label{eq:invert_expanded}
+%
+\end{align*}
+%
+
+
+\subsubsection{Using tridiagonal solvers}
+%
+When using the tridiagonal solvers, $c_1 = c_2$ in equation
+(\ref{eq:to_invert_tri}), hence, it is rather solving
+%
+\begin{align}
+    d&\nabla_\perp^2f + \frac{1}{c}(\nabla_\perp c)\cdot\nabla_\perp f + af = b
+%
+\label{eq:to_invert_tri}
+%
+\end{align}
+%
+In order to use a tridiagonal solver to solve equation
+(\ref{eq:to_invert_tri}), we will first assume that the parallel derivatives
+are small. This means that we will only have derivatives of $x$ and $z$ for the
+dependent variable. The hope is that the modes in the periodic $z$ direction
+will decouple, so that we in the end only have to invert for the $x$
+coordinate.
+
+If the modes decouples when fourier transforming equation
+(\ref{eq:invert_expanded}), we can use a tridiagonal solver to solve the
+equation for each fourier mode.
+
+Using the discrete fourier transform
+%
+\begin{align}
+    F(x,y)_{k} = \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp\L(\frac{-2\pi i k
+    Z}{N}\R)
+\end{align}
+%
+we see that the modes will not decouple if a term consist of a product of two
+terms which depends on $z$, as this would give terms like
+%
+\begin{align*}
+    \frac{1}{N}\sum_{Z=0}^{N-1} a(x,y)_Z f(x,y)_Z \exp\L(\frac{-2\pi i k
+    Z}{N}\R)
+\end{align*}
+%
+Thus, in order to use a tridiagonal solver, $a$, $c$ and $d$ cannot be
+functions of $z$. Because of this, the $\ve{e}^z \partial_z c$ term in equation
+(\ref{eq:invert_expanded}) is zero. In principle the modes would still decouple
+if the $\ve{e}^z \partial_z f$ part of equation (\ref{eq:invert_expanded}) was
+kept, but currently this part is also neglected in solvers using a tridiagonal
+matrix. Thus the tridiagonal solvers are solving equations on the form
+%
+\begin{align*}
+    \, &d(x,y) \L(    g^{xx}(x,y) \partial_x^2 + G^x(x,y) \partial_x +
+    g^{zz}(x,y) \partial_z^2 + G^z(x,y) \partial_z + 2g^{xz}(x,y) \partial_x
+    \partial_z \R) f(x,y,z) \\
+%
+    +& \frac{1}{c(x,y)}\L( \ve{e}^x \partial_x \R) c(x,y) \cdot \L( \ve{e}^x
+    \partial_x \R) f(x,y,z) \\
+%
+   +& a(x,y)f(x,y,z) = b(x,y,z)
+\end{align*}
+%
+after using the discrete fourier transform (see section \ref{sec:deriv_of_FT}),
+we get
+%
+\begin{align*}
+    \, &d \L(    g^{xx} \partial_x^2F_z + G^x \partial_xF_z + g^{zz} [i k]^2F_z
+    + G^z [i k]F_z + 2g^{xz} \partial_x[i k]F_z \R) \\
+%
+    +& \frac{1}{c}\L( \ve{e}^x \partial_x \R) c \cdot \L( \ve{e}^x
+    \partial_xF_z \R) \\
+%
+    +& aF_z = B_z
+\end{align*}
+%
+which gives
+%
+\begin{align*}
+    \, &d \L(    g^{xx} \partial_x^2 + G^x \partial_x - k^2 g^{zz} + i kG^z + i
+    k2g^{xz} \partial_x \R)F_z \\
+%
+    +& \frac{g^{xx}}{c} \L( \partial_x c \R) \partial_xF_z \\
+%
+    +& aF_z = B_z \numberthis
+%
+\label{eq:FT_laplace_inversion}
+%
+\end{align*}
+%
+As nothing in equation (\ref{eq:FT_laplace_inversion}) couples points in $y$
+togehter (since we neglected the $y$-derivatives if $g_{xy}$ and $g_{yz}$ are
+non-zero). Also, as the modes are decoupled, we may solve equation
+(\ref{eq:FT_laplace_inversion})  $k$ mode by $k$ mode in addition to $y$-plane
+by $y$-plane.
+
+The second order centered approximation of the first and second derivatives in
+$x$ reads
+%
+\begin{align*}
+    &&\partial_x f \simeq \frac{-f_{n-1} + f_{n+1}}{2\text{d}x}&&
+    &&\partial_x^2 f \simeq \frac{f_{n-1} - f_{n} + f_{n+1}}{\text{d}x^2}&&
+\end{align*}
+%
+This gives
+%
+\begin{align*}
+    \, &d \L(    g^{xx} \frac{F_{z,n-1} - 2F_{z,n} + F_{z, n+1}}{\text{d}x^2} +
+    G^x \frac{-F_{z,n-1} + F_{z,n+1}}{2\text{d}x} - k^2 g^{zz}F_{z,n} \R.\\
+    &\quad\L.  + i kG^zF_{z,n} + i k2g^{xz} \frac{-F_{z,n-1} +
+F_{z,n+1}}{2\text{d}x} \R) \\
+%
+    +& \frac{g^{xx}}{c} \L( \frac{-c_{n-1} + c_{n+1}}{2\text{d}x} \R)
+\frac{-F_{z,n-1} + F_{z,n+1}}{2\text{d}x} \\
+%
+    +& aF_{z,n} = B_{z,n}
+\end{align*}
+%
+collecting point by point
+%
+\begin{align*}
+    &\L( \frac{dg^{xx}}{\text{d}x^2} - \frac{dG^x}{2\text{d}x} -
+    \frac{g^{xx}}{c_{n}} \frac{-c_{n-1} + c_{n+1}}{4\text{d}x^2} - i\frac{d
+    k2g^{xz}}{2\text{d}x} \R) F_{z,n-1} \\
+    %
+    +&\L( - \frac{ dg^{xx} }{\text{d}x^2} - dk^2 g^{zz} + a + idkG^z \R)
+    F_{z,n} \\
+    %
+    +&\L( \frac{dg^{xx}}{\text{d}x^2} + \frac{dG^x}{2\text{d}x} +
+    \frac{g^{xx}}{c_{n}} \frac{-c_{n-1} + c_{n+1}}{4\text{d}x^2} +
+    i\frac{dk2g^{xz}}{2\text{d}x} \R) F_{z, n+1} \\
+%
+     =& B_{z,n} \numberthis
+%
+\label{eq:discretized_laplace}
+%
+\end{align*}
+%
+We now introduce
+%
+\begin{align*}
+    &c_1 = \frac{dg^{xx}}{\text{d}x^2}& &c_2 = dg^{zz}& &c_3 =
+    \frac{2dg^{xz}}{2\text{d}x}& && \\ &c_4 = \frac{dG^x + g^{xx}\frac{-c_{n-1}
+    + c_{n+1}}{2c_n\text{d}x}}{2\text{d}x}& &c_5 = dG^z& &&
+\end{align*}
+%
+which inserted in equation (\ref{eq:discretized_laplace}) gives
+%
+\begin{align*}
+    &\L( c_1 - c_4 -ikc_3 \R) F_{z,n-1} \\
+    %
+    +&\L( -2c_1 - k^2c_2 +ikc_5 + a \R) F_{z,n} \\
+    %
+    +&\L( c_1 + c_4 + ikc_3 \R) F_{z, n+1} \\
+%
+     =& B_{z,n}
+\end{align*}
+%
+This can be formulated as the matrix equation
+%
+\begin{align*}
+    AF_z=B_z
+\end{align*}
+%
+where the matrix $A$ is tridiagonal. The boundary conditions are set by setting
+the first and last rows in $A$ and $B_z$.
+%
+
+
+\subsubsection{Using PETSc solvers}
+%
+When using PETSc, all terms of equation (\ref{eq:invert_expanded}) is being
+used when inverting to find $f$. Note that when using PETSc, we are not fourier
+decomposing in the $z$-direction, so it may take substantially longer time to
+find the solution.  As with the tridiagonal solver, the fields are being sliced
+in the $y$-direction, and a solution is being found for one $y$ plane at the
+time.
+
+Before solving, equation (\ref{eq:invert_expanded}) is rewritten to the form
+$A\ve{x} =\ve{b}$ (however, the full $A$ is not expanded in memory). To do
+this, a row $i$ in the matrix $A$ is indexed from bottom left of the two
+dimensional field $= (0,0) = 0$ to top right $= (\texttt{meshx}-1,
+\texttt{meshz}-1) = \texttt{meshx}\cdot\texttt{meshz}-1$ of the two dimensional
+field. This is done in such a way so that a row $i$ in $A$ increments by $1$
+for an increase of $1$ in the $z-$direction, and by $\texttt{meshz}$ for an
+increase of $1$ in the $x-$direction, where the variables $\texttt{meshx}$ and
+$\texttt{meshz}$ represents the highest value of the field in the given
+direction.
+
+Similarly to equation (\ref{eq:discretized_laplace}), the discretized version
+of equation (\ref{eq:invert_expanded}) can be written. Doing the same for the
+full two dimensional case yields\\
+%
+\begin{minipage}{0.45\textwidth}
+Second order approximation
+%
+\begin{align*}
+    \; & c_{i,j} f_{i,j} \\
+    %
+    &+ c_{i-1,j-1} f_{i-1,j-1} + c_{i-1,j} f_{i-1,j} \\
+    %
+    &+ c_{i-1,j+1} f_{i-1,j+1} + c_{i,j-1} f_{i,j-1} \\
+    %
+    &+ c_{i,j+1} f_{i,j+1} + c_{i+1,j-1} f_{i+1,j-1} \\
+    %
+    &+ c_{i+1,j} f_{i+1,j} + c_{i+1,j+1} f_{i+1,j+1} \\
+%
+    =& b_{i,j}
+\end{align*}
+%
+\end{minipage}
+%
+\hspace{1cm}
+%
+\begin{minipage}{0.45\textwidth}
+Fourth order approximation
+%
+\begin{align*}
+    \; & c_{i,j} f_{i,j} \\
+    %
+    &+ c_{i-2,j-2} f_{i-2,j-2} + c_{i-2,j-1} f_{i-2,j-1} \\
+    %
+    &+ c_{i-2,j} f_{i-2,j} + c_{i-2,j+1} f_{i-2,j+1} \\
+    %
+    &+ c_{i-2,j+2} f_{i-2,j+2} + c_{i-1,j-2} f_{i-1,j-2} \\
+    %
+    &+ c_{i-1,j-1} f_{i-1,j-1} + c_{i-1,j} f_{i-1,j} \\
+    %
+    &+ c_{i-1,j-1} f_{i-1,j-1} + c_{i-1,j} f_{i-1,j} \\
+    %
+    &+ c_{i-1,j+1} f_{i-1,j+1} + c_{i-1,j+2} f_{i-1,j+2} \\
+    %
+    &+ c_{i,j-2} f_{i,j-2} + c_{i,j-1} f_{i,j-1} \\
+    %
+    &+ c_{i,j+1} f_{i,j+1} + c_{i,j+2} f_{i,j+2} \\
+    %
+    &+ c_{i+1,j-2} f_{i+1,j-2} + c_{i+1,j-1} f_{i+1,j-1} \\
+    %
+    &+ c_{i+1,j} f_{i+1,j} + c_{i+1,j+1} f_{i+1,j+1} \\
+    %
+    &+ c_{i+1,j+2} f_{i+1,j+2} + c_{i+2,j-2} f_{i+2,j-2} \\
+    %
+    &+ c_{i+2,j-1} f_{i+2,j-1} + c_{i+2,j} f_{i+2,j} \\
+    %
+    &+ c_{i+2,j+1} f_{i+2,j+1} + c_{i+2,j+2} f_{i+2,j+2} \\
+%
+    =& b_{i,j}
+\end{align*}
+%
+\end{minipage}
+%
+\\ To determine the coefficient for each node point, it is convenient to
+introduce some quantities
+%
+\begin{align*}
+    &A_0 = a(x,y_{\text{current}},z)& &A_1 = dg^{xx}&\\ &A_2 = dg^{zz}& &A_3 =
+    2dg^{xz}&
+\end{align*}
+%
+In addition, we have\\
+%
+\begin{minipage}{0.45\textwidth}
+Second order approximation
+%
+\begin{align*}
+    \texttt{ddx\_c} = \frac{\texttt{c2}_{x+1} - \texttt{c2}_{x-1} }{
+    2\texttt{c1}\text{d}x}\\
+    %
+    \texttt{ddz\_c} = \frac{\texttt{c2}_{z+1} - \texttt{c2}_{z-1} }{
+    2\texttt{c1}\text{d}z}
+\end{align*}
+%
+\end{minipage}
+%
+\hspace{1cm}
+%
+\begin{minipage}{0.45\textwidth}
+Fourth order approximation
+%
+\begin{align*}
+    \texttt{ddx\_c} = \frac{-\texttt{c2}_{x+2} + 8\texttt{c2}_{x+1} -
+    8\texttt{c2}_{x-1} + \texttt{c2}_{x-1} }{ 12\texttt{c1}\text{d}x}\\
+    %
+    \texttt{ddz\_c} = \frac{-\texttt{c2}_{z+2} + 8\texttt{c2}_{z+1} -
+    8\texttt{c2}_{z-1} + \texttt{c2}_{z-1} }{ 12\texttt{c1}\text{d}z}
+\end{align*}
+%
+\end{minipage}
+%
+\\
+%
+This gives
+%
+\begin{align*}
+    &A_4 = dG^x + g^{xx}\texttt{ddx\_c} + g^{xz}\texttt{ddz\_c}& &A_5 = dG^z +
+    g^{xz}\texttt{ddx\_c} + g^{xx}\texttt{ddz\_c}&
+\end{align*}
+%
+The coefficients $c_{i+m,j+n}$ are finally being set according to the
+appropriate order of discretization. The coefficients can be found in the file
+\texttt{petsc\_laplace.cxx}.
 
 
 
@@ -7306,6 +7661,8 @@ See the example \file{examples/test-globalfield} for more examples.
 
 \subsection{LaplaceXY}
 %
+\label{sec:LaplaceXY}
+%
 Perpendicular Laplacian solver in X-Y.
 %
 \begin{align}
@@ -7313,7 +7670,10 @@ Perpendicular Laplacian solver in X-Y.
     \nonumber \\ =& \left(\frac{\partial f}{\partial x} -
 \frac{g_{xy}}{g_{yy}}\frac{\partial f}{\partial y}\right)\nabla x +
 \left(\frac{\partial f}{\partial z} - \frac{g_{yz}}{g_{yy}}\frac{\partial
-f}{\partial y}\right)\nabla z \label{eq:nabl_perp_f}
+f}{\partial y}\right)\nabla z
+%
+\label{eq:nabl_perp_f}
+%
 \end{align}
 %
 In 2D (X-Y), the $g_{xy}$ component can be dropped since this depends on
@@ -7369,6 +7729,8 @@ Notes:
 
 
 \subsection{LaplaceXZ}
+%
+\label{sec:LaplaceXZ}
 %
 This is a Laplacian inversion code in X-Z, similar to the \texttt{Laplacian}
 solver described in section~\ref{sec:laplacian}.  The difference is in the form
@@ -8400,8 +8762,8 @@ documentation, and source code.
   \item \texttt{Vector = {\bf Curl}(Vector)}
   \item \texttt{Field = {\bf Delp2}(Field)} \\ $\nabla_\perp^2$ operator
   \item \texttt{Field = {\bf Div}(Vector)} \\ Divergence of a vector
-  \item \texttt{Field = {\bf Div\_par}(Field f)} \\
-    Parallel divergence $B_0\mathbf{b}\cdot\nabla\L(f / B_0\R)$
+  \item \texttt{Field = {\bf Div\_par}(Field f)} \\ Parallel divergence
+      $B_0\mathbf{b}\cdot\nabla\L(f / B_0\R)$
   \item \texttt{{\bf dump.add}(Field, ``name'', 1/0)}
   \item \texttt{Field = {\bf filter}(Field, modenr)}
   \item \texttt{{\bf geometry\_derivs}()} \\ Calculates useful quantities from
@@ -8936,6 +9298,85 @@ function.}
 %
 \end{landscape}
 %
+
+
+
+
+
+\section{Derivates of the fourier transform}
+%
+\label{sec:deriv_of_FT}
+%
+By using the definition of the fourier transformed, we have
+%
+\begin{align*}
+    F(x,y,\xi) = \defi{-\infty}{\infty}{f(x,y,z)\exp\L(-2\pi iz\xi\R)}{z}
+\end{align*}
+%
+this gives
+%
+\begin{align*}
+    &\defi{-\infty}{\infty}{\L(\partial_zf[x,y,z]\R)\exp\L(-2\pi iz\xi\R)}{z}\\
+%
+    =& \defi{-\infty}{\infty}{\partial_z\L(f[x,y,z]\exp\L[-2\pi iz\xi\R]\R)}{z}
+    - \defi{-\infty}{\infty}{f(x,y,z)\partial_z\exp\L(-2\pi iz\xi\R)}{z}\\
+%
+    =& \L(f[x,y,z]\exp\L[-2\pi iz\xi\R]\R)\bigg|_{-\infty}^{\infty} - \L(-2\pi
+    i\xi\R)\defi{-\infty}{\infty}{f(x,y,z)\exp\L(-2\pi iz\xi\R)}{z}\\
+%
+    =& 2\pi i\xi F(x,y,\xi) \numberthis
+%
+\label{eq:f_derivative}
+%
+\end{align*}
+%
+where we have used that $f(x,y,\pm\infty)=0$ in order to have a well defined
+fourier transform. This means that
+%
+\begin{align*}
+    \partial_z^n F(x,y,\xi) = (2\pi i \xi)^n F(x,y,\xi)
+\end{align*}
+%
+In our case, we are dealing with periodic boundary conditions. Strictly
+speaking, the fourier transform does not exist in such cases, but it is
+possible to define a fourier transform in the limit which in the end lead to
+the fourier series
+%
+\footnote{For more detail see Bracewell, R. N. - The Fourier Transform and Its
+Applications 3rd Edition chapter $10$}
+%
+By discretizing the spatial domain, it is no longer possible to represent the
+infinite amount of fourier modes, but only $N+1$ number of modes, where $N$ is
+the number of points (this includes the modes with negative frequencies, and
+the zeroth offset mode). For the discrete fourier transform, we have
+%
+\begin{align}
+    F(x,y)_{k} = \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp\L(\frac{-2\pi i k
+    Z}{N}\R)
+%
+\label{eq:DFT}
+%
+\end{align}
+%
+where $k$ is the mode number, $N$ is the number of points in $z$. If we call
+the sampling points of $z$ for $z_Z$, where $Z = 0, 1 \ldots N-1$, we have that
+$z_Z = Z \text{d}z$. As our domain goes from $[0, 2\pi[$, we have that (since
+        we have one less line segment than point) $\text{d}z (N-1) = L_z = 2\pi
+        - \text{d}z$, which gives $\text{d}z = \frac{2\pi}{N}$. Inserting this
+        is equation (\ref{eq:DFT}) yields
+%
+\begin{align*}
+    F(x,y)_{k} = \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp\L( - i k
+    Z\text{d}z\R) = \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp\L( - i k z_Z\R)
+\end{align*}
+%
+The discrete verison of equation (\ref{eq:f_derivative}) thus gives
+%
+\begin{align*}
+    \partial_z^n F(x,y)_k = (i k)^n F(x,y)_k
+\end{align*}
+%
 \printindex
+
 
 \end{document}
