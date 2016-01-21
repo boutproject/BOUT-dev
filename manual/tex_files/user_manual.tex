@@ -1,4 +1,4 @@
-%% Users manual for C++ BOUT code
+%% Users manual for C++ BOUT++ code
 
 \documentclass[12pt]{article}
 \usepackage[nofoot]{geometry}
@@ -3678,7 +3678,6 @@ problem with the fastest time-scales.
 
 A simple example
 %
-%
 \footnote{Taken from a talk by L.Chacon available here
 \url{https://bout.llnl.gov/pdf/workshops/2011/talks/Chacon_bout2011.pdf}} is a
 coupled wave equation, solved in the \texttt{test-precon} example code:
@@ -5321,9 +5320,9 @@ For example,
 %
 appears in reduced MHD for the vorticity inversion and $j_{||}$.
 
-Alternative formulations and ways to invert equation (
+Alternative formulations and ways to invert equation
 %
-\ref{eq:full_laplace_inv}) can be found in section \ref{sec:LaplaceXY}
+(\ref{eq:full_laplace_inv}) can be found in section \ref{sec:LaplaceXY}
 %
  and \ref{sec:LaplaceXZ}
 
@@ -5331,23 +5330,24 @@ Alternative formulations and ways to invert equation (
 
 \subsection{Usage of the laplacian inversion}
 %
-In BOUT++, these equations can be solved in two ways. One method fourier
-transforms in the $z$-direction, whilst the other is solving the full two
-dimensional problem by matrix inversion (see the coordinates manual for
-details). However, if $g_{xy}$ and $g_{yz}$ are non-zero, BOUT++ is currently
-neglecting the $y$-parallel derivatives when using the solvers
-\texttt{Laplacian} and \texttt{LaplaceXZ}.\\ \\
+In BOUT++, equation (\ref{eq:full_laplace_inv}) can be solved in two ways.  The
+first method fourier transforms in the $z$-direction, whilst the other is
+solving the full two dimensional problem by matrix inversion.  The derivation
+of $\nabla_\perp^2f$ for a general coordinate system can be found in the
+\texttt{coordinates} manual. What is important, is to note that if $g_{xy}$ and
+$g_{yz}$ are non-zero, BOUT++ is neglecting the $y$-parallel derivatives when
+using the solvers \texttt{Laplacian} and \texttt{LaplaceXZ}.\\ \\
 %
 \note{Current implementations of Laplace inversion neglects derivatives in the
 parallel direction if $g_{xy}$ and $g_{yz}$ are non-zero when using the solvers
 \texttt{Laplacian} and \texttt{LaplaceXZ})}\\ \\
 %
-By neglecting the $y$-derivatives, one can solve equation
-(\ref{eq:full_laplace_inv}) $y$ plane by $y$ plane.
+By neglecting the $y$-derivatives (or if $g_{xy}=g_{yz}=0$), one can solve
+equation (\ref{eq:full_laplace_inv}) $y$ plane by $y$ plane.
 
 The first approach utilizes that it is possible fourier transform the equation
-in $z$ (using some assumptions, see the \code{coordinates} manual for details),
-and solve a tridiagonal system for each mode.  These inversion problems are
+in $z$ (using some assumptions described in section \ref{sec:num_laplace}), and
+solve a tridiagonal system for each mode. These inversion problems are
 band-diagonal (tri-diagonal in the case of 2nd-order differencing) and so
 inversions can be very efficient: $O\L(n_z \log n_z\R)$ for the FFTs,
 $O\L(n_x\R)$ for tridiagonal inversion using the Thomas algorithm
@@ -5355,7 +5355,7 @@ $O\L(n_x\R)$ for tridiagonal inversion using the Thomas algorithm
 $x$ and $z$ directions respectively.
 
 In the second approach, the full $2$-D system is being solved. This requires
-PETSc to be built with BOUT++
+PETSc to be built with BOUT++.
 
 The
 %
@@ -5693,23 +5693,24 @@ three coefficients, set them to NULL.
 
 \subsection{Numerical implimentation}
 %
-We will here go through the calulations of the laplacian inversion algorithm,
-as it is performed in BOUT++. We would like to solve the following equation for
-$f$
+\label{sec:num_laplace}
+%
+We will here go through the implimentation of the laplacian inversion
+algorithm, as it is performed in BOUT++. We would like to solve the following
+equation for $f$
 %
 \begin{align}
-    d&\nabla_\perp^2f + \frac{1}{c_1}(\nabla_\perp c_2)\cdot\nabla_\perp f + af =
-    b
+    d&\nabla_\perp^2f + \frac{1}{c_1}(\nabla_\perp c_2)\cdot\nabla_\perp f + af
+    = b
 %
 \label{eq:to_invert}
 %
 \end{align}
 %
-In all currently implemented solvers, the parallel $y$-derivatives are
-neglected if $g_{xy}$ and $g_{yz}$ are non-zero, BOUT++ is currently neglecting
-the $y$-parallel derivatives when using the solvers \texttt{Laplacian} and
-\texttt{LaplaceXZ}.  For these two solvers, equation (\ref{eq:to_invert})
-becomes
+BOUT++ is neglecting the $y$-parallel derivatives if $g_{xy}$ and $g_{yz}$ are
+no-zero when using the solvers \texttt{Laplacian} and \texttt{LaplaceXZ}.  For
+these two solvers, equation (\ref{eq:to_invert}) becomes (see
+\texttt{coordinates} manual for derivation)
 %
 \begin{align*}
     \, &d \L(    g^{xx} \partial_x^2 + G^x \partial_x + g^{zz} \partial_z^2 +
@@ -5729,7 +5730,7 @@ becomes
 \subsubsection{Using tridiagonal solvers}
 %
 When using the tridiagonal solvers, $c_1 = c_2$ in equation
-(\ref{eq:to_invert_tri}), hence, it is rather solving
+(\ref{eq:to_invert}), hence, it is rather solving
 %
 \begin{align}
     d&\nabla_\perp^2f + \frac{1}{c}(\nabla_\perp c)\cdot\nabla_\perp f + af = b
@@ -5738,12 +5739,11 @@ When using the tridiagonal solvers, $c_1 = c_2$ in equation
 %
 \end{align}
 %
-In order to use a tridiagonal solver to solve equation
-(\ref{eq:to_invert_tri}), we will first assume that the parallel derivatives
-are small. This means that we will only have derivatives of $x$ and $z$ for the
-dependent variable. The hope is that the modes in the periodic $z$ direction
-will decouple, so that we in the end only have to invert for the $x$
-coordinate.
+Since there are no parallel $y$-derivatives if $g_{xy}=g_{yz}=0$ (or if they
+are neglected), equation (\ref{eq:to_invert_tri}) will only contain derivatives
+of $x$ and $z$ for the dependent variable. The hope is that the modes in the
+periodic $z$ direction will decouple, so that we in the end only have to invert
+for the $x$ coordinate.
 
 If the modes decouples when fourier transforming equation
 (\ref{eq:invert_expanded}), we can use a tridiagonal solver to solve the
@@ -5810,7 +5810,7 @@ which gives
 \end{align*}
 %
 As nothing in equation (\ref{eq:FT_laplace_inversion}) couples points in $y$
-togehter (since we neglected the $y$-derivatives if $g_{xy}$ and $g_{yz}$ are
+togehter (since we neglected the $y$-derivatives if $g_{xy}$ and $g_{yz}$ were
 non-zero). Also, as the modes are decoupled, we may solve equation
 (\ref{eq:FT_laplace_inversion})  $k$ mode by $k$ mode in addition to $y$-plane
 by $y$-plane.
@@ -5981,7 +5981,7 @@ introduce some quantities
 In addition, we have\\
 %
 \begin{minipage}{0.45\textwidth}
-Second order approximation
+Second order approximation (5-point stencil)
 %
 \begin{align*}
     \texttt{ddx\_c} = \frac{\texttt{c2}_{x+1} - \texttt{c2}_{x-1} }{
@@ -5996,7 +5996,7 @@ Second order approximation
 \hspace{1cm}
 %
 \begin{minipage}{0.45\textwidth}
-Fourth order approximation
+    Fourth order approximation (9-point stencil)
 %
 \begin{align*}
     \texttt{ddx\_c} = \frac{-\texttt{c2}_{x+2} + 8\texttt{c2}_{x+1} -
@@ -6020,6 +6020,79 @@ This gives
 The coefficients $c_{i+m,j+n}$ are finally being set according to the
 appropriate order of discretization. The coefficients can be found in the file
 \texttt{petsc\_laplace.cxx}.
+
+
+\subsubsection{Example: The 5-point stencil}
+%
+Let us now consider the 5-point stencil for a mesh with $3$ inner points in the
+$x$-direction, and $3$ inner points in the $z$-direction. The $z$ direction
+will be periodic, and the $x$ direction will have the boundaries half between
+the grid-point and the first ghost point (see figure \ref{fig:lapl_inv_mesh}).
+%
+\begin{figure}[htbp!]
+    \centering \includegraphics[width=0.3\paperwidth,
+    keepaspectratio]{figs/5PointStencilMesh.pdf}
+\caption{The mesh: The inner boundary points in $x$ are colored in orange, whilst the
+    outer boundary points in $z$ are colored gray. Inner points are colored
+blue.}
+%
+\label{fig:lapl_inv_mesh}
+%
+\end{figure}
+%
+Applying the $5$-point stencil to point $f_{22}$ this mesh will result in
+figure \ref{fig:lapl_inv_mesh_w_stencil}.
+%
+\begin{figure}[htbp!]
+    \centering \includegraphics[width=0.3\paperwidth,
+    keepaspectratio]{figs/5PointStencilMeshWithStencil.pdf}
+    \caption{The mesh with a stencil in point $f_{22}$: The point under
+        consideration is colored blue. The point located $+1$ in $z$ direction
+        (\texttt{zp}) is colored yellow and the point located $-1$ in $z$
+        direction (\texttt{zm}) is colored green. The point located $+1$ in $x$
+        direction (\texttt{xp}) is colored purple and the point located $-1$ in
+    $x$ direction (\texttt{xm}) is colored red.  }
+%
+\label{fig:lapl_inv_mesh_w_stencil}
+%
+\end{figure}
+%
+We want to solve a problem on the form $A\ve{x}=\ve{b}$. We will order $\ve{x}$
+in a row-major order (so that $z$ is varying faster than $x$). Further, we put
+the inner $x$ boudary points first in $\ve{x}$, and the outer $x$ boundary
+points last in $\ve{x}$. The matrix problem for our mesh can then be written
+like in figure \ref{fig:lapl_inv_matrix}.
+%
+\begin{figure}[htbp!]
+    \centering \includegraphics[width=0.85\paperwidth,
+    keepaspectratio]{figs/5PointStencilMatrix.pdf}
+    \caption{Matrix problem for our $3\times3$ mesh: The colors follow that of
+        figure \ref{fig:lapl_inv_mesh} and \ref{fig:lapl_inv_mesh_w_stencil}.
+        The first index of the elements refers to the $x$-position in figure
+        \ref{fig:lapl_inv_mesh}, and the last index of the elements refers to
+        the $z$-position in figure \ref{fig:lapl_inv_mesh}. \texttt{ig} refers
+        to "inner ghost point", \texttt{og} refers to "outer ghost point", and
+        \texttt{c} refers to the point of consideration. Notice the
+        "wrap-around" in $z$-direction when the point of consideration
+    neighbours the first/last $z$-index.  }
+%
+\label{fig:lapl_inv_matrix}
+%
+\end{figure}
+%
+As we are using a row-major implementation, the global indices of the matrix
+will be as in figure \ref{fig:lapl_inv_global}
+%
+\begin{figure}[htbp!]
+    \centering \includegraphics[width=0.6\paperwidth,
+    keepaspectratio]{figs/5PointStencilGlobalIndices.pdf}
+    \caption{Global indices of the matrix in figure \ref{fig:lapl_inv_matrix}.
+    }
+%
+\label{fig:lapl_inv_global}
+%
+\end{figure}
+%
 
 
 
