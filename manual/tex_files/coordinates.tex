@@ -18,23 +18,23 @@
 \definecolor{listinggray}{gray}{0.9}
 \definecolor{lbcolor}{rgb}{0.95,0.95,0.95}
 \lstset{
-	backgroundcolor=\color{lbcolor},
+    backgroundcolor=\color{lbcolor},
         language=C++,
-	keywordstyle=\bfseries\ttfamily\color[rgb]{0,0,1},
-	identifierstyle=\ttfamily,
-	commentstyle=\color[rgb]{0.133,0.545,0.133},
-	stringstyle=\ttfamily\color[rgb]{0.627,0.126,0.941},
-	showstringspaces=false,
-	basicstyle=\small,
-	numberstyle=\footnotesize,
-	numbers=left,
-	stepnumber=1,
-	numbersep=10pt,
-	tabsize=2,
-	breaklines=true,
-	prebreak = \raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
-	breakatwhitespace=false,
-	aboveskip={0.5\baselineskip},
+    keywordstyle=\bfseries\ttfamily\color[rgb]{0,0,1},
+    identifierstyle=\ttfamily,
+    commentstyle=\color[rgb]{0.133,0.545,0.133},
+    stringstyle=\ttfamily\color[rgb]{0.627,0.126,0.941},
+    showstringspaces=false,
+    basicstyle=\small,
+    numberstyle=\footnotesize,
+    numbers=left,
+    stepnumber=1,
+    numbersep=10pt,
+    tabsize=2,
+    breaklines=true,
+    prebreak = \raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
+    breakatwhitespace=false,
+    aboveskip={0.5\baselineskip},
         columns=fixed,
         upquote=true,
         extendedchars=true,
@@ -54,8 +54,8 @@
 \rhead{\thepage}
 \renewcommand{\sectionmark}[1]{\markright{#1}{}}
 \renewcommand{\headrulewidth}{0.3pt}
-\setlength{\headheight}{15pt} 		% Avoids getting warning about to small
-					% header
+\setlength{\headheight}{15pt}       % Avoids getting warning about to small
+                    % header
 
 \newcommand{\code}[1]{\texttt{#1}}
 \newcommand{\bfile}[1]{\texttt{\bf 1}}
@@ -1616,7 +1616,7 @@ This gives
                   + g^{yz} \partial_y \partial_z
                   \R)\\
 %
-	   =&\quad \,
+       =&\quad \,
                \L(g^{xx} \partial_x^2\R)
                + \L(
                     \frac{1}{J} \L[
@@ -1678,8 +1678,8 @@ so that by equation (\ref{eq:divA}),
     \Grad_\|^2 =& \Div\L(\ve{b} \ve{b} \cdot \Grad\R)\\
                =& \Div\L(\frac{\ve{e}_y}{g_{yy}} \cdot \partial_y\R)\\
                =& \frac{1}{J} \partial_i \L(
-		      J\ve{e}^i \cdot \L[\frac{\ve{e}_y}{g_{yy}} \partial_y\R]
-		  \R)\\
+              J\ve{e}^i \cdot \L[\frac{\ve{e}_y}{g_{yy}} \partial_y\R]
+          \R)\\
                =& \frac{1}{J} \partial_y \L(\frac{J}{g_{yy}} \partial_y\R)
 \end{align*}
 %
@@ -2313,7 +2313,7 @@ the file \texttt{petsc\_laplace.cxx}.
 We will here derive the bracket operators, as they are used in BOUT++.
 
 \subsubsection{The electrostatic \texorpdfstring{$\ve{E}\times \ve{B}$}{ExB}
-	       velocity}
+           velocity}
 %
 Under electrostatic conditions, we have that $\ve{v}_E =
 -\frac{\nabla\phi\times\ve{b}}{B}$, which is similar to
@@ -2321,76 +2321,76 @@ $\ve{v}=\ve{k}\times\nabla\psi$ found in incompressible fluid flow
 %
 \begin{align*}
     \ve{v}_E =& -\frac{\nabla\phi\times\ve{b}}{B}\\
-	     %
-	     =&-\frac{\nabla\phi\times\ve{e}_y}{
+         %
+         =&-\frac{\nabla\phi\times\ve{e}_y}{
                \sqrt{g_{yy}}J^{-1}\sqrt{g_{yy}}}\\
              %
-	     =&-\frac{J}{g_{yy}}\nabla\phi\times\ve{e}_y\\
-	     %
-	     =&\frac{J}{g_{yy}}\ve{e}_y\times\nabla\phi\\
-	     %
-	     =&\frac{J}{g_{yy}}\ve{e}_y\times
-	       \L(\ve{e}^x\partial_x + \ve{e}^z\partial_z\R)\phi\\
-	     %
-	     =&\frac{J}{g_{yy}}
-	       \L(g_{yx}\ve{e}^x + g_{yy}\ve{e}^y + g_{yz}\ve{e}^z\R)
-	       \times
-	       \L(\ve{e}^x\partial_x +
-	          \ve{e}^y\partial_y +
+         =&-\frac{J}{g_{yy}}\nabla\phi\times\ve{e}_y\\
+         %
+         =&\frac{J}{g_{yy}}\ve{e}_y\times\nabla\phi\\
+         %
+         =&\frac{J}{g_{yy}}\ve{e}_y\times
+           \L(\ve{e}^x\partial_x + \ve{e}^z\partial_z\R)\phi\\
+         %
+         =&\frac{J}{g_{yy}}
+           \L(g_{yx}\ve{e}^x + g_{yy}\ve{e}^y + g_{yz}\ve{e}^z\R)
+           \times
+           \L(\ve{e}^x\partial_x +
+              \ve{e}^y\partial_y +
                   \ve{e}^z\partial_z\R)\phi\\
              %
-	     =&\frac{J}{g_{yy}}
-	       \L(
-	         g_{yx}\ve{e}^x\times\ve{e}^x\partial_x
-	       + g_{yy}\ve{e}^y\times\ve{e}^x\partial_x
-	       + g_{yz}\ve{e}^z\times\ve{e}^x\partial_x
-	       \R.
-	       \\
-	       &\quad\;
-	       + g_{yx}\ve{e}^x\times\ve{e}^y\partial_y
-	       + g_{yy}\ve{e}^y\times\ve{e}^y\partial_y
-	       + g_{yz}\ve{e}^z\times\ve{e}^y\partial_y
-	       \\
-	       &\quad\;
-	       \L.
-	       + g_{yx}\ve{e}^x\times\ve{e}^z\partial_z
-	       + g_{yy}\ve{e}^y\times\ve{e}^z\partial_z
-	       + g_{yz}\ve{e}^z\times\ve{e}^z\partial_z
-	       \R)
-	       \phi\\
-	     %
-	     =&\frac{J}{g_{yy}}
-	       \L(
-	       - g_{yy}\ve{e}^y\times\ve{e}^x\partial_x
-	       + g_{yz}\ve{e}^z\times\ve{e}^x\partial_x
-	       \R.
-	       \\
-	       &\quad
-	       + g_{yx}\ve{e}^x\times\ve{e}^y\partial_y
-	       - g_{yz}\ve{e}^z\times\ve{e}^y\partial_y
-	       \\
-	       &\quad
-	       \L.
-	       - g_{yx}\ve{e}^x\times\ve{e}^z\partial_z
-	       + g_{yy}\ve{e}^y\times\ve{e}^z\partial_z
-	       \R)
-	       \phi\\
-	     %
-	     =&\frac{1}{g_{yy}}
-	       \L(
-	       - g_{yy}\ve{e}_z\partial_x
-	       + g_{yz}\ve{e}_y\partial_x
-	       + g_{yx}\ve{e}_z\partial_y
-	       - g_{yz}\ve{e}_x\partial_y
-	       - g_{yx}\ve{e}_y\partial_z
-	       + g_{yy}\ve{e}_x\partial_z
-	       \R)
-	       \phi
+         =&\frac{J}{g_{yy}}
+           \L(
+             g_{yx}\ve{e}^x\times\ve{e}^x\partial_x
+           + g_{yy}\ve{e}^y\times\ve{e}^x\partial_x
+           + g_{yz}\ve{e}^z\times\ve{e}^x\partial_x
+           \R.
+           \\
+           &\quad\;
+           + g_{yx}\ve{e}^x\times\ve{e}^y\partial_y
+           + g_{yy}\ve{e}^y\times\ve{e}^y\partial_y
+           + g_{yz}\ve{e}^z\times\ve{e}^y\partial_y
+           \\
+           &\quad\;
+           \L.
+           + g_{yx}\ve{e}^x\times\ve{e}^z\partial_z
+           + g_{yy}\ve{e}^y\times\ve{e}^z\partial_z
+           + g_{yz}\ve{e}^z\times\ve{e}^z\partial_z
+           \R)
+           \phi\\
+         %
+         =&\frac{J}{g_{yy}}
+           \L(
+           - g_{yy}\ve{e}^y\times\ve{e}^x\partial_x
+           + g_{yz}\ve{e}^z\times\ve{e}^x\partial_x
+           \R.
+           \\
+           &\quad
+           + g_{yx}\ve{e}^x\times\ve{e}^y\partial_y
+           - g_{yz}\ve{e}^z\times\ve{e}^y\partial_y
+           \\
+           &\quad
+           \L.
+           - g_{yx}\ve{e}^x\times\ve{e}^z\partial_z
+           + g_{yy}\ve{e}^y\times\ve{e}^z\partial_z
+           \R)
+           \phi\\
+         %
+         =&\frac{1}{g_{yy}}
+           \L(
+           - g_{yy}\ve{e}_z\partial_x
+           + g_{yz}\ve{e}_y\partial_x
+           + g_{yx}\ve{e}_z\partial_y
+           - g_{yz}\ve{e}_x\partial_y
+           - g_{yx}\ve{e}_y\partial_z
+           + g_{yy}\ve{e}_x\partial_z
+           \R)
+           \phi
 \end{align*}
 
 
 \subsubsection{The electrostatic \texorpdfstring{$\ve{E}\times \ve{B}$}{ExB}
-	       advection}
+           advection}
 %
 The electrostatic $E\times B$ advection operator thus becomes
 %
@@ -2400,46 +2400,46 @@ The electrostatic $E\times B$ advection operator thus becomes
     %
     %
     =&\frac{1}{g_{yy}}
-	       \L(
-	       - g_{yy}\ve{e}_z\partial_x
-	       + g_{yz}\ve{e}_y\partial_x
-	       + g_{yx}\ve{e}_z\partial_y
-	       - g_{yz}\ve{e}_x\partial_y
-	       - g_{yx}\ve{e}_y\partial_z
-	       + g_{yy}\ve{e}_x\partial_z
-	       \R)
-	       \phi
+           \L(
+           - g_{yy}\ve{e}_z\partial_x
+           + g_{yz}\ve{e}_y\partial_x
+           + g_{yx}\ve{e}_z\partial_y
+           - g_{yz}\ve{e}_x\partial_y
+           - g_{yx}\ve{e}_y\partial_z
+           + g_{yy}\ve{e}_x\partial_z
+           \R)
+           \phi
        \cdot\L(\ve{e}^x\partial_x + \ve{e}^y\partial_y + \ve{e}^z\partial_z\R)\\
     %
     %
     =& \frac{1}{g_{yy}}
-	       \L(
-	       - g_{yy}\partial_x\phi\partial_z
-	       + g_{yz}\partial_x\phi\partial_y
-	       + g_{yx}\partial_y\phi\partial_z
-	       - g_{yz}\partial_y\phi\partial_x
-	       - g_{yx}\partial_z\phi\partial_y
-	       + g_{yy}\partial_z\phi\partial_x
-	       \R)\\
+           \L(
+           - g_{yy}\partial_x\phi\partial_z
+           + g_{yz}\partial_x\phi\partial_y
+           + g_{yx}\partial_y\phi\partial_z
+           - g_{yz}\partial_y\phi\partial_x
+           - g_{yx}\partial_z\phi\partial_y
+           + g_{yy}\partial_z\phi\partial_x
+           \R)\\
     %
     %
     =& \frac{1}{g_{yy}}
-	       \L(
-	         \L[
-	           g_{yy}\partial_z\phi
-	         - g_{yz}\partial_y\phi
-	         \R]\partial_x
-	       +
-	         \L[
-	           g_{yz}\partial_x\phi
-	         - g_{yx}\partial_z\phi
-	         \R]\partial_y
-	       +
-	         \L[
-	           g_{yx}\partial_y\phi
-	         - g_{yy}\partial_x\phi
-	         \R]\partial_z
-	       \R)\\
+           \L(
+             \L[
+               g_{yy}\partial_z\phi
+             - g_{yz}\partial_y\phi
+             \R]\partial_x
+           +
+             \L[
+               g_{yz}\partial_x\phi
+             - g_{yx}\partial_z\phi
+             \R]\partial_y
+           +
+             \L[
+               g_{yx}\partial_y\phi
+             - g_{yy}\partial_x\phi
+             \R]\partial_z
+           \R)\\
     %
     %
     =& \frac{1}{g_{yy}}
@@ -2489,8 +2489,8 @@ The pure solenoidal advection is thus
                  +
                  g_{yz}\{\phi, \cdot\}_{x,y}
                \R)
-	       \numberthis
-	       \label{eq:brackets}
+           \numberthis
+           \label{eq:brackets}
 \end{align*}
 
 
@@ -2508,9 +2508,9 @@ terms (the $y$-derivative terms), so for the Arakawa brackets BOUT++ returns
     =& -\frac{\nabla\phi\times\ve{b}}{B}\cdot\nabla\\
     %
     \simeq& \frac{1}{g_{yy}}
-	       \L(
+           \L(
                  g_{yy}\{\phi, \cdot\}_{z,x}
-	       \R)\\
+           \R)\\
     %
     =& \partial_z\phi\partial_x - \partial_x\phi\partial_z
 \end{align*}
