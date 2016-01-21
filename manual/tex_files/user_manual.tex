@@ -2606,14 +2606,20 @@ For example,
 %
 appears in reduced MHD for the vorticity inversion and $j_{||}$.
 
-In BOUT++, these equations can be solved in two ways. Currently, both ways
-neglects the parallel derivatives.\\ \\
+In BOUT++, these equations can be solved in two ways. One method fourier
+transforms in the $z$-direction, whilst the other is solving the full two
+dimensional problem by matrix inversion (see the coordinates manual for
+details). However, if $g_{xy}$ and $g_{yz}$ are non-zero, BOUT++ is currently
+neglecting the $y$-parallel derivatives when using the solvers
+\texttt{Laplacian} and \texttt{LaplaceXZ}.\\ \\
 %
-\note{Current implementations neglects derivatives in the parallel direction}\\
+\note{Current implementations of Laplace inversion neglects derivatives in the
+parallel direction if $g_{xy}$ and $g_{yz}$ are non-zero when using the solvers
+\texttt{Laplacian} and \texttt{LaplaceXZ})}\\
 \\
 %
 By neglecting the $y$-derivatives, one can solve equation
-(\ref{eq:full_laplace_inv}) $y$ point by $y$ point.
+(\ref{eq:full_laplace_inv}) $y$ plane by $y$ plane.
 
 The first approach utilizes that it is possible fourier transform the equation
 in $z$ (using some assumptions, see the \code{coordinates} manual for details),
@@ -6935,7 +6941,8 @@ B_0\partial^0_{||}\L(\frac{f}{B_0}\R)$ \\
              & The \code{Laplacian} solver performs the inverse operation \\
 \\
 \code{brackets} & Poisson brackets \\
-                & The Arakawa option, neglects the parallel $y$ derivatives\\
+                & The Arakawa option, neglects the parallel $y$ derivatives if
+                $g_{xy}$ and $g_{yz}$ are non-zero\\
 \hline
 \end{tabular}
 %
@@ -6988,9 +6995,9 @@ equations on the form
 \note{ The bracket operators in BOUT++ are using Clebsch coordinates, and
 returns $-\frac{\nabla\phi\times\ve{b}}{B}\cdot\nabla f$ rather than
 $-\nabla\phi\times\ve{b}\cdot\nabla f$.  } \\ \\ Notice that when we use the
-Arakawa scheme, $y$-derivatives are neglected.  An example of usage of the
-brackets can be found in for example \file{examples/MMS/advection} or
-\file{examples/blob2d}.
+Arakawa scheme, $y$-derivatives are neglected if $g_{xy}$ and $g_{yz}$ are
+non-zero.  An example of usage of the brackets can be found in for example
+\file{examples/MMS/advection} or \file{examples/blob2d}.
 
 
 
