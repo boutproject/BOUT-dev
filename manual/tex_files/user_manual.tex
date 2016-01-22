@@ -736,7 +736,7 @@ e-mail is required for the download. As for the date of this typing, SUNDIALS
 version $2.6.2$ is the newest. In order for a smooth install it is recommended
 to install SUNDIALS from an install directory. The full installation guide is
 found in the downloaded \texttt{.tar.gz}, but we will provide a step-by-step
-guide to install it and make it comatible with BOUT++ here.  \\ \\ \note{ It is
+guide to install it and make it compatible with BOUT++ here.  \\ \\ \note{ It is
     important to note that if you do configure PETSc with SUNDIALS then BOUT
 must use/link the same version of SUNDIALS }
 
@@ -1605,7 +1605,7 @@ or also put ``append=true'' near the top of the BOUT.inp input file.
 When restarting simulations BOUT++ will by default output the initial state,
 unless appending to existing data files when it will not output until the first
 timestep is completed. To override this behaviour, you can specify the option
-dump\_on\_restart manully. If dump\_on\_restart is true then the initial state
+dump\_on\_restart manually. If dump\_on\_restart is true then the initial state
 will always be written out, if false then it never will be (regardless of the
 values of restart and append).
 
@@ -2834,7 +2834,7 @@ sinh(x) & Hyperbolic sine\\
 sqrt(x) & $\sqrt{x}$\\
 tan(x) & Tangent \\
 erf(x) & The error function \\
-TanhHat(x, width, center, steepness) & The hat function\\
+TanhHat(x, width, centre, steepness) & The hat function\\
         &$\frac{1}{2}\L(\tanh\L[s \L(x-\L[c-\frac{w}{2}\R]\R)\R]
           + \tanh\L[s \L(x-\L[c+\frac{w}{2}\R]\R)\R] \R)$ \\
 \hline
@@ -4127,7 +4127,7 @@ may in some cases be less efficient.
 \index{boundary conditions}
 %
 \note{The boundary conditions are currently not set in the corner cells.
-Therefore: When using stecils which uses corner cells (like the Arakawa scheme)
+Therefore: When using stencils which uses corner cells (like the Arakawa scheme)
 care must be taken, and the boundary conditions in the corner cells must be set
 manually.}
 
@@ -4636,7 +4636,7 @@ Singleton, so to get a pointer to the boundary factory use
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
 \end{lstlisting}
 %
-and to delete this singleton, free memory and cleanup at the end use:
+and to delete this singleton, free memory and clean-up at the end use:
 %
 \begin{lstlisting}[numbers=none]
   BoundaryFactory::cleanup();
@@ -4956,9 +4956,9 @@ domains using the parameters \code{ixseps1}, \code{ixseps2}, \code{jyseps1\_1},
 \subsubsection{Advanced}
 %
 The internal domain in BOUT++ is deconstructed into a series of logically
-rectangular subdomains with boundaries determined by the \code{ixseps} and
-\code{jyseps} parameters. The boundaries coinside with processor boundaries so
-the number of grid points within each subdomain must be an integer multiple of
+rectangular sub-domains with boundaries determined by the \code{ixseps} and
+\code{jyseps} parameters. The boundaries coincide with processor boundaries so
+the number of grid points within each sub-domain must be an integer multiple of
 \code{ny/nypes} where \code{ny} is the number of grid points in \code{y} and
 \code{nypes} is the number of processors used to split the y domain. Processor
 communication across the domain boundaries is then handled internally. Figure
@@ -4966,7 +4966,7 @@ communication across the domain boundaries is then handled internally. Figure
 double null tokamak with \code{ixseps1 = ixseps2} are connected together via
 communications.
 
-\note{To ensure that each subdomain follows logically, the \code{jyseps}
+\note{To ensure that each sub-domain follows logically, the \code{jyseps}
     indices must adhere to the following conditions:
 %
 \begin{itemize}
@@ -5215,7 +5215,7 @@ Use new hthe?
 A key metric in the BOUT/BOUT++ coordinates is the poloidal arc length
 $h_\theta$. A plot will shot this quantity calculated geometrically (solid
 line), and calculated by enforcing force balance (red symbols) at the outboard
-midplane.  The difference between these two methods is an indication of the
+mid-plane.  The difference between these two methods is an indication of the
 quality of the Grad-Shafranov solution. Entering 'y' will use the ``new''
 $h_\theta$ calculated from force balance, whilst 'n' will use the $h_\theta$
 calculated geometrically.  Personally. i prefer to make sure force balance is
@@ -5264,7 +5264,7 @@ Use new qsafe?
 As with hthe and jpar, the qsafe specified in the original grid file is plotted
 as a black line, and the value calculated by integrating quantities on the new
 mesh is shown as red symbols. Entering 'y' uses the values consistent on the
-new grid, whilst 'n' uses the original safety factor profile. In most cases i'd
+new grid, whilst 'n' uses the original safety factor profile. In most cases I’d
 prefer the grid to be consistent, rather than being identical to the input, so
 answer 'y'. You may have to do some experimentation though.
 
@@ -5331,7 +5331,7 @@ Alternative formulations and ways to invert equation
 \subsection{Usage of the laplacian inversion}
 %
 In BOUT++, equation (\ref{eq:full_laplace_inv}) can be solved in two ways.  The
-first method fourier transforms in the $z$-direction, whilst the other is
+first method Fourier transforms in the $z$-direction, whilst the other is
 solving the full two dimensional problem by matrix inversion.  The derivation
 of $\nabla_\perp^2f$ for a general coordinate system can be found in the
 \texttt{coordinates} manual. What is important, is to note that if $g_{xy}$ and
@@ -5345,7 +5345,7 @@ parallel direction if $g_{xy}$ and $g_{yz}$ are non-zero when using the solvers
 By neglecting the $y$-derivatives (or if $g_{xy}=g_{yz}=0$), one can solve
 equation (\ref{eq:full_laplace_inv}) $y$ plane by $y$ plane.
 
-The first approach utilizes that it is possible fourier transform the equation
+The first approach utilizes that it is possible Fourier transform the equation
 in $z$ (using some assumptions described in section \ref{sec:num_laplace}), and
 solve a tridiagonal system for each mode. These inversion problems are
 band-diagonal (tri-diagonal in the case of 2nd-order differencing) and so
@@ -5691,11 +5691,11 @@ three coefficients, set them to NULL.
 
 
 
-\subsection{Numerical implimentation}
+\subsection{Numerical implementation}
 %
 \label{sec:num_laplace}
 %
-We will here go through the implimentation of the laplacian inversion
+We will here go through the implementation of the laplacian inversion
 algorithm, as it is performed in BOUT++. We would like to solve the following
 equation for $f$
 %
@@ -5745,11 +5745,11 @@ of $x$ and $z$ for the dependent variable. The hope is that the modes in the
 periodic $z$ direction will decouple, so that we in the end only have to invert
 for the $x$ coordinate.
 
-If the modes decouples when fourier transforming equation
+If the modes decouples when Fourier transforming equation
 (\ref{eq:invert_expanded}), we can use a tridiagonal solver to solve the
-equation for each fourier mode.
+equation for each Fourier mode.
 
-Using the discrete fourier transform
+Using the discrete Fourier transform
 %
 \begin{align}
     F(x,y)_{k} = \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp\L(\frac{-2\pi i k
@@ -5782,7 +5782,7 @@ matrix. Thus the tridiagonal solvers are solving equations on the form
    +& a(x,y)f(x,y,z) = b(x,y,z)
 \end{align*}
 %
-after using the discrete fourier transform (see section \ref{sec:deriv_of_FT}),
+after using the discrete Fourier transform (see section \ref{sec:deriv_of_FT}),
 we get
 %
 \begin{align*}
@@ -5810,12 +5810,12 @@ which gives
 \end{align*}
 %
 As nothing in equation (\ref{eq:FT_laplace_inversion}) couples points in $y$
-togehter (since we neglected the $y$-derivatives if $g_{xy}$ and $g_{yz}$ were
+together (since we neglected the $y$-derivatives if $g_{xy}$ and $g_{yz}$ were
 non-zero). Also, as the modes are decoupled, we may solve equation
 (\ref{eq:FT_laplace_inversion})  $k$ mode by $k$ mode in addition to $y$-plane
 by $y$-plane.
 
-The second order centered approximation of the first and second derivatives in
+The second order centred approximation of the first and second derivatives in
 $x$ reads
 %
 \begin{align*}
@@ -5891,7 +5891,7 @@ the first and last rows in $A$ and $B_z$.
 \subsubsection{Using PETSc solvers}
 %
 When using PETSc, all terms of equation (\ref{eq:invert_expanded}) is being
-used when inverting to find $f$. Note that when using PETSc, we are not fourier
+used when inverting to find $f$. Note that when using PETSc, we are not Fourier
 decomposing in the $z$-direction, so it may take substantially longer time to
 find the solution.  As with the tridiagonal solver, the fields are being sliced
 in the $y$-direction, and a solution is being found for one $y$ plane at the
@@ -5908,7 +5908,7 @@ increase of $1$ in the $x-$direction, where the variables $\texttt{meshx}$ and
 $\texttt{meshz}$ represents the highest value of the field in the given
 direction.
 
-Similarly to equation (\ref{eq:discretized_laplace}), the discretized version
+Similarly to equation (\ref{eq:discretized_laplace}), the discretised version
 of equation (\ref{eq:invert_expanded}) can be written. Doing the same for the
 full two dimensional case yields\\
 %
@@ -6018,7 +6018,7 @@ This gives
 \end{align*}
 %
 The coefficients $c_{i+m,j+n}$ are finally being set according to the
-appropriate order of discretization. The coefficients can be found in the file
+appropriate order of discretisation. The coefficients can be found in the file
 \texttt{petsc\_laplace.cxx}.
 
 
@@ -6032,8 +6032,9 @@ the grid-point and the first ghost point (see figure \ref{fig:lapl_inv_mesh}).
 \begin{figure}[htbp!]
     \centering \includegraphics[width=0.3\paperwidth,
     keepaspectratio]{figs/5PointStencilMesh.pdf}
-\caption{The mesh: The inner boundary points in $x$ are colored in orange, whilst the
-    outer boundary points in $z$ are colored gray. Inner points are colored
+\caption{The mesh: The inner boundary points in $x$ are coloured in orange, 
+whilst the
+    outer boundary points in $z$ are coloured gray. Inner points are coloured
 blue.}
 %
 \label{fig:lapl_inv_mesh}
@@ -6047,11 +6048,11 @@ figure \ref{fig:lapl_inv_mesh_w_stencil}.
     \centering \includegraphics[width=0.3\paperwidth,
     keepaspectratio]{figs/5PointStencilMeshWithStencil.pdf}
     \caption{The mesh with a stencil in point $f_{22}$: The point under
-        consideration is colored blue. The point located $+1$ in $z$ direction
-        (\texttt{zp}) is colored yellow and the point located $-1$ in $z$
-        direction (\texttt{zm}) is colored green. The point located $+1$ in $x$
-        direction (\texttt{xp}) is colored purple and the point located $-1$ in
-    $x$ direction (\texttt{xm}) is colored red.  }
+        consideration is coloured blue. The point located $+1$ in $z$ direction
+        (\texttt{zp}) is coloured yellow and the point located $-1$ in $z$
+        direction (\texttt{zm}) is coloured green. The point located $+1$ in $x$
+        direction (\texttt{xp}) is coloured purple and the point located $-1$ in
+    $x$ direction (\texttt{xm}) is coloured red.  }
 %
 \label{fig:lapl_inv_mesh_w_stencil}
 %
@@ -6059,7 +6060,7 @@ figure \ref{fig:lapl_inv_mesh_w_stencil}.
 %
 We want to solve a problem on the form $A\ve{x}=\ve{b}$. We will order $\ve{x}$
 in a row-major order (so that $z$ is varying faster than $x$). Further, we put
-the inner $x$ boudary points first in $\ve{x}$, and the outer $x$ boundary
+the inner $x$ boundary points first in $\ve{x}$, and the outer $x$ boundary
 points last in $\ve{x}$. The matrix problem for our mesh can then be written
 like in figure \ref{fig:lapl_inv_matrix}.
 %
@@ -7321,7 +7322,7 @@ where we have defined
 G^j =& \frac{1}{J}\deriv{}{u^i}\L(Jg^{ij}\R)
 \end{align*}
 %
-\textbf{not} to be confused with the Cristoffel symbol of the second kind (see
+\textbf{not} to be confused with the Christoffel symbol of the second kind (see
 the coordinates manual for more details).
 %
 
@@ -8031,7 +8032,7 @@ SuperLU\_dist we get:
 So after the initial setup and factorisation, the system is solved in one
 iteration using the LU direct solve.
 
-As a test of re-using the preconditoner, the coefficients are then modified:
+As a test of re-using the preconditioner, the coefficients are then modified:
 %
 \begin{lstlisting}[numbers=none]
   inv->setCoefs(Field3D(2.0),Field3D(0.1));
@@ -8214,7 +8215,7 @@ Unit tests can be run using the \file{src/unit\_tests} Python script. This
 searches through the directories looking for an executable script called
 \file{unit\_test}, runs them, and collates the results. Not many tests are
 currently available as much of the code is too tightly coupled. If done
-correctly, the unit tests should describe and check the behavior of each part
+correctly, the unit tests should describe and check the behaviour of each part
 of the code, and hopefully the number of these will increase over time.
 %
 \index{Test suite}
@@ -9376,11 +9377,11 @@ function.}
 
 
 
-\section{Derivates of the fourier transform}
+\section{Derivatives of the Fourier transform}
 %
 \label{sec:deriv_of_FT}
 %
-By using the definition of the fourier transformed, we have
+By using the definition of the Fourier transformed, we have
 %
 \begin{align*}
     F(x,y,\xi) = \defi{-\infty}{\infty}{f(x,y,z)\exp\L(-2\pi iz\xi\R)}{z}
@@ -9404,24 +9405,24 @@ this gives
 \end{align*}
 %
 where we have used that $f(x,y,\pm\infty)=0$ in order to have a well defined
-fourier transform. This means that
+Fourier transform. This means that
 %
 \begin{align*}
     \partial_z^n F(x,y,\xi) = (2\pi i \xi)^n F(x,y,\xi)
 \end{align*}
 %
 In our case, we are dealing with periodic boundary conditions. Strictly
-speaking, the fourier transform does not exist in such cases, but it is
-possible to define a fourier transform in the limit which in the end lead to
-the fourier series
+speaking, the Fourier transform does not exist in such cases, but it is
+possible to define a Fourier transform in the limit which in the end lead to
+the Fourier series
 %
 \footnote{For more detail see Bracewell, R. N. - The Fourier Transform and Its
 Applications 3rd Edition chapter $10$}
 %
-By discretizing the spatial domain, it is no longer possible to represent the
-infinite amount of fourier modes, but only $N+1$ number of modes, where $N$ is
+By discretising the spatial domain, it is no longer possible to represent the
+infinite amount of Fourier modes, but only $N+1$ number of modes, where $N$ is
 the number of points (this includes the modes with negative frequencies, and
-the zeroth offset mode). For the discrete fourier transform, we have
+the zeroth offset mode). For the discrete Fourier transform, we have
 %
 \begin{align}
     F(x,y)_{k} = \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp\L(\frac{-2\pi i k
@@ -9443,7 +9444,7 @@ $z_Z = Z \text{d}z$. As our domain goes from $[0, 2\pi[$, we have that (since
     Z\text{d}z\R) = \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp\L( - i k z_Z\R)
 \end{align*}
 %
-The discrete verison of equation (\ref{eq:f_derivative}) thus gives
+The discrete version of equation (\ref{eq:f_derivative}) thus gives
 %
 \begin{align*}
     \partial_z^n F(x,y)_k = (i k)^n F(x,y)_k
