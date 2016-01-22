@@ -19,6 +19,13 @@
 
 LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt)
   : LaplaceXZ(m, opt), mesh(m), coefs_set(false) {
+  /* Constructor: LaplaceXZpetsc
+   * Purpose:     - Setting inversion solver options
+   *              - Setting the solver method
+   *              - Setting the preconditioner
+   *              - Allocating memory to the matrix A (not expanded in memory)
+   *              - Allocating memory to the vectors x and b in Ax=b
+   */
 
   if(opt == NULL) {
     // If no options supplied, use default
@@ -159,18 +166,28 @@ LaplaceXZpetsc::~LaplaceXZpetsc() {
 }
 
 void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
+  /* Function: LaplaceXZpetsc::setCoefs
+   * Purpose:  - Set the matrix coefficients in the matrix MatA (member data)
+   *             in Ax=b
+   *             NOTE: Do not confuse the matrix A with the input coefficient A
+   *                   referring to A in div(A grad_perp(B)) + Bf = b
+   *
+   * Input
+   * Ain       - The A coefficient in div(A grad_perp(B)) + Bf = b
+   * Bin       - The B coefficient in div(A grad_perp(B)) + Bf = b
+   */
   Timer timer("invert");
   // Set coefficients
 
-  // Shift coefficients into orthogonal X-Z coordinates
   Field3D A = Ain;
   Field3D B = Bin;
+  // Shift coefficients into orthogonal X-Z coordinates
   if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
     // Shift in Z using FFT
     A = Ain.shiftZ(true); // Shift into real space
     B = Bin.shiftZ(true);
   }
-  
+
   // Each Y slice is handled as a separate set of matrices and KSP context
   for(vector<YSlice>::iterator it = slice.begin(); it != slice.end(); it++) {
     // Get Y index
@@ -236,7 +253,7 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
         // Wrap around z-1 and z+1 indices
         int zminus = (z - 1 + (mesh->ngz-1)) % (mesh->ngz-1);
         int zplus = (z + 1) % (mesh->ngz-1);
-        
+
         // Metrics on z+1/2 boundary
         Acoef = 0.5*(A(x,y,z) + A(x,y,zplus));
 
@@ -349,21 +366,34 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
 }
 
 Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
+  /* Function: LaplaceXZpetsc::solve
+   * Purpose:  - Set the values of b in  Ax=b
+   *           - Set the initial guess x0, and use this for x in  Ax=b
+   *           - Solve Ax=b for x
+   *           - Recast x to a Field3D
+   *
+   * Input
+   * bin       - The b to be used in Ax=b
+   * x0in      - The initial guess x0 to be used in Ax=b
+   *
+   * Output
+   * result    - The solved x (returned as a Field3D) in the matrix problem Ax=b
+   */
   if(!coefs_set) {
     throw BoutException("LaplaceXZpetsc: solve called before setCoefs");
   }
 
   Timer timer("invert");
 
-  // Shift b into orthogonal X-Z coordinates
   Field3D b = bin;
+  // Shift b into orthogonal X-Z coordinates
   if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
     // Shift in Z using FFT
     b = bin.shiftZ(true); // Shift into real space
   }
 
-  // Shift x0 into orthogonal X-Z coordinates
   Field3D x0 = x0in;
+  // Shift x0 into orthogonal X-Z coordinates
   if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
     // Shift in Z using FFT
     x0 = x0in.shiftZ(true); // Shift into real space
@@ -399,6 +429,7 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
       }
     }
 
+    // Set the inner points
     for(int x=mesh->xstart;x<= mesh->xend;x++) {
       for(int z=0; z < mesh->ngz-1; z++) {
         PetscScalar val = x0(x,y,z);
