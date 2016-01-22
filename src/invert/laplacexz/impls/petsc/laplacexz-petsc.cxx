@@ -567,16 +567,11 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
   Timer timer("invert");
 
   Field3D b = bin;
-  // Shift b into orthogonal X-Z coordinates
+  Field3D x0 = x0in;
+  // Shift x0 and b into orthogonal X-Z coordinates
   if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
     // Shift in Z using FFT
     b = bin.shiftZ(true); // Shift into real space
-  }
-
-  Field3D x0 = x0in;
-  // Shift x0 into orthogonal X-Z coordinates
-  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
-    // Shift in Z using FFT
     x0 = x0in.shiftZ(true); // Shift into real space
   }
 
@@ -668,7 +663,7 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
 
     // Outer X boundary (see note about BC in LaplaceXZ constructor)
     if(mesh->lastX()) {
-      if (inner_boundary_flags & INVERT_AC_GRAD){
+      if (outer_boundary_flags & INVERT_AC_GRAD){
         // Neumann 0
         for(int z=0; z < mesh->ngz-1; z++) {
           // Setting the initial guess x0
@@ -682,7 +677,7 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
           ind++;
         }
       }
-      else if (inner_boundary_flags & INVERT_SET){
+      else if (outer_boundary_flags & INVERT_SET){
         // Setting BC from x0
         for(int z=0; z < mesh->ngz-1; z++) {
           // Setting the initial guess x0
@@ -696,7 +691,7 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
           ind++;
         }
       }
-      else if (inner_boundary_flags & INVERT_RHS){
+      else if (outer_boundary_flags & INVERT_RHS){
         // Setting BC from b
         for(int z=0; z < mesh->ngz-1; z++) {
           // Setting the initial guess x0
