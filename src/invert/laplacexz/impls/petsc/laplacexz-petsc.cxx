@@ -32,6 +32,23 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt)
     opt = Options::getRoot()->getSection("laplacexz");
   }
 
+  // Getting the boundary flags
+  OPTION(opt, inner_boundary_flags, 0);
+  OPTION(opt, outer_boundary_flags, 0);
+  #ifdef CHECK
+    // Checking flags are set to something which is not implemented
+    // This is done binary (which is possible as each flag is a power of 2)
+    if ( inner_boundary_flags & ~implemented_boundary_flags ) {
+      throw BoutException("Attempted to set LaplaceXZ inversion boundary flag that is not implemented in petsc_laplace.cxx");
+    }
+    if ( outer_boundary_flags & ~implemented_boundary_flags ) {
+      throw BoutException("Attempted to set LaplaceXZ inversion boundary flag that is not implemented in petsc_laplace.cxx");
+    }
+    if(mesh->periodicX) {
+      throw BoutException("LaplacePetsc does not work with periodicity in the x direction (mesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
+      }
+  #endif
+
   OPTION(opt, reuse_limit, 100);
   reuse_count = reuse_limit + 1; // So re-calculates first time
 
@@ -176,6 +193,16 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
    * Ain       - The A coefficient in div(A grad_perp(B)) + Bf = b
    * Bin       - The B coefficient in div(A grad_perp(B)) + Bf = b
    */
+  #ifdef CHECK
+    // Checking flags are set to something which is not implemented
+    // This is done binary (which is possible as each flag is a power of 2)
+    if ( inner_boundary_flags & ~implemented_boundary_flags ) {
+      throw BoutException("Attempted to set LaplaceXZ inversion boundary flag that is not implemented in petsc_laplace.cxx");
+    }
+    if ( outer_boundary_flags & ~implemented_boundary_flags ) {
+      throw BoutException("Attempted to set LaplaceXZ inversion boundary flag that is not implemented in petsc_laplace.cxx");
+    }
+  #endif
   Timer timer("invert");
   // Set coefficients
 
