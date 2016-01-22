@@ -291,20 +291,66 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
     MatGetOwnershipRange( it->MatA, &Istart, &Iend );
 
     ////////////////////////////////////////////////
-    // Inner X boundary
+    // Inner X boundary (see note about BC in LaplaceXZ constructor)
     int row = Istart;
     if(mesh->firstX()) {
-      // Neumann on inner X boundary
+      if (inner_boundary_flags & INVERT_AC_GRAD){
+        // Neumann 0
+        /* NOTE: Sign of the elements are opposite of what one might expect,
+         *       see note about BC in LaplaceXZ constructor for more details
+         */
+        for(int z=0; z < mesh->ngz-1; z++) {
+          PetscScalar val = 1.0;
+          MatSetValues(it->MatA,1,&row,1,&row,&val,INSERT_VALUES);
 
-      for(int z=0; z < mesh->ngz-1; z++) {
-        PetscScalar val = 1.0;
-        MatSetValues(it->MatA,1,&row,1,&row,&val,INSERT_VALUES);
+          int col = row + (mesh->ngz-1); // +1 in X
+          val = -1.0;
+          MatSetValues(it->MatA,1,&row,1,&col,&val,INSERT_VALUES);
 
-        int col = row + (mesh->ngz-1); // +1 in X
-        val = -1.0;
-        MatSetValues(it->MatA,1,&row,1,&col,&val,INSERT_VALUES);
+          row++;
+        }
+      }
+      else if(inner_boundary_flags & INVERT_SET){
+        // Setting BC from x0
+        for(int z=0; z < mesh->ngz-1; z++) {
+          PetscScalar val = 1.0;
+          MatSetValues(it->MatA,1,&row,1,&row,&val,INSERT_VALUES);
 
-        row++;
+          int col = row + (mesh->ngz-1); // +1 in X
+          val = 0.0;
+          MatSetValues(it->MatA,1,&row,1,&col,&val,INSERT_VALUES);
+
+          row++;
+        }
+      }
+      else if(inner_boundary_flags & INVERT_RHS){
+        // Setting BC from b
+        for(int z=0; z < mesh->ngz-1; z++) {
+          PetscScalar val = 1.0;
+          MatSetValues(it->MatA,1,&row,1,&row,&val,INSERT_VALUES);
+
+          int col = row + (mesh->ngz-1); // +1 in X
+          val = 0.0;
+          MatSetValues(it->MatA,1,&row,1,&col,&val,INSERT_VALUES);
+
+          row++;
+        }
+      }
+      else{
+        // Default: Neumann on inner x boundary
+        /* NOTE: Sign of the elements are opposite of what one might expect,
+         *       see note about BC in LaplaceXZ constructor for more details
+         */
+        for(int z=0; z < mesh->ngz-1; z++) {
+          PetscScalar val = 1.0;
+          MatSetValues(it->MatA,1,&row,1,&row,&val,INSERT_VALUES);
+
+          int col = row + (mesh->ngz-1); // +1 in X
+          val = -1.0;
+          MatSetValues(it->MatA,1,&row,1,&col,&val,INSERT_VALUES);
+
+          row++;
+        }
       }
     }
 
@@ -397,21 +443,63 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
     }
 
     ////////////////////////////////////////////////
-    // Outer X boundary
-
+    // Outer X boundary (see note about BC in LaplaceXZ constructor)
     if(mesh->lastX()) {
-      // Dirichlet on outer X boundary
-      PetscScalar val = 0.5;
+      if (outer_boundary_flags & INVERT_AC_GRAD){
+        // Neumann 0
+        for(int z=0; z < mesh->ngz-1; z++) {
+          PetscScalar val = 1.0;
+          MatSetValues(it->MatA,1,&row,1,&row,&val,INSERT_VALUES);
 
-      for(int z=0; z < mesh->ngz-1; z++) {
-        MatSetValues(it->MatA,1,&row,1,&row,&val,INSERT_VALUES);
-        int col = row - (mesh->ngz-1); // -1 in X
-        MatSetValues(it->MatA,1,&row,1,&col,&val,INSERT_VALUES);
+          int col = row - (mesh->ngz-1); // -1 in X
+          val = -1.0;
+          MatSetValues(it->MatA,1,&row,1,&col,&val,INSERT_VALUES);
 
-        row++;
+          row++;
+        }
+      }
+      else if (outer_boundary_flags & INVERT_SET){
+        // Setting BC from x0
+        for(int z=0; z < mesh->ngz-1; z++) {
+          PetscScalar val = 1.0;
+          MatSetValues(it->MatA,1,&row,1,&row,&val,INSERT_VALUES);
+
+          int col = row - (mesh->ngz-1); // -1 in X
+          val = 0.0;
+          MatSetValues(it->MatA,1,&row,1,&col,&val,INSERT_VALUES);
+
+          row++;
+        }
+      }
+      else if (outer_boundary_flags & INVERT_RHS){
+        // Setting BC from b
+        for(int z=0; z < mesh->ngz-1; z++) {
+          PetscScalar val = 1.0;
+          MatSetValues(it->MatA,1,&row,1,&row,&val,INSERT_VALUES);
+
+          int col = row - (mesh->ngz-1); // -1 in X
+          val = 0.0;
+          MatSetValues(it->MatA,1,&row,1,&col,&val,INSERT_VALUES);
+
+          row++;
+        }
+      }
+      else{
+        //Default: Dirichlet on outer X boundary
+        PetscScalar val = 0.5;
+
+        for(int z=0; z < mesh->ngz-1; z++) {
+          MatSetValues(it->MatA,1,&row,1,&row,&val,INSERT_VALUES);
+
+          int col = row - (mesh->ngz-1); // -1 in X
+          MatSetValues(it->MatA,1,&row,1,&col,&val,INSERT_VALUES);
+
+          row++;
+        }
       }
     }
-    ASSERT1(row == Iend);
+
+    ASSERT1(row == Iend); // Check that row is currently on the last row
 
     // Assemble Matrix
     MatAssemblyBegin( it->MatA, MAT_FINAL_ASSEMBLY );
@@ -510,15 +598,59 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
     // Starting index
     int ind = Istart;
 
-    // Inner X boundary (Neumann)
+    // Inner X boundary (see note about BC in LaplaceXZ constructor)
     if(mesh->firstX()) {
-      for(int z=0; z < mesh->ngz-1; z++) {
-        PetscScalar val = x0(mesh->xstart-1,y,z);
-        VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
+      if (inner_boundary_flags & INVERT_AC_GRAD){
+        // Neumann 0
+        for(int z=0; z < mesh->ngz-1; z++) {
+          // Setting the initial guess x0
+          PetscScalar val = x0(mesh->xstart-1,y,z);
+          VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
 
-        val = x0(mesh->xstart-1,y,z) - x0(mesh->xstart,y,z);
-        VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
-        ind++;
+          // Setting the solution b
+          val = 0.0;
+          VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+          ind++;
+        }
+      }
+      else if (inner_boundary_flags & INVERT_SET){
+        // Setting BC from x0
+        for(int z=0; z < mesh->ngz-1; z++) {
+          // Setting the initial guess x0
+          PetscScalar val = x0(mesh->xstart-1,y,z);
+          VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
+
+          // Setting the solution b
+          val = x0(mesh->xstart,y,z);
+          VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+          ind++;
+        }
+      }
+      else if (inner_boundary_flags & INVERT_RHS){
+        // Setting BC from b
+        for(int z=0; z < mesh->ngz-1; z++) {
+          // Setting the initial guess x0
+          PetscScalar val = x0(mesh->xstart-1,y,z);
+          VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
+
+          // Setting the solution b
+          val = b(mesh->xstart,y,z);
+          VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+          ind++;
+        }
+      }
+      else{
+        // Default: Neumann on inner x boundary
+        for(int z=0; z < mesh->ngz-1; z++) {
+          // Setting the initial guess x0
+          PetscScalar val = x0(mesh->xstart-1,y,z);
+          VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
+
+          // Setting the solution b
+          val = x0(mesh->xstart-1,y,z) - x0(mesh->xstart,y,z);
+          VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+          ind++;
+        }
       }
     }
 
@@ -534,16 +666,63 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
       }
     }
 
-    // Outer X boundary (Dirichlet)
+    // Outer X boundary (see note about BC in LaplaceXZ constructor)
     if(mesh->lastX()) {
-      for(int z=0; z < mesh->ngz-1; z++) {
-        PetscScalar val = x0(mesh->xend+1,y,z);
-        VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
+      if (inner_boundary_flags & INVERT_AC_GRAD){
+        // Neumann 0
+        for(int z=0; z < mesh->ngz-1; z++) {
+          // Setting the initial guess x0
+          PetscScalar val = x0(mesh->xend+1,y,z);
+          VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
 
-        val = 0.5*(x0(mesh->xend,y,z) + x0(mesh->xend+1,y,z));
-        VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+          // Setting the solution b
+          val = 0.0;
+          VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
 
-        ind++;
+          ind++;
+        }
+      }
+      else if (inner_boundary_flags & INVERT_SET){
+        // Setting BC from x0
+        for(int z=0; z < mesh->ngz-1; z++) {
+          // Setting the initial guess x0
+          PetscScalar val = x0(mesh->xend+1,y,z);
+          VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
+
+          // Setting the solution b
+          val = x0(mesh->xend+1,y,z);
+          VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+
+          ind++;
+        }
+      }
+      else if (inner_boundary_flags & INVERT_RHS){
+        // Setting BC from b
+        for(int z=0; z < mesh->ngz-1; z++) {
+          // Setting the initial guess x0
+          PetscScalar val = x0(mesh->xend+1,y,z);
+          VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
+
+          // Setting the solution b
+          val = b(mesh->xend+1,y,z);
+          VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+
+          ind++;
+        }
+      }
+      else{
+        //Default: Dirichlet on outer X boundary
+        for(int z=0; z < mesh->ngz-1; z++) {
+          // Setting the initial guess x0
+          PetscScalar val = x0(mesh->xend+1,y,z);
+          VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
+
+          // Setting the solution b
+          val = 0.5*(x0(mesh->xend,y,z) + x0(mesh->xend+1,y,z));
+          VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+
+          ind++;
+        }
       }
     }
 
