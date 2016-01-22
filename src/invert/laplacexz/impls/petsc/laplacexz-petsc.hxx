@@ -77,8 +77,8 @@ private:
   bool coefs_set; ///< Have coefficients been set?
 
   const int INVERT_AC_GRAD  = 2;  // Use zero neumann (NOTE: AC is a misnomer)
-  const int INVERT_SET      = 16; // Set boundary to value
-  const int INVERT_RHS      = 32; // Use input value in RHS boundary
+  const int INVERT_SET      = 16; // Set boundary to x0 value
+  const int INVERT_RHS      = 32; // Set boundary to b value
   #ifdef CHECK
     // Currently implemented flags
     int implemented_boundary_flags =   INVERT_AC_GRAD

@@ -26,6 +26,72 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt)
    *              - Allocating memory to the matrix A (not expanded in memory)
    *              - Allocating memory to the vectors x and b in Ax=b
    */
+  /* A note about the boundary condition:
+   * ====================================
+   * NOTE: All boundaries are currently implemented half between grid points
+   *
+   * We set the inner boundary first in the x-array in Ax=b, and the outer
+   * boundary last in the x-array (z is periodic)
+   *
+   * The problem at the inner boundaries will be set by
+   *
+   * A_{0,j}x_{0,j} + A_{1,j}x_{1,j} = b_{0,j}
+   *
+   * Where the indices denote the indicies in the physical grid, and NOT in
+   * the matrix. I.e. the first index refers to the x-index in the grid, and
+   * the second index refers to the z-index in the grid.
+   * The problem at the outer boundaries will be set by
+   *
+   * A_{xend,j}x_{xend,j} + A_{xend+1,j}x_{xend+1,j} = b_{xend_1,j}
+   *
+   * Determining the boundary conditions:
+   * ====================================
+   * Using x_BC at the value at the boundary, and k as the x index
+   *
+   * 2nd order dirichlet:
+   * --------------------
+   * 0.5*x_{k,j} + 0.5*x_{k+1,j} = x_BC
+   * x_BC will be calculated from the grid points of the input "in" (given to
+   * LaplaceXZpetsc::solve) so
+   * 0.5*x_{k,j} + 0.5*x_{k+1,j} = 0.5*in_{k,j} + 0.5*in_{k+1,j}
+   * which we will write as
+   *
+   * x_{k,j} + x_{k+1,j} = in_{k,j} + in_{k+1,j}
+   *
+   * 2nd order neumann:
+   * --------------------
+   * -(1/dx)*(x_{k,j}) + (1/dx)*x_{k+1,j} = x_BC
+   * x_BC will be calculated from the grid points of the input "in" (given to
+   * LaplaceXZpetsc::solve) so
+   *   -(1/dx)*(x_{k,j}) + (1/dx)*x_{k+1,j}
+   * = -(1/dx)*(in_{k,j}) + (1/dx)*in_{k+1,j}
+   * which we will write as
+   *
+   * x_{0,j} - x_{1,j} = in_{0,j} - in_{1,j}
+   * - x_{end-1,j} + x_{end,j} = - in_{end-1,j} + in_{end,j}
+   *
+   * Notice the change of sign for the inner boundary, which ensures that the
+   * boundary part of main diagonal in the matrix A remains positive
+   *
+   * Specification through ghost point:
+   * ----------------------------------
+   * If options are set to use the ghost points of the input, we simply use
+   * x_{k,j} = in_{k,j}
+   *
+   * Defualt behaviour:
+   * =================-
+   * If the boundary flags are not:
+   * - xin will be set to 2nd order neumann as described above
+   * - xout will be set to 2nd order dirichlet as described above
+   *
+   * Current implementations:
+   * ========================
+   * INVERT_AC_GRAD - As "2nd order neumann", but with 0 at the RHS
+   * INVERT_SET     - As "Specifiaction through ghost points", where "in" is
+   *                  given by x0
+   * INVERT_RHS     - As "Specifiaction through ghost points", where "in" is
+   *                  given by b
+   */
 
   if(opt == NULL) {
     // If no options supplied, use default
@@ -193,6 +259,7 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
    * Ain       - The A coefficient in div(A grad_perp(B)) + Bf = b
    * Bin       - The B coefficient in div(A grad_perp(B)) + Bf = b
    */
+
   #ifdef CHECK
     // Checking flags are set to something which is not implemented
     // This is done binary (which is possible as each flag is a power of 2)
@@ -225,7 +292,6 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
 
     ////////////////////////////////////////////////
     // Inner X boundary
-
     int row = Istart;
     if(mesh->firstX()) {
       // Neumann on inner X boundary
