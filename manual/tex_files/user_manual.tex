@@ -4995,6 +4995,44 @@ BOUT++ with \code{ixseps1 = ixseps2}.}
 \subsubsection{Implementations}
 %
 
+In BOUT++ each processor has a logically rectangular domain, so any branch cuts
+needed for X-point geometry (see figure~\ref{fig:topology_schematic}) must be
+at processor boundaries. 
+
+In the standard ``bout'' mesh (\texttt{src/mesh/impls/bout/}),
+the communication is controlled by the variables
+\begin{lstlisting}
+int UDATA_INDEST, UDATA_OUTDEST, UDATA_XSPLIT;
+int DDATA_INDEST, DDATA_OUTDEST, DDATA_XSPLIT;
+int IDATA_DEST, ODATA_DEST;
+\end{lstlisting}
+These control the behavior of the communications as shown in figure~\ref{fig:boutmesh-comms}.
+%
+\begin{figure}[htbp!]
+\centering \includegraphics[width=0.5\textwidth,
+keepaspectratio]{figs/boutmesh-comms.pdf}
+\caption{Communication of guard cells in BOUT++. Boundaries in X have only one neighbour each, but boundaries in Y can be split into two, allowing branch cuts}
+%
+\label{fig:boutmesh-comms}
+%
+\end{figure}
+%
+In the Y direction, each boundary region ({\bf U}p and {\bf D}own in Y) 
+can be split into two, with \code{0 <= x < UDATA\_XSPLIT} going to
+the processor index \code{UDATA\_INDEST}, and \code{UDATA\_INDEST <= x < ngx}
+going to \code{UDATA\_OUTDEST}. Similarly for the Down boundary.
+Since there are no branch-cuts in the X direction, there is just one
+destination for the {\bf I}nner and {\bf O}uter boundaries.
+In all cases a negative processor number means that there's a domain boundary so no communication is needed.
+
+The communication control variables are set in the \texttt{topology()} function, in \texttt{src/mesh/impls/bout/boutmesh.cxx}
+starting around line 2056.
+First the function \texttt{default\_connections()} sets the topology to be a rectangle
+
+
+To change the topology, the function \texttt{set\_connection} checks that the requested branch cut is on a processor boundary,
+and changes the communications consistently so that communications are two-way and there are no ``dangling'' communications.
+
 
 
 \subsection{3D variables}
