@@ -262,28 +262,26 @@ This section will go through the following steps:
 
 \subsection{Obtaining BOUT++}
 %
-BOUT++ is now hosted publicly on github
-(\url{http://github.com/bendudson/BOUT}), and includes instructions on
-downloading and installing BOUT++ in wiki pages. This website also has a list
-of current  issues and history of changes. To obtain a copy of the latest
-version, run
+BOUT++ is now hosted publicly on github, consisting of two repositories:
+{\url{http://github.com/boutproject/BOUT}} is a stable repository which is only
+occasionally updated. Most development is done in the development repository
+{\url{http://github.com/boutproject/BOUT-dev}}. Most users are recommended to use the
+BOUT-dev repository, as it may contain important bug fixes.
+To obtain a copy of the latest version, run
 %
 \index{Github}
 %
 \begin{verbatim}
-$ git clone git://github.com/bendudson/BOUT.git
+$ git clone git://github.com/boutproject/BOUT-dev.git
 \end{verbatim}
 %
-which will create a directory \texttt{BOUT} containing the code. To get the
-latest changes later, go into the  \texttt{BOUT} directory and run
+which will create a directory \texttt{BOUT-dev} containing the code. To get the
+latest changes later, go into the  \texttt{BOUT-dev} directory and run
 %
 \begin{verbatim}
 $ git pull
 \end{verbatim}
 %
-For more details on using git to work with BOUT++, see the developer's manual.
-
-
 
 \subsection{Installing an MPI compiler}
 %
