@@ -7,6 +7,7 @@
 #include <utils.hxx>
 #include <boutexception.hxx>
 #include <msg_stack.hxx>
+#include <bout/assert.hxx>
 
 #include <cmath>
 
@@ -168,9 +169,239 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
   }else {
     /*!
      * Calculate Jacobian using finite differences.
-     * NOTE: Slow!
+     * 
      */
-    MatCreateAIJ(BoutComm::get(),
+
+    bool coloring;
+    OPTION(options, coloring, true);
+    if(coloring) {
+      // Use matrix coloring to calculate Jacobian
+
+      //////////////////////////////////////////////////
+      // Get the local indices by starting at 0
+      Field3D index = globalIndex(0);
+
+      //////////////////////////////////////////////////
+      // Pre-allocate PETSc storage
+
+      int localN = getLocalN(); // Number of rows on this processor
+      int n2d = f2d.size();
+      int n3d = f3d.size();
+      
+      PetscInt *d_nnz, *o_nnz;
+      PetscMalloc( (localN)*sizeof(PetscInt), &d_nnz );
+      PetscMalloc( (localN)*sizeof(PetscInt), &o_nnz );
+
+      // Set values for most points
+      if(mesh->ngz > 2) {
+        // A 3D mesh, so need points in Z
+
+        for(int i=0;i<localN;i++) {
+          // Non-zero elements on this processor
+          d_nnz[i] = 7*n3d + 5*n2d; // Star pattern in 3D
+          // Non-zero elements on neighboring processor
+          o_nnz[i] = 0;
+        }
+      }else {
+        // Only one point in Z
+        
+        for(int i=0;i<localN;i++) {
+          // Non-zero elements on this processor
+          d_nnz[i] = 5*(n3d+n2d); // Star pattern in 2D
+          // Non-zero elements on neighboring processor
+          o_nnz[i] = 0;
+        }
+      }
+
+      // X boundaries
+      if(mesh->firstX()) {
+        // Lower X boundary
+        for(int y=mesh->ystart;y<=mesh->yend;y++) {
+          for(int z=0;z<mesh->ngz-1;z++) {
+            int localIndex = index(mesh->xstart, y, z);
+            ASSERT2( (localIndex >= 0) && (localIndex < localN) );
+            if(z == 0) {
+              // All 2D and 3D fields
+              for(int i=0;i<n2d+n3d;i++)
+                d_nnz[localIndex + i] -= (n3d + n2d);
+            }else {
+              // Only 3D fields
+              for(int i=0;i<n3d;i++)
+                d_nnz[localIndex + i] -= (n3d + n2d);
+            }
+          }
+        }
+      }else {
+        // On another processor
+        for(int y=mesh->ystart;y<=mesh->yend;y++) {
+          for(int z=0;z<mesh->ngz-1;z++) {
+            int localIndex = index(mesh->xstart, y, z);
+            ASSERT2( (localIndex >= 0) && (localIndex < localN) );
+            if(z == 0) {
+              // All 2D and 3D fields
+              for(int i=0;i<n2d+n3d;i++) {
+                d_nnz[localIndex+i] -= (n3d + n2d);
+                o_nnz[localIndex+i] += (n3d + n2d);
+              }
+            }else {
+              // Only 3D fields
+              for(int i=0;i<n3d;i++) {
+                d_nnz[localIndex+i] -= (n3d + n2d);
+                o_nnz[localIndex+i] += (n3d + n2d);
+              }
+            }
+          }
+        }
+      }
+
+      if(mesh->lastX()) {
+        // Upper X boundary
+        for(int y=mesh->ystart;y<=mesh->yend;y++) {
+          for(int z=0;z<mesh->ngz-1;z++) {
+            int localIndex = index(mesh->xend, y, z);
+            ASSERT2( (localIndex >= 0) && (localIndex < localN) );
+            if(z == 0) {
+              // All 2D and 3D fields
+              for(int i=0;i<n2d+n3d;i++)
+                d_nnz[localIndex + i] -= (n3d + n2d);
+            }else {
+              // Only 3D fields
+              for(int i=0;i<n3d;i++)
+                d_nnz[localIndex + i] -= (n3d + n2d);
+            }
+          }
+        }
+      }else {
+        // On another processor
+        for(int y=mesh->ystart;y<=mesh->yend;y++) {
+          for(int z=0;z<mesh->ngz-1;z++) {
+            int localIndex = index(mesh->xend, y, z);
+            ASSERT2( (localIndex >= 0) && (localIndex < localN) );
+            if(z == 0) {
+              // All 2D and 3D fields
+              for(int i=0;i<n2d+n3d;i++) {
+                d_nnz[localIndex+i] -= (n3d + n2d);
+                o_nnz[localIndex+i] += (n3d + n2d);
+              }
+            }else {
+              // Only 3D fields
+              for(int i=0;i<n3d;i++) {
+                d_nnz[localIndex+i] -= (n3d + n2d);
+                o_nnz[localIndex+i] += (n3d + n2d);
+              }
+            }
+          }
+        }
+      }
+      
+      // Y boundaries
+  
+      for(int x=mesh->xstart; x <=mesh->xend; x++) {
+        // Default to no boundary
+        // NOTE: This assumes that communications in Y are to other
+        //   processors. If Y is communicated with this processor (e.g. NYPE=1)
+        //   then this will result in PETSc warnings about out of range allocations
+
+        // z = 0 case
+        int localIndex = index(x, mesh->ystart, 0);
+        // All 2D and 3D fields
+        for(int i=0;i<n2d+n3d;i++) {
+          //d_nnz[localIndex+i] -= (n3d + n2d);
+          o_nnz[localIndex+i] += (n3d + n2d);
+        }
+        
+        for(int z=1;z<mesh->ngz-1;z++) {
+          localIndex = index(x, mesh->ystart, z);
+          
+          // Only 3D fields
+          for(int i=0;i<n3d;i++) {
+            //d_nnz[localIndex+i] -= (n3d + n2d);
+            o_nnz[localIndex+i] += (n3d + n2d);
+          }
+        }
+
+        // z = 0 case
+        localIndex = index(x, mesh->yend, 0);
+        // All 2D and 3D fields
+        for(int i=0;i<n2d+n3d;i++) {
+          //d_nnz[localIndex+i] -= (n3d + n2d);
+          o_nnz[localIndex+i] += (n3d + n2d);
+        }
+        
+        for(int z=1;z<mesh->ngz-1;z++) {
+          localIndex = index(x, mesh->yend, z);
+          
+          // Only 3D fields
+          for(int i=0;i<n3d;i++) {
+            //d_nnz[localIndex+i] -= (n3d + n2d);
+            o_nnz[localIndex+i] += (n3d + n2d);
+          }
+        }
+      }
+
+      for(RangeIterator it=mesh->iterateBndryLowerY(); !it.isDone(); it++) {
+        // A boundary, so no communication
+
+        // z = 0 case
+        int localIndex = index(it.ind, mesh->ystart, 0);
+        // All 2D and 3D fields
+        for(int i=0;i<n2d+n3d;i++) {
+          o_nnz[localIndex+i] -= (n3d + n2d);
+        }
+        
+        for(int z=1;z<mesh->ngz-1;z++) {
+          int localIndex = index(it.ind, mesh->ystart, z);
+          
+          // Only 3D fields
+          for(int i=0;i<n3d;i++) {
+            o_nnz[localIndex+i] -= (n3d + n2d);
+          }
+        }
+      }
+
+      for(RangeIterator it=mesh->iterateBndryUpperY(); !it.isDone(); it++) {
+        // A boundary, so no communication
+
+        // z = 0 case
+        int localIndex = index(it.ind, mesh->yend, 0);
+        // All 2D and 3D fields
+        for(int i=0;i<n2d+n3d;i++) {
+          o_nnz[localIndex+i] -= (n3d + n2d);
+        }
+        
+        for(int z=1;z<mesh->ngz-1;z++) {
+          int localIndex = index(it.ind, mesh->yend, z);
+          
+          // Only 3D fields
+          for(int i=0;i<n3d;i++) {
+            o_nnz[localIndex+i] -= (n3d + n2d);
+          }
+        }
+      }
+      
+      // Pre-allocate
+      MatMPIAIJSetPreallocation( Jmf, 0, d_nnz, 0, o_nnz );
+      MatSetUp(Jmf); 
+      
+      PetscFree( d_nnz );
+      PetscFree( o_nnz );
+      
+      // Determine which row/columns of the matrix are locally owned
+      int Istart, Iend;
+      MatGetOwnershipRange( Jmf, &Istart, &Iend );
+      
+      // Convert local into global indices
+      index += Istart;
+      
+      // Now communicate to fill guard cells
+      mesh->communicate(index);
+      
+      
+    }else {
+      // Brute force calculation
+      // NOTE: Slow!
+      
+      MatCreateAIJ(BoutComm::get(),
                  nlocal,nlocal,  // Local sizes
                  PETSC_DETERMINE, PETSC_DETERMINE, // Global sizes
                  3,   // Number of nonzero entries in diagonal portion of local submatrix
@@ -181,14 +412,15 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
 
 #ifdef BOUT_HAS_PETSC_3_3
     // Before 3.4
-    SNESSetJacobian(snes,Jmf,Jmf,SNESDefaultComputeJacobian,this);
+      SNESSetJacobian(snes,Jmf,Jmf,SNESDefaultComputeJacobian,this`);
 #else
-    SNESSetJacobian(snes,Jmf,Jmf,SNESComputeJacobianDefault,this);
+      SNESSetJacobian(snes,Jmf,Jmf,SNESComputeJacobianDefault,this);
 #endif
-
-    MatSetOption(Jmf,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_FALSE);
+    
+      MatSetOption(Jmf,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_FALSE);
+    }
   }
-
+  
   /////////////////////////////////////////////////////
   // Set tolerances
   BoutReal atol, rtol; // Tolerances for SNES solver

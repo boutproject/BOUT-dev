@@ -1107,6 +1107,109 @@ void Solver::save_derivs(BoutReal *dudata) {
   loop_vars(dudata, SAVE_DERIVS);
 }
 
+/*!
+ * Returns a Field3D containing the global indices
+ *
+ */
+const Field3D Solver::globalIndex(int localStart) {
+  Field3D index = -1; // Set to -1, indicating out of domain
+
+  int n2d = f2d.size();
+  int n3d = f3d.size();
+
+  int ind = localStart;
+
+  // Find how many boundary cells are evolving
+  int n2dbndry = 0;
+  for(i=0;i<n2d;i++) {
+    if(f2d[i].evolve_bndry)
+      ++n2dbndry;
+  }
+  int n3dbndry = 0;
+  for(i=0;i<n3d;i++) {
+    if(f3d[i].evolve_bndry)
+      n3dbndry++;
+  }
+
+  if(n2dbndry + n3dbndry > 0) {
+    // Some boundary points evolving
+    
+    // Inner X boundary
+    if(mesh->firstX() && !mesh->periodicX) {
+      for(int jx=0;jx<mesh->xstart;jx++)
+        for(int jy=mesh->ystart;jy<=mesh->yend;jy++) {
+          // Zero index contains 2D and 3D variables
+          index(jx, jy, 0) = ind;
+          ind += n2dbndry + n3dbndry;
+          for(int jz=1;jz<mesh->ngz-1; jz++) {
+            index(jx, jy, jz) = ind;
+            ind += n3dbndry;
+          }
+        }
+    }
+    
+    // Lower Y boundary region
+    for(RangeIterator xi = mesh->iterateBndryLowerY(); !xi.isDone(); xi++) {
+      for(int jy=0;jy<mesh->ystart;jy++) {
+        index(*xi, jy, 0) = ind;
+        ind += n2dbndry + n3dbndry;
+        for(int jz=1;jz<mesh->ngz-1; jz++) {
+          index(*xi, jy, jz) = ind;
+          ind += n3dbndry;
+        }
+      }
+    }
+  }
+  
+  // Bulk of points
+  for (int jx=mesh->xstart; jx <= mesh->xend; jx++)
+    for (int jy=mesh->ystart; jy <= mesh->yend; jy++) {
+      index(jx, jy, 0) = ind;
+      ind += n2d + n3d;
+      for(int jz=1;jz<mesh->ngz-1; jz++) {
+        index(jx, jy, jz) = ind;
+        ind += n3d;
+      }
+    }
+
+  if(n2dbndry + n3dbndry > 0) {
+    // Some boundary points evolving
+    
+    // Upper Y boundary condition
+    for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); xi++) {
+      for(int jy=mesh->yend+1;jy<mesh->ngy;jy++) {
+        index(*xi, jy, 0) = ind;
+        ind += n2dbndry + n3dbndry;
+        for(int jz=1;jz<mesh->ngz-1; jz++) {
+          index(*xi, jy, jz) = ind;
+          ind += n3dbndry;
+        }
+      }
+    }
+    
+    // Outer X boundary
+    if(mesh->lastX() && !mesh->periodicX) {
+      for(int jx=mesh->xend+1;jx<mesh->ngx;jx++)
+        for(int jy=mesh->ystart;jy<=mesh->yend;jy++) {
+          index(jx, jy, 0) = ind;
+          ind += n2dbndry + n3dbndry;
+          for(int jz=1;jz<mesh->ngz-1; jz++) {
+            index(jx, jy, jz) = ind;
+            ind += n3dbndry;
+          }
+        }
+    }
+  }
+  
+  // Should have included all evolving variables
+  ASSERT1(ind == localStart + getLocalN());
+  
+  // Now swap guard cells
+  mesh->communicate(index);
+  
+  return index;
+}
+
 /**************************************************************************
  * Running user-supplied functions
  **************************************************************************/

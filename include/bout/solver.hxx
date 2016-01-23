@@ -241,6 +241,9 @@ protected:
   void load_derivs(BoutReal *udata);
   int save_vars(BoutReal *udata);
   void save_derivs(BoutReal *dudata);
+
+  // 
+  const Field3D globalIndex(int localStart);
   
   BoutReal max_dt; ///< Maximum internal timestep
   
