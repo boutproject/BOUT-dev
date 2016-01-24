@@ -1286,11 +1286,12 @@ int Solver::run_convective(BoutReal t) {
     }else
       status = (*phys_conv)(t);
   }else {
-    // Return total
-    if(model) {
-      status = model->runRHS(t);
-    }else
-      status = (*phys_run)(t);
+    // Zero if not split
+    for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++)
+      *((*it).F_var) = 0.0;
+    for(vector< VarStr<Field2D> >::iterator it = f2d.begin(); it != f2d.end(); it++)
+      *((*it).F_var) = 0.0;
+    
   }
   post_rhs(t);
   
@@ -1315,11 +1316,11 @@ int Solver::run_diffusive(BoutReal t, bool linear) {
       status = (*phys_diff)(t);
     post_rhs(t);
   }else {
-    // Zero if not split
-    for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++)
-      *((*it).F_var) = 0.0;
-    for(vector< VarStr<Field2D> >::iterator it = f2d.begin(); it != f2d.end(); it++)
-      *((*it).F_var) = 0.0;
+    // Return total
+    if(model) {
+      status = model->runRHS(t);
+    }else
+      status = (*phys_run)(t);
   }
   rhs_ncalls_i++;
   return status;
