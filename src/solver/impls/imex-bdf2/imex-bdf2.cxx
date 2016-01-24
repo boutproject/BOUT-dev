@@ -14,6 +14,7 @@
 #include <output.hxx>
 
 #include "petscsnes.h"
+#include "petscmat.h"
 
 IMEXBDF2::IMEXBDF2(Options *opt) : Solver(opt), u(0) {
 
@@ -172,9 +173,9 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
      * 
      */
 
-    bool coloring;
-    OPTION(options, coloring, true);
-    if(coloring) {
+    bool use_coloring;
+    OPTION(options, use_coloring, true);
+    if(use_coloring) {
       // Use matrix coloring to calculate Jacobian
 
       //////////////////////////////////////////////////
@@ -187,6 +188,11 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
       int localN = getLocalN(); // Number of rows on this processor
       int n2d = f2d.size();
       int n3d = f3d.size();
+
+      // Set size of Matrix on each processor to localN x localN
+      MatCreate( BoutComm::get(), &Jmf );                                
+      MatSetSizes( Jmf, localN, localN, PETSC_DETERMINE, PETSC_DETERMINE );
+      MatSetFromOptions(Jmf);
       
       PetscInt *d_nnz, *o_nnz;
       PetscMalloc( (localN)*sizeof(PetscInt), &d_nnz );
@@ -218,7 +224,7 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
         // Lower X boundary
         for(int y=mesh->ystart;y<=mesh->yend;y++) {
           for(int z=0;z<mesh->ngz-1;z++) {
-            int localIndex = index(mesh->xstart, y, z);
+            int localIndex = ROUND(index(mesh->xstart, y, z));
             ASSERT2( (localIndex >= 0) && (localIndex < localN) );
             if(z == 0) {
               // All 2D and 3D fields
@@ -235,7 +241,7 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
         // On another processor
         for(int y=mesh->ystart;y<=mesh->yend;y++) {
           for(int z=0;z<mesh->ngz-1;z++) {
-            int localIndex = index(mesh->xstart, y, z);
+            int localIndex = ROUND(index(mesh->xstart, y, z));
             ASSERT2( (localIndex >= 0) && (localIndex < localN) );
             if(z == 0) {
               // All 2D and 3D fields
@@ -258,7 +264,7 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
         // Upper X boundary
         for(int y=mesh->ystart;y<=mesh->yend;y++) {
           for(int z=0;z<mesh->ngz-1;z++) {
-            int localIndex = index(mesh->xend, y, z);
+            int localIndex = ROUND(index(mesh->xend, y, z));
             ASSERT2( (localIndex >= 0) && (localIndex < localN) );
             if(z == 0) {
               // All 2D and 3D fields
@@ -275,7 +281,7 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
         // On another processor
         for(int y=mesh->ystart;y<=mesh->yend;y++) {
           for(int z=0;z<mesh->ngz-1;z++) {
-            int localIndex = index(mesh->xend, y, z);
+            int localIndex = ROUND(index(mesh->xend, y, z));
             ASSERT2( (localIndex >= 0) && (localIndex < localN) );
             if(z == 0) {
               // All 2D and 3D fields
@@ -303,7 +309,7 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
         //   then this will result in PETSc warnings about out of range allocations
 
         // z = 0 case
-        int localIndex = index(x, mesh->ystart, 0);
+        int localIndex = ROUND(index(x, mesh->ystart, 0));
         // All 2D and 3D fields
         for(int i=0;i<n2d+n3d;i++) {
           //d_nnz[localIndex+i] -= (n3d + n2d);
@@ -311,7 +317,7 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
         }
         
         for(int z=1;z<mesh->ngz-1;z++) {
-          localIndex = index(x, mesh->ystart, z);
+          localIndex = ROUND(index(x, mesh->ystart, z));
           
           // Only 3D fields
           for(int i=0;i<n3d;i++) {
@@ -321,7 +327,7 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
         }
 
         // z = 0 case
-        localIndex = index(x, mesh->yend, 0);
+        localIndex = ROUND(index(x, mesh->yend, 0));
         // All 2D and 3D fields
         for(int i=0;i<n2d+n3d;i++) {
           //d_nnz[localIndex+i] -= (n3d + n2d);
@@ -329,7 +335,7 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
         }
         
         for(int z=1;z<mesh->ngz-1;z++) {
-          localIndex = index(x, mesh->yend, z);
+          localIndex = ROUND(index(x, mesh->yend, z));
           
           // Only 3D fields
           for(int i=0;i<n3d;i++) {
@@ -343,14 +349,14 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
         // A boundary, so no communication
 
         // z = 0 case
-        int localIndex = index(it.ind, mesh->ystart, 0);
+        int localIndex = ROUND(index(it.ind, mesh->ystart, 0));
         // All 2D and 3D fields
         for(int i=0;i<n2d+n3d;i++) {
           o_nnz[localIndex+i] -= (n3d + n2d);
         }
         
         for(int z=1;z<mesh->ngz-1;z++) {
-          int localIndex = index(it.ind, mesh->ystart, z);
+          int localIndex = ROUND(index(it.ind, mesh->ystart, z));
           
           // Only 3D fields
           for(int i=0;i<n3d;i++) {
@@ -363,14 +369,14 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
         // A boundary, so no communication
 
         // z = 0 case
-        int localIndex = index(it.ind, mesh->yend, 0);
+        int localIndex = ROUND(index(it.ind, mesh->yend, 0));
         // All 2D and 3D fields
         for(int i=0;i<n2d+n3d;i++) {
           o_nnz[localIndex+i] -= (n3d + n2d);
         }
         
         for(int z=1;z<mesh->ngz-1;z++) {
-          int localIndex = index(it.ind, mesh->yend, z);
+          int localIndex = ROUND(index(it.ind, mesh->yend, z));
           
           // Only 3D fields
           for(int i=0;i<n3d;i++) {
@@ -395,8 +401,153 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
       
       // Now communicate to fill guard cells
       mesh->communicate(index);
+
+      //////////////////////////////////////////////////
+      // Mark non-zero entries
+
+      
+      // Offsets for a 5-point pattern
+      const int xoffset[5] = {0,-1, 1, 0, 0};
+      const int yoffset[5] = {0, 0, 0,-1, 1};
+      
+      PetscScalar val = 1.0;
+      
+      for(int x=mesh->xstart; x <= mesh->xend; x++) {
+        for(int y=mesh->ystart;y<=mesh->yend;y++) {
+          
+          int ind0 = ROUND(index(x,y,0));
+
+          // 2D fields
+          for(int i=0;i<n2d;i++) {
+            int row = ind0 + i;
+
+            // Loop through each point in the 5-point stencil
+            for(int c=0;c<5;c++) {
+              int xi = x + xoffset[c];
+              int yi = y + yoffset[c];
+                
+              if( (xi < 0) || (yi < 0) ||
+                  (xi >= mesh->ngx) || (yi >= mesh->ngy) )
+                continue;
+              
+              int ind2 = ROUND(index(xi, yi, 0));
+              
+              if(ind2 < 0)
+                continue; // A boundary point
+              
+              // Depends on all variables on this cell
+              for(int j=0;j<n2d;j++) {
+                int col = ind2 + j;
+                
+                MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+              }
+            }
+          }
+          
+          // 3D fields
+          for(int z=0;z<mesh->ngz-1;z++) {
+            
+            int ind = ROUND(index(x,y,z));
+            
+            for(int i=0;i<n3d;i++) {
+              int row = ind + i;
+              if(z == 0)
+                row += n2d;
+              
+              // Depends on 2D fields
+              for(int j=0;j<n2d;j++) {
+                int col = ind0 + j;
+                
+                MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+              }
+              
+              // 5 point star pattern
+              for(int c=0;c<5;c++) {
+                int xi = x + xoffset[c];
+                int yi = y + yoffset[c];
+                
+                if( (xi < 0) || (yi < 0) ||
+                    (xi >= mesh->ngx) || (yi >= mesh->ngy) )
+                  continue;
+                
+                int ind2 = ROUND(index(xi, yi, z));
+                if(ind2 < 0)
+                  continue; // Boundary point
+                
+                if(z == 0)
+                  ind2 += n2d;
+                
+                // 3D fields on this cell
+                for(int j=0;j<n3d;j++) {
+                  int col = ind2 + j;
+                  
+                  MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+                }
+              }
+
+              int nz = mesh->ngz-1;
+              if(nz > 1) {
+                // Multiple points in z
+                
+                int zp = (z + 1) % nz;
+
+                int ind2 = ROUND(index(x, y, zp));
+                if(zp == 0)
+                  ind2 += n2d;
+                for(int j=0;j<n3d;j++) {
+                  int col = ind2 + j;
+                  
+                  MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+                }
+
+                int zm = (z - 1 + nz) % nz;
+                ind2 = ROUND(index(x, y, zm));
+                if(zm == 0)
+                  ind2 += n2d;
+                for(int j=0;j<n3d;j++) {
+                  int col = ind2 + j;
+                  
+                  MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+                }
+                
+              }
+              
+            }
+          }
+        }
+      }
+      // Finished marking non-zero entries
+      
+      // Assemble Matrix
+      MatAssemblyBegin( Jmf, MAT_FINAL_ASSEMBLY );
+      MatAssemblyEnd( Jmf, MAT_FINAL_ASSEMBLY );
       
       
+      ISColoring iscoloring;
+      
+#if 0
+      MatColoring coloring; // This new in PETSc 3.5
+      MatColoringCreate(Jmf,&coloring);
+      MatColoringSetType(coloring,MATCOLORINGSL);
+      MatColoringSetFromOptions(coloring);
+      // Calculate index sets
+      MatColoringApply(coloring,&iscoloring);
+      MatColoringDestroy(&coloring);
+#else
+      // Pre-3.5
+      MatGetColoring(Jmf,MATCOLORINGSL,&iscoloring);
+#endif
+
+      // Create data structure for SNESComputeJacobianDefaultColor
+      MatFDColoringCreate(Jmf,iscoloring,&fdcoloring);
+      ISColoringDestroy(&iscoloring);
+      // Set the function to difference
+      //MatFDColoringSetFunction(fdcoloring,(PetscErrorCode (*)(void))FormFunctionForDifferencing,this);
+      MatFDColoringSetFunction(fdcoloring,(PetscErrorCode (*)(void))FormFunction,this);
+      MatFDColoringSetFromOptions(fdcoloring);
+      //MatFDColoringSetUp(Jmf,iscoloring,fdcoloring);
+      
+      SNESSetJacobian(snes,Jmf,Jmf,SNESComputeJacobianDefaultColor,fdcoloring);
     }else {
       // Brute force calculation
       // NOTE: Slow!

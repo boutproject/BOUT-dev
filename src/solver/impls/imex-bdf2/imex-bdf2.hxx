@@ -93,6 +93,8 @@ class IMEXBDF2 : public Solver {
   SNES     snes;    // SNES context
   Mat      Jmf;     // Matrix-free Jacobian
   
+  MatFDColoring fdcoloring;
+  
   template< class Op >
   void loopVars(BoutReal *u);
   

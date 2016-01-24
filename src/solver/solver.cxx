@@ -36,6 +36,7 @@
 #include <bout/sys/timer.hxx>
 #include <msg_stack.hxx>
 #include <output.hxx>
+#include <bout/assert.hxx>
 
 // Static member variables
 
@@ -1121,12 +1122,12 @@ const Field3D Solver::globalIndex(int localStart) {
 
   // Find how many boundary cells are evolving
   int n2dbndry = 0;
-  for(i=0;i<n2d;i++) {
+  for(int i=0;i<n2d;i++) {
     if(f2d[i].evolve_bndry)
       ++n2dbndry;
   }
   int n3dbndry = 0;
-  for(i=0;i<n3d;i++) {
+  for(int i=0;i<n3d;i++) {
     if(f3d[i].evolve_bndry)
       n3dbndry++;
   }

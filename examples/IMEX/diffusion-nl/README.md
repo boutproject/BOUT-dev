@@ -48,3 +48,16 @@ and for IMEX-BDF2:
     2.000e+00          2               71       5.43e-03    13.4    0.0    3.8   21.9   60.8
     3.000e+00          2               58       5.30e-03    13.2    0.0    3.1   21.5   62.2
 
+Jacobian coloring
+-----------------
+
+By default the IMEX-BDF2 solver uses a matrix-free method, but the Jacobian
+can be calculated using finite differences. This uses coloring to improve efficiency
+
+    $ ./diffusion-nl solver:type=imexbdf2 solver:matrix_free=false
+
+    1.000e+00          2               22       6.76e-03    18.3    0.0    2.4    2.9   76.4
+    2.000e+00          2               22       4.83e-03    24.7    0.0    3.2    3.6   68.5
+    3.000e+00          2               17       3.55e-03    25.7    0.0    3.2    4.8   66.2
+
+
