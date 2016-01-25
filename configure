@@ -5860,7 +5860,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 $as_echo_n "checking for fftw3.h... " >&6; }
 	CPPFLAGS_save=$CPPFLAGS
 	BACH_found=no
-	if test .$with_fftw != .yes; then :
+	if test ."$with_fftw" != .yes; then :
   extra_prefix="$with_fftw"
 else
   extra_prefix=""
@@ -6572,7 +6572,7 @@ then
 $as_echo_n "checking for netcdfcpp.h... " >&6; }
 	CPPFLAGS_save=$CPPFLAGS
 	BACH_found=no
-	if test .$with_netcdf != .yes; then :
+	if test ."$with_netcdf" != .yes; then :
   extra_prefix="$with_netcdf"
 else
   extra_prefix=""

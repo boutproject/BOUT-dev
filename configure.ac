@@ -140,7 +140,7 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_HEADER],[
 	AC_MSG_CHECKING([for $1])
 	CPPFLAGS_save=$CPPFLAGS
 	BACH_found=no
-	AS_IF([test .$4 != .yes], [extra_prefix="$4"],[extra_prefix=""])
+	AS_IF([test ."$4" != .yes], [extra_prefix="$4"],[extra_prefix=""])
 	AC_TRY_COMPILE([#include <$1>] ,, [BACH_found=yes ; break;
      		BOUT_MSG_DEBUG([found $1 without path])
 		],)
