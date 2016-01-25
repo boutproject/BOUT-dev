@@ -114,7 +114,7 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
 		],)
 	if test $BACL_found != yes ; then
 		for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
-			for path in $prefix $prefix/lib $prefix/lib64 $prefix/theLongOne ; do
+			for path in $prefix $prefix/lib $prefix/lib64 $prefix/x86_64-linux-gnu ; do
 				LDFLAGS="-L$path $LDFLAGS_save"
 				BOUT_MSG_DEBUG([try link $1 with $path])
 				AC_TRY_LINK([extern "C"
@@ -369,8 +369,8 @@ then
   echo "Using PETSC_DIR = $PETSC_DIR"
   echo "Using PETSC_ARCH = $PETSC_ARCH"
   PRECON_SOURCE="$PRECON_SOURCE jstruc.cxx"
-  EXTRA_INCS="$EXTRA_INCS \$(PETSC_CC_INCLUDES)"
-  EXTRA_LIBS="$EXTRA_LIBS \$(PETSC_LIB)"
+  EXTRA_INCS="$EXTRA_INCS $(PETSC_CC_INCLUDES)"
+  EXTRA_LIBS="$EXTRA_LIBS $(PETSC_LIB)"
 
   if test "$PETSC_HAS_SUNDIALS" == "yes"
   then
