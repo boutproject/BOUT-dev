@@ -79,7 +79,7 @@ static PetscErrorCode imexbdf2PCapply(PC pc,Vec x,Vec y) {
  */
 int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
 
-  int msg_point = msg_stack.push("Initialising IMEX-BDF2 solver");
+  TRACE("Initialising IMEX-BDF2 solver");
 
   /// Call the generic initialisation first
   if(Solver::init(restarting, nout, tstep))
@@ -548,6 +548,8 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
       //MatFDColoringSetUp(Jmf,iscoloring,fdcoloring);
       
       SNESSetJacobian(snes,Jmf,Jmf,SNESComputeJacobianDefaultColor,fdcoloring);
+
+      //MatView(Jmf, PETSC_VIEWER_DRAW_WORLD);
     }else {
       // Brute force calculation
       // NOTE: Slow!
@@ -612,13 +614,11 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
   // Get runtime options
   SNESSetFromOptions(snes);
 
-  msg_stack.pop(msg_point);
-
   return 0;
 }
 
 int IMEXBDF2::run() {
-  int msg_point = msg_stack.push("IMEXBDF2::run()");
+  TRACE("IMEXBDF2::run()");
 
   // Multi-step scheme, so first steps are different
   bool starting = true;
@@ -658,8 +658,6 @@ int IMEXBDF2::run() {
     rhs_ncalls = 0;
 
   }
-
-  msg_stack.pop(msg_point);
 
   return 0;
 }
@@ -709,6 +707,8 @@ void IMEXBDF2::startup(BoutReal curtime, BoutReal dt) {
   // Now need to solve u - dt*G(u) = rhs
   // Using run_diffusive as G
   solve_implicit(curtime+dt, dt);
+
+  //MatView(Jmf, PETSC_VIEWER_DRAW_WORLD);
 }
 
 /*!
