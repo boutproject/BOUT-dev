@@ -62,7 +62,7 @@ class Field2D : public Field, public FieldData {
 
   /// Ensure data is allocated
   void allocate();
-  bool isAllocated() { return data !=  NULL; } ///< Test if data is allocated
+  bool isAllocated() const { return data !=  NULL; } ///< Test if data is allocated
 
   /// Return a pointer to the time-derivative field
   Field2D* timeDeriv();

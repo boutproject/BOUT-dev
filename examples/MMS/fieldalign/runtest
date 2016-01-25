@@ -14,9 +14,7 @@ from numpy import sqrt, max, abs, mean, array, log, zeros
 
 from os.path import join
 
-import matplotlib.pyplot as plt
 import time
-
 MPIRUN = getmpirun()
 
 print("Making MMS test")
@@ -89,32 +87,34 @@ for dir in inputs:
 	if order < 1.5:
 		print("=> FAILED\n")
 		success = False
+
+    try:
+        import matplotlib.pyplot as plt
+        # plot errors
+    
+        plt.figure()
 	
-	# plot errors
+        plt.plot(dx, error_2, '-o', label=r'$l^2$')
+        plt.plot(dx, error_inf, '-x', label=r'$l^\infty$')
 	
-	plt.figure()
+        plt.plot(dx, error_2[-1]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
 	
-	plt.plot(dx, error_2, '-o', label=r'$l^2$')
-	plt.plot(dx, error_inf, '-x', label=r'$l^\infty$')
+        plt.legend(loc="upper left")
+        plt.grid()
 	
-	plt.plot(dx, error_2[-1]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
+        plt.yscale('log')
+        plt.xscale('log')
 	
-	plt.legend(loc="upper left")
-	plt.grid()
+        plt.xlabel(r'Mesh spacing $\delta x$')
+        plt.ylabel("Error norm")
 	
-	plt.yscale('log')
-	plt.xscale('log')
+        plt.savefig(join(dir,"norm.pdf"))
 	
-	plt.xlabel(r'Mesh spacing $\delta x$')
-	plt.ylabel("Error norm")
+        #plt.show()
+        plt.close()
 	
-	plt.savefig(join(directory,"norm.pdf"))
-	
-	#plt.show()
-	plt.close()
-	
-	tot_error[i,:] = error_2
-	i = i + 1
+    except all:
+        pass
 
 plt.ylabel("Error norm")
 plt.grid()
@@ -134,8 +134,10 @@ pickle.dump(dx,f)
 pickle.dump(inputs,f)
 f.close()
 
-  exit(0)
+if success:
+    print(" => All tests passed")
+    exit(0)
 else:
-  print(" => Some failed tests")
-  exit(1)
+    print(" => Some failed tests")
+    exit(1)
 

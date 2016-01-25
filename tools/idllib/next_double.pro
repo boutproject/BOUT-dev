@@ -22,6 +22,15 @@ FUNCTION next_double, fid=fid
     ; None left, so read in more
     line = ' '
     READF, fp, line
+    ;Replace NaNs with +0.00
+    ind_NaNs = STRPOS(line, 'NaN')   
+    IF ind_NaNs GE 0 THEN BEGIN
+	print,line
+	line = STRCOMPRESS(line,/REMOVE_ALL)
+        line = STRJOIN(STRSPLIT(line,'NaN',/EXTRACT,/PRESERVE_NULL,/REGEX),'-0.000e-0')
+	print,line
+	PRINT,'WARNING: NaN detected in input file. Setting NaN to 0.000'
+    ENDIF
     data = regex_extract(line, '[+-]?([0-9])+($| |(\.[0-9]+([eE][+-]?[0-9]*)?))')
     nleft = N_ELEMENTS(data)
   ENDIF

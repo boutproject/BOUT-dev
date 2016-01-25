@@ -1,6 +1,10 @@
 /**************************************************************************
  * Laplacian solver in 2D (X-Y)
- * 
+ *
+ * Equation solved is: 
+ *
+ * Div( A * Grad_perp(x) ) + B*x = b
+ *
  * Intended for use in solving n = 0 component of potential
  * from inversion of vorticity equation
  * 
@@ -34,6 +38,24 @@
 
 #warning LaplaceXY requires PETSc. No LaplaceXY available
 
+#include <bout/mesh.hxx>
+#include <options.hxx>
+#include <boutexception.hxx>
+
+/*!
+ * Create a dummy class so that code will compile
+ * without PETSc, but will throw an exception if
+ * LaplaceXY is used.
+ */
+class LaplaceXY {
+ public:
+  LaplaceXY(Mesh *m, Options *opt = NULL) {
+    throw BoutException("LaplaceXY requires PETSc. No LaplaceXY available");
+  }
+  void setCoefs(const Field2D &A, const Field2D &B) {}
+  const Field2D solve(const Field2D &rhs, const Field2D &x0) {}
+};
+
 #else // BOUT_HAS_PETSC
 
 #include <bout/mesh.hxx>
@@ -50,6 +72,12 @@ public:
    * Destructor
    */
   ~LaplaceXY();
+
+  /*!
+   * Set coefficients (A, B) in equation:
+   * Div( A * Grad_perp(x) ) + B*x = b
+   */
+  void setCoefs(const Field2D &A, const Field2D &B);
   
   /*!
    * Solve Laplacian in X-Y
@@ -91,6 +119,14 @@ private:
   int nloc, nsys;
   BoutReal **acoef, **bcoef, **ccoef, **xvals, **bvals;
   CyclicReduce<BoutReal> *cr; ///< Tridiagonal solver
+
+  // Y derivatives
+  bool include_y_derivs; // Include Y derivative terms?
+  
+  // Boundary conditions
+  bool x_inner_dirichlet; // Dirichlet on inner X boundary?
+  bool x_outer_dirichlet; // Dirichlet on outer X boundary?
+  bool y_bndry_dirichlet; // Dirichlet on Y boundary?
   
   /*!
    * Number of grid points on this processor

@@ -10,14 +10,13 @@ from __future__ import print_function
 from builtins import zip
 from builtins import str
 
-from boututils.run_wrapper import shell, launch, getmpirun, DataFile
+from boututils.run_wrapper import shell, launch, getmpirun
+from boututils.datafile import DataFile
 from boutdata.collect import collect
 
 from numpy import sqrt, max, abs, mean, array, log, pi
 
 from os.path import join, isfile
-
-import matplotlib.pyplot as plt
 
 import pickle
 
@@ -34,7 +33,7 @@ print("Making MMS tokamak geometry test")
 shell("make > make.log")
 
 # List of NX values to use
-nxlist = [4, 8, 16, 32, 64, 128]#, 256]
+nxlist = [4, 8, 16, 32, 64]#, 128]#, 256]
 nprocs = [2, 4,  4,  8,  8,  8, 8] 
 
 success = True
@@ -102,14 +101,9 @@ with open("tokamak.pkl", "wb") as output:
     pickle.dump(error_2, output)
     pickle.dump(error_inf, output)
 
-# plot errors
-plt.figure()
 
 # Calculate convergence order
 for var,mark,label in zip(varlist, markers, labels):
-    plt.plot(dx, error_2[var], '-'+mark, label=label)
-    plt.plot(dx, error_inf[var], '--'+mark)
-
     order = log(error_2[var][-1] / error_2[var][-2]) / log(dx[-1] / dx[-2])
     stdout.write("%s Convergence order = %f" % (var, order))
     
@@ -118,25 +112,38 @@ for var,mark,label in zip(varlist, markers, labels):
         success = False 
     else:
         print("............ PASS")
-
-
-plt.legend(loc="upper left")
-plt.grid()
     
-plt.yscale('log')
-plt.xscale('log')
+# plot errors
+try:
+    import matplotlib.pyplot as plt
+    
+    plt.figure()
+
+    # Calculate convergence order
+    for var,mark,label in zip(varlist, markers, labels):
+        plt.plot(dx, error_2[var], '-'+mark, label=label)
+        plt.plot(dx, error_inf[var], '--'+mark)
+
+
+    plt.legend(loc="upper left")
+    plt.grid()
+    
+    plt.yscale('log')
+    plt.xscale('log')
         
-plt.xlabel(r'Mesh spacing $\delta x$')
-plt.ylabel("Error norm")
+    plt.xlabel(r'Mesh spacing $\delta x$')
+    plt.ylabel("Error norm")
     
-plt.savefig("norm.pdf")
+    plt.savefig("norm.pdf")
 
-plt.show()
-plt.close()
+    #plt.show()
+    plt.close()
+except:
+    pass
 
 if success:
-  print(" => All tests passed")
-  exit(0)
+    print(" => All tests passed")
+    exit(0)
 else:
-  print(" => Some failed tests")
-  exit(1)
+    print(" => Some failed tests")
+    exit(1)
