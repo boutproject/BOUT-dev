@@ -188,7 +188,8 @@ int physics_init(bool restarting) {
 	  b1[jx][jy][jz] = b1[jx-1][jy][jz];
 	}
   
-  invert->setFlags(INVERT_AC_IN_GRAD+INVERT_AC_OUT_GRAD);
+  invert->setInnerBoundaryFlags(INVERT_AC_GRAD);
+  invert->setOuterBoundaryFlags(INVERT_AC_GRAD);
   invert->setCoefA(a1);
   invert->setCoefC(c1);
   invert->setCoefD(d1);
@@ -230,7 +231,9 @@ int physics_init(bool restarting) {
   Field3D error2,absolute_error2; //Absolute value of relative error: abs( (f3-sol3)/f3 )
   BoutReal max_error2; //Output of test
   
-  invert_4th->setFlags(INVERT_AC_IN_GRAD+INVERT_AC_OUT_GRAD+INVERT_4TH_ORDER);
+  invert_4th->setInnerBoundaryFlags(INVERT_AC_GRAD);
+  invert_4th->setOuterBoundaryFlags(INVERT_AC_GRAD);
+  invert_4th->setFlags(INVERT_4TH_ORDER);
   invert_4th->setCoefA(a1);
   invert_4th->setCoefC(c1);
   invert_4th->setCoefD(d1);
@@ -289,7 +292,8 @@ int physics_init(bool restarting) {
 	  b3[jx][jy][jz] = b3[jx-1][jy][jz];
 	}
   
-  invert->setFlags(INVERT_AC_IN_GRAD+INVERT_AC_OUT_GRAD);
+  invert->setInnerBoundaryFlags(INVERT_AC_GRAD);
+  invert->setOuterBoundaryFlags(INVERT_AC_GRAD);
   invert->setCoefA(a3);
   invert->setCoefC(c3);
   invert->setCoefD(d3);
@@ -488,7 +492,8 @@ int physics_init(bool restarting) {
 	  b5[jx][jy][jz] = b5[jx-1][jy][jz];
 	}
 
-  invert->setFlags(INVERT_AC_IN_GRAD+INVERT_AC_OUT_GRAD);
+  invert->setInnerBoundaryFlags(INVERT_AC_GRAD);
+  invert->setOuterBoundaryFlags(INVERT_AC_GRAD);
   invert->setCoefA(a5);
   invert->setCoefC(c5);
   invert->setCoefD(d5);
@@ -527,7 +532,9 @@ int physics_init(bool restarting) {
   Field3D sol6;
   Field3D error6,absolute_error6; //Absolute value of relative error: abs( (f5-sol5)/f5 )
   BoutReal max_error6; //Output of test
-  invert_4th->setFlags(INVERT_AC_IN_GRAD+INVERT_AC_OUT_GRAD+INVERT_4TH_ORDER);
+  invert_4th->setInnerBoundaryFlags(INVERT_AC_GRAD);
+  invert_4th->setOuterBoundaryFlags(INVERT_AC_GRAD);
+  invert_4th->setFlags(INVERT_4TH_ORDER);
   invert_4th->setCoefA(a5);
   invert_4th->setCoefC(c5);
   invert_4th->setCoefD(d5);
@@ -586,7 +593,8 @@ int physics_init(bool restarting) {
 	  b7[jx][jy][jz] = b7[jx-1][jy][jz];
 	}
   
-  invert->setFlags(INVERT_AC_IN_GRAD+INVERT_AC_OUT_GRAD);
+  invert->setInnerBoundaryFlags(INVERT_AC_GRAD);
+  invert->setOuterBoundaryFlags(INVERT_AC_GRAD);
   invert->setCoefA(a7);
   invert->setCoefC(c7);
   invert->setCoefD(d7);

@@ -75,6 +75,9 @@ Solver::Solver(Options *opts) : options(opts), model(0), prefunc(0) {
   }else
     restarting = false;
 
+  // Set up restart options
+  restart = Datafile(Options::getRoot()->getSection("restart"));
+  
   // Split operator
   split_operator = false;
   max_dt = -1.0;
@@ -566,9 +569,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
 
 int Solver::init(bool restarting, int nout, BoutReal tstep) {
   
-#ifdef CHECK
-  int msg_point = msg_stack.push("Solver::init()");
-#endif
+  TRACE("Solver::init()");
 
   if(initialised)
     throw BoutException("ERROR: Solver is already initialised\n");
@@ -594,9 +595,6 @@ int Solver::init(bool restarting, int nout, BoutReal tstep) {
     options->get("dump_format", dump_ext, "nc");
     options->get("restart_format", restart_ext, dump_ext);
     restartext = string(restart_ext);
-    
-    // Set up restart options
-    restart = Datafile(Options::getRoot()->getSection("restart"));
   
     /// Add basic variables to the restart file
     restart.add(simtime,  "tt",    0);
@@ -636,9 +634,7 @@ int Solver::init(bool restarting, int nout, BoutReal tstep) {
     int tmp_NP = NPES;
     int tmp_NX = mesh->NXPE;
     
-#ifdef CHECK
-    int msg_pt2 = msg_stack.push("Loading restart file");
-#endif
+    TRACE("Loading restart file");
     
     /// Load restart file
     if(!restart.openr("%s/BOUT.restart.%s", restartdir.c_str(), restartext.c_str()))
@@ -667,10 +663,6 @@ int Solver::init(bool restarting, int nout, BoutReal tstep) {
 
       output.write("Restarting at iteration %d, simulation time %e\n", iteration, simtime);
     }
-
-#ifdef CHECK
-    msg_stack.pop(msg_pt2);
-#endif
     
   }else {
     // Not restarting
@@ -685,10 +677,6 @@ int Solver::init(bool restarting, int nout, BoutReal tstep) {
   
   /// Mark as initialised. No more variables can be added
   initialised = true;
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 
   return 0;
 }

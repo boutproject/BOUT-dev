@@ -27,6 +27,8 @@ varlist = ["Ne", "Te", "Vort"]
 
 nproc = 4
 
+success=True
+
 error_2 = {}
 error_inf = {}
 for var in varlist:
@@ -69,27 +71,42 @@ dx = 1. / (array(nxlist) - 2.)
 
 # plot errors
 
-import matplotlib.pyplot as plt
 
 for var in varlist:
-    plt.plot(dx, error_2[var], '-o', label=r'$l^2$ '+var)
-    plt.plot(dx, error_inf[var], '-x', label=r'$l^\infty$ '+var)
-
-
     order = log(error_2[var][-1] / error_2[var][-2]) / log(dx[-1] / dx[-2])
     print("Convergence order = %f" % (order))
+    if order < 1.9:
+        success=False
 
-    plt.plot(dx, error_2[var][-1]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
 
-plt.legend(loc="upper left")
-plt.grid()
+try:
+    import matplotlib.pyplot as plt
 
-plt.yscale('log')
-plt.xscale('log')
+    for var in varlist:
+        plt.plot(dx, error_2[var], '-o', label=r'$l^2$ '+var)
+        plt.plot(dx, error_inf[var], '-x', label=r'$l^\infty$ '+var)
 
-plt.xlabel(r'Mesh spacing $\delta x$')
-plt.ylabel("Error norm")
 
-plt.savefig("norm-slab2d.pdf")
+        order = log(error_2[var][-1] / error_2[var][-2]) / log(dx[-1] / dx[-2])
 
-plt.show()
+        plt.plot(dx, error_2[var][-1]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
+
+    plt.legend(loc="upper left")
+    plt.grid()
+    
+    plt.yscale('log')
+    plt.xscale('log')
+    
+    plt.xlabel(r'Mesh spacing $\delta x$')
+    plt.ylabel("Error norm")
+    
+    plt.savefig("norm-slab2d.pdf")
+    
+    #plt.show()
+except:
+    pass
+
+if success:
+    exit(0)
+else:
+    exit(1)
