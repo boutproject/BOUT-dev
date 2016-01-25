@@ -16,7 +16,7 @@ for_all_versions = [\
                     'mode_structure',\
                     # 'moment_xyzt',\   # bunch pkg requried
                     'run_wrapper',\
-                    'shell',\
+#                    'shell',\
                     'showdata',\
                     # 'surface_average',\
                     # 'volume_integral',\ #bunch pkg required

@@ -12,9 +12,10 @@ except ImportError:
         from mayavi.mlab import *
     except ImportError:
         print("No mlab available")
-
-from tvtk.tools import visual
-
+try:
+    from tvtk.tools import visual
+except:
+    pass
 
 
 @mlab.show

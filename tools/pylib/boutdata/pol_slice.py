@@ -133,10 +133,41 @@ def pol_slice(var3d, gridfile, n=1, zangle=0.0, withRepeat=False, nyInterp=None)
     zm = (z0 - 1 + (nz-1)) % (nz-1)
 
     # There may be some more cunning way to do this indexing
-    for x in np.arange(nx):
-        for y in np.arange(ny):
-            var2d[x,y] = 0.5*p[x,y]*(p[x,y]-1.0) * var3d[x,y,zm[x,y]] + \
-                         (1.0 - p[x,y]*p[x,y])   * var3d[x,y,z0[x,y]] + \
-                         0.5*p[x,y]*(p[x,y]+1.0) * var3d[x,y,zp[x,y]]
+    # for x in np.arange(nx):
+    #     for y in np.arange(ny):
+    #         var2d[x,y] = 0.5*p[x,y]*(p[x,y]-1.0) * var3d[x,y,zm[x,y]] + \
+    #                      (1.0 - p[x,y]*p[x,y])   * var3d[x,y,z0[x,y]] + \
+    #                      0.5*p[x,y]*(p[x,y]+1.0) * var3d[x,y,zp[x,y]]
+
+    # var2dList = [x.T for x in var3d.T]
+    # var2d = 0.5*p*(p-1.0) * np.choose(zm,var2dList) + \
+    #         (1.0 - p*p)   * np.choose(z0,var2dList) + \
+    #         0.5*p*(p+1.0) * np.choose(zp,var2dList) 
+
+    #For some reason numpy imposes a limit of 32 entries to choose
+    #so if nz>32 we have to use a different approach
+    if nz >= 32:
+        #Untested
+        # v3m = np.array([var3d.T[zm.T[I]][I] for I in ndi.ndindex(zm.T.shape)]).T
+        # v30 = np.array([var3d.T[z0.T[I]][I] for I in ndi.ndindex(z0.T.shape)]).T
+        # v3p = np.array([var3d.T[zp.T[I]][I] for I in ndi.ndindex(zp.T.shape)]).T
+        # var2d = 0.5*p*(p-1.0) * v3m + \
+        #         (1.0 - p*p) * v30 + \
+        #         0.5*p*(p+1.0) * v3p
+        for x in np.arange(nx):
+            for y in np.arange(ny):
+                var2d[x,y] = 0.5*p[x,y]*(p[x,y]-1.0) * var3d[x,y,zm[x,y]] + \
+                             (1.0 - p[x,y]*p[x,y])   * var3d[x,y,z0[x,y]] + \
+                             0.5*p[x,y]*(p[x,y]+1.0) * var3d[x,y,zp[x,y]]
+    else:
+        var2d = 0.5*p*(p-1.0) * np.choose(zm.T,var3d.T).T + \
+                (1.0 - p*p) * np.choose(z0.T,var3d.T).T + \
+                0.5*p*(p+1.0) * np.choose(zp.T,var3d.T).T
+
+
+    # var2d = 0.5*p*(p-1.0) * var3d[:,:,zm] + \
+    #                      (1.0 - p*p)   * var3d[:,:,z0] + \
+    #                      0.5*p*(p+1.0) * var3d[:,:,zp]
+
 
     return var2d
