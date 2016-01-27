@@ -419,7 +419,7 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
 
           // 2D fields
           for(int i=0;i<n2d;i++) {
-            int row = ind0 + i;
+            PetscInt row = ind0 + i;
 
             // Loop through each point in the 5-point stencil
             for(int c=0;c<5;c++) {
@@ -437,8 +437,9 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
               
               // Depends on all variables on this cell
               for(int j=0;j<n2d;j++) {
-                int col = ind2 + j;
-                
+                PetscInt col = ind2 + j;
+
+                //output.write("SETTING 1: %d, %d\n", row, col);
                 MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
               }
             }
@@ -450,14 +451,14 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
             int ind = ROUND(index(x,y,z));
             
             for(int i=0;i<n3d;i++) {
-              int row = ind + i;
+              PetscInt row = ind + i;
               if(z == 0)
                 row += n2d;
               
               // Depends on 2D fields
               for(int j=0;j<n2d;j++) {
-                int col = ind0 + j;
-                
+                PetscInt col = ind0 + j;
+                //output.write("SETTING 2: %d, %d\n", row, col);
                 MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
               }
               
@@ -479,8 +480,8 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
                 
                 // 3D fields on this cell
                 for(int j=0;j<n3d;j++) {
-                  int col = ind2 + j;
-                  
+                  PetscInt col = ind2 + j;
+                  //output.write("SETTING 3: %d, %d\n", row, col);
                   MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
                 }
               }
@@ -495,8 +496,8 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
                 if(zp == 0)
                   ind2 += n2d;
                 for(int j=0;j<n3d;j++) {
-                  int col = ind2 + j;
-                  
+                  PetscInt col = ind2 + j;
+                  //output.write("SETTING 4: %d, %d\n", row, col);
                   MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
                 }
 
@@ -505,8 +506,8 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
                 if(zm == 0)
                   ind2 += n2d;
                 for(int j=0;j<n3d;j++) {
-                  int col = ind2 + j;
-                  
+                  PetscInt col = ind2 + j;
+                  //output.write("SETTING 5: %d, %d\n", row, col);
                   MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
                 }
                 
@@ -549,6 +550,11 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
       
       SNESSetJacobian(snes,Jmf,Jmf,SNESComputeJacobianDefaultColor,fdcoloring);
 
+      // Re-use Jacobian
+      int lag_jacobian;
+      OPTION(options, lag_jacobian,   4);
+      SNESSetLagJacobian(snes,lag_jacobian);
+      
       //MatView(Jmf, PETSC_VIEWER_DRAW_WORLD);
     }else {
       // Brute force calculation
