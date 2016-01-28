@@ -1705,17 +1705,17 @@ void Field3D::setYStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc
       fval.p = block->data[bx.jx][bx.jy][bx.jz];
       fval.c = block->data[bx.jx][bx.jym][bx.jz];
       fval.m = block->data[bx.jx][bx.jy2m][bx.jz];
-      fval.m2 = block->data[bx.jx][bx.jy+3][bx.jz];
-      fval.m3 = block->data[bx.jx][bx.jy+4][bx.jz];
-      fval.m4 = block->data[bx.jx][bx.jy+5][bx.jz];
+      fval.m2 = block->data[bx.jx][bx.jy-3][bx.jz];
+      fval.m3 = block->data[bx.jx][bx.jy-4][bx.jz];
+      fval.m4 = block->data[bx.jx][bx.jy-5][bx.jz];
     }else if(location == CELL_YLOW) {
       // Stencil centred around a cell centre
       fval.p = block->data[bx.jx][bx.jyp][bx.jz];
       fval.c = block->data[bx.jx][bx.jy][bx.jz];
       fval.m = block->data[bx.jx][bx.jym][bx.jz];
       fval.m2 = block->data[bx.jx][bx.jy2m][bx.jz];
-      fval.m3 = block->data[bx.jx][bx.jy+3][bx.jz];
-      fval.m4 = block->data[bx.jx][bx.jy+4][bx.jz];
+      fval.m3 = block->data[bx.jx][bx.jy-3][bx.jz];
+      fval.m4 = block->data[bx.jx][bx.jy-4][bx.jz];
     }
     // Shifted in one direction -> shift in another
     // Could produce warning
@@ -1725,8 +1725,8 @@ void Field3D::setYStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc
     fval.c = block->data[bx.jx][bx.jy][bx.jz];
     fval.m = block->data[bx.jx][bx.jym][bx.jz];
     fval.m2 = block->data[bx.jx][bx.jy2m][bx.jz];
-    fval.m3 = block->data[bx.jx][bx.jy+3][bx.jz];
-    fval.m4 = block->data[bx.jx][bx.jy+4][bx.jz];
+    fval.m3 = block->data[bx.jx][bx.jy-3][bx.jz];
+    fval.m4 = block->data[bx.jx][bx.jy-4][bx.jz];
   }
 }
 
