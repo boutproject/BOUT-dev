@@ -56,8 +56,7 @@ can be calculated using finite differences. This uses coloring to improve effici
 
     $ ./diffusion-nl solver:type=imexbdf2 solver:matrix_free=false
 
-    1.000e+00          2               22       6.76e-03    18.3    0.0    2.4    2.9   76.4
-    2.000e+00          2               22       4.83e-03    24.7    0.0    3.2    3.6   68.5
-    3.000e+00          2               17       3.55e-03    25.7    0.0    3.2    4.8   66.2
-
+    1.000e+00          2               26       3.10e-03    31.9    0.0    5.9    7.8   54.4
+    2.000e+00          2               23       2.24e-03    35.7    0.0    7.0    7.9   49.4
+    3.000e+00          2               18       2.04e-03    35.0    0.0    6.2    8.5   50.4
 
