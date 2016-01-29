@@ -65,6 +65,18 @@ static PetscErrorCode FormFunctionForDifferencing(void* ctx, Vec x, Vec f) {
   return static_cast<IMEXBDF2*>(ctx)->snes_function(x, f, true);
 }
 
+/*!
+ * SNES callback for forming Jacobian with coloring
+ *
+ * This can be a linearised and simplified form of FormFunction
+ */
+#undef __FUNCT__
+#define __FUNCT__ "FormFunctionForColoring"
+static PetscErrorCode FormFunctionForColoring(SNES snes, Vec x, Vec f, void* ctx) {
+  return static_cast<IMEXBDF2*>(ctx)->snes_function(x, f, true);
+}
+
+
 #undef __FUNCT__
 #define __FUNCT__ "imexbdf2PCapply"
 static PetscErrorCode imexbdf2PCapply(PC pc,Vec x,Vec y) {
@@ -571,7 +583,7 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
       ISColoringDestroy(&iscoloring);
       // Set the function to difference
       //MatFDColoringSetFunction(fdcoloring,(PetscErrorCode (*)(void))FormFunctionForDifferencing,this);
-      MatFDColoringSetFunction(fdcoloring,(PetscErrorCode (*)(void))FormFunction,this);
+      MatFDColoringSetFunction(fdcoloring,(PetscErrorCode (*)(void))FormFunctionForColoring,this);
       MatFDColoringSetFromOptions(fdcoloring);
       //MatFDColoringSetUp(Jmf,iscoloring,fdcoloring);
       
