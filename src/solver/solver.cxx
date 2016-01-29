@@ -919,6 +919,38 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
     
     break;
   }
+  case SET_ID: {
+    /// Set the type of equation (Differential or Algebraic)
+    
+    // Loop over 2D variables
+    for(i=0;i<n2d;i++) {
+      if(bndry && !f2d[i].evolve_bndry)
+	continue;
+      if(f2d[i].constraint) {
+	udata[p] = 0;
+      }else {
+	udata[p] = 1;
+      }
+      p++;
+    }
+    
+    for (jz=0; jz < mesh->ngz-1; jz++) {
+      
+      // Loop over 3D variables
+      for(i=0;i<n3d;i++) {
+        if(bndry && !f3d[i].evolve_bndry)
+	  continue;
+	if(f3d[i].constraint) {
+	  udata[p] = 0;
+	}else {
+	  udata[p] = 1;
+	}
+	p++;
+      }
+    }
+    
+    break;
+  }
   case SAVE_VARS: {
     /// Save variables from BOUT++ into IDA (only used at start of simulation)
     
@@ -1050,16 +1082,16 @@ void Solver::load_derivs(BoutReal *udata) {
 }
 
 // This function only called during initialisation
-int Solver::save_vars(BoutReal *udata) {
+void Solver::save_vars(BoutReal *udata) {
   unsigned int i;
 
   for(i=0;i<f2d.size();i++)
-    if(f2d[i].var->getData() == (BoutReal**) NULL)
-      return(1);
+    if(!f2d[i].var->isAllocated())
+      throw BoutException("Variable '%s' not initialised", f2d[i].name.c_str());
 
   for(i=0;i<f3d.size();i++)
-    if(f3d[i].var->getData() == (BoutReal***) NULL)
-      return(1);
+    if(!f3d[i].var->isAllocated())
+      throw BoutException("Variable '%s' not initialised", f3d[i].name.c_str());
   
   // Make sure vectors in correct basis
   for(i=0;i<v2d.size();i++) {
@@ -1076,8 +1108,6 @@ int Solver::save_vars(BoutReal *udata) {
   }
 
   loop_vars(udata, SAVE_VARS);
-
-  return(0);
 }
 
 void Solver::save_derivs(BoutReal *dudata) {
@@ -1107,6 +1137,11 @@ void Solver::save_derivs(BoutReal *dudata) {
 
   loop_vars(dudata, SAVE_DERIVS);
 }
+
+void Solver::set_id(BoutReal *udata) {
+  loop_vars(udata, SET_ID);
+}
+
 
 /*!
  * Returns a Field3D containing the global indices

@@ -18,6 +18,8 @@
 
 IMEXBDF2::IMEXBDF2(Options *opt) : Solver(opt), u(0) {
 
+  has_constraints = true; ///< This solver can handle constraints
+  
 }
 
 IMEXBDF2::~IMEXBDF2() {
@@ -33,6 +35,9 @@ IMEXBDF2::~IMEXBDF2() {
 
     VecDestroy(&snes_f);
     VecDestroy(&snes_x);
+
+    if(have_constraints)
+      delete[] is_dae;
   }
 }
 
@@ -72,7 +77,6 @@ static PetscErrorCode imexbdf2PCapply(PC pc,Vec x,Vec y) {
   PetscFunctionReturn(s->precon(x, y));
 }
 
-
 /*!
  * Initialisation routine. Called once before solve.
  *
@@ -102,7 +106,30 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
 
   output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
                n3Dvars(), n2Dvars(), neq, nlocal);
+  
+  // Check if there are any constraints
+  have_constraints = false;
 
+  for(int i=0;i<n2Dvars();i++) {
+    if(f2d[i].constraint) {
+      have_constraints = true;
+      break;
+    }
+  }
+  for(int i=0;i<n3Dvars();i++) {
+    if(f3d[i].constraint) {
+      have_constraints = true;
+      break;
+    }
+  }
+  
+  if(have_constraints) {
+    is_dae = new BoutReal[nlocal];
+    // Call the Solver function, which sets the array
+    // to zero when not a constraint, one for constraint
+    set_id(is_dae);
+  }
+  
   // Allocate memory
   u = new BoutReal[nlocal];
   u_1 = new BoutReal[nlocal];
@@ -556,6 +583,7 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
       SNESSetLagJacobian(snes,lag_jacobian);
       
       //MatView(Jmf, PETSC_VIEWER_DRAW_WORLD);
+      //MatView(Jmf, PETSC_VIEWER_STDOUT_WORLD);
     }else {
       // Brute force calculation
       // NOTE: Slow!
@@ -715,6 +743,7 @@ void IMEXBDF2::startup(BoutReal curtime, BoutReal dt) {
   solve_implicit(curtime+dt, dt);
 
   //MatView(Jmf, PETSC_VIEWER_DRAW_WORLD);
+  //MatView(Jmf, PETSC_VIEWER_STDOUT_WORLD);
 }
 
 /*!
@@ -865,10 +894,21 @@ PetscErrorCode IMEXBDF2::snes_function(Vec x, Vec f, bool linear) {
   saveDerivs(fdata);
 
   // G(x) now in fdata
-  for(int i=0;i<nlocal;i++) {
-    //output.write("\n%d, %e, %e, %e ", i, xdata[i], fdata[i], rhs[i]);
-    fdata[i] = xdata[i] - implicit_gamma * fdata[i] - rhs[i];
-    //output.write("-> %e\n", fdata[i]);
+  
+  if(!have_constraints) {
+    // No constraints, so simple loop over all variables
+    
+    for(int i=0;i<nlocal;i++) {
+      fdata[i] = xdata[i] - implicit_gamma * fdata[i] - rhs[i];
+    }
+  }else {
+    // Some constraints
+    for(int i=0;i<nlocal;i++) {
+      if(is_dae[i] > 0.5) { // 1 -> differential, 0 -> algebraic
+        fdata[i] = xdata[i] - implicit_gamma * fdata[i] - rhs[i];
+      }
+      // Otherwise the constraint is that fdata[i] = 0.0
+    }
   }
 
   // Restore data arrays to PETSc

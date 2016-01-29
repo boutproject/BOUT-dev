@@ -92,6 +92,9 @@ class IMEXBDF2 : public Solver {
   Vec      snes_x;  // Result of SNES
   SNES     snes;    // SNES context
   Mat      Jmf;     // Matrix-free Jacobian
+
+  bool have_constraints; // Are there any constraint variables?
+  BoutReal *is_dae; // 1 -> DAE, 0 -> AE
   
   MatFDColoring fdcoloring;
   
