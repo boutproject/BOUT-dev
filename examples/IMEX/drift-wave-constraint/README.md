@@ -27,6 +27,12 @@ currently included in the coloring.
 
 Using the IMEX-BDF2 solver:
 
+    $ ./test-drift solver:type=imexbdf2 solver:matrix_free=false
+
+    1.000e+02          2               35       1.25e-01    64.3    0.0    3.7    0.9   31.1
+    2.000e+02          2               35       1.21e-01    66.3    0.0    3.8    0.9   29.0
+    3.000e+02          2               35       1.22e-01    65.8    0.0    3.7    0.9   29.6
+
     $ ./test-drift solver:type=imexbdf2 solver:matrix_free=false -pc_type sor
 
     1.000e+02          2               35       1.66e-01    48.6    0.0    2.8    0.6   47.9
