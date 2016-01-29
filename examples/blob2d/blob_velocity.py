@@ -1,5 +1,8 @@
-from __future__ import division
-from past.utils import old_div
+try:
+        from past.utils import old_div
+except:
+        def old_div(a,b):
+                return a/b
 
 
 def blob_velocity(n,**kwargs):
@@ -60,12 +63,17 @@ def blob_velocity(n,**kwargs):
 
 
 import numpy as np
-from boutdata import *
-from boututils import *
+from boutdata.collect import collect
 import pickle
-import matplotlib.pyplot as plt
 
-n = collect('n', path='data')
+data='data'
+
+if True:
+        import sys
+        if len(sys.argv) > 1:
+                data=sys.argv[1]
+
+n = collect('n', path=data, info=False)
 
 
 vx,vy,xx,yy = blob_velocity(n[:,:,0,:],type='COM',Index=True)
@@ -83,5 +91,9 @@ f = open('Velocity.dat','rb')
 vx = pickle.load(f)
 f.close()
 
-plt.plot(vx)
-plt.show()
+try:
+        import matplotlib.pyplot as plt
+        plt.plot(vx)
+        plt.show()
+except:
+        pass

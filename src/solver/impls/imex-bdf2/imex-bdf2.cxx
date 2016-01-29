@@ -565,7 +565,7 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
       
       ISColoring iscoloring;
       
-#if 0
+#if PETSC_VERSION_GE(3,5,0)
       MatColoring coloring; // This new in PETSc 3.5
       MatColoringCreate(Jmf,&coloring);
       MatColoringSetType(coloring,MATCOLORINGSL);
@@ -608,12 +608,12 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
                  0,   // Number of nonzeros per row in off-diagonal portion of local submatrix
                  PETSC_NULL,
                  &Jmf);
-
-#ifdef BOUT_HAS_PETSC_3_3
-    // Before 3.4
-      SNESSetJacobian(snes,Jmf,Jmf,SNESDefaultComputeJacobian,this`);
+      
+#if PETSC_VERSION_GE(3,4,0)
+    SNESSetJacobian(snes,Jmf,Jmf,SNESComputeJacobianDefault,this);
 #else
-      SNESSetJacobian(snes,Jmf,Jmf,SNESComputeJacobianDefault,this);
+    // Before 3.4
+    SNESSetJacobian(snes,Jmf,Jmf,SNESDefaultComputeJacobian,this); 
 #endif
     
       MatSetOption(Jmf,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_FALSE);

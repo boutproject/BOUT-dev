@@ -51,6 +51,7 @@ class PetscLib;
 #define PETSC_DEPRECATED(a)
 
 #include <petsc.h>
+#include <petscversion.h>
 
 class PetscLib {
 public:
@@ -70,6 +71,17 @@ private:
   
   static PetscLogEvent USER_EVENT;
 };
+
+#ifndef PETSC_VERSION_GE
+// Newer versions of PETSc define these symbols for testing library version
+// This is a re-implementation of the PETSc BSD-licensed code
+
+#define PETSC_VERSION_GE(MAJOR,MINOR,SUBMINOR)                          \
+  ( (PETSC_VERSION_MAJOR > MAJOR) ||                                    \
+    ( (PETSC_VERSION_MAJOR == MAJOR) && ( (PETSC_VERSION_MINOR > MINOR) || \
+                                          ( (PETSC_VERSION_MINOR == MINOR) && (PETSC_VERSION_SUBMINOR >= SUBMINOR)))))
+
+#endif // PETSC_VERSION_GE
 
 #else // BOUT_HAS_PETSC
 
