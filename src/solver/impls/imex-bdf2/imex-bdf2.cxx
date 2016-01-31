@@ -586,9 +586,13 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
       MatFDColoringSetFunction(fdcoloring,(PetscErrorCode (*)(void))FormFunctionForColoring,this);
       MatFDColoringSetFromOptions(fdcoloring);
       //MatFDColoringSetUp(Jmf,iscoloring,fdcoloring);
-      
-      SNESSetJacobian(snes,Jmf,Jmf,SNESComputeJacobianDefaultColor,fdcoloring);
 
+#if PETSC_VERSION_GE(3,4,0)
+      SNESSetJacobian(snes,Jmf,Jmf,SNESComputeJacobianDefaultColor,fdcoloring);
+#else
+      SNESSetJacobian(snes,Jmf,Jmf,SNESDefaultComputeJacobianColor,fdcoloring);
+#endif
+      
       // Re-use Jacobian
       int lag_jacobian;
       OPTION(options, lag_jacobian,   4);
