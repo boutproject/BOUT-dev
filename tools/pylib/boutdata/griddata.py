@@ -7,6 +7,9 @@ except ImportError:
     print("ERROR: restart module needs DataFile")
     raise
 
+from numpy import ndarray
+
+
 def slice(infile, outfile, region = None, xind=None, yind=None):
     """
     xind, yind - index ranges. Range includes first point, but not last point
@@ -90,3 +93,68 @@ def slice(infile, outfile, region = None, xind=None, yind=None):
 
     indf.close()
     outdf.close()
+
+
+def rotate(gridfile, yshift, output=None):
+    """
+    Shifts a grid file by the specified number of points in y
+    
+    This moves the branch cut around, and can be used
+    to change the limiter location
+    """
+
+    if output is None:
+        output = gridfile + "_rot"
+
+    print("Rotating grid file '%s' -> '%s'" % (gridfile, output))
+        
+    # Open input grid file
+    with DataFile(gridfile) as d:
+        # Open output file
+        with DataFile(output, write=True, create=True) as out:
+            # Loop over variables
+            for varname in d.list():
+                # Number of dimensions
+                ndims = d.ndims(varname)
+                
+                if ndims == 2:
+                    print("Shifting '%s' (x,y)" % (varname,))
+                    # 2D, assume X-Y
+
+                    var = d[varname] # Read
+                    ny = var.shape[1]
+                    
+                    # Make sure yshift is positive and in range
+                    yshift = ((yshift % ny) + ny) % ny
+                    
+                    newvar = ndarray(var.shape)
+
+                    # Rotate
+                    newvar[:,0:(ny-yshift)] = var[:,yshift:ny]
+                    newvar[:,(ny-yshift):] = var[:,:yshift]
+
+                    # Write to output
+                    #out[varname] = newvar # Write
+                    out.write(varname, newvar)
+                elif ndims == 3:
+                    print("Shifting '%s' (x,y,z)" % (varname,))
+                    # 3D, assume X-Y-Z
+                    
+                    var = d[varname] # Read
+                    ny = var.shape[1]
+
+                    # Make sure yshift is positive and in range
+                    yshift = ((yshift % ny) + ny) % ny
+                    
+                    newvar = ndarray(var.shape)
+
+                    newvar[:,0:(ny-yshift),:] = var[:,yshift:ny,:]
+                    newvar[:,(ny-yshift):,:] = var[:,:yshift,:]
+
+                    # Write to output
+                    out.write(varname, newvar)
+                else:
+                    # Just copy
+                    print("Copying '%s' (%d dimensions)" % (varname, ndims))
+                    out.write(varname, d[varname])
+        

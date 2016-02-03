@@ -51,7 +51,12 @@ def plot_eigenvals(eigs, data=None):
 
     # Find closest data point, but stretch axes so 
     # real and imaginary components are weighted equally
-    dist = ((eigs_r - event.xdata)/range_r)**2 + ((eigs_i - event.ydata)/range_i)**2
+    if(range_r == 0):
+      dist = ((eigs_i - event.ydata)/range_i)**2
+    elif(range_i == 0):
+      dist = ((eigs_r - event.xdata)/range_r)**2
+    else:
+      dist = ((eigs_r - event.xdata)/range_r)**2 + ((eigs_i - event.ydata)/range_i)**2
     
     ind = argmin(dist)
     

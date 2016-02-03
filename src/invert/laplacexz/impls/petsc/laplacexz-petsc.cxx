@@ -158,10 +158,19 @@ LaplaceXZpetsc::~LaplaceXZpetsc() {
   VecDestroy(&xs);
 }
 
-void LaplaceXZpetsc::setCoefs(const Field3D &A, const Field3D &B) {
+void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
   Timer timer("invert");
   // Set coefficients
 
+  // Shift coefficients into orthogonal X-Z coordinates
+  Field3D A = Ain;
+  Field3D B = Bin;
+  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
+    // Shift in Z using FFT
+    A = Ain.shiftZ(true); // Shift into real space
+    B = Bin.shiftZ(true);
+  }
+  
   // Each Y slice is handled as a separate set of matrices and KSP context
   for(vector<YSlice>::iterator it = slice.begin(); it != slice.end(); it++) {
     // Get Y index
@@ -321,18 +330,23 @@ void LaplaceXZpetsc::setCoefs(const Field3D &A, const Field3D &B) {
     // Set operators
     for(vector<YSlice>::iterator it = slice.begin(); it != slice.end(); it++) {
 
-      //KSPSetOperators(it->ksp, it->MatA, it->MatP, SAME_PRECONDITIONER); // PETSc <= 3.4
       // Note: This is a hack to force update of the preconditioner matrix
+#if PETSC_VERSION_GE(3,5,0)
+      KSPSetOperators(it->ksp, it->MatA, it->MatP);
+#else
       KSPSetOperators(it->ksp, it->MatA, it->MatP, SAME_NONZERO_PATTERN);
-
-      //KSPSetOperators(it->ksp, it->MatA, it->MatP); // PETSc >= 3.5
+#endif
     }
   }else {
     for(vector<YSlice>::iterator it = slice.begin(); it != slice.end(); it++) {
       /// Reuse the preconditioner, even if the operator changes
 
+#if PETSC_VERSION_GE(3,5,0)
+      KSPSetReusePreconditioner(it->ksp, PETSC_TRUE);
+      //KSPSetOperators(it->ksp, it->MatA, it->MatP);
+#else
       KSPSetOperators(it->ksp, it->MatA, it->MatP, SAME_PRECONDITIONER); // PETSc <= 3.4
-      //KSPSetReusePreconditioner(it->ksp, PETSC_TRUE);  // PETSc >= 3.5
+#endif
     }
   }
 

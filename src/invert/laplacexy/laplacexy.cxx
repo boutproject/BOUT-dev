@@ -9,11 +9,9 @@
 
 #include <boutcomm.hxx>
 #include <utils.hxx>
+#include <bout/sys/timer.hxx>
 
 #include <output.hxx>
-
-// Include derivatives in the Y direction?
-//#define INCLUDE_Y_DERIVS 1
 
 #undef __FUNCT__
 #define __FUNCT__ "laplacePCapply"
@@ -28,6 +26,7 @@ static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
 }
 
 LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
+  Timer timer("invert");
   
   if(opt == NULL) {
     // If no options supplied, use default
@@ -202,159 +201,6 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
   
   // Now communicate to fill guard cells
   mesh->communicate(indexXY);
-  
-  //////////////////////////////////////////////////
-  // Set Matrix elements
-  // 
-  // (1/J) d/dx ( J * g11 d/dx ) + (1/J) d/dy ( J * g22 d/dy )
-  
-  for(int x=mesh->xstart; x <= mesh->xend; x++) {
-    for(int y=mesh->ystart;y<=mesh->yend;y++) {
-      // stencil entries
-      PetscScalar c, xm, xp, ym, yp;
-      
-      // XX component
-      
-      // Metrics on x+1/2 boundary
-      BoutReal J = 0.5*(mesh->J(x,y) + mesh->J(x+1,y));
-      BoutReal g11 = 0.5*(mesh->g11(x,y) + mesh->g11(x+1,y));
-      BoutReal dx = 0.5*(mesh->dx(x,y) + mesh->dx(x+1,y));
-      
-      BoutReal val = J * g11 / (mesh->J(x,y) * dx * mesh->dx(x,y));
-      xp = val;
-      c  = -val;
-      
-      // Metrics on x-1/2 boundary
-      J = 0.5*(mesh->J(x,y) + mesh->J(x-1,y));
-      g11 = 0.5*(mesh->g11(x,y) + mesh->g11(x-1,y));
-      dx = 0.5*(mesh->dx(x,y) + mesh->dx(x-1,y));
-      
-      val = J * g11 / (mesh->J(x,y) * dx * mesh->dx(x,y));
-      xm = val;
-      c  -= val;
-      
-      // Put values into the preconditioner, X derivatives only
-      acoef[y - mesh->ystart][x - xstart] = xm;
-      bcoef[y - mesh->ystart][x - xstart] = c;
-      ccoef[y - mesh->ystart][x - xstart] = xp;
-#ifdef INCLUDE_Y_DERIVS
-      // YY component
-      // Metrics at y+1/2
-      J = 0.5*(mesh->J(x,y) + mesh->J(x,y+1));
-      BoutReal g_22 = 0.5*(mesh->g_22(x,y) + mesh->g_22(x,y+1));
-      BoutReal g23  = 0.5*(mesh->g23(x,y) + mesh->g23(x,y+1));
-      BoutReal g_23 = 0.5*(mesh->g_23(x,y) + mesh->g_23(x,y+1));
-      BoutReal dy   = 0.5*(mesh->dy(x,y) + mesh->dy(x,y+1));
-      
-      val = -J * g23 * g_23 / (g_22 * mesh->J(x,y) * dy * mesh->dy(x,y));
-      yp = val;
-      c -= val;
-      
-      // Metrics at y-1/2
-      J    = 0.5*(mesh->J(x,y)    + mesh->J(x,y-1));
-      g_22 = 0.5*(mesh->g_22(x,y) + mesh->g_22(x,y-1));
-      g23  = 0.5*(mesh->g23(x,y)  + mesh->g23(x,y-1));
-      g_23 = 0.5*(mesh->g_23(x,y) + mesh->g_23(x,y-1));
-      dy   = 0.5*(mesh->dy(x,y)   + mesh->dy(x,y-1));
-      
-      val = -J * g23 * g_23 / (g_22 * mesh->J(x,y) * dy * mesh->dy(x,y));
-      ym = val;
-      c -= val;
-#endif // INCLUDE_Y_DERIVS
-      
-      /////////////////////////////////////////////////
-      // Now have a 5-point stencil for the Laplacian
-      
-      int row = globalIndex(x,y);
-      
-      // Set the centre (diagonal)
-      MatSetValues(MatA,1,&row,1,&row,&c,INSERT_VALUES);
-      
-      // X + 1
-      int col = globalIndex(x+1, y);
-      MatSetValues(MatA,1,&row,1,&col,&xp,INSERT_VALUES);
-      
-      // X - 1
-      col = globalIndex(x-1, y);
-      MatSetValues(MatA,1,&row,1,&col,&xm,INSERT_VALUES);
-      
-      if(y == mesh->ystart) {
-        output << x - xstart << ": " << xm << ", " << c << ", " << xp << endl; 
-      }
-      
-#ifdef INCLUDE_Y_DERIVS
-      // Y + 1
-      col = globalIndex(x, y+1);
-      MatSetValues(MatA,1,&row,1,&col,&yp,INSERT_VALUES);
-      
-      // Y - 1
-      col = globalIndex(x, y-1);
-      MatSetValues(MatA,1,&row,1,&col,&ym,INSERT_VALUES);
-#endif // INCLUDE_Y_DERIVS
-      
-    }
-  }
-  
-  // X boundaries
-  if(mesh->firstX()) {
-    // Neumann on inner X boundary
-    
-    for(int y=mesh->ystart;y<=mesh->yend;y++) {
-      int row = globalIndex(mesh->xstart-1,y);
-      PetscScalar val = 1.0;
-      MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
-      
-      int col = globalIndex(mesh->xstart,y);
-      val = -1.0;
-      MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
-      
-      // Preconditioner
-      bcoef[y-mesh->ystart][0] =  1.0;
-      ccoef[y-mesh->ystart][0] = -1.0;
-    }
-  }
-  if(mesh->lastX()) {
-    // Dirichlet on outer X boundary
-    
-    for(int y=mesh->ystart;y<=mesh->yend;y++) {
-      int row = globalIndex(mesh->xend+1,y);
-      PetscScalar val = 0.5;
-      MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
-      
-      int col = globalIndex(mesh->xend,y);
-      MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
-      
-      // Preconditioner
-      acoef[y-mesh->ystart][mesh->xend+1 - xstart] = 0.5;
-      bcoef[y-mesh->ystart][mesh->xend+1 - xstart] = 0.5;
-    }
-  }
-  
-  // Dirichlet on Y boundaries
-  for(RangeIterator it=mesh->iterateBndryLowerY(); !it.isDone(); it++) {
-    int row = globalIndex(it.ind, mesh->ystart-1);
-    PetscScalar val = 0.5;
-    MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
-    
-    int col = globalIndex(it.ind, mesh->ystart);
-    MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
-  }
-  
-  for(RangeIterator it=mesh->iterateBndryUpperY(); !it.isDone(); it++) {
-    int row = globalIndex(it.ind, mesh->yend+1);
-    PetscScalar val = 0.5;
-    MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
-    
-    int col = globalIndex(it.ind, mesh->yend);
-    MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
-  }
-  
-  // Assemble Matrix
-  MatAssemblyBegin( MatA, MAT_FINAL_ASSEMBLY );
-  MatAssemblyEnd( MatA, MAT_FINAL_ASSEMBLY );
-
-  // Set coefficients for preconditioner
-  cr->setCoefs(nsys, acoef, bcoef, ccoef);
 
   //////////////////////////////////////////////////
   // Set up KSP
@@ -362,8 +208,7 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
   // Declare KSP Context 
   KSPCreate( comm, &ksp ); 
   
-  // Configure Linear Solver               
-  KSPSetOperators( ksp,MatA,MatA,DIFFERENT_NONZERO_PATTERN );
+  // Configure Linear Solver
   
   bool direct;
   OPTION(opt, direct, false);
@@ -415,6 +260,235 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
   }
   
   KSPSetFromOptions( ksp );
+
+  ///////////////////////////////////////////////////
+  // Decide boundary condititions
+  if(mesh->periodicY(mesh->xstart)) {
+    // Periodic in Y, so in the core
+    opt->get("core_bndry_dirichlet", x_inner_dirichlet, false);
+  }else {
+    // Non-periodic, so in the PF region
+    opt->get("pf_bndry_dirichlet", x_inner_dirichlet, true);
+  }
+  opt->get("y_bndry_dirichlet", y_bndry_dirichlet, false);
+
+  ///////////////////////////////////////////////////
+  // Including Y derivatives?
+
+  OPTION(opt, include_y_derivs, true);
+  
+  ///////////////////////////////////////////////////
+  // Set the default coefficients
+  setCoefs(1.0, 0.0);
+}
+
+void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
+  Timer timer("invert");
+  
+  //////////////////////////////////////////////////
+  // Set Matrix elements
+  // 
+  // (1/J) d/dx ( J * g11 d/dx ) + (1/J) d/dy ( J * g22 d/dy )
+  
+  for(int x=mesh->xstart; x <= mesh->xend; x++) {
+    for(int y=mesh->ystart;y<=mesh->yend;y++) {
+      // stencil entries
+      PetscScalar c, xm, xp, ym, yp;
+      
+      // XX component
+      
+      // Metrics on x+1/2 boundary
+      BoutReal J = 0.5*(mesh->J(x,y) + mesh->J(x+1,y));
+      BoutReal g11 = 0.5*(mesh->g11(x,y) + mesh->g11(x+1,y));
+      BoutReal dx = 0.5*(mesh->dx(x,y) + mesh->dx(x+1,y));
+      BoutReal Acoef = 0.5*(A(x,y) + A(x+1,y));
+      
+      BoutReal val = Acoef * J * g11 / (mesh->J(x,y) * dx * mesh->dx(x,y));
+      xp = val;
+      c  = -val;
+      
+      // Metrics on x-1/2 boundary
+      J = 0.5*(mesh->J(x,y) + mesh->J(x-1,y));
+      g11 = 0.5*(mesh->g11(x,y) + mesh->g11(x-1,y));
+      dx = 0.5*(mesh->dx(x,y) + mesh->dx(x-1,y));
+      Acoef = 0.5*(A(x,y) + A(x-1,y));
+      
+      val = Acoef * J * g11 / (mesh->J(x,y) * dx * mesh->dx(x,y));
+      xm = val;
+      c  -= val;
+
+      c += B(x,y);
+      
+      // Put values into the preconditioner, X derivatives only
+      acoef[y - mesh->ystart][x - xstart] = xm;
+      bcoef[y - mesh->ystart][x - xstart] = c;
+      ccoef[y - mesh->ystart][x - xstart] = xp;
+      
+      if( include_y_derivs ) {
+        // YY component
+        // Metrics at y+1/2
+        J = 0.5*(mesh->J(x,y) + mesh->J(x,y+1));
+        BoutReal g_22 = 0.5*(mesh->g_22(x,y) + mesh->g_22(x,y+1));
+        BoutReal g23  = 0.5*(mesh->g23(x,y) + mesh->g23(x,y+1));
+        BoutReal g_23 = 0.5*(mesh->g_23(x,y) + mesh->g_23(x,y+1));
+        BoutReal dy   = 0.5*(mesh->dy(x,y) + mesh->dy(x,y+1));
+        Acoef = 0.5*(A(x,y+1) + A(x,y));
+        
+        val = -Acoef * J * g23 * g_23 / (g_22 * mesh->J(x,y) * dy * mesh->dy(x,y));
+        yp = val;
+        c -= val;
+        
+        // Metrics at y-1/2
+        J    = 0.5*(mesh->J(x,y)    + mesh->J(x,y-1));
+        g_22 = 0.5*(mesh->g_22(x,y) + mesh->g_22(x,y-1));
+        g23  = 0.5*(mesh->g23(x,y)  + mesh->g23(x,y-1));
+        g_23 = 0.5*(mesh->g_23(x,y) + mesh->g_23(x,y-1));
+        dy   = 0.5*(mesh->dy(x,y)   + mesh->dy(x,y-1));
+        Acoef = 0.5*(A(x,y-1) + A(x,y));
+        
+        val = -Acoef * J * g23 * g_23 / (g_22 * mesh->J(x,y) * dy * mesh->dy(x,y));
+        ym = val;
+        c -= val;
+      }
+      
+      /////////////////////////////////////////////////
+      // Now have a 5-point stencil for the Laplacian
+      
+      int row = globalIndex(x,y);
+      
+      // Set the centre (diagonal)
+      MatSetValues(MatA,1,&row,1,&row,&c,INSERT_VALUES);
+      
+      // X + 1
+      int col = globalIndex(x+1, y);
+      MatSetValues(MatA,1,&row,1,&col,&xp,INSERT_VALUES);
+      
+      // X - 1
+      col = globalIndex(x-1, y);
+      MatSetValues(MatA,1,&row,1,&col,&xm,INSERT_VALUES);
+      
+      if( include_y_derivs ) {
+        // Y + 1
+        col = globalIndex(x, y+1);
+        MatSetValues(MatA,1,&row,1,&col,&yp,INSERT_VALUES);
+        
+        // Y - 1
+        col = globalIndex(x, y-1);
+        MatSetValues(MatA,1,&row,1,&col,&ym,INSERT_VALUES);
+      }
+      
+    }
+  }
+  
+  // X boundaries
+  if(mesh->firstX()) {
+    if(x_inner_dirichlet) {
+
+      // Dirichlet on inner X boundary
+      for(int y=mesh->ystart;y<=mesh->yend;y++) {
+        int row = globalIndex(mesh->xstart-1,y);
+        PetscScalar val = 0.5;
+        MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
+        
+        int col = globalIndex(mesh->xstart,y);
+        MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+        
+        // Preconditioner
+        bcoef[y-mesh->ystart][0] = 0.5;
+        ccoef[y-mesh->ystart][0] = 0.5;
+      }
+      
+    }else {
+      
+      // Neumann on inner X boundary
+      for(int y=mesh->ystart;y<=mesh->yend;y++) {
+        int row = globalIndex(mesh->xstart-1,y);
+        PetscScalar val = 1.0;
+        MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
+        
+        int col = globalIndex(mesh->xstart,y);
+        val = -1.0;
+        MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+        
+        // Preconditioner
+        bcoef[y-mesh->ystart][0] =  1.0;
+        ccoef[y-mesh->ystart][0] = -1.0;
+      }
+    }
+  }
+  if(mesh->lastX()) {
+    // Dirichlet on outer X boundary
+    
+    for(int y=mesh->ystart;y<=mesh->yend;y++) {
+      int row = globalIndex(mesh->xend+1,y);
+      PetscScalar val = 0.5;
+      MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
+      
+      int col = globalIndex(mesh->xend,y);
+      MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+      
+      // Preconditioner
+      acoef[y-mesh->ystart][mesh->xend+1 - xstart] = 0.5;
+      bcoef[y-mesh->ystart][mesh->xend+1 - xstart] = 0.5;
+    }
+  }
+
+  if(y_bndry_dirichlet) {
+    // Dirichlet on Y boundaries
+    for(RangeIterator it=mesh->iterateBndryLowerY(); !it.isDone(); it++) {
+      int row = globalIndex(it.ind, mesh->ystart-1);
+      PetscScalar val = 0.5;
+      MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
+      
+      int col = globalIndex(it.ind, mesh->ystart);
+      MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+    }
+    
+    for(RangeIterator it=mesh->iterateBndryUpperY(); !it.isDone(); it++) {
+      int row = globalIndex(it.ind, mesh->yend+1);
+      PetscScalar val = 0.5;
+      MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
+      
+      int col = globalIndex(it.ind, mesh->yend);
+      MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+    }
+  }else {
+    // Neumann on Y boundaries
+    for(RangeIterator it=mesh->iterateBndryLowerY(); !it.isDone(); it++) {
+      int row = globalIndex(it.ind, mesh->ystart-1);
+      PetscScalar val = 1.0;
+      MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
+    
+      val = -1.0;
+      int col = globalIndex(it.ind, mesh->ystart);
+      
+      MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+    }
+    
+    for(RangeIterator it=mesh->iterateBndryUpperY(); !it.isDone(); it++) {
+      int row = globalIndex(it.ind, mesh->yend+1);
+      PetscScalar val = 1.0;
+      MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
+      
+      val = -1.0;
+      int col = globalIndex(it.ind, mesh->yend);
+      MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+    }
+  }
+  
+  // Assemble Matrix
+  MatAssemblyBegin( MatA, MAT_FINAL_ASSEMBLY );
+  MatAssemblyEnd( MatA, MAT_FINAL_ASSEMBLY );
+
+  // Set the operator
+#if PETSC_VERSION_GE(3,5,0)
+  KSPSetOperators( ksp,MatA,MatA );
+#else
+  KSPSetOperators( ksp,MatA,MatA,DIFFERENT_NONZERO_PATTERN );
+#endif
+  
+  // Set coefficients for preconditioner
+  cr->setCoefs(nsys, acoef, bcoef, ccoef);
 }
 
 LaplaceXY::~LaplaceXY() {
@@ -435,6 +509,7 @@ LaplaceXY::~LaplaceXY() {
 }
 
 const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
+  Timer timer("invert");
   
   // Load initial guess x0 into xs and rhs into bs
   
@@ -449,17 +524,29 @@ const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
       VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
     }
   }
-  
-  // Inner X boundary (Neumann)
+
   if(mesh->firstX()) {
-    for(int y=mesh->ystart;y<=mesh->yend;y++) {
-      int ind = globalIndex(mesh->xstart-1,y);
+    if(x_inner_dirichlet) {
+      for(int y=mesh->ystart;y<=mesh->yend;y++) {
+        int ind = globalIndex(mesh->xstart-1,y);
       
-      PetscScalar val = x0(mesh->xstart-1,y);
-      VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
-      
-      val = x0(mesh->xstart-1,y) - x0(mesh->xstart,y);
-      VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+        PetscScalar val = x0(mesh->xstart-1,y);
+        VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
+        
+        val = 0.5*(x0(mesh->xstart-1,y) + x0(mesh->xstart,y));
+        VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+      }
+    }else {
+      // Inner X boundary (Neumann)
+      for(int y=mesh->ystart;y<=mesh->yend;y++) {
+        int ind = globalIndex(mesh->xstart-1,y);
+        
+        PetscScalar val = x0(mesh->xstart-1,y);
+        VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
+        
+        val = 0.0; //x0(mesh->xstart-1,y) - x0(mesh->xstart,y);
+        VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+      }
     }
   }
   
@@ -475,25 +562,48 @@ const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
       VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
     }
   }
+
+  if(y_bndry_dirichlet) {
+    for(RangeIterator it=mesh->iterateBndryLowerY(); !it.isDone(); it++) {
+      int ind = globalIndex(it.ind, mesh->ystart-1);
+    
+      PetscScalar val = x0(it.ind,mesh->ystart-1);
+      VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
+    
+      val = 0.5*(x0(it.ind, mesh->ystart-1) + x0(it.ind, mesh->ystart));
+      VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+    }
   
-  for(RangeIterator it=mesh->iterateBndryLowerY(); !it.isDone(); it++) {
-    int ind = globalIndex(it.ind, mesh->ystart-1);
+    for(RangeIterator it=mesh->iterateBndryUpperY(); !it.isDone(); it++) {
+      int ind = globalIndex(it.ind, mesh->yend+1);
     
-    PetscScalar val = x0(it.ind,mesh->ystart-1);
-    VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
+      PetscScalar val = x0(it.ind,mesh->yend+1);
+      VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
     
-    val = 0.5*(x0(it.ind, mesh->ystart-1) + x0(it.ind, mesh->ystart));
-    VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
-  }
+      val = 0.5*(x0(it.ind, mesh->yend+1) + x0(it.ind, mesh->yend));
+      VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+    }
+  } else {
+    // Y boundaries Neumann
+    for(RangeIterator it=mesh->iterateBndryLowerY(); !it.isDone(); it++) {
+      int ind = globalIndex(it.ind, mesh->ystart-1);
+    
+      PetscScalar val = x0(it.ind,mesh->ystart-1);
+      VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
+      
+      val = 0.0;
+      VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+    }
   
-  for(RangeIterator it=mesh->iterateBndryUpperY(); !it.isDone(); it++) {
-    int ind = globalIndex(it.ind, mesh->yend+1);
+    for(RangeIterator it=mesh->iterateBndryUpperY(); !it.isDone(); it++) {
+      int ind = globalIndex(it.ind, mesh->yend+1);
+      
+      PetscScalar val = x0(it.ind,mesh->yend+1);
+      VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
     
-    PetscScalar val = x0(it.ind,mesh->yend+1);
-    VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
-    
-    val = 0.5*(x0(it.ind, mesh->yend+1) + x0(it.ind, mesh->yend));
-    VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+      val = 0.0;
+      VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+    }
   }
   
   // Assemble RHS Vector
@@ -536,7 +646,8 @@ const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
       int ind = globalIndex(mesh->xstart-1,y);
       PetscScalar val;
       VecGetValues(xs, 1, &ind, &val );
-      result(mesh->xstart-1,y) = val;
+      for(int x=mesh->xstart-1; x >= 0; x--)
+        result(x,y) = val;
     }
   }
 
@@ -546,7 +657,8 @@ const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
       int ind = globalIndex(mesh->xend+1,y);
       PetscScalar val;
       VecGetValues(xs, 1, &ind, &val );
-      result(mesh->xend+1,y) = val;
+      for(int x=mesh->xend+1;x < mesh->ngx;x++)
+        result(x,y) = val;
     }
   }
   
@@ -555,7 +667,8 @@ const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
     int ind = globalIndex(it.ind, mesh->ystart-1);
     PetscScalar val;
     VecGetValues(xs, 1, &ind, &val );
-    result(it.ind, mesh->ystart-1) = val;
+    for(int y=mesh->ystart-1;y>=0;y--)
+      result(it.ind, y) = val;
   }
   
   // Upper Y boundary
@@ -563,7 +676,8 @@ const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
     int ind = globalIndex(it.ind, mesh->yend+1);
     PetscScalar val;
     VecGetValues(xs, 1, &ind, &val );
-    result(it.ind, mesh->yend+1) = val;
+    for(int y=mesh->yend+1;y<mesh->ngy;y++)
+      result(it.ind, y) = val;
   }
   
   return result;

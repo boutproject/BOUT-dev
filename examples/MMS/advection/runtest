@@ -16,8 +16,6 @@ from numpy import sqrt, max, abs, mean, array, log, pi
 
 from os.path import join
 
-import matplotlib.pyplot as plt
-
 import pickle
 
 MPIRUN = getmpirun()
@@ -111,6 +109,8 @@ for opts,label,sym in options:
     
     # plot errors
     if False:
+        import matplotlib.pyplot as plt
+
         plt.figure()
     
         plt.plot(dx, error_2, '-o', label=r'$l^2$')
@@ -138,35 +138,39 @@ with open("advection.pkl", "wb") as output:
     pickle.dump(err_inf_all, output)
 
 # Plot all results for comparison
-plt.figure()
-for e, label, sym in err_2_all:
-    plt.plot(dx, e, sym, label=label)
+try:
+    import matplotlib.pyplot as plt
 
-plt.legend(loc="upper left")
-plt.grid()
-plt.yscale('log')
-plt.xscale('log')
+try:
+    plt.figure()
+    for e, label, sym in err_2_all:
+        plt.plot(dx, e, sym, label=label)
+
+    plt.legend(loc="upper left")
+    plt.grid()
+    plt.yscale('log')
+    plt.xscale('log')
     
-plt.xlabel(r'Mesh spacing $\delta x$')
-plt.ylabel(r'$l^2$ error norm')
-plt.savefig("advection_norm_l2.pdf")
-plt.close()
+    plt.xlabel(r'Mesh spacing $\delta x$')
+    plt.ylabel(r'$l^2$ error norm')
+    plt.savefig("advection_norm_l2.pdf")
+    plt.close()
 
-###
+    ###
 
-plt.figure()
-for e, label, sym in err_inf_all:
-    plt.plot(dx, e, sym, label=label)
+    plt.figure()
+    for e, label, sym in err_inf_all:
+        plt.plot(dx, e, sym, label=label)
 
-plt.legend(loc="upper left")
-plt.grid()
-plt.yscale('log')
-plt.xscale('log')
+    plt.legend(loc="upper left")
+    plt.grid()
+    plt.yscale('log')
+    plt.xscale('log')
     
-plt.xlabel(r'Mesh spacing $\delta x$')
-plt.ylabel(r'$l^\infty$ error norm')
-plt.savefig("advection_norm_linf.pdf")
-plt.close()
+    plt.xlabel(r'Mesh spacing $\delta x$')
+    plt.ylabel(r'$l^\infty$ error norm')
+    plt.savefig("advection_norm_linf.pdf")
+    plt.close()
 
 
 if success:

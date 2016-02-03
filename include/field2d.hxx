@@ -62,7 +62,7 @@ class Field2D : public Field, public FieldData {
 
   /// Ensure data is allocated
   void allocate();
-  bool isAllocated() { return data !=  NULL; } ///< Test if data is allocated
+  bool isAllocated() const { return data !=  NULL; } ///< Test if data is allocated
 
   /// Return a pointer to the time-derivative field
   Field2D* timeDeriv();
@@ -168,16 +168,7 @@ class Field2D : public Field, public FieldData {
   int  getData(int x, int y, int z, BoutReal *rptr) const;
   int  setData(int x, int y, int z, void *vptr);
   int  setData(int x, int y, int z, BoutReal *rptr);
-
-  bool ioSupport() { return true; } ///< This class supports I/O operations
-  BoutReal *getData(int component) { 
-    BoutReal **d = getData();
-    return *d;
-  }
-  void zeroComponent(int component){
-    *this = 0.0;
-  }
-
+  
 #ifdef CHECK
   bool checkData(bool vital = true) const; ///< Checks if the data is all valid.
   void doneComms() { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }

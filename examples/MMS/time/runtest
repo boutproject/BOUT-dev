@@ -12,6 +12,8 @@ from builtins import str
 from boututils.run_wrapper import shell, launch, getmpirun
 from boutdata.collect import collect
 
+verbose=False
+
 from numpy import sqrt, max, abs, mean, array, log, pi
 
 from os.path import join
@@ -25,12 +27,22 @@ shell("make > make.log")
 
 # List of options to be passed for each test
 options = [
-    ("solver:type=euler", "Euler", "-^")
-    ,("solver:type=karniadakis", "Karniadakis", "-x")
-    ,("solver:type=rk3ssp", "RK3-SSP", "-s")
-    ,("solver:type=rk4", "RK4", "-o")
-    ,("solver:type=imexbdf2", "IMEX-BDF2", "-+")
+    ("solver:type=euler", "Euler", "-^",1)
+    ,("solver:type=karniadakis", "Karniadakis", "-x",2) # Whats the expected order?
+    ,("solver:type=rk3ssp", "RK3-SSP", "-s",3)
+    ,("solver:type=rk4", "RK4", "-o",4)
+    ,("solver:type=rkgeneric", "RK-generic", "-o",4)
+    #,("solver:type=pvode solver:", "P-Vode", "-o",2)
     ]
+#Missing: cvode, ida, slepc, power, arkode, snes
+# Is there a better way to check a certain solver should be enabled?
+s,out=shell("grep DBOUT_HAS_PETSC  ../../../make.config")
+if s == 0:
+    #requires petsc:
+    options.append(("solver:type=imexbdf2", "IMEX-BDF2", "-+",2))# What's the expected order?
+    # should petsc solver also be added?
+    #options.append(("solver:type=petsc",    "petsc",     "-+",2))# What's the expected order?
+#options.append(("solver:type=power",    "power",     "-+",2))# What's the expected order?
 
 # List of NX values to use
 timesteps = [4, 8, 16, 32, 64, 128, 256]
@@ -41,14 +53,15 @@ success = True
 
 err_2_all = []
 err_inf_all = []
-for opts,label,sym in options:
+for opts,label,sym,expected_order in options:
     error_2   = []  # The L2 error (RMS)
     error_inf = []  # The maximum error
 
     for nt in timesteps:
         args = opts + " solver:timestep="+str(1./nt)
-        
-        print("  Running with " + args)
+
+        if verbose:
+            print("  Running with " + args)
 
         # Delete old data
         shell("rm data/BOUT.dmp.*.nc")
@@ -59,7 +72,7 @@ for opts,label,sym in options:
         s, out = launch(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
         
         # Save output to log file
-        f = open("run.log."+str(nt), "w")
+        f = open("run.log."+label+"."+str(nt), "w")
         f.write(out)
         f.close()
         
@@ -71,8 +84,9 @@ for opts,label,sym in options:
         
         error_2.append( l2 )
         error_inf.append( linf )
-        
-        print("  -> Error norm: l-2 %f l-inf %f" % (l2, linf))
+
+        if verbose:
+            print("  -> Error norm: l-2 %f l-inf %f" % (l2, linf))
         
     
     # Append to list of all results
@@ -85,7 +99,7 @@ for opts,label,sym in options:
     # Calculate convergence order
     
     order = log(error_2[-1] / error_2[-2]) / log(dt[-1] / dt[-2])
-    print("Convergence order = %f" % (order))
+    print("Convergence order = %f (expected: %f) %s" % (order,expected_order,label))
     
     # plot errors
     if False:
@@ -110,25 +124,27 @@ for opts,label,sym in options:
         plt.show()
         plt.close()
 
-# Plot all results for comparison
-plt.figure()
-for e, label, sym in err_2_all:
-    plt.plot(dt, e, sym, label=label)
+try:
+    # Plot all results for comparison
+    plt.figure()
+    for e, label, sym in err_2_all:
+        plt.plot(dt, e, sym, label=label)
 
-plt.legend(loc="lower right")
-plt.grid()
-plt.yscale('log')
-plt.xscale('log')
+    plt.legend(loc="lower right")
+    plt.grid()
+    plt.yscale('log')
+    plt.xscale('log')
     
-plt.xlabel(r'Time step $\delta t$')
-plt.ylabel(r'$l^2$ error norm')
-plt.savefig("time_norm.pdf")
-plt.close()
-
+    plt.xlabel(r'Time step $\delta t$')
+    plt.ylabel(r'$l^2$ error norm')
+    plt.savefig("time_norm.pdf")
+    plt.close()
+except:
+    pass
 
 if success:
-  print(" => All tests passed")
-  exit(0)
+    print(" => All tests passed")
+    exit(0)
 else:
-  print(" => Some failed tests")
-  exit(1)
+    print(" => Some failed tests")
+    exit(1)
