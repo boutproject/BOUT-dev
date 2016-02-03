@@ -1611,6 +1611,7 @@ void BoundaryNeumann::apply(Field2D &f) {
 
 void BoundaryNeumann::apply(Field3D &f) {
   for(bndry->first(); !bndry->isDone(); bndry->next())
+    #pragma omp parallel for
     for(int z=0;z<mesh->ngz;z++) {
       BoutReal delta = bndry->bx*mesh->dx[bndry->x][bndry->y]+bndry->by*mesh->dy[bndry->x][bndry->y];
       f[bndry->x][bndry->y][z] = f[bndry->x - bndry->bx][bndry->y - bndry->by][z] + val*delta;
