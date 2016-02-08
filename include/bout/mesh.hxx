@@ -147,6 +147,12 @@ class Mesh {
   // Boundary region iteration
   virtual const RangeIterator iterateBndryLowerY() const = 0;
   virtual const RangeIterator iterateBndryUpperY() const = 0;
+  virtual const RangeIterator iterateBndryLowerOuterY() const = 0;
+  virtual const RangeIterator iterateBndryLowerInnerY() const = 0;
+  virtual const RangeIterator iterateBndryUpperOuterY() const = 0;
+  virtual const RangeIterator iterateBndryUpperInnerY() const = 0;
+
+
   
   bool hasBndryLowerY();
   bool hasBndryUpperY();
