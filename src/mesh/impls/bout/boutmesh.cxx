@@ -2742,6 +2742,8 @@ const RangeIterator BoutMesh::iterateBndryUpperY() const {
   }
 */
 
+blurg
+
   RangeIterator iter = iterateBndryUpperInnerY();
   iter += iterateBndryUpperOuterY();
   return iter;
