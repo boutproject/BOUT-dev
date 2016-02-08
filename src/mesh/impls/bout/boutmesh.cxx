@@ -2608,9 +2608,55 @@ MPI_Comm BoutMesh::getYcomm(int xpos) const {
  *                 Range iteration
  ****************************************************************/
 
-const RangeIterator BoutMesh::iterateBndryLowerY() const {
+const RangeIterator BoutMesh::iterateBndryLowerInnerY() const {
 
   int xs = 0;
+  int xe = ngx-1;
+  int yglob = YGLOBAL(ystart);
+  if(yglob == 0){
+    if((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart))
+       xs = DDATA_XSPLIT;
+    if((DDATA_OUTDEST >= 0) && (DDATA_XSPLIT < xend+1))
+       xe = DDATA_XSPLIT-1;
+
+    if(xs < xstart)
+      xs = xstart;
+    if(xe > xend)
+      xe = xend;
+
+    return RangeIterator(xs, xe);
+  }else{
+    //Return Null iterator if not on lower y boundary
+    return RangeIterator(1,0);
+  }
+}
+
+const RangeIterator BoutMesh::iterateBndryLowerOuterY() const {
+
+  int xs = 0;
+  int xe = ngx-1;
+  int yglob = YGLOBAL(ystart);
+  if(yglob == ny_inner){
+    if((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart))
+      xs = DDATA_XSPLIT;
+    if((DDATA_OUTDEST >= 0) && (DDATA_XSPLIT < xend+1))
+      xe = DDATA_XSPLIT-1;
+
+    if(xs < xstart)
+      xs = xstart;
+    if(xe > xend)
+      xe = xend;
+
+    return RangeIterator(xs, xe);
+  }else{
+    return RangeIterator(1,0);
+  }
+
+}
+
+const RangeIterator BoutMesh::iterateBndryLowerY() const {
+
+/*  int xs = 0;
   int xe = ngx-1;
   if((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart))
     xs = DDATA_XSPLIT;
@@ -2621,25 +2667,86 @@ const RangeIterator BoutMesh::iterateBndryLowerY() const {
     xs = xstart;
   if(xe > xend)
     xe = xend;
+*/
+  RangeIterator iter = iterateBndryLowerInnerY();
+  iter += iterateBndryLowerOuterY();
+  return iter;
+}
 
-  return RangeIterator(xs, xe);
+const RangeIterator BoutMesh::iterateBndryUpperInnerY() const {
+  int xs = 0;
+  int xe = ngx-1;
+  int yglob = YGLOBAL(yend);
+  
+  if(yglob == ny_inner - 1){
+    if((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart))
+      xs = UDATA_XSPLIT;
+    if((UDATA_OUTDEST >= 0) && (UDATA_XSPLIT < xend+1))
+      xe = UDATA_XSPLIT-1;
+
+    if(xs < xstart)
+      xs = xstart;
+    if(xe > xend)
+      xe = xend;
+
+    return RangeIterator(xs, xe);
+  }else{
+    return RangeIterator(1,0);
+  }
+
+}
+
+const RangeIterator BoutMesh::iterateBndryUpperOuterY() const {
+  int xs = 0;
+  int xe = ngx-1;
+  int yglob = YGLOBAL(yend);
+
+  if(yglob == GlobalNy - 5){
+    if((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart))
+      xs = UDATA_XSPLIT;
+    if((UDATA_OUTDEST >= 0) && (UDATA_XSPLIT < xend+1))
+      xe = UDATA_XSPLIT-1;
+
+    if(xs < xstart)
+      xs = xstart;
+    if(xe > xend)
+      xe = xend;
+
+    return RangeIterator(xs, xe);
+  }else{
+    return RangeIterator(1,0);
+  }
+
 }
 
 const RangeIterator BoutMesh::iterateBndryUpperY() const {
+/*
   int xs = 0;
   int xe = ngx-1;
-  if((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart))
-    xs = UDATA_XSPLIT;
-  if((UDATA_OUTDEST >= 0) && (UDATA_XSPLIT < xend+1))
-    xe = UDATA_XSPLIT-1;
+  int yglob = YGLOBAL(yend);
 
-  if(xs < xstart)
-    xs = xstart;
-  if(xe > xend)
-    xe = xend;
+  if(yglob == ny_inner - 1){
+    if((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart))
+      xs = UDATA_XSPLIT;
+    if((UDATA_OUTDEST >= 0) && (UDATA_XSPLIT < xend+1))
+      xe = UDATA_XSPLIT-1;
 
-  return RangeIterator(xs, xe);
+    if(xs < xstart)
+      xs = xstart;
+    if(xe > xend)
+      xe = xend;
+
+    return RangeIterator(xs, xe);
+  }else{
+    return RangeIteratory(1,0);
+  }
+*/
+
+  RangeIterator iter = iterateBndryUpperInnerY();
+  iter += iterateBndryUpperOuterY();
+  return iter;
 }
+
 
 
 vector<BoundaryRegion*> BoutMesh::getBoundaries() {
