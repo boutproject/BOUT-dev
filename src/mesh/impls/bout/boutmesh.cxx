@@ -2613,22 +2613,23 @@ const RangeIterator BoutMesh::iterateBndryLowerInnerY() const {
   int xs = 0;
   int xe = ngx-1;
   int yglob = YGLOBAL(ystart);
-  if(yglob == 0){
-    if((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart))
-       xs = DDATA_XSPLIT;
-    if((DDATA_OUTDEST >= 0) && (DDATA_XSPLIT < xend+1))
-       xe = DDATA_XSPLIT-1;
+  
+  if(yglob > 0){
+    //Not on lower inner
+    xs = 0;
+    xe = -1; 
   }else{
+    if((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart) && (yglob > 0))
+       xs = DDATA_XSPLIT;
+    if((DDATA_OUTDEST >= 0) && (DDATA_XSPLIT < xend+1) && (yglob > 0))
+       xe = DDATA_XSPLIT-1;
+ 
     if(xs < xstart)
       xs = xstart;
     if(xe > xend)
       xe = xend;
   }
-    return RangeIterator(xs, xe);
-  //}else{
-    //Return Null iterator if not on lower y boundary
-  //  return RangeIterator(1,0);
-  //}
+  return RangeIterator(xs, xe);
 }
 
 const RangeIterator BoutMesh::iterateBndryLowerOuterY() const {
@@ -2636,23 +2637,24 @@ const RangeIterator BoutMesh::iterateBndryLowerOuterY() const {
   int xs = 0;
   int xe = ngx-1;
   int yglob = YGLOBAL(ystart);
-  if(yglob == ny_inner){
-    if((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart))
+  
+  if(yglob > 0){
+    //Not on lower inner
+    if((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart) && (yglob != ny_inner) && (jyseps2_1 != jyseps1_2))
       xs = DDATA_XSPLIT;
-    if((DDATA_OUTDEST >= 0) && (DDATA_XSPLIT < xend+1))
+    if((DDATA_OUTDEST >= 0) && (DDATA_XSPLIT < xend+1)&& (yglob != ny_inner) && (jyseps2_1 != jyseps1_2))
       xe = DDATA_XSPLIT-1;
-  }else{
+
 
     if(xs < xstart)
       xs = xstart;
     if(xe > xend)
       xe = xend;
+  }else{
+    xs = 0;
+    xe = -1;
   }
     return RangeIterator(xs, xe);
- // }else{
- //   return RangeIterator(1,0);
-  //}
-
 }
 
 const RangeIterator BoutMesh::iterateBndryLowerY() const {
@@ -2671,6 +2673,7 @@ const RangeIterator BoutMesh::iterateBndryLowerY() const {
 */
   RangeIterator iter = iterateBndryLowerOuterY();
   iter += iterateBndryLowerInnerY();
+  iter.first();
   return iter;
 }
 
@@ -2679,22 +2682,21 @@ const RangeIterator BoutMesh::iterateBndryUpperInnerY() const {
   int xe = ngx-1;
   int yglob = YGLOBAL(yend);
   
-  //if(yglob == ny_inner - 1){
-    if((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart))
+  if(yglob < ny - 1){
+    if((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart) && (yglob != ny_inner - 1) && (jyseps2_1 != jyseps1_2))
       xs = UDATA_XSPLIT;
-    if((UDATA_OUTDEST >= 0) && (UDATA_XSPLIT < xend+1))
+    if((UDATA_OUTDEST >= 0) && (UDATA_XSPLIT < xend+1) && (yglob != ny_inner -1) && (jyseps2_1 != jyseps1_2))
       xe = UDATA_XSPLIT-1;
 
     if(xs < xstart)
       xs = xstart;
     if(xe > xend)
       xe = xend;
-
-    return RangeIterator(xs, xe);
-  //}else{
-  //  return RangeIterator(1,0);
- // }
-
+  }else{
+    xs = 0;
+    xe = -1;
+  }
+  return RangeIterator(xs, xe);
 }
 
 const RangeIterator BoutMesh::iterateBndryUpperOuterY() const {
@@ -2702,7 +2704,12 @@ const RangeIterator BoutMesh::iterateBndryUpperOuterY() const {
   int xe = ngx-1;
   int yglob = YGLOBAL(yend);
 
-  //if(yglob == GlobalNy - 5){
+  if(yglob < ny - 1){
+    //Not on upper outer
+    xs = 0;
+    xe = -1;
+  }else{
+    //Is there a core region? If so set iterator to miss it out
     if((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart))
       xs = UDATA_XSPLIT;
     if((UDATA_OUTDEST >= 0) && (UDATA_XSPLIT < xend+1))
@@ -2712,12 +2719,8 @@ const RangeIterator BoutMesh::iterateBndryUpperOuterY() const {
       xs = xstart;
     if(xe > xend)
       xe = xend;
-
+  }
     return RangeIterator(xs, xe);
-  //}else{
-   // return RangeIterator(1,0);
-  //}
-
 }
 
 const RangeIterator BoutMesh::iterateBndryUpperY() const {
@@ -2745,8 +2748,12 @@ const RangeIterator BoutMesh::iterateBndryUpperY() const {
 
 //blurg
 
-  RangeIterator iter = iterateBndryUpperInnerY();
+  RangeIterator iter;
+  iter = iterateBndryUpperInnerY();
   iter += iterateBndryUpperOuterY();
+
+  iter.first();
+  
   return iter;
 }
 
