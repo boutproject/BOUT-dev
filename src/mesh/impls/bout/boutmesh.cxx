@@ -2613,17 +2613,17 @@ const RangeIterator BoutMesh::iterateBndryLowerInnerY() const {
   int xs = 0;
   int xe = ngx-1;
   int yglob = YGLOBAL(ystart);
-  //if(yglob == 0){
+  if(yglob == 0){
     if((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart))
        xs = DDATA_XSPLIT;
     if((DDATA_OUTDEST >= 0) && (DDATA_XSPLIT < xend+1))
        xe = DDATA_XSPLIT-1;
-  //}else{
+  }else{
     if(xs < xstart)
       xs = xstart;
     if(xe > xend)
       xe = xend;
-  //}
+  }
     return RangeIterator(xs, xe);
   //}else{
     //Return Null iterator if not on lower y boundary
@@ -2636,18 +2636,18 @@ const RangeIterator BoutMesh::iterateBndryLowerOuterY() const {
   int xs = 0;
   int xe = ngx-1;
   int yglob = YGLOBAL(ystart);
-  //if(yglob == ny_inner){
+  if(yglob == ny_inner){
     if((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart))
       xs = DDATA_XSPLIT;
     if((DDATA_OUTDEST >= 0) && (DDATA_XSPLIT < xend+1))
       xe = DDATA_XSPLIT-1;
-  //}else{
+  }else{
 
     if(xs < xstart)
       xs = xstart;
     if(xe > xend)
       xe = xend;
-  //}
+  }
     return RangeIterator(xs, xe);
  // }else{
  //   return RangeIterator(1,0);
