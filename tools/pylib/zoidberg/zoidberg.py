@@ -48,6 +48,11 @@ def make_maps(grid, magnetic_field, quiet=False, **kwargs):
     x2d, z2d = np.meshgrid(grid.xarray, grid.zarray, indexing='ij')
     field_tracer = fieldtracer.FieldTracer(magnetic_field)
 
+    try:
+        rtol = kwargs["rtol"]
+    except KeyError:
+        rtol = None
+
     # TODO: if axisymmetric, don't loop, do one slice and copy
     for j in range(ny):
         if not quiet:
@@ -56,7 +61,7 @@ def make_maps(grid, magnetic_field, quiet=False, **kwargs):
         # Go forwards from yarray[j] by an angle delta_y
         y_coords = [grid.yarray[j], grid.yarray[j]+grid.delta_y]
         # We only want the end point, as [0,...] is the initial position
-        coord = field_tracer.follow_field_lines(x2d, z2d, y_coords)[1,...]
+        coord = field_tracer.follow_field_lines(x2d, z2d, y_coords, rtol=rtol)[1,...]
         forward_xt_prime[:,j,:] = (grid.MXG - 0.5) + coord[:,:,0] / grid.delta_x # X index
         forward_zt_prime[:,j,:] = coord[:,:,1] / grid.delta_z # Z index
 
