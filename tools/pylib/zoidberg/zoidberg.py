@@ -68,7 +68,7 @@ def make_maps(grid, magnetic_field, quiet=False, **kwargs):
         # Go backwards from yarray[j] by an angle -delta_y
         y_coords = [grid.yarray[j], grid.yarray[j]-grid.delta_y]
         # We only want the end point, as [0,...] is the initial position
-        coord = field_tracer.follow_field_lines(x2d, z2d, y_coords)[1,...]
+        coord = field_tracer.follow_field_lines(x2d, z2d, y_coords, rtol=rtol)[1,...]
         backward_xt_prime[:,j,:] = (grid.MXG - 0.5) + coord[:,:,0] / grid.delta_x # X index
         backward_zt_prime[:,j,:] = coord[:,:,1] / grid.delta_z # Z index
 
@@ -108,6 +108,7 @@ def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc', legacy=False)
 
         f.write("dx", grid.delta_x)
         f.write("dy", grid.delta_y)
+        f.write("dz", grid.delta_z)
 
         f.write("ixseps1",ixseps)
         f.write("ixseps2",ixseps)
@@ -247,6 +248,12 @@ def make_surfaces(grid, magnetic_field, nsurfaces=10, revs=100):
 def upscale(field, maps, upscale_factor=4, quiet=True):
     """Increase the resolution in y of field along the FCI maps.
 
+    First, interpolate onto the (forward) field line end points, as in
+    normal FCI technique. Then interpolate between start and end
+    points. We also need to interpolate the xt_primes and
+    zt_primes. This gives a cloud of points along the field lines,
+    which we can finally interpolate back onto a regular grid.
+
     Inputs
     ------
     field          - 3D field to be upscaled
@@ -256,7 +263,9 @@ def upscale(field, maps, upscale_factor=4, quiet=True):
 
     Returns
     -------
-    Field with y-resolution increased *upscale_factor* times
+    Field with y-resolution increased *upscale_factor* times. Shape is
+    (nx, upscale_factor*ny, nz).
+
     """
 
     from scipy.ndimage.interpolation import map_coordinates
