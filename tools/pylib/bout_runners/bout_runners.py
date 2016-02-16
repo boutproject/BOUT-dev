@@ -10,7 +10,7 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '1.01'
+__version__ = '1.011'
 __date__    = '2016.02.16'
 
 import os
@@ -503,11 +503,12 @@ class basic_runner(object):
 
             # Check if the run has been performed previously
             do_run = self._check_if_run_already_performed()
+            # If do_run and restart_from is set
+            if do_run and self._restart and self._restart_from:
+                # Copy the files to restart
+                do_run = self._copy_restart_files()
             # Do the actual runs
             if do_run:
-                if self._restart and self._restart_from:
-                    # Copy the files to restart
-                    self._copy_restart_files()
                 # Call the driver for a run
                 self._run_driver(combination, run_no)
 
@@ -1769,7 +1770,7 @@ class basic_runner(object):
         False   - The run will NOT be performed
         """
 
-        dmp_files = glob.glob(self._dmp_folder + '/BOUT.dmp.*')
+        dmp_files = glob.glob(self._dmp_folder + '/*.dmp.*')
         # If no BOUT.inp files are found or if self._restart is not set
         # (meaning that the run will be done even if files are found)
         if len(dmp_files) != 0 and self._restart is None:
@@ -1782,7 +1783,7 @@ class basic_runner(object):
         else:
             if len(dmp_files) == 0 and\
                self._restart is not None and\
-               self._restart_from is not None:
+               self._restart_from is None:
                 message = "'restart' was set to " +self._restart+\
                           ", but no dmp files found."+\
                           " Setting 'restart' to None"
@@ -1797,6 +1798,17 @@ class basic_runner(object):
         """
         Function which copies restart files from self._restart_from
         """
+        # Check for files in dmp_folder
+        if len(glob.glob(os.path.join(self._dmp_folder,'*restart*'))) !=0 or\
+           len(glob.glob(os.path.join(self._dmp_folder,'*dmp*'))) !=0:
+            message = "Restart or dmp files was found in " + self._dmp_folder +\
+                      " when restart_from was set. Run skipped."
+            self._warning_printer(message)
+            self._warnings.append(message)
+            do_run = False
+        else:
+            do_run = True
+
         # Restart files and log files from copy from folder
         restart_files = glob.glob(os.path.join(self._restart_from,'*restart*'))
         log_files = glob.glob(os.path.join(self._restart_from,'*log*'))
@@ -1825,6 +1837,8 @@ class basic_runner(object):
             command = 'cp ' + cur_file + ' ' +\
                       os.path.join(self._dmp_folder, cpy_to)
             shell(command)
+
+        return do_run
 #}}}
 
 #{{{_call_post_processing_function
@@ -2711,7 +2725,7 @@ class basic_runner(object):
 
 
 
-#{{{PBS_runner
+#{{{class PBS_runner
 class PBS_runner(basic_runner):
 #{{{docstring
     """Class for mpi running one or several runs with BOUT++.
