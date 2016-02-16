@@ -1809,34 +1809,36 @@ class basic_runner(object):
         else:
             do_run = True
 
-        # Restart files and log files from copy from folder
-        restart_files = glob.glob(os.path.join(self._restart_from,'*restart*'))
-        log_files = glob.glob(os.path.join(self._restart_from,'*log*'))
-        inp_files = glob.glob(os.path.join(self._restart_from,'*inp*'))
-        cxx_files = glob.glob(os.path.join(self._restart_from,'*cxx*'))
-        hxx_files = glob.glob(os.path.join(self._restart_from,'*hxx*'))
-        # Files to copy
-        cpy_files =\
-            [*restart_files, *log_files, *inp_files, *cxx_files, *hxx_files]
+        if do_run:
+            # Restart files and log files from copy from folder
+            restart_files =\
+                    glob.glob(os.path.join(self._restart_from,'*restart*'))
+            log_files = glob.glob(os.path.join(self._restart_from,'*log*'))
+            inp_files = glob.glob(os.path.join(self._restart_from,'*inp*'))
+            cxx_files = glob.glob(os.path.join(self._restart_from,'*cxx*'))
+            hxx_files = glob.glob(os.path.join(self._restart_from,'*hxx*'))
+            # Files to copy
+            cpy_files =\
+                [*restart_files, *log_files, *inp_files, *cxx_files, *hxx_files]
 
-        print("\nCopying files from {0} to {1} \n".\
-              format(self._restart_from, self._dmp_folder))
+            print("\nCopying files from {0} to {1} \n".\
+                  format(self._restart_from, self._dmp_folder))
 
-        # Copy the files
-        for cur_file in cpy_files:
-            # Grab the file name
-            cpy_to = os.path.split(cur_file)[-1]
+            # Copy the files
+            for cur_file in cpy_files:
+                # Grab the file name
+                cpy_to = os.path.split(cur_file)[-1]
 
-            # Add ".cpy" if the file has on of the following extensions
-            if ".inp" in cur_file or\
-               ".log" in cur_file or\
-               ".cxx" in cur_file or\
-               ".hxx" in cur_file:
-                cpy_to += ".cpy"
+                # Add ".cpy" if the file has on of the following extensions
+                if ".inp" in cur_file or\
+                   ".log" in cur_file or\
+                   ".cxx" in cur_file or\
+                   ".hxx" in cur_file:
+                    cpy_to += ".cpy"
 
-            command = 'cp ' + cur_file + ' ' +\
-                      os.path.join(self._dmp_folder, cpy_to)
-            shell(command)
+                command = 'cp ' + cur_file + ' ' +\
+                          os.path.join(self._dmp_folder, cpy_to)
+                shell(command)
 
         return do_run
 #}}}
