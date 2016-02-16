@@ -1813,13 +1813,15 @@ class basic_runner(object):
             # Restart files and log files from copy from folder
             restart_files =\
                     glob.glob(os.path.join(self._restart_from,'*restart*'))
+            dmp_files = glob.glob(os.path.join(self._restart_from,'*dmp*'))
             log_files = glob.glob(os.path.join(self._restart_from,'*log*'))
             inp_files = glob.glob(os.path.join(self._restart_from,'*inp*'))
             cxx_files = glob.glob(os.path.join(self._restart_from,'*cxx*'))
             hxx_files = glob.glob(os.path.join(self._restart_from,'*hxx*'))
             # Files to copy
             cpy_files =\
-                [*restart_files, *log_files, *inp_files, *cxx_files, *hxx_files]
+                [*restart_files, *dmp_files, *log_files, *inp_files,\
+                 *cxx_files, *hxx_files]
 
             print("\nCopying files from {0} to {1} \n".\
                   format(self._restart_from, self._dmp_folder))
