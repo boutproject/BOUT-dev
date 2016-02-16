@@ -10,8 +10,8 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '1.011'
-__date__    = '2016.02.16'
+__version__ = '1.012'
+__date__    = '2016.02.17'
 
 import os
 import re
@@ -19,6 +19,7 @@ import itertools
 import glob
 import timeit
 import datetime
+import shutil
 from numbers import Number
 import numpy as np
 from boututils.run_wrapper import shell, launch, getmpirun
@@ -480,15 +481,16 @@ class basic_runner(object):
         for run_no, combination in enumerate(combinations):
 
             # Get the folder to store the data
-            self._prepare_dmp_folder(combination)
+            skip_run = self._prepare_dmp_folder(combination)
+            if skip_run:
+                # Skip this run
+                continue
 
             if remove_old:
                 # Remove old data
                self._remove_data()
 
-            # Copy the grid (if any) if cpy_grid files is True We must
-            # do this after self._remove_data as this removes all *.nc
-            # files
+            # Copy the grid (if any) if cpy_grid files is True
             if (self._cpy_grid) and (self._grid_file is not None):
                 combination_list = combination.split()
                 # Loop through all the combinations
@@ -498,15 +500,10 @@ class basic_runner(object):
                         # Remove grid=, so that only the path remains
                         cur_grid = elem.replace('grid=', '')
                         # Copy the grid file
-                        command = 'cp ' + cur_grid + ' ' + self._dmp_folder + '/'
-                        shell(command)
+                        shutil.copy2(cur_grid, self._dmp_folder)
 
             # Check if the run has been performed previously
             do_run = self._check_if_run_already_performed()
-            # If do_run and restart_from is set
-            if do_run and self._restart and self._restart_from:
-                # Copy the files to restart
-                do_run = self._copy_restart_files()
             # Do the actual runs
             if do_run:
                 # Call the driver for a run
@@ -1710,9 +1707,17 @@ class basic_runner(object):
 
 #{{{_prepare_dmp_folder
     def _prepare_dmp_folder(self, combination):
-        """Set the folder to dump data in based on the input from the
-        combination. Copy the input file to the final folder. Copy the
-        source files to the final folder is cpy_source is True."""
+        """
+        Set the folder to dump data in based on the input from the
+        combination.
+
+        - Copy the input file to the final folder.
+        - Copy restart files if restart_from is set (can set skip_run=True)
+        - Copy files if restart is set to overwrite
+        - Copy the source files to the final folder is cpy_source is True.
+
+        Returns skip_run = True if there are any troubles with the copying
+        """
         # Obtain folder names
         folder_name = self._get_folder_name(combination)
         self._dmp_folder = os.path.join(self._directory, folder_name)
@@ -1726,9 +1731,19 @@ class basic_runner(object):
         # self._directory
         if self._dmp_folder != self._directory:
             # Copy the input file into this folder
-            command = 'cp ' + self._directory + '/BOUT.inp ' +\
-                      self._dmp_folder + '/'
-            shell(command)
+            src = os.path.join(self._directory, 'BOUT.inp')
+            shutil.copy2(src, self._dmp_folder)
+
+        # Copy restart files if restart_from is set
+        # skip_run is set to False by default
+        skip_run = False
+        if self._restart and self._restart_from:
+            # Copy the files to restart
+            skip_run = self._copy_restart_files()
+
+        # Save files if restart is set to "overwrite"
+        if self._restart == 'overwrite':
+            self._move_old_runs()
 
         # Copy the source files if cpy_source is True
         if self._cpy_source:
@@ -1739,8 +1754,8 @@ class basic_runner(object):
             for extension in cpp_extension:
                 file_names = glob.glob('*' + extension)
                 for a_file in file_names:
-                    command = 'cp ' + a_file + ' ' + self._dmp_folder + '/'
-                    shell(command)
+                    shutil.copy2(a_file, self._dmp_folder)
+        return skip_run
 #}}}
 
 #{{{_remove_data
@@ -1748,13 +1763,23 @@ class basic_runner(object):
         """Removes *.nc and *.log files from the dump directory"""
 
         print("Removing old data")
-        # Make the command
-        command = "rm -rf ./" + self._dmp_folder +\
-                  "/*.nc ./" + self._dmp_folder +\
-                  "/*.log.* " + self._dmp_folder +\
-                  "/run*/"
-        # Execute the command
-        shell(command)
+        remove_extensions = ['dmp.*', 'fail.*', 'restart.*', 'log.*', 'cpy']
+        files_to_rm = []
+        for extension in remove_extensions:
+            files_to_rm.extend(\
+                    glob.glob(os.path.join(self._dmp_folder, "*." + extension)))
+
+        # Cast to set (unique values)
+        files_to_rm = set(files_to_rm)
+        for f in files_to_rm:
+            os.remove(f)
+
+        # Remove dirs
+        folder_to_rm = glob.glob(os.path.join(self._dmp_folder, "run*"))
+        # Filter to only inlcude folders
+        folder_to_rm = [f for f in folder_to_rm if os.path.isdir(f)]
+        for f in folder_to_rm:
+            os.removedirs(f)
 #}}}
 
 #{{{_check_if_run_already_performed
@@ -1770,7 +1795,7 @@ class basic_runner(object):
         False   - The run will NOT be performed
         """
 
-        dmp_files = glob.glob(self._dmp_folder + '/*.dmp.*')
+        dmp_files = glob.glob(os.path.join(self._dmp_folder, '*.dmp.*'))
         # If no BOUT.inp files are found or if self._restart is not set
         # (meaning that the run will be done even if files are found)
         if len(dmp_files) != 0 and self._restart is None:
@@ -1791,58 +1816,6 @@ class basic_runner(object):
                 self._warning_printer(message)
                 self._warnings.append(message)
             return True
-#}}}
-
-#{{{_copy_restart_files()
-    def _copy_restart_files(self):
-        """
-        Function which copies restart files from self._restart_from
-        """
-        # Check for files in dmp_folder
-        if len(glob.glob(os.path.join(self._dmp_folder,'*restart*'))) !=0 or\
-           len(glob.glob(os.path.join(self._dmp_folder,'*dmp*'))) !=0:
-            message = "Restart or dmp files was found in " + self._dmp_folder +\
-                      " when restart_from was set. Run skipped."
-            self._warning_printer(message)
-            self._warnings.append(message)
-            do_run = False
-        else:
-            do_run = True
-
-        if do_run:
-            # Restart files and log files from copy from folder
-            restart_files =\
-                    glob.glob(os.path.join(self._restart_from,'*restart*'))
-            dmp_files = glob.glob(os.path.join(self._restart_from,'*dmp*'))
-            log_files = glob.glob(os.path.join(self._restart_from,'*log*'))
-            inp_files = glob.glob(os.path.join(self._restart_from,'*inp*'))
-            cxx_files = glob.glob(os.path.join(self._restart_from,'*cxx*'))
-            hxx_files = glob.glob(os.path.join(self._restart_from,'*hxx*'))
-            # Files to copy
-            cpy_files =\
-                [*restart_files, *dmp_files, *log_files, *inp_files,\
-                 *cxx_files, *hxx_files]
-
-            print("\nCopying files from {0} to {1} \n".\
-                  format(self._restart_from, self._dmp_folder))
-
-            # Copy the files
-            for cur_file in cpy_files:
-                # Grab the file name
-                cpy_to = os.path.split(cur_file)[-1]
-
-                # Add ".cpy" if the file has on of the following extensions
-                if ".inp" in cur_file or\
-                   ".log" in cur_file or\
-                   ".cxx" in cur_file or\
-                   ".hxx" in cur_file:
-                    cpy_to += ".cpy"
-
-                command = 'cp ' + cur_file + ' ' +\
-                          os.path.join(self._dmp_folder, cpy_to)
-                shell(command)
-
-        return do_run
 #}}}
 
 #{{{_call_post_processing_function
@@ -2407,6 +2380,115 @@ class basic_runner(object):
             os.makedirs(folder)
             print(folder + " created\n")
 #}}}
+
+#{{{_copy_restart_files
+    def _copy_restart_files(self):
+        """
+        Function which copies restart files from self._restart_from
+        """
+        # Check for files in dmp_folder
+        if len(glob.glob(os.path.join(self._dmp_folder,'*restart*'))) !=0 or\
+           len(glob.glob(os.path.join(self._dmp_folder,'*dmp*'))) !=0:
+            message = "Restart or dmp files was found in " + self._dmp_folder +\
+                      " when restart_from was set. Run skipped."
+            self._warning_printer(message)
+            self._warnings.append(message)
+            skip_run = True
+        else:
+            skip_run = False
+
+        if not skip_run:
+            print("\nCopying files from {0} to {1}\n".\
+                  format(self._restart_from, self._dmp_folder))
+
+            # Files with these extension will be given the
+            # additional extension .cpy when copied to the destination
+            # folder
+            extensions_w_cpy = ['inp', 'log.*']
+
+            if self._cpy_source:
+                extensions_w_cpy.extend(['cc' , 'cpp'  , 'cxx', 'C'  , 'c++',\
+                                        'h'  , 'hpp'  , 'hxx', 'h++'])
+
+            # Additional files that will be copied to the destination
+            # folder
+            extensions = [*extensions_w_cpy, 'restart.*']
+
+            if self._restart == "append":
+                extensions.append("dmp.*")
+
+            # Copy for all files in the extension
+            for extension in extensions:
+                file_names =\
+                    glob.glob(os.path.join(self._restart_from, '*.'+extension))
+                for cur_file in file_names:
+                    # Check if any of the extensions matches the current
+                    # string (must strip the '.' as "in" does not accept
+                    # wildcards
+                    if any([ewc.split('.')[0] in cur_file
+                            for ewc in extensions_w_cpy]):
+                        # Add ".cpy" to the file name (without the path)
+                        name = os.path.split(cur_file)[-1] + '.cpy'
+                        shutil.copy2(cur_file, os.path.join(self._dmp_folder, name))
+                    else:
+                        shutil.copy2(cur_file, self._dmp_folder)
+
+        return skip_run
+#}}}
+
+#{{{Save _move_old_runs
+    def _move_old_runs(self):
+        """Move old runs if restart is set to 'overwrite'"""
+        print("Moving old runs\n")
+        # Check for folders in the dmp directory
+        directories = [\
+                       name for name in\
+                       os.listdir(self._dmp_folder) if\
+                       os.path.isdir(os.path.join(\
+                                    self._dmp_folder, name))\
+                      ]
+        # Find occurrences of 'run' in these folders
+        prev_runs = [name for name in directories if 'run' in name]
+        # Check that the list is not empty
+        if len(prev_runs) != 0:
+            # Sort the folders alphabetically
+            prev_runs.sort()
+            # Pick the last of prev_runs
+            prev_runs = prev_runs[-1]
+            # Pick the number from the last run
+            # First split the string
+            overwrite_nr = prev_runs.split('_')
+            # Pick the last element of overwrite_nr, and cast it
+            # to an integer
+            overwrite_nr = int(overwrite_nr[-1])
+            # Add one to the overwrite_nr, as we want to create
+            # a new directory
+            overwrite_nr += overwrite_nr
+        else:
+            # Set the overwrite_nr
+            overwrite_nr = 1
+        # Create the folder for the previous runs
+        self._create_folder(\
+                os.path.join(self._dmp_folder, 'run_' +\
+                             str(overwrite_nr)))
+
+        extensions_to_move = ['cpy', 'log.*', 'dmp.*',\
+                              'cc' , 'cpp'  , 'cxx'  , 'C'  , 'c++',\
+                              'h'  , 'hpp'  , 'hxx'  , 'h++']
+
+        for extension in extensions_to_move:
+            file_names =\
+                glob.glob(os.path.join(self._dmp_folder, '*.'+extension))
+
+            # Cast to unique file_names
+            file_names = set(file_names)
+
+            # Move the files
+            for cur_file in file_names:
+                dst = os.path.join(self._dmp_folder,\
+                                   "run_" + str(overwrite_nr))
+                shutil.move(cur_file, dst)
+#}}}
 #}}}
 
 #{{{Function called by _run_driver
@@ -2633,65 +2715,11 @@ class basic_runner(object):
         # Creating the arguments
         arg = " -d " + self._dmp_folder + " " + combination
 
-        # If the run is restarted with initial values from the last run
-        if self._restart is not None:
-            if self._restart == 'overwrite':
-                print("Moving old runs\n")
-                # Put restart to the arguments
-                arg += ' restart'
-                #{{{Save old runs
-                # Check for folders in the dmp directory
-                directories = [\
-                               name for name in\
-                               os.listdir(self._dmp_folder) if\
-                               os.path.isdir(os.path.join(\
-                                            self._dmp_folder, name))\
-                              ]
-                # Find occurrences of 'run' in these folders
-                prev_runs = [name for name in directories if 'run' in name]
-                # Check that the list is not empty
-                if len(prev_runs) != 0:
-                    # Sort the folders alphabetically
-                    prev_runs.sort()
-                    # Pick the last of prev_runs
-                    prev_runs = prev_runs[-1]
-                    # Pick the number from the last run
-                    # First split the string
-                    overwrite_nr = prev_runs.split('_')
-                    # Pick the last element of overwrite_nr, and cast it
-                    # to an integer
-                    overwrite_nr = int(overwrite_nr[-1])
-                    # Add one to the overwrite_nr, as we want to create
-                    # a new directory
-                    overwrite_nr += overwrite_nr
-                else:
-                    # Set the overwrite_nr
-                    overwrite_nr = 1
-                # Create the folder for the previous runs
-                self._create_folder(\
-                        os.path.join(self._dmp_folder, 'run_' +\
-                                     str(overwrite_nr)))
-                # Move the dmp files
-                command = "mv ./" + self._dmp_folder +\
-                          "/*.dmp.* ./" + self._dmp_folder +\
-                          "/run_" + str(overwrite_nr) + "/"
-                # Execute the command
-                shell(command)
-
-                # Move the log files
-                command = "mv ./" + self._dmp_folder +\
-                          "/*.log.* ./" + self._dmp_folder +\
-                          "/run_" + str(overwrite_nr) + "/"
-                # Execute the command
-                shell(command)
-                #}}}
-
-            elif self._restart == 'append':
-                arg += ' restart append'
-            else:
-                self._errors.append("TypeError")
-                raise TypeError ("restart must be set to either"+\
-                                 " 'overwrite' or 'append'")
+        # If the run is set to overwrite
+        if self._restart == 'overwrite':
+            arg += ' restart'
+        elif self._restart == 'append':
+            arg += ' restart append'
 
         # Replace excessive spaces with a single space
         arg = ' '.join(arg.split())
@@ -3339,8 +3367,11 @@ class PBS_runner(basic_runner):
         output = output.strip(' \t\n\r')
 
         # Delete the shell script
-        command = "rm -f " + script_name
-        shell(command)
+        try:
+            os.remove(script_name)
+        except FileNotFoundError:
+            # Do not raise an error
+            pass
 
         return output
 #}}}
