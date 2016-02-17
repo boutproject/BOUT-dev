@@ -1712,6 +1712,8 @@ class basic_runner(object):
         combination.
 
         - Copy the input file to the final folder.
+        - Check if restart files are present if restart is set (set
+          restart to None if not found).
         - Copy restart files if restart_from is set (can set skip_run=True)
         - Copy files if restart is set to overwrite
         - Copy the source files to the final folder is cpy_source is True.
@@ -1733,6 +1735,18 @@ class basic_runner(object):
             # Copy the input file into this folder
             src = os.path.join(self._directory, 'BOUT.inp')
             shutil.copy2(src, self._dmp_folder)
+
+        dmp_files = glob.glob(os.path.join(self._dmp_folder, '*.restart.*'))
+        # If no dump files are found, set restart to "None"
+        if len(dmp_files) == 0 and\
+           self._restart is not None and\
+           self._restart_from is None:
+            message = "'restart' was set to " +self._restart+\
+                      ", but no restart files found."+\
+                      " Setting 'restart' to None"
+            self._restart = None
+            self._warning_printer(message)
+            self._warnings.append(message)
 
         # Copy restart files if restart_from is set
         # skip_run is set to False by default
@@ -1787,9 +1801,6 @@ class basic_runner(object):
         """
         Checks if the run has been run previously.
 
-        If restart is set, and no files are found, a warning will be
-        printed.
-
         Returns
         True    - The run will be performed
         False   - The run will NOT be performed
@@ -1804,17 +1815,7 @@ class basic_runner(object):
             print('To overwrite old files, run with'+\
                   ' self.execute_runs(remove_old=True)\n')
             return False
-        # Either no files are found, or restart is set
         else:
-            if len(dmp_files) == 0 and\
-               self._restart is not None and\
-               self._restart_from is None:
-                message = "'restart' was set to " +self._restart+\
-                          ", but no dmp files found."+\
-                          " Setting 'restart' to None"
-                self._restart = None
-                self._warning_printer(message)
-                self._warnings.append(message)
             return True
 #}}}
 
