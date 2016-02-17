@@ -2404,7 +2404,9 @@ class basic_runner(object):
             # Files with these extension will be given the
             # additional extension .cpy when copied to the destination
             # folder
-            extensions_w_cpy = ['inp', 'log.*']
+            extensions_w_cpy = ['inp']
+            # When the extension is not a real extension
+            has_extensions_w_cpy = ['log.*']
 
             if self._cpy_source:
                 extensions_w_cpy.extend(['cc' , 'cpp'  , 'cxx', 'C'  , 'c++',\
@@ -2412,7 +2414,7 @@ class basic_runner(object):
 
             # Additional files that will be copied to the destination
             # folder
-            extensions = [*extensions_w_cpy, 'restart.*']
+            extensions = [*extensions_w_cpy, *has_extensions_w_cpy, 'restart.*']
 
             if self._restart == "append":
                 extensions.append("dmp.*")
@@ -2423,10 +2425,17 @@ class basic_runner(object):
                     glob.glob(os.path.join(self._restart_from, '*.'+extension))
                 for cur_file in file_names:
                     # Check if any of the extensions matches the current
-                    # string (must strip the '.' as "in" does not accept
-                    # wildcards
-                    if any([ewc.split('.')[0] in cur_file
+                    # string
+                    if any([cur_file.endswith(ewc)
                             for ewc in extensions_w_cpy]):
+                        # Add ".cpy" to the file name (without the path)
+                        name = os.path.split(cur_file)[-1] + '.cpy'
+                        shutil.copy2(cur_file, os.path.join(self._dmp_folder, name))
+                    # When the extension is not a real extension we must
+                    # remove "*" in the string as shutil doesn't accept
+                    # wildcards
+                    elif any([hewc.replace("*", "") in cur_file
+                            for hewc in has_extensions_w_cpy]):
                         # Add ".cpy" to the file name (without the path)
                         name = os.path.split(cur_file)[-1] + '.cpy'
                         shutil.copy2(cur_file, os.path.join(self._dmp_folder, name))
@@ -2436,7 +2445,7 @@ class basic_runner(object):
         return skip_run
 #}}}
 
-#{{{Save _move_old_runs
+#{{{_move_old_runs
     def _move_old_runs(self):
         """Move old runs if restart is set to 'overwrite'"""
         print("Moving old runs\n")
