@@ -1114,6 +1114,14 @@ const Field2D applyXdiff(const Field2D &var, deriv_func func, inner_boundary_der
     var.setXStencil(s, bx, loc);
     r[bx.jx][bx.jy] = func(s) / dd[bx.jx][bx.jy];
   }while(next_index2(&bx));
+///  std::for_each(begin(var), end(var), [&](Indices i) {
+///    var.setXStencil(s, bx, loc);
+///    r[i.x][i.y] = func(s) / dd[i.x][i.y];
+///    //r[bx.jx][bx.jy] = func(s) / dd[bx.jx][bx.jy];
+///    //  rd[i.x][i.y][i.z] = ad[i.x][i.y][i.z] + bd[i.x][i.y][i.z];
+///    });
+///  }
+
 #endif // _OPENMP
 
 #ifdef CHECK
@@ -1191,53 +1199,44 @@ const Field3D applyXdiff(const Field3D &var, deriv_func func, inner_boundary_der
     // Shift in Z using FFT
     vs = var.shiftZ(true); // Shift into real space
   }
-  
+
   bindex bx;
   BoutReal ***r = result.getData();
-  
+
   start_index(&bx, RGN_NOX);
+  bindex bxstart = bx; 
+  reverse_start_index(&bx, RGN_NOX);
+  bindex bxend = bx; 
 #ifdef _OPENMP
-  bindex bxstart = bx; // Copy to avoid race condition on first index
-  bool workToDoGlobal; // Shared loop control
-  #pragma omp parallel
-  {
-    bindex bxlocal; // Index for each thread
-    stencil s;
-    bool workToDo;  // Does this thread have work to do?
-    
-    #pragma omp single
-    {
-      // First index done by single thread
-      for(bxstart.jz=0;bxstart.jz<mesh->ngz-1;bxstart.jz++) {
-        vs.setXStencil(s, bxstart, loc);
-        r[bxstart.jx][bxstart.jy][bxstart.jz] = func(s) / dd(bxstart.jx, bxstart.jy);
+  for (int jx=bxstart.jx; jx <= bxend.jx; jx++){
+    for (int jy=bxstart.jy; jy <= bxend.jy; jy++){
+#pragma omp parallel for
+      for (int jz=bxstart.jz; jz <= bxend.jz; jz++){
+        stencil s;
+        bindex bxlocal;
+        bxlocal.jx = jx;
+        bxlocal.jy = jy;
+        bxlocal.jz = jz;
+        calc_index(&bxlocal);
+        vs.setXStencil(s, bxlocal, loc);
+        r[bxlocal.jx][bxlocal.jy][bxlocal.jz] = func(s) / dd(bxlocal.jx, bxlocal.jy);
       }
     }
-    
-    do {
-      #pragma omp critical
-      {
-        // Get the next index
-        workToDo = next_index2(&bx); // Only in 2D
-        bxlocal = bx; // Make a local copy
-        workToDoGlobal = workToDo;
-      }
-      if(workToDo) { // Here workToDo could be different to workToDoGlobal
-        for(bxlocal.jz=0;bxlocal.jz<mesh->ngz-1;bxlocal.jz++) {
-          vs.setXStencil(s, bxlocal, loc);
-          r[bxlocal.jx][bxlocal.jy][bxlocal.jz] = func(s) / dd(bxlocal.jx, bxlocal.jy);
-        }
-      }
-    }while(workToDoGlobal);
   }
+
 #else
   stencil s;
-  do {
-    for(bx.jz=0;bx.jz<mesh->ngz-1;bx.jz++) {
-      vs.setXStencil(s, bx, loc);
-      r[bx.jx][bx.jy][bx.jz] = func(s) / dd(bx.jx, bx.jy);
+
+  for (bx.jx=bxstart.jx; bx.jx <= bxend.jx; bx.jx++){
+    for (bx.jy=bxstart.jy; bx.jy <= bxend.jy; bx.jy++){
+      for (bx.jz=bxstart.jz; bx.jz <= bxend.jz; bx.jz++){
+        calc_index(&bx);  
+        vs.setXStencil(s, bx, loc);
+        r[bx.jx][bx.jy][bx.jz] = func(s) / dd(bx.jx, bx.jy);
+      }
     }
-  }while(next_index2(&bx));
+  }
+
 #endif  
 
 #ifdef CHECK
