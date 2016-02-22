@@ -119,8 +119,7 @@ int ArkodeSolver::init(bool restarting, int nout, BoutReal tstep) {
 
   // Put the variables into uvec
   msg_stack.push("Saving variables into uvec");
-  if(save_vars(NV_DATA_P(uvec)))
-    throw BoutException("\tERROR: Initial variable value not set\n");
+  save_vars(NV_DATA_P(uvec));
   msg_stack.pop();
 
   /// Get options

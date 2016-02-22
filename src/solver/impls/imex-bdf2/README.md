@@ -18,6 +18,8 @@ The following options are used:
 
 * timestep     = The internal time step
 * matrix_free  = True/false (default True). Determines whether the Jacobian in SNES is matrix free
+* use_coloring = True/false (default True). If not matrix free, use coloring to calculate Jacobian?
+* lag_jacobian = Integer number of times to (re-)use Jacobian. Default is 4
 * atol         = Absolute tolerance (1e-16)
 * rtol         = Relative tolerance (1e-10)
 * predictor    = Predictor method (default 1)

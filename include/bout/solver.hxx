@@ -239,8 +239,12 @@ protected:
   // Loading data from BOUT++ to/from solver
   void load_vars(BoutReal *udata);
   void load_derivs(BoutReal *udata);
-  int save_vars(BoutReal *udata);
+  void save_vars(BoutReal *udata);
   void save_derivs(BoutReal *dudata);
+  void set_id(BoutReal *udata);
+  
+  // 
+  const Field3D globalIndex(int localStart);
   
   BoutReal max_dt; ///< Maximum internal timestep
   
