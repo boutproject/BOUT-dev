@@ -572,7 +572,7 @@ MFILE
     echo "***********************************"
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
   fi
-  PETSC="include \$(PETSC_DIR)/conf/variables"
+  PETSC="include $PETSC_DIR/conf/variables"
 else
    PETSC=
 fi
@@ -583,8 +583,8 @@ then
   echo "Using PETSC_DIR = $PETSC_DIR"
   echo "Using PETSC_ARCH = $PETSC_ARCH"
   PRECON_SOURCE="$PRECON_SOURCE jstruc.cxx"
-  EXTRA_INCS="$EXTRA_INCS $(PETSC_CC_INCLUDES)"
-  EXTRA_LIBS="$EXTRA_LIBS $(PETSC_LIB)"
+  EXTRA_INCS="$EXTRA_INCS \$(PETSC_CC_INCLUDES)"
+  EXTRA_LIBS="$EXTRA_LIBS \$(PETSC_LIB)"
 
   if test "$PETSC_HAS_SUNDIALS" == "yes"
   then
@@ -640,7 +640,7 @@ then
 
     EXTRA_INCS="$EXTRA_INCS \$(SLEPC_INCLUDE)"
     EXTRA_LIBS="$EXTRA_LIBS \$(SLEPC_LIB)"
-    SLEPC_VARS="include \${SLEPC_DIR}/conf/slepc_variables"
+    SLEPC_VARS="include $SLEPC_DIR/conf/slepc_variables"
   else
     echo "Error - Unknown SLEPc version"
     echo "  -> No SLEPc support"
