@@ -545,7 +545,22 @@ int BoutMesh::load() {
       get(g_12, "g_12");
       get(g_13, "g_13");
       get(g_23, "g_23");
-      output.write("WARNING! Covariant components of metric tensor set manually. Contravariant components NOT recalculated\n");
+      // Check if the contravariant is also given
+      if (source->hasVar("g11") and
+          source->hasVar("g22") and
+          source->hasVar("g33") and
+          source->hasVar("g12") and
+          source->hasVar("g13") and
+          source->hasVar("g23")
+         ){
+            throw BoutException("Both co and contravariant part of metric"
+                                " tensor specified manually. Exception thrown"
+                                " as gij*g^ij=I cannot be guaranteed.");
+      }
+      else{
+        output.write("\tCovariant metric tensor given, calculating contravariant metric tensor from covariant\n");
+        calcContravariant();
+      }
     }
     else
     {

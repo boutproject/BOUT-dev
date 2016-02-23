@@ -36,6 +36,7 @@
 #include <bout/sys/timer.hxx>
 #include <msg_stack.hxx>
 #include <output.hxx>
+#include <bout/assert.hxx>
 
 // Static member variables
 
@@ -918,6 +919,38 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
     
     break;
   }
+  case SET_ID: {
+    /// Set the type of equation (Differential or Algebraic)
+    
+    // Loop over 2D variables
+    for(i=0;i<n2d;i++) {
+      if(bndry && !f2d[i].evolve_bndry)
+	continue;
+      if(f2d[i].constraint) {
+	udata[p] = 0;
+      }else {
+	udata[p] = 1;
+      }
+      p++;
+    }
+    
+    for (jz=0; jz < mesh->ngz-1; jz++) {
+      
+      // Loop over 3D variables
+      for(i=0;i<n3d;i++) {
+        if(bndry && !f3d[i].evolve_bndry)
+	  continue;
+	if(f3d[i].constraint) {
+	  udata[p] = 0;
+	}else {
+	  udata[p] = 1;
+	}
+	p++;
+      }
+    }
+    
+    break;
+  }
   case SAVE_VARS: {
     /// Save variables from BOUT++ into IDA (only used at start of simulation)
     
@@ -1049,16 +1082,16 @@ void Solver::load_derivs(BoutReal *udata) {
 }
 
 // This function only called during initialisation
-int Solver::save_vars(BoutReal *udata) {
+void Solver::save_vars(BoutReal *udata) {
   unsigned int i;
 
   for(i=0;i<f2d.size();i++)
-    if(f2d[i].var->getData() == (BoutReal**) NULL)
-      return(1);
+    if(!f2d[i].var->isAllocated())
+      throw BoutException("Variable '%s' not initialised", f2d[i].name.c_str());
 
   for(i=0;i<f3d.size();i++)
-    if(f3d[i].var->getData() == (BoutReal***) NULL)
-      return(1);
+    if(!f3d[i].var->isAllocated())
+      throw BoutException("Variable '%s' not initialised", f3d[i].name.c_str());
   
   // Make sure vectors in correct basis
   for(i=0;i<v2d.size();i++) {
@@ -1075,8 +1108,6 @@ int Solver::save_vars(BoutReal *udata) {
   }
 
   loop_vars(udata, SAVE_VARS);
-
-  return(0);
 }
 
 void Solver::save_derivs(BoutReal *dudata) {
@@ -1105,6 +1136,114 @@ void Solver::save_derivs(BoutReal *dudata) {
   }
 
   loop_vars(dudata, SAVE_DERIVS);
+}
+
+void Solver::set_id(BoutReal *udata) {
+  loop_vars(udata, SET_ID);
+}
+
+
+/*!
+ * Returns a Field3D containing the global indices
+ *
+ */
+const Field3D Solver::globalIndex(int localStart) {
+  Field3D index = -1; // Set to -1, indicating out of domain
+
+  int n2d = f2d.size();
+  int n3d = f3d.size();
+
+  int ind = localStart;
+
+  // Find how many boundary cells are evolving
+  int n2dbndry = 0;
+  for(int i=0;i<n2d;i++) {
+    if(f2d[i].evolve_bndry)
+      ++n2dbndry;
+  }
+  int n3dbndry = 0;
+  for(int i=0;i<n3d;i++) {
+    if(f3d[i].evolve_bndry)
+      n3dbndry++;
+  }
+
+  if(n2dbndry + n3dbndry > 0) {
+    // Some boundary points evolving
+    
+    // Inner X boundary
+    if(mesh->firstX() && !mesh->periodicX) {
+      for(int jx=0;jx<mesh->xstart;jx++)
+        for(int jy=mesh->ystart;jy<=mesh->yend;jy++) {
+          // Zero index contains 2D and 3D variables
+          index(jx, jy, 0) = ind;
+          ind += n2dbndry + n3dbndry;
+          for(int jz=1;jz<mesh->ngz-1; jz++) {
+            index(jx, jy, jz) = ind;
+            ind += n3dbndry;
+          }
+        }
+    }
+    
+    // Lower Y boundary region
+    for(RangeIterator xi = mesh->iterateBndryLowerY(); !xi.isDone(); xi++) {
+      for(int jy=0;jy<mesh->ystart;jy++) {
+        index(*xi, jy, 0) = ind;
+        ind += n2dbndry + n3dbndry;
+        for(int jz=1;jz<mesh->ngz-1; jz++) {
+          index(*xi, jy, jz) = ind;
+          ind += n3dbndry;
+        }
+      }
+    }
+  }
+  
+  // Bulk of points
+  for (int jx=mesh->xstart; jx <= mesh->xend; jx++)
+    for (int jy=mesh->ystart; jy <= mesh->yend; jy++) {
+      index(jx, jy, 0) = ind;
+      ind += n2d + n3d;
+      for(int jz=1;jz<mesh->ngz-1; jz++) {
+        index(jx, jy, jz) = ind;
+        ind += n3d;
+      }
+    }
+
+  if(n2dbndry + n3dbndry > 0) {
+    // Some boundary points evolving
+    
+    // Upper Y boundary condition
+    for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); xi++) {
+      for(int jy=mesh->yend+1;jy<mesh->ngy;jy++) {
+        index(*xi, jy, 0) = ind;
+        ind += n2dbndry + n3dbndry;
+        for(int jz=1;jz<mesh->ngz-1; jz++) {
+          index(*xi, jy, jz) = ind;
+          ind += n3dbndry;
+        }
+      }
+    }
+    
+    // Outer X boundary
+    if(mesh->lastX() && !mesh->periodicX) {
+      for(int jx=mesh->xend+1;jx<mesh->ngx;jx++)
+        for(int jy=mesh->ystart;jy<=mesh->yend;jy++) {
+          index(jx, jy, 0) = ind;
+          ind += n2dbndry + n3dbndry;
+          for(int jz=1;jz<mesh->ngz-1; jz++) {
+            index(jx, jy, jz) = ind;
+            ind += n3dbndry;
+          }
+        }
+    }
+  }
+  
+  // Should have included all evolving variables
+  ASSERT1(ind == localStart + getLocalN());
+  
+  // Now swap guard cells
+  mesh->communicate(index);
+  
+  return index;
 }
 
 /**************************************************************************
@@ -1182,11 +1321,12 @@ int Solver::run_convective(BoutReal t) {
     }else
       status = (*phys_conv)(t);
   }else {
-    // Return total
-    if(model) {
-      status = model->runRHS(t);
-    }else
-      status = (*phys_run)(t);
+    // Zero if not split
+    for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++)
+      *((*it).F_var) = 0.0;
+    for(vector< VarStr<Field2D> >::iterator it = f2d.begin(); it != f2d.end(); it++)
+      *((*it).F_var) = 0.0;
+    
   }
   post_rhs(t);
   
@@ -1211,11 +1351,11 @@ int Solver::run_diffusive(BoutReal t, bool linear) {
       status = (*phys_diff)(t);
     post_rhs(t);
   }else {
-    // Zero if not split
-    for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++)
-      *((*it).F_var) = 0.0;
-    for(vector< VarStr<Field2D> >::iterator it = f2d.begin(); it != f2d.end(); it++)
-      *((*it).F_var) = 0.0;
+    // Return total
+    if(model) {
+      status = model->runRHS(t);
+    }else
+      status = (*phys_run)(t);
   }
   rhs_ncalls_i++;
   return status;

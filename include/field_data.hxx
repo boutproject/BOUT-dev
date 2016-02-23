@@ -70,14 +70,6 @@ class FieldData {
   
   virtual int setData(int x, int y, int z, void *vptr) = 0;
   virtual int setData(int x, int y, int z, BoutReal *rptr) = 0;
-
-  // This code for inputting/outputting to file (all optional)
-  virtual bool  ioSupport() { return false; }  ///< Return true if these functions implemented
-  virtual const string getSuffix(int component) const { return string(""); }
-  virtual void* getMark() const {return NULL;} ///< Store current settings (e.g. co/contra-variant)
-  virtual void  setMark(void *setting) {}      ///< Return to the stored settings
-  virtual BoutReal* getData(int component) { return NULL; }
-  virtual void  zeroComponent(int component) { } ///< Set a component to zero
   
   /// Added 20/8/2008 for twist-shifting in communication routine
   virtual void shiftZ(int jx, int jy, double zangle) { }

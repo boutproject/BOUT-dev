@@ -481,7 +481,11 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
   MatAssemblyEnd( MatA, MAT_FINAL_ASSEMBLY );
 
   // Set the operator
+#if PETSC_VERSION_GE(3,5,0)
+  KSPSetOperators( ksp,MatA,MatA );
+#else
   KSPSetOperators( ksp,MatA,MatA,DIFFERENT_NONZERO_PATTERN );
+#endif
   
   // Set coefficients for preconditioner
   cr->setCoefs(nsys, acoef, bcoef, ccoef);

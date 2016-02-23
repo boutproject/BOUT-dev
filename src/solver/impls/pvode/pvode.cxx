@@ -143,9 +143,7 @@ int PvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
 
   // Set pointer to data array in vector u.
   BoutReal *udata = N_VDATA(u);
-  if(save_vars(udata)) {
-    throw BoutException("\tError: Initial variable value not set\n");
-  }
+  save_vars(udata);
   
   /* Call CVodeMalloc to initialize CVODE: 
      
