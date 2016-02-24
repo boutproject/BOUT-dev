@@ -141,7 +141,7 @@ ifeq ("$(TARGET)", "lib")
 lib: makefile $(BOUT_TOP)/make.config $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ)
 ifneq ("$(OBJ)foo", "foo")
 	@echo "Adding $(OBJ) to libbout++.a"
-	@$(AR) cru $(LIB) $(OBJ)
+	@$(AR) @ARFLAGS@ $(LIB) $(OBJ)
 	@$(RANLIB) $(LIB)
 endif
 
@@ -186,7 +186,7 @@ endif
 
 clean::
 	-@$(RM) -rf $(OBJ) $(DEPS) $(TARGET)
-	@for pp in $(DIRS); do echo "  " $$pp cleaned; $(MAKE) --no-print-directory -C $$pp clean; done
+	@for pp in $(DIRS) $(CHECKDIRS); do echo "  " $$pp cleaned; $(MAKE) --no-print-directory -C $$pp clean; done
 
 distclean: clean
 	@echo include cleaned
@@ -201,3 +201,31 @@ distclean: clean
 	@echo externalpackages cleaned
 	@touch $(BOUT_TOP)/configure
 	@echo autom4te.cache cleaned
+
+####################################################################
+# CHECKS
+####################################################################
+
+ifdef CHECKDIRS
+
+CHECKS		= $(CHECKDIRS:%=check-%)
+  
+$(CHECKS):
+	$(MAKE) -C $(@:check-%=%) check
+
+check: $(CHECKS)
+	@echo "Checks successfull"
+
+else # CHECKDIRS not defined -> here should be a runtest
+
+check: $(TARGET)
+	./runtest
+
+endif
+
+####################################################################
+# DOCUMENTATION
+####################################################################
+
+doc:
+	make -C manual

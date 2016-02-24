@@ -657,6 +657,7 @@ EXEEXT
 ac_ct_CXX
 CPPFLAGS
 CXX
+ARFLAGS
 RANLIB
 SET_MAKE
 LN_S
@@ -1366,7 +1367,7 @@ Optional Packages:
   --with-debug            	   Enable all debugging flags
   --with-ida=/path/to/ida 	   Use the SUNDIALS IDA solver
   --with-cvode            	   Use the SUNDIALS CVODE solver
-  --with-sundals              Use CVODE and IDA
+  --with-sundials           Use CVODE and IDA
   --with-facets           	   Build the interface to FACETS
   --with-fftw             	   Set directory of FFTW3 library
   --with-lapack           	   Use the LAPACK library
@@ -7841,6 +7842,22 @@ else
   RANLIB="$ac_cv_prog_RANLIB"
 fi
 
+
+
+ARFLAGS=''
+for flag in cruU cru
+do
+  echo 1 > artest1
+  ar $flag artest artest1 &&ar $flag artest artest1
+  arexit=$?
+  rm -f artest1 artest
+  if test $arexit -eq 0
+  then
+    ARFLAGS="$flag"
+    break;
+  fi
+done
+test -z $ARFLAGS && as_fn_error $? "Failed to find suitable flags for ar" "$LINENO" 5
 
 #############################################################
 # MPI

@@ -1261,6 +1261,22 @@ AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_PROG_RANLIB
 
+AC_SUBST(ARFLAGS)
+ARFLAGS=''
+for flag in cruU cru
+do
+  echo 1 > artest1
+  ar $flag artest artest1 &&ar $flag artest artest1
+  arexit=$?
+  rm -f artest1 artest
+  if test $arexit -eq 0
+  then
+    ARFLAGS="$flag"
+    break;
+  fi
+done
+test -z $ARFLAGS && AC_MSG_ERROR([Failed to find suitable flags for ar])
+
 #############################################################
 # MPI
 #############################################################
