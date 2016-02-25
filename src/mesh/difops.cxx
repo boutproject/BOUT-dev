@@ -1227,7 +1227,12 @@ const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method,
 	
 	switch(method) {
 		case BRACKET_CTU:
-		case BRACKET_ARAKAWA: 
+		  throw BoutException("Bracket method CTU is not yet implemented for [2d,3d] fields.");
+		  break;
+		case BRACKET_ARAKAWA:
+		  // It is symmetric, therefore we can return -[3d,2d]
+		  return -bracket(g,f,method,outloc,solver);
+		  break;
 		case BRACKET_SIMPLE: {
 			// Use a subset of terms for comparison to BOUT-06
 			result = VDDZ(-DDX(f), g);
