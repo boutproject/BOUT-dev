@@ -10,8 +10,8 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '1.012'
-__date__    = '2016.02.17'
+__version__ = '1.02'
+__date__    = '2016.02.27'
 
 import os
 import re
@@ -25,6 +25,7 @@ import numpy as np
 from boututils.run_wrapper import shell, launch, getmpirun
 from boututils.options import BOUTOptions
 from boututils.datafile import DataFile
+from boutdata.restart import redistribute, addnoise
 
 #{{{class basic_runner
 # As a child class uses the super function, the class must allow an
@@ -105,6 +106,8 @@ class basic_runner(object):
                  series_add   = None,\
                  restart      = None,\
                  restart_from = None,\
+                 redistribute = None,\
+                 addnoise     = None,\
                  cpy_source   = None,\
                  cpy_grid     = None,\
                  sort_by      = None,\
@@ -185,7 +188,25 @@ class basic_runner(object):
                           during a run
         restart      -    Wheter or not to use the restart files
                           ('overwrite' or 'append')
-        restart_from -    Path to restart from
+        restart_from -    Path to restart from (string)
+        redistribute -    The number of processors the redistribute the
+                          restart files to. Calls the redistribute
+                          function in boutdata.restart.
+                          Will only be effective if 'restart' is not None (int)
+        addnoise     -    Adding noise to the restart files by calling
+                          the addnoise function in
+                          boutdata.restart.
+                          Will only be effective if 'restart' is not
+                          None.
+                          Must be given as a dict with 'var' and 'scale'
+                          as keys if used.
+                          The value of 'var' must be an iterable containing
+                          the variables to add noise to, if set to None,
+                          then all the evolved variables will be added noise to.
+                          The value of 'scale' will be the scale of the
+                          noise, if set to None the default value will
+                          be used.
+                          (dict)
         cpy_source   -    Wheter or not to copy the source files to the
                           folder of the *.dmp.* files (bool)
         cpy_grid     -    Wheter or not to copy the grid files to the
@@ -272,6 +293,8 @@ class basic_runner(object):
         self._series_add      = series_add
         self._restart         = restart
         self._restart_from    = restart_from
+        self._redistribute    = redistribute
+        self._addnoise        = addnoise
         self._cpy_source      = cpy_source
         self._cpy_grid        = cpy_grid
         self._sort_by         = self._set_member_data(sort_by)
@@ -971,6 +994,62 @@ class basic_runner(object):
                 self._errors.append("FileNotFoundError")
                 raise FileNotFoundError("No restart files found in " +\
                                  self._restart_from)
+        #}}}
+
+        #{{{Check if redistribute is set correctly
+        if self._redistribute is not None:
+            # Throw warning if restart is None
+            if self._restart is None:
+                message = "redistribute will be ignored as restart = None"
+                self._warning_printer(message)
+                self._warnings.append(message)
+            # Throw a warning if restart is append
+            elif self._restart == 'append':
+                message = "redistribute and restart='append' is currently "
+                message += "incompatible, setting restart to 'overwrite' "
+                message += "(previous files will be saved in a 'run' folder "
+                message += "in the dump folder) "
+                self._warning_printer(message)
+                self._warnings.append(message)
+            if type(self._redistribute) != int:
+                self._errors.append("TypeError")
+                raise TypeError ("redistribute must be set as an integer when set")
+            # If nproc is set, and this is incompatible with NPES
+            if self._nproc != self._redistribute:
+                raise RuntimeError("nproc and redistribute must be equal")
+        #}}}
+
+        #{{{Check if addnoise is set correctly
+        if self._addnoise is not None:
+            # Throw warning if restart is None
+            if self._restart is None:
+                message = "addnoise will be ignored as restart = None"
+                self._warning_printer(message)
+                self._warnings.append(message)
+
+            raise_error = False
+            if type(self._addnoise) == dict:
+                addnoise_keys == self._addnoise.keys()
+                if 'var' in keys:
+                    if hasattr(self._addnoise['var'], iter) or\
+                       type(self._addnoise['var']) == str:
+                        if 'scale' in keys:
+                            if type(self._addnoise['scale']) != Number:
+                                raise_error = True
+                        else:
+                            raise_error = True
+                    else:
+                        raise_error = True
+                else:
+                    raise_error = True
+            else:
+                raise_error = True
+
+            if raise_error:
+                self._errors.append("TypeError")
+                message = "addnoise must be on the form "
+                message += "{'var'= iterable_or_string, 'scale'= number}"
+                raise TypeError (message)
         #}}}
 
         #{{{Check for options set in both member data and in the grid file
@@ -1748,16 +1827,64 @@ class basic_runner(object):
             self._warning_printer(message)
             self._warnings.append(message)
 
+        # Find the appropriate mxg and myg if redistribute is set
+        if self._redistribute:
+            if not(self._MXG):
+                # Look in the input file
+                myOpts = BOUTOptions(self._directory)
+                # Check for MXG
+                if 'MXG' in myOpts.keys():
+                    redistribute_MXG = eval(myOpts.root['MXG'])
+                else:
+                    # Set MXG to defualt
+                    redistribute_MXG = 2
+            else:
+                redistribute_MXG = self._MXG
+            # Do the same for MYG
+            if not(self._MYG):
+                myOpts = BOUTOptions(self._directory)
+                if 'MYG' in myOpts.keys():
+                    redistribute_MYG = eval(myOpts.root['MYG'])
+                else:
+                    redistribute_MYG = 2
+            else:
+                redistribute_MYG = self._MYG
+
         # Copy restart files if restart_from is set
         # skip_run is set to False by default
         skip_run = False
         if self._restart and self._restart_from:
-            # Copy the files to restart
-            skip_run = self._copy_restart_files()
+            if not(self._redistribute):
+                # Copy the files to restart
+                skip_run = self._copy_run_files()
+            else:
+                # Use the redistribute function to copy the restart file
+                skip_run = not(redistribute(self._redistribute         ,\
+                                            path   = self._restart_from,\
+                                            output = self._dmp_folder  ,\
+                                            mxg    = redistribute_MXG  ,\
+                                            myg    = redistribute_MYG  ,\
+                                            ))
+        elif self._restart and self._redistribute:
+            # Save the files from previous runs
+            dst = self._move_old_runs(folder_name = 'before_redistribution',\
+                                      include_restart = True)
 
-        # Save files if restart is set to "overwrite"
-        if self._restart == 'overwrite':
-            self._move_old_runs()
+            skip_run = not(redistribute(self._redistribute       ,\
+                                        path = dst               ,\
+                                        output = self._dmp_folder,\
+                                        mxg = redistribute_MXG   ,\
+                                        myg = redistribute_MYG   ,\
+                                        ))
+
+        # Save files if restart is set to "overwrite" (already done if
+        # self._redistribute is set)
+        if self._restart == 'overwrite' and not(self._redistribute):
+            self._move_old_runs(folder_name = 'run', include_restart = False)
+
+        # Add noise
+        if self._restart and self._addnoise:
+            addnoise(var = self._addnoise['var'], scale = self._addnoise['scale'])
 
         # Copy the source files if cpy_source is True
         if self._cpy_source:
@@ -2382,10 +2509,10 @@ class basic_runner(object):
             print(folder + " created\n")
 #}}}
 
-#{{{_copy_restart_files
-    def _copy_restart_files(self):
+#{{{_copy_run_files
+    def _copy_run_files(self):
         """
-        Function which copies restart files from self._restart_from
+        Function which copies run files from self._restart_from
         """
         # Check for files in dmp_folder
         if len(glob.glob(os.path.join(self._dmp_folder,'*restart*'))) !=0 or\
@@ -2447,9 +2574,9 @@ class basic_runner(object):
 #}}}
 
 #{{{_move_old_runs
-    def _move_old_runs(self):
-        """Move old runs if restart is set to 'overwrite'"""
-        print("Moving old runs\n")
+    def _move_old_runs(self, folder_name = 'run', include_restart = False):
+        """Move old runs, return the destination path"""
+
         # Check for folders in the dmp directory
         directories = [\
                        name for name in\
@@ -2457,8 +2584,8 @@ class basic_runner(object):
                        os.path.isdir(os.path.join(\
                                     self._dmp_folder, name))\
                       ]
-        # Find occurrences of 'run' in these folders
-        prev_runs = [name for name in directories if 'run' in name]
+        # Find occurrences of 'folder_name' in these folders
+        prev_runs = [name for name in directories if folder_name in name]
         # Check that the list is not empty
         if len(prev_runs) != 0:
             # Sort the folders alphabetically
@@ -2479,12 +2606,20 @@ class basic_runner(object):
             overwrite_nr = 1
         # Create the folder for the previous runs
         self._create_folder(\
-                os.path.join(self._dmp_folder, 'run_' +\
+                os.path.join(self._dmp_folder, folder_name + '_' +\
                              str(overwrite_nr)))
 
         extensions_to_move = ['cpy', 'log.*', 'dmp.*',\
                               'cc' , 'cpp'  , 'cxx'  , 'C'  , 'c++',\
                               'h'  , 'hpp'  , 'hxx'  , 'h++']
+
+        if include_restart:
+            extensions_to_move.append('restart.*')
+
+        dst = os.path.join(self._dmp_folder,\
+                           folder_name + '_' + str(overwrite_nr))
+
+        print("Moving old runs to {}\n".format(dst))
 
         for extension in extensions_to_move:
             file_names =\
@@ -2495,9 +2630,9 @@ class basic_runner(object):
 
             # Move the files
             for cur_file in file_names:
-                dst = os.path.join(self._dmp_folder,\
-                                   "run_" + str(overwrite_nr))
                 shutil.move(cur_file, dst)
+
+        return dst
 #}}}
 #}}}
 
