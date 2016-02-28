@@ -10,8 +10,8 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '1.02'
-__date__    = '2016.02.27'
+__version__ = '1.021'
+__date__    = '2016.02.28'
 
 import os
 import re
@@ -194,15 +194,14 @@ class basic_runner(object):
                           function in boutdata.restart.
                           Will only be effective if 'restart' is not None (int)
         addnoise     -    Adding noise to the restart files by calling
-                          the addnoise function in
-                          boutdata.restart.
+                          the addnoise function in boutdata.restart.
                           Will only be effective if 'restart' is not
                           None.
                           Must be given as a dict with 'var' and 'scale'
                           as keys if used.
-                          The value of 'var' must be an iterable containing
-                          the variables to add noise to, if set to None,
-                          then all the evolved variables will be added noise to.
+                          The value of 'var' must be a string or None.
+                          If set to None, then all the evolved variables will
+                          be added noise to.
                           The value of 'scale' will be the scale of the
                           noise, if set to None the default value will
                           be used.
@@ -504,8 +503,8 @@ class basic_runner(object):
         for run_no, combination in enumerate(combinations):
 
             # Get the folder to store the data
-            skip_run = self._prepare_dmp_folder(combination)
-            if skip_run:
+            do_run = self._prepare_dmp_folder(combination)
+            if not(do_run):
                 # Skip this run
                 continue
 
@@ -1005,12 +1004,14 @@ class basic_runner(object):
                 self._warnings.append(message)
             # Throw a warning if restart is append
             elif self._restart == 'append':
-                message = "redistribute and restart='append' is currently "
-                message += "incompatible, setting restart to 'overwrite' "
-                message += "(previous files will be saved in a 'run' folder "
-                message += "in the dump folder) "
+                message = "redistribute != None and restart = 'append' is "
+                message += "currently incompatible, setting restart to "
+                message += "'overwrite'"
+                if not(self._restart_from):
+                    message += " (previous files will be saved)"
                 self._warning_printer(message)
                 self._warnings.append(message)
+                self._restart = 'overwrite'
             if type(self._redistribute) != int:
                 self._errors.append("TypeError")
                 raise TypeError ("redistribute must be set as an integer when set")
@@ -1029,12 +1030,14 @@ class basic_runner(object):
 
             raise_error = False
             if type(self._addnoise) == dict:
-                addnoise_keys == self._addnoise.keys()
-                if 'var' in keys:
-                    if hasattr(self._addnoise['var'], iter) or\
-                       type(self._addnoise['var']) == str:
-                        if 'scale' in keys:
-                            if type(self._addnoise['scale']) != Number:
+                addnoise_keys = self._addnoise.keys()
+                if 'var' in addnoise_keys:
+                    if type(self._addnoise['var']) == str or\
+                       self._addnoise['var'] is None:
+                        if 'scale' in addnoise_keys:
+                            if \
+                            not(isinstance(self._addnoise['scale'], Number))\
+                            and (self._addnoise['scale'] is not None):
                                 raise_error = True
                         else:
                             raise_error = True
@@ -1048,7 +1051,8 @@ class basic_runner(object):
             if raise_error:
                 self._errors.append("TypeError")
                 message = "addnoise must be on the form "
-                message += "{'var'= iterable_or_string, 'scale'= number}"
+                message += "{'var'= string_or_none, "
+                message += "'scale'= number_or_none}"
                 raise TypeError (message)
         #}}}
 
@@ -1787,19 +1791,25 @@ class basic_runner(object):
 #{{{_prepare_dmp_folder
     def _prepare_dmp_folder(self, combination):
         """
-        Set the folder to dump data in based on the input from the
-        combination.
+        Prepare the dump folder for runs
 
-        - Copy the input file to the final folder.
+        - Obtain folder name and copy the input file to the final folder.
         - Check if restart files are present if restart is set (set
           restart to None if not found).
-        - Copy restart files if restart_from is set (can set skip_run=True)
+        - Find appropriate mxg and myg if redistribute is set.
+        - Copy restart files if restart_from and/or redistribute is set
+        - Redistribute restart files if redistribute and restart is set
+        - Add noise to the restart files if addnoise and restart is set
         - Copy files if restart is set to overwrite
         - Copy the source files to the final folder is cpy_source is True.
 
-        Returns skip_run = True if there are any troubles with the copying
+        Returns do_run = False if there are any troubles with the copying
         """
-        # Obtain folder names
+
+        # do_run is set to True by default
+        do_run = True
+
+        #{{{ Obtain folder name and copy the input file
         folder_name = self._get_folder_name(combination)
         self._dmp_folder = os.path.join(self._directory, folder_name)
         # If the last character is '/', then remove it
@@ -1814,7 +1824,9 @@ class basic_runner(object):
             # Copy the input file into this folder
             src = os.path.join(self._directory, 'BOUT.inp')
             shutil.copy2(src, self._dmp_folder)
+        #}}}
 
+        #{{{ Toggle restart
         dmp_files = glob.glob(os.path.join(self._dmp_folder, '*.restart.*'))
         # If no dump files are found, set restart to "None"
         if len(dmp_files) == 0 and\
@@ -1826,14 +1838,15 @@ class basic_runner(object):
             self._restart = None
             self._warning_printer(message)
             self._warnings.append(message)
+        #}}}
 
-        # Find the appropriate mxg and myg if redistribute is set
+        #{{{ Find the appropriate mxg and myg if redistribute is set
         if self._redistribute:
             if not(self._MXG):
                 # Look in the input file
                 myOpts = BOUTOptions(self._directory)
                 # Check for MXG
-                if 'MXG' in myOpts.keys():
+                if 'MXG' in myOpts.root.keys():
                     redistribute_MXG = eval(myOpts.root['MXG'])
                 else:
                     # Set MXG to defualt
@@ -1843,50 +1856,69 @@ class basic_runner(object):
             # Do the same for MYG
             if not(self._MYG):
                 myOpts = BOUTOptions(self._directory)
-                if 'MYG' in myOpts.keys():
+                if 'MYG' in myOpts.root.keys():
                     redistribute_MYG = eval(myOpts.root['MYG'])
                 else:
                     redistribute_MYG = 2
             else:
                 redistribute_MYG = self._MYG
+        #}}}
 
-        # Copy restart files if restart_from is set
-        # skip_run is set to False by default
-        skip_run = False
+        #{{{ Copy restart files if restart_from and/or redistribute is set
         if self._restart and self._restart_from:
             if not(self._redistribute):
                 # Copy the files to restart
-                skip_run = self._copy_run_files()
+                do_run = self._copy_run_files()
             else:
                 # Use the redistribute function to copy the restart file
-                skip_run = not(redistribute(self._redistribute         ,\
-                                            path   = self._restart_from,\
-                                            output = self._dmp_folder  ,\
-                                            mxg    = redistribute_MXG  ,\
-                                            myg    = redistribute_MYG  ,\
-                                            ))
+                do_run = self._check_if_run_already_performed(\
+                        restart_file_search_reason = 'redistribute')
+
+                if do_run:
+                    print("\nCopying files from {0} to {1}\n".\
+                            format(self._restart_from, self._dmp_folder))
+                    do_run = redistribute(self._redistribute         ,\
+                                                path   = self._restart_from,\
+                                                output = self._dmp_folder  ,\
+                                                mxg    = redistribute_MXG  ,\
+                                                myg    = redistribute_MYG  ,\
+                                                )
+                    if not do_run:
+                        message = 'redistribute failed, run skipped'
+                        self._warning_printer(message)
+                        self._warnings.append(message)
+
         elif self._restart and self._redistribute:
             # Save the files from previous runs
             dst = self._move_old_runs(folder_name = 'before_redistribution',\
                                       include_restart = True)
 
-            skip_run = not(redistribute(self._redistribute       ,\
-                                        path = dst               ,\
-                                        output = self._dmp_folder,\
-                                        mxg = redistribute_MXG   ,\
-                                        myg = redistribute_MYG   ,\
-                                        ))
+            do_run = redistribute(self._redistribute       ,\
+                                  path = dst               ,\
+                                  output = self._dmp_folder,\
+                                  mxg = redistribute_MXG   ,\
+                                  myg = redistribute_MYG   ,\
+                                  )
+        #}}}
 
-        # Save files if restart is set to "overwrite" (already done if
-        # self._redistribute is set)
+        #{{{ Save files if restart is set to "overwrite"
+        # NOTE: This is already done if self._redistribute is set
         if self._restart == 'overwrite' and not(self._redistribute):
             self._move_old_runs(folder_name = 'run', include_restart = False)
+        #}}}
 
-        # Add noise
-        if self._restart and self._addnoise:
-            addnoise(var = self._addnoise['var'], scale = self._addnoise['scale'])
+        #{{{ Add noise
+        if self._restart and self._addnoise and do_run:
+            print('Now adding noise\n')
+            if self._addnoise['scale'] is None:
+                self._addnoise['scale'] = 1e-5
+            addnoise(path = self._dmp_folder,\
+                     var = self._addnoise['var'],\
+                     scale = self._addnoise['scale'])
+            print('\n')
+        #}}}
 
-        # Copy the source files if cpy_source is True
+        #{{{ Copy the source files if cpy_source is True
         if self._cpy_source:
             # This will copy all C++ files to the dmp_folder
             cpp_extension= ['.cc', '.cpp', '.cxx', '.C', '.c++',\
@@ -1896,7 +1928,9 @@ class basic_runner(object):
                 file_names = glob.glob('*' + extension)
                 for a_file in file_names:
                     shutil.copy2(a_file, self._dmp_folder)
-        return skip_run
+        #}}}
+
+        return do_run
 #}}}
 
 #{{{_remove_data
@@ -1916,17 +1950,24 @@ class basic_runner(object):
             os.remove(f)
 
         # Remove dirs
-        folder_to_rm = glob.glob(os.path.join(self._dmp_folder, "run*"))
+        folder_to_rm = glob.glob(\
+                os.path.join(self._dmp_folder, "before_redistribution_*"))
+        folder_to_rm.extend(glob.glob(os.path.join(self._dmp_folder, "run_*")))
         # Filter to only inlcude folders
         folder_to_rm = [f for f in folder_to_rm if os.path.isdir(f)]
         for f in folder_to_rm:
-            os.removedirs(f)
+            shutil.rmtree(f)
 #}}}
 
 #{{{_check_if_run_already_performed
-    def _check_if_run_already_performed(self):
+    def _check_if_run_already_performed(self,\
+                                        restart_file_search_reason=None):
         """
         Checks if the run has been run previously.
+
+        Input
+        restart_file_search_reason - Reason to check for restart files
+                                     if not None.
 
         Returns
         True    - The run will be performed
@@ -1934,9 +1975,22 @@ class basic_runner(object):
         """
 
         dmp_files = glob.glob(os.path.join(self._dmp_folder, '*.dmp.*'))
-        # If no BOUT.inp files are found or if self._restart is not set
-        # (meaning that the run will be done even if files are found)
-        if len(dmp_files) != 0 and self._restart is None:
+
+        if restart_file_search_reason:
+            restart_files =\
+                    glob.glob(os.path.join(self._dmp_folder, '*.restart.*'))
+            # Check if dmp or restart files are found
+            if len(dmp_files) !=0 or len(restart_files) !=0:
+                message = "Restart or dmp files was found in " +\
+                          self._dmp_folder + " when " +\
+                          restart_file_search_reason + " was set. Run skipped."
+                self._warning_printer(message)
+                self._warnings.append(message)
+                return False
+            else:
+                return True
+        # Check if dmp files are found if restart is None
+        elif len(dmp_files) != 0 and self._restart is None:
             print('Skipping the run as *.dmp.* files was found in '\
                   + self._dmp_folder)
             print('To overwrite old files, run with'+\
@@ -2514,18 +2568,12 @@ class basic_runner(object):
         """
         Function which copies run files from self._restart_from
         """
-        # Check for files in dmp_folder
-        if len(glob.glob(os.path.join(self._dmp_folder,'*restart*'))) !=0 or\
-           len(glob.glob(os.path.join(self._dmp_folder,'*dmp*'))) !=0:
-            message = "Restart or dmp files was found in " + self._dmp_folder +\
-                      " when restart_from was set. Run skipped."
-            self._warning_printer(message)
-            self._warnings.append(message)
-            skip_run = True
-        else:
-            skip_run = False
 
-        if not skip_run:
+        do_run =\
+            self._check_if_run_already_performed(\
+                restart_file_search_reason = 'restart_from')
+
+        if do_run:
             print("\nCopying files from {0} to {1}\n".\
                   format(self._restart_from, self._dmp_folder))
 
@@ -2570,7 +2618,7 @@ class basic_runner(object):
                     else:
                         shutil.copy2(cur_file, self._dmp_folder)
 
-        return skip_run
+        return do_run
 #}}}
 
 #{{{_move_old_runs
