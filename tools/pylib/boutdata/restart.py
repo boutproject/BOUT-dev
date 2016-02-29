@@ -193,6 +193,7 @@ def addnoise(path=".", var=None, scale=1e-5):
                         d.write(v, data)
             else:
                 # Modify a single variable
+                print(" -> "+var)
                 data = d.read(var)
                 data += normal(scale=scale, size=data.shape)
                 d.write(var, data)

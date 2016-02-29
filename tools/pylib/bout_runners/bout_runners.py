@@ -1903,7 +1903,7 @@ class basic_runner(object):
 
         #{{{ Save files if restart is set to "overwrite"
         # NOTE: This is already done if self._redistribute is set
-        if self._restart == 'overwrite' and not(self._redistribute):
+        if self._restart == 'overwrite' and not(self._redistribute) and do_run:
             self._move_old_runs(folder_name = 'run', include_restart = False)
         #}}}
 
