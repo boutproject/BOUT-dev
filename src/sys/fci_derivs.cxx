@@ -168,7 +168,14 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) :
         bool x_upper = (mesh.lastX()  && (xt_prime(x,y,z) >= mesh.xend + 0.5));
         if (x_lower || x_upper) {
           x_boundary = true;
-          s_intersect_x = 1. / (2.*abs(p_x));
+          // Total distance (in index space) from the boundary
+          BoutReal boundary_dist;
+          if (x_lower) {
+            boundary_dist = abs((mesh.xstart - 0.5) - x);
+          } else {
+            boundary_dist = abs((mesh.xend + 0.5) - x);
+          }
+          s_intersect_x = boundary_dist / (abs(p_x));
         } else {
           x_boundary = false;
         }
@@ -190,7 +197,14 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) :
         bool z_upper = !zperiodic && (zt_prime(x,y,z) >= ncz-0.5);
         if (z_lower || z_upper) {
           z_boundary = true;
-          s_intersect_z = 1. / (2.*abs(p_z));
+          // Total distance (in index space) from the boundary
+          BoutReal boundary_dist;
+          if (z_lower) {
+            boundary_dist = abs(-0.5 - z);
+          } else {
+            boundary_dist = abs((ncz - 0.5) - z);
+          }
+          s_intersect_z = boundary_dist / (abs(p_z));
         } else {
           z_boundary = false;
         }

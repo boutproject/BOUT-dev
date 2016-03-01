@@ -228,6 +228,8 @@ void BoundaryOpPar_neumann::apply(Field3D &f, BoutReal t) {
 
   Field3D& f_next = f.ynext(bndry->dir);
 
+  Coordinates& coord = *(mesh->coordinates());
+
   // If point is in boundary, then fill in f_next such that the derivative
   // would be VALUE on the boundary
   for (bndry->first(); !bndry->isDone(); bndry->next()) {
@@ -236,8 +238,9 @@ void BoundaryOpPar_neumann::apply(Field3D &f, BoutReal t) {
 
     // Generate the boundary value
     BoutReal value = getValue(x, y, z, t);
+    BoutReal dy = coord.dy(x, y);
 
-    f_next(x, y+bndry->dir, z) = 2.*value + f(x, y, z);
+    f_next(x, y+bndry->dir, z) = f(x, y, z) + bndry->dir*value*dy;
   }
 
 }
