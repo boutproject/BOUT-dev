@@ -1,4 +1,3 @@
-
 #include <globals.hxx>
 #include <boundary_factory.hxx>
 #include <boundary_standard.hxx>
@@ -69,7 +68,7 @@ BoundaryFactory* BoundaryFactory::getInstance() {
 void BoundaryFactory::cleanup() {
   if(instance == NULL)
     return;
-  
+
   // Just delete the instance
   delete instance;
   instance = NULL;
@@ -199,11 +198,11 @@ BoundaryOpBase* BoundaryFactory::create(const char* name, BoundaryRegionBase *re
 BoundaryOpBase* BoundaryFactory::createFromOptions(const string &varname, BoundaryRegionBase *region) {
   if(region == NULL)
     return NULL;
-  
+
   output << "\t" << region->label << " region: ";
-  
+
   string prefix("bndry_");
-  
+
   string side("all");
   switch(region->location) {
   case BNDRY_XIN: {
@@ -231,29 +230,23 @@ BoundaryOpBase* BoundaryFactory::createFromOptions(const string &varname, Bounda
     break;
   }
   }
-  
+
   // Get options
   Options *options = Options::getRoot();
-  
+
   // Get variable options
   Options *varOpts = options->getSection(varname);
   string set;
-  
+
   /// First try looking for (var, region)
   if(varOpts->isSet(prefix+region->label)) {
     varOpts->get(prefix+region->label, set, "");
     return create(set, region);
   }
-  
+
   /// Then (var, side)
   if(varOpts->isSet(prefix+side)) {
     varOpts->get(prefix+side, set, "");
-    return create(set, region);
-  }
-  
-  /// Then (var, all)
-  if(varOpts->isSet(prefix+"all")) {
-    varOpts->get(prefix+"all", set, "");
     return create(set, region);
   }
 
@@ -263,8 +256,13 @@ BoundaryOpBase* BoundaryFactory::createFromOptions(const string &varname, Bounda
       varOpts->get(prefix+"par_all", set, "");
       return create(set, region);
     }
+  } else {
+    if(varOpts->isSet(prefix+"all")) {
+      varOpts->get(prefix+"all", set, "");
+      return create(set, region);
+    }
   }
-  
+
   // Get the "all" options
   varOpts = options->getSection("All");
 
@@ -273,13 +271,13 @@ BoundaryOpBase* BoundaryFactory::createFromOptions(const string &varname, Bounda
     varOpts->get(prefix+region->label, set, "");
     return create(set, region);
   }
-  
+
   /// Then (all, side)
   if(varOpts->isSet(prefix+side)) {
     varOpts->get(prefix+side, set, "");
     return create(set, region);
   }
-  
+
   /// Then (all, all)
   if(region->isParallel) {
     // Different default for parallel boundary regions
