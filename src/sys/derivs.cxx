@@ -1432,60 +1432,49 @@ const Field3D applyYdiff(const Field3D &var, deriv_func func, inner_boundary_der
   bindex bx;
   
   start_index(&bx, RGN_NOBNDRY);
-  
-  /*
+  bindex bxstart = bx; 
+  reverse_start_index(&bx, RGN_NOBNDRY);
+  bindex bxend = bx; 
 #ifdef _OPENMP
-  // Parallel version
-  bindex bxstart = bx; // Copy to avoid race condition on first index
-  bool workToDoGlobal; // Shared loop control
-  #pragma omp parallel
-  {
-    bindex bxlocal; // Index for each thread
-    stencil s;
-    bool workToDo;  // Does this thread have work to do?
-    
-    #pragma omp single
-    {
-      // First index done by single thread
-      for(bxstart.jz=0;bxstart.jz<mesh->ngz-1;bxstart.jz++) {
-        var.setYStencil(s, bxstart, loc);
-        r[bxstart.jx][bxstart.jy][bxstart.jz] = func(s) / dd[bxstart.jx][bxstart.jy];
+  for (int jx=bxstart.jx; jx <= bxend.jx; jx++){
+    for (int jy=bxstart.jy; jy <= bxend.jy; jy++){
+#pragma omp parallel for
+      for (int jz=bxstart.jz; jz <= bxend.jz; jz++){
+        stencil s;
+        bindex bxlocal;
+        bxlocal.jx = jx;
+        bxlocal.jy = jy;
+        bxlocal.jz = jz;
+        calc_index(&bxlocal);
+        var.setYStencil(s, bxlocal, loc);
+        r[bxlocal.jx][bxlocal.jy][bxlocal.jz] = func(s) / dd(bxlocal.jx, bxlocal.jy);
       }
     }
-    
-    do {
-      #pragma omp critical
-      {
-        // Get the next index
-        workToDo = next_index2(&bx); // Only in 2D
-        bxlocal = bx; // Make a local copy
-        workToDoGlobal = workToDo;
-      }
-      if(workToDo) { // Here workToDo could be different to workToDoGlobal
-        for(bxlocal.jz=0;bxlocal.jz<mesh->ngz-1;bxlocal.jz++) {
-          var.setYStencil(s, bxlocal, loc);
-          r[bxlocal.jx][bxlocal.jy][bxlocal.jz] = func(s) / dd[bxlocal.jx][bxlocal.jy];
-        }
-      }
-    }while(workToDoGlobal);
   }
+
 #else 
-  */
   stencil s;
-  do {
-    //output.write("apply %d %d\n", bx.jx, bx.jy);
-    for(bx.jz=0;bx.jz<mesh->ngz-1;bx.jz++) {
-      var.setYStencil(s, bx, loc);
-      r[bx.jx][bx.jy][bx.jz] = func(s) / dd(bx.jx, bx.jy);
+
+  for (bx.jx=bxstart.jx; bx.jx <= bxend.jx; bx.jx++){
+    for (bx.jy=bxstart.jy; bx.jy <= bxend.jy; bx.jy++){
+      for (bx.jz=bxstart.jz; bx.jz <= bxend.jz; bx.jz++){
+        calc_index(&bx);  
+        var.setYStencil(s, bx, loc);
+        r[bx.jx][bx.jy][bx.jz] = func(s) / dd(bx.jx, bx.jy);
+      }
     }
-  }while(next_index2(&bx));
-  //#endif
+  }
+
+#endif  
 
 #ifdef CHECK
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
   
+#ifdef _OPENMP 
+  stencil s; // only in scope for serial version
+#endif
   if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX) {
     for (bx.jx=mesh->xstart-1; bx.jx>=0; bx.jx--)
       for (bx.jy=mesh->ystart; bx.jy<=mesh->ystart; bx.jy++)
