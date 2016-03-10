@@ -251,7 +251,7 @@ class DataFile_netCDF(DataFile):
         """List all variables in the file."""
         if self.handle == None: return []
         return list(self.handle.variables.keys())
-    
+
     def keys(self):
         """List all variables in the file."""
         return self.list()
