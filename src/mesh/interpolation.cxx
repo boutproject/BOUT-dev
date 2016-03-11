@@ -79,11 +79,13 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
 
       switch(dir) {
       case CELL_XLOW: {
-	start_index(&bx, RGN_NOX);
-	do {
+	//start_index(&bx, RGN_NOX);
+	//do {
+	for (FieldIteratorCIndex cxit(*mesh,NO_X|PARALLEL|CALC_INDEX),cxit.next();){
+	  bx=cxit;
 	  var.setXStencil(s, bx, loc);
 	  d[bx.jx][bx.jy][bx.jz] = interp(s);
-	}while(next_index3(&bx));
+	}//while(next_index3(&bx));
 	break;
 	// Need to communicate in X
       }
