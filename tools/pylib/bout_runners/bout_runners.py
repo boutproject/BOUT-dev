@@ -10,8 +10,8 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '1.021'
-__date__    = '2016.02.28'
+__version__ = '1.022'
+__date__    = '2016.03.15'
 
 import os
 import re
@@ -62,6 +62,7 @@ class basic_runner(object):
     def __init__(self,\
                  nproc        = 1,\
                  directory    = 'data',\
+                 prog_name    = None,\
                  solver       = None,\
                  mms          = None,\
                  atol         = None,\
@@ -125,6 +126,8 @@ class basic_runner(object):
         Input:
         nproc        -    The number of processors to use in the mpirun (int)
         directory    -    The directory of the BOUT.inp file (str)
+        prog_name    -    Name of the excecutable. If none is set the
+                          name will be set from the *.o file.
         solver       -    The solver to be used in the runs (str or
                           iterable)
         mms          -    Whether or not mms should be run (bool)
@@ -316,9 +319,8 @@ class basic_runner(object):
                 self._errors.append("TypeError")
                 raise TypeError("make must be boolean if set")
 
-        # Set self._program_name from the *.o file. Make the program if
-        # the *.o file is not found
-        self._set_program_name()
+        # Set self._program_name
+        self._set_program_name(prog_name)
 
         # Make the file if make is True
         if self._make:
@@ -588,37 +590,72 @@ class basic_runner(object):
 #}}}
 
 #{{{_set_program_name
-    def _set_program_name(self):
-        """Set self._program_name from the *.o file. Make the program if
-        the *.o file is not found"""
+    def _set_program_name(self, prog_name=None):
+        """
+        Will set self._program_name and make the program if the
+        prog_name.o file is not found.
 
-        # Find the *.o file
-        o_files = glob.glob("*.o")
-        if len(o_files) > 0:
-            # Pick the first instance as the name
-            self._program_name = o_files[0].replace('.o', '')
-        else:
-            # Check if there exists a make
-            make_file = glob.glob("*make*")
-            if len(make_file) > 0:
-                # Run make
+        Input
+        prog_name - Name of the exceutable
+                    If None, the name will be set from the *.o file.
+        """
+
+        if prog_name is not(None):
+            # Check that a string is given
+            if type(prog_name) != str:
+                message = 'prog_name must be given as a string'
+                self._errors.append("TypeError")
+                raise TypeError(message)
+            # Search for file
+            if os.path.isfile(prog_name):
+                self._program_name = prog_name
+            else:
+                print(prog_name+" not found, now making:")
+                # File not found, make
                 self._run_make()
                 # Set the make flag to False, so it is not made again
                 self._make = False
-                # Search for the .o file again
-                o_files = glob.glob("*.o")
-                if len(o_files) > 0:
-                    self._program_name = o_files[0].replace('.o', '')
-                else:
-                    self._program_name = False
-                    message = 'The constructor could not make your'+\
-                              ' program'
+                # Search for file
+                if not(os.path.isfile(prog_name)):
+                    message = prog_name + ' could not be found after make. '
+                    message += 'Please check for spelling mistakes'
                     self._errors.append("RuntimeError")
                     raise RuntimeError(message)
+        else:
+            # Find the *.o file
+            o_files = glob.glob("*.o")
+            if len(o_files) > 1:
+                message = "More than one *.o file found. "
+                message += "The first *.o file is chosen. "
+                message += "Consider setting 'prog_name'."
+                self._warning_printer(message)
+                self._warnings.append(message)
+                self._program_name = o_files[0].replace('.o', '')
+            elif len(o_files) == 1:
+                # Pick the first instance as the name
+                self._program_name = o_files[0].replace('.o', '')
             else:
-                self._errors.append("RuntimeError")
-                raise RuntimeError("No make file found in current" +\
-                                   " directory")
+                # Check if there exists a make
+                make_file = glob.glob("*make*")
+                if len(make_file) > 0:
+                    # Run make
+                    self._run_make()
+                    # Set the make flag to False, so it is not made again
+                    self._make = False
+                    # Search for the .o file again
+                    o_files = glob.glob("*.o")
+                    if len(o_files) > 0:
+                        self._program_name = o_files[0].replace('.o', '')
+                    else:
+                        self._program_name = False
+                        message = 'The constructor could not make your'+\
+                                  ' program'
+                        self._errors.append("RuntimeError")
+                        raise RuntimeError(message)
+                else:
+                    self._errors.append("RuntimeError")
+                    raise RuntimeError("No make file found in current" +\
+                                       " directory")
 #}}}
 
 #{{{_check_for_basic_instance_error
