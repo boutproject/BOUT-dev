@@ -10,7 +10,7 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '1.022'
+__version__ = '1.0221'
 __date__    = '2016.03.15'
 
 import os
@@ -2627,7 +2627,7 @@ class basic_runner(object):
 
             # Additional files that will be copied to the destination
             # folder
-            extensions = [*extensions_w_cpy, *has_extensions_w_cpy, 'restart.*']
+            extensions = [extensions_w_cpy[:], has_extensions_w_cpy[:], 'restart.*']
 
             if self._restart == "append":
                 extensions.append("dmp.*")
