@@ -1591,6 +1591,8 @@ fi
 # Gather configuration info for bout-config
 #############################################################
 
+EXTRA_INCS="${EXTRA_INCS} ${CPPFLAGS}"
+
 PREFIX=$PWD
 IDLCONFIGPATH=$PWD/tools/idllib
 PYTHONCONFIGPATH=$PWD/tools/pylib
