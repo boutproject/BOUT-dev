@@ -621,6 +621,8 @@ class basic_runner(object):
                     message += 'Please check for spelling mistakes'
                     self._errors.append("RuntimeError")
                     raise RuntimeError(message)
+                else:
+                    self._program_name = prog_name
         else:
             # Find the *.o file
             o_files = glob.glob("*.o")
@@ -1941,7 +1943,7 @@ class basic_runner(object):
         #{{{ Save files if restart is set to "overwrite"
         # NOTE: This is already done if self._redistribute is set
         if self._restart == 'overwrite' and not(self._redistribute) and do_run:
-            self._move_old_runs(folder_name = 'run', include_restart = False)
+            self._move_old_runs(folder_name = 'restart', include_restart = False)
         #}}}
 
         #{{{ Add noise
@@ -2659,7 +2661,7 @@ class basic_runner(object):
 #}}}
 
 #{{{_move_old_runs
-    def _move_old_runs(self, folder_name = 'run', include_restart = False):
+    def _move_old_runs(self, folder_name = 'restart', include_restart = False):
         """Move old runs, return the destination path"""
 
         # Check for folders in the dmp directory
@@ -2669,30 +2671,25 @@ class basic_runner(object):
                        os.path.isdir(os.path.join(\
                                     self._dmp_folder, name))\
                       ]
-        # Find occurrences of 'folder_name' in these folders
-        prev_runs = [name for name in directories if folder_name in name]
+        # Find occurrences of 'folder_name', split, and cast result to number
+        restart_nr = [int(name.split('_')[-1]) for name in directories\
+                      if folder_name in name]
         # Check that the list is not empty
-        if len(prev_runs) != 0:
-            # Sort the folders alphabetically
-            prev_runs.sort()
-            # Pick the last of prev_runs
-            prev_runs = prev_runs[-1]
-            # Pick the number from the last run
-            # First split the string
-            overwrite_nr = prev_runs.split('_')
-            # Pick the last element of overwrite_nr, and cast it
-            # to an integer
-            overwrite_nr = int(overwrite_nr[-1])
-            # Add one to the overwrite_nr, as we want to create
+        if len(restart_nr) != 0:
+            # Sort the folders in ascending order
+            restart_nr.sort()
+            # Pick the last index
+            restart_nr = restart_nr[-1]
+            # Add one to the restart_nr, as we want to create
             # a new directory
-            overwrite_nr += overwrite_nr
+            restart_nr += 1
         else:
-            # Set the overwrite_nr
-            overwrite_nr = 1
+            # Set the restart_nr
+            restart_nr = 0
         # Create the folder for the previous runs
         self._create_folder(\
                 os.path.join(self._dmp_folder, folder_name + '_' +\
-                             str(overwrite_nr)))
+                             str(restart_nr)))
 
         extensions_to_move = ['cpy', 'log.*', 'dmp.*',\
                               'cc' , 'cpp'  , 'cxx'  , 'C'  , 'c++',\
@@ -2702,7 +2699,7 @@ class basic_runner(object):
             extensions_to_move.append('restart.*')
 
         dst = os.path.join(self._dmp_folder,\
-                           folder_name + '_' + str(overwrite_nr))
+                           folder_name + '_' + str(restart_nr))
 
         print("Moving old runs to {}\n".format(dst))
 
