@@ -405,13 +405,10 @@ Field3D & Field3D::operator=(const FieldPerp &rhs) {
 
   /// Copy data
   
-#pragma omp parallel
-  {
-    for(int jx=0;jx<mesh->ngx;jx++) {
-#pragma omp for
-      for(int jz=0;jz<mesh->ngz;jz++)
-        block->data[jx][jy][jz] = d[jx][jz];
-    }
+#pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++) {
+    for(int jz=0;jz<mesh->ngz;jz++)
+      block->data[jx][jy][jz] = d[jx][jz];
   }
 
   return(*this);

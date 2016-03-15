@@ -27,6 +27,7 @@
 #define __STENCILS_H__
 
 #include "bout_types.hxx"
+#include "bout/deprecated.hxx"
 
 class bvalue {
  public:
@@ -215,14 +216,14 @@ typedef struct {
 } bindex;
 
 void calc_index(bindex *bx);
-void start_index(bindex *bx, REGION region = RGN_NOBNDRY); // Doesn't loop over boundary regions
-int next_index3(bindex *bx);
-int next_index2(bindex *bx);
-int next_indexperp(bindex *bx);
-void reverse_start_index(bindex *bx, REGION region = RGN_NOBNDRY); // Doesn't loop over boundary regions
-void start_index_lasty(bindex *bx, REGION region = RGN_NOBNDRY);
-int reverse_next_index3(bindex *bx);
-int next_index_y(bindex *bx);
-int previous_index_y(bindex *bx);
+DEPRECATED(void start_index(bindex *bx, REGION region = RGN_NOBNDRY) ); // Doesn't loop over boundary regions
+DEPRECATED(int next_index3(bindex *bx));
+DEPRECATED(int next_index2(bindex *bx));
+DEPRECATED(int next_indexperp(bindex *bx));
+DEPRECATED(void reverse_start_index(bindex *bx, REGION region = RGN_NOBNDRY)); // Doesn't loop over boundary regions
+DEPRECATED(void start_index_lasty(bindex *bx, REGION region = RGN_NOBNDRY));
+DEPRECATED(int reverse_next_index3(bindex *bx));
+DEPRECATED(int next_index_y(bindex *bx));
+DEPRECATED(int previous_index_y(bindex *bx));
 
 #endif /* __STENCILS_H__ */

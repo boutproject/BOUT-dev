@@ -42,9 +42,11 @@ enum flags_fielditerator_t{
   NO_X=1,
   NO_Y=2,
   NO_Z=4,
-  PARALLEL=8,
+  PARALLEL=0,
+  NOT_PARALLEL=8,
   CALC_INDEX=16,
-  NO_BNDRY=NO_X|NO_Y|NO_Z
+  NO_BNDRY=NO_X|NO_Y|NO_Z,
+  FIELD2D=32
 };
 
 
@@ -182,7 +184,7 @@ class FieldIteratorCIndex{
 public:
   CIndex current;
   operator bindex(){return current;};
-  bool next(){
+  bool next3(){
     if (++current.jz == max.jz){
       current.jz=0;
       if (++current.jy == max.jy){
@@ -200,8 +202,23 @@ public:
     return true;
 #endif
   };
+  bool next2(){
+    if (++current.jy == max.jy){
+      current.jy=ymin;
+      if (++current.jx == max.jx){
+#ifndef _OPENMP
+	return false;
+#endif
+      };
+    }
+#ifdef _OPENMP
+    return current < end;
+#else
+    return true;
+#endif
+  };
   FieldIteratorCIndex & operator++(){
-    this->next();
+    this->next3();
   };
   FieldIteratorCIndex(int flags, Mesh & mesh);
   FieldIteratorCIndex(Mesh & mesh,int flags=0);

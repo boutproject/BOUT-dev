@@ -125,22 +125,32 @@ void FieldIteratorCIndex::init(){
     start.jz=0;
     end.jz  =mesh.ngz;
   }
+  max=end;
   ymin=start.jy;
 #ifdef _OPENMP
-  if (flags & PARALLEL){
+  if (!flags & NOT_PARALLEL){
     CIndex work = end-start;
-    int iwork   = work.jx*work.jy*work.jz;
+    int iwork;
+    if (flags&FIELD2D){
+      iwork   = work.jx*work.jy;
+    } else {
+      iwork   = work.jx*work.jy*work.jz;
+    }
     int np=omp_get_num_threads();
     int cp=omp_get_thread_num();
     int istart=spread_work(iwork,cp,np);
     int iend=spread_work(iwork,cp+1,np);
-    end.jz=start.jz+iend%work.jz;
-    iend/=work.jz;
+    if (! flags&FIELD2D){
+      end.jz=start.jz+iend%work.jz;
+      iend/=work.jz;
+    }
     end.jy=start.jy+iend%work.jy;
     iend/=work.jy;
     end.jx=start.jx+iend;
-    start.jz+=istart%work.jz;
-    istart/=work.jz;
+    if (! flags&FIELD2D){
+      start.jz+=istart%work.jz;
+      istart/=work.jz;
+    }
     start.jy+=istart%work.jy;
     istart/=work.jy;
     start.jx+=istart;

@@ -28,6 +28,7 @@
 #include <stencils.hxx>
 #include <output.hxx>
 #include <msg_stack.hxx>
+#include <fielditerator.hxx>
 
 /// Perform interpolation between centre -> shifted or vice-versa
 /*!
@@ -70,8 +71,6 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
     if((var.getLocation() == CELL_CENTRE) || (loc == CELL_CENTRE)) {
       // Going between centred and shifted
       
-      bindex bx;
-      stencil s;
       CELL_LOC dir; 
       
       // Get the non-centre location for interpolation direction
@@ -81,8 +80,10 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
       case CELL_XLOW: {
 	//start_index(&bx, RGN_NOX);
 	//do {
-	for (FieldIteratorCIndex cxit(*mesh,NO_X|PARALLEL|CALC_INDEX),cxit.next();){
-	  bx=cxit;
+#pragma omp parallel
+	for (FieldIteratorCIndex cxit(*mesh,NO_X|PARALLEL|CALC_INDEX);cxit.next3();){
+	  bindex bx=cxit;
+	  stencil s;
 	  var.setXStencil(s, bx, loc);
 	  d[bx.jx][bx.jy][bx.jz] = interp(s);
 	}//while(next_index3(&bx));
@@ -90,20 +91,28 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
 	// Need to communicate in X
       }
       case CELL_YLOW: {
-	start_index(&bx, RGN_NOY);
-	do {
+	//start_index(&bx, RGN_NOY);
+	//do {
+#pragma omp parallel
+	for (FieldIteratorCIndex cxit(*mesh,NO_Y|PARALLEL|CALC_INDEX);cxit.next3();){
+	  bindex bx=cxit;
+	  stencil s;
 	  var.setYStencil(s, bx, loc);
 	  d[bx.jx][bx.jy][bx.jz] = interp(s);
-	}while(next_index3(&bx));
+	}//while(next_index3(&bx));
 	break;
 	// Need to communicate in Y
       }
       case CELL_ZLOW: {
-	start_index(&bx, RGN_NOZ);
-	do {
+	//start_index(&bx, RGN_NOZ);
+	//do {
+#pragma omp parallel
+	for (FieldIteratorCIndex cxit(*mesh,NO_Z|PARALLEL|CALC_INDEX);cxit.next3();){
+	  bindex bx=cxit;
+	  stencil s;
 	  var.setZStencil(s, bx, loc);
 	  d[bx.jx][bx.jy][bx.jz] = interp(s);
-	}while(next_index3(&bx));
+	}//while(next_index3(&bx));
 	break;
       }
       default: {
