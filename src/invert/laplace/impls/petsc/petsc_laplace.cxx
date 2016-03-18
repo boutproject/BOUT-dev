@@ -308,7 +308,9 @@ LaplacePetsc::LaplacePetsc(Options *opt) :
   else if(type == "lcd")			ksptype = KSPLCD;
   else if(type == "python")			ksptype = KSPPYTHON;
   else if(type == "gcr")			ksptype = KSPGCR;
+#ifdef KSPSPECEST // Removed 3.6
   else if(type == "specest")			ksptype = KSPSPECEST;
+#endif
   else
     throw BoutException("Unknown Krylov solver type '%s'", type.c_str());
 
