@@ -26,6 +26,7 @@ flags = [""]
 
 code = 0 # Return code
 for nproc in [1,2,4]:
+  for mproc in [1,2,4,8]:
     cmd = "./test_fielditerator"
 
     print("   %d processors...." % (nproc))
