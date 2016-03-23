@@ -115,7 +115,6 @@ public:
     jy+=rhs.jy;
     jz+=rhs.jz;
   }
-  
   /*int getIndex(){
     int ny=mesh.ngy;
     int nz=mesh.ngz;
@@ -182,50 +181,59 @@ inline CIndex operator+(CIndex lhs, const CIndex& rhs){
 
 class FieldIteratorCIndex{
 public:
+  // needs to be first
+  // otherwise it cannot be casted as CIndex
   CIndex current;
   operator bindex(){return current;};
-  bool next3(){
+  operator CIndex&() {return current;};
+  void next3(){
+    ASSERT2(!(flags&FIELD2D));
     if (++current.jz == max.jz){
       current.jz=0;
       if (++current.jy == max.jy){
 	current.jy=ymin;
 	if (++current.jx == max.jx){
 #ifndef _OPENMP
-	  return false;
+	  notfinished=false;
 #endif
 	};
       }
     }
 #ifdef _OPENMP
-    return current < end;
+    notfinished= current <= end;
 #else
-    return true;
+    notfinished=true;
 #endif
+    //return notfinished;
   };
-  bool next2(){
+  void next2(){
+    ASSERT2(flags&FIELD2D);
     if (++current.jy == max.jy){
       current.jy=ymin;
       if (++current.jx == max.jx){
 #ifndef _OPENMP
-	return false;
+	notfinished=false;
 #endif
       };
     }
 #ifdef _OPENMP
-    return current < end;
+    notfinished = current < end;
 #else
-    return true;
+    notfinished = true;
 #endif
+    //return notfinished;
   };
   FieldIteratorCIndex & operator++(){
     this->next3();
   };
   FieldIteratorCIndex(int flags, Mesh & mesh);
   FieldIteratorCIndex(Mesh & mesh,int flags=0);
-  bool finished() {return !notFinished();};
-  bool notFinished() {return current < end ;};
+  bool finished() {return !notfinished;};
+  bool notFinished() {return notfinished ;};
+  operator bool() {return notfinished;};
   //FieldIteratorCIndex(int flags,Mesh & mesh);
   void reset();
+  void printState();
 private:
   // please use the prefix iterator
   FieldIteratorCIndex & operator++(int);
@@ -239,6 +247,7 @@ private:
   int ymin;//zmin=0 -> not needed
   int flags;
   Mesh & mesh;
+  bool notfinished;
   //int xend,yend,zend;
   //int xstart,ystart,zstart;
   void init();

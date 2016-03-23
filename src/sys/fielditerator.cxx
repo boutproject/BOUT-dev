@@ -4,6 +4,10 @@
 
 #include "fielditerator.hxx"
 
+//debugging:
+#include "output.hxx"
+#include <assert.h>
+
 // int calcStart(int);
 // int calcEnd(int);
 
@@ -101,7 +105,14 @@ FieldIteratorCIndex::FieldIteratorCIndex(Mesh & mesh, int flags):flags(flags),me
   init();
 }
 
-static int spread_work(int num_work, int thread, int max_thread);
+
+void FieldIteratorCIndex::printState(){
+  output.write("current: %d %d %d",current.jx,current.jy,current.jz);
+}
+
+int spread_work(int num_work, int thread, int max_thread);
+
+//#undef _OPENMP
 
 void FieldIteratorCIndex::init(){
   if (flags & NO_X){
@@ -128,7 +139,11 @@ void FieldIteratorCIndex::init(){
   max=end;
   ymin=start.jy;
 #ifdef _OPENMP
-  if (!flags & NOT_PARALLEL){
+  int np=omp_get_num_threads();
+  if (np == 1){
+    flags |= NOT_PARALLEL;
+  }
+  if (!(flags & NOT_PARALLEL)){
     CIndex work = end-start;
     int iwork;
     if (flags&FIELD2D){
@@ -136,28 +151,58 @@ void FieldIteratorCIndex::init(){
     } else {
       iwork   = work.jx*work.jy*work.jz;
     }
-    int np=omp_get_num_threads();
     int cp=omp_get_thread_num();
     int istart=spread_work(iwork,cp,np);
     int iend=spread_work(iwork,cp+1,np);
-    if (! flags&FIELD2D){
+    int istart0=istart;
+    int iend0=iend;
+    //output.write("We need to do %d and i do [%d,%d].\n",iwork,istart,iend);
+    if (! (flags&FIELD2D)){
       end.jz=start.jz+iend%work.jz;
       iend/=work.jz;
     }
     end.jy=start.jy+iend%work.jy;
     iend/=work.jy;
     end.jx=start.jx+iend;
-    if (! flags&FIELD2D){
+    if (! (flags&FIELD2D)){
       start.jz+=istart%work.jz;
       istart/=work.jz;
     }
     start.jy+=istart%work.jy;
     istart/=work.jy;
     start.jx+=istart;
+
+    if (flags&FIELD2D){
+      if (--end.jy < ymin){
+	end.jy=max.jy;
+	--end.jx;
+      }
+    } else {
+      if (--end.jz < 0){
+	end.jz=max.jz;
+	if (--end.jy < ymin){
+	  end.jy=max.jy;
+	  --end.jx;
+	}
+      }
+    }
+    
+    if (!(start.jx>=0 && start.jx <= end.jx && end.jx < mesh.ngx)){
+      output.write("%d %d %d %d\n",cp,np,istart0,iend0);
+      abort();
+    }
+  } else {
+    //output.write("flags: %x != %x",flags, flags | NOT_PARALLEL);
+    --end.jx;
+    --end.jy;
+    --end.jz;
   }
+#else
+#error OPENMP disabled!
 #endif
   start.flags=flags;
   current=start;
+  notfinished = current < end;
 }
 
 void FieldIteratorCIndex::reset(){
