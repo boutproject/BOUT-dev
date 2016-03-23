@@ -1231,7 +1231,7 @@ const Field3D applyXdiff(const Field3D &var, deriv_func func, inner_boundary_der
 // #else
   //do {
 #pragma omp parallel
-  for (FieldIteratorCIndex cxit(*mesh,NO_X|PARALLEL|CALC_INDEX|FIELD2D);cxit.next2();){
+  for (FieldIteratorCIndex cxit(*mesh,NO_X|CALC_INDEX|FIELD2D);cxit;cxit.next2()){
     bindex bx=cxit;
     for(bx.jz=0;bx.jz<mesh->ngz-1;bx.jz++) {
       stencil s;
@@ -1356,7 +1356,7 @@ const Field2D applyYdiff(const Field2D &var, deriv_func func, inner_boundary_der
   }
   #else */
 #pragma omp parallel
-  for (FieldIteratorCIndex cxit(*mesh,NO_BNDRY|PARALLEL|CALC_INDEX|FIELD2D);cxit.next2();){
+  for (FieldIteratorCIndex cxit(*mesh,NO_BNDRY|CALC_INDEX|FIELD2D);cxit;cxit.next2()){
     stencil s;
     bindex bx=cxit;
     var.setYStencil(s, bx, loc);
@@ -1476,7 +1476,8 @@ const Field3D applyYdiff(const Field3D &var, deriv_func func, inner_boundary_der
   }
 #else 
   */
-  for (FieldIteratorCIndex cxit(*mesh,FIELD2D|NO_BNDRY|CALC_INDEX|PARALLEL);cxit.next2();){
+#pragma omp parallel
+  for (FieldIteratorCIndex cxit(*mesh,FIELD2D|NO_BNDRY|CALC_INDEX);cxit;cxit.next2()){
     stencil s;
     bindex bx=cxit;
     //output.write("apply %d %d\n", bx.jx, bx.jy);
@@ -1589,7 +1590,7 @@ const Field3D applyZdiff(const Field3D &var, deriv_func func, BoutReal dd, CELL_
 
   //start_index(&bx, RGN_NOZ);
 #pragma omp parallel
-  for (FieldIteratorCIndex cxit(*mesh,NO_X|CALC_INDEX|PARALLEL);cxit.next3();){
+  for (FieldIteratorCIndex cxit(*mesh,NO_X|CALC_INDEX);cxit;cxit.next3()){
     bindex bx=cxit;
     stencil s;
     var.setZStencil(s, bx, loc);
@@ -1834,7 +1835,7 @@ const Field3D DDY_MUSCL(const Field3D &F, const Field3D &u, const Field2D &Vmax)
   //bindex bx;
   //start_index(&bx, RGN_NOBNDRY);
 #pragma omp parallel
-  for (FieldIteratorCIndex cxit(*mesh,NO_BNDRY|FIELD2D|CALC_INDEX);cxit.next2();){
+  for (FieldIteratorCIndex cxit(*mesh,NO_BNDRY|FIELD2D|CALC_INDEX);cxit;cxit.next2()){
     stencil fs, us;
     bindex bx=cxit;		
     //do {
@@ -2551,8 +2552,8 @@ const Field2D VDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_MET
   Field2D result;
   result.allocate(); // Make sure data allocated
   BoutReal **d = result.getData();
-
-  for (FieldIteratorCIndex cxit(*mesh,CALC_INDEX|FIELD2D|NO_BNDRY);cxit.next2();){
+#pragma omp parallel
+  for (FieldIteratorCIndex cxit(*mesh,CALC_INDEX|FIELD2D|NO_BNDRY);cxit;cxit.next2()){
     bindex bx=cxit;
     stencil vs, fs;
     //start_index(&bx);
@@ -2673,7 +2674,8 @@ const Field3D VDDX(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD 
 //   }
 // #else
   // Serial version
-  for (FieldIteratorCIndex cxit(*mesh,NO_BNDRY|CALC_INDEX);cxit.next3();){
+#pragma omp parallel
+  for (FieldIteratorCIndex cxit(*mesh,NO_BNDRY|CALC_INDEX);cxit;cxit.next3()){
     bindex bx=cxit;
   
     stencil vval, fval;
@@ -2757,7 +2759,8 @@ const Field2D VDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_MET
   BoutReal **d = result.getData();
 
   //start_index(&bx);
-  for (FieldIteratorCIndex cxit(*mesh,FIELD2D|CALC_INDEX|NO_BNDRY);cxit.next2();){
+#pragma omp parallel
+  for (FieldIteratorCIndex cxit(*mesh,FIELD2D|CALC_INDEX|NO_BNDRY);cxit;cxit.next2()){
     bindex bx=cxit;
     stencil fval, vval;
     
@@ -2870,7 +2873,8 @@ const Field3D VDDY(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD 
 //   }
 // #else
   // Serial version
-  for (FieldIteratorCIndex cxit(*mesh,NO_BNDRY|CALC_INDEX);cxit.next3();){
+#pragma omp parallel
+  for (FieldIteratorCIndex cxit(*mesh,NO_BNDRY|CALC_INDEX);cxit;cxit.next3()){
     bindex bx=cxit;
     //start_index(&bx);
     stencil vval, fval;
@@ -3000,7 +3004,8 @@ const Field3D VDDZ(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD 
 //     }while(workToDoGlobal);
 //   }
 // #else
-  for (FieldIteratorCIndex cxit(*mesh,CALC_INDEX|NO_BNDRY);cxit.next3();){
+#pragma omp parallel
+  for (FieldIteratorCIndex cxit(*mesh,CALC_INDEX|NO_BNDRY);cxit;cxit.next3()){
     bindex bx=cxit;  
     //start_index(&bx);
     stencil vval, fval;

@@ -81,7 +81,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
 	//start_index(&bx, RGN_NOX);
 	//do {
 #pragma omp parallel
-	for (FieldIteratorCIndex cxit(*mesh,NO_X|PARALLEL|CALC_INDEX);cxit.next3();){
+	for (FieldIteratorCIndex cxit(*mesh,NO_X|CALC_INDEX);cxit;cxit.next3()){
 	  bindex bx=cxit;
 	  stencil s;
 	  var.setXStencil(s, bx, loc);
@@ -94,7 +94,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
 	//start_index(&bx, RGN_NOY);
 	//do {
 #pragma omp parallel
-	for (FieldIteratorCIndex cxit(*mesh,NO_Y|PARALLEL|CALC_INDEX);cxit.next3();){
+	for (FieldIteratorCIndex cxit(*mesh,NO_Y|CALC_INDEX);cxit;cxit.next3()){
 	  bindex bx=cxit;
 	  stencil s;
 	  var.setYStencil(s, bx, loc);
@@ -107,7 +107,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
 	//start_index(&bx, RGN_NOZ);
 	//do {
 #pragma omp parallel
-	for (FieldIteratorCIndex cxit(*mesh,NO_Z|PARALLEL|CALC_INDEX);cxit.next3();){
+	for (FieldIteratorCIndex cxit(*mesh,NO_Z|CALC_INDEX);cxit;cxit.next3()){
 	  bindex bx=cxit;
 	  stencil s;
 	  var.setZStencil(s, bx, loc);

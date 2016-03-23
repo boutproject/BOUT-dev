@@ -371,7 +371,7 @@ const Field3D Vpar_Grad_par_LCtoC(const Field &v, const Field &f) {
 	//start_index(&bx);
 	//do {
 	#pragma omp parallel
-	for (FieldIteratorCIndex cxit(NO_BNDRY|CALC_INDEX|PARALLEL,*mesh);cxit.next3();){
+	for (FieldIteratorCIndex cxit(NO_BNDRY|CALC_INDEX|PARALLEL,*mesh);cxit;cxit.next3()){
 	       bindex bx=cxit;
 		f.setStencil(&fval, &bx);
 		v.setStencil(&vval, &bx);
