@@ -997,11 +997,6 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
     }
     break;
   }
-  case SET_ID: {
-    // I assume it shouldn't be ignored
-    // If it is valid - implement what it should be doing
-    throw BoutException("SET_ID not handled in Solver::loop_vars_op");
-  }
   }
 }
 
