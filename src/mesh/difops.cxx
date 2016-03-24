@@ -581,6 +581,7 @@ const Field3D Delp2(const Field3D &f, BoutReal zsmooth) {
 		for(int jx=0;jx<mesh->ngx;jx++)
 			ZFFT(fd[jx][jy], mesh->zShift(jx, jy), ft[jx]);
 
+		Laplacian::defaultInstance();
 		// Loop over kz
 #pragma omp parallel for
 		for(int jz=0;jz<=ncz/2;jz++) {
