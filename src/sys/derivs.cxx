@@ -546,6 +546,36 @@ BoutReal VDDX_U2_stag(stencil &v, stencil &f) {
   return result;
 }
 
+BoutReal VDDX_WENO3_stag(stencil &v, stencil &f) {
+  //2nd order WENO scheme combining 1st order upwind with 2nd order central difference
+  //first get velocity at cell-center with high order interpolation to minimize error
+  BoutReal vc,deriv,w,r;
+  
+  vc = (9.*(v.p + v.m) - v.mm - v.pp)/16.;
+  //Now use vc to construct regular WENO3 derivative
+  
+    if(vc > 0.0) {
+    // Left-biased stencil
+
+    r = (WENO_SMALL + SQ(f.c - 2.0*f.m + f.mm)) / (WENO_SMALL + SQ(f.p - 2.0*f.c + f.m));
+    w = 1.0 / (1.0 + 2.0*r*r);
+  
+    deriv = 0.5*(f.p - f.m) - 0.5*w*(-f.mm + 3.*f.m - 3.*f.c + f.p);
+  
+  }else {
+    // Right-biased
+
+    r = (WENO_SMALL + SQ(f.pp - 2.0*f.p + f.c)) / (WENO_SMALL + SQ(f.p - 2.0*f.c + f.m));
+    w = 1.0 / (1.0 + 2.0*r*r);
+
+    deriv = 0.5*(f.p - f.m) - 0.5*w*( -f.m + 3.*f.c - 3.*f.p + f.pp );
+  }
+
+  return vc*deriv;
+
+}
+
+
 BoutReal VDDX_C2_stag(stencil &v, stencil &f) {
   // Result is needed at location of f: interpolate v to f's location and take an unstaggered derivative of f
   return 0.5*(v.p+v.m) * 0.5*(f.p - f.m);
@@ -652,6 +682,7 @@ static DiffLookup SecondStagDerivTable[] = { {DIFF_C4, D2DX2_C4_stag, D2DX2_F4_s
 /// Upwinding staggered lookup
 static DiffLookup UpwindStagTable[] = { {DIFF_U1, NULL, NULL, NULL, VDDX_U1_stag, NULL, NULL},
 					{DIFF_U2, NULL, NULL, NULL, VDDX_U2_stag, NULL, NULL},
+					{DIFF_W3, NULL, NULL, NULL, VDDX_WENO3_stag, NULL, NULL},
 					{DIFF_C2, NULL, NULL, NULL, VDDX_C2_stag, NULL, NULL},
 					{DIFF_C4, NULL, NULL, NULL, VDDX_C4_stag, NULL, NULL},
 					{DIFF_DEFAULT} };

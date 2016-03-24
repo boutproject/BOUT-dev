@@ -10,7 +10,8 @@ from __future__ import print_function
 from builtins import zip
 from builtins import str
 
-from boututils.run_wrapper import shell, launch, getmpirun, DataFile
+from boututils.run_wrapper import shell, launch, getmpirun
+from boututils.datafile import DataFile
 from boutdata.collect import collect
 
 from numpy import sqrt, max, abs, mean, array, log, pi

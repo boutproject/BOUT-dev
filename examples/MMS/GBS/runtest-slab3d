@@ -30,6 +30,7 @@ nydy = 64*1e-3
 varlist = ["Ne", "Te", "Vort", "VePsi", "Vi"]
 markers = ['bo', 'r^', "gs", "k+", "mx"]
 
+success=True
 
 nproc = 4
 
@@ -59,7 +60,7 @@ for nx in nxlist:
     
     for var in varlist:
         # Collect data
-        E = collect("E_"+var, tind=[1,1], path=path)
+        E = collect("E_"+var, tind=[1,1], path=path, info=False)
         E = E[0,2:-2,:,:]
 
         l2 = sqrt(mean(E**2))
@@ -82,26 +83,39 @@ with open("mms-slab3d.pkl", "wb") as output:
 
 # plot errors
 
-import matplotlib.pyplot as plt
-
 for var,mark in zip(varlist, markers):
-    plt.plot(dx, error_2[var], '-'+mark, label=var)
-    plt.plot(dx, error_inf[var], '--'+mark)
 
     order = log(error_2[var][-1] / error_2[var][-2]) / log(dx[-1] / dx[-2])
     print("%s Convergence order = %f" % (var, order))
-
+    if order < 1.9:
+        success=False
     #plt.plot(dx, error_2[var][-1]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
 
-plt.legend(loc="upper left")
-plt.grid()
+try:
+    import matplotlib.pyplot as plt
 
-plt.yscale('log')
-plt.xscale('log')
+    for var,mark in zip(varlist, markers):
+        plt.plot(dx, error_2[var], '-'+mark, label=var)
+        plt.plot(dx, error_inf[var], '--'+mark)
 
-plt.xlabel(r'Mesh spacing $\delta x$')
-plt.ylabel("Error norm")
+        #plt.plot(dx, error_2[var][-1]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
 
-plt.savefig("norm-slab3d.pdf")
+    plt.legend(loc="upper left")
+    plt.grid()
+    
+    plt.yscale('log')
+    plt.xscale('log')
+    
+    plt.xlabel(r'Mesh spacing $\delta x$')
+    plt.ylabel("Error norm")
+    
+    plt.savefig("norm-slab3d.pdf")
+    
+    #plt.show()
+except:
+    pass
 
-plt.show()
+if success:
+    exit(0)
+else:
+    exit(1)

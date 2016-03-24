@@ -666,6 +666,7 @@ LN_S
 FACETS_SOURCE
 PRECON_SOURCE
 MKDIR
+LDLIBS
 LDFLAGS
 CXXFLAGS
 EXTRA_LIBS
@@ -741,6 +742,7 @@ EXTRA_INCS
 EXTRA_LIBS
 CXXFLAGS
 LDFLAGS
+LDLIBS
 CXX
 LIBS
 CPPFLAGS
@@ -1384,6 +1386,7 @@ Some influential environment variables:
   EXTRA_LIBS  Extra linking flags
   CXXFLAGS    Extra compile flags
   LDFLAGS     Extra linking flags
+  LDLIBS      Extra linking libraries
   CXX         C++ compiler command
   LIBS        libraries to pass to the linker, e.g. -l<library>
   CPPFLAGS    (Objective) C/C++ preprocessor flags, e.g. -I<include dir> if
@@ -2324,7 +2327,24 @@ rm config-build.log
 
 
 
+
 # Adding variables for additional sources
+
+
+
+
+
+# Functions inspired by ESPResSo (espressomd.org)
+ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+
+
+
+
 
 
 
@@ -3937,6 +3957,897 @@ fi
 GIT_REVISION=$rev
 
 #############################################################
+# FFT routines
+#############################################################
+
+echo "Searching for FFTW library"
+
+if type fftw-wisdom > /dev/null 2>&1; then
+  echo " -> Found fftw-wisdom executable"
+  # Path to fftw-wisdom, then remove fft-wisdom and bin/
+  fftw_wisdom=`which fftw-wisdom | xargs -0 dirname | xargs -0 dirname`
+	with_fftw="$with_fftw $fftw_wisdom"
+fi
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for fftw3.h" >&5
+$as_echo_n "checking for fftw3.h... " >&6; }
+	CPPFLAGS_save=$CPPFLAGS
+	BACH_found=no
+	if test ."$with_fftw" != .yes; then :
+  extra_prefix="$with_fftw"
+else
+  extra_prefix=""
+fi
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <fftw3.h>
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  BACH_found=yes ; break;
+
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+	if test $BACH_found != yes ; then
+		for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
+			for path in $prefix $prefix/include ; do
+				if test -d $path
+				then
+					CPPFLAGS="$CPPFLAGS_save -I$path"
+
+
+					cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <fftw3.h>
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  BACH_found=yes ; break;
+
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+				fi
+			done
+			if test .$BACH_found = .yes; then :
+  break;
+fi
+		done
+	fi
+	if test $BACH_found = yes ; then
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	else
+		CPPFLAGS=$CPPFLAGS_save
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	fi
+	if test .$BACH_found = .yes; then :
+
+else
+  as_fn_error $? "'FFTW3 is needed by BOUT++'" "$LINENO" 5
+fi
+
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libfftw3" >&5
+$as_echo_n "checking for libfftw3... " >&6; }
+	LDFLAGS_save=$LDFLAGS
+	LIBS="$EXTRA_LIBS -lfftw3"
+	BACL_found=no
+	if test ."$with_fftw" = .yes; then :
+  extra_prefix=""
+else
+  extra_prefix="$with_fftw"
+fi
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+extern "C"
+	char fftw_plan_dft_r2c_1d();
+int
+main ()
+{
+return fftw_plan_dft_r2c_1d();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  BACL_found=yes ; break;
+
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+	if test $BACL_found != yes ; then
+		for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
+			for path in $prefix $prefix/lib $prefix/lib64 $prefix/x86_64-linux-gnu ; do
+				if test -d $path
+				then
+					LDFLAGS="-L$path $LDFLAGS_save"
+
+
+					cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+extern "C"
+						char fftw_plan_dft_r2c_1d();
+int
+main ()
+{
+return fftw_plan_dft_r2c_1d();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  BACL_found=yes ; break;
+
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+				fi
+			done
+			if test .$BACL_found = .yes; then :
+  break;
+fi
+		done
+	fi
+	if test $BACL_found = yes ; then
+		EXTRA_LIBS=$LIBS
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	else
+		LDFLAGS=$LDFLAGS_save
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	fi
+	if test .$BACL_found = .yes; then :
+
+else
+  as_fn_error $? "\"FFTW3 is needed by BOUT++\"" "$LINENO" 5
+fi
+
+
+echo ""
+
+#############################################################
+# netCDF support
+#############################################################
+
+NCCONF="" # Configuration script
+
+if test "$with_netcdf" != "no"
+then
+  ##########################################
+  # Try to find a valid NetCDF configuration
+  #
+  # at first, try to find ncconf script
+
+
+  #echo "Searching for NetCDF configuration"
+
+  OLDNCDF="0" # Indicates whether nc-config or ncxx4-config
+
+    if (test "$with_netcdf" = "yes") || (test "$with_netcdf" = "")
+    then
+      NCCONF=""
+      # No path specified. Try using nc-config
+      if type ncxx4-config &> /dev/null ; then
+        NCCONF=`which ncxx4-config` # New interface
+      elif type nc-config &> /dev/null ; then
+        # Older interface. May or may not have C++ support
+        echo " -> nc-config script found:" `which nc-config`
+        if test `nc-config --has-c++` = "yes"
+        then
+          echo " -> C++ support included"
+          NCCONF=`which nc-config`
+          OLDNCDF="1"
+        else
+          echo " -> NO C++ SUPPORT"
+        fi
+      else
+            echo " -> No configure script found. Specify using --with-netcdf option"
+      fi
+    else
+      # see if configure scripts are in path
+      if type $with_netcdf/ncxx4-config > /dev/null 2>&1; then
+        NCCONF="$with_netcdf/ncxx4-config"
+      elif type $with_netcdf/bin/ncxx4-config > /dev/null 2>&1; then
+        NCCONF="$with_netcdf/bin/ncxx4-config"
+      elif type $with_netcdf/nc-config > /dev/null 2>&1; then
+        NCCONF="$with_netcdf/nc-config"
+        OLDNCDF="1"
+      elif type $with_netcdf/bin/nc-config > /dev/null 2>&1; then
+        NCCONF="$with_netcdf/bin/nc-config"
+        OLDNCDF="1"
+      fi
+    fi
+
+    ##########################################
+    # Get configuration
+    if test "$NCCONF" != ""; then
+      echo " -> NetCDF config script found: $NCCONF"
+
+      NCINC=`$NCCONF --cflags`
+      EXTRA_INCS="$EXTRA_INCS $NCINC"
+
+      if test "$OLDNCDF" == "1"; then
+        NCLIB=`$NCCONF --libs | sed s/-lnetcdf/-lnetcdf_c++\ -lnetcdf/` # Note netcdf_c++ needed
+        LDFLAGS="$LDFLAGS -Wl,-rpath,`nc-config --prefix`/lib"
+
+        CXXFLAGS="$CXXFLAGS -DNCDF"
+        echo " -> NetCDF support enabled"
+      else
+        NCLIB=`$NCCONF --libs`
+
+        CXXFLAGS="$CXXFLAGS -DNCDF4"
+        echo " -> NetCDF-4 support enabled"
+      fi
+      EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
+
+      file_formats="$file_formats netCDF"
+      NCPATH="found"
+      NCFOUND=yes
+    fi
+
+    if test .$NCFOUND != ".yes" ; then
+
+
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for netcdfcpp.h" >&5
+$as_echo_n "checking for netcdfcpp.h... " >&6; }
+	CPPFLAGS_save=$CPPFLAGS
+	BACH_found=no
+	if test ."$with_netcdf" != .yes; then :
+  extra_prefix="$with_netcdf"
+else
+  extra_prefix=""
+fi
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <netcdfcpp.h>
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  BACH_found=yes ; break;
+
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+	if test $BACH_found != yes ; then
+		for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
+			for path in $prefix $prefix/include ; do
+				if test -d $path
+				then
+					CPPFLAGS="$CPPFLAGS_save -I$path"
+
+
+					cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <netcdfcpp.h>
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  BACH_found=yes ; break;
+
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+				fi
+			done
+			if test .$BACH_found = .yes; then :
+  break;
+fi
+		done
+	fi
+	if test $BACH_found = yes ; then
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	else
+		CPPFLAGS=$CPPFLAGS_save
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	fi
+	if test .$BACH_found = .yes; then :
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libnetcdf" >&5
+$as_echo_n "checking for libnetcdf... " >&6; }
+	LDFLAGS_save=$LDFLAGS
+	LIBS="$EXTRA_LIBS -lnetcdf"
+	BACL_found=no
+	if test ."$with_netcdf " = .yes; then :
+  extra_prefix=""
+else
+  extra_prefix="$with_netcdf "
+fi
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+extern "C"
+	char nc_get_att();
+int
+main ()
+{
+return nc_get_att();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  BACL_found=yes ; break;
+
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+	if test $BACL_found != yes ; then
+		for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
+			for path in $prefix $prefix/lib $prefix/lib64 $prefix/x86_64-linux-gnu ; do
+				if test -d $path
+				then
+					LDFLAGS="-L$path $LDFLAGS_save"
+
+
+					cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+extern "C"
+						char nc_get_att();
+int
+main ()
+{
+return nc_get_att();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  BACL_found=yes ; break;
+
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+				fi
+			done
+			if test .$BACL_found = .yes; then :
+  break;
+fi
+		done
+	fi
+	if test $BACL_found = yes ; then
+		EXTRA_LIBS=$LIBS
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	else
+		LDFLAGS=$LDFLAGS_save
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	fi
+	if test .$BACL_found = .yes; then :
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libnetcdf_c++" >&5
+$as_echo_n "checking for libnetcdf_c++... " >&6; }
+	LDFLAGS_save=$LDFLAGS
+	LIBS="$EXTRA_LIBS -lnetcdf_c++"
+	BACL_found=no
+	if test ."\
+				$with_netcdf " = .yes; then :
+  extra_prefix=""
+else
+  extra_prefix="\
+				$with_netcdf "
+fi
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+extern "C"
+	char nc_close();
+int
+main ()
+{
+return nc_close();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  BACL_found=yes ; break;
+
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+	if test $BACL_found != yes ; then
+		for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
+			for path in $prefix $prefix/lib $prefix/lib64 $prefix/x86_64-linux-gnu ; do
+				if test -d $path
+				then
+					LDFLAGS="-L$path $LDFLAGS_save"
+
+
+					cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+extern "C"
+						char nc_close();
+int
+main ()
+{
+return nc_close();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  BACL_found=yes ; break;
+
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+				fi
+			done
+			if test .$BACL_found = .yes; then :
+  break;
+fi
+		done
+	fi
+	if test $BACL_found = yes ; then
+		EXTRA_LIBS=$LIBS
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	else
+		LDFLAGS=$LDFLAGS_save
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	fi
+	if test .$BACL_found = .yes; then :
+  NCFOUND=yes
+else
+  NCFOUND=no
+fi
+
+
+else
+  NCFOUND=no
+fi
+
+
+else
+  NCFOUND=no
+fi
+
+
+  if test $NCFOUND = yes; then :
+  file_formats="$file_formats netCDF";
+    echo " -> NetCDF support enabled";NCPATH="found";
+	CXXFLAGS="$CXXFLAGS -DNCDF"
+
+fi
+  fi
+
+  if test $with_netcdf && test $NCFOUND != yes  ; then :
+  as_fn_error $? "\"netcdf requested but not found\"" "$LINENO" 5
+fi
+  if test $NCFOUND != yes; then :
+  echo " -> NetCDF support disabeld"
+fi
+
+fi
+
+echo ""
+
+#############################################################
+# Parallel NetCDF support
+#############################################################
+
+PNCPATH=""
+if test "$with_pnetcdf" != "no"
+then
+  echo "Searching for Parallel-NetCDF library"
+
+  if test "$with_pnetcdf" != ""
+  then
+    # Given a path to the library
+    as_ac_File=`$as_echo "ac_cv_file_$with_pnetcdf/include/pnetcdf.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_pnetcdf/include/pnetcdf.h" >&5
+$as_echo_n "checking for $with_pnetcdf/include/pnetcdf.h... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_pnetcdf/include/pnetcdf.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_pnetcdf/include/pnetcdf.h" | $as_tr_cpp` 1
+_ACEOF
+PNCPATH=$with_pnetcdf
+fi
+
+    if test "$PNCPATH" == ""
+    then
+      echo "parallel-netcdf not found in given directory"
+    fi
+  fi
+
+  # Find the utilities included with pnetcdf
+  if test "$PNCPATH" == ""
+  then
+    path=`which ncmpidump`
+    if test "$path" != ""
+    then
+      path=`dirname $path`
+      path=$path/..
+      as_ac_File=`$as_echo "ac_cv_file_$path/include/pnetcdf.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $path/include/pnetcdf.h" >&5
+$as_echo_n "checking for $path/include/pnetcdf.h... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$path/include/pnetcdf.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$path/include/pnetcdf.h" | $as_tr_cpp` 1
+_ACEOF
+PNCPATH=$path
+fi
+
+    fi
+  fi
+
+  # Try locate
+  if test "$PNCPATH" == ""
+  then
+    path=`locate pnetcdf.h | head -n 1`
+    if test "$path" != ""
+    then
+      path=$path/..
+      as_ac_File=`$as_echo "ac_cv_file_$path/include/pnetcdf.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $path/include/pnetcdf.h" >&5
+$as_echo_n "checking for $path/include/pnetcdf.h... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$path/include/pnetcdf.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$path/include/pnetcdf.h" | $as_tr_cpp` 1
+_ACEOF
+PNCPATH=$path
+fi
+
+    fi
+  fi
+fi
+
+if test "$PNCPATH" != ""
+then
+  as_ac_File=`$as_echo "ac_cv_file_$path/lib/libpnetcdf.a" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $path/lib/libpnetcdf.a" >&5
+$as_echo_n "checking for $path/lib/libpnetcdf.a... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$path/lib/libpnetcdf.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$path/lib/libpnetcdf.a" | $as_tr_cpp` 1
+_ACEOF
+PNCPATHLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$path/lib64/libpnetcdf.a" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $path/lib64/libpnetcdf.a" >&5
+$as_echo_n "checking for $path/lib64/libpnetcdf.a... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$path/lib64/libpnetcdf.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$path/lib64/libpnetcdf.a" | $as_tr_cpp` 1
+_ACEOF
+PNCPATHLIB='lib64'
+else
+  PNCPATH=''
+fi
+
+fi
+
+fi
+
+if test "$PNCPATH" == ""
+then
+  echo "Parallel-NetCDF support disabled"
+else
+  # Set a compile-time flag
+  CXXFLAGS="$CXXFLAGS -DPNCDF"
+  EXTRA_INCS="$EXTRA_INCS -I$PNCPATH/include"
+  EXTRA_LIBS="$EXTRA_LIBS -L$PNCPATH/$PNCPATHLIB -lpnetcdf"
+
+  file_formats="$file_formats Parallel-NetCDF"
+  echo "Parallel-NetCDF support enabled"
+fi
+
+echo ""
+
+#############################################################
+# LAPACK routines (Used for tri- and band-diagonal solvers)
+#############################################################
+
+HAS_LAPACK="no"
+if ( ( test "$with_lapack" != "no" ) )
+then
+	if  test .$with_lapack = .guess || test .$with_lapack = . ; then :
+   lapack_path=""
+else
+   if test .$lapack_path != .yes; then :
+  lapack_path=$with_lapack
+				 				 with_lapack=yes
+else
+  lapack_path=""
+fi
+fi
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libblas" >&5
+$as_echo_n "checking for libblas... " >&6; }
+	LDFLAGS_save=$LDFLAGS
+	LIBS="$EXTRA_LIBS -lblas"
+	BACL_found=no
+	if test ."$lapack_path" = .yes; then :
+  extra_prefix=""
+else
+  extra_prefix="$lapack_path"
+fi
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+extern "C"
+	char zgemm_ ();
+int
+main ()
+{
+return zgemm_ ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  BACL_found=yes ; break;
+
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+	if test $BACL_found != yes ; then
+		for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
+			for path in $prefix $prefix/lib $prefix/lib64 $prefix/x86_64-linux-gnu ; do
+				if test -d $path
+				then
+					LDFLAGS="-L$path $LDFLAGS_save"
+
+
+					cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+extern "C"
+						char zgemm_ ();
+int
+main ()
+{
+return zgemm_ ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  BACL_found=yes ; break;
+
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+				fi
+			done
+			if test .$BACL_found = .yes; then :
+  break;
+fi
+		done
+	fi
+	if test $BACL_found = yes ; then
+		EXTRA_LIBS=$LIBS
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	else
+		LDFLAGS=$LDFLAGS_save
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	fi
+	if test .$BACL_found = .yes; then :
+  HAS_BLAS=yes
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for liblapack" >&5
+$as_echo_n "checking for liblapack... " >&6; }
+	LDFLAGS_save=$LDFLAGS
+	LIBS="$EXTRA_LIBS -llapack"
+	BACL_found=no
+	if test ."$lapack_path " = .yes; then :
+  extra_prefix=""
+else
+  extra_prefix="$lapack_path "
+fi
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+extern "C"
+	char zgbsv_ ();
+int
+main ()
+{
+return zgbsv_ ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  BACL_found=yes ; break;
+
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+	if test $BACL_found != yes ; then
+		for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
+			for path in $prefix $prefix/lib $prefix/lib64 $prefix/x86_64-linux-gnu ; do
+				if test -d $path
+				then
+					LDFLAGS="-L$path $LDFLAGS_save"
+
+
+					cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+extern "C"
+						char zgbsv_ ();
+int
+main ()
+{
+return zgbsv_ ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  BACL_found=yes ; break;
+
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+				fi
+			done
+			if test .$BACL_found = .yes; then :
+  break;
+fi
+		done
+	fi
+	if test $BACL_found = yes ; then
+		EXTRA_LIBS=$LIBS
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	else
+		LDFLAGS=$LDFLAGS_save
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	fi
+	if test .$BACL_found = .yes; then :
+  HAS_LAPACK=yes
+			echo "Using LAPACK"
+			CXXFLAGS="$CXXFLAGS -DLAPACK"
+
+else
+   if test .$with_lapack = ".yes"; then :
+  as_fn_error $? "\"LAPACK requested but not found.\"" "$LINENO" 5
+fi
+fi
+
+
+else
+   if test .$with_lapack = ".yes"; then :
+  as_fn_error $? "\"LAPACK requested but not found.\"" "$LINENO" 5
+fi
+fi
+
+fi
+
+echo ""
+
+#############################################################
 # FACETS
 #############################################################
 
@@ -4109,49 +5020,35 @@ eval ac_res=\$$as_ac_File
 	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
 $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
+  PETSC_CONFDIR=${PETSC_DIR}/conf
+else
+  as_ac_File=`$as_echo "ac_cv_file_$PETSC_DIR/$PETSC_ARCH/lib/petsc/conf" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PETSC_DIR/$PETSC_ARCH/lib/petsc/conf" >&5
+$as_echo_n "checking for $PETSC_DIR/$PETSC_ARCH/lib/petsc/conf... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$PETSC_DIR/$PETSC_ARCH/lib/petsc/conf"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+  PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf
 else
   echo "Error - can't find PETSc distribution"
-    exit
+        exit
+fi
+
 fi
 
   fi
-
-cat <<MFILE > petscmake$$
-PETSC_ARCH = ${PETSC_ARCH}
-PETSC_DIR  = ${PETSC_DIR}
-include ${PETSC_DIR}/conf/rules
-include ${PETSC_DIR}/conf/variables
-echo_cxx:
-	-@echo \${CXX}
-echo_sundials:
-	-@echo \${SUNDIALS_LIB}
-MFILE
-
-  CXX="`make -f petscmake$$ echo_cxx`"
-  HAS_SUNDIALS=`make -f petscmake$$ echo_sundials | grep -c sundials`
-  HAS_CXX=`echo $CXX | grep -ic mp`
-
-  if test "$HAS_SUNDIALS" == "0"
-  then
-    echo "Warning - PETSc has no SUNDIALS support"
-    PETSC_HAS_SUNDIALS="no"
-  else
-    PETSC_HAS_SUNDIALS="yes"
-  fi
-
-  if test "$HAS_CXX" == "0"
-  then
-    echo "Warning - PETSc must have C++ support"
-    #rm petscmake$$
-    #exit
-  fi
-
-
-  echo "PETSc used C++ compiler $CXX"
-  #MPICXX=$CXX
-
-  rm petscmake$$
 
   PETSC_VERSION_MAJOR="0"
   PETSC_VERSION_MAJOR=`grep 'define PETSC_VERSION_MAJOR' $PETSC_DIR/include/petscversion.h | awk '{print \$3;}'`
@@ -4201,7 +5098,46 @@ MFILE
     echo "***********************************"
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
   fi
-  PETSC="include \$(PETSC_DIR)/conf/variables"
+
+cat <<MFILE > petscmake$$
+PETSC_ARCH = ${PETSC_ARCH}
+PETSC_DIR  = ${PETSC_DIR}
+include ${PETSC_CONFDIR}/rules
+include ${PETSC_CONFDIR}/variables
+echo_cxx:
+	-@echo \${CXX}
+echo_sundials:
+	-@echo \${SUNDIALS_LIB}
+MFILE
+
+  CXX="`make -f petscmake$$ echo_cxx`"
+  HAS_SUNDIALS=`make -f petscmake$$ echo_sundials | grep -c sundials`
+  HAS_CXX=`echo $CXX | grep -ic mp`
+
+  if test "$HAS_SUNDIALS" == "0"
+  then
+    echo "Warning - PETSc has no SUNDIALS support"
+    PETSC_HAS_SUNDIALS="no"
+  else
+    PETSC_HAS_SUNDIALS="yes"
+  fi
+
+  if test "$HAS_CXX" == "0"
+  then
+    echo "Warning - PETSc must have C++ support"
+    #rm petscmake$$
+    #exit
+  fi
+
+
+  echo "PETSc used C++ compiler $CXX"
+  #MPICXX=$CXX
+
+  rm petscmake$$
+
+  # Set the line to be included in the make.conf file
+
+  PETSC="include ${PETSC_CONFDIR}/variables"
 else
    PETSC=
 fi
@@ -4312,7 +5248,7 @@ fi
 
     EXTRA_INCS="$EXTRA_INCS \$(SLEPC_INCLUDE)"
     EXTRA_LIBS="$EXTRA_LIBS \$(SLEPC_LIB)"
-    SLEPC_VARS="include \${SLEPC_DIR}/conf/slepc_variables"
+    SLEPC_VARS="include $SLEPC_DIR/conf/slepc_variables"
   else
     echo "Error - Unknown SLEPc version"
     echo "  -> No SLEPc support"
@@ -6865,366 +7801,6 @@ fi
 
 
 #############################################################
-# FFT routines
-#############################################################
-
-echo "Searching for FFTW library"
-
-# first only look for header files
-
-if test "$with_fftw" = ""
-then
-  # No path specified
-  FFTPATH=""
-  echo " -> Path not given. Searching for library..."
-else
-  FFTPATH=$with_fftw
-  # look only for header file, later search for library ($FFTPATH/lib/libfftw3.a)
-  as_ac_File=`$as_echo "ac_cv_file_$FFTPATH/include/fftw3.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $FFTPATH/include/fftw3.h" >&5
-$as_echo_n "checking for $FFTPATH/include/fftw3.h... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$FFTPATH/include/fftw3.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$FFTPATH/include/fftw3.h" | $as_tr_cpp` 1
-_ACEOF
-
-else
-
-    echo " -> Given path not correct. Finding..."
-    FFTPATH=""
-
-fi
-
-fi
-
-# Test if FFTW_ROOT is set
-if test "$FFTPATH" = ""
-then
-  if test "$FFTW_ROOT" != ""
-  then
-    as_ac_File=`$as_echo "ac_cv_file_$FFTW_ROOT/include/fftw3.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $FFTW_ROOT/include/fftw3.h" >&5
-$as_echo_n "checking for $FFTW_ROOT/include/fftw3.h... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$FFTW_ROOT/include/fftw3.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$FFTW_ROOT/include/fftw3.h" | $as_tr_cpp` 1
-_ACEOF
-FFTPATH=$FFTW_ROOT
-fi
-
-  fi
-fi
-
-# Find fftw-wisdom
-if type fftw-wisdom > /dev/null 2>&1; then
-  echo " -> Found fftw-wisdom executable"
-  # Path to fftw-wisdom, then remove fft-wisdom and bin/
-  FFTWISDOM=`which fftw-wisdom | xargs -0 dirname | xargs -0 dirname`
-  # Check if the files are there
-  as_ac_File=`$as_echo "ac_cv_file_$FFTWISDOM/include/fftw3.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $FFTWISDOM/include/fftw3.h" >&5
-$as_echo_n "checking for $FFTWISDOM/include/fftw3.h... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$FFTWISDOM/include/fftw3.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$FFTWISDOM/include/fftw3.h" | $as_tr_cpp` 1
-_ACEOF
-FFTPATH=$FFTWISDOM
-fi
-
-  #AC_CHECK_FILES( $FFTWISDOM/lib/libfftw3.a  , FFTPATH=$FFTWISDOM, )
-fi
-
-# Try some known paths
-if test "$FFTPATH" = ""
-then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /usr/include/fftw3.h" >&5
-$as_echo_n "checking for /usr/include/fftw3.h... " >&6; }
-if ${ac_cv_file__usr_include_fftw3_h+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "/usr/include/fftw3.h"; then
-  ac_cv_file__usr_include_fftw3_h=yes
-else
-  ac_cv_file__usr_include_fftw3_h=no
-fi
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_file__usr_include_fftw3_h" >&5
-$as_echo "$ac_cv_file__usr_include_fftw3_h" >&6; }
-if test "x$ac_cv_file__usr_include_fftw3_h" = xyes; then :
-  FFTPATH=/usr
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /usr/local/include/fftw3.h" >&5
-$as_echo_n "checking for /usr/local/include/fftw3.h... " >&6; }
-if ${ac_cv_file__usr_local_include_fftw3_h+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "/usr/local/include/fftw3.h"; then
-  ac_cv_file__usr_local_include_fftw3_h=yes
-else
-  ac_cv_file__usr_local_include_fftw3_h=no
-fi
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_file__usr_local_include_fftw3_h" >&5
-$as_echo "$ac_cv_file__usr_local_include_fftw3_h" >&6; }
-if test "x$ac_cv_file__usr_local_include_fftw3_h" = xyes; then :
-  FFTPATH=/usr/local
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /opt/local/include/fftw3.h" >&5
-$as_echo_n "checking for /opt/local/include/fftw3.h... " >&6; }
-if ${ac_cv_file__opt_local_include_fftw3_h+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "/opt/local/include/fftw3.h"; then
-  ac_cv_file__opt_local_include_fftw3_h=yes
-else
-  ac_cv_file__opt_local_include_fftw3_h=no
-fi
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_file__opt_local_include_fftw3_h" >&5
-$as_echo "$ac_cv_file__opt_local_include_fftw3_h" >&6; }
-if test "x$ac_cv_file__opt_local_include_fftw3_h" = xyes; then :
-  FFTPATH=/opt/local
-else
-  as_ac_File=`$as_echo "ac_cv_file_$HOME/local/include/fftw3.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $HOME/local/include/fftw3.h" >&5
-$as_echo_n "checking for $HOME/local/include/fftw3.h... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$HOME/local/include/fftw3.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-  FFTPATH=$HOME/local
-else
-  as_ac_File=`$as_echo "ac_cv_file_$HOME/include/fftw3.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $HOME/include/fftw3.h" >&5
-$as_echo_n "checking for $HOME/include/fftw3.h... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$HOME/include/fftw3.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-  FFTPATH=$HOME/
-fi
-
-fi
-
-fi
-
-fi
-
-fi
-
-
-fi
-
-
-#Test for library
-if test "$FFTPATH" != ""
-then
-  as_ac_File=`$as_echo "ac_cv_file_$FFTPATH/lib/libfftw3.a" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $FFTPATH/lib/libfftw3.a" >&5
-$as_echo_n "checking for $FFTPATH/lib/libfftw3.a... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$FFTPATH/lib/libfftw3.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$FFTPATH/lib/libfftw3.a" | $as_tr_cpp` 1
-_ACEOF
-FFTPATHLIB='lib'
-else
-  as_ac_File=`$as_echo "ac_cv_file_$FFTPATH/lib64/libfftw3.a" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $FFTPATH/lib64/libfftw3.a" >&5
-$as_echo_n "checking for $FFTPATH/lib64/libfftw3.a... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$FFTPATH/lib64/libfftw3.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$FFTPATH/lib64/libfftw3.a" | $as_tr_cpp` 1
-_ACEOF
-FFTPATHLIB='lib64'
-else
-  as_ac_File=`$as_echo "ac_cv_file_$FFTPATH/lib/libfftw3.so" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $FFTPATH/lib/libfftw3.so" >&5
-$as_echo_n "checking for $FFTPATH/lib/libfftw3.so... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$FFTPATH/lib/libfftw3.so"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$FFTPATH/lib/libfftw3.so" | $as_tr_cpp` 1
-_ACEOF
-FFTPATHLIB='lib'
-else
-  as_ac_File=`$as_echo "ac_cv_file_$FFTPATH/lib64/libfftw3.so" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $FFTPATH/lib64/libfftw3.so" >&5
-$as_echo_n "checking for $FFTPATH/lib64/libfftw3.so... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$FFTPATH/lib64/libfftw3.so"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$FFTPATH/lib64/libfftw3.so" | $as_tr_cpp` 1
-_ACEOF
-FFTPATHLIB='lib64'
-else
-  FFTPATH=''
-fi
-
-fi
-
-fi
-
-fi
-
-
-fi
-
-if test "$FFTPATH" = ""
-then
-  echo "ERROR: FFTW not found. Required by BOUT++"
-  exit
-else
-  echo " -> path $FFTPATH"
-  EXTRA_INCS="$EXTRA_INCS -I$FFTPATH/include"
-  EXTRA_LIBS="$EXTRA_LIBS -L$FFTPATH/$FFTPATHLIB -lfftw3"
-fi
-echo ""
-
-#############################################################
-# LAPACK routines (Used for tri- and band-diagonal solvers)
-#############################################################
-
-HAS_LAPACK="no"
-if ( ( test "$with_lapack" != "" ) && ( test "$with_lapack" != "no" ) )
-then
-  echo "Using LAPACK"
-  EXTRA_LIBS="$EXTRA_LIBS -llapack -lblas"
-  CXXFLAGS="$CXXFLAGS -DLAPACK"
-  HAS_LAPACK="yes"
-fi
-
-#############################################################
 # HDF5 library
 #############################################################
 HDFPATH=""  # Indicates not found
@@ -7513,863 +8089,6 @@ fi
   fi
 else
   printf "HDF5 support disabled\n"
-fi
-
-echo ""
-
-#############################################################
-# netCDF support
-#############################################################
-
-NCCONF="" # Configuration script
-
-if test "$with_netcdf" != "no"
-then
-  ##########################################
-  # Try to find a valid NetCDF configuration
-
-  echo "Searching for NetCDF configuration"
-
-  OLDNCDF="0" # Indicates whether nc-config or ncxx4-config
-
-  if (test "$with_netcdf" = "yes") || (test "$with_netcdf" = "")
-  then
-    # No path specified. Try using nc-config
-    if type ncxx4-config > /dev/null 2>&1; then
-      NCCONF=`which ncxx4-config` # New interface
-    elif type nc-config > /dev/null 2>&1; then
-      # Older interface. May or may not have C++ support
-      echo " -> nc-config script found:" `which nc-config`
-      if test `nc-config --has-c++` = "yes"
-      then
-        echo " -> C++ support included"
-        NCCONF=`which nc-config`
-	OLDNCDF="1"
-      else
-        echo " -> NO C++ SUPPORT"
-      fi
-    else
-        echo " -> No configure script found. Specify using --with-netcdf option"
-    fi
-  else
-    # see if configure scripts are in path
-
-    if type $with_netcdf/ncxx4-config > /dev/null 2>&1; then
-      NCCONF="$with_netcdf/ncxx4-config"
-    elif type $with_netcdf/bin/ncxx4-config > /dev/null 2>&1; then
-      NCCONF="$with_netcdf/bin/ncxx4-config"
-    elif type $with_netcdf/nc-config > /dev/null 2>&1; then
-      NCCONF="$with_netcdf/nc-config"
-      OLDNCDF="1"
-    elif type $with_netcdf/bin/nc-config > /dev/null 2>&1; then
-      NCCONF="$with_netcdf/bin/nc-config"
-      OLDNCDF="1"
-    fi
-  fi
-
-  ##########################################
-  # Get configuration
-  if test "$NCCONF" != ""; then
-    echo " -> NetCDF config script found: $NCCONF"
-
-    NCINC=`$NCCONF --cflags`
-    EXTRA_INCS="$EXTRA_INCS $NCINC"
-
-    if test "$OLDNCDF" == "1"; then
-      NCLIB=`$NCCONF --libs | sed s/-lnetcdf/-lnetcdf_c++\ -lnetcdf/` # Note netcdf_c++ needed
-      LDFLAGS="$LDFLAGS -Wl,-rpath,`nc-config --prefix`/lib"
-
-      CXXFLAGS="$CXXFLAGS -DNCDF"
-      echo " -> NetCDF support enabled"
-    else
-      NCLIB=`$NCCONF --libs`
-
-      CXXFLAGS="$CXXFLAGS -DNCDF4"
-      echo " -> NetCDF-4 support enabled"
-    fi
-    EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
-
-    file_formats="$file_formats netCDF"
-    NCPATH="found"
-  else
-    # No configuration script. Check the NetCDF path manually
-
-    NCPATH=$with_netcdf
-
-    if test "$NCPATH" != ""
-    then
-      # Path set, so check if libraries present
-      as_ac_File=`$as_echo "ac_cv_file_$NCPATH/include/netcdfcpp.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $NCPATH/include/netcdfcpp.h" >&5
-$as_echo_n "checking for $NCPATH/include/netcdfcpp.h... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$NCPATH/include/netcdfcpp.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$NCPATH/include/netcdfcpp.h" | $as_tr_cpp` 1
-_ACEOF
-
-else
-
-        echo " -> Given path not correct. Finding..."
-        NCPATH=""
-
-fi
-as_ac_File=`$as_echo "ac_cv_file_$NCPATH/lib/libnetcdf_c++.a" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $NCPATH/lib/libnetcdf_c++.a" >&5
-$as_echo_n "checking for $NCPATH/lib/libnetcdf_c++.a... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$NCPATH/lib/libnetcdf_c++.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$NCPATH/lib/libnetcdf_c++.a" | $as_tr_cpp` 1
-_ACEOF
-
-else
-
-        echo " -> Given path not correct. Finding..."
-        NCPATH=""
-
-fi
-as_ac_File=`$as_echo "ac_cv_file_$NCPATH/lib/libnetcdf.a" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $NCPATH/lib/libnetcdf.a" >&5
-$as_echo_n "checking for $NCPATH/lib/libnetcdf.a... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$NCPATH/lib/libnetcdf.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$NCPATH/lib/libnetcdf.a" | $as_tr_cpp` 1
-_ACEOF
-
-else
-
-        echo " -> Given path not correct. Finding..."
-        NCPATH=""
-
-fi
-
-    else
-      echo " -> Path not given. Searching for library..."
-    fi
-
-    # Try some known paths
-    if test "$NCPATH" = ""
-    then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /usr/include/netcdfcpp.h" >&5
-$as_echo_n "checking for /usr/include/netcdfcpp.h... " >&6; }
-if ${ac_cv_file__usr_include_netcdfcpp_h+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "/usr/include/netcdfcpp.h"; then
-  ac_cv_file__usr_include_netcdfcpp_h=yes
-else
-  ac_cv_file__usr_include_netcdfcpp_h=no
-fi
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_file__usr_include_netcdfcpp_h" >&5
-$as_echo "$ac_cv_file__usr_include_netcdfcpp_h" >&6; }
-if test "x$ac_cv_file__usr_include_netcdfcpp_h" = xyes; then :
-  NCPATH=/usr/
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /usr/local/include/netcdfcpp.h" >&5
-$as_echo_n "checking for /usr/local/include/netcdfcpp.h... " >&6; }
-if ${ac_cv_file__usr_local_include_netcdfcpp_h+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "/usr/local/include/netcdfcpp.h"; then
-  ac_cv_file__usr_local_include_netcdfcpp_h=yes
-else
-  ac_cv_file__usr_local_include_netcdfcpp_h=no
-fi
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_file__usr_local_include_netcdfcpp_h" >&5
-$as_echo "$ac_cv_file__usr_local_include_netcdfcpp_h" >&6; }
-if test "x$ac_cv_file__usr_local_include_netcdfcpp_h" = xyes; then :
-  NCPATH=/usr/local/
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /opt/local/include/netcdfcpp.h" >&5
-$as_echo_n "checking for /opt/local/include/netcdfcpp.h... " >&6; }
-if ${ac_cv_file__opt_local_include_netcdfcpp_h+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "/opt/local/include/netcdfcpp.h"; then
-  ac_cv_file__opt_local_include_netcdfcpp_h=yes
-else
-  ac_cv_file__opt_local_include_netcdfcpp_h=no
-fi
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_file__opt_local_include_netcdfcpp_h" >&5
-$as_echo "$ac_cv_file__opt_local_include_netcdfcpp_h" >&6; }
-if test "x$ac_cv_file__opt_local_include_netcdfcpp_h" = xyes; then :
-  NCPATH=/opt/local/
-else
-  as_ac_File=`$as_echo "ac_cv_file_$HOME/local/include/netcdfcpp.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $HOME/local/include/netcdfcpp.h" >&5
-$as_echo_n "checking for $HOME/local/include/netcdfcpp.h... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$HOME/local/include/netcdfcpp.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-  NCPATH=$HOME/local
-else
-  as_ac_File=`$as_echo "ac_cv_file_$HOME/include/netcdfcpp.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $HOME/include/netcdfcpp.h" >&5
-$as_echo_n "checking for $HOME/include/netcdfcpp.h... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$HOME/include/netcdfcpp.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-  NCPATH=$HOME
-fi
-
-fi
-
-fi
-
-fi
-
-fi
-
-
-      if test "$NCPATH" != ""
-      then
-        # Check for the rest of the files
-        as_ac_File=`$as_echo "ac_cv_file_$NCPATH/lib/libnetcdf_c++.a" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $NCPATH/lib/libnetcdf_c++.a" >&5
-$as_echo_n "checking for $NCPATH/lib/libnetcdf_c++.a... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$NCPATH/lib/libnetcdf_c++.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$NCPATH/lib/libnetcdf_c++.a" | $as_tr_cpp` 1
-_ACEOF
-NCPATHLIB='lib'
-else
-  as_ac_File=`$as_echo "ac_cv_file_$NCPATH/lib64/libnetcdf_c++.a" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $NCPATH/lib64/libnetcdf_c++.a" >&5
-$as_echo_n "checking for $NCPATH/lib64/libnetcdf_c++.a... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$NCPATH/lib64/libnetcdf_c++.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$NCPATH/lib64/libnetcdf_c++.a" | $as_tr_cpp` 1
-_ACEOF
-NCPATHLIB='lib64'
-else
-  NCPATH=""
-fi
-as_ac_File=`$as_echo "ac_cv_file_$NCPATH/lib64/libnetcdf.a" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $NCPATH/lib64/libnetcdf.a" >&5
-$as_echo_n "checking for $NCPATH/lib64/libnetcdf.a... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$NCPATH/lib64/libnetcdf.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$NCPATH/lib64/libnetcdf.a" | $as_tr_cpp` 1
-_ACEOF
-NCPATHLIB='lib64'
-else
-  NCPATH=""
-fi
-
-fi
-as_ac_File=`$as_echo "ac_cv_file_$NCPATH/lib/libnetcdf.a" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $NCPATH/lib/libnetcdf.a" >&5
-$as_echo_n "checking for $NCPATH/lib/libnetcdf.a... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$NCPATH/lib/libnetcdf.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$NCPATH/lib/libnetcdf.a" | $as_tr_cpp` 1
-_ACEOF
-NCPATHLIB='lib'
-else
-  as_ac_File=`$as_echo "ac_cv_file_$NCPATH/lib64/libnetcdf_c++.a" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $NCPATH/lib64/libnetcdf_c++.a" >&5
-$as_echo_n "checking for $NCPATH/lib64/libnetcdf_c++.a... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$NCPATH/lib64/libnetcdf_c++.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$NCPATH/lib64/libnetcdf_c++.a" | $as_tr_cpp` 1
-_ACEOF
-NCPATHLIB='lib64'
-else
-  NCPATH=""
-fi
-as_ac_File=`$as_echo "ac_cv_file_$NCPATH/lib64/libnetcdf.a" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $NCPATH/lib64/libnetcdf.a" >&5
-$as_echo_n "checking for $NCPATH/lib64/libnetcdf.a... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$NCPATH/lib64/libnetcdf.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$NCPATH/lib64/libnetcdf.a" | $as_tr_cpp` 1
-_ACEOF
-NCPATHLIB='lib64'
-else
-  NCPATH=""
-fi
-
-fi
-
-      fi
-    fi
-
-    # Try to find using locate
-    if test "$NCPATH" = ""
-    then
-      NCFILE=`locate netcdfcpp.h | head -n 1`
-      if test "$NCFILE" != ""
-      then
-        NCFILE=`dirname $NCFILE`
-        NCFILE=$NCFILE/..
-        as_ac_File=`$as_echo "ac_cv_file_$NCFILE/include/netcdfcpp.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $NCFILE/include/netcdfcpp.h" >&5
-$as_echo_n "checking for $NCFILE/include/netcdfcpp.h... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$NCFILE/include/netcdfcpp.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$NCFILE/include/netcdfcpp.h" | $as_tr_cpp` 1
-_ACEOF
-NCPATH=$NCFILE
-else
-  with_netcdf="no"
-fi
-
-        as_ac_File=`$as_echo "ac_cv_file_$NCFILE/lib/libnetcdf_c++.a" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $NCFILE/lib/libnetcdf_c++.a" >&5
-$as_echo_n "checking for $NCFILE/lib/libnetcdf_c++.a... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$NCFILE/lib/libnetcdf_c++.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$NCFILE/lib/libnetcdf_c++.a" | $as_tr_cpp` 1
-_ACEOF
-NCPATHLIB='lib'
-else
-  as_ac_File=`$as_echo "ac_cv_file_$NCFILE/lib64/libnetcdf_c++.a" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $NCFILE/lib64/libnetcdf_c++.a" >&5
-$as_echo_n "checking for $NCFILE/lib64/libnetcdf_c++.a... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$NCFILE/lib64/libnetcdf_c++.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$NCFILE/lib64/libnetcdf_c++.a" | $as_tr_cpp` 1
-_ACEOF
-NCPATHLIB='lib64'
-else
-  with_netcdf="no"
-fi
-as_ac_File=`$as_echo "ac_cv_file_$NCFILE/lib64/libnetcdf.a" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $NCFILE/lib64/libnetcdf.a" >&5
-$as_echo_n "checking for $NCFILE/lib64/libnetcdf.a... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$NCFILE/lib64/libnetcdf.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$NCFILE/lib64/libnetcdf.a" | $as_tr_cpp` 1
-_ACEOF
-NCPATHLIB='lib64'
-else
-  with_netcdf="no"
-fi
-
-fi
-as_ac_File=`$as_echo "ac_cv_file_$NCFILE/lib/libnetcdf.a" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $NCFILE/lib/libnetcdf.a" >&5
-$as_echo_n "checking for $NCFILE/lib/libnetcdf.a... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$NCFILE/lib/libnetcdf.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$NCFILE/lib/libnetcdf.a" | $as_tr_cpp` 1
-_ACEOF
-NCPATHLIB='lib'
-else
-  as_ac_File=`$as_echo "ac_cv_file_$NCFILE/lib64/libnetcdf_c++.a" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $NCFILE/lib64/libnetcdf_c++.a" >&5
-$as_echo_n "checking for $NCFILE/lib64/libnetcdf_c++.a... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$NCFILE/lib64/libnetcdf_c++.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$NCFILE/lib64/libnetcdf_c++.a" | $as_tr_cpp` 1
-_ACEOF
-NCPATHLIB='lib64'
-else
-  with_netcdf="no"
-fi
-as_ac_File=`$as_echo "ac_cv_file_$NCFILE/lib64/libnetcdf.a" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $NCFILE/lib64/libnetcdf.a" >&5
-$as_echo_n "checking for $NCFILE/lib64/libnetcdf.a... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$NCFILE/lib64/libnetcdf.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$NCFILE/lib64/libnetcdf.a" | $as_tr_cpp` 1
-_ACEOF
-NCPATHLIB='lib64'
-else
-  with_netcdf="no"
-fi
-
-fi
-
-      else
-        echo "checking locate... no"
-        with_netcdf="no"
-      fi
-    fi
-
-    # Finally, if found, add to BOUT++
-
-    if test "$with_netcdf" != "no"
-    then
-      # Set a compile-time flag
-      CXXFLAGS="$CXXFLAGS -DNCDF"
-
-      if test "$NCPATH" != ""; then
-        echo " -> path $NCPATH"
-        EXTRA_INCS="$EXTRA_INCS -I$NCPATH/include"
-        EXTRA_LIBS="$EXTRA_LIBS -L$NCPATH/$NCPATHLIB"
-        LDFLAGS="$LDFLAGS -Wl,-rpath,$NCPATH/lib"
-      fi
-
-      EXTRA_LIBS="$EXTRA_LIBS -lnetcdf_c++ -lnetcdf"
-
-      file_formats="$file_formats netCDF"
-
-      echo " -> NetCDF support enabled"
-    else
-      echo "NetCDF support disabled"
-    fi
-  fi
-
-fi
-
-echo ""
-
-#############################################################
-# Parallel NetCDF support
-#############################################################
-
-PNCPATH=""
-if test "$with_pnetcdf" != "no"
-then
-  echo "Searching for Parallel-NetCDF library"
-
-  if test "$with_pnetcdf" != ""
-  then
-    # Given a path to the library
-    as_ac_File=`$as_echo "ac_cv_file_$with_pnetcdf/include/pnetcdf.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_pnetcdf/include/pnetcdf.h" >&5
-$as_echo_n "checking for $with_pnetcdf/include/pnetcdf.h... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$with_pnetcdf/include/pnetcdf.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$with_pnetcdf/include/pnetcdf.h" | $as_tr_cpp` 1
-_ACEOF
-PNCPATH=$with_pnetcdf
-fi
-
-    if test "$PNCPATH" == ""
-    then
-      echo "parallel-netcdf not found in given directory"
-    fi
-  fi
-
-  # Find the utilities included with pnetcdf
-  if test "$PNCPATH" == ""
-  then
-    path=`which ncmpidump`
-    if test "$path" != ""
-    then
-      path=`dirname $path`
-      path=$path/..
-      as_ac_File=`$as_echo "ac_cv_file_$path/include/pnetcdf.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $path/include/pnetcdf.h" >&5
-$as_echo_n "checking for $path/include/pnetcdf.h... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$path/include/pnetcdf.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$path/include/pnetcdf.h" | $as_tr_cpp` 1
-_ACEOF
-PNCPATH=$path
-fi
-
-    fi
-  fi
-
-  # Try locate
-  if test "$PNCPATH" == ""
-  then
-    path=`locate pnetcdf.h | head -n 1`
-    if test "$path" != ""
-    then
-      path=$path/..
-      as_ac_File=`$as_echo "ac_cv_file_$path/include/pnetcdf.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $path/include/pnetcdf.h" >&5
-$as_echo_n "checking for $path/include/pnetcdf.h... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$path/include/pnetcdf.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$path/include/pnetcdf.h" | $as_tr_cpp` 1
-_ACEOF
-PNCPATH=$path
-fi
-
-    fi
-  fi
-fi
-
-if test "$PNCPATH" != ""
-then
-  as_ac_File=`$as_echo "ac_cv_file_$path/lib/libpnetcdf.a" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $path/lib/libpnetcdf.a" >&5
-$as_echo_n "checking for $path/lib/libpnetcdf.a... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$path/lib/libpnetcdf.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$path/lib/libpnetcdf.a" | $as_tr_cpp` 1
-_ACEOF
-PNCPATHLIB='lib'
-else
-  as_ac_File=`$as_echo "ac_cv_file_$path/lib64/libpnetcdf.a" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $path/lib64/libpnetcdf.a" >&5
-$as_echo_n "checking for $path/lib64/libpnetcdf.a... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$path/lib64/libpnetcdf.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$path/lib64/libpnetcdf.a" | $as_tr_cpp` 1
-_ACEOF
-PNCPATHLIB='lib64'
-else
-  PNCPATH=''
-fi
-
-fi
-
-fi
-
-if test "$PNCPATH" == ""
-then
-  echo "Parallel-NetCDF support disabled"
-else
-  # Set a compile-time flag
-  CXXFLAGS="$CXXFLAGS -DPNCDF"
-  EXTRA_INCS="$EXTRA_INCS -I$PNCPATH/include"
-  EXTRA_LIBS="$EXTRA_LIBS -L$PNCPATH/$PNCPATHLIB -lpnetcdf"
-
-  file_formats="$file_formats Parallel-NetCDF"
-  echo "Parallel-NetCDF support enabled"
 fi
 
 echo ""
@@ -9522,6 +9241,8 @@ fi
 #############################################################
 # Gather configuration info for bout-config
 #############################################################
+
+EXTRA_INCS="${EXTRA_INCS} ${CPPFLAGS}"
 
 PREFIX=$PWD
 IDLCONFIGPATH=$PWD/tools/idllib
