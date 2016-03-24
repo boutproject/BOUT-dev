@@ -10,8 +10,8 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '1.021'
-__date__    = '2016.02.28'
+__version__ = '1.0221'
+__date__    = '2016.03.15'
 
 import os
 import re
@@ -62,6 +62,7 @@ class basic_runner(object):
     def __init__(self,\
                  nproc        = 1,\
                  directory    = 'data',\
+                 prog_name    = None,\
                  solver       = None,\
                  mms          = None,\
                  atol         = None,\
@@ -125,6 +126,8 @@ class basic_runner(object):
         Input:
         nproc        -    The number of processors to use in the mpirun (int)
         directory    -    The directory of the BOUT.inp file (str)
+        prog_name    -    Name of the excecutable. If none is set the
+                          name will be set from the *.o file.
         solver       -    The solver to be used in the runs (str or
                           iterable)
         mms          -    Whether or not mms should be run (bool)
@@ -316,9 +319,8 @@ class basic_runner(object):
                 self._errors.append("TypeError")
                 raise TypeError("make must be boolean if set")
 
-        # Set self._program_name from the *.o file. Make the program if
-        # the *.o file is not found
-        self._set_program_name()
+        # Set self._program_name
+        self._set_program_name(prog_name)
 
         # Make the file if make is True
         if self._make:
@@ -588,37 +590,74 @@ class basic_runner(object):
 #}}}
 
 #{{{_set_program_name
-    def _set_program_name(self):
-        """Set self._program_name from the *.o file. Make the program if
-        the *.o file is not found"""
+    def _set_program_name(self, prog_name=None):
+        """
+        Will set self._program_name and make the program if the
+        prog_name.o file is not found.
 
-        # Find the *.o file
-        o_files = glob.glob("*.o")
-        if len(o_files) > 0:
-            # Pick the first instance as the name
-            self._program_name = o_files[0].replace('.o', '')
-        else:
-            # Check if there exists a make
-            make_file = glob.glob("*make*")
-            if len(make_file) > 0:
-                # Run make
+        Input
+        prog_name - Name of the exceutable
+                    If None, the name will be set from the *.o file.
+        """
+
+        if prog_name is not(None):
+            # Check that a string is given
+            if type(prog_name) != str:
+                message = 'prog_name must be given as a string'
+                self._errors.append("TypeError")
+                raise TypeError(message)
+            # Search for file
+            if os.path.isfile(prog_name):
+                self._program_name = prog_name
+            else:
+                print(prog_name+" not found, now making:")
+                # File not found, make
                 self._run_make()
                 # Set the make flag to False, so it is not made again
                 self._make = False
-                # Search for the .o file again
-                o_files = glob.glob("*.o")
-                if len(o_files) > 0:
-                    self._program_name = o_files[0].replace('.o', '')
-                else:
-                    self._program_name = False
-                    message = 'The constructor could not make your'+\
-                              ' program'
+                # Search for file
+                if not(os.path.isfile(prog_name)):
+                    message = prog_name + ' could not be found after make. '
+                    message += 'Please check for spelling mistakes'
                     self._errors.append("RuntimeError")
                     raise RuntimeError(message)
+                else:
+                    self._program_name = prog_name
+        else:
+            # Find the *.o file
+            o_files = glob.glob("*.o")
+            if len(o_files) > 1:
+                message = "More than one *.o file found. "
+                message += "The first *.o file is chosen. "
+                message += "Consider setting 'prog_name'."
+                self._warning_printer(message)
+                self._warnings.append(message)
+                self._program_name = o_files[0].replace('.o', '')
+            elif len(o_files) == 1:
+                # Pick the first instance as the name
+                self._program_name = o_files[0].replace('.o', '')
             else:
-                self._errors.append("RuntimeError")
-                raise RuntimeError("No make file found in current" +\
-                                   " directory")
+                # Check if there exists a make
+                make_file = glob.glob("*make*")
+                if len(make_file) > 0:
+                    # Run make
+                    self._run_make()
+                    # Set the make flag to False, so it is not made again
+                    self._make = False
+                    # Search for the .o file again
+                    o_files = glob.glob("*.o")
+                    if len(o_files) > 0:
+                        self._program_name = o_files[0].replace('.o', '')
+                    else:
+                        self._program_name = False
+                        message = 'The constructor could not make your'+\
+                                  ' program'
+                        self._errors.append("RuntimeError")
+                        raise RuntimeError(message)
+                else:
+                    self._errors.append("RuntimeError")
+                    raise RuntimeError("No make file found in current" +\
+                                       " directory")
 #}}}
 
 #{{{_check_for_basic_instance_error
@@ -1904,7 +1943,7 @@ class basic_runner(object):
         #{{{ Save files if restart is set to "overwrite"
         # NOTE: This is already done if self._redistribute is set
         if self._restart == 'overwrite' and not(self._redistribute) and do_run:
-            self._move_old_runs(folder_name = 'run', include_restart = False)
+            self._move_old_runs(folder_name = 'restart', include_restart = False)
         #}}}
 
         #{{{ Add noise
@@ -2590,7 +2629,7 @@ class basic_runner(object):
 
             # Additional files that will be copied to the destination
             # folder
-            extensions = [*extensions_w_cpy, *has_extensions_w_cpy, 'restart.*']
+            extensions = [extensions_w_cpy[:], has_extensions_w_cpy[:], 'restart.*']
 
             if self._restart == "append":
                 extensions.append("dmp.*")
@@ -2622,7 +2661,7 @@ class basic_runner(object):
 #}}}
 
 #{{{_move_old_runs
-    def _move_old_runs(self, folder_name = 'run', include_restart = False):
+    def _move_old_runs(self, folder_name = 'restart', include_restart = False):
         """Move old runs, return the destination path"""
 
         # Check for folders in the dmp directory
@@ -2632,30 +2671,25 @@ class basic_runner(object):
                        os.path.isdir(os.path.join(\
                                     self._dmp_folder, name))\
                       ]
-        # Find occurrences of 'folder_name' in these folders
-        prev_runs = [name for name in directories if folder_name in name]
+        # Find occurrences of 'folder_name', split, and cast result to number
+        restart_nr = [int(name.split('_')[-1]) for name in directories\
+                      if folder_name in name]
         # Check that the list is not empty
-        if len(prev_runs) != 0:
-            # Sort the folders alphabetically
-            prev_runs.sort()
-            # Pick the last of prev_runs
-            prev_runs = prev_runs[-1]
-            # Pick the number from the last run
-            # First split the string
-            overwrite_nr = prev_runs.split('_')
-            # Pick the last element of overwrite_nr, and cast it
-            # to an integer
-            overwrite_nr = int(overwrite_nr[-1])
-            # Add one to the overwrite_nr, as we want to create
+        if len(restart_nr) != 0:
+            # Sort the folders in ascending order
+            restart_nr.sort()
+            # Pick the last index
+            restart_nr = restart_nr[-1]
+            # Add one to the restart_nr, as we want to create
             # a new directory
-            overwrite_nr += overwrite_nr
+            restart_nr += 1
         else:
-            # Set the overwrite_nr
-            overwrite_nr = 1
+            # Set the restart_nr
+            restart_nr = 0
         # Create the folder for the previous runs
         self._create_folder(\
                 os.path.join(self._dmp_folder, folder_name + '_' +\
-                             str(overwrite_nr)))
+                             str(restart_nr)))
 
         extensions_to_move = ['cpy', 'log.*', 'dmp.*',\
                               'cc' , 'cpp'  , 'cxx'  , 'C'  , 'c++',\
@@ -2665,7 +2699,7 @@ class basic_runner(object):
             extensions_to_move.append('restart.*')
 
         dst = os.path.join(self._dmp_folder,\
-                           folder_name + '_' + str(overwrite_nr))
+                           folder_name + '_' + str(restart_nr))
 
         print("Moving old runs to {}\n".format(dst))
 

@@ -483,46 +483,11 @@ then
     PETSC_DIR="$with_petsc"
 
   else
-    AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/conf, ,
-    echo "Error - can't find PETSc distribution"
-    exit)
+    AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/conf, PETSC_CONFDIR=${PETSC_DIR}/conf,
+      AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/lib/petsc/conf, PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf,
+        echo "Error - can't find PETSc distribution"
+        exit))
   fi
-
-cat <<MFILE > petscmake$$
-PETSC_ARCH = ${PETSC_ARCH}
-PETSC_DIR  = ${PETSC_DIR}
-include ${PETSC_DIR}/conf/rules
-include ${PETSC_DIR}/conf/variables
-echo_cxx:
-	-@echo \${CXX}
-echo_sundials:
-	-@echo \${SUNDIALS_LIB}
-MFILE
-
-  CXX="`make -f petscmake$$ echo_cxx`"
-  HAS_SUNDIALS=`make -f petscmake$$ echo_sundials | grep -c sundials`
-  HAS_CXX=`echo $CXX | grep -ic mp`
-
-  if test "$HAS_SUNDIALS" == "0"
-  then
-    echo "Warning - PETSc has no SUNDIALS support"
-    PETSC_HAS_SUNDIALS="no"
-  else
-    PETSC_HAS_SUNDIALS="yes"
-  fi
-
-  if test "$HAS_CXX" == "0"
-  then
-    echo "Warning - PETSc must have C++ support"
-    #rm petscmake$$
-    #exit
-  fi
-
-
-  echo "PETSc used C++ compiler $CXX"
-  #MPICXX=$CXX
-
-  rm petscmake$$
 
   PETSC_VERSION_MAJOR="0"
   PETSC_VERSION_MAJOR=`grep 'define PETSC_VERSION_MAJOR' $PETSC_DIR/include/petscversion.h | awk '{print \$3;}'`
@@ -572,7 +537,46 @@ MFILE
     echo "***********************************"
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
   fi
-  PETSC="include $PETSC_DIR/conf/variables"
+
+cat <<MFILE > petscmake$$
+PETSC_ARCH = ${PETSC_ARCH}
+PETSC_DIR  = ${PETSC_DIR}
+include ${PETSC_CONFDIR}/rules
+include ${PETSC_CONFDIR}/variables
+echo_cxx:
+	-@echo \${CXX}
+echo_sundials:
+	-@echo \${SUNDIALS_LIB}
+MFILE
+
+  CXX="`make -f petscmake$$ echo_cxx`"
+  HAS_SUNDIALS=`make -f petscmake$$ echo_sundials | grep -c sundials`
+  HAS_CXX=`echo $CXX | grep -ic mp`
+
+  if test "$HAS_SUNDIALS" == "0"
+  then
+    echo "Warning - PETSc has no SUNDIALS support"
+    PETSC_HAS_SUNDIALS="no"
+  else
+    PETSC_HAS_SUNDIALS="yes"
+  fi
+
+  if test "$HAS_CXX" == "0"
+  then
+    echo "Warning - PETSc must have C++ support"
+    #rm petscmake$$
+    #exit
+  fi
+
+
+  echo "PETSc used C++ compiler $CXX"
+  #MPICXX=$CXX
+
+  rm petscmake$$
+
+  # Set the line to be included in the make.conf file
+
+  PETSC="include ${PETSC_CONFDIR}/variables"
 else
    PETSC=
 fi
@@ -1586,6 +1590,8 @@ fi
 #############################################################
 # Gather configuration info for bout-config
 #############################################################
+
+EXTRA_INCS="${EXTRA_INCS} ${CPPFLAGS}"
 
 PREFIX=$PWD
 IDLCONFIGPATH=$PWD/tools/idllib
