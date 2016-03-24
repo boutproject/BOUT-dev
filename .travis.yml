@@ -5,11 +5,15 @@ compiler:
 matrix:
   include:
   - env: CONFIGURE_OPTIONS='--with-optimize=3'
+  - env: CONFIGURE_OPTIONS='--enable-openmp'
   - env: CONFIGURE_OPTIONS='' MPICH_CC=clang MPICH_CXX=clang++
     compiler: clang
   - env: CONFIGURE_OPTIONS='--with-optimize=3' MPICH_CC=clang MPICH_CXX=clang++
     compiler: clang
-
+  - env: CONFIGURE_OPTIONS='--enable-openmp' MPICH_CC=clang MPICH_CXX=clang++
+    compiler: clang
+  allow_failures:
+  - env: CONFIGURE_OPTIONS='--with-optimize=3'
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -y mpich2 libmpich2-dev
