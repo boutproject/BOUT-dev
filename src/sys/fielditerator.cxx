@@ -135,6 +135,8 @@ void FieldIteratorCIndex::init(){
     start.jz=0;
     end.jz  =mesh.ngz;
   }
+  end.flags=flags;
+  start.flags=flags;
   max=end;
   ymin=start.jy;
 #ifdef _OPENMP
@@ -159,6 +161,10 @@ void FieldIteratorCIndex::init(){
     if (! (flags&FIELD2D)){
       end.jz=start.jz+iend%work.jz;
       iend/=work.jz;
+    } else {
+      end.jz=0;
+      start.jz=0;
+      max.jz=0;
     }
     end.jy=start.jy+iend%work.jy;
     iend/=work.jy;
@@ -197,13 +203,14 @@ void FieldIteratorCIndex::init(){
     --end.jz;
   }
 #endif
-  start.flags=flags;
+  //start.flags=flags;
   current=start;
   notfinished = current < end;
 }
 
 void FieldIteratorCIndex::reset(){
   current=start;
+  notfinished = current < end;
 }
 
 

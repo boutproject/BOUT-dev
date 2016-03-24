@@ -13,14 +13,22 @@
 
 Field3D n;
 
-#define PRINT_DEBUG {						\
-    usleep(2e5*omp_get_thread_num());				\
-    output.write("FieldIterator failed at ");			\
-    cxit.printState();						\
+#ifdef _OPENMP
+#define PRINT_DEBUG {							\
+    usleep(2e5*omp_get_thread_num());					\
+    output.write("FieldIterator failed at ");				\
+    cxit.printState();							\
     output.write("- expected %.1f but got %.1f. ",exp,d3[cxit]);	\
-    output.write("I am %d !\n",omp_get_thread_num());		\
-    usleep(2e5*omp_get_num_threads());				\
+    output.write("I am %d !\n",omp_get_thread_num());			\
+    usleep(2e5*omp_get_num_threads());					\
     abort(); }
+#else
+#define PRINT_DEBUG {							\
+    output.write("FieldIterator failed at ");				\
+    cxit.printState();							\
+    output.write("- expected %.1f but got %.1f. ",exp,d3[cxit]);        \
+    abort(); }
+#endif
 
 int spread_work(int num_work, int thread, int max_thread);
 

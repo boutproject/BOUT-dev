@@ -201,8 +201,6 @@ public:
     }
 #ifdef _OPENMP
     notfinished= current <= end;
-#else
-    notfinished=true;
 #endif
     //return notfinished;
   };
@@ -210,16 +208,16 @@ public:
     ASSERT2(flags&FIELD2D);
     if (++current.jy == max.jy){
       current.jy=ymin;
+#ifdef _OPENMP
+      ++current.jx;
+#else
       if (++current.jx == max.jx){
-#ifndef _OPENMP
 	notfinished=false;
+      }
 #endif
-      };
     }
 #ifdef _OPENMP
     notfinished = current < end;
-#else
-    notfinished = true;
 #endif
     //return notfinished;
   };
