@@ -6,7 +6,6 @@
 
 //debugging:
 #include "output.hxx"
-#include <assert.h>
 
 // int calcStart(int);
 // int calcEnd(int);
@@ -197,8 +196,6 @@ void FieldIteratorCIndex::init(){
     --end.jy;
     --end.jz;
   }
-#else
-#error OPENMP disabled!
 #endif
   start.flags=flags;
   current=start;
