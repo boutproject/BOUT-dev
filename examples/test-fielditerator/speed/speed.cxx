@@ -14,6 +14,20 @@
 
 Field3D n;
 
+#ifndef _OPENMP
+#include <time.h>
+#include <sys/time.h>
+double omp_get_wtime(){
+  struct timeval time;
+  if (gettimeofday(&time,NULL)){
+    //  Handle error
+    return 0;
+  }
+  return (double)time.tv_sec + (double)time.tv_usec * .000001;
+}
+#else
+#include <omp.h>
+#endif
 
 int physics_init(bool restarting) {
 
@@ -33,7 +47,7 @@ int physics_init(bool restarting) {
   double t2=omp_get_wtime();
   for (int i=0;i<iter;++i){
     double myrand=rand();
-#pragma omp parallel
+#pragma omp parallel for collapse(3)
     for (int jx=0;jx < mesh->ngx;++jx){
       for (int jy=0;jy < mesh->ngy;++jy){
 	for (int jz=0;jz < mesh->ngz;++jz){
