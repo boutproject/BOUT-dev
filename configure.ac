@@ -43,6 +43,7 @@ AC_ARG_WITH(hdf5,   [  --with-hdf5                 Enable support for HDF5 files
 AC_ARG_WITH(parallelhdf5,[  --with-parallelhdf5    Enable support for parallel HDF5 files])
 AC_ARG_WITH(pnetcdf,[  --with-pnetcdf              Set path to Parallel NetCDF library])
 AC_ARG_WITH(debug,  [  --with-debug            	   Enable all debugging flags])
+AC_ARG_WITH(optimize,[ --with-optimize=default/1/2/3  Enable optimization])
 AC_ARG_WITH(ida,    [  --with-ida=/path/to/ida 	   Use the SUNDIALS IDA solver])
 AC_ARG_WITH(cvode,  [  --with-cvode            	   Use the SUNDIALS CVODE solver])
 AC_ARG_WITH(sundials, [  --with-sundials           Use CVODE and IDA])
@@ -174,16 +175,155 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_HEADER],[
 
 
 #############################################################
+# Checks for programs
+#############################################################
+
+MKDIR="mkdir -p"
+AC_PROG_LN_S
+AC_PROG_MAKE_SET
+AC_PROG_RANLIB
+
+#############################################################
+# MPI
+#############################################################
+
+AC_DEFUN([ACX_MPI], [
+AC_PREREQ(2.50) dnl for AC_LANG_CASE
+
+AC_LANG_CASE([C++], [
+  AC_REQUIRE([AC_PROG_CXX])
+  AC_ARG_VAR(MPICXX,[MPI C++ compiler command])
+  AC_CHECK_PROGS(MPICXX, mpicxx mpiCC mpic++ hcp mpxlC_r mpxlC mpCC cmpic++ CC, $CXX)
+  acx_mpi_save_CXX="$CXX"
+  CXX="$MPICXX"
+  AC_SUBST(MPICXX)
+])
+
+if test x = x"$MPILIBS"; then
+  AC_LANG_CASE([C++], [AC_CHECK_FUNC(MPI_Init, [MPILIBS=" "])])
+fi
+
+if test x = x"$MPILIBS"; then
+  AC_CHECK_LIB(mpi, MPI_Init, [MPILIBS="-lmpi"])
+fi
+if test x = x"$MPILIBS"; then
+  AC_CHECK_LIB(mpich, MPI_Init, [MPILIBS="-lmpich"])
+fi
+
+dnl We have to use AC_TRY_COMPILE and not AC_CHECK_HEADER because the
+dnl latter uses $CPP, not $CC (which may be mpicc).
+AC_LANG_CASE([C++], [
+  if test x != x"$MPILIBS";
+  then
+    AC_MSG_CHECKING([for mpi.h])
+    AC_TRY_COMPILE([#include <mpi.h>],[],[AC_MSG_RESULT(yes)], [MPILIBS=""
+      AC_MSG_RESULT(no)])
+  fi
+])
+
+# AC_LANG_CASE[C++], [CXX="$acx_mpi_save_CXX"])
+
+AC_SUBST(MPILIBS)
+
+# Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
+if test x = x"$MPILIBS"; then
+  $2
+  :
+else
+  ifelse([$1],,[AC_DEFINE(HAVE_MPI,1,[Define if you have the MPI library.])],[$1])
+  :
+fi
+])dnl ACX_MPI
+
+AC_LANG([C++])
+ACX_MPI()
+
+# Checks for libraries.
+AC_CHECK_LIB([m], [sqrt])
+
+# Checks for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS([malloc.h stdlib.h string.h strings.h])
+
+# Checks for typedefs, structures, and compiler characteristics.
+#AC_HEADER_STDBOOL
+#AC_C_CONST
+#AC_TYPE_SIZE_T
+#AC_C_VOLATILE
+
+# Checks for library functions.
+#AC_FUNC_ERROR_AT_LINE
+AC_FUNC_MALLOC
+AC_FUNC_REALLOC
+AC_FUNC_VPRINTF
+#AC_CHECK_FUNCS([pow sqrt strcasecmp])
+
+# Check for OpenMP support
+: ${enable_openmp=no}  # Disable by default
+#AC_OPENMP
+# Add the flag to both compile and link stages
+#CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"
+#EXTRA_LIBS="$EXTRA_LIBS $OPENMP_CXXFLAGS"
+
+#############################################################
 # General Options
 #############################################################
 
+OPT_FLAGS=""
 if test "$with_debug" != ""
 then
   echo "Enabling all debug options"
   with_checks="3"
-  CXXFLAGS="$CXXFLAGS -g -O0"
+  # use -Og with available, otherwise fall back to -O0
+  OPT_FLAGS="-g -O0 -Og"
+elif test $with_optimize ; then
+  optimize=$with_optimize
+  test $optimize -eq 0 2>/dev/null
+  if test $? -eq 2 ; then
+    if test $optimize == "default"
+    then
+      OPT_FLAGS="-O"
+    elif test $optimize == "fast"
+    then
+      OPT_FLAGS="-Ofast -march=native -funroll-loops"
+      DISABLE_CHECK=probably
+    else
+      AC_MSG_ERROR([unrecognized option: --with=optimize=$optimize])
+    fi
+  else
+    if test $optimize -gt 3
+    then
+      OPT_FLAGS="-Ofast -march=native -funroll-loops"
+      DISABLE_CHECK=probably
+    elif test $optimize -gt 2
+    then
+      OPT_FLAGS="-O3 -march=native -funroll-loops"
+      DISABLE_CHECK=probably
+    elif test $optimize -gt 1
+    then
+      OPT_FLAGS="-O2 -march=native"
+    elif test $optimze -ge 0
+    then
+      OPT_FLAGS="-O$optimize"
+    else
+      AC_MSG_ERROR([unrecognized option: --with=optimize=$optimize])
+    fi
+  fi
 else
-  CXXFLAGS="$CXXFLAGS -O"
+  OPT_FLAGS="-O"
+fi
+for flag in $OPT_FLAGS
+do
+  CXXFLAGS_save=$CXXFLAGS
+  CXXFLAGS="$CXXFLAGS $flag"
+  AC_MSG_CHECKING([for flag $flag])
+  AC_TRY_COMPILE([],[],[AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no);CXXFLAGS=$CXXFLAGS_save])
+done
+
+# disable checks if optimization > 2 is used
+if test -z $with_checks && test .$DISABLE_CHECK = ."probably"
+then
+  with_checks=no
 fi
 
 CHECK_LEVEL="0"
@@ -1249,96 +1389,6 @@ then
   echo
 fi
 
-#############################################################
-# Checks for programs
-#############################################################
-
-MKDIR="mkdir -p"
-AC_PROG_LN_S
-AC_PROG_MAKE_SET
-AC_PROG_RANLIB
-
-#############################################################
-# MPI
-#############################################################
-
-AC_DEFUN([ACX_MPI], [
-AC_PREREQ(2.50) dnl for AC_LANG_CASE
-
-AC_LANG_CASE([C++], [
-  AC_REQUIRE([AC_PROG_CXX])
-  AC_ARG_VAR(MPICXX,[MPI C++ compiler command])
-  AC_CHECK_PROGS(MPICXX, mpicxx mpiCC mpic++ hcp mpxlC_r mpxlC mpCC cmpic++ CC, $CXX)
-  acx_mpi_save_CXX="$CXX"
-  CXX="$MPICXX"
-  AC_SUBST(MPICXX)
-])
-
-if test x = x"$MPILIBS"; then
-  AC_LANG_CASE([C++], [AC_CHECK_FUNC(MPI_Init, [MPILIBS=" "])])
-fi
-
-if test x = x"$MPILIBS"; then
-  AC_CHECK_LIB(mpi, MPI_Init, [MPILIBS="-lmpi"])
-fi
-if test x = x"$MPILIBS"; then
-  AC_CHECK_LIB(mpich, MPI_Init, [MPILIBS="-lmpich"])
-fi
-
-dnl We have to use AC_TRY_COMPILE and not AC_CHECK_HEADER because the
-dnl latter uses $CPP, not $CC (which may be mpicc).
-AC_LANG_CASE([C++], [
-  if test x != x"$MPILIBS";
-  then
-    AC_MSG_CHECKING([for mpi.h])
-    AC_TRY_COMPILE([#include &lt;mpi.h&gt;],[],[AC_MSG_RESULT(yes)], [MPILIBS=""
-      AC_MSG_RESULT(no)])
-  fi
-])
-
-# AC_LANG_CASE[C++], [CXX="$acx_mpi_save_CXX"])
-
-AC_SUBST(MPILIBS)
-
-# Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
-if test x = x"$MPILIBS"; then
-  $2
-  :
-else
-  ifelse([$1],,[AC_DEFINE(HAVE_MPI,1,[Define if you have the MPI library.])],[$1])
-  :
-fi
-])dnl ACX_MPI
-
-AC_LANG([C++])
-ACX_MPI()
-
-# Checks for libraries.
-AC_CHECK_LIB([m], [sqrt])
-
-# Checks for header files.
-AC_HEADER_STDC
-AC_CHECK_HEADERS([malloc.h stdlib.h string.h strings.h])
-
-# Checks for typedefs, structures, and compiler characteristics.
-#AC_HEADER_STDBOOL
-#AC_C_CONST
-#AC_TYPE_SIZE_T
-#AC_C_VOLATILE
-
-# Checks for library functions.
-#AC_FUNC_ERROR_AT_LINE
-AC_FUNC_MALLOC
-AC_FUNC_REALLOC
-AC_FUNC_VPRINTF
-#AC_CHECK_FUNCS([pow sqrt strcasecmp])
-
-# Check for OpenMP support
-: ${enable_openmp=no}  # Disable by default
-#AC_OPENMP
-# Add the flag to both compile and link stages
-#CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"
-#EXTRA_LIBS="$EXTRA_LIBS $OPENMP_CXXFLAGS"
 
 #############################################################
 # Check types for SUNDIALS
