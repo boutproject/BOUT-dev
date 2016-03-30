@@ -49,15 +49,36 @@ public:
   inline bool operator!=(const DataIterator& rhs) const {
     return (x != rhs.x) || (y != rhs.y) || (z != rhs.z);
   }
-
-  // Dereference operators
-  Indices operator*() {
-    return {x, y, z};
+  
+  /*
+   * Dereference operators
+   * These are needed because the C++11 for loop
+   * dereferences the iterator
+   */
+  DataIterator& operator*() {
+    return *this;
   }
-  const Indices operator*() const {
-    return {x, y, z};
+  const DataIterator& operator*() const {
+    return *this;
   }
 
+  /*
+   * Add an offset to the index for general stencils
+   */
+  const Indices offset(int dx, int dy, int dz) {
+    return {x+dx, y+dy, z+dz};
+  }
+  /*
+   * Shortcuts for common offsets, one cell
+   * in each direction.
+   */
+  const Indices xp() { return {x+1, y, z}; }
+  const Indices xm() { return {x-1, y, z}; }
+  const Indices yp() { return {x, y+1, z}; }
+  const Indices ym() { return {x, y-1, z}; }
+  const Indices zp() { return {x, y, z+1}; }
+  const Indices zm() { return {x, y, z-1}; }
+  
   void start() {
     x = xstart; y = ystart; z = zstart;
   }
