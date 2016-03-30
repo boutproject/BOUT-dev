@@ -1415,7 +1415,7 @@ void Solver::post_rhs(BoutReal t) {
   msg_stack.push("Solver checking time derivatives");
   for(const auto& f : f3d) {
     msg_stack.push("Variable: %s", f.name.c_str());
-    f.F_var->checkData();
+    checkData(*f.F_var);
     msg_stack.pop();
   }
   msg_stack.pop();

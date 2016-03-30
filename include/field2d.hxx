@@ -100,9 +100,9 @@ class Field2D : public Field, public FieldData {
 #if CHECK > 2
     if(!isAllocated())
       throw BoutException("Field2D: () operator on empty data");
-    if((jx < 0) || (jx >= mesh->ngx) || (jy < 0) || (jy >= mesh->ngy) )
-      throw BoutException("Field2D: (%d, %d) index out of bounds (%d , %d)\n", 
-                          jx, jy, mesh->ngx, mesh->ngy);
+    //if((jx < 0) || (jx >= mesh->ngx) || (jy < 0) || (jy >= mesh->ngy) )
+    //  throw BoutException("Field2D: (%d, %d) index out of bounds (%d , %d)\n", 
+    //                      jx, jy, mesh->ngx, mesh->ngy);
 #endif
   
     return data[jx][jy];
@@ -111,9 +111,9 @@ class Field2D : public Field, public FieldData {
     #if CHECK > 2
     if(!isAllocated())
       throw BoutException("Field2D: () operator on empty data");
-    if((jx < 0) || (jx >= mesh->ngx) || (jy < 0) || (jy >= mesh->ngy) )
-      throw BoutException("Field2D: (%d, %d) index out of bounds (%d , %d)\n", 
-                          jx, jy, mesh->ngx, mesh->ngy);
+    //if((jx < 0) || (jx >= mesh->ngx) || (jy < 0) || (jy >= mesh->ngy) )
+    //  throw BoutException("Field2D: (%d, %d) index out of bounds (%d , %d)\n", 
+    //                      jx, jy, mesh->ngx, mesh->ngy);
 #endif
   
     return data[jx][jy];
