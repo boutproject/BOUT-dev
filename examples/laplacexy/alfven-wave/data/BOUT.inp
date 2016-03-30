@@ -1,0 +1,58 @@
+
+NOUT = 2000
+TIMESTEP = 2
+
+grid = "d3d_119919.nc"
+
+ShiftXderivs = true
+
+MZ = 1
+
+[solver]
+
+mxstep = 10000
+atol = 1e-9
+rtol = 1e-7
+
+[laplacexy]  # 2D solver in X-Y
+pctype = shell    # Preconditioner
+
+atol = 1e-12
+rtol = 1e-8
+
+[laplace]    # 2D solver in X-Z
+
+inner_boundary_flags = 1 # Zero gradient on inner boundary
+nonuniform = true
+
+[Alfven]
+
+laplace_perp = false  # Use Laplace_perp rather than Delp2?
+split_n0 = true    # Split phi into n=0 and n~=0 components?
+newXZsolver = true   # Use LaplaceXZ solver
+
+
+mu_epar = -1e7
+
+resistivity = 1e-7
+
+[Vort]
+scale = 0.0
+
+bndry_all = dirichlet_o2
+
+[Apar]
+scale = 1e-2
+function = gauss(x-0.5,0.2)*sin(y)
+
+bndry_all = neumann_o2
+
+[jpar] 
+bndry_all = neumann_o2
+
+[phi]
+bndry_xin = none
+bndry_xout = none
+
+bndry_target = dirichlet_o2 # Zero value on targets
+

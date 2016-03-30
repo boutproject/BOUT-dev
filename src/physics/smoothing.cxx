@@ -42,7 +42,7 @@
 
 // Smooth using simple 1-2-1 filter
 const Field3D smooth_x(const Field3D &f, bool BoutRealspace) {
-  MsgStackItem trace("smooth_x");
+  TRACE("smooth_x");
   
   Field3D result;
   result.allocate();
@@ -70,7 +70,7 @@ const Field3D smooth_x(const Field3D &f, bool BoutRealspace) {
 
 
 const Field3D smooth_y(const Field3D &f) {
-  MsgStackItem trace("smooth_y");
+  TRACE("smooth_y");
   
   Field3D result;
   result.allocate();

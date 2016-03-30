@@ -2,8 +2,9 @@
 
 from __future__ import print_function
 from builtins import str
-from boututils import shell, launch, plotdata
-from boutdata import collect
+from boututils.run_wrapper import shell, launch
+from boutdata.plotdata import plotdata
+from boutdata.collect import collect
 import numpy as np
 from sys import argv
 
@@ -23,7 +24,7 @@ elif len(argv)==3:
 else:
   print("Arguments: [end_index][data_path] or [data_path]")
   Exit(1)
-  
+
 # Collect the data
 Ti = collect("T_ion", path=data_path, xind=2, info=True, yguards=True)
 
@@ -32,4 +33,4 @@ if end_index<0:
 
 # Ti has dimensions [Time, X, Y, Z]
 # Make contour plot
-plotdata.plotdata(Ti[:end_index,0,:,0],title="Ti")
+plotdata(Ti[:end_index,0,:,0],title="Ti")

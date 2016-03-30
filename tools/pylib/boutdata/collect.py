@@ -64,7 +64,7 @@ def findVar(varname, varlist):
         print("Variable '"+varname+"' not found, and is ambiguous. Could be one of: "+str(v))
     raise ValueError("Variable '"+varname+"' not found")
 
-def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguards=False, xguards=True, info=True,prefix="BOUT.dmp"):
+def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguards=False, xguards=True, info=True,prefix="BOUT.dmp",strict=False):
     """Collect a variable from a set of BOUT++ outputs.
 
     data = collect(name)
@@ -85,6 +85,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
                            (Set to True to be consistent with the
                            definition of nx)
     info    = True         Print information about collect?
+    strict  = False        Fail if the exact variable name is not found?
     """
 
     # Search for BOUT++ dump files in NetCDF format
@@ -118,7 +119,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
         
     file_list.sort()
     if file_list == []:
-        raise ValueError("ERROR: No data files found")
+        raise IOError("ERROR: No data files found")
 
     nfiles = len(file_list)
 
@@ -130,12 +131,15 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
         #ndims = len(dimens)
         ndims = f.ndims(varname)
     except:
-        # Find the variable
-        varname = findVar(varname, f.list())
-
-        dimens = f.dimensions(varname)
-        #ndims = len(dimens)
-        ndims = f.ndims(varname)
+        if strict:
+            raise
+        else:
+            # Find the variable
+            varname = findVar(varname, f.list())
+            
+            dimens = f.dimensions(varname)
+            #ndims = len(dimens)
+            ndims = f.ndims(varname)
     
     if ndims < 2:
         # Just read from file
@@ -144,12 +148,11 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
         return data
 
     if ndims > 4:
-        print("ERROR: Too many dimensions")
-        raise CollectError
+        raise ValueError("ERROR: Too many dimensions")
 
     mxsub = f.read("MXSUB")
     if mxsub is None:
-        raise CollectError("Missing MXSUB variable")
+        raise ValueError("Missing MXSUB variable")
     mysub = f.read("MYSUB")
     mz    = f.read("MZ")
     myg   = f.read("MYG")

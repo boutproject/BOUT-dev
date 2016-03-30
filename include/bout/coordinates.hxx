@@ -52,7 +52,9 @@ public:
   // Mesh spacing
   
   Field2D dx, dy; 
-  BoutReal zlength, dz;
+  BoutReal dz;
+
+  BoutReal zlength() const { return dz * nz; } // Length of the Z domain. Used for FFTs
   
   bool non_uniform;
   Field2D d1_dx, d1_dy;  // 2nd-order correction for non-uniform meshes d/di(1/dx) and d/di(1/dy)
@@ -125,6 +127,7 @@ public:
 private:
   int gaussj(BoutReal **a, int n);
   int *indxc, *indxr, *ipiv, ilen;
+  int nz; // Size of mesh in Z. This is mesh->ngz-1
 };
 
 /*

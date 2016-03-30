@@ -247,14 +247,6 @@ class Field3D : public Field, public FieldData {
   int  setData(int x, int y, int z, void *vptr);
   int  setData(int x, int y, int z, BoutReal *rptr);
 
-  bool ioSupport() { return true; } ///< This class supports I/O operations
-  BoutReal *getData(int component) { 
-    return &data[0];
-  }
-  void zeroComponent(int component){
-    *this = 0.0;
-  }
-
   /// Visitor pattern support
   void accept(FieldVisitor &v) override { v.accept(*this); }
   

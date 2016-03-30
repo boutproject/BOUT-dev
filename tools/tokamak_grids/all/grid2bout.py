@@ -12,7 +12,7 @@ except ImportError:
     raise
 
 try:
-    from boututils import DataFile
+    from boututils.datafile import DataFile
 except ImportError:
     print("ERROR: restart module needs boututils.DataFile")
     raise

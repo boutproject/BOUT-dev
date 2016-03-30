@@ -1,6 +1,6 @@
 from __future__ import print_function
 from builtins import range
-from boutdata import collect
+from boutdata.collect import collect
 import numpy as np
 import os
 try:

@@ -5,27 +5,27 @@
 from __future__ import division
 from past.utils import old_div
 import numpy as np
-from boututils import file_import
-from boutdata import collect
+from boututils.file_import import file_import
+from boutdata.collect import collect
 from pylab import plot, show, figure, xlabel, ylabel, annotate, xlim, ylim
-from boututils import moment_xyzt
-from boututils import mode_structure
-from boututils import plotpolslice
-from boututils import deriv
+from boututils.moment_xyzt import moment_xyzt
+from boututils.mode_structure import mode_structure
+from boututils.plotpolslice import plotpolslice
+from boututils.calculus import deriv
 from mayavi import mlab
 
-                        
+
 path0="./data0/"
 path1="./data/"
 
-period=15 
+period=15
 
 gfile='./cbm18_dens8.grid_nx68ny64.nc'
 
 
 g = file_import(gfile)
-         
-                
+
+
 Dphi0 = collect("Dphi0", path=path0)
 phi0 = collect("phi0", path=path1) # needs diamagnetic effects
 #

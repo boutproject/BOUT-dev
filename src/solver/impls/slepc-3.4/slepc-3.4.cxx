@@ -62,7 +62,7 @@ PetscErrorCode compareEigsWrapper(PetscScalar ar, PetscScalar ai, PetscScalar br
   myCtx=(SlepcSolver*)ctx;
   myCtx->compareState=myCtx->compareEigs(ar,ai,br,bi);
  
-  res = &myCtx->compareState;
+  *res = myCtx->compareState;
   PetscFunctionReturn(0);
 }
 
@@ -440,7 +440,7 @@ void SlepcSolver::createEPS(){
   
   //Set the user comparison function
   if(userWhich){
-    EPSSetEigenvalueComparison(eps,&compareEigsWrapper,this);
+    EPSSetEigenvalueComparison(eps,compareEigsWrapper,this);
     EPSSetWhichEigenpairs(eps,EPS_WHICH_USER);
   }
 
@@ -748,6 +748,9 @@ void SlepcSolver::analyseResults(){
       vecToFields(vecReal);
       //Set the simtime to omega
       simtime=reEigBout;
+
+      //Run the rhs in order to calculate aux fields
+      run_rhs(0.0);
 
       //Write to file
       dump.write();

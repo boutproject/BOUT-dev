@@ -2,7 +2,7 @@
 
 #
 # Runs the conduction example, produces some output
-# 
+#
 
 from __future__ import print_function
 from __future__ import division
@@ -11,8 +11,9 @@ from builtins import range
 from past.utils import old_div
 nproc = 1  # Number of processors to use
 
-from boututils import shell, launch, plotdata
-from boutdata import collect
+from boututils.run_wrapper import shell, launch
+from boutdata.plotdata import plotdata
+from boutdata.collect import collect
 import numpy as np
 from sys import argv
 
@@ -21,7 +22,7 @@ try:
   data_path = str(argv[2])
 except:
   data_path = "data"
-  
+
 # Collect the data
 q = collect("heat_flux", path=data_path, xind=2, info=True, yguards=True)
 
@@ -51,4 +52,4 @@ for i in range(old_div(length,2)+1,length):
 print("localminq =", localminq, " localmaxq =", localmaxq)
 
 # Make contour plot
-plotdata.plotdata(q[slice_index,0,:,0],title="Electron Heat Flux Profile at t="+str(argv[1]))
+plotdata(q[slice_index,0,:,0],title="Electron Heat Flux Profile at t="+str(argv[1]))

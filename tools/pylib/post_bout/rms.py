@@ -10,7 +10,7 @@ from past.utils import old_div
 
 import numpy as np
 from pylab import plot, show, xlabel, ylabel, tight_layout
-from boutdata import collect
+from boutdata.collect import collect
 
 
 

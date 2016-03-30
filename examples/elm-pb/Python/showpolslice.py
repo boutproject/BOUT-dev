@@ -12,8 +12,8 @@ except ImportError:
     try: from mayavi import mlab
     except ImportError:
         print("No mlab available")
-     
-from boututils import anim
+
+from boututils.anim import anim
 ###########################
 # Read polslice array
 
@@ -51,6 +51,6 @@ mlab.colorbar(orientation="vertical")
 
 
 ########################################################
-# mlab animation 
+# mlab animation
 
 anim(s,fm, save=True)

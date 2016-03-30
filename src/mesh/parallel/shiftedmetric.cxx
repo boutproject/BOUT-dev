@@ -91,7 +91,7 @@ void ShiftedMetric::shiftZ(const BoutReal *in, int len, BoutReal zangle,  BoutRe
   rfft(in, len, &cmplx[0]);
   
   // Apply phase shift
-  BoutReal zlength = mesh->coordinates()->zlength;
+  BoutReal zlength = mesh->coordinates()->zlength();
   for(int jz=1;jz<nmodes;jz++) {
     BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
     cmplx[jz] *= dcomplex(cos(kwave*zangle) , -sin(kwave*zangle));

@@ -6,6 +6,8 @@
 
 #include <vector>
 
+#include <algorithm>
+
 /// Group together fields
 class FieldGroup {
  public:
@@ -132,6 +134,11 @@ class FieldGroup {
   const std::vector<Field3D*>& field3d() const {
     return f3vec;
   }
+
+  /*
+   * Ensure that each field appears only once
+   */
+  void makeUnique();
  private:
   std::vector<FieldData*> fvec;  // Vector of fields
   std::vector<Field3D*>   f3vec; // Vector of 3D fields

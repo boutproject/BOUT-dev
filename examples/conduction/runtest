@@ -1,18 +1,16 @@
 #!/usr/bin/env python
 
-#
-# Runs the conduction example, produces some output
-# 
-
-
+"""
+Runs the conduction example, produces some output
+"""
 
 from __future__ import print_function
-nproc = 2  # Number of processors to use
-
-from boututils import shell, launch, plotdata, getmpirun
-from boutdata import collect
+from boututils.run_wrapper import shell, launch, getmpirun
+from boututils.plotdata import plotdata
+from boutdata.collect import collect
 import numpy as np
 
+nproc = 2  # Number of processors to use
 MPIRUN = getmpirun()
 
 print("Making conduction example")
@@ -28,4 +26,4 @@ T = collect("T", path="data", xind=2, info=True, yguards=True)
 
 # T has dimensions [Time, X, Y, Z]
 # Make contour plot
-plotdata.plotdata(T[:,0,:,0])
+plotdata(T[:,0,:,0])

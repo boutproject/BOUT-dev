@@ -3,7 +3,7 @@
 
 #
 # Runs the conduction example, produces some output
-# 
+#
 
 from __future__ import division
 from builtins import str
@@ -11,8 +11,7 @@ from builtins import range
 from past.utils import old_div
 nproc = 1  # Number of processors to use
 
-#from boututils import shell, launch, plotdata
-from boutdata import collect
+from boutdata.collect import collect
 import numpy as np
 from sys import argv
 from matplotlib import pyplot, rc
@@ -37,7 +36,7 @@ T3 = collect("T_electron", path=data_path3, xind=2, info=True, yguards=True)
 #for index, item in enumerate(T[slice_index,0,:,0]):
 #	print index, item
 # Make contour plot
-#plotdata.plotdata(T[slice_index,0,:,0],title="Electron Temperature Profile at t="+str(argv[1]),ytitle="T/eV")
+#plotdata(T[slice_index,0,:,0],title="Electron Temperature Profile at t="+str(argv[1]),ytitle="T/eV")
 
 positions=[]
 totalgridpoints = len(T1[0,0,2:-3,0])

@@ -11,8 +11,8 @@ from __future__ import division
 
 nxlist = [4, 8, 16, 32, 64, 128]
 
-from boututils import DataFile
-from boututils import shell
+from boututils.datafile import DataFile
+from boututils.run_wrapper import shell
 
 from os.path import isfile
 
@@ -42,9 +42,9 @@ shape.add(bxcvz, "bxcvz")
 
 for nx in nxlist:
     # Generate a new mesh file
-    
+
     filename = "grid%d.nc" % nx
-    
+
     if isfile(filename):
         print("Grid file '%s' already exists" % filename)
     else:
@@ -54,7 +54,7 @@ for nx in nxlist:
         f.close()
 
     # Generate BOUT.inp file
-    
+
     directory = "grid%d" % nx
     shell("mkdir " + directory)
     shell("cp data/BOUT.inp "+directory)

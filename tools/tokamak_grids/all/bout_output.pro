@@ -1182,8 +1182,8 @@ PRO bout_output, data, output=output, input=input,$
 
   jyseps1_1 = -1                ; all in core
   jyseps2_2 = ny-1
-  jyseps1_2 = mid
-  jyseps2_1 = mid
+  jyseps1_2 = ny/2
+  jyseps2_1 = ny/2
   
   ; save to file
 

@@ -101,7 +101,7 @@ from scipy import integrate
 from local_gradient import local_gradient
 from follow_gradient import follow_gradient
 from ask import query_yes_no
-from boututils import deriv
+from boututils.calculus import deriv
 from smooth import SMOOTH
 
 

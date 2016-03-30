@@ -4,6 +4,8 @@
 #include <sstream>
 #include <output.hxx>
 
+#include <field_factory.hxx> // Used for parsing expressions
+
 Options::~Options() {
   // Delete sub-sections
   for(const auto& it : sections) {
@@ -66,21 +68,33 @@ void Options::get(const string &key, int &val, const int &def, bool log) {
   if(it == options.end()) {
     val = def;
     if(log) {
-      output << "\tOption " << sectionName << "/" << key << " = " << def << " (default)" << endl;
+      output << "\tOption " << sectionName << ":" << key << " = " << def << " (default)" << endl;
     }
     return;
   }
   
-  stringstream ss;
-  ss << it->second.value;
-  if(!(ss >> val)) {
-    // Parse failed. Can't read integer
-    throw BoutException("Can't read '%s' as an integer (%s)", it->second.value.c_str(), key.c_str());
+  // Use FieldFactory to evaluate expression
+  // Parse the string, giving this Option pointer for the context
+  // then generate a value at t,x,y,z = 0,0,0,0
+  FieldGenerator* gen = FieldFactory::get()->parse( it->second.value, this );
+  if(!gen) {
+    throw BoutException("Couldn't get integer from %s:%s = '%s'", 
+                        sectionName.c_str(), key.c_str(), it->second.value.c_str());
+  }
+  BoutReal rval = gen->generate(0,0,0,0);
+  
+  // Convert to int by rounding
+  val = ROUND(rval);
+  
+  // Check that the value is close to an integer
+  if(fabs(rval - static_cast<BoutReal>(val)) > 1e-3) {
+    throw BoutException("Value for %s:%s = %e is not an integer",
+                        sectionName.c_str(), key.c_str(), rval);
   }
   
   it->second.used = true;
   if(log) {
-    output << "\tOption " << sectionName << "/" << it->first << " = " << val;
+    output << "\tOption " << sectionName << ":" << it->first << " = " << val;
     if(!it->second.source.empty()) {
       // Specify the source of the setting
       output << " (" << it->second.source << ")";
@@ -94,17 +108,25 @@ void Options::get(const string &key, BoutReal &val, const BoutReal &def, bool lo
   if(it == options.end()) {
     val = def;
     if(log)
-      output << "\tOption " << sectionName << "/" << key << " = " << def << " (default)" << endl;
+      output << "\tOption " << sectionName << ":" << key << " = " << def << " (default)" << endl;
     return;
   }
   
-  stringstream ss;
-  ss << it->second.value;
-  ss >> val;
+  // Use FieldFactory to evaluate expression
+  // Parse the string, giving this Option pointer for the context
+  // then generate a value at t,x,y,z = 0,0,0,0
+  FieldGenerator* gen = FieldFactory::get()->parse( it->second.value, this );
+  if(!gen) {
+    throw BoutException("Couldn't get BoutReal from %s:%s = '%s'", 
+                        sectionName.c_str(), key.c_str(), it->second.value.c_str());
+  }
+  val = gen->generate(0,0,0,0);
+  
+  // Mark this option as used
   it->second.used = true;
   
   if(log) {
-    output << "\tOption " << sectionName << "/" << it->first << " = " << val;
+    output << "\tOption " << sectionName << ":" << it->first << " = " << val;
     if(!it->second.source.empty()) {
       // Specify the source of the setting
       output << " (" << it->second.source << ")";
@@ -119,9 +141,9 @@ void Options::get(const string &key, bool &val, const bool &def, bool log) {
     val = def;
     if(log) {
       if(def) {
-        output << "\tOption " << sectionName << "/" << key << " = true   (default)" << endl;
+        output << "\tOption " << sectionName << ":" << key << " = true   (default)" << endl;
       }else
-        output << "\tOption " << sectionName << "/" << key << " = false  (default)" << endl;
+        output << "\tOption " << sectionName << ":" << key << " = false  (default)" << endl;
     }
     return;
   }
@@ -132,11 +154,11 @@ void Options::get(const string &key, bool &val, const bool &def, bool log) {
   if((c == 'Y') || (c == 'T') || (c == '1')) {
     val = true;
     if(log)
-      output << "\tOption " << sectionName << "/" << it->first << " = true";
+      output << "\tOption " << sectionName << ":" << it->first << " = true";
   } else if((c == 'N') || (c == 'F') || (c == '0')) {
     val = false;
     if(log)
-      output << "\tOption " << sectionName << "/" << it->first << " = false";
+      output << "\tOption " << sectionName << ":" << it->first << " = false";
   } else
     throw BoutException("\tOption '%s': Boolean expected. Got '%s'\n", 
                         it->first.c_str(), it->second.value.c_str());
@@ -153,7 +175,7 @@ void Options::get(const string &key, string &val, const string &def, bool log) {
   if(it == options.end()) {
     val = def;
     if(log)
-      output << "\tOption " << sectionName << "/" << key << " = " << def << " (default)" << endl;
+      output << "\tOption " << sectionName << ":" << key << " = " << def << " (default)" << endl;
     return;
   }
   
@@ -161,7 +183,7 @@ void Options::get(const string &key, string &val, const string &def, bool log) {
   it->second.used = true;
   
   if(log) {
-    output << "\tOption " << sectionName << "/" << it->first << " = " << val;
+    output << "\tOption " << sectionName << ":" << it->first << " = " << val;
     if(!it->second.source.empty()) {
       // Specify the source of the setting
       output << " (" << it->second.source << ")";
@@ -212,7 +234,7 @@ void Options::printUnused() {
     output << "Unused options:\n";
     for(const auto& it : options) {
       if(!it.second.used) {
-        output << "\t" << sectionName << "/" << it.first << " = " << it.second.value;
+        output << "\t" << sectionName << ":" << it.first << " = " << it.second.value;
         if(!it.second.source.empty())
           output << " (" << it.second.source << ")";
         output << endl;

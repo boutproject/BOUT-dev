@@ -159,6 +159,8 @@ int RKGenericSolver::run() {
     
     load_vars(f0); // Put result into variables
 
+    run_rhs(simtime); //Ensure aux. variables are up to date
+
     iteration++; // Advance iteration number
     
     /// Call the output step monitor function

@@ -8,8 +8,11 @@ from __future__ import division
 from builtins import str
 from builtins import range
 from past.utils import old_div
-from boututils import shell, launch, plotdata
-from boutdata import collect
+
+from boututils.run_wrapper import shell, launch
+from boutdata.plotdata import plotdata
+from boutdata.collect import collect
+
 import numpy as np
 from sys import argv
 from math import sqrt, log, pi
@@ -39,7 +42,7 @@ else:
 
 electron_mass = 9.10938291e-31
 ion_mass =  3.34358348e-27
- 
+
 # Collect the data
 f = collect("effective_alpha_e", path=data_path, info=True)
 #Te = collect("T_electron", path=data_path, xind=2, info=True, yguards=True)
@@ -52,8 +55,8 @@ if end_index<0:
 alpha0 = 1
 alphaoveralpha0 = []
 for i in range(end_index):
-	alphaoveralpha0.append(old_div(f[i],alpha0))
-	print(i,alphaoveralpha0[i])
+        alphaoveralpha0.append(old_div(f[i],alpha0))
+        print(i,alphaoveralpha0[i])
 
 # Make plot
 pyplot.figure(1, facecolor='w')

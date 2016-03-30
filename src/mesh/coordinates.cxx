@@ -59,8 +59,8 @@ Coordinates::Coordinates(Mesh *mesh) : ilen(0) {
     zperiod = ROUND(1.0 / (ZMAX - ZMIN));
   }
 
-  zlength = (ZMAX-ZMIN)*TWOPI;
-  dz = zlength/(mesh->ngz-1);
+  nz = mesh->ngz-1;
+  dz = (ZMAX-ZMIN)*TWOPI/nz;
   
   // Diagonal components of metric tensor g^{ij} (default to 1)
   mesh->get(g11, "g11", 1.0);

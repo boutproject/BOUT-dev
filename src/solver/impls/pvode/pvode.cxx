@@ -91,6 +91,10 @@ int PvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
   output.write("Initialising PVODE solver\n");
 
   int local_N = getLocalN();
+
+  if(local_N == 0) {
+    throw BoutException("No local evolving variables");
+  }
   
   // Get total problem size
   int neq;
@@ -139,9 +143,7 @@ int PvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
 
   // Set pointer to data array in vector u.
   BoutReal *udata = N_VDATA(u);
-  if(save_vars(udata)) {
-    throw BoutException("\tError: Initial variable value not set\n");
-  }
+  save_vars(udata);
   
   /* Call CVodeMalloc to initialize CVODE: 
      

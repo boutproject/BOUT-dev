@@ -171,6 +171,11 @@ class Solver {
   static Solver* create(SolverType &type, Options *opts = NULL);
   
   static void setArgs(int &c, char **&v) { pargc = &c; pargv = &v;}
+
+  void addToRestart(BoutReal &var, const string &name) {
+    // Add a variable to the restart file
+    restart.add(var, name.c_str(), 0);
+  }
 protected:
   bool restarting;
   bool dump_on_restart;  // True if initial values should be written to file
@@ -221,7 +226,7 @@ protected:
 
   int run_rhs(BoutReal t); ///< Run the user's RHS function
   int run_convective(BoutReal t); ///< Calculate only the convective parts
-  int run_diffusive(BoutReal t); ///< Calculate only the diffusive parts
+  int run_diffusive(BoutReal t, bool linear=true); ///< Calculate only the diffusive parts
   
   int call_monitors(BoutReal simtime, int iter, int NOUT); ///< Calls all monitor functions
   
@@ -234,8 +239,12 @@ protected:
   // Loading data from BOUT++ to/from solver
   void load_vars(BoutReal *udata);
   void load_derivs(BoutReal *udata);
-  int save_vars(BoutReal *udata);
+  void save_vars(BoutReal *udata);
   void save_derivs(BoutReal *dudata);
+  void set_id(BoutReal *udata);
+  
+  // 
+  const Field3D globalIndex(int localStart);
   
   BoutReal max_dt; ///< Maximum internal timestep
   

@@ -98,6 +98,9 @@ public:
   MsgStackItem(const char* msg) {
     point = msg_stack.push(msg);
   }
+  MsgStackItem(const char* msg, const char* file, int line) {
+    point = msg_stack.push("%s on line %d of '%s'", msg, line, file);
+  }
   ~MsgStackItem() {
     // If an exception has occurred, don't pop the message
     if(!std::uncaught_exception())
@@ -107,6 +110,18 @@ private:
   int point;
 };
 
+// To concatenate strings for a variable name
+#define CONCATENATE_DIRECT(s1, s2) s1##s2
+#define CONCATENATE(s1, s2) CONCATENATE_DIRECT(s1, s2)
+
+/*!
+ * The TRACE macro provides a convenient way to put messages onto the msg_stack
+ */
+#ifdef CHECK
+#define TRACE(message) MsgStackItem CONCATENATE(msgTrace_ , __LINE__) (message, __FILE__, __LINE__)
+#else
+#define TRACE(message)
+#endif
 
 #endif // __MSG_STACK_H__
 

@@ -191,15 +191,7 @@ class Field2D : public Field, public FieldData {
   int  getData(int x, int y, int z, BoutReal *rptr) const;
   int  setData(int x, int y, int z, void *vptr);
   int  setData(int x, int y, int z, BoutReal *rptr);
-
-  bool ioSupport() { return true; } ///< This class supports I/O operations
-  BoutReal *getData(int component) { 
-    return data[0];
-  }
-  void zeroComponent(int component){
-    *this = 0.0;
-  }
-
+  
 #ifdef CHECK
   bool checkData(bool vital = true) const; ///< Checks if the data is all valid.
   void doneComms() { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }

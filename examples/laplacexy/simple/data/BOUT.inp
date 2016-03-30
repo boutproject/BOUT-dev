@@ -1,0 +1,27 @@
+# 
+# Simple test of the LaplaceXY solver. 
+#
+# Inverts a given function (rhs), writing "rhs" and solution "x" to file
+# 
+
+[mesh]
+
+# Mesh sizes
+nx = 20
+ny = 32
+nz = 1
+
+# mesh spacing
+dx = 1.0
+dy = 1.0
+dz = 1.0
+
+[laplacexy]
+
+ksptype = gmres   # Iterative solver type
+pctype  = jacobi  # Preconditioner. "jacobi", "bjacobi" and "sor" usually good
+                  # On one processor"lu" uses direct solver
+
+# Function to be inverted
+rhs = sin(2*pi*x)*sin(y)
+

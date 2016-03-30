@@ -1309,9 +1309,11 @@ int physics_run(BoutReal t)
     }
 
     // Smooth j in x
-    if(smooth_j_x)
+    if(smooth_j_x) {
       Jpar = smooth_x(Jpar);
-
+      Jpar.applyBoundary();
+    }
+      
     //xqx begin
     // Get Delp2(J) from J
     Jpar2 = Delp2(Jpar);

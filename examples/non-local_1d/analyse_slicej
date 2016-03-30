@@ -3,8 +3,10 @@
 
 from __future__ import print_function
 from builtins import str
-from boututils import shell, launch, plotdata
-from boutdata import collect
+
+from boututils.run_wrapper import shell, launch
+from boutdata.plotdata import plotdata
+from boutdata.collect import collect
 import numpy as np
 from sys import argv
 
@@ -21,4 +23,4 @@ j = collect("j_parallel", path=data_path, xind=2, info=True, yguards=True)
 for index, item in enumerate(j[slice_index,0,:,0]):
 	print(index, item)
 # Make contour plot
-plotdata.plotdata(j[slice_index,0,:,0],title="Parallel Current Profile at t="+str(argv[1]),ytitle="j/Am^-2")
+plotdata(j[slice_index,0,:,0],title="Parallel Current Profile at t="+str(argv[1]),ytitle="j/Am^-2")

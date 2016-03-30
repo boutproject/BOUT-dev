@@ -916,8 +916,12 @@ void Field3D::setBoundaryTo(const Field3D &f3d) {
   for(const auto& reg : fieldmesh->getBoundaries()) {
     /// Loop within each region
     for(reg->first(); !reg->isDone(); reg->next())
-      for(int z=0;z<nz;z++)
-        (*this)(reg->x,reg->y,z) = f3d(reg->x,reg->y,z);
+      for(int z=0;z<nz;z++) {
+        // Get value half-way between cells
+        BoutReal val = 0.5*(f3d(reg->x,reg->y,z) + f3d(reg->x-reg->bx, reg->y-reg->by, z));
+        // Set to this value
+        (*this)(reg->x,reg->y,z) = 2.*val - (*this)(reg->x-reg->bx, reg->y-reg->by, z);
+      }
   }
 }
 

@@ -20,7 +20,7 @@ tests = ['test-io', 'test-field', 'test-fieldfactory', 'test-laplace',
 ##################################################################
 
 import os
-from boututils import shell
+from boututils.run_wrapper import shell
 
 savepath = os.getcwd() # Save current working directory
 npassed = 0
@@ -29,9 +29,9 @@ total = len(tests)
 failed = []
 for t in tests:
     os.chdir(t)
-    
+
     status,out = shell("./runtest")
-    
+
     if status != 0:
         print("Test failed")
         nfailed = nfailed + 1
@@ -49,6 +49,8 @@ if nfailed > 0:
     print("The following tests failed")
     for t in failed:
         print("   "+t)
+    import sys
+    sys.exit(1)
 else:
     print(" => All tests passed <=")
 

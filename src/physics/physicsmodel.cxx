@@ -45,8 +45,8 @@ int PhysicsModel::runConvective(BoutReal time) {
   return convective(time);
 }
 
-int PhysicsModel::runDiffusive(BoutReal time) {
-  return diffusive(time);
+int PhysicsModel::runDiffusive(BoutReal time, bool linear) {
+  return diffusive(time, linear);
 }
 
 bool PhysicsModel::hasPrecon() {

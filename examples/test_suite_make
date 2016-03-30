@@ -9,6 +9,8 @@
 # export MPIRUN="aprun -n"
 
 from __future__ import print_function
+import os
+from boututils.run_wrapper import shell
 
 # List of directories containing test cases
 tests = ['test-io', 'test-field', 'test-fieldfactory', 'test-laplace', 
@@ -19,9 +21,6 @@ tests = ['test-io', 'test-field', 'test-fieldfactory', 'test-laplace',
 
 ##################################################################
 
-import os
-from boututils import shell
-
 savepath = os.getcwd() # Save current working directory
 npassed = 0
 nfailed = 0
@@ -29,9 +28,9 @@ total = len(tests)
 failed = []
 for t in tests:
     os.chdir(t)
-    
+
     status,out = shell("make")
-    
+
     if status != 0:
         print("Make test failed")
         nfailed = nfailed + 1
@@ -49,6 +48,8 @@ if nfailed > 0:
     print("The following make tests failed")
     for t in failed:
         print("   "+t)
+    import sys
+    sys.exit(1)
 else:
     print(" => All make tests passed <=")
 

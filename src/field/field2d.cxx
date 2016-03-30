@@ -621,7 +621,7 @@ int Field2D::getData(int x, int y, int z, void *vptr) const {
     throw BoutException("Field2D: getData on empty data\n");
   
   // check ranges
-  if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngx)) {
+  if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngz)) {
     throw BoutException("Field2D: getData (%d,%d,%d) out of bounds\n", x, y, z);
   }
 #endif
@@ -797,23 +797,23 @@ void Field2D::applyTDerivBoundary() {
 }
 
 void Field2D::setBoundaryTo(const Field2D &f2d) {
+  TRACE("Field2D::setBoundary(const Field2D&)");
   allocate(); // Make sure data allocated
 #ifdef CHECK
-  msg_stack.push("Field2D::setBoundary(const Field2D&)");
-  
-  if(f2d.data == NULL)
+  if(!f2d.isAllocated())
     throw BoutException("Setting boundary condition to empty data\n");
 #endif
 
   /// Loop over boundary regions
   for(const auto& reg : mesh->getBoundaries()) {
     /// Loop within each region
-    for(reg->first(); !reg->isDone(); reg->next())
-      data[reg->x][reg->y] = f2d.data[reg->x][reg->y];
+    for(reg->first(); !reg->isDone(); reg->next()) {
+      // Get value half-way between cells
+      BoutReal val = 0.5*(f2d(reg->x,reg->y) + f2d(reg->x-reg->bx, reg->y-reg->by));
+      // Set to this value
+      (*this)(reg->x,reg->y) = 2.*val - (*this)(reg->x-reg->bx, reg->y-reg->by);
+    }
   }
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 }
 
 void Field2D::cleanup() {
@@ -911,7 +911,7 @@ const Field2D SQ(const Field2D &f) {
 }
 
 BoutReal min(const Field2D &f, bool allpe) {
-  MsgStackItem("min(Field2D)");
+  TRACE("min(Field2D)");
   
   ASSERT2(f.isAllocated());
 
@@ -931,7 +931,7 @@ BoutReal min(const Field2D &f, bool allpe) {
 }
 
 BoutReal max(const Field2D &f, bool allpe) {
-  MsgStackItem("max(Field2D)");
+  TRACE("max(Field2D)");
   
   ASSERT2(f.isAllocated());
 
@@ -951,7 +951,7 @@ BoutReal max(const Field2D &f, bool allpe) {
 }
 
 bool finite(const Field2D &f) {
-  MsgStackItem("finite(Field2D)");
+  TRACE("finite(Field2D)");
   ASSERT0(f.isAllocated());
 
   for(auto i : f)
@@ -1014,7 +1014,7 @@ const Field2D floor(const Field2D &var, BoutReal f) {
 }
 
 Field2D pow(const Field2D &lhs, const Field2D &rhs) {
-  MsgStackItem("pow(Field2D, Field2D)");
+  TRACE("pow(Field2D, Field2D)");
   // Check if the inputs are allocated
   ASSERT1(lhs.isAllocated());
   ASSERT1(rhs.isAllocated());
@@ -1032,7 +1032,7 @@ Field2D pow(const Field2D &lhs, const Field2D &rhs) {
 }
 
 Field2D pow(const Field2D &lhs, BoutReal rhs) {
-  MsgStackItem("pow(Field2D, BoutReal)");
+  TRACE("pow(Field2D, BoutReal)");
   // Check if the inputs are allocated
   ASSERT1(lhs.isAllocated());
 
@@ -1049,7 +1049,7 @@ Field2D pow(const Field2D &lhs, BoutReal rhs) {
 }
 
 Field2D pow(BoutReal lhs, const Field2D &rhs) {
-  MsgStackItem("pow(lhs, Field2D)");
+  TRACE("pow(lhs, Field2D)");
   // Check if the inputs are allocated
   ASSERT1(rhs.isAllocated());
 

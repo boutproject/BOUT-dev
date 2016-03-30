@@ -155,8 +155,8 @@ BoundaryOp* BoundaryFactory::create(const string &name, BoundaryRegion *region) 
     return op->clone(region, arglist); 
   }
   // Otherwise nothing matches
-  output << "  Boundary setting is neither an operation nor modifier: " << func << endl;
-  
+  throw BoutException("  Boundary setting is neither an operation nor modifier: %s\n",func.c_str());
+   
   return NULL;
 }
 
