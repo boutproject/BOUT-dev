@@ -42,6 +42,17 @@ int main(int argc, char** argv) {
   ASSERT0(fabs(f3d(2,2,0) + 2.0) < 1e-10);
   f3d = pow(f3d, f2d);
   ASSERT0(fabs(f3d(2,2,0) - 4.0) < 1e-10);
+ 
+  // Some iterator tests
+ 
+  //for(auto i : IndexRange{0,10,0,1,0,1})
+  //  output.write("%d,%d,%d\n", i.x, i.y, i.z);
+
+  Field3D result;
+  result.allocate();
+  
+  for(auto i : result.region(RGN_NOY))
+    result[i] = f3d[i.yp()] - 2*f3d[i] + f3d[i.ym()];
   
   BoutFinalise();
   return 0;

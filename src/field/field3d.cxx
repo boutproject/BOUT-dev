@@ -205,6 +205,36 @@ const DataIterator Field3D::end() const {
 			nz-1, 0, nz-1);
 }
 
+const IndexRange Field3D::region(REGION rgn) const {
+  switch(rgn) {
+  case RGN_ALL: {
+    return IndexRange{0, nx-1,
+        0, ny-1,
+        0, nz-1};
+    break;
+  }
+  case RGN_NOBNDRY: {
+    return IndexRange{fieldmesh->xstart, fieldmesh->xend,
+        fieldmesh->ystart, fieldmesh->yend,
+        0, nz-1};
+    break;
+  }
+  case RGN_NOX: {
+    return IndexRange{fieldmesh->xstart, fieldmesh->xend,
+        0, ny-1,
+        0, nz-1};
+    break;
+  }
+  case RGN_NOY: {
+    return IndexRange{0, nx-1,
+        fieldmesh->ystart, fieldmesh->yend,
+        0, nz-1};
+    break;
+  }
+  };
+  throw BoutException("Field3D::region() : Requested region not implemented");
+}
+
 /////////////////// ASSIGNMENT ////////////////////
 
 Field3D & Field3D::operator=(const Field3D &rhs) {

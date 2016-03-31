@@ -119,6 +119,12 @@ class Field3D : public Field, public FieldData {
   const DataIterator begin() const;
   const DataIterator end() const;
   
+  /*
+   * Returns a range of indices which can be iterated over
+   * Uses the REGION flags in bout_types.hxx
+   */
+  const IndexRange region(REGION rgn) const;
+
   BoutReal& operator[](DataIterator &d) {
     return operator()(d.x, d.y, d.z);
   }

@@ -76,8 +76,9 @@ public:
   const Indices xm() { return {x-1, y, z}; }
   const Indices yp() { return {x, y+1, z}; }
   const Indices ym() { return {x, y-1, z}; }
-  const Indices zp() { return {x, y, z+1}; }
-  const Indices zm() { return {x, y, z-1}; }
+  // Z indices should wrap in zstart, zend range (?)
+  const Indices zp() { return {x, y, z == zend ? zstart : z+1}; }
+  const Indices zm() { return {x, y, z == zstart ? zend : z-1}; }
   
   void start() {
     x = xstart; y = ystart; z = zstart;
@@ -88,7 +89,7 @@ public:
   bool done() const {
     return (x > xend) || (x < xstart);
   }
-
+  
 private:
   DataIterator(); // Disable null constructor
 
@@ -125,10 +126,23 @@ private:
 };
 
 /*
-template<>
-struct DataIterable {
-  DataIterable();
-}
-*/
+ * Specifies a range of indices which can be iterated over
+ */
+struct IndexRange {
+  int xstart, xend;
+  int ystart, yend;
+  int zstart, zend;
+  
+  const DataIterator begin() const {
+    return DataIterator(xstart, xend, 
+                        ystart, yend,
+                        zstart, zend);
+  }
+  const DataIterator end() const {
+    return ++DataIterator(xend, xstart, xend, 
+                          yend, ystart, yend,
+                          zend, zstart, zend);
+  }
+};
 
 #endif // __DATAITERATOR_H__
