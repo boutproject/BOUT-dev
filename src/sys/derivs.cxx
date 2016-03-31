@@ -46,6 +46,7 @@
 #include <interpolation.hxx>
 #include <bout/constants.hxx>
 #include <msg_stack.hxx>
+#include <fielditerator.hxx>
 
 #include <cmath>
 #include <string.h>
@@ -1074,39 +1075,39 @@ const Field2D applyXdiff(const Field2D &var, deriv_func func, inner_boundary_der
   BoutReal **r = result.getData();
 
   start_index(&bx, RGN_NOX);
-#ifdef _OPENMP
-  // Parallel version. Needs another variable for each thread
+// #ifdef _OPENMP
+//   // Parallel version. Needs another variable for each thread
   
-  bindex bxstart = bx; // Copy to avoid race condition on first index
-  bool workToDoGlobal; // Shared loop control
-  #pragma omp parallel
-  {
-    bindex bxlocal; // Index for each thread
-    stencil s;
-    bool workToDo;  // Does this thread have work to do?
+//   bindex bxstart = bx; // Copy to avoid race condition on first index
+//   bool workToDoGlobal; // Shared loop control
+//   #pragma omp parallel
+//   {
+//     bindex bxlocal; // Index for each thread
+//     stencil s;
+//     bool workToDo;  // Does this thread have work to do?
     
-    #pragma omp single
-    {
-      // First index done once
-      var.setXStencil(s, bxstart, loc);
-      r[bxstart.jx][bxstart.jy] = func(s) / dd(bxstart.jx, bxstart.jy);
-    }
+//     #pragma omp single
+//     {
+//       // First index done once
+//       var.setXStencil(s, bxstart, loc);
+//       r[bxstart.jx][bxstart.jy] = func(s) / dd(bxstart.jx, bxstart.jy);
+//     }
     
-    do {
-      #pragma omp critical
-      {
-        // Get the next index
-        workToDo = next_index2(&bx);
-        bxlocal = bx; // Make a local copy
-        workToDoGlobal = workToDo;
-      }
-      if(workToDo) { // Here workToDo could be different to workToDoGlobal
-        var.setXStencil(s, bxlocal, loc);
-        r[bxlocal.jx][bxlocal.jy] = func(s) / dd(bxlocal.jx, bxlocal.jy);
-      }
-    }while(workToDoGlobal);
-  }
-#else
+//     do {
+//       #pragma omp critical
+//       {
+//         // Get the next index
+//         workToDo = next_index2(&bx);
+//         bxlocal = bx; // Make a local copy
+//         workToDoGlobal = workToDo;
+//       }
+//       if(workToDo) { // Here workToDo could be different to workToDoGlobal
+//         var.setXStencil(s, bxlocal, loc);
+//         r[bxlocal.jx][bxlocal.jy] = func(s) / dd(bxlocal.jx, bxlocal.jy);
+//       }
+//     }while(workToDoGlobal);
+//   }
+// #else
   // Serial version
   
   stencil s;
@@ -1114,7 +1115,7 @@ const Field2D applyXdiff(const Field2D &var, deriv_func func, inner_boundary_der
     var.setXStencil(s, bx, loc);
     r[bx.jx][bx.jy] = func(s) / dd[bx.jx][bx.jy];
   }while(next_index2(&bx));
-#endif // _OPENMP
+  //#endif // _OPENMP
 
 #ifdef CHECK
   // Mark boundaries as invalid
@@ -1189,59 +1190,64 @@ const Field3D applyXdiff(const Field3D &var, deriv_func func, inner_boundary_der
     vs = var.shiftZ(true); // Shift into real space
   }
   
-  bindex bx;
+  //bindex bx;
   BoutReal ***r = result.getData();
   
-  start_index(&bx, RGN_NOX);
-#ifdef _OPENMP
-  bindex bxstart = bx; // Copy to avoid race condition on first index
-  bool workToDoGlobal; // Shared loop control
-  #pragma omp parallel
-  {
-    bindex bxlocal; // Index for each thread
-    stencil s;
-    bool workToDo;  // Does this thread have work to do?
+  //start_index(&bx, RGN_NOX);
+// #ifdef _OPENMP
+//   bindex bxstart = bx; // Copy to avoid race condition on first index
+//   bool workToDoGlobal; // Shared loop control
+//   #pragma omp parallel
+//   {
+//     bindex bxlocal; // Index for each thread
+//     stencil s;
+//     bool workToDo;  // Does this thread have work to do?
     
-    #pragma omp single
-    {
-      // First index done by single thread
-      for(bxstart.jz=0;bxstart.jz<mesh->ngz-1;bxstart.jz++) {
-        vs.setXStencil(s, bxstart, loc);
-        r[bxstart.jx][bxstart.jy][bxstart.jz] = func(s) / dd(bxstart.jx, bxstart.jy);
-      }
-    }
+//     #pragma omp single
+//     {
+//       // First index done by single thread
+//       for(bxstart.jz=0;bxstart.jz<mesh->ngz-1;bxstart.jz++) {
+//         vs.setXStencil(s, bxstart, loc);
+//         r[bxstart.jx][bxstart.jy][bxstart.jz] = func(s) / dd(bxstart.jx, bxstart.jy);
+//       }
+//     }
     
-    do {
-      #pragma omp critical
-      {
-        // Get the next index
-        workToDo = next_index2(&bx); // Only in 2D
-        bxlocal = bx; // Make a local copy
-        workToDoGlobal = workToDo;
-      }
-      if(workToDo) { // Here workToDo could be different to workToDoGlobal
-        for(bxlocal.jz=0;bxlocal.jz<mesh->ngz-1;bxlocal.jz++) {
-          vs.setXStencil(s, bxlocal, loc);
-          r[bxlocal.jx][bxlocal.jy][bxlocal.jz] = func(s) / dd(bxlocal.jx, bxlocal.jy);
-        }
-      }
-    }while(workToDoGlobal);
-  }
-#else
-  stencil s;
-  do {
+//     do {
+//       #pragma omp critical
+//       {
+//         // Get the next index
+//         workToDo = next_index2(&bx); // Only in 2D
+//         bxlocal = bx; // Make a local copy
+//         workToDoGlobal = workToDo;
+//       }
+//       if(workToDo) { // Here workToDo could be different to workToDoGlobal
+//         for(bxlocal.jz=0;bxlocal.jz<mesh->ngz-1;bxlocal.jz++) {
+//           vs.setXStencil(s, bxlocal, loc);
+//           r[bxlocal.jx][bxlocal.jy][bxlocal.jz] = func(s) / dd(bxlocal.jx, bxlocal.jy);
+//         }
+//       }
+//     }while(workToDoGlobal);
+//   }
+// #else
+  //do {
+#pragma omp parallel
+  for (FieldIteratorCIndex cxit(*mesh,NO_X|CALC_INDEX|FIELD2D);cxit;cxit.next2()){
+    bindex bx=cxit;
     for(bx.jz=0;bx.jz<mesh->ngz-1;bx.jz++) {
+      stencil s;
       vs.setXStencil(s, bx, loc);
       r[bx.jx][bx.jy][bx.jz] = func(s) / dd(bx.jx, bx.jy);
     }
-  }while(next_index2(&bx));
-#endif  
+    //}while(next_index2(&bx));
+  }
+  //#endif
 
 #ifdef CHECK
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
-  
+  bindex bx;
+  stencil s;
   if (mesh->freeboundary_ydown) {
     for (RangeIterator it=mesh->iterateBndryLowerY(); !it.isDone(); it++)
       for (bx.jy=mesh->ystart-1; bx.jy>=0; bx.jy--)
@@ -1314,9 +1320,9 @@ const Field2D applyYdiff(const Field2D &var, deriv_func func, inner_boundary_der
   result.allocate(); // Make sure data allocated
   BoutReal **r = result.getData();
   
-  bindex bx;
+  //bindex bx;
   
-  start_index(&bx, RGN_NOBNDRY);
+  //start_index(&bx, RGN_NOBNDRY);
   /*
 #ifdef _OPENMP
   bindex bxstart = bx; // Copy to avoid race condition on first index
@@ -1349,18 +1355,22 @@ const Field2D applyYdiff(const Field2D &var, deriv_func func, inner_boundary_der
     }while(workToDoGlobal);
   }
   #else */
-  stencil s;
-  do{
+#pragma omp parallel
+  for (FieldIteratorCIndex cxit(*mesh,NO_BNDRY|CALC_INDEX|FIELD2D);cxit;cxit.next2()){
+    stencil s;
+    bindex bx=cxit;
     var.setYStencil(s, bx, loc);
     r[bx.jx][bx.jy] = func(s) / dd(bx.jx, bx.jy);
-  }while(next_index2(&bx));
+  }//}while(next_index2(&bx));
   //#endif  
 
 #ifdef CHECK
   // Mark boundaries as invalid
   result.bndry_yup = result.bndry_ydown = false;
 #endif
-
+  bindex bx;
+  stencil s;
+  
   if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX) {
     for (bx.jx=mesh->xstart-1; bx.jx>=0; bx.jx--)
       for (bx.jy=mesh->ystart; bx.jy<=mesh->ystart; bx.jy++) {
@@ -1424,9 +1434,9 @@ const Field3D applyYdiff(const Field3D &var, deriv_func func, inner_boundary_der
   result.allocate(); // Make sure data allocated
   BoutReal ***r = result.getData();
   
-  bindex bx;
+  //bindex bx;
   
-  start_index(&bx, RGN_NOBNDRY);
+  //start_index(&bx, RGN_NOBNDRY);
   
   /*
 #ifdef _OPENMP
@@ -1466,20 +1476,24 @@ const Field3D applyYdiff(const Field3D &var, deriv_func func, inner_boundary_der
   }
 #else 
   */
-  stencil s;
-  do {
+#pragma omp parallel
+  for (FieldIteratorCIndex cxit(*mesh,FIELD2D|NO_BNDRY|CALC_INDEX);cxit;cxit.next2()){
+    stencil s;
+    bindex bx=cxit;
     //output.write("apply %d %d\n", bx.jx, bx.jy);
     for(bx.jz=0;bx.jz<mesh->ngz-1;bx.jz++) {
       var.setYStencil(s, bx, loc);
       r[bx.jx][bx.jy][bx.jz] = func(s) / dd(bx.jx, bx.jy);
     }
-  }while(next_index2(&bx));
+  }//}while(next_index2(&bx));
   //#endif
 
 #ifdef CHECK
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
+  bindex bx;
+  stencil s;
   
   if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX) {
     for (bx.jx=mesh->xstart-1; bx.jx>=0; bx.jx--)
@@ -1550,38 +1564,43 @@ const Field3D applyZdiff(const Field3D &var, deriv_func func, BoutReal dd, CELL_
   result.allocate(); // Make sure data allocated
   BoutReal ***r = result.getData();
   
-#ifdef _OPENMP
-  // Parallel version
+// #ifdef _OPENMP
+//   // Parallel version
   
-  int ny = mesh->yend-mesh->ystart+1;
-  int ncz = mesh->ngz-1;
-  #pragma omp parallel for
-  for(int j=0;j<mesh->ngx*ny*ncz;j++) {
-    int jz = j % (mesh->ngz-1);
-    int rem = j / (mesh->ngz-1);
-    int jy = (rem % ny) + mesh->ystart; 
-    int jx = rem / ny;
+//   int ny = mesh->yend-mesh->ystart+1;
+//   int ncz = mesh->ngz-1;
+//   #pragma omp parallel for
+//   for(int j=0;j<mesh->ngx*ny*ncz;j++) {
+//     int jz = j % (mesh->ngz-1);
+//     int rem = j / (mesh->ngz-1);
+//     int jy = (rem % ny) + mesh->ystart; 
+//     int jx = rem / ny;
     
-    bindex bx;
-    bx.jx=jx; bx.jy=jy; bx.jz=jz;
-    bx.jzp  = (bx.jz+1)%ncz;
-    bx.jzm  = (bx.jz+ncz-1)%ncz;
-    bx.jz2p = (bx.jzp+1)%ncz;
-    bx.jz2m = (bx.jzm+ncz-1)%ncz;
+//     bindex bx;
+//     bx.jx=jx; bx.jy=jy; bx.jz=jz;
+//     bx.jzp  = (bx.jz+1)%ncz;
+//     bx.jzm  = (bx.jz+ncz-1)%ncz;
+//     bx.jz2p = (bx.jzp+1)%ncz;
+//     bx.jz2m = (bx.jzm+ncz-1)%ncz;
+//     stencil s;
+//     var.setZStencil(s, bx, loc);
+//     r[jx][jy][jz] = func(s) / dd;
+//   }
+// #else
+
+  //start_index(&bx, RGN_NOZ);
+#pragma omp parallel
+  for (FieldIteratorCIndex cxit(*mesh,NO_X|CALC_INDEX);cxit;cxit.next3()){
+    bindex bx=cxit;
     stencil s;
     var.setZStencil(s, bx, loc);
-    r[jx][jy][jz] = func(s) / dd;
-  }
-#else
-  bindex bx;
-
-  start_index(&bx, RGN_NOZ);
-  stencil s;
-  do {
-    var.setZStencil(s, bx, loc);
     r[bx.jx][bx.jy][bx.jz] = func(s) / dd;
-  }while(next_index3(&bx));
-#endif
+  }
+  //}while(next_index3(&bx));
+  //#endif
+  
+  bindex bx;
+  stencil s;
 
   if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX) {
     for (bx.jx=mesh->xstart-1; bx.jx>=0; bx.jx--)
@@ -1813,18 +1832,20 @@ const Field3D DDY_MUSCL(const Field3D &F, const Field3D &u, const Field2D &Vmax)
   result.allocate(); // Make sure data allocated
   BoutReal ***r = result.getData();
   
-  bindex bx;
-  start_index(&bx, RGN_NOBNDRY);
-
-  stencil fs, us;
-  do {
+  //bindex bx;
+  //start_index(&bx, RGN_NOBNDRY);
+#pragma omp parallel
+  for (FieldIteratorCIndex cxit(*mesh,NO_BNDRY|FIELD2D|CALC_INDEX);cxit;cxit.next2()){
+    stencil fs, us;
+    bindex bx=cxit;		
+    //do {
     for(bx.jz=0;bx.jz<mesh->ngz-1;bx.jz++) {
       F.setYStencil(fs, bx);
       u.setYStencil(us, bx);
       
       r[bx.jx][bx.jy][bx.jz] = DDX_KT(fs, us, Vmax[bx.jx][bx.jy]) / mesh->dy(bx.jx, bx.jy);
     }
-  }while(next_index2(&bx));
+  }//}while(next_index2(&bx));
   
   return result;
 }
@@ -1905,40 +1926,40 @@ const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool in
     
     int ncz = mesh->ngz-1;
     
-#ifndef _OPENMP
+    //#ifndef _OPENMP
     static dcomplex *cv = (dcomplex*) NULL;
-#else
-    static dcomplex *globalcv;
-    static int nthreads = 0;
-#endif 
+// #else
+//     static dcomplex *globalcv;
+//     static int nthreads = 0;
+// #endif 
 
-    #pragma omp parallel
+//#pragma omp parallel
     {
-#ifndef _OPENMP
+      //#ifndef _OPENMP
       // Serial, so can have a single static array
       if(cv == (dcomplex*) NULL)
         cv = new dcomplex[ncz/2 + 1];
-#else
-      // Parallel, so allocate a separate array for each thread
+// #else
+//       // Parallel, so allocate a separate array for each thread
       
-      int th_id = omp_get_thread_num(); // thread ID
+//       int th_id = omp_get_thread_num(); // thread ID
 
-      if(th_id == 0) {
-        int n_th = omp_get_num_threads();
-        if(nthreads < n_th) {
-          // Allocate memory in thread zero
-          if(nthreads > 0)
-            delete[] globalcv;
-          globalcv = new dcomplex[n_th*(ncz/2 + 1)];
-          nthreads = n_th;
-        }
-      }
-      // Wait for memory to be allocated
-      #pragma omp barrier
+//       if(th_id == 0) {
+//         int n_th = omp_get_num_threads();
+//         if(nthreads < n_th) {
+//           // Allocate memory in thread zero
+//           if(nthreads > 0)
+//             delete[] globalcv;
+//           globalcv = new dcomplex[n_th*(ncz/2 + 1)];
+//           nthreads = n_th;
+//         }
+//       }
+//       // Wait for memory to be allocated
+//       #pragma omp barrier
       
-      dcomplex *cv = globalcv + th_id*(ncz/2 + 1); // Separate array for each thread
-#endif
-       #pragma omp for
+//       dcomplex *cv = globalcv + th_id*(ncz/2 + 1); // Separate array for each thread
+// #endif
+//        #pragma omp for
       for(int jy=0;jy<mesh->ngy*(xlt-xge);jy++) {
         rfft(f[xge][jy], ncz, cv); // Forward FFT
           
@@ -2275,38 +2296,38 @@ const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
 
     int ncz = mesh->ngz-1;
     
-#ifndef _OPENMP
+    //#ifndef _OPENMP
     static dcomplex *cv = (dcomplex*) NULL;
-#else
-    static dcomplex *globalcv;
-    static int nthreads = 0;
-#endif
+// #else
+//     static dcomplex *globalcv;
+//     static int nthreads = 0;
+// #endif
     
-    #pragma omp parallel
+//    #pragma omp parallel
     {
-#ifndef _OPENMP
+    //#ifndef _OPENMP
       // Serial, so can have a single static array
       if(cv == (dcomplex*) NULL)
         cv = new dcomplex[ncz/2 + 1];
-#else
-      // Parallel, so allocate a separate array for each thread
+// #else
+//       // Parallel, so allocate a separate array for each thread
       
-      int th_id = omp_get_thread_num(); // thread ID
-      int n_th = omp_get_num_threads();
-      if(th_id == 0) {
-        if(nthreads < n_th) {
-          // Allocate memory in thread zero
-          if(nthreads > 0)
-            delete[] globalcv;
-          globalcv = new dcomplex[n_th*(ncz/2 + 1)];
-          nthreads = n_th;
-        }
-      }
-      // Wait for memory to be allocated
-      #pragma omp barrier
+//       int th_id = omp_get_thread_num(); // thread ID
+//       int n_th = omp_get_num_threads();
+//       if(th_id == 0) {
+//         if(nthreads < n_th) {
+//           // Allocate memory in thread zero
+//           if(nthreads > 0)
+//             delete[] globalcv;
+//           globalcv = new dcomplex[n_th*(ncz/2 + 1)];
+//           nthreads = n_th;
+//         }
+//       }
+//       // Wait for memory to be allocated
+//       #pragma omp barrier
       
-      dcomplex *cv = globalcv + th_id*(ncz/2 + 1); // Separate array for each thread
-#endif
+//       dcomplex *cv = globalcv + th_id*(ncz/2 + 1); // Separate array for each thread
+// #endif
       int xs = mesh->xstart;
       int xe = mesh->xend;
       int ys = mesh->ystart;
@@ -2531,16 +2552,17 @@ const Field2D VDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_MET
   Field2D result;
   result.allocate(); // Make sure data allocated
   BoutReal **d = result.getData();
-
-  bindex bx;
-  stencil vs, fs;
-  start_index(&bx);
-  do {
+#pragma omp parallel
+  for (FieldIteratorCIndex cxit(*mesh,CALC_INDEX|FIELD2D|NO_BNDRY);cxit;cxit.next2()){
+    bindex bx=cxit;
+    stencil vs, fs;
+    //start_index(&bx);
+    
     f.setXStencil(fs, bx);
     v.setXStencil(vs, bx);
     
     d[bx.jx][bx.jy] = func(vs, fs) / mesh->dx(bx.jx, bx.jy);
-  }while(next_index2(&bx));
+  }//while(next_index2(&bx));
 
 #ifdef CHECK
   // Mark boundaries as invalid
@@ -2611,58 +2633,59 @@ const Field3D VDDX(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD 
   result.allocate(); // Make sure data allocated
   BoutReal ***d = result.getData();
 
-  bindex bx;
+// #ifdef _OPENMP
+//   // Parallel version
   
-  start_index(&bx);
-#ifdef _OPENMP
-  // Parallel version
-  
-  bindex bxstart = bx; // Copy to avoid race condition on first index
-  bool workToDoGlobal; // Shared loop control
-  #pragma omp parallel
-  {
-    bindex bxlocal; // Index for each thread
-    stencil vval, fval;
-    bool workToDo;  // Does this thread have work to do?
-    #pragma omp single
-    {
-      // First index done by a single thread
-      for(bxstart.jz=0;bxstart.jz<mesh->ngz-1;bxstart.jz++) {
-        vp->setXStencil(vval, bxstart, diffloc);
-        fp->setXStencil(fval, bxstart); // Location is always the same as input
+//   bindex bxstart = bx; // Copy to avoid race condition on first index
+//   bool workToDoGlobal; // Shared loop control
+//   #pragma omp parallel
+//   {
+//     bindex bxlocal; // Index for each thread
+//     stencil vval, fval;
+//     bool workToDo;  // Does this thread have work to do?
+//     #pragma omp single
+//     {
+//       // First index done by a single thread
+//       for(bxstart.jz=0;bxstart.jz<mesh->ngz-1;bxstart.jz++) {
+//         vp->setXStencil(vval, bxstart, diffloc);
+//         fp->setXStencil(fval, bxstart); // Location is always the same as input
     
-        d[bxstart.jx][bxstart.jy][bxstart.jz] = func(vval, fval) / mesh->dx(bxstart.jx, bxstart.jy);
-      }
-    }
+//         d[bxstart.jx][bxstart.jy][bxstart.jz] = func(vval, fval) / mesh->dx(bxstart.jx, bxstart.jy);
+//       }
+//     }
     
-    do {
-      #pragma omp critical
-      {
-        // Get the next index
-        workToDo = next_index2(&bx);
-        bxlocal = bx; // Make a local copy
-        workToDoGlobal = workToDo;
-      }
-      if(workToDo) { // Here workToDo could be different to workToDoGlobal
-        for(bxlocal.jz=0;bxlocal.jz<mesh->ngz-1;bxlocal.jz++) {
-          vp->setXStencil(vval, bxlocal, diffloc);
-          fp->setXStencil(fval, bxlocal); // Location is always the same as input
+//     do {
+//       #pragma omp critical
+//       {
+//         // Get the next index
+//         workToDo = next_index2(&bx);
+//         bxlocal = bx; // Make a local copy
+//         workToDoGlobal = workToDo;
+//       }
+//       if(workToDo) { // Here workToDo could be different to workToDoGlobal
+//         for(bxlocal.jz=0;bxlocal.jz<mesh->ngz-1;bxlocal.jz++) {
+//           vp->setXStencil(vval, bxlocal, diffloc);
+//           fp->setXStencil(fval, bxlocal); // Location is always the same as input
     
-          d[bxlocal.jx][bxlocal.jy][bxlocal.jz] = func(vval, fval) / mesh->dx(bxlocal.jx, bxlocal.jy);
-        }
-      }
-    }while(workToDoGlobal);
-  }
-#else
+//           d[bxlocal.jx][bxlocal.jy][bxlocal.jz] = func(vval, fval) / mesh->dx(bxlocal.jx, bxlocal.jy);
+//         }
+//       }
+//     }while(workToDoGlobal);
+//   }
+// #else
   // Serial version
-  stencil vval, fval;
-  do {
+#pragma omp parallel
+  for (FieldIteratorCIndex cxit(*mesh,NO_BNDRY|CALC_INDEX);cxit;cxit.next3()){
+    bindex bx=cxit;
+  
+    stencil vval, fval;
+    
     vp->setXStencil(vval, bx, diffloc);
     fp->setXStencil(fval, bx); // Location is always the same as input
     
     d[bx.jx][bx.jy][bx.jz] = func(vval, fval) / mesh->dx(bx.jx, bx.jy);
-  }while(next_index3(&bx));
-#endif
+  }//while(next_index3(&bx));
+  //#endif
   
   if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0))
     result = result.shiftZ(false); // Shift back
@@ -2730,19 +2753,21 @@ const Field2D VDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_MET
     func = lookupUpwindFunc(table, method);
   }
 
-  bindex bx;
-  stencil fval, vval;
   
   Field2D result;
   result.allocate(); // Make sure data allocated
   BoutReal **d = result.getData();
 
-  start_index(&bx);
-  do {
+  //start_index(&bx);
+#pragma omp parallel
+  for (FieldIteratorCIndex cxit(*mesh,FIELD2D|CALC_INDEX|NO_BNDRY);cxit;cxit.next2()){
+    bindex bx=cxit;
+    stencil fval, vval;
+    
     f.setYStencil(fval, bx);
     v.setYStencil(vval, bx, diffloc);
     d[bx.jx][bx.jy] = func(vval,fval)/mesh->dy(bx.jx, bx.jy);
-  }while(next_index2(&bx));
+  }//while(next_index2(&bx));
 
   result.setLocation(inloc);
   
@@ -2801,63 +2826,65 @@ const Field3D VDDY(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD 
     func = lookupUpwindFunc(table, method);
   }
   
-  bindex bx;
   
   Field3D result;
   result.allocate(); // Make sure data allocated
   BoutReal ***d = result.getData();
 
-  start_index(&bx);
-#ifdef _OPENMP
-  // Parallel version
+// #ifdef _OPENMP
+//   // Parallel version
   
-  bindex bxstart = bx; // Copy to avoid race condition on first index
-  bool workToDoGlobal; // Shared loop control
+//   bindex bxstart = bx; // Copy to avoid race condition on first index
+//   bool workToDoGlobal; // Shared loop control
 
-  #pragma omp parallel
-  {
-    bindex bxlocal; // Index for each thread
-    stencil vval, fval;
-    bool workToDo;  // Does this thread have work to do?
-    #pragma omp single
-    {
-      // First index done by a single thread
-      for(bxstart.jz=0;bxstart.jz<mesh->ngz-1;bxstart.jz++) {
-        v.setYStencil(vval, bxstart, diffloc);
-        f.setYStencil(fval, bxstart);
+//   #pragma omp parallel
+//   {
+//     bindex bxlocal; // Index for each thread
+//     stencil vval, fval;
+//     bool workToDo;  // Does this thread have work to do?
+//     #pragma omp single
+//     {
+//       // First index done by a single thread
+//       for(bxstart.jz=0;bxstart.jz<mesh->ngz-1;bxstart.jz++) {
+//         v.setYStencil(vval, bxstart, diffloc);
+//         f.setYStencil(fval, bxstart);
     
-        d[bxstart.jx][bxstart.jy][bxstart.jz] = func(vval, fval)/mesh->dy(bxstart.jx, bxstart.jy);
-      }
-    }
+//         d[bxstart.jx][bxstart.jy][bxstart.jz] = func(vval, fval)/mesh->dy(bxstart.jx, bxstart.jy);
+//       }
+//     }
     
-    do {
-      #pragma omp critical
-      {
-        // Get the next index
-        workToDo = next_index2(&bx);
-        bxlocal = bx; // Make a local copy
-        workToDoGlobal = workToDo;
-      }
-      if(workToDo) { // Here workToDo could be different to workToDoGlobal
-        for(bxlocal.jz=0;bxlocal.jz<mesh->ngz-1;bxlocal.jz++) {
-          v.setYStencil(vval, bxlocal, diffloc);
-          f.setYStencil(fval, bxlocal);
+//     do {
+//       #pragma omp critical
+//       {
+//         // Get the next index
+//         workToDo = next_index2(&bx);
+//         bxlocal = bx; // Make a local copy
+//         workToDoGlobal = workToDo;
+//       }
+//       if(workToDo) { // Here workToDo could be different to workToDoGlobal
+//         for(bxlocal.jz=0;bxlocal.jz<mesh->ngz-1;bxlocal.jz++) {
+//           v.setYStencil(vval, bxlocal, diffloc);
+//           f.setYStencil(fval, bxlocal);
     
-          d[bxlocal.jx][bxlocal.jy][bxlocal.jz] = func(vval, fval)/mesh->dy(bxlocal.jx, bxlocal.jy);
-        }
-      }
-    }while(workToDoGlobal);
-  }
-#else
+//           d[bxlocal.jx][bxlocal.jy][bxlocal.jz] = func(vval, fval)/mesh->dy(bxlocal.jx, bxlocal.jy);
+//         }
+//       }
+//     }while(workToDoGlobal);
+//   }
+// #else
   // Serial version
-  stencil vval, fval;
-  do {
+#pragma omp parallel
+  for (FieldIteratorCIndex cxit(*mesh,NO_BNDRY|CALC_INDEX);cxit;cxit.next3()){
+    bindex bx=cxit;
+    //start_index(&bx);
+    stencil vval, fval;
+    
     v.setYStencil(vval, bx, diffloc);
     f.setYStencil(fval, bx);
     
     d[bx.jx][bx.jy][bx.jz] = func(vval, fval)/mesh->dy(bx.jx, bx.jy);
-  }while(next_index3(&bx));
-#endif
+  }//while(next_index3(&bx));
+  //#endif
   
   result.setLocation(inloc);
 
@@ -2932,63 +2959,63 @@ const Field3D VDDZ(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD 
     func = lookupUpwindFunc(table, method);
   }
 
-  bindex bx;
-  
-  
   Field3D result;
   result.allocate(); // Make sure data allocated
   BoutReal ***d = result.getData();
-  
-  start_index(&bx);
-#ifdef _OPENMP
-  // Parallel version
 
-  bindex bxstart = bx; // Copy to avoid race condition on first index
-  bool workToDoGlobal; // Shared loop control
+// #ifdef _OPENMP
+//   // Parallel version
+
+//   bindex bxstart = bx; // Copy to avoid race condition on first index
+//   bool workToDoGlobal; // Shared loop control
   
-  #pragma omp parallel
-  {
-    bindex bxlocal; // Index for each thread
+//   #pragma omp parallel
+//   {
+//     bindex bxlocal; // Index for each thread
+//     stencil vval, fval;
+//     bool workToDo;  // Does this thread have work to do?
+//     #pragma omp single
+//     {
+//       // First index done by a single thread
+//       for(bxstart.jz=0;bxstart.jz<mesh->ngz-1;bxstart.jz++) {
+//         v.setZStencil(vval, bxstart, diffloc);
+//         f.setZStencil(fval, bxstart);
+    
+//         d[bxstart.jx][bxstart.jy][bxstart.jz] = func(vval, fval)/mesh->dz;
+//       }
+//     }
+    
+//     do {
+//       #pragma omp critical
+//       {
+//         // Get the next index
+//         workToDo = next_index2(&bx);
+//         bxlocal = bx; // Make a local copy
+//         workToDoGlobal = workToDo;
+//       }
+//       if(workToDo) { // Here workToDo could be different to workToDoGlobal
+//         for(bxlocal.jz=0;bxlocal.jz<mesh->ngz-1;bxlocal.jz++) {
+//           v.setZStencil(vval, bxlocal, diffloc);
+//           f.setZStencil(fval, bxlocal);
+    
+//           d[bxlocal.jx][bxlocal.jy][bxlocal.jz] = func(vval, fval)/mesh->dz;
+//         }
+//       }
+//     }while(workToDoGlobal);
+//   }
+// #else
+#pragma omp parallel
+  for (FieldIteratorCIndex cxit(*mesh,CALC_INDEX|NO_BNDRY);cxit;cxit.next3()){
+    bindex bx=cxit;  
+    //start_index(&bx);
     stencil vval, fval;
-    bool workToDo;  // Does this thread have work to do?
-    #pragma omp single
-    {
-      // First index done by a single thread
-      for(bxstart.jz=0;bxstart.jz<mesh->ngz-1;bxstart.jz++) {
-        v.setZStencil(vval, bxstart, diffloc);
-        f.setZStencil(fval, bxstart);
     
-        d[bxstart.jx][bxstart.jy][bxstart.jz] = func(vval, fval)/mesh->dz;
-      }
-    }
-    
-    do {
-      #pragma omp critical
-      {
-        // Get the next index
-        workToDo = next_index2(&bx);
-        bxlocal = bx; // Make a local copy
-        workToDoGlobal = workToDo;
-      }
-      if(workToDo) { // Here workToDo could be different to workToDoGlobal
-        for(bxlocal.jz=0;bxlocal.jz<mesh->ngz-1;bxlocal.jz++) {
-          v.setZStencil(vval, bxlocal, diffloc);
-          f.setZStencil(fval, bxlocal);
-    
-          d[bxlocal.jx][bxlocal.jy][bxlocal.jz] = func(vval, fval)/mesh->dz;
-        }
-      }
-    }while(workToDoGlobal);
-  }
-#else 
-  stencil vval, fval;
-  do {
     v.setZStencil(vval, bx, diffloc);
     f.setZStencil(fval, bx);
     
     d[bx.jx][bx.jy][bx.jz] = func(vval, fval)/mesh->dz;
-  }while(next_index3(&bx));
-#endif
+  }//while(next_index3(&bx));
+  //#endif
 
   result.setLocation(inloc);
 

@@ -40,6 +40,7 @@
 
 #include <cmath>
 #include <output.hxx>
+#include <fielditerator.hxx>
 
 Field2D::Field2D() : data(NULL), deriv(NULL) { 
   is_const = false;
@@ -164,6 +165,30 @@ BoutReal& Field2D::operator()(int jx, int jy) {
 #endif
   
   return data[jx][jy];
+}
+
+BoutReal& Field2D::operator[](CIndex &cx) {
+#if CHECK > 2
+  if(data == (BoutReal**) NULL)
+    throw BoutException("Field2D: [] operator on empty data");
+  if((cx.jx < 0) || (cx.jx >= mesh->ngx) || (cx.jy < 0) || (cx.jy >= mesh->ngy) )
+    throw BoutException("Field2D: [CIndex] index out of bounds [%d , %d]\n", 
+                        cx.jx, cx.jy, mesh->ngx, mesh->ngy);
+#endif
+  
+  return data[cx.jx][cx.jy];
+}
+
+const BoutReal& Field2D::operator[](CIndex &cx) const {
+#if CHECK > 2
+  if(data == (BoutReal**) NULL)
+    throw BoutException("Field2D: [] operator on empty data");
+  if((cx.jx < 0) || (cx.jx >= mesh->ngx) || (cx.jy < 0) || (cx.jy >= mesh->ngy) )
+    throw BoutException("Field2D: [CIndex] index out of bounds [%d , %d]\n", 
+                        cx.jx, cx.jy, mesh->ngx, mesh->ngy);
+#endif
+  
+  return data[cx.jx][cx.jy];
 }
 
 const BoutReal& Field2D::operator()(int jx, int jy) const {

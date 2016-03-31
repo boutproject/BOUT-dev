@@ -37,6 +37,7 @@
 #include <msg_stack.hxx>
 #include <bout/constants.hxx>
 #include <bout/assert.hxx>
+#include <fielditerator.hxx>
 
 /// Constructor
 Field3D::Field3D() : background(NULL), block(NULL), deriv(NULL), yup_field(0), ydown_field(0) {
@@ -285,6 +286,84 @@ const BoutReal& Field3D::operator[](bindex &bx) const {
   return block->data[bx.jx][bx.jy][bx.jz];
 }
 
+BoutReal& Field3D::operator[](CIndex &bx) {
+#if CHECK > 2
+  if(block == NULL) {
+    throw BoutException("Field3D: [CIndex] operator on empty data");
+  }
+  if((bx.jx < 0) || (bx.jx >= mesh->ngx)) {
+    throw BoutException("Field3D: [CIndex.jx = %d] out of range", bx.jx);
+  }
+  if((bx.jy < 0) || (bx.jy >= mesh->ngy)) {
+    throw BoutException("Field3D: [CIndex.jy = %d] out of range", bx.jy);
+  }
+  if((bx.jz < 0) || (bx.jz >= mesh->ngz)) {
+    throw BoutException("Field3D: [CIndex.jz = %d] out of range", bx.jz);
+  }
+#endif
+
+  return block->data[bx.jx][bx.jy][bx.jz];
+}
+
+const BoutReal& Field3D::operator[](CIndex &bx) const {
+#if CHECK > 2
+  if(block == NULL) {
+    throw BoutException("Field3D: [CIndex] operator on empty data");
+  }
+  if((bx.jx < 0) || (bx.jx >= mesh->ngx)) {
+    throw BoutException("Field3D: [CIndex.jx = %d] out of range", bx.jx);
+  }
+  if((bx.jy < 0) || (bx.jy >= mesh->ngy)) {
+    throw BoutException("Field3D: [CIndex.jy = %d] out of range", bx.jy);
+  }
+  if((bx.jz < 0) || (bx.jz >= mesh->ngz)) {
+    throw BoutException("Field3D: [CIndex.jz = %d] out of range", bx.jz);
+  }
+#endif
+
+  return block->data[bx.jx][bx.jy][bx.jz];
+}
+
+// BoutReal& Field3D::operator[](FieldIteratorCIndex &bx) {
+//   CIndex bx=cx;
+// #if CHECK > 2
+//   if(block == NULL) {
+//     throw BoutException("Field3D: [CIndex] operator on empty data");
+//   }
+//   if((bx.jx < 0) || (bx.jx >= mesh->ngx)) {
+//     throw BoutException("Field3D: [CIndex.jx = %d] out of range", bx.jx);
+//   }
+//   if((bx.jy < 0) || (bx.jy >= mesh->ngy)) {
+//     throw BoutException("Field3D: [CIndex.jy = %d] out of range", bx.jy);
+//   }
+//   if((bx.jz < 0) || (bx.jz >= mesh->ngz)) {
+//     throw BoutException("Field3D: [CIndex.jz = %d] out of range", bx.jz);
+//   }
+// #endif
+
+//   return block->data[bx.jx][bx.jy][bx.jz];
+// }
+
+// const BoutReal& Field3D::operator[](FieldIteratorCIndex &cx) const {
+//   CIndex bx=cx;
+// #if CHECK > 2
+//   if(block == NULL) {
+//     throw BoutException("Field3D: [CIndex] operator on empty data");
+//   }
+//   if((bx.jx < 0) || (bx.jx >= mesh->ngx)) {
+//     throw BoutException("Field3D: [CIndex.jx = %d] out of range", bx.jx);
+//   }
+//   if((bx.jy < 0) || (bx.jy >= mesh->ngy)) {
+//     throw BoutException("Field3D: [CIndex.jy = %d] out of range", bx.jy);
+//   }
+//   if((bx.jz < 0) || (bx.jz >= mesh->ngz)) {
+//     throw BoutException("Field3D: [CIndex.jz = %d] out of range", bx.jz);
+//   }
+// #endif
+
+//   return block->data[bx.jx][bx.jy][bx.jz];
+// }
+
 BoutReal& Field3D::operator()(int jx, int jy, int jz) {
 #if CHECK > 2
   if(block == NULL)
@@ -405,13 +484,10 @@ Field3D & Field3D::operator=(const FieldPerp &rhs) {
 
   /// Copy data
   
-#pragma omp parallel
-  {
-    for(int jx=0;jx<mesh->ngx;jx++) {
-#pragma omp for
-      for(int jz=0;jz<mesh->ngz;jz++)
-        block->data[jx][jy][jz] = d[jx][jz];
-    }
+#pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++) {
+    for(int jz=0;jz<mesh->ngz;jz++)
+      block->data[jx][jy][jz] = d[jx][jz];
   }
 
   return(*this);

@@ -31,6 +31,8 @@ class Field3D;
 #include "fieldperp.hxx"
 #include "stencils.hxx"
 #include "bout_types.hxx"
+//#include "fielditerator.hxx"
+class CIndex;
 
 #include "bout/deprecated.hxx"
 
@@ -106,6 +108,13 @@ class Field3D : public Field, public FieldData {
   
   BoutReal& operator[](bindex &bx);
   const BoutReal& operator[](bindex &bx) const;
+  
+  BoutReal& operator[](CIndex &cx);
+  const BoutReal& operator[](CIndex &cx) const;
+  // BoutReal& operator[](FieldIteratorCIndex &cx){return operator[](cx.current);};
+  // const BoutReal& operator[](FieldIteratorCIndex &cx) const {return operator[](cx.current);};
+  // BoutReal& operator[](FieldIteratorCIndex &cx);
+  // const BoutReal& operator[](FieldIteratorCIndex &cx) const;
   
   BoutReal& operator()(int jx, int jy, int jz);
   const BoutReal& operator()(int jx, int jy, int jz) const;

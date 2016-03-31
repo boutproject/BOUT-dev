@@ -56,6 +56,7 @@ AC_ARG_WITH(pvode,  [  --with-pvode	  	   Build and enable PVODE 98 (DEFAULT)])
 AC_ARG_WITH(hypre,  [  --with-hypre                Link to the Hypre library])
 AC_ARG_WITH(mumps,  [  --with-mumps                Link with MUMPS library for direct matrix inversions])
 AC_ARG_WITH(arkode, [  --with-arkode		   Use the SUNDIALS ARKODE solver])
+AC_ARG_WITH(openmp, [  --enable-openmp		   Enable OpenMP])
 
 AC_ARG_VAR(EXTRA_INCS,[Extra compile flags])
 AC_ARG_VAR(EXTRA_LIBS,[Extra linking flags])
@@ -134,6 +135,7 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
 		AC_MSG_RESULT(yes)
 	else
 		LDFLAGS=$LDFLAGS_save
+		LIBS=$EXTRA_LIBS
 		AC_MSG_RESULT(no)
 	fi
 	AS_IF([test .$BACL_found = .yes], [$3],[$4])
@@ -260,7 +262,7 @@ AC_FUNC_VPRINTF
 
 # Check for OpenMP support
 : ${enable_openmp=no}  # Disable by default
-#AC_OPENMP
+AC_OPENMP
 # Add the flag to both compile and link stages
 #CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"
 #EXTRA_LIBS="$EXTRA_LIBS $OPENMP_CXXFLAGS"
@@ -287,7 +289,7 @@ elif test $with_optimize ; then
     then
       OPT_FLAGS="-Ofast -march=native -funroll-loops"
       DISABLE_CHECK=probably
-    else
+else
       AC_MSG_ERROR([unrecognized option: --with=optimize=$optimize])
     fi
   else

@@ -1,0 +1,9 @@
+#!/bin/bash
+make || exit
+
+echo "default threads"
+./speed  | grep RESULTS -A 6
+echo "single thread"
+OMP_NUM_THREADS=1 ./speed  | grep RESULTS -A 6
+echo "with four threads"
+OMP_NUM_THREADS=4 ./speed  | grep RESULTS -A 6

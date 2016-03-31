@@ -287,9 +287,9 @@ int LaplaceSPT::start(const FieldPerp &b, SPT_data &data) {
   data.dir = 1;
   
   if(mesh->firstX()) {
-    dcomplex bet, u0;
     #pragma omp parallel for
     for(int kz = 0; kz <= maxmode; kz++) {
+      dcomplex bet, u0;
       // Start tridiagonal solve
       tridagForward(data.avec[kz], data.bvec[kz], data.cvec[kz],
                     data.bk[kz], data.xk[kz], mesh->xend+1,

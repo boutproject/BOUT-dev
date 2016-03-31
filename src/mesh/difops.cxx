@@ -35,6 +35,8 @@
 
 #include <invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
 
+#include <fielditerator.hxx>
+
 #include <interpolation.hxx>
 
 #include <math.h>
@@ -128,10 +130,10 @@ const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
 
 	// Need Y derivative everywhere
 	for(int x=1;x<=mesh->ngx-2;x++)
-		for(int y=1;y<=mesh->ngy-2;y++)
-	for(int z=0;z<ncz;z++) {
-		gys(x, y, z) = (f(x, y+1, z) - f(x, y-1, z))/(0.5*mesh->dy(x, y+1) + mesh->dy(x, y) + 0.5*mesh->dy(x, y-1));
-	}
+	  for(int y=1;y<=mesh->ngy-2;y++)
+	    for(int z=0;z<ncz;z++) {
+	      gys(x, y, z) = (f(x, y+1, z) - f(x, y-1, z))/(0.5*mesh->dy(x, y+1) + mesh->dy(x, y) + 0.5*mesh->dy(x, y-1));
+	    }
 
 	// Shift into orthogonal XZ local coordinates
 	Field3D as = apar;
@@ -360,14 +362,17 @@ const Field3D Grad_par_CtoL(const Field3D &var) {
 }
 
 const Field3D Vpar_Grad_par_LCtoC(const Field &v, const Field &f) {
-	bindex bx;
+  
 	bstencil fval, vval;
 	Field3D result;
   
 	result.allocate();
 
-	start_index(&bx);
-	do {
+	//start_index(&bx);
+	//do {
+	#pragma omp parallel
+	for (FieldIteratorCIndex cxit(NO_BNDRY|CALC_INDEX|PARALLEL,*mesh);cxit;cxit.next3()){
+	       bindex bx=cxit;
 		f.setStencil(&fval, &bx);
 		v.setStencil(&vval, &bx);
     
@@ -376,7 +381,7 @@ const Field3D Vpar_Grad_par_LCtoC(const Field &v, const Field &f) {
 		// Right side
 		result(bx.jx, bx.jy, bx.jz) -= (vval.yp >= 0.0) ? vval.yp * fval.cc : vval.yp * fval.yp;
     
-	}while(next_index3(&bx));
+	}//while(next_index3(&bx));
 
 	return result;
 }
@@ -461,9 +466,9 @@ const Field3D Grad2_par2(const Field3D &f, CELL_LOC outloc) {
 
 	Field2D sg;
 	Field3D result, r2;
-#pragma omp parallel sections
+	//#pragma omp parallel sections
 	{
-#pragma omp section
+	  //#pragma omp section
 		{
 			sg = sqrt(mesh->g_22);
 			sg = DDY(1./sg) / sg;
@@ -473,10 +478,10 @@ const Field3D Grad2_par2(const Field3D &f, CELL_LOC outloc) {
 			sg = interp_to(sg, outloc);
 		}
     
-#pragma omp section
+		//#pragma omp section
 		result = DDY(f,outloc);
     
-#pragma omp section
+		//#pragma omp section
 		r2 = D2DY2(f,outloc)/interp_to(mesh->g_22,outloc);
 	}
 	result = sg*result + r2;
@@ -581,6 +586,7 @@ const Field3D Delp2(const Field3D &f, BoutReal zsmooth) {
 		for(int jx=0;jx<mesh->ngx;jx++)
 			ZFFT(fd[jx][jy], mesh->zShift(jx, jy), ft[jx]);
 
+		Laplacian::defaultInstance();
 		// Loop over kz
 #pragma omp parallel for
 		for(int jz=0;jz<=ncz/2;jz++) {

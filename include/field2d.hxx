@@ -38,6 +38,8 @@ class Field3D; //#include "field3d.hxx"
 
 #include "bout/deprecated.hxx"
 
+class CIndex;
+
 #include <stack>
 using std::stack;
 
@@ -75,6 +77,8 @@ class Field2D : public Field, public FieldData {
   // Data indexing
   BoutReal* operator[](int jx) const;
   BoutReal& operator()(int jx, int jy);
+  BoutReal& operator[](CIndex &cx);
+  const BoutReal& operator[](CIndex &cx) const;
   const BoutReal& operator()(int jx, int jy) const;
 
   Field2D & operator+=(const Field2D &rhs);
