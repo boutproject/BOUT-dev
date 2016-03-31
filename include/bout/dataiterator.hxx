@@ -16,6 +16,7 @@ struct Indices {
   int z;
 };
 
+#define DI_GET_END ((void *) NULL)
 
 class DataIterator
   : public std::iterator<std::bidirectional_iterator_tag, Indices> {

@@ -142,7 +142,7 @@ const DataIterator Field2D::begin() const {
 const DataIterator Field2D::end() const {
   return DataIterator(0, mesh->ngx-1, 
                       0, mesh->ngy-1,
-                      0, 0, (void*)NULL);
+                      0, 0, DI_GET_END);
 }
 
 ///////// Operators

@@ -75,7 +75,7 @@ const DataIterator FieldPerp::begin() const {
 const DataIterator FieldPerp::end() const {
   return DataIterator( 0, nx-1,
                       yindex, yindex,
-		       0, nz-1,(void*)NULL);
+		       0, nz-1,DI_GET_END);
 }
 
 
