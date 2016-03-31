@@ -1,7 +1,7 @@
 #!/bin/bash
 ./configure
 conf=$?
-if test $conf -gt 1
+if test $conf -gt 0
 then
     echo
     echo "Printing config.log:"
