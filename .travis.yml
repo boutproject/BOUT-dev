@@ -10,4 +10,4 @@ before_install:
   - sudo apt-get install -y python-numpy python-netcdf python-scipy
   - sudo apt-get install -y python-matplotlib
 script:
-  - ./configure && make && ./.travis_script.sh
+  - ./.travis_script.sh
