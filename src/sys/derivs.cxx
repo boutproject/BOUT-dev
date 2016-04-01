@@ -1568,13 +1568,21 @@ const Field3D applyZdiff(const Field3D &var, deriv_func func, BoutReal dd, CELL_
 ///  }
 ///#else
   bindex bx;
-
   start_index(&bx, RGN_NOZ);
+  bindex bxstart = bx; 
+  reverse_start_index(&bx, RGN_NOZ);
+  bindex bxend = bx; 
+
   stencil s;
-  do {
-    var.setZStencil(s, bx, loc);
-    r[bx.jx][bx.jy][bx.jz] = func(s) / dd;
-  }while(next_index3(&bx));
+  for (bx.jx=bxstart.jx; bx.jx <= bxend.jx; bx.jx++){
+    for (bx.jy=bxstart.jy; bx.jy <= bxend.jy; bx.jy++){
+      for (bx.jz=bxstart.jz; bx.jz <= bxend.jz; bx.jz++){
+        calc_index(&bx);  
+        var.setZStencil(s, bx, loc);
+        r[bx.jx][bx.jy][bx.jz] = func(s) / dd;
+      }
+    }
+  }
 ///#endif
 
   if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX) {
