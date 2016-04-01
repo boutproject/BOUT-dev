@@ -1,5 +1,5 @@
 #!/bin/bash
-./configure
+./configure $CONFIGURE_OPTIONS
 conf=$?
 if test $conf -gt 0
 then
