@@ -193,16 +193,16 @@ const DataIterator Field3D::iterator() const {
 }
 
 const DataIterator Field3D::begin() const {
-  return DataIterator(0, 0, nx-1, 
-                      0, 0, ny-1,
-                      0, 0, nz-1);
+  return DataIterator(0, nx-1, 
+                      0, ny-1,
+                      0, nz-1);
 }
 
 const DataIterator Field3D::end() const {
   // end() iterator should be one past the last element
-  return ++DataIterator(nx-1, 0, nx-1,
-			ny-1, 0, ny-1,
-			nz-1, 0, nz-1);
+  return DataIterator(0, nx-1, 
+                      0, ny-1,
+                      0, nz-1,DI_GET_END);
 }
 
 const IndexRange Field3D::region(REGION rgn) const {

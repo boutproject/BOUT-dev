@@ -16,6 +16,8 @@ struct Indices {
   int z;
 };
 
+#define DI_GET_END ((void *) NULL)
+
 class DataIterator
   : public std::iterator<std::bidirectional_iterator_tag, Indices> {
 public:
@@ -27,14 +29,16 @@ public:
 				 ystart(ys), yend(ye),
 				 zstart(zs), zend(ze) {
   }
-  DataIterator(int x, int xs, int xe,
-	       int y, int ys, int ye,
-	       int z, int zs, int ze) : x(x), y(y), z(z),
-					xstart(xs), xend(xe),
-					ystart(ys), yend(ye),
-					zstart(zs), zend(ze) {
-  }
 
+  // set end();
+  DataIterator(int xs, int xe,
+	       int ys, int ye,
+	       int zs, int ze,void* dummy) : x(xe), y(ye), z(ze),
+				 xstart(xs), xend(xe),
+				 ystart(ys), yend(ye),
+				 zstart(zs), zend(ze) {
+    next();
+  }
   /// The index variables, updated during loop
   // Should make these private and provide getters?
   int x, y, z;
@@ -84,6 +88,11 @@ public:
     x = xstart; y = ystart; z = zstart;
   }
 
+  void end() {
+    x = xend; y = yend; z = zend;
+    next();
+  }
+
   /// Checks if finished looping. Is this more efficient than
   /// using the more idiomatic it != MeshIterator::end() ?
   bool done() const {
@@ -122,7 +131,14 @@ private:
       }
     }
   }
-
+  /// This one is dangerours, as the OpenMP implementation assumes all iterators go from start to end.
+  DataIterator(int x, int xs, int xe,
+	       int y, int ys, int ye,
+	       int z, int zs, int ze) : x(x), y(y), z(z),
+					xstart(xs), xend(xe),
+					ystart(ys), yend(ye),
+					zstart(zs), zend(ze) {
+					}
 };
 
 /*
@@ -139,9 +155,9 @@ struct IndexRange {
                         zstart, zend);
   }
   const DataIterator end() const {
-    return ++DataIterator(xend, xstart, xend, 
-                          yend, ystart, yend,
-                          zend, zstart, zend);
+    return DataIterator(xstart, xend, 
+			ystart, yend,
+			zstart, zend, (void*)NULL);;
   }
 };
 
