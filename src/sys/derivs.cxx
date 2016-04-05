@@ -1838,6 +1838,8 @@ const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool in
   CELL_LOC inloc = f.getLocation(); // Input location
   CELL_LOC diffloc = inloc; // Location of differential result
 
+  Field3D result;
+
   if(mesh->StaggerGrids && (outloc == CELL_DEFAULT)) {
     // Take care of CELL_DEFAULT case
     outloc = diffloc; // No shift (i.e. same as no stagger case)
@@ -1875,8 +1877,6 @@ const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool in
     func = lookupFunc(table, method);
   }
 
-  Field3D result;
-
   if(func == NULL) {
     // Use FFT
 
@@ -1892,16 +1892,6 @@ const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool in
     }
 
     result.allocate(); // Make sure data allocated
-
-    int xge = mesh->xstart, xlt = mesh->xend+1;
-    if(inc_xbndry) { // Include x boundary region (for mixed XZ derivatives)
-      xge = 0;
-      xlt = mesh->ngx;
-    }
-    if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX)
-      xge = 0;
-    if (mesh->freeboundary_xout && mesh->lastX() && !mesh->periodicX)
-      xlt = mesh->ngx;
 
     int ncz = mesh->ngz-1;
 
@@ -1922,9 +1912,8 @@ const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool in
       // Parallel, so allocate a separate array for each thread
 
       int th_id = omp_get_thread_num(); // thread ID
-
+      int n_th = omp_get_num_threads();
       if(th_id == 0) {
-        int n_th = omp_get_num_threads();
         if(nthreads < n_th) {
           // Allocate memory in thread zero
           if(nthreads > 0)
@@ -1938,25 +1927,44 @@ const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool in
 
       dcomplex *cv = globalcv + th_id*(ncz/2 + 1); // Separate array for each thread
 #endif
-       #pragma omp for
-      for(int jy=0;jy<mesh->ngy*(xlt-xge);jy++) {
-        rfft(f[xge][jy], ncz, cv); // Forward FFT
+      int xs = mesh->xstart;
+      int xe = mesh->xend;
+      int ys = mesh->ystart;
+      int ye = mesh->yend;
+      if(inc_xbndry) { // Include x boundary region (for mixed XZ derivatives)
+        xs = 0;
+        xe = mesh->ngx-1;
+      }
+      if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX)
+        xs = 0;
+      if (mesh->freeboundary_xout && mesh->lastX() && !mesh->periodicX)
+        xe = mesh->ngx-1;
+      if (mesh->freeboundary_ydown)
+        ys = 0;
+      if (mesh->freeboundary_yup)
+        ye = mesh->ngy-1;
+      #pragma omp for
+      for(int jx=xs;jx<=xe;jx++) {
+        for(int jy=ys;jy<=ye;jy++) {
+          rfft(f[jx][jy], ncz, cv); // Forward FFT
 
-        for(int jz=0;jz<=ncz/2;jz++) {
-          BoutReal kwave=jz*2.0*PI/mesh->zlength(); // wave number is 1/[rad]
+          for(int jz=0;jz<=ncz/2;jz++) {
+            BoutReal kwave=jz*2.0*PI/mesh->zlength(); // wave number is 1/[rad]
 
-          BoutReal flt;
-          if (jz>0.4*ncz) flt=1e-10; else flt=1.0;
-          cv[jz] *= dcomplex(0.0, kwave) * flt;
-          if(mesh->StaggerGrids)
-            cv[jz] *= exp(Im * (shift * kwave * mesh->dz));
+            BoutReal flt;
+            if (jz>0.4*ncz) flt=1e-10; else flt=1.0;
+            cv[jz] *= dcomplex(0.0, kwave) * flt;
+            if(mesh->StaggerGrids)
+              cv[jz] *= exp(Im * (shift * kwave * mesh->dz));
+          }
+
+          irfft(cv, ncz, result[jx][jy]); // Reverse FFT
+
+          result[jx][jy][ncz] = result[jx][jy][0];
         }
-
-        irfft(cv, ncz, result[xge][jy]); // Reverse FFT
-
-        result[xge][jy][ncz] = result[xge][jy][0];
       }
     }
+    // End of parallel section
 
 #ifdef CHECK
     // Mark boundaries as invalid
@@ -1970,7 +1978,8 @@ const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool in
     else result.bndry_ydown = false;
 #endif
 
-  }else {
+  }
+  else {
     // All other (non-FFT) functions
     result = applyZdiff(f, func, mesh->dz);
   }
@@ -2211,7 +2220,7 @@ const Field2D D2DY2(const Field2D &f) {
 
 ////////////// Z DERIVATIVE /////////////////
 
-const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool inc_xbndry) {
   deriv_func func = fD2DZ2; // Set to default function
   DiffLookup *table = SecondDerivTable;
 
@@ -2311,18 +2320,21 @@ const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
       int xe = mesh->xend;
       int ys = mesh->ystart;
       int ye = mesh->yend;
+      if(inc_xbndry) { // Include x boundary region (for mixed XZ derivatives)
+        xs = 0;
+        xe = mesh->ngx-1;
+      }
       if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX)
         xs = 0;
       if (mesh->freeboundary_xout && mesh->lastX() && !mesh->periodicX)
         xe = mesh->ngx-1;
       if (mesh->freeboundary_ydown)
         ys = 0;
-      if (mesh->freeboundary_ydown)
+      if (mesh->freeboundary_yup)
         ye = mesh->ngy-1;
       #pragma omp for
       for(int jx=xs;jx<=xe;jx++) {
         for(int jy=ys;jy<=ye;jy++) {
-
           rfft(f[jx][jy], ncz, cv); // Forward FFT
 
           for(int jz=0;jz<=ncz/2;jz++) {
@@ -2330,7 +2342,6 @@ const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
 
             BoutReal flt;
             if (jz>0.4*ncz) flt=1e-10; else flt=1.0;
-
             cv[jz] *= -SQ(kwave) * flt;
             if(mesh->StaggerGrids)
               cv[jz] *= exp(Im * (shift * kwave * mesh->dz));
@@ -2341,7 +2352,8 @@ const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
           result[jx][jy][ncz] = result[jx][jy][0];
         }
       }
-    } // End of parallel section
+    }
+    // End of parallel section
 
 #ifdef CHECK
     // Mark boundaries as invalid
@@ -2366,10 +2378,13 @@ const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   return interp_to(result, outloc);
 }
 
-const Field3D D2DZ2(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
-  return D2DZ2(f, outloc, method);
+const Field3D D2DZ2(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc, bool inc_xbndry) {
+  return D2DZ2(f, outloc, method, inc_xbndry);
 }
 
+const Field3D D2DZ2(const Field3D &f, bool inc_xbndry) {
+  return D2DZ2(f, CELL_DEFAULT, DIFF_DEFAULT, inc_xbndry);
+}
 
 const Field2D D2DZ2(const Field2D &f) {
   Field2D result;
