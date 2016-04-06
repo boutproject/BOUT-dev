@@ -75,10 +75,7 @@ private:
   int reuse_count; ///< How many times has it been reused?
 
   bool coefs_set; ///< Have coefficients been set?
-
-  static const int INVERT_AC_GRAD  = 2;  // Use zero neumann (NOTE: AC is a misnomer)
-  static const int INVERT_SET      = 16; // Set boundary to x0 value
-  static const int INVERT_RHS      = 32; // Set boundary to b value
+  
   #ifdef CHECK
     // Currently implemented flags
     static const int implemented_boundary_flags =   INVERT_AC_GRAD
