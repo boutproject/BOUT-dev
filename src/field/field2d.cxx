@@ -133,15 +133,16 @@ const DataIterator Field2D::iterator() const {
 }
 
 const DataIterator Field2D::begin() const {
-  return DataIterator(0, 0, mesh->ngx-1,
+  /*return DataIterator(0, 0, mesh->ngx-1,
                       0, 0, mesh->ngy-1,
-                      0, 0, 0);
+                      0, 0, 0);*/
+  return Field2D::iterator();
 }
 
 const DataIterator Field2D::end() const {
-  return ++DataIterator(mesh->ngx-1, 0, mesh->ngx-1,
-						mesh->ngy-1, 0, mesh->ngy-1,
-						0, 0, 0);
+  return DataIterator(0, mesh->ngx-1, 
+                      0, mesh->ngy-1,
+                      0, 0, DI_GET_END);
 }
 
 ///////// Operators

@@ -67,15 +67,15 @@ FieldPerp & FieldPerp::operator=(const BoutReal rhs) {
  ***************************************************************/
 
 const DataIterator FieldPerp::begin() const {
-  return DataIterator(0, 0, nx-1,
-                      yindex, yindex, yindex,
-                      0, 0, nz-1);
+  return DataIterator( 0, nx-1,
+                      yindex, yindex,
+                      0, nz-1);
 }
 
 const DataIterator FieldPerp::end() const {
-  return ++DataIterator(nx-1, 0, nx-1,
-                        yindex, yindex, yindex,
-                        nz-1, 0, nz-1);
+  return DataIterator( 0, nx-1,
+                      yindex, yindex,
+		       0, nz-1,DI_GET_END);
 }
 
 
