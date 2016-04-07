@@ -276,6 +276,10 @@ def create(averagelast=1, final=-1, path="data", output="./", informat="nc", out
         print(("tt = ", tt))
         outfile.write("tt", tt)
 
+        tind = final
+        if tind < 0.0:
+          tind = len(tt) + final
+
         NXPE = infile.read("NXPE")
         NYPE = infile.read("NYPE")
         NPES = NXPE * NYPE
