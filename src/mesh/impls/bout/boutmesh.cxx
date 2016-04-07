@@ -2612,9 +2612,8 @@ const RangeIterator BoutMesh::iterateBndryLowerInnerY() const {
 
   int xs = 0;
   int xe = ngx-1;
-  int yglob = YGLOBAL(ystart);
   
-  if(yglob > 0){
+  if(!firstY()){
     xs = -1;
     xe = -2; 
   }else{
@@ -2635,9 +2634,7 @@ const RangeIterator BoutMesh::iterateBndryLowerOuterY() const {
 
   int xs = 0;
   int xe = ngx-1;
-  int yglob = YGLOBAL(ystart);
-  
-  if(yglob > 0){
+  if(!firstY()){
     if((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart))
       xs = DDATA_XSPLIT;
     if((DDATA_OUTDEST >= 0) && (DDATA_XSPLIT < xend+1))
@@ -2655,29 +2652,26 @@ const RangeIterator BoutMesh::iterateBndryLowerOuterY() const {
 }
 
 const RangeIterator BoutMesh::iterateBndryLowerY() const {
+  int xs = 0;
+  int xe = ngx-1;
+  if((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart))
+    xs = DDATA_XSPLIT;
+  if((DDATA_OUTDEST >= 0) && (DDATA_XSPLIT < xend+1))
+    xe = DDATA_XSPLIT-1;
 
-  RangeIterator inner,outer;
-  int xs,xe;
+  if(xs < xstart)
+    xs = xstart;
+  if(xe > xend)
+    xe = xend;
 
-  inner = iterateBndryLowerInnerY();
-  outer = iterateBndryLowerOuterY();
-
-  xs = (inner.min() <= outer.min()) ? inner.min() : outer.min();
-  if(xs < 0 && (inner.min() >= 0 || outer.min() >= 0))
-     xs = (inner.min() >= 0) ? inner.min() : outer.min();
-
-  xe = (inner.max() >= outer.max()) ? inner.max() : outer.max();
-
-
-  return RangeIterator(xs,xe);
+  return RangeIterator(xs, xe);
 }
 
 const RangeIterator BoutMesh::iterateBndryUpperInnerY() const {
   int xs = 0;
   int xe = ngx-1;
-  int yglob = YGLOBAL(yend);
   
-  if(yglob < ny - 1){
+  if(!lastY()){
     if((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart))
       xs = UDATA_XSPLIT;
     if((UDATA_OUTDEST >= 0) && (UDATA_XSPLIT < xend+1)) 
@@ -2697,9 +2691,8 @@ const RangeIterator BoutMesh::iterateBndryUpperInnerY() const {
 const RangeIterator BoutMesh::iterateBndryUpperOuterY() const {
   int xs = 0;
   int xe = ngx-1;
-  int yglob = YGLOBAL(yend);
 
-  if(yglob < ny - 1){
+  if(!lastY()){
     xs = -1;
     xe = -2;
   }else{
@@ -2717,22 +2710,20 @@ const RangeIterator BoutMesh::iterateBndryUpperOuterY() const {
 }
 
 const RangeIterator BoutMesh::iterateBndryUpperY() const {
+  int xs = 0;
+  int xe = ngx-1;
+  if((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart))
+    xs = UDATA_XSPLIT;
+  if((UDATA_OUTDEST >= 0) && (UDATA_XSPLIT < xend+1))
+    xe = UDATA_XSPLIT-1;
 
-  RangeIterator inner,outer;
-  int xs,xe;
+  if(xs < xstart)
+    xs = xstart;
+  if(xe > xend)
+    xe = xend;
 
-  inner = iterateBndryUpperInnerY();
-  outer = iterateBndryUpperOuterY();
-
-  xs = (inner.min() <= outer.min()) ? inner.min() : outer.min();
-  if(xs < 0 && (inner.min() >= 0 || outer.min() >= 0))
-     xs = (inner.min() >= 0) ? inner.min() : outer.min();
-
-  xe = (inner.max() >= outer.max()) ? inner.max() : outer.max();
-  
-  return RangeIterator(xs,xe);
+  return RangeIterator(xs, xe);
 }
-
 
 
 vector<BoundaryRegion*> BoutMesh::getBoundaries() {
