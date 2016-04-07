@@ -1557,11 +1557,11 @@ comm_handle BoutMesh::irecvXIn(BoutReal *buffer, int size, int tag) {
  * Intended mainly to handle the non-local heat flux integrations
  ****************************************************************/
 
-bool BoutMesh::firstY() {
+bool BoutMesh::firstY() const {
   return PE_YIND == 0;
 }
 
-bool BoutMesh::lastY() {
+bool BoutMesh::lastY() const {
   return PE_YIND == NYPE-1;
 }
 

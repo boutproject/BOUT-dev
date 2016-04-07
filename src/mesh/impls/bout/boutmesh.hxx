@@ -58,8 +58,8 @@ class BoutMesh : public Mesh {
   /////////////////////////////////////////////
   // Y communications
   
-  bool firstY();
-  bool lastY();
+  bool firstY() const;
+  bool lastY() const;
   bool firstY(int xpos);
   bool lastY(int xpos);
   int UpXSplitIndex();

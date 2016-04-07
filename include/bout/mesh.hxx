@@ -123,8 +123,8 @@ class Mesh {
   virtual int ySize(int jx) const;
 
   // Y communications
-  virtual bool firstY() = 0;
-  virtual bool lastY() = 0;
+  virtual bool firstY() const = 0;
+  virtual bool lastY() const = 0;
   virtual bool firstY(int xpos) = 0;
   virtual bool lastY(int xpos) = 0;
   virtual int UpXSplitIndex() = 0;
