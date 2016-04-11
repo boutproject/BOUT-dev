@@ -1,7 +1,7 @@
 /************************************************************
  * Perpendicular Laplacian inversion using PETSc
  *
- * 
+ *
  ************************************************************/
 
 class LaplaceXZpetsc;
@@ -30,7 +30,7 @@ private:
 
 class LaplaceXZpetsc : public LaplaceXZ {
 public:
-  /*! 
+  /*!
    * Constructor
    */
   LaplaceXZpetsc(Mesh *m, Options *options);
@@ -40,19 +40,19 @@ public:
    */
   ~LaplaceXZpetsc();
 
-  
-  
+
+
   void setCoefs(const Field3D &A, const Field3D &B);
-  
+
   void setCoefs(const Field2D &A, const Field2D &B) {
     setCoefs(Field3D(A), Field3D(B));
   }
-  
+
   /*!
    * Solve Laplacian in X-Z
    */
   Field3D solve(const Field3D &b, const Field3D &x0);
-  
+
 private:
   PetscLib lib;      ///< Requires PETSc library
 
@@ -66,7 +66,7 @@ private:
     KSP ksp;   ///< Krylov Subspace solver context
   };
   vector<YSlice> slice;
-  
+
   Vec xs, bs;        ///< Solution and RHS vectors
 
   Mesh *mesh;   ///< The mesh this operates on, provides metrics and communication
@@ -75,6 +75,17 @@ private:
   int reuse_count; ///< How many times has it been reused?
 
   bool coefs_set; ///< Have coefficients been set?
+  
+  #ifdef CHECK
+    // Currently implemented flags
+    static const int implemented_boundary_flags =   INVERT_AC_GRAD
+                                                  + INVERT_SET
+                                                  + INVERT_RHS
+                                                  ;
+  #endif
+
+  int inner_boundary_flags; ///< Flags to set inner boundary condition
+  int outer_boundary_flags; ///< Flags to set outer boundary condition
 };
 
 

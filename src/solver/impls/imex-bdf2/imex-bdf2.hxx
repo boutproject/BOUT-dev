@@ -61,27 +61,53 @@ class IMEXBDF2 : public Solver {
   PetscErrorCode snes_function(Vec x, Vec f, bool linear); // Nonlinear function
   PetscErrorCode precon(Vec x, Vec f); // Preconditioner
  private:
-  int mxstep; // Maximum number of internal steps between outputs
+  static const int MAX_SUPPORTED_ORDER = 4; //Should this be #defined instead?
   
+  int maxOrder; //Specify the maximum order of the scheme to use (1/2/3)
+
   BoutReal out_timestep; // The output timestep
   int nsteps; // Number of output steps
-  
   BoutReal timestep; // The internal timestep
   int ninternal;     // Number of internal steps per output
+  int mxstep; // Maximum number of internal steps between outputs
+
+  //Adaptivity
+  bool adaptive; //Do we want to do an error check to enable adaptivity?
+  int nadapt; //How often do we check the error
+  int mxstepAdapt;  //Maximum no. consecutive times we try to reduce timestep
+  BoutReal scaleCushUp; //Don't increase timestep if scale factor < 1.0+scaleCushUp
+  BoutReal scaleCushDown; //Don't decrease timestep if scale factor > 1.0-scaleCushDown
+  BoutReal adaptRtol; //Target relative error for adaptivity.
+  BoutReal dtMin; //Minimum timestep we want to use
+  BoutReal dtMax; //Maximum timestep we want to use
+  BoutReal dtMinFatal; //If timestep wants to drop below this we abort. Set -ve to deactivate
   
+  //Scheme coefficients
+  vector<BoutReal> uFac, fFac, gFac;
+  BoutReal dtImp;
+
   int nlocal, neq; // Number of variables on local processor and in total
   
-  // Startup step
-  void startup(BoutReal curtime, BoutReal dt);
-  
-  // Take a full step
-  void take_step(BoutReal curtime, BoutReal dt); 
-  
+  // Take a full step at requested order
+  void take_step(BoutReal curtime, BoutReal dt, int order=2); 
+
+  void constructSNES(SNES *snesIn); //Setup a SNES object
+
+  //Shuffle state along one step
+  void shuffleState();
+
+  //Populate the *Fac vectors and dtImp with appropriate coefficients for this order
+  void calculateCoeffs(int order);
+
   // Working memory
-  BoutReal *u, *u_1, *u_2; // System state at n, n-1 and n-2
-  BoutReal *f_1, *f_2;     // F(u_1) and F(u_2)
+  BoutReal *u ; // System state at current time 
+  vector<BoutReal*> uV; //The solution history
+  vector<BoutReal*> fV; //The non-stiff solution history
+  //vector<BoutReal*> gV; //The stiff solution history
+  vector<BoutReal> timesteps; //Timestep history
   BoutReal *rhs;
-  
+  BoutReal *err;
+
   // Implicit solver
   PetscErrorCode solve_implicit(BoutReal curtime, BoutReal gamma);
   BoutReal implicit_gamma;
@@ -91,7 +117,14 @@ class IMEXBDF2 : public Solver {
   Vec      snes_f;  // Used by SNES to store function
   Vec      snes_x;  // Result of SNES
   SNES     snes;    // SNES context
+  SNES     snesAlt; // Alternative SNES object for adaptive checks
+  SNES     snesUse; // The snes object to use in solve stage. Allows easy switching.
   Mat      Jmf;     // Matrix-free Jacobian
+
+  bool have_constraints; // Are there any constraint variables?
+  BoutReal *is_dae; // 1 -> DAE, 0 -> AE
+  
+  MatFDColoring fdcoloring;
   
   template< class Op >
   void loopVars(BoutReal *u);

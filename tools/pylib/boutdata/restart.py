@@ -1,3 +1,5 @@
+"""Routines for manipulating restart files"""
+
 from __future__ import print_function
 from __future__ import division
 try:
@@ -5,13 +7,11 @@ try:
     from builtins import range
 except:
     pass
-# Routines for manipulating restart files
 
 try:
     from boututils.datafile import DataFile
 except ImportError:
-    print("ERROR: restart module needs DataFile")
-    raise
+    raise ImportError("ERROR: restart module needs DataFile")
 
 import numpy
 from numpy import mean, zeros, arange
@@ -25,8 +25,7 @@ try:
     import sys
     import glob
 except ImportError:
-    print("ERROR: os, sys or glob modules not available")
-    raise
+    raise ImportError("ERROR: os, sys or glob modules not available")
 
 def split(nxpe, nype, path="data", output="./", informat="nc", outformat=None):
     """Split restart files across NXPE x NYPE processors.
@@ -164,10 +163,10 @@ def expand(newz, path="data", output="./", informat="nc", outformat=None):
 def addnoise(path=".", var=None, scale=1e-5):
     """
     Add random noise to restart files
-    
+
     Inputs
     ------
-    
+
     path   Path to the restart files
     var    The variable to modify. By default all 3D variables are modified
     scale  Amplitude of the noise. Gaussian noise is used, with zero mean
@@ -194,6 +193,7 @@ def addnoise(path=".", var=None, scale=1e-5):
                         d.write(v, data)
             else:
                 # Modify a single variable
+                print(" -> "+var)
                 data = d.read(var)
                 data += normal(scale=scale, size=data.shape)
                 d.write(var, data)
@@ -202,19 +202,19 @@ def scalevar(var, factor, path="."):
     """
     Scales a variable by a given factor, modifying
     restart files in place
-    
+
     Inputs
     ------
-    
+
     var      Name of the variable  (string)
     factor   Factor to multiply    (float)
     path     Path to the restart files
-    
+
     Returns
     -------
     None
     """
-    
+
     file_list = glob.glob(os.path.join(path, "BOUT.restart.*"))
     nfiles = len(file_list)
 
@@ -224,7 +224,7 @@ def scalevar(var, factor, path="."):
         with DataFile(file, write=True) as d:
             d[var] = d[var] * factor
 
-            
+
 
 def create(averagelast=1, final=-1, path="data", output="./", informat="nc", outformat=None):
     """
@@ -275,6 +275,10 @@ def create(averagelast=1, final=-1, path="data", output="./", informat="nc", out
         tt = t_array[final]
         print(("tt = ", tt))
         outfile.write("tt", tt)
+
+        tind = final
+        if tind < 0.0:
+          tind = len(tt) + final
 
         NXPE = infile.read("NXPE")
         NYPE = infile.read("NYPE")
@@ -526,20 +530,20 @@ def resizeY(newy, path="data", output=".", informat="nc", outformat=None,myg=2):
         outformat = informat
 
     file_list = glob.glob(os.path.join(path, "BOUT.restart.*."+informat))
-    
+
     nfiles = len(file_list)
-    
+
     if nfiles == 0:
         print("ERROR: No restart files found")
         return False
-    
+
     for i in range(nfiles):
         # Open each data file
         infname  = os.path.join(path, "BOUT.restart."+str(i)+"."+informat)
         outfname = os.path.join(output, "BOUT.restart."+str(i)+"."+outformat)
 
         print("Processing %s -> %s", infname, outfname)
-        
+
         infile = DataFile(infname)
         outfile = DataFile(outfname, create=True)
 
@@ -552,33 +556,32 @@ def resizeY(newy, path="data", output=".", informat="nc", outformat=None,myg=2):
             except:
                 pass
             outfile.write(var, data)
-        
+
         # Get a list of variables
         varnames = infile.list()
-        
+
         for var in varnames:
             if infile.ndims(var) == 3:
                 # Could be an evolving variable [x,y,z]
-                
+
                 print(" -> " + var)
-                
+
                 # Read variable from input
                 indata = infile.read(var)
-            
+
                 nx,ny,nz = indata.shape
-                
+
                 # y coordinate in input and output data
                 iny = (arange(ny) - myg + 0.5) / (ny - 2*myg)
                 outy = (arange(newy) - myg + 0.5) / (newy - 2*myg)
-                
+
                 outdata = zeros([nx, newy, nz])
-                
+
                 for x in range(nx):
                     for z in range(nz):
                         f = interp1d(iny, indata[x,:,z], bounds_error=False, fill_value=0.0)
                         outdata[x,:,z] = f(outy)
-                
+
                 outfile.write(var, outdata)
         infile.close()
         outfile.close()
-

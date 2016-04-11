@@ -2633,7 +2633,196 @@ feature is still experimental, and incomplete: output dump files are not yet
 supported by the collect routines.
 
 
+\subsection{Implementation}
+%
+\index{Options}
+%
+To control the behaviour of BOUT++ a set of options is used, with options
+organised into sections which can be nested. To represent this tree structure
+there is the
+%
+\lstinline!Options!
+%
+ class defined in \file{bout++/include/options.hxx}
+%
+\begin{lstlisting}
+class Options {
+ public:
+  // Setting options
+  void set(const string &key,const int &val,const string &source="");
+  ...
+  // Testing if set
+  bool isSet(const string &key);
+  // Getting options
+  void get(const string &key,int &val,const int &def,bool log=true);
+  ...
+  // Get a subsection. Creates if doesn't exist
+  Options* getSection(const string &name);
+};
+\end{lstlisting}
+%
+To access the options, there is a static function (singleton)
+%
+\begin{lstlisting}
+  Options *options = Options::getRoot();
+\end{lstlisting}
+%
+which gives the top-level (root) options class. Setting options is done using
+the
+%
+\lstinline!set()!
+%
+ methods which are currently defined for
+%
+\lstinline!int!, \lstinline!BoutReal!, \lstinline!bool!
+%
+ and
+%
+\lstinline!string!
+%
+. For example:
+%
+\begin{lstlisting}
+  options->set("nout", 10);      // Set an integer
+  options->set("restart", true); // A bool
+\end{lstlisting}
+%
+Often it's useful to see where an option setting has come from e.g. the name of
+the options file or ``command line''. To specify a source, pass it as a third
+argument:
+%
+\begin{lstlisting}
+  options->set("nout", 10, "manual");
+\end{lstlisting}
+%
+To create a section, just use
+%
+\lstinline!getSection!
+%
+: if it doesn't exist it will be created.
+%
+\begin{lstlisting}
+  Options *section = options->getSection("mysection");
+  section->set("myswitch", true);
+\end{lstlisting}
+%
+To get options, use the
+%
+\lstinline!get()!
+%
+ method which take the name of the option, the variable to set, and the default
+ value.
+%
+\begin{lstlisting}
+  int nout;
+  options->get("nout", nout, 1);
+\end{lstlisting}
+%
+Internally,
+%
+\lstinline!Options!
+%
+ converts all types to strings and does type conversion when needed, so the
+ following code would work:
+%
+\begin{lstlisting}
+  Options *options = Options::getRoot();
+  options->set("test", "123");
+  int val;
+  options->get("test", val, 1);
+\end{lstlisting}
+%
+This is because often the type of the option is not known at the time when it's
+set, but only when it's requested.
 
+By default, the
+%
+\lstinline!get!
+%
+ methods output a message to the log files giving the value used and the source
+ of that value.  To suppress this, set the
+%
+\lstinline!log! argument to \lstinline!false!
+%
+:
+%
+\begin{lstlisting}
+  options->get("test", val, 1, false);
+\end{lstlisting}
+%
+
+
+
+\subsection{Reading options}
+%
+To allow different input file formats, each file parser implements the
+%
+\lstinline!OptionParser!
+%
+ interface defined in \file{bout++/src/sys/options/optionparser.hxx}
+%
+\index{OptionParser}
+%
+\begin{lstlisting}
+class OptionParser {
+ public:
+  virtual void read(Options *options, const string &filename) = 0;
+ private:
+};
+\end{lstlisting}
+%
+and so just needs to implement a single function which reads a given file name
+and inserts the options into the given
+%
+\lstinline!Options!
+%
+object.
+
+To use these parsers and read in a file, there is the
+%
+\lstinline!OptionsReader!
+%
+ class defined in \file{bout++/include/optionsreader.hxx}
+%
+\index{OptionsReader}
+%
+\begin{lstlisting}
+class OptionsReader {
+ public:
+ void read(Options *options, const char *file, ...);
+ void parseCommandLine(Options *options, int argc, char **argv);
+};
+\end{lstlisting}
+%
+This is a singleton object which is accessed using
+%
+\begin{lstlisting}
+  OptionsReader *reader = OptionsReader::getInstance();
+\end{lstlisting}
+%
+so to read a file \file{BOUT.inp} in a directory given in a variable
+%
+\lstinline!data_dir!
+%
+ the following code is used in \file{bout++.cxx}:
+%
+\begin{lstlisting}
+  Options *options = Options::getRoot();
+  OptionsReader *reader = OptionsReader::getInstance();
+  reader->read(options, "%s/BOUT.inp", data_dir);
+\end{lstlisting}
+%
+To parse command line arguments as options, the
+%
+\lstinline!OptionsReader!
+%
+class has a method:
+%
+\begin{lstlisting}
+  reader->parseCommandLine(options, argc, argv);
+\end{lstlisting}
+%
+This is currently quite rudimentary and needs improving.
 
 
 \section{Variable initialisation}
@@ -2721,7 +2910,7 @@ branch-cuts (e.g. divertor tokamak), and will often have jumps which then make
 timesteps smaller}
 
 
-\subsubsection{Expressions}
+\subsection{Expressions}
 %
 \label{sec:expressions}
 %
@@ -3265,200 +3454,6 @@ empty brackets, so
  function.
 
 
-
-
-
-\section{Implementation}
-%
-\index{Options}
-%
-To control the behaviour of BOUT++ a set of options is used, with options
-organised into sections which can be nested. To represent this tree structure
-there is the
-%
-\lstinline!Options!
-%
- class defined in \file{bout++/include/options.hxx}
-%
-\begin{lstlisting}
-class Options {
- public:
-  // Setting options
-  void set(const string &key,const int &val,const string &source="");
-  ...
-  // Testing if set
-  bool isSet(const string &key);
-  // Getting options
-  void get(const string &key,int &val,const int &def,bool log=true);
-  ...
-  // Get a subsection. Creates if doesn't exist
-  Options* getSection(const string &name);
-};
-\end{lstlisting}
-%
-To access the options, there is a static function (singleton)
-%
-\begin{lstlisting}
-  Options *options = Options::getRoot();
-\end{lstlisting}
-%
-which gives the top-level (root) options class. Setting options is done using
-the
-%
-\lstinline!set()!
-%
- methods which are currently defined for
-%
-\lstinline!int!, \lstinline!BoutReal!, \lstinline!bool!
-%
- and
-%
-\lstinline!string!
-%
-. For example:
-%
-\begin{lstlisting}
-  options->set("nout", 10);      // Set an integer
-  options->set("restart", true); // A bool
-\end{lstlisting}
-%
-Often it's useful to see where an option setting has come from e.g. the name of
-the options file or ``command line''. To specify a source, pass it as a third
-argument:
-%
-\begin{lstlisting}
-  options->set("nout", 10, "manual");
-\end{lstlisting}
-%
-To create a section, just use
-%
-\lstinline!getSection!
-%
-: if it doesn't exist it will be created.
-%
-\begin{lstlisting}
-  Options *section = options->getSection("mysection");
-  section->set("myswitch", true);
-\end{lstlisting}
-%
-To get options, use the
-%
-\lstinline!get()!
-%
- method which take the name of the option, the variable to set, and the default
- value.
-%
-\begin{lstlisting}
-  int nout;
-  options->get("nout", nout, 1);
-\end{lstlisting}
-%
-Internally,
-%
-\lstinline!Options!
-%
- converts all types to strings and does type conversion when needed, so the
- following code would work:
-%
-\begin{lstlisting}
-  Options *options = Options::getRoot();
-  options->set("test", "123");
-  int val;
-  options->get("test", val, 1);
-\end{lstlisting}
-%
-This is because often the type of the option is not known at the time when it's
-set, but only when it's requested.
-
-By default, the
-%
-\lstinline!get!
-%
- methods output a message to the log files giving the value used and the source
- of that value.  To suppress this, set the
-%
-\lstinline!log! argument to \lstinline!false!
-%
-:
-%
-\begin{lstlisting}
-  options->get("test", val, 1, false);
-\end{lstlisting}
-%
-
-
-
-\subsection{Reading options}
-%
-To allow different input file formats, each file parser implements the
-%
-\lstinline!OptionParser!
-%
- interface defined in \file{bout++/src/sys/options/optionparser.hxx}
-%
-\index{OptionParser}
-%
-\begin{lstlisting}
-class OptionParser {
- public:
-  virtual void read(Options *options, const string &filename) = 0;
- private:
-};
-\end{lstlisting}
-%
-and so just needs to implement a single function which reads a given file name
-and inserts the options into the given
-%
-\lstinline!Options!
-%
-object.
-
-To use these parsers and read in a file, there is the
-%
-\lstinline!OptionsReader!
-%
- class defined in \file{bout++/include/optionsreader.hxx}
-%
-\index{OptionsReader}
-%
-\begin{lstlisting}
-class OptionsReader {
- public:
- void read(Options *options, const char *file, ...);
- void parseCommandLine(Options *options, int argc, char **argv);
-};
-\end{lstlisting}
-%
-This is a singleton object which is accessed using
-%
-\begin{lstlisting}
-  OptionsReader *reader = OptionsReader::getInstance();
-\end{lstlisting}
-%
-so to read a file \file{BOUT.inp} in a directory given in a variable
-%
-\lstinline!data_dir!
-%
- the following code is used in \file{bout++.cxx}:
-%
-\begin{lstlisting}
-  Options *options = Options::getRoot();
-  OptionsReader *reader = OptionsReader::getInstance();
-  reader->read(options, "%s/BOUT.inp", data_dir);
-\end{lstlisting}
-%
-To parse command line arguments as options, the
-%
-\lstinline!OptionsReader!
-%
-class has a method:
-%
-\begin{lstlisting}
-  reader->parseCommandLine(options, argc, argv);
-\end{lstlisting}
-%
-This is currently quite rudimentary and needs improving.
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -3518,6 +3513,7 @@ pvode & 1998 PVODE with BDF method & Always available \\
 cvode & SUNDIALS CVODE. BDF and Adams methods & --with-cvode \\
 ida & SUNDIALS IDA. DAE solver & --with-ida \\
 petsc & PETSc TS methods & --with-petsc \\
+imexbdf2 & IMEX-BDF2 scheme & --with-petsc \\
 \hline
 \end{tabular}
 %
@@ -3542,7 +3538,7 @@ rtol & Relative tolerance & rk4, pvode, cvode, ida \\
 mxstep & Maximum internal steps  & rk4 \\
        & per output step & \\
 max\_timestep & Maximum timestep & rk4, cvode \\
-timestep & Starting timestep & rk4, karniadakis, euler \\
+timestep & Starting timestep & rk4, karniadakis, euler, imexbdf2 \\
 adaptive & Adapt timestep? (Y/N) & rk4 \\
 use\_precon & Use a preconditioner? (Y/N) & pvode, cvode, ida \\
 mudq, mldq & BBD preconditioner settings & pvode, cvode, ida \\
@@ -4009,10 +4005,78 @@ rightprec = false     # Use Right preconditioner (default left)
 
 \subsection{DAE constraint equations}
 %
-Using the IDA solver, BOUT++ can solve Differential Algebraic Equations (DAEs),
+Using the IDA or IMEX-BDF2 solvers, BOUT++ can solve Differential Algebraic Equations (DAEs),
 in which algebraic constraints are used for some variables.
+Examples of how this is used are in the \texttt{examples/constraints} subdirectory.
 
+First the variable to be constrained is added to the solver, in a similar way to
+time integrated variables. For example
+\begin{verbatim}
+Field3D phi;
+...
+solver->constraint(phi, ddt(phi), "phi");
+\end{verbatim}
+The first argument is the variable to be solved for (constrained). The second argument is the
+field to contain the residual (error). In this example the time derivative field \texttt{ddt(phi)}
+is used, but it could be another \texttt{Field3D} variable.
+The solver will attempt to find a solution to the first argument
+(\texttt{phi} here) such that the second argument (\texttt{ddt(phi)}) is zero to within tolerances.
 
+In the RHS function the residual should be calculated. In this example (\texttt{examples/constraints/drift-wave-constraint})
+we have:
+\begin{verbatim}
+ddt(phi) = Delp2(phi) - Vort;
+\end{verbatim}
+so the time integration solver includes the algebraic constraint \texttt{Delp2(phi) = Vort} i.e. ($\nabla_\perp^2\phi = \omega$).
+
+\subsection{IMEX-BDF2}
+
+This is an implicit-explicit multistep method, which uses the PETSc library for the SNES nonlinear solver.
+To use this solver, BOUT++ must have been configured with PETSc support, and the solver type
+set to \texttt{imexbdf2}
+\begin{verbatim}
+[solver]
+type = imexbdf2
+\end{verbatim}
+
+For examples of using IMEX-BDF2, see the \texttt{examples/IMEX/} subdirectory, in particular
+the \texttt{diffusion-nl}, \texttt{drift-wave} and \texttt{drift-wave-constrain} examples.
+
+The time step is currently fixed (not adaptive), and defaults to the output timestep. To set a smaller
+internal timestep, the \texttt{solver:timestep} option can be set. If the timestep is too large, then
+the explicit part of the problem may become unstable, or the implicit part may fail to converge.
+
+The implicit part of the problem can be solved matrix-free, in which case
+the Jacobian-vector product is approximated using finite differences. This is currently the default,
+and can be set on the command-line using the options:
+\begin{verbatim}
+ solver:matrix_free=true  -snes_mf
+\end{verbatim}
+Note the \texttt{-snes\_mf} flag which is passed to PETSc.
+When using a matrix free solver, the Jacobian is not calculated and so the amount of memory used is minimal.
+However, since the Jacobian is not known, many standard preconditioning methods cannot be used, and so in many
+cases a custom preconditioner is needed to obtain good convergence.
+
+An experimental feature uses PETSc's ability to calculate the Jacobian using finite differences.
+This can then speed up the linear solve, and allows more options for preconditioning. To enable this
+option:
+\begin{verbatim}
+ solver:matrix_free=false
+\end{verbatim}
+There are two ways to calculate the Jacobian: A brute force method which is set up
+by this call to PETSc which is generally very slow, and a ``coloring'' scheme which
+can be quite fast and is the default. Coloring uses knowledge of where the non-zero values
+are in the Jacobian, to work out which rows can be calculated simultaneously. The coloring code
+in IMEX-BDF2 currently assumes that every field is coupled to every other field in a star pattern: one cell on each side,
+a 7 point stencil for 3D fields. If this is not the case for your problem, then
+the solver may not converge. 
+
+The brute force method can be useful for comparing the Jacobian structure, so to turn off coloring:
+\begin{verbatim}
+ solver:use_coloring=false
+\end{verbatim}
+Using MatView calls, or the \texttt{-mat\_view} PETSc options, the non-zero structure of the Jacobian can be plotted
+or printed.
 
 \subsection{Monitoring the simulation output}
 %
@@ -4995,7 +5059,7 @@ BOUT++ with \code{ixseps1 = ixseps2}.}
 
 In BOUT++ each processor has a logically rectangular domain, so any branch cuts
 needed for X-point geometry (see figure~\ref{fig:topology_schematic}) must be
-at processor boundaries. 
+at processor boundaries.
 
 In the standard ``bout'' mesh (\texttt{src/mesh/impls/bout/}),
 the communication is controlled by the variables
@@ -5015,7 +5079,7 @@ keepaspectratio]{figs/boutmesh-comms.pdf}
 %
 \end{figure}
 %
-In the Y direction, each boundary region ({\bf U}p and {\bf D}own in Y) 
+In the Y direction, each boundary region ({\bf U}p and {\bf D}own in Y)
 can be split into two, with \code{0 <= x < UDATA\_XSPLIT} going to
 the processor index \code{UDATA\_INDEST}, and \code{UDATA\_INDEST <= x < ngx}
 going to \code{UDATA\_OUTDEST}. Similarly for the Down boundary.
@@ -6068,7 +6132,7 @@ the grid-point and the first ghost point (see figure \ref{fig:lapl_inv_mesh}).
 \begin{figure}[htbp!]
     \centering \includegraphics[width=0.3\paperwidth,
     keepaspectratio]{figs/5PointStencilMesh.pdf}
-\caption{The mesh: The inner boundary points in $x$ are coloured in orange, 
+\caption{The mesh: The inner boundary points in $x$ are coloured in orange,
 whilst the
     outer boundary points in $z$ are coloured gray. Inner points are coloured
 blue.}
@@ -7854,9 +7918,10 @@ difference formulae.  The equation solved is:
 where $A$ and $B$ are coefficients, $b$ is the known RHS vector (e.g.
 vorticity), and $f$ is the unknown quantity to be calculated (e.g. potential),
 and $\nabla_\perp f$ is the same as equation (\ref{eq:nabl_perp_f}), but with
-negligible $y$-parallel derivatives if $g_{xy}$ and $g_{yz}$ is non-vanishing.
-The Laplacian is written in conservative form like the \texttt{LaplaceXY}
-solver, and discretised in terms of fluxes through cell faces.
+negligible $y$-parallel derivatives if $g_{xy}$, $g_{yz}$ and $g_{xz}$ is
+non-vanishing.  The Laplacian is written in conservative form like the
+\texttt{LaplaceXY} solver, and discretised in terms of fluxes through cell
+faces.
 %
 \begin{align*}
   \frac{1}{J}\frac{\partial}{\partial x}\left(J A g^{xx}\frac{\partial

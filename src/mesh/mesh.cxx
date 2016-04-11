@@ -433,8 +433,8 @@ int Mesh::calcCovariant() {
 
       // invert
       if(gaussj(a, 3)) {
-	output.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
-	return 1;
+        output.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
+        return 1;
       }
 
       // put elements into g_{ij}
@@ -452,42 +452,42 @@ int Mesh::calcCovariant() {
 
   BoutReal maxerr, err;
   maxerr = max(abs( (g_11*g11 +
-		     g_12*g12 +
-		     g_13*g13)- 1 ));
+                     g_12*g12 +
+                     g_13*g13)- 1 ));
   if((err = max(abs( (g_12*g12 +
-		      g_22*g22 +
-		      g_23*g23) - 1 ))) > maxerr)
+                      g_22*g22 +
+                      g_23*g23) - 1 ))) > maxerr)
     maxerr = err;
 
   if((err = max(abs( (g_13*g13 +
-		      g_23*g23 +
-		      g_33*g33) - 1 ))) > maxerr)
+                      g_23*g23 +
+                      g_33*g33) - 1 ))) > maxerr)
     maxerr = err;
   output.write("\tMaximum error in diagonal inversion is %e\n", maxerr);
 
 
   maxerr = max(abs(g_11*g12 +
-		   g_12*g22 +
-		   g_13*g23));
+                   g_12*g22 +
+                   g_13*g23));
 
   if((err = max(abs(g_11*g13 +
-		    g_12*g23 +
-		    g_13*g33))) > maxerr)
+                    g_12*g23 +
+                    g_13*g33))) > maxerr)
     maxerr = err;
 
   if((err = max(abs(g_12*g13 +
-		    g_22*g23 +
-		    g_23*g33))) > maxerr)
+                    g_22*g23 +
+                    g_23*g33))) > maxerr)
     maxerr = err;
 
   output.write("\tMaximum error in off-diagonal inversion is %e\n", maxerr);
-  
+
   return 0;
 }
 
 int Mesh::calcContravariant() {
   TRACE("Mesh::calcContravariant");
-  
+
   // Make sure metric elements are allocated
   g11.allocate();
   g22.allocate();
@@ -514,8 +514,8 @@ int Mesh::calcContravariant() {
 
       // invert
       if(gaussj(a, 3)) {
-	output.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
-	return 1;
+        output.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
+        return 1;
       }
 
       // put elements into g_{ij}
@@ -533,32 +533,32 @@ int Mesh::calcContravariant() {
 
   BoutReal maxerr, err;
   maxerr = max(abs( (g_11*g11 +
-		     g_12*g12 +
-		     g_13*g13)- 1 ));
+                     g_12*g12 +
+                     g_13*g13)- 1 ));
   if((err = max(abs( (g_12*g12 +
-		      g_22*g22 +
-		      g_23*g23) - 1 ))) > maxerr)
+                      g_22*g22 +
+                      g_23*g23) - 1 ))) > maxerr)
     maxerr = err;
 
   if((err = max(abs( (g_13*g13 +
-		      g_23*g23 +
-		      g_33*g33) - 1 ))) > maxerr)
+                      g_23*g23 +
+                      g_33*g33) - 1 ))) > maxerr)
     maxerr = err;
   output.write("\tMaximum error in diagonal inversion is %e\n", maxerr);
 
 
   maxerr = max(abs(g_11*g12 +
-		   g_12*g22 +
-		   g_13*g23));
+                   g_12*g22 +
+                   g_13*g23));
 
   if((err = max(abs(g_11*g13 +
-		    g_12*g23 +
-		    g_13*g33))) > maxerr)
+                    g_12*g23 +
+                    g_13*g33))) > maxerr)
     maxerr = err;
 
   if((err = max(abs(g_12*g13 +
-		    g_22*g23 +
-		    g_23*g33))) > maxerr)
+                    g_22*g23 +
+                    g_23*g33))) > maxerr)
     maxerr = err;
 
   output.write("\tMaximum error in off-diagonal inversion is %e\n", maxerr);
@@ -568,16 +568,16 @@ int Mesh::calcContravariant() {
 int Mesh::jacobian() {
   TRACE("Mesh::jacobian");
   // calculate Jacobian using g^-1 = det[g^ij], J = sqrt(g)
-  
+
   Field2D g = g11*g22*g33 +
     2.0*g12*g13*g23 -
     g11*g23*g23 -
     g22*g13*g13 -
     g33*g12*g12;
-  
+
   // Check that g is positive
   if(min(g) < 0.0) {
-    throw BoutException("The determinant of g^ij is negative");
+    throw BoutException("The determinant of g^ij is somewhere less than 0.0");
   }
   J = 1. / sqrt(g);
 
@@ -588,11 +588,11 @@ int Mesh::jacobian() {
   if(min(abs(J)) < 1.0e-10) {
     throw BoutException("\tERROR: Jacobian becomes very small\n");
   }
-  
+
   if(min(g_22) < 0.0)
-    throw BoutException("g_22 is negative");
+    throw BoutException("g_22 is somewhere less than 0.0");
   Bxy = sqrt(g_22)/J;
-  
+
   return 0;
 }
 
@@ -645,17 +645,17 @@ int Mesh::gaussj(BoutReal **a, int n) {
     irow = icol = -1;
     for(j=0;j<n;j++) { // search for pivot element
       if(ipiv[j] != 1) {
-	for(k=0;k<n;k++) {
-	  if(ipiv[k] == 0) {
-	    if(fabs(a[j][k]) >= big) {
-	      big = fabs(a[j][k]);
-	      irow = j;
-	      icol = k;
-	    }
-	  }else if(ipiv[k] > 1) {
-	    throw BoutException("Error in GaussJ: Singular matrix-1\n");
-	  }
-	}
+        for(k=0;k<n;k++) {
+          if(ipiv[k] == 0) {
+            if(fabs(a[j][k]) >= big) {
+              big = fabs(a[j][k]);
+              irow = j;
+              icol = k;
+            }
+          }else if(ipiv[k] > 1) {
+            throw BoutException("Error in GaussJ: Singular matrix-1\n");
+          }
+        }
       }
     }
 
@@ -669,7 +669,7 @@ int Mesh::gaussj(BoutReal **a, int n) {
     // on the diagonal
     if(irow != icol) {
       for(l=0;l<n;l++)
-	swap(a[irow][l],a[icol][l]);
+        swap(a[irow][l],a[icol][l]);
     }
     indxr[i] = irow;
     indxc[i] = icol;
@@ -684,10 +684,10 @@ int Mesh::gaussj(BoutReal **a, int n) {
 
     for(ll=0;ll<n;ll++) { // reduce rows
       if(ll != icol) {    // except for the pivot one
-	dum = a[ll][icol];
-	a[ll][icol] = 0.0;
-	for(l=0;l<n;l++)
-	  a[ll][l] -= a[icol][l]*dum;
+        dum = a[ll][icol];
+        a[ll][icol] = 0.0;
+        for(l=0;l<n;l++)
+          a[ll][l] -= a[icol][l]*dum;
 
       }
     }
@@ -696,7 +696,7 @@ int Mesh::gaussj(BoutReal **a, int n) {
   for(l=n-1;l>=0;l--) {
     if(indxr[l] != indxc[l])
       for(k=0;k<n;k++)
-	swap(a[k][indxr[l]], a[k][indxc[l]]);
+        swap(a[k][indxr[l]], a[k][indxc[l]]);
   }
   // done.
 
@@ -710,7 +710,7 @@ int Mesh::gaussj(BoutReal **a, int n) {
 /// Not very efficient version, as a fallback
 const Field3D Mesh::averageY(const Field3D &f) {
   TRACE("Mesh::averageY");
-  
+
   Field3D result;
   result.allocate();
 
@@ -721,7 +721,7 @@ const Field3D Mesh::averageY(const Field3D &f) {
 
     for(int jx=0; jx<ngx;jx++) {
       for(int jy=0; jy<ngy;jy++) {
-	xy(jx, jy) = f(jx, jy, jz);
+        xy(jx, jy) = f(jx, jy, jz);
       }
     }
 
@@ -729,7 +729,7 @@ const Field3D Mesh::averageY(const Field3D &f) {
 
     for(int jx=0; jx<ngx;jx++) {
       for(int jy=0; jy<ngy;jy++) {
-	result(jx, jy, jz) = xy(jx, jy);
+        result(jx, jy, jz) = xy(jx, jy);
       }
     }
   }
@@ -744,7 +744,7 @@ const Field3D Mesh::averageY(const Field3D &f) {
 /// Not very efficient version, as a fallback
 const Field3D Mesh::averageX(const Field3D &f) {
   TRACE("Mesh::averageX");
-  
+
   Field3D result;
   result.allocate();
 
@@ -755,7 +755,7 @@ const Field3D Mesh::averageX(const Field3D &f) {
 
     for(int jx=0; jx<ngx;jx++) {
       for(int jy=0; jy<ngy;jy++) {
-	xy(jx, jy) = f(jx, jy, jz);
+        xy(jx, jy) = f(jx, jy, jz);
       }
     }
 
@@ -763,7 +763,7 @@ const Field3D Mesh::averageX(const Field3D &f) {
 
     for(int jx=0; jx<ngx;jx++) {
       for(int jy=0; jy<ngy;jy++) {
-	result(jx, jy, jz) = xy(jx, jy);
+        result(jx, jy, jz) = xy(jx, jy);
       }
     }
   }

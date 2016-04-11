@@ -607,8 +607,8 @@ def create_grid( F, R, Z, in_settings, critical,
     maxf = numpy.max(F)
     levels = numpy.arange(numpy.float(nlev))*(maxf-minf)/numpy.float(nlev-1) + minf
 
-    Rr=numpy.tile(R,nx).reshape(nx,ny).T
-    Zz=numpy.tile(Z,ny).reshape(nx,ny)
+    Rr=numpy.tile(R,ny).reshape(ny,nx).T
+    Zz=numpy.tile(Z,nx).reshape(nx,ny)
 
 
     contour( Rr, Zz, F, levels=levels)
@@ -636,9 +636,9 @@ def create_grid( F, R, Z, in_settings, critical,
     opt_ri = critical.opt_ri
     opt_zi = critical.opt_zi
     opt_f  = critical.opt_f
-    xpt_ri = critical.xpt_ri.flatten()
-    xpt_zi = critical.xpt_zi.flatten()
-    xpt_f  = critical.xpt_f.flatten()
+    xpt_ri = numpy.array(critical.xpt_ri).flatten()
+    xpt_zi = numpy.array(critical.xpt_zi).flatten()
+    xpt_f  = numpy.array(critical.xpt_f).flatten()
     
     
 

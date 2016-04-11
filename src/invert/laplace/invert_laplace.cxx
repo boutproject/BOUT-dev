@@ -486,15 +486,45 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
         }
         else if (inner_boundary_flags & INVERT_IN_CYLINDER){
           // Condition for inner radial boundary for cylindrical coordinates
+          /* Explanation:
+           * The discrete fourier transform is defined as
+           *
+           * F(x,y)_k = (1/N) sum_{Z=0}^{N-1} f(x,y)_Z exp(-2pi i k Z/N)
+           *
+           * where
+           *
+           * k = mode number
+           * N = total number of points in the periodic direction
+           * Z = index number for point in Z
+           * i = imaginary number
+           *
+           * If the boundary is located at rho=0, and if the ghost point is
+           * chosen half between grid cells, then (as there is no real boundary
+           * in the center of a cylinder), the ghost point of a innermost inner
+           * point in rho will have its ghost point as the innermost inner
+           * point diamatrically opposite (i.e. the ghost point is the current
+           * point with a rotation of pi [rotation of N/2 in Z if we use index
+           * values]). The fourier components at the ghost point will thus be
+           * phase shifted with respect to the innermost point under
+           * consideration, and for the ghost point we can write
+           *
+           * F(x,y)_k_ghost
+           * = (1/N) sum_{Z=0}^{N-1} f(x,y)_(Z+(N/2)) exp(-2pi i k (Z + N/2)/N)
+           * = (1/N) sum_{Z=0}^{N-1} f(x,y)_(Z+(N/2)) exp(-2pi i k Z/N)
+           *                                          exp(-pi i k)
+           * = F(x,y)_k exp(-pi i k)
+           *
+           * so
+           *
+           * F(x,y)_k_ghost = F(x,y)_k exp(-pi i k)
+           *                =   F(x,y)_k     if k is even
+           *                = - F(x,y)_k     if k is odd
+           */
           for (int ix=0;ix<inbndry;ix++){
             avec[ix] = 0.;
             bvec[ix] = 1. ;
             cvec[ix] = -1. ;
           }
-          // Use phi(-r) = phi(r)*e^(i*kz*pi).
-          // phi(-r) = phi(r) for even modes
-          // phi(-r) = -phi(r) for odd modes
-          // DC case is always the even case
           // Zero value at inner boundary
         }
         else {
@@ -535,6 +565,7 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
         }
         else if (inner_boundary_flags & INVERT_IN_CYLINDER) {
           // Condition for inner radial boundary for cylindrical coordinates
+          // Explanation under "if (inner_boundary_flags & INVERT_IN_CYLINDER)"
           for (int ix=0;ix<inbndry;ix++){
             avec[ix] = 0.;
             bvec[ix] = 1.;
@@ -546,10 +577,6 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
               cvec[ix] = 1.;
             }
           }
-          // Use phi(-r) = phi(r)*e^(i*kz*pi).
-          // phi(-r) = phi(r) for even modes
-          // phi(-r) = -phi(r) for odd modes
-
         }
         else {
           // Order 2 dirichlet BC (boundary half between points)
