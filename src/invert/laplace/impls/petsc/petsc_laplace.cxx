@@ -308,7 +308,9 @@ LaplacePetsc::LaplacePetsc(Options *opt) :
   else if(type == "lcd")			ksptype = KSPLCD;
   else if(type == "python")			ksptype = KSPPYTHON;
   else if(type == "gcr")			ksptype = KSPGCR;
+#ifdef KSPSPECEST // Removed 3.6
   else if(type == "specest")			ksptype = KSPSPECEST;
+#endif
   else
     throw BoutException("Unknown Krylov solver type '%s'", type.c_str());
 
@@ -344,7 +346,7 @@ LaplacePetsc::LaplacePetsc(Options *opt) :
   else if (pctypeoption == "ml") pctype = PCML;
   else if (pctypeoption == "galerkin") pctype = PCGALERKIN;
   else if (pctypeoption == "exotic") pctype = PCEXOTIC;
-#ifndef BOUT_HAS_PETSC_3_5
+#if !PETSC_VERSION_GE(3,5,0)
   else if (pctypeoption == "hmpi") pctype = PCHMPI;
   else if (pctypeoption == "supportgraph") pctype = PCSUPPORTGRAPH;
   else if (pctypeoption == "asa") pctype = PCASA;
@@ -796,7 +798,7 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
   VecAssemblyEnd(xs);
 
   // Configure Linear Solver
-#ifdef BOUT_HAS_PETSC_3_5
+#if PETSC_VERSION_GE(3,5,0)
   KSPSetOperators( ksp,MatA,MatA);
 #else
   KSPSetOperators( ksp,MatA,MatA,DIFFERENT_NONZERO_PATTERN );

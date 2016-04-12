@@ -914,7 +914,7 @@ int Field2D::getData(int x, int y, int z, void *vptr) const {
     throw BoutException("Field2D: getData on empty data\n");
   
   // check ranges
-  if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngx)) {
+  if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngz)) {
     throw BoutException("Field2D: getData (%d,%d,%d) out of bounds\n", x, y, z);
   }
 #endif
@@ -1100,7 +1100,7 @@ void Field2D::setBoundaryTo(const Field2D &f2d) {
 #ifdef CHECK
   msg_stack.push("Field2D::setBoundary(const Field2D&)");
   
-  if(f2d.data == NULL)
+  if(!f2d.isAllocated())
     throw BoutException("Setting boundary condition to empty data\n");
 #endif
 
@@ -1111,8 +1111,13 @@ void Field2D::setBoundaryTo(const Field2D &f2d) {
   for(vector<BoundaryRegion*>::iterator it = reg.begin(); it != reg.end(); it++) {
     BoundaryRegion* bndry= *it;
     /// Loop within each region
-    for(bndry->first(); !bndry->isDone(); bndry->next())
-      data[bndry->x][bndry->y] = f2d.data[bndry->x][bndry->y];
+    for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
+      // Get value half-way between cells
+      BoutReal val = 0.5*(f2d(bndry->x,bndry->y) + f2d(bndry->x-bndry->bx, bndry->y-bndry->by));
+      // Set to this value
+      (*this)(bndry->x,bndry->y) = 2.*val - (*this)(bndry->x-bndry->bx, bndry->y-bndry->by);
+      
+    }
   }
 #ifdef CHECK
   msg_stack.pop();

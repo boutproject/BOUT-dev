@@ -256,10 +256,6 @@ class DataFile_netCDF(DataFile):
         """List all variables in the file."""
         return self.list()
 
-    def keys(self):
-        """List all variables in the file."""
-        return self.list()
-
     def dimensions(self, varname):
         """Array of dimension names"""
         if self.handle == None: return None

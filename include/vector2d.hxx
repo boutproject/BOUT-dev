@@ -111,63 +111,6 @@ class Vector2D : public FieldData {
   int  getData(int jx, int jy, int jz, BoutReal *rptr) const;
   int  setData(int jx, int jy, int jz, void *vptr);
   int  setData(int jx, int jy, int jz, BoutReal *rptr);
-
-  bool ioSupport() { return true; }
-  const string getSuffix(int component) const {
-    if(covariant) {
-      switch(component) {
-      case 0:
-	return string("_x");
-      case 1:
-	return string("_y");
-      case 2:
-	return string("_z");
-      }
-    }else {
-      switch(component) {
-      case 0:
-	return string("x");
-      case 1:
-	return string("y");
-      case 2:
-	return string("z");
-      }
-    }
-    return string("");
-  }
-  void *getMark() const {
-    bool *c = new bool;
-    *c = covariant;
-    return (void*) c;
-  }
-  void setMark(void *setting) {
-    bool *c = (bool*) setting;
-    if(*c) {
-      toCovariant();
-    }else
-      toContravariant();
-  }
-  BoutReal *getData(int component) {
-    switch(component) {
-    case 0:
-      return *(x.getData());
-    case 1:
-      return *(y.getData());
-    case 2:
-      return *(z.getData());
-    }
-    return NULL;
-  }
-  void zeroComponent(int component) {
-    switch(component) {
-    case 0:
-      x = 0.0;
-    case 1:
-      y = 0.0;
-    case 2:
-      z = 0.0;
-    }
-  }
   
   void applyBoundary(bool init=false);
   void applyTDerivBoundary();

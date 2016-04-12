@@ -209,7 +209,7 @@ void ZFFT(dcomplex *cv, BoutReal zoffset, int isign, bool shift)
 
 #ifndef _OPENMP
 // Serial code
-void rfft(BoutReal *in, int length, dcomplex *out) {
+void rfft(const BoutReal *in, int length, dcomplex *out) {
   /* Function: rfft
    * Purpose:  Take the FFT of a real variable using fftw_forward. That is
    *           out_k = sum_{j=0}^(length-1) in_j*exp(-2*pi*j*k*sqrt(-1)/length)
@@ -464,7 +464,7 @@ void irfft(dcomplex *in, int length, BoutReal *out)
 }
 #endif
 
-void ZFFT(BoutReal *in, BoutReal zoffset, dcomplex *cv, bool shift)
+void ZFFT(const BoutReal *in, BoutReal zoffset, dcomplex *cv, bool shift)
 {
   /* Function: ZFFT
    * Purpose:  Take the FFT of a real variable, and add an eventual offset from

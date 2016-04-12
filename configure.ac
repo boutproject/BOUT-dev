@@ -43,6 +43,7 @@ AC_ARG_WITH(hdf5,   [  --with-hdf5                 Enable support for HDF5 files
 AC_ARG_WITH(parallelhdf5,[  --with-parallelhdf5    Enable support for parallel HDF5 files])
 AC_ARG_WITH(pnetcdf,[  --with-pnetcdf              Set path to Parallel NetCDF library])
 AC_ARG_WITH(debug,  [  --with-debug            	   Enable all debugging flags])
+AC_ARG_WITH(optimize,[ --with-optimize=default/1/2/3  Enable optimization])
 AC_ARG_WITH(ida,    [  --with-ida=/path/to/ida 	   Use the SUNDIALS IDA solver])
 AC_ARG_WITH(cvode,  [  --with-cvode            	   Use the SUNDIALS CVODE solver])
 AC_ARG_WITH(sundials, [  --with-sundials           Use CVODE and IDA])
@@ -66,6 +67,7 @@ rm config-build.log
 
 AC_ARG_VAR(CXXFLAGS,[Extra compile flags])
 AC_ARG_VAR(LDFLAGS,[Extra linking flags])
+AC_ARG_VAR(LDLIBS,[Extra linking libraries])
 
 AC_SUBST(MKDIR)
 AC_SUBST(EXTRA_INCS)
@@ -83,17 +85,245 @@ AC_DEFUN([CREATE_DIR],
           fi
         ])
 
+dnl#############################################################
+dnl# Define functions
+dnl#############################################################
+# Functions inspired by ESPResSo (espressomd.org)
+dnl
+dnl Try whether the linker / compiler can find the header / libraries
+AC_LANG(C++)
+
+AC_DEFUN([BOUT_MSG_DEBUG],[
+	dnl Uncomment line below to enable debugging
+	dnl AC_MSG_NOTICE([debug: $1])
+	])
+dnl define the macro to check for libraries
+dnl first  argument is the name of the library
+dnl second arg is a function of that library
+dnl third  arg is to be executed if found
+dnl forth  arg is to be executed if not found
+dnl fifth  arg is an additional path to check
+AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
+	AC_MSG_CHECKING([for lib$1])
+	LDFLAGS_save=$LDFLAGS
+	LIBS="$EXTRA_LIBS -l$1"
+	BACL_found=no
+	AS_IF([test ."$5" = .yes], [extra_prefix=""],[extra_prefix="$5"])
+	AC_TRY_LINK([extern "C"
+	char $2();] ,[return $2();], [BACL_found=yes ; break;
+     		  BOUT_MSG_DEBUG([found $1 without path])
+		],)
+	if test $BACL_found != yes ; then
+		for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
+			for path in $prefix $prefix/lib $prefix/lib64 $prefix/x86_64-linux-gnu ; do
+				if test -d $path
+				then
+					LDFLAGS="-L$path $LDFLAGS_save"
+					BOUT_MSG_DEBUG([try link $1 with $path])
+					AC_TRY_LINK([extern "C"
+						char $2();] ,[return $2();], [BACL_found=yes ; break;
+							BOUT_MSG_DEBUG([found $1 with $path])
+							],)
+				fi
+			done
+			AS_IF([test .$BACL_found = .yes],break;)
+		done
+	fi
+	if test $BACL_found = yes ; then
+		EXTRA_LIBS=$LIBS
+		AC_MSG_RESULT(yes)
+	else
+		LDFLAGS=$LDFLAGS_save
+		AC_MSG_RESULT(no)
+	fi
+	AS_IF([test .$BACL_found = .yes], [$3],[$4])
+])
+
+
+AC_DEFUN([BOUT_ADDPATH_CHECK_HEADER],[
+	AC_MSG_CHECKING([for $1])
+	CPPFLAGS_save=$CPPFLAGS
+	BACH_found=no
+	AS_IF([test ."$4" != .yes], [extra_prefix="$4"],[extra_prefix=""])
+	AC_TRY_COMPILE([#include <$1>] ,, [BACH_found=yes ; break;
+     		BOUT_MSG_DEBUG([found $1 without path])
+		],)
+	if test $BACH_found != yes ; then
+		for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
+			for path in $prefix $prefix/include ; do
+				if test -d $path
+				then
+					CPPFLAGS="$CPPFLAGS_save -I$path"
+					BOUT_MSG_DEBUG([try compile $1 with $path])
+					AC_TRY_COMPILE([#include <$1>] ,, [BACH_found=yes ; break;
+							BOUT_MSG_DEBUG([found $1 with $path])
+							],)
+				fi
+			done
+			AS_IF([test .$BACH_found = .yes],break;)
+		done
+	fi
+	if test $BACH_found = yes ; then
+		AC_MSG_RESULT(yes)
+	else
+		CPPFLAGS=$CPPFLAGS_save
+		AC_MSG_RESULT(no)
+	fi
+	AS_IF([test .$BACH_found = .yes], [$2],[$3])
+])
+
+
+
+#############################################################
+# Checks for programs
+#############################################################
+
+MKDIR="mkdir -p"
+AC_PROG_LN_S
+AC_PROG_MAKE_SET
+AC_PROG_RANLIB
+
+#############################################################
+# MPI
+#############################################################
+
+AC_DEFUN([ACX_MPI], [
+AC_PREREQ(2.50) dnl for AC_LANG_CASE
+
+AC_LANG_CASE([C++], [
+  AC_REQUIRE([AC_PROG_CXX])
+  AC_ARG_VAR(MPICXX,[MPI C++ compiler command])
+  AC_CHECK_PROGS(MPICXX, mpicxx mpiCC mpic++ hcp mpxlC_r mpxlC mpCC cmpic++ CC, $CXX)
+  acx_mpi_save_CXX="$CXX"
+  CXX="$MPICXX"
+  AC_SUBST(MPICXX)
+])
+
+if test x = x"$MPILIBS"; then
+  AC_LANG_CASE([C++], [AC_CHECK_FUNC(MPI_Init, [MPILIBS=" "])])
+fi
+
+if test x = x"$MPILIBS"; then
+  AC_CHECK_LIB(mpi, MPI_Init, [MPILIBS="-lmpi"])
+fi
+if test x = x"$MPILIBS"; then
+  AC_CHECK_LIB(mpich, MPI_Init, [MPILIBS="-lmpich"])
+fi
+
+dnl We have to use AC_TRY_COMPILE and not AC_CHECK_HEADER because the
+dnl latter uses $CPP, not $CC (which may be mpicc).
+AC_LANG_CASE([C++], [
+  if test x != x"$MPILIBS";
+  then
+    AC_MSG_CHECKING([for mpi.h])
+    AC_TRY_COMPILE([#include <mpi.h>],[],[AC_MSG_RESULT(yes)], [MPILIBS=""
+      AC_MSG_RESULT(no)])
+  fi
+])
+
+# AC_LANG_CASE[C++], [CXX="$acx_mpi_save_CXX"])
+
+AC_SUBST(MPILIBS)
+
+# Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
+if test x = x"$MPILIBS"; then
+  $2
+  :
+else
+  ifelse([$1],,[AC_DEFINE(HAVE_MPI,1,[Define if you have the MPI library.])],[$1])
+  :
+fi
+])dnl ACX_MPI
+
+AC_LANG([C++])
+ACX_MPI()
+
+# Checks for libraries.
+AC_CHECK_LIB([m], [sqrt])
+
+# Checks for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS([malloc.h stdlib.h string.h strings.h])
+
+# Checks for typedefs, structures, and compiler characteristics.
+#AC_HEADER_STDBOOL
+#AC_C_CONST
+#AC_TYPE_SIZE_T
+#AC_C_VOLATILE
+
+# Checks for library functions.
+#AC_FUNC_ERROR_AT_LINE
+AC_FUNC_MALLOC
+AC_FUNC_REALLOC
+AC_FUNC_VPRINTF
+#AC_CHECK_FUNCS([pow sqrt strcasecmp])
+
+# Check for OpenMP support
+: ${enable_openmp=no}  # Disable by default
+#AC_OPENMP
+# Add the flag to both compile and link stages
+#CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"
+#EXTRA_LIBS="$EXTRA_LIBS $OPENMP_CXXFLAGS"
+
 #############################################################
 # General Options
 #############################################################
 
+OPT_FLAGS=""
 if test "$with_debug" != ""
 then
   echo "Enabling all debug options"
   with_checks="3"
-  CXXFLAGS="$CXXFLAGS -g -O0"
+  # use -Og with available, otherwise fall back to -O0
+  OPT_FLAGS="-g -O0 -Og"
+elif test $with_optimize ; then
+  optimize=$with_optimize
+  test $optimize -eq 0 2>/dev/null
+  if test $? -eq 2 ; then
+    if test $optimize == "default"
+    then
+      OPT_FLAGS="-O"
+    elif test $optimize == "fast"
+    then
+      OPT_FLAGS="-Ofast -march=native -funroll-loops"
+      DISABLE_CHECK=probably
+    else
+      AC_MSG_ERROR([unrecognized option: --with=optimize=$optimize])
+    fi
+  else
+    if test $optimize -gt 3
+    then
+      OPT_FLAGS="-Ofast -march=native -funroll-loops"
+      DISABLE_CHECK=probably
+    elif test $optimize -gt 2
+    then
+      OPT_FLAGS="-O3 -march=native -funroll-loops"
+      DISABLE_CHECK=probably
+    elif test $optimize -gt 1
+    then
+      OPT_FLAGS="-O2 -march=native"
+    elif test $optimze -ge 0
+    then
+      OPT_FLAGS="-O$optimize"
+    else
+      AC_MSG_ERROR([unrecognized option: --with=optimize=$optimize])
+    fi
+  fi
 else
-  CXXFLAGS="$CXXFLAGS -O"
+  OPT_FLAGS="-O"
+fi
+for flag in $OPT_FLAGS
+do
+  CXXFLAGS_save=$CXXFLAGS
+  CXXFLAGS="$CXXFLAGS $flag"
+  AC_MSG_CHECKING([for flag $flag])
+  AC_TRY_COMPILE([],[],[AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no);CXXFLAGS=$CXXFLAGS_save])
+done
+
+# disable checks if optimization > 2 is used
+if test -z $with_checks && test .$DISABLE_CHECK = ."probably"
+then
+  with_checks=no
 fi
 
 CHECK_LEVEL="0"
@@ -149,6 +379,214 @@ fi
 GIT_REVISION=$rev
 
 #############################################################
+# FFT routines
+#############################################################
+
+echo "Searching for FFTW library"
+
+if type fftw-wisdom > /dev/null 2>&1; then
+  echo " -> Found fftw-wisdom executable"
+  # Path to fftw-wisdom, then remove fft-wisdom and bin/
+  fftw_wisdom=`which fftw-wisdom | xargs -0 dirname | xargs -0 dirname`
+	with_fftw="$with_fftw $fftw_wisdom"
+fi
+BOUT_ADDPATH_CHECK_HEADER(fftw3.h, ,AC_MSG_ERROR('FFTW3 is needed by BOUT++'), $with_fftw)
+BOUT_ADDPATH_CHECK_LIB(fftw3, fftw_plan_dft_r2c_1d, ,AC_MSG_ERROR("FFTW3 is needed by BOUT++"), $with_fftw)
+
+echo ""
+
+#############################################################
+# netCDF support
+#############################################################
+
+NCCONF="" # Configuration script
+
+if test "$with_netcdf" != "no"
+then
+  ##########################################
+  # Try to find a valid NetCDF configuration
+  #
+  # at first, try to find ncconf script
+	
+	
+  #echo "Searching for NetCDF configuration"
+
+  OLDNCDF="0" # Indicates whether nc-config or ncxx4-config
+
+    if (test "$with_netcdf" = "yes") || (test "$with_netcdf" = "")
+    then
+      NCCONF=""
+      # No path specified. Try using nc-config
+      if type ncxx4-config &> /dev/null ; then
+        NCCONF=`which ncxx4-config` # New interface
+      elif type nc-config &> /dev/null ; then
+        # Older interface. May or may not have C++ support
+        echo " -> nc-config script found:" `which nc-config`
+        if test `nc-config --has-c++` = "yes"
+        then
+          echo " -> C++ support included"
+          NCCONF=`which nc-config`
+          OLDNCDF="1"
+        else
+          echo " -> NO C++ SUPPORT"
+        fi
+      else
+            echo " -> No configure script found. Specify using --with-netcdf option"
+      fi
+    else
+      # see if configure scripts are in path
+      if type $with_netcdf/ncxx4-config > /dev/null 2>&1; then
+        NCCONF="$with_netcdf/ncxx4-config"
+      elif type $with_netcdf/bin/ncxx4-config > /dev/null 2>&1; then
+        NCCONF="$with_netcdf/bin/ncxx4-config"
+      elif type $with_netcdf/nc-config > /dev/null 2>&1; then
+        NCCONF="$with_netcdf/nc-config"
+        OLDNCDF="1"
+      elif type $with_netcdf/bin/nc-config > /dev/null 2>&1; then
+        NCCONF="$with_netcdf/bin/nc-config"
+        OLDNCDF="1"
+      fi
+    fi
+
+    ##########################################
+    # Get configuration
+    if test "$NCCONF" != ""; then
+      echo " -> NetCDF config script found: $NCCONF"
+
+      NCINC=`$NCCONF --cflags`
+      EXTRA_INCS="$EXTRA_INCS $NCINC"
+
+      if test "$OLDNCDF" == "1"; then
+        NCLIB=`$NCCONF --libs | sed s/-lnetcdf/-lnetcdf_c++\ -lnetcdf/` # Note netcdf_c++ needed
+        LDFLAGS="$LDFLAGS -Wl,-rpath,`nc-config --prefix`/lib"
+
+        CXXFLAGS="$CXXFLAGS -DNCDF"
+        echo " -> NetCDF support enabled"
+      else
+        NCLIB=`$NCCONF --libs`
+
+        CXXFLAGS="$CXXFLAGS -DNCDF4"
+        echo " -> NetCDF-4 support enabled"
+      fi
+      EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
+
+      file_formats="$file_formats netCDF"
+      NCPATH="found"
+      NCFOUND=yes
+    fi
+
+  dnl if nc-config / ncxx4-config is not found, try to find library directly
+  if test .$NCFOUND != ".yes" ; then
+    BOUT_MSG_DEBUG([calling bout addpath])
+    BOUT_ADDPATH_CHECK_HEADER(netcdfcpp.h,
+      BOUT_ADDPATH_CHECK_LIB(netcdf,nc_get_att,
+	BOUT_ADDPATH_CHECK_LIB(netcdf_c++,nc_close, NCFOUND=yes ,NCFOUND=no, \
+				$with_netcdf )
+      ,NCFOUND=no, $with_netcdf )
+    ,NCFOUND=no, $with_netcdf)
+
+  AS_IF( test $NCFOUND = yes, [file_formats="$file_formats netCDF";
+    echo " -> NetCDF support enabled";NCPATH="found";
+	CXXFLAGS="$CXXFLAGS -DNCDF"]
+	,)
+  fi
+
+  AS_IF( [test $with_netcdf && test $NCFOUND != yes ] , AC_MSG_ERROR("netcdf requested but not found"),)
+  AS_IF( test $NCFOUND != yes, echo " -> NetCDF support disabeld",)
+
+fi
+
+echo ""
+
+#############################################################
+# Parallel NetCDF support
+#############################################################
+
+PNCPATH=""
+if test "$with_pnetcdf" != "no"
+then
+  echo "Searching for Parallel-NetCDF library"
+
+  if test "$with_pnetcdf" != ""
+  then
+    # Given a path to the library
+    AC_CHECK_FILES($with_pnetcdf/include/pnetcdf.h, PNCPATH=$with_pnetcdf,)
+    if test "$PNCPATH" == ""
+    then
+      echo "parallel-netcdf not found in given directory"
+    fi
+  fi
+
+  # Find the utilities included with pnetcdf
+  if test "$PNCPATH" == ""
+  then
+    path=`which ncmpidump`
+    if test "$path" != ""
+    then
+      path=`dirname $path`
+      path=$path/..
+      AC_CHECK_FILES($path/include/pnetcdf.h , PNCPATH=$path,)
+    fi
+  fi
+
+  # Try locate
+  if test "$PNCPATH" == ""
+  then
+    path=`locate pnetcdf.h | head -n 1`
+    if test "$path" != ""
+    then
+      path=$path/..
+      AC_CHECK_FILES($path/include/pnetcdf.h , PNCPATH=$path,)
+    fi
+  fi
+fi
+
+if test "$PNCPATH" != ""
+then
+  AC_CHECK_FILES($path/lib/libpnetcdf.a, PNCPATHLIB='lib',
+    AC_CHECK_FILES($path/lib64/libpnetcdf.a, PNCPATHLIB='lib64', PNCPATH=''))
+fi
+
+if test "$PNCPATH" == ""
+then
+  echo "Parallel-NetCDF support disabled"
+else
+  # Set a compile-time flag
+  CXXFLAGS="$CXXFLAGS -DPNCDF"
+  EXTRA_INCS="$EXTRA_INCS -I$PNCPATH/include"
+  EXTRA_LIBS="$EXTRA_LIBS -L$PNCPATH/$PNCPATHLIB -lpnetcdf"
+
+  file_formats="$file_formats Parallel-NetCDF"
+  echo "Parallel-NetCDF support enabled"
+fi
+
+echo ""
+
+#############################################################
+# LAPACK routines (Used for tri- and band-diagonal solvers)
+#############################################################
+
+HAS_LAPACK="no"
+if ( ( test "$with_lapack" != "no" ) )
+then
+	AS_IF( [ test .$with_lapack = .guess || test .$with_lapack = . ],
+				 [ lapack_path="" ],
+				 [ AS_IF(test .$lapack_path != .yes, [lapack_path=$with_lapack
+				 				 with_lapack=yes], lapack_path="" )])
+	dnl echo "\$with_lapack=$with_lapack"
+	dnl echo "\$lapack_pat=$lapack_path"
+	BOUT_ADDPATH_CHECK_LIB(blas, zgemm_ , HAS_BLAS=yes
+		BOUT_ADDPATH_CHECK_LIB(lapack, zgbsv_ , HAS_LAPACK=yes
+			echo "Using LAPACK"
+			CXXFLAGS="$CXXFLAGS -DLAPACK"
+			,
+		  [ AS_IF( [test .$with_lapack = ".yes"], AC_MSG_ERROR("LAPACK requested but not found.")) ], $lapack_path )
+			, [ AS_IF( [test .$with_lapack = ".yes"], AC_MSG_ERROR("LAPACK requested but not found.")) ] , $lapack_path)
+fi
+
+echo ""
+
+#############################################################
 # FACETS
 #############################################################
 
@@ -185,46 +623,11 @@ then
     PETSC_DIR="$with_petsc"
 
   else
-    AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/conf, ,
-    echo "Error - can't find PETSc distribution"
-    exit)
+    AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/conf, PETSC_CONFDIR=${PETSC_DIR}/conf,
+      AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/lib/petsc/conf, PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf,
+        echo "Error - can't find PETSc distribution"
+        exit))
   fi
-
-cat <<MFILE > petscmake$$
-PETSC_ARCH = ${PETSC_ARCH}
-PETSC_DIR  = ${PETSC_DIR}
-include ${PETSC_DIR}/conf/rules
-include ${PETSC_DIR}/conf/variables
-echo_cxx:
-	-@echo \${CXX}
-echo_sundials:
-	-@echo \${SUNDIALS_LIB}
-MFILE
-
-  CXX="`make -f petscmake$$ echo_cxx`"
-  HAS_SUNDIALS=`make -f petscmake$$ echo_sundials | grep -c sundials`
-  HAS_CXX=`echo $CXX | grep -ic mp`
-
-  if test "$HAS_SUNDIALS" == "0"
-  then
-    echo "Warning - PETSc has no SUNDIALS support"
-    PETSC_HAS_SUNDIALS="no"
-  else
-    PETSC_HAS_SUNDIALS="yes"
-  fi
-
-  if test "$HAS_CXX" == "0"
-  then
-    echo "Warning - PETSc must have C++ support"
-    #rm petscmake$$
-    #exit
-  fi
-
-
-  echo "PETSc used C++ compiler $CXX"
-  #MPICXX=$CXX
-
-  rm petscmake$$
 
   PETSC_VERSION_MAJOR="0"
   PETSC_VERSION_MAJOR=`grep 'define PETSC_VERSION_MAJOR' $PETSC_DIR/include/petscversion.h | awk '{print \$3;}'`
@@ -274,7 +677,46 @@ MFILE
     echo "***********************************"
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
   fi
-  PETSC="include \$(PETSC_DIR)/conf/variables"
+
+cat <<MFILE > petscmake$$
+PETSC_ARCH = ${PETSC_ARCH}
+PETSC_DIR  = ${PETSC_DIR}
+include ${PETSC_CONFDIR}/rules
+include ${PETSC_CONFDIR}/variables
+echo_cxx:
+	-@echo \${CXX}
+echo_sundials:
+	-@echo \${SUNDIALS_LIB}
+MFILE
+
+  CXX="`make -f petscmake$$ echo_cxx`"
+  HAS_SUNDIALS=`make -f petscmake$$ echo_sundials | grep -c sundials`
+  HAS_CXX=`echo $CXX | grep -ic mp`
+
+  if test "$HAS_SUNDIALS" == "0"
+  then
+    echo "Warning - PETSc has no SUNDIALS support"
+    PETSC_HAS_SUNDIALS="no"
+  else
+    PETSC_HAS_SUNDIALS="yes"
+  fi
+
+  if test "$HAS_CXX" == "0"
+  then
+    echo "Warning - PETSc must have C++ support"
+    #rm petscmake$$
+    #exit
+  fi
+
+
+  echo "PETSc used C++ compiler $CXX"
+  #MPICXX=$CXX
+
+  rm petscmake$$
+
+  # Set the line to be included in the make.conf file
+
+  PETSC="include ${PETSC_CONFDIR}/variables"
 else
    PETSC=
 fi
@@ -342,7 +784,7 @@ then
 
     EXTRA_INCS="$EXTRA_INCS \$(SLEPC_INCLUDE)"
     EXTRA_LIBS="$EXTRA_LIBS \$(SLEPC_LIB)"
-    SLEPC_VARS="include \${SLEPC_DIR}/conf/slepc_variables"
+    SLEPC_VARS="include $SLEPC_DIR/conf/slepc_variables"
   else
     echo "Error - Unknown SLEPc version"
     echo "  -> No SLEPc support"
@@ -687,94 +1129,6 @@ fi
 
 
 #############################################################
-# FFT routines
-#############################################################
-
-echo "Searching for FFTW library"
-
-# first only look for header files
-
-if test "$with_fftw" = ""
-then
-  # No path specified
-  FFTPATH=""
-  echo " -> Path not given. Searching for library..."
-else
-  FFTPATH=$with_fftw
-  # look only for header file, later search for library ($FFTPATH/lib/libfftw3.a)
-  AC_CHECK_FILES( $FFTPATH/include/fftw3.h ,, [
-    echo " -> Given path not correct. Finding..."
-    FFTPATH=""
-  ] )
-fi
-
-# Test if FFTW_ROOT is set
-if test "$FFTPATH" = ""
-then
-  if test "$FFTW_ROOT" != ""
-  then
-    AC_CHECK_FILES( $FFTW_ROOT/include/fftw3.h , FFTPATH=$FFTW_ROOT, )
-  fi
-fi
-
-# Find fftw-wisdom
-if type fftw-wisdom > /dev/null 2>&1; then
-  echo " -> Found fftw-wisdom executable"
-  # Path to fftw-wisdom, then remove fft-wisdom and bin/
-  FFTWISDOM=`which fftw-wisdom | xargs -0 dirname | xargs -0 dirname`
-  # Check if the files are there
-  AC_CHECK_FILES( $FFTWISDOM/include/fftw3.h , FFTPATH=$FFTWISDOM, )
-  #AC_CHECK_FILES( $FFTWISDOM/lib/libfftw3.a  , FFTPATH=$FFTWISDOM, )
-fi
-
-# Try some known paths
-if test "$FFTPATH" = ""
-then
-  AC_CHECK_FILE(/usr/include/fftw3.h, FFTPATH=/usr,
-  AC_CHECK_FILE(/usr/local/include/fftw3.h, FFTPATH=/usr/local,
-  AC_CHECK_FILE(/opt/local/include/fftw3.h, FFTPATH=/opt/local,
-  AC_CHECK_FILE($HOME/local/include/fftw3.h, FFTPATH=$HOME/local,
-  AC_CHECK_FILE($HOME/include/fftw3.h, FFTPATH=$HOME/,
-  )))))
-
-fi
-
-
-#Test for library
-if test "$FFTPATH" != ""
-then
-  AC_CHECK_FILES($FFTPATH/lib/libfftw3.a, FFTPATHLIB='lib',
-    AC_CHECK_FILES($FFTPATH/lib64/libfftw3.a, FFTPATHLIB='lib64',
-      AC_CHECK_FILES($FFTPATH/lib/libfftw3.so, FFTPATHLIB='lib',
-        AC_CHECK_FILES($FFTPATH/lib64/libfftw3.so, FFTPATHLIB='lib64', FFTPATH='' ) ) ) )
-
-fi
-
-if test "$FFTPATH" = ""
-then
-  echo "ERROR: FFTW not found. Required by BOUT++"
-  exit
-else
-  echo " -> path $FFTPATH"
-  EXTRA_INCS="$EXTRA_INCS -I$FFTPATH/include"
-  EXTRA_LIBS="$EXTRA_LIBS -L$FFTPATH/$FFTPATHLIB -lfftw3"
-fi
-echo ""
-
-#############################################################
-# LAPACK routines (Used for tri- and band-diagonal solvers)
-#############################################################
-
-HAS_LAPACK="no"
-if ( ( test "$with_lapack" != "" ) && ( test "$with_lapack" != "no" ) )
-then
-  echo "Using LAPACK"
-  EXTRA_LIBS="$EXTRA_LIBS -llapack -lblas"
-  CXXFLAGS="$CXXFLAGS -DLAPACK"
-  HAS_LAPACK="yes"
-fi
-
-#############################################################
 # HDF5 library
 #############################################################
 HDFPATH=""  # Indicates not found
@@ -863,223 +1217,6 @@ then
   fi
 else
   printf "HDF5 support disabled\n"
-fi
-
-echo ""
-
-#############################################################
-# netCDF support
-#############################################################
-
-NCCONF="" # Configuration script
-
-if test "$with_netcdf" != "no"
-then
-  ##########################################
-  # Try to find a valid NetCDF configuration
-
-  echo "Searching for NetCDF configuration"
-
-  OLDNCDF="0" # Indicates whether nc-config or ncxx4-config
-
-  if (test "$with_netcdf" = "yes") || (test "$with_netcdf" = "")
-  then
-    # No path specified. Try using nc-config
-    if type ncxx4-config > /dev/null 2>&1; then
-      NCCONF=`which ncxx4-config` # New interface
-    elif type nc-config > /dev/null 2>&1; then
-      # Older interface. May or may not have C++ support
-      echo " -> nc-config script found:" `which nc-config`
-      if test `nc-config --has-c++` = "yes"
-      then
-        echo " -> C++ support included"
-        NCCONF=`which nc-config`
-	OLDNCDF="1"
-      else
-        echo " -> NO C++ SUPPORT"
-      fi
-    else
-        echo " -> No configure script found. Specify using --with-netcdf option"
-    fi
-  else
-    # see if configure scripts are in path
-
-    if type $with_netcdf/ncxx4-config > /dev/null 2>&1; then
-      NCCONF="$with_netcdf/ncxx4-config"
-    elif type $with_netcdf/bin/ncxx4-config > /dev/null 2>&1; then
-      NCCONF="$with_netcdf/bin/ncxx4-config"
-    elif type $with_netcdf/nc-config > /dev/null 2>&1; then
-      NCCONF="$with_netcdf/nc-config"
-      OLDNCDF="1"
-    elif type $with_netcdf/bin/nc-config > /dev/null 2>&1; then
-      NCCONF="$with_netcdf/bin/nc-config"
-      OLDNCDF="1"
-    fi
-  fi
-
-  ##########################################
-  # Get configuration
-  if test "$NCCONF" != ""; then
-    echo " -> NetCDF config script found: $NCCONF"
-
-    NCINC=`$NCCONF --cflags`
-    EXTRA_INCS="$EXTRA_INCS $NCINC"
-
-    if test "$OLDNCDF" == "1"; then
-      NCLIB=`$NCCONF --libs | sed s/-lnetcdf/-lnetcdf_c++\ -lnetcdf/` # Note netcdf_c++ needed
-      LDFLAGS="$LDFLAGS -Wl,-rpath,`nc-config --prefix`/lib"
-
-      CXXFLAGS="$CXXFLAGS -DNCDF"
-      echo " -> NetCDF support enabled"
-    else
-      NCLIB=`$NCCONF --libs`
-
-      CXXFLAGS="$CXXFLAGS -DNCDF4"
-      echo " -> NetCDF-4 support enabled"
-    fi
-    EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
-
-    file_formats="$file_formats netCDF"
-    NCPATH="found"
-  else
-    # No configuration script. Check the NetCDF path manually
-
-    NCPATH=$with_netcdf
-
-    if test "$NCPATH" != ""
-    then
-      # Path set, so check if libraries present
-      AC_CHECK_FILES( $NCPATH/include/netcdfcpp.h $NCPATH/lib/libnetcdf_c++.a $NCPATH/lib/libnetcdf.a ,, [
-        echo " -> Given path not correct. Finding..."
-        NCPATH=""
-      ] )
-    else
-      echo " -> Path not given. Searching for library..."
-    fi
-
-    # Try some known paths
-    if test "$NCPATH" = ""
-    then
-      AC_CHECK_FILE(/usr/include/netcdfcpp.h, NCPATH=/usr/,
-      AC_CHECK_FILE(/usr/local/include/netcdfcpp.h, NCPATH=/usr/local/,
-      AC_CHECK_FILE(/opt/local/include/netcdfcpp.h, NCPATH=/opt/local/,
-      AC_CHECK_FILE($HOME/local/include/netcdfcpp.h, NCPATH=$HOME/local,
-      AC_CHECK_FILE($HOME/include/netcdfcpp.h, NCPATH=$HOME,
-      )))))
-
-      if test "$NCPATH" != ""
-      then
-        # Check for the rest of the files
-        AC_CHECK_FILES( $NCPATH/lib/libnetcdf_c++.a $NCPATH/lib/libnetcdf.a, NCPATHLIB='lib',
-          AC_CHECK_FILES( $NCPATH/lib64/libnetcdf_c++.a $NCPATH/lib64/libnetcdf.a, NCPATHLIB='lib64', NCPATH=""))
-      fi
-    fi
-
-    # Try to find using locate
-    if test "$NCPATH" = ""
-    then
-      NCFILE=`locate netcdfcpp.h | head -n 1`
-      if test "$NCFILE" != ""
-      then
-        NCFILE=`dirname $NCFILE`
-        NCFILE=$NCFILE/..
-        AC_CHECK_FILES( $NCFILE/include/netcdfcpp.h , NCPATH=$NCFILE, with_netcdf="no")
-        AC_CHECK_FILES( $NCFILE/lib/libnetcdf_c++.a $NCFILE/lib/libnetcdf.a , NCPATHLIB='lib',
-          AC_CHECK_FILES( $NCFILE/lib64/libnetcdf_c++.a $NCFILE/lib64/libnetcdf.a , NCPATHLIB='lib64', with_netcdf="no"))
-      else
-        echo "checking locate... no"
-        with_netcdf="no"
-      fi
-    fi
-
-    # Finally, if found, add to BOUT++
-
-    if test "$with_netcdf" != "no"
-    then
-      # Set a compile-time flag
-      CXXFLAGS="$CXXFLAGS -DNCDF"
-
-      if test "$NCPATH" != ""; then
-        echo " -> path $NCPATH"
-        EXTRA_INCS="$EXTRA_INCS -I$NCPATH/include"
-        EXTRA_LIBS="$EXTRA_LIBS -L$NCPATH/$NCPATHLIB"
-        LDFLAGS="$LDFLAGS -Wl,-rpath,$NCPATH/lib"
-      fi
-
-      EXTRA_LIBS="$EXTRA_LIBS -lnetcdf_c++ -lnetcdf"
-
-      file_formats="$file_formats netCDF"
-
-      echo " -> NetCDF support enabled"
-    else
-      echo "NetCDF support disabled"
-    fi
-  fi
-
-fi
-
-echo ""
-
-#############################################################
-# Parallel NetCDF support
-#############################################################
-
-PNCPATH=""
-if test "$with_pnetcdf" != "no"
-then
-  echo "Searching for Parallel-NetCDF library"
-
-  if test "$with_pnetcdf" != ""
-  then
-    # Given a path to the library
-    AC_CHECK_FILES($with_pnetcdf/include/pnetcdf.h, PNCPATH=$with_pnetcdf,)
-    if test "$PNCPATH" == ""
-    then
-      echo "parallel-netcdf not found in given directory"
-    fi
-  fi
-
-  # Find the utilities included with pnetcdf
-  if test "$PNCPATH" == ""
-  then
-    path=`which ncmpidump`
-    if test "$path" != ""
-    then
-      path=`dirname $path`
-      path=$path/..
-      AC_CHECK_FILES($path/include/pnetcdf.h , PNCPATH=$path,)
-    fi
-  fi
-
-  # Try locate
-  if test "$PNCPATH" == ""
-  then
-    path=`locate pnetcdf.h | head -n 1`
-    if test "$path" != ""
-    then
-      path=$path/..
-      AC_CHECK_FILES($path/include/pnetcdf.h , PNCPATH=$path,)
-    fi
-  fi
-fi
-
-if test "$PNCPATH" != ""
-then
-  AC_CHECK_FILES($path/lib/libpnetcdf.a, PNCPATHLIB='lib',
-    AC_CHECK_FILES($path/lib64/libpnetcdf.a, PNCPATHLIB='lib64', PNCPATH=''))
-fi
-
-if test "$PNCPATH" == ""
-then
-  echo "Parallel-NetCDF support disabled"
-else
-  # Set a compile-time flag
-  CXXFLAGS="$CXXFLAGS -DPNCDF"
-  EXTRA_INCS="$EXTRA_INCS -I$PNCPATH/include"
-  EXTRA_LIBS="$EXTRA_LIBS -L$PNCPATH/$PNCPATHLIB -lpnetcdf"
-
-  file_formats="$file_formats Parallel-NetCDF"
-  echo "Parallel-NetCDF support enabled"
 fi
 
 echo ""
@@ -1252,96 +1389,6 @@ then
   echo
 fi
 
-#############################################################
-# Checks for programs
-#############################################################
-
-MKDIR="mkdir -p"
-AC_PROG_LN_S
-AC_PROG_MAKE_SET
-AC_PROG_RANLIB
-
-#############################################################
-# MPI
-#############################################################
-
-AC_DEFUN([ACX_MPI], [
-AC_PREREQ(2.50) dnl for AC_LANG_CASE
-
-AC_LANG_CASE([C++], [
-  AC_REQUIRE([AC_PROG_CXX])
-  AC_ARG_VAR(MPICXX,[MPI C++ compiler command])
-  AC_CHECK_PROGS(MPICXX, mpicxx mpiCC mpic++ hcp mpxlC_r mpxlC mpCC cmpic++ CC, $CXX)
-  acx_mpi_save_CXX="$CXX"
-  CXX="$MPICXX"
-  AC_SUBST(MPICXX)
-])
-
-if test x = x"$MPILIBS"; then
-  AC_LANG_CASE([C++], [AC_CHECK_FUNC(MPI_Init, [MPILIBS=" "])])
-fi
-
-if test x = x"$MPILIBS"; then
-  AC_CHECK_LIB(mpi, MPI_Init, [MPILIBS="-lmpi"])
-fi
-if test x = x"$MPILIBS"; then
-  AC_CHECK_LIB(mpich, MPI_Init, [MPILIBS="-lmpich"])
-fi
-
-dnl We have to use AC_TRY_COMPILE and not AC_CHECK_HEADER because the
-dnl latter uses $CPP, not $CC (which may be mpicc).
-AC_LANG_CASE([C++], [
-  if test x != x"$MPILIBS";
-  then
-    AC_MSG_CHECKING([for mpi.h])
-    AC_TRY_COMPILE([#include &lt;mpi.h&gt;],[],[AC_MSG_RESULT(yes)], [MPILIBS=""
-      AC_MSG_RESULT(no)])
-  fi
-])
-
-# AC_LANG_CASE[C++], [CXX="$acx_mpi_save_CXX"])
-
-AC_SUBST(MPILIBS)
-
-# Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
-if test x = x"$MPILIBS"; then
-  $2
-  :
-else
-  ifelse([$1],,[AC_DEFINE(HAVE_MPI,1,[Define if you have the MPI library.])],[$1])
-  :
-fi
-])dnl ACX_MPI
-
-AC_LANG([C++])
-ACX_MPI()
-
-# Checks for libraries.
-AC_CHECK_LIB([m], [sqrt])
-
-# Checks for header files.
-AC_HEADER_STDC
-AC_CHECK_HEADERS([malloc.h stdlib.h string.h strings.h])
-
-# Checks for typedefs, structures, and compiler characteristics.
-#AC_HEADER_STDBOOL
-#AC_C_CONST
-#AC_TYPE_SIZE_T
-#AC_C_VOLATILE
-
-# Checks for library functions.
-#AC_FUNC_ERROR_AT_LINE
-AC_FUNC_MALLOC
-AC_FUNC_REALLOC
-AC_FUNC_VPRINTF
-#AC_CHECK_FUNCS([pow sqrt strcasecmp])
-
-# Check for OpenMP support
-: ${enable_openmp=no}  # Disable by default
-#AC_OPENMP
-# Add the flag to both compile and link stages
-#CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"
-#EXTRA_LIBS="$EXTRA_LIBS $OPENMP_CXXFLAGS"
 
 #############################################################
 # Check types for SUNDIALS
@@ -1593,6 +1640,8 @@ fi
 #############################################################
 # Gather configuration info for bout-config
 #############################################################
+
+EXTRA_INCS="${EXTRA_INCS} ${CPPFLAGS}"
 
 PREFIX=$PWD
 IDLCONFIGPATH=$PWD/tools/idllib

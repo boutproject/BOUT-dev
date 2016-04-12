@@ -217,6 +217,9 @@ int QuiltMesh::load(MPI_Comm comm) {
  ****************************************************************/
 
 int QuiltMesh::communicate(FieldGroup &g) {
+  //Ensure FieldGroup has unique members
+  g.makeUnique();
+
   comm_handle c = send(g);
   return wait(c);
 }

@@ -53,28 +53,11 @@ Field3D::Field3D() : background(NULL), block(NULL), deriv(NULL), yup_field(0), y
 }
 
 /// Doesn't copy any data, just create a new reference to the same data (copy on change later)
-Field3D::Field3D(const Field3D& f) : background(NULL), deriv(NULL), yup_field(0), ydown_field(0) {
+Field3D::Field3D(const Field3D& f) : background(NULL), deriv(NULL), yup_field(0), ydown_field(0), block(NULL) {
 #ifdef MEMDEBUG
   output.write("Field3D %u: Copy constructor from %u\n", (unsigned int) this, (unsigned int) &f);
 #endif
-
-#ifdef CHECK
-  msg_stack.push("Field3D: Copy constructor");
-  f.checkData();
-#endif
-
-  /// Copy a reference to the block
-  block = f.block;
-  /// Increase reference count
-  block->refs++;
-
-  location = f.location;
- 
-  boundaryIsSet = false;
- 
-#ifdef CHECK
-  msg_stack.pop();
-#endif
+  * this=f;  
 }
 
 Field3D::Field3D(const Field2D& f) : background(NULL), block(NULL), deriv(NULL), yup_field(0), ydown_field(0) {
@@ -1722,17 +1705,17 @@ void Field3D::setYStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc
       fval.p = block->data[bx.jx][bx.jy][bx.jz];
       fval.c = block->data[bx.jx][bx.jym][bx.jz];
       fval.m = block->data[bx.jx][bx.jy2m][bx.jz];
-      fval.m2 = block->data[bx.jx][bx.jy+3][bx.jz];
-      fval.m3 = block->data[bx.jx][bx.jy+4][bx.jz];
-      fval.m4 = block->data[bx.jx][bx.jy+5][bx.jz];
+      fval.m2 = block->data[bx.jx][bx.jy-3][bx.jz];
+      fval.m3 = block->data[bx.jx][bx.jy-4][bx.jz];
+      fval.m4 = block->data[bx.jx][bx.jy-5][bx.jz];
     }else if(location == CELL_YLOW) {
       // Stencil centred around a cell centre
       fval.p = block->data[bx.jx][bx.jyp][bx.jz];
       fval.c = block->data[bx.jx][bx.jy][bx.jz];
       fval.m = block->data[bx.jx][bx.jym][bx.jz];
       fval.m2 = block->data[bx.jx][bx.jy2m][bx.jz];
-      fval.m3 = block->data[bx.jx][bx.jy+3][bx.jz];
-      fval.m4 = block->data[bx.jx][bx.jy+4][bx.jz];
+      fval.m3 = block->data[bx.jx][bx.jy-3][bx.jz];
+      fval.m4 = block->data[bx.jx][bx.jy-4][bx.jz];
     }
     // Shifted in one direction -> shift in another
     // Could produce warning
@@ -1742,8 +1725,8 @@ void Field3D::setYStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc
     fval.c = block->data[bx.jx][bx.jy][bx.jz];
     fval.m = block->data[bx.jx][bx.jym][bx.jz];
     fval.m2 = block->data[bx.jx][bx.jy2m][bx.jz];
-    fval.m3 = block->data[bx.jx][bx.jy+3][bx.jz];
-    fval.m4 = block->data[bx.jx][bx.jy+4][bx.jz];
+    fval.m3 = block->data[bx.jx][bx.jy-3][bx.jz];
+    fval.m4 = block->data[bx.jx][bx.jy-4][bx.jz];
   }
 }
 
@@ -1924,6 +1907,9 @@ const Field3D Field3D::shiftZ(const BoutReal zangle) const {
 }
 
 const Field3D Field3D::shiftZ(bool toBoutReal) const {
+  if(!mesh->ShiftXderivs)
+    return *this;
+  
   if(toBoutReal) {
     return shiftZ(mesh->zShift);
   }
@@ -2545,7 +2531,7 @@ void Field3D::setBoundaryTo(const Field3D &f3d) {
 #ifdef CHECK
   msg_stack.push("Field3D::setBoundary(const Field3D&)");
   
-  if(f3d.block == NULL)
+  if(!f3d.isAllocated())
     throw BoutException("Setting boundary condition to empty data\n");
 #endif
 
@@ -2556,9 +2542,13 @@ void Field3D::setBoundaryTo(const Field3D &f3d) {
   for(vector<BoundaryRegion*>::iterator it = reg.begin(); it != reg.end(); it++) {
     BoundaryRegion* bndry= *it;
     /// Loop within each region
-    for(bndry->first(); !bndry->isDone(); bndry->next())
-      for(int z=0;z<mesh->ngz;z++)
-        block->data[bndry->x][bndry->y][z] = f3d.block->data[bndry->x][bndry->y][z];
+    for(bndry->first(); !bndry->isDone(); bndry->next1d())
+      for(int z=0;z<mesh->ngz;z++) {
+        // Get value half-way between cells
+        BoutReal val = 0.5*(f3d(bndry->x,bndry->y,z) + f3d(bndry->x-bndry->bx, bndry->y-bndry->by, z));
+        // Set to this value
+        (*this)(bndry->x,bndry->y,z) = 2.*val - (*this)(bndry->x-bndry->bx, bndry->y-bndry->by, z);
+      }
   }
 #ifdef CHECK
   msg_stack.pop();

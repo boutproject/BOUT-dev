@@ -91,11 +91,11 @@ int SNESSolver::init(bool restarting, int nout, BoutReal tstep) {
                0,   // Number of nonzeros per row in off-diagonal portion of local submatrix
                PETSC_NULL, 
                &Jmf);
-#ifdef BOUT_HAS_PETSC_3_3
+#if PETSC_VERSION_GE(3,4,0)
+  SNESSetJacobian(snes,Jmf,Jmf,SNESComputeJacobianDefault,this);
+#else
   // Before 3.4
   SNESSetJacobian(snes,Jmf,Jmf,SNESDefaultComputeJacobian,this);
-#else
-  SNESSetJacobian(snes,Jmf,Jmf,SNESComputeJacobianDefault,this);
 #endif
   MatSetOption(Jmf,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_FALSE);
 

@@ -1,0 +1,261 @@
+#include "laplacexz-cyclic.hxx"
+
+#include <utils.hxx>
+#include <fft.hxx>
+#include <bout/constants.hxx>
+#include <bout/sys/timer.hxx>
+
+#include <output.hxx>
+
+LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options) : LaplaceXZ(m, options), mesh(m) {
+
+  // Number of Z Fourier modes, including DC
+  nmode = (mesh->ngz-1)/2 + 1;
+
+  // Number of independent systems of
+  // equations to solve
+  nsys = nmode * (mesh->yend - mesh->ystart+1);
+
+  // Start and end X index
+  xstart = mesh->xstart; // Starting X index
+  if(mesh->firstX()) {
+    xstart -= 1;
+  }
+  xend = mesh->xend;
+  if(mesh->lastX()) {
+    xend += 1;
+  }
+
+  // Number of points in X on this processor
+  // including boundaries but not guard cells
+  nloc = xend - xstart + 1;
+
+  acoef  = matrix<dcomplex>(nsys, nloc);
+  bcoef  = matrix<dcomplex>(nsys, nloc);
+  ccoef  = matrix<dcomplex>(nsys, nloc);
+  xcmplx = matrix<dcomplex>(nsys, nloc);
+  rhscmplx = matrix<dcomplex>(nsys, nloc);
+
+  k1d = new dcomplex[(mesh->ngz-1)/2 + 1];
+  k1d_2 = new dcomplex[(mesh->ngz-1)/2 + 1];
+  
+  // Create a cyclic reduction object, operating on dcomplex values
+  cr = new CyclicReduce<dcomplex>(mesh->getXcomm(), nloc);
+
+  // Getting the boundary flags
+  OPTION(options, inner_boundary_flags, 0);
+  OPTION(options, outer_boundary_flags, 0);
+
+  // Set default coefficients
+  setCoefs(1.0, 0.0);
+}
+
+LaplaceXZcyclic::~LaplaceXZcyclic() {
+  // Free coefficient arrays
+  free_matrix(acoef);
+  free_matrix(bcoef);
+  free_matrix(ccoef);
+  free_matrix(xcmplx);
+  free_matrix(rhscmplx);
+
+  delete[] k1d;
+  delete[] k1d_2;
+  
+  // Delete tridiagonal solver
+  delete cr;
+}
+
+void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
+  Timer timer("invert");
+
+  // Set coefficients
+
+  int ind = 0;
+  for(int y=mesh->ystart; y <= mesh->yend; y++) {
+    for(int kz = 0; kz < nmode; kz++) {
+      BoutReal kwave=kz*2.0*PI/(mesh->zlength());
+
+      if(mesh->firstX()) {
+        // Inner X boundary
+        
+        if( ((kz == 0) && (inner_boundary_flags & INVERT_DC_GRAD)) ||
+            ((kz != 0) && (inner_boundary_flags & INVERT_AC_GRAD)) ) {
+          // Neumann
+          acoef[ind][0] =  0.0;
+          bcoef[ind][0] =  1.0;
+          ccoef[ind][0] =  -1.0;
+        }else {
+          // Dirichlet
+          // This includes cases where the boundary is set to a value
+          acoef[ind][0] =  0.0;
+          bcoef[ind][0] =  0.5;
+          ccoef[ind][0] =  0.5;
+        }
+      }
+
+      // Bulk of the domain
+      for(int x=mesh->xstart; x <= mesh->xend; x++) {
+        acoef[ind][x-xstart] = 0.0; // X-1
+        bcoef[ind][x-xstart] = 0.0; // Diagonal
+        ccoef[ind][x-xstart] = 0.0; // X+1
+
+        //////////////////////////////
+        // B coefficient
+        bcoef[ind][x-xstart] += B2D(x,y);
+
+        //////////////////////////////
+        // A coefficient
+
+        // XX component
+
+        // Metrics on x+1/2 boundary
+        BoutReal J = 0.5*(mesh->J(x,y) + mesh->J(x+1,y));
+        BoutReal g11 = 0.5*(mesh->g11(x,y) + mesh->g11(x+1,y));
+        BoutReal dx = 0.5*(mesh->dx(x,y) + mesh->dx(x+1,y));
+        BoutReal A = 0.5*(A2D(x,y) + A2D(x+1,y));
+
+        BoutReal val = A * J * g11 / (mesh->J(x,y) * dx * mesh->dx(x,y));
+
+        ccoef[ind][x-xstart] += val;
+        bcoef[ind][x-xstart] -= val;
+
+        // Metrics on x-1/2 boundary
+        J = 0.5*(mesh->J(x,y) + mesh->J(x-1,y));
+        g11 = 0.5*(mesh->g11(x,y) + mesh->g11(x-1,y));
+        dx = 0.5*(mesh->dx(x,y) + mesh->dx(x-1,y));
+        A = 0.5*(A2D(x,y) + A2D(x-1,y));
+
+        val = A * J * g11 / (mesh->J(x,y) * dx * mesh->dx(x,y));
+        acoef[ind][x-xstart] += val;
+        bcoef[ind][x-xstart] -= val;
+
+        // ZZ component
+        bcoef[ind][x-xstart] -= A2D(x,y) * SQ(kwave) * mesh->g33(x,y);
+
+      }
+
+      // Outer X boundary
+      if(mesh->lastX()) {
+        // Outer X boundary
+        if( ((kz == 0) && (outer_boundary_flags & INVERT_DC_GRAD)) ||
+            ((kz != 0) && (outer_boundary_flags & INVERT_AC_GRAD)) ) {
+          // Neumann
+          acoef[ind][nloc-1] =  -1.0;
+          bcoef[ind][nloc-1] =  1.0;
+          ccoef[ind][nloc-1] =  0.0;
+        }else {
+          // Dirichlet
+          acoef[ind][nloc-1] =  0.5;
+          bcoef[ind][nloc-1] =  0.5;
+          ccoef[ind][nloc-1] =  0.0;
+        }
+      }
+      
+      ind++;
+    }
+  }
+  // Set coefficients in tridiagonal solver
+  cr->setCoefs(nsys, acoef, bcoef, ccoef);
+}
+
+Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &x0) {
+  Timer timer("invert");
+  
+  // Create the rhs array
+  int ind = 0;
+  for(int y=mesh->ystart; y <= mesh->yend; y++) {
+
+    if(mesh->firstX()) {
+      // Inner X boundary
+      
+      if(inner_boundary_flags & INVERT_SET) {
+        // Fourier transform x0 in Z at xstart-1 and xstart
+        ZFFT(&x0(mesh->xstart-1,y,0), mesh->zShift(mesh->xstart-1, y), k1d);
+        ZFFT(&x0(mesh->xstart,y,0), mesh->zShift(mesh->xstart, y), k1d_2);
+        for(int kz = 0; kz < nmode; kz++) {
+          // Use the same coefficients as applied to the solution
+          // so can either set gradient or value
+          rhscmplx[ind + kz][0] = bcoef[ind + kz][0]*k1d[kz] + ccoef[ind + kz][0]*k1d_2[kz];
+        }
+      }else if(inner_boundary_flags & INVERT_RHS) {
+        // Fourier transform rhs in Z at xstart-1 and xstart
+        ZFFT(&rhs(mesh->xstart-1,y,0), mesh->zShift(mesh->xstart-1, y), k1d);
+        ZFFT(&rhs(mesh->xstart,y,0), mesh->zShift(mesh->xstart, y), k1d_2);
+        for(int kz = 0; kz < nmode; kz++) {
+          // Use the same coefficients as applied to the solution
+          // so can either set gradient or value
+          rhscmplx[ind + kz][0] = bcoef[ind + kz][0]*k1d[kz] + ccoef[ind + kz][0]*k1d_2[kz];
+        }
+      }else {
+        for(int kz = 0; kz < nmode; kz++) {
+          rhscmplx[ind + kz][0] = 0.0;
+        }
+      }
+    }
+
+    // Bulk of the domain
+    for(int x=mesh->xstart; x <= mesh->xend; x++) {
+      // Fourier transform RHS, shifting into X-Z orthogonal coordinates
+      ZFFT(&rhs(x,y,0), mesh->zShift(x, y), k1d);
+      for(int kz = 0; kz < nmode; kz++) {
+        rhscmplx[ind + kz][x-xstart] = k1d[kz];
+      }
+    }
+
+    // Outer X boundary
+    if(mesh->lastX()) {
+      // Outer X boundary
+      if(outer_boundary_flags & INVERT_SET) {
+        // Fourier transform x0 in Z at xend and xend+1
+        ZFFT(&x0(mesh->xend,y,0), mesh->zShift(mesh->xend, y), k1d);
+        ZFFT(&x0(mesh->xend+1,y,0), mesh->zShift(mesh->xend+1, y), k1d_2);
+        for(int kz = 0; kz < nmode; kz++) {
+          // Use the same coefficients as applied to the solution
+          // so can either set gradient or value
+          rhscmplx[ind + kz][nloc-1] = acoef[ind + kz][nloc-1]*k1d[kz] + bcoef[ind + kz][nloc-1]*k1d_2[kz];
+        }
+      }else if(outer_boundary_flags & INVERT_RHS) {
+        // Fourier transform rhs in Z at xstart-1 and xstart
+        ZFFT(&rhs(mesh->xend,y,0), mesh->zShift(mesh->xend, y), k1d);
+        ZFFT(&rhs(mesh->xend+1,y,0), mesh->zShift(mesh->xend+1, y), k1d_2);
+        for(int kz = 0; kz < nmode; kz++) {
+          // Use the same coefficients as applied to the solution
+          // so can either set gradient or value
+          rhscmplx[ind + kz][nloc-1] = acoef[ind + kz][nloc-1]*k1d[kz] + bcoef[ind + kz][nloc-1]*k1d_2[kz];
+        }
+      }else {
+        for(int kz = 0; kz < nmode; kz++) {
+          rhscmplx[ind + kz][nloc-1] = 0.0;
+        }
+      }
+      
+      for(int kz = 0; kz < nmode; kz++) {
+        rhscmplx[ind + kz][nloc-1] = 0.0;
+      }
+    }
+    ind += nmode;
+  }
+
+  // Solve tridiagonal systems
+  cr->solve(nsys, rhscmplx, xcmplx);
+
+  // FFT back to real space
+
+  Field3D result;
+  result.allocate();
+
+  ind = 0;
+  for(int y=mesh->ystart; y <= mesh->yend; y++) {
+    for(int x=xstart;x<=xend;x++) {
+      for(int kz = 0; kz < nmode; kz++) {
+        k1d[kz] = xcmplx[ind + kz][x-xstart];
+      }
+
+      // This shifts back to field-aligned coordinates
+      ZFFT_rev(k1d, mesh->zShift(x, y), &result(x,y,0));
+    }
+    ind += nmode;
+  }
+  
+  return result;
+}

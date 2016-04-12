@@ -39,10 +39,9 @@ def analyse_equil ( F, R, Z):
   # Need to find starting locations for O-points (minima/maxima)
   # and X-points (saddle points)
   #
-    Rr=numpy.tile(R,nx).reshape(nx,ny).T  # needed for contour
-    Zz=numpy.tile(Z,ny).reshape(nx,ny)
+    Rr=numpy.tile(R,ny).reshape(ny,nx).T  # needed for contour
+    Zz=numpy.tile(Z,nx).reshape(nx,ny)
     
- 
     contour1=contour(Rr,Zz,gradient(F)[0], levels=[0.0], colors='r')
     contour2=contour(Rr,Zz,gradient(F)[1], levels=[0.0], colors='r')    
 

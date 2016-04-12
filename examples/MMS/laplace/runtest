@@ -62,26 +62,35 @@ dx = 1. / (array(nxlist) - 2.)
 
 # plot errors
 
-import matplotlib.pyplot as plt
-
-plt.plot(dx, error_2, '-o', label=r'$l^2$')
-plt.plot(dx, error_inf, '-x', label=r'$l^\infty$')
-
 
 order = log(error_2[-1] / error_2[-2]) / log(dx[-1] / dx[-2])
-print("Convergence order = %f" % (order))
+try:
+    import matplotlib.pyplot as plt
 
-plt.plot(dx, error_2[-1]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
+    plt.plot(dx, error_2, '-o', label=r'$l^2$')
+    plt.plot(dx, error_inf, '-x', label=r'$l^\infty$')
 
-plt.legend(loc="upper left")
-plt.grid()
+    print("Convergence order = %f" % (order))
 
-plt.yscale('log')
-plt.xscale('log')
+    plt.plot(dx, error_2[-1]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
 
-plt.xlabel(r'Mesh spacing $\delta x$')
-plt.ylabel("Error norm")
+    plt.legend(loc="upper left")
+    plt.grid()
 
-plt.savefig("norm.pdf")
+    plt.yscale('log')
+    plt.xscale('log')
 
-plt.show()
+    plt.xlabel(r'Mesh spacing $\delta x$')
+    plt.ylabel("Error norm")
+
+    plt.savefig("norm.pdf")
+
+    #plt.show()
+except:
+    pass
+
+if order < 1.9:
+    print("MMS test failed")
+    exit(1)
+else:
+    exit(0)

@@ -108,10 +108,8 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
   BoutReal *udata;
   
   ierr = VecGetArray(u,&udata);CHKERRQ(ierr);
-  if(save_vars(udata)) {
-    throw BoutException("\tError: Initial variable value not set\n");
-    return 1;
-  }
+  save_vars(udata);
+  
   ierr = VecRestoreArray(u,&udata);CHKERRQ(ierr);
 
   PetscTruth      J_load;

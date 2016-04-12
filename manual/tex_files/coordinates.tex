@@ -18,23 +18,23 @@
 \definecolor{listinggray}{gray}{0.9}
 \definecolor{lbcolor}{rgb}{0.95,0.95,0.95}
 \lstset{
-	backgroundcolor=\color{lbcolor},
+        backgroundcolor=\color{lbcolor},
         language=C++,
-	keywordstyle=\bfseries\ttfamily\color[rgb]{0,0,1},
-	identifierstyle=\ttfamily,
-	commentstyle=\color[rgb]{0.133,0.545,0.133},
-	stringstyle=\ttfamily\color[rgb]{0.627,0.126,0.941},
-	showstringspaces=false,
-	basicstyle=\small,
-	numberstyle=\footnotesize,
-	numbers=left,
-	stepnumber=1,
-	numbersep=10pt,
-	tabsize=2,
-	breaklines=true,
-	prebreak = \raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
-	breakatwhitespace=false,
-	aboveskip={0.5\baselineskip},
+        keywordstyle=\bfseries\ttfamily\color[rgb]{0,0,1},
+        identifierstyle=\ttfamily,
+        commentstyle=\color[rgb]{0.133,0.545,0.133},
+        stringstyle=\ttfamily\color[rgb]{0.627,0.126,0.941},
+        showstringspaces=false,
+        basicstyle=\small,
+        numberstyle=\footnotesize,
+        numbers=left,
+        stepnumber=1,
+        numbersep=10pt,
+        tabsize=2,
+        breaklines=true,
+        prebreak = \raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
+        breakatwhitespace=false,
+        aboveskip={0.5\baselineskip},
         columns=fixed,
         upquote=true,
         extendedchars=true,
@@ -54,8 +54,8 @@
 \rhead{\thepage}
 \renewcommand{\sectionmark}[1]{\markright{#1}{}}
 \renewcommand{\headrulewidth}{0.3pt}
-\setlength{\headheight}{15pt} 		% Avoids getting warning about to small
-					% header
+\setlength{\headheight}{15pt}           % Avoids getting warning about to small
+                                        % header
 
 \newcommand{\code}[1]{\texttt{#1}}
 \newcommand{\bfile}[1]{\texttt{\bf 1}}
@@ -148,9 +148,9 @@ tokamak models, and useful derivations and expressions.
 %
 \label{sec:coordinates}
 Starting with an orthogonal toroidal coordinate system $\L(\psi, \theta,
-\zeta\R)$, where $\psi$ is the poloidal flux, $\theta$ the poloidal angle
-(from $0$ to $2\pi$), and $\zeta$ the toroidal angle (also $0$ to $2\pi$). We
-have that the magnetic field $\Bvec$ can be expressed as
+\zeta\R)$, where $\psi$ is the poloidal flux, $\theta$ the poloidal angle (from
+$0$ to $2\pi$), and $\zeta$ the toroidal angle (also $0$ to $2\pi$). We have
+that the magnetic field $\Bvec$ can be expressed as
 %
 \begin{align*}
  \Bvec =& B_\theta \nabla \theta + B_\zeta \nabla \zeta\\ =& B_\theta
@@ -161,9 +161,8 @@ have that the magnetic field $\Bvec$ can be expressed as
 The magnitudes of the unit vectors are
 %
 \begin{align*}
-\L|\hv{e}_\psi\R| = \frac{1}{R\L|\Bp\R|} \qquad
-\L|\hv{e}_\theta\R| = \hthe \qquad
-\L|\hv{e}_\zeta\R| = R
+\L|\hv{e}_\psi\R| = \frac{1}{R\L|\Bp\R|} \qquad \L|\hv{e}_\theta\R| = \hthe
+\qquad \L|\hv{e}_\zeta\R| = R
 \end{align*}
 %
 where $\hthe$ is the poloidal arc length per radian.  The coordinate system is
@@ -173,15 +172,15 @@ $\hv{e}_\theta\times\hv{e}_\zeta = \hv{e}_\psi$. The covariant metric
 coefficients are
 %
 \begin{align*}
-g_{\psi\psi} = \frac{1}{\L(R\L|\Bp\R|\R)^2} \qquad
-g_{\theta\theta} = h_\theta^2 \qquad g_{\zeta\zeta} = R^2
+g_{\psi\psi} = \frac{1}{\L(R\L|\Bp\R|\R)^2} \qquad g_{\theta\theta} =
+h_\theta^2 \qquad g_{\zeta\zeta} = R^2
 \end{align*}
 %
 and the magnitudes of the reciprocal vectors are therefore
 %
 \begin{align*}
-\L|\nabla\psi\R| = R\L|\Bp\R| \qquad \L|\nabla\theta\R| =
-\frac{1}{h_\theta} \qquad \L|\nabla\zeta\R| = \frac{1}{R}
+\L|\nabla\psi\R| = R\L|\Bp\R| \qquad \L|\nabla\theta\R| = \frac{1}{h_\theta}
+\qquad \L|\nabla\zeta\R| = \frac{1}{R}
 \end{align*}
 %
 Because the coordinate system is orthogonal, $g^{ii} = 1/g_{ii}$ and so the
@@ -212,22 +211,20 @@ Similarly,
 %
 In order to efficiently simulate (predominantly) field-aligned structures,
 grid-points are placed in a field-aligned coordinate system. We define
-$\sigma_{B\theta} \equiv \Bp / \L|\Bp\R|$ i.e. the sign of the poloidal
-field. The new coordinates $\L(x,y,z\R)$ are defined by:
+$\sigma_{B\theta} \equiv \Bp / \L|\Bp\R|$ i.e. the sign of the poloidal field.
+The new coordinates $\L(x,y,z\R)$ are defined by:
 %
 \begin{align}
-x = \sbt\L(\psi - \psi_0\R) \qquad y = \theta \qquad z =
-\sigma_{B\theta} \L(\zeta -
-\int_{\theta_0}^{\theta}\nu\L(\psi,\theta\R)d\theta\R)
+x = \sbt\L(\psi - \psi_0\R) \qquad y = \theta \qquad z = \sigma_{B\theta}
+\L(\zeta - \int_{\theta_0}^{\theta}\nu\L(\psi,\theta\R)d\theta\R)
 \label{eq:coordtransform}
 \end{align}
 %
 Where $\nu$ is the local field-line pitch given by
 %
 \begin{align*}
-\nu\L(\psi, \theta\R) =
-\frac{\Bvec\cdot\nabla\zeta}{\Bvec\cdot\nabla\theta} = \frac{\Bt\hthe}{\Bp R} =
-\frac{\L(F/R\R)h_\theta}{\Bp R} = FJ/R^2
+\nu\L(\psi, \theta\R) = \frac{\Bvec\cdot\nabla\zeta}{\Bvec\cdot\nabla\theta} =
+\frac{\Bt\hthe}{\Bp R} = \frac{\L(F/R\R)h_\theta}{\Bp R} = FJ/R^2
 \end{align*}
 %
 where $F=\Bt R$ is a function only of $\psi$ (sometimes called the poloidal
@@ -242,8 +239,7 @@ The contravariant basis vectors are therefore
 \begin{align*}
 \nabla x = \sbt\nabla \psi \qquad \nabla y = \nabla \theta \qquad \nabla z =
 \sbt\L(\nabla\zeta - \L[\int_{\theta_0}^\theta\deriv{\nu\L(\psi,
-\theta\R)}{\psi} d\theta\R] \nabla\psi - \nu\L(\psi,
-\theta\R)\nabla\theta\R)
+\theta\R)}{\psi} d\theta\R] \nabla\psi - \nu\L(\psi, \theta\R)\nabla\theta\R)
 \end{align*}
 %
 The term in square brackets is the integrated local shear:
@@ -284,8 +280,8 @@ B_x = \sbt\Bt I R \qquad B_y = \frac{B^2 \hthe}{\Bp} \qquad B_z = \sbt\Bt R
 The unit vector in the direction of equilibrium $\Bvec$ is therefore
 %
 \begin{align*}
-\ve{b} = \frac{1}{JB}\ve{e}_y = \frac{1}{JB}\L[g_{xy}\nabla x + g_{yy}\nabla
-y + g_{yz}\nabla z\R]
+\ve{b} = \frac{1}{JB}\ve{e}_y = \frac{1}{JB}\L[g_{xy}\nabla x + g_{yy}\nabla y
++ g_{yz}\nabla z\R]
 \end{align*}
 %
 
@@ -303,8 +299,7 @@ which can be either positive or negative, depending on the sign of $\Bp$.  The
 contravariant metric tensor is given by:
 %
 \begin{align*}
-g^{ij} \equiv \ve{e}^i \cdot\ve{e}^j \equiv \nabla u^i \cdot \nabla u^j =
-\L(%
+g^{ij} \equiv \ve{e}^i \cdot\ve{e}^j \equiv \nabla u^i \cdot \nabla u^j = \L(%
 \begin{array}{ccc}
 \L(R\Bp\R)^2 & 0 & -I\L(R\Bp\R)^2 \\
 0 & 1 / \hthe^2 & -\sbt\nu / \hthe^2 \\
@@ -359,8 +354,8 @@ Using equation (\ref{eq:general_laplacian}), the Laplacian operator is given by
 y}\nabla^2y + \frac{\partial}{\partial z}\nabla^2z \nonumber
 \end{align*}
 %
-Using equation (\ref{eq:laplace_expand}) for $\nabla^2x = G^x$ etc, the
-values are
+Using equation (\ref{eq:laplace_expand}) for $\nabla^2x = G^x$ etc, the values
+are
 %
 \begin{align*}
 \nabla^2x = \frac{\Bp}{h_\theta}\frac{\partial}{\partial x}\L(h_\theta
@@ -370,8 +365,7 @@ y}\L(\frac{1}{\Bp h_\theta}\R)
 %
 \begin{align*}
 \nabla^2z = -\frac{\Bp}{h_\theta}\L[\frac{\partial}{\partial x}\L(IR^2\Bp
-h_\theta\R) + \frac{\partial}{\partial y}\L(\frac{\nu}{\Bp
-h_\theta}\R)\R]
+h_\theta\R) + \frac{\partial}{\partial y}\L(\frac{\nu}{\Bp h_\theta}\R)\R]
 \end{align*}
 %
 Neglecting some parallel derivative terms, the perpendicular Laplacian can be
@@ -379,16 +373,16 @@ written:
 %
 \begin{align*}
 \delp = \rbpsq\L[\dderiv{}{x} - 2I\frac{\partial^2}{\partial z\partial x} +
-\L(I^2 + \frac{B^2}{\L(\rbp\R)^4}\R)\dderiv{}{z}\R] +
-\nabla^2 x \deriv{}{x} + \nabla^2 z\deriv{}{z}
+\L(I^2 + \frac{B^2}{\L(\rbp\R)^4}\R)\dderiv{}{z}\R] + \nabla^2 x \deriv{}{x} +
+\nabla^2 z\deriv{}{z}
 \end{align*}
 %
 The second derivative along the equilibrium field
 %
 \begin{align*}
 \partial^2_{||}\phi = \partial^0_{||}\L(\partial^0_{||}\phi\R) =
-\frac{1}{\sqrt{g_{yy}}}\deriv{}{y}\L(\frac{1}{\sqrt{g_{yy}}}\R)\deriv{
-\phi}{y} + \frac{1}{g_{yy}}\frac{\partial^2\phi}{\partial y^2}
+\frac{1}{\sqrt{g_{yy}}}\deriv{}{y}\L(\frac{1}{\sqrt{g_{yy}}}\R)\deriv{ \phi}{y}
++ \frac{1}{g_{yy}}\frac{\partial^2\phi}{\partial y^2}
 \end{align*}
 %
 A common expression (the Poisson bracket in reduced MHD) is (from equation
@@ -397,8 +391,8 @@ A common expression (the Poisson bracket in reduced MHD) is (from equation
 \begin{align*}
 \bvec_0\cdot\nabla\phi\times\nabla A =
 \frac{1}{J\sqrt{g_{yy}}}\L[\L(g_{yy}\deriv{\phi}{z} -
-    g_{yz}\deriv{\phi}{y}\R)\deriv{A}{x} + \L(g_{yz}\deriv{\phi}{x} -
-    g_{xy}\deriv{\phi}{z}\R)\deriv{A}{y} + \L(g_{xy}\deriv{\phi}{y} -
+g_{yz}\deriv{\phi}{y}\R)\deriv{A}{x} + \L(g_{yz}\deriv{\phi}{x} -
+g_{xy}\deriv{\phi}{z}\R)\deriv{A}{y} + \L(g_{xy}\deriv{\phi}{y} -
 g_{yy}\deriv{\phi}{x}\R)\deriv{A}{z}\R]
 \end{align*}
 %
@@ -406,9 +400,8 @@ The perpendicular nabla operator:
 %
 \begin{align*}
 \nabla_\perp \equiv& \nabla - \ve{b}\L(\ve{b}\cdot\nabla\R) \\ =& \nabla
-    x\L(\deriv{}{x} - \frac{g_{xy}}{\L(JB\R)^2}\deriv{}{y}\R) +
-    \nabla z\L(\deriv{}{z} -
-    \frac{g_{yz}}{\L(JB\R)^2}\deriv{}{y}\R)
+    x\L(\deriv{}{x} - \frac{g_{xy}}{\L(JB\R)^2}\deriv{}{y}\R) + \nabla
+    z\L(\deriv{}{z} - \frac{g_{yz}}{\L(JB\R)^2}\deriv{}{y}\R)
 \end{align*}
 %
 
@@ -432,15 +425,14 @@ B_x = \sbt\Bt I R \qquad B_y = \frac{B^2\hthe}{\Bp} \qquad B_z = \sbt\Bt R
 Calculate current $\Jvec = \frac{1}{\mu}\Curl{\Bvec}$
 %
 \begin{align*}
-\L(\Curl{\Bvec}\R)^x = \frac{1}{J}\L(\deriv{B_z}{y} -
-\deriv{B_y}{z}\R) = 0
+\L(\Curl{\Bvec}\R)^x = \frac{1}{J}\L(\deriv{B_z}{y} - \deriv{B_y}{z}\R) = 0
 \end{align*}
 %
 since $\Bt R$ is a flux-surface quantity, and $\Bvec$ is axisymmetric.
 %
 \begin{align*}
-\L(\Curl{\Bvec}\R)^y =& -\sbt\frac{\Bp}{\hthe}\deriv{}{x}\L(\Bt
-R\R) \\ \L(\Curl{\Bvec}\R)^z =&
+\L(\Curl{\Bvec}\R)^y =& -\sbt\frac{\Bp}{\hthe}\deriv{}{x}\L(\Bt R\R) \\
+    \L(\Curl{\Bvec}\R)^z =&
     \frac{\Bp}{\hthe}\L[\deriv{}{x}\L(\frac{B^2\hthe}{\Bp}\R) -
     \sbt\deriv{}{y}\L(\Bt I R\R)\R]
 \end{align*}
@@ -457,16 +449,16 @@ From these, calculate covariant components:
 %
 \begin{align}
 \L(\Curl{\Bvec}\R)_x =& -\Bt I R \deriv{}{x}\L(\Bt R\R) +
-    \frac{IR^2\Bp}{\hthe}\L[\deriv{}{x}\L(\frac{B^2\hthe}{\Bp}\R) -
-    \Bt R\deriv{\nu}{x}\R] \nonumber\\
+    \frac{IR^2\Bp}{\hthe}\L[\deriv{}{x}\L(\frac{B^2\hthe}{\Bp}\R) - \Bt
+    R\deriv{\nu}{x}\R] \nonumber\\
 %
-\L(\Curl{\Bvec}\R)_y =& -\sbt\frac{B^2\hthe}{\Bp}\deriv{}{x}\L(\Bt
-R\R) + \sbt\Bt R\L[\deriv{}{x}\L(\frac{B^2\hthe}{\Bp}\R) - \Bt
-R\deriv{\nu}{x}\R] \label{eq:curlb_y}\\
+\L(\Curl{\Bvec}\R)_y =& -\sbt\frac{B^2\hthe}{\Bp}\deriv{}{x}\L(\Bt R\R) +
+    \sbt\Bt R\L[\deriv{}{x}\L(\frac{B^2\hthe}{\Bp}\R) - \Bt R\deriv{\nu}{x}\R]
+    \label{eq:curlb_y}\\
 %
 \L(\Curl{\Bvec}\R)_z =& -\Bt R\deriv{}{x}\L(\Bt R\R) +
-\frac{R^2\Bp}{\hthe}\L[\deriv{}{x}\L(\frac{B^2\hthe}{\Bp}\R) - \Bt
-R\deriv{\nu}{x}\R] \nonumber
+    \frac{R^2\Bp}{\hthe}\L[\deriv{}{x}\L(\frac{B^2\hthe}{\Bp}\R) - \Bt
+    R\deriv{\nu}{x}\R] \nonumber
 \end{align}
 %
 Calculate $\Jvec\times\Bvec$ using
@@ -479,33 +471,30 @@ J\L(\ve{e}^j \times \ve{e}^k\R) \qquad i,j,k \texttt{ cyc } 1,2,3
 gives
 %
 \begin{align*}
-\mu_0 \L(\Jvec\times\Bvec\R)^x =&
-    \frac{1}{J}\L[\L(\Curl{\Bvec}\R)_y B_z -
-    \L(\Curl{\Bvec}\R)_z B_y \R]\\ =& -\frac{\Bp^3
-    R^2}{\hthe}\L[\deriv{}{x}\L(\frac{B^2\hthe}{\Bp}\R) - \Bt
-    R\deriv{\nu}{x}\R]
+\mu_0 \L(\Jvec\times\Bvec\R)^x =& \frac{1}{J}\L[\L(\Curl{\Bvec}\R)_y B_z -
+\L(\Curl{\Bvec}\R)_z B_y \R]\\ =& -\frac{\Bp^3
+R^2}{\hthe}\L[\deriv{}{x}\L(\frac{B^2\hthe}{\Bp}\R) - \Bt R\deriv{\nu}{x}\R]
 \end{align*}
 %
 Covariant components of $\nabla P$:
 %
 \begin{align*}
-\L(\nabla P\R)_x = \deriv{P}{x} \qquad \L(\nabla P\R)_y =
-\L(\nabla P\R)_z = 0
+\L(\nabla P\R)_x = \deriv{P}{x} \qquad \L(\nabla P\R)_y = \L(\nabla P\R)_z = 0
 \end{align*}
 %
 and contravariant:
 %
 \begin{align*}
-\L(\nabla P\R)^x = \rbpsq\deriv{P}{x} \qquad \L(\nabla P\R)^y = 0
-\qquad \L(\nabla P\R)^z = -I\rbpsq\deriv{P}{x}
+\L(\nabla P\R)^x = \rbpsq\deriv{P}{x} \qquad \L(\nabla P\R)^y = 0 \qquad
+\L(\nabla P\R)^z = -I\rbpsq\deriv{P}{x}
 \end{align*}
 %
 Hence equating contravariant x components of $\Jvec\times\Bvec = \nabla P$,
 %
 \begin{align}
 \deriv{}{x}\L(\frac{B^2\hthe}{\Bp}\R) - \Bt
-R\deriv{}{x}\L(\frac{\Bt\hthe}{R\Bp}\R) +
-\frac{\mu_0\hthe}{\Bp}\deriv{P}{x} = 0
+R\deriv{}{x}\L(\frac{\Bt\hthe}{R\Bp}\R) + \frac{\mu_0\hthe}{\Bp}\deriv{P}{x} =
+0
 \label{eq:xbalance}
 \end{align}
 %
@@ -548,17 +537,16 @@ J_{||} = \bvec\cdot\Jvec \qquad b^y = \frac{\Bp}{B\hthe}
 and from equation \ref{eq:curlb_y}:
 %
 \begin{align*}
-J_y = \frac{\sbt}{\mu_0}\L\{-\frac{B^2\hthe}{\Bp}\deriv{}{x}\L(\Bt
-R\R) + \Bt R\L[\deriv{}{x}\L(\frac{B^2\hthe}{\Bp}\R) - \sbt\Bt
-R\deriv{\nu}{x}\R]\R\}
+J_y = \frac{\sbt}{\mu_0}\L\{-\frac{B^2\hthe}{\Bp}\deriv{}{x}\L(\Bt R\R) + \Bt
+R\L[\deriv{}{x}\L(\frac{B^2\hthe}{\Bp}\R) - \sbt\Bt R\deriv{\nu}{x}\R]\R\}
 \end{align*}
 %
 since $J_{||} = b^yJ_y$,
 %
 \begin{align*}
 \mu_0 J_{||} =\sbt\frac{\Bp\Bt
-R}{B\hthe}\L[\deriv{}{x}\L(\frac{B^2\hthe}{\Bp}\R) - \Bt
-R\deriv{\nu}{x}\R] - \sbt B\deriv{}{x}\L(\Bt R\R)
+R}{B\hthe}\L[\deriv{}{x}\L(\frac{B^2\hthe}{\Bp}\R) - \Bt R\deriv{\nu}{x}\R] -
+\sbt B\deriv{}{x}\L(\Bt R\R)
 \end{align*}
 %
 
@@ -578,40 +566,36 @@ where $\ve{\kappa} = \L(\bvec\cdot\nabla\R)\bvec =
 Components of $\nabla\times\bvec$ are:
 %
 \begin{align*}
-\L(\nabla\times\bvec\R)^x =&
-    \sbt\frac{\Bp}{\hthe}\deriv{}{y}\L(\frac{\Bt R}{B}\R) \\
-    \L(\nabla\times\bvec\R)^y =&
+\L(\nabla\times\bvec\R)^x =& \sbt\frac{\Bp}{\hthe}\deriv{}{y}\L(\frac{\Bt
+R}{B}\R) \\ \L(\nabla\times\bvec\R)^y =&
     -\sbt\frac{\Bp}{\hthe}\deriv{}{x}\L(\frac{\Bt R}{B}\R) \\
     \L(\nabla\times\bvec\R)^z =&
-    \frac{\Bp}{\hthe}\deriv{}{x}\L(\frac{B\hthe}{\Bp}\R) -
-    \sbt\frac{\Bp\Bt R}{\hthe B}\deriv{\nu}{x} - \sbt
-    I\frac{\Bp}{\hthe}\deriv{}{y}\L(\frac{\Bt R}{B}\R) \\
+    \frac{\Bp}{\hthe}\deriv{}{x}\L(\frac{B\hthe}{\Bp}\R) - \sbt\frac{\Bp\Bt
+    R}{\hthe B}\deriv{\nu}{x} - \sbt I\frac{\Bp}{\hthe}\deriv{}{y}\L(\frac{\Bt
+    R}{B}\R) \\
 \end{align*}
 %
 giving:
 %
 \begin{align}
 \ve{\kappa} =& -\frac{\Bp}{B h_\theta}\L[\deriv{}{x}\L(\frac{B
-h_\theta}{\Bp}\R) - \sbt\deriv{}{y}\L(\frac{\Bt I
-R}{B}\R)\R]\nabla x \nonumber \\ &+ \sbt\frac{\Bp}{B
-    h_\theta}\deriv{}{y}\L(\frac{\Bt R}{B}\R)\nabla z
+h_\theta}{\Bp}\R) - \sbt\deriv{}{y}\L(\frac{\Bt I R}{B}\R)\R]\nabla x \nonumber
+\\ &+ \sbt\frac{\Bp}{B h_\theta}\deriv{}{y}\L(\frac{\Bt R}{B}\R)\nabla z
 \label{eq:curvature}
 \end{align}
 %
 \begin{align*}
-\bvec\cdot\L(\nabla\times\bvec\R) = -\sbt B\deriv{}{x}\L(\frac{\Bt
-R}{B}\R) + \sbt \frac{\Bt\Bp
-R}{B\hthe}\deriv{}{x}\L(\frac{B\hthe}{\Bp}\R) - \frac{\Bp\Bt^2R^2}{\hthe
-B^2}\deriv{\nu}{x}
+\bvec\cdot\L(\nabla\times\bvec\R) = -\sbt B\deriv{}{x}\L(\frac{\Bt R}{B}\R) +
+\sbt \frac{\Bt\Bp R}{B\hthe}\deriv{}{x}\L(\frac{B\hthe}{\Bp}\R) -
+\frac{\Bp\Bt^2R^2}{\hthe B^2}\deriv{\nu}{x}
 \end{align*}
 %
 therefore,
 %
 \begin{align*}
-\L(\bvec\times\ve{\kappa}\R)^x =&
-    \sbt\frac{\Bp}{\hthe}\deriv{}{y}\L(\frac{\Bt R}{B}\R) =
-    -\sbt\frac{\Bp\Bt R}{\hthe B^2}\deriv{B}{y} \\
-    \L(\bvec\times\ve{\kappa}\R)^y =& \frac{\Bp^2\Bt^2
+\L(\bvec\times\ve{\kappa}\R)^x =& \sbt\frac{\Bp}{\hthe}\deriv{}{y}\L(\frac{\Bt
+R}{B}\R) = -\sbt\frac{\Bp\Bt R}{\hthe B^2}\deriv{B}{y} \\
+\L(\bvec\times\ve{\kappa}\R)^y =& \frac{\Bp^2\Bt^2
 R^2}{B^3\hthe^2}\deriv{\nu}{x} - \sbt\frac{\Bp^2\Bt
 R}{B^2\hthe^2}\deriv{}{x}\L(\frac{B\hthe}{\Bp}\R) \\
 \L(\bvec\times\ve{\kappa}\R)^z =&
@@ -622,9 +606,9 @@ R}{\hthe B}\deriv{\nu}{x} - I\L(\bvec\times\ve{\kappa}\R)^x
 Using equation~\ref{eq:xbalance}:
 %
 \begin{align*}
-B\deriv{}{x}\L(\frac{B\hthe}{\Bp}\R) + \frac{B\hthe}{\Bp}\deriv{B}{x} -
-\sbt\Bt R\deriv{}{x}\L(\frac{\Bt\hthe}{R\Bp}\R) +
-\frac{\mu_0\hthe}{\Bp}\deriv{P}{x} = 0
+B\deriv{}{x}\L(\frac{B\hthe}{\Bp}\R) + \frac{B\hthe}{\Bp}\deriv{B}{x} - \sbt\Bt
+R\deriv{}{x}\L(\frac{\Bt\hthe}{R\Bp}\R) + \frac{\mu_0\hthe}{\Bp}\deriv{P}{x} =
+0
 \end{align*}
 %
 we can re-write the above components as:
@@ -632,15 +616,16 @@ we can re-write the above components as:
 \begin{align*}
 \L(\bvec\times\ve{\kappa}\R)^y =& \sbt\frac{\Bp\Bt
 R}{B^2\hthe}\L[\frac{\mu_0}{B}\deriv{P}{x} + \deriv{B}{x}\R] \\
-\L(\bvec\times\ve{\kappa}\R)^z =& -\frac{\mu_0}{B}\deriv{P}{x} -
-\deriv{B}{x} - I\L(\bvec\times\ve{\kappa}\R)^x
+\L(\bvec\times\ve{\kappa}\R)^z =& -\frac{\mu_0}{B}\deriv{P}{x} - \deriv{B}{x} -
+I\L(\bvec\times\ve{\kappa}\R)^x
 \end{align*}
 %
 
 
 
-\subsection{Curvature from \texorpdfstring{$\nabla\times\L(\bvec /
-B\R)$}{div (b/B)}} The vector $\bvec\times\kvec$ is an approximation of
+\subsection{Curvature from \texorpdfstring{$\nabla\times\L(\bvec / B\R)$}
+%
+{div (b/B)}} The vector $\bvec\times\kvec$ is an approximation of
 %
 \begin{align*}
 \frac{B}{2}\nabla\times\L(\frac{\bvec}{B}\R) \simeq \bvec\times\kvec
@@ -654,8 +639,8 @@ appendix):
 \begin{align*}
 \nabla\times\L(\frac{\bvec}{B}\R) =&
     \frac{\Bp}{\hthe}\L[\L(\deriv{}{x}\L(\frac{\hthe}{\Bp}\R) -
-        \deriv{}{y}\L(\frac{\sbt\Bt IR}{B^2}\R)\R)\ve{e}_z \R.
-        \\ &+ \deriv{}{y}\L(\frac{\sbt\Bt R}{B^2}\R)\ve{e}_x \\ &+
+    \deriv{}{y}\L(\frac{\sbt\Bt IR}{B^2}\R)\R)\ve{e}_z \R.  \\ &+
+    \deriv{}{y}\L(\frac{\sbt\Bt R}{B^2}\R)\ve{e}_x \\ &+
     \L.\deriv{}{x}\L(\frac{\sbt\Bt R}{B^2}\R)\ve{e}_y\R]
 \end{align*}
 %
@@ -669,16 +654,15 @@ R\deriv{}{y}\L(\frac{1}{B^2}\R) + \frac{\Bt R}{B^2}\deriv{\nu}{x}
 to give
 %
 \begin{align*}
-  \L(\bvec\times\kvec\R)^x =& -\sbt\frac{\Bp\Bt R}{\hthe
-B^2}\deriv{B}{y} \\ \L(\bvec\times\kvec\R)^y =&
-    -\sbt\frac{B\Bp}{2\hthe}\deriv{}{x}\L(\frac{\Bt R}{B^2}\R) \\
-    \L(\bvec\times\kvec\R)^z =&
+  \L(\bvec\times\kvec\R)^x =& -\sbt\frac{\Bp\Bt R}{\hthe B^2}\deriv{B}{y} \\
+    \L(\bvec\times\kvec\R)^y =& -\sbt\frac{B\Bp}{2\hthe}\deriv{}{x}\L(\frac{\Bt
+R}{B^2}\R) \\ \L(\bvec\times\kvec\R)^z =&
     \frac{B\Bp}{2\hthe}\deriv{}{x}\L(\frac{\hthe}{\Bp}\R) - \frac{\Bp\Bt
     R}{2\hthe B}\deriv{\nu}{x} - I\L(\bxk\R)^x
 \end{align*}
 %
-The first and second terms in $\L(\bxk\R)^z$ almost cancel, so by
-expanding out $\nu$ a better expression is
+The first and second terms in $\L(\bxk\R)^z$ almost cancel, so by expanding out
+$\nu$ a better expression is
 %
 \begin{align*}
 \L(\bvec\times\kvec\R)^z = \frac{\Bp^3}{2\hthe
@@ -717,8 +701,8 @@ is given by
 i.e.
 %
 \begin{align}
-\kvec = \L[\ddd{R}{s} - R\L(\dd{\phi}{s}\R)^2\R]\Rvec +
-\ddd{Z}{s}\Zvec + \L[2\dd{R}{s}\dd{\phi}{s} + R\ddd{\phi}{s}\R]\phivec
+\kvec = \L[\ddd{R}{s} - R\L(\dd{\phi}{s}\R)^2\R]\Rvec + \ddd{Z}{s}\Zvec +
+\L[2\dd{R}{s}\dd{\phi}{s} + R\ddd{\phi}{s}\R]\phivec
 \label{eq:kappaline}
 \end{align}
 %
@@ -737,8 +721,7 @@ $\nabla\phi$. This is done by writing these vectors in cylindrical coordinates:
 \begin{align*}
 \nabla\psi =& \deriv{\psi}{R}\hv{R} + \deriv{\psi}{Z}\hv{Z} \\ \nabla\theta =&
     \frac{1}{\Bp\hthe}\nabla\phi\times\nabla\psi =
-    \frac{1}{R\Bp\hthe}\L(\deriv{\psi}{Z}\hv{R} -
-    \deriv{\psi}{R}\hv{Z}\R) \\
+    \frac{1}{R\Bp\hthe}\L(\deriv{\psi}{Z}\hv{R} - \deriv{\psi}{R}\hv{Z}\R) \\
 \end{align*}
 %
 An alternative is to use
@@ -767,19 +750,17 @@ equation~\ref{eq:kappaline} above gives
 %
 \begin{align*}
   \bvec \times\kvec =& \L[\frac{\Bt}{B}\ddd{Z}{s} -
-\dd{Z}{s}\L(2\dd{R}{s}\dd{\phi}{s} + R\ddd{\phi}{s}\R)\R]\ve{R} \\
-&+ \L[\dd{R}{s}\L(2\dd{R}{s}\dd{\phi}{s} + R\ddd{\phi}{s}\R) -
-\frac{\Bt}{B}\L(\ddd{R}{s} -
-R\L(\dd{\phi}{s}\R)^2\R)\R]\ve{Z} \\ &+
-    \L[\dd{Z}{s}\L(\ddd{R}{s} - R\L(\dd{\phi}{s}\R)^2\R) -
-    \dd{R}{s}\ddd{Z}{s}\R]\phivec
+\dd{Z}{s}\L(2\dd{R}{s}\dd{\phi}{s} + R\ddd{\phi}{s}\R)\R]\ve{R} \\ &+
+    \L[\dd{R}{s}\L(2\dd{R}{s}\dd{\phi}{s} + R\ddd{\phi}{s}\R) -
+    \frac{\Bt}{B}\L(\ddd{R}{s} - R\L(\dd{\phi}{s}\R)^2\R)\R]\ve{Z} \\ &+
+        \L[\dd{Z}{s}\L(\ddd{R}{s} - R\L(\dd{\phi}{s}\R)^2\R) -
+        \dd{R}{s}\ddd{Z}{s}\R]\phivec
 \end{align*}
 %
 The components in field-aligned coordinates can then be calculated:
 %
 \begin{align*}
-\L(\bvec\times\kvec\R)^x =&
-    \sbt\L(\bvec\times\kvec\R)\cdot\nabla\psi \\ =&
+\L(\bvec\times\kvec\R)^x =& \sbt\L(\bvec\times\kvec\R)\cdot\nabla\psi \\ =&
     \frac{R\Bp^2}{B}\L(2\dd{R}{s}\dd{\phi}{s} + R\ddd{\phi}{s}\R) -
     R\Bt\L(\dd{R}{s}\ddd{R}{s} + \dd{Z}{s}\ddd{Z}{s}\R) +
     \frac{\Bt^3}{B^2}\dd{R}{s}
@@ -800,13 +781,11 @@ In toroidal coordinates $\L(\psi,\theta,\phi\R)$, the $\bvec$ vector is
 The curl of this vector is
 %
 \begin{align*}
-\L(\nabla\times\bvec\R)^\psi =&
-    \frac{1}{\sqrt{g}}\L(\deriv{b_\phi}{\theta} -
+\L(\nabla\times\bvec\R)^\psi =& \frac{1}{\sqrt{g}}\L(\deriv{b_\phi}{\theta} -
     \deriv{b_\theta}{\phi}\R) \\ \L(\nabla\times\bvec\R)^\theta =&
-        \frac{1}{\sqrt{g}}\L(\deriv{b_\psi}{\phi} -
-        \deriv{b_\phi}{\psi}\R) \\ \L(\nabla\times\bvec\R)^\phi =&
-            \frac{1}{\sqrt{g}}\L(\deriv{b_\theta}{\psi} -
-            \deriv{b_\psi}{\theta}\R)
+    \frac{1}{\sqrt{g}}\L(\deriv{b_\psi}{\phi} - \deriv{b_\phi}{\psi}\R) \\
+    \L(\nabla\times\bvec\R)^\phi =& \frac{1}{\sqrt{g}}\L(\deriv{b_\theta}{\psi}
+    - \deriv{b_\psi}{\theta}\R)
 \end{align*}
 %
 where $1/\sqrt{g} = \Bp/\hthe$. Therefore, in terms of unit vectors:
@@ -829,8 +808,7 @@ R}{\hthe}\deriv{}{\psi}\L(\frac{\hthe\Bp}{B}\R)\ehat_\phi
  using DCT).
 %
 \begin{align*}
-\Bp = \frac{\L|\nabla\psi\R|}{R} =
-\frac{1}{R}\sqrt{\L(\deriv{\psi}{R}\R)^2 +
+\Bp = \frac{\L|\nabla\psi\R|}{R} = \frac{1}{R}\sqrt{\L(\deriv{\psi}{R}\R)^2 +
 \L(\deriv{\psi}{R}\R)^2}
 \end{align*}
 %
@@ -858,8 +836,8 @@ The derivatives of $\Bp$ in $R$ and $Z$ are:
 \begin{align*}
 \deriv{\Bp}{R} =& -\frac{\Bp}{R} + \frac{1}{\Bp
 R^2}\L[\deriv{\psi}{R}\dderiv{\psi}{R} +
-\deriv{\psi}{Z}\frac{\partial^2\psi}{\partial R\partial Z}\R] \\
-\deriv{\Bp}{Z} =& \frac{1}{\Bp R^2}\L[\deriv{\psi}{Z}\dderiv{\psi}{Z} +
+\deriv{\psi}{Z}\frac{\partial^2\psi}{\partial R\partial Z}\R] \\ \deriv{\Bp}{Z}
+=& \frac{1}{\Bp R^2}\L[\deriv{\psi}{Z}\dderiv{\psi}{Z} +
 \deriv{\psi}{R}\frac{\partial^2\psi}{\partial R\partial Z}\R]
 \end{align*}
 %
@@ -869,8 +847,8 @@ For the toroidal field, $\Bt = f/R$
 \deriv{\Bt}{\psi} = \frac{1}{R}\deriv{f}{\psi} - \frac{f}{R^2}\deriv{R}{\psi}
 \end{align*}
 %
-As above, $\deriv{R}{\psi} = \nabla R \cdot\nabla\psi / \L(R\Bp\R)^2$,
-and since $\nabla R\cdot\nabla R = 1$,
+As above, $\deriv{R}{\psi} = \nabla R \cdot\nabla\psi / \L(R\Bp\R)^2$, and
+since $\nabla R\cdot\nabla R = 1$,
 %
 \begin{align*}
 \deriv{R}{\psi} = \deriv{\psi}{R} / \L(R\Bp\R)^2
@@ -892,8 +870,7 @@ and so the variation of toroidal field with $\psi$ is
 From the definition $B=\sqrt{\Bt^2 + \Bp^2}$,
 %
 \begin{align*}
-\deriv{B}{\psi} = \frac{1}{B}\L(\Bt\deriv{\Bt}{\psi} +
-\Bp\deriv{\Bp}{\psi}\R)
+\deriv{B}{\psi} = \frac{1}{B}\L(\Bt\deriv{\Bt}{\psi} + \Bp\deriv{\Bp}{\psi}\R)
 \end{align*}
 %
 
@@ -904,8 +881,7 @@ From the definition $B=\sqrt{\Bt^2 + \Bp^2}$,
 To get the parallel nablaients of the $B$ field components, start with
 %
 \begin{align*}
-\deriv{}{s}\L(B^2\R) = \deriv{}{s}\L(\Bt^2\R) +
-\deriv{}{s}\L(\Bp^2\R)
+\deriv{}{s}\L(B^2\R) = \deriv{}{s}\L(\Bt^2\R) + \deriv{}{s}\L(\Bp^2\R)
 \end{align*}
 %
 Using the fact that $R\Bt$ is constant along $s$,
@@ -924,13 +900,12 @@ which gives
 The poloidal field can be calculated from
 %
 \begin{align*}
-\deriv{}{s}\L(\nabla\psi \cdot \nabla\psi\R) =
-\deriv{}{s}\L(R^2\Bp^2\R) = R^2\deriv{}{s}\L(\Bp^2\R) +
-\Bp^2\deriv{}{s}\L(R^2\R)
+\deriv{}{s}\L(\nabla\psi \cdot \nabla\psi\R) = \deriv{}{s}\L(R^2\Bp^2\R) =
+R^2\deriv{}{s}\L(\Bp^2\R) + \Bp^2\deriv{}{s}\L(R^2\R)
 \end{align*}
 %
-Using equation~\ref{eq:flinenablapsi}, $\nabla\psi \cdot \nabla\psi$ can also be
-written as
+Using equation~\ref{eq:flinenablapsi}, $\nabla\psi \cdot \nabla\psi$ can also
+be written as
 %
 \begin{align*}
 \nabla\psi \cdot \nabla\psi = B^2R^2\L[\L(\deriv{R}{s}\R)^2 +
@@ -940,31 +915,27 @@ written as
 and so (unsurprisingly)
 %
 \begin{align*}
-\frac{\Bp^2}{B^2} = \L[\L(\deriv{R}{s}\R)^2 +
-\L(\deriv{Z}{s}\R)^2\R]
+\frac{\Bp^2}{B^2} = \L[\L(\deriv{R}{s}\R)^2 + \L(\deriv{Z}{s}\R)^2\R]
 \end{align*}
 %
 Hence
 %
 \begin{align*}
-\deriv{}{s}\L(\Bp^2\R) = B^2\deriv{}{s}\L[\L(\deriv{R}{s}\R)^2
-+ \L(\deriv{Z}{s}\R)^2\R] +
-\frac{\Bp^2}{B^2}\deriv{}{s}\L(B^2\R)
+\deriv{}{s}\L(\Bp^2\R) = B^2\deriv{}{s}\L[\L(\deriv{R}{s}\R)^2 +
+\L(\deriv{Z}{s}\R)^2\R] + \frac{\Bp^2}{B^2}\deriv{}{s}\L(B^2\R)
 \end{align*}
 %
 Which gives
 %
 \begin{align*}
 \deriv{}{s}\L(B^2\R) = -\frac{B^2}{R^2}\deriv{}{s}\L(R^2\R) +
-\frac{B^4}{\Bt^2}\deriv{}{s}\L[\L(\deriv{R}{s}\R)^2 +
-\L(\deriv{Z}{s}\R)^2\R]
+\frac{B^4}{\Bt^2}\deriv{}{s}\L[\L(\deriv{R}{s}\R)^2 + \L(\deriv{Z}{s}\R)^2\R]
 \end{align*}
 %
 \begin{align*}
 \deriv{}{s}\L(\Bp^2\R) = \L(1 +
 \frac{\Bp^2}{\Bt^2}\R)B^2\deriv{}{s}\L[\L(\deriv{R}{s}\R)^2 +
-\L(\deriv{Z}{s}\R)^2\R] -
-\frac{\Bp^2}{R^2}\deriv{}{s}\L(R^2\R)
+\L(\deriv{Z}{s}\R)^2\R] - \frac{\Bp^2}{R^2}\deriv{}{s}\L(R^2\R)
 \end{align*}
 %
 
@@ -1007,9 +978,8 @@ $\partial\hthe/\partial\psi$ needs to be evaluated
 \subsection{\texorpdfstring{$\psi$}{psi}
 %
  derivative of \texorpdfstring{$\hthe$}{h}} From the expression for curvature
- \ref{eq:curvature}, and using $\nabla x \cdot \nabla \psi = \sbt
- \L(R\Bp\R)^2$ and $\nabla z\cdot\nabla \psi = -\sbt I
- \L(R\Bp\R)^2$
+ \ref{eq:curvature}, and using $\nabla x \cdot \nabla \psi = \sbt \L(R\Bp\R)^2$
+ and $\nabla z\cdot\nabla \psi = -\sbt I \L(R\Bp\R)^2$
 %
 \begin{align*}
 \kvec\cdot\nabla\psi =& -\sbt
@@ -1025,10 +995,10 @@ The second and third terms partly cancel, and using $\deriv{I}{y} = \sbt
   \frac{\kvec\cdot\nabla\psi}{\rbpsq} =&
     -\sbt\frac{\Bp}{B\hthe}\deriv{}{x}\L(\frac{B\hthe}{\Bp}\R) +
     \sbt\frac{\Bp}{B\hthe}\frac{\Bt R}{B}\deriv{\nu}{x} \\ =&
-    -\sbt\frac{\Bp}{B\hthe}\L[\deriv{}{x}\L(\frac{B\hthe}{\Bp}\R) -
-    \frac{\Bt R}{B}\deriv{}{x}\L(\frac{\Bt\hthe}{\Bp R}\R)\R] \\ =&
-        -\sbt\frac{\Bp}{B\hthe}\L[\hthe\deriv{}{x}\L(\frac{B}{\Bp}\R)
-            - \hthe\frac{\Bt R}{B}\deriv{}{x}\L(\frac{\Bt}{\Bp R}\R) +
+    -\sbt\frac{\Bp}{B\hthe}\L[\deriv{}{x}\L(\frac{B\hthe}{\Bp}\R) - \frac{\Bt
+    R}{B}\deriv{}{x}\L(\frac{\Bt\hthe}{\Bp R}\R)\R] \\ =&
+            -\sbt\frac{\Bp}{B\hthe}\L[\hthe\deriv{}{x}\L(\frac{B}{\Bp}\R) -
+            \hthe\frac{\Bt R}{B}\deriv{}{x}\L(\frac{\Bt}{\Bp R}\R) +
         \frac{B^2}{B\Bp}\deriv{\hthe}{x} -
     \frac{\Bt^2}{B\Bp}\deriv{\hthe}{x}\R] \\ =& -\sbt
         \frac{\Bp}{B^2\hthe}\deriv{\hthe}{x} -
@@ -1039,11 +1009,10 @@ The second and third terms partly cancel, and using $\deriv{I}{y} = \sbt
 Writing
 %
 \begin{align*}
-B\deriv{}{x}\L(\frac{B}{\Bp}\R) =&
-    \deriv{}{x}\L(\frac{B^2}{\Bp}\R) - \frac{B}{\Bp}\deriv{B}{x} \\ \Bt
-    R\deriv{}{x}\L(\frac{\Bt}{\Bp R}\R) =&
-    \deriv{}{x}\L(\frac{\Bt^2}{\Bp}\R) - \frac{\Bt}{\Bp
-    R}\deriv{}{x}\L(\Bt R\R)
+B\deriv{}{x}\L(\frac{B}{\Bp}\R) =& \deriv{}{x}\L(\frac{B^2}{\Bp}\R) -
+    \frac{B}{\Bp}\deriv{B}{x} \\ \Bt R\deriv{}{x}\L(\frac{\Bt}{\Bp R}\R) =&
+    \deriv{}{x}\L(\frac{\Bt^2}{\Bp}\R) - \frac{\Bt}{\Bp R}\deriv{}{x}\L(\Bt
+    R\R)
 \end{align*}
 %
 and using $B\deriv{B}{x} = \Bt\deriv{\Bt}{x} + \Bp\deriv{\Bp}{x}$, this
@@ -1119,10 +1088,10 @@ and second-order $x$ derivative
 %
 \begin{align*}
 \frac{\partial^2}{\partial x^2} =& \frac{\partial^2}{\partial \psi^2} +
-    \deriv{}{\psi}\L(I\deriv{}{z}\R) + I\deriv{}{z}\L(\deriv{}{\psi}
-    + I\deriv{}{z}\R) \nonumber \\ =& \frac{\partial^2}{\partial \psi^2} +
-        I^2\frac{\partial^2}{\partial z^2} + 2I\frac{\partial^2}{\partial
-        z\partial \psi} + \deriv{I}{\psi}\deriv{}{z}
+    \deriv{}{\psi}\L(I\deriv{}{z}\R) + I\deriv{}{z}\L(\deriv{}{\psi} +
+    I\deriv{}{z}\R) \nonumber \\ =& \frac{\partial^2}{\partial \psi^2} +
+    I^2\frac{\partial^2}{\partial z^2} + 2I\frac{\partial^2}{\partial z\partial
+    \psi} + \deriv{I}{\psi}\deriv{}{z}
 \end{align*}
 %
 
@@ -1148,8 +1117,8 @@ $z$ first derivatives are taken into account:
 %
 \begin{align*}
 \delp = \rbpsq\L[\dderiv{}{x} - 2I\frac{\partial^2}{\partial z\partial x} +
-\L(I^2 + \frac{B^2}{\L(\rbp\R)^4}\R)\dderiv{}{z}\R] +
-\nabla^2 x \deriv{}{x} + \nabla^2 z\deriv{}{z}
+\L(I^2 + \frac{B^2}{\L(\rbp\R)^4}\R)\dderiv{}{z}\R] + \nabla^2 x \deriv{}{x} +
+\nabla^2 z\deriv{}{z}
 \end{align*}
 %
 with
@@ -1173,22 +1142,22 @@ $\deriv{}{x}$ is expanded, so the full expression for $\delp$ using $\psi$
 derivatives is:
 %
 \begin{align}
-\delp =& \rbpsq\L[\dderiv{}{\psi} +
-\frac{B^2}{\L(\rbp\R)^4}\dderiv{}{z}\R] \nonumber \\ &+
-    \frac{1}{J}\deriv{}{\psi}\L[J\rbpsq\R]\deriv{}{\psi} -
+\delp =& \rbpsq\L[\dderiv{}{\psi} + \frac{B^2}{\L(\rbp\R)^4}\dderiv{}{z}\R]
+    \nonumber \\ &+ \frac{1}{J}\deriv{}{\psi}\L[J\rbpsq\R]\deriv{}{\psi} -
     \frac{1}{J}\deriv{}{y}\L(\frac{\Bt}{\Bp^2R}\R)\deriv{}{z}
 \label{eq:delp_shift}
 \end{align}
 %
 
 
-\subsubsection{In orthogonal \texorpdfstring{$\L(\psi, \theta,
-\zeta\R)$}{(psi, theta, zeta)} flux coordinates} For comparison, the
-perpendicular Laplacian can be derived in orthogonal ``flux'' coordinates
+\subsubsection{In orthogonal \texorpdfstring{$\L(\psi, \theta, \zeta\R)$}
+%
+{(psi, theta, zeta)} flux coordinates} For comparison, the perpendicular
+Laplacian can be derived in orthogonal ``flux'' coordinates
 %
 \begin{align*}
-\L|\nabla\psi\R| = \rbp \qquad \L|\nabla\theta\R| = 1/\hthe
-\qquad \L|\nabla\zeta\R| = 1/R
+\L|\nabla\psi\R| = \rbp \qquad \L|\nabla\theta\R| = 1/\hthe \qquad
+\L|\nabla\zeta\R| = 1/R
 \end{align*}
 %
 The Laplacian operator is given by
@@ -1214,8 +1183,7 @@ and so
     \L(\frac{\Bp}{B\hthe}\R)^2\dderiv{A}{\theta} +
     \L(\frac{\Bt}{RB}\R)^2\dderiv{A}{\zeta} \nonumber \\ &+
     2\frac{\Bp\Bt}{B^2\hthe R}\frac{\partial^2 A}{\partial\theta\partial\zeta}
-    \nonumber \\ &+
-    \deriv{}{\theta}\L(\frac{\Bp}{B\hthe}\R)\deriv{A}{\theta} +
+    \nonumber \\ &+ \deriv{}{\theta}\L(\frac{\Bp}{B\hthe}\R)\deriv{A}{\theta} +
     \deriv{}{\theta}\L(\frac{\Bt}{RB}\R)\deriv{A}{\zeta}
 \end{align*}
 %
@@ -1246,29 +1214,27 @@ Note that in the limit of $\Bp = B$, both equations~\ref{eq:delp_shift} and
 %
 \begin{align*}
 \Bvec\times\nabla\phi\cdot\nabla A =& \L(\deriv{\phi}{x}\deriv{A}{y} -
-\deriv{\phi}{y}\deriv{A}{x}\R)\L(-\Bt\frac{\rbp}{\hthe}\R) \\ &+
-    \L(\deriv{\phi}{x}\deriv{A}{z} -
-    \deriv{\phi}{z}\deriv{A}{x}\R)\L(-B^2\R) \\ &-
-        \L(\deriv{\phi}{y}\deriv{A}{z} -
-        \deriv{\phi}{z}\deriv{A}{y}\R)\L(I\Bt\frac{\rbp}{\hthe}\R)
+    \deriv{\phi}{y}\deriv{A}{x}\R)\L(-\Bt\frac{\rbp}{\hthe}\R) \\ &+
+    \L(\deriv{\phi}{x}\deriv{A}{z} - \deriv{\phi}{z}\deriv{A}{x}\R)\L(-B^2\R)
+    \\ &- \L(\deriv{\phi}{y}\deriv{A}{z} -
+    \deriv{\phi}{z}\deriv{A}{y}\R)\L(I\Bt\frac{\rbp}{\hthe}\R)
 \end{align*}
 %
 \begin{align*}
 \Bvec\times\nabla\phi\cdot\nabla A =& \L(\deriv{\phi}{\psi}\deriv{A}{y} + I
-\deriv{\phi}{z}\deriv{A}{y} - \deriv{\phi}{y}\deriv{A}{\psi} -
-I\deriv{\phi}{y}\deriv{A}{z}\R)\L(-\Bt\frac{\rbp}{\hthe}\R) \\ &+
-\L(\deriv{\phi}{\psi}\deriv{A}{z} + I\deriv{\phi}{z}\deriv{A}{z} -
-\deriv{\phi}{z}\deriv{A}{\psi} -
-I\deriv{\phi}{z}\deriv{A}{z}\R)\L(-B^2\R) \\ &-
-\L(\deriv{\phi}{y}\deriv{A}{z} -
-\deriv{\phi}{z}\deriv{A}{y}\R)\L(I\Bt\frac{\rbp}{\hthe}\R)
+    \deriv{\phi}{z}\deriv{A}{y} - \deriv{\phi}{y}\deriv{A}{\psi} -
+    I\deriv{\phi}{y}\deriv{A}{z}\R)\L(-\Bt\frac{\rbp}{\hthe}\R) \\ &+
+    \L(\deriv{\phi}{\psi}\deriv{A}{z} + I\deriv{\phi}{z}\deriv{A}{z} -
+    \deriv{\phi}{z}\deriv{A}{\psi} - I\deriv{\phi}{z}\deriv{A}{z}\R)\L(-B^2\R)
+    \\ &- \L(\deriv{\phi}{y}\deriv{A}{z} -
+    \deriv{\phi}{z}\deriv{A}{y}\R)\L(I\Bt\frac{\rbp}{\hthe}\R)
 \end{align*}
 %
 \begin{align*}
 \Bvec\times\nabla\phi\cdot\nabla A =& \L(\deriv{\phi}{\psi}\deriv{A}{y} -
-\deriv{\phi}{y}\deriv{A}{\psi}\R)\L(-\Bt\frac{\rbp}{\hthe}\R)
-\nonumber \\ &+ \L(\deriv{\phi}{\psi}\deriv{A}{z} -
-\deriv{\phi}{z}\deriv{A}{\psi} \R)\L(-B^2\R)
+    \deriv{\phi}{y}\deriv{A}{\psi}\R)\L(-\Bt\frac{\rbp}{\hthe}\R) \nonumber \\
+    &+ \L(\deriv{\phi}{\psi}\deriv{A}{z} - \deriv{\phi}{z}\deriv{A}{\psi}
+    \R)\L(-B^2\R)
 \end{align*}
 %
 \bibliography{references} \bibliographystyle{unsrt}
@@ -1287,8 +1253,8 @@ warning!}}\\
 %
 The following is notes from \cite{haeseler-1}.
 
-Sets of vectors $\L\{\mathbf{A, B, C}\R\}$ and $\L\{\mathbf{a, b,
-c}\R\}$ are {\bf reciprocal} if
+Sets of vectors $\L\{\mathbf{A, B, C}\R\}$ and $\L\{\mathbf{a, b, c}\R\}$ are
+{\bf reciprocal} if
 %
 \begin{align*}
 \mathbf{A\cdot a} = \mathbf{B\cdot b} = \mathbf{C\cdot c} = 1\\ \mathbf{A\cdot
@@ -1296,26 +1262,24 @@ b} = \mathbf{A\cdot c} = \mathbf{B\cdot a} = \mathbf{B\cdot c} = \mathbf{C\cdot
 a} = \mathbf{C\cdot b} = 0 \\
 \end{align*}
 %
-which implies that $\L\{\mathbf{A, B, C}\R\}$ and $\L\{\mathbf{a, b,
-c}\R\}$ are each linearly independent.  Equivalently,
+which implies that $\L\{\mathbf{A, B, C}\R\}$ and $\L\{\mathbf{a, b, c}\R\}$
+are each linearly independent.  Equivalently,
 %
 \begin{align*}
-\mathbf{a} = \frac{\mathbf{B\times C}}{\mathbf{A\cdot\L(B\times
-C\R)}}\qquad \bvec = \frac{\mathbf{C\times A}}{\mathbf{B\cdot\L(C\times
-A\R)}}\qquad \mathbf{c} = \frac{\mathbf{A\times
-B}}{\mathbf{C\cdot\L(A\times B\R)}}
+\mathbf{a} = \frac{\mathbf{B\times C}}{\mathbf{A\cdot\L(B\times C\R)}}\qquad
+\bvec = \frac{\mathbf{C\times A}}{\mathbf{B\cdot\L(C\times A\R)}}\qquad
+\mathbf{c} = \frac{\mathbf{A\times B}}{\mathbf{C\cdot\L(A\times B\R)}}
 \end{align*}
 %
 Either of these sets can be used as a basis, and any vector $\mathbf{w}$ can be
 represented as $\mathbf{w} = \L(\mathbf{w\cdot a}\R)\mathbf{A} +
-\L(\mathbf{w\cdot b}\R)\Bvec + \L(\mathbf{w\cdot c}\R)\mathbf{C}$
-or as $\mathbf{w} = \L(\mathbf{w\cdot A}\R)\mathbf{a} +
-\L(\mathbf{w\cdot B}\R)\bvec + \L(\mathbf{w\cdot
-C}\R)\mathbf{c}$. In the cartesian coordinate system, the basis vectors are
-reciprocal to themselves so this distinction is not needed.  For a general set
-of coordinates $\L\{u^1, u^2, u^3\R\}$, {\bf tangent basis vectors} can
-be defined. If the cartesian coordinates of a point are given by $\L(x, y,
-z\R) = \mathbf{R}\L(u^1, u^2, u^3\R)$ then the tangent basis vectors
+\L(\mathbf{w\cdot b}\R)\Bvec + \L(\mathbf{w\cdot c}\R)\mathbf{C}$ or as
+$\mathbf{w} = \L(\mathbf{w\cdot A}\R)\mathbf{a} + \L(\mathbf{w\cdot B}\R)\bvec
++ \L(\mathbf{w\cdot C}\R)\mathbf{c}$. In the Cartesian coordinate system, the
+basis vectors are reciprocal to themselves so this distinction is not needed.
+For a general set of coordinates $\L\{u^1, u^2, u^3\R\}$, {\bf tangent basis
+vectors} can be defined. If the Cartesian coordinates of a point are given by
+$\L(x, y, z\R) = \mathbf{R}\L(u^1, u^2, u^3\R)$ then the tangent basis vectors
 are:
 %
 \begin{align*}
@@ -1323,9 +1287,9 @@ are:
 \end{align*}
 %
 and in general these will vary from point to point. The {\bf scale factor} or
-{\bf metric coefficient} $h_i =\L|\ve{e}_i\R| $ is the distance moved
-for a unit change in $u^i$. The unit vector $\hv{e}_i = \ve{e}_i/h_i$.
-Definitiion of {\bf nabla operator}:
+{\bf metric coefficient} $h_i =\L|\ve{e}_i\R| $ is the distance moved for a
+unit change in $u^i$. The unit vector $\hv{e}_i = \ve{e}_i/h_i$.  Definition
+of {\bf nabla operator}:
 %
 \begin{center}
 \framebox{$\nabla\Phi$ of a function $\Phi$ is defined so that $d\Phi =
@@ -1346,19 +1310,18 @@ which can only be true if $\nabla u^i\cdot\ve{e}_j = \delta^i_j$ i.e. if
 reciprocal}
 \end{center}
 %
-Since the sets of vectors $\L\{\ve{e}^i\R\}$ and
-$\L\{\ve{e}_i\R\}$ are reciprocal, any vector $\mathbf{D}$ can be
-written as $\mathbf{D} = D_i\ve{e}^i = D^i\ve{e}_i$ where $D_i = \mathbf{D\cdot
-e}_i$ are the {\bf covariant components} and $D^i = \mathbf{D\cdot e}^i$ are
-the {\bf contravariant components}. To convert between covariant and
-contravariant components, define the {\bf metric coefficients} $g_{ij} =
-\mathbf{e_i\cdot e_j}$ and $g^{ij} = \mathbf{e^i\cdot e^j}$ so that $\ve{e}_i =
-g_{ij}\ve{e}^j$. $g_{ij}$ and $g^{ij}$ are symmetric and if the basis is
-orthogonal then $g_{ij}=g^{ij} = 0$ for $i\neq j$ i.e. the metric is diagonal.
+Since the sets of vectors $\L\{\ve{e}^i\R\}$ and $\L\{\ve{e}_i\R\}$ are
+reciprocal, any vector $\mathbf{D}$ can be written as $\mathbf{D} = D_i\ve{e}^i
+= D^i\ve{e}_i$ where $D_i = \mathbf{D\cdot e}_i$ are the {\bf covariant
+components} and $D^i = \mathbf{D\cdot e}^i$ are the {\bf contravariant
+components}. To convert between covariant and contravariant components, define
+the {\bf metric coefficients} $g_{ij} = \mathbf{e_i\cdot e_j}$ and $g^{ij} =
+\mathbf{e^i\cdot e^j}$ so that $\ve{e}_i = g_{ij}\ve{e}^j$. $g_{ij}$ and
+$g^{ij}$ are symmetric and if the basis is orthogonal then $g_{ij}=g^{ij} = 0$
+for $i\neq j$ i.e. the metric is diagonal.
 %
 \begin{center}
-\framebox{$g_{ij} = h_ih_j\hv{e}_i\cdot\hv{e}_j$ and so
-$g_{ii} = h_i^2$}
+\framebox{$g_{ij} = h_ih_j\hv{e}_i\cdot\hv{e}_j$ and so $g_{ii} = h_i^2$}
 \end{center}
 %
 For a general set of coordinates, the nabla operator can be expressed as
@@ -1387,10 +1350,9 @@ u^i}\L(Jg^{ij}\R)}_{G^j}\frac{\partial\phi}{\partial u^j}
 \end{align}
 %
 where $G^j$ must \textbf{not} be mistaken as the so called connection
-coefficients (i.e. the Christoffel symbols of second kind).
-Setting $\phi = u^k$ in equation (\ref{eq:laplacegen}) gives $\nabla^2u^k =
-G^k$. Expanding (\ref{eq:laplacegen}) and setting $\L\{u^i\R\} = \L\{x,
-y, z\R\}$ gives
+coefficients (i.e. the Christoffel symbols of second kind).  Setting $\phi =
+u^k$ in equation (\ref{eq:laplacegen}) gives $\nabla^2u^k = G^k$. Expanding
+(\ref{eq:laplacegen}) and setting $\L\{u^i\R\} = \L\{x, y, z\R\}$ gives
 %
 \begin{align}
 \nabla^2f = \nabla\cdot\nabla f = \nabla\cdot\L(\frac{\partial}{\partial
@@ -1398,21 +1360,20 @@ x}\nabla x + \frac{\partial}{\partial y}\nabla y + \frac{\partial}{\partial
 z}\nabla z\R) \nonumber \\
 \label{eq:general_laplacian}
 = \frac{\partial^2 f}{\partial x^2}\L|\nabla x\R|^2 + \frac{\partial^2
-f}{\partial y^2}\L|\nabla y\R|^2 + \frac{\partial^2 f}{\partial
-z^2}\L|\nabla z\R|^2 \\ +2\frac{\partial^2 f}{\partial x\partial
-y}\L(\nabla x\cdot\nabla y\R) +2\frac{\partial^2 f}{\partial x\partial
-z}\L(\nabla x\cdot\nabla z\R) +2\frac{\partial^2 f}{\partial y\partial
-z}\L(\nabla y\cdot\nabla z\R) \nonumber \\ +\nabla^2x\frac{\partial
-f}{\partial x} +\nabla^2y\frac{\partial f}{\partial y} +
-\nabla^2z\frac{\partial f}{\partial z} \nonumber
+f}{\partial y^2}\L|\nabla y\R|^2 + \frac{\partial^2 f}{\partial z^2}\L|\nabla
+z\R|^2 \\ +2\frac{\partial^2 f}{\partial x\partial y}\L(\nabla x\cdot\nabla
+y\R) +2\frac{\partial^2 f}{\partial x\partial z}\L(\nabla x\cdot\nabla z\R)
++2\frac{\partial^2 f}{\partial y\partial z}\L(\nabla y\cdot\nabla z\R)
+\nonumber \\ +\nabla^2x\frac{\partial f}{\partial x} +\nabla^2y\frac{\partial
+f}{\partial y} + \nabla^2z\frac{\partial f}{\partial z} \nonumber
 \end{align}
 %
 Curl defined as:
 %
 \begin{align*}
 \nabla\times\mathbf{A} = \frac{1}{\sqrt{g}}\sum_k\L(\frac{\partial
-A_j}{\partial u_i} - \frac{\partial A_i}{\partial u_j}\R)\ve{e}_k \qquad
-i,j,k \texttt{ cyc } 1,2,3
+A_j}{\partial u_i} - \frac{\partial A_i}{\partial u_j}\R)\ve{e}_k \qquad i,j,k
+\texttt{ cyc } 1,2,3
 \end{align*}
 %
 Cross-product relation between contravariant and covariant vectors:
@@ -1425,32 +1386,29 @@ J\L(\ve{e}^j \times \ve{e}^k\R) \qquad i,j,k \texttt{ cyc } 1,2,3
 
 
 
+
+
 \section{Derivation of operators in the BOUT++ Clebsch system}
 %
 The Clebsch system in BOUT++ goes like this
 %
 \begin{align*}
-    \ve{B}=&\nabla z \times \nabla x\\
-    =&\ve{e}^z \times \ve{e}^x\\
+    \ve{B}=&\nabla z \times \nabla x\\ =&\ve{e}^z \times \ve{e}^x\\
     J^{-1}\ve{e}_y=&\ve{e}^z \times \ve{e}^x
 \end{align*}
 %
 We have
 %
 \begin{align*}
-    B\defined & \sqrt{\ve{B}\cdot\ve{B}}
-    = \sqrt{J^{-1}\ve{e}_y\cdot J^{-1}\ve{e}_y}
-    = \sqrt{J^{-2}g_{yy}}
-    = J^{-1}\sqrt{g_{yy}}
+    B\defined & \sqrt{\ve{B}\cdot\ve{B}} = \sqrt{J^{-1}\ve{e}_y\cdot
+J^{-1}\ve{e}_y} = \sqrt{J^{-2}g_{yy}} = J^{-1}\sqrt{g_{yy}}
 \end{align*}
 %
 Further on
 %
 \begin{align*}
-    \ve{B}=&B\ve{b}\\
-    \ve{b}=&\frac{\ve{B}}{B}
-          =\frac{J^{-1}\ve{e}_y}{J^{-1}\sqrt{g_{yy}}}
-          =\frac{\ve{e}_y}{\sqrt{g_{yy}}}
+    \ve{B}=&B\ve{b}\\ \ve{b}=&\frac{\ve{B}}{B}
+    =\frac{J^{-1}\ve{e}_y}{J^{-1}\sqrt{g_{yy}}} =\frac{\ve{e}_y}{\sqrt{g_{yy}}}
 \end{align*}
 %
 
@@ -1461,18 +1419,17 @@ Further on
 We have that
 %
 \begin{align*}
-    \Grad =& \ve{e}^i \partial_i
-          = \ve{e}^x \partial_x + \ve{e}^y \partial_y + \ve{e}^z \partial_z
+    \Grad =& \ve{e}^i \partial_i = \ve{e}^x \partial_x + \ve{e}^y \partial_y +
+    \ve{e}^z \partial_z
 \end{align*}
 %
 and that
 %
 \begin{align*}
-    \Grad_\| =& \L(\ve{b} \cdot \Grad\R) \ve{b}
-             = \ve{b} \ve{b} \cdot \Grad
-             = \frac{\ve{e}_y \ve{e}_y}{g_{yy}} \cdot \Grad
-             = \frac{\ve{e}_y \ve{e}_y}{g_{yy}} \cdot \ve{e}^i \partial_i
-             = \frac{\ve{e}_y}{g_{yy}} \partial_y
+    \Grad_\| =& \L(\ve{b} \cdot \Grad\R) \ve{b} = \ve{b} \ve{b} \cdot \Grad =
+    \frac{\ve{e}_y \ve{e}_y}{g_{yy}} \cdot \Grad = \frac{\ve{e}_y
+    \ve{e}_y}{g_{yy}} \cdot \ve{e}^i \partial_i = \frac{\ve{e}_y}{g_{yy}}
+    \partial_y
 \end{align*}
 %
 so that
@@ -1481,32 +1438,31 @@ so that
     \Grad_\perp =& \Grad - \Grad_\|\\
 %
                 =& \ve{e}^x \partial_x + \ve{e}^y \partial_y + \ve{e}^z
-                   \partial_z - \frac{\ve{e}_y}{g_{yy}} \partial_y\\
+    \partial_z - \frac{\ve{e}_y}{g_{yy}} \partial_y\\
 %
                 =& \ve{e}^x \partial_x + \ve{e}^y \partial_y + \ve{e}^z
-                   \partial_z - \frac{g_{2i}\ve{e}^i}{g_{22}} \partial_y\\
+    \partial_z - \frac{g_{yi}\ve{e}^i}{g_{yy}} \partial_y\\
 %
                 =& \ve{e}^x \partial_x + \ve{e}^y \partial_y + \ve{e}^z
-                   \partial_z
-                   - \frac{g_{21}\ve{e}^x
-                          +g_{22}\ve{e}^y
-                          +g_{23}\ve{e}^z
-                          }{g_{22}}\partial_y\\
+    \partial_z - \frac{g_{yx}\ve{e}^x +g_{yy}\ve{e}^y +g_{yz}\ve{e}^z
+    }{g_{yy}}\partial_y\\
 %
-                =& \ve{e}^x \L(\partial_x - \frac{g_{21}}{g_{22}}\partial_y\R)
-                +  \ve{e}^z \L(\partial_z - \frac{g_{23}}{g_{22}}\partial_y\R)
+                =& \ve{e}^x \L(\partial_x - \frac{g_{yx}}{g_{yy}}\partial_y\R)
+    +  \ve{e}^z \L(\partial_z - \frac{g_{yz}}{g_{yy}}\partial_y\R)
 \end{align*}
 %
-\subsubsection{The perpendicular gradients in Laplacian inversion}
-In the Laplacian inversion BOUT++ currently neglects the parallel derivatives,
-thus
-%
-\begin{align*}
-    \Grad_\perp \simeq&
-        \ve{e}^x \partial_x
-     +  \ve{e}^z \partial_z
-\end{align*}
 
+
+\subsubsection{The perpendicular gradients in Laplacian inversion}
+%
+In the Laplacian inversion BOUT++ currently neglects the parallel $y$
+derivatives if $g_{xy}$ and $g_{yz}$ are non-zero, thus
+%
+\begin{align}
+    \Grad_\perp \simeq& \ve{e}^x \partial_x +  \ve{e}^z \partial_z
+    \label{eq:reduced_grad_perp}
+\end{align}
+%
 
 
 
@@ -1534,43 +1490,32 @@ and that
 In our case $A \to \Grad$, so that
 %
 \begin{align*}
-    \Grad^i = \L(\Grad\R)\cdot \ve{e}^i
-             = \ve{e}^i \cdot \L(\Grad\R)
-             = \ve{e}^i \cdot \L(\ve{e}^j \partial_j\R)
-             = g^{ij} \partial_j
+    \Grad^i = \L(\Grad\R)\cdot \ve{e}^i = \ve{e}^i \cdot \L(\Grad\R) = \ve{e}^i
+    \cdot \L(\ve{e}^j \partial_j\R) = g^{ij} \partial_j
 \end{align*}
 %
 Thus
 %
 \begin{align*}
-    \Grad^2 =& \frac{1}{J} \partial_i \L(J g^{ij} \partial_j\R)\\
-            =& \frac{1}{J} g^{ij} J \partial_i \partial_j
-             + \frac{1}{J} \partial_i \L(J g^{ij} \R) \partial_j\\
-            =& g^{ij} \partial_i \partial_j
-             + G^j \partial_j\\
+    \Grad^2 =& \frac{1}{J} \partial_i \L(J g^{ij} \partial_j\R)\\ =&
+    \frac{1}{J} g^{ij} J \partial_i \partial_j + \frac{1}{J} \partial_i \L(J
+    g^{ij} \R) \partial_j\\ =& g^{ij} \partial_i \partial_j + G^j \partial_j\\
 \end{align*}
 %
-where we have defined%
+where we have defined
 %
-\footnote{%
-Notice that $G^i$ is \textbf{not} the same as the \emph{Christoffel symbols of
-second kind} (also known as the \emph{connection coefficients} or
-$\Gamma^i_{jk}=\ve{e}^i\cdot\partial_k \ve{e}_j$), although the derivation of
-the two are quite similar.\\
-We find that $\Gamma^i_{ji}=\ve{e}^i\cdot\partial_i \ve{e}_j = \Div \ve{e}_j$,
-whereas using equation \ref{eq:divA} leads to
-$G^i=\ve{e}^i\cdot\partial_i \ve{e}^j = \Div \ve{e}^j$, since $g^{ji}=g^{ij}$
-due to
-symmetry.
-}%
+\footnote{Notice that $G^i$ is \textbf{not} the same as the \emph{Christoffel
+    symbols of second kind} (also known as the \emph{connection coefficients}
+    or $\Gamma^i_{jk}=\ve{e}^i\cdot\partial_k \ve{e}_j$), although the
+    derivation of the two are quite similar.\\ We find that
+$\Gamma^i_{ji}=\ve{e}^i\cdot\partial_i \ve{e}_j = \Div \ve{e}_j$, whereas using
+equation \ref{eq:divA} leads to $G^i=\ve{e}^i\cdot\partial_i \ve{e}^j = \Div
+\ve{e}^j$, since $g^{ji}=g^{ij}$ due to symmetry.}
 %
 \begin{align*}
-    G^j =& \frac{1}{J} \partial_i \L(J g^{ij} \R)\\
-        =& \frac{1}{J} \L(
-           \partial_x \L[J g^{xj} \R]
-         + \partial_y \L[J g^{yj} \R]
-         + \partial_z \L[J g^{zj} \R]
-         \R)
+    G^j =& \frac{1}{J} \partial_i \L(J g^{ij} \R)\\ =& \frac{1}{J} \L(
+    \partial_x \L[J g^{xj} \R] + \partial_y \L[J g^{yj} \R] + \partial_z \L[J
+    g^{zj} \R] \R)
 \end{align*}
 %
 By writing the terms out, we get
@@ -1578,73 +1523,37 @@ By writing the terms out, we get
 \begin{align*}
     \Grad^2 =& g^{ij} \partial_i \partial_j + G^j \partial_j\\
 %
-            =& \L(  g^{xj} \partial_x \partial_j
-                  + g^{yj} \partial_y \partial_j
-                  + g^{zj} \partial_z \partial_j\R)
-               + \L(G^j \partial_j\R)\\
+            =& \L(  g^{xj} \partial_x \partial_j + g^{yj} \partial_y \partial_j
+    + g^{zj} \partial_z \partial_j\R) + \L(G^j \partial_j\R)\\
 %
-            =& \quad \,
-               \L(  g^{xx} \partial_x^2
-                  + g^{yx} \partial_y \partial_x
-                  + g^{zx} \partial_z \partial_x\R)
-               + \L(G^x \partial_x\R)\\
-            &+ \L(  g^{xy} \partial_x \partial_y
-                  + g^{yy} \partial_y^2
-                  + g^{zy} \partial_z \partial_y\R)
-               + \L(G^y \partial_y\R)\\
-            &+ \L(  g^{xz} \partial_x \partial_z
-                  + g^{yz} \partial_y \partial_z
-                  + g^{zz} \partial_z^y\R)
-               + \L(G^z \partial_z\R)
+            =& \quad \, \L(  g^{xx} \partial_x^2 + g^{yx} \partial_y \partial_x
+    + g^{zx} \partial_z \partial_x\R) + \L(G^x \partial_x\R)\\ &+ \L(  g^{xy}
+    \partial_x \partial_y + g^{yy} \partial_y^2 + g^{zy} \partial_z
+    \partial_y\R) + \L(G^y \partial_y\R)\\ &+ \L(  g^{xz} \partial_x \partial_z
+    + g^{yz} \partial_y \partial_z + g^{zz} \partial_z^y\R) + \L(G^z
+    \partial_z\R)
 \end{align*}
 %
 We now use that the metric tensor is symmetric (by definition), so that
-$g^{ij}=g^{ji}$, and $g_{ij}=g_{ji}$, and that the partial derivatives
-commutes for smooth functions $\partial_i\partial_j=\partial_j\partial_i$.
-This gives
+$g^{ij}=g^{ji}$, and $g_{ij}=g_{ji}$, and that the partial derivatives commutes
+for smooth functions $\partial_i\partial_j=\partial_j\partial_i$.  This gives
 %
 \begin{align*}
-    \Grad^2 =&\quad \,
-               \L(g^{xx} \partial_x^2 \R)
-               + \L(G^x \partial_x\R)\\
-            &+ \L(g^{yy} \partial_y^2 \R)
-               + \L(G^y \partial_y\R)\\
-            &+ \L(g^{zz} \partial_z^2\R)
-               + \L(G^z \partial_z\R)\\
-            &+ 2\L( g^{xy} \partial_x \partial_y
-                  + g^{xz} \partial_x \partial_z
-                  + g^{yz} \partial_y \partial_z
-                  \R)\\
+    \Grad^2 =&\quad \, \L(g^{xx} \partial_x^2 \R) + \L(G^x \partial_x\R)\\ &+
+    \L(g^{yy} \partial_y^2 \R) + \L(G^y \partial_y\R)\\ &+ \L(g^{zz}
+    \partial_z^2\R) + \L(G^z \partial_z\R)\\ &+ 2\L( g^{xy} \partial_x
+    \partial_y + g^{xz} \partial_x \partial_z + g^{yz} \partial_y \partial_z
+    \R)\\
 %
-	   =&\quad \,
-               \L(g^{xx} \partial_x^2\R)
-               + \L(
-                    \frac{1}{J} \L[
-                      \partial_x \L\{J g^{xx} \R\}
-                    + \partial_y \L\{J g^{yx} \R\}
-                    + \partial_z \L\{J g^{zx} \R\}
-                    \R]
-                    \partial_x\R)\\
-            &+ \L(g^{yy} \partial_y^2\R)
-               + \L(
-                    \frac{1}{J} \L[
-                      \partial_x \L\{J g^{xy} \R\}
-                    + \partial_y \L\{J g^{yy} \R\}
-                    + \partial_z \L\{J g^{zy} \R\}
-                    \R]
-                    \partial_y\R)\\
-            &+ \L(g^{zz} \partial_z^2\R)
-               + \L(
-                    \frac{1}{J} \L[
-                      \partial_x \L\{J g^{xz} \R\}
-                    + \partial_y \L\{J g^{yz} \R\}
-                    + \partial_z \L\{J g^{zz} \R\}
-                    \R]
-                    \partial_z\R)\\
-            &+ 2\L( g^{xy} \partial_x \partial_y
-                  + g^{xz} \partial_x \partial_z
-                  + g^{yz} \partial_y \partial_z
-                  \R)
+           =&\quad \, \L(g^{xx} \partial_x^2\R) + \L( \frac{1}{J} \L[
+\partial_x \L\{J g^{xx} \R\} + \partial_y \L\{J g^{yx} \R\} + \partial_z \L\{J
+g^{zx} \R\} \R] \partial_x\R)\\ &+ \L(g^{yy} \partial_y^2\R) + \L( \frac{1}{J}
+    \L[ \partial_x \L\{J g^{xy} \R\} + \partial_y \L\{J g^{yy} \R\} +
+    \partial_z \L\{J g^{zy} \R\} \R] \partial_y\R)\\ &+ \L(g^{zz}
+        \partial_z^2\R) + \L( \frac{1}{J} \L[ \partial_x \L\{J g^{xz} \R\} +
+        \partial_y \L\{J g^{yz} \R\} + \partial_z \L\{J g^{zz} \R\} \R]
+        \partial_z\R)\\ &+ 2\L( g^{xy} \partial_x \partial_y + g^{xz}
+        \partial_x \partial_z + g^{yz} \partial_y \partial_z \R)
 \end{align*}
 %
 Notice that $G^i$ does not operate on $\partial_i$, but rather that the two are
@@ -1658,653 +1567,72 @@ multiplied together.
 We have that
 %
 \begin{align*}
-    \Grad_\| =& \L(\ve{b} \cdot \Grad\R) \ve{b}\
-             = \ve{b} \ve{b} \cdot \Grad
-             = \frac{\ve{e}_y \ve{e}_y}{g_{yy}} \cdot \Grad
-             = \frac{\ve{e}_y \ve{e}_y}{g_{yy}} \cdot \ve{e}^i \partial_i
-             = \frac{\ve{e}_y}{g_{yy}} \partial_y
+    \Grad_\| =& \L(\ve{b} \cdot \Grad\R) \ve{b}\ = \ve{b} \ve{b} \cdot \Grad =
+    \frac{\ve{e}_y \ve{e}_y}{g_{yy}} \cdot \Grad = \frac{\ve{e}_y
+    \ve{e}_y}{g_{yy}} \cdot \ve{e}^i \partial_i = \frac{\ve{e}_y}{g_{yy}}
+    \partial_y
 \end{align*}
 %
 we have that
 %
 \begin{align*}
-    \Grad_\|^i =& \L(\frac{\ve{e}_y}{g_{yy}} \partial_y\R)\cdot \ve{e}^i
-               = \ve{e}^i \cdot \L(\frac{\ve{e}_y}{g_{yy}} \partial_y\R)
+    \Grad_\|^i =& \L(\frac{\ve{e}_y}{g_{yy}} \partial_y\R)\cdot \ve{e}^i =
+    \ve{e}^i \cdot \L(\frac{\ve{e}_y}{g_{yy}} \partial_y\R)
 \end{align*}
 %
 so that by equation (\ref{eq:divA}),
 %
 \begin{align*}
-    \Grad_\|^2 =& \Div\L(\ve{b} \ve{b} \cdot \Grad\R)\\
-               =& \Div\L(\frac{\ve{e}_y}{g_{yy}} \cdot \partial_y\R)\\
-               =& \frac{1}{J} \partial_i \L(
-		      J\ve{e}^i \cdot \L[\frac{\ve{e}_y}{g_{yy}} \partial_y\R]
-		  \R)\\
-               =& \frac{1}{J} \partial_y \L(\frac{J}{g_{yy}} \partial_y\R)
+    \Grad_\|^2 =& \Div\L(\ve{b} \ve{b} \cdot \Grad\R)\\ =&
+    \Div\L(\frac{\ve{e}_y}{g_{yy}} \cdot \partial_y\R)\\ =& \frac{1}{J}
+    \partial_i \L( J\ve{e}^i \cdot \L[\frac{\ve{e}_y}{g_{yy}} \partial_y\R]
+    \R)\\ =& \frac{1}{J} \partial_y \L(\frac{J}{g_{yy}} \partial_y\R)
 \end{align*}
 %
 
 
 
 \subsection{The perpendicular Laplacian}
+%
 For the perpendicular Laplacian, we have that
 %
 \begin{align*}
-    \Grad_\perp^2 =& \Grad^2 - \Grad_\|^2\\
-                  =& g^{ij} \partial_i \partial_j + G^j \partial_j
-                    -\frac{1}{J} \partial_y \L(\frac{J}{g_{yy}} \partial_y\R)\\
+    \Grad_\perp^2 =& \Grad^2 - \Grad_\|^2\\ =& g^{ij} \partial_i \partial_j +
+    G^j \partial_j -\frac{1}{J} \partial_y \L(\frac{J}{g_{yy}} \partial_y\R)\\
 %
-            =& \quad \,
-               \L(g^{xx} \partial_x^2\R)
-               + \L(
-                    \frac{1}{J} \L[
-                      \partial_x \L\{J g^{xx} \R\}
-                    + \partial_y \L\{J g^{yx} \R\}
-                    + \partial_z \L\{J g^{zx} \R\}
-                    \R]
-                    \partial_x\R)\\
-            &+ \L(g^{yy} \partial_y^2\R)
-               + \L(
-                    \frac{1}{J} \L[
-                      \partial_x \L\{J g^{xy} \R\}
-                    + \partial_y \L\{J g^{yy} \R\}
-                    + \partial_z \L\{J g^{zy} \R\}
-                    \R]
-                    \partial_y\R)\\
-            &+ \L(g^{zz} \partial_z^2\R)
-               + \L(
-                    \frac{1}{J} \L[
-                      \partial_x \L\{J g^{xz} \R\}
-                    + \partial_y \L\{J g^{yz} \R\}
-                    + \partial_z \L\{J g^{zz} \R\}
-                    \R]
-                    \partial_z\R)\\
-            &+ 2\L( g^{xy} \partial_x \partial_y
-                  + g^{xz} \partial_x \partial_z
-                  + g^{yz} \partial_y \partial_z
-                  \R)\\
-            &- \frac{1}{J} \partial_y \L(\frac{J}{g_{yy}} \partial_y\R)
+            =& \quad \, \L(g^{xx} \partial_x^2\R) + \L( \frac{1}{J} \L[
+\partial_x \L\{J g^{xx} \R\} + \partial_y \L\{J g^{yx} \R\} + \partial_z \L\{J
+g^{zx} \R\} \R] \partial_x\R)\\ &+ \L(g^{yy} \partial_y^2\R) + \L( \frac{1}{J}
+    \L[ \partial_x \L\{J g^{xy} \R\} + \partial_y \L\{J g^{yy} \R\} +
+    \partial_z \L\{J g^{zy} \R\} \R] \partial_y\R)\\ &+ \L(g^{zz}
+        \partial_z^2\R) + \L( \frac{1}{J} \L[ \partial_x \L\{J g^{xz} \R\} +
+        \partial_y \L\{J g^{yz} \R\} + \partial_z \L\{J g^{zz} \R\} \R]
+        \partial_z\R)\\ &+ 2\L( g^{xy} \partial_x \partial_y + g^{xz}
+        \partial_x \partial_z + g^{yz} \partial_y \partial_z \R)\\ &-
+        \frac{1}{J} \partial_y \L(\frac{J}{g_{yy}} \partial_y\R)
 \end{align*}
 %
-
 
 
 \subsubsection{The perpendicular Laplacian in Laplacian inversion}
 %
 Notice that BOUT++ currently assumes small parallel gradients in the dependent
-variable in Laplacian inversion, so that
+variable in Laplacian inversion if $g_{xy}$ and $g_{yz}$ are non-zero (if these
+are zero, the derivation can be done directly from equation
+(\ref{eq:reduced_grad_perp}) instead), so that
 %
 \begin{align*}
-    \Grad_\perp^2 \simeq& \quad \,
-               \L(g^{xx} \partial_x^2\R)
-               + \L(
-                    \frac{1}{J} \L[
-                      \partial_x \L\{J g^{xx} \R\}
-                    + \partial_y \L\{J g^{yx} \R\}
-                    + \partial_z \L\{J g^{zx} \R\}
-                    \R]
-                    \partial_x\R)\\
-            &+ \L(g^{zz} \partial_z^2\R)
-               + \L(
-                    \frac{1}{J} \L[
-                      \partial_x \L\{J g^{xz} \R\}
-                    + \partial_y \L\{J g^{yz} \R\}
-                    + \partial_z \L\{J g^{zz} \R\}
-                    \R]
-                    \partial_z\R)\\
-            &+ 2\L(g^{xz} \partial_x \partial_z\R)\\
+    \Grad_\perp^2 \simeq& \quad \, \L(g^{xx} \partial_x^2\R) + \L( \frac{1}{J}
+    \L[ \partial_x \L\{J g^{xx} \R\} + \partial_y \L\{J g^{yx} \R\} +
+    \partial_z \L\{J g^{zx} \R\} \R] \partial_x\R)\\ &+ \L(g^{zz}
+        \partial_z^2\R) + \L( \frac{1}{J} \L[ \partial_x \L\{J g^{xz} \R\} +
+        \partial_y \L\{J g^{yz} \R\} + \partial_z \L\{J g^{zz} \R\} \R]
+        \partial_z\R)\\ &+ 2\L(g^{xz} \partial_x \partial_z\R)\\
 %
-%
-           =&
-               \L(g^{xx} \partial_x^2\R)
-               +
-                    G^x\partial_x
-            + \L(g^{zz} \partial_z^2\R)
-               + G^z \partial_z
-            + 2\L(g^{xz} \partial_x \partial_z\R)
+           =& \L(g^{xx} \partial_x^2\R) + G^x\partial_x + \L(g^{zz}
+        \partial_z^2\R) + G^z \partial_z + 2\L(g^{xz} \partial_x \partial_z\R)
 \end{align*}
 %
-
-
-
-\subsection{The Laplacian inversion}
-%
-We will here go through the calulations of the laplacian inversion algorithm,
-as it is performed in BOUT++. We would like to solve the following equation
-for $f$
-%
-\begin{align}
-    d&\Grad_\perp^2f + \frac{1}{c_1}(\Grad_\perp c_2)\cdot\Grad_\perp f + af = b
-    \label{eq:to_invert}
-\end{align}
-%
-In all currently implemented solvers, the paralle derivatives are neglected.
-Thus, equation (\ref{eq:to_invert}) becomes
-%
-\begin{align*}
-    \, &d
-    \L(    g^{xx} \partial_x^2
-         + G^x \partial_x
-         + g^{zz} \partial_z^2
-         + G^z \partial_z
-         + 2g^{xz} \partial_x \partial_z
-    \R)
-    f
-    \\
-%
-    +& \frac{1}{c_1}\L(
-          \ve{e}^x \partial_x
-       +  \ve{e}^z \partial_z
-    \R)
-    c_2
-    \cdot
-       \L(
-          \ve{e}^x \partial_x
-       +  \ve{e}^z \partial_z
-       \R)
-       f
-       \\
-%
-    +& af = b
-    \numberthis
-    \label{eq:invert_expanded}
-\end{align*}
-%
-
-
-\subsubsection{Using tridiagonal solvers}
-%
-When using the tridiagonal solvers, $c_1 = c_2$ in equation
-(\ref{eq:to_invert_tri}), hence, it is rather solving
-%
-%
-\begin{align}
-    d&\Grad_\perp^2f + \frac{1}{c}(\Grad_\perp c)\cdot\Grad_\perp f + af = b
-    \label{eq:to_invert_tri}
-\end{align}
-%
-%
-In order to use a tridiagonal solver to solve equation
-(\ref{eq:to_invert_tri}), we will first assume that the parallel derivatives
-are small. This means that we will only have derivatives of $x$ and $z$ for the
-dependent variable. The hope is that the modes in the periodic $z$ direction
-will decouple, so that we in the end only have to invert for the $x$
-coordinate.
-
-If the modes decouples when fourier transforming equation
-(\ref{eq:invert_expanded}), we can use a tridiagonal solver to solve the
-equation for each fourier mode.
-
-Using the discrete fourier transform
-%
-\begin{align}
-    F(x,y)_{k} =
-    \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp\L(\frac{-2\pi i k Z}{N}\R)
-\end{align}
-%
-we see that the modes will not decouple if a term consist of a product of two
-terms which depends on $z$, as this would give terms like
-%
-\begin{align*}
-    \frac{1}{N}\sum_{Z=0}^{N-1}
-        a(x,y)_Z
-        f(x,y)_Z
-        \exp\L(\frac{-2\pi i k Z}{N}\R)
-\end{align*}
-%
-Thus, in order to use a tridiagonal solver, $a$, $c$ and $d$ cannot be
-functions of $z$. Because of this, the $\ve{e}^z \partial_z c$ term in equation
-(\ref{eq:invert_expanded}) is zero. In principle the modes would still decouple
-if the $\ve{e}^z \partial_z f$ part of equation (\ref{eq:invert_expanded}) was
-kept, but currently this part is also neglected in solvers using a tridiagonal
-matrix. Thus the tridiagonal solvers are solving equations on the form
-%
-\begin{align*}
-    \, &d(x,y)
-    \L(    g^{xx}(x,y) \partial_x^2
-         + G^x(x,y) \partial_x
-         + g^{zz}(x,y) \partial_z^2
-         + G^z(x,y) \partial_z
-         + 2g^{xz}(x,y) \partial_x \partial_z
-    \R)
-    f(x,y,z)
-    \\
-%
-    +& \frac{1}{c(x,y)}\L(
-          \ve{e}^x \partial_x
-    \R)
-    c(x,y)
-    \cdot
-       \L(
-          \ve{e}^x \partial_x
-       \R)
-       f(x,y,z)
-       \\
-%
-   +& a(x,y)f(x,y,z) = b(x,y,z)
-\end{align*}
-%
-after using the discrete fourier transform (see section \ref{sec:deriv_of_FT}),
-we get
-%
-\begin{align*}
-    \, &d
-    \L(    g^{xx} \partial_x^2F_z
-         + G^x \partial_xF_z
-         + g^{zz} [i k]^2F_z
-         + G^z [i k]F_z
-         + 2g^{xz} \partial_x[i k]F_z
-    \R)
-    \\
-%
-    +& \frac{1}{c}\L(
-          \ve{e}^x \partial_x
-    \R)
-    c
-    \cdot
-       \L(
-          \ve{e}^x \partial_xF_z
-       \R)
-       \\
-%
-    +& aF_z = B_z
-\end{align*}
-%
-which gives
-%
-\begin{align*}
-    \, &d
-    \L(    g^{xx} \partial_x^2
-         + G^x \partial_x
-         - k^2 g^{zz}
-         + i kG^z
-         + i k2g^{xz} \partial_x
-    \R)F_z
-    \\
-%
-    +& \frac{g^{xx}}{c}
-    \L(
-        \partial_x c
-    \R)
-     \partial_xF_z
-       \\
-%
-    +& aF_z = B_z
-    \numberthis
-    \label{eq:FT_laplace_inversion}
-\end{align*}
-%
-As nothing in equation (\ref{eq:FT_laplace_inversion}) couples points in $y$
-togehter (since we have neglected the $y$-derivatives). Also, as the modes are
-decoupled, we may solve equation (\ref{eq:FT_laplace_inversion})  $k$ mode by
-$k$ mode in addition to $y$-point by $y$-point.
-
-The second order centered approximation of the first and second derivatives in
-$x$ reads
-%
-\begin{align*}
-    &&\partial_x f \simeq \frac{-f_{n-1} + f_{n+1}}{2\text{d}x}&&
-    &&\partial_x^2 f \simeq \frac{f_{n-1} - f_{n} + f_{n+1}}{\text{d}x^2}&&
-\end{align*}
-%
-This gives
-%
-\begin{align*}
-    \, &d
-    \L(    g^{xx} \frac{F_{z,n-1} - 2F_{z,n} + F_{z, n+1}}{\text{d}x^2}
-         + G^x \frac{-F_{z,n-1} + F_{z,n+1}}{2\text{d}x}
-         - k^2 g^{zz}F_{z,n}
-         \R.\\
-         &\quad\L.
-         + i kG^zF_{z,n}
-         + i k2g^{xz} \frac{-F_{z,n-1} + F_{z,n+1}}{2\text{d}x}
-    \R)
-    \\
-%
-    +& \frac{g^{xx}}{c}
-    \L(
-        \frac{-c_{n-1} + c_{n+1}}{2\text{d}x}
-    \R)
-     \frac{-F_{z,n-1} + F_{z,n+1}}{2\text{d}x}
-       \\
-%
-    +& aF_{z,n} = B_{z,n}
-\end{align*}
-%
-collecting point by point
-%
-\begin{align*}
-    &\L(
-          \frac{dg^{xx}}{\text{d}x^2}
-        - \frac{dG^x}{2\text{d}x}
-        - \frac{g^{xx}}{c_{n}}
-          \frac{-c_{n-1} + c_{n+1}}{4\text{d}x^2}
-        - i\frac{d k2g^{xz}}{2\text{d}x}
-    \R)
-    F_{z,n-1}
-    \\
-    %
-    &\L(
-       - \frac{ dg^{xx} }{\text{d}x^2}
-       - dk^2 g^{zz}
-       + a
-       + idkG^z
-    \R)
-    F_{z,n}
-    \\
-    %
-    &\L(
-          \frac{dg^{xx}}{\text{d}x^2}
-        + \frac{dG^x}{2\text{d}x}
-        + \frac{g^{xx}}{c_{n}}
-          \frac{-c_{n-1} + c_{n+1}}{4\text{d}x^2}
-        + i\frac{dk2g^{xz}}{2\text{d}x}
-    \R)
-    F_{z, n+1}
-    \\
-%
-     =& B_{z,n}
-    \numberthis
-    \label{eq:discretized_laplace}
-\end{align*}
-%
-We now introduce
-%
-\begin{align*}
-    &c_1 = \frac{dg^{xx}}{\text{d}x^2}&
-    &c_2 = dg^{zz}&
-    &c_3 = \frac{2dg^{xz}}{2\text{d}x}& &&
-    \\
-    &c_4 = \frac{dG^x + g^{xx}\frac{-c_{n-1} + c_{n+1}}{2c_n\text{d}x}}{2\text{d}x}&
-    &c_5 = dG^z&
-    &&
-\end{align*}
-%
-which inserted in equation (\ref{eq:discretized_laplace}) gives
-%
-\begin{align*}
-    &\L(
-        c_1 - c_4
-        -ikc_3
-    \R)
-    F_{z,n-1}
-    \\
-    %
-    &\L(
-       -2c_1 - k^2c_2
-       +ikc_5
-       + a
-    \R)
-    F_{z,n}
-    \\
-    %
-    &\L(
-        c_1 + c_4
-        + ikc_3
-    \R)
-    F_{z, n+1}
-    \\
-%
-     =& B_{z,n}
-\end{align*}
-%
-This can be formulated as the matrix equation
-%
-\begin{align*}
-    AF_z=B_z
-\end{align*}
-%
-where the matrix $A$ is tridiagonal. The boundary conditions are set by
-setting the first and last rows in $A$ and $B_z$.
-%
-
-
-\subsubsection{Using PETSc solvers}
-%
-When using PETSc, all terms of equation (\ref{eq:invert_expanded}) is being
-used when inverting to find $f$. Note that when using PETSc, we are not fourier
-decomposing in the $z$-direction, so it may take substantially longer time to
-find the solution.  As with the tridiagonal solver, the fields are being sliced
-in the $y$-direction, and a solution is being found for one $y$ plane at the
-time.
-
-Before solving, equation (\ref{eq:invert_expanded}) is rewritten to the form
-$A\ve{x} =\ve{b}$ (however, the full $A$ is not expanded in memory). To do
-this, a row $i$ in the matrix $A$ is indexed from bottom left of the two
-dimensional field $= (0,0) = 0$ to top right $= (\texttt{meshx}-1,
-\texttt{meshz}-1) = \texttt{meshx}\cdot\texttt{meshz}-1$ of the two dimensional
-field. This is done in such a way so that a row $i$ in $A$ increments by $1$
-for an increase of $1$ in the $z-$direction, and by $\texttt{meshz}$ for an
-increase of $1$ in the $x-$direction, where the variables $\texttt{meshx}$ and
-$\texttt{meshz}$ represents the highest value of the field in the given
-direction.
-
-Similarly to equation (\ref{eq:discretized_laplace}), the discretized version
-of equation (\ref{eq:invert_expanded}) can be written. Doing the same for the
-full two dimensional case yields\\
-%
-\begin{minipage}{0.45\textwidth}
-Second order approximation
-%
-\begin{align*}
-    \;
-    &
-    c_{i,j}
-    f_{i,j}
-    \\
-    %
-    &+
-    c_{i-1,j-1}
-    f_{i-1,j-1}
-    +
-    c_{i-1,j}
-    f_{i-1,j}
-    \\
-    %
-    &+
-    c_{i-1,j+1}
-    f_{i-1,j+1}
-    +
-    c_{i,j-1}
-    f_{i,j-1}
-    \\
-    %
-    &+
-    c_{i,j+1}
-    f_{i,j+1}
-    +
-    c_{i+1,j-1}
-    f_{i+1,j-1}
-    \\
-    %
-    &+
-    c_{i+1,j}
-    f_{i+1,j}
-    +
-    c_{i+1,j+1}
-    f_{i+1,j+1}
-    \\
-%
-    =& b_{i,j}
-\end{align*}
-\end{minipage}
-%
-\hspace{1cm}
-%
-\begin{minipage}{0.45\textwidth}
-Fourth order approximation
-%
-\begin{align*}
-    \;
-    &
-    c_{i,j}
-    f_{i,j}
-    \\
-    %
-    &+
-    c_{i-2,j-2}
-    f_{i-2,j-2}
-    +
-    c_{i-2,j-1}
-    f_{i-2,j-1}
-    \\
-    %
-    &+
-    c_{i-2,j}
-    f_{i-2,j}
-    +
-    c_{i-2,j+1}
-    f_{i-2,j+1}
-    \\
-    %
-    &+
-    c_{i-2,j+2}
-    f_{i-2,j+2}
-    +
-    c_{i-1,j-2}
-    f_{i-1,j-2}
-    \\
-    %
-    &+
-    c_{i-1,j-1}
-    f_{i-1,j-1}
-    +
-    c_{i-1,j}
-    f_{i-1,j}
-    \\
-    %
-    &+
-    c_{i-1,j-1}
-    f_{i-1,j-1}
-    +
-    c_{i-1,j}
-    f_{i-1,j}
-    \\
-    %
-    &+
-    c_{i-1,j+1}
-    f_{i-1,j+1}
-    +
-    c_{i-1,j+2}
-    f_{i-1,j+2}
-    \\
-    %
-    &+
-    c_{i,j-2}
-    f_{i,j-2}
-    +
-    c_{i,j-1}
-    f_{i,j-1}
-    \\
-    %
-    &+
-    c_{i,j+1}
-    f_{i,j+1}
-    +
-    c_{i,j+2}
-    f_{i,j+2}
-    \\
-    %
-    &+
-    c_{i+1,j-2}
-    f_{i+1,j-2}
-    +
-    c_{i+1,j-1}
-    f_{i+1,j-1}
-    \\
-    %
-    &+
-    c_{i+1,j}
-    f_{i+1,j}
-    +
-    c_{i+1,j+1}
-    f_{i+1,j+1}
-    \\
-    %
-    &+
-    c_{i+1,j+2}
-    f_{i+1,j+2}
-    +
-    c_{i+2,j-2}
-    f_{i+2,j-2}
-    \\
-    %
-    &+
-    c_{i+2,j-1}
-    f_{i+2,j-1}
-    +
-    c_{i+2,j}
-    f_{i+2,j}
-    \\
-    %
-    &+
-    c_{i+2,j+1}
-    f_{i+2,j+1}
-    +
-    c_{i+2,j+2}
-    f_{i+2,j+2}
-    \\
-%
-    =& b_{i,j}
-\end{align*}
-\end{minipage}
-\\
-To determine the coefficient for each node point, it is convenient to introduce
-some quantities
-%
-\begin{align*}
-    &A_0 = a(x,y_{\text{current}},z)&
-    &A_1 = dg^{xx}&\\
-    &A_2 = dg^{zz}&
-    &A_3 = 2dg^{xz}&
-\end{align*}
-%
-In addition, we have\\
-%
-\begin{minipage}{0.45\textwidth}
-Second order approximation
-\begin{align*}
-    \texttt{ddx\_c} =
-     \frac{\texttt{c2}_{x+1} - \texttt{c2}_{x-1}
-      }{
-      2\texttt{c1}\text{d}x}\\
-    %
-    \texttt{ddz\_c} =
-     \frac{\texttt{c2}_{z+1} - \texttt{c2}_{z-1}
-      }{
-      2\texttt{c1}\text{d}z}
-\end{align*}
-\end{minipage}
-%
-\hspace{1cm}
-%
-\begin{minipage}{0.45\textwidth}
-Fourth order approximation
-\begin{align*}
-    \texttt{ddx\_c} =
-     \frac{-\texttt{c2}_{x+2} + 8\texttt{c2}_{x+1} - 8\texttt{c2}_{x-1} + \texttt{c2}_{x-1}
-      }{
-      12\texttt{c1}\text{d}x}\\
-    %
-    \texttt{ddz\_c} =
-     \frac{-\texttt{c2}_{z+2} + 8\texttt{c2}_{z+1} - 8\texttt{c2}_{z-1} + \texttt{c2}_{z-1}
-      }{
-      12\texttt{c1}\text{d}z}
-\end{align*}
-\end{minipage}
-\\
-%
-This gives
-%
-\begin{align*}
-    &A_4 = dG^x + g^{xx}\texttt{ddx\_c} + g^{xz}\texttt{ddz\_c}&
-    &A_5 = dG^z + g^{xz}\texttt{ddx\_c} + g^{xx}\texttt{ddz\_c}&
-\end{align*}
-%
-The coefficients $c_{i+m,j+n}$ are finally being set according to the
-appropriate order of discretization. The coefficients can be found in
-the file \texttt{petsc\_laplace.cxx}.
-
 
 
 
@@ -2312,8 +1640,10 @@ the file \texttt{petsc\_laplace.cxx}.
 %
 We will here derive the bracket operators, as they are used in BOUT++.
 
+
 \subsubsection{The electrostatic \texorpdfstring{$\ve{E}\times \ve{B}$}{ExB}
-	       velocity}
+%
+               velocity}
 %
 Under electrostatic conditions, we have that $\ve{v}_E =
 -\frac{\nabla\phi\times\ve{b}}{B}$, which is similar to
@@ -2321,177 +1651,92 @@ $\ve{v}=\ve{k}\times\nabla\psi$ found in incompressible fluid flow
 %
 \begin{align*}
     \ve{v}_E =& -\frac{\nabla\phi\times\ve{b}}{B}\\
-	     %
-	     =&-\frac{\nabla\phi\times\ve{e}_y}{
-               \sqrt{g_{yy}}J^{-1}\sqrt{g_{yy}}}\\
              %
-	     =&-\frac{J}{g_{yy}}\nabla\phi\times\ve{e}_y\\
-	     %
-	     =&\frac{J}{g_{yy}}\ve{e}_y\times\nabla\phi\\
-	     %
-	     =&\frac{J}{g_{yy}}\ve{e}_y\times
-	       \L(\ve{e}^x\partial_x + \ve{e}^z\partial_z\R)\phi\\
-	     %
-	     =&\frac{J}{g_{yy}}
-	       \L(g_{yx}\ve{e}^x + g_{yy}\ve{e}^y + g_{yz}\ve{e}^z\R)
-	       \times
-	       \L(\ve{e}^x\partial_x +
-	          \ve{e}^y\partial_y +
-                  \ve{e}^z\partial_z\R)\phi\\
+             =&-\frac{\nabla\phi\times\ve{e}_y}{
+\sqrt{g_{yy}}J^{-1}\sqrt{g_{yy}}}\\
              %
-	     =&\frac{J}{g_{yy}}
-	       \L(
-	         g_{yx}\ve{e}^x\times\ve{e}^x\partial_x
-	       + g_{yy}\ve{e}^y\times\ve{e}^x\partial_x
-	       + g_{yz}\ve{e}^z\times\ve{e}^x\partial_x
-	       \R.
-	       \\
-	       &\quad\;
-	       + g_{yx}\ve{e}^x\times\ve{e}^y\partial_y
-	       + g_{yy}\ve{e}^y\times\ve{e}^y\partial_y
-	       + g_{yz}\ve{e}^z\times\ve{e}^y\partial_y
-	       \\
-	       &\quad\;
-	       \L.
-	       + g_{yx}\ve{e}^x\times\ve{e}^z\partial_z
-	       + g_{yy}\ve{e}^y\times\ve{e}^z\partial_z
-	       + g_{yz}\ve{e}^z\times\ve{e}^z\partial_z
-	       \R)
-	       \phi\\
-	     %
-	     =&\frac{J}{g_{yy}}
-	       \L(
-	       - g_{yy}\ve{e}^y\times\ve{e}^x\partial_x
-	       + g_{yz}\ve{e}^z\times\ve{e}^x\partial_x
-	       \R.
-	       \\
-	       &\quad
-	       + g_{yx}\ve{e}^x\times\ve{e}^y\partial_y
-	       - g_{yz}\ve{e}^z\times\ve{e}^y\partial_y
-	       \\
-	       &\quad
-	       \L.
-	       - g_{yx}\ve{e}^x\times\ve{e}^z\partial_z
-	       + g_{yy}\ve{e}^y\times\ve{e}^z\partial_z
-	       \R)
-	       \phi\\
-	     %
-	     =&\frac{1}{g_{yy}}
-	       \L(
-	       - g_{yy}\ve{e}_z\partial_x
-	       + g_{yz}\ve{e}_y\partial_x
-	       + g_{yx}\ve{e}_z\partial_y
-	       - g_{yz}\ve{e}_x\partial_y
-	       - g_{yx}\ve{e}_y\partial_z
-	       + g_{yy}\ve{e}_x\partial_z
-	       \R)
-	       \phi
+             =&-\frac{J}{g_{yy}}\nabla\phi\times\ve{e}_y\\
+             %
+             =&\frac{J}{g_{yy}}\ve{e}_y\times\nabla\phi\\
+             %
+             =&\frac{J}{g_{yy}}\ve{e}_y\times \L(\ve{e}^x\partial_x +
+\ve{e}^z\partial_z\R)\phi\\
+             %
+             =&\frac{J}{g_{yy}} \L(g_{yx}\ve{e}^x + g_{yy}\ve{e}^y +
+g_{yz}\ve{e}^z\R) \times \L(\ve{e}^x\partial_x + \ve{e}^y\partial_y +
+\ve{e}^z\partial_z\R)\phi\\
+             %
+             =&\frac{J}{g_{yy}} \L( g_{yx}\ve{e}^x\times\ve{e}^x\partial_x +
+g_{yy}\ve{e}^y\times\ve{e}^x\partial_x + g_{yz}\ve{e}^z\times\ve{e}^x\partial_x
+\R.  \\ &\quad\; + g_{yx}\ve{e}^x\times\ve{e}^y\partial_y +
+g_{yy}\ve{e}^y\times\ve{e}^y\partial_y + g_{yz}\ve{e}^z\times\ve{e}^y\partial_y
+\\ &\quad\; \L.  + g_{yx}\ve{e}^x\times\ve{e}^z\partial_z +
+g_{yy}\ve{e}^y\times\ve{e}^z\partial_z + g_{yz}\ve{e}^z\times\ve{e}^z\partial_z
+\R) \phi\\
+             %
+             =&\frac{J}{g_{yy}} \L( - g_{yy}\ve{e}^y\times\ve{e}^x\partial_x +
+g_{yz}\ve{e}^z\times\ve{e}^x\partial_x \R.  \\ &\quad +
+g_{yx}\ve{e}^x\times\ve{e}^y\partial_y - g_{yz}\ve{e}^z\times\ve{e}^y\partial_y
+\\ &\quad \L.  - g_{yx}\ve{e}^x\times\ve{e}^z\partial_z +
+g_{yy}\ve{e}^y\times\ve{e}^z\partial_z \R) \phi\\
+             %
+             =&\frac{1}{g_{yy}} \L( - g_{yy}\ve{e}_z\partial_x +
+g_{yz}\ve{e}_y\partial_x + g_{yx}\ve{e}_z\partial_y - g_{yz}\ve{e}_x\partial_y
+- g_{yx}\ve{e}_y\partial_z + g_{yy}\ve{e}_x\partial_z \R) \phi
 \end{align*}
+%
 
 
 \subsubsection{The electrostatic \texorpdfstring{$\ve{E}\times \ve{B}$}{ExB}
-	       advection}
+%
+               advection}
 %
 The electrostatic $E\times B$ advection operator thus becomes
 %
 \begin{align*}
-    \ve{v}_E\cdot\nabla
-    =& -\frac{\nabla\phi\times\ve{b}}{B}\cdot\nabla\\
+    \ve{v}_E\cdot\nabla =& -\frac{\nabla\phi\times\ve{b}}{B}\cdot\nabla\\
     %
+    =&\frac{1}{g_{yy}} \L( - g_{yy}\ve{e}_z\partial_x +
+    g_{yz}\ve{e}_y\partial_x + g_{yx}\ve{e}_z\partial_y -
+    g_{yz}\ve{e}_x\partial_y - g_{yx}\ve{e}_y\partial_z +
+    g_{yy}\ve{e}_x\partial_z \R) \phi \cdot\L(\ve{e}^x\partial_x +
+    \ve{e}^y\partial_y + \ve{e}^z\partial_z\R)\\
     %
-    =&\frac{1}{g_{yy}}
-	       \L(
-	       - g_{yy}\ve{e}_z\partial_x
-	       + g_{yz}\ve{e}_y\partial_x
-	       + g_{yx}\ve{e}_z\partial_y
-	       - g_{yz}\ve{e}_x\partial_y
-	       - g_{yx}\ve{e}_y\partial_z
-	       + g_{yy}\ve{e}_x\partial_z
-	       \R)
-	       \phi
-       \cdot\L(\ve{e}^x\partial_x + \ve{e}^y\partial_y + \ve{e}^z\partial_z\R)\\
+    =& \frac{1}{g_{yy}} \L( - g_{yy}\partial_x\phi\partial_z +
+    g_{yz}\partial_x\phi\partial_y + g_{yx}\partial_y\phi\partial_z -
+    g_{yz}\partial_y\phi\partial_x - g_{yx}\partial_z\phi\partial_y +
+    g_{yy}\partial_z\phi\partial_x \R)\\
     %
+    =& \frac{1}{g_{yy}} \L( \L[ g_{yy}\partial_z\phi - g_{yz}\partial_y\phi
+\R]\partial_x + \L[ g_{yz}\partial_x\phi - g_{yx}\partial_z\phi \R]\partial_y +
+\L[ g_{yx}\partial_y\phi - g_{yy}\partial_x\phi \R]\partial_z \R)\\
     %
-    =& \frac{1}{g_{yy}}
-	       \L(
-	       - g_{yy}\partial_x\phi\partial_z
-	       + g_{yz}\partial_x\phi\partial_y
-	       + g_{yx}\partial_y\phi\partial_z
-	       - g_{yz}\partial_y\phi\partial_x
-	       - g_{yx}\partial_z\phi\partial_y
-	       + g_{yy}\partial_z\phi\partial_x
-	       \R)\\
-    %
-    %
-    =& \frac{1}{g_{yy}}
-	       \L(
-	         \L[
-	           g_{yy}\partial_z\phi
-	         - g_{yz}\partial_y\phi
-	         \R]\partial_x
-	       +
-	         \L[
-	           g_{yz}\partial_x\phi
-	         - g_{yx}\partial_z\phi
-	         \R]\partial_y
-	       +
-	         \L[
-	           g_{yx}\partial_y\phi
-	         - g_{yy}\partial_x\phi
-	         \R]\partial_z
-	       \R)\\
-    %
-    %
-    =& \frac{1}{g_{yy}}
-               \L(
-                 g_{yx}\{\phi, \cdot\}_{y,z}
-                 +
-                 g_{yy}\{\phi, \cdot\}_{z,x}
-                 +
-                 g_{yz}\{\phi, \cdot\}_{x,y}
-               \R)
+    =& \frac{1}{g_{yy}} \L( g_{yx}\{\phi, \cdot\}_{y,z} + g_{yy}\{\phi,
+    \cdot\}_{z,x} + g_{yz}\{\phi, \cdot\}_{x,y} \R)
 \end{align*}
 %
 Where we have used the definition of the Poisson bracket
 %
 \begin{align*}
-    \{a, b\}_{i,j} =
-      \L(\partial_i a\R) \partial_j b
-    - \L(\partial_j a\R) \partial_i b
+    \{a, b\}_{i,j} = \L(\partial_i a\R) \partial_j b - \L(\partial_j a\R)
+    \partial_i b
 \end{align*}
 %
 The pure solenoidal advection is thus
 %
 \begin{align*}
-    B\ve{v}_E\cdot\nabla
-    =& -\nabla\phi\times\ve{b}\cdot\nabla\\
-    %
+    B\ve{v}_E\cdot\nabla =& -\nabla\phi\times\ve{b}\cdot\nabla\\
     %
     =& \ve{b} \times \nabla\phi\cdot\nabla\\
     %
+    =& \frac{\sqrt{g_{yy}}}{Jg_{yy}} \L( g_{yx}\{\phi, \cdot\}_{y,z} +
+    g_{yy}\{\phi, \cdot\}_{z,x} + g_{yz}\{\phi, \cdot\}_{x,y} \R) \\
     %
-    =& \frac{\sqrt{g_{yy}}}{Jg_{yy}}
-               \L(
-                 g_{yx}\{\phi, \cdot\}_{y,z}
-                 +
-                 g_{yy}\{\phi, \cdot\}_{z,x}
-                 +
-                 g_{yz}\{\phi, \cdot\}_{x,y}
-               \R)
-               \\
-    %
-    %
-    =& \frac{1}{J\sqrt{g_{yy}}}
-               \L(
-                 g_{yx}\{\phi, \cdot\}_{y,z}
-                 +
-                 g_{yy}\{\phi, \cdot\}_{z,x}
-                 +
-                 g_{yz}\{\phi, \cdot\}_{x,y}
-               \R)
-	       \numberthis
-	       \label{eq:brackets}
+    =& \frac{1}{J\sqrt{g_{yy}}} \L( g_{yx}\{\phi, \cdot\}_{y,z} + g_{yy}\{\phi,
+\cdot\}_{z,x} + g_{yz}\{\phi, \cdot\}_{x,y} \R) \numberthis
+               \label{eq:brackets}
 \end{align*}
+%
 
 
 \subsubsection{The brackets operator in BOUT++}
@@ -2501,94 +1746,17 @@ $-\frac{\nabla\phi\times\ve{b}}{B}\cdot\nabla f$ rather than
 $-\nabla\phi\times\ve{b}\cdot\nabla f$.
 
 Notice also that the Arakawa brackets neglects the $\partial_y$ derivative
-terms (the $y$-derivative terms), so for the Arakawa brackets BOUT++ returns
+terms (the $y$-derivative terms) if $g_{xy}$ and $g_{yz}$ are non-zero, so for
+the Arakawa brackets, BOUT++ returns
 %
 \begin{align*}
-    \ve{v}_E\cdot\nabla
-    =& -\frac{\nabla\phi\times\ve{b}}{B}\cdot\nabla\\
+    \ve{v}_E\cdot\nabla =& -\frac{\nabla\phi\times\ve{b}}{B}\cdot\nabla\\
     %
-    \simeq& \frac{1}{g_{yy}}
-	       \L(
-                 g_{yy}\{\phi, \cdot\}_{z,x}
-	       \R)\\
+    \simeq& \frac{1}{g_{yy}} \L( g_{yy}\{\phi, \cdot\}_{z,x} \R)\\
     %
     =& \partial_z\phi\partial_x - \partial_x\phi\partial_z
 \end{align*}
 %
-
-
-
-
-
-\section{Derivates of the fourier transform}
-\label{sec:deriv_of_FT}
-By using the definition of the fourier transformed, we have
-%
-\begin{align*}
-    F(x,y,\xi) = \defi{-\infty}{\infty}{f(x,y,z)\exp\L(-2\pi iz\xi\R)}{z}
-\end{align*}
-%
-this gives
-%
-\begin{align*}
-    &\defi{-\infty}{\infty}{\L(\partial_zf[x,y,z]\R)\exp\L(-2\pi iz\xi\R)}{z}\\
-%
-    =& \defi{-\infty}{\infty}{\partial_z\L(f[x,y,z]\exp\L[-2\pi iz\xi\R]\R)}{z}
-     - \defi{-\infty}{\infty}{f(x,y,z)\partial_z\exp\L(-2\pi iz\xi\R)}{z}\\
-%
-    =& \L(f[x,y,z]\exp\L[-2\pi iz\xi\R]\R)\bigg|_{-\infty}^{\infty}
-     - \L(-2\pi i\xi\R)\defi{-\infty}{\infty}{f(x,y,z)\exp\L(-2\pi iz\xi\R)}{z}\\
-%
-    =& 2\pi i\xi F(x,y,\xi)
-    \numberthis
-    \label{eq:f_derivative}
-\end{align*}
-%
-where we have used that $f(x,y,\pm\infty)=0$ in order to have a well defined
-fourier transform. This means that
-%
-\begin{align*}
-    \partial_z^n F(x,y,\xi) = (2\pi i \xi)^n F(x,y,\xi)
-\end{align*}
-%
-In our case, we are dealing with periodic boundary conditions. Strictly
-speaking, the fourier transform does not exist in such cases, but it is
-possible to define a fourier transform in the limit which in the end lead to
-the fourier series%
-\footnote{For more detail see Bracewell, R. N. - The Fourier Transform and Its
-Applications 3rd Edition chapter $10$}%
-%
-By discretizing the spatial domain, it is no longer possible to represent the
-infinite amount of fourier modes, but only $N+1$ number of modes, where $N$ is
-the number of points (this includes the modes with negative frequencies, and
-the zeroth offset mode). For the discrete fourier transform, we have
-%
-\begin{align}
-    F(x,y)_{k} =
-    \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp\L(\frac{-2\pi i k Z}{N}\R)
-    \label{eq:DFT}
-\end{align}
-%
-where $k$ is the mode number, $N$ is the number of points in $z$. If we call
-the sampling points of $z$ for $z_Z$, where $Z = 0, 1 \ldots N-1$, we have
-that $z_Z = Z \text{d}z$. As our domain goes from $[0, 2\pi[$, we have that
-(since we have one less line segment than point) $\text{d}z (N-1) = L_z
-= 2\pi - \text{d}z$, which gives $\text{d}z = \frac{2\pi}{N}$. Inserting this
-is equation (\ref{eq:DFT}) yields
-%
-\begin{align*}
-    F(x,y)_{k}
-    = \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp\L( - i k Z\text{d}z\R)
-    = \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp\L( - i k z_Z\R)
-\end{align*}
-%
-The discrete verison of equation (\ref{eq:f_derivative}) thus gives
-%
-\begin{align*}
-    \partial_z^n F(x,y)_k = (i k)^n F(x,y)_k
-\end{align*}
-%
-
 
 
 
@@ -2603,8 +1771,7 @@ The discrete verison of equation (\ref{eq:f_derivative}) thus gives
 Using
 %
 \begin{align*}
-\nabla\cdot\L(\ve{F}\times\ve{G}\R) =
-\L(\nabla\times\ve{F}\R)\cdot\ve{G} -
+\nabla\cdot\L(\ve{F}\times\ve{G}\R) = \L(\nabla\times\ve{F}\R)\cdot\ve{G} -
 \ve{F}\cdot\L(\nabla\times\ve{G}\R)
 \end{align*}
 %

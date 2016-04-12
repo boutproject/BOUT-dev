@@ -1,0 +1,24 @@
+
+rhs = sin(x - z)
+rhs2 = rhs
+
+[mesh]
+nx = 36
+ny = 2
+nz = 32
+
+dx = 1
+dz = 1
+
+[laplacexz]
+type = petsc   # Use PETSc implementation
+
+ksptype = gmres   # Linear iterative method
+
+pctype  = lu   # Preconditioner. Direct "lu" or "ilu"; iterative "jacobi", "sor"
+
+# Set package to perform factorisation for direct solves
+# "petsc" built-in solver only serial
+# "superlu", "superlu_dist", "mumps", "cusparse"
+factor_package = superlu_dist
+

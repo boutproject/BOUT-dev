@@ -115,7 +115,7 @@ END
 FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parweight, $
                         ydown_dist=ydown_dist, yup_dist=yup_dist, $
                         ydown_space=ydown_space, yup_space=yup_space
-
+  
   IF NOT KEYWORD_SET(parweight) THEN parweight = 0.0  ; Default is poloidal distance
 
   np = N_ELEMENTS(ri)
@@ -180,7 +180,7 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
     IF SIZE(ydown_space, /TYPE) EQ 0 THEN ydown_space = ydown_dist
     IF SIZE(yup_space, /TYPE) EQ 0 THEN yup_space = ydown_dist
     ;dloc = (dist[np-1] - ydown_dist - yup_dist) * FINDGEN(n)/FLOAT(n-1) + ydown_dist  ; Distance locations
-
+    
     
     fn = FLOAT(n-1)
     d = (dist[np-1] - ydown_dist - yup_dist) ; Distance between first and last
@@ -1489,10 +1489,24 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
     ; Calculate distance for equal spacing in each region
     xpt = si[0] ; Start with the innermost x-point
     xpt_dist = FLTARR(critical.n_xpoint, 4) ; Distance between x-point and first grid point
+    
+    ; NOTE: xpt_dist indices go clockwise around the X-point, starting
+    ; from the lower left leg when the core is at the top.
+    ; For the lower x-point,
+    ;     0 = inner leg, 1 = inner SOL, 2 = outer sol, 3 = outer leg
+    ; For the upper x-point (if any)
+    ;     0 = outer leg, 1 = outer sol, 2 = iner sol, 3 = inner leg
+    
     FOR i=0, critical.n_xpoint-1 DO BEGIN
       ; Grid the lower PF region
       
       ; Calculate poloidal distance along starting line
+      ; NOTE: (ri0, zi0) is the line going from x-point down the leg
+      ; to the left, if the core is at the top.
+      ; - If xpt is the lower x-point, then this corresponds to the
+      ;   lower inner leg.
+      ; - If xpt is the upper x-point then this is the upper outer leg
+      
       poldist = line_dist(R, Z, (*pf_info[xpt]).ri0, (*pf_info[xpt]).zi0) ; Poloidal distance along line
       xdist = MAX(poldist) * 0.5 / FLOAT(npol[3*i]) ; Equal spacing
       
@@ -1503,6 +1517,8 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       
       poldist = line_dist(R, Z, (*sol_info[solid]).ri, (*sol_info[solid]).zi)
       xdist = MAX(poldist) * 0.5 / FLOAT(npol[3*i+1])
+
+      PRINT, "S :", solid, max(poldist), npol[3*i+1]
       
       xpt2 = (*sol_info[solid]).xpt2
       
@@ -1512,12 +1528,11 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       ; Second PF region
       xpt = xpt2
       
-      poldist = line_dist(R, Z, (*pf_info[xpt]).ri0, (*pf_info[xpt]).zi0)
-      xdist = MAX(poldist) * 0.5 / FLOAT(npol[3*i])
+      poldist = line_dist(R, Z, (*pf_info[xpt]).ri1, (*pf_info[xpt]).zi1)
+      xdist = MAX(poldist) * 0.5 / FLOAT(npol[3*i+2])
       
       xpt_dist[xpt, 3] = xdist
     ENDFOR
-    
     ;FOR i=0, critical.n_xpoint-1 DO xpt_dist[i,*] = MEAN(xpt_dist[i,*])
     
     FOR i=0, critical.n_xpoint-1 DO BEGIN

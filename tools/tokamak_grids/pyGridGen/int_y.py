@@ -22,14 +22,26 @@ def int_y( var, mesh, loop=None, nosmooth=None, simple=None):
 
         period, yi, xi, last = gen_surface(period=None, last=None, xi=None )
 
-        f[xi,yi] = int_func(var[xi,yi], simple=simple)
+        if period:
+            # Add the first point onto the end to complete the loop
+            yi = numpy.concatenate((yi,[yi[0]]))
+        
+        f1d = int_func(var[xi,yi], simple=simple)
 
         if nosmooth==None :
             print('no smooth yet')
-            #f[xi,yi] = SMOOTH(SMOOTH(f[xi,yi], 5, /edge_truncate), 5, /edge_truncate)
+            #f1d = SMOOTH(SMOOTH(f1d, 5, /edge_truncate), 5, /edge_truncate)
 
-        loop[xi] = f[xi,yi[numpy.size(yi)-1]] - f[xi,yi[0]]
+        loop[xi] = f1d[-1] - f1d[0]
 
+        if period:
+            # Remove the last point
+            f1d = f1d[:-1]
+            yi = yi[:-1]
+
+        # Put data into result
+        f[xi,yi] = f1d
+        
         if last == 1 : break
 
     if nr == 1 :
