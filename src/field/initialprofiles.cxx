@@ -453,6 +453,7 @@ BoutReal Prof1D(BoutReal s, BoutReal s0, BoutReal sMin, BoutReal sMax, BoutReal 
 	+cos(12*sNorm*TWOPI)
 	+cos(13*sNorm*TWOPI)
 	+cos(14*sNorm*TWOPI);
+      break;
     default: res=1.0;
     }
 
