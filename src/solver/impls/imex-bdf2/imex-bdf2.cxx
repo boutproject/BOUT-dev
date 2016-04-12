@@ -688,8 +688,12 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
   KSP ksp;
   SNESGetKSP(*snesIn, &ksp);
   
-  //Set the initial guess to be non-zero
-  KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
+  bool kspsetinitialguessnonzero;
+  options->get("kspsetinitialguessnonzero", kspsetinitialguessnonzero, false);
+  if(kspsetinitialguessnonzero) {
+    //Set the initial guess to be non-zero
+    KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
+  }
 
   // Get PC context from KSP
   PC pc;
@@ -885,7 +889,10 @@ int IMEXBDF2::run() {
 	  if(adaptCounter>mxstepAdapt){
 	    throw BoutException("Aborting: Maximum number of adapative iterations (%i) exceeded", mxstepAdapt);
 	  }
-	}
+	}else {
+          // Reset dtNext in case it was artificially limited
+          dtNext = dt;
+        }
       }//End of running -- Done a single internal step
 
       //Update record of what was used to complete this step
