@@ -50,7 +50,7 @@ public:
  */
 class ShiftedMetric : public ParallelTransform {
 public:
-  ShiftedMetric(Mesh *m);
+  ShiftedMetric(Mesh &mesh);
   
   void calcYUpDown(Field3D &f);
   
@@ -60,7 +60,7 @@ public:
 private:
   ShiftedMetric();
   
-  Mesh *mesh;
+  Mesh &mesh;
 
   Field2D zShift;
   std::vector<dcomplex> cmplx;

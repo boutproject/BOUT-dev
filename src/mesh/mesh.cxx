@@ -101,7 +101,7 @@ int Mesh::get(Field2D &var, const string &name, BoutReal def) {
   return 0;
 }
 
-int Mesh::get(Field3D &var, const string &name, BoutReal def) {
+int Mesh::get(Field3D &var, const string &name, BoutReal def, bool communicate) {
   MsgStackItem msg("Loading 3D field: Mesh::get(Field3D)");
 
   // Ensure data allocated
@@ -111,7 +111,9 @@ int Mesh::get(Field3D &var, const string &name, BoutReal def) {
     return 1;
 
   // Communicate to get guard cell data
-  Mesh::communicate(var);
+  if(communicate) {
+    Mesh::communicate(var);
+  }
 
   // Check that the data is valid
   checkData(var);
@@ -302,11 +304,11 @@ ParallelTransform& Mesh::getParallelTransform() {
       
     }else if(ptstr == "shifted") {
       // Shifted metric method
-      transform = std::unique_ptr<ParallelTransform>(new ShiftedMetric(this));
+      transform = std::unique_ptr<ParallelTransform>(new ShiftedMetric(*this));
       
     }else if(ptstr == "fci") {
       // Flux Coordinate Independent method
-      transform = std::unique_ptr<ParallelTransform>(new FCITransform(this));
+      transform = std::unique_ptr<ParallelTransform>(new FCITransform(*this));
       
     }else {
       throw BoutException("Unrecognised paralleltransform option.\n"

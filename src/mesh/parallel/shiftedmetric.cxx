@@ -15,12 +15,12 @@
 
 #include <output.hxx>
 
-ShiftedMetric::ShiftedMetric(Mesh *m) : mesh(m) {
+ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(mesh) {
   // Read the zShift angle from the mesh
   
-  if(mesh->get(zShift, "zShift")) {
+  if(mesh.get(zShift, "zShift")) {
     // No zShift variable. Try qinty in BOUT grid files
-    mesh->get(zShift, "qinty");
+    mesh.get(zShift, "qinty");
   }
 }
 
@@ -33,18 +33,18 @@ void ShiftedMetric::calcYUpDown(Field3D &f) {
   Field3D& yup = f.yup();
   yup.allocate();
 
-  for(int jx=0;jx<mesh->ngx;jx++) {
-    for(int jy=mesh->ystart;jy<=mesh->yend;jy++) {
-      shiftZ(&(f(jx,jy+1,0)), mesh->ngz-1, zShift(jx,jy) - zShift(jx,jy+1), &(yup(jx,jy+1,0)));
+  for(int jx=0;jx<mesh.ngx;jx++) {
+    for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
+      shiftZ(&(f(jx,jy+1,0)), mesh.ngz-1, zShift(jx,jy) - zShift(jx,jy+1), &(yup(jx,jy+1,0)));
     }
   }
 
   Field3D& ydown = f.ydown();
   ydown.allocate();
 
-  for(int jx=0;jx<mesh->ngx;jx++) {
-    for(int jy=mesh->ystart;jy<=mesh->yend;jy++) {
-      shiftZ(&(f(jx,jy-1,0)), mesh->ngz-1, zShift(jx,jy) - zShift(jx,jy-1), &(ydown(jx,jy-1,0)));
+  for(int jx=0;jx<mesh.ngx;jx++) {
+    for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
+      shiftZ(&(f(jx,jy-1,0)), mesh.ngz-1, zShift(jx,jy) - zShift(jx,jy-1), &(ydown(jx,jy-1,0)));
     }
   }
 }
@@ -66,15 +66,15 @@ const Field3D ShiftedMetric::fromFieldAligned(const Field3D &f) {
 }
 
 const Field3D ShiftedMetric::shiftZ(const Field3D f, const Field2D zangle) {
-  if(mesh->ngz-1 == 1)
+  if(mesh.ngz-1 == 1)
     return f; // Shifting makes no difference
   
   Field3D result;
   result.allocate();
 
-  for(int jx=0;jx<mesh->ngx;jx++) {
-    for(int jy=0;jy<mesh->ngy;jy++) {
-      shiftZ(f(jx,jy), mesh->ngz-1, zangle(jx,jy), result(jx,jy));
+  for(int jx=0;jx<mesh.ngx;jx++) {
+    for(int jy=0;jy<mesh.ngy;jy++) {
+      shiftZ(f(jx,jy), mesh.ngz-1, zangle(jx,jy), result(jx,jy));
     }
   }
   
@@ -91,7 +91,7 @@ void ShiftedMetric::shiftZ(const BoutReal *in, int len, BoutReal zangle,  BoutRe
   rfft(in, len, &cmplx[0]);
   
   // Apply phase shift
-  BoutReal zlength = mesh->coordinates()->zlength();
+  BoutReal zlength = mesh.coordinates()->zlength();
   for(int jz=1;jz<nmodes;jz++) {
     BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
     cmplx[jz] *= dcomplex(cos(kwave*zangle) , -sin(kwave*zangle));

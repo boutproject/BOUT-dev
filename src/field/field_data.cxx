@@ -24,9 +24,19 @@ void FieldData::setBoundary(const string &name) {
   output << "Setting boundary for variable " << name << endl;
   /// Loop over the mesh boundary regions
   for(const auto& reg : mesh->getBoundaries()) {
-    BoundaryOp* op = bfact->createFromOptions(name, reg);
+    BoundaryOp* op = static_cast<BoundaryOp*>(bfact->createFromOptions(name, reg));
     if(op != NULL)
       bndry_op.push_back(op);
+    output << endl;
+  }
+
+  /// Get the mesh boundary regions
+  vector<BoundaryRegionPar*> par_reg = mesh->getBoundariesPar();
+  /// Loop over the mesh parallel boundary regions
+  for(vector<BoundaryRegionPar*>::iterator it=par_reg.begin(); it != par_reg.end(); it++) {
+    BoundaryOpPar* op = static_cast<BoundaryOpPar*>(bfact->createFromOptions(name, (*it)));
+    if(op != NULL)
+      bndry_op_par.push_back(op);
     output << endl;
   }
 
@@ -52,6 +62,7 @@ void FieldData::setBoundary(const string &region, BoundaryOp *op) {
 
 void FieldData::copyBoundary(const FieldData &f) {
   bndry_op = f.bndry_op;
+  bndry_op_par = f.bndry_op_par;
   boundaryIsCopy = true;
   boundaryIsSet = true;
 }
