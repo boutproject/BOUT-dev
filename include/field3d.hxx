@@ -199,6 +199,30 @@ class Field3D : public Field, public FieldData {
 #endif
     return &data[(jx*ny +jy)*nz];
   }
+
+    inline const BoutReal& operator()(int j) const {
+#if CHECK > 2
+    if(data.empty())
+      throw BoutException("Field3D: () operator on empty data");
+
+    if((j < 0) || (j >= nx*ny*nz))
+      throw BoutException("Field3D: (%d) operator out of bounds (%d, %d, %d)",
+                          j, nx, ny, nz);
+#endif
+    return data[j];
+  }
+  
+  inline BoutReal& operator()(int j) {
+#if CHECK > 2
+    if(data.empty())
+      throw BoutException("Field3D: () operator on empty data");
+
+    if((j < 0) || (j >= nx*ny*nz))
+      throw BoutException("Field3D: (%d) operator out of bounds (%d, %d)",
+                          j, nx, ny, nz);
+#endif
+    return data[j];
+  }
   
   /////////////////////////////////////////////////////////
   // Operators
