@@ -49,6 +49,13 @@ Field3D::Field3D(Mesh *msh) : background(NULL), fieldmesh(msh), deriv(NULL), yup
     ny = fieldmesh->ngy;
     nz = fieldmesh->ngz;
   }
+#ifdef CHECK
+  else {
+    nx=-1;
+    ny=-1;
+    nz=-1;
+  }
+#endif
   
   location = CELL_CENTRE; // Cell centred variable by default
 
@@ -73,6 +80,13 @@ Field3D::Field3D(const Field3D& f) : background(NULL),
     ny = fieldmesh->ngy;
     nz = fieldmesh->ngz;
   }
+#ifdef CHECK
+  else {
+    nx=-1;
+    ny=-1;
+    nz=-1;
+  }
+#endif
 
   location = f.location;
  

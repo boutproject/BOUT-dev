@@ -41,6 +41,13 @@ FieldPerp::FieldPerp() {
     nz = mesh->ngz;;
   }
   
+#ifdef CHECK
+  else {
+    nx=-1;
+    nz=-1;
+  }
+#endif
+
   yindex = -1;
 }
 
