@@ -35,8 +35,11 @@
 
 FieldPerp::FieldPerp() {
   // Get mesh size
-  nx = mesh->ngx;
-  nz = mesh->ngz;
+
+  if(mesh) {
+    nx = mesh->ngx;
+    nz = mesh->ngz;;
+  }
   
   yindex = -1;
 }
