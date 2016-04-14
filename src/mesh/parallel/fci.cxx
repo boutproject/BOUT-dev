@@ -165,8 +165,8 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) :
         BoutReal p_z = zt_prime(x, y, z) - z;
 
         // Field line leaves through x boundary
-        bool x_lower = (mesh.firstX() && (xt_prime(x,y,z) <= mesh.xstart - 0.5));
-        bool x_upper = (mesh.lastX()  && (xt_prime(x,y,z) >= mesh.xend + 0.5));
+        bool x_lower = (mesh.firstX() && (xt_prime(x,y,z) < mesh.xstart));
+        bool x_upper = (mesh.lastX()  && (xt_prime(x,y,z) > mesh.xend));
         if (x_lower || x_upper) {
           x_boundary = true;
           // Total distance (in index space) from the boundary
@@ -194,8 +194,8 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) :
 
         // Field line leaves through z boundary
         // Only add this point if the domain is NOT periodic in Z
-        bool z_lower = !zperiodic && (zt_prime(x,y,z) <= -0.5);
-        bool z_upper = !zperiodic && (zt_prime(x,y,z) >= ncz-0.5);
+        bool z_lower = !zperiodic && (zt_prime(x,y,z) < 0.0);
+        bool z_upper = !zperiodic && (zt_prime(x,y,z) > ncz - 1);
         if (z_lower || z_upper) {
           z_boundary = true;
           // Total distance (in index space) from the boundary

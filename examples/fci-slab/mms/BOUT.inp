@@ -8,7 +8,7 @@ MZ = 64
 NXPE = 1
 
 [mesh]
-FCI = true
+paralleltransform = fci
 
 symmetricglobalx = true
 
