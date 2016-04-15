@@ -33,8 +33,8 @@ void FieldData::setBoundary(const string &name) {
   /// Get the mesh boundary regions
   vector<BoundaryRegionPar*> par_reg = mesh->getBoundariesPar();
   /// Loop over the mesh parallel boundary regions
-  for(vector<BoundaryRegionPar*>::iterator it=par_reg.begin(); it != par_reg.end(); it++) {
-    BoundaryOpPar* op = static_cast<BoundaryOpPar*>(bfact->createFromOptions(name, (*it)));
+  for(const auto& reg : mesh->getBoundariesPar()) {
+    BoundaryOpPar* op = static_cast<BoundaryOpPar*>(bfact->createFromOptions(name, reg));
     if(op != NULL)
       bndry_op_par.push_back(op);
     output << endl;

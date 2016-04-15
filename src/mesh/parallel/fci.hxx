@@ -59,7 +59,7 @@ public:
  */
 class FCITransform : public ParallelTransform {
 public:
-  FCITransform(Mesh& mesh, bool yperiodic=false, bool zperiodic=false) :
+  FCITransform(Mesh& mesh, bool yperiodic=true, bool zperiodic=true) :
     mesh(mesh),
     forward_map(mesh, +1, yperiodic, zperiodic),
     backward_map(mesh, -1, yperiodic, zperiodic),

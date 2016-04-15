@@ -107,10 +107,17 @@ class Mesh {
     communicate(g);
   }
 
+  template <typename... Ts>
+  void communicateXZ(Ts&... ts) {
+    FieldGroup g(ts...);
+    communicateXZ(g);
+  }
+
   /*!
    * Communicate a group of fields
    */
   void communicate(FieldGroup &g);
+  void communicateXZ(FieldGroup &g);
 
   /*!
    * Communicate an X-Z field
@@ -305,7 +312,10 @@ class Mesh {
   void setParallelTransform(PTptr pt) {
     transform = std::move(pt);
   }
-  
+  /*!
+   * Set the parallel (y) transform from the options file
+   */
+  void setParallelTransform();
   
  protected:
   
@@ -316,10 +326,10 @@ class Mesh {
   Options *options; ///< Mesh options section
   
   /*!
-   * 
+   * Return the parallel transform, setting it if need be
    */
   ParallelTransform& getParallelTransform();
-  
+
   PTptr transform; ///< Handles calculation of yup and ydown
 
   /// Read a 1D array of integers
