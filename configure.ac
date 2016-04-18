@@ -307,7 +307,7 @@ elif test $with_optimize ; then
     elif test $optimize -gt 1
     then
       OPT_FLAGS="-O2 -march=native"
-    elif test $optimze -ge 0
+    elif test $optimize -ge 0
     then
       OPT_FLAGS="-O$optimize"
     else
