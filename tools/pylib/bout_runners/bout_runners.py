@@ -10,10 +10,11 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '1.0221'
-__date__    = '2016.03.15'
+__version__ = '1.0222'
+__date__    = '2016.04.18'
 
 import os
+import sys
 import re
 import itertools
 import glob
@@ -2982,8 +2983,6 @@ class basic_runner(object):
 #}}}
 #}}}
 
-
-
 #{{{class PBS_runner
 class PBS_runner(basic_runner):
 #{{{docstring
@@ -3328,7 +3327,9 @@ class PBS_runner(basic_runner):
 
         # Make the script
         python_tmp  = '#!/usr/bin/env python\n'
-        python_tmp += 'import os\n'
+        python_tmp += 'import os, sys\n'
+        # Set the python path
+        python_tmp += 'sys.path = '+str(sys.path)+'\n'
         # Import the post processing function
         python_tmp += 'from ' + function.__module__ +\
                       ' import ' + function.__name__ + '\n'
@@ -3604,8 +3605,6 @@ class PBS_runner(basic_runner):
 #}}}
 #}}}
 #}}}
-
-
 
 #{{{if __name__ == '__main__':
 if __name__ == '__main__':
