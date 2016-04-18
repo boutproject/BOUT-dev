@@ -360,7 +360,13 @@ const Field3D tanh(const Field3D &f);
 
 bool finite(const Field3D &var);
 
-void checkData(const Field3D &f); ///< Checks if the data is valid. 
+
+#ifdef CHECK
+void checkData(const Field3D &f); ///< Checks if the data is valid.
+#else
+inline void checkData(const Field3D &f){;}; ///< Checks if the data is valid.
+#endif
+  
 const Field3D copy(const Field3D &f);
 
 const Field3D floor(const Field3D &var, BoutReal f);

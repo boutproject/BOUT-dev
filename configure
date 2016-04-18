@@ -649,6 +649,7 @@ LTLIBOBJS
 PACT
 SLEPC_VARS
 PETSC
+OPENMP_CXXFLAGS
 LIBOBJS
 EGREP
 GREP
@@ -734,6 +735,8 @@ with_pvode
 with_hypre
 with_mumps
 with_arkode
+with_openmp
+enable_openmp
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1355,6 +1358,12 @@ if test -n "$ac_init_help"; then
    esac
   cat <<\_ACEOF
 
+Optional Features:
+  --disable-option-checking  ignore unrecognized --enable/--with options
+  --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
+  --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
+  --disable-openmp        do not use OpenMP
+
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
@@ -1380,6 +1389,7 @@ Optional Packages:
   --with-hypre                Link to the Hypre library
   --with-mumps                Link with MUMPS library for direct matrix inversions
   --with-arkode		   Use the SUNDIALS ARKODE solver
+  --enable-openmp		   Enable OpenMP
 
 Some influential environment variables:
   EXTRA_INCS  Extra compile flags
@@ -2309,6 +2319,12 @@ fi
 # Check whether --with-arkode was given.
 if test "${with_arkode+set}" = set; then :
   withval=$with_arkode;
+fi
+
+
+# Check whether --with-openmp was given.
+if test "${with_openmp+set}" = set; then :
+  withval=$with_openmp;
 fi
 
 
@@ -3822,7 +3838,72 @@ done
 
 # Check for OpenMP support
 : ${enable_openmp=no}  # Disable by default
-#AC_OPENMP
+
+  OPENMP_CXXFLAGS=
+  # Check whether --enable-openmp was given.
+if test "${enable_openmp+set}" = set; then :
+  enableval=$enable_openmp;
+fi
+
+  if test "$enable_openmp" != no; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $CXX option to support OpenMP" >&5
+$as_echo_n "checking for $CXX option to support OpenMP... " >&6; }
+if ${ac_cv_prog_cxx_openmp+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#ifndef _OPENMP
+ choke me
+#endif
+#include <omp.h>
+int main () { return omp_get_num_threads (); }
+
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ac_cv_prog_cxx_openmp='none needed'
+else
+  ac_cv_prog_cxx_openmp='unsupported'
+	  	  	  	  	  	  	                                	  	  	  	  	  	  for ac_option in -fopenmp -xopenmp -openmp -mp -omp -qsmp=omp -homp \
+                           -Popenmp --openmp; do
+	    ac_save_CXXFLAGS=$CXXFLAGS
+	    CXXFLAGS="$CXXFLAGS $ac_option"
+	    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#ifndef _OPENMP
+ choke me
+#endif
+#include <omp.h>
+int main () { return omp_get_num_threads (); }
+
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ac_cv_prog_cxx_openmp=$ac_option
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+	    CXXFLAGS=$ac_save_CXXFLAGS
+	    if test "$ac_cv_prog_cxx_openmp" != unsupported; then
+	      break
+	    fi
+	  done
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_prog_cxx_openmp" >&5
+$as_echo "$ac_cv_prog_cxx_openmp" >&6; }
+    case $ac_cv_prog_cxx_openmp in #(
+      "none needed" | unsupported)
+	;; #(
+      *)
+	OPENMP_CXXFLAGS=$ac_cv_prog_cxx_openmp ;;
+    esac
+  fi
+
+
 # Add the flag to both compile and link stages
 #CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"
 #EXTRA_LIBS="$EXTRA_LIBS $OPENMP_CXXFLAGS"
@@ -4118,6 +4199,7 @@ fi
 $as_echo "yes" >&6; }
 	else
 		LDFLAGS=$LDFLAGS_save
+		LIBS=$EXTRA_LIBS
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 	fi
@@ -4355,6 +4437,7 @@ fi
 $as_echo "yes" >&6; }
 	else
 		LDFLAGS=$LDFLAGS_save
+		LIBS=$EXTRA_LIBS
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 	fi
@@ -4433,6 +4516,7 @@ fi
 $as_echo "yes" >&6; }
 	else
 		LDFLAGS=$LDFLAGS_save
+		LIBS=$EXTRA_LIBS
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 	fi
@@ -4748,6 +4832,7 @@ fi
 $as_echo "yes" >&6; }
 	else
 		LDFLAGS=$LDFLAGS_save
+		LIBS=$EXTRA_LIBS
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 	fi
@@ -4825,6 +4910,7 @@ fi
 $as_echo "yes" >&6; }
 	else
 		LDFLAGS=$LDFLAGS_save
+		LIBS=$EXTRA_LIBS
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 	fi
