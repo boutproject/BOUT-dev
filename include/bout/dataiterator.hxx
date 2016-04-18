@@ -77,7 +77,8 @@ public:
 
   // Comparison operator
   inline bool operator!=(const DataIterator& rhs) const {
-    return (x != rhs.x) || (y != rhs.y) || (z != rhs.z);
+    //return  !(x == rhs.x && y == rhs.y && z == rhs.z);
+    return !this->done();
   }
   
   /*
@@ -122,7 +123,13 @@ public:
   /// Checks if finished looping. Is this more efficient than
   /// using the more idiomatic it != MeshIterator::end() ?
   bool done() const {
+#ifndef _OPENMP
     return (x > xend) || (x < xstart);
+#else //_OPENMP
+    return (x == xend && y == yend && z > zend)
+      || x > xend ||
+      (x <= xstart && y <= ystart && z < zstart)  ;
+#endif //_OPENMP
   }
   
 private:
