@@ -336,7 +336,6 @@ int BoutFinalise() {
   Laplacian::cleanup();
 
   // Delete field memory
-  Field2D::cleanup();
   Array<double>::cleanup();
 
   // Cleanup boundary factory

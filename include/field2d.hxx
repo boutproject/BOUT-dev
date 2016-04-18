@@ -30,6 +30,7 @@ class Field2D;
 #ifndef __FIELD2D_H__
 #define __FIELD2D_H__
 
+class Mesh;
 #include "field.hxx"
 #include "field_data.hxx"
 class Field3D; //#include "field3d.hxx"
@@ -42,8 +43,7 @@ class Field3D; //#include "field3d.hxx"
 
 #include "bout/field_visitor.hxx"
 
-#include <stack>
-using std::stack;
+#include "bout/array.hxx"
 
 /*!
  * \brief 2D X-Y scalar fields
@@ -53,19 +53,17 @@ using std::stack;
  */
 class Field2D : public Field, public FieldData {
  public:
-  Field2D();
+  Field2D(Mesh *msh = nullptr);
   Field2D(const Field2D& f);
   Field2D(BoutReal val);
   ~Field2D();
 
   /// Data type
   using value_type = BoutReal;
-  
-  static void cleanup(); // Frees all memory
 
   /// Ensure data is allocated
   void allocate();
-  bool isAllocated() const { return data !=  NULL; } ///< Test if data is allocated
+  bool isAllocated() const { return !data.empty(); } ///< Test if data is allocated
 
   /// Return a pointer to the time-derivative field
   Field2D* timeDeriv();
@@ -77,16 +75,22 @@ class Field2D : public Field, public FieldData {
 
   /////////////////////////////////////////////////////////
   // Data access
-
+  
   const DataIterator iterator() const;
 
   const DataIterator begin() const;
   const DataIterator end() const;
-
-  inline BoutReal& operator[](DataIterator &d) {
+  
+  /*!
+   * Returns a range of indices which can be iterated over
+   * Uses the REGION flags in bout_types.hxx
+   */
+  const IndexRange region(REGION rgn) const;
+  
+  inline BoutReal& operator[](const DataIterator &d) {
     return operator()(d.x, d.y);
   }
-  inline const BoutReal& operator[](DataIterator &d) const {
+  inline const BoutReal& operator[](const DataIterator &d) const {
     return operator()(d.x, d.y);
   }
   inline BoutReal& operator[](Indices &i) {
@@ -100,23 +104,27 @@ class Field2D : public Field, public FieldData {
 #if CHECK > 2
     if(!isAllocated())
       throw BoutException("Field2D: () operator on empty data");
-    //if((jx < 0) || (jx >= mesh->ngx) || (jy < 0) || (jy >= mesh->ngy) )
-    //  throw BoutException("Field2D: (%d, %d) index out of bounds (%d , %d)\n", 
-    //                      jx, jy, mesh->ngx, mesh->ngy);
+    
+    if((jx < 0) || (jx >= nx) || 
+       (jy < 0) || (jy >= ny) )
+      throw BoutException("Field2D: (%d, %d) index out of bounds (%d , %d)\n", 
+                          jx, jy, nx, ny);
 #endif
   
-    return data[jx][jy];
+    return data[jx*ny + jy];
   }
   inline const BoutReal& operator()(int jx, int jy) const {
-    #if CHECK > 2
+#if CHECK > 2
     if(!isAllocated())
       throw BoutException("Field2D: () operator on empty data");
-    //if((jx < 0) || (jx >= mesh->ngx) || (jy < 0) || (jy >= mesh->ngy) )
-    //  throw BoutException("Field2D: (%d, %d) index out of bounds (%d , %d)\n", 
-    //                      jx, jy, mesh->ngx, mesh->ngy);
+    
+    if((jx < 0) || (jx >= nx) || 
+       (jy < 0) || (jy >= ny) )
+      throw BoutException("Field2D: (%d, %d) index out of bounds (%d , %d)\n", 
+                          jx, jy, nx, ny);
 #endif
   
-    return data[jx][jy];
+    return data[jx*ny + jy];
   }
 
   BoutReal& operator()(int jx, int jy, int jz) {
@@ -135,31 +143,6 @@ class Field2D : public Field, public FieldData {
   Field2D & operator/=(const Field2D &rhs);
   Field2D & operator/=(const BoutReal rhs);
   
-  // Binary operators
-
-  const Field2D operator+(const Field2D &other) const;
-  const Field2D operator+(const BoutReal rhs) const;
-  const Field2D operator-() const;
-  const Field2D operator-(const Field2D &other) const;
-  const Field2D operator-(const BoutReal rhs) const;
-  const Field2D operator*(const Field2D &other) const;
-  const Field2D operator*(const BoutReal rhs) const;
-  const Field2D operator/(const Field2D &other) const;
-  const Field2D operator/(const BoutReal rhs) const;
-
-  // Left binary operators
-
-  const Field3D operator+(const Field3D &other) const;
-  const Field3D operator-(const Field3D &other) const;
-  const Field3D operator*(const Field3D &other) const;
-  const Field3D operator/(const Field3D &other) const;
-
-  const FieldPerp operator+(const FieldPerp &other) const;
-  const FieldPerp operator-(const FieldPerp &other) const;
-  const FieldPerp operator*(const FieldPerp &other) const;
-  const FieldPerp operator/(const FieldPerp &other) const;
-  friend const Field2D operator/(const BoutReal lhs, const Field2D &rhs);
-    
   // Stencils
 
   void getXArray(int y, int z, rvec &xv) const;
@@ -193,10 +176,8 @@ class Field2D : public Field, public FieldData {
   int  setData(int x, int y, int z, BoutReal *rptr);
   
 #ifdef CHECK
-  bool checkData(bool vital = true) const; ///< Checks if the data is all valid.
   void doneComms() { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
-#else 
-  bool checkData(bool vital = true) const {}
+#else
   void doneComms() {}
 #endif
 
@@ -210,28 +191,41 @@ class Field2D : public Field, public FieldData {
   void setBoundaryTo(const Field2D &f2d); ///< Copy the boundary region
   
  private:
-  BoutReal **data;
-
-  // Data stack: Blocks of memory for this class
-  static stack<BoutReal**> block;
-  static bool recycle; ///< Re-use blocks rather than freeing/allocating
-
-  void allocData();
-  void freeData();
+  Mesh *fieldmesh; ///< The mesh over which the field is defined
+  int nx, ny;      ///< Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
+  
+  /// Internal data array. Handles allocation/freeing of memory
+  Array<BoutReal> data;
   
   Field2D *deriv; ///< Time-derivative, can be NULL
 };
 
 // Non-member overloaded operators
 
-const Field2D operator+(const BoutReal lhs, const Field2D &rhs);
-const Field2D operator-(const BoutReal lhs, const Field2D &rhs);
-const Field2D operator*(const BoutReal lhs, const Field2D &rhs);
-const Field2D operator/(const BoutReal lhs, const Field2D &rhs);
-const Field2D operator^(const BoutReal lhs, const Field2D &rhs);
+const Field2D operator+(const Field2D &lhs, const Field2D &rhs);
+const Field2D operator-(const Field2D &lhs, const Field2D &rhs);
+const Field2D operator*(const Field2D &lhs, const Field2D &rhs);
+const Field2D operator/(const Field2D &lhs, const Field2D &rhs);
+
+const Field3D operator+(const Field2D &lhs, const Field3D &rhs);
+const Field3D operator-(const Field2D &lhs, const Field3D &rhs);
+const Field3D operator*(const Field2D &lhs, const Field3D &rhs);
+const Field3D operator/(const Field2D &lhs, const Field3D &rhs);
+
+const Field2D operator+(const Field2D &lhs, BoutReal rhs);
+const Field2D operator-(const Field2D &lhs, BoutReal rhs);
+const Field2D operator*(const Field2D &lhs, BoutReal rhs);
+const Field2D operator/(const Field2D &lhs, BoutReal rhs);
+
+const Field2D operator+(BoutReal lhs, const Field2D &rhs);
+const Field2D operator-(BoutReal lhs, const Field2D &rhs);
+const Field2D operator*(BoutReal lhs, const Field2D &rhs);
+const Field2D operator/(BoutReal lhs, const Field2D &rhs);
+
+// Unary operators
+const Field2D operator-(const Field2D &f);
 
 // Non-member functions
-
 
 /// Square
 const Field2D SQ(const Field2D &f);
@@ -275,6 +269,13 @@ const Field2D floor(const Field2D &var, BoutReal f);
 Field2D pow(const Field2D &lhs, const Field2D &rhs);
 Field2D pow(const Field2D &lhs, BoutReal rhs);
 Field2D pow(BoutReal lhs, const Field2D &rhs);
+
+#ifdef CHECK
+void checkData(const Field2D &f);
+#else
+inline void checkData(const Field2D &f) {}
+#endif
+
 
 /*!
  * @brief Returns a reference to the time-derivative of a field

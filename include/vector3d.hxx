@@ -1,5 +1,5 @@
 /*!
- * \file vector2d.hxx
+ * \file vector3d.hxx
  *
  * \brief Class for 3D vectors. Built on the Field3D class.
  *
