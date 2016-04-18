@@ -1518,6 +1518,32 @@ const Field3D lowPass(const Field3D &var, int zmax, int zmin) {
   return result;
 }
 
+/* 
+ * Use FFT to shift by an angle in the Z direction
+ */
+void shiftZ(Field3D &var, int jx, int jy, double zangle) {
+  TRACE("shiftZ");
+  ASSERT1(var.isAllocated()); // Check that var has some data
+  var.allocate(); // Ensure that var is unique
+  
+  int ncz = mesh->ngz-1;
+  if(ncz == 1)
+    return; // Shifting doesn't do anything
+  
+  Array<dcomplex> v(ncz/2 + 1);
+  
+  rfft(&(var(jx,jy,0)), ncz, v.begin()); // Forward FFT
+
+  BoutReal zlength = mesh->coordinates()->zlength();
+  // Apply phase shift
+  for(int jz=1;jz<=ncz/2;jz++) {
+    BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
+    v[jz] *= dcomplex(cos(kwave*zangle) , -sin(kwave*zangle));
+  }
+
+  irfft(v.begin(), ncz, &(var(jx,jy,0))); // Reverse FFT
+}
+
 bool finite(const Field3D &f) {
   MsgStackItem trace("finite( Field3D )");
   

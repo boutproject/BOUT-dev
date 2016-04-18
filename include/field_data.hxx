@@ -78,9 +78,6 @@ public:
   
   virtual int setData(int x, int y, int z, void *vptr) = 0;
   virtual int setData(int x, int y, int z, BoutReal *rptr) = 0;
-  
-  /// Added 20/8/2008 for twist-shifting in communication routine
-  virtual void shiftZ(int jx, int jy, double zangle) { }
 
 #ifdef CHECK
   virtual void doneComms() { }; // Notifies that communications done

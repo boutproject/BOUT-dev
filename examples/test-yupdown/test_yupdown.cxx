@@ -4,6 +4,7 @@
 
 #include <derivs.hxx>
 
+// Y derivative using yup() and ydown() fields
 const Field3D DDY_yud(const Field3D &f) {
   Field3D result;
   result.allocate();
@@ -16,6 +17,19 @@ const Field3D DDY_yud(const Field3D &f) {
   return result;
 }
 
+// Y derivative assuming field is aligned in Y
+const Field3D DDY_aligned(const Field3D &f) {
+  Field3D result;
+  result.allocate();
+  
+  for(int i=0;i<mesh->ngx;i++)
+    for(int j=mesh->ystart;j<=mesh->yend;j++)
+      for(int k=0;k<mesh->ngz-1;k++)
+	result(i,j,k) = 0.5*(f(i,j+1,k) - f(i,j-1,k));
+  
+  return result;
+}
+
 int main(int argc, char** argv) {
 
   BoutInitialise(argc, argv);
@@ -25,22 +39,24 @@ int main(int argc, char** argv) {
   // Read variable from mesh
   Field3D var;
   mesh->get(var, "var");
-
-  // var now field aligned
-  Field3D ddy = DDY(var);
-
-  // Shift into X-Z orthogonal
-  //Field3D varxz = var.shiftZ(true);
-  Field3D varxz = mesh->fromFieldAligned(var);
+  
+  // Var starts in orthogonal X-Z coordinates
 
   // Calculate yup and ydown
-  s.calcYUpDown(varxz);
+  s.calcYUpDown(var);
+  
+  // Calculate d/dy ysing yup() and ydown() fields
+  Field3D ddy = DDY_yud(var);
 
-  Field3D ddy2 = DDY_yud(varxz);
-
-  // Shift back to field aligned
-  ddy2 = ddy2.shiftZ(false);
-
+  // Change into field-aligned coordinates
+  Field3D var_aligned = mesh->toFieldAligned(var);
+  
+  // var now field aligned
+  Field3D ddy2 = DDY_aligned(var_aligned);
+  
+  // Shift back to orthogonal X-Z coordinates
+  ddy2 = mesh->fromFieldAligned(ddy2);
+  
   SAVE_ONCE2(ddy, ddy2);
   dump.write();
 

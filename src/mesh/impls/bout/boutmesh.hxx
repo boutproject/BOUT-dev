@@ -180,7 +180,7 @@ class BoutMesh : public Mesh {
     bool in_progress;
     
     /// List of fields being communicated
-    vector<FieldData*> var_list;
+    FieldGroup var_list;
   };
   void free_handle(CommHandle *h);
   CommHandle* get_handle(int xlen, int ylen);
@@ -203,9 +203,9 @@ class BoutMesh : public Mesh {
   void post_receive(CommHandle &ch);
 
   /// Take data from objects and put into a buffer
-  int pack_data(vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer);
+  int pack_data(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer);
   /// Copy data from a buffer back into the fields
-  int unpack_data(vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer);
+  int unpack_data(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer);
 };
 
 #endif // __BOUTMESH_H__

@@ -293,7 +293,7 @@ private:
   
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;
-  
+
   CELL_LOC location; // Location of the variable in the cell
   
   Field3D *deriv; ///< Time derivative (may be NULL)
@@ -374,6 +374,10 @@ const Field3D floor(const Field3D &var, BoutReal f);
 const Field3D filter(const Field3D &var, int N0);
 const Field3D lowPass(const Field3D &var, int zmax);
 const Field3D lowPass(const Field3D &var, int zmax, int zmin);
+/*!
+ * Perform a shift by a given angle in Z
+ */
+void shiftZ(Field3D &var, int jx, int jy, double zangle);
 
 Field2D DC(const Field3D &f);
 

@@ -800,7 +800,7 @@ void BoutMesh::post_receive(CommHandle &ch) {
 
   len = 0;
   if(UDATA_INDEST != -1) {
-    len = msg_len(ch.var_list, 0, UDATA_XSPLIT, 0, MYG);
+    len = msg_len(ch.var_list.get(), 0, UDATA_XSPLIT, 0, MYG);
     MPI_Irecv(ch.umsg_recvbuff,
               len,
               PVEC_REAL_MPI_TYPE,
@@ -812,7 +812,7 @@ void BoutMesh::post_receive(CommHandle &ch) {
   if(UDATA_OUTDEST != -1) {
     inbuff = &ch.umsg_recvbuff[len]; // pointer to second half of the buffer
     MPI_Irecv(inbuff,
-              msg_len(ch.var_list, UDATA_XSPLIT, ngx, 0, MYG),
+              msg_len(ch.var_list.get(), UDATA_XSPLIT, ngx, 0, MYG),
               PVEC_REAL_MPI_TYPE,
               UDATA_OUTDEST,
               OUT_SENT_DOWN,
@@ -825,7 +825,7 @@ void BoutMesh::post_receive(CommHandle &ch) {
   len = 0;
 
   if(DDATA_INDEST != -1) { // If sending & recieving data from a processor
-    len = msg_len(ch.var_list, 0, DDATA_XSPLIT, 0, MYG);
+    len = msg_len(ch.var_list.get(), 0, DDATA_XSPLIT, 0, MYG);
     MPI_Irecv(ch.dmsg_recvbuff,
               len,
               PVEC_REAL_MPI_TYPE,
@@ -837,7 +837,7 @@ void BoutMesh::post_receive(CommHandle &ch) {
   if(DDATA_OUTDEST != -1) {
     inbuff = &ch.dmsg_recvbuff[len];
     MPI_Irecv(inbuff,
-              msg_len(ch.var_list, DDATA_XSPLIT, ngx, 0, MYG),
+              msg_len(ch.var_list.get(), DDATA_XSPLIT, ngx, 0, MYG),
               PVEC_REAL_MPI_TYPE,
               DDATA_OUTDEST,
               OUT_SENT_UP,
@@ -849,7 +849,7 @@ void BoutMesh::post_receive(CommHandle &ch) {
 
   if(IDATA_DEST != -1) {
     MPI_Irecv(ch.imsg_recvbuff,
-              msg_len(ch.var_list, 0, MXG, 0, MYSUB),
+              msg_len(ch.var_list.get(), 0, MXG, 0, MYSUB),
               PVEC_REAL_MPI_TYPE,
               IDATA_DEST,
               OUT_SENT_IN,
@@ -861,7 +861,7 @@ void BoutMesh::post_receive(CommHandle &ch) {
 
   if(ODATA_DEST != -1) {
     MPI_Irecv(ch.omsg_recvbuff,
-              msg_len(ch.var_list, 0, MXG, 0, MYSUB),
+              msg_len(ch.var_list.get(), 0, MXG, 0, MYSUB),
               PVEC_REAL_MPI_TYPE,
               ODATA_DEST,
               IN_SENT_OUT,
@@ -873,17 +873,14 @@ void BoutMesh::post_receive(CommHandle &ch) {
 comm_handle BoutMesh::send(FieldGroup &g) {
   /// Start timer
   Timer timer("comms");
-
-  /// Get the list of variables to send
-  vector<FieldData*> var_list = g.get();
-
+  
   /// Work out length of buffer needed
-  int xlen = msg_len(var_list, 0, MXG, 0, MYSUB);
-  int ylen = msg_len(var_list, 0, ngx, 0, MYG);
+  int xlen = msg_len(g.get(), 0, MXG, 0, MYSUB);
+  int ylen = msg_len(g.get(), 0, ngx, 0, MYG);
 
   /// Get a communications handle of (at least) the needed size
   CommHandle *ch = get_handle(xlen, ylen);
-  ch->var_list = var_list;
+  ch->var_list = g; // Group of fields to send
 
   /// Post receives
   post_receive(*ch);
@@ -896,7 +893,7 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   BoutReal *outbuff;
 
   if(UDATA_INDEST != -1) { // If there is a destination for inner x data
-    len = pack_data(var_list, 0, UDATA_XSPLIT, MYSUB, MYSUB+MYG, ch->umsg_sendbuff);
+    len = pack_data(ch->var_list.get(), 0, UDATA_XSPLIT, MYSUB, MYSUB+MYG, ch->umsg_sendbuff);
     // Send the data to processor UDATA_INDEST
 
     if(async_send) {
@@ -918,7 +915,7 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   if(UDATA_OUTDEST != -1) { // if destination for outer x data
     outbuff = &(ch->umsg_sendbuff[len]); // A pointer to the start of the second part
                                    // of the buffer
-    len = pack_data(var_list, UDATA_XSPLIT, ngx, MYSUB, MYSUB+MYG, outbuff);
+    len = pack_data(ch->var_list.get(), UDATA_XSPLIT, ngx, MYSUB, MYSUB+MYG, outbuff);
     // Send the data to processor UDATA_OUTDEST
     if(async_send) {
       MPI_Isend(outbuff,
@@ -941,7 +938,7 @@ comm_handle BoutMesh::send(FieldGroup &g) {
 
   len = 0;
   if(DDATA_INDEST != -1) { // If there is a destination for inner x data
-    len = pack_data(var_list, 0, DDATA_XSPLIT, MYG, 2*MYG, ch->dmsg_sendbuff);
+    len = pack_data(ch->var_list.get(), 0, DDATA_XSPLIT, MYG, 2*MYG, ch->dmsg_sendbuff);
     // Send the data to processor DDATA_INDEST
     if(async_send) {
       MPI_Isend(ch->dmsg_sendbuff,
@@ -962,7 +959,7 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   if(DDATA_OUTDEST != -1) { // if destination for outer x data
     outbuff = &(ch->dmsg_sendbuff[len]); // A pointer to the start of the second part
                                    // of the buffer
-    len = pack_data(var_list, DDATA_XSPLIT, ngx, MYG, 2*MYG, outbuff);
+    len = pack_data(ch->var_list.get(), DDATA_XSPLIT, ngx, MYG, 2*MYG, outbuff);
     // Send the data to processor DDATA_OUTDEST
 
     if(async_send) {
@@ -985,7 +982,7 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   /// Send to the left (x-1)
 
   if(IDATA_DEST != -1) {
-    len = pack_data(var_list, MXG, 2*MXG, MYG, MYG+MYSUB, ch->imsg_sendbuff);
+    len = pack_data(ch->var_list.get(), MXG, 2*MXG, MYG, MYG+MYSUB, ch->imsg_sendbuff);
     if(async_send) {
       MPI_Isend(ch->imsg_sendbuff,
                 len,
@@ -1006,7 +1003,7 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   /// Send to the right (x+1)
 
   if(ODATA_DEST != -1) {
-    len = pack_data(var_list, MXSUB, MXSUB+MXG, MYG, MYG+MYSUB, ch->omsg_sendbuff);
+    len = pack_data(ch->var_list.get(), MXSUB, MXSUB+MXG, MYG, MYG+MYSUB, ch->omsg_sendbuff);
     if(async_send) {
       MPI_Isend(ch->omsg_sendbuff,
                 len,
@@ -1031,6 +1028,8 @@ comm_handle BoutMesh::send(FieldGroup &g) {
 }
 
 int BoutMesh::wait(comm_handle handle) {
+  TRACE("BoutMesh::wait(comm_handle)");
+  
   if(handle == NULL)
     return 1;
 
@@ -1060,29 +1059,29 @@ int BoutMesh::wait(comm_handle handle) {
     MPI_Waitany(6, ch->request, &ind, &status);
     switch(ind) {
     case 0: { // Up, inner
-      unpack_data(ch->var_list, 0, UDATA_XSPLIT, MYSUB+MYG, MYSUB+2*MYG, ch->umsg_recvbuff);
+      unpack_data(ch->var_list.get(), 0, UDATA_XSPLIT, MYSUB+MYG, MYSUB+2*MYG, ch->umsg_recvbuff);
       break;
     }
     case 1: { // Up, outer
-      len = msg_len(ch->var_list, 0, UDATA_XSPLIT, 0, MYG);
-      unpack_data(ch->var_list, UDATA_XSPLIT, ngx, MYSUB+MYG, MYSUB+2*MYG, &(ch->umsg_recvbuff[len]));
+      len = msg_len(ch->var_list.get(), 0, UDATA_XSPLIT, 0, MYG);
+      unpack_data(ch->var_list.get(), UDATA_XSPLIT, ngx, MYSUB+MYG, MYSUB+2*MYG, &(ch->umsg_recvbuff[len]));
       break;
     }
     case 2: { // Down, inner
-      unpack_data(ch->var_list, 0, DDATA_XSPLIT, 0, MYG, ch->dmsg_recvbuff);
+      unpack_data(ch->var_list.get(), 0, DDATA_XSPLIT, 0, MYG, ch->dmsg_recvbuff);
       break;
     }
     case 3: { // Down, outer
-      len = msg_len(ch->var_list, 0, DDATA_XSPLIT, 0, MYG);
-      unpack_data(ch->var_list, DDATA_XSPLIT, ngx, 0, MYG, &(ch->dmsg_recvbuff[len]));
+      len = msg_len(ch->var_list.get(), 0, DDATA_XSPLIT, 0, MYG);
+      unpack_data(ch->var_list.get(), DDATA_XSPLIT, ngx, 0, MYG, &(ch->dmsg_recvbuff[len]));
       break;
     }
     case 4: { // inner
-      unpack_data(ch->var_list, 0, MXG, MYG, MYG+MYSUB, ch->imsg_recvbuff);
+      unpack_data(ch->var_list.get(), 0, MXG, MYG, MYG+MYSUB, ch->imsg_recvbuff);
       break;
     }
     case 5: { // outer
-      unpack_data(ch->var_list, MXSUB+MXG, MXSUB+2*MXG, MYG, MYG+MYSUB, ch->omsg_recvbuff);
+      unpack_data(ch->var_list.get(), MXSUB+MXG, MXSUB+2*MXG, MYG, MYG+MYSUB, ch->omsg_recvbuff);
       break;
     }
     }
@@ -1112,37 +1111,35 @@ int BoutMesh::wait(comm_handle handle) {
   if(TwistShift) {
     int jx, jy;
 
-    // Perform Twist-shift using shifting method (rather than in setStencil)
-    for(const auto& var : ch->var_list) {
-      if(var->is3D()) {
-
-        // Lower boundary
-        if(TS_down_in && (DDATA_INDEST  != -1)) {
-          for(jx=0;jx<DDATA_XSPLIT;jx++)
-            for(jy=0;jy != MYG; jy++)
-              var->shiftZ(jx, jy, ShiftAngle[jx]);
-        }
-        if(TS_down_out && (DDATA_OUTDEST  != -1)) {
-          for(jx=DDATA_XSPLIT;jx<ngx; jx++)
-            for(jy=0;jy != MYG; jy++)
-              var->shiftZ(jx, jy, ShiftAngle[jx]);
-        }
-
-        // Upper boundary
-        if(TS_up_in && (UDATA_INDEST  != -1)) {
-          for(jx=0;jx<UDATA_XSPLIT; jx++)
-            for(jy=ngy-MYG;jy != ngy; jy++)
-              var->shiftZ(jx, jy, -ShiftAngle[jx]);
-        }
-        if(TS_up_out && (UDATA_OUTDEST  != -1)) {
-          for(jx=UDATA_XSPLIT;jx<ngx; jx++)
-            for(jy=ngy-MYG;jy != ngy; jy++)
-              var->shiftZ(jx, jy, -ShiftAngle[jx]);
-        }
+    // Perform Twist-shift using shifting method 
+    // Loop over 3D fields
+    for(const auto& var : ch->var_list.field3d()) {
+      // Lower boundary
+      if(TS_down_in && (DDATA_INDEST  != -1)) {
+        for(jx=0;jx<DDATA_XSPLIT;jx++)
+          for(jy=0;jy != MYG; jy++)
+            shiftZ(*var, jx, jy, ShiftAngle[jx]);
+      }
+      if(TS_down_out && (DDATA_OUTDEST  != -1)) {
+        for(jx=DDATA_XSPLIT;jx<ngx; jx++)
+          for(jy=0;jy != MYG; jy++)
+            shiftZ(*var, jx, jy, ShiftAngle[jx]);
+      }
+      
+      // Upper boundary
+      if(TS_up_in && (UDATA_INDEST  != -1)) {
+        for(jx=0;jx<UDATA_XSPLIT; jx++)
+          for(jy=ngy-MYG;jy != ngy; jy++)
+            shiftZ(*var, jx, jy, -ShiftAngle[jx]);
+      }
+      if(TS_up_out && (UDATA_OUTDEST  != -1)) {
+        for(jx=UDATA_XSPLIT;jx<ngx; jx++)
+          for(jy=ngy-MYG;jy != ngy; jy++)
+            shiftZ(*var, jx, jy, -ShiftAngle[jx]);
       }
     }
   }
-
+  
 #ifdef CHECK
   // Keeping track of whether communications have been done
   for(const auto& var : ch->var_list)
@@ -2026,7 +2023,7 @@ void BoutMesh::clear_handles() {
  *                   Communication utilities
  ****************************************************************/
 
-int BoutMesh::pack_data(vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer)
+int BoutMesh::pack_data(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer)
 {
   int jx, jy, jz;
   int len = 0;
@@ -2053,7 +2050,7 @@ int BoutMesh::pack_data(vector<FieldData*> &var_list, int xge, int xlt, int yge,
   return(len);
 }
 
-int BoutMesh::unpack_data(vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer)
+int BoutMesh::unpack_data(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer)
 {
   int jx, jy, jz;
   int len = 0;
