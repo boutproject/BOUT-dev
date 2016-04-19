@@ -17,7 +17,7 @@ public:
   virtual ~BoutException() throw();
   
   const char* what() const throw();
-  void Backtrace();
+  void Backtrace() const;
 protected:
   string message;
 };

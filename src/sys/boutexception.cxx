@@ -5,7 +5,6 @@
 #include <iostream>
 #include <stdarg.h>
 #include <output.hxx>
-#define BACKTRACE
 #ifdef BACKTRACE
 #include <execinfo.h>
 #endif
@@ -21,7 +20,7 @@ BoutException::~BoutException() throw()
 {
 }
 
-void BoutException::Backtrace(){
+void BoutException::Backtrace() const {
 #ifdef BACKTRACE
   void *trace[64];
   char **messages = (char **)NULL;
@@ -30,7 +29,8 @@ void BoutException::Backtrace(){
   trace_size = backtrace(trace, 64);
   messages = backtrace_symbols(trace, trace_size);
   /* skip first stack frame (points here) */
-  output.write("\n[bt] Execution path:\n");
+  //output.write("\n[bt] Execution path:\n");
+  output.write("====== Exception path ======\n");
   for (i=1; i<trace_size; ++i)
     {
       output.write("[bt] #%d %s\n", i, messages[i]);
@@ -58,13 +58,12 @@ void BoutException::Backtrace(){
       }
     }
 #else
-  output.write("Backtrace not enabled!\n");
+  output.write("Stacktrace not enabled.\n");
 #endif
 }
 
 BoutException::BoutException(const char* s, ...)
 {
-  this->Backtrace();
   
   va_list ap;  // List of arguments
   
@@ -73,20 +72,29 @@ BoutException::BoutException(const char* s, ...)
   
   char buffer[1024];
   va_start(ap, s);
-    vsprintf(buffer, s, ap);
+  vsprintf(buffer, s, ap);
   va_end(ap);
   
   message.assign(buffer);
-}
 
-const char* BoutException::what() const throw()
-{
+  output.write("====== Exception thrown ======\n");
+  output << message;
+
   #ifdef CHECK
     /// Print out the message stack to help debugging
     msg_stack.dump();
   #else
     output.write("Enable checking (-DCHECK flag) to get a trace\n");
   #endif
+  this->Backtrace();
+
+#ifdef ABORT
+  abort();
+#endif
+}
+
+const char* BoutException::what() const throw()
+{
   return message.c_str();
 }
 
