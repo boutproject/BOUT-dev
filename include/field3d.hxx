@@ -129,10 +129,10 @@ class Field3D : public Field, public FieldData {
    */
   const IndexRange region(REGION rgn) const;
 
-  BoutReal& operator[](DataIterator &d) {
+  BoutReal& operator[](const DataIterator &d) {
     return operator()(d.x, d.y, d.z);
   }
-  const BoutReal& operator[](DataIterator &d) const {
+  const BoutReal& operator[](const DataIterator &d) const {
     return operator()(d.x, d.y, d.z);
   }
   BoutReal& operator[](const Indices &i) {

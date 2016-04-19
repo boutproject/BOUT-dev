@@ -69,7 +69,7 @@ Field3D::Field3D(const Field3D& f) : background(NULL),
 				     deriv(NULL),
 				     yup_field(this), ydown_field(this) {
 
-  MsgStackItem trace("Field3D(Field3D&)");
+  TRACE("Field3D(Field3D&)");
   
 #if CHECK > 2
   checkData(f);
@@ -95,7 +95,7 @@ Field3D::Field3D(const Field3D& f) : background(NULL),
 
 Field3D::Field3D(const Field2D& f) : background(NULL), fieldmesh(nullptr), deriv(NULL), yup_field(this), ydown_field(this) {
   
-  MsgStackItem trace("Field3D: Copy constructor from Field2D");
+  TRACE("Field3D: Copy constructor from Field2D");
   
   location = CELL_CENTRE; // Cell centred variable by default
   
@@ -111,7 +111,7 @@ Field3D::Field3D(const Field2D& f) : background(NULL), fieldmesh(nullptr), deriv
 
 Field3D::Field3D(const BoutReal val) : background(NULL), fieldmesh(nullptr), deriv(NULL), yup_field(this), ydown_field(this) {
   
-  MsgStackItem trace("Field3D: Copy constructor from value");
+  TRACE("Field3D: Copy constructor from value");
 
   location = CELL_CENTRE; // Cell centred variable by default
   
@@ -323,7 +323,7 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
   ASSERT1(rhs.isAllocated());
   
   /// Check that the data is valid
-  rhs.checkData();
+  checkData(rhs);
  
   /// Make sure there's a unique array to copy data into
   allocate();
@@ -434,10 +434,10 @@ F3D_UPDATE_FIELD(/=, /, Field2D);    // operator/= Field2D
     return *this;                                            \
   }
 
-F3D_UPDATE_REAL(+=,+);    // operator+= Field2D
-F3D_UPDATE_REAL(-=,-);    // operator-= Field2D
-F3D_UPDATE_REAL(*=,*);    // operator*= Field2D
-F3D_UPDATE_REAL(/=,/);    // operator/= Field2D
+F3D_UPDATE_REAL(+=,+);    // operator+= BoutReal
+F3D_UPDATE_REAL(-=,-);    // operator-= BoutReal
+F3D_UPDATE_REAL(*=,*);    // operator*= BoutReal
+F3D_UPDATE_REAL(/=,/);    // operator/= BoutReal
 
 /***************************************************************
  *                         STENCILS
@@ -1299,13 +1299,11 @@ BoutReal min(const Field3D &f, bool allpe) {
     msg_stack.push("Field3D::Min()");
 #endif
 
-  BoutReal result = f(mesh->xstart,mesh->ystart,0);
+  BoutReal result = f[f.region(RGN_NOBNDRY).begin()];
   
-  for(int i=mesh->xstart; i<=mesh->xend; i++)
-    for(int j=mesh->ystart; j<=mesh->yend; j++)
-      for(int k=0;k<mesh->ngz-1;k++)
-        if(f(i,j,k) < result)
-          result = f(i,j,k);
+  for(auto i: f.region(RGN_NOBNDRY))
+    if(f[i] < result)
+      result = f[i];
   
   if(allpe) {
     // MPI reduce
@@ -1330,13 +1328,11 @@ BoutReal max(const Field3D &f, bool allpe) {
     msg_stack.push("Field3D::Max()");
 #endif
   
-  BoutReal result = f(mesh->xstart,mesh->ystart,0);
+  BoutReal result = f[f.region(RGN_NOBNDRY).begin()];
   
-  for(int i=mesh->xstart; i<=mesh->xend; i++)
-    for(int j=mesh->ystart; j<=mesh->yend; j++)
-      for(int k=0;k<mesh->ngz-1;k++)
-        if(f(i,j,k) > result)
-          result = f(i,j,k);
+  for(auto i: f.region(RGN_NOBNDRY))
+    if(f[i] > result)
+      result = f[i];
   
   if(allpe) {
     // MPI reduce

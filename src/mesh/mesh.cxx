@@ -96,7 +96,7 @@ int Mesh::get(Field2D &var, const string &name, BoutReal def) {
   Mesh::communicate(var);
 
   // Check that the data is valid
-  var.checkData(true);
+  checkData(var);
 
   return 0;
 }
