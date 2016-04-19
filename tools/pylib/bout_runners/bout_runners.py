@@ -10,8 +10,8 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '1.0222'
-__date__    = '2016.04.18'
+__version__ = '1.0223'
+__date__    = '2016.04.19'
 
 import os
 import sys
@@ -2628,9 +2628,12 @@ class basic_runner(object):
                 extensions_w_cpy.extend(['cc' , 'cpp'  , 'cxx', 'C'  , 'c++',\
                                         'h'  , 'hpp'  , 'hxx', 'h++'])
 
-            # Additional files that will be copied to the destination
-            # folder
-            extensions = [extensions_w_cpy[:], has_extensions_w_cpy[:], 'restart.*']
+            # Python 3 syntax (not python 2 friendly)
+            # extensions = [*extensions_w_cpy, *has_extensions_w_cpy, 'restart.*']
+            extensions = extensions_w_cpy
+            for item in has_extensions_w_cpy:
+                extensions.append(item)
+            extensions.append('restart.*')
 
             if self._restart == "append":
                 extensions.append("dmp.*")
