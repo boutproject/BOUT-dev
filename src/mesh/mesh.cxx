@@ -96,12 +96,12 @@ int Mesh::get(Field2D &var, const string &name, BoutReal def) {
   Mesh::communicate(var);
 
   // Check that the data is valid
-  var.checkData(true);
+  checkData(var);
 
   return 0;
 }
 
-int Mesh::get(Field3D &var, const string &name, BoutReal def) {
+int Mesh::get(Field3D &var, const string &name, BoutReal def, bool communicate) {
   MsgStackItem msg("Loading 3D field: Mesh::get(Field3D)");
 
   // Ensure data allocated
@@ -111,7 +111,9 @@ int Mesh::get(Field3D &var, const string &name, BoutReal def) {
     return 1;
 
   // Communicate to get guard cell data
-  Mesh::communicate(var);
+  if(communicate) {
+    Mesh::communicate(var);
+  }
 
   // Check that the data is valid
   checkData(var);
@@ -172,6 +174,16 @@ int Mesh::get(Vector3D &var, const string &name) {
 /**************************************************************************
  * Communications
  **************************************************************************/
+
+void Mesh::communicateXZ(FieldGroup &g) {
+  MsgStackItem("Mesh::communicate(FieldGroup&)");
+
+  // Send data
+  comm_handle h = send(g);
+
+  // Wait for data from other processors
+  wait(h);
+}
 
 void Mesh::communicate(FieldGroup &g) {
   MsgStackItem("Mesh::communicate(FieldGroup&)");
@@ -286,32 +298,42 @@ const vector<int> Mesh::readInts(const string &name, int n) {
   return result;
 }
 
+void Mesh::setParallelTransform() {
+
+  string ptstr;
+  options->get("paralleltransform", ptstr, "identity");
+
+  // Convert to lower case for comparison
+  ptstr = lowercase(ptstr);
+    
+  if(ptstr == "identity") {
+    // Identity method i.e. no transform needed
+    transform = std::unique_ptr<ParallelTransform>(new ParallelTransformIdentity());
+      
+  }else if(ptstr == "shifted") {
+    // Shifted metric method
+    transform = std::unique_ptr<ParallelTransform>(new ShiftedMetric(*this));
+      
+  }else if(ptstr == "fci") {
+
+    Options *fci_options = Options::getRoot()->getSection("fci");
+    // Flux Coordinate Independent method
+    bool fci_yperiodic;
+    fci_options->get("y_periodic", fci_yperiodic, true);
+    bool fci_zperiodic;
+    fci_options->get("z_periodic", fci_zperiodic, true);
+    transform = std::unique_ptr<ParallelTransform>(new FCITransform(*this, fci_yperiodic, fci_zperiodic));
+      
+  }else {
+    throw BoutException("Unrecognised paralleltransform option.\n"
+                        "Valid choices are 'identity', 'shifted', 'fci'");
+  }
+}
+
 ParallelTransform& Mesh::getParallelTransform() {
   if(!transform) {
     // No ParallelTransform object yet. Set from options
-    
-    string ptstr;
-    options->get("paralleltransform", ptstr, "identity");
-
-    // Convert to lower case for comparison
-    ptstr = lowercase(ptstr);
-    
-    if(ptstr == "identity") {
-      // Identity method i.e. no transform needed
-      transform = std::unique_ptr<ParallelTransform>(new ParallelTransformIdentity());
-      
-    }else if(ptstr == "shifted") {
-      // Shifted metric method
-      transform = std::unique_ptr<ParallelTransform>(new ShiftedMetric(this));
-      
-    }else if(ptstr == "fci") {
-      // Flux Coordinate Independent method
-      transform = std::unique_ptr<ParallelTransform>(new FCITransform(this));
-      
-    }else {
-      throw BoutException("Unrecognised paralleltransform option.\n"
-			  "Valid choices are 'identity', 'shifted', 'fci'");
-    }
+    setParallelTransform();
   }
   
   // Return a reference to the ParallelTransform object

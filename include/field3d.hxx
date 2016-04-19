@@ -107,6 +107,10 @@ class Field3D : public Field, public FieldData {
   Field3D& ydown() { return *ydown_field; }
   const Field3D& ydown() const { return *ydown_field; }
 
+  /// Return yup if dir=+1, and ydown if dir=-1
+  Field3D& ynext(int dir);
+  const Field3D& ynext(int dir) const;
+
   // Staggered grids
   void setLocation(CELL_LOC loc); // Set variable location
   CELL_LOC getLocation() const; // Variable location
@@ -125,10 +129,10 @@ class Field3D : public Field, public FieldData {
    */
   const IndexRange region(REGION rgn) const;
 
-  BoutReal& operator[](DataIterator &d) {
+  BoutReal& operator[](const DataIterator &d) {
     return operator()(d.x, d.y, d.z);
   }
-  const BoutReal& operator[](DataIterator &d) const {
+  const BoutReal& operator[](const DataIterator &d) const {
     return operator()(d.x, d.y, d.z);
   }
   BoutReal& operator[](const Indices &i) {
@@ -272,8 +276,15 @@ class Field3D : public Field, public FieldData {
   void applyBoundary(const string &region, const string &condition);
   void applyTDerivBoundary();
   void setBoundaryTo(const Field3D &f3d); ///< Copy the boundary region
+
+  void applyParallelBoundary();
+  void applyParallelBoundary(BoutReal t);
+  void applyParallelBoundary(const string &condition);
+  void applyParallelBoundary(const char* condition) { applyParallelBoundary(string(condition)); }
+  void applyParallelBoundary(const string &region, const string &condition);
+  void applyParallelBoundary(const string &region, const string &condition, Field3D *f);
   
- private:
+private:
   /// Boundary - add a 2D field
   const Field2D *background;
 
@@ -282,7 +293,7 @@ class Field3D : public Field, public FieldData {
   
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;
-  
+
   CELL_LOC location; // Location of the variable in the cell
   
   Field3D *deriv; ///< Time derivative (may be NULL)
@@ -363,6 +374,10 @@ const Field3D floor(const Field3D &var, BoutReal f);
 const Field3D filter(const Field3D &var, int N0);
 const Field3D lowPass(const Field3D &var, int zmax);
 const Field3D lowPass(const Field3D &var, int zmax, int zmin);
+/*!
+ * Perform a shift by a given angle in Z
+ */
+void shiftZ(Field3D &var, int jx, int jy, double zangle);
 
 Field2D DC(const Field3D &f);
 

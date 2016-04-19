@@ -49,6 +49,13 @@ Field3D::Field3D(Mesh *msh) : background(NULL), fieldmesh(msh), deriv(NULL), yup
     ny = fieldmesh->ngy;
     nz = fieldmesh->ngz;
   }
+#ifdef CHECK
+  else {
+    nx=-1;
+    ny=-1;
+    nz=-1;
+  }
+#endif
   
   location = CELL_CENTRE; // Cell centred variable by default
 
@@ -62,7 +69,7 @@ Field3D::Field3D(const Field3D& f) : background(NULL),
 				     deriv(NULL),
 				     yup_field(this), ydown_field(this) {
 
-  MsgStackItem trace("Field3D(Field3D&)");
+  TRACE("Field3D(Field3D&)");
   
 #if CHECK > 2
   checkData(f);
@@ -73,6 +80,13 @@ Field3D::Field3D(const Field3D& f) : background(NULL),
     ny = fieldmesh->ngy;
     nz = fieldmesh->ngz;
   }
+#ifdef CHECK
+  else {
+    nx=-1;
+    ny=-1;
+    nz=-1;
+  }
+#endif
 
   location = f.location;
  
@@ -81,7 +95,7 @@ Field3D::Field3D(const Field3D& f) : background(NULL),
 
 Field3D::Field3D(const Field2D& f) : background(NULL), fieldmesh(nullptr), deriv(NULL), yup_field(this), ydown_field(this) {
   
-  MsgStackItem trace("Field3D: Copy constructor from Field2D");
+  TRACE("Field3D: Copy constructor from Field2D");
   
   location = CELL_CENTRE; // Cell centred variable by default
   
@@ -97,7 +111,7 @@ Field3D::Field3D(const Field2D& f) : background(NULL), fieldmesh(nullptr), deriv
 
 Field3D::Field3D(const BoutReal val) : background(NULL), fieldmesh(nullptr), deriv(NULL), yup_field(this), ydown_field(this) {
   
-  MsgStackItem trace("Field3D: Copy constructor from value");
+  TRACE("Field3D: Copy constructor from value");
 
   location = CELL_CENTRE; // Cell centred variable by default
   
@@ -113,8 +127,18 @@ Field3D::Field3D(const BoutReal val) : background(NULL), fieldmesh(nullptr), der
 
 Field3D::~Field3D() {
   /// Delete the time derivative variable if allocated
-  if(deriv != NULL)
+  if(deriv != NULL) {
+    // The ddt of the yup/ydown_fields point to the same place as ddt.yup_field
+    // only delete once
+    // Also need to check that separate yup_field exists
+    if (yup_field != this)
+      yup_field->deriv = NULL;
+    if (ydown_field != this)
+      ydown_field->deriv = NULL;
+
+    // Now delete them as part of the deriv vector
     delete deriv;
+  }
   
   if(yup_field != this)
     delete yup_field;
@@ -138,9 +162,22 @@ void Field3D::allocate() {
 }
 
 Field3D* Field3D::timeDeriv() {
-  if(deriv == NULL)
+  if(deriv == NULL) {
     deriv = new Field3D(fieldmesh);
 
+    // Check if the yup/ydown have a time-derivative
+    // Need to make sure that ddt(f.yup) = ddt(f).yup
+
+    if(yup().deriv != NULL) {
+      deriv->yup_field = yup().deriv;
+    }
+    if(ydown().deriv != NULL) {
+      deriv->ydown_field = ydown().deriv;
+    }
+    // Set the yup/ydown time-derivatives
+    yup().deriv = &(deriv->yup());
+    ydown().deriv = &(deriv->ydown());
+  }
   return deriv;
 }
 
@@ -168,6 +205,28 @@ void Field3D::mergeYupYdown() {
   ydown_field = this;
 }
 
+Field3D& Field3D::ynext(int dir) {
+  switch(dir) {
+  case +1:
+    return yup();
+  case -1:
+    return ydown();
+  default:
+    throw BoutException("Field3D: Call to ynext with strange direction %d. Only +/-1 currently supported", dir);
+  }
+}
+
+const Field3D& Field3D::ynext(int dir) const {
+  switch(dir) {
+  case +1:
+    return yup();
+  case -1:
+    return ydown();
+  default:
+    throw BoutException("Field3D: Call to ynext with strange direction %d. Only +/-1 currently supported", dir);
+  }
+}
+
 void Field3D::setLocation(CELL_LOC loc) {
   if(loc == CELL_VSHIFT)
     throw BoutException("Field3D: CELL_VSHIFT cell location only makes sense for vectors");
@@ -189,20 +248,20 @@ CELL_LOC Field3D::getLocation() const {
 const DataIterator Field3D::iterator() const {
   return DataIterator(0, nx-1, 
                       0, ny-1,
-                      0, nz-1);
+                      0, nz-2); // NOTE: Miss last point due to ngz
 }
 
 const DataIterator Field3D::begin() const {
   return DataIterator(0, nx-1, 
                       0, ny-1,
-                      0, nz-1);
+                      0, nz-2); // NOTE: Miss last point due to ngz
 }
 
 const DataIterator Field3D::end() const {
   // end() iterator should be one past the last element
   return DataIterator(0, nx-1, 
                       0, ny-1,
-                      0, nz-1,DI_GET_END);
+                      0, nz-2,DI_GET_END); // NOTE: Miss last point due to ngz
 }
 
 const IndexRange Field3D::region(REGION rgn) const {
@@ -210,25 +269,25 @@ const IndexRange Field3D::region(REGION rgn) const {
   case RGN_ALL: {
     return IndexRange{0, nx-1,
         0, ny-1,
-        0, nz-1};
+        0, nz-2}; // NOTE: Miss last point due to ngz
     break;
   }
   case RGN_NOBNDRY: {
     return IndexRange{fieldmesh->xstart, fieldmesh->xend,
         fieldmesh->ystart, fieldmesh->yend,
-        0, nz-1};
+        0, nz-2}; // NOTE: Miss last point due to ngz
     break;
   }
   case RGN_NOX: {
     return IndexRange{fieldmesh->xstart, fieldmesh->xend,
         0, ny-1,
-        0, nz-1};
+        0, nz-2}; // NOTE: Miss last point due to ngz
     break;
   }
   case RGN_NOY: {
     return IndexRange{0, nx-1,
         fieldmesh->ystart, fieldmesh->yend,
-        0, nz-1};
+        0, nz-2}; // NOTE: Miss last point due to ngz
     break;
   }
   };
@@ -264,7 +323,7 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
   ASSERT1(rhs.isAllocated());
   
   /// Check that the data is valid
-  rhs.checkData();
+  checkData(rhs);
  
   /// Make sure there's a unique array to copy data into
   allocate();
@@ -375,10 +434,10 @@ F3D_UPDATE_FIELD(/=, /, Field2D);    // operator/= Field2D
     return *this;                                            \
   }
 
-F3D_UPDATE_REAL(+=,+);    // operator+= Field2D
-F3D_UPDATE_REAL(-=,-);    // operator-= Field2D
-F3D_UPDATE_REAL(*=,*);    // operator*= Field2D
-F3D_UPDATE_REAL(/=,/);    // operator/= Field2D
+F3D_UPDATE_REAL(+=,+);    // operator+= BoutReal
+F3D_UPDATE_REAL(-=,-);    // operator-= BoutReal
+F3D_UPDATE_REAL(*=,*);    // operator*= BoutReal
+F3D_UPDATE_REAL(/=,/);    // operator/= BoutReal
 
 /***************************************************************
  *                         STENCILS
@@ -770,7 +829,7 @@ void Field3D::applyBoundary(BoutReal t) {
   
 #ifdef CHECK
   if(!boundaryIsSet)
-    output << "WARNING: Call to Field3D::applyBoundary(), but no boundary set." << endl;
+    output << "WARNING: Call to Field3D::applyBoundary(t), but no boundary set." << endl;
 #endif
 
   ASSERT1(isAllocated())
@@ -779,7 +838,7 @@ void Field3D::applyBoundary(BoutReal t) {
     // Apply boundary to the total of this and background
 
     Field3D tot = *this + (*background);
-    tot.applyBoundary();
+    tot.applyBoundary(t);
     *this = tot - (*background);
   }else {
     // Apply boundary to this field
@@ -829,7 +888,7 @@ void Field3D::applyBoundary(const string &condition) {
   
   /// Loop over the mesh boundary regions
   for(const auto& reg : fieldmesh->getBoundaries()) {
-    BoundaryOp* op = bfact->create(condition, reg);
+    BoundaryOp* op = static_cast<BoundaryOp*>(bfact->create(condition, reg));
     op->apply(*this);
     delete op;
   }
@@ -866,7 +925,7 @@ void Field3D::applyBoundary(const string &region, const string &condition) {
   /// Loop over the mesh boundary regions
   for(const auto& reg : fieldmesh->getBoundaries()) {
     if(reg->label.compare(region) == 0) {
-      BoundaryOp* op = bfact->create(condition, reg);
+      BoundaryOp* op = static_cast<BoundaryOp*>(bfact->create(condition, reg));
       op->apply(*this);
       delete op;
       break;
@@ -945,15 +1004,138 @@ void Field3D::setBoundaryTo(const Field3D &f3d) {
   /// Loop over boundary regions
   for(const auto& reg : fieldmesh->getBoundaries()) {
     /// Loop within each region
-    for(reg->first(); !reg->isDone(); reg->next())
+    for(reg->first(); !reg->isDone(); reg->next()) {
       for(int z=0;z<nz;z++) {
         // Get value half-way between cells
         BoutReal val = 0.5*(f3d(reg->x,reg->y,z) + f3d(reg->x-reg->bx, reg->y-reg->by, z));
         // Set to this value
         (*this)(reg->x,reg->y,z) = 2.*val - (*this)(reg->x-reg->bx, reg->y-reg->by, z);
       }
+    }
   }
 }
+
+void Field3D::applyParallelBoundary() {
+
+  MsgStackItem trace("Field3D::applyParallelBoundary()");
+
+  ASSERT1(isAllocated());
+
+  if(background != NULL) {
+    // Apply boundary to the total of this and background
+    Field3D tot = *this + (*background);
+    tot.applyParallelBoundary();
+    *this = tot - (*background);
+  } else {
+    // Apply boundary to this field
+    for(const auto& bndry : bndry_op_par) {
+      bndry->apply(*this);
+    }
+  }
+}
+
+void Field3D::applyParallelBoundary(BoutReal t) {
+
+  MsgStackItem trace("Field3D::applyParallelBoundary(t)");
+
+  ASSERT1(isAllocated());
+
+  if(background != NULL) {
+    // Apply boundary to the total of this and background
+    Field3D tot = *this + (*background);
+    tot.applyParallelBoundary(t);
+    *this = tot - (*background);
+  } else {
+    // Apply boundary to this field
+    for(const auto& bndry : bndry_op_par) {
+      bndry->apply(*this, t);
+    }
+  }
+}
+
+void Field3D::applyParallelBoundary(const string &condition) {
+
+  MsgStackItem trace("Field3D::applyParallelBoundary(condition)");
+
+  ASSERT1(isAllocated());
+
+  if(background != NULL) {
+    // Apply boundary to the total of this and background
+    Field3D tot = *this + (*background);
+    tot.applyParallelBoundary(condition);
+    *this = tot - (*background);
+  } else {
+    /// Get the boundary factory (singleton)
+    BoundaryFactory *bfact = BoundaryFactory::getInstance();
+
+    /// Loop over the mesh boundary regions
+    for(const auto& reg : mesh->getBoundariesPar()) {
+      BoundaryOpPar* op = static_cast<BoundaryOpPar*>(bfact->create(condition, reg));
+      op->apply(*this);
+      delete op;
+    }
+  }
+}
+
+void Field3D::applyParallelBoundary(const string &region, const string &condition) {
+
+  MsgStackItem trace("Field3D::applyParallelBoundary(region, condition)");
+
+  ASSERT1(isAllocated());
+
+  if(background != NULL) {
+    // Apply boundary to the total of this and background
+    Field3D tot = *this + (*background);
+    tot.applyParallelBoundary(region, condition);
+    *this = tot - (*background);
+  } else {
+    /// Get the boundary factory (singleton)
+    BoundaryFactory *bfact = BoundaryFactory::getInstance();
+
+    /// Loop over the mesh boundary regions
+    for(const auto& reg : mesh->getBoundariesPar()) {
+      if(reg->label.compare(region) == 0) {
+        BoundaryOpPar* op = static_cast<BoundaryOpPar*>(bfact->create(condition, reg));
+        op->apply(*this);
+        delete op;
+        break;
+      }
+    }
+  }
+}
+
+void Field3D::applyParallelBoundary(const string &region, const string &condition, Field3D *f) {
+
+  MsgStackItem trace("Field3D::applyParallelBoundary(region, condition, f)");
+
+  ASSERT1(isAllocated());
+
+  if(background != NULL) {
+    // Apply boundary to the total of this and background
+    Field3D tot = *this + (*background);
+    tot.applyParallelBoundary(region, condition, f);
+    *this = tot - (*background);
+  } else {
+    /// Get the boundary factory (singleton)
+    BoundaryFactory *bfact = BoundaryFactory::getInstance();
+
+    /// Loop over the mesh boundary regions
+    for(const auto& reg : mesh->getBoundariesPar()) {
+      if(reg->label.compare(region) == 0) {
+        // BoundaryFactory can't create boundaries using Field3Ds, so get temporary
+        // boundary of the right type
+        BoundaryOpPar* tmp = static_cast<BoundaryOpPar*>(bfact->create(condition, reg));
+        // then clone that with the actual argument
+        BoundaryOpPar* op = tmp->clone(reg, f);
+        op->apply(*this);
+        delete tmp;
+        delete op;
+        break;
+      }
+    }
+  }
+}
+
 
 /***************************************************************
  *               NON-MEMBER OVERLOADED OPERATORS
@@ -1117,13 +1299,11 @@ BoutReal min(const Field3D &f, bool allpe) {
     msg_stack.push("Field3D::Min()");
 #endif
 
-  BoutReal result = f(mesh->xstart,mesh->ystart,0);
+  BoutReal result = f[f.region(RGN_NOBNDRY).begin()];
   
-  for(int i=mesh->xstart; i<=mesh->xend; i++)
-    for(int j=mesh->ystart; j<=mesh->yend; j++)
-      for(int k=0;k<mesh->ngz-1;k++)
-        if(f(i,j,k) < result)
-          result = f(i,j,k);
+  for(auto i: f.region(RGN_NOBNDRY))
+    if(f[i] < result)
+      result = f[i];
   
   if(allpe) {
     // MPI reduce
@@ -1148,13 +1328,11 @@ BoutReal max(const Field3D &f, bool allpe) {
     msg_stack.push("Field3D::Max()");
 #endif
   
-  BoutReal result = f(mesh->xstart,mesh->ystart,0);
+  BoutReal result = f[f.region(RGN_NOBNDRY).begin()];
   
-  for(int i=mesh->xstart; i<=mesh->xend; i++)
-    for(int j=mesh->ystart; j<=mesh->yend; j++)
-      for(int k=0;k<mesh->ngz-1;k++)
-        if(f(i,j,k) > result)
-          result = f(i,j,k);
+  for(auto i: f.region(RGN_NOBNDRY))
+    if(f[i] > result)
+      result = f[i];
   
   if(allpe) {
     // MPI reduce
@@ -1334,6 +1512,32 @@ const Field3D lowPass(const Field3D &var, int zmax, int zmin) {
 #endif
   
   return result;
+}
+
+/* 
+ * Use FFT to shift by an angle in the Z direction
+ */
+void shiftZ(Field3D &var, int jx, int jy, double zangle) {
+  TRACE("shiftZ");
+  ASSERT1(var.isAllocated()); // Check that var has some data
+  var.allocate(); // Ensure that var is unique
+  
+  int ncz = mesh->ngz-1;
+  if(ncz == 1)
+    return; // Shifting doesn't do anything
+  
+  Array<dcomplex> v(ncz/2 + 1);
+  
+  rfft(&(var(jx,jy,0)), ncz, v.begin()); // Forward FFT
+
+  BoutReal zlength = mesh->coordinates()->zlength();
+  // Apply phase shift
+  for(int jz=1;jz<=ncz/2;jz++) {
+    BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
+    v[jz] *= dcomplex(cos(kwave*zangle) , -sin(kwave*zangle));
+  }
+
+  irfft(v.begin(), ncz, &(var(jx,jy,0))); // Reverse FFT
 }
 
 bool finite(const Field3D &f) {

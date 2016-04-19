@@ -54,6 +54,8 @@ class Mesh;
 #include "fieldgroup.hxx"
 
 #include "boundary_region.hxx"
+#include "parallel_boundary_region.hxx"
+
 #include "sys/range.hxx" // RangeIterator
 
 #include "bout/deprecated.hxx"
@@ -88,7 +90,7 @@ class Mesh {
   int get(BoutReal &rval, const string &name); ///< Get a BoutReal number
   
   int get(Field2D &var, const string &name, BoutReal def=0.0);
-  int get(Field3D &var, const string &name, BoutReal def=0.0);
+  int get(Field3D &var, const string &name, BoutReal def=0.0, bool communicate=true);
   
   int get(Vector2D &var, const string &name);
   int get(Vector3D &var, const string &name);
@@ -105,10 +107,17 @@ class Mesh {
     communicate(g);
   }
 
+  template <typename... Ts>
+  void communicateXZ(Ts&... ts) {
+    FieldGroup g(ts...);
+    communicateXZ(g);
+  }
+
   /*!
    * Communicate a group of fields
    */
   void communicate(FieldGroup &g);
+  void communicateXZ(FieldGroup &g);
 
   /*!
    * Communicate an X-Z field
@@ -183,12 +192,17 @@ class Mesh {
 
   // Boundary regions
   virtual vector<BoundaryRegion*> getBoundaries() = 0;
+  virtual void addBoundary(BoundaryRegion* bndry) {}
+  virtual vector<BoundaryRegionPar*> getBoundariesPar() = 0;
+  virtual void addBoundaryPar(BoundaryRegionPar* bndry) {}
   
   // Branch-cut special handling (experimental)
   virtual const Field3D smoothSeparatrix(const Field3D &f) {return f;}
   
   virtual BoutReal GlobalX(int jx) const = 0; ///< Continuous X index between 0 and 1
   virtual BoutReal GlobalY(int jy) const = 0; ///< Continuous Y index (0 -> 1)
+  virtual BoutReal GlobalX(BoutReal jx) const = 0; ///< Continuous X index between 0 and 1
+  virtual BoutReal GlobalY(BoutReal jy) const = 0; ///< Continuous Y index (0 -> 1)
   
   //////////////////////////////////////////////////////////
   
@@ -298,7 +312,10 @@ class Mesh {
   void setParallelTransform(PTptr pt) {
     transform = std::move(pt);
   }
-  
+  /*!
+   * Set the parallel (y) transform from the options file
+   */
+  void setParallelTransform();
   
  protected:
   
@@ -309,10 +326,10 @@ class Mesh {
   Options *options; ///< Mesh options section
   
   /*!
-   * 
+   * Return the parallel transform, setting it if need be
    */
   ParallelTransform& getParallelTransform();
-  
+
   PTptr transform; ///< Handles calculation of yup and ydown
 
   /// Read a 1D array of integers

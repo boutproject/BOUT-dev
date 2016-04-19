@@ -7,7 +7,11 @@
 
 #include <bout/expr.hxx>
 
-#include <time.h>
+#include <chrono>
+
+typedef std::chrono::time_point<std::chrono::steady_clock> SteadyClock;
+typedef std::chrono::duration<double> Duration;
+using namespace std::chrono;
 
 class Arithmetic : public PhysicsModel {
 protected: 
@@ -23,16 +27,17 @@ protected:
     
     result1 = 2.*a + b * c;
 
-    clock_t c1 = clock();
+    SteadyClock start1 = steady_clock::now();
     result1 = 2.*a + b * c;
-    clock_t c2 = clock();
+    Duration elapsed1 = steady_clock::now() - start1;
     
     // Using C loops
     result2.allocate();
-    BoutReal *rd = result2[0][0];
-    BoutReal *ad = a[0][0];
-    BoutReal *bd = b[0][0];
-    BoutReal *cd = c[0][0];
+    BoutReal *rd = &result2(0,0,0);
+    BoutReal *ad = &a(0,0,0);
+    BoutReal *bd = &b(0,0,0);
+    BoutReal *cd = &c(0,0,0);
+    SteadyClock start2 = steady_clock::now();
     for(int i=0, iend=(mesh->ngx*mesh->ngy*mesh->ngz)-1; i != iend; i++) {
       *rd = 2.*(*ad) + (*bd)*(*cd);
       rd++;
@@ -40,27 +45,25 @@ protected:
       bd++;
       cd++;
     }
-    clock_t c3 = clock();
+    Duration elapsed2 = steady_clock::now() - start2;
     
     // Template expressions
-    
+    SteadyClock start3 = steady_clock::now();
     result3 = eval3D(add(mul(2,a), mul(b,c)));
-
-    clock_t c4 = clock();
-
+    Duration elapsed3 = steady_clock::now() - start3;
+    
     // Range iterator
     result4.allocate();
+    SteadyClock start4 = steady_clock::now();
     for(auto i : result4)
       result4[i] = 2.*a[i] + b[i] * c[i];
+    Duration elapsed4 = steady_clock::now() - start4;
     
-    clock_t c5 = clock();
-
     output << "TIMING\n======\n";
-    output << "Fields: " << c2 - c1 << endl;
-    output << "C loop: " << c3 - c2 << endl;
-    output << "Templates: " << c4 - c3 << endl;
-    output << "Range For: " << c5 - c4 << endl;
-    output << "\nUnits: " << 1./((double)CLOCKS_PER_SEC) << " seconds" << endl << endl;
+    output << "Fields: " << elapsed1.count() << endl;
+    output << "C loop: " << elapsed2.count() << endl;
+    output << "Templates: " << elapsed3.count() << endl;
+    output << "Range For: " << elapsed4.count() << endl;
     
     return 1;
   }

@@ -31,7 +31,7 @@ class Field3DExpr {
 public:
   typedef Field3D type;
   
-  Field3DExpr(const Field3D &f) : data(f[0][0]) {}
+  Field3DExpr(const Field3D &f) : data(&f(0,0,0)) {}
   const BoutReal& operator()(int x, int y, int z) const { return data[(x*mesh->ngy + y)*mesh->ngy + z]; }
 private:
   const BoutReal *data;
@@ -41,7 +41,7 @@ class Field2DExpr {
 public:
   typedef Field2D type;
   
-  Field2DExpr(const Field2D &f) : data(f[0]) {}
+  Field2DExpr(const Field2D &f) : data(&f(0,0)) {}
   const BoutReal& operator()(int x, int y, int z) const { return data[x*mesh->ngy + y]; }
 private:
   const BoutReal *data;

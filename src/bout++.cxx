@@ -264,7 +264,7 @@ int BoutInitialise(int &argc, char **&argv) {
     
     mesh = Mesh::create();  ///< Create the mesh
     mesh->load();           ///< Load from sources. Required for Field initialisation
-
+    mesh->setParallelTransform(); ///< Set the parallel transform from options
     /////////////////////////////////////////////
     /// Get some settings
 
@@ -336,7 +336,6 @@ int BoutFinalise() {
   Laplacian::cleanup();
 
   // Delete field memory
-  Field2D::cleanup();
   Array<double>::cleanup();
 
   // Cleanup boundary factory

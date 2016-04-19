@@ -96,20 +96,21 @@ public:
   /*
    * Add an offset to the index for general stencils
    */
-  const Indices offset(int dx, int dy, int dz) {
-    return {x+dx, y+dy, z+dz};
+  const Indices offset(int dx, int dy, int dz) const {
+    int nz = zend-zstart+1;
+    return {x+dx, y+dy, ((z+dz-zstart + nz) % nz) + zstart};
   }
   /*
    * Shortcuts for common offsets, one cell
    * in each direction.
    */
-  const Indices xp() { return {x+1, y, z}; }
-  const Indices xm() { return {x-1, y, z}; }
-  const Indices yp() { return {x, y+1, z}; }
-  const Indices ym() { return {x, y-1, z}; }
+  const Indices xp() const { return {x+1, y, z}; }
+  const Indices xm() const { return {x-1, y, z}; }
+  const Indices yp() const { return {x, y+1, z}; }
+  const Indices ym() const { return {x, y-1, z}; }
   // Z indices should wrap in zstart, zend range (?)
-  const Indices zp() { return {x, y, z == zend ? zstart : z+1}; }
-  const Indices zm() { return {x, y, z == zstart ? zend : z-1}; }
+  const Indices zp() const { return {x, y, z == zend ? zstart : z+1}; }
+  const Indices zm() const { return {x, y, z == zstart ? zend : z-1}; }
   
   void start() {
     x = xstart; y = ystart; z = zstart;

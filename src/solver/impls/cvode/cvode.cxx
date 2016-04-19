@@ -643,19 +643,21 @@ void CvodeSolver::set_abstol_values(BoutReal* abstolvec_data, vector<BoutReal> &
 
 void CvodeSolver::loop_abstol_values_op(int jx, int jy, BoutReal* abstolvec_data, int &p, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols, bool bndry) {
   // Loop over 2D variables
-  for(const auto& f : f2dtols) {
-    if(bndry && !f.evolve_bndry)
+  for(int i=0;i<f2dtols.size();i++) {
+    if(bndry && !f2d[i].evolve_bndry) {
       continue;
-    abstolvec_data[p] = f;
+    }
+    abstolvec_data[p] = f2dtols[i];
     p++;
   }
   
   for (int jz=0; jz < mesh->ngz-1; jz++) {
     // Loop over 3D variables
-    for(const auto& f : f3dtols) {
-      if(bndry && !f.evolve_bndry)
+    for(int i=0;i<f3dtols.size();i++) {
+      if(bndry && !f3d[i].evolve_bndry) {
         continue;
-      abstolvec_data[p] = f;
+      }
+      abstolvec_data[p] = f3dtols[i];
       p++;
     }  
   }
