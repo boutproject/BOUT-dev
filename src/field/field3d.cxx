@@ -47,7 +47,7 @@ Field3D::Field3D(Mesh *msh) : background(NULL), fieldmesh(msh), deriv(NULL), yup
   if(fieldmesh) {
     nx = fieldmesh->ngx;
     ny = fieldmesh->ngy;
-    nz = fieldmesh->ngz-1;
+    nz = fieldmesh->ngz;
   }
 #ifdef CHECK
   else {
@@ -78,7 +78,7 @@ Field3D::Field3D(const Field3D& f) : background(NULL),
   if(fieldmesh) {
     nx = fieldmesh->ngx;
     ny = fieldmesh->ngy;
-    nz = fieldmesh->ngz-1;
+    nz = fieldmesh->ngz;
   }
 #ifdef CHECK
   else {
@@ -104,7 +104,7 @@ Field3D::Field3D(const Field2D& f) : background(NULL), fieldmesh(nullptr), deriv
   fieldmesh = mesh;
   nx = fieldmesh->ngx;
   ny = fieldmesh->ngy;
-  nz = fieldmesh->ngz-1;
+  nz = fieldmesh->ngz;
   
   *this = f;
 }
@@ -120,7 +120,7 @@ Field3D::Field3D(const BoutReal val) : background(NULL), fieldmesh(nullptr), der
   fieldmesh = mesh;
   nx = fieldmesh->ngx;
   ny = fieldmesh->ngy;
-  nz = fieldmesh->ngz-1;
+  nz = fieldmesh->ngz;
   
   *this = val;
 }
@@ -154,9 +154,9 @@ void Field3D::allocate() {
       fieldmesh = mesh;
       nx = fieldmesh->ngx;
       ny = fieldmesh->ngy;
-      nz = fieldmesh->ngz-1;
+      nz = fieldmesh->ngz;
     }
-    data = Array<BoutReal>(nx*ny*(nz+1)); // NOTE: Extra Z point for now
+    data = Array<BoutReal>(nx*ny*nz);
   }else
     data.ensureUnique();
 }
@@ -248,20 +248,20 @@ CELL_LOC Field3D::getLocation() const {
 const DataIterator Field3D::iterator() const {
   return DataIterator(0, nx-1, 
                       0, ny-1,
-                      0, nz-1);
+                      0, nz-2); // NOTE: Miss last point due to ngz
 }
 
 const DataIterator Field3D::begin() const {
   return DataIterator(0, nx-1, 
                       0, ny-1,
-                      0, nz-1);
+                      0, nz-2); // NOTE: Miss last point due to ngz
 }
 
 const DataIterator Field3D::end() const {
   // end() iterator should be one past the last element
   return DataIterator(0, nx-1, 
                       0, ny-1,
-                      0, nz-1,DI_GET_END);
+                      0, nz-2,DI_GET_END); // NOTE: Miss last point due to ngz
 }
 
 const IndexRange Field3D::region(REGION rgn) const {
@@ -269,25 +269,25 @@ const IndexRange Field3D::region(REGION rgn) const {
   case RGN_ALL: {
     return IndexRange{0, nx-1,
         0, ny-1,
-        0, nz-1};
+        0, nz-2}; // NOTE: Miss last point due to ngz
     break;
   }
   case RGN_NOBNDRY: {
     return IndexRange{fieldmesh->xstart, fieldmesh->xend,
         fieldmesh->ystart, fieldmesh->yend,
-        0, nz-1};
+        0, nz-2}; // NOTE: Miss last point due to ngz
     break;
   }
   case RGN_NOX: {
     return IndexRange{fieldmesh->xstart, fieldmesh->xend,
         0, ny-1,
-        0, nz-1};
+        0, nz-2}; // NOTE: Miss last point due to ngz
     break;
   }
   case RGN_NOY: {
     return IndexRange{0, nx-1,
         fieldmesh->ystart, fieldmesh->yend,
-        0, nz-1};
+        0, nz-2}; // NOTE: Miss last point due to ngz
     break;
   }
   };
