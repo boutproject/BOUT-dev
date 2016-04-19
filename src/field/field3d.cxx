@@ -47,7 +47,7 @@ Field3D::Field3D(Mesh *msh) : background(NULL), fieldmesh(msh), deriv(NULL), yup
   if(fieldmesh) {
     nx = fieldmesh->ngx;
     ny = fieldmesh->ngy;
-    nz = fieldmesh->ngz;
+    nz = fieldmesh->ngz-1;
   }
 #ifdef CHECK
   else {
@@ -78,7 +78,7 @@ Field3D::Field3D(const Field3D& f) : background(NULL),
   if(fieldmesh) {
     nx = fieldmesh->ngx;
     ny = fieldmesh->ngy;
-    nz = fieldmesh->ngz;
+    nz = fieldmesh->ngz-1;
   }
 #ifdef CHECK
   else {
@@ -104,7 +104,7 @@ Field3D::Field3D(const Field2D& f) : background(NULL), fieldmesh(nullptr), deriv
   fieldmesh = mesh;
   nx = fieldmesh->ngx;
   ny = fieldmesh->ngy;
-  nz = fieldmesh->ngz;
+  nz = fieldmesh->ngz-1;
   
   *this = f;
 }
@@ -120,7 +120,7 @@ Field3D::Field3D(const BoutReal val) : background(NULL), fieldmesh(nullptr), der
   fieldmesh = mesh;
   nx = fieldmesh->ngx;
   ny = fieldmesh->ngy;
-  nz = fieldmesh->ngz;
+  nz = fieldmesh->ngz-1;
   
   *this = val;
 }
@@ -154,9 +154,9 @@ void Field3D::allocate() {
       fieldmesh = mesh;
       nx = fieldmesh->ngx;
       ny = fieldmesh->ngy;
-      nz = fieldmesh->ngz;
+      nz = fieldmesh->ngz-1;
     }
-    data = Array<BoutReal>(nx*ny*nz);
+    data = Array<BoutReal>(nx*ny*(nz+1)); // NOTE: Extra Z point for now
   }else
     data.ensureUnique();
 }
