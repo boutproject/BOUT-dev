@@ -11,7 +11,7 @@ void f1(){
   BoutReal b=0;
   BoutReal c = a/b;
   output.write("c is %f\n",c);
-  BoutException("Tomatoes are red?\n");
+  throw BoutException("Tomatoes are red?\n");
 }
 void f2(int a){
   f1();
