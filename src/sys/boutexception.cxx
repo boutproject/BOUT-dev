@@ -75,16 +75,15 @@ BoutException::BoutException(const char* s, ...)
 
   va_list ap;  // List of arguments
 
-  if(s == (const char*) NULL)
-    return;
-
-  char buffer[1024];
-  va_start(ap, s);
-  vsprintf(buffer, s, ap);
-  va_end(ap);
-
-
-  message.assign(buffer);
+  if(s == (const char*) NULL) {
+    message="No error message given!\n";
+  } else {
+    char buffer[1024];
+    va_start(ap, s);
+    vsprintf(buffer, s, ap);
+    va_end(ap);
+    message.assign(buffer);
+  }
   message="====== Exception thrown ======\n"+message;
 
   this->Backtrace();
