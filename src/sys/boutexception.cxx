@@ -89,12 +89,7 @@ BoutException::BoutException(const char* s, ...)
 
   this->Backtrace();
 
-
-
-#ifdef ABORT
-  output << message;
-  abort();
-#endif
+  //output << message;
 }
 
 const char* BoutException::what() const throw()
