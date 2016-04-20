@@ -734,7 +734,6 @@ enable_signal
 enable_track
 enable_debug
 enable_optimize
-enable_abort
 enable_sigfpe
 '
       ac_precious_vars='build_alias
@@ -1366,7 +1365,6 @@ Optional Features:
   --enable-track          Enable variable tracking
   --enable-debug          Enable all debugging flags
   --enable-optimize=1/2/3 Enable optimization
-  --enable-abort          Call abort in exceptions to allow simple debuging
   --enable-sigfpe         Enable FloatingPointExceptions
 
 Optional Packages:
@@ -2313,11 +2311,6 @@ fi
 # Check whether --enable-optimize was given.
 if test "${enable_optimize+set}" = set; then :
   enableval=$enable_optimize;
-fi
-
-# Check whether --enable-abort was given.
-if test "${enable_abort+set}" = set; then :
-  enableval=$enable_abort;
 fi
 
 # Check whether --enable-sigfpe was given.
@@ -3956,11 +3949,6 @@ fi
 if test ."$enable_sigfpe" == .yes
 then
     CXXFLAGS="$CXXFLAGS -DBOUT_FPE"
-fi
-
-if test ."$enable_abort" == .yes
-then
-    CXXFLAGS="$CXXFLAGS -DABORT"
 fi
 
 echo

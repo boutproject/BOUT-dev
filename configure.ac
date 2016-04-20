@@ -61,8 +61,6 @@ AC_ARG_ENABLE(debug,
               [  --enable-debug          Enable all debugging flags])
 AC_ARG_ENABLE(optimize,
               [  --enable-optimize=1/2/3 Enable optimization])
-AC_ARG_ENABLE(abort,
-              [  --enable-abort          Call abort in exceptions to allow simple debuging])
 AC_ARG_ENABLE(sigfpe,
               [  --enable-sigfpe         Enable FloatingPointExceptions])
 AC_ARG_VAR(EXTRA_INCS,[Extra compile flags])
@@ -373,11 +371,6 @@ fi
 if test ."$enable_sigfpe" == .yes
 then
     CXXFLAGS="$CXXFLAGS -DBOUT_FPE"
-fi
-
-if test ."$enable_abort" == .yes
-then
-    CXXFLAGS="$CXXFLAGS -DABORT"
 fi
 
 echo
