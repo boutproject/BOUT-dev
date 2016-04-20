@@ -10,8 +10,8 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '1.0223'
-__date__    = '2016.04.19'
+__version__ = '1.023'
+__date__    = '2016.04.20'
 
 import os
 import sys
@@ -2365,9 +2365,9 @@ class basic_runner(object):
         print("Successfully found the following good values for the mesh:")
         message = ''
         if test_nx:
-            message += "nx = " + str(self._nx[size_nr]) + " "
+            message += "nx = " + str(local_nx[size_nr]) + " "
         if test_ny:
-            message += "ny = " + str(self._ny[size_nr])
+            message += "ny = " + str(local_ny[size_nr])
 
         print(message + "\n")
         #}}}
