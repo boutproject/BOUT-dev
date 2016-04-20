@@ -495,18 +495,7 @@ void bout_error() {
 }
 
 void bout_error(const char *str) {
-  output.write("****** ERROR CAUGHT ******\n");
-
-  if (str != NULL) output.write(str);
-
-  output.write("\n");
-
-#ifdef CHECK
-  msg_stack.dump();
-#endif
-
-  MPI_Abort(BoutComm::get(), 1);
-
+  throw BoutException(str);
   exit(1);
 }
 
