@@ -12,7 +12,7 @@
 void BoutParallelThrowRhsFail(int &status, const char* message) {
   int allstatus;
   MPI_Allreduce(&status,&allstatus,1,MPI_INT,MPI_LOR,BoutComm::get());
-  
+
   if (allstatus) throw BoutRhsFail(message);
 }
 
@@ -20,21 +20,29 @@ BoutException::~BoutException() throw()
 {
 }
 
-void BoutException::Backtrace() const {
+void BoutException::Backtrace() {
+#ifdef CHECK
+  /// Print out the message stack to help debugging
+  std::string tmp=msg_stack.getDump();
+  message+=tmp;
+#else
+  message+="Enable checking (-DCHECK flag) to get a trace\n");
+#endif
 #ifdef BACKTRACE
   void *trace[64];
   char **messages = (char **)NULL;
   int i, trace_size = 0;
-  
+
   trace_size = backtrace(trace, 64);
   messages = backtrace_symbols(trace, trace_size);
   /* skip first stack frame (points here) */
   //output.write("\n[bt] Execution path:\n");
-  output.write("====== Exception path ======\n");
+  message+=("====== Exception path ======\n");
+  char buf[1024];
   for (i=1; i<trace_size; ++i)
     {
-      output.write("[bt] #%d %s\n", i, messages[i]);
-      
+      snprintf(buf,1023,"[bt] #%d %s\n", i, messages[i]);
+      message+=buf;
       /* find first occurence of '(' or ' ' in message[i] and assume
        * everything before that is the file name. (Don't go beyond 0 though
        * (string terminator)*/
@@ -42,7 +50,7 @@ void BoutException::Backtrace() const {
       while(messages[i][p] != '(' && messages[i][p] != ' '
 	    && messages[i][p] != 0)
 	++p;
-      
+
       char syscom[256];
       sprintf(syscom,"addr2line %p -Cfpie %.*s", trace[i], p, messages[i]);
       //last parameter is the file name of the symbol
@@ -51,10 +59,10 @@ void BoutException::Backtrace() const {
 	char out[1024];
 	fgets(out, sizeof(out)-1, fp);
 	if (pclose(fp) == 0){
-	  output.write(out);
+          message+=out;
 	}
       } else {
-	output.write(syscom);
+        message+=syscom;
       }
     }
 #else
@@ -64,31 +72,27 @@ void BoutException::Backtrace() const {
 
 BoutException::BoutException(const char* s, ...)
 {
-  
+
   va_list ap;  // List of arguments
-  
+
   if(s == (const char*) NULL)
     return;
-  
+
   char buffer[1024];
   va_start(ap, s);
   vsprintf(buffer, s, ap);
   va_end(ap);
-  
+
+
   message.assign(buffer);
+  message="====== Exception thrown ======\n"+message;
 
-  output.write("====== Exception thrown ======\n");
-  output << message;
-
-  #ifdef CHECK
-    /// Print out the message stack to help debugging
-    msg_stack.dump();
-  #else
-    output.write("Enable checking (-DCHECK flag) to get a trace\n");
-  #endif
   this->Backtrace();
 
+
+
 #ifdef ABORT
+  output << message;
   abort();
 #endif
 }
@@ -103,12 +107,12 @@ BoutRhsFail::BoutRhsFail(const char* s, ...)  : BoutException::BoutException(s){
 
   if(s == (const char*) NULL)
     return;
-  
+
   char buffer[1024];
   va_start(ap, s);
     vsprintf(buffer, s, ap);
   va_end(ap);
-  
+
   message.assign(buffer);
 }
 
@@ -117,11 +121,11 @@ BoutIterationFail::BoutIterationFail(const char* s, ...) : BoutException::BoutEx
 
   if(s == (const char*) NULL)
     return;
-  
+
   char buffer[1024];
   va_start(ap, s);
     vsprintf(buffer, s, ap);
   va_end(ap);
-  
+
   message.assign(buffer);
 }
