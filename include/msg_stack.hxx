@@ -30,6 +30,7 @@ class MsgStack;
 #define __MSG_STACK_H__
 
 #include <stdio.h>
+#include <string>
 
 #define MSG_MAX_SIZE 127
 
@@ -52,6 +53,7 @@ class MsgStack {
   void clear();        ///< Clear all message
   
   void dump();         ///< Write out all messages (using output)
+  std::string getDump();    ///< Write out all messages to a string
 #else
   /// Dummy functions which should be optimised out
   int push(const char *s, ...) {return 0;}
