@@ -10,8 +10,8 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '1.023'
-__date__    = '2016.04.20'
+__version__ = '1.0231'
+__date__    = '2016.04.21'
 
 import os
 import sys
@@ -1499,6 +1499,7 @@ class basic_runner(object):
         myOpts = BOUTOptions(self._directory)
 
         if (self._nx is None) and (self._ny is None):
+            #{{{ Set local_nx and local_ny from input
             # If nx and ny is a function of MXG and MYG
             if self._MXG is None:
                 MXG = eval(myOpts.root['MXG'])
@@ -1526,7 +1527,51 @@ class basic_runner(object):
                 message += myOpts.mesh['ny']
                 message += "\nfound ny in mesh in the input file."
                 raise RuntimeError(message)
+            #}}}
+        elif (self._nx is None):
+            #{{{ Set local_nx from input
+            # ny is given, so we only need to find nx
+            local_ny = self._ny
+            # If nx and ny is a function of MXG and MYG
+            if self._MXG is None:
+                MXG = eval(myOpts.root['MXG'])
+            else:
+                MXG = self._MXG
 
+            # Set the local nx value
+            try:
+                local_nx = [eval(myOpts.mesh['nx'])]
+            except NameError:
+                message  = "Could not evaluate\n"
+                message += myOpts.mesh['nx']
+                message += "\nfound nx in mesh in the input file."
+                raise RuntimeError(message)
+
+            # Get the same length on nx and ny
+            local_nx = local_nx * len(local_ny)
+            #}}}
+        elif (self._ny is None):
+            #{{{ Set local_ny from input
+            # nx is given, so we only need to find ny
+            local_nx = self._nx
+            # If nx and ny is a function of MXG and MYG
+            if self._MYG is None:
+                MYG = eval(myOpts.root['MYG'])
+            else:
+                MYG = self._MYG
+
+            # Set the local nx value
+            try:
+                local_ny = [eval(myOpts.mesh['yx'])]
+            except NameError:
+                message  = "Could not evaluate\n"
+                message += myOpts.mesh['ny']
+                message += "\nfound ny in mesh in the input file."
+                raise RuntimeError(message)
+
+            # Get the same length on nx and ny
+            local_ny = local_ny * len(local_nx)
+            #}}}
         else:
             local_nx = self._nx
             local_ny = self._ny
