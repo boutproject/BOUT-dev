@@ -110,7 +110,7 @@ const Field3D DDY_MUSCL(const Field3D &F, const Field3D &u, const Field2D &Vmax)
 
   stencil fs, us;
   do {
-    for(bx.jz=0;bx.jz<mesh->ngz-1;bx.jz++) {
+    for(bx.jz=0;bx.jz<mesh->LocalNz;bx.jz++) {
       F.setYStencil(fs, bx);
       u.setYStencil(us, bx);
       
@@ -318,9 +318,9 @@ const Field3D D2DYDZ(const Field3D &f) {
   result.allocate();
   for(int i=mesh->xstart;i<=mesh->xend;i++)
     for(int j=mesh->ystart;j<=mesh->yend;j++) 
-      for(int k=0;k<mesh->ngz-1;k++) {
-        int kp = (k+1) % (mesh->ngz-1);
-        int km = (k-1+mesh->ngz-1) % (mesh->ngz-1);
+      for(int k=0;k<mesh->LocalNz;k++) {
+        int kp = (k+1) % (mesh->LocalNz);
+        int km = (k-1+mesh->LocalNz) % (mesh->LocalNz);
         result(i,j,k) = 0.25*( +(f(i,j+1,kp) - f(i,j-1,kp))/(mesh->coordinates()->dy(i,j+1))
                                -(f(i,j+1,km) - f(i,j-1,km))/(mesh->coordinates()->dy(i,j-1)) )
           / mesh->coordinates()->dz;

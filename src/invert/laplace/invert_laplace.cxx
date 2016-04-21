@@ -64,7 +64,7 @@ Laplacian::Laplacian(Options *options) {
 
   BoutReal filter; ///< Fraction of Z modes to filter out. Between 0 and 1
   OPTION(options, filter, 0.0);
-  int ncz = mesh->ngz-1;
+  int ncz = mesh->LocalNz;
   // convert filtering into an integer number of modes
   maxmode = ROUND((1.0 - filter) * ((double) (ncz / 2)));
   // Can be overriden by max_mode option
@@ -138,7 +138,7 @@ const Field3D Laplacian::solve(const Field3D &b) {
   }
   if(mesh->hasBndryUpperY()) {
     if (include_yguards)
-      ye = mesh->ngy-1; // Contains upper boundary and we are solving in the guard cells
+      ye = mesh->LocalNy-1; // Contains upper boundary and we are solving in the guard cells
 
     ye -= extra_yguards_upper;
   }
@@ -197,7 +197,7 @@ const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
   if(mesh->hasBndryLowerY() && include_yguards)
     ys = 0; // Mesh contains a lower boundary
   if(mesh->hasBndryUpperY() && include_yguards)
-    ye = mesh->ngy-1; // Contains upper boundary
+    ye = mesh->LocalNy-1; // Contains upper boundary
 
   Field3D x;
   x.allocate();
@@ -303,14 +303,14 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
 
   if(nonuniform) {
     // non-uniform mesh correction
-    if((jx != 0) && (jx != (mesh->ngx-1))) {
+    if((jx != 0) && (jx != (mesh->LocalNx-1))) {
       coef4 -= 0.5*((coord->dx(jx+1,jy) - coord->dx(jx-1,jy))/SQ(coord->dx(jx,jy)))*coef1;
     }
   }
 
   if(ccoef != NULL) {
     // A first order derivative term
-    if((jx > 0) && (jx < (mesh->ngx-1)))
+    if((jx > 0) && (jx < (mesh->LocalNx-1)))
       coef4 += coord->g11(jx,jy) * ((*ccoef)(jx+1,jy) - (*ccoef)(jx-1,jy)) / (2.*coord->dx(jx,jy)*((*ccoef)(jx,jy)));
   }
 
@@ -393,7 +393,7 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
    * cvec      - The upper diagonal. DO NOT CONFUSE WITH C (called ccoef here)
    */
   int xs = 0;            // xstart set to the start of x on this processor (including ghost points)
-  int xe = mesh->ngx-1;  // xend set to the end of x on this processor (including ghost points)
+  int xe = mesh->LocalNx-1;  // xend set to the end of x on this processor (including ghost points)
 
   Coordinates *coord = mesh->coordinates();
 

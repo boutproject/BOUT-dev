@@ -155,7 +155,7 @@ bool GridFile::get(Mesh *m, Field2D &var,   const string &name, BoutReal def) {
   int yd = m->ystart;
 
   // Number of points to read
-  int nx = m->ngx;
+  int nx = m->LocalNx;
   int ny = m->yend - m->ystart + 1;
   
   for(int x=xs;x < xs+nx; x++) {
@@ -165,10 +165,10 @@ bool GridFile::get(Mesh *m, Field2D &var,   const string &name, BoutReal def) {
     }
   }
   // Upper and lower Y boundaries copied from nearest point
-  for(int x=0;x<m->ngx;x++) {
+  for(int x=0;x<m->LocalNx;x++) {
     for(int y=0;y<m->ystart;y++)
       var(x, y) = var(x, m->ystart);
-    for(int y=m->yend+1;y<m->ngy;y++)
+    for(int y=m->yend+1;y<m->LocalNy;y++)
       var(x, y) = var(x, m->yend);
   }
   
@@ -232,14 +232,14 @@ bool GridFile::get(Mesh *m, Field3D &var,   const string &name, BoutReal def) {
       
       // Check the array is the right size
       
-      if(size[2] != m->ngz-1)
-        throw BoutException("3D variable '%s' has incorrect size %d (expecting %d)", name.c_str(), size[2], m->ngz-1);
+      if(size[2] != m->LocalNz)
+        throw BoutException("3D variable '%s' has incorrect size %d (expecting %d)", name.c_str(), size[2], m->LocalNz);
       
       if(! readgrid_3dvar_real(m, name,
 			       m->OffsetY,// Start reading at global index
 			       m->ystart,// Insert data starting from y=ystart
 			       m->yend-m->ystart+1, // Length of data in Y
-			       0, m->ngx, // All x indices (local indices)
+			       0, m->LocalNx, // All x indices (local indices)
 			       var) ) {
 	throw BoutException("\tWARNING: Could not read '%s' from grid. Setting to zero\n", name.c_str());
 	
@@ -252,7 +252,7 @@ bool GridFile::get(Mesh *m, Field3D &var,   const string &name, BoutReal def) {
 			      m->OffsetY,// Start reading at global index
 			      m->ystart,// Insert data starting from y=ystart
 			      m->yend-m->ystart+1, // Length of data in Y
-			      0, m->ngx, // All x indices (local indices)
+			      0, m->LocalNx, // All x indices (local indices)
 			      var) ) {
 	throw BoutException("\tWARNING: Could not read '%s' from grid. Setting to zero\n", name.c_str());
       }
@@ -267,12 +267,12 @@ bool GridFile::get(Mesh *m, Field3D &var,   const string &name, BoutReal def) {
   };
 
   // Upper and lower Y boundaries copied from nearest point
-  for(int x=0;x<m->ngx;x++) {
+  for(int x=0;x<m->LocalNx;x++) {
     for(int y=0;y<m->ystart;y++)
-      for(int z=0;z<m->ngz-1;z++)
+      for(int z=0;z<m->LocalNz;z++)
 	var(x, y, z) = var(x, m->ystart, z);
-    for(int y=m->yend+1;y<m->ngy;y++)
-      for(int z=0;z<m->ngz-1;z++)
+    for(int y=m->yend+1;y<m->LocalNy;y++)
+      for(int z=0;z<m->LocalNz;z++)
 	var(x, y, z) = var(x, m->yend, z);
   }
   
@@ -341,7 +341,7 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const string &name,
 
   int maxmode = (size[2] - 1)/2; ///< Maximum mode-number n
 
-  int ncz = m->ngz-1;
+  int ncz = m->LocalNz;
 
   BoutReal zlength = m->coordinates()->zlength();
   

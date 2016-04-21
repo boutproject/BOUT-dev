@@ -40,7 +40,7 @@ void Bilinear::calcWeights(const Field3D &delta_x, const Field3D &delta_z) {
 
   for(int x=mesh->xstart;x<=mesh->xend;x++) {
     for(int y=mesh->ystart; y<=mesh->yend;y++) {
-      for(int z=0;z<mesh->ngz-1;z++) {
+      for(int z=0;z<mesh->LocalNz;z++) {
 
         if (skip_mask(x, y, z)) continue;
 
@@ -92,7 +92,7 @@ const Field3D Bilinear::interpolate(const Field3D& f) const {
 
   for(int x=mesh->xstart;x<=mesh->xend;x++) {
     for(int y=mesh->ystart; y<=mesh->yend;y++) {
-      for(int z=0;z<mesh->ngz-1;z++) {
+      for(int z=0;z<mesh->LocalNz;z++) {
 
         if (skip_mask(x, y, z)) continue;
 

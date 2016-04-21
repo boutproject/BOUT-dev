@@ -516,7 +516,7 @@ void NonLocalParallel::initialise(const BoutReal &pass_electron_charge, const Bo
     }
   #endif
   #ifdef BC_HEATFLUX
-    heatflux_transients_factors = new BoutReal[2*(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)];
+    heatflux_transients_factors = new BoutReal[2*(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)];
   #endif
   #ifdef CALCULATE_VISCOSITY
     viscosity_lower_boundary_transients = new FieldPerp[number_of_negative_eigenvalues];
@@ -527,7 +527,7 @@ void NonLocalParallel::initialise(const BoutReal &pass_electron_charge, const Bo
     }
   #endif
   #ifdef BC_VISCOSITY
-    viscosity_transients_factors = new BoutReal[2*(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)];
+    viscosity_transients_factors = new BoutReal[2*(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)];
   #endif
   #ifdef CALCULATE_FRICTION
     friction_lower_boundary_transients = new FieldPerp[number_of_negative_eigenvalues];
@@ -654,8 +654,8 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_centre(const Field3D &n_
       FieldPerp pass_dimensionless_length;
       pass_dimensionless_length.allocate();
       {
-	mesh->wait(mesh->irecvYInOutdest(*pass_dimensionless_length.getData(),mesh->ngx*(mesh->ngz-1),
-				       NONLOCAL_PARALLEL_TAGBASE + position->jx*mesh->ngz+position->jz));
+	mesh->wait(mesh->irecvYInOutdest(*pass_dimensionless_length.getData(),mesh->LocalNx*(mesh->LocalNz),
+				       NONLOCAL_PARALLEL_TAGBASE + position->jx*mesh->LocalNz+position->jz));
       }
       pass_dimensionless_length.setIndex(mesh->ystart);
       increasing_dimensionless_length = pass_dimensionless_length;
@@ -687,15 +687,15 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_centre(const Field3D &n_
   
   {
     Timer timer("comms");
-    mesh->sendYOutOutdest(*increasing_dimensionless_length.slice(mesh->yend+1).getData(),mesh->ngx*(mesh->ngz-1),
-			  NONLOCAL_PARALLEL_TAGBASE + position->jx*mesh->ngz+position->jz);
+    mesh->sendYOutOutdest(*increasing_dimensionless_length.slice(mesh->yend+1).getData(),mesh->LocalNx*(mesh->LocalNz),
+			  NONLOCAL_PARALLEL_TAGBASE + position->jx*mesh->LocalNz+position->jz);
   }
   
   // Send the total dimensionless_length at the upper boundary back to the other processors.
   if (is_upper_boundary)
     total_dimensionless_length = increasing_dimensionless_length.slice(mesh->yend);
 
-  y_broadcast(*total_dimensionless_length.getData(), mesh->ngx*mesh->ngz, mesh->getNYPE()-1);
+  y_broadcast(*total_dimensionless_length.getData(), mesh->LocalNx*mesh->LocalNz, mesh->getNYPE()-1);
   
   decreasing_dimensionless_length = -increasing_dimensionless_length;
   for (int jy=mesh->ystart; jy<=mesh->yend; jy++) {
@@ -818,7 +818,7 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_centre(const Field3D &n_
   
 //   bout_error("cell_centre version of boundary conditions code needs checking, at the moment it has just been cut&pasted from cell_ylow");
   for (RangeIterator rup = mesh->iterateBndryUpperY(); !rup.isDone(); rup++)
-    for (int jz=0; jz<mesh->ngz-1; jz++) {
+    for (int jz=0; jz<mesh->LocalNz; jz++) {
       position->jx=rup.ind;
       position->jy=mesh->yend;
       position->jz=jz;
@@ -837,11 +837,11 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_centre(const Field3D &n_
     #ifdef BC_HEATFLUX
       MPI_Request request1 = mesh->sendToProc(mesh->getXProcIndex(),0,
 					      *pass_interim_upper_boundary_n11.getData(),
-					      mesh->ngx*mesh->ngz,
+					      mesh->LocalNx*mesh->LocalNz,
 					      NONLOCAL_PARALLEL_TAGBASE + mesh->getXProcIndex());
       MPI_Request request2 = mesh->sendToProc(mesh->getXProcIndex(),0,
 					      *upper_boundary_condition_n11.getData(),
-					      mesh->ngx*mesh->ngz,
+					      mesh->LocalNx*mesh->LocalNz,
 					      NONLOCAL_PARALLEL_TAGBASE + mesh->getXProcIndex() + 1);
       MPI_Waitall(1,&request1,MPI_STATUSES_IGNORE);
       MPI_Waitall(1,&request2,MPI_STATUSES_IGNORE);
@@ -849,11 +849,11 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_centre(const Field3D &n_
     #ifdef BC_VISCOSITY
       MPI_Request request3 = mesh->sendToProc(mesh->getXProcIndex(),0,
 					      *pass_interim_upper_boundary_n20.getData(),
-					      mesh->ngx*mesh->ngz,
+					      mesh->LocalNx*mesh->LocalNz,
 					      NONLOCAL_PARALLEL_TAGBASE + mesh->getXProcIndex() + 3);
       MPI_Request request4 = mesh->sendToProc(mesh->getXProcIndex(),0,
 					      *upper_boundary_condition_n20.getData(),
-					      mesh->ngx*mesh->ngz,
+					      mesh->LocalNx*mesh->LocalNz,
 					      NONLOCAL_PARALLEL_TAGBASE + mesh->getXProcIndex() + 4);
       MPI_Waitall(1,&request3,MPI_STATUSES_IGNORE);
       MPI_Waitall(1,&request4,MPI_STATUSES_IGNORE);
@@ -863,28 +863,28 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_centre(const Field3D &n_
     #ifdef BC_HEATFLUX
       mesh->wait(mesh->receiveFromProc(mesh->getXProcIndex(), mesh->getNYPE()-1,
 					    *pass_interim_upper_boundary_n11.getData(),
-					    mesh->ngx*mesh->ngz,
+					    mesh->LocalNx*mesh->LocalNz,
 					    NONLOCAL_PARALLEL_TAGBASE + mesh->getXProcIndex()) );
       mesh->wait(mesh->receiveFromProc(mesh->getXProcIndex(), mesh->getNYPE()-1,
 					    *upper_boundary_condition_n11.getData(),
-					    mesh->ngx*mesh->ngz,
+					    mesh->LocalNx*mesh->LocalNz,
 					    NONLOCAL_PARALLEL_TAGBASE + mesh->getXProcIndex() + 1) );
     #endif
     #ifdef BC_VISCOSITY
       mesh->wait(mesh->receiveFromProc(mesh->getXProcIndex(), mesh->getNYPE()-1,
 					    *pass_interim_upper_boundary_n20.getData(),
-					    mesh->ngx*mesh->ngz,
+					    mesh->LocalNx*mesh->LocalNz,
 					    NONLOCAL_PARALLEL_TAGBASE + mesh->getXProcIndex() + 3) );
       mesh->wait(mesh->receiveFromProc(mesh->getXProcIndex(), mesh->getNYPE()-1,
 					    *upper_boundary_condition_n20.getData(),
-					    mesh->ngx*mesh->ngz,
+					    mesh->LocalNx*mesh->LocalNz,
 					    NONLOCAL_PARALLEL_TAGBASE + mesh->getXProcIndex() + 4) );
     #endif
   }
   
   if (is_lower_boundary) {
     for (int jx=mesh->xstart; jx<=mesh->xend; jx++)
-      for (int jz=0; jz<mesh->ngz-1; jz++) {
+      for (int jz=0; jz<mesh->LocalNz; jz++) {
 	position->jx=jx;
 	position->jy=mesh->ystart;
 	position->jz=jz;
@@ -908,10 +908,10 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_centre(const Field3D &n_
 	    exp_total_dimensionless_length_over_eigenvalue[i] = exp(total_dimensionless_length[jx][jz]/eigenvalues[i]);
 	    sum_decayed_W11_W11_term += W11_B_times_WinverseB_11[i]*exp_total_dimensionless_length_over_eigenvalue[i];
 	  }
-	  heatflux_transients_factors[(jx-mesh->xstart)*(mesh->ngz-1)+jz] = ( (lower_boundary_n11 - interim_lower_boundary_n11)*W11_dot_W11
+	  heatflux_transients_factors[(jx-mesh->xstart)*(mesh->LocalNz)+jz] = ( (lower_boundary_n11 - interim_lower_boundary_n11)*W11_dot_W11
 								    - sum_decayed_W11_W11_term*(upper_boundary_n11 - interim_upper_boundary_n11) )
 								    / ( pow(W11_dot_W11,2) - pow(sum_decayed_W11_W11_term,2) );
-	  heatflux_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)+(jx-mesh->xstart)*(mesh->ngz-1)+jz] = ( (upper_boundary_n11 - interim_upper_boundary_n11)*W11_dot_W11
+	  heatflux_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)+(jx-mesh->xstart)*(mesh->LocalNz)+jz] = ( (upper_boundary_n11 - interim_upper_boundary_n11)*W11_dot_W11
 													    - sum_decayed_W11_W11_term*(lower_boundary_n11 - interim_lower_boundary_n11) )
 													    / ( pow(W11_dot_W11,2) - pow(sum_decayed_W11_W11_term,2) );
 	#elif defined(BC_VISCOSITY) && !defined(BC_HEATFLUX)
@@ -932,10 +932,10 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_centre(const Field3D &n_
 	    exp_total_dimensionless_length_over_eigenvalue[i] = exp(total_dimensionless_length[jx][jz]/eigenvalues[i]);
 	    sum_decayed_W20_W20_term += W20_B_times_WinverseB_20[i]*exp_total_dimensionless_length_over_eigenvalue[i];
 	  }
-	  viscosity_transients_factors[(jx-mesh->xstart)*(mesh->ngz-1)+jz] = ( (lower_boundary_n20 - interim_lower_boundary_n20)*W20_dot_W20
+	  viscosity_transients_factors[(jx-mesh->xstart)*(mesh->LocalNz)+jz] = ( (lower_boundary_n20 - interim_lower_boundary_n20)*W20_dot_W20
 								    - sum_decayed_W20_W20_term*(upper_boundary_n20 - interim_upper_boundary_n20) )
 								    / ( pow(W20_dot_W20,2) - pow(sum_decayed_W20_W20_term,2) );
-	  viscosity_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)+(jx-mesh->xstart)*(mesh->ngz-1)+jz] = ( (upper_boundary_n20 - interim_upper_boundary_n20)*W20_dot_W20
+	  viscosity_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)+(jx-mesh->xstart)*(mesh->LocalNz)+jz] = ( (upper_boundary_n20 - interim_upper_boundary_n20)*W20_dot_W20
 													    - sum_decayed_W20_W20_term*(lower_boundary_n20 - interim_lower_boundary_n20) )
 													    / ( pow(W20_dot_W20,2) - pow(sum_decayed_W20_W20_term,2));
 	#elif defined(BC_HEATFLUX) && defined(BC_VISCOSITY)
@@ -974,7 +974,7 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_centre(const Field3D &n_
 			 - 2*W11_dot_W11*W11_dot_W20*W20_dot_W11*W20_dot_W20
 			 - pow(sum_decayed_W11_W11_term,2)*pow(W20_dot_W20,2)
 			 + pow(W11_dot_W11,2)*pow(W20_dot_W20,2);
-	  heatflux_transients_factors[(jx-mesh->xstart)*(mesh->ngz-1)+jz] = ( (upper_boundary_n11-interim_upper_boundary_n11)*( -sum_decayed_W11_W20_term*sum_decayed_W20_W11_term*sum_decayed_W20_W20_term
+	  heatflux_transients_factors[(jx-mesh->xstart)*(mesh->LocalNz)+jz] = ( (upper_boundary_n11-interim_upper_boundary_n11)*( -sum_decayed_W11_W20_term*sum_decayed_W20_W11_term*sum_decayed_W20_W20_term
 																+ sum_decayed_W11_W11_term*pow(sum_decayed_W20_W20_term,2)
 																+ sum_decayed_W20_W20_term*W11_dot_W20*W20_dot_W11
 																- sum_decayed_W20_W11_term*W11_dot_W20*W20_dot_W20
@@ -998,7 +998,7 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_centre(const Field3D &n_
 																    + sum_decayed_W11_W11_term*sum_decayed_W11_W20_term*W20_dot_W20
 																    - W11_dot_W11*W11_dot_W20*W20_dot_W20 )
 									    ) / det;
-	  heatflux_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)+(jx-mesh->xstart)*(mesh->ngz-1)+jz] = ( (upper_boundary_n11-interim_upper_boundary_n11)*( -pow(sum_decayed_W20_W20_term,2)*W11_dot_W11
+	  heatflux_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)+(jx-mesh->xstart)*(mesh->LocalNz)+jz] = ( (upper_boundary_n11-interim_upper_boundary_n11)*( -pow(sum_decayed_W20_W20_term,2)*W11_dot_W11
 																					  + sum_decayed_W20_W11_term*sum_decayed_W20_W20_term*W11_dot_W20
 																					  - sum_decayed_W11_W20_term*sum_decayed_W20_W20_term*W20_dot_W11
 																					  + sum_decayed_W11_W20_term*sum_decayed_W20_W11_term*W20_dot_W20
@@ -1023,7 +1023,7 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_centre(const Field3D &n_
 																					    - sum_decayed_W11_W20_term*W11_dot_W11*W20_dot_W20
 																					    + sum_decayed_W11_W11_term*W11_dot_W20*W20_dot_W20 )
 														      ) / det;
-	  viscosity_transients_factors[(jx-mesh->xstart)*(mesh->ngz-1)+jz] = ( (upper_boundary_n11-interim_upper_boundary_n11)*( sum_decayed_W11_W20_term*pow(sum_decayed_W20_W11_term,2)
+	  viscosity_transients_factors[(jx-mesh->xstart)*(mesh->LocalNz)+jz] = ( (upper_boundary_n11-interim_upper_boundary_n11)*( sum_decayed_W11_W20_term*pow(sum_decayed_W20_W11_term,2)
 																 - sum_decayed_W11_W11_term*sum_decayed_W20_W11_term*sum_decayed_W20_W20_term
 																 - sum_decayed_W20_W20_term*W11_dot_W11*W20_dot_W11
 																 - sum_decayed_W11_W20_term*pow(W20_dot_W11,2)
@@ -1048,7 +1048,7 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_centre(const Field3D &n_
 																    - pow(sum_decayed_W11_W11_term,2)*W20_dot_W20
 																    + pow(W11_dot_W11,2)*W20_dot_W20 )
 									     ) / det;
-	  viscosity_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)+(jx-mesh->xstart)*(mesh->ngz-1)+jz] = ( (upper_boundary_n11-interim_upper_boundary_n11)*( -sum_decayed_W20_W11_term*sum_decayed_W20_W20_term*W11_dot_W11
+	  viscosity_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)+(jx-mesh->xstart)*(mesh->LocalNz)+jz] = ( (upper_boundary_n11-interim_upper_boundary_n11)*( -sum_decayed_W20_W11_term*sum_decayed_W20_W20_term*W11_dot_W11
 																					   + pow(sum_decayed_W20_W11_term,2)*W11_dot_W20
 																					   - sum_decayed_W11_W11_term*sum_decayed_W20_W20_term*W20_dot_W11
 																					   - W11_dot_W20*pow(W20_dot_W11,2)
@@ -1078,63 +1078,63 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_centre(const Field3D &n_
   }
 
   #ifdef BC_HEATFLUX
-    y_broadcast(heatflux_transients_factors, (mesh->xend-mesh->xstart+1)*(mesh->ngz-1)*2, 0);
+    y_broadcast(heatflux_transients_factors, (mesh->xend-mesh->xstart+1)*(mesh->LocalNz)*2, 0);
   #endif
   #ifdef BC_VISCOSITY
-    y_broadcast(viscosity_transients_factors, (mesh->xend-mesh->xstart+1)*(mesh->ngz-1)*2, 0);
+    y_broadcast(viscosity_transients_factors, (mesh->xend-mesh->xstart+1)*(mesh->LocalNz)*2, 0);
   #endif
   
   for (int jx=mesh->xstart; jx<=mesh->xend; jx++)
-    for (int jz=0; jz<mesh->ngz-1; jz++) {
+    for (int jz=0; jz<mesh->LocalNz; jz++) {
       #if defined(BC_HEATFLUX) && !defined(BC_VISCOSITY)
 	for (int i=0; i<number_of_negative_eigenvalues; i++) {
 	  #ifdef CALCULATE_HEATFLUX
-	    heatflux_lower_boundary_transients[i][jx][jz] = W11_B_times_WinverseB_11[i]*heatflux_transients_factors[(jx-mesh->xstart)*(mesh->ngz-1)+jz];
-	    heatflux_upper_boundary_transients[i][jx][jz] = W11_B_times_WinverseB_11[i]*heatflux_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)+(jx-mesh->xstart)*(mesh->ngz-1)+jz];
+	    heatflux_lower_boundary_transients[i][jx][jz] = W11_B_times_WinverseB_11[i]*heatflux_transients_factors[(jx-mesh->xstart)*(mesh->LocalNz)+jz];
+	    heatflux_upper_boundary_transients[i][jx][jz] = W11_B_times_WinverseB_11[i]*heatflux_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)+(jx-mesh->xstart)*(mesh->LocalNz)+jz];
 	  #endif
 	  #ifdef CALCULATE_VISCOSITY
-	    viscosity_lower_boundary_transients[i][jx][jz] = W20_B_times_WinverseB_11[i]*heatflux_transients_factors[(jx-mesh->xstart)*(mesh->ngz-1)+jz];
-	    viscosity_upper_boundary_transients[i][jx][jz] = -W20_B_times_WinverseB_11[i]*heatflux_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)+(jx-mesh->xstart)*(mesh->ngz-1)+jz];
+	    viscosity_lower_boundary_transients[i][jx][jz] = W20_B_times_WinverseB_11[i]*heatflux_transients_factors[(jx-mesh->xstart)*(mesh->LocalNz)+jz];
+	    viscosity_upper_boundary_transients[i][jx][jz] = -W20_B_times_WinverseB_11[i]*heatflux_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)+(jx-mesh->xstart)*(mesh->LocalNz)+jz];
 	  #endif
 	  #ifdef CALCULATE_FRICTION
-	    friction_lower_boundary_transients[i][jx][jz] = C10_1k_dot_W1k_B_times_WinverseB_11[i]*heatflux_transients_factors[(jx-mesh->xstart)*(mesh->ngz-1)+jz];
-	    friction_upper_boundary_transients[i][jx][jz] = C10_1k_dot_W1k_B_times_WinverseB_11[i]*heatflux_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)+(jx-mesh->xstart)*(mesh->ngz-1)+jz];
+	    friction_lower_boundary_transients[i][jx][jz] = C10_1k_dot_W1k_B_times_WinverseB_11[i]*heatflux_transients_factors[(jx-mesh->xstart)*(mesh->LocalNz)+jz];
+	    friction_upper_boundary_transients[i][jx][jz] = C10_1k_dot_W1k_B_times_WinverseB_11[i]*heatflux_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)+(jx-mesh->xstart)*(mesh->LocalNz)+jz];
 	  #endif
 	}
       #elif defined(BC_VISCOSITY) && !defined(BC_HEATFLUX)
 	for (int i=0; i<number_of_negative_eigenvalues; i++) {
 	  #ifdef CALCULATE_HEATFLUX
-	    heatflux_lower_boundary_transients[i][jx][jz] = W11_B_times_WinverseB_20[i]*viscosity_transients_factors[(jx-mesh->xstart)*(mesh->ngz-1)+jz];
-	    heatflux_upper_boundary_transients[i][jx][jz] = -W11_B_times_WinverseB_20[i]*viscosity_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)+(jx-mesh->xstart)*(mesh->ngz-1)+jz];
+	    heatflux_lower_boundary_transients[i][jx][jz] = W11_B_times_WinverseB_20[i]*viscosity_transients_factors[(jx-mesh->xstart)*(mesh->LocalNz)+jz];
+	    heatflux_upper_boundary_transients[i][jx][jz] = -W11_B_times_WinverseB_20[i]*viscosity_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)+(jx-mesh->xstart)*(mesh->LocalNz)+jz];
 	  #endif
 	  #ifdef CALCULATE_VISCOSITY
-	    viscosity_lower_boundary_transients[i][jx][jz] = W20_B_times_WinverseB_20[i]*viscosity_transients_factors[(jx-mesh->xstart)*(mesh->ngz-1)+jz];
-	    viscosity_upper_boundary_transients[i][jx][jz] = W20_B_times_WinverseB_20[i]*viscosity_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)+(jx-mesh->xstart)*(mesh->ngz-1)+jz];
+	    viscosity_lower_boundary_transients[i][jx][jz] = W20_B_times_WinverseB_20[i]*viscosity_transients_factors[(jx-mesh->xstart)*(mesh->LocalNz)+jz];
+	    viscosity_upper_boundary_transients[i][jx][jz] = W20_B_times_WinverseB_20[i]*viscosity_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)+(jx-mesh->xstart)*(mesh->LocalNz)+jz];
 	  #endif
 	  #ifdef CALCULATE_FRICTION
-	    friction_lower_boundary_transients[i][jx][jz] = C10_1k_dot_W1k_B_times_WinverseB_20[i]*viscosity_transients_factors[(jx-mesh->xstart)*(mesh->ngz-1)+jz];
-	    friction_upper_boundary_transients[i][jx][jz] = -C10_1k_dot_W1k_B_times_WinverseB_20[i]*viscosity_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)+(jx-mesh->xstart)*(mesh->ngz-1)+jz];
+	    friction_lower_boundary_transients[i][jx][jz] = C10_1k_dot_W1k_B_times_WinverseB_20[i]*viscosity_transients_factors[(jx-mesh->xstart)*(mesh->LocalNz)+jz];
+	    friction_upper_boundary_transients[i][jx][jz] = -C10_1k_dot_W1k_B_times_WinverseB_20[i]*viscosity_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)+(jx-mesh->xstart)*(mesh->LocalNz)+jz];
 	#endif
 	}
       #elif defined(BC_HEATFLUX) && defined(BC_VISCOSITY)
 	for (int i=0; i<number_of_negative_eigenvalues; i++) {
 	  #ifdef CALCULATE_HEATFLUX
-	    heatflux_lower_boundary_transients[i][jx][jz] = W11_B_times_WinverseB_11[i]*heatflux_transients_factors[(jx-mesh->xstart)*(mesh->ngz-1)+jz]
-							    + W11_B_times_WinverseB_20[i]*viscosity_transients_factors[(jx-mesh->xstart)*(mesh->ngz-1)+jz];
-	    heatflux_upper_boundary_transients[i][jx][jz] = W11_B_times_WinverseB_11[i]*heatflux_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)+(jx-mesh->xstart)*(mesh->ngz-1)+jz]
-							    - W11_B_times_WinverseB_20[i]*viscosity_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)+(jx-mesh->xstart)*(mesh->ngz-1)+jz];
+	    heatflux_lower_boundary_transients[i][jx][jz] = W11_B_times_WinverseB_11[i]*heatflux_transients_factors[(jx-mesh->xstart)*(mesh->LocalNz)+jz]
+							    + W11_B_times_WinverseB_20[i]*viscosity_transients_factors[(jx-mesh->xstart)*(mesh->LocalNz)+jz];
+	    heatflux_upper_boundary_transients[i][jx][jz] = W11_B_times_WinverseB_11[i]*heatflux_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)+(jx-mesh->xstart)*(mesh->LocalNz)+jz]
+							    - W11_B_times_WinverseB_20[i]*viscosity_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)+(jx-mesh->xstart)*(mesh->LocalNz)+jz];
 	  #endif
 	  #ifdef CALCULATE_VISCOSITY
-	    viscosity_lower_boundary_transients[i][jx][jz] = W20_B_times_WinverseB_11[i]*heatflux_transients_factors[(jx-mesh->xstart)*(mesh->ngz-1)+jz]
-							      + W20_B_times_WinverseB_20[i]*viscosity_transients_factors[(jx-mesh->xstart)*(mesh->ngz-1)+jz];
-	    viscosity_upper_boundary_transients[i][jx][jz] = -W20_B_times_WinverseB_11[i]*heatflux_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)+(jx-mesh->xstart)*(mesh->ngz-1)+jz]
-							      + W20_B_times_WinverseB_20[i]*viscosity_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)+(jx-mesh->xstart)*(mesh->ngz-1)+jz];
+	    viscosity_lower_boundary_transients[i][jx][jz] = W20_B_times_WinverseB_11[i]*heatflux_transients_factors[(jx-mesh->xstart)*(mesh->LocalNz)+jz]
+							      + W20_B_times_WinverseB_20[i]*viscosity_transients_factors[(jx-mesh->xstart)*(mesh->LocalNz)+jz];
+	    viscosity_upper_boundary_transients[i][jx][jz] = -W20_B_times_WinverseB_11[i]*heatflux_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)+(jx-mesh->xstart)*(mesh->LocalNz)+jz]
+							      + W20_B_times_WinverseB_20[i]*viscosity_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)+(jx-mesh->xstart)*(mesh->LocalNz)+jz];
 	  #endif
 	  #ifdef CALCULATE_FRICTION
-	    friction_lower_boundary_transients[i][jx][jz] = C10_1k_dot_W1k_B_times_WinverseB_11[i]*heatflux_transients_factors[(jx-mesh->xstart)*(mesh->ngz-1)+jz]
-							    + C10_1k_dot_W1k_B_times_WinverseB_20[i]*viscosity_transients_factors[(jx-mesh->xstart)*(mesh->ngz-1)+jz];
-	    friction_upper_boundary_transients[i][jx][jz] = C10_1k_dot_W1k_B_times_WinverseB_11[i]*heatflux_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)+(jx-mesh->xstart)*(mesh->ngz-1)+jz]
-							    - C10_1k_dot_W1k_B_times_WinverseB_20[i]*viscosity_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)+(jx-mesh->xstart)*(mesh->ngz-1)+jz];
+	    friction_lower_boundary_transients[i][jx][jz] = C10_1k_dot_W1k_B_times_WinverseB_11[i]*heatflux_transients_factors[(jx-mesh->xstart)*(mesh->LocalNz)+jz]
+							    + C10_1k_dot_W1k_B_times_WinverseB_20[i]*viscosity_transients_factors[(jx-mesh->xstart)*(mesh->LocalNz)+jz];
+	    friction_upper_boundary_transients[i][jx][jz] = C10_1k_dot_W1k_B_times_WinverseB_11[i]*heatflux_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)+(jx-mesh->xstart)*(mesh->LocalNz)+jz]
+							    - C10_1k_dot_W1k_B_times_WinverseB_20[i]*viscosity_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)+(jx-mesh->xstart)*(mesh->LocalNz)+jz];
 	  #endif
 	}
       #else
@@ -1234,7 +1234,7 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
   // Calculate target boundary guard cell derivitives (at YLOW) for gradT_electron with 4th order forward/backward differences from T_electron (at CENTRE)
   // Also check for unphysical lambdaC_inverse
   for (RangeIterator rlow = mesh->iterateBndryLowerY(); !rlow.isDone(); rlow++)
-    for (int jz=0; jz<mesh->ngz-1; jz++) {
+    for (int jz=0; jz<mesh->LocalNz; jz++) {
       for (int jy=mesh->ystart-1; jy>=0; jy--) {
 	#ifdef DRIVE_GRADT
 	gradT_electron(rlow.ind,jy,jz)=(-93.*T_electron(rlow.ind,jy,jz) + 229.*T_electron(rlow.ind,jy+1,jz) - 225.*T_electron(rlow.ind,jy+2,jz) + 111.*T_electron(rlow.ind,jy+3,jz) - 22.*T_electron(rlow.ind,jy+4,jz))/48./coord->dy(rlow.ind,jy)/sqrt((coord->g_22(rlow.ind,jy) + coord->g_22(rlow.ind,jy+1) + coord->g_22(rlow.ind,jy+2) + coord->g_22(rlow.ind,jy+3) + coord->g_22(rlow.ind,jy+4))/5.);
@@ -1253,11 +1253,11 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
   
 
   for (RangeIterator rup = mesh->iterateBndryUpperY(); !rup.isDone(); rup++)
-    for (int jz=0; jz<mesh->ngz-1; jz++) {
+    for (int jz=0; jz<mesh->LocalNz; jz++) {
       #ifdef DRIVE_GRADT
 	gradT_electron[rup.ind][mesh->yend][jz] = (T_electron[rup.ind][mesh->yend-2][jz]-27.*T_electron[rup.ind][mesh->yend-1][jz]+27.*T_electron[rup.ind][mesh->yend][jz]-T_electron[rup.ind][mesh->yend+1][jz])/24./coord->dy[rup.ind][mesh->yend+1]/sqrt((coord->g_22[rup.ind][mesh->yend-1] + coord->g_22[rup.ind][mesh->yend] + coord->g_22[rup.ind][mesh->yend+1] + coord->g_22[rup.ind][mesh->yend+2])/4.);
       #endif
-      for (int jy=mesh->yend+1; jy<mesh->ngy; jy++) {
+      for (int jy=mesh->yend+1; jy<mesh->LocalNy; jy++) {
 	#ifdef DRIVE_GRADT
 	gradT_electron[rup.ind][jy][jz]=(93.*T_electron(rup.ind,jy-1,jz) - 229.*T_electron(rup.ind,jy-2,jz) + 225.*T_electron(rup.ind,jy-3,jz) - 111.*T_electron(rup.ind,jy-4,jz) + 22.*T_electron(rup.ind,jy-5,jz))/48./coord->dy(rup.ind,jy-1)/sqrt((coord->g_22[rup.ind][jy-1] + coord->g_22[rup.ind][jy-2] + coord->g_22[rup.ind][jy-3] + coord->g_22[rup.ind][jy-4] + coord->g_22[rup.ind][jy-5])/5.);
 	  if (abs(gradT_driveterm[rup.ind][jy][jz])>1.e37 || gradT_driveterm[rup.ind][jy][jz]!=gradT_driveterm[rup.ind][jy][jz]) gradT_driveterm[rup.ind][jy][jz] = 1.e37;
@@ -1290,8 +1290,8 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
       FieldPerp pass_dimensionless_length;
       pass_dimensionless_length.allocate();
       {
-	mesh->wait(mesh->irecvYInOutdest(*pass_dimensionless_length.getData(),mesh->ngx*(mesh->ngz-1),
-					NONLOCAL_PARALLEL_TAGBASE + position->jx*mesh->ngz+position->jz));
+	mesh->wait(mesh->irecvYInOutdest(*pass_dimensionless_length.getData(),mesh->LocalNx*(mesh->LocalNz),
+					NONLOCAL_PARALLEL_TAGBASE + position->jx*mesh->LocalNz+position->jz));
       }
       pass_dimensionless_length.setIndex(mesh->ystart);
       increasing_dimensionless_length = pass_dimensionless_length;
@@ -1329,8 +1329,8 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
   
   {
     Timer timer("comms");
-    mesh->sendYOutOutdest(*increasing_dimensionless_length.slice(mesh->yend+1).getData(),mesh->ngx*(mesh->ngz-1),
-			    NONLOCAL_PARALLEL_TAGBASE + position->jx*mesh->ngz+position->jz);
+    mesh->sendYOutOutdest(*increasing_dimensionless_length.slice(mesh->yend+1).getData(),mesh->LocalNx*(mesh->LocalNz),
+			    NONLOCAL_PARALLEL_TAGBASE + position->jx*mesh->LocalNz+position->jz);
   }
   
   // Send the total dimensionless_length at the upper boundary back to the other processors.
@@ -1338,7 +1338,7 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
     total_dimensionless_length = increasing_dimensionless_length.slice(mesh->yend);
   }
 
-  y_broadcast(*total_dimensionless_length.getData(), mesh->ngx*mesh->ngz, mesh->getNYPE()-1);
+  y_broadcast(*total_dimensionless_length.getData(), mesh->LocalNx*mesh->LocalNz, mesh->getNYPE()-1);
   
   decreasing_dimensionless_length = -increasing_dimensionless_length;
   for (int jy=mesh->ystart; jy<=mesh->yend; jy++) {
@@ -1460,7 +1460,7 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
   }
   
   for (RangeIterator rup = mesh->iterateBndryUpperY(); !rup.isDone(); rup++)
-    for (int jz=0; jz<mesh->ngz-1; jz++) {
+    for (int jz=0; jz<mesh->LocalNz; jz++) {
       position->jx=rup.ind;
       position->jy=mesh->yend;
       position->jz=jz;
@@ -1479,11 +1479,11 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
     #ifdef BC_HEATFLUX
       MPI_Request request1 = mesh->sendToProc(mesh->getXProcIndex(),0,
 					      *pass_interim_upper_boundary_n11.getData(),
-					      mesh->ngx*mesh->ngz,
+					      mesh->LocalNx*mesh->LocalNz,
 					      NONLOCAL_PARALLEL_TAGBASE + mesh->getXProcIndex());
       MPI_Request request2 = mesh->sendToProc(mesh->getXProcIndex(),0,
 					      *upper_boundary_condition_n11.getData(),
-					      mesh->ngx*mesh->ngz,
+					      mesh->LocalNx*mesh->LocalNz,
 					      NONLOCAL_PARALLEL_TAGBASE + mesh->getXProcIndex() + 1);
       MPI_Waitall(1,&request1,MPI_STATUSES_IGNORE);
       MPI_Waitall(1,&request2,MPI_STATUSES_IGNORE);
@@ -1491,11 +1491,11 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
     #ifdef BC_VISCOSITY
       MPI_Request request3 = mesh->sendToProc(mesh->getXProcIndex(),0,
 					      *pass_interim_upper_boundary_n20.getData(),
-					      mesh->ngx*mesh->ngz,
+					      mesh->LocalNx*mesh->LocalNz,
 					      NONLOCAL_PARALLEL_TAGBASE + mesh->getXProcIndex() + 3);
       MPI_Request request4 = mesh->sendToProc(mesh->getXProcIndex(),0,
 					      *upper_boundary_condition_n20.getData(),
-					      mesh->ngx*mesh->ngz,
+					      mesh->LocalNx*mesh->LocalNz,
 					      NONLOCAL_PARALLEL_TAGBASE + mesh->getXProcIndex() + 4);
       MPI_Waitall(1,&request3,MPI_STATUSES_IGNORE);
       MPI_Waitall(1,&request4,MPI_STATUSES_IGNORE);
@@ -1505,28 +1505,28 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
     #ifdef BC_HEATFLUX
       mesh->wait(mesh->receiveFromProc(mesh->getXProcIndex(), mesh->getNYPE()-1,
 					    *pass_interim_upper_boundary_n11.getData(),
-					    mesh->ngx*mesh->ngz,
+					    mesh->LocalNx*mesh->LocalNz,
 					    NONLOCAL_PARALLEL_TAGBASE + mesh->getXProcIndex()) );
       mesh->wait(mesh->receiveFromProc(mesh->getXProcIndex(), mesh->getNYPE()-1,
 					    *upper_boundary_condition_n11.getData(),
-					    mesh->ngx*mesh->ngz,
+					    mesh->LocalNx*mesh->LocalNz,
 					    NONLOCAL_PARALLEL_TAGBASE + mesh->getXProcIndex() + 1) );
     #endif
     #ifdef BC_VISCOSITY
       mesh->wait(mesh->receiveFromProc(mesh->getXProcIndex(), mesh->getNYPE()-1,
 					    *pass_interim_upper_boundary_n20.getData(),
-					    mesh->ngx*mesh->ngz,
+					    mesh->LocalNx*mesh->LocalNz,
 					    NONLOCAL_PARALLEL_TAGBASE + mesh->getXProcIndex() + 3) );
       mesh->wait(mesh->receiveFromProc(mesh->getXProcIndex(), mesh->getNYPE()-1,
 					    *upper_boundary_condition_n20.getData(),
-					    mesh->ngx*mesh->ngz,
+					    mesh->LocalNx*mesh->LocalNz,
 					    NONLOCAL_PARALLEL_TAGBASE + mesh->getXProcIndex() + 4) );
     #endif
   }
   
   if (is_lower_boundary) {
     for (int jx=mesh->xstart; jx<=mesh->xend; jx++)
-      for (int jz=0; jz<mesh->ngz-1; jz++) {
+      for (int jz=0; jz<mesh->LocalNz; jz++) {
 	position->jx=jx;
 	position->jy=mesh->ystart;
 	position->jz=jz;
@@ -1550,10 +1550,10 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
 	    exp_total_dimensionless_length_over_eigenvalue[i] = exp(total_dimensionless_length[jx][jz]/eigenvalues[i]);
 	    sum_decayed_W11_W11_term += W11_B_times_WinverseB_11[i]*exp_total_dimensionless_length_over_eigenvalue[i];
 	  }
-	  heatflux_transients_factors[(jx-mesh->xstart)*(mesh->ngz-1)+jz] = ( (lower_boundary_n11 - interim_lower_boundary_n11)*W11_dot_W11
+	  heatflux_transients_factors[(jx-mesh->xstart)*(mesh->LocalNz)+jz] = ( (lower_boundary_n11 - interim_lower_boundary_n11)*W11_dot_W11
 								    - sum_decayed_W11_W11_term*(upper_boundary_n11 - interim_upper_boundary_n11) )
 								    / ( pow(W11_dot_W11,2) - pow(sum_decayed_W11_W11_term,2) );
-	  heatflux_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)+(jx-mesh->xstart)*(mesh->ngz-1)+jz] = ( (upper_boundary_n11 - interim_upper_boundary_n11)*W11_dot_W11
+	  heatflux_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)+(jx-mesh->xstart)*(mesh->LocalNz)+jz] = ( (upper_boundary_n11 - interim_upper_boundary_n11)*W11_dot_W11
 													    - sum_decayed_W11_W11_term*(lower_boundary_n11 - interim_lower_boundary_n11) )
 													    / ( pow(W11_dot_W11,2) - pow(sum_decayed_W11_W11_term,2) );
 	#elif defined(BC_VISCOSITY) && !defined(BC_HEATFLUX)
@@ -1574,10 +1574,10 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
 	    exp_total_dimensionless_length_over_eigenvalue[i] = exp(total_dimensionless_length[jx][jz]/eigenvalues[i]);
 	    sum_decayed_W20_W20_term += W20_B_times_WinverseB_20[i]*exp_total_dimensionless_length_over_eigenvalue[i];
 	  }
-	  viscosity_transients_factors[(jx-mesh->xstart)*(mesh->ngz-1)+jz] = ( (lower_boundary_n20 - interim_lower_boundary_n20)*W20_dot_W20
+	  viscosity_transients_factors[(jx-mesh->xstart)*(mesh->LocalNz)+jz] = ( (lower_boundary_n20 - interim_lower_boundary_n20)*W20_dot_W20
 								    - sum_decayed_W20_W20_term*(upper_boundary_n20 - interim_upper_boundary_n20) )
 								    / ( pow(W20_dot_W20,2) - pow(sum_decayed_W20_W20_term,2) );
-	  viscosity_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)+(jx-mesh->xstart)*(mesh->ngz-1)+jz] = ( (upper_boundary_n20 - interim_upper_boundary_n20)*W20_dot_W20
+	  viscosity_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)+(jx-mesh->xstart)*(mesh->LocalNz)+jz] = ( (upper_boundary_n20 - interim_upper_boundary_n20)*W20_dot_W20
 													    - sum_decayed_W20_W20_term*(lower_boundary_n20 - interim_lower_boundary_n20) )
 													    / ( pow(W20_dot_W20,2) - pow(sum_decayed_W20_W20_term,2));
 	#elif defined(BC_HEATFLUX) && defined(BC_VISCOSITY)
@@ -1616,7 +1616,7 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
 			 - 2*W11_dot_W11*W11_dot_W20*W20_dot_W11*W20_dot_W20
 			 - pow(sum_decayed_W11_W11_term,2)*pow(W20_dot_W20,2)
 			 + pow(W11_dot_W11,2)*pow(W20_dot_W20,2);
-	  heatflux_transients_factors[(jx-mesh->xstart)*(mesh->ngz-1)+jz] = ( (upper_boundary_n11-interim_upper_boundary_n11)*( -sum_decayed_W11_W20_term*sum_decayed_W20_W11_term*sum_decayed_W20_W20_term
+	  heatflux_transients_factors[(jx-mesh->xstart)*(mesh->LocalNz)+jz] = ( (upper_boundary_n11-interim_upper_boundary_n11)*( -sum_decayed_W11_W20_term*sum_decayed_W20_W11_term*sum_decayed_W20_W20_term
 																+ sum_decayed_W11_W11_term*pow(sum_decayed_W20_W20_term,2)
 																+ sum_decayed_W20_W20_term*W11_dot_W20*W20_dot_W11
 																- sum_decayed_W20_W11_term*W11_dot_W20*W20_dot_W20
@@ -1640,7 +1640,7 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
 																    + sum_decayed_W11_W11_term*sum_decayed_W11_W20_term*W20_dot_W20
 																    - W11_dot_W11*W11_dot_W20*W20_dot_W20 )
 									    ) / det;
-	  heatflux_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)+(jx-mesh->xstart)*(mesh->ngz-1)+jz] = ( (upper_boundary_n11-interim_upper_boundary_n11)*( -pow(sum_decayed_W20_W20_term,2)*W11_dot_W11
+	  heatflux_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)+(jx-mesh->xstart)*(mesh->LocalNz)+jz] = ( (upper_boundary_n11-interim_upper_boundary_n11)*( -pow(sum_decayed_W20_W20_term,2)*W11_dot_W11
 																					  + sum_decayed_W20_W11_term*sum_decayed_W20_W20_term*W11_dot_W20
 																					  - sum_decayed_W11_W20_term*sum_decayed_W20_W20_term*W20_dot_W11
 																					  + sum_decayed_W11_W20_term*sum_decayed_W20_W11_term*W20_dot_W20
@@ -1665,7 +1665,7 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
 																					    - sum_decayed_W11_W20_term*W11_dot_W11*W20_dot_W20
 																					    + sum_decayed_W11_W11_term*W11_dot_W20*W20_dot_W20 )
 														      ) / det;
-	  viscosity_transients_factors[(jx-mesh->xstart)*(mesh->ngz-1)+jz] = ( (upper_boundary_n11-interim_upper_boundary_n11)*( sum_decayed_W11_W20_term*pow(sum_decayed_W20_W11_term,2)
+	  viscosity_transients_factors[(jx-mesh->xstart)*(mesh->LocalNz)+jz] = ( (upper_boundary_n11-interim_upper_boundary_n11)*( sum_decayed_W11_W20_term*pow(sum_decayed_W20_W11_term,2)
 																 - sum_decayed_W11_W11_term*sum_decayed_W20_W11_term*sum_decayed_W20_W20_term
 																 - sum_decayed_W20_W20_term*W11_dot_W11*W20_dot_W11
 																 - sum_decayed_W11_W20_term*pow(W20_dot_W11,2)
@@ -1690,7 +1690,7 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
 																    - pow(sum_decayed_W11_W11_term,2)*W20_dot_W20
 																    + pow(W11_dot_W11,2)*W20_dot_W20 )
 									     ) / det;
-	  viscosity_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)+(jx-mesh->xstart)*(mesh->ngz-1)+jz] = ( (upper_boundary_n11-interim_upper_boundary_n11)*( -sum_decayed_W20_W11_term*sum_decayed_W20_W20_term*W11_dot_W11
+	  viscosity_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)+(jx-mesh->xstart)*(mesh->LocalNz)+jz] = ( (upper_boundary_n11-interim_upper_boundary_n11)*( -sum_decayed_W20_W11_term*sum_decayed_W20_W20_term*W11_dot_W11
 																					   + pow(sum_decayed_W20_W11_term,2)*W11_dot_W20
 																					   - sum_decayed_W11_W11_term*sum_decayed_W20_W20_term*W20_dot_W11
 																					   - W11_dot_W20*pow(W20_dot_W11,2)
@@ -1720,63 +1720,63 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
   }
 
   #ifdef BC_HEATFLUX
-    y_broadcast(heatflux_transients_factors, (mesh->xend-mesh->xstart+1)*(mesh->ngz-1)*2, 0);
+    y_broadcast(heatflux_transients_factors, (mesh->xend-mesh->xstart+1)*(mesh->LocalNz)*2, 0);
   #endif
   #ifdef BC_VISCOSITY
-    y_broadcast(viscosity_transients_factors, (mesh->xend-mesh->xstart+1)*(mesh->ngz-1)*2, 0);
+    y_broadcast(viscosity_transients_factors, (mesh->xend-mesh->xstart+1)*(mesh->LocalNz)*2, 0);
   #endif
   
   for (int jx=mesh->xstart; jx<=mesh->xend; jx++)
-    for (int jz=0; jz<mesh->ngz-1; jz++) {
+    for (int jz=0; jz<mesh->LocalNz; jz++) {
       #if defined(BC_HEATFLUX) && !defined(BC_VISCOSITY)
 	for (int i=0; i<number_of_negative_eigenvalues; i++) {
 	  #ifdef CALCULATE_HEATFLUX
-	    heatflux_lower_boundary_transients[i][jx][jz] = W11_B_times_WinverseB_11[i]*heatflux_transients_factors[(jx-mesh->xstart)*(mesh->ngz-1)+jz];
-	    heatflux_upper_boundary_transients[i][jx][jz] = W11_B_times_WinverseB_11[i]*heatflux_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)+(jx-mesh->xstart)*(mesh->ngz-1)+jz];
+	    heatflux_lower_boundary_transients[i][jx][jz] = W11_B_times_WinverseB_11[i]*heatflux_transients_factors[(jx-mesh->xstart)*(mesh->LocalNz)+jz];
+	    heatflux_upper_boundary_transients[i][jx][jz] = W11_B_times_WinverseB_11[i]*heatflux_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)+(jx-mesh->xstart)*(mesh->LocalNz)+jz];
 	  #endif
 	  #ifdef CALCULATE_VISCOSITY
-	    viscosity_lower_boundary_transients[i][jx][jz] = W20_B_times_WinverseB_11[i]*heatflux_transients_factors[(jx-mesh->xstart)*(mesh->ngz-1)+jz];
-	    viscosity_upper_boundary_transients[i][jx][jz] = -W20_B_times_WinverseB_11[i]*heatflux_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)+(jx-mesh->xstart)*(mesh->ngz-1)+jz];
+	    viscosity_lower_boundary_transients[i][jx][jz] = W20_B_times_WinverseB_11[i]*heatflux_transients_factors[(jx-mesh->xstart)*(mesh->LocalNz)+jz];
+	    viscosity_upper_boundary_transients[i][jx][jz] = -W20_B_times_WinverseB_11[i]*heatflux_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)+(jx-mesh->xstart)*(mesh->LocalNz)+jz];
 	  #endif
 	  #ifdef CALCULATE_FRICTION
-	    friction_lower_boundary_transients[i][jx][jz] = C10_1k_dot_W1k_B_times_WinverseB_11[i]*heatflux_transients_factors[(jx-mesh->xstart)*(mesh->ngz-1)+jz];
-	    friction_upper_boundary_transients[i][jx][jz] = C10_1k_dot_W1k_B_times_WinverseB_11[i]*heatflux_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)+(jx-mesh->xstart)*(mesh->ngz-1)+jz];
+	    friction_lower_boundary_transients[i][jx][jz] = C10_1k_dot_W1k_B_times_WinverseB_11[i]*heatflux_transients_factors[(jx-mesh->xstart)*(mesh->LocalNz)+jz];
+	    friction_upper_boundary_transients[i][jx][jz] = C10_1k_dot_W1k_B_times_WinverseB_11[i]*heatflux_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)+(jx-mesh->xstart)*(mesh->LocalNz)+jz];
 	  #endif
 	}
       #elif defined(BC_VISCOSITY) && !defined(BC_HEATFLUX)
 	for (int i=0; i<number_of_negative_eigenvalues; i++) {
 	  #ifdef CALCULATE_HEATFLUX
-	    heatflux_lower_boundary_transients[i][jx][jz] = W11_B_times_WinverseB_20[i]*viscosity_transients_factors[(jx-mesh->xstart)*(mesh->ngz-1)+jz];
-	    heatflux_upper_boundary_transients[i][jx][jz] = -W11_B_times_WinverseB_20[i]*viscosity_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)+(jx-mesh->xstart)*(mesh->ngz-1)+jz];
+	    heatflux_lower_boundary_transients[i][jx][jz] = W11_B_times_WinverseB_20[i]*viscosity_transients_factors[(jx-mesh->xstart)*(mesh->LocalNz)+jz];
+	    heatflux_upper_boundary_transients[i][jx][jz] = -W11_B_times_WinverseB_20[i]*viscosity_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)+(jx-mesh->xstart)*(mesh->LocalNz)+jz];
 	  #endif
 	  #ifdef CALCULATE_VISCOSITY
-	    viscosity_lower_boundary_transients[i][jx][jz] = W20_B_times_WinverseB_20[i]*viscosity_transients_factors[(jx-mesh->xstart)*(mesh->ngz-1)+jz];
-	    viscosity_upper_boundary_transients[i][jx][jz] = W20_B_times_WinverseB_20[i]*viscosity_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)+(jx-mesh->xstart)*(mesh->ngz-1)+jz];
+	    viscosity_lower_boundary_transients[i][jx][jz] = W20_B_times_WinverseB_20[i]*viscosity_transients_factors[(jx-mesh->xstart)*(mesh->LocalNz)+jz];
+	    viscosity_upper_boundary_transients[i][jx][jz] = W20_B_times_WinverseB_20[i]*viscosity_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)+(jx-mesh->xstart)*(mesh->LocalNz)+jz];
 	  #endif
 	  #ifdef CALCULATE_FRICTION
-	    friction_lower_boundary_transients[i][jx][jz] = C10_1k_dot_W1k_B_times_WinverseB_20[i]*viscosity_transients_factors[(jx-mesh->xstart)*(mesh->ngz-1)+jz];
-	    friction_upper_boundary_transients[i][jx][jz] = -C10_1k_dot_W1k_B_times_WinverseB_20[i]*viscosity_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)+(jx-mesh->xstart)*(mesh->ngz-1)+jz];
+	    friction_lower_boundary_transients[i][jx][jz] = C10_1k_dot_W1k_B_times_WinverseB_20[i]*viscosity_transients_factors[(jx-mesh->xstart)*(mesh->LocalNz)+jz];
+	    friction_upper_boundary_transients[i][jx][jz] = -C10_1k_dot_W1k_B_times_WinverseB_20[i]*viscosity_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)+(jx-mesh->xstart)*(mesh->LocalNz)+jz];
 	#endif
 	}
       #elif defined(BC_HEATFLUX) && defined(BC_VISCOSITY)
 	for (int i=0; i<number_of_negative_eigenvalues; i++) {
 	  #ifdef CALCULATE_HEATFLUX
-	    heatflux_lower_boundary_transients[i][jx][jz] = W11_B_times_WinverseB_11[i]*heatflux_transients_factors[(jx-mesh->xstart)*(mesh->ngz-1)+jz]
-							    + W11_B_times_WinverseB_20[i]*viscosity_transients_factors[(jx-mesh->xstart)*(mesh->ngz-1)+jz];
-	    heatflux_upper_boundary_transients[i][jx][jz] = W11_B_times_WinverseB_11[i]*heatflux_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)+(jx-mesh->xstart)*(mesh->ngz-1)+jz]
-							    - W11_B_times_WinverseB_20[i]*viscosity_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)+(jx-mesh->xstart)*(mesh->ngz-1)+jz];
+	    heatflux_lower_boundary_transients[i][jx][jz] = W11_B_times_WinverseB_11[i]*heatflux_transients_factors[(jx-mesh->xstart)*(mesh->LocalNz)+jz]
+							    + W11_B_times_WinverseB_20[i]*viscosity_transients_factors[(jx-mesh->xstart)*(mesh->LocalNz)+jz];
+	    heatflux_upper_boundary_transients[i][jx][jz] = W11_B_times_WinverseB_11[i]*heatflux_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)+(jx-mesh->xstart)*(mesh->LocalNz)+jz]
+							    - W11_B_times_WinverseB_20[i]*viscosity_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)+(jx-mesh->xstart)*(mesh->LocalNz)+jz];
 	  #endif
 	  #ifdef CALCULATE_VISCOSITY
-	    viscosity_lower_boundary_transients[i][jx][jz] = W20_B_times_WinverseB_11[i]*heatflux_transients_factors[(jx-mesh->xstart)*(mesh->ngz-1)+jz]
-							      + W20_B_times_WinverseB_20[i]*viscosity_transients_factors[(jx-mesh->xstart)*(mesh->ngz-1)+jz];
-	    viscosity_upper_boundary_transients[i][jx][jz] = -W20_B_times_WinverseB_11[i]*heatflux_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)+(jx-mesh->xstart)*(mesh->ngz-1)+jz]
-							      + W20_B_times_WinverseB_20[i]*viscosity_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)+(jx-mesh->xstart)*(mesh->ngz-1)+jz];
+	    viscosity_lower_boundary_transients[i][jx][jz] = W20_B_times_WinverseB_11[i]*heatflux_transients_factors[(jx-mesh->xstart)*(mesh->LocalNz)+jz]
+							      + W20_B_times_WinverseB_20[i]*viscosity_transients_factors[(jx-mesh->xstart)*(mesh->LocalNz)+jz];
+	    viscosity_upper_boundary_transients[i][jx][jz] = -W20_B_times_WinverseB_11[i]*heatflux_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)+(jx-mesh->xstart)*(mesh->LocalNz)+jz]
+							      + W20_B_times_WinverseB_20[i]*viscosity_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)+(jx-mesh->xstart)*(mesh->LocalNz)+jz];
 	  #endif
 	  #ifdef CALCULATE_FRICTION
-	    friction_lower_boundary_transients[i][jx][jz] = C10_1k_dot_W1k_B_times_WinverseB_11[i]*heatflux_transients_factors[(jx-mesh->xstart)*(mesh->ngz-1)+jz]
-							    + C10_1k_dot_W1k_B_times_WinverseB_20[i]*viscosity_transients_factors[(jx-mesh->xstart)*(mesh->ngz-1)+jz];
-	    friction_upper_boundary_transients[i][jx][jz] = C10_1k_dot_W1k_B_times_WinverseB_11[i]*heatflux_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)+(jx-mesh->xstart)*(mesh->ngz-1)+jz]
-							    - C10_1k_dot_W1k_B_times_WinverseB_20[i]*viscosity_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->ngz-1)+(jx-mesh->xstart)*(mesh->ngz-1)+jz];
+	    friction_lower_boundary_transients[i][jx][jz] = C10_1k_dot_W1k_B_times_WinverseB_11[i]*heatflux_transients_factors[(jx-mesh->xstart)*(mesh->LocalNz)+jz]
+							    + C10_1k_dot_W1k_B_times_WinverseB_20[i]*viscosity_transients_factors[(jx-mesh->xstart)*(mesh->LocalNz)+jz];
+	    friction_upper_boundary_transients[i][jx][jz] = C10_1k_dot_W1k_B_times_WinverseB_11[i]*heatflux_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)+(jx-mesh->xstart)*(mesh->LocalNz)+jz]
+							    - C10_1k_dot_W1k_B_times_WinverseB_20[i]*viscosity_transients_factors[(mesh->xend-mesh->xstart+1)*(mesh->LocalNz)+(jx-mesh->xstart)*(mesh->LocalNz)+jz];
 	  #endif
 	}
       #else
@@ -1843,7 +1843,7 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
 
 void NonLocalParallel::set_boundary_gradients() {
   for (RangeIterator rlow = mesh->iterateBndryLowerY(); !rlow.isDone(); rlow++)
-    for (int jz=0; jz<mesh->ngz-1; jz++) {
+    for (int jz=0; jz<mesh->LocalNz; jz++) {
       #ifdef CALCULATE_HEATFLUX
 //       BoutReal heat_flux_boundarygradient = (electron_heat_flux[rlow.ind][mesh->ystart][jz]-27.*electron_heat_flux[rlow.ind][mesh->ystart+1][jz]+27.*electron_heat_flux[rlow.ind][mesh->ystart+2][jz]-electron_heat_flux[rlow.ind][mesh->ystart+3][jz])/24.; // NB gradient in index space
 //       BoutReal heat_flux_boundarygradient = (-11.*electron_heat_flux[rlow.ind][mesh->ystart][jz] + 18.*electron_heat_flux[rlow.ind][mesh->ystart+1][jz] - 9.*electron_heat_flux[rlow.ind][mesh->ystart+2][jz] + 2.*electron_heat_flux[rlow.ind][mesh->ystart+3][jz]) / 6. / coord->dy[rlow.ind][mesh->ystart] / sqrt((coord->g_22[rlow.ind][mesh->ystart]+coord->g_22[rlow.ind][mesh->ystart+1]+coord->g_22[rlow.ind][mesh->ystart+2]+coord->g_22[rlow.ind][mesh->ystart+3])/4.);
@@ -1872,7 +1872,7 @@ void NonLocalParallel::set_boundary_gradients() {
       }
     }
   for (RangeIterator rup = mesh->iterateBndryUpperY(); !rup.isDone(); rup++)
-    for (int jz=0; jz<mesh->ngz-1; jz++) {
+    for (int jz=0; jz<mesh->LocalNz; jz++) {
       #ifdef CALCULATE_HEATFLUX
 // 	BoutReal heat_flux_boundarygradient = (electron_heat_flux[rup.ind][mesh->yend-3][jz]-27.*electron_heat_flux[rup.ind][mesh->yend-2][jz]+27.*electron_heat_flux[rup.ind][mesh->yend-1][jz]-electron_heat_flux[rup.ind][mesh->yend][jz])/24.; // NB gradient in index space
 //       BoutReal heat_flux_boundarygradient = (11.*electron_heat_flux[rup.ind][mesh->yend][jz] - 18.*electron_heat_flux[rup.ind][mesh->yend-1][jz] + 9.*electron_heat_flux[rup.ind][mesh->yend-2][jz] - 2.*electron_heat_flux[rup.ind][mesh->yend-3][jz]) / 6. / coord->dy[rup.ind][mesh->yend] / sqrt((coord->g_22[rup.ind][mesh->yend]+coord->g_22[rup.ind][mesh->yend-1]+coord->g_22[rup.ind][mesh->yend-2]+coord->g_22[rup.ind][mesh->yend-3])/4.);
@@ -1888,7 +1888,7 @@ void NonLocalParallel::set_boundary_gradients() {
 //       BoutReal friction_boundarygradient = (11.*electron_friction[rup.ind][mesh->yend][jz] - 18.*electron_friction[rup.ind][mesh->yend-1][jz] + 9.*electron_friction[rup.ind][mesh->yend-2][jz] - 2.*electron_friction[rup.ind][mesh->yend-3][jz]) / 6. / coord->dy[rup.ind][mesh->yend] / sqrt((coord->g_22[rup.ind][mesh->yend]+coord->g_22[rup.ind][mesh->yend-1]+coord->g_22[rup.ind][mesh->yend-2]+coord->g_22[rup.ind][mesh->yend-3])/4.);
 	BoutReal friction_boundarygradient = (-electron_friction[rup.ind][mesh->yend-boundary_gradient_smoothing_length][jz] + electron_friction[rup.ind][mesh->yend][jz])/BoutReal(boundary_gradient_smoothing_length); // NB gradient in index space
       #endif
-      for (int jy=mesh->yend+1; jy<mesh->ngy; jy++) {
+      for (int jy=mesh->yend+1; jy<mesh->LocalNy; jy++) {
 	#ifdef CALCULATE_HEATFLUX
 	  electron_heat_flux[rup.ind][jy][jz] = electron_heat_flux[rup.ind][jy-1][jz] + heat_flux_boundarygradient;
 	#endif
@@ -1905,7 +1905,7 @@ void NonLocalParallel::set_boundary_gradients() {
 void NonLocalParallel::set_neumann_boundary_conditions() {
   for (RangeIterator rlow = mesh->iterateBndryLowerY(); !rlow.isDone(); rlow++)
     for (int jy=0; jy<mesh->ystart; jy++)
-      for (int jz=0; jz<mesh->ngz-1; jz++) {
+      for (int jz=0; jz<mesh->LocalNz; jz++) {
 	#ifdef CALCULATE_HEATFLUX
 	  electron_heat_flux[rlow.ind][jy][jz]= electron_heat_flux[rlow.ind][mesh->ystart][jz];
 	#endif
@@ -1917,8 +1917,8 @@ void NonLocalParallel::set_neumann_boundary_conditions() {
 	#endif
       }
   for (RangeIterator rup = mesh->iterateBndryUpperY(); !rup.isDone(); rup++)
-    for (int jy=mesh->yend+1; jy<mesh->ngy; jy++)
-      for (int jz=0; jz<mesh->ngz-1; jz++) {
+    for (int jy=mesh->yend+1; jy<mesh->LocalNy; jy++)
+      for (int jz=0; jz<mesh->LocalNz; jz++) {
 	#ifdef CALCULATE_HEATFLUX
 	  electron_heat_flux[rup.ind][jy][jz]= electron_heat_flux[rup.ind][mesh->yend][jz];
 	#endif
@@ -1949,7 +1949,7 @@ void NonLocalParallel::rms_over_y(const Field3D &input_field, FieldPerp &output_
   int ye = mesh->yend;
   if (mesh->StaggerGrids && input_field.getLocation()==CELL_CENTRE) ye--;
   for (int jx=mesh->xstart; jx<=mesh->xend; jx++)
-    for (int jz=0; jz<mesh->ngz-1; jz++)
+    for (int jz=0; jz<mesh->LocalNz; jz++)
       for (int jy=mesh->ystart; jy<=ye; jy++) {
 	tempsum(jx,jz) += SQ(input_field(jx,jy,jz));
       }
@@ -1959,7 +1959,7 @@ void NonLocalParallel::rms_over_y(const Field3D &input_field, FieldPerp &output_
   
   MPI_Reduce(*tempsum.getData(),
 	     *output_field.getData(),
-	     mesh->ngx*mesh->ngz,
+	     mesh->LocalNx*mesh->LocalNz,
 	     MPI_DOUBLE,
 	     MPI_SUM,
 	     mesh->getXProcIndex(), // Why?
@@ -1970,12 +1970,12 @@ void NonLocalParallel::rms_over_y(const Field3D &input_field, FieldPerp &output_
     int ny = mesh->GlobalNy;
     if (mesh->StaggerGrids && input_field.getLocation()==CELL_CENTRE) ny--;
     for (int jx=mesh->xstart; jx<=mesh->xend; jx++)
-      for (int jz=0; jz<mesh->ngz-1;jz++)
+      for (int jz=0; jz<mesh->LocalNz;jz++)
 	output_field[jx][jz] = sqrt(output_field[jx][jz]/ny);
-    mesh->sendToProc(mesh->getXProcIndex(),mesh->getNYPE()-1,*output_field.getData(),mesh->ngx*mesh->ngz,NONLOCAL_PARALLEL_TAGBASE);
+    mesh->sendToProc(mesh->getXProcIndex(),mesh->getNYPE()-1,*output_field.getData(),mesh->LocalNx*mesh->LocalNz,NONLOCAL_PARALLEL_TAGBASE);
   }
   else if (mesh->getYProcIndex()==mesh->getNYPE()-1) {
-    mesh->wait(mesh->receiveFromProc(mesh->getXProcIndex(),0,*output_field.getData(),mesh->ngx*mesh->ngz,NONLOCAL_PARALLEL_TAGBASE));
+    mesh->wait(mesh->receiveFromProc(mesh->getXProcIndex(),0,*output_field.getData(),mesh->LocalNx*mesh->LocalNz,NONLOCAL_PARALLEL_TAGBASE));
   }
 }
 
@@ -1993,7 +1993,7 @@ void NonLocalParallel::mean_over_y(const Field3D &input_field, FieldPerp &output
   if (mesh->StaggerGrids && input_field.getLocation()==CELL_CENTRE && mesh->lastY()) ye--;
   
   for (int jx=mesh->xstart; jx<=mesh->xend; jx++)
-    for (int jz=0; jz<mesh->ngz-1; jz++)
+    for (int jz=0; jz<mesh->LocalNz; jz++)
       for (int jy=ys; jy<=ye; jy++) {
 	tempsum(jx,jz)+=input_field(jx,jy,jz);
       }
@@ -2003,7 +2003,7 @@ void NonLocalParallel::mean_over_y(const Field3D &input_field, FieldPerp &output
 
   MPI_Reduce(*tempsum.getData(),
 	     *output_field.getData(),
-	     mesh->ngx*mesh->ngz,
+	     mesh->LocalNx*mesh->LocalNz,
 	     MPI_DOUBLE,
 	     MPI_SUM,
 	     mesh->getXProcIndex(),  // Why? 
@@ -2013,12 +2013,12 @@ void NonLocalParallel::mean_over_y(const Field3D &input_field, FieldPerp &output
     if (mesh->StaggerGrids && input_field.getLocation()==CELL_CENTRE) ny--;
     ny-=2*exclude_edgecells;
     for (int jx=mesh->xstart; jx<=mesh->xend; jx++)
-      for (int jz=0; jz<mesh->ngz-1;jz++)
+      for (int jz=0; jz<mesh->LocalNz;jz++)
 	output_field[jx][jz] = output_field[jx][jz]/ny;
-    mesh->sendToProc(mesh->getXProcIndex(),mesh->getNYPE()-1,*output_field.getData(),mesh->ngx*mesh->ngz,NONLOCAL_PARALLEL_TAGBASE);
+    mesh->sendToProc(mesh->getXProcIndex(),mesh->getNYPE()-1,*output_field.getData(),mesh->LocalNx*mesh->LocalNz,NONLOCAL_PARALLEL_TAGBASE);
   }
   else if (mesh->getYProcIndex()==mesh->getNYPE()-1) {
-    mesh->wait(mesh->receiveFromProc(mesh->getXProcIndex(),0,*output_field.getData(),mesh->ngx*mesh->ngz,NONLOCAL_PARALLEL_TAGBASE));
+    mesh->wait(mesh->receiveFromProc(mesh->getXProcIndex(),0,*output_field.getData(),mesh->LocalNx*mesh->LocalNz,NONLOCAL_PARALLEL_TAGBASE));
   }
 }
 

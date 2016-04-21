@@ -33,18 +33,18 @@ void ShiftedMetric::calcYUpDown(Field3D &f) {
   Field3D& yup = f.yup();
   yup.allocate();
 
-  for(int jx=0;jx<mesh.ngx;jx++) {
+  for(int jx=0;jx<mesh.LocalNx;jx++) {
     for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
-      shiftZ(&(f(jx,jy+1,0)), mesh.ngz-1, zShift(jx,jy) - zShift(jx,jy+1), &(yup(jx,jy+1,0)));
+      shiftZ(&(f(jx,jy+1,0)), mesh.LocalNz, zShift(jx,jy) - zShift(jx,jy+1), &(yup(jx,jy+1,0)));
     }
   }
 
   Field3D& ydown = f.ydown();
   ydown.allocate();
 
-  for(int jx=0;jx<mesh.ngx;jx++) {
+  for(int jx=0;jx<mesh.LocalNx;jx++) {
     for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
-      shiftZ(&(f(jx,jy-1,0)), mesh.ngz-1, zShift(jx,jy) - zShift(jx,jy-1), &(ydown(jx,jy-1,0)));
+      shiftZ(&(f(jx,jy-1,0)), mesh.LocalNz, zShift(jx,jy) - zShift(jx,jy-1), &(ydown(jx,jy-1,0)));
     }
   }
 }
@@ -66,15 +66,15 @@ const Field3D ShiftedMetric::fromFieldAligned(const Field3D &f) {
 }
 
 const Field3D ShiftedMetric::shiftZ(const Field3D f, const Field2D zangle) {
-  if(mesh.ngz-1 == 1)
+  if(mesh.LocalNz == 1)
     return f; // Shifting makes no difference
   
   Field3D result;
   result.allocate();
 
-  for(int jx=0;jx<mesh.ngx;jx++) {
-    for(int jy=0;jy<mesh.ngy;jy++) {
-      shiftZ(f(jx,jy), mesh.ngz-1, zangle(jx,jy), result(jx,jy));
+  for(int jx=0;jx<mesh.LocalNx;jx++) {
+    for(int jy=0;jy<mesh.LocalNy;jy++) {
+      shiftZ(f(jx,jy), mesh.LocalNz, zangle(jx,jy), result(jx,jy));
     }
   }
   
