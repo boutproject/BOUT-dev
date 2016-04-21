@@ -748,7 +748,7 @@ void checkData(const Field2D &f) {
   
 #if CHECK > 2
   // Do full checks
-  for(auto i : f.region(RGN_NOBNDRY)){
+  for(auto i : f)
     if(!::finite(f[i])) {
       throw BoutException("Field2D: Operation on non-finite data at [%d][%d]\n", i.x, i.y);
     }
