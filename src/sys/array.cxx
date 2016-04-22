@@ -8,16 +8,16 @@
 #include <dcomplex.hxx>
 
 template<>
-std::map< int, std::vector<Array<double>::ArrayData* > > Array<double>::store {}; // NB: C++11
+std::map< int, std::vector<Array<double>::ArrayData* > > Array<double>::store = {}; // NB: C++11
 
 template<>
-bool Array<double>::use_store {true};
+bool Array<double>::use_store = true;
 
 template<>
-std::map< int, std::vector<Array<dcomplex>::ArrayData* > > Array<dcomplex>::store {};
+std::map< int, std::vector<Array<dcomplex>::ArrayData* > > Array<dcomplex>::store = {};
 
 template<>
-bool Array<dcomplex>::use_store {true};
+bool Array<dcomplex>::use_store = true;
 
 
 #ifdef UNIT
