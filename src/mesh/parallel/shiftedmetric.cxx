@@ -15,7 +15,7 @@
 
 #include <output.hxx>
 
-ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(mesh) {
+ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m) {
   // Read the zShift angle from the mesh
   
   if(mesh.get(zShift, "zShift")) {

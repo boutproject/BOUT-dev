@@ -1540,6 +1540,12 @@ void shiftZ(Field3D &var, int jx, int jy, double zangle) {
   irfft(v.begin(), ncz, &(var(jx,jy,0))); // Reverse FFT
 }
 
+void shiftZ(Field3D &var, double zangle) {
+  for(int x=0;x<mesh->ngx;x++) 
+    for(int y=0;mesh->ngy;y++)
+      shiftZ(var, x, y, zangle);
+}
+
 bool finite(const Field3D &f) {
   MsgStackItem trace("finite( Field3D )");
   

@@ -378,6 +378,7 @@ const Field3D lowPass(const Field3D &var, int zmax, int zmin);
  * Perform a shift by a given angle in Z
  */
 void shiftZ(Field3D &var, int jx, int jy, double zangle);
+void shiftZ(Field3D &var, double zangle);
 
 Field2D DC(const Field3D &f);
 
