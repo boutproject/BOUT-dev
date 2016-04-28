@@ -35,7 +35,10 @@
 #include <cmath>
 #include <algorithm>
 
-using std::abs;
+// abs is implemented for the fields.
+// Disable it, as it (might?) shadow the specific implementation
+// if it wanted, use this in the specific section you want it
+//using std::abs;
 using std::swap;
 
 BoutReal *rvector(int size);

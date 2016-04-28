@@ -190,7 +190,10 @@ BoundaryOp* BoundaryFactory::createFromOptions(const string &varname, BoundaryRe
     side = "yup";
     break;
   }
+  case BNDRY_ALL: {
+    ; // is already set
   }
+  };
   
   // Get options
   Options *options = Options::getRoot();

@@ -60,7 +60,7 @@ Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), f
 }
 
 Datafile::Datafile(const Datafile &other) : parallel(other.parallel), flush(other.flush), guards(other.guards), 
-                                            floats(other.floats), openclose(other.openclose), Lx(Lx), Ly(Ly), Lz(Lz), 
+                                            floats(other.floats), openclose(other.openclose), Lx(other.Lx), Ly(other.Ly), Lz(other.Lz), 
                                             enabled(other.enabled), file(NULL), int_arr(other.int_arr), 
                                             BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr), 
                                             f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {
@@ -604,6 +604,7 @@ bool Datafile::write_int(const string &name, int *f, bool grow) {
   }else {
     file->write(f, name);
   }
+  return true;
 }
 
 bool Datafile::write_real(const string &name, BoutReal *f, bool grow) {
@@ -612,6 +613,7 @@ bool Datafile::write_real(const string &name, BoutReal *f, bool grow) {
   }else {
     file->write(f, name);
   }
+  return true;
 }
 
 bool Datafile::write_f2d(const string &name, Field2D *f, bool grow) {

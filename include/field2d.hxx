@@ -173,7 +173,7 @@ class Field2D : public Field, public FieldData {
   bool checkData(bool vital = true) const; ///< Checks if the data is all valid.
   void doneComms() { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
 #else 
-  bool checkData(bool vital = true) const {}
+  bool checkData(bool vital = true) const {return false;}
   void doneComms() {}
 #endif
 

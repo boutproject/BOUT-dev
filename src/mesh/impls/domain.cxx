@@ -85,7 +85,7 @@ void Domain::addBoundary(Bndry *b) {
     len = ny;
   if( b->onSide(this, s) ) {
     if( (b->getMin(s) < 0) || (b->getMax(s) >= len) ) {
-      fprintf(stderr, "%x: (%d, %d) %d  %d [%d, %d]",
+      fprintf(stderr, "%p: (%d, %d) %d  %d [%d, %d]",
               this, nx, ny, s, len, b->getMin(s), b->getMax(s));
       throw BoutException("Invalid range");
     }
@@ -93,7 +93,7 @@ void Domain::addBoundary(Bndry *b) {
   s = reverse(s);
   if( b->onSide(this, s) ) {
     if( (b->getMin(s) < 0) || (b->getMax(s) >= len) ) {
-      fprintf(stderr, "%x: (%d, %d) %d  %d [%d, %d]",
+      fprintf(stderr, "%p: (%d, %d) %d  %d [%d, %d]",
               this, nx, ny, s, len, b->getMin(s), b->getMax(s));
       throw BoutException("Invalid range");
     }
@@ -109,7 +109,7 @@ void Domain::addBoundary(Bndry *b) {
       // Same side as an existing boundary
       // Check for overlap
       if( !( ((*it)->getMax(s) < b->getMin(s)) || (b->getMax(s) < (*it)->getMin(s)) ) ) {
-        fprintf(stderr, "%x: (%d, %d) %d [%d, %d] [%d, %d]",
+        fprintf(stderr, "%p: (%d, %d) %d [%d, %d] [%d, %d]",
                 this, nx, ny, s, (*it)->getMin(s), (*it)->getMax(s), b->getMin(s), b->getMax(s));
         throw BoutException("Boundary ranges overlap");
       }
