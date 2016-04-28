@@ -29,7 +29,7 @@
 #    * Searching for libs in lib and lib64
 #
 
-BOUT_VERSION="2.0"
+BOUT_VERSION="3.0"
 
 AC_PREREQ(2.59)
 AC_INIT(BOUT++, BOUT_VERSION, bd512@york.ac.uk)
@@ -266,6 +266,7 @@ fi
 echo
 
 #############################################################
+<<<<<<< 4832531511126787b9dc23bd052cf3d3da039ef5
 # Enable Backtrace if possible
 #############################################################
 
@@ -282,6 +283,12 @@ then
                                       ])])
     fi
 fi
+=======
+# Expose BOUT version
+#############################################################
+
+CXXFLAGS="$CXXFLAGS -DBOUT_VERSION_MAJOR=${BOUT_VERSION_MAJOR}"
+>>>>>>> expose bout version to preprocessor
 
 #############################################################
 # Git revision number
