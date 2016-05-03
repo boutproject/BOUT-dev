@@ -10,8 +10,8 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '1.0231'
-__date__    = '2016.04.21'
+__version__ = '1.0233'
+__date__    = '2016.05.03'
 
 import os
 import sys
@@ -1265,12 +1265,12 @@ class basic_runner(object):
                         self._series_add[index] = tuple(self._series_add[index])
 
             # Collect all second indices
-            second_indices = [elems[2] for elems in self._series_add]
+            third_indicies = [elems[2] for elems in self._series_add]
             # Find the length of the second indices
-            lengths = [len(elem) for elem in second_indices\
+            lengths = [len(elem) for elem in third_indicies\
                        if (type(elem)!=str and type(elem)!=dict)]
             # Check if any string or dicts were given
-            if len(second_indices) != len(lengths):
+            if len(third_indicies) != len(lengths):
                 message  = "series_add is on the wrong form.\n"
                 message += "series_add should be on the form\n"
                 message += "series_add=\ \n"
@@ -1290,7 +1290,7 @@ class basic_runner(object):
             # of value
             # stackoverflow.com/questions/3844801/check-if-all-elements-in-a-list-are-identical
             if not(lengths.count(lengths[0]) == len(lengths)):
-                message = "The length of the second index of the elements"+\
+                message = "The length of the third index of the elements"+\
                           " of series_add must be the same"
                 self._errors.append("TypeError")
                 raise TypeError(message)
@@ -1562,7 +1562,7 @@ class basic_runner(object):
 
             # Set the local nx value
             try:
-                local_ny = [eval(myOpts.mesh['yx'])]
+                local_ny = [eval(myOpts.mesh['ny'])]
             except NameError:
                 message  = "Could not evaluate\n"
                 message += myOpts.mesh['ny']
