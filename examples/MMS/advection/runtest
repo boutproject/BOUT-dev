@@ -141,7 +141,6 @@ with open("advection.pkl", "wb") as output:
 try:
     import matplotlib.pyplot as plt
 
-try:
     plt.figure()
     for e, label, sym in err_2_all:
         plt.plot(dx, e, sym, label=label)
@@ -171,7 +170,8 @@ try:
     plt.ylabel(r'$l^\infty$ error norm')
     plt.savefig("advection_norm_linf.pdf")
     plt.close()
-
+except:
+    print("Failed to plot results")
 
 if success:
   print(" => All tests passed")
