@@ -10,8 +10,8 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '1.0233'
-__date__    = '2016.05.03'
+__version__ = '1.0234'
+__date__    = '2016.05.13'
 
 import os
 import sys
@@ -1502,11 +1502,33 @@ class basic_runner(object):
             #{{{ Set local_nx and local_ny from input
             # If nx and ny is a function of MXG and MYG
             if self._MXG is None:
-                MXG = eval(myOpts.root['MXG'])
+                try:
+                    MXG = eval(myOpts.root['MXG'])
+                except KeyError:
+                    try:
+                        MXG = eval(myOpts.root['mxg'])
+                    except KeyError:
+                        message  = "Could not find 'MXG' or 'mxg' "
+                        message += "in the input file. "
+                        message += "Setting MXG = 2"
+                        self._warning_printer(message)
+                        self._warnings.append(message)
+                        MXG = 2
             else:
                 MXG = self._MXG
             if self._MYG is None:
-                MYG = eval(myOpts.root['MYG'])
+                try:
+                    MYG = eval(myOpts.root['MYG'])
+                except KeyError:
+                    try:
+                        MYG = eval(myOpts.root['myg'])
+                    except KeyError:
+                        message  = "Could not find 'MYG' or 'myg' "
+                        message += "in the input file. "
+                        message += "Setting MYG = 2"
+                        self._warning_printer(message)
+                        self._warnings.append(message)
+                        MYG = 2
             else:
                 MYG = self._MYG
 
@@ -1580,7 +1602,18 @@ class basic_runner(object):
         #{{{First we check if self._MXG is given
         if self._MXG is None:
             # Get MXG as string, and evaluate it
-            local_MXG = eval(myOpts.root['MXG'])
+            try:
+                local_MXG = eval(myOpts.root['MXG'])
+            except KeyError:
+                try:
+                    local_MXG = eval(myOpts.root['mxg'])
+                except KeyError:
+                    message  = "Could not find 'MXG' or 'mxg' "
+                    message += "in the input file. "
+                    message += "Setting MXG = 2"
+                    self._warning_printer(message)
+                    self._warnings.append(message)
+                    local_MXG = 2
         else:
             local_MXG = self._MXG
         #}}}
