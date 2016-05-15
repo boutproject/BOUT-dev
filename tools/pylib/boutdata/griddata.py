@@ -171,7 +171,11 @@ def gridcontourf(grid, data2d, nlevel=30, show=True, mind=None, maxd=None):
     j22 = grid["jyseps2_2"]
     ix1 = grid["ixseps1"]
     ix2 = grid["ixseps2"]
-    nin = grid["ny_inner"]
+    try:
+      nin = grid["ny_inner"]
+    except:
+      nin = j12
+     
     nx  = grid["nx"]
     ny  = grid["ny"]
     

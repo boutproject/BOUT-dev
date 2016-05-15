@@ -5,11 +5,11 @@ DIRS			= field fileio invert mesh physics precon solver sys facets
 
 SOURCEC		= bout++.cxx
 SOURCEH		= bout.hxx
-CFLAGS		= -DMD5SUM=$(CHECKSUM) -DREVISION="$(REVISION)"
+CXXFLAGS       += -DMD5SUM=$(CHECKSUM) -DREVISION="$(REVISION)"
 TARGET		= lib
 
 # Checksum passed to bout++.cxx
-CHECKSUM := $(shell cat $(foreach DIR,$(DIRS),$(wildcard $(DIR)/*.cxx $(DIR)/*.hxx)) | md5sum | head -c 32)
+CHECKSUM := $(shell cat $(foreach DIR,$(DIRS),$(wildcard $(DIR)/*.cxx $(DIR)/*.hxx)) | md5sum | head -c 32 )
 
 # Git revision passed to bout++.cxx
 REVISION := $(shell git rev-parse HEAD 2> /dev/null || hg id -n 2> /dev/null || { echo "Unknown"; } )
@@ -35,7 +35,7 @@ initial_message:
 	@echo ""
 	@echo "----- Compiling BOUT++ -----" 
 	@echo "CXX      = " $(CXX)
-	@echo "CFLAGS   = " $(BOUT_FLAGS)
+	@echo "FLAGS    = " $(BOUT_FLAGS)
 	@echo "CHECKSUM = " $(CHECKSUM)
 	@echo "INCLUDE  = " $(BOUT_INCLUDE)
 	@rm -f $(BOUT_TOP)/lib/libbout++.a
