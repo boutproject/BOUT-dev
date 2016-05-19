@@ -10,8 +10,8 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '1.0234'
-__date__    = '2016.05.13'
+__version__ = '1.0235'
+__date__    = '2016.05.18'
 
 import os
 import sys
@@ -2475,7 +2475,7 @@ class basic_runner(object):
                             in order not to alter self._nx)
         local_ny        -   List of values of ny (a local value is used
                             in order not to alter self._ny)
-        type_txt        -   can be either 'NXPE' or 'NYPE' and is specifying
+        type_str        -   can be either 'NXPE' or 'NYPE' and is specifying
                             whether NXPE or NYPE should be checked
         local_MXG       -   the current MXG
         produce_warning -   whether or not a warning should be produced
@@ -2484,10 +2484,10 @@ class basic_runner(object):
 
         for size_nr in range(len(local_nx)):
             # Check the type
-            if type_txt == 'NXPE':
+            if type_str == 'NXPE':
                 print("Checking nx = " + str(local_nx[size_nr]) +\
                       " with NXPE = " + str(self._NXPE[size_nr]))
-            elif type_txt == 'NYPE':
+            elif type_str == 'NYPE':
                 print("Checking ny = " + str(local_ny[size_nr]) +\
                       " with NYPE = " + str(self._NYPE[size_nr]))
             # Check to see if succeeded
@@ -2505,7 +2505,7 @@ class basic_runner(object):
                 # if((MX % NXPE) != 0)
                 # and
                 # if((MY % NYPE) != 0)
-                if type_txt == 'NXPE':
+                if type_str == 'NXPE':
                     MX = local_nx[size_nr] - 2*local_MXG
                     # self._nproc is called NPES in boutmesh
                     if (MX % self._NXPE[size_nr]) == 0:
@@ -2522,7 +2522,7 @@ class basic_runner(object):
                                                       local_ny       ,\
                                                       using_nx = True,\
                                                       using_ny = False)
-                elif type_txt == 'NYPE':
+                elif type_str == 'NYPE':
                     MY = local_ny[size_nr]
                     # self._nproc is called NPES in boutmesh
                     if (MY % self._NYPE[size_nr]) == 0:
@@ -2552,7 +2552,7 @@ class basic_runner(object):
             #}}}
 
             # Check if initial split succeeded
-            if type_txt == 'NXPE':
+            if type_str == 'NXPE':
                 self._check_init_split_found(init_split_found,\
                                              size_nr         ,\
                                              local_nx        ,\
@@ -2560,7 +2560,7 @@ class basic_runner(object):
                                              test_nx = True  ,\
                                              test_ny = False ,\
                                              produce_warning = produce_warning)
-            elif type_txt == 'NYPE':
+            elif type_str == 'NYPE':
                 self._check_init_split_found(init_split_found,\
                                              size_nr         ,\
                                              local_nx        ,\
