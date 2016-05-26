@@ -503,8 +503,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   
   // Initialise
   if(init(restarting, NOUT, TIMESTEP)) {
-    output.write("Failed to initialise solver-> Aborting\n");
-    return 1;
+    throw BoutException("Failed to initialise solver-> Aborting\n");
   }
   
   /// Run the solver
@@ -520,8 +519,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
     
     // Run RHS once to ensure all variables set
     if (run_rhs(simtime)) {
-      output.write("Physics RHS call failed\n");
-      return 1;
+      throw BoutException("Physics RHS call failed\n");
     }
     
     // Call monitors so initial values are written to output dump files
