@@ -1,17 +1,19 @@
 #!/usr/bin/env python
 
-"""Classes for running one or several mpi-runs with BOUT++ at once.
-   Read the docstring of 'basic_runner', or refer to the user manual of
-   BOUT++ for more info. Examples can be found in
-   BOUT/examples/bout_runners_example."""
+"""
+Classes for running one or several mpi-runs with BOUT++ at once.
+Read the docstring of 'basic_runner', or refer to the user manual of
+BOUT++ for more info. Examples can be found in
+BOUT/examples/bout_runners_example.
+"""
 
 # NOTE: This document uses folding. A hash-symbol followed by three {'s
 # denotes the start of a fold, and a hash-symbol followed by three }'s
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '1.0235'
-__date__    = '2016.05.18'
+__version__ = '1.024'
+__date__    = '2016.05.26'
 
 import os
 import sys
@@ -2899,6 +2901,19 @@ class basic_runner(object):
             # Move the files
             for cur_file in file_names:
                 shutil.move(cur_file, dst)
+
+        if not(include_restart):
+            # We would like to save the restart files as well
+            print("Copying restart files to {}\n".format(dst))
+            file_names =\
+                glob.glob(os.path.join(self._dmp_folder, '*.restart.*'))
+
+            # Cast to unique file_names
+            file_names = set(file_names)
+
+            # Copy the files
+            for cur_file in file_names:
+                shutil.copy(cur_file, dst)
 
         return dst
 #}}}
