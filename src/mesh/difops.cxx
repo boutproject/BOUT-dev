@@ -207,6 +207,38 @@ const Field3D Div_par(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
   return mesh->coordinates()->Div_par(f, outloc, method);
 }
 
+const Field3D Div_par(const Field3D &f, const Field3D &v) {
+  // Parallel divergence, using velocities at cell boundaries
+  // Note: Not guaranteed to be flux conservative
+
+  Field3D result;
+  result.allocate();
+
+  Coordinates *coord = mesh->coordinates();
+  
+  for(int i=mesh->xstart;i<=mesh->xend;i++)
+    for(int j=mesh->ystart;j<=mesh->yend;j++) {
+      for(int k=0;k<mesh->ngz-1;k++) {
+	
+	// Value of f and v at left cell face
+	BoutReal fL = 0.5*(f(i,j,k) + f.ydown()(i,j-1,k));
+	BoutReal vL = 0.5*(v(i,j,k) + v.ydown()(i,j-1,k));
+	
+	BoutReal fR = 0.5*(f(i,j,k) + f.yup()(i,j+1,k));
+	BoutReal vR = 0.5*(v(i,j,k) + v.yup()(i,j+1,k));
+	
+        // Calculate flux at right boundary (y+1/2)
+	BoutReal fluxRight = fR * vR * (coord->J(i,j) + coord->J(i,j+1)) / (sqrt(coord->g_22(i,j))+ sqrt(coord->g_22(i,j+1)));
+	
+        // Calculate at left boundary (y-1/2)
+	BoutReal fluxLeft = fL * vL * (coord->J(i,j) + coord->J(i,j-1)) / (sqrt(coord->g_22(i,j)) + sqrt(coord->g_22(i,j-1)));
+	
+	result(i,j,k)   = (fluxRight - fluxLeft) / (coord->dy(i,j)*coord->J(i,j));
+      }
+    }
+  return result;
+}
+
 //////// Flux methods
 
 const Field3D Div_par_flux(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
