@@ -7,9 +7,21 @@ except ImportError:
     print("ERROR: restart module needs DataFile")
     raise
 
+from numpy import zeros
+
 def slice(infile, outfile, region = None, xind=None, yind=None):
     """
-    xind, yind - index ranges. Range includes first point, but not last point
+    infile     - Name of the input file
+    outfile    - Name of the output file to be created
+    region     - The region of the mesh to slice. 
+                 0 = Lower inner leg
+                 1 = Inner core
+                 2 = Upper inner leg
+                 3 = Upper outer leg
+                 4 = Outer core
+                 5 = Lower outer leg
+    xind, yind - index ranges. Range includes first point, 
+                 but not last point
     
     """
     
@@ -90,3 +102,99 @@ def slice(infile, outfile, region = None, xind=None, yind=None):
 
     indf.close()
     outdf.close()
+
+
+def bout2sonnet(grdname, outf):
+    """
+    Creates a Sonnet format grid from a BOUT++ grid.
+    NOTE: Branch cuts are not yet supported 
+    
+    Inputs
+    ------
+    
+    grdname - Filename of BOUT++ grid file
+    
+    outf    - The file-like object to write to
+    
+    Example
+    -------
+    
+    with open("output.sonnet", "w") as f:
+      bout2sonnet("BOUT.grd.nc", f)
+    
+    """
+
+    with DataFile(grdname) as g:
+        Rxy = g["Rxy"]
+        Zxy = g["Zxy"]
+        Bpxy = g["Bpxy"]
+        Btxy = g["Btxy"]
+        Bxy = g["Bxy"]
+
+    # Now iterate over cells in the order Eirene expects
+
+    nx, ny = Rxy.shape
+
+    # Extrapolate values in Y
+    R = zeros([nx,ny+2])
+    Z = zeros([nx,ny+2])
+
+    R[:,1:-1] = Rxy
+    Z[:,1:-1] = Zxy
+
+    R[:,0] = 2.*R[:,1] - R[:,2]
+    Z[:,0] = 2.*Z[:,1] - Z[:,2]
+
+    R[:,-1] = 2.*R[:,-2] - R[:,-3]
+    Z[:,-1] = 2.*Z[:,-2] - Z[:,-3]
+    
+    element = 1  # Element number
+
+    outf.write("BOUT++: "+grdname+"\n\n")
+    
+    outf.write("=====================================\n")
+    
+    for i in range(2, nx-2):
+        # Loop in X, excluding guard cells
+        for j in range(1,ny+1):
+            # Loop in Y. Guard cells not in grid file
+
+            # Lower left (low Y, low X)
+            ll = ( 0.25*(R[i-1,j-1] + R[i-1,j] + R[i,j-1] + R[i,j]),
+                   0.25*(Z[i-1,j-1] + Z[i-1,j] + Z[i,j-1] + Z[i,j]) )
+
+            # Lower right (low Y, upper X)
+            lr = ( 0.25*(R[i+1,j-1] + R[i+1,j] + R[i,j-1] + R[i,j]),
+                   0.25*(Z[i+1,j-1] + Z[i+1,j] + Z[i,j-1] + Z[i,j]) )
+
+            # Upper left (upper Y, lower X)
+            ul = ( 0.25*(R[i-1,j+1] + R[i-1,j] + R[i,j+1] + R[i,j]),
+                   0.25*(Z[i-1,j+1] + Z[i-1,j] + Z[i,j+1] + Z[i,j]) )
+        
+            # Upper right (upper Y, upper X)
+            ur = ( 0.25*(R[i+1,j+1] + R[i+1,j] + R[i,j+1] + R[i,j]),
+                   0.25*(Z[i+1,j+1] + Z[i+1,j] + Z[i,j+1] + Z[i,j]) )
+            
+            # Element number
+            outf.write("     ELEMENT   %d = ( %d, %d): (%e, %e) (%e, %e)\n" % (
+                element,
+                j-1, i-2,
+                ll[0], ll[1],
+                ul[0], ul[1]))
+
+            # Ratio Bt / Bp at cell centre. Note j-1 because
+            # Bpxy and Btxy have not had extra points added
+            outf.write("     FIELD RATIO  = %e  (%e, %e)\n" % (Bpxy[i,j-1] / Btxy[i,j-1], R[i,j], Z[i,j]) )
+            
+            outf.write("                         (%e, %e) (%e, %e)\n" % (
+                lr[0], lr[1],
+                ur[0], ur[1]))
+
+            if (i == nx-3) and (j == ny+1):
+                # Last element
+                outf.write("=====================================\n")
+            else:
+                outf.write("-------------------------------------\n")
+
+            element += 1
+
