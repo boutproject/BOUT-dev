@@ -209,30 +209,26 @@ class BoutOptionsFile(BoutOptions):
                     
                         
             
-class BoutData(object):
+class BoutOutputs(object):
     """
     Emulates a map class, represents the contents of a BOUT++
-    output directory. Does not allow writing, only reading of data.
+    dmp files. Does not allow writing, only reading of data.
     Currently there is no cache, so each time a variable
     is read it is collected.
     
     Example
     -------
 
-    d = BoutData(".")  # Current directory
+    d = BoutOutputs(".")  # Current directory
     
     d.keys()     # List all valid keys
-
-    print d["options"]  # Prints tree of options
-
-    d["options"]["nout"]   # Value of nout in BOUT.inp file
     
     d["ne"] # Read "ne" from data files
     
     """
     def __init__(self, path=".", prefix="BOUT.dmp"):
         """
-        Initialise BoutData object
+        Initialise BoutOutputs object
         """
         self._path = path
         self._prefix = prefix
@@ -251,31 +247,21 @@ class BoutData(object):
         with DataFile(file_list[0]) as f:
             # Get variable names
             self.varNames = f.keys()
-            
-        # Options
-        self.options = BoutOptionsFile(os.path.join(path, "BOUT.inp"), name="options")
-        
         
     def keys(self):
         """
         Return a list of available variable names
         """
-        return ["options"] + self.varNames
+        return self.varNames
         
     def __len__(self):
-        return 
+        return len(self.varNames)
             
     def __getitem__(self, name):
         """
         Reads a variable using collect.
         
         """
-        
-        if name.lower() == "options":
-            return self.options
-            
-        if name not in self.varNames:
-            raise KeyError("Variable '%s' not found" % name)
 
         # Collect the data from the repository
         data = collect(name, path=self._path, prefix=self._prefix)
@@ -286,7 +272,6 @@ class BoutData(object):
         Iterate through all keys, starting with "options"
         then going through all variables for collect
         """
-        yield "options"
         for k in self.varNames:
             yield k
             
@@ -294,10 +279,45 @@ class BoutData(object):
         """
         Print a pretty version of the tree
         """
-        
-        text = str(self.options)
+        text = ""
         for k in self.varNames:
-            text += k+"\n"
+            text += indent+k+"\n"
         
         return text
     
+
+def BoutData(path=".", prefix="BOUT.dmp"):
+    """
+    Returns a dictionary, containing the contents of a BOUT++
+    output directory. Does not allow writing, only reading of data.
+    Currently there is no cache, so each time a variable
+    is read it is collected.
+    
+    Example
+    -------
+
+    d = BoutData(".")  # Current directory
+    
+    d.keys()     # List all valid keys
+
+    print d["options"]  # Prints tree of options
+
+    d["options"]["nout"]   # Value of nout in BOUT.inp file
+    
+    print d["outputs"]    # Print available outputs
+
+    d["outputs"]["ne"] # Read "ne" from data files
+    
+    """
+    
+    data = {} # Map for the result
+    
+    data["path"] = path
+    
+    # Options from BOUT.inp file
+    data["options"] = BoutOptionsFile(os.path.join(path, "BOUT.inp"), name="options")
+    
+    # Output from .dmp.* files
+    data["outputs"] = BoutOutputs(path)
+    
+    return data
