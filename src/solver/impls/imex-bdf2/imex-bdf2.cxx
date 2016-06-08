@@ -636,10 +636,7 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
       
       SNESSetJacobian(*snesIn,Jmf,Jmf,SNESComputeJacobianDefaultColor,fdcoloring);
 
-      // Re-use Jacobian
-      int lag_jacobian;
-      OPTION(options, lag_jacobian,   4);
-      SNESSetLagJacobian(*snesIn,lag_jacobian);
+      
       
       //MatView(Jmf, PETSC_VIEWER_DRAW_WORLD);
       //MatView(Jmf, PETSC_VIEWER_STDOUT_WORLD);
@@ -665,6 +662,18 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
     
       MatSetOption(Jmf,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_FALSE);
     }
+    
+    // Re-use Jacobian
+    int lag_jacobian;
+    OPTION(options, lag_jacobian,   4);
+    SNESSetLagJacobian(*snesIn,lag_jacobian);
+    
+#if PETSC_VERSION_GE(3,5,0)
+    // Jacobian persists across solves (timesteps)
+    bool lag_jacobian_persist;
+    OPTION(options, lag_jacobian_persist, true);
+    SNESSetLagJacobianPersists(*snesIn, static_cast<PetscBool>(lag_jacobian_persist));
+#endif
   }
   
   /////////////////////////////////////////////////////

@@ -1331,7 +1331,6 @@ int Solver::run_convective(BoutReal t) {
   // If using Method of Manufactured Solutions
   add_mms_sources(t);
   
-  rhs_ncalls++;
   rhs_ncalls_e++;
   return status;
 }
@@ -1355,6 +1354,7 @@ int Solver::run_diffusive(BoutReal t, bool linear) {
     }else
       status = (*phys_run)(t);
   }
+  rhs_ncalls++;
   rhs_ncalls_i++;
   return status;
 }
