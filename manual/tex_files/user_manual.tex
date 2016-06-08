@@ -4042,7 +4042,7 @@ type = imexbdf2
 For examples of using IMEX-BDF2, see the \texttt{examples/IMEX/} subdirectory, in particular
 the \texttt{diffusion-nl}, \texttt{drift-wave} and \texttt{drift-wave-constrain} examples.
 
-The time step is currently fixed (not adaptive), and defaults to the output timestep. To set a smaller
+The time step can be either fixed or adaptive, and defaults to the output timestep. To set a smaller
 internal timestep, the \texttt{solver:timestep} option can be set. If the timestep is too large, then
 the explicit part of the problem may become unstable, or the implicit part may fail to converge.
 
@@ -4052,7 +4052,7 @@ and can be set on the command-line using the options:
 \begin{verbatim}
  solver:matrix_free=true  -snes_mf
 \end{verbatim}
-Note the \texttt{-snes\_mf} flag which is passed to PETSc.
+Note the \texttt{-snes\_mf} flag which is passed to PETSc. This seems to be necessary in older versions of PETSc (3.4,3.5) but perhaps not in later versions.
 When using a matrix free solver, the Jacobian is not calculated and so the amount of memory used is minimal.
 However, since the Jacobian is not known, many standard preconditioning methods cannot be used, and so in many
 cases a custom preconditioner is needed to obtain good convergence.
@@ -4066,10 +4066,9 @@ option:
 There are two ways to calculate the Jacobian: A brute force method which is set up
 by this call to PETSc which is generally very slow, and a ``coloring'' scheme which
 can be quite fast and is the default. Coloring uses knowledge of where the non-zero values
-are in the Jacobian, to work out which rows can be calculated simultaneously. The coloring code
-in IMEX-BDF2 currently assumes that every field is coupled to every other field in a star pattern: one cell on each side,
-a 7 point stencil for 3D fields. If this is not the case for your problem, then
-the solver may not converge.
+are in the Jacobian, to work out which rows can be calculated simultaneously. 
+
+\subsubsection{Brute force Jacobian}
 
 The brute force method can be useful for comparing the Jacobian structure, so to turn off coloring:
 \begin{verbatim}
@@ -4077,6 +4076,17 @@ The brute force method can be useful for comparing the Jacobian structure, so to
 \end{verbatim}
 Using MatView calls, or the \texttt{-mat\_view} PETSc options, the non-zero structure of the Jacobian can be plotted
 or printed.
+
+\subsubsection{Coloring Jacobian}
+
+The coloring code in IMEX-BDF2 must specify the non-zero pattern
+of the system Jacobian. Several different non-zero patterns are currently implemented, which are controlled by the \texttt{coloring\_type} option:
+\begin{enumerate}
+  \setcounter{enumi}{-1}
+\item 7-point star (for 3D fields). Each variable depends on all the variables on its grid cell and one grid cell in each direction
+\item 13-point star. Each variable depends on all variables on its grid cell and two grid cells in each direction
+\end{enumerate}
+If this is not the case for your problem, then the solver may not converge, or may perform poorly, since the Jacobian will not be correct. This is problematic for systems involving Laplacian inversion of vorticity (for example), since these operations couple large parts of the mesh together. In these cases it may be possible to perform the inversion as a constraint as part of the time integration. See \texttt{examples/drift-wave-constraint} for an example where this is done.
 
 \subsection{Monitoring the simulation output}
 %

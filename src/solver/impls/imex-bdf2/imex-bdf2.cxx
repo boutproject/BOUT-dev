@@ -267,7 +267,29 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
       //////////////////////////////////////////////////
       // Get the local indices by starting at 0
       Field3D index = globalIndex(0);
-
+      
+      //////////////////////////////////////////////////
+      // Type of coloring to use
+      int coloring_type;
+      OPTION(options, coloring_type, 0);
+      int nn = 0; // Number of neighbours in each direction
+      switch(coloring_type) {
+      case 0: {
+        output.write("Coloring type 0: one grid point in each direction\n");
+        
+        nn = 1;
+        break;
+      }
+      case 1: {
+        output.write("Coloring type 1: two grid points in each direction\n");
+        nn = 2; // Number of neighbours
+        break;
+      }
+      default: {
+        throw BoutException("Unrecognised coloring type");
+      }
+      }
+      
       //////////////////////////////////////////////////
       // Pre-allocate PETSc storage
 
@@ -287,21 +309,33 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
       // Set values for most points
       if(mesh->ngz > 2) {
         // A 3D mesh, so need points in Z
-
-        for(int i=0;i<localN;i++) {
-          // Non-zero elements on this processor
-          d_nnz[i] = 7*n3d + 5*n2d; // Star pattern in 3D
-          // Non-zero elements on neighboring processor
-          o_nnz[i] = 0;
+        
+        switch(coloring_type) {
+        case 0:
+        case 1: {
+          // One grid point in each direction
+          for(int i=0;i<localN;i++) {
+            // Non-zero elements on this processor
+            d_nnz[i] = (1+6*nn)*n3d + (1+4*nn)*n2d; // Star pattern in 3D
+            // Non-zero elements on neighboring processor
+            o_nnz[i] = 0;
+          }
+          break;
+        }
         }
       }else {
         // Only one point in Z
-        
-        for(int i=0;i<localN;i++) {
-          // Non-zero elements on this processor
-          d_nnz[i] = 5*(n3d+n2d); // Star pattern in 2D
-          // Non-zero elements on neighboring processor
-          o_nnz[i] = 0;
+        switch(coloring_type) {
+        case 0:
+        case 1: {
+          for(int i=0;i<localN;i++) {
+            // Non-zero elements on this processor
+            d_nnz[i] = (1+4*nn)*(n3d+n2d); // Star pattern in 2D
+            // Non-zero elements on neighboring processor
+            o_nnz[i] = 0;
+          }
+          break;
+        }
         }
       }
 
@@ -312,14 +346,22 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
           for(int z=0;z<mesh->ngz-1;z++) {
             int localIndex = ROUND(index(mesh->xstart, y, z));
             ASSERT2( (localIndex >= 0) && (localIndex < localN) );
-            if(z == 0) {
-              // All 2D and 3D fields
-              for(int i=0;i<n2d+n3d;i++)
-                d_nnz[localIndex + i] -= (n3d + n2d);
-            }else {
-              // Only 3D fields
-              for(int i=0;i<n3d;i++)
-                d_nnz[localIndex + i] -= (n3d + n2d);
+            switch(coloring_type) {
+            case 0:
+            case 1: {
+              // Remove one grid point dependency
+              
+              if(z == 0) {
+                // All 2D and 3D fields
+                for(int i=0;i<n2d+n3d;i++)
+                  d_nnz[localIndex + i] -= nn*(n3d + n2d);
+              }else {
+                // Only 3D fields
+                for(int i=0;i<n3d;i++)
+                  d_nnz[localIndex + i] -= nn*(n3d + n2d);
+              }
+              break;
+            }
             }
           }
         }
@@ -329,18 +371,24 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
           for(int z=0;z<mesh->ngz-1;z++) {
             int localIndex = ROUND(index(mesh->xstart, y, z));
             ASSERT2( (localIndex >= 0) && (localIndex < localN) );
-            if(z == 0) {
-              // All 2D and 3D fields
-              for(int i=0;i<n2d+n3d;i++) {
-                d_nnz[localIndex+i] -= (n3d + n2d);
-                o_nnz[localIndex+i] += (n3d + n2d);
+            switch(coloring_type) {
+            case 0: 
+            case 1: {
+              if(z == 0) {
+                // All 2D and 3D fields
+                for(int i=0;i<n2d+n3d;i++) {
+                  d_nnz[localIndex+i] -= nn*(n3d + n2d);
+                  o_nnz[localIndex+i] += nn*(n3d + n2d);
+                }
+              }else {
+                // Only 3D fields
+                for(int i=0;i<n3d;i++) {
+                  d_nnz[localIndex+i] -= nn*(n3d + n2d);
+                  o_nnz[localIndex+i] += nn*(n3d + n2d);
+                }
               }
-            }else {
-              // Only 3D fields
-              for(int i=0;i<n3d;i++) {
-                d_nnz[localIndex+i] -= (n3d + n2d);
-                o_nnz[localIndex+i] += (n3d + n2d);
-              }
+              break;
+            }
             }
           }
         }
@@ -352,14 +400,20 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
           for(int z=0;z<mesh->ngz-1;z++) {
             int localIndex = ROUND(index(mesh->xend, y, z));
             ASSERT2( (localIndex >= 0) && (localIndex < localN) );
-            if(z == 0) {
-              // All 2D and 3D fields
-              for(int i=0;i<n2d+n3d;i++)
-                d_nnz[localIndex + i] -= (n3d + n2d);
-            }else {
-              // Only 3D fields
-              for(int i=0;i<n3d;i++)
-                d_nnz[localIndex + i] -= (n3d + n2d);
+            switch(coloring_type) {
+            case 0: 
+            case 1: {
+              if(z == 0) {
+                // All 2D and 3D fields
+                for(int i=0;i<n2d+n3d;i++)
+                  d_nnz[localIndex + i] -= nn*(n3d + n2d);
+              }else {
+                // Only 3D fields
+                for(int i=0;i<n3d;i++)
+                  d_nnz[localIndex + i] -= nn*(n3d + n2d);
+              }
+              break;
+            }
             }
           }
         }
@@ -369,20 +423,26 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
           for(int z=0;z<mesh->ngz-1;z++) {
             int localIndex = ROUND(index(mesh->xend, y, z));
             ASSERT2( (localIndex >= 0) && (localIndex < localN) );
-            if(z == 0) {
-              // All 2D and 3D fields
-              for(int i=0;i<n2d+n3d;i++) {
-                d_nnz[localIndex+i] -= (n3d + n2d);
-                o_nnz[localIndex+i] += (n3d + n2d);
+            switch(coloring_type) {
+            case 0: 
+            case 1: {
+              if(z == 0) {
+                // All 2D and 3D fields
+                for(int i=0;i<n2d+n3d;i++) {
+                  d_nnz[localIndex+i] -= nn*(n3d + n2d);
+                  o_nnz[localIndex+i] += nn*(n3d + n2d);
+                }
+              }else {
+                // Only 3D fields
+                for(int i=0;i<n3d;i++) {
+                  d_nnz[localIndex+i] -= nn*(n3d + n2d);
+                  o_nnz[localIndex+i] += nn*(n3d + n2d);
+                }
               }
-            }else {
-              // Only 3D fields
-              for(int i=0;i<n3d;i++) {
-                d_nnz[localIndex+i] -= (n3d + n2d);
-                o_nnz[localIndex+i] += (n3d + n2d);
-              }
+              break;
             }
-          }
+            }
+          } 
         }
       }
       
@@ -397,77 +457,94 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
         // z = 0 case
         int localIndex = ROUND(index(x, mesh->ystart, 0));
         // All 2D and 3D fields
-        for(int i=0;i<n2d+n3d;i++) {
-          //d_nnz[localIndex+i] -= (n3d + n2d);
-          o_nnz[localIndex+i] += (n3d + n2d);
-        }
-        
-        for(int z=1;z<mesh->ngz-1;z++) {
-          localIndex = ROUND(index(x, mesh->ystart, z));
-          
-          // Only 3D fields
-          for(int i=0;i<n3d;i++) {
+        switch(coloring_type) {
+        case 0:
+        case 1: {
+          for(int i=0;i<n2d+n3d;i++) {
             //d_nnz[localIndex+i] -= (n3d + n2d);
-            o_nnz[localIndex+i] += (n3d + n2d);
+            o_nnz[localIndex+i] += nn*(n3d + n2d);
           }
-        }
-
-        // z = 0 case
-        localIndex = ROUND(index(x, mesh->yend, 0));
-        // All 2D and 3D fields
-        for(int i=0;i<n2d+n3d;i++) {
-          //d_nnz[localIndex+i] -= (n3d + n2d);
-          o_nnz[localIndex+i] += (n3d + n2d);
-        }
         
-        for(int z=1;z<mesh->ngz-1;z++) {
-          localIndex = ROUND(index(x, mesh->yend, z));
-          
-          // Only 3D fields
-          for(int i=0;i<n3d;i++) {
-            //d_nnz[localIndex+i] -= (n3d + n2d);
-            o_nnz[localIndex+i] += (n3d + n2d);
+          for(int z=1;z<mesh->ngz-1;z++) {
+            localIndex = ROUND(index(x, mesh->ystart, z));
+            
+            // Only 3D fields
+            for(int i=0;i<n3d;i++) {
+              //d_nnz[localIndex+i] -= (n3d + n2d);
+              o_nnz[localIndex+i] += nn*(n3d + n2d);
+            }
           }
+          
+          // z = 0 case
+          localIndex = ROUND(index(x, mesh->yend, 0));
+          // All 2D and 3D fields
+          for(int i=0;i<n2d+n3d;i++) {
+            //d_nnz[localIndex+i] -= (n3d + n2d);
+            o_nnz[localIndex+i] += nn*(n3d + n2d);
+          }
+          
+          for(int z=1;z<mesh->ngz-1;z++) {
+            localIndex = ROUND(index(x, mesh->yend, z));
+            
+            // Only 3D fields
+            for(int i=0;i<n3d;i++) {
+              //d_nnz[localIndex+i] -= (n3d + n2d);
+              o_nnz[localIndex+i] += nn*(n3d + n2d);
+            }
+          }
+          break;
+        }
         }
       }
-
+      
       for(RangeIterator it=mesh->iterateBndryLowerY(); !it.isDone(); it++) {
         // A boundary, so no communication
-
-        // z = 0 case
-        int localIndex = ROUND(index(it.ind, mesh->ystart, 0));
-        // All 2D and 3D fields
-        for(int i=0;i<n2d+n3d;i++) {
-          o_nnz[localIndex+i] -= (n3d + n2d);
-        }
-        
-        for(int z=1;z<mesh->ngz-1;z++) {
-          int localIndex = ROUND(index(it.ind, mesh->ystart, z));
+        switch(coloring_type) {
+        case 0:
+        case 1: {
+          // z = 0 case
+          int localIndex = ROUND(index(it.ind, mesh->ystart, 0));
+          // All 2D and 3D fields
           
-          // Only 3D fields
-          for(int i=0;i<n3d;i++) {
-            o_nnz[localIndex+i] -= (n3d + n2d);
+          for(int i=0;i<n2d+n3d;i++) {
+            o_nnz[localIndex+i] -= nn*(n3d + n2d);
           }
+          
+          for(int z=1;z<mesh->ngz-1;z++) {
+            int localIndex = ROUND(index(it.ind, mesh->ystart, z));
+            
+            // Only 3D fields
+            for(int i=0;i<n3d;i++) {
+              o_nnz[localIndex+i] -= nn*(n3d + n2d);
+            }
+          }
+          break;
+        }
         }
       }
 
       for(RangeIterator it=mesh->iterateBndryUpperY(); !it.isDone(); it++) {
         // A boundary, so no communication
-
-        // z = 0 case
-        int localIndex = ROUND(index(it.ind, mesh->yend, 0));
-        // All 2D and 3D fields
-        for(int i=0;i<n2d+n3d;i++) {
-          o_nnz[localIndex+i] -= (n3d + n2d);
-        }
-        
-        for(int z=1;z<mesh->ngz-1;z++) {
-          int localIndex = ROUND(index(it.ind, mesh->yend, z));
-          
-          // Only 3D fields
-          for(int i=0;i<n3d;i++) {
-            o_nnz[localIndex+i] -= (n3d + n2d);
+        switch(coloring_type) {
+        case 0:
+        case 1: {
+          // z = 0 case
+          int localIndex = ROUND(index(it.ind, mesh->yend, 0));
+          // All 2D and 3D fields
+          for(int i=0;i<n2d+n3d;i++) {
+            o_nnz[localIndex+i] -= nn*(n3d + n2d);
           }
+          
+          for(int z=1;z<mesh->ngz-1;z++) {
+            int localIndex = ROUND(index(it.ind, mesh->yend, z));
+            
+            // Only 3D fields
+            for(int i=0;i<n3d;i++) {
+              o_nnz[localIndex+i] -= nn*(n3d + n2d);
+            }
+          }
+          break;
+        }
         }
       }
       
@@ -491,65 +568,31 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
       //////////////////////////////////////////////////
       // Mark non-zero entries
 
+      switch(coloring_type) {
+      case 0:
+      case 1: {
+        // Offsets for a 9-point pattern, with first 5
+        // entries corresponding to a 5-point pattern
+        const int xoffset[9] = {0,-1, 1, 0, 0, -2, 2,  0, 0};
+        const int yoffset[9] = {0, 0, 0,-1, 1,  0, 0, -2, 2};
+        
+        int noffsets = 5; // a 5-point stencil if one neighbour
+        if(coloring_type == 1)
+          noffsets = 9; // A 9-point stencil if two neighbours
+        
+        PetscScalar val = 1.0;
       
-      // Offsets for a 5-point pattern
-      const int xoffset[5] = {0,-1, 1, 0, 0};
-      const int yoffset[5] = {0, 0, 0,-1, 1};
-      
-      PetscScalar val = 1.0;
-      
-      for(int x=mesh->xstart; x <= mesh->xend; x++) {
-        for(int y=mesh->ystart;y<=mesh->yend;y++) {
-          
-          int ind0 = ROUND(index(x,y,0));
-
-          // 2D fields
-          for(int i=0;i<n2d;i++) {
-            PetscInt row = ind0 + i;
-
-            // Loop through each point in the 5-point stencil
-            for(int c=0;c<5;c++) {
-              int xi = x + xoffset[c];
-              int yi = y + yoffset[c];
-                
-              if( (xi < 0) || (yi < 0) ||
-                  (xi >= mesh->ngx) || (yi >= mesh->ngy) )
-                continue;
-              
-              int ind2 = ROUND(index(xi, yi, 0));
-              
-              if(ind2 < 0)
-                continue; // A boundary point
-              
-              // Depends on all variables on this cell
-              for(int j=0;j<n2d;j++) {
-                PetscInt col = ind2 + j;
-
-                //output.write("SETTING 1: %d, %d\n", row, col);
-                MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
-              }
-            }
-          }
-          
-          // 3D fields
-          for(int z=0;z<mesh->ngz-1;z++) {
+        for(int x=mesh->xstart; x <= mesh->xend; x++) {
+          for(int y=mesh->ystart;y<=mesh->yend;y++) {
             
-            int ind = ROUND(index(x,y,z));
+            int ind0 = ROUND(index(x,y,0));
             
-            for(int i=0;i<n3d;i++) {
-              PetscInt row = ind + i;
-              if(z == 0)
-                row += n2d;
+            // 2D fields
+            for(int i=0;i<n2d;i++) {
+              PetscInt row = ind0 + i;
               
-              // Depends on 2D fields
-              for(int j=0;j<n2d;j++) {
-                PetscInt col = ind0 + j;
-                //output.write("SETTING 2: %d, %d\n", row, col);
-                MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
-              }
-              
-              // 5 point star pattern
-              for(int c=0;c<5;c++) {
+              // Loop through each point in the stencil
+              for(int c=0;c<noffsets;c++) {
                 int xi = x + xoffset[c];
                 int yi = y + yoffset[c];
                 
@@ -557,51 +600,97 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
                     (xi >= mesh->ngx) || (yi >= mesh->ngy) )
                   continue;
                 
-                int ind2 = ROUND(index(xi, yi, z));
+                int ind2 = ROUND(index(xi, yi, 0));
+                
                 if(ind2 < 0)
-                  continue; // Boundary point
+                  continue; // A boundary point
                 
-                if(z == 0)
-                  ind2 += n2d;
-                
-                // 3D fields on this cell
-                for(int j=0;j<n3d;j++) {
+                // Depends on all variables on this cell
+                for(int j=0;j<n2d;j++) {
                   PetscInt col = ind2 + j;
-                  //output.write("SETTING 3: %d, %d\n", row, col);
+                  
+                  //output.write("SETTING 1: %d, %d\n", row, col);
                   MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
                 }
               }
-
-              int nz = mesh->ngz-1;
-              if(nz > 1) {
-                // Multiple points in z
-                
-                int zp = (z + 1) % nz;
-
-                int ind2 = ROUND(index(x, y, zp));
-                if(zp == 0)
-                  ind2 += n2d;
-                for(int j=0;j<n3d;j++) {
-                  PetscInt col = ind2 + j;
-                  //output.write("SETTING 4: %d, %d\n", row, col);
-                  MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
-                }
-
-                int zm = (z - 1 + nz) % nz;
-                ind2 = ROUND(index(x, y, zm));
-                if(zm == 0)
-                  ind2 += n2d;
-                for(int j=0;j<n3d;j++) {
-                  PetscInt col = ind2 + j;
-                  //output.write("SETTING 5: %d, %d\n", row, col);
-                  MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
-                }
-                
-              }
+            }
+          
+            // 3D fields
+            for(int z=0;z<mesh->ngz-1;z++) {
               
+              int ind = ROUND(index(x,y,z));
+              
+              for(int i=0;i<n3d;i++) {
+                PetscInt row = ind + i;
+                if(z == 0)
+                  row += n2d;
+                
+                // Depends on 2D fields
+                for(int j=0;j<n2d;j++) {
+                  PetscInt col = ind0 + j;
+                  //output.write("SETTING 2: %d, %d\n", row, col);
+                  MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+                }
+              
+                // 5 or 9 point star pattern
+                for(int c=0;c<noffsets;c++) {
+                  int xi = x + xoffset[c];
+                  int yi = y + yoffset[c];
+                  
+                  if( (xi < 0) || (yi < 0) ||
+                      (xi >= mesh->ngx) || (yi >= mesh->ngy) )
+                    continue;
+                  
+                  int ind2 = ROUND(index(xi, yi, z));
+                  if(ind2 < 0)
+                    continue; // Boundary point
+                  
+                  if(z == 0)
+                    ind2 += n2d;
+                  
+                  // 3D fields on this cell
+                  for(int j=0;j<n3d;j++) {
+                    PetscInt col = ind2 + j;
+                    //output.write("SETTING 3: %d, %d\n", row, col);
+                    MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+                  }
+                }
+
+                int nz = mesh->ngz-1;
+                if(nz > 1) {
+                  // Multiple points in z
+                  // nn is set to either 1 or 2
+                  
+                  for(int n=1;n<=nn;n++) {
+                    // Neighbour "n" points away
+                    int zp = (z + n) % nz;
+                  
+                    int ind2 = ROUND(index(x, y, zp));
+                    if(zp == 0)
+                      ind2 += n2d;
+                    for(int j=0;j<n3d;j++) {
+                      PetscInt col = ind2 + j;
+                      //output.write("SETTING 4: %d, %d\n", row, col);
+                      MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+                    }
+                    
+                    int zm = (z - n + nz) % nz;
+                    ind2 = ROUND(index(x, y, zm));
+                    if(zm == 0)
+                      ind2 += n2d;
+                    for(int j=0;j<n3d;j++) {
+                      PetscInt col = ind2 + j;
+                      //output.write("SETTING 5: %d, %d\n", row, col);
+                      MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+                    }
+                  }
+                }
+              }
             }
           }
         }
+        break;
+      }
       }
       // Finished marking non-zero entries
       
