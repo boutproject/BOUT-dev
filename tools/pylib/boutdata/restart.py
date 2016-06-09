@@ -13,7 +13,7 @@ try:
 except ImportError:
     raise ImportError("ERROR: restart module needs DataFile")
 
-import numpy
+import numpy as np
 from numpy import mean, zeros, arange
 from math import sqrt
 from numpy.random import normal
@@ -135,9 +135,25 @@ def split(nxpe, nype, path="data", output="./", informat="nc", outformat=None):
         #
 
 def expand(newz, path="data", output="./", informat="nc", outformat=None):
-    """Increase the number of Z points in restart files
-
     """
+    Increase the number of Z points in restart files.
+
+    The python equivalent of ../../idllib/expand_restarts.pro
+
+    NOTE: Can't over-write
+
+    Input
+    -----
+    path       Input path
+    output     Output path
+    informat   File extension of input
+    outformat  File extension of output
+
+    Returns
+    -------
+    True on success, else False
+    """
+
     if outformat == None:
         outformat = informat
 
@@ -154,10 +170,60 @@ def expand(newz, path="data", output="./", informat="nc", outformat=None):
         return False
 
     file_list = glob.glob(os.path.join(path, "BOUT.restart.*."+informat))
+    file_list.sort()
     nfiles = len(file_list)
 
-    # Get the file extension
-    ind = file_list[0].rfind(".")
+    if nfiles == 0:
+        print("ERROR: No data found")
+        return False
+
+    print("Number of files found: " + str(nfiles))
+
+    for f in file_list:
+        new_f = os.path.join(output, f.split('/')[-1])
+        print("Changing {} => {}".format(f, new_f))
+
+        # Open the restart file in read mode and create the new file
+        with DataFile(f) as old,\
+             DataFile(new_f, write=True, create=True) as new:
+            # Loop over the variables in the old file
+            for var in old.list():
+                # Read the data
+                data = old.read(var)
+
+                # Find 3D variables
+                if old.ndims(var) == 3:
+                    print("    Resizing "+var)
+
+                    nx, ny, nz = data.shape
+
+                    newdata = np.zeros((nx, ny, newz))
+                    for x in range(nx):
+                        for y in range(ny):
+                            f_old = np.fft.fft(data[x, y, 0:(nz-1)])
+
+                            # Number of points in f is power of 2
+                            f_new = np.zeros(newz - 1)
+
+                            # Copy coefficients across (ignoring Nyquist)
+                            f_new[0] = f_old[0] # DC
+                            for m in range(1, int((nz-1)/2)):
+                                # + ve frequencies
+                                f_new[m] = f_old[m]
+                                # - ve frequencies
+                                f_new[newz-1-m] = f_old[nz-1-m]
+
+                            # Invert fft
+                            newdata[x,y,0:(newz-1)] = np.fft.ifft(f_new).real
+                            newdata[x,y,newz-1] = newdata[x,y,0]
+                else:
+                    print("    Copying "+var)
+                    newdata = data.copy()
+
+                new.write(var, data)
+
+    return True
+
 
 
 def addnoise(path=".", var=None, scale=1e-5):
@@ -453,7 +519,7 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
               #scalar
               data = f.read(v)
           elif ndims == 2:
-              data = numpy.zeros( (nx+2*mxg,ny+2*nyg) )
+              data = np.zeros( (nx+2*mxg,ny+2*nyg) )
               for i in range(old_npes):
                   ix = i%old_nxpe
                   iy = int(i/old_nxpe)
@@ -471,7 +537,7 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
                       iyend = 0
                   data[ix*old_mxsub+ixstart:(ix+1)*old_mxsub+2*mxg+ixend, iy*old_mysub+iystart:(iy+1)*old_mysub+2*myg+iyend] = infile_list[i].read(v)[ixstart:old_mxsub+2*mxg+ixend, iystart:old_mysub+2*myg+iyend]
           elif ndims == 3:
-              data = numpy.zeros( (nx+2*mxg,ny+2*myg,mz) )
+              data = np.zeros( (nx+2*mxg,ny+2*myg,mz) )
               for i in range(old_npes):
                   ix = i%old_nxpe
                   iy = int(i/old_nxpe)
