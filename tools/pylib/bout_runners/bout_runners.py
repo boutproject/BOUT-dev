@@ -12,8 +12,8 @@ BOUT/examples/bout_runners_example.
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '1.024'
-__date__    = '2016.05.26'
+__version__ = '1.025'
+__date__    = '2016.06.10'
 
 import os
 import sys
@@ -35,7 +35,11 @@ from boutdata.restart import redistribute, addnoise
 # object as input
 class basic_runner(object):
 #{{{docstring
-    """Class for mpi running one or several runs with BOUT++.
+    """
+    basic_runner
+    ------------
+
+    Class for mpi running one or several runs with BOUT++.
     Calling self.execute_runs() will run your BOUT++ program with the possible
     combinations given in the member data using the mpi runner.
 
@@ -48,9 +52,9 @@ class basic_runner(object):
     By default self._directory = 'data', self._nproc = 1 and
     self._allow_size_modification = False
 
-    self._program_name is by default set to the same name as any .o files in the
-    folder where an instance of the object is created. If none is found
-    the creator tries to run make.
+    self._program_name is by default set to the same name as any .o files in
+    thefolder where an instance of the object is created. If none is found the
+    constructor tries to run make.
 
     All other data members are set to None by default.
 
@@ -58,7 +62,8 @@ class basic_runner(object):
     self._directory/BOUT.inp.
 
     See the doctring of the constructor (__int__) for options.
-    See BOUT/examples/bout_runners_example for examples."""
+    See BOUT/examples/bout_runners_example for examples.
+    """
 #}}}
 
 #{{{__init__
@@ -118,7 +123,9 @@ class basic_runner(object):
                  make         = None,\
                  allow_size_modification = False):
         #{{{docstring
-        """The constructor of the basic_runner.
+        """
+        basic_runner constructor
+        ------------------------
 
         All the member data is set to None by default. If the
         data members are not set, the values from BOUT.inp will be used.
@@ -126,103 +133,143 @@ class basic_runner(object):
         'data') and allow_size_modification (default = False), which
         always needs to be set.
 
-        Input:
-        nproc        -    The number of processors to use in the mpirun (int)
-        directory    -    The directory of the BOUT.inp file (str)
-        prog_name    -    Name of the excecutable. If none is set the
-                          name will be set from the *.o file.
-        solver       -    The solver to be used in the runs (str or
-                          iterable)
-        mms          -    Whether or not mms should be run (bool)
-        atol         -    Absolute tolerance (number or iterable)
-        rtol         -    Relative tolerance (number or iterable)
-        mxstep       -    Max internal step pr output step (int or
-                          iterable)
-        grid_file    -    The grid file (str or iterable)
-        nx           -    Number of nx in the run (int or iterable)
-        ny           -    Number of ny in the run (int or iterable)
-        nz           -    Number of nz in the run (int or iterable)
-        zperiod      -    Domain size in  multiple of fractions of 2*pi
-                          (int or iterable)
-        zmin         -    Minimum range of the z domain
-        zmax         -    Maximum range of the z domain
-        dx           -    Grid size in the x direction (Number or iterable)
-        dy           -    Grid size in the x direction (Number or iterable)
-        dz           -    Grid size in the x direction (Number or iterable)
-        MXG          -    The number of guard cells in the x direction
-                          (int)
-        MYG          -    The number of guard cells in the y direction
-                          (int)
-        NXPE         -    Numbers of processors in the x direction
-        ixseps1      -    Separatrix location for 'upper' divertor (int
-                          or iterable)
-        ixseps2      -    Separatrix location for 'lower' divertor (int
-                          or iterable)
-        jyseps1_1    -    Branch cut location 1_1 [see user's manual for
-                          details] (int or iterable)
-        jyseps1_2    -    Branch cut location 1_2 [see user's manual for
-                          details] (int or iterable)
-        jyseps2_1    -    Branch cut location 2_1 [see user's manual for
-                          details] (int or iterable)
-        jyseps2_2    -    Branch cut location 2_2 [see user's manual for
-                          details] (int or iterable)
-        symGlobX     -    symmetricGLobalX: x defined symmetrically between
-                          0 and 1 (bool)
-        symGlobY     -    symmetricGLobalX: y defined symmetrically (bool)
-        ddx_first    -    Method used for for first ddx terms (str or iterable)
-        ddx_second   -    Method used for for second ddx terms (str or iterable)
-        ddx_upwind   -    Method used for for upwind ddx terms (str or iterable)
-        ddx_flux     -    Method used for for flux ddx terms (str or iterable)
-        ddy_first    -    Method used for for first ddy terms (str or iterable)
-        ddy_second   -    Method used for for second ddy terms (str or iterable)
-        ddy_upwind   -    Method used for for upwind ddy terms (str or iterable)
-        ddy_flux     -    Method used for for flux ddy terms (str or iterable)
-        ddz_first    -    Method used for for first ddz terms (str or iterable)
-        ddz_second   -    Method used for for second ddz terms (str or iterable)
-        ddz_upwind   -    Method used for for upwind ddz terms (str or iterable)
-        ddz_flux     -    Method used for for flux ddz terms (str or iterable)
-        nout         -    Number of outputs stored in the *.dmp.* files
-                          (int or iterable)
-        timestep     -    The time between each output stored in the
-                          *.dmp.* files (int or iterable)
-        additional   -    Additional option for the run given on the form
-                          ('section_name','variable name', values) or as
-                          iterable on the same form, where values can be
-                          any value or string or an iterable of those
-        series_add   -    The same as above, with the exception that
-                          no combination will be performed between the elements
-                          during a run
-        restart      -    Wheter or not to use the restart files
-                          ('overwrite' or 'append')
-        restart_from -    Path to restart from (string)
-        redistribute -    The number of processors the redistribute the
-                          restart files to. Calls the redistribute
-                          function in boutdata.restart.
-                          Will only be effective if 'restart' is not None (int)
-        addnoise     -    Adding noise to the restart files by calling
-                          the addnoise function in boutdata.restart.
-                          Will only be effective if 'restart' is not
-                          None.
-                          Must be given as a dict with 'var' and 'scale'
-                          as keys if used.
-                          The value of 'var' must be a string or None.
-                          If set to None, then all the evolved variables will
-                          be added noise to.
-                          The value of 'scale' will be the scale of the
-                          noise, if set to None the default value will
-                          be used.
-                          (dict)
-        cpy_source   -    Wheter or not to copy the source files to the
-                          folder of the *.dmp.* files (bool)
-        cpy_grid     -    Wheter or not to copy the grid files to the
-                          folder of the *.dmp.* files (bool)
-        sort_by      -    Defining what will be the fastest running
-                          variable in the run, which can be useful if one
-                          for example would like to 'group' the runs before
-                          sending it to a post processing function (see
-                          the docstring of the run function for more
-                          info). The possibilities are
-                         'spatial_domain',
+        Parameters
+        ----------
+        nproc : int
+            Number of processors to use in the mpirun
+        directory : str
+            The directory of the BOUT.inp file
+        prog_name : str or iterable
+            Name of the excecutable. If none is set the name will be set from
+            the *.o file.
+        solver : str or iterable
+            The solver to be used in the runs
+        mms : bool
+            Whether or not mms should be run
+        atol : number or iterable
+            Absolute tolerance
+        rtol : number or iterable
+            Relative tolerance
+        mxstep : int or iterable
+            Max internal step pr output step
+        grid_file : str or iterable
+            The grid file
+        nx : int or iterable
+            Number of nx in the run
+        ny : int or iterable
+            Number of ny in the run
+        nz : int or iterable
+            Number of nz in the run
+        zperiod : int or iterable
+            Domain size in  multiple of fractions of 2*pi
+        zmin : number
+            Minimum range of the z domain
+        zmax : number
+            Maximum range of the z domain
+        dx : number or iterable
+            Grid size in the x direction
+        dy : number or iterable
+            Grid size in the x direction number or iterable
+        dz : number or iterable
+            Grid size in the x direction number or iterable
+        MXG : int
+            The number of guard cells in the x direction
+        MYG : int
+            The number of guard cells in the y direction
+        NXPE : int
+            Numbers of processors in the x direction
+        ixseps1 : int or iterable
+            Separatrix location for 'upper' divertor
+        ixseps2 : int or iterable
+            Separatrix location for 'lower' divertor
+        jyseps1_1 : int or iterable
+            Branch cut location 1_1 (see user's manual for details)
+        jyseps1_2 : int or iterable
+            Branch cut location 1_2 (see user's manual for details)
+        jyseps2_1 : int or iterable
+            Branch cut location 2_1 (see user's manual for details)
+        jyseps2_2 : int or iterable
+            Branch cut location 2_2 (see user's manual for details)
+        symGlobX : bool
+            Whether or not to use symmetricGLobalX (x defined
+            symmetrically between 0 and 1)
+        symGlobY : bool
+            Whether or not to use symmetricGLobalY (y defined
+            symmetrically)
+        ddx_first : str or iterable
+            Method used for for first ddx terms
+        ddx_second : str or iterable
+            Method used for for second ddx terms
+        ddx_upwind : str or iterable
+            Method used for for upwind ddx terms
+        ddx_flux : str or iterable
+            Method used for for flux ddx terms
+        ddy_first : str or iterable
+            Method used for for first ddy terms
+        ddy_second : str or iterable
+            Method used for for second ddy terms
+        ddy_upwind : str or iterable
+            Method used for for upwind ddy terms
+        ddy_flux : str or iterable
+            Method used for for flux ddy terms
+        ddz_first : str or iterable
+            Method used for for first ddz terms
+        ddz_second : str or iterable
+            Method used for for second ddz terms
+        ddz_upwind : str or iterable
+            Method used for for upwind ddz terms
+        ddz_flux : str or iterable
+            Method used for for flux ddz terms
+        nout : int or iterable
+            Number of outputs stored in the *.dmp.* files
+        timestep : int or iterable
+            The time between each output stored in the *.dmp.* files
+        additional : tuple or iterable
+            Additional option for the run given on the form
+
+            >>> ('section_name','variable name', values)
+
+            or as iterable on the same form, where values can be any
+            value or string or an iterable of those
+        series_add : tuple or iterable
+            The same as above, with the exception that no combination
+            will be performed between the elements during a run
+        restart : str
+            Wheter or not to use the restart files. Must be either
+            'overwrite' or 'append' if set
+        restart_from : str
+            Path to restart from string
+        redistribute : int
+            The number of processors the redistribute the restart files
+            to. Calls the redistribute function in boutdata.restart.
+            Will only be effective if 'restart' is not None
+        addnoise : dict
+            Adding noise to the restart files by calling the addnoise
+            function in boutdata.restart.  Will only be effective if
+            'restart' is not None.  Must be given as a dict with 'var'
+            and 'scale' as keys if used.  The value of 'var' must be a
+            string or None.  If set to None, then all the evolved
+            variables will be added noise to.  The value of 'scale' will
+            be the scale of the noise, if set to None the default value
+            will be used.
+            Example:
+
+            >>> addnoise = {'n':1e-4, 'Te':1e-5}
+
+        cpy_source : bool
+            Wheter or not to copy the source files to the folder of the
+            *.dmp.* files
+        cpy_grid : bool
+            Whether or not to copy the grid files to the folder of the
+            *.dmp.* files
+        sort_by : str
+            Defining what will be the fastest running variable in the
+            run, which can be useful if one for example would like to
+            'group' the runs before sending it to a post processing
+            function (see the docstring of the run function for more
+            info). The possibilities are
+
+                         >>> 'spatial_domain',
                          'temporal_domain',
                          'solver',
                          'ddx_first',
@@ -237,17 +284,17 @@ class basic_runner(object):
                          'ddz_second',
                          'ddz_upwind',
                          'ddz_flux',
-                         any 'variable_name' from additional or series_add
-                         an iterable consisting of several of these. If
-                         an iterable is given, then the first element is
-                         going to be the fastest varying variable, the
-                         second element is going to be the second fastest
-                         varying variable and so on.
-        make         -   Whether or not to make the program (bool)
 
-        allow_size_modification - Whether or not to allow bout_runners
-                                  modify nx and ny in order to find a
-                                  valid split of the domain (bool)
+            any 'variable_name' from additional or series_add an
+            iterable consisting of several of these. If an iterable is
+            given, then the first element is going to be the fastest
+            varying variable, the second element is going to be the
+            second fastest varying variable and so on.
+        make : bool
+            Whether or not to make the program
+        allow_size_modification : bool
+            Whether or not to allow bout_runners modify nx and ny in
+            order to find a valid split of the domain
         """
         #}}}
 
@@ -443,26 +490,22 @@ class basic_runner(object):
         """
         Makes a run for each of the combination given by the member data.
 
-        Input
-        remove_old                  - boolean telling whether old run
-                                      files should be deleted or not
-        post_processing_function    - a function to be called after
-                                      one or several run. This function
-                                      must accept the string of
-                                      self._dmp_folder if
-                                      post_process_after_each_run is
-                                      True, and a list of dmp folders if
-                                      post_process_after_each_run is
-                                      False
-        post_process_after_each_run - boolean telling whether
-                                      post_processing_function
-                                      should be called after each run
-                                      (if True), or after the number of
-                                      runs decided by self._sort_by
-                                      (see the constructor of
-                                      basic_runner for more info)
-        **kwargs                    - parameters to be passed to the
-                                      post_processing_function
+        Parameters
+        ----------
+        remove_old : bool, default : False
+            Whether old run files should be deleted or not
+        post_processing_function : callable
+            A function to be called after one or several run. This
+            function must accept the string of self._dmp_folder if
+            post_process_after_each_run is True, and a list of dmp
+            folders if post_process_after_each_run is False
+        post_process_after_each_run : bool, default: True
+            boolean telling whether post_processing_function should be
+            called after each run (if True), or after the number of runs
+            decided by self._sort_by (see the constructor of
+            basic_runner for more info)
+        **kwargs : any
+            parameters to be passed to the post_processing_function
         """
         #}}}
 
@@ -559,8 +602,10 @@ class basic_runner(object):
 
 #{{{_run_driver
     def _run_driver(self, combination, run_no):
-        """The machinery which actually performs the run and eventual
-        post_processing"""
+        """
+        The machinery which actually performs the run and eventually
+        calls post_processing_function.
+        """
 
         # Get the time when the run starts
         start = datetime.datetime.now()
@@ -576,8 +621,10 @@ class basic_runner(object):
 #{{{ Functions called by the constructor
 #{{{_set_member_data
     def _set_member_data(self, input_parameter):
-        """Returns the input_parameter as a list if it is different than None,
-        and if it is not iterable"""
+        """
+        Returns the input_parameter as a list if it is different than None,
+        and if it is not iterable
+        """
 
        # If the input_data is not set, the value in BOUT.inp will
        # be used
@@ -597,9 +644,11 @@ class basic_runner(object):
         Will set self._program_name and make the program if the
         prog_name.o file is not found.
 
-        Input
-        prog_name - Name of the exceutable
-                    If None, the name will be set from the *.o file.
+        Parameters
+        ----------
+        prog_name : str
+            Name of the exceutable. If None, the name will be set from
+            the *.o file.
         """
 
         if prog_name is not(None):
@@ -1337,14 +1386,15 @@ class basic_runner(object):
         """
         Checks that the input_member is on the following form:
 
-        input_member = [(section1, name1, [value1-1, value1-2, ...]),
-                        (section2, name2, [value2-1, value2-2, ...]),
-                        ...]
+        >>> input_member = [(section1, name1, [value1-1, value1-2, ...]),
+                           (section2, name2, [value2-1, value2-2, ...]),
+                           ...]
 
-        Input:
-        Either self._additional or self._series_add
-        input_member[0]     -   the input data
-        input_member[1]     -   the name of the input data
+        Parameters
+        ----------
+        input member: [self._additional | self._series_add]
+            input_member[0] is the input data and
+            input_member[1] is the name of the input data
         """
         #}}}
 
@@ -1400,8 +1450,9 @@ class basic_runner(object):
                                    post_processing_function    ,\
                                    post_process_after_every_run \
                                    ):
-        """Check if there are any type errors in input for the run
-        function"""
+        """
+        Check if there are any type errors in input for the run function
+        """
 
         #{{{Check if remove_old is of the correct type
         check_if_bool = [\
@@ -1462,9 +1513,11 @@ class basic_runner(object):
                                    post_processing_function    ,\
                                    post_process_after_every_run \
                                    ):
-        """Function which check for errors in a child class.
+        """
+        Function which check for errors in a child class.
 
-        Here a virtual function"""
+        Here a virtual function
+        """
         pass
     #}}}
 #}}}
@@ -1699,9 +1752,11 @@ class basic_runner(object):
 
 #{{{_get_possibilities
     def _get_possibilities(self):
-        """ Returns the list of the possibilities. In get_combinations
+        """
+        Returns the list of the possibilities. In get_combinations
         the elements of this list is going to be put together to a list
-        of strings which will be used when making a run."""
+        of strings which will be used when making a run.
+        """
 
         #{{{Set combination of nx, ny and nz (if not set in grid_file)
         # Appendable list
@@ -1911,9 +1966,11 @@ class basic_runner(object):
 
 #{{{_get_combinations
     def _get_combinations(self, input_list):
-        """The input_list is a list with lists as element.
+        """
+        The input_list is a list with lists as element.
         Returns a list of all combinations between the elements of the
-        input_list."""
+        input_list.
+        """
 
         # Remove empty elements in input_list in order for
         # itertools.product to work
@@ -2101,7 +2158,10 @@ class basic_runner(object):
 
 #{{{_remove_data
     def _remove_data(self):
-        """Removes *.nc and *.log files from the dump directory"""
+        """
+        Removes dmp.*, fail.*, restart.*, log.* and *.cpy files from the
+        dump directory
+        """
 
         print("Removing old data")
         remove_extensions = ['dmp.*', 'fail.*', 'restart.*', 'log.*', 'cpy']
@@ -2131,13 +2191,16 @@ class basic_runner(object):
         """
         Checks if the run has been run previously.
 
-        Input
-        restart_file_search_reason - Reason to check for restart files
-                                     if not None.
+        Parameters
+        ----------
+        restart_file_search_reason : ['restart_from' | 'redistribute' | None ]
+            Reason to check for restart files if not None.
 
         Returns
-        True    - The run will be performed
-        False   - The run will NOT be performed
+        -------
+        bool : [True|False]
+            If true is returned, the run will be performed, if not the
+            run will not be performed
         """
 
         dmp_files = glob.glob(os.path.join(self._dmp_folder, '*.dmp.*'))
@@ -2204,15 +2267,19 @@ class basic_runner(object):
                                  var            = None,\
                                  the_type       = None,\
                                  allow_iterable = None):
-        """Checks if a variable has the correct type
+        """
+        Checks if a variable has the correct type
 
-        Input:
-        var            - a tuple consisting of
-                         var[0] - the variable (a data member)
-                         var[1] - the name of the variable given as a string
-        the_type       - the data type
-        allow_iterable - if an iterable with the element as type is
-                         allowed
+        Parameters
+        ----------
+        var : tuple
+            var[0] - the variable (a data member)
+
+            var[1] - the name of the variable given as a string
+        the_type : type
+            The data type to be checked
+        allow_iterable : bool
+            If an iterable with the element as type is allowed
         """
 
         # Set a variable which is False if the test fails
@@ -2250,8 +2317,10 @@ class basic_runner(object):
     def _check_if_set_correctly(self,\
                                  var           = None,\
                                  possibilities = None):
-        """Check if a variable is set to a possible variable. Called by
-        the error checkers"""
+        """
+        Check if a variable is set to a possible variable.
+        Called by the error checkers
+        """
 
         # Set a variable which is False if the test fails
         success = True
@@ -2306,41 +2375,52 @@ class basic_runner(object):
 
 #{{{ Functions called by _get_correct_domain_split
     #{{{_check_cur_split_found
-    def _check_cur_split_found(self           ,\
-                              cur_split_found ,\
-                               produce_warning,\
-                               add_number     ,\
-                               size_nr        ,\
-                               local_nx       ,\
-                               local_ny       ,\
-                               using_nx = None,\
-                               using_ny = None):
+    def _check_cur_split_found(self            ,\
+                               cur_split_found ,\
+                               produce_warning ,\
+                               add_number      ,\
+                               size_nr         ,\
+                               local_nx        ,\
+                               local_ny        ,\
+                               using_nx = None ,\
+                               using_ny = None ):
         #{{{docstring
         """
         Checks if the current split is found.
 
         Will add a number if not found.
 
-        Input:
-        cur_split_found     -   whether or not the current split was
-                                found
-        produce_warning     -   if a warning should be produced
-        add_number          -   the number added to nx and/or ny
-        local_nx            -   List of values of nx (a local value is
-                                used in order not to alter self._nx)
-        local_ny            -   List of values of ny (a local value is
-                                used in order not to alter self._ny)
-        size_nr             -   index of the current nx and/or ny
-        using_nx            -   if add_number should be added to nx
-        using_ny            -   if add_number should be added to ny
+        Parameters
+        ----------
+        cur_split_found : bool
+            Whether or not the current split was found
+        produce_warning : bool
+            If a warning should be produced
+        add_number : int
+            The number added to nx and/or ny
+        local_nx : int
+            List of values of nx (a local value is used in order not to
+            alter self._nx)
+        local_ny: int
+            List of values of ny (a local value is used in order not to
+            alter self._ny)
+        size_nr : int
+            Index of the current nx and/or ny
+        using_nx : bool
+            If add_number should be added to nx
+        using_ny : bool
+            if add_number should be added to ny
 
-        Output:
-        local_nx            -   List of values of nx
-        local_ny            -   List of values of ny
-        add_number          -   the number to eventually be added the
-                                next time
-        produce_warning     -   whether or not a warning should be
-                                produced
+        Returns
+        -------
+        local_nx : int
+            List of values of nx
+        local_ny : int
+            List of values of ny
+        add_number : int
+            The number to eventually be added the next time
+        produce_warning : bool
+            Whether or not a warning should be produced
         """
         #}}}
 
@@ -2392,19 +2472,25 @@ class basic_runner(object):
         Check if the initial split was a good choice when checking the grids.
 
         Will raise eventual errors.
-        Input:
-        init_split_found    -   boolean revealing whether or not a good
-                                split was found on the first trial
-        size_nr             -   the index of the current nx, ny or NXPE
-                                under consideration
-        local_nx            -   List of values of nx (a local value is
-                                used in order not to alter self._nx)
-        local_ny            -   List of values of ny (a local value is
-                                used in order not to alter self._ny)
-        test_nx             -   whether or not the test was run on nx
-        test_ny             -   whether or not the test was run on ny
-        produce_warning     -   whether or not a warning should be
-                                produced
+
+        Parameters
+        ----------
+        init_split_found : bool
+            Whether or not a good split was found on the first trial
+        size_nr : int
+            The index of the current nx, ny or NXPE under consideration
+        local_nx : int
+            List of values of nx (a local value is used in order not to
+            alter self._nx)
+        local_ny : int
+            List of values of ny (a local value is used in order not to
+            alter self._ny)
+        test_nx : bool
+            whether or not the test was run on nx
+        test_ny : bool
+            whether or not the test was run on ny
+        produce_warning : bool
+            whether or not a warning should be produced
         """
         #}}}
 
@@ -2472,15 +2558,22 @@ class basic_runner(object):
         """
         Check if NXPE or NYPE is consistent with nproc
 
-        Input
-        local_nx        -   List of values of nx (a local value is used
-                            in order not to alter self._nx)
-        local_ny        -   List of values of ny (a local value is used
-                            in order not to alter self._ny)
-        type_str        -   can be either 'NXPE' or 'NYPE' and is specifying
-                            whether NXPE or NYPE should be checked
-        local_MXG       -   the current MXG
-        produce_warning -   whether or not a warning should be produced
+        Parameters
+        ----------
+
+        local_nx : int
+            List of values of nx (a local value is used in order not to
+            alter self._nx)
+        local_ny : int
+            List of values of ny (a local value is used in order not to
+            alter self._ny)
+        type_str : ['NXPE' | 'NYPE']
+            Can be either 'NXPE' or 'NYPE' and is specifying whether
+            NXPE or NYPE should be checked
+        local_MXG : int
+            The current MXG
+        produce_warning : bool
+            Whether or not a warning should be produced
         """
         #}}}
 
@@ -2576,10 +2669,12 @@ class basic_runner(object):
 #{{{Function called by _prepare_dmp_folder
 #{{{_get_folder_name
     def _get_folder_name(self, combination):
-        """Returning the folder name where the data will be stored.
+        """
+        Returning the folder name where the data will be stored.
 
         If all options are given the folder structure should be on the
-        form solver/method/nout_timestep/mesh/additional/grid"""
+        form solver/method/nout_timestep/mesh/additional/grid
+        """
 
         # Combination is one of the combination of the data members
         # which is used as the command line arguments in the run
@@ -3029,10 +3124,12 @@ class basic_runner(object):
 #{{{Functions called by _get_combinations
 #{{{_get_swapped_input_list
     def _get_swapped_input_list(self, input_list):
-        """Finds the element in the input list, which corresponds to the
+        """
+        Finds the element in the input list, which corresponds to the
         self._sort_by criterion. The element is swapped with the last
         index, so that itertools.product will make this the fastest
-        varying variable"""
+        varying variable
+        """
 
         # We make a sort list containing the string to find in the
         # input_list
@@ -3137,8 +3234,10 @@ class basic_runner(object):
 #{{{Function called by _single_run
 #{{{_get_command_to_run
     def _get_command_to_run(self, combination):
-        """ Returns a string of the command which will run the BOUT++
-        program"""
+        """
+        Returns a string of the command which will run the BOUT++
+        program
+        """
 
         # Creating the arguments
         arg = " -d " + self._dmp_folder + " " + combination
@@ -3186,7 +3285,11 @@ class basic_runner(object):
 #{{{class PBS_runner
 class PBS_runner(basic_runner):
 #{{{docstring
-    """Class for mpi running one or several runs with BOUT++.
+    """
+    pbs_runner
+    ----------
+
+    Class for mpi running one or several runs with BOUT++.
     Works like the basic_runner, but submits the jobs to a Portable
     Batch System (PBS).
 
@@ -3214,48 +3317,53 @@ class PBS_runner(basic_runner):
                  post_process_run_name = None      ,\
                  **kwargs):
         #{{{docstring
-        """The constructor of the PBS_runner.
+        """
+        PBS_runner constructor
+        ----------------------
 
         All the member data is set to None by default, with the
         exception of BOUT_nodes (default=1) and BOUT_ppn (default = 4).
 
-        Input:
-        BOUT_nodes              -    Number of nodes for one submitted
-                                     BOUT job
-        BOUT_ppn                -    Processors per node for one
-                                     submitted BOUT job
-        BOUT_walltime           -    Maximum wall time for one submitted
-                                     BOUT job
-        BOUT_queue              -    The queue to submit the BOUT jobs
-        BOUT_mail               -    Mail address to notify when a BOUT job
-                                     has finished
-        BOUT_run_name           -    Name of the BOUT run on the cluster
-                                     (optional)
-        post_process_nproc      -    Total number of processors for one
-                                     submitted post processing job
-        post_process_nodes      -    Number of nodes for one submitted
-                                     post processing job
-        post_process_ppn        -    Processors per node for one
-                                     submitted BOUT job
-        post_process_walltime   -    Maximum wall time for one
-                                     submitting post processing job
-        post_process_queue      -    The queue to submit the post
-                                     processing jobs
-        post_process_mail       -    Mail address to notify when a post
-                                     processing job has finished
-        post_process_run_name   -    Name of the post processing run on the
-                                     cluster (optional)
-        **kwargs                -    As the constructor of bout_runners
-                                     is called, this additional keyword
-                                     makes it possible to specify the
-                                     member data of bout_runners in the
-                                     constructor of PBS_runner (i.e.
-                                     nprocs = 1
-                                     is an allowed keyword argument in
-                                     the constructor of PBS_runner).
-                                     For a full list of possible
-                                     keywords, see the docstring of the
-                                     bout_runners constructor.
+        Parameters
+        ----------
+
+        BOUT_nodes : int
+            Number of nodes for one submitted BOUT job
+        BOUT_ppn : int
+            Processors per node for one submitted BOUT job
+        BOUT_walltime : str
+            Maximum wall time for one submitted BOUT job
+        BOUT_queue : str
+            The queue to submit the BOUT jobs
+        BOUT_mail : str
+            Mail address to notify when a BOUT job has finished
+        BOUT_run_name : str
+            Name of the BOUT run on the cluster (optional)
+        post_process_nproc : int
+            Total number of processors for one submitted post processing
+            job
+        post_process_nodes : int
+            Number of nodes for one submitted post processing job
+        post_process_ppn : int
+            Processors per node for one submitted BOUT job
+        post_process_walltime : str
+            Maximum wall time for one submitting post processing job
+        post_process_queue : str
+            The queue to submit the post processing jobs
+        post_process_mail : str
+            Mail address to notify when a post processing job has
+            finished
+        post_process_run_name : str
+            Name of the post processing run on the cluster (optional)
+        **kwargs : any
+            As the constructor of bout_runners is called, this
+            additional keyword makes it possible to specify the member
+            data of bout_runners in the constructor of PBS_runner (i.e.
+            nprocs = 1 is an allowed keyword argument in the constructor
+            of PBS_runner).
+
+            For a full list of possible keywords, see the docstring of
+            the bout_runners constructor.
         """
         #}}}
 
@@ -3513,10 +3621,12 @@ class PBS_runner(basic_runner):
                                        folders  = None ,\
                                        **kwargs         \
                                        ):
-        """Function which submits the post processing to the PBS
+        """
+        Function which submits the post processing to the PBS
 
         This is done by making a self deleting temporary python file
-        that will be called by a PBS script."""
+        that will be called by a PBS script.
+        """
 
         #{{{ Create a python script, calling the post-processing function
         # Get the start_time (to be used in the name of the file)
@@ -3594,8 +3704,10 @@ class PBS_runner(basic_runner):
 #{{{ Functions called by _single_submit
     #{{{_get_job_string
     def _get_job_string(self, run_no, combination, append_to_run_log):
-        """Make a string which will saved as a shell script before being sent to
-        the PBS queue."""
+        """
+        Make a string which will saved as a shell script before being
+        sent to the PBS queue.
+        """
 
         #{{{Make the job name based on the combination
         # Split the name to a list
@@ -3688,7 +3800,9 @@ class PBS_runner(basic_runner):
 #{{{Functions called by _submit_to_PBS
 #{{{_get_start_time
     def _get_start_time(self):
-        """Returns a string of the current time down to micro precision"""
+        """
+        Returns a string of the current time down to micro precision
+        """
 
         # The time is going to be appended to the  job name and python name
         time_now = datetime.datetime.now()
@@ -3714,7 +3828,9 @@ class PBS_runner(basic_runner):
                                 mail     = None,\
                                 queue    = None \
                                 ):
-        """Creates the core of a PBS script as a string"""
+        """
+        Creates the core of a PBS script as a string
+        """
 
         # Shebang line
         job_string = '#!/bin/bash\n'
@@ -3746,8 +3862,10 @@ class PBS_runner(basic_runner):
 
 #{{{_submit_to_PBS
     def _submit_to_PBS(self, job_string, dependent_job=None):
-        """Saves the job_string as a shell script, submits it and
-        deletes it. Returns the output from PBS as a string"""
+        """
+        Saves the job_string as a shell script, submits it and deletes
+        it. Returns the output from PBS as a string
+        """
 
         # Create the name of the temporary shell script
         # Get the start_time used for the name of the script
@@ -3808,9 +3926,8 @@ class PBS_runner(basic_runner):
 
 #{{{if __name__ == '__main__':
 if __name__ == '__main__':
-    """If bout_runners is run as a script, it will just call the demo
-    function"""
 
-    print("\n\nTo find out about the bout_runners, please read the user's"+\
-          " manual, or have a look at 'BOUT/examples/bout_runners_example'")
+    print("\n\nTo find out about the bout_runners, please read the user's "+\
+          "manual, or have a look at 'BOUT/examples/bout_runners_example, '"+\
+          "or have a look at the documentation")
 #}}}
