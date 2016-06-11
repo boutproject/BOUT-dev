@@ -8994,6 +8994,9 @@ then
     }
 MYEOF
 
+  # This is needed here, as CXX may be empty
+  CXX="$MPICXX"
+
   # Try to compile
   echo "Trying to compile test_cvode_compile.cxx" >> config-build.log
 
