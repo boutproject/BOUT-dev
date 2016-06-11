@@ -12,8 +12,8 @@ BOUT/examples/bout_runners_example.
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '1.025'
-__date__    = '2016.06.10'
+__version__ = '1.0251'
+__date__    = '2016.06.11'
 
 import os
 import sys
@@ -28,7 +28,7 @@ import numpy as np
 from boututils.run_wrapper import shell, launch, getmpirun
 from boututils.options import BOUTOptions
 from boututils.datafile import DataFile
-from boutdata.restart import redistribute, addnoise
+from boutdata.restart import redistribute, addnoise, expand
 
 #{{{class basic_runner
 # As a child class uses the super function, the class must allow an
@@ -1141,8 +1141,8 @@ class basic_runner(object):
             if raise_error:
                 self._errors.append("TypeError")
                 message = "addnoise must be on the form "
-                message += "{'var'= string_or_none, "
-                message += "'scale'= number_or_none}"
+                message += "{'var': string_or_none, "
+                message += "'scale': number_or_none}"
                 raise TypeError (message)
         #}}}
 
@@ -1610,6 +1610,8 @@ class basic_runner(object):
             # ny is given, so we only need to find nx
             local_ny = self._ny
             # If nx and ny is a function of MXG and MYG
+            # NOTE: MXG may seem unused, but it needs to be in the current
+            #       namespace if eval(myOpts.mesh['nx']) depends on MXG
             if self._MXG is None:
                 MXG = eval(myOpts.root['MXG'])
             else:
@@ -1632,6 +1634,8 @@ class basic_runner(object):
             # nx is given, so we only need to find ny
             local_nx = self._nx
             # If nx and ny is a function of MXG and MYG
+            # NOTE: MYG may seem unused, but it needs to be in the current
+            #       namespace if eval(myOpts.mesh['nx']) depends on MYG
             if self._MYG is None:
                 MYG = eval(myOpts.root['MYG'])
             else:
@@ -2022,6 +2026,8 @@ class basic_runner(object):
         - Find appropriate mxg and myg if redistribute is set.
         - Copy restart files if restart_from and/or redistribute is set
         - Redistribute restart files if redistribute and restart is set
+        - Expand the runs (change nz) if nz is set and it deviates from
+          what is found in the restart files.
         - Add noise to the restart files if addnoise and restart is set
         - Copy files if restart is set to overwrite
         - Copy the source files to the final folder is cpy_source is True.
@@ -2089,10 +2095,7 @@ class basic_runner(object):
 
         #{{{ Copy restart files if restart_from and/or redistribute is set
         if self._restart and self._restart_from:
-            if not(self._redistribute):
-                # Copy the files to restart
-                do_run = self._copy_run_files()
-            else:
+            if self._redistribute:
                 # Use the redistribute function to copy the restart file
                 do_run = self._check_if_run_already_performed(\
                         restart_file_search_reason = 'redistribute')
@@ -2107,13 +2110,16 @@ class basic_runner(object):
                                                 myg    = redistribute_MYG  ,\
                                                 )
                     if not do_run:
-                        message = 'redistribute failed, run skipped'
+                        message = 'Redistribute failed, run skipped'
                         self._warning_printer(message)
                         self._warnings.append(message)
+            else:
+                # Copy the files to restart
+                do_run = self._copy_run_files()
 
         elif self._restart and self._redistribute:
             # Save the files from previous runs
-            dst = self._move_old_runs(folder_name = 'before_redistribution',\
+            dst = self._move_old_runs(folder_name = 'redistribute',\
                                       include_restart = True)
 
             do_run = redistribute(self._redistribute       ,\
@@ -2130,6 +2136,108 @@ class basic_runner(object):
             self._move_old_runs(folder_name = 'restart', include_restart = False)
         #}}}
 
+        #{{{ Expand nz
+        if self._restart and self._nz and do_run:
+            # The current nz should be in the second index as any
+            # eventual other names would come from additional or
+            # series_add
+            cur_nz = int(self._dmp_folder.\
+                         split("nz")[1].\
+                         split("/")[0].\
+                         replace("_", ""))
+            if self._restart == "append":
+                # Check if nz is the same as in the restart files
+                # Start by opening the 0th restart file
+                file_name  = glob.glob(os.path.join(self._dmp_folder, "BOUT.restart.0.*"))[0]
+                with DataFile(file_name) as f:
+                    # Loop over the variables in the file
+                    for var in f.list():
+                        # Read the data
+                        data = f.read(var)
+
+                        # Find 3D variables
+                        if f.ndims(var) == 3:
+                            nx, ny, nz = data.shape
+
+                            if nz != cur_nz:
+                                message  = "Cannot change nz when appending\n"
+                                message += "nz in restart file = {}\n".format(nz)
+                                message += "current run nz = {}".format(cur_nz)
+                                raise IOError(message)
+                            else:
+                                break
+
+            # Get the folder of the restart files
+            elif self._restart == "overwrite" and not(self._redistribute):
+                # The restart files are stored in the restart folder
+                folder = "restart*"
+            elif self._restart == "overwrite" and self._redistribute:
+                if self._restart_from:
+                    dst = self._move_old_runs(folder_name = 'redistribute',\
+                                              include_restart = True)
+
+                # The restart files are stored in the restart folder
+                folder = "redistribute*"
+
+            if self._restart == "overwrite":
+                # Find the restart files
+                location = glob.glob(os.path.join(self._dmp_folder, folder))
+                location.sort()
+                location = location[-1]
+
+                # Check whether nz is changing or not
+                file_name = glob.glob(\
+                        os.path.join(location, "BOUT.restart.0.*"))[0]
+
+                with DataFile(file_name) as f:
+                    # Loop over the variables in the file
+                    for var in f.list():
+                        # Read the data
+                        data = f.read(var)
+
+                        # Find 3D variables
+                        if f.ndims(var) == 3:
+                            nx, ny, nz = data.shape
+
+                            if nz == cur_nz or nz+1 == cur_nz or nz-1 == cur_nz:
+                                call_expand = False
+                            else:
+                                if nz < cur_nz:
+                                    call_expand = True
+                                else:
+                                    if self._restart_from:
+                                        print("Something went wrong: "+\
+                                              "Reomving "+\
+                                              os.path.split(location)[0] + "\n")
+                                        shutil.rmtree(os.path.split(location)[0])
+                                    message = "Cannot decrease nz from {} to"\
+                                              " {} in a restart".format(nz, cur_nz)
+                                    raise IOError(message)
+
+                if call_expand:
+                    # NOTE: Self expand currently uses the extra z plane
+                    if cur_nz % 2 == 0:
+                        newz = cur_nz + 1
+                    else:
+                        newz = cur_nz
+
+                    print("\nnz is bigger than in restart file, expanding:\n")
+                    success = expand(newz,\
+                                     path = location,\
+                                     output = self._dmp_folder)
+                    print("\n")
+
+                    if success == False:
+                        do_run = False
+                        if self._restart_from:
+                            print("Something went wrong: Reomving "+\
+                                  os.path.split(location)[0]+"\n")
+                            shutil.rmtree(os.path.split(location)[0])
+                        message = "Expand failed, skipping run."
+                        self._warnings.append(message)
+                        self._warning_printer(message)
+        #}}}
+
         #{{{ Add noise
         if self._restart and self._addnoise and do_run:
             print('Now adding noise\n')
@@ -2142,7 +2250,7 @@ class basic_runner(object):
         #}}}
 
         #{{{ Copy the source files if cpy_source is True
-        if self._cpy_source:
+        if self._cpy_source and do_run:
             # This will copy all C++ files to the dmp_folder
             cpp_extension= ['.cc', '.cpp', '.cxx', '.C', '.c++',\
                             '.h',  '.hpp', '.hxx', '.h++']
@@ -3264,7 +3372,6 @@ class basic_runner(object):
         print('\n'*3 + '*'*37 + 'WARNING' + '*'*36)
         # Makes sure that no more than 80 characters are printed out at
         # the same time
-        message_chunks=[]
         for chunk in self._message_chunker(message):
             rigth_padding = ' '*(76 - len(chunk))
             print('* ' + chunk + rigth_padding + ' *')
@@ -3696,7 +3803,7 @@ class PBS_runner(basic_runner):
         # Submit the job
         print('\nSubmitting the post processing function "' +\
                 function.__name__ + '"\n')
-        PBS_id = self._submit_to_PBS(job_string, dependent_job = dependencies)
+        self._submit_to_PBS(job_string, dependent_job = dependencies)
         #}}}
     #}}}
 #}}}
