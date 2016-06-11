@@ -407,8 +407,8 @@ then
   # Try to find a valid NetCDF configuration
   #
   # at first, try to find ncconf script
-	
-	
+
+
   #echo "Searching for NetCDF configuration"
 
   OLDNCDF="0" # Indicates whether nc-config or ncxx4-config
@@ -1413,6 +1413,9 @@ then
       exit (0);
     }
 MYEOF
+
+  # This is needed here, as CXX may be empty
+  CXX="$MPICXX"
 
   # Try to compile
   echo "Trying to compile test_cvode_compile.cxx" >> config-build.log
