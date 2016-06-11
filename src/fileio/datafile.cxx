@@ -56,6 +56,7 @@ Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), f
   OPTION(opt, floats, false); // High precision by default
   OPTION(opt, openclose, true); // Open and close every write or read
   OPTION(opt, enabled, true);
+  OPTION(opt, init_missing, false); // Initialise missing variables?
   
 }
 
@@ -333,14 +334,14 @@ bool Datafile::read() {
   for(std::vector< VarStr<int> >::iterator it = int_arr.begin(); it != int_arr.end(); it++) {
     if(it->grow) {
       if(!file->read_rec(it->ptr, it->name.c_str())) {
-	output.write("\tWARNING: Could not read integer %s. Setting to zero\n", it->name.c_str());
-	*(it->ptr) = 0;
+        output.write("\tWARNING: Could not read integer %s. Setting to zero\n", it->name.c_str());
+        *(it->ptr) = 0;
 	continue;
       }
     }else {
       if(!file->read(it->ptr, it->name.c_str())) {
-	output.write("\tWARNING: Could not read integer %s. Setting to zero\n", it->name.c_str());
-	*(it->ptr) = 0;
+        output.write("\tWARNING: Could not read integer %s. Setting to zero\n", it->name.c_str());
+        *(it->ptr) = 0;
 	continue;
       }
     }
@@ -565,14 +566,22 @@ bool Datafile::read_f2d(const string &name, Field2D *f, bool grow) {
   
   if(grow) {
     if(!file->read_rec(*(f->getData()), name, mesh->ngx, mesh->ngy)) {
-      output.write("\tWARNING: Could not read 2D field %s. Setting to zero\n", name.c_str());
-      *f = 0.0;
+      if(init_missing) {
+        output.write("\tWARNING: Could not read 2D field %s. Setting to zero\n", name.c_str());
+        *f = 0.0;
+      }else {
+        throw BoutException("Missing 2D evolving field %s in input. Set init_missing=true to set to zero.", name.c_str());
+      }
       return false;
     }
   }else {
     if(!file->read(*(f->getData()), name, mesh->ngx, mesh->ngy)) {
-      output.write("\tWARNING: Could not read 2D field %s. Setting to zero\n", name.c_str());
-      *f = 0.0;
+      if(init_missing) {
+        output.write("\tWARNING: Could not read 2D field %s. Setting to zero\n", name.c_str());
+        *f = 0.0;
+      }else {
+        throw BoutException("Missing 2D field %s in input. Set init_missing=true to set to zero.", name.c_str());
+      }
       return false;
     }
   }
@@ -584,14 +593,22 @@ bool Datafile::read_f3d(const string &name, Field3D *f, bool grow) {
   
   if(grow) {
     if(!file->read_rec(**(f->getData()), name, mesh->ngx, mesh->ngy, mesh->ngz)) {
-      output.write("\tWARNING: Could not read 3D field %s. Setting to zero\n", name.c_str());
-      *f = 0.0;
+      if(init_missing) {
+        output.write("\tWARNING: Could not read 3D field %s. Setting to zero\n", name.c_str());
+        *f = 0.0;
+      }else {
+        throw BoutException("Missing 3D evolving field %s in input. Set init_missing=true to set to zero.", name.c_str());
+      }
       return false;
     }
   }else {
     if(!file->read(**(f->getData()), name, mesh->ngx, mesh->ngy, mesh->ngz)) {
-      output.write("\tWARNING: Could not read 3D field %s. Setting to zero\n", name.c_str());
-      *f = 0.0;
+      if(init_missing) {
+        output.write("\tWARNING: Could not read 3D field %s. Setting to zero\n", name.c_str());
+        *f = 0.0;
+      }else {
+        throw BoutException("Missing 3D field %s in input. Set init_missing=true to set to zero.", name.c_str());
+      }
       return false;
     }
   }
