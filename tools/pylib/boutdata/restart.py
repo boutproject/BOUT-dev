@@ -220,7 +220,7 @@ def expand(newz, path="data", output="./", informat="nc", outformat=None):
                     print("    Copying "+var)
                     newdata = data.copy()
 
-                new.write(var, data)
+                new.write(var, newdata)
 
     return True
 
