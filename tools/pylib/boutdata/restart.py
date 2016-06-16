@@ -216,6 +216,15 @@ def expand(newz, path="data", output="./", informat="nc", outformat=None):
                             # Invert fft
                             newdata[x,y,0:(newz-1)] = np.fft.ifft(f_new).real
                             newdata[x,y,newz-1] = newdata[x,y,0]
+
+                    # Multiply with the ratio of newz/nz
+                    # This is not needed in the IDL routine as the
+                    # forward transfrom has the scaling factor 1/N in
+                    # the forward transform, whereas the scaling factor
+                    # 1/N is the inverse transform in np.fft
+                    # Note that ifft(fft(a)) = a for the same number of
+                    # points in both IDL and np.ftt
+                    newdata *= ((newz-1)/(nz-1))
                 else:
                     print("    Copying "+var)
                     newdata = data.copy()
