@@ -146,7 +146,9 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
         # Just read from file
         if varname != 't_array':
             data = f.read(varname)
-        else:
+        elif (varname == 't_array') and (tind is None):
+            data = f.read(varname)
+        elif (varname == 't_array') and (tind is not None):
             data = f.read(varname, ranges=[tind[0],tind[1]+1])
         f.close()
         return data
