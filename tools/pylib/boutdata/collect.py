@@ -105,7 +105,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
 
         data = f.read(varname)
         return data
-    
+
     file_list_nc = glob.glob(os.path.join(path, prefix+".*nc"))
     file_list_h5 = glob.glob(os.path.join(path, prefix+".*hdf5"))
     if file_list_nc != [] and file_list_h5 != []:
@@ -116,7 +116,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
     else:
         suffix = ".nc"
         file_list = file_list_nc
-        
+
     file_list.sort()
     if file_list == []:
         raise IOError("ERROR: No data files found")
@@ -136,14 +136,18 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
         else:
             # Find the variable
             varname = findVar(varname, f.list())
-            
+
             dimens = f.dimensions(varname)
             #ndims = len(dimens)
             ndims = f.ndims(varname)
-    
+
+    # ndims is 0 for reals, and 1 for f.ex. t_array
     if ndims < 2:
         # Just read from file
-        data = f.read(varname)
+        if varname != 't_array':
+            data = f.read(varname)
+        else:
+            data = f.read(varname, ranges=[tind[0],tind[1]+1])
         f.close()
         return data
 
@@ -356,7 +360,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
 
         if not inrange:
             continue # Don't need this file
-        
+
         filename = os.path.join(path, prefix+"." + str(i) + suffix)
         if info:
             sys.stdout.write("\rReading from " + filename + ": [" + \
@@ -391,11 +395,6 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
             d = f.read(varname, ranges=[xmin, xmax+1,
                                         ymin, ymax+1])
             data[(xgmin-xind[0]):(xgmin-xind[0]+nx_loc), (ygmin-yind[0]):(ygmin-yind[0]+ny_loc)] = d
-        elif ndims == 1:
-            if dimens[0] == 't':
-                # t
-                d = f.read(varname, ranges=[tind[0],tind[1]+1])
-                data[:] = d
 
         f.close()
 
