@@ -160,10 +160,26 @@ def rotate(gridfile, yshift, output=None):
 import matplotlib.pyplot as plt        
 from numpy import linspace, amin, amax
 
-def gridcontourf(grid, data2d, nlevel=30, show=True, mind=None, maxd=None):
+def gridcontourf(grid, data2d, nlevel=31, show=True, mind=None, maxd=None, cmap=None):
     """
+    Plots a 2D contour plot, taking into account branch cuts (X-points).
     
+    Inputs
+    ------
+    grid - A DataFile object
+    data2d - A 2D (x,y) NumPy array of data to plot
+    
+    nlevel - Number of levels in the contour plot
+    mind   - Minimum data level
+    maxd   - Maximum data level
     """
+
+    if cmap == None:
+        cmap = plt.cm.get_cmap("YlOrRd")
+
+    if len(data2d.shape) != 2:
+        raise ValueError("data2d must be 2D (x,y)")
+    
     j11 = grid["jyseps1_1"]
     j12 = grid["jyseps1_2"]
     j21 = grid["jyseps2_1"]
@@ -178,17 +194,23 @@ def gridcontourf(grid, data2d, nlevel=30, show=True, mind=None, maxd=None):
     nx  = grid["nx"]
     ny  = grid["ny"]
     
+    if (data2d.shape[0] != nx) or (data2d.shape[1] != ny):
+        raise ValueError("data2d has wrong size: (%d,%d), expected (%d,%d)" % (data2d.shape[0], data2d.shape[1], nx, ny))
+
     if hasattr(j11, "__len__"):
         # Arrays rather than scalars
-        j11 = j11[0]
-        j12 = j12[0]
-        j21 = j21[0]
-        j22 = j22[0]
-        ix1 = ix2[0]
-        ix2 = ix2[0]
-        nin = nin[0]
-        nx  = nx[0]
-        ny  = ny[0]
+        try:
+          j11 = j11[0]
+          j12 = j12[0]
+          j21 = j21[0]
+          j22 = j22[0]
+          ix1 = ix2[0]
+          ix2 = ix2[0]
+          nin = nin[0]
+          nx  = nx[0]
+          ny  = ny[0]
+        except:
+          pass
 
     R = grid["Rxy"]
     Z = grid["Zxy"]
@@ -204,52 +226,54 @@ def gridcontourf(grid, data2d, nlevel=30, show=True, mind=None, maxd=None):
     if maxd is None:
       maxd = amax(data2d)    
 
-    levels = linspace(mind, maxd, nlevel)
+    levels = linspace(mind, maxd, nlevel, endpoint=True)
 
     ystart = 0  # Y index to start the next section
     if j11 >= 0:
         # plot lower inner leg
-        ax.contourf(R[:,ystart:(j11+1)], Z[:,ystart:(j11+1)], data2d[:,ystart:(j11+1)], levels)
+        ax.contourf(R[:,ystart:(j11+1)], Z[:,ystart:(j11+1)], data2d[:,ystart:(j11+1)], levels,cmap=cmap)
     
         yind = [j11, j22+1]
-        ax.contourf(R[:ix1, yind].transpose(), Z[:ix1, yind].transpose(), data2d[:ix1, yind].transpose(), levels)
+        ax.contourf(R[:ix1, yind].transpose(), Z[:ix1, yind].transpose(), data2d[:ix1, yind].transpose(), levels,cmap=cmap)
         
-        ax.contourf(R[ix1:,j11:(j11+2)], Z[ix1:,j11:(j11+2)], data2d[ix1:,j11:(j11+2)], levels)
+        ax.contourf(R[ix1:,j11:(j11+2)], Z[ix1:,j11:(j11+2)], data2d[ix1:,j11:(j11+2)], levels,cmap=cmap)
         ystart = j11+1
     
         yind = [j22, j11+1]
-        ax.contourf(R[:ix1, yind].transpose(), Z[:ix1, yind].transpose(), data2d[:ix1, yind].transpose(), levels)
+        ax.contourf(R[:ix1, yind].transpose(), Z[:ix1, yind].transpose(), data2d[:ix1, yind].transpose(), levels, cmap=cmap)
         
     # Inner SOL
-    con = ax.contourf(R[:,ystart:(j21+1)], Z[:,ystart:(j21+1)], data2d[:,ystart:(j21+1)], levels)
+    con = ax.contourf(R[:,ystart:(j21+1)], Z[:,ystart:(j21+1)], data2d[:,ystart:(j21+1)], levels, cmap=cmap)
     ystart = j21+1
     
     if j12 > j21: 
         # Contains upper PF region
         
         # Inner leg
-        ax.contourf(R[ix1:,j21:(j21+2)], Z[ix1:,j21:(j21+2)], data2d[ix1:,j21:(j21+2)], levels)
-        ax.contourf(R[:,ystart:nin], Z[:,ystart:nin], data2d[:,ystart:nin], levels)
+        ax.contourf(R[ix1:,j21:(j21+2)], Z[ix1:,j21:(j21+2)], data2d[ix1:,j21:(j21+2)], levels, cmap=cmap)
+        ax.contourf(R[:,ystart:nin], Z[:,ystart:nin], data2d[:,ystart:nin], levels, cmap=cmap)
         
         # Outer leg
-        ax.contourf(R[:,nin:(j12+1)], Z[:,nin:(j12+1)], data2d[:,nin:(j12+1)], levels)
-        ax.contourf(R[ix1:,j12:(j12+2)], Z[ix1:,j12:(j12+2)], data2d[ix1:,j12:(j12+2)], levels)
+        ax.contourf(R[:,nin:(j12+1)], Z[:,nin:(j12+1)], data2d[:,nin:(j12+1)], levels, cmap=cmap)
+        ax.contourf(R[ix1:,j12:(j12+2)], Z[ix1:,j12:(j12+2)], data2d[ix1:,j12:(j12+2)], levels, cmap=cmap)
         ystart = j12+1
         
         yind = [j21, j12+1]
-        ax.contourf(R[:ix1, yind].transpose(), Z[:ix1, yind].transpose(), data2d[:ix1, yind].transpose(), levels)
+        ax.contourf(R[:ix1, yind].transpose(), Z[:ix1, yind].transpose(), data2d[:ix1, yind].transpose(), levels, cmap=cmap)
 
         yind = [j21+1, j12]
-        ax.contourf(R[:ix1, yind].transpose(), Z[:ix1, yind].transpose(), data2d[:ix1, yind].transpose(), levels)
+        ax.contourf(R[:ix1, yind].transpose(), Z[:ix1, yind].transpose(), data2d[:ix1, yind].transpose(), levels, cmap=cmap)
+    else:
+        ystart -= 1
     # Outer SOL
-    ax.contourf(R[:,ystart:(j22+1)], Z[:,ystart:(j22+1)], data2d[:,ystart:(j22+1)], levels)
+    ax.contourf(R[:,ystart:(j22+1)], Z[:,ystart:(j22+1)], data2d[:,ystart:(j22+1)], levels, cmap=cmap)
     
     ystart = j22+1
 
     if j22+1 < ny:
         # Outer leg
-        ax.contourf(R[ix1:,j22:(j22+2)], Z[ix1:,j22:(j22+2)], data2d[ix1:,j22:(j22+2)], levels)
-        ax.contourf(R[:,ystart:ny], Z[:,ystart:ny], data2d[:,ystart:ny], levels)
+        ax.contourf(R[ix1:,j22:(j22+2)], Z[ix1:,j22:(j22+2)], data2d[ix1:,j22:(j22+2)], levels, cmap=cmap)
+        ax.contourf(R[:,ystart:ny], Z[:,ystart:ny], data2d[:,ystart:ny], levels, cmap=cmap)
         
 
     fig.colorbar(con)
