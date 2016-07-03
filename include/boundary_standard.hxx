@@ -182,6 +182,24 @@ class BoundaryNeumann_4thOrder : public BoundaryOp {
   BoutReal val;
 };
 
+/// Neumann boundary condition set half way between guard cell and grid cell at 4th order accuracy
+class BndNeumann_O4 : public BoundaryOp {
+ public:
+  BndNeumann_O4() : bndfunc(NULL), gen(NULL) {}
+  BndNeumann_O4(BoundaryRegion *region, FieldGenerator*g):BoundaryOp(region), bndfunc(NULL), gen(g) {}
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  void apply(Field2D &f);
+  void apply(Field2D &f, BoutReal t);
+  void apply(Field3D &f);
+  void apply(Field3D &f,BoutReal t);
+
+  void apply_ddt(Field2D &f);
+  void apply_ddt(Field3D &f);
+ private:
+  FuncPtr bndfunc;
+  FieldGenerator *gen;
+};
+
 /// NeumannPar (zero-gradient) boundary condition on
 /// the variable / sqrt(g_22)
 class BoundaryNeumannPar : public BoundaryOp {

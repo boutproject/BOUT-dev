@@ -2127,6 +2127,143 @@ void BndNeumann_O2::apply_ddt(Field3D &f) {
       (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
 }
 
+///////////////////////////////////////////////////////////////
+
+BoundaryOp* BndNeumann_O4::clone(BoundaryRegion *region, const list<string> &args){
+  FieldGenerator *newgen = 0;
+  if(!args.empty()) {
+    // First argument should be an expression
+    newgen = FieldFactory::get()->parse(args.front());
+  }
+  return new BndNeumann_O4(region, newgen);
+}
+
+void BndNeumann_O4::apply(Field2D &f) {
+  BndNeumann_O4::apply(f,0.);
+}
+
+void BndNeumann_O4::apply(Field2D &f,BoutReal t) {
+  // Set (at 4th order) the value at the mid-point between the guard cell and the grid cell to be val
+  // N.B. Only first guard cells (closest to the grid) should ever be used
+  bndry->first();
+
+  // Decide which generator to use
+  FieldGenerator* fg = gen;
+  if(!fg)
+    fg = f.getBndryGenerator(bndry->location);
+
+  BoutReal val = 0.0;
+  
+  // Check for staggered grids
+  CELL_LOC loc = f.getLocation();
+  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+    throw BoutException("neumann_o4 not implemented with staggered grid yet");
+  }
+  else {
+    // Non-staggered, standard case
+    
+    for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
+      BoutReal delta = bndry->bx*mesh->dx(bndry->x,bndry->y)+bndry->by*mesh->dy(bndry->x,bndry->y);
+      
+      if(fg) {
+        // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
+        BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
+                                 + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+	
+        BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
+                                 + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+	
+        val = fg->generate(xnorm, TWOPI*ynorm, 0.0, t);
+      }
+      
+      f(bndry->x, bndry->y) = 12.*delta*val/11.
+                             +
+                             (
+                             + 17.*f(bndry->x-  bndry->bx, bndry->y-  bndry->by)
+                             +  9.*f(bndry->x-2*bndry->bx, bndry->y-1*bndry->by)
+                             -  5.*f(bndry->x-3*bndry->bx, bndry->y-2*bndry->by)
+                             +     f(bndry->x-4*bndry->bx, bndry->y-3*bndry->by)
+                             )/22.;
+
+      if (bndry->width == 2){
+        throw BoutException("neumann_o4 with a boundary width of 2 not implemented yet");
+      }
+    }
+  }
+}
+
+void BndNeumann_O4::apply(Field3D &f) {
+  BndNeumann_O4::apply(f,0.);
+}
+
+void BndNeumann_O4::apply(Field3D &f,BoutReal t) {
+  bndry->first();
+
+  // Decide which generator to use
+  FieldGenerator* fg = gen;
+  if(!fg)
+    fg = f.getBndryGenerator(bndry->location);
+
+  BoutReal val = 0.0;
+  
+  // Check for staggered grids
+  CELL_LOC loc = f.getLocation();
+  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+    throw BoutException("neumann_o4 not implemented with staggered grid yet");
+  }
+  else {
+    for(; !bndry->isDone(); bndry->next1d()) {
+      // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
+      BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
+                               + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+
+      BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
+                               + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+      
+      BoutReal delta = bndry->bx*mesh->dx(bndry->x,bndry->y)+bndry->by*mesh->dy(bndry->x,bndry->y);
+
+      for(int zk=0;zk<mesh->ngz-1;zk++) {
+        if(fg){
+          val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1),t);
+        }
+
+        output << "delta = " << delta << std::endl;
+        output << "val   = " << val << std::endl;
+        output << "\n"  << std::endl;
+        f(bndry->x,bndry->y, zk) = f(bndry->x-bndry->bx, bndry->y-bndry->by, zk) + delta*val;
+
+        f(bndry->x,bndry->y, zk) = 12.*delta*val/11.
+                                 +
+                                 (
+                                 + 17.*f(bndry->x-  bndry->bx, bndry->y-  bndry->by, zk)
+                                 +  9.*f(bndry->x-2*bndry->bx, bndry->y-1*bndry->by, zk)
+                                 -  5.*f(bndry->x-3*bndry->bx, bndry->y-2*bndry->by, zk)
+                                 +     f(bndry->x-4*bndry->bx, bndry->y-3*bndry->by, zk)
+                                 )/22.;
+
+        if (bndry->width == 2){
+            throw BoutException("neumann_o4 with a boundary width of 2 not implemented yet");
+        }
+      }
+    }
+  }
+}
+
+void BndNeumann_O4::apply_ddt(Field2D &f) {
+  Field2D *dt = f.timeDeriv();
+  for(bndry->first(); !bndry->isDone(); bndry->next())
+    (*dt)(bndry->x,bndry->y) = 0.; // Set time derivative to zero
+}
+
+void BndNeumann_O4::apply_ddt(Field3D &f) {
+  Field3D *dt = f.timeDeriv();
+  for(bndry->first(); !bndry->isDone(); bndry->next())
+    for(int z=0;z<mesh->ngz;z++)
+      (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
+}
+
+///////////////////////////////////////////////////////////////
+
 BoundaryOp* BoundaryNeumann_4thOrder::clone(BoundaryRegion *region, const list<string> &args) {
   if(!args.empty()) {
     // First argument should be a value
