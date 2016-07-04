@@ -2143,6 +2143,7 @@ void BndNeumann_O4::apply(Field2D &f) {
 }
 
 void BndNeumann_O4::apply(Field2D &f,BoutReal t) {
+  
   // Set (at 4th order) the value at the mid-point between the guard cell and the grid cell to be val
   // N.B. Only first guard cells (closest to the grid) should ever be used
   bndry->first();
@@ -2180,9 +2181,9 @@ void BndNeumann_O4::apply(Field2D &f,BoutReal t) {
                              +
                              (
                              + 17.*f(bndry->x-  bndry->bx, bndry->y-  bndry->by)
-                             +  9.*f(bndry->x-2*bndry->bx, bndry->y-1*bndry->by)
-                             -  5.*f(bndry->x-3*bndry->bx, bndry->y-2*bndry->by)
-                             +     f(bndry->x-4*bndry->bx, bndry->y-3*bndry->by)
+                             +  9.*f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by)
+                             -  5.*f(bndry->x-3*bndry->bx, bndry->y-3*bndry->by)
+                             +     f(bndry->x-4*bndry->bx, bndry->y-4*bndry->by)
                              )/22.;
 
       if (bndry->width == 2){
@@ -2227,18 +2228,13 @@ void BndNeumann_O4::apply(Field3D &f,BoutReal t) {
           val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1),t);
         }
 
-        output << "delta = " << delta << std::endl;
-        output << "val   = " << val << std::endl;
-        output << "\n"  << std::endl;
-        f(bndry->x,bndry->y, zk) = f(bndry->x-bndry->bx, bndry->y-bndry->by, zk) + delta*val;
-
         f(bndry->x,bndry->y, zk) = 12.*delta*val/11.
                                  +
                                  (
                                  + 17.*f(bndry->x-  bndry->bx, bndry->y-  bndry->by, zk)
-                                 +  9.*f(bndry->x-2*bndry->bx, bndry->y-1*bndry->by, zk)
-                                 -  5.*f(bndry->x-3*bndry->bx, bndry->y-2*bndry->by, zk)
-                                 +     f(bndry->x-4*bndry->bx, bndry->y-3*bndry->by, zk)
+                                 +  9.*f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by, zk)
+                                 -  5.*f(bndry->x-3*bndry->bx, bndry->y-3*bndry->by, zk)
+                                 +     f(bndry->x-4*bndry->bx, bndry->y-4*bndry->by, zk)
                                  )/22.;
 
         if (bndry->width == 2){
