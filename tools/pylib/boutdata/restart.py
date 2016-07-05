@@ -13,12 +13,14 @@ try:
 except ImportError:
     raise ImportError("ERROR: restart module needs DataFile")
 
+import multiprocessing
 import numpy as np
 from numpy import mean, zeros, arange
 from math import sqrt
 from numpy.random import normal
 
 from scipy.interpolate import interp1d
+from scipy.interpolate import RegularGridInterpolator
 
 try:
     import os
@@ -133,6 +135,187 @@ def split(nxpe, nype, path="data", output="./", informat="nc", outformat=None):
         print(" =>  "+str(old_mype)+" ("+str(old_pex)+", "+str(old_pey)+") : ("+str(old_x)+", "+str(old_y)+")")
 
         #
+
+def resize3DField(var, data, coordsAndSizesTuple, mute):
+    """
+    Resizing of the 3D fields.
+
+    To be called by resize.
+
+    Written as a function in order to call it using multiprocesse. Must
+    be defined as a top level function in order to be pickable by the
+    multiprocess.
+
+    See the function resize for details.
+    """
+
+    # Unpack the tuple for better readability
+    xCoordOld, yCoordOld, zCoordOld,\
+    xCoordNew, yCoordNew, zCoordNew,\
+    newNx, newNy, newNz = coordsAndSizesTuple
+
+    if not(mute):
+        print("    Resizing "+var)
+
+    # Make the regular grid function (see examples in
+    # http://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.RegularGridInterpolator.html
+    # for details)
+    gridInterpolator = RegularGridInterpolator((xCoordOld, yCoordOld, zCoordOld), data)
+
+    newData = np.zeros((newNx, newNy, newNz))
+
+    # Interpolate to the new values
+    for xInd, x in enumerate(xCoordNew):
+        for yInd, y in enumerate(yCoordNew):
+            for zInd, z in enumerate(zCoordNew):
+                newData[xInd, yInd, zInd] = gridInterpolator([x, y, z])
+
+    return var, newData
+
+
+def resize(newNx, newNy, newNz, mxg=2, myg=2,\
+           path="data", output="./", informat="nc", outformat=None,\
+           maxProc=None, mute=False):
+    """
+    Increase/decrease the number of points in restart files.
+
+    NOTE: Can't over-write
+    WARNING: Currently only implemented with uniform BOUT++ grid
+    WARNING: Currently only implemented if grid is half between grid points
+
+    Parameters
+    -----
+    newNx : int
+        nx for the new file (including ghost points)
+    newNy : int
+        ny for the new file (including ghost points)
+    newNz : int
+        nz for the new file (including last unused z-plane)
+    mxg : int
+        Number of ghost points in x. **NOTE:** Default is 2
+    myg : int
+        Number of ghost points in y. **NOTE:** Default is 2
+    path : str
+        Input path
+    output : str
+        Output path
+    informat : str
+        File extension of input
+    outformat : [None|str]
+        File extension of output
+    maxProc: [None|int]
+        Limits maximum processors to use when interpolating if set
+    mute : [True|False]
+        Whether or not output should be printed from this function
+
+    Returns
+    -------
+    return : [True|False]
+        True on success, else False
+    """
+
+    if outformat == None:
+        outformat = informat
+
+    if path == output:
+        print("ERROR: Can't overwrite restart files when expanding")
+        return False
+
+    def is_pow2(x):
+        """Returns true if x is a power of 2"""
+        return (x > 0) and ((x & (x-1)) == 0)
+
+    if not is_pow2(newNz-1):
+        print("ERROR: New Z size must be a power of 2 + 1")
+        return False
+
+    file_list = glob.glob(os.path.join(path, "BOUT.restart.*."+informat))
+    file_list.sort()
+    nfiles = len(file_list)
+
+    if nfiles == 0:
+        print("ERROR: No data found")
+        return False
+
+    if not(mute):
+        print("Number of files found: " + str(nfiles))
+
+    for f in file_list:
+        new_f = os.path.join(output, f.split('/')[-1])
+        if not(mute):
+            print("Changing {} => {}".format(f, new_f))
+
+        # Open the restart file in read mode and create the new file
+        with DataFile(f) as old,\
+             DataFile(new_f, write=True, create=True) as new:
+
+            # Find the dimension
+            for var in old.list():
+                # Read the data
+                data = old.read(var)
+                # Find 3D variables
+                if old.ndims(var) == 3:
+                    break
+
+            nx, ny, nz = data.shape
+
+            # Make coordinates
+            # NOTE: The max min of the coordinates are irrelevant when
+            #       interpolating (as long as old and new coordinates
+            #       are consistent), so we just choose all variable to
+            #       be between 0 and 1 Calculate the old coordinates
+            xCoordOld = np.linspace(0, 1, nx)
+            yCoordOld = np.linspace(0, 1, ny)
+            zCoordOld = np.linspace(0, 1, nz)
+
+            # Calculate the new coordinates
+            xCoordNew = np.linspace(xCoordOld[0], xCoordOld[-1], newNx)
+            yCoordNew = np.linspace(yCoordOld[0], yCoordOld[-1], newNy)
+            zCoordNew = np.linspace(zCoordOld[0], zCoordOld[-1], newNz)
+
+            # Make a pool of workers
+            pool = multiprocessing.Pool(maxProc)
+            # List of jobs and results
+            jobs = []
+            # Pack input to resize3DField together
+            coordsAndSizesTuple = (xCoordOld, yCoordOld, zCoordOld,\
+                                   xCoordNew, yCoordNew, zCoordNew,\
+                                   newNx, newNy, newNz)
+
+            # Loop over the variables in the old file
+            for var in old.list():
+                # Read the data
+                data = old.read(var)
+
+                # Find 3D variables
+                if old.ndims(var) == 3:
+                    # Asynchronous call (locks first at .get())
+                    jobs.append(pool.apply_async(resize3DField,\
+                                    (var, data, coordsAndSizesTuple, mute)\
+                               ))
+
+                else:
+                    if not(mute):
+                        print("    Copying "+var)
+                        newData = data.copy()
+                    if not(mute):
+                        print("Writing "+var)
+                    new.write(var, newData)
+
+            for job in jobs:
+                var, newData = job.get()
+                if not(mute):
+                    print("Writing "+var)
+                new.write(var, newData)
+
+            # Close the pool of workers
+            pool.close()
+            # Wait for all processes to finish
+            pool.join()
+
+    return True
+
+
 
 def expand(newz, path="data", output="./", informat="nc", outformat=None):
     """
