@@ -62,7 +62,7 @@ Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), f
 
 Datafile::Datafile(const Datafile &other) : parallel(other.parallel), flush(other.flush), guards(other.guards), 
                                             floats(other.floats), openclose(other.openclose), Lx(Lx), Ly(Ly), Lz(Lz), 
-                                            enabled(other.enabled), file(NULL), int_arr(other.int_arr), 
+                                            enabled(other.enabled), init_missing(other.init_missing), file(NULL), int_arr(other.int_arr), 
                                             BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr), 
                                             f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {
   
@@ -76,6 +76,7 @@ Datafile& Datafile::operator=(const Datafile &rhs) {
   floats     = rhs.floats;
   openclose    = rhs.openclose;
   enabled      = rhs.enabled;
+  init_missing = rhs.init_missing;
   file         = NULL; // All values copied except this
   int_arr      = rhs.int_arr;
   BoutReal_arr = rhs.BoutReal_arr;
