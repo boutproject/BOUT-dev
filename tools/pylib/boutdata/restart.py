@@ -20,7 +20,11 @@ from math import sqrt
 from numpy.random import normal
 
 from scipy.interpolate import interp1d
-from scipy.interpolate import RegularGridInterpolator
+try:
+  from scipy.interpolate import RegularGridInterpolator
+except:
+  pass
+
 
 try:
     import os
@@ -536,7 +540,7 @@ def create(averagelast=1, final=-1, path="data", output="./", informat="nc", out
 
         tind = final
         if tind < 0.0:
-          tind = len(tt) + final
+          tind = len(t_array) + final
 
         NXPE = infile.read("NXPE")
         NYPE = infile.read("NYPE")
