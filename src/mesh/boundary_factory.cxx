@@ -26,6 +26,7 @@ BoundaryFactory::BoundaryFactory() {
   add(new BoundaryNeumann_2ndOrder(), "neumann_2ndorder");
   add(new BndNeumann_O2(), "neumann_O2");
   add(new BoundaryNeumann_4thOrder(), "neumann_4thorder");
+  add(new BndNeumann_O4(), "neumann_O4");
   add(new BoundaryRobin(), "robin");
   add(new BoundaryConstGradient(), "constgradient");
   add(new BoundaryZeroLaplace(), "zerolaplace");
