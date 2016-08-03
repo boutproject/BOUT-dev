@@ -216,6 +216,10 @@ def resize(newNx, newNy, newNz, mxg=2, myg=2,\
     -------
     return : [True|False]
         True on success, else False
+
+    Todo
+    ----
+    Add 2D field interpolation
     """
 
     if outformat == None:
@@ -238,7 +242,7 @@ def resize(newNx, newNy, newNz, mxg=2, myg=2,\
     nfiles = len(file_list)
 
     if nfiles == 0:
-        print("ERROR: No data found")
+        print("ERROR: No data found in {}".format(path))
         return False
 
     if not(mute):
