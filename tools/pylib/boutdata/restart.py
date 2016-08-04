@@ -166,7 +166,8 @@ def resize3DField(var, data, coordsAndSizesTuple, mute):
     # for details)
     gridInterpolator = RegularGridInterpolator((xCoordOld, yCoordOld, zCoordOld), data)
 
-    newData = np.zeros((newNx, newNy, newNz))
+    # Need to fill with one exrta z plane (will only contain zeros)
+    newData = np.zeros((newNx, newNy, newNz+1))
 
     # Interpolate to the new values
     for xInd, x in enumerate(xCoordNew):
@@ -183,9 +184,8 @@ def resize(newNx, newNy, newNz, mxg=2, myg=2,\
     """
     Increase/decrease the number of points in restart files.
 
-    NOTE: Can't over-write
+    NOTE: Can't overwrite
     WARNING: Currently only implemented with uniform BOUT++ grid
-    WARNING: Currently only implemented if grid is half between grid points
 
     Parameters
     -----
@@ -237,6 +237,10 @@ def resize(newNx, newNy, newNz, mxg=2, myg=2,\
         print("ERROR: New Z size must be a power of 2 + 1")
         return False
 
+    # The above statement is a lie, but ensures that z is a power of
+    # 2+1, so that we can safely
+    newNz -= 1
+
     file_list = glob.glob(os.path.join(path, "BOUT.restart.*."+informat))
     file_list.sort()
     nfiles = len(file_list)
@@ -264,6 +268,9 @@ def resize(newNx, newNy, newNz, mxg=2, myg=2,\
                 # Find 3D variables
                 if old.ndims(var) == 3:
                     break
+
+            # Last nz plane is not in use
+            data = data[:,:,:-1]
 
             nx, ny, nz = data.shape
 
@@ -297,6 +304,9 @@ def resize(newNx, newNy, newNz, mxg=2, myg=2,\
 
                 # Find 3D variables
                 if old.ndims(var) == 3:
+                    # Last nz plane is not in use
+                    data = data[:,:,:-1]
+
                     # Asynchronous call (locks first at .get())
                     jobs.append(pool.apply_async(resize3DField,\
                                     (var, data, coordsAndSizesTuple, mute)\

@@ -76,59 +76,61 @@ class basic_runner(object):
 
 #{{{__init__
     def __init__(self,\
-                 nproc        = 1,\
+                 nproc        = 1     ,\
                  directory    = 'data',\
-                 prog_name    = None,\
-                 solver       = None,\
-                 mms          = None,\
-                 atol         = None,\
-                 rtol         = None,\
-                 mxstep       = None,\
-                 grid_file    = None,\
-                 nx           = None,\
-                 ny           = None,\
-                 nz           = None,\
-                 zperiod      = None,\
-                 zmin         = None,\
-                 zmax         = None,\
-                 dx           = None,\
-                 dy           = None,\
-                 dz           = None,\
-                 MXG          = None,\
-                 MYG          = None,\
-                 NXPE         = None,\
-                 ixseps1      = None,\
-                 ixseps2      = None,\
-                 jyseps1_1    = None,\
-                 jyseps1_2    = None,\
-                 jyseps2_1    = None,\
-                 jyseps2_2    = None,\
-                 symGlobX     = None,\
-                 symGlobY     = None,\
-                 ddx_first    = None,\
-                 ddx_second   = None,\
-                 ddx_upwind   = None,\
-                 ddx_flux     = None,\
-                 ddy_first    = None,\
-                 ddy_second   = None,\
-                 ddy_upwind   = None,\
-                 ddy_flux     = None,\
-                 ddz_first    = None,\
-                 ddz_second   = None,\
-                 ddz_upwind   = None,\
-                 ddz_flux     = None,\
-                 nout         = None,\
-                 timestep     = None,\
-                 additional   = None,\
-                 series_add   = None,\
-                 restart      = None,\
-                 restart_from = None,\
-                 redistribute = None,\
-                 addnoise     = None,\
-                 cpy_source   = None,\
-                 cpy_grid     = None,\
-                 sort_by      = None,\
-                 make         = None,\
+                 prog_name    = None  ,\
+                 solver       = None  ,\
+                 mms          = None  ,\
+                 atol         = None  ,\
+                 rtol         = None  ,\
+                 mxstep       = None  ,\
+                 grid_file    = None  ,\
+                 nx           = None  ,\
+                 ny           = None  ,\
+                 nz           = None  ,\
+                 zperiod      = None  ,\
+                 zmin         = None  ,\
+                 zmax         = None  ,\
+                 dx           = None  ,\
+                 dy           = None  ,\
+                 dz           = None  ,\
+                 MXG          = None  ,\
+                 MYG          = None  ,\
+                 NXPE         = None  ,\
+                 ixseps1      = None  ,\
+                 ixseps2      = None  ,\
+                 jyseps1_1    = None  ,\
+                 jyseps1_2    = None  ,\
+                 jyseps2_1    = None  ,\
+                 jyseps2_2    = None  ,\
+                 symGlobX     = None  ,\
+                 symGlobY     = None  ,\
+                 ddx_first    = None  ,\
+                 ddx_second   = None  ,\
+                 ddx_upwind   = None  ,\
+                 ddx_flux     = None  ,\
+                 ddy_first    = None  ,\
+                 ddy_second   = None  ,\
+                 ddy_upwind   = None  ,\
+                 ddy_flux     = None  ,\
+                 ddz_first    = None  ,\
+                 ddz_second   = None  ,\
+                 ddz_upwind   = None  ,\
+                 ddz_flux     = None  ,\
+                 nout         = None  ,\
+                 timestep     = None  ,\
+                 additional   = None  ,\
+                 series_add   = None  ,\
+                 restart      = None  ,\
+                 restart_from = None  ,\
+                 redistribute = None  ,\
+                 use_expand   = False ,\
+                 max_proc     = None  ,\
+                 addnoise     = None  ,\
+                 cpy_source   = None  ,\
+                 cpy_grid     = None  ,\
+                 sort_by      = None  ,\
+                 make         = None  ,\
                  allow_size_modification = False):
         #{{{docstring
         """
@@ -138,8 +140,9 @@ class basic_runner(object):
         All the member data is set to None by default. If the
         data members are not set, the values from BOUT.inp will be used.
         The exception is nproc (default = 1), directory (default =
-        'data') and allow_size_modification (default = False), which
-        always needs to be set.
+        'data'), use_expand (default = False) and
+        allow_size_modification (default = False), which always needs to
+        be set.
 
         Parameters
         ----------
@@ -180,11 +183,11 @@ class basic_runner(object):
             Grid size in the x direction number or iterable
         dz : number or iterable
             Grid size in the x direction number or iterable
-        MXG : int
+        MXG : int or iterable
             The number of guard cells in the x direction
-        MYG : int
+        MYG : int or iterable
             The number of guard cells in the y direction
-        NXPE : int
+        NXPE : int or iterable
             Numbers of processors in the x direction
         ixseps1 : int or iterable
             Separatrix location for 'upper' divertor
@@ -251,6 +254,15 @@ class basic_runner(object):
             The number of processors the redistribute the restart files
             to. Calls the redistribute function in boutdata.restart.
             Will only be effective if 'restart' is not None
+        use_expand : bool
+            Only used when restarting.
+            If there is a mismatch in nz between the requested nz and
+            the nz found in the restart file, boutdata.restart.expand
+            will be used if use_expand = True, if not
+            boutdata.restart.resize will be used
+        max_proc : int
+            Only used when restarting.
+            Max processors used when calling boutdata.restart.resize
         addnoise : dict
             Adding noise to the restart files by calling the addnoise
             function in boutdata.restart.  Will only be effective if
@@ -354,6 +366,8 @@ class basic_runner(object):
         self._restart         = restart
         self._restart_from    = restart_from
         self._redistribute    = redistribute
+        self._use_expand      = use_expand
+        self._max_proc        = max_proc
         self._addnoise        = addnoise
         self._cpy_source      = cpy_source
         self._cpy_grid        = cpy_grid
@@ -732,12 +746,15 @@ class basic_runner(object):
     def _check_for_basic_instance_error(self):
         """Check if there are any type errors when creating the object"""
 
-        #{{{Check if directory has the correct type
+        #{{{Check if nproc has the correct type
         if type(self._nproc) != int:
             message  = "nproc is of wrong type\n"+\
                        "nproc must be given as an int"
             self._errors.append("TypeError")
             raise TypeError(message)
+        #}}}
+
+        #{{{Check if directory has the correct type
         if type(self._directory) != str:
             message  = "directory is of wrong type\n"+\
                        "directory must be given as a str"
@@ -1131,6 +1148,15 @@ class basic_runner(object):
                 raise RuntimeError("nproc and redistribute must be equal")
         #}}}
 
+        #{{{Check if max_proc has the correct type
+        if self._restart is not None and self._max_proc is not None:
+            if type(self._max_proc) != int:
+                message  = "max_proc is of wrong type\n"+\
+                           "max_proc must be given as an int"
+                self._errors.append("TypeError")
+                raise TypeError(message)
+        #}}}
+
         #{{{Check if addnoise is set correctly
         if self._addnoise is not None:
             # Throw warning if restart is None
@@ -1368,13 +1394,15 @@ class basic_runner(object):
                 raise TypeError(message)
         #}}}
 
-        #{{{Check mms, symGlobX, symGlobY, cpy_src/grid, allow_size_mod is bool
+        #{{{Check mms, symGlobX, symGlobY, cpy_src/grid, use_expand and
+        #   allow_size_mod is bool
         check_if_bool = [\
             (self._mms                    , 'mms')                    ,\
             (self._symGlobX               , 'symGlobX')               ,\
             (self._symGlobY               , 'symGlobY')               ,\
             (self._cpy_source             , 'cpy_source')             ,\
             (self._cpy_grid               , 'cpy_grid')               ,\
+            (self._use_expand             , 'use_expand')             ,\
             (self._allow_size_modification, 'allow_size_modification') \
             ]
 
@@ -2065,13 +2093,24 @@ class basic_runner(object):
                     cur_nz = self._get_dim_from_input('nz')
                 except KeyError:
                     cur_nz = self._get_dim_from_input('mz')
+
+            # Make sure cur_nz is divisible by 2 if cur_nz != 1
+            if cur_nz != 1:
+                if cur_nz%2 != 0:
+                    old_cur_nz = cur_nz
+                    cur_nz += 1
+                    if cur_nz%2 != 0:
+                        cur_nz = old_cur_nz - 1
+                    else:
+                        message = "nz = {} not a power of 2".format(cur_nz)
+                        raise RuntimeError(message)
         #}}}
 
         # Flag to check if the mesh has been resized
         resized = False
 
-        #{{{ Resize nx and ny of the evolved fields
-        if self._restart and do_run and (self._nx or self._ny):
+        #{{{ Resize nx, ny and nz of the evolved fields
+        if self._restart and do_run and (self._nx or self._ny or self._nz):
             # Obtain MXG and MYG
             MXG, MYG = self._get_MXG_MYG()
 
@@ -2122,18 +2161,32 @@ class basic_runner(object):
                         nx = NXPE * MXSUB + 2*MXG
                         ny = NYPE * MYSUB
 
-                        if nx == cur_nx and ny == cur_ny:
+                        # nz contains one extra plane
+                        if nx == cur_nx and ny == cur_ny and nz-1  == cur_nz:
                             call_resize = False
+                            break
+                        elif nx == cur_nx and ny == cur_ny and nz-1 != cur_nz:
+                            # nz contains extra plane
+                            if nz-1 == 1:
+                                # Override user specification to save time
+                                self._use_expand = True
+                            if self._use_expand:
+                                call_resize = False
+                            else:
+                                call_resize = True
                             break
                         else:
                             call_resize = True
                             if self._restart == "append":
-                                message  = ("Cannot change nx and/or ny when "
-                                            "appending\n")
-                                message += "nx in restart file = {}.".format(nx)
-                                message += " Requested nx = {}\n".format(cur_nx)
-                                message += "ny in restart file = {}.".format(ny)
-                                message += " Requested ny = {}\n".format(cur_ny)
+                                message  = ("Cannot change nx, ny and/or nz "
+                                            "when appending\n")
+                                # Extra plane in nz
+                                message +=  (\
+                                "Requested nx = {}, nx in restart file = {}\n"
+                                "Requested ny = {}, ny in restart file = {}\n"
+                                "Requested nz = {}, nz in restart file = {}\n"
+                                "Resizing:\n"\
+                                .format(cur_nx, nx, cur_ny, ny, cur_nz, nz-1))
                                 raise IOError(message)
                             else:
                                 break
@@ -2164,17 +2217,30 @@ class basic_runner(object):
                 self._create_folder(before_resize_dir)
                 shutil.move(file_name, before_resize_dir)
 
-                print("\nDimension change found:\n"
-                      "Requested nx = {}, nx in restart file = {}\n"
-                      "Requested ny = {}, ny in restart file = {}\n"
-                      "Resizing:\n".format(cur_nx, nx, cur_ny, ny))
+                if self._use_expand:
+                    print("\nDimension change found:\n"
+                          "Requested nx = {}, nx in restart file = {}\n"
+                          "Requested ny = {}, ny in restart file = {}\n"
+                          "Resizing:\n"\
+                            .format(cur_nx, nx, cur_ny, ny))
+                    the_nz = nz
+                else:
+                    # Extra plane in nz
+                    print("\nDimension change found:\n"
+                          "Requested nx = {}, nx in restart file = {}\n"
+                          "Requested ny = {}, ny in restart file = {}\n"
+                          "Requested nz = {}, nz in restart file = {}\n"
+                          "Resizing:\n"\
+                            .format(cur_nx, nx, cur_ny, ny, cur_nz, nz-1))
+                    the_nz = cur_nz + 1
 
                 # NOTE: Different definition for nx and ny
-                success = resize(cur_nx, cur_ny+2*MYG, nz,\
-                                 mxg    = MXG,\
-                                 myg    = MYG,\
-                                 path   = before_resize_dir,\
-                                 output = self._dmp_folder)
+                success = resize(cur_nx, cur_ny+2*MYG, the_nz,\
+                                 mxg     = MXG,\
+                                 myg     = MYG,\
+                                 path    = before_resize_dir,\
+                                 output  = self._dmp_folder,\
+                                 maxProc = self._max_proc)
                 print("\n")
 
                 if success == False:
@@ -2221,7 +2287,8 @@ class basic_runner(object):
         #}}}
 
         #{{{ Expand nz
-        if self._restart and do_run and self._nz:
+        if self._restart and do_run\
+           and self._nz and not resized and self._use_expand:
             # The current nz should be in the second index as any
             # eventual other names would come from additional or
             # series_add
