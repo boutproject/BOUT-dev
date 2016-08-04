@@ -12,8 +12,8 @@ BOUT/examples/bout_runners_example.
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '1.03'
-__date__    = '2016.08.03'
+__version__ = '1.0301'
+__date__    = '2016.08.04'
 
 import os
 import sys
@@ -2109,7 +2109,7 @@ class basic_runner(object):
                 # Loop over the variables in the file
                 NPES = f.read("NPES")
                 NXPE = f.read("NXPE")
-                NYPE = NPES - NXPE
+                NYPE = int(NPES/NXPE)
                 for var in f.list():
                     # Read the data
                     data = f.read(var)

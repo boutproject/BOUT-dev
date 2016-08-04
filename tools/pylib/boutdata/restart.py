@@ -331,7 +331,10 @@ def expand(newz, path="data", output="./", informat="nc", outformat=None):
 
     The python equivalent of ../../idllib/expand_restarts.pro
 
-    NOTE: Can't over-write
+    NOTE:
+        * Can't overwrite
+        * Will not yield a result close to the original if there are
+          aymmetires in the z-direction
 
     Input
     -----
