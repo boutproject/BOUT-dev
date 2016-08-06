@@ -126,6 +126,7 @@ class basic_runner(object):
                  redistribute = None  ,\
                  use_expand   = False ,\
                  max_proc     = None  ,\
+                 intrp_method = None  ,\
                  addnoise     = None  ,\
                  cpy_source   = None  ,\
                  cpy_grid     = None  ,\
@@ -263,6 +264,9 @@ class basic_runner(object):
         max_proc : int
             Only used when restarting.
             Max processors used when calling boutdata.restart.resize
+        intrp_method: str
+            Only used when restarting, and when the mesh is resizied.
+            Sets the method used in the interpolation.
         addnoise : dict
             Adding noise to the restart files by calling the addnoise
             function in boutdata.restart.  Will only be effective if
@@ -368,6 +372,7 @@ class basic_runner(object):
         self._redistribute    = redistribute
         self._use_expand      = use_expand
         self._max_proc        = max_proc
+        self._intrp_method    = intrp_method
         self._addnoise        = addnoise
         self._cpy_source      = cpy_source
         self._cpy_grid        = cpy_grid
@@ -1153,6 +1158,15 @@ class basic_runner(object):
             if type(self._max_proc) != int:
                 message  = "max_proc is of wrong type\n"+\
                            "max_proc must be given as an int"
+                self._errors.append("TypeError")
+                raise TypeError(message)
+        #}}}
+
+        #{{{Check if intrp_method has the correct type
+        if self._restart is not None and self._intrp_method is not None:
+            if type(self._intrp_method) != str:
+                message  = "intrp_method is of wrong type\n"+\
+                           "intrp_method must be given as a string"
                 self._errors.append("TypeError")
                 raise TypeError(message)
         #}}}
@@ -2240,6 +2254,7 @@ class basic_runner(object):
                                  myg     = MYG,\
                                  path    = before_resize_dir,\
                                  output  = self._dmp_folder,\
+                                 method  = self._intrp_method,\
                                  maxProc = self._max_proc)
                 print("\n")
 

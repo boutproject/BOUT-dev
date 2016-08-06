@@ -140,7 +140,7 @@ def split(nxpe, nype, path="data", output="./", informat="nc", outformat=None):
 
         #
 
-def resize3DField(var, data, coordsAndSizesTuple, mute):
+def resize3DField(var, data, coordsAndSizesTuple, method, mute):
     """
     Resizing of the 3D fields.
 
@@ -164,7 +164,7 @@ def resize3DField(var, data, coordsAndSizesTuple, mute):
     # Make the regular grid function (see examples in
     # http://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.RegularGridInterpolator.html
     # for details)
-    gridInterpolator = RegularGridInterpolator((xCoordOld, yCoordOld, zCoordOld), data)
+    gridInterpolator = RegularGridInterpolator((xCoordOld, yCoordOld, zCoordOld), data, method)
 
     # Need to fill with one exrta z plane (will only contain zeros)
     newData = np.zeros((newNx, newNy, newNz+1))
@@ -180,7 +180,7 @@ def resize3DField(var, data, coordsAndSizesTuple, mute):
 
 def resize(newNx, newNy, newNz, mxg=2, myg=2,\
            path="data", output="./", informat="nc", outformat=None,\
-           maxProc=None, mute=False):
+           method='linear', maxProc=None, mute=False):
     """
     Increase/decrease the number of points in restart files.
 
@@ -207,6 +207,8 @@ def resize(newNx, newNy, newNz, mxg=2, myg=2,\
         File extension of input
     outformat : [None|str]
         File extension of output
+    method : ['linear'|'nearest']
+        What interpolation method to be used
     maxProc: [None|int]
         Limits maximum processors to use when interpolating if set
     mute : [True|False]
@@ -309,7 +311,7 @@ def resize(newNx, newNy, newNz, mxg=2, myg=2,\
 
                     # Asynchronous call (locks first at .get())
                     jobs.append(pool.apply_async(resize3DField,\
-                                    (var, data, coordsAndSizesTuple, mute)\
+                                    (var, data, coordsAndSizesTuple, method, mute)\
                                ))
 
                 else:
