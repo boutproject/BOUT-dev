@@ -20,7 +20,11 @@ from math import sqrt
 from numpy.random import normal
 
 from scipy.interpolate import interp1d
-from scipy.interpolate import RegularGridInterpolator
+try:
+  from scipy.interpolate import RegularGridInterpolator
+except:
+  pass
+
 
 try:
     import os
@@ -136,7 +140,7 @@ def split(nxpe, nype, path="data", output="./", informat="nc", outformat=None):
 
         #
 
-def resize3DField(var, data, coordsAndSizesTuple, mute):
+def resize3DField(var, data, coordsAndSizesTuple, method, mute):
     """
     Resizing of the 3D fields.
 
@@ -160,9 +164,10 @@ def resize3DField(var, data, coordsAndSizesTuple, mute):
     # Make the regular grid function (see examples in
     # http://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.RegularGridInterpolator.html
     # for details)
-    gridInterpolator = RegularGridInterpolator((xCoordOld, yCoordOld, zCoordOld), data)
+    gridInterpolator = RegularGridInterpolator((xCoordOld, yCoordOld, zCoordOld), data, method)
 
-    newData = np.zeros((newNx, newNy, newNz))
+    # Need to fill with one exrta z plane (will only contain zeros)
+    newData = np.zeros((newNx, newNy, newNz+1))
 
     # Interpolate to the new values
     for xInd, x in enumerate(xCoordNew):
@@ -175,13 +180,12 @@ def resize3DField(var, data, coordsAndSizesTuple, mute):
 
 def resize(newNx, newNy, newNz, mxg=2, myg=2,\
            path="data", output="./", informat="nc", outformat=None,\
-           maxProc=None, mute=False):
+           method='linear', maxProc=None, mute=False):
     """
     Increase/decrease the number of points in restart files.
 
-    NOTE: Can't over-write
+    NOTE: Can't overwrite
     WARNING: Currently only implemented with uniform BOUT++ grid
-    WARNING: Currently only implemented if grid is half between grid points
 
     Parameters
     -----
@@ -203,6 +207,8 @@ def resize(newNx, newNy, newNz, mxg=2, myg=2,\
         File extension of input
     outformat : [None|str]
         File extension of output
+    method : ['linear'|'nearest']
+        What interpolation method to be used
     maxProc: [None|int]
         Limits maximum processors to use when interpolating if set
     mute : [True|False]
@@ -212,6 +218,10 @@ def resize(newNx, newNy, newNz, mxg=2, myg=2,\
     -------
     return : [True|False]
         True on success, else False
+
+    Todo
+    ----
+    Add 2D field interpolation
     """
 
     if outformat == None:
@@ -229,12 +239,16 @@ def resize(newNx, newNy, newNz, mxg=2, myg=2,\
         print("ERROR: New Z size must be a power of 2 + 1")
         return False
 
+    # The above statement is a lie, but ensures that z is a power of
+    # 2+1, so that we can safely
+    newNz -= 1
+
     file_list = glob.glob(os.path.join(path, "BOUT.restart.*."+informat))
     file_list.sort()
     nfiles = len(file_list)
 
     if nfiles == 0:
-        print("ERROR: No data found")
+        print("ERROR: No data found in {}".format(path))
         return False
 
     if not(mute):
@@ -256,6 +270,9 @@ def resize(newNx, newNy, newNz, mxg=2, myg=2,\
                 # Find 3D variables
                 if old.ndims(var) == 3:
                     break
+
+            # Last nz plane is not in use
+            data = data[:,:,:-1]
 
             nx, ny, nz = data.shape
 
@@ -289,9 +306,12 @@ def resize(newNx, newNy, newNz, mxg=2, myg=2,\
 
                 # Find 3D variables
                 if old.ndims(var) == 3:
+                    # Last nz plane is not in use
+                    data = data[:,:,:-1]
+
                     # Asynchronous call (locks first at .get())
                     jobs.append(pool.apply_async(resize3DField,\
-                                    (var, data, coordsAndSizesTuple, mute)\
+                                    (var, data, coordsAndSizesTuple, method, mute)\
                                ))
 
                 else:
@@ -323,7 +343,10 @@ def expand(newz, path="data", output="./", informat="nc", outformat=None):
 
     The python equivalent of ../../idllib/expand_restarts.pro
 
-    NOTE: Can't over-write
+    NOTE:
+        * Can't overwrite
+        * Will not yield a result close to the original if there are
+          aymmetires in the z-direction
 
     Input
     -----
@@ -536,7 +559,7 @@ def create(averagelast=1, final=-1, path="data", output="./", informat="nc", out
 
         tind = final
         if tind < 0.0:
-          tind = len(tt) + final
+          tind = len(t_array) + final
 
         NXPE = infile.read("NXPE")
         NYPE = infile.read("NYPE")

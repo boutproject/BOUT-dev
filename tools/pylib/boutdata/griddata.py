@@ -274,7 +274,17 @@ def gridcontourf(grid, data2d, nlevel=31, show=True, mind=None, maxd=None, cmap=
         # Outer leg
         ax.contourf(R[ix1:,j22:(j22+2)], Z[ix1:,j22:(j22+2)], data2d[ix1:,j22:(j22+2)], levels, cmap=cmap)
         ax.contourf(R[:,ystart:ny], Z[:,ystart:ny], data2d[:,ystart:ny], levels, cmap=cmap)
+
+        # X-point
+        Rx = [ [R[ix1-1,j11], R[ix1,j11], R[ix1,j11+1], R[ix1-1,j11+1]],
+               [R[ix1-1,j22+1], R[ix1,j22+1], R[ix1,j22], R[ix1-1,j22]] ]
+
         
+        Zx = [ [Z[ix1-1,j11], Z[ix1,j11], Z[ix1,j11+1], Z[ix1-1,j11+1]],
+               [Z[ix1-1,j22+1], Z[ix1,j22+1], Z[ix1,j22], Z[ix1-1,j22]] ]
+        Dx = [ [data2d[ix1-1,j11], data2d[ix1,j11], data2d[ix1,j11+1], data2d[ix1-1,j11+1]],
+               [data2d[ix1-1,j22+1], data2d[ix1,j22+1], data2d[ix1,j22], data2d[ix1-1,j22]] ]
+        ax.contourf(Rx, Zx, Dx, levels, cmap=cmap)
 
     fig.colorbar(con)
     ax.set_aspect("equal")

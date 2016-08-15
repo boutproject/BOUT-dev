@@ -12,8 +12,8 @@ BOUT/examples/bout_runners_example.
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '1.0251'
-__date__    = '2016.06.11'
+__version__ = '1.0301'
+__date__    = '2016.08.04'
 
 import os
 import sys
@@ -28,7 +28,7 @@ import numpy as np
 from boututils.run_wrapper import shell, launch, getmpirun
 from boututils.options import BOUTOptions
 from boututils.datafile import DataFile
-from boutdata.restart import redistribute, addnoise, expand
+from boutdata.restart import redistribute, addnoise, expand, resize
 
 #{{{class basic_runner
 # As a child class uses the super function, the class must allow an
@@ -43,9 +43,17 @@ class basic_runner(object):
     Calling self.execute_runs() will run your BOUT++ program with the possible
     combinations given in the member data using the mpi runner.
 
-    Before each run, a folder system, based on the member data, rooted
-    in self._directory, will be created. The BOUT.inp of self._directory
-    is then copied to the execution folder.
+    Before each run basic_runner will:
+        * Create a folder system, based on the member data, rooted in
+          self._directory.
+        * Copy BOUT.inp of self._directory to the execution folder.
+        * Check that the domain split is sane (suggest a split if a bad
+          domain split is given)
+
+    If the restart option is checked, bout_runners will
+        * Put old data into a restart folder (so that nothing is lost
+          upon restart)
+        * Resize the mesh if new sizes are detected
 
     A log-file for the run is stored in self._directory
 
@@ -68,59 +76,62 @@ class basic_runner(object):
 
 #{{{__init__
     def __init__(self,\
-                 nproc        = 1,\
+                 nproc        = 1     ,\
                  directory    = 'data',\
-                 prog_name    = None,\
-                 solver       = None,\
-                 mms          = None,\
-                 atol         = None,\
-                 rtol         = None,\
-                 mxstep       = None,\
-                 grid_file    = None,\
-                 nx           = None,\
-                 ny           = None,\
-                 nz           = None,\
-                 zperiod      = None,\
-                 zmin         = None,\
-                 zmax         = None,\
-                 dx           = None,\
-                 dy           = None,\
-                 dz           = None,\
-                 MXG          = None,\
-                 MYG          = None,\
-                 NXPE         = None,\
-                 ixseps1      = None,\
-                 ixseps2      = None,\
-                 jyseps1_1    = None,\
-                 jyseps1_2    = None,\
-                 jyseps2_1    = None,\
-                 jyseps2_2    = None,\
-                 symGlobX     = None,\
-                 symGlobY     = None,\
-                 ddx_first    = None,\
-                 ddx_second   = None,\
-                 ddx_upwind   = None,\
-                 ddx_flux     = None,\
-                 ddy_first    = None,\
-                 ddy_second   = None,\
-                 ddy_upwind   = None,\
-                 ddy_flux     = None,\
-                 ddz_first    = None,\
-                 ddz_second   = None,\
-                 ddz_upwind   = None,\
-                 ddz_flux     = None,\
-                 nout         = None,\
-                 timestep     = None,\
-                 additional   = None,\
-                 series_add   = None,\
-                 restart      = None,\
-                 restart_from = None,\
-                 redistribute = None,\
-                 addnoise     = None,\
-                 cpy_source   = None,\
-                 cpy_grid     = None,\
-                 sort_by      = None,\
-                 make         = None,\
+                 prog_name    = None  ,\
+                 solver       = None  ,\
+                 mms          = None  ,\
+                 atol         = None  ,\
+                 rtol         = None  ,\
+                 mxstep       = None  ,\
+                 grid_file    = None  ,\
+                 nx           = None  ,\
+                 ny           = None  ,\
+                 nz           = None  ,\
+                 zperiod      = None  ,\
+                 zmin         = None  ,\
+                 zmax         = None  ,\
+                 dx           = None  ,\
+                 dy           = None  ,\
+                 dz           = None  ,\
+                 MXG          = None  ,\
+                 MYG          = None  ,\
+                 NXPE         = None  ,\
+                 ixseps1      = None  ,\
+                 ixseps2      = None  ,\
+                 jyseps1_1    = None  ,\
+                 jyseps1_2    = None  ,\
+                 jyseps2_1    = None  ,\
+                 jyseps2_2    = None  ,\
+                 symGlobX     = None  ,\
+                 symGlobY     = None  ,\
+                 ddx_first    = None  ,\
+                 ddx_second   = None  ,\
+                 ddx_upwind   = None  ,\
+                 ddx_flux     = None  ,\
+                 ddy_first    = None  ,\
+                 ddy_second   = None  ,\
+                 ddy_upwind   = None  ,\
+                 ddy_flux     = None  ,\
+                 ddz_first    = None  ,\
+                 ddz_second   = None  ,\
+                 ddz_upwind   = None  ,\
+                 ddz_flux     = None  ,\
+                 nout         = None  ,\
+                 timestep     = None  ,\
+                 additional   = None  ,\
+                 series_add   = None  ,\
+                 restart      = None  ,\
+                 restart_from = None  ,\
+                 redistribute = None  ,\
+                 use_expand   = False ,\
+                 max_proc     = None  ,\
+                 intrp_method = None  ,\
+                 addnoise     = None  ,\
+                 cpy_source   = None  ,\
+                 cpy_grid     = None  ,\
+                 sort_by      = None  ,\
+                 make         = None  ,\
                  allow_size_modification = False):
         #{{{docstring
         """
@@ -130,8 +141,9 @@ class basic_runner(object):
         All the member data is set to None by default. If the
         data members are not set, the values from BOUT.inp will be used.
         The exception is nproc (default = 1), directory (default =
-        'data') and allow_size_modification (default = False), which
-        always needs to be set.
+        'data'), use_expand (default = False) and
+        allow_size_modification (default = False), which always needs to
+        be set.
 
         Parameters
         ----------
@@ -172,11 +184,11 @@ class basic_runner(object):
             Grid size in the x direction number or iterable
         dz : number or iterable
             Grid size in the x direction number or iterable
-        MXG : int
+        MXG : int or iterable
             The number of guard cells in the x direction
-        MYG : int
+        MYG : int or iterable
             The number of guard cells in the y direction
-        NXPE : int
+        NXPE : int or iterable
             Numbers of processors in the x direction
         ixseps1 : int or iterable
             Separatrix location for 'upper' divertor
@@ -243,6 +255,18 @@ class basic_runner(object):
             The number of processors the redistribute the restart files
             to. Calls the redistribute function in boutdata.restart.
             Will only be effective if 'restart' is not None
+        use_expand : bool
+            Only used when restarting.
+            If there is a mismatch in nz between the requested nz and
+            the nz found in the restart file, boutdata.restart.expand
+            will be used if use_expand = True, if not
+            boutdata.restart.resize will be used
+        max_proc : int
+            Only used when restarting.
+            Max processors used when calling boutdata.restart.resize
+        intrp_method: str
+            Only used when restarting, and when the mesh is resizied.
+            Sets the method used in the interpolation.
         addnoise : dict
             Adding noise to the restart files by calling the addnoise
             function in boutdata.restart.  Will only be effective if
@@ -346,6 +370,9 @@ class basic_runner(object):
         self._restart         = restart
         self._restart_from    = restart_from
         self._redistribute    = redistribute
+        self._use_expand      = use_expand
+        self._max_proc        = max_proc
+        self._intrp_method    = intrp_method
         self._addnoise        = addnoise
         self._cpy_source      = cpy_source
         self._cpy_grid        = cpy_grid
@@ -449,6 +476,15 @@ class basic_runner(object):
 
         # Check if the instance is set correctly
         self._check_for_basic_instance_error()
+
+        # We need to find options in BOUT.inp. We use BOUTOption for this
+        # Object initialization
+        self._inputFileOpts = BOUTOptions(self._directory)
+        # Convert indices to lowercase
+        self._inputFileOpts.root = dict((key.lower(), value)\
+                            for key, value in self._inputFileOpts.root.items())
+        self._inputFileOpts.mesh = dict((key.lower(), value)\
+                            for key, value in self._inputFileOpts.mesh.items())
 #}}}
 
 #{{{__del__
@@ -715,12 +751,15 @@ class basic_runner(object):
     def _check_for_basic_instance_error(self):
         """Check if there are any type errors when creating the object"""
 
-        #{{{Check if directory has the correct type
+        #{{{Check if nproc has the correct type
         if type(self._nproc) != int:
             message  = "nproc is of wrong type\n"+\
                        "nproc must be given as an int"
             self._errors.append("TypeError")
             raise TypeError(message)
+        #}}}
+
+        #{{{Check if directory has the correct type
         if type(self._directory) != str:
             message  = "directory is of wrong type\n"+\
                        "directory must be given as a str"
@@ -865,16 +904,20 @@ class basic_runner(object):
         # Check if the solver is possible
         # From /include/bout/solver.hxx
         possible_solvers = [\
-            'cvode',\
-            'pvode',\
-            'ida',\
-            'petsc',\
-            'karniadakis',\
-            'rk4',\
-            'euler',\
-            'rk3ssp',\
-            'power',\
-            'arkode'\
+            "cvode"      ,\
+            "pvode"      ,\
+            "ida"        ,\
+            "petsc"      ,\
+            "slepc"      ,\
+            "karniadakis",\
+            "rk4"        ,\
+            "euler"      ,\
+            "rk3ssp"     ,\
+            "power"      ,\
+            "arkode"     ,\
+            "imexbdf2"   ,\
+            "snes"       ,\
+            "rkgeneric"  ,\
             ]
 
         # Do the check if the solver is set
@@ -886,10 +929,8 @@ class basic_runner(object):
         #{{{Check if the methods is set to the correct possibility
         # Check if ddx or ddy is possible
         possible_method = [\
-            'C2',\
-            'C4',\
-            'W2',\
-            'W3'\
+            "C2",\
+            "C4",\
             ]
 
         # Make a list of the variables
@@ -923,9 +964,11 @@ class basic_runner(object):
 
         # Check for upwind terms
         possible_method = [\
-            'U1',\
-            'U4',\
-            'W3'\
+            "U1",\
+            "U2",\
+            "U4",\
+            "W2",\
+            "W3",\
             ]
 
         # Make a list of the variables
@@ -1108,6 +1151,24 @@ class basic_runner(object):
             # If nproc is set, and this is incompatible with NPES
             if self._nproc != self._redistribute:
                 raise RuntimeError("nproc and redistribute must be equal")
+        #}}}
+
+        #{{{Check if max_proc has the correct type
+        if self._restart is not None and self._max_proc is not None:
+            if type(self._max_proc) != int:
+                message  = "max_proc is of wrong type\n"+\
+                           "max_proc must be given as an int"
+                self._errors.append("TypeError")
+                raise TypeError(message)
+        #}}}
+
+        #{{{Check if intrp_method has the correct type
+        if self._restart is not None and self._intrp_method is not None:
+            if type(self._intrp_method) != str:
+                message  = "intrp_method is of wrong type\n"+\
+                           "intrp_method must be given as a string"
+                self._errors.append("TypeError")
+                raise TypeError(message)
         #}}}
 
         #{{{Check if addnoise is set correctly
@@ -1347,13 +1408,15 @@ class basic_runner(object):
                 raise TypeError(message)
         #}}}
 
-        #{{{Check mms, symGlobX, symGlobY, cpy_src/grid, allow_size_mod is bool
+        #{{{Check mms, symGlobX, symGlobY, cpy_src/grid, use_expand and
+        #   allow_size_mod is bool
         check_if_bool = [\
             (self._mms                    , 'mms')                    ,\
             (self._symGlobX               , 'symGlobX')               ,\
             (self._symGlobY               , 'symGlobY')               ,\
             (self._cpy_source             , 'cpy_source')             ,\
             (self._cpy_grid               , 'cpy_grid')               ,\
+            (self._use_expand             , 'use_expand')             ,\
             (self._allow_size_modification, 'allow_size_modification') \
             ]
 
@@ -1549,82 +1612,21 @@ class basic_runner(object):
         If not, vary the number of points until value is found.
         """
 
-        # We need to find options in BOUT.inp. We use BOUTOption for this
-        # Object initialization
-        myOpts = BOUTOptions(self._directory)
-
         if (self._nx is None) and (self._ny is None):
             #{{{ Set local_nx and local_ny from input
-            # If nx and ny is a function of MXG and MYG
-            if self._MXG is None:
-                try:
-                    MXG = eval(myOpts.root['MXG'])
-                except KeyError:
-                    try:
-                        MXG = eval(myOpts.root['mxg'])
-                    except KeyError:
-                        message  = "Could not find 'MXG' or 'mxg' "
-                        message += "in the input file. "
-                        message += "Setting MXG = 2"
-                        self._warning_printer(message)
-                        self._warnings.append(message)
-                        MXG = 2
-            else:
-                MXG = self._MXG
-            if self._MYG is None:
-                try:
-                    MYG = eval(myOpts.root['MYG'])
-                except KeyError:
-                    try:
-                        MYG = eval(myOpts.root['myg'])
-                    except KeyError:
-                        message  = "Could not find 'MYG' or 'myg' "
-                        message += "in the input file. "
-                        message += "Setting MYG = 2"
-                        self._warning_printer(message)
-                        self._warnings.append(message)
-                        MYG = 2
-            else:
-                MYG = self._MYG
-
             # Set the local nx value
-            try:
-                local_nx = [eval(myOpts.mesh['nx'])]
-            except NameError:
-                message  = "Could not evaluate\n"
-                message += myOpts.mesh['nx']
-                message += "\nfound nx in mesh in the input file."
-                raise RuntimeError(message)
+            local_nx = [self._get_dim_from_input('nx')]
 
             # Set the local ny value
-            try:
-                local_ny = [eval(myOpts.mesh['ny'])]
-            except NameError:
-                message  = "Could not evaluate\n"
-                message += myOpts.mesh['ny']
-                message += "\nfound ny in mesh in the input file."
-                raise RuntimeError(message)
+            local_ny = [self._get_dim_from_input('ny')]
             #}}}
         elif (self._nx is None):
             #{{{ Set local_nx from input
             # ny is given, so we only need to find nx
             local_ny = self._ny
-            # If nx and ny is a function of MXG and MYG
-            # NOTE: MXG may seem unused, but it needs to be in the current
-            #       namespace if eval(myOpts.mesh['nx']) depends on MXG
-            if self._MXG is None:
-                MXG = eval(myOpts.root['MXG'])
-            else:
-                MXG = self._MXG
 
             # Set the local nx value
-            try:
-                local_nx = [eval(myOpts.mesh['nx'])]
-            except NameError:
-                message  = "Could not evaluate\n"
-                message += myOpts.mesh['nx']
-                message += "\nfound nx in mesh in the input file."
-                raise RuntimeError(message)
+            local_nx = [self._get_dim_from_input('nx')]
 
             # Get the same length on nx and ny
             local_nx = local_nx * len(local_ny)
@@ -1633,22 +1635,9 @@ class basic_runner(object):
             #{{{ Set local_ny from input
             # nx is given, so we only need to find ny
             local_nx = self._nx
-            # If nx and ny is a function of MXG and MYG
-            # NOTE: MYG may seem unused, but it needs to be in the current
-            #       namespace if eval(myOpts.mesh['nx']) depends on MYG
-            if self._MYG is None:
-                MYG = eval(myOpts.root['MYG'])
-            else:
-                MYG = self._MYG
 
-            # Set the local nx value
-            try:
-                local_ny = [eval(myOpts.mesh['ny'])]
-            except NameError:
-                message  = "Could not evaluate\n"
-                message += myOpts.mesh['ny']
-                message += "\nfound ny in mesh in the input file."
-                raise RuntimeError(message)
+            # Set the local ny value
+            local_ny = [self._get_dim_from_input('ny')]
 
             # Get the same length on nx and ny
             local_ny = local_ny * len(local_nx)
@@ -1657,30 +1646,12 @@ class basic_runner(object):
             local_nx = self._nx
             local_ny = self._ny
 
-
-        #{{{First we check if self._MXG is given
-        if self._MXG is None:
-            # Get MXG as string, and evaluate it
-            try:
-                local_MXG = eval(myOpts.root['MXG'])
-            except KeyError:
-                try:
-                    local_MXG = eval(myOpts.root['mxg'])
-                except KeyError:
-                    message  = "Could not find 'MXG' or 'mxg' "
-                    message += "in the input file. "
-                    message += "Setting MXG = 2"
-                    self._warning_printer(message)
-                    self._warnings.append(message)
-                    local_MXG = 2
-        else:
-            local_MXG = self._MXG
-        #}}}
-
         # If NXPE is not set, we will try to find a optimal grid size
         # Flag to determine if a warning should be printed
         produce_warning = False
         print("\nChecking the grid split for the meshes\n")
+        # Obtain MXG
+        MXG, _MYG = self._get_MXG_MYG()
         if self._NXPE is None:
             #{{{ If NXPE is not set
             for size_nr in range(len(local_nx)):
@@ -1700,7 +1671,7 @@ class basic_runner(object):
                     # BOUT++ (see boutmesh.cxx under
                     # if(options->isSet("NXPE")))
                     for i in range(1, self._nproc+1, 1):
-                        MX = local_nx[size_nr] - 2*local_MXG
+                        MX = local_nx[size_nr] - 2*MXG
                         # self._nproc is called NPES in boutmesh
                         if (self._nproc % i == 0) and \
                            (MX % i == 0) and \
@@ -1747,7 +1718,7 @@ class basic_runner(object):
             self._check_NXPE_or_NYPE(local_nx          ,\
                                      local_ny          ,\
                                      type_str = 'NXPE' ,\
-                                     local_MXG = local_MXG)
+                                     MXG = MXG)
             self._check_NXPE_or_NYPE(local_nx        ,\
                                      local_ny        ,\
                                      type_str = 'NYPE')
@@ -2026,6 +1997,8 @@ class basic_runner(object):
         - Find appropriate mxg and myg if redistribute is set.
         - Copy restart files if restart_from and/or redistribute is set
         - Redistribute restart files if redistribute and restart is set
+        - Resize the runs (change nx, ny and/or nz) if the dimension is
+          changed.
         - Expand the runs (change nz) if nz is set and it deviates from
           what is found in the restart files.
         - Add noise to the restart files if addnoise and restart is set
@@ -2071,26 +2044,7 @@ class basic_runner(object):
 
         #{{{ Find the appropriate mxg and myg if redistribute is set
         if self._redistribute:
-            if not(self._MXG):
-                # Look in the input file
-                myOpts = BOUTOptions(self._directory)
-                # Check for MXG
-                if 'MXG' in myOpts.root.keys():
-                    redistribute_MXG = eval(myOpts.root['MXG'])
-                else:
-                    # Set MXG to defualt
-                    redistribute_MXG = 2
-            else:
-                redistribute_MXG = self._MXG
-            # Do the same for MYG
-            if not(self._MYG):
-                myOpts = BOUTOptions(self._directory)
-                if 'MYG' in myOpts.root.keys():
-                    redistribute_MYG = eval(myOpts.root['MYG'])
-                else:
-                    redistribute_MYG = 2
-            else:
-                redistribute_MYG = self._MYG
+            redistribute_MXG, redistribute_MYG = self._get_MXG_MYG()
         #}}}
 
         #{{{ Copy restart files if restart_from and/or redistribute is set
@@ -2104,11 +2058,11 @@ class basic_runner(object):
                     print("\nCopying files from {0} to {1}\n".\
                             format(self._restart_from, self._dmp_folder))
                     do_run = redistribute(self._redistribute         ,\
-                                                path   = self._restart_from,\
-                                                output = self._dmp_folder  ,\
-                                                mxg    = redistribute_MXG  ,\
-                                                myg    = redistribute_MYG  ,\
-                                                )
+                                          path   = self._restart_from,\
+                                          output = self._dmp_folder  ,\
+                                          mxg    = redistribute_MXG  ,\
+                                          myg    = redistribute_MYG  ,\
+                                          )
                     if not do_run:
                         message = 'Redistribute failed, run skipped'
                         self._warning_printer(message)
@@ -2136,15 +2090,227 @@ class basic_runner(object):
             self._move_old_runs(folder_name = 'restart', include_restart = False)
         #}}}
 
+        #{{{Finding cur_nz
+        if self._restart and do_run:
+            if self._nz:
+                # The current nz should be in the second index as any
+                # eventual other names would come from additional or
+                # series_add
+                cur_nz = int(self._dmp_folder.\
+                             split("nz")[1].\
+                             split("/")[0].\
+                             replace("_", ""))
+            else:
+                # The nz size is not changed, will use the one from
+                # the input file
+                try:
+                    cur_nz = self._get_dim_from_input('nz')
+                except KeyError:
+                    cur_nz = self._get_dim_from_input('mz')
+
+            # Make sure cur_nz is divisible by 2 if cur_nz != 1
+            if cur_nz != 1:
+                if cur_nz%2 != 0:
+                    old_cur_nz = cur_nz
+                    cur_nz += 1
+                    if cur_nz%2 != 0:
+                        cur_nz = old_cur_nz - 1
+                    else:
+                        message = "nz = {} not a power of 2".format(cur_nz)
+                        raise RuntimeError(message)
+        #}}}
+
+        # Flag to check if the mesh has been resized
+        resized = False
+
+        #{{{ Resize nx, ny and nz of the evolved fields
+        if self._restart and do_run and (self._nx or self._ny or self._nz):
+            # Obtain MXG and MYG
+            MXG, MYG = self._get_MXG_MYG()
+
+            # Checking if the sizes are changed
+            # Finding the current sizes
+            # The current sizes should be in the second index as any
+            # eventual other names would come from additional or
+            # series_add
+            # Finding nx
+            if self._nx:
+                cur_nx = int(self._dmp_folder.\
+                         split("nx")[1].\
+                         split("/")[0].\
+                         split("_")[1])
+            else:
+                # The nx size is not changed, will use the one from
+                # the input file
+                cur_nx = self._get_dim_from_input('nx')
+            # Finding ny
+            if self._ny:
+                cur_ny = int(self._dmp_folder.\
+                         split("ny")[1].\
+                         split("/")[0].\
+                         split("_")[1])
+            else:
+                # The ny size is not changed, will use the one from
+                # the input file
+                cur_ny = self._get_dim_from_input('ny')
+
+            # Finding the sizes in the restart files
+            file_name = glob.glob(\
+                    os.path.join(self._dmp_folder, "BOUT.restart.0.*"))[0]
+
+            with DataFile(file_name) as f:
+                # Loop over the variables in the file
+                NPES = f.read("NPES")
+                NXPE = f.read("NXPE")
+                NYPE = int(NPES/NXPE)
+                for var in f.list():
+                    # Read the data
+                    data = f.read(var)
+
+                    # Find 3D variables
+                    if f.ndims(var) == 3:
+                        local_nx, local_ny, nz = data.shape
+                        MXSUB = local_nx - 2*MXG
+                        MYSUB = local_ny - 2*MYG
+                        nx = NXPE * MXSUB + 2*MXG
+                        ny = NYPE * MYSUB
+
+                        # nz contains one extra plane
+                        if nx == cur_nx and ny == cur_ny and nz-1  == cur_nz:
+                            call_resize = False
+                            break
+                        elif nx == cur_nx and ny == cur_ny and nz-1 != cur_nz:
+                            # nz contains extra plane
+                            if nz-1 == 1:
+                                # Override user specification to save time
+                                self._use_expand = True
+                            if self._use_expand:
+                                call_resize = False
+                            else:
+                                call_resize = True
+                            break
+                        else:
+                            call_resize = True
+                            if self._restart == "append":
+                                message  = ("Cannot change nx, ny and/or nz "
+                                            "when appending\n")
+                                # Extra plane in nz
+                                message +=  (\
+                                "Requested nx = {}, nx in restart file = {}\n"
+                                "Requested ny = {}, ny in restart file = {}\n"
+                                "Requested nz = {}, nz in restart file = {}\n"
+                                "Resizing:\n"\
+                                .format(cur_nx, nx, cur_ny, ny, cur_nz, nz-1))
+                                raise IOError(message)
+                            else:
+                                break
+
+            if call_resize:
+                # Move runs
+                dst = self._move_old_runs(folder_name = 'beforeResize',\
+                                          include_restart = True)
+
+                # Redistributing the data to one file
+                # Redistribute
+                success = redistribute(1                          ,\
+                                       path   = dst               ,\
+                                       output = self._dmp_folder  ,\
+                                       mxg    = MXG               ,\
+                                       myg    = MYG               ,\
+                                       )
+                if not success:
+                    message = ("Failed to redistribute to one file when "
+                               "resizing evolved variables")
+                    raise RuntimeError(message)
+
+                # Move the redistributed to the resize folder
+                file_name = glob.glob(os.path.join(self._dmp_folder,\
+                                                   "BOUT.restart.0.*"))[0]
+                path, name = os.path.split(file_name)
+                before_resize_dir = os.path.join(path, "beforeResizingOneFile")
+                self._create_folder(before_resize_dir)
+                shutil.move(file_name, before_resize_dir)
+
+                if self._use_expand:
+                    print("\nDimension change found:\n"
+                          "Requested nx = {}, nx in restart file = {}\n"
+                          "Requested ny = {}, ny in restart file = {}\n"
+                          "Resizing:\n"\
+                            .format(cur_nx, nx, cur_ny, ny))
+                    the_nz = nz
+                else:
+                    # Extra plane in nz
+                    print("\nDimension change found:\n"
+                          "Requested nx = {}, nx in restart file = {}\n"
+                          "Requested ny = {}, ny in restart file = {}\n"
+                          "Requested nz = {}, nz in restart file = {}\n"
+                          "Resizing:\n"\
+                            .format(cur_nx, nx, cur_ny, ny, cur_nz, nz-1))
+                    the_nz = cur_nz + 1
+
+                # NOTE: Different definition for nx and ny
+                success = resize(cur_nx, cur_ny+2*MYG, the_nz,\
+                                 mxg     = MXG,\
+                                 myg     = MYG,\
+                                 path    = before_resize_dir,\
+                                 output  = self._dmp_folder,\
+                                 method  = self._intrp_method,\
+                                 maxProc = self._max_proc)
+                print("\n")
+
+                if success == False:
+                    do_run = False
+                    if self._restart_from:
+                        print("Something went wrong: Reomving "+\
+                              os.path.split(dst)[0]+"\n")
+                        shutil.rmtree(os.path.split(dst)[0])
+                    message = "Resize failed, skipping run."
+                    self._warnings.append(message)
+                    self._warning_printer(message)
+
+                # Move the resized restart file
+                path, name = os.path.split(file_name)
+                # Create a temporary file which 'redistribute' can read
+                # from
+                after_resize_dir = os.path.join(path, "afterResizingOneFile")
+                self._create_folder(after_resize_dir)
+                shutil.move(file_name, after_resize_dir)
+
+                # Redistribute to original split
+                if self._redistribute:
+                    nproc = self._redistribute
+                else:
+                    nproc = self._nproc
+
+                success = redistribute(nproc                    ,\
+                                       path   = after_resize_dir,\
+                                       output = self._dmp_folder,\
+                                       mxg    = MXG             ,\
+                                       myg    = MYG             ,\
+                                       )
+
+                if not success:
+                    message = ("Failed to redistribute after "
+                               "resizing evolved variables")
+                    if self._restart_from:
+                        print("Something went wrong: Reomving "+\
+                              os.path.split(dst)[0]+"\n")
+                        shutil.rmtree(os.path.split(dst)[0])
+                    raise RuntimeError(message)
+
+                resized = True
+        #}}}
+
         #{{{ Expand nz
-        if self._restart and self._nz and do_run:
+        if self._restart and do_run\
+           and self._nz and not resized and self._use_expand:
             # The current nz should be in the second index as any
             # eventual other names would come from additional or
             # series_add
             cur_nz = int(self._dmp_folder.\
                          split("nz")[1].\
                          split("/")[0].\
-                         replace("_", ""))
+                         split("_")[1])
             if self._restart == "append":
                 # Check if nz is the same as in the restart files
                 # Start by opening the 0th restart file
@@ -2157,7 +2323,7 @@ class basic_runner(object):
 
                         # Find 3D variables
                         if f.ndims(var) == 3:
-                            nx, ny, nz = data.shape
+                            _nx, _ny, nz = data.shape
 
                             if nz != cur_nz:
                                 message  = "Cannot change nz when appending\n"
@@ -2168,13 +2334,23 @@ class basic_runner(object):
                                 break
 
             # Get the folder of the restart files
+            elif resized:
+                # Copy the files to afterResizeRedistr
+                after_resize_dir = os.path.join(path, "afterResizeRedistr")
+                self._create_folder(after_resize_dir)
+                file_names = glob.glob(\
+                        os.path.join(self._dmp_folder, "BOUT.restart.*"))
+                for file_name in file_names:
+                    shutil.copy2(file_name, after_resize_dir)
+                # The restart files are stored in the resize folder
+                folder = "afterResizeRedistr*"
             elif self._restart == "overwrite" and not(self._redistribute):
                 # The restart files are stored in the restart folder
                 folder = "restart*"
             elif self._restart == "overwrite" and self._redistribute:
                 if self._restart_from:
-                    dst = self._move_old_runs(folder_name = 'redistribute',\
-                                              include_restart = True)
+                    _dst = self._move_old_runs(folder_name = 'redistribute',\
+                                               include_restart = True)
 
                 # The restart files are stored in the restart folder
                 folder = "redistribute*"
@@ -2659,8 +2835,8 @@ class basic_runner(object):
                             local_nx              ,\
                             local_ny              ,\
                             type_str        = None,\
-                            local_MXG       = None,\
-                            produce_warning = None\
+                            MXG             = None,\
+                            produce_warning = None,\
                             ):
         #{{{docstring
         """
@@ -2678,7 +2854,7 @@ class basic_runner(object):
         type_str : ['NXPE' | 'NYPE']
             Can be either 'NXPE' or 'NYPE' and is specifying whether
             NXPE or NYPE should be checked
-        local_MXG : int
+        MXG : int
             The current MXG
         produce_warning : bool
             Whether or not a warning should be produced
@@ -2709,7 +2885,7 @@ class basic_runner(object):
                 # and
                 # if((MY % NYPE) != 0)
                 if type_str == 'NXPE':
-                    MX = local_nx[size_nr] - 2*local_MXG
+                    MX = local_nx[size_nr] - 2*MXG
                     # self._nproc is called NPES in boutmesh
                     if (MX % self._NXPE[size_nr]) == 0:
                         # If the test passes
@@ -3116,7 +3292,7 @@ class basic_runner(object):
 
             # Copy the files
             for cur_file in file_names:
-                shutil.copy(cur_file, dst)
+                shutil.copy2(cur_file, dst)
 
         return dst
 #}}}
@@ -3365,6 +3541,75 @@ class basic_runner(object):
 #}}}
 
 #{{{Functions called from several places in the code
+#{{{_get_MXG_MYG
+    def _get_MXG_MYG(self):
+        """Function which returns the MXG and MYG"""
+
+        if self._MXG is None:
+            try:
+                MXG = eval(self._inputFileOpts.root['mxg'])
+            except KeyError:
+                message  = "Could not find 'MXG' or 'mxg' "
+                message += "in the input file. "
+                message += "Setting MXG = 2"
+                self._warning_printer(message)
+                self._warnings.append(message)
+                MXG = 2
+        else:
+            MXG = self._MXG
+        if self._MYG is None:
+            try:
+                MYG = eval(self._inputFileOpts.root['myg'])
+            except KeyError:
+                message  = "Could not find 'MYG' or 'myg' "
+                message += "in the input file. "
+                message += "Setting MYG = 2"
+                self._warning_printer(message)
+                self._warnings.append(message)
+                MYG = 2
+        else:
+            MYG = self._MYG
+
+        return MXG, MYG
+#}}}
+
+#{{{_get_dim_from_input
+    def _get_dim_from_input(self, direction):
+        """
+        Get the dimension from the input
+
+        Parameters
+        ----------
+        direction : ['nx'|'ny'|'nz'|'mz']
+            The direction to read
+
+        Returns
+        -------
+        Number of points in the given direction
+        """
+
+        # If nx and ny is a function of MXG and MYG
+        MXG, MYG = self._get_MXG_MYG()
+        # NOTE: MXG may seem unused, but it needs to be in the current
+        #       namespace if eval(self._inputFileOpts.mesh['nx']) depends on MXG
+
+        if self._grid_file:
+            # Open the grid file and read it
+            with DataFile(self._grid_file) as f:
+                # Loop over the variables in the file
+                n_points = f.read(direction)
+        else:
+            try:
+                n_points = eval(self._inputFileOpts.mesh[direction])
+            except NameError:
+                message  = "Could not evaluate\n"
+                message += self._inputFileOpts.mesh[direction]
+                message += "\nfound in {} in [mesh] in the input file.".format(direction)
+                raise RuntimeError(message)
+
+        return n_points
+#}}}
+
     #{{{_warning_printer
     def _warning_printer(self, message):
         """Function for printing warnings"""
