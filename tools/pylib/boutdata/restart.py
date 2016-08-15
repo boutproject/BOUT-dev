@@ -734,7 +734,7 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
               #scalar
               data = f.read(v)
           elif ndims == 2:
-              data = np.zeros( (nx+2*mxg,ny+2*nyg) )
+              data = np.zeros( (nx+2*mxg,ny+2*myg) )
               for i in range(old_npes):
                   ix = i%old_nxpe
                   iy = int(i/old_nxpe)

@@ -160,7 +160,8 @@ def rotate(gridfile, yshift, output=None):
 import matplotlib.pyplot as plt        
 from numpy import linspace, amin, amax
 
-def gridcontourf(grid, data2d, nlevel=31, show=True, mind=None, maxd=None, cmap=None):
+def gridcontourf(grid, data2d, nlevel=31, show=True, mind=None, maxd=None, cmap=None, ax=None,
+                 xlabel="Major radius [m]", ylabel="Height [m]"):
     """
     Plots a 2D contour plot, taking into account branch cuts (X-points).
     
@@ -218,9 +219,12 @@ def gridcontourf(grid, data2d, nlevel=31, show=True, mind=None, maxd=None, cmap=
     if data2d.shape != (nx, ny):
         raise ValueError("Dimensions do not match")
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-
+    add_colorbar = False
+    if ax is None:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        add_colorbar = True
+    
     if mind is None:
       mind = amin(data2d)
     if maxd is None:
@@ -286,12 +290,18 @@ def gridcontourf(grid, data2d, nlevel=31, show=True, mind=None, maxd=None, cmap=
                [data2d[ix1-1,j22+1], data2d[ix1,j22+1], data2d[ix1,j22], data2d[ix1-1,j22]] ]
         ax.contourf(Rx, Zx, Dx, levels, cmap=cmap)
 
-    fig.colorbar(con)
+    if add_colorbar:
+        fig.colorbar(con)
+        
     ax.set_aspect("equal")
-    ax.set_xlabel("Major radius [m]")
-    ax.set_ylabel("Height [m]")
+    if xlabel != None:
+        ax.set_xlabel(xlabel)
+    if ylabel != None:
+        ax.set_ylabel(ylabel)
     if show:
       plt.show()
+      
+    return con
 
 def bout2sonnet(grdname, outf):
     """
