@@ -6,7 +6,7 @@
  *  d*\nabla^2_\perp x + (1/c1)\nabla_perp c2\cdot\nabla_\perp x + a x = b
  *
  **************************************************************************
- * Copyright 2015 K.S. Kang
+ * Copyright 2016 K.S. Kang
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
  * 
@@ -105,9 +105,7 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt) :
       }
       nn = nn/2;
     }
-  }
-  if(mglevel >1) {
-    int nn = Nz_local;
+    nn = Nz_local;
     for(int n = aclevel;n > 1; n--) {
       if ( nn%2 != 0 )  {
 	output<<"Size of local z-domain is not a power of 2^ "<<aclevel <<" mglevel is changed to "<<aclevel - n + 1<<endl;
@@ -117,6 +115,7 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt) :
       nn = nn/2;
     }
   }
+  else aclevel = 1;
   adlevel = mglevel - aclevel;
 
   int rcheck = 0;
@@ -149,6 +148,13 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt) :
     if(mglevel == 1) output<<"PGMRES with simple Preconditioner"<<endl;
     else if(mgplag == 1) output<<"PGMRES with multigrid Preconditioner"<<endl;
     else output<<"Multigrid solver with merging "<<mgmpi<<endl;
+#ifdef OPENMP
+#pragma omp parallel
+#pragma omp master
+    {
+      output<<"Num threads = "<<omp_get_num_threads()<<endl;
+    } 
+#endif
   }  
 }
 
