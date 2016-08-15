@@ -112,6 +112,8 @@ class BoutMesh : public Mesh {
   BoutReal Vol_Integral(const Field2D &var);
 
  private:
+  Options *meshoptions; ///< Handle for mesh options
+
   string gridname;
   int nx, ny;        ///< Size of the grid in the input file
   int MX, MY;        ///< size of the grid excluding boundary regions
