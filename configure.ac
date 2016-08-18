@@ -34,37 +34,55 @@ BOUT_VERSION="2.0"
 AC_PREREQ(2.59)
 AC_INIT(BOUT++, BOUT_VERSION, bd512@york.ac.uk)
 
-AC_ARG_WITH(netcdf, [  --with-netcdf           Enable support for netCDF files])
-AC_ARG_WITH(hdf5,   [  --with-hdf5             Enable support for HDF5 files])
-AC_ARG_WITH(parallelhdf5,[  --with-parallelhdf5     Enable support for parallel HDF5 files])
-AC_ARG_WITH(pnetcdf,[  --with-pnetcdf          Set path to Parallel NetCDF library])
-AC_ARG_WITH(ida,    [  --with-ida=/path/to/ida Use the SUNDIALS IDA solver])
-AC_ARG_WITH(cvode,  [  --with-cvode            Use the SUNDIALS CVODE solver])
-AC_ARG_WITH(sundials, [  --with-sundials         Use CVODE and IDA])
-AC_ARG_WITH(facets, [  --with-facets           Build the interface to FACETS])
-AC_ARG_WITH(fftw,   [  --with-fftw             Set directory of FFTW3 library])
-AC_ARG_WITH(lapack, [  --with-lapack           Use the LAPACK library])
-AC_ARG_WITH(petsc,  [  --with-petsc            Enable PETSc interface])
-AC_ARG_WITH(slepc,  [  --with-slepc            Enable SLEPc interface])
-AC_ARG_WITH(pvode,  [  --with-pvode            Build and enable PVODE 98 (DEFAULT)])
-AC_ARG_WITH(hypre,  [  --with-hypre            Link to the Hypre library])
-AC_ARG_WITH(mumps,  [  --with-mumps            Link with MUMPS library for direct matrix inversions])
-AC_ARG_WITH(arkode, [  --with-arkode           Use the SUNDIALS ARKODE solver])
-AC_ARG_ENABLE(checks,
-              [  --enable-checks=no/1/2/3  Set run-time checking level])
-AC_ARG_ENABLE(signal,
-              [  --disable-signal      Disable SEGFAULT handling])
-AC_ARG_ENABLE(track,
-              [  --enable-track          Enable variable tracking])
-AC_ARG_ENABLE(debug,
-              [  --enable-debug          Enable all debugging flags])
-AC_ARG_ENABLE(optimize,
-              [  --enable-optimize=1/2/3 Enable optimization])
-AC_ARG_ENABLE(sigfpe,
-              [  --enable-sigfpe         Enable FloatingPointExceptions])
-AC_ARG_ENABLE(backtrace,
-              [  --disable-backtrace     Disable function backtrace],
-              [], [enable_backtrace=yes])
+AC_ARG_WITH(pdb,          [AS_HELP_STRING([--with-pdb],
+        [Enable support for PDB files])],,[])
+AC_ARG_WITH(netcdf,       [AS_HELP_STRING([--with-netcdf],
+        [Enable support for netCDF files])],,[])
+AC_ARG_WITH(hdf5,         [AS_HELP_STRING([--with-hdf5],
+        [Enable support for HDF5 files])],,[])
+AC_ARG_WITH(parallelhdf5, [AS_HELP_STRING([--with-parallelhdf5],
+        [Enable support for parallel HDF5 files])],,[])
+AC_ARG_WITH(pnetcdf,      [AS_HELP_STRING([--with-pnetcdf],
+        [Set path to Parallel NetCDF library])],,[])
+AC_ARG_WITH(ida,          [AS_HELP_STRING([--with-ida=/path/to/ida],
+        [Use the SUNDIALS IDA solver])],,[])
+AC_ARG_WITH(cvode,        [AS_HELP_STRING([--with-cvode],
+        [Use the SUNDIALS CVODE solver])],,[])
+AC_ARG_WITH(sundials,     [AS_HELP_STRING([--with-sundials],
+        [Use CVODE and IDA])],,[])
+AC_ARG_WITH(facets,       [AS_HELP_STRING([--with-facets],
+        [Build the interface to FACETS])],,[])
+AC_ARG_WITH(fftw,         [AS_HELP_STRING([--with-fftw],
+        [Set directory of FFTW3 library])],,[])
+AC_ARG_WITH(lapack,       [AS_HELP_STRING([--with-lapack],
+        [Use the LAPACK library])],,[])
+AC_ARG_WITH(petsc,        [AS_HELP_STRING([--with-petsc],
+        [Enable PETSc interface])],,[])
+AC_ARG_WITH(slepc,        [AS_HELP_STRING([--with-slepc],
+        [Enable SLEPc interface])],,[])
+AC_ARG_WITH(pvode,        [AS_HELP_STRING([--with-pvode],
+        [Build and enable PVODE 98 (DEFAULT)])],,[])
+AC_ARG_WITH(hypre,        [AS_HELP_STRING([--with-hypre],
+        [Link to the Hypre library])],,[])
+AC_ARG_WITH(mumps,        [AS_HELP_STRING([--with-mumps],
+        [Link with MUMPS library for direct matrix inversions])],,[])
+AC_ARG_WITH(arkode,       [AS_HELP_STRING([--with-arkode],
+        [Use the SUNDIALS ARKODE solver])],,[])
+AC_ARG_ENABLE(checks,       [AS_HELP_STRING([--enable-checks=no/1/2/3],
+        [Set run-time checking level])],,[])
+AC_ARG_ENABLE(signal,       [AS_HELP_STRING([--disable-signal],
+        [Disable SEGFAULT handling])],,[])
+AC_ARG_ENABLE(track,        [AS_HELP_STRING([--enable-track],
+        [Enable variable tracking])],,[])
+AC_ARG_ENABLE(debug,        [AS_HELP_STRING([--enable-debug],
+        [Enable all debugging flags])],,[])
+AC_ARG_ENABLE(optimize,     [AS_HELP_STRING([--enable-optimize=1/2/3],
+        [Enable optimization])],,[])
+AC_ARG_ENABLE(sigfpe,       [AS_HELP_STRING([--enable-sigfpe],
+        [Enable FloatingPointExceptions])],,[])
+AC_ARG_ENABLE(backtrace,    [AS_HELP_STRING([--disable-backtrace],
+        [Disable function backtrace])],,[enable_backtrace=yes])
+
 AC_ARG_VAR(EXTRA_INCS,[Extra compile flags])
 AC_ARG_VAR(EXTRA_LIBS,[Extra linking flags])
 

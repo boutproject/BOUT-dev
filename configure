@@ -1359,8 +1359,9 @@ Optional Features:
   --disable-option-checking  ignore unrecognized --enable/--with options
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
-  --enable-checks=no/1/2/3  Set run-time checking level
-  --disable-signal      Disable SEGFAULT handling
+  --enable-checks=no/1/2/3
+                          Set run-time checking level
+  --disable-signal        Disable SEGFAULT handling
   --enable-track          Enable variable tracking
   --enable-debug          Enable all debugging flags
   --enable-optimize=1/2/3 Enable optimization
@@ -2317,6 +2318,7 @@ if test "${enable_backtrace+set}" = set; then :
 else
   enable_backtrace=yes
 fi
+
 
 
 
