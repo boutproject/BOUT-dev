@@ -454,100 +454,77 @@ echo ""
 
 NCCONF="" # Configuration script
 
-if test "$with_netcdf" != "no"
-then
+AS_IF([test "x$with_netcdf" != "xno"],
+[
   ##########################################
   # Try to find a valid NetCDF configuration
   #
   # at first, try to find ncconf script
 
-
-  #echo "Searching for NetCDF configuration"
-
   OLDNCDF="0" # Indicates whether nc-config or ncxx4-config
 
-    if (test "$with_netcdf" = "yes") || (test "$with_netcdf" = "")
-    then
-      NCCONF=""
-      # No path specified. Try using nc-config
-      if type ncxx4-config &> /dev/null ; then
-        NCCONF=`which ncxx4-config` # New interface
-      elif type nc-config &> /dev/null ; then
-        # Older interface. May or may not have C++ support
-        echo " -> nc-config script found:" `which nc-config`
-        if test `nc-config --has-c++` = "yes"
-        then
-          echo " -> C++ support included"
-          NCCONF=`which nc-config`
-          OLDNCDF="1"
-        else
-          echo " -> NO C++ SUPPORT"
-        fi
-      else
-            echo " -> No configure script found. Specify using --with-netcdf option"
-      fi
-    else
-      # see if configure scripts are in path
-      if type $with_netcdf/ncxx4-config > /dev/null 2>&1; then
-        NCCONF="$with_netcdf/ncxx4-config"
-      elif type $with_netcdf/bin/ncxx4-config > /dev/null 2>&1; then
-        NCCONF="$with_netcdf/bin/ncxx4-config"
-      elif type $with_netcdf/nc-config > /dev/null 2>&1; then
-        NCCONF="$with_netcdf/nc-config"
-        OLDNCDF="1"
-      elif type $with_netcdf/bin/nc-config > /dev/null 2>&1; then
-        NCCONF="$with_netcdf/bin/nc-config"
-        OLDNCDF="1"
-      fi
-    fi
+  # Search for NetCDF config scripts, prefer ncxx4-config over nc-config
+  # Check the path provided by --with-netcdf, appending "/bin" if need be, then check system path
+  # Set NCCONF to the full path of the found scropt
+  AC_PATH_PROGS([NCCONF], [ncxx4-config nc-config],
+      [AC_MSG_ERROR([No configure script found. Specify using --with-netcdf option])],
+      [$with_netcdf$PATH_SEPARATOR$with_netcdf/bin$PATH_SEPARATOR$PATH])
 
-    ##########################################
-    # Get configuration
-    if test "$NCCONF" != ""; then
-      echo " -> NetCDF config script found: $NCCONF"
+  # If we found nc-config rather than ncxx4-config, we need to check if it supports C++
+  AS_IF([test `basename $NCCONF` = 'nc-config'],
+        [AC_MSG_CHECKING([if NetCDF has C++4 support])
+         nc_has_cpp4=`$NCCONF --has-c++4`
+         AC_MSG_RESULT([$nc_has_cpp4])
+         AC_MSG_CHECKING([if NetCDF has C++ support])
+         nc_has_cpp=`$NCCONF --has-c++`
+         AC_MSG_RESULT([$nc_has_cpp])
+        ], [
+         nc_has_cpp4="yes"
+        ])
 
-      NCINC=`$NCCONF --cflags`
-      EXTRA_INCS="$EXTRA_INCS $NCINC"
-
-      if test "$OLDNCDF" == "1"; then
-        NCLIB=`$NCCONF --libs | sed s/-lnetcdf/-lnetcdf_c++\ -lnetcdf/` # Note netcdf_c++ needed
-        LDFLAGS="$LDFLAGS -Wl,-rpath,`nc-config --prefix`/lib"
-
-        CXXFLAGS="$CXXFLAGS -DNCDF"
-        echo " -> NetCDF support enabled"
-      else
+  ##########################################
+  # Get configuration
+  AS_IF([test "x$NCCONF" != "x" ],
+  [
+     NCINC=`$NCCONF --cflags`
+     EXTRA_INCS="$EXTRA_INCS $NCINC"
+     AS_IF([test "x$nc_has_cpp4" = "xyes"],
+       [
         NCLIB=`$NCCONF --libs`
-
         CXXFLAGS="$CXXFLAGS -DNCDF4"
         echo " -> NetCDF-4 support enabled"
-      fi
+       ], [
+        # Note netcdf_c++ needed
+        NCLIB=`$NCCONF --libs | sed s/-lnetcdf/-lnetcdf_c++\ -lnetcdf/`
+        CXXFLAGS="$CXXFLAGS -DNCDF"
+        echo " -> NetCDF support enabled"
+       ])
       EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
 
       file_formats="$file_formats netCDF"
       NCPATH="found"
       NCFOUND=yes
-    fi
+   ], [
+     # if nc-config / ncxx4-config is not found, try to find library directly
+     BOUT_MSG_DEBUG([calling bout addpath])
+     BOUT_ADDPATH_CHECK_HEADER(netcdfcpp.h,
+        BOUT_ADDPATH_CHECK_LIB(netcdf, nc_get_att,
+            BOUT_ADDPATH_CHECK_LIB(netcdf_c++, nc_close, NCFOUND=yes, NCFOUND=no, [$with_netcdf]),
+            NCFOUND=no, [$with_netcdf]),
+        NCFOUND=no, [$with_netcdf])
 
-  dnl if nc-config / ncxx4-config is not found, try to find library directly
-  if test .$NCFOUND != ".yes" ; then
-    BOUT_MSG_DEBUG([calling bout addpath])
-    BOUT_ADDPATH_CHECK_HEADER(netcdfcpp.h,
-      BOUT_ADDPATH_CHECK_LIB(netcdf,nc_get_att,
-	BOUT_ADDPATH_CHECK_LIB(netcdf_c++,nc_close, NCFOUND=yes ,NCFOUND=no, \
-				$with_netcdf )
-      ,NCFOUND=no, $with_netcdf )
-    ,NCFOUND=no, $with_netcdf)
+      AS_IF([test "x$NCFOUND" = "xyes"],
+        [
+         file_formats="$file_formats netCDF"
+         echo " -> NetCDF support enabled"
+         NCPATH="found"
+         CXXFLAGS="$CXXFLAGS -DNCDF"
+        ], [])
+  ])
 
-  AS_IF( test $NCFOUND = yes, [file_formats="$file_formats netCDF";
-    echo " -> NetCDF support enabled";NCPATH="found";
-	CXXFLAGS="$CXXFLAGS -DNCDF"]
-	,)
-  fi
-
-  AS_IF( [test $with_netcdf && test $NCFOUND != yes ] , AC_MSG_ERROR("netcdf requested but not found"),)
-  AS_IF( test $NCFOUND != yes, echo " -> NetCDF support disabeld",)
-
-fi
+  AS_IF([test $with_netcdf && test "x$NCFOUND" != "xyes" ], AC_MSG_ERROR([NetCDF requested but not found]), [])
+  AS_IF([test "x$NCFOUND" != "xyes"], [AC_MSG_NOTICE([ -> NetCDF support disabled])], [])
+], [])
 
 echo ""
 
