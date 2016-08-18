@@ -1358,28 +1358,29 @@ if test -n "$ac_init_help"; then
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-checks=no/1/2/3  	   Set run-time checking level
-  --with-signal=no        	   Disable SEGFAULT handling
-  --with-track            	   Enable variable tracking
-  --with-pdb              	   Enable support for PDB files
-  --with-netcdf           	   Enable support for netCDF files
-  --with-hdf5                 Enable support for HDF5 files
-  --with-parallelhdf5    Enable support for parallel HDF5 files
-  --with-pnetcdf              Set path to Parallel NetCDF library
-  --with-debug            	   Enable all debugging flags
- --with-optimize=default/1/2/3  Enable optimization
-  --with-ida=/path/to/ida 	   Use the SUNDIALS IDA solver
-  --with-cvode            	   Use the SUNDIALS CVODE solver
-  --with-sundials           Use CVODE and IDA
-  --with-facets           	   Build the interface to FACETS
-  --with-fftw             	   Set directory of FFTW3 library
-  --with-lapack           	   Use the LAPACK library
-  --with-petsc            	   Enable PETSc interface
-  --with-slepc                Enable SLEPc interface
-  --with-pvode	  	   Build and enable PVODE 98 (DEFAULT)
-  --with-hypre                Link to the Hypre library
-  --with-mumps                Link with MUMPS library for direct matrix inversions
-  --with-arkode		   Use the SUNDIALS ARKODE solver
+  --with-checks=no/1/2/3  Set run-time checking level
+  --with-signal=no        Disable SEGFAULT handling
+  --with-track            Enable variable tracking
+  --with-pdb              Enable support for PDB files
+  --with-netcdf           Enable support for netCDF files
+  --with-hdf5             Enable support for HDF5 files
+  --with-parallelhdf5     Enable support for parallel HDF5 files
+  --with-pnetcdf          Set path to Parallel NetCDF library
+  --with-debug            Enable all debugging flags
+  --with-optimize=default/1/2/3
+                          Enable optimization
+  --with-ida=/path/to/ida Use the SUNDIALS IDA solver
+  --with-cvode            Use the SUNDIALS CVODE solver
+  --with-sundials         Use CVODE and IDA
+  --with-facets           Build the interface to FACETS
+  --with-fftw             Set directory of FFTW3 library
+  --with-lapack           Use the LAPACK library
+  --with-petsc            Enable PETSc interface
+  --with-slepc            Enable SLEPc interface
+  --with-pvode            Build and enable PVODE 98 (DEFAULT)
+  --with-hypre            Link to the Hypre library
+  --with-mumps            Link with MUMPS library for direct matrix inversions
+  --with-arkode           Use the SUNDIALS ARKODE solver
 
 Some influential environment variables:
   EXTRA_INCS  Extra compile flags
