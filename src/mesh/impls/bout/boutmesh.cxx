@@ -1480,6 +1480,22 @@ int BoutMesh::getYProcIndex() {
   return PE_YIND;
 }
 
+int BoutMesh::getnx() const {
+  return nx;
+}
+
+int BoutMesh::getny() const {
+  return ny;
+}
+
+int BoutMesh::getMXG() const {
+  return MXG;
+}
+
+int BoutMesh::getMYG() const {
+  return MYG;
+}
+
 /****************************************************************
  *                 X COMMUNICATIONS
  *
@@ -1796,8 +1812,7 @@ comm_handle BoutMesh::irecvYInOutdest(BoutReal *buffer, int size, int tag) {
  * If out of range returns -1 (no processor)
  */
 
-int BoutMesh::PROC_NUM(int xind, int yind)
-{
+int BoutMesh::PROC_NUM(int xind, int yind) const {
   if((xind >= NXPE) || (xind < 0))
     return -1;
   if((yind >= NYPE) || (yind < 0))
@@ -1807,9 +1822,8 @@ int BoutMesh::PROC_NUM(int xind, int yind)
 }
 
 /// Returns true if the given grid-point coordinates are in this processor
-bool BoutMesh::IS_MYPROC(int xind, int yind)
-{
-  return ((xind / MXSUB) == PE_XIND) && ((yind / MYSUB) == PE_YIND);
+bool BoutMesh::IS_MYPROC(int xind, int yind) const {
+  return ((xind / (MXSUB+1)) == PE_XIND) && ((yind / (MYSUB+1)) == PE_YIND);
 }
 
 /// Returns the global X index given a local index
@@ -1842,14 +1856,14 @@ int BoutMesh::YLOCAL(int yglo, int yproc) const {
 }
 
 /// Return the Y processor number given a global Y index
-int BoutMesh::YPROC(int yind) {
+int BoutMesh::YPROC(int yind) const {
   if((yind < 0) || (yind > ny))
     return -1;
   return yind / MYSUB;
 }
 
 /// Return the X processor number given a global X index
-int BoutMesh::XPROC(int xind) {
+int BoutMesh::XPROC(int xind) const {
   return (xind >= MXG) ? (xind - MXG) / MXSUB : 0;
 }
 

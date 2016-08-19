@@ -188,7 +188,23 @@ class Mesh {
   /// Local ranges of data (inclusive), excluding guard cells
   int xstart, xend, ystart, yend;
 
-  // These used for differential operators 
+  /// Getters for grid data
+  virtual int getnx() const {}; /// Return nx from the grid
+  virtual int getny() const {}; /// Return ny from the grid
+  virtual int getMXG() const{}; /// Return MXG from the grid
+  virtual int getMYG() const{}; /// Return MYG from the grid
+
+  /// Processor number, local <-> global translation
+  virtual int PROC_NUM(int xind, int yind) const{}; // (PE_XIND, PE_YIND) -> MYPE
+  virtual bool IS_MYPROC(int xind, int yind) const{};
+  virtual int XLOCAL(int xglo) const{};
+  virtual int YGLOBAL(int yloc, int yproc) const{};
+  virtual int YLOCAL(int yglo) const{};
+  virtual int YLOCAL(int yglo, int yproc) const{};
+  virtual int YPROC(int yind) const{};
+  virtual int XPROC(int xind) const{};
+
+  // These used for differential operators
   Field2D dx, dy;      // Read in grid.cpp
   Field2D d1_dx, d1_dy;  // 2nd-order correction for non-uniform meshes d/di(1/dx) and d/di(1/dy)
   
