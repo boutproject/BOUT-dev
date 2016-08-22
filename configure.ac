@@ -107,91 +107,9 @@ AC_DEFUN([CREATE_DIR],
 dnl#############################################################
 dnl# Define functions
 dnl#############################################################
-# Functions inspired by ESPResSo (espressomd.org)
 dnl
 dnl Try whether the linker / compiler can find the header / libraries
 AC_LANG(C++)
-
-AC_DEFUN([BOUT_MSG_DEBUG],[
-	dnl Uncomment line below to enable debugging
-	dnl AC_MSG_NOTICE([debug: $1])
-	])
-dnl define the macro to check for libraries
-dnl first  argument is the name of the library
-dnl second arg is a function of that library
-dnl third  arg is to be executed if found
-dnl forth  arg is to be executed if not found
-dnl fifth  arg is an additional path to check
-AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
-	AC_MSG_CHECKING([for lib$1])
-	LDFLAGS_save=$LDFLAGS
-	LIBS="$EXTRA_LIBS -l$1"
-	BACL_found=no
-	AS_IF([test ."$5" = .yes], [extra_prefix=""],[extra_prefix="$5"])
-	AC_TRY_LINK([extern "C"
-	char $2();] ,[return $2();], [BACL_found=yes ; break;
-     		  BOUT_MSG_DEBUG([found $1 without path])
-		],)
-	if test $BACL_found != yes ; then
-		for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
-			for path in $prefix $prefix/lib $prefix/lib64 $prefix/x86_64-linux-gnu ; do
-				if test -d $path
-				then
-					LDFLAGS="-L$path $LDFLAGS_save"
-					BOUT_MSG_DEBUG([try link $1 with $path])
-					AC_TRY_LINK([extern "C"
-						char $2();] ,[return $2();], [BACL_found=yes ; break;
-							BOUT_MSG_DEBUG([found $1 with $path])
-							],)
-				fi
-			done
-			AS_IF([test .$BACL_found = .yes],break;)
-		done
-	fi
-	if test $BACL_found = yes ; then
-		EXTRA_LIBS=$LIBS
-		AC_MSG_RESULT(yes)
-	else
-		LDFLAGS=$LDFLAGS_save
-		AC_MSG_RESULT(no)
-	fi
-	AS_IF([test .$BACL_found = .yes], [$3],[$4])
-])
-
-
-AC_DEFUN([BOUT_ADDPATH_CHECK_HEADER],[
-	AC_MSG_CHECKING([for $1])
-	CPPFLAGS_save=$CPPFLAGS
-	BACH_found=no
-	AS_IF([test ."$4" != .yes], [extra_prefix="$4"],[extra_prefix=""])
-	AC_TRY_COMPILE([#include <$1>] ,, [BACH_found=yes ; break;
-     		BOUT_MSG_DEBUG([found $1 without path])
-		],)
-	if test $BACH_found != yes ; then
-		for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
-			for path in $prefix $prefix/include ; do
-				if test -d $path
-				then
-					CPPFLAGS="$CPPFLAGS_save -I$path"
-					BOUT_MSG_DEBUG([try compile $1 with $path])
-					AC_TRY_COMPILE([#include <$1>] ,, [BACH_found=yes ; break;
-							BOUT_MSG_DEBUG([found $1 with $path])
-							],)
-				fi
-			done
-			AS_IF([test .$BACH_found = .yes],break;)
-		done
-	fi
-	if test $BACH_found = yes ; then
-		AC_MSG_RESULT(yes)
-	else
-		CPPFLAGS=$CPPFLAGS_save
-		AC_MSG_RESULT(no)
-	fi
-	AS_IF([test .$BACH_found = .yes], [$2],[$3])
-])
-
-
 
 #############################################################
 # Checks for programs
@@ -205,54 +123,6 @@ AC_PROG_RANLIB
 #############################################################
 # MPI
 #############################################################
-
-AC_DEFUN([ACX_MPI], [
-AC_PREREQ(2.50) dnl for AC_LANG_CASE
-
-AC_LANG_CASE([C++], [
-  AC_REQUIRE([AC_PROG_CXX])
-  AC_ARG_VAR(MPICXX,[MPI C++ compiler command])
-  AC_CHECK_PROGS(MPICXX, mpicxx mpiCC mpic++ hcp mpxlC_r mpxlC mpCC cmpic++ CC, $CXX)
-  acx_mpi_save_CXX="$CXX"
-  CXX="$MPICXX"
-  AC_SUBST(MPICXX)
-])
-
-if test x = x"$MPILIBS"; then
-  AC_LANG_CASE([C++], [AC_CHECK_FUNC(MPI_Init, [MPILIBS=" "])])
-fi
-
-if test x = x"$MPILIBS"; then
-  AC_CHECK_LIB(mpi, MPI_Init, [MPILIBS="-lmpi"])
-fi
-if test x = x"$MPILIBS"; then
-  AC_CHECK_LIB(mpich, MPI_Init, [MPILIBS="-lmpich"])
-fi
-
-dnl We have to use AC_TRY_COMPILE and not AC_CHECK_HEADER because the
-dnl latter uses $CPP, not $CC (which may be mpicc).
-AC_LANG_CASE([C++], [
-  if test x != x"$MPILIBS";
-  then
-    AC_MSG_CHECKING([for mpi.h])
-    AC_TRY_COMPILE([#include <mpi.h>],[],[AC_MSG_RESULT(yes)], [MPILIBS=""
-      AC_MSG_RESULT(no)])
-  fi
-])
-
-# AC_LANG_CASE[C++], [CXX="$acx_mpi_save_CXX"])
-
-AC_SUBST(MPILIBS)
-
-# Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
-if test x = x"$MPILIBS"; then
-  $2
-  :
-else
-  ifelse([$1],,[AC_DEFINE(HAVE_MPI,1,[Define if you have the MPI library.])],[$1])
-  :
-fi
-])dnl ACX_MPI
 
 AC_LANG([C++])
 ACX_MPI()
