@@ -128,7 +128,7 @@ const Field3D b0xGrad_dot_Grad(const Field2D &phi, const Field3D &A);
 const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC outloc=CELL_DEFAULT);
 
 // Poisson bracket methods
-enum BRACKET_METHOD {BRACKET_STD=0, BRACKET_SIMPLE=1, BRACKET_ARAKAWA=2, BRACKET_CTU=3};
+enum BRACKET_METHOD {BRACKET_STD=0, BRACKET_SIMPLE=1, BRACKET_ARAKAWA=2, BRACKET_CTU=3, BRACKET_ARAKAWA_OLD=4};
 const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method = BRACKET_STD, CELL_LOC outloc=CELL_DEFAULT, Solver *solver = NULL);
 const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method = BRACKET_STD, CELL_LOC outloc=CELL_DEFAULT, Solver *solver = NULL);
 const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method = BRACKET_STD, CELL_LOC outloc=CELL_DEFAULT, Solver *solver = NULL);
