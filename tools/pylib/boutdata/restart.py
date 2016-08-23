@@ -224,6 +224,10 @@ def resize(newNx, newNy, newNz, mxg=2, myg=2,\
     Add 2D field interpolation
     """
 
+    if method is None:
+        # Make sure the method is set
+        method = 'linear'
+
     if outformat == None:
         outformat = informat
 
