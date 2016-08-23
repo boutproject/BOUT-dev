@@ -6,7 +6,7 @@
  *  d*\nabla^2_\perp x + (1/c1)\nabla_perp c2\cdot\nabla_\perp x + a x = b
  *
  **************************************************************************
- * Copyright 2015 K.S. Kang
+ * Copyright 2016 K.S. Kang
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
  * 
@@ -28,7 +28,7 @@
  **************************************************************************/
 
 #include "multigrid_laplace.hxx"
-int mgcount = 0;
+
 BoutReal soltime=0.0,settime=0.0;
 
 
@@ -45,9 +45,13 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt) :
   opts->get("atol",atol,pow(10.0,-20),true);
   opts->get("dtol",dtol,pow(10.0,5),true);
   opts->get("smtype",mgsm,1,true);
+  opts->get("jacomega",omega,0.8,true);
   opts->get("solvertype",mgplag,1,true);
   opts->get("cftype",cftype,0,true);
+  opts->get("mergempi",mgmpi,63,true);
   opts->get("checking",pcheck,0,true);
+  tcheck = pcheck;
+  mgcount = 0;
 
   // Initialize, allocate memory, etc.
   comms_tagbase = 385; // Some random number
@@ -68,126 +72,99 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt) :
   }
   
   commX = mesh->getXcomm();
-  MPI_Comm_size(commX,&xNP);
-  if(xNP > 1) {
-    xProcI = mesh->getXProcIndex();
-    if(xProcI == 0) xProcM = xNP-1;
-    else xProcM = xProcI-1;
-    if(xProcI == xNP-1) xProcP = 0;
-    else xProcP = xProcI+1;
-  }
-  else {
-    xProcI = 0;
-    xProcM = 0;
-    xProcP = 0;
-  }
   
   Nx_local = mesh->xend - mesh->xstart + 1; // excluding guard cells
   Nx_global = mesh->GlobalNx - 2*mesh->xstart; // excluding guard cells
   
   if(mgcount == 0) {
-    output <<"xNP="<<xNP<<"("<<xProcI<<","<<xProcM<<","<<xProcP<<"), Nx="<<Nx_global<<"("<<Nx_local<<")"<<endl;
+    output <<"Nx="<<Nx_global<<"("<<Nx_local<<")"<<endl;
   }
-  zNP = 1;
-  commXZ = commX;
-  commZ = MPI_COMM_WORLD;
-  if(zNP == 1) {
-    zProcI = 0;
-    zProcM = 0;
-    zProcP = 0;
-    Nz_global = mesh->GlobalNz - 1;
+  Nz_global = mesh->GlobalNz - 1;
            // z-direction has one extra, unused point for historical reasons
-    Nz_local = Nz_global; // No parallelization in z-direction (for now)
-  }
+  Nz_local = Nz_global; // No parallelization in z-direction (for now)
   // 
   //else {
   //  Nz_local = mesh->zend - mesh->zstart + 1; // excluding guard cells
   //  Nz_global = mesh->GlobalNz - 2*mesh->zstart; // excluding guard cells
   // }
   if(mgcount==0) {
-    output <<"zNP="<<zNP<<"("<<zProcI<<"), Nz="<<Nz_global<<"("<<Nz_local<<")"<<endl;
+    output <<"Nz="<<Nz_global<<"("<<Nz_local<<")"<<endl;
   }
+
+
   // Compute available levels along x-direction
+  int aclevel,adlevel;
   if(mglevel >1) {
     int nn = Nx_local;
-    for(int n = mglevel;n > 1; n--) {
+    aclevel = mglevel;
+    for(int n = aclevel;n > 1; n--) {
       if ( nn%2 != 0 )  {
 	output<<"Size of local x-domain is not a power of 2^"<<mglevel<<" mglevel is changed to"<<mglevel-n+1<<endl;
-        mglevel = mglevel - n + 1;
+        aclevel = aclevel - n + 1;
         n = 1;
       }
       nn = nn/2;
     }
-  }
-  if(mglevel >1) {
-    int nn = Nz_local;
-    for(int n = mglevel;n > 1; n--) {
+    nn = Nz_local;
+    for(int n = aclevel;n > 1; n--) {
       if ( nn%2 != 0 )  {
-	output<<"Size of local z-domain is not a power of 2"<<mglevel <<" mglevel is changed to "<<mglevel - n + 1<<endl;
-        mglevel = mglevel - n + 1;
+	output<<"Size of local z-domain is not a power of 2^ "<<aclevel <<" mglevel is changed to "<<aclevel - n + 1<<endl;
+        aclevel = aclevel - n + 1;
         n = 1;
       }
       nn = nn/2;
     }
   }
-  
-  /* Momory allocate for Multigrid */
-  gnx = new int[mglevel];
-  gnz = new int[mglevel];
-  lnx = new int[mglevel];
-  lnz = new int[mglevel];
-  gnx[mglevel-1] = Nx_global;
-  gnz[mglevel-1] = Nz_global;
-  lnx[mglevel-1] = Nx_local;
-  lnz[mglevel-1] = Nz_local;
-  if(mglevel > 1) {
-    for(int i=mglevel-1;i>0;i--) {
-      gnx[i-1] = gnx[i]/2;
-      gnz[i-1] = gnz[i]/2;
-      lnx[i-1] = lnx[i]/2;
-      lnz[i-1] = lnz[i]/2;
-    }
-  }
-  if(mgcount == 0) { 
-    output<<"Before alloc mat "<<mglevel<<"("<<gnx[mglevel-1]<<","<<gnz[mglevel-1]<<"="<<lnx[mglevel-1]<<","<<lnz[mglevel-1]<<")"<<endl;
-  }
-  matmg = new BoutReal *[mglevel];
+  else aclevel = 1;
+  adlevel = mglevel - aclevel;
 
-  for(int i = 0;i<mglevel;i++) {
-    if(mgcount == 0) {
-      output<<"In alloc mat "<<i<<"("<<gnx[i]<<","<<gnz[i]<<"="<<lnx[i]<<","<<lnz[i]<<")"<<(lnx[i]+2)*(lnz[i]+2)*9<<endl;
-    }
-    matmg[i] = new BoutReal[(lnx[i]+2)*(lnz[i]+2)*9];
-  }
-  
+  int rcheck = 0;
+  if((pcheck == 1) && (mgcount == 0)) rcheck = 1;
+  kMG = new Multigrid1DP(aclevel,Nx_local,Nz_local,Nx_global,adlevel,mgmpi,
+            commX,rcheck);
+  kMG->mgplag = mgplag;
+  kMG->mgsm = mgsm; 
+  kMG->cftype = cftype;
+  kMG->rtol = rtol;
+  kMG->atol = atol;
+  kMG->dtol = dtol;
+  kMG->omega = omega;
+  kMG->setValueS();
+
   // Set up Multigrid Cycle
 
-  x = new BoutReal[(lnx[mglevel-1]+2)*(lnz[mglevel-1]+2)];
-  b = new BoutReal[(lnx[mglevel-1]+2)*(lnz[mglevel-1]+2)];
+  x = new BoutReal[(Nx_local+2)*(Nz_local+2)];
+  b = new BoutReal[(Nx_local+2)*(Nz_local+2)];
 
   if(mgcount == 0) {  
     output<<" Smoothing type is ";
-    if(mgsm ==0) output<<"Jacobi smoother"<<endl;
+    if(mgsm == 0) {
+      output<<"Jacobi smoother";
+      output<<"with omega = "<<omega<<endl;
+    }
     else if(mgsm ==1) output<<" Gauss-Seidel smoother"<<endl;
     else throw BoutException("Undefined smoother");
     output<<"Solver type is ";
     if(mglevel == 1) output<<"PGMRES with simple Preconditioner"<<endl;
     else if(mgplag == 1) output<<"PGMRES with multigrid Preconditioner"<<endl;
-    else output<<"Multigrid solver"<<endl;
-  }
-  
+    else output<<"Multigrid solver with merging "<<mgmpi<<endl;
+#ifdef OPENMP
+#pragma omp parallel
+#pragma omp master
+    {
+      output<<"Num threads = "<<omp_get_num_threads()<<endl;
+    } 
+#endif
+  }  
 }
 
 LaplaceMultigrid::~LaplaceMultigrid() {
   // Finalize, deallocate memory, etc.
   delete [] x;
   delete [] b;
-  for(int i = 0;i<mglevel;i++) delete [] matmg[i];
-  delete [] matmg;
-  delete [] lnz;
-  delete [] lnx;
-  delete [] gnz;
-  delete [] gnx;
+  kMG->cleanMem();
+  kMG->cleanS();
+  kMG = NULL;
 }
 
 const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &x0) {
@@ -195,19 +172,17 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
   BoutReal t0,t1;
   
   yindex = b_in.getIndex();
-  
-  int lzz = lnz[mglevel-1];
+  int level = kMG->mglevel-1;
+  int lzz = kMG->lnz[level];
   int lz2 = lzz+2;
-  int lxx = lnx[mglevel-1];
-  if(pcheck == 1) {
-    output<<mgcount<<"Start of solve at "<<yindex<<endl;
-  }
-
+  int lxx = kMG->lnx[level];
 
   if ( global_flags & INVERT_START_NEW ) {
     // set initial guess to zero
     for (int i=1; i<lxx+1; i++) {
       int i2 = i-1+mesh->xstart;
+#pragma omp parallel default(shared) 
+#pragma omp for
       for (int k=1; k<lzz+1; k++) {
         int k2 = k;
         x[i*lz2+k] = 0.;
@@ -218,14 +193,13 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
     // Read initial guess into local array, ignoring guard cells
     for (int i=1; i<lxx+1; i++) {
       int i2 = i-1+mesh->xstart;
+#pragma omp parallel default(shared) 
+#pragma omp for
       for (int k=1; k<lzz+1; k++) {
         int k2 = k-1;
         x[i*lz2+k] = x0[i2][k2];
       }
     }
-  }
-  if(pcheck == 1) {
-    output<<"End of Initial condition at "<<xProcI<<endl;
   }
   
   // Read RHS into local array
@@ -314,91 +288,85 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
   }
 
   // Exchange ghost cells of initial guess
-  if(zNP > 1) {
-    MPI_Status  status[4];
-    MPI_Request requests[4];
-    MPI_Datatype xvector;
-    int stag,rtag,ierr;
-    ierr = MPI_Type_vector(lxx+2, 1, lz2, MPI_DOUBLE, &xvector);
-    ierr = MPI_Type_commit(&xvector);
-    // Send to z+ and recieve from z-
-    ierr = MPI_Sendrecv(&x[lz2-2],1,xvector,zProcP,stag,
-                        &x[0],1,xvector,zProcM,rtag,commZ,status);
-    // Send to z- and recieve from z+
-    ierr = MPI_Sendrecv(&x[1],1,xvector,zProcM,stag,&x[lz2-1],
-                        1,xvector,zProcP,rtag,commZ,status);
-    ierr = MPI_Type_free(&xvector);
-  }
-  else {
-    for(int i=0;i<lxx+2;i++) {
-      x[i*lz2] = x[(i+1)*lz2-2];
-      x[(i+1)*lz2-1] = x[i*lz2+1];
-    }
+  for(int i=0;i<lxx+2;i++) {
+    x[i*lz2] = x[(i+1)*lz2-2];
+    x[(i+1)*lz2-1] = x[i*lz2+1];
   }
    
   if(mgcount == 0) {
     soltime = 0.0;
     settime = 0.0;
   }
+  else {
+    if(kMG->pcheck > 0) {
+      kMG->setPcheck(0);
+    }
+  }
+  
 
   t0 = MPI_Wtime();
-  generateMatrixF(mglevel-1);  
-  if(pcheck == 1) {
-    output<<"End of Matrix F generation at "<<xProcI<<endl;
-  }
+  generateMatrixF(level);  
 
-  if(xNP >1) MPI_Barrier(commX);
+  if(kMG->xNP > 1) MPI_Barrier(commX);
 
-  /*
-  FILE *outf;
-  outf = fopen("test_matF.mat","w");
-  int dim =  (lnx[mglevel-1]+2)*(lnz[mglevel-1]+2);
-  fprintf(outf,"dim = %d\n",dim);
-
-  for(int i = 0;i<dim;i++) {
-    fprintf(outf,"%d ==",i);
-    for(int j=0;j<9;j++) fprintf(outf,"%12.6f,",matmg[mglevel-1][i*9+j]);
-    fprintf(outf,"\n");
-  }  
-  fclose(outf);
-  */
-  for(int i = mglevel-1; i> 0;i--) {
-    setMatrixC(i);
-
-    /*
+  if((pcheck == 3) && (mgcount == 0)) {
+    FILE *outf;
     char outfile[256];
-    sprintf(outfile,"test_matC%1d.mat",i);
+    sprintf(outfile,"test_matF_%d.mat",kMG->rProcI);
+    output<<"Out file= "<<outfile<<endl;
     outf = fopen(outfile,"w");
-    int dim =  (lnx[i-1]+2)*(lnz[i-1]+2);
-    fprintf(outf,"dim = %d\n",dim);
-  
-    for(int ii = 0;ii<dim;ii++) {
-      fprintf(outf,"%d ==",ii);
-      for(int j=0;j<9;j++) fprintf(outf,"%12.6f,",matmg[i-1][ii*9+j]);
+    int dim =  (lxx+2)*(lzz+2);
+    fprintf(outf,"dim = %d (%d, %d)\n",dim,lxx,lzz);
+
+    for(int i = 0;i<dim;i++) {
+      fprintf(outf,"%d ==",i);
+      for(int j=0;j<9;j++) fprintf(outf,"%12.6f,",kMG->matmg[level][i*9+j]);
       fprintf(outf,"\n");
     }  
     fclose(outf);
-    */
   }
-  if(pcheck == 1) {
-    output<<"End of all matrix at "<<xProcI<<endl;
+
+  if(level > 0) kMG->setMultigridC(0);
+
+  if((pcheck == 3) && (mgcount == 0)) {
+    for(int i = level; i> 0;i--) {
+      output<<i<<"dimension= "<<kMG->lnx[i-1]<<"("<<kMG->gnx[i-1]<<"),"<<kMG->lnz[i-1]<<endl;
+      
+      FILE *outf;
+      char outfile[256];
+      sprintf(outfile,"test_matC%1d_%d.mat",i,kMG->rProcI);
+      output<<"Out file= "<<outfile<<endl;
+      outf = fopen(outfile,"w");
+      int dim =  (kMG->lnx[i-1]+2)*(kMG->lnz[i-1]+2);
+      fprintf(outf,"dim = %d (%d,%d)\n",dim,kMG->lnx[i-1],kMG->lnz[i-1]);
+  
+      for(int ii = 0;ii<dim;ii++) {
+        fprintf(outf,"%d ==",ii);
+        for(int j=0;j<9;j++) fprintf(outf,"%12.6f,",kMG->matmg[i-1][ii*9+j]);
+        fprintf(outf,"\n");
+      }  
+      fclose(outf);
+    }
   }
 
   t1 = MPI_Wtime();
   settime += t1-t0;
-  // Compute solution.. 
-  communications(x,mglevel-1);
+  // Compute solution.
 
   mgcount++;
+  if((mgcount == 300) && (pcheck == 0)) {
+    tcheck = 1;
+  }
   t0 = MPI_Wtime();
-  if(mglevel == 1) pGMRES(x,b,mglevel-1,1);
-  else if(mgplag == 1) pGMRES(x,b,mglevel-1,1);
-  else solveMG(x,b,mglevel-1);
+
+  kMG->getSolution(x,b,0);
+
   t1 = MPI_Wtime();
+  if((mgcount == 300) && (tcheck != pcheck)) tcheck = pcheck;
   soltime += t1-t0;
-  //if(mgcount%100 == 0) {
-  //  output<<"Accumulated execution time at "<<mgcount<<" Sol "<<soltime<<" ( "<<settime<<" )"<<endl;
-  //}
+  if(mgcount%300 == 0) {
+    output<<"Accumulated execution time at "<<mgcount<<" Sol "<<soltime<<" ( "<<settime<<" )"<<endl;
+  }
   
   FieldPerp result;
   result.allocate();
@@ -407,11 +375,47 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
     result = 1./0.;
   #endif
   // Copy solution into a FieldPerp to return
-  for (int i=0; i<lxx+2; i++) {
+  for (int i=1; i<lxx+1; i++) {
     int i2 = i-1+mesh->xstart;
     for (int k=1; k<lzz+1; k++) {
       int k2 = k-1;
       result[i2][k2] = x[i*lz2+k];
+    }
+  }
+  if (xProcI == 0) {
+    if ( inner_boundary_flags & INVERT_AC_GRAD ) {
+      // Neumann boundary condition
+      int i2 = -1+mesh->xstart;
+      for (int k=1; k<lzz+1; k++) {
+        int k2 = k-1;
+        result[i2][k2] = x[lz2+k] - x[k];
+      }
+    }
+    else {
+      // Dirichlet boundary condition
+      int i2 = -1+mesh->xstart;
+      for (int k=1; k<lzz+1; k++) {
+        int k2 = k-1;
+        result[i2][k2] = x[k]- x[lz2+k];
+      }
+    }
+  }
+  if (xProcI == xNP-1) {
+    if ( outer_boundary_flags & INVERT_AC_GRAD ) {
+      // Neumann boundary condition
+      int i2 = lxx+mesh->xstart;
+      for (int k=1; k<lzz+1; k++) {
+        int k2 = k-1;
+        result[i2][k2] = x[lxx*lz2+k]-x[(lxx+1)*lz2+k];
+      }
+    }
+    else {
+      // Dirichlet boundary condition
+      int i2 = lxx+mesh->xstart;
+      for (int k=1; k<lzz+1; k++) {
+        int k2 = k-1;
+        result[i2][k2] = x[(lxx+1)*lz2+k]-x[lxx*lz2+k];
+      }
     }
   }
   result.setIndex(yindex); // Set the index of the FieldPerp to be returned
@@ -420,63 +424,22 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
   
 }
 
-void LaplaceMultigrid::communications(BoutReal* x, int level) {
-  // nx does not include guard cells
-  
-  MPI_Status  status[4];
-  MPI_Request requests[4];
-  int stag,rtag,ierr;
-
-  if(zNP > 1) {
-    MPI_Datatype xvector;
-    ierr = MPI_Type_vector(lnx[level], 1, lnz[level]+2, MPI_DOUBLE, &xvector);
-    ierr = MPI_Type_commit(&xvector);
-    // Send to z+ and recieve from z-
-    stag = zProcI;
-    rtag = zProcM;
-    ierr = MPI_Sendrecv(&x[2*(lnz[level]+2)-2],1,xvector,zProcP,stag,
-                        &x[lnz[level]+2],1,xvector,zProcM,rtag,commZ,status);
-    // Send to z- and recieve from z+
-    stag = zProcI+zNP;
-    rtag = zProcM+zNP;
-    ierr = MPI_Sendrecv(&x[1],1,xvector,zProcM,stag,&x[2*(lnz[level]+2)-1],
-                        1,xvector,zProcP,rtag,commZ,status);
-    ierr = MPI_Type_free(&xvector);
-  }
-  else {
-    for(int i=1;i<lnx[level]+1;i++) {
-      x[i*(lnz[level]+2)] = x[(i+1)*(lnz[level]+2)-2];
-      x[(i+1)*(lnz[level]+2)-1] = x[i*(lnz[level]+2)+1];
-    }
-  }
-  if(xNP > 1) {
-    // Send to x+ and recieve from x-
-    stag = xProcI; 
-    rtag = xProcM;
-    ierr = MPI_Sendrecv(&x[lnx[level]*(lnz[level]+2)],lnz[level]+2,
-                MPI_DOUBLE,xProcP,stag,&x[0],lnz[level]+2,MPI_DOUBLE,
-                xProcM,rtag,commX,status);
-    // Send to x- and recieve from x+
-    stag = xProcI+xNP;
-    rtag = xProcP+xNP;;
-    ierr = MPI_Sendrecv(&x[lnz[level]+2],lnz[level]+2,MPI_DOUBLE,xProcM,stag,
-                        &x[(lnx[level]+1)*(lnz[level]+2)],lnz[level]+2,
-                        MPI_DOUBLE,xProcP,rtag,commX,status);
-
-  }
-
-}
 
 void LaplaceMultigrid::generateMatrixF(int level) {
 
   // Set (fine-level) matrix entries
 
   int i2,k2;
+  BoutReal *mat;
+  mat = kMG->matmg[level];
+  int llx = kMG->lnx[level];
+  int llz = kMG->lnz[level];
 
-
-  for (int i=1; i<lnx[level]+1; i++) {
+  for (int i=1; i<llx+1; i++) {
     i2 = i-1+mesh->xstart;
-    for (int k=1; k<lnz[level]+1; k++) {
+#pragma omp parallel default(shared) private(k2)
+#pragma omp for
+    for (int k=1; k<llz+1; k++) {
       k2 = k-1;
       int k2p  = (k2+1)%Nz_global;
       int k2m  = (k2+Nz_global-1)%Nz_global;
@@ -504,126 +467,84 @@ void LaplaceMultigrid::generateMatrixF(int level) {
         + mesh->g13[i2][yindex]*ddx_C // (could assume zero, at least initially, if easier; then check this is true in constructor)
       )/mesh->dz; // coefficient of 1st derivative stencil (z-direction)
       
-      int ic = i*(lnz[level]+2)+k;
-      matmg[level][ic*9] = dxdz/4.;
-      matmg[level][ic*9+1] = ddx - dxd/2.;
-      matmg[level][ic*9+2] = -dxdz/4.;
-      matmg[level][ic*9+3] = ddz - dzd/2.;
-      matmg[level][ic*9+4] = A[i2][yindex][k2] - 2.*(ddx+ddz); // coefficient of no-derivative component
-      matmg[level][ic*9+5] = ddz + dzd/2.;
-      matmg[level][ic*9+6] = -dxdz/4.;
-      matmg[level][ic*9+7] = ddx+dxd/2.;
-      matmg[level][ic*9+8] = dxdz/4.;
+      int ic = i*(llz+2)+k;
+      mat[ic*9] = dxdz/4.;
+      mat[ic*9+1] = ddx - dxd/2.;
+      mat[ic*9+2] = -dxdz/4.;
+      mat[ic*9+3] = ddz - dzd/2.;
+      mat[ic*9+4] = A[i2][yindex][k2] - 2.*(ddx+ddz); // coefficient of no-derivative component
+      mat[ic*9+5] = ddz + dzd/2.;
+      mat[ic*9+6] = -dxdz/4.;
+      mat[ic*9+7] = ddx+dxd/2.;
+      mat[ic*9+8] = dxdz/4.;
     }
   }
 
   // Here put boundary conditions
 
-  if (xProcI == 0) {
+  if (kMG->rProcI == 0) {
     if ( inner_boundary_flags & INVERT_AC_GRAD ) {
       // Neumann boundary condition
-      for(int k = 1;k<lnz[level]+1; k++) {
-        int ic = lnz[level]+2 +k;
-        matmg[level][ic*9+3] += matmg[level][ic*9];
-        matmg[level][ic*9+4] += matmg[level][ic*9+1];
-        matmg[level][ic*9+5] += matmg[level][ic*9+2];
-        b[ic] -= matmg[level][ic*9]*x[k-1];
-        b[ic] -= matmg[level][ic*9+1]*x[k];
-        b[ic] -= matmg[level][ic*9+2]*x[k+1];
-        matmg[level][ic*9] = 0.;
-        matmg[level][ic*9+1] = 0.;
-        matmg[level][ic*9+2] = 0.;
+      for(int k = 1;k<llz+1; k++) {
+        int ic = llz+2 +k;
+        mat[ic*9+3] += mat[ic*9];
+        mat[ic*9+4] += mat[ic*9+1];
+        mat[ic*9+5] += mat[ic*9+2];
+        b[ic] -= mat[ic*9]*x[k-1];
+        b[ic] -= mat[ic*9+1]*x[k];
+        b[ic] -= mat[ic*9+2]*x[k+1];
+        mat[ic*9] = 0.;
+        mat[ic*9+1] = 0.;
+        mat[ic*9+2] = 0.;
       }
     }
     else {
       // Dirichlet boundary condition
-      for(int k = 1;k<lnz[level]+1; k++) {
-        int ic = lnz[level]+2 +k;
-        matmg[level][ic*9+3] -= matmg[level][ic*9];
-        matmg[level][ic*9+4] -= matmg[level][ic*9+1];
-        matmg[level][ic*9+5] -= matmg[level][ic*9+2];
-        b[ic] -= matmg[level][ic*9]*x[k-1];
-        b[ic] -= matmg[level][ic*9+1]*x[k];
-        b[ic] -= matmg[level][ic*9+2]*x[k+1];
-        matmg[level][ic*9] = 0.;
-        matmg[level][ic*9+1] = 0.;
-        matmg[level][ic*9+2] = 0.;
+      for(int k = 1;k<llz+1; k++) {
+        int ic = llz+2 +k;
+        mat[ic*9+3] -= mat[ic*9];
+        mat[ic*9+4] -= mat[ic*9+1];
+        mat[ic*9+5] -= mat[ic*9+2];
+        b[ic] -= mat[ic*9]*x[k-1];
+        b[ic] -= mat[ic*9+1]*x[k];
+        b[ic] -= mat[ic*9+2]*x[k+1];
+        mat[ic*9] = 0.;
+        mat[ic*9+1] = 0.;
+        mat[ic*9+2] = 0.;
       }
     }
   }
-  if (xProcI == xNP-1) {
+  if (kMG->rProcI == kMG->xNP-1) {
     if ( outer_boundary_flags & INVERT_AC_GRAD ) {
       // Neumann boundary condition
-      for(int k = 1;k<lnz[level]+1; k++) {
-        int ic = lnx[level]*(lnz[level]+2)+k;
-        matmg[level][ic*9+3] += matmg[level][ic*9+6];
-        matmg[level][ic*9+4] += matmg[level][ic*9+7];
-        matmg[level][ic*9+5] += matmg[level][ic*9+8];
-        b[ic] -= matmg[level][ic*9+6]*x[(lnx[level]+1)*(lnz[level]+2)+k-1];
-        b[ic] -= matmg[level][ic*9+7]*x[(lnx[level]+1)*(lnz[level]+2)+k];
-        b[ic] -= matmg[level][ic*9+8]*x[(lnx[level]+1)*(lnz[level]+2)+k+1];
-        matmg[level][ic*9+6] = 0.;
-        matmg[level][ic*9+7] = 0.;
-        matmg[level][ic*9+8] = 0.;
+      for(int k = 1;k<llz+1; k++) {
+        int ic = llx*(llz+2)+k;
+        mat[ic*9+3] += mat[ic*9+6];
+        mat[ic*9+4] += mat[ic*9+7];
+        mat[ic*9+5] += mat[ic*9+8];
+        b[ic] -= mat[ic*9+6]*x[(llx+1)*(llz+2)+k-1];
+        b[ic] -= mat[ic*9+7]*x[(llx+1)*(llz+2)+k];
+        b[ic] -= mat[ic*9+8]*x[(llx+1)*(llz+2)+k+1];
+        mat[ic*9+6] = 0.;
+        mat[ic*9+7] = 0.;
+        mat[ic*9+8] = 0.;
       }
     }
     else {
       // Dirichlet boundary condition
-      for(int k = 1;k<lnz[level]+1; k++) {
-        int ic = lnx[level]*(lnz[level]+2)+k;
-        matmg[level][ic*9+3] -= matmg[level][ic*9+6];
-        matmg[level][ic*9+4] -= matmg[level][ic*9+7];
-        matmg[level][ic*9+5] -= matmg[level][ic*9+8];
-        b[ic] -= matmg[level][ic*9+6]*x[(lnx[level]+1)*(lnz[level]+2)+k-1];
-        b[ic] -= matmg[level][ic*9+7]*x[(lnx[level]+1)*(lnz[level]+2)+k];
-        b[ic] -= matmg[level][ic*9+8]*x[(lnx[level]+1)*(lnz[level]+2)+k+1];
-        matmg[level][ic*9+6] = 0.;
-        matmg[level][ic*9+7] = 0.;
-        matmg[level][ic*9+8] = 0.;
+      for(int k = 1;k<llz+1; k++) {
+        int ic = llx*(llz+2)+k;
+        mat[ic*9+3] -= mat[ic*9+6];
+        mat[ic*9+4] -= mat[ic*9+7];
+        mat[ic*9+5] -= mat[ic*9+8];
+        b[ic] -= mat[ic*9+6]*x[(llx+1)*(llz+2)+k-1];
+        b[ic] -= mat[ic*9+7]*x[(llx+1)*(llz+2)+k];
+        b[ic] -= mat[ic*9+8]*x[(llx+1)*(llz+2)+k+1];
+        mat[ic*9+6] = 0.;
+        mat[ic*9+7] = 0.;
+        mat[ic*9+8] = 0.;
       }
     }
   }
 }
 
-void LaplaceMultigrid::setMatrixC(int level) {
-
-  BoutReal ratio=8.0,val; 
-
-  for(int i = 1;i<lnx[level-1]+1;i++) {
-    int i2 = 2*i-1;
-    for(int k = 1;k<lnz[level-1]+1;k++) {
-      int k2 = 2*k-1;
-      int mm = i*(lnz[level-1]+2)+k;
-      int m0 = i2*(lnz[level]+2)+k2;
-      int m1 = i2*(lnz[level]+2)+k2+1;
-      int m2 = (i2+1)*(lnz[level]+2)+k2;
-      int m3 = (i2+1)*(lnz[level]+2)+k2+1;
-      val = matmg[level][m0*9+4]+matmg[level][m1*9+4];
-      val += matmg[level][m2*9+4] + matmg[level][m3*9+4];
-      val += matmg[level][m0*9+5] + matmg[level][m1*9+3];
-      val += matmg[level][m2*9+5] + matmg[level][m3*9+3];
-      val += matmg[level][m0*9+7] + matmg[level][m2*9+1];
-      val += matmg[level][m1*9+7] + matmg[level][m3*9+1];
-      val += matmg[level][m0*9+8] + matmg[level][m3*9];
-      val += matmg[level][m1*9+6] + matmg[level][m2*9+2];
-      matmg[level-1][mm*9+4] = val/ratio;
-      val = matmg[level][m0*9+1]+matmg[level][m1*9+1];
-      val += matmg[level][m0*9+2]+matmg[level][m1*9];
-      matmg[level-1][mm*9+1] = val/ratio;
-      val = matmg[level][m0*9+3]+matmg[level][m2*9+3];
-      val += matmg[level][m0*9+6]+matmg[level][m2*9];
-      matmg[level-1][mm*9+3] = val/ratio;
-      val = matmg[level][m1*9+5]+matmg[level][m3*9+5];
-      val += matmg[level][m1*9+8]+matmg[level][m3*9+2];
-      matmg[level-1][mm*9+5] = val/ratio;
-      val = matmg[level][m2*9+7]+matmg[level][m3*9+7];
-      val += matmg[level][m2*9+8]+matmg[level][m3*9+6];
-      matmg[level-1][mm*9+7] = val/ratio;
-      matmg[level-1][mm*9] = matmg[level][m0*9]/ratio;
-      matmg[level-1][mm*9+2] = matmg[level][m1*9+2]/ratio;
-      matmg[level-1][mm*9+6] = matmg[level][m2*9+6]/ratio;
-      matmg[level-1][mm*9+8] = matmg[level][m3*9+8]/ratio;      
-    }
-  }
-
-}

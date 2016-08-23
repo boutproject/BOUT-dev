@@ -1,7 +1,7 @@
 
 BOUT_TOP = ../../../../..
 
-SOURCEC         = multigrid_laplace.cxx multigrid_cycle.cxx multigrid_gmres.cxx
+SOURCEC         = multigrid_laplace.cxx multigrid_alg.cxx multigrid_solver.cxx
 SOURCEH         = multigrid_laplace.hxx
 TARGET          = lib
 
