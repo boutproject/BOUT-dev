@@ -5000,8 +5000,9 @@ then
   then
     PETSC_DIR="$with_petsc"
 
-  else
-    as_ac_File=`$as_echo "ac_cv_file_$PETSC_DIR/$PETSC_ARCH/conf" | $as_tr_sh`
+  fi
+
+  as_ac_File=`$as_echo "ac_cv_file_$PETSC_DIR/$PETSC_ARCH/conf" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PETSC_DIR/$PETSC_ARCH/conf" >&5
 $as_echo_n "checking for $PETSC_DIR/$PETSC_ARCH/conf... " >&6; }
 if eval \${$as_ac_File+:} false; then :
@@ -5042,12 +5043,11 @@ if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
   PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf
 else
   echo "Error - can't find PETSc distribution"
-        exit
+      exit
 fi
 
 fi
 
-  fi
 
   PETSC_VERSION_MAJOR="0"
   PETSC_VERSION_MAJOR=`grep 'define PETSC_VERSION_MAJOR' $PETSC_DIR/include/petscversion.h | awk '{print \$3;}'`

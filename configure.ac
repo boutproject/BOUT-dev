@@ -622,12 +622,12 @@ then
   then
     PETSC_DIR="$with_petsc"
 
-  else
-    AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/conf, PETSC_CONFDIR=${PETSC_DIR}/conf,
-      AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/lib/petsc/conf, PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf,
-        echo "Error - can't find PETSc distribution"
-        exit))
   fi
+  
+  AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/conf, PETSC_CONFDIR=${PETSC_DIR}/conf,
+    AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/lib/petsc/conf, PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf,
+      echo "Error - can't find PETSc distribution"
+      exit))
 
   PETSC_VERSION_MAJOR="0"
   PETSC_VERSION_MAJOR=`grep 'define PETSC_VERSION_MAJOR' $PETSC_DIR/include/petscversion.h | awk '{print \$3;}'`
