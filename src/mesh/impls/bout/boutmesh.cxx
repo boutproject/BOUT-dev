@@ -51,14 +51,14 @@
 
 //#define COMMDEBUG 1   // Uncomment to print communications debugging information
 
-BoutMesh::BoutMesh(GridDataSource *s, Options *options) : Mesh(s) {
-  if(options == NULL)
-    options = Options::getRoot()->getSection("mesh");
+BoutMesh::BoutMesh(GridDataSource *s, Options *options) : Mesh(s), meshoptions(options) {
+  if(meshoptions == NULL)
+    meshoptions = Options::getRoot()->getSection("mesh");
 
-  OPTION(options, symmetricGlobalX,  true);
-  OPTION(options, symmetricGlobalY,  false);
+  OPTION(meshoptions, symmetricGlobalX,  true);
+  OPTION(meshoptions, symmetricGlobalY,  false);
 
-  OPTION(options, FCI, false);  // Use Flux Coordinate Independent method
+  OPTION(meshoptions, FCI, false);  // Use Flux Coordinate Independent method
 
   comm_x = MPI_COMM_NULL;
   comm_inner = MPI_COMM_NULL;
@@ -457,7 +457,16 @@ int BoutMesh::load() {
       for(int i=0;i<ngx;i++)
         ShiftAngle[i] = 0.0;
     }
-  }else if(MYG > 0) {
+  }else if((MYG > 0) && TwistShift) {
+    // Need ShiftAngle for twist-shift. 
+    // Approximate from zShift if user requests
+    
+    bool shiftangle_from_zshift;
+    OPTION(meshoptions, shiftangle_from_zshift, false);
+    if(!shiftangle_from_zshift) {
+      throw BoutException("No ShiftAngle. Set mesh option shiftangle_from_zshift=true to use zShift");
+    }
+    
     output.write("\tWARNING: Twist-shift angle 'ShiftAngle' not found. Setting from zShift\n");
 
     if(YPROC(jyseps2_2) == PE_YIND) {
