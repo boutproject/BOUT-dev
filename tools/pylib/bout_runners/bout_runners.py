@@ -13,7 +13,7 @@ BOUT/examples/bout_runners_example.
 __authors__ = "Michael Loeiten"
 __email__   = "mmag@fysik.dtu.dk"
 __version__ = "1.04"
-__date__    = "2016.09.04"
+__date__    = "2016.09.05"
 
 import os
 import sys
@@ -22,6 +22,7 @@ import itertools
 import glob
 import timeit
 import datetime
+import time
 import shutil
 from numbers import Number
 import numpy as np
@@ -486,6 +487,10 @@ class basic_runner(object):
                             for key, value in self._inputFileOpts.root.items())
         self._inputFileOpts.mesh = dict((key.lower(), value)\
                             for key, value in self._inputFileOpts.mesh.items())
+
+        # Initialize outputs from execute runs
+        self._PBS_id      = []
+        self._dmp_folders = []
 #}}}
 
 #{{{__del__
@@ -519,6 +524,7 @@ class basic_runner(object):
 
 #{{{execute_runs
     def execute_runs(self,\
+                     job_dependencies = None,\
                      remove_old = False,\
                      post_processing_function = None,\
                      post_process_after_every_run = True,\
@@ -529,6 +535,10 @@ class basic_runner(object):
 
         Parameters
         ----------
+        job_dependencies : [None | list], default: None
+            If the jobs should be run after other jobs. This input is
+            only effective if the object calling the function is a
+            PBS_runner.
         remove_old : bool, default : False
             Whether old run files should be deleted or not
         post_processing_function : callable
@@ -543,8 +553,51 @@ class basic_runner(object):
             basic_runner for more info)
         **kwargs : any
             parameters to be passed to the post_processing_function
-        """
+
+        Returns
+        -------
+        self._dmp_folders : list
+            A list of the folder locations made from the runner
+        self._PBS_id : list
+            A list of the PBS ids is returned.         """
         #}}}
+
+
+        if self.__class__.__name__ == "PBS_runner":
+            # Wait for jobs to finish
+            if job_dependencies is not None:
+                # Ensure that job_dependencies are just numbers
+                job_dependencies = [int(re.match('\d+', j).group(0))\
+                                    for j in job_dependencies\
+                                    if re.match('\d+', j) is not None]
+                print("\nWill now wait for these jobs to finish\n{}\n".\
+                       format("\n".join([str(j) for j in job_dependencies])))
+                while len(job_dependencies) > 0:
+                    # Get current jobs
+                    status, output = shell("qstat", pipe=True)
+                    job_queue = output.split("\n")
+                    # Find the jobIds
+                    job_queue = [int(re.match('\d+', j).group(0))\
+                                for j in job_queue\
+                                if re.match('\d+', j) is not None]
+                    # These jobs will be removed from job_dependencies
+                    pop_jobs = []
+                    for job in job_dependencies:
+                        if job not in job_queue:
+                            pop_jobs.append(job)
+
+                    for job in pop_jobs:
+                        job_dependencies.remove(job)
+
+                    time.sleep(60)
+
+        if self._restart_from is not None:
+            # Check if any restart files are present
+            # This check is performed after waiting for other runs to finish
+            if len(glob.glob(os.path.join(self._restart_from,"*restart*")))== 0:
+                self._errors.append("FileNotFoundError")
+                raise FileNotFoundError("No restart files found in " +\
+                                 self._restart_from)
 
         # Check for errors in the run function
         self._error_check_for_run_input(remove_old,\
@@ -635,13 +688,14 @@ class basic_runner(object):
                                 **kwargs)
                         # Reset the list_of_dmp_folders
                         list_of_dmp_folders = []
+
+        return self._dmp_folders, self._PBS_id
 #}}}
 
 #{{{_run_driver
     def _run_driver(self, combination, run_no):
         """
-        The machinery which actually performs the run and eventually
-        calls post_processing_function.
+        The machinery which actually performs the runs.
         """
 
         # Get the time when the run starts
@@ -651,8 +705,6 @@ class basic_runner(object):
         # Print info to the log file for the runs
         self._append_run_log(start, run_no, run_time)
         print("\n")
-
-        # Perform eventual post-processing
 #}}}
 
 #{{{ Functions called by the constructor
@@ -1121,12 +1173,6 @@ class basic_runner(object):
             if type(self._restart_from) != str:
                 self._errors.append("TypeError")
                 raise TypeError ("restart_from must be set as a string when set")
-
-            # Check if any restart files are present
-            if len(glob.glob(os.path.join(self._restart_from,"*restart*")))== 0:
-                self._errors.append("FileNotFoundError")
-                raise FileNotFoundError("No restart files found in " +\
-                                 self._restart_from)
         #}}}
 
         #{{{Check if redistribute is set correctly
@@ -1571,23 +1617,6 @@ class basic_runner(object):
                                           )
 #}}}
 
-#{{{Functions called by _error_check_for_run_input
-    #{{{_check_for_child_class_errors
-    def _check_for_child_class_errors(
-                                   self                        ,\
-                                   remove_old                  ,\
-                                   post_processing_function    ,\
-                                   post_process_after_every_run \
-                                   ):
-        """
-        Function which check for errors in a child class.
-
-        Here a virtual function
-        """
-        pass
-    #}}}
-#}}}
-
 #{{{_create_run_log
     def _create_run_log(self):
         """Makes a run_log file if it doesn't exists"""
@@ -2024,6 +2053,7 @@ class basic_runner(object):
 
         # Create folder if it doesn't exists
         self._create_folder(self._dmp_folder)
+        self._dmp_folders.append(self._dmp_folder)
         # If self._dmp_folder contains anything other than
         # self._directory
         if self._dmp_folder != self._directory:
@@ -2536,6 +2566,23 @@ class basic_runner(object):
         function(folders, **kwargs)
 
 #}}}
+#}}}
+
+#{{{Functions called by _error_check_for_run_input
+    #{{{_check_for_child_class_errors
+    def _check_for_child_class_errors(
+                                   self                        ,\
+                                   remove_old                  ,\
+                                   post_processing_function    ,\
+                                   post_process_after_every_run \
+                                   ):
+        """
+        Function which check for errors in a child class.
+
+        Here a virtual function
+        """
+        pass
+    #}}}
 #}}}
 
 #{{{Function called by _set_program_name
@@ -4062,7 +4109,6 @@ class PBS_runner(basic_runner):
 
         # Create the dependencies
         dependencies = ":".join(self._PBS_id)
-
         # Submit the job
         print("\nSubmitting the post processing function '" +\
                 function.__name__ + "'\n")
