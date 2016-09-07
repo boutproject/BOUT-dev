@@ -12,8 +12,8 @@ BOUT/examples/bout_runners_example.
 # denotes the end of a fold
 __authors__ = "Michael Loeiten"
 __email__   = "mmag@fysik.dtu.dk"
-__version__ = "1.04"
-__date__    = "2016.09.05"
+__version__ = "1.05"
+__date__    = "2016.09.06"
 
 import os
 import sys
@@ -250,8 +250,12 @@ class basic_runner(object):
         restart : str
             Wheter or not to use the restart files. Must be either
             "overwrite" or "append" if set
-        restart_from : str
-            Path to restart from string
+        restart_from : [str | function]
+            Path to restart if string. If function: A function which
+            takes the current dmp_folder and kwargs (given to
+            execute_runs) as input and returns the restart path. The
+            function is handy when restarting from jobs while doing a
+            parameter scan.
         redistribute : int
             The number of processors the redistribute the restart files
             to. Calls the redistribute function in boutdata.restart.
@@ -547,12 +551,13 @@ class basic_runner(object):
             post_process_after_each_run is True, and a list of dmp
             folders if post_process_after_each_run is False
         post_process_after_each_run : bool, default: True
-            boolean telling whether post_processing_function should be
+            Boolean telling whether post_processing_function should be
             called after each run (if True), or after the number of runs
             decided by self._sort_by (see the constructor of
             basic_runner for more info)
         **kwargs : any
-            parameters to be passed to the post_processing_function
+            Parameters to be passed to the post_processing_function and
+            self._restart_from function (if any)
 
         Returns
         -------
@@ -561,7 +566,6 @@ class basic_runner(object):
         self._PBS_id : list
             A list of the PBS ids is returned.         """
         #}}}
-
 
         if self.__class__.__name__ == "PBS_runner":
             # Wait for jobs to finish
@@ -590,14 +594,6 @@ class basic_runner(object):
                         job_dependencies.remove(job)
 
                     time.sleep(60)
-
-        if self._restart_from is not None:
-            # Check if any restart files are present
-            # This check is performed after waiting for other runs to finish
-            if len(glob.glob(os.path.join(self._restart_from,"*restart*")))== 0:
-                self._errors.append("FileNotFoundError")
-                raise FileNotFoundError("No restart files found in " +\
-                                 self._restart_from)
 
         # Check for errors in the run function
         self._error_check_for_run_input(remove_old,\
@@ -640,7 +636,7 @@ class basic_runner(object):
         for run_no, combination in enumerate(combinations):
 
             # Get the folder to store the data
-            do_run = self._prepare_dmp_folder(combination)
+            do_run = self._prepare_dmp_folder(combination, **kwargs)
             if not(do_run):
                 # Skip this run
                 continue
@@ -1170,9 +1166,12 @@ class basic_runner(object):
                 self._warning_printer(message)
                 self._warnings.append(message)
 
-            if type(self._restart_from) != str:
+            if type(self._restart_from) != str\
+            and not(hasattr(self._restart_from, "__call__")):
                 self._errors.append("TypeError")
-                raise TypeError ("restart_from must be set as a string when set")
+                message = ("restart_from must be set as a string or a "
+                           "function returning the restart path when set")
+                raise TypeError (message)
         #}}}
 
         #{{{Check if redistribute is set correctly
@@ -2020,10 +2019,11 @@ class basic_runner(object):
 #}}}
 
 #{{{_prepare_dmp_folder
-    def _prepare_dmp_folder(self, combination):
+    def _prepare_dmp_folder(self, combination, **kwargs):
         """
         Prepare the dump folder for runs
 
+        - Obtain the folder name to restart from
         - Obtain folder name and copy the input file to the final folder.
         - Check if restart files are present if restart is set (set
           restart to None if not found).
@@ -2037,6 +2037,14 @@ class basic_runner(object):
         - Add noise to the restart files if addnoise and restart is set
         - Copy files if restart is set to overwrite
         - Copy the source files to the final folder is cpy_source is True.
+
+        Parameters
+        ----------
+        combination : list
+            The current combination to be run
+        **kwargs : any
+            Extra parameters given to self._restart_from from function (if
+            any)
 
         Returns do_run = False if there are any troubles with the copying
         """
@@ -2062,12 +2070,37 @@ class basic_runner(object):
             shutil.copy2(src, self._dmp_folder)
         #}}}
 
+        #{{{ Obtain the folder name to restart from
+        if self._restart_from is not None:
+
+            if type(self._restart_from) == str:
+                self._cur_restart_from = self._restart_from
+            elif hasattr(self._restart_from, "__call__"):
+                self._cur_restart_from =\
+                        self._restart_from(self._dmp_folder, **kwargs)
+                if type(self._cur_restart_from) != str:
+                    message = ("The restart_from from function must "
+                               "return a string")
+                    raise ValueError(message)
+
+            # Check if any restart files are present
+            # This check is performed after waiting for other runs to finish
+            if len(glob.glob(\
+                    os.path.join(self._cur_restart_from,"*restart*")))== 0:
+                self._errors.append("FileNotFoundError")
+                raise FileNotFoundError("No restart files found in " +\
+                                 self._restart_from)
+
+        else:
+            self._cur_restart_from = None
+        #}}}
+
         #{{{ Toggle restart
         dmp_files = glob.glob(os.path.join(self._dmp_folder, "*.restart.*"))
         # If no dump files are found, set restart to "None"
         if len(dmp_files) == 0 and\
            self._restart is not None and\
-           self._restart_from is None:
+           self._cur_restart_from is None:
             message = "'restart' was set to " +self._restart+\
                       ", but no restart files found."+\
                       " Setting 'restart' to None"
@@ -2082,7 +2115,7 @@ class basic_runner(object):
         #}}}
 
         #{{{ Copy restart files if restart_from and/or redistribute is set
-        if self._restart and self._restart_from:
+        if self._restart and self._cur_restart_from:
             if self._redistribute:
                 # Use the redistribute function to copy the restart file
                 do_run = self._check_if_run_already_performed(\
@@ -2090,9 +2123,9 @@ class basic_runner(object):
 
                 if do_run:
                     print("\nCopying files from {0} to {1}\n".\
-                            format(self._restart_from, self._dmp_folder))
+                            format(self._cur_restart_from, self._dmp_folder))
                     do_run = redistribute(self._redistribute         ,\
-                                          path   = self._restart_from,\
+                                          path   = self._cur_restart_from,\
                                           output = self._dmp_folder  ,\
                                           mxg    = redistribute_MXG  ,\
                                           myg    = redistribute_MYG  ,\
@@ -2295,7 +2328,7 @@ class basic_runner(object):
 
                 if success == False:
                     do_run = False
-                    if self._restart_from:
+                    if self._cur_restart_from:
                         print("Something went wrong: Reomving "+\
                               os.path.split(dst)[0]+"\n")
                         shutil.rmtree(os.path.split(dst)[0])
@@ -2327,7 +2360,7 @@ class basic_runner(object):
                 if not success:
                     message = ("Failed to redistribute after "
                                "resizing evolved variables")
-                    if self._restart_from:
+                    if self._cur_restart_from:
                         print("Something went wrong: Reomving "+\
                               os.path.split(dst)[0]+"\n")
                         shutil.rmtree(os.path.split(dst)[0])
@@ -2385,7 +2418,7 @@ class basic_runner(object):
                 # The restart files are stored in the restart folder
                 folder = "restart*"
             elif self._restart == "overwrite" and self._redistribute:
-                if self._restart_from:
+                if self._cur_restart_from:
                     _ = self._move_old_runs(folder_name = "redistribute",\
                                             include_restart = True)
 
@@ -2420,7 +2453,7 @@ class basic_runner(object):
                                 if nz < cur_nz:
                                     call_expand = True
                                 else:
-                                    if self._restart_from:
+                                    if self._cur_restart_from:
                                         print("Something went wrong: "+\
                                               "Reomving "+\
                                               os.path.split(location)[0]+"\n")
@@ -2446,7 +2479,7 @@ class basic_runner(object):
 
                     if success == False:
                         do_run = False
-                        if self._restart_from:
+                        if self._cur_restart_from:
                             print("Something went wrong: Reomving "+\
                                   os.path.split(location)[0]+"\n")
                             shutil.rmtree(os.path.split(location)[0])
@@ -3228,7 +3261,7 @@ class basic_runner(object):
 #{{{_copy_run_files
     def _copy_run_files(self):
         """
-        Function which copies run files from self._restart_from
+        Function which copies run files from self._cur_restart_from
         """
 
         do_run =\
@@ -3237,7 +3270,7 @@ class basic_runner(object):
 
         if do_run:
             print("\nCopying files from {0} to {1}\n".\
-                  format(self._restart_from, self._dmp_folder))
+                  format(self._cur_restart_from, self._dmp_folder))
 
             # Files with these extension will be given the
             # additional extension .cpy when copied to the destination
@@ -3264,7 +3297,7 @@ class basic_runner(object):
             # Copy for all files in the extension
             for extension in extensions:
                 file_names =\
-                    glob.glob(os.path.join(self._restart_from, "*."+extension))
+                    glob.glob(os.path.join(self._cur_restart_from, "*."+extension))
                 for cur_file in file_names:
                     # Check if any of the extensions matches the current
                     # string
@@ -3430,8 +3463,8 @@ class basic_runner(object):
         # If the run is restarted with initial values from the last run
         if self._restart:
             dmp_line = self._dmp_folder + "-restart-"+self._restart
-            if self._restart_from:
-                dmp_line += " from " + self._restart_from
+            if self._cur_restart_from:
+                dmp_line += " from " + self._cur_restart_from
         else:
             dmp_line = self._dmp_folder
 
