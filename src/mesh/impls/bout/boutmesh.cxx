@@ -326,7 +326,7 @@ int BoutMesh::load() {
   }
 
   /// Get mesh options
-  OPTION(options, non_uniform,  false);
+  OPTION(options, non_uniform,  true);
   OPTION(options, TwistShift,   false);
   OPTION(options, TwistOrder,   0);
   OPTION(options, ShiftOrder,   0);
