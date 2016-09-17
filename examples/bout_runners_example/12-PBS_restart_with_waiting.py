@@ -3,15 +3,11 @@
 """Driver which restarts a scan, given a restart function"""
 
 import re
-from post_processing_show_the_data import show_the_data
 from bout_runners.bout_runners import PBS_runner
 
 scan = [("cst", "D_perp", [1.0,5.5]),\
         ("cst", "D_par",  [1.5,2.5])
        ]
-
-# Given that the runs has already been performed
-only_post_process = True
 
 #{{{restart_from_func
 def restart_from_func(dmp_folder,\
@@ -81,19 +77,8 @@ def restart_from_func(dmp_folder,\
 # ===========================================================================
 init_run = PBS_runner(additional = scan)
 
-dmp_folder, _ =\
-        init_run.execute_runs(\
-                              post_processing_function = show_the_data,\
-                              # This function will be called every time after
-                              # performing a run
-                              post_process_after_every_run = True,\
-                              # Below are the kwargs arguments being passed to
-                              # show_the_data
-                              t = slice(0,None),\
-                              x = 1,\
-                              y = slice(0,None),\
-                              z = slice(0,None)\
-                             )
+dmp_folder, PBS_ids =\
+        init_run.execute_runs()
 
 one_of_the_restart_paths_in_scan = dmp_folder[0]
 # ===========================================================================
@@ -101,18 +86,15 @@ one_of_the_restart_paths_in_scan = dmp_folder[0]
 
 # Restart the scan
 # ===========================================================================
-if only_post_process:
-    restart = None
-else:
-    restart = "overwrite"
-
 restart_run = PBS_runner(nout         = 5                ,\
-                         restart      = restart          ,\
+                         restart      = "overwrite"      ,\
                          restart_from = restart_from_func,\
                          additional   = scan             ,\
                         )
 
 restart_run.execute_runs(\
+                         # Declare dependencies
+                         job_dependencies = PBS_ids,\
                          # Below are the kwargs given to the
                          # restart_from_func
                          one_of_the_restart_paths_in_scan =\
