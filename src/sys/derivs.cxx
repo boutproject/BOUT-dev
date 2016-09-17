@@ -2459,37 +2459,11 @@ const Field2D D4DZ4(const Field2D &f) {
  *******************************************************************************/
 
 const Field2D D2DXDY(const Field2D &f) {
-  return Field2D(0.0);
-  /*
-    Note: Missing corners, so following will break
-  Field2D result;
-  result.allocate();
-  for(int i=mesh->xstart;i<=mesh->xend;i++)
-    for(int j=mesh->ystart;j<=mesh->yend;j++) {
-      result(i,j) = 0.25*( +(f(i+1,j+1) - f(i-1,j+1))/(mesh->dx(i,j+1))
-                           -(f(i+1,j-1) - f(i-1,j-1))/(mesh->dx(i,j-1)) )
-        / mesh->dy(i,j);
-    }
-  return result;
-  */
+  throw BoutException("Sorry, D2DXDY not implemented");
 }
 
 const Field3D D2DXDY(const Field3D &f) {
-  return Field3D(0.0);
-  /*
-    Note: Missing corners, so following will break
-
-  Field3D result;
-  result.allocate();
-  for(int i=mesh->xstart;i<=mesh->xend;i++)
-    for(int j=mesh->ystart;j<=mesh->yend;j++)
-      for(int k=0;k<mesh->ngz;k++) {
-        result(i,j,k) = 0.25*( +(f(i+1,j+1,k) - f(i-1,j+1,k))/(mesh->dx(i,j+1))
-                               -(f(i+1,j-1,k) - f(i-1,j-1,k))/(mesh->dx(i,j-1)) )
-          / mesh->dy(i,j);
-      }
-  return result;
-  */
+  throw BoutException("Sorry, D2DXDY not implemented");
 }
 
 const Field2D D2DXDZ(const Field2D &f) {

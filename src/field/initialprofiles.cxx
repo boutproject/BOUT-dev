@@ -110,7 +110,7 @@ int initial_profile(const char *name, Field3D &var)
   // Get the section for this specific variable 
   Options *varOpts = globalOpts->getSection(name);
   
-  FIND_OPT(varOpts, allOpts, "scale", scale, 1.0e-4);
+  FIND_OPT(varOpts, allOpts, "scale", scale, 1.0);
 
   if(varOpts->isSet("function")) {
     // Form of perturbation specified as string. Use FieldFactory to generate values
