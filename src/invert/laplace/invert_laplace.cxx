@@ -288,6 +288,13 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
     coef5 = mesh->G3[jx][jy]; // Z 1st derivative
   }
 
+  if(mesh->ShiftXderivs && mesh->IncIntShear) {
+    // d2dz2 term
+    coef2 += mesh->g11[jx][jy] * mesh->IntShiftTorsion[jx][jy] * mesh->IntShiftTorsion[jx][jy];
+    // Mixed derivative
+    coef3 = 0.0; // This cancels out
+  }
+
   if(d != (Field2D*) NULL) {
     // Multiply Delp2 component by a factor
     coef1 *= (*d)[jx][jy];
@@ -311,12 +318,7 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
       coef4 += mesh->g11[jx][jy] * ((*ccoef)[jx+1][jy] - (*ccoef)[jx-1][jy]) / (2.*mesh->dx[jx][jy]*((*ccoef)[jx][jy]));
   }
 
-  if(mesh->ShiftXderivs && mesh->IncIntShear) {
-    // d2dz2 term
-    coef2 += mesh->g11[jx][jy] * mesh->IntShiftTorsion[jx][jy] * mesh->IntShiftTorsion[jx][jy];
-    // Mixed derivative
-    coef3 = 0.0; // This cancels out
-  }
+
 
   coef1 /= SQ(mesh->dx[jx][jy]);
   coef3 /= 2.*mesh->dx[jx][jy];
