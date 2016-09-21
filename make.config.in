@@ -148,6 +148,20 @@ endif
 #END 'lib'
 else
 
+ifeq ("$(TARGET)", "sub")
+
+LIB=$(MODULE_DIR)/$(SUB_NAME).a
+
+sub: makefile $(BOUT_TOP)/make.config $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ)
+ifneq ("$(OBJ)foo", "foo")
+	@echo "Adding $(OBJ)"
+	@$(AR) cru $(LIB) $(OBJ)
+	@$(RANLIB) $(LIB)
+endif
+
+
+
+else
 
 ####################################################################
 # Make libbout++.a if it doesn't exist with the checklib target
@@ -159,16 +173,20 @@ else
 ####################################################################
 # Make the target (e.g. gas_compress)
 ####################################################################
+SUB_LIBS=$(DIRS:%=%.a)
+
 $(TARGET).cxx: checklib
 $(TARGET).o: $(LIB)
-$(TARGET): makefile $(BOUT_TOP)/make.config $(OBJ)
+$(TARGET): makefile $(BOUT_TOP)/make.config $(OBJ) $(SUB_LIBS)
 	@echo "  Linking" $(TARGET)
-	@$(LD) $(LDFLAGS) -o $(TARGET) $(OBJ) $(BOUT_LIBS)
+	@$(LD) $(LDFLAGS) -o $(TARGET) $(OBJ) $(BOUT_LIBS) $(SUB_LIBS)
 
 checklib:
 ifneq ("$(CHANGED)foo", "foo")
 	@echo "Rebuilding out-of-date bout++ library"
 	@$(MAKE) --no-print-directory -C $(BOUT_TOP)
+endif
+
 endif
 
 endif
