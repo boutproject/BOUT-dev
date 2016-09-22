@@ -34,6 +34,7 @@ class Field;
 #include "bout_types.hxx"
 #include "stencils.hxx"
 #include <bout/rvec.hxx>
+#include "boutexception.hxx"
 
 #include "bout/deprecated.hxx"
 
@@ -59,7 +60,9 @@ class Field {
   virtual void setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const = 0;
   virtual void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const = 0;
 
-  virtual void setLocation(CELL_LOC loc) { }
+  virtual void setLocation(CELL_LOC loc) {
+    throw BoutException("not implemented!");
+  }
   virtual CELL_LOC getLocation() const {
     return CELL_CENTRE;
   }
