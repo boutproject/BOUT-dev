@@ -57,6 +57,8 @@ class FieldPerp : public Field {
   // operators
 
   BoutReal* operator[](int jx) const;
+  BoutReal & operator()(int jx, int jz);
+  const BoutReal & operator()(int jx, int jz) const;
 
   FieldPerp & operator=(const FieldPerp &rhs);
   FieldPerp & operator=(const BoutReal rhs);

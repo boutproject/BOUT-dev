@@ -110,7 +110,7 @@ int initial_profile(const char *name, Field3D &var)
   // Get the section for this specific variable 
   Options *varOpts = globalOpts->getSection(name);
   
-  FIND_OPT(varOpts, allOpts, "scale", scale, 1.0e-4);
+  FIND_OPT(varOpts, allOpts, "scale", scale, 1.0);
 
   if(varOpts->isSet("function")) {
     // Form of perturbation specified as string. Use FieldFactory to generate values
@@ -453,6 +453,7 @@ BoutReal Prof1D(BoutReal s, BoutReal s0, BoutReal sMin, BoutReal sMax, BoutReal 
 	+cos(12*sNorm*TWOPI)
 	+cos(13*sNorm*TWOPI)
 	+cos(14*sNorm*TWOPI);
+      break;
     default: res=1.0;
     }
 

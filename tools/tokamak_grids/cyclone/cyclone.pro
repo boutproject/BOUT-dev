@@ -19,12 +19,13 @@ FUNCTION eps_integral, eps, theta=theta
   return, (LSODE(result, 0.0, theta, 'eps_func'))[0]
 END
 
-PRO cyclone, output=output, varyBp=varyBp
+PRO cyclone, output=output, varyBp=varyBp, noVaryLogBx=noVaryLogBx
 
-  nx = 68 ; Radial grid points
-  ny = 32 ; Poloidal (parallel) grid points
+  nx = 260;68;128;68;128 ;256;24;260 ; 36 ;68 ; Radial grid points
+  ny = 32;32;64;128  ;32 ;128;32 ;64 ;128 ;32 ; Poloidal (parallel) grid points
   
-  IF NOT KEYWORD_SET(output) THEN output = "cyclone_"+STR(nx)+"x"+STR(ny)+".nc"
+  IF NOT KEYWORD_SET(output) THEN output = "grid_constAll_"+STR(nx)+"x"+STR(ny)+".nc"
+  ;IF NOT KEYWORD_SET(output) THEN output = "cyclone_"+STR(nx)+"x"+STR(ny)+".nc"
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
@@ -54,10 +55,12 @@ PRO cyclone, output=output, varyBp=varyBp
   
   ; Normalised ion gyro-radius rho_norm = rho_i / L_T
   rho_norm = 0.01
-  
+  rho_star = rho_norm/Rnorm
+  print, "Rho_star = ",rho_star
+
   ; Radial extent, normalised to gyro-radius r_wid = dr / rho_i
   r_wid = 100
-  
+
   Mi = 2.*1.67262158e-27   ; Ion mass [kg]. Deuterium
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -66,17 +69,27 @@ PRO cyclone, output=output, varyBp=varyBp
   L_T = Rmaj / Rnorm       ; Temp. length scale [m]
   L_n = eta_i * L_T        ; Density length scale [m]
   rho_i = rho_norm * L_T   ; Ion Larmor radius [m]
+  print,"rho_i = ",rho_i
   Bt0 = SQRT(2.*Ti*Mi / 1.602e-19) / rho_i ; Toroidal field from rho_i [T]
-  Bp = rminor * Bt0 * eps_integral(epsilon)/ (q * Rmaj) ; Poloidal field [T]
-  
+  Bp = rminor * Bt0 * eps_integral(epsilon)/ (2*!DPI*q * Rmaj) ; Poloidal field [T]
+
+  print,"Integral ",eps_integral(epsilon)
+  print,"Epsilon*BT0/BP : ",epsilon*Bt0/Bp
+  ;; Bp = Bp/eps_integral(epsilon);ADDED
+  ;; print,"Epsilon*BT0/BP : ",epsilon*Bt0/Bp
+
   dr = r_wid * rho_i       ; Width of domain [m]
   
   theta = 2.*!PI * FINDGEN(ny) / FLOAT(ny)
-  
+  drprof = dr*((FINDGEN(nx) / FLOAT(nx-1)) - 0.5) 
   Rxy = FLTARR(nx, ny)
-  FOR i=0, ny-1 DO Rxy[*,i] = Rmaj - rminor*COS(theta[i])
+;FOR i=0, ny-1 DO Rxy[*,i] = Rmaj
+;  FOR i=0, ny-1 DO Rxy[*,i] = Rmaj  - (rminor+drprof)*COS(theta[i])
+  FOR i=0, ny-1 DO Rxy[*,i] = Rmaj  - (rminor)*COS(theta[i])
   Zxy = FLTARR(nx, ny)
-  FOR i=0, ny-1 DO Zxy[*,i] = rminor*SIN(theta[i])
+;  FOR i=0, ny-1 DO Zxy[*,i] = 0.0
+;  FOR i=0, ny-1 DO Zxy[*,i] = 0.0 +(rminor+drprof)*SIN(theta[i])
+  FOR i=0, ny-1 DO Zxy[*,i] = 0.0 +(rminor)*SIN(theta[i])
   
   dy = FLTARR(nx, ny) +  2.*!PI / FLOAT(ny)
   hthe = FLTARR(nx, ny) + rminor
@@ -90,7 +103,8 @@ PRO cyclone, output=output, varyBp=varyBp
   qprof = q + (s*q/rminor) * drprof
   PRINT, "q varies from "+STR(MIN(qprof))+" to "+STR(MAX(qprof))
   ShiftAngle = qprof * 2.*!PI
-  
+;  ShiftAngle[*] =  q*2*!DPI
+
   IF KEYWORD_SET(varyBp) THEN BEGIN
      ; Vary Bpxy to get shear
      Bpxy = FLTARR(nx, ny)
@@ -107,18 +121,63 @@ PRO cyclone, output=output, varyBp=varyBp
   
   zShift = FLTARR(nx, ny)
   qint = eps_integral(epsilon)
+;  ShiftAngle[*] = ShiftAngle[-1+nx/2]
+  print, "Qint is ",qint
   FOR i=1, ny-1 DO zShift[*,i] = ShiftAngle * eps_integral(epsilon, theta=theta[i]) / qint
-  
+
   y0 = FIX(ny/2)
+  print,"Theta at y0 is ",theta[y0]
   zs0 = zshift[*,y0]
   FOR i=0, ny-1 DO zshift[*,i] = zshift[*,i] - zs0
 
+;  ShiftAngle = qprof * 2.*!PI
+;  ShiftAngle[*] = q * 2.*!PI
+
+  width = 1/10.0;'5.0 ;1/10.0 ;1/1.0 
   Ni0 = FLTARR(nx, ny)
-  FOR i=0, ny-1 DO Ni0[*,i] = Ni * EXP(-drprof / L_n)
+  FOR i=0, ny-1 DO Ni0[*,i] = Ni * EXP(-width*tanh(drprof/width) / L_n)
+  width = 1/10.0;5.0 ; 1/10.0 ;1/6.0
   Ti0 = FLTARR(nx, ny)
-  FOR i=0, ny-1 DO Ti0[*,i] = Ti * EXP(-drprof / L_T)
+  FOR i=0, ny-1 DO Ti0[*,i] = Ti * EXP(-width*tanh(drprof/width) / L_T)
   Te0 = Ti0
+
+  ;; ;No gradient near the edge
+  ;; FOR i=0,8 DO Ni0[i,*] = Ni0[9,*]
+  ;; FOR i=0,8 DO Ni0[nx-i-1,*] = Ni0[nx-10,*]
+  ;; FOR i=0,8 DO Ti0[i,*] = Ti0[9,*]
+  ;; FOR i=0,8 DO Ti0[nx-i-1,*] = Ti0[nx-10,*]
+  ;; Te0 = Ti0
   
+  ;;Smoothly dropping gradient to zero
+  ;; width = dr*120
+  ;; grad = 1/L_T
+  ;; tmp = -drprof[0]/L_T+ERF(-drprof*sqrt(width))*grad*!DPI/(2.0*sqrt(width)) 
+  ;; Ti0_tmp = exp(tmp)
+  ;; Ti0_tmp = Ti0_tmp/(MAX(Ti0_tmp)-MIN(Ti0_tmp))
+  ;; Ti0_tmp = Ti0_tmp*(MAX(Ti0)-MIN(Ti0))
+  ;; Ti0_tmp = Ti0_tmp - MAX(Ti0_tmp) + MAX(Ti0)
+  ;; FOR i=0,ny-1 DO Ti0[*,i]=Ti0_tmp
+  ;; Te0 = Ti0
+
+  ;; width = dr*120
+  ;; grad = 1/L_n
+  ;; tmp = ERF(-drprof*sqrt(width))*grad*!DPI/(2.0*sqrt(width))
+  ;; Ni0_tmp = exp(tmp)
+  ;; Ni0_tmp = Ni0_tmp/(MAX(Ni0_tmp)-MIN(Ni0_tmp))
+  ;; Ni0_tmp = Ni0_tmp*(MAX(Ni0)-MIN(Ni0))
+  ;; Ni0_tmp = Ni0_tmp - MAX(Ni0_tmp) + MAX(Ni0)
+  ;; FOR i=0,ny-1 DO Ni0[*,i]=Ni0_tmp
+
+  ;;Orb5 style profiles
+  ;; xx = findgen(nx)/(nx-1.0)  - 0.5
+  ;; width = 0.4
+  ;; Ti0_tmp = Ti * EXP(-0.5*width*(1.0/L_T)*TANH(xx*2/width))
+  ;; Ni0_tmp = Ni * EXP(-0.5*width*(1.0/L_N)*TANH(xx*2/width))
+  ;; FOR i=0,ny-1 DO Ni0[*,i]=Ni0_tmp
+  ;; FOR i=0,ny-1 DO Ti0[*,i]=Ti0_tmp
+  ;; Te0 = Ti0
+
+
   pressure = Ni0 * (Ti0 + Te0) * 1.602e-19*1.0e20 ; In Pascals
 
   Jpar0 = FLTARR(nx, ny)
@@ -135,14 +194,20 @@ PRO cyclone, output=output, varyBp=varyBp
   ; Bxy is constant in x, so need to supply logB too
   
   logB = FLTARR(nx, ny)
-  
+  Rplot = FLTARR(nx, ny)
+  Zplot = FLTARR(nx, ny)
+;  width = 1.0/20.0
   FOR y=0, ny-1 DO BEGIN
     FOR x=0,nx-1 DO BEGIN
       rpos = (FLOAT(x)/FLOAT(nx-1) - 0.5) * dr
+      Rplot[x,y] = Rmaj - (rminor+rpos)*cos(theta[y])
+      Zplot[x,y] = (rminor+rpos)*sin(theta[y])
+ ;     rpos = width*tanh(rpos/width)
+      IF KEYWORD_SET(noVaryLogBx) THEN rpos = 0.0
       R = Rmaj - (rminor + rpos)*COS(theta[y])
       
       Bt = Bt0 * Rmaj / R
-      
+
       logB[x,y] = ALOG(SQRT(Bt^2 + Bp^2))
     ENDFOR
   ENDFOR
@@ -239,6 +304,9 @@ PRO cyclone, output=output, varyBp=varyBp
   ; Psi range
 ;  s = file_write(handle, "psi_axis", mesh.faxis)
 ;  s = file_write(handle, "psi_bndry", psi_bndry)
+
+  s = file_write(handle, "Rplot", Rplot)
+  s = file_write(handle, "Zplot", Zplot)
 
   file_close, handle
   PRINT, "DONE"

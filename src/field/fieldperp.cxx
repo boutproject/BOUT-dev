@@ -110,6 +110,36 @@ BoutReal* FieldPerp::operator[](int jx) const {
   return data[jx];
 }
 
+const BoutReal & FieldPerp::operator()(int jx, int jz) const {
+#if CHECK > 2
+  if(data == (BoutReal**) NULL) {
+    throw BoutException("FieldPerp: () operator on empty data\n");
+  }
+  
+  if((jx < 0) || (jx >= mesh->ngx) ||
+     (jz < 0) || (jz >= mesh->ngz)) {
+    throw BoutException("FieldPerp: () operator out of bounds\n");
+  }
+#endif
+  
+  return data[jx][jz];
+}
+
+BoutReal & FieldPerp::operator()(int jx, int jz) {
+#if CHECK > 2
+  if(data == (BoutReal**) NULL) {
+    throw BoutException("FieldPerp: () operator on empty data\n");
+  }
+  
+  if((jx < 0) || (jx >= mesh->ngx) ||
+     (jz < 0) || (jz >= mesh->ngz)) {
+    throw BoutException("FieldPerp: () operator out of bounds\n");
+  }
+#endif
+  
+  return data[jx][jz];
+}
+
 //////////////// ASSIGNMENT //////////////////
 
 FieldPerp& FieldPerp::operator=(const FieldPerp &rhs) {

@@ -29,7 +29,12 @@
 
 #include "petsc-3.5.hxx"
 
+#if PETSC_VERSION_GE(3,6,0)
+#include <petsc/private/tsimpl.h>
+#else
 #include <petsc-private/tsimpl.h>
+#endif
+
 #include <petsc.h>
 
 #include <globals.hxx>

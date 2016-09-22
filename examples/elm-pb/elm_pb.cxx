@@ -171,6 +171,8 @@ bool smooth_j_x;  // Smooth Jpar in the x direction
 
 int jpar_bndry_width; // Zero jpar in a boundary region
 
+bool sheath_boundaries; // Apply sheath boundaries in Y
+
 bool parallel_lr_diff; // Use left and right shifted stencils for parallel differences
 
 bool parallel_lagrange; // Use (semi-) Lagrangian method for parallel derivatives
@@ -216,6 +218,8 @@ Field2D I; // Shear factor
 
 const BoutReal MU0 = 4.0e-7*PI;
 const BoutReal Mi = 2.0*1.6726e-27; // Ion mass
+const BoutReal Me = 9.1094e-31; // Electron mass
+const BoutReal mi_me = Mi/Me;
 
 // Communication objects
 FieldGroup comms;
@@ -315,6 +319,7 @@ const Field3D Grad2_par2new(const Field3D &f)
 #endif
   return result;
 }
+
 
 int physics_init(bool restarting)
 {
@@ -484,6 +489,8 @@ int physics_init(bool restarting)
   // Jpar boundary region
   OPTION(options, jpar_bndry_width, -1);
 
+  OPTION(options, sheath_boundaries, false);
+
   // Parallel differencing
   OPTION(options, parallel_lr_diff, false);
   OPTION(options, parallel_lagrange, false); // Use a (semi-) Lagrangian method for Grad_parP
@@ -629,8 +636,10 @@ int physics_init(bool restarting)
       }
     }else {
       // Load perturbation from grid file.
-      include_rmp = mesh->get(rmp_Psi0, "rmp_A"); // Only include if found
-      
+      include_rmp = !mesh->get(rmp_Psi0, "rmp_A"); // Only include if found
+      if(!include_rmp) {
+         output.write("WARNING: Couldn't read 'rmp_A' from grid file\n");
+      }
       // Multiply by factor
       rmp_Psi0 *= rmp_factor;
     }
@@ -1282,7 +1291,7 @@ int physics_run(BoutReal t)
 	phi = invert_laplace(ubyn, phi_flags, NULL, &N0, NULL);
       }
     // Apply a boundary condition on phi for target plates
-    //phi.applyBoundary();
+    phi.applyBoundary();
     mesh->communicate(phi); 
   }
 
@@ -1368,6 +1377,61 @@ int physics_run(BoutReal t)
   }
 
   ////////////////////////////////////////////////////
+  // Sheath boundary conditions
+  // Normalised and linearised, since here we have only pressure
+  // rather than density and temperature. Applying a boundary
+  // to Jpar so that Jpar = sqrt(mi/me)/(2*pi) * phi
+  // 
+  
+  if(sheath_boundaries) {
+
+    // At y = ystart (lower boundary)
+    
+    for(RangeIterator r=mesh->iterateBndryLowerY(); !r.isDone(); r++) {
+      for(int jz=0; jz<mesh->ngz; jz++) {
+		
+	// Zero-gradient potential
+	BoutReal phisheath = phi(r.ind, mesh->ystart, jz);
+	
+	BoutReal jsheath = - (sqrt(mi_me)/(2.*sqrt(PI))) * phisheath;
+	
+	// Apply boundary condition half-way between cells
+	for(int jy = mesh->ystart-1;jy >= 0; jy--) {
+	  // Neumann conditions
+	  P(r.ind, jy, jz) = P(r.ind, mesh->ystart, jz);
+	  phi(r.ind, jy, jz) = phisheath;
+	  // Dirichlet condition on Jpar
+	  Jpar(r.ind, jy, jz) = 2.*jsheath - Jpar(r.ind, mesh->ystart, jz);
+
+	}
+      }
+    }
+    
+    // At y = yend (upper boundary)
+
+    for(RangeIterator r=mesh->iterateBndryUpperY(); !r.isDone(); r++) {
+      for(int jz=0; jz<mesh->ngz; jz++) {
+		
+	// Zero-gradient potential
+	BoutReal phisheath = phi(r.ind, mesh->yend, jz);
+	  
+	BoutReal jsheath = (sqrt(mi_me)/(2.*sqrt(PI))) * phisheath;
+	
+	// Apply boundary condition half-way between cells
+	for(int jy = mesh->yend-1;jy >= 0; jy--) {
+	  // Neumann conditions
+	  P(r.ind, jy, jz) = P(r.ind, mesh->yend, jz);
+	  phi(r.ind, jy, jz) = phisheath;
+	  // Dirichlet condition on Jpar
+	  Jpar(r.ind, jy, jz) = 2.*jsheath - Jpar(r.ind, mesh->yend, jz);
+
+	}
+      }
+    }
+
+  }
+
+  ////////////////////////////////////////////////////
   // Parallel electric field
 
   if(evolve_jpar) {
@@ -1428,7 +1492,8 @@ int physics_run(BoutReal t)
       tmpA2 = Grad2_par2new(Psi);
       mesh->communicate(tmpA2);
       tmpA2.applyBoundary();
-      ddt(Psi) -= diffusion_a4 * Grad2_par2new(tmpA2);}
+      ddt(Psi) -= diffusion_a4 * Grad2_par2new(tmpA2);
+    }
 
     // Vacuum solution
     if(relax_j_vac) {
@@ -1611,7 +1676,8 @@ int physics_run(BoutReal t)
     tmpP2 = Grad2_par2new(P);
     mesh->communicate(tmpP2);
     tmpP2.applyBoundary();
-    ddt(P) = diffusion_p4 * Grad2_par2new(tmpP2);}
+    ddt(P) = diffusion_p4 * Grad2_par2new(tmpP2);
+  }
 
   // heating source terms 
   if(heating_P > 0.0){

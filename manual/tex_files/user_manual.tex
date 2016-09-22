@@ -3023,7 +3023,7 @@ tan(x) & Tangent \\
 erf(x) & The error function \\
 TanhHat(x, width, centre, steepness) & The hat function\\
         &$\frac{1}{2}\L(\tanh\L[s \L(x-\L[c-\frac{w}{2}\R]\R)\R]
-          + \tanh\L[s \L(x-\L[c+\frac{w}{2}\R]\R)\R] \R)$ \\
+        - \tanh\L[s \L(x-\L[c+\frac{w}{2}\R]\R)\R] \R)$ \\
 \hline
 \end{tabular}
 %
@@ -3673,7 +3673,7 @@ problem with the fastest time-scales.
 A simple example
 %
 \footnote{Taken from a talk by L.Chacon available here
-\url{https://bout.llnl.gov/pdf/workshops/2011/talks/Chacon_bout2011.pdf}} is a
+\url{https://bout2011.llnl.gov/pdf/talks/Chacon_bout2011.pdf}} is a
 coupled wave equation, solved in the \texttt{test-precon} example code:
 %
 \begin{align}
@@ -3733,7 +3733,7 @@ In implicit time stepping, the preconditioner needs to solve an equation
 \end{align}
 %
 where $\mathcal{I}$ is the identity matrix, and $\gamma$ depends on the time
-step and method (e.g. $\gamma = \delta t^2$ for backwards Euler method). For
+step and method (e.g. $\gamma = \delta t$ for backwards Euler method). For
 the simple wave equation problem, this is
 %
 \begin{align}
@@ -4069,7 +4069,7 @@ can be quite fast and is the default. Coloring uses knowledge of where the non-z
 are in the Jacobian, to work out which rows can be calculated simultaneously. The coloring code
 in IMEX-BDF2 currently assumes that every field is coupled to every other field in a star pattern: one cell on each side,
 a 7 point stencil for 3D fields. If this is not the case for your problem, then
-the solver may not converge. 
+the solver may not converge.
 
 The brute force method can be useful for comparing the Jacobian structure, so to turn off coloring:
 \begin{verbatim}
@@ -7878,7 +7878,7 @@ y}\left(Jg^{yz}\frac{g_{yz}}{g_{yy}}\frac{\partial f}{\partial y}\right)
 In field-aligned coordinates, the metrics in the $y$ derivative term become:
 %
 \begin{align*}
-g^{yz}\frac{g_{yz}}{g_{yy}} = \frac{B_{tor}}{B^2}\frac{1}{h_\theta^2}
+g^{yz}\frac{g_{yz}}{g_{yy}} = \frac{B_{tor}^2}{B^2}\frac{1}{h_\theta^2}
 \end{align*}
 %
 In the LaplaceXY operator this is implemented in terms of fluxes at cell faces.

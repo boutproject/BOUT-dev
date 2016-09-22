@@ -61,7 +61,11 @@ extern PetscErrorCode PetscMonitor(TS,PetscInt,PetscReal,Vec,void *ctx);
 extern PetscErrorCode PetscSNESMonitor(SNES,PetscInt,PetscReal,void *ctx);
 extern int jstruc(int NVARS, int NXPE, int MXSUB, int NYPE, int MYSUB, int MZ, int MYG, int MXG);
 
+#if PETSC_VERSION_GE(3,5,0)
+extern PetscErrorCode solver_ijacobian(TS,PetscReal,Vec,Vec,PetscReal,Mat,Mat,void*);
+#else
 extern PetscErrorCode solver_ijacobian(TS,PetscReal,Vec,Vec,PetscReal,Mat*,Mat*,MatStructure*,void*);
+#endif
 
 typedef struct snes_info {
   PetscInt it;
@@ -90,7 +94,11 @@ class PetscSolver : public Solver {
   PetscErrorCode jac(Vec x, Vec y);
   friend PetscErrorCode PetscMonitor(TS,PetscInt,PetscReal,Vec,void *ctx);
   friend PetscErrorCode PetscSNESMonitor(SNES,PetscInt,PetscReal,void *ctx);
+#if PETSC_VERSION_GE(3,5,0)
+  friend PetscErrorCode solver_ijacobian(TS,PetscReal,Vec,Vec,PetscReal,Mat,Mat,void*);
+#else
   friend PetscErrorCode solver_ijacobian(TS,PetscReal,Vec,Vec,PetscReal,Mat*,Mat*,MatStructure*,void*);
+#endif
 
   PetscLogEvent solver_event, loop_event, init_event;
  private:

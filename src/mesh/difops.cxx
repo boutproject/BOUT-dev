@@ -1048,7 +1048,7 @@ const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method,
 		result_loc = CELL_CENTRE;      	  // Location of result		
 	}
 	
-	if( (method == BRACKET_SIMPLE) || (method == BRACKET_ARAKAWA) || (method == BRACKET_ARAKAWA_OPT)) {
+	if( (method == BRACKET_SIMPLE) || (method == BRACKET_ARAKAWA) || (method == BRACKET_ARAKAWA_OLD)) {
 		// Use a subset of terms for comparison to BOUT-06
 		result = 0.0;
 	}else {
@@ -1137,57 +1137,6 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
 				}
 			}
 			break;
-		}
-        	case BRACKET_ARAKAWA_OPT:{
-		  // Arakawa scheme for perpendicular flow. Here as a test
-		  
-		  Field3D fs = f;
-		  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
-		    fs = f.shiftZ(true);
-		  }
-		  BoutReal ***fsd=fs.getData();
-		  BoutReal **gd=g.getData();
-		  result.allocate();
-		  int ncz = mesh->ngz - 1;
-		  for(int jy=mesh->ystart;jy<=mesh->yend;jy++){
-		    //FieldPerp F=fs.slice(jy);
-		    for(int jx=mesh->xstart;jx<=mesh->xend;jx++){
-		      // BoutReal *Fxm=F[jx-1], *Fx=F[jx], *Fxp=F[jx+1];
-		      // BoutReal Gxm=g[jx-1][jy], Gx=g[jx][jy], Gxp=g[jx+1][jy];
-
-		      BoutReal *Fxm=fsd[jx-1][jy], *Fx=fsd[jx][jy], *Fxp=fsd[jx+1][jy];
-		      BoutReal Gxm=gd[jx-1][jy], Gx=gd[jx][jy], Gxp=gd[jx+1][jy];
-		      //Move this out of inner loop
-		      BoutReal scal=1.0/(12.0*mesh->dx[jx][jy] * mesh->dz);
-
-		      for(int jz=0;jz<ncz;jz++) {
-			int jzp = (jz + 1) % ncz;
-			int jzm = (jz - 1 + ncz) % ncz;
-          
-			// J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
-			BoutReal Jpp = (Fx[jzp] - Fx[jzm])*(Gxp - Gxm);
-			  ;
-
-			// J+x
-			BoutReal Jpx = ( Gxp*(Fxp[jzp]-Fxp[jzm]) -
-					 Gxm*(Fxm[jzp]-Fxm[jzm]) -
-					 Gx*(Fxp[jzp]-Fxm[jzp]) +
-					 Gx*(Fxp[jzm]-Fxm[jzm]));
-			// Jx+
-			BoutReal Jxp = ( Gxp*(Fx[jzp]-Fxp[jz]) -
-					 Gxm*(Fxm[jz]-Fx[jzm]) -
-					 Gxm*(Fx[jzp]-Fxm[jz]) +
-					 Gxp*(Fxp[jz]-Fx[jzm]));
-          
-			result[jx][jy][jz] = (Jpp + Jpx + Jxp)*scal;
-		      }
-		    }
-		  }
-    
-		  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0))
-		    result = result.shiftZ(false); // Shift back
-    
-		  break;
 		}
 		case BRACKET_ARAKAWA: {
 			// Arakawa scheme for perpendicular flow. Here as a test
@@ -1282,10 +1231,6 @@ const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method,
 	}
 	
 	switch(method) {
-        	case BRACKET_ARAKAWA_OPT:{
-		  return -bracket(g,f,method,outloc);
-		  break;
-		}
 		case BRACKET_CTU:
 		  throw BoutException("Bracket method CTU is not yet implemented for [2d,3d] fields.");
 		  break;
@@ -1439,7 +1384,7 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
 				result = result.shiftZ(false); // Shift back
 			break;
 		}
-		case BRACKET_ARAKAWA_OPT: {
+		case BRACKET_ARAKAWA: {
 			// Arakawa scheme for perpendicular flow
     
 			result.allocate();
@@ -1450,53 +1395,61 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
 				fs = f.shiftZ(true);
 				gs = g.shiftZ(true);
 			}
+		        BoutReal ***fsd=fs.getData();
+		        BoutReal ***gsd=gs.getData();
     
 			int ncz = mesh->ngz - 1;
-			BoutReal ***fsd=fs.getData();
-			BoutReal ***gsd=gs.getData();
-			for(int jy=mesh->ystart;jy<=mesh->yend;jy++){
-			  // FieldPerp F=fs.slice(jy);
-			  // FieldPerp G=gs.slice(jy);
-			  for(int jx=mesh->xstart;jx<=mesh->xend;jx++){
-			    // BoutReal *Fxm=F[jx-1], *Fx=F[jx], *Fxp=F[jx+1];
-			    // BoutReal *Gxm=G[jx-1], *Gx=G[jx], *Gxp=G[jx+1];
+			//#pragma omp parallel for
+			for(int jx=mesh->xstart;jx<=mesh->xend;jx++){
+				for(int jy=mesh->ystart;jy<=mesh->yend;jy++){
+					BoutReal meshdx = mesh->dx[jx][jy];
+		      			BoutReal *Fxm=fsd[jx-1][jy], *Fx=fsd[jx][jy], *Fxp=fsd[jx+1][jy];
+		      			BoutReal *Gxm=gsd[jx-1][jy], *Gx=gsd[jx][jy], *Gxp=gsd[jx+1][jy];
+					for(int jz=0;jz<ncz;jz++) {
+						int jzp = (jz + 1) % ncz;
+						int jzm = (jz - 1 + ncz) % ncz;
+          
+						// J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
+						//BoutReal Jpp = 0.25*( (fs[jx][jy][jzp] - fs[jx][jy][jzm])*
+						//	(gs[jx+1][jy][jz] - gs[jx-1][jy][jz]) -
+						//		(fs[jx+1][jy][jz] - fs[jx-1][jy][jz])*
+						//			(gs[jx][jy][jzp] - gs[jx][jy][jzm]) )
+						//				/ (mesh->dx[jx][jy] * mesh->dz);
+						BoutReal Jpp = 0.25*( (Fx[jzp] - Fx[jzm])*(Gxp[jz] - Gxm[jz]) - (Fxp[jz] - Fxm[jz])*(Gx[jzp] - Gx[jzm]) )
+										/ (meshdx * mesh->dz);
 
-			    //Below means we don't need to use fieldperp objs
-			    BoutReal *Fxm=fsd[jx-1][jy], *Fx=fsd[jx][jy], *Fxp=fsd[jx+1][jy];
-			    BoutReal *Gxm=gsd[jx-1][jy], *Gx=gsd[jx][jy], *Gxp=gsd[jx+1][jy];
-
-			    //Move this out of inner loop
-			    BoutReal scal=1.0/(12.0*mesh->dx[jx][jy] * mesh->dz);
-			    
-			    for(int jz=0;jz<ncz;jz++) {
-			      int jzp = (jz + 1) % ncz;
-			      int jzm = (jz - 1 + ncz) % ncz;
-			      // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
-			      BoutReal Jpp = ( (Fx[jzp] - Fx[jzm])*
-					       (Gxp[jz] - Gxm[jz]) -
-					       (Fxp[jz] - Fxm[jz])*
-					       (Gx[jzp] - Gx[jzm]) );
-
-			      // J+x
-			      BoutReal Jpx = ( Gxp[jz]*(Fxp[jzp]-Fxp[jzm]) -
-					       Gxm[jz]*(Fxm[jzp]-Fxm[jzm]) -
-					       Gx[jzp]*(Fxp[jzp]-Fxm[jzp]) +
-					       Gx[jzm]*(Fxp[jzm]-Fxm[jzm]));
-			      // Jx+
-			      BoutReal Jxp = ( Gxp[jzp]*(Fx[jzp]-Fxp[jz]) -
-					       Gxm[jzm]*(Fxm[jz]-Fx[jzm]) -
-					       Gxm[jzp]*(Fx[jzp]-Fxm[jz]) +
-					       Gxp[jzm]*(Fxp[jz]-Fx[jzm]));
-			      result(jx,jy,jz) = (Jpp + Jpx + Jxp)*scal;
-			    }
-			  }
+						// J+x
+						//BoutReal Jpx = 0.25*( gs[jx+1][jy][jz]*(fs[jx+1][jy][jzp]-fs[jx+1][jy][jzm]) -
+						//	gs[jx-1][jy][jz]*(fs[jx-1][jy][jzp]-fs[jx-1][jy][jzm]) -
+						//		gs[jx][jy][jzp]*(fs[jx+1][jy][jzp]-fs[jx-1][jy][jzp]) +
+						//			gs[jx][jy][jzm]*(fs[jx+1][jy][jzm]-fs[jx-1][jy][jzm]))
+						//				/ (mesh->dx[jx][jy] * mesh->dz);
+						BoutReal Jpx = 0.25*( Gxp[jz]*(Fxp[jzp]-Fxp[jzm]) -
+							Gxm[jz]*(Fxm[jzp]-Fxm[jzm]) -
+								Gx[jzp]*(Fxp[jzp]-Fxm[jzp]) +
+									Gx[jzm]*(Fxp[jzm]-Fxm[jzm]))
+										/ (meshdx * mesh->dz);
+						// Jx+
+						//BoutReal Jxp = 0.25*( gs[jx+1][jy][jzp]*(fs[jx][jy][jzp]-fs[jx+1][jy][jz]) -
+						//	gs[jx-1][jy][jzm]*(fs[jx-1][jy][jz]-fs[jx][jy][jzm]) -
+						//		gs[jx-1][jy][jzp]*(fs[jx][jy][jzp]-fs[jx-1][jy][jz]) +
+						//			gs[jx+1][jy][jzm]*(fs[jx+1][jy][jz]-fs[jx][jy][jzm]))
+						//				/ (mesh->dx[jx][jy] * mesh->dz);
+						BoutReal Jxp = 0.25*( Gxp[jzp]*(Fx[jzp]-Fxp[jz]) -
+							Gxm[jzm]*(Fxm[jz]-Fx[jzm]) -
+								Gxm[jzp]*(Fx[jzp]-Fxm[jz]) +
+									Gxp[jzm]*(Fxp[jz]-Fx[jzm]))
+										/ (meshdx * mesh->dz);
+			  
+						result[jx][jy][jz] = (Jpp + Jpx + Jxp) / 3.;
+					}
+				}
 			}
 			if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0))
-			  result = result.shiftZ(false); // Shift back
-			
+				result = result.shiftZ(false); // Shift back
 			break;
 		}
-		case BRACKET_ARAKAWA: {
+		case BRACKET_ARAKAWA_OLD: {
 			// Arakawa scheme for perpendicular flow
     
 			result.allocate();

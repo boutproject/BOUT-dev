@@ -43,6 +43,7 @@ AC_ARG_WITH(hdf5,   [  --with-hdf5                 Enable support for HDF5 files
 AC_ARG_WITH(parallelhdf5,[  --with-parallelhdf5    Enable support for parallel HDF5 files])
 AC_ARG_WITH(pnetcdf,[  --with-pnetcdf              Set path to Parallel NetCDF library])
 AC_ARG_WITH(debug,  [  --with-debug            	   Enable all debugging flags])
+AC_ARG_WITH(optimize,[ --with-optimize=default/1/2/3  Enable optimization])
 AC_ARG_WITH(ida,    [  --with-ida=/path/to/ida 	   Use the SUNDIALS IDA solver])
 AC_ARG_WITH(cvode,  [  --with-cvode            	   Use the SUNDIALS CVODE solver])
 AC_ARG_WITH(sundials, [  --with-sundials           Use CVODE and IDA])
@@ -174,16 +175,155 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_HEADER],[
 
 
 #############################################################
+# Checks for programs
+#############################################################
+
+MKDIR="mkdir -p"
+AC_PROG_LN_S
+AC_PROG_MAKE_SET
+AC_PROG_RANLIB
+
+#############################################################
+# MPI
+#############################################################
+
+AC_DEFUN([ACX_MPI], [
+AC_PREREQ(2.50) dnl for AC_LANG_CASE
+
+AC_LANG_CASE([C++], [
+  AC_REQUIRE([AC_PROG_CXX])
+  AC_ARG_VAR(MPICXX,[MPI C++ compiler command])
+  AC_CHECK_PROGS(MPICXX, mpicxx mpiCC mpic++ hcp mpxlC_r mpxlC mpCC cmpic++ CC, $CXX)
+  acx_mpi_save_CXX="$CXX"
+  CXX="$MPICXX"
+  AC_SUBST(MPICXX)
+])
+
+if test x = x"$MPILIBS"; then
+  AC_LANG_CASE([C++], [AC_CHECK_FUNC(MPI_Init, [MPILIBS=" "])])
+fi
+
+if test x = x"$MPILIBS"; then
+  AC_CHECK_LIB(mpi, MPI_Init, [MPILIBS="-lmpi"])
+fi
+if test x = x"$MPILIBS"; then
+  AC_CHECK_LIB(mpich, MPI_Init, [MPILIBS="-lmpich"])
+fi
+
+dnl We have to use AC_TRY_COMPILE and not AC_CHECK_HEADER because the
+dnl latter uses $CPP, not $CC (which may be mpicc).
+AC_LANG_CASE([C++], [
+  if test x != x"$MPILIBS";
+  then
+    AC_MSG_CHECKING([for mpi.h])
+    AC_TRY_COMPILE([#include <mpi.h>],[],[AC_MSG_RESULT(yes)], [MPILIBS=""
+      AC_MSG_RESULT(no)])
+  fi
+])
+
+# AC_LANG_CASE[C++], [CXX="$acx_mpi_save_CXX"])
+
+AC_SUBST(MPILIBS)
+
+# Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
+if test x = x"$MPILIBS"; then
+  $2
+  :
+else
+  ifelse([$1],,[AC_DEFINE(HAVE_MPI,1,[Define if you have the MPI library.])],[$1])
+  :
+fi
+])dnl ACX_MPI
+
+AC_LANG([C++])
+ACX_MPI()
+
+# Checks for libraries.
+AC_CHECK_LIB([m], [sqrt])
+
+# Checks for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS([malloc.h stdlib.h string.h strings.h])
+
+# Checks for typedefs, structures, and compiler characteristics.
+#AC_HEADER_STDBOOL
+#AC_C_CONST
+#AC_TYPE_SIZE_T
+#AC_C_VOLATILE
+
+# Checks for library functions.
+#AC_FUNC_ERROR_AT_LINE
+AC_FUNC_MALLOC
+AC_FUNC_REALLOC
+AC_FUNC_VPRINTF
+#AC_CHECK_FUNCS([pow sqrt strcasecmp])
+
+# Check for OpenMP support
+: ${enable_openmp=no}  # Disable by default
+#AC_OPENMP
+# Add the flag to both compile and link stages
+#CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"
+#EXTRA_LIBS="$EXTRA_LIBS $OPENMP_CXXFLAGS"
+
+#############################################################
 # General Options
 #############################################################
 
+OPT_FLAGS=""
 if test "$with_debug" != ""
 then
   echo "Enabling all debug options"
   with_checks="3"
-  CXXFLAGS="$CXXFLAGS -g -O0"
+  # use -Og with available, otherwise fall back to -O0
+  OPT_FLAGS="-g -O0 -Og"
+elif test $with_optimize ; then
+  optimize=$with_optimize
+  test $optimize -eq 0 2>/dev/null
+  if test $? -eq 2 ; then
+    if test $optimize == "default"
+    then
+      OPT_FLAGS="-O"
+    elif test $optimize == "fast"
+    then
+      OPT_FLAGS="-Ofast -march=native -funroll-loops"
+      DISABLE_CHECK=probably
+    else
+      AC_MSG_ERROR([unrecognized option: --with=optimize=$optimize])
+    fi
+  else
+    if test $optimize -gt 3
+    then
+      OPT_FLAGS="-Ofast -march=native -funroll-loops"
+      DISABLE_CHECK=probably
+    elif test $optimize -gt 2
+    then
+      OPT_FLAGS="-O3 -march=native -funroll-loops"
+      DISABLE_CHECK=probably
+    elif test $optimize -gt 1
+    then
+      OPT_FLAGS="-O2 -march=native"
+    elif test $optimze -ge 0
+    then
+      OPT_FLAGS="-O$optimize"
+    else
+      AC_MSG_ERROR([unrecognized option: --with=optimize=$optimize])
+    fi
+  fi
 else
-  CXXFLAGS="$CXXFLAGS -O"
+  OPT_FLAGS="-O"
+fi
+for flag in $OPT_FLAGS
+do
+  CXXFLAGS_save=$CXXFLAGS
+  CXXFLAGS="$CXXFLAGS $flag"
+  AC_MSG_CHECKING([for flag $flag])
+  AC_TRY_COMPILE([],[],[AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no);CXXFLAGS=$CXXFLAGS_save])
+done
+
+# disable checks if optimization > 2 is used
+if test -z $with_checks && test .$DISABLE_CHECK = ."probably"
+then
+  with_checks=no
 fi
 
 CHECK_LEVEL="0"
@@ -232,7 +372,7 @@ rev=`git rev-parse HEAD`
 if test "$?" = "0"
 then
   # Attach revision info to flags
-  CXXFLAGS="$CXXFLAGS -DREVISION=$rev"
+  dnl CXXFLAGS="$CXXFLAGS -DREVISION=$rev"
   echo "Revision ID: $rev"
 fi
 
@@ -267,8 +407,8 @@ then
   # Try to find a valid NetCDF configuration
   #
   # at first, try to find ncconf script
-	
-	
+
+
   #echo "Searching for NetCDF configuration"
 
   OLDNCDF="0" # Indicates whether nc-config or ncxx4-config
@@ -482,47 +622,12 @@ then
   then
     PETSC_DIR="$with_petsc"
 
-  else
-    AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/conf, ,
-    echo "Error - can't find PETSc distribution"
-    exit)
   fi
-
-cat <<MFILE > petscmake$$
-PETSC_ARCH = ${PETSC_ARCH}
-PETSC_DIR  = ${PETSC_DIR}
-include ${PETSC_DIR}/conf/rules
-include ${PETSC_DIR}/conf/variables
-echo_cxx:
-	-@echo \${CXX}
-echo_sundials:
-	-@echo \${SUNDIALS_LIB}
-MFILE
-
-  CXX="`make -f petscmake$$ echo_cxx`"
-  HAS_SUNDIALS=`make -f petscmake$$ echo_sundials | grep -c sundials`
-  HAS_CXX=`echo $CXX | grep -ic mp`
-
-  if test "$HAS_SUNDIALS" == "0"
-  then
-    echo "Warning - PETSc has no SUNDIALS support"
-    PETSC_HAS_SUNDIALS="no"
-  else
-    PETSC_HAS_SUNDIALS="yes"
-  fi
-
-  if test "$HAS_CXX" == "0"
-  then
-    echo "Warning - PETSc must have C++ support"
-    #rm petscmake$$
-    #exit
-  fi
-
-
-  echo "PETSc used C++ compiler $CXX"
-  #MPICXX=$CXX
-
-  rm petscmake$$
+  
+  AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/conf, PETSC_CONFDIR=${PETSC_DIR}/conf,
+    AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/lib/petsc/conf, PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf,
+      echo "Error - can't find PETSc distribution"
+      exit))
 
   PETSC_VERSION_MAJOR="0"
   PETSC_VERSION_MAJOR=`grep 'define PETSC_VERSION_MAJOR' $PETSC_DIR/include/petscversion.h | awk '{print \$3;}'`
@@ -572,7 +677,46 @@ MFILE
     echo "***********************************"
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
   fi
-  PETSC="include $PETSC_DIR/conf/variables"
+
+cat <<MFILE > petscmake$$
+PETSC_ARCH = ${PETSC_ARCH}
+PETSC_DIR  = ${PETSC_DIR}
+include ${PETSC_CONFDIR}/rules
+include ${PETSC_CONFDIR}/variables
+echo_cxx:
+	-@echo \${CXX}
+echo_sundials:
+	-@echo \${SUNDIALS_LIB}
+MFILE
+
+  CXX="`make -f petscmake$$ echo_cxx`"
+  HAS_SUNDIALS=`make -f petscmake$$ echo_sundials | grep -c sundials`
+  HAS_CXX=`echo $CXX | grep -ic mp`
+
+  if test "$HAS_SUNDIALS" == "0"
+  then
+    echo "Warning - PETSc has no SUNDIALS support"
+    PETSC_HAS_SUNDIALS="no"
+  else
+    PETSC_HAS_SUNDIALS="yes"
+  fi
+
+  if test "$HAS_CXX" == "0"
+  then
+    echo "Warning - PETSc must have C++ support"
+    #rm petscmake$$
+    #exit
+  fi
+
+
+  echo "PETSc used C++ compiler $CXX"
+  #MPICXX=$CXX
+
+  rm petscmake$$
+
+  # Set the line to be included in the make.conf file
+
+  PETSC="include ${PETSC_CONFDIR}/variables"
 else
    PETSC=
 fi
@@ -1245,96 +1389,6 @@ then
   echo
 fi
 
-#############################################################
-# Checks for programs
-#############################################################
-
-MKDIR="mkdir -p"
-AC_PROG_LN_S
-AC_PROG_MAKE_SET
-AC_PROG_RANLIB
-
-#############################################################
-# MPI
-#############################################################
-
-AC_DEFUN([ACX_MPI], [
-AC_PREREQ(2.50) dnl for AC_LANG_CASE
-
-AC_LANG_CASE([C++], [
-  AC_REQUIRE([AC_PROG_CXX])
-  AC_ARG_VAR(MPICXX,[MPI C++ compiler command])
-  AC_CHECK_PROGS(MPICXX, mpicxx mpiCC mpic++ hcp mpxlC_r mpxlC mpCC cmpic++ CC, $CXX)
-  acx_mpi_save_CXX="$CXX"
-  CXX="$MPICXX"
-  AC_SUBST(MPICXX)
-])
-
-if test x = x"$MPILIBS"; then
-  AC_LANG_CASE([C++], [AC_CHECK_FUNC(MPI_Init, [MPILIBS=" "])])
-fi
-
-if test x = x"$MPILIBS"; then
-  AC_CHECK_LIB(mpi, MPI_Init, [MPILIBS="-lmpi"])
-fi
-if test x = x"$MPILIBS"; then
-  AC_CHECK_LIB(mpich, MPI_Init, [MPILIBS="-lmpich"])
-fi
-
-dnl We have to use AC_TRY_COMPILE and not AC_CHECK_HEADER because the
-dnl latter uses $CPP, not $CC (which may be mpicc).
-AC_LANG_CASE([C++], [
-  if test x != x"$MPILIBS";
-  then
-    AC_MSG_CHECKING([for mpi.h])
-    AC_TRY_COMPILE([#include &lt;mpi.h&gt;],[],[AC_MSG_RESULT(yes)], [MPILIBS=""
-      AC_MSG_RESULT(no)])
-  fi
-])
-
-# AC_LANG_CASE[C++], [CXX="$acx_mpi_save_CXX"])
-
-AC_SUBST(MPILIBS)
-
-# Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
-if test x = x"$MPILIBS"; then
-  $2
-  :
-else
-  ifelse([$1],,[AC_DEFINE(HAVE_MPI,1,[Define if you have the MPI library.])],[$1])
-  :
-fi
-])dnl ACX_MPI
-
-AC_LANG([C++])
-ACX_MPI()
-
-# Checks for libraries.
-AC_CHECK_LIB([m], [sqrt])
-
-# Checks for header files.
-AC_HEADER_STDC
-AC_CHECK_HEADERS([malloc.h stdlib.h string.h strings.h])
-
-# Checks for typedefs, structures, and compiler characteristics.
-#AC_HEADER_STDBOOL
-#AC_C_CONST
-#AC_TYPE_SIZE_T
-#AC_C_VOLATILE
-
-# Checks for library functions.
-#AC_FUNC_ERROR_AT_LINE
-AC_FUNC_MALLOC
-AC_FUNC_REALLOC
-AC_FUNC_VPRINTF
-#AC_CHECK_FUNCS([pow sqrt strcasecmp])
-
-# Check for OpenMP support
-: ${enable_openmp=no}  # Disable by default
-#AC_OPENMP
-# Add the flag to both compile and link stages
-#CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"
-#EXTRA_LIBS="$EXTRA_LIBS $OPENMP_CXXFLAGS"
 
 #############################################################
 # Check types for SUNDIALS
@@ -1359,6 +1413,9 @@ then
       exit (0);
     }
 MYEOF
+
+  # This is needed here, as CXX may be empty
+  CXX="$MPICXX"
 
   # Try to compile
   echo "Trying to compile test_cvode_compile.cxx" >> config-build.log
@@ -1586,6 +1643,8 @@ fi
 #############################################################
 # Gather configuration info for bout-config
 #############################################################
+
+EXTRA_INCS="${EXTRA_INCS} ${CPPFLAGS}"
 
 PREFIX=$PWD
 IDLCONFIGPATH=$PWD/tools/idllib
