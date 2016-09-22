@@ -98,7 +98,7 @@ void Field2D::allocate() {
 }
 
 Field2D* Field2D::timeDeriv() {
-  if(deriv)
+  if(deriv == nullptr)
     deriv = new Field2D();
   return deriv;
 }
