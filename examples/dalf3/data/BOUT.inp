@@ -135,6 +135,8 @@ viscosity_par = 1.0
 phi_flags = 769
 apar_flags = 769
 
+split_n0 = true # Split into n=0 and n != 0
+
 [All]
 scale = 0.0 # default size of initial perturbations
 

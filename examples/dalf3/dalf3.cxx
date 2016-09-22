@@ -23,6 +23,7 @@
 
 #include <utils.hxx>
 #include <invert_laplace.hxx>
+#include <bout/invert/laplacexy.hxx>
 #include <math.h>
 
 #include <bout/constants.hxx>
@@ -55,6 +56,7 @@ BoutReal beta_hat, mu_hat;
 BoutReal viscosity_par;
 
 int phi_flags, apar_flags;
+bool split_n0;
 bool ZeroElMass, estatic; 
 bool curv_kappa;
 bool flat_resist;
@@ -70,6 +72,9 @@ BoutReal viscosity, hyper_viscosity;
 bool smooth_separatrix;
 
 FieldGroup comms;
+
+LaplaceXY *laplacexy; // Laplacian solver in X-Y (n=0)
+Field2D phi2D;   // Axisymmetric potential, used when split_n0=true
 
 int physics_init(bool restarting) {
   
@@ -114,6 +119,7 @@ int physics_init(bool restarting) {
   
   OPTION(options, phi_flags, 0);
   OPTION(options, apar_flags, 0);
+  OPTION(options, split_n0, false);
   OPTION(options, estatic, false);
   OPTION(options, ZeroElMass, false);
   OPTION(options, jpar_noderiv, true);
@@ -283,6 +289,13 @@ int physics_init(bool restarting) {
   }else
     SAVE_ONCE(eta);
   
+  // LaplaceXY for n=0 solve
+  if(split_n0) {
+    // Create an XY solver for n=0 component
+    laplacexy = new LaplaceXY(mesh);
+    phi2D = 0.0; // Starting guess
+  }
+
   return 0;
 }
 
@@ -331,7 +344,16 @@ const Field3D Grad_parP_CtoL(const Field3D &f) {
 int physics_run(BoutReal time) {
 
   // Invert vorticity to get electrostatic potential
-  phi = invert_laplace(Vort*B0, phi_flags);
+  if(split_n0) {
+    Field2D Vort2D = Vort.DC(); // n=0 component
+    phi2D = laplacexy->solve(Vort2D, phi2D);
+    
+    // Solve non-axisymmetric part using X-Z solver
+    phi = invert_laplace((Vort-Vort2D)*B0, phi_flags);
+    phi += phi2D; // Add axisymmetric part
+  }else {
+    phi = invert_laplace(Vort*B0, phi_flags);
+  }
   phi.applyBoundary();
   
   // Calculate apar and jpar
