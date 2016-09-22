@@ -836,10 +836,10 @@ BoutReal Field2D::min(bool allpe) const {
     msg_stack.push("Field2D::Min()");
 #endif
 
-  BoutReal result = data[0][0];
+  BoutReal result = data[mesh->xstart][mesh->ystart];
   
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
+  for(int jx=mesh->xstart;jx<mesh->xend;jx++)
+    for(int jy=mesh->ystart;jy<mesh->yend;jy++)
       if(data[jx][jy] < result)
 	result = data[jx][jy];
   
