@@ -61,7 +61,7 @@ class Field {
   virtual void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const = 0;
 
   virtual void setLocation(CELL_LOC loc) {
-    if (loc != CELL_CENTE)
+    if (loc != CELL_CENTRE)
       throw BoutException("not implemented!");
   }
   virtual CELL_LOC getLocation() const {
