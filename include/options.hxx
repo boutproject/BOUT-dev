@@ -139,4 +139,11 @@ public:
     options->get(#var5, var5, def);                               \
     options->get(#var6, var6, def);}
 
+#define VAROPTION(options, var, def) {					\
+    if (options->isSet(#var)){						\
+      options->get(#var, var, def);					\
+    } else {								\
+      Options::getRoot()->getSection("all")->get(#var, var, def);	\
+    }}									\
+
 #endif // __OPTIONS_H__
