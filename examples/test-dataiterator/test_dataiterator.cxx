@@ -61,6 +61,7 @@ int physics_init(bool restarting) {
 
 #pragma omp parallel
   for (auto i: d3){
+    //output.print("%d %d %d\n",i.x,i.y,i.z);
     if (d3[i] != exp) PRINT_DEBUG;
     //if (i.x != 8)
     d3[i]=3;
@@ -69,8 +70,12 @@ int physics_init(bool restarting) {
 
   for (int jx=0;jx<mesh->ngx;++jx)
     for (int jy=0;jy<mesh->ngy;++jy)
-      for (int jz=0;jz<mesh->ngz;++jz)
+      for (int jz=0;jz<mesh->ngz-1;++jz){
+	if (d3(jx,jy,jz) != exp) {
+	  output.print("%d %d %d: expected %g got %g",jx,jy,jz,exp,d3(jx,jy,jz)) ;
+	};
 	assert(d3(jx,jy,jz)==exp);
+      }
 
   /*
 #pragma omp parallel
