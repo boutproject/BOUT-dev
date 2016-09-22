@@ -839,7 +839,7 @@ BoutReal Field2D::min(bool allpe) const {
   BoutReal result = data[mesh->xstart][mesh->ystart];
   
   for(int jx=mesh->xstart;jx<=mesh->xend;jx++)
-    for(int jy=mesh->ystart;jy<=->yend;jy++)
+    for(int jy=mesh->ystart;jy<=mesh->yend;jy++)
       if(data[jx][jy] < result)
 	result = data[jx][jy];
   
