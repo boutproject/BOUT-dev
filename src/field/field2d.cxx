@@ -593,7 +593,7 @@ BoutReal min(const Field2D &f, bool allpe) {
 
   BoutReal result = f(0,0);
 
-  for(auto i : f)
+  for(auto i : f.region(RGN_NOBNDRY))
     if(f[i] < result)
       result = f[i];
   
@@ -613,7 +613,7 @@ BoutReal max(const Field2D &f, bool allpe) {
 
   BoutReal result = f(mesh->xstart,mesh->ystart);
 
-  for(auto i : f)
+  for(auto i : f.region(RGN_NOBNDRY))
     if(f[i] > result)
       result = f[i];
   
