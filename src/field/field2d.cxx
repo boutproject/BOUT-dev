@@ -836,10 +836,10 @@ BoutReal Field2D::min(bool allpe) const {
     msg_stack.push("Field2D::Min()");
 #endif
 
-  BoutReal result = data[0][0];
+  BoutReal result = data[mesh->xstart][mesh->ystart];
   
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
+  for(int jx=mesh->xstart;jx<=mesh->xend;jx++)
+    for(int jy=mesh->ystart;jy<=mesh->yend;jy++)
       if(data[jx][jy] < result)
 	result = data[jx][jy];
   
@@ -869,8 +869,8 @@ BoutReal Field2D::max(bool allpe) const {
 
   BoutReal result = data[mesh->xstart][mesh->ystart];
 
-  for(int jx=mesh->xstart;jx<mesh->xend;jx++)
-    for(int jy=mesh->ystart;jy<mesh->yend;jy++) {
+  for(int jx=mesh->xstart;jx<=mesh->xend;jx++)
+    for(int jy=mesh->ystart;jy<=mesh->yend;jy++) {
       //if(!isfinite(data[jx][jy]))
       //  output.write("Non-finite number at %d,%d\n", jx, jy);
       if(data[jx][jy] > result)
