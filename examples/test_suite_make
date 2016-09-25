@@ -13,7 +13,7 @@ import os
 from boututils.run_wrapper import shell
 
 # List of directories containing test cases
-tests = ['test-io', 'test-field', 'test-fieldfactory', 'test-laplace', 
+tests = ['test-io', 'test-field', 'test-minmax', 'test-fieldfactory', 'test-laplace',
          "test-cyclic", "test-invpar", "test-smooth", "test-gyro",
          "test-delp2",
          "MMS/diffusion","MMS/wave-1d",
