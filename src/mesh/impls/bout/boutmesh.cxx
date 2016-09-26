@@ -362,7 +362,7 @@ int BoutMesh::load() {
   OPTION(options, TwistShift,   false);
   
   if(TwistShift) {
-    output.write("Applying Twist-Shift condition. Interpolation: FFT");
+    output.write("Applying Twist-Shift condition. Interpolation: FFT\n");
     
     // Try to read the shift angle from the grid file
     // NOTE: All processors should know the twist-shift angle (for invert_parderiv)

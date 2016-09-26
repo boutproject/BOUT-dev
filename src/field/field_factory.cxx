@@ -79,7 +79,7 @@ FieldFactory::FieldFactory(Mesh *m, Options *opt) : fieldmesh(m), options(opt) {
   addGenerator("power", new FieldGenTwoArg<pow>(NULL,NULL));
 
   addGenerator("round", new FieldRound(NULL));
-
+  
   // Ballooning transform
   addGenerator("ballooning", new FieldBallooning(fieldmesh));
 
@@ -216,6 +216,15 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt, Mesh *m,
   };
 
   // Don't delete generator
+  
+  // Transform from field aligned coordinates, to be compatible with
+  // older BOUT++ inputs. This is not a particularly "nice" solution.
+  try {
+    result = m->fromFieldAligned(result);
+  }catch(BoutException &e) {
+    // might fail if not possible to shift coordinates
+    // e.g. FCI
+  }
 
   return result;
 }

@@ -11,8 +11,6 @@ wall_limit = 1.55  # wall time limit (in hours)
 
 ShiftXderivs = true # use shifted radial derivatives?
 TwistShift = true   # use twist-shift condition?
-ShiftOrder = 0      # interpolation order (1 = nearest neighbour, 0=FFT)
-TwistOrder = 0      # order of twist-shift interpolation
 
 MZ = 17             # number of points in z direction (2^n + 1)
 ZPERIOD = 15        # Fraction of a torus to simulate
@@ -23,6 +21,9 @@ dump_format = "nc"      # Dump file format. "nc" = NetCDF, "pdb" = PDB
 restart_format = "nc"   # Restart file format
 
 StaggerGrids = false    # Use staggered grids (EXPERIMENTAL)
+
+[mesh]
+paralleltransform = shifted # Use shifted metric method
 
 ##################################################
 # Communications
@@ -250,24 +251,6 @@ apar_flags = 769
 [All]
 scale = 0.0 # default size of initial perturbations
 
-# form of initial profile:
-# 0 - constant
-# 1 - Gaussian
-# 2 - Sinusoidal
-# 3 - Mix of mode numbers (like original BOUT)
-
-xs_opt = 1
-ys_opt = 1
-zs_opt = 2
-
-xs_s0 = 0.5
-xs_wd = 0.1
-
-ys_s0 = 0.5
-ys_wd = 0.3
-
-zs_mode = 1
-
 # boundary conditions
 # -------------------
 # dirichlet    - Zero value
@@ -282,6 +265,7 @@ bndry_all = dirichlet_o2 # Default to zero-value
 [U]   # vorticity
 
 scale = 1.0e-5
+function = gauss(x-0.5,0.1)*gauss(y-pi,0.6*pi)*sin(z)
 
 [P]  # pressure
 bndry_core = neumann

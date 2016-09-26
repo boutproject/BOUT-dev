@@ -98,7 +98,7 @@ void Field2D::allocate() {
 }
 
 Field2D* Field2D::timeDeriv() {
-  if(deriv)
+  if(deriv == nullptr)
     deriv = new Field2D();
   return deriv;
 }
@@ -350,7 +350,7 @@ int Field2D::getData(int x, int y, int z, void *vptr) const {
   
 #if CHECK > 2
   // check ranges
-  if((x < 0) || (x >= nx) || (y < 0) || (y >= ny) || (z < 0) || (z >= nz)) {
+  if((x < 0) || (x >= nx) || (y < 0) || (y >= ny)) {
     throw BoutException("Field2D: getData (%d,%d,%d) out of bounds\n", x, y, z);
   }
 #endif
@@ -365,7 +365,7 @@ int Field2D::getData(int x, int y, int z, BoutReal *rptr) const {
   
 #if CHECK > 2
   // check ranges
-  if((x < 0) || (x >= nx) || (y < 0) || (y >= ny) || (z < 0) || (z >= nz)) {
+  if((x < 0) || (x >= nx) || (y < 0) || (y >= ny)) {
     throw BoutException("Field2D: getData (%d,%d,%d) out of bounds\n", x, y, z);
   }
 #endif
@@ -379,7 +379,7 @@ int Field2D::setData(int x, int y, int z, void *vptr) {
   
 #if CHECK > 2
   // check ranges
-  if((x < 0) || (x >= nx) || (y < 0) || (y >= ny) || (z < 0) || (z >= nz)) {
+  if((x < 0) || (x >= nx) || (y < 0) || (y >= ny)) {
     throw BoutException("Field2D: setData (%d,%d,%d) out of bounds\n", x, y, z);
   }
 #endif
@@ -593,7 +593,7 @@ BoutReal min(const Field2D &f, bool allpe) {
 
   BoutReal result = f(0,0);
 
-  for(auto i : f)
+  for(auto i : f.region(RGN_NOBNDRY))
     if(f[i] < result)
       result = f[i];
   
@@ -613,7 +613,7 @@ BoutReal max(const Field2D &f, bool allpe) {
 
   BoutReal result = f(mesh->xstart,mesh->ystart);
 
-  for(auto i : f)
+  for(auto i : f.region(RGN_NOBNDRY))
     if(f[i] > result)
       result = f[i];
   
@@ -750,8 +750,8 @@ void checkData(const Field2D &f) {
   
 #if CHECK > 2
   // Do full checks
-  for(auto i : region(RGN_NOBNDRY))
-    if(!::finite(operator[][i])) {
+  for(auto i : f)
+    if(!::finite(f[i])) {
       throw BoutException("Field2D: Operation on non-finite data at [%d][%d]\n", i.x, i.y);
     }
 #endif
