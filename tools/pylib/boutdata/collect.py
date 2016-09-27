@@ -213,7 +213,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
 
     def check_range(r, low, up, name="range"):
         r2 = r
-        if r != None:
+        if r is not None:
             try:
                 n = len(r2)
             except:
