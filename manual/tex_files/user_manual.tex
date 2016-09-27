@@ -4829,8 +4829,7 @@ will be printed and the default values used.
 \item Off-diagonal metric tensor $g^{ij}$ elements \code{g12[nx][ny]},
 \code{g13[nx][ny]}, and \code{g23[nx][ny]}. If not found, these will be set to
 0.
-\item Z shift for sheared grids \code{zshift[nx][ny]}. This is intended for
-dpsi derivatives in sheared coordinates. If not found, set to zero.
+\item Z shift for interpolation between field-aligned coordinates and shifted coordinates (see \file{manual/coordinates.pdf}). Perpendicular differential operators are calculated in shifted coordinates when \code{ShiftXderivs} in \file{mesh/mesh.hxx} is enabled. \code{ShiftXderivs} can be set in the root section of \file{BOUT.inp} as \texttt{ShiftXderivs = true}. The shifts must be provided in the gridfile in a field \code{zshift[nx][ny]}. If not found, \code{zshift} is set to zero.
 \end{itemize}
 %
 The remaining quantities determine the topology of the grid. These are based on
@@ -4844,9 +4843,9 @@ situations.
     ixseps2 is found, ixseps1 is set to -1.
 \item Branch-cut locations \code{jyseps1\_1}, \code{jyseps1\_2},
 \code{jyseps2\_1}, and \code{jyseps2\_2}
-\item Twist-shift matching condition \code{twistshift[nx]}. This is applied in
+\item Twist-shift matching condition \code{ShiftAngle[nx]} for field aligned coordinates. This is applied in
 the ``core'' region between indices \code{jyseps2\_2}, and \code{jyseps1\_1 +
-1}, if enabled in the options file. If not given, this is set to zero.
+1}, if either \texttt{TwistShift = True} enabled in the options file or in general the \code{TwistShift} flag in \file{mesh/impls/bout/boutmesh.hxx} is enabled by other means. BOUT++ automatically reads the twist shifts in the gridfile if the shifts are stored in a field in a field ShiftAngle[nx]. If not given, this is set to zero.
 \end{itemize}
 %
 \note{All input quantities should be normalised - no normalisation is performed
