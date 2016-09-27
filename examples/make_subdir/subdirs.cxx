@@ -3,7 +3,7 @@
 Field3D n;
 
 // functions I need in subprojects
-void fuu();
+#include "fuu/fuu.hxx"
 void bar();
 
 int physics_init(bool restart) {
