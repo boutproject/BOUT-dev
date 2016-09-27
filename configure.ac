@@ -995,7 +995,7 @@ AS_IF([test "$with_hdf5" = "yes"], [
   AC_MSG_NOTICE([Found HDF5])
   CXXFLAGS="$CXXFLAGS -DHDF5"
   EXTRA_INCS="$EXTRA_INCS $HDF5_CPPFLAGS"
-  EXTRA_LIBS="$EXTRA_LIBS $HDF5_LIBS"
+  EXTRA_LIBS="$EXTRA_LIBS $HDF5_LDFLAGS $HDF5_LIBS"
   HAS_HDF5="yes"
   file_formats="$file_formats HDF5"
   ], [
@@ -1008,7 +1008,7 @@ AS_IF([test "$with_parallelhdf5" = "yes"], [
   AC_MSG_NOTICE([Found parallel HDF5])
   CXXFLAGS="$CXXFLAGS -DPHDF5"
   EXTRA_INCS="$EXTRA_INCS $PARALLELHDF5_CPPFLAGS"
-  EXTRA_LIBS="$EXTRA_LIBS $PARALLELHDF5_LIBS"
+  EXTRA_LIBS="$EXTRA_LIBS $PARALLELHDF5_LDFLAGS $PARALLELHDF5_LIBS"
   HAS_PHDF5="yes"
   file_formats="$file_formats Parallel HDF5"
   ], [

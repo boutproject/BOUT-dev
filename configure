@@ -9210,7 +9210,7 @@ if test "$with_hdf5" = "yes"; then :
 $as_echo "$as_me: Found HDF5" >&6;}
   CXXFLAGS="$CXXFLAGS -DHDF5"
   EXTRA_INCS="$EXTRA_INCS $HDF5_CPPFLAGS"
-  EXTRA_LIBS="$EXTRA_LIBS $HDF5_LIBS"
+  EXTRA_LIBS="$EXTRA_LIBS $HDF5_LDFLAGS $HDF5_LIBS"
   HAS_HDF5="yes"
   file_formats="$file_formats HDF5"
 
@@ -9240,7 +9240,7 @@ if test "${with_parallelhdf5+set}" = set; then :
      PARALLELH5CC="$withval"
    fi
 else
-  with_parallelhdf5="yes"
+  with_parallelhdf5="no"
 
 fi
 
@@ -9512,7 +9512,7 @@ if test "$with_parallelhdf5" = "yes"; then :
 $as_echo "$as_me: Found parallel HDF5" >&6;}
   CXXFLAGS="$CXXFLAGS -DPHDF5"
   EXTRA_INCS="$EXTRA_INCS $PARALLELHDF5_CPPFLAGS"
-  EXTRA_LIBS="$EXTRA_LIBS $PARALLELHDF5_LIBS"
+  EXTRA_LIBS="$EXTRA_LIBS $PARALLELHDF5_LDFLAGS $PARALLELHDF5_LIBS"
   HAS_PHDF5="yes"
   file_formats="$file_formats Parallel HDF5"
 
