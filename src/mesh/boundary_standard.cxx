@@ -30,7 +30,7 @@ void BoundaryDirichlet::apply(Field2D &f) {
 void BoundaryDirichlet::apply(Field3D &f) {
   // Just loop over all elements and set to the value
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->ngz;z++)
+    for(int z=0;z<mesh->LocalNz;z++)
       f(bndry->x, bndry->y, z) = val;
 }
 
@@ -43,7 +43,7 @@ void BoundaryDirichlet::apply_ddt(Field2D &f) {
 void BoundaryDirichlet::apply_ddt(Field3D &f) {
   Field3D *dt = f.timeDeriv();
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->ngz;z++)
+    for(int z=0;z<mesh->LocalNz;z++)
       (*dt)(bndry->x, bndry->y, z) = 0.; // Set time derivative to zero
 }
 
@@ -294,9 +294,9 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
 				   + mesh->GlobalX(bndry->x - bndry->bx) );
 	  BoutReal ynorm = mesh->GlobalY(bndry->y);
           
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    if(fg){
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
 	    }
 	    f(bndry->x,bndry->y, zk) = val;
 						
@@ -318,9 +318,9 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
 				   + mesh->GlobalX(bndry->x - bndry->bx) );
 	  BoutReal ynorm = mesh->GlobalY(bndry->y);
           
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    if(fg){
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
 	    }
 	    f(bndry->x - bndry->bx,bndry->y, zk) = val;
 	    f(bndry->x,bndry->y, zk) = f(bndry->x - bndry->bx,bndry->y, zk);
@@ -343,9 +343,9 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
 	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - 1) );
 	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) ); 
       
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    if(fg){
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
 	    }
 	    f(bndry->x,bndry->y,zk) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by, zk);
 						
@@ -364,9 +364,9 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
 	  // int yi = bndry->y + i*bndry->by;
 	  // xnorm = mesh->GlobalX(xi);
 	  // ynorm = mesh->GlobalY(yi);
-	  // for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  // for(int zk=0;zk<mesh->LocalNz;zk++) {
 	  // if(fg) {
-	  // val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	  // val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
 	  // }
 	  // f(xi, yi, zk) = val;
 	  // }						
@@ -385,9 +385,9 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  BoutReal xnorm = mesh->GlobalX(bndry->x);
 	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) );
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    if(fg){
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
 	    }
 	    f(bndry->x,bndry->y,zk) = val;
 						
@@ -408,9 +408,9 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
 	  BoutReal xnorm = mesh->GlobalX(bndry->x);
 	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) );
 	  
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    if(fg){
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
 	    }
 	    f(bndry->x,bndry->y - bndry->by, zk) = val;
 	    // f(bndry->x,bndry->y,zk) = f(bndry->x,bndry->y - bndry->by,zk);
@@ -433,9 +433,9 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
 	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - bndry->bx) ); 
 	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - 1) );
 					      
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    if(fg)
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
 	
 	    f(bndry->x,bndry->y,zk) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by, zk);
 						
@@ -454,9 +454,9 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
 	  // int yi = bndry->y + i*bndry->by;
 	  // xnorm = mesh->GlobalX(xi);
 	  // ynorm = mesh->GlobalY(yi);
-	  // for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  // for(int zk=0;zk<mesh->LocalNz;zk++) {
 	  // if(fg) {
-	  // val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	  // val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
 	  // }
 	  // f(xi, yi, zk) = val;
 	  // }
@@ -477,9 +477,9 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
       BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
 			       + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
       
-      for(int zk=0;zk<mesh->ngz-1;zk++) {
+      for(int zk=0;zk<mesh->LocalNz;zk++) {
 	if(fg){
-	  val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	  val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
 	}
 	f(bndry->x,bndry->y,zk) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by, zk);
 	// f(bndry->x,bndry->y,zk) = (8./3.)*val - 2.*f(bndry->x-bndry->bx, bndry->y-bndry->by,zk) + f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by,zk)/3.;
@@ -504,9 +504,9 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
         int yi = bndry->y + i*bndry->by;
         xnorm = mesh->GlobalX(xi);
         ynorm = mesh->GlobalY(yi);
-        for(int zk=0;zk<mesh->ngz-1;zk++) {
+        for(int zk=0;zk<mesh->LocalNz;zk++) {
           if(fg) {
-            val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+            val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
           }
           f(xi, yi, zk) = val;
         }
@@ -525,7 +525,7 @@ void BndDirichlet_O2::apply_ddt(Field2D &f) {
 void BndDirichlet_O2::apply_ddt(Field3D &f) {
   Field3D *dt = f.timeDeriv();
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->ngz;z++)
+    for(int z=0;z<mesh->LocalNz;z++)
       (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
 }
 
@@ -767,9 +767,9 @@ void BndDirichlet_O3::apply(Field3D &f,BoutReal t) {
 	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - bndry->bx) );
 	  BoutReal ynorm = mesh->GlobalY(bndry->y);
           
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    if(fg){
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
 	    }
 	    f(bndry->x,bndry->y, zk) = val;
 						
@@ -790,9 +790,9 @@ void BndDirichlet_O3::apply(Field3D &f,BoutReal t) {
 	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - bndry->bx) );
 	  BoutReal ynorm = mesh->GlobalY(bndry->y);
           
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    if(fg){
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
 	    }
 	    f(bndry->x - bndry->bx,bndry->y, zk) = val;
 						
@@ -815,9 +815,9 @@ void BndDirichlet_O3::apply(Field3D &f,BoutReal t) {
 	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - 1) ); 
 	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) ); 
       
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    if(fg)
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
 	
 	    f(bndry->x,bndry->y,zk) = (8./3)*val - 2.*f(bndry->x-bndry->bx, bndry->y-bndry->by,zk) + f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by,zk)/3.;
 						
@@ -835,9 +835,9 @@ void BndDirichlet_O3::apply(Field3D &f,BoutReal t) {
 	  // 						int yi = bndry->y + i*bndry->by;
 	  // 						xnorm = mesh->GlobalX(xi);
 	  // 						ynorm = mesh->GlobalY(yi);
-	  // 						for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  // 						for(int zk=0;zk<mesh->LocalNz;zk++) {
 	  // 							if(fg) {
-	  // 								val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	  // 								val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
 	  // 							}
 	  // 							f(xi, yi, zk) = val;
 	  // 						}
@@ -855,9 +855,9 @@ void BndDirichlet_O3::apply(Field3D &f,BoutReal t) {
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  BoutReal xnorm = mesh->GlobalX(bndry->x);
 	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) );
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    if(fg){
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
 	    }
 	    f(bndry->x,bndry->y,zk) = val;
 						
@@ -878,9 +878,9 @@ void BndDirichlet_O3::apply(Field3D &f,BoutReal t) {
 	  BoutReal xnorm = mesh->GlobalX(bndry->x);
 	  BoutReal ynorm = 0.5*(mesh->GlobalY(bndry->y)+ mesh->GlobalY(bndry->y - bndry->by) );
 	  
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    if(fg){
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
 	      // output.write("\nI'm being called.  val = %1.18f \n", val) ;
 	    }
 	    f(bndry->x,bndry->y - bndry->by, zk) = val;
@@ -903,9 +903,9 @@ void BndDirichlet_O3::apply(Field3D &f,BoutReal t) {
 	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - bndry->bx) ); 
 	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - 1) ); 
       
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    if(fg)
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
 	
 	    f(bndry->x,bndry->y,zk) = (8./3)*val - 2.*f(bndry->x-bndry->bx, bndry->y-bndry->by,zk) + f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by,zk)/3.;
 						
@@ -924,9 +924,9 @@ void BndDirichlet_O3::apply(Field3D &f,BoutReal t) {
 	  // 						int yi = bndry->y + i*bndry->by;
 	  // 						xnorm = mesh->GlobalX(xi);
 	  // 						ynorm = mesh->GlobalY(yi);
-	  // 						for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  // 						for(int zk=0;zk<mesh->LocalNz;zk++) {
 	  // 							if(fg) {
-	  // 								val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	  // 								val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
 	  // 							}
 	  // 							f(xi, yi, zk) = val;
 	  // 						}
@@ -945,9 +945,9 @@ void BndDirichlet_O3::apply(Field3D &f,BoutReal t) {
       BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
 			       + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
       
-      for(int zk=0;zk<mesh->ngz-1;zk++) {
+      for(int zk=0;zk<mesh->LocalNz;zk++) {
 	if(fg)
-	  val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	  val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
 	
 	f(bndry->x,bndry->y,zk) = (8./3)*val - 2.*f(bndry->x-bndry->bx, bndry->y-bndry->by,zk) + f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by,zk)/3.;
 				
@@ -965,9 +965,9 @@ void BndDirichlet_O3::apply(Field3D &f,BoutReal t) {
       // 				int yi = bndry->y + i*bndry->by;
       // 				xnorm = mesh->GlobalX(xi);
       // 				ynorm = mesh->GlobalY(yi);
-      // 				for(int zk=0;zk<mesh->ngz-1;zk++) {
+      // 				for(int zk=0;zk<mesh->LocalNz;zk++) {
       // 					if(fg) {
-      // 						val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+      // 						val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
       // 					}
       // 					f(xi, yi, zk) = val;
       // 				}
@@ -994,7 +994,7 @@ void BndDirichlet_O3::apply_ddt(Field3D &f) {
   // 		if( (loc == CELL_YLOW) && (bndry->by < 0)) {
   //
   // 			for(; !bndry->isDone(); bndry->next1d()){
-  // 				for(int z=0;z<mesh->ngz;z++){
+  // 				for(int z=0;z<mesh->LocalNz;z++){
   // 					for(int i=-1;i<bndry->width;i++) {
   // 						int xi = bndry->x + i*bndry->bx;
   // 						int yi = bndry->y + i*bndry->by;
@@ -1006,7 +1006,7 @@ void BndDirichlet_O3::apply_ddt(Field3D &f) {
   // 	}
   // 	else{
   for(bndry->first(); !bndry->isDone(); bndry->next()){
-    for(int z=0;z<mesh->ngz;z++){
+    for(int z=0;z<mesh->LocalNz;z++){
       (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
     }
   }
@@ -1265,9 +1265,9 @@ void BndDirichlet_O4::apply(Field3D &f,BoutReal t) {
 				   + mesh->GlobalX(bndry->x - bndry->bx) );
 	  BoutReal ynorm = mesh->GlobalY(bndry->y);
           
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    if(fg){
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
 	    }
 	    f(bndry->x,bndry->y, zk) = val;
 						
@@ -1289,9 +1289,9 @@ void BndDirichlet_O4::apply(Field3D &f,BoutReal t) {
 				   + mesh->GlobalX(bndry->x - bndry->bx) );
 	  BoutReal ynorm = mesh->GlobalY(bndry->y);
           
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    if(fg)
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
 	    
 	    f(bndry->x - bndry->bx,bndry->y, zk) = val;
 	    // f(bndry->x,bndry->y, zk) = f(bndry->x - bndry->bx,bndry->y, zk);
@@ -1315,9 +1315,9 @@ void BndDirichlet_O4::apply(Field3D &f,BoutReal t) {
 	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - 1) ); 
 	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) ); 
       
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    if(fg)
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
 	
 	    f(bndry->x,bndry->y,zk) = (16./5)*val - 3.*f(bndry->x-bndry->bx, bndry->y-bndry->by,zk) + f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by,zk) - (1./5)*f(bndry->x-3*bndry->bx, bndry->y-3*bndry->by,zk);
 	
@@ -1328,9 +1328,9 @@ void BndDirichlet_O4::apply(Field3D &f,BoutReal t) {
 	    int yi = bndry->y + i*bndry->by;
 	    xnorm = mesh->GlobalX(xi);
 	    ynorm = mesh->GlobalY(yi);
-	    for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    for(int zk=0;zk<mesh->LocalNz;zk++) {
 	      if(fg) {
-		val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+		val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
 	      }
 	      f(xi, yi, zk) = val;
 							
@@ -1357,9 +1357,9 @@ void BndDirichlet_O4::apply(Field3D &f,BoutReal t) {
 	  BoutReal xnorm = mesh->GlobalX(bndry->x);
 	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
 				   + mesh->GlobalY(bndry->y - bndry->by) );
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    if(fg)
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
 	    
 	    f(bndry->x,bndry->y,zk) = val;
 						
@@ -1381,9 +1381,9 @@ void BndDirichlet_O4::apply(Field3D &f,BoutReal t) {
 	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
 				   + mesh->GlobalY(bndry->y - bndry->by) );
 	  
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    if(fg)
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
 	    
 	    f(bndry->x,bndry->y - bndry->by, zk) = val;
 	    // f(bndry->x,bndry->y,zk) = f(bndry->x,bndry->y - bndry->by,zk);
@@ -1407,9 +1407,9 @@ void BndDirichlet_O4::apply(Field3D &f,BoutReal t) {
 	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - bndry->bx) ); 
 	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - 1) ); 
       
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    if(fg)
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
 	
 	    f(bndry->x,bndry->y,zk) = (16./5)*val - 3.*f(bndry->x-bndry->bx, bndry->y-bndry->by,zk) + f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by,zk) - (1./5)*f(bndry->x-3*bndry->bx, bndry->y-3*bndry->by,zk);
 						
@@ -1428,9 +1428,9 @@ void BndDirichlet_O4::apply(Field3D &f,BoutReal t) {
 	  // int yi = bndry->y + i*bndry->by;
 	  // xnorm = mesh->GlobalX(xi);
 	  // ynorm = mesh->GlobalY(yi);
-	  // for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  // for(int zk=0;zk<mesh->LocalNz;zk++) {
 	  // if(fg) {
-	  // val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	  // val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
 	  // }
 	  // f(xi, yi, zk) = val;
 	  // }
@@ -1449,9 +1449,9 @@ void BndDirichlet_O4::apply(Field3D &f,BoutReal t) {
       BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
 			       + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
       
-      for(int zk=0;zk<mesh->ngz-1;zk++) {
+      for(int zk=0;zk<mesh->LocalNz;zk++) {
 	if(fg)
-	  val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	  val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
 	
 	f(bndry->x,bndry->y,zk) = (16./5)*val - 3.*f(bndry->x-bndry->bx, bndry->y-bndry->by,zk) + f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by,zk) - (1./5)*f(bndry->x-3*bndry->bx, bndry->y-3*bndry->by,zk);
 				
@@ -1469,9 +1469,9 @@ void BndDirichlet_O4::apply(Field3D &f,BoutReal t) {
       // int yi = bndry->y + i*bndry->by;
       // xnorm = mesh->GlobalX(xi);
       // ynorm = mesh->GlobalY(yi);
-      // for(int zk=0;zk<mesh->ngz-1;zk++) {
+      // for(int zk=0;zk<mesh->LocalNz;zk++) {
       // if(fg) {
-      // val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+      // val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
       // }
       // f(xi, yi, zk) = val;
       // }
@@ -1489,7 +1489,7 @@ void BndDirichlet_O4::apply_ddt(Field2D &f) {
 void BndDirichlet_O4::apply_ddt(Field3D &f) {
   Field3D *dt = f.timeDeriv();
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->ngz;z++)
+    for(int z=0;z<mesh->LocalNz;z++)
       (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
 }
 
@@ -1522,7 +1522,7 @@ void BoundaryDirichlet_2ndOrder::apply(Field3D &f) {
   // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
   // N.B. Only first guard cells (closest to the grid) should ever be used
   for(bndry->first(); !bndry->isDone(); bndry->next1d())
-    for(int z=0;z<mesh->ngz;z++) {
+    for(int z=0;z<mesh->LocalNz;z++) {
       // /* this would only give 1st order (first) derivatives? */      f(bndry->x,bndry->y,z) = 2.*val - f(bndry->x-bndry->bx,bndry->y-bndry->by,z);
       f(bndry->x,bndry->y,z) = 8./3.*val - 2.*f(bndry->x-bndry->bx,bndry->y-bndry->by,z) + 1./3.*f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by,z);
 #ifdef BOUNDARY_CONDITIONS_UPGRADE_EXTRAPOLATE_FOR_2ND_ORDER
@@ -1542,7 +1542,7 @@ void BoundaryDirichlet_2ndOrder::apply_ddt(Field2D &f) {
 void BoundaryDirichlet_2ndOrder::apply_ddt(Field3D &f) {
   Field3D *dt = f.timeDeriv();
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->ngz;z++)
+    for(int z=0;z<mesh->LocalNz;z++)
       (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
 }
 
@@ -1568,7 +1568,7 @@ void BoundaryDirichlet_4thOrder::apply(Field2D &f) {
 void BoundaryDirichlet_4thOrder::apply(Field3D &f) {
   // Set (at 4th order) the value at the mid-point between the guard cell and the grid cell to be val
   for(bndry->first(); !bndry->isDone(); bndry->next1d())
-    for(int z=0;z<mesh->ngz;z++) {
+    for(int z=0;z<mesh->LocalNz;z++) {
       f(bndry->x,bndry->y,z) = 128./35.*val - 4.*f(bndry->x-bndry->bx,bndry->y-bndry->by,z) + 2.*f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by,z) - 4./3.*f(bndry->x-3*bndry->bx,bndry->y-3*bndry->by,z) + 1./7.*f(bndry->x-4*bndry->bx,bndry->y-4*bndry->by,z);
       f(bndry->x+bndry->bx,bndry->y+bndry->by,z) = -128./5.*val + 9.*f(bndry->x,bndry->y,z) + 18.*f(bndry->x-bndry->bx,bndry->y-bndry->by,z) -4.*f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by,z) + 3./5.*f(bndry->x-3*bndry->bx,bndry->y-3*bndry->by,z);
     }
@@ -1583,7 +1583,7 @@ void BoundaryDirichlet_4thOrder::apply_ddt(Field2D &f) {
 void BoundaryDirichlet_4thOrder::apply_ddt(Field3D &f) {
   Field3D *dt = f.timeDeriv();
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->ngz;z++)
+    for(int z=0;z<mesh->LocalNz;z++)
       (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
 }
 
@@ -1611,7 +1611,7 @@ void BoundaryNeumann::apply(Field2D &f) {
 void BoundaryNeumann::apply(Field3D &f) {
   Coordinates *metric = mesh->coordinates();
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->ngz;z++) {
+    for(int z=0;z<mesh->LocalNz;z++) {
       BoutReal delta = bndry->bx*metric->dx(bndry->x, bndry->y)+bndry->by*metric->dy(bndry->x, bndry->y);
       f(bndry->x, bndry->y, z) = f(bndry->x - bndry->bx, bndry->y - bndry->by, z) + val*delta;
     }
@@ -1634,7 +1634,7 @@ void BoundaryNeumann2::apply(Field2D &f) {
 
 void BoundaryNeumann2::apply(Field3D &f) {
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->ngz;z++)
+    for(int z=0;z<mesh->LocalNz;z++)
       f(bndry->x, bndry->y, z) = (4.*f(bndry->x - bndry->bx, bndry->y - bndry->by, z) - f(bndry->x - 2*bndry->bx, bndry->y - 2*bndry->by, z))/3.;
 }
 
@@ -1671,7 +1671,7 @@ void BoundaryNeumann_2ndOrder::apply(Field3D &f) {
   // This sets the value of the co-ordinate derivative, i.e. DDX/DDY not Grad_par/Grad_perp.x
   // N.B. Only first guard cells (closest to the grid) should ever be used
   for(bndry->first(); !bndry->isDone(); bndry->next1d())
-    for(int z=0;z<mesh->ngz;z++) {
+    for(int z=0;z<mesh->LocalNz;z++) {
       BoutReal delta = bndry->bx*metric->dx(bndry->x,bndry->y)+bndry->by*metric->dy(bndry->x,bndry->y);
       f(bndry->x,bndry->y,z) = f(bndry->x-bndry->bx,bndry->y-bndry->by,z) + val*delta;
 #ifdef BOUNDARY_CONDITIONS_UPGRADE_EXTRAPOLATE_FOR_2ND_ORDER
@@ -1691,7 +1691,7 @@ void BoundaryNeumann_2ndOrder::apply_ddt(Field2D &f) {
 void BoundaryNeumann_2ndOrder::apply_ddt(Field3D &f) {
   Field3D *dt = f.timeDeriv();
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->ngz;z++)
+    for(int z=0;z<mesh->LocalNz;z++)
       (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
 }
 
@@ -1950,9 +1950,9 @@ void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
 				   + mesh->GlobalX(bndry->x - bndry->bx) );
 	  BoutReal ynorm = mesh->GlobalY(bndry->y);
 	  
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    if(fg)
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1),t) * metric->dx(bndry->x, bndry->y);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz),t) * metric->dx(bndry->x, bndry->y);
 	    
 	    f(bndry->x,bndry->y, zk) = (4.*f(bndry->x - bndry->bx, bndry->y,zk) - f(bndry->x - 2*bndry->bx, bndry->y,zk) + 2.*val)/3.;
 	    
@@ -1976,10 +1976,10 @@ void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
 				   + mesh->GlobalX(bndry->x - bndry->bx) );
 	  BoutReal ynorm = mesh->GlobalY(bndry->y);
 	  
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    
 	    if(fg)
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1),t) * metric->dx(bndry->x - bndry->bx, bndry->y);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz),t) * metric->dx(bndry->x - bndry->bx, bndry->y);
             
 	    f(bndry->x - bndry->bx,bndry->y, zk) = (4.*f(bndry->x - 2*bndry->bx, bndry->y,zk) - f(bndry->x - 3*bndry->bx, bndry->y,zk) - 2.*val)/3.;
 	    // f(bndry->x,bndry->y,zk) = f(bndry->x - bndry->bx,bndry->y,zk);
@@ -2005,9 +2005,9 @@ void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
 	  
 	  BoutReal delta = bndry->bx*metric->dx(bndry->x,bndry->y)+bndry->by*metric->dy(bndry->x,bndry->y);
 
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    if(fg){
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1),t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz),t);
 	    }
 	    f(bndry->x,bndry->y, zk) = f(bndry->x-bndry->bx, bndry->y-bndry->by, zk) + delta*val;
 	    if (bndry->width == 2){
@@ -2027,10 +2027,10 @@ void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
 	  BoutReal xnorm = mesh->GlobalX(bndry->x);
 	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
 				   + mesh->GlobalY(bndry->y - bndry->by) );
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	  
 	    if(fg){
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1),t) * metric->dy(bndry->x, bndry->y);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz),t) * metric->dy(bndry->x, bndry->y);
 	    }
 	    f(bndry->x,bndry->y,zk) =   (4.*f(bndry->x, bndry->y - bndry->by,zk) - f(bndry->x, bndry->y - 2*bndry->by,zk) + 2.*val)/3.;
 	    
@@ -2053,9 +2053,9 @@ void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
 	  BoutReal xnorm = mesh->GlobalX(bndry->x);
 	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
 				   + mesh->GlobalY(bndry->y - bndry->by) );
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    if(fg)
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1),t) * metric->dy(bndry->x, bndry->y - bndry->by);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz),t) * metric->dy(bndry->x, bndry->y - bndry->by);
             
 	    f(bndry->x,bndry->y - bndry->by,zk) = (4.*f(bndry->x, bndry->y - 2*bndry->by,zk) - f(bndry->x, bndry->y - 3*bndry->by,zk) - 2.*val)/3.;
 	    
@@ -2084,9 +2084,9 @@ void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
 	  
 	  BoutReal delta = bndry->bx*metric->dx(bndry->x,bndry->y)+bndry->by*metric->dy(bndry->x,bndry->y);
 
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    if(fg){
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1),t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz),t);
 	    }
 	    f(bndry->x,bndry->y, zk) = f(bndry->x-bndry->bx, bndry->y-bndry->by, zk) + delta*val;
 	    if (bndry->width == 2){
@@ -2108,9 +2108,9 @@ void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
       
       BoutReal delta = bndry->bx*metric->dx(bndry->x,bndry->y)+bndry->by*metric->dy(bndry->x,bndry->y);
       
-      for(int zk=0;zk<mesh->ngz-1;zk++) {
+      for(int zk=0;zk<mesh->LocalNz;zk++) {
 	if(fg){
-	  val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1),t);
+	  val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz),t);
 	}
 	f(bndry->x,bndry->y, zk) = f(bndry->x-bndry->bx, bndry->y-bndry->by, zk) + delta*val;
 	if (bndry->width == 2){
@@ -2130,7 +2130,7 @@ void BndNeumann_O2::apply_ddt(Field2D &f) {
 void BndNeumann_O2::apply_ddt(Field3D &f) {
   Field3D *dt = f.timeDeriv();
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->ngz;z++)
+    for(int z=0;z<mesh->LocalNz;z++)
       (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
 }
 
@@ -2159,7 +2159,7 @@ void BoundaryNeumann_4thOrder::apply(Field3D &f) {
   // Set (at 4th order) the gradient at the mid-point between the guard cell and the grid cell to be val
   // This sets the value of the co-ordinate derivative, i.e. DDX/DDY not Grad_par/Grad_perp.x
   for(bndry->first(); !bndry->isDone(); bndry->next1d())
-    for(int z=0;z<mesh->ngz;z++) {
+    for(int z=0;z<mesh->LocalNz;z++) {
       BoutReal delta = -(bndry->bx*metric->dx(bndry->x,bndry->y)+bndry->by*metric->dy(bndry->x,bndry->y));
       f(bndry->x,bndry->y,z) = 12.*delta/11.*val + 17./22.*f(bndry->x-bndry->bx,bndry->y-bndry->by,z) + 9./22.*f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by,z) - 5./22.*f(bndry->x-3*bndry->bx,bndry->y-3*bndry->by,z) + 1./22.*f(bndry->x-4*bndry->bx,bndry->y-4*bndry->by,z);
       f(bndry->x+bndry->bx,bndry->y+bndry->by,z) = -24.*delta*val + 27.*f(bndry->x,bndry->y,z) - 27.*f(bndry->x-bndry->bx,bndry->y-bndry->by,z) + f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by,z); // The f(bndry->x-4*bndry->bx,bndry->y-4*bndry->by,z) term vanishes, so that this sets to zero the 4th order central difference first derivative at the point half way between the guard cell and the grid cell
@@ -2175,7 +2175,7 @@ void BoundaryNeumann_4thOrder::apply_ddt(Field2D &f) {
 void BoundaryNeumann_4thOrder::apply_ddt(Field3D &f) {
   Field3D *dt = f.timeDeriv();
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->ngz;z++)
+    for(int z=0;z<mesh->LocalNz;z++)
       (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
 }
 
@@ -2199,7 +2199,7 @@ void BoundaryNeumannPar::apply(Field2D &f) {
 void BoundaryNeumannPar::apply(Field3D &f) {
   Coordinates *metric = mesh->coordinates();
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->ngz;z++)
+    for(int z=0;z<mesh->LocalNz;z++)
       f(bndry->x,bndry->y,z) = f(bndry->x - bndry->bx,bndry->y - bndry->by,z)*sqrt(metric->g_22(bndry->x, bndry->y)/metric->g_22(bndry->x - bndry->bx, bndry->y - bndry->by));
 }
 
@@ -2251,14 +2251,14 @@ void BoundaryRobin::apply(Field2D &f) {
 void BoundaryRobin::apply(Field3D &f) {
   if(fabs(bval) < 1.e-12) {
     for(bndry->first(); !bndry->isDone(); bndry->next())
-      for(int z=0;z<mesh->ngz;z++)
+      for(int z=0;z<mesh->LocalNz;z++)
 	f(bndry->x, bndry->y, z) = gval / aval;
   }else {
     BoutReal sign = 1.;
     if( (bndry->bx < 0) || (bndry->by < 0))
       sign = -1.;
     for(bndry->first(); !bndry->isDone(); bndry->next())
-      for(int z=0;z<mesh->ngz;z++)
+      for(int z=0;z<mesh->LocalNz;z++)
 	f(bndry->x, bndry->y, z) = f(bndry->x - bndry->bx, bndry->y - bndry->by, z) + sign*(gval - aval*f(bndry->x - bndry->bx, bndry->y - bndry->by, z) ) / bval;
   }
 }
@@ -2273,7 +2273,7 @@ void BoundaryConstGradient::apply(Field2D &f){
 
 void BoundaryConstGradient::apply(Field3D &f) {
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->ngz;z++)
+    for(int z=0;z<mesh->LocalNz;z++)
       f(bndry->x, bndry->y, z) = 2.*f(bndry->x - bndry->bx, bndry->y - bndry->by, z) - f(bndry->x - 2*bndry->bx,bndry->y - 2*bndry->by,z);
 }
 
@@ -2319,7 +2319,7 @@ void BoundaryZeroLaplace::apply(Field2D &f) {
 
 void BoundaryZeroLaplace::apply(Field3D &f) {
   static dcomplex *c0 = (dcomplex*) NULL, *c1;
-  int ncz = mesh->ngz-1;
+  int ncz = mesh->LocalNz;
   
   Coordinates *metric = mesh->coordinates();
   
@@ -2344,8 +2344,8 @@ void BoundaryZeroLaplace::apply(Field3D &f) {
     int y = bndry->y;
     
     // Take FFT of last 2 points in domain
-    rfft(f(x-bx,y), mesh->ngz-1, c0);
-    rfft(f(x-2*bx,y), mesh->ngz-1, c1);
+    rfft(f(x-bx,y), mesh->LocalNz, c0);
+    rfft(f(x-2*bx,y), mesh->LocalNz, c1);
     c1[0] = c0[0] - c1[0]; // Only need gradient
     
     // Solve  metric->g11*d2f/dx2 - metric->g33*kz^2f = 0
@@ -2363,7 +2363,7 @@ void BoundaryZeroLaplace::apply(Field3D &f) {
 	c0[jz] *= exp(coef*kwave); // The decaying solution only
       }
       // Reverse FFT
-      irfft(c0, mesh->ngz-1, f(x,y));
+      irfft(c0, mesh->LocalNz, f(x,y));
       
       bndry->nextX();
       x = bndry->x; y = bndry->y;
@@ -2405,7 +2405,7 @@ void BoundaryZeroLaplace2::apply(Field2D &f) {
 }
 
 void BoundaryZeroLaplace2::apply(Field3D &f) {
-  int ncz = mesh->ngz-1;
+  int ncz = mesh->LocalNz;
 
   // allocate memory
   Array<dcomplex> c0(ncz/2 + 1), c1(ncz/2 + 1), c2(ncz/2 + 1);
@@ -2506,7 +2506,7 @@ void BoundaryConstLaplace::apply(Field3D &f) {
   
   Coordinates *metric = mesh->coordinates();
   
-  int ncz = mesh->ngz-1;
+  int ncz = mesh->LocalNz;
 
   // Allocate memory
   Array<dcomplex> c0(ncz/2 + 1), c1(ncz/2 + 1), c2(ncz/2 + 1);
@@ -2577,7 +2577,7 @@ void BoundaryDivCurl::apply(Vector3D &var) {
   
   Coordinates *metric = mesh->coordinates();
   
-  int ncz = mesh->ngz-1;
+  int ncz = mesh->LocalNz;
   
   if(bndry->location != BNDRY_XOUT) {
     throw BoutException("ERROR: DivCurl boundary only works for outer X currently\n");
@@ -2589,7 +2589,7 @@ void BoundaryDivCurl::apply(Vector3D &var) {
   }
 
   jx = mesh->xend+1;
-  for(jy=1;jy<mesh->ngy-1;jy++) {
+  for(jy=1;jy<mesh->LocalNy-1;jy++) {
     for(jz=0;jz<ncz;jz++) {
       jzp = (jz+1) % ncz;
       jzm = (jz - 1 + ncz) % ncz;
@@ -2798,7 +2798,7 @@ void BoundaryFree_O2::apply(Field3D &f) {
 	
 	for(; !bndry->isDone(); bndry->next1d()) {
 					
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    for(int i=0;i<bndry->width;i++) {
 	      int xi = bndry->x + i*bndry->bx;
 	      int yi = bndry->y + i*bndry->by;
@@ -2811,7 +2811,7 @@ void BoundaryFree_O2::apply(Field3D &f) {
 	// Inner x boundary. Set one point inwards
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    for(int i=-1;i<bndry->width;i++) {
 	      int xi = bndry->x + i*bndry->bx;
 	      int yi = bndry->y + i*bndry->by;
@@ -2825,7 +2825,7 @@ void BoundaryFree_O2::apply(Field3D &f) {
 				
 	for(; !bndry->isDone(); bndry->next1d()) {
 					
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    for(int i=0;i<bndry->width;i++) {
 	      int xi = bndry->x + i*bndry->bx;
 	      int yi = bndry->y + i*bndry->by;
@@ -2841,7 +2841,7 @@ void BoundaryFree_O2::apply(Field3D &f) {
       if(bndry->by > 0) {
 	// Upper y boundary
 	for(; !bndry->isDone(); bndry->next1d()) {
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    for(int i=0;i<bndry->width;i++) {
 	      int xi = bndry->x + i*bndry->bx;
 	      int yi = bndry->y + i*bndry->by;
@@ -2854,7 +2854,7 @@ void BoundaryFree_O2::apply(Field3D &f) {
 	// Lower y boundary. Set one point inwards
 	for(; !bndry->isDone(); bndry->next1d()) {
 					
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    for(int i=-1;i<bndry->width;i++) {
 	      int xi = bndry->x + i*bndry->bx;
 	      int yi = bndry->y + i*bndry->by;
@@ -2867,7 +2867,7 @@ void BoundaryFree_O2::apply(Field3D &f) {
 	// x boundaries
 	for(; !bndry->isDone(); bndry->next1d()) {
 					
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    for(int i=0;i<bndry->width;i++) {
 	      int xi = bndry->x + i*bndry->bx;
 	      int yi = bndry->y + i*bndry->by;
@@ -2882,7 +2882,7 @@ void BoundaryFree_O2::apply(Field3D &f) {
     // Standard (non-staggered) case
     for(; !bndry->isDone(); bndry->next1d()) {
 			
-      for(int zk=0;zk<mesh->ngz-1;zk++) {
+      for(int zk=0;zk<mesh->LocalNz;zk++) {
 	for(int i=0;i<bndry->width;i++) {
 	  int xi = bndry->x + i*bndry->bx;
 	  int yi = bndry->y + i*bndry->by;
@@ -2902,7 +2902,7 @@ void BoundaryFree_O2::apply_ddt(Field2D &f) {
 void BoundaryFree_O2::apply_ddt(Field3D &f) {
   Field3D *dt = f.timeDeriv();
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->ngz;z++)
+    for(int z=0;z<mesh->LocalNz;z++)
       (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
 
 }
@@ -3034,7 +3034,7 @@ void BoundaryFree_O3::apply(Field3D &f) {
 	
 	for(; !bndry->isDone(); bndry->next1d()) {
 					
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    for(int i=0;i<bndry->width;i++) {
 	      int xi = bndry->x + i*bndry->bx;
 	      int yi = bndry->y + i*bndry->by;
@@ -3048,7 +3048,7 @@ void BoundaryFree_O3::apply(Field3D &f) {
 	// Inner x boundary. Set one point inwards
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    for(int i=-1;i<bndry->width;i++) {
 	      int xi = bndry->x + i*bndry->bx;
 	      int yi = bndry->y + i*bndry->by;
@@ -3063,7 +3063,7 @@ void BoundaryFree_O3::apply(Field3D &f) {
 				
 	for(; !bndry->isDone(); bndry->next1d()) {
 					
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    for(int i=0;i<bndry->width;i++) {
 	      int xi = bndry->x + i*bndry->bx;
 	      int yi = bndry->y + i*bndry->by;
@@ -3080,7 +3080,7 @@ void BoundaryFree_O3::apply(Field3D &f) {
       if(bndry->by > 0) {
 	// Upper y boundary
 	for(; !bndry->isDone(); bndry->next1d()) {
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    for(int i=0;i<bndry->width;i++) {
 	      int xi = bndry->x + i*bndry->bx;
 	      int yi = bndry->y + i*bndry->by;
@@ -3094,7 +3094,7 @@ void BoundaryFree_O3::apply(Field3D &f) {
 	// Lower y boundary. Set one point inwards
 	for(; !bndry->isDone(); bndry->next1d()) {
 					
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    for(int i=-1;i<bndry->width;i++) {
 	      int xi = bndry->x + i*bndry->bx;
 	      int yi = bndry->y + i*bndry->by;
@@ -3108,7 +3108,7 @@ void BoundaryFree_O3::apply(Field3D &f) {
 	// x boundaries
 	for(; !bndry->isDone(); bndry->next1d()) {
 					
-	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    for(int i=0;i<bndry->width;i++) {
 	      int xi = bndry->x + i*bndry->bx;
 	      int yi = bndry->y + i*bndry->by;
@@ -3125,7 +3125,7 @@ void BoundaryFree_O3::apply(Field3D &f) {
     // Standard (non-staggered) case
     for(; !bndry->isDone(); bndry->next1d()) {
 			
-      for(int zk=0;zk<mesh->ngz-1;zk++) {
+      for(int zk=0;zk<mesh->LocalNz;zk++) {
 	for(int i=0;i<bndry->width;i++) {
 	  int xi = bndry->x + i*bndry->bx;
 	  int yi = bndry->y + i*bndry->by;
@@ -3146,7 +3146,7 @@ void BoundaryFree_O3::apply_ddt(Field2D &f) {
 void BoundaryFree_O3::apply_ddt(Field3D &f) {
   Field3D *dt = f.timeDeriv();
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->ngz;z++)
+    for(int z=0;z<mesh->LocalNz;z++)
       (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
 
 }
@@ -3209,7 +3209,7 @@ void BoundaryRelax::apply_ddt(Field3D &f) {
   op->apply(g);
   // Set time-derivatives
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->ngz;z++) {
+    for(int z=0;z<mesh->LocalNz;z++) {
       /*
         BoutReal lim = r * (g(bndry->x, bndry->y, z) - f(bndry->x, bndry->y, z));
         BoutReal val = ddt(f)(bndry->x - bndry->bx, bndry->y - bndry->by, z) + lim;

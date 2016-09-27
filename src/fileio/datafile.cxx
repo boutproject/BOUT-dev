@@ -141,15 +141,15 @@ bool Datafile::openw(const char *format, ...) {
   // If parallel do not want to write ghost points, and it is easier then to ignore the boundary guard cells as well
   if (parallel) {
     file->setLocalOrigin(0, 0, 0, mesh->xstart, mesh->ystart, 0);
-    Lx = mesh->ngx-2*mesh->xstart;
-    Ly = mesh->ngy-2*mesh->ystart;
-    Lz = mesh->ngz;
+    Lx = mesh->LocalNx-2*mesh->xstart;
+    Ly = mesh->LocalNy-2*mesh->ystart;
+    Lz = mesh->LocalNz;
   }
   else {
     file->setGlobalOrigin(0,0,0);
-    Lx = mesh->ngx;
-    Ly = mesh->ngy;
-    Lz = mesh->ngz;
+    Lx = mesh->LocalNx;
+    Ly = mesh->LocalNy;
+    Lz = mesh->LocalNz;
   }
   
   appending = false;
@@ -184,15 +184,15 @@ bool Datafile::opena(const char *format, ...) {
   // If parallel do not want to write ghost points, and it is easier then to ignore the boundary guard cells as well
   if (parallel) {
     file->setLocalOrigin(0, 0, 0, mesh->xstart, mesh->ystart, 0);
-    Lx = mesh->ngx-2*mesh->xstart;
-    Ly = mesh->ngy-2*mesh->ystart;
-    Lz = mesh->ngz;
+    Lx = mesh->LocalNx-2*mesh->xstart;
+    Ly = mesh->LocalNy-2*mesh->ystart;
+    Lz = mesh->LocalNz;
   }
   else {
     file->setGlobalOrigin(0,0,0);
-    Lx = mesh->ngx;
-    Ly = mesh->ngy;
-    Lz = mesh->ngz;
+    Lx = mesh->LocalNx;
+    Ly = mesh->LocalNy;
+    Lz = mesh->LocalNz;
   }
   
   appending = true;
@@ -557,13 +557,13 @@ bool Datafile::read_f2d(const string &name, Field2D *f, bool grow) {
   f->allocate();
   
   if(grow) {
-    if(!file->read_rec(&((*f)(0,0)), name, mesh->ngx, mesh->ngy)) {
+    if(!file->read_rec(&((*f)(0,0)), name, mesh->LocalNx, mesh->LocalNy)) {
       output.write("\tWARNING: Could not read 2D field %s. Setting to zero\n", name.c_str());
       *f = 0.0;
       return false;
     }
   }else {
-    if(!file->read(&((*f)(0,0)), name, mesh->ngx, mesh->ngy)) {
+    if(!file->read(&((*f)(0,0)), name, mesh->LocalNx, mesh->LocalNy)) {
       output.write("\tWARNING: Could not read 2D field %s. Setting to zero\n", name.c_str());
       *f = 0.0;
       return false;
@@ -576,13 +576,13 @@ bool Datafile::read_f3d(const string &name, Field3D *f, bool grow) {
   f->allocate();
   
   if(grow) {
-    if(!file->read_rec(&((*f)(0,0,0)), name, mesh->ngx, mesh->ngy, mesh->ngz)) {
+    if(!file->read_rec(&((*f)(0,0,0)), name, mesh->LocalNx, mesh->LocalNy, mesh->LocalNz)) {
       output.write("\tWARNING: Could not read 3D field %s. Setting to zero\n", name.c_str());
       *f = 0.0;
       return false;
     }
   }else {
-    if(!file->read(&((*f)(0,0,0)), name, mesh->ngx, mesh->ngy, mesh->ngz)) {
+    if(!file->read(&((*f)(0,0,0)), name, mesh->LocalNx, mesh->LocalNy, mesh->LocalNz)) {
       output.write("\tWARNING: Could not read 3D field %s. Setting to zero\n", name.c_str());
       *f = 0.0;
       return false;
@@ -612,9 +612,9 @@ bool Datafile::write_f2d(const string &name, Field2D *f, bool grow) {
     return false; // No data allocated
   
   if(grow) {
-    return file->write_rec(&((*f)(0,0)), name, mesh->ngx, mesh->ngy);
+    return file->write_rec(&((*f)(0,0)), name, mesh->LocalNx, mesh->LocalNy);
   }else {
-    return file->write(&((*f)(0,0)), name, mesh->ngx, mesh->ngy);
+    return file->write(&((*f)(0,0)), name, mesh->LocalNx, mesh->LocalNy);
   }
 }
 
@@ -625,9 +625,9 @@ bool Datafile::write_f3d(const string &name, Field3D *f, bool grow) {
   }
   
   if(grow) {
-    return file->write_rec(&((*f)(0,0,0)), name, mesh->ngx, mesh->ngy, mesh->ngz);
+    return file->write_rec(&((*f)(0,0,0)), name, mesh->LocalNx, mesh->LocalNy, mesh->LocalNz);
   }else {
-    return file->write(&((*f)(0,0,0)), name, mesh->ngx, mesh->ngy, mesh->ngz);
+    return file->write(&((*f)(0,0,0)), name, mesh->LocalNx, mesh->LocalNy, mesh->LocalNz);
   }
 }
 

@@ -264,15 +264,15 @@ int physics_run(BoutReal t) {
     // Boundary in jpar
     if(mesh->firstX()) {
       for(int i=jpar_bndry;i>=0;i--)
-	for(int j=0;j<mesh->ngy;j++)
-	  for(int k=0;k<mesh->ngz-1;k++) {
+	for(int j=0;j<mesh->LocalNy;j++)
+	  for(int k=0;k<mesh->LocalNz;k++) {
 	    jpar[i][j][k] = jpar[i+1][j][k];
 	  }
     }
     if(mesh->lastX()) {
-      for(int i=mesh->ngx-jpar_bndry-1;i<mesh->ngx;i++)
-	for(int j=0;j<mesh->ngy;j++)
-	  for(int k=0;k<mesh->ngz-1;k++) {
+      for(int i=mesh->LocalNx-jpar_bndry-1;i<mesh->LocalNx;i++)
+	for(int j=0;j<mesh->LocalNy;j++)
+	  for(int k=0;k<mesh->LocalNz;k++) {
 	    jpar[i][j][k] = jpar[i-1][j][k];
 	  }
     }
@@ -323,15 +323,15 @@ int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
     // Boundary in jpar
     if(mesh->firstX()) {
       for(int i=jpar_bndry;i>=0;i--)
-	for(int j=0;j<mesh->ngy;j++)
-	  for(int k=0;k<mesh->ngz-1;k++) {
+	for(int j=0;j<mesh->LocalNy;j++)
+	  for(int k=0;k<mesh->LocalNz;k++) {
 	    Jp[i][j][k] = Jp[i+1][j][k];
 	  }
     }
     if(mesh->lastX()) {
-      for(int i=mesh->ngx-jpar_bndry-1;i<mesh->ngx;i++)
-	for(int j=0;j<mesh->ngy;j++)
-	  for(int k=0;k<mesh->ngz-1;k++) {
+      for(int i=mesh->LocalNx-jpar_bndry-1;i<mesh->LocalNx;i++)
+	for(int j=0;j<mesh->LocalNy;j++)
+	  for(int k=0;k<mesh->LocalNz;k++) {
 	    Jp[i][j][k] = Jp[i-1][j][k];
 	  }
     }

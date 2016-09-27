@@ -63,9 +63,9 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) :
 
   // Index arrays contain guard cells in order to get subscripts right
   // x-index of bottom-left grid point
-  int*** i_corner = i3tensor(mesh.ngx, mesh.ngy, mesh.ngz-1);
+  int*** i_corner = i3tensor(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz);
   // z-index of bottom-left grid point
-  int*** k_corner = i3tensor(mesh.ngx, mesh.ngy, mesh.ngz-1);
+  int*** k_corner = i3tensor(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz);
 
   bool x_boundary;     // has the field line left the domain through the x-sides
   bool y_boundary;     // has the field line left the domain through the y-sides
@@ -93,7 +93,7 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) :
 
   interp->calcWeights(xt_prime, zt_prime);
 
-  int ncz = mesh.ngz-1;
+  int ncz = mesh.LocalNz;
   BoutReal t_x, t_z, temp;
 
   Coordinates& coord = *(mesh.coordinates());

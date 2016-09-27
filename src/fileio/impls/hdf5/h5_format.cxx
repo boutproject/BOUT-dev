@@ -349,7 +349,6 @@ bool H5Format::read(void *data, hid_t hdf5_type, const char *name, int lx, int l
   counts[0]=lx; counts[1]=ly; counts[2]=lz;
   offset[0]=x0; offset[1]=y0; offset[2]=z0;
   offset_local[0]=x0_local;offset_local[1]=y0_local;offset_local[2]=z0_local;
-//   init_size_local[0]=mesh->ngx; init_size_local[1]=mesh->ngy; init_size_local[2]=mesh->ngz;
   init_size_local[0]=offset_local[0]+counts[0]; init_size_local[1]=offset_local[1]+counts[1]; init_size_local[2]=offset_local[2]+counts[2]; // Want to be able to use without needing mesh to be initialised; makes hyperslab selection redundant
   
   hid_t mem_space = H5Screate_simple(nd, init_size_local, init_size_local);
@@ -454,9 +453,9 @@ bool H5Format::write(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type, con
     init_size[0]=mesh->GlobalNx-2*mesh->xstart; init_size[1]=mesh->GlobalNy-2*mesh->ystart; init_size[2]=mesh->GlobalNz;
   }
   else {
-    init_size[0]=mesh->ngx; init_size[1]=mesh->ngy; init_size[2]=mesh->ngz;
+    init_size[0]=mesh->LocalNx; init_size[1]=mesh->LocalNy; init_size[2]=mesh->LocalNz;
   }
-  init_size_local[0]=mesh->ngx; init_size_local[1]=mesh->ngy; init_size_local[2]=mesh->ngz;
+  init_size_local[0]=mesh->LocalNx; init_size_local[1]=mesh->LocalNy; init_size_local[2]=mesh->LocalNz;
   
   if (nd==0) {
     // Need to write a scalar, not a 0-d array
@@ -586,9 +585,9 @@ bool H5Format::read_rec(void *data, hid_t hdf5_type, const char *name, int lx, i
     init_size[0]=mesh->GlobalNx-2*mesh->xstart; init_size[1]=mesh->GlobalNy-2*mesh->ystart; init_size[2]=mesh->GlobalNz;
   }
   else {
-    init_size[0]=mesh->ngx; init_size[1]=mesh->ngy; init_size[2]=mesh->ngz;
+    init_size[0]=mesh->LocalNx; init_size[1]=mesh->LocalNy; init_size[2]=mesh->LocalNz;
   }
-  init_size_local[0]=mesh->ngx; init_size_local[1]=mesh->ngy; init_size_local[2]=mesh->ngz;
+  init_size_local[0]=mesh->LocalNx; init_size_local[1]=mesh->LocalNy; init_size_local[2]=mesh->LocalNz;
   
   if (nd==1) {
     // Need to write a time-series of scalars
@@ -689,9 +688,9 @@ bool H5Format::write_rec(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type,
     init_size[0]=1;init_size[1]=mesh->GlobalNx-2*mesh->xstart; init_size[2]=mesh->GlobalNy-2*mesh->ystart; init_size[3]=mesh->GlobalNz;
   }
   else {
-    init_size[0]=1;init_size[1]=mesh->ngx; init_size[2]=mesh->ngy; init_size[3]=mesh->ngz;
+    init_size[0]=1;init_size[1]=mesh->LocalNx; init_size[2]=mesh->LocalNy; init_size[3]=mesh->LocalNz;
   }
-  init_size_local[0]=mesh->ngx; init_size_local[1]=mesh->ngy; init_size_local[2]=mesh->ngz;
+  init_size_local[0]=mesh->LocalNx; init_size_local[1]=mesh->LocalNy; init_size_local[2]=mesh->LocalNz;
   
   if (nd_local==0) {
     nd_local = 1;

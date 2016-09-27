@@ -225,7 +225,7 @@ class Mesh {
   virtual const Field3D Switch_XZ(const Field3D &var) = 0;
 
   /// Size of the mesh on this processor including guard/boundary cells
-  int ngx, ngy, ngz;
+  int LocalNx, LocalNy, LocalNz;
   
   /// Local ranges of data (inclusive), excluding guard cells
   int xstart, xend, ystart, yend;

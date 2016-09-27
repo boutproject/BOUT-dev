@@ -62,7 +62,7 @@ public:
          (ny, std::vector<bool>
           (nz, value))) {}
   BoutMask(Mesh& mesh, bool value=false) :
-    BoutMask(mesh.ngx, mesh.ngy, mesh.ngz-1, value) {}
+    BoutMask(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz, value) {}
   // Default constructor uses global mesh
   BoutMask() : BoutMask(*mesh) {}
 

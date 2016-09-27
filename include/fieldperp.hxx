@@ -65,10 +65,10 @@ class FieldPerp : public Field {
   const DataIterator begin() const;
   const DataIterator end() const;
 
-  inline BoutReal& operator[](DataIterator &d) {
+  inline BoutReal& operator[](const DataIterator &d) {
     return operator()(d.x, d.z);
   }
-  inline const BoutReal& operator[](DataIterator &d) const {
+  inline const BoutReal& operator[](const DataIterator &d) const {
     return operator()(d.x, d.z);
   }
   BoutReal& operator[](const Indices &i) {

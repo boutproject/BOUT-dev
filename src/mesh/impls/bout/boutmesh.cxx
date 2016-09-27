@@ -114,20 +114,13 @@ int BoutMesh::load() {
   if(Mesh::get(MZ, "nz")) {
     // No "nz" variable in the grid file. Instead read MZ from options
 
-    OPTION(options, MZ,           65);
-    if(!is_pow2(MZ-1)) {
-      if(is_pow2(MZ)) {
-        MZ++;
-        output.write("WARNING: Number of toroidal points increased to %d\n", MZ);
-      }else {
-        throw BoutException("Error: Number of toroidal points must be 2^n + 1");
-      }
+    OPTION(options, MZ,           64);
+    if(!is_pow2(MZ)) {
+      // Should be a power of 2 for efficient FFTs
+      output.write("WARNING: Number of toroidal points should be 2^n\n", MZ);
     }
   }else {
     output.write("\tRead nz from input grid file\n");
-    // Read "nz" from input file. For now we need to add 1 point to MZ,
-    // since the extra point will be ignored throughout the code (ngz-1 points are used)
-    MZ++;
   }
 
   output << "\tGrid size: " << nx << " x " << ny << " x " << MZ << endl;
@@ -350,9 +343,9 @@ int BoutMesh::load() {
   }
 
   /// Number of grid cells is ng* = M*SUB + guard/boundary cells
-  ngx = MXSUB + 2*MXG;
-  ngy = MYSUB + 2*MYG;
-  ngz = MZ;
+  LocalNx = MXSUB + 2*MXG;
+  LocalNy = MYSUB + 2*MYG;
+  LocalNz = MZ;
 
   // Set local index ranges
 
@@ -374,12 +367,12 @@ int BoutMesh::load() {
     // Try to read the shift angle from the grid file
     // NOTE: All processors should know the twist-shift angle (for invert_parderiv)
     
-    ShiftAngle.resize(ngx);
+    ShiftAngle.resize(LocalNx);
       
     if(!source->get(this, ShiftAngle,  "ShiftAngle",
-                    ngx, XGLOBAL(0))) {
+                    LocalNx, XGLOBAL(0))) {
       output.write("\tWARNING: Twist-shift angle 'ShiftAngle' not found. Setting to zero\n");
-      for(int i=0;i<ngx;i++)
+      for(int i=0;i<LocalNx;i++)
         ShiftAngle[i] = 0.0;
     }
   }
@@ -812,7 +805,7 @@ void BoutMesh::post_receive(CommHandle &ch) {
   if(UDATA_OUTDEST != -1) {
     inbuff = &ch.umsg_recvbuff[len]; // pointer to second half of the buffer
     MPI_Irecv(inbuff,
-              msg_len(ch.var_list.get(), UDATA_XSPLIT, ngx, 0, MYG),
+              msg_len(ch.var_list.get(), UDATA_XSPLIT, LocalNx, 0, MYG),
               PVEC_REAL_MPI_TYPE,
               UDATA_OUTDEST,
               OUT_SENT_DOWN,
@@ -837,7 +830,7 @@ void BoutMesh::post_receive(CommHandle &ch) {
   if(DDATA_OUTDEST != -1) {
     inbuff = &ch.dmsg_recvbuff[len];
     MPI_Irecv(inbuff,
-              msg_len(ch.var_list.get(), DDATA_XSPLIT, ngx, 0, MYG),
+              msg_len(ch.var_list.get(), DDATA_XSPLIT, LocalNx, 0, MYG),
               PVEC_REAL_MPI_TYPE,
               DDATA_OUTDEST,
               OUT_SENT_UP,
@@ -876,7 +869,7 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   
   /// Work out length of buffer needed
   int xlen = msg_len(g.get(), 0, MXG, 0, MYSUB);
-  int ylen = msg_len(g.get(), 0, ngx, 0, MYG);
+  int ylen = msg_len(g.get(), 0, LocalNx, 0, MYG);
 
   /// Get a communications handle of (at least) the needed size
   CommHandle *ch = get_handle(xlen, ylen);
@@ -915,7 +908,7 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   if(UDATA_OUTDEST != -1) { // if destination for outer x data
     outbuff = &(ch->umsg_sendbuff[len]); // A pointer to the start of the second part
                                    // of the buffer
-    len = pack_data(ch->var_list.get(), UDATA_XSPLIT, ngx, MYSUB, MYSUB+MYG, outbuff);
+    len = pack_data(ch->var_list.get(), UDATA_XSPLIT, LocalNx, MYSUB, MYSUB+MYG, outbuff);
     // Send the data to processor UDATA_OUTDEST
     if(async_send) {
       MPI_Isend(outbuff,
@@ -959,7 +952,7 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   if(DDATA_OUTDEST != -1) { // if destination for outer x data
     outbuff = &(ch->dmsg_sendbuff[len]); // A pointer to the start of the second part
                                    // of the buffer
-    len = pack_data(ch->var_list.get(), DDATA_XSPLIT, ngx, MYG, 2*MYG, outbuff);
+    len = pack_data(ch->var_list.get(), DDATA_XSPLIT, LocalNx, MYG, 2*MYG, outbuff);
     // Send the data to processor DDATA_OUTDEST
 
     if(async_send) {
@@ -1064,7 +1057,7 @@ int BoutMesh::wait(comm_handle handle) {
     }
     case 1: { // Up, outer
       len = msg_len(ch->var_list.get(), 0, UDATA_XSPLIT, 0, MYG);
-      unpack_data(ch->var_list.get(), UDATA_XSPLIT, ngx, MYSUB+MYG, MYSUB+2*MYG, &(ch->umsg_recvbuff[len]));
+      unpack_data(ch->var_list.get(), UDATA_XSPLIT, LocalNx, MYSUB+MYG, MYSUB+2*MYG, &(ch->umsg_recvbuff[len]));
       break;
     }
     case 2: { // Down, inner
@@ -1073,7 +1066,7 @@ int BoutMesh::wait(comm_handle handle) {
     }
     case 3: { // Down, outer
       len = msg_len(ch->var_list.get(), 0, DDATA_XSPLIT, 0, MYG);
-      unpack_data(ch->var_list.get(), DDATA_XSPLIT, ngx, 0, MYG, &(ch->dmsg_recvbuff[len]));
+      unpack_data(ch->var_list.get(), DDATA_XSPLIT, LocalNx, 0, MYG, &(ch->dmsg_recvbuff[len]));
       break;
     }
     case 4: { // inner
@@ -1121,7 +1114,7 @@ int BoutMesh::wait(comm_handle handle) {
             shiftZ(*var, jx, jy, ShiftAngle[jx]);
       }
       if(TS_down_out && (DDATA_OUTDEST  != -1)) {
-        for(jx=DDATA_XSPLIT;jx<ngx; jx++)
+        for(jx=DDATA_XSPLIT;jx<LocalNx; jx++)
           for(jy=0;jy != MYG; jy++)
             shiftZ(*var, jx, jy, ShiftAngle[jx]);
       }
@@ -1129,12 +1122,12 @@ int BoutMesh::wait(comm_handle handle) {
       // Upper boundary
       if(TS_up_in && (UDATA_INDEST  != -1)) {
         for(jx=0;jx<UDATA_XSPLIT; jx++)
-          for(jy=ngy-MYG;jy != ngy; jy++)
+          for(jy=LocalNy-MYG;jy != LocalNy; jy++)
             shiftZ(*var, jx, jy, -ShiftAngle[jx]);
       }
       if(TS_up_out && (UDATA_OUTDEST  != -1)) {
-        for(jx=UDATA_XSPLIT;jx<ngx; jx++)
-          for(jy=ngy-MYG;jy != ngy; jy++)
+        for(jx=UDATA_XSPLIT;jx<LocalNx; jx++)
+          for(jy=LocalNy-MYG;jy != LocalNy; jy++)
             shiftZ(*var, jx, jy, -ShiftAngle[jx]);
       }
     }
@@ -1670,12 +1663,12 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
   xge = XLOCAL(xge);
   xlt = XLOCAL(xlt);
 
-  if(( xge >= ngx ) || ( xlt <= 0 )) {
+  if(( xge >= LocalNx ) || ( xlt <= 0 )) {
     return; // Not in this x domain
   }
 
   if(xge < 0)   xge = 0;
-  if(xlt > ngx) xlt = ngx;
+  if(xlt > LocalNx) xlt = LocalNx;
 
   if(MYPE == PROC_NUM(PE_XIND, ypeup)) { /* PROCESSOR SENDING +VE Y */
     /* Set the branch cut x position */
@@ -1683,7 +1676,7 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
       /* Connect on the inside */
       UDATA_XSPLIT = xlt;
       UDATA_INDEST = PROC_NUM(PE_XIND, ypedown);
-      if(UDATA_XSPLIT == ngx)
+      if(UDATA_XSPLIT == LocalNx)
         UDATA_OUTDEST = -1;
 
       TS_up_in = ts; // Twist-shift
@@ -1709,7 +1702,7 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
       /* Connect on the inside */
       DDATA_XSPLIT = xlt;
       DDATA_INDEST = PROC_NUM(PE_XIND, ypeup);
-      if(DDATA_XSPLIT == ngx)
+      if(DDATA_XSPLIT == LocalNx)
         DDATA_OUTDEST = -1;
 
       TS_down_in = ts;
@@ -1757,7 +1750,7 @@ void BoutMesh::add_target(int ypos, int xge, int xlt) {
   // Convert X coordinates into local indices
   xge = XLOCAL(xge);
   xlt = XLOCAL(xlt);
-  if(( xge >= ngx ) || ( xlt <= 0 )) {
+  if(( xge >= LocalNx ) || ( xlt <= 0 )) {
     return; // Not in this x domain
   }
 
@@ -1767,7 +1760,7 @@ void BoutMesh::add_target(int ypos, int xge, int xlt) {
       // Target on inside
       UDATA_XSPLIT = xlt;
       UDATA_INDEST = -1;
-      if(xlt >= ngx)
+      if(xlt >= LocalNx)
         UDATA_OUTDEST = -1;
       output.write("=> This processor has target upper inner\n");
     }else {
@@ -1787,7 +1780,7 @@ void BoutMesh::add_target(int ypos, int xge, int xlt) {
       // Target on inside
       DDATA_XSPLIT = xlt;
       DDATA_INDEST = -1;
-      if(xlt >= ngx)
+      if(xlt >= LocalNx)
         DDATA_OUTDEST = -1;
       output.write("=> This processor has target lower inner\n");
     }else {
@@ -1889,10 +1882,10 @@ void BoutMesh::topology() {
     MYPE_IN_CORE = 1; /* processor is in the core */
   }
 
-  if(DDATA_XSPLIT > ngx)
-    DDATA_XSPLIT = ngx;
-  if(UDATA_XSPLIT > ngx)
-    UDATA_XSPLIT = ngx;
+  if(DDATA_XSPLIT > LocalNx)
+    DDATA_XSPLIT = LocalNx;
+  if(UDATA_XSPLIT > LocalNx)
+    UDATA_XSPLIT = LocalNx;
 
   // Print out settings
   output.write("\tMYPE_IN_CORE = %d\n", MYPE_IN_CORE);
@@ -2023,8 +2016,7 @@ void BoutMesh::clear_handles() {
  *                   Communication utilities
  ****************************************************************/
 
-int BoutMesh::pack_data(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer)
-{
+int BoutMesh::pack_data(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer) {
   int jx, jy, jz;
   int len = 0;
   std::vector<FieldData*>::iterator it;
@@ -2037,7 +2029,7 @@ int BoutMesh::pack_data(const vector<FieldData*> &var_list, int xge, int xlt, in
         // 3D variable
 
         for(jy=yge;jy < ylt;jy++)
-          for(jz=0;jz < ngz-1;jz++)
+          for(jz=0;jz < LocalNz;jz++)
             len += var->getData(jx,jy,jz,buffer+len);
       } else {
         // 2D variable
@@ -2064,7 +2056,7 @@ int BoutMesh::unpack_data(const vector<FieldData*> &var_list, int xge, int xlt, 
         // 3D variable
 
         for(jy=yge;jy < ylt;jy++)
-          for(jz=0;jz < ngz-1;jz++)
+          for(jz=0;jz < LocalNz;jz++)
             len += var->setData(jx,jy,jz,buffer+len);
       } else {
         // 2D variable
@@ -2151,7 +2143,7 @@ MPI_Comm BoutMesh::getYcomm(int xpos) const {
 const RangeIterator BoutMesh::iterateBndryLowerY() const {
 
   int xs = 0;
-  int xe = ngx-1;
+  int xe = LocalNx-1;
   if((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart))
     xs = DDATA_XSPLIT;
   if((DDATA_OUTDEST >= 0) && (DDATA_XSPLIT < xend+1))
@@ -2167,7 +2159,7 @@ const RangeIterator BoutMesh::iterateBndryLowerY() const {
 
 const RangeIterator BoutMesh::iterateBndryUpperY() const {
   int xs = 0;
-  int xe = ngx-1;
+  int xe = LocalNx-1;
   if((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart))
     xs = UDATA_XSPLIT;
   if((UDATA_OUTDEST >= 0) && (UDATA_XSPLIT < xend+1))
@@ -2202,18 +2194,16 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
     result.allocate();
     if(XPROC(ixseps_inner) == PE_XIND) {
       int x = XLOCAL(ixseps_inner);
-      for(int y=0;y<ngy;y++)
-        for(int z=0;z<ngz;z++) {
+      for(int y=0;y<LocalNy;y++)
+        for(int z=0;z<LocalNz;z++) {
 	  result(x,y,z) = 0.5*(f(x,y,z) + f(x-1,y,z));
-          //result[x][y][z] = f[x-1][y][z] - 2.*f[x][y][z] + f[x+1][y][z];
         }
     }
     if(XPROC(ixseps_inner-1) == PE_XIND) {
       int x = XLOCAL(ixseps_inner-1);
-      for(int y=0;y<ngy;y++)
-        for(int z=0;z<ngz;z++) {
+      for(int y=0;y<LocalNy;y++)
+        for(int z=0;z<LocalNz;z++) {
 	  result(x,y,z) = 0.5*(f(x,y,z) + f(x+1,y,z));
-          //result[x][y][z] = f[x-1][y][z] - 2.*f[x][y][z] + f[x+1][y][z];
         }
     }
   }
@@ -2221,16 +2211,16 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
     result.allocate();
     if(XPROC(ixseps_outer) == PE_XIND) {
       int x = XLOCAL(ixseps_outer);
-      for(int y=0;y<ngy;y++)
-        for(int z=0;z<ngz;z++) {
-          result(x,y,z) = 0.5*(f(x,y,z) + f(x-1,y,z)); //f[x-1][y][z] - 2.*f[x][y][z] + f[x+1][y][z];
+      for(int y=0;y<LocalNy;y++)
+        for(int z=0;z<LocalNz;z++) {
+          result(x,y,z) = 0.5*(f(x,y,z) + f(x-1,y,z));
         }
     }
     if(XPROC(ixseps_outer-1) == PE_XIND) {
       int x = XLOCAL(ixseps_outer-1);
-      for(int y=0;y<ngy;y++)
-        for(int z=0;z<ngz;z++) {
-          result(x,y,z) = 0.5*(f(x,y,z) + f(x+1,y,z)); //f[x-1][y][z] - 2.*f[x][y][z] + f[x+1][y][z];
+      for(int y=0;y<LocalNy;y++)
+        for(int z=0;z<LocalNz;z++) {
+          result(x,y,z) = 0.5*(f(x,y,z) + f(x+1,y,z));
         }
     }
   }
@@ -2355,7 +2345,7 @@ void BoutMesh::outputVars(Datafile &file) {
   file.add(MYSUB, "MYSUB", 0);
   file.add(MXG,   "MXG",   0);
   file.add(MYG,   "MYG",   0);
-  file.add(ngz,   "MZ",    0);
+  file.add(LocalNz,"MZ",    0);
   file.add(NXPE,  "NXPE",  0);
   file.add(NYPE,  "NYPE",  0);
   file.add(ZMAX,  "ZMAX",  0);
@@ -2411,7 +2401,7 @@ const Field2D BoutMesh::lowPass_poloidal(const Field2D &var,int mmax)
   int mmax1;
 
   mmax1 = mmax+1;
-  ncx = ngx;
+  ncx = LocalNx;
   ncy = yend - ystart + 1;
   ncyall = ncy*NYPE;
   ncyall2 = ncyall/2;
@@ -2480,8 +2470,7 @@ const Field2D BoutMesh::lowPass_poloidal(const Field2D &var,int mmax)
 // Developed by T. Rhee and S. S. Kim
 //================================================================*/
 
-const Field3D BoutMesh::Switch_YZ(const Field3D &var)
-{
+const Field3D BoutMesh::Switch_YZ(const Field3D &var) {
   static BoutReal **ayz = (BoutReal **) NULL;
   static BoutReal **ayz_all = (BoutReal **) NULL;
   Field3D  result;
@@ -2489,9 +2478,9 @@ const Field3D BoutMesh::Switch_YZ(const Field3D &var)
   int i,j,ix;
   ncy = yend - ystart + 1;
   ncy_all = MY;
-  ncz = ngz-1 ;
+  ncz = LocalNz ;
 
-  if(MY != ngz-1){
+  if(MY != LocalNz){
     throw new BoutException("Y and Z dimension is not same in Switch_YZ code"); }
 
   //memory allocation
@@ -2515,16 +2504,12 @@ const Field3D BoutMesh::Switch_YZ(const Field3D &var)
     for(i=ystart;i<=yend;i++)
       for(j=0;j<ncz;j++)
         result(ix,i,j)=ayz_all[j][YGLOBAL(i)];
-
-    //boundary at ngz
-    for(i=0;i<ncy;i++)
-      result(ix,i+ystart,ncz)=result(ix,i+ystart,0);
   }
   return result;
 }
 
 const Field3D BoutMesh::Switch_XZ(const Field3D &var) {   
-    if(MX != ngz-1){
+    if(MX != LocalNz){
         throw new BoutException("X and Z dimension must be the same to use Switch_XZ");
     }
     static BoutReal ***buffer = (BoutReal ***) NULL;
@@ -2534,9 +2519,9 @@ const Field3D BoutMesh::Switch_XZ(const Field3D &var) {
 
     Field3D result;
 
-    ncx = ngx - 2*MXG ;
-    ncy = ngy - 2*MYG ;
-    ncz = ngz-1 ;
+    ncx = LocalNx - 2*MXG ;
+    ncy = LocalNy - 2*MYG ;
+    ncz = LocalNz ;
 
     // Allocate Memory
     result.allocate();
@@ -2569,13 +2554,6 @@ const Field3D BoutMesh::Switch_XZ(const Field3D &var) {
 	}
       }
     }
-
-    // z boundary at ngz
-    for (i=0; i<ncx ; i++){
-      for (j=0; j<ncy ; j++){
-	result(MXG+i,MYG+j,ncz) = result(MXG+i,MYG+j,0) ;
-      }
-    }
-
+    
     return result;
 }

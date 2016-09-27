@@ -185,9 +185,9 @@ const Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3
   result.allocate();
 
   // Loop over output grid points
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      for(int jz=0;jz<mesh->ngz-1;jz++) {
+  for(int jx=0;jx<mesh->LocalNx;jx++)
+    for(int jy=0;jy<mesh->LocalNy;jy++)
+      for(int jz=0;jz<mesh->LocalNz;jz++) {
 	// Need to get value of f at 
 	// [jx + delta_x[jx][jy][jz]][jy][jz + delta_z[jx][jy][jz]]
 
@@ -204,17 +204,17 @@ const Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3
 	if(jxmnew < 0) {
 	  jxmnew = 0;
 	  xs = 0.0;
-	}else if(jxmnew >= (mesh->ngx-1)) {
+	}else if(jxmnew >= (mesh->LocalNx-1)) {
 	  // Want to always be able to use [jxnew] and [jxnew+1]
-	  jxmnew = mesh->ngx-2; 
+	  jxmnew = mesh->LocalNx-2; 
 	  xs = 1.0;
 	}
 
 	int jx2mnew = (jxmnew == 0) ? 0 : (jxmnew - 1);
 	int jxpnew = jxmnew + 1;
-	int jx2pnew = (jxmnew == (mesh->ngx-2)) ? jxpnew : (jxpnew + 1);
+	int jx2pnew = (jxmnew == (mesh->LocalNx-2)) ? jxpnew : (jxpnew + 1);
 
-	int ncz = mesh->ngz-1;
+	int ncz = mesh->LocalNz;
 
 	// Get the 4 Z points
 	jzmnew = ((jzmnew % ncz) + ncz) % ncz;
@@ -265,9 +265,9 @@ const Field3D interpolate(const Field2D &f, const Field3D &delta_x) {
   result.allocate();
   
   // Loop over output grid points
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      for(int jz=0;jz<mesh->ngz-1;jz++) {
+  for(int jx=0;jx<mesh->LocalNx;jx++)
+    for(int jy=0;jy<mesh->LocalNy;jy++)
+      for(int jz=0;jz<mesh->LocalNz;jz++) {
 	// Need to get value of f at 
 	// [jx + delta_x[jx][jy][jz]][jy][jz + delta_z[jx][jy][jz]]
 	
@@ -282,9 +282,9 @@ const Field3D interpolate(const Field2D &f, const Field3D &delta_x) {
 	if(jxnew < 0) {
 	  jxnew = 0;
 	  xs = 0.0;
-	}else if(jxnew >= (mesh->ngx-1)) {
+	}else if(jxnew >= (mesh->LocalNx-1)) {
 	  // Want to always be able to use [jxnew] and [jxnew+1]
-	  jxnew = mesh->ngx-2; 
+	  jxnew = mesh->LocalNx-2; 
 	  xs = 1.0;
 	}
 	// Interpolate in X

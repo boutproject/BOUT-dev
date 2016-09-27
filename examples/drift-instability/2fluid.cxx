@@ -308,8 +308,7 @@ int physics_init(bool restarting) {
 // just define a macro for V_E dot Grad
 #define vE_Grad(f, p) ( b0xGrad_dot_Grad(p, f) / coord->Bxy )
 
-int physics_run(BoutReal t)
-{
+int physics_run(BoutReal t) {
   // Solve EM fields
 
   solve_phi_tridag(rho, phi, phi_flags);
@@ -343,20 +342,7 @@ int physics_run(BoutReal t)
   if(ZeroElMass) {
     // Set jpar,Ve,Ajpar neglecting the electron inertia term
     jpar = ((Te0*Grad_par(Ni, CELL_YLOW)) - (Ni0*Grad_par(phi, CELL_YLOW)))/(fmei*0.51*nu);
-
-    /*
-    for(int jx=MXG;jx<mesh->ngx-MXG;jx++) {
-      for(int jy=MYG;jy<mesh->ngy-MYG;jy++) {
-	for(int jz=0;jz<mesh->ngz;jz++) {
-	  jpar[jx][jy][jz] = ( (Te0[jx][jy] * (Ni[jx][jy+1][jz] - Ni[jx][jy][jz]))
-			       - (Ni0[jx][jy] * (phi[jx][jy+1][jz] - phi[jx][jy][jz])) )
-	    / (fmei * 0.51 * nu[jx][jy][jz] * dy[jx][jy] * sqrt(coord->g_22[jx][jy]));
-			       
-	}
-      }
-    }
-    */
-
+    
     // Set boundary conditions on jpar (in BOUT.inp)
     jpar.applyBoundary();
     
@@ -376,15 +362,6 @@ int physics_run(BoutReal t)
   ddt(Ni) = 0.0;
   if(evolve_ni) {
     ddt(Ni) -= vE_Grad(Ni0, phi);
-
-    /*
-      ddt(Ni) -= vE_Grad(Ni, phi0) + vE_Grad(Ni0, phi) + vE_Grad(Ni, phi);
-      ddt(Ni) -= Vpar_Grad_par(Vi, Ni0) + Vpar_Grad_par(Vi0, Ni) + Vpar_Grad_par(Vi, Ni);
-      ddt(Ni) -= Ni0*Div_par(Vi) + Ni*Div_par(Vi0) + Ni*Div_par(Vi);
-      ddt(Ni) += Div_par(jpar);
-      ddt(Ni) += 2.0*V_dot_Grad(b0xcv, pe);
-      ddt(Ni) -= 2.0*(Ni0*V_dot_Grad(b0xcv, phi) + Ni*V_dot_Grad(b0xcv, phi0) + Ni*V_dot_Grad(b0xcv, phi));
-    */
   }
 
   // ION VELOCITY
@@ -422,26 +399,8 @@ int physics_run(BoutReal t)
 
   ddt(rho) = 0.0;
   if(evolve_rho) {
-    /*
-    ddt(rho) -= vE_Grad(rho0, phi) + vE_Grad(rho, phi0) + vE_Grad(rho, phi);
-    ddt(rho) -= Vpar_Grad_par(Vi, rho0) + Vpar_Grad_par(Vi0, rho) + Vpar_Grad_par(Vi, rho);
-    */
-    
-    //ddt(rho) += 2.0*Bnorm*V_dot_Grad(b0xcv, pei);
 
-    ddt(rho) += coord->Bxy*coord->Bxy*Div_par(jpar, CELL_CENTRE);
-
-    /*
-    for(int jx=MXG;jx<mesh->ngx-MXG;jx++) {
-      for(int jy=MYG;jy<mesh->ngy-MYG;jy++) {
-	for(int jz=0;jz<mesh->ngz;jz++) {
-	  ddt(rho)[jx][jy][jz] = Bxy[jx][jy]*Bxy[jx][jy] * (jpar[jx][jy+1][jz] - jpar[jx][jy][jz]) / (dy[jx][jy] * sqrt(coord->g_22[jx][jy]));
-	}
-      }
-    }
-    */
-
-    //ddt(rho) += 1e-2 * mu_i * Laplacian(rho);
+    ddt(rho) += SQ(coord->Bxy)*Div_par(jpar, CELL_CENTRE);
   }
   
 
@@ -450,19 +409,6 @@ int physics_run(BoutReal t)
 
   ddt(Ajpar) = 0.0;
   if(evolve_ajpar) {
-    //ddt(Ajpar) -= vE_Grad(Ajpar0, phi) + vE_Grad(Ajpar, phi0) + vE_Grad(Ajpar, phi);
-
-    /*
-    for(int jx=MXG;jx<mesh->ngx-MXG;jx++) {
-      for(int jy=MYG;jy<mesh->ngy-MYG;jy++) {
-	for(int jz=0;jz<mesh->ngz;jz++) {
-	  ddt(Ajpar)[jx][jy][jz] += (1./fmei) * (phi[jx][jy][jz] - phi[jx][jy-1][jz]) / (dy[jx][jy] * sqrt(coord->g_22[jx][jy]));
-	  ddt(Ajpar)[jx][jy][jz] -= (1./fmei)*(Te0[jx][jy]/Ni0[jx][jy])*(Ni[jx][jy][jz] - Ni[jx][jy-1][jz]) / (dy[jx][jy] * sqrt(coord->g_22[jx][jy]));
-	}
-      }
-    }
-    */
-
     ddt(Ajpar) += (1./fmei)*Grad_par(phi, CELL_YLOW);
     ddt(Ajpar) -= (1./fmei)*(Te0/Ni0)*Grad_par(Ni, CELL_YLOW);
     //ddt(Ajpar) -= (1./fmei)*1.71*Grad_par(Te);
@@ -492,8 +438,7 @@ int solve_phi_tridag(Field3D &r, Field3D &p, int flags) {
   return(0);
 }
 
-int solve_apar_tridag(Field3D &aj, Field3D &ap, int flags)
-{
+int solve_apar_tridag(Field3D &aj, Field3D &ap, int flags) {
   static Field2D a;
   static int set = 0;
 

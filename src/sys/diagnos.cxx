@@ -134,9 +134,9 @@ BoutReal Diagnos::run(const diag_item &i)
     }else {
       // Local index
       
-      if((i.x < 0) || (i.x >= mesh->ngx) ||
-	 (i.y < 0) || (i.y >= mesh->ngy) ||
-	 (i.z < 0) || (i.z >= mesh->ngz)) {
+      if((i.x < 0) || (i.x >= mesh->LocalNx) ||
+	 (i.y < 0) || (i.y >= mesh->LocalNy) ||
+	 (i.z < 0) || (i.z >= mesh->LocalNz)) {
 	return 0.0;
       }
     }
