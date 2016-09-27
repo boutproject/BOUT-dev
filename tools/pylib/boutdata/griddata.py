@@ -175,7 +175,7 @@ def gridcontourf(grid, data2d, nlevel=31, show=True, mind=None, maxd=None, cmap=
     maxd   - Maximum data level
     """
 
-    if cmap == None:
+    if cmap is None:
         cmap = plt.cm.get_cmap("YlOrRd")
 
     if len(data2d.shape) != 2:
@@ -294,9 +294,9 @@ def gridcontourf(grid, data2d, nlevel=31, show=True, mind=None, maxd=None, cmap=
         fig.colorbar(con)
         
     ax.set_aspect("equal")
-    if xlabel != None:
+    if xlabel is not None:
         ax.set_xlabel(xlabel)
-    if ylabel != None:
+    if ylabel is not None:
         ax.set_ylabel(ylabel)
     if show:
       plt.show()

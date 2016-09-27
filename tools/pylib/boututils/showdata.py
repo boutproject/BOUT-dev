@@ -300,7 +300,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
     if (tslice == 0):           # Only wish to collect time data if it matches
         try:
             t = collect('t_array')
-            if t == None:
+            if t is None:
                 raise ValueError("t_array is None")
             if len(t) != Nt[0][0]:
                 raise ValueError("t_array is wrong size")
