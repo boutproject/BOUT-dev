@@ -2458,12 +2458,32 @@ const Field2D D4DZ4(const Field2D &f) {
  * Mixed derivatives
  *******************************************************************************/
 
+/*!
+ * Mixed derivative in X and Y
+ *
+ * This first takes derivatives in X, then in Y.
+ * 
+ * ** Applies Neumann boundary in Y, communicates
+ */
 const Field2D D2DXDY(const Field2D &f) {
-  throw BoutException("Sorry, D2DXDY not implemented");
+  Field2D dfdx = DDX(f);
+  mesh->communicate(dfdx);
+  dfdx.applyBoundary("neumann");
+  return DDY(dfdx);
 }
 
+/*!
+ * Mixed derivative in X and Y
+ *
+ * This first takes derivatives in X, then in Y.
+ * 
+ * ** Applies Neumann boundary in Y, communicates
+ */
 const Field3D D2DXDY(const Field3D &f) {
-  throw BoutException("Sorry, D2DXDY not implemented");
+  Field3D dfdx = DDX(f);
+  mesh->communicate(dfdx);
+  dfdx.applyBoundary("neumann");
+  return DDY(dfdx);
 }
 
 const Field2D D2DXDZ(const Field2D &f) {
