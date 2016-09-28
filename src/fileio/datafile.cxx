@@ -56,6 +56,7 @@ Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), f
   OPTION(opt, floats, false); // High precision by default
   OPTION(opt, openclose, true); // Open and close every write or read
   OPTION(opt, enabled, true);
+  OPTION(opt, shiftOutput, false); //Do we want to write 3D fields in shifted space?
   
 }
 
@@ -75,6 +76,7 @@ Datafile& Datafile::operator=(const Datafile &rhs) {
   floats     = rhs.floats;
   openclose    = rhs.openclose;
   enabled      = rhs.enabled;
+  shiftOutput  = rhs.shiftOutput;
   file         = NULL; // All values copied except this
   int_arr      = rhs.int_arr;
   BoutReal_arr = rhs.BoutReal_arr;
@@ -623,11 +625,19 @@ bool Datafile::write_f3d(const string &name, Field3D *f, bool grow) {
     //output << "Datafile: unallocated: " << name << endl;
     return false; // No data allocated
   }
-  
-  if(grow) {
-    return file->write_rec(&((*f)(0,0,0)), name, mesh->ngx, mesh->ngy, mesh->ngz);
+
+  //Deal with shifting the output
+  Field3D targ;
+  if(shiftOutput) {
+    targ = mesh->fromFieldAligned(*f);
   }else {
-    return file->write(&((*f)(0,0,0)), name, mesh->ngx, mesh->ngy, mesh->ngz);
+    targ = *f;
+  }
+
+  if(grow) {
+    return file->write_rec(&(targ(0,0,0)), name, mesh->ngx, mesh->ngy, mesh->ngz);
+  }else {
+    return file->write(&(targ(0,0,0)), name, mesh->ngx, mesh->ngy, mesh->ngz);
   }
 }
 
