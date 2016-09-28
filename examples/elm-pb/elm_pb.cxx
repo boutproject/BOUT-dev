@@ -627,7 +627,7 @@ int physics_init(bool restarting) {
 
   if(mesh->IncIntShear) {
     // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
-    mesh->coordinates()->IntShiftTorsion = I;
+    metric->IntShiftTorsion = I;
     
   }else {
     // Dimits style, using local coordinate system

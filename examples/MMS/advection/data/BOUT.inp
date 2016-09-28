@@ -17,10 +17,10 @@ symmetricGlobalX = true
 
 ny = 1
 
-[ddx]
+[mesh:ddx]
 upwind=c2
 
-[ddz]
+[mesh:ddz]
 upwind=c2
 
 [solver]
