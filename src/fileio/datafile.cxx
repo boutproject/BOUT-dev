@@ -57,12 +57,11 @@ Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), f
   OPTION(opt, openclose, true); // Open and close every write or read
   OPTION(opt, enabled, true);
   OPTION(opt, shiftOutput, false); //Do we want to write 3D fields in shifted space?
-  
 }
 
 Datafile::Datafile(const Datafile &other) : parallel(other.parallel), flush(other.flush), guards(other.guards), 
                                             floats(other.floats), openclose(other.openclose), Lx(Lx), Ly(Ly), Lz(Lz), 
-                                            enabled(other.enabled), file(NULL), int_arr(other.int_arr), 
+                                            enabled(other.enabled), shiftOutput(other.shiftOutput), file(NULL), int_arr(other.int_arr), 
                                             BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr), 
                                             f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {
   
