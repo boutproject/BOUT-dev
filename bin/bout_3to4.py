@@ -77,7 +77,7 @@ def fix_coordinates(line_text, filename, line_num, replace=False):
         pattern = re.compile("mesh->{}".format(var))
         matches = re.findall(pattern, line_text)
         for match in matches:
-            line_text = re.sub(pattern, "coords->{}".format(var), line_text)
+            line_text = re.sub(pattern, "mesh->coordinates()->{}".format(var), line_text)
             if not replace:
                 name_num = "{name}:{num}:".format(name=filename, num=line_num)
                 print("{name_num}{line}".format(name_num=name_num, line=old_line_text), end='')
