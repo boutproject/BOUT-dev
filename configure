@@ -3917,8 +3917,8 @@ if test "$with_debug" != ""
 then
   echo "Enabling all debug options"
   with_checks="3"
-  # use -Og with available, otherwise fall back to -O0
-  OPT_FLAGS="-g -O0 -Og"
+  # use -Og if available, otherwise fall back to -O0
+  OPT_FLAGS="-g -O0 -Og -fno-inline"
 elif test $with_optimize ; then
   optimize=$with_optimize
   test $optimize -eq 0 2>/dev/null
