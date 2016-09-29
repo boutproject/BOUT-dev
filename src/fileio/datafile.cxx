@@ -627,17 +627,17 @@ bool Datafile::write_f3d(const string &name, Field3D *f, bool grow) {
   }
 
   //Deal with shifting the output
-  Field3D targ;
+  Field3D f_out;
   if(shiftOutput) {
-    targ = mesh->fromFieldAligned(*f);
+    f_out = mesh->toFieldAligned(*f);
   }else {
-    targ = *f;
+    f_out = *f;
   }
 
   if(grow) {
-    return file->write_rec(&(targ(0,0,0)), name, mesh->ngx, mesh->ngy, mesh->ngz);
+    return file->write_rec(&(f_out(0,0,0)), name, mesh->ngx, mesh->ngy, mesh->ngz);
   }else {
-    return file->write(&(targ(0,0,0)), name, mesh->ngx, mesh->ngy, mesh->ngz);
+    return file->write(&(f_out(0,0,0)), name, mesh->ngx, mesh->ngy, mesh->ngz);
   }
 }
 
