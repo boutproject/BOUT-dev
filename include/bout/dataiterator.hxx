@@ -180,6 +180,13 @@ public:
   /// The index one point -1 in z. Wraps around zstart to zend
   const Indices zm() const { return {x, y, z == zstart ? zend : z-1}; }
 
+  // and for 2 cells
+  const Indices xpp() const { return {x+2, y, z}; }
+  const Indices xmm() const { return {x-2, y, z}; }
+  const Indices ypp() const { return {x, y+2, z}; }
+  const Indices ymm() const { return {x, y-2, z}; }
+  const Indices zpp() const { int zp=(z == zend ? zstart : z+1); return {x, y, zp == zend ? zstart :zp+1 }; }
+  const Indices zmm() const { int zm=(z == zstart ? zend : z-1); return {x, y, zm == zstart ? zend : zm-1}; }
   /*!
    * Resets DataIterator to the start of the range
    */
