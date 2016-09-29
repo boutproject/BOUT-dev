@@ -1671,8 +1671,6 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
         }
           
         irfft(cv, ncz, result(xge,jy)); // Reverse FFT
-         
-        result(xge,jy,ncz) = result(xge,jy,0);
       }
     }
     
@@ -2015,8 +2013,6 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
 	}
 
 	irfft(cv, ncz, result(jx,jy)); // Reverse FFT
-	
-	result(jx,jy,ncz) = result(jx,jy,0);
       }
     }
 
