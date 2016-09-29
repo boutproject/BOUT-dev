@@ -28,6 +28,8 @@
 
 #include "bout_types.hxx"
 
+extern const BoutReal WENO_SMALL;
+
 class bvalue {
  public:
   int jx, jy, jz;
