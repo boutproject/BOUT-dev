@@ -6,7 +6,7 @@
  *
  * July 2014: Ben Dudson <benjamin.dudson@york.ac.uk>
  *      o Simplified and cleaned up for MMS testing
- * 
+ *
  *******************************************************************************/
 
 #include <bout.hxx>
@@ -50,7 +50,7 @@ BoutReal Bbar, Lbar, Tbar, Va; // Normalisation constants
 BoutReal dnorm; // For diamagnetic terms: 1 / (2. * wci * Tbar)
 BoutReal dia_fact; // Multiply diamagnetic term by this
 BoutReal delta_i; // Normalized ion skin depth
-BoutReal omega_i; // ion gyrofrequency 
+BoutReal omega_i; // ion gyrofrequency
 
 BoutReal diffusion_par;  // Parallel pressure diffusion
 
@@ -69,9 +69,9 @@ BoutReal g; // Only if compressible
 bool phi_curv;
 
 // Poisson brackets: b0 x Grad(f) dot Grad(g) / B = [f, g]
-// Method to use: BRACKET_ARAKAWA, BRACKET_STD or BRACKET_SIMPLE      
+// Method to use: BRACKET_ARAKAWA, BRACKET_STD or BRACKET_SIMPLE
 /*
- * Bracket method 
+ * Bracket method
  *
  * BRACKET_STD      - Same as b0xGrad_dot_Grad, methods in BOUT.inp
  * BRACKET_SIMPLE   - Subset of terms, used in BOUT-06
@@ -80,7 +80,7 @@ bool phi_curv;
  *
  */
 
-// Bracket method for advection terms 
+// Bracket method for advection terms
 BRACKET_METHOD bm_exb;
 BRACKET_METHOD bm_mag;
 int bm_exb_flag;
@@ -153,31 +153,33 @@ int physics_init(bool restarting) {
   mesh->get(hthe, "hthe"); // m
   mesh->get(I,    "sinty");// m^-2 T^-1
 
+  Coordinates *coords = mesh->coordinates();
+
   //////////////////////////////////////////////////////////////
   // Read parameters from the options file
-  // 
+  //
   // Options.get ( NAME,    VARIABLE,    DEFAULT VALUE)
   //
   // or if NAME = "VARIABLE" then just
   //
-  // OPTION(VARIABLE, DEFAULT VALUE) 
+  // OPTION(VARIABLE, DEFAULT VALUE)
   //
   // Prints out what values are assigned
   /////////////////////////////////////////////////////////////
 
   Options *globalOptions = Options::getRoot();
   Options *options = globalOptions->getSection("highbeta");
-  
+
   OPTION(options, density,           1.0e19); // Number density [m^-3]
 
   // Effects to include/exclude
   OPTION(options, include_curvature, true);
   OPTION(options, include_jpar0,     true);
-  
+
   OPTION(options, compress0,          false);
   OPTION(options, nonlinear,         false);
 
-  // option for ExB Poisson Bracket 
+  // option for ExB Poisson Bracket
   OPTION(options, bm_exb_flag,         0);
   switch(bm_exb_flag) {
   case 0: {
@@ -233,14 +235,14 @@ int physics_init(bool restarting) {
     return 1;
   }
 
-  OPTION(options, eHall,            false);  // electron Hall or electron parallel pressue gradient effects? 
+  OPTION(options, eHall,            false);  // electron Hall or electron parallel pressue gradient effects?
   OPTION(options, AA,               1.0);    // ion mass in units of proton mass
 
-  OPTION(options, diamag,            false);  // Diamagnetic effects? 
+  OPTION(options, diamag,            false);  // Diamagnetic effects?
   OPTION(options, diamag_grad_t,     diamag); // Grad_par(Te) term in Psi equation
   OPTION(options, diamag_phi0,       diamag); // Include equilibrium phi0
   OPTION(options, dia_fact,          1.0);    // Scale diamagnetic effects by this factor
-  
+
   // Toroidal filtering
   OPTION(options, filter_z,          false);  // Filter a single n
   OPTION(options, filter_z_mode,     1);
@@ -252,7 +254,7 @@ int physics_init(bool restarting) {
   // Vacuum region control
   OPTION(options, vacuum_pressure,   0.02);   // Fraction of peak pressure
   OPTION(options, vacuum_trans,      0.005);  // Transition width in pressure
-  
+
   // Resistivity and hyper-resistivity options
   OPTION(options, vac_lund,          0.0);    // Lundquist number in vacuum region
   OPTION(options, core_lund,         0.0);    // Lundquist number in core region
@@ -263,14 +265,14 @@ int physics_init(bool restarting) {
 
   // Viscosity and hyper-viscosity
   OPTION(options, viscos_perp,       -1.0);  // Perpendicular viscosity
-  
+
   // parallel pressure diffusion
   OPTION(options, diffusion_par,        -1.0);  // Parallel pressure diffusion
-  
+
   // Compressional terms
   OPTION(options, phi_curv,          true);
   options->get("gamma",             g,                 5.0/3.0);
-  
+
   // Field inversion flags
   OPTION(options, phi_flags,         0);
 
@@ -278,34 +280,36 @@ int physics_init(bool restarting) {
 
   if(!include_curvature)
     b0xcv = 0.0;
-  
+
   if(!include_jpar0)
     J0 = 0.0;
-  
+
   //////////////////////////////////////////////////////////////
   // SHIFTED RADIAL COORDINATES
 
-  if(mesh->ShiftXderivs) {
+  bool ShiftXderivs;
+  globalOptions->get("shiftXderivs", ShiftXderivs, false); // Read global flag
+  if(ShiftXderivs) {
     if(mesh->IncIntShear) {
       // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
-      mesh->IntShiftTorsion = I;
-      
+      coords->IntShiftTorsion = I;
+
     }else {
       // Dimits style, using local coordinate system
       if(include_curvature)
-	b0xcv.z += I*b0xcv.x;
+    b0xcv.z += I*b0xcv.x;
       I = 0.0;  // I disappears from metric
     }
   }
 
   //////////////////////////////////////////////////////////////
   // NORMALISE QUANTITIES
-  
+
   if(mesh->get(Bbar, "bmag")) // Typical magnetic field
     Bbar = 1.0;
   if(mesh->get(Lbar, "rmag")) // Typical length scale
     Lbar = 1.0;
-  
+
   Va = sqrt(Bbar*Bbar / (MU0*density*Mi));
 
   Tbar = Lbar / Va;
@@ -318,22 +322,22 @@ int physics_init(bool restarting) {
   output.write("                Va = %e m/s   Tbar = %e s\n", Va, Tbar);
   output.write("                dnorm = %e\n", dnorm);
   output.write("    Resistivity\n");
-  
+
   if(eHall)
     output.write("                delta_i = %e   AA = %e \n", delta_i, AA);
 
   if(vac_lund > 0.0) {
-    output.write("        Vacuum  Tau_R = %e s   eta = %e Ohm m\n", vac_lund * Tbar, 
-		 MU0 * Lbar * Lbar / (vac_lund * Tbar));
+    output.write("        Vacuum  Tau_R = %e s   eta = %e Ohm m\n", vac_lund * Tbar,
+         MU0 * Lbar * Lbar / (vac_lund * Tbar));
     vac_resist = 1. / vac_lund;
   }else {
     output.write("        Vacuum  - Zero resistivity -\n");
     vac_resist = 0.0;
   }
-  
+
   if(core_lund > 0.0) {
     output.write("        Core    Tau_R = %e s   eta = %e Ohm m\n", core_lund * Tbar,
-		 MU0 * Lbar * Lbar / (core_lund * Tbar));
+         MU0 * Lbar * Lbar / (core_lund * Tbar));
     core_resist = 1. / core_lund;
   }else {
     output.write("        Core    - Zero resistivity -\n");
@@ -343,13 +347,13 @@ int physics_init(bool restarting) {
   if(ehyperviscos > 0.0) {
     output.write("    electron Hyper-viscosity coefficient: %e\n", ehyperviscos);
   }
-  
+
   Field2D Te;
   Te = P0 / (2.0*density * 1.602e-19); // Temperature in eV
 
   J0 = - MU0*Lbar * J0 / B0;
   P0 = 2.0*MU0 * P0 / (Bbar*Bbar);
- 
+
   b0xcv.x /= Bbar;
   b0xcv.y *= Lbar*Lbar;
   b0xcv.z *= Lbar*Lbar;
@@ -359,11 +363,11 @@ int physics_init(bool restarting) {
   Btxy /= Bbar;
   B0   /= Bbar;
   hthe /= Lbar;
-  mesh->dx   /= Lbar*Lbar*Bbar;
+  coords->dx   /= Lbar*Lbar*Bbar;
   I    *= Lbar*Lbar*Bbar;
-  
+
   BoutReal pnorm = max(P0, true); // Maximum over all processors
-  
+
   vacuum_pressure *= pnorm; // Get pressure from fraction
   vacuum_trans *= pnorm;
 
@@ -371,9 +375,9 @@ int physics_init(bool restarting) {
   vac_mask = (1.0 - tanh( (P0 - vacuum_pressure) / vacuum_trans )) / 2.0;
 
   if(spitzer_resist) {
-    // Use Spitzer resistivity 
+    // Use Spitzer resistivity
     output.write("\tTemperature: %e -> %e [eV]\n", min(Te), max(Te));
-    eta = 0.51*1.03e-4*Zeff*20.*(Te^(-1.5)); // eta in Ohm-m. NOTE: ln(Lambda) = 20
+    eta = 0.51*1.03e-4*Zeff*20.*pow(Te, -1.5); // eta in Ohm-m. NOTE: ln(Lambda) = 20
     output.write("\tSpitzer resistivity: %e -> %e [Ohm m]\n", min(eta), max(eta));
     eta /= MU0 * Va * Lbar;
     output.write("\t -> Lundquist %e -> %e\n", 1.0/max(eta), 1.0/min(eta));
@@ -383,35 +387,35 @@ int physics_init(bool restarting) {
   }
 
   dump.add(eta, "eta", 0);
-  
+
   /**************** CALCULATE METRICS ******************/
 
-  mesh->g11 = (Rxy*Bpxy)^2;
-  mesh->g22 = 1.0 / (hthe^2);
-  mesh->g33 = (I^2)*mesh->g11 + (B0^2)/mesh->g11;
-  mesh->g12 = 0.0;
-  mesh->g13 = -I*mesh->g11;
-  mesh->g23 = -Btxy/(hthe*Bpxy*Rxy);
-  
-  mesh->J = hthe / Bpxy;
-  mesh->Bxy = B0;
-  
-  mesh->g_11 = 1.0/mesh->g11 + ((I*Rxy)^2);
-  mesh->g_22 = (B0*hthe/Bpxy)^2;
-  mesh->g_33 = Rxy*Rxy;
-  mesh->g_12 = Btxy*hthe*I*Rxy/Bpxy;
-  mesh->g_13 = I*Rxy*Rxy;
-  mesh->g_23 = Btxy*hthe*Rxy/Bpxy;
-  
-  mesh->geometry(); // Calculate quantities from metric tensor
+  coords->g11 = SQ(Rxy*Bpxy);
+  coords->g22 = 1.0 / SQ(hthe);
+  coords->g33 = SQ(I)*coords->g11 + SQ(B0)/coords->g11;
+  coords->g12 = 0.0;
+  coords->g13 = -I*coords->g11;
+  coords->g23 = -Btxy/(hthe*Bpxy*Rxy);
+
+  coords->J = hthe / Bpxy;
+  coords->Bxy = B0;
+
+  coords->g_11 = 1.0/coords->g11 + (SQ(I*Rxy));
+  coords->g_22 = SQ(B0*hthe/Bpxy);
+  coords->g_33 = Rxy*Rxy;
+  coords->g_12 = Btxy*hthe*I*Rxy/Bpxy;
+  coords->g_13 = I*Rxy*Rxy;
+  coords->g_23 = Btxy*hthe*Rxy/Bpxy;
+
+  coords->geometry(); // Calculate quantities from metric tensor
 
   // Set B field vector
-  
+
   B0vec.covariant = false;
   B0vec.x = 0.;
   B0vec.y = Bpxy / hthe;
   B0vec.z = 0.;
-  
+
   /**************** SET VARIABLE LOCATIONS *************/
 
   P.setLocation(CELL_CENTRE);
@@ -426,10 +430,10 @@ int physics_init(bool restarting) {
   // Tell BOUT which variables to evolve
   SOLVE_FOR3(U, P, Psi);
   dump.add(Jpar, "jpar", 1);
-  
+
   if(compress0) {
     output.write("Including compression (Vpar) effects\n");
-    
+
     SOLVE_FOR(Vpar);
 
     beta = B0*B0 / ( 0.5 + (B0*B0 / (g*P0)));
@@ -447,32 +451,32 @@ int physics_init(bool restarting) {
     phi0 = -0.5*dnorm*P0/B0;
     SAVE_ONCE(phi0);
   }
-  
+
   // Add some equilibrium quantities and normalisations
   // everything needed to recover physical units
   SAVE_ONCE2(J0, P0);
   SAVE_ONCE4(density, Lbar, Bbar, Tbar);
   SAVE_ONCE2(Va, B0);
-  
+
   /////////////// CHECK VACUUM ///////////////////////
   // In vacuum region, initial vorticity should equal zero
-  
+
   if(!restarting) {
     // Only if not restarting: Check initial perturbation
 
     // Set U to zero where P0 < vacuum_pressure
     U = where(P0 - vacuum_pressure, U, 0.0);
-    
+
     // Phi should be consistent with U
     phi = invert_laplace(U, phi_flags, NULL);
-    
+
     //if(diamag) {
     //phi -= 0.5*dnorm * P / B0;
     //}
   }
-  
+
   /************** SETUP COMMUNICATIONS **************/
-  
+
   comms.add(U, P, Psi);
 
   phi.setBoundary("phi"); // Set boundary conditions
@@ -487,38 +491,40 @@ int physics_init(bool restarting) {
 // Parallel gradient along perturbed field-line
 const Field3D Grad_parP(const Field3D &f, CELL_LOC loc = CELL_DEFAULT) {
   Field3D result;
-  
+
   result = Grad_par(f, loc);
-  
+
   if(nonlinear) {
     result -= bracket(Psi, f, bm_mag)*B0;
   }
-  
+
   return result;
 }
 
 int physics_run(BoutReal t) {
   // Perform communications
   mesh->communicate(comms);
-  
+
+  Coordinates *coords = mesh->coordinates();
+
   ////////////////////////////////////////////
   // Transitions from 0 in core to 1 in vacuum
   if(nonlinear) {
     vac_mask = (1.0 - tanh( ((P0 + P) - vacuum_pressure) / vacuum_trans )) / 2.0;
-    
+
     // Update resistivity
     if(spitzer_resist) {
       // Use Spitzer formula
       Field3D Te;
       Te = (P0+P)*Bbar*Bbar/(4.*MU0) / (density * 1.602e-19); // eV
-      eta = 0.51*1.03e-4*Zeff*20.*(Te^(-1.5)); // eta in Ohm-m. ln(Lambda) = 20
+      eta = 0.51*1.03e-4*Zeff*20.*pow(Te, -1.5); // eta in Ohm-m. ln(Lambda) = 20
       eta /= MU0 * Va * Lbar; // Normalised eta
     }else {
       // Use specified core and vacuum Lundquist numbers
       eta = core_resist + (vac_resist - core_resist) * vac_mask;
     }
   }
-  
+
   ////////////////////////////////////////////
   // Inversion
   if(mms) {
@@ -528,21 +534,21 @@ int physics_run(BoutReal t) {
   }else {
     phi = invert_laplace(U, phi_flags, NULL);
   }
-  
+
   if(diamag) {
     phi -= 0.5*dnorm * P / B0;
   }
-  
+
   // Apply a boundary condition on phi for target plates
   //phi.applyBoundary();
-  mesh->communicate(phi); 
-  
+  mesh->communicate(phi);
+
   // Get J from Psi
   //PsiExact = FieldFactory::get()->create3D("psi:solution", Options::getRoot(), mesh, CELL_CENTRE, t);
   //PsiExact.applyBoundary(t);
   //Jpar = Delp2(PsiExact);
   Jpar = Delp2(Psi);
-  
+
   Jpar.applyBoundary(t);
   mesh->communicate(Jpar);
 
@@ -556,21 +562,21 @@ int physics_run(BoutReal t) {
 
   Jpar2.applyBoundary(t);
   mesh->communicate(Jpar2);
-  
+
   ////////////////////////////////////////////////////
   // Parallel electric field
   // Evolving vector potential
-  
+
   ddt(Psi) = -Grad_parP(phi, CELL_CENTRE) + eta*Jpar;
-  
+
   if(eHall) {
-    ddt(Psi) +=  0.25*delta_i*(Grad_parP(B0*P, CELL_CENTRE) / B0 
+    ddt(Psi) +=  0.25*delta_i*(Grad_parP(B0*P, CELL_CENTRE) / B0
                                +b0xGrad_dot_Grad(P0, Psi));   // electron parallel pressure
   }
-  
+
   if(diamag_phi0)
     ddt(Psi) -= b0xGrad_dot_Grad(phi0, Psi);   // Equilibrium flow
-  
+
   if(diamag_grad_t) {
     // grad_par(T_e) correction
 
@@ -589,54 +595,54 @@ int physics_run(BoutReal t) {
 
   ////////////////////////////////////////////////////
   // Vorticity equation
-  
-  ddt(U) = (B0^2) * b0xGrad_dot_Grad(Psi, J0, CELL_CENTRE); // Grad j term
-  
+
+  ddt(U) = SQ(B0) * b0xGrad_dot_Grad(Psi, J0, CELL_CENTRE); // Grad j term
+
   ddt(U) += b0xcv*Grad(P);  // curvature term
 
   // Parallel current term
-  ddt(U) -= (B0^2)*Grad_parP(Jpar, CELL_CENTRE); // b dot grad j
-  
+  ddt(U) -= SQ(B0)*Grad_parP(Jpar, CELL_CENTRE); // b dot grad j
+
   if(diamag_phi0)
     ddt(U) -= b0xGrad_dot_Grad(phi0, U);   // Equilibrium flow
-  
+
   if(nonlinear) {
     ddt(U) -= bracket(phi, U, bm_exb)*B0;    // Advection
   }
 
-  // Viscosity terms 
-  
+  // Viscosity terms
+
   if(viscos_perp > 0.0)
     ddt(U) += viscos_perp * Delp2(U);     // Perpendicular viscosity
 
-  ddt(U) -= 10*(SQ(SQ(mesh->dx))*D4DX4(U) + SQ(SQ(mesh->dz))*D4DZ4(U));
+  ddt(U) -= 10*(SQ(SQ(coords->dx))*D4DX4(U) + SQ(SQ(coords->dz))*D4DZ4(U));
 
   ////////////////////////////////////////////////////
   // Pressure equation
 
   ddt(P) = -b0xGrad_dot_Grad(phi, P0);
- 
- 
+
+
   if(diamag_phi0)
     ddt(P) -= b0xGrad_dot_Grad(phi0, P);   // Equilibrium flow
-    
+
   if(nonlinear)
     ddt(P) -= bracket(phi, P, bm_exb)*B0;    // Advection
 
-  // Parallel diffusion terms 
+  // Parallel diffusion terms
   if(diffusion_par > 0.0)
     ddt(P) += diffusion_par * Grad2_par2(P); // Parallel diffusion
-  
-  ddt(P) -= 10*(SQ(SQ(mesh->dx))*D4DX4(P) + SQ(SQ(mesh->dz))*D4DZ4(P));
+
+  ddt(P) -= 10*(SQ(SQ(coords->dx))*D4DX4(P) + SQ(SQ(coords->dz))*D4DZ4(P));
 
   ////////////////////////////////////////////////////
   // Compressional effects
-  
+
   if(compress0) {
-    
+
     //ddt(P) += beta*( - Grad_parP(Vpar, CELL_CENTRE) + Vpar*gradparB );
     ddt(P) -= beta*Div_par_CtoL(Vpar);
-    
+
     if(phi_curv) {
       ddt(P) -= 2.*beta*b0xcv*Grad(phi);
     }
@@ -652,7 +658,7 @@ int physics_run(BoutReal t) {
 
   if(filter_z) {
     // Filter out all except filter_z_mode
-    
+
     ddt(Psi) = filter(ddt(Psi), filter_z_mode);
     ddt(U) = filter(ddt(U), filter_z_mode);
     ddt(P) = filter(ddt(P), filter_z_mode);
@@ -660,7 +666,7 @@ int physics_run(BoutReal t) {
 
   if(low_pass_z > 0) {
     // Low-pass filter, keeping n up to low_pass_z
-    
+
     ddt(Psi) = lowPass(ddt(Psi), low_pass_z, zonal_field);
     ddt(U) = lowPass(ddt(U), low_pass_z, zonal_flow);
     ddt(P) = lowPass(ddt(P), low_pass_z, zonal_bkgd);
