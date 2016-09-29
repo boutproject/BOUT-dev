@@ -30,19 +30,19 @@ NXPE = 2
 ##################################################
 # derivative methods
 
-[ddx]
+[mesh:ddx]
 
 first = C4
 second = C4
 upwind = W3
 
-[ddy]
+[mesh:ddy]
 
 first = C4
 second = C4
 upwind = W3
 
-[ddz]
+[mesh:ddz]
 
 first = C4
 second = C4
