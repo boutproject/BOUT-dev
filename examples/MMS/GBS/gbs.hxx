@@ -58,6 +58,8 @@ private:
   BRACKET_METHOD bm_exb;
 
   bool mms;
+
+  Coordinates *coords;
   
   // Stress tensor components
   BoutReal tau_e0, tau_i0;

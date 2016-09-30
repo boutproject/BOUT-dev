@@ -33,19 +33,19 @@ NXPE = 1 # Decompose in X direction
 ##################################################
 # derivative methods
 
-[ddx]
+[mesh:ddx]
 
 first = C4    # C4 = 4th order central, C2 = 2nd order central
 second = C4
 upwind = C4   # U1 = 1st order upwind, W3 = 3rd order WENO
 
-[ddy]
+[mesh:ddy]
 
 first = C4
 second = C4
 upwind = C4
 
-[ddz]
+[mesh:ddz]
 
 first = C4
 second = C4

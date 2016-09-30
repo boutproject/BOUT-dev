@@ -15,6 +15,14 @@ nz = 1
 
 dy = 0.2
 
+# Puts the boundaries half a step outside the last gridpoints
+symmetricGlobalY=true
+
+# These flags make the y-direction non-periodic
+ixseps1 = -1
+ixseps2 = -1
+
+##################################################
 [conduction]  # Settings for the conduction model
 
 chi = 1.0
@@ -24,4 +32,5 @@ chi = 1.0
 scale = 1.0  # Size of the initial perturbation
 function = gauss(y-pi, 0.2)  # The form of the initial perturbation. y from 0 to 2*pi
 
-bndry_all = dirichlet
+# Set the value on the boundaries to 0 (4th order extrapolation to ghostpoint)
+bndry_all = dirichlet_o4(0.0)

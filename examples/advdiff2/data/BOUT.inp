@@ -28,19 +28,19 @@ dump_format = "nc" # Output format. nc = NetCDF
 ##################################################
 # derivative methods
 
-[ddx]
+[mesh:ddx]
 
 first = C2  
 second = C2
 upwind = U1
 
-[ddy]
+[mesh:ddy]
 
 first = C4
 second = C2
 upwind = U1
 
-[ddz]
+[mesh:ddz]
 
 first = C2
 second = C2

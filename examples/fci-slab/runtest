@@ -36,6 +36,9 @@ labels = [r'$f$', r'$g$']
 
 MPIRUN = getmpirun()
 
+print("Making fci-slab test")
+shell("make > make.log")
+
 error_2 = {}
 error_inf = {}
 for var in varlist:

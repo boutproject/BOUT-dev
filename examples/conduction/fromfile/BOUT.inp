@@ -12,7 +12,7 @@ dump_format="nc"     # Write NetCDF format files
 grid="conduct_grid.nc"
 
 ##################################################
-[ddy]   # Methods used for parallel (y) derivative terms
+[mesh:ddy]   # Methods used for parallel (y) derivative terms
 
 first = C4
 second = C4
