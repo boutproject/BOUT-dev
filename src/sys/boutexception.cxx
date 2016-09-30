@@ -26,7 +26,7 @@ void BoutException::Backtrace() {
   std::string tmp=msg_stack.getDump();
   message+=tmp;
 #else
-  message+="Enable checking (-DCHECK flag) to get a trace\n");
+  message+="Enable checking (-DCHECK flag) to get a trace\n";
 #endif
 #ifdef BACKTRACE
   void *trace[64];
