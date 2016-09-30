@@ -49,7 +49,7 @@ with open("stencils_cleaned.cxx","r") as f:
 func_db=dict()
 
 dir=['x', 'y', 'z']
-dir=['y']
+#dir=['x','y']
 for d in dir:
     func_db[d]=[]
 
@@ -96,7 +96,9 @@ for f in functions:
             for d in dir:
                 tmp="cart_diff_%s_%s_%%s"%(d,f.name)
                 func_db[d].append([f.name,"cart_diff_%s_%s_norm"%(d,f.name),"NULL","NULL"])
-
+for db in func_db:
+    func_db[db].append(["NULL","NULL","NULL","NULL"])
+                
 for f in functions:
     if f.flux == False:
             if f.stag:
@@ -109,8 +111,12 @@ for f in functions:
                         warn()
                         print """Field3D %s(const Field3D in){
   Field3D result;
-  result.allocate();
-  for (auto i: result.region(RGN_NO%s)){"""%(tmp%mode,d.upper())
+  //result.allocate();
+  result=0;"""%(tmp%mode)
+                        if d != 'z':
+                            print """  for (auto i: result.region(RGN_NO%s)){"""%d.upper()
+                        else:
+                            print """  for (auto i: result){"""
                         for line in f.body[1:]:
                             ret="return"
                             pos=line.find("f.")
@@ -132,13 +138,14 @@ for f in functions:
                                 print "    result[i]= ",line[len(ret)+line.index(ret):]
                                 break
                         print """  }
+  return result;
 }
 """
 
 
 # print at end, so functions are defined
 d=dir[0]
-for entry in func_db[d]:
+for entry in func_db[d][:-1]:
     print "BoutReal %s(stencil &f);"%entry[0]
 for d in dir:
     print "static CartesianMesh::cart_diff_lookup_table diff_lookup_%s [] = {"%d
@@ -150,3 +157,38 @@ for d in dir:
             t=','
         print '},'
     print "};"
+
+
+
+
+for d in dir:
+    warn()
+    du=d.upper()
+    if d != "z":
+        print """const Field3D CartesianMesh::apply%sdiff(const Field3D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc ){"""%du
+    else:
+        print """const Field3D CartesianMesh::apply%sdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc ){
+"""%du
+    print """  cart_diff_lookup_table chosen;
+  for (int i=0;;++i){
+    output.write("maybe: %sp == %sp?\\n",diff_lookup_%s[i].func,func);
+    if (diff_lookup_%s[i].func==func){
+      chosen=diff_lookup_%s[i];
+      break;
+    }
+    if (diff_lookup_%s[i].func==NULL){
+      throw BoutException("Diff method not found!");
+    }
+  }
+  if ( loc == CELL_%sLOW && var.getLocation() != CELL_%sLOW ){
+    auto result=chosen.on(var);
+    return result;
+  } else if ( var.getLocation() == CELL_%sLOW  && ! (loc == CELL_CENTRE )){
+    return chosen.off(var);
+  } else {
+    if (loc != var.getLocation() && loc != CELL_DEFAULT) throw BoutException("Didn't expect this - I wouldn't interpolate");
+    auto result=chosen.norm(var);
+    return result;
+  }
+}
+"""%('%','%',d,d,d,d,du,du,du)

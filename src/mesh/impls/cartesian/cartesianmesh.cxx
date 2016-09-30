@@ -45,24 +45,11 @@ CartesianMesh::CartesianMesh(GridDataSource *s, Options *options): BoutMesh(s,op
 CartesianMesh::~CartesianMesh(){
 }
 
-const Field3D CartesianMesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc ){
-  cart_diff_lookup_table chosen;
-  for (int i=0;;++i){
-    output.write("maybe: %p == %p?\n",diff_lookup_y[i].func,func);
-    if (diff_lookup_y[i].func==func){
-      chosen=diff_lookup_y[i];
-      break;
-    }
-    if (diff_lookup_y[i].func==NULL){
-      throw BoutException("Diff method not found!");
-    }
-  }
-  if ( loc == CELL_YLOW && var.getLocation() != CELL_YLOW ){
-    return chosen.on(var);
-  } else if ( var.getLocation() == CELL_YLOW  && ! (loc == CELL_CENTRE )){
-    return chosen.off(var);
-  } else {
-    if (loc != var.getLocation() && loc != CELL_DEFAULT) throw BoutException("Didn't expect this - I wouldn't interpolate");
-    return chosen.norm(var);
-  }
+BoutReal CartesianMesh::GlobalY(int jy) const{
+  int gjy=BoutMesh::YGLOBAL(jy);
+  output.write(" %d->%d ",jy,gjy);
+	       
+  return ((BoutReal) gjy ) / ((BoutReal)(this->GlobalNy-2*this->ystart));
 }
+
+
