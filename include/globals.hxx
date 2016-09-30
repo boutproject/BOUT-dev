@@ -74,8 +74,7 @@ SETTING(Mesh *mesh, NULL); ///< The mesh object
 GLOBAL Datafile dump;
 
 // Error handling (bout++.cpp)
-void bout_error();
-void bout_error(const char *str);
+void bout_error(const char *str=NULL);
 
 #undef GLOBAL
 #undef SETTING

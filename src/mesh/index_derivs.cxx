@@ -1657,8 +1657,9 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
       dcomplex *cv = globalcv + th_id*(ncz/2 + 1); // Separate array for each thread
 #endif
        #pragma omp for
-      for(int jy=0;jy<mesh->LocalNy*(xlt-xge);jy++) {
-        rfft(f(xge,jy), ncz, cv); // Forward FFT
+      for (int jx=xge;jx<xlt;++jx)
+      for(int jy=0;jy<mesh->LocalNy;jy++) {
+        rfft(f(jx,jy), ncz, cv); // Forward FFT
           
         for(int jz=0;jz<=ncz/2;jz++) {
           BoutReal kwave=jz*2.0*PI/ncz; // wave number is 1/[rad]
@@ -1670,9 +1671,7 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
             cv[jz] *= exp(Im * (shift * kwave));
         }
           
-        irfft(cv, ncz, result(xge,jy)); // Reverse FFT
-         
-        result(xge,jy,ncz) = result(xge,jy,0);
+        irfft(cv, ncz, result(jx,jy)); // Reverse FFT
       }
     }
     
@@ -2015,8 +2014,6 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
 	}
 
 	irfft(cv, ncz, result(jx,jy)); // Reverse FFT
-	
-	result(jx,jy,ncz) = result(jx,jy,0);
       }
     }
 

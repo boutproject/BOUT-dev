@@ -393,8 +393,8 @@ int Field2D::setData(int x, int y, int z, BoutReal *rptr) {
   allocate();
 #if CHECK > 2
   // check ranges
-  if((x < 0) || (x >= nx) || (y < 0) || (y >= ny) || (z < 0) || (z >= nz)) {
-    throw BoutException("Field2D: setData (%d,%d,%d) out of bounds\n", x, y, z);
+  if((x < 0) || (x >= nx) || (y < 0) || (y >= ny) ) {
+    throw BoutException("Field2D: setData (%d,%d) out of bounds\n", x, y);
   }
 #endif
 
