@@ -22,9 +22,9 @@ int physics_init(bool restarting) {
    * * *                                    * * *
    **********************************************/
   
-  Field3D d3=1;
-  Field2D d2=1;
-  FieldPerp dp;
+  Field3D   d3 = 1.;
+  Field2D   d2 = 1.;
+  FieldPerp dp = sliceXZ(d3,mesh->xstart);
 
   #include "test3d.cxx"
   
