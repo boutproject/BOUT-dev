@@ -65,6 +65,8 @@ class FieldPerp : public Field {
   const DataIterator begin() const;
   const DataIterator end() const;
 
+  const IndexRange region(REGION rgn) const;
+
   inline BoutReal& operator[](const DataIterator &d) {
     return operator()(d.x, d.z);
   }

@@ -7,8 +7,8 @@ offs={-2:'mm',
 
 # the fields to be tested.
 # FieldPerp doesn't work (yet)
-#field=[2,3,'p']
-field=[2,3]
+field=[2,3,'p']
+#field=[2,3]
 # the directions each field supports
 dirs={}
 dirs[2]=['x','y']
