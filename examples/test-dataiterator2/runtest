@@ -1,0 +1,13 @@
+#!/usr/bin/env sh
+
+make > make.log || exit
+
+for n in 1 2 4
+do
+    for m in 1 2 4
+    do
+	OMP_NUM_THREADS=$m mpirun -np $n ./test_dataiterator > run.log.$m.$n || exit
+    done
+done
+
+echo "All test successfull"
