@@ -1,16 +1,21 @@
-offs={#-2:'mm',
+# The possible offsets to test
+offs={-2:'mm',
       -1:'m',
       1:'p',
-      #2:'pp'
+      2:'pp'
 }
 
+# the fields to be tested.
+# FieldPerp doesn't work (yet)
 #field=[2,3,'p']
 field=[2,3]
+# the directions each field supports
 dirs={}
 dirs[2]=['x','y']
 dirs[3]=['x','y', 'z']
 dirs['p']=['x', 'z']
 
+# loop over everything and generate code ...
 for f in field:
   for d in dirs[f]:
     print """
