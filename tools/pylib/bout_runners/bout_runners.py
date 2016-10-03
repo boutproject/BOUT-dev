@@ -624,7 +624,7 @@ class basic_runner(object):
         # self._sort_by is None
         if (post_processing_function is not None) and\
            (not(post_process_after_every_run)) and\
-           (self._len_group == None):
+           (self._len_group is None):
                # self._len_group is to a number by _get_swapped_input_list
                # (which is called if self._sort_by is not None)
                # If there are no sorting, self._len_group will be None
@@ -1058,7 +1058,7 @@ class basic_runner(object):
         possible_sort_by = []
 
         # Append the 1st element of sort_checks if the 0th elements of
-        # sort_checks != None
+        # sort_checks is not None
         sort_checks = [\
             (self._nx,         "spatial_domain")  ,\
             (self._ny,         "spatial_domain")  ,\
@@ -1183,7 +1183,7 @@ class basic_runner(object):
                 self._warnings.append(message)
             # Throw a warning if restart is append
             elif self._restart == "append":
-                message = "redistribute != None and restart = 'append' is "
+                message = "redistribute is not None and restart = 'append' is "
                 message += "currently incompatible, setting restart to "
                 message += "'overwrite'"
                 if not(self._restart_from):
@@ -1352,12 +1352,12 @@ class basic_runner(object):
 
         #{{{Check (zperiod), (zmin, zmax) and (dz) is not set simultaneously
         if (self._zperiod is not None and\
-           (self._zmin != None or self._zmax != None)):
+           (self._zmin is not None or self._zmax is not None)):
             self._errors.append("TypeError")
             message = "zperiod and zmin or zmax cannot be set simultaneously."
             raise TypeError(message)
         elif (self._dz is not None and\
-             (self._zmin != None or self._zmax != None)):
+             (self._zmin is not None or self._zmax is not None)):
             self._errors.append("TypeError")
             message = "dz and zmin or zmax cannot be set simultaneously."
             raise TypeError(message)
@@ -1472,7 +1472,7 @@ class basic_runner(object):
                                     the_type = bool)
         #}}}
 
-        #{{{Check grid_file == None if cpy_grid==True
+        #{{{Check grid_file is None if cpy_grid==True
         if (self._grid_file is None) and (self._cpy_grid == True):
             # Raise error
             self._errors.append("TypeError")
@@ -1592,7 +1592,7 @@ class basic_runner(object):
 
         #{{{Check that the post_process_after_every_run is not set alone
         if (post_process_after_every_run is not None) and\
-           (type(post_processing_function) == None):
+           (type(post_processing_function) is None):
             self._errors.append("RuntimeError")
             message = "post_process_after_every_run can only be set if"+\
                       " post_processing_function is given"
@@ -2874,7 +2874,7 @@ class basic_runner(object):
         if not(init_split_found):
             # If modification is allowed
             if not(self._allow_size_modification) or\
-                  (self._grid_file != None):
+                  (self._grid_file is not None):
                 # If the split fails and the a grid file is given
                 if self._grid_file is not None:
                     self._errors.append("RuntimeError")
@@ -4326,7 +4326,7 @@ class PBS_runner(basic_runner):
                 shell_script.write(job_string)
 
         # Submit the jobs
-        if dependent_job==None:
+        if dependent_job is None:
             # Without dependencies
             command = "qsub ./"+script_name
             status, output = shell(command, pipe=True)

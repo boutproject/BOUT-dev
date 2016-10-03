@@ -39,7 +39,7 @@ def split(nxpe, nype, path="data", output="./", informat="nc", outformat=None):
     Returns True on success
     """
 
-    if outformat == None:
+    if outformat is None:
         outformat = informat
 
     mxg = 2
@@ -228,7 +228,7 @@ def resize(newNx, newNy, newNz, mxg=2, myg=2,\
         # Make sure the method is set
         method = 'linear'
 
-    if outformat == None:
+    if outformat is None:
         outformat = informat
 
     if path == output:
@@ -364,7 +364,7 @@ def expand(newz, path="data", output="./", informat="nc", outformat=None):
     True on success, else False
     """
 
-    if outformat == None:
+    if outformat is None:
         outformat = informat
 
     if path == output:
@@ -469,7 +469,7 @@ def addnoise(path=".", var=None, scale=1e-5):
     for file in file_list:
         print(file)
         with DataFile(file, write=True) as d:
-            if var == None:
+            if var is None:
                 for v in d.list():
                     if d.ndims(v) == 3:
                         print(" -> "+v)
@@ -533,7 +533,7 @@ def create(averagelast=1, final=-1, path="data", output="./", informat="nc", out
 
     """
 
-    if outformat == None:
+    if outformat is None:
         outformat = informat
 
     file_list = glob.glob(os.path.join(path, "BOUT.dmp.*."+informat))
@@ -628,7 +628,7 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
         print("ERROR: Can't overwrite restart files")
         return False
 
-    if informat == None:
+    if informat is None:
         file_list = glob.glob(os.path.join(path, "BOUT.restart.*"))
     else:
         file_list = glob.glob(os.path.join(path, "BOUT.restart.*."+informat))
@@ -658,7 +658,7 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
         return False
 
     informat = file_list[0].split(".")[-1]
-    if outformat == None:
+    if outformat is None:
         outformat = informat
 
     old_mxsub = 0
@@ -700,7 +700,7 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
     ny = old_mysub * old_nype
     print("Grid sizes: ", nx, ny, mz)
 
-    if nxpe == None: # Copy algorithm from BoutMesh for selecting nxpe
+    if nxpe is None: # Copy algorithm from BoutMesh for selecting nxpe
         ideal = sqrt(float(nx) * float(npes) / float(ny)) # Results in square domain
 
         for i in range(1,npes+1):
@@ -708,10 +708,10 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
                 # Found an acceptable value
                 # Warning: does not check branch cuts!
 
-                if nxpe==None or abs(ideal - i) < abs(ideal - nxpe):
+                if nxpe is None or abs(ideal - i) < abs(ideal - nxpe):
                     nxpe = i # Keep value nearest to the ideal
 
-        if nxpe == None:
+        if nxpe is None:
             print("ERROR: could not find a valid value for nxpe")
             return False
 
@@ -811,7 +811,7 @@ def resizeY(newy, path="data", output=".", informat="nc", outformat=None,myg=2):
     Resize all the restart files in Y
     """
 
-    if outformat == None:
+    if outformat is None:
         outformat = informat
 
     file_list = glob.glob(os.path.join(path, "BOUT.restart.*."+informat))

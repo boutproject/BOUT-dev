@@ -634,7 +634,12 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
       MatFDColoringSetFromOptions(fdcoloring);
       //MatFDColoringSetUp(Jmf,iscoloring,fdcoloring);
       
-      SNESSetJacobian(*snesIn,Jmf,Jmf,SNESComputeJacobianDefaultColor,fdcoloring);
+#if PETSC_VERSION_GE(3,4,0)
+      SNESSetJacobian(*snesIn,Jmf,Jmf,SNESComputeJacobianDefault,fdcoloring);
+#else
+      // Before 3.4
+      SNESSetJacobian(*snesIn,Jmf,Jmf,SNESDefaultComputeJacobian,fdcoloring);
+#endif
 
       // Re-use Jacobian
       int lag_jacobian;

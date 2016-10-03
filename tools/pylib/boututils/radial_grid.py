@@ -21,30 +21,30 @@ def radial_grid( n, pin, pout, include_in, include_out, seps, sep_factor,
 
     x = numpy.arange(0.,n)
     m = numpy.float(n-1)
-    if include_in==None :
+    if include_in is None :
         x = x + 0.5
         m = m + 0.5
   
     
-    if include_out==None:
+    if include_out is None:
         m = m + 0.5
  
     x = old_div(x, m) 
   
 
-    if in_dp==None and out_dp==None :
+    if in_dp is None and out_dp is None :
     # Neither inner or outer gradients set. Just return equal spacing
         return pin + (pout - pin)*x
   
     
     norm = (x[1] - x[0])*(pout - pin)
 
-    if in_dp != None and out_dp != None :
+    if in_dp is not None and out_dp is not None :
     # Fit to dist = a*i^3 + b*i^2 + c*i
         c = old_div(in_dp,norm)
         b = 3.*(1. - c) - old_div(out_dp,norm) + c
         a = 1. - c - b
-    elif in_dp != None :
+    elif in_dp is not None :
     # Only inner set
         c = old_div(in_dp,norm)
         a = 0.5*(c-1.)
