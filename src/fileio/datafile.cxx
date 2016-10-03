@@ -634,9 +634,9 @@ bool Datafile::write_f3d(const string &name, Field3D *f, bool grow) {
   }
 
   if(grow) {
-    return file->write_rec(&(f_out(0,0,0)), name, mesh->ngx, mesh->ngy, mesh->ngz);
+    return file->write_rec(&(f_out(0,0,0)), name, mesh->ngx, mesh->ngy, mesh->LocalNz);
   }else {
-    return file->write(&(f_out(0,0,0)), name, mesh->ngx, mesh->ngy, mesh->ngz);
+    return file->write(&(f_out(0,0,0)), name, mesh->ngx, mesh->ngy, mesh->LocalNz);
   }
 }
 
