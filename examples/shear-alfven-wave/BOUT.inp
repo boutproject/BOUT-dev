@@ -26,19 +26,19 @@ dump_format = "nc"
 ##################################################
 # derivative methods
 
-[ddx]
+[mesh:ddx]
 
 first = C2  # order of first x derivatives 
 second = C2 # order of second x derivatives
 upwind = W3 # order of upwinding method
 
-[ddy]
+[mesh:ddy]
 
 first = C4
 second = C2
 upwind = W3
 
-[ddz]
+[mesh:ddz]
 
 first = FFT
 second = FFT

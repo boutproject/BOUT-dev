@@ -34,30 +34,35 @@ BOUT_VERSION="2.0"
 AC_PREREQ(2.59)
 AC_INIT(BOUT++, BOUT_VERSION, bd512@york.ac.uk)
 
-AC_ARG_WITH(checks, [  --with-checks=no/1/2/3  	   Set run-time checking level])
-AC_ARG_WITH(signal, [  --with-signal=no        	   Disable SEGFAULT handling])
-AC_ARG_WITH(track,  [  --with-track            	   Enable variable tracking])
-AC_ARG_WITH(pdb,    [  --with-pdb              	   Enable support for PDB files])
-AC_ARG_WITH(netcdf, [  --with-netcdf           	   Enable support for netCDF files])
-AC_ARG_WITH(hdf5,   [  --with-hdf5                 Enable support for HDF5 files])
-AC_ARG_WITH(parallelhdf5,[  --with-parallelhdf5    Enable support for parallel HDF5 files])
-AC_ARG_WITH(pnetcdf,[  --with-pnetcdf              Set path to Parallel NetCDF library])
-AC_ARG_WITH(debug,  [  --with-debug            	   Enable all debugging flags])
-AC_ARG_WITH(optimize,[ --with-optimize=default/1/2/3  Enable optimization])
-AC_ARG_WITH(ida,    [  --with-ida=/path/to/ida 	   Use the SUNDIALS IDA solver])
-AC_ARG_WITH(cvode,  [  --with-cvode            	   Use the SUNDIALS CVODE solver])
-AC_ARG_WITH(sundials, [  --with-sundials           Use CVODE and IDA])
-AC_ARG_WITH(facets, [  --with-facets           	   Build the interface to FACETS])
-AC_ARG_WITH(fftw,   [  --with-fftw             	   Set directory of FFTW3 library])
-AC_ARG_WITH(lapack, [  --with-lapack           	   Use the LAPACK library])
-AC_ARG_WITH(petsc,  [  --with-petsc            	   Enable PETSc interface])
-AC_ARG_WITH(slepc,  [  --with-slepc                Enable SLEPc interface])
-AC_ARG_WITH(pvode,  [  --with-pvode	  	   Build and enable PVODE 98 (DEFAULT)])
-AC_ARG_WITH(hypre,  [  --with-hypre                Link to the Hypre library])
-AC_ARG_WITH(mumps,  [  --with-mumps                Link with MUMPS library for direct matrix inversions])
-AC_ARG_WITH(arkode, [  --with-arkode		   Use the SUNDIALS ARKODE solver])
-AC_ARG_WITH(openmp, [  --enable-openmp		   Enable OpenMP])
-
+AC_ARG_WITH(pdb,    [  --with-pdb              Enable support for PDB files])
+AC_ARG_WITH(netcdf, [  --with-netcdf           Enable support for netCDF files])
+AC_ARG_WITH(hdf5,   [  --with-hdf5             Enable support for HDF5 files])
+AC_ARG_WITH(parallelhdf5,[  --with-parallelhdf5     Enable support for parallel HDF5 files])
+AC_ARG_WITH(pnetcdf,[  --with-pnetcdf          Set path to Parallel NetCDF library])
+AC_ARG_WITH(ida,    [  --with-ida=/path/to/ida Use the SUNDIALS IDA solver])
+AC_ARG_WITH(cvode,  [  --with-cvode            Use the SUNDIALS CVODE solver])
+AC_ARG_WITH(sundials, [  --with-sundials         Use CVODE and IDA])
+AC_ARG_WITH(facets, [  --with-facets           Build the interface to FACETS])
+AC_ARG_WITH(fftw,   [  --with-fftw             Set directory of FFTW3 library])
+AC_ARG_WITH(lapack, [  --with-lapack           Use the LAPACK library])
+AC_ARG_WITH(petsc,  [  --with-petsc            Enable PETSc interface])
+AC_ARG_WITH(slepc,  [  --with-slepc            Enable SLEPc interface])
+AC_ARG_WITH(pvode,  [  --with-pvode            Build and enable PVODE 98 (DEFAULT)])
+AC_ARG_WITH(hypre,  [  --with-hypre            Link to the Hypre library])
+AC_ARG_WITH(mumps,  [  --with-mumps            Link with MUMPS library for direct matrix inversions])
+AC_ARG_WITH(arkode, [  --with-arkode           Use the SUNDIALS ARKODE solver])
+AC_ARG_ENABLE(checks,
+              [  --enable-checks=no/1/2/3  Set run-time checking level])
+AC_ARG_ENABLE(signal,
+              [  --disable-signal      Disable SEGFAULT handling])
+AC_ARG_ENABLE(track,
+              [  --enable-track          Enable variable tracking])
+AC_ARG_ENABLE(debug,
+              [  --enable-debug          Enable all debugging flags])
+AC_ARG_ENABLE(optimize,
+              [  --enable-optimize=1/2/3 Enable optimization])
+AC_ARG_ENABLE(sigfpe,
+              [  --enable-sigfpe         Enable FloatingPointExceptions])
 AC_ARG_VAR(EXTRA_INCS,[Extra compile flags])
 AC_ARG_VAR(EXTRA_LIBS,[Extra linking flags])
 
@@ -275,14 +280,14 @@ AC_OPENMP
 #############################################################
 
 OPT_FLAGS=""
-if test "$with_debug" != ""
+if test "$enable_debug" != ""
 then
   echo "Enabling all debug options"
-  with_checks="3"
+  enable_checks="3"
   # use -Og with available, otherwise fall back to -O0
   OPT_FLAGS="-g -O0 -Og"
-elif test $with_optimize ; then
-  optimize=$with_optimize
+elif test $enable_optimize ; then
+  optimize=$enable_optimize
   test $optimize -eq 0 2>/dev/null
   if test $? -eq 2 ; then
     if test $optimize == "default"
@@ -293,7 +298,7 @@ elif test $with_optimize ; then
       OPT_FLAGS="-Ofast -march=native -funroll-loops"
       DISABLE_CHECK=probably
     else
-      AC_MSG_ERROR([unrecognized option: --with=optimize=$optimize])
+      AC_MSG_ERROR([unrecognized option: --enable-optimize=$optimize])
     fi
   else
     if test $optimize -gt 3
@@ -311,7 +316,7 @@ elif test $with_optimize ; then
     then
       OPT_FLAGS="-O$optimize"
     else
-      AC_MSG_ERROR([unrecognized option: --with=optimize=$optimize])
+      AC_MSG_ERROR([unrecognized option: --enable-optimize=$optimize])
     fi
   fi
 else
@@ -326,21 +331,21 @@ do
 done
 
 # disable checks if optimization > 2 is used
-if test -z $with_checks && test .$DISABLE_CHECK = ."probably"
+if test -z $enable_checks && test .$DISABLE_CHECK = ."probably"
 then
-  with_checks=no
+  enable_checks=no
 fi
 
 CHECK_LEVEL="0"
-if test "$with_checks" != "no"
+if test "enable_checks" != "no"
 then
   echo "Run-time checking enabled"
-  if test "$with_checks" = "1"
+  if test "$enable_checks" = "1"
   then
     echo " -> Level 1 (Basic checking)"
     CXXFLAGS="$CXXFLAGS -DCHECK=1"
     CHECK_LEVEL="1"
-  elif test "$with_checks" = "3"
+  elif test "$enable_checks" = "3"
   then
     CXXFLAGS="$CXXFLAGS -DCHECK=3"
     echo " -> Level 3 (Full checking + stack tracing)"
@@ -354,7 +359,7 @@ else
   echo "Run-time checking disabled"
 fi
 
-if test "$with_signal" != "no"
+if test "$enable_signal" != "no"
 then
   echo "Segmentation fault handling enabled"
   CXXFLAGS="$CXXFLAGS -DSIGHANDLE"
@@ -362,12 +367,32 @@ else
   echo "Segmentation fault handling disabled"
 fi
 
-if test "$with_track" != ""
+if test ."$enable_track" == ."yes"
 then
        CXXFLAGS="$CXXFLAGS -DTRACK"
 fi
 
+if test ."$enable_sigfpe" == .yes
+then
+    CXXFLAGS="$CXXFLAGS -DBOUT_FPE"
+fi
+
 echo
+
+#############################################################
+# Enable Backtrace if possible
+#############################################################
+
+if which addr2line &>/dev/null
+then
+    AC_CHECK_FUNC(popen,
+             [AC_TRY_COMPILE([#include <execinfo.h>] ,,
+                 [AC_TRY_LINK([extern "C"
+                               char backtrace();] ,
+                              [return backtrace();],
+                              [CXXFLAGS="$CXXFLAGS -DBACKTRACE"]);
+                 ])])
+fi
 
 #############################################################
 # Git revision number
@@ -412,8 +437,8 @@ then
   # Try to find a valid NetCDF configuration
   #
   # at first, try to find ncconf script
-	
-	
+
+
   #echo "Searching for NetCDF configuration"
 
   OLDNCDF="0" # Indicates whether nc-config or ncxx4-config

@@ -48,8 +48,8 @@ Field2D::Field2D(Mesh *msh) : fieldmesh(msh), deriv(nullptr) {
   boundaryIsSet = false;
 
   if(fieldmesh) {
-    nx = fieldmesh->ngx;
-    ny = fieldmesh->ngy;
+    nx = fieldmesh->LocalNx;
+    ny = fieldmesh->LocalNy;
   }
   
 #ifdef TRACK
@@ -61,8 +61,8 @@ Field2D::Field2D(const Field2D& f) : fieldmesh(f.fieldmesh), // The mesh contain
                                      data(f.data), // This handles references to the data array
                                      deriv(nullptr) {
   if(fieldmesh) {
-    nx = fieldmesh->ngx;
-    ny = fieldmesh->ngy;
+    nx = fieldmesh->LocalNx;
+    ny = fieldmesh->LocalNy;
   }
   
   boundaryIsSet = false;
@@ -73,8 +73,8 @@ Field2D::Field2D(BoutReal val) : fieldmesh(nullptr), deriv(nullptr) {
   boundaryIsSet = false;
   
   fieldmesh = mesh;
-  nx = fieldmesh->ngx;
-  ny = fieldmesh->ngy;
+  nx = fieldmesh->LocalNx;
+  ny = fieldmesh->LocalNy;
   
   *this = val;
 }
@@ -89,8 +89,8 @@ void Field2D::allocate() {
     if(!fieldmesh) {
       /// If no mesh, use the global
       fieldmesh = mesh;
-      nx = fieldmesh->ngx;
-      ny = fieldmesh->ngy;
+      nx = fieldmesh->LocalNx;
+      ny = fieldmesh->LocalNy;
     }
     data = Array<BoutReal>(nx*ny);
   }else
@@ -144,21 +144,21 @@ Field2D & Field2D::operator=(const BoutReal rhs) {
 ////////////// Indexing ///////////////////
 
 const DataIterator Field2D::iterator() const {
-  return DataIterator(0, mesh->ngx-1, 
-                      0, mesh->ngy-1,
+  return DataIterator(0, mesh->LocalNx-1, 
+                      0, mesh->LocalNy-1,
                       0, 0);
 }
 
 const DataIterator Field2D::begin() const {
-  /*return DataIterator(0, 0, mesh->ngx-1,
-                      0, 0, mesh->ngy-1,
+  /*return DataIterator(0, 0, mesh->LocalNx-1,
+                      0, 0, mesh->LocalNy-1,
                       0, 0, 0);*/
   return Field2D::iterator();
 }
 
 const DataIterator Field2D::end() const {
-  return DataIterator(0, mesh->ngx-1, 
-                      0, mesh->ngy-1,
+  return DataIterator(0, mesh->LocalNx-1, 
+                      0, mesh->LocalNy-1,
                       0, 0, DI_GET_END);
 }
 
@@ -263,9 +263,9 @@ void Field2D::getYArray(int x, int z, rvec &yv) const {
 void Field2D::getZArray(int x, int y, rvec &zv) const {
   ASSERT0(isAllocated());
 
-  zv.resize(mesh->ngz-1);
+  zv.resize(mesh->LocalNz);
   
-  for(int z=0;z<mesh->ngz-1;z++)
+  for(int z=0;z<mesh->LocalNz;z++)
     zv[z] = operator()(x,y);
 }
 
@@ -281,9 +281,9 @@ void Field2D::setXArray(int y, int z, const rvec &xv) {
 void Field2D::setYArray(int x, int z, const rvec &yv) {
   allocate();
 
-  ASSERT0(yv.capacity() == (unsigned int) mesh->ngy);
+  ASSERT0(yv.capacity() == (unsigned int) mesh->LocalNy);
 
-  for(int y=0;y<mesh->ngy;y++)
+  for(int y=0;y<mesh->LocalNy;y++)
     operator()(x,y) = yv[y];
 }
 
@@ -391,10 +391,10 @@ int Field2D::setData(int x, int y, int z, void *vptr) {
 
 int Field2D::setData(int x, int y, int z, BoutReal *rptr) {
   allocate();
-#ifdef CHECK
+#if CHECK > 2
   // check ranges
-  if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngz)) {
-    throw BoutException("Field2D: setData (%d,%d,%d) out of bounds\n", x, y, z);
+  if((x < 0) || (x >= nx) || (y < 0) || (y >= ny) ) {
+    throw BoutException("Field2D: setData (%d,%d) out of bounds\n", x, y);
   }
 #endif
 
@@ -444,15 +444,15 @@ void Field2D::applyBoundary(const string &condition) {
     for(int jy=0;jy<mesh->ystart;jy++) {
       operator()(jx,jy) = 0.;
     }
-    for(int jy=mesh->yend+1;jy<mesh->ngy;jy++) {
+    for(int jy=mesh->yend+1;jy<mesh->LocalNy;jy++) {
       operator()(jx,jy) = 0.;
     }
   }
-  for(int jx=mesh->xend+1;jx<mesh->ngx;jx++) {
+  for(int jx=mesh->xend+1;jx<mesh->LocalNx;jx++) {
     for(int jy=0;jy<mesh->ystart;jy++) {
       operator()(jx,jy) = 0.;
     }
-    for(int jy=mesh->yend+1;jy<mesh->ngy;jy++) {
+    for(int jy=mesh->yend+1;jy<mesh->LocalNy;jy++) {
       operator()(jx,jy) = 0.;
     }
   }
@@ -480,15 +480,15 @@ void Field2D::applyBoundary(const string &region, const string &condition) {
     for(int jy=0;jy<mesh->ystart;jy++) {
       operator()(jx,jy) = 0.;
     }
-    for(int jy=mesh->yend+1;jy<mesh->ngy;jy++) {
+    for(int jy=mesh->yend+1;jy<mesh->LocalNy;jy++) {
       operator()(jx,jy) = 0.;
     }
   }
-  for(int jx=mesh->xend+1;jx<mesh->ngx;jx++) {
+  for(int jx=mesh->xend+1;jx<mesh->LocalNx;jx++) {
     for(int jy=0;jy<mesh->ystart;jy++) {
       operator()(jx,jy) = 0.;
     }
-    for(int jy=mesh->yend+1;jy<mesh->ngy;jy++) {
+    for(int jy=mesh->yend+1;jy<mesh->LocalNy;jy++) {
       operator()(jx,jy) = 0.;
     }
   }

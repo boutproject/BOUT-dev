@@ -27,6 +27,7 @@
 #include <msg_stack.hxx>
 #include <output.hxx>
 #include <string.h>
+#include <string>
 #include <stdarg.h>
 
 MsgStack::MsgStack()
@@ -108,15 +109,20 @@ void MsgStack::clear() {
 }
 
 void MsgStack::dump() {
-  output.write("====== Back trace ======\n");
+  output << this->getDump();
+}
 
+std::string MsgStack::getDump() {
+  std::string res = "====== Back trace ======\n";
+  //output.write("====== Back trace ======\n");
   for(int i=nmsg-1;i>=0;i--) {
     if(msg[i].str[0] != '\0') {
-      output.write(" -> ");
-      output.write(msg[i].str);
-      output.write("\n");
+      res+=" -> ";
+      res+=msg[i].str;
+      res+="\n";
     }
   }
+  return res;
 }
 
 #endif

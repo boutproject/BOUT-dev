@@ -64,14 +64,14 @@ void initial_profile(const string &name, Field3D &var) {
   FieldFactory f(mesh);
 
   string function;
-  OPTION(varOpts, function, "0.0");
-
+  VAROPTION(varOpts, function, "0.0");
+  
   // Create a 3D variable
   var = f.create3D(function, varOpts, NULL, loc);
 
   // Optionally scale the variable
   BoutReal scale;
-  OPTION(varOpts, scale, 1.0);
+  VAROPTION(varOpts, scale, 1.0);
   var *= scale;
 }
 
@@ -82,19 +82,20 @@ void initial_profile(const string &name, Field2D &var) {
   
   // Get the section for this variable
   Options *varOpts = Options::getRoot()->getSection(name);
+  output << name;
   
   // Use FieldFactory to generate values
     
   FieldFactory f(mesh);
 
   string function;
-  OPTION(varOpts, function, "0.0");
+  VAROPTION(varOpts, function, "0.0");
 
   var = f.create2D(function, varOpts, NULL, loc);
 
   // Optionally scale the variable
   BoutReal scale;
-  OPTION(varOpts, scale, 1.0);
+  VAROPTION(varOpts, scale, 1.0);
   var *= scale;
 }
 
@@ -136,10 +137,10 @@ const Field3D genZMode(int n, BoutReal phase) {
 
   result.allocate();
   
-  for(int jz=0;jz<mesh->ngz;jz++) {
-    BoutReal val = sin(phase*PI +  TWOPI * ((BoutReal) jz)/ ((BoutReal) mesh->ngz-1) );
-    for(int jx=0;jx<mesh->ngx;jx++)
-      for(int jy=0;jy<mesh->ngy;jy++)
+  for(int jz=0;jz<mesh->LocalNz;jz++) {
+    BoutReal val = sin(phase*PI +  TWOPI * ((BoutReal) jz)/ ((BoutReal) mesh->LocalNz) );
+    for(int jx=0;jx<mesh->LocalNx;jx++)
+      for(int jy=0;jy<mesh->LocalNy;jy++)
 	result(jx,jy,jz) = val;
   }
   return result;

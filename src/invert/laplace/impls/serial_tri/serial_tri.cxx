@@ -44,17 +44,17 @@ LaplaceSerialTri::LaplaceSerialTri(Options *opt) : Laplacian(opt), A(0.0), C(1.0
 
   // Allocate memory
 
-  int ncz = mesh->ngz-1;
+  int ncz = mesh->LocalNz;
 
-  bk = cmatrix(mesh->ngx, ncz/2 + 1);
-  bk1d = new dcomplex[mesh->ngx];
+  bk = cmatrix(mesh->LocalNx, ncz/2 + 1);
+  bk1d = new dcomplex[mesh->LocalNx];
 
-  xk = cmatrix(mesh->ngx, ncz/2 + 1);
-  xk1d = new dcomplex[mesh->ngx];
+  xk = cmatrix(mesh->LocalNx, ncz/2 + 1);
+  xk1d = new dcomplex[mesh->LocalNx];
 
-  avec = new dcomplex[mesh->ngx];
-  bvec = new dcomplex[mesh->ngx];
-  cvec = new dcomplex[mesh->ngx];
+  avec = new dcomplex[mesh->LocalNx];
+  bvec = new dcomplex[mesh->LocalNx];
+  cvec = new dcomplex[mesh->LocalNx];
 }
 
 LaplaceSerialTri::~LaplaceSerialTri() {
@@ -98,8 +98,8 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
   int jy = b.getIndex();
   x.setIndex(jy);
 
-  int ncz = mesh->ngz-1; // No of z pnts (counts from 1 to easily convert to kz)
-  int ncx = mesh->ngx-1; // No of x pnts (counts from 0)
+  int ncz = mesh->LocalNz; // No of z pnts (counts from 1 to easily convert to kz)
+  int ncx = mesh->LocalNx-1; // No of x pnts (counts from 0)
 
   // Setting the width of the boundary.
   // NOTE: The default is a width of 2 guard cells
@@ -115,7 +115,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
     outbndry = 1;
 
   #pragma omp parallel for
-  for(int ix=0;ix<mesh->ngx;ix++) {
+  for(int ix=0;ix<mesh->LocalNx;ix++) {
     /* This for loop will set the bk (initialized by the constructor)
      * bk is the z fourier modes of b in z
      * If the INVERT_SET flag is set (meaning that x0 will be used to set the
@@ -174,16 +174,16 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
     ///////// PERFORM INVERSION /////////
     if(!mesh->periodicX) {
       // Call tridiagonal solver
-      tridag(avec, bvec, cvec, bk1d, xk1d, mesh->ngx);
+      tridag(avec, bvec, cvec, bk1d, xk1d, mesh->LocalNx);
 
     } else {
       // Periodic in X, so cyclic tridiagonal
-      cyclic_tridag(avec+2, bvec+2, cvec+2, bk1d+2, xk1d+2, mesh->ngx-4);
+      cyclic_tridag(avec+2, bvec+2, cvec+2, bk1d+2, xk1d+2, mesh->LocalNx-4);
 
       // Copy boundary regions
       for(int ix=0;ix<2;ix++) {
-        xk1d[ix] = xk1d[mesh->ngx-4+ix];
-        xk1d[mesh->ngx-2+ix] = xk1d[2+ix];
+        xk1d[ix] = xk1d[mesh->LocalNx-4+ix];
+        xk1d[mesh->LocalNx-2+ix] = xk1d[2+ix];
       }
     }
 

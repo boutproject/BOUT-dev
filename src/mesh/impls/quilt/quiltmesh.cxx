@@ -52,17 +52,11 @@ int QuiltMesh::load(MPI_Comm comm) {
   options->get("MXG", MXG, 2);
   options->get("MYG", MYG, 2);
   if(options->isSet("MZ")) {
-    options->get("MZ", ngz, 65);
+    options->get("MZ", LocalNz, 64);
   }else
-    Options::getRoot()->get("MZ", ngz, 65);
-  if(!is_pow2(ngz-1)) {
-    if(is_pow2(ngz)) {
-      ngz++;
-      output.write("WARNING: Number of toroidal points increased to %d\n", ngz);
-    }else {
-      output.write("ERROR: Number of toroidal points must be 2^n + 1");
-      return 1;
-    }
+    Options::getRoot()->get("MZ", LocalNz, 64);
+  if(!is_pow2(LocalNz)) {
+    output.write("WARNING: Number of toroidal points should be 2^n\n");
   }
 
   // Create domains
@@ -512,7 +506,7 @@ void QuiltMesh::packData(const vector<FieldData*> &vars, GuardRange* range, vect
       // 3D variable
       for(int x=range->xmin; x <= range->xmax; x++)
         for(int y=range->ymin; y <= range->ymax; y++)
-          for(int z=0;z<ngz-1;z++)
+          for(int z=0;z<LocalNz;z++)
             len += var->getData(x,y,z,&data[len]);
     } else {
       // 2D variable
@@ -531,7 +525,7 @@ void QuiltMesh::unpackData(vector<BoutReal> &data, GuardRange* range, vector<Fie
       // 3D variable
       for(int x=range->xmin; x <= range->xmax; x++)
         for(int y=range->ymin; y <= range->ymax; y++)
-          for(int z=0;z<ngz-1;z++)
+          for(int z=0;z<LocalNz;z++)
             len += var->setData(x,y,z,&data[len]);
     } else {
       // 2D variable

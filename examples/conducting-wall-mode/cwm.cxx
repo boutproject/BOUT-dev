@@ -234,10 +234,11 @@ int physics_init(bool restarting)
 
   SAVE_ONCE3(Te_x,Ti_x,Ni_x);
   SAVE_ONCE6(AA,ZZ,zeff,rho_s,wci,bmag);
-  dump.add(mesh->ngx, "ngx", 0);  dump.add(mesh->ngy,   "ngy", 0);  dump.add(mesh->ngz,   "ngz", 0);
+  dump.add(mesh->LocalNx, "ngx", 0);
+  dump.add(mesh->LocalNy, "ngy", 0);
+  dump.add(mesh->LocalNz, "ngz", 0);
   SAVE_ONCE3(nu_hat,time_step,hthe0);
-
-
+  
   return(0);
 }
 // End of physics_init()
@@ -318,8 +319,8 @@ void bndry_yup_Grad_par(Field3D &var, const Field3D &value)
   RangeIterator xrup = mesh->iterateBndryUpperY();
 
   for(xrup.first(); !xrup.isDone(); xrup.next())
-    for(int jy=mesh->yend+1; jy<mesh->ngy; jy++)
-      for(int jz=0; jz<mesh->ngz; jz++) {
+    for(int jy=mesh->yend+1; jy<mesh->LocalNy; jy++)
+      for(int jz=0; jz<mesh->LocalNz; jz++) {
 
 	var[xrup.ind][jy][jz] = var[xrup.ind][jy-1][jz] + mesh->dy[xrup.ind][jy]*sqrt(mesh->g_22[xrup.ind][jy])*value[xrup.ind][jy][jz];
 
@@ -334,7 +335,7 @@ void bndry_ydown_Grad_par(Field3D &var, const Field3D &value)
 
   for(xrdn.first(); !xrdn.isDone(); xrdn.next())
     for(int jy=mesh->ystart-1; jy>=0; jy--)
-      for(int jz=0; jz<mesh->ngz; jz++) {
+      for(int jz=0; jz<mesh->LocalNz; jz++) {
 
 	var[xrdn.ind][jy][jz] = var[xrdn.ind][jy+1][jz] - mesh->dy[xrdn.ind][jy]*sqrt(mesh->g_22[xrdn.ind][jy])*value[xrdn.ind][jy][jz];
 

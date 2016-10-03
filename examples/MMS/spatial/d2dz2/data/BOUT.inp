@@ -8,7 +8,7 @@ myg = 0  # No guard cells in Y
 input = sin(z)
 solution = -sin(z)
 
-[ddz]
+[mesh:ddz]
 
 second = c2
 

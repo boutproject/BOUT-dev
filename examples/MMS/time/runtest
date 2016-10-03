@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 
 MPIRUN = getmpirun()
 
-print("Making MMS diffusion test")
+print("Making MMS time integration test")
 shell("make > make.log")
 
 # List of options to be passed for each test
@@ -31,7 +31,7 @@ options = [
     ,("solver:type=karniadakis", "Karniadakis", "-x",2) # Whats the expected order?
     ,("solver:type=rk3ssp", "RK3-SSP", "-s",3)
     ,("solver:type=rk4", "RK4", "-o",4)
-    ,("solver:type=rkgeneric", "RK-generic", "-o",4)
+    ,("solver:type=rkgeneric solver:adaptive=false", "RK-generic", "-o",4)
     #,("solver:type=pvode solver:", "P-Vode", "-o",2)
     ]
 #Missing: cvode, ida, slepc, power, arkode, snes
@@ -39,7 +39,7 @@ options = [
 s,out=shell("grep DBOUT_HAS_PETSC  ../../../make.config")
 if s == 0:
     #requires petsc:
-    options.append(("solver:type=imexbdf2", "IMEX-BDF2", "-+",2))# What's the expected order?
+    options.append(("solver:type=imexbdf2 -snes_mf", "IMEX-BDF2", "-+",2))# What's the expected order?
     # should petsc solver also be added?
     #options.append(("solver:type=petsc",    "petsc",     "-+",2))# What's the expected order?
 #options.append(("solver:type=power",    "power",     "-+",2))# What's the expected order?
@@ -58,7 +58,7 @@ for opts,label,sym,expected_order in options:
     error_inf = []  # The maximum error
 
     for nt in timesteps:
-        args = opts + " solver:timestep="+str(1./nt)
+        args = " solver:timestep="+str(1./nt) + " " + opts
 
         if verbose:
             print("  Running with " + args)
@@ -101,6 +101,10 @@ for opts,label,sym,expected_order in options:
     order = log(error_2[-1] / error_2[-2]) / log(dt[-1] / dt[-2])
     print("Convergence order = %f (expected: %f) %s" % (order,expected_order,label))
     
+    if order < expected_order - 0.5:
+      print(" -> FAILED")
+      success = False
+
     # plot errors
     if False:
         plt.figure()

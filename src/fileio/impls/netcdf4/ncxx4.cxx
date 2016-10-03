@@ -209,7 +209,7 @@ bool Ncxx4::openw(const char *name, bool append) {
 
     /// Test they're the right size (and t is unlimited)
     
-    if((xDim.getSize() != mesh->ngx) || (yDim.getSize() != mesh->ngy) || (zDim.getSize() != mesh->ngz)
+    if((xDim.getSize() != mesh->LocalNx) || (yDim.getSize() != mesh->LocalNy) || (zDim.getSize() != mesh->LocalNz)
        || (!tDim.isUnlimited()) ) {
       delete dataFile;
       dataFile = NULL;
@@ -231,21 +231,21 @@ bool Ncxx4::openw(const char *name, bool append) {
 
     /// Add the dimensions
     
-    xDim = dataFile->addDim("x", mesh->ngx);
+    xDim = dataFile->addDim("x", mesh->LocalNx);
     if(xDim.isNull()) {
       delete dataFile;
       dataFile = NULL;
       return false;
     }
   
-    yDim = dataFile->addDim("y", mesh->ngy);
+    yDim = dataFile->addDim("y", mesh->LocalNy);
     if(yDim.isNull()) {
       delete dataFile;
       dataFile = NULL;
       return false;
     }
     
-    zDim = dataFile->addDim("z", mesh->ngz);
+    zDim = dataFile->addDim("z", mesh->LocalNz);
     if(zDim.isNull()) {
       delete dataFile;
       dataFile = NULL;

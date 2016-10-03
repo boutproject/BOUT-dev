@@ -168,7 +168,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
 
     # Get the version of BOUT++ (should be > 0.6 for NetCDF anyway)
     try:
-        v = f.read("BOUT_VERSION")
+        version = f.read("BOUT_VERSION")
 
         # 2D decomposition
         nxpe = f.read("NXPE")
@@ -195,6 +195,14 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
         mxg = 0
         nxpe = 1
         nype = nfiles
+    
+        version = 0
+
+    if version < 3.5:
+        # Remove extra point
+        nz = mz-1
+    else:
+        nz = mz
 
     if yguards:
         ny = mysub * nype + 2*myg
@@ -237,7 +245,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
 
     xind = check_range(xind, 0, nx-1, "xind")
     yind = check_range(yind, 0, ny-1, "yind")
-    zind = check_range(zind, 0, mz-2, "zind")
+    zind = check_range(zind, 0, nz-1, "zind")
     tind = check_range(tind, 0, nt-1, "tind")
 
     xsize = xind[1] - xind[0] + 1

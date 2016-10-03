@@ -18,12 +18,13 @@ public:
   }
   int rhs(BoutReal time) {
     mesh->communicate(f);
+    Coordinates *coords = mesh->coordinates();
     
     g = FieldFactory::get()->create3D("g:solution", Options::getRoot(), mesh, CELL_CENTRE, time);
     
     ddt(f) = -bracket(g, f, (BRACKET_METHOD) method)
-      - 20.*(SQ(SQ(mesh->dx))*D4DX4(f) + SQ(SQ(mesh->dz))*D4DZ4(f))
-      //+ 20.*(SQ(mesh->dx)*D2DX2(f) + SQ(mesh->dz)*D2DZ2(f))
+      - 20.*(SQ(SQ(coords->dx))*D4DX4(f) + SQ(SQ(coords->dz))*D4DZ4(f))
+      //+ 20.*(SQ(coords->dx)*D2DX2(f) + SQ(coords->dz)*D2DZ2(f))
       ;
 
     return 0;
