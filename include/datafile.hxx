@@ -74,6 +74,7 @@ class Datafile {
   bool floats;   // Low precision?
   bool openclose; // Open and close file for each write
   bool enabled;  // Enable / Disable writing
+  bool shiftOutput; //Do we want to write out in shifted space?
 
   DataFormat *file;
   char filename[512];
