@@ -318,7 +318,8 @@ class SimpleTokamak(object):
 
         nx - Number of radial grid points, not including guard cells
         ny - Number of poloidal (parallel) grid points
-
+        output - boututils.datafile object, e.g., an open netCDF file
+        MXG, Number of guard cells in the x-direction
         """       
 
         ngx = nx + 2*MXG
@@ -511,7 +512,8 @@ class ShapedTokamak(object):
 
         nx - Number of radial grid points, not including guard cells
         ny - Number of poloidal (parallel) grid points
-
+        output - boututils.datafile object, e.g., an open netCDF file
+        MXG, Number of guard cells in the x-direction
         """ 
 
         ngx = nx + 2*MXG
