@@ -312,16 +312,14 @@ class SimpleTokamak(object):
         self._extra[name] = expr
 
 
-    def write(self, nx, ny, MXG = 2, output):
+    def write(self, nx, ny, output, MXG=2):
         """
         Outputs a tokamak shape to a grid file
 
         nx - Number of radial grid points, not including guard cells
         ny - Number of poloidal (parallel) grid points
 
-        """
-
-        MXG = MXG
+        """       
 
         ngx = nx + 2*MXG
         ngy = ny
@@ -507,16 +505,14 @@ class ShapedTokamak(object):
 
         self.hthe = hthe
 
-    def write(self, nx, ny, MXG = 2, filename):
+    def write(self, nx, ny, filename, MXG=2):
         """
         Outputs a tokamak shape to a grid file
 
         nx - Number of radial grid points, not including guard cells
         ny - Number of poloidal (parallel) grid points
 
-        """
-
-        MXG = MXG
+        """ 
 
         ngx = nx + 2*MXG
         ngy = ny
