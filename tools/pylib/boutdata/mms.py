@@ -312,7 +312,7 @@ class SimpleTokamak(object):
         self._extra[name] = expr
 
 
-    def write(self, nx, ny, output):
+    def write(self, nx, ny, MXG = 2, output):
         """
         Outputs a tokamak shape to a grid file
 
@@ -321,7 +321,7 @@ class SimpleTokamak(object):
 
         """
 
-        MXG = 2
+        MXG = MXG
 
         ngx = nx + 2*MXG
         ngy = ny
@@ -507,7 +507,7 @@ class ShapedTokamak(object):
 
         self.hthe = hthe
 
-    def write(self, nx, ny, filename):
+    def write(self, nx, ny, MXG = 2, filename):
         """
         Outputs a tokamak shape to a grid file
 
@@ -516,7 +516,7 @@ class ShapedTokamak(object):
 
         """
 
-        MXG = 2
+        MXG = MXG
 
         ngx = nx + 2*MXG
         ngy = ny
