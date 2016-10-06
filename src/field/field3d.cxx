@@ -1412,8 +1412,6 @@ const Field3D filter(const Field3D &var, int N0) {
       }
 
       irfft(f.begin(), ncz, &(result(jx, jy, 0))); // Reverse FFT
-
-      result(jx,jy,ncz) = result(jx,jy,0);
     }
   }
   
@@ -1456,7 +1454,6 @@ const Field3D lowPass(const Field3D &var, int zmax) {
 	f[jz] = 0.0;
 
       irfft(f.begin(), ncz, &(result(jx,jy,0))); // Reverse FFT
-      result(jx,jy,ncz) = result(jx,jy,0);
     }
   }
   
@@ -1501,7 +1498,6 @@ const Field3D lowPass(const Field3D &var, int zmax, int zmin) {
 	f[0] = 0.0;
       }
       irfft(f.begin(), ncz, &(result(jx,jy,0))); // Reverse FFT
-      result(jx,jy,ncz) = result(jx,jy,0);
     }
   }
   
