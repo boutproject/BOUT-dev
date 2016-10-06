@@ -312,16 +312,15 @@ class SimpleTokamak(object):
         self._extra[name] = expr
 
 
-    def write(self, nx, ny, output):
+    def write(self, nx, ny, output, MXG=2):
         """
         Outputs a tokamak shape to a grid file
 
         nx - Number of radial grid points, not including guard cells
         ny - Number of poloidal (parallel) grid points
-
-        """
-
-        MXG = 2
+        output - boututils.datafile object, e.g., an open netCDF file
+        MXG, Number of guard cells in the x-direction
+        """       
 
         ngx = nx + 2*MXG
         ngy = ny
@@ -507,16 +506,15 @@ class ShapedTokamak(object):
 
         self.hthe = hthe
 
-    def write(self, nx, ny, filename):
+    def write(self, nx, ny, filename, MXG=2):
         """
         Outputs a tokamak shape to a grid file
 
         nx - Number of radial grid points, not including guard cells
         ny - Number of poloidal (parallel) grid points
-
-        """
-
-        MXG = 2
+        output - boututils.datafile object, e.g., an open netCDF file
+        MXG, Number of guard cells in the x-direction
+        """ 
 
         ngx = nx + 2*MXG
         ngy = ny
