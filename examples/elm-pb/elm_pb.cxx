@@ -1053,7 +1053,6 @@ int physics_init(bool restarting) {
   /************** SETUP COMMUNICATIONS **************/
   
   comms.add(U);
-  comms.add(Psi);
   comms.add(P);
   //  comms.add(phi);
 
@@ -1066,6 +1065,7 @@ int physics_init(bool restarting) {
   if(evolve_jpar) {
     comms.add(Jpar);
   }else {
+    comms.add(Psi);
     // otherwise Need to communicate Jpar separately
     Jpar.setBoundary("J");
   }
@@ -1176,6 +1176,7 @@ int physics_run(BoutReal t) {
   if(evolve_jpar) {
     // Invert laplacian for Psi
     Psi = invert_laplace(Jpar, apar_flags, NULL);
+    mesh->communicate(Psi);
   }
 
   if(phi_constraint) {
