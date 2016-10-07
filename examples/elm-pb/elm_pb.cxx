@@ -1088,7 +1088,8 @@ const Field3D Grad_parP(const Field3D &f, CELL_LOC loc = CELL_DEFAULT) {
     result = Grad_par(f, loc);
   
   if(nonlinear) {
-    Field3D PsiSum = Psi + rmp_Psi; mesh->communicate(PsiSum);
+    Field3D PsiSum = Psi + rmp_Psi;
+    mesh->communicate(PsiSum);
     result -= bracket(PsiSum, f, bm_mag)*B0;
   }
   
@@ -1281,7 +1282,8 @@ int physics_run(BoutReal t) {
 
   if(evolve_jpar) {
     // Jpar
-    Field3D B0U = B0*U ; mesh->communicate(B0U);
+    Field3D B0U = B0*U ; 
+    mesh->communicate(B0U);
     ddt(Jpar) = -Grad_parP(B0U, CELL_YLOW) / B0 + eta*Delp2(Jpar);
 
     if(relax_j_vac) {
@@ -1291,12 +1293,14 @@ int physics_run(BoutReal t) {
     }
   }else {
     // Vector potential
-    Field3D B0phi = B0*phi; mesh->communicate(B0phi);
+    Field3D B0phi = B0*phi; 
+    mesh->communicate(B0phi);
     ddt(Psi) = -Grad_parP(B0phi, CELL_CENTRE) / B0 + eta*Jpar;
     //xqx      ddt(Psi) = -Grad_parP(B0*phi, CELL_YLOW) / B0 + eta*Jpar;
 
     if(eHall) {
-      Field3D B0P = B0*P; mesh->communicate(B0P);
+      Field3D B0P = B0*P; 
+      mesh->communicate(B0P);
       ddt(Psi) +=  0.25*delta_i*(Grad_parP(B0P, CELL_CENTRE) / B0 
                                  +b0xGrad_dot_Grad(P0, Psi));   // electron parallel pressure
     }
@@ -1347,7 +1351,8 @@ int physics_run(BoutReal t) {
   
   ////////////////////////////////////////////////////
   // Vorticity equation
-  Field3D PsiSum = Psi+rmp_Psi; mesh->communicate(PsiSum);
+  Field3D PsiSum = Psi+rmp_Psi; 
+  mesh->communicate(PsiSum);
   ddt(U) = SQ(B0) * b0xGrad_dot_Grad(PsiSum, J0, CELL_CENTRE); // Grad j term
 
   ddt(U) += b0xcv*Grad(P);  // curvature term
@@ -1433,8 +1438,10 @@ int physics_run(BoutReal t) {
 
     ddt(U) -= 0.5*Upara2*bracket(Pi, Dperp2Phi0, bm_exb)/B0;
     ddt(U) -= 0.5*Upara2*bracket(Pi0, Dperp2Phi, bm_exb)/B0;
-    Field3D B0phi = B0*phi; mesh->communicate(B0phi);
-    Field3D B0phi0 = B0*phi0; mesh->communicate(B0phi0);
+    Field3D B0phi = B0*phi; 
+    mesh->communicate(B0phi);
+    Field3D B0phi0 = B0*phi0; 
+    mesh->communicate(B0phi0);
     ddt(U) += 0.5*Upara2*bracket(B0phi, Dperp2Pi0, bm_exb)/B0;
     ddt(U) += 0.5*Upara2*bracket(B0phi0, Dperp2Pi, bm_exb)/B0;
     ddt(U) -= 0.5*Upara2*Delp2(bracketPhi0P)/B0;
@@ -1442,7 +1449,8 @@ int physics_run(BoutReal t) {
 
     if (nonlinear)
       {
-	Field3D B0phi = B0*phi; mesh->communicate(B0phi);
+	Field3D B0phi = B0*phi; 
+	mesh->communicate(B0phi);
         bracketPhiP = bracket(B0phi, Pi, bm_exb);
         bracketPhiP.applyBoundary();
         mesh->communicate(bracketPhiP);
@@ -1518,7 +1526,8 @@ int physics_run(BoutReal t) {
     // Vpar equation
 
     //ddt(Vpar) = -0.5*Grad_parP(P + P0, CELL_YLOW);
-    Field3D PP0=P+P0 ; mesh->communicate(PP0);
+    Field3D PP0=P+P0 ; 
+    mesh->communicate(PP0);
     ddt(Vpar) = -0.5*Grad_par_LtoC(PP0);
 
     if(nonlinear)
@@ -1621,7 +1630,8 @@ int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
   Field3D phi3 = invert_laplace(ddt(U), phi_flags, NULL);
   mesh->communicate(phi3);
   phi3.applyBoundary("neumann");
-  Field3D B0phi3 = B0*phi3; mesh->communicate(B0phi3);  
+  Field3D B0phi3 = B0*phi3; 
+  mesh->communicate(B0phi3);  
   ddt(Psi) = ddt(Psi) - gamma*Grad_par(B0phi3)/B0;
   ddt(Psi).applyBoundary();
   
@@ -1655,7 +1665,8 @@ int jacobian(BoutReal t) {
 
   Field3D JP = -b0xGrad_dot_Grad(phi, P0);
   JP.setBoundary("P"); JP.applyBoundary();
-  Field3D B0phi = B0*phi; mesh->communicate(B0phi);  
+  Field3D B0phi = B0*phi; 
+  mesh->communicate(B0phi);  
   Field3D JPsi = -Grad_par(B0phi, CELL_YLOW) / B0;
   JPsi.setBoundary("Psi"); JPsi.applyBoundary();
 
