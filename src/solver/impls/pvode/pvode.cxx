@@ -240,7 +240,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
   int msg_point = msg_stack.push("Running solver: solver::run(%e)", tout);
 #endif
   
-  rhs_ncalls = 0;
+  //rhs_ncalls = 0;
 
   // Set pointer to data array in vector u.
   udata = N_VDATA(u);

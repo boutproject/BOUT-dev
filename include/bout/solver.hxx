@@ -115,7 +115,7 @@ class Solver {
   enum MonitorPosition {BACK, FRONT}; ///< A type to set where in the list monitors are added
   /// Add a monitor function to be called every output
   DEPRECATED(void addMonitor(int (&)(Solver *solver, BoutReal simtime, int iter, int NOUT)
-                             , MonitorPosition pos=FRONT);)
+                             , MonitorPosition pos=FRONT));
   /// Add a monitor to be called every output
   void addMonitor(Monitor * f, MonitorPosition pos=FRONT);
   void removeMonitor(Monitor * f);  ///< Remove a monitor function previously added
