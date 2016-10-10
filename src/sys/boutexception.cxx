@@ -78,7 +78,7 @@ void BoutException::Backtrace() {
     } else {                                    \
       char buffer[1024];                        \
       va_start(ap, s);                          \
-      vsprintf(buffer, s, ap);                  \
+      vsnprintf(buffer, s, ap);                 \
       va_end(ap);                               \
       for (int i=0;i<1024;++i){                 \
         if (buffer[i]==0){                      \
@@ -100,6 +100,7 @@ BoutException::BoutException(const char* s, ...)
 {
 
   INIT_EXCEPTION(s);
+
 }
 
 const char* BoutException::what() const throw()
