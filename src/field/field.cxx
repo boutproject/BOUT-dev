@@ -31,6 +31,7 @@
 #include <output.hxx>
 #include <msg_stack.hxx>
 #include <boutexception.hxx>
+#include <utils.hxx>
 
 Field::Field() {
 #ifdef CHECK
@@ -40,10 +41,11 @@ Field::Field() {
 
 /////////////////// PROTECTED ////////////////////
 
-char err_buffer[512];
 
 // Report an error occurring
 void Field::error(const char *s, ...) const {
+  int buf_len=512;
+  char * err_buffer=new char[buf_len];
   va_list ap;  // List of arguments
 
   if(s == (const char*) NULL) {
@@ -51,8 +53,8 @@ void Field::error(const char *s, ...) const {
   }else {
   
     va_start(ap, s);
-      vsprintf(err_buffer, s, ap);
-      va_end(ap);
+    myvsnprintf(err_buffer,buf_len, s, ap);
+    va_end(ap);
 
 #ifdef TRACK
       output.write("Error in '%s': %s", name.c_str(), err_buffer);
@@ -62,5 +64,6 @@ void Field::error(const char *s, ...) const {
   }
   
   throw BoutException("Error in field: %s", err_buffer);
+  delete[] err_buffer;
 }
 

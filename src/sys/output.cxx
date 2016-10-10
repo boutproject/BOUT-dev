@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <output.hxx>
+#include <utils.hxx>
 
 void Output::enable() {
   add(std::cout);
@@ -45,7 +46,7 @@ int Output::open(const char* fname, ...) {
     return 1;
 
   va_start(ap, fname);
-    vsnprintf(buffer, Output::BUFFER_LEN, fname, ap);
+    myvsnprintf(buffer, BUFFER_LEN, fname, ap);
   va_end(ap);
 
   close();
@@ -77,7 +78,7 @@ void Output::write(const char* string, ...) {
     return;
   
   va_start(ap, string);
-    vsnprintf(buffer, Output::BUFFER_LEN, string, ap);
+    myvsnprintf(buffer, BUFFER_LEN, string, ap);
   va_end(ap);
 
   multioutbuf_init::buf()->sputn(buffer, strlen(buffer));

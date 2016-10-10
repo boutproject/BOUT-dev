@@ -8,6 +8,7 @@
 #ifdef BACKTRACE
 #include <execinfo.h>
 #endif
+#include <utils.hxx>
 
 void BoutParallelThrowRhsFail(int &status, const char* message) {
   int allstatus;
@@ -17,6 +18,7 @@ void BoutParallelThrowRhsFail(int &status, const char* message) {
 }
 
 BoutException::~BoutException() throw() {
+  delete[] buffer;
 }
 
 void BoutException::Backtrace() {
@@ -70,16 +72,18 @@ void BoutException::Backtrace() {
 }
 
 #define INIT_EXCEPTION(s) {                     \
-    va_list ap;                                 \
-                                                \
+    buflen=0;                                   \
+    buffer=NULL;                                \
     if(s == (const char*) NULL) {               \
       message="No error message given!\n";      \
     } else {                                    \
-      char buffer[BoutException::BUFFER_LEN];   \
-      va_start(ap, s);                                          \
-      vsnprintf(buffer, BoutException::BUFFER_LEN, s, ap);      \
-      va_end(ap);                                               \
-      for (int i=0;i<BoutException::BUFFER_LEN;++i){            \
+      buflen=BoutException::BUFFER_LEN;         \
+      buffer = new char[buflen];                \
+      va_list ap;                               \
+      va_start(ap, s);                          \
+      myvsnprintf(buffer, buflen, s, ap);       \
+      va_end(ap);                               \
+      for (int i=0;i<buflen;++i){               \
         if (buffer[i]==0){                      \
           if (i>0 && buffer[i-1]=='\n'){        \
             buffer[i-1]=0;                      \
@@ -97,7 +101,7 @@ void BoutException::Backtrace() {
 
 BoutException::BoutException(const char* s, ...)
 {
-
+  
   INIT_EXCEPTION(s);
 
 }

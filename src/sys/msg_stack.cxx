@@ -65,11 +65,10 @@ int MsgStack::push(const char *s, ...)
   if(s != NULL) {
 
     va_start(ap, s);
-      vsprintf(buffer, s, ap);
+      vsnprintf(buffer,MSG_MAX_SIZE, s, ap);
     va_end(ap);
     
     strncpy(m->str, buffer, MSG_MAX_SIZE);
-    m->str[MSG_MAX_SIZE] = '\0';
 
     //output.write("Pushing '%s' -> %d\n", buffer, nmsg);
   }else
