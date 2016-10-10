@@ -410,13 +410,15 @@ ParseException::ParseException(const char *s, ...) {
 
   if(s == (const char*) NULL)
     return;
-  
-  char buffer[1024];
+
+  int buf_len=1024;
+  char * buffer= new char[buf_len];
   va_start(ap, s);
-    vsprintf(buffer, s, ap);
+    myvsnprintf(buffer,buf_len, s, ap);
   va_end(ap);
   
   message.assign(buffer);
+  delete[] buffer;
 }
 
 const char* ParseException::what() const throw() {

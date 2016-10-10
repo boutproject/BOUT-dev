@@ -103,4 +103,16 @@ string trim(const string &, const string &c=" \t\r");
 string trimLeft(const string &, const string &c=" \t");
 string trimRight(const string &, const string &c=" \t\r");
 string trimComments(const string &, const string &c="#;");
+
+
+#define myvsnprintf(buf,len,fmt,va) {                   \
+    int _vsnprintflen=vsnprintf(buf,len,fmt,va);        \
+    if (! _vsnprintflen < len){                         \
+      _vsnprintflen+=1;                                 \
+      delete[] buf;                                     \
+      buf = new char[_vsnprintflen];                    \
+      len = _vsnprintflen;                              \
+      vsnprintf(buf,len,fmt,va);                        \
+    }                                                   \
+  }
 #endif // __UTILS_H__

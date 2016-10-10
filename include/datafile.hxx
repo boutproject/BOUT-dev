@@ -37,7 +37,7 @@ class Datafile {
  public:
   Datafile(Options *opt = NULL);
   Datafile(const Datafile &other);
-//   ~Datafile(); Default destructor is adequate
+  ~Datafile(); // need to delete filename
   
   Datafile& operator=(const Datafile &rhs);
 
@@ -77,7 +77,8 @@ class Datafile {
   bool init_missing; // Initialise missing variables? 
 
   DataFormat *file;
-  char filename[512];
+  int filenamelen;
+  char *filename;
   bool appending;
   int Lx,Ly,Lz; // The sizes in the x-, y- and z-directions of the arrays to be written
 
