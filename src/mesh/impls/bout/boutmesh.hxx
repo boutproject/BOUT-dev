@@ -85,7 +85,7 @@ class BoutMesh : public Mesh {
   const Field3D smoothSeparatrix(const Field3D &f);
 
   BoutReal GlobalX(int jx) const;
-  BoutReal GlobalY(int jy) const;
+  virtual BoutReal GlobalY(int jy) const;
   BoutReal GlobalX(BoutReal jx) const;
   BoutReal GlobalY(BoutReal jy) const;
 

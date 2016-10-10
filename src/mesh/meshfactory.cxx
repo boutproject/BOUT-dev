@@ -70,6 +70,9 @@ Mesh* MeshFactory::createMesh(GridDataSource *source, Options *options) {
     return new QuiltMesh(source, options);
   }
 */
-  
-  return new BoutMesh(source, options);
+  if(!strcasecmp(type.c_str(), MESH_BOUT)) {
+    return new BoutMesh(source, options);
+  }
+
+  throw BoutException("  Unknown mesh: %s",type.c_str());
 }

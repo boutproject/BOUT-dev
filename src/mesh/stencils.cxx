@@ -355,12 +355,14 @@ Mesh::boundary_derivs_pair DDX_F2_stag(forward_stencil &f) {
   Mesh::boundary_derivs_pair result;
   result.inner = -2.*f.c+3*f.p-f.p2;
   result.outer = -2.*f.m+3*f.c-f.p;
+  return result;
 }
 
 Mesh::boundary_derivs_pair DDX_B2_stag(backward_stencil &f) {
   Mesh::boundary_derivs_pair result;
   result.inner = 2.*f.c-3*f.m+f.m2;
   result.outer = 2.*f.p-3*f.c+f.m;
+  return result;
 }
 
 BoutReal DDX_C4_stag(stencil &f) {

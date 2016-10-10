@@ -35,21 +35,33 @@
 #include <boutexception.hxx>
 #include <utils.hxx>
 #include <output.hxx>
-// Include the auto generated file
+#include <interpolation.hxx>
+
+
+DIFF_METHOD default_FirstDeriv=DIFF_C2;
+DIFF_METHOD default_FirstStagDeriv=DIFF_C2;
+DIFF_METHOD default_SecondDeriv=DIFF_C2;
+DIFF_METHOD default_SecondStagDeriv=DIFF_C2;
+
+
+// Include the auto generated files
 #include "generated_stencils.cxx"
+#include "generated_derivs.cxx"
 
 
 
 CartesianMesh::CartesianMesh(GridDataSource *s, Options *options): BoutMesh(s,options){
+  output.write("  Using Cartesian Mesh!\n");
 }
 CartesianMesh::~CartesianMesh(){
 }
 
 BoutReal CartesianMesh::GlobalY(int jy) const{
   int gjy=BoutMesh::YGLOBAL(jy);
-  output.write(" %d->%d ",jy,gjy);
+  //output.write(" %d->%d ",jy,gjy);
 	       
   return ((BoutReal) gjy ) / ((BoutReal)(this->GlobalNy-2*this->ystart));
 }
 
 
+//Field3D CartesianMesh::
