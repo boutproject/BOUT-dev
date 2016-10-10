@@ -22,9 +22,9 @@ BoutException::BoutException(const char* s, ...) {
   if(s == (const char*) NULL)
     return;
   
-  char buffer[1024];
+  char buffer[BoutException::BUFFER_LEN];
   va_start(ap, s);
-    vsnprintf(buffer, 1024, s, ap);
+    vsnprintf(buffer, BoutException::BUFFER_LEN, s, ap);
   va_end(ap);
   
   message.assign(buffer);
@@ -46,9 +46,9 @@ BoutRhsFail::BoutRhsFail(const char* s, ...)  : BoutException::BoutException(s) 
   if(s == (const char*) NULL)
     return;
   
-  char buffer[1024];
+  char buffer[BoutException::BUFFER_LEN];
   va_start(ap, s);
-    vsnprintf(buffer, 1024, s, ap);
+    vsnprintf(buffer, BoutException::BUFFER_LEN, s, ap);
   va_end(ap);
   
   message.assign(buffer);
@@ -60,9 +60,9 @@ BoutIterationFail::BoutIterationFail(const char* s, ...) : BoutException::BoutEx
   if(s == (const char*) NULL)
     return;
   
-  char buffer[1024];
+  char buffer[BoutException::BUFFER_LEN];
   va_start(ap, s);
-    vsprintf(buffer, 1024, s, ap);
+    vsnprintf(buffer, BoutException::BUFFER_LEN, s, ap);
   va_end(ap);
   
   message.assign(buffer);
