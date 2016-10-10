@@ -246,42 +246,42 @@ class Mesh {
 
   // First derivatives in index space
   // Implemented in src/mesh/index_derivs.hxx
-  const Field3D indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
-  const Field2D indexDDX(const Field2D &f);
+  virtual const Field3D indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
+  virtual const Field2D indexDDX(const Field2D &f);
   
-  const Field3D indexDDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
-  const Field2D indexDDY(const Field2D &f);
+  virtual const Field3D indexDDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
+  virtual const Field2D indexDDY(const Field2D &f);
 
-  const Field3D indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool inc_xbndry);
-  const Field2D indexDDZ(const Field2D &f);
+  virtual const Field3D indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool inc_xbndry);
+  virtual const Field2D indexDDZ(const Field2D &f);
 
   // Second derivatives in index space
   // Implemented in src/mesh/index_derivs.hxx
-  const Field3D indexD2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
-  const Field2D indexD2DX2(const Field2D &f);
-  const Field3D indexD2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
-  const Field2D indexD2DY2(const Field2D &f);
-  const Field3D indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool inc_xbndry);
+  virtual const Field3D indexD2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
+  virtual const Field2D indexD2DX2(const Field2D &f);
+  virtual const Field3D indexD2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
+  virtual const Field2D indexD2DY2(const Field2D &f);
+  virtual const Field3D indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool inc_xbndry);
   
   // Fourth derivatives in index space
-  const Field3D indexD4DX4(const Field3D &f);
-  const Field2D indexD4DX4(const Field2D &f);
-  const Field3D indexD4DY4(const Field3D &f);
-  const Field2D indexD4DY4(const Field2D &f);
-  const Field3D indexD4DZ4(const Field3D &f);
+  virtual const Field3D indexD4DX4(const Field3D &f);
+  virtual const Field2D indexD4DX4(const Field2D &f);
+  virtual const Field3D indexD4DY4(const Field3D &f);
+  virtual const Field2D indexD4DY4(const Field2D &f);
+  virtual const Field3D indexD4DZ4(const Field3D &f);
   
   // Advection schemes
-  const Field2D indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method);
-  const Field3D indexVDDX(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method);
-  const Field2D indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method);
-  const Field3D indexVDDY(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method);
-  const Field3D indexVDDZ(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method);
+  virtual const Field2D indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method);
+  virtual const Field3D indexVDDX(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method);
+  virtual const Field2D indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method);
+  virtual const Field3D indexVDDY(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method);
+  virtual const Field3D indexVDDZ(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method);
 
-  const Field2D indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method);
-  const Field3D indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
-  const Field2D indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method);
-  const Field3D indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
-  const Field3D indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
+  virtual const Field2D indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method);
+  virtual const Field3D indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
+  virtual const Field2D indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method);
+  virtual const Field3D indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
+  virtual const Field3D indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
   
   typedef BoutReal (*deriv_func)(stencil &); // f
   typedef BoutReal (*upwind_func)(BoutReal, stencil &); // v, f
