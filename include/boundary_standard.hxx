@@ -333,4 +333,34 @@ private:
   int width;
 };
 
+/// Convert toFieldAligned
+class BoundaryToFieldAligned : public BoundaryModifier {
+public:
+  BoundaryToFieldAligned(){NULL;};
+  BoundaryToFieldAligned(BoundaryOp *operation) : BoundaryModifier(operation){}
+  BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
+  
+  void apply(Field2D &f);
+  void apply(Field3D &f);
+  
+  void apply_ddt(Field2D &f);
+  void apply_ddt(Field3D &f);
+private:
+};
+
+/// Convert fromFieldAligned
+class BoundaryFromFieldAligned : public BoundaryModifier {
+public:
+  BoundaryFromFieldAligned(){NULL;};
+  BoundaryFromFieldAligned(BoundaryOp *operation) : BoundaryModifier(operation){}
+  BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
+  
+  void apply(Field2D &f);
+  void apply(Field3D &f);
+  
+  void apply_ddt(Field2D &f);
+  void apply_ddt(Field3D &f);
+private:
+};
+
 #endif // __BNDRY_STD_H__

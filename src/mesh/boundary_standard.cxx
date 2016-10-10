@@ -3267,3 +3267,84 @@ void BoundaryWidth::apply_ddt(Field3D &f) {
   bndry->width = oldwid;
 }
 
+///////////////////////////////////////////////////////////////
+BoundaryOp* BoundaryToFieldAligned::cloneMod(BoundaryOp *operation, const list<string> &args) {
+  BoundaryToFieldAligned* result = new BoundaryToFieldAligned(operation);
+  
+  if(!args.empty()) {
+    output << "WARNING: BoundaryToFieldAligned expected no argument\n";
+    //Shouldn't we throw ?
+  }
+  
+  return result;
+}
+
+void BoundaryToFieldAligned::apply(Field2D &f) {
+  op->apply(f);
+}
+
+void BoundaryToFieldAligned::apply(Field3D &f) {
+  //NOTE: This is not very efficient... copying entire field -- could reuse memory of f
+  Field3D g = mesh->fromFieldAligned(f); 
+
+  // Apply the boundary to g
+  op->apply(g);
+  f = mesh->toFieldAligned(g);
+
+  //This is inefficient -- could instead use the shiftZ just in the bndry
+  //but this is not portable to other parallel transforms -- we could instead
+  //have a flag to define the region in which we want to apply to/fromFieldAligned
+}
+  
+void BoundaryToFieldAligned::apply_ddt(Field2D &f) {
+  op->apply_ddt(f);
+}
+
+void BoundaryToFieldAligned::apply_ddt(Field3D &f) {
+  Field3D g = mesh->toFieldAligned(f);
+  ddt(g) = mesh->toFieldAligned(ddt(f));
+  op->apply_ddt(g);
+  ddt(f) = mesh->fromFieldAligned(ddt(g));
+}
+
+
+///////////////////////////////////////////////////////////////
+BoundaryOp* BoundaryFromFieldAligned::cloneMod(BoundaryOp *operation, const list<string> &args) {
+  BoundaryFromFieldAligned* result = new BoundaryFromFieldAligned(operation);
+  
+  if(!args.empty()) {
+    output << "WARNING: BoundaryFromFieldAligned expected no argument\n";
+    //Shouldn't we throw ?
+  }
+  
+  return result;
+}
+
+void BoundaryFromFieldAligned::apply(Field2D &f) {
+  op->apply(f);
+}
+
+void BoundaryFromFieldAligned::apply(Field3D &f) {
+  //NOTE: This is not very efficient... copying entire field -- could reuse memory of f
+  Field3D g = mesh->toFieldAligned(f); 
+
+  // Apply the boundary to g
+  op->apply(g);
+  f = mesh->fromFieldAligned(g);
+
+  //This is inefficient -- could instead use the shiftZ just in the bndry
+  //but this is not portable to other parallel transforms -- we could instead
+  //have a flag to define the region in which we want to apply to/fromFieldAligned
+
+}
+  
+void BoundaryFromFieldAligned::apply_ddt(Field2D &f) {
+  op->apply_ddt(f);
+}
+
+void BoundaryFromFieldAligned::apply_ddt(Field3D &f) {
+  Field3D g = mesh->toFieldAligned(f);
+  ddt(g) = mesh->toFieldAligned(ddt(f));
+  op->apply_ddt(g);
+  ddt(f) = mesh->fromFieldAligned(ddt(g));
+}
