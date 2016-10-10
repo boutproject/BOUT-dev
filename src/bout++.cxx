@@ -78,6 +78,9 @@ using std::list;
 #include <signal.h>
 void bout_signal_handler(int sig);  // Handles segmentation faults
 #endif
+#ifdef BOUT_FPE
+#include <fenv.h>
+#endif
 
 #include <output.hxx>
 
@@ -115,8 +118,14 @@ int BoutInitialise(int &argc, char **&argv) {
 #ifdef SIGHANDLE
   /// Set a signal handler for segmentation faults
   signal(SIGSEGV, bout_signal_handler);
+#ifdef BOUT_FPE
+  signal(SIGFPE,  bout_signal_handler);
 #endif
-
+#endif
+#ifdef BOUT_FPE
+  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+#endif
+  
   // Set default data directory
   data_dir = DEFAULT_DIR;
   opt_file = DEFAULT_OPT;
@@ -242,6 +251,10 @@ int BoutInitialise(int &argc, char **&argv) {
 
 #ifdef METRIC3D
   output.write("\tRUNNING IN 3D-METRIC MODE\n");
+#endif
+
+#ifdef BOUT_FPE
+  output.write("\tFloatingPointExceptions enabled\n");
 #endif
 
   /// Get the options tree
@@ -490,18 +503,7 @@ void bout_error() {
 }
 
 void bout_error(const char *str) {
-  output.write("****** ERROR CAUGHT ******\n");
-
-  if (str != NULL) output.write(str);
-
-  output.write("\n");
-
-#ifdef CHECK
-  msg_stack.dump();
-#endif
-
-  MPI_Abort(BoutComm::get(), 1);
-
+  throw BoutException(str);
   exit(1);
 }
 
@@ -510,14 +512,31 @@ void bout_error(const char *str) {
 void bout_signal_handler(int sig) {
   /// Set signal handler back to default to prevent possible infinite loop
   signal(SIGSEGV, SIG_DFL);
+  // print number of process to stderr, so the user knows which log to check
+  int world_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+  fprintf(stderr,"\nSighandler called on process %d with sig %d\n"
+          ,world_rank,sig);
 
-  output.write("\n****** SEGMENTATION FAULT CAUGHT ******\n\n");
-#ifdef CHECK
-  /// Print out the message stack to help debugging
-  msg_stack.dump();
-#else
-  output.write("Enable checking (-DCHECK flag) to get a trace\n");
-#endif
+  switch (sig){
+  case SIGSEGV:
+    throw BoutException("\n****** SEGMENTATION FAULT CAUGHT ******\n\n");
+    break;
+  case SIGFPE:
+    throw BoutException("\n****** Floating Point Exception "
+                        "(FPE) caught ******\n\n");
+    break;
+  case SIGINT:
+    throw BoutException("\n****** SigInt caught ******\n\n");
+    break;
+  case SIGKILL:
+    throw BoutException("\n****** SigKill caught ******\n\n");
+    break;
+  default:
+    throw BoutException("\n****** Signal %d  caught ******\n\n",sig);
+    break;
+  }
+
 
   exit(sig);
 }
