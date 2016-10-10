@@ -234,7 +234,7 @@ void Datafile::setLowPrecision() {
   file->setLowPrecision();
 }
 
-void Datafile::add(int &i, const char *name, int grow) {
+void Datafile::add(int &i, const char *name, bool save_repeat) {
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Datafile", name);
 
@@ -247,7 +247,7 @@ void Datafile::add(int &i, const char *name, int grow) {
   int_arr.push_back(d);
 }
 
-void Datafile::add(BoutReal &r, const char *name, int grow) {
+void Datafile::add(BoutReal &r, const char *name, bool save_repeat) {
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Datafile", name);
   
@@ -260,7 +260,7 @@ void Datafile::add(BoutReal &r, const char *name, int grow) {
   BoutReal_arr.push_back(d);
 }
 
-void Datafile::add(Field2D &f, const char *name, int grow) {
+void Datafile::add(Field2D &f, const char *name, bool save_repeat) {
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Datafile", name);
   
@@ -273,7 +273,7 @@ void Datafile::add(Field2D &f, const char *name, int grow) {
   f2d_arr.push_back(d);
 }
 
-void Datafile::add(Field3D &f, const char *name, int grow) {
+void Datafile::add(Field3D &f, const char *name, bool save_repeat) {
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Datafile", name);
   
@@ -286,7 +286,7 @@ void Datafile::add(Field3D &f, const char *name, int grow) {
   f3d_arr.push_back(d);
 }
 
-void Datafile::add(Vector2D &f, const char *name, int grow) {
+void Datafile::add(Vector2D &f, const char *name, bool save_repeat) {
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Datafile", name);
   
@@ -300,7 +300,7 @@ void Datafile::add(Vector2D &f, const char *name, int grow) {
   v2d_arr.push_back(d);
 }
 
-void Datafile::add(Vector3D &f, const char *name, int grow) {
+void Datafile::add(Vector3D &f, const char *name, bool save_repeat) {
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Datafile", name);
   

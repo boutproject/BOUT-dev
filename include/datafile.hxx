@@ -50,13 +50,20 @@ class Datafile {
   void close();
 
   void setLowPrecision(); ///< Only output floats
-
-  void add(int &i, const char *name, int grow = 0);
-  void add(BoutReal &r, const char *name, int grow = 0);
-  void add(Field2D &f, const char *name, int grow = 0);
-  void add(Field3D &f, const char *name, int grow = 0);
-  void add(Vector2D &f, const char *name, int grow = 0);
-  void add(Vector3D &f, const char *name, int grow = 0);
+  template <typename t>
+  void addRepeat(t &value, std::string name){
+    add(value,name.c_str());
+  }
+  template <typename t>
+  void addOnce(t &value, std::string name){
+    add(value,name.c_str());
+  }
+  void add(int &i, const char *name, bool save_repeat = false);
+  void add(BoutReal &r, const char *name, bool save_repeat = false);
+  void add(Field2D &f, const char *name, bool save_repeat = false);
+  void add(Field3D &f, const char *name, bool save_repeat = false);
+  void add(Vector2D &f, const char *name, bool save_repeat = false);
+  void add(Vector3D &f, const char *name, bool save_repeat = false);
   
   bool read();  ///< Read data into added variables 
   bool write(); ///< Write added variables
@@ -64,7 +71,7 @@ class Datafile {
   bool write(const char *filename, ...) const; ///< Opens, writes, closes file
   
   // Write a variable to the file now
-  bool writeVar(const int &i, const char *name);
+ bool writeVar(const int &i, const char *name);
   bool writeVar(const BoutReal &r, const char *name);
   
  private:
