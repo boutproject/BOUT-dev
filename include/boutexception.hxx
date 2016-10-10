@@ -19,6 +19,8 @@ public:
   const char* what() const throw();
   void Backtrace();
 protected:
+  static const int BUFFER_LEN = 1024; // Length of char buffer for printing
+  
   string message;
 };
 

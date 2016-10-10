@@ -75,11 +75,11 @@ void BoutException::Backtrace() {
     if(s == (const char*) NULL) {               \
       message="No error message given!\n";      \
     } else {                                    \
-      char buffer[1024];                        \
-      va_start(ap, s);                          \
-      vsnprintf(buffer,1024, s, ap);            \
-      va_end(ap);                               \
-      for (int i=0;i<1024;++i){                 \
+      char buffer[BoutException::BUFFER_LEN];   \
+      va_start(ap, s);                                          \
+      vsnprintf(buffer, BoutException::BUFFER_LEN, s, ap);      \
+      va_end(ap);                                               \
+      for (int i=0;i<BoutException::BUFFER_LEN;++i){            \
         if (buffer[i]==0){                      \
           if (i>0 && buffer[i-1]=='\n'){        \
             buffer[i-1]=0;                      \
