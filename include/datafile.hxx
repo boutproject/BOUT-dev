@@ -93,7 +93,7 @@ class Datafile {
     struct VarStr {
       T *ptr;
       string name;
-      bool grow;
+      bool save_repeat;
       bool covar;
     };
 
@@ -105,13 +105,13 @@ class Datafile {
   vector< VarStr<Vector2D> > v2d_arr;
   vector< VarStr<Vector3D> > v3d_arr;
 
-  bool read_f2d(const string &name, Field2D *f, bool grow);
-  bool read_f3d(const string &name, Field3D *f, bool grow);
+  bool read_f2d(const string &name, Field2D *f, bool save_repeat);
+  bool read_f3d(const string &name, Field3D *f, bool save_repeat);
 
-  bool write_int(const string &name, int *f, bool grow);
-  bool write_real(const string &name, BoutReal *f, bool grow);
-  bool write_f2d(const string &name, Field2D *f, bool grow);
-  bool write_f3d(const string &name, Field3D *f, bool grow);
+  bool write_int(const string &name, int *f, bool save_repeat);
+  bool write_real(const string &name, BoutReal *f, bool save_repeat);
+  bool write_f2d(const string &name, Field2D *f, bool save_repeat);
+  bool write_f3d(const string &name, Field3D *f, bool save_repeat);
 
   bool varAdded(const string &name); // Check if a variable has already been added
 };
