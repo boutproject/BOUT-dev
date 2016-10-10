@@ -16,8 +16,7 @@ void BoutParallelThrowRhsFail(int &status, const char* message) {
   if (allstatus) throw BoutRhsFail(message);
 }
 
-BoutException::~BoutException() throw()
-{
+BoutException::~BoutException() throw() {
 }
 
 void BoutException::Backtrace() {
@@ -78,7 +77,7 @@ void BoutException::Backtrace() {
     } else {                                    \
       char buffer[1024];                        \
       va_start(ap, s);                          \
-      vsnprintf(buffer, s, ap);                 \
+      vsnprintf(buffer,1024, s, ap);            \
       va_end(ap);                               \
       for (int i=0;i<1024;++i){                 \
         if (buffer[i]==0){                      \
