@@ -26,7 +26,7 @@ BoutException::BoutException(const char* s, ...)
   
   char buffer[1024];
   va_start(ap, s);
-    vsprintf(buffer, s, ap);
+    vsnprintf(buffer, 1024, s, ap);
   va_end(ap);
   
   message.assign(buffer);
