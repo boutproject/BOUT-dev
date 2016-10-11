@@ -3267,3 +3267,107 @@ void BoundaryWidth::apply_ddt(Field3D &f) {
   bndry->width = oldwid;
 }
 
+///////////////////////////////////////////////////////////////
+BoundaryOp* BoundaryToFieldAligned::cloneMod(BoundaryOp *operation, const list<string> &args) {
+  BoundaryToFieldAligned* result = new BoundaryToFieldAligned(operation);
+  
+  if(!args.empty()) {
+    output << "WARNING: BoundaryToFieldAligned expected no argument\n";
+    //Shouldn't we throw ?
+  }
+  
+  return result;
+}
+
+void BoundaryToFieldAligned::apply(Field2D &f) {
+  //Warning assuming t = 0. -- likely incorrect for evolving boundaries
+  BoundaryToFieldAligned::apply(f,0.);
+}
+
+void BoundaryToFieldAligned::apply(Field2D &f, BoutReal t) {
+  op->apply(f, t);
+}
+
+void BoundaryToFieldAligned::apply(Field3D &f) {
+  //Warning assuming t = 0. -- likely incorrect for evolving boundaries
+  BoundaryToFieldAligned::apply(f,0.);
+}
+
+void BoundaryToFieldAligned::apply(Field3D &f, BoutReal t) {
+  //NOTE: This is not very efficient... updating entire field
+  f = mesh->fromFieldAligned(f); 
+
+  // Apply the boundary to shifted field
+  op->apply(f, t);
+
+  //Shift back
+  f = mesh->toFieldAligned(f);
+
+  //This is inefficient -- could instead use the shiftZ just in the bndry
+  //but this is not portable to other parallel transforms -- we could instead
+  //have a flag to define the region in which we want to apply to/fromFieldAligned
+}
+  
+void BoundaryToFieldAligned::apply_ddt(Field2D &f) {
+  op->apply_ddt(f);
+}
+
+void BoundaryToFieldAligned::apply_ddt(Field3D &f) {
+  f = mesh->fromFieldAligned(f);
+  ddt(f) = mesh->fromFieldAligned(ddt(f));
+  op->apply_ddt(f);
+  ddt(f) = mesh->toFieldAligned(ddt(f));
+}
+
+
+///////////////////////////////////////////////////////////////
+BoundaryOp* BoundaryFromFieldAligned::cloneMod(BoundaryOp *operation, const list<string> &args) {
+  BoundaryFromFieldAligned* result = new BoundaryFromFieldAligned(operation);
+  
+  if(!args.empty()) {
+    output << "WARNING: BoundaryFromFieldAligned expected no argument\n";
+    //Shouldn't we throw ?
+  }
+  
+  return result;
+}
+
+void BoundaryFromFieldAligned::apply(Field2D &f) {
+  //Warning assuming t = 0. -- likely incorrect for evolving boundaries
+  BoundaryFromFieldAligned::apply(f,0.);
+}
+
+void BoundaryFromFieldAligned::apply(Field2D &f, BoutReal t) {
+  op->apply(f, t);
+}
+
+void BoundaryFromFieldAligned::apply(Field3D &f) {
+  //Warning assuming t = 0. -- likely incorrect for evolving boundaries
+  BoundaryFromFieldAligned::apply(f,0.);
+}
+
+void BoundaryFromFieldAligned::apply(Field3D &f, BoutReal t) {
+  //NOTE: This is not very efficient... shifting entire field
+  f = mesh->toFieldAligned(f); 
+
+  // Apply the boundary to shifted field
+  op->apply(f, t);
+
+  //Shift back
+  f = mesh->fromFieldAligned(f);
+
+  //This is inefficient -- could instead use the shiftZ just in the bndry
+  //but this is not portable to other parallel transforms -- we could instead
+  //have a flag to define the region in which we want to apply to/fromFieldAligned
+}
+  
+void BoundaryFromFieldAligned::apply_ddt(Field2D &f) {
+  op->apply_ddt(f);
+}
+
+void BoundaryFromFieldAligned::apply_ddt(Field3D &f) {
+  f = mesh->toFieldAligned(f);
+  ddt(f) = mesh->toFieldAligned(ddt(f));
+  op->apply_ddt(f);
+  ddt(f) = mesh->fromFieldAligned(ddt(f));
+}

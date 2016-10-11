@@ -333,4 +333,40 @@ private:
   int width;
 };
 
+/// Convert input field fromFieldAligned, apply boundary and then convert back toFieldAligned
+/// Equivalent to converting the boundary condition to "Field Aligned" from "orthogonal"
+class BoundaryToFieldAligned : public BoundaryModifier {
+public:
+  BoundaryToFieldAligned(){NULL;};
+  BoundaryToFieldAligned(BoundaryOp *operation) : BoundaryModifier(operation){}
+  BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
+  
+  void apply(Field2D &f);
+  void apply(Field2D &f, BoutReal t);
+  void apply(Field3D &f);
+  void apply(Field3D &f, BoutReal t);
+  
+  void apply_ddt(Field2D &f);
+  void apply_ddt(Field3D &f);
+private:
+};
+
+/// Convert input field toFieldAligned, apply boundary and then convert back fromFieldAligned
+/// Equivalent to converting the boundary condition from "Field Aligned" to "orthogonal"
+class BoundaryFromFieldAligned : public BoundaryModifier {
+public:
+  BoundaryFromFieldAligned(){NULL;};
+  BoundaryFromFieldAligned(BoundaryOp *operation) : BoundaryModifier(operation){}
+  BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
+  
+  void apply(Field2D &f);
+  void apply(Field2D &f, BoutReal t);
+  void apply(Field3D &f);
+  void apply(Field3D &f, BoutReal t);
+  
+  void apply_ddt(Field2D &f);
+  void apply_ddt(Field3D &f);
+private:
+};
+
 #endif // __BNDRY_STD_H__

@@ -36,6 +36,8 @@ BoundaryFactory::BoundaryFactory() {
   
   addMod(new BoundaryRelax(), "relax");
   addMod(new BoundaryWidth(), "width");
+  addMod(new BoundaryToFieldAligned(), "toFieldAligned");
+  addMod(new BoundaryFromFieldAligned(), "fromFieldAligned");
 
   // Parallel boundaries
   add(new BoundaryOpPar_dirichlet(), "parallel_dirichlet");
