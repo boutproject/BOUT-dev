@@ -106,13 +106,18 @@ string trimComments(const string &, const string &c="#;");
 
 
 #define myvsnprintf(buf,len,fmt,va) {                   \
+    va_list ap;                                         \
+    va_start(ap, fmt);                                  \
     int _vsnprintflen=vsnprintf(buf,len,fmt,va);        \
-    if (! _vsnprintflen < len){                         \
+    va_end(ap);                                         \
+    if ( _vsnprintflen+1 > len){                        \
       _vsnprintflen+=1;                                 \
       delete[] buf;                                     \
       buf = new char[_vsnprintflen];                    \
       len = _vsnprintflen;                              \
+      va_start(va,fmt);                                 \
       vsnprintf(buf,len,fmt,va);                        \
+      va_end(va);                                       \
     }                                                   \
   }
 #endif // __UTILS_H__

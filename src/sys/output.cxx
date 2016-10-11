@@ -40,14 +40,11 @@ void Output::disable() {
 }
 
 int Output::open(const char* fname, ...) {
-  va_list ap;  // List of arguments
   
   if(fname == (const char*) NULL)
     return 1;
 
-  va_start(ap, fname);
-    myvsnprintf(buffer, BUFFER_LEN, fname, ap);
-  va_end(ap);
+  myvsnprintf(buffer, BUFFER_LEN, fname, ap);
 
   close();
 
@@ -72,14 +69,11 @@ void Output::close() {
 }
 
 void Output::write(const char* string, ...) {
-  va_list ap;  // List of arguments
 
   if(string == (const char*) NULL)
     return;
   
-  va_start(ap, string);
-    myvsnprintf(buffer, BUFFER_LEN, string, ap);
-  va_end(ap);
+  myvsnprintf(buffer, BUFFER_LEN, string, ap);
 
   multioutbuf_init::buf()->sputn(buffer, strlen(buffer));
 }

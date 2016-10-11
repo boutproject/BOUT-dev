@@ -25,12 +25,8 @@ BoutException::BoutException(const char* s, ...) {
   if(s == (const char*) NULL)
     return;
 
-  va_list ap;  // List of arguments
-  
-  va_start(ap, s);
-    myvsnprintf(buffer, buflen, s, ap);
-  va_end(ap);
-  
+  myvsnprintf(buffer, buflen, s, ap);
+
   message.assign(buffer);
 }
 
