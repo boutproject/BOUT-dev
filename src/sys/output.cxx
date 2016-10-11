@@ -44,7 +44,7 @@ int Output::open(const char* fname, ...) {
   if(fname == (const char*) NULL)
     return 1;
 
-  myvsnprintf(buffer, BUFFER_LEN, fname, ap);
+  myvsnprintf(buffer, buffer_len, fname, ap);
 
   close();
 
@@ -73,7 +73,7 @@ void Output::write(const char* string, ...) {
   if(string == (const char*) NULL)
     return;
   
-  myvsnprintf(buffer, BUFFER_LEN, string, ap);
+  myvsnprintf(buffer, buffer_len, string, ap);
 
   multioutbuf_init::buf()->sputn(buffer, strlen(buffer));
 }
