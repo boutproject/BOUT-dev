@@ -265,7 +265,7 @@ const IndexRange FieldPerp::region(REGION rgn) const {
       break;
     }
     case RGN_NOX: {
-#warning dont use fieldmesh
+#warning FieldPerp doesn`t have its own mesh
       return IndexRange{mesh->xstart, mesh->xend,
         0, 0,
         0, nz-1};
