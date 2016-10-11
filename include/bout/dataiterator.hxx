@@ -74,12 +74,12 @@ public:
 #ifndef _OPENMP
     x(xs), y(ys), z(zs),
     xstart(xs),   ystart(ys),   zstart(zs),
-    xmin(xstart), ymin(ystart), zmin(zstart),
     xend(xe),     yend(ye),     zend(ze),
-    xmax(xend),   ymax(yend),   zmax(zend),
+    xmin(xstart), ymin(ystart), zmin(zstart),
+    xmax(xend),   ymax(yend),   zmax(zend)
 #else
     xmin(xstart), ymin(ys),     zmin(zs),
-    xmax(xend),   ymax(ye),     zmax(ze),
+    xmax(xend),   ymax(ye),     zmax(ze)
 #endif
     isEnd(false)
   {
@@ -96,9 +96,9 @@ public:
 #ifndef _OPENMP
     x(xe), y(ye), z(ze),
     xstart(xs),   ystart(ys),   zstart(zs),
-    xmin(xstart), ymin(ystart), zmin(zstart),
     xend(xe),     yend(ye),     zend(ze),
-    xmax(xend),   ymax(yend),   zmax(zend),
+    xmin(xstart), ymin(ystart), zmin(zstart),
+    xmax(xend),   ymax(yend),   zmax(zend)
 #else
     xmin(xstart), ymin(ys),   zmin(zs),
     xmax(xend),   ymax(ye),   zmax(ze),
@@ -229,14 +229,12 @@ private:
   DataIterator(); // Disable null constructor
 
   int xstart, ystart, zstart;
-
+  int xend,   yend,   zend;
 #ifndef _OPENMP
   int &xmin, &ymin, &zmin;
 #else
   int xmin, ymin, zmin;
 #endif
-
-  int xend, yend, zend;
 
 #ifndef _OPENMP
   int &xmax, &ymax, &zmax;
