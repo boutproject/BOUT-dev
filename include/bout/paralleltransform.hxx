@@ -34,7 +34,7 @@ public:
  */
 class ParallelTransformIdentity : public ParallelTransform {
 public:
-  void calcYUpDown(Field3D &f) { }
+  void calcYUpDown(Field3D &f) {f.mergeYupYdown();}
   
   const Field3D toFieldAligned(const Field3D &f) {
     return f;

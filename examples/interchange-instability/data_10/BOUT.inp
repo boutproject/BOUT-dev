@@ -38,8 +38,8 @@ upwind = W3
 
 [mesh:ddy]
 
-first = C4
-second = C4
+first = C2
+second = C2
 upwind = W3
 
 [mesh:ddz]

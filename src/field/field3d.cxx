@@ -39,7 +39,7 @@
 #include <bout/assert.hxx>
 
 /// Constructor
-Field3D::Field3D(Mesh *msh) : background(NULL), fieldmesh(msh), deriv(NULL), yup_field(this), ydown_field(this) {
+Field3D::Field3D(Mesh *msh) : background(nullptr), fieldmesh(msh), deriv(nullptr), yup_field(nullptr), ydown_field(nullptr) {
 #ifdef TRACK
   name = "<F3D>";
 #endif
@@ -63,11 +63,11 @@ Field3D::Field3D(Mesh *msh) : background(NULL), fieldmesh(msh), deriv(NULL), yup
 }
 
 /// Doesn't copy any data, just create a new reference to the same data (copy on change later)
-Field3D::Field3D(const Field3D& f) : background(NULL),
+Field3D::Field3D(const Field3D& f) : background(nullptr),
 				     fieldmesh(f.fieldmesh), // The mesh containing array sizes
 				     data(f.data),   // This handles references to the data array
-				     deriv(NULL),
-				     yup_field(this), ydown_field(this) {
+				     deriv(nullptr),
+				     yup_field(nullptr), ydown_field(nullptr) {
 
   TRACE("Field3D(Field3D&)");
   
@@ -93,7 +93,7 @@ Field3D::Field3D(const Field3D& f) : background(NULL),
   boundaryIsSet = false;
 }
 
-Field3D::Field3D(const Field2D& f) : background(NULL), fieldmesh(nullptr), deriv(NULL), yup_field(this), ydown_field(this) {
+Field3D::Field3D(const Field2D& f) : background(nullptr), fieldmesh(nullptr), deriv(nullptr), yup_field(nullptr), ydown_field(nullptr) {
   
   TRACE("Field3D: Copy constructor from Field2D");
   
@@ -109,7 +109,7 @@ Field3D::Field3D(const Field2D& f) : background(NULL), fieldmesh(nullptr), deriv
   *this = f;
 }
 
-Field3D::Field3D(const BoutReal val) : background(NULL), fieldmesh(nullptr), deriv(NULL), yup_field(this), ydown_field(this) {
+Field3D::Field3D(const BoutReal val) : background(nullptr), fieldmesh(nullptr), deriv(nullptr), yup_field(nullptr), ydown_field(nullptr) {
   
   TRACE("Field3D: Copy constructor from value");
 
@@ -131,19 +131,19 @@ Field3D::~Field3D() {
     // The ddt of the yup/ydown_fields point to the same place as ddt.yup_field
     // only delete once
     // Also need to check that separate yup_field exists
-    if (yup_field != this)
-      yup_field->deriv = NULL;
-    if (ydown_field != this)
-      ydown_field->deriv = NULL;
+    if ((yup_field != this) && (yup_field != nullptr))
+      yup_field->deriv = nullptr;
+    if ((ydown_field != this) && (ydown_field != nullptr))
+      ydown_field->deriv = nullptr;
 
     // Now delete them as part of the deriv vector
     delete deriv;
   }
   
-  if(yup_field != this)
+  if((yup_field != this) && (yup_field != nullptr))
     delete yup_field;
   
-  if(ydown_field != this)
+  if((ydown_field != this) && (ydown_field != nullptr))
     delete ydown_field;
 }
 
@@ -162,21 +162,8 @@ void Field3D::allocate() {
 }
 
 Field3D* Field3D::timeDeriv() {
-  if(deriv == NULL) {
+  if(deriv == nullptr) {
     deriv = new Field3D(fieldmesh);
-
-    // Check if the yup/ydown have a time-derivative
-    // Need to make sure that ddt(f.yup) = ddt(f).yup
-
-    if(yup().deriv != NULL) {
-      deriv->yup_field = yup().deriv;
-    }
-    if(ydown().deriv != NULL) {
-      deriv->ydown_field = ydown().deriv;
-    }
-    // Set the yup/ydown time-derivatives
-    yup().deriv = &(deriv->yup());
-    ydown().deriv = &(deriv->ydown());
   }
   return deriv;
 }
@@ -184,7 +171,7 @@ Field3D* Field3D::timeDeriv() {
 void Field3D::splitYupYdown() {
   MsgStackItem trace("Field3D::splitYupYdown");
   
-  if(yup_field != this)
+  if((yup_field != this) && (yup_field != nullptr))
     return;
 
   // yup_field and ydown_field null
@@ -198,8 +185,10 @@ void Field3D::mergeYupYdown() {
   if(yup_field == this)
     return;
 
-  delete yup_field;
-  delete ydown_field;
+  if(yup_field != nullptr) {
+    delete yup_field;
+    delete ydown_field;
+  }
 
   yup_field = this;
   ydown_field = this;

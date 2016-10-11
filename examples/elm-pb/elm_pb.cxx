@@ -269,28 +269,19 @@ const Field2D N0tanh(BoutReal n0_height, BoutReal n0_ave, BoutReal n0_width, Bou
   return result;
 }
 
-const Field3D Grad2_par2new(const Field3D &f)
-{
-  /*
-   * This function implements d2/dy2 where y is the poloidal coordinate theta
-   */
 
-
-#ifdef CHECK
-  int msg_pos = msg_stack.push("Grad2_par2new( Field3D )");
-#endif
-
-
+/*!
+ * This function implements d2/dy2 where y is the poloidal coordinate theta
+ */
+const Field3D Grad2_par2new(const Field3D &f) {
+  TRACE("Grad2_par2new( Field3D )");
 
   Field3D result = D2DY2(f);
   
-
 #ifdef TRACK
   result.name = "Grad2_par2new("+f.name+")";
 #endif
-#ifdef CHECK
-  msg_stack.pop(msg_pos);
-#endif
+  
   return result;
 }
 
@@ -1088,9 +1079,11 @@ const Field3D Grad_parP(const Field3D &f, CELL_LOC loc = CELL_DEFAULT) {
     result = Grad_par(f, loc);
   
   if(nonlinear) {
-    Field3D PsiSum = Psi + rmp_Psi;
-    mesh->communicate(PsiSum);
-    result -= bracket(PsiSum, f, bm_mag)*B0;
+    result -= bracket(Psi, f, bm_mag)*B0;
+    
+    if(include_rmp) {
+      result -= bracket(rmp_Psi, f, bm_mag)*B0;
+    }
   }
   
   return result;
@@ -1170,6 +1163,8 @@ int physics_run(BoutReal t) {
       if(rmp_vac_mask)
         rmp_Psi = rmp_Psi0 * vac_mask;  // Only in vacuum -> skin current -> diffuses inwards
     }
+    
+    mesh->communicate(rmp_Psi);
   }
   
   ////////////////////////////////////////////
@@ -1225,7 +1220,9 @@ int physics_run(BoutReal t) {
 
   if(!evolve_jpar) {
     // Get J from Psi
-    Jpar = Delp2(Psi + rmp_Psi);
+    Jpar = Delp2(Psi);
+    if(include_rmp)
+      Jpar += Delp2(rmp_Psi);
 
     Jpar.applyBoundary();
     mesh->communicate(Jpar);
@@ -1293,25 +1290,18 @@ int physics_run(BoutReal t) {
     }
   }else {
     // Vector potential
-    Field3D B0phi = B0*phi; 
-    mesh->communicate(B0phi);
-    ddt(Psi) = -Grad_parP(B0phi, CELL_CENTRE) / B0 + eta*Jpar;
-    //xqx      ddt(Psi) = -Grad_parP(B0*phi, CELL_YLOW) / B0 + eta*Jpar;
-
+    ddt(Psi) = -Grad_parP(phi, CELL_CENTRE) + eta*Jpar;
+    
     if(eHall) {
-      Field3D B0P = B0*P; 
-      mesh->communicate(B0P);
-      ddt(Psi) +=  0.25*delta_i*(Grad_parP(B0P, CELL_CENTRE) / B0 
-                                 +b0xGrad_dot_Grad(P0, Psi));   // electron parallel pressure
+      ddt(Psi) +=  0.25*delta_i*(Grad_parP(P, CELL_CENTRE) 
+                                 +bracket(P0, Psi, bm_mag));   // electron parallel pressure
     }
 
     if(diamag_phi0)
-      ddt(Psi) -= b0xGrad_dot_Grad(phi0, Psi);   // Equilibrium flow
+      ddt(Psi) -= bracket(phi0, Psi, bm_exb);   // Equilibrium flow
 
     if(withflow)                                //net flow 
       ddt(Psi)-= V_dot_Grad(V0net, Psi);
-
-    //F_Psi = -Grad_par_CtoL(B0*phi) / B0 + eta*Jpar;
     
     if(diamag_grad_t) {
       // grad_par(T_e) correction
@@ -1351,10 +1341,13 @@ int physics_run(BoutReal t) {
   
   ////////////////////////////////////////////////////
   // Vorticity equation
-  Field3D PsiSum = Psi+rmp_Psi; 
-  mesh->communicate(PsiSum);
-  ddt(U) = SQ(B0) * b0xGrad_dot_Grad(PsiSum, J0, CELL_CENTRE); // Grad j term
-
+  
+  // Grad j term
+  ddt(U) = SQ(B0) * b0xGrad_dot_Grad(Psi, J0, CELL_CENTRE);
+  if(include_rmp) {
+    ddt(U) += SQ(B0) * b0xGrad_dot_Grad(rmp_Psi, J0, CELL_CENTRE);
+  }
+  
   ddt(U) += b0xcv*Grad(P);  // curvature term
 
   if(!nogradparj) {
@@ -1524,11 +1517,9 @@ int physics_run(BoutReal t) {
     }
 
     // Vpar equation
-
+    
     //ddt(Vpar) = -0.5*Grad_parP(P + P0, CELL_YLOW);
-    Field3D PP0=P+P0 ; 
-    mesh->communicate(PP0);
-    ddt(Vpar) = -0.5*Grad_par_LtoC(PP0);
+    ddt(Vpar) = -0.5*(Grad_par_LtoC(P) + Grad_par_LtoC(P0));
 
     if(nonlinear)
       ddt(Vpar) -= bracket(phi, Vpar, bm_exb)*B0; // Advection
