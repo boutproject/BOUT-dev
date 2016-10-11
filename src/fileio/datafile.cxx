@@ -92,12 +92,10 @@ Datafile::~Datafile() {
 }
 
 bool Datafile::openr(const char *format, ...) {
-  va_list ap;  // List of arguments
   if(format == (const char*) NULL)
     return 1;
-  va_start(ap, format);
+
   myvsnprintf(filename,filenamelen, format, ap);
-  va_end(ap);
   
   // Get the data format
   file = FormatFactory::getInstance()->createDataFormat(filename, parallel);
@@ -128,12 +126,10 @@ bool Datafile::openw(const char *format, ...) {
   if(!enabled)
     return true;
   
-  va_list ap;  // List of arguments
   if(format == (const char*) NULL)
     return 1;
-  va_start(ap, format);
+
   myvsnprintf(filename, filenamelen, format, ap);
-  va_end(ap);
   
   // Get the data format
   file = FormatFactory::getInstance()->createDataFormat(filename, parallel);
@@ -171,13 +167,11 @@ bool Datafile::opena(const char *format, ...) {
   if(!enabled)
     return true;
   
-  va_list ap;  // List of arguments
   if(format == (const char*) NULL)
     return 1;
-  va_start(ap, format);
+
   myvsnprintf(filename, filenamelen, format, ap);
-  va_end(ap);
-  
+
   // Get the data format
   file = FormatFactory::getInstance()->createDataFormat(filename, parallel);
   
@@ -520,15 +514,14 @@ bool Datafile::write() {
 bool Datafile::write(const char *format, ...) const {
   if(!enabled)
     return true;
-  
-  va_list ap;  // List of arguments
+
   if(format == (const char*) NULL)
     return false;
+
   int filenamelen=512;
   char * filename=new char[filenamelen];
-  va_start(ap, format);
+
   myvsnprintf(filename, filenamelen, format, ap);
-  va_end(ap);
 
   // Create a new datafile
   Datafile tmp(*this);

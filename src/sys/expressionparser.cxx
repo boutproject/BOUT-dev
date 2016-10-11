@@ -406,16 +406,12 @@ int ExpressionParser::LexInfo::getPos() {
 
 
 ParseException::ParseException(const char *s, ...) {
-  va_list ap;  // List of arguments
-
   if(s == (const char*) NULL)
     return;
 
   int buf_len=1024;
   char * buffer= new char[buf_len];
-  va_start(ap, s);
-    myvsnprintf(buffer,buf_len, s, ap);
-  va_end(ap);
+  myvsnprintf(buffer,buf_len, s, ap);
   
   message.assign(buffer);
   delete[] buffer;

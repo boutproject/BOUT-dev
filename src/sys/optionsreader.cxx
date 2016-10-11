@@ -21,13 +21,10 @@ OptionsReader* OptionsReader::getInstance() {
 void OptionsReader::read(Options *options, const char *file, ...) {
   if(file == (const char*) NULL) throw new BoutException("OptionsReader::read passed NULL filename\n");
 
-  va_list ap;  // List of arguments
   int buf_len=512;
   char * filename=new char[buf_len];
 
-  va_start(ap, file);
   myvsnprintf(filename,buf_len, file, ap);
-  va_end(ap);
 
   output.write("Reading options file %s\n", filename);
 

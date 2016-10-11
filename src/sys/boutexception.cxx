@@ -79,10 +79,7 @@ void BoutException::Backtrace() {
     } else {                                    \
       buflen=BoutException::BUFFER_LEN;         \
       buffer = new char[buflen];                \
-      va_list ap;                               \
-      va_start(ap, s);                          \
       myvsnprintf(buffer, buflen, s, ap);       \
-      va_end(ap);                               \
       for (int i=0;i<buflen;++i){               \
         if (buffer[i]==0){                      \
           if (i>0 && buffer[i-1]=='\n'){        \
@@ -103,7 +100,6 @@ BoutException::BoutException(const char* s, ...)
 {
   
   INIT_EXCEPTION(s);
-
 }
 
 const char* BoutException::what() const throw()
