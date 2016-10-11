@@ -237,7 +237,7 @@ void Datafile::setLowPrecision() {
   file->setLowPrecision();
 }
 
-void Datafile::add(int &i, const char *name, int grow) {
+void Datafile::add(int &i, const char *name, bool save_repeat) {
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Datafile", name);
 
@@ -245,12 +245,12 @@ void Datafile::add(int &i, const char *name, int grow) {
 
   d.ptr = &i;
   d.name = string(name);
-  d.grow = (grow > 0) ? true : false;
+  d.save_repeat = save_repeat;
   
   int_arr.push_back(d);
 }
 
-void Datafile::add(BoutReal &r, const char *name, int grow) {
+void Datafile::add(BoutReal &r, const char *name, bool save_repeat) {
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Datafile", name);
   
@@ -258,13 +258,12 @@ void Datafile::add(BoutReal &r, const char *name, int grow) {
 
   d.ptr = &r;
   d.name = string(name);
-  d.grow = (grow > 0) ? true : false;
+  d.save_repeat = save_repeat;
   
   BoutReal_arr.push_back(d);
 }
 
-void Datafile::add(Field2D &f, const char *name, int grow) {
-  fprintf(stderr,"adding f2d %s\n",name);
+void Datafile::add(Field2D &f, const char *name, bool save_repeat) {
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Datafile", name);
   
@@ -272,12 +271,12 @@ void Datafile::add(Field2D &f, const char *name, int grow) {
 
   d.ptr = &f;
   d.name = string(name);
-  d.grow = (grow > 0) ? true : false;
+  d.save_repeat = save_repeat;
   
   f2d_arr.push_back(d);
 }
 
-void Datafile::add(Field3D &f, const char *name, int grow) {
+void Datafile::add(Field3D &f, const char *name, bool save_repeat) {
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Datafile", name);
   
@@ -285,12 +284,12 @@ void Datafile::add(Field3D &f, const char *name, int grow) {
 
   d.ptr = &f;
   d.name = string(name);
-  d.grow = (grow > 0) ? true : false;
+  d.save_repeat = save_repeat;
   
   f3d_arr.push_back(d);
 }
 
-void Datafile::add(Vector2D &f, const char *name, int grow) {
+void Datafile::add(Vector2D &f, const char *name, bool save_repeat) {
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Datafile", name);
   
@@ -298,13 +297,13 @@ void Datafile::add(Vector2D &f, const char *name, int grow) {
 
   d.ptr = &f;
   d.name = string(name);
-  d.grow = (grow > 0) ? true : false;
+  d.save_repeat = save_repeat;
   d.covar = f.covariant;
   
   v2d_arr.push_back(d);
 }
 
-void Datafile::add(Vector3D &f, const char *name, int grow) {
+void Datafile::add(Vector3D &f, const char *name, bool save_repeat) {
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Datafile", name);
   
@@ -312,7 +311,7 @@ void Datafile::add(Vector3D &f, const char *name, int grow) {
 
   d.ptr = &f;
   d.name = string(name);
-  d.grow = (grow > 0) ? true : false;
+  d.save_repeat = save_repeat;
   d.covar = f.covariant;
   
   v3d_arr.push_back(d);
@@ -337,7 +336,7 @@ bool Datafile::read() {
   // Read integers
 
   for(std::vector< VarStr<int> >::iterator it = int_arr.begin(); it != int_arr.end(); it++) {
-    if(it->grow) {
+    if(it->save_repeat) {
       if(!file->read_rec(it->ptr, it->name.c_str())) {
 	if(!init_missing)
 	  throw BoutException("Missing data for %s in input. Set init_missing=true to set to zero.", it->name.c_str());
@@ -359,7 +358,7 @@ bool Datafile::read() {
   // Read BoutReals
 
   for(std::vector< VarStr<BoutReal> >::iterator it = BoutReal_arr.begin(); it != BoutReal_arr.end(); it++) {
-    if(it->grow) {
+    if(it->save_repeat) {
       if(!file->read_rec(it->ptr, it->name)) {
 	if(!init_missing)
 	  throw BoutException("Missing data for %s in input. Set init_missing=true to set to zero.", it->name.c_str());
@@ -381,13 +380,13 @@ bool Datafile::read() {
   // Read 2D fields
   
   for(std::vector< VarStr<Field2D> >::iterator it = f2d_arr.begin(); it != f2d_arr.end(); it++) {
-    read_f2d(it->name, it->ptr, it->grow);
+    read_f2d(it->name, it->ptr, it->save_repeat);
   }
 
   // Read 3D fields
   
   for(std::vector< VarStr<Field3D> >::iterator it = f3d_arr.begin(); it != f3d_arr.end(); it++) {
-    read_f3d(it->name, it->ptr, it->grow);
+    read_f3d(it->name, it->ptr, it->save_repeat);
   }
 
   // 2D vectors
@@ -395,13 +394,13 @@ bool Datafile::read() {
   for(std::vector< VarStr<Vector2D> >::iterator it = v2d_arr.begin(); it != v2d_arr.end(); it++) {
     if(it->covar) {
       // Reading covariant vector
-      read_f2d(it->name+string("_x"), &(it->ptr->x), it->grow);
-      read_f2d(it->name+string("_y"), &(it->ptr->y), it->grow);
-      read_f2d(it->name+string("_z"), &(it->ptr->z), it->grow);
+      read_f2d(it->name+string("_x"), &(it->ptr->x), it->save_repeat);
+      read_f2d(it->name+string("_y"), &(it->ptr->y), it->save_repeat);
+      read_f2d(it->name+string("_z"), &(it->ptr->z), it->save_repeat);
     }else {
-      read_f2d(it->name+string("x"), &(it->ptr->x), it->grow);
-      read_f2d(it->name+string("y"), &(it->ptr->y), it->grow);
-      read_f2d(it->name+string("z"), &(it->ptr->z), it->grow);
+      read_f2d(it->name+string("x"), &(it->ptr->x), it->save_repeat);
+      read_f2d(it->name+string("y"), &(it->ptr->y), it->save_repeat);
+      read_f2d(it->name+string("z"), &(it->ptr->z), it->save_repeat);
     }
 
     it->ptr->covariant = it->covar;
@@ -412,13 +411,13 @@ bool Datafile::read() {
   for(std::vector< VarStr<Vector3D> >::iterator it = v3d_arr.begin(); it != v3d_arr.end(); it++) {
     if(it->covar) {
       // Reading covariant vector
-      read_f3d(it->name+string("_x"), &(it->ptr->x), it->grow);
-      read_f3d(it->name+string("_y"), &(it->ptr->y), it->grow);
-      read_f3d(it->name+string("_z"), &(it->ptr->z), it->grow);
+      read_f3d(it->name+string("_x"), &(it->ptr->x), it->save_repeat);
+      read_f3d(it->name+string("_y"), &(it->ptr->y), it->save_repeat);
+      read_f3d(it->name+string("_z"), &(it->ptr->z), it->save_repeat);
     }else {
-      read_f3d(it->name+string("x"), &(it->ptr->x), it->grow);
-      read_f3d(it->name+string("y"), &(it->ptr->y), it->grow);
-      read_f3d(it->name+string("z"), &(it->ptr->z), it->grow);
+      read_f3d(it->name+string("x"), &(it->ptr->x), it->save_repeat);
+      read_f3d(it->name+string("y"), &(it->ptr->y), it->save_repeat);
+      read_f3d(it->name+string("z"), &(it->ptr->z), it->save_repeat);
     }
 
     it->ptr->covariant = it->covar;
@@ -461,12 +460,12 @@ bool Datafile::write() {
 
   // Write integers
   for(std::vector< VarStr<int> >::iterator it = int_arr.begin(); it != int_arr.end(); it++) {
-    write_int(it->name, it->ptr, it->grow);
+    write_int(it->name, it->ptr, it->save_repeat);
   }
   
   // Write BoutReals
   for(std::vector< VarStr<BoutReal> >::iterator it = BoutReal_arr.begin(); it != BoutReal_arr.end(); it++) {
-    if(it->grow) {
+    if(it->save_repeat) {
       file->write_rec(it->ptr, it->name);
     }else {
       file->write(it->ptr, it->name);
@@ -476,13 +475,13 @@ bool Datafile::write() {
   // Write 2D fields
   
   for(std::vector< VarStr<Field2D> >::iterator it = f2d_arr.begin(); it != f2d_arr.end(); it++) {
-    write_f2d(it->name, it->ptr, it->grow);
+    write_f2d(it->name, it->ptr, it->save_repeat);
   }
 
   // Write 3D fields
   
   for(std::vector< VarStr<Field3D> >::iterator it = f3d_arr.begin(); it != f3d_arr.end(); it++) {
-    write_f3d(it->name, it->ptr, it->grow);
+    write_f3d(it->name, it->ptr, it->save_repeat);
   }
   
   // 2D vectors
@@ -493,17 +492,17 @@ bool Datafile::write() {
       Vector2D v  = *(it->ptr);
       v.toCovariant();
       
-      write_f2d(it->name+string("_x"), &(v.x), it->grow);
-      write_f2d(it->name+string("_y"), &(v.y), it->grow);
-      write_f2d(it->name+string("_z"), &(v.z), it->grow);
+      write_f2d(it->name+string("_x"), &(v.x), it->save_repeat);
+      write_f2d(it->name+string("_y"), &(v.y), it->save_repeat);
+      write_f2d(it->name+string("_z"), &(v.z), it->save_repeat);
     }else {
       // Writing contravariant vector
       Vector2D v  = *(it->ptr);
       v.toContravariant();
       
-      write_f2d(it->name+string("x"), &(v.x), it->grow);
-      write_f2d(it->name+string("y"), &(v.y), it->grow);
-      write_f2d(it->name+string("z"), &(v.z), it->grow);
+      write_f2d(it->name+string("x"), &(v.x), it->save_repeat);
+      write_f2d(it->name+string("y"), &(v.y), it->save_repeat);
+      write_f2d(it->name+string("z"), &(v.z), it->save_repeat);
     }
   }
 
@@ -515,17 +514,17 @@ bool Datafile::write() {
       Vector3D v  = *(it->ptr);
       v.toCovariant();
       
-      write_f3d(it->name+string("_x"), &(v.x), it->grow);
-      write_f3d(it->name+string("_y"), &(v.y), it->grow);
-      write_f3d(it->name+string("_z"), &(v.z), it->grow);
+      write_f3d(it->name+string("_x"), &(v.x), it->save_repeat);
+      write_f3d(it->name+string("_y"), &(v.y), it->save_repeat);
+      write_f3d(it->name+string("_z"), &(v.z), it->save_repeat);
     }else {
       // Writing contravariant vector
       Vector3D v  = *(it->ptr);
       v.toContravariant();
       
-      write_f3d(it->name+string("x"), &(v.x), it->grow);
-      write_f3d(it->name+string("y"), &(v.y), it->grow);
-      write_f3d(it->name+string("z"), &(v.z), it->grow);
+      write_f3d(it->name+string("x"), &(v.x), it->save_repeat);
+      write_f3d(it->name+string("y"), &(v.y), it->save_repeat);
+      write_f3d(it->name+string("z"), &(v.z), it->save_repeat);
     }
   }
   
@@ -574,10 +573,10 @@ bool Datafile::writeVar(const BoutReal &r, const char *name) {
 
 /////////////////////////////////////////////////////////////
 
-bool Datafile::read_f2d(const string &name, Field2D *f, bool grow) {
+bool Datafile::read_f2d(const string &name, Field2D *f, bool save_repeat) {
   f->allocate();
   
-  if(grow) {
+  if(save_repeat) {
     if(!file->read_rec(*(f->getData()), name, mesh->ngx, mesh->ngy)) {
       if(init_missing) {
         output.write("\tWARNING: Could not read 2D field %s. Setting to zero\n", name.c_str());
@@ -601,10 +600,10 @@ bool Datafile::read_f2d(const string &name, Field2D *f, bool grow) {
   return true;
 }
 
-bool Datafile::read_f3d(const string &name, Field3D *f, bool grow) {
+bool Datafile::read_f3d(const string &name, Field3D *f, bool save_repeat) {
   f->allocate();
   
-  if(grow) {
+  if(save_repeat) {
     if(!file->read_rec(**(f->getData()), name, mesh->ngx, mesh->ngy, mesh->ngz)) {
       if(init_missing) {
         output.write("\tWARNING: Could not read 3D field %s. Setting to zero\n", name.c_str());
@@ -628,27 +627,27 @@ bool Datafile::read_f3d(const string &name, Field3D *f, bool grow) {
   return true;
 }
 
-bool Datafile::write_int(const string &name, int *f, bool grow) {
-  if(grow) {
+bool Datafile::write_int(const string &name, int *f, bool save_repeat) {
+  if(save_repeat) {
     file->write_rec(f, name);
   }else {
     file->write(f, name);
   }
 }
 
-bool Datafile::write_real(const string &name, BoutReal *f, bool grow) {
-  if(grow) {
+bool Datafile::write_real(const string &name, BoutReal *f, bool save_repeat) {
+  if(save_repeat) {
     file->write_rec(f, name);
   }else {
     file->write(f, name);
   }
 }
 
-bool Datafile::write_f2d(const string &name, Field2D *f, bool grow) {
+bool Datafile::write_f2d(const string &name, Field2D *f, bool save_repeat) {
   if(!f->isAllocated())
     throw BoutException("Datafile::write_f2d: Field2D is not allocated!");
   
-  if(grow) {
+  if(save_repeat) {
     if (!file->write_rec(*(f->getData()), name, Lx, Ly))
       throw BoutException("Datafile::write_f2d: Failed to write %s!",name.c_str());
   }else {
@@ -658,12 +657,12 @@ bool Datafile::write_f2d(const string &name, Field2D *f, bool grow) {
   return true;
 }
 
-bool Datafile::write_f3d(const string &name, Field3D *f, bool grow) {
+bool Datafile::write_f3d(const string &name, Field3D *f, bool save_repeat) {
   if(!f->isAllocated()) {
     throw BoutException("Datafile::write_f3d: Field3D is not allocated!");
   }
   
-  if(grow) {
+  if(save_repeat) {
     return file->write_rec(**(f->getData()), name, Lx, Ly, Lz);
   }else {
     return file->write(**(f->getData()), name, Lx, Ly, Lz);
