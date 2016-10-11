@@ -31,12 +31,12 @@ for f in field:
 #pragma omp parallel
   for (auto i:d%s){
     auto val=d%s[i.%s%s()];
-    assert(abs(val-((i.z+mesh->LocalNz*2%+d)%smesh->LocalNz))<1e-8);
+    myassert(abs(val-((i.z+mesh->LocalNz*2%+d)%smesh->LocalNz))<1e-8);
   }"""%(f,f,d,offs[diff],diff,'%')
         else:
             print """
 #pragma omp parallel
   for (auto i:d%s.region(RGN_NO%s)){
     auto zero=d%s[i]%+d-d%s[i.%s%s()];
-    assert(abs(zero)<1e-8);
+    myassert(abs(zero)<1e-8);
   }"""%(f,d.upper(),f,diff,f,d,offs[diff])

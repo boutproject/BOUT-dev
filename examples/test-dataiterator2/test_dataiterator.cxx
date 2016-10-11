@@ -7,12 +7,18 @@
 #include <boutmain.hxx>
 
 //#include <fielditerator.hxx>
-#include <assert.h>
+//#include <assert.h>
 
 #include <unistd.h>
 
 Field3D n;
 
+#define myassert(expr) {				\
+    if (!(expr)){					\
+      throw BoutException("%s failed %s in %s:%d",	\
+			  #expr,__func__,		\
+			  __FILE__,__LINE__);		\
+    }}
 
 int physics_init(bool restarting) {
 
