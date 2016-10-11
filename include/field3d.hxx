@@ -38,6 +38,7 @@ class Mesh;  // #include "bout/mesh.hxx"
 #include "bout/array.hxx"
 
 #include "bout/deprecated.hxx"
+#include "bout/assert.hxx"
 
 #include "bout/field_visitor.hxx"
 
@@ -101,11 +102,23 @@ class Field3D : public Field, public FieldData {
   void mergeYupYdown();
   
   /// Flux Coordinate Independent (FCI) method
-  Field3D& yup() { return *yup_field; }
-  const Field3D& yup() const { return *yup_field; }
+  Field3D& yup() { 
+    ASSERT2(yup_field != nullptr); // Check for communicate
+    return *yup_field; 
+  }
+  const Field3D& yup() const { 
+    ASSERT2(yup_field != nullptr);
+    return *yup_field; 
+  }
   
-  Field3D& ydown() { return *ydown_field; }
-  const Field3D& ydown() const { return *ydown_field; }
+  Field3D& ydown() { 
+    ASSERT2(ydown_field != nullptr);
+    return *ydown_field;
+  }
+  const Field3D& ydown() const { 
+    ASSERT2(ydown_field != nullptr);
+    return *ydown_field; 
+  }
 
   /// Return yup if dir=+1, and ydown if dir=-1
   Field3D& ynext(int dir);

@@ -537,12 +537,17 @@ const Field3D b0xGrad_dot_Grad(const Field3D &p, const Field2D &A, CELL_LOC outl
   // Calculate advection velocity
   vx = metric->g_22*dpdz - metric->g_23*dpdy;
   vy = metric->g_23*dpdx - metric->g_12*dpdz;
-
+  
+  // NOTE: These communications are terrible for performance
+  // and are not necessary; only the central v point is used for most upwind operators
+  mesh->communicate(vx, vy);
+  vx.applyBoundary("neumann");
+  vy.applyBoundary("neumann");
+  
   // Upwind A using these velocities
   
   result = VDDX(vx, A)
     + VDDY(vy, A);
-  
   
   result /=  (metric->J*sqrt(metric->g_22));
   
@@ -578,7 +583,12 @@ const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC ou
   }
 
   // Upwind A using these velocities
-  
+  // NOTE: These communications are terrible for performance
+  // and are not necessary; only the central v point is used for most upwind operators
+  mesh->communicate(vx,vy,vz);
+  vx.applyBoundary("neumann");
+  vy.applyBoundary("neumann");
+  vz.applyBoundary("neumann");
   
   result = VDDX(vx, A)
     + VDDY(vy, A)
