@@ -3284,12 +3284,14 @@ void BoundaryToFieldAligned::apply(Field2D &f) {
 }
 
 void BoundaryToFieldAligned::apply(Field3D &f) {
-  //NOTE: This is not very efficient... copying entire field -- could reuse memory of f
-  Field3D g = mesh->fromFieldAligned(f); 
+  //NOTE: This is not very efficient... updating entire field
+  f = mesh->fromFieldAligned(f); 
 
-  // Apply the boundary to g
-  op->apply(g);
-  f = mesh->toFieldAligned(g);
+  // Apply the boundary to shifted field
+  op->apply(f);
+
+  //Shift back
+  f = mesh->toFieldAligned(f);
 
   //This is inefficient -- could instead use the shiftZ just in the bndry
   //but this is not portable to other parallel transforms -- we could instead
@@ -3301,10 +3303,10 @@ void BoundaryToFieldAligned::apply_ddt(Field2D &f) {
 }
 
 void BoundaryToFieldAligned::apply_ddt(Field3D &f) {
-  Field3D g = mesh->toFieldAligned(f);
-  ddt(g) = mesh->toFieldAligned(ddt(f));
-  op->apply_ddt(g);
-  ddt(f) = mesh->fromFieldAligned(ddt(g));
+  f = mesh->toFieldAligned(f);
+  ddt(f) = mesh->toFieldAligned(ddt(f));
+  op->apply_ddt(f);
+  ddt(f) = mesh->fromFieldAligned(ddt(f));
 }
 
 
@@ -3324,18 +3326,24 @@ void BoundaryFromFieldAligned::apply(Field2D &f) {
   op->apply(f);
 }
 
-void BoundaryFromFieldAligned::apply(Field3D &f) {
-  //NOTE: This is not very efficient... copying entire field -- could reuse memory of f
-  Field3D g = mesh->toFieldAligned(f); 
+// void BoundaryFromFieldAligned::apply(Field3D &f) {
+//   //Warning assuming t = 0. -- likely incorrect for evolving boundaries
+//   BoundaryFromFieldAligned::apply(f,0.);
+// }
 
-  // Apply the boundary to g
-  op->apply(g);
-  f = mesh->fromFieldAligned(g);
+void BoundaryFromFieldAligned::apply(Field3D &f) {
+  //NOTE: This is not very efficient... shifting entire field
+  f = mesh->toFieldAligned(f); 
+
+  // Apply the boundary to shifted field
+  op->apply(f);
+
+  //Shift back
+  f = mesh->fromFieldAligned(f);
 
   //This is inefficient -- could instead use the shiftZ just in the bndry
   //but this is not portable to other parallel transforms -- we could instead
   //have a flag to define the region in which we want to apply to/fromFieldAligned
-
 }
   
 void BoundaryFromFieldAligned::apply_ddt(Field2D &f) {
@@ -3343,8 +3351,8 @@ void BoundaryFromFieldAligned::apply_ddt(Field2D &f) {
 }
 
 void BoundaryFromFieldAligned::apply_ddt(Field3D &f) {
-  Field3D g = mesh->toFieldAligned(f);
-  ddt(g) = mesh->toFieldAligned(ddt(f));
-  op->apply_ddt(g);
-  ddt(f) = mesh->fromFieldAligned(ddt(g));
+  f = mesh->toFieldAligned(f);
+  ddt(f) = mesh->toFieldAligned(ddt(f));
+  op->apply_ddt(f);
+  ddt(f) = mesh->fromFieldAligned(ddt(f));
 }
