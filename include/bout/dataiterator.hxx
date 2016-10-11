@@ -157,7 +157,7 @@ public:
   /*!
    * Add an offset to the index for general stencils
    */
-  const Indices offset(int dx, int dy, int dz) const {
+  const inline Indices offset(int dx, int dy, int dz) const {
     int nz = zend-zstart+1;
     return {x+dx, y+dy, ((z+dz-zstart + nz) % nz) + zstart};
   }
@@ -166,73 +166,35 @@ public:
    * Shortcuts for common offsets, one cell
    * in each direction.
    */
-  
+  // general implementation for an abitrary number of cells
+  // which defaults to one if used as .xp();
   /// The index one point +1 in x
-  const Indices xp() const { return {x+1, y, z}; }
+  const inline Indices xp(int i=1) const { return {x+i, y, z}; }
   /// The index one point -1 in x
-  const Indices xm() const { return {x-1, y, z}; }
+  const inline Indices xm(int i=1) const { return {x-i, y, z}; }
   /// The index one point +1 in y
-  const Indices yp() const { return {x, y+1, z}; }
+  const inline Indices yp(int i=1) const { return {x, y+i, z}; }
   /// The index one point -1 in y
-  const Indices ym() const { return {x, y-1, z}; }
+  const inline Indices ym(int i=1) const { return {x, y-i, z}; }
   /// The index one point +1 in z. Wraps around zend to zstart
-  const Indices zp() const { return {x, y, z == zend ? zstart : z+1}; }
+  const inline Indices zp(int i=1) const {
+    int zp=z;
+    for (int j=0;j<i;++j)
+      zp=(zp == zend ? zstart : zp+1);
+    return {x, y, zp }; }
   /// The index one point -1 in z. Wraps around zstart to zend
-  const Indices zm() const { return {x, y, z == zstart ? zend : z-1}; }
-
+  const inline Indices zm(int i=1) const {
+    int zm=z;
+    for (;i!= 0;--i)
+      zm = (zm == zstart ? zend : zm-1);
+    return {x, y, zm }; }
   // and for 2 cells
-  const Indices xpp() const { return {x+2, y, z}; }
-  const Indices xmm() const { return {x-2, y, z}; }
-  const Indices ypp() const { return {x, y+2, z}; }
-  const Indices ymm() const { return {x, y-2, z}; }
-  const Indices zpp() const { int zp=(z == zend ? zstart : z+1); return {x, y, zp == zend ? zstart :zp+1 }; }
-  const Indices zmm() const { int zm=(z == zstart ? zend : z-1); return {x, y, zm == zstart ? zend : zm-1}; }
-  // and for 2 cells
-  const Indices xp2() const { return {x+2, y, z}; }
-  const Indices xm2() const { return {x-2, y, z}; }
-  const Indices yp2() const { return {x, y+2, z}; }
-  const Indices ym2() const { return {x, y-2, z}; }
-  const Indices zp2() const { int zp=(z == zend ? zstart : z+1); return {x, y, zp == zend ? zstart :zp+1 }; }
-  const Indices zm2() const { int zm=(z == zstart ? zend : z-1); return {x, y, zm == zstart ? zend : zm-1}; }
-  // and 3 cells
-  const Indices xp3() const { return {x+3, y, z}; }
-  const Indices xm3() const { return {x-3, y, z}; }
-  const Indices yp3() const { return {x, y+3, z}; }
-  const Indices ym3() const { return {x, y-3, z}; }
-  const Indices zp3() const { int zp=(z == zend ? zstart : z+1);
-    int zp2=(zp == zend ? zstart : zp+1);
-    return {x, y, zp2 == zend ? zstart :zp2+1 }; }
-  const Indices zm3() const { int zm=(z == zstart ? zend : z-1);
-     int zm2=(zm == zstart ? zend : zm-1);
-    return {x, y, zm2 == zstart ? zend : zm2-1}; }
-  // and 4 cells
-  const Indices xp4() const { return {x+4, y, z}; }
-  const Indices xm4() const { return {x-4, y, z}; }
-  const Indices yp4() const { return {x, y+4, z}; }
-  const Indices ym4() const { return {x, y-4, z}; }
-  const Indices zp4() const { int zp=(z == zend ? zstart : z+1);
-    int zp2=(zp == zend ? zstart : zp+1);
-    int zp3=(zp2 == zend ? zstart : zp2+1);
-    return {x, y, zp3 == zend ? zstart :zp3+1 }; }
-  const Indices zm4() const { int zm=(z == zstart ? zend : z-1);
-     int zm2=(zm == zstart ? zend : zm-1);
-     int zm3=(zm2 == zstart ? zend : zm2-1);
-    return {x, y, zm3 == zstart ? zend : zm3-1}; }
-  // and 5 cells
-  const Indices xp5() const { return {x+5, y, z}; }
-  const Indices xm5() const { return {x-5, y, z}; }
-  const Indices yp5() const { return {x, y+5, z}; }
-  const Indices ym5() const { return {x, y-5, z}; }
-  const Indices zp5() const { int zp=(z == zend ? zstart : z+1);
-    int zp2=(zp == zend ? zstart : zp+1);
-    int zp3=(zp2 == zend ? zstart : zp2+1);
-    int zp4=(zp3 == zend ? zstart : zp3+1);
-    return {x, y, zp4 == zend ? zstart :zp4+1 }; }
-  const Indices zm5() const { int zm=(z == zstart ? zend : z-1);
-     int zm2=(zm == zstart ? zend : zm-1);
-     int zm3=(zm2 == zstart ? zend : zm2-1);
-     int zm4=(zm3 == zstart ? zend : zm3-1);
-    return {x, y, zm4 == zstart ? zend : zm4-1}; }
+  const inline Indices xpp() const { return xp(2); }
+  const inline Indices xmm() const { return xm(2); }
+  const inline Indices ypp() const { return yp(2); }
+  const inline Indices ymm() const { return ym(2); }
+  const inline Indices zpp() const { return zp(2); }
+  const inline Indices zmm() const { return zm(2); }
   
   /*!
    * Resets DataIterator to the start of the range
