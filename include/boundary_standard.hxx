@@ -299,6 +299,7 @@ public:
 };
 // End L.Easy
 
+
 /////////////////////////////////////////////////////////
 
 /// Convert a boundary condition to a relaxing one
@@ -308,8 +309,10 @@ class BoundaryRelax : public BoundaryModifier {
   BoundaryRelax(BoundaryOp *operation, BoutReal rate) : BoundaryModifier(operation) {r = fabs(rate); apply_to_ddt = true;}
   BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
   
-  void apply(Field2D &f);
-  void apply(Field3D &f);
+  void apply(Field2D &f) {apply(f, 0.);};
+  void apply(Field2D &f, BoutReal t);
+  void apply(Field3D &f) {apply(f, 0.);};
+  void apply(Field3D &f, BoutReal t);
   
   void apply_ddt(Field2D &f);
   void apply_ddt(Field3D &f);
@@ -324,8 +327,10 @@ public:
   BoundaryWidth(BoundaryOp *operation, int wid) : BoundaryModifier(operation), width(wid) {}
   BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
   
-  void apply(Field2D &f);
-  void apply(Field3D &f);
+  void apply(Field2D &f) {apply(f, 0.);};
+  void apply(Field2D &f, BoutReal t);
+  void apply(Field3D &f) {apply(f, 0.);};
+  void apply(Field3D &f, BoutReal t);
   
   void apply_ddt(Field2D &f);
   void apply_ddt(Field3D &f);
@@ -340,10 +345,10 @@ public:
   BoundaryToFieldAligned(){NULL;};
   BoundaryToFieldAligned(BoundaryOp *operation) : BoundaryModifier(operation){}
   BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
-  
-  void apply(Field2D &f);
+
+  void apply(Field2D &f) {apply(f, 0.);};
   void apply(Field2D &f, BoutReal t);
-  void apply(Field3D &f);
+  void apply(Field3D &f) {apply(f, 0.);};
   void apply(Field3D &f, BoutReal t);
   
   void apply_ddt(Field2D &f);
@@ -358,10 +363,10 @@ public:
   BoundaryFromFieldAligned(){NULL;};
   BoundaryFromFieldAligned(BoundaryOp *operation) : BoundaryModifier(operation){}
   BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
-  
-  void apply(Field2D &f);
+
+  void apply(Field2D &f) {apply(f, 0.);};
   void apply(Field2D &f, BoutReal t);
-  void apply(Field3D &f);
+  void apply(Field3D &f) {apply(f, 0.);};
   void apply(Field3D &f, BoutReal t);
   
   void apply_ddt(Field2D &f);
