@@ -52,11 +52,11 @@ class Datafile {
   void setLowPrecision(); ///< Only output floats
   template <typename t>
   void addRepeat(t &value, std::string name){
-    add(value,name.c_str());
+    add(value,name.c_str(),true);
   }
   template <typename t>
   void addOnce(t &value, std::string name){
-    add(value,name.c_str());
+    add(value,name.c_str(),false);
   }
   void add(int &i, const char *name, bool save_repeat = false);
   void add(BoutReal &r, const char *name, bool save_repeat = false);
@@ -71,7 +71,7 @@ class Datafile {
   bool write(const char *filename, ...) const; ///< Opens, writes, closes file
   
   // Write a variable to the file now
- bool writeVar(const int &i, const char *name);
+  bool writeVar(const int &i, const char *name);
   bool writeVar(const BoutReal &r, const char *name);
   
  private:
