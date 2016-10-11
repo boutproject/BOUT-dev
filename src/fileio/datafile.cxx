@@ -93,7 +93,8 @@ Datafile& Datafile::operator=(const Datafile &rhs) {
 bool Datafile::openr(const char *format, ...) {
   va_list ap;  // List of arguments
   if(format == (const char*) NULL)
-    return 1;
+    throw BoutException("Datafile::open: No argument given for opening file!");
+
   va_start(ap, format);
     vsprintf(filename, format, ap);
   va_end(ap);
@@ -102,7 +103,7 @@ bool Datafile::openr(const char *format, ...) {
   file = FormatFactory::getInstance()->createDataFormat(filename, parallel);
   
   if(!file)
-    return false;
+    throw BoutException("Datafile::open: Factory failed to create a DataFormat!");
   
   // If parallel do not want to write ghost points, and it is easier then to ignore the boundary guard cells as well
   if (parallel) {
@@ -117,7 +118,7 @@ bool Datafile::openr(const char *format, ...) {
     int MYPE;
     MPI_Comm_rank(BoutComm::get(), &MYPE);
     if(!file->openr(filename, MYPE))
-      return false;
+      throw BoutException("Datafile::open: Failed to open file!");
   }
   
   return true;
@@ -129,7 +130,8 @@ bool Datafile::openw(const char *format, ...) {
   
   va_list ap;  // List of arguments
   if(format == (const char*) NULL)
-    return 1;
+    throw BoutException("Datafile::open: No argument given for opening file!");
+
   va_start(ap, format);
   vsprintf(filename, format, ap);
   va_end(ap);
@@ -138,7 +140,7 @@ bool Datafile::openw(const char *format, ...) {
   file = FormatFactory::getInstance()->createDataFormat(filename, parallel);
   
   if(!file)
-    return false;
+    throw BoutException("Datafile::open: Factory failed to create a DataFormat!");
   
   // If parallel do not want to write ghost points, and it is easier then to ignore the boundary guard cells as well
   if (parallel) {
@@ -160,7 +162,7 @@ bool Datafile::openw(const char *format, ...) {
     int MYPE;
     MPI_Comm_rank(BoutComm::get(), &MYPE);
     if(!file->openw(filename, MYPE))
-      return false;
+      throw BoutException("Datafile::open: Failed to open file!");
   }
   
   return true;
@@ -172,7 +174,8 @@ bool Datafile::opena(const char *format, ...) {
   
   va_list ap;  // List of arguments
   if(format == (const char*) NULL)
-    return 1;
+    throw BoutException("Datafile::open: No argument given for opening file!");
+
   va_start(ap, format);
   vsprintf(filename, format, ap);
   va_end(ap);
@@ -181,7 +184,7 @@ bool Datafile::opena(const char *format, ...) {
   file = FormatFactory::getInstance()->createDataFormat(filename, parallel);
   
   if(!file)
-    return false;
+    throw BoutException("Datafile::open: Factory failed to create a DataFormat!");
 
   // If parallel do not want to write ghost points, and it is easier then to ignore the boundary guard cells as well
   if (parallel) {
@@ -203,7 +206,7 @@ bool Datafile::opena(const char *format, ...) {
     int MYPE;
     MPI_Comm_rank(BoutComm::get(), &MYPE);
     if(!file->openw(filename, MYPE, true))
-      return false;
+      throw BoutException("Datafile::open: Failed to open file!");
   }
   return true;
 }
@@ -261,6 +264,7 @@ void Datafile::add(BoutReal &r, const char *name, int grow) {
 }
 
 void Datafile::add(Field2D &f, const char *name, int grow) {
+  fprintf(stderr,"adding f2d %s\n",name);
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Datafile", name);
   
@@ -322,11 +326,11 @@ bool Datafile::read() {
     int MYPE;
     MPI_Comm_rank(BoutComm::get(), &MYPE);
     if(!file->openr(filename, MYPE))
-      return false;
+      throw BoutException("Datafile::read: Failed to open file!");
   }
   
   if(!file->is_valid())
-    return false;  
+    throw BoutException("Datafile::read: File is not valid!");
 
   file->setRecord(-1); // Read the latest record
 
@@ -335,12 +339,16 @@ bool Datafile::read() {
   for(std::vector< VarStr<int> >::iterator it = int_arr.begin(); it != int_arr.end(); it++) {
     if(it->grow) {
       if(!file->read_rec(it->ptr, it->name.c_str())) {
+	if(!init_missing)
+	  throw BoutException("Missing data for %s in input. Set init_missing=true to set to zero.", it->name.c_str());
         output.write("\tWARNING: Could not read integer %s. Setting to zero\n", it->name.c_str());
         *(it->ptr) = 0;
 	continue;
       }
     }else {
       if(!file->read(it->ptr, it->name.c_str())) {
+	if(!init_missing)
+	  throw BoutException("Missing data for %s in input. Set init_missing=true to set to zero.", it->name.c_str());
         output.write("\tWARNING: Could not read integer %s. Setting to zero\n", it->name.c_str());
         *(it->ptr) = 0;
 	continue;
@@ -353,12 +361,16 @@ bool Datafile::read() {
   for(std::vector< VarStr<BoutReal> >::iterator it = BoutReal_arr.begin(); it != BoutReal_arr.end(); it++) {
     if(it->grow) {
       if(!file->read_rec(it->ptr, it->name)) {
+	if(!init_missing)
+	  throw BoutException("Missing data for %s in input. Set init_missing=true to set to zero.", it->name.c_str());
 	output.write("\tWARNING: Could not read BoutReal %s. Setting to zero\n", it->name.c_str());
 	*(it->ptr) = 0;
 	continue;
       }
     }else {
       if(!file->read(it->ptr, it->name)) {
+	if(!init_missing)
+	  throw BoutException("Missing data for %s in input. Set init_missing=true to set to zero.", it->name.c_str());
 	output.write("\tWARNING: Could not read BoutReal %s. Setting to zero\n", it->name.c_str());
 	*(it->ptr) = 0;
 	continue;
@@ -425,20 +437,20 @@ bool Datafile::write() {
     return true; // Just pretend it worked
   
   if(!file)
-    return false;
+    throw BoutException("Datafile::write: File is not valid!");
   
   if(openclose) {
     // Open the file
     int MYPE;
     MPI_Comm_rank(BoutComm::get(), &MYPE);
     if(!file->openw(filename, MYPE, appending))
-      return false;
+      throw BoutException("Datafile::write: Failed to open file!");
     appending = true;
   }
 
   
   if(!file->is_valid())
-    return false;
+    throw BoutException("Datafile::open: File is not valid!");
 
   if(floats)
     file->setLowPrecision();
@@ -529,7 +541,7 @@ bool Datafile::write(const char *format, ...) const {
   
   va_list ap;  // List of arguments
   if(format == (const char*) NULL)
-    return false;
+    throw BoutException("Datafile::write: No argument given!");
   char filename[512];
   va_start(ap, format);
   vsprintf(filename, format, ap);
@@ -634,19 +646,21 @@ bool Datafile::write_real(const string &name, BoutReal *f, bool grow) {
 
 bool Datafile::write_f2d(const string &name, Field2D *f, bool grow) {
   if(!f->isAllocated())
-    return false; // No data allocated
+    throw BoutException("Datafile::write_f2d: Field2D is not allocated!");
   
   if(grow) {
-    return file->write_rec(*(f->getData()), name, Lx, Ly);
+    if (!file->write_rec(*(f->getData()), name, Lx, Ly))
+      throw BoutException("Datafile::write_f2d: Failed to write %s!",name.c_str());
   }else {
-    return file->write(*(f->getData()), name, Lx, Ly);
+    if (!file->write(*(f->getData()), name, Lx, Ly))
+      throw BoutException("Datafile::write_f2d: Failed to write %s!",name.c_str());
   }
+  return true;
 }
 
 bool Datafile::write_f3d(const string &name, Field3D *f, bool grow) {
   if(!f->isAllocated()) {
-    //output << "Datafile: unallocated: " << name << endl;
-    return false; // No data allocated
+    throw BoutException("Datafile::write_f3d: Field3D is not allocated!");
   }
   
   if(grow) {
