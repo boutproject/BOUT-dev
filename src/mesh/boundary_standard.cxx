@@ -3303,10 +3303,10 @@ void BoundaryToFieldAligned::apply_ddt(Field2D &f) {
 }
 
 void BoundaryToFieldAligned::apply_ddt(Field3D &f) {
-  f = mesh->toFieldAligned(f);
-  ddt(f) = mesh->toFieldAligned(ddt(f));
-  op->apply_ddt(f);
+  f = mesh->fromFieldAligned(f);
   ddt(f) = mesh->fromFieldAligned(ddt(f));
+  op->apply_ddt(f);
+  ddt(f) = mesh->toFieldAligned(ddt(f));
 }
 
 
