@@ -333,7 +333,8 @@ private:
   int width;
 };
 
-/// Convert toFieldAligned
+/// Convert input field fromFieldAligned, apply boundary and then convert back toFieldAligned
+/// Equivalent to converting the boundary condition to "Field Aligned" from "orthogonal"
 class BoundaryToFieldAligned : public BoundaryModifier {
 public:
   BoundaryToFieldAligned(){NULL;};
@@ -350,7 +351,8 @@ public:
 private:
 };
 
-/// Convert fromFieldAligned
+/// Convert input field toFieldAligned, apply boundary and then convert back fromFieldAligned
+/// Equivalent to converting the boundary condition from "Field Aligned" to "orthogonal"
 class BoundaryFromFieldAligned : public BoundaryModifier {
 public:
   BoundaryFromFieldAligned(){NULL;};
