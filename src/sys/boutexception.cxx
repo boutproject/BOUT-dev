@@ -13,27 +13,24 @@ void BoutParallelThrowRhsFail(int &status, const char* message) {
   if (allstatus) throw BoutRhsFail(message);
 }
 
-BoutException::~BoutException() throw()
-{
+BoutException::~BoutException() throw() {
 }
 
-BoutException::BoutException(const char* s, ...)
-{
+BoutException::BoutException(const char* s, ...) {
   va_list ap;  // List of arguments
 
   if(s == (const char*) NULL)
     return;
   
-  char buffer[1024];
+  char buffer[BoutException::BUFFER_LEN];
   va_start(ap, s);
-    vsprintf(buffer, s, ap);
+    vsnprintf(buffer, BoutException::BUFFER_LEN, s, ap);
   va_end(ap);
   
   message.assign(buffer);
 }
 
-const char* BoutException::what() const throw()
-{
+const char* BoutException::what() const throw() {
   #ifdef CHECK
     /// Print out the message stack to help debugging
     msg_stack.dump();
@@ -43,15 +40,15 @@ const char* BoutException::what() const throw()
   return message.c_str();
 }
 
-BoutRhsFail::BoutRhsFail(const char* s, ...)  : BoutException::BoutException(s){
+BoutRhsFail::BoutRhsFail(const char* s, ...)  : BoutException::BoutException(s) {
   va_list ap;  // List of arguments
 
   if(s == (const char*) NULL)
     return;
   
-  char buffer[1024];
+  char buffer[BoutException::BUFFER_LEN];
   va_start(ap, s);
-    vsprintf(buffer, s, ap);
+    vsnprintf(buffer, BoutException::BUFFER_LEN, s, ap);
   va_end(ap);
   
   message.assign(buffer);
@@ -63,9 +60,9 @@ BoutIterationFail::BoutIterationFail(const char* s, ...) : BoutException::BoutEx
   if(s == (const char*) NULL)
     return;
   
-  char buffer[1024];
+  char buffer[BoutException::BUFFER_LEN];
   va_start(ap, s);
-    vsprintf(buffer, s, ap);
+    vsnprintf(buffer, BoutException::BUFFER_LEN, s, ap);
   va_end(ap);
   
   message.assign(buffer);
