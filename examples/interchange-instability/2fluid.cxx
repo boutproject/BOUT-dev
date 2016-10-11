@@ -342,6 +342,8 @@ int physics_run(BoutReal t)
   pei = (Te0+Ti0)*Ni + (Te + Ti)*Ni0;
   pe  = Te0*Ni + Te*Ni0;
   
+  mesh->communicate(pe, pei);
+
   if(ZeroElMass) {
     // Set jpar,Ve,Ajpar neglecting the electron inertia term
     jpar = ((Te0*Grad_par(Ni, CELL_YLOW)) - (Ni0*Grad_par(phi, CELL_YLOW)))/(fmei*0.51*nu);
