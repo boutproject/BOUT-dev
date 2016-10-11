@@ -127,6 +127,8 @@ for db in func_db:
 
                 
 def gen_functions_normal(to_gen):
+    #import sys
+    #print >>sys.stderr, off_diff
     for f_ar in to_gen:
         mode=f_ar[3]
         #for d in dir:
@@ -187,8 +189,9 @@ def gen_functions_normal(to_gen):
                         end+=1
                     off=line[pos+2:end]
                     diff=off_diff[mode][sten_name][off]
-                    if diff != 'c':
-                        line=line[:pos]+"in[i.%s%s()]"%(d,diff)+line[end:]
+                    #print >> sys.stderr, diff
+                    if diff != 'c()':
+                        line=line[:pos]+"in[i.%s%s]"%(d,diff)+line[end:]
                     else:
                         line="%sin[i]%s"%(line[:pos],line[end:])
                     pos=line.find("f.")
@@ -219,7 +222,7 @@ def gen_functions_normal(to_gen):
         print """  return result;
 }
 """
-
+    #exit(1)
 
 # # print at end, so functions are defined
 # d=dir[0]
