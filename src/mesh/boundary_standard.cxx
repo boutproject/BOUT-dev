@@ -3280,15 +3280,25 @@ BoundaryOp* BoundaryToFieldAligned::cloneMod(BoundaryOp *operation, const list<s
 }
 
 void BoundaryToFieldAligned::apply(Field2D &f) {
-  op->apply(f);
+  //Warning assuming t = 0. -- likely incorrect for evolving boundaries
+  BoundaryToFieldAligned::apply(f,0.);
+}
+
+void BoundaryToFieldAligned::apply(Field2D &f, BoutReal t) {
+  op->apply(f, t);
 }
 
 void BoundaryToFieldAligned::apply(Field3D &f) {
+  //Warning assuming t = 0. -- likely incorrect for evolving boundaries
+  BoundaryToFieldAligned::apply(f,0.);
+}
+
+void BoundaryToFieldAligned::apply(Field3D &f, BoutReal t) {
   //NOTE: This is not very efficient... updating entire field
   f = mesh->fromFieldAligned(f); 
 
   // Apply the boundary to shifted field
-  op->apply(f);
+  op->apply(f, t);
 
   //Shift back
   f = mesh->toFieldAligned(f);
@@ -3323,20 +3333,25 @@ BoundaryOp* BoundaryFromFieldAligned::cloneMod(BoundaryOp *operation, const list
 }
 
 void BoundaryFromFieldAligned::apply(Field2D &f) {
-  op->apply(f);
+  //Warning assuming t = 0. -- likely incorrect for evolving boundaries
+  BoundaryFromFieldAligned::apply(f,0.);
 }
 
-// void BoundaryFromFieldAligned::apply(Field3D &f) {
-//   //Warning assuming t = 0. -- likely incorrect for evolving boundaries
-//   BoundaryFromFieldAligned::apply(f,0.);
-// }
+void BoundaryFromFieldAligned::apply(Field2D &f, BoutReal t) {
+  op->apply(f, t);
+}
 
 void BoundaryFromFieldAligned::apply(Field3D &f) {
+  //Warning assuming t = 0. -- likely incorrect for evolving boundaries
+  BoundaryFromFieldAligned::apply(f,0.);
+}
+
+void BoundaryFromFieldAligned::apply(Field3D &f, BoutReal t) {
   //NOTE: This is not very efficient... shifting entire field
   f = mesh->toFieldAligned(f); 
 
   // Apply the boundary to shifted field
-  op->apply(f);
+  op->apply(f, t);
 
   //Shift back
   f = mesh->fromFieldAligned(f);

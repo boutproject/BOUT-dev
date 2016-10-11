@@ -341,7 +341,9 @@ public:
   BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
   
   void apply(Field2D &f);
+  void apply(Field2D &f, BoutReal t);
   void apply(Field3D &f);
+  void apply(Field3D &f, BoutReal t);
   
   void apply_ddt(Field2D &f);
   void apply_ddt(Field3D &f);
@@ -356,7 +358,9 @@ public:
   BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
   
   void apply(Field2D &f);
+  void apply(Field2D &f, BoutReal t);
   void apply(Field3D &f);
+  void apply(Field3D &f, BoutReal t);
   
   void apply_ddt(Field2D &f);
   void apply_ddt(Field3D &f);
