@@ -78,6 +78,7 @@ class Datafile {
 
   DataFormat *file;
   int filenamelen;
+  static const int FILENAMELEN=512;
   char *filename;
   bool appending;
   int Lx,Ly,Lz; // The sizes in the x-, y- and z-directions of the arrays to be written

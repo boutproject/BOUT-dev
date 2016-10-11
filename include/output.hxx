@@ -59,16 +59,16 @@ class Output : private multioutbuf_init<char, std::char_traits<char> >,
  public:
   Output() : multioutbuf_init(), 
     std::basic_ostream<char, _Tr>(multioutbuf_init::buf()) {
-    BUFFER_LEN=1024;
-    buffer=new char[BUFFER_LEN];
+    buffer_len=BUFFER_LEN;
+    buffer=new char[buffer_len];
     enable();
   }
     
   /// Specify a log file to open
   Output(const char *fname) : multioutbuf_init(), 
     std::basic_ostream<char, _Tr>(multioutbuf_init::buf()) {
-    BUFFER_LEN=1024;
-    buffer=new char[BUFFER_LEN];
+    buffer_len=BUFFER_LEN;
+    buffer=new char[buffer_len];
     enable();
     open(fname);
   } 
@@ -99,7 +99,8 @@ class Output : private multioutbuf_init<char, std::char_traits<char> >,
   static Output *instance; ///< Default instance of this class
   
   std::ofstream file; ///< Log file stream
-  int BUFFER_LEN;
+  static const int BUFFER_LEN=1024; ///< default length
+  int buffer_len; ///< the current length
   char * buffer; ///< Buffer used for C style output
   bool enabled;      ///< Whether output to stdout is enabled
 };

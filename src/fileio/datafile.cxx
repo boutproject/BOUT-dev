@@ -45,6 +45,7 @@
 #include "formatfactory.hxx"
 
 Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), floats(false), openclose(true), enabled(true), file(NULL) {
+  filenamelen=FILENAMELEN;
   filename=new char[filenamelen];
   if(opt == NULL)
     return; // To allow static initialisation
@@ -60,10 +61,11 @@ Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), f
 }
 
 Datafile::Datafile(const Datafile &other) : parallel(other.parallel), flush(other.flush), guards(other.guards), 
-                                            floats(other.floats), openclose(other.openclose), Lx(Lx), Ly(Ly), Lz(Lz), 
+                                            floats(other.floats), openclose(other.openclose), Lx(other.Lx), Ly(other.Ly), Lz(other.Lz), 
                                             enabled(other.enabled), shiftOutput(other.shiftOutput), file(NULL), int_arr(other.int_arr), 
                                             BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr), 
                                             f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {
+  filenamelen=FILENAMELEN;
   filename=new char[filenamelen];
   // Same added variables, but the file not the same 
 }
@@ -83,6 +85,7 @@ Datafile& Datafile::operator=(const Datafile &rhs) {
   f3d_arr      = rhs.f3d_arr;
   v2d_arr      = rhs.v2d_arr;
   v3d_arr      = rhs.v3d_arr;
+  filenamelen=FILENAMELEN;
   filename     = new char[filenamelen];
   return *this;
 }
