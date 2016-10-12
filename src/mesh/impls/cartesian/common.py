@@ -1,6 +1,6 @@
 # Define some constants, functions
 def warn():
-    print "// This file is auto-generated - do not edit!"
+    print "\n// This file is auto-generated - do not edit!"
 
 fields=['Field3D','Field2D']
 dirs=dict()
@@ -21,14 +21,14 @@ for stag in ['on','off','norm']:
     for mfb in ['main','forward','backward']:
         curr=dict()
         if mfb=='main':
-            if stag=='on':
+            if stag=='off':
                 curr={'ppp':'ppp',
                       'pp' :'pp',
                       'p'  :'p',
                       'm'  :'c',
                       'mm' :'m',
                       'mmm':'mm'}
-            if stag=='off':
+            if stag=='on':
                 curr={'ppp':'pp',
                       'pp' :'p',
                       'p'  :'c',
@@ -77,3 +77,40 @@ for stag in ['on','off','norm']:
                     curr[mylist[i+1]]=mylist2[i]
         off_diff[stag][mfb]=curr
 
+numGuards={ 'DDX_C2'       : 1,
+            'DDX_C4'       : 2,
+            'DDX_U1'       : 1,
+            'DDX_U2'       : 2,
+            'DDX_U4'       : 2,
+            'DDX_CWENO2'       : 1,
+            'DDX_WENO3'       : 2,
+            'DDX_S2'       : 2,
+            'DDX_NND'      : 2,
+            'DDX_C2_stag'  : 1,
+            'DDX_C4_stag'  : 2,
+            'DDX_U1_stag'  : 1,
+            'DDX_U2_stag'  : 2,
+            'DDX_U4_stag'  : 2,
+            'DDX_WENO2_stag'  : 1,
+            'DDX_WENO3_stag'  : 2,
+            'DDX_S2_stag'  : 2,
+            'DDX_NND_stag' : 2,
+            'D2DX2_C2'       : 1,
+            'D2DX2_C4'       : 2,
+            'D2DX2_U1'       : 1,
+            'D2DX2_U2'       : 2,
+            'D2DX2_U4'       : 2,
+            'D2DX2_WENO2'       : 1,
+            'D2DX2_WENO3'       : 2,
+            'D2DX2_S2'       : 2,
+            'D2DX2_NND'      : 2,
+            'D2DX2_C2_stag'  : 1,
+            'D2DX2_C4_stag'  : 2,
+            'D2DX2_U1_stag'  : 1,
+            'D2DX2_U2_stag'  : 2,
+            'D2DX2_U4_stag'  : 2,
+            'D2DX2_WENO2_stag'  : 1,
+            'D2DX2_WENO3_stag'  : 2,
+            'D2DX2_S2_stag'  : 2,
+            'D2DX2_NND_stag' : 2,
+            }

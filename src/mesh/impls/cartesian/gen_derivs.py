@@ -37,30 +37,27 @@ with open("tables_cleaned.cxx","r") as f:
                         func_tables[name][cn]=en[1:7]
                 cfunc=None
 descriptions=func_tables.pop("DiffNameTable")
+descriptions.pop("DIFF_DEFAULT")
 
-# fields=['Field3D','Field2D']
-# dirs={}
-# dirs['Field3D']=['x','y','z']
-# dirs['Field2D']=['x','y']
+# import sys
+# print >> sys.stderr , descriptions
+# exit(1)
+
 funcname={ 'FirstDerivTable' : 'indexDD%s',
            'SecondDerivTable' : 'indexD2D%s2',
            'FirstStagDerivTable' : 'indexDD%s',
            'SecondStagDerivTable' : 'indexD2D%s2'}
 
 funcs_to_gen=[]
+default_methods=dict()
 for t in func_tables:
-    #print t
-    #if t== "FirstDerivTable":
-    #    print func_tables[t]
     func_tables[t].pop('DIFF_DEFAULT')
     fu=func_tables[t].itervalues().next()
     if fu[1] != "NULL": # not a flux/upwind scheeme
-        #print t
         if fu[1][-4:]== "stag":
             stag=True
         else:
             stag=False
-        #print t,"is %s staggered"%stag
         for field in fields:
             for d in dirs[field]:
                 warn()
@@ -70,12 +67,13 @@ for t in func_tables:
                     myname=funcname[t]%d.upper()+"_stag"
                 print "const",field, myname , "(const",field,"&f, CELL_LOC outloc, DIFF_METHOD method) {"
                 print "  if (method == DIFF_DEFAULT){"
-                print "    method = default_%s;"%t[:-5]# drop 'Table'
+                print "    method = default_%s_%s;"%(d,t[:-5])# drop 'Table'
                 print "  }"
                 print "  if (outloc == CELL_DEFAULT){"
                 print "    outloc = f.getLocation();"
                 print "  }"
                 print "  switch (method){"
+                default_methods["default_%s_%s"%(d,t[:-5])]=func_tables[t]
                 for method in func_tables[t]:
                     print "  case",method,":"
                     if stag:
@@ -114,7 +112,7 @@ for t in func_tables:
                 print "  default:"
                 print "    throw BoutException(\"%s CartesianMesh::"%field +myname,'unknown method %d.\\nNote FFTs are not (yet) supported.",method);'
                 print "  }; // end switch"
-                print "};"
+                print "}"
                 print
                 
     #else:
@@ -153,3 +151,73 @@ import sys
 sys.stdout=open("generated_stencils.cxx","w")
 from gen_stencils import gen_functions_normal
 gen_functions_normal(funcs_to_gen)
+
+sys.stdout=open("generated_init.cxx","w")
+
+descriptions_cleaned=dict()
+for d in descriptions:
+    #print >> sys.stderr, d
+    descriptions_cleaned[d]=descriptions[d][1].strip('"');
+for d in dirs['Field3D']:
+    warn()
+    for i in ['First','Second','Upwind','Flux']:
+        if i in ['First','Second']:
+            table="DerivTable"
+            stags=['','Stag']
+        else:
+            table="Table"
+            stags=[""]
+        for stag in stags:
+            print 'DIFF_METHOD default_%s_%s%sDeriv;'%(d,i,stag)
+
+warn()
+print "void CartesianMesh::derivs_init(Options * option) {"
+print "  std::string name;"
+print "  Options * dirOption;"
+print '  Options * defOption = option->getSection("diff");'
+for d in dirs['Field3D']:
+    print "  output.write(\"\\tSetting derivatives for direction %s:\\n\");"%d
+    print '  dirOption = option->getSection("dd%s");'%d
+    print
+    for i in ['First','Second','Upwind','Flux']:
+        if i in ['First','Second']:
+            table="DerivTable"
+            stags=['','Stag']
+        else:
+            table="Table"
+            stags=[""]
+        for stag in stags:
+            warn()
+            print '  // Setting derivatives for dd%s and %s'%(d,i+stag)
+            print ' ',
+            for option in ['dirOption','defOption']:
+                if stag == "Stag":
+                    names = [ i+stag,i,"all" ]
+                else:
+                    names = [ i,"all" ]
+                for name in names:
+                    print 'if (%s->isSet("%s")){'%(option,name)
+                    print '    %s->get("%s",name,"");'%(option,name)
+                    print '  } else',
+            print '{'
+            if i == 'Second' and stag == "Stag":
+                print '    name="C4";'
+            elif i == 'Flux':
+                print '    name="SPLIT";'
+            elif i == 'Upwind':
+                print '    name="U1";'
+            else:
+                print '    name="C2";'
+            #elif i == ''
+            print '  }'
+            print ' ',
+            for avail in func_tables[i+stag+table]:
+                print 'if (strcasecmp(name.c_str(),"%s")==0) {'%avail[5:]
+                print '    default_%s_%s%sDeriv = %s;'%(d,i,stag,avail)
+                print '    output.write("\t%15s : %s\\n");'%(i+stag,descriptions_cleaned[avail]);
+                print '  } else',
+            print '{'
+            print '    throw BoutException("Dont\'t know what diff method to use for %s (direction %s, tried to use %s)!",name.c_str());'%(i+stag,d,'%s')
+            print '  }'
+print "}"
+#exit(1)

@@ -7,7 +7,7 @@ TARGET          = lib
 
 include $(BOUT_TOP)/make.config
 
-generated=generated_header.hxx generated_derivs.cxx generated_stencils.cxx
+generated=generated_header.hxx generated_derivs.cxx generated_stencils.cxx generated_init.cxx
 #lib: makefile $(BOUT_TOP)/make.config $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ) generated_stencils.cxx
 
 cartesianmesh.o:$(generated)
@@ -21,5 +21,11 @@ stencils_cleaned.cxx:../../stencils.cxx
 	gcc -E $< > $@
 
 $(generated):gen_derivs.py \
-		tables_cleaned.cxx gen_stencils.py stencils_cleaned.cxx
-	python $< > generated_derivs.cxx
+		tables_cleaned.cxx gen_stencils.py stencils_cleaned.cxx \
+		common.py
+	python $< > generated_derivs.cxx || ( rm $@ ; exit 1)
+
+clean:: clean-generated
+
+clean-generated:
+	@rm $(generated)

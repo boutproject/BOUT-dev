@@ -81,49 +81,7 @@ for f in functions:
                 func_db[d].append([f.name,"cart_diff_%s_%s_norm"%(d,f.name),"NULL","NULL"])
 for db in func_db:
     func_db[db].append(["NULL","NULL","NULL","NULL"])
-                
-# for f in functions:
-#     if f.flux == False:
-#             if f.stag:
-#                 modes=['on','off']
-#             else:
-#                 modes=['norm']
-#             for d in dir:
-#                 tmp="cart_diff_%s_%s_%%s"%(d,f.name)
-#                 for mode in modes:
-#                         warn()
-#                         print """Field3D %s(const Field3D in){
-#   Field3D result;
-#   //result.allocate();
-#   result=0;"""%(tmp%mode)
-#                         if d != 'z':
-#                             print """  for (auto i: result.region(RGN_NO%s)){"""%d.upper()
-#                         else:
-#                             print """  for (auto i: result){"""
-#                         for line in f.body[1:]:
-#                             ret="return"
-#                             pos=line.find("f.")
-#                             while pos > -1:
-#                                 end=pos+2
-#                                 while line[end]=='p' or line[end]=='m' or line[end]=='c':
-#                                     end+=1
-#                                 off=line[pos+2:end]
-#                                 diff=off_diff[mode][off]
-#                                 if diff != 'c':
-#                                     line="%sin[i.%s%s()]%s"%(line[:pos],d,diff,line[end:])
-#                                 else:
-#                                     line="%sin[i]%s"%(line[:pos],line[end:])
-#                                 pos=line.find("f.")
-                                
-#                             if line.find(ret) == -1:
-#                                 print "    ",line
-#                             else:
-#                                 print "    result[i]= ",line[len(ret)+line.index(ret):]
-#                                 break
-#                         print """  }
-#   return result;
-# }
-# """
+               
 
                 
 def gen_functions_normal(to_gen):
@@ -139,6 +97,7 @@ def gen_functions_normal(to_gen):
         name=f_ar[0]
         warn()
         print "const",field,name,"(const",field,"&in){"
+        print ' //output.write("Using method %s!\\n");'%name
         print " ",field,"result;"
         print "  result.allocate();"
         stencils={'main':None,
@@ -156,18 +115,67 @@ def gen_functions_normal(to_gen):
         if d=='z':
             todo=[todo[0]]
         for sten_name in todo:
+            if sten_name=='backward' and mode=='on' and guards ==1:
+                print "  }"
+                continue;
+            if sten_name=='forward' and mode=='off' and guards ==1:
+                print "  if (mesh->%sstart > 0){"%d
+                print "    DataIterator i(0,mesh->LocalNx,0,mesh->LocalNy,0,mesh->LocalNz);"
+                continue;
             if sten_name=='main':
                 if d != 'z':
-                    print """  for (auto i: result.region(RGN_NO%s)){"""%d.upper()
+                    guards=numGuards[f_ar[4]]
+                    if d == 'x':
+                        dxp=guards
+                        dxm=-guards
+                        dyp=0
+                        dym=0
+                    else:
+                        dxp=0
+                        dxm=0
+                        dyp=guards
+                        dym=-guards
+                    if mode == 'on':
+                        if d=='x':
+                            dxm=-(guards-1)
+                        else:
+                            dym=-(guards-1)
+                    elif mode == 'off':
+                        if d=='x':
+                            dxp=(guards-1)
+                        else:
+                            dyp=(guards-1)
+                        
+                    if 'x' in dirs[field]:
+                        xmax='mesh->LocalNx%+d'%(-1+dxm)
+                    else:
+                        xmax="0"
+                    if 'y' in dirs[field]:
+                        ymax='mesh->LocalNy%+d'%(-1+dym)
+                    else:
+                        ymax="0"
+                    if 'z' in dirs[field]:
+                        zmax='mesh->LocalNz-1'
+                    else:
+                        zmax="0"
+                    print "  for (DataIterator i(%s, %s,"%(dxp,xmax),
+                    print "%s, %s, 0, %s)"%(dyp,ymax,zmax),
+                    print "; !i.done() ; ++i) {"
                 else:
                     print """  for (auto i: result){"""
             elif sten_name!='main':
                 if sten_name == 'forward':
                     print "  if (mesh->%sstart > 0){"%d
                     print "    DataIterator i(0,mesh->LocalNx,0,mesh->LocalNy,0,mesh->LocalNz);"
-                    print "    i."+d,"=mesh->%sstart"%d,"-1 ;"
+                bp=guards
+                if ( sten_name == 'backward' and mode == 'on' ) or \
+                   ( sten_name == 'forward' and mode == 'off' ):
+                    if guards > 1:
+                        bp=guards-1;
+                if sten_name == 'forward':
+                    print "    i."+d,"=%d ;"%(bp-1)
                 if sten_name == 'backward':
-                    print "    i."+d,"=mesh->%send"%d,"+1 ;"
+                    print "    i."+d,"=mesh->LocalN%s"%d,"-%d ;"%bp
                 for d2 in perp_dir[field][d]:
                     print "    for (i."+d2,"=0; i."+d2,"< mesh->LocalN"+d2,";++i."+d2,") {"
             sten=stencils[sten_name]
@@ -177,6 +185,7 @@ def gen_functions_normal(to_gen):
                     print func.name
                 print "#error unexpected: sten is None!"
                 exit(1)
+            result_=['','']
             for line in sten.body[1:]:
                 ret="return"
                 pos=line.find("f.")
@@ -196,22 +205,58 @@ def gen_functions_normal(to_gen):
                         line="%sin[i]%s"%(line[:pos],line[end:])
                     pos=line.find("f.")
 
-                if line.find(ret) == -1:
-                    print "     ",line
+                if line.find("return") == -1:
+                    if sten_name == 'main':
+                        print "     ",line
+                    else:
+                        toPrint=True
+                        resl=["result_.inner", "result_.outer"]
+                        for resi in range(2):
+                            res=resl[resi]
+                            if line.find(res) > -1:
+                                tmp=line[line.index(res)+len(res):]
+                                if tmp.find("=") > -1:
+                                    if result_[resi]!='':
+                                        import sys
+                                        print >> sys.stderr ,"Did not expect another defintion of",res
+                                        print >> sys.stderr ,"The last one was %s = %s"%(res,result_[resi])
+                                        print >> sys.stderr ,"thise one is ",line
+                                        exit(1)
+                                    result_[resi]=tmp[tmp.index("=")+1:]
+                                    toPrint=False
+                        if toPrint:
+                            if line.find("=") > -1:
+                                import sys
+                                print >> sys.stderr ,"Failed to parse - unexpected line: ",line
+                                exit(1)
+                                    
                 else:
                     if sten_name == 'main':
-                        print "    result[i]= ",line[len(ret)+line.index(ret):]
+                        print "    result[i]= ",line[len("return")+line.index("return"):]
                     else:
-                        returned=line[len(ret)+line.index(ret):]
+                        returned=line[len("return")+line.index("return"):]
                     break
             if sten_name != 'main':
-                print "      result[i]=result_.inner;"
-                print "      if (mesh->%sstart >1 ){"%d
-                if sten_name == 'forward':
-                    print "        result[i.%sm()]=result_.outer;"%d
+                if result_[0] != '':
+                    print "      result[i]="+result_[0]
                 else:
-                    print "        result[i.%sp()]=result_.outer;"%d
-                print "      }"
+                    print "      result[i]=result_.inner;"
+                #print "      if (mesh->%sstart >1 ){"%d
+                
+                if guards > 1:
+                    if ( sten_name == 'backward' and mode == 'on' ) or \
+                       ( sten_name == 'forward' and mode == 'off' ):
+                        pass# dont do anything ...
+                    else:
+                        if sten_name == 'forward':
+                            print "        result[i.%sm()]="%d ,
+                        else:
+                            print "        result[i.%sp()]="%d ,
+                        if result_[1] != '':
+                            print result_[1]
+                        else:
+                            print "result_.outer;"
+                #print "      }"
                 for d2 in perp_dir[field][d]:
                     print "    }"
             else:

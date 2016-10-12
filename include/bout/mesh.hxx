@@ -345,7 +345,7 @@ class Mesh {
   int msg_len(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt);
   
   // Initialise derivatives
-  void derivs_init(Options* options);
+  virtual void derivs_init(Options* options);
   
   // Loop over mesh, applying a stencil in the X direction
   virtual const Field2D applyXdiff(const Field2D &var, deriv_func func, inner_boundary_deriv_func func_in, outer_boundary_deriv_func func_out, CELL_LOC loc = CELL_DEFAULT);

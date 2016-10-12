@@ -1,6 +1,6 @@
 /**************************************************************************
  * Implementation of the Mesh class, handling input files compatible with
- * BOUT / BOUT-06.
+ * BOUT++.
  *
  * Changelog
  * ---------
@@ -37,14 +37,10 @@
 #include <output.hxx>
 #include <interpolation.hxx>
 
-
-DIFF_METHOD default_FirstDeriv=DIFF_C2;
-DIFF_METHOD default_FirstStagDeriv=DIFF_C2;
-DIFF_METHOD default_SecondDeriv=DIFF_C2;
-DIFF_METHOD default_SecondStagDeriv=DIFF_C2;
-
+#include <strings.h>
 
 // Include the auto generated files
+#include "generated_init.cxx"
 #include "generated_stencils.cxx"
 #include "generated_derivs.cxx"
 
@@ -52,6 +48,7 @@ DIFF_METHOD default_SecondStagDeriv=DIFF_C2;
 
 CartesianMesh::CartesianMesh(GridDataSource *s, Options *options): BoutMesh(s,options){
   output.write("  Using Cartesian Mesh!\n");
+  derivs_init(options);
 }
 CartesianMesh::~CartesianMesh(){
 }
