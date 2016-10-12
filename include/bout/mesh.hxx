@@ -279,8 +279,9 @@ class Mesh {
   const Field3D indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
   
   typedef BoutReal (*deriv_func)(stencil &); // f
-  typedef BoutReal (*upwind_func)(stencil &, stencil &); // v, f
-
+  typedef BoutReal (*upwind_func)(BoutReal, stencil &); // v, f
+  typedef BoutReal (*flux_func)(stencil&, stencil &); // v, f
+  
   typedef struct {
     BoutReal inner;
     BoutReal outer;
