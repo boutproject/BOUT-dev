@@ -788,7 +788,8 @@ void Field3D::applyBoundary(bool init) {
       if ( !bndry->apply_to_ddt || init) // Always apply to the values when initialising fields, otherwise apply only if wanted
         bndry->apply(*this);
   }
-  
+
+  /*
   if (init) {
     // Set the corners to zero. ddt vanishes for the corners, so only need to be set once
     for(int jx=0;jx<fieldmesh->xstart;jx++) {
@@ -811,7 +812,7 @@ void Field3D::applyBoundary(bool init) {
           operator()(jx,jy,jz) = 0.;
       }
     }
-  }
+    }*/
 }
 
 //JMAD
@@ -1279,7 +1280,7 @@ Field3D pow(BoutReal lhs, const Field3D &rhs) {
   return result;
 }
 
-BoutReal min(const Field3D &f, bool allpe) {
+BoutReal min(const Field3D &f, bool allpe, REGION rgn) {
 #ifdef CHECK
   if(!f.isAllocated())
     throw BoutException("Field3D: min() method on empty data");
@@ -1290,9 +1291,9 @@ BoutReal min(const Field3D &f, bool allpe) {
     msg_stack.push("Field3D::Min()");
 #endif
 
-  BoutReal result = f[f.region(RGN_NOBNDRY).begin()];
+  BoutReal result = f[f.region(rgn).begin()];
   
-  for(auto i: f.region(RGN_NOBNDRY))
+  for(auto i: f.region(rgn))
     if(f[i] < result)
       result = f[i];
   
@@ -1309,7 +1310,7 @@ BoutReal min(const Field3D &f, bool allpe) {
   return result;
 }
 
-BoutReal max(const Field3D &f, bool allpe) {
+BoutReal max(const Field3D &f, bool allpe, REGION rgn) {
 #ifdef CHECK
   if(!f.isAllocated())
     throw BoutException("Field3D: max() method on empty data");
@@ -1319,9 +1320,9 @@ BoutReal max(const Field3D &f, bool allpe) {
     msg_stack.push("Field3D::Max()");
 #endif
   
-  BoutReal result = f[f.region(RGN_NOBNDRY).begin()];
+  BoutReal result = f[f.region(rgn).begin()];
   
-  for(auto i: f.region(RGN_NOBNDRY))
+  for(auto i: f.region(rgn))
     if(f[i] > result)
       result = f[i];
   

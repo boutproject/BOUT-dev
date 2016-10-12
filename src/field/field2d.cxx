@@ -584,14 +584,15 @@ const Field2D operator-(const Field2D &f) {
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
-BoutReal min(const Field2D &f, bool allpe) {
+
+BoutReal min(const Field2D &f, bool allpe, REGION rgn) {
   TRACE("min(Field2D)");
   
   ASSERT2(f.isAllocated());
 
-  BoutReal result = f(0,0);
+  BoutReal result = f[f.region(rgn).begin()];
 
-  for(auto i : f.region(RGN_NOBNDRY))
+  for(auto i : f.region(rgn))
     if(f[i] < result)
       result = f[i];
   
@@ -604,12 +605,12 @@ BoutReal min(const Field2D &f, bool allpe) {
   return result;
 }
 
-BoutReal max(const Field2D &f, bool allpe) {
+BoutReal max(const Field2D &f, bool allpe,REGION rgn) {
   TRACE("max(Field2D)");
   
   ASSERT2(f.isAllocated());
 
-  BoutReal result = f(mesh->xstart,mesh->ystart);
+  BoutReal result = f[f.region(rgn).begin()];
 
   for(auto i : f.region(RGN_NOBNDRY))
     if(f[i] > result)

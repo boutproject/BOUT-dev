@@ -237,10 +237,10 @@ const Field2D sqrt(const Field2D &f);
 const Field2D abs(const Field2D &f);
 
 /// Minimum over field. By default only on this processor
-BoutReal min(const Field2D &f, bool allpe=false);
+BoutReal min(const Field2D &f, bool allpe=false, REGION rgn=RGN_NOBNDRY);
 
 /// Maximum over field. By default only on this processor
-BoutReal max(const Field2D &f, bool allpe=false);
+BoutReal max(const Field2D &f, bool allpe=false, REGION rgn=RGN_NOBNDRY);
 
 /// Test if all values of this field are finite
 bool finite(const Field2D &f);
