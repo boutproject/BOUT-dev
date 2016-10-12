@@ -40,12 +40,14 @@ fi
 #    exit 1
 #fi
 
-ny=11
-if ! ./test mesh:ny=$ny all:function=y^4 diff_x:function=0 diff_y:function=4*y^3 mesh:ddx:first=C4 mesh:ddy:first=C4 MXG=2 MYG=2 mesh:nx=5 mesh:nz=1 > run.log.$ny
+if grep cartesian data/BOUT.inp | grep -v \# &>/dev/null
 then
-    cat run.log.$ny
-    exit 1
+    ny=11
+    if ! ./test mesh:ny=$ny all:function=y^4 diff_x:function=0 diff_y:function=4*y^3 mesh:ddx:first=C4 mesh:ddy:first=C4 MXG=2 MYG=2 mesh:nx=5 mesh:nz=1 > run.log.$ny
+    then
+        cat run.log.$ny
+        exit 1
+    fi
 fi
-
 
 echo "Test Succesfull"
