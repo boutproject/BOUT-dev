@@ -84,7 +84,7 @@ BoutException::BoutException(const char* s, ...)
     va_end(ap);
     message.assign(buffer);
   }
-  message="====== Exception thrown ======\n"+message;
+  message="====== Exception thrown ======\n"+message+"\n";
 
   this->Backtrace();
 
