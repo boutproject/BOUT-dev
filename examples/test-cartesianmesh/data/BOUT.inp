@@ -27,6 +27,10 @@ ixseps2		= -1
 
 StaggerGrids=true
 
+[MESH:diff]
+all=c2
+Second=C4
+
 [All]
 bndry_all = none
 function=x#*y*y*z
