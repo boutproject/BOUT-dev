@@ -3165,13 +3165,13 @@ BoundaryOp* BoundaryRelax::cloneMod(BoundaryOp *operation, const list<string> &a
 
   return result;
 }
-  
-void BoundaryRelax::apply(Field2D &f) {
+
+void BoundaryRelax::apply(Field2D &f, BoutReal t) {
   // Just apply the original boundary condition to f
-  op->apply(f);
+  op->apply(f, t);
 }
 
-void BoundaryRelax::apply(Field3D &f) {
+void BoundaryRelax::apply(Field3D &f, BoutReal t) {
   // Just apply the original boundary condition to f
   op->apply(f);
 }
@@ -3238,18 +3238,18 @@ BoundaryOp* BoundaryWidth::cloneMod(BoundaryOp *operation, const list<string> &a
   return result;
 }
 
-void BoundaryWidth::apply(Field2D &f) {
+void BoundaryWidth::apply(Field2D &f, BoutReal t) {
   // Pointer to boundary region shared between all BoundaryOp, BoundaryModifiers
   int oldwid = bndry->width;
   bndry->width = width;
-  op->apply(f);
+  op->apply(f, t);
   bndry->width = oldwid;
 }
 
-void BoundaryWidth::apply(Field3D &f) {
+void BoundaryWidth::apply(Field3D &f, BoutReal t) {
   int oldwid = bndry->width;
   bndry->width = width;
-  op->apply(f);
+  op->apply(f, t);
   bndry->width = oldwid;
 }
   
@@ -3259,7 +3259,7 @@ void BoundaryWidth::apply_ddt(Field2D &f) {
   op->apply_ddt(f);
   bndry->width = oldwid;
 }
-
+  
 void BoundaryWidth::apply_ddt(Field3D &f) {
   int oldwid = bndry->width;
   bndry->width = width;
@@ -3279,18 +3279,8 @@ BoundaryOp* BoundaryToFieldAligned::cloneMod(BoundaryOp *operation, const list<s
   return result;
 }
 
-void BoundaryToFieldAligned::apply(Field2D &f) {
-  //Warning assuming t = 0. -- likely incorrect for evolving boundaries
-  BoundaryToFieldAligned::apply(f,0.);
-}
-
 void BoundaryToFieldAligned::apply(Field2D &f, BoutReal t) {
   op->apply(f, t);
-}
-
-void BoundaryToFieldAligned::apply(Field3D &f) {
-  //Warning assuming t = 0. -- likely incorrect for evolving boundaries
-  BoundaryToFieldAligned::apply(f,0.);
 }
 
 void BoundaryToFieldAligned::apply(Field3D &f, BoutReal t) {
@@ -3332,18 +3322,8 @@ BoundaryOp* BoundaryFromFieldAligned::cloneMod(BoundaryOp *operation, const list
   return result;
 }
 
-void BoundaryFromFieldAligned::apply(Field2D &f) {
-  //Warning assuming t = 0. -- likely incorrect for evolving boundaries
-  BoundaryFromFieldAligned::apply(f,0.);
-}
-
 void BoundaryFromFieldAligned::apply(Field2D &f, BoutReal t) {
   op->apply(f, t);
-}
-
-void BoundaryFromFieldAligned::apply(Field3D &f) {
-  //Warning assuming t = 0. -- likely incorrect for evolving boundaries
-  BoundaryFromFieldAligned::apply(f,0.);
 }
 
 void BoundaryFromFieldAligned::apply(Field3D &f, BoutReal t) {
