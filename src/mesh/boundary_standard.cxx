@@ -29,7 +29,10 @@ void verifyNumPoints(BoundaryRegion *region, int ptsRequired) {
 
   int ptsAvailGlobal, ptsAvailLocal, ptsAvail;
   string side, gridType;
-
+  
+  //Initialise var in case of no match and CHECK<=2
+  ptsAvail = ptsRequired; //Ensures test passes without exception
+	
   switch(region->location) {
   case BNDRY_XIN: 
   case BNDRY_XOUT: {
