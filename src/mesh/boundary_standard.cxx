@@ -11,6 +11,91 @@
 // #define BOUNDARY_CONDITIONS_UPGRADE_EXTRAPOLATE_FOR_2ND_ORDER
 
 ///////////////////////////////////////////////////////////////
+// Helpers
+
+/*  Check that there are sufficient non-boundary points for desired B.C.
+    
+    Checks both the size of the global grid (i.e. if this B.C. could be ok
+    for some parallel setup or not) and the local grid.
+
+    Note the local grid check is not strictly necessary as this would typically
+    lead to an out of bounds access error later but we add it here to provide a
+    more explanatory message.
+ */
+void verifyNumPoints(BoundaryRegion *region, int ptsRequired) {
+#ifndef CHECK
+  return; //No checking so just return
+#else
+
+  int ptsAvailGlobal, ptsAvailLocal, ptsAvail;
+  string side, gridType;
+
+  switch(region->location) {
+  case BNDRY_XIN: 
+  case BNDRY_XOUT: {
+    side = "x";
+
+    //Here 2*mesh->xstart is the total number of guard/boundary cells
+    ptsAvailGlobal = mesh->GlobalNx - 2*mesh->xstart;
+
+    //Work out how many processor local points we have excluding boundaries
+    //but including ghost/guard cells
+    ptsAvailLocal  = mesh->LocalNx;
+    if(mesh->firstX()) ptsAvailLocal -= mesh->xstart;
+    if(mesh->lastX())  ptsAvailLocal -= mesh->xstart;
+
+    //Now decide if it's a local or global limit, prefer global if a tie
+    if(ptsAvailGlobal <= ptsAvailLocal){
+      ptsAvail = ptsAvailGlobal;
+      gridType = "global";
+    }else{
+      ptsAvail = ptsAvailLocal;
+      gridType = "local";
+    }
+
+    break;
+  }
+  case BNDRY_YUP: 
+  case BNDRY_YDOWN: {
+    side = "y";
+
+    //Here 2*mesh->ystart is the total number of guard/boundary cells
+    ptsAvailGlobal = mesh->GlobalNy - 2*mesh->ystart;
+
+    //Work out how many processor local points we have excluding boundaries
+    //but including ghost/guard cells
+    ptsAvailLocal  = mesh->LocalNy;
+    if(mesh->firstY()) ptsAvailLocal -= mesh->ystart;
+    if(mesh->lastY())  ptsAvailLocal -= mesh->ystart;
+
+    //Now decide if it's a local or global limit, prefer global if a tie
+    if(ptsAvailGlobal <= ptsAvailLocal){
+      ptsAvail = ptsAvailGlobal;
+      gridType = "global";
+    }else{
+      ptsAvail = ptsAvailLocal;
+      gridType = "local";
+    }
+
+    break;
+  }
+#if CHECK > 2 //Only fail on Unrecognised boundary for extreme checking
+  default : {
+    throw BoutException("Unrecognised boundary region (%s) for verifyNumPoints.",region->location);
+  }
+#endif
+  }
+
+  //Now check we have enough points and if not throw an exception
+  if(ptsAvail < ptsRequired){
+    throw BoutException("Too few %s grid points for %s boundary, have %d but need at least %d",
+			gridType.c_str(),side.c_str(),ptsAvail,ptsRequired);
+  }
+
+#endif
+}
+
+///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryDirichlet::clone(BoundaryRegion *region, const list<string> &args) {
   if(!args.empty()) {
