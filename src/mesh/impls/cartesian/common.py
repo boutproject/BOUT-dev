@@ -77,6 +77,14 @@ for stag in ['on','off','norm']:
                     curr[mylist[i+1]]=mylist2[i]
         off_diff[stag][mfb]=curr
 
+diff2={'mm()': -2,
+       'm()' : -1,
+       'c()' :  0,
+       'p()' :  1,
+       'pp()':  2}
+for i in range(10):
+    diff2["m(%d)"%i]=-i
+    diff2["p(%d)"%i]=i
 numGuards={ 'DDX_C2'       : 1,
             'DDX_C4'       : 2,
             'DDX_U1'       : 1,

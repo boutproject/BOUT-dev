@@ -84,48 +84,102 @@ for db in func_db:
                
 
 
-def get_for_loop(d,mode,field,guards):
-    if d != 'z':
-        if d == 'x':
-            dxp=guards
-            dxm=-guards
-            dyp=0
-            dym=0
-        else:
-            dxp=0
-            dxm=0
-            dyp=guards
-            dym=-guards
-        if mode == 'on':
-            if d=='x':
-                dxm=-(guards-1)
+def get_for_loop(d,mode,field,guards,sten_name ):
+    if sten_name == 'main':
+        if d != 'z':
+            dp=guards
+            dm=-guards
+            if mode == 'on':
+                dm=-(guards-1)
+            elif mode == 'off':
+                dp=(guards-1)
+            # if 'x' in dirs[field]:
+            #     xmax='mesh->LocalNx%+d'%(-1+dxm)
+            # else:
+            #     xmax="0"
+            # if 'y' in dirs[field]:
+            #     ymax='mesh->LocalNy%+d'%(-1+dym)
+            # else:
+            #     ymax="0"
+            # if 'z' in dirs[field]:
+            #     zmax='mesh->LocalNz-1'
+            # else:
+            #     zmax="0"
+            #print "  for (DataIterator i(%s, %s,"%(dxp,xmax),
+            #print "%s, %s, 0, %s)"%(dyp,ymax,zmax),
+            #print "; !i.done() ; ++i) {"
+        if d=='z':
+            d='ignore'
+        for d2 in dirs[field]:
+            if d==d2:
+                print "  for (int %s = %d; %s < mesh->LocalN%s%+d; ++%s ){"%(d,dp,d,d,dm,d)
             else:
-                dym=-(guards-1)
-        elif mode == 'off':
-            if d=='x':
-                dxp=(guards-1)
-            else:
-                dyp=(guards-1)
-                
-        if 'x' in dirs[field]:
-            xmax='mesh->LocalNx%+d'%(-1+dxm)
-        else:
-            xmax="0"
-        if 'y' in dirs[field]:
-            ymax='mesh->LocalNy%+d'%(-1+dym)
-        else:
-            ymax="0"
-        if 'z' in dirs[field]:
-            zmax='mesh->LocalNz-1'
-        else:
-            zmax="0"
-        print "  for (DataIterator i(%s, %s,"%(dxp,xmax),
-        print "%s, %s, 0, %s)"%(dyp,ymax,zmax),
-        print "; !i.done() ; ++i) {"
+                print "  for (int %s = 0 ; %s < mesh->LocalN%s; ++%s ){"%(d2,d2,d2,d2)
+        #else:
+        #    print """  for (auto i: result){"""
     else:
-        print """  for (auto i: result){"""
+        if sten_name == 'forward':
+            print "  if (mesh->%sstart > 0){"%d
+            #print "    DataIterator i(0,mesh->LocalNx,0,mesh->LocalNy,0,mesh->LocalNz);"
+        bp=guards
+        if ( sten_name == 'backward' and mode == 'on' ) or \
+           ( sten_name == 'forward' and mode == 'off' ):
+            if guards > 1:
+                bp=guards-1;
+        if sten_name == 'forward':
+            print "    int "+d,"=%d ;"%(bp-1)
+        else:
+            print "    "+d,"=mesh->LocalN%s"%d,"-%d ;"%bp
+        for d2 in perp_dir[field][d]:
+            print "    for (int "+d2,"=0; "+d2,"< mesh->LocalN"+d2,";++"+d2,") {"
+            
 
-                
+def get_for_end(d,field, sten_name):
+    if sten_name != 'main':
+        for d2 in perp_dir[field][d]:
+            print "    }"
+    else:
+        for d2 in dirs[field]:
+            print "  }"
+    if sten_name == 'backward':
+        print "  }"
+
+def get_diff(diff,fname,field,d):
+    #diff=
+    #print >> sys.stderr, diff
+    ret=fname+"("
+    first=True
+    for d2 in dirs[field]:
+        if not first:
+            ret+=','
+        first=False
+        if (d2 == d):
+            #do smart stuff
+            ret+=d2+"%+d"%(diff2[diff])
+        else:
+            ret+=d2
+    ret+=")"
+    return ret
+    # if diff != 'c()':
+    #     return "%s[i.%s%s]"%(fname,d,diff)
+    # else:
+    #     return "%s[i]"%(fname)
+
+def get_pointer(field, field_type,const):
+    if const:
+        print "  const BoutReal"
+    else:
+        print "  BoutReal"
+    print "* __restrict__ %s_ptr = &"%field,field,"(",
+    first=True
+    for d in dirs[field_type]:
+        if not first:
+            print ',',
+        first=False
+        print "0",
+    print ");";
+        
+
 def gen_functions_normal(to_gen):
     #import sys
     #print >>sys.stderr, off_diff
@@ -142,6 +196,8 @@ def gen_functions_normal(to_gen):
         print ' //output.write("Using method %s!\\n");'%name
         print " ",field,"result;"
         print "  result.allocate();"
+        #get_pointer("result",field,False)
+        #get_pointer("in",field,True)
         stencils={'main':None,
                   'forward':None,
                   'backward':None}
@@ -162,26 +218,12 @@ def gen_functions_normal(to_gen):
                 continue;
             if sten_name=='forward' and mode=='off' and guards ==1:
                 print "  if (mesh->%sstart > 0){"%d
-                print "    DataIterator i(0,mesh->LocalNx,0,mesh->LocalNy,0,mesh->LocalNz);"
+                #print "    DataIterator i(0,mesh->LocalNx,0,mesh->LocalNy,0,mesh->LocalNz);"
+                print "    int",d,";"
                 continue;
-            if sten_name=='main':
-                guards=numGuards[f_ar[4]]
-                get_for_loop(d,mode,field,guards)
-            elif sten_name!='main':
-                if sten_name == 'forward':
-                    print "  if (mesh->%sstart > 0){"%d
-                    print "    DataIterator i(0,mesh->LocalNx,0,mesh->LocalNy,0,mesh->LocalNz);"
-                bp=guards
-                if ( sten_name == 'backward' and mode == 'on' ) or \
-                   ( sten_name == 'forward' and mode == 'off' ):
-                    if guards > 1:
-                        bp=guards-1;
-                if sten_name == 'forward':
-                    print "    i."+d,"=%d ;"%(bp-1)
-                if sten_name == 'backward':
-                    print "    i."+d,"=mesh->LocalN%s"%d,"-%d ;"%bp
-                for d2 in perp_dir[field][d]:
-                    print "    for (i."+d2,"=0; i."+d2,"< mesh->LocalN"+d2,";++i."+d2,") {"
+            #if sten_name=='main':
+            guards=numGuards[f_ar[4]]
+            get_for_loop(d,mode,field,guards,sten_name)
             sten=stencils[sten_name]
             if sten is None:
                 print f_ar
@@ -189,9 +231,8 @@ def gen_functions_normal(to_gen):
                     print func.name
                 print "#error unexpected: sten is None!"
                 exit(1)
-            result_=['','']
+            result_=['',''] # for foward/backward
             for line in sten.body[1:]:
-                ret="return"
                 pos=line.find("f.")
                 while pos > -1:
                     end=pos+2
@@ -201,12 +242,7 @@ def gen_functions_normal(to_gen):
                     while line[end] in part_of_offset:
                         end+=1
                     off=line[pos+2:end]
-                    diff=off_diff[mode][sten_name][off]
-                    #print >> sys.stderr, diff
-                    if diff != 'c()':
-                        line=line[:pos]+"in[i.%s%s]"%(d,diff)+line[end:]
-                    else:
-                        line="%sin[i]%s"%(line[:pos],line[end:])
+                    line=line[:pos]+get_diff(off_diff[mode][sten_name][off],"in",field,d)+line[end:]
                     pos=line.find("f.")
 
                 if line.find("return") == -1:
@@ -236,15 +272,15 @@ def gen_functions_normal(to_gen):
                                     
                 else:
                     if sten_name == 'main':
-                        print "    result[i]= ",line[len("return")+line.index("return"):]
+                        print "    "+get_diff('c()',"result",field,d)+"= ",line[len("return")+line.index("return"):]
                     else:
                         returned=line[len("return")+line.index("return"):]
                     break
             if sten_name != 'main':
                 if result_[0] != '':
-                    print "      result[i]="+result_[0]
+                    print "      "+get_diff('c()',"result",field,d)+"="+result_[0]
                 else:
-                    print "      result[i]=result_.inner;"
+                    print "      "+get_diff('c()',"result",field,d)+"=result_.inner;"
                 #print "      if (mesh->%sstart >1 ){"%d
                 
                 if guards > 1:
@@ -253,20 +289,15 @@ def gen_functions_normal(to_gen):
                         pass# dont do anything ...
                     else:
                         if sten_name == 'forward':
-                            print "        result[i.%sm()]="%d ,
+                            print "        "+get_diff('m()',"result",field,d)+"=" ,
                         else:
-                            print "        result[i.%sp()]="%d ,
+                            print "        "+get_diff('p()',"result",field,d)+"=" ,
                         if result_[1] != '':
                             print result_[1]
                         else:
                             print "result_.outer;"
                 #print "      }"
-                for d2 in perp_dir[field][d]:
-                    print "    }"
-            else:
-                print "  }"
-            if sten_name == 'backward':
-                print "  }"
+            get_for_end(d,field,sten_name)
             
         print """  return result;
 }
