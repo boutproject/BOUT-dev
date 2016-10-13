@@ -141,6 +141,8 @@ BndDirichlet_O2::BndDirichlet_O2(BoundaryRegion *region, FieldGenerator*g):Bound
 }
 
 BoundaryOp* BndDirichlet_O2::clone(BoundaryRegion *region, const list<string> &args){
+  verifyNumPoints(region,1);
+
   FieldGenerator* newgen = 0;
   if(!args.empty()) {
     // First argument should be an expression
@@ -619,6 +621,7 @@ void BndDirichlet_O2::apply_ddt(Field3D &f) {
 // New implementation, accurate to higher order
 
 BoundaryOp* BndDirichlet_O3::clone(BoundaryRegion *region, const list<string> &args){
+  verifyNumPoints(region,2);
   FieldGenerator* newgen = 0;
   if(!args.empty()) {
     // First argument should be an expression
@@ -1102,6 +1105,7 @@ void BndDirichlet_O3::apply_ddt(Field3D &f) {
 // Extrapolate to calculate boundary cell to 4th-order
 
 BoundaryOp* BndDirichlet_O4::clone(BoundaryRegion *region, const list<string> &args){
+  verifyNumPoints(region,3);
   FieldGenerator* newgen = 0;
   if(!args.empty()) {
     // First argument should be an expression
@@ -1581,6 +1585,7 @@ void BndDirichlet_O4::apply_ddt(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryDirichlet_2ndOrder::clone(BoundaryRegion *region, const list<string> &args) {
+  verifyNumPoints(region,2);
   if(!args.empty()) {
     // First argument should be a value
     val = stringToReal(args.front());
@@ -1634,6 +1639,7 @@ void BoundaryDirichlet_2ndOrder::apply_ddt(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryDirichlet_4thOrder::clone(BoundaryRegion *region, const list<string> &args) {
+  verifyNumPoints(region,4);
   if(!args.empty()) {
     // First argument should be a value
     val = stringToReal(args.front());
@@ -1675,6 +1681,7 @@ void BoundaryDirichlet_4thOrder::apply_ddt(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryNeumann::clone(BoundaryRegion *region, const list<string> &args) {
+  verifyNumPoints(region,1); 
   if(!args.empty()) {
     //output << "WARNING: Ignoring arguments to BoundaryNeumann\n";
     output << "WARNING: arguments is set to BoundaryNeumann None Zero Gradient\n";
@@ -1705,6 +1712,7 @@ void BoundaryNeumann::apply(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryNeumann2::clone(BoundaryRegion *region, const list<string> &args) {
+  verifyNumPoints(region,2);
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryNeumann2\n";
   }
@@ -1726,6 +1734,11 @@ void BoundaryNeumann2::apply(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryNeumann_2ndOrder::clone(BoundaryRegion *region, const list<string> &args) {
+#ifdef BOUNDARY_CONDITIONS_UPGRADE_EXTRAPOLATE_FOR_2ND_ORDER
+  verifyNumPoints(region,2);
+#else
+  verifyNumPoints(region,1);
+#endif
   if(!args.empty()) {
     // First argument should be a value
     val = stringToReal(args.front());
@@ -1785,6 +1798,7 @@ void BoundaryNeumann_2ndOrder::apply_ddt(Field3D &f) {
 /////JMAD///
 
 BoundaryOp* BndNeumann_O2::clone(BoundaryRegion *region, const list<string> &args){
+  verifyNumPoints(region,1);
   FieldGenerator *newgen = 0;
   if(!args.empty()) {
     // First argument should be an expression
@@ -2220,6 +2234,7 @@ void BndNeumann_O2::apply_ddt(Field3D &f) {
 }
 
 BoundaryOp* BoundaryNeumann_4thOrder::clone(BoundaryRegion *region, const list<string> &args) {
+  verifyNumPoints(region,4);
   if(!args.empty()) {
     // First argument should be a value
     val = stringToReal(args.front());
@@ -2267,6 +2282,7 @@ void BoundaryNeumann_4thOrder::apply_ddt(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryNeumannPar::clone(BoundaryRegion *region, const list<string> &args) {
+  verifyNumPoints(region,1);
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryNeumann2\n";
   }
@@ -2291,6 +2307,7 @@ void BoundaryNeumannPar::apply(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryRobin::clone(BoundaryRegion *region, const list<string> &args) {
+  verifyNumPoints(region,1);
   BoutReal a = 0.5, b = 1.0, g = 0.;
   
   list<string>::const_iterator it = args.begin();
@@ -2365,6 +2382,7 @@ void BoundaryConstGradient::apply(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryConstGradient::clone(BoundaryRegion *region, const list<string> &args) {
+  verifyNumPoints(region,2);
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryConstGradient\n";
   }
@@ -2374,6 +2392,7 @@ BoundaryOp* BoundaryConstGradient::clone(BoundaryRegion *region, const list<stri
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryZeroLaplace::clone(BoundaryRegion *region, const list<string> &args) {
+  verifyNumPoints(region,2);
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryZeroLaplace\n";
   }
@@ -2459,6 +2478,7 @@ void BoundaryZeroLaplace::apply(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryZeroLaplace2::clone(BoundaryRegion *region, const list<string> &args) {
+  verifyNumPoints(region,3);
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryZeroLaplace2\n";
   }
@@ -2547,6 +2567,7 @@ void BoundaryZeroLaplace2::apply(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryConstLaplace::clone(BoundaryRegion *region, const list<string> &args) {
+  verifyNumPoints(region,2);
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryConstLaplace\n";
   }
@@ -2759,6 +2780,7 @@ void BoundaryFree::apply_ddt(Field3D &f) {
 // 2nd order extrapolation:
 
 BoundaryOp* BoundaryFree_O2::clone(BoundaryRegion *region, const list<string> &args){
+  verifyNumPoints(region,2);
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryFree\n";
   }
@@ -2996,6 +3018,8 @@ void BoundaryFree_O2::apply_ddt(Field3D &f) {
 // Third order extrapolation:
 //////////////////////////////////
 BoundaryOp* BoundaryFree_O3::clone(BoundaryRegion *region, const list<string> &args){
+  verifyNumPoints(region,3);
+
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryConstLaplace\n";
   }
