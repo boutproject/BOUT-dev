@@ -70,25 +70,36 @@ void BoutException::Backtrace() {
 #endif
 }
 
+#define INIT_EXCEPTION(s) {                     \
+    va_list ap;                                 \
+                                                \
+    if(s == (const char*) NULL) {               \
+      message="No error message given!\n";      \
+    } else {                                    \
+      char buffer[1024];                        \
+      va_start(ap, s);                          \
+      vsprintf(buffer, s, ap);                  \
+      va_end(ap);                               \
+      for (int i=0;i<1024;++i){                 \
+        if (buffer[i]==0){                      \
+          if (i>0 && buffer[i-1]=='\n'){        \
+            buffer[i-1]=0;                      \
+          }                                     \
+          break;                                \
+        }                                       \
+      }                                         \
+      message.assign(buffer);                   \
+    }                                           \
+    message="====== Exception thrown ======\n"  \
+      +message+"\n";                            \
+                                                \
+    this->Backtrace();                          \
+  }
+
 BoutException::BoutException(const char* s, ...)
 {
 
-  va_list ap;  // List of arguments
-
-  if(s == (const char*) NULL) {
-    message="No error message given!\n";
-  } else {
-    char buffer[1024];
-    va_start(ap, s);
-    vsprintf(buffer, s, ap);
-    va_end(ap);
-    message.assign(buffer);
-  }
-  message="====== Exception thrown ======\n"+message;
-
-  this->Backtrace();
-
-  //output << message;
+  INIT_EXCEPTION(s);
 }
 
 const char* BoutException::what() const throw()
@@ -96,30 +107,14 @@ const char* BoutException::what() const throw()
   return message.c_str();
 }
 
-BoutRhsFail::BoutRhsFail(const char* s, ...)  : BoutException::BoutException(s){
-  va_list ap;  // List of arguments
+BoutRhsFail::BoutRhsFail(const char* s, ...)  : BoutException::BoutException(NULL ){
 
-  if(s == (const char*) NULL)
-    return;
-
-  char buffer[1024];
-  va_start(ap, s);
-    vsprintf(buffer, s, ap);
-  va_end(ap);
-
-  message.assign(buffer);
+  INIT_EXCEPTION(s);
+  
 }
 
-BoutIterationFail::BoutIterationFail(const char* s, ...) : BoutException::BoutException(s) {
-  va_list ap;  // List of arguments
-
-  if(s == (const char*) NULL)
-    return;
-
-  char buffer[1024];
-  va_start(ap, s);
-    vsprintf(buffer, s, ap);
-  va_end(ap);
-
-  message.assign(buffer);
+BoutIterationFail::BoutIterationFail(const char* s, ...) : BoutException::BoutException(NULL) {
+  
+  INIT_EXCEPTION(s);
+  
 }
