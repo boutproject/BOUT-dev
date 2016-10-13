@@ -23,6 +23,8 @@
     more explanatory message.
  */
 void verifyNumPoints(BoundaryRegion *region, int ptsRequired) {
+  TRACE("Verifying number of points available for BC");
+
 #ifndef CHECK
   return; //No checking so just return
 #else
