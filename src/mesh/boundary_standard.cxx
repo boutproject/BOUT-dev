@@ -13,7 +13,7 @@
 ///////////////////////////////////////////////////////////////
 // Helpers
 
-/*  Check that there are sufficient non-boundary points for desired B.C.
+/** \brief Check that there are sufficient non-boundary points for desired B.C.
     
     Checks both the size of the global grid (i.e. if this B.C. could be ok
     for some parallel setup or not) and the local grid.
