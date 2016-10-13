@@ -83,6 +83,48 @@ for db in func_db:
     func_db[db].append(["NULL","NULL","NULL","NULL"])
                
 
+
+def get_for_loop(d,mode,field,guards):
+    if d != 'z':
+        if d == 'x':
+            dxp=guards
+            dxm=-guards
+            dyp=0
+            dym=0
+        else:
+            dxp=0
+            dxm=0
+            dyp=guards
+            dym=-guards
+        if mode == 'on':
+            if d=='x':
+                dxm=-(guards-1)
+            else:
+                dym=-(guards-1)
+        elif mode == 'off':
+            if d=='x':
+                dxp=(guards-1)
+            else:
+                dyp=(guards-1)
+                
+        if 'x' in dirs[field]:
+            xmax='mesh->LocalNx%+d'%(-1+dxm)
+        else:
+            xmax="0"
+        if 'y' in dirs[field]:
+            ymax='mesh->LocalNy%+d'%(-1+dym)
+        else:
+            ymax="0"
+        if 'z' in dirs[field]:
+            zmax='mesh->LocalNz-1'
+        else:
+            zmax="0"
+        print "  for (DataIterator i(%s, %s,"%(dxp,xmax),
+        print "%s, %s, 0, %s)"%(dyp,ymax,zmax),
+        print "; !i.done() ; ++i) {"
+    else:
+        print """  for (auto i: result){"""
+
                 
 def gen_functions_normal(to_gen):
     #import sys
@@ -123,46 +165,8 @@ def gen_functions_normal(to_gen):
                 print "    DataIterator i(0,mesh->LocalNx,0,mesh->LocalNy,0,mesh->LocalNz);"
                 continue;
             if sten_name=='main':
-                if d != 'z':
-                    guards=numGuards[f_ar[4]]
-                    if d == 'x':
-                        dxp=guards
-                        dxm=-guards
-                        dyp=0
-                        dym=0
-                    else:
-                        dxp=0
-                        dxm=0
-                        dyp=guards
-                        dym=-guards
-                    if mode == 'on':
-                        if d=='x':
-                            dxm=-(guards-1)
-                        else:
-                            dym=-(guards-1)
-                    elif mode == 'off':
-                        if d=='x':
-                            dxp=(guards-1)
-                        else:
-                            dyp=(guards-1)
-                        
-                    if 'x' in dirs[field]:
-                        xmax='mesh->LocalNx%+d'%(-1+dxm)
-                    else:
-                        xmax="0"
-                    if 'y' in dirs[field]:
-                        ymax='mesh->LocalNy%+d'%(-1+dym)
-                    else:
-                        ymax="0"
-                    if 'z' in dirs[field]:
-                        zmax='mesh->LocalNz-1'
-                    else:
-                        zmax="0"
-                    print "  for (DataIterator i(%s, %s,"%(dxp,xmax),
-                    print "%s, %s, 0, %s)"%(dyp,ymax,zmax),
-                    print "; !i.done() ; ++i) {"
-                else:
-                    print """  for (auto i: result){"""
+                guards=numGuards[f_ar[4]]
+                get_for_loop(d,mode,field,guards)
             elif sten_name!='main':
                 if sten_name == 'forward':
                     print "  if (mesh->%sstart > 0){"%d
