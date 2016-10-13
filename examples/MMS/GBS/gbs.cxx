@@ -358,6 +358,7 @@ int GBS::rhs(BoutReal t) {
   if(estatic) {
     // Electrostatic
     Ve = VePsi;
+    mesh->communicate(Ve);
   }else {
     aparSolver->setCoefA(-Ne*0.5*mi_me*beta_e);
     psi = aparSolver->solve(Ne*(Vi - VePsi));
@@ -382,12 +383,20 @@ int GBS::rhs(BoutReal t) {
     Gi = -(0.96*Ti*Ne*tau_i) * ( 2.*Grad_par(Vi) + C(phi)/coords->Bxy );
     mesh->communicate(Gi);
     Gi.applyBoundary("neumann");
+  }else{
+    mesh->communicate(Gi);
   }
+
+  Field3D logNe = log(Ne);
+  mesh->communicate(logNe);
+
   Ge = 0.0;
   if(elecvis) {
-    Ge = -(0.73*Te*Ne*tau_e) * (2.*Grad_par(Ve) + (5.*C(Te) + 5.*Te*C(log(Ne)) + C(phi))/coords->Bxy);
+    Ge = -(0.73*Te*Ne*tau_e) * (2.*Grad_par(Ve) + (5.*C(Te) + 5.*Te*C(logNe) + C(phi))/coords->Bxy);
     mesh->communicate(Ge);
     Ge.applyBoundary("neumann");
+  }else{
+    mesh->communicate(Ge);
   }
   
   // Collisional damping (normalised)
@@ -425,7 +434,7 @@ int GBS::rhs(BoutReal t) {
     
     if(parallel) {
       ddt(Te) -= Vpar_Grad_par(Ve, Te);
-      ddt(Te) += (2./3.)*Te*( 0.71*Grad_par(Vi) - 1.71*Grad_par(Ve) + 0.71*(Vi-Ve)*Grad_par(log(Ne)));
+      ddt(Te) += (2./3.)*Te*( 0.71*Grad_par(Vi) - 1.71*Grad_par(Ve) + 0.71*(Vi-Ve)*Grad_par(logNe));
     }
     
     if(!mms) {
@@ -448,8 +457,10 @@ int GBS::rhs(BoutReal t) {
       ;
 
     if(parallel) {
+      Field3D delV = Vi-Ve;
+      mesh->communicate(delV);
       ddt(Vort) -= Vpar_Grad_par(Vi, Vort); // Parallel advection
-      ddt(Vort) += SQ(coords->Bxy)*( Grad_par(Vi - Ve) + (Vi - Ve)*Grad_par(log(Ne)) );
+      ddt(Vort) += SQ(coords->Bxy)*( Grad_par(delV) + (Vi - Ve)*Grad_par(logNe) );
     }
   }
   
@@ -462,7 +473,7 @@ int GBS::rhs(BoutReal t) {
       - mi_me*(2./3.)*Grad_par(Ge)
       - mi_me*nu*(Ve - Vi)
       + mi_me*Grad_par(phi)
-      - mi_me*(  Te*Grad_par(log(Ne)) + 1.71*Grad_par(Te) )
+      - mi_me*(  Te*Grad_par(logNe) + 1.71*Grad_par(Te) )
       + D(Ve, Dve)
       + H(Ve, Hve)
       ;
@@ -475,7 +486,7 @@ int GBS::rhs(BoutReal t) {
       - vE_Grad(Vi, phi)
       - Vpar_Grad_par(Vi, Vi)
       - (2./3.)*Grad_par(Gi)
-      - (Grad_par(Te) + Te*Grad_par(log(Ne))) // Parallel pressure
+      - (Grad_par(Te) + Te*Grad_par(logNe)) // Parallel pressure
       + D(Vi, Dvi)
       + H(Vi, Hvi)
       ;
@@ -485,11 +496,16 @@ int GBS::rhs(BoutReal t) {
 }
 
 const Field3D GBS::C(const Field3D &f) { // Curvature operator
+  Field3D g; //Temporary in case we need to communicate
   switch(curv_method) {
   case 0:
-    return V_dot_Grad(bxcv, f);
+    g = f ; 
+    mesh->communicate(g);
+    return V_dot_Grad(bxcv, g);
   case 1:
-    return bxcv*Grad(f);
+    g = f ; 
+    mesh->communicate(g);
+    return bxcv*Grad(g);
   }
   return coords->Bxy*bracket(logB, f, BRACKET_ARAKAWA);
 }
