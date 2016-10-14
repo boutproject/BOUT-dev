@@ -114,7 +114,7 @@ bool NcFormat::openr(const char *name) {
     return false;
     */
     xDim = NULL;
-  }else {
+  }else if(mesh != NULL) {
     // Check that the dimension size is correct
     if(xDim->size() != mesh->ngx) {
       throw BoutException("X dimension incorrect. Expected %d, got %d", mesh->ngx, xDim->size());
@@ -129,7 +129,7 @@ bool NcFormat::openr(const char *name) {
     return false;
     */
     yDim = NULL;
-  }else {
+  }else if(mesh != NULL) {
     // Check that the dimension size is correct
     if(yDim->size() != mesh->ngy) {
       throw BoutException("Y dimension incorrect. Expected %d, got %d", mesh->ngy, yDim->size());
@@ -142,7 +142,7 @@ bool NcFormat::openr(const char *name) {
     output.write("INFO: NetCDF file has no 'z' coordinate\n");
 #endif
     zDim = NULL;
-  }else {
+  }else if(mesh != NULL) {
     // Check that the dimension size is correct
     if(zDim->size() != mesh->ngz) {
       throw BoutException("Z dimension incorrect. Expected %d, got %d", mesh->ngz, zDim->size());
