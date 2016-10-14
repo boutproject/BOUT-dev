@@ -12,7 +12,7 @@ zmax=lz/2/pi
 Lx=mesh:lx
 
 [MESH]
-type=cartesian
+type=aiolos
 Ly=2*pi
 dy=Ly/ny
 Lx=1
@@ -30,6 +30,7 @@ StaggerGrids=true
 [MESH:diff]
 all=c2
 Second=C4
+FluxStag=U1
 
 [All]
 bndry_all = none

@@ -13,10 +13,10 @@ using std::vector;
 
   
 
-class CartesianMesh : public BoutMesh {
+class AiolosMesh : public BoutMesh {
  public:
-  CartesianMesh(GridDataSource *s, Options *options = NULL);
-  ~CartesianMesh();
+  AiolosMesh(GridDataSource *s, Options *options = NULL);
+  ~AiolosMesh();
   
   typedef Field3D (*deriv_func)(const Field3D ); // f
   typedef Field3D (*upwind_func)(const Field3D , const Field3D); // v, f
@@ -39,6 +39,6 @@ class CartesianMesh : public BoutMesh {
 
   //virtual const Field3D applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc = CELL_DEFAULT);
 
-  int isCartesian=1;
+  int isAiolos=1;
 
 };

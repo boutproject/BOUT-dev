@@ -30,7 +30,7 @@
  *
  **************************************************************************/
 
-#include "cartesianmesh.hxx"
+#include "aiolosmesh.hxx"
 
 #include <boutexception.hxx>
 #include <utils.hxx>
@@ -46,14 +46,14 @@
 
 
 
-CartesianMesh::CartesianMesh(GridDataSource *s, Options *options): BoutMesh(s,options){
-  output.write("  Using Cartesian Mesh!\n");
+AiolosMesh::AiolosMesh(GridDataSource *s, Options *options): BoutMesh(s,options){
+  output.write("  Using Aiolos Mesh!\n");
   derivs_init(options);
 }
-CartesianMesh::~CartesianMesh(){
+AiolosMesh::~AiolosMesh(){
 }
 
-BoutReal CartesianMesh::GlobalY(int jy) const{
+BoutReal AiolosMesh::GlobalY(int jy) const{
   int gjy=BoutMesh::YGLOBAL(jy);
   //output.write(" %d->%d ",jy,gjy);
 	       
@@ -61,4 +61,4 @@ BoutReal CartesianMesh::GlobalY(int jy) const{
 }
 
 
-//Field3D CartesianMesh::
+//Field3D AiolosMesh::

@@ -1,8 +1,8 @@
 
 BOUT_TOP = ../../../..
 
-SOURCEC         = cartesianmesh.cxx
-SOURCEH         = cartesianmesh.hxx
+SOURCEC         = aiolosmesh.cxx
+SOURCEH         = aiolosmesh.hxx
 TARGET          = lib
 
 include $(BOUT_TOP)/make.config
@@ -10,7 +10,7 @@ include $(BOUT_TOP)/make.config
 generated=generated_header.hxx generated_derivs.cxx generated_stencils.cxx generated_init.cxx
 #lib: makefile $(BOUT_TOP)/make.config $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ) generated_stencils.cxx
 
-cartesianmesh.o:$(generated)
+aiolosmesh.o:$(generated)
 
 tables_cleaned.cxx:../../diff_tables.cxx
 	gcc -E $< > $@

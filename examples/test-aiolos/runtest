@@ -40,7 +40,7 @@ fi
 #    exit 1
 #fi
 
-if grep cartesian data/BOUT.inp | grep -v \# &>/dev/null
+if grep aiolos data/BOUT.inp | grep -v \# &>/dev/null
 then
     ny=11
     if ! ./test mesh:ny=$ny all:function=y^4 diff_x:function=0 diff_y:function=4*y^3 mesh:ddx:first=C4 mesh:ddy:first=C4 MXG=2 MYG=2 mesh:nx=5 mesh:nz=1 > run.log.$ny

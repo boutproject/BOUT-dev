@@ -370,7 +370,7 @@ def gen_functions_normal(to_gen):
 # for entry in func_db[d][:-1]:
 #     print "BoutReal %s(stencil &f);"%entry[0]
 # for d in dir:
-#     print "static CartesianMesh::cart_diff_lookup_table diff_lookup_%s [] = {"%d
+#     print "static AiolosMesh::cart_diff_lookup_table diff_lookup_%s [] = {"%d
 #     for entry in func_db[d]:
 #         print "\t{",
 #         t=''
@@ -387,9 +387,9 @@ def gen_functions_normal(to_gen):
 #     warn()
 #     du=d.upper()
 #     if d != "z":
-#         print "const Field3D CartesianMesh::apply%sdiff(const Field3D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc ){"%du
+#         print "const Field3D AiolosMesh::apply%sdiff(const Field3D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc ){"%du
 #     else:
-#         print "const Field3D CartesianMesh::apply%sdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc ){"%du
+#         print "const Field3D AiolosMesh::apply%sdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc ){"%du
 #     print """  cart_diff_lookup_table chosen;
 #   for (int i=0;;++i){
 #     output.write("maybe: %sp == %sp?\\n",diff_lookup_%s[i].func,func);

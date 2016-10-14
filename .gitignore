@@ -34,3 +34,4 @@ test*.py
 /tools/vagrant/.vagrant
 \#*#
 .#*
+*.132t.vect

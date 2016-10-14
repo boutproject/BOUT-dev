@@ -175,7 +175,7 @@ for t in func_tables:
                     print "    break;"
                     #print "    }"
                 print "  default:"
-                print "    throw BoutException(\"%s CartesianMesh::"%field +myname,'unknown method %d.\\nNote FFTs are not (yet) supported.",method);'
+                print "    throw BoutException(\"%s AiolosMesh::"%field +myname,'unknown method %d.\\nNote FFTs are not (yet) supported.",method);'
                 print "  }; // end switch"
                 print "}"
                 print
@@ -201,7 +201,7 @@ for func in ["indexDD%s", "indexD2D%s2","indexVDD%s","indexFDD%s"]:
             function_header="  virtual const "+field+" "+func%d.upper()
             function_header+=sig
             headers+=function_header+";\n"
-            function_header="const "+field+" CartesianMesh::"+func%d.upper()
+            function_header="const "+field+" AiolosMesh::"+func%d.upper()
             function_header+=sig
             if flux:
                 f="v, f"
@@ -264,7 +264,7 @@ for d in dirs['Field3D']:
             print 'DIFF_METHOD default_%s_%s%sDeriv;'%(d,i,stag)
 
 warn()
-print "void CartesianMesh::derivs_init(Options * option) {"
+print "void AiolosMesh::derivs_init(Options * option) {"
 print "  std::string name;"
 print "  Options * dirOption;"
 print '  Options * defOption = option->getSection("diff");'
