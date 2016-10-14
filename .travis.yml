@@ -18,9 +18,9 @@ before_install:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8" MPICH_CXX="g++-4.8" MPICH_CC="gcc-4.8"; fi
   - sudo apt-get install -y mpich2 libmpich2-dev
   - sudo apt-get install -y libfftw3-dev libnetcdf-dev
-  - sudo apt-get install -y python-numpy python-netcdf4 python-scipy
+  - sudo apt-get install -y python-numpy python-netcdf python-scipy
   - sudo apt-get install -y python-matplotlib
-  - sudo apt-get install -y python3-numpy python3-netcdf4 python3-scipy
+  - sudo apt-get install -y python3-numpy python3-netcdf python3-scipy
   - sudo apt-get install -y python3-matplotlib
 script:
   - ./.travis_script.sh
