@@ -669,7 +669,7 @@ bool finite(const Field3D &var);
 #ifdef CHECK
 void checkData(const Field3D &f); ///< Checks if the data is valid.
 #else
-inline void checkData(const Field3D &f){;}; ///< Checks if the data is valid.
+inline void checkData(const Field3D &f){;} ///< Checks if the data is valid.
 #endif
  
 /*!
