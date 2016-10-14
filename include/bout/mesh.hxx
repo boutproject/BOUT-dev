@@ -286,6 +286,11 @@ class Mesh {
   typedef BoutReal (*deriv_func)(stencil &); // f
   typedef BoutReal (*upwind_func)(BoutReal, stencil &); // v, f
   typedef BoutReal (*flux_func)(stencil&, stencil &); // v, f
+
+  /// Interpolate to a give cell location
+  virtual const Field3D interp_to(const Field3D &var, CELL_LOC loc) const;
+  virtual const Field2D interp_to(const Field2D &var, CELL_LOC loc) const;
+
   
   typedef struct {
     BoutReal inner;
