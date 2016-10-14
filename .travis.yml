@@ -20,5 +20,7 @@ before_install:
   - sudo apt-get install -y libfftw3-dev libnetcdf-dev
   - sudo apt-get install -y python-numpy python-netcdf python-scipy
   - sudo apt-get install -y python-matplotlib
+  - sudo apt-get install -y python3-numpy python3-netcdf python3-scipy
+  - sudo apt-get install -y python3-matplotlib
 script:
   - ./.travis_script.sh
