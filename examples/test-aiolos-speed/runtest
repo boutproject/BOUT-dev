@@ -1,0 +1,9 @@
+iter=$1
+test $iter ||iter=10
+make &> /dev/null
+echo '*****************************'
+echo "AIOLOS-Mesh"
+time (./test iter=$iter &> /dev/null)
+echo '*****************************'
+echo "BOUT-Mesh"
+time (./test iter=$iter mesh:type=bout &> /dev/null)
