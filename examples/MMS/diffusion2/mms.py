@@ -54,7 +54,9 @@ def D2DZ2(f):
 def exprToStr(expr):
     """ Convert a sympy expression to a string for BOUT++ input
     """
-    return str(expr).replace("**", "^") # Replace exponent operator
+    tmp = str(expr).replace("**", "^")# Replace exponent operator
+    tmp = tmp.replace("xl","N:xl")
+    return tmp.replace("yl","N:yl") 
 
 ####
 
@@ -67,13 +69,16 @@ Dz = 1.
 
 x = symbols('x')
 y = symbols('y')
+xl = symbols('xl')
+yl = symbols('yl')
 z = symbols('z')
 t = symbols('t')
 pi = symbols('pi')
 
 # Define the manufactured solution
 
-n = 0.9 + 0.9*x + 0.2*cos(10*t)*sin(5.*x**2 - 2*z) + cos(y)
+n = 0.9 + 0.9*x + 0.2*sin(5.*x**2 - 2*z) + cos(10*z)*cos(y)*sin(y*7+1.234)
+
 
 
 # Calculate gradients for boundaries
@@ -93,6 +98,15 @@ dndt = (
 
 Sn = diff(n, t) - dndt
 
+#x and y-domains are Lx and Ly long, respectively
+# change to corresponding coordinates. Standard BOUT++ coordinates 
+#have Lx = 1, Ly = 2pi. 
+#Scaling takes place in BOUT.inp
+scale_coordinates = [(x,xl), (y,yl)] 
+n = n.subs(scale_coordinates)
+dndx = dndx.subs(scale_coordinates)
+dndy = dndy.subs(scale_coordinates)
+Sn = Sn.subs(scale_coordinates)
 #######################
 
 print("[n]")
