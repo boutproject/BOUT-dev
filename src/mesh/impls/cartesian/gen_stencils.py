@@ -1,6 +1,8 @@
 from common import *
 # Define some constants, functions
 
+import sys
+
 # Read the stencils
 functions=[]
 inFunc=0
@@ -33,7 +35,7 @@ class function:
     body=[]
     stag=False
     flux=False
-    
+    guards=3
 
 functions_=functions
 functions=[]
@@ -67,6 +69,19 @@ for f in functions_:
         else:
             func.flux=True
         functions.append(func)
+null_func=function()
+null_func.name='NULL'
+null_func.body=["NULL","result_.inner = 0;","result_.outer = 0;","}"]
+functions.append(null_func)
+for f in functions:
+    f.guards=1
+    for l in f.body:
+        for off in ['pp','mm','p2','m2']:
+            if l.find(off)>-1:
+                f.guards=2
+                #print >> sys.stderr , f.name ,"has 2 guard cells"
+    #if f.guards == 1:
+        #print >> sys.stderr , f.name ,"has 1 guard cells"
         
 for f in functions:
     if f.flux == False:
@@ -81,7 +96,26 @@ for f in functions:
                 func_db[d].append([f.name,"cart_diff_%s_%s_norm"%(d,f.name),"NULL","NULL"])
 for db in func_db:
     func_db[db].append(["NULL","NULL","NULL","NULL"])
-               
+
+
+def replace_stencil(line,sten,fname,field,mode,sten_name,off,d):
+    pos=line.find(sten)
+    while pos > -1:
+        end=pos+len(sten)
+        part_of_offset=['p','m','c']
+        for i in range(2,9):
+            part_of_offset.append(str(i))
+        while line[end] in part_of_offset:
+            end+=1
+        off=line[pos+2:end]
+        try:
+            line_=line
+            line=line[:pos]+get_diff(off_diff[mode][sten_name][off],fname,field,d)+line[end:]
+        except:
+            print >>sys.stderr,line_
+            raise
+        pos=line.find(sten)
+    return line
 
 
 def get_for_loop(d,mode,field,guards,sten_name ):
@@ -112,9 +146,9 @@ def get_for_loop(d,mode,field,guards,sten_name ):
             d='ignore'
         for d2 in dirs[field]:
             if d==d2:
-                print "  for (int %s = %d; %s < mesh->LocalN%s%+d; ++%s ){"%(d,dp,d,d,dm,d)
+                print "  for (int %s = %d; %s < N%s%+d; ++%s ){"%(d,dp,d,d,dm,d)
             else:
-                print "  for (int %s = 0 ; %s < mesh->LocalN%s; ++%s ){"%(d2,d2,d2,d2)
+                print "  for (int %s = 0 ; %s < N%s; ++%s ){"%(d2,d2,d2,d2)
         #else:
         #    print """  for (auto i: result){"""
     else:
@@ -147,18 +181,20 @@ def get_for_end(d,field, sten_name):
 def get_diff(diff,fname,field,d):
     #diff=
     #print >> sys.stderr, diff
-    ret=fname+"("
+    ret=fname+"_ptr["
+    for d2 in dirs[field][1:]:
+        ret+="("
     first=True
     for d2 in dirs[field]:
         if not first:
-            ret+=','
+            ret+=')*N%s + '%d2
         first=False
         if (d2 == d):
             #do smart stuff
             ret+=d2+"%+d"%(diff2[diff])
         else:
             ret+=d2
-    ret+=")"
+    ret+="]"
     return ret
     # if diff != 'c()':
     #     return "%s[i.%s%s]"%(fname,d,diff)
@@ -167,10 +203,10 @@ def get_diff(diff,fname,field,d):
 
 def get_pointer(field, field_type,const):
     if const:
-        print "  const BoutReal"
+        print "  const BoutReal * __restrict__",
     else:
-        print "  BoutReal"
-    print "* __restrict__ %s_ptr = &"%field,field,"(",
+        print "  BoutReal * __restrict__",
+    print "%s_ptr = &"%field,field,"(",
     first=True
     for d in dirs[field_type]:
         if not first:
@@ -181,8 +217,10 @@ def get_pointer(field, field_type,const):
         
 
 def gen_functions_normal(to_gen):
-    #import sys
-    #print >>sys.stderr, off_diff
+    import sys
+    #for f_ar in to_gen:
+    #    print >>sys.stderr,f_ar[0],f_ar[1]
+    #exit(1)
     for f_ar in to_gen:
         mode=f_ar[3]
         #for d in dir:
@@ -191,13 +229,16 @@ def gen_functions_normal(to_gen):
         #tmp="cart_diff_%s_%s_%%s"%(d,f.name)
         #for mode in modes:
         name=f_ar[0]
+        flux=f_ar[-1]
         warn()
-        print "const",field,name,"(const",field,"&in){"
-        print ' //output.write("Using method %s!\\n");'%name
-        print " ",field,"result;"
-        print "  result.allocate();"
-        #get_pointer("result",field,False)
-        #get_pointer("in",field,True)
+        print "static void "+name+"_"+field.lower()+"(BoutReal * __restrict__ result_ptr,",
+        if flux:
+            print "const BoutReal * __restrict__ v_in_ptr,",
+            print "const BoutReal * __restrict__ f_in_ptr) {"
+        else:
+            print "const BoutReal * __restrict__ in_ptr) {"
+        for d2 in dirs[field]:
+            print "  const int N%s = mesh->LocalN%s;"%(d2,d2)
         stencils={'main':None,
                   'forward':None,
                   'backward':None}
@@ -213,6 +254,8 @@ def gen_functions_normal(to_gen):
         if d=='z':
             todo=[todo[0]]
         for sten_name in todo:
+            if sten_name=='main':
+                guards=stencils[sten_name].guards #numGuards[f_ar[4]]
             if sten_name=='backward' and mode=='on' and guards ==1:
                 print "  }"
                 continue;
@@ -221,29 +264,23 @@ def gen_functions_normal(to_gen):
                 #print "    DataIterator i(0,mesh->LocalNx,0,mesh->LocalNy,0,mesh->LocalNz);"
                 print "    int",d,";"
                 continue;
-            #if sten_name=='main':
-            guards=numGuards[f_ar[4]]
             get_for_loop(d,mode,field,guards,sten_name)
             sten=stencils[sten_name]
             if sten is None:
-                print f_ar
+                import sys
+                print >>sys.stderr,f_ar
                 for func in functions:
-                    print func.name
-                print "#error unexpected: sten is None!"
+                    print >>sys.stderr,func.name
+                print >>sys.stderr,stencils
+                print >>sys.stderr,"#error unexpected: sten is None for sten_name %s !"%sten_name
                 exit(1)
             result_=['',''] # for foward/backward
-            for line in sten.body[1:]:
-                pos=line.find("f.")
-                while pos > -1:
-                    end=pos+2
-                    part_of_offset=['p','m','c']
-                    for i in range(2,9):
-                        part_of_offset.append(str(i))
-                    while line[end] in part_of_offset:
-                        end+=1
-                    off=line[pos+2:end]
-                    line=line[:pos]+get_diff(off_diff[mode][sten_name][off],"in",field,d)+line[end:]
-                    pos=line.find("f.")
+            for line in sten.body[1:-1]:
+                if flux:
+                    line=replace_stencil(line,'v.',"v_in",field,mode,sten_name,off,d)
+                    line=replace_stencil(line,'f.',"f_in",field,"norm",sten_name,off,d)
+                else:
+                    line=replace_stencil(line,'f.',"in",field,mode,sten_name,off,d)
 
                 if line.find("return") == -1:
                     if sten_name == 'main':
@@ -268,6 +305,7 @@ def gen_functions_normal(to_gen):
                             if line.find("=") > -1:
                                 import sys
                                 print >> sys.stderr ,"Failed to parse - unexpected line: ",line
+                                print >> sys.stderr ,result_
                                 exit(1)
                                     
                 else:
@@ -275,15 +313,18 @@ def gen_functions_normal(to_gen):
                         print "    "+get_diff('c()',"result",field,d)+"= ",line[len("return")+line.index("return"):]
                     else:
                         returned=line[len("return")+line.index("return"):]
-                    break
+                    #break
             if sten_name != 'main':
                 if result_[0] != '':
                     print "      "+get_diff('c()',"result",field,d)+"="+result_[0]
                 else:
+                    import sys
                     print "      "+get_diff('c()',"result",field,d)+"=result_.inner;"
                 #print "      if (mesh->%sstart >1 ){"%d
                 
                 if guards > 1:
+                    #print >> sys.stderr, stencils[todo[0]].body[0]
+                    #print >> sys.stderr, stencils[todo[0]].guards
                     if ( sten_name == 'backward' and mode == 'on' ) or \
                        ( sten_name == 'forward' and mode == 'off' ):
                         pass# dont do anything ...
@@ -299,6 +340,26 @@ def gen_functions_normal(to_gen):
                 #print "      }"
             get_for_end(d,field,sten_name)
             
+        print "}"
+        warn()
+        print "static",field,name,"(const",field,
+        if flux:
+            print "&v_in, const",field,"&f_in){"
+        else:
+            print "&in){"
+        print ' output.write("Using method %s!\\n");'%name
+        print " ",field,"result;"
+        print "  result.allocate();"
+        get_pointer("result",field,False)
+        if flux:
+            get_pointer("v_in",field,True)
+            get_pointer("f_in",field,True)
+        else:
+            get_pointer("in",field,True)
+        if flux:
+            print "  "+name+"_"+field.lower()+"(result_ptr,v_in_ptr,f_in_ptr);"
+        else:
+            print "  "+name+"_"+field.lower()+"(result_ptr,in_ptr);"
         print """  return result;
 }
 """

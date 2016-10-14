@@ -121,4 +121,17 @@ numGuards={ 'DDX_C2'       : 1,
             'D2DX2_WENO3_stag'  : 2,
             'D2DX2_S2_stag'  : 2,
             'D2DX2_NND_stag' : 2,
+            'VDDX_C4'         : 2,
             }
+
+
+def duplicates(a):
+    import collections
+    dup = [item for item, count in collections.Counter(a).items() if count > 1]
+    if dup:
+        import sys
+        print >> sys.stderr , "found duplicates:"
+        print >>sys.stderr, dup
+        print >> sys.stderr , "in"
+        print >> sys.stderr , a
+        exit(3)

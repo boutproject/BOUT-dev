@@ -1,4 +1,5 @@
 from common import *
+import sys
 
 # read tables
 func_tables={}
@@ -27,7 +28,10 @@ with open("tables_cleaned.cxx","r") as f:
                         for diff in e:
                             en.append(diff.strip())
                         cn=en[0]
+                        #NI not implemented :
                         if cn=='DIFF_W3':
+                            continue
+                        if cn=='DIFF_SPLIT':
                             continue
                         #print cn
                         if not name in first_entry:
@@ -43,70 +47,131 @@ descriptions.pop("DIFF_DEFAULT")
 # print >> sys.stderr , descriptions
 # exit(1)
 
-funcname={ 'FirstDerivTable' : 'indexDD%s',
-           'SecondDerivTable' : 'indexD2D%s2',
-           'FirstStagDerivTable' : 'indexDD%s',
-           'SecondStagDerivTable' : 'indexD2D%s2'}
+funcname={ 'FirstDerivTable'      : 'indexDD%s',
+           'FirstStagDerivTable'  : 'indexDD%s',
+           'SecondDerivTable'     : 'indexD2D%s2',
+           'SecondStagDerivTable' : 'indexD2D%s2',
+           'UpwindTable'          : 'indexVDD%s',
+           'UpwindStagTable'      : 'indexVDD%s',
+           'FluxTable'            : 'indexFDD%s',
+           'FluxStagTable'        : 'indexFDD%s'
+}
 
 funcs_to_gen=[]
 default_methods=dict()
+duplicates(func_tables.keys())
 for t in func_tables:
     func_tables[t].pop('DIFF_DEFAULT')
+    try:
+        func_tables[t].pop('DIFF_SPLIT')
+    except:
+        pass
     fu=func_tables[t].itervalues().next()
     if fu[1] != "NULL": # not a flux/upwind scheeme
-        if fu[1][-4:]== "stag":
+        flux=False
+    else:
+        flux=True
+    if flux:
+        #print >> sys.stderr , fu[3]
+        if fu[3][-4:]== "stag":
             stag=True
         else:
             stag=False
+    else:
+        #print >> sys.stderr , fu[0]
+        if fu[0][-4:]== "stag":
+            stag=True
+        else:
+            stag=False
+    if True:
+        #for t in func_tables:
+        #print >>sys.stderr , t #func_tables
+        duplicates(fields)
         for field in fields:
+            duplicates(dirs[field])
             for d in dirs[field]:
                 warn()
-                if not stag:
-                    myname=funcname[t]%d.upper()+"_non_stag"
+                try:
+                    if not stag:
+                        myname=funcname[t]%d.upper()+"_non_stag"
+                    else:
+                        myname=funcname[t]%d.upper()+"_stag"
+                except:
+                    import sys
+                    print >>sys.stderr,funcname[t]
+                    exit(3)
+                if flux:
+                    inp="(const "+field+" &v, const "+field+" &f, "
                 else:
-                    myname=funcname[t]%d.upper()+"_stag"
-                print "const",field, myname , "(const",field,"&f, CELL_LOC outloc, DIFF_METHOD method) {"
+                    inp="(const "+field+" &f, "
+                print "const",field, myname , inp,"CELL_LOC outloc, DIFF_METHOD method) {"
                 print "  if (method == DIFF_DEFAULT){"
-                print "    method = default_%s_%s;"%(d,t[:-5])# drop 'Table'
+                print "    method = default_%s_%s;"%(d,t[:-5]+("Deriv" if flux else ""))# drop 'Table'
                 print "  }"
                 print "  if (outloc == CELL_DEFAULT){"
                 print "    outloc = f.getLocation();"
                 print "  }"
                 print "  switch (method){"
                 default_methods["default_%s_%s"%(d,t[:-5])]=func_tables[t]
+                duplicates(func_tables[t].keys())
                 for method in func_tables[t]:
                     print "  case",method,":"
-                    if stag:
-                        print "    if (outloc == CELL_%sLOW){"%d.upper()
-                        print "      if (f.getLocation() == CELL_CENTRE){"
-                        print "        return %s_on_%s(f);"%(funcname[t]%d.upper(),method) #func_tables[t][method][0]
-                        print "      } else {"
-                        print "        return %s_on_%s(interp_to(f,CELL_CENTRE));"%(funcname[t]%d.upper(),method)
-                        print "      };"
-                        print "    } else {" # inloc must be CELL_%sLOW
-                        print "      if (outloc == CELL_CENTRE){"
-                        print "        return %s_off_%s(f);"%(funcname[t]%d.upper(),method)
-                        print "      } else {"
-                        print "        return interp_to(%s_off_%s(f),outloc);"%(funcname[t]%d.upper(),method)
-                        print "      };"
-                        print "    }"
-                        stags=['on','off']
+                    if flux:
+                        f="v,f"
                     else:
-                        print "    if (outloc == f.getLocation()){"
-                        print "      return %s_norm_%s(f);"%(funcname[t]%d.upper(),method)
-                        print "    } else {"
-                        print "      return interp_to(%s_norm_%s(f),outloc);"%(funcname[t]%d.upper(),method)
-                        print "    }"
-                        stags=['norm']
+                        f="f"
+                    if flux:
+                        # f.getLocation() == outloc guaranteed
+                        if stag:
+                            print "    if (outloc == CELL_%sLOW){"%d.upper()
+                            print "      return %s_on_%s(interp_to(v,CELL_CENTRE),f);"% \
+                                (funcname[t]%d.upper(),method)
+                            print "    } else {" # inloc must be CELL_%sLOW
+                            print "      return interp_to(%s_off_%s(v,interp_to(f,CELL_CENTRE)),outloc);"% \
+                                (funcname[t]%d.upper(),method)
+                            print "    }"
+                            stags=['on','off']
+                        else:
+                            print "    if (v.getLocation() == f.getLocation()){"
+                            print "      return interp_to(%s_norm_%s(v,f),outloc);"%(funcname[t]%d.upper(),method)
+                            print "    } else {"
+                            print "      return interp_to(%s_norm_%s(interp_to(v,CELL_CENTRE),interp_to(f,CELL_CENTRE)),outloc);"%(funcname[t]%d.upper(),method)
+                            print "    }"
+                            stags=['norm']
+                    else: # not flux
+                        if stag:
+                            print "    if (outloc == CELL_%sLOW){"%d.upper()
+                            print "      return %s_on_%s(interp_to(%s,CELL_CENTRE));"%(funcname[t]%d.upper(),method,f)
+                            print "    } else {" # inloc must be CELL_%sLOW
+                            print "      return interp_to(%s_off_%s(%s),outloc);"% \
+                                (funcname[t]%d.upper(),method,f)
+                            print "    }"
+                            stags=['on','off']
+                        else:
+                            print "    return interp_to(%s_norm_%s(%s),outloc);"%(funcname[t]%d.upper(),method,f)
+                            stags=['norm']
                     for mstag in stags:
                         funcs=func_tables[t][method]
+                        if funcs[0]=='NULL':
+                            #print >> sys.stderr, funcs
+                            funcs[0:3]=funcs[3:6]
+                            #print >> sys.stderr, funcs
                         forward=funcs[1]
                         if forward=='NULL':
-                            forward=func_tables[t][first_entry[t]][1]
+                            try:
+                                forward=func_tables[t][first_entry[t]][1]
+                                #if forward=='NULL':
+                                #    raise
+                            except:
+                                print >> sys.stderr,t
+                                print >> sys.stderr,first_entry
+                                print >> sys.stderr,func_tables[t]
+                                raise
                         backward=funcs[2]
                         if backward=='NULL':
                             backward=func_tables[t][first_entry[t]][2]
-                        funcs_to_gen.append(["%s_%s_%s"%(funcname[t]%d.upper(),mstag,method),field,d,mstag,funcs[0],forward,backward])
+                        #print >> sys.stderr, funcname[t] , d, mstag, method, field
+                        funcs_to_gen.append(["%s_%s_%s"%(funcname[t]%d.upper(),mstag,method),field,d,mstag,funcs[0],forward,backward,flux])
                     print "    break;"
                     #print "    }"
                 print "  default:"
@@ -114,7 +179,7 @@ for t in func_tables:
                 print "  }; // end switch"
                 print "}"
                 print
-                
+
     #else:
     #    print fu
     #for meth in func_tables[t]:
@@ -123,21 +188,37 @@ for t in func_tables:
 #print first_entry
 
 headers=""
-for func in ["indexDD%s", "indexD2D%s2"]:
+for func in ["indexDD%s", "indexD2D%s2","indexVDD%s","indexFDD%s"]:
+    flux=True
+    if func.find("indexD") > -1:
+        flux=False
     for field in fields:
         for d in dirs[field]:
             warn()
+            sig="(const "+field+" &f, CELL_LOC outloc, DIFF_METHOD method)";
+            if flux:
+                sig="(const "+field+" &v,const "+field+" &f, CELL_LOC outloc, DIFF_METHOD method)";
             function_header="  virtual const "+field+" "+func%d.upper()
-            function_header+="(const "+field+" &f, CELL_LOC outloc, DIFF_METHOD method)";
+            function_header+=sig
             headers+=function_header+";\n"
             function_header="const "+field+" CartesianMesh::"+func%d.upper()
-            function_header+="(const "+field+" &f, CELL_LOC outloc, DIFF_METHOD method)";
+            function_header+=sig
+            if flux:
+                f="v, f"
+            else:
+                f="f"
             print function_header," {"
-            print "  if ((outloc == CELL_%sLOW) != (f.getLocation() == CELL_%sLOW)){"%(d.upper(),d.upper())
+            if flux:
+                print "  if (outloc != CELL_DEFAULT && outloc != f.getLocation()) {"
+                print '    throw BoutException("AiolosMesh::index?DDX: Unhandled case for shifting.\\n\
+f.getLocation()==outloc is required!");'
+                print "  }"
+            print "  if ((outloc == CELL_%sLOW) != (f.getLocation() == CELL_%sLOW)){"% \
+                (d.upper(),d.upper())
             print "    // we are going onto a staggered grid or coming from one"
-            print "    return",func%d.upper()+"_stag","(f,outloc,method);"
+            print "    return",func%d.upper()+"_stag","("+f+",outloc,method);"
             print "  } else {"
-            print "    return",func%d.upper()+"_non_stag","(f,outloc,method);"
+            print "    return",func%d.upper()+"_non_stag","("+f+",outloc,method);"
             print "  }"
             print "}"
             print
@@ -148,6 +229,18 @@ with open("generated_header.hxx","w") as f:
 
 import sys
 #funcs_to_gen=funcs_to_gen[0:2]
+tmp=[]
+for fu in funcs_to_gen:
+    tmp.append(fu[0]+fu[1])
+#duplicates(tmp)
+seen = set()
+uniq = []
+for x in funcs_to_gen:
+    xs=x[0]+x[1]
+    if xs not in seen:
+        uniq.append(x)
+        seen.add(xs)
+funcs_to_gen=uniq
 sys.stdout=open("generated_stencils.cxx","w")
 from gen_stencils import gen_functions_normal
 gen_functions_normal(funcs_to_gen)
@@ -161,12 +254,12 @@ for d in descriptions:
 for d in dirs['Field3D']:
     warn()
     for i in ['First','Second','Upwind','Flux']:
+        stags=['','Stag']
         if i in ['First','Second']:
             table="DerivTable"
-            stags=['','Stag']
         else:
             table="Table"
-            stags=[""]
+            #stags=[""]
         for stag in stags:
             print 'DIFF_METHOD default_%s_%s%sDeriv;'%(d,i,stag)
 
@@ -180,12 +273,12 @@ for d in dirs['Field3D']:
     print '  dirOption = option->getSection("dd%s");'%d
     print
     for i in ['First','Second','Upwind','Flux']:
+        stags=['','Stag']
         if i in ['First','Second']:
             table="DerivTable"
-            stags=['','Stag']
         else:
             table="Table"
-            stags=[""]
+            #stags=[""]
         for stag in stags:
             warn()
             print '  // Setting derivatives for dd%s and %s'%(d,i+stag)
@@ -211,13 +304,15 @@ for d in dirs['Field3D']:
             #elif i == ''
             print '  }'
             print ' ',
+            options=""
             for avail in func_tables[i+stag+table]:
                 print 'if (strcasecmp(name.c_str(),"%s")==0) {'%avail[5:]
                 print '    default_%s_%s%sDeriv = %s;'%(d,i,stag,avail)
                 print '    output.write("\t%15s : %s\\n");'%(i+stag,descriptions_cleaned[avail]);
                 print '  } else',
+                options+="\\n * %s"%avail[5:]
             print '{'
-            print '    throw BoutException("Dont\'t know what diff method to use for %s (direction %s, tried to use %s)!",name.c_str());'%(i+stag,d,'%s')
+            print '    throw BoutException("Dont\'t know what diff method to use for %s (direction %s, tried to use %s)!\\nOptions are:%s",name.c_str());'%(i+stag,d,'%s',options)
             print '  }'
 print "}"
 #exit(1)
