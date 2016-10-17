@@ -12,8 +12,8 @@ BOUT/examples/bout_runners_example.
 # denotes the end of a fold
 __authors__ = "Michael Loeiten"
 __email__   = "mmag@fysik.dtu.dk"
-__version__ = "1.05"
-__date__    = "2016.09.06"
+__version__ = "1.051"
+__date__    = "2016.10.17"
 
 import os
 import sys
@@ -298,27 +298,27 @@ class basic_runner(object):
             function (see the docstring of the run function for more
             info). The possibilities are
 
-                         >>> 'spatial_domain",
-                         "temporal_domain",
-                         "solver",
-                         "ddx_first",
-                         "ddx_second",
-                         "ddx_upwind",
-                         "ddx_flux",
-                         "ddy_first",
-                         "ddy_second",
-                         "ddy_upwind",
-                         "ddy_flux",
-                         "ddz_first",
-                         "ddz_second",
-                         "ddz_upwind",
-                         "ddz_flux",
+                * "spatial_domain"
+                * "temporal_domain"
+                * "solver"
+                * "ddx_first"
+                * "ddx_second"
+                * "ddx_upwind"
+                * "ddx_flux"
+                * "ddy_first"
+                * "ddy_second"
+                * "ddy_upwind"
+                * "ddy_flux"
+                * "ddz_first"
+                * "ddz_second"
+                * "ddz_upwind"
+                * "ddz_flux"
+                * Any "variable_name" from additional or series_add
+                * An iterable consisting of several of these.
 
-            any "variable_name" from additional or series_add an
-            iterable consisting of several of these. If an iterable is
-            given, then the first element is going to be the fastest
-            varying variable, the second element is going to be the
-            second fastest varying variable and so on.
+            If an iterable is given, then the first element is going to
+            be the fastest varying variable, the second element is going
+            to be the second fastest varying variable and so on.
         make : bool
             Whether or not to make the program
         allow_size_modification : bool
@@ -574,7 +574,8 @@ class basic_runner(object):
                 job_dependencies = [int(re.match('\d+', j).group(0))\
                                     for j in job_dependencies\
                                     if re.match('\d+', j) is not None]
-                print("\nWill now wait for these jobs to finish\n{}\n".\
+                if len(job_dependencies) != 0:
+                    print("\nWill now wait for these jobs to finish\n{}\n".\
                        format("\n".join([str(j) for j in job_dependencies])))
                 while len(job_dependencies) > 0:
                     # Get current jobs
@@ -2089,7 +2090,7 @@ class basic_runner(object):
                     os.path.join(self._cur_restart_from,"*restart*")))== 0:
                 self._errors.append("FileNotFoundError")
                 raise FileNotFoundError("No restart files found in " +\
-                                 self._restart_from)
+                                 self._cur_restart_from)
 
         else:
             self._cur_restart_from = None
