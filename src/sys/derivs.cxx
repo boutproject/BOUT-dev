@@ -2010,11 +2010,20 @@ const Field2D DDZ(const Field2D &f) {
 const Vector3D DDZ(const Vector3D &v, CELL_LOC outloc, DIFF_METHOD method) {
   Vector3D result;
 
-  result.covariant = v.covariant;
-
-  result.x = DDZ(v.x, outloc, method);
-  result.y = DDZ(v.y, outloc, method);
-  result.z = DDZ(v.z, outloc, method);
+  if(v.covariant){
+    // From equation (2.6.32) in D'Haeseleer
+    result.x = DDZ(v.x, outloc, method) - v.x*G1_13 - v.y*G2_13 - v.z*G3_13;
+    result.y = DDZ(v.y, outloc, method) - v.x*G1_23 - v.y*G2_23 - v.z*G3_23;
+    result.z = DDZ(v.z, outloc, method) - v.x*G1_33 - v.y*G2_33 - v.z*G3_33;
+    result.covariant = true;
+  }
+  else{
+    // From equation (2.6.31) in D'Haeseleer
+    result.x = DDZ(v.x, outloc, method) + v.x*G1_13 + v.y*G1_23 + v.z*G1_33;
+    result.y = DDZ(v.y, outloc, method) + v.x*G2_13 + v.y*G2_23 + v.z*G2_33;
+    result.z = DDZ(v.z, outloc, method) + v.x*G3_13 + v.y*G3_23 + v.z*G3_33;
+    result.covariant = false;
+  }
 
   return result;
 }
@@ -2028,6 +2037,9 @@ const Vector2D DDZ(const Vector2D &v) {
 
   result.covariant = v.covariant;
 
+  // Vector 2D is constant in the z direction
+  // Gx_y3 contains z-derivatives (where G is the Christoffel symbol of the
+  // second kind, and x and y in {1, 2, 3})
   result.x = 0.;
   result.y = 0.;
   result.z = 0.;
@@ -2462,7 +2474,7 @@ const Field2D D4DZ4(const Field2D &f) {
  * Mixed derivative in X and Y
  *
  * This first takes derivatives in X, then in Y.
- * 
+ *
  * ** Applies Neumann boundary in Y, communicates
  */
 const Field2D D2DXDY(const Field2D &f) {
@@ -2476,7 +2488,7 @@ const Field2D D2DXDY(const Field2D &f) {
  * Mixed derivative in X and Y
  *
  * This first takes derivatives in X, then in Y.
- * 
+ *
  * ** Applies Neumann boundary in Y, communicates
  */
 const Field3D D2DXDY(const Field3D &f) {
