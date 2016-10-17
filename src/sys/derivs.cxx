@@ -2012,16 +2012,16 @@ const Vector3D DDZ(const Vector3D &v, CELL_LOC outloc, DIFF_METHOD method) {
 
   if(v.covariant){
     // From equation (2.6.32) in D'Haeseleer
-    result.x = DDZ(v.x, outloc, method) - v.x*G1_13 - v.y*G2_13 - v.z*G3_13;
-    result.y = DDZ(v.y, outloc, method) - v.x*G1_23 - v.y*G2_23 - v.z*G3_23;
-    result.z = DDZ(v.z, outloc, method) - v.x*G1_33 - v.y*G2_33 - v.z*G3_33;
+    result.x = DDZ(v.x, outloc, method) - v.x*mesh->G1_13 - v.y*mesh->G2_13 - v.z*mesh->G3_13;
+    result.y = DDZ(v.y, outloc, method) - v.x*mesh->G1_23 - v.y*mesh->G2_23 - v.z*mesh->G3_23;
+    result.z = DDZ(v.z, outloc, method) - v.x*mesh->G1_33 - v.y*mesh->G2_33 - v.z*mesh->G3_33;
     result.covariant = true;
   }
   else{
     // From equation (2.6.31) in D'Haeseleer
-    result.x = DDZ(v.x, outloc, method) + v.x*G1_13 + v.y*G1_23 + v.z*G1_33;
-    result.y = DDZ(v.y, outloc, method) + v.x*G2_13 + v.y*G2_23 + v.z*G2_33;
-    result.z = DDZ(v.z, outloc, method) + v.x*G3_13 + v.y*G3_23 + v.z*G3_33;
+    result.x = DDZ(v.x, outloc, method) + v.x*mesh->G1_13 + v.y*mesh->G1_23 + v.z*mesh->G1_33;
+    result.y = DDZ(v.y, outloc, method) + v.x*mesh->G2_13 + v.y*mesh->G2_23 + v.z*mesh->G2_33;
+    result.z = DDZ(v.z, outloc, method) + v.x*mesh->G3_13 + v.y*mesh->G3_23 + v.z*mesh->G3_33;
     result.covariant = false;
   }
 
