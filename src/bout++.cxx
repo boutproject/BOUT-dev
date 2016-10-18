@@ -431,7 +431,7 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
       //Now add data directory to start of name to ensure we look in a run specific location
       string data_dir;
       Options::getRoot()->get("datadir", data_dir, string(DEFAULT_DIR));
-      stopCheckName = data_dir + stopCheckName; 
+      stopCheckName = data_dir + "/" + stopCheckName; 
     }
 
     /// Record the starting time
