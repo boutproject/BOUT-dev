@@ -388,8 +388,9 @@ int BoutFinalise() {
 int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
   // Data used for timing
   static bool first_time = true;
+  static bool stopCheck;
   static BoutReal wall_limit, mpi_start_time; // Keep track of remaining wall time
-
+  static string stopCheckName;
 #ifdef CHECK
   int msg_point = msg_stack.push("bout_monitor(%e, %d, %d)", t, iter, NOUT);
 #endif
@@ -422,6 +423,16 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
     Options *options = Options::getRoot();
     OPTION(options, wall_limit, -1.0); // Wall time limit. By default, no limit
     wall_limit *= 60.0*60.0;  // Convert from hours to seconds
+
+    OPTION(options, stopCheck, false);
+    if(stopCheck){
+      //Get name of file whose existence triggers a stop
+      OPTION(options, stopCheckName, "BOUT.stop");
+      //Now add data directory to start of name to ensure we look in a run specific location
+      string data_dir;
+      Options::getRoot()->get("datadir", data_dir, string(DEFAULT_DIR));
+      stopCheckName = data_dir + stopCheckName; 
+    }
 
     /// Record the starting time
     mpi_start_time = MPI_Wtime() - wtime;
@@ -477,7 +488,20 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
       output.print(" Wall %s", (time_to_hms(t_remain)).c_str());
     }
   }
-  
+
+  //Check if the user has created the stop file and if so trigger an exit
+  if (stopCheck) {
+    std::ifstream f(stopCheckName.c_str());
+    if(f.good()){
+      output<<"\n"<<"File "<<stopCheckName<<" exists -- triggering exit."<<endl;
+
+#ifdef CHECK
+  msg_stack.pop(msg_point);
+#endif
+      return 1;
+    }
+  }
+
 #ifdef CHECK
   msg_stack.pop(msg_point);
 #endif
