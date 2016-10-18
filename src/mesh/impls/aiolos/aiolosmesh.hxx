@@ -11,7 +11,6 @@
 using std::list;
 using std::vector;
 
-  
 
 class AiolosMesh : public BoutMesh {
  public:
@@ -29,16 +28,27 @@ class AiolosMesh : public BoutMesh {
   };
 
   #include "generated_header.hxx"
+
+  //virtual const Field3D interp_to(const Field3D &var, CELL_LOC loc) const;
+  
+  virtual const Field3D interp_to(const Field3D &f , CELL_LOC loc) const override {
+    if (loc == f.getLocation()){
+      return f;
+    } else {
+      return interp_to_do(f,loc);
+    }
+  }
+  virtual const Field2D interp_to(const Field2D &f , CELL_LOC loc) const override {
+    return f;
+  }
+  
   virtual BoutReal GlobalY(int y) const;
   virtual void derivs_init(Options * option);
-    //virtual const Field2D applyXdiff(const Field2D &var, deriv_func func, inner_boundary_deriv_func func_in, outer_boundary_deriv_func func_out, CELL_LOC loc = CELL_DEFAULT);
-  //virtual const Field3D applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc = CELL_DEFAULT);
-  
-  //virtual const Field2D applyYdiff(const Field2D &var, deriv_func func, inner_boundary_deriv_func func_in, outer_boundary_deriv_func func_out, CELL_LOC loc = CELL_DEFAULT);
-  //virtual const Field3D applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc = CELL_DEFAULT);
 
-  //virtual const Field3D applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc = CELL_DEFAULT);
-
-  int isAiolos=1;
-
+  // to check in debugger we have the right mesh
+#ifdef CHECK
+  bool isAiolos=true;
+#endif
+private:
+  const Field3D interp_to_do(const Field3D & f, CELL_LOC loc) const;
 };
