@@ -2757,88 +2757,57 @@ This is currently quite rudimentary and needs improving.
 %
 \index{variable initialisation}
 %
+Variables in BOUT++ are not initialised automatically, but must be explicitly given a value. For example the following code declares a \texttt{Field3D} variable then attempts to access a particular element:
+\begin{lstlisting}[numbers=none]
+Field3D f;    // Declare a variable
+f(0,0,0) = 1.0;  // Error!
+\end{lstlisting}
+This results in an error because the data array to store values in 
+\texttt{f} has not been allocated. Allocating data can be done in several ways:
+\begin{enumerate}
+\item Initialise with a value
+  \begin{lstlisting}[numbers=none]
+    Field3D f = 0.0; // Allocates memory, fills with zeros
+    f(0,0,0) = 1.0; // ok
+  \end{lstlisting}
+  That this cannot be done at a global scope, since it requires
+  the mesh to already exist and have a defined size.
+\item Set to a scalar value
+  \begin{lstlisting}[numbers=none]
+    Field3D f;
+    f = 0.0; // Allocates memory, fills with zeros
+    f(0,0,0) = 1.0; // ok
+  \end{lstlisting}
+  Note that setting a field equal to another field has the effect of
+  making both fields share the same underlying data. This behaviour is 
+  similar to how NumPy arrays behave in Python.
+  \begin{lstlisting}[numbers=none]
+    Field3D g = 0.0;  // Allocates memory, fills with zeros
+    Field3D f = g; // f now shares memory with g
+    
+    f(0,0,0) = 1.0; // g also modified 
+  \end{lstlisting}
+  To ensure that a field has a unique underlying memory array
+  call the \texttt{allocate} method before writing to individual indices.
+  
+\item Use \texttt{allocate()} to allocate memory
+  \begin{lstlisting}[numbers=none]
+    Field3D f;
+    f.allocate(); // Allocates memory, values undefined
+    f(0,0,0) = 1.0; // ok
+  \end{lstlisting}
+\end{enumerate}
+
+In a BOUT++ simulation some variables are typically evolved in time. The initialisation of these variables is handled by the time integration solver.
+
+\subsection{Initialisation of time evolved variables}
+
 Each variable being evolved has its own section, with the same name as the
 output data. For example, the high-$\beta$ model has variables ``P'', ``jpar'',
 and ``U'', and so has sections \code{[P]}, \code{[jpar]}, \code{[U]} (not case
 sensitive).
 
-There are two ways to specify the initial conditions for a variable: the
-original method (similar to that used by BOUT-06) which covers the most
-commonly needed functions. If more flexibility is needed then a more general
-analytical expression can be given.
-
-
-\subsubsection{Original method}
-%
-The shape of the initial value is specified for each dimension separately using
-the options \code{xs\_opt}, \code{ys\_opt}, and \code{zs\_opt}. These are set
-to an integer:
-%
-\begin{enumerate}
-\setcounter{enumi}{-1}
-\item Constant (this is the default)
-\item Gaussian, with a peak location given by \code{xs\_s0}, \code{ys\_s0},
-    \code{zs\_s0} as a fraction of the domain (i.e. $0 \Rarrow 1$.  The width
-    is given by \code{*s\_wd}, also as a fraction of the domain size.
-\item Sinusoidal, with the number of periods given by \code{*s\_mode}.
-\item Mix of mode numbers, with pseudo-random phases.
-\end{enumerate}
-%
-The magnitude of the initial value is given by the variable \code{scale}.
-
-Defaults for all variables can be set in a section called \code{[All]}, so for
-example the options below:
-%
-\begin{lstlisting}[language=bash,numbers=none]
-[All]
-scale = 0.0 # By default set variables to zero
-
-xs_opt = 1  # Gaussian in X
-ys_opt = 1  # Gaussian in Y
-zs_opt = 2  # Sinusoidal in Z (axisymmetric direction)
-
-xs_s0 = 0.5 # Peak in the middle of the X direction
-xs_wd = 0.1 # Width is 10% of the domain
-
-ys_s0 = 0.5 # Peak in the middle of the Y direction
-ys_wd = 0.3 # Width is 30% of the Y domain
-
-zs_mode = 3 # 3 periods in the Z direction
-
-[U]
-scale = 1.0e-5  # Amplitude for the U variable, overrides default
-\end{lstlisting}
-%
-For field-aligned tokamak simulations, the Y direction is along the field and
-in the core this will have a discontinuity at the twist-shift location where
-field-lines are matched onto each other. To handle this, a truncated Ballooning
-transformation can be used to construct a smooth initial perturbation:
-%
-\begin{align}
-U_0^{balloon} = \sum_{i=-N}^N F\L(x\R)G\L(y + 2\pi i\R)H\L(z + q2\pi i\R)
-%
-\label{eq:ballooning_transform}
-%
-\end{align}
-%
-\begin{figure}[h]
-\includegraphics[width=0.48\textwidth,
-keepaspectratio]{figs/init_noballoon.png}
-\includegraphics[width=0.48\textwidth, keepaspectratio]{figs/init_balloon.png}
-\caption{Initial profiles in twist-shifted grid. {\bf Left}: Without ballooning
-transform, showing discontinuity at the matching location {\bf Right}: with
-ballooning transform}
-%
-\label{fig:ballooning}
-%
-\end{figure}
-%
-\note{The initial profiles code currently doesn't work very well for grids with
-branch-cuts (e.g. divertor tokamak), and will often have jumps which then make
-timesteps smaller}
-
-
-\subsection{Expressions}
+\subsubsection{Expressions}
 %
 \label{sec:expressions}
 %
@@ -2848,27 +2817,15 @@ timesteps smaller}
 %
 \index{Expressions}
 %
-If a more general function is needed, a variable can be initialised using the
-\code{function} option for each variable. This overrides the original method
-for that variable. e.g.
+The recommended way to initialise a variable is to use the
+\code{function} option for each variable:
 %
 \begin{lstlisting}[language=bash,numbers=none]
-[all]
-
-xs_opt = 1  # Gaussian in X
-ys_opt = 1  # Gaussian in Y
-zs_opt = 2  # Sinusoidal in Z (axisymmetric direction)
-
-[U]
-scale = 1.0e-5
-
 [p]
 function = 1 + gauss(x-0.5)*gauss(y)*sin(z)
 \end{lstlisting}
 %
-will use the original method to set $U$, but use the given expression to set
-$p$.
-
+This evaluates an analytic expression to initialise the $P$ variable. 
 Expressions can include the usual operators
 (\code{+},\code{-},\code{*},\code{/}), including \code{\^} for exponents. The
 following values are also already defined:
@@ -2957,10 +2914,32 @@ TanhHat(x, width, centre, steepness) & The hat function\\
 %
 \end{table}
 %
-Note that to apply a ballooning transform in analytic expressions the
-\texttt{ballooning} function should be used, and the global flag ``ballooning''
-has no effect. There is an example code \texttt{test-ballooning} which compares
-methods of setting initial conditions with ballooning transform.
+For field-aligned tokamak simulations, the Y direction is along the field and
+in the core this will have a discontinuity at the twist-shift location where
+field-lines are matched onto each other. To handle this, the 
+\texttt{ballooning} function applies a truncated Ballooning
+transformation to construct a smooth initial perturbation:
+%
+\begin{align}
+U_0^{balloon} = \sum_{i=-N}^N F\L(x\R)G\L(y + 2\pi i\R)H\L(z + q2\pi i\R)
+%
+\label{eq:ballooning_transform}
+%
+\end{align}
+%
+\begin{figure}[h]
+\includegraphics[width=0.48\textwidth,
+keepaspectratio]{figs/init_noballoon.png}
+\includegraphics[width=0.48\textwidth, keepaspectratio]{figs/init_balloon.png}
+\caption{Initial profiles in twist-shifted grid. {\bf Left}: Without ballooning
+transform, showing discontinuity at the matching location {\bf Right}: with
+ballooning transform}
+%
+\label{fig:ballooning}
+%
+\end{figure}
+There is an example code \texttt{test-ballooning} which compares
+methods of setting initial conditions with the ballooning transform.
 
 The \texttt{mixmode(x)} function is a mixture of Fourier modes of the form:
 %
@@ -2973,16 +2952,70 @@ where $\phi$ is a random phase between $-\pi$ and $+\pi$, which depends on the
 seed. The factor in front of each term is chosen so that the 4th harmonic
 ($i=4$) has the highest amplitude. This is useful mainly for initialising
 turbulence simulations, where a mixture of mode numbers is desired.
+
+\subsubsection{Original method}
 %
-\index{variable initialisation}
+A backward compatible method to set initial value is to specify the function for each dimension separately using
+the options \code{xs\_opt}, \code{ys\_opt}, and \code{zs\_opt}. These are set
+to an integer:
 %
+\begin{enumerate}
+\setcounter{enumi}{-1}
+\item Constant (this is the default)
+\item Gaussian, with a peak location given by \code{xs\_s0}, \code{ys\_s0},
+    \code{zs\_s0} as a fraction of the domain (i.e. $0 \Rarrow 1$.  The width
+    is given by \code{*s\_wd}, also as a fraction of the domain size.
+\item Sinusoidal, with the number of periods given by \code{*s\_mode}.
+\item Mix of mode numbers, with pseudo-random phases.
+\end{enumerate}
+%
+The magnitude of the initial value is given by the variable \code{scale}.
+
+Defaults for all variables can be set in a section called \code{[All]}, so for
+example the options below:
+%
+\begin{lstlisting}[language=bash,numbers=none]
+[All]
+scale = 0.0 # By default set variables to zero
+
+xs_opt = 1  # Gaussian in X
+ys_opt = 1  # Gaussian in Y
+zs_opt = 2  # Sinusoidal in Z (axisymmetric direction)
+
+xs_s0 = 0.5 # Peak in the middle of the X direction
+xs_wd = 0.1 # Width is 10% of the domain
+
+ys_s0 = 0.5 # Peak in the middle of the Y direction
+ys_wd = 0.3 # Width is 30% of the Y domain
+
+zs_mode = 3 # 3 periods in the Z direction
+
+[U]
+scale = 1.0e-5  # Amplitude for the U variable, overrides default
+\end{lstlisting}
+%
+To apply the ballooning transform to these initial conditions there is a global flag ``ballooning'' which should be set to true.
+%
+
+\note{The initial profiles code currently doesn't work very well for grids with
+branch-cuts (e.g. divertor tokamak), and will often have jumps which then make
+timesteps smaller}
 
 
 
-\subsection{\texttt{FieldFactory} class}
+\subsection{Initalising variables with the \texttt{FieldFactory} class}
 %
-This class provides a way to generate a field with a specified form. It
-implements a recursive descent parser to turn a string containing something
+This class provides a way to generate a field with a specified form. For example to create a variable \texttt{var} from options we could write
+\begin{lstlisting}[numbers=none]
+FieldFactory f(mesh);
+Field2D var = f.create2D("var");
+\end{lstlisting}
+This will look for an option called ``var'', and use that expression to initialise the variable \texttt{var}. This could then be set in the BOUT.inp file or on the command line.
+\begin{lstlisting}[numbers=none]
+var = gauss(x-0.5,0.2)*gauss(y)*sin(3*z)
+\end{lstlisting}
+
+To do this, \texttt{FieldFactory} implements a recursive descent parser to turn a string containing something
 like
 %
 \lstinline!"gauss(x-0.5,0.2)*gauss(y)*sin(3*z)"!
@@ -2999,8 +3032,8 @@ or
 %
 \index{FieldFactory}
 %
-\begin{lstlisting}
-FieldFactory f;
+\begin{lstlisting}[numbers=none]
+FieldFactory f(mesh);
 Field2D b = f.create2D("1 - x");
 Field3D d = f.create3D("gauss(x-0.5,0.2)*gauss(y)*sin(z)");
 \end{lstlisting}
