@@ -98,19 +98,21 @@ for db in func_db:
     func_db[db].append(["NULL","NULL","NULL","NULL"])
 
 
-def replace_stencil(line,sten,fname,field,mode,sten_name,off,d):
+def replace_stencil(line,sten,fname,field,mode,sten_name,off,d,update=None,z0=None):
+    if update==None:
+        update=sten_name=="main"
     pos=line.find(sten)
+    part_of_offset=['p','m','c']
+    for i in range(2,9):
+        part_of_offset.append(str(i))
     while pos > -1:
         end=pos+len(sten)
-        part_of_offset=['p','m','c']
-        for i in range(2,9):
-            part_of_offset.append(str(i))
         while line[end] in part_of_offset:
             end+=1
         off=line[pos+2:end]
         try:
             line_=line
-            line=line[:pos]+get_diff(off_diff[mode][sten_name][off],fname,field,d)+line[end:]
+            line=line[:pos]+get_diff(off_diff[mode][sten_name][off],fname,field,d,update,z0)+line[end:]
         except:
             print >>sys.stderr,line_
             raise
@@ -120,13 +122,9 @@ def replace_stencil(line,sten,fname,field,mode,sten_name,off,d):
 
 def get_for_loop(d,mode,field,guards,sten_name ):
     if sten_name == 'main':
-        if d != 'z':
-            dp=guards
-            dm=-guards
-            if mode == 'on':
-                dm=-(guards-1)
-            elif mode == 'off':
-                dp=(guards-1)
+        #if d != 'z':
+        dp=guards[0]
+        dm=-guards[1]
             # if 'x' in dirs[field]:
             #     xmax='mesh->LocalNx%+d'%(-1+dxm)
             # else:
@@ -142,30 +140,45 @@ def get_for_loop(d,mode,field,guards,sten_name ):
             #print "  for (DataIterator i(%s, %s,"%(dxp,xmax),
             #print "%s, %s, 0, %s)"%(dyp,ymax,zmax),
             #print "; !i.done() ; ++i) {"
-        if d=='z':
-            d='ignore'
+        #if d=='z':
+        #    d='ignore'
         for d2 in dirs[field]:
             if d==d2:
                 print "  for (int %s = %d; %s < N%s%+d; ++%s ){"%(d,dp,d,d,dm,d)
             else:
                 print "  for (int %s = 0 ; %s < N%s; ++%s ){"%(d2,d2,d2,d2)
-        #else:
+        # if d=='z': # aka z
+        #     for dz in range(1,guards_[0]+1):
+        #         curr="z"+'m'*(dz)
+        #         print "    int z"+'m'*dz+"  = "+"z"+'m'*(dz-1)+"+Nz-1;"
+        #         print "    //z"+'m'*dz+"     -= "+curr+"/Nz*Nz;"
+        #     for dz in range(1,guards_[1]+1):
+        #         curr="z"+'p'*(dz)
+        #         print "    int z"+'p'*dz+"  = z"+'p'*(dz-1)+"+1;"
+        #         print "    //z"+'p'*dz+"     -= "+curr+"/Nz*Nz;"
+        # #else:
         #    print """  for (auto i: result){"""
     else:
-        if sten_name == 'forward':
-            print "  if (mesh->%sstart > 0){"%d
+        #if sten_name == 'forward':
+            #print "  if (mesh->%sstart > 0){"%d
             #print "    DataIterator i(0,mesh->LocalNx,0,mesh->LocalNy,0,mesh->LocalNz);"
-        bp=guards
-        if ( sten_name == 'backward' and mode == 'on' ) or \
-           ( sten_name == 'forward' and mode == 'off' ):
-            if guards > 1:
-                bp=guards-1;
+        #bp=max(guards)
+        #if ( sten_name == 'backward' and mode == 'on' ) or \
+        #   ( sten_name == 'forward' and mode == 'off' ):
+        #    if bp > 1:
+        #        bp=bp-1;
+        if max(guards_) < 1:
+            print >>sys.stderr,guards_
+            print >>sys.stderr,d,mode,field,guards,sten_name
+            fuu
         if sten_name == 'forward':
-            print "    int "+d,"=%d ;"%(bp-1)
+            print "    int "+d,"=%d ;"%(guards_[0]-1)
         else:
-            print "    "+d,"=mesh->LocalN%s"%d,"-%d ;"%bp
+            print "    "+d,"=N%s"%d,"-%d ;"%(guards_[1])
+            if guards_[1]>2:
+                print >>sys.stderr,guards_
         for d2 in perp_dir[field][d]:
-            print "    for (int "+d2,"=0; "+d2,"< mesh->LocalN"+d2,";++"+d2,") {"
+            print "    for (int "+d2,"=0; "+d2,"< N"+d2,";++"+d2,") {"
             
 
 def get_for_end(d,field, sten_name):
@@ -175,26 +188,62 @@ def get_for_end(d,field, sten_name):
     else:
         for d2 in dirs[field]:
             print "  }"
-    if sten_name == 'backward':
-        print "  }"
+    #if sten_name == 'backward':
+    #    print "  }"
 
-def get_diff(diff,fname,field,d):
+def get_diff(diff,fname,field,d,update=False,z0=None):
     #diff=
     #print >> sys.stderr, diff
-    ret=fname+"_ptr["
+    global use_field_operator
+    if use_field_operator:
+        ret=fname+"("
+    else:
+        ret=fname+"_ptr["
     for d2 in dirs[field][1:]:
-        ret+="("
+        if not use_field_operator:
+            ret+="("
     first=True
     for d2 in dirs[field]:
         if not first:
-            ret+=')*N%s + '%d2
+            if use_field_operator:
+                ret+=','
+            else:
+                ret+=')*N%s + '%d2
         first=False
         if (d2 == d):
             #do smart stuff
-            ret+=d2+"%+d"%(diff2[diff])
+            global guards_
+            diffd=diff2[diff]
+            if update:
+                if abs(diffd) > 2:
+                    sdfadfasdf
+                if diffd > guards_[1]:
+                    guards_[1]=diffd
+                elif -diffd > guards_[0]:
+                    guards_[0]=-diffd
+            #if d != 'z':
+            if d=='z' and z0:
+                # We want to generate code for the interp_to case with wrapping
+                #print >> sys.stderr, z0, diffd
+                if z0 > 0 and -diffd >= z0:
+                    ret+=d2+"%+d+Nz"%(diffd)
+                elif z0 < 0 and -diffd <= z0:
+                    ret+=d2+"%+d-Nz"%(diffd)
+                else:
+                    ret+=d2+"%+d"%(diffd)
+            else:
+                ret+=d2+"%+d"%(diffd)
+            #else:
+            #    if diffd > 0:
+            #        ret+='z'+'p'*(diffd)
+            #    else:
+            #        ret+='z'+'m'*(-diffd)
         else:
             ret+=d2
-    ret+="]"
+    if use_field_operator:
+        ret+=")\n    \t\t\t\t"
+    else:
+        ret+="]\n    \t\t\t\t"
     return ret
     # if diff != 'c()':
     #     return "%s[i.%s%s]"%(fname,d,diff)
@@ -213,7 +262,7 @@ def get_pointer(field, field_type,const):
             print ',',
         first=False
         print "0",
-    print ");";
+    print ");"
         
 
 def gen_functions_normal(to_gen):
@@ -253,18 +302,20 @@ def gen_functions_normal(to_gen):
         todo=['main','forward','backward']
         if d=='z':
             todo=[todo[0]]
+        # only reset before main
+        global guards_
+        guards_=[0,0]
         for sten_name in todo:
             if sten_name=='main':
                 guards=stencils[sten_name].guards #numGuards[f_ar[4]]
             if sten_name=='backward' and mode=='on' and guards ==1:
-                print "  }"
+                #print "  }"
                 continue;
             if sten_name=='forward' and mode=='off' and guards ==1:
-                print "  if (mesh->%sstart > 0){"%d
+                #print "  if (mesh->%sstart > 0){"%d
                 #print "    DataIterator i(0,mesh->LocalNx,0,mesh->LocalNy,0,mesh->LocalNz);"
                 print "    int",d,";"
                 continue;
-            get_for_loop(d,mode,field,guards,sten_name)
             sten=stencils[sten_name]
             if sten is None:
                 import sys
@@ -275,16 +326,17 @@ def gen_functions_normal(to_gen):
                 print >>sys.stderr,"#error unexpected: sten is None for sten_name %s !"%sten_name
                 exit(1)
             result_=['',''] # for foward/backward
+            body=''
             for line in sten.body[1:-1]:
                 if flux:
                     line=replace_stencil(line,'v.',"v_in",field,mode,sten_name,off,d)
                     line=replace_stencil(line,'f.',"f_in",field,"norm",sten_name,off,d)
                 else:
                     line=replace_stencil(line,'f.',"in",field,mode,sten_name,off,d)
-
+                    
                 if line.find("return") == -1:
                     if sten_name == 'main':
-                        print "     ",line
+                        body+= "     "+line+"\n"
                     else:
                         toPrint=True
                         resl=["result_.inner", "result_.outer"]
@@ -310,10 +362,11 @@ def gen_functions_normal(to_gen):
                                     
                 else:
                     if sten_name == 'main':
-                        print "    "+get_diff('c()',"result",field,d)+"= ",line[len("return")+line.index("return"):]
+                        body+= "    "+get_diff('c()',"result",field,d)+"= "+line[len("return")+line.index("return"):]+"\n"
                     else:
                         returned=line[len("return")+line.index("return"):]
-                    #break
+            get_for_loop(d,mode,field,guards_,sten_name)
+            print body
             if sten_name != 'main':
                 if result_[0] != '':
                     print "      "+get_diff('c()',"result",field,d)+"="+result_[0]
@@ -347,9 +400,15 @@ def gen_functions_normal(to_gen):
             print "&v_in, const",field,"&f_in){"
         else:
             print "&in){"
-        print ' output.write("Using method %s!\\n");'%name
+        print '  //output.write("Using method %s!\\n");'%name
+        print '#ifdef CHECK'
+        print '  if (mesh->LocalN%s < %d) {'%(d,sum(guards_)+1)
+        print '    throw BoutException("AiolosMesh::%s - Not enough guards cells to take derivative!");'%(name)
+        print '  }'
+        print '#endif'
         print " ",field,"result;"
         print "  result.allocate();"
+        print "  checkData(result);"
         get_pointer("result",field,False)
         if flux:
             get_pointer("v_in",field,True)
@@ -360,10 +419,144 @@ def gen_functions_normal(to_gen):
             print "  "+name+"_"+field.lower()+"(result_ptr,v_in_ptr,f_in_ptr);"
         else:
             print "  "+name+"_"+field.lower()+"(result_ptr,in_ptr);"
-        print """  return result;
+        print """  checkData(result);
+  return result;
 }
 """
-    #exit(1)
+#exit(1)
+
+
+field=fields[0]#3d
+use_field_operator=True
+def get_interp_vals(order,pos):
+    import numpy as np
+    rhs=np.zeros(order)
+    rhs[0]=1
+    mat=np.zeros((order,order))
+    x0=-pos+(order-1.)/2.
+    #print >> sys.stderr, x0,pos,(order-1.)/2.,pos+(order-1.)/.2
+    for i in range(order):
+        x=x0-i;
+        for j in range(order):
+            mat[j,i]=x**j*np.math.factorial(j)
+    #print mat
+    facs=np.dot(np.linalg.inv(mat),rhs)
+    return facs
+def get_interp_sten(order,pos):
+    if order%2:
+        print >>sys.stderr, "Cannot handle uneven order!"
+        exit(4)
+    oh=order/2
+    if pos:
+        oh-=pos/abs(pos)
+    vals=get_interp_vals(order,pos)
+    ret=""
+    first=True
+    for i in range(order):
+        #if not first:
+        #    ret+="+"
+        #first=False
+        ret+="%+.5e*"%vals[i]
+        if i < oh:
+            ret+='s.m'+(str(oh-i) if oh-i > 1 else "")
+        else:
+            ret+='s.p'+(str(i-oh+1) if i-oh+1 > 1 else "" )
+    #print >> sys.stderr, ret
+    return ret+" ;"
+            
+interp=["return "+get_interp_sten(4,0)]
+#["return ( 9.*(s.m + s.p) - s.mm - s.pp ) / 16.;"]
+for mode in ['on','off']:
+  for order in [4]:
+    for d in dirs[field]:
+        global guards_
+        guards_=[0,0]
+        line=interp[0]
+        sten_name="main"
+        line=replace_stencil(line,'s.',"in",field,mode,sten_name,off,d)
+        print "static void interp_to_%s_%s_%s("%(mode,field,d),
+        if use_field_operator:
+            print field+"& result, const "+field+" & in){"
+        else:
+            print "BoutReal * __restrict__ result_ptr, const BoutReal * __restrict__ in_ptr){"
+        for d2 in dirs[field]:
+            print "  const int N%s = mesh->LocalN%s;"%(d2,d2)
+        body= "    "+get_diff('c()',"result",field,d)+"= "+line[len("return")+line.index("return"):]+"\n"
+        #print >> sys.stderr , guards_
+        get_for_loop(d,mode,field,guards_,sten_name)
+        print body
+        guards__=guards_
+        get_for_end(d,field,sten_name)
+        #if d != 'z':
+        sten_names=["forward","backward"]
+        for sten_name in sten_names:
+            sten_name_index=sten_names.index(sten_name)
+            sign=-1
+            if sten_name == "forward":
+                sign=1
+            _sign=sign
+            if d=='z':
+                sign=0
+            get_for_loop(d,mode,field,guards_,sten_name)
+            print "      "+get_diff('c()',"result",field,d)+"=",
+            print replace_stencil(get_interp_sten(4,sign),'s.',"in",field,mode,"main",off,d,False,z0=((guards_[sten_name_index])*_sign))
+            print '      throw BoutException("AiolosMesh - not yet done properly :P - don`t use Aiolos ...");'
+            #print >> sys.stderr, guards_, guards__
+            guards_=guards__
+            if order/2 > 1:
+                if ( sten_name == 'backward' and mode == 'on' ) or \
+                   ( sten_name == 'forward' and mode == 'off' ):
+                    pass# dont do anything ...
+                else:
+                    if sten_name == 'forward':
+                        print "        "+get_diff('m()',"result",field,d)+"=" ,
+                    else:
+                        print "        "+get_diff('p()',"result",field,d)+"=" ,
+                    print replace_stencil(get_interp_sten(4,sign*2),'s.',"in",field,mode,"main",off,d,False,z0=((guards_[sten_name_index])*_sign))
+                    guards_=guards__
+            get_for_end(d,field,sten_name)
+        #else:
+            
+        print "}"
+
+print "const Field3D AiolosMesh::interp_to_do(const Field3D &f, CELL_LOC loc) const {"
+print "  Field3D result;"
+print "  result.allocate();"
+print "  if (f.getLocation() != CELL_CENTRE){"
+print "    // we first need to go back to centre before we can go anywhere else"
+print "    switch (f.getLocation()){"
+for d in dirs[field]:
+    print "    case CELL_%sLOW:"%d.upper()
+    if use_field_operator:
+        print "      interp_to_off_%s_%s(result,f);"%(field,d)
+    else:
+        print "      interp_to_off_%s_%s(&result(0,0,0),&f(0,0,0));"%(field,d)
+    print "      result.setLocation(CELL_CENTRE);"
+    print "      // return or interpolate again"
+    print "      return interp_to(result,loc);"
+    print "      break;"
+print "    default:"
+print '      throw BoutException("AiolosMesh::interp_to: Cannot interpolate to %s!",strLocation(loc));'
+print "    }"
+print "  }"
+print "  // we are in CELL_CENTRE and need to go somewhere else ..."
+print "  switch (loc){"
+for d in dirs[field]:
+    print "    case CELL_%sLOW:"%d.upper()
+    if use_field_operator:
+        print "      interp_to_on_%s_%s(result,f);"%(field,d)
+    else:
+        print "      interp_to_on_%s_%s(&result(0,0,0),&f(0,0,0));"%(field,d)
+    print "      result.setLocation(CELL_%sLOW);"%d.upper()
+    print "      // return or interpolate again"
+    print "      return interp_to(result,loc);"
+    print "      break;"
+print "    default:"
+print '      throw BoutException("AiolosMesh::interp_to: Cannot interpolate to %s!",strLocation(loc));'
+print "    }"
+print "}"
+
+use_field_operator=False
 
 # # print at end, so functions are defined
 # d=dir[0]

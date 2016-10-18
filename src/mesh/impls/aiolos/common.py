@@ -49,6 +49,14 @@ for stag in ['on','off','norm']:
                     curr[d]='m(3)'
                 if curr[d]=='ppp()':
                     curr[d]='p(3)'
+            if stag == 'on':
+                for i in range(1,6):
+                    curr['m%d'%i]='m(%d)'%i
+                    curr['p%d'%i]='p(%d)'%(i-1)
+            if stag == 'off':
+                for i in range(1,6):
+                    curr['m%d'%i]='m(%d)'%(i-1)
+                    curr['p%d'%i]='p(%d)'%(i)
         else:
             mylist=[]
             mylist2=[]

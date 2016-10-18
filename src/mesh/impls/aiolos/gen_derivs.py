@@ -195,12 +195,22 @@ for func in ["indexDD%s", "indexD2D%s2","indexVDD%s","indexFDD%s"]:
     for field in fields:
         for d in dirs[field]:
             warn()
-            sig="(const "+field+" &f, CELL_LOC outloc, DIFF_METHOD method)";
+            sig="("
             if flux:
-                sig="(const "+field+" &v,const "+field+" &f, CELL_LOC outloc, DIFF_METHOD method)";
+                sig+="const "+field+" &v,"
+            sig += "const "+field+" &f"
+            if field=="Field3D" or flux:
+                sig+=", CELL_LOC outloc, DIFF_METHOD method";
+            if func%d.upper() == "indexDDZ":
+                sig+=",bool ignored";
+            sig+=")"
             function_header="  virtual const "+field+" "+func%d.upper()
             function_header+=sig
-            headers+=function_header+";\n"
+            if  not (field == "Field3D" and func[5]=='V'):
+                #print >> sys.stderr , func[5:]
+                function_header+=" override"
+            function_header+=";\n"
+            headers+=function_header
             function_header="const "+field+" AiolosMesh::"+func%d.upper()
             function_header+=sig
             if flux:
@@ -208,8 +218,14 @@ for func in ["indexDD%s", "indexD2D%s2","indexVDD%s","indexFDD%s"]:
             else:
                 f="f"
             print function_header," {"
+            if field != "Field3D" and not flux:
+                print "  CELL_LOC outloc=CELL_DEFAULT;"
+                print "  DIFF_METHOD method=DIFF_DEFAULT;"
+            print "  if (outloc == CELL_DEFAULT) {"
+            print "    outloc=f.getLocation();"
+            print "  }"
             if flux:
-                print "  if (outloc != CELL_DEFAULT && outloc != f.getLocation()) {"
+                print "  if (outloc != f.getLocation()) {"
                 print '    throw BoutException("AiolosMesh::index?DDX: Unhandled case for shifting.\\n\
 f.getLocation()==outloc is required!");'
                 print "  }"
@@ -232,15 +248,16 @@ import sys
 tmp=[]
 for fu in funcs_to_gen:
     tmp.append(fu[0]+fu[1])
-#duplicates(tmp)
-seen = set()
-uniq = []
-for x in funcs_to_gen:
-    xs=x[0]+x[1]
-    if xs not in seen:
-        uniq.append(x)
-        seen.add(xs)
-funcs_to_gen=uniq
+duplicates(tmp)
+#seen = set()
+#uniq = []
+# for x in funcs_to_gen:
+#     xs=x[0]+x[1]
+#     if xs not in seen:
+#         uniq.append(x)
+#         seen.add(xs)
+# funcs_to_gen=uniq
+guards_=[]
 sys.stdout=open("generated_stencils.cxx","w")
 from gen_stencils import gen_functions_normal
 gen_functions_normal(funcs_to_gen)
