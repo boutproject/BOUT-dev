@@ -4,7 +4,7 @@
 #include <utils.hxx>
 
 BoundaryRegionXIn::BoundaryRegionXIn(const string &name, int ymin, int ymax)
-  : ys(ymin), ye(ymax), BoundaryRegion(name, -1, 0)
+  : BoundaryRegion(name, -1, 0), ys(ymin), ye(ymax)
 {
   location = BNDRY_XIN;
   width = mesh->xstart;
@@ -58,7 +58,7 @@ bool BoundaryRegionXIn::isDone()
 
 
 BoundaryRegionXOut::BoundaryRegionXOut(const string &name, int ymin, int ymax)
-  : ys(ymin), ye(ymax), BoundaryRegion(name, 1, 0)
+  : BoundaryRegion(name, 1, 0), ys(ymin), ye(ymax)
 {
   location = BNDRY_XOUT;
   width = mesh->LocalNx - mesh->xend - 1;
@@ -112,7 +112,7 @@ bool BoundaryRegionXOut::isDone()
 
 
 BoundaryRegionYDown::BoundaryRegionYDown(const string &name, int xmin, int xmax)
-  : xs(xmin), xe(xmax), BoundaryRegion(name, 0, -1)
+  : BoundaryRegion(name, 0, -1), xs(xmin), xe(xmax)
 {
   location = BNDRY_YDOWN;
   width = mesh->ystart;
@@ -167,7 +167,7 @@ bool BoundaryRegionYDown::isDone()
 
 
 BoundaryRegionYUp::BoundaryRegionYUp(const string &name, int xmin, int xmax)
-  : xs(xmin), xe(xmax), BoundaryRegion(name, 0, 1)
+  : BoundaryRegion(name, 0, 1), xs(xmin), xe(xmax)
 {
   location = BNDRY_YUP;
   width = mesh->LocalNy - mesh->yend - 1;
