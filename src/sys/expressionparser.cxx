@@ -406,17 +406,15 @@ int ExpressionParser::LexInfo::getPos() {
 
 
 ParseException::ParseException(const char *s, ...) {
-  va_list ap;  // List of arguments
-
   if(s == (const char*) NULL)
     return;
-  
-  char buffer[1024];
-  va_start(ap, s);
-    vsprintf(buffer, s, ap);
-  va_end(ap);
+
+  int buf_len=1024;
+  char * buffer= new char[buf_len];
+  myvsnprintf(buffer,buf_len, s, ap);
   
   message.assign(buffer);
+  delete[] buffer;
 }
 
 const char* ParseException::what() const throw() {

@@ -5,6 +5,7 @@
 #include <iostream>
 #include <stdarg.h>
 #include <output.hxx>
+#include <utils.hxx>
 
 void BoutParallelThrowRhsFail(int &status, const char* message) {
   int allstatus;
@@ -14,19 +15,18 @@ void BoutParallelThrowRhsFail(int &status, const char* message) {
 }
 
 BoutException::~BoutException() throw() {
+  delete[] buffer;
 }
 
 BoutException::BoutException(const char* s, ...) {
-  va_list ap;  // List of arguments
-
+  buflen=1024;
+  buffer=new char[buflen];
+  
   if(s == (const char*) NULL)
     return;
-  
-  char buffer[BoutException::BUFFER_LEN];
-  va_start(ap, s);
-    vsnprintf(buffer, BoutException::BUFFER_LEN, s, ap);
-  va_end(ap);
-  
+
+  myvsnprintf(buffer, buflen, s, ap);
+
   message.assign(buffer);
 }
 
@@ -41,29 +41,7 @@ const char* BoutException::what() const throw() {
 }
 
 BoutRhsFail::BoutRhsFail(const char* s, ...)  : BoutException::BoutException(s) {
-  va_list ap;  // List of arguments
-
-  if(s == (const char*) NULL)
-    return;
-  
-  char buffer[BoutException::BUFFER_LEN];
-  va_start(ap, s);
-    vsnprintf(buffer, BoutException::BUFFER_LEN, s, ap);
-  va_end(ap);
-  
-  message.assign(buffer);
 }
 
 BoutIterationFail::BoutIterationFail(const char* s, ...) : BoutException::BoutException(s) {
-  va_list ap;  // List of arguments
-
-  if(s == (const char*) NULL)
-    return;
-  
-  char buffer[BoutException::BUFFER_LEN];
-  va_start(ap, s);
-    vsnprintf(buffer, BoutException::BUFFER_LEN, s, ap);
-  va_end(ap);
-  
-  message.assign(buffer);
 }
