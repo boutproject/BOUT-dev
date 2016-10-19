@@ -129,14 +129,19 @@ public:
 private:
   DataIterator(); // Disable null constructor
 
-  int xstart, xend;
-  int ystart, yend;
-  int zstart, zend;
+  int xstart, ystart, zstart;
+
 #ifndef _OPENMP
   int &xmin, &ymin, &zmin;
-  int &xmax, &ymax, &zmax;
 #else
   int xmin, ymin, zmin;
+#endif
+
+  int xend, yend, zend;
+
+#ifndef _OPENMP
+  int &xmax, &ymax, &zmax;
+#else
   int xmax, ymax, zmax;
 #endif
   
