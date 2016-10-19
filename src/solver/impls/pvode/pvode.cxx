@@ -307,7 +307,7 @@ void PvodeSolver::rhs(int N, BoutReal t, BoutReal *udata, BoutReal *dudata) {
   load_vars(udata);
 
   // Call function
-  int flag = run_rhs(t);
+  run_rhs(t);
 
   // Save derivatives to CVODE
   save_derivs(dudata);
@@ -328,7 +328,7 @@ void PvodeSolver::gloc(int N, BoutReal t, BoutReal *udata, BoutReal *dudata) {
   load_vars(udata);
 
   // Call function
-  int flag = run_rhs(t);
+  run_rhs(t);
 
   // Save derivatives to CVODE
   save_derivs(dudata);

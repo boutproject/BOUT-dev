@@ -652,9 +652,6 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
     if(!solver)
       throw BoutException("CTU method requires access to the solver");
     
-    // Get current timestep
-    BoutReal dt = solver->getCurrentTimestep();
-
     result.allocate();
     
     int ncz = mesh->LocalNz;
