@@ -786,6 +786,8 @@ int Solver::call_timestep_monitors(BoutReal simtime, BoutReal lastdt) {
   // Call physics model monitor
   if(model) {
     int ret = model->runTimestepMonitor(simtime, lastdt);
+    if(ret)
+      return ret; // Return first time an error is encountered
   }
   return 0;
 }
