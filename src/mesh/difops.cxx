@@ -735,6 +735,7 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
     result = b0xGrad_dot_Grad(f, g) / metric->Bxy;
   }
   }
+  result.setLocation(result_loc);
   return result;
 }
 
