@@ -866,7 +866,6 @@ Solver* Solver::create(SolverType &type, Options *opts) {
 
 /// Perform an operation at a given (jx,jy) location, moving data between BOUT++ and CVODE
 void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op, bool bndry) {
-  int i;
   int jz;
  
   switch(op) {
@@ -1039,8 +1038,6 @@ void Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op) {
 }
 
 void Solver::load_vars(BoutReal *udata) {
-  unsigned int i;
-  
   // Make sure data is allocated
   for(const auto& f : f2d) 
     f.var->allocate();
@@ -1060,8 +1057,6 @@ void Solver::load_vars(BoutReal *udata) {
 }
 
 void Solver::load_derivs(BoutReal *udata) {
-  unsigned int i;
-  
   // Make sure data is allocated
   for(const auto& f : f2d) 
     f.F_var->allocate();
@@ -1082,8 +1077,6 @@ void Solver::load_derivs(BoutReal *udata) {
 
 // This function only called during initialisation
 void Solver::save_vars(BoutReal *udata) {
-  unsigned int i;
-
   for(const auto& f : f2d) 
     if(!f.var->isAllocated())
       throw BoutException("Variable '%s' not initialised", f.name.c_str());
@@ -1110,8 +1103,6 @@ void Solver::save_vars(BoutReal *udata) {
 }
 
 void Solver::save_derivs(BoutReal *dudata) {
-  unsigned int i;
-
   // Make sure vectors in correct basis
   for(const auto& v : v2d) {
     if(v.covariant) {
