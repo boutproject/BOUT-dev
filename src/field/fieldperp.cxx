@@ -60,6 +60,7 @@ FieldPerp & FieldPerp::operator=(const FieldPerp &rhs) {
   nz = rhs.nz;
   yindex = rhs.yindex;
   data = rhs.data;
+  return *this;
 }
 
 FieldPerp & FieldPerp::operator=(const BoutReal rhs) {
@@ -134,6 +135,7 @@ FPERP_OP_FIELD(/=, /, Field2D);
       /* Shared with another FieldPerp */		\
       (*this) = (*this) bop rhs;                        \
     }                                                   \
+    return *this;                                       \
   }
 
 FPERP_OP_REAL(+=, +);

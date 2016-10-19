@@ -388,12 +388,14 @@ Mesh::boundary_derivs_pair DDX_F2_stag(forward_stencil &f) {
   Mesh::boundary_derivs_pair result;
   result.inner = -2.*f.c+3*f.p-f.p2;
   result.outer = -2.*f.m+3*f.c-f.p;
+  return result;
 }
 
 Mesh::boundary_derivs_pair DDX_B2_stag(backward_stencil &f) {
   Mesh::boundary_derivs_pair result;
   result.inner = 2.*f.c-3*f.m+f.m2;
   result.outer = 2.*f.p-3*f.c+f.m;
+  return result;
 }
 
 BoutReal DDX_C4_stag(stencil &f) {
@@ -2041,12 +2043,14 @@ Mesh::boundary_derivs_pair D4D4_F2(forward_stencil &f) {
   Mesh::boundary_derivs_pair result;
   result.inner = 2.*f.m-9.*f.c+16.*f.p-14.*f.p2+6.*f.p3-f.p4;
   result.outer = 3.*f.m-14.*f.c+26.*f.p-24.*f.p2+11.*f.p3-2.*f.p4;
+  return result;
 }
 
 Mesh::boundary_derivs_pair D4D4_B2(backward_stencil &f) {
   Mesh::boundary_derivs_pair result;
   result.inner = 2.*f.p-9.*f.c+16.*f.m-14.*f.m2+6.*f.m3-f.m4;
   result.outer = 3.*f.p-14.*f.c+26.*f.m-24.*f.m2+11.*f.m3-2.*f.m4;
+  return result;
 }
 
 const Field3D Mesh::indexD4DX4(const Field3D &f) {
