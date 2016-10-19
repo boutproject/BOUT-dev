@@ -36,6 +36,7 @@ class function:
     stag=False
     flux=False
     guards=3
+    mbf=None
 
 functions_=functions
 functions=[]
@@ -71,8 +72,36 @@ for f in functions_:
         functions.append(func)
 null_func=function()
 null_func.name='NULL'
-null_func.body=["NULL","result_.inner = 0;","result_.outer = 0;","}"]
+null_func.body=["{","result_.inner = 0;","result_.outer = 0;","}"]
 functions.append(null_func)
+for f in functions:
+    ls=""
+    for l in f.body:
+        ls+=l
+    inv=ls[::-1].find("}")+1
+    ls=ls[ls.find("{")+1:-inv]
+    fu=ls.split(";")
+    mymax=len(fu)
+    #for i in range(len(fu)):
+    i=0
+    while i < mymax:
+        fu[i]+=';'
+        if fu[i].find("}")>-1:
+            l=fu[i]
+            t=l.split("}")
+            for ti in t[:-1]:
+                fu.insert(i,ti+"}")
+                i+=1
+                mymax+=1
+            fu[i]=t[-1]
+        i+=1
+            
+    f.body=fu
+
+#    print fu
+#    print f.name
+#exit(7)
+        
 for f in functions:
     f.guards=1
     for l in f.body:
@@ -98,9 +127,11 @@ for db in func_db:
     func_db[db].append(["NULL","NULL","NULL","NULL"])
 
 
-def replace_stencil(line,sten,fname,field,mode,sten_name,off,d,update=None,z0=None):
+def replace_stencil(line,sten,fname,field,mode,sten_name,d,update=None,z0=None):
     if update==None:
         update=sten_name=="main"
+#    if z0 is not None:
+#        print >>sys.stderr,' ... z0'
     pos=line.find(sten)
     part_of_offset=['p','m','c']
     for i in range(2,9):
@@ -114,63 +145,137 @@ def replace_stencil(line,sten,fname,field,mode,sten_name,off,d,update=None,z0=No
             line_=line
             line=line[:pos]+get_diff(off_diff[mode][sten_name][off],fname,field,d,update,z0)+line[end:]
         except:
-            print >>sys.stderr,line_
+            print >>sys.stderr,line_,mode,sten_name,off,sten
+            print >>sys.stderr,off_diff[mode][sten_name]
             raise
         pos=line.find(sten)
     return line
 
+def parse_body(sten,field,mode,d,z0=None):
+    body=""
+    result=''
+    result_=['']*2
+    for line in sten.body[:-1]:
+        if sten.flux:
+            try:
+                line=replace_stencil(line,'v.',"v_in",field,mode,sten.mbf,d,z0=z0)
+                line=replace_stencil(line,'f.',"f_in",field,"norm",sten.mbf,d,z0=z0)
+            except:
+                import sys
+                print >>sys.stderr , sten.name, sten.mbf
+                raise
+        else:
+            line=replace_stencil(line,'f.',"in",field,mode,sten.mbf,d,z0=z0)
+        #body+=replace_stencil(line,'f.',"f_in",field,"norm",off,d)
+        if line.find("return") == -1:
+            if sten.mbf == 'main':
+                body+= "     "+line+"\n"
+            else:
+                toPrint=True
+                for resi,res in enumerate(["result_.inner", "result_.outer"]):
+                    if line.find(res) > -1:
+                        tmp=line[line.index(res)+len(res):]
+                        if tmp.find("=") > -1:
+                            if result_[resi]!='':
+                                import sys
+                                print >> sys.stderr ,"Did not expect another defintion of",res
+                                print >> sys.stderr ,"The last one was %s = %s"%(res,result_[resi])
+                                print >> sys.stderr ,"thise one is ",line
+                                exit(1)
+                            result_[resi]=tmp[tmp.index("=")+1:]
+                            toPrint=False
+                if toPrint:
+                    if line.find("=") > -1:
+                        import sys
+                        print >> sys.stderr ,"Failed to parse - unexpected line: ",line
+                        print >> sys.stderr ,result_
+                        print >> sys.stderr ,line
+                        exit(1)
 
+        else:
+            if sten.mbf == 'main':
+                #body+= "    "+get_diff('c()',"result",field,d)+"= "+
+                result=line[len("return")+line.index("return"):]+"\n"
+                #print >> sys.stderr,"bla"
+            else:
+                returned=line[len("return")+line.index("return"):]
+    return [body, result, result_]
+def get_for_loop_z(sten,field,stag):
+    d='z'
+    print '  if (Nz > 3) {'
+    for d2 in dirs[field]:
+        if d!=d2:
+            print "  for (int %s = 0 ; %s < N%s; ++%s ){"%(d2,d2,d2,d2)
+    #print '    int z;'
+    sten.mbf='main'
+    body,result,_ = parse_body(sten,field,stag,d)
+    for i in range(guards_[0]):
+        print '    {'
+        print '      int z=%d;'%i
+        body,result,_ = parse_body(sten,field,stag,d,z0=i+1)
+        print body
+        print "      "+get_diff('c()',"result",field,d)+"=",
+        if result:
+            print result;
+        else:
+            print 'result_;'
+        print '    }'
+    print '    for (int z=%d;z<Nz-%d;++z) {'%(guards_[0],guards_[1])
+    body,result,_ = parse_body(sten,field,stag,d)
+    print body
+    print "      "+get_diff('c()',"result",field,d)+"=",
+    if result:
+        print result;
+    else:
+        print 'result_;'
+    print '    }'
+    for i in range(guards_[1],0,-1):
+        print '    {'
+        print '      int z=Nz-%d;'%i
+        body,result,_ = parse_body(sten,field,stag,d,z0=-i)
+        print body
+        print "      "+get_diff('c()',"result",field,d)+"=",
+        if result:
+            print result;
+        else:
+            print 'result_;'
+        print '    }'
+    for d2 in dirs[field]:
+        if d!=d2:
+            print "  }"
+    print '  } else {'
+    for d2 in dirs[field]:
+        if d!=d2:
+            print "  for (int %s = 0 ; %s < N%s; ++%s ){"%(d2,d2,d2,d2)
+    print '    for (int z=0;z<Nz;++z) {'
+    body,result,_ = parse_body(sten,field,stag,d,z0='secure')
+    print body
+    print "      "+get_diff('c()',"result",field,d)+"=",
+    if result:
+        print result;
+    else:
+        print 'result_;'
+    print '    }'
+    for d2 in dirs[field]:
+        if d!=d2:
+            print "  }"
+    print '  }'
+                                                # if d=='z': # aka z                                                 
 def get_for_loop(d,mode,field,guards,sten_name ):
     if sten_name == 'main':
-        #if d != 'z':
         dp=guards[0]
         dm=-guards[1]
-            # if 'x' in dirs[field]:
-            #     xmax='mesh->LocalNx%+d'%(-1+dxm)
-            # else:
-            #     xmax="0"
-            # if 'y' in dirs[field]:
-            #     ymax='mesh->LocalNy%+d'%(-1+dym)
-            # else:
-            #     ymax="0"
-            # if 'z' in dirs[field]:
-            #     zmax='mesh->LocalNz-1'
-            # else:
-            #     zmax="0"
-            #print "  for (DataIterator i(%s, %s,"%(dxp,xmax),
-            #print "%s, %s, 0, %s)"%(dyp,ymax,zmax),
-            #print "; !i.done() ; ++i) {"
-        #if d=='z':
-        #    d='ignore'
         for d2 in dirs[field]:
             if d==d2:
                 print "  for (int %s = %d; %s < N%s%+d; ++%s ){"%(d,dp,d,d,dm,d)
             else:
                 print "  for (int %s = 0 ; %s < N%s; ++%s ){"%(d2,d2,d2,d2)
-        # if d=='z': # aka z
-        #     for dz in range(1,guards_[0]+1):
-        #         curr="z"+'m'*(dz)
-        #         print "    int z"+'m'*dz+"  = "+"z"+'m'*(dz-1)+"+Nz-1;"
-        #         print "    //z"+'m'*dz+"     -= "+curr+"/Nz*Nz;"
-        #     for dz in range(1,guards_[1]+1):
-        #         curr="z"+'p'*(dz)
-        #         print "    int z"+'p'*dz+"  = z"+'p'*(dz-1)+"+1;"
-        #         print "    //z"+'p'*dz+"     -= "+curr+"/Nz*Nz;"
-        # #else:
-        #    print """  for (auto i: result){"""
     else:
-        #if sten_name == 'forward':
-            #print "  if (mesh->%sstart > 0){"%d
-            #print "    DataIterator i(0,mesh->LocalNx,0,mesh->LocalNy,0,mesh->LocalNz);"
-        #bp=max(guards)
-        #if ( sten_name == 'backward' and mode == 'on' ) or \
-        #   ( sten_name == 'forward' and mode == 'off' ):
-        #    if bp > 1:
-        #        bp=bp-1;
-        if max(guards_) < 1:
-            print >>sys.stderr,guards_
-            print >>sys.stderr,d,mode,field,guards,sten_name
-            fuu
+        #if max(guards_) < 1:
+            
+            #print >>sys.stderr,guards_
+            #print >>sys.stderr,d,mode,field,guards,sten_name
+            #fuu
         if sten_name == 'forward':
             print "    int "+d,"=%d ;"%(guards_[0]-1)
         else:
@@ -222,10 +327,15 @@ def get_diff(diff,fname,field,d,update=False,z0=None):
                 elif -diffd > guards_[0]:
                     guards_[0]=-diffd
             #if d != 'z':
-            if d=='z' and z0:
+            if d=='z' and z0 is not None:
                 # We want to generate code for the interp_to case with wrapping
                 #print >> sys.stderr, z0, diffd
-                if z0 > 0 and -diffd >= z0:
+                if z0 == 'secure':
+                    ret+="+(("+d+"%+d"%(diffd)
+                    if diffd < 0:
+                        ret+='+%d*Nz'%(-diffd)
+                    ret+=')%Nz)'
+                elif z0 > 0 and -diffd >= z0:
                     ret+=d2+"%+d+Nz"%(diffd)
                 elif z0 < 0 and -diffd <= z0:
                     ret+=d2+"%+d-Nz"%(diffd)
@@ -294,10 +404,13 @@ def gen_functions_normal(to_gen):
         for func in functions:
             if func.name==f_ar[4]:
                 stencils['main']=func
+                stencils['main'].mbf='main'
             if func.name==f_ar[5]:
                 stencils['forward']=func
+                stencils['forward'].mbf='forward'
             if func.name==f_ar[6]:
                 stencils['backward']=func
+                stencils['backward'].mbf='backward'
         #start with main file:
         todo=['main','forward','backward']
         if d=='z':
@@ -325,73 +438,49 @@ def gen_functions_normal(to_gen):
                 print >>sys.stderr,stencils
                 print >>sys.stderr,"#error unexpected: sten is None for sten_name %s !"%sten_name
                 exit(1)
-            result_=['',''] # for foward/backward
-            body=''
-            for line in sten.body[1:-1]:
-                if flux:
-                    line=replace_stencil(line,'v.',"v_in",field,mode,sten_name,off,d)
-                    line=replace_stencil(line,'f.',"f_in",field,"norm",sten_name,off,d)
-                else:
-                    line=replace_stencil(line,'f.',"in",field,mode,sten_name,off,d)
-                    
-                if line.find("return") == -1:
-                    if sten_name == 'main':
-                        body+= "     "+line+"\n"
+            if d=='z':
+                get_for_loop_z(sten,field,mode)
+            else:
+                #print >>sys.stderr, sten.name, sten.mbf
+                body, result, result_ = parse_body(sten,field,mode,d)
+                get_for_loop(d,mode,field,guards_,sten_name)
+                if body+result == '' and sten.mbf == 'main':
+                    print >> sys.stderr, sten.body
+                    fuuuu
+                print body
+                if sten.mbf == 'main':
+                    print "      "+get_diff('c()',"result",field,d)+"=",
+                    if result:
+                        print result;
                     else:
-                        toPrint=True
-                        resl=["result_.inner", "result_.outer"]
-                        for resi in range(2):
-                            res=resl[resi]
-                            if line.find(res) > -1:
-                                tmp=line[line.index(res)+len(res):]
-                                if tmp.find("=") > -1:
-                                    if result_[resi]!='':
-                                        import sys
-                                        print >> sys.stderr ,"Did not expect another defintion of",res
-                                        print >> sys.stderr ,"The last one was %s = %s"%(res,result_[resi])
-                                        print >> sys.stderr ,"thise one is ",line
-                                        exit(1)
-                                    result_[resi]=tmp[tmp.index("=")+1:]
-                                    toPrint=False
-                        if toPrint:
-                            if line.find("=") > -1:
-                                import sys
-                                print >> sys.stderr ,"Failed to parse - unexpected line: ",line
-                                print >> sys.stderr ,result_
-                                exit(1)
-                                    
+                        print 'result_;'
                 else:
-                    if sten_name == 'main':
-                        body+= "    "+get_diff('c()',"result",field,d)+"= "+line[len("return")+line.index("return"):]+"\n"
+                    #if sten_name != 'main':
+                    if result_[0] != '':
+                        print "      "+get_diff('c()',"result",field,d)+"="+result_[0]
                     else:
-                        returned=line[len("return")+line.index("return"):]
-            get_for_loop(d,mode,field,guards_,sten_name)
-            print body
-            if sten_name != 'main':
-                if result_[0] != '':
-                    print "      "+get_diff('c()',"result",field,d)+"="+result_[0]
-                else:
-                    import sys
-                    print "      "+get_diff('c()',"result",field,d)+"=result_.inner;"
-                #print "      if (mesh->%sstart >1 ){"%d
-                
-                if guards > 1:
-                    #print >> sys.stderr, stencils[todo[0]].body[0]
-                    #print >> sys.stderr, stencils[todo[0]].guards
-                    if ( sten_name == 'backward' and mode == 'on' ) or \
-                       ( sten_name == 'forward' and mode == 'off' ):
-                        pass# dont do anything ...
-                    else:
-                        if sten_name == 'forward':
-                            print "        "+get_diff('m()',"result",field,d)+"=" ,
+                        import sys
+                        print >>sys.stderr,result_, body,sten.body
+                        print "      "+get_diff('c()',"result",field,d)+"=result_.inner;"
+                    #print "      if (mesh->%sstart >1 ){"%d
+
+                    if guards > 1:
+                        #print >> sys.stderr, stencils[todo[0]].body[0]
+                        #print >> sys.stderr, stencils[todo[0]].guards
+                        if ( sten_name == 'backward' and mode == 'on' ) or \
+                           ( sten_name == 'forward' and mode == 'off' ):
+                            pass# dont do anything ...
                         else:
-                            print "        "+get_diff('p()',"result",field,d)+"=" ,
-                        if result_[1] != '':
-                            print result_[1]
-                        else:
-                            print "result_.outer;"
-                #print "      }"
-            get_for_end(d,field,sten_name)
+                            if sten_name == 'forward':
+                                print "        "+get_diff('m()',"result",field,d)+"=" ,
+                            else:
+                                print "        "+get_diff('p()',"result",field,d)+"=" ,
+                            if result_[1] != '':
+                                print result_[1]
+                            else:
+                                print "result_.outer;"
+                    #print "      }"
+                get_for_end(d,field,sten_name)
             
         print "}"
         warn()
@@ -458,22 +547,22 @@ def get_interp_sten(order,pos):
         #first=False
         ret+="%+.5e*"%vals[i]
         if i < oh:
-            ret+='s.m'+(str(oh-i) if oh-i > 1 else "")
+            ret+='f.m'+(str(oh-i) if oh-i > 1 else "")
         else:
-            ret+='s.p'+(str(i-oh+1) if i-oh+1 > 1 else "" )
+            ret+='f.p'+(str(i-oh+1) if i-oh+1 > 1 else "" )
     #print >> sys.stderr, ret
     return ret+" ;"
             
-interp=["return "+get_interp_sten(4,0)]
+interp=['',"return "+get_interp_sten(4,0),'']
 #["return ( 9.*(s.m + s.p) - s.mm - s.pp ) / 16.;"]
 for mode in ['on','off']:
   for order in [4]:
     for d in dirs[field]:
         global guards_
         guards_=[0,0]
-        line=interp[0]
+        line=interp[1]
         sten_name="main"
-        line=replace_stencil(line,'s.',"in",field,mode,sten_name,off,d)
+        line=replace_stencil(line,'f.',"in",field,mode,sten_name,d)
         print "static void interp_to_%s_%s_%s("%(mode,field,d),
         if use_field_operator:
             print field+"& result, const "+field+" & in){"
@@ -481,41 +570,46 @@ for mode in ['on','off']:
             print "BoutReal * __restrict__ result_ptr, const BoutReal * __restrict__ in_ptr){"
         for d2 in dirs[field]:
             print "  const int N%s = mesh->LocalN%s;"%(d2,d2)
-        body= "    "+get_diff('c()',"result",field,d)+"= "+line[len("return")+line.index("return"):]+"\n"
-        #print >> sys.stderr , guards_
-        get_for_loop(d,mode,field,guards_,sten_name)
-        print body
-        guards__=guards_
-        get_for_end(d,field,sten_name)
-        #if d != 'z':
-        sten_names=["forward","backward"]
-        for sten_name in sten_names:
-            sten_name_index=sten_names.index(sten_name)
-            sign=-1
-            if sten_name == "forward":
-                sign=1
-            _sign=sign
-            if d=='z':
-                sign=0
+        if d == 'z':
+            sten=function()
+            sten.body=interp
+            get_for_loop_z(sten,field,mode)
+        else:
+            body= "    "+get_diff('c()',"result",field,d)+"= "+line[len("return")+line.index("return"):]+"\n"
+            #print >> sys.stderr , guards_
             get_for_loop(d,mode,field,guards_,sten_name)
-            print "      "+get_diff('c()',"result",field,d)+"=",
-            print replace_stencil(get_interp_sten(4,sign),'s.',"in",field,mode,"main",off,d,False,z0=((guards_[sten_name_index])*_sign))
-            print '      throw BoutException("AiolosMesh - not yet done properly :P - don`t use Aiolos ...");'
-            #print >> sys.stderr, guards_, guards__
-            guards_=guards__
-            if order/2 > 1:
-                if ( sten_name == 'backward' and mode == 'on' ) or \
-                   ( sten_name == 'forward' and mode == 'off' ):
-                    pass# dont do anything ...
-                else:
-                    if sten_name == 'forward':
-                        print "        "+get_diff('m()',"result",field,d)+"=" ,
-                    else:
-                        print "        "+get_diff('p()',"result",field,d)+"=" ,
-                    print replace_stencil(get_interp_sten(4,sign*2),'s.',"in",field,mode,"main",off,d,False,z0=((guards_[sten_name_index])*_sign))
-                    guards_=guards__
+            print body
+            guards__=guards_
             get_for_end(d,field,sten_name)
-        #else:
+            #if d != 'z':
+            sten_names=["forward","backward"]
+            for sten_name in sten_names:
+                sten_name_index=sten_names.index(sten_name)
+                sign=-1
+                if sten_name == "forward":
+                    sign=1
+                _sign=sign
+                if d=='z':
+                    sign=0
+                get_for_loop(d,mode,field,guards_,sten_name)
+                print "      "+get_diff('c()',"result",field,d)+"=",
+                print replace_stencil(get_interp_sten(4,sign),'f.',"in",field,mode,"main",d,False,z0=((guards_[sten_name_index])*_sign))
+                #print '      throw BoutException("AiolosMesh - not yet done properly :P - don`t use Aiolos ...");'
+                #print >> sys.stderr, guards_, guards__
+                guards_=guards__
+                if order/2 > 1:
+                    if ( sten_name == 'backward' and mode == 'on' ) or \
+                       ( sten_name == 'forward' and mode == 'off' ):
+                        pass# dont do anything ...
+                    else:
+                        if sten_name == 'forward':
+                            print "        "+get_diff('m()',"result",field,d)+"=" ,
+                        else:
+                            print "        "+get_diff('p()',"result",field,d)+"=" ,
+                        print replace_stencil(get_interp_sten(4,sign*2),'f.',"in",field,mode,"main",d,False,z0=((guards_[sten_name_index])*_sign))
+                        guards_=guards__
+                get_for_end(d,field,sten_name)
+            #else:
             
         print "}"
 

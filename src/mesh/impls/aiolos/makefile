@@ -24,6 +24,7 @@ $(generated):gen_derivs.py \
 		tables_cleaned.cxx gen_stencils.py stencils_cleaned.cxx \
 		common.py
 	python $< > generated_derivs.cxx || ( rm $@ ; exit 1)
+	@(VERSION_CONTROL=none indent $(generated) && sed -ri 's/const const/const/' $(generated) ) || exit 0 # ignore failure
 
 clean:: clean-generated
 
