@@ -134,7 +134,6 @@ void OptionINI::parse(const string &buffer, string &key, string &value)
    // A key/value pair, separated by a '='
 
   size_t startpos = buffer.find_first_of("=");
-  size_t endpos   = buffer.find_last_of("=");
 
   if (startpos == string::npos) {
     // Just set a flag to true

@@ -46,7 +46,6 @@ void GlobalField::proc_origin(int proc, int *x, int *y, int *z) const {
   
   // Get the number of processors in X and Y
   int nxpe = mesh->getNXPE();
-  int nype = mesh->getNYPE();
   
   // Get the X and Y indices
   int pex = proc % nxpe;

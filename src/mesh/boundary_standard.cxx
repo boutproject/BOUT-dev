@@ -987,7 +987,7 @@ void BndDirichlet_O3::apply_ddt(Field2D &f) {
 void BndDirichlet_O3::apply_ddt(Field3D &f) {
   output.write("\nI'm getting called \n") ; 
   Field3D *dt = f.timeDeriv();
-  CELL_LOC loc = f.getLocation();
+  // CELL_LOC loc = f.getLocation();
   bndry->first() ; 
   // if(mesh->StaggerGrids && loc != CELL_CENTRE) {
   //

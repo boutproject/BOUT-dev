@@ -20,7 +20,7 @@ public:
     throw BoutException("No PETSc LaplaceXY solver available");
   }
   void setCoefs(const Field2D &A, const Field2D &B) {}
-  Field3D solve(const Field3D &b, const Field3D &x0) {}
+  Field3D solve(const Field3D &b, const Field3D &x0) {return 0.;}
 private:
 };
 

@@ -2361,7 +2361,7 @@ void BoutMesh::outputVars(Datafile &file) {
 //================================================================
 
 void BoutMesh::slice_r_y(const BoutReal *fori, BoutReal * fxy, int ystart, int ncy) {
-  int i,j;
+  int i;
   for(i=0;i<ncy;i++)
       fxy[i]=fori[i+ystart];
 }
@@ -2397,7 +2397,6 @@ const Field2D BoutMesh::lowPass_poloidal(const Field2D &var,int mmax)
   int jx, jy;
   int ncyall,ncyall2;   // nype is number of processors in the Y dir.
   int t1; //return value for setData of Field2D
-  int i,j,k;
   int mmax1;
 
   mmax1 = mmax+1;
