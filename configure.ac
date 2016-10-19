@@ -63,6 +63,9 @@ AC_ARG_ENABLE(optimize,
               [  --enable-optimize=1/2/3 Enable optimization])
 AC_ARG_ENABLE(sigfpe,
               [  --enable-sigfpe         Enable FloatingPointExceptions])
+AC_ARG_ENABLE(backtrace,
+              [  --disable-backtrace     Disable function backtrace],
+              [], [enable_backtrace=yes])
 AC_ARG_VAR(EXTRA_INCS,[Extra compile flags])
 AC_ARG_VAR(EXTRA_LIBS,[Extra linking flags])
 
@@ -383,15 +386,18 @@ echo
 # Enable Backtrace if possible
 #############################################################
 
-if which addr2line &>/dev/null
+if test ."$enable_backtrace" == .yes
 then
-    AC_CHECK_FUNC(popen,
-             [AC_TRY_COMPILE([#include <execinfo.h>] ,,
-                 [AC_TRY_LINK([extern "C"
-                               char backtrace();] ,
-                              [return backtrace();],
-                              [CXXFLAGS="$CXXFLAGS -DBACKTRACE"]);
-                 ])])
+    if which addr2line &>/dev/null
+    then
+        AC_CHECK_FUNC(popen,
+                      [AC_TRY_COMPILE([#include <execinfo.h>] ,,
+                                      [AC_TRY_LINK([extern "C"
+                                                    char backtrace();] ,
+                                                   [return backtrace();],
+                                                   [CXXFLAGS="$CXXFLAGS -DBACKTRACE"]);
+                                      ])])
+    fi
 fi
 
 #############################################################
