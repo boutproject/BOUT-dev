@@ -1,8 +1,10 @@
 #include <boutmain.hxx>
 #include <derivs.hxx>
 #include <field_factory.hxx>
-
+#include <bout/mesh.hxx>
 #include <assert.h>
+
+#include <interpolation.hxx>
 
 Field3D n;
 
@@ -30,6 +32,20 @@ int physics_init(bool restart) {
 	    FieldFactory::get()->create3D("diff_z:function", Options::getRoot(),
 					  mesh, CELL_ZLOW, 0));
     }
+
+  int order;
+  OPTION(Options::getRoot(),order,2);
+  if (order < 4){
+    compare(interp_to(n,CELL_XLOW),
+            FieldFactory::get()->create3D("all:function", Options::getRoot(),
+                                          mesh, CELL_XLOW, 0));
+    compare(mesh->interp_to(n,CELL_YLOW),
+            FieldFactory::get()->create3D("all:function", Options::getRoot(),
+                                          mesh, CELL_YLOW, 0));
+    compare(mesh->interp_to(n,CELL_ZLOW),
+            FieldFactory::get()->create3D("all:function", Options::getRoot(),
+                                          mesh, CELL_ZLOW, 0));
+  }
   
   return 0;
 }
@@ -43,8 +59,8 @@ int physics_run(BoutReal time) {
 
 void compare( Field3D diff, Field3D exp){
   static int counter=0;
-  int print;
-  OPTION(Options::getRoot(),print,-1);
+  int print=-1;
+  //OPTION(Options::getRoot(),print,-1);
   if (counter++==print){
     //for (int x=mesh->xstart;x<=mesh->xend;++x)
       for (int x=0;x<mesh->LocalNx;++x)
@@ -56,15 +72,15 @@ void compare( Field3D diff, Field3D exp){
   
   }
   auto error=max(abs(diff-exp)); 
-  output.write("\n%g\n",error);
+  output.write("\nerror: %g\n",error);
   if (error > 1e-8){
-    int x=mesh->xend-1;
-    int y=mesh->ystart;
-    int z=mesh->LocalNz-1;
+    //int x=mesh->xend-1;
+    //int y=mesh->ystart;
+    //int z=mesh->LocalNz-1;
     auto err=exp-diff;
     
-    for (int x=mesh->xstart;x<=mesh->xend;++x)
-      //for (int x=0;x<mesh->LocalNx;++x)
+    //for (int x=mesh->xstart;x<=mesh->xend;++x)
+    for (int x=0;x<mesh->LocalNx;++x)
       //for (int y=mesh->ystart;y<=mesh->yend;++y)
       for (int y=0;y<mesh->LocalNy;++y)
 	for (int z=0;z<mesh->LocalNz;++z)
