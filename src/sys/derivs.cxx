@@ -200,6 +200,10 @@ const Field2D D2DX2(const Field2D &f) {
 ////////////// Y DERIVATIVE /////////////////
 
 const Field3D D2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+
+  if (outloc == CELL_DEFAULT){
+    outloc = f.getLocation();
+  }
   
   Field3D result = mesh->indexD2DY2(f, outloc, method) / SQ(mesh->coordinates()->dy);
 
