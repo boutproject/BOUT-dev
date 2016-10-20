@@ -700,9 +700,11 @@ void Field3D::setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const {
       
       fval.mm = fval.m;
       fval.m  = fval.c;
+    } else {
+      // Shifted in one direction -> shift in another
+      // Could produce warning
+      throw BoutException("Cannot handle shift!");
     }
-    // Shifted in one direction -> shift in another
-    // Could produce warning
   }
 }
 
