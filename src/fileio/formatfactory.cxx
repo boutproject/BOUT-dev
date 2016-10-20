@@ -123,9 +123,8 @@ DataFormat* FormatFactory::createDataFormat(const char *filename, bool parallel)
   }
 #endif
 
-  output.write("\tFile extension not recognised for '%s'\n", filename);
-  // Set to the default
-  return createDataFormat();
+  throw BoutException("\tFile extension not recognised for '%s'\n", filename);
+  return NULL;
 }
 
 ////////////////////// Private functions /////////////////////////////
