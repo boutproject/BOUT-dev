@@ -181,7 +181,7 @@ elif test $enable_optimize ; then
       OPT_FLAGS="-O"
     elif test $optimize == "fast"
     then
-      OPT_FLAGS="-Ofast -march=native -funroll-loops"
+      OPT_FLAGS="-Ofast -fno-finite-math-only -march=native -funroll-loops"
       DISABLE_CHECK=probably
     else
       AC_MSG_ERROR([unrecognized option: --enable-optimize=$optimize])
@@ -189,7 +189,7 @@ elif test $enable_optimize ; then
   else
     if test $optimize -gt 3
     then
-      OPT_FLAGS="-Ofast -march=native -funroll-loops"
+      OPT_FLAGS="-Ofast -fno-finite-math-only -march=native -funroll-loops"
       DISABLE_CHECK=probably
     elif test $optimize -gt 2
     then
