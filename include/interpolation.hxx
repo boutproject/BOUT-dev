@@ -152,6 +152,9 @@ public:
 };
 
 class Bilinear : public Interpolation {
+  int*** i_corner;      // x-index of bottom-left grid point
+  int*** k_corner;      // z-index of bottom-left grid point
+
   Field3D w0, w1, w2, w3;
 
 public:
@@ -159,7 +162,10 @@ public:
   Bilinear(BoutMask mask, int y_offset=0) : Bilinear(y_offset) {
     skip_mask = mask;}
 
-  ~Bilinear() {}
+  ~Bilinear() {
+    free_i3tensor(i_corner);
+    free_i3tensor(k_corner);
+  }
 
   /// Callback function for InterpolationFactory
   static Interpolation* CreateBilinear() {
