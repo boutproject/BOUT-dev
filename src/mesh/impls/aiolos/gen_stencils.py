@@ -508,6 +508,15 @@ def gen_functions_normal(to_gen):
             print "  "+name+"_"+field.lower()+"(result_ptr,v_in_ptr,f_in_ptr);"
         else:
             print "  "+name+"_"+field.lower()+"(result_ptr,in_ptr);"
+        if mode == "on":
+            print "  result.setLocation(CELL_%sLOW);"%d.upper()
+        elif mode == "off":
+            print "  result.setLocation(CELL_CENTRE);"
+        else:
+            if flux:
+                print "  result.setLocation(f_in.getLocation());"
+            else:
+                print "  result.setLocation(in.getLocation());"
         print """  checkData(result);
   return result;
 }
