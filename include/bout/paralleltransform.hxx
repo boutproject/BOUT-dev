@@ -57,6 +57,8 @@ public:
   const Field3D toFieldAligned(const Field3D &f);
 
   const Field3D fromFieldAligned(const Field3D &f);
+
+  typedef std::vector<std::vector<std::vector<dcomplex>>> arr3Dvec;
 private:
   ShiftedMetric();
   
@@ -66,7 +68,7 @@ private:
   std::vector<dcomplex> cmplx;
   std::vector<dcomplex> cmplxLoc;
 
-  typedef std::vector<std::vector<std::vector<dcomplex>>> arr3Dvec;
+
   arr3Dvec toAlignedPhs;
   arr3Dvec fromAlignedPhs;
 
@@ -75,6 +77,7 @@ private:
 
   const Field2D shiftZ(const Field2D f, const Field2D zangle){return f;};
   const Field3D shiftZ(const Field3D f, const Field2D zangle);
+  const Field3D shiftZ(const Field3D f, const arr3Dvec &phs);
   void shiftZ(const BoutReal *in, int len, BoutReal zangle,  BoutReal *out);
   void shiftZ(const BoutReal *in, const std::vector<dcomplex> &phs, BoutReal *out);
 };

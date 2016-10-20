@@ -121,20 +121,7 @@ void ShiftedMetric::calcYUpDown(Field3D &f) {
  * and Y is then field aligned.
  */
 const Field3D ShiftedMetric::toFieldAligned(const Field3D &f) {
-  if(mesh.LocalNz == 1)
-    return f; // Shifting makes no difference
-  
-  Field3D result;
-  result.allocate();
-  
-  for(int jx=0;jx<mesh.LocalNx;jx++) {
-    for(int jy=0;jy<mesh.LocalNy;jy++) {
-      shiftZ(f(jx,jy), toAlignedPhs[jx][jy], result(jx,jy));
-    }
-  }
-  
-  return result;
-
+  return shiftZ(f, toAlignedPhs);
 }
 
 /*!
@@ -142,6 +129,10 @@ const Field3D ShiftedMetric::toFieldAligned(const Field3D &f) {
  * but Y is not field aligned.
  */
 const Field3D ShiftedMetric::fromFieldAligned(const Field3D &f) {
+  return shiftZ(f, fromAlignedPhs);
+}
+
+const Field3D ShiftedMetric::shiftZ(const Field3D f, const arr3Dvec &phs) {
   if(mesh.LocalNz == 1)
     return f; // Shifting makes no difference
   
@@ -150,11 +141,12 @@ const Field3D ShiftedMetric::fromFieldAligned(const Field3D &f) {
   
   for(int jx=0;jx<mesh.LocalNx;jx++) {
     for(int jy=0;jy<mesh.LocalNy;jy++) {
-      shiftZ(f(jx,jy), fromAlignedPhs[jx][jy], result(jx,jy));
+      shiftZ(f(jx,jy), phs[jx][jy], result(jx,jy));
     }
   }
   
   return result;
+
 }
 
 void ShiftedMetric::shiftZ(const BoutReal *in, const std::vector<dcomplex> &phs, BoutReal *out) {
