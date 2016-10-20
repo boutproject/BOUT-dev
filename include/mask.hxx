@@ -71,6 +71,7 @@ public:
     mask = vec3bool(nx, std::vector<std::vector<bool>>
                     (ny, std::vector<bool>
                      (nz, value)));
+    return *this;
   }
 
   // vector<bool> is weird nonsense and doesn't actually store bools.
