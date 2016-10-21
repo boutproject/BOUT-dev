@@ -34,10 +34,11 @@
 #include <options.hxx>
 #include <field3d.hxx>
 #include <bout/mesh.hxx>
+#include <unused.hxx>
 
 class LaplaceXZ {
 public:
-  LaplaceXZ(Mesh *m, Options *options) {}
+  LaplaceXZ(Mesh *UNUSED(m), Options *UNUSED(options)) {}
   virtual ~LaplaceXZ() {}
 
   virtual void setCoefs(const Field2D &A, const Field2D &B) = 0;

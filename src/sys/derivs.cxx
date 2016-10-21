@@ -140,7 +140,7 @@ const Field3D DDZ(const Field3D &f, bool inc_xbndry) {
   return DDZ(f, CELL_DEFAULT, DIFF_DEFAULT, inc_xbndry);
 }
 
-const Field2D DDZ(const Field2D &f) {
+const Field2D DDZ(const Field2D &UNUSED(f)) {
   return Field2D(0.0);
 }
 
@@ -243,7 +243,7 @@ const Field3D D2DZ2(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
   return D2DZ2(f, outloc, method);
 }
 
-const Field2D D2DZ2(const Field2D &f) {
+const Field2D D2DZ2(const Field2D &UNUSED(f)) {
   return Field2D(0.0);
 }
 
@@ -294,7 +294,7 @@ const Field3D D2DXDY(const Field3D &f) {
   return DDX(dfdy);
 }
 
-const Field2D D2DXDZ(const Field2D &f) {
+const Field2D D2DXDZ(const Field2D &UNUSED(f)) {
   return Field2D(0.0);
 }
 
@@ -309,7 +309,7 @@ const Field3D D2DXDZ(const Field3D &f) {
   return result;
 }
 
-const Field2D D2DYDZ(const Field2D &f) {
+const Field2D D2DYDZ(const Field2D &UNUSED(f)) {
   return Field2D(0.0);
 }
 
@@ -378,12 +378,12 @@ const Field3D VDDY(const Field &v, const Field &f, DIFF_METHOD method, CELL_LOC 
 ////////////// Z DERIVATIVE /////////////////
 
 // special case where both are 2D
-const Field2D VDDZ(const Field2D &v, const Field2D &f) {
+const Field2D VDDZ(const Field2D &UNUSED(v), const Field2D &UNUSED(f)) {
   return Field2D(0.0);
 }
 
 // Note that this is zero because no compression is included
-const Field2D VDDZ(const Field3D &v, const Field2D &f) {
+const Field2D VDDZ(const Field3D &UNUSED(v), const Field2D &UNUSED(f)) {
   return Field2D(0.0);
 }
 
@@ -460,7 +460,7 @@ const Field2D FDDZ(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_MET
   return FDDZ(v, f, method, outloc);
 }
 
-const Field2D FDDZ(const Field2D &v, const Field2D &f, DIFF_METHOD method, CELL_LOC outloc) {
+const Field2D FDDZ(const Field2D &UNUSED(v), const Field2D &UNUSED(f), DIFF_METHOD UNUSED(method), CELL_LOC UNUSED(outloc)) {
   return Field2D(0.0);
 }
 

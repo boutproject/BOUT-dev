@@ -1688,7 +1688,7 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
   return interp_to(result, outloc);
 }
 
-const Field2D Mesh::indexDDZ(const Field2D &f) {
+const Field2D Mesh::indexDDZ(const Field2D &UNUSED(f)) {
   Field2D result;
   result = 0.0;
   return result;
@@ -2087,7 +2087,7 @@ const Field3D Mesh::indexD4DZ4(const Field3D &f) {
 ////////////// X DERIVATIVE /////////////////
 
 /// Special case where both arguments are 2D. Output location ignored for now
-const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC UNUSED(outloc), DIFF_METHOD method) {
   Mesh::upwind_func func = fVDDX;
 
   if(method != DIFF_DEFAULT) {

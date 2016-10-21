@@ -9,6 +9,7 @@
 #include <field3d.hxx>
 #include <boutexception.hxx>
 #include <dcomplex.hxx>
+#include <unused.hxx>
 
 class Mesh;
 
@@ -75,7 +76,7 @@ private:
   arr3Dvec yupPhs;
   arr3Dvec ydownPhs;
 
-  const Field2D shiftZ(const Field2D f, const Field2D zangle){return f;};
+  const Field2D shiftZ(const Field2D f, const Field2D UNUSED(zangle)){return f;};
   const Field3D shiftZ(const Field3D f, const Field2D zangle);
   const Field3D shiftZ(const Field3D f, const arr3Dvec &phs);
   void shiftZ(const BoutReal *in, int len, BoutReal zangle,  BoutReal *out);

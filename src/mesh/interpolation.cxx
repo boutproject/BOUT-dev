@@ -28,6 +28,7 @@
 #include <stencils.hxx>
 #include <output.hxx>
 #include <msg_stack.hxx>
+#include <unused.hxx>
 
 /// Perform interpolation between centre -> shifted or vice-versa
 /*!
@@ -136,7 +137,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
   return var;
 }
 
-const Field2D interp_to(const Field2D &var, CELL_LOC loc) {
+const Field2D interp_to(const Field2D &var, CELL_LOC UNUSED(loc)) {
   // Currently do nothing
   return var;
 }
@@ -254,7 +255,7 @@ const Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3
   return result;
 }
 
-const Field3D interpolate(const Field2D &f, const Field3D &delta_x, const Field3D &delta_z) {
+const Field3D interpolate(const Field2D &f, const Field3D &delta_x, const Field3D &UNUSED(delta_z)) {
   return interpolate(f, delta_x);
 }
 

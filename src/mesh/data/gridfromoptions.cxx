@@ -9,6 +9,8 @@
 
 #include <output.hxx>
 
+#include <unused.hxx>
+
 bool GridFromOptions::hasVar(const string &name) {
   return options->isSet(name);
 }
@@ -33,7 +35,7 @@ bool GridFromOptions::hasVar(const string &name) {
  *
  * True if option is set, false if ival is default (0)
  */
-bool GridFromOptions::get(Mesh *m, int &ival, const string &name) {
+bool GridFromOptions::get(Mesh *UNUSED(m), int &ival, const string &name) {
   if(!hasVar(name)) {
     ival = 0;
     return false;
@@ -43,7 +45,7 @@ bool GridFromOptions::get(Mesh *m, int &ival, const string &name) {
   return true;
 }
 
-bool GridFromOptions::get(Mesh *m, BoutReal &rval, const string &name) {
+bool GridFromOptions::get(Mesh *UNUSED(m), BoutReal &rval, const string &name) {
   if(!hasVar(name)) {
     rval = 0.0;
     return false;
@@ -81,7 +83,8 @@ bool GridFromOptions::get(Mesh *m, Field3D &var, const string &name, BoutReal de
   return true;
 }
 
-bool GridFromOptions::get(Mesh *m, vector<int> &var, const string &name, int len, int offset, GridDataSource::Direction dir) {
+bool GridFromOptions::get(Mesh *m, vector<int> &var, const string &name, int len,
+                          int UNUSED(offset), GridDataSource::Direction UNUSED(dir)) {
   // Integers not expressions yet
 
   int ival;
