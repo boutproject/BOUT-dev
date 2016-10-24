@@ -94,16 +94,16 @@ BoutReal D2DX2_C2(stencil &f) {
 /// Second derivative: Forward, 2nd order
 Mesh::boundary_derivs_pair D2DX2_F2(forward_stencil &f) {
   Mesh::boundary_derivs_pair result;
-  result.inner = 2.*f.c-5.*f.p+4.*f.p2-3.*f.p3;
-  result.outer = 2.*f.m-5.*f.c+4.*f.p-3.*f.p2;
+  result.inner = (2.*f.c-5.*f.p+4.*f.p2-f.p3)/4;
+  result.outer = (2.*f.m-5.*f.c+4.*f.p -f.p2)/4;
   return result;
 }
 
 /// Second derivative: Backward, 2nd order
 Mesh::boundary_derivs_pair D2DX2_B2(backward_stencil &f) {
   Mesh::boundary_derivs_pair result;
-  result.inner = -2.*f.c+5.*f.m-4.*f.m2+3.*f.m3;
-  result.outer = -2.*f.p+5.*f.c-4.*f.m+3.*f.m2;
+  result.inner = (2.*f.c-5.*f.m+4.*f.m2-f.m3)/4;
+  result.outer = (2.*f.p-5.*f.c+4.*f.m -f.m2)/4;
   return result;
 }
 
