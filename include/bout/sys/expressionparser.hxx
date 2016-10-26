@@ -29,6 +29,8 @@ class ParseException;
 #ifndef __EXPRESSION_PARSER_H__
 #define __EXPRESSION_PARSER_H__
 
+#include "unused.hxx"
+
 #include <string>
 #include <map>
 #include <list>
@@ -44,7 +46,7 @@ class ParseException;
 class FieldGenerator {
 public:
   virtual ~FieldGenerator() { }
-  virtual FieldGenerator* clone(const std::list<FieldGenerator*> args) {return NULL;}
+  virtual FieldGenerator* clone(const std::list<FieldGenerator*> UNUSED(args)) {return NULL;}
   virtual double generate(double x, double y, double z, double t) = 0;
   virtual const std::string str() {return std::string("?");}
 };
@@ -59,7 +61,7 @@ public:
   
 protected:
   /// This will be called to resolve any unknown symbols
-  virtual FieldGenerator* resolve(std::string &name) {return NULL;}
+  virtual FieldGenerator* resolve(std::string &UNUSED(name)) {return NULL;}
 
   /// Parses a given string into a tree of FieldGenerator objects
   FieldGenerator* parseString(const std::string &input);
@@ -119,8 +121,8 @@ private:
 class FieldValue : public FieldGenerator {
 public:
   FieldValue(double val) : value(val) {}
-  FieldGenerator* clone(const std::list<FieldGenerator*> args) { return new FieldValue(value); }
-  double generate(double x, double y, double z, double t) { return value; }
+  FieldGenerator* clone(const std::list<FieldGenerator*> UNUSED(args)) { return new FieldValue(value); }
+  double generate(double UNUSED(x), double UNUSED(y), double UNUSED(z), double UNUSED(t)) { return value; }
   const std::string str() {
     std::stringstream ss;
     ss << value;

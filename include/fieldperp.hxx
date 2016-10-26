@@ -36,6 +36,8 @@ class FieldPerp;
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
 
+#include "unused.hxx"
+
 class Field2D; // #include "field2d.hxx"
 class Field3D; // #include "field3d.hxx"
 
@@ -135,9 +137,9 @@ class FieldPerp : public Field {
     return data[jx*nz + jz];
   }
   
-  BoutReal& operator()(int jx, int jy, int jz) { return (*this)(jx, jz); }
+  BoutReal& operator()(int jx, int UNUSED(jy), int jz) { return (*this)(jx, jz); }
   
-  const BoutReal& operator()(int jx, int jy, int jz) const { return (*this)(jx, jz); }
+  const BoutReal& operator()(int jx, int UNUSED(jy), int jz) const { return (*this)(jx, jz); }
 
   FieldPerp & operator+=(const FieldPerp &rhs);
   FieldPerp & operator+=(const Field3D &rhs);

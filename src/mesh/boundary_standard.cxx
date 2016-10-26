@@ -2567,7 +2567,7 @@ BoundaryOp* BoundaryDivCurl::clone(BoundaryRegion *region, const list<string> &a
   return new BoundaryDivCurl(region);
 }
 
-void BoundaryDivCurl::apply(Vector2D &f) {
+void BoundaryDivCurl::apply(Vector2D &UNUSED(f)) {
   throw BoutException("ERROR: DivCurl boundary not yet implemented for 2D vectors\n");
 }
 
@@ -2651,19 +2651,19 @@ BoundaryOp* BoundaryFree::clone(BoundaryRegion *region, const list<string> &args
   return new BoundaryFree(region);
 }
 
-void BoundaryFree::apply(Field2D &f) {
+void BoundaryFree::apply(Field2D &UNUSED(f)) {
   // Do nothing for free boundary
 }
 
-void BoundaryFree::apply(Field3D &f) {
+void BoundaryFree::apply(Field3D &UNUSED(f)) {
   // Do nothing for free boundary
 }
 
-void BoundaryFree::apply_ddt(Field2D &f) {
+void BoundaryFree::apply_ddt(Field2D &UNUSED(f)) {
   // Do nothing for free boundary
 }
 
-void BoundaryFree::apply_ddt(Field3D &f) {
+void BoundaryFree::apply_ddt(Field3D &UNUSED(f)) {
   // Do nothing for free boundary
 }
 ///////////////////////////////////////////////////////////////
@@ -3171,7 +3171,7 @@ void BoundaryRelax::apply(Field2D &f, BoutReal t) {
   op->apply(f, t);
 }
 
-void BoundaryRelax::apply(Field3D &f, BoutReal t) {
+void BoundaryRelax::apply(Field3D &f, BoutReal UNUSED(t)) {
   // Just apply the original boundary condition to f
   op->apply(f);
 }

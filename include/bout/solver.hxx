@@ -37,6 +37,7 @@ class Solver;
 
 #include <bout_types.hxx>
 #include <boutexception.hxx>
+#include <unused.hxx>
 
 ///////////////////////////////////////////////////////////////////
 // C function pointer types
@@ -107,7 +108,7 @@ class Solver {
   
   virtual void setRHS(rhsfunc f) { phys_run = f; } ///< Set the RHS function
   void setPrecon(PhysicsPrecon f) {prefunc = f;} ///< Specify a preconditioner (optional)
-  virtual void setJacobian(Jacobian j) {} ///< Specify a Jacobian (optional)
+  virtual void setJacobian(Jacobian UNUSED(j)) {} ///< Specify a Jacobian (optional)
   virtual void setSplitOperator(rhsfunc fC, rhsfunc fD); ///< Split operator solves
   
   

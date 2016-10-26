@@ -28,12 +28,13 @@
 #include <vecops.hxx>
 #include <derivs.hxx>
 #include <msg_stack.hxx>
+#include <unused.hxx>
 
 /**************************************************************************
  * Gradient operators
  **************************************************************************/
 
-const Vector2D Grad(const Field2D &f, CELL_LOC outloc) {
+const Vector2D Grad(const Field2D &f, CELL_LOC UNUSED(outloc)) {
   Vector2D result;
   
   MsgStackItem trace("Grad( Field2D )");
@@ -77,8 +78,8 @@ const Vector3D Grad(const Field3D &f, CELL_LOC outloc)
   return Grad(f, outloc, outloc, outloc);
 }
 
-const Vector3D Grad_perp(const Field3D &f, 
-			 CELL_LOC outloc_x, CELL_LOC outloc_y, CELL_LOC outloc_z) {
+const Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc_x,
+                         CELL_LOC UNUSED(outloc_y), CELL_LOC outloc_z) {
   Vector3D result;
 
   MsgStackItem trace("Grad_perp( Field3D )");
@@ -106,7 +107,7 @@ const Vector3D Grad_perp(const Field3D &f,
  * Divergence operators
  **************************************************************************/
 
-const Field2D Div(const Vector2D &v, CELL_LOC outloc) {
+const Field2D Div(const Vector2D &v, CELL_LOC UNUSED(outloc)) {
   Field2D result;
 
   MsgStackItem trace("Div( Vector2D )");
@@ -203,7 +204,7 @@ const Field3D Div(const Vector3D &v, const Field3D &f) {
  * Curl operators
  **************************************************************************/
 
-const Vector2D Curl(const Vector2D &v, CELL_LOC outloc) {
+const Vector2D Curl(const Vector2D &v, CELL_LOC UNUSED(outloc)) {
 
   MsgStackItem trace("Curl( Vector2D )");
   

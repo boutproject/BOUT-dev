@@ -36,6 +36,7 @@
 #include <invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
 
 #include <interpolation.hxx>
+#include <unused.hxx>
 
 #include <math.h>
 #include <stdlib.h>
@@ -385,7 +386,7 @@ const Field3D Div_par_K_Grad_par(Field3D &kY, Field3D &f) {
 * Divergence of perpendicular diffusive flux kperp*Grad_perp
 *******************************************************************************/
 
-const Field3D Div_K_perp_Grad_perp(const Field2D &kperp, const Field3D &f) {
+const Field3D Div_K_perp_Grad_perp(const Field2D &UNUSED(kperp), const Field3D &UNUSED(f)) {
   throw BoutException("Div_K_perp_Grad_per not implemented yet");
   Field3D result = 0.0;
   return result;
@@ -400,11 +401,11 @@ const Field2D Delp2(const Field2D &f) {
   return mesh->coordinates()->Delp2(f);
 }
 
-const Field3D Delp2(const Field3D &f, BoutReal zsmooth) {
+const Field3D Delp2(const Field3D &f, BoutReal UNUSED(zsmooth)) {
   return mesh->coordinates()->Delp2(f);
 }
 
-const FieldPerp Delp2(const FieldPerp &f, BoutReal zsmooth) {
+const FieldPerp Delp2(const FieldPerp &f, BoutReal UNUSED(zsmooth)) {
   return mesh->coordinates()->Delp2(f);
 }
 
@@ -617,7 +618,7 @@ CELL_LOC bracket_location(const CELL_LOC &f_loc, const CELL_LOC &g_loc, const CE
   return outloc;      	  // Location of result
 }
 
-const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method, CELL_LOC outloc, Solver *solver) {
+const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method, CELL_LOC outloc, Solver *UNUSED(solver)) {
   MsgStackItem trace("bracket(Field2D, Field2D)");
   Field2D result;
 

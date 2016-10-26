@@ -45,6 +45,8 @@ class Field3D; //#include "field3d.hxx"
 
 #include "bout/array.hxx"
 
+#include "unused.hxx"
+
 /*!
  * \brief 2D X-Y scalar fields
  *
@@ -127,10 +129,10 @@ class Field2D : public Field, public FieldData {
     return data[jx*ny + jy];
   }
 
-  BoutReal& operator()(int jx, int jy, int jz) {
+  BoutReal& operator()(int jx, int jy, int UNUSED(jz)) {
     return operator()(jx, jy);
   }
-  const BoutReal& operator()(int jx, int jy, int jz) const {
+  const BoutReal& operator()(int jx, int jy, int UNUSED(jz)) const {
     return operator()(jx, jy);
   }
   

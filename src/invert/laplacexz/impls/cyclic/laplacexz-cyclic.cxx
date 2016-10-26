@@ -144,7 +144,7 @@ void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
   cr->setCoefs(nsys, acoef, bcoef, ccoef);
 }
 
-Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &x0) {
+Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &UNUSED(x0)) {
   Timer timer("invert");
   
   // Create the rhs array
