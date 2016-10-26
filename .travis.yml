@@ -1,5 +1,7 @@
 language: cpp
 compiler: gcc
+python:
+  - "3.5"
 matrix:
   include:
   - env: CONFIGURE_OPTIONS='--enable-openmp'
@@ -18,7 +20,15 @@ before_install:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8" MPICH_CXX="g++-4.8" MPICH_CC="gcc-4.8"; fi
   - sudo apt-get install -y mpich2 libmpich2-dev
   - sudo apt-get install -y libfftw3-dev libnetcdf-dev
-  - sudo apt-get install -y python-numpy python-netcdf python-scipy
-  - sudo apt-get install -y python-matplotlib
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  # Useful for debugging any issues with conda
+  - conda info -a
+  - conda create -q -n test-environment python=3.5 numpy scipy netcdf4
+  - source activate test-environment
 script:
   - ./.travis_script.sh
