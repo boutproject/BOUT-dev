@@ -11,6 +11,96 @@
 // #define BOUNDARY_CONDITIONS_UPGRADE_EXTRAPOLATE_FOR_2ND_ORDER
 
 ///////////////////////////////////////////////////////////////
+// Helpers
+
+/** \brief Check that there are sufficient non-boundary points for desired B.C.
+    
+    Checks both the size of the global grid (i.e. if this B.C. could be ok
+    for some parallel setup or not) and the local grid.
+
+    Note the local grid check is not strictly necessary as this would typically
+    lead to an out of bounds access error later but we add it here to provide a
+    more explanatory message.
+ */
+void verifyNumPoints(BoundaryRegion *region, int ptsRequired) {
+  TRACE("Verifying number of points available for BC");
+
+#ifndef CHECK
+  return; //No checking so just return
+#else
+
+  int ptsAvailGlobal, ptsAvailLocal, ptsAvail;
+  string side, gridType;
+  
+  //Initialise var in case of no match and CHECK<=2
+  ptsAvail = ptsRequired; //Ensures test passes without exception
+	
+  switch(region->location) {
+  case BNDRY_XIN: 
+  case BNDRY_XOUT: {
+    side = "x";
+
+    //Here 2*mesh->xstart is the total number of guard/boundary cells
+    ptsAvailGlobal = mesh->GlobalNx - 2*mesh->xstart;
+
+    //Work out how many processor local points we have excluding boundaries
+    //but including ghost/guard cells
+    ptsAvailLocal  = mesh->LocalNx;
+    if(mesh->firstX()) ptsAvailLocal -= mesh->xstart;
+    if(mesh->lastX())  ptsAvailLocal -= mesh->xstart;
+
+    //Now decide if it's a local or global limit, prefer global if a tie
+    if(ptsAvailGlobal <= ptsAvailLocal){
+      ptsAvail = ptsAvailGlobal;
+      gridType = "global";
+    }else{
+      ptsAvail = ptsAvailLocal;
+      gridType = "local";
+    }
+
+    break;
+  }
+  case BNDRY_YUP: 
+  case BNDRY_YDOWN: {
+    side = "y";
+
+    //Here 2*mesh->ystart is the total number of guard/boundary cells
+    ptsAvailGlobal = mesh->GlobalNy - 2*mesh->ystart;
+
+    //Work out how many processor local points we have excluding boundaries
+    //but including ghost/guard cells
+    ptsAvailLocal  = mesh->LocalNy;
+    if(mesh->firstY()) ptsAvailLocal -= mesh->ystart;
+    if(mesh->lastY())  ptsAvailLocal -= mesh->ystart;
+
+    //Now decide if it's a local or global limit, prefer global if a tie
+    if(ptsAvailGlobal <= ptsAvailLocal){
+      ptsAvail = ptsAvailGlobal;
+      gridType = "global";
+    }else{
+      ptsAvail = ptsAvailLocal;
+      gridType = "local";
+    }
+
+    break;
+  }
+#if CHECK > 2 //Only fail on Unrecognised boundary for extreme checking
+  default : {
+    throw BoutException("Unrecognised boundary region (%s) for verifyNumPoints.",region->location);
+  }
+#endif
+  }
+
+  //Now check we have enough points and if not throw an exception
+  if(ptsAvail < ptsRequired){
+    throw BoutException("Too few %s grid points for %s boundary, have %d but need at least %d",
+			gridType.c_str(),side.c_str(),ptsAvail,ptsRequired);
+  }
+
+#endif
+}
+
+///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryDirichlet::clone(BoundaryRegion *region, const list<string> &args) {
   if(!args.empty()) {
@@ -56,6 +146,8 @@ BndDirichlet_O2::BndDirichlet_O2(BoundaryRegion *region, FieldGenerator*g):Bound
 }
 
 BoundaryOp* BndDirichlet_O2::clone(BoundaryRegion *region, const list<string> &args){
+  verifyNumPoints(region,1);
+
   FieldGenerator* newgen = 0;
   if(!args.empty()) {
     // First argument should be an expression
@@ -534,6 +626,7 @@ void BndDirichlet_O2::apply_ddt(Field3D &f) {
 // New implementation, accurate to higher order
 
 BoundaryOp* BndDirichlet_O3::clone(BoundaryRegion *region, const list<string> &args){
+  verifyNumPoints(region,2);
   FieldGenerator* newgen = 0;
   if(!args.empty()) {
     // First argument should be an expression
@@ -1017,6 +1110,7 @@ void BndDirichlet_O3::apply_ddt(Field3D &f) {
 // Extrapolate to calculate boundary cell to 4th-order
 
 BoundaryOp* BndDirichlet_O4::clone(BoundaryRegion *region, const list<string> &args){
+  verifyNumPoints(region,3);
   FieldGenerator* newgen = 0;
   if(!args.empty()) {
     // First argument should be an expression
@@ -1496,6 +1590,7 @@ void BndDirichlet_O4::apply_ddt(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryDirichlet_2ndOrder::clone(BoundaryRegion *region, const list<string> &args) {
+  verifyNumPoints(region,2);
   if(!args.empty()) {
     // First argument should be a value
     val = stringToReal(args.front());
@@ -1549,6 +1644,7 @@ void BoundaryDirichlet_2ndOrder::apply_ddt(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryDirichlet_4thOrder::clone(BoundaryRegion *region, const list<string> &args) {
+  verifyNumPoints(region,4);
   if(!args.empty()) {
     // First argument should be a value
     val = stringToReal(args.front());
@@ -1590,6 +1686,7 @@ void BoundaryDirichlet_4thOrder::apply_ddt(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryNeumann::clone(BoundaryRegion *region, const list<string> &args) {
+  verifyNumPoints(region,1); 
   if(!args.empty()) {
     //output << "WARNING: Ignoring arguments to BoundaryNeumann\n";
     output << "WARNING: arguments is set to BoundaryNeumann None Zero Gradient\n";
@@ -1620,6 +1717,7 @@ void BoundaryNeumann::apply(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryNeumann2::clone(BoundaryRegion *region, const list<string> &args) {
+  verifyNumPoints(region,2);
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryNeumann2\n";
   }
@@ -1641,6 +1739,11 @@ void BoundaryNeumann2::apply(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryNeumann_2ndOrder::clone(BoundaryRegion *region, const list<string> &args) {
+#ifdef BOUNDARY_CONDITIONS_UPGRADE_EXTRAPOLATE_FOR_2ND_ORDER
+  verifyNumPoints(region,2);
+#else
+  verifyNumPoints(region,1);
+#endif
   if(!args.empty()) {
     // First argument should be a value
     val = stringToReal(args.front());
@@ -1700,6 +1803,7 @@ void BoundaryNeumann_2ndOrder::apply_ddt(Field3D &f) {
 /////JMAD///
 
 BoundaryOp* BndNeumann_O2::clone(BoundaryRegion *region, const list<string> &args){
+  verifyNumPoints(region,1);
   FieldGenerator *newgen = 0;
   if(!args.empty()) {
     // First argument should be an expression
@@ -2135,6 +2239,7 @@ void BndNeumann_O2::apply_ddt(Field3D &f) {
 }
 
 BoundaryOp* BoundaryNeumann_4thOrder::clone(BoundaryRegion *region, const list<string> &args) {
+  verifyNumPoints(region,4);
   if(!args.empty()) {
     // First argument should be a value
     val = stringToReal(args.front());
@@ -2182,6 +2287,7 @@ void BoundaryNeumann_4thOrder::apply_ddt(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryNeumannPar::clone(BoundaryRegion *region, const list<string> &args) {
+  verifyNumPoints(region,1);
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryNeumann2\n";
   }
@@ -2206,6 +2312,7 @@ void BoundaryNeumannPar::apply(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryRobin::clone(BoundaryRegion *region, const list<string> &args) {
+  verifyNumPoints(region,1);
   BoutReal a = 0.5, b = 1.0, g = 0.;
   
   list<string>::const_iterator it = args.begin();
@@ -2280,6 +2387,7 @@ void BoundaryConstGradient::apply(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryConstGradient::clone(BoundaryRegion *region, const list<string> &args) {
+  verifyNumPoints(region,2);
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryConstGradient\n";
   }
@@ -2289,6 +2397,7 @@ BoundaryOp* BoundaryConstGradient::clone(BoundaryRegion *region, const list<stri
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryZeroLaplace::clone(BoundaryRegion *region, const list<string> &args) {
+  verifyNumPoints(region,2);
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryZeroLaplace\n";
   }
@@ -2374,6 +2483,7 @@ void BoundaryZeroLaplace::apply(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryZeroLaplace2::clone(BoundaryRegion *region, const list<string> &args) {
+  verifyNumPoints(region,3);
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryZeroLaplace2\n";
   }
@@ -2462,6 +2572,7 @@ void BoundaryZeroLaplace2::apply(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryConstLaplace::clone(BoundaryRegion *region, const list<string> &args) {
+  verifyNumPoints(region,2);
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryConstLaplace\n";
   }
@@ -2674,6 +2785,7 @@ void BoundaryFree::apply_ddt(Field3D &UNUSED(f)) {
 // 2nd order extrapolation:
 
 BoundaryOp* BoundaryFree_O2::clone(BoundaryRegion *region, const list<string> &args){
+  verifyNumPoints(region,2);
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryFree\n";
   }
@@ -2911,6 +3023,8 @@ void BoundaryFree_O2::apply_ddt(Field3D &f) {
 // Third order extrapolation:
 //////////////////////////////////
 BoundaryOp* BoundaryFree_O3::clone(BoundaryRegion *region, const list<string> &args){
+  verifyNumPoints(region,3);
+
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryConstLaplace\n";
   }
