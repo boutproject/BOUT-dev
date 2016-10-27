@@ -96,21 +96,22 @@ bool GridFromOptions::get(Mesh *m, vector<int> &var, const string &name, int len
   return true;
 }
 
-bool GridFromOptions::get(Mesh *m, vector<BoutReal> &var, const string &name, int len, int offset, GridDataSource::Direction dir) {
-  
+bool GridFromOptions::get(Mesh *m, vector<BoutReal> &var, const string &name, int len,
+                          int offset, GridDataSource::Direction dir) {
+
   if(!hasVar(name)) {
     return false;
   }
-  
-  // Fetch expression as a string 
+
+  // Fetch expression as a string
   std::string expr;
   options->get(name, expr, "0");
-  
+
   // Parse, and evaluate with x,y,z,t = 0
   FieldGenerator* gen = FieldFactory::get()->parse(expr, options);
 
   var.resize(len);
-  
+
   switch(dir) {
   case GridDataSource::X: {
     for(int x=0;x<len;x++){
@@ -122,11 +123,13 @@ bool GridFromOptions::get(Mesh *m, vector<BoutReal> &var, const string &name, in
     for(int y=0;y<len;y++){
       var[y] = gen->generate(0.0, TWOPI*m->GlobalY(y - m->OffsetY + offset), 0.0, 0.0);
     }
+    break;
   }
   case GridDataSource::Z : {
     for(int z=0;z<len;z++){
       var[z] = gen->generate(0.0, 0.0, TWOPI*((BoutReal) z + offset) / ((BoutReal) (m->LocalNz)), 0.0);
     }
+    break;
   }
   default: {
     throw BoutException("Invalid direction argument");
