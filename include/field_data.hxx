@@ -31,6 +31,7 @@ class FieldData;
 #define __FIELD_DATA_H__
 
 #include "bout_types.hxx"
+#include "unused.hxx"
 
 #include <string>
 using std::string;
@@ -89,7 +90,7 @@ public:
 
   void copyBoundary(const FieldData &f); ///< Copy the boundary conditions from another field
 
-  virtual void applyBoundary() {}
+  virtual void applyBoundary(bool UNUSED(init)=false) {}
   virtual void applyTDerivBoundary() {};
 //JMAD
   void addBndryFunction(FuncPtr userfunc, BndryLoc location);
