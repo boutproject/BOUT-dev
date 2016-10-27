@@ -131,7 +131,7 @@ public:
     int ns = Nsys / nprocs; // Number of systems to assign to all processors
     int nsextra = Nsys % nprocs;  // Number of processors with 1 extra 
     
-    MPI_Request req[nprocs];
+    MPI_Request* req = new MPI_Request[nprocs];
 
     if(myns > 0) {
       // Post receives from all other processors
@@ -343,6 +343,7 @@ public:
     ///////////////////////////////////////
     // Solve local equations
     back_solve(Nsys, N, coefs, x1, xn, x);
+    delete req;
   }
   
 private:
