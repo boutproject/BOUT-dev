@@ -87,7 +87,7 @@ public:
 #endif
     return mask[jx][jy][jz];
   }
-  inline const std::vector<bool>::const_reference operator()(const int jx, const int jy, const int jz) const {
+  inline std::vector<bool>::const_reference operator()(const int jx, const int jy, const int jz) const {
 #if CHECK > 2
     // Perform bounds checking
     if((jx < 0) || (jx >= nx) ||
