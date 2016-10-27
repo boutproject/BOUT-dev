@@ -160,8 +160,10 @@ const char* strLocation(CELL_LOC loc) {
   case CELL_ZLOW: {
     return " Lower Z";
   }
+  default: {
+    return " Default (Unknown)";
+  }
   };
-  return " Default (Unknown)";
 }
 
 // 4-point Lagrangian interpolation

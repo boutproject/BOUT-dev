@@ -205,7 +205,7 @@ BoundaryOpBase* BoundaryFactory::createFromOptions(const string &varname, Bounda
 
   string prefix("bndry_");
 
-  string side("all");
+  string side;
   switch(region->location) {
   case BNDRY_XIN: {
     side = "xin";
@@ -229,6 +229,10 @@ BoundaryOpBase* BoundaryFactory::createFromOptions(const string &varname, Bounda
   }
   case BNDRY_PAR_BKWD: {
     side = "par_ydown";
+    break;
+  }
+  default: {
+    side = "all";
     break;
   }
   }

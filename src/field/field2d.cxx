@@ -188,8 +188,10 @@ const IndexRange Field2D::region(REGION rgn) const {
         0, 0};
     break;
   }
+  default: {
+    throw BoutException("Field2D::region() : Requested region not implemented");
+  }
   };
-  throw BoutException("Field2D::region() : Requested region not implemented");
 }
 
 ///////// Operators
