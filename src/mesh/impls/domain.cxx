@@ -126,7 +126,7 @@ void Domain::addBoundary(Bndry *b) {
 }
 
 void Domain::removeBoundary(Bndry *b) {
-  int s = boundary.size();
+  size_t s = boundary.size();
   boundary.remove(b);
   assert(boundary.size() == s-1);
 }

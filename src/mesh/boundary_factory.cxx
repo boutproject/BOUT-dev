@@ -79,7 +79,7 @@ void BoundaryFactory::cleanup() {
 BoundaryOpBase* BoundaryFactory::create(const string &name, BoundaryRegionBase *region) {
 
   // Search for a string of the form: modifier(operation)
-  int pos = name.find('(');
+  auto pos = name.find('(');
   if(pos == string::npos) {
     // No more (opening) brackets. Should be a boundary operation
     // Need to strip whitespace
@@ -108,7 +108,7 @@ BoundaryOpBase* BoundaryFactory::create(const string &name, BoundaryRegionBase *
     }
   }
   // Contains a bracket. Find the last bracket and remove
-  int pos2 = name.rfind(')');
+  auto pos2 = name.rfind(')');
   if(pos2 == string::npos) {
     output << "\tWARNING: Unmatched brackets in boundary condition: " << name << endl;
   }
@@ -123,7 +123,7 @@ BoundaryOpBase* BoundaryFactory::create(const string &name, BoundaryRegionBase *
   list<string> arglist;
   int level = 0;
   int start = 0;
-  for(int i = 0;i<arg.length();i++) {
+  for(string::size_type i = 0;i<arg.length();i++) {
     switch(arg[i]) {
     case '(':
     case '[':
