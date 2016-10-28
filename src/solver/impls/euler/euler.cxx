@@ -151,7 +151,7 @@ void EulerSolver::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, Bout
   run_rhs(curtime);
   save_derivs(result);
   
-  #pragma omp parallel for
+  PRAGMA_OMP( parallel for )
   for(int i=0;i<nlocal;i++)
     result[i] = start[i] + dt*result[i];
 }

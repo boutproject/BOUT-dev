@@ -23,8 +23,7 @@
  *
  **************************************************************************/
 
-#ifndef __UTILS_H__
-#define __UTILS_H__
+#pragma once
 
 #include "bout_types.hxx"
 #include "dcomplex.hxx"
@@ -103,4 +102,10 @@ string trim(const string &, const string &c=" \t\r");
 string trimLeft(const string &, const string &c=" \t");
 string trimRight(const string &, const string &c=" \t\r");
 string trimComments(const string &, const string &c="#;");
-#endif // __UTILS_H__
+
+#define STRINGIZE(A) #A
+#ifdef _OPENMP
+#define PRAGMA_OMP(f1) _Pragma(STRINGIZE(omp f1))
+#else
+#define PRAGMA_OMP(f1)
+#endif

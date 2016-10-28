@@ -27,8 +27,6 @@
 class Field2D;
 
 #pragma once
-#ifndef __FIELD2D_H__
-#define __FIELD2D_H__
 
 class Mesh;
 #include "field.hxx"
@@ -36,6 +34,7 @@ class Mesh;
 class Field3D; //#include "field3d.hxx"
 #include "fieldperp.hxx"
 #include "stencils.hxx"
+#include "unused.hxx"
 
 #include "bout/dataiterator.hxx"
 
@@ -275,7 +274,7 @@ Field2D pow(BoutReal lhs, const Field2D &rhs);
 #ifdef CHECK
 void checkData(const Field2D &f);
 #else
-inline void checkData(const Field2D &f) {}
+inline void checkData(const Field2D &UNUSED(f)) {}
 #endif
 
 
@@ -288,5 +287,3 @@ inline void checkData(const Field2D &f) {}
 inline Field2D& ddt(Field2D &f) {
   return *(f.timeDeriv());
 }
-
-#endif /* __FIELD2D_H__ */

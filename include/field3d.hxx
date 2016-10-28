@@ -23,8 +23,6 @@
 class Field3D;
 
 #pragma once
-#ifndef __FIELD3D_H__
-#define __FIELD3D_H__
 
 class Mesh;  // #include "bout/mesh.hxx"
 #include "field.hxx"
@@ -32,6 +30,7 @@ class Mesh;  // #include "bout/mesh.hxx"
 #include "fieldperp.hxx"
 #include "stencils.hxx"
 #include "bout_types.hxx"
+#include "unused.hxx"
 
 #include "bout/dataiterator.hxx"
 
@@ -377,7 +376,7 @@ bool finite(const Field3D &var);
 #ifdef CHECK
 void checkData(const Field3D &f); ///< Checks if the data is valid.
 #else
-inline void checkData(const Field3D &f){;}; ///< Checks if the data is valid.
+inline void checkData(const Field3D &UNUSED(f)){;} ///< Checks if the data is valid.
 #endif
   
 const Field3D copy(const Field3D &f);
@@ -404,5 +403,3 @@ Field2D DC(const Field3D &f);
 inline Field3D& ddt(Field3D &f) {
   return *(f.timeDeriv());
 }
-
-#endif /* __FIELD3D_H__ */

@@ -84,7 +84,7 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
   if(global_flags & INVERT_BOTH_BNDRY_ONE)
     xbndry = 1;
 
-  #pragma omp parallel for
+  PRAGMA_OMP( parallel for )
   for(int ix=0;ix<mesh->LocalNx;ix++) {
     // for fixed ix,jy set a complex vector rho(z)
     

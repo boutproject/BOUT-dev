@@ -56,12 +56,12 @@ class MsgStack {
   std::string getDump();    ///< Write out all messages to a string
 #else
   /// Dummy functions which should be optimised out
-  int push(const char *s, ...) {return 0;}
+  int push(const char *UNUSED(s), ...) {return 0;}
   
   int setPoint() {return 0;}
   
   void pop() {}
-  void pop(int id) {}
+  void pop(int UNUSED(id)) {}
   void clear() {}
   
   void dump() {}
