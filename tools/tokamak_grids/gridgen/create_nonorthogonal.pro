@@ -287,7 +287,7 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
                       sep_down=sep_down, sep_line_down=sep_line_down, $     ;Separatrix location and line
                       vec_in_up=vec_in_up, vec_out_up=vec_out_up, $         ;
                       sep_up=sep_up, sep_line_up=sep_line_up, $             ;
-                      sp_loc=sp_loc
+                      sp_loc=sp_loc, orthdown=orthdown, orthup=orthup
                       
   
   nsurf = N_ELEMENTS(fvals)
@@ -362,7 +362,8 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
                 INTERPOLATE(Z, REFORM(sep_line_up[1,*])), $
                 thick=2,color=3
        ENDIF ELSE sep_line = FLTARR(2,2)
-       weight = ((2.*i/(npar-1))-1)^1.35
+       IF NOT KEYWORD_SET(orthup) THEN orthup=0
+       IF orthup EQ 1 THEN weight = 0 ELSE weight = ((2.*i/(npar-1))-1)^1.35
     ENDIF ELSE BEGIN
 ;        PRINT, "***** DOWN *****" 
        IF KEYWORD_SET(vec_in_down) THEN vec_in = vec_in_down
@@ -378,7 +379,8 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
                 INTERPOLATE(Z, REFORM(sep_line_down[1,*])), $
                 thick=2,color=2
        ENDIF ELSE sep_line = FLTARR(2,2)
-       weight = (1-(2.*i)/(npar-1))^1.35
+       IF NOT KEYWORD_SET(orthdown) THEN orthdown=0
+       IF orthdown EQ 1 THEN weight = 0 ELSE weight = (1-(2.*i)/(npar-1))^1.35
     ENDELSE
     
     ; Refine the location of the starting point
@@ -811,7 +813,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
                       fpsi = fpsi, $ ; f(psi) = R*Bt current function
                       nrad_flexible=nrad_flexible, $
                       single_rad_grid=single_rad_grid, fast=fast, $
-                      xpt_mindist=xpt_mindist, xpt_mul=xpt_mul
+                      xpt_mindist=xpt_mindist, xpt_mul=xpt_mul, xpt_only=xpt_only
 
 
   strictbndry=0
@@ -1981,6 +1983,10 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
           vec_out_up1 = TRANSPOSE(vec2[i,*])
           sp_loc=1
        END
+       IF xpt_only EQ 1 THEN BEGIN
+			orthdown = 1
+			orthup = 0
+	   ENDIF
       ; Calculate maximum psi of x-point
       xpt_psi_max = MAX([xpt_psi[ci[i]], xpt_psi[ci[(i+1) MOD critical.n_xpoint]]])
       PRINT, "Gridding regions "+STR(3*i)+" to " +STR(3*i+2)
@@ -1997,7 +2003,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
                       ffirst=ffirst, flast=flast1, fpsi=fpsi, yup_dist=xpt_dist[xpt, 0], /oplot, $
                       vec_in_up=vec_in_up1, vec_out_up=vec_out_up1, sep_up=critical.xpt_f[xpt], $
                       vec_in_down=-vec_in_down1, vec_out_down=vec_out_down1, $
-                      ydown_dist=0)
+                      ydown_dist=0,orthup=orthup,orthdown=orthdown)
       Rxy[*, ypos:(ypos+npol[3*i]-1)] = a.Rxy
       Zxy[*, ypos:(ypos+npol[3*i]-1)] = a.Zxy
       Rixy[*, ypos:(ypos+npol[3*i]-1)] = a.Rixy
@@ -2184,7 +2190,10 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
             sp_loc=1
          END
       END
-
+       IF xpt_only EQ 1 THEN BEGIN
+			orthup = 1
+			orthdown = 0
+	   ENDIF
       ; Second PF region
       xpt = (*sol_info[solid]).xpt2
       PRINT, "   x-point index ", xpt
@@ -2200,7 +2209,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
                       ydown_dist=xpt_dist[xpt, 3], /oplot, $
                       vec_in_down=vec_in_down3, vec_out_down=vec_out_down3, sep_down=critical.xpt_f[xpt], $
                       vec_in_up=vec_in_up3, vec_out_up=vec_out_up3, $
-                      yup_dist=0)
+                      yup_dist=0,orthup=orthup,orthdown=orthdown)
       Rxy[*, ypos:(ypos+npol[3*i+2]-1)] = a.Rxy
       Zxy[*, ypos:(ypos+npol[3*i+2]-1)] = a.Zxy
       Rixy[*, ypos:(ypos+npol[3*i+2]-1)] = a.Rixy

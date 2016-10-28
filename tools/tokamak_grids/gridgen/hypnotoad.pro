@@ -407,6 +407,8 @@ PRO event_handler, event
                                [MIN(boundary[1,*]), MIN(boundary[1,*]), $
                                 MAX(boundary[1,*]), MAX(boundary[1,*])] ])
       ENDIF
+      
+      IF info.xptonly_check EQ 0 THEN xpt_only = 0 ELSE xpt_only = 1
         
       WIDGET_CONTROL, info.status, set_value="Generating non-orthogonal mesh ..."
       
@@ -414,7 +416,7 @@ PRO event_handler, event
                          boundary=boundary, strict=info.strict_bndry, $
                          /nrad_flexible, $
                          single_rad_grid=info.single_rad_grid, $
-                         critical=(*(info.rz_grid)).critical)
+                         critical=(*(info.rz_grid)).critical, xpt_only=info.xpt_only)
       IF mesh.error EQ 0 THEN BEGIN
         PRINT, "Successfully generated non-orthogonal mesh"
         WIDGET_CONTROL, info.status, set_value="Successfully generated mesh. All glory to the Hypnotoad!"
@@ -499,6 +501,11 @@ PRO event_handler, event
     'strict': BEGIN
       ; Checkbox with boundary strictness
       info.strict_bndry = event.select
+      widget_control, event.top, set_UVALUE=info
+    END
+    'xpt_only': BEGIN
+      ; Checkbox for X-point only non-orth option
+      info.xpt_only = event.select
       widget_control, event.top, set_UVALUE=info
     END
     'simplebndry': BEGIN
@@ -1017,6 +1024,10 @@ PRO hypnotoad
   fast_check = WIDGET_BUTTON(checkboxbase, VALUE="Fast", uvalue='fast', tooltip="Uses faster but less acurate methods")
   Widget_Control, fast_check, set_button=0
   
+  xptonly_check = WIDGET_BUTTON(checkboxbase, VALUE="Non-orth X-point only", uvalue='xpt_only', $
+                               tooltip="Allows strikepoints to be orthogonal, but keeps X-point non-orthogonal")
+  Widget_Control, xptonly_check, Set_Button=0
+  
   gen_mesh_text = WIDGET_LABEL(tab1, VALUE='Generate Mesh:', frame=0)
 
   mesh_button = WIDGET_BUTTON(tab1, VALUE='Orthogonal mesh', $
@@ -1132,6 +1143,8 @@ PRO hypnotoad
            strict_bndry:0, $ ; 1 if boundaries should be strict
            simple_check:simple_check, $
            simple_bndry:0, $ ; Use simplified boundary?
+           xptonly_check:xptonly_check, $ ; 
+           xpt_only:0, $ ; x-point only non-orthogonal
            radgrid_check:radgrid_check, $
            single_rad_grid:1, $
            smoothP_check:smoothP_check, $
