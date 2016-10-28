@@ -1,5 +1,4 @@
-#ifndef __UNUSED_H__
-#define __UNUSED_H__
+#pragma once
 
 // Macro taken from http://stackoverflow.com/q/7090998/2043465
 // 
@@ -24,5 +23,3 @@
 #else
 # define UNUSED(x) x
 #endif
-
-#endif //__UNUSED_H__
