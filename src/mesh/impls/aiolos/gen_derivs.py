@@ -67,10 +67,15 @@ for t in func_tables:
     except:
         pass
     fu=func_tables[t].itervalues().next()
-    if fu[1] != "NULL": # not a flux/upwind scheeme
-        flux=False
-    else:
-        flux=True
+    try:
+        if fu[1] != "NULL": # not a flux/upwind scheeme
+            flux=False
+        else:
+            flux=True
+    except:
+        print >>sys.stderr,fu
+        print >>sys.stderr,func_tables[t]
+        raise
     if flux:
         #print >> sys.stderr , fu[3]
         if fu[3][-4:]== "stag":
@@ -311,7 +316,7 @@ for d in dirs['Field3D']:
                     print '  } else',
             print '{'
             if i == 'Second' and stag == "Stag":
-                print '    name="C4";'
+                print '    name="C2";'
             elif i == 'Flux':
                 print '    name="SPLIT";'
             elif i == 'Upwind':

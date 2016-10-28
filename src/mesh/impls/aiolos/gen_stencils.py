@@ -419,16 +419,6 @@ def gen_functions_normal(to_gen):
         global guards_
         guards_=[0,0]
         for sten_name in todo:
-            if sten_name=='main':
-                guards=stencils[sten_name].guards #numGuards[f_ar[4]]
-            if sten_name=='backward' and mode=='on' and guards ==1:
-                #print "  }"
-                continue;
-            if sten_name=='forward' and mode=='off' and guards ==1:
-                #print "  if (mesh->%sstart > 0){"%d
-                #print "    DataIterator i(0,mesh->LocalNx,0,mesh->LocalNy,0,mesh->LocalNz);"
-                print "    int",d,";"
-                continue;
             sten=stencils[sten_name]
             if sten is None:
                 import sys
@@ -438,6 +428,21 @@ def gen_functions_normal(to_gen):
                 print >>sys.stderr,stencils
                 print >>sys.stderr,"#error unexpected: sten is None for sten_name %s !"%sten_name
                 exit(1)
+            if sten_name=='main':
+                try:
+                    guards=stencils[sten_name].guards #numGuards[f_ar[4]]
+                except:
+                    print >>sys.stderr,stencils
+                    print >>sys.stderr,sten_name
+                    raise
+            if sten_name=='backward' and mode=='on' and guards ==1:
+                #print "  }"
+                continue;
+            if sten_name=='forward' and mode=='off' and guards ==1:
+                #print "  if (mesh->%sstart > 0){"%d
+                #print "    DataIterator i(0,mesh->LocalNx,0,mesh->LocalNy,0,mesh->LocalNz);"
+                print "    int",d,";"
+                continue;
             if d=='z':
                 get_for_loop_z(sten,field,mode)
             else:
