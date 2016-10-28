@@ -688,7 +688,6 @@ static int arkode_rhs_e(BoutReal t,
   ArkodeSolver *s = (ArkodeSolver*) user_data;
   
   // Calculate RHS function
-  int rhs_e_status = 0;
   try {
     s->rhs_e(t, udata, dudata);
   }
@@ -710,7 +709,6 @@ static int arkode_rhs_i(BoutReal t,
   ArkodeSolver *s = (ArkodeSolver*) user_data;
 
   //Calculate RHS function
-  int rhs_e_status = 0;
   try {
      s->rhs_i(t, udata, dudata);
     }
@@ -731,7 +729,6 @@ static int arkode_rhs(BoutReal t,
   ArkodeSolver *s = (ArkodeSolver*) user_data;
 
   //Calculate RHS function
-  int rhs_status = 0;
   try {
    s->rhs(t, udata, dudata);
       }
