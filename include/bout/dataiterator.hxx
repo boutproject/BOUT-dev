@@ -248,7 +248,7 @@ inline void DataIterator::omp_init(int xs, int xe,bool end){
   }
 };
 #else
-inline void DataIterator::omp_init(int UNUSED(xs), int UNUSED(xe), bool UNUSED(end)){;};
+inline void DataIterator::omp_init(int UNUSED(xs), int UNUSED(xe), bool UNUSED(end)){;}
 #endif
 
 #endif // __DATAITERATOR_H__
