@@ -12,15 +12,21 @@ void save_diff(Field3D a, Field3D b,CELL_LOC in,CELL_LOC out=CELL_CENTRE);
 
 
 #define test(x) {                                                       \
-    if (Options::getRoot()->getSection("diff_" #x)->isSet("function")){ \
+    if (Options::getRoot()->                                            \
+        getSection("diff_" #x)->isSet("function")){                     \
       for (auto in : {CELL_CENTRE, CELL_ ##x ## LOW} ){                 \
         auto inf = ff->create3D("all:function",oo,mesh,in,0);           \
         for (auto out : {CELL_CENTRE, CELL_ ##x ## LOW} ){              \
           save_diff(DD##x(inf,out),                                     \
                     ff->create3D(                                       \
-                               "diff_" #x ":function",                  \
-                               oo,                                      \
-                               mesh, out, 0),in,out);                   \
+                                 "diff_" #x ":function",                \
+                                 oo,                                    \
+                                 mesh, out, 0),in,out);                 \
+          save_diff(D2D##x ##2(inf,out),                                \
+                    ff->create3D(                                       \
+                                 "diff2_" #x ":function",               \
+                                 oo,                                    \
+                                 mesh, out, 0),in,out);                 \
         }                                                               \
       }                                                                 \
     }                                                                   \

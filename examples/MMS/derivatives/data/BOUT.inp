@@ -30,6 +30,7 @@ StaggerGrids=true
 [MESH:diff]
 all=c4
 Second=C4
+SecondStag=C2
 FluxStag=U1
 
 [All]

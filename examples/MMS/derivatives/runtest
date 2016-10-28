@@ -31,22 +31,26 @@ def mkdir_p(path):
         else:
             raise
 
-print("Making MMS diffusion test")
-shell("make > make.log")
+print("Making MMS derivative test")
+s,_ = shell("make > make.log")
+if s:
+    print("Make failed!")
+    exit(1)
 
 # List of input directories
 inputs = [
     ("X", ["mesh:nx"]),
-    ("Y",["mesh:ny"]),
-    ("Z",["MZ"])#, 
+    #("Y",["mesh:ny"]),
+    #("Z",["MZ"])#, 
     #("XYZ", ["mesh:nx", "mesh:ny", "MZ"])
     ]
 
 funcs_periodic = {
-    'sin(x*fac)' : 'cos(x*fac)*fac',
-    'cos(x*fac)' : '-sin(x*fac)*fac',
+    #'sin(x*fac)' : ['cos(x*fac)*fac','-sin(x*fac)*fac*fac'],
+    'cos(x*fac)' : ['-sin(x*fac)*fac','-cos(x*fac)*fac*fac'],
     #'x*fac':'fac',
-    'sin(x*fac)+sin(10*fac*x)' : 'fac*cos(fac*x)+fac*10*cos(10*fac*x)',
+    'sin(x*fac)+sin(10*fac*x)' : ['fac*cos(fac*x)+fac*10*cos(10*fac*x)',
+                                  '-fac*fac*sin(fac*x)-fac*fac*100*sin(10*fac*x)'],
 }
 
 facs={'X':'2*pi',
@@ -54,7 +58,7 @@ facs={'X':'2*pi',
       'Z':'1'    }
 
 # List of NX values to use
-nxlist = [8, 16, 32, 64, 128, 256, 512]
+nxlist = [16, 32, 64, 128]#, 256, 512]
 #nxlist = [128,256,512,1024,2048,4096]
 
 nout = 1
@@ -64,7 +68,20 @@ timestep = 0.1
 nproc = 2
 
 success = True
-tmax=4
+tmax=8
+t_desc=[]
+for i in [1,2]:
+    t_desc.append("C->C d_%d"%i)
+for i in [1,2]:
+    t_desc.append("C->L d_%d"%i)
+for i in [1,2]:
+    t_desc.append("L->C d_%d"%i)
+for i in [1,2]:
+    t_desc.append("L->L d_%d"%i)
+
+doPlot = 0 # 0, 1 or 2
+if doPlot == 0:
+    nxlist=nxlist[-2:] # just need behaviour in limit
 for dir,sizes in inputs:
     print("Running test in '%s'" % (dir))
     for setOrder in [2, 4]:
@@ -73,16 +90,17 @@ for dir,sizes in inputs:
             error_inf = zeros((len(nxlist),tmax))  # The maximum error
             myindex=0
             for nx in nxlist:
-                args = " mesh:type=aiolos"
+                args = ""
                 for s in sizes:
                     args += " "+s+"="+str(nx)
                 args += " all:function="+fun.replace('x',dir)
-                args += " diff_"+dir+":function="+diff.replace('x',dir)
+                args += " diff_"+dir+":function="+diff[0].replace('x',dir)
+                args += " diff2_"+dir+":function="+diff[1].replace('x',dir)
                 args += " fac="+facs[dir]
-                args += " mesh:dd%s:first=C%d"%(dir,setOrder)
+                args += " mesh:dd%s:first=C%d mesh:dd%s:second=C%d mesh:dd%s:secondStag=C2"%(dir,setOrder,dir,setOrder,dir)
                 args = args.replace('(','\(').replace(')','\)')
 
-                print("  Running with " + args)
+                #print("  Running with " + args)
 
                 # Delete old data
                 shell("rm data/BOUT.dmp.*.nc")
@@ -97,9 +115,12 @@ for dir,sizes in inputs:
                 f.write(out)
                 f.close()
 
+                if s:
+                    print("Run failed!")
+                    exit(2)
                 # Collect data
                 tr=[0,tmax-1]
-                incGuards=False
+                incGuards=True
                 E_N = collect("error", path='data', tind=tr,info=False,xguards=incGuards,yguards=incGuards)
 
 
@@ -110,8 +131,8 @@ for dir,sizes in inputs:
                     error_2[myindex,t]   = l2
                     error_inf[myindex,t] = linf
                 myindex+=1
-                print("  -> Error norm: l-2 %f l-inf %f" % (l2, linf))
-                if True:
+                #print("  -> Error norm: l-2 %f l-inf %f" % (l2, linf))
+                if doPlot > 1:
                     N  = collect("diff"  , path='data', tind=tr,info=False,xguards=incGuards,yguards=incGuards)
                     N_ = collect("exact" , path='data', tind=tr,info=False,xguards=incGuards,yguards=incGuards)
                     try:
@@ -119,7 +140,7 @@ for dir,sizes in inputs:
                         plt.figure()
                         import numpy
                         dim=numpy.shape(E_N)
-                        for i in range(dim[0]):
+                        for i in range(dim[0])[1::2]:
                             ix=1
                             iy=1
                             iz=1
@@ -132,9 +153,9 @@ for dir,sizes in inputs:
                             else:
                                 fuuu(We, shouldn,'t be here ...')
                             #plot error:
-                            #plt.plot( E_N[i,:ix,:iy,:iz].flatten(), '-o', label=r'$e_%d$'%i)
+                            plt.plot( E_N[i,:ix,:iy,:iz].flatten(), '-o', label=r'$e: %s$'%t_desc[i])
                             #plot result:
-                            plt.plot( N  [i,:ix,:iy,:iz].flatten(), '-o', label=r'$d_%d$'%i)
+                            plt.plot( N  [i,:ix,:iy,:iz].flatten(), '-o', label=r'$d: %s$'%t_desc[i])
                             #plot expcected result:
                             #plt.plot( N_ [i,:ix,:iy,:iz].flatten(), '-o', label=r'$a_%d$'%i)
                         plt.legend(loc="upper left")
@@ -144,11 +165,14 @@ for dir,sizes in inputs:
                         plt.ylabel("Error/Messurement")
 
                         mkdir_p(join("data",dir,fun))
-                        plt.savefig(join("data",dir,fun,str(nx)+".pdf"))
+                        plt.savefig(join("data",dir,fun,"%d_%d.pdf"%(nx,setOrder)))
 
                         #plt.show()
                         plt.close()
+                    except KeyboardInterrupt:
+                        raise
                     except:
+                        print("plotting failed")
                         pass
 
             # Calculate grid spacing
@@ -160,39 +184,45 @@ for dir,sizes in inputs:
             # Calculate convergence order
             for t in range(tmax):
                 order = log(error_2[-1,t] / error_2[-2,t]) / log(dx[-1] / dx[-2])
-                print("Convergence order = %f" % (order))
 
-                if order < setOrder-.5:
-                    print("=> FAILED\n")
-                    success = False
+                if setOrder-.5 > order: # < setOrder+.5:
+                    if t == 3 or t == 5:
+                        print("Convergence order = %f" % (order))
+                        print("C4 for staggered 2nd diff not implemented")
+                    else:
+                        print("Convergence order = %f" % (order))
+                        print(args, " - t=",t_desc[t])
+                        print("=> FAILED\n")
+                        success = False
 
                 # plot errors
+                if doPlot > 0:
+                    try:
+                        import matplotlib.pyplot as plt
+                        plt.figure()
+                        #print(numpy.shape(dx),numpy.shape(error_2))
+                        plt.plot(dx, error_2[:,t], '-o', label=r'$l^2$')
+                        plt.plot(dx, error_inf[:,t], '-x', label=r'$l^\infty$')
 
-                try:
-                    import matplotlib.pyplot as plt
-                    plt.figure()
-                    #print(numpy.shape(dx),numpy.shape(error_2))
-                    plt.plot(dx, error_2[:,t], '-o', label=r'$l^2$')
-                    plt.plot(dx, error_inf[:,t], '-x', label=r'$l^\infty$')
+                        plt.plot(dx, error_2[-1,t]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
 
-                    plt.plot(dx, error_2[-1,t]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
+                        plt.legend(loc="upper left")
+                        plt.grid()
 
-                    plt.legend(loc="upper left")
-                    plt.grid()
+                        plt.yscale('log')
+                        plt.xscale('log')
 
-                    plt.yscale('log')
-                    plt.xscale('log')
+                        plt.xlabel(r'Mesh spacing $\delta x$')
+                        plt.ylabel("Error norm")
 
-                    plt.xlabel(r'Mesh spacing $\delta x$')
-                    plt.ylabel("Error norm")
+                        mkdir_p(join("data",dir,fun))
+                        plt.savefig(join("data",dir,fun,"%s_%d_norm.pdf"%(t_desc[t].replace(" ","_"),setOrder)))
 
-                    mkdir_p(join("data",dir,fun))
-                    plt.savefig(join("data",dir,fun,str(t)+"_norm.pdf"))
-
-                    #plt.show()
-                    plt.close()
-                except:
-                    pass
+                        #plt.show()
+                        plt.close()
+                    except:
+                        print("plotting failed")
+                        pass
 
 if success:
   print(" => All tests passed")
