@@ -15,22 +15,30 @@ def restart_from_func(dmp_folder,\
                       scan_parameters = None,\
                       **kwargs):
     """
-    Function which returns the restart from folder
+    Function which returns the restart from dmp_folder and
+    one_of_the_restart_paths_in_scan
+
+    NOTE: This will not work if the values of one of the scan parameters
+          contains an underscore, or if the initial hit is in the root
+          folder.
 
     Parameters
     ----------
     dmp_folder : str
-        Given by the bout_runners
+        Given by the bout_runners. Used to find the current scan
+        values.
     one_of_the_restart_paths_in_scan : str
-        One of the restart paths from a previously run scan. This
-        paramemter will be given as a kwargs
+        One of the restart paths from a previously run scan.
     scan_parameters : list
-        List of strings
+        List of strings of the names of the scan paramemters.
     kwargs : dict
         Dictionary with additional keyword arguments, given by
         bout_runners.
-        One of the arguments (given as kwargs to execute_runs) is
-        one_of_the_restart_paths_in_scan.
+
+    Returns
+    -------
+    restart_from : str
+        String which gives path to restart from
     """
 
     # Make a template string of one_of_the_restart_paths_in_scan
