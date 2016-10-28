@@ -1619,7 +1619,7 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
     static int nthreads = 0;
 #endif 
 
-    #pragma omp parallel
+    PRAGMA_OMP( parallel )
     {
 #ifndef _OPENMP
       // Serial, so can have a single static array
@@ -1641,11 +1641,11 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
         }
       }
       // Wait for memory to be allocated
-      #pragma omp barrier
+      PRAGMA_OMP( barrier )
       
       dcomplex *cv = globalcv + th_id*(ncz/2 + 1); // Separate array for each thread
 #endif
-       #pragma omp for
+      PRAGMA_OMP( for )
       for (int jx=xge;jx<xlt;++jx)
       for(int jy=0;jy<mesh->LocalNy;jy++) {
         rfft(f(jx,jy), ncz, cv); // Forward FFT
