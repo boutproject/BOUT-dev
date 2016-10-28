@@ -343,7 +343,7 @@ public:
     ///////////////////////////////////////
     // Solve local equations
     back_solve(Nsys, N, coefs, x1, xn, x);
-    delete req;
+    delete[] req;
   }
   
 private:

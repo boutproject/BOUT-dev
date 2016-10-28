@@ -164,7 +164,7 @@ void GlobalField2D::gather(const Field2D &f) {
         }
       }while(pe != MPI_UNDEFINED);
     }
-    delete req;
+    delete[] req;
   }else {
     // Sending data to proc
     
@@ -330,7 +330,7 @@ void GlobalField3D::gather(const Field3D &f) {
         }
       }while(pe != MPI_UNDEFINED);
     }
-    delete req;
+    delete[] req;
   }else {
     // Sending data to proc
     
