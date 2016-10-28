@@ -343,7 +343,7 @@ private:
 /// Equivalent to converting the boundary condition to "Field Aligned" from "orthogonal"
 class BoundaryToFieldAligned : public BoundaryModifier {
 public:
-  BoundaryToFieldAligned(){NULL;};
+  BoundaryToFieldAligned(){}
   BoundaryToFieldAligned(BoundaryOp *operation) : BoundaryModifier(operation){}
   BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
 
@@ -361,7 +361,7 @@ private:
 /// Equivalent to converting the boundary condition from "Field Aligned" to "orthogonal"
 class BoundaryFromFieldAligned : public BoundaryModifier {
 public:
-  BoundaryFromFieldAligned(){NULL;};
+  BoundaryFromFieldAligned(){}
   BoundaryFromFieldAligned(BoundaryOp *operation) : BoundaryModifier(operation){}
   BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
 

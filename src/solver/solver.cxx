@@ -562,7 +562,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
     throw e;
   }
 
-  return 0;
+  return status;
 }
 
 

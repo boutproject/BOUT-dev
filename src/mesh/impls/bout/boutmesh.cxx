@@ -2395,15 +2395,13 @@ const Field2D BoutMesh::lowPass_poloidal(const Field2D &var,int mmax)
 
   int ncx, ncy;
   int jx, jy;
-  int ncyall,ncyall2;   // nype is number of processors in the Y dir.
-  int t1; //return value for setData of Field2D
+  int ncyall;   // nype is number of processors in the Y dir.
   int mmax1;
 
   mmax1 = mmax+1;
   ncx = LocalNx;
   ncy = yend - ystart + 1;
   ncyall = ncy*NYPE;
-  ncyall2 = ncyall/2;
 
   result.allocate();  //initialize
   if(f1d == (BoutReal*) NULL)
@@ -2458,7 +2456,7 @@ const Field2D BoutMesh::lowPass_poloidal(const Field2D &var,int mmax)
       f1d[jy]=ayn[jy].real();
 
     for(jy=0;jy<ncy;jy++)
-      t1=result.setData(jx,jy+ystart,1,f1d+jy);
+      result.setData(jx,jy+ystart,1,f1d+jy);
   }//end of x
 
   return result;

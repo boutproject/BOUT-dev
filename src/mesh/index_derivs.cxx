@@ -717,15 +717,13 @@ DIFF_METHOD lookupFunc(DiffLookup *table, const string &label) {
     return table[0].method;
 
   matchtype = DIFF_DEFAULT;
-  int typeind;
-  
+
   // Loop through the name lookup table
   int i = 0;
   do {
     if((toupper(DiffNameTable[i].label[0]) == toupper(label[0])) && isImplemented(table, DiffNameTable[i].method)) {
       matchtype = DiffNameTable[i].method;
-      typeind = i;
-      
+
       if(strcasecmp(label.c_str(), DiffNameTable[i].label) == 0) {// Whole match
 	return matchtype;
       }

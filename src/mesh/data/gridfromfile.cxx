@@ -397,17 +397,7 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const string &name,
 	  fdata[i] = 0.0;
 	}
       }
-      
-      // Inverse FFT, shifting in the z direction
-      for(int jz=0;jz<=ncz/2;jz++) {
-	BoutReal kwave;
-	
-	kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
-      
-	// Multiply by EXP(ik*zoffset)
-	//fdata[jz] *= dcomplex(cos(kwave*zShift[jx][jy]) , sin(kwave*zShift[jx][jy]));
-      }
-      
+
       irfft(fdata, ncz, &var(jx,ydest+jy,0));
     }
   }
