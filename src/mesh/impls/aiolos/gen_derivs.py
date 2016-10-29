@@ -213,8 +213,12 @@ for func in ["indexDD%s", "indexD2D%s2","indexVDD%s","indexFDD%s"]:
             function_header+=sig
             if  not (field == "Field3D" and func[5]=='V'):
                 #print >> sys.stderr , func[5:]
-                function_header+=" override"
-            function_header+=";\n"
+                function_header+=" override;\n"
+            else:
+                function_header+=""";
+virtual const Field3D indexVDD%s(const Field &v,const Field &f, CELL_LOC outloc, DIFF_METHOD method) override{
+  return indexVDD%s(dynamic_cast<const Field3D &>(v),dynamic_cast<const Field3D &>(f),outloc,method);
+}"""%(d.upper(),d.upper())
             headers+=function_header
             function_header="const "+field+" AiolosMesh::"+func%d.upper()
             function_header+=sig

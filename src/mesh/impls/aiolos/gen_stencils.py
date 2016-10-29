@@ -263,6 +263,11 @@ def get_for_loop_z(sten,field,stag):
                                                 # if d=='z': # aka z                                                 
 def get_for_loop(d,mode,field,guards,sten_name ):
     if sten_name == 'main':
+        print '#ifdef CHECK'
+        print '  if (mesh->%sstart < %d){'%(d,max(guards))
+        print '    throw BoutException("Cannot compute derivative - need at least %d guard cells in %s direction!");'%(max(guards),d.upper())
+        print '  }'
+        print '#endif'
         dp=guards[0]
         dm=-guards[1]
         for d2 in dirs[field]:
@@ -362,6 +367,7 @@ def get_diff(diff,fname,field,d,update=False,z0=None):
 
 def get_pointer(field, field_type,const):
     if const:
+        print '  checkData(%s);'%field
         print "  const BoutReal * __restrict__",
     else:
         print "  BoutReal * __restrict__",
@@ -435,10 +441,10 @@ def gen_functions_normal(to_gen):
                     print >>sys.stderr,stencils
                     print >>sys.stderr,sten_name
                     raise
-            if sten_name=='backward' and mode=='on' and guards ==1:
+            if guards_[1] == 0 and sten_name=='backward':# and mode=='on' and guards ==1:
                 #print "  }"
                 continue;
-            if sten_name=='forward' and mode=='off' and guards ==1:
+            if guards_[0] == 0 and sten_name=='forward':# and mode=='off' and guards ==1:
                 #print "  if (mesh->%sstart > 0){"%d
                 #print "    DataIterator i(0,mesh->LocalNx,0,mesh->LocalNy,0,mesh->LocalNz);"
                 print "    int",d,";"
@@ -502,7 +508,7 @@ def gen_functions_normal(to_gen):
         print '#endif'
         print " ",field,"result;"
         print "  result.allocate();"
-        print "  checkData(result);"
+        #print "  checkData(result);"
         get_pointer("result",field,False)
         if flux:
             get_pointer("v_in",field,True)
