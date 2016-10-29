@@ -3,11 +3,11 @@
 """Driver which restarts a scan, given a restart function"""
 
 import re
-from bout_runners.bout_runners import PBS_runner
+from bout_runners import PBS_runner
 
-scan = [("cst", "D_perp", [1.0,5.5]),\
-        ("cst", "D_par",  [1.5,2.5])
-       ]
+scan = (("cst", "D_perp", (1.0,5.5)),\
+        ("cst", "D_par",  (1.5,2.5))
+       )
 
 #{{{restart_from_func
 def restart_from_func(dmp_folder,\
@@ -107,6 +107,6 @@ restart_run.execute_runs(\
                          # restart_from_func
                          one_of_the_restart_paths_in_scan =\
                          one_of_the_restart_paths_in_scan,\
-                         scan_parameters = ["D_perp", "D_par"],\
+                         scan_parameters = ("D_perp", "D_par"),\
                         )
 # ===========================================================================

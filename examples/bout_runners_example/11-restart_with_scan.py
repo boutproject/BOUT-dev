@@ -3,15 +3,15 @@
 """Driver which restarts a scan, given a restart function"""
 
 import re
-from post_processing_show_the_data import show_the_data
-from bout_runners.bout_runners import basic_runner
+from pre_and_post_processing.post_processing_show_the_data import show_the_data
+from bout_runners import basic_runner
 
-scan = [("cst", "D_perp", [1.0,5.5]),\
-        ("cst", "D_par",  [1.5,2.5])
-       ]
+scan = (("cst", "D_perp", (1.0,5.5)),\
+        ("cst", "D_par",  (1.5,2.5))
+       )
 
 # Given that the runs has already been performed
-only_post_process = True
+only_post_process = False
 
 #{{{restart_from_func
 def restart_from_func(dmp_folder,\
