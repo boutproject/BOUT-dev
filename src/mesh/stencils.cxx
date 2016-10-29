@@ -94,16 +94,16 @@ BoutReal D2DX2_C2(stencil &f) {
 /// Second derivative: Forward, 2nd order
 Mesh::boundary_derivs_pair D2DX2_F2(forward_stencil &f) {
   Mesh::boundary_derivs_pair result;
-  result.inner = (2.*f.c-5.*f.p+4.*f.p2-f.p3)/4;
-  result.outer = (2.*f.m-5.*f.c+4.*f.p -f.p2)/4;
+  result.inner = (2*f.c -5.*f.p +4*f.p2 -1.*f.p3);
+  result.outer = (2*f.m -5.*f.c +4*f.p  -1.*f.p2);
   return result;
 }
 
 /// Second derivative: Backward, 2nd order
 Mesh::boundary_derivs_pair D2DX2_B2(backward_stencil &f) {
   Mesh::boundary_derivs_pair result;
-  result.inner = (2.*f.c-5.*f.m+4.*f.m2-f.m3)/4;
-  result.outer = (2.*f.p-5.*f.c+4.*f.m -f.m2)/4;
+  result.inner = (2*f.c -5.*f.m +4.*f.m2 -1.*f.m3);
+  result.outer = (2*f.p -5.*f.c +4.*f.m  -1.*f.m2);
   return result;
 }
 
@@ -388,20 +388,25 @@ Mesh::boundary_derivs_pair DDX_B4_stag(backward_stencil &f) {
 
 Mesh::boundary_derivs_pair D2DX2_F2_stag(forward_stencil &f) {
   Mesh::boundary_derivs_pair result;
-  result.inner = 5./2.*f.c-13./2.*f.p+11./2.*f.p2-3./2.*f.p3;
-  result.outer = 5./2.*f.m-13./2.*f.c+11./2.*f.p-3./2.*f.p2;
+  //result.inner = 5./2.*f.c-13./2.*f.p+11./2.*f.p2-3./2.*f.p3;
+  result.inner = 3./2.*f.c  -7./2.*f.p  +5./2.*f.p2 -1./2.*f.p3;
+  result.outer = 5./2.*f.m -13./2.*f.c +11./2.*f.p  -3./2.*f.p2;
   return result;
 }
 
 Mesh::boundary_derivs_pair D2DX2_B2_stag(backward_stencil &f) {
   Mesh::boundary_derivs_pair result;
-  result.inner = 5./2.*f.c-13./2.*f.m+11./2.*f.m2-3./2.*f.m3;
-  result.outer = 5./2.*f.p-13./2.*f.c+11./2.*f.m-3./2.*f.m2;
+  result.inner = 3./2.*f.c  -7./2.*f.m  +5./2.*f.m2 -1./2.*f.m3;
+  result.outer = 5./2.*f.p -13./2.*f.c +11./2.*f.m  -3./2.*f.m2;
   return result;
 }
 
-BoutReal D2DX2_C4_stag(stencil &f) {
+BoutReal D2DX2_C2_stag(stencil &f) {
   return ( f.pp + f.mm - f.p - f.m ) / 2.;
+}
+
+BoutReal D2DX2_C4_stag(stencil &f) {
+  return ( -5./192.*(f.ppp+f.mmm) + 39./192.*(f.pp+f.mm) + -34./192.*( f.p + f.m );
 }
 
 Mesh::boundary_derivs_pair D2DX2_F4_stag(forward_stencil &f) {
