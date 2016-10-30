@@ -1423,9 +1423,14 @@ class basic_runner(object):
         #{{{Check that self._series_add[:][2] have the same length
         if self._series_add is not None:
             # Make the second indices iterable if they are not already
+            # Start by converting to list, so that self._series becomes
+            # modifyable
+            self._series_add = list(list(el) for el in self._series_add)
             for index in range(len(self._series_add)):
                 if not(hasattr(self._series_add[index][2], "__iter__")):
                     self._series_add[index][2]=(self._series_add[index][2],)
+            # Conver to tuple
+            self._series_add = tuple(tuple(el) for el in self._series_add)
 
             # Collect all second indices
             third_indicies = tuple(elems[2] for elems in self._series_add)
