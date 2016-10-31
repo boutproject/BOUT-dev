@@ -33,15 +33,12 @@ BOUT_VERSION="2.0"
 
 AC_PREREQ(2.59)
 AC_INIT(BOUT++, BOUT_VERSION, bd512@york.ac.uk)
+AC_CONFIG_MACRO_DIR([m4])
 
 AC_ARG_WITH(pdb,          [AS_HELP_STRING([--with-pdb],
         [Enable support for PDB files])],,[])
 AC_ARG_WITH(netcdf,       [AS_HELP_STRING([--with-netcdf],
         [Enable support for netCDF files])],,[])
-AC_ARG_WITH(hdf5,         [AS_HELP_STRING([--with-hdf5],
-        [Enable support for HDF5 files])],,[])
-AC_ARG_WITH(parallelhdf5, [AS_HELP_STRING([--with-parallelhdf5],
-        [Enable support for parallel HDF5 files])],,[])
 AC_ARG_WITH(pnetcdf,      [AS_HELP_STRING([--with-pnetcdf],
         [Set path to Parallel NetCDF library])],,[])
 AC_ARG_WITH(ida,          [AS_HELP_STRING([--with-ida=/path/to/ida],
@@ -68,6 +65,9 @@ AC_ARG_WITH(mumps,        [AS_HELP_STRING([--with-mumps],
         [Link with MUMPS library for direct matrix inversions])],,[])
 AC_ARG_WITH(arkode,       [AS_HELP_STRING([--with-arkode],
         [Use the SUNDIALS ARKODE solver])],,[])
+
+dnl --with-hdf5 flags are set in AX_LIB_{PARALLEL}HDF5
+
 AC_ARG_ENABLE(checks,       [AS_HELP_STRING([--enable-checks=no/1/2/3],
         [Set run-time checking level])],,[])
 AC_ARG_ENABLE(signal,       [AS_HELP_STRING([--disable-signal],
@@ -1156,98 +1156,35 @@ then
   fi
 fi
 
-
-
 #############################################################
 # HDF5 library
 #############################################################
-HDFPATH=""  # Indicates not found
+
+HAS_HDF5="no"
+AX_LIB_HDF5([serial])
+AS_IF([test "$with_hdf5" = "yes"], [
+  AC_MSG_NOTICE([Found HDF5])
+  CXXFLAGS="$CXXFLAGS -DHDF5"
+  EXTRA_INCS="$EXTRA_INCS $HDF5_CPPFLAGS"
+  EXTRA_LIBS="$EXTRA_LIBS $HDF5_LIBS"
+  HAS_HDF5="yes"
+  file_formats="$file_formats HDF5"
+  ], [
+  AC_MSG_NOTICE([Serial HDF5 support disabled])
+])
+
 HAS_PHDF5="no"
-
-if test "$with_parallelhdf5" != "no" && test "$with_parallelhdf5" != ""
-then
-  with_hdf5="$with_parallelhdf5"
-fi
-
-if test "$with_hdf5" != "no"
-then
-  ##########################################
-  # Try to find a valid HDF5 configuration
-
-  if (test "$with_hdf5" = "yes") || (test "$with_hdf5" = "")
-  then
-    # No path specified
-    echo "Searching for HDF5 configuration"
-
-    # Try some common HDF5 utilities
-    for i in h5cc h5pcc h5diff h5ls
-    do
-      printf "  -> Looking for $i..."
-      if type $i > /dev/null 2>&1; then
-        printf "yes\n"
-        # Remove 'h5cc' then bin
-        HDFPATH=`which $i | xargs -0 dirname | xargs -0 dirname`
-        break
-      fi
-      printf "no\n"
-    done
-
-    # Check for include and library files
-    AC_CHECK_FILES($HDFPATH/include/hdf5.h ,, [
-        echo " -> Can't find HDF5 files"
-        HDFPATH=""
-      ] )
-
-  else
-    HDFPATH=$with_hdf5  # Configure given path
-
-    # Check for include and library files
-    AC_CHECK_FILES($HDFPATH/include/hdf5.h ,, [
-        echo " ERROR: Given HDF5 path not correct."
-        exit
-      ] )
-  fi
-
-
-  # Try some known paths
-  if test "$HDFPATH" = ""
-  then
-    AC_CHECK_FILE(/usr/include/hdf5.h, HDFPATH=/usr,
-    AC_CHECK_FILE(/usr/local/include/hdf5.h, HDFPATH=/usr/local,
-    AC_CHECK_FILE(/opt/local/include/hdf5.h, HDFPATH=/opt/local,
-    AC_CHECK_FILE($HOME/local/include/hdf5.h, HDFPATH=$HOME/local,
-    AC_CHECK_FILE($HOME/include/hdf5.h, HDFPATH=$HOME,
-    )))))
-  fi
-
-  if test $HDFPATH
-  then
-      AC_CHECK_FILES($HDFPATH/lib/libhdf5.a   , HDFLIBPATH='lib',
-      AC_CHECK_FILES($HDFPATH/lib64/libhdf5.a , HDFLIBPATH='lib64', HDFPATH=''))
-      test $HDFLIBPATH || echo " -> Can't find HDF5 files"
-  fi
-
-  # Check if found valid path
-  if test "$HDFPATH" != ""
-  then
-    echo "HDF5 path: $HDFPATH"
-    CXXFLAGS="$CXXFLAGS -DHDF5"
-    if test "$with_phdf5" != "no" && test "$with_parallelhdf5" != ""
-    then
-      CXXFLAGS="$CXXFLAGS -DPHDF5"
-      HAS_PHDF5="yes"
-    fi
-
-    EXTRA_INCS="$EXTRA_INCS -I$HDFPATH/include"
-    EXTRA_LIBS="$EXTRA_LIBS -L$HDFPATH/$HDFLIBPATH -lhdf5 -lz"
-
-    file_formats="$file_formats HDF5"
-  else
-    printf "HDF5 library not found\n\n"
-  fi
-else
-  printf "HDF5 support disabled\n"
-fi
+AX_LIB_PARALLELHDF5()
+AS_IF([test "$with_parallelhdf5" = "yes"], [
+  AC_MSG_NOTICE([Found parallel HDF5])
+  CXXFLAGS="$CXXFLAGS -DPHDF5"
+  EXTRA_INCS="$EXTRA_INCS $PARALLELHDF5_CPPFLAGS"
+  EXTRA_LIBS="$EXTRA_LIBS $PARALLELHDF5_LIBS"
+  HAS_PHDF5="yes"
+  file_formats="$file_formats Parallel HDF5"
+  ], [
+  AC_MSG_NOTICE([Parallel HDF5 support disabled])
+])
 
 echo ""
 
@@ -1606,7 +1543,6 @@ then
   HAS_ARKODE="no"
 fi
 
-
 HAS_NETCDF="yes"
 if test "$NCPATH" = ""
 then
@@ -1617,12 +1553,6 @@ HAS_PNETCDF="yes"
 if test "$PNCPATH" = ""
 then
   HAS_PNETCDF="no"
-fi
-
-HAS_HDF5="yes"
-if test "$HDFPATH" = ""
-then
-  HAS_HDF5="no"
 fi
 
 HAS_HYPRE="yes"
