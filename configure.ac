@@ -33,29 +33,49 @@ BOUT_VERSION="2.0"
 
 AC_PREREQ(2.59)
 AC_INIT(BOUT++, BOUT_VERSION, bd512@york.ac.uk)
+AC_CONFIG_AUX_DIR([build-aux])
+AC_CONFIG_MACRO_DIR([m4])
 
-AC_ARG_WITH(checks, [  --with-checks=no/1/2/3  	   Set run-time checking level])
-AC_ARG_WITH(signal, [  --with-signal=no        	   Disable SEGFAULT handling])
-AC_ARG_WITH(track,  [  --with-track            	   Enable variable tracking])
-AC_ARG_WITH(pdb,    [  --with-pdb              	   Enable support for PDB files])
-AC_ARG_WITH(netcdf, [  --with-netcdf           	   Enable support for netCDF files])
-AC_ARG_WITH(hdf5,   [  --with-hdf5                 Enable support for HDF5 files])
-AC_ARG_WITH(parallelhdf5,[  --with-parallelhdf5    Enable support for parallel HDF5 files])
-AC_ARG_WITH(pnetcdf,[  --with-pnetcdf              Set path to Parallel NetCDF library])
-AC_ARG_WITH(debug,  [  --with-debug            	   Enable all debugging flags])
-AC_ARG_WITH(optimize,[ --with-optimize=default/1/2/3  Enable optimization])
-AC_ARG_WITH(ida,    [  --with-ida=/path/to/ida 	   Use the SUNDIALS IDA solver])
-AC_ARG_WITH(cvode,  [  --with-cvode            	   Use the SUNDIALS CVODE solver])
-AC_ARG_WITH(sundials, [  --with-sundials           Use CVODE and IDA])
-AC_ARG_WITH(facets, [  --with-facets           	   Build the interface to FACETS])
-AC_ARG_WITH(fftw,   [  --with-fftw             	   Set directory of FFTW3 library])
-AC_ARG_WITH(lapack, [  --with-lapack           	   Use the LAPACK library])
-AC_ARG_WITH(petsc,  [  --with-petsc            	   Enable PETSc interface])
-AC_ARG_WITH(slepc,  [  --with-slepc                Enable SLEPc interface])
-AC_ARG_WITH(pvode,  [  --with-pvode	  	   Build and enable PVODE 98 (DEFAULT)])
-AC_ARG_WITH(hypre,  [  --with-hypre                Link to the Hypre library])
-AC_ARG_WITH(mumps,  [  --with-mumps                Link with MUMPS library for direct matrix inversions])
-AC_ARG_WITH(arkode, [  --with-arkode		   Use the SUNDIALS ARKODE solver])
+AC_ARG_WITH(checks,       [AS_HELP_STRING([--with-checks=no/1/2/3],
+        [Set run-time checking level])],,[])
+AC_ARG_WITH(signal,       [AS_HELP_STRING([--with-signal=no],
+        [Disable SEGFAULT handling])],,[])
+AC_ARG_WITH(track,        [AS_HELP_STRING([--with-track],
+        [Enable variable tracking])],,[])
+AC_ARG_WITH(pdb,          [AS_HELP_STRING([--with-pdb],
+        [Enable support for PDB files])],,[])
+AC_ARG_WITH(netcdf,       [AS_HELP_STRING([--with-netcdf],
+        [Enable support for netCDF files])],,[])
+AC_ARG_WITH(pnetcdf,      [AS_HELP_STRING([--with-pnetcdf],
+        [Set path to Parallel NetCDF library])],,[])
+AC_ARG_WITH(debug,        [AS_HELP_STRING([--with-debug],
+        [Enable all debugging flags])],,[])
+AC_ARG_WITH(optimize,     [AS_HELP_STRING([--with-optimize=default/1/2/3],
+        [Enable optimization])],,[])
+AC_ARG_WITH(ida,          [AS_HELP_STRING([--with-ida=/path/to/ida],
+        [Use the SUNDIALS IDA solver])],,[])
+AC_ARG_WITH(cvode,        [AS_HELP_STRING([--with-cvode],
+        [Use the SUNDIALS CVODE solver])],,[])
+AC_ARG_WITH(sundials,     [AS_HELP_STRING([--with-sundials],
+        [Use CVODE and IDA])],,[])
+AC_ARG_WITH(facets,       [AS_HELP_STRING([--with-facets],
+        [Build the interface to FACETS])],,[])
+AC_ARG_WITH(fftw,         [AS_HELP_STRING([--with-fftw],
+        [Set directory of FFTW3 library])],,[])
+AC_ARG_WITH(lapack,       [AS_HELP_STRING([--with-lapack],
+        [Use the LAPACK library])],,[])
+AC_ARG_WITH(petsc,        [AS_HELP_STRING([--with-petsc],
+        [Enable PETSc interface])],,[])
+AC_ARG_WITH(slepc,        [AS_HELP_STRING([--with-slepc],
+        [Enable SLEPc interface])],,[])
+AC_ARG_WITH(pvode,        [AS_HELP_STRING([--with-pvode],
+        [Build and enable PVODE 98 (DEFAULT)])],,[])
+AC_ARG_WITH(hypre,        [AS_HELP_STRING([--with-hypre],
+        [Link to the Hypre library])],,[])
+AC_ARG_WITH(mumps,        [AS_HELP_STRING([--with-mumps],
+        [Link with MUMPS library for direct matrix inversions])],,[])
+AC_ARG_WITH(arkode,       [AS_HELP_STRING([--with-arkode],
+        [Use the SUNDIALS ARKODE solver])],,[])
 
 AC_ARG_VAR(EXTRA_INCS,[Extra compile flags])
 AC_ARG_VAR(EXTRA_LIBS,[Extra linking flags])
@@ -69,7 +89,7 @@ AC_ARG_VAR(CXXFLAGS,[Extra compile flags])
 AC_ARG_VAR(LDFLAGS,[Extra linking flags])
 AC_ARG_VAR(LDLIBS,[Extra linking libraries])
 
-AC_SUBST(MKDIR)
+AC_SUBST(MKDIR_P)
 AC_SUBST(EXTRA_INCS)
 AC_SUBST(EXTRA_LIBS)
 
@@ -77,108 +97,19 @@ AC_SUBST(EXTRA_LIBS)
 AC_SUBST(PRECON_SOURCE)
 AC_SUBST(FACETS_SOURCE)
 
-AC_DEFUN([CREATE_DIR],
-        [
-          if ! [[ -d $1 ]]
-          then
-            mkdir $1
-          fi
-        ])
-
 dnl#############################################################
 dnl# Define functions
 dnl#############################################################
-# Functions inspired by ESPResSo (espressomd.org)
 dnl
 dnl Try whether the linker / compiler can find the header / libraries
 AC_LANG(C++)
-
-AC_DEFUN([BOUT_MSG_DEBUG],[
-	dnl Uncomment line below to enable debugging
-	dnl AC_MSG_NOTICE([debug: $1])
-	])
-dnl define the macro to check for libraries
-dnl first  argument is the name of the library
-dnl second arg is a function of that library
-dnl third  arg is to be executed if found
-dnl forth  arg is to be executed if not found
-dnl fifth  arg is an additional path to check
-AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
-	AC_MSG_CHECKING([for lib$1])
-	LDFLAGS_save=$LDFLAGS
-	LIBS="$EXTRA_LIBS -l$1"
-	BACL_found=no
-	AS_IF([test ."$5" = .yes], [extra_prefix=""],[extra_prefix="$5"])
-	AC_TRY_LINK([extern "C"
-	char $2();] ,[return $2();], [BACL_found=yes ; break;
-     		  BOUT_MSG_DEBUG([found $1 without path])
-		],)
-	if test $BACL_found != yes ; then
-		for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
-			for path in $prefix $prefix/lib $prefix/lib64 $prefix/x86_64-linux-gnu ; do
-				if test -d $path
-				then
-					LDFLAGS="-L$path $LDFLAGS_save"
-					BOUT_MSG_DEBUG([try link $1 with $path])
-					AC_TRY_LINK([extern "C"
-						char $2();] ,[return $2();], [BACL_found=yes ; break;
-							BOUT_MSG_DEBUG([found $1 with $path])
-							],)
-				fi
-			done
-			AS_IF([test .$BACL_found = .yes],break;)
-		done
-	fi
-	if test $BACL_found = yes ; then
-		EXTRA_LIBS=$LIBS
-		AC_MSG_RESULT(yes)
-	else
-		LDFLAGS=$LDFLAGS_save
-		AC_MSG_RESULT(no)
-	fi
-	AS_IF([test .$BACL_found = .yes], [$3],[$4])
-])
-
-
-AC_DEFUN([BOUT_ADDPATH_CHECK_HEADER],[
-	AC_MSG_CHECKING([for $1])
-	CPPFLAGS_save=$CPPFLAGS
-	BACH_found=no
-	AS_IF([test ."$4" != .yes], [extra_prefix="$4"],[extra_prefix=""])
-	AC_TRY_COMPILE([#include <$1>] ,, [BACH_found=yes ; break;
-     		BOUT_MSG_DEBUG([found $1 without path])
-		],)
-	if test $BACH_found != yes ; then
-		for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
-			for path in $prefix $prefix/include ; do
-				if test -d $path
-				then
-					CPPFLAGS="$CPPFLAGS_save -I$path"
-					BOUT_MSG_DEBUG([try compile $1 with $path])
-					AC_TRY_COMPILE([#include <$1>] ,, [BACH_found=yes ; break;
-							BOUT_MSG_DEBUG([found $1 with $path])
-							],)
-				fi
-			done
-			AS_IF([test .$BACH_found = .yes],break;)
-		done
-	fi
-	if test $BACH_found = yes ; then
-		AC_MSG_RESULT(yes)
-	else
-		CPPFLAGS=$CPPFLAGS_save
-		AC_MSG_RESULT(no)
-	fi
-	AS_IF([test .$BACH_found = .yes], [$2],[$3])
-])
-
-
 
 #############################################################
 # Checks for programs
 #############################################################
 
-MKDIR="mkdir -p"
+AC_PROG_CXX
+AC_PROG_MKDIR_P
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_PROG_RANLIB
@@ -187,55 +118,6 @@ AC_PROG_RANLIB
 # MPI
 #############################################################
 
-AC_DEFUN([ACX_MPI], [
-AC_PREREQ(2.50) dnl for AC_LANG_CASE
-
-AC_LANG_CASE([C++], [
-  AC_REQUIRE([AC_PROG_CXX])
-  AC_ARG_VAR(MPICXX,[MPI C++ compiler command])
-  AC_CHECK_PROGS(MPICXX, mpicxx mpiCC mpic++ hcp mpxlC_r mpxlC mpCC cmpic++ CC, $CXX)
-  acx_mpi_save_CXX="$CXX"
-  CXX="$MPICXX"
-  AC_SUBST(MPICXX)
-])
-
-if test x = x"$MPILIBS"; then
-  AC_LANG_CASE([C++], [AC_CHECK_FUNC(MPI_Init, [MPILIBS=" "])])
-fi
-
-if test x = x"$MPILIBS"; then
-  AC_CHECK_LIB(mpi, MPI_Init, [MPILIBS="-lmpi"])
-fi
-if test x = x"$MPILIBS"; then
-  AC_CHECK_LIB(mpich, MPI_Init, [MPILIBS="-lmpich"])
-fi
-
-dnl We have to use AC_TRY_COMPILE and not AC_CHECK_HEADER because the
-dnl latter uses $CPP, not $CC (which may be mpicc).
-AC_LANG_CASE([C++], [
-  if test x != x"$MPILIBS";
-  then
-    AC_MSG_CHECKING([for mpi.h])
-    AC_TRY_COMPILE([#include <mpi.h>],[],[AC_MSG_RESULT(yes)], [MPILIBS=""
-      AC_MSG_RESULT(no)])
-  fi
-])
-
-# AC_LANG_CASE[C++], [CXX="$acx_mpi_save_CXX"])
-
-AC_SUBST(MPILIBS)
-
-# Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
-if test x = x"$MPILIBS"; then
-  $2
-  :
-else
-  ifelse([$1],,[AC_DEFINE(HAVE_MPI,1,[Define if you have the MPI library.])],[$1])
-  :
-fi
-])dnl ACX_MPI
-
-AC_LANG([C++])
 ACX_MPI()
 
 # Checks for libraries.
@@ -401,100 +283,77 @@ echo ""
 
 NCCONF="" # Configuration script
 
-if test "$with_netcdf" != "no"
-then
+AS_IF([test "x$with_netcdf" != "xno"],
+[
   ##########################################
   # Try to find a valid NetCDF configuration
   #
   # at first, try to find ncconf script
 
-
-  #echo "Searching for NetCDF configuration"
-
   OLDNCDF="0" # Indicates whether nc-config or ncxx4-config
 
-    if (test "$with_netcdf" = "yes") || (test "$with_netcdf" = "")
-    then
-      NCCONF=""
-      # No path specified. Try using nc-config
-      if type ncxx4-config &> /dev/null ; then
-        NCCONF=`which ncxx4-config` # New interface
-      elif type nc-config &> /dev/null ; then
-        # Older interface. May or may not have C++ support
-        echo " -> nc-config script found:" `which nc-config`
-        if test `nc-config --has-c++` = "yes"
-        then
-          echo " -> C++ support included"
-          NCCONF=`which nc-config`
-          OLDNCDF="1"
-        else
-          echo " -> NO C++ SUPPORT"
-        fi
-      else
-            echo " -> No configure script found. Specify using --with-netcdf option"
-      fi
-    else
-      # see if configure scripts are in path
-      if type $with_netcdf/ncxx4-config > /dev/null 2>&1; then
-        NCCONF="$with_netcdf/ncxx4-config"
-      elif type $with_netcdf/bin/ncxx4-config > /dev/null 2>&1; then
-        NCCONF="$with_netcdf/bin/ncxx4-config"
-      elif type $with_netcdf/nc-config > /dev/null 2>&1; then
-        NCCONF="$with_netcdf/nc-config"
-        OLDNCDF="1"
-      elif type $with_netcdf/bin/nc-config > /dev/null 2>&1; then
-        NCCONF="$with_netcdf/bin/nc-config"
-        OLDNCDF="1"
-      fi
-    fi
+  # Search for NetCDF config scripts, prefer ncxx4-config over nc-config
+  # Check the path provided by --with-netcdf, appending "/bin" if need be, then check system path
+  # Set NCCONF to the full path of the found scropt
+  AC_PATH_PROGS([NCCONF], [ncxx4-config nc-config],
+      [AC_MSG_ERROR([No configure script found. Specify using --with-netcdf option])],
+      [$with_netcdf$PATH_SEPARATOR$with_netcdf/bin$PATH_SEPARATOR$PATH])
 
-    ##########################################
-    # Get configuration
-    if test "$NCCONF" != ""; then
-      echo " -> NetCDF config script found: $NCCONF"
+  # If we found nc-config rather than ncxx4-config, we need to check if it supports C++
+  AS_IF([test `basename $NCCONF` = 'nc-config'],
+        [AC_MSG_CHECKING([if NetCDF has C++4 support])
+         nc_has_cpp4=`$NCCONF --has-c++4`
+         AC_MSG_RESULT([$nc_has_cpp4])
+         AC_MSG_CHECKING([if NetCDF has C++ support])
+         nc_has_cpp=`$NCCONF --has-c++`
+         AC_MSG_RESULT([$nc_has_cpp])
+        ], [
+         nc_has_cpp4="yes"
+        ])
 
-      NCINC=`$NCCONF --cflags`
-      EXTRA_INCS="$EXTRA_INCS $NCINC"
-
-      if test "$OLDNCDF" == "1"; then
-        NCLIB=`$NCCONF --libs | sed s/-lnetcdf/-lnetcdf_c++\ -lnetcdf/` # Note netcdf_c++ needed
-        LDFLAGS="$LDFLAGS -Wl,-rpath,`nc-config --prefix`/lib"
-
-        CXXFLAGS="$CXXFLAGS -DNCDF"
-        echo " -> NetCDF support enabled"
-      else
+  ##########################################
+  # Get configuration
+  AS_IF([test "x$NCCONF" != "x" ],
+  [
+     NCINC=`$NCCONF --cflags`
+     EXTRA_INCS="$EXTRA_INCS $NCINC"
+     AS_IF([test "x$nc_has_cpp4" = "xyes"],
+       [
         NCLIB=`$NCCONF --libs`
-
         CXXFLAGS="$CXXFLAGS -DNCDF4"
         echo " -> NetCDF-4 support enabled"
-      fi
+       ], [
+        # Note netcdf_c++ needed
+        NCLIB=`$NCCONF --libs | sed s/-lnetcdf/-lnetcdf_c++\ -lnetcdf/`
+        CXXFLAGS="$CXXFLAGS -DNCDF"
+        echo " -> NetCDF support enabled"
+       ])
       EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
 
       file_formats="$file_formats netCDF"
       NCPATH="found"
       NCFOUND=yes
-    fi
+   ], [
+     # if nc-config / ncxx4-config is not found, try to find library directly
+     BOUT_MSG_DEBUG([calling bout addpath])
+     BOUT_ADDPATH_CHECK_HEADER(netcdfcpp.h,
+        BOUT_ADDPATH_CHECK_LIB(netcdf, nc_get_att,
+            BOUT_ADDPATH_CHECK_LIB(netcdf_c++, nc_close, NCFOUND=yes, NCFOUND=no, [$with_netcdf]),
+            NCFOUND=no, [$with_netcdf]),
+        NCFOUND=no, [$with_netcdf])
 
-  dnl if nc-config / ncxx4-config is not found, try to find library directly
-  if test .$NCFOUND != ".yes" ; then
-    BOUT_MSG_DEBUG([calling bout addpath])
-    BOUT_ADDPATH_CHECK_HEADER(netcdfcpp.h,
-      BOUT_ADDPATH_CHECK_LIB(netcdf,nc_get_att,
-	BOUT_ADDPATH_CHECK_LIB(netcdf_c++,nc_close, NCFOUND=yes ,NCFOUND=no, \
-				$with_netcdf )
-      ,NCFOUND=no, $with_netcdf )
-    ,NCFOUND=no, $with_netcdf)
+      AS_IF([test "x$NCFOUND" = "xyes"],
+        [
+         file_formats="$file_formats netCDF"
+         echo " -> NetCDF support enabled"
+         NCPATH="found"
+         CXXFLAGS="$CXXFLAGS -DNCDF"
+        ], [])
+  ])
 
-  AS_IF( test $NCFOUND = yes, [file_formats="$file_formats netCDF";
-    echo " -> NetCDF support enabled";NCPATH="found";
-	CXXFLAGS="$CXXFLAGS -DNCDF"]
-	,)
-  fi
-
-  AS_IF( [test $with_netcdf && test $NCFOUND != yes ] , AC_MSG_ERROR("netcdf requested but not found"),)
-  AS_IF( test $NCFOUND != yes, echo " -> NetCDF support disabeld",)
-
-fi
+  AS_IF([test $with_netcdf && test "x$NCFOUND" != "xyes" ], AC_MSG_ERROR([NetCDF requested but not found]), [])
+  AS_IF([test "x$NCFOUND" != "xyes"], [AC_MSG_NOTICE([ -> NetCDF support disabled])], [])
+], [])
 
 echo ""
 
@@ -1126,98 +985,35 @@ then
   fi
 fi
 
-
-
 #############################################################
 # HDF5 library
 #############################################################
-HDFPATH=""  # Indicates not found
+
+HAS_HDF5="no"
+AX_LIB_HDF5([serial])
+AS_IF([test "$with_hdf5" = "yes"], [
+  AC_MSG_NOTICE([Found HDF5])
+  CXXFLAGS="$CXXFLAGS -DHDF5"
+  EXTRA_INCS="$EXTRA_INCS $HDF5_CPPFLAGS"
+  EXTRA_LIBS="$EXTRA_LIBS $HDF5_LDFLAGS $HDF5_LIBS"
+  HAS_HDF5="yes"
+  file_formats="$file_formats HDF5"
+  ], [
+  AC_MSG_NOTICE([Serial HDF5 support disabled])
+])
+
 HAS_PHDF5="no"
-
-if test "$with_parallelhdf5" != "no" && test "$with_parallelhdf5" != ""
-then
-  with_hdf5="$with_parallelhdf5"
-fi
-
-if test "$with_hdf5" != "no"
-then
-  ##########################################
-  # Try to find a valid HDF5 configuration
-
-  if (test "$with_hdf5" = "yes") || (test "$with_hdf5" = "")
-  then
-    # No path specified
-    echo "Searching for HDF5 configuration"
-
-    # Try some common HDF5 utilities
-    for i in h5cc h5pcc h5diff h5ls
-    do
-      printf "  -> Looking for $i..."
-      if type $i > /dev/null 2>&1; then
-        printf "yes\n"
-        # Remove 'h5cc' then bin
-        HDFPATH=`which $i | xargs -0 dirname | xargs -0 dirname`
-        break
-      fi
-      printf "no\n"
-    done
-
-    # Check for include and library files
-    AC_CHECK_FILES($HDFPATH/include/hdf5.h ,, [
-        echo " -> Can't find HDF5 files"
-        HDFPATH=""
-      ] )
-
-  else
-    HDFPATH=$with_hdf5  # Configure given path
-
-    # Check for include and library files
-    AC_CHECK_FILES($HDFPATH/include/hdf5.h ,, [
-        echo " ERROR: Given HDF5 path not correct."
-        exit
-      ] )
-  fi
-
-
-  # Try some known paths
-  if test "$HDFPATH" = ""
-  then
-    AC_CHECK_FILE(/usr/include/hdf5.h, HDFPATH=/usr,
-    AC_CHECK_FILE(/usr/local/include/hdf5.h, HDFPATH=/usr/local,
-    AC_CHECK_FILE(/opt/local/include/hdf5.h, HDFPATH=/opt/local,
-    AC_CHECK_FILE($HOME/local/include/hdf5.h, HDFPATH=$HOME/local,
-    AC_CHECK_FILE($HOME/include/hdf5.h, HDFPATH=$HOME,
-    )))))
-  fi
-
-  if test $HDFPATH
-  then
-      AC_CHECK_FILES($HDFPATH/lib/libhdf5.a   , HDFLIBPATH='lib',
-      AC_CHECK_FILES($HDFPATH/lib64/libhdf5.a , HDFLIBPATH='lib64', HDFPATH=''))
-      test $HDFLIBPATH || echo " -> Can't find HDF5 files"
-  fi
-
-  # Check if found valid path
-  if test "$HDFPATH" != ""
-  then
-    echo "HDF5 path: $HDFPATH"
-    CXXFLAGS="$CXXFLAGS -DHDF5"
-    if test "$with_phdf5" != "no" && test "$with_parallelhdf5" != ""
-    then
-      CXXFLAGS="$CXXFLAGS -DPHDF5"
-      HAS_PHDF5="yes"
-    fi
-
-    EXTRA_INCS="$EXTRA_INCS -I$HDFPATH/include"
-    EXTRA_LIBS="$EXTRA_LIBS -L$HDFPATH/$HDFLIBPATH -lhdf5 -lz"
-
-    file_formats="$file_formats HDF5"
-  else
-    printf "HDF5 library not found\n\n"
-  fi
-else
-  printf "HDF5 support disabled\n"
-fi
+AX_LIB_PARALLELHDF5()
+AS_IF([test "$with_parallelhdf5" = "yes"], [
+  AC_MSG_NOTICE([Found parallel HDF5])
+  CXXFLAGS="$CXXFLAGS -DPHDF5"
+  EXTRA_INCS="$EXTRA_INCS $PARALLELHDF5_CPPFLAGS"
+  EXTRA_LIBS="$EXTRA_LIBS $PARALLELHDF5_LDFLAGS $PARALLELHDF5_LIBS"
+  HAS_PHDF5="yes"
+  file_formats="$file_formats Parallel HDF5"
+  ], [
+  AC_MSG_NOTICE([Parallel HDF5 support disabled])
+])
 
 echo ""
 
@@ -1536,9 +1332,9 @@ fi
 # Download + Build PVODE '98
 #############################################################
 
-CREATE_DIR(externalpackages)
-CREATE_DIR(lib)
-CREATE_DIR(include)
+AS_MKDIR_P(externalpackages)
+AS_MKDIR_P(lib)
+AS_MKDIR_P(include)
 
 HAS_PVODE="no"
 if ( test "$with_pvode" != "no" )
@@ -1592,16 +1388,16 @@ then
 #  cd -
 
    # Clean PVODE
-   CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-   CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+   CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR_P" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+   CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR_P" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
    #make -C externalpackages/PVODE/ clean
 
     echo "* Building PVODE" | tee -a config-build.log
     echo "*************************************************************" >> config-build.log
 
-    CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-    CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+    CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR_P" RANLIB="$RANLIB" make -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+    CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR_P" RANLIB="$RANLIB" make -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
     if [[ -f externalpackages/PVODE/lib/libpvode.a ]]
     then
@@ -1616,7 +1412,7 @@ then
     fi
 
   # Set the correct libraries and copy them to bout
-  CREATE_DIR(include/pvode)
+  AS_MKDIR_P(include/pvode)
   cp externalpackages/PVODE/precon/pvbbdpre.h externalpackages/PVODE/include/*.h include/pvode
   cp externalpackages/PVODE/lib/*.a lib/
   EXTRA_LIBS="$EXTRA_LIBS -L\$(BOUT_TOP)/lib -lpvode -lpvpre"
@@ -1674,7 +1470,6 @@ then
   HAS_ARKODE="no"
 fi
 
-
 HAS_NETCDF="yes"
 if test "$NCPATH" = ""
 then
@@ -1685,12 +1480,6 @@ HAS_PNETCDF="yes"
 if test "$PNCPATH" = ""
 then
   HAS_PNETCDF="no"
-fi
-
-HAS_HDF5="yes"
-if test "$HDFPATH" = ""
-then
-  HAS_HDF5="no"
 fi
 
 HAS_PDB="yes"
