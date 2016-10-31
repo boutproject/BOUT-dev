@@ -104,18 +104,19 @@ AC_SUBST(EXTRA_LIBS)
 AC_SUBST(PRECON_SOURCE)
 AC_SUBST(FACETS_SOURCE)
 
-dnl#############################################################
-dnl# Define functions
-dnl#############################################################
-dnl
-dnl Try whether the linker / compiler can find the header / libraries
+# We're using C++
 AC_LANG(C++)
 
 #############################################################
 # Checks for programs
 #############################################################
 
-AC_PROG_CXX
+# Search for MPI compiler; fail if not found
+AX_PROG_CXX_MPI([], [], [
+  AC_MSG_ERROR([*** An MPI compiler is required.])
+])
+
+# Utility programs
 AC_PROG_MKDIR_P
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
@@ -126,10 +127,8 @@ AC_PROG_RANLIB
 AX_CXX_COMPILE_STDCXX([11], [noext], [mandatory])
 
 #############################################################
-# MPI
+# STD Library functions
 #############################################################
-
-ACX_MPI()
 
 # Checks for libraries.
 AC_CHECK_LIB([m], [sqrt])
