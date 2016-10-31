@@ -33,6 +33,7 @@ BOUT_VERSION="2.0"
 
 AC_PREREQ(2.59)
 AC_INIT(BOUT++, BOUT_VERSION, bd512@york.ac.uk)
+AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 
 AC_ARG_WITH(pdb,          [AS_HELP_STRING([--with-pdb],
@@ -95,7 +96,7 @@ AC_ARG_VAR(CXXFLAGS,[Extra compile flags])
 AC_ARG_VAR(LDFLAGS,[Extra linking flags])
 AC_ARG_VAR(LDLIBS,[Extra linking libraries])
 
-AC_SUBST(MKDIR)
+AC_SUBST(MKDIR_P)
 AC_SUBST(EXTRA_INCS)
 AC_SUBST(EXTRA_LIBS)
 
@@ -103,13 +104,6 @@ AC_SUBST(EXTRA_LIBS)
 AC_SUBST(PRECON_SOURCE)
 AC_SUBST(FACETS_SOURCE)
 
-AC_DEFUN([CREATE_DIR],
-        [
-          if ! [[ -d $1 ]]
-          then
-            mkdir $1
-          fi
-        ])
 
 # Enable C++11 support
 CXXFLAGS="$CXXFLAGS -std=c++11"
@@ -125,7 +119,8 @@ AC_LANG(C++)
 # Checks for programs
 #############################################################
 
-MKDIR="mkdir -p"
+AC_PROG_CXX
+AC_PROG_MKDIR_P
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_PROG_RANLIB
@@ -134,7 +129,6 @@ AC_PROG_RANLIB
 # MPI
 #############################################################
 
-AC_LANG([C++])
 ACX_MPI()
 
 # Checks for libraries.
@@ -1274,9 +1268,9 @@ fi
 # Download + Build PVODE '98
 #############################################################
 
-CREATE_DIR(externalpackages)
-CREATE_DIR(lib)
-CREATE_DIR(include)
+AS_MKDIR_P(externalpackages)
+AS_MKDIR_P(lib)
+AS_MKDIR_P(include)
 
 HAS_PVODE="no"
 if ( test "$with_pvode" != "no" )
@@ -1330,16 +1324,16 @@ then
 #  cd -
 
    # Clean PVODE
-   CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-   CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+   CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR_P" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+   CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR_P" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
    #make -C externalpackages/PVODE/ clean
 
     echo "* Building PVODE" | tee -a config-build.log
     echo "*************************************************************" >> config-build.log
 
-    CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-    CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+    CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR_P" RANLIB="$RANLIB" make -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+    CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR_P" RANLIB="$RANLIB" make -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
     if [[ -f externalpackages/PVODE/lib/libpvode.a ]]
     then
@@ -1354,7 +1348,7 @@ then
     fi
 
   # Set the correct libraries and copy them to bout
-  CREATE_DIR(include/pvode)
+  AS_MKDIR_P(include/pvode)
   cp externalpackages/PVODE/precon/pvbbdpre.h externalpackages/PVODE/include/*.h include/pvode
   cp externalpackages/PVODE/lib/*.a lib/
   EXTRA_LIBS="$EXTRA_LIBS -L\$(BOUT_TOP)/lib -lpvode -lpvpre"
