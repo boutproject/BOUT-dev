@@ -224,12 +224,6 @@ int BoutInitialise(int &argc, char **&argv) {
   output.write("\tSignal handling disabled\n");
 #endif
 
-#ifdef PDBF
-  output.write("\tPDB support enabled\n");
-#else
-  output.write("\tPDB support disabled\n");
-#endif
-
 #ifdef NCDF
   output.write("\tnetCDF support enabled\n");
 #else
