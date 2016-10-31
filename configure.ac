@@ -1275,64 +1275,18 @@ HAS_PVODE="no"
 if ( test "$with_pvode" != "no" )
 then
 
-
-
-#    # Get a decent file transfer
-#    prog=$(basename "$(which curl)")
-#    if test "$prog" == ""
-#    then
-#      prog=$(basename "$(which wget)")
-#    fi
-#
-#    # This first 'tee' command clears the file out so don't have to delete it if it exists
-#    echo "*************************************************************" | tee config-build.log
-#    if [[ -f $enable_download_pvode ]]
-#    then
-#      echo "* Using supplied file $enable_download_pvode" | tee -a config-build.log
-#      file=$enable_download_pvode
-#    else
-#      filename=externalpackages/pvode.tar.gz
-#      server=ftp.mcs.anl.gov
-#      remotename=/pub/petsc/boutpkgs/pvode.tar.gz
-#
-#      echo "* Downloading PVODE from $server ... " | tee -a config-build.log
-#    if test "$prog" == "curl"
-#    then
-#      curl -o $filename $server$remotename >> config-build.log 2>&1
-#    elif test "$prog" == "wget"
-#    then
-#      wget -O $filename ftp://$server$remotename >> config-build.log 2>&1
-#    else
-#      ftp -o $filename -a $servername:$remotename >> config-build.log 2>&1
-#    fi
-#
-#    if test $? != "0"
-#    then
-#      AC_MSG_ERROR(Error with downloading pvode.tar.gz. Check config-build.log for errors)
-#    fi
-#    file=externalpackages/pvode.tar.gz
-#  fi
-#  gunzip -c $file > externalpackages/tmp.tar
-#  cd externalpackages
-#  tar -x -f tmp.tar >> ../config-build.log 2>&1
-#  if test $? != "0"
-#  then
-#    cd -
-#    AC_MSG_ERROR([Cannot extract file: $file])
-#  fi
-#  cd -
-
+   PVODE_FLAGS="$CXXFLAGS $OPENMP_CXXFLAGS $CXX11_FLAGS"
    # Clean PVODE
-   CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR_P" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-   CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR_P" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+   CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+   CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
    #make -C externalpackages/PVODE/ clean
 
     echo "* Building PVODE" | tee -a config-build.log
     echo "*************************************************************" >> config-build.log
 
-    CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR_P" RANLIB="$RANLIB" make -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-    CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR_P" RANLIB="$RANLIB" make -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" make -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" make -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
     if [[ -f externalpackages/PVODE/lib/libpvode.a ]]
     then

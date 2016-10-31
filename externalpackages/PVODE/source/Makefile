@@ -6,7 +6,7 @@
 BOUT_TOP = ../../..
 
 CINCLUDES = -I../include
-FLAGS    = $(CFLAGS) $(CINCLUDES)
+FLAGS    = $(CXXFLAGS) $(CINCLUDES)
 
 # PVODE library file
 LIBF = ../lib/libpvode.a
