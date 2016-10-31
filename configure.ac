@@ -104,10 +104,6 @@ AC_SUBST(EXTRA_LIBS)
 AC_SUBST(PRECON_SOURCE)
 AC_SUBST(FACETS_SOURCE)
 
-
-# Enable C++11 support
-CXXFLAGS="$CXXFLAGS -std=c++11"
-
 dnl#############################################################
 dnl# Define functions
 dnl#############################################################
@@ -124,6 +120,10 @@ AC_PROG_MKDIR_P
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_PROG_RANLIB
+
+# Check for and enable C++11 support
+# Error if not supported
+AX_CXX_COMPILE_STDCXX([11], [noext], [mandatory])
 
 #############################################################
 # MPI
