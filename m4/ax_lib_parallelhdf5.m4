@@ -110,7 +110,7 @@ AC_ARG_WITH([parallelhdf5],
      with_parallelhdf5="yes"
      PARALLELH5CC="$withval"
    fi],
-   [with_parallelhdf5="yes"]
+   [with_parallelhdf5="no"]
 )
 
 dnl Set defaults to blank
