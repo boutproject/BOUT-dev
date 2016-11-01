@@ -1130,98 +1130,32 @@ fi
 
 AS_IF([test "x$CVODELIBS" != "x"],
 [
-  save_CXXFLAGS=$CXXFLAGS
-  AC_MSG_NOTICE(["checking CVODE types..."])
-  AC_LANG_PUSH([C++])
-
-  for cvode_int_type in int long; do
-    AC_MSG_CHECKING([$cvode_int_type])
-    CXXFLAGS="$save_CXXFLAGS $CVODEINCS -DCVODEINT=$cvode_int_type"
-    AC_COMPILE_IFELSE([
-      AC_LANG_PROGRAM([
+    BOUT_CHECK_SUNDIALS_TYPE([CVODE],[$CVODEINCS],[CVODEINT],[
 #include <cvode/cvode_bbdpre.h>
 extern int cvode_bbd_rhs(CVODEINT Nlocal,
                double, N_Vector u, N_Vector du,
                void *user_data);
-      ], [CVBBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, cvode_bbd_rhs, nullptr);])],
-    [cvode_int_type_found=yes],
-    [cvode_int_type_found=no])
-    AC_MSG_RESULT($cvode_int_type_found)
-    if test "x$cvode_int_type_found" = "xyes"; then
-      break;
-    fi
-    CXXFLAGS=$save_CXXFLAGS
-  done
-
-  AS_IF([test "x$cvode_int_type_found" = "xno"], [
-      AC_MSG_ERROR([*** Cannot compile CVODE with either long or int])
-      ])
-  AC_LANG_POP([C++])
-  CXXFLAGS="$save_CXXFLAGS -DCVODEINT=$cvode_int_type"
+    ], [CVBBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, cvode_bbd_rhs, nullptr);])
 ], [])
 
 AS_IF([test "x$IDALIBS" != "x"],
 [
-  save_CXXFLAGS=$CXXFLAGS
-  AC_MSG_NOTICE(["checking IDA types..."])
-  AC_LANG_PUSH([C++])
-
-  for ida_int_type in int long; do
-    AC_MSG_CHECKING([$ida_int_type])
-    CXXFLAGS="$save_CXXFLAGS $IDAINCS -DIDAINT=$ida_int_type"
-    AC_COMPILE_IFELSE([
-      AC_LANG_PROGRAM([
+    BOUT_CHECK_SUNDIALS_TYPE([IDA],[$IDAINCS],[IDAINT],[
 #include <ida/ida_bbdpre.h>
 extern int ida_bbd_rhs(IDAINT Nlocal,
                double, N_Vector u, N_Vector du, N_Vector rr,
                void *user_data);
-      ], [IDABBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, ida_bbd_rhs, nullptr);])],
-    [ida_int_type_found=yes],
-    [ida_int_type_found=no])
-    AC_MSG_RESULT($ida_int_type_found)
-    if test "x$ida_int_type_found" = "xyes"; then
-      break;
-    fi
-    CXXFLAGS=$save_CXXFLAGS
-  done
-
-  AS_IF([test "x$ida_int_type_found" = "xno"], [
-      AC_MSG_ERROR([*** Cannot compile IDA with either long or int])
-      ])
-  AC_LANG_POP([C++])
-  CXXFLAGS="$save_CXXFLAGS -DIDAINT=$ida_int_type"
+      ], [IDABBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, ida_bbd_rhs, nullptr);])
 ], [])
 
 AS_IF([test "x$ARKODELIBS" != "x"],
 [
-  save_CXXFLAGS=$CXXFLAGS
-  AC_MSG_NOTICE(["checking ARKODE types..."])
-  AC_LANG_PUSH([C++])
-
-  for arkode_int_type in int long; do
-    AC_MSG_CHECKING([$arkode_int_type])
-    CXXFLAGS="$CXXFLAGS $ARKODEINCS -DARKODEINT=$arkode_int_type"
-    AC_COMPILE_IFELSE([
-      AC_LANG_PROGRAM([
+    BOUT_CHECK_SUNDIALS_TYPE([ARKODE],[$ARKODEINCS],[ARKODEINT],[
 #include <arkode/arkode_bbdpre.h>
 extern int arkode_bbd_rhs(ARKODEINT Nlocal,
                double, N_Vector u, N_Vector du,
                void *user_data);
-      ], [ARKBBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, arkode_bbd_rhs, nullptr);])],
-    [arkode_int_type_found=yes],
-    [arkode_int_type_found=no])
-    AC_MSG_RESULT($arkode_int_type_found)
-    if test "x$arkode_int_type_found" = "xyes"; then
-      break;
-    fi
-    CXXFLAGS=$save_CXXFLAGS
-  done
-
-  AS_IF([test "x$arkode_int_type_found" = "xno"], [
-      AC_MSG_ERROR([*** Cannot compile ARKODE with either long or int])
-      ])
-  AC_LANG_POP([C++])
-  CXXFLAGS="$save_CXXFLAGS -DARKODEINT=$arkode_int_type"
+      ], [ARKBBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, arkode_bbd_rhs, nullptr);])
 ], [])
 
 #############################################################
