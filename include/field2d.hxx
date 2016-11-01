@@ -229,9 +229,6 @@ const Field2D operator-(const Field2D &f);
 
 // Non-member functions
 
-/// Square
-const Field2D SQ(const Field2D &f);
-
 /// Square root
 const Field2D sqrt(const Field2D &f);
 

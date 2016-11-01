@@ -356,7 +356,6 @@ Field3D pow(const Field3D &lhs, const FieldPerp &rhs);
 Field3D pow(const Field3D &f, BoutReal rhs);
 Field3D pow(BoutReal lhs, const Field3D &rhs);
 
-const Field3D SQ(const Field3D &f);
 const Field3D sqrt(const Field3D &f);
 const Field3D abs(const Field3D &f);
 
