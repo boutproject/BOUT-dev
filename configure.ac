@@ -444,6 +444,51 @@ fi
 echo ""
 
 #############################################################
+# HDF5 library
+#############################################################
+
+HAS_HDF5="no"
+AX_LIB_HDF5([serial])
+AS_IF([test "$with_hdf5" = "yes"], [
+  AC_MSG_NOTICE([Found HDF5])
+  CXXFLAGS="$CXXFLAGS -DHDF5"
+  EXTRA_INCS="$EXTRA_INCS $HDF5_CPPFLAGS"
+  EXTRA_LIBS="$EXTRA_LIBS $HDF5_LDFLAGS $HDF5_LIBS"
+  HAS_HDF5="yes"
+  file_formats="$file_formats HDF5"
+  ], [
+  AC_MSG_NOTICE([Serial HDF5 support disabled])
+])
+
+HAS_PHDF5="no"
+AX_LIB_PARALLELHDF5()
+AS_IF([test "$with_parallelhdf5" = "yes"], [
+  AC_MSG_NOTICE([Found parallel HDF5])
+  CXXFLAGS="$CXXFLAGS -DPHDF5"
+  EXTRA_INCS="$EXTRA_INCS $PARALLELHDF5_CPPFLAGS"
+  EXTRA_LIBS="$EXTRA_LIBS $PARALLELHDF5_LDFLAGS $PARALLELHDF5_LIBS"
+  HAS_PHDF5="yes"
+  file_formats="$file_formats Parallel HDF5"
+  ], [
+  AC_MSG_NOTICE([Parallel HDF5 support disabled])
+])
+
+echo ""
+
+#############################################################
+# Check file formats
+#############################################################
+
+if test "$file_formats" = ""
+then
+  AC_MSG_ERROR([*** At least one file format must be supported])
+else
+  echo "Supported file formats:$file_formats"
+fi
+
+echo
+
+#############################################################
 # LAPACK routines (Used for tri- and band-diagonal solvers)
 #############################################################
 
@@ -991,51 +1036,6 @@ then
 
   fi
 fi
-
-#############################################################
-# HDF5 library
-#############################################################
-
-HAS_HDF5="no"
-AX_LIB_HDF5([serial])
-AS_IF([test "$with_hdf5" = "yes"], [
-  AC_MSG_NOTICE([Found HDF5])
-  CXXFLAGS="$CXXFLAGS -DHDF5"
-  EXTRA_INCS="$EXTRA_INCS $HDF5_CPPFLAGS"
-  EXTRA_LIBS="$EXTRA_LIBS $HDF5_LDFLAGS $HDF5_LIBS"
-  HAS_HDF5="yes"
-  file_formats="$file_formats HDF5"
-  ], [
-  AC_MSG_NOTICE([Serial HDF5 support disabled])
-])
-
-HAS_PHDF5="no"
-AX_LIB_PARALLELHDF5()
-AS_IF([test "$with_parallelhdf5" = "yes"], [
-  AC_MSG_NOTICE([Found parallel HDF5])
-  CXXFLAGS="$CXXFLAGS -DPHDF5"
-  EXTRA_INCS="$EXTRA_INCS $PARALLELHDF5_CPPFLAGS"
-  EXTRA_LIBS="$EXTRA_LIBS $PARALLELHDF5_LDFLAGS $PARALLELHDF5_LIBS"
-  HAS_PHDF5="yes"
-  file_formats="$file_formats Parallel HDF5"
-  ], [
-  AC_MSG_NOTICE([Parallel HDF5 support disabled])
-])
-
-echo ""
-
-#############################################################
-# Check file formats
-#############################################################
-
-if test "$file_formats" = ""
-then
-  AC_MSG_ERROR([*** At least one file format must be supported])
-else
-  echo "Supported file formats:$file_formats"
-fi
-
-echo
 
 #############################################################
 # Hypre
