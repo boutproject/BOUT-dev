@@ -36,8 +36,6 @@ AC_INIT(BOUT++, BOUT_VERSION, bd512@york.ac.uk)
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 
-AC_ARG_WITH(pdb,          [AS_HELP_STRING([--with-pdb],
-        [Enable support for PDB files])],,[])
 AC_ARG_WITH(netcdf,       [AS_HELP_STRING([--with-netcdf],
         [Enable support for netCDF files])],,[])
 AC_ARG_WITH(pnetcdf,      [AS_HELP_STRING([--with-pnetcdf],
