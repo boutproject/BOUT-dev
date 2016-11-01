@@ -4659,7 +4659,14 @@ fi
 done
 
 
+# Checks for typedefs, structures, and compiler characteristics.
+#AC_HEADER_STDBOOL
+#AC_C_CONST
+#AC_TYPE_SIZE_T
+#AC_C_VOLATILE
+
 # Checks for library functions.
+#AC_FUNC_ERROR_AT_LINE
 for ac_header in stdlib.h
 do :
   ac_fn_cxx_check_header_mongrel "$LINENO" "stdlib.h" "ac_cv_header_stdlib_h" "$ac_includes_default"
@@ -4813,6 +4820,7 @@ fi
 done
 
 
+#AC_CHECK_FUNCS([pow sqrt strcasecmp])
 
 # Check for OpenMP support
 : ${enable_openmp=no}  # Disable by default
@@ -4882,6 +4890,9 @@ $as_echo "$ac_cv_prog_cxx_openmp" >&6; }
   fi
 
 
+# Add the flag to both compile and link stages
+#CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"
+#EXTRA_LIBS="$EXTRA_LIBS $OPENMP_CXXFLAGS"
 
 #############################################################
 # General Options
@@ -10656,140 +10667,191 @@ fi
 # Check types for SUNDIALS
 #############################################################
 
-if test "$CVODELIBS" != ""
-then
-  echo "checking CVODE types..." | tee -a config-build.log
+if test "x$CVODELIBS" != "x"; then :
 
-  cat > test_cvode_compile.cxx <<MYEOF
-    #include <cvode/cvode_bbdpre.h>
+  save_CXXFLAGS=$CXXFLAGS
+  { $as_echo "$as_me:${as_lineno-$LINENO}: \"checking CVODE types...\"" >&5
+$as_echo "$as_me: \"checking CVODE types...\"" >&6;}
+  ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-    #include <stdlib.h>
 
-    extern int cvode_bbd_rhs(CVODEINT Nlocal,
-                   double, N_Vector u, N_Vector du,
-                   void *user_data);
+  for cvode_int_type in int long; do
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking $cvode_int_type" >&5
+$as_echo_n "checking $cvode_int_type... " >&6; }
+    CXXFLAGS="$save_CXXFLAGS $CVODEINCS -DCVODEINT=$cvode_int_type"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
 
-    int main() {
-      CVBBDPrecInit(NULL, 0, 0, 0,
-                  0, 0, 0, cvode_bbd_rhs, NULL);
-      exit (0);
-    }
-MYEOF
 
-  # Try to compile
-  echo "Trying to compile test_cvode_compile.cxx" >> config-build.log
+#include <cvode/cvode_bbdpre.h>
+extern int cvode_bbd_rhs(CVODEINT Nlocal,
+               double, N_Vector u, N_Vector du,
+               void *user_data);
 
-  $CXX -c test_cvode_compile.cxx $CVODEINCS -DCVODEINT=int  >> config-build.log 2>&1
-
-  # Check return value
-  if test "$?" = "0"
-  then
-    CVODEINT=int
-  else
-    $CXX -c test_cvode_compile.cxx $CVODEINCS -DCVODEINT=long  >> config-build.log 2>&1
-    if test "$?" = "0"
-    then
-      CVODEINT=long
-    else
-      echo "HEELP! Cannot compile CVODE with either long or int"
-      exit
+int
+main ()
+{
+CVBBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, cvode_bbd_rhs, nullptr);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  cvode_int_type_found=yes
+else
+  cvode_int_type_found=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $cvode_int_type_found" >&5
+$as_echo "$cvode_int_type_found" >&6; }
+    if test "x$cvode_int_type_found" = "xyes"; then
+      break;
     fi
-  fi
-  echo "  CVODE BBD uses '$CVODEINT' type" | tee -a config-build.log
+    CXXFLAGS=$save_CXXFLAGS
+  done
 
-  CXXFLAGS="$CXXFLAGS -DCVODEINT=$CVODEINT"
+  if test "x$cvode_int_type_found" = "xno"; then :
+
+      as_fn_error $? "*** Cannot compile CVODE with either long or int" "$LINENO" 5
+
+fi
+  ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+  CXXFLAGS="$save_CXXFLAGS -DCVODEINT=$cvode_int_type"
+
 fi
 
-if test "$IDALIBS" != ""
-then
-  echo "checking IDA types..." | tee -a config-build.log
+if test "x$IDALIBS" != "x"; then :
 
-  cat > test_ida_compile.cxx <<MYEOF
-    #include <ida/ida_bbdpre.h>
+  save_CXXFLAGS=$CXXFLAGS
+  { $as_echo "$as_me:${as_lineno-$LINENO}: \"checking IDA types...\"" >&5
+$as_echo "$as_me: \"checking IDA types...\"" >&6;}
+  ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-    #include <stdlib.h>
-    extern int ida_bbd_res(IDAINT Nlocal, double,
-		       N_Vector u, N_Vector du, N_Vector rr, void *user_data);
 
-    int main() {
-      IDABBDPrecInit(NULL, 0, 0, 0, 0, 0,
-			 0, ida_bbd_res, NULL);
-      exit (0);
-    }
-MYEOF
+  for ida_int_type in int long; do
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking $ida_int_type" >&5
+$as_echo_n "checking $ida_int_type... " >&6; }
+    CXXFLAGS="$save_CXXFLAGS $IDAINCS -DIDAINT=$ida_int_type"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
 
-  # Try to compile
-  echo "Trying to compile test_ida_compile.cxx" >> config-build.log
 
-  $CXX -c test_ida_compile.cxx $IDAINCS -DIDAINT=int  >> config-build.log 2>&1
+#include <ida/ida_bbdpre.h>
+extern int ida_bbd_rhs(IDAINT Nlocal,
+               double, N_Vector u, N_Vector du, N_Vector rr,
+               void *user_data);
 
-  # Check return value
-  if test "$?" = "0"
-  then
-    IDAINT=int
-  else
-    $CXX -c test_ida_compile.cxx $IDAINCS -DIDAINT=long  >> config-build.log 2>&1
-    if test "$?" = "0"
-    then
-      IDAINT=long
-    else
-      echo "HEELP! Cannot compile IDA with either long or int"
-      exit
+int
+main ()
+{
+IDABBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, ida_bbd_rhs, nullptr);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  ida_int_type_found=yes
+else
+  ida_int_type_found=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ida_int_type_found" >&5
+$as_echo "$ida_int_type_found" >&6; }
+    if test "x$ida_int_type_found" = "xyes"; then
+      break;
     fi
-  fi
-  echo "  IDA BBD uses '$IDAINT' type" | tee -a config-build.log
+    CXXFLAGS=$save_CXXFLAGS
+  done
 
-  CXXFLAGS="$CXXFLAGS -DIDAINT=$IDAINT"
+  if test "x$ida_int_type_found" = "xno"; then :
+
+      as_fn_error $? "*** Cannot compile IDA with either long or int" "$LINENO" 5
+
+fi
+  ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+  CXXFLAGS="$save_CXXFLAGS -DIDAINT=$ida_int_type"
+
 fi
 
-#### Test ARKode compile ########
+if test "x$ARKODELIBS" != "x"; then :
+
+  save_CXXFLAGS=$CXXFLAGS
+  { $as_echo "$as_me:${as_lineno-$LINENO}: \"checking ARKODE types...\"" >&5
+$as_echo "$as_me: \"checking ARKODE types...\"" >&6;}
+  ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
-if test "$ARKODELIBS" != ""
-then
-  echo "checking ARKODE types..." | tee -a config-build.log
+  for arkode_int_type in int long; do
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking $arkode_int_type" >&5
+$as_echo_n "checking $arkode_int_type... " >&6; }
+    CXXFLAGS="$CXXFLAGS $ARKODEINCS -DARKODEINT=$arkode_int_type"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
 
-  cat > test_arkode_compile.cxx <<MYEOF
-    #include <arkode/arkode_bbdpre.h>
 
-    #include <stdlib.h>
+#include <arkode/arkode_bbdpre.h>
+extern int arkode_bbd_rhs(ARKODEINT Nlocal,
+               double, N_Vector u, N_Vector du,
+               void *user_data);
 
-    extern int arkode_bbd_rhs(ARKODEINT Nlocal,
-                   double, N_Vector u, N_Vector du,
-                   void *user_data);
-
-    int main() {
-      ARKBBDPrecInit(NULL, 0, 0, 0,
-                  0, 0, 0, arkode_bbd_rhs, NULL);
-      exit (0);
-    }
-MYEOF
-
-  # Try to compile
-  echo "Trying to compile test_arkode_compile.cxx" >> config-build.log
-
-  $CXX -c test_arkode_compile.cxx $ARKODEINCS -DARKODEINT=int  >> config-build.log 2>&1
-
-  # Check return value
-  if test "$?" = "0"
-  then
-    ARKODEINT=int
-  else
-    $CXX -c test_arkode_compile.cxx $ARKODEINCS -DARKODEINT=long  >> config-build.log 2>&1
-    if test "$?" = "0"
-    then
-      ARKODEINT=long
-    else
-      echo "HEELP! Cannot compile ARKODE with either long or int"
-      exit
-    fi
-  fi
-  echo "  ARKODE BBD uses '$ARKODEINT' type" | tee -a config-build.log
-
-  CXXFLAGS="$CXXFLAGS -DARKODEINT=$ARKODEINT"
+int
+main ()
+{
+ARKBBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, arkode_bbd_rhs, nullptr);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  arkode_int_type_found=yes
+else
+  arkode_int_type_found=no
 fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $arkode_int_type_found" >&5
+$as_echo "$arkode_int_type_found" >&6; }
+    if test "x$arkode_int_type_found" = "xyes"; then
+      break;
+    fi
+    CXXFLAGS=$save_CXXFLAGS
+  done
 
+  if test "x$arkode_int_type_found" = "xno"; then :
 
+      as_fn_error $? "*** Cannot compile ARKODE with either long or int" "$LINENO" 5
+
+fi
+  ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+  CXXFLAGS="$save_CXXFLAGS -DARKODEINT=$arkode_int_type"
+
+fi
 
 #############################################################
 # Download + Build PVODE '98

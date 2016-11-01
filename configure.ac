@@ -1128,140 +1128,101 @@ fi
 # Check types for SUNDIALS
 #############################################################
 
-if test "$CVODELIBS" != ""
-then
-  echo "checking CVODE types..." | tee -a config-build.log
+AS_IF([test "x$CVODELIBS" != "x"],
+[
+  save_CXXFLAGS=$CXXFLAGS
+  AC_MSG_NOTICE(["checking CVODE types..."])
+  AC_LANG_PUSH([C++])
 
-  cat > test_cvode_compile.cxx <<MYEOF
-    #include <cvode/cvode_bbdpre.h>
-
-    #include <stdlib.h>
-
-    extern int cvode_bbd_rhs(CVODEINT Nlocal,
-                   double, N_Vector u, N_Vector du,
-                   void *user_data);
-
-    int main() {
-      CVBBDPrecInit(NULL, 0, 0, 0,
-                  0, 0, 0, cvode_bbd_rhs, NULL);
-      exit (0);
-    }
-MYEOF
-
-  # Try to compile
-  echo "Trying to compile test_cvode_compile.cxx" >> config-build.log
-
-  $CXX -c test_cvode_compile.cxx $CVODEINCS -DCVODEINT=int  >> config-build.log 2>&1
-
-  # Check return value
-  if test "$?" = "0"
-  then
-    CVODEINT=int
-  else
-    $CXX -c test_cvode_compile.cxx $CVODEINCS -DCVODEINT=long  >> config-build.log 2>&1
-    if test "$?" = "0"
-    then
-      CVODEINT=long
-    else
-      echo "HEELP! Cannot compile CVODE with either long or int"
-      exit
+  for cvode_int_type in int long; do
+    AC_MSG_CHECKING([$cvode_int_type])
+    CXXFLAGS="$save_CXXFLAGS $CVODEINCS -DCVODEINT=$cvode_int_type"
+    AC_COMPILE_IFELSE([
+      AC_LANG_PROGRAM([
+#include <cvode/cvode_bbdpre.h>
+extern int cvode_bbd_rhs(CVODEINT Nlocal,
+               double, N_Vector u, N_Vector du,
+               void *user_data);
+      ], [CVBBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, cvode_bbd_rhs, nullptr);])],
+    [cvode_int_type_found=yes],
+    [cvode_int_type_found=no])
+    AC_MSG_RESULT($cvode_int_type_found)
+    if test "x$cvode_int_type_found" = "xyes"; then
+      break;
     fi
-  fi
-  echo "  CVODE BBD uses '$CVODEINT' type" | tee -a config-build.log
+    CXXFLAGS=$save_CXXFLAGS
+  done
 
-  CXXFLAGS="$CXXFLAGS -DCVODEINT=$CVODEINT"
-fi
+  AS_IF([test "x$cvode_int_type_found" = "xno"], [
+      AC_MSG_ERROR([*** Cannot compile CVODE with either long or int])
+      ])
+  AC_LANG_POP([C++])
+  CXXFLAGS="$save_CXXFLAGS -DCVODEINT=$cvode_int_type"
+], [])
 
-if test "$IDALIBS" != ""
-then
-  echo "checking IDA types..." | tee -a config-build.log
+AS_IF([test "x$IDALIBS" != "x"],
+[
+  save_CXXFLAGS=$CXXFLAGS
+  AC_MSG_NOTICE(["checking IDA types..."])
+  AC_LANG_PUSH([C++])
 
-  cat > test_ida_compile.cxx <<MYEOF
-    #include <ida/ida_bbdpre.h>
-
-    #include <stdlib.h>
-    extern int ida_bbd_res(IDAINT Nlocal, double,
-		       N_Vector u, N_Vector du, N_Vector rr, void *user_data);
-
-    int main() {
-      IDABBDPrecInit(NULL, 0, 0, 0, 0, 0,
-			 0, ida_bbd_res, NULL);
-      exit (0);
-    }
-MYEOF
-
-  # Try to compile
-  echo "Trying to compile test_ida_compile.cxx" >> config-build.log
-
-  $CXX -c test_ida_compile.cxx $IDAINCS -DIDAINT=int  >> config-build.log 2>&1
-
-  # Check return value
-  if test "$?" = "0"
-  then
-    IDAINT=int
-  else
-    $CXX -c test_ida_compile.cxx $IDAINCS -DIDAINT=long  >> config-build.log 2>&1
-    if test "$?" = "0"
-    then
-      IDAINT=long
-    else
-      echo "HEELP! Cannot compile IDA with either long or int"
-      exit
+  for ida_int_type in int long; do
+    AC_MSG_CHECKING([$ida_int_type])
+    CXXFLAGS="$save_CXXFLAGS $IDAINCS -DIDAINT=$ida_int_type"
+    AC_COMPILE_IFELSE([
+      AC_LANG_PROGRAM([
+#include <ida/ida_bbdpre.h>
+extern int ida_bbd_rhs(IDAINT Nlocal,
+               double, N_Vector u, N_Vector du, N_Vector rr,
+               void *user_data);
+      ], [IDABBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, ida_bbd_rhs, nullptr);])],
+    [ida_int_type_found=yes],
+    [ida_int_type_found=no])
+    AC_MSG_RESULT($ida_int_type_found)
+    if test "x$ida_int_type_found" = "xyes"; then
+      break;
     fi
-  fi
-  echo "  IDA BBD uses '$IDAINT' type" | tee -a config-build.log
+    CXXFLAGS=$save_CXXFLAGS
+  done
 
-  CXXFLAGS="$CXXFLAGS -DIDAINT=$IDAINT"
-fi
+  AS_IF([test "x$ida_int_type_found" = "xno"], [
+      AC_MSG_ERROR([*** Cannot compile IDA with either long or int])
+      ])
+  AC_LANG_POP([C++])
+  CXXFLAGS="$save_CXXFLAGS -DIDAINT=$ida_int_type"
+], [])
 
-#### Test ARKode compile ########
+AS_IF([test "x$ARKODELIBS" != "x"],
+[
+  save_CXXFLAGS=$CXXFLAGS
+  AC_MSG_NOTICE(["checking ARKODE types..."])
+  AC_LANG_PUSH([C++])
 
-
-if test "$ARKODELIBS" != ""
-then
-  echo "checking ARKODE types..." | tee -a config-build.log
-
-  cat > test_arkode_compile.cxx <<MYEOF
-    #include <arkode/arkode_bbdpre.h>
-
-    #include <stdlib.h>
-
-    extern int arkode_bbd_rhs(ARKODEINT Nlocal,
-                   double, N_Vector u, N_Vector du,
-                   void *user_data);
-
-    int main() {
-      ARKBBDPrecInit(NULL, 0, 0, 0,
-                  0, 0, 0, arkode_bbd_rhs, NULL);
-      exit (0);
-    }
-MYEOF
-
-  # Try to compile
-  echo "Trying to compile test_arkode_compile.cxx" >> config-build.log
-
-  $CXX -c test_arkode_compile.cxx $ARKODEINCS -DARKODEINT=int  >> config-build.log 2>&1
-
-  # Check return value
-  if test "$?" = "0"
-  then
-    ARKODEINT=int
-  else
-    $CXX -c test_arkode_compile.cxx $ARKODEINCS -DARKODEINT=long  >> config-build.log 2>&1
-    if test "$?" = "0"
-    then
-      ARKODEINT=long
-    else
-      echo "HEELP! Cannot compile ARKODE with either long or int"
-      exit
+  for arkode_int_type in int long; do
+    AC_MSG_CHECKING([$arkode_int_type])
+    CXXFLAGS="$CXXFLAGS $ARKODEINCS -DARKODEINT=$arkode_int_type"
+    AC_COMPILE_IFELSE([
+      AC_LANG_PROGRAM([
+#include <arkode/arkode_bbdpre.h>
+extern int arkode_bbd_rhs(ARKODEINT Nlocal,
+               double, N_Vector u, N_Vector du,
+               void *user_data);
+      ], [ARKBBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, arkode_bbd_rhs, nullptr);])],
+    [arkode_int_type_found=yes],
+    [arkode_int_type_found=no])
+    AC_MSG_RESULT($arkode_int_type_found)
+    if test "x$arkode_int_type_found" = "xyes"; then
+      break;
     fi
-  fi
-  echo "  ARKODE BBD uses '$ARKODEINT' type" | tee -a config-build.log
+    CXXFLAGS=$save_CXXFLAGS
+  done
 
-  CXXFLAGS="$CXXFLAGS -DARKODEINT=$ARKODEINT"
-fi
-
-
+  AS_IF([test "x$arkode_int_type_found" = "xno"], [
+      AC_MSG_ERROR([*** Cannot compile ARKODE with either long or int])
+      ])
+  AC_LANG_POP([C++])
+  CXXFLAGS="$save_CXXFLAGS -DARKODEINT=$arkode_int_type"
+], [])
 
 #############################################################
 # Download + Build PVODE '98
