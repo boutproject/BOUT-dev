@@ -557,7 +557,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
     }
     
     // Call monitors so initial values are written to output dump files
-    call_monitors(simtime, 0, NOUT); 
+    call_monitors(simtime, -1, NOUT); 
   }
   
   int status;
@@ -792,11 +792,11 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
       restart.write("%s/BOUT.restart_%04d.%s", restartdir.c_str(), iteration, restartext.c_str());
     }
   }
-  
+  ++iter;
   try {
     // Call physics model monitor
     if(model) {
-      if(model->runOutputMonitor(simtime, iter, NOUT))
+      if(model->runOutputMonitor(simtime, iter-1, NOUT))
         throw BoutException("Monitor signalled to quit");
     }
     
@@ -804,7 +804,7 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
     for (auto it: monitors){
       if ((iter % it->freq)==0){
         // Call each monitor one by one
-        int ret = it->call(this, simtime,iter/it->freq, NOUT/it->freq);
+        int ret = it->call(this, simtime,iter/it->freq-1, NOUT/it->freq);
         if(ret)
           throw BoutException("Monitor signalled to quit");
       }
