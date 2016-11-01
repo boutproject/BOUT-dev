@@ -32,10 +32,10 @@
 
 #ifndef GLOBALORIGIN
 #define GLOBAL extern
-#define SETTING(name, val) extern name;
+#define SETTING(name, val) extern name
 #else
 #define GLOBAL
-#define SETTING(name, val) name = val;
+#define SETTING(name, val) name = val
 #endif
 
 SETTING(Mesh *mesh, NULL); ///< The mesh object

@@ -562,7 +562,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
     throw e;
   }
 
-  return 0;
+  return status;
 }
 
 
@@ -1316,6 +1316,7 @@ int Solver::run_convective(BoutReal t) {
       *(f.F_var) = 0.0;
     for(const auto& f : f2d)
       *(f.F_var) = 0.0;
+    status = 0;
   }
   post_rhs(t);
   

@@ -158,7 +158,7 @@ bool Datafile::openw(const char *format, ...) {
     // Open the file
     int MYPE;
     MPI_Comm_rank(BoutComm::get(), &MYPE);
-    if(!file->openw(filename, MYPE))
+    if(!file->openw(filename, MYPE, appending))
       return false;
   }
   

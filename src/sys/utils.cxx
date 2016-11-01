@@ -349,7 +349,7 @@ const string lowercasequote(const string &str) {
   string strlow(str);
 
   bool quote = false, dquote = false;
-  for(int i=0;i<strlow.length(); i++) {
+  for(string::size_type i=0;i<strlow.length(); i++) {
     if(strlow[i] == '\'') {
       quote ^= true;
     }else if(strlow[i] == '"') {
