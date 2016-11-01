@@ -137,25 +137,14 @@ AC_CHECK_LIB([m], [sqrt])
 AC_HEADER_STDC
 AC_CHECK_HEADERS([malloc.h stdlib.h string.h strings.h])
 
-# Checks for typedefs, structures, and compiler characteristics.
-#AC_HEADER_STDBOOL
-#AC_C_CONST
-#AC_TYPE_SIZE_T
-#AC_C_VOLATILE
-
 # Checks for library functions.
-#AC_FUNC_ERROR_AT_LINE
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_FUNC_VPRINTF
-#AC_CHECK_FUNCS([pow sqrt strcasecmp])
 
 # Check for OpenMP support
 : ${enable_openmp=no}  # Disable by default
 AC_OPENMP
-# Add the flag to both compile and link stages
-#CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"
-#EXTRA_LIBS="$EXTRA_LIBS $OPENMP_CXXFLAGS"
 
 #############################################################
 # General Options
@@ -303,7 +292,7 @@ if type fftw-wisdom > /dev/null 2>&1; then
   echo " -> Found fftw-wisdom executable"
   # Path to fftw-wisdom, then remove fft-wisdom and bin/
   fftw_wisdom=`which fftw-wisdom | xargs -0 dirname | xargs -0 dirname`
-	with_fftw="$with_fftw $fftw_wisdom"
+    with_fftw="$with_fftw $fftw_wisdom"
 fi
 BOUT_ADDPATH_CHECK_HEADER(fftw3.h, ,AC_MSG_ERROR('FFTW3 is needed by BOUT++'), $with_fftw)
 BOUT_ADDPATH_CHECK_LIB(fftw3, fftw_plan_dft_r2c_1d, ,AC_MSG_ERROR("FFTW3 is needed by BOUT++"), $with_fftw)
@@ -461,28 +450,28 @@ echo ""
 HAS_LAPACK="no"
 if ( ( test "$with_lapack" != "no" ) )
 then
-	AS_IF( [ test .$with_lapack = .guess || test .$with_lapack = . ],
-				 [ lapack_path="" ],
-				 [ AS_IF(test .$lapack_path != .yes, [lapack_path=$with_lapack
-				 				 with_lapack=yes], lapack_path="" )])
-	dnl echo "\$with_lapack=$with_lapack"
-	dnl echo "\$lapack_pat=$lapack_path"
-	BOUT_ADDPATH_CHECK_LIB(blas, zgemm_ , [HAS_BLAS=yes
-		BOUT_ADDPATH_CHECK_LIB(lapack, zgbsv_ , HAS_LAPACK=yes
-			echo "Using LAPACK"
-			CXXFLAGS="$CXXFLAGS -DLAPACK"
-			,
-		  [ AS_IF( [test .$with_lapack = ".yes"], AC_MSG_ERROR("LAPACK requested but not found.")) ], $lapack_path )
-		]	, [ AS_IF( [test .$with_lapack = ".yes"], AC_MSG_ERROR("LAPACK requested but not found.")) ] , $lapack_path)
-fi
+    AS_IF( [ test .$with_lapack = .guess || test .$with_lapack = . ],
+                 [ lapack_path="" ],
+                 [ AS_IF(test .$lapack_path != .yes, [lapack_path=$with_lapack
+                                 with_lapack=yes], lapack_path="" )])
+    dnl echo "\$with_lapack=$with_lapack"
+    dnl echo "\$lapack_pat=$lapack_path"
+    BOUT_ADDPATH_CHECK_LIB(blas, zgemm_ , [HAS_BLAS=yes
+        BOUT_ADDPATH_CHECK_LIB(lapack, zgbsv_ , HAS_LAPACK=yes
+            echo "Using LAPACK"
+            CXXFLAGS="$CXXFLAGS -DLAPACK"
+            ,
+          [ AS_IF( [test .$with_lapack = ".yes"], AC_MSG_ERROR("LAPACK requested but not found.")) ], $lapack_path )
+        ]	, [ AS_IF( [test .$with_lapack = ".yes"], AC_MSG_ERROR("LAPACK requested but not found.")) ] , $lapack_path)
 
-echo ""
+    echo ""
+fi
 
 #############################################################
 # FACETS
 #############################################################
 
-if test "$with_facets" != ""
+if test "x$with_facets" != "x"
 then
     FACETS="$with_facets"
       AC_CHECK_FILE($FACETS/include/FacetsIfc.h, FIFCPATH=$FACETS,
@@ -492,14 +481,13 @@ then
       AC_CHECK_FILE($HOME/local/include/FacetsIfc.h, FIFCPATH=$HOME/local,
       AC_CHECK_FILE($HOME/software/facetsifc/include/FacetsIfc.h, FIFCPATH=$HOME/software/facetsifc,
       ))))))
-  if test "$FIFCPATH" != ""
+  if test "x$FIFCPATH" != "x"
   then
     echo "Enabling FACETS interface"
     EXTRA_INCS="$EXTRA_INCS -I$FIFCPATH/include"
     FACETS_SOURCE="$FACETS_SOURCE bout_facets.cxx"
   else
-    echo "--with-facets was specified but could not find the FACETS interface"
-    exit
+    AC_MSG_ERROR([*** --with-facets was specified but could not find the FACETS interface])
   fi
 fi
 
@@ -507,7 +495,7 @@ fi
 # PETSc library
 #############################################################
 
-if test "$with_petsc" != "" && test "$with_petsc" != "no"
+if test "x$with_petsc" != "x" && test "$with_petsc" != "no"
 then
 ### This still needs to check for PETSC_ARCH
   if test "$with_petsc" != "yes"
@@ -517,8 +505,8 @@ then
   else
     AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/conf, PETSC_CONFDIR=${PETSC_DIR}/conf,
       AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/lib/petsc/conf, PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf,
-        echo "Error - can't find PETSc distribution"
-        exit))
+        AC_MSG_ERROR([*** --with-petsc was specified but could not find PETSc distribution])
+        ))
   fi
 
   PETSC_VERSION_MAJOR="0"
@@ -530,8 +518,7 @@ then
 
   if test $PETSC_VERSION_MAJOR != "3"
   then
-    echo "PETSc must be at least version 3"
-    exit
+    AC_MSG_ERROR([PETSc must be version 3, found $PETSC_VERSION_MAJOR])
   fi
 
   if test "$PETSC_VERSION_MINOR" = "1"
@@ -576,9 +563,9 @@ PETSC_DIR  = ${PETSC_DIR}
 include ${PETSC_CONFDIR}/rules
 include ${PETSC_CONFDIR}/variables
 echo_cxx:
-	-@echo \${CXX}
+    -@echo \${CXX}
 echo_sundials:
-	-@echo \${SUNDIALS_LIB}
+    -@echo \${SUNDIALS_LIB}
 MFILE
 
   CXX="`make -f petscmake$$ echo_cxx`"
@@ -596,18 +583,13 @@ MFILE
   if test "$HAS_CXX" == "0"
   then
     echo "Warning - PETSc must have C++ support"
-    #rm petscmake$$
-    #exit
   fi
 
-
   echo "PETSc used C++ compiler $CXX"
-  #MPICXX=$CXX
 
   rm petscmake$$
 
   # Set the line to be included in the make.conf file
-
   PETSC="include ${PETSC_CONFDIR}/variables"
 else
    PETSC=
@@ -626,9 +608,8 @@ then
   then
     CXXFLAGS="$CXXFLAGS -DPETSC_HAS_SUNDIALS "
   fi
+  echo
 fi
-
-echo
 
 #############################################################
 # SLEPc library
@@ -638,29 +619,24 @@ SLEPC_VARS=""
 
 if test "$with_slepc" != "" && test "$with_slepc" != "no"
 then
-  #PETSC_ARCH = ${PETSC_ARCH}
-  #SLEPC_DIR = ${SLEPC_DIR}
-
   echo "Searching for SLEPc"
 
   if test "$SLEPC_DIR" == ""
   then
-    echo "Error - SLEPC_DIR not set"
-    exit
+    AC_MSG_ERROR([*** --with-slepc specified but SLEPC_DIR not set])
   fi
 
   # Check that the config directory exists
   AC_CHECK_FILE($SLEPC_DIR/$PETSC_ARCH/conf, ,
-    echo "Error - can't find SLEPc distribution"
-    exit)
+    AC_MSG_ERROR([*** --with-slepc specified but could not find SLEPc distribution])
+    )
 
   echo " -> using SLEPC_DIR=$SLEPC_DIR"
 
   # Find version number
-
   AC_CHECK_FILE(${SLEPC_DIR}/include/slepcversion.h, ,
-    echo "Error - can't read include/slepcversion.h"
-    exit)
+    AC_MSG_ERROR([*** --with-slepc specified but could not read include/slepcversion.h])
+    )
 
   SLEPC_VERSION_MAJOR="0"
   SLEPC_VERSION_MAJOR=`grep 'define SLEPC_VERSION_MAJOR' $SLEPC_DIR/include/slepcversion.h | awk '{print \$3;}'`
@@ -678,15 +654,13 @@ then
     EXTRA_LIBS="$EXTRA_LIBS \$(SLEPC_LIB)"
     SLEPC_VARS="include $SLEPC_DIR/conf/slepc_variables"
   else
-    echo "Error - Unknown SLEPc version"
+    AC_MSG_WARN([Error - Unknown SLEPc version])
     echo "  -> No SLEPc support"
     HAS_SLEPC="no"
   fi
-
+  echo
 fi
 AC_SUBST(SLEPC_VARS, $SLEPC_VARS)
-
-echo
 
 #############################################################
 # MUMPS library
@@ -802,9 +776,9 @@ then
     ) )
     if test "$IDALIBS" != ""
     then
-	IDAINCS="-I$IDALIBS/include"
-	IDALIBS="-L$IDALIBS/$IDALIBSLIB -lsundials_ida -lsundials_nvecparallel"
-	echo "=> Using SUNDIALS IDA solver, path $with_ida"
+    IDAINCS="-I$IDALIBS/include"
+    IDALIBS="-L$IDALIBS/$IDALIBSLIB -lsundials_ida -lsundials_nvecparallel"
+    echo "=> Using SUNDIALS IDA solver, path $with_ida"
     else
       echo " -> Given path not correct. Finding..."
     fi
@@ -822,20 +796,20 @@ then
 
     if test "$IDALIBS" != ""
     then
-	# Check the rest of the files
-	AC_CHECK_FILES( $IDALIBS/include/ida/ida.h $IDALIBS/include/ida/ida_spgmr.h $IDALIBS/include/ida/ida_bbdpre.h $IDALIBS/include/nvector/nvector_parallel.h $IDALIBS/include/sundials/sundials_types.h , , [
-      	  IDALIBS=""
-      	] )
-    	AC_CHECK_FILES( $IDALIBS/lib/libsundials_nvecparallel.a $IDALIBS/lib/libsundials_ida.a, IDALIBSLIB='lib',
-      	  AC_CHECK_FILES( $IDALIBS/lib64/libsundials_nvecparallel.a $IDALIBS/lib64/libsundials_ida.a, IDALIBSLIB='lib64',
+    # Check the rest of the files
+    AC_CHECK_FILES( $IDALIBS/include/ida/ida.h $IDALIBS/include/ida/ida_spgmr.h $IDALIBS/include/ida/ida_bbdpre.h $IDALIBS/include/nvector/nvector_parallel.h $IDALIBS/include/sundials/sundials_types.h , , [
+          IDALIBS=""
+        ] )
+        AC_CHECK_FILES( $IDALIBS/lib/libsundials_nvecparallel.a $IDALIBS/lib/libsundials_ida.a, IDALIBSLIB='lib',
+          AC_CHECK_FILES( $IDALIBS/lib64/libsundials_nvecparallel.a $IDALIBS/lib64/libsundials_ida.a, IDALIBSLIB='lib64',
            IDALIBS=""
-	) )
+    ) )
     fi
 
     if test "$IDALIBS" != ""
     then
-	IDAINCS="-I$IDALIBS/include"
-	IDALIBS="-L$IDALIBS/$IDALIBSLIB -lsundials_ida -lsundials_nvecparallel"
+    IDAINCS="-I$IDALIBS/include"
+    IDALIBS="-L$IDALIBS/$IDALIBSLIB -lsundials_ida -lsundials_nvecparallel"
     fi
   fi
 
@@ -903,10 +877,10 @@ then
 
     if test "$CVODELIBS" != ""
     then
-	# Check the rest of the files
-	AC_CHECK_FILES( $CVODELIBS/include/cvode/cvode.h $CVODELIBS/include/cvode/cvode_bbdpre.h $CVODELIBS/include/nvector/nvector_parallel.h , , [
-	  CVODELIBS=""
-	])
+    # Check the rest of the files
+    AC_CHECK_FILES( $CVODELIBS/include/cvode/cvode.h $CVODELIBS/include/cvode/cvode_bbdpre.h $CVODELIBS/include/nvector/nvector_parallel.h , , [
+      CVODELIBS=""
+    ])
         AC_CHECK_FILES( $CVODELIBS/lib/libsundials_cvode.a $CVODELIBS/lib/libsundials_nvecparallel.a, CVODELIBSLIB='lib',
           AC_CHECK_FILES( $CVODELIBS/lib64/libsundials_cvode.a $CVODELIBS/lib64/libsundials_nvecparallel.a, CVODELIBSLIB='lib64',  [
             CVODELIBS=""
@@ -1056,8 +1030,7 @@ echo ""
 
 if test "$file_formats" = ""
 then
-  echo "ERROR: At least one file format must be supported"
-  exit
+  AC_MSG_ERROR([*** At least one file format must be supported])
 else
   echo "Supported file formats:$file_formats"
 fi

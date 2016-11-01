@@ -4659,14 +4659,7 @@ fi
 done
 
 
-# Checks for typedefs, structures, and compiler characteristics.
-#AC_HEADER_STDBOOL
-#AC_C_CONST
-#AC_TYPE_SIZE_T
-#AC_C_VOLATILE
-
 # Checks for library functions.
-#AC_FUNC_ERROR_AT_LINE
 for ac_header in stdlib.h
 do :
   ac_fn_cxx_check_header_mongrel "$LINENO" "stdlib.h" "ac_cv_header_stdlib_h" "$ac_includes_default"
@@ -4820,7 +4813,6 @@ fi
 done
 
 
-#AC_CHECK_FUNCS([pow sqrt strcasecmp])
 
 # Check for OpenMP support
 : ${enable_openmp=no}  # Disable by default
@@ -4890,9 +4882,6 @@ $as_echo "$ac_cv_prog_cxx_openmp" >&6; }
   fi
 
 
-# Add the flag to both compile and link stages
-#CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"
-#EXTRA_LIBS="$EXTRA_LIBS $OPENMP_CXXFLAGS"
 
 #############################################################
 # General Options
@@ -5088,7 +5077,7 @@ if type fftw-wisdom > /dev/null 2>&1; then
   echo " -> Found fftw-wisdom executable"
   # Path to fftw-wisdom, then remove fft-wisdom and bin/
   fftw_wisdom=`which fftw-wisdom | xargs -0 dirname | xargs -0 dirname`
-	with_fftw="$with_fftw $fftw_wisdom"
+    with_fftw="$with_fftw $fftw_wisdom"
 fi
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for fftw3.h" >&5
@@ -5817,12 +5806,12 @@ echo ""
 HAS_LAPACK="no"
 if ( ( test "$with_lapack" != "no" ) )
 then
-	if  test .$with_lapack = .guess || test .$with_lapack = . ; then :
+    if  test .$with_lapack = .guess || test .$with_lapack = . ; then :
    lapack_path=""
 else
    if test .$lapack_path != .yes; then :
   lapack_path=$with_lapack
-				 				 with_lapack=yes
+                                 with_lapack=yes
 else
   lapack_path=""
 fi
@@ -5981,8 +5970,8 @@ $as_echo "no" >&6; }
     fi
     if test .$BACL_found = .yes; then :
   HAS_LAPACK=yes
-			echo "Using LAPACK"
-			CXXFLAGS="$CXXFLAGS -DLAPACK"
+            echo "Using LAPACK"
+            CXXFLAGS="$CXXFLAGS -DLAPACK"
 
 else
    if test .$with_lapack = ".yes"; then :
@@ -5997,15 +5986,15 @@ else
 fi
 fi
 
-fi
 
-echo ""
+    echo ""
+fi
 
 #############################################################
 # FACETS
 #############################################################
 
-if test "$with_facets" != ""
+if test "x$with_facets" != "x"
 then
     FACETS="$with_facets"
       as_ac_File=`$as_echo "ac_cv_file_$FACETS/include/FacetsIfc.h" | $as_tr_sh`
@@ -6133,14 +6122,13 @@ fi
 
 fi
 
-  if test "$FIFCPATH" != ""
+  if test "x$FIFCPATH" != "x"
   then
     echo "Enabling FACETS interface"
     EXTRA_INCS="$EXTRA_INCS -I$FIFCPATH/include"
     FACETS_SOURCE="$FACETS_SOURCE bout_facets.cxx"
   else
-    echo "--with-facets was specified but could not find the FACETS interface"
-    exit
+    as_fn_error $? "*** --with-facets was specified but could not find the FACETS interface" "$LINENO" 5
   fi
 fi
 
@@ -6148,7 +6136,7 @@ fi
 # PETSc library
 #############################################################
 
-if test "$with_petsc" != "" && test "$with_petsc" != "no"
+if test "x$with_petsc" != "x" && test "$with_petsc" != "no"
 then
 ### This still needs to check for PETSC_ARCH
   if test "$with_petsc" != "yes"
@@ -6196,8 +6184,8 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
   PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf
 else
-  echo "Error - can't find PETSc distribution"
-        exit
+  as_fn_error $? "*** --with-petsc was specified but could not find PETSc distribution" "$LINENO" 5
+
 fi
 
 fi
@@ -6213,8 +6201,7 @@ fi
 
   if test $PETSC_VERSION_MAJOR != "3"
   then
-    echo "PETSc must be at least version 3"
-    exit
+    as_fn_error $? "PETSc must be version 3, found $PETSC_VERSION_MAJOR" "$LINENO" 5
   fi
 
   if test "$PETSC_VERSION_MINOR" = "1"
@@ -6259,9 +6246,9 @@ PETSC_DIR  = ${PETSC_DIR}
 include ${PETSC_CONFDIR}/rules
 include ${PETSC_CONFDIR}/variables
 echo_cxx:
-	-@echo \${CXX}
+    -@echo \${CXX}
 echo_sundials:
-	-@echo \${SUNDIALS_LIB}
+    -@echo \${SUNDIALS_LIB}
 MFILE
 
   CXX="`make -f petscmake$$ echo_cxx`"
@@ -6279,18 +6266,13 @@ MFILE
   if test "$HAS_CXX" == "0"
   then
     echo "Warning - PETSc must have C++ support"
-    #rm petscmake$$
-    #exit
   fi
 
-
   echo "PETSc used C++ compiler $CXX"
-  #MPICXX=$CXX
 
   rm petscmake$$
 
   # Set the line to be included in the make.conf file
-
   PETSC="include ${PETSC_CONFDIR}/variables"
 else
    PETSC=
@@ -6310,9 +6292,8 @@ then
   then
     CXXFLAGS="$CXXFLAGS -DPETSC_HAS_SUNDIALS "
   fi
+  echo
 fi
-
-echo
 
 #############################################################
 # SLEPc library
@@ -6322,15 +6303,11 @@ SLEPC_VARS=""
 
 if test "$with_slepc" != "" && test "$with_slepc" != "no"
 then
-  #PETSC_ARCH = ${PETSC_ARCH}
-  #SLEPC_DIR = ${SLEPC_DIR}
-
   echo "Searching for SLEPc"
 
   if test "$SLEPC_DIR" == ""
   then
-    echo "Error - SLEPC_DIR not set"
-    exit
+    as_fn_error $? "*** --with-slepc specified but SLEPC_DIR not set" "$LINENO" 5
   fi
 
   # Check that the config directory exists
@@ -6354,15 +6331,14 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 else
-  echo "Error - can't find SLEPc distribution"
-    exit
+  as_fn_error $? "*** --with-slepc specified but could not find SLEPc distribution" "$LINENO" 5
+
 fi
 
 
   echo " -> using SLEPC_DIR=$SLEPC_DIR"
 
   # Find version number
-
   as_ac_File=`$as_echo "ac_cv_file_${SLEPC_DIR}/include/slepcversion.h" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ${SLEPC_DIR}/include/slepcversion.h" >&5
 $as_echo_n "checking for ${SLEPC_DIR}/include/slepcversion.h... " >&6; }
@@ -6383,8 +6359,8 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 else
-  echo "Error - can't read include/slepcversion.h"
-    exit
+  as_fn_error $? "*** --with-slepc specified but could not read include/slepcversion.h" "$LINENO" 5
+
 fi
 
 
@@ -6404,16 +6380,15 @@ fi
     EXTRA_LIBS="$EXTRA_LIBS \$(SLEPC_LIB)"
     SLEPC_VARS="include $SLEPC_DIR/conf/slepc_variables"
   else
-    echo "Error - Unknown SLEPc version"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Error - Unknown SLEPc version" >&5
+$as_echo "$as_me: WARNING: Error - Unknown SLEPc version" >&2;}
     echo "  -> No SLEPc support"
     HAS_SLEPC="no"
   fi
-
+  echo
 fi
 SLEPC_VARS=$SLEPC_VARS
 
-
-echo
 
 #############################################################
 # MUMPS library
@@ -7122,9 +7097,9 @@ fi
 
     if test "$IDALIBS" != ""
     then
-	IDAINCS="-I$IDALIBS/include"
-	IDALIBS="-L$IDALIBS/$IDALIBSLIB -lsundials_ida -lsundials_nvecparallel"
-	echo "=> Using SUNDIALS IDA solver, path $with_ida"
+    IDAINCS="-I$IDALIBS/include"
+    IDALIBS="-L$IDALIBS/$IDALIBSLIB -lsundials_ida -lsundials_nvecparallel"
+    echo "=> Using SUNDIALS IDA solver, path $with_ida"
     else
       echo " -> Given path not correct. Finding..."
     fi
@@ -7239,8 +7214,8 @@ fi
 
     if test "$IDALIBS" != ""
     then
-	# Check the rest of the files
-	as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/include/ida/ida.h" | $as_tr_sh`
+    # Check the rest of the files
+    as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/include/ida/ida.h" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/include/ida/ida.h" >&5
 $as_echo_n "checking for $IDALIBS/include/ida/ida.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
@@ -7265,7 +7240,7 @@ _ACEOF
 
 else
 
-      	  IDALIBS=""
+          IDALIBS=""
 
 fi
 as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/include/ida/ida_spgmr.h" | $as_tr_sh`
@@ -7293,7 +7268,7 @@ _ACEOF
 
 else
 
-      	  IDALIBS=""
+          IDALIBS=""
 
 fi
 as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/include/ida/ida_bbdpre.h" | $as_tr_sh`
@@ -7321,7 +7296,7 @@ _ACEOF
 
 else
 
-      	  IDALIBS=""
+          IDALIBS=""
 
 fi
 as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/include/nvector/nvector_parallel.h" | $as_tr_sh`
@@ -7349,7 +7324,7 @@ _ACEOF
 
 else
 
-      	  IDALIBS=""
+          IDALIBS=""
 
 fi
 as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/include/sundials/sundials_types.h" | $as_tr_sh`
@@ -7377,11 +7352,11 @@ _ACEOF
 
 else
 
-      	  IDALIBS=""
+          IDALIBS=""
 
 fi
 
-    	as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/lib/libsundials_nvecparallel.a" | $as_tr_sh`
+        as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/lib/libsundials_nvecparallel.a" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/lib/libsundials_nvecparallel.a" >&5
 $as_echo_n "checking for $IDALIBS/lib/libsundials_nvecparallel.a... " >&6; }
 if eval \${$as_ac_File+:} false; then :
@@ -7546,8 +7521,8 @@ fi
 
     if test "$IDALIBS" != ""
     then
-	IDAINCS="-I$IDALIBS/include"
-	IDALIBS="-L$IDALIBS/$IDALIBSLIB -lsundials_ida -lsundials_nvecparallel"
+    IDAINCS="-I$IDALIBS/include"
+    IDALIBS="-L$IDALIBS/$IDALIBSLIB -lsundials_ida -lsundials_nvecparallel"
     fi
   fi
 
@@ -7983,8 +7958,8 @@ fi
 
     if test "$CVODELIBS" != ""
     then
-	# Check the rest of the files
-	as_ac_File=`$as_echo "ac_cv_file_$CVODELIBS/include/cvode/cvode.h" | $as_tr_sh`
+    # Check the rest of the files
+    as_ac_File=`$as_echo "ac_cv_file_$CVODELIBS/include/cvode/cvode.h" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $CVODELIBS/include/cvode/cvode.h" >&5
 $as_echo_n "checking for $CVODELIBS/include/cvode/cvode.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
@@ -8009,7 +7984,7 @@ _ACEOF
 
 else
 
-	  CVODELIBS=""
+      CVODELIBS=""
 
 fi
 as_ac_File=`$as_echo "ac_cv_file_$CVODELIBS/include/cvode/cvode_bbdpre.h" | $as_tr_sh`
@@ -8037,7 +8012,7 @@ _ACEOF
 
 else
 
-	  CVODELIBS=""
+      CVODELIBS=""
 
 fi
 as_ac_File=`$as_echo "ac_cv_file_$CVODELIBS/include/nvector/nvector_parallel.h" | $as_tr_sh`
@@ -8065,7 +8040,7 @@ _ACEOF
 
 else
 
-	  CVODELIBS=""
+      CVODELIBS=""
 
 fi
 
@@ -10370,8 +10345,7 @@ echo ""
 
 if test "$file_formats" = ""
 then
-  echo "ERROR: At least one file format must be supported"
-  exit
+  as_fn_error $? "*** At least one file format must be supported" "$LINENO" 5
 else
   echo "Supported file formats:$file_formats"
 fi
