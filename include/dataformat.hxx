@@ -1,7 +1,7 @@
 /*!
  * \file dataformat.hxx
  *
- * \brief Generic interface for file formats e.g. PDB, netCDF
+ * \brief Generic interface for file formats e.g. netCDF, HDF5
  *
  * \author B.Dudson
  * \date   April 2009

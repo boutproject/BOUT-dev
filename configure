@@ -629,7 +629,6 @@ HAS_PETSC
 HAS_LAPACK
 HAS_MUMPS
 HAS_HYPRE
-HAS_PDB
 HAS_HDF5
 HAS_PNETCDF
 HAS_NETCDF
@@ -646,7 +645,6 @@ PREFIX
 CONFIG_LDFLAGS
 CONFIG_CFLAGS
 LTLIBOBJS
-PACT
 SLEPC_VARS
 PETSC
 OPENMP_CXXFLAGS
@@ -713,7 +711,6 @@ SHELL'
 ac_subst_files=''
 ac_user_opts='
 enable_option_checking
-with_pdb
 with_netcdf
 with_hdf5
 with_parallelhdf5
@@ -752,8 +749,7 @@ LIBS
 CPPFLAGS
 CCC
 MPICXX
-CXXCPP
-PACT'
+CXXCPP'
 
 
 # Initialize some variables set by options.
@@ -1375,7 +1371,6 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-pdb              Enable support for PDB files
   --with-netcdf           Enable support for netCDF files
   --with-hdf5             Enable support for HDF5 files
   --with-parallelhdf5     Enable support for parallel HDF5 files
@@ -1405,7 +1400,6 @@ Some influential environment variables:
               you have headers in a nonstandard directory <include dir>
   MPICXX      MPI C++ compiler command
   CXXCPP      C++ preprocessor
-  PACT        Path to the Portable Application Toolkit library
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -2190,12 +2184,6 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
-
-
-# Check whether --with-pdb was given.
-if test "${with_pdb+set}" = set; then :
-  withval=$with_pdb;
-fi
 
 
 # Check whether --with-netcdf was given.
@@ -8237,585 +8225,6 @@ fi
 echo ""
 
 #############################################################
-# PACT library
-#############################################################
-
-
-
-if test "$with_pdb" = "no"
-then
-  echo "=> PDB support disabled"
-else
-  echo "Searching for PDB library"
-
-  if test "$PACT" != ""
-  then
-    # Path set, check it's correct
-    as_ac_File=`$as_echo "ac_cv_file_$PACT/include/pdb.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PACT/include/pdb.h" >&5
-$as_echo_n "checking for $PACT/include/pdb.h... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$PACT/include/pdb.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$PACT/include/pdb.h" | $as_tr_cpp` 1
-_ACEOF
-
-else
-
-      echo "PACT library location not correct. Finding..."
-      PACT=""
-
-fi
-
-  else
-    echo "PACT variable not set. Searching for library..."
-  fi
-
-  if ( test "$with_pdb" != "" ) && ( test "$with_pdb" != "yes" ) && ( test "$with_pdb" != "no" )
-  then
-    # could be a path
-    PACT=$with_pdb
-    as_ac_File=`$as_echo "ac_cv_file_$PACT/include/pdb.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PACT/include/pdb.h" >&5
-$as_echo_n "checking for $PACT/include/pdb.h... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$PACT/include/pdb.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$PACT/include/pdb.h" | $as_tr_cpp` 1
-_ACEOF
-
-else
-
-      echo "with-pdb library location not correct. Finding..."
-      PACT=""
-
-fi
-
-  fi
-
-  ## Try some known paths
-  if test "$PACT" = ""
-  then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /usr/include/pdb.h" >&5
-$as_echo_n "checking for /usr/include/pdb.h... " >&6; }
-if ${ac_cv_file__usr_include_pdb_h+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "/usr/include/pdb.h"; then
-  ac_cv_file__usr_include_pdb_h=yes
-else
-  ac_cv_file__usr_include_pdb_h=no
-fi
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_file__usr_include_pdb_h" >&5
-$as_echo "$ac_cv_file__usr_include_pdb_h" >&6; }
-if test "x$ac_cv_file__usr_include_pdb_h" = xyes; then :
-  PACT=/usr/
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /usr/local/include/pdb.h" >&5
-$as_echo_n "checking for /usr/local/include/pdb.h... " >&6; }
-if ${ac_cv_file__usr_local_include_pdb_h+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "/usr/local/include/pdb.h"; then
-  ac_cv_file__usr_local_include_pdb_h=yes
-else
-  ac_cv_file__usr_local_include_pdb_h=no
-fi
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_file__usr_local_include_pdb_h" >&5
-$as_echo "$ac_cv_file__usr_local_include_pdb_h" >&6; }
-if test "x$ac_cv_file__usr_local_include_pdb_h" = xyes; then :
-  PACT=/usr/local/
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /opt/local/include/pdb.h" >&5
-$as_echo_n "checking for /opt/local/include/pdb.h... " >&6; }
-if ${ac_cv_file__opt_local_include_pdb_h+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "/opt/local/include/pdb.h"; then
-  ac_cv_file__opt_local_include_pdb_h=yes
-else
-  ac_cv_file__opt_local_include_pdb_h=no
-fi
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_file__opt_local_include_pdb_h" >&5
-$as_echo "$ac_cv_file__opt_local_include_pdb_h" >&6; }
-if test "x$ac_cv_file__opt_local_include_pdb_h" = xyes; then :
-  PACT=/opt/local/
-else
-  as_ac_File=`$as_echo "ac_cv_file_$HOME/local/include/pdb.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $HOME/local/include/pdb.h" >&5
-$as_echo_n "checking for $HOME/local/include/pdb.h... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$HOME/local/include/pdb.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-  PACT=$HOME/local/
-else
-  as_ac_File=`$as_echo "ac_cv_file_$HOME/local/include/pdb.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $HOME/local/include/pdb.h" >&5
-$as_echo_n "checking for $HOME/local/include/pdb.h... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$HOME/local/include/pdb.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-  PACT=$HOME/local/
-fi
-
-fi
-
-fi
-
-fi
-
-fi
-
-
-
-  ## Try to find using locate
-  if test "$PACT" = ""
-  then
-    PACTFILE=`locate pdb.h | head -n 1`
-    if test "$PACTFILE" != ""
-    then
-      PACTFILE=`dirname $PACTFILE`
-      PACTFILE=$PACTFILE/..
-      as_ac_File=`$as_echo "ac_cv_file_$PACTFILE/include/pdb.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PACTFILE/include/pdb.h" >&5
-$as_echo_n "checking for $PACTFILE/include/pdb.h... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$PACTFILE/include/pdb.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$PACTFILE/include/pdb.h" | $as_tr_cpp` 1
-_ACEOF
-PACT=$PACTFILE
-else
-  PACT=""
-fi
-
-    else
-      echo "checking locate... no"
-    fi
-  fi
-
-  if test "$PACT" != ""
-  then
-    # Check the rest of the PACT libraries exist
-    as_ac_File=`$as_echo "ac_cv_file_$PACT/lib/libpdb.a" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PACT/lib/libpdb.a" >&5
-$as_echo_n "checking for $PACT/lib/libpdb.a... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$PACT/lib/libpdb.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$PACT/lib/libpdb.a" | $as_tr_cpp` 1
-_ACEOF
-PACTPATHLIB='lib'
-else
-  as_ac_File=`$as_echo "ac_cv_file_$PACT/lib64/libpdb.a" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PACT/lib64/libpdb.a" >&5
-$as_echo_n "checking for $PACT/lib64/libpdb.a... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$PACT/lib64/libpdb.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$PACT/lib64/libpdb.a" | $as_tr_cpp` 1
-_ACEOF
-PACTPATHLIB='lib64'
-else
-  PACT=''
-fi
-as_ac_File=`$as_echo "ac_cv_file_$PACT/lib64/libpml.a" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PACT/lib64/libpml.a" >&5
-$as_echo_n "checking for $PACT/lib64/libpml.a... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$PACT/lib64/libpml.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$PACT/lib64/libpml.a" | $as_tr_cpp` 1
-_ACEOF
-PACTPATHLIB='lib64'
-else
-  PACT=''
-fi
-as_ac_File=`$as_echo "ac_cv_file_$PACT/lib64/libscore.a" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PACT/lib64/libscore.a" >&5
-$as_echo_n "checking for $PACT/lib64/libscore.a... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$PACT/lib64/libscore.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$PACT/lib64/libscore.a" | $as_tr_cpp` 1
-_ACEOF
-PACTPATHLIB='lib64'
-else
-  PACT=''
-fi
-
-fi
-as_ac_File=`$as_echo "ac_cv_file_$PACT/lib/libpml.a" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PACT/lib/libpml.a" >&5
-$as_echo_n "checking for $PACT/lib/libpml.a... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$PACT/lib/libpml.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$PACT/lib/libpml.a" | $as_tr_cpp` 1
-_ACEOF
-PACTPATHLIB='lib'
-else
-  as_ac_File=`$as_echo "ac_cv_file_$PACT/lib64/libpdb.a" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PACT/lib64/libpdb.a" >&5
-$as_echo_n "checking for $PACT/lib64/libpdb.a... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$PACT/lib64/libpdb.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$PACT/lib64/libpdb.a" | $as_tr_cpp` 1
-_ACEOF
-PACTPATHLIB='lib64'
-else
-  PACT=''
-fi
-as_ac_File=`$as_echo "ac_cv_file_$PACT/lib64/libpml.a" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PACT/lib64/libpml.a" >&5
-$as_echo_n "checking for $PACT/lib64/libpml.a... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$PACT/lib64/libpml.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$PACT/lib64/libpml.a" | $as_tr_cpp` 1
-_ACEOF
-PACTPATHLIB='lib64'
-else
-  PACT=''
-fi
-as_ac_File=`$as_echo "ac_cv_file_$PACT/lib64/libscore.a" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PACT/lib64/libscore.a" >&5
-$as_echo_n "checking for $PACT/lib64/libscore.a... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$PACT/lib64/libscore.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$PACT/lib64/libscore.a" | $as_tr_cpp` 1
-_ACEOF
-PACTPATHLIB='lib64'
-else
-  PACT=''
-fi
-
-fi
-as_ac_File=`$as_echo "ac_cv_file_$PACT/lib/libscore.a" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PACT/lib/libscore.a" >&5
-$as_echo_n "checking for $PACT/lib/libscore.a... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$PACT/lib/libscore.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$PACT/lib/libscore.a" | $as_tr_cpp` 1
-_ACEOF
-PACTPATHLIB='lib'
-else
-  as_ac_File=`$as_echo "ac_cv_file_$PACT/lib64/libpdb.a" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PACT/lib64/libpdb.a" >&5
-$as_echo_n "checking for $PACT/lib64/libpdb.a... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$PACT/lib64/libpdb.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$PACT/lib64/libpdb.a" | $as_tr_cpp` 1
-_ACEOF
-PACTPATHLIB='lib64'
-else
-  PACT=''
-fi
-as_ac_File=`$as_echo "ac_cv_file_$PACT/lib64/libpml.a" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PACT/lib64/libpml.a" >&5
-$as_echo_n "checking for $PACT/lib64/libpml.a... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$PACT/lib64/libpml.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$PACT/lib64/libpml.a" | $as_tr_cpp` 1
-_ACEOF
-PACTPATHLIB='lib64'
-else
-  PACT=''
-fi
-as_ac_File=`$as_echo "ac_cv_file_$PACT/lib64/libscore.a" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PACT/lib64/libscore.a" >&5
-$as_echo_n "checking for $PACT/lib64/libscore.a... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$PACT/lib64/libscore.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$PACT/lib64/libscore.a" | $as_tr_cpp` 1
-_ACEOF
-PACTPATHLIB='lib64'
-else
-  PACT=''
-fi
-
-fi
-
-    fi
-  fi
-
-  # Test if PACT is set
-  if test "$PACT" != ""
-  then
-    with_pdb="yes"
-
-    # Set include and library paths
-    EXTRA_INCS="$EXTRA_INCS -I$PACT/include"
-    EXTRA_LIBS="$EXTRA_LIBS -L$PACT/$PACTPATHLIB"
-  fi
-
-  ## Add PDB support if available
-  if test "$with_pdb" = "yes"
-  then
-    EXTRA_LIBS="$EXTRA_LIBS -lpdb -lpml -lscore \$(shell $PACT/bin/pact -link)"
-
-    # Set a compile-time flag. PDBF because PDB already used in score.h
-    CXXFLAGS="$CXXFLAGS -DPDBF"
-
-    file_formats="$file_formats PDB"
-    echo "=> PDB support enabled"
-  else
-    echo "=> PDB support not available"
-  fi
-fi
-
-echo
-
-#############################################################
 # Check file formats
 #############################################################
 
@@ -9434,12 +8843,6 @@ then
   HAS_HDF5="no"
 fi
 
-HAS_PDB="yes"
-if test "$PACT" = ""
-then
-  HAS_PDB="no"
-fi
-
 HAS_HYPRE="yes"
 if test "$HYPREPATH" = ""
 then
@@ -9495,8 +8898,6 @@ echo "  NetCDF support: $HAS_NETCDF" | tee -a config-build.log
 echo "  Parallel-NetCDF support: $HAS_PNETCDF" | tee -a config-build.log
 
 echo "  HDF5 support: $HAS_HDF5 (parallel: $HAS_PHDF5)" | tee -a config-build.log
-
-echo "  PDB support: $HAS_PDB" | tee -a config-build.log
 
 echo "  Hypre support: $HAS_HYPRE" | tee -a config-build.log
 
@@ -10698,7 +10099,6 @@ CONFIG_LDFLAGS=`make ldflags -f output.make`
 #############################################################
 # Write configuration to bout-config
 #############################################################
-
 
 
 

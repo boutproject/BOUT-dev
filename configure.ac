@@ -34,7 +34,6 @@ BOUT_VERSION="2.0"
 AC_PREREQ(2.59)
 AC_INIT(BOUT++, BOUT_VERSION, bd512@york.ac.uk)
 
-AC_ARG_WITH(pdb,    [  --with-pdb              Enable support for PDB files])
 AC_ARG_WITH(netcdf, [  --with-netcdf           Enable support for netCDF files])
 AC_ARG_WITH(hdf5,   [  --with-hdf5             Enable support for HDF5 files])
 AC_ARG_WITH(parallelhdf5,[  --with-parallelhdf5     Enable support for parallel HDF5 files])
@@ -1258,101 +1257,6 @@ fi
 echo ""
 
 #############################################################
-# PACT library
-#############################################################
-
-AC_ARG_VAR(PACT,[Path to the Portable Application Toolkit library])
-
-if test "$with_pdb" = "no"
-then
-  echo "=> PDB support disabled"
-else
-  echo "Searching for PDB library"
-
-  if test "$PACT" != ""
-  then
-    # Path set, check it's correct
-    AC_CHECK_FILES( $PACT/include/pdb.h  ,, [
-      echo "PACT library location not correct. Finding..."
-      PACT=""
-    ] )
-  else
-    echo "PACT variable not set. Searching for library..."
-  fi
-
-  if ( test "$with_pdb" != "" ) && ( test "$with_pdb" != "yes" ) && ( test "$with_pdb" != "no" )
-  then
-    # could be a path
-    PACT=$with_pdb
-    AC_CHECK_FILES( $PACT/include/pdb.h ,, [
-      echo "with-pdb library location not correct. Finding..."
-      PACT=""
-    ] )
-  fi
-
-  ## Try some known paths
-  if test "$PACT" = ""
-  then
-    AC_CHECK_FILE(/usr/include/pdb.h, PACT=/usr/,
-    AC_CHECK_FILE(/usr/local/include/pdb.h, PACT=/usr/local/,
-    AC_CHECK_FILE(/opt/local/include/pdb.h, PACT=/opt/local/,
-    AC_CHECK_FILE($HOME/local/include/pdb.h, PACT=$HOME/local/,
-    AC_CHECK_FILE($HOME/local/include/pdb.h, PACT=$HOME/local/,
-    )))))
-
-
-  ## Try to find using locate
-  if test "$PACT" = ""
-  then
-    PACTFILE=`locate pdb.h | head -n 1`
-    if test "$PACTFILE" != ""
-    then
-      PACTFILE=`dirname $PACTFILE`
-      PACTFILE=$PACTFILE/..
-      AC_CHECK_FILES( $PACTFILE/include/pdb.h ,
-        PACT=$PACTFILE,
-        PACT="")
-    else
-      echo "checking locate... no"
-    fi
-  fi
-
-  if test "$PACT" != ""
-  then
-    # Check the rest of the PACT libraries exist
-    AC_CHECK_FILES( $PACT/lib/libpdb.a   $PACT/lib/libpml.a   $PACT/lib/libscore.a,   PACTPATHLIB='lib',
-      AC_CHECK_FILES( $PACT/lib64/libpdb.a $PACT/lib64/libpml.a $PACT/lib64/libscore.a, PACTPATHLIB='lib64', PACT='' ) )
-    fi
-  fi
-
-  # Test if PACT is set
-  if test "$PACT" != ""
-  then
-    with_pdb="yes"
-
-    # Set include and library paths
-    EXTRA_INCS="$EXTRA_INCS -I$PACT/include"
-    EXTRA_LIBS="$EXTRA_LIBS -L$PACT/$PACTPATHLIB"
-  fi
-
-  ## Add PDB support if available
-  if test "$with_pdb" = "yes"
-  then
-    EXTRA_LIBS="$EXTRA_LIBS -lpdb -lpml -lscore \$(shell $PACT/bin/pact -link)"
-
-    # Set a compile-time flag. PDBF because PDB already used in score.h
-    CXXFLAGS="$CXXFLAGS -DPDBF"
-
-    file_formats="$file_formats PDB"
-    echo "=> PDB support enabled"
-  else
-    echo "=> PDB support not available"
-  fi
-fi
-
-echo
-
-#############################################################
 # Check file formats
 #############################################################
 
@@ -1726,12 +1630,6 @@ then
   HAS_HDF5="no"
 fi
 
-HAS_PDB="yes"
-if test "$PACT" = ""
-then
-  HAS_PDB="no"
-fi
-
 HAS_HYPRE="yes"
 if test "$HYPREPATH" = ""
 then
@@ -1787,8 +1685,6 @@ echo "  NetCDF support: $HAS_NETCDF" | tee -a config-build.log
 echo "  Parallel-NetCDF support: $HAS_PNETCDF" | tee -a config-build.log
 
 echo "  HDF5 support: $HAS_HDF5 (parallel: $HAS_PHDF5)" | tee -a config-build.log
-
-echo "  PDB support: $HAS_PDB" | tee -a config-build.log
 
 echo "  Hypre support: $HAS_HYPRE" | tee -a config-build.log
 
@@ -1853,7 +1749,6 @@ AC_SUBST(HAS_ARKODE)
 AC_SUBST(HAS_NETCDF)
 AC_SUBST(HAS_PNETCDF)
 AC_SUBST(HAS_HDF5)
-AC_SUBST(HAS_PDB)
 AC_SUBST(HAS_HYPRE)
 AC_SUBST(HAS_MUMPS)
 AC_SUBST(HAS_LAPACK)
