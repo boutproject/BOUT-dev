@@ -16,10 +16,18 @@ matrix:
   - env: CONFIGURE_OPTIONS='--enable-debug' MPICH_CC=clang MPICH_CXX=clang++
     compiler: clang
 before_install:
-  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+  ##################################################
+  # System packages
+  ##################################################
   - sudo apt-get update -qq
-  - sudo apt-get install -y openmpi-bin libopenmpi-dev
-  - sudo apt-get install -y libfftw3-dev libnetcdf-dev libhdf5-serial-dev netcdf-bin hdf5-tools
+  - sudo apt-get install -qq openmpi-bin libopenmpi-dev
+                             libfftw3-dev libnetcdf-dev
+                             libhdf5-serial-dev netcdf-bin
+                             hdf5-tools
+
+  ##################################################
+  # Install Conda for python 3
+  ##################################################
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
@@ -30,6 +38,8 @@ before_install:
   - conda info -a
   - conda create -q -n test-environment python=3.5 numpy scipy netcdf4
   - source activate test-environment
+
+  ##################################################
 
   # Make sure to use the system NetCDF/HDF5 libraries, or we end up
   # using the Conda libraries, which causes no end of headaches
