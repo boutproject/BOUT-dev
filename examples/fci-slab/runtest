@@ -50,8 +50,8 @@ for n in nlist:
     # Generate grid file
     grid = zb.grid.Grid(nx, n, n)
     slab = zb.field.Slab(grid, Bpprime=0.1, Bp=0.05)
-    maps = zb.make_maps(grid, slab.magnetic_field)
-    zb.write_maps(grid, slab.magnetic_field, maps)
+    maps = zb.make_maps(grid, slab)
+    zb.write_maps(grid, slab, maps)
 
     args = " -d "+directory+" MZ="+str(n)
 

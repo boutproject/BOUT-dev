@@ -128,7 +128,7 @@ class MagneticField(object):
         return P
 
 
-class Slab(object):
+class Slab(MagneticField):
     def __init__(self, grid, Bt=1.0, Bp = 0.1, Bpprime = 1.0):
 
         self.grid = grid
@@ -152,10 +152,10 @@ class Slab(object):
         def Bzfunc(x, z, phi):
             return self.Bp + (x - self.grid.xcentre)*self.Bpprime
 
-        self.magnetic_field = MagneticField(grid, Bxfunc, Bzfunc)
+        super().__init__(grid, Bxfunc, Bzfunc)
 
 
-class Stellarator(object):
+class Stellarator(MagneticField):
     def coil(self, radius, angle, iota, I):
         """Defines a single coil
 
@@ -211,4 +211,4 @@ class Stellarator(object):
         self.Bxfunc = lambdify((self.x, self.z, self.phi), Bx, "numpy")
         self.Bzfunc = lambdify((self.x, self.z, self.phi), Bz, "numpy")
 
-        self.magnetic_field = MagneticField(self.grid, self.Bxfunc, self.Bzfunc)
+        super().__init__(self.grid, self.Bxfunc, self.Bzfunc)
