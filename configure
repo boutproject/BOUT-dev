@@ -736,7 +736,6 @@ SHELL'
 ac_subst_files=''
 ac_user_opts='
 enable_option_checking
-with_pdb
 with_netcdf
 with_pnetcdf
 with_ida
@@ -1401,7 +1400,6 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-pdb              Enable support for PDB files
   --with-netcdf           Enable support for netCDF files
   --with-pnetcdf          Set path to Parallel NetCDF library
   --with-ida=/path/to/ida Use the SUNDIALS IDA solver
@@ -2461,12 +2459,6 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 
-
-
-# Check whether --with-pdb was given.
-if test "${with_pdb+set}" = set; then :
-  withval=$with_pdb;
-fi
 
 
 # Check whether --with-netcdf was given.
@@ -5251,12 +5243,18 @@ if test "x$with_netcdf" != "xno"; then :
   #
   # at first, try to find ncconf script
 
-  OLDNCDF="0" # Indicates whether nc-config or ncxx4-config
-
   # Search for NetCDF config scripts, prefer ncxx4-config over nc-config
-  # Check the path provided by --with-netcdf, appending "/bin" if need be, then check system path
+  # Check if the path to the config script has been supplied directly, otherwise
+  # check the path provided by --with-netcdf, appending "/bin" if need
+  # be, then check system path
   # Set NCCONF to the full path of the found scropt
-  for ac_prog in ncxx4-config nc-config
+  case `basename $with_netcdf` in #(
+  "ncxx4-config") :
+    NCCONF=$with_netcdf ;; #(
+  "nc-config") :
+    NCCONF=$with_netcdf ;; #(
+  *) :
+    for ac_prog in ncxx4-config nc-config
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -5300,18 +5298,19 @@ fi
 
   test -n "$NCCONF" && break
 done
-test -n "$NCCONF" || NCCONF="as_fn_error $? "No configure script found. Specify using --with-netcdf option" "$LINENO" 5"
-
+test -n "$NCCONF" || NCCONF="as_fn_error $? "No configure script found. Specify path using --with-netcdf option" "$LINENO" 5"
+ ;;
+esac
 
   # If we found nc-config rather than ncxx4-config, we need to check if it supports C++
   if test `basename $NCCONF` = 'nc-config'; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if NetCDF has C++4 support" >&5
-$as_echo_n "checking if NetCDF has C++4 support... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if $NCCONF has C++4 support" >&5
+$as_echo_n "checking if $NCCONF has C++4 support... " >&6; }
          nc_has_cpp4=`$NCCONF --has-c++4`
          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $nc_has_cpp4" >&5
 $as_echo "$nc_has_cpp4" >&6; }
-         { $as_echo "$as_me:${as_lineno-$LINENO}: checking if NetCDF has C++ support" >&5
-$as_echo_n "checking if NetCDF has C++ support... " >&6; }
+         { $as_echo "$as_me:${as_lineno-$LINENO}: checking if $NCCONF has C++ support" >&5
+$as_echo_n "checking if $NCCONF has C++ support... " >&6; }
          nc_has_cpp=`$NCCONF --has-c++`
          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $nc_has_cpp" >&5
 $as_echo "$nc_has_cpp" >&6; }
@@ -5336,12 +5335,60 @@ fi
 
 else
 
+        # nc-config might not *say* it has C++ support, but we can try anyway
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can compile NetCDF with C++" >&5
+$as_echo_n "checking if we can compile NetCDF with C++... " >&6; }
         # Note netcdf_c++ needed
         NCLIB=`$NCCONF --libs | sed s/-lnetcdf/-lnetcdf_c++\ -lnetcdf/`
-        CXXFLAGS="$CXXFLAGS -DNCDF"
-        echo " -> NetCDF support enabled"
+
+        save_LIBS=$LIBS
+        save_LDFLAGS=$LDFLAGS
+        ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+        LIBS="$save_LIBS $NCLIB"
+        LDFALGS="save_LDFLAGS $NCINC"
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+             #include <netcdfcpp.h>
+
+int
+main ()
+{
+NcFile file("foo.nc");
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+           echo " -> NetCDF support enabled"
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+           { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "Could not compile NetCDF C++ program!
+See \`config.log' for more details" "$LINENO" 5; }
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+        ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+        LIBS=$save_LIBS
+        LDFLAGS=$save_LDFLAGS
 
 fi
+      CXXFLAGS="$CXXFLAGS -DNCDF"
       EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
 
       file_formats="$file_formats netCDF"

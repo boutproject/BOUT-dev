@@ -310,21 +310,24 @@ AS_IF([test "x$with_netcdf" != "xno"],
   #
   # at first, try to find ncconf script
 
-  OLDNCDF="0" # Indicates whether nc-config or ncxx4-config
-
   # Search for NetCDF config scripts, prefer ncxx4-config over nc-config
-  # Check the path provided by --with-netcdf, appending "/bin" if need be, then check system path
+  # Check if the path to the config script has been supplied directly, otherwise
+  # check the path provided by --with-netcdf, appending "/bin" if need
+  # be, then check system path
   # Set NCCONF to the full path of the found scropt
-  AC_PATH_PROGS([NCCONF], [ncxx4-config nc-config],
-      [AC_MSG_ERROR([No configure script found. Specify using --with-netcdf option])],
-      [$with_netcdf$PATH_SEPARATOR$with_netcdf/bin$PATH_SEPARATOR$PATH])
+  AS_CASE([`basename $with_netcdf`],
+    ["ncxx4-config"], [NCCONF=$with_netcdf],
+    ["nc-config"], [NCCONF=$with_netcdf],
+    [AC_PATH_PROGS([NCCONF], [ncxx4-config nc-config],
+       [AC_MSG_ERROR([No configure script found. Specify path using --with-netcdf option])],
+       [$with_netcdf$PATH_SEPARATOR$with_netcdf/bin$PATH_SEPARATOR$PATH])])
 
   # If we found nc-config rather than ncxx4-config, we need to check if it supports C++
   AS_IF([test `basename $NCCONF` = 'nc-config'],
-        [AC_MSG_CHECKING([if NetCDF has C++4 support])
+        [AC_MSG_CHECKING([if $NCCONF has C++4 support])
          nc_has_cpp4=`$NCCONF --has-c++4`
          AC_MSG_RESULT([$nc_has_cpp4])
-         AC_MSG_CHECKING([if NetCDF has C++ support])
+         AC_MSG_CHECKING([if $NCCONF has C++ support])
          nc_has_cpp=`$NCCONF --has-c++`
          AC_MSG_RESULT([$nc_has_cpp])
         ], [
@@ -343,11 +346,29 @@ AS_IF([test "x$with_netcdf" != "xno"],
         CXXFLAGS="$CXXFLAGS -DNCDF4"
         echo " -> NetCDF-4 support enabled"
        ], [
+        # nc-config might not *say* it has C++ support, but we can try anyway
+        AC_MSG_CHECKING([if we can compile NetCDF with C++])
         # Note netcdf_c++ needed
         NCLIB=`$NCCONF --libs | sed s/-lnetcdf/-lnetcdf_c++\ -lnetcdf/`
-        CXXFLAGS="$CXXFLAGS -DNCDF"
-        echo " -> NetCDF support enabled"
+
+        save_LIBS=$LIBS
+        save_LDFLAGS=$LDFLAGS
+        AC_LANG_PUSH([C++])
+        LIBS="$save_LIBS $NCLIB"
+        LDFALGS="save_LDFLAGS $NCINC"
+        AC_LINK_IFELSE(
+          [AC_LANG_PROGRAM([
+             #include <netcdfcpp.h>
+             ], [NcFile file("foo.nc");])],
+          [AC_MSG_RESULT([yes])
+           echo " -> NetCDF support enabled"],
+          [AC_MSG_RESULT([no])
+           AC_MSG_FAILURE([Could not compile NetCDF C++ program!])])
+        AC_LANG_POP([C++])
+        LIBS=$save_LIBS
+        LDFLAGS=$save_LDFLAGS
        ])
+      CXXFLAGS="$CXXFLAGS -DNCDF"
       EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
 
       file_formats="$file_formats netCDF"
