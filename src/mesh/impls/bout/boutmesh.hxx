@@ -58,8 +58,8 @@ class BoutMesh : public Mesh {
   /////////////////////////////////////////////
   // Y communications
   
-  bool firstY();
-  bool lastY();
+  bool firstY() const;
+  bool lastY() const;
   bool firstY(int xpos);
   bool lastY(int xpos);
   int UpXSplitIndex();
@@ -84,6 +84,11 @@ class BoutMesh : public Mesh {
   // Boundary iteration
   const RangeIterator iterateBndryLowerY() const;
   const RangeIterator iterateBndryUpperY() const;
+  const RangeIterator iterateBndryLowerInnerY() const;
+  const RangeIterator iterateBndryLowerOuterY() const;
+  const RangeIterator iterateBndryUpperInnerY() const;
+  const RangeIterator iterateBndryUpperOuterY() const;
+
 
   // Boundary regions
   vector<BoundaryRegion*> getBoundaries();
