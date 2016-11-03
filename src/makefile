@@ -30,8 +30,9 @@ checksum:
 	@echo $(CHECKSUM)
 
 # This to make sure build time is always printed correctly
+.PHONY: bout++.cxx
+
 initial_message:
-	@touch $(SOURCEC)
 	@echo ""
 	@echo "----- Compiling BOUT++ -----" 
 	@echo "CXX      = " $(CXX)
