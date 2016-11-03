@@ -23,7 +23,7 @@ BoutReal mu_N; // Parallel collisional diffusion coefficient
 BoutReal Lx, Ly, Lz;
 
 Coordinates *coord;
-ErrorMonitor error_monitor();
+ErrorMonitor error_monitor;
 int physics_init(bool restarting) {
   // Get the options
   Options *meshoptions = Options::getRoot()->getSection("mesh");

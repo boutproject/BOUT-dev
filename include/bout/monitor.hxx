@@ -1,16 +1,17 @@
 #pragma once
 
 template <typename t>
-t abs(t a){
+t bout_abs(t a){
   return a>0? a:-1;
 }
+
 template <typename t>
 bool isMultiple(t a, t b){
   t min = a>b?b:a;
   t max = a>b?a:b;
   int ratio = (max/min)+.5;
   t error = ratio*min - max;
-  if (abs(error/max) > 1e-5)
+  if (bout_abs(error/max) > 1e-5)
     return false;
   return true;
 }
