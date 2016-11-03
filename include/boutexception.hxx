@@ -20,6 +20,7 @@ public:
   void Backtrace();
 protected:
   char * buffer;
+  static const int BUFFER_LEN=1024;
   int buflen; // Length of char buffer for printing
   string message;
 };
