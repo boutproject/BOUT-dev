@@ -32,10 +32,10 @@ protected:
   GlobalField(Mesh *m, int proc, int xsize, int ysize, int zsize);
   
   Mesh *mesh;
-  
+
+  int data_on_proc; // Which processor is this data on?  
   int nx, ny, nz;
   BoutReal *data;
-  int data_on_proc; // Which processor is this data on?
 
   MPI_Comm comm;
   int npes, mype;

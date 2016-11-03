@@ -73,6 +73,7 @@ class Datafile {
   bool guards;   // Write guard cells?
   bool floats;   // Low precision?
   bool openclose; // Open and close file for each write
+  int Lx,Ly,Lz; // The sizes in the x-, y- and z-directions of the arrays to be written
   bool enabled;  // Enable / Disable writing
   bool shiftOutput; //Do we want to write out in shifted space?
 
@@ -81,7 +82,6 @@ class Datafile {
   static const int FILENAMELEN=512;
   char *filename;
   bool appending;
-  int Lx,Ly,Lz; // The sizes in the x-, y- and z-directions of the arrays to be written
 
   /// A structure to hold a pointer to a class, and associated name and flags
   template <class T>

@@ -68,11 +68,11 @@ public:
 
   void calcYUpDown(Field3D &f);
 
-  const Field3D toFieldAligned(const Field3D &f) {
+  const Field3D toFieldAligned(const Field3D &UNUSED(f)) {
     throw BoutException("FCI method cannot transform into field aligned grid");
   }
 
-  const Field3D fromFieldAligned(const Field3D &f) {
+  const Field3D fromFieldAligned(const Field3D &UNUSED(f)) {
     throw BoutException("FCI method cannot transform into field aligned grid");
   }
 private:

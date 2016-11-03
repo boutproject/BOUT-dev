@@ -14,6 +14,8 @@
 
 #include <fft.hxx>
 
+#include <unused.hxx>
+
 /*!
  * Creates a GridFile object
  * 
@@ -75,7 +77,7 @@ bool GridFile::hasVar(const string &name) {
  *   Boolean. True on success.
  * 
  */
-bool GridFile::get(Mesh *m, int &ival,      const string &name) {
+bool GridFile::get(Mesh *UNUSED(m), int &ival,      const string &name) {
   Timer timer("io");
   MsgStackItem msg("GridFile::get(int)");
   
@@ -89,7 +91,7 @@ bool GridFile::get(Mesh *m, int &ival,      const string &name) {
  *
  *
  */
-bool GridFile::get(Mesh *m, BoutReal &rval, const string &name) {
+bool GridFile::get(Mesh *UNUSED(m), BoutReal &rval, const string &name) {
   Timer timer("io");
   MsgStackItem msg("GridFile::get(BoutReal)");
   
@@ -279,7 +281,8 @@ bool GridFile::get(Mesh *m, Field3D &var,   const string &name, BoutReal def) {
   return true;
 }
 
-bool GridFile::get(Mesh *m, vector<int> &var, const string &name, int len, int offset, GridDataSource::Direction dir) {
+bool GridFile::get(Mesh *UNUSED(m), vector<int> &var, const string &name,
+                   int len, int offset, GridDataSource::Direction UNUSED(dir)) {
   MsgStackItem msg("GridFile::get(vector<int>)");
   
   if(!file->is_valid())
@@ -294,7 +297,8 @@ bool GridFile::get(Mesh *m, vector<int> &var, const string &name, int len, int o
   return true;
 }
 
-bool GridFile::get(Mesh *m, vector<BoutReal> &var, const string &name, int len, int offset, GridDataSource::Direction dir) {
+bool GridFile::get(Mesh *UNUSED(m), vector<BoutReal> &var, const string &name,
+                   int len, int offset, GridDataSource::Direction UNUSED(dir)) {
   MsgStackItem msg("GridFile::get(vector<BoutReal>)");
   
   if(!file->is_valid())
@@ -393,17 +397,7 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const string &name,
 	  fdata[i] = 0.0;
 	}
       }
-      
-      // Inverse FFT, shifting in the z direction
-      for(int jz=0;jz<=ncz/2;jz++) {
-	BoutReal kwave;
-	
-	kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
-      
-	// Multiply by EXP(ik*zoffset)
-	//fdata[jz] *= dcomplex(cos(kwave*zShift[jx][jy]) , sin(kwave*zShift[jx][jy]));
-      }
-      
+
       irfft(fdata, ncz, &var(jx,ydest+jy,0));
     }
   }

@@ -105,7 +105,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
 
         data = f.read(varname)
         return data
-    
+
     file_list_nc = glob.glob(os.path.join(path, prefix+".*nc"))
     file_list_h5 = glob.glob(os.path.join(path, prefix+".*hdf5"))
     if file_list_nc != [] and file_list_h5 != []:
@@ -116,7 +116,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
     else:
         suffix = ".nc"
         file_list = file_list_nc
-        
+
     file_list.sort()
     if file_list == []:
         raise IOError("ERROR: No data files found")
@@ -136,11 +136,11 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
         else:
             # Find the variable
             varname = findVar(varname, f.list())
-            
+
             dimens = f.dimensions(varname)
             #ndims = len(dimens)
             ndims = f.ndims(varname)
-    
+
     if ndims < 2:
         # Just read from file
         data = f.read(varname)
@@ -168,41 +168,45 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
 
     # Get the version of BOUT++ (should be > 0.6 for NetCDF anyway)
     try:
-        version = f.read("BOUT_VERSION")
-
-        # 2D decomposition
-        nxpe = f.read("NXPE")
-        mxg  = f.read("MXG")
-        nype = f.read("NYPE")
-        npe = nxpe * nype
-
-        if info:
-            print("nxpe = %d, nype = %d, npe = %d\n" % (nxpe, nype, npe))
-            if npe < nfiles:
-                print("WARNING: More files than expected (" + str(npe) + ")")
-            elif npe > nfiles:
-                print("WARNING: Some files missing. Expected " + str(npe))
-
-        if xguards:
-            nx = nxpe * mxsub + 2*mxg
-        else:
-            nx = nxpe * mxsub
+        version = f["BOUT_VERSION"]
     except KeyError:
         print("BOUT++ version : Pre-0.2")
-        # Assume number of files is correct
-        # No decomposition in X
-        nx = mxsub
-        mxg = 0
-        nxpe = 1
-        nype = nfiles
-    
         version = 0
-
     if version < 3.5:
         # Remove extra point
         nz = mz-1
     else:
         nz = mz
+
+    # Fallback to sensible (?) defaults
+    try:
+        nxpe = f["NXPE"]
+    except KeyError:
+        nxpe = 1
+        print("NXPE not found, setting to {}".format(nxpe))
+    try:
+        mxg  = f["MXG"]
+    except KeyError:
+        mxg = 0
+        print("MXG not found, setting to {}".format(mxg))
+    try:
+        nype = f["NYPE"]
+    except KeyError:
+        nype = nfiles
+        print("NYPE not found, setting to {}".format(nype))
+
+    npe = nxpe * nype
+    if info:
+        print("nxpe = %d, nype = %d, npe = %d\n" % (nxpe, nype, npe))
+        if npe < nfiles:
+            print("WARNING: More files than expected (" + str(npe) + ")")
+        elif npe > nfiles:
+            print("WARNING: Some files missing. Expected " + str(npe))
+
+    if xguards:
+        nx = nxpe * mxsub + 2*mxg
+    else:
+        nx = nxpe * mxsub
 
     if yguards:
         ny = mysub * nype + 2*myg
@@ -364,7 +368,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
 
         if not inrange:
             continue # Don't need this file
-        
+
         filename = os.path.join(path, prefix+"." + str(i) + suffix)
         if info:
             sys.stdout.write("\rReading from " + filename + ": [" + \

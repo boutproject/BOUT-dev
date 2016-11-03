@@ -55,7 +55,7 @@ extern "C" {
   void dgtsv_(int *n, int *nrhs, BoutReal *dl, BoutReal *d, BoutReal *du, BoutReal *b, int *ldb, int *info); 
   /// Complex band solver
   void zgbsv_(int *n, int *kl, int *ku, int *nrhs, fcmplx *ab, int *ldab, int *ipiv, fcmplx *b, int *ldb, int *info);
-};
+}
 
 /// Use LAPACK routine ZGTSV. About 25% slower than the simple NR routine for 260 points
 int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcomplex *r, dcomplex *u, int n)

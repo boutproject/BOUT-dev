@@ -66,6 +66,8 @@ class Mesh;
 
 #include "paralleltransform.hxx" // ParallelTransform class
 
+#include "unused.hxx"
+
 #include <list>
 #include <memory>
 
@@ -82,7 +84,7 @@ class Mesh {
   
   // Currently need to create and load mesh in separate calls. Will be removed
   virtual int load() {return 1;}
-  virtual void outputVars(Datafile &file) {} ///< Output variables to a data file
+  virtual void outputVars(Datafile &UNUSED(file)) {} ///< Output variables to a data file
 
   
   // Get routines to request data from mesh file
@@ -192,9 +194,9 @@ class Mesh {
 
   // Boundary regions
   virtual vector<BoundaryRegion*> getBoundaries() = 0;
-  virtual void addBoundary(BoundaryRegion* bndry) {}
+  virtual void addBoundary(BoundaryRegion* UNUSED(bndry)) {}
   virtual vector<BoundaryRegionPar*> getBoundariesPar() = 0;
-  virtual void addBoundaryPar(BoundaryRegionPar* bndry) {}
+  virtual void addBoundaryPar(BoundaryRegionPar* UNUSED(bndry)) {}
   
   // Branch-cut special handling (experimental)
   virtual const Field3D smoothSeparatrix(const Field3D &f) {return f;}

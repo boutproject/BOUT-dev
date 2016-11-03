@@ -60,27 +60,10 @@ NcFormat::NcFormat(const char *name) {
   openr(name);
 }
 
-NcFormat::NcFormat(const string &name) {
-  dataFile = NULL;
-  x0 = y0 = z0 = t0 = 0;
-  recDimList = new const NcDim*[4];
-  dimList = recDimList+1;
-  lowPrecision = false;
-
-  default_rec = 0;
-  rec_nr.clear();
-
-  openr(name);
-}
-
 NcFormat::~NcFormat() {
   delete[] recDimList;
   close();
   rec_nr.clear();
-}
-
-bool NcFormat::openr(const string &name) {
-  return openr(name.c_str());
 }
 
 bool NcFormat::openr(const char *name) {
@@ -156,10 +139,6 @@ bool NcFormat::openr(const char *name) {
 #endif
 
   return true;
-}
-
-bool NcFormat::openw(const string &name, bool append) {
-  return openw(name.c_str(), append);
 }
 
 bool NcFormat::openw(const char *name, bool append) {

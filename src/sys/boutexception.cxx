@@ -67,7 +67,7 @@ void BoutException::Backtrace() {
       }
     }
 #else
-  output.write("Stacktrace not enabled.\n");
+  message+="Stacktrace not enabled.\n";
 #endif
 }
 

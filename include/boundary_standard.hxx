@@ -6,6 +6,7 @@
 #include "boundary_op.hxx"
 #include "bout_types.hxx"
 #include <field_factory.hxx>
+#include "unused.hxx"
 
 /// Dirichlet (set to zero) boundary condition
 class BoundaryDirichlet : public BoundaryOp {
@@ -251,8 +252,8 @@ class BoundaryDivCurl : public BoundaryOp {
   BoundaryDivCurl() {}
   BoundaryDivCurl(BoundaryRegion *region):BoundaryOp(region) { }
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
-  void apply(Field2D &f) { bout_error("ERROR: DivCurl boundary only for vectors"); }
-  void apply(Field3D &f) { bout_error("ERROR: DivCurl boundary only for vectors"); }
+  void apply(Field2D &UNUSED(f)) { bout_error("ERROR: DivCurl boundary only for vectors"); }
+  void apply(Field3D &UNUSED(f)) { bout_error("ERROR: DivCurl boundary only for vectors"); }
   void apply(Vector2D &f);
   void apply(Vector3D &f);
 };
@@ -342,7 +343,7 @@ private:
 /// Equivalent to converting the boundary condition to "Field Aligned" from "orthogonal"
 class BoundaryToFieldAligned : public BoundaryModifier {
 public:
-  BoundaryToFieldAligned(){NULL;};
+  BoundaryToFieldAligned(){}
   BoundaryToFieldAligned(BoundaryOp *operation) : BoundaryModifier(operation){}
   BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
 
@@ -360,7 +361,7 @@ private:
 /// Equivalent to converting the boundary condition from "Field Aligned" to "orthogonal"
 class BoundaryFromFieldAligned : public BoundaryModifier {
 public:
-  BoundaryFromFieldAligned(){NULL;};
+  BoundaryFromFieldAligned(){}
   BoundaryFromFieldAligned(BoundaryOp *operation) : BoundaryModifier(operation){}
   BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
 

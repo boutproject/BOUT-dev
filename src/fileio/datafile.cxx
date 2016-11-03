@@ -159,7 +159,7 @@ bool Datafile::openw(const char *format, ...) {
     // Open the file
     int MYPE;
     MPI_Comm_rank(BoutComm::get(), &MYPE);
-    if(!file->openw(filename, MYPE))
+    if(!file->openw(filename, MYPE, appending))
       return false;
   }
   
@@ -593,17 +593,17 @@ bool Datafile::read_f3d(const string &name, Field3D *f, bool grow) {
 
 bool Datafile::write_int(const string &name, int *f, bool grow) {
   if(grow) {
-    file->write_rec(f, name);
+    return file->write_rec(f, name);
   }else {
-    file->write(f, name);
+    return file->write(f, name);
   }
 }
 
 bool Datafile::write_real(const string &name, BoutReal *f, bool grow) {
   if(grow) {
-    file->write_rec(f, name);
+    return file->write_rec(f, name);
   }else {
-    file->write(f, name);
+    return file->write(f, name);
   }
 }
 

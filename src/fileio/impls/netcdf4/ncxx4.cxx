@@ -65,27 +65,10 @@ Ncxx4::Ncxx4(const char *name) {
   openr(name);
 }
 
-Ncxx4::Ncxx4(const string &name) {
-  dataFile = NULL;
-  x0 = y0 = z0 = t0 = 0;
-  recDimList = new const NcDim*[4];
-  dimList = recDimList+1;
-  lowPrecision = false;
-
-  default_rec = 0;
-  rec_nr.clear();
-
-  openr(name);
-}
-
 Ncxx4::~Ncxx4() {
   delete[] recDimList;
   close();
   rec_nr.clear();
-}
-
-bool Ncxx4::openr(const string &name) {
-  return openr(name.c_str());
 }
 
 bool Ncxx4::openr(const char *name) {
@@ -146,10 +129,6 @@ bool Ncxx4::openr(const char *name) {
 #endif
 
   return true;
-}
-
-bool Ncxx4::openw(const string &name, bool append) {
-  return openw(name.c_str(), append);
 }
 
 bool Ncxx4::openw(const char *name, bool append) {
@@ -332,8 +311,8 @@ const vector<int> Ncxx4::getSize(const char *name) {
     return size;
   }
   
-  for(const auto& dim in var.getDims()) {
-    size.push_back(dim->getSize());
+  for(const auto& dim: var.getDims()) {
+    size.push_back(dim.getSize());
   }
   
 #ifdef CHECK

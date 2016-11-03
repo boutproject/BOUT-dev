@@ -8,6 +8,7 @@
 
 #include <iterator>
 #include <iostream>
+#include "unused.hxx"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -50,7 +51,7 @@ public:
   // use as DataIterator(int,int,int,int,int,int,DI_GET_END);
   DataIterator(int xs, int xe,
 	       int ys, int ye,
-	       int zs, int ze,void* dummy) :
+	       int zs, int ze, void* UNUSED(dummy)) :
 #ifndef _OPENMP
     x(xe), y(ye), z(ze),
     xstart(xs),   ystart(ys),   zstart(zs),
@@ -129,14 +130,19 @@ public:
 private:
   DataIterator(); // Disable null constructor
 
-  int xstart, xend;
-  int ystart, yend;
-  int zstart, zend;
+  int xstart, ystart, zstart;
+
 #ifndef _OPENMP
   int &xmin, &ymin, &zmin;
-  int &xmax, &ymax, &zmax;
 #else
   int xmin, ymin, zmin;
+#endif
+
+  int xend, yend, zend;
+
+#ifndef _OPENMP
+  int &xmax, &ymax, &zmax;
+#else
   int xmax, ymax, zmax;
 #endif
   
@@ -242,7 +248,7 @@ inline void DataIterator::omp_init(int xs, int xe,bool end){
   }
 };
 #else
-inline void DataIterator::omp_init(int xs, int xe,bool end){;};
+inline void DataIterator::omp_init(int UNUSED(xs), int UNUSED(xe), bool UNUSED(end)){;}
 #endif
 
 #endif // __DATAITERATOR_H__

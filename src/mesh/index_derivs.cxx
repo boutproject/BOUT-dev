@@ -388,12 +388,14 @@ Mesh::boundary_derivs_pair DDX_F2_stag(forward_stencil &f) {
   Mesh::boundary_derivs_pair result;
   result.inner = -2.*f.c+3*f.p-f.p2;
   result.outer = -2.*f.m+3*f.c-f.p;
+  return result;
 }
 
 Mesh::boundary_derivs_pair DDX_B2_stag(backward_stencil &f) {
   Mesh::boundary_derivs_pair result;
   result.inner = 2.*f.c-3*f.m+f.m2;
   result.outer = 2.*f.p-3*f.c+f.m;
+  return result;
 }
 
 BoutReal DDX_C4_stag(stencil &f) {
@@ -550,7 +552,7 @@ static DiffNameLookup DiffNameTable[] = { {DIFF_U1, "U1", "First order upwinding
 					  {DIFF_FFT, "FFT", "FFT"},
                       {DIFF_NND, "NND", "NND"},
                       {DIFF_SPLIT, "SPLIT", "Split into upwind and central"},
-					  {DIFF_DEFAULT}}; // Use to terminate the list
+					  {DIFF_DEFAULT, NULL, NULL}}; // Use to terminate the list
 
 /// First derivative lookup table
 static DiffLookup FirstDerivTable[] = { {DIFF_C2, DDX_C2,     DDX_F2, DDX_B2, NULL, NULL, NULL, NULL},
@@ -559,13 +561,13 @@ static DiffLookup FirstDerivTable[] = { {DIFF_C2, DDX_C2,     DDX_F2, DDX_B2, NU
 					{DIFF_C4, DDX_C4,     DDX_F4, DDX_B4, NULL, NULL, NULL, NULL},
                                         {DIFF_S2, DDX_S2,     NULL,   NULL,   NULL, NULL, NULL, NULL},
 					{DIFF_FFT, NULL,      NULL,   NULL,   NULL, NULL, NULL, NULL},
-					{DIFF_DEFAULT}};
+					{DIFF_DEFAULT, NULL,  NULL,   NULL,   NULL, NULL, NULL, NULL}};
 
 /// Second derivative lookup table
 static DiffLookup SecondDerivTable[] = { {DIFF_C2, D2DX2_C2, D2DX2_F2, D2DX2_B2, NULL, NULL, NULL, NULL},
 					 {DIFF_C4, D2DX2_C4, D2DX2_F4, D2DX2_B4, NULL, NULL, NULL, NULL},
 					 {DIFF_FFT, NULL,    NULL,     NULL,     NULL, NULL, NULL, NULL},
-					 {DIFF_DEFAULT}};
+					 {DIFF_DEFAULT, NULL,NULL,     NULL,     NULL, NULL, NULL, NULL}};
 
 /// Upwinding functions lookup table
 static DiffLookup UpwindTable[] = { {DIFF_U1, NULL, NULL, NULL, VDDX_U1, NULL, NULL, NULL},
@@ -574,7 +576,7 @@ static DiffLookup UpwindTable[] = { {DIFF_U1, NULL, NULL, NULL, VDDX_U1, NULL, N
 				    {DIFF_U4, NULL, NULL, NULL, VDDX_U4, NULL, NULL, NULL},
 				    {DIFF_W3, NULL, NULL, NULL, VDDX_WENO3, NULL, NULL, NULL},
 				    {DIFF_C4, NULL, NULL, NULL, VDDX_C4, NULL, NULL, NULL},
-				    {DIFF_DEFAULT}};
+				    {DIFF_DEFAULT, NULL, NULL, NULL, NULL, NULL, NULL, NULL}};
 
 /// Flux functions lookup table
 static DiffLookup FluxTable[] = { {DIFF_SPLIT, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
@@ -582,28 +584,28 @@ static DiffLookup FluxTable[] = { {DIFF_SPLIT, NULL, NULL, NULL, NULL, NULL, NUL
                                   {DIFF_C2, NULL, NULL, NULL, NULL, FDDX_C2, NULL, NULL},
                                   {DIFF_C4, NULL, NULL, NULL, NULL, FDDX_C4, NULL, NULL},
                                   {DIFF_NND, NULL, NULL, NULL, NULL, FDDX_NND, NULL, NULL},
-                                  {DIFF_DEFAULT}};
+                                  {DIFF_DEFAULT, NULL, NULL, NULL, NULL, NULL, NULL, NULL}};
 
 /// First staggered derivative lookup
 static DiffLookup FirstStagDerivTable[] = { {DIFF_C2, DDX_C2_stag, DDX_F2_stag, DDX_B2_stag, NULL, NULL, NULL, NULL}, 
 					    {DIFF_C4, DDX_C4_stag, DDX_F4_stag, DDX_B4_stag, NULL, NULL, NULL, NULL},
-					    {DIFF_DEFAULT}};
+					    {DIFF_DEFAULT, NULL, NULL, NULL, NULL, NULL, NULL, NULL}};
 
 /// Second staggered derivative lookup
 static DiffLookup SecondStagDerivTable[] = { {DIFF_C4, D2DX2_C4_stag, D2DX2_F4_stag, D2DX2_B4_stag, NULL, NULL, NULL, NULL},
-					     {DIFF_DEFAULT}};
+					     {DIFF_DEFAULT, NULL, NULL, NULL, NULL, NULL, NULL, NULL}};
 
 /// Upwinding staggered lookup
 static DiffLookup UpwindStagTable[] = { {DIFF_U1, NULL, NULL, NULL, NULL, VDDX_U1_stag, NULL, NULL},
 					{DIFF_U2, NULL, NULL, NULL, NULL, VDDX_U2_stag, NULL, NULL},
 					{DIFF_C2, NULL, NULL, NULL, NULL, VDDX_C2_stag, NULL, NULL},
 					{DIFF_C4, NULL, NULL, NULL, NULL, VDDX_C4_stag, NULL, NULL},
-					{DIFF_DEFAULT} };
+					{DIFF_DEFAULT, NULL, NULL, NULL, NULL, NULL, NULL, NULL} };
 
 /// Flux staggered lookup
 static DiffLookup FluxStagTable[] = { {DIFF_SPLIT, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
                                       {DIFF_U1, NULL, NULL, NULL, NULL, FDDX_U1_stag, NULL, NULL},
-                                      {DIFF_DEFAULT}};
+                                      {DIFF_DEFAULT, NULL, NULL, NULL, NULL, NULL, NULL, NULL}};
 
 /*******************************************************************************
  * Routines to use the above tables to map between function codes, names
@@ -715,15 +717,13 @@ DIFF_METHOD lookupFunc(DiffLookup *table, const string &label) {
     return table[0].method;
 
   matchtype = DIFF_DEFAULT;
-  int typeind;
-  
+
   // Loop through the name lookup table
   int i = 0;
   do {
     if((toupper(DiffNameTable[i].label[0]) == toupper(label[0])) && isImplemented(table, DiffNameTable[i].method)) {
       matchtype = DiffNameTable[i].method;
-      typeind = i;
-      
+
       if(strcasecmp(label.c_str(), DiffNameTable[i].label) == 0) {// Whole match
 	return matchtype;
       }
@@ -1686,7 +1686,7 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
   return interp_to(result, outloc);
 }
 
-const Field2D Mesh::indexDDZ(const Field2D &f) {
+const Field2D Mesh::indexDDZ(const Field2D &UNUSED(f)) {
   Field2D result;
   result = 0.0;
   return result;
@@ -2041,12 +2041,14 @@ Mesh::boundary_derivs_pair D4D4_F2(forward_stencil &f) {
   Mesh::boundary_derivs_pair result;
   result.inner = 2.*f.m-9.*f.c+16.*f.p-14.*f.p2+6.*f.p3-f.p4;
   result.outer = 3.*f.m-14.*f.c+26.*f.p-24.*f.p2+11.*f.p3-2.*f.p4;
+  return result;
 }
 
 Mesh::boundary_derivs_pair D4D4_B2(backward_stencil &f) {
   Mesh::boundary_derivs_pair result;
   result.inner = 2.*f.p-9.*f.c+16.*f.m-14.*f.m2+6.*f.m3-f.m4;
   result.outer = 3.*f.p-14.*f.c+26.*f.m-24.*f.m2+11.*f.m3-2.*f.m4;
+  return result;
 }
 
 const Field3D Mesh::indexD4DX4(const Field3D &f) {
@@ -2083,7 +2085,7 @@ const Field3D Mesh::indexD4DZ4(const Field3D &f) {
 ////////////// X DERIVATIVE /////////////////
 
 /// Special case where both arguments are 2D. Output location ignored for now
-const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC UNUSED(outloc), DIFF_METHOD method) {
   Mesh::upwind_func func = fVDDX;
 
   if(method != DIFF_DEFAULT) {

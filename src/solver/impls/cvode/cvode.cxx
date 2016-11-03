@@ -547,7 +547,6 @@ static int cvode_rhs(BoutReal t,
   CvodeSolver *s = (CvodeSolver*) user_data;
   
   // Calculate RHS function
-  int rhs_status = 0;
   try {
     s->rhs(t, udata, dudata);
   }
@@ -643,7 +642,7 @@ void CvodeSolver::set_abstol_values(BoutReal* abstolvec_data, vector<BoutReal> &
 
 void CvodeSolver::loop_abstol_values_op(int jx, int jy, BoutReal* abstolvec_data, int &p, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols, bool bndry) {
   // Loop over 2D variables
-  for(int i=0;i<f2dtols.size();i++) {
+  for(vector<BoutReal>::size_type i=0; i<f2dtols.size(); i++) {
     if(bndry && !f2d[i].evolve_bndry) {
       continue;
     }
@@ -653,7 +652,7 @@ void CvodeSolver::loop_abstol_values_op(int jx, int jy, BoutReal* abstolvec_data
   
   for (int jz=0; jz < mesh->LocalNz; jz++) {
     // Loop over 3D variables
-    for(int i=0;i<f3dtols.size();i++) {
+    for(vector<BoutReal>::size_type i=0; i<f3dtols.size(); i++) {
       if(bndry && !f3d[i].evolve_bndry) {
         continue;
       }

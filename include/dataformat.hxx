@@ -1,7 +1,7 @@
 /*!
  * \file dataformat.hxx
  *
- * \brief Generic interface for file formats e.g. PDB, netCDF
+ * \brief Generic interface for file formats e.g. netCDF, HDF5
  *
  * \author B.Dudson
  * \date   April 2009
@@ -45,9 +45,15 @@ class DataFormat {
  public:
   virtual ~DataFormat() { }
   // File opening routines
-  virtual bool openr(const string &name) = 0;
+  virtual bool openr(const char *name) = 0;
+  virtual bool openr(const string &name) {
+    return openr(name.c_str());
+  }
   virtual bool openr(const string &base, int mype);
-  virtual bool openw(const string &name, bool append=false) = 0;
+  virtual bool openw(const char *name, bool append=false) = 0;
+  virtual bool openw(const string &name, bool append=false) {
+    return openw(name.c_str(), append);
+  }
   virtual bool openw(const string &base, int mype, bool append=false);
   
   virtual bool is_valid() = 0;

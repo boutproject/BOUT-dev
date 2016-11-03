@@ -57,14 +57,12 @@ class PncFormat : public DataFormat {
  public:
   PncFormat();
   PncFormat(const char *name);
-  PncFormat(const string &name);
+  PncFormat(const string &name) : PncFormat(name.c_str()) {}
   ~PncFormat();
-  
-  bool openr(const string &name) { return openr(name.c_str()); }
+
   bool openr(const char *name);
   bool openr(const string &name, int mype) {return openr(name);}
 
-  bool openw(const string &name, bool append=false) { return openw(name.c_str(), append); }
   bool openw(const char *name, bool append=false);
   bool openw(const string &name, int mype, bool append=false) {return openw(name, append);}
 

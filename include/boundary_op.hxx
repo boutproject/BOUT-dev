@@ -10,6 +10,7 @@ class BoundaryModifier;
 #include "field3d.hxx"
 #include "vector2d.hxx"
 #include "vector3d.hxx"
+#include "unused.hxx"
 
 #include <cmath>
 #include <string>
@@ -24,9 +25,9 @@ public:
 
   /// Apply a boundary condition on field f
   virtual void apply(Field2D &f) = 0;
-  virtual void apply(Field2D &f,BoutReal t){return apply(f);}//JMAD
+  virtual void apply(Field2D &f,BoutReal UNUSED(t)){return apply(f);}//JMAD
   virtual void apply(Field3D &f) = 0;
-  virtual void apply(Field3D &f,BoutReal t){return apply(f);}//JMAD
+  virtual void apply(Field3D &f,BoutReal UNUSED(t)){return apply(f);}//JMAD
 
   virtual void apply(Vector2D &f) {
     apply(f.x);
@@ -49,7 +50,7 @@ public:
   virtual ~BoundaryOp() {}
 
   // Note: All methods must implement clone, except for modifiers (see below)
-  virtual BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) {return NULL; }
+  virtual BoundaryOp* clone(BoundaryRegion *UNUSED(region), const list<string> &UNUSED(args)) {return NULL; }
 
   /// Apply a boundary condition on ddt(f)
   virtual void apply_ddt(Field2D &f) {

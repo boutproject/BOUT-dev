@@ -166,7 +166,6 @@ public:
 
   typedef T* iterator;
 
-  
   iterator begin() {
     return (ptr) ? ptr->data : nullptr;
   }
@@ -176,7 +175,7 @@ public:
   }
 
   // Const iterators
-  typedef T*const const_iterator;
+  typedef const T* const_iterator;
   
   const_iterator begin() const {
     return (ptr) ? ptr->data : nullptr;

@@ -44,7 +44,7 @@ void OptionsReader::parseCommandLine(Options *options, int argc, char **argv) {
   string buffer;
 
   // Go through command-line arguments
-  for (size_t i=1;i<argc;i++) {
+  for (int i=1;i<argc;i++) {
 
     // Reset the section
     options = options->getRoot();
