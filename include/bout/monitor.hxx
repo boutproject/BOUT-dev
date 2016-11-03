@@ -17,9 +17,12 @@ bool isMultiple(t a, t b){
 
 
 class Monitor{
+  friend class Solver; // needs access to timestep and freq
 public:
+  Monitor(BoutReal timestep_=-1):timestep(timestep_){};
   virtual int call(Solver * solver, BoutReal time, int iter, int nout)=0;
   bool operator==(const Monitor& rhs) const;
+private:
   BoutReal timestep;
   int freq;
 };
