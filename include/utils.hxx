@@ -85,7 +85,7 @@ T BOUTMAX(T a){
 template <typename T, typename... Args>
 T BOUTMAX(T a,T b,Args... args){
   T c = BOUTMAX(b,args...);
-  return c > a? c :a;
+  return c > a ? c : a;
 }
 
 template <typename T>
