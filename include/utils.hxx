@@ -94,8 +94,8 @@ T BOUTMIN(T a){
 }
 template <typename T, typename... Args>
 T BOUTMIN(T a,T b,Args... args){
-  T c = BOUTMAX(b,args...);
-  return c < a? c :a;
+  T c = BOUTMIN(b,args...);
+  return c < a ? c : a;
 }
 
 inline bool is_pow2(int x) { // Check if a number is a power of 2
