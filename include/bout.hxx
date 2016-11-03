@@ -80,7 +80,10 @@ int BoutInitialise(int &argc, char **&argv);
 
 int bout_run(Solver *solver, rhsfunc physics_run);
 
-int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT); 
+
+class BoutMonitor: public Monitor{
+  int call(Solver *solver, BoutReal t, int iter, int NOUT) override;
+};
 
 /*!
  * BOUT++ finalisation. This should be called at the

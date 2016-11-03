@@ -328,6 +328,7 @@ int bout_run(Solver *solver, rhsfunc physics_run) {
   solver->setRHS(physics_run);
   
   /// Add the monitor function
+  Monitor * bout_monitor = new BoutMonitor();
   solver->addMonitor(bout_monitor, Solver::BACK);
 
   /// Run the simulation
@@ -385,13 +386,13 @@ int BoutFinalise() {
  * Called each timestep by the solver
  **************************************************************************/
 
-int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
+int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
   // Data used for timing
   static bool first_time = true;
   static BoutReal wall_limit, mpi_start_time; // Keep track of remaining wall time
 
 #ifdef CHECK
-  int msg_point = msg_stack.push("bout_monitor(%e, %d, %d)", t, iter, NOUT);
+  int msg_point = msg_stack.push("BoutMonitor::call(%e, %d, %d)", t, iter, NOUT);
 #endif
 
   // Set the global variables. This is done because they need to be
