@@ -17,8 +17,8 @@ BOUT/examples/bout_runners_example.
 #          parameters
 __authors__ = "Michael Loeiten"
 __email__   = "mmag@fysik.dtu.dk"
-__version__ = "1.06"
-__date__    = "2016.10.29"
+__version__ = "1.061"
+__date__    = "2016.11.05"
 
 import os
 import sys
@@ -695,9 +695,9 @@ class basic_runner(object):
         self._PBS_id = tuple(self._PBS_id)
         if hasattr(self._dmp_folders, "__iter__")\
            and type(self._dmp_folders) != str:
-            self._dmp_folder = tuple(tuple(el) for el in self._dmp_folder)
+            self._dmp_folders = tuple(el for el in self._dmp_folders)
         else:
-            self._dmp_folder = tuple(self._dmp_folder)
+            self._dmp_folders = (self._dmp_folders,)
 
         return self._dmp_folders, self._PBS_id
 #}}}
@@ -1507,11 +1507,7 @@ class basic_runner(object):
             # Set a success variable that will fail if anything goes
             # wrong
             success = True
-# FIXME:
-#            # If we need to change the elements, make sure that the
-#            # input element is not a tuple
-#            if type(input_member[0]) == tuple:
-#                success = False
+
             # Loop through all elements in input_member
             for elem in input_member[0]:
                 # Check if self._addition is iterable, but not a string
@@ -2055,7 +2051,13 @@ class basic_runner(object):
 
         # Create folder if it doesn't exists
         self._create_folder(self._dmp_folder)
-        self._dmp_folders.append(self._dmp_folder)
+
+        if type(self._dmp_folders) != tuple:
+            # If self._dmp_folders is a tuple, it means that execute runs
+            # is called more then once.
+            # self._dmp_folders should then not be appended
+            self._dmp_folders.append(self._dmp_folder)
+
         # If self._dmp_folder contains anything other than
         # self._directory
         if self._dmp_folder != self._directory:
@@ -4104,9 +4106,9 @@ class PBS_runner(basic_runner):
         # Call the post processing function
         if hasattr(folders, "__iter__") and type(folders) != str:
             python_tmp+="{}({},{})\n".\
-                    format(function.__name__, folders, arguments)
+                    format(function.__name__, tuple(folders), arguments)
         elif type(folders) == str:
-            python_tmp+="{}('{}',{})\n".\
+            python_tmp+="{}(('{}',),{})\n".\
                     format(function.__name__, folders, arguments)
         # When the script has run, it will delete itself
         python_tmp += "os.remove('{}')\n".format(python_name)
