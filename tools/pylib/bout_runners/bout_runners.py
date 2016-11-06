@@ -621,7 +621,7 @@ class basic_runner(object):
         # run, make an appendable list over all the runs which will be
         # passed as an input parameter to the post processing function
         if not(post_process_after_every_run):
-            list_of_dmp_folders = []
+            seq_of_dmp_folders = []
 
         # Print either "now running" or "now submitting"
         self._print_run_or_submit()
@@ -676,20 +676,20 @@ class basic_runner(object):
                     # Call the post processing function
                     self._call_post_processing_function(\
                             function = post_processing_function,\
-                            folders  = self._dmp_folder,\
+                            folders  = tuple(self._dmp_folders),\
                             **kwargs)
                 else:
                     # Append the dmp folder to the list of dmp folders
-                    list_of_dmp_folders.append(self._dmp_folder)
+                    seq_of_dmp_folders.append(self._dmp_folder)
                     # If the run_no+1 is divisible by self._len_group
                     if ((run_no+1) % self._len_group == 0):
                         # Call the post processing function
                         self._call_post_processing_function(\
                                 function = post_processing_function,\
-                                folders  = list_of_dmp_folders,\
+                                folders  = tuple(seq_of_dmp_folders),\
                                 **kwargs)
-                        # Reset the list_of_dmp_folders
-                        list_of_dmp_folders = []
+                        # Reset the seq_of_dmp_folders
+                        seq_of_dmp_folders = []
 
         # Cast to tuple
         self._PBS_id = tuple(self._PBS_id)
