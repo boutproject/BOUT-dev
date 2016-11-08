@@ -7,7 +7,7 @@ the docstrings.
 ## Contents
 ### The program:
 
-* `3D_diffusion.cxx` - Simulates 3D diffusion
+* `diffusion_3D.cxx` - Simulates 3D diffusion
 * `make` - The corresponding make file (notice that the `bout_runner`
   calls this, so no make is necessary for the `bout_runner` to work.
 
@@ -42,3 +42,6 @@ the docstrings.
   using `bout_runners`
 * `11-restart_with_scan.py` - Use `bout_runners` to restart runs
   belonging to a parameter scan
+* `12-PBS_restart_with_waiting.py` - Runs where the restart waits for jobs to
+  finish
+*  `13-restart_w_add_noise.py` - Adds noise to a restart run

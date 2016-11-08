@@ -133,7 +133,7 @@ class basic_runner(object):
                  use_expand   = False ,\
                  max_proc     = None  ,\
                  intrp_method = None  ,\
-                 addnoise     = None  ,\
+                 add_noise    = None  ,\
                  cpy_source   = None  ,\
                  cpy_grid     = None  ,\
                  sort_by      = None  ,\
@@ -277,7 +277,7 @@ class basic_runner(object):
         intrp_method: str
             Only used when restarting, and when the mesh is resizied.
             Sets the method used in the interpolation.
-        addnoise : dict
+        add_noise : dict
             Adding noise to the restart files by calling the addnoise
             function in boutdata.restart.  Will only be effective if
             "restart" is not None.  Must be given as a dict with "var"
@@ -288,7 +288,7 @@ class basic_runner(object):
             will be used.
             Example:
 
-            >>> addnoise = {"n":1e-4, "Te":1e-5}
+            >>> add_noise = {"n":1e-4, "Te":1e-5}
 
         cpy_source : bool
             Wheter or not to copy the source files to the folder of the
@@ -383,7 +383,7 @@ class basic_runner(object):
         self._use_expand      = use_expand
         self._max_proc        = max_proc
         self._intrp_method    = intrp_method
-        self._addnoise        = addnoise
+        self._add_noise       = add_noise
         self._cpy_source      = cpy_source
         self._cpy_grid        = cpy_grid
         self._sort_by         = self._set_member_data(sort_by)
@@ -1233,39 +1233,31 @@ class basic_runner(object):
                 raise TypeError(message)
         #}}}
 
-        #{{{Check if addnoise is set correctly
-        if self._addnoise is not None:
+        #{{{Check if add_noise is set correctly
+        if self._add_noise is not None:
             # Throw warning if restart is None
             if self._restart is None:
-                message = "addnoise will be ignored as restart = None"
+                message = "add_noise will be ignored as restart = None"
                 self._warning_printer(message)
                 self._warnings.append(message)
 
             raise_error = False
-            if type(self._addnoise) == dict:
-                addnoise_keys = self._addnoise.keys()
-                if "var" in addnoise_keys:
-                    if type(self._addnoise["var"]) == str or\
-                       self._addnoise["var"] is None:
-                        if "scale" in addnoise_keys:
-                            if \
-                            not(isinstance(self._addnoise["scale"], Number))\
-                            and (self._addnoise["scale"] is not None):
-                                raise_error = True
-                        else:
-                            raise_error = True
-                    else:
+            if type(self._add_noise) == dict:
+                for var, scale in self._add_noise.items():
+                    if type(var) != str:
                         raise_error = True
-                else:
-                    raise_error = True
+                        break
+                    if not(isinstance(scale, Number) or (scale is None)):
+                        raise_error = True
+                        break
             else:
                 raise_error = True
 
             if raise_error:
                 self._errors.append("TypeError")
-                message = ("addnoise must be on the form "\
-                           "{'var': string_or_none, "\
-                           "'scale': number_or_none}")
+                message = ("add_noise must be on the form "\
+                           "{'var1': number_or_none,"\
+                           " 'var2': number_or_none, ...}")
                 raise TypeError (message)
         #}}}
 
@@ -2024,7 +2016,7 @@ class basic_runner(object):
           changed.
         - Expand the runs (change nz) if nz is set and it deviates from
           what is found in the restart files.
-        - Add noise to the restart files if addnoise and restart is set
+        - Add noise to the restart files if add_noise and restart is set
         - Copy files if restart is set to overwrite
         - Copy the source files to the final folder is cpy_source is True.
 
@@ -2485,13 +2477,21 @@ class basic_runner(object):
         #}}}
 
         #{{{ Add noise
-        if self._restart and self._addnoise and do_run:
+        if self._restart and self._add_noise and do_run:
             print("Now adding noise\n")
-            if self._addnoise["scale"] is None:
-                self._addnoise["scale"] = 1e-5
-            addnoise(path = self._dmp_folder,\
-                     var = self._addnoise["var"],\
-                     scale = self._addnoise["scale"])
+            for var, scale in self._add_noise.items():
+                if scale is None:
+                    scale = 1e-5
+                    print("No scale set for '{}', setting to {}\n".\
+                          format(var, scale))
+                try:
+                    addnoise(path = self._dmp_folder,\
+                             var = var,\
+                             scale = scale)
+                except Exception as ex:
+                    print("{0}{1}addnoise failed with the following error:{0}".\
+                          format("\n"*4, "!"*3))
+                    raise ex
             print("\n")
         #}}}
 
