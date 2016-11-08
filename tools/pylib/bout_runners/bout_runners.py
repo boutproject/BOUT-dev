@@ -17,8 +17,8 @@ BOUT/examples/bout_runners_example.
 #          parameters
 __authors__ = "Michael Loeiten"
 __email__   = "mmag@fysik.dtu.dk"
-__version__ = "1.061"
-__date__    = "2016.11.05"
+__version__ = "1.0611"
+__date__    = "2016.11.08"
 
 import os
 import sys
@@ -678,6 +678,8 @@ class basic_runner(object):
                             function = post_processing_function,\
                             folders  = tuple(self._dmp_folders),\
                             **kwargs)
+                    # Reset the seq_of_dmp_folders
+                    seq_of_dmp_folders = []
                 else:
                     # Append the dmp folder to the list of dmp folders
                     seq_of_dmp_folders.append(self._dmp_folder)
