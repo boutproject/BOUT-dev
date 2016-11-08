@@ -534,56 +534,48 @@ int BoutMesh::load() {
   /// Find covariant metric components
   // Check if any of the components are present
   if (source->hasVar("g_11") or
-      source->hasVar("g_22") or
-      source->hasVar("g_33") or
-      source->hasVar("g_12") or
-      source->hasVar("g_13") or
-      source->hasVar("g_23")
-     ){
-    // Check that all components are present
-    if (source->hasVar("g_11") and
-        source->hasVar("g_22") and
-        source->hasVar("g_33") and
-        source->hasVar("g_12") and
-        source->hasVar("g_13") and
-        source->hasVar("g_23")
-       ){
-      get(g_11, "g_11");
-      get(g_22, "g_22");
-      get(g_33, "g_33");
-      get(g_12, "g_12");
-      get(g_13, "g_13");
-      get(g_23, "g_23");
-      // Check if the contravariant is also given
-      if (source->hasVar("g11") and
-          source->hasVar("g22") and
-          source->hasVar("g33") and
-          source->hasVar("g12") and
-          source->hasVar("g13") and
-          source->hasVar("g23")
-         ){
-            throw BoutException("Both co and contravariant part of metric"
-                                " tensor specified manually. Exception thrown"
-                                " as gij*g^ij=I cannot be guaranteed.");
-      }
-      else{
-        output.write("\tCovariant metric tensor given, calculating contravariant metric tensor from covariant\n");
-        calcContravariant();
-      }
-    }
-    else
-    {
-      output.write("Not all covariant components of metric tensor found. Calculating all from the contravariant tensor\n");
-      /// Calculate contravariant metric components if not found
-      if(calcCovariant())
-        throw BoutException("Error in calcCovariant call");
-    }
+		  source->hasVar("g_22") or
+		  source->hasVar("g_33") or
+		  source->hasVar("g_12") or
+		  source->hasVar("g_13") or
+		  source->hasVar("g_23")
+  ){
+	  // Check that all components are present
+	  if (source->hasVar("g_11") and
+			  source->hasVar("g_22") and
+			  source->hasVar("g_33") and
+			  source->hasVar("g_12") and
+			  source->hasVar("g_13") and
+			  source->hasVar("g_23")
+	  ){
+		  get(g_11, "g_11");
+		  get(g_22, "g_22");
+		  get(g_33, "g_33");
+		  get(g_12, "g_12");
+		  get(g_13, "g_13");
+		  get(g_23, "g_23");
+
+		  ///Since used provided co- and contravariant metric tensors check if they are consistent
+		  // i.e. gij*g_ij - I < \epsilon
+		  BoutReal error = gijXg_ijMinusI();
+		  output << "\t\|\|gij g_ij - I|_{\infty}\|_2 = : " << error << endl; 
+		  if(error > 0.01){			  
+			  throw BoutException("gij and g_ij are not consistent. |gij* g_ij - I| => 0.01  ");
+		  }
+	  }
+	  else
+	  {
+		  output.write("Not all covariant components of metric tensor found. Calculating all from the contravariant tensor\n");
+		  /// Calculate contravariant metric components if not found
+		  if(calcCovariant())
+			  throw BoutException("Error in calcCovariant call");
+	  }
   }
   else
   {
-    /// Calculate contravariant metric components if not found
-    if(calcCovariant())
-      throw BoutException("Error in calcCovariant call");
+	  /// Calculate contravariant metric components if not found
+	  if(calcCovariant())
+		  throw BoutException("Error in calcCovariant call");
   }
 
   /// Calculate Jacobian and Bxy

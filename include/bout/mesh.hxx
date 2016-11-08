@@ -231,6 +231,7 @@ class Mesh {
   int calcCovariant(); ///< Inverts contravatiant metric to get covariant
   int calcContravariant(); ///< Invert covariant metric to get contravariant
   int jacobian(); // Calculate J and Bxy
+  BoutReal gijXg_ijMinusI(BoutReal epsilon = 10E-10); //<Returns inf norm of \| g_ij gij - I \|_inf = \epsilon
   
   bool non_uniform; // Use corrections for non-uniform meshes
   

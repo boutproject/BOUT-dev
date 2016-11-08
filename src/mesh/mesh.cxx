@@ -612,6 +612,62 @@ const vector<int> Mesh::readInts(const string &name, int n) {
   return result;
 }
 
+BoutReal Mesh::gijXg_ijMinusI(BoutReal epsilon ){
+	BoutReal globalError = 0.;
+	BoutReal localError = 0.;
+	///2d array of field3d pointers. Using array because vector of const references aor const pointers is not allowed
+	Field2D * const gij[3][3] = {{&g11,&g12,&g13}, {&g12,&g22,&g23}, {&g13,&g23,&g33}};
+	Field2D * const g_ij[3][3]= {{&g_11,&g_12,&g_13}, {&g_12,&g_22,&g_23}, {&g_13,&g_23,&g_33}};
+
+	BoutReal res[3][3] = {{0.,0.,0.},{0.,0.,0.},{0.,0.,0.}};
+	const BoutReal I[3][3] = {{1.,0.,0.},{0.,1.,0.},{0.,1.,0.}};
+
+	/*for(int i = 0; i<3;i++)	for(int j = 0; j<3;j++){
+				output << "gij " << i << " " << j << " : " << (*gij[i][j])(1,1) <<endl;
+				output << "g_ij " << i << " " << j << " : " << (*g_ij[i][j])(1,1) <<endl;
+	}
+	for(int i = 0; i<3;i++)
+		{
+			for(int j = 0; j<3;j++)
+			{
+				for(int k = 0; k<3;k++){
+
+					res[i][j] += (*gij[i][k])(1,1) * (*g_ij[k][j])(1,1);
+				}
+				//res[i][j] -=  I[i][j];
+
+			}
+			globalError += mesh->dx(1,1)*mesh->dy(1,1)*(*std::max_element(res[i],res[i]+3));//matrix inf norm
+
+		}
+	for(int i = 0; i<3;i++)	for(int j = 0; j<3;j++){
+					output << "res " << i << " " << j << " : " << res[i][j]<<endl;
+	}
+	exit(0);*/
+	for(int x=mesh->xstart;x<mesh->xend;x++)for(int y=mesh->ystart;y<mesh->yend;y++)
+	{//do matrix multiplication for each point in space
+		for(int i = 0; i<3;i++)
+		{
+			for(int j = 0; j<3;j++)
+			{
+				for(int k = 0; k<3;k++){
+
+					res[i][j] += (*gij[i][k])(x,y) * (*g_ij[k][j])(x,y);
+				}
+				res[i][j] -=  I[i][j];
+
+			}///L2 norm of matrix inf norm
+			localError += mesh->dx(x,y)*mesh->dy(x,y)*(*std::max_element(res[i],res[i]+3));
+		}
+
+		for(int i = 0; i<3;i++)	for(int j = 0; j<3;j++){
+			res[i][j] = 0.;
+		}
+	}
+	MPI_Allreduce(&localError,&globalError,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+	return globalError;
+}
+
 /*******************************************************************************
  * Gauss-Jordan matrix inversion
  * used to invert metric tensor
