@@ -676,7 +676,7 @@ class basic_runner(object):
                     # Call the post processing function
                     self._call_post_processing_function(\
                             function = post_processing_function,\
-                            folders  = tuple(self._dmp_folders),\
+                            folders  = tuple(self._dmp_folder),\
                             **kwargs)
                     # Reset the seq_of_dmp_folders
                     seq_of_dmp_folders = []
