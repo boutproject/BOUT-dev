@@ -557,10 +557,15 @@ int BoutMesh::load() {
 
 		  ///Since used provided co- and contravariant metric tensors check if they are consistent
 		  // i.e. gij*g_ij - I < \epsilon
-		  BoutReal error = gijXg_ijMinusI();
-		  output << "\t\|\|gij g_ij - I|_{\infty}\|_2 = : " << error << endl; 
-		  if(error > 0.01){			  
-			  throw BoutException("gij and g_ij are not consistent. |gij* g_ij - I| => 0.01  ");
+		  Options *solver_options = Options::getRoot()->getSection("solver");
+		  bool mms;
+		  solver_options->get("mms",mms,false);
+		  if(!mms){//In verification exercises using mms we allow inconsistent metrics 
+			  BoutReal error = gijXg_ijMinusI();
+			  output << "\t\|\|gij g_ij - I|_{\infty}\|_2 = : " << error << endl; 
+			  if(error > 0.1){			  
+				  throw BoutException("gij and g_ij are not consistent. |gij* g_ij - I| => 0.01  ");
+			  }
 		  }
 	  }
 	  else
