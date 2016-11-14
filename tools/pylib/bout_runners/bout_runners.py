@@ -17,8 +17,8 @@ BOUT/examples/bout_runners_example.
 #          parameters
 __authors__ = "Michael Loeiten"
 __email__   = "mmag@fysik.dtu.dk"
-__version__ = "1.0611"
-__date__    = "2016.11.08"
+__version__ = "1.0612"
+__date__    = "2016.11.14"
 
 import os
 import sys
@@ -1242,14 +1242,20 @@ class basic_runner(object):
                 self._warnings.append(message)
 
             raise_error = False
+            is_key_none = False
             if type(self._add_noise) == dict:
                 for var, scale in self._add_noise.items():
                     if type(var) != str:
-                        raise_error = True
-                        break
+                        if var is not(None):
+                            raise_error = True
+                            break
+                        else:
+                            is_key_none = True
                     if not(isinstance(scale, Number) or (scale is None)):
                         raise_error = True
                         break
+                if is_key_none and len(self._add_noise.keys()) > 1:
+                    raise_error = True
             else:
                 raise_error = True
 
@@ -1257,7 +1263,10 @@ class basic_runner(object):
                 self._errors.append("TypeError")
                 message = ("add_noise must be on the form "\
                            "{'var1': number_or_none,"\
-                           " 'var2': number_or_none, ...}")
+                           " 'var2': number_or_none, ...}'\n"
+                           "or\n"
+                           "{None: number_or_none}"
+                           )
                 raise TypeError (message)
         #}}}
 
