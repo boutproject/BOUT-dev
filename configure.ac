@@ -585,31 +585,33 @@ then
     AC_MSG_ERROR([PETSc must be version 3, found $PETSC_VERSION_MAJOR])
   fi
 
+  AC_MSG_CHECKING([PETSc interface version])
   if test "$PETSC_VERSION_MINOR" = "1"
   then
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_1"
-    echo "Using PETSc 3.1 interface"
+    AC_MSG_RESULT([3.1])
   elif test "$PETSC_VERSION_MINOR" = "2"
   then
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_2"
-    echo "Using PETSc 3.2 interface"
+    AC_MSG_RESULT([3.2])
   elif test "$PETSC_VERSION_MINOR" = "3" && test "$PETSC_VERSION_RELEASE" = "1"
   then
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_3"
-    echo "Using PETSc 3.3 interface"
+    AC_MSG_RESULT([3.3])
   elif test "$PETSC_VERSION_MINOR" = "4" && test "$PETSC_VERSION_RELEASE" = "1"
   then
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_4"
-    echo "Using PETSc 3.4 interface"
+    AC_MSG_RESULT([3.4])
   elif test "$PETSC_VERSION_MINOR" = "5" && test "$PETSC_VERSION_RELEASE" = "1"
   then
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_5"
-    echo "Using PETSc 3.5 interface"
+    AC_MSG_RESULT([3.5])
   elif test "$PETSC_VERSION_MINOR" = "5" && test "$PETSC_VERSION_RELEASE" = "0"
   then
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
-    echo "Using PETSc-dev interface"
+    AC_MSG_RESULT([dev])
   else
+    AC_MSG_RESULT([unknown])
     echo "***********************************"
     echo "WARNING: Unrecognised PETSc version"
     echo "MAJOR VERSION: $PETSC_VERSION_MAJOR"
@@ -627,36 +629,45 @@ PETSC_DIR  = ${PETSC_DIR}
 include ${PETSC_CONFDIR}/rules
 include ${PETSC_CONFDIR}/variables
 echo_cxx:
-    -@echo \${CXX}
+	-@echo \${CXX}
 echo_sundials:
-    -@echo \${SUNDIALS_LIB}
+	-@echo \${SUNDIALS_LIB}
+echo_language:
+	-@echo \${PETSC_LANGUAGE}
 MFILE
 
-  CXX="`make -f petscmake$$ echo_cxx`"
-  HAS_SUNDIALS=`make -f petscmake$$ echo_sundials | grep -c sundials`
-  HAS_CXX=`echo $CXX | grep -ic mp`
+  AC_MSG_CHECKING([PETSC has C++ support])
+  PETSC_HAS_CXX=`make -f petscmake$$ echo_language | grep -c CXX`
 
-  if test "$HAS_SUNDIALS" == "0"
+  if test "$PETSC_HAS_CXX" == "0"
+  then
+    AC_MSG_RESULT([no])
+    AC_MSG_ERROR([Warning - PETSc must have C++ support])
+  fi
+  AC_MSG_RESULT([yes])
+
+  AC_MSG_CHECKING([PETSc C++ compiler used])
+  PETSC_CXX=`make -f petscmake$$ echo_cxx`
+  AC_MSG_RESULT([$PETSC_CXX])
+
+  AC_MSG_CHECKING([PETSc has SUNDIALS support])
+  PETSC_HAS_SUNDIALS=`make -f petscmake$$ echo_sundials | grep -c sundials`
+
+  if test "$PETSC_HAS_SUNDIALS" == "0"
   then
     echo "Warning - PETSc has no SUNDIALS support"
     PETSC_HAS_SUNDIALS="no"
   else
     PETSC_HAS_SUNDIALS="yes"
   fi
-
-  if test "$HAS_CXX" == "0"
-  then
-    echo "Warning - PETSc must have C++ support"
-  fi
-
-  echo "PETSc used C++ compiler $CXX"
+  AC_MSG_RESULT([$PETSC_HAS_SUNDIALS])
 
   rm petscmake$$
 
   # Set the line to be included in the make.conf file
   PETSC="include ${PETSC_CONFDIR}/variables"
 else
-   PETSC=
+  PETSC=
 fi
 AC_SUBST(PETSC, $PETSC)
 
