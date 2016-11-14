@@ -1360,10 +1360,6 @@ BoutReal max(const Field3D &f, bool allpe) {
     return result;                                         \
   }
 
-const Field3D SQ(const Field3D &f) {
-  return f * f;
-}
-
 F3D_FUNC(sqrt, ::sqrt);
 F3D_FUNC(abs, ::fabs);
 

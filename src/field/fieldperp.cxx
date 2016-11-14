@@ -240,10 +240,6 @@ const FieldPerp copy(const FieldPerp &f) {
   return fcopy;
 }
 
-const FieldPerp SQ(const FieldPerp &f) {
-  return f*f;
-}
- 
 const FieldPerp sliceXZ(const Field3D& f, int y) {
   // Source field should be valid
   ASSERT1(f.isAllocated());

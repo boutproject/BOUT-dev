@@ -208,10 +208,6 @@ const FieldPerp operator/(const BoutReal lhs, const FieldPerp &rhs);
 
 const FieldPerp copy(const FieldPerp &f);
 
-/*!
- * Square a FieldPerp
- */
-const FieldPerp SQ(const FieldPerp &f);
 
 /*!
  * Create a FieldPerp by slicing a 3D field at a given y

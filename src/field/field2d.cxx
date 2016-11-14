@@ -584,10 +584,6 @@ const Field2D operator-(const Field2D &f) {
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
-const Field2D SQ(const Field2D &f) {
-  return f*f;
-}
-
 BoutReal min(const Field2D &f, bool allpe) {
   TRACE("min(Field2D)");
   
