@@ -287,6 +287,7 @@ def get_for_loop(d,mode,field,guards,sten_name ):
             print "    "+d,"=N%s"%d,"-%d ;"%(guards_[1])
             if guards_[1]>2:
                 print >>sys.stderr,guards_
+                raise "To many guards"
         for d2 in perp_dir[field][d]:
             print "    for (int "+d2,"=0; "+d2,"< N"+d2,";++"+d2,") {"
             
@@ -432,6 +433,7 @@ def gen_functions_normal(to_gen):
                 for func in functions:
                     print >>sys.stderr,func.name
                 print >>sys.stderr,stencils
+                print >>sys.stderr,f_ar
                 print >>sys.stderr,"#error unexpected: sten is None for sten_name %s !"%sten_name
                 exit(1)
             if sten_name=='main':
@@ -473,6 +475,7 @@ def gen_functions_normal(to_gen):
                         import sys
                         print >>sys.stderr,result_, body,sten.body
                         print "      "+get_diff('c()',"result",field,d)+"=result_.inner;"
+                        raise "Fuuu"
                     #print "      if (mesh->%sstart >1 ){"%d
 
                     if guards > 1:

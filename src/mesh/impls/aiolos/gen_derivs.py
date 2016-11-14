@@ -61,7 +61,12 @@ funcs_to_gen=[]
 default_methods=dict()
 duplicates(func_tables.keys())
 for t in func_tables:
-    func_tables[t].pop('DIFF_DEFAULT')
+    try:
+        func_tables[t].pop('DIFF_DEFAULT')
+    except:
+        #print >>sys.stderr,t
+        #print >>sys.stderr,func_tables[t]
+        pass
     try:
         func_tables[t].pop('DIFF_SPLIT')
     except:
