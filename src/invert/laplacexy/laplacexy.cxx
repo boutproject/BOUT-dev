@@ -284,6 +284,8 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
 
 void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
   Timer timer("invert");
+
+  Coordinates *coords = mesh->coordinates();
   
   //////////////////////////////////////////////////
   // Set Matrix elements
@@ -298,22 +300,22 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
       // XX component
       
       // Metrics on x+1/2 boundary
-      BoutReal J = 0.5*(mesh->J(x,y) + mesh->J(x+1,y));
-      BoutReal g11 = 0.5*(mesh->g11(x,y) + mesh->g11(x+1,y));
-      BoutReal dx = 0.5*(mesh->dx(x,y) + mesh->dx(x+1,y));
+      BoutReal J = 0.5*(coords->J(x,y) + coords->J(x+1,y));
+      BoutReal g11 = 0.5*(coords->g11(x,y) + coords->g11(x+1,y));
+      BoutReal dx = 0.5*(coords->dx(x,y) + coords->dx(x+1,y));
       BoutReal Acoef = 0.5*(A(x,y) + A(x+1,y));
       
-      BoutReal val = Acoef * J * g11 / (mesh->J(x,y) * dx * mesh->dx(x,y));
+      BoutReal val = Acoef * J * g11 / (coords->J(x,y) * dx * coords->dx(x,y));
       xp = val;
       c  = -val;
       
       // Metrics on x-1/2 boundary
-      J = 0.5*(mesh->J(x,y) + mesh->J(x-1,y));
-      g11 = 0.5*(mesh->g11(x,y) + mesh->g11(x-1,y));
-      dx = 0.5*(mesh->dx(x,y) + mesh->dx(x-1,y));
+      J = 0.5*(coords->J(x,y) + coords->J(x-1,y));
+      g11 = 0.5*(coords->g11(x,y) + coords->g11(x-1,y));
+      dx = 0.5*(coords->dx(x,y) + coords->dx(x-1,y));
       Acoef = 0.5*(A(x,y) + A(x-1,y));
       
-      val = Acoef * J * g11 / (mesh->J(x,y) * dx * mesh->dx(x,y));
+      val = Acoef * J * g11 / (coords->J(x,y) * dx * coords->dx(x,y));
       xm = val;
       c  -= val;
 
@@ -327,26 +329,26 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
       if( include_y_derivs ) {
         // YY component
         // Metrics at y+1/2
-        J = 0.5*(mesh->J(x,y) + mesh->J(x,y+1));
-        BoutReal g_22 = 0.5*(mesh->g_22(x,y) + mesh->g_22(x,y+1));
-        BoutReal g23  = 0.5*(mesh->g23(x,y) + mesh->g23(x,y+1));
-        BoutReal g_23 = 0.5*(mesh->g_23(x,y) + mesh->g_23(x,y+1));
-        BoutReal dy   = 0.5*(mesh->dy(x,y) + mesh->dy(x,y+1));
+        J = 0.5*(coords->J(x,y) + coords->J(x,y+1));
+        BoutReal g_22 = 0.5*(coords->g_22(x,y) + coords->g_22(x,y+1));
+        BoutReal g23  = 0.5*(coords->g23(x,y) + coords->g23(x,y+1));
+        BoutReal g_23 = 0.5*(coords->g_23(x,y) + coords->g_23(x,y+1));
+        BoutReal dy   = 0.5*(coords->dy(x,y) + coords->dy(x,y+1));
         Acoef = 0.5*(A(x,y+1) + A(x,y));
         
-        val = -Acoef * J * g23 * g_23 / (g_22 * mesh->J(x,y) * dy * mesh->dy(x,y));
+        val = -Acoef * J * g23 * g_23 / (g_22 * coords->J(x,y) * dy * coords->dy(x,y));
         yp = val;
         c -= val;
         
         // Metrics at y-1/2
-        J    = 0.5*(mesh->J(x,y)    + mesh->J(x,y-1));
-        g_22 = 0.5*(mesh->g_22(x,y) + mesh->g_22(x,y-1));
-        g23  = 0.5*(mesh->g23(x,y)  + mesh->g23(x,y-1));
-        g_23 = 0.5*(mesh->g_23(x,y) + mesh->g_23(x,y-1));
-        dy   = 0.5*(mesh->dy(x,y)   + mesh->dy(x,y-1));
+        J    = 0.5*(coords->J(x,y)    + coords->J(x,y-1));
+        g_22 = 0.5*(coords->g_22(x,y) + coords->g_22(x,y-1));
+        g23  = 0.5*(coords->g23(x,y)  + coords->g23(x,y-1));
+        g_23 = 0.5*(coords->g_23(x,y) + coords->g_23(x,y-1));
+        dy   = 0.5*(coords->dy(x,y)   + coords->dy(x,y-1));
         Acoef = 0.5*(A(x,y-1) + A(x,y));
         
-        val = -Acoef * J * g23 * g_23 / (g_22 * mesh->J(x,y) * dy * mesh->dy(x,y));
+        val = -Acoef * J * g23 * g_23 / (g_22 * coords->J(x,y) * dy * coords->dy(x,y));
         ym = val;
         c -= val;
       }
