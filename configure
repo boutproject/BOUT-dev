@@ -7757,13 +7757,11 @@ $as_echo "$PETSC_CXX" >&6; }
 $as_echo_n "checking PETSc has SUNDIALS support... " >&6; }
   PETSC_HAS_SUNDIALS=`make -f petscmake$$ echo_sundials | grep -c sundials`
 
-  if test "$PETSC_HAS_SUNDIALS" == "0"
-  then
-    echo "Warning - PETSc has no SUNDIALS support"
-    PETSC_HAS_SUNDIALS="no"
-  else
-    PETSC_HAS_SUNDIALS="yes"
-  fi
+  if test "$PETSC_HAS_SUNDIALS" == "0"; then :
+  PETSC_HAS_SUNDIALS="no"
+else
+  PETSC_HAS_SUNDIALS="yes"
+fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PETSC_HAS_SUNDIALS" >&5
 $as_echo "$PETSC_HAS_SUNDIALS" >&6; }
 
@@ -7869,7 +7867,7 @@ fi
   if test "$SLEPC_VERSION_MAJOR" = "3" && test "$SLEPC_VERSION_MINOR" = "4"
   then
     # Version 3.4
-    echo "  -> Using interface for SLEPc 3.4"
+    echo " -> Using interface for SLEPc 3.4"
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SLEPC -DBOUT_HAS_SLEPC_3_4"
     HAS_SLEPC="yes"
 

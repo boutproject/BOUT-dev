@@ -651,13 +651,9 @@ MFILE
   AC_MSG_CHECKING([PETSc has SUNDIALS support])
   PETSC_HAS_SUNDIALS=`make -f petscmake$$ echo_sundials | grep -c sundials`
 
-  if test "$PETSC_HAS_SUNDIALS" == "0"
-  then
-    echo "Warning - PETSc has no SUNDIALS support"
-    PETSC_HAS_SUNDIALS="no"
-  else
-    PETSC_HAS_SUNDIALS="yes"
-  fi
+  AS_IF([test "$PETSC_HAS_SUNDIALS" == "0"],
+        [PETSC_HAS_SUNDIALS="no"],
+        [PETSC_HAS_SUNDIALS="yes"])
   AC_MSG_RESULT([$PETSC_HAS_SUNDIALS])
 
   rm petscmake$$
