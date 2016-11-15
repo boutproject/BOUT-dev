@@ -632,18 +632,16 @@ echo_cxx:
 	-@echo \${CXX}
 echo_sundials:
 	-@echo \${SUNDIALS_LIB}
-echo_language:
-	-@echo \${PETSC_LANGUAGE}
 MFILE
 
   AC_MSG_CHECKING([PETSC has C++ support])
-  PETSC_HAS_CXX=`make -f petscmake$$ echo_language | grep -c CXX`
+  PETSC_HAS_CXX=`make -f petscmake$$ echo_cxx`
 
-  if test "$PETSC_HAS_CXX" == "0"
-  then
+  AS_IF([test -z "$PETSC_HAS_CXX"],
+  [
     AC_MSG_RESULT([no])
     AC_MSG_ERROR([Warning - PETSc must have C++ support])
-  fi
+  ], [])
   AC_MSG_RESULT([yes])
 
   AC_MSG_CHECKING([PETSc C++ compiler used])
