@@ -13,6 +13,11 @@
 # -DPDBF  PDB format (need to include pdb_format.cxx)
 # -DNCDF  NetCDF format (nc_format.cxx)
 
+# PETSc config variables need to be first, else they may clobber other
+# options (e.g. CXX, CXXFLAGS)
+@PETSC@
+@SLEPC_VARS@
+
 # Created this variable so that a user won't overwrite the CXXFLAGS variable
 # on the command line, just add to this one
 BOUT_FLAGS		= $(CXXFLAGS) @CXXFLAGS@ @OPENMP_CXXFLAGS@ @CXX11_FLAGS@
@@ -41,9 +46,6 @@ LDFLAGS = @LDFLAGS@
 
 EXTRA_INCS		= @EXTRA_INCS@
 EXTRA_LIBS		= @EXTRA_LIBS@ @OPENMP_CXXFLAGS@
-
-@PETSC@
-@SLEPC_VARS@
 
 PRECON_SOURCE	= @PRECON_SOURCE@
 FACETS_SOURCE   = @FACETS_SOURCE@
