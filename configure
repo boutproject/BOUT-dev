@@ -5367,7 +5367,7 @@ _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-           echo " -> NetCDF support enabled"
+           echo " -> Legacy NetCDF support enabled"
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -5386,9 +5386,9 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
         LIBS=$save_LIBS
         LDFLAGS=$save_LDFLAGS
+        CXXFLAGS="$CXXFLAGS -DNCDF"
 
 fi
-      CXXFLAGS="$CXXFLAGS -DNCDF"
       EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
 
       file_formats="$file_formats netCDF"
@@ -5639,7 +5639,7 @@ fi
       if test "x$NCFOUND" = "xyes"; then :
 
          file_formats="$file_formats netCDF"
-         echo " -> NetCDF support enabled"
+         echo " -> Legacy NetCDF support enabled"
          NCPATH="found"
          CXXFLAGS="$CXXFLAGS -DNCDF"
 
@@ -7731,20 +7731,19 @@ echo_cxx:
 	-@echo \${CXX}
 echo_sundials:
 	-@echo \${SUNDIALS_LIB}
-echo_language:
-	-@echo \${PETSC_LANGUAGE}
 MFILE
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking PETSC has C++ support" >&5
 $as_echo_n "checking PETSC has C++ support... " >&6; }
-  PETSC_HAS_CXX=`make -f petscmake$$ echo_language | grep -c CXX`
+  PETSC_HAS_CXX=`make -f petscmake$$ echo_cxx`
 
-  if test "$PETSC_HAS_CXX" == "0"
-  then
+  if test -z "$PETSC_HAS_CXX"; then :
+
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
     as_fn_error $? "Warning - PETSc must have C++ support" "$LINENO" 5
-  fi
+
+fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 

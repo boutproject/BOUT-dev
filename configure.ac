@@ -361,14 +361,14 @@ AS_IF([test "x$with_netcdf" != "xno"],
              #include <netcdfcpp.h>
              ], [NcFile file("foo.nc");])],
           [AC_MSG_RESULT([yes])
-           echo " -> NetCDF support enabled"],
+           echo " -> Legacy NetCDF support enabled"],
           [AC_MSG_RESULT([no])
            AC_MSG_FAILURE([Could not compile NetCDF C++ program!])])
         AC_LANG_POP([C++])
         LIBS=$save_LIBS
         LDFLAGS=$save_LDFLAGS
+        CXXFLAGS="$CXXFLAGS -DNCDF"
        ])
-      CXXFLAGS="$CXXFLAGS -DNCDF"
       EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
 
       file_formats="$file_formats netCDF"
@@ -386,7 +386,7 @@ AS_IF([test "x$with_netcdf" != "xno"],
       AS_IF([test "x$NCFOUND" = "xyes"],
         [
          file_formats="$file_formats netCDF"
-         echo " -> NetCDF support enabled"
+         echo " -> Legacy NetCDF support enabled"
          NCPATH="found"
          CXXFLAGS="$CXXFLAGS -DNCDF"
         ], [])
@@ -719,7 +719,7 @@ then
   if test "$SLEPC_VERSION_MAJOR" = "3" && test "$SLEPC_VERSION_MINOR" = "4"
   then
     # Version 3.4
-    echo "  -> Using interface for SLEPc 3.4"
+    echo " -> Using interface for SLEPc 3.4"
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SLEPC -DBOUT_HAS_SLEPC_3_4"
     HAS_SLEPC="yes"
 
