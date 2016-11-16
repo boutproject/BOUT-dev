@@ -44,7 +44,7 @@
 
 #include "formatfactory.hxx"
 
-Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), floats(false), openclose(true), enabled(true), shiftOutput(false), file(NULL) {
+Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), floats(false), openclose(true), enabled(true), shiftOutput(false), writeFlushCounter(0), writeFlushFreq(1), file(NULL) {
   if(opt == NULL)
     return; // To allow static initialisation
   
@@ -57,12 +57,16 @@ Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), f
   OPTION(opt, openclose, true); // Open and close every write or read
   OPTION(opt, enabled, true);
   OPTION(opt, shiftOutput, false); //Do we want to write 3D fields in shifted space?
+
+  writeFlushCounter = 0;
+  OPTION(opt, writeFlushFreq, 1); //How frequently do we flush the file
+  
 }
 
 Datafile::Datafile(const Datafile &other) : parallel(other.parallel), flush(other.flush), guards(other.guards), 
                                             floats(other.floats), openclose(other.openclose), Lx(other.Lx), Ly(other.Ly), Lz(other.Lz), 
-                                            enabled(other.enabled), shiftOutput(other.shiftOutput), file(NULL), int_arr(other.int_arr), 
-                                            BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr), 
+                                            enabled(other.enabled), shiftOutput(other.shiftOutput), writeFlushCounter(other.writeFlushCounter), writeFlushFreq(other.writeFlushFreq),
+                                            file(NULL), int_arr(other.int_arr), BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr), 
                                             f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {
   
   // Same added variables, but the file not the same 
@@ -76,6 +80,8 @@ Datafile& Datafile::operator=(const Datafile &rhs) {
   openclose    = rhs.openclose;
   enabled      = rhs.enabled;
   shiftOutput  = rhs.shiftOutput;
+  writeFlushCounter = rhs.writeFlushCounter;
+  writeFlushFreq = rhs.writeFlushFreq;
   file         = NULL; // All values copied except this
   int_arr      = rhs.int_arr;
   BoutReal_arr = rhs.BoutReal_arr;
@@ -420,13 +426,14 @@ bool Datafile::write() {
   if(!file)
     return false;
   
-  if(openclose) {
+  if(openclose && (writeFlushCounter % writeFlushFreq == 0)) {
     // Open the file
     int MYPE;
     MPI_Comm_rank(BoutComm::get(), &MYPE);
     if(!file->openw(filename, MYPE, appending))
       return false;
     appending = true;
+    writeFlushCounter = 0;
   }
   
   if(!file->is_valid())
@@ -509,9 +516,10 @@ bool Datafile::write() {
     }
   }
   
-  if(openclose)
+  if(openclose  && (writeFlushCounter+1 % writeFlushFreq == 0)){
     file->close();
-
+  }
+  writeFlushCounter++;
   return true;
 }
 

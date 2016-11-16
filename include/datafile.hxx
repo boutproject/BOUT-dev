@@ -76,6 +76,8 @@ class Datafile {
   int Lx,Ly,Lz; // The sizes in the x-, y- and z-directions of the arrays to be written
   bool enabled;  // Enable / Disable writing
   bool shiftOutput; //Do we want to write out in shifted space?
+  int writeFlushCounter; //Counter used in determining when next openclose required
+  int writeFlushFreq; //How many write calls do we want between openclose
 
   DataFormat *file;
   char filename[512];
