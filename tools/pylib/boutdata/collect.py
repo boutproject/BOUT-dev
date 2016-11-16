@@ -232,9 +232,9 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
                 if len(r2) == 1:
                     r2 = [r2,r2]
                 if r2[0] < 0 and low >= 0:
-                    r2[0]+=nt
+                    r2[0]+=(up-low+1)
                 if r2[1] < 0 and low >= 0:
-                    r2[1]+=nt
+                    r2[1]+=(up-low+1)
                 if r2[0] < low:
                     r2[0] = low
                 if r2[0] > up:
