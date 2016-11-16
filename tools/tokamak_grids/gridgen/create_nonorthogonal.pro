@@ -1,33 +1,33 @@
 ; Tokamak grid generator
 ; ======================
-; 
+;
 ; Generates a flux-surface aligned grid from
-; an R-Z mesh of psi values. 
+; an R-Z mesh of psi values.
 ;
 ; Features:
 ; --------
 ;  o An arbitrary number of X-points
 ;  o Automatic default settings when not
-;    supplied. 
+;    supplied.
 ;
 ; Author: Ben Dudson, University of York, Nov 2009
-; 
+;
 ;
 ; NOTE: Throughout, "F" means un-normalised psi,
 ;       and "psi" means normalised psi
 ;
 ; Useage:
 ; ------
-; 
+;
 ; FUNCTION create_grid, F, R, Z, settings, critical=critical,
 ;                                boundary=boundary, fpsi=fpsi
 ;
 ; F - psi(nr, nz) 2D array
 ; R - R(nr)  1D array
 ; Z - Z(nz)  1D array
-; 
+;
 ; Settings is a structure containing:
-;   
+;
 ;   psi_inner, psi_outer  - Range of normalised psi
 ;   nrad                  - Number of radial grid points
 ;                           Scalar -> Total number. Distributed
@@ -45,12 +45,12 @@
 ;                           Not supplied -> 0
 ;                           Scalar -> Same for all poloidal sections
 ;                           Array -> Specified for each section
-; 
+;
 ; A minimal settings structure must contain 4 scalars:
 ;    psi_inner, psi_outer, nrad and npol.
 ;
 ; Critical is a structure containing critical points:
-;  
+;
 ;   n_opoint, n_xpoint   - Number of O- and X-points
 ;   primary_opt          - Index of plasma centre O-point
 ;   inner_sep            - X-point index of inner separatrix
@@ -58,9 +58,9 @@
 ;   opt_f                - Psi value at each O-point
 ;   xpt_ri, xpt_zi       - R and Z indices for each X-point
 ;   xpt_f                - Psi value of each X-point
-; 
+;
 ; If critical is not supplied, it is calculated
-; 
+;
 ; Boundary is a 2D array of indices
 ;   boundary[0, *]       - R values
 ;   boundary[1, *]       - Z values
@@ -70,7 +70,7 @@
 ;   fpsi[1,*]            - f values
 ;
 ; Return structure contains:
-; 
+;
 ;   error                       - Non-zero if an error occurred
 ;   psi_inner, psi_outer        - Normalised ranges of psi used
 ;   nrad[d], npol[d]            - Number of grid points used in each domain
@@ -78,7 +78,7 @@
 ;   yup_xin[d], yup_xout[d]     - Inner and outer domain connections. -1 = none
 ;   ydown_xsplit[d]             - Lower Y edge of domain. x < xsplit -> inner
 ;   ydown_xin[d], ydown_xout[d] - Inner and outer domain connections
-; 
+;
 ;   Rixy[x,y], Zixy[x,y]   - 2D arrays of indices into R and Z array
 ;   Rxy[x,y], Zxy[x,y]     - 2D arrays of (rad,pol) grid-point locations
 ;   psixy[x,y]             - 2D array of normalised psi at each point
@@ -101,7 +101,7 @@ FUNCTION remove_ind, arr, ind
   ENDIF ELSE IF ind EQ n-1 THEN BEGIN
     RETURN, arr[0:(ind-1)]
   ENDIF
-  
+
   RETURN, [arr[0:(ind-1)], arr[(ind+1):*]]
 END
 
@@ -109,7 +109,7 @@ PRO lengthen_line, r0, z0, r1, z1
 ;; Lengthen a line given the two end-points
   swapped = 0
 
-  IF abs(r0) GT abs(r1) THEN BEGIN 
+  IF abs(r0) GT abs(r1) THEN BEGIN
      swap, r0, r1
      swap, z0, z1
      swapped = 1
@@ -126,7 +126,7 @@ PRO lengthen_line, r0, z0, r1, z1
   ;; PRINT, 'z1: ', z1
   ;; stop
 
-  IF swapped THEN BEGIN 
+  IF swapped THEN BEGIN
      swap, r0, r1
      swap, z0, z1
   END
@@ -136,7 +136,7 @@ PRO lengthen_line, r0, z0, r1, z1
 END
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; 
+;
 ; Poloidal grid
 ;
 ; Divide up a poloidal arc
@@ -162,7 +162,7 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
     ; Calculate poloidal distance along starting line
     drdi = DERIV(INTERPOLATE(R, ri))
     dzdi = DERIV(INTERPOLATE(Z, zi))
-    
+
     dldi = SQRT(drdi^2 + dzdi^2)
     poldist = int_func(findgen(np), dldi) ; Poloidal distance along line
   ENDIF ELSE BEGIN
@@ -188,11 +188,11 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
       ; dfd* are derivatives wrt the indices. Need to multiply by dr/di etc
       dfdr /= INTERPOLATE(DERIV(R),ri[i])
       dfdz /= INTERPOLATE(DERIV(Z),zi[i])
-      
+
       IF i EQ 0 THEN BEGIN
         btr = INTERPOL(REFORM(fpsi[1,*]), REFORM(fpsi[0,*]), f)
       ENDIF
-      
+
       bp[i] = SQRT(dfdr^2 + dfdz^2) / INTERPOLATE(R, ri[i])
       bt[i] = ABS( btr / INTERPOLATE(R, ri[i]))
     ENDFOR
@@ -231,7 +231,7 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
     fn = FLOAT(n-1)
     d = (dist[np-1] - ydown_dist - yup_dist) ; Distance between first and last
     i = FINDGEN(n)
-    
+
     yd = ydown_space < 0.5*d/fn
     yu = yup_space < 0.5*d/fn
     ; Fit to ai + bi^2 + c[i-sin(2pi*i/(n-1))*(n-1)/(2pi)]
@@ -240,13 +240,13 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
     c = d/fn - a - 0.5*b*fn
     dloc = ydown_dist + a*i + 0.5*b*i^2 + c*[i - SIN(2.*!PI*i / fn)*fn/(2.*!PI)]
     ddloc = a + b*i + c*[1 - COS(2.*!PI*i / fn)]
-    
+
     ; Fit to dist = a*i^3 + b*i^2 + c*i
     ;; c = ydown_dist*2.
     ;; b = 3.*(d/fn^2 - c/fn) - 2.*yup_dist/fn + c/fn
     ;; a = d/fn^3 - c/fn^2 - b/fn
     ;; dloc = ydown_dist + c*i + b*i^2 + a*i^3
-    
+
   ENDIF ELSE BEGIN
     PRINT, "SORRY; Need 2 points in each region"
     STOP
@@ -263,10 +263,10 @@ END
 ;
 ; Arguments:
 ;   interp_data  Data used for interpolation of psi(x,y)
-;   R, Z         
+;   R, Z
 ;   ri, zi       1D indices into F for starting line
 ;   f0           Starting f for the line
-;   fin, fout    Range of f to grid 
+;   fin, fout    Range of f to grid
 ;   npar         Number of perpendicular lines to generate
 ;   nin, nout    Number of points inside and outside line
 FUNCTION grid_region_nonorth, interp_data, R, Z, $
@@ -288,10 +288,10 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
                       vec_in_up=vec_in_up, vec_out_up=vec_out_up, $         ;
                       sep_up=sep_up, sep_line_up=sep_line_up, $             ;
                       sp_loc=sp_loc, orthdown=orthdown, orthup=orthup
-                      
-  
+
+
   nsurf = N_ELEMENTS(fvals)
-  
+
   IF sind GE 0 THEN BEGIN
     ; starting position is on one of the output surfaces
     f0 = fvals[sind]
@@ -300,7 +300,7 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
     ; Starting position between surfaces
     n = FIX(N_ELEMENTS(ri)/2)
     local_gradient, interp_data, ri[n], zi[n], status=status, f=f0
-    
+
     IF fvals[0] LT fvals[nsurf-1] THEN BEGIN
       w = WHERE(fvals LE f0, nin)
     ENDIF ELSE BEGIN
@@ -310,13 +310,13 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
   nout = nsurf - nin - 1
 
   sfirst = 0      ; Innermost successful index
-  slast = nsurf-1 ; Last successful index 
+  slast = nsurf-1 ; Last successful index
 
   ffirst = fvals[sfirst]
   flast = fvals[slast]
 
   PRINT, "    => Gridding range: ", MIN(fvals), MAX(fvals)
-  
+
   nr = interp_data.nx
   nz = interp_data.ny
 
@@ -328,14 +328,16 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
                       ydown_dist=ydown_dist, yup_dist=yup_dist, $
                       ydown_space=ydown_space, yup_space=yup_space, $
                       parweight=parweight)
-  
+  print,"starting index",ind
   rii = INTERPOLATE(ri, ind)
   zii = INTERPOLATE(zi, ind)
+  print,"starting rind",ri
+  print,"starting zind",zi
 
   ;rii = int_func(SMOOTH(deriv(rii), 3)) + rii[0]
   ;zii = int_func(SMOOTH(deriv(zii), 3)) + zii[0]
   ;STOP
-  
+
   ; Refine the location of the starting point
   ;FOR i=0, npar-1 DO BEGIN
   ;  follow_gradient_nonorth, interp_data, R, Z, rii[i], zii[i], f0, ri1, zi1
@@ -344,10 +346,13 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
   ;ENDFOR
 
   ; From each starting point, follow gradient in both directions
-  
+
   rixy = FLTARR(nsurf, npar)
   zixy = FLTARR(nsurf, npar)
-  FOR i=0, npar-1 DO BEGIN
+
+  ; Set the starting and ending lines that will be gridded evenly on each field
+  FOR ii=0, 1 DO BEGIN
+    IF ii EQ 0 THEN i=0 ELSE i=npar-1
 
     IF i GE npar/2 THEN BEGIN
        IF KEYWORD_SET(vec_in_up) THEN vec_in = vec_in_up
@@ -365,7 +370,7 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
        IF NOT KEYWORD_SET(orthup) THEN orthup=0
        IF orthup EQ 1 THEN weight = 0 ELSE weight = ((2.*i/(npar-1))-1)^1.35
     ENDIF ELSE BEGIN
-;        PRINT, "***** DOWN *****" 
+;        PRINT, "***** DOWN *****"
        IF KEYWORD_SET(vec_in_down) THEN vec_in = vec_in_down
        IF KEYWORD_SET(vec_out_down) THEN vec_out = vec_out_down
 
@@ -374,7 +379,7 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
        ENDIF ELSE sep = fvals[nin]
        IF KEYWORD_SET(sep_line_down) THEN BEGIN
          sep_line = sep_line_down
-         
+
          OPLOT, INTERPOLATE(R, REFORM(sep_line_down[0,*])), $
                 INTERPOLATE(Z, REFORM(sep_line_down[1,*])), $
                 thick=2,color=2
@@ -382,7 +387,7 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
        IF NOT KEYWORD_SET(orthdown) THEN orthdown=0
        IF orthdown EQ 1 THEN weight = 0 ELSE weight = (1-(2.*i)/(npar-1))^1.35
     ENDELSE
-    
+
     ; Refine the location of the starting point
 ;     follow_gradient_nonorth, interp_data, R, Z, rii[i], zii[i], f0, ri1, zi1, vec=vec_in, weight=weight
 ;     rii[i] = ri1
@@ -402,7 +407,7 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
     ENDELSE
     FOR j=0, nout-1 DO BEGIN
       ftarg = fvals[nin+j+1]
-      
+
       IF (fvals[nin+j] LT sep) AND (ftarg GE sep) THEN BEGIN
          ; Line going across separatrix. Split into two pieces
 ;          PRINT, "FOLLOWING INNER i, j = ", i, j
@@ -412,24 +417,24 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
          ; If hits the separatrix, should now continue from
          ; the separatrix line
          OPLOT, [INTERPOLATE(R, rinext)], [INTERPOLATE(Z, zinext)], psym=4, color=5
-         
+
 ;          PRINT, "FOLLOWING OUTER"
          follow_gradient_nonorth, interp_data, R, Z, rinext, zinext, $
                           ftarg, rinext, zinext, status=status, $
                           boundary=boundary, fbndry=fbndry, vec=vec_out, weight=weight
       ENDIF ELSE BEGIN
-         
+
          IF fvals[nin+j] GT sep THEN BEGIN
             vec = vec_out
          ENDIF ELSE BEGIN
             vec = vec_in
          ENDELSE
-         
+
          follow_gradient_nonorth, interp_data, R, Z, rixy[nin+j, i], zixy[nin+j, i], $
                           ftarg, rinext, zinext, status=status, $
                           boundary=boundary, fbndry=fbndry, vec=vec, weight=weight
       ENDELSE
-      
+
       IF status EQ 1 THEN BEGIN
         rixy[nin+j+1, i] = -1.0
         IF nin+j LT slast THEN slast = nin+j ; last good surface index
@@ -437,7 +442,7 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
         IF (fvals[1] - fvals[0])*(flast - fbndry) GT 0 THEN flast = 0.95*fbndry + 0.05*f0
         BREAK
       ENDIF ELSE IF status EQ 2 THEN BEGIN
-        ; Hit a boundary 
+        ; Hit a boundary
         rixy[nin+j+1, i] = rinext
         zixy[nin+j+1, i] = zinext
         IF nin+j LT slast THEN slast = nin+j ; Set the last point
@@ -450,18 +455,18 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
     ENDFOR
     FOR j=0, nin-1 DO BEGIN
       ftarg = fvals[nin-j-1]
-      
+
       IF ftarg GT sep THEN BEGIN
          vec = vec_out
       ENDIF ELSE BEGIN
          vec = vec_in
       ENDELSE
-      
+
       follow_gradient_nonorth, interp_data, R, Z, rixy[nin-j, i], zixy[nin-j, i], $
         ftarg, rinext, zinext,  status=status, $
         boundary=boundary, fbndry=fbndry, $
         vec=vec, weight=weight
-      
+
       IF status EQ 1 THEN BEGIN
         rixy[nin-j-1, i] = -1.0
         IF nin-j GT sfirst THEN sfirst = nin-j
@@ -480,15 +485,53 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
       ENDIF
    ENDFOR
 
-   ; Finished calculating point locations
-   ; Starting position rixy[nin,i], zixy[nin, i] may not be correct
-    
+   ; Finished calculating starting and ending point locations
+
+   ; spread points out for central line
+  ;  FOR i=0,npar-1 DO BEGIN
+  ;    IF sind GE 0 THEN BEGIN
+  ;      rixy[nin, i] = rii[i]
+  ;      zixy[nin, i] = zii[i]
+  ;    ENDIF ELSE BEGIN
+  ;      ; fvals[nin] should be just outside the starting position
+  ;      ftarg = fvals[nin]
+  ;      follow_gradient_nonorth, interp_data, R, Z, rii[i], zii[i], $
+  ;        ftarg, rinext, zinext, status=status, $
+  ;                       vec=vec_in, weight=weight
+  ;      rixy[nin, i] = rinext
+  ;      zixy[nin, i] = zinext
+  ;    ENDELSE
+  ;  ENDFOR
+
+   ;  need to evenly space points along each flux surface
+   FOR j=-1, nin-1 DO BEGIN
+     ri = [rixy[nin-j-1,0],rixy[nin-j-1,npar-1]]
+     zi = [zixy[nin-j-1,0],zixy[nin-j-1,npar-1]]
+     ind = poloidal_grid(interp_data, R, Z, ri, zi, npar, fpsi=fpsi, $
+                         ydown_dist=ydown_dist, yup_dist=yup_dist, $
+                         ydown_space=ydown_space, yup_space=yup_space, $
+                         parweight=parweight)
+
+     rixy[nin-j-1,*] = INTERPOLATE(ri, ind)
+     zixy[nin-j-1,*] = INTERPOLATE(zi, ind)
+   ENDFOR
+   FOR j=0, nout-1 DO BEGIN
+     ri = [rixy[nin+j+1,0],rixy[nin+j+1,npar-1]]
+     zi = [zixy[nin+j+1,0],zixy[nin+j+1,npar-1]]
+     ind = poloidal_grid(interp_data, R, Z, ri, zi, npar, fpsi=fpsi, $
+                         ydown_dist=ydown_dist, yup_dist=yup_dist, $
+                         ydown_space=ydown_space, yup_space=yup_space, $
+                         parweight=parweight)
+
+     rixy[nin+j+1,*] = INTERPOLATE(ri, ind)
+     zixy[nin+j+1,*] = INTERPOLATE(zi, ind)
+   ENDFOR
 
     dr = rixy[nin-1,i] - rixy[nin-2,i]
     dz = zixy[nin-1,i] - zixy[nin-2,i]
     r1 = [ rixy[nin-1,i] - 1000*dr, rixy[nin-1,i] + 1000*dr ]
     z1 = [ zixy[nin-1,i] - 1000*dz, zixy[nin-1,i] + 1000*dz ]
-    
+
     ; Second line going through first point in SOL, along line vec_out
     ;r2 = [ rixy[nin+1,i] - 1000*vec_out[0], rixy[nin+1,i] + 1000*vec_out[0] ]
     ;z2 = [ zixy[nin+1,i] - 1000*vec_out[1], zixy[nin+1,i] + 1000*vec_out[1] ]
@@ -497,19 +540,19 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
     dz = zixy[nin+1,i] - zixy[nin+2,i]
     r2 = [ rixy[nin+1,i] - 1000*dr, rixy[nin+1,i] + 1000*dr ]
     z2 = [ zixy[nin+1,i] - 1000*dz, zixy[nin+1,i] + 1000*dz ]
-    
+
     ; Check the angle between the two lines
     dr1 = r1[1] - r1[0]
     dr2 = r2[1] - r2[0]
     dz1 = z1[1] - z1[0]
     dz2 = z2[1] - z2[0]
     costheta = ABS( dr1*dr2 + dz1*dz2 ) / ( SQRT(dr1^2 + dz1^2)*SQRT(dr2^2 + dz2^2) )
-    
+
     ncross = 0
-    IF costheta LT 0.7 THEN BEGIN ; Angle greater than 45 degrees    
+    IF costheta LT 0.7 THEN BEGIN ; Angle greater than 45 degrees
        ; Find intersection of the two lines
        cross = line_crossings(r1,z1, 0, r2,z2, 0, ncross=ncross)
-      
+
        ; If no intersection, something odd.. Panic?
        IF ncross EQ 1 THEN BEGIN
           ; Set location to be half-way between the intersection
@@ -523,11 +566,11 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
        rixy[nin,i] = ri1
        zixy[nin,i] = zi1
     ENDELSE
-    
+
     IF KEYWORD_SET(oplot) THEN BEGIN
        OPLOT, INTERPOLATE(R, rixy[*, i]), INTERPOLATE(Z, zixy[*, i]), color=4
-    ENDIF 
-    
+    ENDIF
+
     ;PLOT, INTERPOLATE(R, rixy[*, i]), INTERPOLATE(Z, zixy[*, i]), color=1,psym=1
     ;OPLOT, [INTERPOLATE(R, rixy[nin, i])], [INTERPOLATE(Z, zixy[nin, i])], color=4,psym=4
     ;IF ncross EQ 1 THEN BEGIN
@@ -543,11 +586,11 @@ PRO plot_grid_section, a, _extra=_extra
   s = SIZE(a.rxy, /dimension)
   nrad = s[0]
   npol = s[1]
-  
+
   FOR j=0, nrad-1 DO BEGIN
     OPLOT, a.Rxy[j,*], a.Zxy[j,*], _extra=_extra
   ENDFOR
-  
+
   FOR j=0, npol-1 DO BEGIN
     OPLOT, a.Rxy[*,j], a.Zxy[*,j], _extra=_extra
   ENDFOR
@@ -555,11 +598,11 @@ END
 
 ; Plot a line from a given starting point to a given f
 PRO oplot_line, interp_data, R, Z, ri0, zi0, fto, npt=npt, color=color, _extra=_extra
-  
+
   IF NOT KEYWORD_SET(color) THEN color=1
-  
+
   pos = get_line_nonorth(interp_data, R, Z, ri0, zi0, fto, npt=npt)
-  
+
   OPLOT, INTERPOLATE(R, pos[*,0]), INTERPOLATE(Z, pos[*,1]), $
     color=color, _extra=_extra
 END
@@ -572,7 +615,7 @@ FUNCTION line_dist, R, Z, ri, zi
 END
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; 
+;
 ; Calculate poloidal distances around x-point
 
 FUNCTION xpt_hthe, dctF, R, Z, sep_info, dist, pf_f, core_f, sol_in_f, sol_out_f, boundary=boundary, psi=psi
@@ -588,19 +631,19 @@ FUNCTION xpt_hthe, dctF, R, Z, sep_info, dist, pf_f, core_f, sol_in_f, sol_out_f
   follow_gradient_nonorth, dctF, R, Z, ri, zi, $
                    pf_f, pf_ri1, pf_zi1, status=status, fbndry=fbndry, boundary=boundary, psi=psi
   IF status THEN pf_f = fbndry
-  
+
   ; Outwards into in SOL
   follow_gradient_nonorth, dctF, R, Z, ri, zi, $
                    sol_in_f, sol_in_ri1, sol_in_zi1, status=status, fbndry=fbndry, boundary=boundary, psi=psi
   IF status THEN sol_in_f = fbndry
-  
+
   ;;;;;;; Leg 2
-  
+
   darr = sep_info.leg2_dist
   ind = INTERPOL(FINDGEN(N_ELEMENTS(darr)), darr, dist[3])
   ri = INTERPOLATE(sep_info.leg2_ri, ind)
   zi = INTERPOLATE(sep_info.leg2_zi, ind)
-  
+
   ; Go inwards to PF
   follow_gradient_nonorth, dctF, R, Z, ri, zi, $
                    pf_f, pf_ri2, pf_zi2, status=status, fbndry=fbndry, boundary=boundary, psi=psi
@@ -610,30 +653,30 @@ FUNCTION xpt_hthe, dctF, R, Z, sep_info, dist, pf_f, core_f, sol_in_f, sol_out_f
                    sol_out_f, sol_out_ri1, sol_out_zi1, status=status, fbndry=fbndry, boundary=boundary, psi=psi
   IF status THEN sol_out_f = fbndry
   ;;;;;;; Core 1
-  
+
   darr = sep_info.core1_dist
   ind = INTERPOL(FINDGEN(N_ELEMENTS(darr)), darr, dist[2])
   ri = INTERPOLATE(sep_info.core1_ri, ind)
   zi = INTERPOLATE(sep_info.core1_zi, ind)
-  
+
   ; Go inwards to core
   follow_gradient_nonorth, dctF, R, Z, ri, zi, $
                    core_f, core_ri1, core_zi1, status=status, fbndry=fbndry, boundary=boundary, psi=psi
   g = local_gradient(dctF, core_ri1, core_zi1, f=psi)
-  
+
   IF status NE 0 THEN STOP
   ; Outwards into out SOL
   follow_gradient_nonorth, dctF, R, Z, ri, zi, $
                    sol_out_f, sol_out_ri2, sol_out_zi2, status=status, fbndry=fbndry, boundary=boundary, psi=psi
   IF status THEN sol_out_f = fbndry
-  
+
   ;;;;;;; Core 2
-  
+
   darr = sep_info.core2_dist
   ind = INTERPOL(FINDGEN(N_ELEMENTS(darr)), darr, dist[1])
   ri = INTERPOLATE(sep_info.core2_ri, ind)
   zi = INTERPOLATE(sep_info.core2_zi, ind)
-  
+
   ; Go inwards to core
   follow_gradient_nonorth, dctF, R, Z, ri, zi, $
                    core_f, core_ri2, core_zi2, status=status, fbndry=fbndry, boundary=boundary, psi=psi
@@ -642,18 +685,18 @@ FUNCTION xpt_hthe, dctF, R, Z, sep_info, dist, pf_f, core_f, sol_in_f, sol_out_f
   follow_gradient_nonorth, dctF, R, Z, ri, zi, $
                    sol_in_f, sol_in_ri2, sol_in_zi2, status=status, fbndry=fbndry, boundary=boundary, psi=psi
   IF status THEN sol_out_f = fbndry
-  
+
   ; Get distances between end points
-  
+
   OPLOT, INTERPOLATE(R, [pf_ri1, pf_ri2]), $
     INTERPOLATE(Z, [pf_zi1, pf_zi2]), thick=2, color=1
 
   d1 = (INTERPOLATE(R, pf_ri1) - INTERPOLATE(R, pf_ri2))^2 + $
        (INTERPOLATE(Z, pf_zi1) - INTERPOLATE(Z, pf_zi2))^2
-  
+
   d2 = (INTERPOLATE(R, core_ri1) - INTERPOLATE(R, core_ri2))^2 + $
        (INTERPOLATE(Z, core_zi1) - INTERPOLATE(Z, core_zi2))^2
-  
+
   OPLOT, INTERPOLATE(R, [core_ri1, core_ri2]), $
     INTERPOLATE(Z, [core_zi1, core_zi2]), thick=2, color=2
 
@@ -668,7 +711,7 @@ FUNCTION xpt_hthe, dctF, R, Z, sep_info, dist, pf_f, core_f, sol_in_f, sol_out_f
 
   OPLOT, INTERPOLATE(R, [sol_out_ri1, sol_out_ri2]), $
     INTERPOLATE(Z, [sol_out_zi1, sol_out_zi2]), thick=2, color=4
-  
+
   ;cursor, x, y, /down
 
   RETURN, SQRT([d1, d3, d2, d4]) ; Clockwise around from PF
@@ -694,11 +737,11 @@ FUNCTION solve_xpt_hthe, dctF, R, Z, sep_info, dist0, pf_f, core_f, sol_in_f, so
   sol_in_fc = sol_in_f
   sol_out_fc = sol_out_f
   IF KEYWORD_SET(boundary) THEN bndry = boundary
-  
-  xd = xpt_hthe(dctF, R, Z, sep_info, dist, pf_f, core_f, sol_in_f, sol_out_f, boundary=boundary, psi=psi) 
+
+  xd = xpt_hthe(dctF, R, Z, sep_info, dist, pf_f, core_f, sol_in_f, sol_out_f, boundary=boundary, psi=psi)
   xd_target = MAX(xd) ;MEAN(xd)
-  
-  ; NOTE: IDL throws an internal error 
+
+  ; NOTE: IDL throws an internal error
   ; Internal error: Bad variable type encountered in no_name_var().
   ; when NEWTON is combined with LSODE
 
@@ -720,18 +763,18 @@ FUNCTION solve_xpt_hthe, dctF, R, Z, sep_info, dist0, pf_f, core_f, sol_in_f, so
     PRINT, "WARNING: ILL-BEHAVED FITTING"
     RETURN, dist0 ; Don't modify
   ENDIF
-  
+
 ;  ; Invert using SVD
 ;  SVDC, dfdx, W, U, V
 ;  WP = FLTARR(4, 4)
 ;  for i=0,2 do wp[i,i] = 1.0/w[i]
 ;  ddist = V ## WP ## TRANSPOSE(U) # xp0
-;  
+;
 ;  ;ddist = INVERT(dfdx) # xp0
 ;  w = WHERE(ABS(ddist) GT 0.5*dist, count)
 ;  IF count GT 0 THEN ddist[w] = ddist[w] * 0.5*dist[w] / ABS(ddist[w])
 ;  dist = dist - ddist
-;  
+;
   PRINT, "DIST =", REFORM(dist)
   PRINT, "RESP = ", response
 ;  PRINT, "CHANGE = ", ddist
@@ -745,9 +788,9 @@ FUNCTION solve_xpt_hthe, dctF, R, Z, sep_info, dist0, pf_f, core_f, sol_in_f, so
   IF count1 GT 0 THEN dist[w] = dist[w] * 2.
   w = WHERE(response GT 10.*med, count2)
   IF count2 GT 0 THEN dist[w] = dist[w] * 0.75
-  
+
   ENDREP UNTIL count1+count2 EQ 0
-  
+
   RETURN, dist
 END
 
@@ -757,21 +800,21 @@ END
 FUNCTION increase_xpt_hthe, dctF, R, Z, sep_info, dist0, pf_f, core_f, sol_in_f, sol_out_f, boundary=boundary, psi=psi
 
   dist = dist0
-  
+
   ; Get the initial distances
-  xd = xpt_hthe(dctF, R, Z, sep_info, dist, pf_f, core_f, sol_in_f, sol_out_f, boundary=boundary, psi=psi) 
+  xd = xpt_hthe(dctF, R, Z, sep_info, dist, pf_f, core_f, sol_in_f, sol_out_f, boundary=boundary, psi=psi)
   xd_target = MEAN(xd)
   ; Numbering of xd: 0 - PF, going clockwise
 
   PRINT, "START:"+STR(dist)+" -> "+STR(xd)
-  
+
   ; Increase spacing until all above a minimum
   REPEAT BEGIN
     m = MIN(xd, ind)
     IF m LT xd_target THEN BEGIN
       ; Try to increase this distance
       ; Can adjust dist[ind] or dist[ind-1]
-      
+
       IF xd[(ind+1) MOD 4] LT xd[(ind+3) MOD 4] THEN BEGIN
         ; Increase dist[ind]
         dist[ind] = dist[ind] * 1.1
@@ -782,13 +825,13 @@ FUNCTION increase_xpt_hthe, dctF, R, Z, sep_info, dist0, pf_f, core_f, sol_in_f,
     ENDIF
     xd = xpt_hthe(dctF, R, Z, sep_info, dist, pf_f, core_f, sol_in_f, sol_out_f, boundary=boundary, psi=psi)
   ENDREP UNTIL (MIN(xd) GE xd_target) OR ( ABS(MIN(xd) - m) LT 1.e-5 )
-  
+
   ; Reduce spacing until one goes below target
   REPEAT BEGIN
     dist_last = dist
     m = MAX(xd, ind)
     IF m GT xd_target THEN BEGIN
-      ; Decrease distance 
+      ; Decrease distance
       IF xd[(ind+1) MOD 4] GT xd[(ind+3) MOD 4] THEN BEGIN
         dist[ind] = dist[ind] / 1.1
       ENDIF ELSE BEGIN
@@ -798,9 +841,9 @@ FUNCTION increase_xpt_hthe, dctF, R, Z, sep_info, dist0, pf_f, core_f, sol_in_f,
     xd = xpt_hthe(dctF, R, Z, sep_info, dist, pf_f, core_f, sol_in_f, sol_out_f, boundary=boundary, psi=psi)
   ENDREP UNTIL MIN(xd) LT xd_target
   dist = dist_last
-  
+
   PRINT, "ADJUST:"+STR(dist)+" -> "+STR(xd)
-  
+
   RETURN, dist
 END
 
@@ -838,7 +881,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ; Check the settings
   ; If a setting is missing, set a default value
-  
+
   IF N_PARAMS() LT 3 THEN BEGIN
     PRINT, "ERROR: Need at least a 2D array of psi values, R and Z arrays"
     RETURN, {error:1}
@@ -871,13 +914,13 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
   ENDIF
   nx = s[0]
   ny = s[1]
-  
+
   s = SIZE(R, /DIMENSION)
   IF (N_ELEMENTS(s) NE 1) OR (s[0] NE nx) THEN BEGIN
     PRINT, "ERROR: Second argument must be 1D array of major radii"
     RETURN, {error:1}
   ENDIF
-  
+
   s = SIZE(Z, /DIMENSION)
   IF (N_ELEMENTS(s) NE 1) OR (s[0] NE ny) THEN BEGIN
     PRINT, "ERROR: Second argument must be 1D array of heights"
@@ -904,26 +947,26 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       PRINT, "WARNING: boundary must be a 2D array: [2, n]. Ignoring"
       boundary = 0
     ENDIF ELSE BEGIN
-    
+
       ; Calculate indices
       bndryi = boundary
       bndryi[0,*] = INTERPOL(FINDGEN(nx), R, REFORM(boundary[0,*]))
       bndryi[1,*] = INTERPOL(FINDGEN(ny), Z, REFORM(boundary[1,*]))
     ENDELSE
   ENDIF
-  
+
   IF NOT KEYWORD_SET(bndryi) THEN BEGIN
     bndryi = FLTARR(2,4)
     bndryi[0,*] = [1, nx-2, nx-2, 1]
     bndryi[1,*] = [1, 1, ny-2, ny-2]
   ENDIF
-  
+
   ;;;;;;;;;;;;;;; Psi interpolation data ;;;;;;;;;;;;;;
-  
+
   interp_data = {nx:nx, ny:ny, $
                  method:0, $
                  f: F}       ; Always include function
-               
+
   IF KEYWORD_SET(fast) THEN BEGIN
     PRINT, "Using Fast settings"
     interp_data.method = 2
@@ -936,7 +979,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
                    f: F, $       ; Always include function
                    dct: dct} ; Pass the DCT coefficients
   ENDELSE
-  
+
   ;;;;;;;;;;;;;;;; First plot ;;;;;;;;;;;;;;;;
 
   nlev = 100
@@ -946,7 +989,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
 
   safe_colors, /first
   CONTOUR, F, R, Z, levels=levels, color=1, /iso, xstyl=1, ysty=1;;, xrange=[0.5, 1.5] , yrange=[-2., -1.4], font=1,charsize=3
-  
+
   IF KEYWORD_SET(boundary) THEN BEGIN
     OPLOT, [REFORM(boundary[0,*]), boundary[0,0]], [REFORM(boundary[1,*]), boundary[1,0]], $
            thick=2,color=2
@@ -954,7 +997,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ; Analyse the equilibrium to find O- and X-points
-  
+
   IF NOT KEYWORD_SET(critical) THEN critical = analyse_equil(F, R, Z)
   critical = restrict_psi_range(critical, MAX(settings.psi_outer))
 
@@ -973,7 +1016,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
   xpt_f  = critical.xpt_f
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  
+
   PRINT, "Refining x-point locations..."
   FOR i=0, n_xpoint-1 DO BEGIN
     PRINT, "  "+STR(i)+": "+STR([xpt_ri[i], xpt_zi[i]])+" "+STR(xpt_f[i])
@@ -997,7 +1040,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
   ; From normalised psi, get range of f
   f_inner = faxis + MIN(settings.psi_inner)*fnorm
   f_outer = faxis + MAX(settings.psi_outer)*fnorm
-  
+
   ; Check the number of x-points
   IF critical.n_xpoint EQ 0 THEN BEGIN
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1016,47 +1059,47 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
     ; Create a starting surface
     sind = FIX(nrad / 2)
     start_f = fvals[sind]
-    
+
     contour_lines, F, findgen(nx), findgen(ny), levels=[start_f], $
       path_info=info, path_xy=xy
-  
+
     IF N_ELEMENTS(info) GT 1 THEN BEGIN
       ; Find the surface closest to the o-point
-      
+
       ind = closest_line(info, xy, opt_ri[primary_opt], opt_zi[primary_opt])
       info = info[ind]
     ENDIF ELSE info = info[0]
-    
+
     start_ri = REFORM(xy[0,info.offset:(info.offset+info.n-1)])
     start_zi = REFORM(xy[1,info.offset:(info.offset+info.n-1)])
 
     ; Make sure that the line goes clockwise
-    
+
     m = MAX(INTERPOLATE(Z, start_zi), ind)
     IF (DERIV(INTERPOLATE(R, start_ri)))[ind] LT 0.0 THEN BEGIN
       ; R should be increasing at the top. Need to reverse
       start_ri = REVERSE(start_ri)
       start_zi = REVERSE(start_zi)
     ENDIF
-    
+
     ; Last point should be the same as the first
     start_ri = [start_ri, start_ri[0]]
     start_zi = [start_zi, start_zi[0]]
-    
+
     ; Smooth and refine the starting location
     np = N_ELEMENTS(start_ri)
     s = 3
     start_ri = (SMOOTH([start_ri[(np-s):(np-1)], start_ri, start_ri[0:(s-1)]], s))[s:(np-1+s)]
     start_zi = (SMOOTH([start_zi[(np-s):(np-1)], start_zi, start_zi[0:(s-1)]], s))[s:(np-1+s)]
-    
+
     FOR i=0, np-1 DO BEGIN
       follow_gradient_nonorth, interp_data, R, Z, start_ri[i], start_zi[i], start_f, ri1, zi1
       start_ri[i] = ri1
       start_zi[i] = zi1
     ENDFOR
-    
+
     oplot_contour, info, xy, R, Z, /periodic, color=2, thick=1.5
-    
+
     a = grid_region_nonorth(interp_data, R, Z, $
                     start_ri, start_zi, $
                     fvals, $
@@ -1064,9 +1107,9 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
                     npol, fpsi=fpsi, $
                     parweight=settings.parweight, $
                     /oplot)
-    
+
     OPLOT, [REFORM(a.rxy[0,*]), a.rxy[0,0]], [REFORM(a.zxy[0,*]), a.zxy[0,0]], color=4
-      
+
     FOR i=1, nrad-1 DO BEGIN
       OPLOT, [REFORM(a.rxy[i,*]), a.rxy[i,0]], [REFORM(a.zxy[i,*]), a.zxy[i,0]], color=4
     ENDFOR
@@ -1074,15 +1117,15 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
     FOR i=0, npol-1 DO BEGIN
       OPLOT, a.rxy[*,i], a.zxy[*,i], color=4
     ENDFOR
-    
+
     ; Get other useful variables
     Psixy = FLTARR(nrad, npol)
     FOR i=0, npol-1 DO psixy[*,i] = (fvals - faxis)/fnorm ; to get normalised psi
-    
+
     ; Calculate magnetic field components
     dpsidR = FLTARR(nrad, npol)
     dpsidZ = dpsidR
-    
+
     interp_data.method = 2
 
     FOR i=0,nrad-1 DO BEGIN
@@ -1090,8 +1133,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
         local_gradient, interp_data, a.Rixy[i,j], a.Zixy[i,j], status=status, $
           dfdr=dfdr, dfdz=dfdz
         ; dfd* are derivatives wrt the indices. Need to multiply by dr/di etc
-        dpsidR[i,j] = dfdr/INTERPOLATE(DERIV(R),a.Rixy[i,j]) 
-        dpsidZ[i,j] = dfdz/INTERPOLATE(DERIV(Z),a.Zixy[i,j]) 
+        dpsidR[i,j] = dfdr/INTERPOLATE(DERIV(R),a.Rixy[i,j])
+        dpsidZ[i,j] = dfdz/INTERPOLATE(DERIV(Z),a.Zixy[i,j])
       ENDFOR
     ENDFOR
 
@@ -1122,7 +1165,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
               ydown_xin:ydown_xin, ydown_xout:ydown_xout}
 
     RETURN, result
-    
+
   ENDIF ELSE BEGIN
 
     rad_peaking = settings.rad_peaking
@@ -1131,7 +1174,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
 
     ; Normalised psi value of each separatrix
     xpt_psi = (critical.xpt_f - faxis) / fnorm
-    
+
     si = SORT(xpt_psi) ; Sort separatrices from inside out
 
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1142,52 +1185,52 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
     PRINT, "Primary X-point is number "+STR(primary_xpt)
     PRINT, "   at R = "+STR(INTERPOLATE(R, critical.xpt_ri[primary_xpt])) $
       +" Z = "+STR(INTERPOLATE(Z, critical.xpt_zi[primary_xpt]))
-    
+
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ; work out where to put the surfaces
 
     nrad = settings.nrad
     nnrad = N_ELEMENTS(nrad)
 
-    
+
     IF nnrad NE (critical.n_xpoint + 1) THEN BEGIN
       ; Only given total number of radial points. Decide
       ; distribution automatically
-      
+
       nrad_flexible = 1 ; Flag used later if nrad not fixed
-      
+
       IF nnrad GT 1 THEN BEGIN
         PRINT, "WARNING: nrad has wrong number of elements ("+STR(nnrad)+")"
         PRINT, "         Should have 1 or "+STR(critical.n_xpoint + 1)+" elements"
       ENDIF
-      
+
       PRINT, "Distributing radial points automatically"
-      
+
       n = TOTAL(nrad,/int)
       fac = 2.*(xpt_f[inner_sep] - f_inner)/(1.+rad_peaking)
       FOR i=1, critical.n_xpoint-1 DO fac = fac + (xpt_f[si[i]] - xpt_f[si[i-1]])/rad_peaking
       fac = fac + 2.*(f_outer - xpt_f[si[critical.n_xpoint-1]])/(1.+rad_peaking)
       dx0 = fac / FLOAT(n)  ; Inner grid spacing
-      
+
       ; Calculate number of grid points
       nrad = LONARR(critical.n_xpoint + 1)
       nrad[0] = FIX( 2.*(xpt_f[inner_sep] - f_inner) / ( (1.+rad_peaking)*dx0 ) + 0.5)
       FOR i=1, critical.n_xpoint-1 DO nrad[i] = FIX((xpt_f[si[i]] - xpt_f[si[i-1]])/(rad_peaking*dx0)-0.5)
       nrad[critical.n_xpoint] = n - TOTAL(nrad,/int)
-      
+
       ;fvals = radial_grid(TOTAL(nrad), f_inner, f_outer, 1, 1, xpt_f, rad_peaking)
-      
-      
+
+
     ENDIF
-    
+
     ; Now got number of points in each region
-    
+
     IF KEYWORD_SET(single_rad_grid) THEN BEGIN
       ; Just produce one grid
       nrad_tot = TOTAL(nrad, /int)
       fvals = radial_grid(nrad_tot, f_inner, f_outer, 1, 1, xpt_f, rad_peaking)
       psi_vals = (fvals - faxis) / fnorm ; Normalised psi
-      
+
       ; Find out how many grid points were used
       nrad = LONARR(critical.n_xpoint + 1)
       tot = 0
@@ -1197,12 +1240,12 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
         tot = tot + nrad[i]
       ENDFOR
       nrad[critical.n_xpoint] = nrad_tot - tot
-      
-    ENDIF ELSE BEGIN 
+
+    ENDIF ELSE BEGIN
       IF critical.n_xpoint GT 1 THEN BEGIN
         ; Between separatrices
         fvals = radial_grid(nrad[1], xpt_f[inner_sep], xpt_f[si[1]], 0, 0, xpt_f, rad_peaking)
-        
+
         FOR i=2, critical.n_xpoint-1 DO fvals = [fvals, radial_grid(nrad[i], xpt_f[si[i-1]], xpt_f[si[i]], 0, 0, xpt_f, rad_peaking)]
         ; Core
         fvals = [radial_grid(nrad[0], f_inner, 2.*xpt_f[inner_sep]-fvals[0], $
@@ -1223,14 +1266,14 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       dpsi = 2.*(xpt_f[si[critical.n_xpoint-1]] - fvals[n-1])
       fvals = [fvals, radial_grid(nrad[critical.n_xpoint], $
                                   fvals[n-1]+dpsi, f_outer, 1, 1, xpt_f, rad_peaking, $
-                                  in_dp=dpsi, out_dp=dpsi/rad_peaking)]  
+                                  in_dp=dpsi, out_dp=dpsi/rad_peaking)]
     ENDELSE
-    
+
     psi_vals = (fvals - faxis) / fnorm ; Normalised psi
-    
+
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ; Create arrays of psi values for each region
-    
+
     sol_psi_vals = FLTARR(critical.n_xpoint, TOTAL(nrad,/int))
     pf_psi_vals  = FLTARR(critical.n_xpoint, 2, TOTAL(nrad,/int))
     FOR i=0, critical.n_xpoint-1 DO BEGIN
@@ -1238,7 +1281,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       pf_psi_vals[i,0,*] = psi_vals
       pf_psi_vals[i,1,*] = psi_vals
     ENDFOR
-    
+
     IF N_ELEMENTS(settings.psi_inner) EQ (critical.n_xpoint + 1) THEN BEGIN
       psi_inner = settings.psi_inner
     ENDIF ELSE BEGIN
@@ -1247,26 +1290,26 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
         PRINT, "         Should have 1 or "+STR(critical.n_xpoint+1)+" elements"
       ENDIF
       PRINT, "Keeping same inner psi for all regions"
-      
+
       psi_inner = FLTARR(critical.n_xpoint+1) + MIN(settings.psi_inner)
     ENDELSE
-    
+
     IF N_ELEMENTS(settings.psi_outer) EQ critical.n_xpoint THEN BEGIN
       psi_outer = settings.psi_outer
     ENDIF ELSE BEGIN
       IF N_ELEMENTS(settings.psi_outer) GT 1 THEN BEGIN
         PRINT, "WARNING: psi_outer has wrong number of elements ("+STR(N_ELEMENTS(settings.psi_outer))+")"
         PRINT, "         Should have 1 or "+STR(critical.n_xpoint)+" elements"
-      ENDIF 
+      ENDIF
       PRINT, "Keeping same outer psi for all regions"
-      
+
       psi_outer = FLTARR(critical.n_xpoint) + MAX(settings.psi_outer)
     ENDELSE
-    
+
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ; Need to work out where the x-points are
     ; and create lines just inside the separatrices
-    
+
     ; take a contour surface just inside the innermost separatrix
     ;sind = FIX(nrad[0]/2) ;nrad[0]-1 ; the last point inside core
     ;sind = nrad[0]-1
@@ -1275,21 +1318,21 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
 
     contour_lines, F, findgen(nx), findgen(ny), levels=[f_cont], $
       path_info=info, path_xy=xy
-    
+
     IF N_ELEMENTS(info) GT 0 THEN BEGIN
       ; Find the surface closest to the o-point
 
       info = info[closest_line(info, xy, $
                                critical.opt_ri[critical.primary_opt], critical.opt_zi[critical.primary_opt])]
     ENDIF ELSE info = info[0]
-    
+
     oplot_contour, info, xy, R, Z, /periodic, color=3, thick=1.5
 
     start_ri = REFORM(xy[0,info.offset:(info.offset+info.n-1)])
     start_zi = REFORM(xy[1,info.offset:(info.offset+info.n-1)])
 
     ; Make sure that the line goes clockwise
-    
+
     m = MAX(INTERPOLATE(Z, start_zi), ind)
     IF (DERIV(INTERPOLATE(R, start_ri)))[ind] LT 0.0 THEN BEGIN
       ; R should be increasing at the top. Need to reverse
@@ -1299,25 +1342,25 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
 
     ; now have (start_ri, start_zi). For each x-point, find the radial
     ; line going through the x-point
-    
+
     fri = FFT(start_ri) ; for interpolating periodic functions
     fzi = FFT(start_zi)
 
     xpt_ind = FLTARR(critical.n_xpoint)  ; index into start_*i
 
     pf_info = PTRARR(critical.n_xpoint)
-    
+
     veccore = fltarr(critical.n_xpoint,2)
     vec1 = fltarr(critical.n_xpoint,2)
     vec2 = fltarr(critical.n_xpoint,2)
-    vecpvt = fltarr(critical.n_xpoint,2) 
+    vecpvt = fltarr(critical.n_xpoint,2)
     FOR i=0, critical.n_xpoint-1 DO BEGIN
       PRINT, "Finding theta location of x-point "+STR(i)
-      
+
       ; Get the separatrices
       legsep = leg_separatrix2(interp_data, R, Z, xpt_ri[i], xpt_zi[i], $
                                opt_ri[primary_opt], opt_zi[primary_opt], boundary=bndryi)
-      
+
       ;; ;BS
       centerliner = INTERPOLATE(R, [opt_ri[0],xpt_ri[i]])
       centerlinez = INTERPOLATE(Z, [opt_zi[0],xpt_zi[i]])
@@ -1337,7 +1380,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       END ELSE BEGIN
          nflux_pvt = nflux_leg2
       END
-      
+
       meanrpvt = fltarr(nflux_pvt)
       meanzpvt = fltarr(nflux_pvt)
 
@@ -1345,7 +1388,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
          IF ii EQ 0 THEN BEGIN
             meanr1[ii] = xpt_ri[i]
             meanz1[ii] = xpt_zi[i]
-         END ELSE BEGIN 
+         END ELSE BEGIN
             meanr1[ii] = mean([legsep.leg1[ii,0], legsep.core2[ii,0]])
             meanz1[ii] = mean([legsep.leg1[ii,1], legsep.core2[ii,1]])
          END
@@ -1355,7 +1398,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
          IF ii EQ 0 THEN BEGIN
             meanr2[ii] = xpt_ri[i]
             meanz2[ii] = xpt_zi[i]
-         END ELSE BEGIN 
+         END ELSE BEGIN
             meanr2[ii] = mean([legsep.leg2[ii,0], legsep.core1[ii,0]])
             meanz2[ii] = mean([legsep.leg2[ii,1], legsep.core1[ii,1]])
          END
@@ -1364,12 +1407,12 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
          IF ii EQ 0 THEN BEGIN
             meanrpvt[ii] = xpt_ri[i]
             meanzpvt[ii] = xpt_zi[i]
-         END ELSE BEGIN 
+         END ELSE BEGIN
             meanrpvt[ii] = mean([legsep.leg2[ii,0], legsep.leg1[ii,0]])
             meanzpvt[ii] = mean([legsep.leg2[ii,1], legsep.leg1[ii,1]])
          END
       END
-      
+
       corelength = sqrt((centerliner[0] - centerliner[1])^2 + (centerlinez[0] - centerlinez[1])^2)
       veccore[i,0] = (centerliner[1] - centerliner[0])/corelength
       veccore[i,1] = (centerlinez[1] - centerlinez[0])/corelength
@@ -1385,13 +1428,13 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       lengthpvt = sqrt((meanrpvt[nflux_pvt/2]-meanrpvt[0])^2 + (meanzpvt[nflux_pvt/2]-meanzpvt[0])^2)
       vecpvt[i,0] = (meanrpvt[nflux_pvt/2]-meanrpvt[0])/lengthpvt
       vecpvt[i,1] = (meanzpvt[nflux_pvt/2]-meanzpvt[0])/lengthpvt
-     
+
       ;; oplot, INTERPOLATE(R,[meanr1[0],meanr1[nflux_leg1/2]]),INTERPOLATE(Z,[meanz1[0],meanz1[nflux_leg1/2]]), thick=5
       ;; oplot, INTERPOLATE(R,[meanr2[0],meanr2[nflux_leg2/2]]),INTERPOLATE(Z,[meanz2[0],meanz2[nflux_leg2/2]]), thick=5
       ;; oplot, INTERPOLATE(R,[meanrpvt[0],meanrpvt[nflux_pvt/2]]),INTERPOLATE(Z,[meanzpvt[0],meanzpvt[nflux_pvt/2]]), thick=5
-      
+
       ;; stop
-      
+
       ; Go a little way along each core separatrix and follow
       follow_gradient, interp_data, R, Z, $
                        legsep.core1[2,0], legsep.core1[2,1], $
@@ -1403,9 +1446,9 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
                        0.95 * f_cont + 0.05*opt_f[primary_opt], $
                        rhit, zhit, $
                        boundary=TRANSPOSE([[start_ri], [start_zi]]), ibndry=hit_ind2
-      
+
       ni = N_ELEMENTS(start_ri)
-      
+
       IF MIN([ni - hit_ind2 + hit_ind1, ni - hit_ind1 + hit_ind2]) LT ABS(hit_ind2 - hit_ind1) THEN BEGIN
           ; One at the beginning and one at the end (across the join)
         mini = (hit_ind2 + hit_ind1 - ni) / 2.
@@ -1422,18 +1465,18 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       ;;       mini = (hit_ind2 + hit_ind1 - ni) / 2.
       ;;       IF mini LT 0. THEN mini = mini + ni
       ;;     ENDIF ELSE mini = (hit_ind1 + hit_ind2) / 2.
-          
+
       ;;     OPLOT, [INTERPOLATE(R, INTERPOLATE(start_ri, mini))], [INTERPOLATE(Z, INTERPOLATE(start_zi, mini))], psym=2, color=4
-          
+
       ;;     PRINT, "Theta location: " + STR(hit_ind1) + "," + STR(hit_ind2) + " -> " + STR(mini)
-          
+
       ;;     ;  Get line a little bit beyond the X-point
       ;;     pos = get_line_nonorth(interp_data, R, Z, $
       ;;                    INTERPOLATE(start_ri, mini), INTERPOLATE(start_zi, mini), $
       ;;                    critical.xpt_f[i] + (critical.xpt_f[i] - opt_f[primary_opt]) * 0.05)
-          
+
       ;;     ;OPLOT, INTERPOLATE(R, pos[*,0]), INTERPOLATE(Z, pos[*,1]), color=4, thick=2
-          
+
       ;;     ; Find which separatrix line this intersected with
       ;;     cpos = line_crossings([xpt_ri[i], legsep.core1[*,0]], $
       ;;                           [xpt_zi[i], legsep.core1[*,1]], 0, $
@@ -1454,13 +1497,13 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       ;; ENDIF
 
       xpt_ind[i] = mini  ; Record the index
-      
+
       IF (mini LT 0) OR (mini GE ni) THEN BEGIN
         ; An error
         PRINT, "ERROR: mini out of range"
         STOP
       ENDIF
-      
+
       ; Plot the line to the x-point
       oplot_line, interp_data, R, Z, $
         fft_interp(fri, mini), fft_interp(fzi, mini), critical.xpt_f[i], color=125
@@ -1471,16 +1514,16 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       ; Get tangent vector
       drdi = INTERPOLATE((DERIV(INTERPOLATE(R, start_ri))), mini)
       dzdi = INTERPOLATE((DERIV(INTERPOLATE(Z, start_zi))), mini)
-      
+
       tmp = {core_ind:mini, drdi:drdi, dzdi:dzdi, $ ; Core index and tangent vector
              sol:LONARR(2)} ; Array to store SOL indices
-      
+
       pf_info[i] = PTR_NEW(tmp)
     ENDFOR
 
     ; Sort x-points by index along this core surface
     ci = SORT(xpt_ind)
-    
+
     ; Extract starting lines for each section
     sol_info = PTRARR(critical.n_xpoint)
     FOR i=0, critical.n_xpoint-1 DO BEGIN
@@ -1488,7 +1531,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
         ri = [ fft_interp(fri,xpt_ind[ci[i]]), $
                start_ri[FIX(xpt_ind[ci[i]]+1.0):FIX(xpt_ind[ci[i+1]])], $
                fft_interp(fri,xpt_ind[ci[i+1]]) ]
-        
+
         zi = [ fft_interp(fzi,xpt_ind[ci[i]]), $
                start_zi[FIX(xpt_ind[ci[i]]+1.0):FIX(xpt_ind[ci[i+1]])], $
                fft_interp(fzi,xpt_ind[ci[i+1]]) ]
@@ -1498,24 +1541,24 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
           ri = [ fft_interp(fri,xpt_ind[ci[i]]), $
                  start_ri[0:FIX(xpt_ind[ci[0]])], $
                  fft_interp(fri,xpt_ind[ci[0]]) ]
-          
+
           zi = [ fft_interp(fzi,xpt_ind[ci[i]]), $
                  start_zi[0:FIX(xpt_ind[ci[0]])], $
                  fft_interp(fzi,xpt_ind[ci[0]]) ]
-          
+
         ENDIF ELSE BEGIN
           ri = [ fft_interp(fri,xpt_ind[ci[i]]), $
                  start_ri[FIX(xpt_ind[ci[i]]+1.0):*], $
                  start_ri[0:FIX(xpt_ind[ci[0]])], $
                  fft_interp(fri,xpt_ind[ci[0]]) ]
-          
+
           zi = [ fft_interp(fzi,xpt_ind[ci[i]]), $
                  start_zi[FIX(xpt_ind[ci[i]]+1.0):*], $
                  start_zi[0:FIX(xpt_ind[ci[0]])], $
                  fft_interp(fzi,xpt_ind[ci[0]]) ]
         ENDELSE
       ENDELSE
-      
+
       ; Calculate length of the line
       drdi = DERIV(INTERPOLATE(R, ri))
       dzdi = DERIV(INTERPOLATE(Z, zi))
@@ -1531,11 +1574,11 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       IF xpt_psi_max GT psi_outer[solid] THEN BEGIN
         PRINT, "**Far SOL cannot include both x-points"
         PRINT, " Probably caused by intersection with boundaries."
-        
+
         IF KEYWORD_SET(strictbndry) THEN BEGIN
           PRINT, "**Re-running, removing the strict keyword"
         ENDIF ELSE BEGIN
-          
+
           IF N_ELEMENTS(boundary[0,*]) GT 4 THEN BEGIN
             PRINT, "**Re-running, simplifying boundary"
             boundary = TRANSPOSE([ [MIN(boundary[0,*]), MAX(boundary[0,*]), MAX(boundary[0,*]), MIN(boundary[0,*])], $
@@ -1545,7 +1588,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
             boundary = 0
           ENDELSE
         ENDELSE
-          
+
         IF KEYWORD_SET(nrad_flexible) THEN nrad = TOTAL(nrad,/int) ; Allow nrad to change again
 
         new_settings = {psi_inner:psi_inner, psi_outer:(max(xpt_psi)+0.02), $
@@ -1566,14 +1609,14 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       tmp = {xpt1:ci[i], xpt2:ci[(i+1) MOD critical.n_xpoint], $ ; X-point indices
              ri:ri, zi:zi, length:length, $  ; R and Z points and the line length
              nsol:nsol}
-      
+
       sol_info[i] = PTR_NEW(tmp)
 
       ; Add this SOL to the PF structure
       (*(pf_info[ci[i]])).sol[i MOD 2] = i
       (*(pf_info[ci[(i+1) MOD critical.n_xpoint]])).sol[i MOD 2] = i
     ENDFOR
-    
+
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ; Do the same for each PF region
 
@@ -1583,12 +1626,12 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       ; Change grid in PF regions (inner psi can vary)
       ; psi_inner sorted in separatrix psi from inside out
       xind = si[i]
-      
+
       ; Get number of points in this PF region (npf)
       w = WHERE(psi_vals LT xpt_psi[xind], npf)
       w = WHERE(ci EQ xind)
       id = w[0]
-      
+
       IF KEYWORD_SET(single_rad_grid) THEN BEGIN
         ; Gridding as one region
         IF (npf+1) LT TOTAL(nrad,/int) THEN BEGIN
@@ -1609,31 +1652,31 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
         ; Gridding in multiple regions. Ensure equal spacing around separatrix
         dpsi = 2.*(pf_psi_vals[xind,0,npf] - xpt_psi[xind])
         pf_psi_out = xpt_psi[xind] - 0.5*dpsi
-        
+
         pf_psi_vals[xind,0,0:(npf-1)] = radial_grid(npf, psi_inner[id+1], $
                                                     pf_psi_out, $
                                                     1, 1, $
                                                     [xpt_psi[xind]], settings.rad_peaking, $
                                                     out_dp=dpsi)
       ENDELSE
-      
+
       pf_psi_vals[xind,1,0:(npf-1)] = pf_psi_vals[xind,0,0:(npf-1)]
-      
+
       ; BS -- USE THIS TO DETERMINE LEG LINE?
       ; Get the lines from the x-point to the target plates
       legsep = leg_separatrix2(interp_data, R, Z, xpt_ri[i], xpt_zi[i], $
                                opt_ri[primary_opt], opt_zi[primary_opt], boundary=bndryi)
-      
+
       pf_ri = [REVERSE(legsep.leg1[*,0]), xpt_ri[i], legsep.leg2[*,0]]
       pf_zi = [REVERSE(legsep.leg1[*,1]), xpt_zi[i], legsep.leg2[*,1]]
       mini = N_ELEMENTS(legsep.leg1[*,0])
 
       ; Use the tangent vector to determine direction
       ; relative to core and so get direction of positive theta
-      
+
       drdi = INTERPOLATE((DERIV(INTERPOLATE(R, pf_ri))), mini)
       dzdi = INTERPOLATE((DERIV(INTERPOLATE(Z, pf_zi))), mini)
-      
+
       IF drdi * (*pf_info[xind]).drdi + dzdi * (*pf_info[xind]).dzdi GT 0.0 THEN BEGIN
         ; Line is parallel to the core. Need to reverse
         pf_ri = REVERSE(pf_ri)
@@ -1665,12 +1708,12 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       IF (*pf_info[xind]).sol[0] NE w[0] THEN BEGIN
         (*pf_info[xind]).sol = REVERSE((*pf_info[xind]).sol)
       ENDIF
-      
+
       ; Copy radial grid in the SOL
       solind = (*pf_info[xind]).sol[0]
       nsol = (*sol_info[solind]).nsol
       pf_psi_vals[xind, 0, (TOTAL(nrad,/int)-nsol):*] = sol_psi_vals[solind, (TOTAL(nrad,/int)-nsol):*]
-      
+
       solind = (*pf_info[xind]).sol[1]
       nsol = (*sol_info[solind]).nsol
       pf_psi_vals[xind, 1, (TOTAL(nrad,/int)-nsol):*] = sol_psi_vals[solind, (TOTAL(nrad,/int)-nsol):*]
@@ -1689,37 +1732,37 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       dldi = SQRT(DERIV(INTERPOLATE(R, tmp.ri1))^2 + DERIV(INTERPOLATE(Z, tmp.zi1))^2)
       len1 = INT_TABULATED(FINDGEN(N_ELEMENTS(dldi)), dldi)
       tmp = CREATE_STRUCT(tmp, 'len0', len0, 'len1', len1)
-      
+
       PTR_FREE, pf_info[xind]
       pf_info[xind] = PTR_NEW(tmp)
     ENDFOR
-    
+
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ; Decide poloidal resolutions
     ; If automatic, divide up based on length, with a
     ; minimum of 2 points per region
-    
+
     npol = settings.npol
     nnpol = N_ELEMENTS(npol)
     IF nnpol EQ 1 THEN npol = npol[0]
-    
+
     IF nnpol NE 3*critical.n_xpoint THEN BEGIN
       IF nnpol GT 1 THEN BEGIN
         PRINT, "WARNING: npol has wrong number of elements ("+STR(nnpol)+")"
         PRINT, "         Should have 1 or "+STR(3*critical.n_xpoint)+" elements"
         npol = TOTAL(npol,/int)
       ENDIF
-      
+
       IF npol LT 6*critical.n_xpoint THEN BEGIN
         PRINT, "WARNING: supplied npol ("+STR(npol)+") too small"
         npol = 6*critical.n_xpoint
         PRINT, "   => Increasing npol to "+ STR(npol)
       ENDIF
-    
+
       nnpol = npol
       npol = LONARR(3*critical.n_xpoint) + 2
       nnpol = nnpol - 6*critical.n_xpoint ; Extra points to divide up
-      
+
       ; Get lengths
       length = FLTARR(3*critical.n_xpoint)
       FOR i=0, critical.n_xpoint-1 DO BEGIN
@@ -1729,26 +1772,26 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
         ; SOL
         length[2*critical.n_xpoint + i] = (*sol_info[i]).length
       ENDFOR
-      
+
       FOR i=0, nnpol-1 DO BEGIN
         ; Add an extra point to the longest length
-        
+
         dl = length / FLOAT(npol)
         dl[0:(2*critical.n_xpoint-1)] = length[0:(2*critical.n_xpoint-1)] $
           / (FLOAT(npol[0:(2*critical.n_xpoint-1)]) - 0.5)
-        
+
         m = MAX(dl, ind)
         npol[ind] = npol[ind] + 1
       ENDFOR
-      
+
       ; Now sort out the order of npol. Starts from innermost xpoint
       ; and goes clockwise around: PF, SOL, PF, PF, SOL, PF
-      
+
       npol2 = npol
       xpt = si[0] ; X-point index to start with
       FOR i=0, critical.n_xpoint-1 DO BEGIN
         npol2[3*i] = npol[xpt]  ; PF part 0
-        
+
         ; Get the SOL ID
         solid = (*pf_info[xpt]).sol[0]
         IF (*sol_info[solid]).xpt1 NE xpt THEN BEGIN
@@ -1756,15 +1799,15 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
           STOP
         ENDIF
         npol2[3*i+1] = npol[2*critical.n_xpoint + solid]
-        
+
         ; Get the next x-point
         xpt = (*sol_info[solid]).xpt2
         npol2[3*i+2] = npol[critical.n_xpoint + xpt] ; PF part 1
       ENDFOR
-      
+
       npol = npol2
     ENDIF
-    
+
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ; Poloidal spacing. Need to ensure regular spacing
     ; around x-points.
@@ -1774,45 +1817,45 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
     xpt_dist = FLTARR(critical.n_xpoint, 4) ; Distance between x-point and first grid point
     FOR i=0, critical.n_xpoint-1 DO BEGIN
       ; Grid the lower PF region
-      
+
       ; Calculate poloidal distance along starting line
       poldist = line_dist(R, Z, (*pf_info[xpt]).ri0, (*pf_info[xpt]).zi0) ; Poloidal distance along line
       xdist = MAX(poldist) * 0.5 / FLOAT(npol[3*i]) ; Equal spacing
 
       xpt_dist[xpt, 0] = 0.03 ;;xdist
-      
+
       ; SOL
       solid = (*pf_info[xpt]).sol[0]
-      
+
       poldist = line_dist(R, Z, (*sol_info[solid]).ri, (*sol_info[solid]).zi)
       xdist = MAX(poldist) * 0.5 / FLOAT(npol[3*i+1])
-      
+
       xpt2 = (*sol_info[solid]).xpt2
-      
+
       xpt_dist[xpt, 1] = 0.03 ;;xdist
       xpt_dist[xpt2, 2] =0.03 ;;xdist
 
       ; Second PF region
       xpt = xpt2
-      
+
       poldist = line_dist(R, Z, (*pf_info[xpt]).ri0, (*pf_info[xpt]).zi0)
       xdist = MAX(poldist) * 0.5 / FLOAT(npol[3*i])
-      
+
       xpt_dist[xpt, 3] = 0.03 ;;xdist
 
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-      
+
 
     ENDFOR
-    
+
     ;FOR i=0, critical.n_xpoint-1 DO xpt_dist[i,*] = MEAN(xpt_dist[i,*])
-    
+
     FOR i=0, critical.n_xpoint-1 DO BEGIN
       md = MAX(xpt_dist[i,*])
       xpt_dist[i,*] = 0.5*xpt_dist[i,*] + 0.5*md
     ENDFOR
-    
+
     ; Try to equalise
     FOR i=0, critical.n_xpoint-1 DO BEGIN
       pf_f = faxis + fnorm*pf_psi_vals[i,0,0]
@@ -1820,7 +1863,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       sol_out_f = faxis + fnorm*pf_psi_vals[i,1,TOTAL(nrad,/int)-1]
       core_f = faxis + fnorm*psi_inner[0]
       PRINT, "PSI", psi_inner[0], core_f
-      
+
       IF KEYWORD_SET(xpt_mindist) THEN xpt_dist[i,*] = xpt_dist[i,*] > xpt_mindist
     ENDFOR
 
@@ -1838,10 +1881,10 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
     ; Calculate distances along starting line
     xpt = si[0] ; Start with the innermost x-point
     FOR i=0, critical.n_xpoint-1 DO BEGIN
-      
+
       solid = (*pf_info[xpt]).sol[0]
       xpt2 = (*sol_info[solid]).xpt2 ; the next x-point
-      
+
       ydown_dist = xpt_dist[xpt, 1]
       ; Locate this point on the separatrix (core2)
       dist = line_dist(R, Z, (*sep_info[xpt]).core2_ri, (*sep_info[xpt]).core2_zi); Distance along the separatrix
@@ -1853,14 +1896,14 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
                       INTERPOLATE((*sep_info[xpt]).core2_ri, sepi), $
                       INTERPOLATE((*sep_info[xpt]).core2_zi, sepi), $
                       0.95*f_cont + 0.05*faxis, npt=30, vec=vec_in_down2, weight=1)
-      
+
       OPLOT, INTERPOLATE(R, line[*,0]), INTERPOLATE(Z, line[*,1]), $
              color=4, _extra=_extra
 
       ; Find intersection of this line with starting line
       cpos = line_crossings((*sol_info[solid]).ri, (*sol_info[solid]).zi, 0, $
                             line[*,0], line[*,1], 0, ncross=ncross, inds1=start_ind)
- 
+
       IF ncross NE 1 THEN BEGIN
         PRINT, "WARNING: PROBLEM MAPPING STARTING LOCATION"
       ENDIF ELSE BEGIN
@@ -1872,7 +1915,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       ENDELSE
 
       xpt_dist[xpt, 1] = ydown_dist
-      
+
       ; Repeat for yup
       yup_dist = xpt_dist[xpt2, 2]
       ; Locate this point on the separatrix (core1)
@@ -1885,7 +1928,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
                       INTERPOLATE((*sep_info[xpt2]).core1_zi, sepi), $
                       0.95*f_cont + 0.05*faxis, npt=20, $
                       vec=vec_in_up2, weight=1)
-      
+
       OPLOT, INTERPOLATE(R, line[*,0]), INTERPOLATE(Z, line[*,1]), $
              color=2, _extra=_extra
 
@@ -1900,19 +1943,19 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
         dist = line_dist(R, Z, (*sol_info[solid]).ri, (*sol_info[solid]).zi)
         yup_dist = MAX(dist) - INTERPOLATE(dist, start_ind)
       ENDELSE
-      
+
       xpt_dist[xpt2, 2] = yup_dist
 
       xpt = xpt2 ; Move to the next x-point
    ENDFOR
-    
+
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ; Now have all the radial locations for each region
     ; and number of poloidal points
-    ; 
+    ;
     ; => Grid each section
-    ; 
-    
+    ;
+
     IF KEYWORD_SET(bndryi) THEN BEGIN
       IF KEYWORD_SET(strictbndry) THEN BEGIN
         ; No part of the grid is allowed to be outside boundary
@@ -1925,30 +1968,30 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
         gridbndry[1,*] = [0, ny-1, ny-1, 0]
       ENDELSE
     ENDIF
-    
+
     ; Create 2D arrays for the grid
     Rxy = FLTARR(TOTAL(nrad,/int), TOTAL(npol,/int))
     Zxy = Rxy
     Rixy = Rxy
     Zixy = Rxy
     Psixy = Rxy
-    
+
     ; Create arrays for the topology connections
-    
+
     yup_xsplit   = LONARR(nnpol) ; X index where domain is split on the upper Y side
     ydown_xsplit = LONARR(nnpol) ; X index " " " lower Y side
     yup_xin      = LONARR(nnpol) ; The region number connected to on inner X, upper Y
     yup_xout     = LONARR(nnpol)
     ydown_xin    = LONARR(nnpol)
     ydown_xout   = LONARR(nnpol)
-    
+
     xpt = si[0] ; Start with the innermost x-point
     ypos = 0
     rerun = 0   ; Flag. If 1 then have to re-run the grid generator
     FOR i=0, critical.n_xpoint-1 DO BEGIN
 
-       pvtfluxliner = [R[(*pf_info[i]).ri0[N_ELEMENTS((*pf_info[i]).ri0)-1]], R[(*pf_info[i]).ri0[0]]] 
-       pvtfluxlinez = [Z[(*pf_info[i]).zi0[N_ELEMENTS((*pf_info[i]).zi0)-1]], Z[(*pf_info[i]).zi0[0]]] 
+       pvtfluxliner = [R[(*pf_info[i]).ri0[N_ELEMENTS((*pf_info[i]).ri0)-1]], R[(*pf_info[i]).ri0[0]]]
+       pvtfluxlinez = [Z[(*pf_info[i]).zi0[N_ELEMENTS((*pf_info[i]).zi0)-1]], Z[(*pf_info[i]).zi0[0]]]
 
        pvtr1 = pvtfluxliner[1]
        pvtz1 = pvtfluxlinez[1]
@@ -1967,7 +2010,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
           vec_in_down_z = boundary[1,bndrycrossi+1] -boundary[1,bndrycrossi]
           vec_in_down_r = vec_in_down_r / SQRT(vec_in_down_r^2 + vec_in_down_z^2)
           vec_in_down_z = vec_in_down_z / SQRT(vec_in_down_r^2 + vec_in_down_z^2)
-          vec_in_down1 = [vec_in_down_r, vec_in_down_z] 
+          vec_in_down1 = [vec_in_down_r, vec_in_down_z]
           vec_out_down1= -vec_in_down1 ;; [-1,1]/(SQRT(2.))
           vec_in_up1 = TRANSPOSE(-vecpvt[0,*])
           vec_out_up1 = TRANSPOSE(vec2[0,*])
@@ -1977,7 +2020,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
           vec_in_down_z = boundary[1,bndrycrossi+1] -boundary[1,bndrycrossi]
           vec_in_down_r = vec_in_down_r / SQRT(vec_in_down_r^2 + vec_in_down_z^2)
           vec_in_down_z = vec_in_down_z / SQRT(vec_in_down_r^2 + vec_in_down_z^2)
-          vec_in_down1 = [-1,0] ;;[vec_in_down_r, vec_in_down_z] 
+          vec_in_down1 = [-1,0] ;;[vec_in_down_r, vec_in_down_z]
           vec_out_down1= -vec_in_down1 ;;[1,0]
           vec_in_up1 = TRANSPOSE(-vecpvt[i,*])
           vec_out_up1 = TRANSPOSE(vec2[i,*])
@@ -2010,15 +2053,15 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       Zixy[*, ypos:(ypos+npol[3*i]-1)] = a.Zixy
       FOR j=ypos, ypos+npol[3*i]-1 DO Psixy[*, j] = pf_psi_vals[xpt,0,*]
       ypos = ypos + npol[3*i]
-      
+
       ; Set topology
       ydown_xsplit[3*i] = (*pf_info[xpt]).npf
       yup_xsplit[3*i]   = (*pf_info[xpt]).npf
       ydown_xin[3*i]    = -1 ; Target plates
-      ydown_xout[3*i]   = -1 
+      ydown_xout[3*i]   = -1
       yup_xin[3*i]  = 3*((i-1+critical.n_xpoint) MOD critical.n_xpoint) + 2 ; Previous PF
       yup_xout[3*i] = 3*i+1 ; The following SOL region
-      
+
       IF (flast1 - faxis)/fnorm LT xpt_psi_max THEN BEGIN
         PRINT, "WARNING: Due to intersections with the boundary,"
         PRINT, "         the SOL can't cover both x-points"
@@ -2030,7 +2073,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
           PRINT, "** Removing the boundary"
           boundary = 0
         ENDIF
-        
+
         flast1 = faxis + fnorm*MAX(pf_psi_vals[xpt,0,*]) ; don't restrict range
         rerun = 1
       ENDIF
@@ -2042,7 +2085,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
         PRINT, "    => Inner only good to f = "+STR(ffirst)
         pfirst = (ffirst - faxis)/fnorm
         PRINT, "    => Inner normalised psi = "+STR(pfirst)
-        
+
         ; Change the inner psi
         w = WHERE(ci EQ xpt)
         IF pfirst GT psi_inner[w[0]+1] THEN BEGIN
@@ -2053,7 +2096,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
 
       ; SOL region
       solid = (*pf_info[xpt]).sol[0]
-      
+
       PRINT, "   SOL index ", solid
 
       xpt2 = (*sol_info[solid]).xpt2 ; the second x-point
@@ -2070,12 +2113,12 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       sep_line_down = FLTARR(2, N_ELEMENTS((*sep_info[xpt]).core2_ri))
       sep_line_down[0,*] = (*sep_info[xpt]).core2_ri
       sep_line_down[1,*] = (*sep_info[xpt]).core2_zi
-      
+
       sep_line_up = FLTARR(2, N_ELEMENTS((*sep_info[xpt2]).core1_ri))
       sep_line_up[0,*] = (*sep_info[xpt2]).core1_ri
       sep_line_up[1,*] = (*sep_info[xpt2]).core1_zi
-      
-      
+
+
       vec_in_down2 = TRANSPOSE(veccore[xpt,*])
       vec_out_down2 = TRANSPOSE(vec2[xpt,*])
       vec_in_up2 = TRANSPOSE(veccore[xpt2,*])
@@ -2101,7 +2144,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
                       sep_line_down=sep_line_down, $
                       vec_in_up=vec_in_up2, vec_out_up=vec_out_up2, $
                       sep_up=critical.xpt_f[xpt2], sep_line_up=sep_line_up)
-      
+
       Rxy[*, ypos:(ypos+npol[3*i+1]-1)] = a.Rxy
       Zxy[*, ypos:(ypos+npol[3*i+1]-1)] = a.Zxy
       Rixy[*, ypos:(ypos+npol[3*i+1]-1)] = a.Rixy
@@ -2126,13 +2169,13 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
           PRINT, "** Removing the boundary"
           boundary = 0
         ENDIF
-        
+
         flast2 = faxis + fnorm*MAX(sol_psi_vals[solid,*]) ; don't restrict range
         rerun = 1
       ENDIF
 
       plot_grid_section, a, color=4
-      
+
       IF i EQ 0 THEN BEGIN
          vec_in_up1=[0,-1]
          vec_out_up1=[-1,-1]/(SQRT(2.))
@@ -2143,8 +2186,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       ; Second PF region
       xpt = (*sol_info[solid]).xpt2
 
-      pvtfluxliner = [R[(*pf_info[xpt]).ri1[N_ELEMENTS((*pf_info[xpt]).ri1)-1]], R[(*pf_info[xpt]).ri1[0]]] 
-      pvtfluxlinez = [Z[(*pf_info[xpt]).zi1[N_ELEMENTS((*pf_info[xpt]).zi1)-1]], Z[(*pf_info[xpt]).zi1[0]]] 
+      pvtfluxliner = [R[(*pf_info[xpt]).ri1[N_ELEMENTS((*pf_info[xpt]).ri1)-1]], R[(*pf_info[xpt]).ri1[0]]]
+      pvtfluxlinez = [Z[(*pf_info[xpt]).zi1[N_ELEMENTS((*pf_info[xpt]).zi1)-1]], Z[(*pf_info[xpt]).zi1[0]]]
 
        pvtr1 = pvtfluxliner[1]
        pvtz1 = pvtfluxlinez[1]
@@ -2157,7 +2200,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
        pvtfluxlinez[0] = pvtz0
 
       bndcrosspos = line_crossings( boundary[0,*], boundary[1,*], 1,pvtfluxliner, pvtfluxlinez, 0, ncross=ncross, inds1=bndrycrossi)
-      
+
       IF critical.n_xpoint EQ 1 THEN BEGIN
          vec_in_down3 = TRANSPOSE(-vecpvt[0,*])
          vec_out_down3 = TRANSPOSE(vec1[0,*])
@@ -2169,7 +2212,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
              vec_in_up_z = boundary[1,bndrycrossi+1] -boundary[1,bndrycrossi]
              vec_in_up_r = vec_in_up_r / SQRT(vec_in_up_r^2 + vec_in_up_z^2)
              vec_in_up_z = vec_in_up_z / SQRT(vec_in_up_r^2 + vec_in_up_z^2)
-             vec_in_up3 = [vec_in_up_r, vec_in_down_z] 
+             vec_in_up3 = [vec_in_up_r, vec_in_down_z]
             vec_in_down3 = TRANSPOSE(-vecpvt[1,*])
             vec_out_down3 = TRANSPOSE(vec1[1,*])
             ;;vec_in_up3 = [0,-1] ;;TRANSPOSE(veccore[1,*])
@@ -2183,7 +2226,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
             vec_in_up_z = boundary[1,bndrycrossi+1] -boundary[1,bndrycrossi]
             vec_in_up_r = vec_in_up_r / SQRT(vec_in_up_r^2 + vec_in_up_z^2)
             vec_in_up_z = vec_in_up_z / SQRT(vec_in_up_r^2 + vec_in_up_z^2)
-            vec_in_up3 = [vec_in_up_r, vec_in_up_z] 
+            vec_in_up3 = [vec_in_up_r, vec_in_up_z]
 
            ;; vec_in_up3 = [1,0] ;;TRANSPOSE(veccore[0,*])
             vec_out_up3 = vec_in_up3 ;;[1,0] ;; TRANSPOSE(vec1[0,*])
@@ -2235,19 +2278,19 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
           PRINT, "** Removing the boundary"
           boundary = 0
         ENDIF
-        
+
         flast2 = faxis + fnorm*MAX(pf_psi_vals[xpt,1,*]) ; don't restrict range
         rerun = 1
       ENDIF
 
       plot_grid_section, a, color=4
-      
+
       IF sfirst3 GT 0 THEN BEGIN
         PRINT, "  PF region "+STR(3*i+2)+" incomplete"
         PRINT, "    => Inner only good to f = "+STR(ffirst)
         pfirst = (ffirst - faxis)/fnorm
         PRINT, "    => Inner normalised psi = "+STR(pfirst)
-        
+
         ; Change the inner psi. Make sure hasn't already been reduced
         w = WHERE(ci EQ xpt)
         IF pfirst GT psi_inner[w[0]+1] THEN BEGIN
@@ -2255,7 +2298,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
         ENDIF
         rerun = 1  ; Signal that the grid needs to be rerun
       ENDIF
-      
+
       ; Check if any of the outer edges failed
       slast = MIN([slast1, slast2, slast3])
       IF slast LT (TOTAL(nrad,/int)-1) THEN BEGIN
@@ -2263,7 +2306,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
         flast = faxis + fnorm*plast
         PRINT, "   => These regions only good until f = "+STR(flast)
         PRINT, "   => i.e. Normalised psi of "+STR( plast )
-        
+
         ; Set the new outer psi for these regions
         w = WHERE(ci EQ primary_xpt)
         id = (solid - w[0] + critical.n_xpoint) MOD critical.n_xpoint
@@ -2275,13 +2318,13 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
 
     IF rerun THEN BEGIN
       ; Create new settings
-      
+
       IF nrad_flexible THEN nrad = TOTAL(nrad, /integer)  ; Allow nrad to change again
 
       new_settings = {psi_inner:psi_inner, psi_outer:psi_outer, $ ; New ranges
                       nrad:nrad, npol:npol, $
                       rad_peaking:settings.rad_peaking, pol_peaking:settings.pol_peaking}
-      
+
       IF iter GT 0 THEN strictbndry = 0
 
       PRINT, "** Re-running grid generator with changed settings"
@@ -2290,15 +2333,15 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
                           boundary=boundary, strictbndry=strictbndry, $
                           iter=iter+1, nrad_flexible=nrad_flexible, $
                           single_rad_grid=single_rad_grid, fast=fast)
-      
+
     ENDIF
-    
+
     ; Successfully created grid
-    
+
     new_settings = {psi_inner:psi_inner, psi_outer:psi_outer, $ ; New ranges
                     nrad:nrad, npol:npol, $
                     rad_peaking:settings.rad_peaking, pol_peaking:settings.pol_peaking}
-    
+
     ; Calculate magnetic field components
     dpsidR = FLTARR(TOTAL(nrad, /int), TOTAL(npol, /int))
     dpsidZ = dpsidR
@@ -2310,8 +2353,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
         local_gradient, interp_data, Rixy[i,j], Zixy[i,j], status=status, $
           dfdr=dfdr, dfdz=dfdz
         ; dfd* are derivatives wrt the indices. Need to multiply by dr/di etc
-        dpsidR[i,j] = dfdr/INTERPOLATE(DERIV(R),Rixy[i,j]) 
-        dpsidZ[i,j] = dfdz/INTERPOLATE(DERIV(Z),Zixy[i,j]) 
+        dpsidR[i,j] = dfdr/INTERPOLATE(DERIV(R),Rixy[i,j])
+        dpsidZ[i,j] = dfdz/INTERPOLATE(DERIV(Z),Zixy[i,j])
       ENDFOR
     ENDFOR
 
@@ -2329,8 +2372,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
               ydown_xsplit:ydown_xsplit, $
               yup_xin:yup_xin, yup_xout:yup_xout, $ ; Domain index to connect to
               ydown_xin:ydown_xin, ydown_xout:ydown_xout}
-              
-              
+
+
   ENDELSE
 
   CATCH, /cancel
