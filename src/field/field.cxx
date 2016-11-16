@@ -59,8 +59,9 @@ void Field::error(const char *s, ...) const {
       output.write("Error in field: %s", err_buffer);
 #endif
   }
-  
-  throw BoutException("Error in field: %s", err_buffer);
+  std::string msg="Error in field: ";
+  msg+=err_buffer;
   delete[] err_buffer;
+  throw BoutException(msg);
 }
 

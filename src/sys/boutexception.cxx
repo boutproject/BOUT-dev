@@ -101,6 +101,12 @@ BoutException::BoutException(const char* s, ...)
   
   INIT_EXCEPTION(s);
 }
+BoutException::BoutException(const std::string msg)
+{
+  message="====== Exception thrown ======\n"+msg+"\n";
+
+  this->Backtrace();
+}
 
 const char* BoutException::what() const throw()
 {
