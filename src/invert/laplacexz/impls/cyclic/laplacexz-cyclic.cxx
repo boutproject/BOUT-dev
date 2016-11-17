@@ -37,6 +37,7 @@ LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options) : LaplaceXZ(m, optio
   rhscmplx = matrix<dcomplex>(nsys, nloc);
 
   k1d = new dcomplex[(mesh->LocalNz)/2 + 1];
+  k1d_2 = new dcomplex[(mesh->LocalNz)/2 + 1];
 
   // Create a cyclic reduction object, operating on dcomplex values
   cr = new CyclicReduce<dcomplex>(mesh->getXcomm(), nloc);
@@ -159,7 +160,7 @@ void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
   cr->setCoefs(nsys, acoef, bcoef, ccoef);
 }
 
-Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &UNUSED(x0)) {
+Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &x0) {
   Timer timer("invert");
   
   // Create the rhs array
@@ -171,8 +172,8 @@ Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &UNUSED(x0)) {
       
       if(inner_boundary_flags & INVERT_SET) {
         // Fourier transform x0 in Z at xstart-1 and xstart
-        ZFFT(&x0(mesh->xstart-1,y,0), mesh->zShift(mesh->xstart-1, y), k1d);
-        ZFFT(&x0(mesh->xstart,y,0), mesh->zShift(mesh->xstart, y), k1d_2);
+        rfft(&x0(mesh->xstart-1,y,0), mesh->LocalNz, k1d);
+        rfft(&x0(mesh->xstart,y,0), mesh->LocalNz, k1d_2);
         for(int kz = 0; kz < nmode; kz++) {
           // Use the same coefficients as applied to the solution
           // so can either set gradient or value
@@ -180,8 +181,8 @@ Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &UNUSED(x0)) {
         }
       }else if(inner_boundary_flags & INVERT_RHS) {
         // Fourier transform rhs in Z at xstart-1 and xstart
-        ZFFT(&rhs(mesh->xstart-1,y,0), mesh->zShift(mesh->xstart-1, y), k1d);
-        ZFFT(&rhs(mesh->xstart,y,0), mesh->zShift(mesh->xstart, y), k1d_2);
+        rfft(&rhs(mesh->xstart-1,y,0), mesh->LocalNz, k1d);
+        rfft(&rhs(mesh->xstart,y,0), mesh->LocalNz, k1d_2);
         for(int kz = 0; kz < nmode; kz++) {
           // Use the same coefficients as applied to the solution
           // so can either set gradient or value
@@ -208,8 +209,8 @@ Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &UNUSED(x0)) {
       // Outer X boundary
       if(outer_boundary_flags & INVERT_SET) {
         // Fourier transform x0 in Z at xend and xend+1
-        ZFFT(&x0(mesh->xend,y,0), mesh->zShift(mesh->xend, y), k1d);
-        ZFFT(&x0(mesh->xend+1,y,0), mesh->zShift(mesh->xend+1, y), k1d_2);
+        rfft(&x0(mesh->xend,y,0), mesh->LocalNz, k1d);
+        rfft(&x0(mesh->xend+1,y,0), mesh->LocalNz, k1d_2);
         for(int kz = 0; kz < nmode; kz++) {
           // Use the same coefficients as applied to the solution
           // so can either set gradient or value
@@ -217,8 +218,8 @@ Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &UNUSED(x0)) {
         }
       }else if(outer_boundary_flags & INVERT_RHS) {
         // Fourier transform rhs in Z at xstart-1 and xstart
-        ZFFT(&rhs(mesh->xend,y,0), mesh->zShift(mesh->xend, y), k1d);
-        ZFFT(&rhs(mesh->xend+1,y,0), mesh->zShift(mesh->xend+1, y), k1d_2);
+        rfft(&rhs(mesh->xend,y,0), mesh->LocalNz, k1d);
+        rfft(&rhs(mesh->xend+1,y,0), mesh->LocalNz, k1d_2);
         for(int kz = 0; kz < nmode; kz++) {
           // Use the same coefficients as applied to the solution
           // so can either set gradient or value
