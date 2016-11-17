@@ -54,7 +54,7 @@ class RKScheme {
  public:
 
   RKScheme(Options *opts = NULL); //Options picks the scheme, pretty much everything else is automated
-  ~RKScheme();
+  virtual ~RKScheme();
 
   //Finish generic initialisation
   void init(const int nlocalIn, const int neqIn, const bool adaptiveIn, const BoutReal atolIn,

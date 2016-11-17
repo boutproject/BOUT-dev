@@ -46,12 +46,6 @@ using std::map;
 #include <string>
 using std::string;
 
-struct OptionValue {
-  string value;
-  string source;     // Source of the setting
-  bool used;         // Set to true when used
-};
-
 /// Class to represent hierarchy of options
 /*!
 * 
@@ -93,10 +87,20 @@ public:
   void printUnused();
  private:
   static Options *root; ///< Only instance of the root section
-
+  
   Options *parent;
   string sectionName; // section name (if any), for logging only
 
+  /*!
+   * Private class, used to store values, together with
+   * information about their origin and usage
+   */
+  struct OptionValue {
+    string value;
+    string source;     // Source of the setting
+    bool used;         // Set to true when used
+  };
+  
   map<string, OptionValue> options;
   map<string, Options*> sections;
 };
@@ -134,5 +138,12 @@ public:
     options->get(#var4, var4, def);                               \
     options->get(#var5, var5, def);                               \
     options->get(#var6, var6, def);}
+
+#define VAROPTION(options, var, def) {					\
+    if (options->isSet(#var)){						\
+      options->get(#var, var, def);					\
+    } else {								\
+      Options::getRoot()->getSection("all")->get(#var, var, def);	\
+    }}									\
 
 #endif // __OPTIONS_H__

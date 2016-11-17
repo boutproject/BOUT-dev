@@ -6,6 +6,7 @@
 #include "boundary_op.hxx"
 #include "bout_types.hxx"
 #include <field_factory.hxx>
+#include "unused.hxx"
 
 /// Dirichlet (set to zero) boundary condition
 class BoundaryDirichlet : public BoundaryOp {
@@ -269,8 +270,8 @@ class BoundaryDivCurl : public BoundaryOp {
   BoundaryDivCurl() {}
   BoundaryDivCurl(BoundaryRegion *region):BoundaryOp(region) { }
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
-  void apply(Field2D &f) { bout_error("ERROR: DivCurl boundary only for vectors"); }
-  void apply(Field3D &f) { bout_error("ERROR: DivCurl boundary only for vectors"); }
+  void apply(Field2D &UNUSED(f)) { bout_error("ERROR: DivCurl boundary only for vectors"); }
+  void apply(Field3D &UNUSED(f)) { bout_error("ERROR: DivCurl boundary only for vectors"); }
   void apply(Vector2D &f);
   void apply(Vector3D &f);
 };
@@ -317,6 +318,7 @@ public:
 };
 // End L.Easy
 
+
 /////////////////////////////////////////////////////////
 
 /// Convert a boundary condition to a relaxing one
@@ -326,31 +328,15 @@ class BoundaryRelax : public BoundaryModifier {
   BoundaryRelax(BoundaryOp *operation, BoutReal rate) : BoundaryModifier(operation) {r = fabs(rate); apply_to_ddt = true;}
   BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
   
-  void apply(Field2D &f);
-  void apply(Field3D &f);
+  void apply(Field2D &f) {apply(f, 0.);};
+  void apply(Field2D &f, BoutReal t);
+  void apply(Field3D &f) {apply(f, 0.);};
+  void apply(Field3D &f, BoutReal t);
   
   void apply_ddt(Field2D &f);
   void apply_ddt(Field3D &f);
  private:
   BoutReal r;
-};
-
-/// Apply boundary condition in shifted coordinates
-class BoundaryShifted : public BoundaryModifier {
-public:
-  BoundaryShifted() {}
-  BoundaryShifted(BoundaryOp *operation) : BoundaryModifier(operation) {}
-  BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
-  
-  void apply(Field2D &f);
-  void apply(Field3D &f);
-  
-  void apply_ddt(Field2D &f);
-  void apply(Field2D &f, BoutReal t);
-  void apply_ddt(Field3D &f);
-  void apply(Field3D &f, BoutReal t);
-private:
-  
 };
 
 /// Increase the width of a boundary
@@ -360,13 +346,51 @@ public:
   BoundaryWidth(BoundaryOp *operation, int wid) : BoundaryModifier(operation), width(wid) {}
   BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
   
-  void apply(Field2D &f);
-  void apply(Field3D &f);
+  void apply(Field2D &f) {apply(f, 0.);};
+  void apply(Field2D &f, BoutReal t);
+  void apply(Field3D &f) {apply(f, 0.);};
+  void apply(Field3D &f, BoutReal t);
   
   void apply_ddt(Field2D &f);
   void apply_ddt(Field3D &f);
 private:
   int width;
+};
+
+/// Convert input field fromFieldAligned, apply boundary and then convert back toFieldAligned
+/// Equivalent to converting the boundary condition to "Field Aligned" from "orthogonal"
+class BoundaryToFieldAligned : public BoundaryModifier {
+public:
+  BoundaryToFieldAligned(){}
+  BoundaryToFieldAligned(BoundaryOp *operation) : BoundaryModifier(operation){}
+  BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
+
+  void apply(Field2D &f) {apply(f, 0.);};
+  void apply(Field2D &f, BoutReal t);
+  void apply(Field3D &f) {apply(f, 0.);};
+  void apply(Field3D &f, BoutReal t);
+  
+  void apply_ddt(Field2D &f);
+  void apply_ddt(Field3D &f);
+private:
+};
+
+/// Convert input field toFieldAligned, apply boundary and then convert back fromFieldAligned
+/// Equivalent to converting the boundary condition from "Field Aligned" to "orthogonal"
+class BoundaryFromFieldAligned : public BoundaryModifier {
+public:
+  BoundaryFromFieldAligned(){}
+  BoundaryFromFieldAligned(BoundaryOp *operation) : BoundaryModifier(operation){}
+  BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
+
+  void apply(Field2D &f) {apply(f, 0.);};
+  void apply(Field2D &f, BoutReal t);
+  void apply(Field3D &f) {apply(f, 0.);};
+  void apply(Field3D &f, BoutReal t);
+  
+  void apply_ddt(Field2D &f);
+  void apply_ddt(Field3D &f);
+private:
 };
 
 #endif // __BNDRY_STD_H__

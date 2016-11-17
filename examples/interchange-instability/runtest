@@ -19,6 +19,10 @@ MPIRUN = getmpirun()
 print("Making interchange instability test")
 shell("make > make.log")
 
+# Delete old output files
+shell("rm data_1/BOUT.dmp.*")
+shell("rm data_10/BOUT.dmp.*")
+
 def growth_rate(path, nproc, log=False):
     pipe = False
     if log != False:

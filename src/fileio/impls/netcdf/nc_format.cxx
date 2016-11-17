@@ -60,27 +60,10 @@ NcFormat::NcFormat(const char *name) {
   openr(name);
 }
 
-NcFormat::NcFormat(const string &name) {
-  dataFile = NULL;
-  x0 = y0 = z0 = t0 = 0;
-  recDimList = new const NcDim*[4];
-  dimList = recDimList+1;
-  lowPrecision = false;
-
-  default_rec = 0;
-  rec_nr.clear();
-
-  openr(name);
-}
-
 NcFormat::~NcFormat() {
   delete[] recDimList;
   close();
   rec_nr.clear();
-}
-
-bool NcFormat::openr(const string &name) {
-  return openr(name.c_str());
 }
 
 bool NcFormat::openr(const char *name) {
@@ -116,8 +99,8 @@ bool NcFormat::openr(const char *name) {
     xDim = NULL;
   }else if(mesh != NULL) {
     // Check that the dimension size is correct
-    if(xDim->size() != mesh->ngx) {
-      throw BoutException("X dimension incorrect. Expected %d, got %d", mesh->ngx, xDim->size());
+    if(xDim->size() != mesh->LocalNx) {
+      throw BoutException("X dimension incorrect. Expected %d, got %d", mesh->LocalNx, xDim->size());
     }
   }
   
@@ -131,8 +114,8 @@ bool NcFormat::openr(const char *name) {
     yDim = NULL;
   }else if(mesh != NULL) {
     // Check that the dimension size is correct
-    if(yDim->size() != mesh->ngy) {
-      throw BoutException("Y dimension incorrect. Expected %d, got %d", mesh->ngy, yDim->size());
+    if(yDim->size() != mesh->LocalNy) {
+      throw BoutException("Y dimension incorrect. Expected %d, got %d", mesh->LocalNy, yDim->size());
     }
   }
   
@@ -144,8 +127,8 @@ bool NcFormat::openr(const char *name) {
     zDim = NULL;
   }else if(mesh != NULL) {
     // Check that the dimension size is correct
-    if(zDim->size() != mesh->ngz) {
-      throw BoutException("Z dimension incorrect. Expected %d, got %d", mesh->ngz, zDim->size());
+    if(zDim->size() != mesh->LocalNz) {
+      throw BoutException("Z dimension incorrect. Expected %d, got %d", mesh->LocalNz, zDim->size());
     }
   }
   
@@ -165,10 +148,6 @@ bool NcFormat::openr(const char *name) {
   fname = copy_string(name);
 
   return true;
-}
-
-bool NcFormat::openw(const string &name, bool append) {
-  return openw(name.c_str(), append);
 }
 
 bool NcFormat::openw(const char *name, bool append) {
@@ -226,7 +205,7 @@ bool NcFormat::openw(const char *name, bool append) {
 
     /// Test they're the right size (and t is unlimited)
     
-    if((xDim->size() != mesh->ngx) || (yDim->size() != mesh->ngy) || (zDim->size() != mesh->ngz)
+    if((xDim->size() != mesh->LocalNx) || (yDim->size() != mesh->LocalNy) || (zDim->size() != mesh->LocalNz)
        || (!tDim->is_unlimited()) ) {
       delete dataFile;
       dataFile = NULL;
@@ -247,19 +226,19 @@ bool NcFormat::openw(const char *name, bool append) {
 
     /// Add the dimensions
     
-    if(!(xDim = dataFile->add_dim("x", mesh->ngx))) {
+    if(!(xDim = dataFile->add_dim("x", mesh->LocalNx))) {
       delete dataFile;
       dataFile = NULL;
       return false;
     }
   
-    if(!(yDim = dataFile->add_dim("y", mesh->ngy))) {
+    if(!(yDim = dataFile->add_dim("y", mesh->LocalNy))) {
       delete dataFile;
       dataFile = NULL;
       return false;
     }
     
-    if(!(zDim = dataFile->add_dim("z", mesh->ngz))) {
+    if(!(zDim = dataFile->add_dim("z", mesh->LocalNz))) {
       delete dataFile;
       dataFile = NULL;
       return false;
@@ -754,9 +733,7 @@ bool NcFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int l
   // Check the name
   checkName(name);
 
-#ifdef CHECK
-  msg_stack.push("NcFormat::write_rec(BoutReal)");
-#endif
+  MsgStackItem trace("NcFormat::write_rec(BoutReal*)");
 
   int nd = 1; // Number of dimensions
   if(lx != 0) nd = 2;
@@ -778,17 +755,15 @@ bool NcFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int l
     NcType vartype = ncDouble;
     if(lowPrecision)
       vartype = ncFloat;
-  
+    
     var = dataFile->add_var(name, vartype, nd, recDimList);
+    ASSERT1(var != 0);
     
     rec_nr[name] = default_rec; // Starting record
-
+    
     if(!var->is_valid()) {
 #ifdef NCDF_VERBOSE
       output.write("ERROR: NetCDF Could not add variable '%s' to file '%s'\n", name, fname);
-#endif
-#ifdef CHECK
-  msg_stack.pop();
 #endif
       return false;
     }
@@ -835,11 +810,7 @@ bool NcFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int l
   
   // Increment record number
   rec_nr[name] = rec_nr[name] + 1;
-
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-
+  
   return true;
 }
 

@@ -65,27 +65,10 @@ Ncxx4::Ncxx4(const char *name) {
   openr(name);
 }
 
-Ncxx4::Ncxx4(const string &name) {
-  dataFile = NULL;
-  x0 = y0 = z0 = t0 = 0;
-  recDimList = new const NcDim*[4];
-  dimList = recDimList+1;
-  lowPrecision = false;
-
-  default_rec = 0;
-  rec_nr.clear();
-
-  openr(name);
-}
-
 Ncxx4::~Ncxx4() {
   delete[] recDimList;
   close();
   rec_nr.clear();
-}
-
-bool Ncxx4::openr(const string &name) {
-  return openr(name.c_str());
 }
 
 bool Ncxx4::openr(const char *name) {
@@ -148,10 +131,6 @@ bool Ncxx4::openr(const char *name) {
   return true;
 }
 
-bool Ncxx4::openw(const string &name, bool append) {
-  return openw(name.c_str(), append);
-}
-
 bool Ncxx4::openw(const char *name, bool append) {
 #ifdef CHECK
   msg_stack.push("Ncxx4::openw");
@@ -209,7 +188,7 @@ bool Ncxx4::openw(const char *name, bool append) {
 
     /// Test they're the right size (and t is unlimited)
     
-    if((xDim.getSize() != mesh->ngx) || (yDim.getSize() != mesh->ngy) || (zDim.getSize() != mesh->ngz)
+    if((xDim.getSize() != mesh->LocalNx) || (yDim.getSize() != mesh->LocalNy) || (zDim.getSize() != mesh->LocalNz)
        || (!tDim.isUnlimited()) ) {
       delete dataFile;
       dataFile = NULL;
@@ -231,21 +210,21 @@ bool Ncxx4::openw(const char *name, bool append) {
 
     /// Add the dimensions
     
-    xDim = dataFile->addDim("x", mesh->ngx);
+    xDim = dataFile->addDim("x", mesh->LocalNx);
     if(xDim.isNull()) {
       delete dataFile;
       dataFile = NULL;
       return false;
     }
   
-    yDim = dataFile->addDim("y", mesh->ngy);
+    yDim = dataFile->addDim("y", mesh->LocalNy);
     if(yDim.isNull()) {
       delete dataFile;
       dataFile = NULL;
       return false;
     }
     
-    zDim = dataFile->addDim("z", mesh->ngz);
+    zDim = dataFile->addDim("z", mesh->LocalNz);
     if(zDim.isNull()) {
       delete dataFile;
       dataFile = NULL;
@@ -332,9 +311,8 @@ const vector<int> Ncxx4::getSize(const char *name) {
     return size;
   }
   
-  vector<NcDim> dims = var.getDims();
-  for(vector<NcDim>::iterator it = dims.begin(); it != dims.end(); it++) {
-    size.push_back(it->getSize());
+  for(const auto& dim: var.getDims()) {
+    size.push_back(dim.getSize());
   }
   
 #ifdef CHECK

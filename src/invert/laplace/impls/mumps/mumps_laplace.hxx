@@ -36,16 +36,16 @@ class LaplaceMumps;
  
 class LaplaceMumps : public Laplacian {
  public:
-  LaplaceMumps(Options *opt = NULL) { throw BoutException("Mumps library not available"); }
+  LaplaceMumps(Options *UNUSED(opt) = NULL) { throw BoutException("Mumps library not available"); }
   
-  void setCoefA(const Field2D &val) {}
-  void setCoefB(const Field2D &val) {}
-  void setCoefC(const Field2D &val) {}
-  void setCoefD(const Field2D &val) {}
-  void setCoefEx(const Field2D &val) {}
-  void setCoefEz(const Field2D &val) {}
+  void setCoefA(const Field2D &UNUSED(val)) {}
+  void setCoefB(const Field2D &UNUSED(val)) {}
+  void setCoefC(const Field2D &UNUSED(val)) {}
+  void setCoefD(const Field2D &UNUSED(val)) {}
+  void setCoefEx(const Field2D &UNUSED(val)) {}
+  void setCoefEz(const Field2D &UNUSED(val)) {}
   
-  const FieldPerp solve(const FieldPerp &b) {throw BoutException("PETSc not available");}
+  const FieldPerp solve(const FieldPerp &UNUSED(b)) {throw BoutException("PETSc not available");}
 };
  
 #else

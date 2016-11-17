@@ -1,4 +1,3 @@
-
 #include <bout/physicsmodel.hxx>
 #include <derivs.hxx>
 
@@ -10,21 +9,21 @@ protected:
     solver->add(f, "f");
     return 0;
   }
-  
+
   int rhs(BoutReal t) {
     mesh->communicate(f);
+    Coordinates *coords = mesh->coordinates();
 
     // df/dt = df/dtheta + df/dphi
 
-    ddt(f) = 
-      vy * (mesh->g22*DDY(f) + mesh->g23*DDZ(f)) +    // Upwinding with second-order central differencing 
-      vz * (mesh->g33*DDZ(f) + mesh->g23*DDY(f))      // (unstable without additional dissipation)
-      - SQ(SQ(mesh->dy))*D4DY4(f) - SQ(SQ(mesh->dz))*D4DY4(f);   // Numerical dissipation terms
-    
-    
+    ddt(f) =
+      vy * (coords->g22*DDY(f) + coords->g23*DDZ(f)) +    // Upwinding with second-order central differencing
+      vz * (coords->g33*DDZ(f) + coords->g23*DDY(f))      // (unstable without additional dissipation)
+      - SQ(SQ(coords->dy))*D4DY4(f) - SQ(SQ(coords->dz))*D4DY4(f);   // Numerical dissipation terms
+
     return 0;
   }
-  
+
 private:
   Field3D f;
   Field2D vy, vz;

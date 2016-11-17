@@ -34,6 +34,7 @@
 #include "field3d.hxx"
 #include "field2d.hxx"
 #include "options.hxx"
+#include "unused.hxx"
 
 // Parderiv implementations
 #define PARDERIVSERIAL "serial"
@@ -42,7 +43,7 @@
 /// Base class for parallel inversion solvers
 class InvertPar {
 public:
-  InvertPar(Options *opt) {}
+  InvertPar(Options *UNUSED(opt)) {}
   virtual ~InvertPar() {}
   
   static InvertPar* Create();
@@ -50,27 +51,27 @@ public:
   virtual const Field2D solve(const Field2D &f); ///< Warning: Default implementation very inefficient
   virtual const Field3D solve(const Field3D &f) = 0;  ///< This method must be implemented
   
-  virtual const Field3D solve(const Field2D &f, const Field2D &start) {return solve(f);}
-  virtual const Field3D solve(const Field3D &f, const Field3D &start) {return solve(f);}
+  virtual const Field3D solve(const Field2D &f, const Field2D &UNUSED(start)) {return solve(f);}
+  virtual const Field3D solve(const Field3D &f, const Field3D &UNUSED(start)) {return solve(f);}
   
   virtual void setCoefA(const Field2D &f) = 0;
-  virtual void setCoefA(const Field3D &f) {setCoefA(f.DC());}
+  virtual void setCoefA(const Field3D &f) {setCoefA(DC(f));}
   virtual void setCoefA(const BoutReal f) {setCoefA(Field2D(f));}
   
   virtual void setCoefB(const Field2D &f) = 0;
-  virtual void setCoefB(const Field3D &f) {setCoefB(f.DC());}
+  virtual void setCoefB(const Field3D &f) {setCoefB(DC(f));}
   virtual void setCoefB(const BoutReal f) {setCoefB(Field2D(f));}
   
   virtual void setCoefC(const Field2D &f) = 0;
-  virtual void setCoefC(const Field3D &f) {setCoefB(f.DC());}
+  virtual void setCoefC(const Field3D &f) {setCoefB(DC(f));}
   virtual void setCoefC(const BoutReal f) {setCoefB(Field2D(f));}
   
   virtual void setCoefD(const Field2D &f) = 0;
-  virtual void setCoefD(const Field3D &f) {setCoefB(f.DC());}
+  virtual void setCoefD(const Field3D &f) {setCoefB(DC(f));}
   virtual void setCoefD(const BoutReal f) {setCoefB(Field2D(f));}
   
   virtual void setCoefE(const Field2D &f) = 0;
-  virtual void setCoefE(const Field3D &f) {setCoefB(f.DC());}
+  virtual void setCoefE(const Field3D &f) {setCoefB(DC(f));}
   virtual void setCoefE(const BoutReal f) {setCoefB(Field2D(f));}
   
 private:

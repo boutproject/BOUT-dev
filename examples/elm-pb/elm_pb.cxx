@@ -4,7 +4,7 @@
  * Basically the same as Hazeltine-Meiss but different normalisations.
  * Can also include the Vpar compressional term
  *******************************************************************************/
-
+ 
 #include <bout.hxx>
 #include <initialprofiles.hxx>
 #include <invert_laplace.hxx>
@@ -25,7 +25,7 @@ Vector2D b0xcv; // Curvature term
 Field2D beta, gradparB;   // Used for Vpar terms
 Field2D phi0;   // When diamagnetic terms used
 Field2D U0, Psixy, x;   //0th vorticity of equilibrium flow, 
-                       //radial flux coordinate, normalized radial flux coordinate
+//radial flux coordinate, normalized radial flux coordinate
 
 bool constn0;
 BoutReal n0_height, n0_ave, n0_width, n0_center, n0_bottom_x, Nbar, Tibar, Tebar; //the total height, average width and center of profile of N0
@@ -175,13 +175,6 @@ bool sheath_boundaries; // Apply sheath boundaries in Y
 
 bool parallel_lr_diff; // Use left and right shifted stencils for parallel differences
 
-bool parallel_lagrange; // Use (semi-) Lagrangian method for parallel derivatives
-bool parallel_project;  // Use Apar to project field-lines
-
-Field3D Xip_x, Xip_z;     // Displacement of y+1 (in cell index space)
-
-Field3D Xim_x, Xim_z;     // Displacement of y-1 (in cell index space)
-
 bool phi_constraint; // Solver for phi using a solver constraint 
 
 bool include_rmp; // Include RMP coil perturbation
@@ -229,16 +222,9 @@ int jacobian(BoutReal t); // Jacobian-vector multiply
 
 int precon_phi(BoutReal t, BoutReal cj, BoutReal delta); // Preconditioner with phi constraint
 
-void advect_tracer(const Field3D &p,  // phi (input)
-		   const Field3D &delta_x, const Field3D &delta_z, // Current location (input) 
-		   Field3D &F_dx, Field3D &F_dz); // Time-derivative of location
-
 const Field3D Grad2_par2new(const Field3D &f); //for 4th order diffusion
 
-const Field2D N0tanh(BoutReal n0_height, BoutReal n0_ave, BoutReal n0_width, BoutReal n0_center, BoutReal n0_bottom_x);
-
-const Field2D N0tanh(BoutReal n0_height, BoutReal n0_ave, BoutReal n0_width, BoutReal n0_center, BoutReal n0_bottom_x)
-{
+const Field2D N0tanh(BoutReal n0_height, BoutReal n0_ave, BoutReal n0_width, BoutReal n0_center, BoutReal n0_bottom_x) {
   Field2D result;
   result.allocate();
 
@@ -249,82 +235,65 @@ const Field2D N0tanh(BoutReal n0_height, BoutReal n0_ave, BoutReal n0_width, Bou
   Grid_NXlimit = n0_bottom_x * Grid_NX; 
   output.write("Jysep1_1 = %i   Grid number = %e\n", int(Jysep), Grid_NX);
   
-  if (Jysep > 0.) //for single null geometry
-    {
-      BoutReal Jxsep, Jysep2;
-      mesh->get(Jxsep, "ixseps1");
-      mesh->get(Jysep2, "jyseps2_2");
-      //output.write("Jysep2_2 = %i   Ixsep1 = %i\n", int(Jysep2), int(Jxsep));
-
-      for(int jx=0;jx<mesh->ngx;jx++)
-	{
-	  BoutReal mgx = mesh->GlobalX(jx);
-	  BoutReal xgrid_num = (Jxsep+1.)/Grid_NX;
-	  //output.write("mgx = %e xgrid_num = %e\n", mgx);
-	  for (int jy=0;jy<mesh->ngy;jy++)
-	    {
-	      int globaly = mesh->YGLOBAL(jy);
-	      //output.write("local y = %i;   global y: %i\n", jy, globaly);
-	      if ( mgx > xgrid_num || (globaly<=int(Jysep)-4) || (globaly>int(Jysep2)) )
-		mgx = xgrid_num;
-	      BoutReal rlx = mgx - n0_center;
-	      BoutReal temp = exp(rlx/n0_width);
-	      BoutReal dampr = ((temp - 1.0 / temp) / (temp + 1.0 / temp));
-	      result[jx][jy] = 0.5*(1.0 - dampr) * n0_height + n0_ave;  
-	    }
-	}
+  if (Jysep > 0.) { //for single null geometry
+    BoutReal Jxsep, Jysep2;
+    mesh->get(Jxsep, "ixseps1");
+    mesh->get(Jysep2, "jyseps2_2");
+    //output.write("Jysep2_2 = %i   Ixsep1 = %i\n", int(Jysep2), int(Jxsep));
+    
+    for(auto i : result) {
+      BoutReal mgx = mesh->GlobalX(i.x);
+      BoutReal xgrid_num = (Jxsep+1.)/Grid_NX;
+      //output.write("mgx = %e xgrid_num = %e\n", mgx);
+      
+      int globaly = mesh->YGLOBAL(i.y);
+      //output.write("local y = %i;   global y: %i\n", i.y, globaly);
+      if ( mgx > xgrid_num || (globaly<=int(Jysep)-4) || (globaly>int(Jysep2)) )
+        mgx = xgrid_num;
+      BoutReal rlx = mgx - n0_center;
+      BoutReal temp = exp(rlx/n0_width);
+      BoutReal dampr = ((temp - 1.0 / temp) / (temp + 1.0 / temp));
+      result[i] = 0.5*(1.0 - dampr) * n0_height + n0_ave;  
     }
-  else //circular geometry
-    {
-      for(int jx=0;jx<mesh->ngx;jx++)
-	{
-	  BoutReal mgx = mesh->GlobalX(jx);
-	  BoutReal xgrid_num = Grid_NXlimit/Grid_NX;
-	  if (mgx > xgrid_num)
-	    mgx = xgrid_num;
-	  BoutReal rlx = mgx - n0_center;
-	  BoutReal temp = exp(rlx/n0_width);
-	  BoutReal dampr = ((temp - 1.0 / temp) / (temp + 1.0 / temp));
-	  for(int jy=0;jy<mesh->ngy;jy++)
-	    result[jx][jy] = 0.5*(1.0 - dampr) * n0_height + n0_ave;  
-	}
+  } else { //circular geometry
+    for(auto i : result) {
+      BoutReal mgx = mesh->GlobalX(i.x);
+      BoutReal xgrid_num = Grid_NXlimit/Grid_NX;
+      if (mgx > xgrid_num)
+        mgx = xgrid_num;
+      BoutReal rlx = mgx - n0_center;
+      BoutReal temp = exp(rlx/n0_width);
+      BoutReal dampr = ((temp - 1.0 / temp) / (temp + 1.0 / temp));
+      result[i] = 0.5*(1.0 - dampr) * n0_height + n0_ave;  
     }
+  }
   
   mesh->communicate(result);
 
   return result;
 }
 
-const Field3D Grad2_par2new(const Field3D &f)
-{
-  /*
-   * This function implements d2/dy2 where y is the poloidal coordinate theta
-   */
 
-
-#ifdef CHECK
-  int msg_pos = msg_stack.push("Grad2_par2new( Field3D )");
-#endif
-
-
+/*!
+ * This function implements d2/dy2 where y is the poloidal coordinate theta
+ */
+const Field3D Grad2_par2new(const Field3D &f) {
+  TRACE("Grad2_par2new( Field3D )");
 
   Field3D result = D2DY2(f);
   
-
 #ifdef TRACK
   result.name = "Grad2_par2new("+f.name+")";
 #endif
-#ifdef CHECK
-  msg_stack.pop(msg_pos);
-#endif
+  
   return result;
 }
 
-
-int physics_init(bool restarting)
-{
+int physics_init(bool restarting) {
   bool noshear;
   
+  Coordinates *metric = mesh->coordinates();
+
   output.write("Solving high-beta flute reduced equations\n");
   output.write("\tFile    : %s\n", __FILE__);
   output.write("\tCompiled: %s at %s\n", __DATE__, __TIME__);
@@ -493,8 +462,6 @@ int physics_init(bool restarting)
 
   // Parallel differencing
   OPTION(options, parallel_lr_diff, false);
-  OPTION(options, parallel_lagrange, false); // Use a (semi-) Lagrangian method for Grad_parP
-  OPTION(options, parallel_project, false);
 
   // RMP-related options
   OPTION(options, include_rmp,       false);  // Read RMP data from grid
@@ -593,7 +560,7 @@ int physics_init(bool restarting)
 	OPTION(options, rmp_m,  9);
 	OPTION(options, rmp_polwid, -1.0);
 	OPTION(options, rmp_polpeak, 0.5);
-    OPTION(options, rmp_vac_mask, true);
+        OPTION(options, rmp_vac_mask, true);
 	// Divide n by the size of the domain
         int zperiod;
         globalOptions->get("zperiod", zperiod, 1);
@@ -604,24 +571,21 @@ int physics_init(bool restarting)
 		     rmp_n, rmp_m, rmp_factor);
 	
 	rmp_Psi0 = 0.0;
-	BoutReal ***d = rmp_Psi0.getData();
 	if(mesh->lastX()) {
 	  // Set the outer boundary
-	  for(int jx=mesh->ngx-4;jx<mesh->ngx;jx++)
-	    for(int jy=0;jy<mesh->ngy;jy++)
-	      for(int jz=0;jz<mesh->ngz;jz++) {
+	  for(int jx=mesh->LocalNx-4;jx<mesh->LocalNx;jx++)
+	    for(int jy=0;jy<mesh->LocalNy;jy++)
+	      for(int jz=0;jz<mesh->LocalNz;jz++) {
 	      
-	        BoutReal angle = rmp_m * pol_angle[jx][jy] + rmp_n * ((BoutReal) jz) * mesh->dz;
-	        d[jx][jy][jz] = (((BoutReal)(jx - 4)) / ((BoutReal)(mesh->ngx - 5))) * rmp_factor * cos(angle);
+	        BoutReal angle = rmp_m * pol_angle(jx,jy) + rmp_n * ((BoutReal) jz) * mesh->coordinates()->dz;
+	        rmp_Psi0(jx,jy,jz) = (((BoutReal)(jx - 4)) / ((BoutReal)(mesh->LocalNx - 5))) * rmp_factor * cos(angle);
                 if(rmp_polwid > 0.0) {
                   // Multiply by a Gaussian in poloidal angle
-                  BoutReal gx = ((pol_angle[jx][jy] / (2.*PI)) - rmp_polpeak) / rmp_polwid;
-                  d[jx][jy][jz] *= exp(-gx*gx);
+                  BoutReal gx = ((pol_angle(jx,jy) / (2.*PI)) - rmp_polpeak) / rmp_polwid;
+                  rmp_Psi0(jx,jy,jz) *= exp(-gx*gx);
                 }
 	      }
         }
-	
-	rmp_Psi0 = rmp_Psi0.shiftZ(false); // Shift into field-aligned coords
 
 	// Now have a simple model for Psi due to coils at the outer boundary
 	// Need to calculate Psi inside the domain, enforcing j = 0
@@ -654,24 +618,21 @@ int physics_init(bool restarting)
   if(noshear) {
     if(include_curvature)
       b0xcv.z += I*b0xcv.x;
-    mesh->ShiftXderivs = false;
     I = 0.0;
   }
   
   //////////////////////////////////////////////////////////////
   // SHIFTED RADIAL COORDINATES
 
-  if(mesh->ShiftXderivs) {
-    if(mesh->IncIntShear) {
-      // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
-      mesh->IntShiftTorsion = I;
-      
-    }else {
-      // Dimits style, using local coordinate system
-      if(include_curvature)
-	b0xcv.z += I*b0xcv.x;
-      I = 0.0;  // I disappears from metric
-    }
+  if(mesh->IncIntShear) {
+    // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
+    metric->IntShiftTorsion = I;
+    
+  }else {
+    // Dimits style, using local coordinate system
+    if(include_curvature)
+      b0xcv.z += I*b0xcv.x;
+    I = 0.0;  // I disappears from metric
   }
 
   //////////////////////////////////////////////////////////////
@@ -695,13 +656,12 @@ int physics_init(bool restarting)
   output.write("                dnorm = %e\n", dnorm);
   output.write("    Resistivity\n");
 
-  if(gyroviscous)
-    {
-      omega_i = 9.58e7*Zeff*Bbar;
-      Upara2 = 0.5/(Tbar*omega_i);
-      //Upara3 = 1.0;
-      output.write("Upara2 = %e     Omega_i = %e\n", Upara2, omega_i);
-    }
+  if(gyroviscous) {
+    omega_i = 9.58e7*Zeff*Bbar;
+    Upara2 = 0.5/(Tbar*omega_i);
+    //Upara3 = 1.0;
+    output.write("Upara2 = %e     Omega_i = %e\n", Upara2, omega_i);
+  }
 
   if(eHall)
     output.write("                delta_i = %e   AA = %e \n", delta_i, AA);
@@ -805,7 +765,7 @@ int physics_init(bool restarting)
   Btxy /= Bbar;
   B0   /= Bbar;
   hthe /= Lbar;
-  mesh->dx   /= Lbar*Lbar*Bbar;
+  metric->dx   /= Lbar*Lbar*Bbar;
   I    *= Lbar*Lbar*Bbar;
 
   if (constn0)
@@ -815,9 +775,9 @@ int physics_init(bool restarting)
     }
   else
     {
-        Nbar = 1.0;
-	Tibar=1000.0;
-	Tebar=1000.0;
+      Nbar = 1.0;
+      Tibar=1000.0;
+      Tebar=1000.0;
 
       if( (!T0_fake_prof) && n0_fake_prof )
 	{
@@ -892,7 +852,7 @@ int physics_init(bool restarting)
   if(spitzer_resist) {
     // Use Spitzer resistivity 
     output.write("\tTemperature: %e -> %e [eV]\n", min(Te), max(Te));
-    eta = 0.51*1.03e-4*Zeff*20.*(Te^(-1.5)); // eta in Ohm-m. NOTE: ln(Lambda) = 20
+    eta = 0.51*1.03e-4*Zeff*20.*pow(Te,-1.5); // eta in Ohm-m. NOTE: ln(Lambda) = 20
     output.write("\tSpitzer resistivity: %e -> %e [Ohm m]\n", min(eta), max(eta));
     eta /= MU0 * Va * Lbar;
     output.write("\t -> Lundquist %e -> %e\n", 1.0/max(eta), 1.0/min(eta));
@@ -942,24 +902,24 @@ int physics_init(bool restarting)
 	
   /**************** CALCULATE METRICS ******************/
 
-  mesh->g11 = (Rxy*Bpxy)^2;
-  mesh->g22 = 1.0 / (hthe^2);
-  mesh->g33 = (I^2)*mesh->g11 + (B0^2)/mesh->g11;
-  mesh->g12 = 0.0;
-  mesh->g13 = -I*mesh->g11;
-  mesh->g23 = -Btxy/(hthe*Bpxy*Rxy);
+  metric->g11 = SQ(Rxy*Bpxy);
+  metric->g22 = 1.0 / SQ(hthe);
+  metric->g33 = SQ(I)*metric->g11 + SQ(B0)/metric->g11;
+  metric->g12 = 0.0;
+  metric->g13 = -I*metric->g11;
+  metric->g23 = -Btxy/(hthe*Bpxy*Rxy);
   
-  mesh->J = hthe / Bpxy;
-  mesh->Bxy = B0;
+  metric->J = hthe / Bpxy;
+  metric->Bxy = B0;
   
-  mesh->g_11 = 1.0/mesh->g11 + ((I*Rxy)^2);
-  mesh->g_22 = (B0*hthe/Bpxy)^2;
-  mesh->g_33 = Rxy*Rxy;
-  mesh->g_12 = Btxy*hthe*I*Rxy/Bpxy;
-  mesh->g_13 = I*Rxy*Rxy;
-  mesh->g_23 = Btxy*hthe*Rxy/Bpxy;
+  metric->g_11 = 1.0/metric->g11 + SQ(I*Rxy);
+  metric->g_22 = SQ(B0*hthe/Bpxy);
+  metric->g_33 = Rxy*Rxy;
+  metric->g_12 = Btxy*hthe*I*Rxy/Bpxy;
+  metric->g_13 = I*Rxy*Rxy;
+  metric->g_23 = Btxy*hthe*Rxy/Bpxy;
   
-  mesh->geometry(); // Calculate quantities from metric tensor
+  metric->geometry(); // Calculate quantities from metric tensor
 
   // Set B field vector
   
@@ -1001,25 +961,6 @@ int physics_init(bool restarting)
     dump.add(Jpar, "jpar", 1);
   }
   
-  if(parallel_lagrange) {
-    // Evolving the distortion of the flux surfaces (Ideal-MHD only!)
-    
-    bout_solve(Xip_x, "Xip_x");
-    bout_solve(Xip_z, "Xip_z");
-    
-    bout_solve(Xim_x, "Xim_x");
-    bout_solve(Xim_z, "Xim_z");
-  }
-  
-  if(parallel_project) {
-    // Add Xi to the dump file
-    dump.add(Xip_x, "Xip_x", 1);
-    dump.add(Xip_z, "Xip_z", 1);
-    
-    dump.add(Xim_x, "Xim_x", 1);
-    dump.add(Xim_z, "Xim_z", 1);
-  }
-
   if(compress0) {
     output.write("Including compression (Vpar) effects\n");
     
@@ -1029,7 +970,7 @@ int physics_init(bool restarting)
     gradparB = Grad_par(B0) / B0;
 
     output.write("Beta in range %e -> %e\n",
-      min(beta), max(beta));
+                 min(beta), max(beta));
   }
 
   if(phi_constraint) {
@@ -1059,7 +1000,7 @@ int physics_init(bool restarting)
     if (constn0)
       phi0 = -0.5*dnorm*P0/B0;
     else
-    // Stationary equilibrium plasma. ExB velocity balances diamagnetic drift
+      // Stationary equilibrium plasma. ExB velocity balances diamagnetic drift
       phi0 = -0.5*dnorm*P0/B0/N0;
     SAVE_ONCE(phi0);
   }
@@ -1111,9 +1052,8 @@ int physics_init(bool restarting)
   /************** SETUP COMMUNICATIONS **************/
   
   comms.add(U);
-  comms.add(Psi);
   comms.add(P);
-//  comms.add(phi);
+  //  comms.add(phi);
 
   phi.setBoundary("phi"); // Set boundary conditions
   tmpU2.setBoundary("U");
@@ -1124,6 +1064,7 @@ int physics_init(bool restarting)
   if(evolve_jpar) {
     comms.add(Jpar);
   }else {
+    comms.add(Psi);
     // otherwise Need to communicate Jpar separately
     Jpar.setBoundary("J");
   }
@@ -1133,49 +1074,36 @@ int physics_init(bool restarting)
 }
 
 // Parallel gradient along perturbed field-line
-const Field3D Grad_parP(const Field3D &f, CELL_LOC loc = CELL_DEFAULT)
-{
+const Field3D Grad_parP(const Field3D &f, CELL_LOC loc = CELL_DEFAULT) {
   Field3D result;
   
-  if(parallel_lagrange || parallel_project) {
-    // Moving stencil locations
-    
-    Field3D fp, fm; // Interpolated on + and - y locations
-    
-    fp = interpolate(f, Xip_x, Xip_z);
-    fm = interpolate(f, Xim_x, Xim_z);
-    
-    result.allocate();
-    for(int i=0;i<mesh->ngx;i++)
-      for(int j=1;j<mesh->ngy-1;j++)
-	for(int k=0;k<mesh->ngz-1;k++) {
-	  result[i][j][k] = (fp[i][j+1][k] - fm[i][j-1][k])/(2.*mesh->dy[i][j]*sqrt(mesh->g_22[i][j]));
-	}
-  }else {
-    if(parallel_lr_diff) {
-      // Use left/right biased stencils. NOTE: First order only!
-      if(loc == CELL_YLOW) {
-	result = Grad_par_CtoL(f);
-      }else
-	result = Grad_par_LtoC(f);
+  if(parallel_lr_diff) {
+    // Use left/right biased stencils. NOTE: First order only!
+    if(loc == CELL_YLOW) {
+      result = Grad_par_CtoL(f);
     }else
-      result = Grad_par(f, loc);
+      result = Grad_par_LtoC(f);
+  }else
+    result = Grad_par(f, loc);
+  
+  if(nonlinear) {
+    result -= bracket(Psi, f, bm_mag)*B0;
     
-    if(nonlinear) {
-      result -= bracket(Psi + rmp_Psi, f, bm_mag)*B0;
+    if(include_rmp) {
+      result -= bracket(rmp_Psi, f, bm_mag)*B0;
     }
   }
-
+  
   return result;
 }
 
 bool first_run = true; // For printing out some diagnostics first time around
 
-int physics_run(BoutReal t)
-{
+int physics_run(BoutReal t) {
   // Perform communications
   mesh->communicate(comms);
-
+  
+  Coordinates *metric = mesh->coordinates();
 
   ////////////////////////////////////////////
   // Transitions from 0 in core to 1 in vacuum
@@ -1187,7 +1115,7 @@ int physics_run(BoutReal t)
       // Use Spitzer formula
       Field3D Te;
       Te = (P0+P)*Bbar*Bbar/(4.*MU0) / (density * 1.602e-19); // eV
-      eta = 0.51*1.03e-4*Zeff*20.*(Te^(-1.5)); // eta in Ohm-m. ln(Lambda) = 20
+      eta = 0.51*1.03e-4*Zeff*20.*pow(Te, -1.5); // eta in Ohm-m. ln(Lambda) = 20
       eta /= MU0 * Va * Lbar; // Normalised eta
     }else {
       // Use specified core and vacuum Lundquist numbers
@@ -1227,9 +1155,8 @@ int physics_run(BoutReal t)
       if(rmp_rotate != 0.0) {
 	// Rotate toroidally at given frequency
 	
-	rmp_Psi = rmp_Psi.shiftZ(2*PI * rmp_rotate * t);
-	
-	rmp_dApdt = rmp_dApdt.shiftZ(2*PI * rmp_rotate * t);
+        shiftZ(rmp_Psi, 2*PI * rmp_rotate * t);
+	shiftZ(rmp_dApdt, 2*PI * rmp_rotate * t);
 	
 	// Add toroidal rotation term. CHECK SIGN
 	
@@ -1244,6 +1171,8 @@ int physics_run(BoutReal t)
       if(rmp_vac_mask)
         rmp_Psi = rmp_Psi0 * vac_mask;  // Only in vacuum -> skin current -> diffuses inwards
     }
+    
+    mesh->communicate(rmp_Psi);
   }
   
   ////////////////////////////////////////////
@@ -1252,6 +1181,7 @@ int physics_run(BoutReal t)
   if(evolve_jpar) {
     // Invert laplacian for Psi
     Psi = invert_laplace(Jpar, apar_flags, NULL);
+    mesh->communicate(Psi);
   }
 
   if(phi_constraint) {
@@ -1287,7 +1217,7 @@ int physics_run(BoutReal t)
 	    //sourp.applyBoundary();
 	    //mesh->communicate(sourp);
 	  }
-    // Invert laplacian for phi
+        // Invert laplacian for phi
 	phi = invert_laplace(ubyn, phi_flags, NULL, &N0, NULL);
       }
     // Apply a boundary condition on phi for target plates
@@ -1298,7 +1228,9 @@ int physics_run(BoutReal t)
 
   if(!evolve_jpar) {
     // Get J from Psi
-    Jpar = Delp2(Psi + rmp_Psi);
+    Jpar = Delp2(Psi);
+    if(include_rmp)
+      Jpar += Delp2(rmp_Psi);
 
     Jpar.applyBoundary();
     mesh->communicate(Jpar);
@@ -1308,12 +1240,12 @@ int physics_run(BoutReal t)
       // at the boundary
       
       for(int i=0;i<jpar_bndry_width;i++)
-	for(int j=0;j<mesh->ngy;j++)
-	  for(int k=0;k<mesh->ngz-1;k++) {
+	for(int j=0;j<mesh->LocalNy;j++)
+	  for(int k=0;k<mesh->LocalNz;k++) {
 	    if(mesh->firstX())
-	      Jpar[i][j][k] = 0.0;
+	      Jpar(i,j,k) = 0.0;
 	    if(mesh->lastX())
-	      Jpar[mesh->ngx-1-i][j][k] = 0.0;
+	      Jpar(mesh->LocalNx-1-i,j,k) = 0.0;
 	  }
     }
 
@@ -1321,7 +1253,11 @@ int physics_run(BoutReal t)
     if(smooth_j_x) {
       Jpar = smooth_x(Jpar);
       Jpar.applyBoundary();
+
+      //Recommunicate now smoothed
+      mesh->communicate(Jpar);
     }
+    
       
     //xqx begin
     // Get Delp2(J) from J
@@ -1335,45 +1271,15 @@ int physics_run(BoutReal t)
       // at the boundary
       
       for(int i=0;i<jpar_bndry_width;i++)
-	for(int j=0;j<mesh->ngy;j++)
-	  for(int k=0;k<mesh->ngz-1;k++) {
+	for(int j=0;j<mesh->LocalNy;j++)
+	  for(int k=0;k<mesh->LocalNz;k++) {
 	    if(mesh->firstX())
-	      Jpar2[i][j][k] = 0.0;
+	      Jpar2(i,j,k) = 0.0;
 	    if(mesh->lastX())
-	      Jpar2[mesh->ngx-1-i][j][k] = 0.0;
+	      Jpar2(mesh->LocalNx-1-i,j,k) = 0.0;
 	  }
     }
     //xqx end
-  }
-  ////////////////////////////////////////////////////
-  // Project perturbed field-lines
-
-  if(parallel_project) {
-    Vector3D Btilde; // Perturbed field
-    Btilde = Grad(Psi) ^ B0vec;
-    // Want contravariant components: B^x is change in psi, B^z is change in toroidal angle
-    Btilde.toContravariant();
-    
-    // Calculate displacements in index space
-    Xip_x = 0.;
-    Xip_z = 0.;
-    Xim_x = 0.;
-    Xim_z = 0.;
-    Field2D sgx = sqrt(mesh->g_11); // 1/(R*Bp)
-    Field2D sgz = sqrt(mesh->g_33); // 1/R
-    for(int i=0;i<mesh->ngx;i++)
-      for(int j=1;j<mesh->ngy-1;j++)
-	for(int k=0;k<mesh->ngz-1;k++) {
-	  BoutReal bxratio = (Btilde.x[i][j][k]*sgx[i][j])/B0[i][j]; // |Bx| / B
-	  bxratio *= (hthe[i][j] * B0[i][j] / Bpxy[i][j]); // Multiply by parallel length
-	  Xip_x[i][j+1][k] = bxratio / (sgx[i][j+1] * mesh->dx[i][j+1]); // Convert to psi, then index
-	  Xim_x[i][j-1][k] = bxratio / (sgx[i][j-1] * mesh->dx[i][j-1]); 
-	  
-	  BoutReal bzratio = (Btilde.z[i][j][k]*sgz[i][j])/B0[i][j]; // |Bz| / B
-	  bzratio *= (hthe[i][j] * B0[i][j] / Bpxy[i][j]); // Multiply by parallel length
-	  Xip_z[i][j+1][k] = bzratio / (sgz[i][j+1] * mesh->dz); // Convert to psi, then index
-	  Xim_z[i][j-1][k] = bzratio / (sgz[i][j-1] * mesh->dz); 
-	}
   }
 
   ////////////////////////////////////////////////////
@@ -1388,7 +1294,7 @@ int physics_run(BoutReal t)
     // At y = ystart (lower boundary)
     
     for(RangeIterator r=mesh->iterateBndryLowerY(); !r.isDone(); r++) {
-      for(int jz=0; jz<mesh->ngz; jz++) {
+      for(int jz=0; jz<mesh->LocalNz; jz++) {
 		
 	// Zero-gradient potential
 	BoutReal phisheath = phi(r.ind, mesh->ystart, jz);
@@ -1410,7 +1316,7 @@ int physics_run(BoutReal t)
     // At y = yend (upper boundary)
 
     for(RangeIterator r=mesh->iterateBndryUpperY(); !r.isDone(); r++) {
-      for(int jz=0; jz<mesh->ngz; jz++) {
+      for(int jz=0; jz<mesh->LocalNz; jz++) {
 		
 	// Zero-gradient potential
 	BoutReal phisheath = phi(r.ind, mesh->yend, jz);
@@ -1436,16 +1342,9 @@ int physics_run(BoutReal t)
 
   if(evolve_jpar) {
     // Jpar
-    
-    ddt(Jpar) = -Grad_parP(B0*U, CELL_YLOW) / B0 + eta*Delp2(Jpar);
-
-    /*
-      ddt(Psi) = -Grad_parP(B0*phi, CELL_YLOW) / B0 + eta*Jpar;
-      // Apply boundary condition on Psi
-      apply_boundary(ddt(Psi), "Psi");
-      mesh->communicate(ddt(psi));
-      ddt(Jpar) = Delp2(ddt(Psi));
-    */
+    Field3D B0U = B0*U ; 
+    mesh->communicate(B0U);
+    ddt(Jpar) = -Grad_parP(B0U, CELL_YLOW) / B0 + eta*Delp2(Jpar);
 
     if(relax_j_vac) {
       // Make ddt(Jpar) relax to zero.
@@ -1454,22 +1353,18 @@ int physics_run(BoutReal t)
     }
   }else {
     // Vector potential
-      
-    ddt(Psi) = -Grad_parP(B0*phi, CELL_CENTRE) / B0 + eta*Jpar;
-    //xqx      ddt(Psi) = -Grad_parP(B0*phi, CELL_YLOW) / B0 + eta*Jpar;
-
+    ddt(Psi) = -Grad_parP(phi, CELL_CENTRE) + eta*Jpar;
+    
     if(eHall) {
-      ddt(Psi) +=  0.25*delta_i*(Grad_parP(B0*P, CELL_CENTRE) / B0 
-                                 +b0xGrad_dot_Grad(P0, Psi));   // electron parallel pressure
+      ddt(Psi) +=  0.25*delta_i*(Grad_parP(P, CELL_CENTRE) 
+                                 +bracket(P0, Psi, bm_mag));   // electron parallel pressure
     }
 
     if(diamag_phi0)
-      ddt(Psi) -= b0xGrad_dot_Grad(phi0, Psi);   // Equilibrium flow
+      ddt(Psi) -= bracket(phi0, Psi, bm_exb);   // Equilibrium flow
 
     if(withflow)                                //net flow 
       ddt(Psi)-= V_dot_Grad(V0net, Psi);
-
-    //F_Psi = -Grad_par_CtoL(B0*phi) / B0 + eta*Jpar;
     
     if(diamag_grad_t) {
       // grad_par(T_e) correction
@@ -1507,42 +1402,21 @@ int physics_run(BoutReal t)
       ddt(Psi) = ddt(Psi)*(1. - vac_mask) - (Psi - Psitarget)*vac_mask / relax_j_tconst;
     }
   }
-
-  if(parallel_lagrange) {
-    // Move tracers with the plasma
-    //advect_tracer(phi, Xi_x, Xi_z, F_Xi_x, F_Xi_z);
-
-    // Follow intersection of fieldlines with neighbouring
-    // poloidal planes
-
-    // Calculate the ExB velocity on the grid-points
-    Field3D vx0, vz0, vxp, vzp, vxm, vzm;
-    vx0 = DDZ(phi);
-    vz0 = -DDX(phi);
-    
-    // Interpolate to get velocity at intersections
-    vxp = interpolate(vx0, Xip_x, Xip_z);
-    vzp = interpolate(vz0, Xip_x, Xip_z);
-    
-    vxm = interpolate(vx0, Xim_x, Xim_z);
-    vzm = interpolate(vz0, Xim_x, Xim_z);
-    
-    // Convert into relative velocity of
-    // grid points and intersections.
-    // NOTE: Should be Christoffel terms here
-  }
-
+  
   ////////////////////////////////////////////////////
   // Vorticity equation
-
-  ddt(U) = (B0^2) * b0xGrad_dot_Grad(Psi + rmp_Psi, J0, CELL_CENTRE); // Grad j term
-
+  
+  // Grad j term
+  ddt(U) = SQ(B0) * b0xGrad_dot_Grad(Psi, J0, CELL_CENTRE);
+  if(include_rmp) {
+    ddt(U) += SQ(B0) * b0xGrad_dot_Grad(rmp_Psi, J0, CELL_CENTRE);
+  }
+  
   ddt(U) += b0xcv*Grad(P);  // curvature term
 
   if(!nogradparj) {
     // Parallel current term
-    ddt(U) -= (B0^2)*Grad_parP(Jpar, CELL_CENTRE); // b dot grad j
-    //ddt(U) -= (B0^2)*Grad_par_LtoC(Jpar);
+    ddt(U) -= SQ(B0)*Grad_parP(Jpar, CELL_CENTRE); // b dot grad j
   }
 
   if(withflow&&K_H_term)                         //K_H_term
@@ -1577,68 +1451,72 @@ int physics_run(BoutReal t)
   if(hyperviscos > 0.0) {
     // Calculate coefficient.
     
-    hyper_mu_x = hyperviscos * mesh->g_11*SQ(mesh->dx) * abs(mesh->g11*D2DX2(U)) / (abs(U) + 1e-3);
+    hyper_mu_x = hyperviscos * metric->g_11*SQ(metric->dx) * abs(metric->g11*D2DX2(U)) / (abs(U) + 1e-3);
     hyper_mu_x.applyBoundary("dirichlet"); // Set to zero on all boundaries
     
-    ddt(U) += hyper_mu_x * mesh->g11*D2DX2(U);
+    ddt(U) += hyper_mu_x * metric->g11*D2DX2(U);
     
     if(first_run) { // Print out maximum values of viscosity used on this processor
       output.write("   Hyper-viscosity values:\n");
-      output.write("      Max mu_x = %e, Max_DC mu_x = %e\n", max(hyper_mu_x), max(hyper_mu_x.DC()));
+      output.write("      Max mu_x = %e, Max_DC mu_x = %e\n", max(hyper_mu_x), max(DC(hyper_mu_x)));
     }
   }
 
-  if(gyroviscous)
-    {
+  if(gyroviscous) {
+    
+    Field3D Pi;
+    Field2D Pi0;
+    Pi = 0.5*P;
+    Pi0 = 0.5*P0;
+      
+    Dperp2Phi0 = Field3D(Delp2(B0*phi0));
+    Dperp2Phi0.applyBoundary();
+    mesh->communicate(Dperp2Phi0);
 
-      Field3D Pi;
-      Field2D Pi0;
-      Pi = 0.5*P;
-      Pi0 = 0.5*P0;
+    Dperp2Phi = Delp2(B0*phi);
+    Dperp2Phi.applyBoundary();
+    mesh->communicate(Dperp2Phi);
 
-      Dperp2Phi0 = Field3D(Delp2(B0*phi0));
-      Dperp2Phi0.applyBoundary();
-      mesh->communicate(Dperp2Phi0);
+    Dperp2Pi0 = Field3D(Delp2(Pi0));
+    Dperp2Pi0.applyBoundary();
+    mesh->communicate(Dperp2Pi0);
 
-      Dperp2Phi = Delp2(B0*phi);
-      Dperp2Phi.applyBoundary();
-      mesh->communicate(Dperp2Phi);
+    Dperp2Pi = Delp2(Pi);
+    Dperp2Pi.applyBoundary();
+    mesh->communicate(Dperp2Pi);
 
-      Dperp2Pi0 = Field3D(Delp2(Pi0));
-      Dperp2Pi0.applyBoundary();
-      mesh->communicate(Dperp2Pi0);
+    bracketPhi0P = bracket(B0*phi0, Pi, bm_exb);
+    bracketPhi0P.applyBoundary();
+    mesh->communicate(bracketPhi0P);
 
-      Dperp2Pi = Delp2(Pi);
-      Dperp2Pi.applyBoundary();
-      mesh->communicate(Dperp2Pi);
+    bracketPhiP0 = bracket(B0*phi, Pi0, bm_exb);
+    bracketPhiP0.applyBoundary();
+    mesh->communicate(bracketPhiP0);
 
-      bracketPhi0P = bracket(B0*phi0, Pi, bm_exb);
-      bracketPhi0P.applyBoundary();
-      mesh->communicate(bracketPhi0P);
+    ddt(U) -= 0.5*Upara2*bracket(Pi, Dperp2Phi0, bm_exb)/B0;
+    ddt(U) -= 0.5*Upara2*bracket(Pi0, Dperp2Phi, bm_exb)/B0;
+    Field3D B0phi = B0*phi; 
+    mesh->communicate(B0phi);
+    Field3D B0phi0 = B0*phi0; 
+    mesh->communicate(B0phi0);
+    ddt(U) += 0.5*Upara2*bracket(B0phi, Dperp2Pi0, bm_exb)/B0;
+    ddt(U) += 0.5*Upara2*bracket(B0phi0, Dperp2Pi, bm_exb)/B0;
+    ddt(U) -= 0.5*Upara2*Delp2(bracketPhi0P)/B0;
+    ddt(U) -= 0.5*Upara2*Delp2(bracketPhiP0)/B0;
 
-      bracketPhiP0 = bracket(B0*phi, Pi0, bm_exb);
-      bracketPhiP0.applyBoundary();
-      mesh->communicate(bracketPhiP0);
-
-      ddt(U) -= 0.5*Upara2*bracket(Pi, Dperp2Phi0, bm_exb)/B0;
-      ddt(U) -= 0.5*Upara2*bracket(Pi0, Dperp2Phi, bm_exb)/B0;
-      ddt(U) += 0.5*Upara2*bracket(B0*phi, Dperp2Pi0, bm_exb)/B0;
-      ddt(U) += 0.5*Upara2*bracket(B0*phi0, Dperp2Pi, bm_exb)/B0;
-      ddt(U) -= 0.5*Upara2*Delp2(bracketPhi0P)/B0;
-      ddt(U) -= 0.5*Upara2*Delp2(bracketPhiP0)/B0;
-
-      if (nonlinear)
-	{
-
-	  bracketPhiP = bracket(B0*phi, Pi, bm_exb);
-	  bracketPhiP.applyBoundary();
-	  mesh->communicate(bracketPhiP);
+    if (nonlinear)
+      {
+	Field3D B0phi = B0*phi; 
+	mesh->communicate(B0phi);
+        bracketPhiP = bracket(B0phi, Pi, bm_exb);
+        bracketPhiP.applyBoundary();
+        mesh->communicate(bracketPhiP);
 	  
-	  ddt(U) -= 0.5*Upara2*bracket(Pi, Dperp2Phi, bm_exb)/B0;
-	  ddt(U) += 0.5*Upara2*bracket(B0*phi, Dperp2Pi, bm_exb)/B0;
-	  ddt(U) -= 0.5*Upara2*Delp2(bracketPhiP)/B0;
-	}
-    }
+        ddt(U) -= 0.5*Upara2*bracket(Pi, Dperp2Phi, bm_exb)/B0;
+        ddt(U) += 0.5*Upara2*bracket(B0phi, Dperp2Pi, bm_exb)/B0;
+        ddt(U) -= 0.5*Upara2*Delp2(bracketPhiP)/B0;
+      }
+  }
 
   // left edge sink terms 
   if(sink_Ul > 0.0){
@@ -1681,9 +1559,9 @@ int physics_run(BoutReal t)
 
   // heating source terms 
   if(heating_P > 0.0){
-    BoutReal pnorm = P0[0][0];
+    BoutReal pnorm = P0(0,0);
     ddt(P) += heating_P*source_expx2(P0,2.*hp_width,0.5*hp_length)*(Tbar/pnorm); // heat source
-    ddt(P) += (100.*source_tanhx(P0,hp_width,hp_length)+0.01) * mesh->g11 * D2DX2(P) * (Tbar/Lbar/Lbar) ;     // radial diffusion
+    ddt(P) += (100.*source_tanhx(P0,hp_width,hp_length)+0.01) * metric->g11 * D2DX2(P) * (Tbar/Lbar/Lbar) ;     // radial diffusion
   }
 
   // sink terms 
@@ -1704,9 +1582,9 @@ int physics_run(BoutReal t)
     }
 
     // Vpar equation
-
+    
     //ddt(Vpar) = -0.5*Grad_parP(P + P0, CELL_YLOW);
-    ddt(Vpar) = -0.5*Grad_par_LtoC(P + P0);
+    ddt(Vpar) = -0.5*(Grad_par_LtoC(P) + Grad_par_LtoC(P0));
 
     if(nonlinear)
       ddt(Vpar) -= bracket(phi, Vpar, bm_exb)*B0; // Advection
@@ -1737,12 +1615,12 @@ int physics_run(BoutReal t)
 
   if(damp_width > 0) {
     for(int i=0;i<damp_width;i++) {
-      for(int j=0;j<mesh->ngy;j++)
-	for(int k=0;k<mesh->ngz;k++) {
+      for(int j=0;j<mesh->LocalNy;j++)
+	for(int k=0;k<mesh->LocalNz;k++) {
 	  if(mesh->firstX())
-	    ddt(U)[i][j][k] -= U[i][j][k] / damp_t_const;
+	    ddt(U)(i,j,k) -= U(i,j,k) / damp_t_const;
 	  if(mesh->lastX())
-	    ddt(U)[mesh->ngx-1-i][j][k] -= U[mesh->ngx-1-i][j][k] / damp_t_const;
+	    ddt(U)(mesh->LocalNx-1-i,j,k) -= U(mesh->LocalNx-1-i,j,k) / damp_t_const;
 	}
     }
   }
@@ -1774,20 +1652,20 @@ int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
     // Boundary in jpar
     if(mesh->firstX()) {
       for(int i=jpar_bndry_width;i>=0;i--)
-        for(int j=0;j<mesh->ngy;j++)
-          for(int k=0;k<mesh->ngz-1;k++) {
-            Jrhs[i][j][k] = 0.5*Jrhs[i+1][j][k];
-}
+        for(int j=0;j<mesh->LocalNy;j++)
+          for(int k=0;k<mesh->LocalNz;k++) {
+            Jrhs(i,j,k) = 0.5*Jrhs(i+1,j,k);
+          }
 
     }
     if(mesh->lastX()) {
-      for(int i=mesh->ngx-jpar_bndry_width-1;i<mesh->ngx;i++)
-        for(int j=0;j<mesh->ngy;j++)
-          for(int k=0;k<mesh->ngz-1;k++) {
-            Jrhs[i][j][k] = 0.5*Jrhs[i-1][j][k];
+      for(int i=mesh->LocalNx-jpar_bndry_width-1;i<mesh->LocalNx;i++)
+        for(int j=0;j<mesh->LocalNy;j++)
+          for(int k=0;k<mesh->LocalNz;k++) {
+            Jrhs(i,j,k) = 0.5*Jrhs(i-1,j,k);
           }
     }
-}
+  }
 
   mesh->communicate(Jrhs, ddt(P));
 
@@ -1808,8 +1686,9 @@ int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
   Field3D phi3 = invert_laplace(ddt(U), phi_flags, NULL);
   mesh->communicate(phi3);
   phi3.applyBoundary("neumann");
-  
-  ddt(Psi) = ddt(Psi) - gamma*Grad_par(B0*phi3)/B0;
+  Field3D B0phi3 = B0*phi3; 
+  mesh->communicate(B0phi3);  
+  ddt(Psi) = ddt(Psi) - gamma*Grad_par(B0phi3)/B0;
   ddt(Psi).applyBoundary();
   
   return 0;
@@ -1842,13 +1721,14 @@ int jacobian(BoutReal t) {
 
   Field3D JP = -b0xGrad_dot_Grad(phi, P0);
   JP.setBoundary("P"); JP.applyBoundary();
-  
-  Field3D JPsi = -Grad_par(B0*phi, CELL_YLOW) / B0;
+  Field3D B0phi = B0*phi; 
+  mesh->communicate(B0phi);  
+  Field3D JPsi = -Grad_par(B0phi, CELL_YLOW) / B0;
   JPsi.setBoundary("Psi"); JPsi.applyBoundary();
 
   Field3D JU = b0xcv*Grad(ddt(P))
-    - (B0^2)*Grad_par(Jpar, CELL_CENTRE)
-    + (B0^2) * b0xGrad_dot_Grad(ddt(Psi), J0, CELL_CENTRE);
+    - SQ(B0)*Grad_par(Jpar, CELL_CENTRE)
+    + SQ(B0) * b0xGrad_dot_Grad(ddt(Psi), J0, CELL_CENTRE);
   JU.setBoundary("U"); JU.applyBoundary();
 
   // Put result into time-derivatives
@@ -1873,32 +1753,4 @@ int jacobian(BoutReal t) {
 int precon_phi(BoutReal t, BoutReal cj, BoutReal delta) {
   ddt(phi) = invert_laplace(C_phi - ddt(U), phi_flags, NULL);
   return 0;
-}
-
-/*******************************************************************************
- * Tracer advection code
- * 
- * May be used to track field-lines and calculate Grad_par along
- * highly perturbed field-lines.
- *
- * Aug 2009
- *******************************************************************************/
-
-void advect_tracer(const Field3D &p,  // phi (input)
-		   const Field3D &delta_x, const Field3D &delta_z, // Current location (input) 
-		   Field3D &F_dx, Field3D &F_dz)
-{
-  // Calculate the ExB velocity
-  Field3D vx, vz;
-  
-  vx = DDZ(p);
-  vz = -DDX(p);
-
-  // Interpolate these velocities onto the current locations
-  vx = interpolate(vx, delta_x, delta_z);
-  vz = interpolate(vz, delta_x, delta_z);
-  
-  // Time derivative of the cell index:
-  F_dx = vx / mesh->dx;
-  F_dz = vz / mesh->dz;
 }

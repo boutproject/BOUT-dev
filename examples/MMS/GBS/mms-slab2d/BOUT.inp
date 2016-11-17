@@ -8,7 +8,7 @@
 NOUT = 1    # number of time-steps
 TIMESTEP = 1 # time between outputs
 MXG = 1
-MYG = 0      # No y derivatives, so no guard cells needed in y
+MYG = 1      # No y derivatives, so no guard cells needed in y
 
 MZ = 256     # number of points in z direction (2^n)
 ZMAX = 1e-3   # Chosen so dx*nx = ZMAX * 2*pi * Rxy
@@ -41,19 +41,19 @@ floats = false # -> Output in double precision
 ##################################################
 # derivative methods
 
-[ddx]
+[mesh:ddx]
 
 first = C2  
 second = C2
 upwind = W3
 
-[ddy]
+[mesh:ddy]
 
 first = C2
 second = C2
 upwind = W3
 
-[ddz]
+[mesh:ddz]
 
 first = C2
 second = C2

@@ -28,18 +28,15 @@
 
 #include "dcomplex.hxx"
 
+/// Complex in-place FFT
 void cfft(dcomplex *cv, int length, int isign);
-void ZFFT(dcomplex *cv, BoutReal zoffset, int isign, bool shift = true);
 
-// more optimised code (for BoutReals)
-
+// Real FFTs
 void rfft(const BoutReal *in, int length, dcomplex *out);
-void irfft(dcomplex *in, int length, BoutReal *out);
+void irfft(const dcomplex *in, int length, BoutReal *out);
 
-void ZFFT(const BoutReal *in, BoutReal zoffset, dcomplex *cv, bool shift = true);
-void ZFFT_rev(dcomplex *cv, BoutReal zoffset, BoutReal *out, bool shift = true);
 // Discrete Sine Transform
-void DST(BoutReal *in, int length, dcomplex *out);
+void DST(const BoutReal *in, int length, dcomplex *out);
 void DST_rev(dcomplex *in, int length, BoutReal *out);
 
 #endif // __FFT_H__

@@ -1,10 +1,48 @@
+sudo: required
+dist: trusty
 language: cpp
 compiler: gcc
+python:
+  - "3.5"
+matrix:
+  include:
+  - env: CONFIGURE_OPTIONS='--enable-openmp'
+  - env: CONFIGURE_OPTIONS='--enable-debug'
+  allow_failures:
+  - env: CONFIGURE_OPTIONS='' MPICH_CC=clang MPICH_CXX=clang++
+    compiler: clang
+  - env: CONFIGURE_OPTIONS='--enable-openmp' MPICH_CC=clang MPICH_CXX=clang++
+    compiler: clang
+  - env: CONFIGURE_OPTIONS='--enable-debug' MPICH_CC=clang MPICH_CXX=clang++
+    compiler: clang
 before_install:
+  ##################################################
+  # System packages
+  ##################################################
   - sudo apt-get update -qq
-  - sudo apt-get install -y mpich2 libmpich2-dev
-  - sudo apt-get install -y libfftw3-dev libnetcdf-dev
-  - sudo apt-get install -y python-numpy python-netcdf python-scipy
-  - sudo apt-get install -y python-matplotlib
+  - sudo apt-get install -qq openmpi-bin libopenmpi-dev
+                             libfftw3-dev libnetcdf-dev
+                             libhdf5-serial-dev netcdf-bin
+                             hdf5-tools
+
+  ##################################################
+  # Install Conda for python 3
+  ##################################################
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  # Useful for debugging any issues with conda
+  - conda info -a
+  - conda create -q -n test-environment python=3.5 numpy scipy netcdf4
+  - source activate test-environment
+
+  ##################################################
+
+  # Make sure to use the system NetCDF/HDF5 libraries, or we end up
+  # using the Conda libraries, which causes no end of headaches
+  - export CONFIGURE_OPTIONS="--with-netcdf=/usr/bin/nc-config --with-hdf5=/usr/bin/h5cc $CONFIGURE_OPTIONS"
 script:
-  - ./configure && make && ./.travis_script.sh
+  - ./.travis_script.sh

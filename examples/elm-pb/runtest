@@ -15,6 +15,9 @@ nproc = 2
 MPIRUN = getmpirun()
 s, out = launch("./elm_pb ", runcmd=MPIRUN, nproc=nproc)
 
+with open("run.log", "w") as f:
+    f.write(out)
+
 # Get time base
 tarr = collect("t_array", path="data")
 nt = len(tarr)

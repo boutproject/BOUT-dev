@@ -21,11 +21,11 @@ const Field3D LaplaceGMRES::invert(const Field3D &b, const Field3D &start, int i
     /// Get DC components for preconditioner
     aptr = cptr = NULL;
     if(enable_a) {
-      a2d = a3d.DC();
+      a2d = DC(a3d);
       aptr = &a2d;
     }
     if(enable_c) {
-      c2d = c3d.DC();
+      c2d = DC(c3d);
       cptr = &c2d;
     }
     

@@ -26,29 +26,21 @@ class Field3D;
 #ifndef __FIELD3D_H__
 #define __FIELD3D_H__
 
+class Mesh;  // #include "bout/mesh.hxx"
 #include "field.hxx"
 #include "field2d.hxx"
 #include "fieldperp.hxx"
 #include "stencils.hxx"
 #include "bout_types.hxx"
 
+#include "bout/dataiterator.hxx"
+
+#include "bout/array.hxx"
+
 #include "bout/deprecated.hxx"
+#include "bout/assert.hxx"
 
-/// Structure to store blocks of memory for Field3D class
-struct memblock3d {
-  /// memory block
-  BoutReal ***data;
-
-  /// Number of references
-  int refs;
-  
-  /// Pointer to next block in linked-list structure
-  memblock3d *next;
-  
-  /// Pointer in list of all blocks
-  memblock3d *all_next;
-}; 
-
+#include "bout/field_visitor.hxx"
 
 /// Class for 3D X-Y-Z scalar fields
 /*!
@@ -60,10 +52,19 @@ struct memblock3d {
  */
 class Field3D : public Field, public FieldData {
  public:
-  /// Constructor
-  Field3D();
-  /// copy constructor
+  /*!
+   * Constructor
+   *
+   * Note: the global "mesh" can't be passed here because
+   * fields may be created before the mesh is.
+   */
+  Field3D(Mesh *msh = nullptr);
+  
+  /*! 
+   * Copy constructor
+   */
   Field3D(const Field3D& f);
+  
   /// Constructor from 2D field
   Field3D(const Field2D& f);
   /// Constructor from value
@@ -71,45 +72,156 @@ class Field3D : public Field, public FieldData {
   /// Destructor
   ~Field3D();
 
-  DEPRECATED(Field3D* clone() const);
+  /// Data type
+  using value_type = BoutReal;
 
-  /// Ensures that memory is allocated
-  void allocate() const;
-  /// Returns a pointer to internal data (REMOVE THIS)
-  BoutReal*** getData() const;
-  bool isAllocated() const { return block !=  NULL; } ///< Test if data is allocated
-
-  /// Return a pointer to the time-derivative field
+  /*!
+   * Ensures that memory is allocated and unique
+   */
+  void allocate();
+  
+  /*!
+   * Test if data is allocated
+   */
+  bool isAllocated() const { return !data.empty(); } 
+  
+  /*!
+   * Return a pointer to the time-derivative field
+   */
   Field3D* timeDeriv();
 
-  /// Flux Coordinate Independent (FCI) method
-  Field3D* yup();
-  const Field3D* yup() const;
-  
-  Field3D* ydown();
-  const Field3D* ydown() const;
+  /*!
+   * Ensure that this field has separate fields
+   * for yup and ydown.
+   */
+  void splitYupYdown();
 
-  // Nullify yup and ydown
-  void resetFCI();
+  /*!
+   * Ensure that yup and ydown refer to this field
+   */
+  void mergeYupYdown();
   
-  /// Returns DC component
-  const Field2D DC() const;
+  /// Flux Coordinate Independent (FCI) method
+  Field3D& yup() { 
+    ASSERT2(yup_field != nullptr); // Check for communicate
+    return *yup_field; 
+  }
+  const Field3D& yup() const { 
+    ASSERT2(yup_field != nullptr);
+    return *yup_field; 
+  }
+  
+  Field3D& ydown() { 
+    ASSERT2(ydown_field != nullptr);
+    return *ydown_field;
+  }
+  const Field3D& ydown() const { 
+    ASSERT2(ydown_field != nullptr);
+    return *ydown_field; 
+  }
+
+  /// Return yup if dir=+1, and ydown if dir=-1
+  Field3D& ynext(int dir);
+  const Field3D& ynext(int dir) const;
 
   // Staggered grids
   void setLocation(CELL_LOC loc); // Set variable location
   CELL_LOC getLocation() const; // Variable location
+  
+  /////////////////////////////////////////////////////////
+  // Data access
+  
+  const DataIterator iterator() const;
 
+  const DataIterator begin() const;
+  const DataIterator end() const;
+  
+  /*
+   * Returns a range of indices which can be iterated over
+   * Uses the REGION flags in bout_types.hxx
+   */
+  const IndexRange region(REGION rgn) const;
+
+  BoutReal& operator[](const DataIterator &d) {
+    return operator()(d.x, d.y, d.z);
+  }
+  const BoutReal& operator[](const DataIterator &d) const {
+    return operator()(d.x, d.y, d.z);
+  }
+  BoutReal& operator[](const Indices &i) {
+    return operator()(i.x, i.y, i.z);
+  }
+  const BoutReal& operator[](const Indices &i) const {
+    return operator()(i.x, i.y, i.z);
+  }
+  
+  BoutReal& operator[](bindex &bx) {
+    return operator()(bx.jx, bx.jy, bx.jz);
+  }
+  const BoutReal& operator[](bindex &bx) const {
+    return operator()(bx.jx, bx.jy, bx.jz);
+  }
+  
+  inline BoutReal& operator()(int jx, int jy, int jz) {
+#if CHECK > 2
+    // Perform bounds checking
+    if(data.empty())
+      throw BoutException("Field3D: () operator on empty data");
+    
+    if((jx < 0) || (jx >= nx) || 
+       (jy < 0) || (jy >= ny) || 
+       (jz < 0) || (jz >= nz))
+      throw BoutException("Field3D: (%d, %d, %d) operator out of bounds (%d, %d, %d)", 
+			  jx, jy, jz, nx, ny, nz);
+#endif
+    return data[(jx*ny +jy)*nz + jz];
+  }
+  
+  inline const BoutReal& operator()(int jx, int jy, int jz) const {
+#if CHECK > 2
+    if(data.empty())
+      throw BoutException("Field3D: () operator on empty data");
+    
+    if((jx < 0) || (jx >= nx) || 
+       (jy < 0) || (jy >= ny) || 
+       (jz < 0) || (jz >= nz))
+      throw BoutException("Field3D: (%d, %d, %d) operator out of bounds (%d, %d, %d)", 
+			  jx, jy, jz, nx, ny, nz);
+#endif
+    return data[(jx*ny +jy)*nz + jz];
+  }
+
+  inline const BoutReal* operator()(int jx, int jy) const {
+#if CHECK > 2
+    if(data.empty())
+      throw BoutException("Field3D: () operator on empty data");
+
+    if((jx < 0) || (jx >= nx) ||
+       (jy < 0) || (jy >= ny))
+      throw BoutException("Field3D: (%d, %d) operator out of bounds (%d, %d)",
+                          jx, jy, nx, ny);
+#endif
+    return &data[(jx*ny +jy)*nz];
+  }
+
+  inline BoutReal* operator()(int jx, int jy) {
+#if CHECK > 2
+    if(data.empty())
+      throw BoutException("Field3D: () operator on empty data");
+
+    if((jx < 0) || (jx >= nx) ||
+       (jy < 0) || (jy >= ny))
+      throw BoutException("Field3D: (%d, %d) operator out of bounds (%d, %d)",
+                          jx, jy, nx, ny);
+#endif
+    return &data[(jx*ny +jy)*nz];
+  }
+  
+  /////////////////////////////////////////////////////////
   // Operators
   
-  /// Allows access to internal data using square-brackets
-  BoutReal** operator[](int jx) const;
+  const Field3D operator+() {return *this;}
   
-  BoutReal& operator[](bindex &bx);
-  const BoutReal& operator[](bindex &bx) const;
-  
-  BoutReal& operator()(int jx, int jy, int jz);
-  const BoutReal& operator()(int jx, int jy, int jz) const;
-
   /// Assignment operators
   Field3D & operator=(const Field3D &rhs);
   Field3D & operator=(const Field2D &rhs);
@@ -120,67 +232,25 @@ class Field3D : public Field, public FieldData {
   /// Addition operators
   Field3D & operator+=(const Field3D &rhs);
   Field3D & operator+=(const Field2D &rhs);
-  Field3D & operator+=(const FieldPerp &rhs);
   Field3D & operator+=(const BoutReal &rhs);
   
   /// Subtraction
   Field3D & operator-=(const Field3D &rhs);
   Field3D & operator-=(const Field2D &rhs);
-  Field3D & operator-=(const FieldPerp &rhs);
   Field3D & operator-=(const BoutReal &rhs);
 
   /// Multiplication
   Field3D & operator*=(const Field3D &rhs);
   Field3D & operator*=(const Field2D &rhs);
-  Field3D & operator*=(const BoutReal rhs);
+  Field3D & operator*=(const BoutReal &rhs);
   
   /// Division
   Field3D & operator/=(const Field3D &rhs);
   Field3D & operator/=(const Field2D &rhs);
-  Field3D & operator/=(const BoutReal rhs);
-
-  /// Exponentiation (use pow() function)
-  Field3D & operator^=(const Field3D &rhs);
-  Field3D & operator^=(const Field2D &rhs);
-  Field3D & operator^=(const BoutReal rhs);
-  
-  // Binary operators
-
-  const Field3D operator+() const;
-  const Field3D operator+(const Field3D &other) const;
-  const Field3D operator+(const Field2D &other) const;
-  const FieldPerp operator+(const FieldPerp &other) const;
-  const Field3D operator+(const BoutReal &rhs) const;
-
-  const Field3D operator-() const;
-  const Field3D operator-(const Field3D &other) const;
-  const Field3D operator-(const Field2D &other) const;
-  const FieldPerp operator-(const FieldPerp &other) const;
-  const Field3D operator-(const BoutReal &rhs) const;
-
-  const Field3D operator*(const Field3D &other) const;
-  const Field3D operator*(const Field2D &other) const;
-  const FieldPerp operator*(const FieldPerp &other) const;
-  const Field3D operator*(const BoutReal rhs) const;
-
-  const Field3D operator/(const Field3D &other) const;
-  const Field3D operator/(const Field2D &other) const;
-  const FieldPerp operator/(const FieldPerp &other) const;
-  const Field3D operator/(const BoutReal rhs) const;
-
-  const Field3D operator^(const Field3D &other) const;
-  const Field3D operator^(const Field2D &other) const;
-  const FieldPerp operator^(const FieldPerp &other) const;
-  const Field3D operator^(const BoutReal rhs) const;
+  Field3D & operator/=(const BoutReal &rhs);
 
   // Stencils for differencing
-
-  /// Takes a location and fills values in the stencil
-  void setStencil(bstencil *fval, bindex *bx) const {
-    setStencil(fval, bx, true);
-  }
-  void setStencil(bstencil *fval, bindex *bx, bool need_x) const;
-
+  
   void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   void setXStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   void setXStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
@@ -188,46 +258,7 @@ class Field3D : public Field, public FieldData {
   void setYStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   void setYStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
-
-  /// Shifts specified points by angle
-  void shiftZ(int jx, int jy, double zangle); 
-  /// Shift all points in z by specified angle
-  const Field3D shiftZ(const Field2D zangle) const; 
-  const Field3D shiftZ(const BoutReal zangle) const;
-  /// Shifts to/from BoutReal-space (using zShift global variable)
-  const Field3D shiftZ(bool toBoutReal) const; 
-  /// virtual function to shift between BoutReal and shifted space
-  void shiftToReal(bool toBoutReal) {
-    *this = shiftZ(toBoutReal);
-  }
   
-  // Slicing
-
-  // NOTE: No shifting done in z for x array
-  void getXArray(int y, int z, rvec &xv) const;
-  void getYArray(int x, int z, rvec &yv) const;
-  void getZArray(int x, int y, rvec &zv) const;
-
-  void setXArray(int y, int z, const rvec &xv);
-  void setYArray(int x, int z, const rvec &yv);
-  void setZArray(int x, int y, const rvec &zv);
-
-  /// Take a slice through the data at constant y
-  const FieldPerp slice(int y) const;
-
-  // Functions
-  
-  const Field3D sqrt() const;
-  const Field3D abs() const;
-  BoutReal min(bool allpe=false) const;
-  BoutReal max(bool allpe=false) const;
-
-  // Friend functions
-
-  friend const Field3D filter(const Field3D &var, int N0);
-  friend const Field3D lowPass(const Field3D &var, int zmax);
-  friend const Field3D lowPass(const Field3D &var, int zmax, int zmin);
-
   // FieldData virtual functions
   
   bool isReal() const   { return true; }         // Consists of BoutReal values
@@ -238,20 +269,17 @@ class Field3D : public Field, public FieldData {
   int  getData(int x, int y, int z, BoutReal *rptr) const;
   int  setData(int x, int y, int z, void *vptr);
   int  setData(int x, int y, int z, BoutReal *rptr);
+
+  /// Visitor pattern support
+  void accept(FieldVisitor &v) override { v.accept(*this); }
   
 #ifdef CHECK
-  bool checkData(bool vital = false) const; ///< Checks if the data is all valid. 
-
   void doneComms() { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
 #else
-  // Define the above functions to do nothing
-  bool checkData(bool vital = false) const {}
   void doneComms() {}
 #endif
 
   friend class Vector3D;
-  
-  static void cleanup(); // Frees all memory
 
   void setBackground(const Field2D &f2d); // Boundary is applied to the total of this and f2d
   void applyBoundary(bool init=false);
@@ -261,55 +289,75 @@ class Field3D : public Field, public FieldData {
   void applyBoundary(const string &region, const string &condition);
   void applyTDerivBoundary();
   void setBoundaryTo(const Field3D &f3d); ///< Copy the boundary region
+
+  void applyParallelBoundary();
+  void applyParallelBoundary(BoutReal t);
+  void applyParallelBoundary(const string &condition);
+  void applyParallelBoundary(const char* condition) { applyParallelBoundary(string(condition)); }
+  void applyParallelBoundary(const string &region, const string &condition);
+  void applyParallelBoundary(const string &region, const string &condition, Field3D *f);
   
- private:
+private:
   /// Boundary - add a 2D field
   const Field2D *background;
+
+  Mesh *fieldmesh; ///< The mesh over which the field is defined
+  int nx, ny, nz;  ///< Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
   
-  /// Interpolates in z using up to 4 points
-  BoutReal interpZ(int jx, int jy, int jz0, BoutReal zoffset, int order) const;
+  /// Internal data array. Handles allocation/freeing of memory
+  Array<BoutReal> data;
 
-  // NOTE: Data structures mutable, though logically const
-
-  /// Data block for this object
-  mutable memblock3d *block;
-
-  /// Number of blocks allocated
-  static int nblocks;
-  /// Linked list of all memory blocks
-  static memblock3d *blocklist;
-  /// Linked list of free blocks
-  static memblock3d *free_block;
-
-  /// Get a new block of data, either from free list or allocate
-  memblock3d* newBlock() const;
-  /// Makes sure data is allocated and only referenced by this object
-  void allocData() const;
-  /// Releases the data array, putting onto global stack
-  void freeData();
-  
   CELL_LOC location; // Location of the variable in the cell
   
   Field3D *deriv; ///< Time derivative (may be NULL)
 
-  /// FCI method
+  /// Pointers to fields containing values along Y
   Field3D *yup_field, *ydown_field;
 };
 
 // Non-member overloaded operators
 
-const Field3D operator-(const BoutReal &lhs, const Field3D &rhs);
-const Field3D operator+(const BoutReal &lhs, const Field3D &rhs);
-const Field3D operator*(const BoutReal lhs, const Field3D &rhs);
-const Field3D operator/(const BoutReal lhs, const Field3D &rhs);
-const Field3D operator^(const BoutReal lhs, const Field3D &rhs);
+// Binary operators
+const FieldPerp operator+(const Field3D &lhs, const FieldPerp &rhs);
+const FieldPerp operator-(const Field3D &lhs, const FieldPerp &rhs);
+const FieldPerp operator*(const Field3D &lhs, const FieldPerp &rhs);
+const FieldPerp operator/(const Field3D &lhs, const FieldPerp &rhs);
+
+const Field3D operator+(const Field3D &lhs, const Field3D &rhs);
+const Field3D operator-(const Field3D &lhs, const Field3D &rhs);
+const Field3D operator*(const Field3D &lhs, const Field3D &rhs);
+const Field3D operator/(const Field3D &lhs, const Field3D &rhs);
+
+const Field3D operator+(const Field3D &lhs, const Field2D &rhs);
+const Field3D operator-(const Field3D &lhs, const Field2D &rhs);
+const Field3D operator*(const Field3D &lhs, const Field2D &rhs);
+const Field3D operator/(const Field3D &lhs, const Field2D &rhs);
+
+const Field3D operator+(const Field3D &lhs, BoutReal rhs);
+const Field3D operator-(const Field3D &lhs, BoutReal rhs);
+const Field3D operator*(const Field3D &lhs, BoutReal rhs);
+const Field3D operator/(const Field3D &lhs, BoutReal rhs);
+
+const Field3D operator+(BoutReal lhs, const Field3D &rhs);
+const Field3D operator-(BoutReal lhs, const Field3D &rhs);
+const Field3D operator*(BoutReal lhs, const Field3D &rhs);
+const Field3D operator/(BoutReal lhs, const Field3D &rhs);
+
+// Unary operators
+const Field3D operator-(const Field3D &f);
 
 // Non-member functions
-const Field3D SQ(const Field3D &f);
-const Field3D sqrt(const Field3D &f);
-const Field3D abs(const Field3D &f);
 BoutReal min(const Field3D &f, bool allpe=false);
 BoutReal max(const Field3D &f, bool allpe=false);
+
+Field3D pow(const Field3D &lhs, const Field3D &rhs);
+Field3D pow(const Field3D &lhs, const Field2D &rhs);
+Field3D pow(const Field3D &lhs, const FieldPerp &rhs);
+Field3D pow(const Field3D &f, BoutReal rhs);
+Field3D pow(BoutReal lhs, const Field3D &rhs);
+
+const Field3D sqrt(const Field3D &f);
+const Field3D abs(const Field3D &f);
 
 const Field3D exp(const Field3D &f);
 const Field3D log(const Field3D &f);
@@ -324,9 +372,27 @@ const Field3D tanh(const Field3D &f);
 
 bool finite(const Field3D &var);
 
+
+#ifdef CHECK
+void checkData(const Field3D &f); ///< Checks if the data is valid.
+#else
+inline void checkData(const Field3D &f){;}; ///< Checks if the data is valid.
+#endif
+  
 const Field3D copy(const Field3D &f);
 
 const Field3D floor(const Field3D &var, BoutReal f);
+
+const Field3D filter(const Field3D &var, int N0);
+const Field3D lowPass(const Field3D &var, int zmax);
+const Field3D lowPass(const Field3D &var, int zmax, int zmin);
+/*!
+ * Perform a shift by a given angle in Z
+ */
+void shiftZ(Field3D &var, int jx, int jy, double zangle);
+void shiftZ(Field3D &var, double zangle);
+
+Field2D DC(const Field3D &f);
 
 /*!
  * @brief Returns a reference to the time-derivative of a field

@@ -32,19 +32,19 @@ dump_format = "nc" # Output format. nc = NetCDF
 ##################################################
 # derivative methods
 
-[ddx]
+[mesh:ddx]
 
 first = C2
 second = C2
 upwind = W3
 
-[ddy]
+[mesh:ddy]
 
 first = C2
 second = C2
 upwind = W3
 
-[ddz]
+[mesh:ddz]
 
 first = C4
 second = C4
@@ -70,7 +70,7 @@ ZZ = 1.0
  
 estatic = true    # if true, electrostatic (Apar = 0)
 ZeroElMass = true  # Use Ohms law without electron inertia
-Zeff = 128.0        # Z effective
+Zeff = 128.0       # Z effective
 nu_perp = 1.0e-20
 
 ShearFactor = 0.0
@@ -93,21 +93,6 @@ apar_flags = 0 # flags for apar inversion
 # a section of that name.
 
 [All]
-scale = 0.0 # default size of initial perturbations
-
-# form of initial profile:
-# 0 - constant
-# 1 - Gaussian
-# 2 - Sinusoidal
-# 3 - Mix of mode numbers (like original BOUT)
-
-xs_opt = 0
-ys_opt = 2
-zs_opt = 2
-
-ys_mode = 1#
-
-zs_mode = 1 # toroidal mode number
 
 # boundary conditions
 # -------------------
@@ -120,6 +105,8 @@ bndry_all = neumann # Zero-gradient on all boundaries
 
 [Ni]
 scale = 1.0e-8 # only perturbing Ni
+
+function = sin(y)*sin(z)
 
 [Vi]
 evolve = false

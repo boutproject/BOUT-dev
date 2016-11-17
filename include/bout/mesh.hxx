@@ -5,6 +5,11 @@
  * Changelog
  * =========
  *
+ * 2014-12 Ben Dudson <bd512@york.ac.uk>
+ *     * Removing coordinate system into separate
+ *       Coordinates class
+ *     * Adding index derivative functions from derivs.cxx
+ * 
  * 2010-06 Ben Dudson, Sean Farley
  *     * Initial version, adapted from GridData class
  *     * Incorporates code from topology.cpp and Communicator
@@ -49,18 +54,29 @@ class Mesh;
 #include "fieldgroup.hxx"
 
 #include "boundary_region.hxx"
+#include "parallel_boundary_region.hxx"
+
 #include "sys/range.hxx" // RangeIterator
+
+#include "bout/deprecated.hxx"
 
 #include <bout/griddata.hxx>
 
+#include "coordinates.hxx"    // Coordinates class
+
+#include "paralleltransform.hxx" // ParallelTransform class
+
+#include "unused.hxx"
+
 #include <list>
+#include <memory>
 
 typedef void* comm_handle;
 
 class Mesh {
  public:
   
-  Mesh(GridDataSource *s);
+  Mesh(GridDataSource *s, Options *options);
   virtual ~Mesh();
   
   static Mesh* create(GridDataSource *source, Options *opt = NULL); ///< Create a Mesh object
@@ -68,7 +84,7 @@ class Mesh {
   
   // Currently need to create and load mesh in separate calls. Will be removed
   virtual int load() {return 1;}
-  virtual void outputVars(Datafile &file) {} ///< Output variables to a data file
+  virtual void outputVars(Datafile &UNUSED(file)) {} ///< Output variables to a data file
 
   
   // Get routines to request data from mesh file
@@ -76,22 +92,52 @@ class Mesh {
   int get(BoutReal &rval, const string &name); ///< Get a BoutReal number
   
   int get(Field2D &var, const string &name, BoutReal def=0.0);
-  int get(Field3D &var, const string &name, BoutReal def=0.0);
+  int get(Field3D &var, const string &name, BoutReal def=0.0, bool communicate=true);
   
   int get(Vector2D &var, const string &name);
   int get(Vector3D &var, const string &name);
   
   // Communications
-  
-  int communicate(FieldData &f);  // Returns error code
-  int communicate(FieldData &f1, FieldData &f2);
-  int communicate(FieldData &f1, FieldData &f2, FieldData &f3);
-  int communicate(FieldData &f1, FieldData &f2, FieldData &f3, FieldData &f4);
-  virtual int communicate(FieldGroup &g) = 0; // Returns error code
-  int communicate(FieldPerp &f); // Communicate an X-Z field
+  /*!
+   * Communicate a list of FieldData objects
+   * Uses a variadic template (C++11) to pack all
+   * arguments into a FieldGroup
+   */
+  template <typename... Ts>
+  void communicate(Ts&... ts) {
+    FieldGroup g(ts...);
+    communicate(g);
+  }
+
+  template <typename... Ts>
+  void communicateXZ(Ts&... ts) {
+    FieldGroup g(ts...);
+    communicateXZ(g);
+  }
+
+  /*!
+   * Communicate a group of fields
+   */
+  void communicate(FieldGroup &g);
+  void communicateXZ(FieldGroup &g);
+
+  /*!
+   * Communicate an X-Z field
+   */
+  void communicate(FieldPerp &f); 
+
+  /*!
+   * Send a list of FieldData objects
+   * Packs arguments into a FieldGroup and passes
+   * to send(FieldGroup&).
+   */
+  template <typename... Ts>
+  comm_handle send(Ts&... ts) {
+    FieldGroup g(ts...);
+    return send(g);
+  }
   
   virtual comm_handle send(FieldGroup &g) = 0;  // Return handle
-  comm_handle send(FieldData &f);   // Send a single field
   virtual int wait(comm_handle handle) = 0; // Wait for the handle, return error code
 
   // non-local communications
@@ -113,7 +159,8 @@ class Mesh {
   virtual comm_handle irecvXOut(BoutReal *buffer, int size, int tag) = 0;
   virtual comm_handle irecvXIn(BoutReal *buffer, int size, int tag) = 0;
 
-  virtual MPI_Comm getXcomm() const = 0; // Return X communicator
+  DEPRECATED(MPI_Comm getXcomm()) {return getXcomm(0);}
+  virtual MPI_Comm getXcomm(int jy) const = 0; // Return X communicator
   virtual MPI_Comm getYcomm(int jx) const = 0; // Return Y communicator
 
   //virtual bool periodicX() const = 0;                     ///< Test if a surface is periodic in X
@@ -138,12 +185,6 @@ class Mesh {
   virtual comm_handle irecvYInIndest(BoutReal *buffer, int size, int tag) = 0;
   virtual comm_handle irecvYInOutdest(BoutReal *buffer, int size, int tag) = 0;
   
-  
-  virtual const Field2D averageY(const Field2D &f) = 0;
-  virtual const Field3D averageY(const Field3D &f);
-  virtual const Field2D averageX(const Field2D &f) = 0;
-  virtual const Field3D averageX(const Field3D &f);
-  
   // Boundary region iteration
   virtual const RangeIterator iterateBndryLowerY() const = 0;
   virtual const RangeIterator iterateBndryUpperY() const = 0;
@@ -153,12 +194,17 @@ class Mesh {
 
   // Boundary regions
   virtual vector<BoundaryRegion*> getBoundaries() = 0;
+  virtual void addBoundary(BoundaryRegion* UNUSED(bndry)) {}
+  virtual vector<BoundaryRegionPar*> getBoundariesPar() = 0;
+  virtual void addBoundaryPar(BoundaryRegionPar* UNUSED(bndry)) {}
   
   // Branch-cut special handling (experimental)
   virtual const Field3D smoothSeparatrix(const Field3D &f) {return f;}
   
   virtual BoutReal GlobalX(int jx) const = 0; ///< Continuous X index between 0 and 1
   virtual BoutReal GlobalY(int jy) const = 0; ///< Continuous Y index (0 -> 1)
+  virtual BoutReal GlobalX(BoutReal jx) const = 0; ///< Continuous X index between 0 and 1
+  virtual BoutReal GlobalY(BoutReal jy) const = 0; ///< Continuous Y index (0 -> 1)
   
   //////////////////////////////////////////////////////////
   
@@ -171,74 +217,123 @@ class Mesh {
   virtual int YGLOBAL(int yloc) const = 0;
 
   // poloidal lowpass filter for n=0 mode
-  virtual void slice_r_y(BoutReal *, BoutReal *, int , int)=0;
+  virtual void slice_r_y(const BoutReal *, BoutReal *, int , int)=0;
   virtual void get_ri( dcomplex *, int, BoutReal *, BoutReal *)=0;
   virtual void set_ri( dcomplex *, int, BoutReal *, BoutReal *)=0;
   virtual const Field2D lowPass_poloidal(const Field2D &,int)=0;
-
+  
   /// volume integral
-  virtual BoutReal Average_XY(const Field2D &var)=0;
-  virtual const Field3D Switch_YZ(const Field3D &var)=0;
-  virtual const Field3D Switch_XZ(const Field3D &var)=0;
-  virtual BoutReal Vol_Integral(const Field2D &var)=0;
+  virtual const Field3D Switch_YZ(const Field3D &var) = 0;
+  virtual const Field3D Switch_XZ(const Field3D &var) = 0;
 
   /// Size of the mesh on this processor including guard/boundary cells
-  int ngx, ngy, ngz;
+  int LocalNx, LocalNy, LocalNz;
   
   /// Local ranges of data (inclusive), excluding guard cells
   int xstart, xend, ystart, yend;
-
-  // These used for differential operators 
-  Field2D dx, dy;      // Read in grid.cpp
-  Field2D d1_dx, d1_dy;  // 2nd-order correction for non-uniform meshes d/di(1/dx) and d/di(1/dy)
   
-  BoutReal dz;    // Grid spacing in the Z direction
-  BoutReal zlength() const { return dz * (ngz-1); } // Length of the Z domain. Used for FFTs
-  
-  bool ShiftXderivs; // Use shifted X derivatives
-  int  ShiftOrder;   // Order of shifted X derivative interpolation
-  Field2D zShift; // Z shift for each point (radians)
-  
-  bool FCI; ///< Using Flux Coordinate Independent (FCI) method?
-
-  int  TwistOrder;   // Order of twist-shift interpolation
-  bool BoundaryOnCell; // NB: DOESN'T REALLY BELONG HERE
   bool StaggerGrids;    ///< Enable staggered grids (Centre, Lower). Otherwise all vars are cell centred (default).
   
-  Field2D ShiftTorsion; // d <pitch angle> / dx. Needed for vector differentials (Curl)
-  Field2D IntShiftTorsion; // Integrated shear (I in BOUT notation)
   bool IncIntShear; // Include integrated shear (if shifting X)
   
-  Field2D J; // Jacobian
-
-  Field2D Bxy; // Magnitude of B = nabla z times nabla x
-  
-  // Contravariant metric tensor (g^{ij})
-  Field2D g11, g22, g33, g12, g13, g23; // These are read in grid.cpp
-  
-  // Covariant metric tensor
-  Field2D g_11, g_22, g_33, g_12, g_13, g_23;
-  
-  // Christoffel symbol of the second kind (connection coefficients)
-  Field2D G1_11, G1_22, G1_33, G1_12, G1_13;
-  Field2D G2_11, G2_22, G2_33, G2_12, G2_23;
-  Field2D G3_11, G3_22, G3_33, G3_13, G3_23;
-  
-  Field2D G1, G2, G3;
-
-  /// Calculate differential geometry quantities from the metric tensor
-  int geometry();
-  int calcCovariant(); ///< Inverts contravatiant metric to get covariant
-  int calcContravariant(); ///< Invert covariant metric to get contravariant
-  int jacobian(); // Calculate J and Bxy
-  
-  bool non_uniform; // Use corrections for non-uniform meshes
+  /// Coordinate system
+  Coordinates* coordinates();
   
   bool freeboundary_xin, freeboundary_xout, freeboundary_ydown, freeboundary_yup;
+
+  // First derivatives in index space
+  // Implemented in src/mesh/index_derivs.hxx
+  const Field3D indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
+  const Field2D indexDDX(const Field2D &f);
+  
+  const Field3D indexDDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
+  const Field2D indexDDY(const Field2D &f);
+
+  const Field3D indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool inc_xbndry);
+  const Field2D indexDDZ(const Field2D &f);
+
+  // Second derivatives in index space
+  // Implemented in src/mesh/index_derivs.hxx
+  const Field3D indexD2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
+  const Field2D indexD2DX2(const Field2D &f);
+  const Field3D indexD2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
+  const Field2D indexD2DY2(const Field2D &f);
+  const Field3D indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool inc_xbndry);
+  
+  // Fourth derivatives in index space
+  const Field3D indexD4DX4(const Field3D &f);
+  const Field2D indexD4DX4(const Field2D &f);
+  const Field3D indexD4DY4(const Field3D &f);
+  const Field2D indexD4DY4(const Field2D &f);
+  const Field3D indexD4DZ4(const Field3D &f);
+  
+  // Advection schemes
+  const Field2D indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method);
+  const Field3D indexVDDX(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method);
+  const Field2D indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method);
+  const Field3D indexVDDY(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method);
+  const Field3D indexVDDZ(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method);
+
+  const Field2D indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method);
+  const Field3D indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
+  const Field2D indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method);
+  const Field3D indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
+  const Field3D indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
+  
+  typedef BoutReal (*deriv_func)(stencil &); // f
+  typedef BoutReal (*upwind_func)(BoutReal, stencil &); // v, f
+  typedef BoutReal (*flux_func)(stencil&, stencil &); // v, f
+  
+  typedef struct {
+    BoutReal inner;
+    BoutReal outer;
+  } boundary_derivs_pair;
+  // More types for forward/backward differences to calculate derivatives in boundary guard cells for free boundary conditions
+  typedef boundary_derivs_pair (*inner_boundary_deriv_func)(forward_stencil &); // f
+  typedef boundary_derivs_pair (*outer_boundary_deriv_func)(backward_stencil &); // f
+  typedef boundary_derivs_pair (*inner_boundary_upwind_func)(forward_stencil &); // v,f
+  typedef boundary_derivs_pair (*outer_boundary_upwind_func)(backward_stencil &); // v,f
+
+  /// Transform a field into field-aligned coordinates
+  const Field3D toFieldAligned(const Field3D &f) {
+    return getParallelTransform().toFieldAligned(f);
+  }
+  /// Convert back into standard form
+  const Field3D fromFieldAligned(const Field3D &f) {
+    return getParallelTransform().fromFieldAligned(f);
+  }
+
+  /*!
+   * Unique pointer to ParallelTransform object
+   */
+  typedef std::unique_ptr<ParallelTransform> PTptr;
+  
+  /*!
+   * Set the parallel (y) transform for this mesh.
+   * Unique pointer used so that ParallelTransform will be deleted
+   */
+  void setParallelTransform(PTptr pt) {
+    transform = std::move(pt);
+  }
+  /*!
+   * Set the parallel (y) transform from the options file
+   */
+  void setParallelTransform();
   
  protected:
   
   GridDataSource *source; ///< Source for grid data
+  
+  Coordinates *coords;    ///< Coordinate system. Initialised to Null
+
+  Options *options; ///< Mesh options section
+  
+  /*!
+   * Return the parallel transform, setting it if need be
+   */
+  ParallelTransform& getParallelTransform();
+
+  PTptr transform; ///< Handles calculation of yup and ydown
 
   /// Read a 1D array of integers
   const vector<int> readInts(const string &name, int n);
@@ -246,9 +341,20 @@ class Mesh {
   /// Calculates the size of a message for a given x and y range
   int msg_len(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt);
   
- private:
-  int gaussj(BoutReal **a, int n);
-  int *indxc, *indxr, *ipiv, ilen;
+  // Initialise derivatives
+  void derivs_init(Options* options);
+  
+  // Loop over mesh, applying a stencil in the X direction
+  const Field2D applyXdiff(const Field2D &var, deriv_func func, inner_boundary_deriv_func func_in, outer_boundary_deriv_func func_out, CELL_LOC loc = CELL_DEFAULT);
+  const Field3D applyXdiff(const Field3D &var, deriv_func func, inner_boundary_deriv_func func_in, outer_boundary_deriv_func func_out, CELL_LOC loc = CELL_DEFAULT);
+  
+  const Field2D applyYdiff(const Field2D &var, deriv_func func, inner_boundary_deriv_func func_in, outer_boundary_deriv_func func_out, CELL_LOC loc = CELL_DEFAULT);
+  const Field3D applyYdiff(const Field3D &var, deriv_func func, inner_boundary_deriv_func func_in, outer_boundary_deriv_func func_out, CELL_LOC loc = CELL_DEFAULT);
+
+  const Field3D applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc = CELL_DEFAULT);
+  
+private:
+  
 };
 
 #endif // __MESH_H__

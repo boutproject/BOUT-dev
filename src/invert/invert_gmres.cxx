@@ -58,14 +58,14 @@ int iter_solve(FieldPerp &b, FieldPerp &x, opfunc2D A, void *extra)
   static int size = 0;
   static iter2d data;
 
-  n = mesh->ngx*mesh->ngz;
+  n = mesh->LocalNx*mesh->LocalNz;
   if(size == 0) {
     if(size == 0) {
-      data.b2d = (BoutReal**) malloc(sizeof(BoutReal*)*mesh->ngx);
-      data.x2d = (BoutReal**) malloc(sizeof(BoutReal*)*mesh->ngx);
+      data.b2d = (BoutReal**) malloc(sizeof(BoutReal*)*mesh->LocalNx);
+      data.x2d = (BoutReal**) malloc(sizeof(BoutReal*)*mesh->LocalNx);
     }else {
-      data.b2d = (BoutReal**) BoutRealloc(data.b2d, sizeof(BoutReal*)*mesh->ngx);
-      data.x2d = (BoutReal**) BoutRealloc(data.x2d, sizeof(BoutReal*)*mesh->ngx);
+      data.b2d = (BoutReal**) BoutRealloc(data.b2d, sizeof(BoutReal*)*mesh->LocalNx);
+      data.x2d = (BoutReal**) BoutRealloc(data.x2d, sizeof(BoutReal*)*mesh->LocalNx);
     }
     size = n;
   }
@@ -90,14 +90,14 @@ int iter_solve_bndry(FieldPerp &b, FieldPerp &x, opfunc2D A, int flags, void *ex
   static int size = 0;
   static iter2d data;
 
-  n = mesh->ngx*mesh->ngz;
+  n = mesh->LocalNx*mesh->LocalNz;
   if(size == 0) {
     if(size == 0) {
-      data.b2d = (BoutReal**) malloc(sizeof(BoutReal*)*mesh->ngx);
-      data.x2d = (BoutReal**) malloc(sizeof(BoutReal*)*mesh->ngx);
+      data.b2d = (BoutReal**) malloc(sizeof(BoutReal*)*mesh->LocalNx);
+      data.x2d = (BoutReal**) malloc(sizeof(BoutReal*)*mesh->LocalNx);
     }else {
-      data.b2d = (BoutReal**) BoutRealloc(data.b2d, sizeof(BoutReal*)*mesh->ngx);
-      data.x2d = (BoutReal**) BoutRealloc(data.x2d, sizeof(BoutReal*)*mesh->ngx);
+      data.b2d = (BoutReal**) BoutRealloc(data.b2d, sizeof(BoutReal*)*mesh->LocalNx);
+      data.x2d = (BoutReal**) BoutRealloc(data.x2d, sizeof(BoutReal*)*mesh->LocalNx);
     }
     size = n;
   }
@@ -111,7 +111,7 @@ int iter_solve_bndry(FieldPerp &b, FieldPerp &x, opfunc2D A, int flags, void *ex
   data.data = extra;
   
   /* Set boundaries to zero */
-  for(jx=0;jx<mesh->ngx;jx++) {
+  for(jx=0;jx<mesh->LocalNx;jx++) {
     b[jx][ncz] = 0.0;
   }
   
@@ -127,7 +127,7 @@ int iter_solve_bndry(FieldPerp &b, FieldPerp &x, opfunc2D A, int flags, void *ex
 
   if(flags & INVERT_ZERO_DC) {
     /* Set the DC component to zero */
-    for(jx=MXG;jx<(mesh->ngx-MXG);jx++) {
+    for(jx=MXG;jx<(mesh->LocalNx-MXG);jx++) {
       dc = 0.0;
       for(jz=0;jz<ncz;jz++) {
 	dc += b[jx][jz];
@@ -173,9 +173,9 @@ int operator_2d(BoutReal *b, BoutReal *x, void *extra)
   data->b2d[0] = b;
   data->x2d[0] = x;
 
-  for(i=1;i<mesh->ngx;i++) {
-    data->b2d[i] = data->b2d[i-1] + mesh->ngz;
-    data->x2d[i] = data->x2d[i-1] + mesh->ngz;
+  for(i=1;i<mesh->LocalNx;i++) {
+    data->b2d[i] = data->b2d[i-1] + mesh->LocalNz;
+    data->x2d[i] = data->x2d[i-1] + mesh->LocalNz;
   }
 
   data->bp->setData(data->b2d);
@@ -202,9 +202,9 @@ int operator_2d_bndry(BoutReal *b, BoutReal *x, void *extra)
   data->b2d[0] = b;
   data->x2d[0] = x;
 
-  for(i=1;i<mesh->ngx;i++) {
-    data->b2d[i] = data->b2d[i-1] + mesh->ngz;
-    data->x2d[i] = data->x2d[i-1] + mesh->ngz;
+  for(i=1;i<mesh->LocalNx;i++) {
+    data->b2d[i] = data->b2d[i-1] + mesh->LocalNz;
+    data->x2d[i] = data->x2d[i-1] + mesh->LocalNz;
   }
   data->bp->setData(data->b2d);
   data->xp->setData(data->x2d);
@@ -218,7 +218,7 @@ int operator_2d_bndry(BoutReal *b, BoutReal *x, void *extra)
 
   if(data->flags & INVERT_ZERO_DC) {
     /* Set the DC component to zero */
-    for(i=MXG;i<(mesh->ngx-MXG);i++) {
+    for(i=MXG;i<(mesh->LocalNx-MXG);i++) {
       dc1 = 0.0;
       for(j=0;j<ncz;j++) {
 	dc1 += data->b2d[i][j];
@@ -233,7 +233,7 @@ int operator_2d_bndry(BoutReal *b, BoutReal *x, void *extra)
   /* Set boundaries */
 
   /***** Toroidal *****/
-  for(i=0;i<mesh->ngx;i++) {
+  for(i=0;i<mesh->LocalNx;i++) {
     data->b2d[i][ncz] = data->x2d[i][ncz] - data->x2d[i][0]; /* Enforce periodicity */
   }
 

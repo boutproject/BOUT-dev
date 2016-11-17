@@ -120,6 +120,7 @@ int main(int argc, char **argv) {
     if (physics_init(restart)) {
       output.write("Failed to initialise physics. Aborting\n");
       delete solver;
+      MPI_Abort(BoutComm::get(), 1);
       BoutFinalise();
       return 1;
     }

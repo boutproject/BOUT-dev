@@ -40,6 +40,7 @@ class PhysicsModel;
 #include <options.hxx>
 #include <msg_stack.hxx>
 #include "solver.hxx"
+#include "unused.hxx"
 
 /*!
   Base class for physics models
@@ -101,7 +102,7 @@ protected:
    * By default this function just returns an error,
    * which will stop the simulation.
    */
-  virtual int rhs(BoutReal t) {return 1;} 
+  virtual int rhs(BoutReal UNUSED(t)) {return 1;}
 
   /* 
      If split operator is set to true, then
@@ -113,20 +114,20 @@ protected:
      and the sum used to evolve the system:
      rhs() = convective() + diffusive()
    */
-  virtual int convective(BoutReal t) {return 1;}
-  virtual int diffusive(BoutReal t) {return 1;}
-  virtual int diffusive(BoutReal t, bool linear) { return diffusive(t); }
+  virtual int convective(BoutReal UNUSED(t)) {return 1;}
+  virtual int diffusive(BoutReal UNUSED(t)) {return 1;}
+  virtual int diffusive(BoutReal t, bool UNUSED(linear)) { return diffusive(t); }
   
   /*!
    * Implemented by user code to monitor solution at output times
   */
-  virtual int outputMonitor(BoutReal simtime, int iter, int NOUT) {return 0;}
+  virtual int outputMonitor(BoutReal UNUSED(simtime), int UNUSED(iter), int UNUSED(NOUT)) {return 0;}
   
   /*!
    * Timestep monitor. If enabled by setting solver:monitor_timestep=true
    * then this function is called every internal timestep.
    */
-  virtual int timestepMonitor(BoutReal simtime, BoutReal dt) {return 0;}
+  virtual int timestepMonitor(BoutReal UNUSED(simtime), BoutReal UNUSED(dt)) {return 0;}
 
   // Functions called by the user to set callback functions
   void setSplitOperator(bool split=true) {splitop = split;}

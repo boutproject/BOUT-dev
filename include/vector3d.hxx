@@ -1,5 +1,5 @@
 /*!
- * \file vector2d.hxx
+ * \file vector3d.hxx
  *
  * \brief Class for 3D vectors. Built on the Field3D class.
  *
@@ -101,18 +101,10 @@ class Vector3D : public FieldData {
   const Vector3D operator^(const Vector2D &rhs) const;
   
   void setLocation(CELL_LOC loc); // Set variable location
+
+  /// Visitor pattern support
+  void accept(FieldVisitor &v) override;
   
-  // Z shifting
-  void shiftZ(int jx, int jy, double zangle) {
-      x.shiftZ(jx, jy, zangle);
-      y.shiftZ(jx, jy, zangle);
-      z.shiftZ(jx, jy, zangle);
-  }
-  const Vector3D shiftZ(const BoutReal zangle) const;
-
-  // Non-member functions
-  friend const Field3D abs(const Vector3D &v);
-
   // FieldData virtual functions
   
   bool isReal() const   { return true; }
@@ -135,6 +127,8 @@ class Vector3D : public FieldData {
 const Vector3D operator*(const BoutReal lhs, const Vector3D &rhs);
 const Vector3D operator*(const Field2D &lhs, const Vector3D &rhs);
 const Vector3D operator*(const Field3D &lhs, const Vector3D &rhs);
+
+const Field3D abs(const Vector3D &v);
 
 /*!
  * @brief Time derivative of 3D vector field

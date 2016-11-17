@@ -83,8 +83,8 @@ const vector< BoutReal > Diagnos::run()
 
   vector< BoutReal > result;
   
-  for(std::vector< diag_item >::iterator it = item.begin(); it != item.end(); it++) {
-    result.push_back(run(*it));
+  for(const auto& it : item) {
+    result.push_back(run(it));
   }
 
 #ifdef CHECK
@@ -134,9 +134,9 @@ BoutReal Diagnos::run(const diag_item &i)
     }else {
       // Local index
       
-      if((i.x < 0) || (i.x >= mesh->ngx) ||
-	 (i.y < 0) || (i.y >= mesh->ngy) ||
-	 (i.z < 0) || (i.z >= mesh->ngz)) {
+      if((i.x < 0) || (i.x >= mesh->LocalNx) ||
+	 (i.y < 0) || (i.y >= mesh->LocalNy) ||
+	 (i.z < 0) || (i.z >= mesh->LocalNz)) {
 	return 0.0;
       }
     }

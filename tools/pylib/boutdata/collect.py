@@ -174,33 +174,45 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
 
     # Get the version of BOUT++ (should be > 0.6 for NetCDF anyway)
     try:
-        v = f.read("BOUT_VERSION")
-
-        # 2D decomposition
-        nxpe = f.read("NXPE")
-        mxg  = f.read("MXG")
-        nype = f.read("NYPE")
-        npe = nxpe * nype
-
-        if info:
-            print("nxpe = %d, nype = %d, npe = %d\n" % (nxpe, nype, npe))
-            if npe < nfiles:
-                print("WARNING: More files than expected (" + str(npe) + ")")
-            elif npe > nfiles:
-                print("WARNING: Some files missing. Expected " + str(npe))
-
-        if xguards:
-            nx = nxpe * mxsub + 2*mxg
-        else:
-            nx = nxpe * mxsub
+        version = f["BOUT_VERSION"]
     except KeyError:
         print("BOUT++ version : Pre-0.2")
-        # Assume number of files is correct
-        # No decomposition in X
-        nx = mxsub
-        mxg = 0
+        version = 0
+    if version < 3.5:
+        # Remove extra point
+        nz = mz-1
+    else:
+        nz = mz
+
+    # Fallback to sensible (?) defaults
+    try:
+        nxpe = f["NXPE"]
+    except KeyError:
         nxpe = 1
+        print("NXPE not found, setting to {}".format(nxpe))
+    try:
+        mxg  = f["MXG"]
+    except KeyError:
+        mxg = 0
+        print("MXG not found, setting to {}".format(mxg))
+    try:
+        nype = f["NYPE"]
+    except KeyError:
         nype = nfiles
+        print("NYPE not found, setting to {}".format(nype))
+
+    npe = nxpe * nype
+    if info:
+        print("nxpe = %d, nype = %d, npe = %d\n" % (nxpe, nype, npe))
+        if npe < nfiles:
+            print("WARNING: More files than expected (" + str(npe) + ")")
+        elif npe > nfiles:
+            print("WARNING: Some files missing. Expected " + str(npe))
+
+    if xguards:
+        nx = nxpe * mxsub + 2*mxg
+    else:
+        nx = nxpe * mxsub
 
     if yguards:
         ny = mysub * nype + 2*myg
@@ -243,7 +255,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
 
     xind = check_range(xind, 0, nx-1, "xind")
     yind = check_range(yind, 0, ny-1, "yind")
-    zind = check_range(zind, 0, mz-2, "zind")
+    zind = check_range(zind, 0, nz-1, "zind")
     tind = check_range(tind, 0, nt-1, "tind")
 
     xsize = xind[1] - xind[0] + 1

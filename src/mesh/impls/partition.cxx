@@ -199,10 +199,11 @@ void partitionAll(Domain* d, int n) {
   
   int total = 0;
   int ndomains = 0;
-  for(Domain::iterator it = d->begin(); it != d->end(); it++) {
-    domains.push_back(&(*it));
+  for(auto&& it : *d) {
+  // for(Domain::iterator it = d->begin(); it != d->end(); it++) {
+    domains.push_back(&it);
     // Get size of domain
-    int area = it->area();
+    int area = it.area();
     size.push_back(area);
     total += area;
     ndomains++;
@@ -212,12 +213,12 @@ void partitionAll(Domain* d, int n) {
     throw BoutException("Cannot partition %d domains into %d pieces", ndomains, n);
 
   // Now partition each one
-  for(list<Domain*>::iterator it = domains.begin(); it != domains.end(); it++) {
-    int area = (*it)->area();
+  for(const auto& it : domains) {
+    int area = it->area();
     int nsub = roundi(n * (D(area) / total));
     if(nsub < 1)
       nsub = 1;
-    partition(*it, nsub);
+    partition(it, nsub);
     total -= area; // Remaining area
     n -= nsub; // Remaining number of processors
   }
