@@ -555,18 +555,11 @@ int BoutMesh::load() {
 		  get(g_13, "g_13");
 		  get(g_23, "g_23");
 
-		  ///Since used provided co- and contravariant metric tensors check if they are consistent
+		  ///Since used provided co- and contravariant metric tensors, calculate consistency
 		  // i.e. gij*g_ij - I < \epsilon
-		  Options *solver_options = Options::getRoot()->getSection("solver");
-		  bool mms;
-		  solver_options->get("mms",mms,false);
-		  if(!mms){//In verification exercises using mms we allow inconsistent metrics 
-			  BoutReal error = gijXg_ijMinusI();
-			  output << "\t\|\|gij g_ij - I|_{\infty}\|_2 = : " << error << endl; 
-			  if(error > 0.1){			  
-				  throw BoutException("gij and g_ij are not consistent. |gij* g_ij - I| => 0.01  ");
-			  }
-		  }
+		  BoutReal error = gijXg_ijMinusI();
+		  output << "\t\|\|gij g_ij - I|_{\infty}\|_2 = : " << error << endl;
+
 	  }
 	  else
 	  {
