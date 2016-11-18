@@ -19,7 +19,7 @@ protected:
     ddt(f) =
       vy * (coords->g22*DDY(f) + coords->g23*DDZ(f)) +    // Upwinding with second-order central differencing
       vz * (coords->g33*DDZ(f) + coords->g23*DDY(f))      // (unstable without additional dissipation)
-      - SQ(SQ(coords->dy))*D4DY4(f) - SQ(SQ(coords->dz))*D4DY4(f);   // Numerical dissipation terms
+      /*- SQ(SQ(coords->dy))*D4DY4(f)*/ - SQ(SQ(coords->dz))*D4DZ4(f);   // Numerical dissipation terms
 
     return 0;
   }
