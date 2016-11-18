@@ -30,6 +30,7 @@
 #include <bout/sys/timer.hxx>
 #include <boutcomm.hxx>
 #include <bout/assert.hxx>
+#include <utils.hxx>
 
 #define KSP_RICHARDSON "richardson"
 #define KSP_CHEBYSHEV   "chebyshev"
@@ -136,7 +137,7 @@ LaplacePetsc::LaplacePetsc(Options *opt) :
   PetscMalloc( (localN)*sizeof(PetscInt), &d_nnz );
   PetscMalloc( (localN)*sizeof(PetscInt), &o_nnz );
   if (fourth_order) {
-    // first and last 2*mesh-localNz entries are the edge x-values that (may) have 'off-diagonal' components (i.e. on another processor)
+    // first and last 2*mesh-LocalNz entries are the edge x-values that (may) have 'off-diagonal' components (i.e. on another processor)
     if ( mesh->firstX() && mesh->lastX() ) {
       for (int i=0; i<mesh->LocalNz; i++) {
         d_nnz[i]=15;
@@ -1009,7 +1010,7 @@ void LaplacePetsc::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2
     }
   }
 
-  if(mesh->ShiftXderivs && mesh->IncIntShear) {
+  if(mesh->IncIntShear) {
     // d2dz2 term
     coef2 += coord->g11(x,y) * coord->IntShiftTorsion(x,y) * coord->IntShiftTorsion(x,y);
     // Mixed derivative

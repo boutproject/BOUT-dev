@@ -99,7 +99,7 @@ int main(int argc, char **argv) {
   
   // Loop over data so first test doesn't have a disadvantage from caching
   for(int i=0;i<10;++i) {
-    for(int j=0;j<mesh->LocalNx*mesh->LocalNy*mesh->localNz;++j) {
+    for(int j=0;j<mesh->LocalNx*mesh->LocalNy*mesh->LocalNz;++j) {
       rd[j] = ad[j] + bd[j];
     }
   }
