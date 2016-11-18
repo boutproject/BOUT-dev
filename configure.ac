@@ -111,7 +111,7 @@ AC_LANG(C++)
 
 # Search for MPI compiler; fail if not found
 AX_PROG_CXX_MPI([], [], [
-  AC_MSG_ERROR([*** An MPI compiler is required.])
+  AC_MSG_ERROR([*** An MPI compiler is required. You might need to set MPICXX correctly.])
 ])
 
 # Utility programs
