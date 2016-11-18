@@ -199,8 +199,6 @@ BoutReal Zeff;            // Z effective for resistivity formula
 
 BoutReal hyperresist;    // Hyper-resistivity coefficient (in core only)
 BoutReal ehyperviscos;   // electron Hyper-viscosity coefficient
-Field3D hyper_eta_x; // Radial resistivity profile
-Field3D hyper_eta_z; // Toroidal resistivity profile
 
 int damp_width;     // Width of inner damped region
 BoutReal damp_t_const;  // Timescale of damping
@@ -685,8 +683,6 @@ int physics_init(bool restarting) {
 
   if(hyperresist > 0.0) {
     output.write("    Hyper-resistivity coefficient: %e\n", hyperresist);
-    dump.add(hyper_eta_x, "hyper_eta_x", 1);
-    dump.add(hyper_eta_z, "hyper_eta_z", 1);
   }
 
   if(ehyperviscos > 0.0) {
