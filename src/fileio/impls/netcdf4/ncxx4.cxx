@@ -451,11 +451,8 @@ bool Ncxx4::write(int *data, const char *name, int lx, int ly, int lz) {
 #endif
     // Variable not in file, so add it.
 
-    if (nd == 0) {
-      var = dataFile->addVar(name, ncInt);
-    } else {
-      var = dataFile->addVar(name, ncInt, getDimVec(nd));
-    }
+    var = dataFile->addVar(name, ncInt, getDimVec(nd));
+
     if(var.isNull()) {
       output.write("ERROR: NetCDF could not add int '%s' to file '%s'\n", name, fname);
       return false;
