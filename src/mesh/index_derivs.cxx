@@ -1656,7 +1656,7 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
           rfft(f(jx, jy), ncz, cv); // Forward FFT
           
         for(int jz=0;jz<=ncz/2;jz++) {
-          BoutReal kwave=jz*2.0*PI/mesh->coordinates()->zlength(); // wave number is 1/[rad]
+            BoutReal kwave=jz*2.0*PI/ncz; // wave number is 1/[rad]
             
           BoutReal flt;
           if (jz>0.4*ncz) flt=1e-10; else flt=1.0;
