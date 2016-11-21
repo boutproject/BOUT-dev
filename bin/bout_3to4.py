@@ -52,14 +52,20 @@ def fix_nonmembers(line_text, filename, line_num, replace=False):
 def fix_subscripts(line_text, filename, line_num, replace=False):
     """Replace triple square brackets with round brackets
 
-    Should also check that the variable is a Field3D - but doesn't
+    Should also check that the variable is a Field3D/Field2D - but doesn't
     """
 
     old_line_text = line_text
-    pattern = re.compile("\[([^[]*)\]\[([^[]*)\]\[([^[]*)\]")
+    # Catch both 2D and 3D arrays
+    pattern = re.compile(r"\[([^[]*)\]\[([^[]*)\](?:\[([^[]*)\])?")
     matches = re.findall(pattern, line_text)
     for match in matches:
-        line_text = re.sub(pattern, "(\1, \2, \3)", line_text)
+        # If the last group is non-empty, then it was a 3D array
+        if len(match[2]):
+            replacement = r"(\1, \2, \3)"
+        else:
+            replacement = r"(\1, \2)"
+        line_text = re.sub(pattern, replacement, line_text)
         if not replace:
             name_num = "{name}:{num}:".format(name=filename, num=line_num)
             print("{name_num}{line}".format(name_num=name_num, line=old_line_text), end='')
