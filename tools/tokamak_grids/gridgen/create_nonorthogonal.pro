@@ -328,11 +328,9 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
                       ydown_dist=ydown_dist, yup_dist=yup_dist, $
                       ydown_space=ydown_space, yup_space=yup_space, $
                       parweight=parweight)
-  print,"starting index",ind
+
   rii = INTERPOLATE(ri, ind)
   zii = INTERPOLATE(zi, ind)
-  print,"starting rind",ri
-  print,"starting zind",zi
 
   ;rii = int_func(SMOOTH(deriv(rii), 3)) + rii[0]
   ;zii = int_func(SMOOTH(deriv(zii), 3)) + zii[0]
@@ -353,6 +351,7 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
   ; Set the starting and ending lines that will be gridded evenly on each field
   FOR ii=0, 1 DO BEGIN
     IF ii EQ 0 THEN i=0 ELSE i=npar-1
+    print,i
 
     IF i GE npar/2 THEN BEGIN
        IF KEYWORD_SET(vec_in_up) THEN vec_in = vec_in_up
@@ -484,6 +483,7 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
         BREAK
       ENDIF
    ENDFOR
+ENDFOR
 
    ; Finished calculating starting and ending point locations
 
@@ -505,8 +505,21 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
 
    ;  need to evenly space points along each flux surface
    FOR j=-1, nin-1 DO BEGIN
-     ri = [rixy[nin-j-1,0],rixy[nin-j-1,npar-1]]
-     zi = [zixy[nin-j-1,0],zixy[nin-j-1,npar-1]]
+      start_point = [rixy[nin-j-1,0],zixy[nin-j-1,0]]
+      end_point = [rixy[nin-j-1,npar-1],zixy[nin-j-1,npar-1]]
+      print,start_point,end_point
+      follow_fieldline, interp_data, start_point, end_point, ri_out=ri, zi_out=zi
+
+      ; ; Make sure that the line goes clockwise
+      ; m = MAX(INTERPOLATE(Z, zi), ind)
+      ; IF (DERIV(INTERPOLATE(R, ri)))[ind] LT 0.0 THEN BEGIN
+      ;   ; R should be increasing at the top. Need to reverse
+      ;   start_ri = REVERSE(ri)
+      ;   start_zi = REVERSE(zi)
+      ; ENDIF
+
+    ;  ri = [rixy[nin-j-1,0],rixy[nin-j-1,npar-1]]
+    ;  zi = [zixy[nin-j-1,0],zixy[nin-j-1,npar-1]]
      ind = poloidal_grid(interp_data, R, Z, ri, zi, npar, fpsi=fpsi, $
                          ydown_dist=ydown_dist, yup_dist=yup_dist, $
                          ydown_space=ydown_space, yup_space=yup_space, $
@@ -516,8 +529,9 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
      zixy[nin-j-1,*] = INTERPOLATE(zi, ind)
    ENDFOR
    FOR j=0, nout-1 DO BEGIN
-     ri = [rixy[nin+j+1,0],rixy[nin+j+1,npar-1]]
-     zi = [zixy[nin+j+1,0],zixy[nin+j+1,npar-1]]
+     start_point = [rixy[nin+j+1,0],zixy[nin+j+1,0]]
+     end_point = [rixy[nin+j+1,npar-1],zixy[nin+j+1,npar-1]]
+     follow_fieldline, interp_data, start_point, end_point, ri_out=ri, zi_out=zi
      ind = poloidal_grid(interp_data, R, Z, ri, zi, npar, fpsi=fpsi, $
                          ydown_dist=ydown_dist, yup_dist=yup_dist, $
                          ydown_space=ydown_space, yup_space=yup_space, $
@@ -577,7 +591,6 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
     ;   OPLOT, [INTERPOLATE(R, cross[0,0])], [INTERPOLATE(Z, cross[1,0])],psym=2,color=2
     ;ENDIF
     ;CURSOR, ax,by, /down
- ENDFOR
 
   RETURN, {rixy:rixy, zixy:zixy, rxy:INTERPOLATE(R, rixy), zxy:INTERPOLATE(Z, zixy)}
 END
