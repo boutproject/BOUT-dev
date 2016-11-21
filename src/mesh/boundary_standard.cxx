@@ -3427,7 +3427,7 @@ void BoundaryRelax::apply(Field3D &f, BoutReal UNUSED(t)) {
 }
 
 void BoundaryRelax::apply_ddt(Field2D &f) {
-  MsgStackItem("BoundaryRelax::apply_ddt(Field2D)");
+  TRACE("BoundaryRelax::apply_ddt(Field2D)");
 
   // Make a copy of f
   Field2D g = f;
@@ -3451,7 +3451,7 @@ void BoundaryRelax::apply_ddt(Field2D &f) {
 }
 
 void BoundaryRelax::apply_ddt(Field3D &f) {
-  MsgStackItem("BoundaryRelax::apply_ddt(Field3D)");
+  TRACE("BoundaryRelax::apply_ddt(Field3D)");
   
   // Make a copy of f
   Field3D g = f; // NOTE: This is not very efficient... copying entire field

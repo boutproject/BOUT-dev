@@ -2126,7 +2126,7 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC UNUSE
 
 /// General version for 2 or 3-D objects
 const Field3D Mesh::indexVDDX(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method) {
-  MsgStackItem("Mesh::indexVDDX(Field, Field)");
+  TRACE("Mesh::indexVDDX(Field, Field)");
   
   Field3D result;
   result.allocate(); // Make sure data allocated
@@ -2213,7 +2213,7 @@ const Field3D Mesh::indexVDDX(const Field &v, const Field &f, CELL_LOC outloc, D
 
 // special case where both are 2D
 const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
-  MsgStackItem("Mesh::indexVDDY");
+  TRACE("Mesh::indexVDDY");
   
   Field2D result;
   result.allocate(); // Make sure data allocated
@@ -2296,7 +2296,7 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
 // general case
 const Field3D Mesh::indexVDDY(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method) {
-  MsgStackItem("Mesh::indexVDDY(Field, Field)");
+  TRACE("Mesh::indexVDDY(Field, Field)");
   
   Field3D result;
   result.allocate(); // Make sure data allocated
@@ -2384,7 +2384,7 @@ const Field3D Mesh::indexVDDY(const Field &v, const Field &f, CELL_LOC outloc, D
 
 // general case
 const Field3D Mesh::indexVDDZ(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method) {
-  MsgStackItem("Mesh::indexVDDZ");
+  TRACE("Mesh::indexVDDZ");
   
   Field3D result;
   result.allocate(); // Make sure data allocated
@@ -2472,7 +2472,7 @@ const Field3D Mesh::indexVDDZ(const Field &v, const Field &f, CELL_LOC outloc, D
  *******************************************************************************/
 
 const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
-  MsgStackItem("Mesh::::indexFDDX(Field2D, Field2D)");
+  TRACE("Mesh::::indexFDDX(Field2D, Field2D)");
   
   if( (method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDX == NULL)) ) {
     // Split into an upwind and a central differencing part
@@ -2507,7 +2507,7 @@ const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
 }
 
 const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
-  MsgStackItem("Mesh::indexFDDX");
+  TRACE("Mesh::indexFDDX");
   
   if( (method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDX == NULL)) ) {
     // Split into an upwind and a central differencing part
@@ -2582,7 +2582,7 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
 /////////////////////////////////////////////////////////////////////////
 
 const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
-  MsgStackItem("Mesh::indexFDDY(Field2D, Field2D)");
+  TRACE("Mesh::indexFDDY(Field2D, Field2D)");
   
   if( (method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDY == NULL)) ) {
     // Split into an upwind and a central differencing part
@@ -2617,7 +2617,7 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
 }
 
 const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
-  MsgStackItem("Mesh::indexFDDY");
+  TRACE("Mesh::indexFDDY");
   
   if( (method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDY == NULL)) ) {
     // Split into an upwind and a central differencing part
@@ -2697,7 +2697,7 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 /////////////////////////////////////////////////////////////////////////
 
 const Field3D Mesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
-  MsgStackItem("Mesh::indexFDDZ(Field3D, Field3D)");
+  TRACE("Mesh::indexFDDZ(Field3D, Field3D)");
   if( (method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDZ == NULL)) ) {
     // Split into an upwind and a central differencing part
     // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)

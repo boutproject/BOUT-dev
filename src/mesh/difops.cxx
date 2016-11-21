@@ -461,7 +461,7 @@ const Field3D Laplace(const Field3D &f) {
 
 const Field2D b0xGrad_dot_Grad(const Field2D &phi, const Field2D &A) {
   
-  MsgStackItem trace("b0xGrad_dot_Grad( Field2D , Field2D )");
+  TRACE("b0xGrad_dot_Grad( Field2D , Field2D )");
   
   Coordinates *metric = mesh->coordinates();
 
@@ -488,7 +488,7 @@ const Field3D b0xGrad_dot_Grad(const Field2D &phi, const Field3D &A) {
   Field2D vx, vy, vz;
   Field3D result;
   
-  MsgStackItem trace("b0xGrad_dot_Grad( Field2D , Field3D )");
+  TRACE("b0xGrad_dot_Grad( Field2D , Field3D )");
 
   Coordinates *metric = mesh->coordinates();
   
@@ -526,7 +526,7 @@ const Field3D b0xGrad_dot_Grad(const Field3D &p, const Field2D &A, CELL_LOC outl
   Field3D vx, vy;
   Field3D result;
   
-  MsgStackItem trace("b0xGrad_dot_Grad( Field3D , Field2D )");
+  TRACE("b0xGrad_dot_Grad( Field3D , Field2D )");
 
   Coordinates *metric = mesh->coordinates();
 
@@ -558,7 +558,7 @@ const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC ou
   Field3D vx, vy, vz;
   Field3D result;
   
-  MsgStackItem trace("b0xGrad_dot_Grad( Field3D , Field3D )");
+  TRACE("b0xGrad_dot_Grad( Field3D , Field3D )");
 
   Coordinates *metric = mesh->coordinates();
 
@@ -619,7 +619,7 @@ CELL_LOC bracket_location(const CELL_LOC &f_loc, const CELL_LOC &g_loc, const CE
 }
 
 const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method, CELL_LOC outloc, Solver *UNUSED(solver)) {
-  MsgStackItem trace("bracket(Field2D, Field2D)");
+  TRACE("bracket(Field2D, Field2D)");
   Field2D result;
 
   // Sort out cell locations
@@ -637,7 +637,7 @@ const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method,
 }
 
 const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method, CELL_LOC outloc, Solver *solver) {
-  MsgStackItem trace("bracket(Field3D, Field2D)");
+  TRACE("bracket(Field3D, Field2D)");
   
   Field3D result;
   
@@ -738,7 +738,7 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
 }
 
 const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method, CELL_LOC outloc, Solver *solver) {
-  MsgStackItem trace("bracket(Field2D, Field3D)");
+  TRACE("bracket(Field2D, Field3D)");
   
   Field3D result;
 
@@ -769,7 +769,7 @@ const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method,
 }
 
 const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method, CELL_LOC outloc, Solver *solver) {
-  MsgStackItem trace("Field3D, Field3D");
+  TRACE("Field3D, Field3D");
   
   Coordinates *metric = mesh->coordinates();
 

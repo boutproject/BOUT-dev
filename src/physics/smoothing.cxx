@@ -107,7 +107,7 @@ const Field3D smooth_y(const Field3D &f) {
   so no processor/branch cuts in X
  */
 const Field2D averageX(const Field2D &f) {
-  MsgStackItem trace("averageX(Field2D)");
+  TRACE("averageX(Field2D)");
  
   int ngx = mesh->LocalNx;
   int ngy = mesh->LocalNy;
@@ -164,7 +164,7 @@ const Field2D averageX(const Field2D &f) {
 const Field3D averageX(const Field3D &f) {
   static BoutReal **input = NULL, **result;
 
-  MsgStackItem trace("averageX(Field3D)");
+  TRACE("averageX(Field3D)");
 
   int ngx = mesh->LocalNx;
   int ngy = mesh->LocalNy;
@@ -223,7 +223,7 @@ const Field3D averageX(const Field3D &f) {
   
  */
 const Field2D averageY(const Field2D &f) {
-  MsgStackItem trace("averageY(Field2D)");
+  TRACE("averageY(Field2D)");
  
   int ngx = mesh->LocalNx;
   int ngy = mesh->LocalNy;
@@ -435,7 +435,7 @@ void nl_filter(rvec &f, BoutReal w) {
 
 const Field3D nl_filter_x(const Field3D &f, BoutReal w) {
 
-  MsgStackItem trace("nl_filter_x( Field3D )");
+  TRACE("nl_filter_x( Field3D )");
   
     Field3D result;
   rvec v;
@@ -451,7 +451,7 @@ const Field3D nl_filter_x(const Field3D &f, BoutReal w) {
 }
 
 const Field3D nl_filter_y(const Field3D &fs, BoutReal w) {
-  MsgStackItem trace("nl_filter_x( Field3D )");
+  TRACE("nl_filter_x( Field3D )");
   
   Field3D result;
   rvec v;
@@ -467,7 +467,7 @@ const Field3D nl_filter_y(const Field3D &fs, BoutReal w) {
 }
 
 const Field3D nl_filter_z(const Field3D &fs, BoutReal w) {
-  MsgStackItem trace("nl_filter_z( Field3D )");
+  TRACE("nl_filter_z( Field3D )");
   
   Field3D result;
   rvec v;

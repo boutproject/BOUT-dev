@@ -646,7 +646,7 @@ const Field2D Coordinates::Delp2(const Field2D &f) {
 }
 
 const Field3D Coordinates::Delp2(const Field3D &f) {
-  MsgStackItem trace("Coordinates::Delp2( Field3D )");
+  TRACE("Coordinates::Delp2( Field3D )");
 
   //return mesh->G1*DDX(f) + mesh->G3*DDZ(f) + mesh->g11*D2DX2(f) + mesh->g33*D2DZ2(f); //+ 2.0*mesh->g13*D2DXDZ(f)
 
@@ -706,7 +706,7 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
 }
 
 const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
-  MsgStackItem trace("Coordinates::Delp2( FieldPerp )");
+  TRACE("Coordinates::Delp2( FieldPerp )");
   
   FieldPerp result;
   result.allocate();
@@ -767,7 +767,7 @@ const Field3D Coordinates::Laplace_par(const Field3D &f) {
 // Full Laplacian operator on scalar field
 
 const Field2D Coordinates::Laplace(const Field2D &f) {
-  MsgStackItem trace("Coordinates::Laplace( Field2D )");
+  TRACE("Coordinates::Laplace( Field2D )");
 
   Field2D result =  G1*DDX(f) +G2*DDY(f)
     + g11*D2DX2(f) + g22*D2DY2(f)
@@ -777,7 +777,7 @@ const Field2D Coordinates::Laplace(const Field2D &f) {
 }
 
 const Field3D Coordinates::Laplace(const Field3D &f) {
-  MsgStackItem trace("Coordinates::Laplace( Field3D )");
+  TRACE("Coordinates::Laplace( Field3D )");
 
   Field3D result  = G1*::DDX(f) + G2*::DDY(f) + G3*::DDZ(f)
     + g11*D2DX2(f) + g22*D2DY2(f) + g33*D2DZ2(f)
@@ -793,7 +793,7 @@ const Field3D Coordinates::Laplace(const Field3D &f) {
 
 // Invert an nxn matrix using Gauss-Jordan elimination with full pivoting
 int Coordinates::gaussj(BoutReal **a, int n) {
-  MsgStackItem trace("Coordinates::gaussj");
+  TRACE("Coordinates::gaussj");
   
   int i, icol, irow, j, k, l, ll;
   float big, dum, pivinv;

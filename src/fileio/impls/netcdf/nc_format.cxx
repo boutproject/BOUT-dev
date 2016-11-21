@@ -733,7 +733,7 @@ bool NcFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int l
   // Check the name
   checkName(name);
 
-  MsgStackItem trace("NcFormat::write_rec(BoutReal*)");
+  TRACE("NcFormat::write_rec(BoutReal*)");
 
   int nd = 1; // Number of dimensions
   if(lx != 0) nd = 2;

@@ -110,7 +110,7 @@ Field2D & Field2D::operator=(const Field2D &rhs) {
   if(this == &rhs)
     return(*this); // skip this assignment
 
-  MsgStackItem trace("Field2D: Assignment from Field2D");
+  TRACE("Field2D: Assignment from Field2D");
 
   checkData(rhs);
   

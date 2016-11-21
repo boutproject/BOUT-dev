@@ -65,7 +65,7 @@ Mesh::~Mesh() {
 
 /// Get an integer
 int Mesh::get(int &ival, const string &name) {
-  MsgStackItem msg("Mesh::get(ival)");
+  TRACE("Mesh::get(ival)");
 
   if(!source->get(this, ival, name))
     return 1;
@@ -75,7 +75,7 @@ int Mesh::get(int &ival, const string &name) {
 
 /// A BoutReal number
 int Mesh::get(BoutReal &rval, const string &name) {
-  MsgStackItem msg("Mesh::get(rval)");
+  TRACE("Mesh::get(rval)");
 
   if(!source->get(this, rval, name))
     return 1;
@@ -84,7 +84,7 @@ int Mesh::get(BoutReal &rval, const string &name) {
 }
 
 int Mesh::get(Field2D &var, const string &name, BoutReal def) {
-  MsgStackItem msg("Loading 2D field: Mesh::get(Field2D)");
+  TRACE("Loading 2D field: Mesh::get(Field2D)");
 
   // Ensure data allocated
   var.allocate();
@@ -102,7 +102,7 @@ int Mesh::get(Field2D &var, const string &name, BoutReal def) {
 }
 
 int Mesh::get(Field3D &var, const string &name, BoutReal def, bool communicate) {
-  MsgStackItem msg("Loading 3D field: Mesh::get(Field3D)");
+  TRACE("Loading 3D field: Mesh::get(Field3D)");
 
   // Ensure data allocated
   var.allocate();
@@ -176,7 +176,7 @@ int Mesh::get(Vector3D &var, const string &name) {
  **************************************************************************/
 
 void Mesh::communicateXZ(FieldGroup &g) {
-  MsgStackItem("Mesh::communicate(FieldGroup&)");
+  TRACE("Mesh::communicate(FieldGroup&)");
 
   // Send data
   comm_handle h = send(g);
@@ -186,7 +186,7 @@ void Mesh::communicateXZ(FieldGroup &g) {
 }
 
 void Mesh::communicate(FieldGroup &g) {
-  MsgStackItem("Mesh::communicate(FieldGroup&)");
+  TRACE("Mesh::communicate(FieldGroup&)");
 
   // Send data
   comm_handle h = send(g);
