@@ -20,12 +20,12 @@ BoutException::~BoutException() throw() {
 }
 
 void BoutException::Backtrace() {
-#ifdef CHECK
+#if CHECK > 1
   /// Print out the message stack to help debugging
   std::string tmp=msg_stack.getDump();
   message+=tmp;
 #else
-  message+="Enable checking (-DCHECK flag) to get a trace\n";
+  message+="Enable checking (configure with --enable-check or set flag -DCHECK > 1) to get a trace\n";
 #endif
 #ifdef BACKTRACE
   void *trace[64];
