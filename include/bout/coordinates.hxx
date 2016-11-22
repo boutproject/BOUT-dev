@@ -85,6 +85,7 @@ public:
   int calcCovariant(); ///< Inverts contravatiant metric to get covariant
   int calcContravariant(); ///< Invert covariant metric to get contravariant
   int jacobian(); // Calculate J and Bxy
+  BoutReal gijXg_ijMinusI(); //<Returns L2 norm of \| gij*g_ij - I \|_inf
 
   // Operators
 
