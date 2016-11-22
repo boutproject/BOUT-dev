@@ -485,24 +485,6 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
    ENDFOR
 ENDFOR
 
-   ; Finished calculating starting and ending point locations
-
-   ; spread points out for central line
-  ;  FOR i=0,npar-1 DO BEGIN
-  ;    IF sind GE 0 THEN BEGIN
-  ;      rixy[nin, i] = rii[i]
-  ;      zixy[nin, i] = zii[i]
-  ;    ENDIF ELSE BEGIN
-  ;      ; fvals[nin] should be just outside the starting position
-  ;      ftarg = fvals[nin]
-  ;      follow_gradient_nonorth, interp_data, R, Z, rii[i], zii[i], $
-  ;        ftarg, rinext, zinext, status=status, $
-  ;                       vec=vec_in, weight=weight
-  ;      rixy[nin, i] = rinext
-  ;      zixy[nin, i] = zinext
-  ;    ENDELSE
-  ;  ENDFOR
-
    ;  need to evenly space points along each flux surface
    FOR j=-1, nin-1 DO BEGIN
       start_point = [rixy[nin-j-1,0],zixy[nin-j-1,0]]
@@ -510,16 +492,6 @@ ENDFOR
       print,start_point,end_point
       follow_fieldline, interp_data, start_point, end_point, ri_out=ri, zi_out=zi
 
-      ; ; Make sure that the line goes clockwise
-      ; m = MAX(INTERPOLATE(Z, zi), ind)
-      ; IF (DERIV(INTERPOLATE(R, ri)))[ind] LT 0.0 THEN BEGIN
-      ;   ; R should be increasing at the top. Need to reverse
-      ;   start_ri = REVERSE(ri)
-      ;   start_zi = REVERSE(zi)
-      ; ENDIF
-
-    ;  ri = [rixy[nin-j-1,0],rixy[nin-j-1,npar-1]]
-    ;  zi = [zixy[nin-j-1,0],zixy[nin-j-1,npar-1]]
      ind = poloidal_grid(interp_data, R, Z, ri, zi, npar, fpsi=fpsi, $
                          ydown_dist=ydown_dist, yup_dist=yup_dist, $
                          ydown_space=ydown_space, yup_space=yup_space, $

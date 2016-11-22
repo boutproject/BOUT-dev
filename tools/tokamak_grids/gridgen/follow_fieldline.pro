@@ -14,6 +14,8 @@ pro follow_fieldline, interp_data, start_point, end_point, ri_out=ri, zi_out=zi
   ; weird behaviour of info, so take out important values
   NN = n_elements(xy[0,*])
   offsets = (info.offset)
+  n_elem = TOTAL(info.N,/cumulative)
+  print,offsets
   ; ri = REFORM(xy[0,offset:(offset+NN-1)])
   ; zi = REFORM(xy[1,offset:(offset+NN-1)])
 
@@ -31,13 +33,13 @@ pro follow_fieldline, interp_data, start_point, end_point, ri_out=ri, zi_out=zi
     closed = (info.type)[0]
     NN = (info.N)[0]
   endif else begin
-    for i=1,n_elements(offsets)-1 do begin
-      if(start_ind LT offsets[i]) then begin
-        NN = (info.N)[i-1]
-        xy = xy[*,offsets[i-1]:offsets[i]-1]
-        start_ind -= offsets[i-1]
-        end_ind -= offsets[i-1]
-        closed = (info.type)[i-1]
+    for i=0,n_elements(offsets)-1 do begin
+      if(start_ind LT n_elem[i]) then begin
+        NN = (info.N)[i]
+        xy = xy[*,offsets[i]:offsets[i]+NN-1]
+        start_ind -= offsets[i]
+        end_ind -= offsets[i]
+        closed = (info.type)[i]
         break
       endif
     endfor
