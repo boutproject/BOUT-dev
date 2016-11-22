@@ -531,7 +531,7 @@ BoutReal Coordinates::gijXg_ijMinusI(){
 				res[i][j] -=  I[i][j];
 
 			}///L2 norm of matrix inf norm
-			localError += mesh->dx(x,y)*mesh->dy(x,y)*(*std::max_element(res[i],res[i]+3));
+			localError += mesh->coordinates()->dx(x,y)*mesh->coordinates()->dy(x,y)*(*std::max_element(res[i],res[i]+3));
 		}
 
 		for(int i = 0; i<3;i++)	for(int j = 0; j<3;j++){
