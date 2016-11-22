@@ -328,7 +328,7 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
                       ydown_dist=ydown_dist, yup_dist=yup_dist, $
                       ydown_space=ydown_space, yup_space=yup_space, $
                       parweight=parweight)
-
+  ind[0] -= 0.5
   rii = INTERPOLATE(ri, ind)
   zii = INTERPOLATE(zi, ind)
 
