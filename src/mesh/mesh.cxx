@@ -171,6 +171,10 @@ int Mesh::get(Vector3D &var, const string &name) {
   return 0;
 }
 
+bool Mesh::sourceHasVar(const string &name) {
+  return source->hasVar(name);
+}
+
 /**************************************************************************
  * Communications
  **************************************************************************/

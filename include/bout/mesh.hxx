@@ -96,6 +96,9 @@ class Mesh {
   
   int get(Vector2D &var, const string &name);
   int get(Vector3D &var, const string &name);
+
+  /// Wrapper for GridDataSource::hasVar
+  bool sourceHasVar(const string &name);
   
   // Communications
   /*!

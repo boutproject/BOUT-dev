@@ -85,33 +85,32 @@ Coordinates::Coordinates(Mesh *mesh) : ilen(0) {
   
   /// Find covariant metric components
   // Check if any of the components are present
-  if (source->hasVar("g_11") or
-      source->hasVar("g_22") or
-      source->hasVar("g_33") or
-      source->hasVar("g_12") or
-      source->hasVar("g_13") or
-      source->hasVar("g_23")) {
+  if (mesh->sourceHasVar("g_11") or
+      mesh->sourceHasVar("g_22") or
+      mesh->sourceHasVar("g_33") or
+      mesh->sourceHasVar("g_12") or
+      mesh->sourceHasVar("g_13") or
+      mesh->sourceHasVar("g_23")) {
     // Check that all components are present
-    if (source->hasVar("g_11") and
-        source->hasVar("g_22") and
-        source->hasVar("g_33") and
-        source->hasVar("g_12") and
-        source->hasVar("g_13") and
-        source->hasVar("g_23")) {
-      get(g_11, "g_11");
-      get(g_22, "g_22");
-      get(g_33, "g_33");
-      get(g_12, "g_12");
-      get(g_13, "g_13");
-      get(g_23, "g_23");
+    if (mesh->sourceHasVar("g_11") and
+        mesh->sourceHasVar("g_22") and
+        mesh->sourceHasVar("g_33") and
+        mesh->sourceHasVar("g_12") and
+        mesh->sourceHasVar("g_13") and
+        mesh->sourceHasVar("g_23")) {
+      mesh->get(g_11, "g_11");
+      mesh->get(g_22, "g_22");
+      mesh->get(g_33, "g_33");
+      mesh->get(g_12, "g_12");
+      mesh->get(g_13, "g_13");
+      mesh->get(g_23, "g_23");
       // Check if the contravariant is also given
-
-      if (source->hasVar("g11") and
-          source->hasVar("g22") and
-          source->hasVar("g33") and
-          source->hasVar("g12") and
-          source->hasVar("g13") and
-          source->hasVar("g23")
+      if (mesh->sourceHasVar("g11") and
+          mesh->sourceHasVar("g22") and
+          mesh->sourceHasVar("g33") and
+          mesh->sourceHasVar("g12") and
+          mesh->sourceHasVar("g13") and
+          mesh->sourceHasVar("g23")
          ) {
             throw BoutException("Both co and contravariant part of metric"
                                 " tensor specified manually. Exception thrown"
