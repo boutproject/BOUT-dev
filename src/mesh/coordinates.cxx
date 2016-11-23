@@ -83,9 +83,56 @@ Coordinates::Coordinates(Mesh *mesh) : ilen(0) {
     throw BoutException("\tERROR: Off-diagonal metrics are not finite!\n");
   }
   
-  /// Calculate contravariant metric components
-  if(calcCovariant())
-    throw BoutException("Error in calcCovariant call");
+  /// Find covariant metric components
+  // Check if any of the components are present
+  if (source->hasVar("g_11") or
+      source->hasVar("g_22") or
+      source->hasVar("g_33") or
+      source->hasVar("g_12") or
+      source->hasVar("g_13") or
+      source->hasVar("g_23")) {
+    // Check that all components are present
+    if (source->hasVar("g_11") and
+        source->hasVar("g_22") and
+        source->hasVar("g_33") and
+        source->hasVar("g_12") and
+        source->hasVar("g_13") and
+        source->hasVar("g_23")) {
+      get(g_11, "g_11");
+      get(g_22, "g_22");
+      get(g_33, "g_33");
+      get(g_12, "g_12");
+      get(g_13, "g_13");
+      get(g_23, "g_23");
+      // Check if the contravariant is also given
+
+      if (source->hasVar("g11") and
+          source->hasVar("g22") and
+          source->hasVar("g33") and
+          source->hasVar("g12") and
+          source->hasVar("g13") and
+          source->hasVar("g23")
+         ) {
+            throw BoutException("Both co and contravariant part of metric"
+                                " tensor specified manually. Exception thrown"
+                                " as gij*g^ij=I cannot be guaranteed.");
+      } else {
+        output.write("\tCovariant metric tensor given, calculating contravariant metric tensor from covariant\n");
+        calcContravariant();
+      }
+    } else {
+      output.write("Not all covariant components of metric tensor found. Calculating all from the contravariant tensor\n");
+      /// Calculate contravariant metric components if not found
+      if(calcCovariant()) {
+        throw BoutException("Error in calcCovariant call");
+      }
+    }
+  } else {
+    /// Calculate contravariant metric components if not found
+    if(calcCovariant()) {
+      throw BoutException("Error in calcCovariant call");
+    }
+  }
 
   /// Calculate Jacobian and Bxy
   if(jacobian())
@@ -189,10 +236,8 @@ void Coordinates::outputVars(Datafile &file) {
 
 
 int Coordinates::geometry() {
-#ifdef CHECK
-  msg_stack.push("Coordinates::geometry");
-#endif
-  
+  TRACE("Coordinates::geometry");
+
   output.write("Calculating differential geometry terms\n");
 
   if(min(abs(dx)) < 1e-8)
@@ -309,19 +354,13 @@ int Coordinates::geometry() {
   com.add(G3);
 
   mesh->communicate(com);
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-  
+
   return 0;
 }
 
 int Coordinates::calcCovariant() {
-#ifdef CHECK
-  msg_stack.push("Coordinates::calcCovariant");
-#endif
-  
+  TRACE("Coordinates::calcCovariant");
+
   // Make sure metric elements are allocated
   g_11.allocate();
   g_22.allocate();
@@ -348,8 +387,8 @@ int Coordinates::calcCovariant() {
       
       // invert
       if(gaussj(a, 3)) {
-	output.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
-	return 1;
+        output.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
+        return 1;
       }
       
       // put elements into g_{ij}
@@ -396,15 +435,13 @@ int Coordinates::calcCovariant() {
     maxerr = err;
   
   output.write("\tMaximum error in off-diagonal inversion is %e\n", maxerr);
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 
   return 0;
 }
 
 int Coordinates::calcContravariant() {
+  TRACE("Coordinates::calcContravariant");
+
   // Make sure metric elements are allocated
   g11.allocate();
   g22.allocate();
@@ -431,8 +468,8 @@ int Coordinates::calcContravariant() {
       
       // invert
       if(gaussj(a, 3)) {
-	output.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
-	return 1;
+        output.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
+        return 1;
       }
       
       // put elements into g_{ij}
@@ -483,25 +520,34 @@ int Coordinates::calcContravariant() {
 }
 
 int Coordinates::jacobian() {
+  TRACE("Coordinates::jacobian");
   // calculate Jacobian using g^-1 = det[g^ij], J = sqrt(g)
-  J = 1. / sqrt(g11*g22*g33 + 
-                2.0*g12*g13*g23 - 
-                g11*g23*g23 - 
-                g22*g13*g13 - 
-                g33*g12*g12);
-  
+
+  Field2D g = g11*g22*g33 +
+    2.0*g12*g13*g23 -
+    g11*g23*g23 -
+    g22*g13*g13 -
+    g33*g12*g12;
+
+  // Check that g is positive
+  if(min(g) < 0.0) {
+    throw BoutException("The determinant of g^ij is somewhere less than 0.0");
+  }
+  J = 1. / sqrt(g);
+
   // Check jacobian
   if(!finite(J)) {
-    output.write("\tERROR: Jacobian not finite everywhere!\n");
-    return 1;
+    throw BoutException("\tERROR: Jacobian not finite everywhere!\n");
   }
   if(min(abs(J)) < 1.0e-10) {
-    output.write("\tERROR: Jacobian becomes very small\n");
-    return 1;
+    throw BoutException("\tERROR: Jacobian becomes very small\n");
   }
-  
+
+  if(min(g_22) < 0.0) {
+    throw BoutException("g_22 is somewhere less than 0.0");
+  }
   Bxy = sqrt(g_22)/J;
-  
+
   return 0;
 }
 
