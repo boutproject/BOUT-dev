@@ -532,10 +532,10 @@ void Field2D::setBoundaryTo(const Field2D &f2d) {
     return result;                                                  \
   }
 
-F2D_OP_F2D(+);  // Field2D + Field2D
-F2D_OP_F2D(-);  // Field2D - Field2D
-F2D_OP_F2D(*);  // Field2D * Field2D
-F2D_OP_F2D(/);  // Field2D / Field2D
+//F2D_OP_F2D(+);  // Field2D + Field2D
+//F2D_OP_F2D(-);  // Field2D - Field2D
+//F2D_OP_F2D(*);  // Field2D * Field2D
+//F2D_OP_F2D(/);  // Field2D / Field2D
 
 #define F2D_OP_F3D(op)                                     \
   const Field3D operator op(const Field2D &lhs, const Field3D &rhs) { \
@@ -546,10 +546,10 @@ F2D_OP_F2D(/);  // Field2D / Field2D
     return result;                                                  \
   }
 
-F2D_OP_F3D(+);  // Field2D + Field3D
-F2D_OP_F3D(-);  // Field2D - Field3D
-F2D_OP_F3D(*);  // Field2D * Field3D
-F2D_OP_F3D(/);  // Field2D / Field3D
+//F2D_OP_F3D(+);  // Field2D + Field3D
+//F2D_OP_F3D(-);  // Field2D - Field3D
+//F2D_OP_F3D(*);  // Field2D * Field3D
+//F2D_OP_F3D(/);  // Field2D / Field3D
 
 #define F2D_OP_REAL(op)                                     \
   const Field2D operator op(const Field2D &lhs, BoutReal rhs) {     \
