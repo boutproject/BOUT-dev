@@ -323,12 +323,14 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
   ;; IF strikepoint is down THEN start one point back
   ;; ELSE IF strikpoint is up THEN go one point farther
   ;; ELSE default
-
+  yup_dist *= 0.5
+  ydown_dist *= 0.5
   ind = poloidal_grid(interp_data, R, Z, ri, zi, npar, fpsi=fpsi, $
                       ydown_dist=ydown_dist, yup_dist=yup_dist, $
                       ydown_space=ydown_space, yup_space=yup_space, $
                       parweight=parweight)
-  ind[0] -= 0.5
+
+  ;ind[0] -= 0.5
   rii = INTERPOLATE(ri, ind)
   zii = INTERPOLATE(zi, ind)
 
@@ -391,6 +393,7 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
 ;     follow_gradient_nonorth, interp_data, R, Z, rii[i], zii[i], f0, ri1, zi1, vec=vec_in, weight=weight
 ;     rii[i] = ri1
 ;     zii[i] = zi1
+;stop
 
     IF sind GE 0 THEN BEGIN
       rixy[nin, i] = rii[i]
@@ -405,6 +408,7 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
       zixy[nin, i] = zinext
     ENDELSE
     FOR j=0, nout-1 DO BEGIN
+      ;print,j,nout-1,nin+j+1
       ftarg = fvals[nin+j+1]
 
       IF (fvals[nin+j] LT sep) AND (ftarg GE sep) THEN BEGIN
@@ -433,7 +437,6 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
                           ftarg, rinext, zinext, status=status, $
                           boundary=boundary, fbndry=fbndry, vec=vec, weight=weight
       ENDELSE
-
       IF status EQ 1 THEN BEGIN
         rixy[nin+j+1, i] = -1.0
         IF nin+j LT slast THEN slast = nin+j ; last good surface index
@@ -453,6 +456,7 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
       ENDELSE
     ENDFOR
     FOR j=0, nin-1 DO BEGIN
+      ;print,j,nin-1,nin-j-1
       ftarg = fvals[nin-j-1]
 
       IF ftarg GT sep THEN BEGIN
@@ -466,6 +470,7 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
         boundary=boundary, fbndry=fbndry, $
         vec=vec, weight=weight
 
+        ;print,nin-1-j,i, status
       IF status EQ 1 THEN BEGIN
         rixy[nin-j-1, i] = -1.0
         IF nin-j GT sfirst THEN sfirst = nin-j
@@ -484,7 +489,15 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
       ENDIF
    ENDFOR
 ENDFOR
-
+; if starting lines aren't in order of flux, then sort them
+ff0 = interpolate(interp_data.f,rixy[*,0],zixy[*,0])
+ff1 = interpolate(interp_data.f,rixy[*,npar-1],zixy[*,npar-1])
+rixy[*,0] = rixy[sort(ff0),0]
+zixy[*,0] = zixy[sort(ff0),0]
+rixy[*,npar-1] = rixy[sort(ff1),npar-1]
+rixy[*,npar-1] = rixy[sort(ff1),npar-1]
+;print,"just found the start and end lines - in rixy and zixy"
+;stop
    ;  need to evenly space points along each flux surface
    FOR j=-1, nin-1 DO BEGIN
       start_point = [rixy[nin-j-1,0],zixy[nin-j-1,0]]
@@ -499,6 +512,8 @@ ENDFOR
 
      rixy[nin-j-1,*] = INTERPOLATE(ri, ind)
      zixy[nin-j-1,*] = INTERPOLATE(zi, ind)
+     ;print,"just filled in a field line in nin region - in rixy[i,*] and zixy[i,*] where i=",nin-j-1
+     ;stop
    ENDFOR
    FOR j=0, nout-1 DO BEGIN
      start_point = [rixy[nin+j+1,0],zixy[nin+j+1,0]]
@@ -511,6 +526,8 @@ ENDFOR
 
      rixy[nin+j+1,*] = INTERPOLATE(ri, ind)
      zixy[nin+j+1,*] = INTERPOLATE(zi, ind)
+     ;print,"just filled in a field line in nin region - in rixy[i,*] and zixy[i,*] where i=",nin+j+1
+     ;stop
    ENDFOR
 
     dr = rixy[nin-1,i] - rixy[nin-2,i]
@@ -533,7 +550,7 @@ ENDFOR
     dz1 = z1[1] - z1[0]
     dz2 = z2[1] - z2[0]
     costheta = ABS( dr1*dr2 + dz1*dz2 ) / ( SQRT(dr1^2 + dz1^2)*SQRT(dr2^2 + dz2^2) )
-
+    print,"costheta: ",costheta
     ncross = 0
     IF costheta LT 0.7 THEN BEGIN ; Angle greater than 45 degrees
        ; Find intersection of the two lines
@@ -2020,6 +2037,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       PRINT, "Gridding regions "+STR(3*i)+" to " +STR(3*i+2)
       ; Grid the lower PF region
       PRINT, "   x-point index ", xpt
+
       a = grid_region_nonorth(interp_data, R, Z, $
                       (*pf_info[xpt]).ri0, (*pf_info[xpt]).zi0, $
                       faxis + fnorm*pf_psi_vals[xpt,0,*], $

@@ -11,11 +11,11 @@ pro follow_fieldline, interp_data, start_point, end_point, ri_out=ri, zi_out=zi
   fcut = interp_data.f
   fcut[0:1,*] = 0.0
   contour_lines, fcut, findgen(interp_data.nx), findgen(interp_data.ny), levels=fval, path_info=info, path_xy=xy
-  ; weird behaviour of info, so take out important values
+
+  ; take out important values from info
   NN = n_elements(xy[0,*])
   offsets = (info.offset)
   n_elem = TOTAL(info.N,/cumulative)
-  print,offsets
   ; ri = REFORM(xy[0,offset:(offset+NN-1)])
   ; zi = REFORM(xy[1,offset:(offset+NN-1)])
 
@@ -61,6 +61,10 @@ pro follow_fieldline, interp_data, start_point, end_point, ri_out=ri, zi_out=zi
       start_ind = NN - 1 - start_ind
       end_ind = NN - 1 - end_ind
     endif
+
+    ; case where one point in the original array is closest to both the starting and end point - move the start point
+    if(start_ind EQ end_ind) then end_ind -= 1
+
     ; now that it's clockwise, makesure end_ind > start_ind, otherwise shift
     if(end_ind LT start_ind) then BEGIN
       xy = shift(xy,[0,-end_ind-1])
