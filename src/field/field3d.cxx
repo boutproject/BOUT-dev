@@ -837,15 +837,15 @@ F3D_OP_FPERP(*);
     return result;                                                  \
   }
 
-F3D_OP_FIELD(+, Field3D);   // Field3D + Field3D
-F3D_OP_FIELD(-, Field3D);   // Field3D - Field3D
-F3D_OP_FIELD(*, Field3D);   // Field3D * Field3D
-F3D_OP_FIELD(/, Field3D);   // Field3D / Field3D
+//F3D_OP_FIELD(+, Field3D);   // Field3D + Field3D
+//F3D_OP_FIELD(-, Field3D);   // Field3D - Field3D
+//F3D_OP_FIELD(*, Field3D);   // Field3D * Field3D
+//F3D_OP_FIELD(/, Field3D);   // Field3D / Field3D
 
-F3D_OP_FIELD(+, Field2D);   // Field3D + Field2D
-F3D_OP_FIELD(-, Field2D);   // Field3D - Field2D
-F3D_OP_FIELD(*, Field2D);   // Field3D * Field2D
-F3D_OP_FIELD(/, Field2D);   // Field3D / Field2D
+//F3D_OP_FIELD(+, Field2D);   // Field3D + Field2D
+//F3D_OP_FIELD(-, Field2D);   // Field3D - Field2D
+//F3D_OP_FIELD(*, Field2D);   // Field3D * Field2D
+//F3D_OP_FIELD(/, Field2D);   // Field3D / Field2D
 
 #define F3D_OP_REAL(op)                                         \
   const Field3D operator op(const Field3D &lhs, BoutReal rhs) { \
