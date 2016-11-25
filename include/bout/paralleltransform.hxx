@@ -15,6 +15,14 @@ class Mesh;
 
 #include <vector>
 
+/*!
+ * Calculates the values of a field along the magnetic
+ * field (y direction)
+ *
+ * This is used inside Mesh to represent a variety of possible
+ * numerical schemes, including Shifted Metric and FCI
+ *
+ */
 class ParallelTransform {
 public:
   /// Given a 3D field, calculate and set the Y up down fields

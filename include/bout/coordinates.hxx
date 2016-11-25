@@ -39,6 +39,11 @@ class Coordinates;
 #include "datafile.hxx"
 #include <bout_types.hxx>
 
+/*!
+ * Represents a coordinate system, and associated operators
+ *
+ * This is a container for a collection of metric tensor components
+ */ 
 class Coordinates {
 public:
   /// Constructor
