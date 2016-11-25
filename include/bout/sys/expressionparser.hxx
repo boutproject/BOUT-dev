@@ -40,9 +40,11 @@ class ParseException;
 #include <exception>
 
 //////////////////////////////////////////////////////////
-// Generates a value at a given (x,y,z) location,
-// perhaps using other generators passed to clone()
 
+/*!
+ * Represents an operation which generates a value at a given (x,y,z) location,
+ * perhaps using other generators passed to clone()
+ */
 class FieldGenerator {
 public:
   virtual ~FieldGenerator() { }
@@ -51,6 +53,13 @@ public:
   virtual const std::string str() {return std::string("?");}
 };
 
+/*!
+ * Parses expressions, turning strings into FieldGenerator
+ * objects which can be used to perform calculations.
+ *
+ * This class is not intended to be used directly, but should be inherited
+ * to add additional functionality
+ */
 class ExpressionParser {
 public:
   ExpressionParser();
