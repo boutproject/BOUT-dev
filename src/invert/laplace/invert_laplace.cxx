@@ -175,18 +175,16 @@ const Field2D Laplacian::solve(const Field2D &b) {
   return DC(f);
 }
 
+/*!
+ * Performs the laplacian inversion y-slice by y-slice
+ *
+ * \param[in] b     All the y-slices of b_slice, which is the right hand side
+ *                  of the equation A*x_slice = b_slice
+ * \param[in] x0    All the y-slices of the variable eventually used to set BC
+ *
+ * \returns x All the y-slices of x_slice in the equation A*x_slice = b_slice
+ */
 const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
-  /* Function: Laplacian::solve
-   * Purpose:  Performs the laplacian inversion y-slice by y-slice
-   *
-   * Input:
-   * b        - All the y-slices of b_slice, which is the right hand side of
-   *            the equation A*x_slice = b_slice
-   * x0       - All the y-slices of the variable eventually used to set BC
-   *
-   * Output:
-   * x        - All the y-slices of x_slice in the equation A*x_slice = b_slice
-   */
   Timer timer("invert");
 #ifdef CHECK
   msg_stack.push("Laplacian::solve(Field3D, Field3D)");
@@ -239,11 +237,11 @@ void Laplacian::tridagCoefs(int jx, int jy, int jz,
                             const Field2D *ccoef, const Field2D *d) {
 
   Coordinates *coord = mesh->coordinates();
-  
+
   BoutReal kwave=jz*2.0*PI/coord->zlength(); // wave number is 1/[rad]
-  
-  tridagCoefs(jx, jy, kwave, 
-              a, b, c, 
+
+  tridagCoefs(jx, jy, kwave,
+              a, b, c,
               ccoef, d);
 }
 
@@ -279,7 +277,7 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
   BoutReal coef1, coef2, coef3, coef4, coef5;
 
   Coordinates *coord = mesh->coordinates();
-  
+
   coef1=coord->g11(jx,jy);     ///< X 2nd derivative coefficient
   coef2=coord->g33(jx,jy);     ///< Z 2nd derivative coefficient
   coef3=2.*coord->g13(jx,jy);  ///< X-Z mixed derivative coefficient
@@ -320,7 +318,7 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
     // Mixed derivative
     coef3 = 0.0; // This cancels out
   }
-  
+
   coef1 /= SQ(coord->dx(jx,jy));
   coef3 /= 2.*coord->dx(jx,jy);
   coef4 /= 2.*coord->dx(jx,jy);
@@ -344,7 +342,7 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
   #pragma omp parallel for
   for(int kz = 0; kz <= maxmode; kz++) {
     BoutReal kwave=kz*2.0*PI/coord->zlength(); // wave number is 1/[rad]
-    
+
     tridagMatrix(avec[kz], bvec[kz], cvec[kz],
                  bk[kz],
                  jy,
@@ -354,44 +352,48 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
   }
 }
 
+/*!
+ * Set the matrix components of A in Ax=b
+ *
+ * This function will
+ *      1. Calling tridagCoef, solving
+ *
+ *         D*Laplace_perp(x) + (1/C)Grad_perp(C)*Grad_perp(x) + Ax = B
+ *
+ *         for each fourier component
+ *      2. Set the boundary conditions by setting the first and last rows
+ *         properly
+ *
+ * \param[in] avec      Lower diagonal of the tridiagonal matrix.
+ *                      DO NOT CONFUSE WITH "A"
+ * \param[in] bvec      The main diagonal
+ * \param[in] cvec      The upper diagonal.
+ *                      DO NOT CONFUSE WITH "C" (called ccoef here)
+ * \param[in] bk        The b in Ax = b
+ * \param[in] jy        Index of the current y-slice
+ * \param[in] kz        The mode number index
+ * \param[in] kwave     The mode number (different from kz only if we are
+ *                      taking a part of the z-domain [and not from 0 to 2*pi])
+ * \param[in] global_flags          Global flags of the inversion
+ * \param[in] inner_boundary_flags  Flags used to set the inner boundary
+ * \param[in] outer_boundary_flags  Flags used to set the outer boundary
+ * \param[in] a         A in the equation above. DO NOT CONFUSE WITH avec
+ * \param[in] ccoef     C in the equation above. DO NOT CONFUSE WITH cvec
+ * \param[in] d         D in the equation above
+ * \param[in] includeguards Whether or not the guard points in x should be used
+ *
+ * \param[out] avec     Lower diagonal of the tridiagonal matrix.
+ *                      DO NOT CONFUSE WITH "A"
+ * \param[out] bvec     The main diagonal
+ * \param[out] cvec     The upper diagonal.
+ *                      DO NOT CONFUSE WITH "C" (called ccoef here)
+ */
 void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
                              dcomplex *bk, int jy, int kz, BoutReal kwave,
                              int global_flags, int inner_boundary_flags, int outer_boundary_flags,
                              const Field2D *a, const Field2D *ccoef,
                              const Field2D *d,
                              bool includeguards) {
-  /* Function: Laplacian::tridagMatrix
-   * Purpose:  - Set the matrix components of A in Ax=b by calling tridagCoef,
-   *             solving
-   *
-   *             D*Laplace_perp(x) + (1/C)Grad_perp(C)*Grad_perp(x) + Ax = B
-   *
-   *             for each fourier component
-   *           - Set the boundary conditions by setting the first and last rows
-   *             properly
-   *
-   * Input:
-   * avec      - Lower diagonal of the tridiagonal matrix. DO NOT CONFUSE WITH A
-   * bvec      - The main diagonal
-   * cvec      - The upper diagonal. DO NOT CONFUSE WITH C (called ccoef here)
-   * bk        - The b in Ax = b
-   * jy        - Index of the current y-slice
-   * kz        - The mode number index
-   * kwave     - The mode number (different from kz only if we are taking a part
-   *             of the z-domain [and not from 0 to 2*pi])
-   * global_flags          - Global flags of the inversion
-   * inner_boundary_flags  - Flags used to set the inner boundary
-   * outer_boundary_flags  - Flags used to set the outer boundary
-   * a         - A in the equation above. DO NOT CONFUSE WITH avec
-   * ccoef     - C in the equation above. DO NOT CONFUSE WITH cvec
-   * d         - D in the equation above
-   * includeguards - Whether or not the guard points in x should be used
-   *
-   * Output:
-   * avec      - Lower diagonal of the tridiagonal matrix. DO NOT CONFUSE WITH A
-   * bvec      - The main diagonal
-   * cvec      - The upper diagonal. DO NOT CONFUSE WITH C (called ccoef here)
-   */
   int xs = 0;            // xstart set to the start of x on this processor (including ghost points)
   int xe = mesh->LocalNx-1;  // xend set to the end of x on this processor (including ghost points)
 
