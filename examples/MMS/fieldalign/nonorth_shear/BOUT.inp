@@ -14,8 +14,8 @@ ny = 32
 nz = 32
 
 dx = 1. / (nx-2.*MXG)
-dy = 2*pi / ny
-dz = 2*pi / nz
+dy = 2.*pi / ny
+dz = 2.*pi / nz
 
 g11 = 1.
 g22 = G^2 + eta^2
@@ -28,14 +28,14 @@ vx = G + eta + G*I + HH*eta
 vy = 1. + HH
 vz = G
 
-zShift = 0.1*y
-nu = 0.1
-shiftangle = 2.*pi/10.
-I = 0
-HH = 0.1
+zShift = 0.1*x*(0.2*x + y)
+nu = 0.1*x
+shiftangle = 2.*pi/10.*x
+I = 0.02*x + 0.1*y
+HH = 0.1*x
 
-eta = 0
-yShift = 0
+eta = 0.2
+yShift = 0.2*x
 G = 1
 
 [solver]
@@ -47,6 +47,6 @@ mms = true
 scale = 0.0
 function = 0  # Initial condition
 
-solution = cos(-t + x + 1.1*y + z)^2
-source = 8.0*sin(-t + x + 1.1*y + z)*cos(-t + x + 1.1*y + z)
+solution = cos(-t + 0.1*x*(0.2*x + y) + 1.2*x + y + z)^2
+source = 8*sin(-t + 0.1*x*(0.2*x + y) + 1.2*x + y + z)*cos(-t + 0.1*x*(0.2*x + y) + 1.2*x + y + z)
 bndry_all = dirichlet_o2(f:solution)
