@@ -104,21 +104,9 @@ Coordinates::Coordinates(Mesh *mesh) : ilen(0) {
       mesh->get(g_12, "g_12");
       mesh->get(g_13, "g_13");
       mesh->get(g_23, "g_23");
-      // Check if the contravariant is also given
-      if (mesh->sourceHasVar("g11") and
-          mesh->sourceHasVar("g22") and
-          mesh->sourceHasVar("g33") and
-          mesh->sourceHasVar("g12") and
-          mesh->sourceHasVar("g13") and
-          mesh->sourceHasVar("g23")
-         ) {
-            throw BoutException("Both co and contravariant part of metric"
-                                " tensor specified manually. Exception thrown"
-                                " as gij*g^ij=I cannot be guaranteed.");
-      } else {
-        output.write("\tCovariant metric tensor given, calculating contravariant metric tensor from covariant\n");
-        calcContravariant();
-      }
+
+      output.write("\tWARNING! Covariant components of metric tensor set manually. Contravariant components NOT recalculated\n");
+
     } else {
       output.write("Not all covariant components of metric tensor found. Calculating all from the contravariant tensor\n");
       /// Calculate contravariant metric components if not found
