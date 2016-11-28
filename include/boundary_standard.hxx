@@ -110,12 +110,12 @@ class BoundaryDirichlet_4thOrder : public BoundaryOp {
   BoutReal val;
 };
 
-/// Neumann (zero-gradient) boundary condition
-class BoundaryNeumann : public BoundaryOp {
+/// Neumann (zero-gradient) boundary condition for non-orthogonal meshes
+class BoundaryNeumann_NonOrthogonal : public BoundaryOp {
  public:
-  BoundaryNeumann(): val(0.) {}
-  BoundaryNeumann(const BoutReal setval): val(setval) {}
-  BoundaryNeumann(BoundaryRegion *region, BoutReal setval=0.):BoundaryOp(region),val(setval) { }
+  BoundaryNeumann_NonOrthogonal(): val(0.) {}
+  BoundaryNeumann_NonOrthogonal(const BoutReal setval): val(setval) {}
+  BoundaryNeumann_NonOrthogonal(BoundaryRegion *region, BoutReal setval=0.):BoundaryOp(region),val(setval) { }
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
   void apply(Field2D &f);
   void apply(Field3D &f);
@@ -149,11 +149,11 @@ class BoundaryNeumann_2ndOrder : public BoundaryOp {
   BoutReal val;
 };
 
-//JMAD
-class BndNeumann_O2 : public BoundaryOp {
+// Neumann boundary condition set half way between guard cell and grid cell at 2nd order accuracy
+class BoundaryNeumann : public BoundaryOp {
  public:
-  BndNeumann_O2() : bndfunc(NULL), gen(NULL) {}
-  BndNeumann_O2(BoundaryRegion *region, FieldGenerator*g):BoundaryOp(region), bndfunc(NULL), gen(g) {}
+  BoundaryNeumann() : bndfunc(NULL), gen(NULL) {}
+  BoundaryNeumann(BoundaryRegion *region, FieldGenerator*g):BoundaryOp(region), bndfunc(NULL), gen(g) {}
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
   void apply(Field2D &f);
   void apply(Field2D &f, BoutReal t);
