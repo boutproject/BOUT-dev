@@ -8,22 +8,6 @@
 #include <field_factory.hxx>
 #include "unused.hxx"
 
-/// Dirichlet (set to zero) boundary condition
-class BoundaryDirichlet : public BoundaryOp {
- public:
-  BoundaryDirichlet() : val(0.) {}
-  BoundaryDirichlet(const BoutReal setval): val(setval) {}
-  BoundaryDirichlet(BoundaryRegion *region, BoutReal setval=0.):BoundaryOp(region),val(setval) { }
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
-  void apply(Field2D &f);
-  void apply(Field3D &f);
-  
-  void apply_ddt(Field2D &f);
-  void apply_ddt(Field3D &f);
- private:
-  BoutReal val;
-};
-
 /// Dirichlet boundary condition set half way between guard cell and grid cell at 2nd order accuracy
 class BoundaryDirichlet_2ndOrder : public BoundaryOp {
  public:
@@ -39,12 +23,12 @@ class BoundaryDirichlet_2ndOrder : public BoundaryOp {
  private:
   BoutReal val;
 };
-//JMAD
 
-class BndDirichlet_O2 : public BoundaryOp {
+/// Dirichlet (set to zero) boundary condition
+class BoundaryDirichlet : public BoundaryOp {
  public:
-  BndDirichlet_O2();
-  BndDirichlet_O2(BoundaryRegion *region, FieldGenerator *g);
+  BoundaryDirichlet() : gen(nullptr) {}
+  BoundaryDirichlet(BoundaryRegion *region, FieldGenerator *g) : BoundaryOp(region), gen(g) {}
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
   void apply(Field2D &f);
   void apply(Field2D &f,BoutReal t);
@@ -58,13 +42,12 @@ class BndDirichlet_O2 : public BoundaryOp {
 };
 
 BoutReal default_func(BoutReal t, int x, int y, int z);
-// END JMAD
 
 /// 3nd-order boundary condition
-class BndDirichlet_O3 : public BoundaryOp {
+class BoundaryDirichlet_O3 : public BoundaryOp {
  public:
-  BndDirichlet_O3() : gen(NULL) {}
-  BndDirichlet_O3(BoundaryRegion *region, FieldGenerator *g) : BoundaryOp(region), gen(g) {}
+  BoundaryDirichlet_O3() : gen(NULL) {}
+  BoundaryDirichlet_O3(BoundaryRegion *region, FieldGenerator *g) : BoundaryOp(region), gen(g) {}
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
   void apply(Field2D &f);
   void apply(Field2D &f,BoutReal t);
@@ -78,10 +61,10 @@ class BndDirichlet_O3 : public BoundaryOp {
 };
 
 /// 4th-order boundary condition
-class BndDirichlet_O4 : public BoundaryOp {
+class BoundaryDirichlet_O4 : public BoundaryOp {
  public:
-  BndDirichlet_O4() : gen(NULL) {}
-  BndDirichlet_O4(BoundaryRegion *region, FieldGenerator *g) : BoundaryOp(region), gen(g) {}
+  BoundaryDirichlet_O4() : gen(NULL) {}
+  BoundaryDirichlet_O4(BoundaryRegion *region, FieldGenerator *g) : BoundaryOp(region), gen(g) {}
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
   void apply(Field2D &f);
   void apply(Field2D &f,BoutReal t);
@@ -184,10 +167,10 @@ class BoundaryNeumann_4thOrder : public BoundaryOp {
 };
 
 /// Neumann boundary condition set half way between guard cell and grid cell at 4th order accuracy
-class BndNeumann_O4 : public BoundaryOp {
+class BoundaryNeumann_O4 : public BoundaryOp {
  public:
-  BndNeumann_O4() : bndfunc(NULL), gen(NULL) {}
-  BndNeumann_O4(BoundaryRegion *region, FieldGenerator*g):BoundaryOp(region), bndfunc(NULL), gen(g) {}
+  BoundaryNeumann_O4() : bndfunc(NULL), gen(NULL) {}
+  BoundaryNeumann_O4(BoundaryRegion *region, FieldGenerator*g):BoundaryOp(region), bndfunc(NULL), gen(g) {}
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
   void apply(Field2D &f);
   void apply(Field2D &f, BoutReal t);

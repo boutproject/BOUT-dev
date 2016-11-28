@@ -14,19 +14,19 @@ BoundaryFactory* BoundaryFactory::instance = NULL;
 
 BoundaryFactory::BoundaryFactory() {
   add(new BoundaryDirichlet(), "dirichlet");
-  add(new BoundaryDirichlet_2ndOrder(), "dirichlet_2ndorder");
-  add(new BndDirichlet_O2(), "dirichlet_o2");
-  add(new BndDirichlet_O3(), "dirichlet_o3");
-  add(new BndDirichlet_O4(), "dirichlet_o4");
+  add(new BoundaryDirichlet(), "dirichlet_o2"); // Synonym for "dirichlet"
+  add(new BoundaryDirichlet_2ndOrder(), "dirichlet_2ndorder"); // Deprecated
+  add(new BoundaryDirichlet_O3(), "dirichlet_o3");
+  add(new BoundaryDirichlet_O4(), "dirichlet_o4");
   add(new BoundaryDirichlet_4thOrder(), "dirichlet_4thorder");
-  add(new BoundaryNeumann_NonOrthogonal(), "neumann_nonorthogonal");
-  add(new BoundaryNeumann2(), "neumann2"); // Deprecated
-  add(new BoundaryNeumannPar(), "neumannpar");
-  add(new BoundaryNeumann_2ndOrder(), "neumann_2ndorder"); // Deprecated
   add(new BoundaryNeumann(), "neumann");
-  add(new BoundaryNeumann(), "neumann_O2"); // Just a synonym for neumann
+  add(new BoundaryNeumann(), "neumann_O2"); // Synonym for "neumann"
+  add(new BoundaryNeumann2(), "neumann2"); // Deprecated
+  add(new BoundaryNeumann_2ndOrder(), "neumann_2ndorder"); // Deprecated
   add(new BoundaryNeumann_4thOrder(), "neumann_4thorder");
-  add(new BndNeumann_O4(), "neumann_O4");
+  add(new BoundaryNeumann_O4(), "neumann_O4");
+  add(new BoundaryNeumannPar(), "neumannpar");
+  add(new BoundaryNeumann_NonOrthogonal(), "neumann_nonorthogonal");
   add(new BoundaryRobin(), "robin");
   add(new BoundaryConstGradient(), "constgradient");
   add(new BoundaryZeroLaplace(), "zerolaplace");
