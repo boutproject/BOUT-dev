@@ -1448,7 +1448,7 @@ const Field3D Mesh::indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
     func_in = lookupInnerBoundaryFunc(table, method);
     func_out = lookupOuterBoundaryFunc(table, method);
     if(func == NULL)
-      bout_error("Cannot use FFT for X derivatives");
+      throw BoutException("Cannot use FFT for X derivatives");
   }
   
   result = applyXdiff(f, func, func_in, func_out, diffloc);
@@ -1522,7 +1522,7 @@ const Field3D Mesh::indexDDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
     func_in = lookupInnerBoundaryFunc(table, method);
     func_out = lookupOuterBoundaryFunc(table, method);
     if(func == NULL)
-      bout_error("Cannot use FFT for Y derivatives");
+      throw BoutException("Cannot use FFT for Y derivatives");
   }
   
   result = applyYdiff(f, func, func_in, func_out, diffloc);
@@ -1772,7 +1772,7 @@ const Field3D Mesh::indexD2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
     func_in = lookupInnerBoundaryFunc(table, method);
     func_out = lookupOuterBoundaryFunc(table, method);
     if(func == NULL)
-      bout_error("Cannot use FFT for X derivatives");
+      throw BoutException("Cannot use FFT for X derivatives");
   }
   
   result = applyXdiff(f, func, func_in, func_out);
@@ -1878,7 +1878,7 @@ const Field3D Mesh::indexD2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
     func_in = lookupInnerBoundaryFunc(table, method);
     func_out = lookupOuterBoundaryFunc(table, method);
     if(func == NULL)
-      bout_error("Cannot use FFT for Y derivatives");
+      throw BoutException("Cannot use FFT for Y derivatives");
   }
   
   result = applyYdiff(f, func, func_in, func_out);
