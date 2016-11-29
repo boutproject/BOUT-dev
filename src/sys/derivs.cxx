@@ -100,28 +100,6 @@ const Field2D DDY(const Field2D &f) {
   return mesh->coordinates()->DDY(f);
 }
 
-/*
-const Field3D DDY_MUSCL(const Field3D &F, const Field3D &u, const Field2D &Vmax) {
-  Field3D result;
-  result.allocate(); // Make sure data allocated
-  
-  bindex bx;
-  start_index(&bx, RGN_NOBNDRY);
-
-  stencil fs, us;
-  do {
-    for(bx.jz=0;bx.jz<mesh->LocalNz;bx.jz++) {
-      F.setYStencil(fs, bx);
-      u.setYStencil(us, bx);
-      
-      result(bx.jx,bx.jy,bx.jz) = DDX_KT(fs, us, Vmax(bx.jx,bx.jy)) / mesh->dy(bx.jx, bx.jy);
-    }
-  }while(next_index2(&bx));
-
-  return result;
-}
-*/
-
 ////////////// Z DERIVATIVE /////////////////
 
 const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool inc_xbndry) {
