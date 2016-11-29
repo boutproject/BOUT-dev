@@ -45,7 +45,7 @@ pro follow_fieldline, interp_data, start_point, end_point, ri_out=ri, zi_out=zi
     endfor
   endelse
 
-  if(closed) then begin
+  if(closed AND min(xy[0,*]) GT 3) then begin
     ; check for clockwise array - calculate delta theta between two adjacent points
     R0 = mean(xy[0,*])
     Z0 = mean(xy[1,*])
@@ -56,7 +56,8 @@ pro follow_fieldline, interp_data, start_point, end_point, ri_out=ri, zi_out=zi
     znext = xy[1,1] - Z0
     theta_next = atan(znext,rnext)
     ; reverse array if it's counter-clockwise
-    if(theta_next - theta_start GT 0.0) then begin
+    if(theta_next - theta_start GT 0.0 AND min(xy[0,*]) GT 3) then begin
+      print,"reverseing indices"
       xy = reverse(xy,2)
       start_ind = NN - 1 - start_ind
       end_ind = NN - 1 - end_ind
@@ -71,7 +72,23 @@ pro follow_fieldline, interp_data, start_point, end_point, ri_out=ri, zi_out=zi
       start_ind -= end_ind + 1
       end_ind = NN-1
     endif
-  endif
+  endif else begin
+    ; not a closed contour - need to make sure points still go in the correct direction (towards the axis)
+    R0 = mean(xy[0,*])
+    Z0 = mean(xy[1,*])
+    rstart = xy[0,0]
+    zstart = xy[1,0]
+    start_dist = sqrt((R0-rstart)^2 + (Z0-zstart)^2)
+    rnext = xy[0,1] - R0
+    znext = xy[1,1] - Z0
+    next_dist = sqrt((R0-rnext)^2 + (Z0-znext)^2)
+    ; reverse array if it's counter-clockwise
+    if(next_dist - start_dist GT 0.0) then begin
+      xy = reverse(xy,2)
+      start_ind = NN - 1 - start_ind
+      end_ind = NN - 1 - end_ind
+    endif
+  endelse
 
   ; plot,xy[0,*],xy[1,*],psym=4,/iso
   ; oplot,xy[0,start_ind],xy[1,start_ind],psym=2
