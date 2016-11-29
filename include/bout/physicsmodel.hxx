@@ -55,6 +55,11 @@ public:
   
   ~PhysicsModel();
   
+  /*!
+   * Initialse the model, calling the init() method
+   *
+   * Note: this is usually only called by the Solver
+   */
   int initialise(Solver *s, bool restarting) {
     if(initialised)
       return 0; // Ignore second initialisation
@@ -64,16 +69,65 @@ public:
     return init(restarting); // Call user code
   }
   
+  /*!
+   * Run the RHS function, to calculate the time derivatives
+   *
+   * Input
+   * -----
+   *
+   * @param[in] time  The simulation time
+   *
+   * The system state should be in the evolving variables
+   *
+   * Output
+   * ------
+   * 
+   * The time derivatives will be put in the ddt() variables
+   * 
+   * Returns a flag: 0 indicates success, non-zero an error flag
+   */
   int runRHS(BoutReal time);
   
+  /*!
+   * True if this model uses split operators
+   */ 
   bool splitOperator();
+  
+  /*!
+   * Run the convective (usually explicit) part of the model
+   */
   int runConvective(BoutReal time);
+  
+  /*!
+   * Run the diffusive (usually implicit) part of the model
+   */
   int runDiffusive(BoutReal time, bool linear);
   
+  /*!
+   * True if a preconditioner has been defined
+   */ 
   bool hasPrecon();
+  
+  /*!
+   * Run the preconditioner. The system state should be in the 
+   * evolving variables, and the vector to be solved in the ddt() variables.
+   * The result will be put in the ddt() variables.
+   *
+   * Note: this is usually only called by the Solver
+   *
+   */
   int runPrecon(BoutReal t, BoutReal gamma, BoutReal delta);
   
+  /*!
+   * True if a Jacobian function has been defined
+   */
   bool hasJacobian();
+  
+  /*!
+   * Run the Jacobian-vector multiplication function
+   * 
+   * Note: this is usually only called by the Solver
+   */ 
   int runJacobian(BoutReal t);
 
   int runOutputMonitor(BoutReal simtime, int iter, int NOUT) {return outputMonitor(simtime, iter, NOUT);}
@@ -120,7 +174,7 @@ protected:
   
   /*!
    * Implemented by user code to monitor solution at output times
-  */
+   */
   virtual int outputMonitor(BoutReal UNUSED(simtime), int UNUSED(iter), int UNUSED(NOUT)) {return 0;}
   
   /*!

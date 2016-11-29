@@ -40,15 +40,29 @@ public:
 
 /*!
  * This class implements the simplest form of ParallelTransform
+ * where the domain is a logically rectangular domain, and 
+ * yup() and ydown() refer to the same field.
  */
 class ParallelTransformIdentity : public ParallelTransform {
 public:
+  /*!
+   * Merges the yup and ydown() fields of f, so that
+   * f.yup() = f.ydown() = f
+   */ 
   void calcYUpDown(Field3D &f) {f.mergeYupYdown();}
   
+  /*!
+   * The field is already aligned in Y, so this
+   * does nothing
+   */ 
   const Field3D toFieldAligned(const Field3D &f) {
     return f;
   }
   
+  /*!
+   * The field is already aligned in Y, so this
+   * does nothing
+   */
   const Field3D fromFieldAligned(const Field3D &f) {
     return f;
   }
@@ -56,15 +70,36 @@ public:
 
 /*!
  * Shifted metric method
+ * Each Y location is shifted in Z with respect to its neighbours
+ * so that the grid is orthogonal in X-Z, but requires interpolation
+ * to calculate the values of points along field-lines.
+ *
+ * In this implementation the interpolation is done using FFTs in Z
  */
 class ShiftedMetric : public ParallelTransform {
 public:
   ShiftedMetric(Mesh &mesh);
   
+  /*!
+   * Calculates the yup() and ydown() fields of f
+   * by taking FFTs in Z and applying a phase shift.
+   */ 
   void calcYUpDown(Field3D &f);
   
+  /*!
+   * Uses FFTs and a phase shift to align the grid points
+   * with the y coordinate (along magnetic field usually). 
+   * 
+   * Note that the returned field will no longer be orthogonal
+   * in X-Z, and the metric tensor will need to be changed 
+   * if X derivatives are used.
+   */
   const Field3D toFieldAligned(const Field3D &f);
 
+  /*!
+   * Converts a field back to X-Z orthogonal coordinates
+   * from field aligned coordinates.
+   */
   const Field3D fromFieldAligned(const Field3D &f);
 
   typedef std::vector<std::vector<std::vector<dcomplex>>> arr3Dvec;

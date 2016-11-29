@@ -73,8 +73,7 @@ void Vector3D::toCovariant() {
     covariant = true;
   }
 }
-void Vector3D::toContravariant()
-{  
+void Vector3D::toContravariant() {  
   if(covariant) {
     // multiply by g^{ij}
     
@@ -94,8 +93,7 @@ void Vector3D::toContravariant()
   }
 }
 
-Vector3D* Vector3D::timeDeriv()
-{
+Vector3D* Vector3D::timeDeriv() {
   if(deriv == NULL) {
     deriv = new Vector3D();
     
@@ -129,8 +127,7 @@ Vector3D* Vector3D::timeDeriv()
 
 /////////////////// ASSIGNMENT ////////////////////
 
-Vector3D & Vector3D::operator=(const Vector3D &rhs)
-{
+Vector3D & Vector3D::operator=(const Vector3D &rhs) {
   x = rhs.x;
   y = rhs.y;
   z = rhs.z;
@@ -140,8 +137,7 @@ Vector3D & Vector3D::operator=(const Vector3D &rhs)
   return *this;
 }
 
-Vector3D & Vector3D::operator=(const Vector2D &rhs)
-{
+Vector3D & Vector3D::operator=(const Vector2D &rhs) {
   x = rhs.x;
   y = rhs.y;
   z = rhs.z;
