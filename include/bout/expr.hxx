@@ -166,8 +166,7 @@ struct Power {
   }
 };
 
-// Define functions add, mul
-
+/// Define functions add, mul which use operator structs
 #define DEFINE_OVERLOAD_FUNC(name, func)                                   \
   template  <typename ExprT1, typename ExprT2>                             \
   typename BinaryResult<ExprT1,ExprT2,name>::type                          \
@@ -179,8 +178,7 @@ struct Power {
 DEFINE_OVERLOAD_FUNC(Add, add);
 DEFINE_OVERLOAD_FUNC(Multiply, mul);
 
-// A function to evaluate expressions
-
+/// A function to evaluate expressions
 template<typename Expr>
 const Field3D eval3D(Expr e) {
   Field3D result;

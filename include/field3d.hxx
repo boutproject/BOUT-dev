@@ -241,7 +241,7 @@ class Field3D : public Field, public FieldData {
     return *ydown_field;
   }
   
-  // Return const reference to ydown field
+  /// Return const reference to ydown field
   const Field3D& ydown() const { 
     ASSERT2(ydown_field != nullptr);
     return *ydown_field; 
@@ -252,8 +252,8 @@ class Field3D : public Field, public FieldData {
   const Field3D& ynext(int dir) const;
 
   // Staggered grids
-  void setLocation(CELL_LOC loc); // Set variable location
-  CELL_LOC getLocation() const; // Variable location
+  void setLocation(CELL_LOC loc); ///< Set variable location
+  CELL_LOC getLocation() const; ///< Variable location
   
   /////////////////////////////////////////////////////////
   // Data access
@@ -297,6 +297,11 @@ class Field3D : public Field, public FieldData {
    */
   const IndexRange region(REGION rgn) const;
 
+  /*!
+   * Direct data access using DataIterator object.
+   * This uses operator(x,y,z) so checks will only be
+   * performed if CHECK > 2.
+   */
   BoutReal& operator[](const DataIterator &d) {
     return operator()(d.x, d.y, d.z);
   }
@@ -478,7 +483,7 @@ private:
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;
 
-  CELL_LOC location; // Location of the variable in the cell
+  CELL_LOC location; ///< Location of the variable in the cell
   
   Field3D *deriv; ///< Time derivative (may be NULL)
 
@@ -514,31 +519,138 @@ const Field3D operator-(BoutReal lhs, const Field3D &rhs);
 const Field3D operator*(BoutReal lhs, const Field3D &rhs);
 const Field3D operator/(BoutReal lhs, const Field3D &rhs);
 
-// Unary operators
+/*!
+ * Unary minus. Returns the negative of given field,
+ * iterates over whole domain including guard/boundary cells.
+ */
 const Field3D operator-(const Field3D &f);
 
 // Non-member functions
+
+/*!
+ * Calculates the minimum of a field, excluding
+ * the boundary/guard cells. 
+ * By default this is only on the local processor,
+ * but setting allpe=true does a collective Allreduce
+ * over all processors.
+ *
+ * @param[in] f  The field to loop over
+ * @param[in] allpe  Minimum over all processors?
+ * 
+ */
 BoutReal min(const Field3D &f, bool allpe=false);
+
+/*!
+ * Calculates the maximum of a field, excluding
+ * the boundary/guard cells. 
+ * By default this is only on the local processor,
+ * but setting allpe=true does a collective Allreduce
+ * over all processors.
+ *
+ * @param[in] f  The field to loop over
+ * @param[in] allpe  Minimum over all processors?
+ * 
+ */
 BoutReal max(const Field3D &f, bool allpe=false);
 
+/*!
+ * Exponent: pow(a, b) is a raised to the power of b
+ *
+ * This loops over the entire domain, including guard/boundary cells
+ * If CHECK >= 3 then the result will be checked for non-finite numbers
+ */
 Field3D pow(const Field3D &lhs, const Field3D &rhs);
 Field3D pow(const Field3D &lhs, const Field2D &rhs);
 Field3D pow(const Field3D &lhs, const FieldPerp &rhs);
 Field3D pow(const Field3D &f, BoutReal rhs);
 Field3D pow(BoutReal lhs, const Field3D &rhs);
 
+/*!
+ * Square root
+ * 
+ * This loops over the entire domain, including guard/boundary cells
+ * If CHECK >= 3 then the result will be checked for non-finite numbers
+ */
 const Field3D sqrt(const Field3D &f);
+
+/*!
+ * Absolute value (modulus, |f|)
+ *
+ * This loops over the entire domain, including guard/boundary cells
+ * If CHECK >= 3 then the result will be checked for non-finite numbers
+ */
 const Field3D abs(const Field3D &f);
 
+/*!
+ * Exponential: exp(f) is e to the power of f
+ *
+ * This loops over the entire domain, including guard/boundary cells
+ * If CHECK >= 3 then the result will be checked for non-finite numbers
+ */
 const Field3D exp(const Field3D &f);
+
+/*!
+ * Natural logarithm, inverse of exponential
+ * 
+ *     log(exp(f)) = f
+ *
+ * This loops over the entire domain, including guard/boundary cells
+ * If CHECK >= 3 then the result will be checked for non-finite numbers
+ */
 const Field3D log(const Field3D &f);
 
+/*!
+ * Sine trigonometric function. 
+ *
+ * @param[in] f  Angle in radians
+ *
+ * This loops over the entire domain, including guard/boundary cells
+ * If CHECK >= 3 then the result will be checked for non-finite numbers
+ */
 const Field3D sin(const Field3D &f);
+
+/*!
+ * Cosine trigonometric function. 
+ *
+ * @param[in] f  Angle in radians
+ *
+ * This loops over the entire domain, including guard/boundary cells
+ * If CHECK >= 3 then the result will be checked for non-finite numbers
+ */
 const Field3D cos(const Field3D &f);
+
+/*!
+ * Tangent trigonometric function. 
+ *
+ * @param[in] f  Angle in radians
+ *
+ * This loops over the entire domain, including guard/boundary cells
+ * If CHECK >= 3 then the result will be checked for non-finite numbers
+ */
 const Field3D tan(const Field3D &f);
 
+/*!
+ * Hyperbolic sine function. 
+ *
+ * This loops over the entire domain, including guard/boundary cells
+ * If CHECK >= 3 then the result will be checked for non-finite numbers
+ */
 const Field3D sinh(const Field3D &f);
+
+/*!
+ * Hyperbolic cosine function. 
+ *
+ * This loops over the entire domain, including guard/boundary cells
+ * If CHECK >= 3 then the result will be checked for non-finite numbers
+ */
 const Field3D cosh(const Field3D &f);
+
+/*!
+ * Hyperbolic tangent function. 
+ *
+ * This loops over the entire domain, including guard/boundary cells
+ * If CHECK >= 3 then the result will be checked for non-finite numbers
+ */
 const Field3D tanh(const Field3D &f);
 
 /*!
