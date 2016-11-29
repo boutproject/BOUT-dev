@@ -29,12 +29,16 @@
 #    * Searching for libs in lib and lib64
 #
 
-BOUT_VERSION="2.0"
-
-AC_PREREQ(2.59)
-AC_INIT(BOUT++, BOUT_VERSION, bd512@york.ac.uk)
+AC_PREREQ(2.69)
+AC_INIT(BOUT++,
+    m4_esyscmd_s(echo $(git describe)),
+    [benjamin.dudson@york.ac.uk],
+    [],
+    [http://boutproject.github.io/])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
+
+BOUT_VERSION=$(git describe)
 
 AC_ARG_WITH(netcdf,       [AS_HELP_STRING([--with-netcdf],
         [Enable support for netCDF files])],,[])
