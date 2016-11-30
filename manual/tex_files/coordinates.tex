@@ -1236,6 +1236,38 @@ Note that in the limit of $\Bp = B$, both equations~\ref{eq:delp_shift} and
     &+ \L(\deriv{\phi}{\psi}\deriv{A}{z} - \deriv{\phi}{z}\deriv{A}{\psi}
     \R)\L(-B^2\R)
 \end{align*}
+
+\section{Useful identities}
+
+\subsection{$\mathbf{b}\times\mathbf{\kappa}\cdot\nabla\psi \simeq -RB_\zeta\partial_{||}\ln B$}
+
+Using $\mathbf{b}\times\mathbf{\kappa} \simeq \frac{B}{2}\nabla\times\frac{\mathbf{b}}{B}$, and working
+in orthogonal $\left(\psi, \theta, \zeta\right)$ coordinates. The magnetic field unit vector is:
+\[
+\mathbf{b} = \frac{B_\theta h_\theta}{B}\nabla\theta + \frac{B_\zeta R}{B}\nabla\zeta
+\]
+and using the definition of curl (equation~\ref{eq:curlcurvilinear}) we can write
+\begin{equation}
+\mathbf{b}\times\mathbf{\kappa} \simeq \frac{B}{2}\nabla\times\frac{\mathbf{b}}{B} = \frac{B}{2}\frac{B_\theta}{h_\theta}\left[\frac{\partial}{\partial\theta}\left(\frac{B_\zeta R}{B^2}\right) - \frac{\partial}{\partial\zeta}\left(\frac{B_\theta h_\theta}{B^2}\right)\right]\mathbf{e}_\psi + \left[\cdot\right]\mathbf{e}_\theta + \left[\cdot\right]\mathbf{e}_\zeta
+\end{equation}
+so that when dotted with $\nabla\psi$, only the first bracket survives.
+The parallel gradient is
+\[
+\partial_{||} = \mathbf{b}\cdot\nabla = \frac{B_\theta}{Bh_\theta}\frac{\partial}{\partial\theta} + \frac{B_\theta}{BR}\frac{\partial}{\partial\zeta}
+\]
+Neglecting derivatives for axisymmetric equilibrium
+\[
+\frac{B}{2}\nabla\times\frac{\mathbf{b}}{B}\cdot\nabla\psi = \frac{B}{2}B\partial_{||}\left(\frac{B_\zeta R}{B^2}\right)
+\]
+Since $B_\zeta R$ is a flux function, this can be written as
+\begin{equation}
+\frac{B}{2}\nabla\times\frac{\mathbf{b}}{B}\cdot\nabla\psi = -B_\zeta R\frac{1}{B}\partial_{||} B
+\end{equation}
+and so
+\begin{equation}
+\mathbf{b}\times\mathbf{\kappa}\cdot\nabla\psi \simeq -RB_\zeta\partial_{||}\ln B
+\end{equation}
+
 %
 \bibliography{references} \bibliographystyle{unsrt}
 
@@ -1370,11 +1402,11 @@ f}{\partial y} + \nabla^2z\frac{\partial f}{\partial z} \nonumber
 %
 Curl defined as:
 %
-\begin{align*}
+\begin{align}
 \nabla\times\mathbf{A} = \frac{1}{\sqrt{g}}\sum_k\L(\frac{\partial
 A_j}{\partial u_i} - \frac{\partial A_i}{\partial u_j}\R)\ve{e}_k \qquad i,j,k
-\texttt{ cyc } 1,2,3
-\end{align*}
+\texttt{ cyc } 1,2,3 \label{eq:curlcurvilinear}
+\end{align}
 %
 Cross-product relation between contravariant and covariant vectors:
 %
@@ -1659,7 +1691,7 @@ $\ve{v}=\ve{k}\times\nabla\psi$ found in incompressible fluid flow
              %
              =&\frac{J}{g_{yy}}\ve{e}_y\times\nabla\phi\\
              %
-             =&\frac{J}{g_{yy}}\ve{e}_y\times \L(\ve{e}^x\partial_x +
+             =&\frac{J}{g_{yy}}\ve{e}_y\times \L(\ve{e}^x\partial_x + \ve{e}^y\partial_y +
 \ve{e}^z\partial_z\R)\phi\\
              %
              =&\frac{J}{g_{yy}} \L(g_{yx}\ve{e}^x + g_{yy}\ve{e}^y +
@@ -1819,4 +1851,10 @@ Alternatively, equation~\ref{eq:exb1} can be expanded as
     \frac{1}{B^2}\ve{J}\cdot\nabla\phi
 \end{align*}
 %
+
+\begin{eqnarray}
+\nabla\cdot\left(n\frac{\mathbf{b}\times\nabla\phi}{B}\right) &=& \frac{1}{J}\frac{\partial}{\partial\psi}\left(Jn\frac{\partial\phi}{\partial z} \right) - \frac{1}{J}\frac{\partial}{\partial z}\left(Jn\frac{\partial\phi}{\partial\psi}\right)  \\
+                                                              &+& \frac{1}{J}\frac{\partial}{\partial\psi}\left(Jn\frac{g^{\psi\psi}g^{yz}}{B^2}\frac{\partial\phi}{\partial y}\right) - \frac{1}{J}\frac{\partial}{\partial y}\left(Jn\frac{g^{\psi\psi}g^{yz}}{B^2}\frac{\partial\phi}{\partial\psi}\right)
+\end{eqnarray}
+
 \end{document}

@@ -168,7 +168,7 @@ AC_DEFUN([_AX_PROG_CXX_MPI], [
     AC_MSG_RESULT($_ax_prog_cxx_mpi_mpi_wanted)
   ])
   if test x"$_ax_prog_cxx_mpi_mpi_wanted" = xyes; then
-    AC_CHECK_TOOLS([MPICXX], [mpic++ mpicxx mpiCC sxmpic++ hcp mpxlC_r mpxlC mpixlcxx_r mpixlcxx mpg++ mpc++ mpCC cmpic++ mpiFCC CCicpc pgCC pathCC sxc++ xlC_r xlC bgxlC_r bgxlC openCC sunCC crayCC g++ c++ gpp aCC CC cxx cc++ cl.exe FCC KCC RCC])
+    AC_CHECK_TOOLS([MPICXX], [mpic++ mpicxx mpiCC sxmpic++ hcp mpxlC_r mpxlC mpixlcxx_r mpixlcxx mpg++ mpc++ mpCC cmpic++ mpiFCC CCicpc pgCC pathCC sxc++ xlC_r xlC bgxlC_r bgxlC openCC sunCC crayCC aCC CC g++ c++ gpp cxx cc++ cl.exe FCC KCC RCC])
     CXX="$MPICXX"
   fi
   AC_PROG_CXX

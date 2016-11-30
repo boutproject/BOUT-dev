@@ -107,6 +107,8 @@ class BoutMesh : public Mesh {
   const Field3D Switch_XZ(const Field3D &var);
   
  private:
+  Options *meshoptions; ///< Handle for mesh options
+
   string gridname;
   int nx, ny;        ///< Size of the grid in the input file
   int MX, MY;        ///< size of the grid excluding boundary regions

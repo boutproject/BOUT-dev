@@ -172,10 +172,11 @@ class Field2D : public Field, public FieldData {
   bool is3D() const     { return false; }        // Field is 2D
   int  byteSize() const { return sizeof(BoutReal); } // Just one BoutReal
   int  BoutRealSize() const { return 1; }
-  int  getData(int x, int y, int z, void *vptr) const;
-  int  getData(int x, int y, int z, BoutReal *rptr) const;
-  int  setData(int x, int y, int z, void *vptr);
-  int  setData(int x, int y, int z, BoutReal *rptr);
+
+  DEPRECATED(int getData(int x, int y, int z, void *vptr) const);
+  DEPRECATED(int getData(int x, int y, int z, BoutReal *rptr) const);
+  DEPRECATED(int setData(int x, int y, int z, void *vptr));
+  DEPRECATED(int setData(int x, int y, int z, BoutReal *rptr));
   
 #ifdef CHECK
   void doneComms() { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }

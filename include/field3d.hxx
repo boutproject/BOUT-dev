@@ -44,9 +44,129 @@ class Mesh;  // #include "bout/mesh.hxx"
 
 /// Class for 3D X-Y-Z scalar fields
 /*!
-  Recycles memory using a global stack. Overloaded operators
-  provide operations on data.
+  This class represents a scalar field defined over the mesh.
+  It handles memory management, and provides overloaded operators
+  for operations on the data, iterators and access methods.
+  
+  Initialisation
+  --------------
+  
+  Fields can be declared in any scope (even global),
+  but cannot be accessed by index or used until the data
+  is allocated. 
 
+  Field3D f;   // Declare variable, no data allocated
+  f(0,0,0) = 1.0; // Error !
+
+  f = 0.0;  // Allocates memory, fills with value (0.0)
+  
+  Field3D g(1.0); // Declares, allocates memory, fills with value (1.0)
+  
+  Field3D h;   // not allocated
+  h.allocate();  // Data array allocated, values undefined
+  f(0,0,0) = 1.0; // ok
+  
+  Copy-on-Write
+  -------------
+  
+  A field is a reference to the underlying data array, so
+  setting one field equal to another has the effect of making
+  both fields share the same underlying data
+  
+  Field3D f(0.0);
+  Field3D g = f; // f and g now share data
+  f(0,0,0) = 1.0; // g is also modified
+  
+  Setting the entire field equal to a new value changes the reference:
+
+  Field3D f(0.0);
+  Field3D g = f; // f and g now share data
+  g = 1.0;   // g and f are now separate
+  
+  To ensure that a field is unique, call allocate() which
+  will make a copy of the underlying data if it is shared.
+  
+  Field3D f(0.0);
+  Field3D g = f; // f and g now share data
+  g.allocate();  // Data copied so g and f don't share data
+  f(0,0,0) = 1.0; // ok
+
+  Data access
+  -----------
+  
+  Individual data indices can be accessed by index using
+  round brackets:
+  
+  Field3D f;
+  f(0,1,2) = 1.0;  // Set value  
+  BoutReal val = f(2,1,3);  // Get value
+
+  if CHECK is greater than 2, this function will perform
+  bounds checking. This will significantly slow calculations.
+
+  Some methods, such as FFT routines, need access to
+  a pointer to memory. For the Z dimension this can be done
+  by passing only the X and Y indices
+
+  BoutReal *data = f(0,1);
+
+  data now points to f(0,1,0) and can be incremented to move in Z.
+  
+  Indexing can also be done using DataIterator or Indices objects,
+  defined in bout/dataiterator.hxx:
+
+  Indices i = {0,1,0};
+  
+  f[i] = 1.0;  // Equivalent to f(0,1,0)
+  
+  This is primarily used to allow convenient iteration over fields
+  
+  Iteration
+  ---------
+  
+  To loop over all points in a field, a for loop can be used
+  to get the indices:
+  
+  Field3D f(0.0); // Allocate, set to zero
+  
+  for( auto i : f ) {  // Loop over all points, with index i
+    f[i] = 1.0;
+  }
+  
+  There is also more explicit looping over regions:
+  
+  for( auto i : f.region(RGN_ALL) ) {  // Loop over all points, with index i
+    f[i] = 1.0;
+  }
+  
+  Parallel (y) derivatives
+  ------------------------
+  
+  In several numerical schemes the mapping along magnetic fields
+  (default y direction) is a relatively complex map. To accommodate
+  this, the values of a field in the positive (up) and negative (down)
+  directions can be stored in separate fields.
+  
+  Field3D f(0.0); // f allocated, set to zero
+
+  f.yup() // error; f.yup not allocated
+
+  f.mergeYupYdown(); // f.yup() and f.ydown() now point to f
+  f.yup()(0,1,0)  // ok, gives value of f at (0,1,0) 
+  
+  To have separate fields for yup and ydown, first call
+
+  f.splitYupYdown(); // f.yup() and f.ydown() separate
+
+  f.yup(); // ok
+  f.yup()(0,1,0) // error; f.yup not allocated
+  
+  f.yup() = 1.0; // Set f.yup() field to 1.0
+  
+  f.yup()(0,1,0) // ok
+  
+  Changelog
+  ---------
   July 2008: Added FieldData virtual functions
   May 2008: Added reference counting to reduce memory copying
  */
@@ -72,7 +192,7 @@ class Field3D : public Field, public FieldData {
   /// Destructor
   ~Field3D();
 
-  /// Data type
+  /// Data type stored in this field
   using value_type = BoutReal;
 
   /*!
@@ -87,6 +207,9 @@ class Field3D : public Field, public FieldData {
   
   /*!
    * Return a pointer to the time-derivative field
+   *
+   * The first time this is called, a new field will be
+   * allocated. Subsequent calls return the same field
    */
   Field3D* timeDeriv();
 
@@ -101,20 +224,24 @@ class Field3D : public Field, public FieldData {
    */
   void mergeYupYdown();
   
-  /// Flux Coordinate Independent (FCI) method
+  /// Return reference to yup field
   Field3D& yup() { 
     ASSERT2(yup_field != nullptr); // Check for communicate
     return *yup_field; 
   }
+  /// Return const reference to yup field
   const Field3D& yup() const { 
     ASSERT2(yup_field != nullptr);
     return *yup_field; 
   }
   
+  /// Return reference to ydown field
   Field3D& ydown() { 
     ASSERT2(ydown_field != nullptr);
     return *ydown_field;
   }
+  
+  // Return const reference to ydown field
   const Field3D& ydown() const { 
     ASSERT2(ydown_field != nullptr);
     return *ydown_field; 
@@ -133,12 +260,40 @@ class Field3D : public Field, public FieldData {
   
   const DataIterator iterator() const;
 
+  /*!
+   * These begin and end functions are used to iterate over
+   * the indices of a field. Indices are used rather than
+   * values since this allows expressions involving multiple fields.
+   *
+   * Example
+   * -------
+   *
+   * Field3D objects f and g can be modified by 
+   * 
+   * for(auto i : f) {
+   *   f[i] = 2.*f[i] + g[i];
+   * }
+   * 
+   */
   const DataIterator begin() const;
   const DataIterator end() const;
   
-  /*
+  /*!
    * Returns a range of indices which can be iterated over
    * Uses the REGION flags in bout_types.hxx
+   * 
+   * Example
+   * -------
+   * 
+   * This loops over the interior points, not the boundary
+   * and inside the loop the index is used to calculate the difference
+   * between the point one index up in x (i.xp()) and one index down
+   * in x (i.xm()), putting the result into a different field 'g'
+   * 
+   * for(auto i : f.region(RGN_NOBNDRY)) {
+   *   g[i] = f[i.xp()] - f[i.xm()];
+   * }
+   * 
    */
   const IndexRange region(REGION rgn) const;
 
@@ -162,6 +317,14 @@ class Field3D : public Field, public FieldData {
     return operator()(bx.jx, bx.jy, bx.jz);
   }
   
+  /*!
+   * Direct access to the underlying data array
+   *
+   * If CHECK > 2 then bounds checking is performed
+   * 
+   * If CHECK <= 2 then no checks are performed, to
+   * allow inlining and optimisation of inner loops
+   */
   inline BoutReal& operator()(int jx, int jy, int jz) {
 #if CHECK > 2
     // Perform bounds checking
@@ -190,7 +353,14 @@ class Field3D : public Field, public FieldData {
 #endif
     return data[(jx*ny +jy)*nz + jz];
   }
-
+  
+  /*!
+   * Direct access to the underlying data array
+   *
+   * This version returns a pointer to a data array,
+   * and is intended for use with FFT routines. The data
+   * is guaranteed to be contiguous in Z index
+   */
   inline const BoutReal* operator()(int jx, int jy) const {
 #if CHECK > 2
     if(data.empty())
@@ -265,10 +435,11 @@ class Field3D : public Field, public FieldData {
   bool is3D() const     { return true; }         // Field is 3D
   int  byteSize() const { return sizeof(BoutReal); } // Just one BoutReal
   int  BoutRealSize() const { return 1; }
-  int  getData(int x, int y, int z, void *vptr) const;
-  int  getData(int x, int y, int z, BoutReal *rptr) const;
-  int  setData(int x, int y, int z, void *vptr);
-  int  setData(int x, int y, int z, BoutReal *rptr);
+
+  DEPRECATED(int getData(int x, int y, int z, void *vptr) const);
+  DEPRECATED(int getData(int x, int y, int z, BoutReal *rptr) const);
+  DEPRECATED(int setData(int x, int y, int z, void *vptr));
+  DEPRECATED(int setData(int x, int y, int z, BoutReal *rptr));
 
   /// Visitor pattern support
   void accept(FieldVisitor &v) override { v.accept(*this); }
@@ -370,6 +541,10 @@ const Field3D sinh(const Field3D &f);
 const Field3D cosh(const Field3D &f);
 const Field3D tanh(const Field3D &f);
 
+/*!
+ * Check if all values of a field are finite.
+ * Loops over all points including the boundaries
+ */
 bool finite(const Field3D &var);
 
 
@@ -378,20 +553,62 @@ void checkData(const Field3D &f); ///< Checks if the data is valid.
 #else
 inline void checkData(const Field3D &f){;}; ///< Checks if the data is valid.
 #endif
-  
+ 
+/*!
+ * Makes a copy of a field, ensuring that the underlying
+ * data is not shared.
+ */ 
 const Field3D copy(const Field3D &f);
 
+/*!
+ * Apply a floor value to a field. Any value lower than
+ * the floor is set to the floor.
+ * 
+ * @param[in] var  Variable to apply floor to
+ * @param[in] f    The floor value
+ *
+ */
 const Field3D floor(const Field3D &var, BoutReal f);
 
+/*!
+ * Fourier filtering, removes all except one mode
+ * 
+ * @param[in] N0 The component to keep
+ */
 const Field3D filter(const Field3D &var, int N0);
+
+/*!
+ * Fourier low pass filtering. Removes modes higher than zmax
+ */ 
 const Field3D lowPass(const Field3D &var, int zmax);
+
+/*!
+ * Fourier low pass filtering. Removes modes
+ * lower than zmin and higher than zmax
+ */
 const Field3D lowPass(const Field3D &var, int zmax, int zmin);
+
 /*!
  * Perform a shift by a given angle in Z
+ *
+ * @param[inout] var  The variable to be modified in-place
+ * @param[in] jx   X index
+ * @param[in] jy   Y index
+ * @param[in] zangle   The Z angle to apply
  */
 void shiftZ(Field3D &var, int jx, int jy, double zangle);
+
+/*!
+ * Apply a phase shift by a given angle in Z to all points
+ * 
+ * @param[inout] var  The variable to modify in-place
+ * @param[in] zangle  The angle to shift by in Z
+ */
 void shiftZ(Field3D &var, double zangle);
 
+/*!
+ * Average in the Z direction
+ */ 
 Field2D DC(const Field3D &f);
 
 /*!

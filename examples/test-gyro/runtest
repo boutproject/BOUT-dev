@@ -29,7 +29,7 @@ shell("make > make.log")
 print("Reading benchmark data")
 bmk = {}
 for v in vars:
-  bmk[v] = collect(v, path="data", prefix="benchmark", info=False)
+  bmk[v] = collect(v, path="data", prefix="benchmark", info=False, xguards=False)
 
 print("Running Gyro-average inversion test")
 success = True
@@ -52,7 +52,7 @@ for nproc in [1,2,4]:
    # Collect output data
   for v in vars:
     stdout.write("      Checking variable "+v+" ... ")
-    result = collect(v, path="data", info=False)
+    result = collect(v, path="data", info=False, xguards=False)
     # Compare benchmark and output
     if np.shape(bmk[v]) != np.shape(result):
       print("Fail, wrong shape")

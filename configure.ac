@@ -111,7 +111,7 @@ AC_LANG(C++)
 
 # Search for MPI compiler; fail if not found
 AX_PROG_CXX_MPI([], [], [
-  AC_MSG_ERROR([*** An MPI compiler is required.])
+  AC_MSG_ERROR([*** An MPI compiler is required. You might need to set MPICXX correctly.])
 ])
 
 # Utility programs
@@ -274,7 +274,7 @@ rev=`git rev-parse HEAD`
 if test "$?" = "0"
 then
   # Attach revision info to flags
-  CXXFLAGS="$CXXFLAGS -DREVISION=$rev"
+  dnl CXXFLAGS="$CXXFLAGS -DREVISION=$rev"
   echo "Revision ID: $rev"
 fi
 
@@ -361,14 +361,14 @@ AS_IF([test "x$with_netcdf" != "xno"],
              #include <netcdfcpp.h>
              ], [NcFile file("foo.nc");])],
           [AC_MSG_RESULT([yes])
-           echo " -> NetCDF support enabled"],
+           echo " -> Legacy NetCDF support enabled"],
           [AC_MSG_RESULT([no])
            AC_MSG_FAILURE([Could not compile NetCDF C++ program!])])
         AC_LANG_POP([C++])
         LIBS=$save_LIBS
         LDFLAGS=$save_LDFLAGS
+        CXXFLAGS="$CXXFLAGS -DNCDF"
        ])
-      CXXFLAGS="$CXXFLAGS -DNCDF"
       EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
 
       file_formats="$file_formats netCDF"
@@ -386,7 +386,7 @@ AS_IF([test "x$with_netcdf" != "xno"],
       AS_IF([test "x$NCFOUND" = "xyes"],
         [
          file_formats="$file_formats netCDF"
-         echo " -> NetCDF support enabled"
+         echo " -> Legacy NetCDF support enabled"
          NCPATH="found"
          CXXFLAGS="$CXXFLAGS -DNCDF"
         ], [])
@@ -572,7 +572,7 @@ then
         AC_MSG_ERROR([*** --with-petsc was specified but could not find PETSc distribution])
         ))
   fi
-
+  
   PETSC_VERSION_MAJOR="0"
   PETSC_VERSION_MAJOR=`grep 'define PETSC_VERSION_MAJOR' $PETSC_DIR/include/petscversion.h | awk '{print \$3;}'`
   PETSC_VERSION_MINOR="0"
@@ -585,31 +585,33 @@ then
     AC_MSG_ERROR([PETSc must be version 3, found $PETSC_VERSION_MAJOR])
   fi
 
+  AC_MSG_CHECKING([PETSc interface version])
   if test "$PETSC_VERSION_MINOR" = "1"
   then
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_1"
-    echo "Using PETSc 3.1 interface"
+    AC_MSG_RESULT([3.1])
   elif test "$PETSC_VERSION_MINOR" = "2"
   then
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_2"
-    echo "Using PETSc 3.2 interface"
+    AC_MSG_RESULT([3.2])
   elif test "$PETSC_VERSION_MINOR" = "3" && test "$PETSC_VERSION_RELEASE" = "1"
   then
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_3"
-    echo "Using PETSc 3.3 interface"
+    AC_MSG_RESULT([3.3])
   elif test "$PETSC_VERSION_MINOR" = "4" && test "$PETSC_VERSION_RELEASE" = "1"
   then
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_4"
-    echo "Using PETSc 3.4 interface"
+    AC_MSG_RESULT([3.4])
   elif test "$PETSC_VERSION_MINOR" = "5" && test "$PETSC_VERSION_RELEASE" = "1"
   then
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_5"
-    echo "Using PETSc 3.5 interface"
+    AC_MSG_RESULT([3.5])
   elif test "$PETSC_VERSION_MINOR" = "5" && test "$PETSC_VERSION_RELEASE" = "0"
   then
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
-    echo "Using PETSc-dev interface"
+    AC_MSG_RESULT([dev])
   else
+    AC_MSG_RESULT([unknown])
     echo "***********************************"
     echo "WARNING: Unrecognised PETSc version"
     echo "MAJOR VERSION: $PETSC_VERSION_MAJOR"
@@ -627,36 +629,39 @@ PETSC_DIR  = ${PETSC_DIR}
 include ${PETSC_CONFDIR}/rules
 include ${PETSC_CONFDIR}/variables
 echo_cxx:
-    -@echo \${CXX}
+	-@echo \${CXX}
 echo_sundials:
-    -@echo \${SUNDIALS_LIB}
+	-@echo \${SUNDIALS_LIB}
 MFILE
 
-  CXX="`make -f petscmake$$ echo_cxx`"
-  HAS_SUNDIALS=`make -f petscmake$$ echo_sundials | grep -c sundials`
-  HAS_CXX=`echo $CXX | grep -ic mp`
+  AC_MSG_CHECKING([PETSC has C++ support])
+  PETSC_HAS_CXX=`make -f petscmake$$ echo_cxx`
 
-  if test "$HAS_SUNDIALS" == "0"
-  then
-    echo "Warning - PETSc has no SUNDIALS support"
-    PETSC_HAS_SUNDIALS="no"
-  else
-    PETSC_HAS_SUNDIALS="yes"
-  fi
+  AS_IF([test -z "$PETSC_HAS_CXX"],
+  [
+    AC_MSG_RESULT([no])
+    AC_MSG_ERROR([Warning - PETSc must have C++ support])
+  ], [])
+  AC_MSG_RESULT([yes])
 
-  if test "$HAS_CXX" == "0"
-  then
-    echo "Warning - PETSc must have C++ support"
-  fi
+  AC_MSG_CHECKING([PETSc C++ compiler used])
+  PETSC_CXX=`make -f petscmake$$ echo_cxx`
+  AC_MSG_RESULT([$PETSC_CXX])
 
-  echo "PETSc used C++ compiler $CXX"
+  AC_MSG_CHECKING([PETSc has SUNDIALS support])
+  PETSC_HAS_SUNDIALS=`make -f petscmake$$ echo_sundials | grep -c sundials`
+
+  AS_IF([test "$PETSC_HAS_SUNDIALS" == "0"],
+        [PETSC_HAS_SUNDIALS="no"],
+        [PETSC_HAS_SUNDIALS="yes"])
+  AC_MSG_RESULT([$PETSC_HAS_SUNDIALS])
 
   rm petscmake$$
 
   # Set the line to be included in the make.conf file
   PETSC="include ${PETSC_CONFDIR}/variables"
 else
-   PETSC=
+  PETSC=
 fi
 AC_SUBST(PETSC, $PETSC)
 
@@ -710,7 +715,7 @@ then
   if test "$SLEPC_VERSION_MAJOR" = "3" && test "$SLEPC_VERSION_MINOR" = "4"
   then
     # Version 3.4
-    echo "  -> Using interface for SLEPc 3.4"
+    echo " -> Using interface for SLEPc 3.4"
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SLEPC -DBOUT_HAS_SLEPC_3_4"
     HAS_SLEPC="yes"
 

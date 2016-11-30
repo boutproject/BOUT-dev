@@ -83,9 +83,43 @@ Coordinates::Coordinates(Mesh *mesh) : ilen(0) {
     throw BoutException("\tERROR: Off-diagonal metrics are not finite!\n");
   }
   
-  /// Calculate contravariant metric components
-  if(calcCovariant())
-    throw BoutException("Error in calcCovariant call");
+  /// Find covariant metric components
+  // Check if any of the components are present
+  if (mesh->sourceHasVar("g_11") or
+      mesh->sourceHasVar("g_22") or
+      mesh->sourceHasVar("g_33") or
+      mesh->sourceHasVar("g_12") or
+      mesh->sourceHasVar("g_13") or
+      mesh->sourceHasVar("g_23")) {
+    // Check that all components are present
+    if (mesh->sourceHasVar("g_11") and
+        mesh->sourceHasVar("g_22") and
+        mesh->sourceHasVar("g_33") and
+        mesh->sourceHasVar("g_12") and
+        mesh->sourceHasVar("g_13") and
+        mesh->sourceHasVar("g_23")) {
+      mesh->get(g_11, "g_11");
+      mesh->get(g_22, "g_22");
+      mesh->get(g_33, "g_33");
+      mesh->get(g_12, "g_12");
+      mesh->get(g_13, "g_13");
+      mesh->get(g_23, "g_23");
+
+      output.write("\tWARNING! Covariant components of metric tensor set manually. Contravariant components NOT recalculated\n");
+
+    } else {
+      output.write("Not all covariant components of metric tensor found. Calculating all from the contravariant tensor\n");
+      /// Calculate contravariant metric components if not found
+      if(calcCovariant()) {
+        throw BoutException("Error in calcCovariant call");
+      }
+    }
+  } else {
+    /// Calculate contravariant metric components if not found
+    if(calcCovariant()) {
+      throw BoutException("Error in calcCovariant call");
+    }
+  }
 
   /// Calculate Jacobian and Bxy
   if(jacobian())
@@ -189,10 +223,8 @@ void Coordinates::outputVars(Datafile &file) {
 
 
 int Coordinates::geometry() {
-#ifdef CHECK
-  msg_stack.push("Coordinates::geometry");
-#endif
-  
+  TRACE("Coordinates::geometry");
+
   output.write("Calculating differential geometry terms\n");
 
   if(min(abs(dx)) < 1e-8)
@@ -309,19 +341,13 @@ int Coordinates::geometry() {
   com.add(G3);
 
   mesh->communicate(com);
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-  
+
   return 0;
 }
 
 int Coordinates::calcCovariant() {
-#ifdef CHECK
-  msg_stack.push("Coordinates::calcCovariant");
-#endif
-  
+  TRACE("Coordinates::calcCovariant");
+
   // Make sure metric elements are allocated
   g_11.allocate();
   g_22.allocate();
@@ -348,8 +374,8 @@ int Coordinates::calcCovariant() {
       
       // invert
       if(gaussj(a, 3)) {
-	output.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
-	return 1;
+        output.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
+        return 1;
       }
       
       // put elements into g_{ij}
@@ -396,15 +422,13 @@ int Coordinates::calcCovariant() {
     maxerr = err;
   
   output.write("\tMaximum error in off-diagonal inversion is %e\n", maxerr);
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 
   return 0;
 }
 
 int Coordinates::calcContravariant() {
+  TRACE("Coordinates::calcContravariant");
+
   // Make sure metric elements are allocated
   g11.allocate();
   g22.allocate();
@@ -431,8 +455,8 @@ int Coordinates::calcContravariant() {
       
       // invert
       if(gaussj(a, 3)) {
-	output.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
-	return 1;
+        output.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
+        return 1;
       }
       
       // put elements into g_{ij}
@@ -483,25 +507,34 @@ int Coordinates::calcContravariant() {
 }
 
 int Coordinates::jacobian() {
+  TRACE("Coordinates::jacobian");
   // calculate Jacobian using g^-1 = det[g^ij], J = sqrt(g)
-  J = 1. / sqrt(g11*g22*g33 + 
-                2.0*g12*g13*g23 - 
-                g11*g23*g23 - 
-                g22*g13*g13 - 
-                g33*g12*g12);
-  
+
+  Field2D g = g11*g22*g33 +
+    2.0*g12*g13*g23 -
+    g11*g23*g23 -
+    g22*g13*g13 -
+    g33*g12*g12;
+
+  // Check that g is positive
+  if(min(g) < 0.0) {
+    throw BoutException("The determinant of g^ij is somewhere less than 0.0");
+  }
+  J = 1. / sqrt(g);
+
   // Check jacobian
   if(!finite(J)) {
-    output.write("\tERROR: Jacobian not finite everywhere!\n");
-    return 1;
+    throw BoutException("\tERROR: Jacobian not finite everywhere!\n");
   }
   if(min(abs(J)) < 1.0e-10) {
-    output.write("\tERROR: Jacobian becomes very small\n");
-    return 1;
+    throw BoutException("\tERROR: Jacobian becomes very small\n");
   }
-  
+
+  if(min(g_22) < 0.0) {
+    throw BoutException("g_22 is somewhere less than 0.0");
+  }
   Bxy = sqrt(g_22)/J;
-  
+
   return 0;
 }
 
@@ -646,7 +679,7 @@ const Field2D Coordinates::Delp2(const Field2D &f) {
 }
 
 const Field3D Coordinates::Delp2(const Field3D &f) {
-  MsgStackItem trace("Coordinates::Delp2( Field3D )");
+  TRACE("Coordinates::Delp2( Field3D )");
 
   //return mesh->G1*DDX(f) + mesh->G3*DDZ(f) + mesh->g11*D2DX2(f) + mesh->g33*D2DZ2(f); //+ 2.0*mesh->g13*D2DXDZ(f)
 
@@ -706,7 +739,7 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
 }
 
 const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
-  MsgStackItem trace("Coordinates::Delp2( FieldPerp )");
+  TRACE("Coordinates::Delp2( FieldPerp )");
   
   FieldPerp result;
   result.allocate();
@@ -767,7 +800,7 @@ const Field3D Coordinates::Laplace_par(const Field3D &f) {
 // Full Laplacian operator on scalar field
 
 const Field2D Coordinates::Laplace(const Field2D &f) {
-  MsgStackItem trace("Coordinates::Laplace( Field2D )");
+  TRACE("Coordinates::Laplace( Field2D )");
 
   Field2D result =  G1*DDX(f) +G2*DDY(f)
     + g11*D2DX2(f) + g22*D2DY2(f)
@@ -777,7 +810,7 @@ const Field2D Coordinates::Laplace(const Field2D &f) {
 }
 
 const Field3D Coordinates::Laplace(const Field3D &f) {
-  MsgStackItem trace("Coordinates::Laplace( Field3D )");
+  TRACE("Coordinates::Laplace( Field3D )");
 
   Field3D result  = G1*::DDX(f) + G2*::DDY(f) + G3*::DDZ(f)
     + g11*D2DX2(f) + g22*D2DY2(f) + g33*D2DZ2(f)
@@ -793,7 +826,7 @@ const Field3D Coordinates::Laplace(const Field3D &f) {
 
 // Invert an nxn matrix using Gauss-Jordan elimination with full pivoting
 int Coordinates::gaussj(BoutReal **a, int n) {
-  MsgStackItem trace("Coordinates::gaussj");
+  TRACE("Coordinates::gaussj");
   
   int i, icol, irow, j, k, l, ll;
   float big, dum, pivinv;

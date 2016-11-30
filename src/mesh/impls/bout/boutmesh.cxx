@@ -371,12 +371,10 @@ int BoutMesh::load() {
       
     if(!source->get(this, ShiftAngle,  "ShiftAngle",
                     LocalNx, XGLOBAL(0))) {
-      output.write("\tWARNING: Twist-shift angle 'ShiftAngle' not found. Setting to zero\n");
-      for(int i=0;i<LocalNx;i++)
-        ShiftAngle[i] = 0.0;
+      throw BoutException("WARNING: Twist-shift angle 'ShiftAngle' not found.");
     }
   }
-  
+
   //////////////////////////////////////////////////////
   /// Communicator
 

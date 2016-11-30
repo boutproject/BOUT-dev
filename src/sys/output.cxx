@@ -45,7 +45,7 @@ int Output::open(const char* fname, ...) {
     return 1;
 
   va_start(ap, fname);
-    vsprintf(buffer, fname, ap);
+    vsnprintf(buffer, Output::BUFFER_LEN, fname, ap);
   va_end(ap);
 
   close();
@@ -77,7 +77,7 @@ void Output::write(const char* string, ...) {
     return;
   
   va_start(ap, string);
-    vsprintf(buffer, string, ap);
+    vsnprintf(buffer, Output::BUFFER_LEN, string, ap);
   va_end(ap);
 
   multioutbuf_init::buf()->sputn(buffer, strlen(buffer));

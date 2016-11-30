@@ -132,7 +132,7 @@ $4
   done
 
   AS_IF([test "x$sundials_int_type_found" = "xno"], [
-      AC_MSG_ERROR([*** Cannot compile $1 with either long or int])
+      AC_MSG_FAILURE([*** Cannot compile $1 with either long or int])
       ])
   AC_LANG_POP([C++])
   CXXFLAGS="$save_CXXFLAGS -D$3=$sundials_int_type"

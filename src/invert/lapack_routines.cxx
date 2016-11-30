@@ -226,7 +226,7 @@ void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal 
   
   // Solve tridiagonal system Ax=r
   if(!tridag(a, b, c, r, x, n))
-    bout_error("ERROR: first tridag call failed in cyclic_tridag\n");
+    throw BoutException("ERROR: first tridag call failed in cyclic_tridag\n");
   
   u[0] = gamma;
   u[n-1] = c[n-1];
@@ -235,7 +235,7 @@ void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal 
   
   // Solve Az = u
   if(!tridag(a, b, c, u, z, n))
-    bout_error("ERROR: second tridag call failed in cyclic_tridag\n");
+    throw BoutException("ERROR: second tridag call failed in cyclic_tridag\n");
   
   BoutReal fact = (x[0] + a[0]*x[n-1]/gamma) /
     (1.0 + z[0] + a[0]*z[n-1]/gamma); 

@@ -16,6 +16,9 @@ private:
 
   int xstart, xend;
   int nmode, nloc, nsys;
-  dcomplex **acoef, **bcoef, **ccoef, **xcmplx, **rhscmplx, *k1d;
+  dcomplex **acoef, **bcoef, **ccoef, **xcmplx, **rhscmplx, *k1d, *k1d_2;
   CyclicReduce<dcomplex> *cr; ///< Tridiagonal solver
+
+  int inner_boundary_flags; ///< Flags to set inner boundary condition
+  int outer_boundary_flags; ///< Flags to set outer boundary condition
 };

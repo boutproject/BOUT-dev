@@ -96,6 +96,9 @@ class Mesh {
   
   int get(Vector2D &var, const string &name);
   int get(Vector3D &var, const string &name);
+
+  /// Wrapper for GridDataSource::hasVar
+  bool sourceHasVar(const string &name);
   
   // Communications
   /*!
@@ -258,7 +261,7 @@ class Mesh {
   const Field2D indexD2DX2(const Field2D &f);
   const Field3D indexD2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
   const Field2D indexD2DY2(const Field2D &f);
-  const Field3D indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
+  const Field3D indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool inc_xbndry);
   
   // Fourth derivatives in index space
   const Field3D indexD4DX4(const Field3D &f);

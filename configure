@@ -2622,7 +2622,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
   _ax_prog_cxx_mpi_mpi_wanted=yes
   if test x"$_ax_prog_cxx_mpi_mpi_wanted" = xyes; then
     if test -n "$ac_tool_prefix"; then
-  for ac_prog in mpic++ mpicxx mpiCC sxmpic++ hcp mpxlC_r mpxlC mpixlcxx_r mpixlcxx mpg++ mpc++ mpCC cmpic++ mpiFCC CCicpc pgCC pathCC sxc++ xlC_r xlC bgxlC_r bgxlC openCC sunCC crayCC g++ c++ gpp aCC CC cxx cc++ cl.exe FCC KCC RCC
+  for ac_prog in mpic++ mpicxx mpiCC sxmpic++ hcp mpxlC_r mpxlC mpixlcxx_r mpixlcxx mpg++ mpc++ mpCC cmpic++ mpiFCC CCicpc pgCC pathCC sxc++ xlC_r xlC bgxlC_r bgxlC openCC sunCC crayCC aCC CC g++ c++ gpp cxx cc++ cl.exe FCC KCC RCC
   do
     # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
 set dummy $ac_tool_prefix$ac_prog; ac_word=$2
@@ -2666,7 +2666,7 @@ fi
 fi
 if test -z "$MPICXX"; then
   ac_ct_MPICXX=$MPICXX
-  for ac_prog in mpic++ mpicxx mpiCC sxmpic++ hcp mpxlC_r mpxlC mpixlcxx_r mpixlcxx mpg++ mpc++ mpCC cmpic++ mpiFCC CCicpc pgCC pathCC sxc++ xlC_r xlC bgxlC_r bgxlC openCC sunCC crayCC g++ c++ gpp aCC CC cxx cc++ cl.exe FCC KCC RCC
+  for ac_prog in mpic++ mpicxx mpiCC sxmpic++ hcp mpxlC_r mpxlC mpixlcxx_r mpixlcxx mpg++ mpc++ mpCC cmpic++ mpiFCC CCicpc pgCC pathCC sxc++ xlC_r xlC bgxlC_r bgxlC openCC sunCC crayCC aCC CC g++ c++ gpp cxx cc++ cl.exe FCC KCC RCC
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -3342,7 +3342,7 @@ $as_echo "#define HAVE_MPI 1" >>confdefs.h
 else
 
 
-  as_fn_error $? "*** An MPI compiler is required." "$LINENO" 5
+  as_fn_error $? "*** An MPI compiler is required. You might need to set MPICXX correctly." "$LINENO" 5
 
         :
 
@@ -5053,8 +5053,7 @@ rev=`git rev-parse HEAD`
 if test "$?" = "0"
 then
   # Attach revision info to flags
-  CXXFLAGS="$CXXFLAGS -DREVISION=$rev"
-  echo "Revision ID: $rev"
+    echo "Revision ID: $rev"
 fi
 
 GIT_REVISION=$rev
@@ -5367,7 +5366,7 @@ _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-           echo " -> NetCDF support enabled"
+           echo " -> Legacy NetCDF support enabled"
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -5386,9 +5385,9 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
         LIBS=$save_LIBS
         LDFLAGS=$save_LDFLAGS
+        CXXFLAGS="$CXXFLAGS -DNCDF"
 
 fi
-      CXXFLAGS="$CXXFLAGS -DNCDF"
       EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
 
       file_formats="$file_formats netCDF"
@@ -5639,7 +5638,7 @@ fi
       if test "x$NCFOUND" = "xyes"; then :
 
          file_formats="$file_formats netCDF"
-         echo " -> NetCDF support enabled"
+         echo " -> Legacy NetCDF support enabled"
          NCPATH="found"
          CXXFLAGS="$CXXFLAGS -DNCDF"
 
@@ -7676,31 +7675,41 @@ fi
     as_fn_error $? "PETSc must be version 3, found $PETSC_VERSION_MAJOR" "$LINENO" 5
   fi
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking PETSc interface version" >&5
+$as_echo_n "checking PETSc interface version... " >&6; }
   if test "$PETSC_VERSION_MINOR" = "1"
   then
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_1"
-    echo "Using PETSc 3.1 interface"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: 3.1" >&5
+$as_echo "3.1" >&6; }
   elif test "$PETSC_VERSION_MINOR" = "2"
   then
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_2"
-    echo "Using PETSc 3.2 interface"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: 3.2" >&5
+$as_echo "3.2" >&6; }
   elif test "$PETSC_VERSION_MINOR" = "3" && test "$PETSC_VERSION_RELEASE" = "1"
   then
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_3"
-    echo "Using PETSc 3.3 interface"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: 3.3" >&5
+$as_echo "3.3" >&6; }
   elif test "$PETSC_VERSION_MINOR" = "4" && test "$PETSC_VERSION_RELEASE" = "1"
   then
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_4"
-    echo "Using PETSc 3.4 interface"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: 3.4" >&5
+$as_echo "3.4" >&6; }
   elif test "$PETSC_VERSION_MINOR" = "5" && test "$PETSC_VERSION_RELEASE" = "1"
   then
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_5"
-    echo "Using PETSc 3.5 interface"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: 3.5" >&5
+$as_echo "3.5" >&6; }
   elif test "$PETSC_VERSION_MINOR" = "5" && test "$PETSC_VERSION_RELEASE" = "0"
   then
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
-    echo "Using PETSc-dev interface"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: dev" >&5
+$as_echo "dev" >&6; }
   else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: unknown" >&5
+$as_echo "unknown" >&6; }
     echo "***********************************"
     echo "WARNING: Unrecognised PETSc version"
     echo "MAJOR VERSION: $PETSC_VERSION_MAJOR"
@@ -7718,36 +7727,49 @@ PETSC_DIR  = ${PETSC_DIR}
 include ${PETSC_CONFDIR}/rules
 include ${PETSC_CONFDIR}/variables
 echo_cxx:
-    -@echo \${CXX}
+	-@echo \${CXX}
 echo_sundials:
-    -@echo \${SUNDIALS_LIB}
+	-@echo \${SUNDIALS_LIB}
 MFILE
 
-  CXX="`make -f petscmake$$ echo_cxx`"
-  HAS_SUNDIALS=`make -f petscmake$$ echo_sundials | grep -c sundials`
-  HAS_CXX=`echo $CXX | grep -ic mp`
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking PETSC has C++ support" >&5
+$as_echo_n "checking PETSC has C++ support... " >&6; }
+  PETSC_HAS_CXX=`make -f petscmake$$ echo_cxx`
 
-  if test "$HAS_SUNDIALS" == "0"
-  then
-    echo "Warning - PETSc has no SUNDIALS support"
-    PETSC_HAS_SUNDIALS="no"
-  else
-    PETSC_HAS_SUNDIALS="yes"
-  fi
+  if test -z "$PETSC_HAS_CXX"; then :
 
-  if test "$HAS_CXX" == "0"
-  then
-    echo "Warning - PETSc must have C++ support"
-  fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+    as_fn_error $? "Warning - PETSc must have C++ support" "$LINENO" 5
 
-  echo "PETSc used C++ compiler $CXX"
+fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking PETSc C++ compiler used" >&5
+$as_echo_n "checking PETSc C++ compiler used... " >&6; }
+  PETSC_CXX=`make -f petscmake$$ echo_cxx`
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PETSC_CXX" >&5
+$as_echo "$PETSC_CXX" >&6; }
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking PETSc has SUNDIALS support" >&5
+$as_echo_n "checking PETSc has SUNDIALS support... " >&6; }
+  PETSC_HAS_SUNDIALS=`make -f petscmake$$ echo_sundials | grep -c sundials`
+
+  if test "$PETSC_HAS_SUNDIALS" == "0"; then :
+  PETSC_HAS_SUNDIALS="no"
+else
+  PETSC_HAS_SUNDIALS="yes"
+fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PETSC_HAS_SUNDIALS" >&5
+$as_echo "$PETSC_HAS_SUNDIALS" >&6; }
 
   rm petscmake$$
 
   # Set the line to be included in the make.conf file
   PETSC="include ${PETSC_CONFDIR}/variables"
 else
-   PETSC=
+  PETSC=
 fi
 PETSC=$PETSC
 
@@ -7844,7 +7866,7 @@ fi
   if test "$SLEPC_VERSION_MAJOR" = "3" && test "$SLEPC_VERSION_MINOR" = "4"
   then
     # Version 3.4
-    echo "  -> Using interface for SLEPc 3.4"
+    echo " -> Using interface for SLEPc 3.4"
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SLEPC -DBOUT_HAS_SLEPC_3_4"
     HAS_SLEPC="yes"
 
@@ -10741,7 +10763,10 @@ $as_echo "$sundials_int_type_found" >&6; }
 
   if test "x$sundials_int_type_found" = "xno"; then :
 
-      as_fn_error $? "*** Cannot compile CVODE with either long or int" "$LINENO" 5
+      { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "*** Cannot compile CVODE with either long or int
+See \`config.log' for more details" "$LINENO" 5; }
 
 fi
   ac_ext=cpp
@@ -10808,7 +10833,10 @@ $as_echo "$sundials_int_type_found" >&6; }
 
   if test "x$sundials_int_type_found" = "xno"; then :
 
-      as_fn_error $? "*** Cannot compile IDA with either long or int" "$LINENO" 5
+      { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "*** Cannot compile IDA with either long or int
+See \`config.log' for more details" "$LINENO" 5; }
 
 fi
   ac_ext=cpp
@@ -10875,7 +10903,10 @@ $as_echo "$sundials_int_type_found" >&6; }
 
   if test "x$sundials_int_type_found" = "xno"; then :
 
-      as_fn_error $? "*** Cannot compile ARKODE with either long or int" "$LINENO" 5
+      { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "*** Cannot compile ARKODE with either long or int
+See \`config.log' for more details" "$LINENO" 5; }
 
 fi
   ac_ext=cpp
