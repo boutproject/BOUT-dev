@@ -1,4 +1,5 @@
 /*!************************************************************************
+ * \file physicsmodel.hxx
  * 
  * @brief Base class for Physics Models
  * 
@@ -184,27 +185,70 @@ protected:
   virtual int timestepMonitor(BoutReal UNUSED(simtime), BoutReal UNUSED(dt)) {return 0;}
 
   // Functions called by the user to set callback functions
+
+  /// Specify that this model is split into a convective and diffusive part
   void setSplitOperator(bool split=true) {splitop = split;}
+
+  /// Specify a preconditioner function
   void setPrecon(preconfunc pset) {userprecon = pset;}
+
+  /// Specify a Jacobian-vector multiply function
   void setJacobian(jacobianfunc jset) {userjacobian = jset;}
 
+  /// This is set by a call to initialise, and can be used by models to specify evolving variables
   Solver *solver;
+
+  /*!
+   * Specify a variable for the solver to evolve
+   *
+   * @param[in] var  The variable to evolve
+   * @param[in] name The name to use for variable initialisation and output
+   * 
+   * Note that the variable must not be destroyed (e.g. go out of scope)
+   * after this call, since a pointer to \p var is stored in the solver.
+   *
+   * To evolve the state, the solver will set \p var, and the user-supplied
+   * rhs() function should calculate ddt(var).
+   */
   void bout_solve(Field2D &var, const char *name);
   void bout_solve(Field3D &var, const char *name);
   void bout_solve(Vector2D &var, const char *name);
   void bout_solve(Vector3D &var, const char *name);
-  
+
+  /*!
+   * Specify a constrained variable \p var, which will be
+   * adjusted to make \p F_var equal to zero.
+   * If the solver does not support constraints then this will throw an exception
+   * 
+   * @param[in] var  The variable the solver should modify
+   * @param[in] F_var  The control variable, which the user will set
+   * @param[in] name   The name to use for initialisation and output
+   * 
+   */ 
   bool bout_constrain(Field3D &var, Field3D &F_var, const char *name);
 private:
-  bool splitop;
-  preconfunc   userprecon;
-  jacobianfunc userjacobian;
+  bool splitop; ///< Split operator model?
+  preconfunc   userprecon; ///< Pointer to user-supplied preconditioner function
+  jacobianfunc userjacobian; ///< Pointer to user-supplied Jacobian-vector multiply function
   
-  bool initialised; // True if model already initialised
+  bool initialised; ///< True if model already initialised
 };
 
-// Macro to define a simple main() which creates
-// the given model and runs it.
+/*!
+ * Macro to define a simple main() which creates
+ * the given model and runs it. This should be sufficient
+ * for most use cases, but a user can define their own
+ * main() function if needed.
+ *
+ * Example
+ * -------
+ *
+ * class MyModel : public PhysicsModel {
+ *   ..
+ * };
+ *
+ * BOUTMAIN(MyModel);
+ */
 #define BOUTMAIN(ModelClass)                          \
   int main(int argc, char **argv) {                   \
     int init_err = BoutInitialise(argc, argv);        \
