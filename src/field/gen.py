@@ -17,9 +17,9 @@ class Field:
         if self.i=='real':
             return name
         elif self.i=='f2d':
-            return '%s[i]'%name
+            return '%s[y+x*ny]'%name
         else:
-            return '%s[i*nz+j]'%(name)
+            return '%s[z+nz*(y+ny*x)]'%(name)
 
 f3d =Field('Field3D' ,['x','y','z'],'f3d')
 f2d =Field('Field2D' ,['x','y'    ],'f2d')
@@ -37,9 +37,14 @@ def mymax(f1,f2):
         return f1
     else:
         return f3d
-#dirs={'f3d':['x','y','z'],
-#      'f2d':['x','y']}
+def mymin(f1,f2):
+    if (len(f1.d) < len(f2.d)):
+        return f1
+    else:
+        return f2
+
 ops=['*','/','+','-']
+#ops=['*']
 op_names={'*':'mul',
           '/':'div',
           '-':'minus',
@@ -49,9 +54,11 @@ for lhs in fields:
     for rhs in fields:
         if lhs.i == rhs.i == 'real':
             continue
-        #rhsn=field_names[rhs]
+        if (lhs != rhs and mymin(lhs,rhs).i != 'real'):
+            elementwise=True
+        else:
+            elementwise=False
         out=mymax(rhs,lhs)
-        #outn=field_names[out]
         for op in ops:
             opn=op_names[op]
             print 'void autogen_%s_%s_%s_%s('%(out.n,lhs.n,rhs.n,opn),
@@ -61,56 +68,60 @@ for lhs in fields:
             for f in range(len(fs)):
                 print const,"BoutReal",
                 if fs[f].i != 'real':
-                    print "*",
+                    print "* __restrict__",
                 print fn[f],",",
                 const='const'
-            print'int max',
-            if (lhs != rhs):
-                print ', int nz',
+            if (lhs != rhs and mymin(lhs,rhs).i != 'real'):
+                c=''
+                for d in out.d:
+                    print '%s int n%s'%(c,d),
+                    c=','
+            else:
+                print ' int max',
             print '){'
-            if (lhs != rhs):
-                print '  max/=nz;'
-            print '  for (int i=0;i<max;++i){'
-            if (lhs != rhs):
-                print "    for (int j=0;j<nz;++j){"
-                print "      result[i*nz+j]=",
+            if elementwise:#(lhs != rhs and mymin(lhs,rhs).i != 'real'):
+                for d in out.d:
+                    print '  for (int %s=0;%s<n%s;++%s){'%(d,d,d,d)
+                print "      ",out.get('result'),"=",
                 print lhs.get('lhs'),
-                # if lhs.i == 'f2d':
-                #     print "lhs[i]",
-                # elif lhs.i == 'real':
-                #     print "lhs"
-                # else:
-                #     print "lhs[i*nz+j]",
                 print op,
                 print rhs.get('rhs'),
                 print ";"
-                # if rhs.i == 'f2d':
-                #     print "rhs[i];"
-                # else:
-                #     print "rhs[i*nz+j];"
-                print "    }"
+                for d in out.d:
+                    print "  }"
             else:
-                print "    result[i]=lhs[i]%srhs[i];"%op
-            print "  }"
+                print "  for (int i=0;i<max;++i){"
+                print "    result[i]=lhs",
+                if lhs.i != 'real':
+                    print "[i]",
+                print "%srhs"%op,
+                if rhs.i != 'real':
+                    print "[i]",
+                print ";"
+                print "  }"
             print "}"
-            print
             print "const %s operator%s(const %s & lhs,const %s & rhs){"%(out.n,op,lhs.n,rhs.n)
             print "  Indices i{0,0,0};"
             print "  %s result;"%(out.n)
             print "  result.allocate();"
-            print "  "
             print "  autogen_%s_%s_%s_%s("%(out.n,lhs.n,rhs.n,opn),
             for f in range(len(fn)):
                 if fs[f].i=='real':
-                    print "%s,"%fn[f]
+                    print "%s,"%fn[f],
                 else:
                     print "&%s[i],"%fn[f],
             m=''
+            print '\n             ',
             for d in out.d:
                 print m,"mesh->LocalN%s"%d,
-                m='*'
-            if (lhs != rhs):
-                print "\n     ,mesh->LocalNz",
+                if elementwise:
+                    m=','
+                else:
+                    m='*'
+#            if (lhs != rhs):
+ #               print "\n     ,mesh->LocalNz",
             print ");"
             print "  return result;"
             print "}"
+            print
+            print
