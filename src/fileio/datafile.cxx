@@ -44,7 +44,7 @@
 #include <utils.hxx>
 #include "formatfactory.hxx"
 
-Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), floats(false), openclose(true), enabled(true), file(NULL) {
+Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), floats(false), openclose(true), enabled(true), shiftOutput(false), file(NULL) {
   filenamelen=FILENAMELEN;
   filename=new char[filenamelen];
   if(opt == NULL)
@@ -101,7 +101,7 @@ bool Datafile::openr(const char *format, ...) {
   if(format == (const char*) NULL) 
     throw BoutException("Datafile::open: No argument given for opening file!");
 
-  myvsnprintf(filename,filenamelen, format, ap);
+  bout_vsnprintf(filename,filenamelen, format);
   
   // Get the data format
   file = FormatFactory::getInstance()->createDataFormat(filename, parallel);
@@ -135,7 +135,7 @@ bool Datafile::openw(const char *format, ...) {
   if(format == (const char*) NULL)
     throw BoutException("Datafile::open: No argument given for opening file!");
 
-  myvsnprintf(filename, filenamelen, format, ap);
+  bout_vsnprintf(filename, filenamelen, format);
   
   // Get the data format
   file = FormatFactory::getInstance()->createDataFormat(filename, parallel);
@@ -176,7 +176,7 @@ bool Datafile::opena(const char *format, ...) {
   if(format == (const char*) NULL)
     throw BoutException("Datafile::open: No argument given for opening file!");
 
-  myvsnprintf(filename, filenamelen, format, ap);
+  bout_vsnprintf(filename, filenamelen, format);
 
   // Get the data format
   file = FormatFactory::getInstance()->createDataFormat(filename, parallel);
@@ -531,7 +531,7 @@ bool Datafile::write(const char *format, ...) const {
   int filenamelen=512;
   char * filename=new char[filenamelen];
 
-  myvsnprintf(filename, filenamelen, format, ap);
+  bout_vsnprintf(filename, filenamelen, format);
 
   // Create a new datafile
   Datafile tmp(*this);

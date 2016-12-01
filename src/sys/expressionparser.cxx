@@ -411,7 +411,7 @@ ParseException::ParseException(const char *s, ...) {
 
   int buf_len=1024;
   char * buffer= new char[buf_len];
-  myvsnprintf(buffer,buf_len, s, ap);
+  bout_vsnprintf(buffer,buf_len, s);
   
   message.assign(buffer);
   delete[] buffer;

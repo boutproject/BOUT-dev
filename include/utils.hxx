@@ -131,16 +131,15 @@ string trimLeft(const string &, const string &c=" \t");
 string trimRight(const string &, const string &c=" \t\r");
 string trimComments(const string &, const string &c="#;");
 
-/// the myvsnprintf macro:
+/// the bout_vsnprintf macro:
 /// The first argument is an char * buffer of length len.
 /// It needs to have been allocated with new[], as it may be
 /// reallocated.
 /// len: the length of said buffer. May be changed, mussn't be const.
 /// fmt: the const char * descriping the format.
-/// va: A dummy argument. will
 /// note that fmt should be the first argument of the function of type
 /// const char * and has to be directly followed by the variable arguments.
-#define myvsnprintf(buf,len,fmt,va) {                     \
+#define bout_vsnprintf(buf,len,fmt) {                   \
     va_list va;                                         \
     va_start(va, fmt);                                  \
     int _vsnprintflen=vsnprintf(buf,len,fmt,va);        \

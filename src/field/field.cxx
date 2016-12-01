@@ -51,7 +51,7 @@ void Field::error(const char *s, ...) const {
     output.write("Unspecified error in field\n");
   }else {
   
-    myvsnprintf(err_buffer,buf_len, s, ap);
+    bout_vsnprintf(err_buffer,buf_len, s);
 
 #ifdef TRACK
       output.write("Error in '%s': %s", name.c_str(), err_buffer);
@@ -59,8 +59,9 @@ void Field::error(const char *s, ...) const {
       output.write("Error in field: %s", err_buffer);
 #endif
   }
-  
-  throw BoutException("Error in field: %s", err_buffer);
+  std::string msg="Error in field: ";
+  msg+=err_buffer;
   delete[] err_buffer;
+  throw BoutException(msg);
 }
 

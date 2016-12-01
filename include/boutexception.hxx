@@ -14,6 +14,7 @@ void BoutParallelThrowRhsFail(int &status, const char* message);
 class BoutException : public exception {
 public:
   BoutException(const char *, ...);
+  BoutException(const std::string);
   virtual ~BoutException() throw();
   
   const char* what() const throw();

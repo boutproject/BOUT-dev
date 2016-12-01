@@ -24,7 +24,7 @@ void OptionsReader::read(Options *options, const char *file, ...) {
   int buf_len=512;
   char * filename=new char[buf_len];
 
-  myvsnprintf(filename,buf_len, file, ap);
+  bout_vsnprintf(filename,buf_len, file);
 
   output.write("Reading options file %s\n", filename);
 
