@@ -25,13 +25,13 @@ def plotdata(data, x=None, y=None,
     ndims = len(size)
     
     if ndims == 1:
-        if (xerr != None) or (yerr != None):
+        if (xerr is not None) or (yerr is not None):
             # Points with error bars
-            if x == None:
+            if x is None:
                 x = np.arange(size)
             errorbar(x, data, xerr, yerr)
         # Line plot
-        if x == None:
+        if x is None:
             plt.plot(data)
         else:
             plt.plot(x, data)
@@ -39,9 +39,9 @@ def plotdata(data, x=None, y=None,
     elif ndims == 2:
         # A contour plot
         
-        if x == None:
+        if x is None:
             x = np.arange(size[1])
-        if y == None:
+        if y is None:
             y = np.arange(size[0])
         
         if fill:
@@ -63,14 +63,14 @@ def plotdata(data, x=None, y=None,
         print("Sorry, can't handle %d-D variables" % ndims)
         return
     
-    if title != None:
+    if title is not None:
         plt.title(title)
-    if xtitle != None:
+    if xtitle is not None:
         plt.xlabel(xtitle)
-    if ytitle != None:
+    if ytitle is not None:
         plt.ylabel(ytitle)
     
-    if output != None:
+    if output is not None:
         # Write to a file
         plt.savefig(output)
     else:

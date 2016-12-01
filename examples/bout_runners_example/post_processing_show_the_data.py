@@ -8,15 +8,24 @@ from boututils.showdata import showdata
 # All post processing functions called by bout_runners must accept the
 # first argument from bout_runners (called 'folder' in
 # __call_post_processing_function)
-def show_the_data(path, t=None, x=None, y=None, z=None):
+def show_the_data(path, t=None, x=None, y=None, z=None, **kwargs):
     """Function which plots the data.
 
-    Input
-    path     -   the path of a run
-    t        -   the desired t slice of showdata
-    x        -   the desired x slice of showdata
-    y        -   the desired y slice of showdata
-    z        -   the desired z slice of showdata
+    Parameters
+    ----------
+    path : str
+        The path of a run
+    t : slice
+        The desired t slice of showdata
+    x : slice
+        The desired x slice of showdata
+    y : slice
+        The desired y slice of showdata
+    z : slice
+        The desired z slice of showdata
+    **kwargs : key word arguments
+        Not used here, but acts like a "dumpster" for additional keyword
+        arguments
     """
 
     print("Showing data from " + path)

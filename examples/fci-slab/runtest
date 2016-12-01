@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Python script to run and analyse MMS test
 #
@@ -19,7 +19,7 @@ import pickle
 
 from sys import stdout
 
-import generate
+import zoidberg as zb
 
 nx = 5 # Not changed for these tests
 
@@ -48,7 +48,10 @@ for var in varlist:
 for n in nlist:
 
     # Generate grid file
-    generate.slab(nx, n, n, Bpprime=0.1, Bp=0.05)
+    grid = zb.grid.Grid(nx, n, n)
+    slab = zb.field.Slab(grid, Bpprime=0.1, Bp=0.05)
+    maps = zb.make_maps(grid, slab)
+    zb.write_maps(grid, slab, maps)
 
     args = " -d "+directory+" MZ="+str(n)
 

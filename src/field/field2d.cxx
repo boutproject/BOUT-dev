@@ -110,7 +110,7 @@ Field2D & Field2D::operator=(const Field2D &rhs) {
   if(this == &rhs)
     return(*this); // skip this assignment
 
-  MsgStackItem trace("Field2D: Assignment from Field2D");
+  TRACE("Field2D: Assignment from Field2D");
 
   checkData(rhs);
   
@@ -583,10 +583,6 @@ const Field2D operator-(const Field2D &f) {
 }
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
-
-const Field2D SQ(const Field2D &f) {
-  return f*f;
-}
 
 BoutReal min(const Field2D &f, bool allpe) {
   TRACE("min(Field2D)");

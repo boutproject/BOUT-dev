@@ -336,13 +336,13 @@ void Solver::constraint(Field2D &v, Field2D &C_v, const char* name) {
 #endif
 
   if(!has_constraints)
-    bout_error("ERROR: This solver doesn't support constraints\n");
+    throw BoutException("ERROR: This solver doesn't support constraints\n");
 
   if(initialised)
-    bout_error("Error: Cannot add constraints to solver after initialisation\n");
+    throw BoutException("Error: Cannot add constraints to solver after initialisation\n");
 
   if(name == NULL)
-    bout_error("WARNING: Constraint requested for variable with NULL name\n");
+    throw BoutException("WARNING: Constraint requested for variable with NULL name\n");
   
   VarStr<Field2D> d;
   
@@ -368,13 +368,13 @@ void Solver::constraint(Field3D &v, Field3D &C_v, const char* name) {
 #endif
 
   if(!has_constraints)
-    bout_error("ERROR: This solver doesn't support constraints\n");
+    throw BoutException("ERROR: This solver doesn't support constraints\n");
 
   if(initialised)
-    bout_error("Error: Cannot add constraints to solver after initialisation\n");
+    throw BoutException("Error: Cannot add constraints to solver after initialisation\n");
 
   if(name == NULL)
-    bout_error("WARNING: Constraint requested for variable with NULL name\n");
+    throw BoutException("WARNING: Constraint requested for variable with NULL name\n");
 
   VarStr<Field3D> d;
   
@@ -401,13 +401,13 @@ void Solver::constraint(Vector2D &v, Vector2D &C_v, const char* name) {
 #endif
 
   if(!has_constraints)
-    bout_error("ERROR: This solver doesn't support constraints\n");
+    throw BoutException("ERROR: This solver doesn't support constraints\n");
 
   if(initialised)
-    bout_error("Error: Cannot add constraints to solver after initialisation\n");
+    throw BoutException("Error: Cannot add constraints to solver after initialisation\n");
 
   if(name == NULL)
-    bout_error("WARNING: Constraint requested for variable with NULL name\n");
+    throw BoutException("WARNING: Constraint requested for variable with NULL name\n");
     
   VarStr<Vector2D> d;
   
@@ -445,13 +445,13 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, const char* name) {
 #endif
 
   if(!has_constraints)
-    bout_error("ERROR: This solver doesn't support constraints\n");
+    throw BoutException("ERROR: This solver doesn't support constraints\n");
 
   if(initialised)
-    bout_error("Error: Cannot add constraints to solver after initialisation\n");
+    throw BoutException("Error: Cannot add constraints to solver after initialisation\n");
 
   if(name == NULL)
-    bout_error("WARNING: Constraint requested for variable with NULL name\n");
+    throw BoutException("WARNING: Constraint requested for variable with NULL name\n");
 
   VarStr<Vector3D> d;
   
@@ -505,8 +505,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   
   // Initialise
   if(init(restarting, NOUT, TIMESTEP)) {
-    output.write("Failed to initialise solver-> Aborting\n");
-    return 1;
+    throw BoutException("Failed to initialise solver-> Aborting\n");
   }
   
   /// Run the solver
@@ -522,8 +521,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
     
     // Run RHS once to ensure all variables set
     if (run_rhs(simtime)) {
-      output.write("Physics RHS call failed\n");
-      return 1;
+      throw BoutException("Physics RHS call failed\n");
     }
     
     // Call monitors so initial values are written to output dump files

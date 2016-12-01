@@ -1,4 +1,4 @@
-/*
+/*!
  * Provides global gather/scatter operations for fields
  *
  */
@@ -12,21 +12,40 @@ class GlobalField2D;
 
 #include "mesh.hxx"
 
+/*!
+ * This provides a method for gathering and scattering a field
+ * which takes into account the local and global indices
+ * 
+ * This is a base class which is inherited by GlobalField2D and GlobalField3D
+ */ 
 class GlobalField {
 public:
   virtual ~GlobalField();
   virtual bool valid() const = 0;  ///< Is the data valid on any processor?
   bool dataIsLocal() const {return valid() && (data_on_proc == mype);} ///< Data is on this processor
 
-  // Data access by index
+  /*!
+   * Data access by index. This doesn't perform any checks,
+   * so the user should first test if the data is available
+   * on this processor by calling dataIsLocal()
+   */
   BoutReal& operator()(int jx, int jy, int jz) {return data[jz + nz*jy + nz*ny*jx];}
+
+  /// Const data access by index
   const BoutReal& operator()(int jx, int jy, int jz) const {return data[jz + nz*jy + nz*ny*jx];}
   
+  /// Size of the field in X
   int xSize() const {return nx;}
+  /// Size of the field in Y
   int ySize() const {return ny;}
+  /// Size of the field in Z
   int zSize() const {return nz;}
   
-  // Direct data access
+  /*
+   * Direct data access
+   *
+   * Stored as a 1D array [x*ny*nz + y*nz + z]
+   */ 
   BoutReal* getData() {return data;}
 protected:
   GlobalField(Mesh *m, int proc, int xsize, int ysize, int zsize);
@@ -47,6 +66,50 @@ private:
   GlobalField();
 };
 
+/*!
+ * Gather and scatter a Field2D
+ *
+ * Example
+ * -------
+ *
+ * To create a GlobalField2D, pass a mesh pointer
+ * 
+ *     GlobalField2D g2d(mesh); 
+ *
+ * By default data is gathered and scattered to/from processor 0. 
+ * To change this, pass the processor number as a second argument:
+ *
+ *     GlobalField3D g2d(mesh, 1); // Gather onto processor 1
+ *
+ * Gather and scatter methods operate on Field2D objects:
+ *
+ *     Field2D localdata;
+ *     
+ *     g2d.gather(localdata); // Gather onto one processsor
+ *
+ * To scatter data back, use the scatter method:
+ *
+ *     localdata = g2d.scatter();
+ *
+ * Note that both gather and scatter are collective operations, 
+ * which must be performed by all processors.
+ *
+ * To test if the data is available on a processor, use:
+ *
+ *     if(g2d.dataIsLocal()) {
+ *       // g2d data on this processor
+ *     }
+ * 
+ * The data in a GlobalField2D can be accessed using (x,y,z) indexing,
+ * with the index ranges given by xSize, ySize, zSize methods. 
+ * 
+ *     for ( int x=0; x<g2d.xSize(); x++)
+ *       for ( int y=0; y<g2d.ySize(); y++)
+ *         output.write(" Value at (%d ,%d) is %e\n" ,
+ *                        x, y,
+ *                        g2d(x, y));
+ *
+ */ 
 class GlobalField2D : public GlobalField {
 public:
   GlobalField2D(Mesh *m, int proc = 0);
@@ -80,12 +143,59 @@ private:
   bool data_valid;
 };
 
-
+/*!
+ * Gather and scatter a Field3D to/from one processor
+ *
+ * Example
+ * -------
+ *
+ * To create a GlobalField3D, pass a mesh pointer
+ * 
+ *     GlobalField3D g3d(mesh); 
+ *
+ * By default data is gathered and scattered to/from processor 0. 
+ * To change this, pass the processor number as a second argument:
+ *
+ *     GlobalField3D g3d(mesh, 1); // Gather onto processor 1
+ *
+ * Gather and scatter methods operate on Field3D objects:
+ *
+ *     Field3D localdata;
+ *     
+ *     g3d.gather(localdata); // Gather onto one processsor
+ *
+ * To scatter data back, use the scatter method:
+ *
+ *     localdata = g3d.scatter();
+ *
+ * Note that both gather and scatter are collective operations, 
+ * which must be performed by all processors.
+ *
+ * To test if the data is available on a processor, use:
+ *
+ *     if(g3d.dataIsLocal()) {
+ *       // g3d data on this processor
+ *     }
+ * 
+ * The data in a GlobalField3D can be accessed using (x,y,z) indexing,
+ * with the index ranges given by xSize, ySize, zSize methods. 
+ * 
+ *     for ( int x=0; x<g3d.xSize(); x++)
+ *       for ( int y=0; y<g3d.ySize(); y++)
+ *         for ( int z=0; z<g3d.zSize(); z++)
+ *           output.write(" Value at (%d ,%d ,%d) is %e\n" ,
+ *                        x, y, z,
+ *                        g3d(x, y, z));
+ *
+ */
 class GlobalField3D : public GlobalField {
 public:
   GlobalField3D(Mesh *m, int proc = 0);
   virtual ~GlobalField3D();
   
+  /*!
+   * Test if the data is valid i.e. has been allocated
+   */ 
   bool valid() const {return data_valid;}
   
   void gather(const Field3D &f); ///< Gather all data onto one processor

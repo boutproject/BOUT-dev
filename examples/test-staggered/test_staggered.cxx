@@ -30,7 +30,7 @@ int physics_run(BoutReal time) {
   for( RangeIterator rlow = mesh->iterateBndryLowerY(); !rlow.isDone(); rlow++)
     for(int y=2;y>=0;y--) 
       for(int z=0;z<mesh->LocalNz;z++) {
-        ddt(v)[rlow.ind][y][z] = ddt(v)[rlow.ind][y+1][z];
+        ddt(v)(rlow.ind,y,z) = ddt(v)(rlow.ind,y+1,z);
       }
   
   return 0;

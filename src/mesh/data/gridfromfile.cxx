@@ -23,7 +23,7 @@
  *            destructor
  */
 GridFile::GridFile(DataFormat *format, const string gridfilename) : file(format), filename(gridfilename) {
-  MsgStackItem msg("GridFile constructor");
+  TRACE("GridFile constructor");
   
   if(! file->openr(filename) ) {
     throw BoutException("Could not open file '%s'", filename.c_str());
@@ -79,7 +79,7 @@ bool GridFile::hasVar(const string &name) {
  */
 bool GridFile::get(Mesh *UNUSED(m), int &ival,      const string &name) {
   Timer timer("io");
-  MsgStackItem msg("GridFile::get(int)");
+  TRACE("GridFile::get(int)");
   
   if(!file->is_valid())
     throw BoutException("File cannot be read");
@@ -93,7 +93,7 @@ bool GridFile::get(Mesh *UNUSED(m), int &ival,      const string &name) {
  */
 bool GridFile::get(Mesh *UNUSED(m), BoutReal &rval, const string &name) {
   Timer timer("io");
-  MsgStackItem msg("GridFile::get(BoutReal)");
+  TRACE("GridFile::get(BoutReal)");
   
   if(!file->is_valid())
     throw BoutException("File cannot be read");
@@ -108,7 +108,7 @@ bool GridFile::get(Mesh *UNUSED(m), BoutReal &rval, const string &name) {
  */
 bool GridFile::get(Mesh *m, Field2D &var,   const string &name, BoutReal def) {
   Timer timer("io");
-  MsgStackItem msg("GridFile::get(Field2D)");
+  TRACE("GridFile::get(Field2D)");
 
   if(!file->is_valid())
     throw BoutException("Could not read '%s' from file: File cannot be read", name.c_str());
@@ -189,7 +189,7 @@ bool GridFile::get(Mesh *m, Field2D &var,   const string &name, BoutReal def) {
  */
 bool GridFile::get(Mesh *m, Field3D &var,   const string &name, BoutReal def) {
   Timer timer("io");
-  MsgStackItem msg("GridFile::get(Field3D)");
+  TRACE("GridFile::get(Field3D)");
 
   // Check that the file can be read
   
@@ -283,7 +283,7 @@ bool GridFile::get(Mesh *m, Field3D &var,   const string &name, BoutReal def) {
 
 bool GridFile::get(Mesh *UNUSED(m), vector<int> &var, const string &name,
                    int len, int offset, GridDataSource::Direction UNUSED(dir)) {
-  MsgStackItem msg("GridFile::get(vector<int>)");
+  TRACE("GridFile::get(vector<int>)");
   
   if(!file->is_valid())
     return false;
@@ -299,7 +299,7 @@ bool GridFile::get(Mesh *UNUSED(m), vector<int> &var, const string &name,
 
 bool GridFile::get(Mesh *UNUSED(m), vector<BoutReal> &var, const string &name,
                    int len, int offset, GridDataSource::Direction UNUSED(dir)) {
-  MsgStackItem msg("GridFile::get(vector<BoutReal>)");
+  TRACE("GridFile::get(vector<BoutReal>)");
   
   if(!file->is_valid())
     return false;

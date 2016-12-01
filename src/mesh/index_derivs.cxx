@@ -1448,7 +1448,7 @@ const Field3D Mesh::indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
     func_in = lookupInnerBoundaryFunc(table, method);
     func_out = lookupOuterBoundaryFunc(table, method);
     if(func == NULL)
-      bout_error("Cannot use FFT for X derivatives");
+      throw BoutException("Cannot use FFT for X derivatives");
   }
   
   result = applyXdiff(f, func, func_in, func_out, diffloc);
@@ -1522,7 +1522,7 @@ const Field3D Mesh::indexDDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
     func_in = lookupInnerBoundaryFunc(table, method);
     func_out = lookupOuterBoundaryFunc(table, method);
     if(func == NULL)
-      bout_error("Cannot use FFT for Y derivatives");
+      throw BoutException("Cannot use FFT for Y derivatives");
   }
   
   result = applyYdiff(f, func, func_in, func_out, diffloc);
@@ -1544,6 +1544,8 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
  
   CELL_LOC inloc = f.getLocation(); // Input location
   CELL_LOC diffloc = inloc; // Location of differential result
+
+  Field3D result;
 
   if(mesh->StaggerGrids && (outloc == CELL_DEFAULT)) {
     // Take care of CELL_DEFAULT case
@@ -1582,8 +1584,6 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
     func = lookupFunc(table, method);
   }
 
-  Field3D result;
-
   if(func == NULL) {
     // Use FFT
     
@@ -1600,16 +1600,6 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
 
     result.allocate(); // Make sure data allocated
 
-    int xge = mesh->xstart, xlt = mesh->xend+1;
-    if(inc_xbndry) { // Include x boundary region (for mixed XZ derivatives)
-      xge = 0;
-      xlt = mesh->LocalNx;
-    }
-    if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX)
-      xge = 0;
-    if (mesh->freeboundary_xout && mesh->lastX() && !mesh->periodicX)
-      xlt = mesh->LocalNx;
-    
     int ncz = mesh->LocalNz;
     
 #ifndef _OPENMP
@@ -1629,9 +1619,8 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
       // Parallel, so allocate a separate array for each thread
       
       int th_id = omp_get_thread_num(); // thread ID
-
-      if(th_id == 0) {
         int n_th = omp_get_num_threads();
+      if(th_id == 0) {
         if(nthreads < n_th) {
           // Allocate memory in thread zero
           if(nthreads > 0)
@@ -1645,13 +1634,29 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
       
       dcomplex *cv = globalcv + th_id*(ncz/2 + 1); // Separate array for each thread
 #endif
-       #pragma omp for
-      for (int jx=xge;jx<xlt;++jx)
-      for(int jy=0;jy<mesh->LocalNy;jy++) {
-        rfft(f(jx,jy), ncz, cv); // Forward FFT
+      int xs = mesh->xstart;
+      int xe = mesh->xend;
+      int ys = mesh->ystart;
+      int ye = mesh->yend;
+      if(inc_xbndry) { // Include x boundary region (for mixed XZ derivatives)
+        xs = 0;
+        xe = mesh->LocalNx-1;
+      }
+      if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX)
+        xs = 0;
+      if (mesh->freeboundary_xout && mesh->lastX() && !mesh->periodicX)
+        xe = mesh->LocalNx-1;
+      if (mesh->freeboundary_ydown)
+        ys = 0;
+      if (mesh->freeboundary_yup)
+        ye = mesh->LocalNy-1;
+      #pragma omp for
+      for(int jx=xs;jx<=xe;jx++) {
+        for(int jy=ys;jy<=ye;jy++) {
+          rfft(f(jx, jy), ncz, cv); // Forward FFT
           
         for(int jz=0;jz<=ncz/2;jz++) {
-          BoutReal kwave=jz*2.0*PI/ncz; // wave number is 1/[rad]
+            BoutReal kwave=jz*2.0*PI/ncz; // wave number is 1/[rad]
             
           BoutReal flt;
           if (jz>0.4*ncz) flt=1e-10; else flt=1.0;
@@ -1663,6 +1668,8 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
         irfft(cv, ncz, result(jx,jy)); // Reverse FFT
       }
     }
+    }
+    // End of parallel section
     
 #ifdef CHECK
     // Mark boundaries as invalid
@@ -1765,7 +1772,7 @@ const Field3D Mesh::indexD2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
     func_in = lookupInnerBoundaryFunc(table, method);
     func_out = lookupOuterBoundaryFunc(table, method);
     if(func == NULL)
-      bout_error("Cannot use FFT for X derivatives");
+      throw BoutException("Cannot use FFT for X derivatives");
   }
   
   result = applyXdiff(f, func, func_in, func_out);
@@ -1871,7 +1878,7 @@ const Field3D Mesh::indexD2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
     func_in = lookupInnerBoundaryFunc(table, method);
     func_out = lookupOuterBoundaryFunc(table, method);
     if(func == NULL)
-      bout_error("Cannot use FFT for Y derivatives");
+      throw BoutException("Cannot use FFT for Y derivatives");
   }
   
   result = applyYdiff(f, func, func_in, func_out);
@@ -1906,7 +1913,7 @@ const Field2D Mesh::indexD2DY2(const Field2D &f) {
  *          guard cells
  *
  */
-const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool inc_xbndry) {
   Mesh::deriv_func func = fD2DZ2; // Set to default function
   DiffLookup *table = SecondDerivTable;
   
@@ -1980,13 +1987,17 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
     int xe = mesh->xend;
     int ys = mesh->ystart;
     int ye = mesh->yend;
+    if(inc_xbndry) { // Include x boundary region (for mixed XZ derivatives)
+      xs = 0;
+      xe = mesh->LocalNx-1;
+    }
     if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX)
       xs = 0;
     if (mesh->freeboundary_xout && mesh->lastX() && !mesh->periodicX)
       xe = mesh->LocalNx-1;
     if (mesh->freeboundary_ydown)
       ys = 0;
-    if (mesh->freeboundary_ydown)
+    if (mesh->freeboundary_yup)
       ye = mesh->LocalNy-1;
       
     for(int jx=xs;jx<=xe;jx++) {
@@ -2115,7 +2126,7 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC UNUSE
 
 /// General version for 2 or 3-D objects
 const Field3D Mesh::indexVDDX(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method) {
-  MsgStackItem("Mesh::indexVDDX(Field, Field)");
+  TRACE("Mesh::indexVDDX(Field, Field)");
   
   Field3D result;
   result.allocate(); // Make sure data allocated
@@ -2202,7 +2213,7 @@ const Field3D Mesh::indexVDDX(const Field &v, const Field &f, CELL_LOC outloc, D
 
 // special case where both are 2D
 const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
-  MsgStackItem("Mesh::indexVDDY");
+  TRACE("Mesh::indexVDDY");
   
   Field2D result;
   result.allocate(); // Make sure data allocated
@@ -2285,7 +2296,7 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
 // general case
 const Field3D Mesh::indexVDDY(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method) {
-  MsgStackItem("Mesh::indexVDDY(Field, Field)");
+  TRACE("Mesh::indexVDDY(Field, Field)");
   
   Field3D result;
   result.allocate(); // Make sure data allocated
@@ -2373,7 +2384,7 @@ const Field3D Mesh::indexVDDY(const Field &v, const Field &f, CELL_LOC outloc, D
 
 // general case
 const Field3D Mesh::indexVDDZ(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method) {
-  MsgStackItem("Mesh::indexVDDZ");
+  TRACE("Mesh::indexVDDZ");
   
   Field3D result;
   result.allocate(); // Make sure data allocated
@@ -2461,7 +2472,7 @@ const Field3D Mesh::indexVDDZ(const Field &v, const Field &f, CELL_LOC outloc, D
  *******************************************************************************/
 
 const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
-  MsgStackItem("Mesh::::indexFDDX(Field2D, Field2D)");
+  TRACE("Mesh::::indexFDDX(Field2D, Field2D)");
   
   if( (method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDX == NULL)) ) {
     // Split into an upwind and a central differencing part
@@ -2496,7 +2507,7 @@ const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
 }
 
 const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
-  MsgStackItem("Mesh::indexFDDX");
+  TRACE("Mesh::indexFDDX");
   
   if( (method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDX == NULL)) ) {
     // Split into an upwind and a central differencing part
@@ -2571,7 +2582,7 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
 /////////////////////////////////////////////////////////////////////////
 
 const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
-  MsgStackItem("Mesh::indexFDDY(Field2D, Field2D)");
+  TRACE("Mesh::indexFDDY(Field2D, Field2D)");
   
   if( (method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDY == NULL)) ) {
     // Split into an upwind and a central differencing part
@@ -2606,7 +2617,7 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
 }
 
 const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
-  MsgStackItem("Mesh::indexFDDY");
+  TRACE("Mesh::indexFDDY");
   
   if( (method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDY == NULL)) ) {
     // Split into an upwind and a central differencing part
@@ -2686,7 +2697,7 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 /////////////////////////////////////////////////////////////////////////
 
 const Field3D Mesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
-  MsgStackItem("Mesh::indexFDDZ(Field3D, Field3D)");
+  TRACE("Mesh::indexFDDZ(Field3D, Field3D)");
   if( (method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDZ == NULL)) ) {
     // Split into an upwind and a central differencing part
     // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)

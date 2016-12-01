@@ -141,9 +141,15 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
             #ndims = len(dimens)
             ndims = f.ndims(varname)
 
+    # ndims is 0 for reals, and 1 for f.ex. t_array
     if ndims < 2:
         # Just read from file
-        data = f.read(varname)
+        if varname != 't_array':
+            data = f.read(varname)
+        elif (varname == 't_array') and (tind is None):
+            data = f.read(varname)
+        elif (varname == 't_array') and (tind is not None):
+            data = f.read(varname, ranges=[tind[0],tind[1]+1])
         f.close()
         return data
 
@@ -219,7 +225,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
 
     def check_range(r, low, up, name="range"):
         r2 = r
-        if r != None:
+        if r is not None:
             try:
                 n = len(r2)
             except:
@@ -231,12 +237,16 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
             else:
                 if len(r2) == 1:
                     r2 = [r2,r2]
+                if r2[0] < 0 and low >= 0:
+                    r2[0]+=(up-low+1)
+                if r2[1] < 0 and low >= 0:
+                    r2[1]+=(up-low+1)
                 if r2[0] < low:
                     r2[0] = low
                 if r2[0] > up:
                     r2[0] = up
-                if r2[1] < 0:
-                    r2[1] = 0
+                if r2[1] < low:
+                    r2[1] = low
                 if r2[1] > up:
                     r2[1] = up
                 if r2[0] > r2[1]:
@@ -403,11 +413,6 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
             d = f.read(varname, ranges=[xmin, xmax+1,
                                         ymin, ymax+1])
             data[(xgmin-xind[0]):(xgmin-xind[0]+nx_loc), (ygmin-yind[0]):(ygmin-yind[0]+ny_loc)] = d
-        elif ndims == 1:
-            if dimens[0] == 't':
-                # t
-                d = f.read(varname, ranges=[tind[0],tind[1]+1])
-                data[:] = d
 
         f.close()
 

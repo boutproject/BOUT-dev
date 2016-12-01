@@ -50,14 +50,14 @@ shell("make > make.log")
 
 # Run with and without staggered grids
 print("Running with staggered grids")
-s, out = launch("./test_staggered -d test StaggerGrids=true", nproc=1, pipe=True)
+s, out = launch("./test_staggered -d test mesh:StaggerGrids=true", nproc=1, pipe=True)
 f = open("run.log.stag", "w")
 f.write(out)
 f.close()
 stag = analyse()
 
 print("Running without staggered grids")
-s, out = launch("./test_staggered -d test StaggerGrids=false", nproc=1, pipe=True)
+s, out = launch("./test_staggered -d test mesh:StaggerGrids=false", nproc=1, pipe=True)
 f = open("run.log.nostag", "w")
 f.write(out)
 f.close()

@@ -37,7 +37,7 @@
 const Vector2D Grad(const Field2D &f, CELL_LOC UNUSED(outloc)) {
   Vector2D result;
   
-  MsgStackItem trace("Grad( Field2D )");
+  TRACE("Grad( Field2D )");
   
   result.x = DDX(f);
   result.y = DDY(f);
@@ -52,7 +52,7 @@ const Vector3D Grad(const Field3D &f,
                     CELL_LOC outloc_x, CELL_LOC outloc_y, CELL_LOC outloc_z) {
   Vector3D result;
 
-  MsgStackItem trace("Grad( Field3D )");
+  TRACE("Grad( Field3D )");
 
   if(outloc_x == CELL_DEFAULT)
     outloc_x = f.getLocation();
@@ -82,7 +82,7 @@ const Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc_x,
                          CELL_LOC UNUSED(outloc_y), CELL_LOC outloc_z) {
   Vector3D result;
 
-  MsgStackItem trace("Grad_perp( Field3D )");
+  TRACE("Grad_perp( Field3D )");
 
   Coordinates *metric = mesh->coordinates();
 
@@ -110,7 +110,7 @@ const Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc_x,
 const Field2D Div(const Vector2D &v, CELL_LOC UNUSED(outloc)) {
   Field2D result;
 
-  MsgStackItem trace("Div( Vector2D )");
+  TRACE("Div( Vector2D )");
   
   Coordinates *metric = mesh->coordinates();
   
@@ -129,7 +129,7 @@ const Field2D Div(const Vector2D &v, CELL_LOC UNUSED(outloc)) {
 const Field3D Div(const Vector3D &v, CELL_LOC outloc) {
   Field3D result;
 
-  MsgStackItem trace("Div( Vector3D )");
+  TRACE("Div( Vector3D )");
   
   Coordinates *metric = mesh->coordinates();
 
@@ -153,7 +153,7 @@ const Field3D Div(const Vector3D &v, CELL_LOC outloc) {
  **************************************************************************/
 
 const Field2D Div(const Vector2D &v, const Field2D &f) {
-  MsgStackItem trace("Div( Vector2D, Field2D )");
+  TRACE("Div( Vector2D, Field2D )");
   
   Coordinates *metric = mesh->coordinates();
   
@@ -173,7 +173,7 @@ const Field2D Div(const Vector2D &v, const Field2D &f) {
 const Field3D Div(const Vector3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
   Field3D result;
   
-  MsgStackItem trace("Div( Vector3D, Field3D )");
+  TRACE("Div( Vector3D, Field3D )");
   
   Coordinates *metric = mesh->coordinates();
   
@@ -206,7 +206,7 @@ const Field3D Div(const Vector3D &v, const Field3D &f) {
 
 const Vector2D Curl(const Vector2D &v, CELL_LOC UNUSED(outloc)) {
 
-  MsgStackItem trace("Curl( Vector2D )");
+  TRACE("Curl( Vector2D )");
   
   Coordinates *metric = mesh->coordinates();
   
@@ -231,7 +231,7 @@ const Vector2D Curl(const Vector2D &v, CELL_LOC UNUSED(outloc)) {
 const Vector3D Curl(const Vector3D &v, 
                     CELL_LOC outloc_x, CELL_LOC outloc_y, CELL_LOC outloc_z) {
 
-  MsgStackItem trace("Curl( Vector3D )");
+  TRACE("Curl( Vector3D )");
 
   Coordinates *metric = mesh->coordinates();
 

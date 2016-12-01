@@ -1,5 +1,14 @@
-/*
+/*!
  * Defines a DEPRECATED macro, to mark functions for future removal
+ * 
+ * Example
+ * -------
+ * 
+ * class SomeClass {
+ *  public:
+ *   DEPRECATED(int someFunction(const string &input));
+ * }
+ *
  */
 
 #ifndef __DEPRECATED_H__

@@ -169,7 +169,7 @@ Field3D* Field3D::timeDeriv() {
 }
 
 void Field3D::splitYupYdown() {
-  MsgStackItem trace("Field3D::splitYupYdown");
+  TRACE("Field3D::splitYupYdown");
   
   if((yup_field != this) && (yup_field != nullptr))
     return;
@@ -180,7 +180,7 @@ void Field3D::splitYupYdown() {
 }
 
 void Field3D::mergeYupYdown() {
-  MsgStackItem trace("Field3D::mergeYupYdown");
+  TRACE("Field3D::mergeYupYdown");
   
   if(yup_field == this)
     return;
@@ -292,7 +292,7 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
   if(this == &rhs)
     return(*this); // skip this assignment
 
-  MsgStackItem trace("Field3D: Assignment from Field3D");
+  TRACE("Field3D: Assignment from Field3D");
   
   /// Check that the data is valid
   checkData(rhs);
@@ -309,7 +309,7 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
 }
 
 Field3D & Field3D::operator=(const Field2D &rhs) {
-  MsgStackItem trace("Field3D = Field2D");
+  TRACE("Field3D = Field2D");
   
   ASSERT1(rhs.isAllocated());
   
@@ -344,7 +344,7 @@ Field3D & Field3D::operator=(const FieldPerp &rhs) {
 }
 
 const bvalue & Field3D::operator=(const bvalue &bv) {
-  MsgStackItem trace("Field3D = bvalue");
+  TRACE("Field3D = bvalue");
   
   allocate();
 
@@ -360,7 +360,7 @@ const bvalue & Field3D::operator=(const bvalue &bv) {
 }
 
 BoutReal Field3D::operator=(const BoutReal val) {
-  MsgStackItem trace("Field3D = BoutReal");
+  TRACE("Field3D = BoutReal");
   allocate();
 
 #ifdef CHECK
@@ -571,8 +571,8 @@ void Field3D::setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
   fval.c = (*this)(bx.jx,bx.jy,bx.jz);
   fval.p = yup()(bx.jx,bx.jyp,bx.jz);
   fval.m = ydown()(bx.jx,bx.jym,bx.jz);
-  fval.pp = 0.0;
-  fval.mm = 0.0;
+  fval.pp = nan("");
+  fval.mm = nan("");
 
   if(mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
     // Non-centred stencil
@@ -772,7 +772,7 @@ void Field3D::setBackground(const Field2D &f2d) {
 }
 
 void Field3D::applyBoundary(bool init) {
-  MsgStackItem trace("Field3D::applyBoundary()");
+  TRACE("Field3D::applyBoundary()");
 
   ASSERT1(isAllocated());
   
@@ -816,7 +816,7 @@ void Field3D::applyBoundary(bool init) {
 
 //JMAD
 void Field3D::applyBoundary(BoutReal t) {
-  MsgStackItem trace("Field3D::applyBoundary()");
+  TRACE("Field3D::applyBoundary()");
   
 #ifdef CHECK
   if(!boundaryIsSet)
@@ -861,7 +861,7 @@ void Field3D::applyBoundary(BoutReal t) {
 }
 
 void Field3D::applyBoundary(const string &condition) {
-  MsgStackItem trace("Field3D::applyBoundary(condition)");
+  TRACE("Field3D::applyBoundary(condition)");
   
   ASSERT1(isAllocated());
   
@@ -947,7 +947,7 @@ void Field3D::applyBoundary(const string &region, const string &condition) {
 }
 
 void Field3D::applyTDerivBoundary() {
-  MsgStackItem trace("Field3D::applyTDerivBoundary()");
+  TRACE("Field3D::applyTDerivBoundary()");
   
   ASSERT1(isAllocated());
   ASSERT1(deriv != NULL);
@@ -986,7 +986,7 @@ void Field3D::applyTDerivBoundary() {
 }
 
 void Field3D::setBoundaryTo(const Field3D &f3d) {
-  MsgStackItem trace("Field3D::setBoundary(const Field3D&)");
+  TRACE("Field3D::setBoundary(const Field3D&)");
   
   allocate(); // Make sure data allocated
 
@@ -1008,7 +1008,7 @@ void Field3D::setBoundaryTo(const Field3D &f3d) {
 
 void Field3D::applyParallelBoundary() {
 
-  MsgStackItem trace("Field3D::applyParallelBoundary()");
+  TRACE("Field3D::applyParallelBoundary()");
 
   ASSERT1(isAllocated());
 
@@ -1027,7 +1027,7 @@ void Field3D::applyParallelBoundary() {
 
 void Field3D::applyParallelBoundary(BoutReal t) {
 
-  MsgStackItem trace("Field3D::applyParallelBoundary(t)");
+  TRACE("Field3D::applyParallelBoundary(t)");
 
   ASSERT1(isAllocated());
 
@@ -1046,7 +1046,7 @@ void Field3D::applyParallelBoundary(BoutReal t) {
 
 void Field3D::applyParallelBoundary(const string &condition) {
 
-  MsgStackItem trace("Field3D::applyParallelBoundary(condition)");
+  TRACE("Field3D::applyParallelBoundary(condition)");
 
   ASSERT1(isAllocated());
 
@@ -1070,7 +1070,7 @@ void Field3D::applyParallelBoundary(const string &condition) {
 
 void Field3D::applyParallelBoundary(const string &region, const string &condition) {
 
-  MsgStackItem trace("Field3D::applyParallelBoundary(region, condition)");
+  TRACE("Field3D::applyParallelBoundary(region, condition)");
 
   ASSERT1(isAllocated());
 
@@ -1097,7 +1097,7 @@ void Field3D::applyParallelBoundary(const string &region, const string &conditio
 
 void Field3D::applyParallelBoundary(const string &region, const string &condition, Field3D *f) {
 
-  MsgStackItem trace("Field3D::applyParallelBoundary(region, condition, f)");
+  TRACE("Field3D::applyParallelBoundary(region, condition, f)");
 
   ASSERT1(isAllocated());
 
@@ -1205,7 +1205,7 @@ REAL_OP_F3D(/); // BoutReal / Field3D
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
 Field3D pow(const Field3D &lhs, const Field3D &rhs) {
-  MsgStackItem trace("pow(Field3D, Field3D)");
+  TRACE("pow(Field3D, Field3D)");
 
   if(mesh->StaggerGrids && (lhs.getLocation() != rhs.getLocation())) {
     // Interpolate and call again
@@ -1227,7 +1227,7 @@ Field3D pow(const Field3D &lhs, const Field3D &rhs) {
 }
 
 Field3D pow(const Field3D &lhs, const Field2D &rhs) {
-  MsgStackItem trace("pow(Field3D, Field2D)");
+  TRACE("pow(Field3D, Field2D)");
   
   Field3D result;
   result.allocate();
@@ -1244,7 +1244,7 @@ Field3D pow(const Field3D &lhs, const Field2D &rhs) {
 }
 
 Field3D pow(const Field3D &lhs, const FieldPerp &rhs) {
-  MsgStackItem trace("pow(Field3D, FieldPerp)");
+  TRACE("pow(Field3D, FieldPerp)");
   
   Field3D result;
   result.allocate();
@@ -1360,10 +1360,6 @@ BoutReal max(const Field3D &f, bool allpe) {
     return result;                                         \
   }
 
-const Field3D SQ(const Field3D &f) {
-  return f * f;
-}
-
 F3D_FUNC(sqrt, ::sqrt);
 F3D_FUNC(abs, ::fabs);
 
@@ -1379,7 +1375,7 @@ F3D_FUNC(cosh, ::cosh);
 F3D_FUNC(tanh, ::tanh);
 
 const Field3D filter(const Field3D &var, int N0) {
-  MsgStackItem trace("filter(Field3D, int)");
+  TRACE("filter(Field3D, int)");
   
   ASSERT1(var.isAllocated());
   
@@ -1534,7 +1530,7 @@ void shiftZ(Field3D &var, double zangle) {
 }
 
 bool finite(const Field3D &f) {
-  MsgStackItem trace("finite( Field3D )");
+  TRACE("finite( Field3D )");
   
   if(!f.isAllocated()) {
     return false;
@@ -1580,7 +1576,7 @@ const Field3D floor(const Field3D &var, BoutReal f) {
 }
 
 Field2D DC(const Field3D &f) {
-  MsgStackItem trace("DC(Field3D)");
+  TRACE("DC(Field3D)");
   
   Field2D result;
   result.allocate();

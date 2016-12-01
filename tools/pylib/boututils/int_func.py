@@ -17,7 +17,7 @@ import copy
 #
 
 def int_func( xin, fin=None, simple=None):
-    if fin == None :
+    if fin is None :
         f = copy.deepcopy(xin)
         x = numpy.arange(numpy.size(f)).astype(float)
     else:
@@ -28,7 +28,7 @@ def int_func( xin, fin=None, simple=None):
 
     g = numpy.zeros(n)
 
-    if simple != None :
+    if simple is not None :
      # Just use trapezium rule
      
         g[0] = 0.0

@@ -187,9 +187,9 @@ for nproc in nprocs:
         exit(status)
 
     # Collect the coordinate arrays separately
-    x = collect("var_x", xguards=False, yguards=False, path=datadir, info=False)
-    y = collect("var_y", xguards=False, yguards=False, path=datadir, info=False)
-    z = collect("var_z", xguards=False, yguards=False, path=datadir, info=False)
+    x = collect("var_x", xguards=True, yguards=True, path=datadir, info=False)
+    y = collect("var_y", xguards=True, yguards=True, path=datadir, info=False)
+    z = collect("var_z", xguards=True, yguards=True, path=datadir, info=False)
 
     # Evaluate the functions
     for var in varlist:
@@ -203,7 +203,7 @@ for nproc in nprocs:
         except NotImplementedError as err:
             print("{} not implemented, skipping".format(err.args[0]))
         else:
-            data = collect(var, xguards=False, yguards=False, path=datadir, info=False)
+            data = collect(var, xguards=True, yguards=True, path=datadir, info=False)
             E2 = np.sqrt(np.mean((analytic - data)**2))
             if E2 < tolerance:
                 success_string = "PASS"

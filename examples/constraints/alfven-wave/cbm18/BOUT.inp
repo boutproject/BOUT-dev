@@ -1,0 +1,51 @@
+
+NOUT = 500
+TIMESTEP = 10
+
+grid = "cbm18_dens8.grid_nx68ny64.nc"
+
+ShiftXderivs = true
+
+MZ = 1
+
+[solver]
+
+type = imexbdf2
+timestep = 1 # Fixed internal timestep
+use_precon = true # Use user supplied preconditioner
+mxstep = 10000
+
+[laplace]    # 2D solver in X-Z
+
+inner_boundary_flags = 1 # Zero gradient on inner boundary
+nonuniform = true
+
+[Alfven]
+
+newXZsolver = false   # Use LaplaceXZ solver
+
+mu_epar = -1e7
+
+resistivity = 1e-7
+
+[Vort]
+scale = 0.0
+
+bndry_all = dirichlet_o2
+
+[Apar]
+scale = 1e-2
+function = gauss(x-0.5,0.2)*sin(y)
+
+bndry_all = neumann_o2
+
+[jpar] 
+bndry_all = neumann_o2
+
+[phi]
+bndry_xin = neumann
+bndry_xout = dirichlet_o2
+
+bndry_target = neumann
+
+
