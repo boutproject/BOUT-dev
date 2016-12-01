@@ -36,12 +36,22 @@ class FieldPerp;
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
 
+#include "unused.hxx"
+
 class Field2D; // #include "field2d.hxx"
 class Field3D; // #include "field3d.hxx"
 
-
+/*!
+ * Represents a 2D field perpendicular to the magnetic field
+ * at a particular index in Y, which only varies in X-Z. 
+ * 
+ * Primarily used inside field solvers
+ */ 
 class FieldPerp : public Field {
  public:
+  /*!
+   * Constructor
+   */
   FieldPerp();
 
   /*!
@@ -65,10 +75,10 @@ class FieldPerp : public Field {
   const DataIterator begin() const;
   const DataIterator end() const;
 
-  inline BoutReal& operator[](DataIterator &d) {
+  inline BoutReal& operator[](const DataIterator &d) {
     return operator()(d.x, d.z);
   }
-  inline const BoutReal& operator[](DataIterator &d) const {
+  inline const BoutReal& operator[](const DataIterator &d) const {
     return operator()(d.x, d.z);
   }
   BoutReal& operator[](const Indices &i) {
@@ -78,7 +88,16 @@ class FieldPerp : public Field {
     return operator()(i.x, i.z);
   }
   
+  /*!
+   * Returns the y index at which this field is defined
+   */ 
   int getIndex() const {return yindex;}
+  
+  /*!
+   * Sets the y index at which this field is defined
+   *
+   * This is used in arithmetic operations
+   */
   void setIndex(int y) { yindex = y; }
 
   /*!
@@ -91,17 +110,26 @@ class FieldPerp : public Field {
       data.ensureUnique();
   }
 
+  /*!
+   * True if the underlying data array is allocated.
+   *
+   *
+   */
   bool isAllocated() const { return !data.empty(); }
   
   // operators
-
+  
   const BoutReal* operator[](int jx) const {
     ASSERT2(!data.empty());
     ASSERT2( (jx >= 0) && (jx < nx) );
-    
+  
     return &data[jx*nz];
   }
-
+  
+  /*!
+   * Returns a C-style array (pointer to first element) in Z
+   * at a given X index. Used mainly for FFT routines
+   */
   BoutReal* operator[](int jx) {
     ASSERT2(!data.empty());
     ASSERT2( (jx >= 0) && (jx < nx) );
@@ -109,6 +137,12 @@ class FieldPerp : public Field {
     return &data[jx*nz];
   }
 
+  /*!
+   * Access to the underlying data array at a given x,z index
+   * 
+   * If CHECK > 2 then bounds checking is performed, otherwise
+   * no checks are performed
+   */ 
   BoutReal& operator()(int jx, int jz) {
 #if CHECK > 2
     // Bounds check both indices
@@ -122,6 +156,9 @@ class FieldPerp : public Field {
     return data[jx*nz + jz];
   }
   
+  /*!
+   * Const (read-only) access to the underlying data array.
+   */ 
   const BoutReal& operator()(int jx, int jz) const {
 #if CHECK > 2
     // Bounds check both indices
@@ -135,9 +172,14 @@ class FieldPerp : public Field {
     return data[jx*nz + jz];
   }
   
-  BoutReal& operator()(int jx, int jy, int jz) { return (*this)(jx, jz); }
+  /*!
+   * Access to the underlying data array. (X,Y,Z) indices for consistency with 
+   * other field types
+   * 
+   */ 
+  BoutReal& operator()(int jx, int UNUSED(jy), int jz) { return (*this)(jx, jz); }
   
-  const BoutReal& operator()(int jx, int jy, int jz) const { return (*this)(jx, jz); }
+  const BoutReal& operator()(int jx, int UNUSED(jy), int jz) const { return (*this)(jx, jz); }
 
   FieldPerp & operator+=(const FieldPerp &rhs);
   FieldPerp & operator+=(const Field3D &rhs);
@@ -167,15 +209,17 @@ class FieldPerp : public Field {
   void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   
  private:
-  int yindex;
+  int yindex; ///< The Y index at which this FieldPerp is defined
 
+  /// The size of the data array
   int nx, nz;
 
+  /// The underlying data array
   Array<BoutReal> data;
 };
-
+  
 // Non-member overloaded operators
-
+  
 const FieldPerp operator+(const FieldPerp &lhs, const FieldPerp &rhs);
 const FieldPerp operator+(const FieldPerp &lhs, const Field3D &rhs);
 const FieldPerp operator+(const FieldPerp &lhs, const Field2D &rhs);
@@ -203,13 +247,12 @@ const FieldPerp operator/(const FieldPerp &lhs, const Field3D &other);
 const FieldPerp operator/(const FieldPerp &lhs, const Field2D &other);
 const FieldPerp operator/(const FieldPerp &lhs, const BoutReal &rhs);
 const FieldPerp operator/(const BoutReal lhs, const FieldPerp &rhs);
-
-const FieldPerp copy(const FieldPerp &f);
-
+  
 /*!
- * Square a FieldPerp
+ * Create a unique copy of a FieldPerp, ensuring 
+ * that they do not share an underlying data array
  */
-const FieldPerp SQ(const FieldPerp &f);
+const FieldPerp copy(const FieldPerp &f);
 
 /*!
  * Create a FieldPerp by slicing a 3D field at a given y

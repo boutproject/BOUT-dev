@@ -18,7 +18,7 @@ dump_format = "nc"  # NetCDF format
 TwistShift = true
 Ballooning = false
 
-[ddy]
+[mesh:ddy]
 first=c2
 
 [mesh] # Simple mesh for testing

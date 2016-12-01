@@ -75,10 +75,10 @@ RKF34Scheme::RKF34Scheme(Options *options):RKScheme(options){
   //Level 4
   timeCoeffs[4] = 1.0;
 
-};
+}
 
 RKF34Scheme::~RKF34Scheme(){
   //Do my cleanup
   
-};
+}
 

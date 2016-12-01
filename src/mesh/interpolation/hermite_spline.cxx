@@ -30,8 +30,8 @@ HermiteSpline::HermiteSpline(int y_offset) :
   Interpolation(y_offset) {
 
   // Index arrays contain guard cells in order to get subscripts right
-  i_corner = i3tensor(mesh->ngx, mesh->ngy, mesh->ngz-1);
-  k_corner = i3tensor(mesh->ngx, mesh->ngy, mesh->ngz-1);
+  i_corner = i3tensor(mesh->LocalNx, mesh->LocalNy, mesh->LocalNz);
+  k_corner = i3tensor(mesh->LocalNx, mesh->LocalNy, mesh->LocalNz);
 
   // Allocate Field3D members
   h00_x.allocate();
@@ -50,7 +50,7 @@ void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z) 
 
   for(int x=mesh->xstart;x<=mesh->xend;x++) {
     for(int y=mesh->ystart; y<=mesh->yend;y++) {
-      for(int z=0;z<mesh->ngz-1;z++) {
+      for(int z=0;z<mesh->LocalNz;z++) {
 
         if (skip_mask(x, y, z)) continue;
 
@@ -99,7 +99,7 @@ void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z, 
   calcWeights(delta_x, delta_z);
 }
 
-const Field3D HermiteSpline::interpolate(const Field3D& f) const {
+Field3D HermiteSpline::interpolate(const Field3D& f) const {
 
   Field3D f_interp;
   f_interp.allocate();
@@ -115,13 +115,13 @@ const Field3D HermiteSpline::interpolate(const Field3D& f) const {
 
   for(int x=mesh->xstart;x<=mesh->xend;x++) {
     for(int y=mesh->ystart; y<=mesh->yend;y++) {
-      for(int z=0;z<mesh->ngz-1;z++) {
+      for(int z=0;z<mesh->LocalNz;z++) {
 
         if (skip_mask(x, y, z)) continue;
 
         // Due to lack of guard cells in z-direction, we need to ensure z-index
         // wraps around
-        int ncz = mesh->ngz-1;
+        int ncz = mesh->LocalNz;
         int z_mod = ((k_corner[x][y][z] % ncz) + ncz) % ncz;
         int z_mod_p1 = (z_mod + 1) % ncz;
 
@@ -163,12 +163,12 @@ const Field3D HermiteSpline::interpolate(const Field3D& f) const {
   return f_interp;
 }
 
-const Field3D HermiteSpline::interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z) {
+Field3D HermiteSpline::interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z) {
   calcWeights(delta_x, delta_z);
   return interpolate(f);
 }
 
-const Field3D HermiteSpline::interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z, BoutMask mask) {
+Field3D HermiteSpline::interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z, BoutMask mask) {
   calcWeights(delta_x, delta_z, mask);
   return interpolate(f);
 }

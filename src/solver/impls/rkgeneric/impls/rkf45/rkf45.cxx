@@ -78,10 +78,10 @@ RKF45Scheme::RKF45Scheme(Options *options):RKScheme(options){
   //Level 5
   timeCoeffs[5] = 1.0/2.0;
 
-};
+}
 
 RKF45Scheme::~RKF45Scheme(){
   //Do my cleanup
   
-};
+}
 

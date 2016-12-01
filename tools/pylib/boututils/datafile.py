@@ -66,7 +66,7 @@ except ImportError:
 class DataFile:
     impl = None
     def __init__(self, filename=None, write=False, create=False, format='NETCDF3_CLASSIC'):
-        if filename != None:
+        if filename is not None:
             if filename.split('.')[-1] in ('hdf5','hdf','h5'):
                 self.impl = DataFile_HDF5(filename=filename, write=write, create=create, format=format)
             else:
@@ -159,7 +159,7 @@ class DataFile_netCDF(DataFile):
         self.writeable = write or create
 
     def close(self):
-        if self.handle != None:
+        if self.handle is not None:
             self.handle.close()
         self.handle = None
 
@@ -168,7 +168,7 @@ class DataFile_netCDF(DataFile):
         if not has_netCDF:
             message = "DataFile: No supported NetCDF python-modules available"
             raise ImportError(message)
-        if filename != None:
+        if filename is not None:
             self.open(filename, write=write, create=create, format=format)
 
     def __del__(self):
@@ -182,7 +182,7 @@ class DataFile_netCDF(DataFile):
 
     def read(self, name, ranges=None):
         """Read a variable from the file."""
-        if self.handle == None: return None
+        if self.handle is None: return None
 
         try:
             var = self.handle.variables[name]
@@ -193,14 +193,14 @@ class DataFile_netCDF(DataFile):
                 if n.lower() == name.lower():
                     print("WARNING: Reading '"+n+"' instead of '"+name+"'")
                     var = self.handle.variables[n]
-            if var == None:
+            if var is None:
                 return None
         ndims = len(var.dimensions)
         if ndims == 0:
             data = var.getValue()
             return data #[0]
         else:
-            if ranges != None:
+            if ranges is not None:
                 if len(ranges) != 2*ndims:
                     print("Incorrect number of elements in ranges argument")
                     return None
@@ -249,7 +249,7 @@ class DataFile_netCDF(DataFile):
 
     def list(self):
         """List all variables in the file."""
-        if self.handle == None: return []
+        if self.handle is None: return []
         return list(self.handle.variables.keys())
 
     def keys(self):
@@ -258,7 +258,7 @@ class DataFile_netCDF(DataFile):
 
     def dimensions(self, varname):
         """Array of dimension names"""
-        if self.handle == None: return None
+        if self.handle is None: return None
         try:
             var = self.handle.variables[varname]
         except KeyError:
@@ -277,7 +277,7 @@ class DataFile_netCDF(DataFile):
 
     def size(self, varname):
         """List of dimension sizes for a variable."""
-        if self.handle == None: return []
+        if self.handle is None: return []
         try:
             var = self.handle.variables[varname]
         except KeyError:
@@ -285,7 +285,7 @@ class DataFile_netCDF(DataFile):
 
         def dimlen(d):
             dim = self.handle.dimensions[d]
-            if dim != None:
+            if dim is not None:
                 t = type(dim).__name__
                 if t == 'int':
                     return dim
@@ -422,7 +422,7 @@ class DataFile_netCDF(DataFile):
             else:
                 var = self.handle.createVariable(name, t, dims)
 
-            if var == None:
+            if var is None:
                 raise Exception("Couldn't create variable")
 
         # Write the data
@@ -448,7 +448,7 @@ class DataFile_HDF5(DataFile):
         self.writeable = write or create
 
     def close(self):
-        if self.handle != None:
+        if self.handle is not None:
             self.handle.close()
         self.handle = None
 
@@ -457,7 +457,7 @@ class DataFile_HDF5(DataFile):
         if not has_h5py:
             message = "DataFile: No supported HDF5 python-modules available"
             raise ImportError(message)
-        if filename != None:
+        if filename is not None:
             self.open(filename, write=write, create=create, format=format)
 
     def __del__(self):
@@ -471,7 +471,7 @@ class DataFile_HDF5(DataFile):
 
     def read(self, name, ranges=None):
         """Read a variable from the file."""
-        if self.handle == None: return None
+        if self.handle is None: return None
 
         try:
             var = self.handle[name]
@@ -482,14 +482,14 @@ class DataFile_HDF5(DataFile):
                 if n.lower() == name.lower():
                     print("WARNING: Reading '"+n+"' instead of '"+name+"'")
                     var = self.handle[name]
-            if var == None:
+            if var is None:
                 return None
         ndims = len(var.shape)
         if ndims == 1 and var.shape[0] == 1:
             data = var
             return data[0]
         else:
-            if ranges != None:
+            if ranges is not None:
                 if len(ranges) != 2*ndims:
                     print("Incorrect number of elements in ranges argument")
                     return None
@@ -520,7 +520,7 @@ class DataFile_HDF5(DataFile):
 
     def list(self):
         """List all variables in the file."""
-        if self.handle == None: return []
+        if self.handle is None: return []
         names = []
         self.handle.visit(names.append)
         return names
@@ -550,7 +550,7 @@ class DataFile_HDF5(DataFile):
 
     def ndims(self, varname):
         """Number of dimensions for a variable."""
-        if self.handle == None: return None
+        if self.handle is None: return None
         try:
             var = self.handle[varname]
         except KeyError:
@@ -559,7 +559,7 @@ class DataFile_HDF5(DataFile):
 
     def size(self, varname):
         """List of dimension sizes for a variable."""
-        if self.handle == None: return None
+        if self.handle is None: return None
         try:
             var = self.handle[varname]
         except KeyError:

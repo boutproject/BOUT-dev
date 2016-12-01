@@ -16,15 +16,15 @@ class MeshIterator
 public:
   /// Constructor. This would set ranges. Could depend on thread number
   MeshIterator() : x(0), y(0), z(0), xstart(0), ystart(0), zstart(0) {
-    xend = mesh->ngx-1;
-    yend = mesh->ngy-1;
-    zend = mesh->ngz-1;
+    xend = mesh->LocalNx-1;
+    yend = mesh->LocalNy-1;
+    zend = mesh->LocalNz;
   }
 
   MeshIterator(int x, int y, int z) : x(x), y(y), z(z), xstart(0), ystart(0), zstart(0) {
-    xend = mesh->ngx-1;
-    yend = mesh->ngy-1;
-    zend = mesh->ngz-1;
+    xend = mesh->LocalNx-1;
+    yend = mesh->LocalNy-1;
+    zend = mesh->LocalNz;
   }
 
   /// The index variables, updated during loop
@@ -75,7 +75,7 @@ MeshIterator begin(Mesh* mesh) {
 }
 
 MeshIterator end(Mesh* mesh) {
-  return MeshIterator(mesh->ngx-1, mesh->ngy-1, mesh->ngz-1);
+  return MeshIterator(mesh->LocalNx-1, mesh->LocalNy-1, mesh->LocalNz);
 }
 
 int main(int argc, char **argv) {
@@ -99,13 +99,13 @@ int main(int argc, char **argv) {
   
   // Loop over data so first test doesn't have a disadvantage from caching
   for(int i=0;i<10;++i) {
-    for(int j=0;j<mesh->ngx*mesh->ngy*mesh->ngz;++j) {
+    for(int j=0;j<mesh->LocalNx*mesh->LocalNy*mesh->LocalNz;++j) {
       rd[j] = ad[j] + bd[j];
     }
   }
   
   SteadyClock start1 = steady_clock::now();
-  int len = mesh->ngx*mesh->ngy*mesh->ngz;
+  int len = mesh->LocalNx*mesh->LocalNy*mesh->LocalNz;
   for(int i=0;i<10;++i) {
     for(int j=0;j<len;++j) {
       rd[j] = ad[j] + bd[j];
@@ -116,9 +116,9 @@ int main(int argc, char **argv) {
   // Nested loops over block data
   SteadyClock start2 = steady_clock::now();
   for(int x=0;x<10;x++) {
-    for(int i=0;i<mesh->ngx;++i) {
-      for(int j=0;j<mesh->ngy;++j) {
-        for(int k=0;k<mesh->ngz;++k) {
+    for(int i=0;i<mesh->LocalNx;++i) {
+      for(int j=0;j<mesh->LocalNy;++j) {
+        for(int k=0;k<mesh->LocalNz;++k) {
           result(i,j,k) = a(i,j,k) + b(i,j,k);
         }
       }

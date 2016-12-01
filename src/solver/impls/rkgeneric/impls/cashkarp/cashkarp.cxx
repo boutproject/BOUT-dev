@@ -78,10 +78,10 @@ CASHKARPScheme::CASHKARPScheme(Options *options):RKScheme(options){
   //Level 5
   timeCoeffs[5] = 7.0/8.0;
 
-};
+}
 
 CASHKARPScheme::~CASHKARPScheme(){
   //Do my cleanup
   
-};
+}
 

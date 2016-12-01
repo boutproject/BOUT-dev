@@ -14,17 +14,19 @@ BoundaryFactory* BoundaryFactory::instance = NULL;
 
 BoundaryFactory::BoundaryFactory() {
   add(new BoundaryDirichlet(), "dirichlet");
-  add(new BoundaryDirichlet_2ndOrder(), "dirichlet_2ndorder");
-  add(new BndDirichlet_O2(), "dirichlet_o2");
-  add(new BndDirichlet_O3(), "dirichlet_o3");
-  add(new BndDirichlet_O4(), "dirichlet_o4");
+  add(new BoundaryDirichlet(), "dirichlet_o2"); // Synonym for "dirichlet"
+  add(new BoundaryDirichlet_2ndOrder(), "dirichlet_2ndorder"); // Deprecated
+  add(new BoundaryDirichlet_O3(), "dirichlet_o3");
+  add(new BoundaryDirichlet_O4(), "dirichlet_o4");
   add(new BoundaryDirichlet_4thOrder(), "dirichlet_4thorder");
   add(new BoundaryNeumann(), "neumann");
-  add(new BoundaryNeumann2(), "neumann2");
-  add(new BoundaryNeumannPar(), "neumannpar");
-  add(new BoundaryNeumann_2ndOrder(), "neumann_2ndorder");
-  add(new BndNeumann_O2(), "neumann_O2");
+  add(new BoundaryNeumann(), "neumann_O2"); // Synonym for "neumann"
+  add(new BoundaryNeumann2(), "neumann2"); // Deprecated
+  add(new BoundaryNeumann_2ndOrder(), "neumann_2ndorder"); // Deprecated
   add(new BoundaryNeumann_4thOrder(), "neumann_4thorder");
+  add(new BoundaryNeumann_O4(), "neumann_O4");
+  add(new BoundaryNeumannPar(), "neumannpar");
+  add(new BoundaryNeumann_NonOrthogonal(), "neumann_nonorthogonal");
   add(new BoundaryRobin(), "robin");
   add(new BoundaryConstGradient(), "constgradient");
   add(new BoundaryZeroLaplace(), "zerolaplace");
@@ -36,6 +38,8 @@ BoundaryFactory::BoundaryFactory() {
   
   addMod(new BoundaryRelax(), "relax");
   addMod(new BoundaryWidth(), "width");
+  addMod(new BoundaryToFieldAligned(), "toFieldAligned");
+  addMod(new BoundaryFromFieldAligned(), "fromFieldAligned");
 
   // Parallel boundaries
   add(new BoundaryOpPar_dirichlet(), "parallel_dirichlet");
@@ -77,7 +81,7 @@ void BoundaryFactory::cleanup() {
 BoundaryOpBase* BoundaryFactory::create(const string &name, BoundaryRegionBase *region) {
 
   // Search for a string of the form: modifier(operation)
-  int pos = name.find('(');
+  auto pos = name.find('(');
   if(pos == string::npos) {
     // No more (opening) brackets. Should be a boundary operation
     // Need to strip whitespace
@@ -106,7 +110,7 @@ BoundaryOpBase* BoundaryFactory::create(const string &name, BoundaryRegionBase *
     }
   }
   // Contains a bracket. Find the last bracket and remove
-  int pos2 = name.rfind(')');
+  auto pos2 = name.rfind(')');
   if(pos2 == string::npos) {
     output << "\tWARNING: Unmatched brackets in boundary condition: " << name << endl;
   }
@@ -121,7 +125,7 @@ BoundaryOpBase* BoundaryFactory::create(const string &name, BoundaryRegionBase *
   list<string> arglist;
   int level = 0;
   int start = 0;
-  for(int i = 0;i<arg.length();i++) {
+  for(string::size_type i = 0;i<arg.length();i++) {
     switch(arg[i]) {
     case '(':
     case '[':
@@ -203,7 +207,7 @@ BoundaryOpBase* BoundaryFactory::createFromOptions(const string &varname, Bounda
 
   string prefix("bndry_");
 
-  string side("all");
+  string side;
   switch(region->location) {
   case BNDRY_XIN: {
     side = "xin";
@@ -227,6 +231,10 @@ BoundaryOpBase* BoundaryFactory::createFromOptions(const string &varname, Bounda
   }
   case BNDRY_PAR_BKWD: {
     side = "par_ydown";
+    break;
+  }
+  default: {
+    side = "all";
     break;
   }
   }

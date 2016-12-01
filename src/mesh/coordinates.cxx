@@ -59,7 +59,7 @@ Coordinates::Coordinates(Mesh *mesh) : ilen(0) {
     zperiod = ROUND(1.0 / (ZMAX - ZMIN));
   }
 
-  nz = mesh->ngz-1;
+  nz = mesh->LocalNz;
   dz = (ZMAX-ZMIN)*TWOPI/nz;
   
   // Diagonal components of metric tensor g^{ij} (default to 1)
@@ -83,9 +83,43 @@ Coordinates::Coordinates(Mesh *mesh) : ilen(0) {
     throw BoutException("\tERROR: Off-diagonal metrics are not finite!\n");
   }
   
-  /// Calculate contravariant metric components
-  if(calcCovariant())
-    throw BoutException("Error in calcCovariant call");
+  /// Find covariant metric components
+  // Check if any of the components are present
+  if (mesh->sourceHasVar("g_11") or
+      mesh->sourceHasVar("g_22") or
+      mesh->sourceHasVar("g_33") or
+      mesh->sourceHasVar("g_12") or
+      mesh->sourceHasVar("g_13") or
+      mesh->sourceHasVar("g_23")) {
+    // Check that all components are present
+    if (mesh->sourceHasVar("g_11") and
+        mesh->sourceHasVar("g_22") and
+        mesh->sourceHasVar("g_33") and
+        mesh->sourceHasVar("g_12") and
+        mesh->sourceHasVar("g_13") and
+        mesh->sourceHasVar("g_23")) {
+      mesh->get(g_11, "g_11");
+      mesh->get(g_22, "g_22");
+      mesh->get(g_33, "g_33");
+      mesh->get(g_12, "g_12");
+      mesh->get(g_13, "g_13");
+      mesh->get(g_23, "g_23");
+
+      output.write("\tWARNING! Covariant components of metric tensor set manually. Contravariant components NOT recalculated\n");
+
+    } else {
+      output.write("Not all covariant components of metric tensor found. Calculating all from the contravariant tensor\n");
+      /// Calculate contravariant metric components if not found
+      if(calcCovariant()) {
+        throw BoutException("Error in calcCovariant call");
+      }
+    }
+  } else {
+    /// Calculate contravariant metric components if not found
+    if(calcCovariant()) {
+      throw BoutException("Error in calcCovariant call");
+    }
+  }
 
   /// Calculate Jacobian and Bxy
   if(jacobian())
@@ -189,10 +223,8 @@ void Coordinates::outputVars(Datafile &file) {
 
 
 int Coordinates::geometry() {
-#ifdef CHECK
-  msg_stack.push("Coordinates::geometry");
-#endif
-  
+  TRACE("Coordinates::geometry");
+
   output.write("Calculating differential geometry terms\n");
 
   if(min(abs(dx)) < 1e-8)
@@ -309,19 +341,13 @@ int Coordinates::geometry() {
   com.add(G3);
 
   mesh->communicate(com);
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-  
+
   return 0;
 }
 
 int Coordinates::calcCovariant() {
-#ifdef CHECK
-  msg_stack.push("Coordinates::calcCovariant");
-#endif
-  
+  TRACE("Coordinates::calcCovariant");
+
   // Make sure metric elements are allocated
   g_11.allocate();
   g_22.allocate();
@@ -335,8 +361,8 @@ int Coordinates::calcCovariant() {
 
   BoutReal** a = rmatrix(3, 3);
   
-  for(int jx=0;jx<mesh->ngx;jx++) {
-    for(int jy=0;jy<mesh->ngy;jy++) {
+  for(int jx=0;jx<mesh->LocalNx;jx++) {
+    for(int jy=0;jy<mesh->LocalNy;jy++) {
       // set elements of g
       a[0][0] = g11(jx, jy);
       a[1][1] = g22(jx, jy);
@@ -348,8 +374,8 @@ int Coordinates::calcCovariant() {
       
       // invert
       if(gaussj(a, 3)) {
-	output.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
-	return 1;
+        output.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
+        return 1;
       }
       
       // put elements into g_{ij}
@@ -396,15 +422,13 @@ int Coordinates::calcCovariant() {
     maxerr = err;
   
   output.write("\tMaximum error in off-diagonal inversion is %e\n", maxerr);
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 
   return 0;
 }
 
 int Coordinates::calcContravariant() {
+  TRACE("Coordinates::calcContravariant");
+
   // Make sure metric elements are allocated
   g11.allocate();
   g22.allocate();
@@ -418,8 +442,8 @@ int Coordinates::calcContravariant() {
   
   BoutReal** a = rmatrix(3, 3);
   
-  for(int jx=0;jx<mesh->ngx;jx++) {
-    for(int jy=0;jy<mesh->ngy;jy++) {
+  for(int jx=0;jx<mesh->LocalNx;jx++) {
+    for(int jy=0;jy<mesh->LocalNy;jy++) {
       // set elements of g
       a[0][0] = g_11(jx, jy);
       a[1][1] = g_22(jx, jy);
@@ -431,8 +455,8 @@ int Coordinates::calcContravariant() {
       
       // invert
       if(gaussj(a, 3)) {
-	output.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
-	return 1;
+        output.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
+        return 1;
       }
       
       // put elements into g_{ij}
@@ -483,25 +507,34 @@ int Coordinates::calcContravariant() {
 }
 
 int Coordinates::jacobian() {
+  TRACE("Coordinates::jacobian");
   // calculate Jacobian using g^-1 = det[g^ij], J = sqrt(g)
-  J = 1. / sqrt(g11*g22*g33 + 
-                2.0*g12*g13*g23 - 
-                g11*g23*g23 - 
-                g22*g13*g13 - 
-                g33*g12*g12);
-  
+
+  Field2D g = g11*g22*g33 +
+    2.0*g12*g13*g23 -
+    g11*g23*g23 -
+    g22*g13*g13 -
+    g33*g12*g12;
+
+  // Check that g is positive
+  if(min(g) < 0.0) {
+    throw BoutException("The determinant of g^ij is somewhere less than 0.0");
+  }
+  J = 1. / sqrt(g);
+
   // Check jacobian
   if(!finite(J)) {
-    output.write("\tERROR: Jacobian not finite everywhere!\n");
-    return 1;
+    throw BoutException("\tERROR: Jacobian not finite everywhere!\n");
   }
   if(min(abs(J)) < 1.0e-10) {
-    output.write("\tERROR: Jacobian becomes very small\n");
-    return 1;
+    throw BoutException("\tERROR: Jacobian becomes very small\n");
   }
-  
+
+  if(min(g_22) < 0.0) {
+    throw BoutException("g_22 is somewhere less than 0.0");
+  }
   Bxy = sqrt(g_22)/J;
-  
+
   return 0;
 }
 
@@ -518,7 +551,7 @@ const Field2D Coordinates::DDY(const Field2D &f) {
   return mesh->indexDDY(f) / dy;
 }
 
-const Field2D Coordinates::DDZ(const Field2D &f) {
+const Field2D Coordinates::DDZ(const Field2D &UNUSED(f)) {
   return Field2D(0.0);
 }
 
@@ -527,7 +560,7 @@ const Field2D Coordinates::DDZ(const Field2D &f) {
 /////////////////////////////////////////////////////////
 // Parallel gradient
 
-const Field2D Coordinates::Grad_par(const Field2D &var, CELL_LOC outloc, DIFF_METHOD method) {
+const Field2D Coordinates::Grad_par(const Field2D &var, CELL_LOC UNUSED(outloc), DIFF_METHOD UNUSED(method)) {
   msg_stack.push("Coordinates::Grad_par( Field2D )");
   
   Field2D result = DDY(var)/sqrt(g_22);
@@ -550,7 +583,8 @@ const Field3D Coordinates::Grad_par(const Field3D &var, CELL_LOC outloc, DIFF_ME
 // Vpar_Grad_par
 // vparallel times the parallel derivative along unperturbed B-field
 
-const Field2D Coordinates::Vpar_Grad_par(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field2D Coordinates::Vpar_Grad_par(const Field2D &v, const Field2D &f,
+                                         CELL_LOC UNUSED(outloc), DIFF_METHOD UNUSED(method)) {
   return VDDY(v, f)/sqrt(g_22);
 }
 
@@ -561,9 +595,9 @@ const Field3D Coordinates::Vpar_Grad_par(const Field &v, const Field &f, CELL_LO
 /////////////////////////////////////////////////////////
 // Parallel divergence
 
-const Field2D Coordinates::Div_par(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field2D Coordinates::Div_par(const Field2D &f, CELL_LOC UNUSED(outloc), DIFF_METHOD UNUSED(method)) {
   msg_stack.push("Coordinates::Div_par( Field2D )");
-  
+   
   Field2D result = Bxy*Grad_par(f/Bxy);
   
   msg_stack.pop();
@@ -574,7 +608,18 @@ const Field2D Coordinates::Div_par(const Field2D &f, CELL_LOC outloc, DIFF_METHO
 const Field3D Coordinates::Div_par(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   msg_stack.push("Coordinates::Div_par( Field3D )");
   
-  Field3D result = Bxy*Grad_par(f/Bxy, outloc, method);
+  // Need to modify yup and ydown fields
+  Field3D f_B = f/Bxy;
+  if(&f.yup() == &f) {
+    // Identity, yup and ydown point to same field
+    f_B.mergeYupYdown();
+  }else {
+    // Distinct fields
+    f_B.splitYupYdown();
+    f_B.yup() = f.yup() / Bxy;
+    f_B.ydown() = f.ydown() / Bxy;
+  }
+  Field3D result = Bxy*Grad_par(f_B, outloc, method);
   
   msg_stack.pop();
   return result;
@@ -634,7 +679,7 @@ const Field2D Coordinates::Delp2(const Field2D &f) {
 }
 
 const Field3D Coordinates::Delp2(const Field3D &f) {
-  MsgStackItem trace("Coordinates::Delp2( Field3D )");
+  TRACE("Coordinates::Delp2( Field3D )");
 
   //return mesh->G1*DDX(f) + mesh->G3*DDZ(f) + mesh->g11*D2DX2(f) + mesh->g33*D2DZ2(f); //+ 2.0*mesh->g13*D2DXDZ(f)
 
@@ -643,21 +688,21 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
   Field3D result;
   result.allocate();
   
-  int ncz = mesh->ngz-1;
+  int ncz = mesh->LocalNz;
   
   static dcomplex **ft = (dcomplex**) NULL, **delft;
   if(ft == (dcomplex**) NULL) {
     // Allocate memory
-    ft = cmatrix(mesh->ngx, ncz/2 + 1);
-    delft = cmatrix(mesh->ngx, ncz/2 + 1);
+    ft = cmatrix(mesh->LocalNx, ncz/2 + 1);
+    delft = cmatrix(mesh->LocalNx, ncz/2 + 1);
   }
   
   // Loop over all y indices
-  for(int jy=0;jy<mesh->ngy;jy++) {
+  for(int jy=0;jy<mesh->LocalNy;jy++) {
 
     // Take forward FFT
     
-    for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jx=0;jx<mesh->LocalNx;jx++)
       rfft(&f(jx,jy,0), ncz, ft[jx]);
 
     // Loop over kz
@@ -683,7 +728,7 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
     // Boundaries
     for(int jz=0;jz<ncz;jz++) {
       result(0,jy,jz) = 0.0;
-      result(mesh->ngx-1,jy,jz) = 0.0;
+      result(mesh->LocalNx-1,jy,jz) = 0.0;
     }
   }
   
@@ -694,7 +739,7 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
 }
 
 const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
-  MsgStackItem trace("Coordinates::Delp2( FieldPerp )");
+  TRACE("Coordinates::Delp2( FieldPerp )");
   
   FieldPerp result;
   result.allocate();
@@ -704,23 +749,23 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
   int jy = f.getIndex();
   result.setIndex(jy);
   
-  int ncz = mesh->ngz-1;
+  int ncz = mesh->LocalNz;
   
   if(ft == (dcomplex**) NULL) {
     // Allocate memory
-    ft = cmatrix(mesh->ngx, ncz/2 + 1);
-    delft = cmatrix(mesh->ngx, ncz/2 + 1);
+    ft = cmatrix(mesh->LocalNx, ncz/2 + 1);
+    delft = cmatrix(mesh->LocalNx, ncz/2 + 1);
   }
   
   // Take forward FFT
-  for(int jx=0;jx<mesh->ngx;jx++)
+  for(int jx=0;jx<mesh->LocalNx;jx++)
     rfft(f[jx], ncz, ft[jx]);
 
   // Loop over kz
   for(int jz=0;jz<=ncz/2;jz++) {
     
     // No smoothing in the x direction
-    for(int jx=2;jx<(mesh->ngx-2);jx++) {
+    for(int jx=2;jx<(mesh->LocalNx-2);jx++) {
       // Perform x derivative
       
       dcomplex a, b, c;
@@ -731,14 +776,14 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
   }
   
   // Reverse FFT
-  for(int jx=1;jx<(mesh->ngx-1);jx++) {
+  for(int jx=1;jx<(mesh->LocalNx-1);jx++) {
     irfft(delft[jx], ncz, result[jx]);
   }
 
   // Boundaries
   for(int jz=0;jz<ncz;jz++) {
     result(0,jz) = 0.0;
-    result(mesh->ngx-1,jz) = 0.0;
+    result(mesh->LocalNx-1,jz) = 0.0;
   }
   
   return result;
@@ -755,7 +800,7 @@ const Field3D Coordinates::Laplace_par(const Field3D &f) {
 // Full Laplacian operator on scalar field
 
 const Field2D Coordinates::Laplace(const Field2D &f) {
-  MsgStackItem trace("Coordinates::Laplace( Field2D )");
+  TRACE("Coordinates::Laplace( Field2D )");
 
   Field2D result =  G1*DDX(f) +G2*DDY(f)
     + g11*D2DX2(f) + g22*D2DY2(f)
@@ -765,7 +810,7 @@ const Field2D Coordinates::Laplace(const Field2D &f) {
 }
 
 const Field3D Coordinates::Laplace(const Field3D &f) {
-  MsgStackItem trace("Coordinates::Laplace( Field3D )");
+  TRACE("Coordinates::Laplace( Field3D )");
 
   Field3D result  = G1*::DDX(f) + G2*::DDY(f) + G3*::DDZ(f)
     + g11*D2DX2(f) + g22*D2DY2(f) + g33*D2DZ2(f)
@@ -781,7 +826,7 @@ const Field3D Coordinates::Laplace(const Field3D &f) {
 
 // Invert an nxn matrix using Gauss-Jordan elimination with full pivoting
 int Coordinates::gaussj(BoutReal **a, int n) {
-  MsgStackItem trace("Coordinates::gaussj");
+  TRACE("Coordinates::gaussj");
   
   int i, icol, irow, j, k, l, ll;
   float big, dum, pivinv;

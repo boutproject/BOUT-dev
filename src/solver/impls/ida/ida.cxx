@@ -65,8 +65,6 @@ static int ida_pre(BoutReal t, N_Vector yy,
 IdaSolver::IdaSolver(Options *opts) : Solver(opts)
 {
   has_constraints = true; ///< This solver has constraints
-  
-  prefunc = NULL;
 }
 
 IdaSolver::~IdaSolver()
@@ -85,7 +83,7 @@ IdaSolver::~IdaSolver()
 
  int IdaSolver::init(bool restarting, int nout, BoutReal tstep) {
 
-  int msg_point = msg_stack.push("Initialising IDA solver");
+  TRACE("Initialising IDA solver");
 
   /// Call the generic initialisation first
   if(Solver::init(restarting, nout, tstep))
@@ -180,7 +178,7 @@ IdaSolver::~IdaSolver()
     throw BoutException("ERROR: IDASpgmr failed\n");
 
   if(use_precon) {
-    if(prefunc == NULL) {
+    if(!have_user_precon()) {
       output.write("\tUsing BBD preconditioner\n");
       if( IDABBDPrecInit(idamem, local_N, mudq, mldq, mukeep, mlkeep, 
 			 ZERO, ida_bbd_res, NULL) )
@@ -198,11 +196,7 @@ IdaSolver::~IdaSolver()
       throw BoutException("ERROR: IDACalcIC failed\n");
   }
 
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
-
-  return(0);
+  return 0;
 }
 
 /**************************************************************************
@@ -322,7 +316,7 @@ void IdaSolver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal *udata, Bo
 
   int N = NV_LOCLENGTH_P(id);
   
-  if(prefunc == NULL) {
+  if(!have_user_precon()) {
     // Identity (but should never happen)
     for(int i=0;i<N;i++)
       zvec[i] = rvec[i];
@@ -335,7 +329,7 @@ void IdaSolver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal *udata, Bo
   // Load vector to be inverted into F_vars
   load_derivs(rvec);
   
-  (*prefunc)(t, cj, delta);
+  run_precon(t, cj, delta);
 
   // Save the solution from F_vars
   save_derivs(zvec);

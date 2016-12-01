@@ -8,13 +8,16 @@
 
 #include <iterator>
 #include <iostream>
+#include "unused.hxx"
 
 #ifdef _OPENMP
 #include <omp.h>
 int DI_spread_work(int num_work, int thread, int max_thread);
 #endif
 
-// Set of indices - DataIterator is dereferenced into these
+/*!
+ * Set of indices - DataIterator is dereferenced into these
+ */
 struct Indices {
   int x;
   int y;
@@ -23,12 +26,48 @@ struct Indices {
 
 #define DI_GET_END ((void *) NULL)
 
+/*!
+ * Provides range-based iteration over indices. 
+ * If OpenMP is enabled, then this divides work between threads.
+ * 
+ * This is used mainly to loop over the indices of fields,
+ * and provides convenient ways to index 
+ * 
+ * Example
+ * -------
+ * 
+ * Start,end values for (x,y,z) can be specified directly:
+ * 
+ *     for(d = DataIterator(xs, xe, ys, ye, zs, ze); !d.done(); ++d) {
+ *       // print index
+ *       output.write("%d,%d,%d\n", d.x, d.y, d.z);
+ *       // Index into a Field3D variable 'f'
+ *       output.write("Value = %e\n", f[d]);
+ *     }
+ * 
+ * Usually DataIterator is used to loop over fields. Field3D::begin()
+ * and Field3D::end() return DataIterator objects:
+ * 
+ *     Field3D f(0.0); // Initialise field
+ *     for(auto i : f) { // Loop over all indices, including guard cells
+ *       f[i] = i.x; // Indexing using DataIterator
+ *     }
+ * 
+ */
 class DataIterator
   : public std::iterator<std::bidirectional_iterator_tag, Indices> {
 private:
+  /*!
+   * This initialises OpenMP threads if enabled, and
+   * divides iteration index ranges between threads
+   */
   void omp_init(int xs,int xe,bool end);
 public:
-  /// Constructor. This would set ranges. Could depend on thread number
+  /*!
+   * Constructor. This sets index ranges.
+   * If OpenMP is enabled, the index range is divided
+   * between threads using the omp_init method.
+   */ 
   DataIterator(int xs, int xe,
 	       int ys, int ye,
 	       int zs, int ze) : 
@@ -47,11 +86,13 @@ public:
     omp_init(xs,xe,false);
   }
 
-  // set end();
-  // use as DataIterator(int,int,int,int,int,int,DI_GET_END);
+  /*!
+   * set end();
+   * use as DataIterator(int,int,int,int,int,int,DI_GET_END);
+   */
   DataIterator(int xs, int xe,
 	       int ys, int ye,
-	       int zs, int ze,void* dummy) :
+	       int zs, int ze, void* UNUSED(dummy)) :
 #ifndef _OPENMP
     x(xe), y(ye), z(ze),
     xstart(xs),   ystart(ys),   zstart(zs),
@@ -67,17 +108,26 @@ public:
     omp_init(xs,xe,true);
     next();
   }
-  /// The index variables, updated during loop
-  // Should make these private and provide getters?
+  
+  /*!
+   * The index variables, updated during loop
+   * Should make these private and provide getters?
+   */
   int x, y, z;
 
-  /// Increment operators
+  /// Pre-increment operator. Use this rather than post-increment when possible
   DataIterator& operator++() { next(); return *this; }
+  
+  /// Post-increment operator
   DataIterator operator++(int) { DataIterator tmp(*this); next(); return tmp; }
+  
+  /// Pre-decrement operator
   DataIterator& operator--() { prev(); return *this; }
+  
+  /// Post-decrement operator
   DataIterator operator--(int) { DataIterator tmp(*this); prev(); return tmp; }
 
-  // Comparison operator
+  /// Comparison operator. Most common use is in for loops
   inline bool operator!=(const DataIterator& rhs) const {
     //return  !(x == rhs.x && y == rhs.y && z == rhs.z);
     if (rhs.isEnd){
@@ -87,7 +137,7 @@ public:
     }
   }
   
-  /*
+  /*!
    * Dereference operators
    * These are needed because the C++11 for loop
    * dereferences the iterator
@@ -95,40 +145,60 @@ public:
   DataIterator& operator*() {
     return *this;
   }
+  
+  /*!
+   * Const dereference operator. 
+   * Needed because C++11 for loop dereferences the iterator
+   */
   const DataIterator& operator*() const {
     return *this;
   }
 
-  /*
+  /*!
    * Add an offset to the index for general stencils
    */
   const Indices offset(int dx, int dy, int dz) const {
     int nz = zend-zstart+1;
     return {x+dx, y+dy, ((z+dz-zstart + nz) % nz) + zstart};
   }
+  
   /*
    * Shortcuts for common offsets, one cell
    * in each direction.
    */
-  const Indices xp() const { return {x+1, y, z}; }
-  const Indices xm() const { return {x-1, y, z}; }
-  const Indices yp() const { return {x, y+1, z}; }
-  const Indices ym() const { return {x, y-1, z}; }
-  // Z indices should wrap in zstart, zend range (?)
-  const Indices zp() const { return {x, y, z == zend ? zstart : z+1}; }
-  const Indices zm() const { return {x, y, z == zstart ? zend : z-1}; }
   
+  /// The index one point +1 in x
+  const Indices xp() const { return {x+1, y, z}; }
+  /// The index one point -1 in x
+  const Indices xm() const { return {x-1, y, z}; }
+  /// The index one point +1 in y
+  const Indices yp() const { return {x, y+1, z}; }
+  /// The index one point -1 in y
+  const Indices ym() const { return {x, y-1, z}; }
+  /// The index one point +1 in z. Wraps around zend to zstart
+  const Indices zp() const { return {x, y, z == zend ? zstart : z+1}; }
+  /// The index one point -1 in z. Wraps around zstart to zend
+  const Indices zm() const { return {x, y, z == zstart ? zend : z-1}; }
+
+  /*!
+   * Resets DataIterator to the start of the range
+   */
   void start() {
     x = xstart; y = ystart; z = zstart;
   }
 
+  /*!
+   * Sets DataIterator to one index past the end of the range
+   */ 
   void end() {
     x = xend; y = yend; z = zend;
     next();
   }
 
-  /// Checks if finished looping. Is this more efficient than
-  /// using the more idiomatic it != MeshIterator::end() ?
+  /*!
+   * Checks if finished looping. Is this more efficient than
+   * using the more idiomatic it != DataIterator::end() ?
+   */
   bool done() const {
 #ifndef _OPENMP
     return (x > xend) || (x < xstart);
@@ -142,14 +212,19 @@ public:
 private:
   DataIterator(); // Disable null constructor
 
-  int xstart, xend;
-  int ystart, yend;
-  int zstart, zend;
+  int xstart, ystart, zstart;
+
 #ifndef _OPENMP
   int &xmin, &ymin, &zmin;
-  int &xmax, &ymax, &zmax;
 #else
   int xmin, ymin, zmin;
+#endif
+
+  int xend, yend, zend;
+
+#ifndef _OPENMP
+  int &xmax, &ymax, &zmax;
+#else
   int xmax, ymax, zmax;
 #endif
   const bool isEnd;
@@ -180,8 +255,39 @@ private:
   }
 };
 
-/*
+/*!
  * Specifies a range of indices which can be iterated over
+ * and begin() and end() methods for range-based for loops
+ * 
+ * Example
+ * -------
+ *
+ * Index ranges can be defined manually:
+ *
+ *     IndexRange r(0, 10, 0, 20, 0, 30);
+ *     
+ * then iterated over using begin() and end()
+ *
+ *     for( DataIterator i = r.begin(); i != r.end(); i++ ) {
+ *       output.write("%d,%d,%d\n", i.x, i.y, i.z);
+ *     }
+ *
+ * or the more convenient range for loop:
+ *
+ *     for( auto i : r ) {
+ *       output.write("%d,%d,%d\n", i.x, i.y, i.z);
+ *     }
+ *
+ * A common use for this class is to loop over
+ * regions of a field:
+ *
+ *     Field3D f(0.0);
+ *     for( auto i : f.region(RGN_NOBNDRY) ) {
+ *       f[i] = 1.0;
+ *     }
+ * 
+ * where RGN_NOBNDRY specifies a region not including
+ * boundary/guard cells. 
  */
 struct IndexRange {
   int xstart, xend;
@@ -255,7 +361,7 @@ inline void DataIterator::omp_init(int xs, int xe,bool end){
   }
 };
 #else
-inline void DataIterator::omp_init(int xs, int xe,bool end){;};
+inline void DataIterator::omp_init(int UNUSED(xs), int UNUSED(xe), bool UNUSED(end)){;}
 #endif
 
 #endif // __DATAITERATOR_H__

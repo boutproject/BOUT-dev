@@ -37,6 +37,7 @@ class Solver;
 
 #include <bout_types.hxx>
 #include <boutexception.hxx>
+#include <unused.hxx>
 
 ///////////////////////////////////////////////////////////////////
 // C function pointer types
@@ -92,6 +93,81 @@ enum SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
 
 ///////////////////////////////////////////////////////////////////
 
+/*!
+ * Interface to integrators, mainly for time integration
+ *
+ * 
+ * Creation
+ * --------
+ * 
+ * Solver is a base class and can't be created directly:
+ * 
+ *     Solver *solver = Solver(); // Error
+ * 
+ * Instead, use the create() static function:
+ * 
+ *     Solver *solver = Solver::create(); // ok
+ *
+ * By default this will use the options in the "solver" section
+ * of the options, equivalent to:
+ * 
+ *     Options *opts = Options::getRoot()->getSection("solver");
+ *     Solver *solver = Solver::create(opts);
+ * 
+ * To use a different set of options, for example if there are
+ * multiple solvers, use a different option section:
+ *
+ *     Options *opts = Options::getRoot()->getSection("anothersolver");
+ *     Solver *anothersolver = Solver::create(opts);
+ *
+ * Problem specification
+ * ---------------------
+ * 
+ * The equations to be solved are specified in a PhysicsModel object
+ *
+ *     class MyProblem : public PhysicsModel {
+ *       protected:
+ *         // This function called once at beginning
+ *         int init(bool restarting) {
+ *           SOLVE_FOR(f);   // Specify variables to solve
+ *           // Set f to initial value if needed
+ *           // otherwise read from input options
+ *           return 0;
+ *         }
+ *
+ *         // This function called to evaluate time derivatives
+ *         int rhs(BoutReal t) {
+ *            ddt(f) = 1.0; // Calculate time derivatives
+ *            return 0;
+ *         }
+ *       private:
+ *         Field3D f; // A variable to evolve
+ *     }
+ * 
+ * The init() and rhs() functions must be defined, but there
+ * are other functions which can be defined. See PhysicsModel
+ * documentation for details.
+ * 
+ * Create an object, then add to the solver:
+ * 
+ *     MyProblem *prob = MyProblem();
+ *     solver->setModel(prob);
+ * 
+ * Running simulation
+ * ------------------
+ * 
+ * To run a calculation
+ * 
+ *     solver->solve();
+ * 
+ * This will use NOUT and TIMESTEP in the solver options 
+ * (specified during creation). If these are not present
+ * then the global options will be used.
+ * 
+ * To specify NOUT and TIMESTEP, pass the values to solve:
+ *
+ *     solver->solver(NOUT, TIMESTEP);
+ */
 class Solver {
  public:
   Solver(Options *opts = NULL);
@@ -100,16 +176,22 @@ class Solver {
   /////////////////////////////////////////////
   // New API
   
-  virtual void setModel(PhysicsModel *model); ///< Specify physics model to solve
+  /*!
+   * Specify physics model to solve. Currently only one model
+   * can be evolved by a Solver.
+   */ 
+  virtual void setModel(PhysicsModel *model);
 
   /////////////////////////////////////////////
   // Old API
   
   virtual void setRHS(rhsfunc f) { phys_run = f; } ///< Set the RHS function
   void setPrecon(PhysicsPrecon f) {prefunc = f;} ///< Specify a preconditioner (optional)
-  virtual void setJacobian(Jacobian j) {} ///< Specify a Jacobian (optional)
+  virtual void setJacobian(Jacobian UNUSED(j)) {} ///< Specify a Jacobian (optional)
   virtual void setSplitOperator(rhsfunc fC, rhsfunc fD); ///< Split operator solves
   
+  /////////////////////////////////////////////
+  // Monitors
   
   enum MonitorPosition {BACK, FRONT}; ///< A type to set where in the list monitors are added
   void addMonitor(MonitorFunc f, MonitorPosition pos=FRONT);     ///< Add a monitor function to be called every output
@@ -121,14 +203,26 @@ class Solver {
   /////////////////////////////////////////////
   // Routines to add variables. Solvers can just call these
   // (or leave them as-is)
+  
+  /*!
+   * Add a variable to be solved. This must be done
+   * in the initialisation stage, before the simulation starts.
+   */ 
   virtual void add(Field2D &v, const char* name);
   virtual void add(Field3D &v, const char* name);
   virtual void add(Vector2D &v, const char* name);
   virtual void add(Vector3D &v, const char* name);
   
-  virtual bool constraints() {return has_constraints; } ///< Returns true if constraints available
-
-  // Add constraint functions (optional)
+  /*!
+   * Returns true if constraints available
+   */ 
+  virtual bool constraints() {return has_constraints; }
+  
+  /*!
+   * Add constraint functions (optional). These link a variable
+   * v to a control parameter C_v such that v is adjusted 
+   * to keep C_v = 0.
+   */
   virtual void constraint(Field2D &v, Field2D &C_v, const char* name);
   virtual void constraint(Field3D &v, Field3D &C_v, const char* name);
   virtual void constraint(Vector2D &v, Vector2D &C_v, const char* name);
@@ -139,6 +233,14 @@ class Solver {
   /// Return the current internal timestep 
   virtual BoutReal getCurrentTimestep() {return 0.0;}
   
+  /*!
+   * Start the solver. By default solve() uses options
+   * to determine the number of steps and the output timestep.
+   * If nout and dt are specified here then the options are not used
+   * 
+   * @param[in] nout   Number of output timesteps
+   * @param[in] dt     The time between outputs
+   */
   int solve(int nout=-1, BoutReal dt=0.0);
 
   /// Initialise the solver
@@ -146,7 +248,13 @@ class Solver {
   ///       Needed because of how the PETSc TS code works
   virtual int init(bool restarting, int nout, BoutReal tstep);
 
-  /// Run the solver, calling monitors nout times, at intervals of tstep
+  /*!
+   * Run the solver, calling monitors nout times, at intervals of tstep 
+   * This function is called by solve(), and is specific to each solver type
+   * 
+   * This should probably be protected, since it shouldn't be called
+   * by users. 
+   */
   virtual int run() = 0;
 
   //Should wipe out internal field vector and reset from current field object data
@@ -158,6 +266,9 @@ class Solver {
   
   int rhs_ncalls,rhs_ncalls_e,rhs_ncalls_i; ///< Number of calls to the RHS function
   
+  /*!
+   * Test if this solver supports split operators (e.g. implicit/explicit)
+   */ 
   bool splitOperator() {return split_operator;}
 
   bool canReset;
@@ -167,11 +278,31 @@ class Solver {
   /// Add evolving variables to output (dump) file
   void outputVars(Datafile &outputfile);
 
+  /*!
+   * Create a Solver object. This uses the "type" option
+   * in the given Option section to determine which solver
+   * type to create.
+   */ 
   static Solver* create(Options *opts = NULL);
+  
+  /*!
+   * Create a Solver object, specifying the type
+   */ 
   static Solver* create(SolverType &type, Options *opts = NULL);
   
+  /*!
+   * Pass the command-line arguments. This static function is
+   * called by BoutInitialise, and puts references
+   * into protected variables. These may then be used by Solvers
+   * to control behavior
+   * 
+   */ 
   static void setArgs(int &c, char **&v) { pargc = &c; pargv = &v;}
-
+  
+  /*!
+   * Add extra variables to the restart files, which store
+   * system state.
+   */
   void addToRestart(BoutReal &var, const string &name) {
     // Add a variable to the restart file
     restart.add(var, name.c_str(), 0);

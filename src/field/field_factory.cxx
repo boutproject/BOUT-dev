@@ -79,7 +79,7 @@ FieldFactory::FieldFactory(Mesh *m, Options *opt) : fieldmesh(m), options(opt) {
   addGenerator("power", new FieldGenTwoArg<pow>(NULL,NULL));
 
   addGenerator("round", new FieldRound(NULL));
-
+  
   // Ballooning transform
   addGenerator("ballooning", new FieldBallooning(fieldmesh));
 
@@ -117,34 +117,32 @@ const Field2D FieldFactory::create2D(const string &value, Options *opt, Mesh *m,
 
   switch(loc)  {
   case CELL_XLOW: {
-      for(int x=0;x<m->ngx;x++) {
-        BoutReal xpos = 0.5*(m->GlobalX(x-1) + m->GlobalX(x));
-        for(int y=0;y<m->ngy;y++)
-          result(x,y) = gen->generate(xpos,
-                                      TWOPI*m->GlobalY(y),
-                                      0.0,  // Z
-                                      t); // T
-      }
-      break;
+    for(auto i : result) {
+      BoutReal xpos = 0.5*(m->GlobalX(i.x-1) + m->GlobalX(i.x));
+      result[i] = gen->generate(xpos,
+                                TWOPI*m->GlobalY(i.y),
+                                0.0,  // Z
+                                t); // T
     }
+    break;
+  }
   case CELL_YLOW: {
-      for(int x=0;x<m->ngx;x++)
-        for(int y=0;y<m->ngy;y++) {
-          BoutReal ypos = TWOPI*0.5*(m->GlobalY(y-1) + m->GlobalY(y));
-          result(x,y) = gen->generate(m->GlobalX(x),
-                                      ypos,
-                                      0.0,  // Z
-                                      t); // T
-        }
-      break;
+    for(auto i : result) {
+      BoutReal ypos = TWOPI*0.5*(m->GlobalY(i.y-1) + m->GlobalY(i.y));
+      result[i] = gen->generate(m->GlobalX(i.x),
+                                ypos,
+                                0.0,  // Z
+                                t); // T
     }
+    break;
+  }
   default: {// CELL_CENTRE or CELL_ZLOW
-    for(int x=0;x<m->ngx;x++)
-      for(int y=0;y<m->ngy;y++)
-        result(x,y) = gen->generate(m->GlobalX(x),
-                                    TWOPI*m->GlobalY(y),
-                                    0.0,  // Z
-                                    t); // T
+    for(auto i : result) {
+      result[i] = gen->generate(m->GlobalX(i.x),
+                                TWOPI*m->GlobalY(i.y),
+                                0.0,  // Z
+                                t); // T
+    }
   }
   };
 
@@ -154,17 +152,22 @@ const Field2D FieldFactory::create2D(const string &value, Options *opt, Mesh *m,
 }
 
 const Field3D FieldFactory::create3D(const string &value, Options *opt, Mesh *m, CELL_LOC loc, BoutReal t) {
-  Field3D result = 0.;
-
-  if(mesh->StaggerGrids == false){
-    loc = CELL_CENTRE ;
-  }
-  result.setLocation(loc);
-
+  
   if(m == NULL)
     m = fieldmesh;
   if(m == NULL)
     throw BoutException("Not a valid mesh");
+  
+  // Create a Field3D over mesh "m"
+  Field3D result(m);
+  
+  // Ensure that data is allocated and unique
+  result.allocate();
+  
+  if(mesh->StaggerGrids == false){
+    loc = CELL_CENTRE ;
+  }
+  result.setLocation(loc);
 
   // Parse expression to create a tree of generators
   FieldGenerator* gen = parse(value, opt);
@@ -174,51 +177,54 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt, Mesh *m,
 
   switch(loc)  {
   case CELL_XLOW: {
-      for(int x=0;x<m->ngx;x++) {
-        BoutReal xpos = 0.5*(m->GlobalX(x-1) + m->GlobalX(x));
-        for(int y=0;y<m->ngy;y++)
-          for(int z=0;z<m->ngz;z++)
-            result(x, y, z) = gen->generate(xpos,
-                                            TWOPI*m->GlobalY(y),
-                                            TWOPI*((BoutReal) z) / ((BoutReal) (m->ngz-1)),  // Z
-                                            t); // T
-      }
-      break;
+    for(auto i : result) {
+      BoutReal xpos = 0.5*(m->GlobalX(i.x-1) + m->GlobalX(i.x));
+      result[i] = gen->generate(xpos,
+                                TWOPI*m->GlobalY(i.y),
+                                TWOPI*((BoutReal) i.z) / ((BoutReal) (m->LocalNz)),  // Z
+                                t); // T
     }
+    break;
+  }
   case CELL_YLOW: {
-      for(int x=0;x<m->ngx;x++)
-        for(int y=0;y<m->ngy;y++) {
-          BoutReal ypos = TWOPI*0.5*(m->GlobalY(y-1) + m->GlobalY(y));
-          for(int z=0;z<m->ngz;z++)
-            result(x, y, z) = gen->generate(m->GlobalX(x),
-                                            ypos,
-                                            TWOPI*((BoutReal) z) / ((BoutReal) (m->ngz-1)),  // Z
-                                            t); // T
-        }
-      break;
+    for(auto i : result) {
+      BoutReal ypos = TWOPI*0.5*(m->GlobalY(i.y-1) + m->GlobalY(i.y));
+      result[i] = gen->generate(m->GlobalX(i.x),
+                                ypos,
+                                TWOPI*((BoutReal) i.z) / ((BoutReal) (m->LocalNz)),  // Z
+                                t); // T
     }
+    break;
+  }
   case CELL_ZLOW: {
-      for(int x=0;x<m->ngx;x++)
-        for(int y=0;y<m->ngy;y++)
-          for(int z=0;z<m->ngz;z++)
-            result(x, y, z) = gen->generate(m->GlobalX(x),
-                                            TWOPI*m->GlobalY(y),
-                                            TWOPI*(((BoutReal) z) - 0.5) / ((BoutReal) (m->ngz-1)),  // Z
-                                            t); // T
-      break;
+    for(auto i : result) {
+      result[i] = gen->generate(m->GlobalX(i.x),
+                                TWOPI*m->GlobalY(i.y),
+                                TWOPI*(((BoutReal) i.z) - 0.5) / ((BoutReal) (m->LocalNz)),  // Z
+                                t); // T
     }
+    break;
+  }
   default: {// CELL_CENTRE
-    for(int x=0;x<m->ngx;x++)
-      for(int y=0;y<m->ngy;y++)
-        for(int z=0;z<m->ngz;z++)
-          result(x, y, z) = gen->generate(m->GlobalX(x),
-                                          TWOPI*m->GlobalY(y),
-                                          TWOPI*((BoutReal) z) / ((BoutReal) (m->ngz-1)),  // Z
-                                          t); // T
+    for(auto i : result) {
+      result[i] = gen->generate(m->GlobalX(i.x),
+                                TWOPI*m->GlobalY(i.y),
+                                TWOPI*((BoutReal) i.z) / ((BoutReal) (m->LocalNz)),  // Z
+                                t); // T
     }
+  }
   };
 
   // Don't delete generator
+  
+  // Transform from field aligned coordinates, to be compatible with
+  // older BOUT++ inputs. This is not a particularly "nice" solution.
+  try {
+    result = m->fromFieldAligned(result);
+  }catch(BoutException &e) {
+    // might fail if not possible to shift coordinates
+    // e.g. FCI
+  }
 
   return result;
 }

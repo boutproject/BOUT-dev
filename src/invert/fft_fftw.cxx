@@ -178,21 +178,9 @@ void cfft(dcomplex *cv, int length, int isign)
 
 #ifndef _OPENMP
 // Serial code
+
+
 void rfft(const BoutReal *in, int length, dcomplex *out) {
-  /* Function: rfft
-   * Purpose:  Take the FFT of a real variable using fftw_forward. That is
-   *           out_k = sum_{j=0}^(length-1) in_j*exp(-2*pi*j*k*sqrt(-1)/length)
-   *           Thus, out_k must be divided by 'length' in order for
-   *           DFT[IDFT[in]] = in
-   *           where IDFT is the inverse fourier transform
-   *
-   * Input:
-   * *in      - Pointer to the 1D array to take the fourier transform of
-   * length   - Number of points in the input array
-   *
-   * Output:
-   * *out      - Pointer to the complex 1D array which is the FFT of *in
-   */
   // static variables initialized once
   static double *fin;
   static fftw_complex *fout;
@@ -247,18 +235,6 @@ void rfft(const BoutReal *in, int length, dcomplex *out) {
 }
 
 void irfft(const dcomplex *in, int length, BoutReal *out) {
-  /* Function: irfft
-   * Purpose:  Take the inverse FFT of a complex variable using fftw_backward.
-   *           That is
-   *           out_k = sum_{j=0}^(length-1) in_j*exp(2*pi*j*k*sqrt(-1)/length)
-   *
-   * Input:
-   * *in      - Pointer to the 1D array to take the fourier transform of
-   * length   - Number of points in the output array
-   *
-   * Output:
-   * *out      - Pointer to the complex 1D array which is the FFT of *in
-   */
   // static variables initialized once
   static fftw_complex *fin;
   static double *fout;

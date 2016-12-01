@@ -36,6 +36,7 @@
 #include <invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
 
 #include <interpolation.hxx>
+#include <unused.hxx>
 
 #include <math.h>
 #include <stdlib.h>
@@ -95,7 +96,7 @@ const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
   Field3D result;
   result.allocate();
   
-  int ncz = mesh->ngz-1;
+  int ncz = mesh->LocalNz;
 
   Coordinates *metric = mesh->coordinates();
   
@@ -103,13 +104,13 @@ const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
   gys.allocate();
 
   // Need Y derivative everywhere
-  for(int x=1;x<=mesh->ngx-2;x++)
-    for(int y=1;y<=mesh->ngy-2;y++)
+  for(int x=1;x<=mesh->LocalNx-2;x++)
+    for(int y=1;y<=mesh->LocalNy-2;y++)
       for(int z=0;z<ncz;z++) {
         gys(x, y, z) = (f.yup()(x, y+1, z) - f.ydown()(x, y-1, z))/(0.5*metric->dy(x, y+1) + metric->dy(x, y) + 0.5*metric->dy(x, y-1));
       }
   
-  for(int x=1;x<=mesh->ngx-2;x++) {
+  for(int x=1;x<=mesh->LocalNx-2;x++) {
     for(int y=mesh->ystart;y<=mesh->yend;y++) {
       BoutReal by = 1./sqrt(metric->g_22(x, y));
       for(int z=0;z<ncz;z++) {
@@ -207,6 +208,38 @@ const Field3D Div_par(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
   return mesh->coordinates()->Div_par(f, outloc, method);
 }
 
+const Field3D Div_par(const Field3D &f, const Field3D &v) {
+  // Parallel divergence, using velocities at cell boundaries
+  // Note: Not guaranteed to be flux conservative
+
+  Field3D result;
+  result.allocate();
+
+  Coordinates *coord = mesh->coordinates();
+  
+  for(int i=mesh->xstart;i<=mesh->xend;i++)
+    for(int j=mesh->ystart;j<=mesh->yend;j++) {
+      for(int k=0;k<mesh->LocalNz;k++) {
+	
+	// Value of f and v at left cell face
+	BoutReal fL = 0.5*(f(i,j,k) + f.ydown()(i,j-1,k));
+	BoutReal vL = 0.5*(v(i,j,k) + v.ydown()(i,j-1,k));
+	
+	BoutReal fR = 0.5*(f(i,j,k) + f.yup()(i,j+1,k));
+	BoutReal vR = 0.5*(v(i,j,k) + v.yup()(i,j+1,k));
+	
+        // Calculate flux at right boundary (y+1/2)
+	BoutReal fluxRight = fR * vR * (coord->J(i,j) + coord->J(i,j+1)) / (sqrt(coord->g_22(i,j))+ sqrt(coord->g_22(i,j+1)));
+	
+        // Calculate at left boundary (y-1/2)
+	BoutReal fluxLeft = fL * vL * (coord->J(i,j) + coord->J(i,j-1)) / (sqrt(coord->g_22(i,j)) + sqrt(coord->g_22(i,j-1)));
+	
+	result(i,j,k)   = (fluxRight - fluxLeft) / (coord->dy(i,j)*coord->J(i,j));
+      }
+    }
+  return result;
+}
+
 //////// Flux methods
 
 const Field3D Div_par_flux(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
@@ -231,9 +264,9 @@ const Field3D Grad_par_CtoL(const Field3D &var) {
   Coordinates *metric = mesh->coordinates();
   
   // NOTE: Need to calculate one more point than centred vars
-  for(int jx=0; jx<mesh->ngx;jx++) {
-    for(int jy=1;jy<mesh->ngy;jy++) {
-      for(int jz=0;jz<mesh->ngz;jz++) {
+  for(int jx=0; jx<mesh->LocalNx;jx++) {
+    for(int jy=1;jy<mesh->LocalNy;jy++) {
+      for(int jz=0;jz<mesh->LocalNz;jz++) {
 	result(jx, jy, jz) = 2.*(var(jx, jy, jz) - var.ydown()(jx, jy-1, jz)) / (metric->dy(jx, jy) * sqrt(metric->g_22(jx, jy)) + metric->dy(jx, jy-1) * sqrt(metric->g_22(jx, jy-1)));
       }
     }
@@ -271,9 +304,9 @@ const Field3D Grad_par_LtoC(const Field3D &var) {
   
   Coordinates *metric = mesh->coordinates();
   
-  for(int jx=0; jx<mesh->ngx;jx++) {
-    for(int jy=0;jy<mesh->ngy-1;jy++) {
-      for(int jz=0;jz<mesh->ngz;jz++) {
+  for(int jx=0; jx<mesh->LocalNx;jx++) {
+    for(int jy=0;jy<mesh->LocalNy-1;jy++) {
+      for(int jz=0;jz<mesh->LocalNz;jz++) {
 	result(jx, jy, jz) = (var.yup()(jx, jy+1, jz) - var(jx, jy, jz)) / (metric->dy(jx, jy) * sqrt(metric->g_22(jx, jy)));
       }
     }
@@ -353,7 +386,7 @@ const Field3D Div_par_K_Grad_par(Field3D &kY, Field3D &f) {
 * Divergence of perpendicular diffusive flux kperp*Grad_perp
 *******************************************************************************/
 
-const Field3D Div_K_perp_Grad_perp(const Field2D &kperp, const Field3D &f) {
+const Field3D Div_K_perp_Grad_perp(const Field2D &UNUSED(kperp), const Field3D &UNUSED(f)) {
   throw BoutException("Div_K_perp_Grad_per not implemented yet");
   Field3D result = 0.0;
   return result;
@@ -368,11 +401,11 @@ const Field2D Delp2(const Field2D &f) {
   return mesh->coordinates()->Delp2(f);
 }
 
-const Field3D Delp2(const Field3D &f, BoutReal zsmooth) {
+const Field3D Delp2(const Field3D &f, BoutReal UNUSED(zsmooth)) {
   return mesh->coordinates()->Delp2(f);
 }
 
-const FieldPerp Delp2(const FieldPerp &f, BoutReal zsmooth) {
+const FieldPerp Delp2(const FieldPerp &f, BoutReal UNUSED(zsmooth)) {
   return mesh->coordinates()->Delp2(f);
 }
 
@@ -428,7 +461,7 @@ const Field3D Laplace(const Field3D &f) {
 
 const Field2D b0xGrad_dot_Grad(const Field2D &phi, const Field2D &A) {
   
-  MsgStackItem trace("b0xGrad_dot_Grad( Field2D , Field2D )");
+  TRACE("b0xGrad_dot_Grad( Field2D , Field2D )");
   
   Coordinates *metric = mesh->coordinates();
 
@@ -455,7 +488,7 @@ const Field3D b0xGrad_dot_Grad(const Field2D &phi, const Field3D &A) {
   Field2D vx, vy, vz;
   Field3D result;
   
-  MsgStackItem trace("b0xGrad_dot_Grad( Field2D , Field3D )");
+  TRACE("b0xGrad_dot_Grad( Field2D , Field3D )");
 
   Coordinates *metric = mesh->coordinates();
   
@@ -493,7 +526,7 @@ const Field3D b0xGrad_dot_Grad(const Field3D &p, const Field2D &A, CELL_LOC outl
   Field3D vx, vy;
   Field3D result;
   
-  MsgStackItem trace("b0xGrad_dot_Grad( Field3D , Field2D )");
+  TRACE("b0xGrad_dot_Grad( Field3D , Field2D )");
 
   Coordinates *metric = mesh->coordinates();
 
@@ -505,12 +538,11 @@ const Field3D b0xGrad_dot_Grad(const Field3D &p, const Field2D &A, CELL_LOC outl
   // Calculate advection velocity
   vx = metric->g_22*dpdz - metric->g_23*dpdy;
   vy = metric->g_23*dpdx - metric->g_12*dpdz;
-
+  
   // Upwind A using these velocities
   
   result = VDDX(vx, A)
     + VDDY(vy, A);
-  
   
   result /=  (metric->J*sqrt(metric->g_22));
   
@@ -526,7 +558,7 @@ const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC ou
   Field3D vx, vy, vz;
   Field3D result;
   
-  MsgStackItem trace("b0xGrad_dot_Grad( Field3D , Field3D )");
+  TRACE("b0xGrad_dot_Grad( Field3D , Field3D )");
 
   Coordinates *metric = mesh->coordinates();
 
@@ -544,9 +576,6 @@ const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC ou
     // BOUT-06 style differencing
     vz += metric->IntShiftTorsion * vx;
   }
-
-  // Upwind A using these velocities
-  
   
   result = VDDX(vx, A)
     + VDDY(vy, A)
@@ -589,8 +618,8 @@ CELL_LOC bracket_location(const CELL_LOC &f_loc, const CELL_LOC &g_loc, const CE
   return outloc;      	  // Location of result
 }
 
-const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method, CELL_LOC outloc, Solver *solver) {
-  MsgStackItem trace("bracket(Field2D, Field2D)");
+const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method, CELL_LOC outloc, Solver *UNUSED(solver)) {
+  TRACE("bracket(Field2D, Field2D)");
   Field2D result;
 
   // Sort out cell locations
@@ -608,7 +637,7 @@ const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method,
 }
 
 const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method, CELL_LOC outloc, Solver *solver) {
-  MsgStackItem trace("bracket(Field3D, Field2D)");
+  TRACE("bracket(Field3D, Field2D)");
   
   Field3D result;
   
@@ -624,12 +653,9 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
     if(!solver)
       throw BoutException("CTU method requires access to the solver");
     
-    // Get current timestep
-    BoutReal dt = solver->getCurrentTimestep();
-
     result.allocate();
     
-    int ncz = mesh->ngz - 1;
+    int ncz = mesh->LocalNz;
     for(int x=mesh->xstart;x<=mesh->xend;x++)
       for(int y=mesh->ystart;y<=mesh->yend;y++) {
 	for(int z=0;z<ncz;z++) {
@@ -665,7 +691,7 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
     // Arakawa scheme for perpendicular flow. Here as a test
 
     result.allocate();
-    int ncz = mesh->ngz - 1;
+    int ncz = mesh->LocalNz;
     for(int jx=mesh->xstart;jx<=mesh->xend;jx++)
       for(int jy=mesh->ystart;jy<=mesh->yend;jy++)
 	for(int jz=0;jz<ncz;jz++) {
@@ -707,11 +733,12 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
     result = b0xGrad_dot_Grad(f, g) / metric->Bxy;
   }
   }
+  result.setLocation(result_loc);
   return result;
 }
 
 const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method, CELL_LOC outloc, Solver *solver) {
-  MsgStackItem trace("bracket(Field2D, Field3D)");
+  TRACE("bracket(Field2D, Field3D)");
   
   Field3D result;
 
@@ -742,7 +769,7 @@ const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method,
 }
 
 const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method, CELL_LOC outloc, Solver *solver) {
-  MsgStackItem trace("Field3D, Field3D");
+  TRACE("Field3D, Field3D");
   
   Coordinates *metric = mesh->coordinates();
 
@@ -767,12 +794,12 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
     vx.allocate();
     vz.allocate();
     
-    int ncz = mesh->ngz - 1;
+    int ncz = mesh->LocalNz;
     for(int y=mesh->ystart;y<=mesh->yend;y++) {
-      for(int x=1;x<=mesh->ngx-2;x++) {
-	for(int z=0;z<ncz;z++) {
-	  int zm = (z - 1 + ncz) % ncz;
-	  int zp = (z + 1) % ncz;
+      for(int x=1;x<=mesh->LocalNx-2;x++) {
+        for(int z=0;z<ncz;z++) {
+          int zm = (z - 1 + ncz) % ncz;
+          int zp = (z + 1) % ncz;
           
           // Vx = DDZ(f)
           vx(x,z) = (f(x,y,zp) - f(x,y,zm))/(2.*metric->dz);
@@ -788,11 +815,11 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
       // Simplest form: use cell-centered velocities (no divergence included so not flux conservative)
       
       for(int x=mesh->xstart;x<=mesh->xend;x++)
-	for(int z=0;z<ncz;z++) {
-	  int zm = (z - 1 + ncz) % ncz;
-	  int zp = (z + 1) % ncz;
+        for(int z=0;z<ncz;z++) {
+          int zm = (z - 1 + ncz) % ncz;
+          int zp = (z + 1) % ncz;
           
-	  BoutReal gp, gm;
+          BoutReal gp, gm;
 	  
           // X differencing
           if(vx(x,z) > 0.0) {
@@ -832,8 +859,8 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
               + (0.5*dt/metric->dx(x,y)) * ( (vx(x,z) > 0) ? vx(x,z)*(g(x-1,y,z) - g(x,y,z)) : vx(x,z)*(g(x,y,z) - g(x+1,y,z)) );
           }
           
-          result(x,y,z) += vz(x,z) * (gp - gm) / metric->dz;
-        }
+					result(x, y, z) += vz(x, z) * (gp - gm) / metric->dz;
+				}
     }
     break;
   }
@@ -842,12 +869,60 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
     
     result.allocate();
     
-    int ncz = mesh->ngz - 1;
+    int ncz = mesh->LocalNz;
+
+    // We need to discard const qualifier in order to manipulate
+    // storage array directly
+    Field3D f_temp = f;
+    Field3D g_temp = g;
+
+    for(int jx=mesh->xstart;jx<=mesh->xend;jx++){
+      for(int jy=mesh->ystart;jy<=mesh->yend;jy++){
+        BoutReal meshdx = metric->dx(jx, jy);
+        BoutReal *Fxm = f_temp(jx-1, jy);
+        BoutReal *Fx  = f_temp(jx,   jy);
+        BoutReal *Fxp = f_temp(jx+1, jy);
+        BoutReal *Gxm = g_temp(jx-1, jy);
+        BoutReal *Gx  = g_temp(jx,   jy);
+        BoutReal *Gxp = g_temp(jx+1, jy);
+        for(int jz=0;jz<ncz;jz++) {
+          int jzp = (jz + 1) % ncz;
+          int jzm = (jz - 1 + ncz) % ncz;
+          
+          // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
+          BoutReal Jpp = 0.25*( (Fx[jzp] - Fx[jzm])*(Gxp[jz] - Gxm[jz]) - (Fxp[jz] - Fxm[jz])*(Gx[jzp] - Gx[jzm]) )
+            / (meshdx * metric->dz);
+
+          // J+x
+          BoutReal Jpx = 0.25*( Gxp[jz]*(Fxp[jzp]-Fxp[jzm]) -
+                                Gxm[jz]*(Fxm[jzp]-Fxm[jzm]) -
+                                Gx[jzp]*(Fxp[jzp]-Fxm[jzp]) +
+                                Gx[jzm]*(Fxp[jzm]-Fxm[jzm]))
+            / (meshdx * metric->dz);
+          // Jx+
+          BoutReal Jxp = 0.25*( Gxp[jzp]*(Fx[jzp]-Fxp[jz]) -
+                                Gxm[jzm]*(Fxm[jz]-Fx[jzm]) -
+                                Gxm[jzp]*(Fx[jzp]-Fxm[jz]) +
+                                Gxp[jzm]*(Fxp[jz]-Fx[jzm]))
+            / (meshdx * metric->dz);
+			  
+          result(jx, jy, jz) = (Jpp + Jpx + Jxp) / 3.;
+        }
+      }
+    }
+    break;
+  }
+  case BRACKET_ARAKAWA_OLD: {
+    // Arakawa scheme for perpendicular flow
+    
+    result.allocate();
+
+    int ncz = mesh->LocalNz;
     for(int jx=mesh->xstart;jx<=mesh->xend;jx++)
       for(int jy=mesh->ystart;jy<=mesh->yend;jy++)
-	for(int jz=0;jz<ncz;jz++) {
-	  int jzp = (jz + 1) % ncz;
-	  int jzm = (jz - 1 + ncz) % ncz;
+        for(int jz=0;jz<ncz;jz++) {
+          int jzp = (jz + 1) % ncz;
+          int jzm = (jz - 1 + ncz) % ncz;
           
           // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
           BoutReal Jpp = 0.25*( (f(jx,jy,jzp) - f(jx,jy,jzm))*

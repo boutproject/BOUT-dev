@@ -5,6 +5,7 @@
 #include "mpi.h"
 
 #include <bout/mesh.hxx>
+#include "unused.hxx"
 
 #include <list>
 #include <vector>
@@ -46,7 +47,7 @@ class BoutMesh : public Mesh {
   comm_handle irecvXOut(BoutReal *buffer, int size, int tag);
   comm_handle irecvXIn(BoutReal *buffer, int size, int tag);
   
-  MPI_Comm getXcomm(int jy) const {return comm_x; }
+  MPI_Comm getXcomm(int UNUSED(jy)) const {return comm_x; }
   MPI_Comm getYcomm(int jx) const;
   
   bool periodicY(int jx, BoutReal &ts) const;
@@ -106,6 +107,8 @@ class BoutMesh : public Mesh {
   const Field3D Switch_XZ(const Field3D &var);
   
  private:
+  Options *meshoptions; ///< Handle for mesh options
+
   string gridname;
   int nx, ny;        ///< Size of the grid in the input file
   int MX, MY;        ///< size of the grid excluding boundary regions

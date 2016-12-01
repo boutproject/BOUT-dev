@@ -130,7 +130,7 @@ int physics_init(bool restarting) {
     evolve_ajpar = false; // Don't need ajpar - calculated from ohm's law
 
   /************* SHIFTED RADIAL COORDINATES ************/
-bool ShiftXderivs;
+  bool ShiftXderivs;
   globalOptions->get("shiftXderivs", ShiftXderivs, false); // Read global flag
   if(ShiftXderivs) {
     ShearFactor = 0.0;  // I disappears from metric
@@ -342,6 +342,8 @@ int physics_run(BoutReal t)
   pei = (Te0+Ti0)*Ni + (Te + Ti)*Ni0;
   pe  = Te0*Ni + Te*Ni0;
   
+  mesh->communicate(pe, pei);
+
   if(ZeroElMass) {
     // Set jpar,Ve,Ajpar neglecting the electron inertia term
     jpar = ((Te0*Grad_par(Ni, CELL_YLOW)) - (Ni0*Grad_par(phi, CELL_YLOW)))/(fmei*0.51*nu);

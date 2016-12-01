@@ -59,12 +59,10 @@ class H5Format : public DataFormat {
  public:
   H5Format(bool parallel_in = false);
   H5Format(const char *name, bool parallel_in = false);
-  H5Format(const string &name, bool parallel_in = false);
+  H5Format(const string &name, bool parallel_in = false) : H5Format(name.c_str(), parallel_in) {}
   ~H5Format();
-  
-  bool openr(const string &name);
+
   bool openr(const char *name);
-  bool openw(const string &name, bool append=false);
   bool openw(const char *name, bool append=false);
   
   bool is_valid();

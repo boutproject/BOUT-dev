@@ -42,15 +42,15 @@ ixseps2 = -1
 # Methods option
 ###############################################################################
 # Methods used for the radial (x) derivative terms
-[ddx]
+[mesh:ddx]
 second = C2 # d^2/dx^2 (f)
 
 # Methods used for parallel (y) derivative terms
-[ddy]
+[mesh:ddy]
 second = C2  # d^2/dy^2 (f)
 
 #Methods used for the azimuthal (z) derivative terms
-[ddz]
+[mesh:ddz]
 second = FTT # d^2/dz^2 (f)
 ###############################################################################
 

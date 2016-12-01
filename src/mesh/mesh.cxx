@@ -65,7 +65,7 @@ Mesh::~Mesh() {
 
 /// Get an integer
 int Mesh::get(int &ival, const string &name) {
-  MsgStackItem msg("Mesh::get(ival)");
+  TRACE("Mesh::get(ival)");
 
   if(!source->get(this, ival, name))
     return 1;
@@ -75,7 +75,7 @@ int Mesh::get(int &ival, const string &name) {
 
 /// A BoutReal number
 int Mesh::get(BoutReal &rval, const string &name) {
-  MsgStackItem msg("Mesh::get(rval)");
+  TRACE("Mesh::get(rval)");
 
   if(!source->get(this, rval, name))
     return 1;
@@ -84,7 +84,7 @@ int Mesh::get(BoutReal &rval, const string &name) {
 }
 
 int Mesh::get(Field2D &var, const string &name, BoutReal def) {
-  MsgStackItem msg("Loading 2D field: Mesh::get(Field2D)");
+  TRACE("Loading 2D field: Mesh::get(Field2D)");
 
   // Ensure data allocated
   var.allocate();
@@ -102,7 +102,7 @@ int Mesh::get(Field2D &var, const string &name, BoutReal def) {
 }
 
 int Mesh::get(Field3D &var, const string &name, BoutReal def, bool communicate) {
-  MsgStackItem msg("Loading 3D field: Mesh::get(Field3D)");
+  TRACE("Loading 3D field: Mesh::get(Field3D)");
 
   // Ensure data allocated
   var.allocate();
@@ -171,12 +171,16 @@ int Mesh::get(Vector3D &var, const string &name) {
   return 0;
 }
 
+bool Mesh::sourceHasVar(const string &name) {
+  return source->hasVar(name);
+}
+
 /**************************************************************************
  * Communications
  **************************************************************************/
 
 void Mesh::communicateXZ(FieldGroup &g) {
-  MsgStackItem("Mesh::communicate(FieldGroup&)");
+  TRACE("Mesh::communicate(FieldGroup&)");
 
   // Send data
   comm_handle h = send(g);
@@ -186,7 +190,7 @@ void Mesh::communicateXZ(FieldGroup &g) {
 }
 
 void Mesh::communicate(FieldGroup &g) {
-  MsgStackItem("Mesh::communicate(FieldGroup&)");
+  TRACE("Mesh::communicate(FieldGroup&)");
 
   // Send data
   comm_handle h = send(g);
@@ -205,16 +209,16 @@ void Mesh::communicate(FieldPerp &f) {
   comm_handle recv[2];
   
   int nin = xstart; // Number of x points in inner guard cell
-  int nout = ngx-xend-1; // Number of x points in outer guard cell
+  int nout = LocalNx-xend-1; // Number of x points in outer guard cell
 
   // Post receives for guard cell regions
 
-  recv[0] = irecvXIn(f[0],       nin*ngz, 0);
-  recv[1] = irecvXOut(f[xend+1], nout*ngz, 1);
+  recv[0] = irecvXIn(f[0],       nin*LocalNz, 0);
+  recv[1] = irecvXOut(f[xend+1], nout*LocalNz, 1);
   
   // Send data
-  sendXIn(f[xstart], nin*ngz, 1);
-  sendXOut(f[xend-nout+1], nout*ngz, 0);
+  sendXIn(f[xstart], nin*LocalNz, 1);
+  sendXOut(f[xend-nout+1], nout*LocalNz, 0);
  
   // Wait for receive
   wait(recv[0]);
@@ -227,7 +231,7 @@ int Mesh::msg_len(const vector<FieldData*> &var_list, int xge, int xlt, int yge,
   /// Loop over variables
   for(const auto& var : var_list) {
     if(var->is3D()) {
-      len += (xlt - xge) * (ylt - yge) * (ngz-1) * var->BoutRealSize();
+      len += (xlt - xge) * (ylt - yge) * LocalNz * var->BoutRealSize();
     } else {
       len += (xlt - xge) * (ylt - yge) * var->BoutRealSize();
     }

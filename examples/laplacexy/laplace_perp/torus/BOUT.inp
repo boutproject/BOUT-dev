@@ -1,0 +1,16 @@
+
+input = sin(pi*x - y)
+calc_metric = true  # Read Rxy, Bpxy etc and calculate metric
+
+grid = "cbm18_dens8.grid_nx68ny64.nc"
+
+non_uniform = true  # Include corrections to second derivatives
+
+[mesh]
+
+nz = 1
+
+[laplacexy]
+pctype = sor  # Preconditioner
+include_y_derivs = true
+

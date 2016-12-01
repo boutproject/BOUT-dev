@@ -48,8 +48,8 @@ Field2D::Field2D(Mesh *msh) : fieldmesh(msh), deriv(nullptr) {
   boundaryIsSet = false;
 
   if(fieldmesh) {
-    nx = fieldmesh->ngx;
-    ny = fieldmesh->ngy;
+    nx = fieldmesh->LocalNx;
+    ny = fieldmesh->LocalNy;
   }
   
 #ifdef TRACK
@@ -61,8 +61,8 @@ Field2D::Field2D(const Field2D& f) : fieldmesh(f.fieldmesh), // The mesh contain
                                      data(f.data), // This handles references to the data array
                                      deriv(nullptr) {
   if(fieldmesh) {
-    nx = fieldmesh->ngx;
-    ny = fieldmesh->ngy;
+    nx = fieldmesh->LocalNx;
+    ny = fieldmesh->LocalNy;
   }
   
   boundaryIsSet = false;
@@ -73,8 +73,8 @@ Field2D::Field2D(BoutReal val) : fieldmesh(nullptr), deriv(nullptr) {
   boundaryIsSet = false;
   
   fieldmesh = mesh;
-  nx = fieldmesh->ngx;
-  ny = fieldmesh->ngy;
+  nx = fieldmesh->LocalNx;
+  ny = fieldmesh->LocalNy;
   
   *this = val;
 }
@@ -89,8 +89,8 @@ void Field2D::allocate() {
     if(!fieldmesh) {
       /// If no mesh, use the global
       fieldmesh = mesh;
-      nx = fieldmesh->ngx;
-      ny = fieldmesh->ngy;
+      nx = fieldmesh->LocalNx;
+      ny = fieldmesh->LocalNy;
     }
     data = Array<BoutReal>(nx*ny);
   }else
@@ -98,7 +98,7 @@ void Field2D::allocate() {
 }
 
 Field2D* Field2D::timeDeriv() {
-  if(deriv)
+  if(deriv == nullptr)
     deriv = new Field2D();
   return deriv;
 }
@@ -110,7 +110,7 @@ Field2D & Field2D::operator=(const Field2D &rhs) {
   if(this == &rhs)
     return(*this); // skip this assignment
 
-  MsgStackItem trace("Field2D: Assignment from Field2D");
+  TRACE("Field2D: Assignment from Field2D");
 
   checkData(rhs);
   
@@ -144,21 +144,21 @@ Field2D & Field2D::operator=(const BoutReal rhs) {
 ////////////// Indexing ///////////////////
 
 const DataIterator Field2D::iterator() const {
-  return DataIterator(0, mesh->ngx-1, 
-                      0, mesh->ngy-1,
+  return DataIterator(0, mesh->LocalNx-1, 
+                      0, mesh->LocalNy-1,
                       0, 0);
 }
 
 const DataIterator Field2D::begin() const {
-  /*return DataIterator(0, 0, mesh->ngx-1,
-                      0, 0, mesh->ngy-1,
+  /*return DataIterator(0, 0, mesh->LocalNx-1,
+                      0, 0, mesh->LocalNy-1,
                       0, 0, 0);*/
   return Field2D::iterator();
 }
 
 const DataIterator Field2D::end() const {
-  return DataIterator(0, mesh->ngx-1, 
-                      0, mesh->ngy-1,
+  return DataIterator(0, mesh->LocalNx-1, 
+                      0, mesh->LocalNy-1,
                       0, 0, DI_GET_END);
 }
 
@@ -188,8 +188,10 @@ const IndexRange Field2D::region(REGION rgn) const {
         0, 0};
     break;
   }
+  default: {
+    throw BoutException("Field2D::region() : Requested region not implemented");
+  }
   };
-  throw BoutException("Field2D::region() : Requested region not implemented");
 }
 
 ///////// Operators
@@ -242,7 +244,7 @@ F2D_UPDATE_REAL(/=,/);    // operator/= BoutReal
 
 ////////////////////// STENCILS //////////////////////////
 
-void Field2D::getXArray(int y, int z, rvec &xv) const {
+void Field2D::getXArray(int y, int UNUSED(z), rvec &xv) const {
   ASSERT0(isAllocated());
 
   xv.resize(nx);
@@ -251,7 +253,7 @@ void Field2D::getXArray(int y, int z, rvec &xv) const {
     xv[x] = operator()(x,y);
 }
 
-void Field2D::getYArray(int x, int z, rvec &yv) const {
+void Field2D::getYArray(int x, int UNUSED(z), rvec &yv) const {
   ASSERT0(isAllocated());
 
   yv.resize(ny);
@@ -263,13 +265,13 @@ void Field2D::getYArray(int x, int z, rvec &yv) const {
 void Field2D::getZArray(int x, int y, rvec &zv) const {
   ASSERT0(isAllocated());
 
-  zv.resize(mesh->ngz-1);
+  zv.resize(mesh->LocalNz);
   
-  for(int z=0;z<mesh->ngz-1;z++)
+  for(int z=0;z<mesh->LocalNz;z++)
     zv[z] = operator()(x,y);
 }
 
-void Field2D::setXArray(int y, int z, const rvec &xv) {
+void Field2D::setXArray(int y, int UNUSED(z), const rvec &xv) {
   allocate();
 
   ASSERT0(xv.capacity() == (unsigned int) nx);
@@ -278,16 +280,16 @@ void Field2D::setXArray(int y, int z, const rvec &xv) {
     operator()(x,y) = xv[x];
 }
 
-void Field2D::setYArray(int x, int z, const rvec &yv) {
+void Field2D::setYArray(int x, int UNUSED(z), const rvec &yv) {
   allocate();
 
-  ASSERT0(yv.capacity() == (unsigned int) mesh->ngy);
+  ASSERT0(yv.capacity() == (unsigned int) mesh->LocalNy);
 
-  for(int y=0;y<mesh->ngy;y++)
+  for(int y=0;y<mesh->LocalNy;y++)
     operator()(x,y) = yv[y];
 }
 
-void Field2D::setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const {
+void Field2D::setXStencil(stencil &fval, const bindex &bx, CELL_LOC UNUSED(loc)) const {
   fval.mm = operator()(bx.jx2m,bx.jy);
   fval.m  = operator()(bx.jxm,bx.jy);
   fval.c  = operator()(bx.jx,bx.jy);
@@ -295,7 +297,7 @@ void Field2D::setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const {
   fval.pp = operator()(bx.jx2p,bx.jy);
 }
 
-void Field2D::setXStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc) const {
+void Field2D::setXStencil(forward_stencil &fval, const bindex &bx, CELL_LOC UNUSED(loc)) const {
   fval.m  = operator()(bx.jxm,bx.jy);
   fval.c  = operator()(bx.jx,bx.jy);
   fval.p  = operator()(bx.jxp,bx.jy);
@@ -304,7 +306,7 @@ void Field2D::setXStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc)
   fval.p4 = operator()(bx.jx+4,bx.jy);
 }
 
-void Field2D::setXStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc) const {
+void Field2D::setXStencil(backward_stencil &fval, const bindex &bx, CELL_LOC UNUSED(loc)) const {
   fval.m4 = operator()(bx.jx-4,bx.jy);
   fval.m3 = operator()(bx.jx-3,bx.jy);
   fval.m2 = operator()(bx.jx2m,bx.jy);
@@ -313,7 +315,7 @@ void Field2D::setXStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc
   fval.p  = operator()(bx.jxp,bx.jy);
 }
 
-void Field2D::setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const {
+void Field2D::setYStencil(stencil &fval, const bindex &bx, CELL_LOC UNUSED(loc)) const {
   fval.mm = operator()(bx.jx,bx.jy2m);
   fval.m  = operator()(bx.jx,bx.jym);
   fval.c  = operator()(bx.jx,bx.jy);
@@ -321,7 +323,7 @@ void Field2D::setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const {
   fval.pp = operator()(bx.jx,bx.jy2p);
 }
 
-void Field2D::setYStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc) const {
+void Field2D::setYStencil(forward_stencil &fval, const bindex &bx, CELL_LOC UNUSED(loc)) const {
   fval.m  = operator()(bx.jx,bx.jym);
   fval.c  = operator()(bx.jx,bx.jy);
   fval.p  = operator()(bx.jx,bx.jyp);
@@ -330,7 +332,7 @@ void Field2D::setYStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc)
   fval.p4 = operator()(bx.jx,bx.jy+4);
 }
 
-void Field2D::setYStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc) const {
+void Field2D::setYStencil(backward_stencil &fval, const bindex &bx, CELL_LOC UNUSED(loc)) const {
   fval.m4 = operator()(bx.jx,bx.jy-4);
   fval.m3 = operator()(bx.jx,bx.jy-3);
   fval.m2 = operator()(bx.jx,bx.jy2m);
@@ -339,7 +341,7 @@ void Field2D::setYStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc
   fval.p  = operator()(bx.jx,bx.jyp);
 }
 
-void Field2D::setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const {
+void Field2D::setZStencil(stencil &fval, const bindex &bx, CELL_LOC UNUSED(loc)) const {
   fval = operator()(bx.jx,bx.jy);
 }
 
@@ -350,7 +352,7 @@ int Field2D::getData(int x, int y, int z, void *vptr) const {
   
 #if CHECK > 2
   // check ranges
-  if((x < 0) || (x >= nx) || (y < 0) || (y >= ny) || (z < 0) || (z >= nz)) {
+  if((x < 0) || (x >= nx) || (y < 0) || (y >= ny)) {
     throw BoutException("Field2D: getData (%d,%d,%d) out of bounds\n", x, y, z);
   }
 #endif
@@ -365,7 +367,7 @@ int Field2D::getData(int x, int y, int z, BoutReal *rptr) const {
   
 #if CHECK > 2
   // check ranges
-  if((x < 0) || (x >= nx) || (y < 0) || (y >= ny) || (z < 0) || (z >= nz)) {
+  if((x < 0) || (x >= nx) || (y < 0) || (y >= ny)) {
     throw BoutException("Field2D: getData (%d,%d,%d) out of bounds\n", x, y, z);
   }
 #endif
@@ -379,7 +381,7 @@ int Field2D::setData(int x, int y, int z, void *vptr) {
   
 #if CHECK > 2
   // check ranges
-  if((x < 0) || (x >= nx) || (y < 0) || (y >= ny) || (z < 0) || (z >= nz)) {
+  if((x < 0) || (x >= nx) || (y < 0) || (y >= ny)) {
     throw BoutException("Field2D: setData (%d,%d,%d) out of bounds\n", x, y, z);
   }
 #endif
@@ -389,12 +391,12 @@ int Field2D::setData(int x, int y, int z, void *vptr) {
   return sizeof(BoutReal);
 }
 
-int Field2D::setData(int x, int y, int z, BoutReal *rptr) {
+int Field2D::setData(int x, int y, int UNUSED(z), BoutReal *rptr) {
   allocate();
-#ifdef CHECK
+#if CHECK > 2
   // check ranges
-  if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngz)) {
-    throw BoutException("Field2D: setData (%d,%d,%d) out of bounds\n", x, y, z);
+  if((x < 0) || (x >= nx) || (y < 0) || (y >= ny) ) {
+    throw BoutException("Field2D: setData (%d,%d) out of bounds\n", x, y);
   }
 #endif
 
@@ -444,15 +446,15 @@ void Field2D::applyBoundary(const string &condition) {
     for(int jy=0;jy<mesh->ystart;jy++) {
       operator()(jx,jy) = 0.;
     }
-    for(int jy=mesh->yend+1;jy<mesh->ngy;jy++) {
+    for(int jy=mesh->yend+1;jy<mesh->LocalNy;jy++) {
       operator()(jx,jy) = 0.;
     }
   }
-  for(int jx=mesh->xend+1;jx<mesh->ngx;jx++) {
+  for(int jx=mesh->xend+1;jx<mesh->LocalNx;jx++) {
     for(int jy=0;jy<mesh->ystart;jy++) {
       operator()(jx,jy) = 0.;
     }
-    for(int jy=mesh->yend+1;jy<mesh->ngy;jy++) {
+    for(int jy=mesh->yend+1;jy<mesh->LocalNy;jy++) {
       operator()(jx,jy) = 0.;
     }
   }
@@ -480,15 +482,15 @@ void Field2D::applyBoundary(const string &region, const string &condition) {
     for(int jy=0;jy<mesh->ystart;jy++) {
       operator()(jx,jy) = 0.;
     }
-    for(int jy=mesh->yend+1;jy<mesh->ngy;jy++) {
+    for(int jy=mesh->yend+1;jy<mesh->LocalNy;jy++) {
       operator()(jx,jy) = 0.;
     }
   }
-  for(int jx=mesh->xend+1;jx<mesh->ngx;jx++) {
+  for(int jx=mesh->xend+1;jx<mesh->LocalNx;jx++) {
     for(int jy=0;jy<mesh->ystart;jy++) {
       operator()(jx,jy) = 0.;
     }
-    for(int jy=mesh->yend+1;jy<mesh->ngy;jy++) {
+    for(int jy=mesh->yend+1;jy<mesh->LocalNy;jy++) {
       operator()(jx,jy) = 0.;
     }
   }
@@ -582,10 +584,6 @@ const Field2D operator-(const Field2D &f) {
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
-const Field2D SQ(const Field2D &f) {
-  return f*f;
-}
-
 BoutReal min(const Field2D &f, bool allpe) {
   TRACE("min(Field2D)");
   
@@ -593,7 +591,7 @@ BoutReal min(const Field2D &f, bool allpe) {
 
   BoutReal result = f(0,0);
 
-  for(auto i : f)
+  for(auto i : f.region(RGN_NOBNDRY))
     if(f[i] < result)
       result = f[i];
   
@@ -613,7 +611,7 @@ BoutReal max(const Field2D &f, bool allpe) {
 
   BoutReal result = f(mesh->xstart,mesh->ystart);
 
-  for(auto i : f)
+  for(auto i : f.region(RGN_NOBNDRY))
     if(f[i] > result)
       result = f[i];
   
@@ -750,10 +748,11 @@ void checkData(const Field2D &f) {
   
 #if CHECK > 2
   // Do full checks
-  for(auto i : region(RGN_NOBNDRY))
-    if(!::finite(operator[][i])) {
+  for(auto i : f.region(RGN_NOBNDRY)){
+    if(!::finite(f[i])) {
       throw BoutException("Field2D: Operation on non-finite data at [%d][%d]\n", i.x, i.y);
     }
+  }
 #endif
 }
 #endif

@@ -23,6 +23,7 @@
 
 #include <utils.hxx>
 #include <invert_laplace.hxx>
+#include <bout/invert/laplacexy.hxx>
 #include <math.h>
 
 #include <bout/constants.hxx>
@@ -55,6 +56,7 @@ BoutReal beta_hat, mu_hat;
 BoutReal viscosity_par;
 
 int phi_flags, apar_flags;
+bool split_n0;
 bool ZeroElMass, estatic; 
 bool curv_kappa;
 bool flat_resist;
@@ -70,6 +72,9 @@ BoutReal viscosity, hyper_viscosity;
 bool smooth_separatrix;
 
 FieldGroup comms;
+
+LaplaceXY *laplacexy; // Laplacian solver in X-Y (n=0)
+Field2D phi2D;   // Axisymmetric potential, used when split_n0=true
 
 int physics_init(bool restarting) {
   
@@ -114,6 +119,7 @@ int physics_init(bool restarting) {
   
   OPTION(options, phi_flags, 0);
   OPTION(options, apar_flags, 0);
+  OPTION(options, split_n0, false);
   OPTION(options, estatic, false);
   OPTION(options, ZeroElMass, false);
   OPTION(options, jpar_noderiv, true);
@@ -283,6 +289,13 @@ int physics_init(bool restarting) {
   }else
     SAVE_ONCE(eta);
   
+  // LaplaceXY for n=0 solve
+  if(split_n0) {
+    // Create an XY solver for n=0 component
+    laplacexy = new LaplaceXY(mesh);
+    phi2D = 0.0; // Starting guess
+  }
+
   return 0;
 }
 
@@ -331,7 +344,16 @@ const Field3D Grad_parP_CtoL(const Field3D &f) {
 int physics_run(BoutReal time) {
 
   // Invert vorticity to get electrostatic potential
-  phi = invert_laplace(Vort*B0, phi_flags);
+  if(split_n0) {
+    Field2D Vort2D = Vort.DC(); // n=0 component
+    phi2D = laplacexy->solve(Vort2D, phi2D);
+    
+    // Solve non-axisymmetric part using X-Z solver
+    phi = invert_laplace((Vort-Vort2D)*B0, phi_flags);
+    phi += phi2D; // Add axisymmetric part
+  }else {
+    phi = invert_laplace(Vort*B0, phi_flags);
+  }
   phi.applyBoundary();
   
   // Calculate apar and jpar
@@ -384,15 +406,15 @@ int physics_run(BoutReal time) {
   // Boundary in jpar
   if(mesh->firstX()) {
     for(int i=4;i>=0;i--)
-      for(int j=0;j<mesh->ngy;j++)
-	for(int k=0;k<mesh->ngz-1;k++) {
+      for(int j=0;j<mesh->LocalNy;j++)
+	for(int k=0;k<mesh->LocalNz;k++) {
           jpar[i][j][k] = 0.5*jpar[i+1][j][k];
 	}
   }
   if(mesh->lastX()) {
-    for(int i=mesh->ngx-5;i<mesh->ngx;i++)
-      for(int j=0;j<mesh->ngy;j++)
-	for(int k=0;k<mesh->ngz-1;k++) {
+    for(int i=mesh->LocalNx-5;i<mesh->LocalNx;i++)
+      for(int j=0;j<mesh->LocalNy;j++)
+	for(int k=0;k<mesh->LocalNz;k++) {
           jpar[i][j][k] = 0.5*jpar[i-1][j][k];
 	}
   }
@@ -477,27 +499,27 @@ int physics_run(BoutReal time) {
   
   if(mesh->firstX()) {
     for(int i=3;i>=0;i--)
-      for(int j=0;j<mesh->ngy;j++)
-	for(int k=0;k<mesh->ngz-1;k++) {
+      for(int j=0;j<mesh->LocalNy;j++)
+	for(int k=0;k<mesh->LocalNz;k++) {
           ddt(Vpar)[i][j][k] = ddt(Vpar)[i+1][j][k];
           ddt(Vort)[i][j][k] = ddt(Vort)[i+1][j][k];
 	}
     
     // Subtract DC component
     for(int i=0;i<10;i++)
-      for(int j=0;j<mesh->ngy;j++) {
+      for(int j=0;j<mesh->LocalNy;j++) {
         BoutReal avg = 0.;
-        for(int k=0;k<mesh->ngz-1;k++)
+        for(int k=0;k<mesh->LocalNz;k++)
           avg += ddt(Vort)[i][j][k];
-        avg /= (BoutReal) mesh->ngz-1;
-        for(int k=0;k<mesh->ngz-1;k++)
+        avg /= (BoutReal) mesh->LocalNz;
+        for(int k=0;k<mesh->LocalNz;k++)
           ddt(Vort)[i][j][k] -= avg;
       }
   }
   if(mesh->lastX()) {
-    for(int i=mesh->ngx-3;i<mesh->ngx;i++)
-      for(int j=0;j<mesh->ngy;j++)
-	for(int k=0;k<mesh->ngz-1;k++) {
+    for(int i=mesh->LocalNx-3;i<mesh->LocalNx;i++)
+      for(int j=0;j<mesh->LocalNy;j++)
+	for(int k=0;k<mesh->LocalNz;k++) {
           ddt(Vpar)[i][j][k] = ddt(Vpar)[i-1][j][k];
           ddt(Vort)[i][j][k] = ddt(Vort)[i-1][j][k];
 	}

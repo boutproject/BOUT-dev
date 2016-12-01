@@ -61,7 +61,6 @@
 
 #include <bout/mesh.hxx>
 
-
 /*******************************************************************************
  * Limiters
  *******************************************************************************/
@@ -208,77 +207,36 @@ Mesh::boundary_derivs_pair D2DX2_B4(backward_stencil &f) {
 //////////////////////// UPWIND METHODS ///////////////////////
 
 /// Upwinding: Central, 2nd order
-BoutReal VDDX_C2(stencil &v, stencil &f) {
-  return v.c*0.5*(f.p - f.m);
+BoutReal VDDX_C2(BoutReal vc, stencil &f) {
+  return vc*0.5*(f.p - f.m);
 }
 
 /// Upwinding: Central, 4th order
-BoutReal VDDX_C4(stencil &v, stencil &f) {
-  return v.c*(8.*f.p - 8.*f.m + f.mm - f.pp)/12.;
+BoutReal VDDX_C4(BoutReal vc, stencil &f) {
+  return vc*(8.*f.p - 8.*f.m + f.mm - f.pp)/12.;
 }
 
 /// upwind, 1st order
-BoutReal VDDX_U1(stencil &v, stencil &f) {
-  return v.c>=0.0 ? v.c*(f.c - f.m): v.c*(f.p - f.c);
+BoutReal VDDX_U1(BoutReal vc, stencil &f) {
+  return vc>=0.0 ? vc*(f.c - f.m): vc*(f.p - f.c);
 }
 
 /// upwind, 2nd order
-BoutReal VDDX_U2(stencil &v, stencil &f) {
-  return v.c>=0.0 ? v.c*(1.5*f.c - 2.0*f.m + 0.5*f.mm): v.c*(-0.5*f.pp + 2.0*f.p - 1.5*f.c);
+BoutReal VDDX_U2(BoutReal vc, stencil &f) {
+  return vc>=0.0 ? vc*(1.5*f.c - 2.0*f.m + 0.5*f.mm): vc*(-0.5*f.pp + 2.0*f.p - 1.5*f.c);
 }
 
 /// upwind, 4th order
-BoutReal VDDX_U4(stencil &v, stencil &f) {
-  return v.c >= 0.0 ? v.c*(4.*f.p - 12.*f.m + 2.*f.mm + 6.*f.c)/12.
-    : v.c*(-4.*f.m + 12.*f.p - 2.*f.pp - 6.*f.c)/12.;
-}
-
-/// TVD upwinding (2nd order)
-/// WARNING WARNING : THIS TVD IMPLEMENTATION DOESN'T WORK PROPERLY
-BoutReal VDDX_TVD(BoutReal vc, BoutReal vm, BoutReal vp, BoutReal fc, BoutReal fm, BoutReal fp, BoutReal fmm, BoutReal fpp) {
-  BoutReal denom, res, ri, ri1, ri_1, fluxLeft, fluxRight;
-
-  if (vc>=0.0){
-
-    /*-smoothness indicator*/
-    denom=fp-fc;
-    if (fabs(denom) < 1e-20) denom=1e-20;
-    ri=(fc-fm)/denom;
-
-    denom=fc-fm;
-    if (fabs(denom) < 1e-20) denom=1e-20;
-    ri_1=(fm-fmm)/denom;
-
-    /*;-nonlinear TVD flux*/
-    fluxRight=fc + 0.5*VANLEER(ri)*(fp-fc);
-    fluxLeft=fm + 0.5*VANLEER(ri_1)*(fc-fm);
-    res = vc*(fluxRight-fluxLeft); /*divide by dx outside*/
-    
-  }
-  else{
-
-    /*;-smoothness indicator*/
-    denom=fm-fc;
-    if (fabs(denom) < 1e-20) denom=1e-20;
-    ri=(fc-fp)/denom;
-    
-    denom=(fc-fp);
-    if (fabs(denom) < 1e-20) denom=1e-20;
-    ri1=(fp-fpp)/denom;
-
-    /*;-nonlinear TVD flux*/
-    fluxRight=(fp - 0.5*VANLEER(ri1)*(fp-fc));
-    fluxLeft=(fc - 0.5*VANLEER(ri)*(fc-fm));
-    res = vc*(fluxRight-fluxLeft); /*divide by dx outside*/    
-  }
-  return res;
+BoutReal VDDX_U4(BoutReal vc, stencil &f) {
+  return vc >= 0.0 ? vc*(4.*f.p - 12.*f.m + 2.*f.mm + 6.*f.c)/12.
+    : vc*(-4.*f.m + 12.*f.p - 2.*f.pp - 6.*f.c)/12.;
 }
 
 /// 3rd-order WENO scheme
-BoutReal VDDX_WENO3(stencil &v, stencil &f) {
+BoutReal VDDX_WENO3(BoutReal vc, stencil &f) {
   BoutReal deriv, w, r;
 
-  if(v.c > 0.0) {
+  if(vc > 0.0) {
     // Left-biased stencil
     
     r = (WENO_SMALL + SQ(f.c - 2.0*f.m + f.mm)) / (WENO_SMALL + SQ(f.p - 2.0*f.c + f.m));
@@ -295,7 +253,7 @@ BoutReal VDDX_WENO3(stencil &v, stencil &f) {
     deriv = 0.5*(f.p - f.m) - 0.5*w*( -f.m + 3.*f.c - 3.*f.p + f.pp );
   }
 
-  return v.c*deriv;
+  return vc*deriv;
 }
 
 /// 3rd-order CWENO. Uses the upwinding code and split flux
@@ -309,12 +267,10 @@ BoutReal DDX_CWENO3(stencil &f) {
   
   stencil sp, vp, sm, vm;
   
-  vp.c = 0.5; vm.c = -0.5;
-  
   sp = f + ma;
   sm = ma - f;
   
-  return VDDX_WENO3(vp, sp) + VDDX_WENO3(vm, sm);
+  return VDDX_WENO3(0.5, sp) + VDDX_WENO3(-0.5, sm);
 }
 
 //////////////////////// FLUX METHODS ///////////////////////
@@ -432,12 +388,14 @@ Mesh::boundary_derivs_pair DDX_F2_stag(forward_stencil &f) {
   Mesh::boundary_derivs_pair result;
   result.inner = -2.*f.c+3*f.p-f.p2;
   result.outer = -2.*f.m+3*f.c-f.p;
+  return result;
 }
 
 Mesh::boundary_derivs_pair DDX_B2_stag(backward_stencil &f) {
   Mesh::boundary_derivs_pair result;
   result.inner = 2.*f.c-3*f.m+f.m2;
   result.outer = 2.*f.p-3*f.c+f.m;
+  return result;
 }
 
 BoutReal DDX_C4_stag(stencil &f) {
@@ -570,6 +528,7 @@ struct DiffLookup {
   Mesh::inner_boundary_deriv_func inner_boundary_func; // Differencing function using forward derivatives
   Mesh::outer_boundary_deriv_func outer_boundary_func; // Differencing function using backward derivatives
   Mesh::upwind_func up_func; // Upwinding function
+  Mesh::flux_func fl_func; // Flux function
   Mesh::inner_boundary_upwind_func inner_boundary_up_func; // Upwinding function using forward derivatives
   Mesh::outer_boundary_upwind_func outer_boundary_up_func; // Upwinding function using backward derivatives
 };
@@ -593,60 +552,60 @@ static DiffNameLookup DiffNameTable[] = { {DIFF_U1, "U1", "First order upwinding
 					  {DIFF_FFT, "FFT", "FFT"},
                       {DIFF_NND, "NND", "NND"},
                       {DIFF_SPLIT, "SPLIT", "Split into upwind and central"},
-					  {DIFF_DEFAULT}}; // Use to terminate the list
+					  {DIFF_DEFAULT, NULL, NULL}}; // Use to terminate the list
 
 /// First derivative lookup table
-static DiffLookup FirstDerivTable[] = { {DIFF_C2, DDX_C2,     DDX_F2, DDX_B2, NULL, NULL, NULL},
-					{DIFF_W2, DDX_CWENO2, DDX_F2, DDX_B2, NULL, NULL, NULL},
-					{DIFF_W3, DDX_CWENO3, DDX_F4, DDX_B4, NULL, NULL, NULL},
-					{DIFF_C4, DDX_C4,     DDX_F4, DDX_B4, NULL, NULL, NULL},
-                                        {DIFF_S2, DDX_S2,     NULL,   NULL,   NULL, NULL, NULL},
-					{DIFF_FFT, NULL,      NULL,   NULL,   NULL, NULL, NULL},
-					{DIFF_DEFAULT}};
+static DiffLookup FirstDerivTable[] = { {DIFF_C2, DDX_C2,     DDX_F2, DDX_B2, NULL, NULL, NULL, NULL},
+					{DIFF_W2, DDX_CWENO2, DDX_F2, DDX_B2, NULL, NULL, NULL, NULL},
+					{DIFF_W3, DDX_CWENO3, DDX_F4, DDX_B4, NULL, NULL, NULL, NULL},
+					{DIFF_C4, DDX_C4,     DDX_F4, DDX_B4, NULL, NULL, NULL, NULL},
+                                        {DIFF_S2, DDX_S2,     NULL,   NULL,   NULL, NULL, NULL, NULL},
+					{DIFF_FFT, NULL,      NULL,   NULL,   NULL, NULL, NULL, NULL},
+					{DIFF_DEFAULT, NULL,  NULL,   NULL,   NULL, NULL, NULL, NULL}};
 
 /// Second derivative lookup table
-static DiffLookup SecondDerivTable[] = { {DIFF_C2, D2DX2_C2, D2DX2_F2, D2DX2_B2, NULL, NULL, NULL},
-					 {DIFF_C4, D2DX2_C4, D2DX2_F4, D2DX2_B4, NULL, NULL, NULL},
-					 {DIFF_FFT, NULL,    NULL,     NULL,     NULL, NULL, NULL},
-					 {DIFF_DEFAULT}};
+static DiffLookup SecondDerivTable[] = { {DIFF_C2, D2DX2_C2, D2DX2_F2, D2DX2_B2, NULL, NULL, NULL, NULL},
+					 {DIFF_C4, D2DX2_C4, D2DX2_F4, D2DX2_B4, NULL, NULL, NULL, NULL},
+					 {DIFF_FFT, NULL,    NULL,     NULL,     NULL, NULL, NULL, NULL},
+					 {DIFF_DEFAULT, NULL,NULL,     NULL,     NULL, NULL, NULL, NULL}};
 
 /// Upwinding functions lookup table
-static DiffLookup UpwindTable[] = { {DIFF_U1, NULL, NULL, NULL, VDDX_U1, NULL, NULL},
-					{DIFF_U2, NULL, NULL, NULL, VDDX_U2, NULL, NULL}, 
-				    {DIFF_C2, NULL, NULL, NULL, VDDX_C2, NULL, NULL},
-				    {DIFF_U4, NULL, NULL, NULL, VDDX_U4, NULL, NULL},
-				    {DIFF_W3, NULL, NULL, NULL, VDDX_WENO3, NULL, NULL},
-				    {DIFF_C4, NULL, NULL, NULL, VDDX_C4, NULL, NULL},
-				    {DIFF_DEFAULT}};
+static DiffLookup UpwindTable[] = { {DIFF_U1, NULL, NULL, NULL, VDDX_U1, NULL, NULL, NULL},
+					{DIFF_U2, NULL, NULL, NULL, VDDX_U2, NULL, NULL, NULL}, 
+				    {DIFF_C2, NULL, NULL, NULL, VDDX_C2, NULL, NULL, NULL},
+				    {DIFF_U4, NULL, NULL, NULL, VDDX_U4, NULL, NULL, NULL},
+				    {DIFF_W3, NULL, NULL, NULL, VDDX_WENO3, NULL, NULL, NULL},
+				    {DIFF_C4, NULL, NULL, NULL, VDDX_C4, NULL, NULL, NULL},
+				    {DIFF_DEFAULT, NULL, NULL, NULL, NULL, NULL, NULL, NULL}};
 
 /// Flux functions lookup table
-static DiffLookup FluxTable[] = { {DIFF_SPLIT, NULL, NULL, NULL, NULL, NULL, NULL},
-                                  {DIFF_U1, NULL, NULL, NULL, FDDX_U1, NULL, NULL},
-                                  {DIFF_C2, NULL, NULL, NULL, FDDX_C2, NULL, NULL},
-                                  {DIFF_C4, NULL, NULL, NULL, FDDX_C4, NULL, NULL},
-                                  {DIFF_NND, NULL, NULL, NULL, FDDX_NND, NULL, NULL},
-                                  {DIFF_DEFAULT}};
+static DiffLookup FluxTable[] = { {DIFF_SPLIT, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
+                                  {DIFF_U1, NULL, NULL, NULL, NULL, FDDX_U1, NULL, NULL},
+                                  {DIFF_C2, NULL, NULL, NULL, NULL, FDDX_C2, NULL, NULL},
+                                  {DIFF_C4, NULL, NULL, NULL, NULL, FDDX_C4, NULL, NULL},
+                                  {DIFF_NND, NULL, NULL, NULL, NULL, FDDX_NND, NULL, NULL},
+                                  {DIFF_DEFAULT, NULL, NULL, NULL, NULL, NULL, NULL, NULL}};
 
 /// First staggered derivative lookup
-static DiffLookup FirstStagDerivTable[] = { {DIFF_C2, DDX_C2_stag, DDX_F2_stag, DDX_B2_stag, NULL, NULL, NULL}, 
-					    {DIFF_C4, DDX_C4_stag, DDX_F4_stag, DDX_B4_stag, NULL, NULL, NULL},
-					    {DIFF_DEFAULT}};
+static DiffLookup FirstStagDerivTable[] = { {DIFF_C2, DDX_C2_stag, DDX_F2_stag, DDX_B2_stag, NULL, NULL, NULL, NULL}, 
+					    {DIFF_C4, DDX_C4_stag, DDX_F4_stag, DDX_B4_stag, NULL, NULL, NULL, NULL},
+					    {DIFF_DEFAULT, NULL, NULL, NULL, NULL, NULL, NULL, NULL}};
 
 /// Second staggered derivative lookup
-static DiffLookup SecondStagDerivTable[] = { {DIFF_C4, D2DX2_C4_stag, D2DX2_F4_stag, D2DX2_B4_stag, NULL, NULL, NULL},
-					     {DIFF_DEFAULT}};
+static DiffLookup SecondStagDerivTable[] = { {DIFF_C4, D2DX2_C4_stag, D2DX2_F4_stag, D2DX2_B4_stag, NULL, NULL, NULL, NULL},
+					     {DIFF_DEFAULT, NULL, NULL, NULL, NULL, NULL, NULL, NULL}};
 
 /// Upwinding staggered lookup
-static DiffLookup UpwindStagTable[] = { {DIFF_U1, NULL, NULL, NULL, VDDX_U1_stag, NULL, NULL},
-					{DIFF_U2, NULL, NULL, NULL, VDDX_U2_stag, NULL, NULL},
-					{DIFF_C2, NULL, NULL, NULL, VDDX_C2_stag, NULL, NULL},
-					{DIFF_C4, NULL, NULL, NULL, VDDX_C4_stag, NULL, NULL},
-					{DIFF_DEFAULT} };
+static DiffLookup UpwindStagTable[] = { {DIFF_U1, NULL, NULL, NULL, NULL, VDDX_U1_stag, NULL, NULL},
+					{DIFF_U2, NULL, NULL, NULL, NULL, VDDX_U2_stag, NULL, NULL},
+					{DIFF_C2, NULL, NULL, NULL, NULL, VDDX_C2_stag, NULL, NULL},
+					{DIFF_C4, NULL, NULL, NULL, NULL, VDDX_C4_stag, NULL, NULL},
+					{DIFF_DEFAULT, NULL, NULL, NULL, NULL, NULL, NULL, NULL} };
 
 /// Flux staggered lookup
-static DiffLookup FluxStagTable[] = { {DIFF_SPLIT, NULL, NULL, NULL, NULL, NULL, NULL},
-                                      {DIFF_U1, NULL, NULL, NULL, FDDX_U1_stag, NULL, NULL},
-                                      {DIFF_DEFAULT}};
+static DiffLookup FluxStagTable[] = { {DIFF_SPLIT, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
+                                      {DIFF_U1, NULL, NULL, NULL, NULL, FDDX_U1_stag, NULL, NULL},
+                                      {DIFF_DEFAULT, NULL, NULL, NULL, NULL, NULL, NULL, NULL}};
 
 /*******************************************************************************
  * Routines to use the above tables to map between function codes, names
@@ -701,6 +660,18 @@ Mesh::upwind_func lookupUpwindFunc(DiffLookup* table, DIFF_METHOD method) {
   return table[0].up_func;
 }
 
+Mesh::flux_func lookupFluxFunc(DiffLookup* table, DIFF_METHOD method) {
+  int i = 0;
+  do {
+    if(table[i].method == method)
+      return table[i].fl_func;
+    i++;
+  }while(table[i].method != DIFF_DEFAULT);
+  // Not found in list. Return the first 
+  
+  return table[0].fl_func;
+}
+
 Mesh::inner_boundary_upwind_func lookupInnerBoundaryUpwindFunc(DiffLookup* table, DIFF_METHOD method) {
   int i = 0;
   do {
@@ -746,15 +717,13 @@ DIFF_METHOD lookupFunc(DiffLookup *table, const string &label) {
     return table[0].method;
 
   matchtype = DIFF_DEFAULT;
-  int typeind;
-  
+
   // Loop through the name lookup table
   int i = 0;
   do {
     if((toupper(DiffNameTable[i].label[0]) == toupper(label[0])) && isImplemented(table, DiffNameTable[i].method)) {
       matchtype = DiffNameTable[i].method;
-      typeind = i;
-      
+
       if(strcasecmp(label.c_str(), DiffNameTable[i].label) == 0) {// Whole match
 	return matchtype;
       }
@@ -800,7 +769,7 @@ void printFuncName(DIFF_METHOD method) {
 Mesh::deriv_func fDDX, fDDY, fDDZ;        ///< Differencing methods for each dimension
 Mesh::deriv_func fD2DX2, fD2DY2, fD2DZ2;  ///< second differential operators
 Mesh::upwind_func fVDDX, fVDDY, fVDDZ;    ///< Upwind functions in the three directions
-Mesh::upwind_func fFDDX, fFDDY, fFDDZ;    ///< Default flux functions
+Mesh::flux_func fFDDX, fFDDY, fFDDZ;    ///< Default flux functions
 Mesh::inner_boundary_deriv_func fDDX_in, fDDY_in; ///< Differencing methods in the inner boundaries
 Mesh::outer_boundary_deriv_func fDDX_out, fDDY_out; ///< Differencing methods in the outer boundaries
 Mesh::inner_boundary_deriv_func fD2DX2_in, fD2DY2_in; ///< Second derivative methods in the inner boundaries
@@ -813,8 +782,8 @@ Mesh::outer_boundary_upwind_func fFDDX_out, fFDDY_out;    ///< Default flux func
 // Central -> Left (or Left -> Central) functions
 Mesh::deriv_func sfDDX, sfDDY, sfDDZ;
 Mesh::deriv_func sfD2DX2, sfD2DY2, sfD2DZ2;
-Mesh::upwind_func sfVDDX, sfVDDY, sfVDDZ;
-Mesh::upwind_func sfFDDX, sfFDDY, sfFDDZ;
+Mesh::flux_func sfVDDX, sfVDDY, sfVDDZ;
+Mesh::flux_func sfFDDX, sfFDDY, sfFDDZ;
 Mesh::inner_boundary_deriv_func sfDDX_in, sfDDY_in;
 Mesh::outer_boundary_deriv_func sfDDX_out, sfDDY_out;
 Mesh::inner_boundary_deriv_func sfD2DX2_in, sfD2DY2_in;
@@ -847,6 +816,15 @@ void derivs_set(Options *options, DiffLookup *table, const char* name, Mesh::upw
   f = lookupUpwindFunc(table, method);
 }
 
+void derivs_set(Options *options, DiffLookup *table, const char* name, Mesh::flux_func &f) {
+  string label;
+  options->get(name, label, "", false);
+
+  DIFF_METHOD method = lookupFunc(table, label); // Find the function
+  printFuncName(method); // Print differential function name
+  f = lookupFluxFunc(table, method);
+}
+
 /// Set the derivative methods including for boundaries, given a table and option name
 void derivs_set(Options *options, DiffLookup *table, const char* name, Mesh::deriv_func &f, Mesh::inner_boundary_deriv_func &f_in, Mesh::outer_boundary_deriv_func &f_out) {
   string label;
@@ -870,12 +848,23 @@ void derivs_set(Options *options, DiffLookup *table, const char* name, Mesh::upw
   f_out = lookupOuterBoundaryUpwindFunc(table, method);
 }
 
+void derivs_set(Options *options, DiffLookup *table, const char* name, Mesh::flux_func &f, Mesh::inner_boundary_upwind_func &f_in, Mesh::outer_boundary_upwind_func &f_out) {
+  string label;
+  options->get(name, label, "", false);
+
+  DIFF_METHOD method = lookupFunc(table, label); // Find the function
+  printFuncName(method); // Print differential function name
+  f = lookupFluxFunc(table, method);
+  f_in = lookupInnerBoundaryUpwindFunc(table, method);
+  f_out = lookupOuterBoundaryUpwindFunc(table, method);
+}
+
 /// Initialise derivatives from options
 void derivs_initialise(Options *options, bool StaggerGrids,
                  Mesh::deriv_func &fdd, Mesh::deriv_func &sfdd, 
                  Mesh::deriv_func &fd2d, Mesh::deriv_func &sfd2d, 
-                 Mesh::upwind_func &fu, Mesh::upwind_func &sfu,
-                 Mesh::upwind_func &ff, Mesh::upwind_func &sff) {
+                 Mesh::upwind_func &fu, Mesh::flux_func &sfu,
+                 Mesh::flux_func &ff, Mesh::flux_func &sff) {
   output.write("\tFirst       : ");
   derivs_set(options, FirstDerivTable, "first",  fdd);
   if(StaggerGrids) {
@@ -905,8 +894,8 @@ void derivs_initialise(Options *options, bool StaggerGrids,
 void derivs_initialise(Options *options, bool StaggerGrids,
                  Mesh::deriv_func &fdd, Mesh::deriv_func &sfdd, 
                  Mesh::deriv_func &fd2d, Mesh::deriv_func &sfd2d, 
-                 Mesh::upwind_func &fu, Mesh::upwind_func &sfu,
-                 Mesh::upwind_func &ff, Mesh::upwind_func &sff,
+                 Mesh::upwind_func &fu, Mesh::flux_func &sfu,
+                 Mesh::flux_func &ff, Mesh::flux_func &sff,
 		 Mesh::inner_boundary_deriv_func &inner_fdd, Mesh::inner_boundary_deriv_func &inner_sfdd,
 		 Mesh::outer_boundary_deriv_func &outer_fdd, Mesh::outer_boundary_deriv_func &outer_sfdd,
 		 Mesh::inner_boundary_deriv_func &inner_fd2d, Mesh::inner_boundary_deriv_func &inner_sfd2d,
@@ -1042,7 +1031,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
   }
   if (mesh->freeboundary_yup) {
     for (RangeIterator it=mesh->iterateBndryUpperY(); !it.isDone(); it++)
-      for (bx.jy=mesh->yend+1; bx.jy<mesh->ngy; bx.jy++) {
+      for (bx.jy=mesh->yend+1; bx.jy<mesh->LocalNy; bx.jy++) {
 	bx.jx=it.ind;
 	calc_index(&bx);
 	var.setXStencil(s, bx, loc);
@@ -1095,7 +1084,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
   start_index(&bx, RGN_NOX);
   stencil s;
   do {
-    for(bx.jz=0;bx.jz<mesh->ngz-1;bx.jz++) {
+    for(bx.jz=0;bx.jz<mesh->LocalNz;bx.jz++) {
       var.setXStencil(s, bx, loc);
       result(bx.jx,bx.jy,bx.jz) = func(s);
     }
@@ -1109,7 +1098,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
   if (mesh->freeboundary_ydown) {
     for (RangeIterator it=mesh->iterateBndryLowerY(); !it.isDone(); it++)
       for (bx.jy=mesh->ystart-1; bx.jy>=0; bx.jy--)
-	for (bx.jz=0; bx.jz<mesh->ngz-1; bx.jz++) {
+	for (bx.jz=0; bx.jz<mesh->LocalNz; bx.jz++) {
 	  bx.jx=it.ind;
 	  calc_index(&bx);
 	  var.setXStencil(s, bx, loc);
@@ -1121,8 +1110,8 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
   }
   if (mesh->freeboundary_yup) {
     for (RangeIterator it=mesh->iterateBndryUpperY(); !it.isDone(); it++)
-      for (bx.jy=mesh->yend+1; bx.jy<mesh->ngy; bx.jy++)
-	for (bx.jz=0; bx.jz<mesh->ngz-1; bx.jz++) {
+      for (bx.jy=mesh->yend+1; bx.jy<mesh->LocalNy; bx.jy++)
+	for (bx.jz=0; bx.jz<mesh->LocalNz; bx.jz++) {
 	  bx.jx=it.ind;
 	  calc_index(&bx);
 	  var.setXStencil(s, bx, loc);
@@ -1137,7 +1126,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
     Mesh::boundary_derivs_pair funcs_pair;
     bx.jx=mesh->xstart-1;
     for (bx.jy=mesh->ystart; bx.jy<=mesh->yend; bx.jy++)
-      for (bx.jz=0; bx.jz<mesh->ngz-1; bx.jz++) {
+      for (bx.jz=0; bx.jz<mesh->LocalNz; bx.jz++) {
 	calc_index(&bx);
 	var.setXStencil(fs, bx, loc);
 	funcs_pair = func_in(fs);
@@ -1153,7 +1142,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
     Mesh::boundary_derivs_pair funcs_pair;
     bx.jx=mesh->xend+1;
     for (bx.jy=mesh->ystart; bx.jy<=mesh->yend; bx.jy++)
-      for (bx.jz=0; bx.jz<mesh->ngz-1; bx.jz++) {
+      for (bx.jz=0; bx.jz<mesh->LocalNz; bx.jz++) {
 	calc_index(&bx);
 	var.setXStencil(bs, bx, loc);
 	funcs_pair = func_out(bs);
@@ -1200,7 +1189,7 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
     #endif
   }
   if (mesh->freeboundary_xout && mesh->lastX() && !mesh->periodicX) {
-    for (bx.jx=mesh->xend+1; bx.jx<mesh->ngx; bx.jx++)
+    for (bx.jx=mesh->xend+1; bx.jx<mesh->LocalNx; bx.jx++)
       for (bx.jy=mesh->ystart; bx.jy<=mesh->ystart; bx.jy++) {
 	calc_index(&bx);
 	var.setYStencil(s, bx, loc);
@@ -1255,7 +1244,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
   start_index(&bx, RGN_NOBNDRY);
   stencil s;
   do {
-    for(bx.jz=0;bx.jz<mesh->ngz-1;bx.jz++) {
+    for(bx.jz=0;bx.jz<mesh->LocalNz;bx.jz++) {
       var.setYStencil(s, bx, loc);
       result(bx.jx,bx.jy,bx.jz) = func(s);
     }
@@ -1269,7 +1258,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
   if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX) {
     for (bx.jx=mesh->xstart-1; bx.jx>=0; bx.jx--)
       for (bx.jy=mesh->ystart; bx.jy<=mesh->ystart; bx.jy++)
-	for (bx.jz=0; bx.jz<mesh->ngz-1; bx.jz++) {
+	for (bx.jz=0; bx.jz<mesh->LocalNz; bx.jz++) {
 	  calc_index(&bx);
 	  var.setYStencil(s, bx, loc);
 	  result(bx.jx,bx.jy,bx.jz) = func(s);
@@ -1279,9 +1268,9 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
     #endif
   }
   if (mesh->freeboundary_xout && mesh->lastX() && !mesh->periodicX) {
-    for (bx.jx=mesh->xend+1; bx.jx<mesh->ngx; bx.jx++)
+    for (bx.jx=mesh->xend+1; bx.jx<mesh->LocalNx; bx.jx++)
       for (bx.jy=mesh->ystart; bx.jy<=mesh->ystart; bx.jy++)
-	for (bx.jz=0; bx.jz<mesh->ngz-1; bx.jz++) {
+	for (bx.jz=0; bx.jz<mesh->LocalNz; bx.jz++) {
 	  calc_index(&bx);
 	  var.setYStencil(s, bx, loc);
 	  result(bx.jx,bx.jy,bx.jz) = func(s);
@@ -1295,7 +1284,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
     Mesh::boundary_derivs_pair funcs_pair;
     bx.jy=mesh->ystart-1;
     for (RangeIterator it=mesh->iterateBndryLowerY(); !it.isDone(); it++)
-      for (bx.jz=0; bx.jz<mesh->ngz-1; bx.jz++) {
+      for (bx.jz=0; bx.jz<mesh->LocalNz; bx.jz++) {
 	bx.jx = it.ind;
 	calc_index(&bx);
 	var.setYStencil(fs, bx, loc);
@@ -1312,7 +1301,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
     Mesh::boundary_derivs_pair funcs_pair;
     bx.jy=mesh->yend+1;
     for (RangeIterator it=mesh->iterateBndryUpperY(); !it.isDone(); it++)
-      for (bx.jz=0; bx.jz<mesh->ngz-1; bx.jz++) {
+      for (bx.jz=0; bx.jz<mesh->LocalNz; bx.jz++) {
 	bx.jx = it.ind;
 	calc_index(&bx);
 	var.setYStencil(bs, bx, loc);
@@ -1346,7 +1335,7 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX) {
     for (bx.jx=mesh->xstart-1; bx.jx>=0; bx.jx--)
       for (bx.jy=mesh->ystart; bx.jy<=mesh->ystart; bx.jy++)
-	for (bx.jz=0; bx.jz<mesh->ngz-1; bx.jz++) {
+	for (bx.jz=0; bx.jz<mesh->LocalNz; bx.jz++) {
 	  calc_index(&bx);
 	  var.setZStencil(s, bx, loc);
 	  result(bx.jx,bx.jy,bx.jz) = func(s);
@@ -1357,9 +1346,9 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   }
 
   if (mesh->freeboundary_xout && mesh->lastX() && !mesh->periodicX) {
-    for (bx.jx=mesh->xend+1; bx.jx<mesh->ngx; bx.jx++)
+    for (bx.jx=mesh->xend+1; bx.jx<mesh->LocalNx; bx.jx++)
       for (bx.jy=mesh->ystart; bx.jy<=mesh->ystart; bx.jy++)
-	for (bx.jz=0; bx.jz<mesh->ngz-1; bx.jz++) {
+	for (bx.jz=0; bx.jz<mesh->LocalNz; bx.jz++) {
 	  calc_index(&bx);
 	  var.setZStencil(s, bx, loc);
 	  result(bx.jx,bx.jy,bx.jz) = func(s);
@@ -1372,7 +1361,7 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   if (mesh->freeboundary_ydown) {
     for (RangeIterator it=mesh->iterateBndryLowerY(); !it.isDone(); it++)
       for (bx.jy=mesh->ystart-1; bx.jy>=0; bx.jy--)
-	for (bx.jz=0; bx.jz<mesh->ngz-1; bx.jz++) {
+	for (bx.jz=0; bx.jz<mesh->LocalNz; bx.jz++) {
 	  bx.jx = it.ind;
 	  calc_index(&bx);
 	  var.setZStencil(s, bx, loc);
@@ -1385,8 +1374,8 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 
   if (mesh->freeboundary_yup) {
     for (RangeIterator it=mesh->iterateBndryUpperY(); !it.isDone(); it++)
-      for (bx.jy=mesh->yend; bx.jy<mesh->ngy; bx.jy++)
-	for (bx.jz=0; bx.jz<mesh->ngz-1; bx.jz++) {
+      for (bx.jy=mesh->yend; bx.jy<mesh->LocalNy; bx.jy++)
+	for (bx.jz=0; bx.jz<mesh->LocalNz; bx.jz++) {
 	  bx.jx = it.ind;
 	  calc_index(&bx);
 	  var.setZStencil(s, bx, loc);
@@ -1459,7 +1448,7 @@ const Field3D Mesh::indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
     func_in = lookupInnerBoundaryFunc(table, method);
     func_out = lookupOuterBoundaryFunc(table, method);
     if(func == NULL)
-      bout_error("Cannot use FFT for X derivatives");
+      throw BoutException("Cannot use FFT for X derivatives");
   }
   
   result = applyXdiff(f, func, func_in, func_out, diffloc);
@@ -1533,7 +1522,7 @@ const Field3D Mesh::indexDDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
     func_in = lookupInnerBoundaryFunc(table, method);
     func_out = lookupOuterBoundaryFunc(table, method);
     if(func == NULL)
-      bout_error("Cannot use FFT for Y derivatives");
+      throw BoutException("Cannot use FFT for Y derivatives");
   }
   
   result = applyYdiff(f, func, func_in, func_out, diffloc);
@@ -1555,6 +1544,8 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
  
   CELL_LOC inloc = f.getLocation(); // Input location
   CELL_LOC diffloc = inloc; // Location of differential result
+
+  Field3D result;
 
   if(mesh->StaggerGrids && (outloc == CELL_DEFAULT)) {
     // Take care of CELL_DEFAULT case
@@ -1593,8 +1584,6 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
     func = lookupFunc(table, method);
   }
 
-  Field3D result;
-
   if(func == NULL) {
     // Use FFT
     
@@ -1611,17 +1600,7 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
 
     result.allocate(); // Make sure data allocated
 
-    int xge = mesh->xstart, xlt = mesh->xend+1;
-    if(inc_xbndry) { // Include x boundary region (for mixed XZ derivatives)
-      xge = 0;
-      xlt = mesh->ngx;
-    }
-    if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX)
-      xge = 0;
-    if (mesh->freeboundary_xout && mesh->lastX() && !mesh->periodicX)
-      xlt = mesh->ngx;
-    
-    int ncz = mesh->ngz-1;
+    int ncz = mesh->LocalNz;
     
 #ifndef _OPENMP
     static dcomplex *cv = (dcomplex*) NULL;
@@ -1640,9 +1619,8 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
       // Parallel, so allocate a separate array for each thread
       
       int th_id = omp_get_thread_num(); // thread ID
-
-      if(th_id == 0) {
         int n_th = omp_get_num_threads();
+      if(th_id == 0) {
         if(nthreads < n_th) {
           // Allocate memory in thread zero
           if(nthreads > 0)
@@ -1656,12 +1634,29 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
       
       dcomplex *cv = globalcv + th_id*(ncz/2 + 1); // Separate array for each thread
 #endif
-       #pragma omp for
-      for(int jy=0;jy<mesh->ngy*(xlt-xge);jy++) {
-        rfft(f(xge,jy), ncz, cv); // Forward FFT
+      int xs = mesh->xstart;
+      int xe = mesh->xend;
+      int ys = mesh->ystart;
+      int ye = mesh->yend;
+      if(inc_xbndry) { // Include x boundary region (for mixed XZ derivatives)
+        xs = 0;
+        xe = mesh->LocalNx-1;
+      }
+      if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX)
+        xs = 0;
+      if (mesh->freeboundary_xout && mesh->lastX() && !mesh->periodicX)
+        xe = mesh->LocalNx-1;
+      if (mesh->freeboundary_ydown)
+        ys = 0;
+      if (mesh->freeboundary_yup)
+        ye = mesh->LocalNy-1;
+      #pragma omp for
+      for(int jx=xs;jx<=xe;jx++) {
+        for(int jy=ys;jy<=ye;jy++) {
+          rfft(f(jx, jy), ncz, cv); // Forward FFT
           
         for(int jz=0;jz<=ncz/2;jz++) {
-          BoutReal kwave=jz*2.0*PI/ncz; // wave number is 1/[rad]
+            BoutReal kwave=jz*2.0*PI/ncz; // wave number is 1/[rad]
             
           BoutReal flt;
           if (jz>0.4*ncz) flt=1e-10; else flt=1.0;
@@ -1670,11 +1665,11 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
             cv[jz] *= exp(Im * (shift * kwave));
         }
           
-        irfft(cv, ncz, result(xge,jy)); // Reverse FFT
-         
-        result(xge,jy,ncz) = result(xge,jy,0);
+        irfft(cv, ncz, result(jx,jy)); // Reverse FFT
       }
     }
+    }
+    // End of parallel section
     
 #ifdef CHECK
     // Mark boundaries as invalid
@@ -1698,7 +1693,7 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
   return interp_to(result, outloc);
 }
 
-const Field2D Mesh::indexDDZ(const Field2D &f) {
+const Field2D Mesh::indexDDZ(const Field2D &UNUSED(f)) {
   Field2D result;
   result = 0.0;
   return result;
@@ -1777,7 +1772,7 @@ const Field3D Mesh::indexD2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
     func_in = lookupInnerBoundaryFunc(table, method);
     func_out = lookupOuterBoundaryFunc(table, method);
     if(func == NULL)
-      bout_error("Cannot use FFT for X derivatives");
+      throw BoutException("Cannot use FFT for X derivatives");
   }
   
   result = applyXdiff(f, func, func_in, func_out);
@@ -1883,7 +1878,7 @@ const Field3D Mesh::indexD2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
     func_in = lookupInnerBoundaryFunc(table, method);
     func_out = lookupOuterBoundaryFunc(table, method);
     if(func == NULL)
-      bout_error("Cannot use FFT for Y derivatives");
+      throw BoutException("Cannot use FFT for Y derivatives");
   }
   
   result = applyYdiff(f, func, func_in, func_out);
@@ -1918,7 +1913,7 @@ const Field2D Mesh::indexD2DY2(const Field2D &f) {
  *          guard cells
  *
  */
-const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool inc_xbndry) {
   Mesh::deriv_func func = fD2DZ2; // Set to default function
   DiffLookup *table = SecondDerivTable;
   
@@ -1980,7 +1975,7 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
     
     result.allocate(); // Make sure data allocated
 
-    int ncz = mesh->ngz-1;
+    int ncz = mesh->LocalNz;
     
     static dcomplex *cv = (dcomplex*) NULL;
     
@@ -1992,14 +1987,18 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
     int xe = mesh->xend;
     int ys = mesh->ystart;
     int ye = mesh->yend;
+    if(inc_xbndry) { // Include x boundary region (for mixed XZ derivatives)
+      xs = 0;
+      xe = mesh->LocalNx-1;
+    }
     if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX)
       xs = 0;
     if (mesh->freeboundary_xout && mesh->lastX() && !mesh->periodicX)
-      xe = mesh->ngx-1;
+      xe = mesh->LocalNx-1;
     if (mesh->freeboundary_ydown)
       ys = 0;
-    if (mesh->freeboundary_ydown)
-      ye = mesh->ngy-1;
+    if (mesh->freeboundary_yup)
+      ye = mesh->LocalNy-1;
       
     for(int jx=xs;jx<=xe;jx++) {
       for(int jy=ys;jy<=ye;jy++) {
@@ -2015,8 +2014,6 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
 	}
 
 	irfft(cv, ncz, result(jx,jy)); // Reverse FFT
-	
-	result(jx,jy,ncz) = result(jx,jy,0);
       }
     }
 
@@ -2055,12 +2052,14 @@ Mesh::boundary_derivs_pair D4D4_F2(forward_stencil &f) {
   Mesh::boundary_derivs_pair result;
   result.inner = 2.*f.m-9.*f.c+16.*f.p-14.*f.p2+6.*f.p3-f.p4;
   result.outer = 3.*f.m-14.*f.c+26.*f.p-24.*f.p2+11.*f.p3-2.*f.p4;
+  return result;
 }
 
 Mesh::boundary_derivs_pair D4D4_B2(backward_stencil &f) {
   Mesh::boundary_derivs_pair result;
   result.inner = 2.*f.p-9.*f.c+16.*f.m-14.*f.m2+6.*f.m3-f.m4;
   result.outer = 3.*f.p-14.*f.c+26.*f.m-24.*f.m2+11.*f.m3-2.*f.m4;
+  return result;
 }
 
 const Field3D Mesh::indexD4DX4(const Field3D &f) {
@@ -2097,7 +2096,7 @@ const Field3D Mesh::indexD4DZ4(const Field3D &f) {
 ////////////// X DERIVATIVE /////////////////
 
 /// Special case where both arguments are 2D. Output location ignored for now
-const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC UNUSED(outloc), DIFF_METHOD method) {
   Mesh::upwind_func func = fVDDX;
 
   if(method != DIFF_DEFAULT) {
@@ -2113,9 +2112,8 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
   start_index(&bx);
   do {
     f.setXStencil(fs, bx);
-    v.setXStencil(vs, bx);
     
-    result(bx.jx,bx.jy) = func(vs, fs);
+    result(bx.jx,bx.jy) = func(v[{bx.jx,bx.jy,0}], fs);
   }while(next_index2(&bx));
 
 #ifdef CHECK
@@ -2128,11 +2126,11 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
 /// General version for 2 or 3-D objects
 const Field3D Mesh::indexVDDX(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method) {
-  MsgStackItem("Mesh::indexVDDX(Field, Field)");
+  TRACE("Mesh::indexVDDX(Field, Field)");
   
-  Mesh::upwind_func func = fVDDX;
-  DiffLookup *table = UpwindTable;
-
+  Field3D result;
+  result.allocate(); // Make sure data allocated
+  
   CELL_LOC vloc = v.getLocation();
   CELL_LOC inloc = f.getLocation(); // Input location
   CELL_LOC diffloc = inloc; // Location of differential result
@@ -2144,6 +2142,10 @@ const Field3D Mesh::indexVDDX(const Field &v, const Field &f, CELL_LOC outloc, D
   
   if(StaggerGrids && (vloc != inloc)) {
     // Staggered grids enabled, and velocity at different location to value
+    
+    Mesh::flux_func func = sfVDDX;
+    DiffLookup *table = UpwindTable;
+    
     if(vloc == CELL_XLOW) {
       // V staggered w.r.t. variable
       func = sfVDDX;
@@ -2163,26 +2165,39 @@ const Field3D Mesh::indexVDDX(const Field &v, const Field &f, CELL_LOC outloc, D
       
       throw BoutException("Unhandled shift in Mesh::indexVDDX");
     }
-  }
-
-  if(method != DIFF_DEFAULT) {
-    // Lookup function
-    func = lookupUpwindFunc(table, method);
-  }
-  
-  Field3D result;
-  result.allocate(); // Make sure data allocated
-
-  bindex bx;
-  
-  start_index(&bx);
-  stencil vval, fval;
-  do {
-    v.setXStencil(vval, bx, diffloc);
-    f.setXStencil(fval, bx); // Location is always the same as input
+    if(method != DIFF_DEFAULT) {
+      // Lookup function
+      func = lookupFluxFunc(table, method);
+    }
     
-    result(bx.jx, bx.jy, bx.jz) = func(vval, fval);
-  }while(next_index3(&bx));
+    bindex bx;
+    start_index(&bx);
+    stencil vval, fval;
+    do {
+      v.setXStencil(vval, bx, diffloc);
+      f.setXStencil(fval, bx); // Location is always the same as input
+      
+      result(bx.jx, bx.jy, bx.jz) = func(vval, fval);
+    }while(next_index3(&bx));
+    
+  }else {
+    // Not staggered
+    Mesh::upwind_func func = fVDDX;
+    DiffLookup *table = UpwindTable;
+    
+    if(method != DIFF_DEFAULT) {
+      // Lookup function
+      func = lookupUpwindFunc(table, method);
+    }
+    
+    bindex bx;
+    start_index(&bx);
+    stencil vval, fval;
+    do {
+      f.setXStencil(fval, bx); // Location is always the same as input
+      result(bx.jx, bx.jy, bx.jz) = func(v[{bx.jx, bx.jy, bx.jz}], fval);
+    }while(next_index3(&bx));
+  }
   
   result.setLocation(inloc);
 
@@ -2198,9 +2213,10 @@ const Field3D Mesh::indexVDDX(const Field &v, const Field &f, CELL_LOC outloc, D
 
 // special case where both are 2D
 const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
-  MsgStackItem("Mesh::indexVDDY");
-  Mesh::upwind_func func = fVDDY;
-  DiffLookup *table = UpwindTable;
+  TRACE("Mesh::indexVDDY");
+  
+  Field2D result;
+  result.allocate(); // Make sure data allocated
 
   CELL_LOC vloc = v.getLocation();
   CELL_LOC inloc = f.getLocation(); // Input location
@@ -2213,6 +2229,9 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
   if(StaggerGrids && (vloc != inloc)) {
     // Staggered grids enabled, and velocity at different location to value
+
+    Mesh::flux_func func = sfVDDY;
+    DiffLookup *table = UpwindTable;
     if(vloc == CELL_YLOW) {
       // V staggered w.r.t. variable
       func = sfVDDY;
@@ -2233,28 +2252,40 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
       // Instead, pretend it's been shifted
       throw BoutException("Unhandled shift in indexVDDY(Field2D, Field2D)");
     }
+    
+    if(method != DIFF_DEFAULT) {
+      // Lookup function
+      func = lookupFluxFunc(table, method);
+    }
+    
+    bindex bx;
+    stencil fval, vval;
+    
+    start_index(&bx);
+    do {
+      f.setYStencil(fval, bx);
+      v.setYStencil(vval, bx, diffloc);
+      result(bx.jx, bx.jy) = func(vval,fval);
+    }while(next_index2(&bx));
+  }else {
+    Mesh::upwind_func func = fVDDY;
+    DiffLookup *table = UpwindTable;
+    
+    if(method != DIFF_DEFAULT) {
+      // Lookup function
+      func = lookupUpwindFunc(table, method);
+    }
+    bindex bx;
+    stencil fval, vval;
+    start_index(&bx);
+    do {
+      f.setYStencil(fval, bx);
+      result(bx.jx, bx.jy) = func(v[{bx.jx, bx.jy, 0}],fval);
+    }while(next_index2(&bx));
+    
   }
-
-  if(method != DIFF_DEFAULT) {
-    // Lookup function
-    func = lookupUpwindFunc(table, method);
-  }
-
-  bindex bx;
-  stencil fval, vval;
-  
-  Field2D result;
-  result.allocate(); // Make sure data allocated
-
-  start_index(&bx);
-  do {
-    f.setYStencil(fval, bx);
-    v.setYStencil(vval, bx, diffloc);
-    result(bx.jx, bx.jy) = func(vval,fval);
-  }while(next_index2(&bx));
-
   result.setLocation(inloc);
-  
+    
 #ifdef CHECK
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
@@ -2265,9 +2296,10 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
 // general case
 const Field3D Mesh::indexVDDY(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method) {
-  MsgStackItem("Mesh::indexVDDY(Field, Field)");
-  Mesh::upwind_func func = fVDDY;
-  DiffLookup *table = UpwindTable;
+  TRACE("Mesh::indexVDDY(Field, Field)");
+  
+  Field3D result;
+  result.allocate(); // Make sure data allocated
 
   CELL_LOC vloc = v.getLocation();
   CELL_LOC inloc = f.getLocation(); // Input location
@@ -2280,6 +2312,10 @@ const Field3D Mesh::indexVDDY(const Field &v, const Field &f, CELL_LOC outloc, D
 
   if(StaggerGrids && (vloc != inloc)) {
     // Staggered grids enabled, and velocity at different location to value
+    
+    Mesh::flux_func func = sfVDDY;
+    DiffLookup *table = UpwindTable;
+  
     if(vloc == CELL_YLOW) {
       // V staggered w.r.t. variable
       func = sfVDDY;
@@ -2299,29 +2335,43 @@ const Field3D Mesh::indexVDDY(const Field &v, const Field &f, CELL_LOC outloc, D
       
       throw BoutException("Unhandled shift in VDDY(Field, Field)");
     }
-  }
-  
-  if(method != DIFF_DEFAULT) {
-    // Lookup function
-    func = lookupUpwindFunc(table, method);
-  }
-  
-  bindex bx;
-  
-  Field3D result;
-  result.allocate(); // Make sure data allocated
 
-  start_index(&bx);
-  stencil vval, fval;
-  do {
-    v.setYStencil(vval, bx, diffloc);
-    f.setYStencil(fval, bx);
+    if(method != DIFF_DEFAULT) {
+      // Lookup function
+      func = lookupFluxFunc(table, method);
+    }
     
-    result(bx.jx, bx.jy, bx.jz) = func(vval, fval);
-  }while(next_index3(&bx));
+    bindex bx;
+    start_index(&bx);
+    stencil vval, fval;
+    do {
+      v.setYStencil(vval, bx, diffloc);
+      f.setYStencil(fval, bx);
+      
+      result(bx.jx, bx.jy, bx.jz) = func(vval, fval);
+    }while(next_index3(&bx));
+    
+  }else {
+    Mesh::upwind_func func = fVDDY;
+    DiffLookup *table = UpwindTable;
+    
+    if(method != DIFF_DEFAULT) {
+      // Lookup function
+      func = lookupUpwindFunc(table, method);
+    }
+  
+    bindex bx;
+    start_index(&bx);
+    stencil vval, fval;
+    do {
+      f.setYStencil(fval, bx);
+      
+      result(bx.jx, bx.jy, bx.jz) = func(v[{bx.jx, bx.jy, bx.jz}], fval);
+    }while(next_index3(&bx));
+  }
   
   result.setLocation(inloc);
-
+    
 #ifdef CHECK
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
@@ -2334,10 +2384,10 @@ const Field3D Mesh::indexVDDY(const Field &v, const Field &f, CELL_LOC outloc, D
 
 // general case
 const Field3D Mesh::indexVDDZ(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method) {
-  MsgStackItem("Mesh::indexVDDZ");
+  TRACE("Mesh::indexVDDZ");
   
-  Mesh::upwind_func func = fVDDZ;
-  DiffLookup *table = UpwindTable;
+  Field3D result;
+  result.allocate(); // Make sure data allocated
 
   CELL_LOC vloc = v.getLocation();
   CELL_LOC inloc = f.getLocation(); // Input location
@@ -2350,6 +2400,10 @@ const Field3D Mesh::indexVDDZ(const Field &v, const Field &f, CELL_LOC outloc, D
 
   if(StaggerGrids && (vloc != inloc)) {
     // Staggered grids enabled, and velocity at different location to value
+
+    Mesh::flux_func func = sfVDDZ;
+    DiffLookup *table = UpwindTable;
+    
     if(vloc == CELL_ZLOW) {
       // V staggered w.r.t. variable
       func = sfVDDZ;
@@ -2369,29 +2423,42 @@ const Field3D Mesh::indexVDDZ(const Field &v, const Field &f, CELL_LOC outloc, D
       
       throw BoutException("Unhandled shift in indexVDDZ");
     }
-  }
 
-  if(method != DIFF_DEFAULT) {
-    // Lookup function
-    func = lookupUpwindFunc(table, method);
-  }
+    if(method != DIFF_DEFAULT) {
+      // Lookup function
+      func = lookupFluxFunc(table, method);
+    }
 
-  bindex bx;
-  
-  Field3D result;
-  result.allocate(); // Make sure data allocated
-  
-  start_index(&bx);
-  stencil vval, fval;
-  do {
-    v.setZStencil(vval, bx, diffloc);
-    f.setZStencil(fval, bx);
+    bindex bx;
+    start_index(&bx);
+    stencil vval, fval;
+    do {
+      v.setZStencil(vval, bx, diffloc);
+      f.setZStencil(fval, bx);
+      
+      result(bx.jx, bx.jy, bx.jz) = func(vval, fval);
+    }while(next_index3(&bx));
     
-    result(bx.jx, bx.jy, bx.jz) = func(vval, fval);
-  }while(next_index3(&bx));
+  }else {
+    Mesh::upwind_func func = fVDDZ;
+    DiffLookup *table = UpwindTable;
 
+    if(method != DIFF_DEFAULT) {
+      // Lookup function
+      func = lookupUpwindFunc(table, method);
+    }
+    
+    bindex bx;
+    start_index(&bx);
+    stencil vval, fval;
+    do {
+      f.setZStencil(fval, bx);
+      result(bx.jx, bx.jy, bx.jz) = func(v[{bx.jx, bx.jy, bx.jz}], fval);
+    }while(next_index3(&bx));
+  }
+  
   result.setLocation(inloc);
-
+  
 #ifdef CHECK
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
@@ -2405,7 +2472,7 @@ const Field3D Mesh::indexVDDZ(const Field &v, const Field &f, CELL_LOC outloc, D
  *******************************************************************************/
 
 const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
-  MsgStackItem("Mesh::::indexFDDX(Field2D, Field2D)");
+  TRACE("Mesh::::indexFDDX(Field2D, Field2D)");
   
   if( (method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDX == NULL)) ) {
     // Split into an upwind and a central differencing part
@@ -2413,10 +2480,10 @@ const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
     return indexVDDX(v, f, outloc, DIFF_DEFAULT) + f * indexDDX(v);
   }
   
-  Mesh::upwind_func func = fFDDX;
+  Mesh::flux_func func = fFDDX;
   if(method != DIFF_DEFAULT) {
     // Lookup function
-    func = lookupUpwindFunc(FluxTable, method);
+    func = lookupFluxFunc(FluxTable, method);
   }
   Field2D result;
   result.allocate(); // Make sure data allocated
@@ -2440,7 +2507,7 @@ const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
 }
 
 const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
-  MsgStackItem("Mesh::indexFDDX");
+  TRACE("Mesh::indexFDDX");
   
   if( (method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDX == NULL)) ) {
     // Split into an upwind and a central differencing part
@@ -2448,7 +2515,7 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
     return indexVDDX(v, f, outloc, DIFF_DEFAULT) + indexDDX(v, outloc, DIFF_DEFAULT) * f;
   }
   
-  Mesh::upwind_func func = fFDDX;
+  Mesh::flux_func func = fFDDX;
   DiffLookup *table = FluxTable;
 
   CELL_LOC vloc = v.getLocation();
@@ -2485,7 +2552,7 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   if(method != DIFF_DEFAULT) {
     // Lookup function
-    func = lookupUpwindFunc(table, method);
+    func = lookupFluxFunc(table, method);
   }
   
   Field3D result;
@@ -2515,7 +2582,7 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
 /////////////////////////////////////////////////////////////////////////
 
 const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
-  MsgStackItem("Mesh::indexFDDY(Field2D, Field2D)");
+  TRACE("Mesh::indexFDDY(Field2D, Field2D)");
   
   if( (method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDY == NULL)) ) {
     // Split into an upwind and a central differencing part
@@ -2523,10 +2590,10 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
     return indexVDDY(v, f, outloc, DIFF_DEFAULT) + f * indexDDY(v);
   }
   
-  Mesh::upwind_func func = fFDDY;
+  Mesh::flux_func func = fFDDY;
   if(method != DIFF_DEFAULT) {
     // Lookup function
-    func = lookupUpwindFunc(FluxTable, method);
+    func = lookupFluxFunc(FluxTable, method);
   }
   Field2D result;
   result.allocate(); // Make sure data allocated
@@ -2550,14 +2617,14 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
 }
 
 const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
-  MsgStackItem("Mesh::indexFDDY");
+  TRACE("Mesh::indexFDDY");
   
   if( (method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDY == NULL)) ) {
     // Split into an upwind and a central differencing part
     // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
     return indexVDDY(v, f, outloc, DIFF_DEFAULT) + indexDDY(v, outloc, DIFF_DEFAULT) * f;
   }
-  Mesh::upwind_func func = fFDDY;
+  Mesh::flux_func func = fFDDY;
   DiffLookup *table = FluxTable;
 
   CELL_LOC vloc = v.getLocation();
@@ -2594,7 +2661,7 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   if(method != DIFF_DEFAULT) {
     // Lookup function
-    func = lookupUpwindFunc(table, method);
+    func = lookupFluxFunc(table, method);
   }
   
   if(func == NULL) {
@@ -2630,14 +2697,14 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 /////////////////////////////////////////////////////////////////////////
 
 const Field3D Mesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
-  MsgStackItem("Mesh::indexFDDZ(Field3D, Field3D)");
+  TRACE("Mesh::indexFDDZ(Field3D, Field3D)");
   if( (method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDZ == NULL)) ) {
     // Split into an upwind and a central differencing part
     // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
     return indexVDDZ(v, f, outloc, DIFF_DEFAULT) + indexDDZ(v, outloc, DIFF_DEFAULT,true) * f;
   }
   
-  Mesh::upwind_func func = fFDDZ;
+  Mesh::flux_func func = fFDDZ;
   DiffLookup *table = FluxTable;
 
   CELL_LOC vloc = v.getLocation();
@@ -2674,7 +2741,7 @@ const Field3D Mesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   if(method != DIFF_DEFAULT) {
     // Lookup function
-    func = lookupUpwindFunc(table, method);
+    func = lookupFluxFunc(table, method);
   }
   
   Field3D result;

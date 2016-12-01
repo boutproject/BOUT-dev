@@ -336,13 +336,13 @@ void Solver::constraint(Field2D &v, Field2D &C_v, const char* name) {
 #endif
 
   if(!has_constraints)
-    bout_error("ERROR: This solver doesn't support constraints\n");
+    throw BoutException("ERROR: This solver doesn't support constraints\n");
 
   if(initialised)
-    bout_error("Error: Cannot add constraints to solver after initialisation\n");
+    throw BoutException("Error: Cannot add constraints to solver after initialisation\n");
 
   if(name == NULL)
-    bout_error("WARNING: Constraint requested for variable with NULL name\n");
+    throw BoutException("WARNING: Constraint requested for variable with NULL name\n");
   
   VarStr<Field2D> d;
   
@@ -368,13 +368,13 @@ void Solver::constraint(Field3D &v, Field3D &C_v, const char* name) {
 #endif
 
   if(!has_constraints)
-    bout_error("ERROR: This solver doesn't support constraints\n");
+    throw BoutException("ERROR: This solver doesn't support constraints\n");
 
   if(initialised)
-    bout_error("Error: Cannot add constraints to solver after initialisation\n");
+    throw BoutException("Error: Cannot add constraints to solver after initialisation\n");
 
   if(name == NULL)
-    bout_error("WARNING: Constraint requested for variable with NULL name\n");
+    throw BoutException("WARNING: Constraint requested for variable with NULL name\n");
 
   VarStr<Field3D> d;
   
@@ -401,13 +401,13 @@ void Solver::constraint(Vector2D &v, Vector2D &C_v, const char* name) {
 #endif
 
   if(!has_constraints)
-    bout_error("ERROR: This solver doesn't support constraints\n");
+    throw BoutException("ERROR: This solver doesn't support constraints\n");
 
   if(initialised)
-    bout_error("Error: Cannot add constraints to solver after initialisation\n");
+    throw BoutException("Error: Cannot add constraints to solver after initialisation\n");
 
   if(name == NULL)
-    bout_error("WARNING: Constraint requested for variable with NULL name\n");
+    throw BoutException("WARNING: Constraint requested for variable with NULL name\n");
     
   VarStr<Vector2D> d;
   
@@ -445,13 +445,13 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, const char* name) {
 #endif
 
   if(!has_constraints)
-    bout_error("ERROR: This solver doesn't support constraints\n");
+    throw BoutException("ERROR: This solver doesn't support constraints\n");
 
   if(initialised)
-    bout_error("Error: Cannot add constraints to solver after initialisation\n");
+    throw BoutException("Error: Cannot add constraints to solver after initialisation\n");
 
   if(name == NULL)
-    bout_error("WARNING: Constraint requested for variable with NULL name\n");
+    throw BoutException("WARNING: Constraint requested for variable with NULL name\n");
 
   VarStr<Vector3D> d;
   
@@ -505,8 +505,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   
   // Initialise
   if(init(restarting, NOUT, TIMESTEP)) {
-    output.write("Failed to initialise solver-> Aborting\n");
-    return 1;
+    throw BoutException("Failed to initialise solver-> Aborting\n");
   }
   
   /// Run the solver
@@ -522,8 +521,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
     
     // Run RHS once to ensure all variables set
     if (run_rhs(simtime)) {
-      output.write("Physics RHS call failed\n");
-      return 1;
+      throw BoutException("Physics RHS call failed\n");
     }
     
     // Call monitors so initial values are written to output dump files
@@ -562,7 +560,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
     throw e;
   }
 
-  return 0;
+  return status;
 }
 
 
@@ -786,6 +784,8 @@ int Solver::call_timestep_monitors(BoutReal simtime, BoutReal lastdt) {
   // Call physics model monitor
   if(model) {
     int ret = model->runTimestepMonitor(simtime, lastdt);
+    if(ret)
+      return ret; // Return first time an error is encountered
   }
   return 0;
 }
@@ -802,7 +802,7 @@ int Solver::getLocalN() {
   int n2d = n2Dvars();
   int n3d = n3Dvars();
   
-  int ncz = mesh->ngz-1;
+  int ncz = mesh->LocalNz;
   int MYSUB = mesh->yend - mesh->ystart + 1;
 
   int local_N = (mesh->xend - mesh->xstart + 1) *
@@ -826,7 +826,7 @@ int Solver::getLocalN() {
   
   // Y up
   for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); xi++) {
-    local_N +=  (mesh->ngy - mesh->yend - 1) * (n2dbndry + ncz * n3dbndry);
+    local_N +=  (mesh->LocalNy - mesh->yend - 1) * (n2dbndry + ncz * n3dbndry);
   }
   
   // Y down
@@ -842,7 +842,7 @@ int Solver::getLocalN() {
 
   // X outer
   if(mesh->lastX() && !mesh->periodicX) {
-    local_N += (mesh->ngx - mesh->xend - 1) * MYSUB * (n2dbndry + ncz * n3dbndry);
+    local_N += (mesh->LocalNx - mesh->xend - 1) * MYSUB * (n2dbndry + ncz * n3dbndry);
     output.write("\tBoundary region outer X\n");
   }
   
@@ -866,7 +866,6 @@ Solver* Solver::create(SolverType &type, Options *opts) {
 
 /// Perform an operation at a given (jx,jy) location, moving data between BOUT++ and CVODE
 void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op, bool bndry) {
-  int i;
   int jz;
  
   switch(op) {
@@ -881,7 +880,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
       p++;
     }
     
-    for (jz=0; jz < mesh->ngz-1; jz++) {
+    for (jz=0; jz < mesh->LocalNz; jz++) {
       
       // Loop over 3D variables
       for(const auto& f : f3d) {
@@ -905,7 +904,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
       p++;
     }
     
-    for (jz=0; jz < mesh->ngz-1; jz++) {
+    for (jz=0; jz < mesh->LocalNz; jz++) {
       
       // Loop over 3D variables
       for(const auto& f : f3d) {
@@ -933,7 +932,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
       p++;
     }
     
-    for (jz=0; jz < mesh->ngz-1; jz++) {
+    for (jz=0; jz < mesh->LocalNz; jz++) {
       
       // Loop over 3D variables
       for(const auto& f : f3d) {
@@ -961,7 +960,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
       p++;
     }
     
-    for (jz=0; jz < mesh->ngz-1; jz++) {
+    for (jz=0; jz < mesh->LocalNz; jz++) {
       
       // Loop over 3D variables
       for(const auto& f : f3d) {
@@ -984,7 +983,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
       p++;
     }
     
-    for (jz=0; jz < mesh->ngz-1; jz++) {
+    for (jz=0; jz < mesh->LocalNz; jz++) {
       
       // Loop over 3D variables
       for(const auto& f : f3d) {
@@ -1026,21 +1025,19 @@ void Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op) {
   
   // Upper Y boundary condition
   for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); xi++) {
-    for(jy=mesh->yend+1;jy<mesh->ngy;jy++)
+    for(jy=mesh->yend+1;jy<mesh->LocalNy;jy++)
       loop_vars_op(*xi, jy, udata, p, op, true);
   }
 
   // Outer X boundary
   if(mesh->lastX() && !mesh->periodicX) {
-    for(jx=mesh->xend+1;jx<mesh->ngx;jx++)
+    for(jx=mesh->xend+1;jx<mesh->LocalNx;jx++)
       for(jy=mesh->ystart;jy<=mesh->yend;jy++)
 	loop_vars_op(jx, jy, udata, p, op, true);
   }
 }
 
 void Solver::load_vars(BoutReal *udata) {
-  unsigned int i;
-  
   // Make sure data is allocated
   for(const auto& f : f2d) 
     f.var->allocate();
@@ -1060,8 +1057,6 @@ void Solver::load_vars(BoutReal *udata) {
 }
 
 void Solver::load_derivs(BoutReal *udata) {
-  unsigned int i;
-  
   // Make sure data is allocated
   for(const auto& f : f2d) 
     f.F_var->allocate();
@@ -1082,8 +1077,6 @@ void Solver::load_derivs(BoutReal *udata) {
 
 // This function only called during initialisation
 void Solver::save_vars(BoutReal *udata) {
-  unsigned int i;
-
   for(const auto& f : f2d) 
     if(!f.var->isAllocated())
       throw BoutException("Variable '%s' not initialised", f.name.c_str());
@@ -1110,8 +1103,6 @@ void Solver::save_vars(BoutReal *udata) {
 }
 
 void Solver::save_derivs(BoutReal *dudata) {
-  unsigned int i;
-
   // Make sure vectors in correct basis
   for(const auto& v : v2d) {
     if(v.covariant) {
@@ -1176,7 +1167,7 @@ const Field3D Solver::globalIndex(int localStart) {
           // Zero index contains 2D and 3D variables
           index(jx, jy, 0) = ind;
           ind += n2dbndry + n3dbndry;
-          for(int jz=1;jz<mesh->ngz-1; jz++) {
+          for(int jz=1;jz<mesh->LocalNz; jz++) {
             index(jx, jy, jz) = ind;
             ind += n3dbndry;
           }
@@ -1188,7 +1179,7 @@ const Field3D Solver::globalIndex(int localStart) {
       for(int jy=0;jy<mesh->ystart;jy++) {
         index(*xi, jy, 0) = ind;
         ind += n2dbndry + n3dbndry;
-        for(int jz=1;jz<mesh->ngz-1; jz++) {
+        for(int jz=1;jz<mesh->LocalNz; jz++) {
           index(*xi, jy, jz) = ind;
           ind += n3dbndry;
         }
@@ -1201,7 +1192,7 @@ const Field3D Solver::globalIndex(int localStart) {
     for (int jy=mesh->ystart; jy <= mesh->yend; jy++) {
       index(jx, jy, 0) = ind;
       ind += n2d + n3d;
-      for(int jz=1;jz<mesh->ngz-1; jz++) {
+      for(int jz=1;jz<mesh->LocalNz; jz++) {
         index(jx, jy, jz) = ind;
         ind += n3d;
       }
@@ -1212,10 +1203,10 @@ const Field3D Solver::globalIndex(int localStart) {
     
     // Upper Y boundary condition
     for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); xi++) {
-      for(int jy=mesh->yend+1;jy<mesh->ngy;jy++) {
+      for(int jy=mesh->yend+1;jy<mesh->LocalNy;jy++) {
         index(*xi, jy, 0) = ind;
         ind += n2dbndry + n3dbndry;
-        for(int jz=1;jz<mesh->ngz-1; jz++) {
+        for(int jz=1;jz<mesh->LocalNz; jz++) {
           index(*xi, jy, jz) = ind;
           ind += n3dbndry;
         }
@@ -1224,11 +1215,11 @@ const Field3D Solver::globalIndex(int localStart) {
     
     // Outer X boundary
     if(mesh->lastX() && !mesh->periodicX) {
-      for(int jx=mesh->xend+1;jx<mesh->ngx;jx++)
+      for(int jx=mesh->xend+1;jx<mesh->LocalNx;jx++)
         for(int jy=mesh->ystart;jy<=mesh->yend;jy++) {
           index(jx, jy, 0) = ind;
           ind += n2dbndry + n3dbndry;
-          for(int jz=1;jz<mesh->ngz-1; jz++) {
+          for(int jz=1;jz<mesh->LocalNz; jz++) {
             index(jx, jy, jz) = ind;
             ind += n3dbndry;
           }
@@ -1323,6 +1314,7 @@ int Solver::run_convective(BoutReal t) {
       *(f.F_var) = 0.0;
     for(const auto& f : f2d)
       *(f.F_var) = 0.0;
+    status = 0;
   }
   post_rhs(t);
   

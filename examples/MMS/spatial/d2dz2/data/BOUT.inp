@@ -3,12 +3,12 @@ MZ = 8
 ZPERIOD = 1
 
 mxg = 0  # No guard cells in X
-myg = 0  # No guard cells in Y
+myg = 1  # No guard cells in Y
 
 input = sin(z)
 solution = -sin(z)
 
-[ddz]
+[mesh:ddz]
 
 second = c2
 

@@ -96,7 +96,8 @@ class Output : private multioutbuf_init<char, std::char_traits<char> >,
   static Output *instance; ///< Default instance of this class
   
   std::ofstream file; ///< Log file stream
-  char buffer[1024]; ///< Buffer used for C style output
+  static const int BUFFER_LEN=1024;
+  char buffer[BUFFER_LEN]; ///< Buffer used for C style output
   bool enabled;      ///< Whether output to stdout is enabled
 };
 

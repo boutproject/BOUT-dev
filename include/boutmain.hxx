@@ -22,15 +22,31 @@
 #define GLOBAL
 #endif
 
-// Solver object
-Solver *solver;    // Interface to PVODE
+/*!
+ * Solver object
+ *
+ * This is a global object here, to allow the physics models to be written as
+ * standalone functions.
+ */
+Solver *solver;
 
 /*!************************************************************************
  * Add variables to be solved
  **************************************************************************/
 
+/*!
+ * Add a variable to the solver. This will store a reference
+ * to the given field, and associate that field 
+ * with the given name.
+ *
+ * This function should probably be removed, replaced with either
+ * solver->add(var, name)
+ * 
+ * or the macro
+ * 
+ * SOLVE_FOR(var)
+ */
 void bout_solve(Field2D &var, const char *name) {
-  // Add to solver
   solver->add(var, name);
 }
 
@@ -78,6 +94,9 @@ void bout_solve(Vector3D &var, const char *name) {
  * Add constraints
  **************************************************************************/
 
+/*!
+ * Add a contraint variable
+ */
 bool bout_constrain(Field3D &var, Field3D &F_var, const char *name) {
   if (!solver->constraints()) return false; // Doesn't support constraints
 
@@ -120,6 +139,7 @@ int main(int argc, char **argv) {
     if (physics_init(restart)) {
       output.write("Failed to initialise physics. Aborting\n");
       delete solver;
+      MPI_Abort(BoutComm::get(), 1);
       BoutFinalise();
       return 1;
     }

@@ -175,6 +175,10 @@ FUNCTION collect, arg, xind=xind, yind=yind, zind=zind, tind=tind, $
     NYPE = nfiles
   ENDELSE
 
+  IF version LT 3.5 THEN BEGIN
+    nz = MZ-1  ; Remove extra point
+  ENDIF ELSE nz = MZ
+
   NY = MYSUB * NYPE
 
   IF quiet EQ 0 THEN BEGIN
@@ -191,7 +195,7 @@ FUNCTION collect, arg, xind=xind, yind=yind, zind=zind, tind=tind, $
 
   IF NOT KEYWORD_SET(xind) THEN xind = [0, nx-1]
   IF NOT KEYWORD_SET(yind) THEN yind = [0, ny-1]
-  IF NOT KEYWORD_SET(zind) THEN zind = [0, mz-2]
+  IF NOT KEYWORD_SET(zind) THEN zind = [0, nz-1]
   IF NOT KEYWORD_SET(tind) THEN tind = [0, nt-1]
   
   ; check ranges
@@ -217,9 +221,9 @@ FUNCTION collect, arg, xind=xind, yind=yind, zind=zind, tind=tind, $
   ENDIF
   
   IF zind[0] LT 0 THEN zind[0] = 0
-  IF zind[0] GT MZ-2 THEN zind[0] = MZ-2
+  IF zind[0] GT nz-1 THEN zind[0] = nz-1
   IF zind[1] LT 0 THEN zind[1] = 0
-  IF zind[1] GT MZ-2 THEN zind[1] = MZ-2
+  IF zind[1] GT nz-1 THEN zind[1] = nz-1
   IF zind[0] GT zind[1] THEN BEGIN
     tmp = zind[0]
     zind[0] = zind[1]
@@ -352,7 +356,7 @@ FUNCTION collect, arg, xind=xind, yind=yind, zind=zind, tind=tind, $
     
     ; could be xyz or txy
     isxyz = 0
-    IF dimsize[0] EQ MZ THEN isxyz = 1
+    IF dimsize[0] EQ nz THEN isxyz = 1
 
     ; print ranges
     IF quiet EQ 0 THEN BEGIN

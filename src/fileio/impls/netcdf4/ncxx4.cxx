@@ -65,27 +65,10 @@ Ncxx4::Ncxx4(const char *name) {
   openr(name);
 }
 
-Ncxx4::Ncxx4(const string &name) {
-  dataFile = NULL;
-  x0 = y0 = z0 = t0 = 0;
-  recDimList = new const NcDim*[4];
-  dimList = recDimList+1;
-  lowPrecision = false;
-
-  default_rec = 0;
-  rec_nr.clear();
-
-  openr(name);
-}
-
 Ncxx4::~Ncxx4() {
   delete[] recDimList;
   close();
   rec_nr.clear();
-}
-
-bool Ncxx4::openr(const string &name) {
-  return openr(name.c_str());
 }
 
 bool Ncxx4::openr(const char *name) {
@@ -148,10 +131,6 @@ bool Ncxx4::openr(const char *name) {
   return true;
 }
 
-bool Ncxx4::openw(const string &name, bool append) {
-  return openw(name.c_str(), append);
-}
-
 bool Ncxx4::openw(const char *name, bool append) {
 #ifdef CHECK
   msg_stack.push("Ncxx4::openw");
@@ -209,7 +188,7 @@ bool Ncxx4::openw(const char *name, bool append) {
 
     /// Test they're the right size (and t is unlimited)
     
-    if((xDim.getSize() != mesh->ngx) || (yDim.getSize() != mesh->ngy) || (zDim.getSize() != mesh->ngz)
+    if((xDim.getSize() != mesh->LocalNx) || (yDim.getSize() != mesh->LocalNy) || (zDim.getSize() != mesh->LocalNz)
        || (!tDim.isUnlimited()) ) {
       delete dataFile;
       dataFile = NULL;
@@ -231,21 +210,21 @@ bool Ncxx4::openw(const char *name, bool append) {
 
     /// Add the dimensions
     
-    xDim = dataFile->addDim("x", mesh->ngx);
+    xDim = dataFile->addDim("x", mesh->LocalNx);
     if(xDim.isNull()) {
       delete dataFile;
       dataFile = NULL;
       return false;
     }
   
-    yDim = dataFile->addDim("y", mesh->ngy);
+    yDim = dataFile->addDim("y", mesh->LocalNy);
     if(yDim.isNull()) {
       delete dataFile;
       dataFile = NULL;
       return false;
     }
     
-    zDim = dataFile->addDim("z", mesh->ngz);
+    zDim = dataFile->addDim("z", mesh->LocalNz);
     if(zDim.isNull()) {
       delete dataFile;
       dataFile = NULL;
@@ -332,8 +311,8 @@ const vector<int> Ncxx4::getSize(const char *name) {
     return size;
   }
   
-  for(const auto& dim in var.getDims()) {
-    size.push_back(dim->getSize());
+  for(const auto& dim: var.getDims()) {
+    size.push_back(dim.getSize());
   }
   
 #ifdef CHECK
@@ -448,14 +427,14 @@ bool Ncxx4::read(BoutReal *var, const string &name, int lx, int ly, int lz) {
 
 bool Ncxx4::write(int *data, const char *name, int lx, int ly, int lz) {
 #ifdef NCDF_VERBOSE
-  output.write("Ncxx4:: write(int, %s)\n", name); 
+  output.write("Ncxx4:: write(int, %s)\n", name);
 #endif
   if(!is_valid())
     return false;
 
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
-  
+
   int nd = 0; // Number of dimensions
   if(lx != 0) nd = 1;
   if(ly != 0) nd = 2;
@@ -465,41 +444,34 @@ bool Ncxx4::write(int *data, const char *name, int lx, int ly, int lz) {
   msg_stack.push("Ncxx4::write(int)");
 #endif
 
-  if(nd == 0) {
-    // Zero-dimensional attribute
-    
-    NcGroupAtt att  = dataFile->putAtt(name, ncInt, 1, data);
-  }else {
-    // Multi-dimensional variables
-    
-    NcVar var = dataFile->getVar(name);
+  NcVar var = dataFile->getVar(name);
+  if(var.isNull()) {
+#ifdef NCDF_VERBOSE
+    output.write("Ncxx4:: write { Adding Variable %d } \n", nd);
+#endif
+    // Variable not in file, so add it.
+
+    var = dataFile->addVar(name, ncInt, getDimVec(nd));
+
     if(var.isNull()) {
-#ifdef NCDF_VERBOSE
-      output.write("Ncxx4:: write { Adding Variable %d } \n", nd); 
-#endif
-      // Variable not in file, so add it.
-    
-      var = dataFile->addVar(name, ncInt, getDimVec(nd));
-      if(var.isNull()) {
-        output.write("ERROR: NetCDF could not add int '%s' to file '%s'\n", name, fname);
-        return false;
-      }
+      output.write("ERROR: NetCDF could not add int '%s' to file '%s'\n", name, fname);
+      return false;
     }
-    
-#ifdef NCDF_VERBOSE
-    output.write("Ncxx4:: write { Writing Variable } \n"); 
-#endif
-    
-    vector<size_t> start(3);
-    start[0] = x0; start[1] = y0; start[2] = z0;
-    vector<size_t> counts(3);
-    counts[0] = lx; counts[1] = ly; counts[2] = lz;
-    
-    var.putVar(start, counts, data);
   }
 
 #ifdef NCDF_VERBOSE
-  output.write("Ncxx4:: write { Done } \n"); 
+  output.write("Ncxx4:: write { Writing Variable } \n");
+#endif
+
+  vector<size_t> start(3);
+  start[0] = x0; start[1] = y0; start[2] = z0;
+  vector<size_t> counts(3);
+  counts[0] = lx; counts[1] = ly; counts[2] = lz;
+
+  var.putVar(start, counts, data);
+
+#ifdef NCDF_VERBOSE
+  output.write("Ncxx4:: write { Done } \n");
 #endif
 
 #ifdef CHECK

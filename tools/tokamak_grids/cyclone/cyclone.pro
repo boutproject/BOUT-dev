@@ -67,7 +67,7 @@ PRO cyclone, output=output, varyBp=varyBp
   L_n = eta_i * L_T        ; Density length scale [m]
   rho_i = rho_norm * L_T   ; Ion Larmor radius [m]
   Bt0 = SQRT(2.*Ti*Mi / 1.602e-19) / rho_i ; Toroidal field from rho_i [T]
-  Bp = rminor * Bt0 * eps_integral(epsilon)/ (q * Rmaj) ; Poloidal field [T]
+  Bp = rminor * Bt0 * eps_integral(epsilon)/ (2*!PI * q * Rmaj) ; Poloidal field [T]
   
   dr = r_wid * rho_i       ; Width of domain [m]
   

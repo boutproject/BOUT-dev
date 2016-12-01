@@ -34,8 +34,13 @@ class Field;
 #include "bout_types.hxx"
 #include "stencils.hxx"
 #include <bout/rvec.hxx>
+#include "boutexception.hxx"
 
 #include "bout/deprecated.hxx"
+
+#include "bout/dataiterator.hxx"
+
+#include "unused.hxx"
 
 #ifdef TRACK
 #include <string>
@@ -59,28 +64,34 @@ class Field {
   virtual void setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const = 0;
   virtual void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const = 0;
 
-  virtual void setLocation(CELL_LOC loc) { }
+  // Data access
+  virtual const BoutReal& operator[](const Indices &i) const = 0;
+
+  virtual void setLocation(CELL_LOC loc) {
+    if (loc != CELL_CENTRE)
+      throw BoutException("not implemented!");
+  }
   virtual CELL_LOC getLocation() const {
     return CELL_CENTRE;
   }
 
-  virtual void getXArray(int y, int z, rvec &xv) const {
+  virtual void getXArray(int UNUSED(y), int UNUSED(z), rvec &UNUSED(xv)) const {
     error("Field: Base class does not implement getXarray");
   }
-  virtual void getYArray(int x, int z, rvec &yv) const {
+  virtual void getYArray(int UNUSED(x), int UNUSED(z), rvec &UNUSED(yv)) const {
     error("Field: Base class does not implement getYarray");
   }
-  virtual void getZArray(int x, int y, rvec &zv) const {
+  virtual void getZArray(int UNUSED(x), int UNUSED(y), rvec &UNUSED(zv)) const {
     error("Field: Base class does not implement getZarray");
   }
 
-  virtual void setXArray(int y, int z, const rvec &xv) {
+  virtual void setXArray(int UNUSED(y), int UNUSED(z), const rvec &UNUSED(xv)) {
     error("Field: Base class does not implement setXarray");
   }
-  virtual void setYArray(int x, int z, const rvec &yv) {
+  virtual void setYArray(int UNUSED(x), int UNUSED(z), const rvec &UNUSED(yv)) {
     error("Field: Base class does not implement setYarray");
   }
-  virtual void setZArray(int x, int y, const rvec &zv) {
+  virtual void setZArray(int UNUSED(x), int UNUSED(y), const rvec &UNUSED(zv)) {
     error("Field: Base class does not implement setZarray");
   }
     
