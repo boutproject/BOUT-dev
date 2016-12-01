@@ -1,0 +1,28 @@
+#!/usr/bin/env sh
+make || exit
+
+
+for ny in 4 8
+do
+    for my in 1 2
+    do
+        for nx in 8 16
+        do
+            for mx in 1 2
+            do
+                for nz in 1 8
+                do
+                    np=$((my*mx))
+                    of=run.log.$nx.$mx.$ny.$my.$ny
+                    if ! mpirun -np $np ./test mesh:ny=$ny mesh:nx=$nx MZ=$nz nxpe=$mx nype=$my > $of
+                    then
+	                cat $of
+	                exit 1
+                    fi
+                done
+            done
+        done
+    done
+done
+
+echo "Test Succesfull"
