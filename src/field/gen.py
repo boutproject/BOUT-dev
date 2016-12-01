@@ -121,6 +121,16 @@ for lhs in fields:
 #            if (lhs != rhs):
  #               print "\n     ,mesh->LocalNz",
             print ");"
+            if out.i == 'f3d':
+                if lhs == 'f3d':
+                    src='lhs'
+                elif rhs.i == 'f3d':
+                    src='rhs'
+                elif lhs.i != 'real':
+                    src='lhs'
+                else:
+                    src='rhs'
+                print "  result.setLocation(%s.getLocation());"%src
             print "  return result;"
             print "}"
             print
