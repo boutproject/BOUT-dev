@@ -1,0 +1,46 @@
+MZ=5
+
+nout=1
+timestep=1
+
+periodicY=true
+MXG=1
+MYG=1
+
+Lz=mesh:lz
+zmax=lz/2/pi
+Lx=mesh:lx
+
+[MESH]
+type=aiolos
+Ly=2*pi
+dy=Ly/ny
+Lx=1
+dx=Lx/(nx-2*MXG)
+Lz=2*pi
+dz=mz/Lz
+nx=5
+ny=6
+
+ixseps1		= -1
+ixseps2		= -1
+
+StaggerGrids=true
+
+[MESH:diff]
+all=c2
+Second=C4
+FluxStag=U1
+
+[All]
+bndry_all = none
+function=x#*y*y*z
+scale=1
+
+[diff_y]
+function=0#2*x*y*z
+
+[diff_x]
+function=1#y*y*z
+
+[diff_z]
