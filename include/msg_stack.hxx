@@ -32,6 +32,7 @@ class MsgStack;
 #include <stdio.h>
 #include <string>
 
+/// The maximum length (in chars) of messages, not including terminating '0'
 #define MSG_MAX_SIZE 127
 
 /*!
@@ -91,6 +92,11 @@ class MsgStack {
   int size;    ///< Size of the stack
 };
 
+/*!
+ * This is a way to define a global object,
+ * so that it is declared extern in all files except one
+ * where GLOBALORIGIN is defined.
+ */ 
 #ifndef GLOBALORIGIN
 #define GLOBAL extern
 #else
@@ -128,8 +134,9 @@ private:
   int point;
 };
 
-// To concatenate strings for a variable name
+/// To concatenate strings for a variable name
 #define CONCATENATE_DIRECT(s1, s2) s1##s2
+/// Need to use two levels due to macro strangeness
 #define CONCATENATE(s1, s2) CONCATENATE_DIRECT(s1, s2)
 
 /*!

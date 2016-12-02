@@ -17,7 +17,7 @@
 
 #include <globals.hxx>
 
-Coordinates::Coordinates(Mesh *mesh) : ilen(0) {
+Coordinates::Coordinates(Mesh *mesh) {
   
   dx = 1.0; dy = 1.0; dz = 1.0;
   
@@ -190,15 +190,6 @@ Coordinates::Coordinates(Mesh *mesh) : ilen(0) {
   }
 }
 
-Coordinates::~Coordinates() {
-  // Gaussj working arrays
-  if(ilen > 0) {
-    ivfree(indxc);
-    ivfree(indxr);
-    ivfree(ipiv);
-  }
-}
-
 void Coordinates::outputVars(Datafile &file) {
   file.add(dx,    "dx",    0);
   file.add(dy,    "dy",    0);
@@ -359,7 +350,7 @@ int Coordinates::calcCovariant() {
   // Perform inversion of g^{ij} to get g_{ij}
   // NOTE: Currently this bit assumes that metric terms are Field2D objects
 
-  BoutReal** a = rmatrix(3, 3);
+  BoutReal** a = matrix<BoutReal>(3, 3);
   
   for(int jx=0;jx<mesh->LocalNx;jx++) {
     for(int jy=0;jy<mesh->LocalNy;jy++) {
@@ -389,7 +380,7 @@ int Coordinates::calcCovariant() {
     }
   }
 
-  free_rmatrix(a);
+  free_matrix(a);
   
   BoutReal maxerr, err;
   maxerr = max(abs( (g_11*g11 +
@@ -440,7 +431,7 @@ int Coordinates::calcContravariant() {
   // Perform inversion of g_{ij} to get g^{ij}
   // NOTE: Currently this bit assumes that metric terms are Field2D objects
   
-  BoutReal** a = rmatrix(3, 3);
+  BoutReal** a = matrix<BoutReal>(3, 3);
   
   for(int jx=0;jx<mesh->LocalNx;jx++) {
     for(int jy=0;jy<mesh->LocalNy;jy++) {
@@ -470,7 +461,7 @@ int Coordinates::calcContravariant() {
     }
   }
 
-  free_rmatrix(a);
+  free_matrix(a);
 
   BoutReal maxerr, err;
   maxerr = max(abs( (g_11*g11 +
@@ -693,8 +684,8 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
   static dcomplex **ft = (dcomplex**) NULL, **delft;
   if(ft == (dcomplex**) NULL) {
     // Allocate memory
-    ft = cmatrix(mesh->LocalNx, ncz/2 + 1);
-    delft = cmatrix(mesh->LocalNx, ncz/2 + 1);
+    ft = matrix<dcomplex>(mesh->LocalNx, ncz/2 + 1);
+    delft = matrix<dcomplex>(mesh->LocalNx, ncz/2 + 1);
   }
   
   // Loop over all y indices
@@ -753,8 +744,8 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
   
   if(ft == (dcomplex**) NULL) {
     // Allocate memory
-    ft = cmatrix(mesh->LocalNx, ncz/2 + 1);
-    delft = cmatrix(mesh->LocalNx, ncz/2 + 1);
+    ft = matrix<dcomplex>(mesh->LocalNx, ncz/2 + 1);
+    delft = matrix<dcomplex>(mesh->LocalNx, ncz/2 + 1);
   }
   
   // Take forward FFT
@@ -832,18 +823,9 @@ int Coordinates::gaussj(BoutReal **a, int n) {
   float big, dum, pivinv;
 
   // Make sure enough temporary memory is allocated
-  if(n > ilen) {
-    if(ilen == 0) {
-      indxc = ivector(n);
-      indxr = ivector(n);
-      ipiv = ivector(n);
-    }else {
-      indxc = ivresize(indxc, n);
-      indxr = ivresize(indxr, n);
-      ipiv = ivresize(ipiv, n);
-    }
-    ilen = n;
-  }
+  indxc.resize(n);
+  indxr.resize(n);
+  ipiv.resize(n);
 
   for(i=0;i<n;i++)
     ipiv[i] = 0;
