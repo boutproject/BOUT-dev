@@ -59,10 +59,12 @@ void Vector3D::toCovariant() {
   if(!covariant) {
     Field3D gx, gy, gz;
 
+    Coordinates *metric = mesh->coordinates();
+    
     // multiply by g_{ij}
-    gx = x*mesh->g_11 + mesh->g_12*y + mesh->g_13*z;
-    gy = y*mesh->g_22 + mesh->g_12*x + mesh->g_23*z;
-    gz = z*mesh->g_33 + mesh->g_13*x + mesh->g_23*y;
+    gx = x*metric->g_11 + metric->g_12*y + metric->g_13*z;
+    gy = y*metric->g_22 + metric->g_12*x + metric->g_23*z;
+    gz = z*metric->g_33 + metric->g_13*x + metric->g_23*y;
 
     x = gx;
     y = gy;
@@ -71,16 +73,17 @@ void Vector3D::toCovariant() {
     covariant = true;
   }
 }
-void Vector3D::toContravariant()
-{  
+void Vector3D::toContravariant() {  
   if(covariant) {
     // multiply by g^{ij}
     
     Field3D gx, gy, gz;
 
-    gx = x*mesh->g11 + mesh->g12*y + mesh->g13*z;
-    gy = y*mesh->g22 + mesh->g12*x + mesh->g23*z;
-    gz = z*mesh->g33 + mesh->g13*x + mesh->g23*y;
+    Coordinates *metric = mesh->coordinates();
+
+    gx = x*metric->g11 + metric->g12*y + metric->g13*z;
+    gy = y*metric->g22 + metric->g12*x + metric->g23*z;
+    gz = z*metric->g33 + metric->g13*x + metric->g23*y;
 
     x = gx;
     y = gy;
@@ -90,8 +93,7 @@ void Vector3D::toContravariant()
   }
 }
 
-Vector3D* Vector3D::timeDeriv()
-{
+Vector3D* Vector3D::timeDeriv() {
   if(deriv == NULL) {
     deriv = new Vector3D();
     
@@ -125,8 +127,7 @@ Vector3D* Vector3D::timeDeriv()
 
 /////////////////// ASSIGNMENT ////////////////////
 
-Vector3D & Vector3D::operator=(const Vector3D &rhs)
-{
+Vector3D & Vector3D::operator=(const Vector3D &rhs) {
   x = rhs.x;
   y = rhs.y;
   z = rhs.z;
@@ -136,8 +137,7 @@ Vector3D & Vector3D::operator=(const Vector3D &rhs)
   return *this;
 }
 
-Vector3D & Vector3D::operator=(const Vector2D &rhs)
-{
+Vector3D & Vector3D::operator=(const Vector2D &rhs) {
   x = rhs.x;
   y = rhs.y;
   z = rhs.z;
@@ -292,8 +292,7 @@ Vector3D & Vector3D::operator/=(const Field3D &rhs)
 
 ///////////////// CROSS PRODUCT //////////////////
 
-Vector3D & Vector3D::operator^=(const Vector3D &rhs)
-{
+Vector3D & Vector3D::operator^=(const Vector3D &rhs) {
   Vector3D result;
 
   // Make sure both vector components are covariant
@@ -301,10 +300,12 @@ Vector3D & Vector3D::operator^=(const Vector3D &rhs)
   rco.toCovariant();
   toCovariant();
 
+  Coordinates *metric = mesh->coordinates();
+  
   // calculate contravariant components of cross-product
-  result.x = (y*rco.z - z*rco.y)/mesh->J;
-  result.y = (z*rco.x - x*rco.z)/mesh->J;
-  result.z = (x*rco.y - y*rco.x)/mesh->J;
+  result.x = (y*rco.z - z*rco.y)/metric->J;
+  result.y = (z*rco.x - x*rco.z)/metric->J;
+  result.z = (x*rco.y - y*rco.x)/metric->J;
   result.covariant = false;
 
   *this = result;
@@ -312,8 +313,7 @@ Vector3D & Vector3D::operator^=(const Vector3D &rhs)
   return *this;
 }
 
-Vector3D & Vector3D::operator^=(const Vector2D &rhs)
-{
+Vector3D & Vector3D::operator^=(const Vector2D &rhs) {
   Vector3D result;
   
   // Make sure both vector components are covariant
@@ -321,10 +321,12 @@ Vector3D & Vector3D::operator^=(const Vector2D &rhs)
   rco.toCovariant();
   toCovariant();
   
+  Coordinates *metric = mesh->coordinates();
+ 
   // calculate contravariant components of cross-product
-  result.x = (y*rco.z - z*rco.y)/mesh->J;
-  result.y = (z*rco.x - x*rco.z)/mesh->J;
-  result.z = (x*rco.y - y*rco.x)/mesh->J;
+  result.x = (y*rco.z - z*rco.y)/metric->J;
+  result.y = (z*rco.x - x*rco.z)/metric->J;
+  result.z = (x*rco.y - y*rco.x)/metric->J;
   result.covariant = false;
 
   *this = result;
@@ -338,15 +340,13 @@ Vector3D & Vector3D::operator^=(const Vector2D &rhs)
 
 ////////////////// ADDITION //////////////////////
 
-const Vector3D Vector3D::operator+(const Vector3D &rhs) const
-{
+const Vector3D Vector3D::operator+(const Vector3D &rhs) const {
   Vector3D result = *this;
   result += rhs;
   return result;
 }
 
-const Vector3D Vector3D::operator+(const Vector2D &rhs) const
-{
+const Vector3D Vector3D::operator+(const Vector2D &rhs) const {
   Vector3D result = *this;
   result += rhs;
   return result;
@@ -354,15 +354,13 @@ const Vector3D Vector3D::operator+(const Vector2D &rhs) const
 
 ///////////////// SUBTRACTION ////////////////////
 
-const Vector3D Vector3D::operator-(const Vector3D &rhs) const
-{
+const Vector3D Vector3D::operator-(const Vector3D &rhs) const {
   Vector3D result = *this;
   result -= rhs;
   return result;
 }
 
-const Vector3D Vector3D::operator-(const Vector2D &rhs) const
-{
+const Vector3D Vector3D::operator-(const Vector2D &rhs) const {
   Vector3D result = *this;
   result -= rhs;
   return result;
@@ -370,22 +368,19 @@ const Vector3D Vector3D::operator-(const Vector2D &rhs) const
 
 //////////////// MULTIPLICATION //////////////////
 
-const Vector3D Vector3D::operator*(const BoutReal rhs) const
-{
+const Vector3D Vector3D::operator*(const BoutReal rhs) const {
   Vector3D result = *this;
   result *= rhs;
   return result;
 }
 
-const Vector3D Vector3D::operator*(const Field2D &rhs) const
-{
+const Vector3D Vector3D::operator*(const Field2D &rhs) const {
   Vector3D result = *this;
   result *= rhs;
   return result;
 }
 
-const Vector3D Vector3D::operator*(const Field3D &rhs) const
-{
+const Vector3D Vector3D::operator*(const Field3D &rhs) const {
   Vector3D result = *this;
   result *= rhs;
   return result;
@@ -393,22 +388,19 @@ const Vector3D Vector3D::operator*(const Field3D &rhs) const
 
 /////////////////// DIVISION /////////////////////
 
-const Vector3D Vector3D::operator/(const BoutReal rhs) const
-{
+const Vector3D Vector3D::operator/(const BoutReal rhs) const {
   Vector3D result = *this;
   result /= rhs;
   return result;
 }
 
-const Vector3D Vector3D::operator/(const Field2D &rhs) const
-{
+const Vector3D Vector3D::operator/(const Field2D &rhs) const {
   Vector3D result = *this;
   result /= rhs;
   return result;
 }
 
-const Vector3D Vector3D::operator/(const Field3D &rhs) const
-{
+const Vector3D Vector3D::operator/(const Field3D &rhs) const {
   Vector3D result = *this;
   result /= rhs;
   return result;
@@ -416,8 +408,7 @@ const Vector3D Vector3D::operator/(const Field3D &rhs) const
 
 ////////////////// DOT PRODUCT ///////////////////
 
-const Field3D Vector3D::operator*(const Vector3D &rhs) const
-{
+const Field3D Vector3D::operator*(const Vector3D &rhs) const {
   Field3D result;
 
   if(rhs.covariant ^ covariant) {
@@ -425,18 +416,21 @@ const Field3D Vector3D::operator*(const Vector3D &rhs) const
     result = x*rhs.x + y*rhs.y + z*rhs.z;
   }else {
     // Both are covariant or contravariant
+
+    Coordinates *metric = mesh->coordinates();
+    
     if(covariant) {
       // Both covariant
-      result = x*rhs.x*mesh->g11 + y*rhs.y*mesh->g22 + z*rhs.z*mesh->g33;
-      result += (x*rhs.y + y*rhs.x)*mesh->g12
-	+ (x*rhs.z + z*rhs.x)*mesh->g13
-	+ (y*rhs.z + z*rhs.y)*mesh->g23;
+      result = x*rhs.x*metric->g11 + y*rhs.y*metric->g22 + z*rhs.z*metric->g33;
+      result += (x*rhs.y + y*rhs.x)*metric->g12
+	+ (x*rhs.z + z*rhs.x)*metric->g13
+	+ (y*rhs.z + z*rhs.y)*metric->g23;
     }else {
       // Both contravariant
-      result = x*rhs.x*mesh->g_11 + y*rhs.y*mesh->g_22 + z*rhs.z*mesh->g_33;
-      result += (x*rhs.y + y*rhs.x)*mesh->g_12
-	+ (x*rhs.z + z*rhs.x)*mesh->g_13
-	+ (y*rhs.z + z*rhs.y)*mesh->g_23;
+      result = x*rhs.x*metric->g_11 + y*rhs.y*metric->g_22 + z*rhs.z*metric->g_33;
+      result += (x*rhs.y + y*rhs.x)*metric->g_12
+	+ (x*rhs.z + z*rhs.x)*metric->g_13
+	+ (y*rhs.z + z*rhs.y)*metric->g_23;
     }
   }
   
@@ -452,18 +446,20 @@ const Field3D Vector3D::operator*(const Vector2D &rhs) const
     result = x*rhs.x + y*rhs.y + z*rhs.z;
   }else {
     // Both are covariant or contravariant
+
+    Coordinates *metric = mesh->coordinates();
     if(covariant) {
       // Both covariant
-      result = x*rhs.x*mesh->g11 + y*rhs.y*mesh->g22 + z*rhs.z*mesh->g33;
-      result += (x*rhs.y + y*rhs.x)*mesh->g12
-	+ (x*rhs.z + z*rhs.x)*mesh->g13
-	+ (y*rhs.z + z*rhs.y)*mesh->g23;
+      result = x*rhs.x*metric->g11 + y*rhs.y*metric->g22 + z*rhs.z*metric->g33;
+      result += (x*rhs.y + y*rhs.x)*metric->g12
+	+ (x*rhs.z + z*rhs.x)*metric->g13
+	+ (y*rhs.z + z*rhs.y)*metric->g23;
     }else {
       // Both contravariant
-      result = x*rhs.x*mesh->g_11 + y*rhs.y*mesh->g_22 + z*rhs.z*mesh->g_33;
-      result += (x*rhs.y + y*rhs.x)*mesh->g_12
-	+ (x*rhs.z + z*rhs.x)*mesh->g_13
-	+ (y*rhs.z + z*rhs.y)*mesh->g_23;
+      result = x*rhs.x*metric->g_11 + y*rhs.y*metric->g_22 + z*rhs.z*metric->g_33;
+      result += (x*rhs.y + y*rhs.x)*metric->g_12
+	+ (x*rhs.z + z*rhs.x)*metric->g_13
+	+ (y*rhs.z + z*rhs.y)*metric->g_23;
     }
   }
 
@@ -472,8 +468,7 @@ const Field3D Vector3D::operator*(const Vector2D &rhs) const
  
 ///////////////// CROSS PRODUCT //////////////////
 
-const Vector3D Vector3D::operator^(const Vector3D &rhs) const
-{
+const Vector3D Vector3D::operator^(const Vector3D &rhs) const {
   Vector3D result = *this;
   
   result ^= rhs;
@@ -481,8 +476,7 @@ const Vector3D Vector3D::operator^(const Vector3D &rhs) const
   return result;
 }
 
-const Vector3D Vector3D::operator^(const Vector2D &rhs) const
-{
+const Vector3D Vector3D::operator^(const Vector2D &rhs) const {
   Vector3D result = *this;
   
   result ^= rhs;
@@ -507,22 +501,6 @@ void Vector3D::setLocation(CELL_LOC loc) {
 }
 
 /***************************************************************
- *               Z SHIFTING
- ***************************************************************/
-
-const Vector3D Vector3D::shiftZ(const BoutReal zangle) const {
-  Vector3D result;
-
-  result.covariant = covariant;
-
-  result.x = x.shiftZ(zangle);
-  result.y = y.shiftZ(zangle);
-  result.z = z.shiftZ(zangle);
-
-  return result;
-}
-
-/***************************************************************
  *               NON-MEMBER OVERLOADED OPERATORS
  ***************************************************************/
 
@@ -544,8 +522,7 @@ const Vector3D operator*(const Field3D &lhs, const Vector3D &rhs)
  ***************************************************************/
 
 // Return the magnitude of a vector
-const Field3D abs(const Vector3D &v)
-{
+const Field3D abs(const Vector3D &v) {
   return sqrt(v*v);
 }
 
@@ -553,18 +530,24 @@ const Field3D abs(const Vector3D &v)
  *               FieldData VIRTUAL FUNCTIONS
  ***************************************************************/
 
+////////////////////////////////////////////////////////////
+// Visitor pattern support
+void Vector3D::accept(FieldVisitor &v) {
+  v.accept(*this);
+}
+
 int Vector3D::getData(int jx, int jy, int jz, void *vptr) const
 {
 #ifdef CHECK
   // check ranges
-  if((jx < 0) || (jx >= mesh->ngx) || (jy < 0) || (jy >= mesh->ngy) || (jz < 0) || (jz >= mesh->ngz)) {
+  if((jx < 0) || (jx >= mesh->LocalNx) || (jy < 0) || (jy >= mesh->LocalNy) || (jz < 0) || (jz >= mesh->LocalNz)) {
     throw BoutException("Vector3D: getData (%d,%d,%d) out of bounds\n", jx, jy, jz);
   }
 #endif
   BoutReal *ptr = (BoutReal*) vptr;
-  *ptr = x[jx][jy][jz]; ptr++;
-  *ptr = y[jx][jy][jz]; ptr++;
-  *ptr = z[jx][jy][jz];
+  *ptr = x(jx,jy,jz); ptr++;
+  *ptr = y(jx,jy,jz); ptr++;
+  *ptr = z(jx,jy,jz);
   
   return 3*sizeof(BoutReal);
 }
@@ -573,14 +556,14 @@ int Vector3D::getData(int jx, int jy, int jz, BoutReal *rptr) const
 {
 #ifdef CHECK
   // check ranges
-  if((jx < 0) || (jx >= mesh->ngx) || (jy < 0) || (jy > mesh->ngy) || (jz < 0) || (jz >= mesh->ngz)) {
+  if((jx < 0) || (jx >= mesh->LocalNx) || (jy < 0) || (jy > mesh->LocalNy) || (jz < 0) || (jz >= mesh->LocalNz)) {
     throw BoutException("Vector3D: getData (%d,%d,%d) out of bounds\n", jx, jy, jz);
   }
 #endif
 
-  *rptr = x[jx][jy][jz]; rptr++;
-  *rptr = y[jx][jy][jz]; rptr++;
-  *rptr = z[jx][jy][jz];
+  *rptr = x(jx,jy,jz); rptr++;
+  *rptr = y(jx,jy,jz); rptr++;
+  *rptr = z(jx,jy,jz);
   
   return 3;
 }
@@ -589,14 +572,14 @@ int Vector3D::setData(int jx, int jy, int jz, void *vptr)
 {
 #ifdef CHECK
   // check ranges
-  if((jx < 0) || (jx >= mesh->ngx) || (jy < 0) || (jy >= mesh->ngy) || (jz < 0) || (jz >= mesh->ngz)) {
+  if((jx < 0) || (jx >= mesh->LocalNx) || (jy < 0) || (jy >= mesh->LocalNy) || (jz < 0) || (jz >= mesh->LocalNz)) {
     throw BoutException("Vector3D: setData (%d,%d,%d) out of bounds\n", jx, jy, jz);
   }
 #endif
   BoutReal *rptr = (BoutReal*) vptr;
-  x[jx][jy][jz] = *rptr; rptr++;
-  y[jx][jy][jz] = *rptr; rptr++;
-  z[jx][jy][jz] = *rptr;
+  x(jx,jy,jz) = *rptr; rptr++;
+  y(jx,jy,jz) = *rptr; rptr++;
+  z(jx,jy,jz) = *rptr;
 
   return 3*sizeof(BoutReal);
 }
@@ -605,14 +588,14 @@ int Vector3D::setData(int jx, int jy, int jz, BoutReal *rptr)
 {
 #ifdef CHECK
   // check ranges
-  if((jx < 0) || (jx >= mesh->ngx) || (jy < 0) || (jy >= mesh->ngy) || (jz < 0) || (jz >= mesh->ngz)) {
+  if((jx < 0) || (jx >= mesh->LocalNx) || (jy < 0) || (jy >= mesh->LocalNy) || (jz < 0) || (jz >= mesh->LocalNz)) {
     throw BoutException("Vector3D: setData (%d,%d,%d) out of bounds\n", jx, jy, jz);
   }
 #endif
 
-  x[jx][jy][jz] = *rptr; rptr++;
-  y[jx][jy][jz] = *rptr; rptr++;
-  z[jx][jy][jz] = *rptr;
+  x(jx,jy,jz) = *rptr; rptr++;
+  y(jx,jy,jz) = *rptr; rptr++;
+  z(jx,jy,jz) = *rptr;
   
   return 3;
 }
@@ -621,13 +604,13 @@ int Vector3D::setData(int jx, int jy, int jz, BoutReal *rptr)
 
 void Vector3D::applyBoundary(bool init)
 {
-  for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
-    if ( !(*it)->apply_to_ddt || init) // Always apply to the values when initialising fields, otherwise apply only if wanted
-      (*it)->apply(*this);
+  for(const auto& bndry : bndry_op)
+    if ( !bndry->apply_to_ddt || init) // Always apply to the values when initialising fields, otherwise apply only if wanted
+      bndry->apply(*this);
 }
 
 void Vector3D::applyTDerivBoundary()
 {
-  for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
-    (*it)->apply_ddt(*this);
+  for(const auto& bndry : bndry_op)
+    bndry->apply_ddt(*this);
 }

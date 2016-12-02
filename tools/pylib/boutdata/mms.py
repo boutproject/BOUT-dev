@@ -155,6 +155,14 @@ def Vpar_Grad_par(v, f, metric = identity):
     """Parallel advection operator v*grad_||(f)"""
     return v * Grad_par(f, metric=metric)
 
+def Div_par(f, metric=identity):
+    '''
+    Divergence of magnetic field aligned vector v = \bhat f
+    \nabla \cdot (\bhat f) = 1/J \partial_y (f/B)
+    = B Grad_par(f/B)
+    '''
+    return metric.B*Grad_par(f/metric.B, metric)
+
 def Laplace(f, metric=identity):
     """The full Laplace operator"""
     G1 = (DDX(metric.J*metric.g11, metric) + DDY(metric.J*metric.g12, metric) + DDZ(metric.J*metric.g13, metric)) / metric.J

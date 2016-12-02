@@ -38,10 +38,10 @@ my_runs = basic_runner(\
             # (which will depend on the member data of this object)
             # sort_by = 'uncomment_me'\
             #
-            # cst:par will be the fastest varying variable, followed by
-            # the spatial_domain. The post processing function will be
-            # called when all possibilities of these variables has been
-            # run
+            # In this example cst:D_par will be the fastest varying
+            # variable, followed by the spatial_domain. The post
+            # processing function will be called when all possibilities
+            # of these variables has been run
             # sort_by = ['cst:D_par', 'spatial_domain']\
             )
 

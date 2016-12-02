@@ -60,33 +60,14 @@ NcFormat::NcFormat(const char *name) {
   openr(name);
 }
 
-NcFormat::NcFormat(const string &name) {
-  dataFile = NULL;
-  x0 = y0 = z0 = t0 = 0;
-  recDimList = new const NcDim*[4];
-  dimList = recDimList+1;
-  lowPrecision = false;
-
-  default_rec = 0;
-  rec_nr.clear();
-
-  openr(name);
-}
-
 NcFormat::~NcFormat() {
   delete[] recDimList;
   close();
   rec_nr.clear();
 }
 
-bool NcFormat::openr(const string &name) {
-  return openr(name.c_str());
-}
-
 bool NcFormat::openr(const char *name) {
-#ifdef CHECK
-  msg_stack.push("NcFormat::openr");
-#endif
+  TRACE("NcFormat::openr");
 
   if(dataFile != NULL) // Already open. Close then re-open
     close(); 
@@ -116,6 +97,11 @@ bool NcFormat::openr(const char *name) {
     return false;
     */
     xDim = NULL;
+  }else if(mesh != NULL) {
+    // Check that the dimension size is correct
+    if(xDim->size() != mesh->LocalNx) {
+      throw BoutException("X dimension incorrect. Expected %d, got %d", mesh->LocalNx, xDim->size());
+    }
   }
   
   if(!(yDim = dataFile->get_dim("y"))) {
@@ -126,6 +112,11 @@ bool NcFormat::openr(const char *name) {
     return false;
     */
     yDim = NULL;
+  }else if(mesh != NULL) {
+    // Check that the dimension size is correct
+    if(yDim->size() != mesh->LocalNy) {
+      throw BoutException("Y dimension incorrect. Expected %d, got %d", mesh->LocalNy, yDim->size());
+    }
   }
   
   if(!(zDim = dataFile->get_dim("z"))) {
@@ -134,6 +125,11 @@ bool NcFormat::openr(const char *name) {
     output.write("INFO: NetCDF file has no 'z' coordinate\n");
 #endif
     zDim = NULL;
+  }else if(mesh != NULL) {
+    // Check that the dimension size is correct
+    if(zDim->size() != mesh->LocalNz) {
+      throw BoutException("Z dimension incorrect. Expected %d, got %d", mesh->LocalNz, zDim->size());
+    }
   }
   
   if(!(tDim = dataFile->get_dim("t"))) {
@@ -151,21 +147,12 @@ bool NcFormat::openr(const char *name) {
 
   fname = copy_string(name);
 
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-
   return true;
 }
 
-bool NcFormat::openw(const string &name, bool append) {
-  return openw(name.c_str(), append);
-}
-
 bool NcFormat::openw(const char *name, bool append) {
-#ifdef CHECK
-  msg_stack.push("NcFormat::openw");
-#endif
+
+  TRACE("NcFormat::openw");
 
   // Create an error object so netCDF doesn't exit
 #ifdef NCDF_VERBOSE
@@ -218,7 +205,7 @@ bool NcFormat::openw(const char *name, bool append) {
 
     /// Test they're the right size (and t is unlimited)
     
-    if((xDim->size() != mesh->ngx) || (yDim->size() != mesh->ngy) || (zDim->size() != mesh->ngz)
+    if((xDim->size() != mesh->LocalNx) || (yDim->size() != mesh->LocalNy) || (zDim->size() != mesh->LocalNz)
        || (!tDim->is_unlimited()) ) {
       delete dataFile;
       dataFile = NULL;
@@ -239,19 +226,19 @@ bool NcFormat::openw(const char *name, bool append) {
 
     /// Add the dimensions
     
-    if(!(xDim = dataFile->add_dim("x", mesh->ngx))) {
+    if(!(xDim = dataFile->add_dim("x", mesh->LocalNx))) {
       delete dataFile;
       dataFile = NULL;
       return false;
     }
   
-    if(!(yDim = dataFile->add_dim("y", mesh->ngy))) {
+    if(!(yDim = dataFile->add_dim("y", mesh->LocalNy))) {
       delete dataFile;
       dataFile = NULL;
       return false;
     }
     
-    if(!(zDim = dataFile->add_dim("z", mesh->ngz))) {
+    if(!(zDim = dataFile->add_dim("z", mesh->LocalNz))) {
       delete dataFile;
       dataFile = NULL;
       return false;
@@ -273,10 +260,6 @@ bool NcFormat::openw(const char *name, bool append) {
 
   fname = copy_string(name);
 
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-
   return true;
 }
 
@@ -289,10 +272,8 @@ bool NcFormat::is_valid() {
 void NcFormat::close() {
   if(dataFile == NULL)
     return;
-
-#ifdef CHECK
-  msg_stack.push("NcFormat::close");
-#endif
+  
+  TRACE("NcFormat::close");
 
 #ifdef NCDF_VERBOSE
   NcError err(NcError::verbose_nonfatal);
@@ -306,10 +287,6 @@ void NcFormat::close() {
   
   free(fname);
   fname = NULL;
-
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 }
 
 void NcFormat::flush() {
@@ -331,9 +308,7 @@ const vector<int> NcFormat::getSize(const char *name) {
   if(!is_valid())
     return size;
 
-#ifdef CHECK
-  msg_stack.push("NcFormat::getSize");
-#endif
+  TRACE("NcFormat::getSize");
 
   NcVar *var;
   
@@ -355,10 +330,6 @@ const vector<int> NcFormat::getSize(const char *name) {
     size.push_back((int) ls[i]);
 
   delete[] ls;
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 
   return size;
 }
@@ -391,9 +362,7 @@ bool NcFormat::read(int *data, const char *name, int lx, int ly, int lz) {
   // Check for valid name
   checkName(name);
 
-#ifdef CHECK
-  msg_stack.push("NcFormat::read(int)");
-#endif
+  TRACE("NcFormat::read(int)");
 
   // Create an error object so netCDF doesn't exit
 #ifdef NCDF_VERBOSE
@@ -408,9 +377,6 @@ bool NcFormat::read(int *data, const char *name, int lx, int ly, int lz) {
 #ifdef NCDF_VERBOSE
     output.write("INFO: NetCDF variable '%s' not found\n", name);
 #endif
-#ifdef CHECK
-    msg_stack.pop();
-#endif
     return false;
   }
   
@@ -423,9 +389,6 @@ bool NcFormat::read(int *data, const char *name, int lx, int ly, int lz) {
     output.write("INFO: NetCDF Could not set cur(%d,%d,%d) for variable '%s'\n", 
 		 x0,y0,z0, name);
 #endif
-#ifdef CHECK
-    msg_stack.pop();
-#endif
     return false;
   }
 
@@ -433,15 +396,8 @@ bool NcFormat::read(int *data, const char *name, int lx, int ly, int lz) {
 #ifdef NCDF_VERBOSE
     output.write("INFO: NetCDF could not read data for '%s'\n", name);
 #endif
-#ifdef CHECK
-    msg_stack.pop();
-#endif
     return false;
   }
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 
   return true;
 }
@@ -457,9 +413,7 @@ bool NcFormat::read(BoutReal *data, const char *name, int lx, int ly, int lz) {
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
 
-#ifdef CHECK
-  msg_stack.push("NcFormat::read(BoutReal)");
-#endif
+  TRACE("NcFormat::read(BoutReal)");
 
   // Create an error object so netCDF doesn't exit
 #ifdef NCDF_VERBOSE
@@ -471,9 +425,6 @@ bool NcFormat::read(BoutReal *data, const char *name, int lx, int ly, int lz) {
   NcVar *var;
   
   if(!(var = dataFile->get_var(name))) {
-#ifdef CHECK
-    msg_stack.pop();
-#endif
     return false;
   }
   
@@ -482,22 +433,12 @@ bool NcFormat::read(BoutReal *data, const char *name, int lx, int ly, int lz) {
   counts[0] = lx; counts[1] = ly; counts[2] = lz;
 
   if(!(var->set_cur(cur))) {
-#ifdef CHECK
-    msg_stack.pop();
-#endif
     return false;
   }
 
   if(!(var->get(data, counts))) {
-#ifdef CHECK
-    msg_stack.pop();
-#endif
     return false;
   }
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 
   return true;
 }
@@ -521,9 +462,7 @@ bool NcFormat::write(int *data, const char *name, int lx, int ly, int lz) {
   if(ly != 0) nd = 2;
   if(lz != 0) nd = 3;
 
-#ifdef CHECK
-  msg_stack.push("NcFormat::write(int)");
-#endif
+  TRACE("NcFormat::write(int)");
 
 #ifdef NCDF_VERBOSE
   NcError err(NcError::verbose_nonfatal);
@@ -556,10 +495,6 @@ bool NcFormat::write(int *data, const char *name, int lx, int ly, int lz) {
   if(!(var->put(data, counts)))
     return false;
 
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-
   return true;
 }
 
@@ -577,9 +512,7 @@ bool NcFormat::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
   // Check for valid name
   checkName(name);
   
-#ifdef CHECK
-  msg_stack.push("NcFormat::write(BoutReal)");
-#endif
+  TRACE("NcFormat::write(BoutReal)");
 
   int nd = 0; // Number of dimensions
   if(lx != 0) nd = 1;
@@ -636,10 +569,6 @@ bool NcFormat::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
 
   if(!(var->put(data, counts)))
     return false;
-
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 
   return true;
 }
@@ -804,9 +733,7 @@ bool NcFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int l
   // Check the name
   checkName(name);
 
-#ifdef CHECK
-  msg_stack.push("NcFormat::write_rec(BoutReal)");
-#endif
+  TRACE("NcFormat::write_rec(BoutReal*)");
 
   int nd = 1; // Number of dimensions
   if(lx != 0) nd = 2;
@@ -828,17 +755,15 @@ bool NcFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int l
     NcType vartype = ncDouble;
     if(lowPrecision)
       vartype = ncFloat;
-  
+    
     var = dataFile->add_var(name, vartype, nd, recDimList);
+    ASSERT1(var != 0);
     
     rec_nr[name] = default_rec; // Starting record
-
+    
     if(!var->is_valid()) {
 #ifdef NCDF_VERBOSE
       output.write("ERROR: NetCDF Could not add variable '%s' to file '%s'\n", name, fname);
-#endif
-#ifdef CHECK
-  msg_stack.pop();
 #endif
       return false;
     }
@@ -885,11 +810,7 @@ bool NcFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int l
   
   // Increment record number
   rec_nr[name] = rec_nr[name] + 1;
-
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-
+  
   return true;
 }
 

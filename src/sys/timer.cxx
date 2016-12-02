@@ -62,8 +62,8 @@ double Timer::resetTime(const string &label) {
 // Static method to clean up all memory
 void Timer::cleanup() {
   // Iterate over map
-  for(map<string, Timer::timer_info*>::iterator it = info.begin(); it != info.end(); it++) {
-    delete it->second;
+  for(const auto& it : info) {
+    delete it.second;
   }
   info.clear();
 }

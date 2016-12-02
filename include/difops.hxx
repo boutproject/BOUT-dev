@@ -49,9 +49,11 @@ const Field2D Grad_par(const Field2D &var, DIFF_METHOD method, CELL_LOC outloc=C
 const Field3D Grad_par(const Field3D &var, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
 const Field3D Grad_par(const Field3D &var, DIFF_METHOD method, CELL_LOC outloc=CELL_DEFAULT);
 
+/*
 // MUSCL schemes. Model dvar/dt = Grad_par(f) with a maximum velocity of Vmax
 const Field3D Grad_par(const Field3D &f, const Field3D &var, const Field2D &Vmax);
 const Field3D Grad_par(const Field3D &f, const Field3D &var, BoutReal Vmax);
+*/
 
 // b0 dot Grad  -  (1/B)b0 x Grad(apar) dot Grad
 const Field3D Grad_parP(const Field3D &apar, const Field3D &f);
@@ -74,10 +76,17 @@ const Field3D Div_par_flux(const Field3D &v, const Field3D &f,
 		      CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
 const Field3D Div_par_flux(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT);
 
+// Divergence of a parallel flow: Div(f*v)
+// Both f and v are interpolated onto cell boundaries
+// using 2nd order central difference, then multiplied together
+// to get the flux at the boundary.
+const Field3D Div_par(const Field3D &f, const Field3D &v);
+
+/*
 // MUSCL scheme. Model dvar/dt = Div_par(f) with a maximum velocity of Vmax
 const Field3D Div_par(const Field3D &f, const Field3D &var, const Field2D &Vmax);
 const Field3D Div_par(const Field3D &f, const Field3D &var, BoutReal Vmax);
-
+*/
 
 // second parallel derivative
 const Field2D Grad2_par2(const Field2D &f);

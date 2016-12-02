@@ -1,10 +1,56 @@
+sudo: required
+dist: trusty
 language: cpp
 compiler: gcc
+python:
+  - "3.5"
+matrix:
+  include:
+  - env: CONFIGURE_OPTIONS='--enable-openmp'
+  - env: CONFIGURE_OPTIONS='--enable-debug'
+  allow_failures:
+  - env: CONFIGURE_OPTIONS='' MPICH_CC=clang MPICH_CXX=clang++
+    compiler: clang
+  - env: CONFIGURE_OPTIONS='--enable-openmp' MPICH_CC=clang MPICH_CXX=clang++
+    compiler: clang
+  - env: CONFIGURE_OPTIONS='--enable-debug' MPICH_CC=clang MPICH_CXX=clang++
+    compiler: clang
+
 before_install:
+  ##################################################
+  # System packages
+  ##################################################
   - sudo apt-get update -qq
-  - sudo apt-get install -y mpich2 libmpich2-dev
-  - sudo apt-get install -y libfftw3-dev libnetcdf-dev
-  - sudo apt-get install -y python-numpy python-netcdf python-scipy
-  - sudo apt-get install -y python-matplotlib
+  - sudo apt-get install -qq openmpi-bin libopenmpi-dev
+                             libfftw3-dev libnetcdf-dev
+                             libhdf5-serial-dev netcdf-bin
+                             hdf5-tools
+
+  ##################################################
+  # Install Conda for python 3
+  ##################################################
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  # Useful for debugging any issues with conda
+  - conda info -a
+  - conda create -q -n test-environment python=3.5 numpy scipy netcdf4
+  - source activate test-environment
+
+  ##################################################
+
+  # Make sure to use the system NetCDF/HDF5 libraries, or we end up
+  # using the Conda libraries, which causes no end of headaches
+  - export CONFIGURE_OPTIONS="--with-netcdf=/usr/bin/nc-config --with-hdf5=/usr/bin/h5cc $CONFIGURE_OPTIONS"
+
 script:
-  - ./configure && make && ./.travis_script.sh
+  # Configure, compile and run test_suite
+  - "./.travis_script.sh"
+
+notifications:
+  # Send a notification to the BOUT++ Slack team
+  slack:
+    secure: keU2ApI8C1M5q1700iNWmhzAQN5iJCciuP6V1lAjVBE8C2C/8mnYK3Pe83wok97buvvfVs5Qjq1+MSYSTCEw+dEye7p+1aBH7qg8C2Jyw+ugFe+6vmijag3v8DqkkzUGyF4X7+ei7YfV4G7u7YAlq/BqzD9e0SA7aASZJ3CF42f4lHKwTe0mnJfqOb8MwCBbSytzdj/iQH/O/pch03CjVObv2A88gaC5YMwYpeTAMMNGZThHsJHcVFCAz4MbvOApKSnykbRbE4AooF6lhUnAg/V40+ews5Q0NhYSLoOcQohLljLTMKAL2oRS34WdunnAEdIighLztFBNI/CKO8uaFBsWZcT2E4qRrajYTnuhCop5fUtk2lsrwUV36WFKLswa74KaSjXgpjvrV1MIidkRztPhYwcJdk9yvEroZ67C4GPBLZ6jZF/nUU9l2toPNkzGkxhDB9r9MIU2l0PJ2d3wRCcZ59jZ/Gr1Bminsyr20AU1JO5tsiO+6UI+7hxXQXtz/1knlmiZ/pXj/3Sp8+KQ/Z0MUeayC0CROFoZt/HekA6z34YcmeN/nMcXCnO7HTZ+bw7LasaIsrHbQ3PYPn8Be2f1hj4sPBnPpruN5FFYYc29c/ek8FET9LLD8a3v1V8P2udy/y5RnDqFskx+OfqKL8tSJk/zSbK/JPCTnx1rfsU=

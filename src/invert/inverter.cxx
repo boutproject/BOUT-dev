@@ -64,7 +64,7 @@ int Inverter::solve(const FieldPerp &b, FieldPerp &x, int flags, int restart, in
   int iterations;
   BoutReal residual;
   
-  int status = gmres_solve(*(b.getData()), *(x.getData()), mesh->ngx*mesh->ngz, 
+  int status = gmres_solve(*(b.getData()), *(x.getData()), mesh->LocalNx*mesh->LocalNz, 
 			   restart, itmax, tol, iterations, residual);
   
   // Iterations and residual now set by GMRES method
@@ -77,7 +77,7 @@ int Inverter::solve(const Field3D &b, Field3D &x,
 		    int restart, int itmax,
 		    BoutReal tol)
 {
-  int ys = 0, ye = mesh->ngy-1;
+  int ys = 0, ye = mesh->LocalNy-1;
   // NOTE: REFINE THIS TO ONLY SOLVE IN BOUNDARY Y CELLS
   
   FieldPerp xperp;
@@ -96,8 +96,8 @@ void Inverter::A(BoutReal *b, BoutReal *x)
 {
   FieldPerp Fb, Fx;
   
-  Fb.setData(&b);
-  Fx.setData(&x);
+  //Fb.setData(&b);
+  //Fx.setData(&x);
   
   if(parallel) {
     // Communicate Fx
@@ -148,10 +148,12 @@ void Inverter::applyBoundary(FieldPerp &f, int flags)
   // Set boundaries in Fourier space (to be compatible with
   // invert_laplace)
   
-  int nin = mesh->xstart; // Number of inner points
-  int nout = mesh->ngx-mesh->xend-1; // Number of outer points
+  Coordinates *coord = mesh->coordinates();
   
-  int ncz = mesh->ngz-1;
+  int nin = mesh->xstart; // Number of inner points
+  int nout = mesh->LocalNx-mesh->xend-1; // Number of outer points
+  
+  int ncz = mesh->LocalNz;
   
   int jy = f.getIndex();
 
@@ -167,36 +169,36 @@ void Inverter::applyBoundary(FieldPerp &f, int flags)
   //////////////////////////////////////
   // Inner boundary
   
-  ZFFT(f[nin+1], mesh->zShift[nin+1][jy], cdata[0]);
-  ZFFT(f[nin], mesh->zShift[nin][jy], cdata[1]);
+  ZFFT(f[nin+1], mesh->zShift(nin+1,jy), cdata[0]);
+  ZFFT(f[nin], mesh->zShift(nin,jy), cdata[1]);
   for(int i=0;i<=nin+1;i++)
-    h[i] = mesh->dx[nin+1-i][jy];
+    h[i] = coord->dx(nin+1-i,jy);
   
   int mask = INVERT_DC_IN_GRAD | INVERT_AC_IN_GRAD | INVERT_AC_IN_LAP;
   calcBoundary(cdata, nin, h, flags & mask);
   
   for(int i=0;i<nin;i++)
-    ZFFT_rev(cdata[2+i], mesh->zShift[nin-1-i][jy], f[nin-1-i]);
+    ZFFT_rev(cdata[2+i], mesh->zShift(nin-1-i,jy), f[nin-1-i]);
   
   //////////////////////////////////////
   // Outer boundary
   
   int xe = mesh->xend;
-  ZFFT(f[xe-1], mesh->zShift[xe-1][jy], cdata[0]);
-  ZFFT(f[xe], mesh->zShift[xe][jy], cdata[1]);
+  ZFFT(f[xe-1], mesh->zShift(xe-1,jy), cdata[0]);
+  ZFFT(f[xe], mesh->zShift(xe,jy), cdata[1]);
   for(int i=0;i<=nout+1;i++)
-    h[i] = mesh->dx[xe-1+i][jy];
+    h[i] = coord->dx(xe-1+i,jy);
   
   mask = INVERT_DC_OUT_GRAD | INVERT_AC_OUT_GRAD | INVERT_AC_OUT_LAP;
   calcBoundary(cdata, nout, h, flags & mask);
   
   for(int i=0;i<nout;i++)
-    ZFFT_rev(cdata[2+i], mesh->zShift[xe+1+i][jy], f[xe+1+i]);
+    ZFFT_rev(cdata[2+i], mesh->zShift(xe+1+i,jy), f[xe+1+i]);
 }
 
 void Inverter::calcBoundary(dcomplex **cdata, int n, BoutReal *h, int flags)
 {
-  int ncz = mesh->ngz-1;
+  int ncz = mesh->LocalNz;
   
   // DC component
   if(flags & (INVERT_DC_IN_GRAD | INVERT_DC_OUT_GRAD)) {

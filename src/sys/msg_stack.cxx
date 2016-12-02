@@ -27,6 +27,7 @@
 #include <msg_stack.hxx>
 #include <output.hxx>
 #include <string.h>
+#include <string>
 #include <stdarg.h>
 
 MsgStack::MsgStack()
@@ -64,11 +65,10 @@ int MsgStack::push(const char *s, ...)
   if(s != NULL) {
 
     va_start(ap, s);
-      vsprintf(buffer, s, ap);
+      vsnprintf(buffer,MSG_MAX_SIZE, s, ap);
     va_end(ap);
     
     strncpy(m->str, buffer, MSG_MAX_SIZE);
-    m->str[MSG_MAX_SIZE] = '\0';
 
     //output.write("Pushing '%s' -> %d\n", buffer, nmsg);
   }else
@@ -108,15 +108,20 @@ void MsgStack::clear() {
 }
 
 void MsgStack::dump() {
-  output.write("====== Back trace ======\n");
+  output << this->getDump();
+}
 
+std::string MsgStack::getDump() {
+  std::string res = "====== Back trace ======\n";
+  //output.write("====== Back trace ======\n");
   for(int i=nmsg-1;i>=0;i--) {
     if(msg[i].str[0] != '\0') {
-      output.write(" -> ");
-      output.write(msg[i].str);
-      output.write("\n");
+      res+=" -> ";
+      res+=msg[i].str;
+      res+="\n";
     }
   }
+  return res;
 }
 
 #endif

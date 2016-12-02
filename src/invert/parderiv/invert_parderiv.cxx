@@ -38,7 +38,7 @@ const Field2D InvertPar::solve(const Field2D &f) {
   Field3D var(f);
   
   var = solve(var);
-  return var.DC();
+  return DC(var);
 }
 
   

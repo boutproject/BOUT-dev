@@ -6,7 +6,7 @@ MZ = 16
 ZMAX = 1
 
 MXG = 2
-MYG = 0
+MYG = 1
 
 [mesh]
 
@@ -17,10 +17,10 @@ symmetricGlobalX = true
 
 ny = 1
 
-[ddx]
+[mesh:ddx]
 upwind=c2
 
-[ddz]
+[mesh:ddz]
 upwind=c2
 
 [solver]

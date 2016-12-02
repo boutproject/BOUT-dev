@@ -1,5 +1,5 @@
 /*!************************************************************************
- * \file fft.cpp
+ * \file fft_fftw.cxx
  *
  * \brief FFT routines using external libraries
  *
@@ -172,58 +172,15 @@ void cfft(dcomplex *cv, int length, int isign)
 }
 #endif
 
-
-void ZFFT(dcomplex *cv, BoutReal zoffset, int isign, bool shift)
-{
-  int jz, ikz;
-  BoutReal kwave;
-
-  int ncz = mesh->ngz-1;
-  if((isign > 0) && (mesh->ShiftXderivs) && shift) {
-    // Reverse FFT
-    for(jz=0;jz<ncz;jz++) {
-      if (jz <= ncz/2) ikz=jz; else ikz=jz-ncz;
-      kwave=ikz*2.0*PI/mesh->zlength(); // wave number is 1/[rad]
-
-      // Multiply by EXP(ik*zoffset)
-      cv[jz] *= dcomplex(cos(kwave*zoffset) , sin(kwave*zoffset));
-    }
-  }
-
-  cfft(cv, ncz, isign);
-
-  if((isign < 0) && (mesh->ShiftXderivs) && shift) {
-    // Forward FFT
-    for(jz=0;jz<ncz;jz++) {
-      if (jz <= ncz/2) ikz=jz; else ikz=jz-ncz;
-      kwave=ikz*2.0*PI/mesh->zlength(); // wave number is 1/[rad]
-
-      // Multiply by EXP(-ik*zoffset)
-      cv[jz] *= dcomplex(cos(kwave*zoffset) , -sin(kwave*zoffset));
-    }
-  }
-}
 /***********************************************************
  * Real FFTs
  ***********************************************************/
 
 #ifndef _OPENMP
 // Serial code
+
+
 void rfft(const BoutReal *in, int length, dcomplex *out) {
-  /* Function: rfft
-   * Purpose:  Take the FFT of a real variable using fftw_forward. That is
-   *           out_k = sum_{j=0}^(length-1) in_j*exp(-2*pi*j*k*sqrt(-1)/length)
-   *           Thus, out_k must be divided by 'length' in order for
-   *           DFT[IDFT[in]] = in
-   *           where IDFT is the inverse fourier transform
-   *
-   * Input:
-   * *in      - Pointer to the 1D array to take the fourier transform of
-   * length   - Number of points in the input array
-   *
-   * Output:
-   * *out      - Pointer to the complex 1D array which is the FFT of *in
-   */
   // static variables initialized once
   static double *fin;
   static fftw_complex *fout;
@@ -242,7 +199,7 @@ void rfft(const BoutReal *in, int length, dcomplex *out) {
 
     fft_init();
 
-    // Initilaize the input for the fourier transformation
+    // Initialize the input for the fourier transformation
     fin = (double*) fftw_malloc(sizeof(double) * length);
     // Initialize the output of the fourier transformation
     /* NOTE: Only the non-redundant output is given
@@ -277,20 +234,7 @@ void rfft(const BoutReal *in, int length, dcomplex *out) {
     out[i] = dcomplex(fout[i][0], fout[i][1]) / ((double) n); // Normalise
 }
 
-void irfft(dcomplex *in, int length, BoutReal *out)
-{
-  /* Function: irfft
-   * Purpose:  Take the inverse FFT of a complex variable using fftw_backward.
-   *           That is
-   *           out_k = sum_{j=0}^(length-1) in_j*exp(2*pi*j*k*sqrt(-1)/length)
-   *
-   * Input:
-   * *in      - Pointer to the 1D array to take the fourier transform of
-   * length   - Number of points in the output array
-   *
-   * Output:
-   * *out      - Pointer to the complex 1D array which is the FFT of *in
-   */
+void irfft(const dcomplex *in, int length, BoutReal *out) {
   // static variables initialized once
   static fftw_complex *fin;
   static double *fout;
@@ -348,7 +292,7 @@ void irfft(dcomplex *in, int length, BoutReal *out)
 
 #else
 // Parallel thread-safe version of rfft and irfft
-void rfft(BoutReal *in, int length, dcomplex *out) {
+void rfft(const BoutReal *in, int length, dcomplex *out) {
   static double *finall;
   static fftw_complex *foutall;
   static fftw_plan *p;
@@ -405,8 +349,7 @@ void rfft(BoutReal *in, int length, dcomplex *out) {
     out[i] = dcomplex(fout[i][0], fout[i][1]) / ((double) length); // Normalise
 }
 
-void irfft(dcomplex *in, int length, BoutReal *out)
-{
+void irfft(const dcomplex *in, int length, BoutReal *out) {
   static fftw_complex *finall;
   static double *foutall;
   static fftw_plan *p;
@@ -464,82 +407,9 @@ void irfft(dcomplex *in, int length, BoutReal *out)
 }
 #endif
 
-void ZFFT(const BoutReal *in, BoutReal zoffset, dcomplex *cv, bool shift)
-{
-  /* Function: ZFFT
-   * Purpose:  Take the FFT of a real variable, and add an eventual offset from
-   *           the shifted metric
-   *
-   * Input:
-   * *in      - Pointer to the 1D array to take the fourier transform of
-   * zoffset  - The offset
-   * shift    - Whether or not a shift should be added to the wave
-   *
-   * Output:
-   * *cv      - Pointer to the complex 1D array which is the FFT of *in
-   */
-  int jz;
-  BoutReal kwave;
-
-  int ncz = mesh->ngz-1; // Number of points in z (counting from 1)
-
-  // Taking the fft of the real input in, and storing the output in cv
-  rfft(in, ncz, cv);
-
-  // If there are shifted derivates and a specified shift
-  if((mesh->ShiftXderivs) && shift) {
-    // Forward FFT
-    for(jz=0;jz<=ncz/2;jz++) {
-      // Wave number (will be different than the index only if we are taking a
-      // part of the z-domian [and not from 0 to 2*pi])
-      kwave=jz*2.0*PI/mesh->zlength();
-
-      // Multiply by EXP(-ik*zoffset)
-      cv[jz] *= dcomplex(cos(kwave*zoffset) , -sin(kwave*zoffset));
-    }
-  }
-}
-
-void ZFFT_rev(dcomplex *cv, BoutReal zoffset, BoutReal *out, bool shift)
-{
-  /* Function: ZFFT_rev
-   * Purpose:  Take the FFT of a real variable, and add an eventual offset from
-   *           the shifted metric
-   *
-   * Input:
-   * *cv      - Pointer to the 1D array to take the inverse fourier transform of
-   * zoffset  - The offset
-   * shift    - Whether or not a shift should be added to the wave
-   *
-   * Output:
-   * *out      - Pointer to the complex 1D array which is the inverse FFT of *cv
-   */
-  int jz;
-  BoutReal kwave;
-
-  int ncz = mesh->ngz-1; // Number of points in z (counting from 1)
-
-  // If there are shifted derivates and a specified shift
-  if((mesh->ShiftXderivs) && shift) {
-    // Only do positive (non-redunant) frequencies
-    for(jz=0;jz<=ncz/2;jz++) {
-      // Wave number (will be different than the index only if we are taking a
-      // part of the z-domian [and not from 0 to 2*pi])
-      kwave=jz*2.0*PI/mesh->zlength();
-
-      // Multiply by EXP(ik*zoffset)
-      cv[jz] *= dcomplex(cos(kwave*zoffset) , sin(kwave*zoffset));
-    }
-  }
-
-  // Taking the inverse fft of the complex input cv, and storing it in out
-  irfft(cv, ncz, out);
-}
-
-
 //  Discrete sine transforms (B Shanahan)
 
-void DST(BoutReal *in, int length, dcomplex *out) {
+void DST(const BoutReal *in, int length, dcomplex *out) {
   static double *fin;
   static fftw_complex *fout;
   static fftw_plan p;

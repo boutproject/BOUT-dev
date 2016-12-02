@@ -171,6 +171,8 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
 
   BoutReal t0,t1;
   
+  Coordinates *coords = mesh->coordinates();
+
   yindex = b_in.getIndex();
   int level = kMG->mglevel-1;
   int lzz = kMG->lnz[level];
@@ -207,7 +209,7 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
     int i2 = i-1+mesh->xstart;
     for (int k=1; k<lzz+1; k++) {
       int k2 = k-1;
-      b[i*lz2+k] = b_in[i2][k2];
+      b[i*lz2+k] = b_in(i2, k2);
     }
   }
   
@@ -218,7 +220,7 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
         // guard cells of x0 specify gradient to set at inner boundary
         for (int k=1; k<lzz+1; k++) {
           int k2 = k-1;
-	  x[k] = -x0[mesh->xstart-1][k2]*sqrt(mesh->g_11[mesh->xstart][yindex])*mesh->dx[mesh->xstart][yindex]; 
+	  x[k] = -x0(mesh->xstart-1, k2)*sqrt(coords->g_11(mesh->xstart, yindex))*coords->dx(mesh->xstart, yindex); 
         }
       }
       else {
@@ -235,7 +237,7 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
         // guard cells of x0 specify value to set at inner boundary
         for (int k=1; k<lzz+1; k++) {
           int k2 = k-1;
-          x[k] = 2.*x0[mesh->xstart-1][k2]; 
+          x[k] = 2.*x0(mesh->xstart-1, k2); 
         // this is the value to set at the inner boundary
         }
       }
@@ -255,7 +257,7 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
         // guard cells of x0 specify gradient to set at outer boundary
         for (int k=1; k<lzz+1; k++) {
           int k2 = k-1;
-        x[(lxx+1)*lz2+k] = x0[mesh->xend+1][k2]*sqrt(mesh->g_11[mesh->xend][yindex])*mesh->dx[mesh->xend][yindex]; 
+        x[(lxx+1)*lz2+k] = x0(mesh->xend+1, k2)*sqrt(coords->g_11(mesh->xend, yindex))*coords->dx(mesh->xend, yindex); 
         // this is the value to set the gradient to at the outer boundary
         }
       }
@@ -273,7 +275,7 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
         // guard cells of x0 specify value to set at outer boundary
         for (int k=1; k<lzz+1; k++) {
           int k2 = k-1;
-          x[(lxx+1)*lz2+k]=2.*x0[mesh->xend+1][k2]; 
+          x[(lxx+1)*lz2+k]=2.*x0(mesh->xend+1, k2); 
           // this is the value to set at the outer boundary
         }
       }
@@ -379,7 +381,7 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
     int i2 = i-1+mesh->xstart;
     for (int k=1; k<lzz+1; k++) {
       int k2 = k-1;
-      result[i2][k2] = x[i*lz2+k];
+      result(i2, k2) = x[i*lz2+k];
     }
   }
   if (xProcI == 0) {
@@ -388,7 +390,7 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
       int i2 = -1+mesh->xstart;
       for (int k=1; k<lzz+1; k++) {
         int k2 = k-1;
-        result[i2][k2] = x[lz2+k] - x[k];
+        result(i2, k2) = x[lz2+k] - x[k];
       }
     }
     else {
@@ -396,7 +398,7 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
       int i2 = -1+mesh->xstart;
       for (int k=1; k<lzz+1; k++) {
         int k2 = k-1;
-        result[i2][k2] = x[k]- x[lz2+k];
+        result(i2, k2) = x[k]- x[lz2+k];
       }
     }
   }
@@ -406,7 +408,7 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
       int i2 = lxx+mesh->xstart;
       for (int k=1; k<lzz+1; k++) {
         int k2 = k-1;
-        result[i2][k2] = x[lxx*lz2+k]-x[(lxx+1)*lz2+k];
+        result(i2, k2) = x[lxx*lz2+k]-x[(lxx+1)*lz2+k];
       }
     }
     else {
@@ -414,7 +416,7 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
       int i2 = lxx+mesh->xstart;
       for (int k=1; k<lzz+1; k++) {
         int k2 = k-1;
-        result[i2][k2] = x[(lxx+1)*lz2+k]-x[lxx*lz2+k];
+        result(i2, k2) = x[(lxx+1)*lz2+k]-x[lxx*lz2+k];
       }
     }
   }
@@ -429,6 +431,7 @@ void LaplaceMultigrid::generateMatrixF(int level) {
 
   // Set (fine-level) matrix entries
 
+  Coordinates *coords = mesh->coordinates();
   int i2,k2;
   BoutReal *mat;
   mat = kMG->matmg[level];
@@ -444,35 +447,35 @@ void LaplaceMultigrid::generateMatrixF(int level) {
       int k2p  = (k2+1)%Nz_global;
       int k2m  = (k2+Nz_global-1)%Nz_global;
       
-      BoutReal ddx_C = (C2[i2+1][yindex][k2] - C2[i2-1][yindex][k2])/2./mesh->dx[i2][yindex]/C1[i2][yindex][k2];
-      BoutReal ddz_C = (C2[i2][yindex][k2p] - C2[i2][yindex][k2m]) /2./mesh->dz/C1[i2][yindex][k2];
+      BoutReal ddx_C = (C2(i2+1, yindex, k2) - C2(i2-1, yindex, k2))/2./coords->dx(i2, yindex)/C1(i2, yindex, k2);
+      BoutReal ddz_C = (C2(i2, yindex, k2p) - C2(i2, yindex, k2m)) /2./coords->dz/C1(i2, yindex, k2);
       
-      BoutReal ddx = D[i2][yindex][k2]*mesh->g11[i2][yindex]/mesh->dx[i2][yindex]/mesh->dx[i2][yindex]; 
+      BoutReal ddx = D(i2, yindex, k2)*coords->g11(i2, yindex)/coords->dx(i2, yindex)/coords->dx(i2, yindex); 
                // coefficient of 2nd derivative stencil (x-direction)
       
-      BoutReal ddz = D[i2][yindex][k2]*mesh->g33[i2][yindex]/mesh->dz/mesh->dz; 
+      BoutReal ddz = D(i2, yindex, k2)*coords->g33(i2, yindex)/coords->dz/coords->dz; 
               // coefficient of 2nd derivative stencil (z-direction)
       
-      BoutReal dxdz = D[i2][yindex][k2]*mesh->g13[i2][yindex]/mesh->dx[i2][yindex]/mesh->dz/2.; 
+      BoutReal dxdz = D(i2, yindex, k2)*coords->g13(i2, yindex)/coords->dx(i2, yindex)/coords->dz/2.; 
               // coefficient of mixed derivative stencil (could assume zero, at least initially, 
               // if easier; then check this is true in constructor)
       
-      BoutReal dxd = (D[i2][yindex][k2]*2.*mesh->G1[i2][yindex]
-        + mesh->g11[i2][yindex]*ddx_C
-        + mesh->g13[i2][yindex]*ddz_C // (could assume zero, at least initially, if easier; then check this is true in constructor)
-      )/mesh->dx[i2][yindex]; // coefficient of 1st derivative stencil (x-direction)
+      BoutReal dxd = (D(i2, yindex, k2)*2.*coords->G1(i2, yindex)
+        + coords->g11(i2, yindex)*ddx_C
+        + coords->g13(i2, yindex)*ddz_C // (could assume zero, at least initially, if easier; then check this is true in constructor)
+      )/coords->dx(i2, yindex); // coefficient of 1st derivative stencil (x-direction)
       
-      BoutReal dzd = (D[i2][yindex][k2]*2.*mesh->G3[i2][yindex]
-        + mesh->g33[i2][yindex]*ddz_C
-        + mesh->g13[i2][yindex]*ddx_C // (could assume zero, at least initially, if easier; then check this is true in constructor)
-      )/mesh->dz; // coefficient of 1st derivative stencil (z-direction)
+      BoutReal dzd = (D(i2, yindex, k2)*2.*coords->G3(i2, yindex)
+        + coords->g33(i2, yindex)*ddz_C
+        + coords->g13(i2, yindex)*ddx_C // (could assume zero, at least initially, if easier; then check this is true in constructor)
+      )/coords->dz; // coefficient of 1st derivative stencil (z-direction)
       
       int ic = i*(llz+2)+k;
       mat[ic*9] = dxdz/4.;
       mat[ic*9+1] = ddx - dxd/2.;
       mat[ic*9+2] = -dxdz/4.;
       mat[ic*9+3] = ddz - dzd/2.;
-      mat[ic*9+4] = A[i2][yindex][k2] - 2.*(ddx+ddz); // coefficient of no-derivative component
+      mat[ic*9+4] = A(i2, yindex, k2) - 2.*(ddx+ddz); // coefficient of no-derivative component
       mat[ic*9+5] = ddz + dzd/2.;
       mat[ic*9+6] = -dxdz/4.;
       mat[ic*9+7] = ddx+dxd/2.;

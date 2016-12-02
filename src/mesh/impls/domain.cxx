@@ -23,8 +23,7 @@ DomainIterator& DomainIterator::operator++() {
     Domain* d = stack.front();
     
     // Go through all boundaries of this domain
-    for(list<Domain::Bndry*>::iterator bit = d->boundary.begin(); bit != d->boundary.end(); bit++) {
-      Domain::Bndry* b = *bit;
+    for(const auto& b : d->boundary) {
       Domain *neighbour = b->getNeighbour(d);
       if((neighbour != NULL) && !visited(neighbour)) {
         // If neighbour exists, and hasn't been visited
@@ -46,9 +45,8 @@ Domain::Domain(int NX, int NY) : nx(NX), ny(NY) {}
 Domain::Domain(int NX, int NY, const string &Name) : nx(NX), ny(NY), name(Name) {}
 
 Domain::~Domain() {
-  for(list<Bndry*>::iterator it=boundary.begin(); it != boundary.end(); it++) {
+  for(const auto& b : boundary) {
     // Remove pointers to here from neighbours
-    Domain::Bndry *b = *it;
     if(b->from == this)
       b->from = NULL;
     if(b->to == this)
@@ -85,40 +83,40 @@ void Domain::addBoundary(Bndry *b) {
     len = ny;
   if( b->onSide(this, s) ) {
     if( (b->getMin(s) < 0) || (b->getMax(s) >= len) ) {
-      fprintf(stderr, "%x: (%d, %d) %d  %d [%d, %d]",
-              this, nx, ny, s, len, b->getMin(s), b->getMax(s));
+      fprintf(stderr, "%p: (%d, %d) %d  %d [%d, %d]",
+              (void*)this, nx, ny, s, len, b->getMin(s), b->getMax(s));
       throw BoutException("Invalid range");
     }
   }
   s = reverse(s);
   if( b->onSide(this, s) ) {
     if( (b->getMin(s) < 0) || (b->getMax(s) >= len) ) {
-      fprintf(stderr, "%x: (%d, %d) %d  %d [%d, %d]",
-              this, nx, ny, s, len, b->getMin(s), b->getMax(s));
+      fprintf(stderr, "%p: (%d, %d) %d  %d [%d, %d]",
+              (void*)this, nx, ny, s, len, b->getMin(s), b->getMax(s));
       throw BoutException("Invalid range");
     }
   }
 
   // Check that the range doesn't overlap an existing boundary
-  for(list<Bndry*>::iterator it=boundary.begin(); it != boundary.end(); it++) {
-    if( ((*it)->side != b->side) && ((*it)->side != reverse(b->side)) )
+  for(const auto& bndry : boundary) {
+    if( (bndry->side != b->side) && (bndry->side != reverse(b->side)) )
       continue;
     
     BndrySide s = b->side;
-    if((*it)->onSide(this, s) && b->onSide(this, s)) {
+    if(bndry->onSide(this, s) && b->onSide(this, s)) {
       // Same side as an existing boundary
       // Check for overlap
-      if( !( ((*it)->getMax(s) < b->getMin(s)) || (b->getMax(s) < (*it)->getMin(s)) ) ) {
-        fprintf(stderr, "%x: (%d, %d) %d [%d, %d] [%d, %d]",
-                this, nx, ny, s, (*it)->getMin(s), (*it)->getMax(s), b->getMin(s), b->getMax(s));
+      if( !( (bndry->getMax(s) < b->getMin(s)) || (b->getMax(s) < bndry->getMin(s)) ) ) {
+        fprintf(stderr, "%p: (%d, %d) %d [%d, %d] [%d, %d]",
+                (void *)this, nx, ny, s, bndry->getMin(s), bndry->getMax(s), b->getMin(s), b->getMax(s));
         throw BoutException("Boundary ranges overlap");
       }
     }
     s = reverse(s);
-    if((*it)->onSide(this, s) && b->onSide(this, s)) {
+    if(bndry->onSide(this, s) && b->onSide(this, s)) {
       // Same side as an existing boundary
       // Check for overlap
-      if( !( ((*it)->getMax(s) < b->getMin(s)) || (b->getMax(s) < (*it)->getMin(s)) ) )
+      if( !( (bndry->getMax(s) < b->getMin(s)) || (b->getMax(s) < bndry->getMin(s)) ) )
         throw BoutException("Boundary ranges overlap");
     }
   }
@@ -128,7 +126,7 @@ void Domain::addBoundary(Bndry *b) {
 }
 
 void Domain::removeBoundary(Bndry *b) {
-  int s = boundary.size();
+  size_t s = boundary.size();
   boundary.remove(b);
   assert(boundary.size() == s-1);
 }
@@ -152,13 +150,12 @@ Domain* Domain::splitX(int xind) {
   // Copy the list of boundaries so not iterating over a changing list
   list<Bndry*> oldboundary(boundary);
   
-  for(list<Bndry*>::iterator it=oldboundary.begin(); it != oldboundary.end(); it++) {
-    Bndry *b = *it;
-    
+  for(const auto& b : oldboundary) {
+
     if(b->onSide(this, xhigh)) {
       // Move to new domain
       b->setNeighbour(xlow, d);
-    }else if(b->onSide(this, ylow)) {
+    } else if(b->onSide(this, ylow)) {
       int start = b->getMin(ylow);
       int end   = b->getMax(ylow);
       
@@ -177,7 +174,7 @@ Domain* Domain::splitX(int xind) {
                         0, end - nx,
                         b->getShift(ylow)+nx, b->zshift);
       }
-    }else if(b->onSide(this, yhigh)) {
+    } else if(b->onSide(this, yhigh)) {
       int start = b->getMin(yhigh);
       int end   = b->getMax(yhigh);
       
@@ -185,7 +182,7 @@ Domain* Domain::splitX(int xind) {
         // Move to new domain
         b->shiftInds(yhigh, -nx);
         b->setNeighbour(ylow, d);
-      }else if(end >= nx) {
+      } else if(end >= nx) {
         // Crosses cut, so need to split into two
         b->end -= end - nx + 1;      // Make boundary smaller
         
@@ -219,12 +216,11 @@ Domain* Domain::splitY(int yind) {
   // Copy the list of boundaries
   list<Bndry*> oldboundary(boundary);
   
-  for(list<Bndry*>::iterator it=oldboundary.begin(); it != oldboundary.end(); it++) {
-    Bndry *b = *it;
+  for(const auto& b : oldboundary) {
     if(b->onSide(this, yhigh)) {
       // Move to new domain
       b->setNeighbour(ylow, d);
-    }else if(b->onSide(this, xlow)) {
+    } else if(b->onSide(this, xlow)) {
       int start = b->getMin(xlow);
       int end   = b->getMax(xlow);
       
@@ -245,7 +241,7 @@ Domain* Domain::splitY(int yind) {
                         b->getShift(xlow)+ny, b->zshift);
 
       }
-    }else if(b->onSide(this, xhigh)) {
+    } else if(b->onSide(this, xhigh)) {
       int start = b->getMin(xhigh);
       int end   = b->getMax(xhigh);
       
@@ -283,8 +279,7 @@ std::ostream& operator<<(std::ostream &os, const Domain &d) {
     os << std::endl;
     for(int i=0;i<4;i++) {
       os << "\tBoundary "<< i << std::endl;
-      for(list<Domain::Bndry*>::const_iterator it=d.boundary.begin(); it != d.boundary.end(); it++) {
-        Domain::Bndry *b = *it;
+      for(const auto& b : d.boundary) {
         if(b->onSide(&d, (Domain::BndrySide) i)) {
           os << "\t\tRange: " << b->getMin((Domain::BndrySide)i) << " -> " << b->getMax((Domain::BndrySide)i)
              << " to domain " << b->getNeighbour(&d) << std::endl;

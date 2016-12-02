@@ -5,6 +5,7 @@
 #include "mpi.h"
 
 #include <bout/mesh.hxx>
+#include "unused.hxx"
 
 #include <list>
 #include <vector>
@@ -24,7 +25,6 @@ class BoutMesh : public Mesh {
   /////////////////////////////////////////////
   // Communicate variables
   
-  int communicate(FieldGroup &g);
   comm_handle send(FieldGroup &g);
   int wait(comm_handle handle);
   
@@ -47,7 +47,7 @@ class BoutMesh : public Mesh {
   comm_handle irecvXOut(BoutReal *buffer, int size, int tag);
   comm_handle irecvXIn(BoutReal *buffer, int size, int tag);
   
-  MPI_Comm getXcomm() const {return comm_x; }
+  MPI_Comm getXcomm(int UNUSED(jy)) const {return comm_x; }
   MPI_Comm getYcomm(int jx) const;
   
   bool periodicY(int jx, BoutReal &ts) const;
@@ -73,33 +73,31 @@ class BoutMesh : public Mesh {
   comm_handle irecvYInIndest(BoutReal *buffer, int size, int tag);
   comm_handle irecvYInOutdest(BoutReal *buffer, int size, int tag);
   
-  /////////////////////////////////////////////
-  // Y-Z communications
-
-  const Field2D averageY(const Field2D&);
-  const Field3D averageY(const Field3D &f);
-  const Field2D averageX(const Field2D &f);
-  const Field3D averageX(const Field3D &f);
-
   // Boundary iteration
   const RangeIterator iterateBndryLowerY() const;
   const RangeIterator iterateBndryUpperY() const;
 
   // Boundary regions
   vector<BoundaryRegion*> getBoundaries();
+  vector<BoundaryRegionPar*> getBoundariesPar();
+  void addBoundaryPar(BoundaryRegionPar* bndry);
 
   const Field3D smoothSeparatrix(const Field3D &f);
 
   BoutReal GlobalX(int jx) const;
   BoutReal GlobalY(int jy) const;
+  BoutReal GlobalX(BoutReal jx) const;
+  BoutReal GlobalY(BoutReal jy) const;
 
   void outputVars(Datafile &file);
 
   int XGLOBAL(int xloc) const;
   int YGLOBAL(int yloc) const;
+  int XGLOBAL(BoutReal xloc, BoutReal &xglo) const;
+  int YGLOBAL(BoutReal yloc, BoutReal &yglo) const;
 
   // poloidal lowpass filtering for n=0 mode
-  void slice_r_y(BoutReal *fori, BoutReal * fxy, int ystart, int ncy);
+  void slice_r_y(const BoutReal *fori, BoutReal * fxy, int ystart, int ncy);
   void get_ri( dcomplex * ayn, int ncy, BoutReal * ayn_Real, BoutReal * ayn_Imag);
   void set_ri( dcomplex * ayn, int ncy, BoutReal * ayn_Real, BoutReal * ayn_Imag);
   const Field2D lowPass_poloidal(const Field2D &var,int mmax);
@@ -108,9 +106,6 @@ class BoutMesh : public Mesh {
   const Field3D Switch_YZ(const Field3D &var);
   const Field3D Switch_XZ(const Field3D &var);
   
-  BoutReal Average_XY(const Field2D &var);
-  BoutReal Vol_Integral(const Field2D &var);
-
  private:
   Options *meshoptions; ///< Handle for mesh options
 
@@ -155,12 +150,12 @@ class BoutMesh : public Mesh {
   
   // Settings
   bool TwistShift;   // Use a twist-shift condition in core?
-  //int  TwistOrder;   // Order of twist-shift interpolation
   
   bool symmetricGlobalX; ///< Use a symmetric definition in GlobalX() function
   bool symmetricGlobalY;
 
   int  zperiod; 
+  BoutReal zlength; // Needed for reading 3D variables
   BoutReal ZMIN, ZMAX;   // Range of the Z domain (in fractions of 2pi)
   
   int  MXG, MYG;     // Boundary sizes
@@ -171,6 +166,7 @@ class BoutMesh : public Mesh {
   void topology();
 
   vector<BoundaryRegion*> boundary; // Vector of boundary regions
+  vector<BoundaryRegionPar*> par_boundary; // Vector of parallel boundary regions
   
   //////////////////////////////////////////////////
   // Communications
@@ -187,7 +183,7 @@ class BoutMesh : public Mesh {
     bool in_progress;
     
     /// List of fields being communicated
-    vector<FieldData*> var_list;
+    FieldGroup var_list;
   };
   void free_handle(CommHandle *h);
   CommHandle* get_handle(int xlen, int ylen);
@@ -210,9 +206,9 @@ class BoutMesh : public Mesh {
   void post_receive(CommHandle &ch);
 
   /// Take data from objects and put into a buffer
-  int pack_data(vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer);
+  int pack_data(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer);
   /// Copy data from a buffer back into the fields
-  int unpack_data(vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer);
+  int unpack_data(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer);
 };
 
 #endif // __BOUTMESH_H__

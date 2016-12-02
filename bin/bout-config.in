@@ -21,7 +21,6 @@ prefix="@PREFIX@"
 idlpath="@IDLCONFIGPATH@"
 pythonpath="@PYTHONCONFIGPATH@"
 
-has_pdb="@HAS_PDB@"
 has_netcdf="@HAS_NETCDF@"
 has_pnetcdf="@HAS_PNETCDF@"
 has_hdf5="@HAS_HDF5@"
@@ -62,8 +61,7 @@ Available values for OPTION include:
   --prefix    Install prefix
   --idl       IDL path
   --python    Python path
-  
-  --has-pdb     PDB file support
+
   --has-netcdf  NetCDF file support
   --has-pnetcdf Parallel NetCDF file support
   --has-hdf5    HDF5 file support
@@ -102,7 +100,6 @@ all()
         echo "  --idl         -> $idlpath"
         echo "  --python      -> $pythonpath"
         echo
-        echo "  --has-pdb     -> $has_pdb"
         echo "  --has-netcdf  -> $has_netcdf"
         echo "  --has-pnetcdf -> $has_pnetcdf"
         echo "  --has-hdf5    -> $has_hdf5"
@@ -187,10 +184,6 @@ while test $# -gt 0; do
 
     --python)
         echo $pythonpath
-        ;;
-
-    --has-pdb)
-        echo $has_pdb
         ;;
 
     --has-netcdf)

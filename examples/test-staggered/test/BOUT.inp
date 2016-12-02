@@ -15,7 +15,7 @@ dy = 0.0625
 ixseps1 = 1000 # Make domain periodic
 ixseps2 = 1000 
 
-[ddy]
+[mesh:ddy]
 
 first = c2
 flux = u1

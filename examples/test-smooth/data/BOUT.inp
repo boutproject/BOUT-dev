@@ -12,9 +12,7 @@ grid = "test_smooth.nc"
 
 dump_format = "nc"  # NetCDF format. Alternative is "pdb"
 
-TwistShift = false
-Ballooning = false
-
 [mesh]
 symmetricGlobalX = false
+
 

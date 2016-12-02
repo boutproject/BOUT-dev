@@ -49,8 +49,8 @@ InvertParHypre::InvertParHypre(Mesh *mi) {
   m = mi;
   
   // Allocate complex arrays for input rhs and result
-  crhs = cmatrix(m->ngy, (m->ngz-1)/2 + 1);
-  cresult = cmatrix(m->ngy, (m->ngz-1)/2 + 1);
+  crhs = cmatrix(m->ngy, (m->LocalNz)/2 + 1);
+  cresult = cmatrix(m->ngy, (m->LocalNz)/2 + 1);
   
   // Create Hypre structured grids
   grid = new HYPRE_StructGrid[m->ngx];
@@ -65,9 +65,9 @@ InvertParHypre::InvertParHypre(Mesh *mi) {
 
   // Allocate matrices
   mat = new HYPRE_StructMatrix*[m->ngx];
-  mat[0] = new HYPRE_StructMatrix[m->ngx * ( (m->ngz-1)/2 + 1 )];
+  mat[0] = new HYPRE_StructMatrix[m->ngx * ( (m->LocalNz)/2 + 1 )];
   for(int i=1;i<m->ngx;i++)
-    mat[i] = mat[i-1] + (m->ngz-1)/2 + 1;
+    mat[i] = mat[i-1] + (m->LocalNz)/2 + 1;
 
   // Loop over surfaces
   SurfaceIter *surf = m->iterateSurfaces();
@@ -112,7 +112,7 @@ InvertParHypre::InvertParHypre(Mesh *mi) {
     HYPRE_StructGridAssemble(grid[surf->xpos]);
     
     // Set up the matrices, one for each k
-    int nk = (m->ngz-1)/2 + 1;
+    int nk = (m->LocalNz)/2 + 1;
     
     int stencil_indices[5] = {0,1,2,3,4}; // Labels for stencil entries
     int *values = new int[nyloc * 5];

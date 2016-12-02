@@ -44,8 +44,8 @@ namespace { // These classes only visible in this file
   
   class FieldX : public FieldGenerator {
   public:
-    FieldGenerator* clone(const list<FieldGenerator*> args) { return new FieldX(); }
-    double generate(double x, double y, double z, double t) {
+    FieldGenerator* clone(const list<FieldGenerator*> UNUSED(args)) { return new FieldX(); }
+    double generate(double x, double UNUSED(y), double UNUSED(z), double UNUSED(t)) {
       return x;
     }
     const std::string str() {return std::string("x");}
@@ -53,8 +53,8 @@ namespace { // These classes only visible in this file
   
   class FieldY : public FieldGenerator {
   public:
-    FieldGenerator* clone(const list<FieldGenerator*> args) { return new FieldY(); }
-    double generate(double x, double y, double z, double t) {
+    FieldGenerator* clone(const list<FieldGenerator*> UNUSED(args)) { return new FieldY(); }
+    double generate(double UNUSED(x), double y, double UNUSED(z), double UNUSED(t)) {
       return y;
     }
     const std::string str() {return std::string("y");}
@@ -62,8 +62,8 @@ namespace { // These classes only visible in this file
 
   class FieldZ : public FieldGenerator {
   public:
-    FieldGenerator* clone(const list<FieldGenerator*> args) { return new FieldZ(); }
-    double generate(double x, double y, double z, double t) {
+    FieldGenerator* clone(const list<FieldGenerator*> UNUSED(args)) { return new FieldZ(); }
+    double generate(double UNUSED(x), double UNUSED(y), double z, double UNUSED(t)) {
       return z;
     }
     const std::string str() {return std::string("z");}
@@ -71,8 +71,8 @@ namespace { // These classes only visible in this file
   
   class FieldT : public FieldGenerator {
   public:
-    FieldGenerator* clone(const list<FieldGenerator*> args) { return new FieldT(); }
-    double generate(double x, double y, double z, double t) {
+    FieldGenerator* clone(const list<FieldGenerator*> UNUSED(args)) { return new FieldT(); }
+    double generate(double UNUSED(x), double UNUSED(y), double UNUSED(z), double t) {
       return t;
     }
     const std::string str() {return std::string("t");}
@@ -138,15 +138,15 @@ ExpressionParser::ExpressionParser() {
 
 ExpressionParser::~ExpressionParser() {
   // Free memory
-  for(map<string, FieldGenerator*>::iterator it = gen.begin(); it != gen.end(); it++)
-    delete it->second;
+  for(const auto& it : gen)
+    delete it.second;
   
-  for(map<char, pair<FieldGenerator*, int> >::iterator it = bin_op.begin(); it != bin_op.end(); it++)
-    delete it->second.first;
+  for(const auto& it : bin_op)
+    delete it.second.first;
   
   // Delete allocated generators
-  for(list<FieldGenerator*>::iterator it = genheap.begin(); it != genheap.end(); it++)
-    delete *it;
+  for(const auto& it : genheap)
+    delete it;
 }
 
 void ExpressionParser::addGenerator(string name, FieldGenerator* g) {
@@ -406,17 +406,15 @@ int ExpressionParser::LexInfo::getPos() {
 
 
 ParseException::ParseException(const char *s, ...) {
-  va_list ap;  // List of arguments
-
   if(s == (const char*) NULL)
     return;
-  
-  char buffer[1024];
-  va_start(ap, s);
-    vsprintf(buffer, s, ap);
-  va_end(ap);
+
+  int buf_len=1024;
+  char * buffer= new char[buf_len];
+  bout_vsnprintf(buffer,buf_len, s);
   
   message.assign(buffer);
+  delete[] buffer;
 }
 
 const char* ParseException::what() const throw() {

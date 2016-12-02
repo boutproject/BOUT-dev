@@ -23,7 +23,7 @@ ixseps1 = -1
 ixseps2 = -1
 
 ##################################################
-[ddy]   # Methods used for parallel (y) derivative terms
+[mesh:ddy]   # Methods used for parallel (y) derivative terms
 
 first = C4
 second = C4
