@@ -75,6 +75,9 @@ class FieldPerp : public Field {
   const DataIterator begin() const;
   const DataIterator end() const;
 
+  /*!
+   * Direct data access using DataIterator indexing
+   */
   inline BoutReal& operator[](const DataIterator &d) {
     return operator()(d.x, d.z);
   }
@@ -181,21 +184,37 @@ class FieldPerp : public Field {
   
   const BoutReal& operator()(int jx, int UNUSED(jy), int jz) const { return (*this)(jx, jz); }
 
+  /*!
+   * Addition, modifying in-place. 
+   * This loops over the entire domain, including guard/boundary cells
+   */
   FieldPerp & operator+=(const FieldPerp &rhs);
   FieldPerp & operator+=(const Field3D &rhs);
   FieldPerp & operator+=(const Field2D &rhs);
   FieldPerp & operator+=(const BoutReal &rhs);
-  
+
+  /*!
+   * Subtraction, modifying in place. 
+   * This loops over the entire domain, including guard/boundary cells
+   */
   FieldPerp & operator-=(const FieldPerp &rhs);
   FieldPerp & operator-=(const Field3D &rhs);
   FieldPerp & operator-=(const Field2D &rhs);
   FieldPerp & operator-=(const BoutReal &rhs);
 
+  /*!
+   * Multiplication, modifying in place. 
+   * This loops over the entire domain, including guard/boundary cells
+   */
   FieldPerp & operator*=(const FieldPerp &rhs);
   FieldPerp & operator*=(const Field3D &rhs);
   FieldPerp & operator*=(const Field2D &rhs);
   FieldPerp & operator*=(const BoutReal &rhs);
 
+  /*!
+   * Division, modifying in place. 
+   * This loops over the entire domain, including guard/boundary cells
+   */
   FieldPerp & operator/=(const FieldPerp &rhs);
   FieldPerp & operator/=(const Field3D &rhs);
   FieldPerp & operator/=(const Field2D &rhs);

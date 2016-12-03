@@ -291,8 +291,11 @@ public:
   FieldGenerator* clone(const list<FieldGenerator*> args);
   BoutReal generate(double x, double y, double z, double t);
 private:
-  /// Generate a random number between 0 and 1
+  /// Generate a random number between 0 and 1 (exclusive)
   /// given an arbitrary seed value
+  ///
+  /// This PRNG has no memory, i.e. you need to call it 
+  /// with a different seed each time.
   BoutReal genRand(BoutReal seed);
 
   FieldGenerator *arg;

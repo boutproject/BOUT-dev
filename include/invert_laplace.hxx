@@ -1,4 +1,6 @@
-/**************************************************************************
+/*!*************************************************************************
+ * \file invert_laplace.hxx
+ *
  * Perpendicular Laplacian inversion using FFT and Tridiagonal solver
  *
  * Equation solved is: d*\nabla^2_\perp x + (1/c)\nabla_perp c\cdot\nabla_\perp x + a x = b
@@ -46,24 +48,24 @@ class Laplacian;
 #include "options.hxx"
 
 // Inversion flags for each boundary
-const int INVERT_DC_GRAD  = 1;
-const int INVERT_AC_GRAD  = 2;
-const int INVERT_AC_LAP   = 4;
-const int INVERT_SYM      = 8; // Use symmetry to enforce either zero-value or zero-gradient
-const int INVERT_SET      = 16; // Set boundary to value
-const int INVERT_RHS      = 32; // Use input value in RHS boundary
-const int INVERT_DC_LAP   = 64;
-const int INVERT_BNDRY_ONE = 128;
+const int INVERT_DC_GRAD  = 1; ///< Zero-gradient for DC (constant in Z) component. Default is zero value
+const int INVERT_AC_GRAD  = 2; ///< Zero-gradient for AC (non-constant in Z) component. Default is zero value
+const int INVERT_AC_LAP   = 4; ///< Use zero-laplacian (decaying solution) to AC component
+const int INVERT_SYM      = 8; ///< Use symmetry to enforce either zero-value or zero-gradient
+const int INVERT_SET      = 16; ///< Set boundary to value
+const int INVERT_RHS      = 32; ///< Use input value in RHS boundary
+const int INVERT_DC_LAP   = 64; ///< Use zero-laplacian solution for DC component
+const int INVERT_BNDRY_ONE = 128; ///< Only use one boundary point
 const int INVERT_DC_GRADPAR = 256;
 const int INVERT_DC_GRADPARINV = 512;
-const int INVERT_IN_CYLINDER = 1024; // For use in cylindrical coordiate system.  
+const int INVERT_IN_CYLINDER = 1024; ///< For use in cylindrical coordiate system.
 
 // Global flags
-const int INVERT_ZERO_DC     = 1;
-const int INVERT_START_NEW   = 2;
-const int INVERT_BOTH_BNDRY_ONE = 4; // Sets the width of the boundary to 1
-const int INVERT_4TH_ORDER   = 8; // Use band solver for 4th order in x
-const int INVERT_KX_ZERO     = 16; // Zero the kx=0, n = 0 component
+const int INVERT_ZERO_DC     = 1; ///< Zero the DC (constant in Z) component of the solution
+const int INVERT_START_NEW   = 2; ///< Iterative method start from solution=0. Has no effect for direct solvers
+const int INVERT_BOTH_BNDRY_ONE = 4; ///< Sets the width of the boundaries to 1
+const int INVERT_4TH_ORDER   = 8; ///< Use band solver for 4th order in x
+const int INVERT_KX_ZERO     = 16; ///< Zero the kx=0, n = 0 component
 
 /*
 // Legacy flags, can be used in calls to setFlags()
@@ -97,8 +99,8 @@ const int INVERT_KX_ZERO     = 16; // Zero the kx=0, n = 0 component
   const int INVERT_DC_IN_GRADPARINV = 2097152;
  */
 
-const int INVERT_IN_RHS  = 16384; // Use input value in RHS at inner boundary
-const int INVERT_OUT_RHS = 32768; // Use input value in RHS at outer boundary
+const int INVERT_IN_RHS  = 16384; ///< Use input value in RHS at inner boundary
+const int INVERT_OUT_RHS = 32768; ///< Use input value in RHS at outer boundary
 
 /// Base class for Laplacian inversion
 class Laplacian {
@@ -154,22 +156,27 @@ public:
 
   /// Coefficients in tridiagonal inversion
   void tridagCoefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcomplex &c, const Field2D *ccoef = NULL, const Field2D *d=NULL);
-  
-  static Laplacian* create(Options *opt = NULL);  ///< Create a new Laplacian solver
+
+  /*!
+   * Create a new Laplacian solver
+   * 
+   * @param[in] opt  The options section to use. By default "laplace" will be used
+   */ 
+  static Laplacian* create(Options *opt = NULL);
   static Laplacian* defaultInstance(); ///< Return pointer to global singleton
   
-  static void cleanup(); // Frees all memory
+  static void cleanup(); ///< Frees all memory
 protected:
   bool async_send; ///< If true, use asyncronous send in parallel algorithms
   
   int maxmode;     ///< The maximum Z mode to solve for
   
   bool low_mem;    ///< If true, reduce the amount of memory used
-  bool all_terms;  // applies to Delp2 operator and laplacian inversion
-  bool nonuniform; // Non-uniform mesh correction
-  bool include_yguards; // solve in y-guard cells, default true.
-  int extra_yguards_lower; // exclude some number of points at the lower boundary, useful for staggered grids or when boundary conditions make inversion redundant
-  int extra_yguards_upper; // exclude some number of points at the upper boundary, useful for staggered grids or when boundary conditions make inversion redundant
+  bool all_terms;  ///< applies to Delp2 operator and laplacian inversion
+  bool nonuniform; ///< Non-uniform mesh correction
+  bool include_yguards; ///< solve in y-guard cells, default true.
+  int extra_yguards_lower; ///< exclude some number of points at the lower boundary, useful for staggered grids or when boundary conditions make inversion redundant
+  int extra_yguards_upper; ///< exclude some number of points at the upper boundary, useful for staggered grids or when boundary conditions make inversion redundant
   
   int global_flags;       ///< Default flags
   int inner_boundary_flags; ///< Flags to set inner boundary condition
