@@ -17,7 +17,7 @@
 
 #include <globals.hxx>
 
-Coordinates::Coordinates(Mesh *mesh) : ilen(0) {
+Coordinates::Coordinates(Mesh *mesh) {
   
   dx = 1.0; dy = 1.0; dz = 1.0;
   
@@ -190,15 +190,6 @@ Coordinates::Coordinates(Mesh *mesh) : ilen(0) {
   }
 }
 
-Coordinates::~Coordinates() {
-  // Gaussj working arrays
-  if(ilen > 0) {
-    ivfree(indxc);
-    ivfree(indxr);
-    ivfree(ipiv);
-  }
-}
-
 void Coordinates::outputVars(Datafile &file) {
   file.add(dx,    "dx",    0);
   file.add(dy,    "dy",    0);
@@ -257,7 +248,7 @@ int Coordinates::geometry() {
     throw BoutException("\tERROR: Off-diagonal g_ij metrics are not finite!\n");
   }
   
-  // Calculate Christoffel symbol terms (15 independent values)
+  // Calculate Christoffel symbol terms (18 independent values)
   // Note: This calculation is completely general: metric 
   // tensor can be 2D or 3D. For 2D, all DDZ terms are zero
   
@@ -276,7 +267,12 @@ int Coordinates::geometry() {
   G1_13 = 0.5*g11*DDZ(g_11)
     + 0.5*g12*(DDZ(g_12) + DDX(g_23) - DDY(g_13))
     + 0.5*g13*DDX(g_33);
-
+  G1_23 = 0.5 *g11*(DDZ(g_12) + DDY(g_13) - DDX(g_23))
+    + 0.5 *g12*(DDZ(g_22) + DDY(g_23) - DDY(g_23))
+    // + 0.5 *g13*(DDZ(g_32) + DDY(g_33) - DDZ(g_23));
+    // which equals
+    + 0.5 *g13*DDY(g_33);
+  
   G2_11 = 0.5*g12*DDX(g_11)
     + g22*(DDX(g_12) - 0.5*DDY(g_11))
     + g23*(DDX(g_13) - 0.5*DDZ(g_11));
@@ -289,6 +285,16 @@ int Coordinates::geometry() {
   G2_12 = 0.5*g12*DDY(g_11)
     + 0.5*g22*DDX(g_22)
     + 0.5*g23*(DDY(g_13) + DDX(g_23) - DDZ(g_12));
+  G2_13 = 
+    // 0.5 *g21*(DDZ(g_11) + DDX(g_13) - DDX(g_13))
+    // which equals
+      0.5 *g12*(DDZ(g_11) + DDX(g_13) - DDX(g_13))
+    // + 0.5 *g22*(DDZ(g_21) + DDX(g_23) - DDY(g_13))
+    // which equals
+    + 0.5 *g22*(DDZ(g_12) + DDX(g_23) - DDY(g_13))
+    // + 0.5 *g23*(DDZ(g_31) + DDX(g_33) - DDZ(g_13));
+    // which equals
+    + 0.5 *g23*DDX(g_33);
   G2_23 = 0.5*g12*(DDZ(g_12) + DDY(g_13) - DDX(g_23))
     + 0.5*g22*DDZ(g_22)
     + 0.5*g23*DDY(g_33);
@@ -302,6 +308,16 @@ int Coordinates::geometry() {
   G3_33 = g13*(DDZ(g_13) - 0.5*DDX(g_33))
     + g23*(DDZ(g_23) - 0.5*DDY(g_33))
     + 0.5*g33*DDZ(g_33);
+  G3_12 =
+    // 0.5 *g31*(DDY(g_11) + DDX(g_12) - DDX(g_12))
+    // which equals to
+    0.5 *g13*DDY(g_11) 
+    // + 0.5 *g32*(DDY(g_21) + DDX(g_22) - DDY(g_12))
+    // which equals to
+    + 0.5 *g23*DDX(g_22)
+    //+ 0.5 *g33*(DDY(g_31) + DDX(g_32) - DDZ(g_12));
+    // which equals to
+    + 0.5 *g33*(DDY(g_13) + DDX(g_23) - DDZ(g_12));
   G3_13 = 0.5*g13*DDZ(g_11)
     + 0.5*g23*(DDZ(g_12) + DDX(g_23) - DDY(g_13))
     + 0.5*g33*DDX(g_33);
@@ -323,16 +339,19 @@ int Coordinates::geometry() {
   com.add(G1_33);
   com.add(G1_12);
   com.add(G1_13);
+  com.add(G1_23);
   
   com.add(G2_11);
   com.add(G2_22);
   com.add(G2_33);
   com.add(G2_12);
+  com.add(G2_13);
   com.add(G2_23);
   
   com.add(G3_11);
   com.add(G3_22);
   com.add(G3_33);
+  com.add(G3_12);
   com.add(G3_13);
   com.add(G3_23);
 
@@ -359,7 +378,7 @@ int Coordinates::calcCovariant() {
   // Perform inversion of g^{ij} to get g_{ij}
   // NOTE: Currently this bit assumes that metric terms are Field2D objects
 
-  BoutReal** a = rmatrix(3, 3);
+  BoutReal** a = matrix<BoutReal>(3, 3);
   
   for(int jx=0;jx<mesh->LocalNx;jx++) {
     for(int jy=0;jy<mesh->LocalNy;jy++) {
@@ -389,7 +408,7 @@ int Coordinates::calcCovariant() {
     }
   }
 
-  free_rmatrix(a);
+  free_matrix(a);
   
   BoutReal maxerr, err;
   maxerr = max(abs( (g_11*g11 +
@@ -440,7 +459,7 @@ int Coordinates::calcContravariant() {
   // Perform inversion of g_{ij} to get g^{ij}
   // NOTE: Currently this bit assumes that metric terms are Field2D objects
   
-  BoutReal** a = rmatrix(3, 3);
+  BoutReal** a = matrix<BoutReal>(3, 3);
   
   for(int jx=0;jx<mesh->LocalNx;jx++) {
     for(int jy=0;jy<mesh->LocalNy;jy++) {
@@ -470,7 +489,7 @@ int Coordinates::calcContravariant() {
     }
   }
 
-  free_rmatrix(a);
+  free_matrix(a);
 
   BoutReal maxerr, err;
   maxerr = max(abs( (g_11*g11 +
@@ -693,8 +712,8 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
   static dcomplex **ft = (dcomplex**) NULL, **delft;
   if(ft == (dcomplex**) NULL) {
     // Allocate memory
-    ft = cmatrix(mesh->LocalNx, ncz/2 + 1);
-    delft = cmatrix(mesh->LocalNx, ncz/2 + 1);
+    ft = matrix<dcomplex>(mesh->LocalNx, ncz/2 + 1);
+    delft = matrix<dcomplex>(mesh->LocalNx, ncz/2 + 1);
   }
   
   // Loop over all y indices
@@ -753,8 +772,8 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
   
   if(ft == (dcomplex**) NULL) {
     // Allocate memory
-    ft = cmatrix(mesh->LocalNx, ncz/2 + 1);
-    delft = cmatrix(mesh->LocalNx, ncz/2 + 1);
+    ft = matrix<dcomplex>(mesh->LocalNx, ncz/2 + 1);
+    delft = matrix<dcomplex>(mesh->LocalNx, ncz/2 + 1);
   }
   
   // Take forward FFT
@@ -832,18 +851,9 @@ int Coordinates::gaussj(BoutReal **a, int n) {
   float big, dum, pivinv;
 
   // Make sure enough temporary memory is allocated
-  if(n > ilen) {
-    if(ilen == 0) {
-      indxc = ivector(n);
-      indxr = ivector(n);
-      ipiv = ivector(n);
-    }else {
-      indxc = ivresize(indxc, n);
-      indxr = ivresize(indxr, n);
-      ipiv = ivresize(ipiv, n);
-    }
-    ilen = n;
-  }
+  indxc.resize(n);
+  indxr.resize(n);
+  ipiv.resize(n);
 
   for(i=0;i<n;i++)
     ipiv[i] = 0;

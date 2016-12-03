@@ -15,26 +15,6 @@ bool GridFromOptions::hasVar(const string &name) {
   return options->isSet(name);
 }
 
-/*!
- * Reads integers from options. Assumes that integers are not
- * expressions.
- * 
- * Inputs
- * ======
- *
- * m      [Mesh pointer] Not used
- * name   [string] containing name of variable
- * 
- * Outputs
- * =======
- * 
- * ival    [integer] Always given a value, defaults to 0
- *
- * Returns
- * =======
- *
- * True if option is set, false if ival is default (0)
- */
 bool GridFromOptions::get(Mesh *UNUSED(m), int &ival, const string &name) {
   if(!hasVar(name)) {
     ival = 0;

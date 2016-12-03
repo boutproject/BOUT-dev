@@ -161,7 +161,7 @@ def Div_par(f, metric=identity):
     \nabla \cdot (\bhat f) = 1/J \partial_y (f/B)
     = B Grad_par(f/B)
     '''
-    return metric.B*Grad_par(f/metric.B)
+    return metric.B*Grad_par(f/metric.B, metric)
 
 def Laplace(f, metric=identity):
     """The full Laplace operator"""
