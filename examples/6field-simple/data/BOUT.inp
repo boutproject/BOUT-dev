@@ -60,19 +60,19 @@ fft_measure = true  # If using FFTW, perform tests to determine fastest method
 ##################################################
 # derivative methods
 
-[ddx]
+[mesh:ddx]
 
 first = C4  # order of first x derivatives (options are 2 or 4)
 second = C4 # order of second x derivatives (2 or 4)
 upwind = W3 # order of upwinding method (1, 4, 0 = TVD (DO NOT USE), 3 = WENO)
 
-[ddy]
+[mesh:ddy]
 
 first = C4
 second = C4
 upwind = W3
 
-[ddz]
+[mesh:ddz]
 
 first = C4  # Z derivatives can be done using FFT
 second = C4

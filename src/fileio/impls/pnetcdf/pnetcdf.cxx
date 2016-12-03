@@ -61,17 +61,6 @@ PncFormat::PncFormat(const char *name) {
   openr(name);
 }
 
-PncFormat::PncFormat(const string &name) {
-  x0 = y0 = z0 = t0 = 0;
-  dimList = recDimList+1;
-  lowPrecision = false;
-
-  default_rec = 0;
-  rec_nr.clear();
-
-  openr(name);
-}
-
 PncFormat::~PncFormat() {
   close();
   rec_nr.clear();

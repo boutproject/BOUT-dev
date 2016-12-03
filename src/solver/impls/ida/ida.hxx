@@ -58,8 +58,6 @@ class IdaSolver : public Solver {
  public:
   IdaSolver(Options *opts = NULL);
   ~IdaSolver();
-
-  void setPrecon(PhysicsPrecon f) {prefunc = f;}
   
   int init(bool restarting, int nout, BoutReal tstep);
   
@@ -72,8 +70,6 @@ class IdaSolver : public Solver {
  private:
   int NOUT; // Number of outputs. Specified in init, needed in run
   BoutReal TIMESTEP; // Time between outputs
-  
-  PhysicsPrecon prefunc; // Preconditioner
   
   N_Vector uvec, duvec, id; // Values, time-derivatives, and equation type
   void *idamem;

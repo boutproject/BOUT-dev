@@ -45,6 +45,8 @@ class Field3D; //#include "field3d.hxx"
 
 #include "bout/array.hxx"
 
+#include "unused.hxx"
+
 /*!
  * \brief 2D X-Y scalar fields
  *
@@ -93,10 +95,10 @@ class Field2D : public Field, public FieldData {
   inline const BoutReal& operator[](const DataIterator &d) const {
     return operator()(d.x, d.y);
   }
-  inline BoutReal& operator[](Indices &i) {
+  inline BoutReal& operator[](const Indices &i) {
     return operator()(i.x, i.y);
   }
-  inline const BoutReal& operator[](Indices &i) const {
+  inline const BoutReal& operator[](const Indices &i) const {
     return operator()(i.x, i.y);
   }
   
@@ -127,10 +129,10 @@ class Field2D : public Field, public FieldData {
     return data[jx*ny + jy];
   }
 
-  BoutReal& operator()(int jx, int jy, int jz) {
+  BoutReal& operator()(int jx, int jy, int UNUSED(jz)) {
     return operator()(jx, jy);
   }
-  const BoutReal& operator()(int jx, int jy, int jz) const {
+  const BoutReal& operator()(int jx, int jy, int UNUSED(jz)) const {
     return operator()(jx, jy);
   }
   
@@ -170,10 +172,11 @@ class Field2D : public Field, public FieldData {
   bool is3D() const     { return false; }        // Field is 2D
   int  byteSize() const { return sizeof(BoutReal); } // Just one BoutReal
   int  BoutRealSize() const { return 1; }
-  int  getData(int x, int y, int z, void *vptr) const;
-  int  getData(int x, int y, int z, BoutReal *rptr) const;
-  int  setData(int x, int y, int z, void *vptr);
-  int  setData(int x, int y, int z, BoutReal *rptr);
+
+  DEPRECATED(int getData(int x, int y, int z, void *vptr) const);
+  DEPRECATED(int getData(int x, int y, int z, BoutReal *rptr) const);
+  DEPRECATED(int setData(int x, int y, int z, void *vptr));
+  DEPRECATED(int setData(int x, int y, int z, BoutReal *rptr));
   
 #ifdef CHECK
   void doneComms() { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
@@ -226,9 +229,6 @@ const Field2D operator/(BoutReal lhs, const Field2D &rhs);
 const Field2D operator-(const Field2D &f);
 
 // Non-member functions
-
-/// Square
-const Field2D SQ(const Field2D &f);
 
 /// Square root
 const Field2D sqrt(const Field2D &f);

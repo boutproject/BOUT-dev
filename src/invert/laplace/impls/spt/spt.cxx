@@ -473,8 +473,6 @@ void LaplaceSPT::finish(SPT_data &data, FieldPerp &x) {
       dc1d[0] = 0.0;
     
     irfft(dc1d, ncz, x[ix]);
-    
-    x(ix,ncz) = x(ix,0); // enforce periodicity
   }
 
   if(!mesh->firstX()) {

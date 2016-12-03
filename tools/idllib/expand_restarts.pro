@@ -82,7 +82,8 @@ PRO expand_restarts, newz, path=path, output=output, format=format
             f2 = COMPLEXARR(newz-1)
             ; copy coefficients across (ignoring nyquist)
             f2[0] = f[0] ; DC
-            FOR m=1, (nz-1)/2 - 1 DO BEGIN
+            minnz = MIN([nz, newz])
+            FOR m=1, (minnz-1)/2 - 1 DO BEGIN
               f2[m] = f[m]       ; +ve frequencies
               f2[newz-1-m] = f[nz-1-m] ; -ve frequencies
             ENDFOR

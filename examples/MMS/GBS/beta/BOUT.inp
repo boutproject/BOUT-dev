@@ -80,19 +80,19 @@ zshift = ShiftAngle * z / (2*pi)
 ##################################################
 # derivative methods
 
-[ddx]
+[mesh:ddx]
 
 first = C2  
 second = C2
 upwind = W3
 
-[ddy]
+[mesh:ddy]
 
 first = C2
 second = C2
 upwind = W3
 
-[ddz]
+[mesh:ddz]
 
 first = C2
 second = C2

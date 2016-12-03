@@ -3,7 +3,7 @@
 
 FieldGroup operator+(const FieldGroup &lhs, const FieldGroup &rhs) {
   return FieldGroup(lhs) += rhs;
-};
+}
 
 void FieldGroup::makeUnique(){
   //Need to sort vector before making unique
@@ -14,4 +14,4 @@ void FieldGroup::makeUnique(){
   vector<FieldData*>::iterator last = std::unique(fvec.begin(), fvec.end());
   //Resizes vector to remove memory no longer required
   fvec.erase(last, fvec.end());
-};
+}

@@ -29,7 +29,7 @@ ixseps2 = 5
 ##################################################
 # derivative methods
 
-[ddy]
+[mesh:ddy]
 
 first = C4
 second = C4

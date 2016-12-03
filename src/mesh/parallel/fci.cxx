@@ -94,7 +94,7 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) :
   interp->calcWeights(xt_prime, zt_prime);
 
   int ncz = mesh.LocalNz;
-  BoutReal t_x, t_z, temp;
+  BoutReal t_x, t_z;
 
   Coordinates& coord = *(mesh.coordinates());
 
@@ -297,7 +297,7 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) :
 
 
 void FCITransform::calcYUpDown(Field3D &f) {
-  MsgStackItem trace("FCITransform::calcYUpDown");
+  TRACE("FCITransform::calcYUpDown");
 
   // Ensure that yup and ydown are different fields
   f.splitYupYdown();

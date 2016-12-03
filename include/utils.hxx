@@ -69,19 +69,46 @@ void free_cmatrix(dcomplex** cm);
 
 BoutReal randomu(); // Get Random number between 0 and 1
 
-BoutReal SQ(BoutReal x);
-int ROUND(BoutReal x);
-int BOUTMAX(int a, int b);
-BoutReal BOUTMAX(BoutReal a, BoutReal b);
-BoutReal BOUTMAX(BoutReal a, BoutReal b, BoutReal c);
-BoutReal BOUTMIN(BoutReal a, BoutReal b);
-BoutReal BOUTMIN(BoutReal a, BoutReal b, BoutReal c);
-bool is_pow2(int x); // Check if a number is a power of 2
-BoutReal SIGN(BoutReal a); // Return +1 or -1 (0 -> +1)
+template <typename T>
+T SQ(T t){
+  return t*t;
+}
+
+inline int ROUND(BoutReal x){
+  return (x > 0.0) ? (int) (x + 0.5) : (int) (x - 0.5);
+}
+
+template <typename T>
+T BOUTMAX(T a){
+  return a;
+}
+template <typename T, typename... Args>
+T BOUTMAX(T a,T b,Args... args){
+  T c = BOUTMAX(b,args...);
+  return c > a ? c : a;
+}
+
+template <typename T>
+T BOUTMIN(T a){
+  return a;
+}
+template <typename T, typename... Args>
+T BOUTMIN(T a,T b,Args... args){
+  T c = BOUTMIN(b,args...);
+  return c < a ? c : a;
+}
+
+inline bool is_pow2(int x) { // Check if a number is a power of 2
+  return x && !((x-1) & x);
+}
+
+template <typename T>
+T SIGN(T a) { // Return +1 or -1 (0 -> +1)
+  return a > 0 ? 1 : -1;
+}
 BoutReal MINMOD(BoutReal a, BoutReal b);
 
 char* copy_string(const char* s);
-char *strconcat(const char* left, const char *right);
 
 // Convert a value to a string
 template <class T>

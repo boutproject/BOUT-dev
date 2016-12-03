@@ -66,6 +66,8 @@ class Mesh;
 
 #include "paralleltransform.hxx" // ParallelTransform class
 
+#include "unused.hxx"
+
 #include <list>
 #include <memory>
 
@@ -82,7 +84,7 @@ class Mesh {
   
   // Currently need to create and load mesh in separate calls. Will be removed
   virtual int load() {return 1;}
-  virtual void outputVars(Datafile &file) {} ///< Output variables to a data file
+  virtual void outputVars(Datafile &UNUSED(file)) {} ///< Output variables to a data file
 
   
   // Get routines to request data from mesh file
@@ -94,6 +96,9 @@ class Mesh {
   
   int get(Vector2D &var, const string &name);
   int get(Vector3D &var, const string &name);
+
+  /// Wrapper for GridDataSource::hasVar
+  bool sourceHasVar(const string &name);
   
   // Communications
   /*!
@@ -192,9 +197,9 @@ class Mesh {
 
   // Boundary regions
   virtual vector<BoundaryRegion*> getBoundaries() = 0;
-  virtual void addBoundary(BoundaryRegion* bndry) {}
+  virtual void addBoundary(BoundaryRegion* UNUSED(bndry)) {}
   virtual vector<BoundaryRegionPar*> getBoundariesPar() = 0;
-  virtual void addBoundaryPar(BoundaryRegionPar* bndry) {}
+  virtual void addBoundaryPar(BoundaryRegionPar* UNUSED(bndry)) {}
   
   // Branch-cut special handling (experimental)
   virtual const Field3D smoothSeparatrix(const Field3D &f) {return f;}
@@ -256,7 +261,7 @@ class Mesh {
   const Field2D indexD2DX2(const Field2D &f);
   const Field3D indexD2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
   const Field2D indexD2DY2(const Field2D &f);
-  const Field3D indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
+  const Field3D indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool inc_xbndry);
   
   // Fourth derivatives in index space
   const Field3D indexD4DX4(const Field3D &f);
@@ -279,8 +284,9 @@ class Mesh {
   const Field3D indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
   
   typedef BoutReal (*deriv_func)(stencil &); // f
-  typedef BoutReal (*upwind_func)(stencil &, stencil &); // v, f
-
+  typedef BoutReal (*upwind_func)(BoutReal, stencil &); // v, f
+  typedef BoutReal (*flux_func)(stencil&, stencil &); // v, f
+  
   typedef struct {
     BoutReal inner;
     BoutReal outer;

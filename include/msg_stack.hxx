@@ -30,13 +30,30 @@ class MsgStack;
 #define __MSG_STACK_H__
 
 #include <stdio.h>
+#include <string>
 
 #define MSG_MAX_SIZE 127
 
+/*!
+ * Each message consists of a fixed length buffer
+ */
 typedef struct {
   char str[MSG_MAX_SIZE+1];
 }msg_item_t;
 
+
+/*!
+ * Message stack 
+ *
+ * Implements a stack of messages which can be pushed onto the top
+ * and popped off the top. This is used for debugging: messages are put
+ * into this stack at the start of a section of code, and removed at the end.
+ * If an error occurs in between push and pop, then the message can be printed.
+ *
+ * This code is only enabled if CHECK > 1. If CHECK is disabled then this
+ * message stack code reverts to empty functions which should be removed by
+ * the optimiser
+ */
 class MsgStack {
  public:
   MsgStack();
@@ -52,6 +69,7 @@ class MsgStack {
   void clear();        ///< Clear all message
   
   void dump();         ///< Write out all messages (using output)
+  std::string getDump();    ///< Write out all messages to a string
 #else
   /// Dummy functions which should be optimised out
   int push(const char *s, ...) {return 0;}
@@ -116,6 +134,15 @@ private:
 
 /*!
  * The TRACE macro provides a convenient way to put messages onto the msg_stack
+ * It pushes a message onto the stack, and pops it when the scope ends
+ * 
+ * Example
+ * -------
+ * 
+ * {
+ *   TRACE("Starting calculation")
+ * 
+ * } // Scope ends, message popped
  */
 #ifdef CHECK
 #define TRACE(message) MsgStackItem CONCATENATE(msgTrace_ , __LINE__) (message, __FILE__, __LINE__)

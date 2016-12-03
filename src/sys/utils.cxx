@@ -223,41 +223,6 @@ BoutReal randomu() {
   return ((BoutReal) rand()) / ((BoutReal) RAND_MAX);
 }
 
-BoutReal SQ(BoutReal x) {
-  return(x*x);
-}
-
-int ROUND(BoutReal x) {
-  return (x > 0.0) ? (int) (x + 0.5) : (int) (x - 0.5);
-}
-
-int BOUTMAX(int a, int b) {
-  return (a > b) ? a : b;
-}
-
-BoutReal BOUTMAX(BoutReal a, BoutReal b) {
-  return (a > b) ? a : b;
-}
-
-BoutReal BOUTMAX(BoutReal a, BoutReal b, BoutReal c) {
-  return BOUTMAX(BOUTMAX(a,b), c);
-}
-
-BoutReal BOUTMIN(BoutReal a, BoutReal b) {
-  return (a < b) ? a : b;
-}
-BoutReal BOUTMIN(BoutReal a, BoutReal b, BoutReal c) {
-  return BOUTMIN(BOUTMIN(a,b),c);
-}
-
-bool is_pow2(int x) {
-  return x && !((x-1) & x);
-}
-
-BoutReal SIGN(BoutReal a) {
-  return (a >= 0) ? 1.0 : -1.0;
-}
-
 BoutReal MINMOD(BoutReal a, BoutReal b) {
   return 0.5*(SIGN(a) + SIGN(b)) * BOUTMIN(fabs(a), fabs(b));
 }
@@ -316,15 +281,6 @@ char* copy_string(const char* s) {
   return s2;
 }
 
-/// Concatenate a string. This is a mildly nasty hack, and not thread-safe.
-/// Simplifies some code though.
-char *strconcat(const char* left, const char *right) {
-  static char buffer[128];
-
-  snprintf(buffer, 128, "%s%s", left, right);
-  return buffer;
-}
-
 // Convert a value to a string
 template <class T>
 const string toString(const T& val) {
@@ -349,7 +305,7 @@ const string lowercasequote(const string &str) {
   string strlow(str);
 
   bool quote = false, dquote = false;
-  for(int i=0;i<strlow.length(); i++) {
+  for(string::size_type i=0;i<strlow.length(); i++) {
     if(strlow[i] == '\'') {
       quote ^= true;
     }else if(strlow[i] == '"') {

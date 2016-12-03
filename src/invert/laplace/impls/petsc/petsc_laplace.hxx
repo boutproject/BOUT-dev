@@ -37,16 +37,16 @@ class LaplacePetsc;
 
 class LaplacePetsc : public Laplacian {
 public:
-  LaplacePetsc(Options *opt = NULL) { throw BoutException("No PETSc solver available"); }
+  LaplacePetsc(Options *UNUSED(opt) = NULL) { throw BoutException("No PETSc solver available"); }
 
-  void setCoefA(const Field2D &val) {}
-  void setCoefB(const Field2D &val) {}
-  void setCoefC(const Field2D &val) {}
-  void setCoefD(const Field2D &val) {}
-  void setCoefEx(const Field2D &val) {}
-  void setCoefEz(const Field2D &val) {}
+  void setCoefA(const Field2D &UNUSED(val)) {}
+  void setCoefB(const Field2D &UNUSED(val)) {}
+  void setCoefC(const Field2D &UNUSED(val)) {}
+  void setCoefD(const Field2D &UNUSED(val)) {}
+  void setCoefEx(const Field2D &UNUSED(val)) {}
+  void setCoefEz(const Field2D &UNUSED(val)) {}
 
-  const FieldPerp solve(const FieldPerp &b) {throw BoutException("PETSc not available");}
+  const FieldPerp solve(const FieldPerp &UNUSED(b)) {throw BoutException("PETSc not available");}
 };
 
 #else

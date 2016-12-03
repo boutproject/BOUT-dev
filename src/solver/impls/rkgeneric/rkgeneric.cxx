@@ -26,7 +26,7 @@ RKGenericSolver::~RKGenericSolver() {
     delete[] f0;
     delete[] f2;
     delete[] tmpState;
-  };
+  }
 }
 
 void RKGenericSolver::setMaxTimestep(BoutReal dt) {
@@ -189,7 +189,7 @@ BoutReal RKGenericSolver::take_step(const BoutReal timeIn, const BoutReal dt, co
     load_vars(tmpState);
     run_rhs(curTime);
     save_derivs(scheme->steps[curStage]);
-  };
+  }
 
   return scheme->setOutputStates(start, dt, resultFollow);
-};
+}

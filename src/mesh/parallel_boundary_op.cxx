@@ -27,6 +27,8 @@ BoutReal BoundaryOpPar::getValue(int x, int y, int z, BoutReal t) {
     return value;
   case REAL:
     return real_value;
+  default:
+    throw BoutException("Invalid value_type encountered in BoundaryOpPar::getValue");
   }
 
 }
@@ -52,6 +54,8 @@ BoutReal BoundaryOpPar::getValue(const BoundaryRegionPar &bndry, BoutReal t) {
     return value;
   case REAL:
     return real_value;
+  default:
+    throw BoutException("Invalid value_type encountered in BoundaryOpPar::getValue");
   }
 
 }

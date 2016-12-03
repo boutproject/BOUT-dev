@@ -27,15 +27,16 @@
 #ifndef __GLOBALS_H__
 #define __GLOBALS_H__
 
+#include "bout/deprecated.hxx"
 #include "bout/mesh.hxx"
 #include "datafile.hxx"
 
 #ifndef GLOBALORIGIN
 #define GLOBAL extern
-#define SETTING(name, val) extern name;
+#define SETTING(name, val) extern name
 #else
 #define GLOBAL
-#define SETTING(name, val) name = val;
+#define SETTING(name, val) name = val
 #endif
 
 SETTING(Mesh *mesh, NULL); ///< The mesh object
@@ -73,9 +74,10 @@ SETTING(Mesh *mesh, NULL); ///< The mesh object
 /// Dump file object
 GLOBAL Datafile dump;
 
-// Error handling (bout++.cpp)
-void bout_error();
-void bout_error(const char *str);
+/// Error handling (bout++.cpp)
+/// Deprecated! Use "throw BoutException(str)" instead
+/// Will be removed in 5.0
+void DEPRECATED(bout_error(const char *str=NULL));
 
 #undef GLOBAL
 #undef SETTING

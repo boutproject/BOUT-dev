@@ -5,6 +5,7 @@
 #include "bout_types.hxx"
 #include "parallel_boundary_region.hxx"
 #include "utils.hxx"
+#include "unused.hxx"
 
 //////////////////////////////////////////////////
 // Base class
@@ -27,23 +28,23 @@ public:
   virtual ~BoundaryOpPar() {}
 
   // Note: All methods must implement clone, except for modifiers (see below)
-  virtual BoundaryOpPar* clone(BoundaryRegionPar *region, const list<string> &args) {return NULL; }
-  virtual BoundaryOpPar* clone(BoundaryRegionPar *region, Field3D *f) {return NULL; }
+  virtual BoundaryOpPar* clone(BoundaryRegionPar *UNUSED(region), const list<string> &UNUSED(args)) {return NULL; }
+  virtual BoundaryOpPar* clone(BoundaryRegionPar *UNUSED(region), Field3D *UNUSED(f)) {return NULL; }
 
-  void apply(Field2D &f)
+  void apply(Field2D &UNUSED(f))
   {
     throw BoutException("Can't apply parallel boundary conditions to Field2D!");
   }
-  void apply(Field2D &f, BoutReal t)
+  void apply(Field2D &UNUSED(f), BoutReal UNUSED(t))
   {
     throw BoutException("Can't apply parallel boundary conditions to Field2D!");
   }
-  void apply(Field3D &f) {}
-  void apply(Field3D &f, BoutReal t) {}
+  void apply(Field3D &UNUSED(f)) {}
+  void apply(Field3D &UNUSED(f), BoutReal UNUSED(t)) {}
 
   // Apply to time derivative
   // Unlikely to be used?
-  void apply_ddt(Field3D &f) {};
+  void apply_ddt(Field3D &UNUSED(f)) {};
 
   BoundaryRegionPar *bndry;
 
