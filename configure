@@ -4885,7 +4885,7 @@ then
   echo "Enabling all debug options"
   enable_checks="3"
   # use -Og with available, otherwise fall back to -O0
-  OPT_FLAGS="-g -O0 -Og"
+  OPT_FLAGS="-g -O0 -Og -fno-inline -hipa1"
 elif test $enable_optimize ; then
   optimize=$enable_optimize
   test $optimize -eq 0 2>/dev/null
