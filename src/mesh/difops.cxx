@@ -62,25 +62,6 @@ const Field3D Grad_par(const Field3D &var, DIFF_METHOD method, CELL_LOC outloc) 
   return mesh->coordinates()->Grad_par(var, outloc, method);
 }
 
-/*
-// Model dvar/dt = Grad_par(f) with a maximum velocity of Vmax
-const Field3D Grad_par(const Field3D &f, const Field3D &var, const Field2D &Vmax) {
-  int msg_pos = msg_stack.push("Grad_par( Field3D, Field3D, Field2D )");
-
-  Field2D sg = sqrt(mesh->coordinates()->g_22);
-  Field3D result = DDY_MUSCL(f, var, sg*Vmax)/sg;
-  
-  msg_stack.pop(msg_pos);
-  
-  return result;
-}
-
-const Field3D Grad_par(const Field3D &f, const Field3D &var, BoutReal Vmax) {
-	Field2D V = Vmax;
-	return Grad_par(f, var, V);
-}
-*/
-
 /*******************************************************************************
 * Grad_parP
 *
@@ -357,39 +338,28 @@ const Field3D Grad2_par2(const Field3D &f, CELL_LOC outloc) {
 * Parallel divergence of diffusive flux, K*Grad_par
 *******************************************************************************/
 
-const Field2D Div_par_K_Grad_par(BoutReal kY, Field2D &f) {
+const Field2D Div_par_K_Grad_par(BoutReal kY, const Field2D &f) {
   return kY*Grad2_par2(f);
 }
 
-const Field3D Div_par_K_Grad_par(BoutReal kY, Field3D &f) {
+const Field3D Div_par_K_Grad_par(BoutReal kY, const Field3D &f) {
   return kY*Grad2_par2(f);
 }
 
-const Field2D Div_par_K_Grad_par(Field2D &kY, Field2D &f) {
+const Field2D Div_par_K_Grad_par(const Field2D &kY, const Field2D &f) {
   return kY*Grad2_par2(f) + Div_par(kY)*Grad_par(f);
 }
 
-const Field3D Div_par_K_Grad_par(Field2D &kY, Field3D &f) {
+const Field3D Div_par_K_Grad_par(const Field2D &kY, const Field3D &f) {
   return kY*Grad2_par2(f) + Div_par(kY)*Grad_par(f);
 }
 
-const Field3D Div_par_K_Grad_par(Field3D &kY, Field2D &f) {
+const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field2D &f) {
   return kY*Grad2_par2(f) + Div_par(kY)*Grad_par(f);
 }
 
-const Field3D Div_par_K_Grad_par(Field3D &kY, Field3D &f) {
+const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field3D &f) {
   return kY*Grad2_par2(f) + Div_par(kY)*Grad_par(f);
-}
-
-/*******************************************************************************
-* Div_K_perp_Grad_perp
-* Divergence of perpendicular diffusive flux kperp*Grad_perp
-*******************************************************************************/
-
-const Field3D Div_K_perp_Grad_perp(const Field2D &UNUSED(kperp), const Field3D &UNUSED(f)) {
-  throw BoutException("Div_K_perp_Grad_per not implemented yet");
-  Field3D result = 0.0;
-  return result;
 }
 
 /*******************************************************************************
