@@ -287,9 +287,6 @@ int BoutInitialise(int &argc, char **&argv) {
     // Set up the "dump" data output file
     output << "Setting up output (dump) file\n";
 
-    if(!options->getSection("output")->isSet("floats"))
-      options->getSection("output")->set("floats", true, "default"); // by default output floats
-
     dump = Datafile(options->getSection("output"));
     
     /// Open a file for the output
