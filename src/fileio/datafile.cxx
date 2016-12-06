@@ -248,6 +248,10 @@ void Datafile::add(int &i, const char *name, bool save_repeat) {
   int_arr.push_back(d);
 }
 
+void Datafile::add(const BoutReal &r, const char *name, bool save_repeat) {
+  BoutReal * t=(BoutReal*) &r;
+  add(*t,name,save_repeat);
+}
 void Datafile::add(BoutReal &r, const char *name, bool save_repeat) {
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Datafile", name);

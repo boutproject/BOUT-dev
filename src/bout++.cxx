@@ -300,7 +300,7 @@ int BoutInitialise(int &argc, char **&argv) {
     }
 
     /// Add book-keeping variables to the output files
-    dump.writeVar(BOUT_VERSION, "BOUT_VERSION");
+    dump.add(BOUT_VERSION, "BOUT_VERSION",0);
     dump.add(simtime, "t_array", 1); // Appends the time of dumps into an array
     dump.add(iteration, "iteration", 0);
 
