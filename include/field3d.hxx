@@ -407,22 +407,22 @@ class Field3D : public Field, public FieldData {
   /// Addition operators
   Field3D & operator+=(const Field3D &rhs);
   Field3D & operator+=(const Field2D &rhs);
-  Field3D & operator+=(const BoutReal &rhs);
+  Field3D & operator+=(BoutReal rhs);
   
   /// Subtraction
   Field3D & operator-=(const Field3D &rhs);
   Field3D & operator-=(const Field2D &rhs);
-  Field3D & operator-=(const BoutReal &rhs);
+  Field3D & operator-=(BoutReal rhs);
 
   /// Multiplication
   Field3D & operator*=(const Field3D &rhs);
   Field3D & operator*=(const Field2D &rhs);
-  Field3D & operator*=(const BoutReal &rhs);
+  Field3D & operator*=(BoutReal rhs);
   
   /// Division
   Field3D & operator/=(const Field3D &rhs);
   Field3D & operator/=(const Field2D &rhs);
-  Field3D & operator/=(const BoutReal &rhs);
+  Field3D & operator/=(BoutReal rhs);
 
   // Stencils for differencing
   
