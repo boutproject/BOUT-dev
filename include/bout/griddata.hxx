@@ -70,7 +70,7 @@ class GridDataSource {
  */
 class GridFile : public GridDataSource {
  public:
-  GridFile(DataFormat *format, const string gridfilename);
+  GridFile(DataFormat *format, string gridfilename);
   ~GridFile();
   
   bool hasVar(const string &name);

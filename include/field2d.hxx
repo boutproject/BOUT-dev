@@ -73,7 +73,7 @@ class Field2D : public Field, public FieldData {
   // Operators
 
   Field2D & operator=(const Field2D &rhs);
-  Field2D & operator=(const BoutReal rhs);
+  Field2D & operator=(BoutReal rhs);
 
   /////////////////////////////////////////////////////////
   // Data access
@@ -137,13 +137,13 @@ class Field2D : public Field, public FieldData {
   }
   
   Field2D & operator+=(const Field2D &rhs);
-  Field2D & operator+=(const BoutReal rhs);
+  Field2D & operator+=(BoutReal rhs);
   Field2D & operator-=(const Field2D &rhs);
-  Field2D & operator-=(const BoutReal rhs);
+  Field2D & operator-=(BoutReal rhs);
   Field2D & operator*=(const Field2D &rhs);
-  Field2D & operator*=(const BoutReal rhs);
+  Field2D & operator*=(BoutReal rhs);
   Field2D & operator/=(const Field2D &rhs);
-  Field2D & operator/=(const BoutReal rhs);
+  Field2D & operator/=(BoutReal rhs);
   
   // Stencils
 

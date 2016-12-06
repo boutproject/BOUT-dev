@@ -188,7 +188,7 @@ class Field3D : public Field, public FieldData {
   /// Constructor from 2D field
   Field3D(const Field2D& f);
   /// Constructor from value
-  Field3D(const BoutReal val);
+  Field3D(BoutReal val );
   /// Destructor
   ~Field3D();
 
@@ -402,7 +402,7 @@ class Field3D : public Field, public FieldData {
   Field3D & operator=(const Field2D &rhs);
   Field3D & operator=(const FieldPerp &rhs);
   const bvalue & operator=(const bvalue &val);
-  BoutReal operator=(const BoutReal val);
+  BoutReal operator=(BoutReal val);
 
   /// Addition operators
   Field3D & operator+=(const Field3D &rhs);

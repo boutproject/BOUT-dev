@@ -67,7 +67,7 @@ class FieldPerp : public Field {
    * Assignment operators
    */
   FieldPerp & operator=(const FieldPerp &rhs);
-  FieldPerp & operator=(const BoutReal rhs);
+  FieldPerp & operator=(BoutReal rhs);
   
   /*!
    * Iterators and data access
@@ -257,7 +257,7 @@ const FieldPerp operator*(const FieldPerp &lhs, const FieldPerp &other);
 const FieldPerp operator*(const FieldPerp &lhs, const Field3D &other);
 const FieldPerp operator*(const FieldPerp &lhs, const Field2D &other);
 const FieldPerp operator*(const FieldPerp &lhs, BoutReal rhs);
-inline const FieldPerp operator*(const BoutReal lhs, const FieldPerp &rhs) {
+inline const FieldPerp operator*(BoutReal lhs, const FieldPerp &rhs) {
   return rhs * lhs;
 }
 
@@ -265,7 +265,7 @@ const FieldPerp operator/(const FieldPerp &lhs, const FieldPerp &other);
 const FieldPerp operator/(const FieldPerp &lhs, const Field3D &other);
 const FieldPerp operator/(const FieldPerp &lhs, const Field2D &other);
 const FieldPerp operator/(const FieldPerp &lhs, BoutReal rhs);
-const FieldPerp operator/(const BoutReal lhs, const FieldPerp &rhs);
+const FieldPerp operator/(BoutReal lhs, const FieldPerp &rhs);
   
 /*!
  * Create a unique copy of a FieldPerp, ensuring 
