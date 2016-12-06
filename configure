@@ -677,6 +677,7 @@ GREP
 CXXCPP
 CXX11_FLAGS
 HAVE_CXX11
+ARFLAGS
 RANLIB
 SET_MAKE
 LN_S
@@ -3527,6 +3528,23 @@ else
   RANLIB="$ac_cv_prog_RANLIB"
 fi
 
+
+
+
+ARFLAGS=''
+for flag in cruU cru
+do
+  echo 1 > artest1
+  ar $flag artest artest1 &&ar $flag artest artest1
+  arexit=$?
+  rm -f artest1 artest
+  if test $arexit -eq 0
+  then
+    ARFLAGS="$flag"
+    break;
+  fi
+done
+test -z $ARFLAGS && as_fn_error $? "Failed to find suitable flags for ar" "$LINENO" 5
 
 # Check for and enable C++11 support
 # Error if not supported
