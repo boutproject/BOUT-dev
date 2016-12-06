@@ -46,10 +46,10 @@ LaplaceSerialTri::LaplaceSerialTri(Options *opt) : Laplacian(opt), A(0.0), C(1.0
 
   int ncz = mesh->LocalNz;
 
-  bk = cmatrix(mesh->LocalNx, ncz/2 + 1);
+  bk = matrix<dcomplex>(mesh->LocalNx, ncz/2 + 1);
   bk1d = new dcomplex[mesh->LocalNx];
 
-  xk = cmatrix(mesh->LocalNx, ncz/2 + 1);
+  xk = matrix<dcomplex>(mesh->LocalNx, ncz/2 + 1);
   xk1d = new dcomplex[mesh->LocalNx];
 
   avec = new dcomplex[mesh->LocalNx];
@@ -58,9 +58,9 @@ LaplaceSerialTri::LaplaceSerialTri(Options *opt) : Laplacian(opt), A(0.0), C(1.0
 }
 
 LaplaceSerialTri::~LaplaceSerialTri() {
-  free_cmatrix(bk);
+  free_matrix(bk);
   delete[] bk1d;
-  free_cmatrix(xk);
+  free_matrix(xk);
   delete[] xk1d;
 
   delete[] avec;
