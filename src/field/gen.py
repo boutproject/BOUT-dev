@@ -13,6 +13,10 @@ class Field:
         self.n=name
         self.d=dirs
         self.i=idn
+        if idn=='real':
+            self.a=name
+        else:
+            self.a='const %s &'%name
     def get(self,name):
         if self.i=='real':
             return name
@@ -49,8 +53,9 @@ op_names={'*':'mul',
           '/':'div',
           '-':'minus',
           '+':'plus'}
+
+
 for lhs in fields:
-    #lhsn=field_names[lhs]
     for rhs in fields:
         if lhs.i == rhs.i == 'real':
             continue
@@ -79,7 +84,7 @@ for lhs in fields:
             else:
                 print ' int max',
             print '){'
-            if elementwise:#(lhs != rhs and mymin(lhs,rhs).i != 'real'):
+            if elementwise:
                 for d in out.d:
                     print '  for (int %s=0;%s<n%s;++%s){'%(d,d,d,d)
                 print "      ",out.get('result'),"=",
@@ -100,10 +105,12 @@ for lhs in fields:
                 print ";"
                 print "  }"
             print "}"
-            print "const %s operator%s(const %s & lhs,const %s & rhs){"%(out.n,op,lhs.n,rhs.n)
+            print "%s operator%s(%s lhs,%s rhs){"%(out.n,op,lhs.a,rhs.a)
             print "  Indices i{0,0,0};"
             print "  %s result;"%(out.n)
             print "  result.allocate();"
+            print "  checkData(lhs);"
+            print "  checkData(rhs);"
             print "  autogen_%s_%s_%s_%s("%(out.n,lhs.n,rhs.n,opn),
             for f in range(len(fn)):
                 if fs[f].i=='real':
@@ -121,6 +128,12 @@ for lhs in fields:
 #            if (lhs != rhs):
  #               print "\n     ,mesh->LocalNz",
             print ");"
+            if lhs.i == rhs.i == 'f3d':
+                print "#ifdef CHECK"
+                print "  if (lhs.getLocation() != rhs.getLocation()){"
+                print '    throw BoutException("Trying to %s fields of different locations!");'%op_names[op]
+                print '  }'
+                print '#endif'
             if out.i == 'f3d':
                 if lhs == 'f3d':
                     src='lhs'
@@ -135,3 +148,93 @@ for lhs in fields:
             print "}"
             print
             print
+
+
+# generate the ops for updating the lhs
+for lhs in fields:
+    #lhsn=field_names[lhs]
+    for rhs in fields:
+        if lhs.i == rhs.i == 'real':
+            continue
+        if (lhs != rhs and mymin(lhs,rhs).i != 'real'):
+            elementwise=True
+        else:
+            elementwise=False
+        out=mymax(rhs,lhs)
+        if out == lhs:
+            for op in ops:
+                opn=op_names[op]
+                print 'void autogen_%s_%s_%s('%(lhs.n,rhs.n,opn),
+                const=''
+                fs=[lhs,rhs]
+                fn=['lhs','rhs']
+                for f in range(len(fs)):
+                    print const,"BoutReal",
+                    if fs[f].i != 'real':
+                        print "* __restrict__",
+                    print fn[f],",",
+                    const='const'
+                if (lhs != rhs and mymin(lhs,rhs).i != 'real'):
+                    c=''
+                    for d in out.d:
+                        print '%s int n%s'%(c,d),
+                        c=','
+                else:
+                    print ' int max',
+                print '){'
+                if elementwise:
+                    for d in out.d:
+                        print '  for (int %s=0;%s<n%s;++%s){'%(d,d,d,d)
+                    print "      ",out.get('lhs'),"%s="%op,
+                    print rhs.get('rhs'),
+                    print ";"
+                    for d in out.d:
+                        print "  }"
+                else:
+                    print "  for (int i=0;i<max;++i){"
+                    print "    lhs[i]%s=rhs"%op,
+                    if rhs.i != 'real':
+                        print "[i]",
+                    print ";"
+                    print "  }"
+                print "}"
+                print "%s & %s::operator %s="%(lhs.n,lhs.n,op) ,
+                print "(%s rhs){"%(rhs.a)
+                print "  if (data.unique()){"
+                print "    Indices i{0,0,0};"
+                print "    checkData(*this);"
+                print "    checkData(rhs);"
+                print "    autogen_%s_%s_%s(&(*this)[i],"%(lhs.n,rhs.n,opn),
+                fs=[rhs]
+                fn=['rhs']
+                #print "data[]"
+                for f in range(len(fn)):
+                    if fs[f].i=='real':
+                        print "%s,"%fn[f],
+                    else:
+                        print "&%s[i],"%fn[f],
+                m=''
+                print '\n             ',
+                for d in out.d:
+                    print m,"mesh->LocalN%s"%d,
+                    if elementwise:
+                        m=','
+                    else:
+                        m='*'
+    #            if (lhs != rhs):
+     #               print "\n     ,mesh->LocalNz",
+                print ");"
+                if lhs.i == rhs.i == 'f3d':
+                    print "#ifdef CHECK"
+                    print "  if (this->getLocation() != rhs.getLocation()){"
+                    print '    throw BoutException("Trying to %s fields of different locations!");'%op_names[op]
+                    print '  }'
+                    print '#endif'
+                print "  } else {"
+                print "    (*this)= (*this) %s rhs;"%op
+                print "  }"
+                print "  return *this;"
+                print "}"
+                print
+                print
+                
