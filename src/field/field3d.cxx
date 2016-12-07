@@ -396,15 +396,15 @@ BoutReal Field3D::operator=(const BoutReal val) {
     return *this;                                            \
   }
 
-F3D_UPDATE_FIELD(+=, +, Field3D);    // operator+= Field3D
-F3D_UPDATE_FIELD(-=, -, Field3D);    // operator-= Field3D
-F3D_UPDATE_FIELD(*=, *, Field3D);    // operator*= Field3D
-F3D_UPDATE_FIELD(/=, /, Field3D);    // operator/= Field3D
+//F3D_UPDATE_FIELD(+=, +, Field3D);    // operator+= Field3D
+//F3D_UPDATE_FIELD(-=, -, Field3D);    // operator-= Field3D
+//F3D_UPDATE_FIELD(*=, *, Field3D);    // operator*= Field3D
+//F3D_UPDATE_FIELD(/=, /, Field3D);    // operator/= Field3D
 
-F3D_UPDATE_FIELD(+=, +, Field2D);    // operator+= Field2D
-F3D_UPDATE_FIELD(-=, -, Field2D);    // operator-= Field2D
-F3D_UPDATE_FIELD(*=, *, Field2D);    // operator*= Field2D
-F3D_UPDATE_FIELD(/=, /, Field2D);    // operator/= Field2D
+//F3D_UPDATE_FIELD(+=, +, Field2D);    // operator+= Field2D
+//F3D_UPDATE_FIELD(-=, -, Field2D);    // operator-= Field2D
+//F3D_UPDATE_FIELD(*=, *, Field2D);    // operator*= Field2D
+//F3D_UPDATE_FIELD(/=, /, Field2D);    // operator/= Field2D
 
 #define F3D_UPDATE_REAL(op,bop)                              \
   Field3D & Field3D::operator op(BoutReal rhs) {      \
@@ -425,10 +425,10 @@ F3D_UPDATE_FIELD(/=, /, Field2D);    // operator/= Field2D
     return *this;                                            \
   }
 
-F3D_UPDATE_REAL(+=,+);    // operator+= BoutReal
-F3D_UPDATE_REAL(-=,-);    // operator-= BoutReal
-F3D_UPDATE_REAL(*=,*);    // operator*= BoutReal
-F3D_UPDATE_REAL(/=,/);    // operator/= BoutReal
+// F3D_UPDATE_REAL(+=,+);    // operator+= BoutReal
+// F3D_UPDATE_REAL(-=,-);    // operator-= BoutReal
+// F3D_UPDATE_REAL(*=,*);    // operator*= BoutReal
+// F3D_UPDATE_REAL(/=,/);    // operator/= BoutReal
 
 /***************************************************************
  *                         STENCILS
@@ -1022,7 +1022,7 @@ void Field3D::applyParallelBoundary(const string &region, const string &conditio
  ***************************************************************/
 
 
-const Field3D operator-(const Field3D &f) {
+Field3D operator-(const Field3D &f) {
   return -1.0*f;
 }
 
@@ -1036,10 +1036,10 @@ const Field3D operator-(const Field3D &f) {
     return result;                                                        \
   }
 
-F3D_OP_FPERP(+);
-F3D_OP_FPERP(-);
-F3D_OP_FPERP(/);
-F3D_OP_FPERP(*);
+// F3D_OP_FPERP(+);
+// F3D_OP_FPERP(-);
+// F3D_OP_FPERP(/);
+// F3D_OP_FPERP(*);
 
 #define F3D_OP_FIELD(op, ftype)                                     \
   const Field3D operator op(const Field3D &lhs, const ftype &rhs) { \
@@ -1071,10 +1071,10 @@ F3D_OP_FPERP(*);
     return result;                                              \
   }
 
-F3D_OP_REAL(+); // Field3D + BoutReal
-F3D_OP_REAL(-); // Field3D - BoutReal
-F3D_OP_REAL(*); // Field3D * BoutReal
-F3D_OP_REAL(/); // Field3D / BoutReal
+// F3D_OP_REAL(+); // Field3D + BoutReal
+// F3D_OP_REAL(-); // Field3D - BoutReal
+// F3D_OP_REAL(*); // Field3D * BoutReal
+// F3D_OP_REAL(/); // Field3D / BoutReal
 
 #define REAL_OP_F3D(op)                                         \
   const Field3D operator op(BoutReal lhs, const Field3D &rhs) { \
@@ -1086,10 +1086,10 @@ F3D_OP_REAL(/); // Field3D / BoutReal
     return result;                                              \
   }
 
-REAL_OP_F3D(+); // BoutReal + Field3D
-REAL_OP_F3D(-); // BoutReal - Field3D
-REAL_OP_F3D(*); // BoutReal * Field3D
-REAL_OP_F3D(/); // BoutReal / Field3D
+// REAL_OP_F3D(+); // BoutReal + Field3D
+// REAL_OP_F3D(-); // BoutReal - Field3D
+// REAL_OP_F3D(*); // BoutReal * Field3D
+// REAL_OP_F3D(/); // BoutReal / Field3D
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
@@ -1444,6 +1444,12 @@ void checkData(const Field3D &f)  {
     
     if(!finite(f[d]))
       throw BoutException("Field3D: Operation on non-finite data at [%d][%d][%d]\n", d.x, d.y, d.z);
+  }
+}
+
+void checkData(const BoutReal &f) {
+  if (!finite(f)){
+    throw BoutException("BoutReal: Operation on non-finite data");
   }
 }
 #endif

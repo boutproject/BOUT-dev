@@ -264,31 +264,31 @@ class Field2D : public Field, public FieldData {
 
 // Non-member overloaded operators
 
-const Field2D operator+(const Field2D &lhs, const Field2D &rhs);
-const Field2D operator-(const Field2D &lhs, const Field2D &rhs);
-const Field2D operator*(const Field2D &lhs, const Field2D &rhs);
-const Field2D operator/(const Field2D &lhs, const Field2D &rhs);
+Field2D operator+(const Field2D &lhs, const Field2D &rhs);
+Field2D operator-(const Field2D &lhs, const Field2D &rhs);
+Field2D operator*(const Field2D &lhs, const Field2D &rhs);
+Field2D operator/(const Field2D &lhs, const Field2D &rhs);
 
-const Field3D operator+(const Field2D &lhs, const Field3D &rhs);
-const Field3D operator-(const Field2D &lhs, const Field3D &rhs);
-const Field3D operator*(const Field2D &lhs, const Field3D &rhs);
-const Field3D operator/(const Field2D &lhs, const Field3D &rhs);
+Field3D operator+(const Field2D &lhs, const Field3D &rhs);
+Field3D operator-(const Field2D &lhs, const Field3D &rhs);
+Field3D operator*(const Field2D &lhs, const Field3D &rhs);
+Field3D operator/(const Field2D &lhs, const Field3D &rhs);
 
-const Field2D operator+(const Field2D &lhs, BoutReal rhs);
-const Field2D operator-(const Field2D &lhs, BoutReal rhs);
-const Field2D operator*(const Field2D &lhs, BoutReal rhs);
-const Field2D operator/(const Field2D &lhs, BoutReal rhs);
+Field2D operator+(const Field2D &lhs, BoutReal rhs);
+Field2D operator-(const Field2D &lhs, BoutReal rhs);
+Field2D operator*(const Field2D &lhs, BoutReal rhs);
+Field2D operator/(const Field2D &lhs, BoutReal rhs);
 
-const Field2D operator+(BoutReal lhs, const Field2D &rhs);
-const Field2D operator-(BoutReal lhs, const Field2D &rhs);
-const Field2D operator*(BoutReal lhs, const Field2D &rhs);
-const Field2D operator/(BoutReal lhs, const Field2D &rhs);
+Field2D operator+(BoutReal lhs, const Field2D &rhs);
+Field2D operator-(BoutReal lhs, const Field2D &rhs);
+Field2D operator*(BoutReal lhs, const Field2D &rhs);
+Field2D operator/(BoutReal lhs, const Field2D &rhs);
 
 /*!
  * Unary minus. Returns the negative of given field,
  * iterates over whole domain including guard/boundary cells.
  */
-const Field2D operator-(const Field2D &f);
+Field2D operator-(const Field2D &f);
 
 // Non-member functions
 
