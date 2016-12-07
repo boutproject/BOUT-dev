@@ -12,7 +12,7 @@ import os
 
 # Generate the grids
 # Specify the grid dimensions
-grid_numbers = (4, 8, 16)
+grid_numbers = (5, 8, 16)
 # Make an append able list
 grid_files = []
 for grid_number in grid_numbers:

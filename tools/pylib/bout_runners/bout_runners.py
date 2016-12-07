@@ -17,8 +17,8 @@ BOUT/examples/bout_runners_example.
 #          parameters
 __authors__ = "Michael Loeiten"
 __email__   = "mmag@fysik.dtu.dk"
-__version__ = "1.0612"
-__date__    = "2016.11.14"
+__version__ = "1.0614"
+__date__    = "2016.12.17"
 
 import os
 import sys
@@ -3347,6 +3347,7 @@ class basic_runner(object):
         # Check that the sequence is not empty
         if len(restart_nr) != 0:
             # Sort the folders in ascending order
+            restart_nr = list(restart_nr)
             restart_nr.sort()
             # Pick the last index
             restart_nr = restart_nr[-1]

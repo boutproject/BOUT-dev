@@ -1,15 +1,16 @@
 # bout_runners_example
 
-The different examples in this folder serves as a tutorial on how to use
-`bout_runners`. Extra documentation of `bout_runners` can be found in
-the docstrings.
+A tutorial on how to use `bout_runners`.
+
+Extra documentation of `bout_runners` can be found in the
+`bout_runners`' docstrings.
 
 ## Contents
 ### The program:
 
 * `diffusion_3D.cxx` - Simulates 3D diffusion
 * `make` - The corresponding make file (notice that the `bout_runner`
-  calls this, so no make is necessary for the `bout_runner` to work.
+  calls this, so no make is necessary for the `bout_runner` to work).
 
 ### Folders:
 

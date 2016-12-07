@@ -17,8 +17,8 @@ my_runs = basic_runner(\
             # Set mms to true
             mms = True,\
             # Set the spatial domain
-            nx = (4, 8, 16),\
-            ny = (4, 8, 16),\
+            nx = (5, 8, 16),\
+            ny = (5, 8, 16),\
             nz = (4, 8, 16),\
             # Additional (put here to illustrate the sorting)
             series_add = (('cst','D_par',(1,2)), ('cst','D_perp',(0.5,1))),\
