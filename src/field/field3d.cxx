@@ -386,16 +386,6 @@ Field3D & Field3D::operator=(const BoutReal val) {
     return *this;                                            \
   }
 
-F3D_UPDATE_FIELD(+=, +, Field3D);    // operator+= Field3D
-F3D_UPDATE_FIELD(-=, -, Field3D);    // operator-= Field3D
-F3D_UPDATE_FIELD(*=, *, Field3D);    // operator*= Field3D
-F3D_UPDATE_FIELD(/=, /, Field3D);    // operator/= Field3D
-
-F3D_UPDATE_FIELD(+=, +, Field2D);    // operator+= Field2D
-F3D_UPDATE_FIELD(-=, -, Field2D);    // operator-= Field2D
-F3D_UPDATE_FIELD(*=, *, Field2D);    // operator*= Field2D
-F3D_UPDATE_FIELD(/=, /, Field2D);    // operator/= Field2D
-
 #define F3D_UPDATE_REAL(op,bop)                              \
   Field3D & Field3D::operator op(BoutReal rhs) {      \
     TRACE("Field3D: %s Field3D", #op);              \
@@ -413,11 +403,6 @@ F3D_UPDATE_FIELD(/=, /, Field2D);    // operator/= Field2D
     }                                                        \
     return *this;                                            \
   }
-
-F3D_UPDATE_REAL(+=,+);    // operator+= BoutReal
-F3D_UPDATE_REAL(-=,-);    // operator-= BoutReal
-F3D_UPDATE_REAL(*=,*);    // operator*= BoutReal
-F3D_UPDATE_REAL(/=,/);    // operator/= BoutReal
 
 ///////////////////// BOUNDARY CONDITIONS //////////////////
 
@@ -702,11 +687,6 @@ Field3D operator-(const Field3D &f) {
     return result;                                                        \
   }
 
-F3D_OP_FPERP(+);
-F3D_OP_FPERP(-);
-F3D_OP_FPERP(/);
-F3D_OP_FPERP(*);
-
 #define F3D_OP_FIELD(op, ftype)                                     \
   Field3D operator op(const Field3D &lhs, const ftype &rhs) { \
     Field3D result;                                                 \
@@ -716,16 +696,6 @@ F3D_OP_FPERP(*);
     result.setLocation( lhs.getLocation() );                        \
     return result;                                                  \
   }
-
-//F3D_OP_FIELD(+, Field3D);   // Field3D + Field3D
-//F3D_OP_FIELD(-, Field3D);   // Field3D - Field3D
-//F3D_OP_FIELD(*, Field3D);   // Field3D * Field3D
-//F3D_OP_FIELD(/, Field3D);   // Field3D / Field3D
-
-//F3D_OP_FIELD(+, Field2D);   // Field3D + Field2D
-//F3D_OP_FIELD(-, Field2D);   // Field3D - Field2D
-//F3D_OP_FIELD(*, Field2D);   // Field3D * Field2D
-//F3D_OP_FIELD(/, Field2D);   // Field3D / Field2D
 
 #define F3D_OP_REAL(op)                                         \
   Field3D operator op(const Field3D &lhs, BoutReal rhs) { \
@@ -737,11 +707,6 @@ F3D_OP_FPERP(*);
     return result;                                              \
   }
 
-F3D_OP_REAL(+); // Field3D + BoutReal
-F3D_OP_REAL(-); // Field3D - BoutReal
-F3D_OP_REAL(*); // Field3D * BoutReal
-F3D_OP_REAL(/); // Field3D / BoutReal
-
 #define REAL_OP_F3D(op)                                         \
   Field3D operator op(BoutReal lhs, const Field3D &rhs) { \
     Field3D result;                                             \
@@ -751,11 +716,6 @@ F3D_OP_REAL(/); // Field3D / BoutReal
     result.setLocation( rhs.getLocation() );                    \
     return result;                                              \
   }
-
-REAL_OP_F3D(+); // BoutReal + Field3D
-REAL_OP_F3D(-); // BoutReal - Field3D
-REAL_OP_F3D(*); // BoutReal * Field3D
-REAL_OP_F3D(/); // BoutReal / Field3D
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
@@ -1106,6 +1066,12 @@ void checkData(const Field3D &f) {
     }
   }
 #endif
+}
+
+void checkData(const BoutReal &f) {
+  if (!finite(f)){
+    throw BoutException("BoutReal: Operation on non-finite data");
+  }
 }
 #endif
 
