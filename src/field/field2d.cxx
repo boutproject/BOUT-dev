@@ -229,10 +229,10 @@ Field2D & Field2D::operator=(const BoutReal rhs) {
     return *this;                                            \
   }
 
-F2D_UPDATE_FIELD(+=, +, Field2D); // operator+=(const Field2D &rhs)
-F2D_UPDATE_FIELD(-=, -, Field2D); // operator-=(const Field2D &rhs)
-F2D_UPDATE_FIELD(*=, *, Field2D); // operator*=(const Field2D &rhs)
-F2D_UPDATE_FIELD(/=, /, Field2D); // operator/=(const Field2D &rhs)
+// F2D_UPDATE_FIELD(+=, +, Field2D); // operator+=(const Field2D &rhs)
+// F2D_UPDATE_FIELD(-=, -, Field2D); // operator-=(const Field2D &rhs)
+// F2D_UPDATE_FIELD(*=, *, Field2D); // operator*=(const Field2D &rhs)
+// F2D_UPDATE_FIELD(/=, /, Field2D); // operator/=(const Field2D &rhs)
 
 #define F2D_UPDATE_REAL(op,bop)                              \
   Field2D & Field2D::operator op(const BoutReal rhs) {       \
@@ -252,10 +252,10 @@ F2D_UPDATE_FIELD(/=, /, Field2D); // operator/=(const Field2D &rhs)
     return *this;                                            \
   }
 
-F2D_UPDATE_REAL(+=,+);    // operator+= BoutReal
-F2D_UPDATE_REAL(-=,-);    // operator-= BoutReal
-F2D_UPDATE_REAL(*=,*);    // operator*= BoutReal
-F2D_UPDATE_REAL(/=,/);    // operator/= BoutReal
+// F2D_UPDATE_REAL(+=,+);    // operator+= BoutReal
+// F2D_UPDATE_REAL(-=,-);    // operator-= BoutReal
+// F2D_UPDATE_REAL(*=,*);    // operator*= BoutReal
+// F2D_UPDATE_REAL(/=,/);    // operator/= BoutReal
 
 ////////////////////// STENCILS //////////////////////////
 
@@ -499,10 +499,10 @@ void Field2D::setBoundaryTo(const Field2D &f2d) {
     return result;                                                  \
   }
 
-F2D_OP_REAL(+);  // Field2D + BoutReal
-F2D_OP_REAL(-);  // Field2D - BoutReal
-F2D_OP_REAL(*);  // Field2D * BoutReal
-F2D_OP_REAL(/);  // Field2D / BoutReal
+// F2D_OP_REAL(+);  // Field2D + BoutReal
+// F2D_OP_REAL(-);  // Field2D - BoutReal
+// F2D_OP_REAL(*);  // Field2D * BoutReal
+// F2D_OP_REAL(/);  // Field2D / BoutReal
 
 #define REAL_OP_F2D(op)                                     \
   const Field2D operator op(BoutReal lhs, const Field2D &rhs) {     \
@@ -513,13 +513,13 @@ F2D_OP_REAL(/);  // Field2D / BoutReal
     return result;                                                  \
   }
 
-REAL_OP_F2D(+);  // BoutReal + Field2D
-REAL_OP_F2D(-);  // BoutReal - Field2D
-REAL_OP_F2D(*);  // BoutReal * Field2D
-REAL_OP_F2D(/);  // BoutReal / Field2D
+// REAL_OP_F2D(+);  // BoutReal + Field2D
+// REAL_OP_F2D(-);  // BoutReal - Field2D
+// REAL_OP_F2D(*);  // BoutReal * Field2D
+// REAL_OP_F2D(/);  // BoutReal / Field2D
 
 // Unary minus
-const Field2D operator-(const Field2D &f) {
+Field2D operator-(const Field2D &f) {
   return -1.0*f;
 }
 
