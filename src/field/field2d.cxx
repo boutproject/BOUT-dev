@@ -589,7 +589,7 @@ BoutReal min(const Field2D &f, bool allpe) {
   
   ASSERT2(f.isAllocated());
 
-  BoutReal result = f(0,0);
+  BoutReal result = f(mesh->xstart,mesh->ystart);
 
   for(auto i : f.region(RGN_NOBNDRY))
     if(f[i] < result)
