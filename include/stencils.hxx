@@ -40,22 +40,22 @@ class bvalue {
   bvalue & operator+=(const bvalue &rhs);
   bvalue & operator-=(const bvalue &rhs);
   bvalue & operator*=(const bvalue &rhs);
-  bvalue & operator*=(const BoutReal rhs);
+  bvalue & operator*=(BoutReal rhs );
   bvalue & operator/=(const bvalue &rhs);
-  bvalue & operator/=(const BoutReal rhs);
+  bvalue & operator/=(BoutReal rhs );
 
   // Binary operators
   
   const bvalue operator+(const bvalue &other) const;
   const bvalue operator-(const bvalue &other) const;
   const bvalue operator*(const bvalue &other) const;
-  const bvalue operator*(const BoutReal rhs) const;
+  const bvalue operator*(BoutReal rhs ) const;
   const bvalue operator/(const bvalue &other) const;
-  const bvalue operator/(const BoutReal rhs) const;
+  const bvalue operator/(BoutReal rhs ) const;
 };
 
-const bvalue operator*(const BoutReal lhs, const bvalue &rhs);
-const bvalue operator/(const BoutReal lhs, const bvalue &rhs);
+const bvalue operator*(BoutReal lhs , const bvalue &rhs);
+const bvalue operator/(BoutReal lhs , const bvalue &rhs);
 
 class stencil {
  public:
@@ -76,30 +76,30 @@ class stencil {
   // operators
   
   stencil & operator=(const stencil &rhs);
-  stencil & operator=(const BoutReal rhs);
+  stencil & operator=(BoutReal rhs);
 
   stencil & operator+=(const stencil &rhs);
-  stencil & operator+=(const BoutReal &rhs);
+  stencil & operator+=(BoutReal rhs);
   stencil & operator-=(const stencil &rhs);
-  stencil & operator-=(const BoutReal &rhs);
+  stencil & operator-=(BoutReal rhs);
   stencil & operator*=(const stencil &rhs);
-  stencil & operator*=(const BoutReal &rhs);
+  stencil & operator*=(BoutReal rhs);
   stencil & operator/=(const stencil &rhs);
-  stencil & operator/=(const BoutReal &rhs);
+  stencil & operator/=(BoutReal rhs);
 
   const stencil operator+(const stencil &other) const;
-  const stencil operator+(const BoutReal &other) const;
+  const stencil operator+(BoutReal other) const;
   const stencil operator-(const stencil &other) const;
-  const stencil operator-(const BoutReal &other) const;
+  const stencil operator-(BoutReal other) const;
   const stencil operator*(const stencil &other) const;
-  const stencil operator*(const BoutReal &other) const;
+  const stencil operator*(BoutReal other) const;
   const stencil operator/(const stencil &other) const;
-  const stencil operator/(const BoutReal &other) const;
+  const stencil operator/(BoutReal other) const;
 
-  friend const stencil operator+(const BoutReal &lhs, const stencil &rhs);
-  friend const stencil operator-(const BoutReal &lhs, const stencil &rhs);
-  friend const stencil operator*(const BoutReal &lhs, const stencil &rhs);
-  friend const stencil operator/(const BoutReal &lhs, const stencil &rhs);
+  friend const stencil operator+(BoutReal lhs, const stencil &rhs);
+  friend const stencil operator-(BoutReal lhs, const stencil &rhs);
+  friend const stencil operator*(BoutReal lhs, const stencil &rhs);
+  friend const stencil operator/(BoutReal lhs, const stencil &rhs);
 
   BoutReal min() const;
   BoutReal max() const;

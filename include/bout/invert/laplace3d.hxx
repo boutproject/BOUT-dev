@@ -27,19 +27,19 @@ public:
   
   virtual void setCoefA(const Field2D &f) = 0;
   virtual void setCoefA(const Field3D &f) {setCoefA(f.DC());}
-  virtual void setCoefA(const BoutReal f) {setCoefA(Field2D(f));}
+  virtual void setCoefA(BoutReal f) {setCoefA(Field2D(f));}
   
   virtual void setCoefB(const Field2D &f) = 0;
   virtual void setCoefB(const Field3D &f) {setCoefB(f.DC());}
-  virtual void setCoefB(const BoutReal f) {setCoefB(Field2D(f));}
+  virtual void setCoefB(BoutReal f) {setCoefB(Field2D(f));}
   
   virtual void setCoefC(const Field2D &f) = 0;
   virtual void setCoefC(const Field3D &f) {setCoefC(f.DC());}
-  virtual void setCoefC(const BoutReal f) {setCoefC(Field2D(f));}
+  virtual void setCoefC(BoutReal f) {setCoefC(Field2D(f));}
   
   virtual void setCoefD(const Field2D &f) = 0;
   virtual void setCoefD(const Field3D &f) {setCoefD(f.DC());}
-  virtual void setCoefD(const BoutReal f) {setCoefD(Field2D(f));}
+  virtual void setCoefD(BoutReal f) {setCoefD(Field2D(f));}
 
   virtual void setFlags(int f) {flags = f;}
   

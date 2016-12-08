@@ -20,7 +20,7 @@ class Literal {
  public:
   typedef Literal type; ///< Type of this expression
 
-  Literal(const BoutReal v) : val(v) {}
+  Literal(BoutReal v) : val(v) {}
   ~Literal() {}
   BoutReal operator()(int x, int y, int z) const {return val;}
 private:

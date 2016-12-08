@@ -407,7 +407,7 @@ F3D_UPDATE_FIELD(*=, *, Field2D);    // operator*= Field2D
 F3D_UPDATE_FIELD(/=, /, Field2D);    // operator/= Field2D
 
 #define F3D_UPDATE_REAL(op,bop)                              \
-  Field3D & Field3D::operator op(const BoutReal &rhs) {      \
+  Field3D & Field3D::operator op(BoutReal rhs) {      \
     msg_stack.push("Field3D: %s Field3D", #op);              \
     if(!finite(rhs))                                         \
       throw BoutException("Field3D: %s operator passed non-finite BoutReal number", #op); \
