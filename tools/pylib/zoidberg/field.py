@@ -152,7 +152,7 @@ class Slab(MagneticField):
         def Bzfunc(x, z, phi):
             return self.Bp + (x - self.grid.xcentre)*self.Bpprime
 
-        super().__init__(grid, Bxfunc, Bzfunc)
+        super(Slab,self).__init__(grid, Bxfunc, Bzfunc)
 
 
 class Stellarator(MagneticField):
@@ -211,4 +211,4 @@ class Stellarator(MagneticField):
         self.Bxfunc = lambdify((self.x, self.z, self.phi), Bx, "numpy")
         self.Bzfunc = lambdify((self.x, self.z, self.phi), Bz, "numpy")
 
-        super().__init__(self.grid, self.Bxfunc, self.Bzfunc)
+        super(Stellarator, self).__init__(self.grid, self.Bxfunc, self.Bzfunc)

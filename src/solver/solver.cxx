@@ -837,13 +837,13 @@ int Solver::getLocalN() {
   // X inner
   if(mesh->firstX() && !mesh->periodicX) {
     local_N += mesh->xstart * MYSUB * (n2dbndry + ncz * n3dbndry);
-    output.write("\tBoundary region inner X\n");
+    // output.write("\tBoundary region inner X\n");
   }
 
   // X outer
   if(mesh->lastX() && !mesh->periodicX) {
     local_N += (mesh->LocalNx - mesh->xend - 1) * MYSUB * (n2dbndry + ncz * n3dbndry);
-    output.write("\tBoundary region outer X\n");
+    // output.write("\tBoundary region outer X\n");
   }
   
   return local_N;

@@ -100,8 +100,8 @@ protected:
     Field3D nonzonal_phi = phi;
     if(modified) {
       // Subtract average in Y and Z
-      nonzonal_n -= averageY(n.DC());
-      nonzonal_phi -= averageY(phi.DC());
+      nonzonal_n -= averageY(DC(n));
+      nonzonal_phi -= averageY(DC(phi));
     }
     
     ddt(n) = -bracket(phi, n, bm) + alpha*(nonzonal_phi - nonzonal_n) - kappa*DDZ(phi);
