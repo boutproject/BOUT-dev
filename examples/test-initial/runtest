@@ -143,7 +143,7 @@ pi = np.pi
 
 # Some parameters
 success = True
-tolerance = 1.e-5
+tolerance = 1e-13
 cmd = "./test_initial"
 datadir = "data"
 inputfile = os.path.join(datadir, "BOUT.inp")
