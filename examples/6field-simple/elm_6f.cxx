@@ -266,7 +266,7 @@ const Field2D Invert_laplace2(const Field2D &f, int flags)
 
   for(int jx=0;jx<mesh->LocalNx;jx++)
     for(int jy=0;jy<mesh->LocalNy;jy++)
-      result(jx,jy) = result_tmp(jx,jy,0);
+      result[jx][jy] = result_tmp[jx][jy][0];
 
   return(result);
 }
@@ -342,7 +342,7 @@ const Field2D N0tanh(BoutReal n0_height, BoutReal n0_ave, BoutReal n0_width, Bou
 	      BoutReal rlx = mgx - n0_center;
 	      BoutReal temp = exp(rlx/n0_width);
 	      BoutReal dampr = ((temp - 1.0 / temp) / (temp + 1.0 / temp));
-	      result(jx,jy) = 0.5*(1.0 - dampr) * n0_height + n0_ave;  
+	      result[jx][jy] = 0.5*(1.0 - dampr) * n0_height + n0_ave;  
 	    }
 	}
     }
@@ -358,7 +358,7 @@ const Field2D N0tanh(BoutReal n0_height, BoutReal n0_ave, BoutReal n0_width, Bou
 	  BoutReal temp = exp(rlx/n0_width);
 	  BoutReal dampr = ((temp - 1.0 / temp) / (temp + 1.0 / temp));
 	  for(int jy=0;jy<mesh->LocalNy;jy++)
-	    result(jx,jy) = 0.5*(1.0 - dampr) * n0_height + n0_ave;  
+	    result[jx][jy] = 0.5*(1.0 - dampr) * n0_height + n0_ave;  
 	}
     }
   
@@ -1214,7 +1214,7 @@ const Field3D Grad_parP(const Field3D &f, CELL_LOC loc = CELL_DEFAULT)
     for(int i=0;i<mesh->LocalNx;i++)
       for(int j=1;j<mesh->LocalNy-1;j++)
 	for(int k=0;k<mesh->LocalNz;k++) {
-	  result(i,j,k) = (fp(i,j+1,k) - fm(i,j-1,k))/(2.*mesh->dy(i,j)*sqrt(mesh->g_22(i,j)));
+	  result[i][j][k] = (fp[i][j+1][k] - fm[i][j-1][k])/(2.*mesh->dy[i][j]*sqrt(mesh->g_22[i][j]));
 	}
   }else {
     if(parallel_lr_diff) {
@@ -1373,9 +1373,9 @@ int physics_run(BoutReal t)
       for(int j=0;j<mesh->LocalNy;j++)
 	for(int k=0;k<mesh->LocalNz;k++) {
 	  if(mesh->firstX())
-	    Jpar(i,j,k) = 0.0;
+	    Jpar[i][j][k] = 0.0;
 	  if(mesh->lastX())
-	    Jpar(mesh->LocalNx-1-i,j,k) = 0.0;
+	    Jpar[mesh->LocalNx-1-i][j][k] = 0.0;
 	}
   }
 
@@ -1409,9 +1409,9 @@ int physics_run(BoutReal t)
       for(int j=0;j<mesh->LocalNy;j++)
 	for(int k=0;k<mesh->LocalNz;k++) {
 	  if(mesh->firstX())
-	    Jpar2(i,j,k) = 0.0;
+	    Jpar2[i][j][k] = 0.0;
 	  if(mesh->lastX())
-	    Jpar2(mesh->coordinates()->LocalNx-1-i,j,k) = 0.0;
+	    Jpar2[mesh->LocalNx-1-i][j][k] = 0.0;
 	}
     }
   //output.write("I see you 3! \n");//xia
@@ -1476,7 +1476,7 @@ int physics_run(BoutReal t)
   if(hyperviscos > 0.0) {
     // Calculate coefficient.
     
-    hyper_mu_x = hyperviscos * mesh->coordinates()->g_11*SQ(mesh->coordinates()->dx) * abs(mesh->coordinates->g11*D2DX2(U)) / (abs(U) + 1e-3);
+    hyper_mu_x = hyperviscos * mesh->g_11*SQ(mesh->dx) * abs(mesh->g11*D2DX2(U)) / (abs(U) + 1e-3);
     hyper_mu_x.applyBoundary("dirichlet"); // Set to zero on all boundaries
     
     ddt(U) += hyper_mu_x * mesh->g11*D2DX2(U);
