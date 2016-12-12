@@ -2014,57 +2014,58 @@ void BoutMesh::clear_handles() {
  *                   Communication utilities
  ****************************************************************/
 
-int BoutMesh::pack_data(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer) {
-  int jx, jy, jz;
+int BoutMesh::pack_data(const vector<FieldData *> &var_list, int xge, int xlt, int yge,
+                        int ylt, BoutReal *buffer) {
+
   int len = 0;
-  std::vector<FieldData*>::iterator it;
 
-  for(jx=xge; jx != xlt; jx++) {
-
+  for (int jx = xge; jx != xlt; jx++) {
     /// Loop over variables
-    for(const auto& var : var_list) {
-      if(var->is3D()) {
+    for (const auto &var : var_list) {
+      if (var->is3D()) {
         // 3D variable
-
-        for(jy=yge;jy < ylt;jy++)
-          for(jz=0;jz < LocalNz;jz++)
-            len += var->getData(jx,jy,jz,buffer+len);
+        for (int jy = yge; jy < ylt; jy++) {
+          for (int jz = 0; jz < LocalNz; jz++, len++) {
+            buffer[len] = (*dynamic_cast<Field3D*>(var))(jx, jy, jz);
+          }
+        }
       } else {
         // 2D variable
-        for(jy=yge;jy < ylt;jy++)
-          len += var->getData(jx,jy,0,buffer+len);
+        for (int jy = yge; jy < ylt; jy++, len++) {
+          buffer[len] = (*dynamic_cast<Field2D*>(var))(jx, jy);
+        }
       }
     }
   }
 
-  return(len);
+  return (len);
 }
 
-int BoutMesh::unpack_data(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer)
-{
-  int jx, jy, jz;
+int BoutMesh::unpack_data(const vector<FieldData *> &var_list, int xge, int xlt, int yge,
+                          int ylt, BoutReal *buffer) {
+
   int len = 0;
-  std::vector<FieldData*>::iterator it;
 
-  for(jx=xge; jx != xlt; jx++) {
-
+  for (int jx = xge; jx != xlt; jx++) {
     /// Loop over variables
-    for(const auto& var : var_list) {
-      if(var->is3D()) {
+    for (const auto &var : var_list) {
+      if (var->is3D()) {
         // 3D variable
-
-        for(jy=yge;jy < ylt;jy++)
-          for(jz=0;jz < LocalNz;jz++)
-            len += var->setData(jx,jy,jz,buffer+len);
+        for (int jy = yge; jy < ylt; jy++) {
+          for (int jz = 0; jz < LocalNz; jz++, len++) {
+            (*dynamic_cast<Field3D*>(var))(jx, jy, jz) = buffer[len];
+          }
+        }
       } else {
         // 2D variable
-        for(jy=yge;jy < ylt;jy++)
-          len += var->setData(jx,jy,0,buffer+len);
+        for (int jy = yge; jy < ylt; jy++, len++) {
+          (*dynamic_cast<Field2D*>(var))(jx, jy) = buffer[len];
+        }
       }
     }
   }
 
-  return(len);
+  return (len);
 }
 
 /****************************************************************
@@ -2451,10 +2452,11 @@ const Field2D BoutMesh::lowPass_poloidal(const Field2D &var,int mmax)
      set_ri(ayn,ncy,aynReal,aynImag);
 
      for(jy=0;jy<ncy;jy++)
-      f1d[jy]=ayn[jy].real();
+       f1d[jy]=ayn[jy].real();
 
-    for(jy=0;jy<ncy;jy++)
-      result.setData(jx,jy+ystart,1,f1d+jy);
+     for(jy=0;jy<ncy;jy++) {
+       result(jx,jy+ystart,1) = f1d[jy];
+     }
   }//end of x
 
   return result;
