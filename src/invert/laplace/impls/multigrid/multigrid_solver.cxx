@@ -499,7 +499,7 @@ void Multigrid1DP::convertMatrixFS(int level) {
 Multigrid2DPf1D::Multigrid2DPf1D(int level,int lx,int lz, int gx, int gz,
 		       int dl,int px,int pz, MPI_Comm comm,int check) :
   MultigridAlg(level,lx,lz,gx,gz,comm,check) {
-  int num;
+
   mglevel = level;
 
   /* Momory allocate for Multigrid */
