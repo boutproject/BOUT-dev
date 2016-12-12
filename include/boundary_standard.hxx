@@ -135,8 +135,8 @@ class BoundaryNeumann_2ndOrder : public BoundaryOp {
 // Neumann boundary condition set half way between guard cell and grid cell at 2nd order accuracy
 class BoundaryNeumann : public BoundaryOp {
  public:
-  BoundaryNeumann() : bndfunc(NULL), gen(NULL) {}
-  BoundaryNeumann(BoundaryRegion *region, FieldGenerator*g):BoundaryOp(region), bndfunc(NULL), gen(g) {}
+  BoundaryNeumann() : gen(NULL) {}
+  BoundaryNeumann(BoundaryRegion *region, FieldGenerator*g):BoundaryOp(region), gen(g) {}
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
   void apply(Field2D &f);
   void apply(Field2D &f, BoutReal t);
@@ -146,7 +146,6 @@ class BoundaryNeumann : public BoundaryOp {
   void apply_ddt(Field2D &f);
   void apply_ddt(Field3D &f);
  private:
-  FuncPtr bndfunc;
   FieldGenerator *gen;
 };
 
@@ -169,8 +168,8 @@ class BoundaryNeumann_4thOrder : public BoundaryOp {
 /// Neumann boundary condition set half way between guard cell and grid cell at 4th order accuracy
 class BoundaryNeumann_O4 : public BoundaryOp {
  public:
-  BoundaryNeumann_O4() : bndfunc(NULL), gen(NULL) {}
-  BoundaryNeumann_O4(BoundaryRegion *region, FieldGenerator*g):BoundaryOp(region), bndfunc(NULL), gen(g) {}
+  BoundaryNeumann_O4() : gen(NULL) {}
+  BoundaryNeumann_O4(BoundaryRegion *region, FieldGenerator*g):BoundaryOp(region), gen(g) {}
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
   void apply(Field2D &f);
   void apply(Field2D &f, BoutReal t);
@@ -180,7 +179,6 @@ class BoundaryNeumann_O4 : public BoundaryOp {
   void apply_ddt(Field2D &f);
   void apply_ddt(Field3D &f);
  private:
-  FuncPtr bndfunc;
   FieldGenerator *gen;
 };
 

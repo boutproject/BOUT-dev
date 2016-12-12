@@ -170,7 +170,7 @@ private:
 
   /******* Start implementation ********/
   int mglevel,mgplag,cftype,mgsm,pcheck,tcheck;
-  int xNP,zNP,xProcI,yProcI,zProcI,xProcP,xProcM,zProcP,zProcM;
+  int xNP,xProcI;
   int mgcount,mgmpi;
 
   Options *opts;

@@ -107,8 +107,6 @@ class BoutMesh : public Mesh {
   const Field3D Switch_XZ(const Field3D &var);
   
  private:
-  Options *meshoptions; ///< Handle for mesh options
-
   string gridname;
   int nx, ny;        ///< Size of the grid in the input file
   int MX, MY;        ///< size of the grid excluding boundary regions
@@ -155,7 +153,6 @@ class BoutMesh : public Mesh {
   bool symmetricGlobalY;
 
   int  zperiod; 
-  BoutReal zlength; // Needed for reading 3D variables
   BoutReal ZMIN, ZMAX;   // Range of the Z domain (in fractions of 2pi)
   
   int  MXG, MYG;     // Boundary sizes
