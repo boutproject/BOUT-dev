@@ -870,13 +870,9 @@ void LaplaceMumps::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2
 	  coef4 -= 0.5 * ( ( coord->dx[x+1][y] - coord->dx[x-1][y] ) / pow( coord->dx[x][y], 2.0 ) ) * coef1; // BOUT-06 term
 	}
     }
-  
-  if(mesh->ShiftXderivs && mesh->IncIntShear) {
-    // d2dz2 term
-    coef2 += coord->g11[x][y] * mesh->IntShiftTorsion[x][y] * mesh->IntShiftTorsion[x][y];
-    // Mixed derivative
-    coef3 = 0.0; // This cancels out
-  }
+
+  // ShiftXderivs removed in BOUT-v4.0
+  // Input fields are in X-Z orthogonal coordinates.
   
   if (issetD) {
     coef1 *= D[x][y][z];
