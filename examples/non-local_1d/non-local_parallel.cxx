@@ -119,7 +119,7 @@ void NonLocalParallel::initialise(const BoutReal &pass_electron_charge, const Bo
     boundary_gradient_smoothing_length = 1;
   
   if (fluxes_location_is_ylow && !mesh->StaggerGrids)
-    bout_error("Trying to calculate the heat flux at CELL_YLOW while StaggerGrids=false is an error.");
+    throw BoutException("Trying to calculate the heat flux at CELL_YLOW while StaggerGrids=false is an error.");
   
   cubic_spline_inverse_lambdaC.initialise('y',true,fluxes_location_is_ylow);
   if (fluxes_location_is_ylow) {
@@ -224,7 +224,7 @@ void NonLocalParallel::initialise(const BoutReal &pass_electron_charge, const Bo
     heatflux_infilename<<"nonlocal_coefficients/heatfluxcoeffs"<<moments_number;
     std::ifstream heatflux_infile ( heatflux_infilename.str().c_str() );
     if (!heatflux_infile.is_open())
-      bout_error("Could not open heatfluxcoeffs file");
+      throw BoutException("Could not open heatfluxcoeffs file");
     heatflux_infile>>number_of_negative_eigenvalues;
     #ifndef ALLOCATED_EIGENVALUES
       #define ALLOCATED_EIGENVALUES
@@ -256,7 +256,7 @@ void NonLocalParallel::initialise(const BoutReal &pass_electron_charge, const Bo
     #endif
     for (int i=0; i<number_of_negative_eigenvalues; i++) {
       if (heatflux_infile.eof())
-	bout_error("reached end of heatfluxcoeffs file unexpectedly");
+	throw BoutException("reached end of heatfluxcoeffs file unexpectedly");
       heatflux_infile>>eigenvalues[i];
       #ifdef DRIVE_GRADT
 	heatflux_infile>>heatflux_gradT_coefficients[i];
@@ -279,7 +279,7 @@ void NonLocalParallel::initialise(const BoutReal &pass_electron_charge, const Bo
     heatfluxbc_infilename<<"nonlocal_coefficients/heatfluxbc"<<moments_number;
     std::ifstream heatfluxbc_infile ( heatfluxbc_infilename.str().c_str() );
     if (!heatfluxbc_infile.is_open())
-      bout_error("Could not open heatfluxbc file");
+      throw BoutException("Could not open heatfluxbc file");
     #ifdef BC_HEATFLUX
       W11_B_times_WinverseB_11 = new BoutReal[number_of_negative_eigenvalues];
     #endif
@@ -299,7 +299,7 @@ void NonLocalParallel::initialise(const BoutReal &pass_electron_charge, const Bo
     for (int i=0; i<number_of_negative_eigenvalues; i++) {
       if (heatfluxbc_infile.eof()) {
 	output<<"Error at i="<<i<<endl;
-	bout_error("reached end of heatfluxbc file unexpectedly");
+	throw BoutException("reached end of heatfluxbc file unexpectedly");
       }
       #ifdef BC_HEATFLUX
 	heatfluxbc_infile>>W11_B_times_WinverseB_11[i];
@@ -325,7 +325,7 @@ void NonLocalParallel::initialise(const BoutReal &pass_electron_charge, const Bo
     viscosity_infilename<<"nonlocal_coefficients/viscositycoeffs"<<moments_number;
     std::ifstream viscosity_infile ( viscosity_infilename.str().c_str() );
     if (!viscosity_infile.is_open())
-      bout_error("Could not open viscositycoeffs file");
+      throw BoutException("Could not open viscositycoeffs file");
     viscosity_infile>>number_of_negative_eigenvalues;
     #ifndef ALLOCATED_EIGENVALUES
       #define ALLOCATED_EIGENVALUES
@@ -357,7 +357,7 @@ void NonLocalParallel::initialise(const BoutReal &pass_electron_charge, const Bo
     #endif
     for (int i=0; i<number_of_negative_eigenvalues; i++) {
       if (viscosity_infile.eof())
-	bout_error("reached end of viscositycoeffs file unexpectedly");
+	throw BoutException("reached end of viscositycoeffs file unexpectedly");
       viscosity_infile>>eigenvalues[i];
       #ifdef DRIVE_GRADT
 	viscosity_infile>>viscosity_gradT_coefficients[i];
@@ -380,7 +380,7 @@ void NonLocalParallel::initialise(const BoutReal &pass_electron_charge, const Bo
     viscositybc_infilename<<"nonlocal_coefficients/viscositybc"<<moments_number;
     std::ifstream viscositybc_infile ( viscositybc_infilename.str().c_str() );
     if (!viscositybc_infile.is_open())
-      bout_error("Could not open viscositybc file");
+      throw BoutException("Could not open viscositybc file");
     #ifdef BC_VISCOSITY
       W20_B_times_WinverseB_20 = new BoutReal[number_of_negative_eigenvalues];
     #endif
@@ -399,7 +399,7 @@ void NonLocalParallel::initialise(const BoutReal &pass_electron_charge, const Bo
     #endif
     for (int i=0; i<number_of_negative_eigenvalues; i++) {
       if (viscositybc_infile.eof())
-	bout_error("reached end of viscositybc file unexpectedly");
+	throw BoutException("reached end of viscositybc file unexpectedly");
       #ifdef BC_VISCOSITY
 	viscositybc_infile>>W20_B_times_WinverseB_20[i];
       #else
@@ -424,7 +424,7 @@ void NonLocalParallel::initialise(const BoutReal &pass_electron_charge, const Bo
     friction_infilename<<"nonlocal_coefficients/frictioncoeffs"<<moments_number;
     std::ifstream friction_infile ( friction_infilename.str().c_str() );
     if (!friction_infile.is_open())
-      bout_error("Could not open frictioncoeffs file");
+      throw BoutException("Could not open frictioncoeffs file");
     friction_infile>>number_of_negative_eigenvalues;
     #ifndef ALLOCATED_EIGENVALUES
       #define ALLOCATED_EIGENVALUES
@@ -456,7 +456,7 @@ void NonLocalParallel::initialise(const BoutReal &pass_electron_charge, const Bo
     #endif
     for (int i=0; i<number_of_negative_eigenvalues; i++) {
       if (friction_infile.eof())
-	bout_error("reached end of frictioncoeffs file unexpectedly");
+	throw BoutException("reached end of frictioncoeffs file unexpectedly");
       friction_infile>>eigenvalues[i];
       #ifdef DRIVE_GRADT
 	friction_infile>>friction_gradT_coefficients[i];
@@ -479,7 +479,7 @@ void NonLocalParallel::initialise(const BoutReal &pass_electron_charge, const Bo
     frictionbc_infilename<<"nonlocal_coefficients/frictionbc"<<moments_number;
     std::ifstream frictionbc_infile ( frictionbc_infilename.str().c_str() );
     if (!frictionbc_infile.is_open())
-      bout_error("Could not open frictionbc file");
+      throw BoutException("Could not open frictionbc file");
     #ifdef BC_HEATFLUX
       C10_1k_dot_W1k_B_times_WinverseB_11 = new BoutReal[number_of_negative_eigenvalues];
     #endif
@@ -488,7 +488,7 @@ void NonLocalParallel::initialise(const BoutReal &pass_electron_charge, const Bo
     #endif
     for (int i=0; i<number_of_negative_eigenvalues; i++) {
       if (frictionbc_infile.eof())
-	bout_error("reached end of frictionbc file unexpectedly");
+	throw BoutException("reached end of frictionbc file unexpectedly");
       #ifdef BC_HEATFLUX
       frictionbc_infile>>C10_1k_dot_W1k_B_times_WinverseB_11[i];
       #else
@@ -649,7 +649,7 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_centre(const Field3D &n_
   
   start_index(position);
   
-  if (mesh->UpXSplitIndex()!=0 || mesh->DownXSplitIndex()!=0) bout_error("This code cannot currently handle x-splitting of processors.");
+  if (mesh->UpXSplitIndex()!=0 || mesh->DownXSplitIndex()!=0) throw BoutException("This code cannot currently handle x-splitting of processors.");
     if (!is_lower_boundary) {
       FieldPerp pass_dimensionless_length;
       pass_dimensionless_length.allocate();
@@ -816,7 +816,7 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_centre(const Field3D &n_
     #endif
   }
   
-//   bout_error("cell_centre version of boundary conditions code needs checking, at the moment it has just been cut&pasted from cell_ylow");
+//   throw BoutException("cell_centre version of boundary conditions code needs checking, at the moment it has just been cut&pasted from cell_ylow");
   for (RangeIterator rup = mesh->iterateBndryUpperY(); !rup.isDone(); rup++)
     for (int jz=0; jz<mesh->LocalNz; jz++) {
       position->jx=rup.ind;
@@ -1285,7 +1285,7 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
   
   start_index(position);
   
-  if (mesh->UpXSplitIndex()!=0 || mesh->DownXSplitIndex()!=0) bout_error("This code cannot currently handle x-splitting of processors.");
+  if (mesh->UpXSplitIndex()!=0 || mesh->DownXSplitIndex()!=0) throw BoutException("This code cannot currently handle x-splitting of processors.");
     if (!is_lower_boundary) {
       FieldPerp pass_dimensionless_length;
       pass_dimensionless_length.allocate();

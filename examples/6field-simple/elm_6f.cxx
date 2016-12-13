@@ -1099,7 +1099,7 @@ int physics_init(bool restarting)
     
     if(!bout_constrain(phi, C_phi, "phi")) {
       output.write("ERROR: Cannot constrain. Run again with phi_constraint=false\n");
-      bout_error("Aborting.\n");
+      throw BoutException("Aborting.\n");
     }
     
   }else {
