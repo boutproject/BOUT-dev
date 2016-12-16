@@ -120,6 +120,23 @@ AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_PROG_RANLIB
 
+AC_SUBST(ARFLAGS)
+
+ARFLAGS=''
+for flag in cruU cru
+do
+  echo 1 > artest1
+  ar $flag artest artest1 &&ar $flag artest artest1
+  arexit=$?
+  rm -f artest1 artest
+  if test $arexit -eq 0
+  then
+    ARFLAGS="$flag"
+    break;
+  fi
+done
+test -z $ARFLAGS && AC_MSG_ERROR([Failed to find suitable flags for ar])
+
 # Check for and enable C++11 support
 # Error if not supported
 AX_CXX_COMPILE_STDCXX([11], [noext], [mandatory])
@@ -154,7 +171,7 @@ then
   echo "Enabling all debug options"
   enable_checks="3"
   # use -Og with available, otherwise fall back to -O0
-  OPT_FLAGS="-g -O0 -Og"
+  OPT_FLAGS="-g -O0 -Og -fno-inline -hipa1"
 elif test $enable_optimize ; then
   optimize=$enable_optimize
   test $optimize -eq 0 2>/dev/null

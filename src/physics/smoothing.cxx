@@ -171,8 +171,8 @@ const Field3D averageX(const Field3D &f) {
   int ngz = mesh->LocalNz;
 
   if(input == NULL) {
-    input = rmatrix(ngy, ngz);
-    result = rmatrix(ngy, ngz);
+    input = matrix<BoutReal>(ngy, ngz);
+    result = matrix<BoutReal>(ngy, ngz);
   }
   
   // Average on this processor
@@ -263,8 +263,8 @@ const Field3D averageY(const Field3D &f) {
   int ngz = mesh->LocalNz;
   
   if(input == NULL) {
-    input = rmatrix(ngx, ngz);
-    result = rmatrix(ngx, ngz);
+    input = matrix<BoutReal>(ngx, ngz);
+    result = matrix<BoutReal>(ngx, ngz);
   }
   
   // Average on this processor

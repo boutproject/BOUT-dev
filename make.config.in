@@ -28,6 +28,7 @@ CXX			= @MPICXX@
 CC                      = $(CXX)
 
 AR			= ar
+ARFLAGS                 = @ARFLAGS@
 RANLIB			= @RANLIB@
 MKDIR			= @MKDIR@
 
@@ -143,7 +144,7 @@ ifeq ("$(TARGET)", "lib")
 lib: makefile $(BOUT_TOP)/make.config $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ)
 ifneq ("$(OBJ)foo", "foo")
 	@echo "Adding $(OBJ) to libbout++.a"
-	@$(AR) cru $(LIB) $(OBJ)
+	@$(AR) $(ARFLAGS) $(LIB) $(OBJ)
 	@$(RANLIB) $(LIB)
 endif
 
