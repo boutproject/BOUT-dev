@@ -4,6 +4,7 @@ int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
 
   Datafile df(Options::getRoot()->getSection("output"));
+  df.writeVar(BOUT_VERSION, "BOUT_VERSION");
 
   mesh->outputVars(df);
 

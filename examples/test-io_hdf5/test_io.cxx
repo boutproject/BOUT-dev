@@ -9,7 +9,7 @@
 
 #include <bout.hxx>
 
-int main(int argc, char**argv) {
+int main(int argc, char **argv) {
 
   // Initialise BOUT++, setting up mesh
   BoutInitialise(argc, argv);
