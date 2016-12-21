@@ -47,6 +47,7 @@
 #include <msg_stack.hxx>
 #include <bout/constants.hxx>
 
+/// MPI type of BoutReal for communications
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 
 //#define COMMDEBUG 1   // Uncomment to print communications debugging information
@@ -775,13 +776,13 @@ int BoutMesh::load() {
  *                 COMMUNICATIONS
  ****************************************************************/
 
-const int IN_SENT_UP    = 0;
-const int OUT_SENT_UP   = 1;
-const int IN_SENT_DOWN  = 2;
-const int OUT_SENT_DOWN = 3;
+const int IN_SENT_UP    = 0; ///< Data lower in X than branch-cut, at upper boundary in Y
+const int OUT_SENT_UP   = 1; ///< Data higher in X than branch-cut, at upper boundary in Y
+const int IN_SENT_DOWN  = 2; ///< Data lower in X than branch-cut, at lower boundary in Y
+const int OUT_SENT_DOWN = 3; ///< Data higher in X than branch-cut, at lower boundary in Y
 // X communication signals
-const int IN_SENT_OUT = 4;
-const int OUT_SENT_IN  = 5;
+const int IN_SENT_OUT = 4; ///< Data going in positive X direction (in to out)
+const int OUT_SENT_IN  = 5; ///< Data going in negative X direction (out to in)
 
 void BoutMesh::post_receive(CommHandle &ch) {
   BoutReal *inbuff;
