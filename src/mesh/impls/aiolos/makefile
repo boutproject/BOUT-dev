@@ -12,13 +12,17 @@ generated=generated_header.hxx generated_derivs.cxx generated_stencils.cxx gener
 
 aiolosmesh.o:$(generated)
 
-tables_cleaned.cxx:../../diff_tables.cxx
-	gcc -E $< > $@
+tables_cleaned.cxx:../../index_derivs.cxx
+	@ grep ' * Lookup tables of functions. Map between names, codes and functions' -B 1 -A 10000 $< |\
+	grep ' * Routines to use the above tables to map between function codes, names' -A 2 -B 10000 |\
+	gcc -E - > $@
 
 :generated_derivs.cxx
 
-stencils_cleaned.cxx:../../stencils.cxx
-	gcc -E $< > $@
+stencils_cleaned.cxx:../../index_derivs.cxx
+	@ grep ' * Derivative methods.' -B 1 -A 10000 $< | \
+	grep ' * Lookup tables of functions. Map between names, codes and functions' -A 1 -B 10000 |\
+	gcc -E - > $@
 
 $(generated):gen_derivs.py \
 		tables_cleaned.cxx gen_stencils.py stencils_cleaned.cxx \
