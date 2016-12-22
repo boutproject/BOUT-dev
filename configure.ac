@@ -266,7 +266,6 @@ fi
 echo
 
 #############################################################
-<<<<<<< 4832531511126787b9dc23bd052cf3d3da039ef5
 # Enable Backtrace if possible
 #############################################################
 
@@ -283,12 +282,6 @@ then
                                       ])])
     fi
 fi
-=======
-# Expose BOUT version
-#############################################################
-
-CXXFLAGS="$CXXFLAGS -DBOUT_VERSION_MAJOR=${BOUT_VERSION_MAJOR}"
->>>>>>> expose bout version to preprocessor
 
 #############################################################
 # Git revision number

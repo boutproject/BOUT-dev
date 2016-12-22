@@ -76,7 +76,7 @@ public:
     xstart(xs),   ystart(ys),   zstart(zs),
     xend(xe),     yend(ye),     zend(ze),
     xmin(xstart), ymin(ystart), zmin(zstart),
-    xmax(xend),   ymax(yend),   zmax(zend)
+    xmax(xend),   ymax(yend),   zmax(zend),
 #else
     xmin(xstart), ymin(ys),     zmin(zs),
     xmax(xend),   ymax(ye),     zmax(ze)
@@ -98,7 +98,7 @@ public:
     xstart(xs),   ystart(ys),   zstart(zs),
     xend(xe),     yend(ye),     zend(ze),
     xmin(xstart), ymin(ystart), zmin(zstart),
-    xmax(xend),   ymax(yend),   zmax(zend)
+    xmax(xend),   ymax(yend),   zmax(zend),
 #else
     xmin(xstart), ymin(ys),   zmin(zs),
     xmax(xend),   ymax(ye),   zmax(ze),
