@@ -139,7 +139,7 @@ def duplicates(a):
     if dup:
         import sys
         print >> sys.stderr , "found duplicates:"
-        print >>sys.stderr, dup
+        print >> sys.stderr, dup
         print >> sys.stderr , "in"
         print >> sys.stderr , a
-        exit(3)
+        raise "Exit"

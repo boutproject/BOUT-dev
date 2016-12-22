@@ -36,9 +36,9 @@ with open("tables_cleaned.cxx","r") as f:
                         #print cn
                         if not name in first_entry:
                             first_entry[name]=cn
-                        if en[1:7] == ['NULL']*6:
+                        if en[1:8] == ['NULL']*7:
                             continue
-                        func_tables[name][cn]=en[1:7]
+                        func_tables[name][cn]=en[1:8]
                 cfunc=None
 descriptions=func_tables.pop("DiffNameTable")
 descriptions.pop("DIFF_DEFAULT")
@@ -60,6 +60,11 @@ funcname={ 'FirstDerivTable'      : 'indexDD%s',
 funcs_to_gen=[]
 default_methods=dict()
 duplicates(func_tables.keys())
+#import sys
+#for f in func_tables:
+#    fu=func_tables[f]
+#    for k in fu:
+#        print >>sys.stderr, k,fu[k]
 for t in func_tables:
     try:
         func_tables[t].pop('DIFF_DEFAULT')
@@ -72,27 +77,25 @@ for t in func_tables:
     except:
         pass
     fu=func_tables[t].itervalues().next()
-    try:
-        if fu[1] != "NULL": # not a flux/upwind scheeme
-            flux=False
-        else:
-            flux=True
-    except:
-        print >>sys.stderr,fu
-        print >>sys.stderr,func_tables[t]
-        raise
-    if flux:
-        #print >> sys.stderr , fu[3]
-        if fu[3][-4:]== "stag":
-            stag=True
-        else:
-            stag=False
+    if fu[1] != "NULL": # not a flux/upwind scheeme
+        flux=False
+        upwind=False
     else:
-        #print >> sys.stderr , fu[0]
-        if fu[0][-4:]== "stag":
-            stag=True
+        if fu[3] != "NULL":
+            upwind=True
         else:
-            stag=False
+            upwind=False
+        flux=True
+    if upwind:
+        pos=3
+    elif flux:
+        pos=4
+    else:
+        pos=0
+    if fu[pos][-4:]== "stag":
+        stag=True
+    else:
+        stag=False
     if True:
         #for t in func_tables:
         #print >>sys.stderr , t #func_tables
@@ -164,7 +167,10 @@ for t in func_tables:
                         funcs=func_tables[t][method]
                         if funcs[0]=='NULL':
                             #print >> sys.stderr, funcs
-                            funcs[0:3]=funcs[3:6]
+                            funcs[1:3]=funcs[5:7]
+                            funcs[0]=funcs[3]
+                            if funcs[0]=='NULL':
+                                funcs[0]=funcs[4]
                             #print >> sys.stderr, funcs
                         forward=funcs[1]
                         if forward=='NULL':
@@ -217,8 +223,11 @@ for func in ["indexDD%s", "indexD2D%s2","indexVDD%s","indexFDD%s"]:
             function_header="  virtual const "+field+" "+func%d.upper()
             function_header+=sig
             if  not (field == "Field3D" and func[5]=='V'):
-                #print >> sys.stderr , func[5:]
-                function_header+=" override;\n"
+                print >> sys.stderr , func%d    #     indexD2DZ2
+                if not (field == "Field3D" and func%d.upper() == "indexD2DZ2"):
+                    function_header+=" override;\n"
+                else:
+                    function_header+=";\n"
             else:
                 function_header+=""";
 virtual const Field3D indexVDD%s(const Field &v,const Field &f, CELL_LOC outloc, DIFF_METHOD method) override{

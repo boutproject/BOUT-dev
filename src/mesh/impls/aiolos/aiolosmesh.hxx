@@ -32,7 +32,7 @@ class AiolosMesh : public BoutMesh {
   //virtual const Field3D interp_to(const Field3D &var, CELL_LOC loc) const;
   
   virtual const Field3D interp_to(const Field3D &f , CELL_LOC loc) const override {
-    if (loc == f.getLocation()){
+    if (loc == f.getLocation() || loc == CELL_DEFAULT){
       return f;
     } else {
       return interp_to_do(f,loc);

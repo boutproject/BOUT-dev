@@ -158,6 +158,7 @@ def parse_body(sten,field,mode,d,z0=None):
     for line in sten.body[:-1]:
         if sten.flux:
             try:
+                line=line.replace("vc","v.c");
                 line=replace_stencil(line,'v.',"v_in",field,mode,sten.mbf,d,z0=z0)
                 line=replace_stencil(line,'f.',"f_in",field,"norm",sten.mbf,d,z0=z0)
             except:
@@ -187,10 +188,13 @@ def parse_body(sten,field,mode,d,z0=None):
                 if toPrint:
                     if line.find("=") > -1:
                         import sys
+                        print >> sys.stderr ,"While parsing function %s"%sten.name
+                        print >> sys.stderr ,sten.body
+                        print >> sys.stderr ,sten.mbf
                         print >> sys.stderr ,"Failed to parse - unexpected line: ",line
                         print >> sys.stderr ,result_
                         print >> sys.stderr ,line
-                        exit(1)
+                        raise "Fuu"
 
         else:
             if sten.mbf == 'main':
@@ -504,6 +508,10 @@ def gen_functions_normal(to_gen):
         else:
             print "&in){"
         print '  //output.write("Using method %s!\\n");'%name
+        if d=='z':
+            print '  if (mesh->LocalN%s == 1) {'%(d)
+            print '    return 0.;'
+            print '  }'
         print '#ifdef CHECK'
         print '  if (mesh->LocalN%s < %d) {'%(d,sum(guards_)+1)
         print '    throw BoutException("AiolosMesh::%s - Not enough guards cells to take derivative!");'%(name)
