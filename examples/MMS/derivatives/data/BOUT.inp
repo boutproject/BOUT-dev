@@ -5,7 +5,7 @@ timestep=1
 
 periodicY=true
 MXG=2
-MYG=1
+MYG=2
 
 Lz=mesh:lz
 zmax=lz/2/pi

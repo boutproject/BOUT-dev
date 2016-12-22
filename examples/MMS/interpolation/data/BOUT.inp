@@ -5,7 +5,7 @@ timestep=1
 
 periodicY=true
 MXG=2
-MYG=1
+MYG=2
 
 Lz=mesh:lz
 zmax=lz/2/pi
@@ -30,6 +30,7 @@ StaggerGrids=true
 [MESH:diff]
 all=c4
 Second=C4
+secondStag=C2
 FluxStag=U1
 
 [All]
