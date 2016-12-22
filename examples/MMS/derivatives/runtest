@@ -40,13 +40,12 @@ if s:
 # List of input directories
 inputs = [
     ("X", ["mesh:nx"]),
-    #("Y",["mesh:ny"]),
-    #("Z",["MZ"])#, 
-    #("XYZ", ["mesh:nx", "mesh:ny", "MZ"])
+    ("Y",["mesh:ny"]),
+    ("Z",["MZ"]),
     ]
 
 funcs_periodic = {
-    #'sin(x*fac)' : ['cos(x*fac)*fac','-sin(x*fac)*fac*fac'],
+    'sin(x*fac)' : ['cos(x*fac)*fac','-sin(x*fac)*fac*fac'],
     'cos(x*fac)' : ['-sin(x*fac)*fac','-cos(x*fac)*fac*fac'],
     #'x*fac':'fac',
     'sin(x*fac)+sin(10*fac*x)' : ['fac*cos(fac*x)+fac*10*cos(10*fac*x)',
@@ -58,7 +57,7 @@ facs={'X':'2*pi',
       'Z':'1'    }
 
 # List of NX values to use
-nxlist = [16, 32, 64, 128]#, 256, 512]
+nxlist = [16, 32, 64, 128, 256, 512]
 #nxlist = [128,256,512,1024,2048,4096]
 
 nout = 1
@@ -80,8 +79,11 @@ for i in [1,2]:
     t_desc.append("L->L d_%d"%i)
 
 doPlot = 0 # 0, 1 or 2
+plotError=True
 if doPlot == 0:
     nxlist=nxlist[-2:] # just need behaviour in limit
+if doPlot > 1:
+    plotError=False # anyway plotted
 for dir,sizes in inputs:
     print("Running test in '%s'" % (dir))
     for setOrder in [2, 4]:
@@ -194,6 +196,49 @@ for dir,sizes in inputs:
                         print(args, " - t=",t_desc[t])
                         print("=> FAILED\n")
                         success = False
+                        if plotError:
+                            N  = collect("diff"  , path='data', tind=tr,info=False,xguards=incGuards,yguards=incGuards)
+                            N_ = collect("exact" , path='data', tind=tr,info=False,xguards=incGuards,yguards=incGuards)
+                            try:
+                                import matplotlib.pyplot as plt
+                                plt.figure()
+                                import numpy
+                                dim=numpy.shape(E_N)
+                                for i in range(dim[0])[1::2]:
+                                    ix=1
+                                    iy=1
+                                    iz=1
+                                    if dir == 'X':
+                                        ix=dim[1]
+                                    elif dir == 'Y':
+                                        iy=dim[2]
+                                    elif dir == 'Z':
+                                        iz=dim[3]
+                                    else:
+                                        fuuu(We, shouldn,'t be here ...')
+                                    #plot error:
+                                    plt.plot( E_N[i,:ix,:iy,:iz].flatten(), '-o', label=r'$e: %s$'%t_desc[i])
+                                    #plot result:
+                                    plt.plot( N  [i,:ix,:iy,:iz].flatten(), '-o', label=r'$d: %s$'%t_desc[i])
+                                    #plot expcected result:
+                                    #plt.plot( N_ [i,:ix,:iy,:iz].flatten(), '-o', label=r'$a_%d$'%i)
+                                plt.legend(loc="upper left")
+                                plt.grid()
+
+                                plt.xlabel(r'Mesh spacing $%s$'%dir)
+                                plt.ylabel("Error/Messurement")
+
+                                mkdir_p(join("data",dir,fun))
+                                plt.savefig(join("data",dir,fun,"%d_%d.pdf"%(nx,setOrder)))
+
+                                #plt.show()
+                                plt.close()
+                            except KeyboardInterrupt:
+                                raise
+                            except:
+                                print("plotting failed")
+                                pass
+
 
                 # plot errors
                 if doPlot > 0:
