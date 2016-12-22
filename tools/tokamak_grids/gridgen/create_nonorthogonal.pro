@@ -1391,7 +1391,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       ;; oplot, INTERPOLATE(R,[meanrpvt[0],meanrpvt[nflux_pvt/2]]),INTERPOLATE(Z,[meanzpvt[0],meanzpvt[nflux_pvt/2]]), thick=5
       
       ;; stop
-      
+
       ; Go a little way along each core separatrix and follow
       follow_gradient, interp_data, R, Z, $
                        legsep.core1[2,0], legsep.core1[2,1], $
@@ -1545,7 +1545,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
             boundary = 0
           ENDELSE
         ENDELSE
-          
+
         IF KEYWORD_SET(nrad_flexible) THEN nrad = TOTAL(nrad,/int) ; Allow nrad to change again
 
         new_settings = {psi_inner:psi_inner, psi_outer:(max(xpt_psi)+0.02), $
@@ -1623,7 +1623,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       ; Get the lines from the x-point to the target plates
       legsep = leg_separatrix2(interp_data, R, Z, xpt_ri[i], xpt_zi[i], $
                                opt_ri[primary_opt], opt_zi[primary_opt], boundary=bndryi)
-      
+
       pf_ri = [REVERSE(legsep.leg1[*,0]), xpt_ri[i], legsep.leg2[*,0]]
       pf_zi = [REVERSE(legsep.leg1[*,1]), xpt_zi[i], legsep.leg2[*,1]]
       mini = N_ELEMENTS(legsep.leg1[*,0])
@@ -1946,7 +1946,6 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
     ypos = 0
     rerun = 0   ; Flag. If 1 then have to re-run the grid generator
     FOR i=0, critical.n_xpoint-1 DO BEGIN
-
        pvtfluxliner = [R[(*pf_info[i]).ri0[N_ELEMENTS((*pf_info[i]).ri0)-1]], R[(*pf_info[i]).ri0[0]]] 
        pvtfluxlinez = [Z[(*pf_info[i]).zi0[N_ELEMENTS((*pf_info[i]).zi0)-1]], Z[(*pf_info[i]).zi0[0]]] 
 

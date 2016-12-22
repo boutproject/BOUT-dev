@@ -2481,9 +2481,9 @@ const Field3D BoutMesh::Switch_YZ(const Field3D &var) {
   //memory allocation
   result.allocate();
   if(ayz == (BoutReal**) NULL)
-    ayz=rmatrix(ncy,ncz);
+    ayz=matrix<BoutReal>(ncy,ncz);
   if(ayz_all == (BoutReal**) NULL)
-    ayz_all=rmatrix(ncy_all,ncz);
+    ayz_all=matrix<BoutReal>(ncy_all,ncz);
 
   for(ix=xstart;ix<=xend;ix++){
     //Field 3D to rmatrix of local

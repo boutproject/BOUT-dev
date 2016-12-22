@@ -498,15 +498,15 @@ void LaplaceSPT::SPT_data::allocate(int mm, int nx) {
   if(bk != NULL)
     return; // Already allocated
   
-  bk = cmatrix(mm, nx);
-  xk = cmatrix(mm, nx);
+  bk = matrix<dcomplex>(mm, nx);
+  xk = matrix<dcomplex>(mm, nx);
   
-  gam = cmatrix(mm, nx);
+  gam = matrix<dcomplex>(mm, nx);
   
   // Matrix to be solved
-  avec = cmatrix(mm, nx);
-  bvec = cmatrix(mm, nx);
-  cvec = cmatrix(mm, nx);
+  avec = matrix<dcomplex>(mm, nx);
+  bvec = matrix<dcomplex>(mm, nx);
+  cvec = matrix<dcomplex>(mm, nx);
   
   buffer  = new BoutReal[4*mm];
 }
@@ -515,14 +515,14 @@ LaplaceSPT::SPT_data::~SPT_data() {
   if( bk == NULL )
     return;
     
-  free_cmatrix(bk);
-  free_cmatrix(xk);
+  free_matrix(bk);
+  free_matrix(xk);
   
-  free_cmatrix(gam);
+  free_matrix(gam);
   
-  free_cmatrix(avec);
-  free_cmatrix(bvec);
-  free_cmatrix(cvec);
+  free_matrix(avec);
+  free_matrix(bvec);
+  free_matrix(cvec);
   
   delete[] buffer;
 }
