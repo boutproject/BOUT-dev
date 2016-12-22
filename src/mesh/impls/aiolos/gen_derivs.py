@@ -217,17 +217,17 @@ for func in ["indexDD%s", "indexD2D%s2","indexVDD%s","indexFDD%s"]:
             sig += "const "+field+" &f"
             if field=="Field3D" or flux:
                 sig+=", CELL_LOC outloc, DIFF_METHOD method";
-            if func%d.upper() == "indexDDZ":
+            if func%d.upper() in ["indexDDZ", "indexD2DZ2"]:
                 sig+=",bool ignored";
             sig+=")"
             function_header="  virtual const "+field+" "+func%d.upper()
             function_header+=sig
             if  not (field == "Field3D" and func[5]=='V'):
                 #print >> sys.stderr , func%d    #     indexD2DZ2
-                if not (field == "Field3D" and func%d.upper() == "indexD2DZ2"):
-                    function_header+=" override;\n"
-                else:
-                    function_header+=";\n"
+                #if not (field == "Field3D" and func%d.upper() == "indexD2DZ2"):
+                function_header+=" override;\n"
+                #else:
+                #    function_header+=";\n"
             else:
                 function_header+=""";
 virtual const Field3D indexVDD%s(const Field &v,const Field &f, CELL_LOC outloc, DIFF_METHOD method) override{
@@ -252,6 +252,7 @@ virtual const Field3D indexVDD%s(const Field &v,const Field &f, CELL_LOC outloc,
                 print '    throw BoutException("AiolosMesh::index?DDX: Unhandled case for shifting.\\n\
 f.getLocation()==outloc is required!");'
                 print "  }"
+            print '  output.write("Using aiolos mesh for %s\\n");'%(func%d.upper())
             print "  if ((outloc == CELL_%sLOW) != (f.getLocation() == CELL_%sLOW)){"% \
                 (d.upper(),d.upper())
             print "    // we are going onto a staggered grid or coming from one"
