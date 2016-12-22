@@ -252,7 +252,7 @@ virtual const Field3D indexVDD%s(const Field &v,const Field &f, CELL_LOC outloc,
                 print '    throw BoutException("AiolosMesh::index?DDX: Unhandled case for shifting.\\n\
 f.getLocation()==outloc is required!");'
                 print "  }"
-            print '  output.write("Using aiolos mesh for %s\\n");'%(func%d.upper())
+            #print '  output.write("Using aiolos mesh for %s\\n");'%(func%d.upper())
             print "  if ((outloc == CELL_%sLOW) != (f.getLocation() == CELL_%sLOW)){"% \
                 (d.upper(),d.upper())
             print "    // we are going onto a staggered grid or coming from one"
