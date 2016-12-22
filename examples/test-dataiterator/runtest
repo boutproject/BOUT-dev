@@ -16,7 +16,7 @@ from sys import stdout, exit
 MPIRUN=getmpirun()
 
 print("Making DataIterator test")
-s, out = launch("make > make.log",pipe=True)
+s, out = shell("make > make.log",pipe=True)
 if s:
   print("Failed to run make")
   exit(s);
