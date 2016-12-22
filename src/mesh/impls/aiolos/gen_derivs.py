@@ -223,7 +223,7 @@ for func in ["indexDD%s", "indexD2D%s2","indexVDD%s","indexFDD%s"]:
             function_header="  virtual const "+field+" "+func%d.upper()
             function_header+=sig
             if  not (field == "Field3D" and func[5]=='V'):
-                print >> sys.stderr , func%d    #     indexD2DZ2
+                #print >> sys.stderr , func%d    #     indexD2DZ2
                 if not (field == "Field3D" and func%d.upper() == "indexD2DZ2"):
                     function_header+=" override;\n"
                 else:

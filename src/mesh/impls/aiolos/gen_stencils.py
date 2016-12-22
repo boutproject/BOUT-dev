@@ -439,7 +439,7 @@ def gen_functions_normal(to_gen):
                 print >>sys.stderr,stencils
                 print >>sys.stderr,f_ar
                 print >>sys.stderr,"#error unexpected: sten is None for sten_name %s !"%sten_name
-                exit(1)
+                raise 1
             if sten_name=='main':
                 try:
                     guards=stencils[sten_name].guards #numGuards[f_ar[4]]

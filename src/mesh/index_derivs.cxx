@@ -433,7 +433,7 @@ Mesh::boundary_derivs_pair D2DX2_B2_stag(backward_stencil &f) {
   return result;
 }
 
-BoutReal D2DX2_C4_stag(stencil &f) {
+BoutReal D2DX2_C2_stag(stencil &f) {
   return ( f.pp + f.mm - f.p - f.m ) / 2.;
 }
 

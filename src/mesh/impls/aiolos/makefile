@@ -20,8 +20,9 @@ tables_cleaned.cxx:../../index_derivs.cxx
 :generated_derivs.cxx
 
 stencils_cleaned.cxx:../../index_derivs.cxx
-	@ grep ' * Derivative methods.' -B 1 -A 10000 $< | \
+	@ grep ' * All expect to have an input g' -B 2 -A 10000 $< | \
 	grep ' * Lookup tables of functions. Map between names, codes and functions' -A 1 -B 10000 |\
+	cat  |\
 	gcc -E - > $@
 
 $(generated):gen_derivs.py \
