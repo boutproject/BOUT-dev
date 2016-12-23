@@ -3244,12 +3244,9 @@ void BoundaryShifted::apply(Field2D &f) {
 }
 
 void BoundaryShifted::apply(Field3D &f) {
-  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
-    Field3D g = f.shiftZ(true); // Shift into orthogonal coordinates
-    op->apply(g);               // Apply the boundary condition
-    f = g.shiftZ(false);        // Shift back to field-aligned
-  }else
-    op->apply(f);
+  // ShiftXderivs removed in BOUT-v4.0
+  // Input fields are in X-Z orthogonal coordinates
+  op->apply(f);
 }
 
 void BoundaryShifted::apply_ddt(Field2D &f) {
@@ -3257,18 +3254,10 @@ void BoundaryShifted::apply_ddt(Field2D &f) {
 }
 
 void BoundaryShifted::apply_ddt(Field3D &f) {
-  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
-    // Shift both the field and its time-derivative into orthogonal coordinates
-    // This is in case the boundary condition depends on both (e.g. relaxing)
-    Field3D g = f.shiftZ(true);
-    ddt(g) = ddt(f).shiftZ(true);
-
-    op->apply_ddt(g);             // Apply the boundary condition
-    
-    // Shift the time-derivative back 
-    ddt(f) = ddt(g).shiftZ(false);       // Shift back to field-aligned
-  }else
-    op->apply_ddt(f);
+  // ShiftXderivs removed in BOUT-v4.0
+  // Input fields are in X-Z orthogonal coordinates
+  
+  op->apply_ddt(f);
 }
 
 ///////////////////////////////////////////////////////////////
