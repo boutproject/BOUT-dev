@@ -60,6 +60,7 @@ class Datafile {
   }
   void add(int &i, const char *name, bool save_repeat = false);
   void add(BoutReal &r, const char *name, bool save_repeat = false);
+  void add(const BoutReal &r, const char *name, bool save_repeat = false);
   void add(Field2D &f, const char *name, bool save_repeat = false);
   void add(Field3D &f, const char *name, bool save_repeat = false);
   void add(Vector2D &f, const char *name, bool save_repeat = false);
@@ -71,8 +72,8 @@ class Datafile {
   bool write(const char *filename, ...) const; ///< Opens, writes, closes file
   
   // Write a variable to the file now
-  bool writeVar(const int &i, const char *name);
-  bool writeVar(const BoutReal &r, const char *name);
+  DEPRECATED(bool writeVar(const int &i, const char *name));
+  DEPRECATED(bool writeVar(const BoutReal &r, const char *name));
   
  private:
   bool parallel; // Use parallel formats?
