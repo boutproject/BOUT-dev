@@ -72,7 +72,7 @@ void HeatFluxIntegration::initialise(const bool pass_electron_heat_flux_location
  *                            INTEGRATION ROUTINES
  **********************************************************************************/
 
-void HeatFluxIntegration::calculateIntegralBelow_cell_centre(const BoutReal &eigenvalue, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, const int &counter) {
+void HeatFluxIntegration::calculateIntegralBelow_cell_centre(BoutReal eigenvalue, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, const int &counter) {
 
   #ifdef CHECK
   msg_stack.push("HeatFluxIntegration::calculateIntegralBelow()");
@@ -155,7 +155,7 @@ void HeatFluxIntegration::calculateIntegralBelow_cell_centre(const BoutReal &eig
   
 }
 
-void HeatFluxIntegration::calculateIntegralAbove_cell_centre(const BoutReal &eigenvalue, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, const int &counter) {
+void HeatFluxIntegration::calculateIntegralAbove_cell_centre(BoutReal eigenvalue, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, const int &counter) {
 
   #ifdef CHECK
   msg_stack.push("HeatFluxIntegration::calculateIntegralAbove()");
@@ -245,7 +245,7 @@ void HeatFluxIntegration::calculateIntegralAbove_cell_centre(const BoutReal &eig
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void HeatFluxIntegration::calculateIntegralBelow_cell_ylow(const BoutReal &eigenvalue, const Field3D &dimensionless_length_deltas_below, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, CubicSpline &cubic_spline_gradT, const int &counter) {
+void HeatFluxIntegration::calculateIntegralBelow_cell_ylow(BoutReal eigenvalue, const Field3D &dimensionless_length_deltas_below, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, CubicSpline &cubic_spline_gradT, const int &counter) {
   
   #ifdef CHECK
   msg_stack.push("HeatFluxIntegration::calculateIntegralBelow()");
@@ -424,7 +424,7 @@ void HeatFluxIntegration::calculateIntegralBelow_cell_ylow(const BoutReal &eigen
   
 }
 
-void HeatFluxIntegration::calculateIntegralAbove_cell_ylow(const BoutReal &eigenvalue, const Field3D &dimensionless_length_deltas_below, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, CubicSpline &cubic_spline_gradT, const int &counter) {
+void HeatFluxIntegration::calculateIntegralAbove_cell_ylow(BoutReal eigenvalue, const Field3D &dimensionless_length_deltas_below, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, CubicSpline &cubic_spline_gradT, const int &counter) {
 
   #ifdef CHECK
   msg_stack.push("HeatFluxIntegration::calculateIntegralAbove()");

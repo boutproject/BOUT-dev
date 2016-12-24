@@ -106,7 +106,7 @@ NonLocalParallel::~NonLocalParallel() {
   MPI_Comm_free(&comm_yprocs_minusone);
 }
 
-void NonLocalParallel::initialise(const BoutReal &pass_electron_charge, const BoutReal &pass_electron_mass, const BoutReal &pass_ion_mass, const BoutReal &pass_epsilon_0, const BoutReal &pass_logLambda, const bool pass_fluxes_location_is_ylow, const BoutReal &pass_gamma_factor) {
+void NonLocalParallel::initialise(BoutReal pass_electron_charge, BoutReal pass_electron_mass, BoutReal pass_ion_mass, BoutReal pass_epsilon_0, BoutReal pass_logLambda, const bool pass_fluxes_location_is_ylow, BoutReal pass_gamma_factor) {
   fluxes_location_is_ylow = pass_fluxes_location_is_ylow;
   #ifdef CHECK
     calculated_before_setting_bcs=false;

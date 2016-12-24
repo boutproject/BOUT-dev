@@ -109,7 +109,7 @@ class Field2D : public Field, public FieldData {
    * Allocates data if not already allocated, then
    * sets all cells to \p rhs
    */ 
-  Field2D & operator=(const BoutReal rhs);
+  Field2D & operator=(BoutReal rhs);
 
   /////////////////////////////////////////////////////////
   // Data access
@@ -196,14 +196,14 @@ class Field2D : public Field, public FieldData {
   }
   
   Field2D & operator+=(const Field2D &rhs); ///< In-place addition. Copy-on-write used if data is shared
-  Field2D & operator+=(const BoutReal rhs); ///< In-place addition. Copy-on-write used if data is shared
+  Field2D & operator+=(BoutReal rhs);       ///< In-place addition. Copy-on-write used if data is shared
   Field2D & operator-=(const Field2D &rhs); ///< In-place subtraction. Copy-on-write used if data is shared
-  Field2D & operator-=(const BoutReal rhs); ///< In-place subtraction. Copy-on-write used if data is shared
+  Field2D & operator-=(BoutReal rhs);       ///< In-place subtraction. Copy-on-write used if data is shared
   Field2D & operator*=(const Field2D &rhs); ///< In-place multiplication. Copy-on-write used if data is shared
-  Field2D & operator*=(const BoutReal rhs); ///< In-place multiplication. Copy-on-write used if data is shared
+  Field2D & operator*=(BoutReal rhs);       ///< In-place multiplication. Copy-on-write used if data is shared
   Field2D & operator/=(const Field2D &rhs); ///< In-place division. Copy-on-write used if data is shared
-  Field2D & operator/=(const BoutReal rhs); ///< In-place division. Copy-on-write used if data is shared
-  
+  Field2D & operator/=(BoutReal rhs);       ///< In-place division. Copy-on-write used if data is shared
+
   // Stencils
 
   void getXArray(int y, int z, rvec &xv) const;
