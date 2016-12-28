@@ -551,7 +551,7 @@ bool Datafile::writeVar(const int &i, const char *name) {
   return true;
 }
 
-bool Datafile::writeVar(const BoutReal &r, const char *name) {
+bool Datafile::writeVar(BoutReal r, const char *name) {
   BoutReal *r2 = new BoutReal;
   *r2 = r;
   add(*r2, name);
