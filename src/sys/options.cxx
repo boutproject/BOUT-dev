@@ -36,7 +36,7 @@ void Options::set(const string &key, const int &val, const string &source) {
   set(key, ss.str(), source);
 }
 
-void Options::set(const string &key, const BoutReal &val, const string &source) {
+void Options::set(const string &key, BoutReal val, const string &source) {
   if(val) {
     set(key, "true", source);
   }else
@@ -103,7 +103,7 @@ void Options::get(const string &key, int &val, const int &def, bool log) {
   }
 }
 
-void Options::get(const string &key, BoutReal &val, const BoutReal &def, bool log) {
+void Options::get(const string &key, BoutReal &val, BoutReal def, bool log) {
   map<string, OptionValue>::iterator it(options.find(lowercase(key)));
   if(it == options.end()) {
     val = def;
