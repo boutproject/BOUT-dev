@@ -51,29 +51,8 @@ class BoutMesh : public Mesh {
   
   /////////////////////////////////////////////
   // non-local communications
-
-  /// Low-level communication routine
-  /// Send a buffer of data from this processor to another
-  /// This must be matched by a corresponding call to
-  /// receiveFromProc on the receiving processor
-  ///
-  /// @param[in] xproc  X index of processor to send to
-  /// @param[in] yproc  Y index of processor to send to
-  /// @param[in] buffer A buffer of data to send
-  /// @param[in] size   The length of \p buffer
-  /// @param[in] tag    A label, must be the same at receive
-  MPI_Request sendToProc(int xproc, int yproc, BoutReal *buffer, int size, int tag);
   
-  /// Low-level communication routine
-  /// Receive a buffer of data from another processor
-  /// Must be matched by corresponding sendToProc call
-  /// on the sending processor
-  ///
-  /// @param[in] xproc X index of sending processor
-  /// @param[in] yproc Y index of sending processor
-  /// @param[inout] buffer  The buffer to fill with data. Must already be allocated of length \p size
-  /// @param[in] size  The length of \p buffer
-  /// @param[in] tag   A label, must be the same as send
+  MPI_Request sendToProc(int xproc, int yproc, BoutReal *buffer, int size, int tag);
   comm_handle receiveFromProc(int xproc, int yproc, BoutReal *buffer, int size, int tag);
   
   int getNXPE(); ///< The number of processors in the X direction
@@ -134,8 +113,8 @@ class BoutMesh : public Mesh {
   /////////////////////////////////////////////
   // Y communications
   
-  bool firstY(); ///< Is this processor first in Y? i.e. is there a boundary at lower Y?
-  bool lastY();  ///< Is this processor last in Y? i.e. is there a boundary at upper Y?
+  bool firstY();
+  bool lastY();  
   bool firstY(int xpos);
   bool lastY(int xpos);
   int UpXSplitIndex();
