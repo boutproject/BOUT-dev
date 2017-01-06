@@ -788,33 +788,8 @@ void Field3D::applyBoundary(bool init) {
       if ( !bndry->apply_to_ddt || init) // Always apply to the values when initialising fields, otherwise apply only if wanted
         bndry->apply(*this);
   }
-  
-  if (init) {
-    // Set the corners to zero. ddt vanishes for the corners, so only need to be set once
-    for(int jx=0;jx<fieldmesh->xstart;jx++) {
-      for(int jy=0;jy<fieldmesh->ystart;jy++) {
-        for(int jz=0;jz<nz;jz++)
-          operator()(jx,jy,jz) = 0.;
-      }
-      for(int jy=fieldmesh->yend+1;jy<fieldmesh->LocalNy;jy++) {
-        for(int jz=0;jz<nz;jz++)
-          operator()(jx,jy,jz) = 0.;
-      }
-    }
-    for(int jx=fieldmesh->xend+1;jx<fieldmesh->LocalNx;jx++) {
-      for(int jy=0;jy<fieldmesh->ystart;jy++) {
-        for(int jz=0;jz<nz;jz++)
-          operator()(jx,jy,jz) = 0.;
-      }
-      for(int jy=fieldmesh->yend+1;jy<fieldmesh->LocalNy;jy++) {
-        for(int jz=0;jz<nz;jz++)
-          operator()(jx,jy,jz) = 0.;
-      }
-    }
-  }
 }
 
-//JMAD
 void Field3D::applyBoundary(BoutReal t) {
   TRACE("Field3D::applyBoundary()");
   
@@ -835,28 +810,6 @@ void Field3D::applyBoundary(BoutReal t) {
     // Apply boundary to this field
     for(const auto& bndry : bndry_op)
       bndry->apply(*this,t);
-  }
-
-  // Set the corners to zero
-  for(int jx=0;jx<fieldmesh->xstart;jx++) {
-    for(int jy=0;jy<fieldmesh->ystart;jy++) {
-      for(int jz=0;jz<nz;jz++)
-        operator()(jx,jy,jz) = 0.;
-    }
-    for(int jy=fieldmesh->yend+1;jy<fieldmesh->LocalNy;jy++) {
-      for(int jz=0;jz<nz;jz++)
-        operator()(jx,jy,jz) = 0.;
-    }
-  }
-  for(int jx=fieldmesh->xend+1;jx<fieldmesh->LocalNx;jx++) {
-    for(int jy=0;jy<fieldmesh->ystart;jy++) {
-      for(int jz=0;jz<nz;jz++)
-        operator()(jx,jy,jz) = 0.;
-    }
-    for(int jy=fieldmesh->yend+1;jy<fieldmesh->LocalNy;jy++) {
-      for(int jz=0;jz<nz;jz++)
-        operator()(jx,jy,jz) = 0.;
-    }
   }
 }
 
@@ -883,28 +836,6 @@ void Field3D::applyBoundary(const string &condition) {
     op->apply(*this);
     delete op;
   }
-  
-  // Set the corners to zero
-  for(int jx=0;jx<fieldmesh->xstart;jx++) {
-    for(int jy=0;jy<fieldmesh->ystart;jy++) {
-      for(int jz=0;jz<nz;jz++)
-        operator()(jx,jy,jz) = 0.;
-    }
-    for(int jy=fieldmesh->yend+1;jy<fieldmesh->LocalNy;jy++) {
-      for(int jz=0;jz<nz;jz++)
-        operator()(jx,jy,jz) = 0.;
-    }
-  }
-  for(int jx=fieldmesh->xend+1;jx<fieldmesh->LocalNx;jx++) {
-    for(int jy=0;jy<fieldmesh->ystart;jy++) {
-      for(int jz=0;jz<nz;jz++)
-        operator()(jx,jy,jz) = 0.;
-    }
-    for(int jy=fieldmesh->yend+1;jy<fieldmesh->LocalNy;jy++) {
-      for(int jz=0;jz<nz;jz++)
-        operator()(jx,jy,jz) = 0.;
-    }
-  }
 }
 
 void Field3D::applyBoundary(const string &region, const string &condition) {
@@ -920,28 +851,6 @@ void Field3D::applyBoundary(const string &region, const string &condition) {
       op->apply(*this);
       delete op;
       break;
-    }
-  }
-  
-  // Set the corners to zero
-  for(int jx=0;jx<fieldmesh->xstart;jx++) {
-    for(int jy=0;jy<fieldmesh->ystart;jy++) {
-      for(int jz=0;jz<nz;jz++)
-        operator()(jx,jy,jz) = 0.;
-    }
-    for(int jy=fieldmesh->yend+1;jy<fieldmesh->LocalNy;jy++) {
-      for(int jz=0;jz<nz;jz++)
-        operator()(jx,jy,jz) = 0.;
-    }
-  }
-  for(int jx=fieldmesh->xend+1;jx<fieldmesh->LocalNx;jx++) {
-    for(int jy=0;jy<fieldmesh->ystart;jy++) {
-      for(int jz=0;jz<nz;jz++)
-        operator()(jx,jy,jz) = 0.;
-    }
-    for(int jy=fieldmesh->yend+1;jy<fieldmesh->LocalNy;jy++) {
-      for(int jz=0;jz<nz;jz++)
-        operator()(jx,jy,jz) = 0.;
     }
   }
 }
@@ -961,28 +870,6 @@ void Field3D::applyTDerivBoundary() {
   
   if(background != NULL)
     *this -= *background;
-
-  // Set the corners to zero
-  for(int jx=0;jx<fieldmesh->xstart;jx++) {
-    for(int jy=0;jy<fieldmesh->ystart;jy++) {
-      for(int jz=0;jz<nz;jz++)
-        (*deriv)(jx,jy,jz) = 0.;
-    }
-    for(int jy=fieldmesh->yend+1;jy<fieldmesh->LocalNy;jy++) {
-      for(int jz=0;jz<nz;jz++)
-        (*deriv)(jx,jy,jz) = 0.;
-    }
-  }
-  for(int jx=fieldmesh->xend+1;jx<fieldmesh->LocalNx;jx++) {
-    for(int jy=0;jy<fieldmesh->ystart;jy++) {
-      for(int jz=0;jz<nz;jz++)
-        (*deriv)(jx,jy,jz) = 0.;
-    }
-    for(int jy=fieldmesh->yend+1;jy<fieldmesh->LocalNy;jy++) {
-      for(int jz=0;jz<nz;jz++)
-        (*deriv)(jx,jy,jz) = 0.;
-    }
-  }
 }
 
 void Field3D::setBoundaryTo(const Field3D &f3d) {
