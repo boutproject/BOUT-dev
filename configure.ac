@@ -19,7 +19,9 @@
 #
 #####################################################################
 #
-# Process this file with autoconf to produce a configure script.
+# Process this file with autoreconf to produce a configure script.
+#
+#     $ autoreconf -if 
 #
 # Changelog:
 #
@@ -367,12 +369,15 @@ AS_IF([test "x$with_netcdf" != "xno"],
         AC_MSG_CHECKING([if we can compile NetCDF with C++])
         # Note netcdf_c++ needed
         NCLIB=`$NCCONF --libs | sed s/-lnetcdf/-lnetcdf_c++\ -lnetcdf/`
+        LDFLAGS="$LDFLAGS -Wl,-rpath,`nc-config --prefix`/lib"
 
         save_LIBS=$LIBS
         save_LDFLAGS=$LDFLAGS
+        save_CXXFLAGS=$CXXFLAGS
         AC_LANG_PUSH([C++])
         LIBS="$save_LIBS $NCLIB"
-        LDFALGS="save_LDFLAGS $NCINC"
+        LDFLAGS="$save_LDFLAGS $NCLIB"
+        CXXFLAGS="$save_CXXFLAGS $NCINC"
         AC_LINK_IFELSE(
           [AC_LANG_PROGRAM([
              #include <netcdfcpp.h>

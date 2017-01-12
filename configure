@@ -5357,9 +5357,11 @@ else
 $as_echo_n "checking if we can compile NetCDF with C++... " >&6; }
         # Note netcdf_c++ needed
         NCLIB=`$NCCONF --libs | sed s/-lnetcdf/-lnetcdf_c++\ -lnetcdf/`
+        LDFLAGS="$LDFLAGS -Wl,-rpath,`nc-config --prefix`/lib"
 
         save_LIBS=$LIBS
         save_LDFLAGS=$LDFLAGS
+        save_CXXFLAGS=$CXXFLAGS
         ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -5367,7 +5369,8 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
         LIBS="$save_LIBS $NCLIB"
-        LDFALGS="save_LDFLAGS $NCINC"
+        LDFLAGS="$save_LDFLAGS $NCLIB"
+        CXXFLAGS="$save_CXXFLAGS $NCINC"
         cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
