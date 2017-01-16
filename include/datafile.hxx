@@ -66,7 +66,7 @@ class Datafile {
   void add(Vector3D &f, const char *name, bool save_repeat = false);
   
   bool read();  ///< Read data into added variables 
-  bool write(); ///< Write added variables
+  bool write(int timestep = 0); ///< Write added variables
 
   bool write(const char *filename, ...) const; ///< Opens, writes, closes file
   
@@ -96,6 +96,7 @@ class Datafile {
       string name;
       bool save_repeat;
       bool covar;
+      int subsample;
     };
 
   // one set per variable type

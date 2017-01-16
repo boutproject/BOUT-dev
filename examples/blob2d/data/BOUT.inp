@@ -13,9 +13,9 @@ MYG = 0      # No y derivatives, so no guard cells needed in y
 
 [mesh]
 
-nx = 68
+nx = 132
 ny = 1
-nz = 64
+nz = 128
 
 dx = 2.0
 dz = 2.0
@@ -109,5 +109,10 @@ bndry_all = neumann # Zero-gradient on all boundaries
 scale = 1.0 # size of perturbation
 
 function = 1 + 0.27*gauss(x-0.25, 0.08333)*gauss(z-pi,0.52)
+subsample = 10
 
+[omega]
+subsample = 1
 
+[phi]
+subsample = 1
