@@ -13,9 +13,9 @@ MYG = 0      # No y derivatives, so no guard cells needed in y
 
 [mesh]
 
-nx = 132
+nx = 68
 ny = 1
-nz = 128
+nz = 64
 
 dx = 2.0
 dz = 2.0
