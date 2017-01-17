@@ -68,7 +68,7 @@ int PowerSolver::run() {
     divide(f0, eigenvalue);
 
     /// Write the restart file
-    restart.write(0);
+    restart.write();
     
     if((archive_restart > 0) && (iteration % archive_restart == 0)) {
       restart.write("%s/BOUT.restart_%04d.%d.%s", restartdir.c_str(), iteration, MYPE, restartext.c_str());

@@ -394,7 +394,12 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
   iteration = iter;
 
   /// Write dump file
-  dump.write(iteration);
+  output.write("Calling write for iteration=%d)",iteration);
+  if( first_time ){
+    dump.write(0);
+  } else{
+    dump.write(iteration+1);
+  }
 
   /// Collect timing information
   BoutReal wtime        = Timer::resetTime("run");

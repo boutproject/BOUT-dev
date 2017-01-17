@@ -1,0 +1,9 @@
+This example demonstrates time subsampling, i.e. writing out a variable only every n timesteps, rather than at every timestep.
+
+To subsample a variable, add `subsample` to that variable's section in the BOUT.inp file, e.g.
+
+`[omega]
+subsample = 10`
+
+to write out `omega` every 10th timestep.
+
