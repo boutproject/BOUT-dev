@@ -394,7 +394,6 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
   iteration = iter;
 
   /// Write dump file
-  output.write("Calling write for iteration=%d)",iteration);
   if( first_time ){
     dump.write(0);
   } else{
