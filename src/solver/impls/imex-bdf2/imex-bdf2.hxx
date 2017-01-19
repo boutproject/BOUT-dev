@@ -121,6 +121,11 @@ class IMEXBDF2 : public Solver {
   SNES     snesUse; // The snes object to use in solve stage. Allows easy switching.
   Mat      Jmf;     // Matrix-free Jacobian
 
+  // Diagnostics
+  bool diagnose;  ///< Output diagnostics every timestep
+  int linear_fails;   ///< Number of linear (KSP) convergence failures
+  int nonlinear_fails;  ///< Numbef of nonlinear (SNES) convergence failures
+
   bool have_constraints; // Are there any constraint variables?
   BoutReal *is_dae; // 1 -> DAE, 0 -> AE
   
