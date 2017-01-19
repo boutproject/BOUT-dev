@@ -21,9 +21,9 @@ At irregular intervals, we will create a **release** branch. No new features go
 into the *release* branch - only bug fixes and documentation.
 
 1. Create a new branch
-2. (Optional) Push it to github to share and for backup
+2. (Optional) Push it to Github to share and for backup
 3. Make changes, commits
-4. Submit a pull request into **next** using github's [Pull Requests][PRs]
+4. Submit a pull request into **next** using Github's [Pull Requests][PRs]
    system
 
 ### Creating a feature branch ###
@@ -41,25 +41,30 @@ name for **myfeature**, anything except "master" or "next".
     git pull
     git checkout -b myfeature     # Switched to a new branch "myfeature"
 
-### Pushing to github ###
+### Pushing to Github ###
+
+Create a fork on Github following the instructions [here][forking].
 
 If you want to push your branch to BOUT-dev to share with other developers, run:
 
-    git push -u origin myfeature
+    git push -u yourfork myfeature
 
-This command pushes **myfeature** to the central BOUT-dev repository (origin),
-and the -u flag adds it as a remote tracking branch.  After setting up the
-tracking branch, you can call "git push" without any parameters to push updates
-to **myfeature**.
+This command pushes **myfeature** to your fork (named **yourfork**) of the
+BOUT-dev repository, and the -u flag adds it as a remote tracking branch.  After
+setting up the tracking branch, you can call "git push" without any parameters
+to push updates to **myfeature**.
 
-If another developer wants to try out this branch, they should clone the
-BOUT-dev repository (or update an existing one), then run
+If another developer wants to try out this branch, they will first need to add
+your repository as a new remote:
 
-    git checkout -b myfeature origin/myfeature
+    git remote add yourfork https://github.com/YourUsername/BOUT-dev.git
 
-*Note* If you do not have write access to the BOUT-dev repository, you can
-develop in your own fork and then send a pull request to someone with write
-access.
+then they will be able to checkout your branch:
+
+    git checkout -b myfeature yourfork/myfeature
+
+*Note*: If you have write access to the central BOUT-dev repository, you can
+push your branches there.
 
 ### Making changes, commits ###
 
@@ -89,8 +94,10 @@ and they will be automatically added to the pull request.
 Code is read an order of magnitude more times than it is written. It's also
 written for *people* and not for the computer! For these reasons, it's important
 that we stick to some form of coding standards. The following coding style
-guidelines broadly follow
-the [LLVM Coding Standards][LLVM].
+guidelines broadly follow the [LLVM Coding Standards][LLVM]. The LLVM Coding
+Standards go into more depth, and explain the reasoning behind the guidelines
+more thoroughly than here. If you just follow the guidelines below, you won't go
+far wrong though.
 
 These guidelines are intended to make code easier to read and therefore easier
 to understand. Being consistent in coding style also helps comprehension by
@@ -102,8 +109,9 @@ reducing cognitive load.
 
 Comments in the code are vital to helping understanding. Comments that
 are embedded in the code should explain **why** something is done,
-rather than *how*. For documenting what functions and classes do, we
-use [Doxygen](www.doxygen.org).
+rather than **how**.
+
+For documenting what functions and classes do, we use [Doxygen][doxygen].
 
 - Prefer C++ style comments `//` over C style `/* */`
 
@@ -217,3 +225,5 @@ Prefer a longer descriptive name over a shorter abbreviated one:
 [PRs]: https://github.com/boutproject/BOUT-dev/pulls
 [gitflow]: https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow
 [LLVM]: http://llvm.org/docs/CodingStandards.html
+[forking]: https://help.github.com/articles/fork-a-repo/
+[doxygen]: http://www.doxygen.org
