@@ -388,7 +388,7 @@ AS_IF([test "x$with_netcdf" != "xno"],
         AC_LANG_POP([C++])
         LIBS=$save_LIBS
         LDFLAGS=$save_LDFLAGS
-        CXXFLAGS="$CXXFLAGS -DNCDF"
+        CXXFLAGS="$save_CXXFLAGS -DNCDF"
        ])
       EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
 

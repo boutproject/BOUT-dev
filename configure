@@ -5405,7 +5405,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
         LIBS=$save_LIBS
         LDFLAGS=$save_LDFLAGS
-        CXXFLAGS="$CXXFLAGS -DNCDF"
+        CXXFLAGS="$save_CXXFLAGS -DNCDF"
 
 fi
       EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
