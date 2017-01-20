@@ -4697,6 +4697,45 @@ boundary operator to the \code{bndry\_op} vector.
 
 
 
+\section{Iterating over fields}
+\label{sec:fielditeration}
+
+In BOUT++ 4.0.0, we now have the ability to use C++ range-based for-loops. This
+means that it is possible to iterate over a whole field using a single loop:
+%
+\begin{lstlisting}
+Field3D f(0.0);
+for (auto i : f) {
+   f[i] = a[i] + b[i];
+}
+\end{lstlisting}
+%
+The iterator provides access to the x, y, z indices:
+%
+\begin{lstlisting}
+Field3D f(0.0);
+for (auto i : f) {
+   f[i] = i.x + i.y + i.z;
+}
+\end{lstlisting}
+%
+It is also possible to specify regions to iterate over using this syntax:
+%
+\begin{lstlisting}
+Field3D f(0.0);
+for (auto i : f.region(RGN_NOBNDRY) {
+   f[i] = 1.0;
+}
+\end{lstlisting}
+%
+Available regions are:
+\begin{itemize}
+\item \code{RGN_ALL}, which is the whole mesh;
+\item \code{RGN_NOBNDRY}, which skips all boundaries;
+\item \code{RGN_NOX}, which skips the x boundaries
+\item \code{RGN_NOY}, which skips the y boundaries
+\end{itemize}
+%
 
 
 \section{Generating input grids}
