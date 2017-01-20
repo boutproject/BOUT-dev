@@ -33,7 +33,7 @@ try:
 except ImportError:
     raise ImportError("ERROR: os, sys or glob modules not available")
 
-def split(nxpe, nype, path="data", output="./", informat="nc", outformat=None, mxg = 2, myg = 2):
+def split(nxpe, nype, path="data", output="./", informat="nc", outformat=None, mxg=2, myg=2):
     """Split restart files across NXPE x NYPE processors.
 
     Returns True on success
@@ -41,10 +41,7 @@ def split(nxpe, nype, path="data", output="./", informat="nc", outformat=None, m
 
     if outformat is None:
         outformat = informat
-
-    mxg = mxg
-    myg = myg
-
+    
     npes = nxpe * nype
 
     if npes <= 0:
