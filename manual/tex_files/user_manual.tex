@@ -381,11 +381,7 @@ and the startup file is \texttt{\$HOME/.cshrc}. You should now be able to run
 %
 After getting an MPI compiler, the next step is to make sure the libraries
 BOUT++ needs are installed. At minimum BOUT++ needs the FFTW-3 library, and to
-run any of the examples you'll also need NetCDF-4 (prior to 4.2) or HDF5
-installed.
-
-\note{There are currently issues with support for NetCDF's new C++ API, which
-appeared in 4.2.  For now use NetCDF 4.1.x}
+run any of the examples you'll also need NetCDF-4 or HDF5 installed.
 
 Most large machines (e.g. NERSC Hopper, HECToR, HPC-FF etc.) will have these
 libraries and many more already installed, but you may need to load a module to
@@ -454,17 +450,17 @@ finishes successfully, then skip to the next section, but if you see a message
 library. Unless you have PACT or pnetcdf installed, this will be followed by a
 message \texttt{ERROR: At least one file format must be supported}.
 
-Download the 4.1.3 {\bf bundled}
-%
-\footnote{Support for the more recent unbundled versions is coming soon}
-release of NetCDF from
-\url{http://www.unidata.ucar.edu/downloads/netcdf/netcdf-4_1_3/} and put the
-\texttt{netcdf-4.1.3.tar.gz} file into your ``install'' directory. Untar the
-file and 'cd' into the resulting directory:
+The latest versions of NetCDF have separated out the C++ API from the main C
+library. As a result, you will need to download and install both. Download the
+latest versions of the NetCDF-C and NetCDF-4 C++ libraries from
+{\url{http://www.unidata.ucar.edu/downloads/netcdf/index.jsp}}. As of January
+2017, these are versions 4.4.1.1 and 4.3.0 respectively.
+
+Untar the file and 'cd' into the resulting directory:
 %
 \begin{verbatim}
-$ tar -xzvf netcdf-4.1.3.tar.gz
-$ cd netcdf-4.1.3
+$ tar -xzvf netcdf-4.4.1.1.tar.gz
+$ cd netcdf-4.4.1.1
 \end{verbatim}
 %
 As with MPI compilers and FFTW, configure, then make and make install:
@@ -475,20 +471,35 @@ $ make
 $ make install
 \end{verbatim}
 %
-Sometimes configure can fail, in which case try disabling Fortran and the HDF5
-interface:
+Sometimes configure can fail, in which case try disabling Fortran:
 %
 \begin{verbatim}
-$ ./configure --prefix=$HOME/local --disable-fortran --disable-netcdf-4
+$ ./configure --prefix=$HOME/local --disable-fortran
 $ make
 $ make install
 \end{verbatim}
 %
-Download the latest stable release of NetCDF-4 C++ from
-%\url{http://www.unidata.ucar.edu/downloads/netcdf/netcdf-cxx/}.  At the time
-%of writing, this was called \texttt{netcdf-cxx4-4.2.tar.gz}.  Put this file
-%into your ``install'' directory, untar it, and 'cd' into the resulting
-%directory.
+Similarly for the C++ API:
+%
+\begin{verbatim}
+$ tar -xzvf netcdf-cxx4-4.3.0.tar.gz
+$ cd netcdf-cxx4-4.3.0
+$ ./configure --prefix=$HOME/local
+$ make
+$ make install
+\end{verbatim}
+%
+You may need to set a couple of environment variables as well:
+%
+\begin{verbatim}
+$ export PATH=$HOME/local/bin:$PATH
+$ export LD_LIBRARY_PATH=$HOME/local/lib:$LD_LIBRARY_PATH
+\end{verbatim}
+%
+You should check where NetCDF actually installed its libraries. On some systems
+this will be ``\$HOME/local/lib'', but on others it may be, e.g.
+``\$HOME/local/lib64''. Check which it is, and set ``\$LD\_LIBRARY\_PATH''
+appropriately.
 
 Go back to the BOUT directory and run the configure script again, this time
 specifying both the location of FFTW (if you installed it from source above),
@@ -504,11 +515,13 @@ which should now finish successfully, printing a summary of the configuration:
 Configuration summary
   FACETS support: no
   PETSc support: no
-  IDA support: no
-  CVODE support: no
+  SLEPc support: no
+  IDA support: yes
+  CVODE support: yes
+  ARKODE support: yes
   NetCDF support: yes
   Parallel-NetCDF support: no
-  PDB support: no
+  HDF5 support: yes (parallel: no)
   Hypre support: no
   MUMPS support: no
 \end{verbatim}
