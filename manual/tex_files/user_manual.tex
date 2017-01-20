@@ -262,12 +262,11 @@ This section will go through the following steps:
 
 \subsection{Obtaining BOUT++}
 %
-BOUT++ is now hosted publicly on github, consisting of two repositories:
-{\url{http://github.com/boutproject/BOUT}} is a stable repository which is only
-occasionally updated. Most development is done in the development repository
-{\url{http://github.com/boutproject/BOUT-dev}}. Most users are recommended to use the
-BOUT-dev repository, as it may contain important bug fixes.
-To obtain a copy of the latest version, run
+BOUT++ is hosted publicly on github at
+{\url{http://github.com/boutproject/BOUT-dev}}. You can the latest stable
+version from {\url{https://github.com/boutproject/BOUT-dev/releases}}. If you
+want to develop BOUT++, you should use git to clone the repository. To obtain a
+copy of the latest version, run
 %
 \index{Github}
 %
@@ -280,6 +279,12 @@ latest changes later, go into the  \texttt{BOUT-dev} directory and run
 %
 \begin{verbatim}
 $ git pull
+\end{verbatim}
+%
+Development is done on the ``next'' branch, which you can checkout with
+%
+\begin{verbatim}
+$ git checkout next
 \end{verbatim}
 %
 
