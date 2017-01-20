@@ -159,7 +159,7 @@ def resize3DField(var, data, coordsAndSizesTuple, method, mute):
     newNx, newNy, newNz = coordsAndSizesTuple
 
     if not(mute):
-        print("    Resizing "+var + ' to (nx,nt,nz) = ({},{},{})'.format(newNx,newNy,newNz) )
+        print("    Resizing "+var + ' to (nx,ny,nz) = ({},{},{})'.format(newNx,newNy,newNz) )
         
 
     # Make the regular grid function (see examples in
@@ -177,7 +177,7 @@ def resize3DField(var, data, coordsAndSizesTuple, method, mute):
                 newData[xInd, yInd, zInd] = gridInterpolator([x, y, z])
 
     return var, newData
-    #return var
+    
     
     
 def resize(newNx, newNy, newNz, mxg=2, myg=2,\
