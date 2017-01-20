@@ -481,13 +481,8 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
  **************************************************************************/
 
 /// Print an error message and exit
-void bout_error() {
-  bout_error(NULL);
-}
-
 void bout_error(const char *str) {
   throw BoutException(str);
-  exit(1);
 }
 
 #ifdef SIGHANDLE

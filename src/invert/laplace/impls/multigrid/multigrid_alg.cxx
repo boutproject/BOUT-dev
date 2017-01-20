@@ -277,8 +277,8 @@ void MultigridAlg::smoothings(int level, BoutReal *x, BoutReal *b) {
 }
 
 void MultigridAlg::pGMRES(BoutReal *sol,BoutReal *rhs,int level,int iplag) {
-  int k,ii,it,etest = 1,MAXIT;
-  BoutReal ini_e,error,a0,a1,rederr,perror,EPS,AbsE, RHO;
+  int k,it,etest = 1,MAXIT;
+  BoutReal ini_e,error,a0,a1,rederr,perror;
   BoutReal **v,*p,*q,*r;
   BoutReal c[MAXGM+1],s[MAXGM+1],y[MAXGM+1],g[MAXGM+1],h[MAXGM+1][MAXGM+1];
 
@@ -494,10 +494,8 @@ BoutReal MultigridAlg::vectorProd(int level,BoutReal* x,BoutReal* y) {
 
 void MultigridAlg::multiAVec(int level, BoutReal *x, BoutReal *b) {
 
-  BoutReal val;
-  int mm;
   communications(x,level);
-  mm = lnz[level]+2;
+  int mm = lnz[level]+2;
 #pragma omp parallel default(shared)
 #pragma omp for
   for(int i = 0;i<mm*(lnx[level]+2);i++) b[i] = 0.0;
@@ -594,7 +592,6 @@ void MultigridAlg::setMatrixC(int level) {
 void MultigridAlg::communications(BoutReal* x, int level) {
  
   MPI_Status  status[4];
-  MPI_Request requests[4];
   int stag,rtag,ierr;
 
   if(zNP > 1) {
@@ -657,7 +654,6 @@ void MultigridAlg::solveMG(BoutReal *sol,BoutReal *rhs,int level) {
 #pragma omp parallel default(shared)
 #pragma omp for
   for(int i = 0;i<ldim;i++) sol[i] = 0.0;
-  int num = 0;
 
   communications(rhs,level);
   ini_e = vectorProd(level,rhs,rhs);

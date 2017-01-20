@@ -186,11 +186,9 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
   if ( global_flags & INVERT_START_NEW ) {
     // set initial guess to zero
     for (int i=1; i<lxx+1; i++) {
-      int i2 = i-1+mesh->xstart;
 #pragma omp parallel default(shared) 
 #pragma omp for
       for (int k=1; k<lzz+1; k++) {
-        int k2 = k;
         x[i*lz2+k] = 0.;
       }
     }
