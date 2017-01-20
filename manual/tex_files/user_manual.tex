@@ -2039,25 +2039,37 @@ var = f.read("variable")   # Read a variable from the file
 f.close()                  # Close the file
 \end{lstlisting}
 %
+A more robust way to read from DataFiles is to use the context manager syntax:
+%
+\begin{lstlisting}[language=python,numbers=none]
+from boututils.datafile import DataFile
+
+with DataFile("file.hdf5") as f: # Open the file
+    var = f.read("variable")     # Read a variable from the file
+\end{lstlisting}
+%
+This way the DataFile is automatically closed at the end of the \texttt{with}
+block, even if there is an error in \texttt{f.read}.
+%
 To list the variables in a file e.g.
 %
 \begin{lstlisting}[language=python,numbers=none]
 >>> f = DataFile("test_io.grd.nc")
->>> print f.list()
+>>> print(f.list())
 ['f3d', 'f2d', 'nx', 'ny', 'rvar', 'ivar']
 \end{lstlisting}
 %
 and to list the names of the dimensions
 %
 \begin{lstlisting}[language=python,numbers=none]
->>> print d.dimensions("f3d")
+>>> print(f.dimensions("f3d"))
 ('x', 'y', 'z')
 \end{lstlisting}
 %
 or to get the sizes of the dimensions
 %
 \begin{lstlisting}[language=python,numbers=none]
->>> print d.size("f3d")
+>>> print(f.size("f3d"))
 [12, 12, 5]
 \end{lstlisting}
 %
