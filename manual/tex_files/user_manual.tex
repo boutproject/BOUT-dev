@@ -2926,55 +2926,6 @@ seed. The factor in front of each term is chosen so that the 4th harmonic
 ($i=4$) has the highest amplitude. This is useful mainly for initialising
 turbulence simulations, where a mixture of mode numbers is desired.
 
-\subsubsection{Original method}
-%
-A backward compatible method to set initial value is to specify the function for each dimension separately using
-the options \code{xs\_opt}, \code{ys\_opt}, and \code{zs\_opt}. These are set
-to an integer:
-%
-\begin{enumerate}
-\setcounter{enumi}{-1}
-\item Constant (this is the default)
-\item Gaussian, with a peak location given by \code{xs\_s0}, \code{ys\_s0},
-    \code{zs\_s0} as a fraction of the domain (i.e. $0 \Rarrow 1$.  The width
-    is given by \code{*s\_wd}, also as a fraction of the domain size.
-\item Sinusoidal, with the number of periods given by \code{*s\_mode}.
-\item Mix of mode numbers, with pseudo-random phases.
-\end{enumerate}
-%
-The magnitude of the initial value is given by the variable \code{scale}.
-
-Defaults for all variables can be set in a section called \code{[All]}, so for
-example the options below:
-%
-\begin{lstlisting}[language=bash,numbers=none]
-[All]
-scale = 0.0 # By default set variables to zero
-
-xs_opt = 1  # Gaussian in X
-ys_opt = 1  # Gaussian in Y
-zs_opt = 2  # Sinusoidal in Z (axisymmetric direction)
-
-xs_s0 = 0.5 # Peak in the middle of the X direction
-xs_wd = 0.1 # Width is 10% of the domain
-
-ys_s0 = 0.5 # Peak in the middle of the Y direction
-ys_wd = 0.3 # Width is 30% of the Y domain
-
-zs_mode = 3 # 3 periods in the Z direction
-
-[U]
-scale = 1.0e-5  # Amplitude for the U variable, overrides default
-\end{lstlisting}
-%
-To apply the ballooning transform to these initial conditions there is a global flag ``ballooning'' which should be set to true.
-%
-
-\note{The initial profiles code currently doesn't work very well for grids with
-branch-cuts (e.g. divertor tokamak), and will often have jumps which then make
-timesteps smaller}
-
-
 
 \subsection{Initalising variables with the \texttt{FieldFactory} class}
 %
