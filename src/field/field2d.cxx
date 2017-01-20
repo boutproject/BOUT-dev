@@ -1,4 +1,6 @@
-/**************************************************************************
+/*!*************************************************************************
+ * \file field2d.cxx
+ *
  * Class for 2D X-Y profiles
  *
  **************************************************************************
@@ -589,7 +591,7 @@ BoutReal min(const Field2D &f, bool allpe) {
   
   ASSERT2(f.isAllocated());
 
-  BoutReal result = f(0,0);
+  BoutReal result = f(mesh->xstart,mesh->ystart);
 
   for(auto i : f.region(RGN_NOBNDRY))
     if(f[i] < result)
@@ -638,6 +640,21 @@ bool finite(const Field2D &f) {
 /////////////////////////////////////////////////
 // functions
 
+/*!
+ * This macro takes a function \p func, which is
+ * assumed to operate on a single BoutReal and return
+ * a single BoutReal, and wraps it up into a function
+ * of a Field2D called \p name.
+ *
+ * @param name  The name of the function to define
+ * @param func  The function to apply to each value
+ *
+ * If CHECK >= 1, checks if the Field2D is allocated
+ *
+ * Loops over the entire domain, applies function,
+ * and if CHECK >= 3 then checks result for non-finite numbers
+ *
+ */
 #define F2D_FUNC(name, func)                               \
   const Field2D name(const Field2D &f) {                   \
     msg_stack.push(#name "(Field2D)");                     \

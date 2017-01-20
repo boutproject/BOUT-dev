@@ -15,7 +15,8 @@ tests = ['test-io', 'test-field', 'test-fieldfactory', 'test-laplace',
          "test-cyclic", "test-invpar", "test-smooth", "test-gyro",
          "test-delp2", "test-griddata", "test-initial",
          "MMS/diffusion","MMS/wave-1d","MMS/wave-1d-y",
-         "drift-instability", 'interchange-instability']
+         "drift-instability", 'interchange-instability',
+         "test-minmax","test-code-style"]
 
 ##################################################################
 

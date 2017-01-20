@@ -231,7 +231,7 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
 
     /* number of degrees (variables) at each grid point */
     if(n2Dvars() != 0) {
-      bout_error("PETSc solver can't handle 2D variables yet. Sorry\n");
+      throw BoutException("PETSc solver can't handle 2D variables yet. Sorry\n");
     }
     
     PetscInt dof = n3Dvars();

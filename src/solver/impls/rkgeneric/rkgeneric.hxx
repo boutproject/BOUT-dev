@@ -51,7 +51,7 @@ class RKGenericSolver : public Solver {
 
  private:
   //Take a step using the scheme
-  BoutReal take_step(const BoutReal timeIn, const BoutReal dt, const BoutReal *start, 
+  BoutReal take_step(BoutReal timeIn,BoutReal dt, const BoutReal *start, 
 		     BoutReal *resultFollow);
 
   //Used for storing current state and next step

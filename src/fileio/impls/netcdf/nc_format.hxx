@@ -123,7 +123,6 @@ class NcFormat : public DataFormat {
   const NcDim **dimList; ///< List of dimensions (x,y,z)
   const NcDim **recDimList; ///< List of dimensions (t,x,y,z)
 
-  bool appending;
   bool lowPrecision; ///< When writing, down-convert to floats
 
   int x0, y0, z0, t0; ///< Data origins

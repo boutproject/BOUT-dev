@@ -33,10 +33,12 @@
 
 #include "fieldgenerators.hxx"
 
+/// Helper function to create a FieldValue generator from a BoutReal
 FieldGenerator* generator(BoutReal value) {
   return new FieldValue(value);
 }
 
+/// Helper function to create a FieldValuePtr from a pointer to BoutReal
 FieldGenerator* generator(BoutReal *ptr) {
   return new FieldValuePtr(ptr);
 }

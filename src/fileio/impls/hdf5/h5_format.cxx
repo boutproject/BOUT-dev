@@ -220,7 +220,7 @@ const vector<int> H5Format::getSize(const char *name) {
 #endif
   }
   else {
-    hsize_t dims[nd];
+    hsize_t* dims = new hsize_t[nd];
     int error = H5Sget_simple_extent_dims(dataSpace, dims, NULL);
     if (error < 0)
       throw BoutException("Failed to get dimensions of dataSpace");
@@ -232,6 +232,8 @@ const vector<int> H5Format::getSize(const char *name) {
     
     for (int i=0; i<nd; i++)
       size.push_back(dims[i]);
+
+    delete[] dims;
     
 #ifdef CHECK
     msg_stack.pop();
