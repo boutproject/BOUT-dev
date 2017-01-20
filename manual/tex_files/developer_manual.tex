@@ -698,12 +698,6 @@ bool is3D() const;   // True if variable is 3D
   
 int byteSize() const; // Number of bytes for a single point
 int realSize() const; // Number of reals (not implemented if not real)
-  
-int getData(int x, int y, int z, void *vptr) const; // Return number of bytes
-int getData(int x, int y, int z, BoutReal *rptr) const; // Return number of reals
-  
-int setData(int x, int y, int z, void *vptr);
-int setData(int x, int y, int z, BoutReal *rptr);
 \end{lstlisting}
 
 To support file I/O there are also some additional functions which may be implemented.
