@@ -616,7 +616,7 @@ bool Datafile::read_f3d(const string &name, Field3D *f, bool save_repeat) {
 
 bool Datafile::write_int(const string &name, int *f, bool save_repeat) {
   if(save_repeat) {
-    file->write_rec(f, name);
+    return file->write_rec(f, name);
   }else {
     return file->write(f, name);
   }
@@ -624,7 +624,7 @@ bool Datafile::write_int(const string &name, int *f, bool save_repeat) {
 
 bool Datafile::write_real(const string &name, BoutReal *f, bool save_repeat) {
   if(save_repeat) {
-    file->write_rec(f, name);
+    return file->write_rec(f, name);
   }else {
     return file->write(f, name);
   }
