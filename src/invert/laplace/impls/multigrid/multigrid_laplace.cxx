@@ -29,6 +29,10 @@
 
 #include "multigrid_laplace.hxx"
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 BoutReal soltime=0.0,settime=0.0;
 
 

@@ -14,6 +14,10 @@
 using std::list;
 using std::vector;
 
+/// Implementation of Mesh (mostly) compatible with BOUT
+/// 
+/// Topology and communications compatible with BOUT
+/// conventions. 
 class BoutMesh : public Mesh {
  public:
   BoutMesh(GridDataSource *s, Options *options = NULL);
@@ -24,42 +28,93 @@ class BoutMesh : public Mesh {
   
   /////////////////////////////////////////////
   // Communicate variables
-  
+
+  /// Send data between processors
+  /// Does not wait for communications
+  /// to complete, so wait() must be called
+  /// before guard cell values are used
+  ///
+  /// @param[in] g  A group of fields to communicate
+  ///
+  /// Example
+  /// -------
+  ///
+  /// comm_handle handle = mesh->send(group);
+  /// ...
+  /// mesh->wait(handle);
+  ///
   comm_handle send(FieldGroup &g);
+
+  /// Wait for a send operation to complete
+  /// @param[in] handle  The handle returned by send()
   int wait(comm_handle handle);
   
   /////////////////////////////////////////////
   // non-local communications
+  
   MPI_Request sendToProc(int xproc, int yproc, BoutReal *buffer, int size, int tag);
   comm_handle receiveFromProc(int xproc, int yproc, BoutReal *buffer, int size, int tag);
-  int getNXPE();
-  int getNYPE();
-  int getXProcIndex();
-  int getYProcIndex();
+  
+  int getNXPE(); ///< The number of processors in the X direction
+  int getNYPE(); ///< The number of processors in the Y direction
+  int getXProcIndex();  ///< This processor's index in X direction
+  int getYProcIndex();  ///< This processor's index in Y direction
   
   /////////////////////////////////////////////
   // X communications
   
-  bool firstX();
-  bool lastX();
+  bool firstX(); ///< Is this processor the first in X? i.e. is there a boundary to the left in X?
+  bool lastX();  ///< Is this processor last in X? i.e. is there a boundary to the right in X?
+
+  /// Send a buffer of data to processor at X index +1
+  ///
+  /// @param[in] buffer  The data to send. Must be at least length \p size
+  /// @param[in] size    The number of BoutReals to send
+  /// @param[in] tag     A label for the communication. Must be the same at receive
   int sendXOut(BoutReal *buffer, int size, int tag);
+
+  /// Send a buffer of data to processor at X index -1
+  ///
+  /// @param[in] buffer  The data to send. Must be at least length \p size
+  /// @param[in] size    The number of BoutReals to send
+  /// @param[in] tag     A label for the communication. Must be the same at receive
   int sendXIn(BoutReal *buffer, int size, int tag);
+
+  /// Receive a buffer of data from X index +1
+  ///
+  /// @param[in] buffer  A buffer to put the data in. Must already be allocated of length \p size
+  /// @param[in] size    The number of BoutReals to receive and put in \p buffer
+  /// @param[in] tag     A label for the communication. Must be the same as sent
   comm_handle irecvXOut(BoutReal *buffer, int size, int tag);
+
+  /// Receive a buffer of data from X index -1
+  ///
+  /// @param[in] buffer  A buffer to put the data in. Must already be allocated of length \p size
+  /// @param[in] size    The number of BoutReals to receive and put in \p buffer
+  /// @param[in] tag     A label for the communication. Must be the same as sent
   comm_handle irecvXIn(BoutReal *buffer, int size, int tag);
   
-  MPI_Comm getXcomm(int UNUSED(jy)) const {return comm_x; }
-  MPI_Comm getYcomm(int jx) const;
-  
+  MPI_Comm getXcomm(int UNUSED(jy)) const {return comm_x; } ///< Return communicator containing all processors in X
+  MPI_Comm getYcomm(int jx) const; ///< Return communicator containing all processors in Y
+
+  /// Is local X index \p jx periodic in Y?
+  ///
+  /// \param[in] jx   The local (on this processor) index in X
+  /// \param[out] ts  The Twist-Shift angle if periodic
   bool periodicY(int jx, BoutReal &ts) const;
+
+  /// Is local X index \p jx periodic in Y?
+  ///
+  /// \param[in] jx   The local (on this processor) index in X
   bool periodicY(int jx) const;
 
-  int ySize(int jx) const;
+  int ySize(int jx) const; ///< The number of points in Y at fixed X index \p jx
 
   /////////////////////////////////////////////
   // Y communications
   
   bool firstY();
-  bool lastY();
+  bool lastY();  
   bool firstY(int xpos);
   bool lastY(int xpos);
   int UpXSplitIndex();
@@ -169,15 +224,18 @@ class BoutMesh : public Mesh {
   // Communications
   
   bool async_send;   ///< Switch to asyncronous sends (ISend, not Send)
-  
+
+  /// Communication handle
+  /// Used to keep track of communications between send and receive
   struct CommHandle {
+    /// Array of receive requests. One for each possible neighbour; one each way in X, two each way in Y
     MPI_Request request[6];
-    /// Array of send requests (for non-blocking send)
-    MPI_Request sendreq[6];
+    /// Array of send requests (for non-blocking send). One for each possible neighbour; one each way in X, two each way in Y
+    MPI_Request sendreq[6]; 
     int xbufflen, ybufflen;  ///< Length of the buffers used to send/receive (in BoutReals)
-    BoutReal *umsg_sendbuff, *dmsg_sendbuff, *imsg_sendbuff, *omsg_sendbuff;
-    BoutReal *umsg_recvbuff, *dmsg_recvbuff, *imsg_recvbuff, *omsg_recvbuff;
-    bool in_progress;
+    BoutReal *umsg_sendbuff, *dmsg_sendbuff, *imsg_sendbuff, *omsg_sendbuff; ///< Sending buffers
+    BoutReal *umsg_recvbuff, *dmsg_recvbuff, *imsg_recvbuff, *omsg_recvbuff; ///< Receiving buffers
+    bool in_progress; ///< Is the communication still going?
     
     /// List of fields being communicated
     FieldGroup var_list;
@@ -190,16 +248,17 @@ class BoutMesh : public Mesh {
   //////////////////////////////////////////////////
   // X communicator
   
-  MPI_Comm comm_x;
+  MPI_Comm comm_x; ///< Communicator containing all processors in X
   
   //////////////////////////////////////////////////
   // Surface communications
   
-  MPI_Comm comm_inner, comm_middle, comm_outer;
+  MPI_Comm comm_inner, comm_middle, comm_outer; ///< Communicators in Y. Inside both separatrices; between separatrices; and outside both separatrices
 
   //////////////////////////////////////////////////
   // Communication routines
-  
+
+  /// Create the MPI requests to receive data. Non-blocking call.
   void post_receive(CommHandle &ch);
 
   /// Take data from objects and put into a buffer

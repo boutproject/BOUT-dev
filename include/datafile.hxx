@@ -72,7 +72,7 @@ class Datafile {
   
   // Write a variable to the file now
   bool writeVar(const int &i, const char *name);
-  bool writeVar(const BoutReal &r, const char *name);
+  bool writeVar(BoutReal r, const char *name);
   
  private:
   bool parallel; // Use parallel formats?

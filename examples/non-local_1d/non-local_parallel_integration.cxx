@@ -72,7 +72,7 @@ void NonLocalParallelIntegration::initialise(const bool pass_electron_heat_flux_
  *                            INTEGRATION ROUTINES
  **********************************************************************************/
 
-void NonLocalParallelIntegration::calculateIntegralBelow_cell_centre(const BoutReal &eigenvalue, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, const int &counter) {
+void NonLocalParallelIntegration::calculateIntegralBelow_cell_centre(BoutReal eigenvalue, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, const int &counter) {
 
   #ifdef CHECK
   msg_stack.push("NonLocalParallelIntegration::calculateIntegralBelow()");
@@ -157,7 +157,7 @@ void NonLocalParallelIntegration::calculateIntegralBelow_cell_centre(const BoutR
   
 }
 
-void NonLocalParallelIntegration::calculateIntegralAbove_cell_centre(const BoutReal &eigenvalue, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, const int &counter) {
+void NonLocalParallelIntegration::calculateIntegralAbove_cell_centre(BoutReal eigenvalue, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, const int &counter) {
 
   Coordinates *coord = mesh->coordinates();
 
@@ -249,7 +249,7 @@ void NonLocalParallelIntegration::calculateIntegralAbove_cell_centre(const BoutR
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void NonLocalParallelIntegration::calculateIntegralBelow_cell_ylow(const BoutReal &eigenvalue, const Field3D &dimensionless_length_deltas_below, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, CubicSpline &cubic_spline_gradT, const int &counter) {
+void NonLocalParallelIntegration::calculateIntegralBelow_cell_ylow(BoutReal eigenvalue, const Field3D &dimensionless_length_deltas_below, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, CubicSpline &cubic_spline_gradT, const int &counter) {
 
   Coordinates *coord = mesh->coordinates();
   
@@ -430,7 +430,7 @@ void NonLocalParallelIntegration::calculateIntegralBelow_cell_ylow(const BoutRea
   
 }
 
-void NonLocalParallelIntegration::calculateIntegralAbove_cell_ylow(const BoutReal &eigenvalue, const Field3D &dimensionless_length_deltas_below, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, CubicSpline &cubic_spline_gradT, const int &counter) {
+void NonLocalParallelIntegration::calculateIntegralAbove_cell_ylow(BoutReal eigenvalue, const Field3D &dimensionless_length_deltas_below, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, CubicSpline &cubic_spline_gradT, const int &counter) {
 
   Coordinates *coord = mesh->coordinates();
 
