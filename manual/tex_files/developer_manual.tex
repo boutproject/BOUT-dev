@@ -472,16 +472,21 @@ The current source code files are:
   \item impls
     \begin{itemize}
     \item \file{emptyformat.hxx}
+    \item hdf5
+      \begin{itemize}
+      \item \file{h5\_format.cxx} implements an interface to the HDF5 library
+      \item \file{h5\_format.hxx}
+      \end{itemize}
     \item netcdf
       \begin{itemize}
       \item \file{nc\_format.cxx} implements an interface to the NetCDF-4 library
-      \item \file{nc\_format.hxx} 
+      \item \file{nc\_format.hxx}
       \end{itemize}
-    \item pdb
+    \item netcdf4
       \begin{itemize}
-      \item \file{pdb\_format.cxx} implements an interace to Portable Data
-        Binary (PDB) formatted files.
-      \item \file{pdb\_format.hxx}
+      \item \file{ncxx4.cxx} implements an interface to the NetCDF-4
+        library using the C++ API
+      \item \file{ncxx4.hxx}
       \end{itemize}
     \item pnetcdf
       \begin{itemize}
@@ -1568,14 +1573,17 @@ the grid routines (\code{grid.hxx} and \code{grid.cxx}), and the
 All other parts which need to read or write data go through these
 methods.
 
-Several different file formats are commonly used, such as HDF, HDF5, and netCDF. 
+Several different file formats are commonly used, such as HDF, HDF5, and netCDF.
 For historical reasons (inherited from BOUT), BOUT++ originally used the
-Portable Data Binary (PDB) format developed at LLNL. 
-To separate the basic file format functions from the higher level grid and 
+Portable Data Binary (PDB) format developed at LLNL.
+%
+\footnote{Support for PDB files was removed in BOUT++ 4.0.0}
+%
+To separate the basic file format functions from the higher level grid and
 Datafile classes, these use an abstract class \code{DataFormat}. Any
 class which implements the functions listed in \code{dataformat.hxx}
 can therefore be passed to grid or datafile. This makes implementing
-a new file format, and switching between formats at run-time, 
+a new file format, and switching between formats at run-time,
 relatively straightforward.
 
 
