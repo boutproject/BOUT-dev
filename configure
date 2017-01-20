@@ -5357,7 +5357,6 @@ else
 $as_echo_n "checking if we can compile NetCDF with C++... " >&6; }
         # Note netcdf_c++ needed
         NCLIB=`$NCCONF --libs | sed s/-lnetcdf/-lnetcdf_c++\ -lnetcdf/`
-        LDFLAGS="$LDFLAGS -Wl,-rpath,`nc-config --prefix`/lib"
 
         save_LIBS=$LIBS
         save_LDFLAGS=$LDFLAGS

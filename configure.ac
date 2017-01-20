@@ -369,7 +369,6 @@ AS_IF([test "x$with_netcdf" != "xno"],
         AC_MSG_CHECKING([if we can compile NetCDF with C++])
         # Note netcdf_c++ needed
         NCLIB=`$NCCONF --libs | sed s/-lnetcdf/-lnetcdf_c++\ -lnetcdf/`
-        LDFLAGS="$LDFLAGS -Wl,-rpath,`nc-config --prefix`/lib"
 
         save_LIBS=$LIBS
         save_LDFLAGS=$LDFLAGS
