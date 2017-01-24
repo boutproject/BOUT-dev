@@ -398,34 +398,43 @@ class Field3D : public Field, public FieldData {
   const Field3D operator+() {return *this;}
   
   /// Assignment operators
+  ///@{
   Field3D & operator=(const Field3D &rhs);
   Field3D & operator=(const Field2D &rhs);
   Field3D & operator=(const FieldPerp &rhs);
   const bvalue & operator=(const bvalue &val);
   BoutReal operator=(BoutReal val);
+  ///@}
 
   /// Addition operators
+  ///@{
   Field3D & operator+=(const Field3D &rhs);
   Field3D & operator+=(const Field2D &rhs);
   Field3D & operator+=(BoutReal rhs);
+  ///@}
   
-  /// Subtraction
+  /// Subtraction operators
+  ///@{
   Field3D & operator-=(const Field3D &rhs);
   Field3D & operator-=(const Field2D &rhs);
   Field3D & operator-=(BoutReal rhs);
+  ///@}
 
-  /// Multiplication
+  /// Multiplication operators
+  ///@{
   Field3D & operator*=(const Field3D &rhs);
   Field3D & operator*=(const Field2D &rhs);
   Field3D & operator*=(BoutReal rhs);
-  
-  /// Division
+  ///@}
+
+  /// Division operators
+  ///@{
   Field3D & operator/=(const Field3D &rhs);
   Field3D & operator/=(const Field2D &rhs);
   Field3D & operator/=(BoutReal rhs);
+  ///@}
 
   // Stencils for differencing
-  
   void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   void setXStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   void setXStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
@@ -685,6 +694,7 @@ const Field3D floor(const Field3D &var, BoutReal f);
 /*!
  * Fourier filtering, removes all except one mode
  * 
+ * @param[in] var Variable to apply filter to
  * @param[in] N0 The component to keep
  */
 const Field3D filter(const Field3D &var, int N0);
