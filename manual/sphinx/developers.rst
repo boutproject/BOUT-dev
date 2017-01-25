@@ -43,7 +43,7 @@ and then submit patches to one of the developers (e.g. to
 ``bd512@york.ac.uk``). Fortunately Git makes this process quite easy:
 First get a copy of BOUT++
 
-::
+.. code-block:: bash
 
     $ git clone git://github.com/bendudson/BOUT.git
 
@@ -51,13 +51,13 @@ The BOUT++ repository will now be in a directory called “BOUT” (sorry -
 github doesn’t like ’+’ in project names). To get the latest changes
 (``svn update`` equivalent), use
 
-::
+.. code-block:: bash
 
     $ git pull
 
 To see the status of the repository, commits etc. use
 
-::
+.. code-block:: bash
 
     $ gitk
 
@@ -66,7 +66,7 @@ be committed, or which haven’t yet been sent to the main repository.
 
 You can make edits as normal, and commit them using
 
-::
+.. code-block:: bash
 
     $ git commit -a
 
@@ -74,13 +74,13 @@ which is pretty much the equivalent of ``svn commit`` in that it commits
 all changes, though importantly it doesn’t send them to a central
 server. To see which changes will be committed, use
 
-::
+.. code-block:: bash
 
     $ git status
 
 To choose which files you want to commit, use
 
-::
+.. code-block:: bash
 
     $ git add file1, file2, ...
     $ git commit
@@ -89,7 +89,7 @@ To choose which files you want to commit, use
 make using Git easier, you can create a config file ``$HOME/.gitconfig``
 containing:
 
-.. code:: bash
+.. code-block:: cfg
 
     [user]
         name = Ben Dudson
@@ -109,7 +109,7 @@ containing:
 Once you’re done making changes, you should first pull the latest
 changes from the server:
 
-::
+.. code-block:: bash
 
     $ git pull
 
@@ -123,7 +123,7 @@ merge.
 After you’ve got the latest changes, and resolved conflicts, create a
 patch:
 
-::
+.. code-block:: bash
 
     $ git format-patch origin/master --stdout > your-patch-file.diff
 
@@ -139,13 +139,13 @@ case you’ll need to sign up for an account on ``github.com``, then
 upload an ssh key and ask to be added. The process is then almost
 identical except that you clone using SSH:
 
-::
+.. code-block:: bash
 
     $ git clone git@github.com:bendudson/BOUT.git
 
 and rather than creating a patch, you push changes to the repository:
 
-::
+.. code-block:: bash
 
     $ git push
 
@@ -157,11 +157,11 @@ as grendel, smaug etc. at LLNL), you can still seamlessly access github
 by using another machine as a proxy over SSH. To do this, edit your SSH
 config file `` /.ssh/config`` and add the following lines:
 
-::
+.. code-block:: aconf
 
-    Host        gh
-    HostName    github.com
-    User        git
+    Host            gh
+    HostName        github.com
+    User            git
     ProxyCommand    ssh -q -x user@euclid.nersc.gov nc %h %p
 
 where ``euclid.nersc.gov`` can be replaced by any machine you can access
@@ -169,7 +169,7 @@ which has netcat (``nc``) installed, and which can access github.com. If
 you have set up a github account with SSH keys, you should now be able
 to get a copy of BOUT++ by running
 
-::
+.. code-block:: bash
 
     $ git clone gh:bendudson/BOUT
 
@@ -193,7 +193,7 @@ repository on.
 
 #. SSH to ``franklin.nersc.gov``, or wherever you want your repository
 
-   ::
+   .. code-block:: bash
 
            $ ssh username@franklin.nersc.gov
          
@@ -201,7 +201,7 @@ repository on.
 #. Create a “bare” Git repository by cloning a repository with the
    ``–bare`` option:
 
-   ::
+   .. code-block:: bash
 
            $ cd ~
            $ git clone --bare git@github.com:bendudson/BOUT.git  bout_private
@@ -214,7 +214,7 @@ repository on.
    directly, but can pull and push changes to it. If you want to work on
    the code on Franklin, make a clone of your private repository:
 
-   ::
+   .. code-block:: bash
 
            $ git clone bout_private bout
          
@@ -226,7 +226,7 @@ repository on.
 #. You can now clone, pull and push changes to your private repository
    over SSH e.g.
 
-   ::
+   .. code-block:: bash
 
            $ git clone username@franklin.nersc.gov:bout_private
          
@@ -235,7 +235,7 @@ repository on.
    changes from github into your private repository. To do this, you
    need to use a third repository. Log into Franklin again:
 
-   ::
+   .. code-block:: bash
 
            $ cd ~
            $ git clone bout_private bout_tmp
@@ -244,7 +244,7 @@ repository on.
    This creates a repository ``bout_tmp`` from your private repository.
    Now cd to the new directory and pull the latest changes from github:
 
-   ::
+   .. code-block:: bash
 
            $ cd bout_tmp
            $ git pull git://github.com/bendudson/BOUT.git
@@ -257,7 +257,7 @@ repository on.
 #. This pull might result in some conflicts which need to be resolved.
    If so, git will tell you, and running
 
-   ::
+   .. code-block:: bash
 
            $ git status
          
@@ -265,7 +265,7 @@ repository on.
    will give a list of files which need to be resolved. Edit each of the
    files listed, and when you’re happy commit the changes
 
-   ::
+   .. code-block:: bash
 
            $ git commit -a
          
@@ -274,7 +274,7 @@ repository on.
    repository and the repository on github. To update your private
    repository, just push the changes back:
 
-   ::
+   .. code-block:: bash
 
            $ git push
          
