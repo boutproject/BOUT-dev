@@ -412,7 +412,7 @@ LaplaceMumps::LaplaceMumps(Options *opt) :
 // 	j++;
       }
   
-  if ( i!=mumps_struc.nz_loc ) bout_error("LaplaceMumps: matrix index error");
+  if ( i!=mumps_struc.nz_loc ) throw BoutException("LaplaceMumps: matrix index error");
 //   if ( j!=localN ) bout_error("LaplaceMumps: vector index error");
 // output<<"matrix indices:"<<endl;for (int k=0; k<mumps_struc.nz; k++) output<<k<<" "<<mumps_struc.irn_loc[k]<<" "<<mumps_struc.jcn_loc[k]<<endl;
 // output<<endl<<"solution vector indices:"<<endl;for (int k=0; k<mumps_struc.n;k++) output<<k<<" "<<mumps_struc.isol_loc[k]<<endl;
@@ -834,7 +834,7 @@ void LaplaceMumps::solve(BoutReal* rhs, int y) {
 	}
       }
   
-  if ( i!=mumps_struc.nz_loc ) bout_error("LaplaceMumps: matrix index error");
+  if ( i!=mumps_struc.nz_loc ) throw BoutException("LaplaceMumps: matrix index error");
   
   mumps_struc.rhs = rhs;
 }

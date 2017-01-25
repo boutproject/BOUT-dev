@@ -5,7 +5,7 @@ try:
   from builtins import str
 except:
   pass
-tol = 1e-7                  # Absolute tolerance
+tol = 1e-10                  # Absolute tolerance
 
 from boututils.run_wrapper import shell, launch, getmpirun
 from boutdata.collect import collect
@@ -33,9 +33,9 @@ for i, opts in enumerate(settings):
   cmd = exefile + " " + opts
   
   s, out = launch(cmd, runcmd=MPIRUN, nproc=1, pipe=True)
-  f = open("run.log."+str(i)+".1", "w")
-  f.write(out)
-  f.close()
+  with open("run.log."+str(i)+".1", "w") as f:
+    f.write(out)
+
   n0 = collect("n", path="data",info=False)
   
   for nproc in [2,4]:
@@ -43,10 +43,9 @@ for i, opts in enumerate(settings):
     
     stdout.write("   %d processor...." % (nproc))
     s, out = launch(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
-    f = open("run.log."+str(i)+"."+str(nproc), "w")
-    f.write(out)
-    f.close()
-    
+    with open("run.log."+str(i)+"."+str(nproc), "w") as f:
+      f.write(out)
+
     # Collect output data
     n = collect("n", path="data",info=False)
     if np.shape(n) != np.shape(n0):
