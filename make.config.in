@@ -222,3 +222,21 @@ distclean: clean
 	@echo externalpackages cleaned
 	@touch $(BOUT_TOP)/configure
 	@echo autom4te.cache cleaned
+
+####################################################################
+# Documentation
+####################################################################
+
+MANUAL_DIR=$(BOUT_TOP)/manual
+
+doxygen:
+	doxygen $(MANUAL_DIR)/doxygen/Doxyfile
+
+breathe-autogen: doxygen
+	breathe-apidoc -f -o $(MANUAL_DIR)/sphinx/_breathe_autogen $(MANUAL_DIR)/doxygen/bout/xml
+
+sphinx-docs-html: breathe-autogen
+	sphinx-build -b html $(MANUAL_DIR)/sphinx/ $(MANUAL_DIR)/sphinx/_build/
+
+sphinx-docs-latex: breathe-autogen
+	sphinx-build -b latex $(MANUAL_DIR)/sphinx/ $(MANUAL_DIR)/sphinx/_build/
