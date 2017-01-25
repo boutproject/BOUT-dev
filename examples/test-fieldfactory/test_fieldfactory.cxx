@@ -6,10 +6,13 @@
  */
 
 #include <bout.hxx>
-#include <boutmain.hxx>
 #include <field_factory.hxx>
 
-int physics_init(bool restarting) {
+int main(int argc, char **argv) {
+
+  // Initialise BOUT++, setting up mesh
+  BoutInitialise(argc, argv);
+
   FieldFactory f(mesh);
   
   Field2D a = f.create2D("2.");
@@ -18,7 +21,6 @@ int physics_init(bool restarting) {
   Field3D d = f.create3D("gauss(x-0.5,0.2)*gauss(y)*sin(z)");
   SAVE_ONCE4(a, b, c, d);
 
-  
   // Write data to file
   dump.write();
   dump.close();
@@ -26,11 +28,8 @@ int physics_init(bool restarting) {
   // Need to wait for all processes to finish writing
   MPI_Barrier(BoutComm::get());
 
-  // Send an error code so quits
-  return 1;
-}
+  /// Finished, tidy up and free memory
+  BoutFinalise();
 
-int physics_run(BoutReal t) {
-  // Doesn't do anything
-  return 1;
+  return 0;
 }
