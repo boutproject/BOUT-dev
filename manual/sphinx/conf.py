@@ -17,12 +17,34 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
+import argparse
+from breathe import apidoc
+import os
+import subprocess
+import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
 import sphinx_rtd_theme
 from recommonmark.parser import CommonMarkParser
+
+# Are we running on readthedocs?
+on_readthedocs = os.environ.get("READTHEDOCS") == "True"
+
+if on_readthedocs:
+    # Run doxygen to generate the XML sources
+    subprocess.call("cd ../doxygen; doxygen Doxyfile", shell=True)
+    # Now use breathe.apidoc to autogen rst files for each XML file
+    apidoc_args = argparse.Namespace(destdir='_breathe_autogen/',
+                                     dryrun=False,
+                                     force=True,
+                                     notoc=False,
+                                     rootpath='../doxygen/bout/xml',
+                                     suffix='rst')
+    apidoc_args.rootpath = os.path.abspath(apidoc_args.rootpath)
+    apidoc.recurse_tree(apidoc_args)
+    for key, value in apidoc.TYPEDICT.items():
+        apidoc.create_modules_toc_file(key, value, apidoc_args)
+
 
 # -- General configuration ------------------------------------------------
 
@@ -83,13 +105,21 @@ pygments_style = 'sphinx'
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
 
+# Tell sphinx what the primary language being documented is.
+primary_domain = 'cpp'
+
+# Tell sphinx what the pygments highlight language should be.
+highlight_language = 'cpp'
 
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'
+if on_readthedocs:
+    html_theme = 'sphinx_rtd_theme'
+else:
+    html_theme = 'sphinxdoc'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
