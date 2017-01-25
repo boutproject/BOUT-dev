@@ -835,7 +835,9 @@ RECURSIVE              = YES
 # run.
 
 EXCLUDE                = /home/peter/Codes/BOUT-dev-clean/examples \
-                         /home/peter/Codes/BOUT-dev-clean/tools/
+                         /home/peter/Codes/BOUT-dev-clean/tools/ \
+                         /home/peter/Codes/BOUT-dev-clean/manual/ \
+                         /home/peter/Codes/BOUT-dev-clean/bin/
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
