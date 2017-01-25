@@ -7,15 +7,15 @@ Welcome to BOUT++'s documentation!
 ==================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents:
+   :glob:
 
-.. doxygenclass:: Field3D
-
+   developers
+   _breathe_autogen/*
 
 Indices and tables
 ==================
 
 * :ref:`genindex`
-* :ref:`modindex`
 * :ref:`search`
