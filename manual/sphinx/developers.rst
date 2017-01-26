@@ -5,57 +5,59 @@ Introduction
    :maxdepth: 1
    :caption: Contents:
 
-This is a manual describing the core BOUT++
-code:raw-latex:`\cite{Dudson2009,dudson-2008-arxiv}`, and is intended
-for anyone who wants to work on improving BOUT++. It does its best to
+This is a manual describing the core BOUT++ [1]_, and is intended for
+anyone who wants to work on improving BOUT++. It does its best to
 describe the details of how BOUT++ works, and assumes that the user is
-very comfortable with C++. For a general introduction, and instructions
-for using BOUT++ see the users’ guide. The user’s guide assumes only
-minimal knowledge of C++, and provides only those details needed to use
-BOUT++.
+very comfortable with C++. For a general introduction, and
+instructions for using BOUT++ see the users’ guide. The user’s guide
+assumes only minimal knowledge of C++, and provides only those details
+needed to use BOUT++.
 
 Since BOUT++ is a scientific code, it is constantly changing and
 (hopefully) being improved. This provides a moving target for
 documentation, and means that describing all the details of how BOUT++
-works in one document is probably impossible. This is particularly true
-since often our first priority is to write papers and code - not
+works in one document is probably impossible. This is particularly
+true since often our first priority is to write papers and code - not
 documentation - and so whatever is documented is likely to be slightly
-out of date. A source of up-to-date documentation of the BOUT++ code is
-the comments and Doxygen tags: running ``doxygen`` on the source should
-produce a set of HTML documentation. See ``www.doxygen.org`` for more
-details.
+out of date. A source of up-to-date documentation of the BOUT++ code
+is the comments and Doxygen tags: running ``doxygen`` on the source
+should produce a set of HTML documentation. See www.doxygen.org for
+more details.
+
+.. [1] http://www.sciencedirect.com/science/article/B6TJ5-4VTCM95-3/2/ed200cd23916d02f86fda4ce6887d798
 
 Using the BOUT++ repository
 ---------------------------
 
-As of June 2009, the BOUT++ distribution is hosted on Github:
+The BOUT++ distribution is hosted on Github:
 
-``http://github.com/bendudson/BOUT/``
+https://github.com/boutproject/BOUT-dev
 
-For a full guide to using Git, see the git website [1]_ or online
+For a full guide to using Git, see the `git website`_ or online
 tutorials. This manual just explains some basic ways to use Git, and the
 recommended work flow when working with BOUT++.
 
+.. _git website: http://git-scm.com/
+
 If you’re just starting with BOUT++, current developers will want to
 check your changes before submitting them to the repository. In this
-case you should clone (checkout) the git repository, make any changes
-and then submit patches to one of the developers (e.g. to
-``bd512@york.ac.uk``). Fortunately Git makes this process quite easy:
-First get a copy of BOUT++
+case you should fork the git repository, make any changes and then
+submit a pull request on Github. Fortunately Git makes this process
+quite easy: First get a copy of BOUT++
 
 .. code-block:: bash
 
-    $ git clone git://github.com/bendudson/BOUT.git
+    $ git clone https://github.com/boutproject/BOUT-dev.git
 
-The BOUT++ repository will now be in a directory called “BOUT” (sorry -
-github doesn’t like ’+’ in project names). To get the latest changes
-(``svn update`` equivalent), use
+The BOUT++ repository will now be in a directory called “BOUT-dev”
+(sorry - github doesn’t like ’+’ in project names). To get the latest
+changes, use
 
 .. code-block:: bash
 
     $ git pull
 
-To see the status of the repository, commits etc. use
+To see the status of the repository, commits etc. in a GUI use
 
 .. code-block:: bash
 
@@ -92,8 +94,8 @@ containing:
 .. code-block:: cfg
 
     [user]
-        name = Ben Dudson
-        email = bd512@york.ac.uk
+        name = A. Developer
+        email = a.developer@example.com
 
     [alias]
         st = status
@@ -120,15 +122,6 @@ them yourself. To see a list of conflicting changes run ``git status``
 you’ve finished resolving conflicts, run ``git commit -a`` to commit the
 merge.
 
-After you’ve got the latest changes, and resolved conflicts, create a
-patch:
-
-.. code-block:: bash
-
-    $ git format-patch origin/master --stdout > your-patch-file.diff
-
-Now you can email this patch to someone who can commit to the Git
-archive (e.g. Ben Dudson, bd512@york.ac.uk).
 
 Developing BOUT++
 ~~~~~~~~~~~~~~~~~
@@ -141,7 +134,7 @@ identical except that you clone using SSH:
 
 .. code-block:: bash
 
-    $ git clone git@github.com:bendudson/BOUT.git
+    $ git clone https://github.com/boutproject/BOUT-dev.git
 
 and rather than creating a patch, you push changes to the repository:
 
@@ -171,7 +164,7 @@ to get a copy of BOUT++ by running
 
 .. code-block:: bash
 
-    $ git clone gh:bendudson/BOUT
+    $ git clone gh:boutproject/BOUT-dev.git
 
 Creating a private repository
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -204,10 +197,10 @@ repository on.
    .. code-block:: bash
 
            $ cd ~
-           $ git clone --bare git@github.com:bendudson/BOUT.git  bout_private
+           $ git clone --bare git@github.com:boutproject/BOUT-dev.git  bout_private
          
 
-   where you can replace ``git@github.com:bendudson/BOUT.git`` with any
+   where you can replace ``git@github.com:boutproject/BOUT-dev.git`` with any
    other repository you can access. ``bout_private`` will be the name of
    the directory which will be created. This will make a repository
    without a working version. This means you can’t modify the code in it
@@ -247,7 +240,7 @@ repository on.
    .. code-block:: bash
 
            $ cd bout_tmp
-           $ git pull git://github.com/bendudson/BOUT.git
+           $ git pull git://github.com/boutproject/BOUT-dev.git
          
 
    Note: You should be able to access this repository from Franklin, but
