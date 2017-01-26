@@ -2600,7 +2600,7 @@ expressions.
 +----------------------------------------+------------------------------------------------------------------------------+
 | asin(x), acos(x), atan(x), atan(y,x)   | Inverse trigonometric functions                                              |
 +----------------------------------------+------------------------------------------------------------------------------+
-| ballooning(x)                          | Ballooning transform (eq [eq:ballooning\_transform], fig [fig:ballooning])   |
+| ballooning(x)                          | Ballooning transform (:eq:`ballooning_transform`, fig [fig:ballooning])      |
 +----------------------------------------+------------------------------------------------------------------------------+
 | ballooning(x,n)                        | Ballooning transform, using :math:`n` terms (default 3)                      |
 +----------------------------------------+------------------------------------------------------------------------------+
@@ -2655,9 +2655,8 @@ location where field-lines are matched onto each other. To handle this,
 the ``ballooning`` function applies a truncated Ballooning
 transformation to construct a smooth initial perturbation:
 
-.. _eq-ballooning_transform:
-
 .. math::
+   :label: ballooning_transform
 
    \begin{aligned}
    U_0^{balloon} = \sum_{i=-N}^N F(x)G(y + 2\pi i)H(z + q2\pi i)
@@ -3231,6 +3230,7 @@ where
 Using this, the wave problem becomes:
 
 .. math::
+   :label: precon
 
    \begin{aligned}
    (\begin{array}{cc}
@@ -3250,7 +3250,7 @@ Using this, the wave problem becomes:
    \gamma\partial_{||} & 1
    \end{array}
    )
-   \label{eq:precon}
+   \end{aligned}
 
 The preconditioner is implemented by defining a function of the form
 
@@ -3274,7 +3274,7 @@ the identity matrix and so does nothing is therefore:
     int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
     }
 
-To implement the preconditioner in equation [eq:precon], first apply the
+To implement the preconditioner in equation :eq:`precon`, first apply the
 rightmost matrix to the given vector:
 
 .. math::
@@ -4515,29 +4515,30 @@ Laplacian inversion
 A common problem in plasma models is to solve an equation of the form
 
 .. math::
+   :label: full_laplace_inv
 
    \begin{aligned}
-      d\nabla^2_\perp x + \frac{1}{c_1}(\nabla_\perp c_2)\cdot\nabla_\perp x +
-      a x = b
-   \label{eq:full_laplace_inv}
+   d\nabla^2_\perp x + \frac{1}{c_1}(\nabla_\perp c_2)\cdot\nabla_\perp x +
+   a x = b
+   \end{aligned}
 
- For example,
+For example,
 
 .. math::
 
    \begin{aligned}
    \nabla_\perp^2 x + a x = b\end{aligned}
 
- appears in reduced MHD for the vorticity inversion and :math:`j_{||}`.
+appears in reduced MHD for the vorticity inversion and :math:`j_{||}`.
 
 Alternative formulations and ways to invert equation
-([eq:full\_laplace\_inv]) can be found in section [sec:LaplaceXY] and
+(:eq:`full_laplace_inv`) can be found in section [sec:LaplaceXY] and
 [sec:LaplaceXZ]
 
 Usage of the laplacian inversion
 --------------------------------
 
-| In BOUT++, equation ([eq:full\_laplace\_inv]) can be solved in two
+| In BOUT++, equation (:eq:`full_laplace_inv`) can be solved in two
   ways. The first method Fourier transforms in the :math:`z`-direction,
   whilst the other is solving the full two dimensional problem by matrix
   inversion. The derivation of :math:`\nabla_\perp^2f` for a general
@@ -4548,7 +4549,7 @@ Usage of the laplacian inversion
 |  
 | By neglecting the :math:`y`-derivatives (or if
   :math:`g_{xy}=g_{yz}=0`), one can solve equation
-  ([eq:full\_laplace\_inv]) :math:`y` plane by :math:`y` plane.
+  (:eq:`full_laplace_inv`) :math:`y` plane by :math:`y` plane.
 
 The first approach utilizes that it is possible Fourier transform the
 equation in :math:`z` (using some assumptions described in section
@@ -4562,11 +4563,11 @@ grid-points in the :math:`x` and :math:`z` directions respectively.
 
 .. [1] Numerical recipes in C. The art of scientific computing, Press, W H and Teukolsky, S A and Vetterling, W T and Flannery, B P
 
-In the second approach, the full :math:`2`-D system is being solved.
+In the second approach, the full :math:`2`\ -D system is being solved.
 This requires PETSc to be built with BOUT++.
 
 The ``Laplacian`` class is defined in ``invert_laplace.hxx`` and solves
-problems formulated like equation ( [eq:full\_laplace\_inv] ) To use
+problems formulated like equation (:eq:`full_laplace_inv`) To use
 this class, first create an instance of it:
 
 ::
@@ -4668,9 +4669,7 @@ Table: Laplacian inversion options
 | 2      | set initial guess to 0 (iterative solvers)                                     | ``INVERT_START_NEW``        |
 +--------+--------------------------------------------------------------------------------+-----------------------------+
 | 4      | equivalent to                                                                  | ``INVERT_BOTH_BNDRY_ONE``   |
-+--------+--------------------------------------------------------------------------------+-----------------------------+
 |        | ``outer_boundary_flags = 128``,                                                |                             |
-+--------+--------------------------------------------------------------------------------+-----------------------------+
 |        | ``inner_boundary_flags = 128``                                                 |                             |
 +--------+--------------------------------------------------------------------------------+-----------------------------+
 | 8      | Use 4th order differencing (Apparently not actually implemented anywhere!!!)   | ``INVERT_4TH_ORDER``        |
@@ -4793,47 +4792,51 @@ algorithm, as it is performed in BOUT++. We would like to solve the
 following equation for :math:`f`
 
 .. math::
+   :label: to_invert
 
    \begin{aligned}
        d&\nabla_\perp^2f + \frac{1}{c_1}(\nabla_\perp c_2)\cdot\nabla_\perp f + af
        = b
-   \label{eq:to_invert}
+   \end{aligned}
 
 BOUT++ is neglecting the :math:`y`-parallel derivatives if
 :math:`g_{xy}` and :math:`g_{yz}` are no-zero when using the solvers
 ``Laplacian`` and ``LaplaceXZ``. For these two solvers, equation
-([eq:to\_invert]) becomes (see ``coordinates`` manual for derivation)
+(:eq:`to_invert`) becomes (see ``coordinates`` manual for derivation)
 
 .. math::
+   :label: invert_expanded
 
    \begin{aligned}
-       \, &d (    g^{xx} \partial_x^2 + G^x \partial_x + g^{zz} \partial_z^2 +
+       \, &d (g^{xx} \partial_x^2 + G^x \partial_x + g^{zz} \partial_z^2 +
        G^z \partial_z + 2g^{xz} \partial_x \partial_z ) f \\
        +& \frac{1}{c_1}( {\ensuremath{\boldsymbol{e}}}^x \partial_x +  {\ensuremath{\boldsymbol{e}}}^z \partial_z ) c_2
        \cdot ( {\ensuremath{\boldsymbol{e}}}^x \partial_x +  {\ensuremath{\boldsymbol{e}}}^z \partial_z ) f \\
-       +& af = b {\addtocounter{equation}{1}\tag{\theequation}}\label{eq:invert_expanded}
+       +& af = b
+   \end{aligned}
 
 Using tridiagonal solvers
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When using the tridiagonal solvers, :math:`c_1 = c_2` in equation
-([eq:to\_invert]), hence, it is rather solving
+(:eq:`to_invert`), hence, it is rather solving
 
 .. math::
+   :label: to_invert_tri
 
    \begin{aligned}
        d&\nabla_\perp^2f + \frac{1}{c}(\nabla_\perp c)\cdot\nabla_\perp f + af = b
-   \label{eq:to_invert_tri}
+   \end{aligned}
 
 Since there are no parallel :math:`y`-derivatives if
 :math:`g_{xy}=g_{yz}=0` (or if they are neglected), equation
-([eq:to\_invert\_tri]) will only contain derivatives of :math:`x` and
+(:eq:`to_invert_tri`) will only contain derivatives of :math:`x` and
 :math:`z` for the dependent variable. The hope is that the modes in the
 periodic :math:`z` direction will decouple, so that we in the end only
 have to invert for the :math:`x` coordinate.
 
 If the modes decouples when Fourier transforming equation
-([eq:invert\_expanded]), we can use a tridiagonal solver to solve the
+(:eq:`invert_expanded`), we can use a tridiagonal solver to solve the
 equation for each Fourier mode.
 
 Using the discrete Fourier transform
@@ -4842,7 +4845,8 @@ Using the discrete Fourier transform
 
    \begin{aligned}
        F(x,y)_{k} = \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp(\frac{-2\pi i k
-       Z}{N})\end{aligned}
+       Z}{N})
+   \end{aligned}
 
 we see that the modes will not decouple if a term consist of a product
 of two terms which depends on :math:`z`, as this would give terms like
@@ -4851,14 +4855,15 @@ of two terms which depends on :math:`z`, as this would give terms like
 
    \begin{aligned}
        \frac{1}{N}\sum_{Z=0}^{N-1} a(x,y)_Z f(x,y)_Z \exp(\frac{-2\pi i k
-       Z}{N})\end{aligned}
+       Z}{N})
+   \end{aligned}
 
 Thus, in order to use a tridiagonal solver, :math:`a`, :math:`c` and
 :math:`d` cannot be functions of :math:`z`. Because of this, the
 :math:`{\ensuremath{\boldsymbol{e}}}^z \partial_z c` term in equation
-([eq:invert\_expanded]) is zero. In principle the modes would still
+(:eq:`invert_expanded`) is zero. In principle the modes would still
 decouple if the :math:`{\ensuremath{\boldsymbol{e}}}^z \partial_z f`
-part of equation ([eq:invert\_expanded]) was kept, but currently this
+part of equation (:eq:`invert_expanded`) was kept, but currently this
 part is also neglected in solvers using a tridiagonal matrix. Thus the
 tridiagonal solvers are solving equations on the form
 
@@ -4887,19 +4892,21 @@ after using the discrete Fourier transform (see section
 which gives
 
 .. math::
+   :label: FT_laplace_inversion
 
    \begin{aligned}
        \, &d (    g^{xx} \partial_x^2 + G^x \partial_x - k^2 g^{zz} + i kG^z + i
        k2g^{xz} \partial_x )F_z \\
        +& \frac{g^{xx}}{c} ( \partial_x c ) \partial_xF_z \\
-       +& aF_z = B_z {\addtocounter{equation}{1}\tag{\theequation}}\label{eq:FT_laplace_inversion}
+       +& aF_z = B_z {\addtocounter{equation}{1}\tag{\theequation}}
+   \end{aligned}
 
-As nothing in equation ([eq:FT\_laplace\_inversion]) couples points in
+As nothing in equation (:eq:`FT_laplace_inversion`) couples points in
 :math:`y` together (since we neglected the :math:`y`-derivatives if
 :math:`g_{xy}` and :math:`g_{yz}` were non-zero). Also, as the modes are
-decoupled, we may solve equation ([eq:FT\_laplace\_inversion]) :math:`k`
-mode by :math:`k` mode in addition to :math:`y`-plane by
-:math:`y`-plane.
+decoupled, we may solve equation (:eq:`FT_laplace_inversion`) :math:`k`
+mode by :math:`k` mode in addition to :math:`y`\ -plane by
+:math:`y`\ -plane.
 
 The second order centred approximation of the first and second
 derivatives in :math:`x` reads
@@ -4926,6 +4933,7 @@ This gives
 collecting point by point
 
 .. math::
+   :label: discretized_laplace
 
    \begin{aligned}
        &( \frac{dg^{xx}}{\text{d}x^2} - \frac{dG^x}{2\text{d}x} -
@@ -4936,7 +4944,8 @@ collecting point by point
            +&( \frac{dg^{xx}}{\text{d}x^2} + \frac{dG^x}{2\text{d}x} +
        \frac{g^{xx}}{c_{n}} \frac{-c_{n-1} + c_{n+1}}{4\text{d}x^2} +
        i\frac{dk2g^{xz}}{2\text{d}x} ) F_{z, n+1} \\
-        =& B_{z,n} {\addtocounter{equation}{1}\tag{\theequation}}\label{eq:discretized_laplace}
+        =& B_{z,n} {\addtocounter{equation}{1}\tag{\theequation}}
+        \end{aligned}
 
 We now introduce
 
@@ -4947,7 +4956,7 @@ We now introduce
        \frac{2dg^{xz}}{2\text{d}x}& && \\ &c_4 = \frac{dG^x + g^{xx}\frac{-c_{n-1}
        + c_{n+1}}{2c_n\text{d}x}}{2\text{d}x}& &c_5 = dG^z& &&\end{aligned}
 
-which inserted in equation ([eq:discretized\_laplace]) gives
+which inserted in equation (:eq:`discretized_laplace`) gives
 
 .. math::
 
@@ -4970,14 +4979,14 @@ set by setting the first and last rows in :math:`A` and :math:`B_z`.
 Using PETSc solvers
 ~~~~~~~~~~~~~~~~~~~
 
-When using PETSc, all terms of equation ([eq:invert\_expanded]) is being
+When using PETSc, all terms of equation (:eq:`invert_expanded`) is being
 used when inverting to find :math:`f`. Note that when using PETSc, we
 are not Fourier decomposing in the :math:`z`-direction, so it may take
 substantially longer time to find the solution. As with the tridiagonal
 solver, the fields are being sliced in the :math:`y`-direction, and a
 solution is being found for one :math:`y` plane at the time.
 
-Before solving, equation ([eq:invert\_expanded]) is rewritten to the
+Before solving, equation (:eq:`invert_expanded`) is rewritten to the
 form
 :math:`A{\ensuremath{\boldsymbol{x}}} ={\ensuremath{\boldsymbol{b}}}`
 (however, the full :math:`A` is not expanded in memory). To do this, a
@@ -4992,8 +5001,8 @@ dimensional field. This is done in such a way so that a row :math:`i` in
 :math:`\texttt{meshx}` and :math:`\texttt{meshz}` represents the highest
 value of the field in the given direction.
 
-| Similarly to equation ([eq:discretized\_laplace]), the discretised
-  version of equation ([eq:invert\_expanded]) can be written. Doing the
+| Similarly to equation (:eq:`discretized_laplace`), the discretised
+  version of equation (:eq:`invert_expanded`) can be written. Doing the
   same for the full two dimensional case yields
 
 0.45 Second order approximation
@@ -6185,6 +6194,7 @@ system.
    {\texttt{V\_dot\_Grad(Vector, Vector)}} \\
    f =& \nabla^2 f &\qquad {\texttt{Field}} =& {\texttt{Laplace(Field)}}
    \end{array}
+   \end{aligned}
 
 .. math::
 
@@ -6488,6 +6498,7 @@ LaplaceXY
 Perpendicular Laplacian solver in X-Y.
 
 .. math::
+   :label: nabl_perp_f
 
    \begin{aligned}
    \nabla_\perp f =& \nabla f - \mathbf{b}\left(\mathbf{b}\cdot\nabla\right)
@@ -6495,7 +6506,7 @@ Perpendicular Laplacian solver in X-Y.
    \frac{g_{xy}}{g_{yy}}\frac{\partial f}{\partial y}\right)\nabla x +
    \left(\frac{\partial f}{\partial z} - \frac{g_{yz}}{g_{yy}}\frac{\partial
    f}{\partial y}\right)\nabla z
-   \label{eq:nabl_perp_f}
+   \end{aligned}
 
 In 2D (X-Y), the :math:`g_{xy}` component can be dropped since this
 depends on integrated shear :math:`I` which will cancel with the
@@ -6568,7 +6579,7 @@ the finite difference formulae. The equation solved is:
 where :math:`A` and :math:`B` are coefficients, :math:`b` is the known
 RHS vector (e.g. vorticity), and :math:`f` is the unknown quantity to be
 calculated (e.g. potential), and :math:`\nabla_\perp f` is the same as
-equation ([eq:nabl\_perp\_f]), but with negligible :math:`y`-parallel
+equation (:eq:`nabl_perp_f`), but with negligible :math:`y`-parallel
 derivatives if :math:`g_{xy}`, :math:`g_{yz}` and :math:`g_{xz}` is
 non-vanishing. The Laplacian is written in conservative form like the
 ``LaplaceXY`` solver, and discretised in terms of fluxes through cell
@@ -7822,6 +7833,7 @@ By using the definition of the Fourier transformed, we have
 this gives
 
 .. math::
+   :label: f_derivative
 
    \begin{aligned}
        &{\int_{-\infty}^{\infty} {(\partial_zf[x,y,z])\exp(-2\pi iz\xi)} \; \text{d} {z}}\\
@@ -7829,7 +7841,8 @@ this gives
        - {\int_{-\infty}^{\infty} {f(x,y,z)\partial_z\exp(-2\pi iz\xi)} \; \text{d} {z}}\\
        =& (f[x,y,z]\exp[-2\pi iz\xi])\bigg|_{-\infty}^{\infty} - (-2\pi
        i\xi){\int_{-\infty}^{\infty} {f(x,y,z)\exp(-2\pi iz\xi)} \; \text{d} {z}}\\
-       =& 2\pi i\xi F(x,y,\xi) {\addtocounter{equation}{1}\tag{\theequation}}\label{eq:f_derivative}
+       =& 2\pi i\xi F(x,y,\xi) {\addtocounter{equation}{1}\tag{\theequation}}
+       \end{aligned}
 
 where we have used that :math:`f(x,y,\pm\infty)=0` in order to have a
 well defined Fourier transform. This means that
@@ -7849,11 +7862,12 @@ points (this includes the modes with negative frequencies, and the
 zeroth offset mode). For the discrete Fourier transform, we have
 
 .. math::
+   :label: DFT
 
    \begin{aligned}
        F(x,y)_{k} = \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp(\frac{-2\pi i k
        Z}{N})
-   \label{eq:DFT}
+   \end{aligned}
 
 where :math:`k` is the mode number, :math:`N` is the number of points
 in :math:`z`. If we call the sampling points of :math:`z` for
@@ -7862,7 +7876,7 @@ in :math:`z`. If we call the sampling points of :math:`z` for
 we have that (since we have one less line segment than point)
 :math:`\text{d}z (N-1) = L_z = 2\pi - \text{d}z`, which gives
 :math:`\text{d}z = \frac{2\pi}{N}`.  Inserting this is equation
-([eq:DFT]) yields
+(:eq:`DFT`) yields
 
 .. math::
 
@@ -7870,7 +7884,7 @@ we have that (since we have one less line segment than point)
        F(x,y)_{k} = \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp( - i k
        Z\text{d}z) = \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp( - i k z_Z)\end{aligned}
 
-The discrete version of equation ([eq:f\_derivative]) thus gives
+The discrete version of equation (:eq:`f_derivative`) thus gives
 
 .. math::
 
