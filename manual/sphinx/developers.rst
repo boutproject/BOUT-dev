@@ -330,8 +330,7 @@ Figure [fig:layout1] shows the most important parts of BOUT++ and how
 they fit together.
 
 .. figure:: figs/layout1.pdf
-   :alt: Overview of BOUT++ control flow during initialisation (red),
-   and running (blue)
+   :alt: Overview of BOUT++ control flow
 
    Overview of BOUT++ control flow during initialisation (red), and
    running (blue)
@@ -358,8 +357,7 @@ between them. Some thought was put into how this should be organised,
 but it has also changed over time, so some parts could be cleaner.
 
 .. figure:: figs/layout2.pdf
-   :alt: Relationship between important classes and functions used in
-   calculating the RHS function
+   :alt: Relationships used in calculating the RHS function
 
    Relationship between important classes and functions used in
    calculating the RHS function
@@ -814,11 +812,7 @@ Both of these optimisations are done “behind the scenes”, hidden from
 the remainder of the code, and are illustrated in figure [fig:memory]:
 
 .. figure:: figs/memory.pdf
-   :alt: Memory handling in BOUT++. Memory allocation and freeing is
-   eliminated by recycling memory blocks, and assignments without
-   changes (``A = B``) do not result in copying data, only pointers to
-   the data. Both these optimisations are handled internally, and are
-   invisible to the programmer.
+   :alt: Memory handling in BOUT++
 
    Memory handling in BOUT++. Memory allocation and freeing is
    eliminated by recycling memory blocks, and assignments without
@@ -862,8 +856,7 @@ differencing. This mapping depends on global settings in ``BOUT.inp``
 and is illustrated in figure [fig:diffOverview].
 
 .. figure:: figs/diffOverview.pdf
-   :alt: Overview of ``derivs`` module, mapping derivative functions on
-   fields to direction-independent differential methods
+   :alt: Overview of ``derivs`` module
 
    Overview of ``derivs`` module, mapping derivative functions on fields
    to direction-independent differential methods
@@ -993,8 +986,7 @@ in figure [fig:diffLookup]. First the short description is turned into a
 pointer.
 
 .. figure:: figs/diffLookup.pdf
-   :alt: Lookup tables for mapping between differential method labels,
-   codes, descriptions and function pointers
+   :alt: Lookup tables for differential method
 
    Lookup tables for mapping between differential method labels, codes,
    descriptions and function pointers
@@ -1037,8 +1029,7 @@ cell-centred values), and those which map to different locations (e.g.
 cell-centred to lower X).
 
 .. figure:: figs/diffStencils.pdf
-   :alt: Stencils with cell-centred (solid) and lower shifted values
-   (open). Processor boundaries marked by vertical dashed line
+   :alt: Stencils with cell-centred and lower shifted values
 
    Stencils with cell-centred (solid) and lower shifted values (open).
    Processor boundaries marked by vertical dashed line
@@ -1078,7 +1069,7 @@ The Laplacian inversion code solves the equation:
 
 .. math:: d\nabla^2_\perp x + \frac{1}{c}\nabla_\perp c\cdot\nabla_\perp x + a x = b
 
- where :math:`x` and :math:`b` are 3D variables, whilst :math:`a`,
+where :math:`x` and :math:`b` are 3D variables, whilst :math:`a`,
 :math:`c` and :math:`d` are 2D variables. Several different algorithms
 are implemented for Laplacian inversion, and they differ between serial
 and parallel versions. Serial inversion can currently either be done
@@ -1171,9 +1162,7 @@ Figure [fig:par\_laplace] shows the useage of 4 processors inverting a
 set of 3 poloidal slices (i.e. MYSUB=3)
 
 .. figure:: figs/par_laplace.pdf
-   :alt: Parallel Laplacian inversion with MYSUB=3 on 4 processors. Red
-   periods are where a processor is idle - in this case about 40% of the
-   time
+   :alt: Parallel Laplacian inversion
 
    Parallel Laplacian inversion with MYSUB=3 on 4 processors. Red
    periods are where a processor is idle - in this case about 40% of the
@@ -1849,7 +1838,7 @@ passing the minimum and maximum values.
       cout << it.ind; // Prints 1234
 
 A more canonical C++ style is also supported, using overloaded ``++``,
-``*``, and ````\ =! operators:
+``*``, and ``!=`` operators:
 
 ::
 
