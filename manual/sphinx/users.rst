@@ -659,8 +659,8 @@ https://computation.llnl.gov/casc/sundials/main.html.
 
 The SUNDIALS IDA solver is a Differential-Algebraic Equation (DAE)
 solver, which evolves a system of the form
-:math:`\mathbf{f}\L(\mathbf{u},\dot{\mathbf{u}},
-t\R) = 0`. This allows algebraic constraints on variables to be
+:math:`\mathbf{f}(\mathbf{u},\dot{\mathbf{u}},
+t) = 0`. This allows algebraic constraints on variables to be
 specified.
 
 To configure BOUT++ with SUNDIALS only (see section [sec:PETSc] on how
@@ -894,7 +894,7 @@ a single equation for a 3D scalar field :math:`T`:
 .. math::
 
    \begin{aligned}
-   {\ensuremath{\frac{\partial T}{\partial t}}} = \nabla_{||}\L(\chi\partial_{||} T\R)\end{aligned}
+   {\ensuremath{\frac{\partial T}{\partial t}}} = \nabla_{||}(\chi\partial_{||} T)\end{aligned}
 
  There are several files involved:
 
@@ -1214,7 +1214,7 @@ numerical methods can be specified for first and second central
 difference terms, upwinding terms of the form
 :math:`{\ensuremath{\frac{\partial f}{\partial t}}} = {\ensuremath{\boldsymbol{v}}}\cdot\nabla f`,
 and flux terms of the form
-:math:`{\ensuremath{\frac{\partial f}{\partial t}}} = \nabla\cdot\L({\ensuremath{\boldsymbol{v}}}f\R)`.
+:math:`{\ensuremath{\frac{\partial f}{\partial t}}} = \nabla\cdot({\ensuremath{\boldsymbol{v}}}f)`.
 By default the flux terms are just split into a central and an upwinding
 term.
 
@@ -2596,7 +2596,7 @@ expressions.
 +----------------------------------------+------------------------------------------------------------------------------+
 | Name                                   | Description                                                                  |
 +========================================+==============================================================================+
-| abs(x)                                 | Absolute value :math:`\L|x\R|`                                               |
+| abs(x)                                 | Absolute value :math:`|x|`                                                   |
 +----------------------------------------+------------------------------------------------------------------------------+
 | asin(x), acos(x), atan(x), atan(y,x)   | Inverse trigonometric functions                                              |
 +----------------------------------------+------------------------------------------------------------------------------+
@@ -2612,10 +2612,10 @@ expressions.
 +----------------------------------------+------------------------------------------------------------------------------+
 | tanh(x)                                | Hyperbolic tangent                                                           |
 +----------------------------------------+------------------------------------------------------------------------------+
-| gauss(x)                               | Gaussian :math:`\exp\L(-x^2/2\R) / \sqrt{2\pi}`                              |
+| gauss(x)                               | Gaussian :math:`\exp(-x^2/2) / \sqrt{2\pi}`                                  |
 +----------------------------------------+------------------------------------------------------------------------------+
-| gauss(x, w)                            | Gaussian :math:`\exp\L[-x^2/\L(2w^2\R)\R] /                                  |
-|                                        | \L(w\sqrt{2\pi}\R)`                                                          |
+| gauss(x, w)                            | Gaussian :math:`\exp[-x^2/(2w^2)] /                                          |
+|                                        | (w\sqrt{2\pi})`                                                              |
 +----------------------------------------+------------------------------------------------------------------------------+
 | H(x)                                   | Heaviside function: :math:`1` if :math:`x > 0` otherwise :math:`0`           |
 +----------------------------------------+------------------------------------------------------------------------------+
@@ -2643,8 +2643,8 @@ expressions.
 +----------------------------------------+------------------------------------------------------------------------------+
 | TanhHat(x, width, centre, steepness)   | The hat function                                                             |
 +----------------------------------------+------------------------------------------------------------------------------+
-|                                        | :math:`\frac{1}{2}\L(\tanh\L[s \L(x-\L[c-\frac{w}{2}\R]\R)\R]`               |
-|                                        | :math:`- \tanh\L[s \L(x-\L[c+\frac{w}{2}\R]\R)\R] \R)`                       |
+|                                        | :math:`\frac{1}{2}(\tanh[s (x-[c-\frac{w}{2}])]`                             |
+|                                        | :math:`- \tanh[s (x-[c+\frac{w}{2}])] )`                                     |
 +----------------------------------------+------------------------------------------------------------------------------+
 
 Table: Initialisation expression functions
@@ -2655,11 +2655,13 @@ location where field-lines are matched onto each other. To handle this,
 the ``ballooning`` function applies a truncated Ballooning
 transformation to construct a smooth initial perturbation:
 
+.. _eq-ballooning_transform:
+
 .. math::
 
    \begin{aligned}
-   U_0^{balloon} = \sum_{i=-N}^N F\L(x\R)G\L(y + 2\pi i\R)H\L(z + q2\pi i\R)
-   \label{eq:ballooning_transform}
+   U_0^{balloon} = \sum_{i=-N}^N F(x)G(y + 2\pi i)H(z + q2\pi i)
+   \end{aligned}
 
 .. figure:: figs/init_balloon.*
    :alt: Initial profiles
@@ -2677,8 +2679,8 @@ The ``mixmode(x)`` function is a mixture of Fourier modes of the form:
 .. math::
 
    \begin{aligned}
-   \mathrm{mixmode}\L(x\R) = \sum_{i=1}^{14} \frac{1}{\L(1 +
-   \L|i-4\R|\R)^2}\cos\L[ix + \phi\L(i, \mathrm{seed}\R)\R]\end{aligned}
+   \mathrm{mixmode}(x) = \sum_{i=1}^{14} \frac{1}{(1 +
+   |i-4|)^2}\cos[ix + \phi(i, \mathrm{seed})]\end{aligned}
 
 where :math:`\phi` is a random phase between :math:`-\pi` and
 :math:`+\pi`, which depends on the seed. The factor in front of each
@@ -3147,17 +3149,17 @@ evolving variables
 .. math::
 
    \begin{aligned}
-   \mathcal{J} = \L(\begin{array}{cc}
+   \mathcal{J} = (\begin{array}{cc}
    \frac{\partial}{\partial u}\frac{\partial u}{\partial t} &
    \frac{\partial}{\partial v}\frac{\partial u}{\partial t}\\
    \frac{\partial}{\partial u}\frac{\partial v}{\partial t} &
    \frac{\partial}{\partial v}\frac{\partial v}{\partial t}
    \end{array}
-   \R) = \L(\begin{array}{cc}
+   ) = (\begin{array}{cc}
    0 & \partial_{||} \\
    \partial_{||} & 0
    \end{array}
-   \R)\end{aligned}
+   )\end{aligned}
 
 In this case :math:`\frac{\partial u}{\partial t}` doesn’t depend on
 :math:`u` nor :math:`\frac{\partial v}{\partial t}` on :math:`v`, so the
@@ -3167,15 +3169,15 @@ depend on :math:`u` or :math:`v` and so
 .. math::
 
    \begin{aligned}
-   \frac{\partial}{\partial t}\L(\begin{array}{c}
+   \frac{\partial}{\partial t}(\begin{array}{c}
    u \\
    v
-   \end{array}\R) = \mathcal{J}
-    \L(\begin{array}{c}
+   \end{array}) = \mathcal{J}
+    (\begin{array}{c}
    u \\
    v
    \end{array}
-   \R)\end{aligned}
+   )\end{aligned}
 
 In general for non-linear functions :math:`\mathcal{J}` gives the
 change in time-derivatives in response to changes in the state variables
@@ -3195,34 +3197,34 @@ backwards Euler method). For the simple wave equation problem, this is
 .. math::
 
    \begin{aligned}
-   \mathcal{I} - \gamma \mathcal{J} = \L(\begin{array}{cc}
+   \mathcal{I} - \gamma \mathcal{J} = (\begin{array}{cc}
    1 & -\gamma\partial_{||} \\
    -\gamma\partial_{||} & 1
    \end{array}
-   \R)\end{aligned}
+   )\end{aligned}
 
 This matrix can be block inverted using Schur factorisation  [4]_
 
 .. math::
 
    \begin{aligned}
-   \L(\begin{array}{cc}
+   (\begin{array}{cc}
      {\mathbf{E}} & {\mathbf{U}} \\
      {\mathbf{L}} & {\mathbf{D}}
-   \end{array}\R)^{-1}
-    = \L(\begin{array}{cc}
+   \end{array})^{-1}
+    = (\begin{array}{cc}
      {\mathbf{I}} & -{\mathbf{E}}^{-1}{\mathbf{U}} \\
      0 & {\mathbf{I}}
    \end{array}
-   \R)\L(\begin{array}{cc}
+   )(\begin{array}{cc}
      {\mathbf{E}}^{-1} & 0 \\
      0 & {\mathbf{P}}_{Schur}^{-1}
    \end{array}
-   \R)\L(\begin{array}{cc}
+   )(\begin{array}{cc}
      {\mathbf{I}} & 0 \\
      -{\mathbf{L}}{\mathbf{E}}^{-1} & {\mathbf{I}}
    \end{array}
-   \R)\end{aligned}
+   )\end{aligned}
 
 where
 :math:`{\mathbf{P}}_{Schur} = {\mathbf{D}} - {\mathbf{L}}{\mathbf{E}}^{-1}{\mathbf{U}}`
@@ -3231,23 +3233,23 @@ Using this, the wave problem becomes:
 .. math::
 
    \begin{aligned}
-   \L(\begin{array}{cc}
+   (\begin{array}{cc}
    1 & -\gamma\partial_{||} \\
    -\gamma\partial_{||} & 1
-   \end{array}\R)^{-1}
-    = \L(\begin{array}{cc}
+   \end{array})^{-1}
+    = (\begin{array}{cc}
    1 & \gamma\partial_{||} \\
    0 & 1
    \end{array}
-   \R)\L(\begin{array}{cc}
+   )(\begin{array}{cc}
    1 & 0 \\
-   0 & \L(1 - \gamma^2\partial^2_{||}\R)^{-1}
+   0 & (1 - \gamma^2\partial^2_{||})^{-1}
    \end{array}
-   \R)\L(\begin{array}{cc}
+   )(\begin{array}{cc}
    1 & 0 \\
    \gamma\partial_{||} & 1
    \end{array}
-   \R)
+   )
    \label{eq:precon}
 
 The preconditioner is implemented by defining a function of the form
@@ -3278,19 +3280,19 @@ rightmost matrix to the given vector:
 .. math::
 
    \begin{aligned}
-   \L(\begin{array}{c}
+   (\begin{array}{c}
    \texttt{ddt(u)} \\
    \texttt{ddt(v)}
    \end{array}
-   \R) = \L(\begin{array}{cc}
+   ) = (\begin{array}{cc}
    1 & 0 \\
    \gamma\partial_{||} & 1
    \end{array}
-   \R)\L(\begin{array}{c}
+   )(\begin{array}{c}
    \texttt{ddt(u)} \\
    \texttt{ddt(v)}
    \end{array}
-   \R)\end{aligned}
+   )\end{aligned}
 
 ::
 
@@ -3309,24 +3311,24 @@ The second matrix
 .. math::
 
    \begin{aligned}
-   \L(\begin{array}{c}
+   (\begin{array}{c}
    \texttt{ddt(u)} \\
    \texttt{ddt(v)}
    \end{array}
-   \R) \Larrow \L(\begin{array}{cc}
+   ) arrow (\begin{array}{cc}
    1 & 0 \\
-   0 & \L(1 - \gamma^2\partial^2_{||}\R)^{-1}
+   0 & (1 - \gamma^2\partial^2_{||})^{-1}
    \end{array}
-   \R)\L(\begin{array}{c}
+   )(\begin{array}{c}
    \texttt{ddt(u)} \\
    \texttt{ddt(v)}
    \end{array}
-   \R)\end{aligned}
+   )\end{aligned}
 
 doesn’t alter :math:`u`, but solves a parabolic equation in the
 parallel direction. There is a solver class to do this called
 ``InvertPar`` which solves the equation
-:math:`\L(A + B\partial_{||}^2\R)x = b` where :math:`A` and :math:`B`
+:math:`(A + B\partial_{||}^2)x = b` where :math:`A` and :math:`B`
 are ``Field2D`` or constants  [5]_. In ``physics_init`` we create one of
 these solvers:
 
@@ -3348,26 +3350,26 @@ In the preconditioner we then use this solver to update :math:`v`:
       ddt(v) = inv->solve(ddt(v));
 
 which solves
-:math:`ddt(v) \Larrow \L(1 - \gamma^2\partial_{||}^2\R)^{-1} ddt(v)`.
+:math:`ddt(v) arrow (1 - \gamma^2\partial_{||}^2)^{-1} ddt(v)`.
 The final matrix just updates :math:`u` using this new solution for
 :math:`v`
 
 .. math::
 
    \begin{aligned}
-   \L(\begin{array}{c}
+   (\begin{array}{c}
    \texttt{ddt(u)} \\
    \texttt{ddt(v)}
    \end{array}
-   \R) \Larrow \L(\begin{array}{cc}
+   ) arrow (\begin{array}{cc}
    1 & \gamma\partial_{||} \\
    0 & 1
    \end{array}
-   \R)\L(\begin{array}{c}
+   )(\begin{array}{c}
    \texttt{ddt(u)} \\
    \texttt{ddt(v)}
    \end{array}
-   \R)\end{aligned}
+   )\end{aligned}
 
 ::
 
@@ -3698,7 +3700,7 @@ For example, ``relax(dirichlet)`` will make a field :math:`f` at point
 .. math::
 
    \begin{aligned}
-   \L.{\ensuremath{\frac{\partial f}{\partial t}}}\R|_i = \L.{\ensuremath{\frac{\partial f}{\partial t}}}\R|_{i-1}  - f_i / \tau\end{aligned}
+   .{\ensuremath{\frac{\partial f}{\partial t}}}|_i = .{\ensuremath{\frac{\partial f}{\partial t}}}|_{i-1}  - f_i / \tau\end{aligned}
 
 where :math:`\tau` is a time-scale for the boundary (currently set to
 0.1, but will be a global option). When the time-derivatives are slow
@@ -4465,8 +4467,8 @@ Two representations are now supported for 3D variables:
    .. math::
 
       \begin{aligned}
-      \L[n = 0, n = 1 (\textrm{real}), n = 1 (\textrm{imag}), n = 2 (\textrm{real}),
-      n = 2 (\textrm{imag}), \ldots \R]\end{aligned}
+      [n = 0, n = 1 (\textrm{real}), n = 1 (\textrm{imag}), n = 2 (\textrm{real}),
+      n = 2 (\textrm{imag}), \ldots ]\end{aligned}
 
    where :math:`n` is the toroidal mode number. The size of the array
    must therefore be odd in the Z dimension, to contain a constant
@@ -4515,7 +4517,7 @@ A common problem in plasma models is to solve an equation of the form
 .. math::
 
    \begin{aligned}
-      d\nabla^2_\perp x + \frac{1}{c_1}\L(\nabla_\perp c_2\R)\cdot\nabla_\perp x +
+      d\nabla^2_\perp x + \frac{1}{c_1}(\nabla_\perp c_2)\cdot\nabla_\perp x +
       a x = b
    \label{eq:full_laplace_inv}
 
@@ -4553,8 +4555,8 @@ equation in :math:`z` (using some assumptions described in section
 [sec:num\_laplace]), and solve a tridiagonal system for each
 mode. These inversion problems are band-diagonal (tri-diagonal in the
 case of 2nd-order differencing) and so inversions can be very
-efficient: :math:`O\L(n_z \log n_z\R)` for the FFTs,
-:math:`O\L(n_x\R)` for tridiagonal inversion using the Thomas
+efficient: :math:`O(n_z \log n_z)` for the FFTs,
+:math:`O(n_x)` for tridiagonal inversion using the Thomas
 algorithm [1]_, where :math:`n_x` and :math:`n_z` are the number of
 grid-points in the :math:`x` and :math:`z` directions respectively.
 
@@ -4624,29 +4626,37 @@ condition on both AC and DC components.
     lap->setOuterBoundaryFlags(Outer_Flags_Value);
     lap->setFlags(Flags_Value);
 
-+----------------------------+--------------------------------------------------------------------------------------------------------------------------+----------------------------------------+
-| Name                       | Meaning                                                                                                                  | Default value                          |
-+============================+==========================================================================================================================+========================================+
-| ``type``                   | Which implementation to use                                                                                              | ``tri`` (serial), ``spt`` (parallel)   |
-+----------------------------+--------------------------------------------------------------------------------------------------------------------------+----------------------------------------+
-| ``filter``                 | Filter out modes above :math:`(1-`\ ``filter``\ :math:`)\times k_{max}`, if using Fourier solver                         | 0                                      |
-+----------------------------+--------------------------------------------------------------------------------------------------------------------------+----------------------------------------+
-| ``maxmode``                | Filter modes with :math:`n >`\ ``maxmode``                                                                               | ``MZ``/2                               |
-+----------------------------+--------------------------------------------------------------------------------------------------------------------------+----------------------------------------+
-| ``all_terms``              | Include first derivative terms                                                                                           | ``true``                               |
-+----------------------------+--------------------------------------------------------------------------------------------------------------------------+----------------------------------------+
-| ``global_flags``           | Sets global inversion options See table [tab:laplaceglobalflags]                                                         | ``0``                                  |
-+----------------------------+--------------------------------------------------------------------------------------------------------------------------+----------------------------------------+
-| ``inner_boundary_flags``   | Sets boundary conditions on inner boundary. See table [tab:laplaceBCflags]                                               | ``0``                                  |
-+----------------------------+--------------------------------------------------------------------------------------------------------------------------+----------------------------------------+
-| ``outer_boundary_flags``   | Sets boundary conditions on outer boundary. See table [tab:laplaceBCflags]                                               | ``0``                                  |
-+----------------------------+--------------------------------------------------------------------------------------------------------------------------+----------------------------------------+
-| ``flags``                  | DEPRECATED. Sets global solver options and boundary conditions. See table [tab:laplaceflags] or ``invert_laplace.hxx``   | ``0``                                  |
-+----------------------------+--------------------------------------------------------------------------------------------------------------------------+----------------------------------------+
-| ``include_yguards``        | Perform inversion in :math:`y`-boundary guard cells                                                                      | ``true``                               |
-+----------------------------+--------------------------------------------------------------------------------------------------------------------------+----------------------------------------+
++--------------------------+----------------------------------------------------------------------+----------------------------------------+
+| Name                     | Meaning                                                              | Default value                          |
++==========================+======================================================================+========================================+
+| ``type``                 | Which implementation to use                                          | ``tri`` (serial), ``spt`` (parallel)   |
++--------------------------+----------------------------------------------------------------------+----------------------------------------+
+| ``filter``               | Filter out modes above :math:`(1-`\ ``filter``\                      | 0                                      |
+|                          | :math:`)\times k_{max}`, if using Fourier solver                     |                                        |
++--------------------------+----------------------------------------------------------------------+----------------------------------------+
+| ``maxmode``              | Filter modes with :math:`n >`\ ``maxmode``                           | ``MZ``/2                               |
++--------------------------+----------------------------------------------------------------------+----------------------------------------+
+| ``all_terms``            | Include first derivative terms                                       | ``true``                               |
++--------------------------+----------------------------------------------------------------------+----------------------------------------+
+| ``global_flags``         | Sets global inversion options See table                              | ``0``                                  |
+|                          | :ref:`Laplace global flags<tab-laplaceglobalflags>`                  |                                        |
++--------------------------+----------------------------------------------------------------------+----------------------------------------+
+| ``inner_boundary_flags`` | Sets boundary conditions on inner boundary. See table                | ``0``                                  |
+|                          | :ref:`Laplace boundary flags<tab-laplaceBCflags>`                    |                                        |
++--------------------------+----------------------------------------------------------------------+----------------------------------------+
+| ``outer_boundary_flags`` | Sets boundary conditions on outer boundary. See table                | ``0``                                  |
+|                          | :ref:`Laplace boundary flags<tab-laplaceBCflags>`                    |                                        |
++--------------------------+----------------------------------------------------------------------+----------------------------------------+
+| ``flags``                | DEPRECATED. Sets global solver options and boundary                  | ``0``                                  |
+|                          | conditions. See :ref:`Laplace flags<tab-laplaceflags>` or            |                                        |
+|                          | :doc:`invert_laplace.cxx<_breathe_autogen/file/invert__laplace_8cxx>`|                                        |
++--------------------------+----------------------------------------------------------------------+----------------------------------------+
+| ``include_yguards``      | Perform inversion in :math:`y`\ -boundary guard cells                | ``true``                               |
++--------------------------+----------------------------------------------------------------------+----------------------------------------+
 
 Table: Laplacian inversion options
+
+.. _tab-laplaceglobalflags:
 
 +--------+--------------------------------------------------------------------------------+-----------------------------+
 | Flag   | Meaning                                                                        | Code variable               |
@@ -4671,38 +4681,52 @@ Table: Laplacian inversion options
 Table: Laplacian inversion ``global_flags`` values: add the required
 quantities together.
 
-+--------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------+
-| Flag   | Meaning                                                                                                                                                                                                                                                                                                         | Code variable              |
-+========+=================================================================================================================================================================================================================================================================================================================+============================+
-| 0      | Dirichlet (Set boundary to 0)                                                                                                                                                                                                                                                                                   | :math:`-`                  |
-+--------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------+
-| 1      | Neumann on DC component (set gradient to 0)                                                                                                                                                                                                                                                                     | ``INVERT_DC_GRAD``         |
-+--------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------+
-| 2      | Neumann on AC component (set gradient to 0)                                                                                                                                                                                                                                                                     | ``INVERT_AC_GRAD``         |
-+--------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------+
-| 4      | Zero or decaying Laplacian on AC components ( :math:`\frac{\partial^2}{\partial                                                                                                                                                                                                                                 | ``INVERT_AC_LAP``          |
-|        |     x^2}+k_z^2` vanishes/decays)                                                                                                                                                                                                                                                                                |                            |
-+--------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------+
-| 8      | Use symmetry to enforce zero value or gradient (redundant for 2nd order now)                                                                                                                                                                                                                                    | ``INVERT_SYM``             |
-+--------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------+
-| 16     | Set boundary condition to values in boundary guard cells of second argument, ``x0``, of ``Laplacian::solve(const Field3D &b, const Field3D &x0)`` . May be combined with any combination of 0, 1 and 2, i.e. a Dirichlet or Neumann boundary condition set to values which are :math:`\neq 0` or :math:`f(y)`   | ``INVERT_SET``             |
-+--------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------+
-| 32     | Set boundary condition to values in boundary guard cells of RHS, ``b`` in ``Laplacian::solve(const Field3D &b, const Field3D &x0)`` . May be combined with any combination of 0, 1 and 2, i.e. a Dirichlet or Neumann boundary condition set to values which are :math:`\neq 0` or :math:`f(y)`                 | ``INVERT_RHS``             |
-+--------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------+
-| 64     | Zero or decaying Laplacian on DC components (:math:`\frac{\partial^2}{\partial                                                                                                                                                                                                                                  | ``INVERT_DC_LAP``          |
-|        |     x^2}` vanishes/decays)                                                                                                                                                                                                                                                                                      |                            |
-+--------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------+
-| 128    | Assert that there is only one guard cell in the :math:`x`-boundary                                                                                                                                                                                                                                              | ``INVERT_BNDRY_ONE``       |
-+--------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------+
-| 256    | DC value is set to parallel gradient, :math:`\nabla_\parallel f`                                                                                                                                                                                                                                                | ``INVERT_DC_GRADPAR``      |
-+--------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------+
-| 512    | DC value is set to inverse of parallel gradient :math:`1/\nabla_\parallel f`                                                                                                                                                                                                                                    | ``INVERT_DC_GRADPARINV``   |
-+--------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------+
-| 1024   | Boundary condition for inner ‘boundary’ of cylinder                                                                                                                                                                                                                                                             | ``INVERT_IN_CYLINDER``     |
-+--------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------+
+.. _tab-laplaceBCflags:
+
++--------+----------------------------------------------------------------------+----------------------------+
+| Flag   | Meaning                                                              | Code variable              |
++========+======================================================================+============================+
+| 0      | Dirichlet (Set boundary to 0)                                        | :math:`-`                  |
++--------+----------------------------------------------------------------------+----------------------------+
+| 1      | Neumann on DC component (set gradient to 0)                          | ``INVERT_DC_GRAD``         |
++--------+----------------------------------------------------------------------+----------------------------+
+| 2      | Neumann on AC component (set gradient to 0)                          | ``INVERT_AC_GRAD``         |
++--------+----------------------------------------------------------------------+----------------------------+
+| 4      | Zero or decaying Laplacian on AC components (                        | ``INVERT_AC_LAP``          |
+|        | :math:`\frac{\partial^2}{\partial x^2}+k_z^2` vanishes/decays)       |                            |
++--------+----------------------------------------------------------------------+----------------------------+
+| 8      | Use symmetry to enforce zero value or gradient (redundant for 2nd    | ``INVERT_SYM``             |
+|        | order now)                                                           |                            |
++--------+----------------------------------------------------------------------+----------------------------+
+| 16     | Set boundary condition to values in boundary guard cells of second   | ``INVERT_SET``             |
+|        | argument, ``x0``, of ``Laplacian::solve(const Field3D &b, const      |                            |
+|        | Field3D &x0)`` . May be combined with any combination of 0, 1 and 2, |                            |
+|        | i.e. a Dirichlet or Neumann boundary condition set to values which   |                            |
+|        | are :math:`\neq 0` or :math:`f(y)`                                   |                            |
++--------+----------------------------------------------------------------------+----------------------------+
+| 32     | Set boundary condition to values in boundary guard cells of RHS,     | ``INVERT_RHS``             |
+|        | ``b`` in ``Laplacian::solve(const Field3D &b, const Field3D &x0)``   |                            |
+|        | . May be combined with any combination of 0, 1 and 2, i.e. a         |                            |
+|        | Dirichlet or Neumann boundary condition set to values which are      |                            |
+|        | :math:`\neq 0` or :math:`f(y)`                                       |                            |
++--------+----------------------------------------------------------------------+----------------------------+
+| 64     | Zero or decaying Laplacian on DC components                          | ``INVERT_DC_LAP``          |
+|        | (:math:`\frac{\partial^2}{\partial x^2}` vanishes/decays)            |                            |
++--------+----------------------------------------------------------------------+----------------------------+
+| 128    | Assert that there is only one guard cell in the :math:`x`-boundary   | ``INVERT_BNDRY_ONE``       |
++--------+----------------------------------------------------------------------+----------------------------+
+| 256    | DC value is set to parallel gradient, :math:`\nabla_\parallel f`     | ``INVERT_DC_GRADPAR``      |
++--------+----------------------------------------------------------------------+----------------------------+
+| 512    | DC value is set to inverse of parallel gradient                      | ``INVERT_DC_GRADPARINV``   |
+|        | :math:`1/\nabla_\parallel f`                                         |                            |
++--------+----------------------------------------------------------------------+----------------------------+
+| 1024   | Boundary condition for inner ‘boundary’ of cylinder                  | ``INVERT_IN_CYLINDER``     |
++--------+----------------------------------------------------------------------+----------------------------+
 
 Table: Laplacian inversion ``outer_boundary_flags`` or
 ``inner_boundary_flags`` values: add the required quantities together.
+
+.. _tab-laplaceflags:
 
 +--------+------------------------------------------------------------------------------------------+
 | Flag   | Meaning                                                                                  |
@@ -4724,9 +4748,7 @@ Table: Laplacian inversion ``outer_boundary_flags`` or
 | 128    | Use 4\ :math:`^{th}`-order band solver (default is 2\ :math:`^{nd}` order tridiagonal)   |
 +--------+------------------------------------------------------------------------------------------+
 | 256    | Attempt to set zero laplacian AC component on inner boundary by combining                |
-+--------+------------------------------------------------------------------------------------------+
 |        | 2nd and 4th-order differencing at the boundary.                                          |
-+--------+------------------------------------------------------------------------------------------+
 |        | Ignored if tridiagonal solver used.                                                      |
 +--------+------------------------------------------------------------------------------------------+
 | 512    | Zero laplacian AC on outer boundary                                                      |
@@ -4785,10 +4807,10 @@ BOUT++ is neglecting the :math:`y`-parallel derivatives if
 .. math::
 
    \begin{aligned}
-       \, &d \L(    g^{xx} \partial_x^2 + G^x \partial_x + g^{zz} \partial_z^2 +
-       G^z \partial_z + 2g^{xz} \partial_x \partial_z \R) f \\
-       +& \frac{1}{c_1}\L( {\ensuremath{\boldsymbol{e}}}^x \partial_x +  {\ensuremath{\boldsymbol{e}}}^z \partial_z \R) c_2
-       \cdot \L( {\ensuremath{\boldsymbol{e}}}^x \partial_x +  {\ensuremath{\boldsymbol{e}}}^z \partial_z \R) f \\
+       \, &d (    g^{xx} \partial_x^2 + G^x \partial_x + g^{zz} \partial_z^2 +
+       G^z \partial_z + 2g^{xz} \partial_x \partial_z ) f \\
+       +& \frac{1}{c_1}( {\ensuremath{\boldsymbol{e}}}^x \partial_x +  {\ensuremath{\boldsymbol{e}}}^z \partial_z ) c_2
+       \cdot ( {\ensuremath{\boldsymbol{e}}}^x \partial_x +  {\ensuremath{\boldsymbol{e}}}^z \partial_z ) f \\
        +& af = b {\addtocounter{equation}{1}\tag{\theequation}}\label{eq:invert_expanded}
 
 Using tridiagonal solvers
@@ -4819,8 +4841,8 @@ Using the discrete Fourier transform
 .. math::
 
    \begin{aligned}
-       F(x,y)_{k} = \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp\L(\frac{-2\pi i k
-       Z}{N}\R)\end{aligned}
+       F(x,y)_{k} = \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp(\frac{-2\pi i k
+       Z}{N})\end{aligned}
 
 we see that the modes will not decouple if a term consist of a product
 of two terms which depends on :math:`z`, as this would give terms like
@@ -4828,8 +4850,8 @@ of two terms which depends on :math:`z`, as this would give terms like
 .. math::
 
    \begin{aligned}
-       \frac{1}{N}\sum_{Z=0}^{N-1} a(x,y)_Z f(x,y)_Z \exp\L(\frac{-2\pi i k
-       Z}{N}\R)\end{aligned}
+       \frac{1}{N}\sum_{Z=0}^{N-1} a(x,y)_Z f(x,y)_Z \exp(\frac{-2\pi i k
+       Z}{N})\end{aligned}
 
 Thus, in order to use a tridiagonal solver, :math:`a`, :math:`c` and
 :math:`d` cannot be functions of :math:`z`. Because of this, the
@@ -4843,11 +4865,11 @@ tridiagonal solvers are solving equations on the form
 .. math::
 
    \begin{aligned}
-       \, &d(x,y) \L(    g^{xx}(x,y) \partial_x^2 + G^x(x,y) \partial_x +
+       \, &d(x,y) (    g^{xx}(x,y) \partial_x^2 + G^x(x,y) \partial_x +
        g^{zz}(x,y) \partial_z^2 + G^z(x,y) \partial_z + 2g^{xz}(x,y) \partial_x
-       \partial_z \R) f(x,y,z) \\
-       +& \frac{1}{c(x,y)}\L( {\ensuremath{\boldsymbol{e}}}^x \partial_x \R) c(x,y) \cdot \L( {\ensuremath{\boldsymbol{e}}}^x
-       \partial_x \R) f(x,y,z) \\
+       \partial_z ) f(x,y,z) \\
+       +& \frac{1}{c(x,y)}( {\ensuremath{\boldsymbol{e}}}^x \partial_x ) c(x,y) \cdot ( {\ensuremath{\boldsymbol{e}}}^x
+       \partial_x ) f(x,y,z) \\
       +& a(x,y)f(x,y,z) = b(x,y,z)\end{aligned}
 
 after using the discrete Fourier transform (see section
@@ -4856,10 +4878,10 @@ after using the discrete Fourier transform (see section
 .. math::
 
    \begin{aligned}
-       \, &d \L(    g^{xx} \partial_x^2F_z + G^x \partial_xF_z + g^{zz} [i k]^2F_z
-       + G^z [i k]F_z + 2g^{xz} \partial_x[i k]F_z \R) \\
-       +& \frac{1}{c}\L( {\ensuremath{\boldsymbol{e}}}^x \partial_x \R) c \cdot \L( {\ensuremath{\boldsymbol{e}}}^x
-       \partial_xF_z \R) \\
+       \, &d (    g^{xx} \partial_x^2F_z + G^x \partial_xF_z + g^{zz} [i k]^2F_z
+       + G^z [i k]F_z + 2g^{xz} \partial_x[i k]F_z ) \\
+       +& \frac{1}{c}( {\ensuremath{\boldsymbol{e}}}^x \partial_x ) c \cdot ( {\ensuremath{\boldsymbol{e}}}^x
+       \partial_xF_z ) \\
        +& aF_z = B_z\end{aligned}
 
 which gives
@@ -4867,9 +4889,9 @@ which gives
 .. math::
 
    \begin{aligned}
-       \, &d \L(    g^{xx} \partial_x^2 + G^x \partial_x - k^2 g^{zz} + i kG^z + i
-       k2g^{xz} \partial_x \R)F_z \\
-       +& \frac{g^{xx}}{c} \L( \partial_x c \R) \partial_xF_z \\
+       \, &d (    g^{xx} \partial_x^2 + G^x \partial_x - k^2 g^{zz} + i kG^z + i
+       k2g^{xz} \partial_x )F_z \\
+       +& \frac{g^{xx}}{c} ( \partial_x c ) \partial_xF_z \\
        +& aF_z = B_z {\addtocounter{equation}{1}\tag{\theequation}}\label{eq:FT_laplace_inversion}
 
 As nothing in equation ([eq:FT\_laplace\_inversion]) couples points in
@@ -4893,11 +4915,11 @@ This gives
 .. math::
 
    \begin{aligned}
-       \, &d \L(    g^{xx} \frac{F_{z,n-1} - 2F_{z,n} + F_{z, n+1}}{\text{d}x^2} +
-       G^x \frac{-F_{z,n-1} + F_{z,n+1}}{2\text{d}x} - k^2 g^{zz}F_{z,n} \R.\\
-       &\quad\L.  + i kG^zF_{z,n} + i k2g^{xz} \frac{-F_{z,n-1} +
-   F_{z,n+1}}{2\text{d}x} \R) \\
-       +& \frac{g^{xx}}{c} \L( \frac{-c_{n-1} + c_{n+1}}{2\text{d}x} \R)
+       \, &d (    g^{xx} \frac{F_{z,n-1} - 2F_{z,n} + F_{z, n+1}}{\text{d}x^2} +
+       G^x \frac{-F_{z,n-1} + F_{z,n+1}}{2\text{d}x} - k^2 g^{zz}F_{z,n} .\\
+       &\quad.  + i kG^zF_{z,n} + i k2g^{xz} \frac{-F_{z,n-1} +
+   F_{z,n+1}}{2\text{d}x} ) \\
+       +& \frac{g^{xx}}{c} ( \frac{-c_{n-1} + c_{n+1}}{2\text{d}x} )
    \frac{-F_{z,n-1} + F_{z,n+1}}{2\text{d}x} \\
        +& aF_{z,n} = B_{z,n}\end{aligned}
 
@@ -4906,14 +4928,14 @@ collecting point by point
 .. math::
 
    \begin{aligned}
-       &\L( \frac{dg^{xx}}{\text{d}x^2} - \frac{dG^x}{2\text{d}x} -
+       &( \frac{dg^{xx}}{\text{d}x^2} - \frac{dG^x}{2\text{d}x} -
        \frac{g^{xx}}{c_{n}} \frac{-c_{n-1} + c_{n+1}}{4\text{d}x^2} - i\frac{d
-       k2g^{xz}}{2\text{d}x} \R) F_{z,n-1} \\
-           +&\L( - \frac{ dg^{xx} }{\text{d}x^2} - dk^2 g^{zz} + a + idkG^z \R)
+       k2g^{xz}}{2\text{d}x} ) F_{z,n-1} \\
+           +&( - \frac{ dg^{xx} }{\text{d}x^2} - dk^2 g^{zz} + a + idkG^z )
        F_{z,n} \\
-           +&\L( \frac{dg^{xx}}{\text{d}x^2} + \frac{dG^x}{2\text{d}x} +
+           +&( \frac{dg^{xx}}{\text{d}x^2} + \frac{dG^x}{2\text{d}x} +
        \frac{g^{xx}}{c_{n}} \frac{-c_{n-1} + c_{n+1}}{4\text{d}x^2} +
-       i\frac{dk2g^{xz}}{2\text{d}x} \R) F_{z, n+1} \\
+       i\frac{dk2g^{xz}}{2\text{d}x} ) F_{z, n+1} \\
         =& B_{z,n} {\addtocounter{equation}{1}\tag{\theequation}}\label{eq:discretized_laplace}
 
 We now introduce
@@ -4930,9 +4952,9 @@ which inserted in equation ([eq:discretized\_laplace]) gives
 .. math::
 
    \begin{aligned}
-       &\L( c_1 - c_4 -ikc_3 \R) F_{z,n-1} \\
-           +&\L( -2c_1 - k^2c_2 +ikc_5 + a \R) F_{z,n} \\
-           +&\L( c_1 + c_4 + ikc_3 \R) F_{z, n+1} \\
+       &( c_1 - c_4 -ikc_3 ) F_{z,n-1} \\
+           +&( -2c_1 - k^2c_2 +ikc_5 + a ) F_{z,n} \\
+           +&( c_1 + c_4 + ikc_3 ) F_{z, n+1} \\
         =& B_{z,n}\end{aligned}
 
 This can be formulated as the matrix equation
@@ -5100,9 +5122,9 @@ directory. The equations to be solved are:
    {\ensuremath{\frac{\partial \rho}{\partial t}}} =& -\mathbf{v}\cdot\nabla\rho - \rho\nabla\cdot\mathbf{v} \\
        {\ensuremath{\frac{\partial p}{\partial t}}} =& -\mathbf{v}\cdot\nabla p - \gamma p\nabla\cdot\mathbf{v} \\
        {\ensuremath{\frac{\partial \mathbf{v}}{\partial t}}} =& -\mathbf{v}\cdot\nabla\mathbf{v} +
-       \frac{1}{\rho}\L(-\nabla p +
-       \L(\nabla\times\mathbf{B}\R)\times\mathbf{B}\R) \\ {\ensuremath{\frac{\partial \mathbf{B}}{\partial t}}} =&
-       \nabla\times\L(\mathbf{v}\times\mathbf{B}\R)\end{aligned}
+       \frac{1}{\rho}(-\nabla p +
+       (\nabla\times\mathbf{B})\times\mathbf{B}) \\ {\ensuremath{\frac{\partial \mathbf{B}}{\partial t}}} =&
+       \nabla\times(\mathbf{v}\times\mathbf{B})\end{aligned}
 
 There are two ways to specify a set of equations to solve in BOUT++.
 For advanced users, an object-oriented interface is available and
@@ -5608,8 +5630,8 @@ perturbations, rounding error and tolerances in the time-integration
 mean that linear dispersion relations are not calculated correctly. The
 solution to this is to write all equations in terms of an initial
 “background” quantity and a time-evolving perturbation, for example
-:math:`\rho\L(t\R) \Rarrow \rho_0 +
-\tilde{\rho}\L(t\R)`. For this reason, **the initialisation of all
+:math:`\rho(t) arrow \rho_0 +
+\tilde{\rho}(t)`. For this reason, **the initialisation of all
 variables passed to the ``bout_solve`` function is a combination of
 small-amplitude gaussians and waves; the user is expected to have
 performed this separation into background and perturbed quantities.**
@@ -5751,7 +5773,7 @@ are commonly used, which will be illustrated using the
 
    \begin{aligned}
    {\ensuremath{\frac{\partial U}{\partial t}}} =& -\frac{1}{B}\mathbf{b}_0\times\nabla\phi\cdot\nabla U + B^2
-       \nabla_{||}\L(j_{||} / B\R) \\ {\ensuremath{\frac{\partial A_{||}}{\partial t}}} =&
+       \nabla_{||}(j_{||} / B) \\ {\ensuremath{\frac{\partial A_{||}}{\partial t}}} =&
        -\frac{1}{\hat{\beta}}\nabla_{||}\phi - \eta\frac{1}{\hat{\beta}} j_{||}\end{aligned}
 
 with :math:`\phi` and :math:`j_{||}` given by
@@ -6019,7 +6041,7 @@ categories:
    -  ``C2``: 2\ :math:`^{nd}` order :math:`f_{-1} - 2f_0 + f_1`
 
    -  ``C4``: 4\ :math:`^{th}` order
-      :math:`\L(-f_{-2} + 16f_{-1} - 30f_0 + 16f_1 - f_2\R)/12`
+      :math:`(-f_{-2} + 16f_{-1} - 30f_0 + 16f_1 - f_2)/12`
 
    -  ``W2``: 2\ :math:`^{nd}` order CWENO
 
@@ -6038,10 +6060,10 @@ categories:
       Non-Oscillatory (WENO):raw-latex:`\cite{jiang-1997}`
 
 -  Flux conserving and limiting methods for terms of the form
-   :math:`\frac{d}{dx}\L(v_x f\R)`
+   :math:`\frac{d}{dx}(v_x f)`
 
    -  ``SPLIT``: split into upwind and central terms
-      :math:`\frac{d}{dx}\L(v_x f\R) = v_x\frac{df}{dx} + f\frac{dv_x}{dx}`
+      :math:`\frac{d}{dx}(v_x f) = v_x\frac{df}{dx} + f\frac{dv_x}{dx}`
 
    -  ``NND``: Non-oscillatory, containing No free parameters and
       Dissipative (NND) scheme:raw-latex:`\cite{nnd-2010}`
@@ -6090,11 +6112,11 @@ top of your physics module
 +--------------+-----------------------------------------------+
 | VDDZ(f, g)   | :math:`f \partial g / \partial z`             |
 +--------------+-----------------------------------------------+
-| FDDX(f, g)   | :math:`\partial/\partial x\L( f * g \R)`      |
+| FDDX(f, g)   | :math:`\partial/\partial x( f * g )`          |
 +--------------+-----------------------------------------------+
-| FDDY(f, g)   | :math:`\partial/\partial x\L( f * g \R)`      |
+| FDDY(f, g)   | :math:`\partial/\partial x( f * g )`          |
 +--------------+-----------------------------------------------+
-| FDDZ(f, g)   | :math:`\partial/\partial x\L( f * g \R)`      |
+| FDDZ(f, g)   | :math:`\partial/\partial x( f * g )`          |
 +--------------+-----------------------------------------------+
 
 Table: Coordinate derivatives
@@ -6125,9 +6147,9 @@ therefore given by
    \begin{aligned}
    \frac{\partial^2 f}{\partial x^2} \simeq \frac{1}{\Delta x^2}\frac{\partial^2
    f}{\partial i^2} + \frac{1}{\Delta x}{\ensuremath{\frac{\partial f}{\partial x}}} \cdot
-   {\ensuremath{\frac{\partial }{\partial i}}}\L(\frac{1}{\Delta x}\R)\end{aligned}
+   {\ensuremath{\frac{\partial }{\partial i}}}(\frac{1}{\Delta x})\end{aligned}
 
-The correction factor :math:`\partial/\partial i\L(1/\Delta x\R)` can
+The correction factor :math:`\partial/\partial i(1/\Delta x)` can
 be calculated automatically, but you can also specify ``d2x`` in the
 grid file which is
 
@@ -6141,7 +6163,7 @@ The correction factor is then calculated from ``d2x`` using
 .. math::
 
    \begin{aligned}
-   {\ensuremath{\frac{\partial }{\partial i}}}\L(\frac{1}{\Delta x}\R) = -\frac{1}{\Delta x^2} {\ensuremath{\frac{\partial \Delta x}{\partial i}}}\end{aligned}
+   {\ensuremath{\frac{\partial }{\partial i}}}(\frac{1}{\Delta x}) = -\frac{1}{\Delta x^2} {\ensuremath{\frac{\partial \Delta x}{\partial i}}}\end{aligned}
 
 General operators
 -----------------
@@ -6167,9 +6189,9 @@ system.
 .. math::
 
    \begin{aligned}
-   \nabla\phi =& {\ensuremath{\frac{\partial \phi}{\partial u^i}}}\nabla u^i \Rarrow \L(\nabla\phi\R)_i =
+   \nabla\phi =& {\ensuremath{\frac{\partial \phi}{\partial u^i}}}\nabla u^i arrow (\nabla\phi)_i =
        {\ensuremath{\frac{\partial \phi}{\partial u^i}}} \\ \nabla\cdot A =& =
-       \frac{1}{J}{\ensuremath{\frac{\partial }{\partial u^i}}}\L(Jg^{ij}A_j\R) \\ \nabla^2\phi =&
+       \frac{1}{J}{\ensuremath{\frac{\partial }{\partial u^i}}}(Jg^{ij}A_j) \\ \nabla^2\phi =&
        G^j{\ensuremath{\frac{\partial \phi}{\partial u^i}}} + g^{ij}\frac{\partial^2\phi}{\partial u^i\partial
        u^j} \\\end{aligned}
 
@@ -6178,7 +6200,7 @@ where we have defined
 .. math::
 
    \begin{aligned}
-   G^j =& \frac{1}{J}{\ensuremath{\frac{\partial }{\partial u^i}}}\L(Jg^{ij}\R)\end{aligned}
+   G^j =& \frac{1}{J}{\ensuremath{\frac{\partial }{\partial u^i}}}(Jg^{ij})\end{aligned}
 
 **not** to be confused with the Christoffel symbol of the second kind
 (see the coordinates manual for more details).
@@ -6199,7 +6221,7 @@ written in Clebsch form as
 .. math::
 
    \begin{aligned}
-   \mathbf{B}_0 = \L|\mathbf{B}_0\R|\mathbf{b}_0 = B_0 \mathbf{b}_0\end{aligned}
+   \mathbf{B}_0 = |\mathbf{B}_0|\mathbf{b}_0 = B_0 \mathbf{b}_0\end{aligned}
 
  is the background *equilibrium* magnetic field.
 
@@ -6208,14 +6230,14 @@ written in Clebsch form as
   :math:`\displaystyle\partial^0_{||} = \mathbf{b}_0\cdot\nabla =
   \frac{1}{\sqrt{g_{yy}}}{\ensuremath{\frac{\partial }{\partial y}}}`
 | ``Div_par`` & :math:`\displaystyle \nabla^0_{||}f =
-  B_0\partial^0_{||}\L(\frac{f}{B_0}\R)`
+  B_0\partial^0_{||}(\frac{f}{B_0})`
 | ``Grad2_par2`` & :math:`\displaystyle \partial^2_{||}\phi =
-  \partial^0_{||}\L(\partial^0_{||}\phi\R) =
-  \frac{1}{\sqrt{g_{yy}}}{\ensuremath{\frac{\partial }{\partial y}}}\L(\frac{1}{\sqrt{g_{yy}}}\R){\ensuremath{\frac{\partial 
+  \partial^0_{||}(\partial^0_{||}\phi) =
+  \frac{1}{\sqrt{g_{yy}}}{\ensuremath{\frac{\partial }{\partial y}}}(\frac{1}{\sqrt{g_{yy}}}){\ensuremath{\frac{\partial 
   \phi}{\partial y}}} + \frac{1}{g_{yy}}\frac{\partial^2\phi}{\partial y^2}`
 | ``Laplace_par`` & :math:`\displaystyle \nabla_{||}^2\phi =
   \nabla\cdot\mathbf{b}_0\mathbf{b}_0\cdot\nabla\phi =
-  \frac{1}{J}{\ensuremath{\frac{\partial }{\partial y}}}\L(\frac{J}{g_{yy}}{\ensuremath{\frac{\partial \phi}{\partial y}}}\R)`
+  \frac{1}{J}{\ensuremath{\frac{\partial }{\partial y}}}(\frac{J}{g_{yy}}{\ensuremath{\frac{\partial \phi}{\partial y}}})`
 | ``Laplace_perp`` &
   :math:`\displaystyle \nabla_\perp^2 = \nabla^2 - \nabla_{||}^2`
 | ``Delp2`` & Perpendicular Laplacian, neglecting all :math:`y`
@@ -6231,22 +6253,22 @@ We have that
 
    \begin{aligned}
    \mathbf{b}_0\cdot\nabla\phi\times\nabla A =&
-       \frac{1}{J\sqrt{g_{yy}}}\L[\L(g_{yy}{\ensuremath{\frac{\partial \phi}{\partial z}}} -
-       g_{yz}{\ensuremath{\frac{\partial \phi}{\partial y}}}\R){\ensuremath{\frac{\partial A}{\partial x}}} + \L(g_{yz}{\ensuremath{\frac{\partial \phi}{\partial x}}} -
-   g_{xy}{\ensuremath{\frac{\partial \phi}{\partial z}}}\R){\ensuremath{\frac{\partial A}{\partial y}}} + \L(g_{xy}{\ensuremath{\frac{\partial \phi}{\partial y}}} -
-   g_{yy}{\ensuremath{\frac{\partial \phi}{\partial x}}}\R){\ensuremath{\frac{\partial A}{\partial z}}}\R]\end{aligned}
+       \frac{1}{J\sqrt{g_{yy}}}[(g_{yy}{\ensuremath{\frac{\partial \phi}{\partial z}}} -
+       g_{yz}{\ensuremath{\frac{\partial \phi}{\partial y}}}){\ensuremath{\frac{\partial A}{\partial x}}} + (g_{yz}{\ensuremath{\frac{\partial \phi}{\partial x}}} -
+   g_{xy}{\ensuremath{\frac{\partial \phi}{\partial z}}}){\ensuremath{\frac{\partial A}{\partial y}}} + (g_{xy}{\ensuremath{\frac{\partial \phi}{\partial y}}} -
+   g_{yy}{\ensuremath{\frac{\partial \phi}{\partial x}}}){\ensuremath{\frac{\partial A}{\partial z}}}]\end{aligned}
 
 .. math::
 
    \begin{aligned}
-   \nabla_\perp \equiv \nabla - {\ensuremath{\boldsymbol{b}}}\L({\ensuremath{\boldsymbol{b}}}\cdot\nabla\R) \qquad
+   \nabla_\perp \equiv \nabla - {\ensuremath{\boldsymbol{b}}}({\ensuremath{\boldsymbol{b}}}\cdot\nabla) \qquad
    {\ensuremath{\boldsymbol{b}}}\cdot\nabla = \frac{1}{JB}\frac{\partial}{\partial y}\end{aligned}
 
 .. math::
 
    \begin{aligned}
-   {\ensuremath{\boldsymbol{b}}} = \frac{1}{JB}{\ensuremath{\boldsymbol{e}}}_y = \frac{1}{JB}\L[g_{xy}\nabla x + g_{yy}\nabla y
-   + g_{yz}\nabla z\R]\end{aligned}
+   {\ensuremath{\boldsymbol{b}}} = \frac{1}{JB}{\ensuremath{\boldsymbol{e}}}_y = \frac{1}{JB}[g_{xy}\nabla x + g_{yy}\nabla y
+   + g_{yz}\nabla z]\end{aligned}
 
 In a Clebsch coordinate system
 :math:`{\ensuremath{\boldsymbol{B}}} = \nabla z \times \nabla x = \frac{1}{J}{\ensuremath{\boldsymbol{e}}}_y`,
@@ -6256,9 +6278,9 @@ and so the :math:`\nabla y` term cancels out:
 .. math::
 
    \begin{aligned}
-   \nabla_\perp =& \nabla x\L({\ensuremath{\frac{\partial }{\partial x}}} -
-       \frac{g_{xy}}{\L(JB\R)^2}{\ensuremath{\frac{\partial }{\partial y}}}\R) + \nabla z\L({\ensuremath{\frac{\partial }{\partial z}}} -
-       \frac{g_{yz}}{\L(JB\R)^2}{\ensuremath{\frac{\partial }{\partial y}}}\R)\end{aligned}
+   \nabla_\perp =& \nabla x({\ensuremath{\frac{\partial }{\partial x}}} -
+       \frac{g_{xy}}{(JB)^2}{\ensuremath{\frac{\partial }{\partial y}}}) + \nabla z({\ensuremath{\frac{\partial }{\partial z}}} -
+       \frac{g_{yz}}{(JB)^2}{\ensuremath{\frac{\partial }{\partial y}}})\end{aligned}
 
 The bracket operators
 ---------------------
@@ -7292,7 +7314,7 @@ DOxygen documentation, and source code.
    | Divergence of a vector
 
 -  | ``Field = Div_par(Field f)``
-   | Parallel divergence :math:`B_0\mathbf{b}\cdot\nabla\L(f / B_0\R)`
+   | Parallel divergence :math:`B_0\mathbf{b}\cdot\nabla(f / B_0)`
 
 -  ``dump.add(Field, name, 1/0)``
 
@@ -7795,18 +7817,18 @@ By using the definition of the Fourier transformed, we have
 .. math::
 
    \begin{aligned}
-       F(x,y,\xi) = {\int_{-\infty}^{\infty} {f(x,y,z)\exp\L(-2\pi iz\xi\R)} \; \text{d} {z}}\end{aligned}
+       F(x,y,\xi) = {\int_{-\infty}^{\infty} {f(x,y,z)\exp(-2\pi iz\xi)} \; \text{d} {z}}\end{aligned}
 
 this gives
 
 .. math::
 
    \begin{aligned}
-       &{\int_{-\infty}^{\infty} {\L(\partial_zf[x,y,z]\R)\exp\L(-2\pi iz\xi\R)} \; \text{d} {z}}\\
-       =& {\int_{-\infty}^{\infty} {\partial_z\L(f[x,y,z]\exp\L[-2\pi iz\xi\R]\R)} \; \text{d} {z}}
-       - {\int_{-\infty}^{\infty} {f(x,y,z)\partial_z\exp\L(-2\pi iz\xi\R)} \; \text{d} {z}}\\
-       =& \L(f[x,y,z]\exp\L[-2\pi iz\xi\R]\R)\bigg|_{-\infty}^{\infty} - \L(-2\pi
-       i\xi\R){\int_{-\infty}^{\infty} {f(x,y,z)\exp\L(-2\pi iz\xi\R)} \; \text{d} {z}}\\
+       &{\int_{-\infty}^{\infty} {(\partial_zf[x,y,z])\exp(-2\pi iz\xi)} \; \text{d} {z}}\\
+       =& {\int_{-\infty}^{\infty} {\partial_z(f[x,y,z]\exp[-2\pi iz\xi])} \; \text{d} {z}}
+       - {\int_{-\infty}^{\infty} {f(x,y,z)\partial_z\exp(-2\pi iz\xi)} \; \text{d} {z}}\\
+       =& (f[x,y,z]\exp[-2\pi iz\xi])\bigg|_{-\infty}^{\infty} - (-2\pi
+       i\xi){\int_{-\infty}^{\infty} {f(x,y,z)\exp(-2\pi iz\xi)} \; \text{d} {z}}\\
        =& 2\pi i\xi F(x,y,\xi) {\addtocounter{equation}{1}\tag{\theequation}}\label{eq:f_derivative}
 
 where we have used that :math:`f(x,y,\pm\infty)=0` in order to have a
@@ -7829,8 +7851,8 @@ zeroth offset mode). For the discrete Fourier transform, we have
 .. math::
 
    \begin{aligned}
-       F(x,y)_{k} = \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp\L(\frac{-2\pi i k
-       Z}{N}\R)
+       F(x,y)_{k} = \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp(\frac{-2\pi i k
+       Z}{N})
    \label{eq:DFT}
 
 where :math:`k` is the mode number, :math:`N` is the number of points
@@ -7845,8 +7867,8 @@ we have that (since we have one less line segment than point)
 .. math::
 
    \begin{aligned}
-       F(x,y)_{k} = \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp\L( - i k
-       Z\text{d}z\R) = \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp\L( - i k z_Z\R)\end{aligned}
+       F(x,y)_{k} = \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp( - i k
+       Z\text{d}z) = \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp( - i k z_Z)\end{aligned}
 
 The discrete version of equation ([eq:f\_derivative]) thus gives
 
