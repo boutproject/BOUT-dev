@@ -322,7 +322,7 @@ C++’s object-oriented features.
 Figure [fig:layout1] shows the most important parts of BOUT++ and how
 they fit together.
 
-.. figure:: figs/layout1.pdf
+.. figure:: figs/layout1.*
    :alt: Overview of BOUT++ control flow
 
    Overview of BOUT++ control flow during initialisation (red), and
@@ -349,7 +349,7 @@ BOUT++ involves many different components. Figure [fig:layout2] shows
 between them. Some thought was put into how this should be organised,
 but it has also changed over time, so some parts could be cleaner.
 
-.. figure:: figs/layout2.pdf
+.. figure:: figs/layout2.*
    :alt: Relationships used in calculating the RHS function
 
    Relationship between important classes and functions used in
@@ -845,7 +845,7 @@ minimises unnecessary copying of data.
 Both of these optimisations are done “behind the scenes”, hidden from
 the remainder of the code, and are illustrated in figure [fig:memory]:
 
-.. figure:: figs/memory.pdf
+.. figure:: figs/memory.*
    :alt: Memory handling in BOUT++
 
    Memory handling in BOUT++. Memory allocation and freeing is
@@ -889,7 +889,7 @@ differential methods on stencils such as :math:`4^{th}`-order central
 differencing. This mapping depends on global settings in ``BOUT.inp``
 and is illustrated in figure [fig:diffOverview].
 
-.. figure:: figs/diffOverview.pdf
+.. figure:: figs/diffOverview.*
    :alt: Overview of ``derivs`` module
 
    Overview of ``derivs`` module, mapping derivative functions on fields
@@ -1020,7 +1020,7 @@ in figure [fig:diffLookup]. First the short description is turned into a
 ``DIFF_METHOD`` enum code, then this code is turned into a function
 pointer.
 
-.. figure:: figs/diffLookup.pdf
+.. figure:: figs/diffLookup.*
    :alt: Lookup tables for differential method
 
    Lookup tables for mapping between differential method labels, codes,
@@ -1063,7 +1063,7 @@ which map between the same cell location (e.g. cell-centred values to
 cell-centred values), and those which map to different locations (e.g.
 cell-centred to lower X).
 
-.. figure:: figs/diffStencils.pdf
+.. figure:: figs/diffStencils.*
    :alt: Stencils with cell-centred and lower shifted values
 
    Stencils with cell-centred (solid) and lower shifted values (open).
@@ -1198,7 +1198,7 @@ processors can be busy at once, and so efficiency will fall sharply.
 Figure [fig:par\_laplace] shows the useage of 4 processors inverting a
 set of 3 poloidal slices (i.e. MYSUB=3)
 
-.. figure:: figs/par_laplace.pdf
+.. figure:: figs/par_laplace.*
    :alt: Parallel Laplacian inversion
 
    Parallel Laplacian inversion with MYSUB=3 on 4 processors. Red
