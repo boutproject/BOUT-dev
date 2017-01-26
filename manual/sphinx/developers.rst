@@ -388,314 +388,355 @@ inversion codes, ``mesh``, and ``solver``.
 
 The current source code files are:
 
--  :doc:`bout++.cxx <_breathe_autogen/file/bout_09_09_8cxx>` : Main file which initialises, runs and finalises
-   BOUT++. Currently contains a ``main()`` function, though this is
-   being removed shortly.
+- :doc:`bout++.cxx<_breathe_autogen/file/bout_09_09_8cxx>`: Main file
+  which initialises, runs and finalises BOUT++. Currently contains a
+  :cpp:func:`main()` function, though this is being removed shortly.
 
--  field
+- field
 
-   -  :doc:`field2d.cxx <_breathe_autogen/file/field2d_8cxx>` implements the ``Field2D`` class. This is a scalar
-      field which varies only in :math:`x` and :math:`y` and is used for
-      things like metric tensor components and initial profiles. It
-      supplies lots of overloaded operators and functions on these
-      objects.
+   - :doc:`field2d.cxx<_breathe_autogen/file/field2d_8cxx>` implements
+     the :cpp:class:`Field2D` class. This is a scalar field which
+     varies only in :math:`x` and :math:`y` and is used for things
+     like metric tensor components and initial profiles. It supplies
+     lots of overloaded operators and functions on these objects.
 
-   -  :doc:`field3d.cxx <_breathe_autogen/file/field3d_8cxx>` implements the ``Field3D`` class, which varies in
-      :math:`x`, :math:`y` and :math:`z`. Since these handle a lot more
-      memory than Field2D objects, the memory management is more
-      complicated and includes reference counting. See
-      section [sec:memorymanage] for more details.
+   - :doc:`field3d.cxx<_breathe_autogen/file/field3d_8cxx>` implements
+     the :cpp:class:`Field3D` class, which varies in :math:`x`,
+     :math:`y` and :math:`z`. Since these handle a lot more memory
+     than Field2D objects, the memory management is more complicated
+     and includes reference counting. See section [sec:memorymanage]
+     for more details.
 
-   -  :doc:`field_data.cxx <_breathe_autogen/file/field__data_8cxx>` Implements some functions in the ``FieldData``
-      class. This is a mainly pure virtual interface class which is
-      inherited by ``Field2D`` and ``Field3D``.
+   - :doc:`field_data.cxx<_breathe_autogen/file/field__data_8cxx>`
+     Implements some functions in the :cpp:class:`FieldData`
+     class. This is a mainly pure virtual interface class which is
+     inherited by :cpp:class:`Field2D` and :cpp:class:`Field3D`.
 
-   -  :doc:`fieldperp.cxx <_breathe_autogen/file/fieldperp_8cxx>` implements a ``FieldPerp`` class to store slices
-      perpendicular to the magnetic field i.e. they are a function of
-      :math:`x` and :math:`z` only. This is mainly used for Laplacian
-      inversion routines, and needs to be integrated with the other
-      fields better.
+   - :doc:`fieldperp.cxx<_breathe_autogen/file/fieldperp_8cxx>`
+     implements a :cpp:class:`FieldPerp` class to store slices
+     perpendicular to the magnetic field i.e. they are a function of
+     :math:`x` and :math:`z` only. This is mainly used for Laplacian
+     inversion routines, and needs to be integrated with the other
+     fields better.
 
-   -  :doc:`initialprofiles.cxx <_breathe_autogen/file/initialprofiles_8cxx>` routines to set the initial values of
-      fields when a simulation first starts. Reads settings from the
-      option file based on the name of the variable.
+   - :doc:`initialprofiles.cxx<_breathe_autogen/file/initialprofiles_8cxx>`
+     routines to set the initial values of fields when a simulation
+     first starts. Reads settings from the option file based on the name
+     of the variable.
 
-   -  :doc:`vecops.cxx <_breathe_autogen/file/vecops_8cxx>` a collection of function to operate on vectors.
-      Contains things like ``Grad``, ``Div`` and ``Curl``, and uses a
-      combination of field differential operators (in :doc:`difops.cxx <_breathe_autogen/file/difops_8cxx>`)
-      and metric tensor components (in ``Mesh``).
+   - :doc:`vecops.cxx<_breathe_autogen/file/vecops_8cxx>` a collection
+     of function to operate on vectors.  Contains things like
+     ``Grad``, ``Div`` and ``Curl``, and uses a combination of field
+     differential operators (in
+     :doc:`difops.cxx<_breathe_autogen/file/difops_8cxx>`) and metric
+     tensor components (in :cpp:class:`Mesh`).
 
-   -  :doc:`vector2d.cxx <_breathe_autogen/file/vector2d_8cxx>` implements the ``Vector2D`` class, which uses a
-      ``Field2D`` object for each of its 3 components. Overloads
-      operators to supply things like dot and cross products.
+   - :doc:`vector2d.cxx<_breathe_autogen/file/vector2d_8cxx>`
+     implements the :cpp:class:`Vector2D` class, which uses a
+     :cpp:class:`Field2D` object for each of its 3
+     components. Overloads operators to supply things like dot and
+     cross products.
 
-   -  :doc:`vector3d.cxx <_breathe_autogen/file/vector3d_8cxx>` implements ``Vector3D`` by using a ``Field3D``
-      object for each component.
+   - :doc:`vector3d.cxx<_breathe_autogen/file/vector3d_8cxx>`
+     implements :cpp:class:`Vector3D` by using a :cpp:class:`Field3D`
+     object for each component.
 
-   -  :doc:`where.cxx <_breathe_autogen/file/where_8cxx>` supplies functions for choosing between values based
-      on selection criteria.
+   - :doc:`where.cxx<_breathe_autogen/file/where_8cxx>` supplies
+     functions for choosing between values based on selection
+     criteria.
 
--  fileio
+- fileio
 
-   -  :doc:`datafile.cxx <_breathe_autogen/file/datafile_8cxx>` supplies an abstract ``DataFile`` interface for
-      data input and output. Handles the conversion of data in fields
-      and vectors into blocks of data which are then sent to a specific
-      file format.
+   - :doc:`datafile.cxx<_breathe_autogen/file/datafile_8cxx>`
+     supplies an abstract :cpp:class:`DataFile` interface for data
+     input and output. Handles the conversion of data in fields and
+     vectors into blocks of data which are then sent to a specific
+     file format.
 
-   -  :doc:`formatfactory.cxx <_breathe_autogen/file/formatfactory_8cxx>`
+   - :doc:`formatfactory.cxx<_breathe_autogen/file/formatfactory_8cxx>`
 
-   -  :doc:`formatfactory.hxx <_breathe_autogen/file/formatfactory_8hxx>`
+   - :doc:`formatfactory.hxx<_breathe_autogen/file/formatfactory_8hxx>`
 
-   -  impls
+   - impls
 
-      -  :doc:`emptyformat.hxx <_breathe_autogen/file/emptyformat_8hxx>`
+      - :doc:`emptyformat.hxx<_breathe_autogen/file/emptyformat_8hxx>`
 
-      -  hdf5
+      - hdf5
 
-         -  :doc:`h5_format.cxx <_breathe_autogen/file/h5__format_8cxx>` implements an interface to the HDF5
-            library
+         - :doc:`h5_format.cxx<_breathe_autogen/file/h5__format_8cxx>` implements an
+           interface to the HDF5 library
 
-         -  :doc:`h5_format.hxx <_breathe_autogen/file/h5__format_8hxx>`
+         - :doc:`h5_format.hxx<_breathe_autogen/file/h5__format_8hxx>`
 
-      -  netcdf
+      - netcdf
 
-         -  :doc:`nc_format.cxx <_breathe_autogen/file/nc__format_8cxx>` implements an interface to the NetCDF-4
-            library
+         - :doc:`nc_format.cxx<_breathe_autogen/file/nc__format_8cxx>` implements an
+           interface to the NetCDF-4 library
 
-         -  :doc:`nc_format.hxx <_breathe_autogen/file/nc__format_8hxx>`
+         - :doc:`nc_format.hxx<_breathe_autogen/file/nc__format_8hxx>`
 
-      -  netcdf4
+      - netcdf4
 
-         -  :doc:`ncxx4.cxx <_breathe_autogen/file/ncxx4_8cxx>` implements an interface to the NetCDF-4
-            library using the C++ API
+         - :doc:`ncxx<_breathe_autogen/file/ncxx4_8cxx>`
+           implements an interface to the NetCDF-4 library using the
+           C++ API
 
-         -  :doc:`ncxx4.hxx <_breathe_autogen/file/ncxx4_8hxx>`
+         - :doc:`ncxx<_breathe_autogen/file/ncxx4_8hxx>`
 
-      -  pnetcdf
+      - pnetcdf
 
-         -  :doc:`pnetcdf.cxx <_breathe_autogen/file/pnetcdf_8cxx>` Parallel NetCDF interface
+         - :doc:`pnetcdf.cxx<_breathe_autogen/file/pnetcdf_8cxx>`
+           Parallel NetCDF interface
 
-         -  :doc:`pnetcdf.hxx <_breathe_autogen/file/pnetcdf_8hxx>`
+         - :doc:`pnetcdf.hxx<_breathe_autogen/file/pnetcdf_8hxx>`
 
--  invert
+- invert
 
-   -  :doc:`fft_fftw.cxx <_breathe_autogen/file/fft__fftw_8cxx>` implements the :doc:`fft.hxx <_breathe_autogen/file/fft_8hxx>` interface by calling
-      the Fastest Fourier Transform in the West (FFTW) library.
+   - :doc:`fft_fftw.cxx<_breathe_autogen/file/fft__fftw_8cxx>`
+     implements the :doc:`fft.hxx<_breathe_autogen/file/fft_8hxx>`
+     interface by calling the Fastest Fourier Transform in the West
+     (FFTW) library.
 
-   -  :doc:`full_gmres.cxx <_breathe_autogen/file/full__gmres_8cxx>`
+   - :doc:`full_gmres.cxx<_breathe_autogen/file/full__gmres_8cxx>`
 
-   -  :doc:`inverter.cxx <_breathe_autogen/file/inverter_8cxx>` is a ``FieldPerp`` inversion class currently
-      under development. It is intended to provide a way to solve
-      nonlinear problems using a GMRES iterative method.
+   - :doc:`inverter.cxx<_breathe_autogen/file/inverter_8cxx>` is a
+     :cpp:class:`FieldPerp` inversion class currently under
+     development. It is intended to provide a way to solve nonlinear
+     problems using a GMRES iterative method.
 
-   -  :doc:`invert_gmres.cxx <_breathe_autogen/file/invert__gmres_8cxx>`
+   - :doc:`invert_gmres.cxx<_breathe_autogen/file/invert__gmres_8cxx>`
 
-   -  :doc:`invert_laplace_gmres.cxx <_breathe_autogen/file/invert__laplace__gmres_8cxx>` inherits the ``Inverter`` class and
-      will solve more general Laplacian problems, using the
-      ``invert_laplace`` routines as preconditioners.
+   - :doc:`invert_laplace_gmres.cxx<_breathe_autogen/file/invert__laplace__gmres_8cxx>` inherits
+     the :cpp:class:`Inverter` class and will solve more general
+     Laplacian problems, using the :cpp:func:`invert_laplace`
+     routines as preconditioners.
 
--  invert / laplace
+- invert / laplace
 
-   -  :doc:`invert_laplace.cxx <_breathe_autogen/file/invert__laplace_8cxx>` uses Fourier decomposition in :math:`z`
-      combined with tri- and band-diagonal solvers in :math:`x` to solve
-      Laplacian problems.
+   - :doc:`invert_laplace.cxx<_breathe_autogen/file/invert__laplace_8cxx>` uses Fourier
+      decomposition in :math:`z` combined with tri- and band-diagonal
+      solvers in :math:`x` to solve Laplacian problems.
 
-   -  :doc:`laplacefactory.hxx <_breathe_autogen/file/laplacefactory_8hxx>`
+   - :doc:`laplacefactory.hxx<_breathe_autogen/file/laplacefactory_8hxx>`
 
-   -  :doc:`laplacefactory.cxx <_breathe_autogen/file/laplacefactory_8cxx>`
+   - :doc:`laplacefactory.cxx<_breathe_autogen/file/laplacefactory_8cxx>`
 
-   -  impls
+   - impls
 
-      -  serial\_tri
+      - serial\_tri
 
-         -  :doc:`serial_tri.hxx <_breathe_autogen/file/serial__tri_8hxx>`
+         - :doc:`serial_tri.hxx<_breathe_autogen/file/serial__tri_8hxx>`
 
-         -  :doc:`serial_tri.cxx <_breathe_autogen/file/serial__tri_8cxx>`
+         - :doc:`serial_tri.cxx<_breathe_autogen/file/serial__tri_8cxx>`
 
-      -  serial\_band
+      - serial\_band
 
-         -  :doc:`serial_band.hxx <_breathe_autogen/file/serial__band_8hxx>`
+         - :doc:`serial_band.hxx<_breathe_autogen/file/serial__band_8hxx>`
 
-         -  :doc:`serial_band.cxx <_breathe_autogen/file/serial__band_8cxx>`
+         - :doc:`serial_band.cxx<_breathe_autogen/file/serial__band_8cxx>`
 
-      -  spt
+      - spt
 
-         -  :doc:`spt.hxx <_breathe_autogen/file/spt_8hxx>`
+         - :doc:`spt.hxx<_breathe_autogen/file/spt_8hxx>`
 
-         -  :doc:`spt.cxx <_breathe_autogen/file/spt_8cxx>`
+         - :doc:`spt.cxx<_breathe_autogen/file/spt_8cxx>`
 
-      -  pdd
+      - pdd
 
-         -  :doc:`pdd.hxx <_breathe_autogen/file/pdd_8hxx>`
+         - :doc:`pdd.hxx<_breathe_autogen/file/pdd_8hxx>`
 
-         -  :doc:`pdd.cxx <_breathe_autogen/file/pdd_8cxx>`
+         - :doc:`pdd.cxx<_breathe_autogen/file/pdd_8cxx>`
 
--  invert / parderiv
+- invert / parderiv
 
-   -  :doc:`invert_parderiv.cxx <_breathe_autogen/file/invert__parderiv_8cxx>` inverts a problem involving only parallel
-      :math:`y` derivatives. Intended for use in some preconditioners.
+   -
+     :doc:`invert_parderiv.cxx<_breathe_autogen/file/invert__parderiv_8cxx>`
+     inverts a problem involving only parallel :math:`y`
+     derivatives. Intended for use in some preconditioners.
 
-   -  :doc:`parderiv_factory.hxx <_breathe_autogen/file/parderiv__factory_8hxx>`
+   - :doc:`parderiv_factory.hxx<_breathe_autogen/file/parderiv__factory_8hxx>`
 
-   -  :doc:`parderiv_factory.cxx <_breathe_autogen/file/parderiv__factory_8cxx>`
+   - :doc:`parderiv_factory.cxx<_breathe_autogen/file/parderiv__factory_8cxx>`
 
-   -  impls
+   - impls
 
-      -  serial
+      - serial
 
-         -  :doc:`serial.cxx <_breathe_autogen/file/serial_8cxx>`
+         - :doc:`serial.cxx<_breathe_autogen/file/serial_8cxx>`
 
-         -  :doc:`serial.hxx <_breathe_autogen/file/serial_8hxx>`
+         - :doc:`serial.hxx<_breathe_autogen/file/serial_8hxx>`
 
-      -  cyclic
+      - cyclic
 
-         -  :doc:`cyclic.cxx <_breathe_autogen/file/cyclic_8cxx>`
+         - :doc:`cyclic.cxx<_breathe_autogen/file/cyclic_8cxx>`
 
-         -  :doc:`cyclic.hxx <_breathe_autogen/file/cyclic_8hxx>`
+         - :doc:`cyclic.hxx<_breathe_autogen/file/cyclic_8hxx>`
 
--  :doc:`lapack_routines.cxx <_breathe_autogen/file/lapack__routines_8cxx>` supplies an interface to the LAPACK linear
-   solvers, which are used by the ``invert_laplace`` routines.
+- :doc:`lapack_routines.cxx<_breathe_autogen/file/lapack__routines_8cxx>` supplies an
+   interface to the LAPACK linear solvers, which are used by the
+   ``invert_laplace`` routines.
 
--  mesh
+- mesh
 
-   -  :doc:`boundary_factory.cxx <_breathe_autogen/file/boundary__factory_8cxx>` creates boundary condition operators
-      which can then be applied to fields. Described in
-      section [sec:BoundaryFactory].
+   - :doc:`boundary_factory.cxx<_breathe_autogen/file/boundary__factory_8cxx>` creates boundary
+     condition operators which can then be applied to
+     fields. Described in section [sec:BoundaryFactory].
 
-   -  :doc:`boundary_region.cxx <_breathe_autogen/file/boundary__region_8cxx>` implements a way to describe and iterate
-      over boundary regions. Created by the mesh, and then used by
-      boundary conditions. See section [sec:BoundaryRegion] for more
-      details.
+   - :doc:`boundary_region.cxx<_breathe_autogen/file/boundary__region_8cxx>` implements a way
+     to describe and iterate over boundary regions. Created by the
+     mesh, and then used by boundary conditions. See
+     section [sec:BoundaryRegion] for more details.
 
-   -  :doc:`boundary_standard.cxx <_breathe_autogen/file/boundary__standard_8cxx>` implements some standard boundary
-      operations and modifiers such as ``Neumann`` and ``Dirichlet``.
+   - :doc:`boundary_standard.cxx<_breathe_autogen/file/boundary__standard_8cxx>` implements some
+     standard boundary operations and modifiers such as ``Neumann``
+     and ``Dirichlet``.
 
-   -  :doc:`difops.cxx <_breathe_autogen/file/difops_8cxx>` is a collection of differential operators on scalar
-      fields. It uses the differential methods in :doc:`derivs.cxx <_breathe_autogen/file/derivs_8cxx>` and the
-      metric tensor components in ``Mesh`` to compute operators.
+   - :doc:`difops.cxx<_breathe_autogen/file/difops_8cxx>` is a
+     collection of differential operators on scalar fields. It uses
+     the differential methods in :doc:`derivs.cxx<_breathe_autogen/file/derivs_8cxx>` and the metric tensor
+     components in :cpp:class:`Mesh` to compute operators.
 
-   -  :doc:`interpolation.cxx <_breathe_autogen/file/interpolation_8cxx>` contains functions for interpolating fields
+   - :doc:`interpolation.cxx<_breathe_autogen/file/interpolation_8cxx>` contains functions
+     for interpolating fields
 
-   -  :doc:`mesh.cxx <_breathe_autogen/file/mesh_8cxx>` is the base class for the ``Mesh`` object. Contains
-      routines useful for all ``Mesh`` implementations.
+   - :doc:`mesh.cxx<_breathe_autogen/file/mesh_8cxx>` is the base
+     class for the :cpp:class:`Mesh` object. Contains routines useful
+     for all :cpp:class:`Mesh` implementations.
 
-   -  impls
+   - impls
 
-      -  :doc:`domain.cxx <_breathe_autogen/file/domain_8cxx>`
+      - :doc:`domain.cxx<_breathe_autogen/file/domain_8cxx>`
 
-      -  :doc:`domain.hxx <_breathe_autogen/file/domain_8hxx>`
+      - :doc:`domain.hxx<_breathe_autogen/file/domain_8hxx>`
 
-      -  :doc:`partition.cxx <_breathe_autogen/file/partition_8cxx>`
+      - :doc:`partition.cxx<_breathe_autogen/file/partition_8cxx>`
 
-      -  :doc:`partition.hxx <_breathe_autogen/file/partition_8hxx>`
+      - :doc:`partition.hxx<_breathe_autogen/file/partition_8hxx>`
 
-      -  bout
+      - bout
 
-         -  :doc:`boutmesh.cxx <_breathe_autogen/file/boutmesh_8cxx>` implements a mesh interface which is
-            compatible with BOUT grid files.
+         - :doc:`boutmesh.cxx<_breathe_autogen/file/boutmesh_8cxx>`
+           implements a mesh interface which is compatible with BOUT
+           grid files.
 
-         -  :doc:`boutmesh.hxx <_breathe_autogen/file/boutmesh_8hxx>`
+         - :doc:`boutmesh.hxx<_breathe_autogen/file/boutmesh_8hxx>`
 
--  physics
+- physics
 
-   -  :doc:`gyro_average.cxx <_breathe_autogen/file/gyro__average_8cxx>` gyro-averaging operators
+   - :doc:`gyro_average.cxx<_breathe_autogen/file/gyro__average_8cxx>`
+      gyro-averaging operators
 
-   -  :doc:`smoothing.cxx <_breathe_autogen/file/smoothing_8cxx>` provides smoothing routines on scalar fields
+   - :doc:`smoothing.cxx<_breathe_autogen/file/smoothing_8cxx>`
+     provides smoothing routines on scalar fields
 
-   -  :doc:`sourcex.cxx <_breathe_autogen/file/sourcex_8cxx>` contains some useful routines for creating sources
-      and sinks in physics equations.
+   - :doc:`sourcex.cxx<_breathe_autogen/file/sourcex_8cxx>` contains
+     some useful routines for creating sources and sinks in physics
+     equations.
 
--  precon
+- precon
 
-   -  :doc:`jstruc.cxx <_breathe_autogen/file/jstruc_8cxx>` is an experimental code for preconditioning using
-      PETSc
+   - :doc:`jstruc.cxx<_breathe_autogen/file/jstruc_8cxx>` is an
+     experimental code for preconditioning using PETSc
 
--  solver
+- solver
 
-   -  :doc:`solver.cxx <_breathe_autogen/file/solver_8cxx>` is the interface for all solvers
+   - :doc:`solver.cxx<_breathe_autogen/file/solver_8cxx>` is the
+     interface for all solvers
 
-   -  :doc:`solverfactory.cxx <_breathe_autogen/file/solverfactory_8cxx>` creates solver objects
+   - :doc:`solverfactory.cxx<_breathe_autogen/file/solverfactory_8cxx>` creates solver
+     objects
 
-   -  :doc:`solverfactory.hxx <_breathe_autogen/file/solverfactory_8hxx>`
+   - :doc:`solverfactory.hxx<_breathe_autogen/file/solverfactory_8hxx>`
 
-   -  impls
+   - impls
 
-      -  cvode
+      - cvode
 
-         -  :doc:`cvode.cxx <_breathe_autogen/file/cvode_8cxx>` is the implementation of ``Solver`` which
-            interfaces with the SUNDIALS CVODE library.
+         - :doc:`cvode.cxx<_breathe_autogen/file/cvode_8cxx>` is the
+           implementation of :cpp:class:`Solver` which interfaces with
+           the SUNDIALS CVODE library.
 
-         -  :doc:`cvode.hxx <_breathe_autogen/file/cvode_8hxx>`
+         - :doc:`cvode.hxx<_breathe_autogen/file/cvode_8hxx>`
 
-      -  ida
+      - ida
 
-         -  :doc:`ida.cxx <_breathe_autogen/file/ida_8cxx>` is the implementation which interfaces with the
-            SUNDIALS IDA library
+         - :doc:`ida.cxx<_breathe_autogen/file/ida_8cxx>` is the
+           implementation which interfaces with the SUNDIALS IDA
+           library
 
-         -  :doc:`ida.hxx <_breathe_autogen/file/ida_8hxx>`
+         - :doc:`ida.hxx<_breathe_autogen/file/ida_8hxx>`
 
-      -  petsc
+      - petsc
 
-         -  :doc:`petsc.cxx <_breathe_autogen/file/petsc_8cxx>` is the interface to the PETSc time integration
-            routines
+         - :doc:`petsc.cxx<_breathe_autogen/file/petsc_8cxx>` is the
+           interface to the PETSc time integration routines
 
-         -  :doc:`petsc.hxx <_breathe_autogen/file/petsc_8hxx>`
+         - :doc:`petsc.hxx<_breathe_autogen/file/petsc_8hxx>`
 
-      -  pvode
+      - pvode
 
-         -  :doc:`pvode.cxx <_breathe_autogen/file/pvode_8cxx>` interfaces with the 1998 (pre-SUNDIALS)
-            version of PVODE (which became CVODE).
+         - :doc:`pvode.cxx<_breathe_autogen/file/pvode_8cxx>`
+           interfaces with the 1998 (pre-SUNDIALS) version of PVODE
+           (which became CVODE).
 
-         -  :doc:`pvode.hxx <_breathe_autogen/file/pvode_8hxx>`
+         - :doc:`pvode.hxx<_breathe_autogen/file/pvode_8hxx>`
 
--  sys
+- sys
 
-   -  :doc:`boutcomm.cxx <_breathe_autogen/file/boutcomm_8cxx>`
+   - :doc:`boutcomm.cxx<_breathe_autogen/file/boutcomm_8cxx>`
 
-   -  :doc:`boutexception.cxx <_breathe_autogen/file/boutexception_8cxx>` is an exception class which are used for
-      error handling
+   - :doc:`boutexception.cxx<_breathe_autogen/file/boutexception_8cxx>`
+     is an exception class which are used for error handling
 
-   -  :doc:`comm_group.cxx <_breathe_autogen/file/comm__group_8cxx>` provides routines for non-blocking collective
-      MPI operations. These are not available in MPI-2, though are
-      planned for MPI-3.
+   - :doc:`comm_group.cxx<_breathe_autogen/file/comm__group_8cxx>`
+     provides routines for non-blocking collective MPI
+     operations. These are not available in MPI-2, though are planned
+     for MPI-3.
 
-   -  :doc:`derivs.cxx <_breathe_autogen/file/derivs_8cxx>` contains basic derivative methods such as
-      upwinding, central difference and WENO methods. These are then
-      used by :doc:`difops.cxx <_breathe_autogen/file/difops_8cxx>`. Details are given in
-      section [sec:derivatives].
+   - :doc:`derivs.cxx<_breathe_autogen/file/derivs_8cxx>` contains
+     basic derivative methods such as upwinding, central difference
+     and WENO methods. These are then used by
+     :doc:`difops.cxx<_breathe_autogen/file/difops_8cxx>`. Details are
+     given in section [sec:derivatives].
 
-   -  :doc:`msg_stack.cxx <_breathe_autogen/file/msg__stack_8cxx>` is part of the error handling system. It
-      maintains a stack of messages which can be pushed onto the stack
-      at the start of a function, then removed (popped) at the end. If
-      an error occurs or a segmentation fault is caught then this stack
-      is printed out and can help to find errors.
+   - :doc:`msg_stack.cxx<_breathe_autogen/file/msg__stack_8cxx>` is
+     part of the error handling system. It maintains a stack of
+     messages which can be pushed onto the stack at the start of a
+     function, then removed (popped) at the end. If an error occurs or
+     a segmentation fault is caught then this stack is printed out and
+     can help to find errors.
 
-   -  :doc:`options.cxx <_breathe_autogen/file/options_8cxx>` provides an interface to the BOUT.inp option file
-      and the command-line options.
+   - :doc:`options.cxx<_breathe_autogen/file/options_8cxx>` provides
+     an interface to the BOUT.inp option file and the command-line
+     options.
 
-   -  :doc:`optionsreader.cxx <_breathe_autogen/file/optionsreader_8cxx>`
+   - :doc:`optionsreader.cxx<_breathe_autogen/file/optionsreader_8cxx>`
 
-   -  :doc:`output.cxx <_breathe_autogen/file/output_8cxx>`
+   - :doc:`output.cxx<_breathe_autogen/file/output_8cxx>`
 
-   -  :doc:`range.cxx <_breathe_autogen/file/range_8cxx>` Provides the RangeIterator class, used to iterate
-      over a set of ranges. Described in section [sec:rangeiterator]
+   - :doc:`range.cxx<_breathe_autogen/file/range_8cxx>` Provides the
+     RangeIterator class, used to iterate over a set of
+     ranges. Described in section [sec:rangeiterator]
 
-   -  :doc:`stencils.cxx <_breathe_autogen/file/stencils_8cxx>` contains methods to operate on stencils which are
-      used by differential methods.
+   - :doc:`stencils.cxx<_breathe_autogen/file/stencils_8cxx>` contains
+     methods to operate on stencils which are used by differential
+     methods.
 
-   -  :doc:`timer.cxx <_breathe_autogen/file/timer_8cxx>` a class for timing parts of the code like
-      communications and file I/O. Described in section [sec:timerclass]
+   - :doc:`timer.cxx<_breathe_autogen/file/timer_8cxx>` a class for
+     timing parts of the code like communications and file
+     I/O. Described in section [sec:timerclass]
 
-   -  :doc:`utils.cxx <_breathe_autogen/file/utils_8cxx>` contains miscellaneous small useful routines such as
-      allocating and freeing arrays.
+   - :doc:`utils.cxx<_breathe_autogen/file/utils_8cxx>` contains
+     miscellaneous small useful routines such as allocating and
+     freeing arrays.
 
-   -  options
+   - options
 
-      -  :doc:`optionparser.hxx <_breathe_autogen/file/optionparser_8hxx>`
+      - :doc:`optionparser.hxx<_breathe_autogen/file/optionparser_8hxx>`
 
-      -  :doc:`options_ini.cxx <_breathe_autogen/file/options__ini_8cxx>`
+      - :doc:`options_ini.cxx<_breathe_autogen/file/options__ini_8cxx>`
 
-      -  :doc:`options_ini.hxx <_breathe_autogen/file/options__ini_8hxx>`
+      - :doc:`options_ini.hxx<_breathe_autogen/file/options__ini_8hxx>`
 
 Data types
 ==========
@@ -870,14 +911,14 @@ Four kinds of differencing methods are supported
      :math:`\nabla\cdot\left(\mathbf{v}f\right)`
 
 The differencing methods themselves are independent on direction, and
-have types defined in :doc:`derivs.cxx <_breathe_autogen/file/derivs_8cxx>`
+have types defined in :doc:`derivs.cxx<_breathe_autogen/file/derivs_8cxx>`
 
 ::
 
     typedef BoutReal (*deriv_func)(stencil &); // f
     typedef BoutReal (*upwind_func)(stencil &, stencil &); // v, f
 
-These operate on ``stencil`` objects. This class is in :doc:`stencils.hxx <_breathe_autogen/file/stencils_8hxx>`
+These operate on ``stencil`` objects. This class is in :doc:`stencils.hxx<_breathe_autogen/file/stencils_8hxx>`
 
 ::
 
@@ -899,9 +940,10 @@ calculate things like absolute, minimum, and maximum values.
 Lookup tables
 -------------
 
-To convert between short variable names (“C2”), long descriptions (“2nd
-order Central Differencing”), ``DIFF_METHOD`` enums used to specify
-methods at runtime (DIFF\_C2, defined in :doc:`bout_types.hxx <_breathe_autogen/file/bout__types_8hxx>`), and
+To convert between short variable names (“C2”), long descriptions
+(“2nd order Central Differencing”), ``DIFF_METHOD`` enums used to
+specify methods at runtime (DIFF\_C2, defined in
+:doc:`bout_types.hxx<_breathe_autogen/file/bout__types_8hxx>`), and
 function pointers (``DDX_C2``), taking into account whether variables
 are shifted or not, BOUT++ uses a set of lookup tables.
 
@@ -1064,16 +1106,16 @@ The Laplacian inversion code solves the equation:
 
 where :math:`x` and :math:`b` are 3D variables, whilst :math:`a`,
 :math:`c` and :math:`d` are 2D variables. Several different algorithms
-are implemented for Laplacian inversion, and they differ between serial
-and parallel versions. Serial inversion can currently either be done
-using a tridiagonal solver (Thomas algorithm), or a band-solver
+are implemented for Laplacian inversion, and they differ between
+serial and parallel versions. Serial inversion can currently either be
+done using a tridiagonal solver (Thomas algorithm), or a band-solver
 (allowing :math:`4^{th}`-order differencing).
 
 To support multiple implementations, a base class ``Laplacian`` is
 defined in ``include/invert_laplace.hxx``. This defines a set of
 functions which all implementations must provide:
 
-::
+.. code-block:: cpp
 
     class Laplacian {
      public:
@@ -1092,13 +1134,15 @@ exists but can be overridden by an implementation.
 For convenience, the ``Laplacian`` base class also defines a function to
 calculate coefficients in a Tridiagonal matrix
 
-::
+.. code-block:: cpp
 
-      void tridagCoefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcomplex &c, const Field2D *ccoef = NULL, const Field2D *d=NULL);
+      void tridagCoefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b,
+                       dcomplex &c, const Field2D *ccoef = NULL,
+                       const Field2D *d=NULL);
 
 For the user of the class, some static functions are defined:
 
-::
+.. code-block:: cpp
 
       static Laplacian* create(Options *opt = NULL);
       static Laplacian* defaultInstance();
@@ -1107,7 +1151,7 @@ The create function allows new Laplacian implementations to be created,
 based on options. To use the options in the ``[laplace]`` section, just
 use the default:
 
-::
+.. code-block:: cpp
 
       Laplacian* lap = Laplacian::create();
 
@@ -1194,7 +1238,7 @@ Grid data sources
 -----------------
 
 All data sources inherit from ``GridDataSource``, defined in
-:doc:`grid.hxx <_breathe_autogen/file/griddata_8hxx>` at line 43. They must supply a method to test if a variable
+:doc:`grid.hxx<_breathe_autogen/file/griddata_8hxx>` at line 43. They must supply a method to test if a variable
 exists:
 
 ::
@@ -1246,7 +1290,7 @@ querying each data source in turn for the required variables (in the
 order in which they were added). ``load(GridDataSource)`` loads the mesh
 from only the supplied data source.
 
-In :doc:`bout++.cxx <_breathe_autogen/file/bout_09_09_8cxx>`, this is used to initialise the mesh:
+In :doc:`bout++.cxx<_breathe_autogen/file/bout_09_09_8cxx>`, this is used to initialise the mesh:
 
 ::
 
@@ -1416,7 +1460,7 @@ direction only, and involves quantities which are not in Fields.
     comm_handle irecvXIn(BoutReal *buffer, int size, int tag);
 
 The variables ``NXPE`` and ``PE_XIND`` shouldn’t really be there, but
-are currently needed because the SPT algorithm in :doc:`invert_laplace.cxx <_breathe_autogen/file/invert__laplace_8cxx>`
+are currently needed because the SPT algorithm in :doc:`invert_laplace.cxx<_breathe_autogen/file/invert__laplace_8cxx>`
 needs to know when it’s going to be next and so keep track of which
 processor number is currently working. This logic to pass a problem
 along a chain in X should really be moved into Mesh.
@@ -1683,7 +1727,7 @@ initialised using:
     int init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep);
 
 which returns an error code (0 on success). This is currently called in
-:doc:`bout++.cxx <_breathe_autogen/file/bout_09_09_8cxx>`:
+:doc:`bout++.cxx<_breathe_autogen/file/bout_09_09_8cxx>`:
 
 ::
 
@@ -1718,8 +1762,8 @@ File I/O
 BOUT++ needs to deal with binary format files to read the grid; read and
 write restart restart files; and write dump files. The two parts of the
 code which need to read and write data are therefore the grid routines
-(:doc:`grid.hxx <_breathe_autogen/file/griddata_8hxx>`), and the ``Datafile`` class
-(:doc:`datafile.hxx <_breathe_autogen/file/datafile_8hxx>` and :doc:`datafile.cxx <_breathe_autogen/file/datafile_8cxx>`). All other parts which need to
+(:doc:`grid.hxx<_breathe_autogen/file/griddata_8hxx>`), and the ``Datafile`` class
+(:doc:`datafile.hxx<_breathe_autogen/file/datafile_8hxx>` and :doc:`datafile.cxx<_breathe_autogen/file/datafile_8cxx>`). All other parts which need to
 read or write data go through these methods.
 
 Several different file formats are commonly used, such as HDF, HDF5, and
@@ -1727,7 +1771,7 @@ netCDF. For historical reasons (inherited from BOUT), BOUT++ originally
 used the Portable Data Binary (PDB) format developed at LLNL.  [3]_ To
 separate the basic file format functions from the higher level grid and
 Datafile classes, these use an abstract class ``DataFormat``. Any class
-which implements the functions listed in :doc:`dataformat.hxx <_breathe_autogen/file/dataformat_8hxx>` can
+which implements the functions listed in :doc:`dataformat.hxx<_breathe_autogen/file/dataformat_8hxx>` can
 therefore be passed to grid or datafile. This makes implementing a new
 file format, and switching between formats at run-time, relatively
 straightforward.
@@ -1861,10 +1905,6 @@ To support statements like
 
 the initial call to ``first()`` is optional, and everything is
 initialised in the constructor.
-
-
-.. [1]
-   ``http://git-scm.com/``
 
 .. [2]
    generated using Al Danial’s cloc
