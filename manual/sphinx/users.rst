@@ -906,8 +906,7 @@ a single equation for a 3D scalar field :math:`T`:
 
 .. math::
 
-   \begin{aligned}
-   {\ensuremath{\frac{\partial T}{\partial t}}} = \nabla_{||}(\chi\partial_{||} T)\end{aligned}
+   \frac{\partial T}{\partial t} = \nabla_{||}(\chi\partial_{||} T)
 
 There are several files involved:
 
@@ -1082,8 +1081,7 @@ equation using
 
 .. math::
 
-   \begin{aligned}
-   {\ensuremath{\frac{\partial f}{\partial t}}} = \partial_{||} g \qquad {\ensuremath{\frac{\partial g}{\partial t}}} = \partial_{||} f\end{aligned}
+   \frac{\partial f}{\partial t} = \partial_{||} g \qquad \frac{\partial g}{\partial t} = \partial_{||} f
 
 using two different methods. Other examples contain two scripts: One
 for running the example and then an IDL script to plot the results:
@@ -1229,9 +1227,9 @@ set in the BOUT.inp file (``[ddx]``, ``[ddy]`` and ``[ddz]`` sections),
 but can be overridden for individual operators. For each direction,
 numerical methods can be specified for first and second central
 difference terms, upwinding terms of the form
-:math:`{\ensuremath{\frac{\partial f}{\partial t}}} = {\ensuremath{\boldsymbol{v}}}\cdot\nabla f`,
+:math:`{{\frac{\partial f}{\partial t}}} = {{\boldsymbol{v}}}\cdot\nabla f`,
 and flux terms of the form
-:math:`{\ensuremath{\frac{\partial f}{\partial t}}} = \nabla\cdot({\ensuremath{\boldsymbol{v}}}f)`.
+:math:`{{\frac{\partial f}{\partial t}}} = \nabla\cdot({{\boldsymbol{v}}}f)`.
 By default the flux terms are just split into a central and an upwinding
 term.
 
@@ -2709,9 +2707,8 @@ The ``mixmode(x)`` function is a mixture of Fourier modes of the form:
 
 .. math::
 
-   \begin{aligned}
    \mathrm{mixmode}(x) = \sum_{i=1}^{14} \frac{1}{(1 +
-   |i-4|)^2}\cos[ix + \phi(i, \mathrm{seed})]\end{aligned}
+   |i-4|)^2}\cos[ix + \phi(i, \mathrm{seed})]
 
 where :math:`\phi` is a random phase between :math:`-\pi` and
 :math:`+\pi`, which depends on the seed. The factor in front of each
@@ -3169,9 +3166,8 @@ A simple example  [3]_ is a coupled wave equation, solved in the
 
 .. math::
 
-   \begin{aligned}
    \frac{\partial u}{\partial t} = \partial_{||}v \qquad \frac{\partial
-   v}{\partial t} = \partial_{||} u\end{aligned}
+   v}{\partial t} = \partial_{||} u
 
 First, calculate the Jacobian of this set of equations by taking
 partial derivatives of the time-derivatives with respect to each of the
@@ -3179,7 +3175,6 @@ evolving variables
 
 .. math::
 
-   \begin{aligned}
    \mathcal{J} = (\begin{array}{cc}
    \frac{\partial}{\partial u}\frac{\partial u}{\partial t} &
    \frac{\partial}{\partial v}\frac{\partial u}{\partial t}\\
@@ -3190,7 +3185,7 @@ evolving variables
    0 & \partial_{||} \\
    \partial_{||} & 0
    \end{array}
-   )\end{aligned}
+   )
 
 In this case :math:`\frac{\partial u}{\partial t}` doesn’t depend on
 :math:`u` nor :math:`\frac{\partial v}{\partial t}` on :math:`v`, so the
@@ -3199,16 +3194,9 @@ depend on :math:`u` or :math:`v` and so
 
 .. math::
 
-   \begin{aligned}
-   \frac{\partial}{\partial t}(\begin{array}{c}
-   u \\
-   v
-   \end{array}) = \mathcal{J}
-    (\begin{array}{c}
-   u \\
-   v
-   \end{array}
-   )\end{aligned}
+   \frac{\partial}{\partial t}(\begin{array}{c} u \\
+   v \end{array}) = \mathcal{J} (\begin{array}{c} u \\
+   v \end{array} )
 
 In general for non-linear functions :math:`\mathcal{J}` gives the
 change in time-derivatives in response to changes in the state variables
@@ -3218,8 +3206,7 @@ In implicit time stepping, the preconditioner needs to solve an equation
 
 .. math::
 
-   \begin{aligned}
-   \mathcal{I} - \gamma \mathcal{J}\end{aligned}
+   \mathcal{I} - \gamma \mathcal{J}
 
 where :math:`\mathcal{I}` is the identity matrix, and :math:`\gamma`
 depends on the time step and method (e.g. :math:`\gamma = \delta t` for
@@ -3227,18 +3214,16 @@ backwards Euler method). For the simple wave equation problem, this is
 
 .. math::
 
-   \begin{aligned}
    \mathcal{I} - \gamma \mathcal{J} = (\begin{array}{cc}
    1 & -\gamma\partial_{||} \\
    -\gamma\partial_{||} & 1
    \end{array}
-   )\end{aligned}
+   )
 
 This matrix can be block inverted using Schur factorisation  [4]_
 
 .. math::
 
-   \begin{aligned}
    (\begin{array}{cc}
      {\mathbf{E}} & {\mathbf{U}} \\
      {\mathbf{L}} & {\mathbf{D}}
@@ -3255,7 +3240,7 @@ This matrix can be block inverted using Schur factorisation  [4]_
      {\mathbf{I}} & 0 \\
      -{\mathbf{L}}{\mathbf{E}}^{-1} & {\mathbf{I}}
    \end{array}
-   )\end{aligned}
+   )
 
 where
 :math:`{\mathbf{P}}_{Schur} = {\mathbf{D}} - {\mathbf{L}}{\mathbf{E}}^{-1}{\mathbf{U}}`
@@ -3264,25 +3249,11 @@ Using this, the wave problem becomes:
 .. math::
    :label: precon
 
-   \begin{aligned}
-   (\begin{array}{cc}
-   1 & -\gamma\partial_{||} \\
-   -\gamma\partial_{||} & 1
-   \end{array})^{-1}
-    = (\begin{array}{cc}
-   1 & \gamma\partial_{||} \\
-   0 & 1
-   \end{array}
-   )(\begin{array}{cc}
-   1 & 0 \\
-   0 & (1 - \gamma^2\partial^2_{||})^{-1}
-   \end{array}
-   )(\begin{array}{cc}
-   1 & 0 \\
-   \gamma\partial_{||} & 1
-   \end{array}
-   )
-   \end{aligned}
+   (\begin{array}{cc} 1 & -\gamma\partial_{||} \\
+   -\gamma\partial_{||} & 1 \end{array})^{-1} = (\begin{array}{cc} 1 & \gamma\partial_{||}\\
+   0 & 1 \end{array} )(\begin{array}{cc} 1 & 0 \\
+   0 & (1 -\gamma^2\partial^2_{||})^{-1} \end{array} )(\begin{array}{cc} 1 & 0\\
+   \gamma\partial_{||} & 1 \end{array} )
 
 The preconditioner is implemented by defining a function of the form
 
@@ -3311,7 +3282,6 @@ rightmost matrix to the given vector:
 
 .. math::
 
-   \begin{aligned}
    (\begin{array}{c}
    \texttt{ddt(u)} \\
    \texttt{ddt(v)}
@@ -3324,7 +3294,7 @@ rightmost matrix to the given vector:
    \texttt{ddt(u)} \\
    \texttt{ddt(v)}
    \end{array}
-   )\end{aligned}
+   )
 
 ::
 
@@ -3342,7 +3312,6 @@ The second matrix
 
 .. math::
 
-   \begin{aligned}
    (\begin{array}{c}
    \texttt{ddt(u)} \\
    \texttt{ddt(v)}
@@ -3355,7 +3324,7 @@ The second matrix
    \texttt{ddt(u)} \\
    \texttt{ddt(v)}
    \end{array}
-   )\end{aligned}
+   )
 
 doesn’t alter :math:`u`, but solves a parabolic equation in the
 parallel direction. There is a solver class to do this called
@@ -3388,7 +3357,6 @@ The final matrix just updates :math:`u` using this new solution for
 
 .. math::
 
-   \begin{aligned}
    (\begin{array}{c}
    \texttt{ddt(u)} \\
    \texttt{ddt(v)}
@@ -3401,7 +3369,7 @@ The final matrix just updates :math:`u` using this new solution for
    \texttt{ddt(u)} \\
    \texttt{ddt(v)}
    \end{array}
-   )\end{aligned}
+   )
 
 ::
 
@@ -3665,7 +3633,7 @@ brackets. Currently implemented boundary conditions are:
 -  ``neumann`` - Zero gradient
 
 -  ``robin`` - A combination of zero-gradient and zero-value
-   :math:`a f + b{\ensuremath{\frac{\partial f}{\partial x}}} = g` where the
+   :math:`a f + b{{\frac{\partial f}{\partial x}}} = g` where the
    syntax is ``robin(a, b, g)``.
 
 -  ``constgradient`` - Constant gradient across boundary
@@ -3683,23 +3651,20 @@ The zero- or constant-Laplacian boundary conditions works as follows:
 
 .. math::
 
-   \begin{aligned}
    \nabla_\perp^2 f =& 0 \\ &\simeq& g^{xx}\frac{\partial^2 f}{\partial x^2} +
-       g^{zz}\frac{\partial^2 f}{\partial z^2}\end{aligned}
+       g^{zz}\frac{\partial^2 f}{\partial z^2}
 
  which when Fourier transformed in :math:`z` becomes:
 
 .. math::
 
-   \begin{aligned}
-   g^{xx}\frac{\partial^2 \hat{f}}{\partial x^2} - g^{zz}k_z^2 \hat{f} = 0\end{aligned}
+   g^{xx}\frac{\partial^2 \hat{f}}{\partial x^2} - g^{zz}k_z^2 \hat{f} = 0
 
  which has the solution
 
 .. math::
 
-   \begin{aligned}
-   \hat{f} = Ae^{xk_z\sqrt{g^{zz}/g^{xx}}} + Be^{-xk_z\sqrt{g^{zz}/g^{xx}}}\end{aligned}
+   \hat{f} = Ae^{xk_z\sqrt{g^{zz}/g^{xx}}} + Be^{-xk_z\sqrt{g^{zz}/g^{xx}}}
 
 Assuming that the solution should decay away from the domain, on the
 inner :math:`x` boundary :math:`B = 0`, and on the outer boundary
@@ -3733,8 +3698,7 @@ For example, ``relax(dirichlet)`` will make a field :math:`f` at point
 
 .. math::
 
-   \begin{aligned}
-   .{\ensuremath{\frac{\partial f}{\partial t}}}|_i = .{\ensuremath{\frac{\partial f}{\partial t}}}|_{i-1}  - f_i / \tau\end{aligned}
+   .{{\frac{\partial f}{\partial t}}}|_i = .{{\frac{\partial f}{\partial t}}}|_{i-1}  - f_i / \tau
 
 where :math:`\tau` is a time-scale for the boundary (currently set to
 0.1, but will be a global option). When the time-derivatives are slow
@@ -4556,17 +4520,14 @@ A common problem in plasma models is to solve an equation of the form
 .. math::
    :label: full_laplace_inv
 
-   \begin{aligned}
    d\nabla^2_\perp x + \frac{1}{c_1}(\nabla_\perp c_2)\cdot\nabla_\perp x +
    a x = b
-   \end{aligned}
 
 For example,
 
 .. math::
 
-   \begin{aligned}
-   \nabla_\perp^2 x + a x = b\end{aligned}
+   \nabla_\perp^2 x + a x = b
 
 appears in reduced MHD for the vorticity inversion and :math:`j_{||}`.
 
@@ -4833,10 +4794,7 @@ following equation for :math:`f`
 .. math::
    :label: to_invert
 
-   \begin{aligned}
-       d&\nabla_\perp^2f + \frac{1}{c_1}(\nabla_\perp c_2)\cdot\nabla_\perp f + af
-       = b
-   \end{aligned}
+   d\nabla_\perp^2f + \frac{1}{c_1}(\nabla_\perp c_2)\cdot\nabla_\perp f + af = b
 
 BOUT++ is neglecting the :math:`y`-parallel derivatives if
 :math:`g_{xy}` and :math:`g_{yz}` are no-zero when using the solvers
@@ -4846,13 +4804,12 @@ BOUT++ is neglecting the :math:`y`-parallel derivatives if
 .. math::
    :label: invert_expanded
 
-   \begin{aligned}
-       \, &d (g^{xx} \partial_x^2 + G^x \partial_x + g^{zz} \partial_z^2 +
-       G^z \partial_z + 2g^{xz} \partial_x \partial_z ) f \\
-       +& \frac{1}{c_1}( {\ensuremath{\boldsymbol{e}}}^x \partial_x +  {\ensuremath{\boldsymbol{e}}}^z \partial_z ) c_2
-       \cdot ( {\ensuremath{\boldsymbol{e}}}^x \partial_x +  {\ensuremath{\boldsymbol{e}}}^z \partial_z ) f \\
-       +& af = b
-   \end{aligned}
+   \, &d (g^{xx} \partial_x^2 + G^x \partial_x + g^{zz} \partial_z^2 +
+   G^z \partial_z + 2g^{xz} \partial_x \partial_z ) f \\
+   +& \frac{1}{c_1}( {{\boldsymbol{e}}}^x \partial_x +
+   {\boldsymbol{e}}^z \partial_z ) c_2 \cdot ({\boldsymbol{e}}^x
+   \partial_x + {\boldsymbol{e}}^z \partial_z ) f \\ +& af = b
+
 
 Using tridiagonal solvers
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -4863,9 +4820,7 @@ When using the tridiagonal solvers, :math:`c_1 = c_2` in equation
 .. math::
    :label: to_invert_tri
 
-   \begin{aligned}
-       d&\nabla_\perp^2f + \frac{1}{c}(\nabla_\perp c)\cdot\nabla_\perp f + af = b
-   \end{aligned}
+   d\nabla_\perp^2f + \frac{1}{c}(\nabla_\perp c)\cdot\nabla_\perp f + af = b
 
 Since there are no parallel :math:`y`-derivatives if
 :math:`g_{xy}=g_{yz}=0` (or if they are neglected), equation
@@ -4882,63 +4837,55 @@ Using the discrete Fourier transform
 
 .. math::
 
-   \begin{aligned}
-       F(x,y)_{k} = \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp(\frac{-2\pi i k
-       Z}{N})
-   \end{aligned}
+   F(x,y)_{k} = \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp(\frac{-2\pi i k
+   Z}{N})
 
 we see that the modes will not decouple if a term consist of a product
 of two terms which depends on :math:`z`, as this would give terms like
 
 .. math::
 
-   \begin{aligned}
-       \frac{1}{N}\sum_{Z=0}^{N-1} a(x,y)_Z f(x,y)_Z \exp(\frac{-2\pi i k
-       Z}{N})
-   \end{aligned}
+   \frac{1}{N}\sum_{Z=0}^{N-1} a(x,y)_Z f(x,y)_Z \exp(\frac{-2\pi i k
+   Z}{N})
 
 Thus, in order to use a tridiagonal solver, :math:`a`, :math:`c` and
 :math:`d` cannot be functions of :math:`z`. Because of this, the
-:math:`{\ensuremath{\boldsymbol{e}}}^z \partial_z c` term in equation
+:math:`{{\boldsymbol{e}}}^z \partial_z c` term in equation
 (:eq:`invert_expanded`) is zero. In principle the modes would still
-decouple if the :math:`{\ensuremath{\boldsymbol{e}}}^z \partial_z f`
+decouple if the :math:`{{\boldsymbol{e}}}^z \partial_z f`
 part of equation (:eq:`invert_expanded`) was kept, but currently this
 part is also neglected in solvers using a tridiagonal matrix. Thus the
 tridiagonal solvers are solving equations on the form
 
 .. math::
 
-   \begin{aligned}
-       \, &d(x,y) (    g^{xx}(x,y) \partial_x^2 + G^x(x,y) \partial_x +
-       g^{zz}(x,y) \partial_z^2 + G^z(x,y) \partial_z + 2g^{xz}(x,y) \partial_x
-       \partial_z ) f(x,y,z) \\
-       +& \frac{1}{c(x,y)}( {\ensuremath{\boldsymbol{e}}}^x \partial_x ) c(x,y) \cdot ( {\ensuremath{\boldsymbol{e}}}^x
-       \partial_x ) f(x,y,z) \\
-      +& a(x,y)f(x,y,z) = b(x,y,z)\end{aligned}
+   \, &d(x,y) ( g^{xx}(x,y) \partial_x^2 + G^x(x,y) \partial_x +
+       g^{zz}(x,y) \partial_z^2 + G^z(x,y) \partial_z + 2g^{xz}(x,y)
+       \partial_x \partial_z ) f(x,y,z) \\
+     +& \frac{1}{c(x,y)}({{\boldsymbol{e}}}^x \partial_x ) c(x,y) \cdot (
+       {{\boldsymbol{e}}}^x \partial_x ) f(x,y,z) \\
+     +& a(x,y)f(x,y,z) = b(x,y,z)
 
 after using the discrete Fourier transform (see section
 [sec:deriv\_of\_FT]), we get
 
 .. math::
 
-   \begin{aligned}
-       \, &d (    g^{xx} \partial_x^2F_z + G^x \partial_xF_z + g^{zz} [i k]^2F_z
-       + G^z [i k]F_z + 2g^{xz} \partial_x[i k]F_z ) \\
-       +& \frac{1}{c}( {\ensuremath{\boldsymbol{e}}}^x \partial_x ) c \cdot ( {\ensuremath{\boldsymbol{e}}}^x
-       \partial_xF_z ) \\
-       +& aF_z = B_z\end{aligned}
+   \, &d (    g^{xx} \partial_x^2F_z + G^x \partial_xF_z + g^{zz} [i k]^2F_z
+        + G^z [i k]F_z + 2g^{xz} \partial_x[i k]F_z ) \\
+     +& \frac{1}{c}( {{\boldsymbol{e}}}^x \partial_x ) c \cdot ( {{\boldsymbol{e}}}^x
+        \partial_xF_z ) \\
+     +& aF_z = B_z
 
 which gives
 
 .. math::
    :label: FT_laplace_inversion
 
-   \begin{aligned}
-       \, &d (    g^{xx} \partial_x^2 + G^x \partial_x - k^2 g^{zz} + i kG^z + i
-       k2g^{xz} \partial_x )F_z \\
-       +& \frac{g^{xx}}{c} ( \partial_x c ) \partial_xF_z \\
-       +& aF_z = B_z
-   \end{aligned}
+   \, &d ( g^{xx} \partial_x^2 + G^x \partial_x - k^2 g^{zz} + i
+   kG^z + i k2g^{xz} \partial_x )F_z \\
+   +& \frac{g^{xx}}{c} (\partial_x c ) \partial_xF_z \\
+   +& aF_z = B_z
 
 As nothing in equation (:eq:`FT_laplace_inversion`) couples points in
 :math:`y` together (since we neglected the :math:`y`-derivatives if
@@ -4952,29 +4899,26 @@ derivatives in :math:`x` reads
 
 .. math::
 
-   \begin{aligned}
        &&\partial_x f \simeq \frac{-f_{n-1} + f_{n+1}}{2\text{d}x}&&
-       &&\partial_x^2 f \simeq \frac{f_{n-1} - f_{n} + f_{n+1}}{\text{d}x^2}&&\end{aligned}
+       &&\partial_x^2 f \simeq \frac{f_{n-1} - f_{n} + f_{n+1}}{\text{d}x^2}&&
 
 This gives
 
 .. math::
 
-   \begin{aligned}
        \, &d (    g^{xx} \frac{F_{z,n-1} - 2F_{z,n} + F_{z, n+1}}{\text{d}x^2} +
        G^x \frac{-F_{z,n-1} + F_{z,n+1}}{2\text{d}x} - k^2 g^{zz}F_{z,n} .\\
        &\quad.  + i kG^zF_{z,n} + i k2g^{xz} \frac{-F_{z,n-1} +
    F_{z,n+1}}{2\text{d}x} ) \\
        +& \frac{g^{xx}}{c} ( \frac{-c_{n-1} + c_{n+1}}{2\text{d}x} )
    \frac{-F_{z,n-1} + F_{z,n+1}}{2\text{d}x} \\
-       +& aF_{z,n} = B_{z,n}\end{aligned}
+       +& aF_{z,n} = B_{z,n}
 
 collecting point by point
 
 .. math::
    :label: discretized_laplace
 
-   \begin{aligned}
        &( \frac{dg^{xx}}{\text{d}x^2} - \frac{dG^x}{2\text{d}x} -
        \frac{g^{xx}}{c_{n}} \frac{-c_{n-1} + c_{n+1}}{4\text{d}x^2} - i\frac{d
        k2g^{xz}}{2\text{d}x} ) F_{z,n-1} \\
@@ -4984,26 +4928,23 @@ collecting point by point
        \frac{g^{xx}}{c_{n}} \frac{-c_{n-1} + c_{n+1}}{4\text{d}x^2} +
        i\frac{dk2g^{xz}}{2\text{d}x} ) F_{z, n+1} \\
         =& B_{z,n}
-   \end{aligned}
 
 We now introduce
 
 .. math::
 
-   \begin{aligned}
        &c_1 = \frac{dg^{xx}}{\text{d}x^2}& &c_2 = dg^{zz}& &c_3 =
        \frac{2dg^{xz}}{2\text{d}x}& && \\ &c_4 = \frac{dG^x + g^{xx}\frac{-c_{n-1}
-       + c_{n+1}}{2c_n\text{d}x}}{2\text{d}x}& &c_5 = dG^z& &&\end{aligned}
+       + c_{n+1}}{2c_n\text{d}x}}{2\text{d}x}& &c_5 = dG^z& &&
 
 which inserted in equation (:eq:`discretized_laplace`) gives
 
 .. math::
 
-   \begin{aligned}
        &( c_1 - c_4 -ikc_3 ) F_{z,n-1} \\
            +&( -2c_1 - k^2c_2 +ikc_5 + a ) F_{z,n} \\
            +&( c_1 + c_4 + ikc_3 ) F_{z, n+1} \\
-        =& B_{z,n}\end{aligned}
+        =& B_{z,n}
 
 This can be formulated as the matrix equation
 
@@ -5026,7 +4967,7 @@ solution is being found for one :math:`y` plane at the time.
 
 Before solving, equation (:eq:`invert_expanded`) is rewritten to the
 form
-:math:`A{\ensuremath{\boldsymbol{x}}} ={\ensuremath{\boldsymbol{b}}}`
+:math:`A{{\boldsymbol{x}}} ={{\boldsymbol{b}}}`
 (however, the full :math:`A` is not expanded in memory). To do this, a
 row :math:`i` in the matrix :math:`A` is indexed from bottom left of the
 two dimensional field :math:`= (0,0) = 0` to top right
@@ -5047,19 +4988,17 @@ value of the field in the given direction.
 
 .. math::
 
-   \begin{aligned}
        \; & c_{i,j} f_{i,j} \\
            &+ c_{i-1,j-1} f_{i-1,j-1} + c_{i-1,j} f_{i-1,j} \\
            &+ c_{i-1,j+1} f_{i-1,j+1} + c_{i,j-1} f_{i,j-1} \\
            &+ c_{i,j+1} f_{i,j+1} + c_{i+1,j-1} f_{i+1,j-1} \\
            &+ c_{i+1,j} f_{i+1,j} + c_{i+1,j+1} f_{i+1,j+1} \\
-       =& b_{i,j}\end{aligned}
+       =& b_{i,j}
 
 0.45 Fourth order approximation
 
 .. math::
 
-   \begin{aligned}
        \; & c_{i,j} f_{i,j} \\
            &+ c_{i-2,j-2} f_{i-2,j-2} + c_{i-2,j-1} f_{i-2,j-1} \\
            &+ c_{i-2,j} f_{i-2,j} + c_{i-2,j+1} f_{i-2,j+1} \\
@@ -5074,7 +5013,7 @@ value of the field in the given direction.
            &+ c_{i+1,j+2} f_{i+1,j+2} + c_{i+2,j-2} f_{i+2,j-2} \\
            &+ c_{i+2,j-1} f_{i+2,j-1} + c_{i+2,j} f_{i+2,j} \\
            &+ c_{i+2,j+1} f_{i+2,j+1} + c_{i+2,j+2} f_{i+2,j+2} \\
-       =& b_{i,j}\end{aligned}
+       =& b_{i,j}
 
 | 
 | To determine the coefficient for each node point, it is convenient to
@@ -5082,9 +5021,8 @@ value of the field in the given direction.
 
   .. math::
 
-     \begin{aligned}
          &A_0 = a(x,y_{\text{current}},z)& &A_1 = dg^{xx}&\\ &A_2 = dg^{zz}& &A_3 =
-         2dg^{xz}&\end{aligned}
+         2dg^{xz}&
 
    In addition, we have
 
@@ -5092,30 +5030,27 @@ value of the field in the given direction.
 
 .. math::
 
-   \begin{aligned}
        \texttt{ddx\_c} = \frac{\texttt{c2}_{x+1} - \texttt{c2}_{x-1} }{
        2\texttt{c1}\text{d}x}\\
            \texttt{ddz\_c} = \frac{\texttt{c2}_{z+1} - \texttt{c2}_{z-1} }{
-       2\texttt{c1}\text{d}z}\end{aligned}
+       2\texttt{c1}\text{d}z}
 
 0.45 Fourth order approximation (9-point stencil)
 
 .. math::
 
-   \begin{aligned}
        \texttt{ddx\_c} = \frac{-\texttt{c2}_{x+2} + 8\texttt{c2}_{x+1} -
        8\texttt{c2}_{x-1} + \texttt{c2}_{x-1} }{ 12\texttt{c1}\text{d}x}\\
            \texttt{ddz\_c} = \frac{-\texttt{c2}_{z+2} + 8\texttt{c2}_{z+1} -
-       8\texttt{c2}_{z-1} + \texttt{c2}_{z-1} }{ 12\texttt{c1}\text{d}z}\end{aligned}
+       8\texttt{c2}_{z-1} + \texttt{c2}_{z-1} }{ 12\texttt{c1}\text{d}z}
 
 | 
 | This gives
 
   .. math::
 
-     \begin{aligned}
          &A_4 = dG^x + g^{xx}\texttt{ddx\_c} + g^{xz}\texttt{ddz\_c}& &A_5 = dG^z +
-         g^{xz}\texttt{ddx\_c} + g^{xx}\texttt{ddz\_c}&\end{aligned}
+         g^{xz}\texttt{ddx\_c} + g^{xx}\texttt{ddz\_c}&
 
   The coefficients :math:`c_{i+m,j+n}` are finally being set according
   to the appropriate order of discretisation. The coefficients can be
@@ -5134,12 +5069,12 @@ Applying the :math:`5`-point stencil to point :math:`f_{22}` this mesh
 will result in figure [fig:lapl\_inv\_mesh\_w\_stencil].
 
 We want to solve a problem on the form
-:math:`A{\ensuremath{\boldsymbol{x}}}={\ensuremath{\boldsymbol{b}}}`. We
-will order :math:`{\ensuremath{\boldsymbol{x}}}` in a row-major order
+:math:`A{{\boldsymbol{x}}}={{\boldsymbol{b}}}`. We
+will order :math:`{{\boldsymbol{x}}}` in a row-major order
 (so that :math:`z` is varying faster than :math:`x`). Further, we put
 the inner :math:`x` boundary points first in
-:math:`{\ensuremath{\boldsymbol{x}}}`, and the outer :math:`x` boundary
-points last in :math:`{\ensuremath{\boldsymbol{x}}}`. The matrix problem
+:math:`{{\boldsymbol{x}}}`, and the outer :math:`x` boundary
+points last in :math:`{{\boldsymbol{x}}}`. The matrix problem
 for our mesh can then be written like in figure [fig:lapl\_inv\_matrix].
 
 As we are using a row-major implementation, the global indices of the
@@ -5167,13 +5102,12 @@ directory. The equations to be solved are:
 
 .. math::
 
-   \begin{aligned}
-   {\ensuremath{\frac{\partial \rho}{\partial t}}} =& -\mathbf{v}\cdot\nabla\rho - \rho\nabla\cdot\mathbf{v} \\
-       {\ensuremath{\frac{\partial p}{\partial t}}} =& -\mathbf{v}\cdot\nabla p - \gamma p\nabla\cdot\mathbf{v} \\
-       {\ensuremath{\frac{\partial \mathbf{v}}{\partial t}}} =& -\mathbf{v}\cdot\nabla\mathbf{v} +
+   {{\frac{\partial \rho}{\partial t}}} =& -\mathbf{v}\cdot\nabla\rho - \rho\nabla\cdot\mathbf{v} \\
+       {{\frac{\partial p}{\partial t}}} =& -\mathbf{v}\cdot\nabla p - \gamma p\nabla\cdot\mathbf{v} \\
+       {{\frac{\partial \mathbf{v}}{\partial t}}} =& -\mathbf{v}\cdot\nabla\mathbf{v} +
        \frac{1}{\rho}(-\nabla p +
-       (\nabla\times\mathbf{B})\times\mathbf{B}) \\ {\ensuremath{\frac{\partial \mathbf{B}}{\partial t}}} =&
-       \nabla\times(\mathbf{v}\times\mathbf{B})\end{aligned}
+       (\nabla\times\mathbf{B})\times\mathbf{B}) \\ {{\frac{\partial \mathbf{B}}{\partial t}}} =&
+       \nabla\times(\mathbf{v}\times\mathbf{B})
 
 There are two ways to specify a set of equations to solve in BOUT++.
 For advanced users, an object-oriented interface is available and
@@ -5822,17 +5756,15 @@ are commonly used, which will be illustrated using the
 
 .. math::
 
-   \begin{aligned}
-   {\ensuremath{\frac{\partial U}{\partial t}}} =& -\frac{1}{B}\mathbf{b}_0\times\nabla\phi\cdot\nabla U + B^2
-       \nabla_{||}(j_{||} / B) \\ {\ensuremath{\frac{\partial A_{||}}{\partial t}}} =&
-       -\frac{1}{\hat{\beta}}\nabla_{||}\phi - \eta\frac{1}{\hat{\beta}} j_{||}\end{aligned}
+   {{\frac{\partial U}{\partial t}}} =& -\frac{1}{B}\mathbf{b}_0\times\nabla\phi\cdot\nabla U + B^2
+       \nabla_{||}(j_{||} / B) \\ {{\frac{\partial A_{||}}{\partial t}}} =&
+       -\frac{1}{\hat{\beta}}\nabla_{||}\phi - \eta\frac{1}{\hat{\beta}} j_{||}
 
 with :math:`\phi` and :math:`j_{||}` given by
 
 .. math::
 
-   \begin{aligned}
-   U =& \frac{1}{B}\nabla_\perp^2\phi \\ j_{||} =& -\nabla_\perp^2 A_{||}\end{aligned}
+   U =& \frac{1}{B}\nabla_\perp^2\phi \\ j_{||} =& -\nabla_\perp^2 A_{||}
 
 First create the variables which are going to be evolved, ensure
 they’re communicated
@@ -6195,18 +6127,16 @@ given by writing derivatives as:
 
 .. math::
 
-   \begin{aligned}
-   {\ensuremath{\frac{\partial f}{\partial x}}} \simeq \frac{1}{\Delta x} {\ensuremath{\frac{\partial f}{\partial i}}}\end{aligned}
+   {{\frac{\partial f}{\partial x}}} \simeq \frac{1}{\Delta x} {{\frac{\partial f}{\partial i}}}
 
 where :math:`i` is the cell index number. The second derivative is
 therefore given by
 
 .. math::
 
-   \begin{aligned}
    \frac{\partial^2 f}{\partial x^2} \simeq \frac{1}{\Delta x^2}\frac{\partial^2
-   f}{\partial i^2} + \frac{1}{\Delta x}{\ensuremath{\frac{\partial f}{\partial x}}} \cdot
-   {\ensuremath{\frac{\partial }{\partial i}}}(\frac{1}{\Delta x})\end{aligned}
+   f}{\partial i^2} + \frac{1}{\Delta x}{{\frac{\partial f}{\partial x}}} \cdot
+   {{\frac{\partial }{\partial i}}}(\frac{1}{\Delta x})
 
 The correction factor :math:`\partial/\partial i(1/\Delta x)` can
 be calculated automatically, but you can also specify ``d2x`` in the
@@ -6214,15 +6144,13 @@ grid file which is
 
 .. math::
 
-   \begin{aligned}
-   \texttt{d2x} = {\ensuremath{\frac{\partial \Delta x}{\partial i}}} = \frac{\partial^2 x}{\partial i^2}\end{aligned}
+   \texttt{d2x} = {{\frac{\partial \Delta x}{\partial i}}} = \frac{\partial^2 x}{\partial i^2}
 
 The correction factor is then calculated from ``d2x`` using
 
 .. math::
 
-   \begin{aligned}
-   {\ensuremath{\frac{\partial }{\partial i}}}(\frac{1}{\Delta x}) = -\frac{1}{\Delta x^2} {\ensuremath{\frac{\partial \Delta x}{\partial i}}}\end{aligned}
+   {{\frac{\partial }{\partial i}}}(\frac{1}{\Delta x}) = -\frac{1}{\Delta x^2} {{\frac{\partial \Delta x}{\partial i}}}
 
 General operators
 -----------------
@@ -6232,7 +6160,6 @@ system.
 
 .. math::
 
-   \begin{aligned}
    \begin{array}{rclrcl}
    \mathbf{v} =& \nabla f &\qquad {\texttt{Vector}} =& {\texttt{Grad(Field)}} \\
    f =& \nabla\cdot\mathbf{a} &\qquad {\texttt{Field}} =& {\texttt{Div(Vector)}} \\
@@ -6244,24 +6171,20 @@ system.
    {\texttt{V\_dot\_Grad(Vector, Vector)}} \\
    f =& \nabla^2 f &\qquad {\texttt{Field}} =& {\texttt{Laplace(Field)}}
    \end{array}
-   \end{aligned}
 
 .. math::
 
-   \begin{aligned}
-   \nabla\phi =& {\ensuremath{\frac{\partial \phi}{\partial u^i}}}\nabla u^i arrow (\nabla\phi)_i =
-       {\ensuremath{\frac{\partial \phi}{\partial u^i}}} \\ \nabla\cdot A =& =
-       \frac{1}{J}{\ensuremath{\frac{\partial }{\partial u^i}}}(Jg^{ij}A_j) \\ \nabla^2\phi =&
-       G^j{\ensuremath{\frac{\partial \phi}{\partial u^i}}} + g^{ij}\frac{\partial^2\phi}{\partial u^i\partial
+   \nabla\phi =& {{\frac{\partial \phi}{\partial u^i}}}\nabla u^i arrow (\nabla\phi)_i =
+       {{\frac{\partial \phi}{\partial u^i}}} \\ \nabla\cdot A =& =
+       \frac{1}{J}{{\frac{\partial }{\partial u^i}}}(Jg^{ij}A_j) \\ \nabla^2\phi =&
+       G^j{{\frac{\partial \phi}{\partial u^i}}} + g^{ij}\frac{\partial^2\phi}{\partial u^i\partial
        u^j}
-   \end{aligned}
 
 where we have defined
 
 .. math::
 
-   \begin{aligned}
-   G^j =& \frac{1}{J}{\ensuremath{\frac{\partial }{\partial u^i}}}(Jg^{ij})\end{aligned}
+   G^j =& \frac{1}{J}{{\frac{\partial }{\partial u^i}}}(Jg^{ij})
 
 **not** to be confused with the Christoffel symbol of the second kind
 (see the coordinates manual for more details).
@@ -6274,31 +6197,29 @@ written in Clebsch form as
 
 .. math::
 
-   \begin{aligned}
-   \mathbf{B}_0 = \nabla z\times\nabla x \qquad B_0 = \frac{\sqrt{g_{yy}}}{J}\end{aligned}
+   \mathbf{B}_0 = \nabla z\times\nabla x \qquad B_0 = \frac{\sqrt{g_{yy}}}{J}
 
  where
 
 .. math::
 
-   \begin{aligned}
-   \mathbf{B}_0 = |\mathbf{B}_0|\mathbf{b}_0 = B_0 \mathbf{b}_0\end{aligned}
+   \mathbf{B}_0 = |\mathbf{B}_0|\mathbf{b}_0 = B_0 \mathbf{b}_0
 
  is the background *equilibrium* magnetic field.
 
 | l c Function & Formula
 | ``Grad_par`` &
   :math:`\displaystyle\partial^0_{||} = \mathbf{b}_0\cdot\nabla =
-  \frac{1}{\sqrt{g_{yy}}}{\ensuremath{\frac{\partial }{\partial y}}}`
+  \frac{1}{\sqrt{g_{yy}}}{{\frac{\partial }{\partial y}}}`
 | ``Div_par`` & :math:`\displaystyle \nabla^0_{||}f =
   B_0\partial^0_{||}(\frac{f}{B_0})`
 | ``Grad2_par2`` & :math:`\displaystyle \partial^2_{||}\phi =
   \partial^0_{||}(\partial^0_{||}\phi) =
-  \frac{1}{\sqrt{g_{yy}}}{\ensuremath{\frac{\partial }{\partial y}}}(\frac{1}{\sqrt{g_{yy}}}){\ensuremath{\frac{\partial 
+  \frac{1}{\sqrt{g_{yy}}}{{\frac{\partial }{\partial y}}}(\frac{1}{\sqrt{g_{yy}}}){{\frac{\partial 
   \phi}{\partial y}}} + \frac{1}{g_{yy}}\frac{\partial^2\phi}{\partial y^2}`
 | ``Laplace_par`` & :math:`\displaystyle \nabla_{||}^2\phi =
   \nabla\cdot\mathbf{b}_0\mathbf{b}_0\cdot\nabla\phi =
-  \frac{1}{J}{\ensuremath{\frac{\partial }{\partial y}}}(\frac{J}{g_{yy}}{\ensuremath{\frac{\partial \phi}{\partial y}}})`
+  \frac{1}{J}{{\frac{\partial }{\partial y}}}(\frac{J}{g_{yy}}{{\frac{\partial \phi}{\partial y}}})`
 | ``Laplace_perp`` &
   :math:`\displaystyle \nabla_\perp^2 = \nabla^2 - \nabla_{||}^2`
 | ``Delp2`` & Perpendicular Laplacian, neglecting all :math:`y`
@@ -6312,36 +6233,32 @@ We have that
 
 .. math::
 
-   \begin{aligned}
    \mathbf{b}_0\cdot\nabla\phi\times\nabla A =&
-       \frac{1}{J\sqrt{g_{yy}}}[(g_{yy}{\ensuremath{\frac{\partial \phi}{\partial z}}} -
-       g_{yz}{\ensuremath{\frac{\partial \phi}{\partial y}}}){\ensuremath{\frac{\partial A}{\partial x}}} + (g_{yz}{\ensuremath{\frac{\partial \phi}{\partial x}}} -
-   g_{xy}{\ensuremath{\frac{\partial \phi}{\partial z}}}){\ensuremath{\frac{\partial A}{\partial y}}} + (g_{xy}{\ensuremath{\frac{\partial \phi}{\partial y}}} -
-   g_{yy}{\ensuremath{\frac{\partial \phi}{\partial x}}}){\ensuremath{\frac{\partial A}{\partial z}}}]\end{aligned}
+       \frac{1}{J\sqrt{g_{yy}}}[(g_{yy}{{\frac{\partial \phi}{\partial z}}} -
+       g_{yz}{{\frac{\partial \phi}{\partial y}}}){{\frac{\partial A}{\partial x}}} + (g_{yz}{{\frac{\partial \phi}{\partial x}}} -
+   g_{xy}{{\frac{\partial \phi}{\partial z}}}){{\frac{\partial A}{\partial y}}} + (g_{xy}{{\frac{\partial \phi}{\partial y}}} -
+   g_{yy}{{\frac{\partial \phi}{\partial x}}}){{\frac{\partial A}{\partial z}}}]
 
 .. math::
 
-   \begin{aligned}
-   \nabla_\perp \equiv \nabla - {\ensuremath{\boldsymbol{b}}}({\ensuremath{\boldsymbol{b}}}\cdot\nabla) \qquad
-   {\ensuremath{\boldsymbol{b}}}\cdot\nabla = \frac{1}{JB}\frac{\partial}{\partial y}\end{aligned}
+   \nabla_\perp \equiv \nabla - {{\boldsymbol{b}}}({{\boldsymbol{b}}}\cdot\nabla) \qquad
+   {{\boldsymbol{b}}}\cdot\nabla = \frac{1}{JB}\frac{\partial}{\partial y}
 
 .. math::
 
-   \begin{aligned}
-   {\ensuremath{\boldsymbol{b}}} = \frac{1}{JB}{\ensuremath{\boldsymbol{e}}}_y = \frac{1}{JB}[g_{xy}\nabla x + g_{yy}\nabla y
-   + g_{yz}\nabla z]\end{aligned}
+   {{\boldsymbol{b}}} = \frac{1}{JB}{{\boldsymbol{e}}}_y = \frac{1}{JB}[g_{xy}\nabla x + g_{yy}\nabla y
+   + g_{yz}\nabla z]
 
 In a Clebsch coordinate system
-:math:`{\ensuremath{\boldsymbol{B}}} = \nabla z \times \nabla x = \frac{1}{J}{\ensuremath{\boldsymbol{e}}}_y`,
-:math:`g_{yy} = {\ensuremath{\boldsymbol{e}}}_y\cdot{\ensuremath{\boldsymbol{e}}}_y = J^2B^2`,
+:math:`{{\boldsymbol{B}}} = \nabla z \times \nabla x = \frac{1}{J}{{\boldsymbol{e}}}_y`,
+:math:`g_{yy} = {{\boldsymbol{e}}}_y\cdot{{\boldsymbol{e}}}_y = J^2B^2`,
 and so the :math:`\nabla y` term cancels out:
 
 .. math::
 
-   \begin{aligned}
-   \nabla_\perp =& \nabla x({\ensuremath{\frac{\partial }{\partial x}}} -
-       \frac{g_{xy}}{(JB)^2}{\ensuremath{\frac{\partial }{\partial y}}}) + \nabla z({\ensuremath{\frac{\partial }{\partial z}}} -
-       \frac{g_{yz}}{(JB)^2}{\ensuremath{\frac{\partial }{\partial y}}})\end{aligned}
+   \nabla_\perp =& \nabla x({{\frac{\partial }{\partial x}}} -
+       \frac{g_{xy}}{(JB)^2}{{\frac{\partial }{\partial y}}}) + \nabla z({{\frac{\partial }{\partial z}}} -
+       \frac{g_{yz}}{(JB)^2}{{\frac{\partial }{\partial y}}})
 
 The bracket operators
 ---------------------
@@ -6351,10 +6268,8 @@ The bracket operators
 
   .. math::
 
-     \begin{aligned}
-         -\frac{\nabla\phi\times{\ensuremath{\boldsymbol{b}}}}{B}\cdot\nabla f\end{aligned}
+         -\frac{\nabla\phi\times{{\boldsymbol{b}}}}{B}\cdot\nabla f
 
-   
 | Notice that when we use the Arakawa scheme, :math:`y`-derivatives are
   neglected if :math:`g_{xy}` and :math:`g_{yz}` are non-zero. An
   example of usage of the brackets can be found in for example
@@ -6553,13 +6468,11 @@ Perpendicular Laplacian solver in X-Y.
 .. math::
    :label: nabl_perp_f
 
-   \begin{aligned}
    \nabla_\perp f =& \nabla f - \mathbf{b}\left(\mathbf{b}\cdot\nabla\right)
        \nonumber \\ =& \left(\frac{\partial f}{\partial x} -
    \frac{g_{xy}}{g_{yy}}\frac{\partial f}{\partial y}\right)\nabla x +
    \left(\frac{\partial f}{\partial z} - \frac{g_{yz}}{g_{yy}}\frac{\partial
    f}{\partial y}\right)\nabla z
-   \end{aligned}
 
 In 2D (X-Y), the :math:`g_{xy}` component can be dropped since this
 depends on integrated shear :math:`I` which will cancel with the
@@ -6568,48 +6481,43 @@ simplifies to
 
 .. math::
 
-   \begin{aligned}
    \nabla_\perp f = \frac{\partial f}{\partial x}\nabla x -
-   \frac{g_{yz}}{g_{yy}}\frac{\partial f}{\partial y}\nabla z\end{aligned}
+   \frac{g_{yz}}{g_{yy}}\frac{\partial f}{\partial y}\nabla z
 
 The divergence operator in conservative form is
 
 .. math::
 
-   \begin{aligned}
    \nabla\cdot\mathbf{A} = \frac{1}{J}\frac{\partial}{\partial
-   u^i}\left(Jg^{ij}A_j\right)\end{aligned}
+   u^i}\left(Jg^{ij}A_j\right)
 
 and so the perpendicular Laplacian in X-Y is
 
 .. math::
 
-   \begin{aligned}
    \nabla_\perp^2f = \frac{1}{J}\frac{\partial}{\partial
    x}\left(Jg^{xx}\frac{\partial f}{\partial x}\right) -
    \frac{1}{J}\frac{\partial}{\partial
-   y}\left(Jg^{yz}\frac{g_{yz}}{g_{yy}}\frac{\partial f}{\partial y}\right)\end{aligned}
+   y}\left(Jg^{yz}\frac{g_{yz}}{g_{yy}}\frac{\partial f}{\partial y}\right)
 
 In field-aligned coordinates, the metrics in the :math:`y` derivative
 term become:
 
 .. math::
 
-   \begin{aligned}
-   g^{yz}\frac{g_{yz}}{g_{yy}} = \frac{B_{tor}^2}{B^2}\frac{1}{h_\theta^2}\end{aligned}
+   g^{yz}\frac{g_{yz}}{g_{yy}} = \frac{B_{tor}^2}{B^2}\frac{1}{h_\theta^2}
 
 In the LaplaceXY operator this is implemented in terms of fluxes at
 cell faces.
 
 .. math::
 
-   \begin{aligned}
    \frac{1}{J}\frac{\partial}{\partial x}\left(Jg^{xx}\frac{\partial f}{\partial
    x}\right) &\rightarrow&
            \frac{1}{J_i\mathrm{dx_i}}\left[J_{i+1/2}g^{xx}_{i+1/2}\left(\frac{f_{i+1}
                - f_{i}}{\mathrm{dx}_{i+1/2}}\right) -
                J_{i-1/2}g^{xx}_{i-1/2}\left(\frac{f_{i} -
-           f_{i-1}}{\mathrm{dx}_{i-1/2}}\right)\right]\end{aligned}
+           f_{i-1}}{\mathrm{dx}_{i-1/2}}\right)\right]
 
 Notes:
 
@@ -6628,8 +6536,7 @@ the finite difference formulae. The equation solved is:
 
 .. math::
 
-   \begin{aligned}
-     \nabla\cdot\left( A \nabla_\perp f \right) + Bf = b\end{aligned}
+     \nabla\cdot\left( A \nabla_\perp f \right) + Bf = b
 
 where :math:`A` and :math:`B` are coefficients, :math:`b` is the known
 RHS vector (e.g. vorticity), and :math:`f` is the unknown quantity to be
@@ -6642,10 +6549,9 @@ faces.
 
 .. math::
 
-   \begin{aligned}
      \frac{1}{J}\frac{\partial}{\partial x}\left(J A g^{xx}\frac{\partial
      f}{\partial x}\right) + \frac{1}{J}\frac{\partial}{\partial z}\left(J A
-     g^{zz}\frac{\partial f}{\partial z}\right) + B f = b\end{aligned}
+     g^{zz}\frac{\partial f}{\partial z}\right) + B f = b
 
 The header file is ``include/bout/invert/laplacexz.hxx``. The solver is
 constructed by using the ``LaplaceXZ::create`` function:
@@ -7013,7 +6919,7 @@ output converges to this solution at the expected rate.
 
 To enable testing by MMS, switch an input option “mms” to true:
 
-::
+.. code-block:: cfg
 
     [solver]
     mms = true
@@ -7884,30 +7790,26 @@ By using the definition of the Fourier transformed, we have
 
 .. math::
 
-   \begin{aligned}
-       F(x,y,\xi) = {\int_{-\infty}^{\infty} {f(x,y,z)\exp(-2\pi iz\xi)} \; \text{d} {z}}\end{aligned}
+   F(x,y,\xi) = {\int_{-\infty}^{\infty} {f(x,y,z)\exp(-2\pi iz\xi)} \; \text{d} {z}}
 
 this gives
 
 .. math::
    :label: f_derivative
 
-   \begin{aligned}
-       &{\int_{-\infty}^{\infty} {(\partial_zf[x,y,z])\exp(-2\pi iz\xi)} \; \text{d} {z}}\\
-       =& {\int_{-\infty}^{\infty} {\partial_z(f[x,y,z]\exp[-2\pi iz\xi])} \; \text{d} {z}}
-       - {\int_{-\infty}^{\infty} {f(x,y,z)\partial_z\exp(-2\pi iz\xi)} \; \text{d} {z}}\\
-       =& (f[x,y,z]\exp[-2\pi iz\xi])\bigg|_{-\infty}^{\infty} - (-2\pi
-       i\xi){\int_{-\infty}^{\infty} {f(x,y,z)\exp(-2\pi iz\xi)} \; \text{d} {z}}\\
-       =& 2\pi i\xi F(x,y,\xi) {\addtocounter{equation}{1}\tag{\theequation}}
-       \end{aligned}
+   &{\int_{-\infty}^{\infty} {(\partial_zf[x,y,z])\exp(-2\pi iz\xi)} \; \text{d} {z}}\\
+   =& {\int_{-\infty}^{\infty} {\partial_z(f[x,y,z]\exp[-2\pi iz\xi])} \; \text{d} {z}}
+   - {\int_{-\infty}^{\infty} {f(x,y,z)\partial_z\exp(-2\pi iz\xi)} \; \text{d} {z}}\\
+   =& (f[x,y,z]\exp[-2\pi iz\xi])\bigg|_{-\infty}^{\infty} - (-2\pi
+   i\xi){\int_{-\infty}^{\infty} {f(x,y,z)\exp(-2\pi iz\xi)} \; \text{d} {z}}\\
+   =& 2\pi i\xi F(x,y,\xi)
 
 where we have used that :math:`f(x,y,\pm\infty)=0` in order to have a
 well defined Fourier transform. This means that
 
 .. math::
 
-   \begin{aligned}
-       \partial_z^n F(x,y,\xi) = (2\pi i \xi)^n F(x,y,\xi)\end{aligned}
+   \partial_z^n F(x,y,\xi) = (2\pi i \xi)^n F(x,y,\xi)
 
 In our case, we are dealing with periodic boundary conditions. Strictly
 speaking, the Fourier transform does not exist in such cases, but it is
@@ -7921,10 +7823,7 @@ zeroth offset mode). For the discrete Fourier transform, we have
 .. math::
    :label: DFT
 
-   \begin{aligned}
-       F(x,y)_{k} = \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp(\frac{-2\pi i k
-       Z}{N})
-   \end{aligned}
+   F(x,y)_{k} = \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp(\frac{-2\pi i k Z}{N})
 
 where :math:`k` is the mode number, :math:`N` is the number of points
 in :math:`z`. If we call the sampling points of :math:`z` for
@@ -7937,16 +7836,14 @@ we have that (since we have one less line segment than point)
 
 .. math::
 
-   \begin{aligned}
-       F(x,y)_{k} = \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp( - i k
-       Z\text{d}z) = \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp( - i k z_Z)\end{aligned}
+   F(x,y)_{k} = \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp( - i k
+   Z\text{d}z) = \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp( - i k z_Z)
 
 The discrete version of equation (:eq:`f_derivative`) thus gives
 
 .. math::
 
-   \begin{aligned}
-       \partial_z^n F(x,y)_k = (i k)^n F(x,y)_k\end{aligned}
+   \partial_z^n F(x,y)_k = (i k)^n F(x,y)_k
 
 .. [3]
    Taken from a talk by L.Chacon available here
