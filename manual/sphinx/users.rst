@@ -641,31 +641,31 @@ https://computation.llnl.gov/casc/sundials/main.html.
 
 .. code-block:: bash
 
-    cd ~
-    mkdir local
-    cd local
-    mkdir examples
-    cd ..
-    mkdir install
-    cd install
-    mkdir sundials-install
-    cd sundials-install
-    # Move the downloaded sundials-2.6.2.tar.gz to sundials-install
-    tar -xzvf sundials-2.6.2.tar.gz
-    mkdir build
-    cd build
+    $ cd ~
+    $ mkdir local
+    $ cd local
+    $ mkdir examples
+    $ cd ..
+    $ mkdir install
+    $ cd install
+    $ mkdir sundials-install
+    $ cd sundials-install
+    $ # Move the downloaded sundials-2.6.2.tar.gz to sundials-install
+    $ tar -xzvf sundials-2.6.2.tar.gz
+    $ mkdir build
+    $ cd build
 
-    cmake \
-    -DCMAKE_INSTALL_PREFIX=$HOME/local \
-    -DEXAMPLES_INSTALL_PATH=$HOME/local/examples \
-    -DCMAKE_LINKER=$HOME/local/lib \
-    -DLAPACK_ENABLE=ON \
-    -DOPENMP_ENABLE=ON \
-    -DMPI_ENABLE=ON \
-    ../sundials-2.6.2
+    $ cmake \
+      -DCMAKE_INSTALL_PREFIX=$HOME/local \
+      -DEXAMPLES_INSTALL_PATH=$HOME/local/examples \
+      -DCMAKE_LINKER=$HOME/local/lib \
+      -DLAPACK_ENABLE=ON \
+      -DOPENMP_ENABLE=ON \
+      -DMPI_ENABLE=ON \
+    $ ../sundials-2.6.2
 
-    make
-    make install
+    $ make
+    $ make install
 
 The SUNDIALS IDA solver is a Differential-Algebraic Equation (DAE)
 solver, which evolves a system of the form
@@ -679,7 +679,7 @@ type
 
 .. code-block:: bash
 
-    ./configure --with-sundials
+    $ ./configure --with-sundials
 
 SUNDIALS will allow you to select at run-time which solver to use. See
 :ref:`sec-timeoptions` for more details on how to do this.
@@ -698,23 +698,23 @@ steps
 
 .. code-block:: bash
 
-    cd ~
-    wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.4.5.tar.gz
-    tar -xzvf petsc-3.4.5.tar.gz
-    # Optional
-    # rm petsc-3.4.5.tar.gz
-    cd petsc-3.4.5
+    $ cd ~
+    $ wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.4.5.tar.gz
+    $ tar -xzvf petsc-3.4.5.tar.gz
+    $ # Optional
+    $ # rm petsc-3.4.5.tar.gz
+    $ cd petsc-3.4.5
 
 To build PETSc without SUNDIALS, configure with
 
 .. code-block:: bash
 
-    ./configure \
-    --with-clanguage=cxx \
-    --with-mpi=yes \
-    --with-precision=double \
-    --with-scalar-type=real \
-    --with-shared-libraries=0
+    $ ./configure \
+      --with-clanguage=cxx \
+      --with-mpi=yes \
+      --with-precision=double \
+      --with-scalar-type=real \
+      --with-shared-libraries=0
 
 Add ``–with-debugging=yes`` to ``./configure`` in order to allow
 debugging.
@@ -740,7 +740,7 @@ to ``./configure`` To make PETSc, type
 
 .. code-block:: bash
 
-    make PETSC_DIR=$HOME/petsc-3.4.5 PETSC_ARCH=arch-linux2-cxx-debug all
+    $ make PETSC_DIR=$HOME/petsc-3.4.5 PETSC_ARCH=arch-linux2-cxx-debug all
 
 Should blas, lapack or any other packages be missing, you will get an
 error, and a suggestion that you can append
@@ -749,39 +749,39 @@ to test that everything is configured properly. To do this, type
 
 .. code-block:: bash
 
-    make PETSC_DIR=$HOME/petsc-3.4.5 PETSC_ARCH=arch-linux2-cxx-debug test
+    $ make PETSC_DIR=$HOME/petsc-3.4.5 PETSC_ARCH=arch-linux2-cxx-debug test
 
 To configure BOUT++ with PETSc, go to the BOUT++ root directory, and
 type
 
 .. code-block:: bash
 
-    ./configure --with-petsc=$HOME/petsc-3.4.5
+    $ ./configure --with-petsc=$HOME/petsc-3.4.5
 
 To configure BOUT++ with PETSc and sundials, type instead
 
 .. code-block:: bash
 
-    ./configure --with-petsc=$HOME/petsc-3.4.5 --with-sundials
+    $ ./configure --with-petsc=$HOME/petsc-3.4.5 --with-sundials
 
 Finally compile PETSc:
 
 .. code-block:: bash
 
-    make
+    $ make
 
 To use PETSc, you have to define the variable ``PETSC_DIR`` to point to
 the petsc directory, type
 
 .. code-block:: bash
 
-    export PETSC_DIR=$HOME/petsc-3.4.5
+    $ export PETSC_DIR=$HOME/petsc-3.4.5
 
 and add to your startup file ``$HOME/.bashrc``
 
 .. code-block:: bash
 
-    export PETSC_DIR=$HOME/petsc-3.4.5
+    $ export PETSC_DIR=$HOME/petsc-3.4.5
 
 LAPACK
 ------
@@ -797,13 +797,13 @@ enable these routines use
 
 .. code-block:: bash
 
-    ./configure --with-lapack
+    $ ./configure --with-lapack
 
 and to specify a non-standard path
 
 .. code-block:: bash
 
-    ./configure --with-lapack=/path/to/lapack
+    $ ./configure --with-lapack=/path/to/lapack
 
 .. _sec-mumps:
 
@@ -817,7 +817,7 @@ To enable MUMPS, configure with
 
 .. code-block:: bash
 
-    ./configure --with-mumps
+    $ ./configure --with-mumps
 
 MUMPS has many dependencies, including ScaLapack and ParMetis, which the
 configuration script assumes are in the same place as MUMPS. The easiest
@@ -852,7 +852,7 @@ used by running
 
 .. code-block:: bash
 
-     ~/ $ which install
+     $ which install
 
 This should point to a system directory like ``/usr/bin/install``.
 Sometimes when IDL has been installed, this points to the IDL install
@@ -862,7 +862,7 @@ bin to the system install:
 
 .. code-block:: bash
 
-     ~/ $ ln -s /usr/bin/install $HOME/local/bin/
+     $ ln -s /usr/bin/install $HOME/local/bin/
 
 “which install” should now print the install in your local bin
 directory.
