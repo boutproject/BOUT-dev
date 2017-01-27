@@ -2041,10 +2041,10 @@ directory to Mathematica’s path by putting
 
 .. code-block:: mathematica
 
-       AppendTo[$Path,"/full/path/to/BOUT>/tools/mathematicalib"]
+       AppendTo[$Path,"/full/path/to/BOUT/tools/mathematicalib"]
 
 in your Mathematica startup file (usually
-``\$HOME/.Mathematica/Kernel/init.m`` ). To use the package, call
+``$HOME/.Mathematica/Kernel/init.m`` ). To use the package, call
 
 .. code-block:: mathematica
 
@@ -2327,7 +2327,6 @@ contain a single time-slice, and are controlled by a section called
 
 +-------------+----------------------------------------------------+--------------+
 | Option      | Description                                        | Default      |
-+-------------+----------------------------------------------------+--------------+
 |             |                                                    | value        |
 +-------------+----------------------------------------------------+--------------+
 | enabled     | Writing is enabled                                 | true         |
@@ -2353,7 +2352,7 @@ output dump files are set to floats by default.
 
 To enable parallel I/O for either output or restart files, set
 
-::
+.. code-block:: cfg
 
     parallel = true
 
@@ -2522,9 +2521,8 @@ has not been allocated. Allocating data can be done in several ways:
 
    ::
 
-           Field3D f = 0.0; // Allocates memory, fills with zeros
-           f(0,0,0) = 1.0; // ok
-         
+      Field3D f = 0.0; // Allocates memory, fills with zeros
+      f(0,0,0) = 1.0; // ok
 
    That this cannot be done at a global scope, since it requires the
    mesh to already exist and have a defined size.
@@ -2533,10 +2531,9 @@ has not been allocated. Allocating data can be done in several ways:
 
    ::
 
-           Field3D f;
-           f = 0.0; // Allocates memory, fills with zeros
-           f(0,0,0) = 1.0; // ok
-         
+      Field3D f;
+      f = 0.0; // Allocates memory, fills with zeros
+      f(0,0,0) = 1.0; // ok
 
    Note that setting a field equal to another field has the effect of
    making both fields share the same underlying data. This behaviour is
@@ -2544,11 +2541,10 @@ has not been allocated. Allocating data can be done in several ways:
 
    ::
 
-           Field3D g = 0.0;  // Allocates memory, fills with zeros
-           Field3D f = g; // f now shares memory with g
-           
-           f(0,0,0) = 1.0; // g also modified 
-         
+      Field3D g = 0.0;  // Allocates memory, fills with zeros
+      Field3D f = g; // f now shares memory with g
+
+      f(0,0,0) = 1.0; // g also modified
 
    To ensure that a field has a unique underlying memory array call the
    ``allocate`` method before writing to individual indices.
@@ -2557,10 +2553,9 @@ has not been allocated. Allocating data can be done in several ways:
 
    ::
 
-           Field3D f;
-           f.allocate(); // Allocates memory, values undefined
-           f(0,0,0) = 1.0; // ok
-         
+      Field3D f;
+      f.allocate(); // Allocates memory, values undefined
+      f(0,0,0) = 1.0; // ok
 
 In a BOUT++ simulation some variables are typically evolved in time. The
 initialisation of these variables is handled by the time integration
@@ -7014,8 +7009,11 @@ The code and input files in the ``examples/`` subdirectory are for
 research, demonstrating BOUT++, and to check for broken functionality.
 Some proper unit tests have been implemented, but this is something
 which needs improving. The examples which were published in
-:raw-latex:`\cite{Dudson2009,dudson-2008-arxiv}` were
-``drift-instability``, ``interchange-instability`` and ``orszag-tang``.
+[Dudson2009]_ were ``drift-instability``, ``interchange-instability``
+and ``orszag-tang``.
+
+.. [Dudson2009] http://www.sciencedirect.com/science/article/B6TJ5-4VTCM95-3/2/ed200cd23916d02f86fda4ce6887d798
+
 
 advect1d
 --------
