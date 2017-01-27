@@ -49,7 +49,16 @@ The documentation is divided into three main sections:
    :maxdepth: 1
    :caption: Developer Documentation
 
-   developers
+   developer_docs/introduction
+   developer_docs/code_layout
+   developer_docs/data_types
+   developer_docs/derivatives
+   developer_docs/laplacian_inversion
+   developer_docs/mesh
+   developer_docs/boundary_conditions
+   developer_docs/solvers
+   developer_docs/file_io
+   developer_docs/misc
 
 .. _api-ref:
 
