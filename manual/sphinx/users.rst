@@ -73,11 +73,9 @@ Various sources of documentation are:
    Intended more for quick reference rather than a guide.
 
 - Most of the code contains Doxygen comment tags (which are slowly
-   getting better). Running doxygen_ on these files
-   should therefore generate an HTML reference. This is probably going
-   to be the most up-to-date documentation.
-
-   .. _doxygen: www.doxygen.org
+  getting better). Running `doxygen <www.doxygen.org>`_ on these files
+  should therefore generate an HTML reference. This is probably going
+  to be the most up-to-date documentation.
 
 License and terms of use
 ------------------------
@@ -120,7 +118,7 @@ that you show professional courtesy when using this code:
    et. al. Comp.Phys.Comm 2009`_ and/or other BOUT++ papers. See the
    file CITATION for details.
 
-   _B.Dudson et. al. Comp.Phys.Comm 2009: http://www.sciencedirect.com/science/article/B6TJ5-4VTCM95-3/2/ed200cd23916d02f86fda4ce6887d798
+   .. _B.Dudson et. al. Comp.Phys.Comm 2009: http://www.sciencedirect.com/science/article/B6TJ5-4VTCM95-3/2/ed200cd23916d02f86fda4ce6887d798
 
 Getting started
 ===============
@@ -140,20 +138,22 @@ libraries yourself.
 
 This section will go through the following steps:
 
-#. Obtaining a copy of BOUT++
+#. :ref:`Obtaining a copy of BOUT++ <sec-obtainbout>`
 
-#. Installing an MPI compiler ([sec:installmpi])
+#. :ref:`Installing an MPI compiler <sec-installmpi>`
 
-#. Installing libraries ([sec:libraries])
+#. :ref:`Installing libraries <sec-libraries>`
 
-#. Configuring BOUT++ analysis codes ([sec:configanalysis])
+#. :ref:`Configuring BOUT++ analysis codes <sec-configanalysis>`
 
-#. Compiling BOUT++ ([sec:installbout])
+#. :ref:`Compiling BOUT++ <sec-installbout>`
 
-#. Running the test suite ([sec:runtestsuite])
+#. :ref:`Running the test suite <sec-runtestsuite>`
 
 **Note**: In this manual commands to run in a BASH shell will begin with
 ’$’, and commands specific to CSH with a ’%’.
+
+.. _sec-obtainbout:
 
 Obtaining BOUT++
 ----------------
@@ -180,6 +180,8 @@ Development is done on the “next” branch, which you can checkout with
 .. code-block:: bash
 
     $ git checkout next
+
+.. _sec-installmpi:
 
 Installing an MPI compiler
 --------------------------
@@ -268,6 +270,8 @@ you’re using CSH rather than BASH, the command is
 and the startup file is ``$HOME/.cshrc``. You should now be able to run
 ``mpicc`` and so have a working MPI compiler.
 
+.. _sec-libraries:
+
 Installing libraries
 --------------------
 
@@ -349,7 +353,7 @@ will be followed by a message
 The latest versions of NetCDF have separated out the C++ API from the
 main C library. As a result, you will need to download and install both.
 Download the latest versions of the NetCDF-C and NetCDF-4 C++ libraries
-from http://www.unidata.ucar.edu/downloads/netcdf/index.jsp. As of
+from http://www.unidata.ucar.edu/downloads/netcdf. As of
 January 2017, these are versions 4.4.1.1 and 4.3.0 respectively.
 
 Untar the file and ’cd’ into the resulting directory:
@@ -423,8 +427,10 @@ configuration:
       Hypre support: no
       MUMPS support: no
 
-If not, see section [sec:advancedinstall] for some things you can try to
+If not, see :ref:`sec-advancedinstall` for some things you can try to
 resolve common problems.
+
+.. _sec-configanalysis:
 
 Configuring analysis routines
 -----------------------------
@@ -502,6 +508,8 @@ To test if this command has worked, try running
 If this doesn’t produce any error messages then Python is configured
 correctly.
 
+.. _sec-installbout:
+
 Compiling BOUT++
 ----------------
 
@@ -530,14 +538,15 @@ something like:
 At the end of this, you should see a file ``libbout++.a`` in the
 ``lib/`` subdirectory of the BOUT++ distribution. If you get an error,
 please send an error report to a BOUT++ developer such as
-`mailto:benjamin.dudson@york.ac.uk <mailto:benjamin.dudson@york.ac.uk>`__
-containing
+benjamin.dudson@york.ac.uk containing
 
 -  Which machine you’re compiling on
 
 -  The output from make, including full error message
 
 -  The ``make.config`` file in the BOUT++ root directory
+
+.. _sec-runtestsuite:
 
 Running the test suite
 ----------------------
@@ -558,20 +567,21 @@ processors. **Note:** currently this uses the ``mpirun`` command to
 launch the runs, so won’t work on machines which use a job submission
 system like PBS or SGE.
 
-These tests should all pass, but if not please send an error report to
-`mailto:benjamin.dudson@york.ac.uk <mailto:benjamin.dudson@york.ac.uk>`__
-containing
+These tests should all pass, but if not please create an issue on
+Github containing:
 
 -  Which machine you’re running on
 
 -  The ``make.config`` file in the BOUT++ root directory
 
--  The run.log.\* files in the directory of the test which failed
+-  The ``run.log.*`` files in the directory of the test which failed
 
 If the tests pass, congratulations! You have now got a working
 installation of BOUT++. Unless you want to use some experimental
 features of BOUT++, skip to section [sec:running] to start running the
 code.
+
+.. _sec-advancedinstall:
 
 Advanced installation options
 =============================
@@ -672,7 +682,7 @@ type
     ./configure --with-sundials
 
 SUNDIALS will allow you to select at run-time which solver to use. See
-section [sec:timeoptions] for more details on how to do this.
+:ref:`sec-timeoptions` for more details on how to do this.
 
 PETSc
 -----
@@ -710,11 +720,11 @@ Add ``–with-debugging=yes`` to ``./configure`` in order to allow
 debugging.
 
 | To build PETSc with SUNDIALS, install SUNDIALS as explained in section
-  [sec:sundials], and append ``./configure`` with
+  :ref:`sec-sundials`, and append ``./configure`` with
   ``–with-sundials-dir=$HOME/local``
 |  
 | It is also possible to get PETSc to download and install MUMPS (see
-  section [sec:MUMPS]), by adding
+  :ref:`sec-MUMPS`), by adding
 
 .. code-block:: bash
 
@@ -794,6 +804,8 @@ and to specify a non-standard path
 .. code-block:: bash
 
     ./configure --with-lapack=/path/to/lapack
+
+.. _sec-mumps:
 
 MUMPS
 -----
@@ -882,6 +894,8 @@ to
 
     typedef long CVODEINT;
 
+.. _sec-running:
+
 Running BOUT++
 ==============
 
@@ -896,7 +910,7 @@ a single equation for a 3D scalar field :math:`T`:
    \begin{aligned}
    {\ensuremath{\frac{\partial T}{\partial t}}} = \nabla_{||}(\chi\partial_{||} T)\end{aligned}
 
- There are several files involved:
+There are several files involved:
 
 -  ``conduction.cxx`` contains the source code which specifies the
    equation to solve
@@ -906,7 +920,7 @@ a single equation for a 3D scalar field :math:`T`:
    (``nx`` & ``ny``) with everything else being left as the default
    (e.g. grid spacings dx and dy are :math:`1`, the metric tensor is the
    identity matrix). For details of the grid file format, see
-   section [sec:gridgen].
+   :ref:`sec-gridgen`.
 
 -  ``generate.py`` is a Python script to create the grid file. In this
    case it just writes nx and ny
@@ -960,7 +974,7 @@ run, and produce a bunch of files in the ``data/`` subdirectory.
 -  ``BOUT.restart.*.nc`` are the restart files for the last time point.
    Currently each processor saves its own state in a separate file, but
    there is experimental support for parallel I/O. For the settings, see
-   section [sec:iooptions].
+   :ref:`sec-iooptions`.
 
 -  ``BOUT.dmp.*.nc`` contain the output data, including time history. As
    with the restart files, each processor currently outputs a separate
@@ -980,12 +994,12 @@ again. If you want to keep the output from the first run, add “append”
      $ mpirun -np 2 ./conduction restart append
 
 which will then append any new outputs to the end of the old data files.
-For more information on restarting, see section [sec:restarting].
+For more information on restarting, see :ref:`sec-restarting`.
 
 To analyse the output of the simulation, cd into the ``data``
 subdirectory and start IDL. If you don’t have IDL, don’t panic as all
 this is also possible in Python and discussed in
-section [sec:pythonroutines]. First, list the variables in one of the
+:ref:`sec-pythonroutines`. First, list the variables in one of the
 data files:
 
 .. code-block:: idl
@@ -1083,8 +1097,8 @@ for running the example and then an IDL script to plot the results:
 Assuming these examples work (which they should), looking through the
 scripts and code may give you an idea of how BOUT++ works. More
 information on setting up and running BOUT++ is given in
-section [sec:running], and details of analysing the results using IDL
-are given in section [sec:output].
+:ref:`sec-running`, and details of analysing the results using IDL
+are given in :ref:`sec-output`.
 
 Alternatively, one can run BOUT++ with the python wrapper
 ``bout_runners`` , as explained in section [sec:bout\_runners]. Examples
@@ -1096,7 +1110,7 @@ When things go wrong
 
 BOUT++ is still under development, and so occasionally you may be lucky
 enough to discover a new bug. This is particularly likely if you’re
-modifying the physics module source code (see section [sec:equations])
+modifying the physics module source code (see :ref:`sec-equations`)
 when you need a way to debug your code too.
 
 -  Check the end of each processor’s log file (tail data/BOUT.log.\*).
@@ -1150,7 +1164,9 @@ information makes it possible to verify precisely which version of the
 code was used for any given run.
 
 Next comes the compile-time options, which depend on how BOUT++ was
-configured (see section [sec:installbout])
+configured (see :ref:`sec-installbout`)
+
+.. code-block:: bash
 
     Compile-time options:
             Checking enabled, level 2
@@ -1219,7 +1235,7 @@ By default the flux terms are just split into a central and an upwinding
 term.
 
 In brackets are the code used to specify the method in BOUT.inp. A list
-of available methods is given in section [sec:diffmethod] on page .
+of available methods is given in :ref:`sec-diffmethod`.
 
 .. code-block:: bash
 
@@ -1447,6 +1463,8 @@ for the time spent in different parts of the code.
 The output sent to the terminal (not the log files) also includes a run
 time, and estimated remaining time.
 
+.. _sec-restarting:
+
 Restarting runs
 ---------------
 
@@ -1495,7 +1513,7 @@ will strip out “\_0020” from any file names ending in “.nc”.
 If you don’t have archived restarts, or want to start from a different
 time-point, there are Python routines for creating new restart files. If
 your PYTHONPATH environment variable is set up (see
-section [sec:configanalysis]) then you can use the
+:ref:`sec-configanalysis`) then you can use the
 ``boutdata.restart.create`` function in
 ``tools/pylib/boutdata/restart.py``:
 
@@ -1513,15 +1531,17 @@ Makefiles and compiling BOUT++
 
 BOUT++ has its own makefile system. These can be used to
 
-#. Write an example or executable (see section [sec:executables])
+#. Write an example or executable (see :ref:`sec-executables`)
 
-#. Add a feature to BOUT++ (see section [sec:modules])
+#. Add a feature to BOUT++ (see :ref:`sec-modules`)
 
 In all makefiles, ``BOUT_TOP`` is required!
 
 These makefiles are sufficient for most uses, but for more complicated,
 an executable script ``bout-config`` can be used to get the compilation
 flags (see section [sec:bout-config]).
+
+.. _sec-executables:
 
 Executables example
 -------------------
@@ -1576,6 +1596,8 @@ and the name of the subdirectory that the makefile is in
 
     SUB_NAME = fuu
 
+.. _sec-modules:
+
 Modules example
 ---------------
 
@@ -1624,6 +1646,8 @@ so to get the library linking flags, for example
 
 This script can be used in makefiles to compile BOUT++ alongside other
 libraries. An example is in ``examples/make-script``.
+
+.. _sec-output:
 
 Output and post-processing
 ==========================
@@ -1866,6 +1890,8 @@ variable:
 There are many other useful routines in the ``idllib`` directory. See
 the ``idllib/README`` file for a short description of each one.
 
+.. _sec-pythonroutines:
+
 Python routines
 ---------------
 
@@ -2057,12 +2083,14 @@ NetCDF files.
 
     u = bread(f, "U")  # Finally read the variable
 
+.. _sec-options:
+
 BOUT++ options
 ==============
 
 The inputs to BOUT++ are a text file containing options, and for complex
 grids a binary grid file in NetCDF or HDF5 format. Generating input
-grids for tokamaks is described in section [sec:gridgen]. The grid file
+grids for tokamaks is described in :ref:`sec-gridgen`. The grid file
 describes the size and topology of the X-Y domain, metric tensor
 components and usually some initial profiles. The option file specifies
 the size of the domain in the symmetric direction (Z), and controls how
@@ -2109,7 +2137,7 @@ Command line options
 
 All options can be set on the command line, and will override those set
 in BOUT.inp. The most commonly used are “restart” and “append”,
-described in section [sec:running]. If values are not given for
+described in :ref:`sec-running`. If values are not given for
 command-line arguments, then the value is set to ``true`` , so putting
 ``restart`` is equivalent to ``restart=true`` .
 
@@ -2124,7 +2152,7 @@ Remember **no** spaces around the ’=’ sign. Like the BOUT.inp file,
 setting names are not case sensitive.
 
 Sections are separated by colons ’:’, so to set the solver type
-(section [sec:timeoptions]) you can either put this in BOUT.inp:
+(:ref:`sec-timeoptions`) you can either put this in BOUT.inp:
 
 .. code-block:: cfg
 
@@ -2241,6 +2269,8 @@ option ``async``. This determines whether asynchronous MPI sends are
 used; which method is faster varies (though not by much) with machine
 and problem.
 
+.. _sec-diffmethodoptions:
+
 Differencing methods
 --------------------
 
@@ -2263,7 +2293,7 @@ Model-specific options
 ----------------------
 
 The options which affect a specific physics model vary, since they are
-defined in the physics module itself (see section [sec:inputopts]). They
+defined in the physics module itself (see :ref:`sec-inputopts`). They
 should have a separate section, for example the high-\ :math:`\beta`
 reduced MHD code uses options in a section called ``[highbeta]``.
 
@@ -2274,7 +2304,9 @@ explaining what they do; alternately they may have put comments in the
 C++ code for the module. Another way is to look at the output logs: when
 BOUT++ is run, (nearly) all options used are printed out with their
 default values. This won’t provide much explanation of what they do, but
-may be useful anyway. See section [sec:output] for more details.
+may be useful anyway. See :ref:`sec-output` for more details.
+
+.. _sec-iooptions:
 
 Input and Output
 ----------------
@@ -2328,7 +2360,7 @@ To enable parallel I/O for either output or restart files, set
 
 in the output or restart section. If you have compiled BOUT++ with a
 parallel I/O library such as pnetcdf (see
-section [sec:advancedinstall]), then rather than outputting one file per
+:ref:`sec-advancedinstall`), then rather than outputting one file per
 processor, all processors will output to the same file. For restart
 files this is particularly useful, as it means that you can restart a
 job with a different number of processors. Note that this feature is
@@ -2543,13 +2575,15 @@ the output data. For example, the high-\ :math:`\beta` model has
 variables “P”, “jpar”, and “U”, and so has sections ``[P]``, ``[jpar]``,
 ``[U]`` (not case sensitive).
 
+.. _sec-expressions:
+
 Expressions
 ~~~~~~~~~~~
 
 The recommended way to initialise a variable is to use the ``function``
 option for each variable:
 
-.. code-block:: bash
+.. code-block:: cfg
 
     [p]
     function = 1 + gauss(x-0.5)*gauss(y)*sin(z)
@@ -2927,6 +2961,8 @@ object’s ``clone`` function.
 Time integration
 ================
 
+.. _sec-timeoptions:
+
 Options
 -------
 
@@ -3027,7 +3063,7 @@ model: Multiple Solver objects can exist besides the main one used for
 time integration. Example code is in ``examples/test-integrate``.
 
 To use this feature, systems of ODEs must be represented by a class
-derived from ``PhysicsModel`` (see section [sec:newapi]).
+derived from ``PhysicsModel`` (see :ref:`sec-newapi`).
 
 ::
 
@@ -3591,6 +3627,8 @@ instead be run in SINGLE\_STEP mode (see the SUNDIALS notes
 here:\ http://computation.llnl.gov/casc/sundials/support/notes.html).
 This may in some cases be less efficient.
 
+.. _sec-bndryopts:
+
 Boundary conditions
 ===================
 
@@ -4011,7 +4049,7 @@ operate over:
 The ``clone`` function is used to create boundary operations given a
 single object as a template in ``BoundaryFactory``. This can take
 additional arguments as a vector of strings - see explanation in
-section [sec:BoundaryFactory].
+:ref:`sec-BoundaryFactory`.
 
 Boundary modifiers
 ------------------
@@ -4058,6 +4096,8 @@ Currently the only modifier is ``BoundaryRelax``, defined in
       BoundaryRelax() {} // Must be initialised with a rate
       BoutReal r;
     };
+
+.. _sec-BoundaryFactory:
 
 Boundary factory
 ----------------
@@ -4225,6 +4265,8 @@ Available regions are:
 
 -  ``RGN_NOY``, which skips the y boundaries
 
+.. _sec-gridgen:
+
 Generating input grids
 ======================
 
@@ -4274,7 +4316,7 @@ the example ``test-griddata``:
     dx = dr * Bpxy * Rxy
 
 These expressions use the same mechanism as used for variable
-initialisation (section [sec:expressions]): ``x`` is a variable from
+initialisation (:ref:`sec-expressions`): ``x`` is a variable from
 :math:`0` to :math:`1` in the domain which is uniform in index space;
 ``y`` and ``z`` go from :math:`0` to :math:`2\pi`. As with variable
 initialisation, common trigonometric and mathematical functions can be
@@ -4509,6 +4551,8 @@ Generating equilibria
 The directory ``tokamak_grids/shifted_circle`` contains IDL code to
 generate shifted circle (large aspect ratio) Grad-Shafranov equilibria.
 
+.. _sec-laplacian:
+
 Laplacian inversion
 ===================
 
@@ -4532,8 +4576,8 @@ For example,
 appears in reduced MHD for the vorticity inversion and :math:`j_{||}`.
 
 Alternative formulations and ways to invert equation
-(:eq:`full_laplace_inv`) can be found in section [sec:LaplaceXY] and
-[sec:LaplaceXZ]
+(:eq:`full_laplace_inv`) can be found in section :ref:`sec-LaplaceXY` and
+:ref:`sec-LaplaceXZ`
 
 Usage of the laplacian inversion
 --------------------------------
@@ -5107,6 +5151,8 @@ for our mesh can then be written like in figure [fig:lapl\_inv\_matrix].
 As we are using a row-major implementation, the global indices of the
 matrix will be as in figure [fig:lapl\_inv\_global]
 
+.. _sec-equations:
+
 Fluid equations
 ===============
 
@@ -5137,7 +5183,7 @@ directory. The equations to be solved are:
 
 There are two ways to specify a set of equations to solve in BOUT++.
 For advanced users, an object-oriented interface is available and
-described in section [sec:newapi]. The simplest way to start is to use a
+described in :ref:`sec-newapi`. The simplest way to start is to use a
 C-like interface and define two functions:
 
 ::
@@ -5247,7 +5293,7 @@ the state and time-derivatives will be stored. This is done using the
 
 The name given to this function will be used in the output and restart
 data files. These will be automatically read and written depending on
-input options (see section [sec:options]). Input options based on these
+input options (see :ref:`sec-options`). Input options based on these
 names are also used to initialise the variables.
 
 If the name of the variable in the output file is the same as the
@@ -5299,12 +5345,14 @@ will not operate on vector objects (since result is neither scalar nor
 vector), so the :math:`\mathbf{v}\cdot\nabla\mathbf{v}` term CANNOT be
 written as ``v*Grad(v)``.
 
+.. _sec-inputopts:
+
 Input options
 -------------
 
 Note that in the above equations the extra parameter ``gamma`` has been
 used. To enable this to be set in the input options file (see
-section [sec:options]), we use the ``options`` object in the
+:ref:`sec-options`), we use the ``options`` object in the
 initialisation function:
 
 ::
@@ -5360,7 +5408,7 @@ which is equivalent to
 
     options->get("gamma", gamma, 5.0/3.0);
 
-See section [sec:options] for more details of how to use the input
+See :ref:`sec-options` for more details of how to use the input
 options.
 
 Communication
@@ -5477,14 +5525,14 @@ differential operator the values in the guard cells are invalid.
 Therefore, if you take the output of one differential operator and use
 it as input to another differential operator, you must perform
 communications (and set boundary conditions) first. See
-section [sec:diffops].
+:ref:`sec-diffops`.
 
 Boundary conditions
 -------------------
 
 All evolving variables have boundary conditions applied automatically
 after the ``physics_run`` has finished. Which condition is applied
-depends on the options file settings (see section [sec:bndryopts]). If
+depends on the options file settings (see :ref:`sec-bndryopts`). If
 you want to disable this and apply your own boundary conditions then set
 boundary condition to ``none`` in the ``BOUT.inp`` options file.
 
@@ -5849,6 +5897,8 @@ calculating ``jpar`` . Since we will need to take derivatives of
       ddt(U) = -b0xGrad_dot_Grad(phi, U) + SQ(mesh->Bxy)*Grad_par(Jpar / mesh->Bxy)
       ddt(Apar) = -Grad_par(phi) / beta_hat - eta*jpar / beta_hat; }
 
+.. _sec-printing:
+
 Printing messages/warnings
 --------------------------
 
@@ -5901,7 +5951,7 @@ could be occurring.
 If you have a bug which is easily reproduceable i.e. it occurs almost
 immediately every time you run the code, then the easiest way to hunt
 down the bug is to insert lots of ``output.write`` statements (see
-section [sec:printing]). Things get harder when a bug only occurs after
+:ref:`sec-printing`). Things get harder when a bug only occurs after
 a long time of running, and/or only occasionally. For this type of
 problem, a useful tool can be the message stack. At the start of a
 section of code, put a message onto the stack:
@@ -5920,6 +5970,8 @@ off the stack again:
 
 If an error occurs, the message stack is printed out, and this can then
 help track down where the error originated.
+
+.. _sec-newapi:
 
 Object-orientated interface
 ===========================
@@ -6019,6 +6071,8 @@ This is defined in ``include/bout/physicsmodel.hxx``, and expands to
 If you like, you can define your own ``main()`` function, making it
 easier to combine BOUT++ with other libraries.
 
+.. _sec-diffops:
+
 Differential operators
 ======================
 
@@ -6036,6 +6090,8 @@ many layers are used, each of which handles just part of the problem.
 The main division is between differencing methods (such as 4th-order
 central differencing), and differential operators (such as
 :math:`\nabla_{||}`).
+
+.. _sec-diffmethod:
 
 Differencing methods
 --------------------
@@ -6131,7 +6187,7 @@ top of your physics module
 Table: Coordinate derivatives
 
 By default the method used will be the one specified in the options
-input file (see section [sec:diffmethodoptions]), but most of these
+input file (see :ref:`sec-diffmethodoptions`), but most of these
 methods can take an optional ``DIFF\_METHOD`` argument, specifying
 exactly which method to use.
 
@@ -6492,6 +6548,8 @@ array:
 
 See the example ``examples/test-globalfield`` for more examples.
 
+.. _sec-LaplaceXY:
+
 LaplaceXY
 ---------
 
@@ -6563,11 +6621,13 @@ Notes:
 -  The ShiftXderivs option must be true for this to work, since it
    assumes that :math:`g^{xz} = 0`
 
+.. _sec-LaplaceXZ:
+
 LaplaceXZ
 ---------
 
 This is a Laplacian inversion code in X-Z, similar to the ``Laplacian``
-solver described in section [sec:laplacian]. The difference is in the
+solver described in :ref:`sec-laplacian`. The difference is in the
 form of the Laplacian equation solved, and the approach used to derive
 the finite difference formulae. The equation solved is:
 
@@ -7194,6 +7254,8 @@ pain.
 -  The POWER architecture is big-endian, different to the little endian
    Intel and AMD chips. This can cause problems with binary file
    formats.
+
+.. _sec-sundials:
 
 SUNDIALS
 --------
