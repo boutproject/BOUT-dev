@@ -7222,11 +7222,11 @@ Archer
 
 As of 30th April 2014, the following configuration should work
 
-::
+.. code-block:: bash
 
-    > module swap PrgEnv-cray PrgEnv-gnu/5.1.29
-    > module load fftw
-    > module load netcdf/4.1.3
+    $ module swap PrgEnv-cray PrgEnv-gnu/5.1.29
+    $ module load fftw
+    $ module load netcdf/4.1.3
 
 Compiling and running under AIX
 ===============================
@@ -7285,7 +7285,7 @@ in the ``PATH``:
 
 .. code-block:: bash
 
-    export PATH=$HOME/local/bin:$PATH
+    $ export PATH=$HOME/local/bin:$PATH
 
 If you see an error like this:
 
@@ -7298,7 +7298,7 @@ then you need to set the environment variable ``OBJECT_MODE``
 
 .. code-block:: bash
 
-    export OBJECT_MODE=64
+    $ export OBJECT_MODE=64
 
 Configuring BOUT++, you may get the error:
 
@@ -7310,7 +7310,7 @@ In that case, you can try using:
 
 .. code-block:: bash
 
-    ./configure CFLAGS="-maix64"
+    $ ./configure CFLAGS="-maix64"
 
 When compiling, you may see warnings
 
