@@ -397,8 +397,8 @@ You may need to set a couple of environment variables as well:
     $ export LD_LIBRARY_PATH=$HOME/local/lib:$LD_LIBRARY_PATH
 
 You should check where NetCDF actually installed its libraries. On some
-systems this will be “$HOME/local/lib”, but on others it may be, e.g.
-“$HOME/local/lib64”. Check which it is, and set “$LD\_LIBRARY\_PATH”
+systems this will be ``$HOME/local/lib``, but on others it may be, e.g.
+``$HOME/local/lib64``. Check which it is, and set ``$LD_LIBRARY_PATH``
 appropriately.
 
 Go back to the BOUT directory and run the configure script again, this
@@ -468,7 +468,7 @@ you can try modifying the path inside IDL by running
     IDL> !path = !path + ":/path/to/BOUT/tools/idllib"
 
 where you should use the full path. You can get this by going to the
-``tools/idllib`` directory and typing ’\ ``pwd``\ ’. Once this is done
+``tools/idllib`` directory and typing ``pwd``. Once this is done
 you should be able to use ``collect`` and other routines.
 
 To use Python, you will need the NumPy and SciPy libraries. On Debian or
@@ -669,9 +669,8 @@ https://computation.llnl.gov/casc/sundials/main.html.
 
 The SUNDIALS IDA solver is a Differential-Algebraic Equation (DAE)
 solver, which evolves a system of the form
-:math:`\mathbf{f}(\mathbf{u},\dot{\mathbf{u}},
-t) = 0`. This allows algebraic constraints on variables to be
-specified.
+:math:`\mathbf{f}(\mathbf{u},\dot{\mathbf{u}},t) = 0`. This allows
+algebraic constraints on variables to be specified.
 
 To configure BOUT++ with SUNDIALS only (see section [sec:PETSc] on how
 to build PETSc with SUNDIALS), go to the root directory of BOUT++ and
@@ -1056,14 +1055,14 @@ and to make this a coloured contour plot
 The equivalent commands in Python are as follows. To print a list of
 variables in a file:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> from boututils.datafile import DataFile
     >>> DataFile("BOUT.dmp.0.nc").list()
 
 To collect a variable,
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> from boutdata.collect import collect
     >>> T = collect("T")
@@ -1073,7 +1072,7 @@ Note that the order of the indices is different in Python and IDL: In
 Python, 4D variables are arranged as ``[t, x, y, z]``. To show an
 animation
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> from boututils.showdata import showdata
     >>> showdata(T[:,:,:,0])
@@ -1147,6 +1146,8 @@ the same.
 
 First comes the introductory blurb:
 
+.. code-block:: bash
+
     BOUT++ version 1.0
     Revision: c8794400adc256480f72c651dcf186fb6ea1da49
     MD5 checksum: 8419adb752f9c23b90eb50ea2261963c
@@ -1174,13 +1175,13 @@ configured (see :ref:`sec-installbout`)
             netCDF support enabled
             Parallel NetCDF support disabled
 
-Thins says that some run-time checking of values is enabled, that the
+This says that some run-time checking of values is enabled, that the
 code will try to catch segmentation faults to print a useful error, that
 NetCDF files are supported, but that the parallel flavour isn’t.
 
 The processor number comes next:
 
-::
+.. code-block:: bash
 
     Processor number: 0 of 1
 
@@ -1188,7 +1189,7 @@ This will always be processor number ’0’ on screen as only the output
 from processor ’0’ is sent to the terminal. After this the core BOUT++
 code reads some options:
 
-::
+.. code-block:: bash
 
             Option /nout = 50 (data/BOUT.inp)
             Option /timestep = 100 (data/BOUT.inp)
@@ -1517,7 +1518,7 @@ your PYTHONPATH environment variable is set up (see
 ``boutdata.restart.create`` function in
 ``tools/pylib/boutdata/restart.py``:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> from boutdata.restart import create
     >>> create(final=10, path='data', output='.')
@@ -1935,7 +1936,7 @@ This way the DataFile is automatically closed at the end of the ``with``
 block, even if there is an error in ``f.read``. To list the variables in
 a file e.g.
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> f = DataFile("test_io.grd.nc")
     >>> print(f.list())
@@ -1943,14 +1944,14 @@ a file e.g.
 
 and to list the names of the dimensions
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> print(f.dimensions("f3d"))
     ('x', 'y', 'z')
 
 or to get the sizes of the dimensions
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> print(f.size("f3d"))
     [12, 12, 5]
@@ -2616,7 +2617,7 @@ problems like island reconnection simulations, it’s useful to define
 :math:`x` in a particular way which is more symmetric than the default.
 To do this, set in BOUT.inp
 
-.. code-block:: bash
+.. code-block:: cfg
 
       [mesh]
       symmetricGlobalX = true
@@ -2676,7 +2677,6 @@ expressions.
 | erf(x)                                 | The error function                                                           |
 +----------------------------------------+------------------------------------------------------------------------------+
 | TanhHat(x, width, centre, steepness)   | The hat function                                                             |
-+----------------------------------------+------------------------------------------------------------------------------+
 |                                        | :math:`\frac{1}{2}(\tanh[s (x-[c-\frac{w}{2}])]`                             |
 |                                        | :math:`- \tanh[s (x-[c+\frac{w}{2}])] )`                                     |
 +----------------------------------------+------------------------------------------------------------------------------+
@@ -2692,9 +2692,7 @@ transformation to construct a smooth initial perturbation:
 .. math::
    :label: ballooning_transform
 
-   \begin{aligned}
    U_0^{balloon} = \sum_{i=-N}^N F(x)G(y + 2\pi i)H(z + q2\pi i)
-   \end{aligned}
 
 .. figure:: figs/init_balloon.*
    :alt: Initial profiles
@@ -2973,7 +2971,7 @@ solvers available.
 The solver library used is set using the ``solver:type`` option, so
 either in BOUT.inp:
 
-.. code-block:: bash
+.. code-block:: cfg
 
     [solver]
     type = rk4  # Set the solver to use
@@ -3023,7 +3021,6 @@ given in table [tab:solveropts].
 | rtol             | Relative tolerance                         | rk4, pvode, cvode, ida              |
 +------------------+--------------------------------------------+-------------------------------------+
 | mxstep           | Maximum internal steps                     | rk4                                 |
-+------------------+--------------------------------------------+-------------------------------------+
 |                  | per output step                            |                                     |
 +------------------+--------------------------------------------+-------------------------------------+
 | max\_timestep    | Maximum timestep                           | rk4, cvode                          |
@@ -3043,7 +3040,6 @@ given in table [tab:solveropts].
 | use\_jacobian    | Use user-supplied Jacobian? (Y/N)          | cvode                               |
 +------------------+--------------------------------------------+-------------------------------------+
 | adams\_moulton   | Use Adams-Moulton method                   | cvode                               |
-+------------------+--------------------------------------------+-------------------------------------+
 |                  | rather than BDF                            |                                     |
 +------------------+--------------------------------------------+-------------------------------------+
 | diagnose         | Collect and print additional diagnostics   | cvode                               |
@@ -3812,7 +3808,7 @@ Examples
 This example is taken from the UEDGE benchmark test (in
 ``examples/uedge-benchmark``):
 
-.. code-block:: bash
+.. code-block:: cfg
 
     [All]
     bndry_all = neumann # Default for all variables, boundaries
@@ -3832,7 +3828,7 @@ boundary, and relaxes to :math:`0.1` on all other boundaries. Note that
 the ``bndry_target = neumann`` needs to be in the ``Ni`` section: If we
 just had
 
-.. code-block:: bash
+.. code-block:: cfg
 
     [All]
     bndry_all = neumann # Default for all variables, boundaries
@@ -4508,9 +4504,8 @@ Two representations are now supported for 3D variables:
 
    .. math::
 
-      \begin{aligned}
-      [n = 0, n = 1 (\textrm{real}), n = 1 (\textrm{imag}), n = 2 (\textrm{real}),
-      n = 2 (\textrm{imag}), \ldots ]\end{aligned}
+      [n = 0, n = 1 (\textrm{real}), n = 1 (\textrm{imag}), n = 2
+      (\textrm{real}), n = 2 (\textrm{imag}), \ldots ]
 
    where :math:`n` is the toroidal mode number. The size of the array
    must therefore be odd in the Z dimension, to contain a constant
@@ -4942,7 +4937,7 @@ which gives
        \, &d (    g^{xx} \partial_x^2 + G^x \partial_x - k^2 g^{zz} + i kG^z + i
        k2g^{xz} \partial_x )F_z \\
        +& \frac{g^{xx}}{c} ( \partial_x c ) \partial_xF_z \\
-       +& aF_z = B_z {\addtocounter{equation}{1}\tag{\theequation}}
+       +& aF_z = B_z
    \end{aligned}
 
 As nothing in equation (:eq:`FT_laplace_inversion`) couples points in
@@ -4988,8 +4983,8 @@ collecting point by point
            +&( \frac{dg^{xx}}{\text{d}x^2} + \frac{dG^x}{2\text{d}x} +
        \frac{g^{xx}}{c_{n}} \frac{-c_{n-1} + c_{n+1}}{4\text{d}x^2} +
        i\frac{dk2g^{xz}}{2\text{d}x} ) F_{z, n+1} \\
-        =& B_{z,n} {\addtocounter{equation}{1}\tag{\theequation}}
-        \end{aligned}
+        =& B_{z,n}
+   \end{aligned}
 
 We now introduce
 
@@ -5014,8 +5009,7 @@ This can be formulated as the matrix equation
 
 .. math::
 
-   \begin{aligned}
-       AF_z=B_z\end{aligned}
+   AF_z=B_z
 
 where the matrix :math:`A` is tridiagonal. The boundary conditions are
 set by setting the first and last rows in :math:`A` and :math:`B_z`.
@@ -6259,7 +6253,8 @@ system.
        {\ensuremath{\frac{\partial \phi}{\partial u^i}}} \\ \nabla\cdot A =& =
        \frac{1}{J}{\ensuremath{\frac{\partial }{\partial u^i}}}(Jg^{ij}A_j) \\ \nabla^2\phi =&
        G^j{\ensuremath{\frac{\partial \phi}{\partial u^i}}} + g^{ij}\frac{\partial^2\phi}{\partial u^i\partial
-       u^j} \\\end{aligned}
+       u^j}
+   \end{aligned}
 
 where we have defined
 
