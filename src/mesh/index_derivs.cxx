@@ -1271,7 +1271,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
     
     // Shift result back
     
-    result = mesh->fromFieldAligned(var);
+    result = mesh->fromFieldAligned(result);
   }
 #ifdef CHECK
   // Mark boundaries as invalid
