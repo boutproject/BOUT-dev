@@ -60,7 +60,6 @@ class Datafile {
   }
   void add(int &i, const char *name, bool save_repeat = false);
   void add(BoutReal &r, const char *name, bool save_repeat = false);
-  void add(const BoutReal &r, const char *name, bool save_repeat = false);
   void add(Field2D &f, const char *name, bool save_repeat = false);
   void add(Field3D &f, const char *name, bool save_repeat = false);
   void add(Vector2D &f, const char *name, bool save_repeat = false);
