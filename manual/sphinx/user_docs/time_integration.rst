@@ -77,7 +77,7 @@ given in table [tab:solveropts].
 +------------------+--------------------------------------------+-------------------------------------+
 | mukeep, mlkeep   |                                            |                                     |
 +------------------+--------------------------------------------+-------------------------------------+
-| maxl             |                                            |                                     |
+| maxl             | Maximum number of linear iterations        | cvode                               |
 +------------------+--------------------------------------------+-------------------------------------+
 | use\_jacobian    | Use user-supplied Jacobian? (Y/N)          | cvode                               |
 +------------------+--------------------------------------------+-------------------------------------+
@@ -92,6 +92,40 @@ Table: Time integration solver options
 The most commonly changed options are the absolute and relative solver
 tolerances, ``ATOL`` and ``RTOL`` which should be varied to check
 convergence.
+
+CVODE
+-----
+
+The most commonly used time integration solver is CVODE, or its older
+version PVODE. CVODE has several advantages over PVODE, including better
+support for preconditioning and diagnostics.
+
+Enabling diagnostics output using ``solver:diagnose=true`` will print a
+set of outputs for each timestep similar to:
+
+.. code-block:: bash
+
+    CVODE: nsteps 51, nfevals 69, nniters 65, npevals 126, nliters 79
+        -> Newton iterations per step: 1.274510e+00
+        -> Linear iterations per Newton iteration: 1.215385e+00
+        -> Preconditioner evaluations per Newton: 1.938462e+00
+        -> Last step size: 1.026792e+00, order: 5
+        -> Local error fails: 0, nonlinear convergence fails: 0
+        -> Stability limit order reductions: 0
+    1.000e+01        149       2.07e+01    78.3    0.0   10.0    0.9   10.8
+
+When diagnosing slow performance, key quantities to look for are
+nonlinear convergence failures, and the number of linear iterations per
+Newton iteration. A large number of failures, and close to 5 linear
+iterations per Newton iteration are a sign that the linear solver is not
+converging quickly enough, and hitting the default limit of 5
+iterations. This limit can be modified using the ``solver:maxl``
+setting. Giving it a large value e.g. ``solver:maxl=1000`` will show how
+many iterations are needed to solve the linear system. If the number of
+iterations becomes large, this may be an indication that the system is
+poorly conditioned, and a preconditioner might help improve performance.
+See :ref:`sec-preconditioning`.
+
 
 ODE integration
 ---------------
@@ -183,6 +217,8 @@ Finally, delete the model and solver when finished:
 
 **Note:** If an ODE needs to be solved multiple times, at the moment it
 is recommended to delete the solver, and create a new one each time.
+
+.. _sec-preconditioning:
 
 Preconditioning
 ---------------
