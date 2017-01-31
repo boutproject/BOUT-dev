@@ -51,6 +51,8 @@ The documentation is divided into three main sections:
    :caption: Developer Documentation
 
    developer_docs/introduction
+   developer_docs/CONTRIBUTING.md
+   developer_docs/git_basics
    developer_docs/code_layout
    developer_docs/data_types
    developer_docs/derivatives

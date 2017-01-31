@@ -7,6 +7,34 @@ with the code. You don't need to be particularly familar with BOUT++ or C++ to
 work on many of these. You can see a current list of outstanding bugs and
 feature requests on the [GitHub issue page][issues].
 
+## House rules ##
+
+BOUT++ consists of about 60,000 lines of C/C++, along with 18,500 lines of IDL
+and 12,000 of Python. Of this, about 40,000 lines is the core BOUT++ code, and
+the remainder a mix of pre- and post-processors, and physics modules. As
+production codes go, this is not particularly huge, but it is definitely large
+enough that keeping the code ‘clean’ and understandable is necessary. This is
+vital if many people are going to work on the code, and also greatly helps code
+debugging and verification. There are therefore a few house rules to keep in
+mind when modifying the BOUT++ code.
+
+When modifying the core BOUT++ code, please keep in mind that this portion of
+the code is intended to be general (i.e. independent of any particular physical
+system of equations), and to be used by a wide range of users. Making code clear
+is also more important in this section than the physics model since the number
+of developers is potentially much greater.
+
+Here are some rules for editing the core BOUT++ code:
+
+- **NO FORTRAN**. EVER. Though it may be tempting for scientific programmers to
+   use a little Fortran now and then, please please don’t put any into BOUT++.
+   Use of Fortran, particularly when mixed with C/C++, is the cause of many
+   problems in porting and modifying codes.
+
+-  If a feature is needed to study a particular system, only include it in the
+   core code if it is more generally applicable, or cannot be put into the
+   physics module.
+
 ## Development workflow using Git ##
 
 The workflow we use is essentially ["gitflow"][gitflow].
