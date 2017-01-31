@@ -1,3 +1,5 @@
+.. _sec-iterating:
+
 Iterating over fields
 =====================
 
@@ -11,6 +13,19 @@ using a single loop:
     for (auto i : f) {
        f[i] = a[i] + b[i];
     }
+
+This replaces the C-style triple-nested loop:
+
+::
+
+   Field3D f(0.0);
+   for (int i = mesh->xstart; i < mesh->xend; ++i) {
+     for (int j = mesh->ystart; j < mesh->yend; ++j) {
+       for (int k = 0; k < mesh->ngz; ++k) {
+         f[i,j,k] = a[i,j,k] + b[i,j,k]
+       }
+     }
+   }
 
 The iterator provides access to the x, y, z indices:
 

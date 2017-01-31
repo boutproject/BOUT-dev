@@ -17,6 +17,7 @@ The documentation is divided into three main sections:
    user_docs/getting_started
    user_docs/advanced_install
    user_docs/running_bout
+   user_docs/updating_to_4
    user_docs/makefiles
    user_docs/output_and_post
    user_docs/bout_options
