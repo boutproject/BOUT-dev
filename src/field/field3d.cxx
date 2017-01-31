@@ -780,6 +780,7 @@ void Field3D::applyBoundary(bool init) {
     // Apply boundary to the total of this and background
     
     Field3D tot = *this + (*background);
+    tot.copyBoundary(*this);
     tot.applyBoundary(init);
     *this = tot - (*background);
   } else {
@@ -804,6 +805,7 @@ void Field3D::applyBoundary(BoutReal t) {
     // Apply boundary to the total of this and background
 
     Field3D tot = *this + (*background);
+    tot.copyBoundary(*this);
     tot.applyBoundary(t);
     *this = tot - (*background);
   }else {

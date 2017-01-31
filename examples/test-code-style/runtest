@@ -5,7 +5,7 @@ error=
 
 for i in BoutReal # double float int char size_t
 do
-    grep \([^\)]*const[^\(,:]*$i[^,\):\*]*\&  -r --include=*xx $BOUT_TOP && error=yes
+    grep -E "\([^\)]*const[^\(,:<]*$i[^,\):\*>]*\&"  -r --include=*xx $BOUT_TOP && error=yes
 done
 #for emacs regexp: \([,\(]\)[[:space:]]*const[[:space:]]+\([A-Za-z]+\)[[:space:]]+\([A-Za-z0-9]+\)[[:space:]]*\([,\)]\) → \1\2 \3\4)
 grep [\(,][[:space:]]*const[[:space:]][[:alnum:]]*[[:space:]][[:alnum:]]*[[:space:]]*[,\)] -r --include=*hxx $BOUT_TOP -n && error=yes
