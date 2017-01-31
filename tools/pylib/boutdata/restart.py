@@ -815,7 +815,7 @@ def resizeY(newy, path="data", output=".", informat="nc", outformat=None,myg=2):
         infname  = os.path.join(path, "BOUT.restart."+str(i)+"."+informat)
         outfname = os.path.join(output, "BOUT.restart."+str(i)+"."+outformat)
 
-        print("Processing %s -> %s", infname, outfname)
+        print("Processing %s -> %s" % (infname, outfname))
 
         infile = DataFile(infname)
         outfile = DataFile(outfname, create=True)
@@ -837,7 +837,7 @@ def resizeY(newy, path="data", output=".", informat="nc", outformat=None,myg=2):
             if infile.ndims(var) == 3:
                 # Could be an evolving variable [x,y,z]
 
-                print(" -> " + var)
+                print(" -> Resizing " + var)
 
                 # Read variable from input
                 indata = infile.read(var)
@@ -856,5 +856,38 @@ def resizeY(newy, path="data", output=".", informat="nc", outformat=None,myg=2):
                         outdata[x,:,z] = f(outy)
 
                 outfile.write(var, outdata)
+            elif infile.ndims(var) == 2:
+                # Assume evolving variable [x,y]
+                print(" -> Resizing " + var)
+
+                # Read variable from input
+                indata = infile.read(var)
+
+                nx,ny = indata.shape
+
+                # y coordinate in input and output data
+                iny = (arange(ny) - myg + 0.5) / (ny - 2*myg)
+                outy = (arange(newy) - myg + 0.5) / (newy - 2*myg)
+
+                outdata = zeros([nx, newy])
+
+                for x in range(nx):
+                    f = interp1d(iny, indata[x,:], bounds_error=False, fill_value=0.0)
+                    outdata[x,:] = f(outy)
+
+                outfile.write(var, outdata)
+            else:
+                # Copy variable
+                print(" -> Copying " + var)
+                
+                # Read variable from input
+                data = infile.read(var)
+                try:
+                    # Convert to scalar if necessary
+                    data = data[0]
+                except:
+                    pass
+                outfile.write(var, data)
+                
         infile.close()
         outfile.close()
