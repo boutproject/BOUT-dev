@@ -224,6 +224,11 @@ class Field3D : public Field, public FieldData {
    */
   void mergeYupYdown();
   
+  /// Check if this field has yup and ydown fields
+  bool hasYupYdown() const {
+    return (yup_field != nullptr) && (ydown_field != nullptr);
+  }
+
   /// Return reference to yup field
   Field3D& yup() { 
     ASSERT2(yup_field != nullptr); // Check for communicate
