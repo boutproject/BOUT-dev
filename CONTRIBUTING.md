@@ -35,6 +35,14 @@ Here are some rules for editing the core BOUT++ code:
    core code if it is more generally applicable, or cannot be put into the
    physics module.
 
+-  If you add a new feature, function, class member, etc. you must also include
+   doxygen comments that explain what each new thing does. Similarly, if a change
+   you make would affect e.g. a function's arguments, please ensure that you keep
+   the documentation up-to-date with the code. See the section on coding style
+   for best practices in this regard. If you submit a pull request that doesn't
+   add or update documentation where appropriate, we may ask you to do so before
+   it is merged.
+
 ## Development workflow using Git ##
 
 The workflow we use is essentially ["gitflow"][gitflow].
