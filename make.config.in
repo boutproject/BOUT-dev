@@ -178,8 +178,8 @@ else
 ####################################################################
 SUB_LIBS=$(DIRS:%=%.a)
 
-$(TARGET).cxx: checklib
-$(TARGET).o: $(LIB)
+*.cxx: checklib
+*.o: $(LIB)
 $(TARGET): makefile $(BOUT_TOP)/make.config $(OBJ) $(SUB_LIBS)
 	@echo "  Linking" $(TARGET)
 	@$(LD) $(LDFLAGS) -o $(TARGET) $(OBJ) $(BOUT_LIBS) $(SUB_LIBS)
