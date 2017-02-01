@@ -7,11 +7,10 @@ The documentation is divided into three main sections:
 * :ref:`developer-docs`
 * :ref:`api-ref`
 
-.. _user-docs:
-
 .. toctree::
    :maxdepth: 1
    :caption: User Documentation
+   :name: user-docs
 
    user_docs/introduction
    user_docs/getting_started
@@ -44,11 +43,10 @@ The documentation is divided into three main sections:
    user_docs/fourier_transform_derivatives
    user_docs/examples
 
-.. _developer-docs:
-
 .. toctree::
    :maxdepth: 1
    :caption: Developer Documentation
+   :name: developer-docs
 
    developer_docs/introduction
    developer_docs/CONTRIBUTING.md
@@ -63,11 +61,10 @@ The documentation is divided into three main sections:
    developer_docs/file_io
    developer_docs/misc
 
-.. _api-ref:
-
 .. toctree::
    :maxdepth: 1
    :caption: API Reference
+   :name: api-ref
    :glob:
 
    _breathe_autogen/*
