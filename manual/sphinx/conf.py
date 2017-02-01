@@ -192,6 +192,6 @@ texinfo_documents = [
 
 # -- Options for breathe extension ----------------------------------------
 
-breathe_projects = { "BOUT++": "/home/peter/Codes/BOUT-dev-clean/manual/doxygen/bout/xml" }
+breathe_projects = { "BOUT++": "../doxygen/bout/xml" }
 breathe_default_project = "BOUT++"
 breathe_default_members = ("members", "protected-members", "private-members", "undoc-members")

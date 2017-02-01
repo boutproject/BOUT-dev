@@ -230,7 +230,7 @@ distclean: clean
 MANUAL_DIR=$(BOUT_TOP)/manual
 
 doxygen:
-	doxygen $(MANUAL_DIR)/doxygen/Doxyfile
+	cd $(MANUAL_DIR)/doxygen && doxygen Doxyfile
 
 breathe-autogen: doxygen
 	breathe-apidoc -f -o $(MANUAL_DIR)/sphinx/_breathe_autogen $(MANUAL_DIR)/doxygen/bout/xml
