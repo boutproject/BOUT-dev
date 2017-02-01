@@ -64,32 +64,36 @@ Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), f
 Datafile::Datafile(const Datafile &other) :
   parallel(other.parallel), flush(other.flush), guards(other.guards), 
   floats(other.floats), openclose(other.openclose), Lx(other.Lx), Ly(other.Ly), Lz(other.Lz), 
-  enabled(other.enabled), shiftOutput(other.shiftOutput), file(NULL), int_arr(other.int_arr), 
+  enabled(other.enabled), shiftOutput(other.shiftOutput), file(other.file), int_arr(other.int_arr), 
   BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr), 
-  f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {
-  filenamelen=FILENAMELEN;
+  f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr), filenamelen(other.filenamelen) {
   filename=new char[filenamelen];
-  // Same added variables, but the file not the same 
+  for (int i=0;i<filenamelen;++i){
+    filename[i]=other.filename[i];
+  }
 }
 
 Datafile& Datafile::operator=(const Datafile &rhs) {
   parallel     = rhs.parallel;
   flush        = rhs.flush;
   guards       = rhs.guards;
-  floats     = rhs.floats;
+  floats       = rhs.floats;
   openclose    = rhs.openclose;
   enabled      = rhs.enabled;
   init_missing = rhs.init_missing;
   shiftOutput  = rhs.shiftOutput;
-  file         = NULL; // All values copied except this
+  file         = rhs.file;
   int_arr      = rhs.int_arr;
   BoutReal_arr = rhs.BoutReal_arr;
   f2d_arr      = rhs.f2d_arr;
   f3d_arr      = rhs.f3d_arr;
   v2d_arr      = rhs.v2d_arr;
   v3d_arr      = rhs.v3d_arr;
-  filenamelen=FILENAMELEN;
+  filenamelen  = rhs.filenamelen;
   filename     = new char[filenamelen];
+  for (int i=0;i<filenamelen;++i){
+    filename[i]=rhs.filename[i];
+  }
   return *this;
 }
 
