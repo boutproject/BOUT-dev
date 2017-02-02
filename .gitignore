@@ -35,3 +35,4 @@ test*.py
 *.gcda
 *.gcno
 bout-coverage/
+generated*xx
