@@ -158,7 +158,6 @@ public:
    * Add an offset to the index for general stencils
    */
   const Indices offset(int dx, int dy, int dz) const {
-    int nz = zend-zstart+1;
     if (dz>0){
       int zp=z;
       for (int j=0;j<dz;++j)
