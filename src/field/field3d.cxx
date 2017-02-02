@@ -1191,7 +1191,7 @@ void checkData(const Field3D &f)  {
 #endif
 }
 
-void checkData(const BoutReal &f) {
+void checkData(const BoutReal f) {
   if (!finite(f)){
     throw BoutException("BoutReal: Operation on non-finite data");
   }
