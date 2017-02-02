@@ -2,6 +2,8 @@
 *.log.*
 *.restart.*
 
+*.pdf
+
 gas_compress
 2fluid
 mhd
@@ -9,3 +11,7 @@ ue_bmark
 lapd_drift
 test_io
 jorek_compare
+wave
+cyto
+test
+test_[^.]*
