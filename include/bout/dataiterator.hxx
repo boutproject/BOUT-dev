@@ -159,7 +159,17 @@ public:
    */
   const Indices offset(int dx, int dy, int dz) const {
     int nz = zend-zstart+1;
-    return {x+dx, y+dy, ((z+dz-zstart + nz) % nz) + zstart};
+    if (dz>0){
+      int zp=z;
+      for (int j=0;j<dz;++j)
+        zp=(zp == zend ? zstart : zp+1);
+      return {x+dx, y+dy, zp };
+    } else {
+      int zm=z;
+      for (;dz!= 0;++dz)
+        zm = (zm == zstart ? zend : zm-1);
+      return {x+dx, y+dy, zm };
+    }
   }
   
   /*
