@@ -230,13 +230,20 @@ const Field3D& Field3D::ynext(int dir) const {
 }
 
 void Field3D::setLocation(CELL_LOC loc) {
-  if(loc == CELL_VSHIFT)
-    throw BoutException("Field3D: CELL_VSHIFT cell location only makes sense for vectors");
-  
-  if(loc == CELL_DEFAULT)
-    loc = CELL_CENTRE;
-  
-  location = loc;
+  bool stag = mesh->StaggerGrids;
+  if (this->fieldmesh)
+    stag=this->fieldmesh->StaggerGrids;
+  if (stag){
+    if(loc == CELL_VSHIFT)
+      throw BoutException("Field3D: CELL_VSHIFT cell location only makes sense for vectors");
+    
+    if(loc == CELL_DEFAULT)
+      loc = CELL_CENTRE;
+    
+    location = loc;
+  } else {
+    location = CELL_CENTRE;
+  }
 }
 
 CELL_LOC Field3D::getLocation() const {
