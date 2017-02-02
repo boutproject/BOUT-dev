@@ -1,11 +1,12 @@
 Welcome to BOUT++'s documentation!
 ==================================
 
-The documentation is divided into three main sections:
+The documentation is divided into two main sections:
 
 * :ref:`user-docs`
 * :ref:`developer-docs`
-* :ref:`api-ref`
+..
+   * :ref:`api-ref`
 
 .. toctree::
    :maxdepth: 1
@@ -61,13 +62,14 @@ The documentation is divided into three main sections:
    developer_docs/file_io
    developer_docs/misc
 
-.. toctree::
-   :maxdepth: 1
-   :caption: API Reference
-   :name: api-ref
-   :glob:
+..
+   .. toctree::
+      :maxdepth: 1
+      :caption: API Reference
+      :name: api-ref
+      :glob:
 
-   _breathe_autogen/*
+      _breathe_autogen/*
 
 Indices and tables
 ==================
