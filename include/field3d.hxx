@@ -672,10 +672,10 @@ bool finite(const Field3D &var);
 
 #ifdef CHECK
 void checkData(const Field3D &f); ///< Checks if the data is valid.
-void checkData(const BoutReal &f); ///< Checks if the data is valid.
+void checkData(BoutReal f); ///< Checks if the data is valid.
 #else
 inline void checkData(const Field3D &f){;}; ///< if CHECK is disabled, ignore
-inline void checkData(const BoutReal &f){;}; ///< if CHECK is disabled, ignore
+inline void checkData(BoutReal f){;}; ///< if CHECK is disabled, ignore
 #endif
  
 /*!
