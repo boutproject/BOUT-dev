@@ -88,12 +88,14 @@ Datafile& Datafile::operator=(const Datafile &rhs) {
   f3d_arr      = rhs.f3d_arr;
   v2d_arr      = rhs.v2d_arr;
   v3d_arr      = rhs.v3d_arr;
-  filenamelen=FILENAMELEN;
-  filename     = new char[filenamelen];
   return *this;
 }
 
 Datafile::~Datafile() {
+  if (file){
+    delete file;
+    file = NULL;
+  }
   delete[] filename;
 }
 
@@ -528,7 +530,7 @@ bool Datafile::write(const char *format, ...) const {
   if(format == (const char*) NULL)
     throw BoutException("Datafile::write: No argument given!");
 
-  int filenamelen=512;
+  int filenamelen=FILENAMELEN;
   char * filename=new char[filenamelen];
 
   bout_vsnprintf(filename, filenamelen, format);
@@ -539,6 +541,8 @@ bool Datafile::write(const char *format, ...) const {
   tmp.openw(filename);
   bool ret = tmp.write();
   tmp.close();
+
+  delete[] filename;
   
   return ret;
 }
