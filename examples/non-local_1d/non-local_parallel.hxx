@@ -64,7 +64,7 @@ public:
 //   NonLocalParallel();
   ~NonLocalParallel();
   int moments_number;
-  void initialise(const BoutReal &pass_electron_charge, const BoutReal &pass_electron_mass, const BoutReal &pass_ion_mass, const BoutReal &pass_epsilon_0, const BoutReal &pass_logLambda, const bool pass_fluxes_location_is_ylow=false, const BoutReal &pass_gamma_factor=5./3.);
+  void initialise(BoutReal pass_electron_charge, BoutReal pass_electron_mass, BoutReal pass_ion_mass, BoutReal pass_epsilon_0, BoutReal pass_logLambda, const bool pass_fluxes_location_is_ylow=false, BoutReal pass_gamma_factor=5./3.);
   #ifdef CALCULATE_HEATFLUX
     Field3D electron_heat_flux;
   #endif
@@ -93,7 +93,7 @@ public:
   
   // Bit of a hack: should put the method somewhere more sensible (like in boutmesh.cxx)
   void y_broadcast(void* input_buffer, const int &size, const int &root_processor); // NB Assumes that the mesh is BoutMesh
-  void y_boundary_broadcast(BoutReal* input_buffer, const int &size, const int &root_processor); // NB Assumes that the mesh is BoutMesh
+  
   void rms_over_y(const Field3D &input_field, FieldPerp &output_field);
   void mean_over_y(const Field3D &input_field, FieldPerp &output_field, int exclude_edgecells=0);
   BoutReal interp_to_point_YLOW(const Field3D &input, bindex &position);
@@ -209,7 +209,6 @@ private:
   #endif
   int NONLOCAL_PARALLEL_TAGBASE;
   MPI_Request broadcast_request;
-  MPI_Comm comm_yprocs;
   MPI_Comm comm_yprocs_minusone;
   bindex* position;
   bool fluxes_location_is_ylow;

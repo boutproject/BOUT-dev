@@ -561,7 +561,7 @@ int physics_run(BoutReal t) {
     break;
   }
   default: {
-    bout_error("ERROR: Invalid bkgd option\n");
+    throw BoutException("ERROR: Invalid bkgd option\n");
   }
   }
 
@@ -601,9 +601,9 @@ int physics_run(BoutReal t) {
       // Use BOUT-06 method, no communications
       
       jpar.allocate();
-      for(int jx=0;jx<mesh->ngx;jx++)
-	for(int jy=0;jy<mesh->ngy;jy++)
-	  for(int jz=0;jz<mesh->ngz;jz++) {
+      for(int jx=0;jx<mesh->LocalNx;jx++)
+	for(int jy=0;jy<mesh->LocalNy;jy++)
+	  for(int jz=0;jz<mesh->LocalNz;jz++) {
 	    BoutReal dNi_dpar, dPhi_dpar;
 	  
 	    // parallel derivs at left guard point
@@ -908,7 +908,7 @@ int physics_run(BoutReal t) {
     break;
   }
   default: {
-    bout_error("ERROR: invalid option for iTe_dc\n");
+    throw BoutException("ERROR: invalid option for iTe_dc\n");
   }
   }
   

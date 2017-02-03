@@ -561,7 +561,7 @@ int physics_run(BoutReal t) {
     break;
   }
   default: {
-    bout_error("ERROR: Invalid bkgd option\n");
+    throw BoutException("ERROR: Invalid bkgd option\n");
   }
   }
 
@@ -579,57 +579,21 @@ int physics_run(BoutReal t) {
   ////////////////////////////////////////////////////////
   if(ZeroElMass) {
     // Set jpar,Ve,Ajpar neglecting the electron inertia term
-
-    if(!bout_jpar) {
-      // Calculate Jpar, communicating across processors
-      if(!stagger) {
-	jpar = -(Ni0*Grad_par(phi, CELL_YLOW)) / (fmei*0.51*nu);
-	
-	if(OhmPe)
-	  jpar += (Te0*Grad_par(Ni, CELL_YLOW)) / (fmei*0.51*nu);
-      }else {
-	jpar = -(Ni0*Grad_par_LtoC(phi))/(fmei*0.51*nu);
-	
-	if(OhmPe)
-	  jpar += (Te0*Grad_par_LtoC(Ni)) / (fmei*0.51*nu);
-      }
+    // Calculate Jpar, communicating across processors
+    if(!stagger) {
+      jpar = -(Ni0*Grad_par(phi, CELL_YLOW)) / (fmei*0.51*nu);
       
-      // Need to communicate jpar
-      mesh->communicate(jpar);
-      
+      if(OhmPe)
+        jpar += (Te0*Grad_par(Ni, CELL_YLOW)) / (fmei*0.51*nu);
     }else {
-      // Use BOUT-06 method, no communications
+      jpar = -(Ni0*Grad_par_LtoC(phi))/(fmei*0.51*nu);
       
-      jpar.allocate();
-      for(int jx=0;jx<mesh->ngx;jx++)
-	for(int jy=0;jy<mesh->ngy;jy++)
-	  for(int jz=0;jz<mesh->ngz;jz++) {
-	    BoutReal dNi_dpar, dPhi_dpar;
-	  
-	    // parallel derivs at left guard point
-	    if (jy<mesh->ystart){
-	      dNi_dpar=-1.5*Ni[jx][jy][jz] + 2.*Ni[jx][jy+1][jz] - 0.5*Ni[jx][jy+2][jz];
-	      dPhi_dpar=-1.5*phi[jx][jy][jz] + 2.*phi[jx][jy+1][jz] - 0.5*phi[jx][jy+2][jz];
-	    }else if (jy>mesh->yend){
-	      // parallel derivs at right guard point
-	      dNi_dpar = 1.5*Ni[jx][jy][jz] - 2.*Ni[jx][jy-1][jz] + 0.5*Ni[jx][jy-2][jz];
-	      dPhi_dpar = 1.5*phi[jx][jy][jz] - 2.*phi[jx][jy-1][jz] + 0.5*phi[jx][jy-2][jz];
-	    }else {
-	      dNi_dpar = 0.5*Ni[jx][jy+1][jz] - 0.5*Ni[jx][jy-1][jz];
-	      dPhi_dpar = 0.5*phi[jx][jy+1][jz] - 0.5*phi[jx][jy-1][jz];
-	    }
-	    
-	    BoutReal c0=((Bpxy[jx][jy]/mesh->Bxy[jx][jy])/hthe[jx][jy])/mesh->dy[jx][jy];
-	    dNi_dpar = dNi_dpar*c0;
-	    dPhi_dpar = dPhi_dpar*c0;
-	    
-	    jpar[jx][jy][jz] = -(1./fmei)*(1./(0.51*nu[jx][jy][jz]))*Ni0[jx][jy]*dPhi_dpar;
-	    if(OhmPe)
-	      jpar[jx][jy][jz] += (1./fmei)*(1./(0.51*nu[jx][jy][jz]))*Te0[jx][jy]*dNi_dpar;
-	      
-	  }
+      if(OhmPe)
+        jpar += (Te0*Grad_par_LtoC(Ni)) / (fmei*0.51*nu);
     }
     
+    // Need to communicate jpar
+    mesh->communicate(jpar);
     jpar.applyBoundary();
     
     Ve = Vi - jpar/Ni0;
@@ -908,7 +872,7 @@ int physics_run(BoutReal t) {
     break;
   }
   default: {
-    bout_error("ERROR: invalid option for iTe_dc\n");
+    throw BoutException("ERROR: invalid option for iTe_dc\n");
   }
   }
   

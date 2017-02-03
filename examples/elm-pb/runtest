@@ -13,7 +13,10 @@ shell("make > make.log")
 # Run simulation
 nproc = 2
 MPIRUN = getmpirun()
-s, out = launch("./elm_pb ", runcmd=MPIRUN, nproc=nproc)
+s, out = launch("./elm_pb ", runcmd=MPIRUN, nproc=nproc, pipe=True)
+
+with open("run.log", "w") as f:
+    f.write(out)
 
 # Get time base
 tarr = collect("t_array", path="data")

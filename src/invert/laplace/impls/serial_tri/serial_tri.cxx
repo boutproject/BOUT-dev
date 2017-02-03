@@ -44,23 +44,23 @@ LaplaceSerialTri::LaplaceSerialTri(Options *opt) : Laplacian(opt), A(0.0), C(1.0
 
   // Allocate memory
 
-  int ncz = mesh->ngz-1;
+  int ncz = mesh->LocalNz;
 
-  bk = cmatrix(mesh->ngx, ncz/2 + 1);
-  bk1d = new dcomplex[mesh->ngx];
+  bk = matrix<dcomplex>(mesh->LocalNx, ncz/2 + 1);
+  bk1d = new dcomplex[mesh->LocalNx];
 
-  xk = cmatrix(mesh->ngx, ncz/2 + 1);
-  xk1d = new dcomplex[mesh->ngx];
+  xk = matrix<dcomplex>(mesh->LocalNx, ncz/2 + 1);
+  xk1d = new dcomplex[mesh->LocalNx];
 
-  avec = new dcomplex[mesh->ngx];
-  bvec = new dcomplex[mesh->ngx];
-  cvec = new dcomplex[mesh->ngx];
+  avec = new dcomplex[mesh->LocalNx];
+  bvec = new dcomplex[mesh->LocalNx];
+  cvec = new dcomplex[mesh->LocalNx];
 }
 
 LaplaceSerialTri::~LaplaceSerialTri() {
-  free_cmatrix(bk);
+  free_matrix(bk);
   delete[] bk1d;
-  free_cmatrix(xk);
+  free_matrix(xk);
   delete[] xk1d;
 
   delete[] avec;
@@ -72,32 +72,37 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b) {
   return solve(b,b);   // Call the solver below
 }
 
+/*!
+ * Solve Ax=b for x given b
+ *
+ * This function will
+ *      1. Take the fourier transform of the y-slice given in the input
+ *      2. For each fourier mode
+ *          a) Set up the tridiagonal matrix
+ *          b) Call the solver which inverts the matrix Ax_mode = b_mode
+ *      3. Collect all the modes in a 2D array
+ *      4. Back transform the y-slice
+ *
+ * Input:
+ * \param[in] b     A 2D variable that will be fourier decomposed, each fourier
+ *                  mode of this variable is going to be the right hand side of
+ *                  the equation Ax = b
+ * \param[in] x0    Variable used to set BC (if the right flags are set, see
+ *                  the user manual)
+ *
+ * \param[out] x    The inverted variable.
+ */
 const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0) {
-  /* Function: LaplaceSerialTri::solve
-   * Purpose:  - Take the fourier transform of the y-slice given in the input
-   *           - For each fourier mode
-   *             - Set up the tridiagonal matrix
-   *             - Call the solver which inverts the matrix Ax_mode = b_mode
-   *           - Collect all the modes in a 2D array
-   *           - Back transform the y-slice
-   *
-   * Input:
-   * b        - A 2D variable that will be fourier decomposed, each fourier
-   *            mode of this variable is going to be the right hand side of the
-   *            equation Ax = b
-   * x0       - Variable eventually used to set BC
-   *
-   * Output:
-   * x        - The inverted variable.
-   */
   FieldPerp x;
   x.allocate();
+
+  Coordinates *coord = mesh->coordinates();
 
   int jy = b.getIndex();
   x.setIndex(jy);
 
-  int ncz = mesh->ngz-1; // No of z pnts (counts from 1 to easily convert to kz)
-  int ncx = mesh->ngx-1; // No of x pnts (counts from 0)
+  int ncz = mesh->LocalNz; // No of z pnts (counts from 1 to easily convert to kz)
+  int ncx = mesh->LocalNx-1; // No of x pnts (counts from 0)
 
   // Setting the width of the boundary.
   // NOTE: The default is a width of 2 guard cells
@@ -113,7 +118,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
     outbndry = 1;
 
   #pragma omp parallel for
-  for(int ix=0;ix<mesh->ngx;ix++) {
+  for(int ix=0;ix<mesh->LocalNx;ix++) {
     /* This for loop will set the bk (initialized by the constructor)
      * bk is the z fourier modes of b in z
      * If the INVERT_SET flag is set (meaning that x0 will be used to set the
@@ -123,14 +128,15 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
        ((ncx-ix < outbndry) && (outer_boundary_flags & INVERT_SET))) {
       // Use the values in x0 in the boundary
 
-      // x0 and mesh->zShift are the inputs
+      // x0 is the input
       // bk is the output
-      ZFFT(x0[ix], mesh->zShift[ix][jy], bk[ix]);
+      rfft(x0[ix], ncz, bk[ix]);
 
-    }else
-      // b and mesh->zShift are the inputs
+    }else {
+      // b is the input
       // bk is the output
-      ZFFT(b[ix], mesh->zShift[ix][jy], bk[ix]);
+      rfft(b[ix], ncz, bk[ix]);
+    }
   }
 
   /* Solve differential equation in x for each fourier mode
@@ -164,21 +170,23 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
                  kz,
                  // wave number (different from kz only if we are taking a part
                  // of the z-domain [and not from 0 to 2*pi])
-                 kz*2.0*PI/mesh->zlength(),
+                 kz*2.0*PI/coord->zlength(),
                  global_flags, inner_boundary_flags, outer_boundary_flags,
                  &A, &C, &D);
 
     ///////// PERFORM INVERSION /////////
     if(!mesh->periodicX) {
       // Call tridiagonal solver
-      tridag(avec, bvec, cvec, bk1d, xk1d, mesh->ngx);
+      tridag(avec, bvec, cvec, bk1d, xk1d, mesh->LocalNx);
+
     } else {
       // Periodic in X, so cyclic tridiagonal
-      cyclic_tridag(avec+2, bvec+2, cvec+2, bk1d+2, xk1d+2, mesh->ngx-4);
+      cyclic_tridag(avec+2, bvec+2, cvec+2, bk1d+2, xk1d+2, mesh->LocalNx-4);
+
       // Copy boundary regions
       for(int ix=0;ix<2;ix++) {
-        xk1d[ix] = xk1d[mesh->ngx-4+ix];
-        xk1d[mesh->ngx-2+ix] = xk1d[2+ix];
+        xk1d[ix] = xk1d[mesh->LocalNx-4+ix];
+        xk1d[mesh->LocalNx-2+ix] = xk1d[2+ix];
       }
     }
 
@@ -204,13 +212,13 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
     if(global_flags & INVERT_ZERO_DC)
       xk[ix][0] = 0.0;
 
-    ZFFT_rev(xk[ix], mesh->zShift[ix][jy], x[ix]);
+    irfft(xk[ix], ncz, x[ix]);
 
-    x[ix][mesh->ngz-1] = x[ix][0]; // enforce periodicity
-
-    for(int kz=0;kz<mesh->ngz;kz++)
-      if(!finite(x[ix][kz]))
+#if CHECK > 2
+    for(int kz=0;kz<ncz;kz++)
+      if(!finite(x(ix,kz)))
         throw BoutException("Non-finite at %d, %d, %d", ix, jy, kz);
+#endif
   }
 
   return x; // Result of the inversion

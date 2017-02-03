@@ -55,8 +55,7 @@ class LaplaceGMRES : public Inverter {
   
   bool enable_a, enable_c; // Terms enabled
   Field3D a3d, c3d;
-  
-  bool use_precon;
+
   Field2D a2d, c2d;  // DC components (for preconditioner)
   Field2D *aptr, *cptr; // Pointers to the 2D variables (for passing to preconditioner)
 };

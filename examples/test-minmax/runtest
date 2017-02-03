@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+make || exit
+
+./test > log || exit
+
+echo "Test Succesfull"

@@ -41,65 +41,98 @@ class Vector2D;
 class Field3D;  //#include "field3d.hxx"
 class Vector3D; //#include "vector3d.hxx"
 
+/*!
+ * A vector with three components (x,y,z) which only vary in 2D
+ * (x and y). Implemented as a collection of three Field2D objects.
+ */ 
 class Vector2D : public FieldData {
  public:
   Vector2D();
   Vector2D(const Vector2D &f);
   ~Vector2D();
 
-  Field2D x, y, z; // components
+  Field2D x, y, z; ///< components
 
-  bool covariant; // true if the components are covariant (default)
+  bool covariant; ///< true if the components are covariant (default)
 
+  /// In-place conversion to covariant form
   void toCovariant();
+
+  /// In-place conversion to contravariant form
   void toContravariant();
 
   /// Return a pointer to the time-derivative field
   Vector2D* timeDeriv();
 
-  // Assignment
-
+  /// Assignment
   Vector2D & operator=(const Vector2D &rhs);
-  BoutReal operator=(const BoutReal val);
+
+  /*!
+   * Assign a BoutReal value. This sets all components
+   * to the same value \p val.
+   *
+   * Vector2D v = 0.0;
+   *
+   * is equivalent to
+   *
+   * Vector2D v;
+   * v.x = 0.0;
+   * v.y = 0.0;
+   * v.z = 0.0;
+   *
+   * The only real use for this is setting vector to zero.
+   */
+  BoutReal operator=(BoutReal val);
 
   // operators
 
   Vector2D & operator+=(const Vector2D &rhs);
+
+  /// Unary minus, changes sign of all components
   const Vector2D operator-() const;
+
+  /// Subtract another vector
   Vector2D & operator-=(const Vector2D &rhs);
-  
-  Vector2D & operator*=(const BoutReal rhs);
+
+  /// Multiply all components by \p rhs
+  Vector2D & operator*=(BoutReal rhs);
+
+  /// Multiply all components by \p rhs
   Vector2D & operator*=(const Field2D &rhs);
 
-  Vector2D & operator/=(const BoutReal rhs);
+  /// Divide all components by \p rhs
+  Vector2D & operator/=(BoutReal rhs);
+
+  /// Divide all components by \p rhs
   Vector2D & operator/=(const Field2D &rhs);
 
+  /// Cross-product of two vectors
   Vector2D & operator^=(const Vector2D &rhs);
 
   // Binary operators
+  
+  const Vector2D operator+(const Vector2D &rhs) const; ///< Addition
+  const Vector3D operator+(const Vector3D &rhs) const; ///< Addition
 
-  const Vector2D operator+(const Vector2D &rhs) const; 
-  const Vector3D operator+(const Vector3D &rhs) const;
+  const Vector2D operator-(const Vector2D &rhs) const; ///< Subtract vector \p rhs
+  const Vector3D operator-(const Vector3D &rhs) const; ///< Subtract vector \p rhs
 
-  const Vector2D operator-(const Vector2D &rhs) const;
-  const Vector3D operator-(const Vector3D &rhs) const;
+  const Vector2D operator*(BoutReal rhs) const; ///< Multiply all components by \p rhs
+  const Vector2D operator*(const Field2D &rhs) const; ///< Multiply all components by \p rhs
+  const Vector3D operator*(const Field3D &rhs) const; ///< Multiply all components by \p rhs
 
-  const Vector2D operator*(const BoutReal rhs) const;
-  const Vector2D operator*(const Field2D &rhs) const;
-  const Vector3D operator*(const Field3D &rhs) const;
+  const Vector2D operator/(BoutReal rhs) const; ///< Divides all components by \p rhs
+  const Vector2D operator/(const Field2D &rhs) const; ///< Divides all components by \p rhs
+  const Vector3D operator/(const Field3D &rhs) const; ///< Divides all components by \p rhs
 
-  const Vector2D operator/(const BoutReal rhs) const;
-  const Vector2D operator/(const Field2D &rhs) const;
-  const Vector3D operator/(const Field3D &rhs) const;
+  const Field2D operator*(const Vector2D &rhs) const; ///< Dot product
+  const Field3D operator*(const Vector3D &rhs) const; ///< Dot product
 
-  const Field2D operator*(const Vector2D &rhs) const; // Dot product
-  const Field3D operator*(const Vector3D &rhs) const;
-
-  const Vector2D operator^(const Vector2D &rhs) const; // Cross product
-  const Vector3D operator^(const Vector3D &rhs) const;
-
-  // Non-member functions
-  friend const Field2D abs(const Vector2D &v);
+  const Vector2D operator^(const Vector2D &rhs) const; ///< Cross product
+  const Vector3D operator^(const Vector3D &rhs) const; ///< Cross product
+  
+  /// Visitor pattern support
+  void accept(FieldVisitor &v) override;
   
   // FieldData virtual functions
   
@@ -111,7 +144,8 @@ class Vector2D : public FieldData {
   int  getData(int jx, int jy, int jz, BoutReal *rptr) const;
   int  setData(int jx, int jy, int jz, void *vptr);
   int  setData(int jx, int jy, int jz, BoutReal *rptr);
-  
+
+  /// Apply boundary condition to all fields
   void applyBoundary(bool init=false);
   void applyTDerivBoundary();
  private:
@@ -121,9 +155,16 @@ class Vector2D : public FieldData {
 
 // Non-member overloaded operators
 
-const Vector2D operator*(const BoutReal lhs, const Vector2D &rhs);
+const Vector2D operator*(BoutReal lhs, const Vector2D &rhs);
 const Vector2D operator*(const Field2D &lhs, const Vector2D &rhs);
 const Vector3D operator*(const Field3D &lhs, const Vector2D &rhs);
+
+/*!
+ * Absolute value (Modulus) of given vector \p v
+ *
+ * |v| = sqrt( v dot v )
+ */
+const Field2D abs(const Vector2D &v);
 
 /*!
  * @brief Time derivative of 2D vector field

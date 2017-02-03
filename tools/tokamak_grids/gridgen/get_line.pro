@@ -1,4 +1,4 @@
-FUNCTION get_line, interp_data, R, Z, ri0, zi0, fto, npt=npt
+FUNCTION get_line, interp_data, R, Z, ri0, zi0, fto, npt=npt, vec=vec, weight=weight
   IF NOT KEYWORD_SET(npt) THEN npt=10
   ; Get starting f
   

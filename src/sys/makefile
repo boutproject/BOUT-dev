@@ -1,10 +1,10 @@
 
 BOUT_TOP = ../..
 DIRS		= options
-SOURCEC		= boutexception.cxx comm_group.cxx derivs.cxx \
-		  diagnos.cxx msg_stack.cxx options.cxx output.cxx \
+SOURCEC		= array.cxx boutexception.cxx comm_group.cxx derivs.cxx \
+		  msg_stack.cxx options.cxx output.cxx \
 		  stencils.cxx utils.cxx optionsreader.cxx boutcomm.cxx \
-		  timer.cxx range.cxx petsclib.cxx expressionparser.cxx fci_derivs.cxx \
+		  timer.cxx range.cxx petsclib.cxx expressionparser.cxx \
 	          slepclib.cxx
 
 SOURCEH		= $(SOURCEC:%.cxx=%.hxx) globals.hxx bout_types.hxx multiostream.hxx

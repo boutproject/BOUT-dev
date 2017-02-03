@@ -34,13 +34,12 @@ int NNEIB=6; //-number of neighbors on stencil
 //long MXG=2;    //-radial guard cells
 
 /*auxiliary parameters*/
-//long NSMX, NSMXY, mesh->ngx, mesh->ngy, mesh->ngz, neq, local_N;
 
 
 void nrerror(string error_text)
 {
   msg_stack.push("Run-time error...\n%s\n", error_text.c_str());
-  bout_error("...now exiting to system...");
+  throw BoutException("...now exiting to system...");
 }
 
 
@@ -106,9 +105,9 @@ void Neighbor(enum neib_type neib, long ix1, long iy1, long iz1, long *ix2, long
   //-next point in positive x-direction
   if(neib==xp1)
   {
-    if (ix1 == mesh->ngx-1)
+    if (ix1 == mesh->LocalNx-1)
     {
-      *ix2=0; //-open-periodic ([0,1,..mesh->ngx-1]) where 0<=>mesh->ngx
+      *ix2=0; //-open-periodic ([0,1,..mesh->LocalNx-1]) where 0<=>mesh->LocalNx
     }
     else
     {
@@ -122,7 +121,7 @@ void Neighbor(enum neib_type neib, long ix1, long iy1, long iz1, long *ix2, long
   {
     if (ix1 == 0)
     {
-      *ix2=mesh->ngx-1; //-open-periodic ([0,1,..mesh->ngx-1]) where 0<=>mesh->ngx
+      *ix2=mesh->LocalNx-1; //-open-periodic ([0,1,..mesh->LocalNx-1]) where 0<=>mesh->LocalNx
     }
     else
     {
@@ -134,9 +133,9 @@ void Neighbor(enum neib_type neib, long ix1, long iy1, long iz1, long *ix2, long
   //-next point in positive y-direction
   if(neib==yp1)
   {
-    if (iy1 == mesh->ngy-1)
+    if (iy1 == mesh->LocalNy-1)
     {
-      *iy2=0; //-open-periodic ([0,1,..mesh->ngy-1]) where 0<=>mesh->ngy
+      *iy2=0; //-open-periodic ([0,1,..mesh->LocalNy-1]) where 0<=>mesh->LocalNy
     }
     else
     {
@@ -150,7 +149,7 @@ void Neighbor(enum neib_type neib, long ix1, long iy1, long iz1, long *ix2, long
   {
     if (iy1 == 0)
     {
-      *iy2=mesh->ngy-1; //-open-periodic ([0,1,..mesh->ngy-1]) where 0<=>mesh->ngy
+      *iy2=mesh->LocalNy-1; //-open-periodic ([0,1,..mesh->LocalNy-1]) where 0<=>mesh->LocalNy
     }
     else
     {
@@ -162,9 +161,9 @@ void Neighbor(enum neib_type neib, long ix1, long iy1, long iz1, long *ix2, long
   //-next point in positive z-direction
   if(neib==zp1)
   {
-    if (iz1 == mesh->ngz-1)
+    if (iz1 == mesh->LocalNz)
     {
-      *iz2=1; //-closed-periodic ([0,1,..mesh->ngz-1]) where 0<=>mesh->ngz-1
+      *iz2=1; //-closed-periodic ([0,1,..mesh->LocalNz]) where 0<=>mesh->LocalNz
     }
     else
     {
@@ -178,7 +177,7 @@ void Neighbor(enum neib_type neib, long ix1, long iy1, long iz1, long *ix2, long
   {
     if (iz1 == 0)
     {
-      *iz2=mesh->ngz-2; //-closed-periodic ([0,1,..mesh->ngz-1]) where 0<=>mesh->ngz-1
+      *iz2=mesh->LocalNz-1; //-closed-periodic ([0,1,..mesh->LocalNz]) where 0<=>mesh->LocalNz
     }
     else
     {
@@ -211,21 +210,21 @@ int jstruc(int NVARS, int NXPE, int MXSUB, int NYPE, int MYSUB, int MZ, int MYG,
 
 
   /*calculate auxiliary parametes*/
-  mesh->ngx=MXSUB*mesh->NXPE+4; //-guard cells
-  mesh->ngy=MYSUB*NYPE;
-  mesh->ngz=MZ;
-  int ncz=mesh->ngz-1;
-  int NSMX = NVARS*mesh->ngx;
-  int NSMXY = NVARS*mesh->ngx*MYSUB;
-  neq = NVARS*mesh->ngx*mesh->ngy*ncz;
+  mesh->LocalNx=MXSUB*mesh->NXPE+4; //-guard cells
+  mesh->LocalNy=MYSUB*NYPE;
+  mesh->LocalNz=MZ;
+  int ncz=mesh->LocalNz;
+  int NSMX = NVARS*mesh->LocalNx;
+  int NSMXY = NVARS*mesh->LocalNx*MYSUB;
+  neq = NVARS*mesh->LocalNx*mesh->LocalNy*ncz;
   //local_N = NVARS*MXSUB*MYSUB*mesh->ngz;
 
 
   output << endl << "jstruc(): " << endl;
   output << "NVARS=" << NVARS << endl;
-  output << "mesh->ngx" << mesh->ngx << endl;
-  output << "mesh->ngy" << mesh->ngy << endl;
-  output << "mesh->ngz" << mesh->ngz << endl;
+  output << "mesh->LocalNx" << mesh->LocalNx << endl;
+  output << "mesh->LocalNy" << mesh->LocalNy << endl;
+  output << "mesh->LocalNz" << mesh->LocalNz << endl;
   output << "neq=" << neq << endl;
 
   //-allocate matrix for the jacobian (use list instead)
@@ -239,7 +238,7 @@ int jstruc(int NVARS, int NXPE, int MXSUB, int NYPE, int MYSUB, int MZ, int MYG,
   {
     for (ivar2=1;ivar2<=NVARS;ivar2++)
   	{
-  	  for (ix1=0;ix1<mesh->ngx;ix1++)
+  	  for (ix1=0;ix1<mesh->LocalNx;ix1++)
 	    {
         for (iy1=0;iy1<MYSUB;iy1++)
     		{
@@ -293,7 +292,7 @@ int jstruc(int NVARS, int NXPE, int MXSUB, int NYPE, int MYSUB, int MZ, int MYG,
   {
     for (ivar2=1;ivar2<=NVARS;ivar2++)
     {
-      for (ix1=0;ix1<mesh->ngx;ix1++)
+      for (ix1=0;ix1<mesh->LocalNx;ix1++)
       {
         for (iy1=0;iy1<MYSUB;iy1++)
         {
@@ -347,7 +346,7 @@ int jstruc(int NVARS, int NXPE, int MXSUB, int NYPE, int MYSUB, int MZ, int MYG,
 
   for (ivar1=1;ivar1<=NVARS;ivar1++)
   {
-    for (ix1=0;ix1<mesh->ngx;ix1++)
+    for (ix1=0;ix1<mesh->LocalNx;ix1++)
     {
       for (iy1=0;iy1<MYSUB;iy1++)
       {
@@ -358,7 +357,7 @@ int jstruc(int NVARS, int NXPE, int MXSUB, int NYPE, int MYSUB, int MZ, int MYG,
     		  ij1=Map2sv(ivar1,ix1,iy1,iz1, NVARS,NSMX,NSMXY);
 		  
 		    
-    		  for (ix2=0;ix2<mesh->ngx;ix2++)
+    		  for (ix2=0;ix2<mesh->LocalNx;ix2++)
   		    {
   		      for (iz2=0;iz2<MZ;iz2++) 
       			{

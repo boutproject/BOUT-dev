@@ -48,7 +48,6 @@ const char DEFAULT_OPT[] = "BOUT.inp";
 #include <bout/solver.hxx>
 #include <boutexception.hxx>
 #include <optionsreader.hxx>
-#include <derivs.hxx>
 #include <msg_stack.hxx>
 
 #include <bout/sys/timer.hxx>
@@ -77,6 +76,9 @@ using std::list;
 #ifdef SIGHANDLE
 #include <signal.h>
 void bout_signal_handler(int sig);  // Handles segmentation faults
+#endif
+#ifdef BOUT_FPE
+#include <fenv.h>
 #endif
 
 #include <output.hxx>
@@ -115,8 +117,14 @@ int BoutInitialise(int &argc, char **&argv) {
 #ifdef SIGHANDLE
   /// Set a signal handler for segmentation faults
   signal(SIGSEGV, bout_signal_handler);
+#ifdef BOUT_FPE
+  signal(SIGFPE,  bout_signal_handler);
 #endif
-
+#endif
+#ifdef BOUT_FPE
+  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+#endif
+  
   // Set default data directory
   data_dir = DEFAULT_DIR;
   opt_file = DEFAULT_OPT;
@@ -216,12 +224,6 @@ int BoutInitialise(int &argc, char **&argv) {
   output.write("\tSignal handling disabled\n");
 #endif
 
-#ifdef PDBF
-  output.write("\tPDB support enabled\n");
-#else
-  output.write("\tPDB support disabled\n");
-#endif
-
 #ifdef NCDF
   output.write("\tnetCDF support enabled\n");
 #else
@@ -235,13 +237,17 @@ int BoutInitialise(int &argc, char **&argv) {
 #endif
 
 #ifdef _OPENMP
-  output.write("\tOpenMP parallelisation enabled\n");
+  output.write("\tOpenMP parallelisation enabled, using %d threads\n",omp_get_max_threads());
 #else
   output.write("\tOpenMP parallelisation disabled\n");
 #endif
 
 #ifdef METRIC3D
   output.write("\tRUNNING IN 3D-METRIC MODE\n");
+#endif
+
+#ifdef BOUT_FPE
+  output.write("\tFloatingPointExceptions enabled\n");
 #endif
 
   /// Get the options tree
@@ -262,6 +268,11 @@ int BoutInitialise(int &argc, char **&argv) {
 
   try {
     /////////////////////////////////////////////
+    
+    mesh = Mesh::create();  ///< Create the mesh
+    mesh->load();           ///< Load from sources. Required for Field initialisation
+    mesh->setParallelTransform(); ///< Set the parallel transform from options
+    /////////////////////////////////////////////
     /// Get some settings
 
     // Check if restarting
@@ -270,25 +281,11 @@ int BoutInitialise(int &argc, char **&argv) {
 
     /// Get file extensions
     options->get("dump_format", dump_ext, "nc");
-
-    /// Setup derivative methods
-    if (derivs_init()) {
-      output.write("Failed to initialise derivative methods. Aborting\n");
-      return 1;
-    }
-
-    ///////////////////////////////////////////////
-    
-    mesh = Mesh::create();  ///< Create the mesh
-    mesh->load();           ///< Load from sources. Required for Field initialisation
     
     ////////////////////////////////////////////
 
     // Set up the "dump" data output file
     output << "Setting up output (dump) file\n";
-
-    if(!options->getSection("output")->isSet("floats"))
-      options->getSection("output")->set("floats", true, "default"); // by default output floats
 
     dump = Datafile(options->getSection("output"));
     
@@ -300,9 +297,9 @@ int BoutInitialise(int &argc, char **&argv) {
     }
 
     /// Add book-keeping variables to the output files
-    dump.writeVar(BOUT_VERSION, "BOUT_VERSION");
-    dump.add(simtime, "t_array", 1); // Appends the time of dumps into an array
-    dump.add(iteration, "iteration", 0);
+    dump.add(const_cast<BoutReal&>(BOUT_VERSION), "BOUT_VERSION", false);
+    dump.add(simtime, "t_array", true); // Appends the time of dumps into an array
+    dump.add(iteration, "iteration", false);
 
     ////////////////////////////////////////////
 
@@ -343,8 +340,7 @@ int BoutFinalise() {
   Laplacian::cleanup();
 
   // Delete field memory
-  Field2D::cleanup();
-  Field3D::cleanup();
+  Array<double>::cleanup();
 
   // Cleanup boundary factory
   BoundaryFactory::cleanup();
@@ -485,24 +481,8 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
  **************************************************************************/
 
 /// Print an error message and exit
-void bout_error() {
-  bout_error(NULL);
-}
-
 void bout_error(const char *str) {
-  output.write("****** ERROR CAUGHT ******\n");
-
-  if (str != NULL) output.write(str);
-
-  output.write("\n");
-
-#ifdef CHECK
-  msg_stack.dump();
-#endif
-
-  MPI_Abort(BoutComm::get(), 1);
-
-  exit(1);
+  throw BoutException(str);
 }
 
 #ifdef SIGHANDLE
@@ -510,14 +490,31 @@ void bout_error(const char *str) {
 void bout_signal_handler(int sig) {
   /// Set signal handler back to default to prevent possible infinite loop
   signal(SIGSEGV, SIG_DFL);
+  // print number of process to stderr, so the user knows which log to check
+  int world_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+  fprintf(stderr,"\nSighandler called on process %d with sig %d\n"
+          ,world_rank,sig);
 
-  output.write("\n****** SEGMENTATION FAULT CAUGHT ******\n\n");
-#ifdef CHECK
-  /// Print out the message stack to help debugging
-  msg_stack.dump();
-#else
-  output.write("Enable checking (-DCHECK flag) to get a trace\n");
-#endif
+  switch (sig){
+  case SIGSEGV:
+    throw BoutException("\n****** SEGMENTATION FAULT CAUGHT ******\n\n");
+    break;
+  case SIGFPE:
+    throw BoutException("\n****** Floating Point Exception "
+                        "(FPE) caught ******\n\n");
+    break;
+  case SIGINT:
+    throw BoutException("\n****** SigInt caught ******\n\n");
+    break;
+  case SIGKILL:
+    throw BoutException("\n****** SigKill caught ******\n\n");
+    break;
+  default:
+    throw BoutException("\n****** Signal %d  caught ******\n\n",sig);
+    break;
+  }
+
 
   exit(sig);
 }

@@ -8,14 +8,15 @@
 # export MPIRUN="mpirun -np"
 # export MPIRUN="aprun -n"
 
+from __future__ import print_function
 
 # List of directories containing test cases
-from __future__ import print_function
-tests = ['test-io', 'test-fieldfactory', 'test-laplace',
+tests = ['test-io', 'test-field', 'test-fieldfactory', 'test-laplace', 
          "test-cyclic", "test-invpar", "test-smooth", "test-gyro",
-         "test-delp2", "test-griddata",
+         "test-delp2", "test-griddata", "test-initial",
          "MMS/diffusion","MMS/wave-1d","MMS/wave-1d-y",
-         "drift-instability", 'interchange-instability']
+         "drift-instability", 'interchange-instability',
+         "test-minmax","test-code-style"]
 
 ##################################################################
 

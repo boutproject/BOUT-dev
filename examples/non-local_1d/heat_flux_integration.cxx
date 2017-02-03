@@ -72,7 +72,7 @@ void HeatFluxIntegration::initialise(const bool pass_electron_heat_flux_location
  *                            INTEGRATION ROUTINES
  **********************************************************************************/
 
-void HeatFluxIntegration::calculateIntegralBelow_cell_centre(const BoutReal &eigenvalue, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, const int &counter) {
+void HeatFluxIntegration::calculateIntegralBelow_cell_centre(BoutReal eigenvalue, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, const int &counter) {
 
   #ifdef CHECK
   msg_stack.push("HeatFluxIntegration::calculateIntegralBelow()");
@@ -87,10 +87,10 @@ void HeatFluxIntegration::calculateIntegralBelow_cell_centre(const BoutReal &eig
     else {
       // Set the value at ystart-1 equal to the value at yend on the previous processor.
       if (position->jx<mesh->DownXSplitIndex()) {
-	mesh->wait(mesh->irecvYInIndest(&integral_below[*position],1,HEATFLUX_INTEGRATION_TAGBASE + mesh->DownXSplitIndex()*mesh->ngz*counter + mesh->ngz*position->jx + position->jz));
+	mesh->wait(mesh->irecvYInIndest(&integral_below[*position],1,HEATFLUX_INTEGRATION_TAGBASE + mesh->DownXSplitIndex()*mesh->LocalNz*counter + mesh->LocalNz*position->jx + position->jz));
       }
       else {
-	mesh->wait(mesh->irecvYInOutdest(&integral_below[*position],1,HEATFLUX_INTEGRATION_TAGBASE + (mesh->ngx-mesh->DownXSplitIndex())*mesh->ngz*counter + mesh->ngz*(position->jx-mesh->DownXSplitIndex()) + position->jz));
+	mesh->wait(mesh->irecvYInOutdest(&integral_below[*position],1,HEATFLUX_INTEGRATION_TAGBASE + (mesh->LocalNx-mesh->DownXSplitIndex())*mesh->LocalNz*counter + mesh->LocalNz*(position->jx-mesh->DownXSplitIndex()) + position->jz));
       }
     }
     do {
@@ -140,11 +140,11 @@ void HeatFluxIntegration::calculateIntegralBelow_cell_centre(const BoutReal &eig
     // Send the value at yend to the next processor.
     if (position->jx < mesh->UpXSplitIndex()) {
       Timer timer("comms");
-      mesh->sendYOutIndest(&integral_below[*position],1,HEATFLUX_INTEGRATION_TAGBASE + mesh->UpXSplitIndex()*mesh->ngz*counter + mesh->ngz*position->jx + position->jz);
+      mesh->sendYOutIndest(&integral_below[*position],1,HEATFLUX_INTEGRATION_TAGBASE + mesh->UpXSplitIndex()*mesh->LocalNz*counter + mesh->LocalNz*position->jx + position->jz);
     }
     else {
       Timer timer("comms");
-      mesh->sendYOutOutdest(&integral_below[*position],1,HEATFLUX_INTEGRATION_TAGBASE + (mesh->ngx-mesh->UpXSplitIndex())*mesh->ngz*counter + mesh->ngz*(position->jx-mesh->UpXSplitIndex()) + position->jz);
+      mesh->sendYOutOutdest(&integral_below[*position],1,HEATFLUX_INTEGRATION_TAGBASE + (mesh->LocalNx-mesh->UpXSplitIndex())*mesh->LocalNz*counter + mesh->LocalNz*(position->jx-mesh->UpXSplitIndex()) + position->jz);
     }
     
   } while (next_indexperp(position));
@@ -155,7 +155,7 @@ void HeatFluxIntegration::calculateIntegralBelow_cell_centre(const BoutReal &eig
   
 }
 
-void HeatFluxIntegration::calculateIntegralAbove_cell_centre(const BoutReal &eigenvalue, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, const int &counter) {
+void HeatFluxIntegration::calculateIntegralAbove_cell_centre(BoutReal eigenvalue, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, const int &counter) {
 
   #ifdef CHECK
   msg_stack.push("HeatFluxIntegration::calculateIntegralAbove()");
@@ -170,10 +170,10 @@ void HeatFluxIntegration::calculateIntegralAbove_cell_centre(const BoutReal &eig
     else {
       // Set the value at yend+1 to the value at ystart on the previous processor.
       if (position->jx<mesh->UpXSplitIndex()) {
-	mesh->wait(mesh->irecvYOutIndest(&integral_above[position->jx][position->jyp][position->jz],1,HEATFLUX_INTEGRATION_TAGBASE + mesh->UpXSplitIndex()*mesh->ngz*counter + mesh->ngz*position->jx + position->jz));
+	mesh->wait(mesh->irecvYOutIndest(&integral_above[position->jx][position->jyp][position->jz],1,HEATFLUX_INTEGRATION_TAGBASE + mesh->UpXSplitIndex()*mesh->LocalNz*counter + mesh->LocalNz*position->jx + position->jz));
       }
       else {
-	mesh->wait(mesh->irecvYOutOutdest(&integral_above[position->jx][position->jyp][position->jz],1,HEATFLUX_INTEGRATION_TAGBASE + (mesh->ngx - mesh->UpXSplitIndex())*mesh->ngz*counter + mesh->ngz*(position->jx-mesh->UpXSplitIndex()) + position->jz));
+	mesh->wait(mesh->irecvYOutOutdest(&integral_above[position->jx][position->jyp][position->jz],1,HEATFLUX_INTEGRATION_TAGBASE + (mesh->LocalNx - mesh->UpXSplitIndex())*mesh->LocalNz*counter + mesh->LocalNz*(position->jx-mesh->UpXSplitIndex()) + position->jz));
       }
     }
     do {
@@ -228,11 +228,11 @@ void HeatFluxIntegration::calculateIntegralAbove_cell_centre(const BoutReal &eig
     // Send the value at ystart to the next processor.
     if (position->jx < mesh->DownXSplitIndex()) {
       Timer timer("comms");
-      mesh->sendYInIndest(&integral_above[*position],1,HEATFLUX_INTEGRATION_TAGBASE + mesh->DownXSplitIndex()*mesh->ngz*counter + mesh->ngz*position->jx + position->jz);
+      mesh->sendYInIndest(&integral_above[*position],1,HEATFLUX_INTEGRATION_TAGBASE + mesh->DownXSplitIndex()*mesh->LocalNz*counter + mesh->LocalNz*position->jx + position->jz);
     }
     else {
       Timer timer("comms");
-      mesh->sendYInOutdest(&integral_above[*position],1,HEATFLUX_INTEGRATION_TAGBASE + (mesh->ngx - mesh->DownXSplitIndex())*mesh->ngz*counter + mesh->ngz*(position->jx-mesh->DownXSplitIndex()) + position->jz);
+      mesh->sendYInOutdest(&integral_above[*position],1,HEATFLUX_INTEGRATION_TAGBASE + (mesh->LocalNx - mesh->DownXSplitIndex())*mesh->LocalNz*counter + mesh->LocalNz*(position->jx-mesh->DownXSplitIndex()) + position->jz);
     }
     
   } while (next_indexperp(position));
@@ -245,7 +245,7 @@ void HeatFluxIntegration::calculateIntegralAbove_cell_centre(const BoutReal &eig
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void HeatFluxIntegration::calculateIntegralBelow_cell_ylow(const BoutReal &eigenvalue, const Field3D &dimensionless_length_deltas_below, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, CubicSpline &cubic_spline_gradT, const int &counter) {
+void HeatFluxIntegration::calculateIntegralBelow_cell_ylow(BoutReal eigenvalue, const Field3D &dimensionless_length_deltas_below, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, CubicSpline &cubic_spline_gradT, const int &counter) {
   
   #ifdef CHECK
   msg_stack.push("HeatFluxIntegration::calculateIntegralBelow()");
@@ -258,10 +258,10 @@ void HeatFluxIntegration::calculateIntegralBelow_cell_ylow(const BoutReal &eigen
     if (!mesh->firstY()) {
       // Set the value at ystart to the value at yend+1 of the previous processor.
       if (position->jx<mesh->DownXSplitIndex()) {
-	mesh->wait(mesh->irecvYInIndest(&integral_below[*position],1,HEATFLUX_INTEGRATION_TAGBASE + mesh->DownXSplitIndex()*mesh->ngz*counter + mesh->ngz*position->jx + position->jz));
+	mesh->wait(mesh->irecvYInIndest(&integral_below[*position],1,HEATFLUX_INTEGRATION_TAGBASE + mesh->DownXSplitIndex()*mesh->LocalNz*counter + mesh->LocalNz*position->jx + position->jz));
       }
       else {
-	mesh->wait(mesh->irecvYInOutdest(&integral_below[*position],1,HEATFLUX_INTEGRATION_TAGBASE + (mesh->ngx-mesh->DownXSplitIndex())*mesh->ngz*counter + mesh->ngz*(position->jx-mesh->DownXSplitIndex()) + position->jz));
+	mesh->wait(mesh->irecvYInOutdest(&integral_below[*position],1,HEATFLUX_INTEGRATION_TAGBASE + (mesh->LocalNx-mesh->DownXSplitIndex())*mesh->LocalNz*counter + mesh->LocalNz*(position->jx-mesh->DownXSplitIndex()) + position->jz));
       }
     }
     do {
@@ -409,11 +409,11 @@ void HeatFluxIntegration::calculateIntegralBelow_cell_ylow(const BoutReal &eigen
     // Send the value at yend+1 to the next processor.
     if (position->jx < mesh->UpXSplitIndex()) {
       Timer timer("comms");
-      mesh->sendYOutIndest(&integral_below[*position],1,HEATFLUX_INTEGRATION_TAGBASE + mesh->UpXSplitIndex()*mesh->ngz*counter + mesh->ngz*position->jx + position->jz);
+      mesh->sendYOutIndest(&integral_below[*position],1,HEATFLUX_INTEGRATION_TAGBASE + mesh->UpXSplitIndex()*mesh->LocalNz*counter + mesh->LocalNz*position->jx + position->jz);
     }
     else {
       Timer timer("comms");
-      mesh->sendYOutOutdest(&integral_below[*position],1,HEATFLUX_INTEGRATION_TAGBASE + (mesh->ngx-mesh->UpXSplitIndex())*mesh->ngz*counter + mesh->ngz*(position->jx-mesh->UpXSplitIndex()) + position->jz);
+      mesh->sendYOutOutdest(&integral_below[*position],1,HEATFLUX_INTEGRATION_TAGBASE + (mesh->LocalNx-mesh->UpXSplitIndex())*mesh->LocalNz*counter + mesh->LocalNz*(position->jx-mesh->UpXSplitIndex()) + position->jz);
     }
     
   } while (next_indexperp(position));
@@ -424,7 +424,7 @@ void HeatFluxIntegration::calculateIntegralBelow_cell_ylow(const BoutReal &eigen
   
 }
 
-void HeatFluxIntegration::calculateIntegralAbove_cell_ylow(const BoutReal &eigenvalue, const Field3D &dimensionless_length_deltas_below, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, CubicSpline &cubic_spline_gradT, const int &counter) {
+void HeatFluxIntegration::calculateIntegralAbove_cell_ylow(BoutReal eigenvalue, const Field3D &dimensionless_length_deltas_below, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, CubicSpline &cubic_spline_gradT, const int &counter) {
 
   #ifdef CHECK
   msg_stack.push("HeatFluxIntegration::calculateIntegralAbove()");
@@ -437,10 +437,10 @@ void HeatFluxIntegration::calculateIntegralAbove_cell_ylow(const BoutReal &eigen
     if (!mesh->lastY()) {
       // Set the value at yend+1 equal to the value at ystart of the previous processor.
       if (position->jx<mesh->UpXSplitIndex()) {
-	mesh->wait(mesh->irecvYOutIndest(&integral_above[position->jx][position->jyp][position->jz],1,HEATFLUX_INTEGRATION_TAGBASE + mesh->UpXSplitIndex()*mesh->ngz*counter + mesh->ngz*position->jx + position->jz));
+	mesh->wait(mesh->irecvYOutIndest(&integral_above[position->jx][position->jyp][position->jz],1,HEATFLUX_INTEGRATION_TAGBASE + mesh->UpXSplitIndex()*mesh->LocalNz*counter + mesh->LocalNz*position->jx + position->jz));
       }
       else {
-	mesh->wait(mesh->irecvYOutOutdest(&integral_above[position->jx][position->jyp][position->jz],1,HEATFLUX_INTEGRATION_TAGBASE + (mesh->ngx - mesh->UpXSplitIndex())*mesh->ngz*counter + mesh->ngz*(position->jx-mesh->UpXSplitIndex()) + position->jz));
+	mesh->wait(mesh->irecvYOutOutdest(&integral_above[position->jx][position->jyp][position->jz],1,HEATFLUX_INTEGRATION_TAGBASE + (mesh->LocalNx - mesh->UpXSplitIndex())*mesh->LocalNz*counter + mesh->LocalNz*(position->jx-mesh->UpXSplitIndex()) + position->jz));
       }
     }
     else {
@@ -592,11 +592,11 @@ void HeatFluxIntegration::calculateIntegralAbove_cell_ylow(const BoutReal &eigen
     // Send the value at ystart to the next processor
     if (position->jx < mesh->DownXSplitIndex()) {
       Timer timer("comms");
-      mesh->sendYInIndest(&integral_above[*position],1,HEATFLUX_INTEGRATION_TAGBASE + mesh->DownXSplitIndex()*mesh->ngz*counter + mesh->ngz*position->jx + position->jz);
+      mesh->sendYInIndest(&integral_above[*position],1,HEATFLUX_INTEGRATION_TAGBASE + mesh->DownXSplitIndex()*mesh->LocalNz*counter + mesh->LocalNz*position->jx + position->jz);
     }
     else {
       Timer timer("comms");
-      mesh->sendYInOutdest(&integral_above[*position],1,HEATFLUX_INTEGRATION_TAGBASE + (mesh->ngx - mesh->DownXSplitIndex())*mesh->ngz*counter + mesh->ngz*(position->jx-mesh->DownXSplitIndex()) + position->jz);
+      mesh->sendYInOutdest(&integral_above[*position],1,HEATFLUX_INTEGRATION_TAGBASE + (mesh->LocalNx - mesh->DownXSplitIndex())*mesh->LocalNz*counter + mesh->LocalNz*(position->jx-mesh->DownXSplitIndex()) + position->jz);
     }
     
   } while (next_indexperp(position));

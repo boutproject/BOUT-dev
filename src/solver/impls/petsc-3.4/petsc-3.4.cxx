@@ -341,8 +341,8 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
     PetscInt nx = mesh->xend;//MXSUB;
     PetscInt ny = mesh->yend;//MYSUB;
 
-    /* number of z points (need to subtract one because of historical reasons that MZ has an extra point) */
-    PetscInt nz  = mesh->ngz - 1;
+    /* number of z points */
+    PetscInt nz  = mesh->LocalNz;
 
     /* number of degrees (variables) at each grid point */
     PetscInt dof = n3Dvars();
@@ -383,7 +383,7 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
     } else { // get sparse pattern of the Jacobian
       ierr = PetscPrintf(PETSC_COMM_WORLD,"get sparse pattern of the Jacobian...\n");CHKERRQ(ierr);
 
-      if(n2Dvars() != 0) bout_error("PETSc solver can't handle 2D variables yet. Sorry\n");
+      if(n2Dvars() != 0) throw BoutException("PETSc solver can't handle 2D variables yet. Sorry\n");
 
       ISLocalToGlobalMapping ltog, ltogb;
       PetscInt i, j, k, d, s;
@@ -442,7 +442,7 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
             xmin = 0; // This processor includes a boundary region
           int xmax = mesh->xend;
           if(mesh->lastX())
-            xmax = mesh->ngx-1;
+            xmax = mesh->LocalNx-1;
 
           for(i=xmin; i <= xmax; i++) {
             gi = mesh->XGLOBAL(i);

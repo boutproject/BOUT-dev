@@ -264,34 +264,28 @@ const Field2D Invert_laplace2(const Field2D &f, int flags)
   result_tmp = smooth_x(result_tmp);
   result_tmp = nl_filter_y(result_tmp, 1);
 
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
+  for(int jx=0;jx<mesh->LocalNx;jx++)
+    for(int jy=0;jy<mesh->LocalNy;jy++)
       result[jx][jy] = result_tmp[jx][jy][0];
 
   return(result);
 }
 
-const Field3D field_larger(const Field3D &f, const BoutReal limit)
-{
+const Field3D field_larger(const Field3D &f, const BoutReal limit) {
   Field3D result;
   result.allocate();
 
-//  #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      for(int jz=0;jz<mesh->ngz;jz++)
-      {
-        if(f[jx][jy][jz] >= limit)
-	  result[jx][jy][jz] = f[jx][jy][jz];
-	else
-	  result[jx][jy][jz] = limit;
-      }
+  for(auto i : result) {
+    if(f[i] >= limit)
+      result[i] = f[i];
+    else
+      result[i] = limit;
+  }
   mesh->communicate(result);
-  return(result);
+  return result;
 }
 
-const Field3D Grad2_par2new(const Field3D &f)
-{
+const Field3D Grad2_par2new(const Field3D &f) {
   /*
    * This function implements d2/dy2 where y is the poloidal coordinate theta
    */
@@ -334,12 +328,12 @@ const Field2D N0tanh(BoutReal n0_height, BoutReal n0_ave, BoutReal n0_width, Bou
       mesh->get(Jysep2, "jyseps2_2");
       //output.write("Jysep2_2 = %i   Ixsep1 = %i\n", int(Jysep2), int(Jxsep));
 
-      for(int jx=0;jx<mesh->ngx;jx++)
+      for(int jx=0;jx<mesh->LocalNx;jx++)
 	{
 	  BoutReal mgx = mesh->GlobalX(jx);
 	  BoutReal xgrid_num = (Jxsep+1.)/Grid_NX;
 	  //output.write("mgx = %e xgrid_num = %e\n", mgx);
-	  for (int jy=0;jy<mesh->ngy;jy++)
+	  for (int jy=0;jy<mesh->LocalNy;jy++)
 	    {
 	      int globaly = mesh->YGLOBAL(jy);
 	      //output.write("local y = %i;   global y: %i\n", jy, globaly);
@@ -354,7 +348,7 @@ const Field2D N0tanh(BoutReal n0_height, BoutReal n0_ave, BoutReal n0_width, Bou
     }
   else //circular geometry
     {
-      for(int jx=0;jx<mesh->ngx;jx++)
+      for(int jx=0;jx<mesh->LocalNx;jx++)
 	{
 	  BoutReal mgx = mesh->GlobalX(jx);
 	  BoutReal xgrid_num = Grid_NXlimit/Grid_NX;
@@ -363,7 +357,7 @@ const Field2D N0tanh(BoutReal n0_height, BoutReal n0_ave, BoutReal n0_width, Bou
 	  BoutReal rlx = mgx - n0_center;
 	  BoutReal temp = exp(rlx/n0_width);
 	  BoutReal dampr = ((temp - 1.0 / temp) / (temp + 1.0 / temp));
-	  for(int jy=0;jy<mesh->ngy;jy++)
+	  for(int jy=0;jy<mesh->LocalNy;jy++)
 	    result[jx][jy] = 0.5*(1.0 - dampr) * n0_height + n0_ave;  
 	}
     }
@@ -1105,7 +1099,7 @@ int physics_init(bool restarting)
     
     if(!bout_constrain(phi, C_phi, "phi")) {
       output.write("ERROR: Cannot constrain. Run again with phi_constraint=false\n");
-      bout_error("Aborting.\n");
+      throw BoutException("Aborting.\n");
     }
     
   }else {
@@ -1217,9 +1211,9 @@ const Field3D Grad_parP(const Field3D &f, CELL_LOC loc = CELL_DEFAULT)
     fm = interpolate(f, Xim_x, Xim_z);
     
     result.allocate();
-    for(int i=0;i<mesh->ngx;i++)
-      for(int j=1;j<mesh->ngy-1;j++)
-	for(int k=0;k<mesh->ngz-1;k++) {
+    for(int i=0;i<mesh->LocalNx;i++)
+      for(int j=1;j<mesh->LocalNy-1;j++)
+	for(int k=0;k<mesh->LocalNz;k++) {
 	  result[i][j][k] = (fp[i][j+1][k] - fm[i][j-1][k])/(2.*mesh->dy[i][j]*sqrt(mesh->g_22[i][j]));
 	}
   }else {
@@ -1376,12 +1370,12 @@ int physics_run(BoutReal t)
       // at the boundary
       
     for(int i=0;i<jpar_bndry_width;i++)
-      for(int j=0;j<mesh->ngy;j++)
-	for(int k=0;k<mesh->ngz-1;k++) {
+      for(int j=0;j<mesh->LocalNy;j++)
+	for(int k=0;k<mesh->LocalNz;k++) {
 	  if(mesh->firstX())
 	    Jpar[i][j][k] = 0.0;
 	  if(mesh->lastX())
-	    Jpar[mesh->ngx-1-i][j][k] = 0.0;
+	    Jpar[mesh->LocalNx-1-i][j][k] = 0.0;
 	}
   }
 
@@ -1412,12 +1406,12 @@ int physics_run(BoutReal t)
       // at the boundary
       
     for(int i=0;i<jpar_bndry_width;i++)
-      for(int j=0;j<mesh->ngy;j++)
-	for(int k=0;k<mesh->ngz-1;k++) {
+      for(int j=0;j<mesh->LocalNy;j++)
+	for(int k=0;k<mesh->LocalNz;k++) {
 	  if(mesh->firstX())
 	    Jpar2[i][j][k] = 0.0;
 	  if(mesh->lastX())
-	    Jpar2[mesh->ngx-1-i][j][k] = 0.0;
+	    Jpar2[mesh->LocalNx-1-i][j][k] = 0.0;
 	}
     }
   //output.write("I see you 3! \n");//xia
@@ -1679,12 +1673,12 @@ int physics_run(BoutReal t)
 
   if(damp_width > 0) {
     for(int i=0;i<damp_width;i++) {
-      for(int j=0;j<mesh->ngy;j++)
-	for(int k=0;k<mesh->ngz;k++) {
+      for(int j=0;j<mesh->LocalNy;j++)
+	for(int k=0;k<mesh->LocalNz;k++) {
 	  if(mesh->firstX())
-	    ddt(U)[i][j][k] -= U[i][j][k] / damp_t_const;
+	    ddt(U)(i,j,k) -= U(i,j,k) / damp_t_const;
 	  if(mesh->lastX())
-	    ddt(U)[mesh->ngx-1-i][j][k] -= U[mesh->ngx-1-i][j][k] / damp_t_const;
+	    ddt(U)(mesh->LocalNx-1-i,j,k) -= U(mesh->LocalNx-1-i,j,k) / damp_t_const;
 	}
     }
   }

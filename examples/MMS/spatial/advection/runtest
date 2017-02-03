@@ -28,10 +28,10 @@ shell("make > make.log")
 
 # List of options to be passed for each test
 options = [
-    ("method=2", "Arakawa", "-^")#,
-#    ("method=0 ddx:upwind=u1 ddz:upwind=u1", "1st order upwind", "-o"),
-#    ("method=0 ddx:upwind=c2 ddz:upwind=c2", "2nd order central", "-x"),
-#    ("method=0 ddx:upwind=w3 ddz:upwind=w3", "3rd order WENO", "-s")
+    ("method=2", "Arakawa", "-^"),
+    ("method=0 mesh:ddx:upwind=u1 mesh:ddz:upwind=u1", "1st order upwind", "-o"),
+    ("method=0 mesh:ddx:upwind=c2 mesh:ddz:upwind=c2", "2nd order central", "-x"),
+    ("method=0 mesh:ddx:upwind=w3 mesh:ddz:upwind=w3", "3rd order WENO", "-s")
     ]
 
 # List of NX values to use

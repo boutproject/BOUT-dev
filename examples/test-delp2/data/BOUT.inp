@@ -6,7 +6,7 @@ zmin = 0
 zmax = 8
 
 mxg = 2
-myg = 0  # No need for Y communications
+myg = 1  # No need for Y communications
 
 [mesh]
 

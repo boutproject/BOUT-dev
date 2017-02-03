@@ -19,17 +19,21 @@ Field3D E_N, S,source; //N error vector, solution,source
 BoutReal mu_N; // Parallel collisional diffusion coefficient
 BoutReal Lx, Ly, Lz;
 
+Coordinates *coord;
+
 int physics_init(bool restarting) {
   // Get the options
   Options *meshoptions = Options::getRoot()->getSection("mesh");
 
+  coord = mesh->coordinates();
+  
   meshoptions->get("Lx",Lx,1.0);
   meshoptions->get("Ly",Ly,1.0);
 
   /*this assumes equidistant grid*/
   int nguard = mesh->xstart;
-  mesh->dx = Lx/(mesh->GlobalNx - 2*nguard);
-  mesh->dy = Ly/(mesh->GlobalNy - 2*nguard);
+  coord->dx = Lx/(mesh->GlobalNx - 2*nguard);
+  coord->dy = Ly/(mesh->GlobalNy - 2*nguard);
 
   SAVE_ONCE2(Lx,Ly);
 
@@ -39,20 +43,20 @@ int physics_init(bool restarting) {
   SAVE_ONCE(mu_N);
 
   //set mesh
-  mesh->g11 = 1.0;
-  mesh->g22 = 1.0;
-  mesh->g33 = 1.0;
-  mesh->g12 = 0.0;
-  mesh->g13 = 0.0;
-  mesh->g23 = 0.0;
+  coord->g11 = 1.0;
+  coord->g22 = 1.0;
+  coord->g33 = 1.0;
+  coord->g12 = 0.0;
+  coord->g13 = 0.0;
+  coord->g23 = 0.0;
 
-  mesh->g_11 = 1.0;
-  mesh->g_22 = 1.0;
-  mesh->g_33 = 1.0;
-  mesh->g_12 = 0.0;
-  mesh->g_13 = 0.0;
-  mesh->g_23 = 0.0;
-  mesh->geometry();
+  coord->g_11 = 1.0;
+  coord->g_22 = 1.0;
+  coord->g_33 = 1.0;
+  coord->g_12 = 0.0;
+  coord->g_13 = 0.0;
+  coord->g_23 = 0.0;
+  coord->geometry();
 
   //Dirichlet everywhere except inner x-boundary Neumann
   N.addBndryFunction(MS,BNDRY_ALL);
@@ -67,9 +71,9 @@ int physics_init(bool restarting) {
   //Set initial condition to MS at t = 0.
   for (int xi = mesh->xstart; xi < mesh->xend +1; xi++){
     for (int yj = mesh->ystart; yj < mesh->yend + 1; yj++){
-      for (int zk = 0; zk < mesh->ngz-1; zk++) {
+      for (int zk = 0; zk < mesh->LocalNz; zk++) {
         output.write("Initial condition at %d,%d,%d\n", xi, yj, zk);
-        N(xi, yj, zk) = MS(0.,mesh->GlobalX(xi)*Lx,mesh->GlobalY(yj)*Ly,mesh->dz*zk);
+        N(xi, yj, zk) = MS(0.,mesh->GlobalX(xi)*Lx,mesh->GlobalY(yj)*Ly,coord->dz*zk);
       }
     }
   }
@@ -124,16 +128,16 @@ BoutReal dxMS(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z) {
 
 //Manufactured solution
 void solution(Field3D &f, BoutReal t, BoutReal D) {
-  int bx = (mesh->ngx - (mesh->xend - mesh->xstart + 1)) / 2;
-  int by = (mesh->ngy - (mesh->yend - mesh->ystart + 1)) / 2;
+  int bx = (mesh->LocalNx - (mesh->xend - mesh->xstart + 1)) / 2;
+  int by = (mesh->LocalNy - (mesh->yend - mesh->ystart + 1)) / 2;
   BoutReal x,y,z;
 
   for (int xi = mesh->xstart - bx; xi < mesh->xend + bx + 1; xi++){
     for (int yj = mesh->ystart - by; yj < mesh->yend + by + 1; yj++){
       x = mesh->GlobalX(xi);
       y = mesh->GlobalY(yj);//GlobalY not fixed yet
-      for (int zk = 0; zk < mesh->ngz-1; zk++) {
-        z = mesh->dz*zk;
+      for (int zk = 0; zk < mesh->LocalNz; zk++) {
+        z = coord->dz*zk;
         output.write("Solution at %d,%d,%d\n", xi, yj, zk);
         f(xi, yj, zk) = MS(t,x,y,z);
       }
@@ -149,17 +153,17 @@ Field3D MMS_Source(BoutReal t)
 {
   BoutReal x,y,z;
   Field3D result;
-  result.allocate();
-
+  result = 0.0;
+  
   int xi,yj,zk;
 
   for(xi=mesh->xstart;xi<mesh->xend+1;xi++)
     for(yj=mesh->ystart;yj < mesh->yend+1;yj++){
-      for(zk=0;zk<mesh->ngz-1;zk++){
+      for(zk=0;zk<mesh->LocalNz;zk++){
         x = mesh->GlobalX(xi)*Lx;
         y = mesh->GlobalY(yj)*Ly;
-        z = zk*mesh->dz;
-        result[xi][yj][zk] = -2.*Sin(10*t)*Sin(5.*Power(x,2)) + Cos(10*t)*
+        z = zk*coord->dz;
+        result(xi,yj,zk) = -2.*Sin(10*t)*Sin(5.*Power(x,2)) + Cos(10*t)*
           (-2.*Cos(5.*Power(x,2)) + 20.*Power(x,2)*Sin(5.*Power(x,2)));
       }
     }
@@ -173,12 +177,12 @@ int error_monitor(Solver *solver, BoutReal simtime, int iter, int NOUT) {
   E_N = 0.;
   for (int xi = mesh->xstart; xi < mesh->xend + 1; xi++){
     for (int yj = mesh->ystart ; yj < mesh->yend + 1; yj++){
-      for (int zk = 0; zk < mesh->ngz-1 ; zk++) {
-        E_N[xi][yj][zk] = N[xi][yj][zk] - S[xi][yj][zk];
+      for (int zk = 0; zk < mesh->LocalNz ; zk++) {
+        E_N(xi, yj, zk) = N(xi, yj, zk) - S(xi, yj, zk);
 
         output.write("Error(%d,%d,%d): %e, %e -> %e\n",
                      xi, yj, zk, 
-                     N[xi][yj][zk], S[xi][yj][zk], E_N[xi][yj][zk]);
+                     N(xi, yj, zk), S(xi, yj, zk), E_N(xi, yj, zk));
       }
     }
   }

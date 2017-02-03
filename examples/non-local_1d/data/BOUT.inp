@@ -20,7 +20,7 @@ StaggerGrids = true
 type = bout
 
 ##################################################
-[ddy]   # Methods used for parallel (y) derivative terms
+[mesh:ddy]   # Methods used for parallel (y) derivative terms
 
 first = C4
 second = C4

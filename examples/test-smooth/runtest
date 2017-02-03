@@ -41,10 +41,9 @@ for nype in [1,2]:
 
     print("   %d processor (%d x %d)...." % (nproc, nxpe, nype))
     s, out = launch(cmd+" nxpe="+str(nxpe), runcmd=MPIRUN, nproc=nproc, pipe=True)
-    f = open("run.log."+str(nproc), "w")
-    f.write(out)
-    f.close()
-    
+    with open("run.log."+str(nproc), "w") as f:
+      f.write(out)
+
     # Collect output data
     for v in vars:
       stdout.write("      Checking variable "+v+" ... ")

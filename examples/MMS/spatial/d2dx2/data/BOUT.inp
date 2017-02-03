@@ -3,12 +3,12 @@ MZ = 1
 
 mxg = 1
 
-myg = 0  # No guard cells in Y
+myg = 1  # No guard cells in Y
 
 input = sin(0.5*pi*x)
 solution = -sin(0.5*pi*x) * 0.25*pi*pi
 
-[ddx]
+[mesh:ddx]
 
 second = c2
 

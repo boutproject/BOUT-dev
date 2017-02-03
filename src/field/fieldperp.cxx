@@ -33,1095 +33,226 @@
 #include <boutexception.hxx>
 #include <msg_stack.hxx>
 
-extern BoutReal** rmatrix(int nx, int ny);
-
 FieldPerp::FieldPerp() {
-  data = (BoutReal**) NULL;
+  // Get mesh size
+
+  if(mesh) {
+    nx = mesh->LocalNx;
+    nz = mesh->LocalNz;
+  }
+  
+#ifdef CHECK
+  else {
+    nx=-1;
+    nz=-1;
+  }
+#endif
+
   yindex = -1;
 }
 
-FieldPerp::FieldPerp(const FieldPerp &f) {
-  data = (BoutReal**) NULL;
-  *this = f;
+/***************************************************************
+ *                         ASSIGNMENT 
+ ***************************************************************/
+
+FieldPerp & FieldPerp::operator=(const FieldPerp &rhs) {
+  nx = rhs.nx;
+  nz = rhs.nz;
+  yindex = rhs.yindex;
+  data = rhs.data;
+  return *this;
 }
 
-FieldPerp::FieldPerp(BoutReal val) : data(NULL) {
-  yindex = 0;
-  *this = val;
-}
+FieldPerp & FieldPerp::operator=(const BoutReal rhs) {
+  allocate();
 
-FieldPerp::~FieldPerp() {
-  freeData();
-}
-
-FieldPerp* FieldPerp::clone() const {
-  return new FieldPerp(*this);
-}
-
-void FieldPerp::set(const Field3D &f, int y) {
-  int jx, jz;
-  BoutReal ***d = f.getData();
-
-  if(d == (BoutReal***) NULL) {
-    error("FieldPerp: Setting from empty Field3D");
-    return;
+  for(auto&& d : data) {
+    d = rhs;
   }
-
-  yindex = y;
-
-  allocData();
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] = d[jx][y][jz];
+  
+  return *this;
 }
 
-void FieldPerp::allocate() {
-  allocData();
+/***************************************************************
+ *                         ITERATORS
+ ***************************************************************/
+
+const DataIterator FieldPerp::begin() const {
+  return DataIterator( 0, nx-1,
+                      yindex, yindex,
+                      0, nz-1);
 }
 
-void FieldPerp::setIndex(int y) {
-  if((y < 0) || (y >= mesh->ngy) )
-    throw BoutException("FieldPerp setIndex to invalid value: %d", y);
-  yindex = y;
+const DataIterator FieldPerp::end() const {
+  return DataIterator( 0, nx-1,
+                      yindex, yindex,
+		       0, nz-1,DI_GET_END);
 }
 
-int FieldPerp::getIndex() const {
-  if((yindex < 0) || (yindex >= mesh->ngy) )
-    throw BoutException("FieldPerp has invalid yindex: %d", yindex);
-  return yindex;
-}
 
 /***************************************************************
  *                         OPERATORS 
  ***************************************************************/
 
-BoutReal* FieldPerp::operator[](int jx) const {
-#if CHECK > 2
-  if(data == (BoutReal**) NULL) {
-    throw BoutException("FieldPerp: [] operator on empty data\n");
-  }
-  
-  if((jx < 0) || (jx >= mesh->ngx)) {
-    throw BoutException("FieldPerp: [] operator out of bounds\n");
-  }
-#endif
-  
-  return data[jx];
-}
-
-const BoutReal & FieldPerp::operator()(int jx, int jz) const {
-#if CHECK > 2
-  if(data == (BoutReal**) NULL) {
-    throw BoutException("FieldPerp: () operator on empty data\n");
-  }
-  
-  if((jx < 0) || (jx >= mesh->ngx) ||
-     (jz < 0) || (jz >= mesh->ngz)) {
-    throw BoutException("FieldPerp: () operator out of bounds\n");
-  }
-#endif
-  
-  return data[jx][jz];
-}
-
-BoutReal & FieldPerp::operator()(int jx, int jz) {
-#if CHECK > 2
-  if(data == (BoutReal**) NULL) {
-    throw BoutException("FieldPerp: () operator on empty data\n");
-  }
-  
-  if((jx < 0) || (jx >= mesh->ngx) ||
-     (jz < 0) || (jz >= mesh->ngz)) {
-    throw BoutException("FieldPerp: () operator out of bounds\n");
-  }
-#endif
-  
-  return data[jx][jz];
-}
-
-//////////////// ASSIGNMENT //////////////////
-
-FieldPerp& FieldPerp::operator=(const FieldPerp &rhs) {
-  int jx, jz;
-  
-  // Check for self-assignment
-  if(this == &rhs)
-    return(*this); // skip this assignment
-
-  if(rhs.data == (BoutReal**) NULL) {
-    // No data
-    throw BoutException("FieldPerp: No data in assignment from FieldPerp");
+#define FPERP_OP_FIELD(op, bop, ftype)			\
+  FieldPerp& FieldPerp::operator op(const ftype &rhs) { \
+    if(data.unique()) {                                 \
+      /* Only reference to the data */			\
+      for(int i=0;i<nx;i++)                             \
+        for(int k=0;k<nz;k++)                           \
+          (*this)(i,k) op rhs(i, yindex, k);            \
+    }else {  			                        \
+      /* Shared with another FieldPerp */		\
+      (*this) = (*this) bop rhs;                        \
+    }                                                   \
+    return *this;                                       \
   }
 
-  allocData();
+FPERP_OP_FIELD(+=, +, FieldPerp);
+FPERP_OP_FIELD(+=, +, Field3D);
+FPERP_OP_FIELD(+=, +, Field2D);
 
-  yindex = rhs.getIndex();
+FPERP_OP_FIELD(-=, -, FieldPerp);
+FPERP_OP_FIELD(-=, -, Field3D);
+FPERP_OP_FIELD(-=, -, Field2D);
 
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] = rhs.data[jx][jz];
+FPERP_OP_FIELD(*=, *, FieldPerp);
+FPERP_OP_FIELD(*=, *, Field3D);
+FPERP_OP_FIELD(*=, *, Field2D);
 
-  return(*this);
-}
+FPERP_OP_FIELD(/=, /, FieldPerp);
+FPERP_OP_FIELD(/=, /, Field3D);
+FPERP_OP_FIELD(/=, /, Field2D);
 
-FieldPerp & FieldPerp::operator=(const BoutReal rhs) {
-  int jx, jz;
-
-  allocData();
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] = rhs;
-
-  return(*this);
-}
-
-////////////////// ADDITION //////////////////////
-
-FieldPerp & FieldPerp::operator+=(const FieldPerp &rhs) {
-  int jx, jz;
-  
-  if(rhs.data == (BoutReal**) NULL) {
-    // No data
-    error("FieldPerp: += operates on empty FieldPerp");
-    return(*this);
-  }
-  if(data == (BoutReal**) NULL) {
-    error("FieldPerp: += operates on empty data");
-    return(*this);
+#define FPERP_OP_REAL(op, bop)  			\
+  FieldPerp& FieldPerp::operator op(BoutReal rhs) { \
+    if(data.unique()) {                                 \
+      /* Only reference to the data */           	\
+      for(int i=0;i<nx;i++)                             \
+        for(int k=0;k<nz;k++)                           \
+          (*this)(i,k) op rhs;				\
+    }else {  			                        \
+      /* Shared with another FieldPerp */		\
+      (*this) = (*this) bop rhs;                        \
+    }                                                   \
+    return *this;                                       \
   }
 
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] += rhs.data[jx][jz];
-
-  return(*this);
-}
-
-FieldPerp & FieldPerp::operator+=(const Field3D &rhs)
-{
-  int jx, jz;
-  BoutReal ***d;
-
-  d = rhs.getData();
-  
-  if(d == (BoutReal***) NULL) {
-    // No data
-    error("FieldPerp: += operates on empty Field3D");
-    return(*this);
-  }
-  
-  if(data == (BoutReal**) NULL) {
-    error("FieldPerp: += operates on empty data");
-    return(*this);
-  }
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] += d[jx][yindex][jz];
-
-  return(*this);
-}
-
-FieldPerp & FieldPerp::operator+=(const Field2D &rhs)
-{
-  int jx, jz;
-  BoutReal **d;
-
-  d = rhs.getData();
-  
-  if(d == (BoutReal**) NULL) {
-    // No data
-    error("FieldPerp: += operates on empty Field2D");
-    return(*this);
-  }
-  
-  if(data == (BoutReal**) NULL) {
-    error("FieldPerp: += operates on empty data");
-    return(*this);
-  }
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] += d[jx][yindex];
-
-  return(*this);
-}
-
-FieldPerp & FieldPerp::operator+=(const BoutReal rhs)
-{
-  int jx, jz;
-
-  if(data == (BoutReal**) NULL) {
-    error("FieldPerp: += operates on empty data");
-    return(*this);
-  }
-  
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] += rhs;
-
-  return(*this);
-}
-
-/////////////////// SUBTRACTION /////////////////////////
-
-FieldPerp & FieldPerp::operator-=(const FieldPerp &rhs)
-{
-  int jx, jz;
-  
-  if(rhs.data == (BoutReal**) NULL) {
-    // No data
-    error("FieldPerp: -= operates on empty FieldPerp");
-    return(*this);
-  }
-  
-  if(data == (BoutReal**) NULL) {
-    error("FieldPerp: -= operates on empty data");
-    return(*this);
-  }
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] -= rhs.data[jx][jz];
-
-  return(*this);
-}
-
-FieldPerp & FieldPerp::operator-=(const Field3D &rhs)
-{
-  int jx, jz;
-  BoutReal ***d;
-
-  d = rhs.getData();
-  
-  if(d == (BoutReal***) NULL) {
-    // No data
-    error("FieldPerp: -= operates on empty Field3D");
-    return(*this);
-  }
-  
-  if(data == (BoutReal**) NULL) {
-    error("FieldPerp: -= operates on empty data");
-    return(*this);
-  }
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] -= d[jx][yindex][jz];
-
-  return(*this);
-}
-
-FieldPerp & FieldPerp::operator-=(const Field2D &rhs)
-{
-  int jx, jz;
-  BoutReal **d;
-
-  d = rhs.getData();
-  
-  if(d == (BoutReal**) NULL) {
-    // No data
-    error("FieldPerp: -= operates on empty Field2D");
-    return(*this);
-  }
-  
-  if(data == (BoutReal**) NULL) {
-    error("FieldPerp: -= operates on empty data");
-    return(*this);
-  }
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] -= d[jx][yindex];
-
-  return(*this);
-}
-
-FieldPerp & FieldPerp::operator-=(const BoutReal rhs)
-{
-  int jx, jz;
-
-  if(data == (BoutReal**) NULL) {
-    error("FieldPerp: -= operates on empty data");
-    return(*this);
-  }
-  
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] -= rhs;
-
-  return(*this);
-}
-
-/////////////////// MULTIPLICATION ///////////////////////
-
-FieldPerp & FieldPerp::operator*=(const FieldPerp &rhs)
-{
-  int jx, jz;
-  
-  if(rhs.data == (BoutReal**) NULL) {
-    // No data
-    error("FieldPerp: *= operates on empty FieldPerp");
-    return(*this);
-  }
-  
-  if(data == (BoutReal**) NULL) {
-    error("FieldPerp: *= operates on empty data");
-    return(*this);
-  }
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] *= rhs.data[jx][jz];
-
-  return(*this);
-}
-
-FieldPerp & FieldPerp::operator*=(const Field3D &rhs)
-{
-  int jx, jz;
-  BoutReal ***d;
-
-  d = rhs.getData();
-  
-  if(d == (BoutReal***) NULL) {
-    // No data
-    error("FieldPerp: *= operates on empty Field3D");
-    return(*this);
-  }
-  
-  if(data == (BoutReal**) NULL) {
-    error("FieldPerp: *= operates on empty data");
-    return(*this);
-  }
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] *= d[jx][yindex][jz];
-
-  return(*this);
-}
-
-FieldPerp & FieldPerp::operator*=(const Field2D &rhs)
-{
-  int jx, jz;
-  BoutReal **d;
-
-  d = rhs.getData();
-  
-  if(d == (BoutReal**) NULL) {
-    // No data
-    error("FieldPerp: *= operates on empty Field2D");
-    return(*this);
-  }
-  
-  if(data == (BoutReal**) NULL) {
-    error("FieldPerp: *= operates on empty data");
-    return(*this);
-  }
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] *= d[jx][yindex];
-
-  return(*this);
-}
-
-FieldPerp & FieldPerp::operator*=(const BoutReal rhs)
-{
-  int jx, jz;
-
-  if(data == (BoutReal**) NULL) {
-    error("FieldPerp: *= operates on empty data");
-    return(*this);
-  }
-  
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] *= rhs;
-
-  return(*this);
-}
-
-//////////////////// DIVISION /////////////////////
-
-FieldPerp & FieldPerp::operator/=(const FieldPerp &rhs)
-{
-  int jx, jz;
-  
-  if(rhs.data == (BoutReal**) NULL) {
-    // No data
-    error("FieldPerp: /= operates on empty FieldPerp");
-    return(*this);
-  }
-  
-  if(data == (BoutReal**) NULL) {
-    error("FieldPerp: /= operates on empty data");
-    return(*this);
-  }
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] /= rhs.data[jx][jz];
-
-  return(*this);
-}
-
-FieldPerp & FieldPerp::operator/=(const Field3D &rhs)
-{
-  int jx, jz;
-  BoutReal ***d;
-
-  d = rhs.getData();
-  
-  if(d == (BoutReal***) NULL) {
-    // No data
-    error("FieldPerp: /= operates on empty Field3D");
-    return(*this);
-  }
-
-  if(data == (BoutReal**) NULL) {
-    error("FieldPerp: /= operates on empty data");
-    return(*this);
-  }
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] /= d[jx][yindex][jz];
-
-  return(*this);
-}
-
-FieldPerp & FieldPerp::operator/=(const Field2D &rhs)
-{
-  int jx, jz;
-  BoutReal **d;
-
-  d = rhs.getData();
-  
-  if(d == (BoutReal**) NULL) {
-    // No data
-    error("FieldPerp: /= operates on empty Field2D");
-    return(*this);
-  }
-
-  if(data == (BoutReal**) NULL) {
-    error("FieldPerp: /= operates on empty data");
-    return(*this);
-  }
-  
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] /= d[jx][yindex];
-
-  return(*this);
-}
-
-FieldPerp & FieldPerp::operator/=(const BoutReal rhs)
-{
-  int jx, jz;
-  
-  if(data == (BoutReal**) NULL) {
-    error("FieldPerp: /= operates on empty data");
-    return(*this);
-  }
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] /= rhs;
-
-  return(*this);
-}
-
-///////////////// EXPONENTIATION //////////////////
-
-FieldPerp & FieldPerp::operator^=(const FieldPerp &rhs)
-{
-  int jx, jz;
-  
-  if(rhs.data == (BoutReal**) NULL) {
-    // No data
-    error("FieldPerp: ^= operates on empty FieldPerp");
-    return(*this);
-  }
-
-  if(data == (BoutReal**) NULL) {
-    error("FieldPerp: ^= operates on empty data");
-    return(*this);
-  }
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] = pow(data[jx][jz], rhs.data[jx][jz]);
-
-  return(*this);
-}
-
-FieldPerp & FieldPerp::operator^=(const Field3D &rhs)
-{
-  int jx, jz;
-  BoutReal ***d;
-
-  d = rhs.getData();
-  
-  if(d == (BoutReal***) NULL) {
-    // No data
-    error("FieldPerp: ^= operates on empty Field3D");
-    return(*this);
-  }
-
-  if(data == (BoutReal**) NULL) {
-    error("FieldPerp: ^= operates on empty data");
-    return(*this);
-  }
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] = pow(data[jx][jz], d[jx][yindex][jz]);
-
-  return(*this);
-}
-
-FieldPerp & FieldPerp::operator^=(const Field2D &rhs)
-{
-  int jx, jz;
-  BoutReal **d;
-
-  d = rhs.getData();
-  
-  if(d == (BoutReal**) NULL) {
-    // No data
-    error("FieldPerp: ^= operates on empty Field2D");
-    return(*this);
-  }
-
-  if(data == (BoutReal**) NULL) {
-    error("FieldPerp: ^= operates on empty data");
-    return(*this);
-  }
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] = pow(data[jx][jz], d[jx][yindex]);
-
-  return(*this);
-}
-
-FieldPerp & FieldPerp::operator^=(const BoutReal rhs)
-{
-  int jx, jz;
-  
-  if(data == (BoutReal**) NULL) {
-    error("FieldPerp: ^= operates on empty data");
-    return(*this);
-  }
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] = pow(data[jx][jz], rhs);
-
-  return(*this);
-}
-
-/***************************************************************
- *                      BINARY OPERATORS 
- ***************************************************************/
-
-/////////////////// ADDITION ///////////////////
-
-const FieldPerp FieldPerp::operator+(const FieldPerp &other) const
-{
-  FieldPerp result = *this;
-  result += other;
-  return(result);
-}
-
-const FieldPerp FieldPerp::operator+(const Field3D &other) const
-{
-  FieldPerp result = *this;
-  result += other;
-  return(result);
-}
-
-const FieldPerp FieldPerp::operator+(const Field2D &other) const
-{
-  FieldPerp result = *this;
-  result += other;
-  return(result);
-}
-
-/////////////////// SUBTRACTION ////////////////
-
-const FieldPerp FieldPerp::operator-(const FieldPerp &other) const
-{
-  FieldPerp result = *this;
-  result -= other;
-  return(result);
-}
-
-const FieldPerp FieldPerp::operator-(const Field3D &other) const
-{
-  FieldPerp result = *this;
-  result -= other;
-  return(result);
-}
-
-const FieldPerp FieldPerp::operator-(const Field2D &other) const
-{
-  FieldPerp result = *this;
-  result -= other;
-  return(result);
-}
-
-///////////////// MULTIPLICATION ///////////////
-
-const FieldPerp FieldPerp::operator*(const FieldPerp &other) const
-{
-  FieldPerp result = *this;
-  result *= other;
-  return(result);
-}
-
-const FieldPerp FieldPerp::operator*(const Field3D &other) const
-{
-  FieldPerp result = *this;
-  result *= other;
-  return(result);
-}
-
-const FieldPerp FieldPerp::operator*(const Field2D &other) const
-{
-  FieldPerp result = *this;
-  result *= other;
-  return(result);
-}
-
-const FieldPerp FieldPerp::operator*(const BoutReal other) const
-{
-  FieldPerp result = *this;
-  result *= other;
-  return(result);
-}
-
-//////////////////// DIVISION //////////////////
-
-const FieldPerp FieldPerp::operator/(const FieldPerp &other) const
-{
-  FieldPerp result = *this;
-  result /= other;
-  return(result);
-}
-
-const FieldPerp FieldPerp::operator/(const Field3D &other) const
-{
-  FieldPerp result = *this;
-  result /= other;
-  return(result);
-}
-
-const FieldPerp FieldPerp::operator/(const Field2D &other) const
-{
-  FieldPerp result = *this;
-  result /= other;
-  return(result);
-}
-
-const FieldPerp FieldPerp::operator/(const BoutReal other) const
-{
-  FieldPerp result = *this;
-  result /= other;
-  return(result);
-}
-
-///////////////// EXPONENTIATION ///////////////
-
-const FieldPerp FieldPerp::operator^(const FieldPerp &other) const
-{
-  FieldPerp result = *this;
-  result ^= other;
-  return(result);
-}
-
-const FieldPerp FieldPerp::operator^(const Field3D &other) const
-{
-  FieldPerp result = *this;
-  result ^= other;
-  return(result);
-}
-
-const FieldPerp FieldPerp::operator^(const Field2D &other) const
-{
-  FieldPerp result = *this;
-  result ^= other;
-  return(result);
-}
-
-const FieldPerp FieldPerp::operator^(const BoutReal other) const
-{
-  FieldPerp result = *this;
-  result ^= other;
-  return(result);
-}
-
-/////////////////////////////////////////////////
-// Friend functions
-
-const FieldPerp exp(const FieldPerp &f) {
-#ifdef CHECK
-  msg_stack.push("exp(FieldPerp)");
-#endif
-
-  FieldPerp result;
-  result.allocate();
-  
-  result.yindex = f.yindex;
-  
-  #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jz=0;jz<mesh->ngz-1;jz++)
-      result.data[jx][jz] = ::exp(f.data[jx][jz]);
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-  return result;
-}
-
-const FieldPerp log(const FieldPerp &f) {
-#ifdef CHECK
-  msg_stack.push("log(FieldPerp)");
-#endif
-
-  FieldPerp result;
-  result.allocate();
-  
-  result.yindex = f.yindex;
-  
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jz=0;jz<mesh->ngz-1;jz++) {
-#ifdef CHECK
-      if(f.data[jx][jz] < 0.)
-        throw BoutException("log(FieldPerp) has negative argument at [%d][%d]\n", jx, jz);
-#endif
-      result.data[jx][jz] = ::log(f.data[jx][jz]);
-    }
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-  return result;
-}
-
-const FieldPerp sin(const FieldPerp &f) {
-  FieldPerp result;
-  
-#ifdef TRACK
-  result.name = "sin("+f.name+")";
-#endif
-
-  result.allocate();
-  
-  result.yindex = f.yindex;
-  
-  #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jz=0;jz<mesh->ngz-1;jz++)
-      result.data[jx][jz] = ::sin(f.data[jx][jz]);
-
-  return result;
-}
-
-const FieldPerp cos(const FieldPerp &f) {
-  FieldPerp result;
-  
-#ifdef TRACK
-  result.name = "cos("+f.name+")";
-#endif
-
-  result.allocate();
-  
-  result.yindex = f.yindex;
-  
-  #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jz=0;jz<mesh->ngz-1;jz++)
-      result.data[jx][jz] = ::cos(f.data[jx][jz]);
-
-  return result;
-}
-
-const FieldPerp tan(const FieldPerp &f) {
-  FieldPerp result;
-  
-#ifdef TRACK
-  result.name = "tan("+f.name+")";
-#endif
-
-  result.allocate();
-  
-  result.yindex = f.yindex;
-  
-  #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jz=0;jz<mesh->ngz-1;jz++)
-      result.data[jx][jz] = ::tan(f.data[jx][jz]);
-
-  return result;
-}
-
-const FieldPerp sinh(const FieldPerp &f) {
-  FieldPerp result;
-  
-#ifdef TRACK
-  result.name = "sinh("+f.name+")";
-#endif
-
-  result.allocate();
-  
-  #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jz=0;jz<mesh->ngz-1;jz++)
-      result.data[jx][jz] = ::sinh(f.data[jx][jz]);
-
-  return result;
-}
-
-const FieldPerp cosh(const FieldPerp &f) {
-  FieldPerp result;
-  
-#ifdef TRACK
-  result.name = "cosh("+f.name+")";
-#endif
-
-  result.allocate();
-  
-  result.yindex = f.yindex;
-  
-  #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jz=0;jz<mesh->ngz-1;jz++)
-      result.data[jx][jz] = ::cosh(f.data[jx][jz]);
-
-  return result;
-}
-
-const FieldPerp tanh(const FieldPerp &f) {
-  FieldPerp result;
-  
-#ifdef TRACK
-  result.name = "tanh("+f.name+")";
-#endif
-
-  result.allocate();
-  
-  result.yindex = f.yindex;
-  
-  #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jz=0;jz<mesh->ngz-1;jz++)
-      result.data[jx][jz] = ::tanh(f.data[jx][jz]);
-
-  return result;
-}
-
+FPERP_OP_REAL(+=, +);
+FPERP_OP_REAL(-=, -);
+FPERP_OP_REAL(*=, *);
+FPERP_OP_REAL(/=, /);
 
 ////////////////////// STENCILS //////////////////////////
 
-void FieldPerp::setStencil(bstencil *fval, bindex *bx) const
-{
-  fval->cc = data[bx->jx][bx->jz];
-
-  if(mesh->ShiftXderivs && (mesh->ShiftOrder != 0)) {
-    fval->xp = interpZ(bx->jxp, bx->jz, bx->xp_offset, mesh->ShiftOrder);
-    fval->xm = interpZ(bx->jxm, bx->jz, bx->xm_offset, mesh->ShiftOrder);
-    fval->x2p = interpZ(bx->jxp, bx->jz, bx->x2p_offset, mesh->ShiftOrder);
-    fval->x2m = interpZ(bx->jxm, bx->jz, bx->x2m_offset, mesh->ShiftOrder);
-  }else {
-    fval->xp = data[bx->jxp][bx->jz];
-    fval->xm = data[bx->jxm][bx->jz];
-    fval->x2p = data[bx->jx2p][bx->jz];
-    fval->x2m = data[bx->jx2m][bx->jz];
-  }
-
-  fval->yp = data[bx->jx][bx->jz];
-  fval->ym = data[bx->jx][bx->jz];
-  fval->zp = data[bx->jx][bx->jzp];
-  fval->zm = data[bx->jx][bx->jzm];
-
-  fval->y2p = data[bx->jx][bx->jy];
-  fval->y2m = data[bx->jx][bx->jy];
-  fval->z2p = data[bx->jx][bx->jz2p];
-  fval->z2m = data[bx->jx][bx->jz2m];
+void FieldPerp::setXStencil(stencil &fval, const bindex &bx, CELL_LOC UNUSED(loc)) const {
+  fval.p = (*this)(bx.jxp,bx.jz);
+  fval.m = (*this)(bx.jxm,bx.jz);
+  fval.pp = (*this)(bx.jx2p,bx.jz);
+  fval.mm = (*this)(bx.jx2m,bx.jz);
 }
 
-void FieldPerp::setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
-{
-  if(mesh->ShiftXderivs && (mesh->ShiftOrder != 0)) {
-    fval.p = interpZ(bx.jxp, bx.jz, bx.xp_offset, mesh->ShiftOrder);
-    fval.m = interpZ(bx.jxm, bx.jz, bx.xm_offset, mesh->ShiftOrder);
-    fval.pp = interpZ(bx.jxp, bx.jz, bx.x2p_offset, mesh->ShiftOrder);
-    fval.mm = interpZ(bx.jxm, bx.jz, bx.x2m_offset, mesh->ShiftOrder);
-  }else {
-    fval.p = data[bx.jxp][bx.jz];
-    fval.m = data[bx.jxm][bx.jz];
-    fval.pp = data[bx.jx2p][bx.jz];
-    fval.mm = data[bx.jx2m][bx.jz];
-  }
+void FieldPerp::setYStencil(stencil &fval, const bindex &bx, CELL_LOC UNUSED(loc)) const {
+  fval = (*this)(bx.jx,bx.jz);
 }
 
-void FieldPerp::setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
-{
-  fval = data[bx.jx][bx.jz];
-}
-
-void FieldPerp::setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
-{
-  fval.p = data[bx.jx][bx.jzp];
-  fval.m = data[bx.jx][bx.jzm];
-  fval.pp = data[bx.jx][bx.jz2p];
-  fval.mm = data[bx.jx][bx.jz2m];
-}
-
-BoutReal FieldPerp::interpZ(int jx, int jz0, BoutReal zoffset, int order) const
-{
-  int zi;
-  BoutReal result;
-  int jzp, jzm, jz2p;
-
-  zi = ROUND(zoffset);  // Find the nearest integer
-  zoffset -= (BoutReal) zi; // Difference (-0.5 to +0.5)
-
-  if(zoffset < 0.0) {
-    zi--;
-    zoffset += 1.0;
-  }
-  
-  int ncz = mesh->ngz-1;
-  
-  jz0 = (((jz0 + zi)%ncz) + ncz) % ncz;
-  jzp = (jz0 + 1) % ncz;
-  jz2p = (jz0 + 2) % ncz;
-  jzm = (jz0 - 1 + ncz) % ncz;
-
-  switch(order) {
-  case 2: {
-    // 2-point linear interpolation
-
-    result = (1.0 - zoffset)*data[jx][jz0] + zoffset*data[jx][jzp];
-
-    break;
-  }
-  case 3: {
-    // 3-point Lagrange interpolation
-
-    result = 0.5*zoffset*(zoffset-1.0)*data[jx][jzm]
-      + (1.0 - zoffset*zoffset)*data[jx][jz0]
-      + 0.5*zoffset*(zoffset + 1.0)*data[jx][jzp];
-    break;
-  }
-  case 4: {
-    // 4-point Lagrange interpolation
-    result = -zoffset*(zoffset-1.0)*(zoffset-2.0)*data[jx][jzm]/6.0
-      + 0.5*(zoffset*zoffset - 1.0)*(zoffset-2.0)*data[jx][jz0]
-      - 0.5*zoffset*(zoffset+1.0)*(zoffset-2.0)*data[jx][jzp]
-      + zoffset*(zoffset*zoffset - 1.0)*data[jx][jz2p]/6.0;
-    break;
-  }
-  default: {
-    // Nearest neighbour
-    result = data[jx][jz0];
-  }
-  };
-  return result;
-}
-
-///////////////////// PRIVATE FUNCTIONS ////////////////////
-
-// GLOBAL VARS
-
-int FieldPerp::nblocks = 0;
-int FieldPerp::max_blocks = 0;
-BoutReal*** FieldPerp::block = (BoutReal***) NULL;
-
-void FieldPerp::allocData()
-{
-  if(data != (BoutReal**) NULL)
-    return; // already allocated
-
-  if(nblocks > 0) {
-    // Some free blocks
-
-    nblocks--;
-    data = block[nblocks];
-
-  }else {
-    // Need to create another block
-
-    data = rmatrix(mesh->ngx, mesh->ngz);
-
-  }
-}
-
-void FieldPerp::freeData()
-{
-  // put data block onto stack
-
-  if(data == (BoutReal**) NULL)
-    return; // No data
-
-  if(nblocks == max_blocks) {
-    // need to increase size of stack
-    if(max_blocks == 0) {
-      block = (BoutReal***) malloc(sizeof(BoutReal**));
-    }else {
-      block = (BoutReal***) realloc(block, sizeof(BoutReal**)*(max_blocks+1));
-    }
-    max_blocks++;
-  }
-
-  block[nblocks] = data;
-  nblocks++;
-
-  data = (BoutReal**) NULL;
+void FieldPerp::setZStencil(stencil &fval, const bindex &bx, CELL_LOC UNUSED(loc)) const {
+  fval.p = (*this)(bx.jx,bx.jzp);
+  fval.m = (*this)(bx.jx,bx.jzm);
+  fval.pp = (*this)(bx.jx,bx.jz2p);
+  fval.mm = (*this)(bx.jx,bx.jz2m);
 }
 
 ////////////// NON-MEMBER OVERLOADED OPERATORS //////////////
 
-const FieldPerp operator*(const BoutReal lhs, const FieldPerp &rhs)
-{
-  return(rhs*lhs);
-}
+// Operator on FieldPerp and another field
+#define FPERP_FPERP_OP_FIELD(op, ftype)                     	          \
+  const FieldPerp operator op(const FieldPerp &lhs, const ftype &rhs) {   \
+    FieldPerp result;                                                     \
+    result.allocate();                                                    \
+                                                                          \
+    int y = lhs.getIndex();            		                          \
+    result.setIndex(y);                                                   \
+                                                                          \
+    for(auto i : result)                                                  \
+      result[i] = lhs[i] op rhs[i];                                       \
+                                                                          \
+    return result;                                                        \
+  }
 
-const FieldPerp operator/(const BoutReal lhs, const FieldPerp &rhs)
-{
-  int jx,jz;
-  FieldPerp result = rhs;
-  BoutReal **d = result.getData();
+FPERP_FPERP_OP_FIELD(+, FieldPerp);
+FPERP_FPERP_OP_FIELD(+, Field3D);
+FPERP_FPERP_OP_FIELD(+, Field2D);
 
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      d[jx][jz] = lhs/d[jx][jz];
+FPERP_FPERP_OP_FIELD(-, FieldPerp);
+FPERP_FPERP_OP_FIELD(-, Field3D);
+FPERP_FPERP_OP_FIELD(-, Field2D);
 
-  return(result);
-}
+FPERP_FPERP_OP_FIELD(*, FieldPerp);
+FPERP_FPERP_OP_FIELD(*, Field3D);
+FPERP_FPERP_OP_FIELD(*, Field2D);
 
-const FieldPerp operator^(const BoutReal lhs, const FieldPerp &rhs)
-{
-  int jx,jz;
-  FieldPerp result = rhs;
-  BoutReal **d = result.getData();
+FPERP_FPERP_OP_FIELD(/, FieldPerp);
+FPERP_FPERP_OP_FIELD(/, Field3D);
+FPERP_FPERP_OP_FIELD(/, Field2D);
 
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      d[jx][jz] = pow(lhs, d[jx][jz]);
+// Operator on FieldPerp and BoutReal
+#define FPERP_FPERP_OP_REAL(op)                     	                   \
+  const FieldPerp operator op(const FieldPerp &lhs, BoutReal rhs) { \
+    FieldPerp result;                                                     \
+    result.allocate();                                                    \
+                                                                          \
+    int y = lhs.getIndex();                                               \
+    result.setIndex(y);                                                   \
+                                                                          \
+    for(auto i : result)                                                  \
+      result[i] = lhs[i] op rhs;                                          \
+                                                                          \
+    return result;                                                        \
+  }
 
-  return(result);
-}
+FPERP_FPERP_OP_REAL(+);
+FPERP_FPERP_OP_REAL(-);
+FPERP_FPERP_OP_REAL(*);
+FPERP_FPERP_OP_REAL(/);
+
+#define FPERP_REAL_OP_FPERP(op)                     	                   \
+  const FieldPerp operator op(BoutReal lhs, const FieldPerp &rhs) { \
+    FieldPerp result;                                                     \
+    result.allocate();                                                    \
+                                                                          \
+    int y = rhs.getIndex();                                               \
+    result.setIndex(y);                                                   \
+                                                                          \
+    for(auto i : result)                                                  \
+      result[i] = lhs op rhs[i];                                          \
+                                                                          \
+    return result;                                                        \
+  }
+
+// Only need the asymmetric operators
+FPERP_REAL_OP_FPERP(-);
+FPERP_REAL_OP_FPERP(/);
 
 const FieldPerp copy(const FieldPerp &f) {
   FieldPerp fcopy = f;
   fcopy.allocate();
   return fcopy;
 }
+
+const FieldPerp sliceXZ(const Field3D& f, int y) {
+  // Source field should be valid
+  ASSERT1(f.isAllocated());
+  
+  FieldPerp result;
+
+  // Allocate memory
+  result.allocate();
+  result.setIndex(y);
+
+  for(auto i : result)
+    result[i] = f[i];
+  
+  return result;
+}
+

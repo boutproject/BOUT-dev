@@ -59,12 +59,10 @@ class H5Format : public DataFormat {
  public:
   H5Format(bool parallel_in = false);
   H5Format(const char *name, bool parallel_in = false);
-  H5Format(const string &name, bool parallel_in = false);
+  H5Format(const string &name, bool parallel_in = false) : H5Format(name.c_str(), parallel_in) {}
   ~H5Format();
-  
-  bool openr(const string &name);
+
   bool openr(const char *name);
-  bool openw(const string &name, bool append=false);
   bool openw(const char *name, bool append=false);
   
   bool is_valid();
@@ -117,16 +115,14 @@ class H5Format : public DataFormat {
   hid_t dataFile_plist;
   hid_t dataSet_plist;
 
-  bool appending;
   bool lowPrecision; ///< When writing, down-convert to floats
   bool parallel;
 
   int x0, y0, z0, t0; ///< Data origins for file access
-  int x0_local, y0_local, z0_local, t0_local; ///< Data origins for memory access
+  int x0_local, y0_local, z0_local; ///< Data origins for memory access
   
   hsize_t chunk_length;
-  bool is_open;
-  
+
   bool read(void *var, hid_t hdf5_type, const char *name, int lx = 1, int ly = 0, int lz = 0);
   bool write(void *var, hid_t mem_hdf5_type, hid_t write_hdf5_type, const char *name, int lx = 0, int ly = 0, int lz = 0);
   bool read_rec(void *var, hid_t hdf5_type, const char *name, int lx = 1, int ly = 0, int lz = 0);

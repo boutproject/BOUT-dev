@@ -12,6 +12,8 @@ dump_format = "nc"  # NetCDF format. Alternative is "pdb"
 TwistShift = false
 Ballooning = false
 
+tol = 1e-10
+
 [All]
 # Boundary options
 # 0 - constant

@@ -3,15 +3,15 @@ mz = 129
 grid = "grids/flat_grid.nc"
 dump_format = "nc"
 
-[ddx]
+[mesh:ddx]
 first=C4
 second=C4
 
-[ddy]
+[mesh:ddy]
 first=C4
 second=C4
 
-[ddz]
+[mesh:ddz]
 first=C4
 second=C4
 

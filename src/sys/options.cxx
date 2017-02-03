@@ -8,8 +8,8 @@
 
 Options::~Options() {
   // Delete sub-sections
-  for(map<string,Options*>::iterator it=sections.begin(); it != sections.end(); it++) {
-    delete it->second;
+  for(const auto& it : sections) {
+    delete it.second;
   }
 }
 
@@ -36,7 +36,7 @@ void Options::set(const string &key, const int &val, const string &source) {
   set(key, ss.str(), source);
 }
 
-void Options::set(const string &key, const BoutReal &val, const string &source) {
+void Options::set(const string &key, BoutReal val, const string &source) {
   if(val) {
     set(key, "true", source);
   }else
@@ -103,7 +103,7 @@ void Options::get(const string &key, int &val, const int &def, bool log) {
   }
 }
 
-void Options::get(const string &key, BoutReal &val, const BoutReal &def, bool log) {
+void Options::get(const string &key, BoutReal &val, BoutReal def, bool log) {
   map<string, OptionValue>::iterator it(options.find(lowercase(key)));
   if(it == options.end()) {
     val = def;
@@ -222,8 +222,8 @@ string Options::str() {
 void Options::printUnused() {
   bool allused = true;
   // Check if any options are unused
-  for(map<string,OptionValue>::iterator it=options.begin(); it != options.end(); it++) {
-    if(!it->second.used) {
+  for(const auto& it : options) {
+    if(!it.second.used) {
       allused = false;
       break;
     }
@@ -232,16 +232,16 @@ void Options::printUnused() {
     output << "All options used\n";
   }else {
     output << "Unused options:\n";
-    for(map<string,OptionValue>::iterator it=options.begin(); it != options.end(); it++) {
-      if(!it->second.used) {
-	output << "\t" << sectionName << ":" << it->first << " = " << it->second.value;
-	if(!it->second.source.empty())
-	  output << " (" << it->second.source << ")";
-	output << endl;
+    for(const auto& it : options) {
+      if(!it.second.used) {
+        output << "\t" << sectionName << ":" << it.first << " = " << it.second.value;
+        if(!it.second.source.empty())
+          output << " (" << it.second.source << ")";
+        output << endl;
       }
     }
   }
-  for(map<string,Options*>::iterator it=sections.begin(); it != sections.end(); it++) {
-    it->second->printUnused();
+  for(const auto& it : sections) {
+    it.second->printUnused();
   }
 }

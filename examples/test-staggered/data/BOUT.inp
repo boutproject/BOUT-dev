@@ -8,7 +8,7 @@ grid = "test-staggered.nc"
 
 StaggerGrids = true
 
-[ddy]
+[mesh:ddy]
 
 first = c2
 flux = u1

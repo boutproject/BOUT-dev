@@ -74,14 +74,14 @@ const Field3D InvertParSimple::solve(const Field3D &rc) {
 
   // Decide on x range. Solve in boundary conditions
   int xs = (mesh->firstX()) ? 0 : 2;
-  int xe = (mesh->lastX()) ? mesh->ngx-1 : (mesh->ngx-3);
+  int xe = (mesh->lastX()) ? mesh->LocalNx-1 : (mesh->LocalNx-3);
 
   int nxsolve = xe - xs + 1; // Number of X points to solve    
   int nylocal = mesh->yend - mesh->ystart + 1;
 
   if(max_size == 0) {
-    //.allocate working memory
-    senddata = new BoutReal[nxsolve * nylocal * (2 + mesh->ngz) ]; // Problem data sent out
+    // allocate working memory
+    senddata = new BoutReal[nxsolve * nylocal * (2 + mesh->LocalNz) ]; // Problem data sent out
   }
     
   // coefficients for derivative term
@@ -125,8 +125,8 @@ const Field3D InvertParSimple::solve(const Field3D &rc) {
         delete[] recvdata;
         delete[] resultdata;
       }
-      recvdata = new BoutReal[ysize * (3+mesh->ngz)];  // Problem data received (to be solved)
-      resultdata = new BoutReal[ysize*mesh->ngz];  // Inverted result
+      recvdata = new BoutReal[ysize * (3+mesh->LocalNz)];  // Problem data received (to be solved)
+      resultdata = new BoutReal[ysize*mesh->LocalNz];  // Inverted result
       max_size = ysize;
     }
       
@@ -144,7 +144,7 @@ const Field3D InvertParSimple::solve(const Field3D &rc) {
                     resultdata);
       }else {
         // Open field-lines
-        bout_error("Sorry; invertParSimple can't cope with open field lines yet\n");
+        throw BoutException("Sorry; invertParSimple can't cope with open field lines yet\n");
       }
     }
       
@@ -186,7 +186,7 @@ void InvertParSimple::cyclicSolve(int ysize, int xpos, BoutReal *data, BoutReal 
   static BoutReal *avec, *bvec, *cvec; // Matrix coefficients
   static BoutReal *rvec, *xvec;
     
-  int ncz = mesh->ngz-1;
+  int ncz = mesh->LocalNz;
     
   if(ysize > ylen) {
     // Initialise
@@ -251,7 +251,7 @@ void InvertParSimple::cyclicSolve(int ysize, int xpos, BoutReal *data, BoutReal 
 
       if((zpos != z0) && done[zpos]) {
         // Somehow hit a different fieldline. Should never happen
-        bout_error("ERROR: Crossed streams in invpar::cyclic_solve!\n");
+        throw BoutException("ERROR: Crossed streams in invpar::cyclic_solve!\n");
       }
 	
     }while(zpos != z0);

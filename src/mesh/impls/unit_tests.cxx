@@ -20,14 +20,14 @@ int main() {
   
   cout << "Split X\n";
   
-  for(Domain::iterator it = d.begin(); it != d.end(); it++)
-    cout << *it;
+  for(const auto& it : d) {
+    cout << it;
   
   d.splitY(5);
   
   cout << "Split Y\n";
-  for(Domain::iterator it = d.begin(); it != d.end(); it++)
-    cout << *it;
+  for(const auto& it : d) {
+    cout << it;
   
   cout << "\n\n";
   Domain t(8,5);
@@ -36,8 +36,8 @@ int main() {
   partition(&t, 5);
   
   cout << "\nPartitioned\n";
-  for(Domain::iterator it = t.begin(); it != t.end(); it++)
-    cout << *it;
+  for(const auto& it : t) {
+    cout << it;
   
   return 0;
 }

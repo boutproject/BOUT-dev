@@ -1,4 +1,6 @@
 /**************************************************************
+ * \file smoothing.hxx
+ * 
  * Smoothing operators
  *
  **************************************************************
@@ -37,18 +39,100 @@ const Field3D smooth_y(const Field3D &f);
 /// Smooth using a stencil in X and Y
 const Field3D smoothXY(const Field3D &f);
 
-/// Average over Y
+/*! 
+ * Average over Y
+ *
+ * Issues
+ * ======
+ * 
+ * Important: Only works if there are no branch cuts
+ *
+ * Assumes every processor has the same domain shape
+ * 
+ */
 const Field2D averageY(const Field2D &f);
+
+/*!
+ * Average in Y
+ * 
+ * Issues
+ * ======
+ * 
+ * Important: Only works if there are no branch cuts
+ *
+ * Creates static arrays
+ * 
+ * Not thread safe
+ *
+ * Assumes every processor has the same domain shape
+ * 
+ */
 const Field3D averageY(const Field3D &f);
 
 /// Average over X
 const Field2D averageX(const Field2D &f);
 const Field3D averageX(const Field3D &f);
 
-/// Non-linear filter to remove grid-scale oscillations
+/*!
+  Volume integral of Field2D variable
+  Developed by T. Rhee and S. S. Kim
+  
+  Issues
+  ======
+  
+  Assumes every processor has the same domain shape
+  
+  Will only work if X communicator is constant in Y
+  so no processor/branch cuts in X
+ */
+BoutReal Average_XY(const Field2D &var);
+
+/// Volume integral of Field2D variable
+/// which uses Average_XY
+BoutReal Vol_Integral(const Field2D &var);
+
+/// Nonlinear filtering to remove grid-scale noise in X
+/*!
+  From a paper:
+
+  W.Shyy et. al. JCP 102 (1) September 1992 page 49
+
+  "On the Suppression of Numerical Oscillations Using a Non-Linear Filter"
+  
+ */
 const Field3D nl_filter_x(const Field3D &f, BoutReal w=1.0);
+
+/// Nonlinear filtering to remove grid-scale noise in Y
+/*!
+  From a paper:
+
+  W.Shyy et. al. JCP 102 (1) September 1992 page 49
+
+  "On the Suppression of Numerical Oscillations Using a Non-Linear Filter"
+  
+ */
 const Field3D nl_filter_y(const Field3D &f, BoutReal w=1.0);
+
+/// Nonlinear filtering to remove grid-scale noise in Z
+/*!
+  From a paper:
+
+  W.Shyy et. al. JCP 102 (1) September 1992 page 49
+
+  "On the Suppression of Numerical Oscillations Using a Non-Linear Filter"
+  
+ */
 const Field3D nl_filter_z(const Field3D &f, BoutReal w=1.0);
+
+/// Nonlinear filtering to remove grid-scale noise in X,Y and Z
+/*!
+  From a paper:
+
+  W.Shyy et. al. JCP 102 (1) September 1992 page 49
+
+  "On the Suppression of Numerical Oscillations Using a Non-Linear Filter"
+  
+ */
 const Field3D nl_filter(const Field3D &f, BoutReal w=1.0);
 
 #endif // __SMOOTHING_H__

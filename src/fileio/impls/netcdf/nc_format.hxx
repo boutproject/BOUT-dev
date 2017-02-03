@@ -46,6 +46,7 @@ class NcFormat;
 #define __NCFORMAT_H__
 
 #include "dataformat.hxx"
+#include "unused.hxx"
 
 #include <netcdfcpp.h>
 
@@ -59,12 +60,10 @@ class NcFormat : public DataFormat {
  public:
   NcFormat();
   NcFormat(const char *name);
-  NcFormat(const string &name);
+  NcFormat(const string &name) : NcFormat(name.c_str()) {}
   ~NcFormat();
-  
-  bool openr(const string &name);
+
   bool openr(const char *name);
-  bool openw(const string &name, bool append=false);
   bool openw(const char *name, bool append=false);
   
   bool is_valid();
@@ -80,7 +79,10 @@ class NcFormat : public DataFormat {
   
   // Set the origin for all subsequent calls
   bool setGlobalOrigin(int x = 0, int y = 0, int z = 0);
-  bool setLocalOrigin(int x = 0, int y = 0, int z = 0) { return setGlobalOrigin(x,y,z); }
+  bool setLocalOrigin(int x = 0, int y = 0, int z = 0,
+                      int UNUSED(offset_x) = 0, int UNUSED(offset_y) = 0, int UNUSED(offset_z) = 0) {
+    return setGlobalOrigin(x,y,z);
+  }
   bool setRecord(int t); // negative -> latest
   
   // Read / Write simple variables up to 3D
@@ -121,7 +123,6 @@ class NcFormat : public DataFormat {
   const NcDim **dimList; ///< List of dimensions (x,y,z)
   const NcDim **recDimList; ///< List of dimensions (t,x,y,z)
 
-  bool appending;
   bool lowPrecision; ///< When writing, down-convert to floats
 
   int x0, y0, z0, t0; ///< Data origins

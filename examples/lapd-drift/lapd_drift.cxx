@@ -402,7 +402,9 @@ int physics_init(bool restarting) {
 
   SAVE_ONCE3(Te_x,Ti_x,Ni_x);
   SAVE_ONCE6(AA,ZZ,zeff,rho_s,wci,bmag);
-  dump.add(mesh->ngx, "ngx", 0);  dump.add(mesh->ngy,   "ngy", 0);  dump.add(mesh->ngz,   "ngz", 0);
+  dump.add(mesh->LocalNx, "ngx", 0);
+  dump.add(mesh->LocalNy, "ngy", 0); 
+  dump.add(mesh->LocalNz, "ngz", 0);
   SAVE_ONCE6(mui_hat,nu_hat,nuIonNeutral,beta_p,time_step,hthe0);
   SAVE_ONCE3(ni_perpdiff,rho_perpdiff,te_perpdiff);
 
@@ -745,7 +747,7 @@ const Field3D vE_Grad(const Field2D &f, const Field3D &p)
     // Arakawa scheme for perpendicular flow. Here as a test
     
     result.allocate();
-    int ncz = mesh->ngz - 1;
+    int ncz = mesh->LocalNz;
     for(int jx=mesh->xstart;jx<=mesh->xend;jx++)
       for(int jy=mesh->ystart;jy<=mesh->yend;jy++)
         for(int jz=0;jz<ncz;jz++) {
@@ -806,7 +808,7 @@ const Field3D vE_Grad(const Field3D &f, const Field3D &p)
     
     result.allocate();
     
-    int ncz = mesh->ngz - 1;
+    int ncz = mesh->LocalNz;
     for(int jx=mesh->xstart;jx<=mesh->xend;jx++)
       for(int jy=mesh->ystart;jy<=mesh->yend;jy++)
         for(int jz=0;jz<ncz;jz++) {

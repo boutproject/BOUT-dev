@@ -30,13 +30,31 @@ class MsgStack;
 #define __MSG_STACK_H__
 
 #include <stdio.h>
+#include <string>
 
+/// The maximum length (in chars) of messages, not including terminating '0'
 #define MSG_MAX_SIZE 127
 
+/*!
+ * Each message consists of a fixed length buffer
+ */
 typedef struct {
   char str[MSG_MAX_SIZE+1];
 }msg_item_t;
 
+
+/*!
+ * Message stack 
+ *
+ * Implements a stack of messages which can be pushed onto the top
+ * and popped off the top. This is used for debugging: messages are put
+ * into this stack at the start of a section of code, and removed at the end.
+ * If an error occurs in between push and pop, then the message can be printed.
+ *
+ * This code is only enabled if CHECK > 1. If CHECK is disabled then this
+ * message stack code reverts to empty functions which should be removed by
+ * the optimiser
+ */
 class MsgStack {
  public:
   MsgStack();
@@ -52,6 +70,7 @@ class MsgStack {
   void clear();        ///< Clear all message
   
   void dump();         ///< Write out all messages (using output)
+  std::string getDump();    ///< Write out all messages to a string
 #else
   /// Dummy functions which should be optimised out
   int push(const char *s, ...) {return 0;}
@@ -73,6 +92,11 @@ class MsgStack {
   int size;    ///< Size of the stack
 };
 
+/*!
+ * This is a way to define a global object,
+ * so that it is declared extern in all files except one
+ * where GLOBALORIGIN is defined.
+ */ 
 #ifndef GLOBALORIGIN
 #define GLOBAL extern
 #else
@@ -110,12 +134,22 @@ private:
   int point;
 };
 
-// To concatenate strings for a variable name
+/// To concatenate strings for a variable name
 #define CONCATENATE_DIRECT(s1, s2) s1##s2
+/// Need to use two levels due to macro strangeness
 #define CONCATENATE(s1, s2) CONCATENATE_DIRECT(s1, s2)
 
 /*!
  * The TRACE macro provides a convenient way to put messages onto the msg_stack
+ * It pushes a message onto the stack, and pops it when the scope ends
+ * 
+ * Example
+ * -------
+ * 
+ * {
+ *   TRACE("Starting calculation")
+ * 
+ * } // Scope ends, message popped
  */
 #ifdef CHECK
 #define TRACE(message) MsgStackItem CONCATENATE(msgTrace_ , __LINE__) (message, __FILE__, __LINE__)

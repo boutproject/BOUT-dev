@@ -19,19 +19,19 @@ grid="data/otv.grd.nc"
 ##################################################
 # derivative methods
 
-[ddx]
+[mesh:ddx]
 
 first = C4  # order of first x derivatives (options are 2 or 4)
 second = C4 # order of second x derivatives (2 or 4)
 upwind = U1 # order of upwinding method (1, 4, or 0 = TVD)
 
-[ddy]
+[mesh:ddy]
 
 first = C4
 second = C4
 upwind = W3
 
-[ddz]
+[mesh:ddz]
 
 first = C2
 second = C2

@@ -19,6 +19,8 @@ except:
   def old_div(a,b):
     return a / b
 
+from math import isnan
+
 nproc = 2       # Number of processors to run on
 
 # Relative tolerance in frequency and growth rate
@@ -199,7 +201,7 @@ for zeff in zlist:
     print("  Normalised gamma = ", gamma, " analytic = ", wi, " original = ", origi, " (",100.*gammadiff,"%)")
 
     if omegadiff != None:
-        if (omegadiff > omega_tol) or (gammadiff > gamma_tol):
+        if isnan(omegadiff) or (omegadiff > omega_tol) or (gammadiff > gamma_tol):
             code = 1 # Failed test
             print("  => FAILED")
         else:

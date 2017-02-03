@@ -1,4 +1,6 @@
-/*******************************************************************************
+/*!******************************************************************************
+ * \file fft.hxx
+ *
  * FFT routines
  *
  **************************************************************************
@@ -28,18 +30,57 @@
 
 #include "dcomplex.hxx"
 
+/// Complex in-place FFT
 void cfft(dcomplex *cv, int length, int isign);
-void ZFFT(dcomplex *cv, BoutReal zoffset, int isign, bool shift = true);
 
-// more optimised code (for BoutReals)
-
+/*!
+ * Returns the fft of a real signal using fftw_forward
+ *
+ * The fftw_forward returns
+ * out_k = sum_{j=0}^(length-1) in_j*exp(-2*pi*j*k*sqrt(-1)/length)
+ *
+ * Thus, out_k must be divided by 'length' in order for DFT[IDFT[in]] = in
+ * where IDFT is the inverse fourier transform.
+ * See the the fftw user manual for details.
+ *
+ * \param[in] in  Pointer to the 1D array to take the fourier transform of
+ * \param[in] length Number of points in the input array
+ *
+ * \param[out] Pointer to the complex 1D array which is the FFT of in
+ */
 void rfft(const BoutReal *in, int length, dcomplex *out);
-void irfft(dcomplex *in, int length, BoutReal *out);
 
-void ZFFT(const BoutReal *in, BoutReal zoffset, dcomplex *cv, bool shift = true);
-void ZFFT_rev(dcomplex *cv, BoutReal zoffset, BoutReal *out, bool shift = true);
-// Discrete Sine Transform
-void DST(BoutReal *in, int length, dcomplex *out);
+/*!
+ * Take the inverse fft of signal where the outputs are only reals.
+ *
+ * This is done through a call to fftw_plan_dft_c2r_1d
+ * which is calling fftw_backwards.
+ *
+ * That is
+ * out_k = sum_{j=0}^(length-1) in_j*exp(2*pi*j*k*sqrt(-1)/length)
+ *
+ * See the the fftw user manual for details.
+ *
+ * \param[in] in Pointer to the 1D array to take the inverse fourier transform
+ *               of
+ * \param[in] length Number of points in the input array
+ *
+ * \param[out] Pointer to the complex 1D array which is IFFTed
+ */
+void irfft(const dcomplex *in, int length, BoutReal *out);
+
+/*!
+ * Discrete Sine Transform
+ *
+ * in and out arrays must both be of the same length
+ */
+void DST(const BoutReal *in, int length, dcomplex *out);
+
+/*!
+ * Inverse Discrete Sine Transform
+ *
+ * in and out arrays must both be of the same length
+ */
 void DST_rev(dcomplex *in, int length, BoutReal *out);
 
 #endif // __FFT_H__

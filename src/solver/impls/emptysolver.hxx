@@ -35,10 +35,10 @@ class EmptySolver;
 
 class EmptySolver : public Solver {
 public:
-  EmptySolver(Options *opt = NULL) {throw BoutException("Solver not enabled!");}
+  EmptySolver(Options *UNUSED(opt) = NULL) {throw BoutException("Solver not enabled!");}
   
   int run() {return 0;}
-  BoutReal run(BoutReal tout, int &ncalls, BoutReal &rhstime) {return 0;}
+  BoutReal run(BoutReal UNUSED(tout), int &UNUSED(ncalls), BoutReal &UNUSED(rhstime)) {return 0;}
 
 };
 

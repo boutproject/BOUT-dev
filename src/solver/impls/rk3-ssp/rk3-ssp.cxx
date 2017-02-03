@@ -89,7 +89,6 @@ int RK3SSP::run() {
     
     BoutReal dt;
     bool running = true;
-    int internal_steps = 0;
     do {
       // Take a single time step
       

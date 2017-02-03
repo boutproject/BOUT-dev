@@ -1,4 +1,6 @@
-/*
+/*!
+ * \file fieldgenerators.hxx
+ * 
  * These classes are used by FieldFactory
  */
 
@@ -7,6 +9,7 @@
 
 #include <field_factory.hxx>
 #include <boutexception.hxx>
+#include <unused.hxx>
 
 #include <cmath>
 
@@ -15,20 +18,21 @@ using std::list;
 //////////////////////////////////////////////////////////
 // Generators from values
 
-// Creates a Field Generator using a pointer to value
-// WARNING: The value pointed to must remain in scope until this generator is finished
+/// Creates a Field Generator using a pointer to value
+/// WARNING: The value pointed to must remain in scope until this generator is finished
 class FieldValuePtr : public FieldGenerator {
 public:
   FieldValuePtr(BoutReal *val) : ptr(val) {}
-  FieldGenerator* clone(const list<FieldGenerator*> args) { return new FieldValuePtr(ptr); }
-  BoutReal generate(double x, double y, double z, double t) { return *ptr; }
+  FieldGenerator* clone(const list<FieldGenerator*> UNUSED(args)) { return new FieldValuePtr(ptr); }
+  BoutReal generate(double UNUSED(x), double UNUSED(y), double UNUSED(z), double UNUSED(t)) { return *ptr; }
 private:
-  BoutReal *ptr;
+  BoutReal *ptr; 
 };
 
 //////////////////////////////////////////////////////////
 // Functions
 
+/// Sine function field generator
 class FieldSin : public FieldGenerator {
 public:
   FieldSin(FieldGenerator* g) : gen(g) {}
@@ -40,6 +44,7 @@ private:
   FieldGenerator *gen;
 };
 
+/// Cosine function field generator
 class FieldCos : public FieldGenerator {
 public:
   FieldCos(FieldGenerator* g) : gen(g) {}
@@ -52,7 +57,7 @@ private:
   FieldGenerator *gen;
 };
 
-// Template class to define generators around a C function
+/// Template class to define generators around a C function
 typedef BoutReal(*single_arg_op)(BoutReal);
 template<single_arg_op Op>
 class FieldGenOneArg : public FieldGenerator { ///< Template for single-argument function
@@ -72,6 +77,7 @@ private:
   FieldGenerator *gen;
 };
 
+/// Template for a FieldGenerator with two input arguments
 typedef BoutReal(*double_arg_op)(BoutReal, BoutReal);
 template<double_arg_op Op>
 class FieldGenTwoArg : public FieldGenerator { ///< Template for two-argument function
@@ -91,7 +97,8 @@ private:
   FieldGenerator *A, *B;
 };
 
-class FieldATan : public FieldGenerator { // Arc Tangent
+/// Arc (Inverse) tangent. Either one or two argument versions
+class FieldATan : public FieldGenerator { 
 public:
   FieldATan(FieldGenerator* a, FieldGenerator* b=NULL) : A(a), B(b) {}
   FieldGenerator* clone(const list<FieldGenerator*> args) {
@@ -111,6 +118,7 @@ private:
   FieldGenerator *A, *B;
 };
 
+/// Hyperbolic sine function
 class FieldSinh : public FieldGenerator {
 public:
   FieldSinh(FieldGenerator* g) : gen(g) {}
@@ -121,6 +129,7 @@ private:
   FieldGenerator *gen;
 };
 
+/// Hyperbolic cosine
 class FieldCosh : public FieldGenerator {
 public:
   FieldCosh(FieldGenerator* g) : gen(g) {}
@@ -131,6 +140,7 @@ private:
   FieldGenerator *gen;
 };
 
+/// Hyperbolic tangent
 class FieldTanh : public FieldGenerator {
 public:
   FieldTanh(FieldGenerator* g=NULL) : gen(g) {}
@@ -141,6 +151,7 @@ private:
   FieldGenerator *gen;
 };
 
+/// Gaussian distribution, taking mean and width arguments
 class FieldGaussian : public FieldGenerator {
 public:
   FieldGaussian(FieldGenerator *xin, FieldGenerator *sin) : X(xin), s(sin) {}
@@ -151,6 +162,7 @@ private:
   FieldGenerator *X, *s;
 };
 
+/// Absolute value
 class FieldAbs : public FieldGenerator {
 public:
   FieldAbs(FieldGenerator* g) : gen(g) {}
@@ -161,6 +173,7 @@ private:
   FieldGenerator *gen;
 };
 
+/// Square root function
 class FieldSqrt : public FieldGenerator {
 public:
   FieldSqrt(FieldGenerator* g) : gen(g) {}
@@ -171,6 +184,7 @@ private:
   FieldGenerator *gen;
 };
 
+/// Heaviside function, switches between 0 and 1
 class FieldHeaviside : public FieldGenerator {
 public:
   FieldHeaviside(FieldGenerator* g) : gen(g) {}
@@ -182,6 +196,7 @@ private:
   FieldGenerator *gen;
 };
 
+/// Generator for the error function erf
 class FieldErf : public FieldGenerator {
 public:
   FieldErf(FieldGenerator* g) : gen(g) {}
@@ -242,6 +257,7 @@ private:
   list<FieldGenerator*> input;
 };
 
+/// Generator to round to the nearest integer
 class FieldRound : public FieldGenerator {
 public:
   FieldRound(FieldGenerator* g) : gen(g) {}
@@ -290,8 +306,11 @@ public:
   FieldGenerator* clone(const list<FieldGenerator*> args);
   BoutReal generate(double x, double y, double z, double t);
 private:
-  /// Generate a random number between 0 and 1
+  /// Generate a random number between 0 and 1 (exclusive)
   /// given an arbitrary seed value
+  ///
+  /// This PRNG has no memory, i.e. you need to call it 
+  /// with a different seed each time.
   BoutReal genRand(BoutReal seed);
 
   FieldGenerator *arg;
