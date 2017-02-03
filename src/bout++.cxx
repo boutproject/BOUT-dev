@@ -224,12 +224,6 @@ int BoutInitialise(int &argc, char **&argv) {
   output.write("\tSignal handling disabled\n");
 #endif
 
-#ifdef PDBF
-  output.write("\tPDB support enabled\n");
-#else
-  output.write("\tPDB support disabled\n");
-#endif
-
 #ifdef NCDF
   output.write("\tnetCDF support enabled\n");
 #else
@@ -293,9 +287,6 @@ int BoutInitialise(int &argc, char **&argv) {
     // Set up the "dump" data output file
     output << "Setting up output (dump) file\n";
 
-    if(!options->getSection("output")->isSet("floats"))
-      options->getSection("output")->set("floats", true, "default"); // by default output floats
-
     dump = Datafile(options->getSection("output"));
     
     /// Open a file for the output
@@ -306,9 +297,9 @@ int BoutInitialise(int &argc, char **&argv) {
     }
 
     /// Add book-keeping variables to the output files
-    dump.writeVar(BOUT_VERSION, "BOUT_VERSION");
-    dump.add(simtime, "t_array", 1); // Appends the time of dumps into an array
-    dump.add(iteration, "iteration", 0);
+    dump.add(const_cast<BoutReal&>(BOUT_VERSION), "BOUT_VERSION", false);
+    dump.add(simtime, "t_array", true); // Appends the time of dumps into an array
+    dump.add(iteration, "iteration", false);
 
     ////////////////////////////////////////////
 
@@ -491,13 +482,8 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
  **************************************************************************/
 
 /// Print an error message and exit
-void bout_error() {
-  bout_error(NULL);
-}
-
 void bout_error(const char *str) {
   throw BoutException(str);
-  exit(1);
 }
 
 #ifdef SIGHANDLE

@@ -6,9 +6,11 @@
 
 NOUT = 0  # No timesteps
 
-MZ = 5    # Z size
+MZ = 4    # Z size
 
 grid = "test_io.grd.hdf5"
 
 dump_format = "hdf5"  # HDF5 format. Alternative is "pdb" or "nc"
 
+[output]
+floats=true

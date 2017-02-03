@@ -26,6 +26,7 @@ Homepage found at [http://boutproject.github.io/](http://boutproject.github.io/)
 ## Table of Contents
 * [Usage and installation](#usage-and-installation)
 * [Overview of files](#overview-of-files)
+* [Contributing](#contributing)
 * [Terms of use](#terms-of-use)
 * [License](#license)
 
@@ -78,6 +79,10 @@ This directory contains
     * **py_gridgen**      Translation" into python of the corresponding IDL routines in the folder gridgen
     * **shifted_circle**  Produce shifted cirle equilibria input grids
 
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Terms of use
 

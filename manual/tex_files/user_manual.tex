@@ -262,12 +262,11 @@ This section will go through the following steps:
 
 \subsection{Obtaining BOUT++}
 %
-BOUT++ is now hosted publicly on github, consisting of two repositories:
-{\url{http://github.com/boutproject/BOUT}} is a stable repository which is only
-occasionally updated. Most development is done in the development repository
-{\url{http://github.com/boutproject/BOUT-dev}}. Most users are recommended to use the
-BOUT-dev repository, as it may contain important bug fixes.
-To obtain a copy of the latest version, run
+BOUT++ is hosted publicly on github at
+{\url{http://github.com/boutproject/BOUT-dev}}. You can the latest stable
+version from {\url{https://github.com/boutproject/BOUT-dev/releases}}. If you
+want to develop BOUT++, you should use git to clone the repository. To obtain a
+copy of the latest version, run
 %
 \index{Github}
 %
@@ -280,6 +279,12 @@ latest changes later, go into the  \texttt{BOUT-dev} directory and run
 %
 \begin{verbatim}
 $ git pull
+\end{verbatim}
+%
+Development is done on the ``next'' branch, which you can checkout with
+%
+\begin{verbatim}
+$ git checkout next
 \end{verbatim}
 %
 
@@ -376,11 +381,7 @@ and the startup file is \texttt{\$HOME/.cshrc}. You should now be able to run
 %
 After getting an MPI compiler, the next step is to make sure the libraries
 BOUT++ needs are installed. At minimum BOUT++ needs the FFTW-3 library, and to
-run any of the examples you'll also need NetCDF-4 (prior to 4.2) or HDF5
-installed.
-
-\note{There are currently issues with support for NetCDF's new C++ API, which
-appeared in 4.2.  For now use NetCDF 4.1.x}
+run any of the examples you'll also need NetCDF-4 or HDF5 installed.
 
 Most large machines (e.g. NERSC Hopper, HECToR, HPC-FF etc.) will have these
 libraries and many more already installed, but you may need to load a module to
@@ -449,17 +450,17 @@ finishes successfully, then skip to the next section, but if you see a message
 library. Unless you have PACT or pnetcdf installed, this will be followed by a
 message \texttt{ERROR: At least one file format must be supported}.
 
-Download the 4.1.3 {\bf bundled}
-%
-\footnote{Support for the more recent unbundled versions is coming soon}
-release of NetCDF from
-\url{http://www.unidata.ucar.edu/downloads/netcdf/netcdf-4_1_3/} and put the
-\texttt{netcdf-4.1.3.tar.gz} file into your ``install'' directory. Untar the
-file and 'cd' into the resulting directory:
+The latest versions of NetCDF have separated out the C++ API from the main C
+library. As a result, you will need to download and install both. Download the
+latest versions of the NetCDF-C and NetCDF-4 C++ libraries from
+{\url{http://www.unidata.ucar.edu/downloads/netcdf/index.jsp}}. As of January
+2017, these are versions 4.4.1.1 and 4.3.0 respectively.
+
+Untar the file and 'cd' into the resulting directory:
 %
 \begin{verbatim}
-$ tar -xzvf netcdf-4.1.3.tar.gz
-$ cd netcdf-4.1.3
+$ tar -xzvf netcdf-4.4.1.1.tar.gz
+$ cd netcdf-4.4.1.1
 \end{verbatim}
 %
 As with MPI compilers and FFTW, configure, then make and make install:
@@ -470,20 +471,35 @@ $ make
 $ make install
 \end{verbatim}
 %
-Sometimes configure can fail, in which case try disabling Fortran and the HDF5
-interface:
+Sometimes configure can fail, in which case try disabling Fortran:
 %
 \begin{verbatim}
-$ ./configure --prefix=$HOME/local --disable-fortran --disable-netcdf-4
+$ ./configure --prefix=$HOME/local --disable-fortran
 $ make
 $ make install
 \end{verbatim}
 %
-Download the latest stable release of NetCDF-4 C++ from
-%\url{http://www.unidata.ucar.edu/downloads/netcdf/netcdf-cxx/}.  At the time
-%of writing, this was called \texttt{netcdf-cxx4-4.2.tar.gz}.  Put this file
-%into your ``install'' directory, untar it, and 'cd' into the resulting
-%directory.
+Similarly for the C++ API:
+%
+\begin{verbatim}
+$ tar -xzvf netcdf-cxx4-4.3.0.tar.gz
+$ cd netcdf-cxx4-4.3.0
+$ ./configure --prefix=$HOME/local
+$ make
+$ make install
+\end{verbatim}
+%
+You may need to set a couple of environment variables as well:
+%
+\begin{verbatim}
+$ export PATH=$HOME/local/bin:$PATH
+$ export LD_LIBRARY_PATH=$HOME/local/lib:$LD_LIBRARY_PATH
+\end{verbatim}
+%
+You should check where NetCDF actually installed its libraries. On some systems
+this will be ``\$HOME/local/lib'', but on others it may be, e.g.
+``\$HOME/local/lib64''. Check which it is, and set ``\$LD\_LIBRARY\_PATH''
+appropriately.
 
 Go back to the BOUT directory and run the configure script again, this time
 specifying both the location of FFTW (if you installed it from source above),
@@ -499,11 +515,13 @@ which should now finish successfully, printing a summary of the configuration:
 Configuration summary
   FACETS support: no
   PETSc support: no
-  IDA support: no
-  CVODE support: no
+  SLEPc support: no
+  IDA support: yes
+  CVODE support: yes
+  ARKODE support: yes
   NetCDF support: yes
   Parallel-NetCDF support: no
-  PDB support: no
+  HDF5 support: yes (parallel: no)
   Hypre support: no
   MUMPS support: no
 \end{verbatim}
@@ -683,21 +701,17 @@ PETSc.
 
 \subsection{File formats}
 %
-BOUT++ can currently use four different file formats: Portable Data Binary
-(PDB) which is part of PACT
-%
-\footnote{\url{http://pact.llnl.gov}}, NetCDF-4%
-\footnote{\url{http://www.unidata.ucar.edu/software/netcdf/}}, HDF5%
+BOUT++ can currently use two different file formats: NetCDF-4%
+\footnote{\url{http://www.unidata.ucar.edu/software/netcdf/}}, and HDF5%
 \footnote{\url{https://www.hdfgroup.org/HDF5/}} and experimental support for
-Parallel NetCDF.  PDB was developed at LLNL, was used in the UEDGE and BOUT
-codes, and was the original format used by BOUT++. NetCDF is a more widely used
-format and so has many more tools for viewing and manipulating files.  In
-particular, the NetCDF-4 library can produce files in either NetCDF3
-``classic'' format, which is backwards-compatible with NetCDF libraries since
-1994 (version 2.3), or in the newer NetCDF4 format, which is based on (and
-compatible with) HDF5. HDF5 is another widely used format. If you have multiple
-libraries installed then BOUT++ can use them simultaneously, for example
-reading in grid files in PDB format, but writing output data in NetCDF format.
+parallel flavours of both. NetCDF is a widely used format and so has many more
+tools for viewing and manipulating files.  In particular, the NetCDF-4 library
+can produce files in either NetCDF3 ``classic'' format, which is
+backwards-compatible with NetCDF libraries since 1994 (version 2.3), or in the
+newer NetCDF4 format, which is based on (and compatible with) HDF5. HDF5 is
+another widely used format. If you have multiple libraries installed then BOUT++
+can use them simultaneously, for example reading in grid files in NetCDF format,
+but writing output data in HDF5 format.
 
 To enable NetCDF support, you will need to install NetCDF version 4.0.1 or
 later.  Note that although the NetCDF-4 library is used for the C++ interface,
@@ -708,13 +722,6 @@ then compile NetCDF with HDF5 support.  When NetCDF is installed, a script
 \texttt{nc-config} should be put into somewhere on the path. If this is found
 then configure should have all the settings it needs. If this isn't found then
 configure will search for the NetCDF include and library files.
-
-PACT \url{http://pact.llnl.gov/} is needed for reading and writing Portable
-Data Binary (PDB) format files. This is mainly for backwards compatibility with
-BOUT and UEDGE, and NetCDF-4 is recommended.  If you need to be able to read or
-write PDB files, details on installing PACT are given in
-Appendix~\ref{apx:pact}.
-
 
 
 \subsection{SUNDIALS}
@@ -1280,13 +1287,13 @@ Next comes the compile-time options, which depend on how BOUT++ was configured
 Compile-time options:
         Checking enabled, level 2
         Signal handling enabled
-        PDB support disabled
         netCDF support enabled
+        Parallel NetCDF support disabled
 \end{verbatim}
 %
 Thins says that some run-time checking of values is enabled, that the code will
-try to catch segmentation faults to print a useful error, that PDB files aren't
-supported, but that NetCDF files are.
+try to catch segmentation faults to print a useful error, that NetCDF files are
+supported, but that the parallel flavour isn't.
 
 The processor number comes next:
 %
@@ -1642,19 +1649,21 @@ directory ``.''.
 
 
 
-\subsection{Makefiles in BOUT++}
+\section{Makefiles and compiling BOUT++}
 %
 BOUT++ has its own makefile system. These can be used to
 %
 \begin{enumerate}
- \item Writing an example or executable (see section~\ref{sec:executables})
- \item Adding a feature to BOUT++ (see section~\ref{sec:modules})
+ \item Write an example or executable (see section~\ref{sec:executables})
+ \item Add a feature to BOUT++ (see section~\ref{sec:modules})
 \end{enumerate}
 %
 In all makefiles, \texttt{BOUT\_TOP} is required!
 
+These makefiles are sufficient for most uses, but for more complicated, an executable script 
+\texttt{bout-config} can be used to get the compilation flags (see section~\ref{sec:bout-config}).
 
-\subsubsection{Executables example}
+\subsection{Executables example}
 %
 \label{sec:executables}
 %
@@ -1664,7 +1673,7 @@ very simple:
 \begin{lstlisting}[language=make,numbers=none]
 BOUT_TOP        = ../..
 
-SOURCEC         = <filename>.cpp
+SOURCEC         = <filename>.cxx
 
 include $(BOUT_TOP)/make.config
 \end{lstlisting}
@@ -1677,21 +1686,47 @@ Optionally, it is possible to specify \texttt{TARGET} which defines what the
 executable should be called (e.g. if you have multiple source files). That's
 it!
 
+\subsubsection{Multiple subdirectories}
 
-\subsubsection{Modules example}
+Large physics modules can have many files, and it can be helpful to organise these into
+subdirectories. An example of how to do this is in \texttt{examples/make\_subdir}.
+
+In the top level, list the directories 
+%
+\begin{lstlisting}[language=make,numbers=none]
+DIRS = fuu bar
+\end{lstlisting}
+%
+In the makefile in each subdirectory, specify
+%
+\begin{lstlisting}[language=make,numbers=none]
+TARGET = sub
+\end{lstlisting}
+%
+then specify the path to the top-level directory
+%
+\begin{lstlisting}[language=make,numbers=none]
+MODULE_DIR = ..
+\end{lstlisting}
+%
+and the name of the subdirectory that the makefile is in
+\begin{lstlisting}[language=make,numbers=none]
+SUB_NAME = fuu
+\end{lstlisting}
+
+\subsection{Modules example}
 %
 \label{sec:modules}
 %
-If you are writing a new module (or concrete implementation), then it is again
-pretty simple
+If you are writing a new module (or concrete implementation) to go into the BOUT++ library, 
+then it is again pretty simple
 %
 \begin{lstlisting}[language=make,numbers=none]
 BOUT_TOP = ../..
 
-SOURCEC         = communicator.cpp difops.cpp geometry.cpp grid.cpp
-interpolation.cpp topology.cpp
-SOURCEH         = $(SOURCEC:%.cpp=%.h)
-INCLUDE         = -I../sys -I../field -I../fileio -I../invert
+SOURCEC         = communicator.cxx difops.cxx geometry.cxx grid.cxx
+interpolation.cxx topology.cxx
+SOURCEH         = $(SOURCEC:%.cxx=%.h)
 TARGET          = lib
 
 include $(BOUT_TOP)/make.config
@@ -1702,130 +1737,30 @@ include $(BOUT_TOP)/make.config
 
 The other variables should be pretty self explanatory.
 
-
 \subsubsection{Adding a new subdirectory to 'src'}
 %
 No worries, just make sure to edit \texttt{src/makefile} to add it to the
 \texttt{DIRS} variable.
 
+\subsection{bout-config script}
+\label{sec:bout-config}
 
-
-\subsection{BOUT.inp settings}
+The \texttt{bout-config} script is in the \texttt{bin} subdirectory of the BOUT++ distribution, 
+and is generated by \texttt{configure}. This script can be used to get the compilers, flags and settings
+to compile BOUT++. To get a list of available options:
 %
-{\color{red} \textbf{WARNING: THE FOLLOWING LIST IS OUT OF DATE AND SHOULD NOT
-BE FOLLOWED}}
-%
-\begin{lstlisting}[language=make,numbers=none]
-# This file lists all BOUT++ settings (with default values)
-#
-# File is divided into sections which can be in any order.
-# Comments start with either a ';' or a '#'
-
-NOUT = 1           # Number of outputs
-TIMESTEP = 1.0     # Time between outputs
-WALL_LIMIT = -1.0  # Wall clock limit in hours. -ve means no limit
-archive = -1       # Number of outputs between restart archiving
-                   # -ve means no archiving
-
-grid = "data/bout.grd.pdb" # Grid file to use
-
-ShiftXderivs = false   # Use shifted X derivatives
-IncIntShear = false    #
-ShiftInitial = ShiftXderivs # Shift the initial condition
-TwistShift = false     # Use Twist-Shift condition?
-ShiftOrder = 0         # X shift order (1,4 or 0 = FFT)
-TwistOrder = 0         # Twist-shift order (1,4 or 0 = FFT)
-
-non_uniform = false    # Use corrections for non-uniform meshes
-
-MZ = 65                # Number of points in Z (2^n + 1)
-zperiod = 1            # How many periods in 2pi
-                       # NOTE: Instead of zperiod, ZMIN and ZMAX
-                       # can be specified in units of 2pi
-
-MXG = 2                # # of X guard cells (change with care!)
-MYG = 2                # # of Y guard cells (change with care!)
-
-BoundaryOnCell = false # Location of boundary
-
-StaggerGrids = false   # Use staggered grids
-
-NXPE = 1               # Number of processors in X
-
-dump_float = true      # Output floats to dump file
-                       # (false -> doubles)
-
-dump_format = "pdb"    # Data format for the dump files.
-                       # for NetCDF, set to "cdl", "nc" or "ncdf"
-restart_format = dump_format  # Format for restart files
-
-[comms]
-
-async = true           # Use asyncronous sends
-group_nonblock = true  # Use non-blocking group communications
-
-[fft]
-
-fft_measure = true     # If using FFTW, perform tests to determine
-                       # fastest method
-
-[solver]
-
-# NOTE: Some of these options only apply to some solvers
-
-mudq = n3d*(MXSUB+2)
-mldq = n3d*(MXSUB+2)
-mukeep = 0
-mlkeep = 0
-ATOL = 1.0e-12
-RTOL = 1.0e-5
-
-use_precon = false   # If the physics solver specifies a preconditioner
-                     # then use that, otherwise BBD is used
-
-use_jacobian = false # If the physics solver specifies a Jacobian
-                     # then use that. Otherwise a difference quotient
-                     # method is used internally
-
-precon_dimens = 50   # For BBD preconditioner
-precon_tol = 1.0e-4  # For BBD
-
-adams_moulton = false # Use Adams-Moulton method (default is BDF)
-func_iter = false     # Functional iteration (default is Newton)
-
-[laplace]
-
-filter = 0.2    # Fraction of toroidal modes to filter out
-low_mem = false # For parallel algorithm, use less memory
-                # This is at the expense of communication overlap
-
-use_pdd = false # Use the approximate Parallel Diagonally Dominant solver
-
-all_terms = false # Include all the extra terms in Delp2 and inversion
-
-[ddx]
-
-first = C4
-second = C4
-upwind = W3
-
-[ddy]
-
-first = C4
-second = C4
-upwind = W3
-
-[ddz]
-
-first = C4
-second = C4
-upwind = W3
+\begin{lstlisting}[language=bash,numbers=none]
+$ bout-config --help
 \end{lstlisting}
 %
-
-
-
-
+so to get the library linking flags, for example
+%
+\begin{lstlisting}[language=bash,numbers=none]
+$ bout-config --libs
+\end{lstlisting}
+%
+This script can be used in makefiles to compile BOUT++ alongside other libraries. An example is in
+\texttt{examples/make-script}.
 
 \section{Output and post-processing}
 %
@@ -1833,45 +1768,13 @@ upwind = W3
 %
 The majority of the existing analysis and post-processing code is written in
 IDL. The directory \texttt{idllib} contains many useful routines for reading
-PDB files and analysing data. A summary of available IDL routines is given in
+output files and analysing data. A summary of available IDL routines is given in
 Appendix~\ref{apx:idl_routines}.
 
 Post-processing using Python is also possible, and there are some modules in
 the \texttt{pylib} directory, and a list of routines in
 Appendix~\ref{apx:py_routines}.  This is a more recent addition, and so is not
 yet as developed as the IDL support.
-
-
-
-\subsection{Note on reading PDB files}
-%
-You should never need to use PDB files with BOUT++, as all input and output
-routines have now been changed to use NetCDF. For backwards compatibility with
-BOUT, PDB files can still be used if needed. IDL comes with routines to
-manipulate NetCDF files, but to read PDB files you will need the PDB2IDL
-library supplied with BOUT++:
-%
-\begin{verbatim}
-cd PDB2IDL
-make
-\end{verbatim}
-%
-To use the \code{PDB2IDL} library and IDL analysis codes, set the following
-environment variables
-%
-\begin{verbatim}
-IDL_PATH=$IDL_PATH:<bout>/idllib/
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH:<bout>/lib/
-\end{verbatim}
-%
-Before any of the PDB2IDL functions can be used, you first need to run
-%
-\begin{verbatim}
-IDL> .r pdb2idl
-\end{verbatim}
-%
-This can be added to your IDL startup file (which is specified by the
-\code{IDL\_STARTUP} environment variable).
 
 
 
@@ -1890,8 +1793,7 @@ Ti0 Ti_x ZMAX ZMIN iteration jpar phi rho rho_s t_array wci
 \end{verbatim}
 %
 The \code{file\_list} procedure just returns an array, listing all the
-variables in a given file. This method (and all the file\_ methods) works for
-both NetCDF and PDB files.
+variables in a given file.
 
 One thing new users can find confusing is that different simulations may have
 very different outputs.  This is because {\bf BOUT++ is not a single physics
@@ -1930,7 +1832,7 @@ IDL> print, wci
   9.58000e+06
 \end{verbatim}
 %
-\note{The \code{file\_read} command (and NetCDF/PDB access generally) is
+\note{The \code{file\_read} command (and NetCDF access generally) is
 case-sensitive: variable \code{Wci} is different to \code{wci}}
 
 To read in all the variables in a file into a structure, use the
@@ -1984,12 +1886,10 @@ NI              FLOAT     = Array[11, 1, 32, 100]
 
 \subsection{Summary of IDL file routines}
 %
-Functions file\_* can read/write either PDB or NetCDF files, depending on the
-file extension. Hence same analysis / pre-processing codes can use PDB and/or
-NetCDF files. Any file ending ".nc", ".cdl", ".cdf" is assumed to be NetCDF,
-otherwise PDB.
+Functions file\_* can currently only read/write NetCDF files. HDF5 is not
+supported yet.
 
-Open a PDB or NetCDF file:
+Open a NetCDF file:
 %
 \begin{verbatim}
 handle = file_open("filename", /write, /create)
@@ -2040,17 +1940,6 @@ and to write a structure to file:
 \begin{verbatim}
 status = file_export("filename", data)
 \end{verbatim}
-%
-Converting file types can now be done using
-%
-\begin{verbatim}
-d = file_import("somefile.pdb")
-s = file_export("somefile.nc", d)
-\end{verbatim}
-%
-Note that this will mess up the case of the variable names, and names may be
-changed to become valid IDL variable names.  To convert PDB files to NetCDF
-there is also a code \file{pdb2cdf} in \file{BOUT/tools/archiving/pdb2cdf}.
 
 
 
@@ -2128,9 +2017,9 @@ There are several modules available for reading NetCDF files, so to provide a
 consistent interface, file access is wrapped into a class DataFile. This
 provides a simple interface for reading and writing files from any of the
 following modules: \texttt{netCDF4}; \texttt{Scientific.IO.NetCDF}; and
-\texttt{scipy.io.netcdf}. The DataFile class also provides allows access to
-HDF5 files through the same interface, using the h5py module.  To open a file
-using DataFile:
+\texttt{scipy.io.netcdf}. The DataFile class also provides allows access to HDF5
+files through the same interface, using the \texttt{h5py} module.  To open a
+file using DataFile:
 %
 \begin{lstlisting}[language=python,numbers=none]
 from boututils.datafile import DataFile
@@ -2150,25 +2039,37 @@ var = f.read("variable")   # Read a variable from the file
 f.close()                  # Close the file
 \end{lstlisting}
 %
+A more robust way to read from DataFiles is to use the context manager syntax:
+%
+\begin{lstlisting}[language=python,numbers=none]
+from boututils.datafile import DataFile
+
+with DataFile("file.hdf5") as f: # Open the file
+    var = f.read("variable")     # Read a variable from the file
+\end{lstlisting}
+%
+This way the DataFile is automatically closed at the end of the \texttt{with}
+block, even if there is an error in \texttt{f.read}.
+%
 To list the variables in a file e.g.
 %
 \begin{lstlisting}[language=python,numbers=none]
 >>> f = DataFile("test_io.grd.nc")
->>> print f.list()
+>>> print(f.list())
 ['f3d', 'f2d', 'nx', 'ny', 'rvar', 'ivar']
 \end{lstlisting}
 %
 and to list the names of the dimensions
 %
 \begin{lstlisting}[language=python,numbers=none]
->>> print d.dimensions("f3d")
+>>> print(f.dimensions("f3d"))
 ('x', 'y', 'z')
 \end{lstlisting}
 %
 or to get the sizes of the dimensions
 %
 \begin{lstlisting}[language=python,numbers=none]
->>> print d.size("f3d")
+>>> print(f.size("f3d"))
 [12, 12, 5]
 \end{lstlisting}
 %
@@ -2327,7 +2228,7 @@ u = bread(f, "U")  # Finally read the variable
 \index{options}
 %
 The inputs to BOUT++ are a text file containing options, and for complex grids
-a binary grid file in NetCDF or PDB format. Generating input grids for tokamaks
+a binary grid file in NetCDF or HDF5 format. Generating input grids for tokamaks
 is described in section~\ref{sec:gridgen}. The grid file describes the size and
 topology of the X-Y domain, metric tensor components and usually some initial
 profiles. The option file specifies the size of the domain in the symmetric
@@ -2512,7 +2413,7 @@ simulation is run (i.e. running ``\code{ls ./data/BOUT.inp}'' gives the options
 file)
 %
 \begin{lstlisting}[language=bash,numbers=none]
-grid = "data/cbm18_8_y064_x260.pdb"
+grid = "data/cbm18_8_y064_x260.nc"
 \end{lstlisting}
 %
 
@@ -2573,10 +2474,10 @@ section~\ref{sec:output} for more details.
 \label{sec:iooptions}
 %
 The format of the output (dump) files can be controlled, if support for more
-than one output format has been configured, by setting the top-level option
-{\bf dump\_format} to one of the recognised file extensions: `nc' for NetCDF;
-`hdf5', `hdf' or `h5' for HDF5; `pdb' for PDB. For example to select HDF5
-instead of the default NetCDF format put
+than one output format has been configured, by setting the top-level option {\bf
+  dump\_format} to one of the recognised file extensions: `nc' for NetCDF;
+`hdf5', `hdf' or `h5' for HDF5. For example to select HDF5 instead of the
+default NetCDF format put
 %
 \begin{lstlisting}
 dump_format = hdf5
@@ -2829,88 +2730,57 @@ This is currently quite rudimentary and needs improving.
 %
 \index{variable initialisation}
 %
+Variables in BOUT++ are not initialised automatically, but must be explicitly given a value. For example the following code declares a \texttt{Field3D} variable then attempts to access a particular element:
+\begin{lstlisting}[numbers=none]
+Field3D f;    // Declare a variable
+f(0,0,0) = 1.0;  // Error!
+\end{lstlisting}
+This results in an error because the data array to store values in 
+\texttt{f} has not been allocated. Allocating data can be done in several ways:
+\begin{enumerate}
+\item Initialise with a value
+  \begin{lstlisting}[numbers=none]
+    Field3D f = 0.0; // Allocates memory, fills with zeros
+    f(0,0,0) = 1.0; // ok
+  \end{lstlisting}
+  That this cannot be done at a global scope, since it requires
+  the mesh to already exist and have a defined size.
+\item Set to a scalar value
+  \begin{lstlisting}[numbers=none]
+    Field3D f;
+    f = 0.0; // Allocates memory, fills with zeros
+    f(0,0,0) = 1.0; // ok
+  \end{lstlisting}
+  Note that setting a field equal to another field has the effect of
+  making both fields share the same underlying data. This behaviour is 
+  similar to how NumPy arrays behave in Python.
+  \begin{lstlisting}[numbers=none]
+    Field3D g = 0.0;  // Allocates memory, fills with zeros
+    Field3D f = g; // f now shares memory with g
+    
+    f(0,0,0) = 1.0; // g also modified 
+  \end{lstlisting}
+  To ensure that a field has a unique underlying memory array
+  call the \texttt{allocate} method before writing to individual indices.
+  
+\item Use \texttt{allocate()} to allocate memory
+  \begin{lstlisting}[numbers=none]
+    Field3D f;
+    f.allocate(); // Allocates memory, values undefined
+    f(0,0,0) = 1.0; // ok
+  \end{lstlisting}
+\end{enumerate}
+
+In a BOUT++ simulation some variables are typically evolved in time. The initialisation of these variables is handled by the time integration solver.
+
+\subsection{Initialisation of time evolved variables}
+
 Each variable being evolved has its own section, with the same name as the
 output data. For example, the high-$\beta$ model has variables ``P'', ``jpar'',
 and ``U'', and so has sections \code{[P]}, \code{[jpar]}, \code{[U]} (not case
 sensitive).
 
-There are two ways to specify the initial conditions for a variable: the
-original method (similar to that used by BOUT-06) which covers the most
-commonly needed functions. If more flexibility is needed then a more general
-analytical expression can be given.
-
-
-\subsubsection{Original method}
-%
-The shape of the initial value is specified for each dimension separately using
-the options \code{xs\_opt}, \code{ys\_opt}, and \code{zs\_opt}. These are set
-to an integer:
-%
-\begin{enumerate}
-\setcounter{enumi}{-1}
-\item Constant (this is the default)
-\item Gaussian, with a peak location given by \code{xs\_s0}, \code{ys\_s0},
-    \code{zs\_s0} as a fraction of the domain (i.e. $0 \Rarrow 1$.  The width
-    is given by \code{*s\_wd}, also as a fraction of the domain size.
-\item Sinusoidal, with the number of periods given by \code{*s\_mode}.
-\item Mix of mode numbers, with pseudo-random phases.
-\end{enumerate}
-%
-The magnitude of the initial value is given by the variable \code{scale}.
-
-Defaults for all variables can be set in a section called \code{[All]}, so for
-example the options below:
-%
-\begin{lstlisting}[language=bash,numbers=none]
-[All]
-scale = 0.0 # By default set variables to zero
-
-xs_opt = 1  # Gaussian in X
-ys_opt = 1  # Gaussian in Y
-zs_opt = 2  # Sinusoidal in Z (axisymmetric direction)
-
-xs_s0 = 0.5 # Peak in the middle of the X direction
-xs_wd = 0.1 # Width is 10% of the domain
-
-ys_s0 = 0.5 # Peak in the middle of the Y direction
-ys_wd = 0.3 # Width is 30% of the Y domain
-
-zs_mode = 3 # 3 periods in the Z direction
-
-[U]
-scale = 1.0e-5  # Amplitude for the U variable, overrides default
-\end{lstlisting}
-%
-For field-aligned tokamak simulations, the Y direction is along the field and
-in the core this will have a discontinuity at the twist-shift location where
-field-lines are matched onto each other. To handle this, a truncated Ballooning
-transformation can be used to construct a smooth initial perturbation:
-%
-\begin{align}
-U_0^{balloon} = \sum_{i=-N}^N F\L(x\R)G\L(y + 2\pi i\R)H\L(z + q2\pi i\R)
-%
-\label{eq:ballooning_transform}
-%
-\end{align}
-%
-\begin{figure}[h]
-\includegraphics[width=0.48\textwidth,
-keepaspectratio]{figs/init_noballoon.png}
-\includegraphics[width=0.48\textwidth, keepaspectratio]{figs/init_balloon.png}
-\caption{Initial profiles in twist-shifted grid. {\bf Left}: Without ballooning
-transform, showing discontinuity at the matching location {\bf Right}: with
-ballooning transform}
-%
-\label{fig:ballooning}
-%
-\end{figure}
-%
-\note{The initial profiles code currently doesn't work very well for grids with
-branch-cuts (e.g. divertor tokamak), and will often have jumps which then make
-timesteps smaller}
-
-
-\subsection{Expressions}
+\subsubsection{Expressions}
 %
 \label{sec:expressions}
 %
@@ -2920,27 +2790,15 @@ timesteps smaller}
 %
 \index{Expressions}
 %
-If a more general function is needed, a variable can be initialised using the
-\code{function} option for each variable. This overrides the original method
-for that variable. e.g.
+The recommended way to initialise a variable is to use the
+\code{function} option for each variable:
 %
 \begin{lstlisting}[language=bash,numbers=none]
-[all]
-
-xs_opt = 1  # Gaussian in X
-ys_opt = 1  # Gaussian in Y
-zs_opt = 2  # Sinusoidal in Z (axisymmetric direction)
-
-[U]
-scale = 1.0e-5
-
 [p]
 function = 1 + gauss(x-0.5)*gauss(y)*sin(z)
 \end{lstlisting}
 %
-will use the original method to set $U$, but use the given expression to set
-$p$.
-
+This evaluates an analytic expression to initialise the $P$ variable. 
 Expressions can include the usual operators
 (\code{+},\code{-},\code{*},\code{/}), including \code{\^} for exponents. The
 following values are also already defined:
@@ -3023,16 +2881,38 @@ tan(x) & Tangent \\
 erf(x) & The error function \\
 TanhHat(x, width, centre, steepness) & The hat function\\
         &$\frac{1}{2}\L(\tanh\L[s \L(x-\L[c-\frac{w}{2}\R]\R)\R]
-          + \tanh\L[s \L(x-\L[c+\frac{w}{2}\R]\R)\R] \R)$ \\
+        - \tanh\L[s \L(x-\L[c+\frac{w}{2}\R]\R)\R] \R)$ \\
 \hline
 \end{tabular}
 %
 \end{table}
 %
-Note that to apply a ballooning transform in analytic expressions the
-\texttt{ballooning} function should be used, and the global flag ``ballooning''
-has no effect. There is an example code \texttt{test-ballooning} which compares
-methods of setting initial conditions with ballooning transform.
+For field-aligned tokamak simulations, the Y direction is along the field and
+in the core this will have a discontinuity at the twist-shift location where
+field-lines are matched onto each other. To handle this, the 
+\texttt{ballooning} function applies a truncated Ballooning
+transformation to construct a smooth initial perturbation:
+%
+\begin{align}
+U_0^{balloon} = \sum_{i=-N}^N F\L(x\R)G\L(y + 2\pi i\R)H\L(z + q2\pi i\R)
+%
+\label{eq:ballooning_transform}
+%
+\end{align}
+%
+\begin{figure}[h]
+\includegraphics[width=0.48\textwidth,
+keepaspectratio]{figs/init_noballoon.png}
+\includegraphics[width=0.48\textwidth, keepaspectratio]{figs/init_balloon.png}
+\caption{Initial profiles in twist-shifted grid. {\bf Left}: Without ballooning
+transform, showing discontinuity at the matching location {\bf Right}: with
+ballooning transform}
+%
+\label{fig:ballooning}
+%
+\end{figure}
+There is an example code \texttt{test-ballooning} which compares
+methods of setting initial conditions with the ballooning transform.
 
 The \texttt{mixmode(x)} function is a mixture of Fourier modes of the form:
 %
@@ -3045,16 +2925,21 @@ where $\phi$ is a random phase between $-\pi$ and $+\pi$, which depends on the
 seed. The factor in front of each term is chosen so that the 4th harmonic
 ($i=4$) has the highest amplitude. This is useful mainly for initialising
 turbulence simulations, where a mixture of mode numbers is desired.
-%
-\index{variable initialisation}
-%
 
 
-
-\subsection{\texttt{FieldFactory} class}
+\subsection{Initalising variables with the \texttt{FieldFactory} class}
 %
-This class provides a way to generate a field with a specified form. It
-implements a recursive descent parser to turn a string containing something
+This class provides a way to generate a field with a specified form. For example to create a variable \texttt{var} from options we could write
+\begin{lstlisting}[numbers=none]
+FieldFactory f(mesh);
+Field2D var = f.create2D("var");
+\end{lstlisting}
+This will look for an option called ``var'', and use that expression to initialise the variable \texttt{var}. This could then be set in the BOUT.inp file or on the command line.
+\begin{lstlisting}[numbers=none]
+var = gauss(x-0.5,0.2)*gauss(y)*sin(3*z)
+\end{lstlisting}
+
+To do this, \texttt{FieldFactory} implements a recursive descent parser to turn a string containing something
 like
 %
 \lstinline!"gauss(x-0.5,0.2)*gauss(y)*sin(3*z)"!
@@ -3071,8 +2956,8 @@ or
 %
 \index{FieldFactory}
 %
-\begin{lstlisting}
-FieldFactory f;
+\begin{lstlisting}[numbers=none]
+FieldFactory f(mesh);
 Field2D b = f.create2D("1 - x");
 Field3D d = f.create3D("gauss(x-0.5,0.2)*gauss(y)*sin(z)");
 \end{lstlisting}
@@ -3543,7 +3428,7 @@ adaptive & Adapt timestep? (Y/N) & rk4 \\
 use\_precon & Use a preconditioner? (Y/N) & pvode, cvode, ida \\
 mudq, mldq & BBD preconditioner settings & pvode, cvode, ida \\
 mukeep, mlkeep & & \\
-maxl & & \\
+maxl & Maximum number of linear iterations & cvode \\
 use\_jacobian & Use user-supplied Jacobian? (Y/N) & cvode \\
 adams\_moulton & Use Adams-Moulton method & cvode \\
  & rather than BDF & \\
@@ -3558,6 +3443,25 @@ tolerances, \code{ATOL} and \code{RTOL} which should be varied to check
 convergence.
 
 
+\subsection{CVODE}
+
+The most commonly used time integration solver is CVODE, or its older
+version PVODE. CVODE has several advantages over PVODE, including
+better support for preconditioning and diagnostics.
+
+Enabling diagnostics output using \texttt{solver:diagnose=true} will print
+a set of outputs for each timestep similar to:
+\begin{verbatim}
+CVODE: nsteps 51, nfevals 69, nniters 65, npevals 126, nliters 79
+    -> Newton iterations per step: 1.274510e+00
+    -> Linear iterations per Newton iteration: 1.215385e+00
+    -> Preconditioner evaluations per Newton: 1.938462e+00
+    -> Last step size: 1.026792e+00, order: 5
+    -> Local error fails: 0, nonlinear convergence fails: 0
+    -> Stability limit order reductions: 0
+1.000e+01        149       2.07e+01    78.3    0.0   10.0    0.9   10.8
+\end{verbatim}
+When diagnosing slow performance, key quantities to look for are nonlinear convergence failures, and the number of linear iterations per Newton iteration. A large number of failures, and close to 5 linear iterations per Newton iteration are a sign that the linear solver is not converging quickly enough, and hitting the default limit of 5 iterations. This limit can be modified using the \texttt{solver:maxl} setting. Giving it a large value e.g. \texttt{solver:maxl=1000} will show how many iterations are needed to solve the linear system. If the number of iterations becomes large, this may be an indication that the system is poorly conditioned, and a preconditioner might help improve performance. See section~\ref{sec:preconditioning}.
 
 \subsection{ODE integration}
 %
@@ -3653,6 +3557,7 @@ recommended to delete the solver, and create a new one each time.
 
 \subsection{Preconditioning}
 %
+\label{sec:preconditioning}
 At every time step, an implicit scheme such as BDF has to solve a non-linear
 problem to find the next solution. This is usually done using Newton's method,
 each step of which involves solving a linear (matrix) problem. For $N$ evolving
@@ -3673,7 +3578,7 @@ problem with the fastest time-scales.
 A simple example
 %
 \footnote{Taken from a talk by L.Chacon available here
-\url{https://bout.llnl.gov/pdf/workshops/2011/talks/Chacon_bout2011.pdf}} is a
+\url{https://bout2011.llnl.gov/pdf/talks/Chacon_bout2011.pdf}} is a
 coupled wave equation, solved in the \texttt{test-precon} example code:
 %
 \begin{align}
@@ -3733,7 +3638,7 @@ In implicit time stepping, the preconditioner needs to solve an equation
 \end{align}
 %
 where $\mathcal{I}$ is the identity matrix, and $\gamma$ depends on the time
-step and method (e.g. $\gamma = \delta t^2$ for backwards Euler method). For
+step and method (e.g. $\gamma = \delta t$ for backwards Euler method). For
 the simple wave equation problem, this is
 %
 \begin{align}
@@ -4069,7 +3974,7 @@ can be quite fast and is the default. Coloring uses knowledge of where the non-z
 are in the Jacobian, to work out which rows can be calculated simultaneously. The coloring code
 in IMEX-BDF2 currently assumes that every field is coupled to every other field in a star pattern: one cell on each side,
 a 7 point stencil for 3D fields. If this is not the case for your problem, then
-the solver may not converge. 
+the solver may not converge.
 
 The brute force method can be useful for comparing the Jacobian structure, so to turn off coloring:
 \begin{verbatim}
@@ -4812,6 +4717,45 @@ boundary operator to the \code{bndry\_op} vector.
 
 
 
+\section{Iterating over fields}
+\label{sec:fielditeration}
+
+In BOUT++ 4.0.0, we now have the ability to use C++ range-based for-loops. This
+means that it is possible to iterate over a whole field using a single loop:
+%
+\begin{lstlisting}
+Field3D f(0.0);
+for (auto i : f) {
+   f[i] = a[i] + b[i];
+}
+\end{lstlisting}
+%
+The iterator provides access to the x, y, z indices:
+%
+\begin{lstlisting}
+Field3D f(0.0);
+for (auto i : f) {
+   f[i] = i.x + i.y + i.z;
+}
+\end{lstlisting}
+%
+It is also possible to specify regions to iterate over using this syntax:
+%
+\begin{lstlisting}
+Field3D f(0.0);
+for (auto i : f.region(RGN_NOBNDRY) {
+   f[i] = 1.0;
+}
+\end{lstlisting}
+%
+Available regions are:
+\begin{itemize}
+\item \code{RGN_ALL}, which is the whole mesh;
+\item \code{RGN_NOBNDRY}, which skips all boundaries;
+\item \code{RGN_NOX}, which skips the x boundaries
+\item \code{RGN_NOY}, which skips the y boundaries
+\end{itemize}
+%
 
 
 \section{Generating input grids}
@@ -4884,7 +4828,7 @@ different section, prefix the variable with the section name e.g.
 
 More complex meshes can be created by supplying an input grid file to describe
 the grid points, geometry, and starting profiles.  Currently BOUT++ supports
-either NetCDF, HDF5 or PDB format binary files.  During startup, BOUT++ looks
+either NetCDF, HDF5 format binary files.  During startup, BOUT++ looks
 in the grid file for the following variables.  If any are not found, a warning
 will be printed and the default values used.
 %
@@ -4901,8 +4845,7 @@ will be printed and the default values used.
 \item Off-diagonal metric tensor $g^{ij}$ elements \code{g12[nx][ny]},
 \code{g13[nx][ny]}, and \code{g23[nx][ny]}. If not found, these will be set to
 0.
-\item Z shift for sheared grids \code{zshift[nx][ny]}. This is intended for
-dpsi derivatives in sheared coordinates. If not found, set to zero.
+\item Z shift for interpolation between field-aligned coordinates and shifted coordinates (see \file{manual/coordinates.pdf}). Perpendicular differential operators are calculated in shifted coordinates when \code{ShiftXderivs} in \file{mesh/mesh.hxx} is enabled. \code{ShiftXderivs} can be set in the root section of \file{BOUT.inp} as \texttt{ShiftXderivs = true}. The shifts must be provided in the gridfile in a field \code{zshift[nx][ny]}. If not found, \code{zshift} is set to zero.
 \end{itemize}
 %
 The remaining quantities determine the topology of the grid. These are based on
@@ -4916,9 +4859,9 @@ situations.
     ixseps2 is found, ixseps1 is set to -1.
 \item Branch-cut locations \code{jyseps1\_1}, \code{jyseps1\_2},
 \code{jyseps2\_1}, and \code{jyseps2\_2}
-\item Twist-shift matching condition \code{twistshift[nx]}. This is applied in
+\item Twist-shift matching condition \code{ShiftAngle[nx]} for field aligned coordinates. This is applied in
 the ``core'' region between indices \code{jyseps2\_2}, and \code{jyseps1\_1 +
-1}, if enabled in the options file. If not given, this is set to zero.
+1}, if either \texttt{TwistShift = True} enabled in the options file or in general the \code{TwistShift} flag in \file{mesh/impls/bout/boutmesh.hxx} is enabled by other means. BOUT++ automatically reads the twist shifts in the gridfile if the shifts are stored in a field in a field ShiftAngle[nx]. If not given, this is set to zero.
 \end{itemize}
 %
 \note{All input quantities should be normalised - no normalisation is performed
@@ -5155,7 +5098,7 @@ and calculate metric coefficients.  The code is in
 Currently conversions exist for ELITE \code{.eqin} and GATO \code{dskgato}
 equilibrium files.  Conversion of these into BOUT++ input grids is in two
 stages: In the first, both these input files are converted into a common NetCDF
-or PDB format which describes the Grad-Shafranov equilibrium.  These
+format which describes the Grad-Shafranov equilibrium.  These
 intermediate files are then converted to BOUT++ grids using an interactive IDL
 script.
 
@@ -5165,235 +5108,6 @@ script.
 %
 The directory \texttt{tokamak\_grids/shifted\_circle} contains IDL code to
 generate shifted circle (large aspect ratio) Grad-Shafranov equilibria.
-
-
-
-\subsection{Running pdb2bout}
-%
-There are many options which are set interactively, so here's a run-through of
-the code (only showing most important outputs):
-
-%
-\begin{verbatim}
-IDL> pdb2bout, "cbm18_dens6.dskgato.pdb", output="test.pdb"
-***Maximum mu0p is       23071.7
-Is this pressure (not mu0*pressure)?
-\end{verbatim}
-%
-This is needed because although many grid formats claim to store $\mu_0 P$,
-they actually store $P$. Since the given maximum value is very large, it must
-be in Pascals, so answer yes (y).
-
-The grid will then be displayed along with the safety factor and pressure
-profiles against normalised $\psi$. In all three plots, a red line marks the
-location of the plasma edge. You must then choose the radial domain in
-normalised $\psi$:
-%
-\begin{verbatim}
-Inner Psi boundary:0.6
-Outer Psi boundary:1.2
-Number of radial grid points:           69
-Of which inside the plasma:           49
-Is this range ok?
-\end{verbatim}
-%
-The plots will now also show two green lines for the inner and outer
-boundaries. Enter no (n) to specify a different range.
-
-The code then checks to see if any plasma density of temperatures have been set
-in the input file:
-%
-\begin{verbatim}
-====== SETTING PLASMA PROFILES =======
-Some plasma parameters given in input file
-Use given parameters?
-\end{verbatim}
-%
-Saying yes will just use the given values, but saying no will give you some
-more options:
-%
-\begin{verbatim}
-Generating plasma profiles:
-  1. Flat temperature profile
-  2. Flat density profile
-  3. Te proportional to density
-Profile option:
-\end{verbatim}
-%
-The procedure is the same for each of these, so taking option 2 (flat density):
-%
-\begin{verbatim}
-Setting flat density profile
-Density [10^20 m^-3]:1.0
-\end{verbatim}
-%
-Anything can be entered here, depending on what you want to simulate. The code
-will ensure that whatever you enter, the equilibrium pressure is maintained. In
-this case the temperature is calculated from pressure and the specified
-density.
-%
-\begin{verbatim}
-Maximum temperature (eV):      720.090
-Is this ok?
-\end{verbatim}
-%
-NOTE: This is the maximum temperature anywhere on the input grid (i.e. in this
-case at $\psi = 0$), not just inside the chosen domain. Entering no will go
-back and you can specify a different density.
-
-Earlier the radial resolution was printed, in this case 69 grid points. You can
-now change this if you need to:
-%
-\begin{verbatim}
-Increase radial resolution?
-\end{verbatim}
-%
-Although it says increase, you can also decrease the resolution. Entering yes
-will allow you to enter a different number of radial grid points. It's
-recommended to use $2^n + 4$ grid points because this makes it easier to
-decompose the grid (4 cells for boundary, remainder equally divided between
-processors).
-
-At this point, an orthogonal grid is generated:
-%
-\begin{verbatim}
-======== GENERATING ORTHOGONAL COORDINATES FOR BOUT =========
-Number of poloidal grid points: 64
-Enter x index of equal hthe [0, 68] :35
-\end{verbatim}
-%
-Using  $2^n$ points is highly recommended, but only because the points must be
-equally divided between processors.  The x index of equal hthe shouldn't matter
-very much except for highly shaped plasmas. Recommend that you set it somewhere
-around the peak pressure gradient, or middle of the grid.
-%
-\begin{verbatim}
-Interpolating Rxy
-Interpolating Zxy
-Is this ok?
-\end{verbatim}
-%
-Two plots are shown: On the left the original mesh, and on the right the new
-orthogonal mesh. If this doesn't look right you can enter `no' and change the
-poloidal resolution and location of equal $h_\theta$.
-
-%
-\begin{verbatim}
-Add vacuum region?n
-\end{verbatim}
-%
-This is a little experimental, and extends the grid into vacuum. This is useful
-if the equilibrium supplied doesn't include a vacuum region. In this case we
-already have a vacuum region, so can answer no.
-
-You're now presented with several options:
-%
-\begin{verbatim}
-Equilibrium correction options:
-  0  No correction
-  1  RBt using force balance
-  2  hthe and RBt using force balance and q (FAILS)
-  3  hthe and RBt using force balance and jpar
-Enter option:
-\end{verbatim}
-%
-Because the input Grad-Shafranov solution is probably not perfect to begin
-with, and has now been interpolated onto a new grid, the force balance in
-ballooning coordinates is not quite satisfied. These options attempt to correct
-the equilibrium slightly to ensure force balance, the given $q$ profile, and
-the given $j_{||}$ profile. Option 1 can sometimes work well, other times it
-can fail to converge (as in this case). It's safe to just use option 0.
-
-%
-\begin{verbatim}
-Calculating poloidal arc length dthe
-Maximum difference in hthe:       0.23551123
-Maximum percentage difference:        16.745859
-Use new hthe?
-\end{verbatim}
-%
-A key metric in the BOUT/BOUT++ coordinates is the poloidal arc length
-$h_\theta$. A plot will shot this quantity calculated geometrically (solid
-line), and calculated by enforcing force balance (red symbols) at the outboard
-mid-plane.  The difference between these two methods is an indication of the
-quality of the Grad-Shafranov solution. Entering 'y' will use the ``new''
-$h_\theta$ calculated from force balance, whilst 'n' will use the $h_\theta$
-calculated geometrically.  Personally. i prefer to make sure force balance is
-satisfied so enter 'y'.
-
-%
-\begin{verbatim}
-Checking parallel current
-****Equilibrium has -ve toroidal field
-\end{verbatim}
-%
-Because of the varied and confusing ways different codes define the poloidal
-and toroidal directions, this code currently just sets Bp and Bt positive, and
-then uses the expression for Jpar to work out what sign Bt should have.  This
-is fine if you just want an equilibrium, but for detailed comparison to
-experiment where the sign of Bt may/will make a difference this needs to be
-changed.
-
-Jpar calculated from quantities such as Bp, Bt and hthe is now shown as red
-symbols, with the jpar from the original Grad-Shafranov solution as a black
-line. Like the hthe display, this is a good consistency check.
-%
-\begin{verbatim}
-Use new Jpar?
-\end{verbatim}
-%
-Entering 'y' will use the calculated jpar i.e. consistent with the other grid
-quantities, but probably more noisy and slightly different to the original.
-Entering 'n' will use the original jpar profiles.
-
-%
-\begin{verbatim}
-q is negative. Reversing values from equilibrium
-\end{verbatim}
-%
-This can be printed because the $q$ profile given in the grid file is almost
-always positive, whereas qsafe calculated by integrating the pitch angle can be
-positive or negative. In this case the toroidal field has been set negative
-(see above), and so qinty is negative too.
-
-%
-\begin{verbatim}
-Use new qsafe?
-\end{verbatim}
-%
-As with hthe and jpar, the qsafe specified in the original grid file is plotted
-as a black line, and the value calculated by integrating quantities on the new
-mesh is shown as red symbols. Entering 'y' uses the values consistent on the
-new grid, whilst 'n' uses the original safety factor profile. In most cases I’d
-prefer the grid to be consistent, rather than being identical to the input, so
-answer 'y'. You may have to do some experimentation though.
-
-%
-\begin{verbatim}
-****Minimum pressure is very small:       0.0000000
-****Setting minimum pressure to 1% of maximum
-\end{verbatim}
-%
-This is because having negative pressures is very bad for BOUT/BOUT++ runs, and
-can easily be caused by overshoots or even rounding error when the pressure is
-too low. Because the equilibrium doesn't depend on absolute pressure, this just
-adds a constant pressure across the entire profile.
-
-Finally, the grid file is written to PDB format
-%
-\begin{verbatim}
-Cannot write 2 dimensional double dx. Writing as float
-.
-.
-.
-\end{verbatim}
-%
-These warnings are because the PDB2IDL library currently doesn't have any
-functions for writing doubles, and pdb2bout does calculations in double
-precision. The output is therefore converted to single-precision floats.
-
-
-
 
 
 \section{Laplacian inversion}
@@ -6877,8 +6591,8 @@ By default this only specifies the file name; actual opening of the file
 happens later when the data is written. If you are not using parallel I/O, the
 processor number is also inserted into the file name before the last ``.'', so
 mydata.nc'' becomes ``mydata.0.nc'', ``mydata.1.nc'' etc. The file format used
-depends on the extension, so ``.nc'' will open NetCDF, ``.hdf5'' an HDF5 file,
-``.pdb'' a PDB file etc.
+depends on the extension, so ``.nc'' will open NetCDF, and ``.hdf5'' or ``.h5''
+an HDF5 file.
 
 (see e.g. src/fileio/datafile.cxx line 139, which calls
 src/fileio/dataformat.cxx line 23, which then calls the file format interface
@@ -7878,7 +7592,7 @@ y}\left(Jg^{yz}\frac{g_{yz}}{g_{yy}}\frac{\partial f}{\partial y}\right)
 In field-aligned coordinates, the metrics in the $y$ derivative term become:
 %
 \begin{align*}
-g^{yz}\frac{g_{yz}}{g_{yy}} = \frac{B_{tor}}{B^2}\frac{1}{h_\theta^2}
+g^{yz}\frac{g_{yz}}{g_{yy}} = \frac{B_{tor}^2}{B^2}\frac{1}{h_\theta^2}
 \end{align*}
 %
 In the LaplaceXY operator this is implemented in terms of fluxes at cell faces.
@@ -8669,131 +8383,6 @@ As of 30th April 2014, the following configuration should work
 %
 
 
-
-
-
-\section{Installing PACT}
-%
-\label{apx:pact}
-%
-\index{PACT}
-%
-There are two ways to install PACT, and usually one of them will work on a
-given system.
-
-
-
-\subsection{Self-extracting package}
-%
-This is probably the easiest method (when it works). Download one of the
-``Executable UNIX distribution files'' from the PACT website and run:
-%
-\begin{verbatim}
-./pact07_07_18-src -sl -i $HOME/local/
-\end{verbatim}
-%
-The ``-sl'' flag tells it to generate shared libraries. If you don't plan on
-using IDL to read/write PDB files, then you can omit this. The ``-i
-\$HOME/local/'' tells PACT to install in your home directory/local.
-
-If this script fails, you will usually have to resort to either trying to
-understand DSYS, or going with the second method below.
-
-
-
-\subsection{PACT source distribution}
-%
-The second method is to use a .tar.gz PACT source file. Here the version used
-is \texttt{pact-2.1.0.tar.gz}.
-
-%
-\begin{verbatim}
- ~/ $ cd install
- ~/install/ $ tar -xzvf pact-2.1.0.tar.gz
- ~/install/ $ cd pact-2.1.0/
- ~/install/pact-2.1.0/ $ ./configure --prefix=$HOME/local --enable-shared
-\end{verbatim}
-%
-\note{On Franklin, PACT will compile without the --enable-shared option, but
-not with it. This is OK if you just want to run BOUT++, but the shared
-libraries are needed for reading the results into IDL (the PDB2IDL library)}
-
-At this point, the installation may fail with the following error:
-%
-\begin{verbatim}
-configure: WARNING: yacc is a symbolic link to bison
-configure: WARNING: bison is not a supported type of yacc
-configure: error: No working yacc found
-\end{verbatim}
-%
-If this happens, you need to first install Berkeley Yacc into your home
-directory
-%
-\begin{verbatim}
- ~/install/ $ ls
-byacc.tar.gz       netcdf-tar -xzvf byacc.tar.gz4.0.1.tar.gz  pact-2.1.0.tar.gz
-fftw-3.2.1.tar.gz  pact-2.1.0           sundials-2.4.0.tar.gz
-
- ~/install/ $ tar -xzvf byacc.tar.gz
- ~/install/ $ cd byacc-20080826/
- ~/install/byacc-20080826/ $ ./configure --prefix=$HOME/local
- ~/install/byacc-20080826/ $ gmake
- ~/install/byacc-20080826/ $ mkdir ~/local/bin
- ~/install/byacc-20080826/ $ cp yacc ~/local/bin/
-\end{verbatim}
-%
-NB: We're copying the yacc executable manually because ``gmake install''
-doesn't seem to work, and the fix which works for PACT (see later) doesn't work
-here.
-
-Add this directory to your path:
-%
-\begin{verbatim}
- ~/install/byacc-20080826/ $ setenv PATH $HOME/local/bin:$PATH
-\end{verbatim}
-%
-You can check that this has worked by running ``which yacc'', which should then
-print your home directory /local/bin/yacc.  You could also add this to your
-.profile startup scripts. Now go back to PACT:
-%
-\begin{verbatim}
- ~/install/byacc-20080826/ $ cd ../pact-2.1.0
- ~/install/pact-2.1.0/ $ ./configure --prefix=$HOME/local --enable-shared
- ~/install/pact-2.1.0/ $ gmake
- ~/install/pact-2.1.0/ $ gmake install
-\end{verbatim}
-%
-The last step may fail with a strange error message like:
-%
-\begin{verbatim}
-    The current directory must be set to the ITT directory.
-    Change the default to the ITT directory and re-run
-    this script.
-\end{verbatim}
-%
-This happens when the wrong ``install'' is being used. Check by running:
-%
-\begin{verbatim}
- ~/install/byacc-20080826/ $ which install
-\end{verbatim}
-%
-This should print ``/usr/bin/install'', but if not then run
-%
-\begin{verbatim}
- ~/install/byacc-20080826/ $ ln -s /usr/bin/install ~/local/bin/
- ~/install/pact-2.1.0/ $ ./configure --prefix=$HOME/local
- ~/install/pact-2.1.0/ $ gmake
- ~/install/pact-2.1.0/ $ gmake install
-\end{verbatim}
-%
-NOTE: configure needs to be run again after messing with install.
-
-This should now install PACT into your local directory.
-
-
-
-
-
 \section{Compiling and running under AIX}
 %
 Most development and running of BOUT++ is done under Linux, with the occasional
@@ -9117,7 +8706,7 @@ Here the format is
 \item integer = {\bf file\_ndims} ( handle , ``variable'' ) \\
   Get the number of dimensions of a variable
 \item handle = {\bf file\_open} ( ``file'' ) \\
-  Open a PDB or NetCDF file. File type is inferred from file name
+  Open a NetCDF file.
   %
   \begin{itemize}
     \item {\bf /write}  Open file for writing (default is read only)

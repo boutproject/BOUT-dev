@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <output.hxx>
+#include <utils.hxx>
 
 void Output::enable() {
   add(std::cout);
@@ -39,14 +40,11 @@ void Output::disable() {
 }
 
 int Output::open(const char* fname, ...) {
-  va_list ap;  // List of arguments
   
   if(fname == (const char*) NULL)
     return 1;
 
-  va_start(ap, fname);
-    vsprintf(buffer, fname, ap);
-  va_end(ap);
+  bout_vsnprintf(buffer, buffer_len, fname);
 
   close();
 
@@ -71,14 +69,11 @@ void Output::close() {
 }
 
 void Output::write(const char* string, ...) {
-  va_list ap;  // List of arguments
 
   if(string == (const char*) NULL)
     return;
   
-  va_start(ap, string);
-    vsprintf(buffer, string, ap);
-  va_end(ap);
+  bout_vsnprintf(buffer, buffer_len, string);
 
   multioutbuf_init::buf()->sputn(buffer, strlen(buffer));
 }

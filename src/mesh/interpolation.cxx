@@ -160,8 +160,10 @@ const char* strLocation(CELL_LOC loc) {
   case CELL_ZLOW: {
     return " Lower Z";
   }
+  default: {
+    return " Default (Unknown)";
+  }
   };
-  return " Default (Unknown)";
 }
 
 // 4-point Lagrangian interpolation
@@ -180,7 +182,7 @@ BoutReal lagrange_4pt(BoutReal v[], BoutReal offset)
 }
 
 const Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3D &delta_z) {
-  MsgStackItem trace("Interpolating 3D field");
+  TRACE("Interpolating 3D field");
   
   Field3D result;
   result.allocate();
@@ -260,7 +262,7 @@ const Field3D interpolate(const Field2D &f, const Field3D &delta_x, const Field3
 }
 
 const Field3D interpolate(const Field2D &f, const Field3D &delta_x) {
-  MsgStackItem trace("interpolate(Field2D, Field3D)");
+  TRACE("interpolate(Field2D, Field3D)");
   
   Field3D result;
   result.allocate();

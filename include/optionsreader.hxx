@@ -39,16 +39,50 @@ class OptionsReader;
 #include <stdarg.h>
 #include <stdio.h>
 
+/// Class to handle reading options from file
+///
+/// Example
+/// -------
+///
+/// Options opt;
+/// OptionsReader::getInstance()->read(&opt, "somefile.inp");
+///
+/// opt now contains a tree of sections and options from the input file "somefile.inp"
+///
 class OptionsReader {
  public:
+  /// Return a pointer to the instance singleton
   static OptionsReader *getInstance();
+
+  /// Delete the instance
   static void cleanup() {delete instance; instance = NULL;}
-  
+
+  /// Read the given file, parse options into
+  /// the options tree.
+  ///
+  /// @param[inout] options  The options section to insert values and subsections into
+  /// @param[in] file  The name of the file. printf style arguments can be used to create the file name.
   void read(Options *options, const char *file, ...);
-  
+
+  /// Parse options from the command line
+  ///
+  /// @param[inout] options The options section to insert values and subsections into
+  /// @param[in] argc   The number of command-line arguments
+  /// @param[in] argv   The command line arguments
+  ///
+  /// Example
+  /// -------
+  ///
+  /// int main(int argc, char** argv) {
+  ///   Options opt;
+  ///   OptionsReader::getInstance()->read(&opt, argc, argv);
+  ///   ...
+  ///   return 0;
+  /// }
   void parseCommandLine(Options *options, int argc, char **argv);
   
  private:
+  /// The instance of this singleton
   static OptionsReader *instance;
   
 };

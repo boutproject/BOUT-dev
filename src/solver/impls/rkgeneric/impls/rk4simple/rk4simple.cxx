@@ -11,8 +11,8 @@ RK4SIMPLEScheme::RK4SIMPLEScheme(Options *options):RKScheme(options){
   OPTION(options, followHighOrder, followHighOrder);
 
   //Allocate coefficient arrays
-  stageCoeffs = rmatrix(numStages,numStages);
-  resultCoeffs = rmatrix(numStages,numOrders);
+  stageCoeffs = matrix<BoutReal>(numStages,numStages);
+  resultCoeffs = matrix<BoutReal>(numStages,numOrders);
   timeCoeffs = new BoutReal[numStages];
 
   //Zero out arrays (shouldn't be needed, but do for testing)
@@ -100,12 +100,12 @@ RK4SIMPLEScheme::RK4SIMPLEScheme(Options *options):RKScheme(options){
   timeCoeffs[9] = 1.0/2.0+1.0/4.0;
   timeCoeffs[10] = 1.0/2.0+1.0/2.0;
 
-};
+}
 
 RK4SIMPLEScheme::~RK4SIMPLEScheme(){
   //Do my cleanup
   
-};
+}
 
 BoutReal RK4SIMPLEScheme::setOutputStates(const BoutReal *start, const BoutReal dt, BoutReal *resultFollow){
   //return RKScheme::setOutputStates(start,dt,resultFollow);

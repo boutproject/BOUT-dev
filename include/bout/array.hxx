@@ -28,17 +28,51 @@
 #include <map>
 #include <vector>
 
+/*!
+ * Data array type with automatic memory management
+ *
+ * This implements a container similar to std::vector
+ * but with reference counting like a smart pointer
+ * and custom memory management to minimise new and delete calls
+ * 
+ * This can be used as an alternative to static arrays
+ * 
+ * Array<dcomplex> vals(100); // 100 complex numbers
+ * 
+ * vals[10] = 1.0;  // ok
+ * 
+ * When an Array goes out of scope or is deleted,
+ * the underlying memory (ArrayData) is put into
+ * a map, rather than being freed. 
+ * If the same size arrays are used repeatedly then this
+ * avoids the need to use new and delete.
+ * 
+ */
 template<typename T>
 class Array {
 public:
   typedef T data_type;
   
+  /*!
+   * Create an empty array
+   * 
+   * Array a();
+   * a.empty(); // True
+   * 
+   */
   Array() : ptr(nullptr) {}
+  
+  /*!
+   * Create an array of given length
+   */
   Array(int len) {
     ptr = get(len);
     ptr->refs++;
   }
   
+  /*!
+   * Destructor. Releases the underlying ArrayData
+   */
   ~Array() {
     release(ptr);
   }
@@ -51,7 +85,10 @@ public:
     ptr->refs++;
   }
 
-  // Assignment operator
+  /*!
+   * Assignment operator
+   * After this both Arrays share the same ArrayData
+   */
   Array& operator=(const Array &other) {
     ArrayData* const old = ptr;
 
@@ -130,7 +167,7 @@ public:
     return ptr->len;
   }
   
-  /*
+  /*!
    * Returns true if the data is unique to this Array.
    * 
    */
@@ -166,7 +203,6 @@ public:
 
   typedef T* iterator;
 
-  
   iterator begin() {
     return (ptr) ? ptr->data : nullptr;
   }
@@ -176,7 +212,7 @@ public:
   }
 
   // Const iterators
-  typedef T*const const_iterator;
+  typedef const T* const_iterator;
   
   const_iterator begin() const {
     return (ptr) ? ptr->data : nullptr;
@@ -207,9 +243,9 @@ private:
    * Handles the allocation and deletion of data
    */
   struct ArrayData {
-    int refs;   // Number of references to this data
-    int len;    // Size of the array
-    T *data;    // Array of data
+    int refs;   ///< Number of references to this data
+    int len;    ///< Size of the array
+    T *data;    ///< Array of data
     
     ArrayData(int size) : refs(0), len(size) {
       data = new T[len];
@@ -273,7 +309,9 @@ private:
   
 };
 
-
+/*!
+ * Create a copy of an Array, which does not share data
+ */ 
 template<typename T>
 Array<T>& copy(const Array<T> &other) {
   Array<T> a(other);

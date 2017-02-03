@@ -8,6 +8,7 @@
 #ifdef BACKTRACE
 #include <execinfo.h>
 #endif
+#include <utils.hxx>
 
 void BoutParallelThrowRhsFail(int &status, const char* message) {
   int allstatus;
@@ -16,17 +17,17 @@ void BoutParallelThrowRhsFail(int &status, const char* message) {
   if (allstatus) throw BoutRhsFail(message);
 }
 
-BoutException::~BoutException() throw()
-{
+BoutException::~BoutException() throw() {
+  delete[] buffer;
 }
 
 void BoutException::Backtrace() {
-#ifdef CHECK
+#if CHECK > 1
   /// Print out the message stack to help debugging
   std::string tmp=msg_stack.getDump();
   message+=tmp;
 #else
-  message+="Enable checking (-DCHECK flag) to get a trace\n";
+  message+="Enable checking (configure with --enable-check or set flag -DCHECK > 1) to get a trace\n";
 #endif
 #ifdef BACKTRACE
   void *trace[64];
@@ -71,16 +72,15 @@ void BoutException::Backtrace() {
 }
 
 #define INIT_EXCEPTION(s) {                     \
-    va_list ap;                                 \
-                                                \
+    buflen=0;                                   \
+    buffer=NULL;                                \
     if(s == (const char*) NULL) {               \
       message="No error message given!\n";      \
     } else {                                    \
-      char buffer[1024];                        \
-      va_start(ap, s);                          \
-      vsprintf(buffer, s, ap);                  \
-      va_end(ap);                               \
-      for (int i=0;i<1024;++i){                 \
+      buflen=BoutException::BUFFER_LEN;         \
+      buffer = new char[buflen];                \
+      bout_vsnprintf(buffer, buflen, s);        \
+      for (int i=0;i<buflen;++i){               \
         if (buffer[i]==0){                      \
           if (i>0 && buffer[i-1]=='\n'){        \
             buffer[i-1]=0;                      \
@@ -98,8 +98,14 @@ void BoutException::Backtrace() {
 
 BoutException::BoutException(const char* s, ...)
 {
-
+  
   INIT_EXCEPTION(s);
+}
+BoutException::BoutException(const std::string msg)
+{
+  message="====== Exception thrown ======\n"+msg+"\n";
+
+  this->Backtrace();
 }
 
 const char* BoutException::what() const throw()

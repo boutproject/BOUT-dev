@@ -37,7 +37,7 @@ class Datafile {
  public:
   Datafile(Options *opt = NULL);
   Datafile(const Datafile &other);
-//   ~Datafile(); Default destructor is adequate
+  ~Datafile(); // need to delete filename
   
   Datafile& operator=(const Datafile &rhs);
 
@@ -50,13 +50,20 @@ class Datafile {
   void close();
 
   void setLowPrecision(); ///< Only output floats
-
-  void add(int &i, const char *name, int grow = 0);
-  void add(BoutReal &r, const char *name, int grow = 0);
-  void add(Field2D &f, const char *name, int grow = 0);
-  void add(Field3D &f, const char *name, int grow = 0);
-  void add(Vector2D &f, const char *name, int grow = 0);
-  void add(Vector3D &f, const char *name, int grow = 0);
+  template <typename t>
+  void addRepeat(t &value, std::string name){
+    add(value,name.c_str(),true);
+  }
+  template <typename t>
+  void addOnce(t &value, std::string name){
+    add(value,name.c_str(),false);
+  }
+  void add(int &i, const char *name, bool save_repeat = false);
+  void add(BoutReal &r, const char *name, bool save_repeat = false);
+  void add(Field2D &f, const char *name, bool save_repeat = false);
+  void add(Field3D &f, const char *name, bool save_repeat = false);
+  void add(Vector2D &f, const char *name, bool save_repeat = false);
+  void add(Vector3D &f, const char *name, bool save_repeat = false);
   
   bool read();  ///< Read data into added variables 
   bool write(); ///< Write added variables
@@ -64,8 +71,8 @@ class Datafile {
   bool write(const char *filename, ...) const; ///< Opens, writes, closes file
   
   // Write a variable to the file now
-  bool writeVar(const int &i, const char *name);
-  bool writeVar(const BoutReal &r, const char *name);
+  DEPRECATED(bool writeVar(const int &i, const char *name));
+  DEPRECATED(bool writeVar(BoutReal r, const char *name));
   
  private:
   bool parallel; // Use parallel formats?
@@ -75,10 +82,13 @@ class Datafile {
   bool openclose; // Open and close file for each write
   int Lx,Ly,Lz; // The sizes in the x-, y- and z-directions of the arrays to be written
   bool enabled;  // Enable / Disable writing
+  bool init_missing; // Initialise missing variables?
   bool shiftOutput; //Do we want to write out in shifted space?
 
   DataFormat *file;
-  char filename[512];
+  int filenamelen;
+  static const int FILENAMELEN=512;
+  char *filename;
   bool appending;
 
   /// A structure to hold a pointer to a class, and associated name and flags
@@ -86,7 +96,7 @@ class Datafile {
     struct VarStr {
       T *ptr;
       string name;
-      bool grow;
+      bool save_repeat;
       bool covar;
     };
 
@@ -98,13 +108,13 @@ class Datafile {
   vector< VarStr<Vector2D> > v2d_arr;
   vector< VarStr<Vector3D> > v3d_arr;
 
-  bool read_f2d(const string &name, Field2D *f, bool grow);
-  bool read_f3d(const string &name, Field3D *f, bool grow);
+  bool read_f2d(const string &name, Field2D *f, bool save_repeat);
+  bool read_f3d(const string &name, Field3D *f, bool save_repeat);
 
-  bool write_int(const string &name, int *f, bool grow);
-  bool write_real(const string &name, BoutReal *f, bool grow);
-  bool write_f2d(const string &name, Field2D *f, bool grow);
-  bool write_f3d(const string &name, Field3D *f, bool grow);
+  bool write_int(const string &name, int *f, bool save_repeat);
+  bool write_real(const string &name, BoutReal *f, bool save_repeat);
+  bool write_f2d(const string &name, Field2D *f, bool save_repeat);
+  bool write_f3d(const string &name, Field3D *f, bool save_repeat);
 
   bool varAdded(const string &name); // Check if a variable has already been added
 };

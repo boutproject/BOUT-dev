@@ -16,7 +16,7 @@ TIMESTEP = 1e2   # time between outputs
 ShiftXderivs = false # use shifted radial derivatives?
 TwistShift = false  # use twist-shift condition?
 
-MZ = 65     # number of points in z direction (2^n + 1)
+MZ = 64     # number of points in z direction (2^n + 1)
 ZMIN = 0.0
 ZMAX = 2.8505e-3
 
@@ -119,9 +119,7 @@ evolve = false
 
 [Ti]
 evolve = false # Ti is a constant
-xs_opt = 0
-ys_opt = 0
-zs_opt = 0
+function = 1
 scale = 0.199 
 
 [Ajpar]

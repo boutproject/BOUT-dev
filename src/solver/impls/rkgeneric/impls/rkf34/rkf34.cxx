@@ -16,8 +16,8 @@ RKF34Scheme::RKF34Scheme(Options *options):RKScheme(options){
   }
 
   //Allocate coefficient arrays
-  stageCoeffs = rmatrix(numStages,numStages);
-  resultCoeffs = rmatrix(numStages,numOrders);
+  stageCoeffs = matrix<BoutReal>(numStages,numStages);
+  resultCoeffs = matrix<BoutReal>(numStages,numOrders);
   timeCoeffs = new BoutReal[numStages];
 
   //Zero out arrays (shouldn't be needed, but do for testing)
@@ -75,10 +75,10 @@ RKF34Scheme::RKF34Scheme(Options *options):RKScheme(options){
   //Level 4
   timeCoeffs[4] = 1.0;
 
-};
+}
 
 RKF34Scheme::~RKF34Scheme(){
   //Do my cleanup
   
-};
+}
 
