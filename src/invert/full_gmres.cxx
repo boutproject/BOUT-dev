@@ -1,5 +1,5 @@
 /*!
- * \file full_gmres.cpp
+ * \file full_gmres.cxx
  *
  * \brief Global inversion using GMRES
  *
