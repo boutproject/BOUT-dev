@@ -84,7 +84,13 @@ bool GridFile::get(Mesh *UNUSED(m), int &ival,      const string &name) {
   if(!file->is_valid())
     throw BoutException("File cannot be read");
   
-  return file->read(&ival, name);
+  bool success = file->read(&ival, name);
+  if(success){
+	  output << "\tOption " << name  << " = " << ival << " (" << filename <<")" << endl;
+  }
+
+  return success;
+
 }
 
 /*!
@@ -98,7 +104,11 @@ bool GridFile::get(Mesh *UNUSED(m), BoutReal &rval, const string &name) {
   if(!file->is_valid())
     throw BoutException("File cannot be read");
   
-  return file->read(&rval, name);
+  bool success = file->read(&rval, name);
+    if(success){
+  	  output << "\tOption " << name  << " = " << rval << " (" << filename <<")" << endl;
+    }
+
 }
 
 /*!
