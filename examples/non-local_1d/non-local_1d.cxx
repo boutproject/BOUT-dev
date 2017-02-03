@@ -25,14 +25,14 @@
 
 #ifdef CALCULATE_EFFECTIVE_ALPHAE
   #ifdef LOCALHEATFLUX
-    bout_error("Cannot calculate effective_alpha_e without non-local heat-flux");
+    throw BoutException("Cannot calculate effective_alpha_e without non-local heat-flux");
   #endif
   FieldPerp effective_alpha_e;
 #endif
 
 #ifdef FLUXLIMITER
   #ifndef LOCALHEATFLUX
-    bout_error("FLUXLIMITER can only be defined if LOCALHEATFLUX is also defined");
+    throw BoutException("FLUXLIMITER can only be defined if LOCALHEATFLUX is also defined");
   #endif
   BoutReal electron_flux_limiter = 0.3;
   Field3D grad_par_T_electron;

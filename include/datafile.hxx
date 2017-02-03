@@ -37,7 +37,7 @@ class Datafile {
  public:
   Datafile(Options *opt = NULL);
   Datafile(const Datafile &other);
-//   ~Datafile(); Default destructor is adequate
+  ~Datafile(); // need to delete filename
   
   Datafile& operator=(const Datafile &rhs);
 
@@ -71,8 +71,8 @@ class Datafile {
   bool write(const char *filename, ...) const; ///< Opens, writes, closes file
   
   // Write a variable to the file now
-  bool writeVar(const int &i, const char *name);
-  bool writeVar(const BoutReal &r, const char *name);
+  DEPRECATED(bool writeVar(const int &i, const char *name));
+  DEPRECATED(bool writeVar(BoutReal r, const char *name));
   
  private:
   bool parallel; // Use parallel formats?
@@ -86,7 +86,9 @@ class Datafile {
   bool shiftOutput; //Do we want to write out in shifted space?
 
   DataFormat *file;
-  char filename[512];
+  int filenamelen;
+  static const int FILENAMELEN=512;
+  char *filename;
   bool appending;
 
   /// A structure to hold a pointer to a class, and associated name and flags

@@ -325,9 +325,7 @@ int CvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
  **************************************************************************/
 
 int CvodeSolver::run() {
-#ifdef CHECK
-  int msg_point = msg_stack.push("CvodeSolver::run()");
-#endif
+  TRACE("CvodeSolver::run()");
 
   if(!initialised)
     throw BoutException("CvodeSolver not initialised\n");
@@ -365,6 +363,34 @@ int CvodeSolver::run() {
                    ((double) nliters) / ((double) nniters));
       output.write("    -> Preconditioner evaluations per Newton: %e\n",
                    ((double) npevals) / ((double) nniters));
+
+
+      // Last step size
+      BoutReal last_step;
+      CVodeGetLastStep(cvode_mem, &last_step);
+
+      // Order used in last step
+      int last_order;
+      CVodeGetLastOrder(cvode_mem, &last_order);
+
+      output.write("    -> Last step size: %e, order: %d\n", last_step, last_order);
+      
+      // Local error test failures
+      long int num_fails;
+      CVodeGetNumErrTestFails(cvode_mem, &num_fails);
+
+      // Number of nonlinear convergence failures
+      long int nonlin_fails;
+      CVodeGetNumNonlinSolvConvFails(cvode_mem, &nonlin_fails);
+      
+      output.write("    -> Local error fails: %d, nonlinear convergence fails: %d\n", num_fails, nonlin_fails);
+
+      // Stability limit order reductions
+      long int stab_lims;
+      CVodeGetNumStabLimOrderReds(cvode_mem, &stab_lims);
+      
+      output.write("    -> Stability limit order reductions: %d\n", stab_lims);
+      
     }
 
     /// Call the monitor function
@@ -374,10 +400,6 @@ int CvodeSolver::run() {
       break;
     }
   }
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 
   return 0;
 }

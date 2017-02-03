@@ -1,4 +1,6 @@
-/**************************************************************************
+/*!************************************************************************
+ * \file vecops.hxx
+ * 
  * Operators on vector objects
  * B.Dudson, October 2007
  *
@@ -32,16 +34,44 @@
 #include "vector2d.hxx"
 #include "vector3d.hxx"
 
+/// Gradient of scalar field \p f, returning a covariant vector
+///
+/// @param[in] f  The field to differentiate
+/// @param[in] outloc The location where the result is desired (if staggered meshes are enabled)
+///                   By default this is the same location as the input \p f
 const Vector2D Grad(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT);
 const Vector3D Grad(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT);
+
+/// Gradient of scalar field \p f, returning a covariant vector
+///
+/// @param[in] f  The field to differentiate
+/// @param[in] outloc_x  The cell location where the X component should be defined
+/// @param[in] outloc_y  The cell location where the Y component should be defined
+/// @param[in] outloc_z  The cell location where the Z component should be defined
 const Vector3D Grad(const Field3D &f, 
                     CELL_LOC outloc_x, CELL_LOC outloc_y, CELL_LOC outloc_z = CELL_DEFAULT);
 
+/// Perpendicular gradient of scalar field \p f
+///
+/// result.x = df/dx - g_12/(JB)^2 df/dy
+/// result.y = 0
+/// result.z = df/dz - g_23/(JB)^2 df/dy
+/// 
+/// @param[in] f  The field to differentiate
+/// @param[in] outloc_x  The cell location where the X component should be defined
+/// @param[in] outloc_y  The cell location where the Y component should be defined
+/// @param[in] outloc_z  The cell location where the Z component should be defined
+///
 const Vector3D Grad_perp(const Field3D &f, 
 			 CELL_LOC outloc_x = CELL_DEFAULT, 
 			 CELL_LOC outloc_y = CELL_DEFAULT,
 			 CELL_LOC outloc_z = CELL_DEFAULT);
 
+/// Divergence of a vector \p v, returning a scalar
+///
+/// @param[in] v  The vector to differentiate
+/// @param[in] outloc  The cell location where the result is desired
+///
 const Field2D Div(const Vector2D &v, CELL_LOC outloc = CELL_DEFAULT);
 const Field3D Div(const Vector3D &v, CELL_LOC outloc = CELL_DEFAULT);
 
@@ -50,6 +80,11 @@ const Field3D Div(const Vector3D &v, const Field3D &f, DIFF_METHOD method, CELL_
 const Field3D Div(const Vector3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method = DIFF_DEFAULT);
 const Field3D Div(const Vector3D &v, const Field3D &f);
 
+/// Curl of a vector
+///
+/// @param[in] v  The vector to differentiate
+/// @param[in] outloc  The cell location where the result is desired
+///
 const Vector2D Curl(const Vector2D &v, CELL_LOC outloc = CELL_DEFAULT);
 const Vector3D Curl(const Vector3D &v, CELL_LOC outloc = CELL_DEFAULT);
 const Vector3D Curl(const Vector3D &v, 
@@ -57,11 +92,13 @@ const Vector3D Curl(const Vector3D &v,
 
 // Upwinding routines
 
+/// Advection of a scalar field \p f by a velocity vector \p v
 const Field2D V_dot_Grad(const Vector2D &v, const Field2D &f);
 const Field3D V_dot_Grad(const Vector2D &v, const Field3D &f);
 const Field3D V_dot_Grad(const Vector3D &v, const Field2D &f);
 const Field3D V_dot_Grad(const Vector3D &v, const Field3D &f);
 
+/// Advection of a vector field \p a by a velocity vector \p v
 const Vector2D V_dot_Grad(const Vector2D &v, const Vector2D &a);
 const Vector3D V_dot_Grad(const Vector2D &v, const Vector3D &a);
 const Vector3D V_dot_Grad(const Vector3D &v, const Vector2D &a);

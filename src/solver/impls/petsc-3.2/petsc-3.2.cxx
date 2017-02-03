@@ -256,7 +256,7 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
     PetscInt nz  = mesh->LocalNz;
 
     /* number of degrees (variables) at each grid point */
-    if(n2Dvars() != 0) bout_error("PETSc 3.2 solver can't handle 2D variables yet. Sorry\n");
+    if(n2Dvars() != 0) throw BoutException("PETSc 3.2 solver can't handle 2D variables yet. Sorry\n");
 
     PetscInt dof = n3Dvars();
 

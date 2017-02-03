@@ -144,7 +144,7 @@ const Field3D InvertParSimple::solve(const Field3D &rc) {
                     resultdata);
       }else {
         // Open field-lines
-        bout_error("Sorry; invertParSimple can't cope with open field lines yet\n");
+        throw BoutException("Sorry; invertParSimple can't cope with open field lines yet\n");
       }
     }
       
@@ -251,7 +251,7 @@ void InvertParSimple::cyclicSolve(int ysize, int xpos, BoutReal *data, BoutReal 
 
       if((zpos != z0) && done[zpos]) {
         // Somehow hit a different fieldline. Should never happen
-        bout_error("ERROR: Crossed streams in invpar::cyclic_solve!\n");
+        throw BoutException("ERROR: Crossed streams in invpar::cyclic_solve!\n");
       }
 	
     }while(zpos != z0);

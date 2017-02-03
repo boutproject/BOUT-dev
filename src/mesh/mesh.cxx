@@ -45,15 +45,6 @@ Mesh::~Mesh() {
   if(coords) {
     delete coords;
   }
-  
-  /*
-  // Gaussj working arrays
-  if(ilen > 0) {
-    ivfree(indxc);
-    ivfree(indxr);
-    ivfree(ipiv);
-  }
-  */
 }
 
 /**************************************************************************

@@ -525,7 +525,9 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
     }
     
     // Call monitors so initial values are written to output dump files
-    call_monitors(simtime, 0, NOUT); 
+    if (call_monitors(simtime, 0, NOUT)){
+      throw BoutException("Initial monitor call failed!");
+    }
   }
   
   int status;
@@ -799,6 +801,16 @@ void Solver::setRestartDir(const string &dir) {
  **************************************************************************/
 
 int Solver::getLocalN() {
+
+  /// Cache the value, so this is not repeatedly called.
+  /// This value should not change after initialisation
+  static int cacheLocalN = -1;
+  if(cacheLocalN != -1) {
+    return cacheLocalN;
+  }
+  
+  ASSERT0(initialised); // Must be initialised
+  
   int n2d = n2Dvars();
   int n3d = n3Dvars();
   
@@ -846,6 +858,8 @@ int Solver::getLocalN() {
     output.write("\tBoundary region outer X\n");
   }
   
+  cacheLocalN = local_N;
+
   return local_N;
 }
 

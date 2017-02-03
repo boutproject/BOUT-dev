@@ -4,19 +4,21 @@
  */
 
 #include <bout.hxx>
-#include <boutmain.hxx>
 #include <smoothing.hxx>
 #include <field_factory.hxx>
 
-int physics_init(bool restarting) {
+int main(int argc, char **argv) {
+
+  // Initialise BOUT++, setting up mesh
+  BoutInitialise(argc, argv);
+
   FieldFactory f(mesh);
   
   Field2D input2d = f.create2D("1 + sin(2*y)");
   Field3D input3d = f.create3D("gauss(x-0.5,0.2)*gauss(y-pi)*sin(3*y - z)");
   
   input3d.mergeYupYdown();
-  //mesh->communicate(input2d, input3d);
-  
+
   SAVE_ONCE2(input2d, input3d);
   
   // Average in 3D
@@ -35,10 +37,6 @@ int physics_init(bool restarting) {
   
   MPI_Barrier(BoutComm::get()); // Wait for all processors to write data
   
-  return 1;
-}
-
-int physics_run(BoutReal t) {
-  // Doesn't do anything
-  return 1;
+  BoutFinalise();
+  return 0;
 }

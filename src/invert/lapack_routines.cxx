@@ -1,5 +1,5 @@
 /*!
- * \file lapack_routines.cpp
+ * \file lapack_routines.cxx
  *
  * Serial code to invert a complex tridiagonal system
  *
