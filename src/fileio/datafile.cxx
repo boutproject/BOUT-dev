@@ -244,6 +244,8 @@ void Datafile::add(int &i, const char *name, bool save_repeat) {
   d.ptr = &i;
   d.name = string(name);
   d.save_repeat = save_repeat;
+
+  Options::getRoot()->getSection(name)->get("subsample", d.subsample, 1);
   
   int_arr.push_back(d);
 }
@@ -257,6 +259,8 @@ void Datafile::add(BoutReal &r, const char *name, bool save_repeat) {
   d.ptr = &r;
   d.name = string(name);
   d.save_repeat = save_repeat;
+
+  Options::getRoot()->getSection(name)->get("subsample", d.subsample, 1);
   
   BoutReal_arr.push_back(d);
 }
@@ -270,6 +274,8 @@ void Datafile::add(Field2D &f, const char *name, bool save_repeat) {
   d.ptr = &f;
   d.name = string(name);
   d.save_repeat = save_repeat;
+
+  Options::getRoot()->getSection(name)->get("subsample", d.subsample, 1);
   
   f2d_arr.push_back(d);
 }
@@ -283,6 +289,8 @@ void Datafile::add(Field3D &f, const char *name, bool save_repeat) {
   d.ptr = &f;
   d.name = string(name);
   d.save_repeat = save_repeat;
+
+  Options::getRoot()->getSection(name)->get("subsample", d.subsample, 1);
   
   f3d_arr.push_back(d);
 }
@@ -297,6 +305,8 @@ void Datafile::add(Vector2D &f, const char *name, bool save_repeat) {
   d.name = string(name);
   d.save_repeat = save_repeat;
   d.covar = f.covariant;
+
+  Options::getRoot()->getSection(name)->get("subsample", d.subsample, 1);
   
   v2d_arr.push_back(d);
 }
@@ -311,6 +321,8 @@ void Datafile::add(Vector3D &f, const char *name, bool save_repeat) {
   d.name = string(name);
   d.save_repeat = save_repeat;
   d.covar = f.covariant;
+
+  Options::getRoot()->getSection(name)->get("subsample", d.subsample, 1);
   
   v3d_arr.push_back(d);
 }
@@ -427,7 +439,7 @@ bool Datafile::read() {
   return true;
 }
 
-bool Datafile::write() {
+bool Datafile::write(int timestep) {
   if(!enabled)
     return true; // Just pretend it worked
   
@@ -455,63 +467,75 @@ bool Datafile::write() {
 
   // Write integers
   for(const auto& var : int_arr) {
-    write_int(var.name, var.ptr, var.save_repeat);
+    if( !(timestep % var.subsample) ) {
+      write_int(var.name, var.ptr, var.save_repeat);
+    }
   }
   
   // Write BoutReals
   for(const auto& var : BoutReal_arr) {
-    write_real(var.name, var.ptr, var.save_repeat);
+    if( !(timestep % var.subsample) ) {
+      write_real(var.name, var.ptr, var.save_repeat);
+    }
   }
 
   // Write 2D fields
   for(const auto& var : f2d_arr) {
-    write_f2d(var.name, var.ptr, var.save_repeat);
+    if( !(timestep % var.subsample) ) {
+      write_f2d(var.name, var.ptr, var.save_repeat);
+    }
   }
 
   // Write 3D fields
   for(const auto& var : f3d_arr) {
-    write_f3d(var.name, var.ptr, var.save_repeat);
+    if( !(timestep % var.subsample) ) {
+      write_f3d(var.name, var.ptr, var.save_repeat);
+    }
   }
   
   // 2D vectors
   for(const auto& var : v2d_arr) {
-    if(var.covar) {
-      // Writing covariant vector
-      Vector2D v  = *(var.ptr);
-      v.toCovariant();
-      
-      write_f2d(var.name+string("_x"), &(v.x), var.save_repeat);
-      write_f2d(var.name+string("_y"), &(v.y), var.save_repeat);
-      write_f2d(var.name+string("_z"), &(v.z), var.save_repeat);
-    } else {
-      // Writing contravariant vector
-      Vector2D v  = *(var.ptr);
-      v.toContravariant();
-      
-      write_f2d(var.name+string("x"), &(v.x), var.save_repeat);
-      write_f2d(var.name+string("y"), &(v.y), var.save_repeat);
-      write_f2d(var.name+string("z"), &(v.z), var.save_repeat);
+    if( !(timestep % var.subsample) ) {
+      if(var.covar) {
+        // Writing covariant vector
+        Vector2D v  = *(var.ptr);
+        v.toCovariant();
+
+        write_f2d(var.name+string("_x"), &(v.x), var.save_repeat);
+        write_f2d(var.name+string("_y"), &(v.y), var.save_repeat);
+        write_f2d(var.name+string("_z"), &(v.z), var.save_repeat);
+      } else {
+        // Writing contravariant vector
+        Vector2D v  = *(var.ptr);
+        v.toContravariant();
+
+        write_f2d(var.name+string("x"), &(v.x), var.save_repeat);
+        write_f2d(var.name+string("y"), &(v.y), var.save_repeat);
+        write_f2d(var.name+string("z"), &(v.z), var.save_repeat);
+      }
     }
   }
 
   // 3D vectors
   for(const auto& var : v3d_arr) {
-    if(var.covar) {
-      // Writing covariant vector
-      Vector3D v  = *(var.ptr);
-      v.toCovariant();
-      
-      write_f3d(var.name+string("_x"), &(v.x), var.save_repeat);
-      write_f3d(var.name+string("_y"), &(v.y), var.save_repeat);
-      write_f3d(var.name+string("_z"), &(v.z), var.save_repeat);
-    } else {
-      // Writing contravariant vector
-      Vector3D v  = *(var.ptr);
-      v.toContravariant();
-      
-      write_f3d(var.name+string("x"), &(v.x), var.save_repeat);
-      write_f3d(var.name+string("y"), &(v.y), var.save_repeat);
-      write_f3d(var.name+string("z"), &(v.z), var.save_repeat);
+    if( !(timestep % var.subsample) ) {
+      if(var.covar) {
+        // Writing covariant vector
+        Vector3D v  = *(var.ptr);
+        v.toCovariant();
+
+        write_f3d(var.name+string("_x"), &(v.x), var.save_repeat);
+        write_f3d(var.name+string("_y"), &(v.y), var.save_repeat);
+        write_f3d(var.name+string("_z"), &(v.z), var.save_repeat);
+      } else {
+        // Writing contravariant vector
+        Vector3D v  = *(var.ptr);
+        v.toContravariant();
+
+        write_f3d(var.name+string("x"), &(v.x), var.save_repeat);
+        write_f3d(var.name+string("y"), &(v.y), var.save_repeat);
+        write_f3d(var.name+string("z"), &(v.z), var.save_repeat);
+      }
     }
   }
   

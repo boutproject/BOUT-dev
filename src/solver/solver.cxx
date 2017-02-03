@@ -169,6 +169,9 @@ void Solver::add(Field2D &v, const char* name) {
 
   v.applyBoundary(true);
 
+  // Check subsample frequency of the variable
+  Options::getRoot()->getSection(name)->get("subsample", d.subsample, 1);
+
   f2d.push_back(d);
 
   msg_stack.pop(msg_point);
@@ -230,6 +233,9 @@ void Solver::add(Field3D &v, const char* name) {
 
   v.applyBoundary(true); // Make sure initial profile obeys boundary conditions
   v.setLocation(d.location); // Restore location if changed
+
+  // Check subsample frequency of the variable
+  Options::getRoot()->getSection(name)->get("subsample", d.subsample, 1);
   
   f3d.push_back(d);
               
@@ -279,6 +285,9 @@ void Solver::add(Vector2D &v, const char* name) {
   /// Make sure initial profile obeys boundary conditions
   v.applyBoundary(true);
 
+  // Check subsample frequency of the variable
+  Options::getRoot()->getSection(name)->get("subsample", d.subsample, 1);
+
   msg_stack.pop(msg_point);
 }
 
@@ -319,6 +328,9 @@ void Solver::add(Vector3D &v, const char* name) {
 
   v.applyBoundary(true);
 
+  // Check subsample frequency of the variable
+  Options::getRoot()->getSection(name)->get("subsample", d.subsample, 1);
+
   msg_stack.pop(msg_point);
 }
 
@@ -350,6 +362,9 @@ void Solver::constraint(Field2D &v, Field2D &C_v, const char* name) {
   d.var = &v;
   d.F_var = &C_v;
   d.name = string(name);
+
+  // Check subsample frequency of the variable
+  Options::getRoot()->getSection(name)->get("subsample", d.subsample, 1);
 
   f2d.push_back(d);
 
@@ -384,6 +399,9 @@ void Solver::constraint(Field3D &v, Field3D &C_v, const char* name) {
   d.location = v.getLocation();
   d.name = string(name);
   
+  // Check subsample frequency of the variable
+  Options::getRoot()->getSection(name)->get("subsample", d.subsample, 1);
+
   f3d.push_back(d);
 
 #ifdef CHECK
@@ -416,6 +434,9 @@ void Solver::constraint(Vector2D &v, Vector2D &C_v, const char* name) {
   d.F_var = &C_v;
   d.covariant = v.covariant;
   d.name = string(name);
+
+  // Check subsample frequency of the variable
+  Options::getRoot()->getSection(name)->get("subsample", d.subsample, 1);
   
   v2d.push_back(d);
 
@@ -461,6 +482,9 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, const char* name) {
   d.covariant = v.covariant;
   d.name = string(name);
   
+  // Check subsample frequency of the variable
+  Options::getRoot()->getSection(name)->get("subsample", d.subsample, 1);
+
   v3d.push_back(d);
 
   // Add suffix, depending on co- /contravariance

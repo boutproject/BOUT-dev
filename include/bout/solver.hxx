@@ -333,6 +333,7 @@ protected:
       CELL_LOC location; // For fields and vector components
       bool covariant; // For vectors
       bool evolve_bndry; // Are the boundary regions being evolved?
+      int subsample;     // Number of "output" timesteps between actually writing variable
 
       string name;    // Name of the variable
     };
