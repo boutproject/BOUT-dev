@@ -525,7 +525,9 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
     }
     
     // Call monitors so initial values are written to output dump files
-    call_monitors(simtime, 0, NOUT); 
+    if (call_monitors(simtime, 0, NOUT)){
+      throw BoutException("Initial monitor call failed!");
+    }
   }
   
   int status;
