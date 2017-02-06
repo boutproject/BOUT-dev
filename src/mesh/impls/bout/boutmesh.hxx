@@ -144,6 +144,9 @@ class BoutMesh : public Mesh {
   BoutReal GlobalX(BoutReal jx) const;
   BoutReal GlobalY(BoutReal jy) const;
 
+  BoutReal getIxseps1() const {return ixseps1;}
+  BoutReal getIxseps2() const {return ixseps2;}
+
   void outputVars(Datafile &file);
 
   int XGLOBAL(int xloc) const;
