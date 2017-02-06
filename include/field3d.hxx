@@ -47,128 +47,124 @@ class Mesh;  // #include "bout/mesh.hxx"
   This class represents a scalar field defined over the mesh.
   It handles memory management, and provides overloaded operators
   for operations on the data, iterators and access methods.
-  
+
   Initialisation
   --------------
-  
+
   Fields can be declared in any scope (even global),
   but cannot be accessed by index or used until the data
-  is allocated. 
+  is allocated.
 
-  Field3D f;   // Declare variable, no data allocated
-  f(0,0,0) = 1.0; // Error !
+      Field3D f;   // Declare variable, no data allocated
+      f(0,0,0) = 1.0; // Error !
 
-  f = 0.0;  // Allocates memory, fills with value (0.0)
-  
-  Field3D g(1.0); // Declares, allocates memory, fills with value (1.0)
-  
-  Field3D h;   // not allocated
-  h.allocate();  // Data array allocated, values undefined
-  f(0,0,0) = 1.0; // ok
-  
+      f = 0.0;  // Allocates memory, fills with value (0.0)
+
+      Field3D g(1.0); // Declares, allocates memory, fills with value (1.0)
+
+      Field3D h;   // not allocated
+      h.allocate();  // Data array allocated, values undefined
+      f(0,0,0) = 1.0; // ok
+
   Copy-on-Write
   -------------
-  
+
   A field is a reference to the underlying data array, so
   setting one field equal to another has the effect of making
   both fields share the same underlying data
-  
-  Field3D f(0.0);
-  Field3D g = f; // f and g now share data
-  f(0,0,0) = 1.0; // g is also modified
-  
+
+      Field3D f(0.0);
+      Field3D g = f; // f and g now share data
+      f(0,0,0) = 1.0; // g is also modified
+
   Setting the entire field equal to a new value changes the reference:
 
-  Field3D f(0.0);
-  Field3D g = f; // f and g now share data
-  g = 1.0;   // g and f are now separate
-  
+      Field3D f(0.0);
+      Field3D g = f; // f and g now share data
+      g = 1.0;   // g and f are now separate
+
   To ensure that a field is unique, call allocate() which
   will make a copy of the underlying data if it is shared.
-  
-  Field3D f(0.0);
-  Field3D g = f; // f and g now share data
-  g.allocate();  // Data copied so g and f don't share data
-  f(0,0,0) = 1.0; // ok
+
+      Field3D f(0.0);
+      Field3D g = f; // f and g now share data
+      g.allocate();  // Data copied so g and f don't share data
+      f(0,0,0) = 1.0; // ok
 
   Data access
   -----------
-  
+
   Individual data indices can be accessed by index using
   round brackets:
-  
-  Field3D f;
-  f(0,1,2) = 1.0;  // Set value  
-  BoutReal val = f(2,1,3);  // Get value
 
-  if CHECK is greater than 2, this function will perform
+      Field3D f;
+      f(0,1,2) = 1.0;  // Set value
+      BoutReal val = f(2,1,3);  // Get value
+
+  If CHECK is greater than 2, this function will perform
   bounds checking. This will significantly slow calculations.
 
   Some methods, such as FFT routines, need access to
   a pointer to memory. For the Z dimension this can be done
   by passing only the X and Y indices
 
-  BoutReal *data = f(0,1);
+      BoutReal *data = f(0,1);
 
-  data now points to f(0,1,0) and can be incremented to move in Z.
-  
+  `data` now points to `f(0,1,0)` and can be incremented to move in Z.
+
   Indexing can also be done using DataIterator or Indices objects,
   defined in bout/dataiterator.hxx:
 
-  Indices i = {0,1,0};
-  
-  f[i] = 1.0;  // Equivalent to f(0,1,0)
-  
+      Indices i = {0,1,0};
+
+      f[i] = 1.0;  // Equivalent to f(0,1,0)
+
   This is primarily used to allow convenient iteration over fields
-  
+
   Iteration
   ---------
-  
+
   To loop over all points in a field, a for loop can be used
   to get the indices:
-  
-  Field3D f(0.0); // Allocate, set to zero
-  
-  for( auto i : f ) {  // Loop over all points, with index i
-    f[i] = 1.0;
-  }
-  
+
+      Field3D f(0.0); // Allocate, set to zero
+
+      for( auto i : f ) {  // Loop over all points, with index i
+        f[i] = 1.0;
+      }
+
   There is also more explicit looping over regions:
-  
-  for( auto i : f.region(RGN_ALL) ) {  // Loop over all points, with index i
-    f[i] = 1.0;
-  }
-  
+
+      for( auto i : f.region(RGN_ALL) ) {  // Loop over all points, with index i
+        f[i] = 1.0;
+      }
+
   Parallel (y) derivatives
   ------------------------
-  
+
   In several numerical schemes the mapping along magnetic fields
   (default y direction) is a relatively complex map. To accommodate
   this, the values of a field in the positive (up) and negative (down)
   directions can be stored in separate fields.
-  
-  Field3D f(0.0); // f allocated, set to zero
 
-  f.yup() // error; f.yup not allocated
+      Field3D f(0.0); // f allocated, set to zero
 
-  f.mergeYupYdown(); // f.yup() and f.ydown() now point to f
-  f.yup()(0,1,0)  // ok, gives value of f at (0,1,0) 
-  
-  To have separate fields for yup and ydown, first call
+      f.yup() // error; f.yup not allocated
 
-  f.splitYupYdown(); // f.yup() and f.ydown() separate
+      f.mergeYupYdown(); // f.yup() and f.ydown() now point to f
+      f.yup()(0,1,0)  // ok, gives value of f at (0,1,0)
 
-  f.yup(); // ok
-  f.yup()(0,1,0) // error; f.yup not allocated
-  
-  f.yup() = 1.0; // Set f.yup() field to 1.0
-  
-  f.yup()(0,1,0) // ok
-  
-  Changelog
-  ---------
-  July 2008: Added FieldData virtual functions
-  May 2008: Added reference counting to reduce memory copying
+      To have separate fields for yup and ydown, first call
+
+      f.splitYupYdown(); // f.yup() and f.ydown() separate
+
+      f.yup(); // ok
+      f.yup()(0,1,0) // error; f.yup not allocated
+
+      f.yup() = 1.0; // Set f.yup() field to 1.0
+
+      f.yup()(0,1,0) // ok
+
  */
 class Field3D : public Field, public FieldData {
  public:
@@ -403,34 +399,43 @@ class Field3D : public Field, public FieldData {
   const Field3D operator+() {return *this;}
   
   /// Assignment operators
+  ///@{
   Field3D & operator=(const Field3D &rhs);
   Field3D & operator=(const Field2D &rhs);
   Field3D & operator=(const FieldPerp &rhs);
   const bvalue & operator=(const bvalue &val);
   BoutReal operator=(BoutReal val);
+  ///@}
 
   /// Addition operators
+  ///@{
   Field3D & operator+=(const Field3D &rhs);
   Field3D & operator+=(const Field2D &rhs);
   Field3D & operator+=(BoutReal rhs);
+  ///@}
   
-  /// Subtraction
+  /// Subtraction operators
+  ///@{
   Field3D & operator-=(const Field3D &rhs);
   Field3D & operator-=(const Field2D &rhs);
   Field3D & operator-=(BoutReal rhs);
+  ///@}
 
-  /// Multiplication
+  /// Multiplication operators
+  ///@{
   Field3D & operator*=(const Field3D &rhs);
   Field3D & operator*=(const Field2D &rhs);
   Field3D & operator*=(BoutReal rhs);
-  
-  /// Division
+  ///@}
+
+  /// Division operators
+  ///@{
   Field3D & operator/=(const Field3D &rhs);
   Field3D & operator/=(const Field2D &rhs);
   Field3D & operator/=(BoutReal rhs);
+  ///@}
 
   // Stencils for differencing
-  
   void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   void setXStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   void setXStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
@@ -690,6 +695,7 @@ const Field3D floor(const Field3D &var, BoutReal f);
 /*!
  * Fourier filtering, removes all except one mode
  * 
+ * @param[in] var Variable to apply filter to
  * @param[in] N0 The component to keep
  */
 const Field3D filter(const Field3D &var, int N0);

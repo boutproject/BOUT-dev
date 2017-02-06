@@ -1,0 +1,685 @@
+Time integration
+================
+
+.. _sec-timeoptions:
+
+Options
+-------
+
+BOUT++ can be compiled with several different time-integration solvers ,
+and at minimum should have Runge-Kutta (RK4) and PVODE (BDF/Adams)
+solvers available.
+
+The solver library used is set using the ``solver:type`` option, so
+either in BOUT.inp:
+
+.. code-block:: cfg
+
+    [solver]
+    type = rk4  # Set the solver to use
+
+or on the command line by adding ``solver:type=pvode`` for example:
+
+.. code-block:: bash
+
+    mpirun -np 4 ./2fluid solver:type=rk4
+
+**NB**: Make sure there are no spaces around the “=” sign:
+``solver:type =pvode`` won’t work (probably). Table [tab:solvers] gives
+a list of time integration solvers, along with any compile-time options
+needed to make the solver available.
+
++---------------+-----------------------------------------+--------------------+
+| Name          | Description                             | Compile options    |
++===============+=========================================+====================+
+| euler         | Euler explicit method                   | Always available   |
++---------------+-----------------------------------------+--------------------+
+| rk4           | Runge-Kutta 4th-order explicit method   | Always available   |
++---------------+-----------------------------------------+--------------------+
+| karniadakis   | Karniadakis explicit method             | Always available   |
++---------------+-----------------------------------------+--------------------+
+| pvode         | 1998 PVODE with BDF method              | Always available   |
++---------------+-----------------------------------------+--------------------+
+| cvode         | SUNDIALS CVODE. BDF and Adams methods   | –with-cvode        |
++---------------+-----------------------------------------+--------------------+
+| ida           | SUNDIALS IDA. DAE solver                | –with-ida          |
++---------------+-----------------------------------------+--------------------+
+| petsc         | PETSc TS methods                        | –with-petsc        |
++---------------+-----------------------------------------+--------------------+
+| imexbdf2      | IMEX-BDF2 scheme                        | –with-petsc        |
++---------------+-----------------------------------------+--------------------+
+
+Table: Available time integration solvers
+
+Each solver can have its own settings which work in slightly different
+ways, but some common settings and which solvers they are used in are
+given in table [tab:solveropts].
+
++------------------+--------------------------------------------+-------------------------------------+
+| Option           | Description                                | Solvers used                        |
++==================+============================================+=====================================+
+| atol             | Absolute tolerance                         | rk4, pvode, cvode, ida              |
++------------------+--------------------------------------------+-------------------------------------+
+| rtol             | Relative tolerance                         | rk4, pvode, cvode, ida              |
++------------------+--------------------------------------------+-------------------------------------+
+| mxstep           | Maximum internal steps                     | rk4                                 |
+|                  | per output step                            |                                     |
++------------------+--------------------------------------------+-------------------------------------+
+| max\_timestep    | Maximum timestep                           | rk4, cvode                          |
++------------------+--------------------------------------------+-------------------------------------+
+| timestep         | Starting timestep                          | rk4, karniadakis, euler, imexbdf2   |
++------------------+--------------------------------------------+-------------------------------------+
+| adaptive         | Adapt timestep? (Y/N)                      | rk4                                 |
++------------------+--------------------------------------------+-------------------------------------+
+| use\_precon      | Use a preconditioner? (Y/N)                | pvode, cvode, ida                   |
++------------------+--------------------------------------------+-------------------------------------+
+| mudq, mldq       | BBD preconditioner settings                | pvode, cvode, ida                   |
++------------------+--------------------------------------------+-------------------------------------+
+| mukeep, mlkeep   |                                            |                                     |
++------------------+--------------------------------------------+-------------------------------------+
+| maxl             | Maximum number of linear iterations        | cvode                               |
++------------------+--------------------------------------------+-------------------------------------+
+| use\_jacobian    | Use user-supplied Jacobian? (Y/N)          | cvode                               |
++------------------+--------------------------------------------+-------------------------------------+
+| adams\_moulton   | Use Adams-Moulton method                   | cvode                               |
+|                  | rather than BDF                            |                                     |
++------------------+--------------------------------------------+-------------------------------------+
+| diagnose         | Collect and print additional diagnostics   | cvode                               |
++------------------+--------------------------------------------+-------------------------------------+
+
+Table: Time integration solver options
+
+The most commonly changed options are the absolute and relative solver
+tolerances, ``ATOL`` and ``RTOL`` which should be varied to check
+convergence.
+
+CVODE
+-----
+
+The most commonly used time integration solver is CVODE, or its older
+version PVODE. CVODE has several advantages over PVODE, including better
+support for preconditioning and diagnostics.
+
+Enabling diagnostics output using ``solver:diagnose=true`` will print a
+set of outputs for each timestep similar to:
+
+.. code-block:: bash
+
+    CVODE: nsteps 51, nfevals 69, nniters 65, npevals 126, nliters 79
+        -> Newton iterations per step: 1.274510e+00
+        -> Linear iterations per Newton iteration: 1.215385e+00
+        -> Preconditioner evaluations per Newton: 1.938462e+00
+        -> Last step size: 1.026792e+00, order: 5
+        -> Local error fails: 0, nonlinear convergence fails: 0
+        -> Stability limit order reductions: 0
+    1.000e+01        149       2.07e+01    78.3    0.0   10.0    0.9   10.8
+
+When diagnosing slow performance, key quantities to look for are
+nonlinear convergence failures, and the number of linear iterations per
+Newton iteration. A large number of failures, and close to 5 linear
+iterations per Newton iteration are a sign that the linear solver is not
+converging quickly enough, and hitting the default limit of 5
+iterations. This limit can be modified using the ``solver:maxl``
+setting. Giving it a large value e.g. ``solver:maxl=1000`` will show how
+many iterations are needed to solve the linear system. If the number of
+iterations becomes large, this may be an indication that the system is
+poorly conditioned, and a preconditioner might help improve performance.
+See :ref:`sec-preconditioning`.
+
+
+ODE integration
+---------------
+
+The Solver class can be used to solve systems of ODEs inside a physics
+model: Multiple Solver objects can exist besides the main one used for
+time integration. Example code is in ``examples/test-integrate``.
+
+To use this feature, systems of ODEs must be represented by a class
+derived from ``PhysicsModel`` (see :ref:`sec-newapi`).
+
+::
+
+    class MyFunction : public PhysicsModel {
+     public:
+      int init(bool restarting) {
+        // Initialise ODE
+        // Add variables to solver as usual
+        solver->add(result, "result");
+        ...
+      }
+
+      int rhs(BoutReal time) {
+        // Specify derivatives of fields as usual
+        ddt(result) = ...
+      }
+     private:
+      Field3D result;
+    };
+
+To solve this ODE, create a new Solver object:
+
+::
+
+    Solver* ode = Solver::create(Options::getRoot()->getSection("ode"));
+
+This will look in the section ``[ode]`` in the options file.
+**Important:** To prevent this solver overwriting the main restart files
+with its own restart files, either disable restart files:
+
+.. code-block:: cfg
+
+    [ode]
+    enablerestart = false
+
+or specify a different directory to put the restart files:
+
+.. code-block:: cfg
+
+    [ode]
+    restartdir = ode  # Restart files ode/BOUT.restart.0.nc, ...
+
+Create a model object, and pass it to the solver:
+
+::
+
+    MyFunction* model = new MyFunction();
+    ode->setModel(model);
+
+Finally tell the solver to perform the integration:
+
+::
+
+    ode->solve(5, 0.1);
+
+The first argument is the number of steps to take, and the second is the
+size of each step. These can also be specified in the options, so
+calling
+
+::
+
+    ode->solve();
+
+will cause ode to look in the input for ``nout`` and ``timestep``
+options:
+
+.. code-block:: cfg
+
+    [ode]
+    nout = 5
+    timestep = 0.1
+
+Finally, delete the model and solver when finished:
+
+::
+
+    delete model;
+    delete solver;
+
+**Note:** If an ODE needs to be solved multiple times, at the moment it
+is recommended to delete the solver, and create a new one each time.
+
+.. _sec-preconditioning:
+
+Preconditioning
+---------------
+
+At every time step, an implicit scheme such as BDF has to solve a
+non-linear problem to find the next solution. This is usually done using
+Newton’s method, each step of which involves solving a linear (matrix)
+problem. For :math:`N` evolving variables is an :math:`N\times N` matrix
+and so can be very large. By default matrix-free methods are used, in
+which the Jacobian :math:`\mathcal{J}` is approximated by finite
+differences (see next subsection), and so this matrix never needs to be
+explicitly calculated. Finding a solution to this matrix can still be
+difficult, particularly as :math:`\delta t` gets large compared with
+some time-scales in the system (i.e. a stiff problem).
+
+A preconditioner is a function which quickly finds an approximate
+solution to this matrix, speeding up convergence to a solution. A
+preconditioner does not need to include all the terms in the problem
+being solved, as the preconditioner only affects the convergence rate
+and not the final solution. A good preconditioner can therefore
+concentrate on solving the parts of the problem with the fastest
+time-scales.
+
+A simple example  [1]_ is a coupled wave equation, solved in the
+``test-precon`` example code:
+
+.. math::
+
+   \frac{\partial u}{\partial t} = \partial_{||}v \qquad \frac{\partial
+   v}{\partial t} = \partial_{||} u
+
+First, calculate the Jacobian of this set of equations by taking
+partial derivatives of the time-derivatives with respect to each of the
+evolving variables
+
+.. math::
+
+   \mathcal{J} = (\begin{array}{cc}
+   \frac{\partial}{\partial u}\frac{\partial u}{\partial t} &
+   \frac{\partial}{\partial v}\frac{\partial u}{\partial t}\\
+   \frac{\partial}{\partial u}\frac{\partial v}{\partial t} &
+   \frac{\partial}{\partial v}\frac{\partial v}{\partial t}
+   \end{array}
+   ) = (\begin{array}{cc}
+   0 & \partial_{||} \\
+   \partial_{||} & 0
+   \end{array}
+   )
+
+In this case :math:`\frac{\partial u}{\partial t}` doesn’t depend on
+:math:`u` nor :math:`\frac{\partial v}{\partial t}` on :math:`v`, so the
+diagonal is empty. Since the equations are linear, the Jacobian doesn’t
+depend on :math:`u` or :math:`v` and so
+
+.. math::
+
+   \frac{\partial}{\partial t}(\begin{array}{c} u \\
+   v \end{array}) = \mathcal{J} (\begin{array}{c} u \\
+   v \end{array} )
+
+In general for non-linear functions :math:`\mathcal{J}` gives the
+change in time-derivatives in response to changes in the state variables
+:math:`u` and :math:`v`.
+
+In implicit time stepping, the preconditioner needs to solve an equation
+
+.. math::
+
+   \mathcal{I} - \gamma \mathcal{J}
+
+where :math:`\mathcal{I}` is the identity matrix, and :math:`\gamma`
+depends on the time step and method (e.g. :math:`\gamma = \delta t` for
+backwards Euler method). For the simple wave equation problem, this is
+
+.. math::
+
+   \mathcal{I} - \gamma \mathcal{J} = (\begin{array}{cc}
+   1 & -\gamma\partial_{||} \\
+   -\gamma\partial_{||} & 1
+   \end{array}
+   )
+
+This matrix can be block inverted using Schur factorisation  [2]_
+
+.. math::
+
+   (\begin{array}{cc}
+     {\mathbf{E}} & {\mathbf{U}} \\
+     {\mathbf{L}} & {\mathbf{D}}
+   \end{array})^{-1}
+    = (\begin{array}{cc}
+     {\mathbf{I}} & -{\mathbf{E}}^{-1}{\mathbf{U}} \\
+     0 & {\mathbf{I}}
+   \end{array}
+   )(\begin{array}{cc}
+     {\mathbf{E}}^{-1} & 0 \\
+     0 & {\mathbf{P}}_{Schur}^{-1}
+   \end{array}
+   )(\begin{array}{cc}
+     {\mathbf{I}} & 0 \\
+     -{\mathbf{L}}{\mathbf{E}}^{-1} & {\mathbf{I}}
+   \end{array}
+   )
+
+where
+:math:`{\mathbf{P}}_{Schur} = {\mathbf{D}} - {\mathbf{L}}{\mathbf{E}}^{-1}{\mathbf{U}}`
+Using this, the wave problem becomes:
+
+.. math::
+   :label: precon
+
+   (\begin{array}{cc} 1 & -\gamma\partial_{||} \\
+   -\gamma\partial_{||} & 1 \end{array})^{-1} = (\begin{array}{cc} 1 & \gamma\partial_{||}\\
+   0 & 1 \end{array} )(\begin{array}{cc} 1 & 0 \\
+   0 & (1 -\gamma^2\partial^2_{||})^{-1} \end{array} )(\begin{array}{cc} 1 & 0\\
+   \gamma\partial_{||} & 1 \end{array} )
+
+The preconditioner is implemented by defining a function of the form
+
+::
+
+    int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
+      ...
+    }
+
+which takes as input the current time, the :math:`\gamma` factor
+appearing above, and :math:`\delta` which is only important for
+constrained problems (not discussed here... yet). The current state of
+the system is stored in the state variables (here ``u`` and ``v`` ),
+whilst the vector to be preconditioned is stored in the time derivatives
+(here ``ddt(u)`` and ``ddt(v)`` ). At the end of the preconditioner the
+result should be in the time derivatives. A preconditioner which is just
+the identity matrix and so does nothing is therefore:
+
+::
+
+    int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
+    }
+
+To implement the preconditioner in equation :eq:`precon`, first apply the
+rightmost matrix to the given vector:
+
+.. math::
+
+   (\begin{array}{c}
+   \texttt{ddt(u)} \\
+   \texttt{ddt(v)}
+   \end{array}
+   ) = (\begin{array}{cc}
+   1 & 0 \\
+   \gamma\partial_{||} & 1
+   \end{array}
+   )(\begin{array}{c}
+   \texttt{ddt(u)} \\
+   \texttt{ddt(v)}
+   \end{array}
+   )
+
+::
+
+    int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
+      mesh->communicate(ddt(u));
+      //ddt(u) = ddt(u);
+      ddt(v) = gamma*Grad_par(ddt(u)) + ddt(v);
+
+note that since the preconditioner is linear, it doesn’t depend on
+:math:`u` or :math:`v`. As in the RHS function, since we are taking a
+differential of ``ddt(u)``, it first needs to be communicated to
+exchange guard cell values.
+
+The second matrix
+
+.. math::
+
+   (\begin{array}{c}
+   \texttt{ddt(u)} \\
+   \texttt{ddt(v)}
+   \end{array}
+   ) arrow (\begin{array}{cc}
+   1 & 0 \\
+   0 & (1 - \gamma^2\partial^2_{||})^{-1}
+   \end{array}
+   )(\begin{array}{c}
+   \texttt{ddt(u)} \\
+   \texttt{ddt(v)}
+   \end{array}
+   )
+
+doesn’t alter :math:`u`, but solves a parabolic equation in the
+parallel direction. There is a solver class to do this called
+``InvertPar`` which solves the equation
+:math:`(A + B\partial_{||}^2)x = b` where :math:`A` and :math:`B`
+are ``Field2D`` or constants [3]_. In ``physics_init`` we create one of
+these solvers:
+
+::
+
+    InvertPar *inv; // Parallel inversion class
+    int physics_init(bool restarting) {
+       ...
+       inv = InvertPar::Create();
+       inv->setCoefA(1.0);
+       ...
+    }
+
+In the preconditioner we then use this solver to update :math:`v`:
+
+::
+
+      inv->setCoefB(-SQ(gamma));
+      ddt(v) = inv->solve(ddt(v));
+
+which solves
+:math:`ddt(v) arrow (1 - \gamma^2\partial_{||}^2)^{-1} ddt(v)`.
+The final matrix just updates :math:`u` using this new solution for
+:math:`v`
+
+.. math::
+
+   (\begin{array}{c}
+   \texttt{ddt(u)} \\
+   \texttt{ddt(v)}
+   \end{array}
+   ) arrow (\begin{array}{cc}
+   1 & \gamma\partial_{||} \\
+   0 & 1
+   \end{array}
+   )(\begin{array}{c}
+   \texttt{ddt(u)} \\
+   \texttt{ddt(v)}
+   \end{array}
+   )
+
+::
+
+      mesh->communicate(ddt(v));
+      ddt(u) = ddt(u) + gamma*Grad_par(ddt(v));
+
+Finally, boundary conditions need to be imposed, which should be
+consistent with the conditions used in the RHS
+
+::
+
+      ddt(u).applyBoundary("dirichlet");
+      ddt(v).applyBoundary("dirichlet");
+
+To use the preconditioner, pass the function to the solver in
+``physics_init``
+
+::
+
+    int physics_init(bool restarting) {
+      solver->setPrecon(precon);
+      ...
+    }
+
+then in the ``BOUT.inp`` settings file switch on the preconditioner
+
+.. code-block:: bash
+
+    [solver]
+    type = cvode          # Need CVODE or PETSc
+    use_precon = true     # Use preconditioner
+    rightprec = false     # Use Right preconditioner (default left)
+
+Jacobian function
+-----------------
+
+DAE constraint equations
+------------------------
+
+Using the IDA or IMEX-BDF2 solvers, BOUT++ can solve Differential
+Algebraic Equations (DAEs), in which algebraic constraints are used for
+some variables. Examples of how this is used are in the
+``examples/constraints`` subdirectory.
+
+First the variable to be constrained is added to the solver, in a
+similar way to time integrated variables. For example
+
+::
+
+    Field3D phi;
+    ...
+    solver->constraint(phi, ddt(phi), "phi");
+
+The first argument is the variable to be solved for (constrained). The
+second argument is the field to contain the residual (error). In this
+example the time derivative field ``ddt(phi)`` is used, but it could be
+another ``Field3D`` variable. The solver will attempt to find a solution
+to the first argument (``phi`` here) such that the second argument
+(``ddt(phi)``) is zero to within tolerances.
+
+In the RHS function the residual should be calculated. In this example
+(``examples/constraints/drift-wave-constraint``) we have:
+
+::
+
+    ddt(phi) = Delp2(phi) - Vort;
+
+so the time integration solver includes the algebraic constraint
+``Delp2(phi) = Vort`` i.e. (:math:`\nabla_\perp^2\phi = \omega`).
+
+IMEX-BDF2
+---------
+
+This is an implicit-explicit multistep method, which uses the PETSc
+library for the SNES nonlinear solver. To use this solver, BOUT++ must
+have been configured with PETSc support, and the solver type set to
+``imexbdf2``
+
+::
+
+    [solver]
+    type = imexbdf2
+
+For examples of using IMEX-BDF2, see the ``examples/IMEX/``
+subdirectory, in particular the ``diffusion-nl``, ``drift-wave`` and
+``drift-wave-constrain`` examples.
+
+The time step is currently fixed (not adaptive), and defaults to the
+output timestep. To set a smaller internal timestep, the
+``solver:timestep`` option can be set. If the timestep is too large,
+then the explicit part of the problem may become unstable, or the
+implicit part may fail to converge.
+
+The implicit part of the problem can be solved matrix-free, in which
+case the Jacobian-vector product is approximated using finite
+differences. This is currently the default, and can be set on the
+command-line using the options:
+
+::
+
+     solver:matrix_free=true  -snes_mf
+
+Note the ``-snes_mf`` flag which is passed to PETSc. When using a matrix
+free solver, the Jacobian is not calculated and so the amount of memory
+used is minimal. However, since the Jacobian is not known, many standard
+preconditioning methods cannot be used, and so in many cases a custom
+preconditioner is needed to obtain good convergence.
+
+An experimental feature uses PETSc’s ability to calculate the Jacobian
+using finite differences. This can then speed up the linear solve, and
+allows more options for preconditioning. To enable this option:
+
+::
+
+     solver:matrix_free=false
+
+There are two ways to calculate the Jacobian: A brute force method which
+is set up by this call to PETSc which is generally very slow, and a
+“coloring” scheme which can be quite fast and is the default. Coloring
+uses knowledge of where the non-zero values are in the Jacobian, to work
+out which rows can be calculated simultaneously. The coloring code in
+IMEX-BDF2 currently assumes that every field is coupled to every other
+field in a star pattern: one cell on each side, a 7 point stencil for 3D
+fields. If this is not the case for your problem, then the solver may
+not converge.
+
+The brute force method can be useful for comparing the Jacobian
+structure, so to turn off coloring:
+
+::
+
+     solver:use_coloring=false
+
+Using MatView calls, or the ``-mat_view`` PETSc options, the non-zero
+structure of the Jacobian can be plotted or printed.
+
+Monitoring the simulation output
+--------------------------------
+
+Monitoring of the solution can be done at two levels: output monitoring,
+and timestep monitoring. Output monitoring occurs only when data is
+written to file, whereas timestep monitoring is every timestep and so
+(usually) much more frequent. Examples of both are in
+``examples/monitor`` and ``examples/monitor-newapi``.
+
+**Output monitoring**: At every output timestep the solver calls a
+monitor function, which writes the output dump file, calculates and
+prints timing information and estimated time remaining. If you want to
+run additional code or write data to a different file, you can add
+monitor function(s).
+
+You can call your output monitor function whatever you like, but it must
+have 4 inputs and return an int:
+
+::
+
+    int my_output_monitor(Solver *solver, BoutReal simtime, int iter, int NOUT) {
+      ...
+    }
+
+The first input is the solver object, the second is the current
+simulation time, the third is the output number, and the last is the
+total number of outputs requested. To get the solver to call this
+function every output time, put in your ``physics_init`` code:
+
+::
+
+      solver->addMonitor(my_output_monitor);
+
+If you want to later remove a monitor, you can do so with
+
+::
+
+      solver->removeMonitor(my_output_monitor);
+
+A simple example using this monitor is:
+
+::
+
+    int my_output_monitor(Solver *solver, BoutReal simtime, int iter, int NOUT) {
+      output.write("My monitor, time = %e, dt = %e\n",
+          simtime, solver->getCurrentTimestep());
+    }
+
+    int physics_init(bool restarting) {
+      solver->addMonitor(my_monitor);
+    }
+
+See the monitor example (``examples/monitor``) for full code.
+
+**Timestep monitoring**: This works in the same way as output
+monitoring. First define a monitor function:
+
+::
+
+    int my_timestep_monitor(Solver *solver, BoutReal simtime, BoutReal lastdt) {
+      ...
+    }
+
+where ``simtime`` will again contain the current simulation time, and
+``lastdt`` the last timestep taken. Add this function to the solver:
+
+::
+
+      solver->addTimestepMonitor(my_timestep_monitor);
+
+Timestep monitoring is disabled by default, unlike output monitoring. To
+enable timestep monitoring, set in the options file (BOUT.inp):
+
+::
+
+    [solver]
+    monitor_timestep = true
+
+or put on the command line ``solver:monitor_timestep=true`` . When this
+is enabled, it will change how solvers like CVODE and PVODE (the default
+solvers) are used. Rather than being run in NORMAL mode, they will
+instead be run in SINGLE\_STEP mode (see the SUNDIALS notes
+here:\ http://computation.llnl.gov/casc/sundials/support/notes.html).
+This may in some cases be less efficient.
+
+.. [1]
+   Taken from a talk by L.Chacon available here
+   https://bout2011.llnl.gov/pdf/talks/Chacon_bout2011.pdf
+
+.. [2]
+   See paper http://arxiv.org/abs/1209.2054 for an application to
+   2-fluid equations
+
+.. [3]
+   This ``InvertPar`` class can handle cases with closed field-lines and
+   twist-shift boundary conditions for tokamak simulations
