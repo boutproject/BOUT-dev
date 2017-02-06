@@ -2345,6 +2345,8 @@ void BoutMesh::outputVars(Datafile &file) {
   file.add(MYSUB, "MYSUB", 0);
   file.add(MXG,   "MXG",   0);
   file.add(MYG,   "MYG",   0);
+  file.add(nx,    "nx",    0 );
+  file.add(ny,    "ny",    0 );
   file.add(LocalNz,"MZ",    0);
   file.add(NXPE,  "NXPE",  0);
   file.add(NYPE,  "NYPE",  0);
