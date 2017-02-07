@@ -222,20 +222,10 @@ private:
   DataIterator(); // Disable null constructor
 
   int xstart, ystart, zstart;
-
-#ifndef _OPENMP
-  int &xmin, &ymin, &zmin;
-#else
   int xmin, ymin, zmin;
-#endif
-
   int xend, yend, zend;
-
-#ifndef _OPENMP
-  int &xmax, &ymax, &zmax;
-#else
   int xmax, ymax, zmax;
-#endif
+
   const bool isEnd;
   /// Advance to the next index
   void next() {
