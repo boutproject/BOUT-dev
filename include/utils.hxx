@@ -39,6 +39,7 @@
 #include <list>
 #include <cmath>
 #include <algorithm>
+#include <memory>
 
 using std::abs;
 using std::swap;
@@ -349,6 +350,24 @@ string trimRight(const string &, const string &c=" \t\r");
  * 
  */
 string trimComments(const string &, const string &c="#;");
+
+/// Format a string using C printf-style formatting
+///
+/// Taken from http://stackoverflow.com/a/26221725/2043465
+///
+/// @param format printf-style format string
+/// @param args Arguments to format
+///
+/// @return Formatted string
+template <typename... Args>
+string string_format(const std::string &format, Args... args) {
+  // Extra space for '\0'
+  size_t size = snprintf(nullptr, 0, format.c_str(), args...) + 1;
+  unique_ptr<char[]> buffer(new char[size]);
+  snprintf(buffer.get(), size, format.c_str(), args...);
+  // We don't want the '\0' inside
+  return string(buffer.get(), buffer.get() + size - 1);
+}
 
 /// the bout_vsnprintf macro:
 /// The first argument is an char * buffer of length len.
