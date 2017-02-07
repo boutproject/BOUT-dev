@@ -18,7 +18,10 @@ void BoutParallelThrowRhsFail(int &status, const char* message) {
 }
 
 BoutException::~BoutException() throw() {
-  delete[] buffer;
+  if (buffer != nullptr) {
+    delete[] buffer;
+    buffer = nullptr;
+  }
 }
 
 void BoutException::Backtrace() {
@@ -73,7 +76,7 @@ void BoutException::Backtrace() {
 
 #define INIT_EXCEPTION(s) {                     \
     buflen=0;                                   \
-    buffer=NULL;                                \
+    buffer=nullptr;                             \
     if(s == (const char*) NULL) {               \
       message="No error message given!\n";      \
     } else {                                    \
@@ -89,6 +92,8 @@ void BoutException::Backtrace() {
         }                                       \
       }                                         \
       message.assign(buffer);                   \
+      delete[] buffer;                          \
+      buffer = nullptr;                         \
     }                                           \
     message="====== Exception thrown ======\n"  \
       +message+"\n";                            \
