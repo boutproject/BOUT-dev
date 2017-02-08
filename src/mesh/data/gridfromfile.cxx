@@ -86,7 +86,7 @@ bool GridFile::get(Mesh *UNUSED(m), int &ival,      const string &name) {
   
   bool success = file->read(&ival, name);
   if(success){
-	  output << "\tOption " << name  << " = " << ival << " (" << filename <<")" << endl;
+    output << "\tOption " << name  << " = " << ival << " (" << filename <<")" << endl;
   }
 
   return success;
@@ -106,8 +106,10 @@ bool GridFile::get(Mesh *UNUSED(m), BoutReal &rval, const string &name) {
   
   bool success = file->read(&rval, name);
     if(success){
-  	  output << "\tOption " << name  << " = " << rval << " (" << filename <<")" << endl;
+      output << "\tOption " << name  << " = " << rval << " (" << filename <<")" << endl;
     }
+
+  return success;
 
 }
 
