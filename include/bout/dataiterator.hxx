@@ -80,8 +80,8 @@ public:
     xend(xe),     yend(ye),     zend(ze),
     xmax(xend),   ymax(yend),   zmax(zend),
 #else
-    xmin(xstart), ymin(ys),     zmin(zs),
-    xmax(xend),   ymax(ye),     zmax(ze),
+    xmin(xs),     ymin(ys),     zmin(zs),
+    xmax(xe),     ymax(ye),     zmax(ze),
 #endif
     isEnd(false)
   {
