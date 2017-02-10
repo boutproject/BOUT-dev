@@ -12,7 +12,6 @@ zmax=lz/2/pi
 Lx=mesh:lx
 
 [MESH]
-type=aiolos
 Ly=2*pi
 dy=Ly/ny
 Lx=1
