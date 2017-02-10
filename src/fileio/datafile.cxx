@@ -44,7 +44,7 @@
 #include <utils.hxx>
 #include "formatfactory.hxx"
 
-Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), floats(false), openclose(true), enabled(true), shiftOutput(false), file(NULL) {
+Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), floats(false), openclose(true), enabled(true), shiftOutput(false), file(nullptr) {
   filenamelen=FILENAMELEN;
   filename=new char[filenamelen];
   if(opt == NULL)
@@ -64,7 +64,7 @@ Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), f
 Datafile::Datafile(const Datafile &other) :
   parallel(other.parallel), flush(other.flush), guards(other.guards), 
   floats(other.floats), openclose(other.openclose), Lx(other.Lx), Ly(other.Ly), Lz(other.Lz), 
-  enabled(other.enabled), shiftOutput(other.shiftOutput), file(NULL), int_arr(other.int_arr), 
+  enabled(other.enabled), shiftOutput(other.shiftOutput), file(nullptr), int_arr(other.int_arr), 
   BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr), 
   f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {
   filenamelen=FILENAMELEN;
@@ -81,7 +81,7 @@ Datafile& Datafile::operator=(const Datafile &rhs) {
   enabled      = rhs.enabled;
   init_missing = rhs.init_missing;
   shiftOutput  = rhs.shiftOutput;
-  file         = NULL; // All values copied except this
+  file         = nullptr; // All values copied except this
   int_arr      = rhs.int_arr;
   BoutReal_arr = rhs.BoutReal_arr;
   f2d_arr      = rhs.f2d_arr;
@@ -92,9 +92,9 @@ Datafile& Datafile::operator=(const Datafile &rhs) {
 }
 
 Datafile::~Datafile() {
-  if (file){
+  if (file != nullptr){
     delete file;
-    file = NULL;
+    file = nullptr;
   }
   delete[] filename;
 }
@@ -227,7 +227,7 @@ void Datafile::close() {
   if(!openclose)
     file->close();
   delete file;
-  file = NULL;
+  file = nullptr;
 }
 
 void Datafile::setLowPrecision() {
