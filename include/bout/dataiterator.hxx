@@ -224,7 +224,7 @@ private:
   int xstart, ystart, zstart;
 
 #ifndef _OPENMP
-  int &xmin, &ymin, &zmin;
+  const int xmin, ymin, zmin;
 #else
   int xmin, ymin, zmin;
 #endif
@@ -232,7 +232,7 @@ private:
   int xend, yend, zend;
 
 #ifndef _OPENMP
-  int &xmax, &ymax, &zmax;
+  const int xmax, ymax, zmax;
 #else
   int xmax, ymax, zmax;
 #endif
