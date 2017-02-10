@@ -368,42 +368,6 @@ Field3D & Field3D::operator=(const BoutReal val) {
   return *this;
 }
 
-/////////////////////////////////////////////////////////////////////
-
-#define F3D_UPDATE_FIELD(op,bop,ftype)                       \
-  Field3D & Field3D::operator op(const ftype &rhs) {         \
-    TRACE("Field3D: %s %s", #op, #ftype);           \
-    checkData(rhs) ;                                         \
-    checkData(*this);                                        \
-    if(data.unique()) {                                      \
-      /* This is the only reference to this data */          \
-      for(const auto& i : (*this))                                  \
-        (*this)[i] op rhs[i];                                \
-    }else {                                                  \
-      /* Shared data */                                      \
-      (*this) = (*this) bop rhs;                             \
-    }                                                        \
-    return *this;                                            \
-  }
-
-#define F3D_UPDATE_REAL(op,bop)                              \
-  Field3D & Field3D::operator op(BoutReal rhs) {      \
-    TRACE("Field3D: %s Field3D", #op);              \
-    if(!finite(rhs))                                         \
-      throw BoutException("Field3D: %s operator passed non-finite BoutReal number", #op); \
-    checkData(*this);                                        \
-                                                             \
-    if(data.unique()) {                                      \
-      /* This is the only reference to this data */          \
-      for(const auto& i : (*this))                                  \
-        (*this)[i] op rhs;                                   \
-    }else {                                                  \
-      /* Need to put result in a new block */                \
-      (*this) = (*this) bop rhs;                             \
-    }                                                        \
-    return *this;                                            \
-  }
-
 ///////////////////// BOUNDARY CONDITIONS //////////////////
 
 void Field3D::setBackground(const Field2D &f2d) {
@@ -685,36 +649,6 @@ Field3D operator-(const Field3D &f) {
     for(const auto& i : rhs)                                                     \
       result[i] = lhs[i] op rhs[i];                                       \
     return result;                                                        \
-  }
-
-#define F3D_OP_FIELD(op, ftype)                                     \
-  Field3D operator op(const Field3D &lhs, const ftype &rhs) { \
-    Field3D result;                                                 \
-    result.allocate();                                              \
-    for(const auto& i : lhs)                                               \
-      result[i] = lhs[i] op rhs[i];                                 \
-    result.setLocation( lhs.getLocation() );                        \
-    return result;                                                  \
-  }
-
-#define F3D_OP_REAL(op)                                         \
-  Field3D operator op(const Field3D &lhs, BoutReal rhs) { \
-    Field3D result;                                             \
-    result.allocate();                                          \
-    for(const auto& i : lhs)                                           \
-      result[i] = lhs[i] op rhs;                                \
-    result.setLocation( lhs.getLocation() );                    \
-    return result;                                              \
-  }
-
-#define REAL_OP_F3D(op)                                         \
-  Field3D operator op(BoutReal lhs, const Field3D &rhs) { \
-    Field3D result;                                             \
-    result.allocate();                                          \
-    for(const auto& i : rhs)                                           \
-      result[i] = lhs op rhs[i];                                \
-    result.setLocation( rhs.getLocation() );                    \
-    return result;                                              \
   }
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
