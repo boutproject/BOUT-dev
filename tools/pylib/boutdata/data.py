@@ -131,7 +131,7 @@ class BoutOptions(object):
             text += indent + " |- " + k + " = " + str(self._keys[k]) + "\n"
         
         for s in self._sections:
-            text += " |- " + self._sections[s].__str__(indent+" |  ")
+            text += indent + " |- " + self._sections[s].__str__(indent+" |  ")
         return text
 
 class BoutOptionsFile(BoutOptions):
@@ -181,7 +181,7 @@ class BoutOptionsFile(BoutOptions):
                         scorepos = line.find(":")
                         if scorepos == -1:
                             break
-                        sectionname = line[0,scorepos]
+                        sectionname = line[0:scorepos]
                         line = line[(scorepos+1):]
                         section = section.getSection(sectionname)
                     section = section.getSection(line)
