@@ -122,12 +122,8 @@ Datafile::~Datafile() {
   }
 }
 
-bool Datafile::openr(const char *format, ...) {
-  if(format == (const char*) NULL) 
-    throw BoutException("Datafile::open: No argument given for opening file!");
+bool Datafile::openr(const std::string& filename) {
 
-  bout_vsnprintf(filename,filenamelen, format);
-  
   // Get the data format
   file = FormatFactory::getInstance()->createDataFormat(filename, parallel);
   
@@ -153,14 +149,9 @@ bool Datafile::openr(const char *format, ...) {
   return true;
 }
 
-bool Datafile::openw(const char *format, ...) {
+bool Datafile::openw(const std::string &filename) {
   if(!enabled)
     return true;
-  
-  if(format == (const char*) NULL)
-    throw BoutException("Datafile::open: No argument given for opening file!");
-
-  bout_vsnprintf(filename, filenamelen, format);
   
   // Get the data format
   file = FormatFactory::getInstance()->createDataFormat(filename, parallel);
@@ -194,15 +185,10 @@ bool Datafile::openw(const char *format, ...) {
   return true;
 }
 
-bool Datafile::opena(const char *format, ...) {
+bool Datafile::opena(const std::string &filename) {
   if(!enabled)
     return true;
   
-  if(format == (const char*) NULL)
-    throw BoutException("Datafile::open: No argument given for opening file!");
-
-  bout_vsnprintf(filename, filenamelen, format);
-
   // Get the data format
   file = FormatFactory::getInstance()->createDataFormat(filename, parallel);
   
@@ -546,17 +532,9 @@ bool Datafile::write() {
   return true;
 }
 
-bool Datafile::write(const char *format, ...) const {
+bool Datafile::write(const std::string &filename) const {
   if(!enabled)
     return true;
-
-  if(format == (const char*) NULL)
-    throw BoutException("Datafile::write: No argument given!");
-
-  int filenamelen=FILENAMELEN;
-  char * filename=new char[filenamelen];
-
-  bout_vsnprintf(filename, filenamelen, format);
 
   // Create a new datafile
   Datafile tmp(*this);

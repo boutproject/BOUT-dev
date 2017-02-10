@@ -400,24 +400,3 @@ char ExpressionParser::LexInfo::nextToken() {
 int ExpressionParser::LexInfo::getPos() {
   return (int) ss.tellg();
 }
-
-//////////////////////////////////////////////////////////
-// ParseException
-
-
-ParseException::ParseException(const char *s, ...) {
-  if(s == (const char*) NULL)
-    return;
-
-  int buf_len=1024;
-  char * buffer= new char[buf_len];
-  bout_vsnprintf(buffer,buf_len, s);
-  
-  message.assign(buffer);
-  delete[] buffer;
-}
-
-const char* ParseException::what() const throw() {
-  return message.c_str();
-}
-

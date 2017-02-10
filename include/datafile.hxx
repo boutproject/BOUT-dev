@@ -20,6 +20,7 @@ class Datafile;
 #include "vector2d.hxx"
 #include "vector3d.hxx"
 #include "options.hxx"
+#include "utils.hxx"
 
 #include "dataformat.hxx"
 
@@ -43,10 +44,24 @@ class Datafile {
   Datafile& operator=(Datafile &&rhs);
   Datafile& operator=(const Datafile &rhs) = delete;
 
-  bool openr(const char *filename, ...);
-  bool openw(const char *filename, ...); // Overwrites existing file
-  bool opena(const char *filename, ...); // Appends if exists
-  
+  /// Open a file read-only
+  template <typename... Args> bool openr(const std::string &filename, Args... args) {
+    return openr(string_format(filename, args...));
+  }
+  bool openr(const std::string &filename);
+
+  /// Overwrites existing file
+  template <typename... Args> bool openw(const std::string &filename, Args... args) {
+    return openw(string_format(filename, args...));
+  }
+  bool openw(const std::string &filename);
+
+  /// Appends if exists
+  template <typename... Args> bool opena(const std::string &filename, Args... args) {
+    return opena(string_format(filename, args...));
+  }
+  bool opena(const std::string &filename);
+
   bool isValid();  // Checks if the data source is valid
 
   void close();
@@ -70,8 +85,13 @@ class Datafile {
   bool read();  ///< Read data into added variables 
   bool write(); ///< Write added variables
 
-  bool write(const char *filename, ...) const; ///< Opens, writes, closes file
-  
+  /// Opens, writes, closes file
+  template <typename... Args>
+  bool write(const std::string &filename, Args... args) const {
+    return write(string_format(filename, args...));
+  }
+  bool write(const std::string &filename) const;
+
   // Write a variable to the file now
   DEPRECATED(bool writeVar(const int &i, const char *name));
   DEPRECATED(bool writeVar(BoutReal r, const char *name));

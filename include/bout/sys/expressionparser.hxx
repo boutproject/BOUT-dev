@@ -32,6 +32,7 @@ class ParseException;
 #define __EXPRESSION_PARSER_H__
 
 #include "unused.hxx"
+#include "utils.hxx"
 
 #include <string>
 #include <map>
@@ -181,14 +182,15 @@ private:
 
 class ParseException : public std::exception {
 public:
-  ParseException(const char *, ...);
+  template <typename... Args>
+  ParseException(const std::string &format, Args... args)
+      : message(string_format(format, args...)) {}
   virtual ~ParseException() throw() {}
-  
-  const char* what() const throw();
-  
+
+  const char *what() const throw() { return message.c_str(); }
+
 protected:
   std::string message;
 };
-
 
 #endif // __EXPRESSION_PARSER_H__

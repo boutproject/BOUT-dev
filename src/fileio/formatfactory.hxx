@@ -12,8 +12,11 @@ class FormatFactory : private Uncopyable {
 public:
   /// Return a pointer to the only instance
   static FormatFactory* getInstance();
-  
+
   std::unique_ptr<DataFormat> createDataFormat(const char *filename = NULL, bool parallel=true);
+  std::unique_ptr<DataFormat> createDataFormat(const std::string &filename, bool parallel=true) {
+    return createDataFormat(filename.c_str(), parallel);
+  }
 private:
   static FormatFactory* instance; ///< The only instance of this class (Singleton)
   
