@@ -9,4 +9,4 @@ TARGET		= lib
 include $(BOUT_TOP)/make.config
 
 generated.cxx:gen.py
-	python2 $< > $@
+	python $< > $@
