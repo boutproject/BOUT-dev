@@ -147,13 +147,13 @@ Vector3D & Vector3D::operator=(const Vector2D &rhs) {
   return *this;
 }
 
-BoutReal Vector3D::operator=(const BoutReal val)
+Vector3D & Vector3D::operator=(const BoutReal val)
 {
   x = val;
   y = val;
   z = val;
   
-  return val;
+  return *this;
 }
 
 ////////////////// ADDITION //////////////////////

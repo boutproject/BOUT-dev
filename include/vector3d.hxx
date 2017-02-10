@@ -132,7 +132,7 @@ class Vector3D : public FieldData {
   // Assignment
   Vector3D & operator=(const Vector3D &rhs);
   Vector3D & operator=(const Vector2D &rhs);
-  BoutReal operator=(BoutReal val);
+  Vector3D & operator=(BoutReal val);
   
   // Operators
   Vector3D & operator+=(const Vector3D &rhs);

@@ -402,9 +402,11 @@ class Field3D : public Field, public FieldData {
   ///@{
   Field3D & operator=(const Field3D &rhs);
   Field3D & operator=(const Field2D &rhs);
-  Field3D & operator=(const FieldPerp &rhs);
-  const bvalue & operator=(const bvalue &val);
-  BoutReal operator=(BoutReal val);
+  /// return void, as only part initialised
+  void      operator=(const FieldPerp &rhs);
+  /// return void, as only part initialised
+  void      operator=(const bvalue &val);
+  Field3D & operator=(BoutReal val);
   ///@}
 
   /// Addition operators

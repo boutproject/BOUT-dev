@@ -329,7 +329,7 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
   return *this;
 }
 
-Field3D & Field3D::operator=(const FieldPerp &rhs) {
+void Field3D::operator=(const FieldPerp &rhs) {
   ASSERT1(rhs.isAllocated());
   
   /// Make sure there's a unique array to copy data into
@@ -339,11 +339,9 @@ Field3D & Field3D::operator=(const FieldPerp &rhs) {
   for(auto i : rhs) {
     (*this)[i] = rhs[i];
   }
-
-  return *this;
 }
 
-const bvalue & Field3D::operator=(const bvalue &bv) {
+void Field3D::operator=(const bvalue &bv) {
   TRACE("Field3D = bvalue");
   
   allocate();
@@ -355,11 +353,9 @@ const bvalue & Field3D::operator=(const bvalue &bv) {
 #endif
 
   operator()(bv.jx, bv.jy,bv.jz) = bv.val;
-  
-  return bv;
 }
 
-BoutReal Field3D::operator=(const BoutReal val) {
+Field3D & Field3D::operator=(const BoutReal val) {
   TRACE("Field3D = BoutReal");
   allocate();
 
@@ -374,7 +370,7 @@ BoutReal Field3D::operator=(const BoutReal val) {
   //location = CELL_CENTRE;
   // DON'T RE-SET LOCATION
 
-  return val;
+  return *this;
 }
 
 /////////////////////////////////////////////////////////////////////
