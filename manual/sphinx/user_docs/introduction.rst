@@ -124,6 +124,7 @@ that you show professional courtesy when using this code:
    .. toctree::
       :maxdepth: 1
 
+      overview
       getting_started
       advanced_install
       running_bout
