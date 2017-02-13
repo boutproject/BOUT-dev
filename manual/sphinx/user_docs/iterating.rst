@@ -3,7 +3,7 @@
 Iterating over fields
 =====================
 
-In BOUT++ 4.0.0, we now have the ability to use C++ range-based
+As of BOUT++ 4.0.0, we now have the ability to use C++ range-based
 for-loops. This means that it is possible to iterate over a whole field
 using a single loop:
 
