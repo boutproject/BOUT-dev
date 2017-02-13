@@ -32,4 +32,3 @@ test*.py
 /lib/
 /manual/*.pdf
 /tools/vagrant/.vagrant
-generated*xx
