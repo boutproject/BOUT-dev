@@ -44,8 +44,8 @@ This directory contains
 * **manual**                Manuals and documentation (also [doxygen](http://www.stack.nl/~dimitri/doxygen/) documentation)
 * **src**                   The main code directory
 * **CITATION**              Contains the paper citation for BOUT++
-* **LICENSE**        LGPL license
-* **LICENSE.GPL**               GPL license
+* **LICENSE**               LGPL license
+* **LICENSE.GPL**           GPL license
 * **tools**                 Tools for helping with analysis, mesh generation, and data managment
 
   * **archiving**               Routines for managing input/output files e.g. compressing data, converting formats, and managing runs
