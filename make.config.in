@@ -30,7 +30,7 @@ CC                      = $(CXX)
 AR			= ar
 ARFLAGS                 = @ARFLAGS@
 RANLIB			= @RANLIB@
-MKDIR			= @MKDIR@
+MKDIR			= @MKDIR_P@
 
 ####################################################################
 # Do not need to alter anything below
