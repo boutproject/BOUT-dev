@@ -58,33 +58,33 @@ given in table [tab:solveropts].
 +------------------+--------------------------------------------+-------------------------------------+
 | Option           | Description                                | Solvers used                        |
 +==================+============================================+=====================================+
-| atol             | Absolute tolerance                         | rk4, pvode, cvode, ida              |
+| atol             | Absolute tolerance                         | rk4, pvode, cvode, ida, imexbdf2    |
 +------------------+--------------------------------------------+-------------------------------------+
-| rtol             | Relative tolerance                         | rk4, pvode, cvode, ida              |
+| rtol             | Relative tolerance                         | rk4, pvode, cvode, ida, imexbdf2    |
 +------------------+--------------------------------------------+-------------------------------------+
-| mxstep           | Maximum internal steps                     | rk4                                 |
+| mxstep           | Maximum internal steps                     | rk4, imexbdf2                       |
 |                  | per output step                            |                                     |
 +------------------+--------------------------------------------+-------------------------------------+
 | max\_timestep    | Maximum timestep                           | rk4, cvode                          |
 +------------------+--------------------------------------------+-------------------------------------+
 | timestep         | Starting timestep                          | rk4, karniadakis, euler, imexbdf2   |
 +------------------+--------------------------------------------+-------------------------------------+
-| adaptive         | Adapt timestep? (Y/N)                      | rk4                                 |
+| adaptive         | Adapt timestep? (Y/N)                      | rk4, imexbdf2                       |
 +------------------+--------------------------------------------+-------------------------------------+
-| use\_precon      | Use a preconditioner? (Y/N)                | pvode, cvode, ida                   |
+| use\_precon      | Use a preconditioner? (Y/N)                | pvode, cvode, ida, imexbdf2         |
 +------------------+--------------------------------------------+-------------------------------------+
 | mudq, mldq       | BBD preconditioner settings                | pvode, cvode, ida                   |
 +------------------+--------------------------------------------+-------------------------------------+
 | mukeep, mlkeep   |                                            |                                     |
 +------------------+--------------------------------------------+-------------------------------------+
-| maxl             | Maximum number of linear iterations        | cvode                               |
+| maxl             | Maximum number of linear iterations        | cvode, imexbdf2                     |
 +------------------+--------------------------------------------+-------------------------------------+
 | use\_jacobian    | Use user-supplied Jacobian? (Y/N)          | cvode                               |
 +------------------+--------------------------------------------+-------------------------------------+
 | adams\_moulton   | Use Adams-Moulton method                   | cvode                               |
 |                  | rather than BDF                            |                                     |
 +------------------+--------------------------------------------+-------------------------------------+
-| diagnose         | Collect and print additional diagnostics   | cvode                               |
+| diagnose         | Collect and print additional diagnostics   | cvode, imexbdf2                     |
 +------------------+--------------------------------------------+-------------------------------------+
 
 Table: Time integration solver options
@@ -126,7 +126,124 @@ iterations becomes large, this may be an indication that the system is
 poorly conditioned, and a preconditioner might help improve performance.
 See :ref:`sec-preconditioning`.
 
+IMEX-BDF2
+---------
 
+This is an IMplicit-EXplicit time integration solver, which allows the evolving function to be split into two parts: one which has relatively long timescales and can be integrated using explicit methods, and a part which has short timescales and must be integrated implicitly. The order of accuracy is variable (up to 4th-order currently), and an adaptive timestep can be used.
+
+To use the IMEX-BDF2 solver, set the solver type to `imexbdf2`, e.g. on the command-line add `solver:type=imexbdf2` or in the options file:
+
+.. code-block:: bash
+    [solver]
+    type = imexbdf2
+
+
+The order of the method is set to 2 by default, but can be increased up to a maximum of 4:
+
+.. code-block:: bash
+    [solver]
+    type = imexbdf2
+    maxOrder = 3
+
+This is a multistep method, so the state from previous steps are
+used to construct the next one. This means that at the start, when there are no previous steps, the order is limited to 1 (backwards Euler method). Similarly, the second step is limited to order 2, and so on. At the moment the order is not adapted, so just increases until reaching `maxOrder`.
+
+At each step the explicit (non-stiff) part of the function is
+called, and combined with previous timestep values. The implicit
+part of the function is then solved using PETSc's SNES, which
+consists of a nonlinear solver (usually modified Newton iteration), each iteration of which requires a linear solve (usually GMRES). Settings which affect this implicit part of the solve are:
+
++------------------+-----------+----------------------------------------------------+
+| Option           | Default   |Description                                         |
++==================+===========+====================================================+
+| atol             | 1e-16     | Absolute tolerance on SNES solver                  |
++------------------+-----------+----------------------------------------------------+
+| rtol             | 1e-10     | Relative tolerance on SNES solver                  |
++------------------+-----------+----------------------------------------------------+
+| max_nonlinear_it | 5         | Maximum number of nonlinear iterations             |
+|                  |           | If adaptive timestepping is used then              |
+|                  |           | failure will cause timestep reduction              |
++------------------+-----------+----------------------------------------------------+
+| maxl             | 20        | Maximum number of linear iterations                |
+|                  |           | If adaptive, failure will cause timestep reduction |
++------------------+-----------+----------------------------------------------------+
+| predictor        | 1         | Starting guess for the nonlinear solve             |
+|                  |           | Specifies order of extrapolating polynomial        |
++------------------+-----------+----------------------------------------------------+
+| use_precon       | false     | Use user-supplied preconditioner?                  |
++------------------+-----------+----------------------------------------------------+
+| matrix_free      | true      | Use Jacobian-free methods? If false, calculates    |
+|                  |           | the Jacobian matrix using finite difference        |
++------------------+-----------+----------------------------------------------------+
+| use_coloring     | true      | If not matrix free, use coloring to speed up       |
+|                  |           | calculation of the Jacobian                        |
++------------------+-----------+----------------------------------------------------+
+
+
+Note that the SNES tolerances `atol` and `rtol` are set very conservatively by default. More reasonable
+values might be 1e-10 and 1e-5, but this must be explicitly asked for in the input options.
+
+The predictor extrapolates from previous timesteps to get a starting estimate for the value
+at the next timestep. This estimate is then used to initialise the SNES nonlinear solve.
+The value is the order of the extrapolating polynomial, so 1 (the default) is a linear extrapolation
+from the last two steps, 0 is the same as the last step. A value of -1 uses the explicit
+update to the state as the starting guess, i.e. assuming that the implicit part of the problem is small.
+This is usually not a good guess.
+
+To diagnose what is happening in the time integration, for example to see why it is
+failing to converge or why timesteps are small, there are two settings which can be
+set to `true` to enable:
+
+- `diagnose` outputs a summary at each output time, similar to CVODE. This
+  contains information like the last timestep, average number of iterations
+  and number of convergence failures.
+- `verbose` prints information at every internal step, with more information
+  on the values used to modify timesteps, and the reasons for solver failures.
+
+By default adaptive timestepping is turned on, using several factors to
+modify the timestep:
+
+#. If the nonlinear solver (SNES) fails to converge, either because it diverges or exceeds the iteration limits
+   `max_nonlinear_its` or `maxl`. Reduces the timestep by 2 and tries again, giving up after 10 failures.
+
+#. Every `nadapt` internal timesteps (default 4), the error is checked by taking the timestep twice:
+   Once with the current order of accuracy, and once with one order of accuracy lower. The difference
+   between the solutions is then used to estimate the timestep required to achieve the required
+   tolerances. If this is much larger or smaller than the current timestep, then the timestep is modified.
+
+#. The timestep is kept within user-specified maximum and minimum ranges.
+
+
+The options which control this behaviour are:
+
++------------------+-----------+----------------------------------------------------+
+| Option           | Default   |Description                                         |
++==================+===========+====================================================+
+| adaptive         | true      | Turns on adaptive timestepping                     |
++------------------+-----------+----------------------------------------------------+
+| timestep         | output    | If adaptive sets the starting timestep.            |
+|                  | timestep  | If not adaptive, timestep fixed at this value      |
++------------------+-----------+----------------------------------------------------+
+| dtMin            | 1e-10     | Minimum timestep                                   |
++------------------+-----------+----------------------------------------------------+
+| dtMax            | output    | Maximum timestep                                   |
+|                  | timestep  |                                                    |
++------------------+-----------+----------------------------------------------------+
+| mxstep           | 1e5       | Maximum number of internal steps between outputs   |
++------------------+-----------+----------------------------------------------------+
+| nadapt           | 4         | How often is error checked and timestep adjusted?  |
++------------------+-----------+----------------------------------------------------+
+| adaptRtol        | 1e-3      | Target relative tolerance for adaptive timestep    |
++------------------+-----------+----------------------------------------------------+
+| scaleCushDown    | 1.0       | Timestep scale factor below which the timestep is  |
+|                  |           | modified. By default the timestep is always reduced|
++------------------+-----------+----------------------------------------------------+
+| scaleCushUp      | 1.5       | Minimum timestep scale factor based on adaptRtol   |
+|                  |           | above which the timestep will be modified.         |
+|                  |           | Currently the timestep increase is limited to 25%  |
++------------------+-----------+----------------------------------------------------+
+
+   
 ODE integration
 ---------------
 
