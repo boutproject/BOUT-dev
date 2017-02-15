@@ -732,18 +732,21 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
   // diagnostics
   
   OPTION(options, diagnose, false); // Print diagnostics
+  OPTION(options, verbose, false); // More outputs at each timestep
   
   /////////////////////////////////////////////////////
   // Get runtime options
   SNESSetFromOptions(*snesIn);
 
-  // //Some reporting
-  // PCType pctype; PCGetType(pc, &pctype);
-  // KSPType ksptype; KSPGetType(ksp, &ksptype);
-  // SNESType snestype; SNESGetType(*snesIn, &snestype);
-  // output<<"SNES Type : "<<snestype<<endl;
-  // output<<"KSP Type : "<<ksptype<<endl;
-  // output<<"PC Type : "<<pctype<<endl;
+  if(diagnose) {
+    //Some reporting
+    PCType pctype; PCGetType(pc, &pctype);
+    KSPType ksptype; KSPGetType(ksp, &ksptype);
+    SNESType snestype; SNESGetType(*snesIn, &snestype);
+    output<<"SNES Type : "<<snestype<<endl;
+    output<<"KSP Type : "<<ksptype<<endl;
+    output<<"PC Type : "<<pctype<<endl;
+  }
 
 };
 
@@ -765,8 +768,7 @@ int IMEXBDF2::run() {
   for(int s=0;s<nsteps;s++) {
     BoutReal cumulativeTime = 0.;
     int counter = 0; //How many iterations in this output step
-
-    //output<<endl;
+    
     // Reset linear and nonlinear fail counts
     linear_fails = 0;
     nonlinear_fails = 0;
@@ -814,8 +816,10 @@ int IMEXBDF2::run() {
 	  dtNext = out_timestep - cumulativeTime;
 	}
 
-	//output << "At t=" << cumulativeTime << " attempting internal step "<<counter<<" (attempt "<<adaptCounter<<")"<<endl;
-	//output << "Using dt = "<<dtNext<<endl;
+        if(verbose) {
+          output << endl << "At t=" << cumulativeTime << " attempting internal step "<<counter<<" (attempt "<<adaptCounter<<")"<<endl;
+          output << "Using dt = "<<dtNext<<endl;
+        }
 
 	//Set the current timestep to try -- Has to be before calculateCoeffs call
 	timesteps[0] = dtNext;
@@ -897,8 +901,10 @@ int IMEXBDF2::run() {
 	  MPI_Allreduce(&errTot,&errGlobTot,3,MPI_DOUBLE,MPI_SUM,BoutComm::get());
 
 	  BoutReal aRtol = errGlobTot[0]/errGlobTot[1];
-	  //output<<"The average errors are aerr = "<<errGlobTot[0]<<" and rerr = "<<aRtol<<endl;
-	  //output<<"The err mag is "<<errGlobTot[2]<<" and the sol mag is "<<errGlobTot[1]<<endl;
+          if(verbose) {
+            output<<"The average errors are aerr = "<<errGlobTot[0]<<" and rerr = "<<aRtol<<endl;
+            output<<"The err mag is "<<errGlobTot[2]<<" and the sol mag is "<<errGlobTot[1]<<endl;
+          }
 
 	  /*
 	   * The following is how we argue the timestep should be scaled (s) 
@@ -936,8 +942,9 @@ int IMEXBDF2::run() {
 	    dtNext = timesteps[0];
 	  }
 
-	  //output << "Error ratio is "<<delta<<" so scaling factor is "<<s<<" and dtNext is "<<dtNext<<endl;
-
+          if(verbose) {
+            output << "Error ratio is "<<delta<<" so scaling factor is "<<s<<" and dtNext is "<<dtNext<<endl;
+          }
 	
 	  adaptCounter++;
 	  if(adaptCounter>mxstepAdapt){
@@ -1077,11 +1084,6 @@ void IMEXBDF2::calculateCoeffs(int order){
     gFac[i] /= uCurrFac;
   }
   dtImp /= uCurrFac;
-  
-  // for(int i=0;i<order;i++){
-  //   output<<i+1<<"/"<<order<<" uF = "<<uFac[i]<<" fF = "<<fFac[i]/timesteps[0]<<endl;
-  // };
-  // output<<"dtImp = "<<dtImp/timesteps[0]<<endl;
 }
 
 /*!
@@ -1200,7 +1202,6 @@ PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
     }
   }
   }
-  //output.write("\nIMEX: Solving, %e, %e, %e, (%e)\n", u[0], u_2[0], u_1[0], xdata[0]);
 
   ierr = VecRestoreArray(snes_x,&xdata);CHKERRQ(ierr);
   
@@ -1216,23 +1217,31 @@ PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
     KSPConvergedReason kreason;
     KSPGetConvergedReason(ksp,&kreason);
     if(kreason<0){
-      //output<<"KSP Failed to converge with reason "<<kreason<<endl;
+      if(verbose) {
+        output<<"KSP Failed to converge with reason "<<kreason<<endl;
+      }
       linear_fails++;
     }else{
       nonlinear_fails++;
-      //output<<"KSP Succeeded with reason "<<kreason<<endl;
+      if(verbose) {
+        output << "KSP Succeeded with reason "<<kreason<<endl;
+      }
     };
+    if(verbose) {
+      output << "SNES failed to converge with reason " << reason << endl;
+    }
     throw BoutException("SNES failed to converge. Reason: %d\n", reason);
   }
 
   int its;
   SNESGetIterationNumber(snesUse,&its);
 
-  //output << "Number of SNES iterations: " << its << endl;
-
+  if(verbose) {
+    output << "Number of SNES iterations: " << its << endl;
+  }
+    
   // Put the result into u
   ierr = VecGetArray(snes_x,&xdata);CHKERRQ(ierr);
-  //output.write("\nIMEX: Done -> %e\n", xdata[0]);
 
   for(int i=0;i<nlocal;i++)
     u[i] = xdata[i];
