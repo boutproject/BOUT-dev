@@ -17,9 +17,6 @@ class AiolosMesh : public BoutMesh {
   AiolosMesh(GridDataSource *s, Options *options = NULL);
   ~AiolosMesh();
   
-  typedef Field3D (*deriv_func)(const Field3D ); // f
-  typedef Field3D (*upwind_func)(const Field3D , const Field3D); // v, f
-  
   struct cart_diff_lookup_table {
     Mesh::deriv_func func;     // Single-argument differencing function
     deriv_func norm;
