@@ -25,7 +25,7 @@
 GridFile::GridFile(DataFormat *format, const string gridfilename) : file(format), filename(gridfilename) {
   TRACE("GridFile constructor");
   
-  if(! file->openr(filename) ) {
+  if (! file->openr(filename) ) {
     throw BoutException("Could not open file '%s'", filename.c_str());
   }
 
@@ -45,7 +45,7 @@ GridFile::~GridFile() {
  * and testing for zero size.
  */
 bool GridFile::hasVar(const string &name) {
-  if(!file->is_valid()) {
+  if (!file->is_valid()) {
     return false;
   }
   
@@ -81,12 +81,12 @@ bool GridFile::get(Mesh *UNUSED(m), int &ival,      const string &name) {
   Timer timer("io");
   TRACE("GridFile::get(int)");
   
-  if(!file->is_valid()){
+  if (!file->is_valid()) {
     throw BoutException("File cannot be read");
   }
   
   bool success = file->read(&ival, name);
-  if(success){
+  if (success) {
     output << "\tOption " << name  << " = " << ival << " (" << filename <<")" << endl;
   }
 
@@ -102,11 +102,11 @@ bool GridFile::get(Mesh *UNUSED(m), BoutReal &rval, const string &name) {
   Timer timer("io");
   TRACE("GridFile::get(BoutReal)");
   
-  if(!file->is_valid()){
+  if (!file->is_valid()) {
     throw BoutException("File cannot be read");
   }
   bool success = file->read(&rval, name);
-  if(success){
+  if (success) {
     output << "\tOption " << name  << " = " << rval << " (" << filename <<")" << endl;
   }
 
@@ -123,9 +123,9 @@ bool GridFile::get(Mesh *m, Field2D &var,   const string &name, BoutReal def) {
   Timer timer("io");
   TRACE("GridFile::get(Field2D)");
 
-  if(!file->is_valid())
+  if (!file->is_valid()) {
     throw BoutException("Could not read '%s' from file: File cannot be read", name.c_str());
-  
+  }
   vector<int> size = file->getSize(name);
   
   switch(size.size()) {
@@ -137,11 +137,11 @@ bool GridFile::get(Mesh *m, Field2D &var,   const string &name, BoutReal def) {
   }
   case 1: {
     // 0 or 1 dimension
-    if(size[0] != 1) {
+    if (size[0] != 1) {
       throw BoutException("Expecting a 2D variable, but '%s' is 1D with %d elements\n", name.c_str(), size[0]);
     }
     BoutReal rval;
-    if(!file->read(&rval, name)) {
+    if (!file->read(&rval, name)) {
       throw BoutException("Couldn't read 0D variable '%s'\n", name.c_str());
     }
     var = rval;
@@ -175,7 +175,7 @@ bool GridFile::get(Mesh *m, Field2D &var,   const string &name, BoutReal def) {
   
   for(int x=xs;x < xs+nx; x++) {
     file->setGlobalOrigin(x,ys,0);
-    if(!file->read(&var(x-xs+xd, yd), name, 1, ny) ) {
+    if (!file->read(&var(x-xs+xd, yd), name, 1, ny) ) {
       throw BoutException("Could not fetch data for '%s'", name.c_str());
     }
   }
@@ -206,8 +206,9 @@ bool GridFile::get(Mesh *m, Field3D &var,   const string &name, BoutReal def) {
 
   // Check that the file can be read
   
-  if(!file->is_valid())
+  if (!file->is_valid()) {
     throw BoutException("Could not read '%s' from file: File cannot be read", name.c_str());
+  }
 
   // Check the size of the variable in the file
   
@@ -221,11 +222,11 @@ bool GridFile::get(Mesh *m, Field3D &var,   const string &name, BoutReal def) {
   }
   case 1: {
     // 0 or 1 dimension
-    if(size[0] != 1) {
+    if (size[0] != 1) {
       throw BoutException("Expecting a 3D variable, but '%s' is 1D with %d elements\n", name.c_str(), size[0]);
     }
     BoutReal rval;
-    if(!file->read(&rval, name)) {
+    if (!file->read(&rval, name)) {
       throw BoutException("Couldn't read 0D variable '%s'\n", name.c_str());
     }
     var = rval;
@@ -235,41 +236,42 @@ bool GridFile::get(Mesh *m, Field3D &var,   const string &name, BoutReal def) {
     // Read as 2D
     
     Field2D var2d;
-    if(!get(m, var2d, name, def))
+    if (!get(m, var2d, name, def)) {
       throw BoutException("Couldn't read 2D variable '%s'\n", name.c_str());
+    }
     var = var2d;
     return true;
   }
   case 3: {
     // Check whether "nz" is defined
-    if(hasVar("nz")) {
+    if (hasVar("nz")) {
       // Read directly into arrays
       
       // Check the array is the right size
       
-      if(size[2] != m->LocalNz)
+      if (size[2] != m->LocalNz) {
         throw BoutException("3D variable '%s' has incorrect size %d (expecting %d)", name.c_str(), size[2], m->LocalNz);
+      }
       
-      if(! readgrid_3dvar_real(m, name,
+      if (! readgrid_3dvar_real(m, name,
 			       m->OffsetY,// Start reading at global index
 			       m->ystart,// Insert data starting from y=ystart
 			       m->yend-m->ystart+1, // Length of data in Y
 			       0, m->LocalNx, // All x indices (local indices)
 			       var) ) {
-	throw BoutException("\tWARNING: Could not read '%s' from grid. Setting to zero\n", name.c_str());
-	
+	      throw BoutException("\tWARNING: Could not read '%s' from grid. Setting to zero\n", name.c_str());
       }
-      
-    }else {
+    }
+    else
+    {
       // No Z size specified in file. Assume FFT format
-      
-      if(! readgrid_3dvar_fft(m, name,
+      if (! readgrid_3dvar_fft(m, name,
 			      m->OffsetY,// Start reading at global index
 			      m->ystart,// Insert data starting from y=ystart
 			      m->yend-m->ystart+1, // Length of data in Y
 			      0, m->LocalNx, // All x indices (local indices)
 			      var) ) {
-	throw BoutException("\tWARNING: Could not read '%s' from grid. Setting to zero\n", name.c_str());
+	      throw BoutException("\tWARNING: Could not read '%s' from grid. Setting to zero\n", name.c_str());
       }
     }
     
@@ -298,13 +300,15 @@ bool GridFile::get(Mesh *UNUSED(m), vector<int> &var, const string &name,
                    int len, int offset, GridDataSource::Direction UNUSED(dir)) {
   TRACE("GridFile::get(vector<int>)");
   
-  if(!file->is_valid())
+  if (!file->is_valid()) {
     return false;
+  }
 
   file->setGlobalOrigin(offset);
 
-  if(!file->read(&var[0], name, len))
+  if (!file->read(&var[0], name, len)){
     return false;
+  }
   
   file->setGlobalOrigin();
   return true;
@@ -314,13 +318,15 @@ bool GridFile::get(Mesh *UNUSED(m), vector<BoutReal> &var, const string &name,
                    int len, int offset, GridDataSource::Direction UNUSED(dir)) {
   TRACE("GridFile::get(vector<BoutReal>)");
   
-  if(!file->is_valid())
+  if (!file->is_valid()){
     return false;
+  }
 
   file->setGlobalOrigin(offset);
 
-  if(!file->read(&var[0], name, len))
+  if (!file->read(&var[0], name, len)) {
     return false;
+  }
   
   file->setGlobalOrigin();
   return true;
@@ -345,13 +351,14 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const string &name,
 				 int yread, int ydest, int ysize, 
 				 int xge, int xlt, Field3D &var) {
   /// Check the arguments make sense
-  if((yread < 0) || (ydest < 0) || (ysize < 0) || (xge < 0) || (xlt < 0))
+  if ((yread < 0) || (ydest < 0) || (ysize < 0) || (xge < 0) || (xlt < 0)) {
     return false;
+  }
   
   /// Check the size of the data
   vector<int> size = file->getSize(name);
   
-  if(size.size() != 3) {
+  if (size.size() != 3) {
     output.write("\tWARNING: Number of dimensions of %s incorrect\n", name.c_str());
     return false;
   }
@@ -365,19 +372,24 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const string &name,
   int zperiod = ROUND(TWOPI / zlength); /// Number of periods in 2pi
 
   // Print out which modes are going to be read in
-  if(zperiod > maxmode) {
+  if (zperiod > maxmode) {
     // Domain is too small: Only DC
     output.write(" => Only reading n = 0 component\n");
-  }else {
+  }
+  else
+  {
     // Get maximum mode in the input which is a multiple of zperiod
     int mm = ((int) (maxmode/zperiod))*zperiod;
-    if( (ncz/2)*zperiod < mm )
+    if ( (ncz/2)*zperiod < mm )
       mm = (ncz/2)*zperiod; // Limited by Z resolution
     
-    if(mm == zperiod) {
+    if (mm == zperiod) {
       output.write(" => Reading n = 0, %d\n", zperiod);
-    }else
+    }
+    else
+    {
       output.write(" => Reading n = 0, %d ... %d\n", zperiod, mm);
+    }
   }
 
   /// Data for FFT. Only positive frequencies
@@ -386,31 +398,33 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const string &name,
 
   for(int jx=xge;jx<xlt;jx++) {
     // Set the global X index
-    
+
     for(int jy=0; jy < ysize; jy++) {
       /// Read data
-      
+
       int yind = yread + jy; // Global location to read from
-      
+
       file->setGlobalOrigin(jx + m->OffsetX, yind);
-      if(!file->read(zdata, name, 1, 1, size[2]))
-	return 1;
-      
+      if (!file->read(zdata, name, 1, 1, size[2])) {
+        return 1;
+      }
+
       /// Load into dcomplex array
-      
+
       fdata[0] = zdata[0]; // DC component
 
       for(int i=1;i<=ncz/2;i++) {
-	int modenr = i*zperiod; // Z mode number
-	
-	if(modenr <= maxmode) {
-	  // Have data for this mode
-	  fdata[i] = dcomplex(zdata[modenr*2 - 1], zdata[modenr*2]);
-	}else {
-	  fdata[i] = 0.0;
-	}
-      }
+        int modenr = i*zperiod; // Z mode number
 
+        if (modenr <= maxmode) {
+          // Have data for this mode
+          fdata[i] = dcomplex(zdata[modenr*2 - 1], zdata[modenr*2]);
+        }
+        else
+        {
+          fdata[i] = 0.0;
+        }
+      }
       irfft(fdata, ncz, &var(jx,ydest+jy,0));
     }
   }
@@ -432,13 +446,14 @@ bool GridFile::readgrid_3dvar_real(Mesh *m, const string &name,
 				   int yread, int ydest, int ysize, 
 				   int xge, int xlt, Field3D &var) {
   /// Check the arguments make sense
-  if((yread < 0) || (ydest < 0) || (ysize < 0) || (xge < 0) || (xlt < 0))
+  if ((yread < 0) || (ydest < 0) || (ysize < 0) || (xge < 0) || (xlt < 0)) {
     return false;
+  }
   
   /// Check the size of the data
   vector<int> size = file->getSize(name);
   
-  if(size.size() != 3) {
+  if (size.size() != 3) {
     output.write("\tWARNING: Number of dimensions of %s incorrect\n", name.c_str());
     return false;
   }
@@ -452,8 +467,9 @@ bool GridFile::readgrid_3dvar_real(Mesh *m, const string &name,
       int yind = yread + jy; // Global location to read from
       
       file->setGlobalOrigin(jx + m->OffsetX, yind);
-      if(!file->read(&var(jx,ydest+jy,0), name, 1, 1, size[2]))
-	return false;
+      if (!file->read(&var(jx,ydest+jy,0), name, 1, 1, size[2])) {
+        return false;
+      }
     }
   }
   file->setGlobalOrigin();
