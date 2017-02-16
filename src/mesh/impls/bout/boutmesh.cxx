@@ -2345,11 +2345,20 @@ void BoutMesh::outputVars(Datafile &file) {
   file.add(MYSUB, "MYSUB", 0);
   file.add(MXG,   "MXG",   0);
   file.add(MYG,   "MYG",   0);
+  file.add(nx,    "nx",    0 );
+  file.add(ny,    "ny",    0 );
   file.add(LocalNz,"MZ",    0);
   file.add(NXPE,  "NXPE",  0);
   file.add(NYPE,  "NYPE",  0);
   file.add(ZMAX,  "ZMAX",  0);
   file.add(ZMIN,  "ZMIN",  0);
+  file.add(ixseps1,  "ixseps1",  0);
+  file.add(ixseps2,  "ixseps2",  0);
+  file.add(jyseps1_1,  "jyseps1_1",  0);
+  file.add(jyseps1_2,  "jyseps1_2",  0);
+  file.add(jyseps2_1,  "jyseps2_1",  0);
+  file.add(jyseps2_2,  "jyseps2_2",  0);
+
   
   coordinates()->outputVars(file);
 }
