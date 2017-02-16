@@ -1245,16 +1245,39 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
   result.allocate(); // Make sure data allocated
   
   bindex bx;
-  
-  start_index(&bx, RGN_NOBNDRY);
-  stencil s;
-  do {
-    for(bx.jz=0;bx.jz<mesh->LocalNz;bx.jz++) {
-      var.setYStencil(s, bx, loc);
-      result(bx.jx,bx.jy,bx.jz) = func(s);
+  if(var.hasYupYdown()) {
+    // Field "var" has yup and ydown fields which will be used
+    // to calculate a derivative along the magnetic field
+    
+    start_index(&bx, RGN_NOBNDRY);
+    stencil s;
+    do {
+      for(bx.jz=0;bx.jz<mesh->LocalNz;bx.jz++) {
+        var.setYStencil(s, bx, loc);
+        result(bx.jx,bx.jy,bx.jz) = func(s);
+      }
+    }while(next_index2(&bx));
+  }else {
+    // var has no yup/ydown fields, so we need to shift into field-aligned coordinates
+    
+    Field3D var_fa = mesh->toFieldAligned(var);
+    
+    for(const auto &i : result.region(RGN_NOBNDRY)) {
+      // Set stencils
+      stencil s;
+      s.c = var_fa[i];
+      s.p = var_fa[i.yp()];
+      s.m = var_fa[i.ym()];
+      s.pp = nan("");
+      s.mm = nan("");
+      
+      result[i] = func(s);
     }
-  }while(next_index2(&bx));
-
+    
+    // Shift result back
+    
+    result = mesh->fromFieldAligned(result);
+  }
 #ifdef CHECK
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
@@ -1264,6 +1287,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
     for (bx.jx=mesh->xstart-1; bx.jx>=0; bx.jx--)
       for (bx.jy=mesh->ystart; bx.jy<=mesh->ystart; bx.jy++)
 	for (bx.jz=0; bx.jz<mesh->LocalNz; bx.jz++) {
+          stencil s;
 	  calc_index(&bx);
 	  var.setYStencil(s, bx, loc);
 	  result(bx.jx,bx.jy,bx.jz) = func(s);
@@ -1276,6 +1300,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
     for (bx.jx=mesh->xend+1; bx.jx<mesh->LocalNx; bx.jx++)
       for (bx.jy=mesh->ystart; bx.jy<=mesh->ystart; bx.jy++)
 	for (bx.jz=0; bx.jz<mesh->LocalNz; bx.jz++) {
+          stencil s;
 	  calc_index(&bx);
 	  var.setYStencil(s, bx, loc);
 	  result(bx.jx,bx.jy,bx.jz) = func(s);
@@ -1291,6 +1316,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
     for (RangeIterator it=mesh->iterateBndryLowerY(); !it.isDone(); it++)
       for (bx.jz=0; bx.jz<mesh->LocalNz; bx.jz++) {
 	bx.jx = it.ind;
+        stencil s;
 	calc_index(&bx);
 	var.setYStencil(fs, bx, loc);
 	funcs_pair = func_in(fs);
@@ -1308,6 +1334,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
     for (RangeIterator it=mesh->iterateBndryUpperY(); !it.isDone(); it++)
       for (bx.jz=0; bx.jz<mesh->LocalNz; bx.jz++) {
 	bx.jx = it.ind;
+        stencil s;
 	calc_index(&bx);
 	var.setYStencil(bs, bx, loc);
 	funcs_pair = func_out(bs);

@@ -100,35 +100,35 @@ public:
    */
   virtual void setCoefA(const Field2D &f) = 0;
   virtual void setCoefA(const Field3D &f) {setCoefA(DC(f));}
-  virtual void setCoefA(const BoutReal f) {setCoefA(Field2D(f));}
+  virtual void setCoefA(BoutReal f) {setCoefA(Field2D(f));}
   
   /*!
    * Set the Grad2_par2 coefficient B
    */ 
   virtual void setCoefB(const Field2D &f) = 0;
   virtual void setCoefB(const Field3D &f) {setCoefB(DC(f));}
-  virtual void setCoefB(const BoutReal f) {setCoefB(Field2D(f));}
+  virtual void setCoefB(BoutReal f) {setCoefB(Field2D(f));}
   
   /*!
    * Set the D2DYDZ coefficient C
    */
   virtual void setCoefC(const Field2D &f) = 0;
   virtual void setCoefC(const Field3D &f) {setCoefB(DC(f));}
-  virtual void setCoefC(const BoutReal f) {setCoefB(Field2D(f));}
+  virtual void setCoefC(BoutReal f) {setCoefB(Field2D(f));}
   
   /*!
    * Set the D2DZ2 coefficient D
    */ 
   virtual void setCoefD(const Field2D &f) = 0;
   virtual void setCoefD(const Field3D &f) {setCoefB(DC(f));}
-  virtual void setCoefD(const BoutReal f) {setCoefB(Field2D(f));}
+  virtual void setCoefD(BoutReal f) {setCoefB(Field2D(f));}
   
   /*!
    * Set the DDY coefficient E
    */
   virtual void setCoefE(const Field2D &f) = 0;
   virtual void setCoefE(const Field3D &f) {setCoefB(DC(f));}
-  virtual void setCoefE(const BoutReal f) {setCoefB(Field2D(f));}
+  virtual void setCoefE(BoutReal f) {setCoefB(Field2D(f));}
   
 private:
 };

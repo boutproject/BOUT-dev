@@ -8,13 +8,11 @@
 #include <boutexception.hxx>
 
 #include "impls/bout/boutmesh.hxx"
-//#include "impls/quilt/quiltmesh.hxx"
 #include "impls/aiolos/aiolosmesh.hxx"
 
 MeshFactory *MeshFactory::instance = NULL;
 
 #define MESH_BOUT  "bout"
-//#define MESH_QUILT "quilt"
 #define MESH_AIOLOS "aiolos"
 
 MeshFactory* MeshFactory::getInstance() {
@@ -65,14 +63,9 @@ Mesh* MeshFactory::createMesh(GridDataSource *source, Options *options) {
   if(!strcasecmp(type.c_str(), MESH_AIOLOS)) {
     return new AiolosMesh(source, options);
   }
-/*
-  if(!strcasecmp(type.c_str(), MESH_QUILT)) {
-    return new QuiltMesh(source, options);
-  }
-*/
   if(!strcasecmp(type.c_str(), MESH_BOUT)) {
     return new BoutMesh(source, options);
   }
 
-  throw BoutException("  Unknown mesh: %s",type.c_str());
+  throw BoutException("Mesh type not implemented: %s",type.c_str());
 }

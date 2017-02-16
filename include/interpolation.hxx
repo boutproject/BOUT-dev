@@ -150,8 +150,8 @@ public:
   // Calculate weights and interpolate
   Field3D interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z);
   Field3D interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z, BoutMask mask);
-  BoutReal lagrange_4pt(const BoutReal v2m, const BoutReal vm, const BoutReal vp, const BoutReal v2p, const BoutReal offset) const;
-  BoutReal lagrange_4pt(const BoutReal v[], const BoutReal offset) const;
+  BoutReal lagrange_4pt(BoutReal v2m,BoutReal vm,BoutReal vp,BoutReal v2p,BoutReal offset) const;
+  BoutReal lagrange_4pt(const BoutReal v[],BoutReal offset) const;
 };
 
 class Bilinear : public Interpolation {

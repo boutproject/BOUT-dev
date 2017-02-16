@@ -71,8 +71,8 @@ class Datafile {
   bool write(const char *filename, ...) const; ///< Opens, writes, closes file
   
   // Write a variable to the file now
-  bool writeVar(const int &i, const char *name);
-  bool writeVar(const BoutReal &r, const char *name);
+  DEPRECATED(bool writeVar(const int &i, const char *name));
+  DEPRECATED(bool writeVar(BoutReal r, const char *name));
   
  private:
   bool parallel; // Use parallel formats?

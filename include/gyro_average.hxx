@@ -1,11 +1,13 @@
-/**************************************************************
+/*!************************************************************
+ * \file gyro_average.hxx
+ * 
  * Gyro-averaging operators
  *
  *
  * 2010-09-03 Ben Dudson <bd512@york.ac.uk>
  *    * Initial version, simple averaging operator
  * 
- **************************************************************************
+ **************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
@@ -35,30 +37,65 @@
 
 const int GYRO_FLAGS = 64 + 16384 + 32768; // = INVERT_BNDRY_ONE | INVERT_IN_RHS | INVERT_OUT_RHS; uses old-style Laplacian inversion flags
 
+
+/// Gyro-average using Taylor series approximation
+///
+/// G(f) = f + rho^2*Delp2(f)
+///
+/// Note: Faster, but less robust than Pade approximations
+///
+/// @param[in]  f  The field to gyro-average
+/// @param[in] rho Gyro-radius
 const Field3D gyroTaylor0(const Field3D &f, const Field3D &rho);
 
+/// Gyro-average using Pade approximation
+///
+/// G_0 = (1 - rho^2*Delp2)g = f
+///
+/// NOTE: Uses Z average of rho for efficient inversion
+///
+/// @param[in] f   The field to gyro-average
+/// @param[in] rho  Gyro-radius
+/// @param[in] flags  Flags to be passed to the Laplacian inversion operator
 const Field3D gyroPade0(const Field3D &f, const Field3D &rho, 
                         int flags=GYRO_FLAGS);
-const Field3D gyroPade1(const Field3D &f, const Field3D &rho, 
+const Field3D gyroPade0(const Field3D &f, const Field2D &rho, 
                         int flags=GYRO_FLAGS);
-const Field3D gyroPade2(const Field3D &f, const Field3D &rho, 
+const Field3D gyroPade0(const Field3D &f, BoutReal rho, 
                         int flags=GYRO_FLAGS);
 
-const Field3D gyroPade0(const Field3D &f, const Field2D &rho, 
+/// Pade approximation G_1 = (1 - 0.5*rho^2*Delp2)g = f
+///
+/// Note: Have to use Z average of rho for efficient inversion
+/// 
+/// @param[in] f   The field to gyro-average
+/// @param[in] rho  Gyro-radius
+/// @param[in] flags  Flags to be passed to the Laplacian inversion operator
+const Field3D gyroPade1(const Field3D &f, const Field3D &rho, 
                         int flags=GYRO_FLAGS);
 const Field3D gyroPade1(const Field3D &f, const Field2D &rho, 
                         int flags=GYRO_FLAGS);
-const Field3D gyroPade2(const Field3D &f, const Field2D &rho, 
-                        int flags=GYRO_FLAGS);
-
-const Field3D gyroPade0(const Field3D &f, BoutReal rho, 
-                        int flags=GYRO_FLAGS);
 const Field3D gyroPade1(const Field3D &f, BoutReal rho, 
                         int flags=GYRO_FLAGS);
-const Field3D gyroPade2(const Field3D &f, BoutReal rho, 
+const Field2D gyroPade1(const Field2D &f, const Field2D &rho,
                         int flags=GYRO_FLAGS);
 
-const Field2D gyroPade1(const Field2D &f, const Field2D &rho,
+/// Pade approximation 
+///
+/// \f[
+///    \Gamma_2\left(f\right) = \frac{1}{2}\rho^2 \nabla_\perp^2 \left( 1 - \frac{1}{2} \rho^2 \nabla_\perp^2\right)^{-1}\Gamma_1\left(f\right)
+/// \f]
+///
+/// Note: Have to use Z average of rho for efficient inversion
+///
+/// @param[in] f   The field to gyro-average
+/// @param[in] rho  Gyro-radius
+/// @param[in] flags  Flags to be passed to the Laplacian inversion operator
+const Field3D gyroPade2(const Field3D &f, const Field3D &rho, 
+                        int flags=GYRO_FLAGS);
+const Field3D gyroPade2(const Field3D &f, const Field2D &rho, 
+                        int flags=GYRO_FLAGS);
+const Field3D gyroPade2(const Field3D &f, BoutReal rho, 
                         int flags=GYRO_FLAGS);
 
 #endif // __GYRO_AVERAGE_H__

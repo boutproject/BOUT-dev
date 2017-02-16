@@ -309,16 +309,18 @@ repository on Franklin. To apply this to a different machine just replace
 
 \subsection{House rules}
 
-BOUT++ consists of about 39,400 lines of C/C++\footnote{generated using
-David A. Wheeler's 'SLOCCount'},
-along with 18,500 lines of IDL and 2,900 of Python. Of this, about 24,700 lines is the core
-BOUT++ code, and the remainder
-a mix of pre- and post-processors, and physics modules. As production codes
-go, this is not particularly huge, but it is definitely large enough that
-keeping the code `clean' and understandable is necessary. This is vital
-if many people are going to work on the code, and also greatly helps code
-debugging and verification. There are therefore a few house rules to keep
-in mind when modifying the BOUT++ code.
+BOUT++ consists of about 60,000 lines of C/C++
+%
+\footnote{generated using Al Danial's cloc}
+%,
+along with 18,500 lines of IDL and 12,000 of Python. Of this, about
+40,000 lines is the core BOUT++ code, and the remainder a mix of pre-
+and post-processors, and physics modules. As production codes go, this
+is not particularly huge, but it is definitely large enough that
+keeping the code `clean' and understandable is necessary. This is
+vital if many people are going to work on the code, and also greatly
+helps code debugging and verification. There are therefore a few house
+rules to keep in mind when modifying the BOUT++ code.
 
 When modifying the core BOUT++ code, please keep in mind that this portion of the code
 is intended to be general (i.e. independent of any particular physical system of equations),
@@ -338,27 +340,8 @@ core code if it is more generally applicable, or cannot be put into the physics 
 
 \subsection{Coding conventions}
 
-The naming of BOUT++ classes, functions etc. has not been very consistent
-historically, but please try to follow the following rules:
-\begin{itemize}
-\item Directories and files are all lower case (with underscores)
-\item Class names start with a capital letter, and each word is capitalised e.g. \code{BoutMesh}. No underscores.
-\item Class member functions start with a lower case letter with each subsequent word capitalised (e.g. \code{write()}, \code{setSection()}), also without underscores.
-\item Variable names are all lower case, with underscores if you want.
-\end{itemize}
-
-Curly braces should {\bf not} start on a new line: please use
-\begin{lstlisting}
-if( ... ) {
-  ...
-}
-\end{lstlisting}
-and
-\begin{lstlisting}
-type function( ... ) {
-  ...
-}
-\end{lstlisting}
+See CONTRIBUTING.md for guidelines on naming and other coding conventions used
+within BOUT++.
 
 \section{Code layout}
 
@@ -472,16 +455,21 @@ The current source code files are:
   \item impls
     \begin{itemize}
     \item \file{emptyformat.hxx}
+    \item hdf5
+      \begin{itemize}
+      \item \file{h5\_format.cxx} implements an interface to the HDF5 library
+      \item \file{h5\_format.hxx}
+      \end{itemize}
     \item netcdf
       \begin{itemize}
       \item \file{nc\_format.cxx} implements an interface to the NetCDF-4 library
-      \item \file{nc\_format.hxx} 
+      \item \file{nc\_format.hxx}
       \end{itemize}
-    \item pdb
+    \item netcdf4
       \begin{itemize}
-      \item \file{pdb\_format.cxx} implements an interace to Portable Data
-        Binary (PDB) formatted files.
-      \item \file{pdb\_format.hxx}
+      \item \file{ncxx4.cxx} implements an interface to the NetCDF-4
+        library using the C++ API
+      \item \file{ncxx4.hxx}
       \end{itemize}
     \item pnetcdf
       \begin{itemize}
@@ -586,13 +574,6 @@ The current source code files are:
 	with BOUT grid files.
       \item \file{boutmesh.hxx}
       \end{itemize}
-    \item quilt
-      \begin{itemize}
-      \item \file{quiltmesh.cxx} is an implementation of \code{Mesh} which is
-	currently under development. It is intended to handle more general mesh
-	shapes and topology than the currently used \code{BoutMesh} can handle.
-      \item \file{quiltmesh.hxx}
-      \end{itemize}
     \end{itemize}
   \end{itemize}
 \item physics
@@ -655,9 +636,6 @@ The current source code files are:
     upwinding, central difference and WENO methods. These are then
     used by \file{difops.cxx}. Details are given in
     section~\ref{sec:derivatives}.
-  \item \file{diagnos.cxx} is the start of a diagnostics code which will extract
-    values from fields each timestep and print to the output log file. Not
-    yet finished.
   \item \file{msg\_stack.cxx} is part of the error handling system. It maintains
     a stack of messages which can be pushed onto the stack at the start of 
     a function, then removed (popped) at the end. If an error occurs or 
@@ -700,12 +678,6 @@ bool is3D() const;   // True if variable is 3D
   
 int byteSize() const; // Number of bytes for a single point
 int realSize() const; // Number of reals (not implemented if not real)
-  
-int getData(int x, int y, int z, void *vptr) const; // Return number of bytes
-int getData(int x, int y, int z, BoutReal *rptr) const; // Return number of reals
-  
-int setData(int x, int y, int z, void *vptr);
-int setData(int x, int y, int z, BoutReal *rptr);
 \end{lstlisting}
 
 To support file I/O there are also some additional functions which may be implemented.
@@ -1575,14 +1547,17 @@ the grid routines (\code{grid.hxx} and \code{grid.cxx}), and the
 All other parts which need to read or write data go through these
 methods.
 
-Several different file formats are commonly used, such as HDF, HDF5, and netCDF. 
+Several different file formats are commonly used, such as HDF, HDF5, and netCDF.
 For historical reasons (inherited from BOUT), BOUT++ originally used the
-Portable Data Binary (PDB) format developed at LLNL. 
-To separate the basic file format functions from the higher level grid and 
+Portable Data Binary (PDB) format developed at LLNL.
+%
+\footnote{Support for PDB files was removed in BOUT++ 4.0.0}
+%
+To separate the basic file format functions from the higher level grid and
 Datafile classes, these use an abstract class \code{DataFormat}. Any
 class which implements the functions listed in \code{dataformat.hxx}
 can therefore be passed to grid or datafile. This makes implementing
-a new file format, and switching between formats at run-time, 
+a new file format, and switching between formats at run-time,
 relatively straightforward.
 
 

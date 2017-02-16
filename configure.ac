@@ -19,7 +19,9 @@
 #
 #####################################################################
 #
-# Process this file with autoconf to produce a configure script.
+# Process this file with autoreconf to produce a configure script.
+#
+#     $ autoreconf -if 
 #
 # Changelog:
 #
@@ -370,9 +372,11 @@ AS_IF([test "x$with_netcdf" != "xno"],
 
         save_LIBS=$LIBS
         save_LDFLAGS=$LDFLAGS
+        save_CXXFLAGS=$CXXFLAGS
         AC_LANG_PUSH([C++])
         LIBS="$save_LIBS $NCLIB"
-        LDFALGS="save_LDFLAGS $NCINC"
+        LDFLAGS="$save_LDFLAGS $NCLIB"
+        CXXFLAGS="$save_CXXFLAGS $NCINC"
         AC_LINK_IFELSE(
           [AC_LANG_PROGRAM([
              #include <netcdfcpp.h>
@@ -384,7 +388,7 @@ AS_IF([test "x$with_netcdf" != "xno"],
         AC_LANG_POP([C++])
         LIBS=$save_LIBS
         LDFLAGS=$save_LDFLAGS
-        CXXFLAGS="$CXXFLAGS -DNCDF"
+        CXXFLAGS="$save_CXXFLAGS -DNCDF"
        ])
       EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
 

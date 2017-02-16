@@ -47,6 +47,7 @@
 #include <msg_stack.hxx>
 #include <bout/constants.hxx>
 
+/// MPI type of BoutReal for communications
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 
 //#define COMMDEBUG 1   // Uncomment to print communications debugging information
@@ -775,13 +776,13 @@ int BoutMesh::load() {
  *                 COMMUNICATIONS
  ****************************************************************/
 
-const int IN_SENT_UP    = 0;
-const int OUT_SENT_UP   = 1;
-const int IN_SENT_DOWN  = 2;
-const int OUT_SENT_DOWN = 3;
+const int IN_SENT_UP    = 0; ///< Data lower in X than branch-cut, at upper boundary in Y
+const int OUT_SENT_UP   = 1; ///< Data higher in X than branch-cut, at upper boundary in Y
+const int IN_SENT_DOWN  = 2; ///< Data lower in X than branch-cut, at lower boundary in Y
+const int OUT_SENT_DOWN = 3; ///< Data higher in X than branch-cut, at lower boundary in Y
 // X communication signals
-const int IN_SENT_OUT = 4;
-const int OUT_SENT_IN  = 5;
+const int IN_SENT_OUT = 4; ///< Data going in positive X direction (in to out)
+const int OUT_SENT_IN  = 5; ///< Data going in negative X direction (out to in)
 
 void BoutMesh::post_receive(CommHandle &ch) {
   BoutReal *inbuff;
@@ -2014,57 +2015,58 @@ void BoutMesh::clear_handles() {
  *                   Communication utilities
  ****************************************************************/
 
-int BoutMesh::pack_data(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer) {
-  int jx, jy, jz;
+int BoutMesh::pack_data(const vector<FieldData *> &var_list, int xge, int xlt, int yge,
+                        int ylt, BoutReal *buffer) {
+
   int len = 0;
-  std::vector<FieldData*>::iterator it;
 
-  for(jx=xge; jx != xlt; jx++) {
-
+  for (int jx = xge; jx != xlt; jx++) {
     /// Loop over variables
-    for(const auto& var : var_list) {
-      if(var->is3D()) {
+    for (const auto &var : var_list) {
+      if (var->is3D()) {
         // 3D variable
-
-        for(jy=yge;jy < ylt;jy++)
-          for(jz=0;jz < LocalNz;jz++)
-            len += var->getData(jx,jy,jz,buffer+len);
+        for (int jy = yge; jy < ylt; jy++) {
+          for (int jz = 0; jz < LocalNz; jz++, len++) {
+            buffer[len] = (*dynamic_cast<Field3D*>(var))(jx, jy, jz);
+          }
+        }
       } else {
         // 2D variable
-        for(jy=yge;jy < ylt;jy++)
-          len += var->getData(jx,jy,0,buffer+len);
+        for (int jy = yge; jy < ylt; jy++, len++) {
+          buffer[len] = (*dynamic_cast<Field2D*>(var))(jx, jy);
+        }
       }
     }
   }
 
-  return(len);
+  return (len);
 }
 
-int BoutMesh::unpack_data(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer)
-{
-  int jx, jy, jz;
+int BoutMesh::unpack_data(const vector<FieldData *> &var_list, int xge, int xlt, int yge,
+                          int ylt, BoutReal *buffer) {
+
   int len = 0;
-  std::vector<FieldData*>::iterator it;
 
-  for(jx=xge; jx != xlt; jx++) {
-
+  for (int jx = xge; jx != xlt; jx++) {
     /// Loop over variables
-    for(const auto& var : var_list) {
-      if(var->is3D()) {
+    for (const auto &var : var_list) {
+      if (var->is3D()) {
         // 3D variable
-
-        for(jy=yge;jy < ylt;jy++)
-          for(jz=0;jz < LocalNz;jz++)
-            len += var->setData(jx,jy,jz,buffer+len);
+        for (int jy = yge; jy < ylt; jy++) {
+          for (int jz = 0; jz < LocalNz; jz++, len++) {
+            (*dynamic_cast<Field3D*>(var))(jx, jy, jz) = buffer[len];
+          }
+        }
       } else {
         // 2D variable
-        for(jy=yge;jy < ylt;jy++)
-          len += var->setData(jx,jy,0,buffer+len);
+        for (int jy = yge; jy < ylt; jy++, len++) {
+          (*dynamic_cast<Field2D*>(var))(jx, jy) = buffer[len];
+        }
       }
     }
   }
 
-  return(len);
+  return (len);
 }
 
 /****************************************************************
@@ -2343,11 +2345,20 @@ void BoutMesh::outputVars(Datafile &file) {
   file.add(MYSUB, "MYSUB", 0);
   file.add(MXG,   "MXG",   0);
   file.add(MYG,   "MYG",   0);
+  file.add(nx,    "nx",    0 );
+  file.add(ny,    "ny",    0 );
   file.add(LocalNz,"MZ",    0);
   file.add(NXPE,  "NXPE",  0);
   file.add(NYPE,  "NYPE",  0);
   file.add(ZMAX,  "ZMAX",  0);
   file.add(ZMIN,  "ZMIN",  0);
+  file.add(ixseps1,  "ixseps1",  0);
+  file.add(ixseps2,  "ixseps2",  0);
+  file.add(jyseps1_1,  "jyseps1_1",  0);
+  file.add(jyseps1_2,  "jyseps1_2",  0);
+  file.add(jyseps2_1,  "jyseps2_1",  0);
+  file.add(jyseps2_2,  "jyseps2_2",  0);
+
   
   coordinates()->outputVars(file);
 }
@@ -2451,10 +2462,11 @@ const Field2D BoutMesh::lowPass_poloidal(const Field2D &var,int mmax)
      set_ri(ayn,ncy,aynReal,aynImag);
 
      for(jy=0;jy<ncy;jy++)
-      f1d[jy]=ayn[jy].real();
+       f1d[jy]=ayn[jy].real();
 
-    for(jy=0;jy<ncy;jy++)
-      result.setData(jx,jy+ystart,1,f1d+jy);
+     for(jy=0;jy<ncy;jy++) {
+       result(jx,jy+ystart,1) = f1d[jy];
+     }
   }//end of x
 
   return result;

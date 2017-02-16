@@ -17,7 +17,8 @@ tests = ['test-io', 'test-field', 'test-minmax', 'test-fieldfactory', 'test-lapl
          "test-dataiterator", "test-dataiterator2",
          "MMS/diffusion","MMS/wave-1d","MMS/wave-1d-y",
          "MMS/interpolation", "MMS/derivatives",
-         "drift-instability", 'interchange-instability']
+         "drift-instability", 'interchange-instability',
+         "test-minmax","test-code-style"]
 
 ##################################################################
 

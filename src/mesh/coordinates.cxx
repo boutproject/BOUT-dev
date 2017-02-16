@@ -580,22 +580,15 @@ const Field2D Coordinates::DDZ(const Field2D &UNUSED(f)) {
 // Parallel gradient
 
 const Field2D Coordinates::Grad_par(const Field2D &var, CELL_LOC UNUSED(outloc), DIFF_METHOD UNUSED(method)) {
-  msg_stack.push("Coordinates::Grad_par( Field2D )");
+  TRACE("Coordinates::Grad_par( Field2D )");
   
-  Field2D result = DDY(var)/sqrt(g_22);
-  
-  msg_stack.pop();
-  return result;
+  return DDY(var)/sqrt(g_22);
 }
 
 const Field3D Coordinates::Grad_par(const Field3D &var, CELL_LOC outloc, DIFF_METHOD method) {
-  msg_stack.push("Coordinates::Grad_par( Field3D )");
+  TRACE("Coordinates::Grad_par( Field3D )");
   
-  Field3D result = ::DDY(var, outloc, method)/sqrt(g_22);
-  
-  msg_stack.pop();
-  
-  return result;
+  return ::DDY(var, outloc, method)/sqrt(g_22);
 }
 
 /////////////////////////////////////////////////////////
@@ -615,33 +608,31 @@ const Field3D Coordinates::Vpar_Grad_par(const Field &v, const Field &f, CELL_LO
 // Parallel divergence
 
 const Field2D Coordinates::Div_par(const Field2D &f, CELL_LOC UNUSED(outloc), DIFF_METHOD UNUSED(method)) {
-  msg_stack.push("Coordinates::Div_par( Field2D )");
-   
-  Field2D result = Bxy*Grad_par(f/Bxy);
-  
-  msg_stack.pop();
-  
-  return result;
+  TRACE("Coordinates::Div_par( Field2D )");
+  return Bxy*Grad_par(f/Bxy);
 }
 
 const Field3D Coordinates::Div_par(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
-  msg_stack.push("Coordinates::Div_par( Field3D )");
+  TRACE("Coordinates::Div_par( Field3D )");
   
-  // Need to modify yup and ydown fields
-  Field3D f_B = f/Bxy;
-  if(&f.yup() == &f) {
-    // Identity, yup and ydown point to same field
-    f_B.mergeYupYdown();
-  }else {
-    // Distinct fields
-    f_B.splitYupYdown();
-    f_B.yup() = f.yup() / Bxy;
-    f_B.ydown() = f.ydown() / Bxy;
+  if(f.hasYupYdown() ) {
+    // Need to modify yup and ydown fields
+    Field3D f_B = f/Bxy;
+    if(&f.yup() == &f) {
+      // Identity, yup and ydown point to same field
+      f_B.mergeYupYdown();
+    }else {
+      // Distinct fields
+      f_B.splitYupYdown();
+      f_B.yup() = f.yup() / Bxy;
+      f_B.ydown() = f.ydown() / Bxy;
+    }
+    return Bxy*Grad_par(f_B, outloc, method);
   }
-  Field3D result = Bxy*Grad_par(f_B, outloc, method);
   
-  msg_stack.pop();
-  return result;
+  // No yup/ydown fields. The Grad_par operator will
+  // shift to field aligned coordinates
+  return Bxy*Grad_par(f/Bxy, outloc, method);
 }
 
 /////////////////////////////////////////////////////////

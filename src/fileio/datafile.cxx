@@ -44,7 +44,7 @@
 #include <utils.hxx>
 #include "formatfactory.hxx"
 
-Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), floats(false), openclose(true), enabled(true), shiftOutput(false), file(NULL) {
+Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), floats(false), openclose(true), enabled(true), shiftOutput(false), file(nullptr) {
   filenamelen=FILENAMELEN;
   filename=new char[filenamelen];
   if(opt == NULL)
@@ -64,7 +64,7 @@ Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), f
 Datafile::Datafile(const Datafile &other) :
   parallel(other.parallel), flush(other.flush), guards(other.guards), 
   floats(other.floats), openclose(other.openclose), Lx(other.Lx), Ly(other.Ly), Lz(other.Lz), 
-  enabled(other.enabled), shiftOutput(other.shiftOutput), file(NULL), int_arr(other.int_arr), 
+  enabled(other.enabled), shiftOutput(other.shiftOutput), file(nullptr), int_arr(other.int_arr), 
   BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr), 
   f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {
   filenamelen=FILENAMELEN;
@@ -81,19 +81,21 @@ Datafile& Datafile::operator=(const Datafile &rhs) {
   enabled      = rhs.enabled;
   init_missing = rhs.init_missing;
   shiftOutput  = rhs.shiftOutput;
-  file         = NULL; // All values copied except this
+  file         = nullptr; // All values copied except this
   int_arr      = rhs.int_arr;
   BoutReal_arr = rhs.BoutReal_arr;
   f2d_arr      = rhs.f2d_arr;
   f3d_arr      = rhs.f3d_arr;
   v2d_arr      = rhs.v2d_arr;
   v3d_arr      = rhs.v3d_arr;
-  filenamelen=FILENAMELEN;
-  filename     = new char[filenamelen];
   return *this;
 }
 
 Datafile::~Datafile() {
+  if (file != nullptr){
+    delete file;
+    file = nullptr;
+  }
   delete[] filename;
 }
 
@@ -225,7 +227,7 @@ void Datafile::close() {
   if(!openclose)
     file->close();
   delete file;
-  file = NULL;
+  file = nullptr;
 }
 
 void Datafile::setLowPrecision() {
@@ -528,7 +530,7 @@ bool Datafile::write(const char *format, ...) const {
   if(format == (const char*) NULL)
     throw BoutException("Datafile::write: No argument given!");
 
-  int filenamelen=512;
+  int filenamelen=FILENAMELEN;
   char * filename=new char[filenamelen];
 
   bout_vsnprintf(filename, filenamelen, format);
@@ -539,6 +541,8 @@ bool Datafile::write(const char *format, ...) const {
   tmp.openw(filename);
   bool ret = tmp.write();
   tmp.close();
+
+  delete[] filename;
   
   return ret;
 }
@@ -551,7 +555,7 @@ bool Datafile::writeVar(const int &i, const char *name) {
   return true;
 }
 
-bool Datafile::writeVar(const BoutReal &r, const char *name) {
+bool Datafile::writeVar(BoutReal r, const char *name) {
   BoutReal *r2 = new BoutReal;
   *r2 = r;
   add(*r2, name);
@@ -616,7 +620,7 @@ bool Datafile::read_f3d(const string &name, Field3D *f, bool save_repeat) {
 
 bool Datafile::write_int(const string &name, int *f, bool save_repeat) {
   if(save_repeat) {
-    file->write_rec(f, name);
+    return file->write_rec(f, name);
   }else {
     return file->write(f, name);
   }
@@ -624,7 +628,7 @@ bool Datafile::write_int(const string &name, int *f, bool save_repeat) {
 
 bool Datafile::write_real(const string &name, BoutReal *f, bool save_repeat) {
   if(save_repeat) {
-    file->write_rec(f, name);
+    return file->write_rec(f, name);
   }else {
     return file->write(f, name);
   }

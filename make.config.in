@@ -178,8 +178,8 @@ else
 ####################################################################
 SUB_LIBS=$(DIRS:%=%.a)
 
-$(TARGET).cxx: checklib
-$(TARGET).o: $(LIB)
+$(SOURCEC): checklib
+$(SOURCEC:%.cxx=%.o): $(LIB)
 $(TARGET): makefile $(BOUT_TOP)/make.config $(OBJ) $(SUB_LIBS)
 	@echo "  Linking" $(TARGET)
 	@$(LD) $(LDFLAGS) -o $(TARGET) $(OBJ) $(BOUT_LIBS) $(SUB_LIBS)
@@ -222,3 +222,21 @@ distclean: clean
 	@echo externalpackages cleaned
 	@touch $(BOUT_TOP)/configure
 	@echo autom4te.cache cleaned
+
+####################################################################
+# Documentation
+####################################################################
+
+MANUAL_DIR=$(BOUT_TOP)/manual
+
+doxygen:
+	cd $(MANUAL_DIR)/doxygen && doxygen Doxyfile
+
+breathe-autogen: doxygen
+	breathe-apidoc -f -o $(MANUAL_DIR)/sphinx/_breathe_autogen $(MANUAL_DIR)/doxygen/bout/xml
+
+sphinx-docs-html: breathe-autogen
+	sphinx-build -b html $(MANUAL_DIR)/sphinx/ $(MANUAL_DIR)/sphinx/_build/
+
+sphinx-docs-latex: breathe-autogen
+	sphinx-build -b latex $(MANUAL_DIR)/sphinx/ $(MANUAL_DIR)/sphinx/_build/

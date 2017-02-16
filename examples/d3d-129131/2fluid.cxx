@@ -561,7 +561,7 @@ int physics_run(BoutReal t) {
     break;
   }
   default: {
-    bout_error("ERROR: Invalid bkgd option\n");
+    throw BoutException("ERROR: Invalid bkgd option\n");
   }
   }
 
@@ -872,7 +872,7 @@ int physics_run(BoutReal t) {
     break;
   }
   default: {
-    bout_error("ERROR: invalid option for iTe_dc\n");
+    throw BoutException("ERROR: invalid option for iTe_dc\n");
   }
   }
   
