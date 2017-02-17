@@ -493,6 +493,8 @@ PRO event_handler, event
       ENDIF
 
       IF info.xptonly_check EQ 0 THEN xpt_only = 0 ELSE xpt_only = 1
+	  widget_control, info.xpt_dist_field, get_value=xpt_mul
+      PRINT, "xpt_mul = ", xpt_mul
 
       WIDGET_CONTROL, info.status, set_value="Generating non-orthogonal mesh ..."
 
@@ -500,7 +502,8 @@ PRO event_handler, event
                          boundary=boundary, strict=info.strict_bndry, $
                          /nrad_flexible, $
                          single_rad_grid=info.single_rad_grid, $
-                         critical=(*(info.rz_grid)).critical, xpt_only=info.xpt_only)
+                         critical=(*(info.rz_grid)).critical, xpt_only=info.xpt_only, $
+						 xpt_mul=xpt_mul)
       IF mesh.error EQ 0 THEN BEGIN
         PRINT, "Successfully generated non-orthogonal mesh"
         WIDGET_CONTROL, info.status, set_value="Successfully generated mesh. All glory to the Hypnotoad!"
