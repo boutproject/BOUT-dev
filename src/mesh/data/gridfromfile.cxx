@@ -172,7 +172,7 @@ bool GridFile::get(Mesh *m, Field2D &var,   const string &name, BoutReal def) {
   ///Ghost region width. This is error prone. Should check if really integer!!
   int mxg = 0.5 * (m->LocalNx - (m->xend - m->xstart + 1));
   int myg = 0.5 * (m->LocalNy - (m->yend - m->ystart + 1));
-  output << "mxg " << mxg << "myg " << myg << endl;
+
   ///Global (x,y) dimensions of field
   const vector<int> field_dimensions = file->getSize(name);
 
