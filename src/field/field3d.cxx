@@ -185,8 +185,11 @@ void Field3D::mergeYupYdown() {
   if(yup_field == this && ydown_field == this)
     return;
 
-  if(yup_field != nullptr || ydown_field != nullptr) {
+  if(yup_field != nullptr){
     delete yup_field;
+  }
+
+  if(ydown_field != nullptr) {
     delete ydown_field;
   }
 
