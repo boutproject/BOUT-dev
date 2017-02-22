@@ -711,17 +711,14 @@ bool isImplemented(DiffLookup* table, DIFF_METHOD method) {
 /// This function is used during initialisation only (i.e. doesn't need to be particularly fast)
 /// Returns DIFF_METHOD, rather than function so can be applied to central and upwind tables
 DIFF_METHOD lookupFunc(DiffLookup *table, const string &label) {
-  DIFF_METHOD matchtype; // code which matches just the first letter ('C', 'U' or 'W')
 
   if(label.empty())
     return table[0].method;
 
-  matchtype = DIFF_DEFAULT;
-
   // Loop through the name lookup table
   for (int i = 0; DiffNameTable[i].method != DIFF_DEFAULT ; ++i ){
     if(strcasecmp(label.c_str(), DiffNameTable[i].label) == 0) {// Whole match
-      return matchtype;
+      return  DiffNameTable[i].method;
     }
   }
   
