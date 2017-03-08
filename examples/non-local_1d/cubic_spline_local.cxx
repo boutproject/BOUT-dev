@@ -61,27 +61,27 @@ void CubicSpline::calculate(const Field3D &pass_input) {
     input = pass_input;
     if (!include_boundary_guard_cells) {
       for (RangeIterator rlow = mesh->iterateBndryLowerY(); !rlow.isDone(); rlow++)
-	for (int jz=0; jz<mesh->LocalNz; jz++)
+	for (int jz=0; jz<mesh->localNz; jz++)
 	  for (int jy=mesh->ystart-1; jy>=0; jy--)
 	    input(rlow.ind,jy,jz) = 0.;
       for (RangeIterator rup = mesh->iterateBndryUpperY(); !rup.isDone(); rup++)
-	for (int jz=0; jz<mesh->LocalNz; jz++)
-// 	  for (int jy=mesh->yend+1-staggered; jy<mesh->LocalNy; jy++)
-	  for (int jy=mesh->yend+1-upper_boundary_offset; jy<mesh->LocalNy; jy++)
+	for (int jz=0; jz<mesh->localNz; jz++)
+// 	  for (int jy=mesh->yend+1-staggered; jy<mesh->localNy; jy++)
+	  for (int jy=mesh->yend+1-upper_boundary_offset; jy<mesh->localNy; jy++)
 	    input(rup.ind,jy,jz) = 0.;
 	    
       grad_input = mesh->indexDDY(input,input.getLocation(), DIFF_DEFAULT); // derivative in index space
       
       // values of grad_input that depended on the guard cells are wrong, replace them with forward/backward derivatives
       for (RangeIterator rlow = mesh->iterateBndryLowerY(); !rlow.isDone(); rlow++)
-	for (int jz=0; jz<mesh->LocalNz; jz++)
+	for (int jz=0; jz<mesh->localNz; jz++)
 	  for (int jy=mesh->ystart+1; jy>=0; jy--) {
 	    grad_input(rlow.ind,jy,jz) = (-11.*input(rlow.ind,jy,jz) + 18.*input(rlow.ind,jy+1,jz) - 9.*input(rlow.ind,jy+2,jz) + 2.*input(rlow.ind,jy+3,jz)) / 6.;
 	  }
       for (RangeIterator rup = mesh->iterateBndryUpperY(); !rup.isDone(); rup++)
-	for (int jz=0; jz<mesh->LocalNz; jz++)
-// 	  for (int jy=mesh->yend-1-staggered; jy<mesh->LocalNy; jy++) {
-	  for (int jy=mesh->yend-1-upper_boundary_offset; jy<mesh->LocalNy; jy++) {
+	for (int jz=0; jz<mesh->localNz; jz++)
+// 	  for (int jy=mesh->yend-1-staggered; jy<mesh->localNy; jy++) {
+	  for (int jy=mesh->yend-1-upper_boundary_offset; jy<mesh->localNy; jy++) {
 	    grad_input(rup.ind,jy,jz) = (11.*input(rup.ind,jy,jz) - 18.*input(rup.ind,jy-1,jz) + 9.*input(rup.ind,jy-2,jz) - 2.*input(rup.ind,jy-3,jz)) / 6.;
 	  }
     }
@@ -90,14 +90,14 @@ void CubicSpline::calculate(const Field3D &pass_input) {
       
       // May need values in the guard cells as well, calculate with forward/backward derivatives
       for (RangeIterator rlow = mesh->iterateBndryLowerY(); !rlow.isDone(); rlow++)
-	for (int jz=0; jz<mesh->LocalNz; jz++)
+	for (int jz=0; jz<mesh->localNz; jz++)
 	  for (int jy=mesh->ystart-1; jy>=0; jy--) {
 	    grad_input(rlow.ind,jy,jz) = (-11.*input(rlow.ind,jy,jz) + 18.*input(rlow.ind,jy+1,jz) - 9.*input(rlow.ind,jy+2,jz) + 2.*input(rlow.ind,jy+3,jz)) / 6.;
 	  }
       for (RangeIterator rup = mesh->iterateBndryUpperY(); !rup.isDone(); rup++)
-	for (int jz=0; jz<mesh->LocalNz; jz++)
-// 	  for (int jy=mesh->yend+1-staggered; jy<mesh->LocalNy; jy++) {
-	  for (int jy=mesh->yend+1-upper_boundary_offset; jy<mesh->LocalNy; jy++) {
+	for (int jz=0; jz<mesh->localNz; jz++)
+// 	  for (int jy=mesh->yend+1-staggered; jy<mesh->localNy; jy++) {
+	  for (int jy=mesh->yend+1-upper_boundary_offset; jy<mesh->localNy; jy++) {
 	    grad_input(rup.ind,jy,jz) = (11.*input(rup.ind,jy,jz) - 18.*input(rup.ind,jy-1,jz) + 9.*input(rup.ind,jy-2,jz) - 2.*input(rup.ind,jy-3,jz)) / 6.;
 	  }
     }

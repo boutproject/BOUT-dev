@@ -32,7 +32,7 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m) {
   //As we're attached to a mesh we can expect the z direction to
   //not change once we've been created so precalculate the complex
   //phases used in transformations
-  int nmodes = mesh.LocalNz/2 + 1;
+  int nmodes = mesh.localNz/2 + 1;
   BoutReal zlength = mesh.coordinates()->zlength();
 
   //Allocate storage for complex intermediate
@@ -42,19 +42,19 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m) {
   //Allocate storage for our 3d vector structures.
   //This could be made more succinct but this approach is fairly
   //verbose --> transparent
-  fromAlignedPhs.resize(mesh.LocalNx);
-  toAlignedPhs.resize(mesh.LocalNx);
+  fromAlignedPhs.resize(mesh.localNx);
+  toAlignedPhs.resize(mesh.localNx);
   
-  yupPhs.resize(mesh.LocalNx);
-  ydownPhs.resize(mesh.LocalNx);
+  yupPhs.resize(mesh.localNx);
+  ydownPhs.resize(mesh.localNx);
 
-  for(int jx=0;jx<mesh.LocalNx;jx++){
-    fromAlignedPhs[jx].resize(mesh.LocalNy);
-    toAlignedPhs[jx].resize(mesh.LocalNy);
+  for(int jx=0;jx<mesh.localNx;jx++){
+    fromAlignedPhs[jx].resize(mesh.localNy);
+    toAlignedPhs[jx].resize(mesh.localNy);
 
-    yupPhs[jx].resize(mesh.LocalNy);
-    ydownPhs[jx].resize(mesh.LocalNy);
-    for(int jy=0;jy<mesh.LocalNy;jy++){
+    yupPhs[jx].resize(mesh.localNy);
+    ydownPhs[jx].resize(mesh.localNy);
+    for(int jy=0;jy<mesh.localNy;jy++){
       fromAlignedPhs[jx][jy].resize(nmodes);
       toAlignedPhs[jx][jy].resize(nmodes);
       
@@ -64,8 +64,8 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m) {
   }
 	
   //To/From field aligned phases
-  for(int jx=0;jx<mesh.LocalNx;jx++){
-    for(int jy=0;jy<mesh.LocalNy;jy++){
+  for(int jx=0;jx<mesh.localNx;jx++){
+    for(int jy=0;jy<mesh.localNy;jy++){
       for(int jz=0;jz<nmodes;jz++) {
   	BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
   	fromAlignedPhs[jx][jy][jz] = dcomplex(cos(kwave*zShift(jx,jy)) , -sin(kwave*zShift(jx,jy)));
@@ -75,7 +75,7 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m) {
   }
 
   //Yup/Ydown phases -- note we don't shift in the boundaries/guards
-  for(int jx=0;jx<mesh.LocalNx;jx++){
+  for(int jx=0;jx<mesh.localNx;jx++){
     for(int jy=mesh.ystart;jy<=mesh.yend;jy++){
       BoutReal yupShift = zShift(jx,jy) - zShift(jx,jy+1);
       BoutReal ydownShift = zShift(jx,jy) - zShift(jx,jy-1);
@@ -100,7 +100,7 @@ void ShiftedMetric::calcYUpDown(Field3D &f) {
   Field3D& yup = f.yup();
   yup.allocate();
 
-  for(int jx=0;jx<mesh.LocalNx;jx++) {
+  for(int jx=0;jx<mesh.localNx;jx++) {
     for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
       shiftZ(&(f(jx,jy+1,0)), yupPhs[jx][jy], &(yup(jx,jy+1,0)));
     }
@@ -109,7 +109,7 @@ void ShiftedMetric::calcYUpDown(Field3D &f) {
   Field3D& ydown = f.ydown();
   ydown.allocate();
 
-  for(int jx=0;jx<mesh.LocalNx;jx++) {
+  for(int jx=0;jx<mesh.localNx;jx++) {
     for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
       shiftZ(&(f(jx,jy-1,0)), ydownPhs[jx][jy], &(ydown(jx,jy-1,0)));
     }
@@ -133,14 +133,14 @@ const Field3D ShiftedMetric::fromFieldAligned(const Field3D &f) {
 }
 
 const Field3D ShiftedMetric::shiftZ(const Field3D f, const arr3Dvec &phs) {
-  if(mesh.LocalNz == 1)
+  if(mesh.localNz == 1)
     return f; // Shifting makes no difference
   
   Field3D result;
   result.allocate();
   
-  for(int jx=0;jx<mesh.LocalNx;jx++) {
-    for(int jy=0;jy<mesh.LocalNy;jy++) {
+  for(int jx=0;jx<mesh.localNx;jx++) {
+    for(int jy=0;jy<mesh.localNy;jy++) {
       shiftZ(f(jx,jy), phs[jx][jy], result(jx,jy));
     }
   }
@@ -151,7 +151,7 @@ const Field3D ShiftedMetric::shiftZ(const Field3D f, const arr3Dvec &phs) {
 
 void ShiftedMetric::shiftZ(const BoutReal *in, const std::vector<dcomplex> &phs, BoutReal *out) {
   // Take forward FFT
-  rfft(in, mesh.LocalNz, &cmplx[0]);
+  rfft(in, mesh.localNz, &cmplx[0]);
 
   //Following is an algorithm approach to write a = a*b where a and b are
   //vectors of dcomplex.
@@ -163,20 +163,20 @@ void ShiftedMetric::shiftZ(const BoutReal *in, const std::vector<dcomplex> &phs,
     cmplx[jz] *= phs[jz];
   }
 
-  irfft(&cmplx[0], mesh.LocalNz, out); // Reverse FFT
+  irfft(&cmplx[0], mesh.localNz, out); // Reverse FFT
 }
 
 //Old approach retained so we can still specify a general zShift
 const Field3D ShiftedMetric::shiftZ(const Field3D f, const Field2D zangle) {
-  if(mesh.LocalNz == 1)
+  if(mesh.localNz == 1)
     return f; // Shifting makes no difference
   
   Field3D result;
   result.allocate();
 
-  for(int jx=0;jx<mesh.LocalNx;jx++) {
-    for(int jy=0;jy<mesh.LocalNy;jy++) {
-      shiftZ(f(jx,jy), mesh.LocalNz, zangle(jx,jy), result(jx,jy));
+  for(int jx=0;jx<mesh.localNx;jx++) {
+    for(int jy=0;jy<mesh.localNy;jy++) {
+      shiftZ(f(jx,jy), mesh.localNz, zangle(jx,jy), result(jx,jy));
     }
   }
   

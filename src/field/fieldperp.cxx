@@ -37,8 +37,8 @@ FieldPerp::FieldPerp() {
   // Get mesh size
 
   if(mesh) {
-    nx = mesh->LocalNx;
-    nz = mesh->LocalNz;
+    nx = mesh->localNx;
+    nz = mesh->localNz;
   }
   
 #ifdef CHECK

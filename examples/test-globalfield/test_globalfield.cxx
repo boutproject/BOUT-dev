@@ -19,8 +19,8 @@ int physics_init(bool restarting) {
   localX.allocate();
   localY.allocate();
   
-  for(int x=0;x<mesh->LocalNx;x++) {
-    for(int y=0;y<mesh->LocalNy;y++) {
+  for(int x=0;x<mesh->localNx;x++) {
+    for(int y=0;y<mesh->localNy;y++) {
       localX(x,y) = mesh->XGLOBAL(x);
       localY(x,y) = mesh->YGLOBAL(y);
     }
@@ -70,9 +70,9 @@ int physics_init(bool restarting) {
   localX3D.allocate();
   localY3D.allocate();
   
-  for(int x=0;x<mesh->LocalNx;x++)
-    for(int y=0;y<mesh->LocalNy;y++)
-      for(int z=0;z<mesh->LocalNz;z++) {
+  for(int x=0;x<mesh->localNx;x++)
+    for(int y=0;y<mesh->localNy;y++)
+      for(int z=0;z<mesh->localNz;z++) {
         localX3D(x,y,z) = mesh->XGLOBAL(x) + z;
         localY3D(x,y,z) = mesh->YGLOBAL(y) + z;
       }
@@ -104,7 +104,7 @@ int physics_init(bool restarting) {
   bool scatter_pass3D = true;
   for(int x=mesh->xstart;x<=mesh->xend;x++)
     for(int y=mesh->ystart;y<=mesh->yend;y++)
-      for(int z=0;z<mesh->LocalNz;z++) {
+      for(int z=0;z<mesh->localNz;z++) {
         if( (localX3D(x,y,z) != scatX3D(x,y,z)) || (localY3D(x,y,z) != scatY3D(x,y,z)) ) {
           output.write("%d, %d, %d :  (%e, %e) (%e, %e)", x, y, z,
                        localX3D(x,y,z), localY3D(x,y,z), scatX3D(x,y,z), scatY3D(x,y,z));

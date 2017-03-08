@@ -51,7 +51,7 @@ LaplaceSPT::LaplaceSPT(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0) {
   if(mesh->hasBndryLowerY() && include_yguards)
     ys = 0; // Mesh contains a lower boundary
   if(mesh->hasBndryUpperY() && include_yguards)
-    ye = mesh->LocalNy-1; // Contains upper boundary
+    ye = mesh->localNy-1; // Contains upper boundary
   
   alldata = new SPT_data[ye - ys + 1];
   alldata -= ys; // Re-number indices to start at ys
@@ -60,7 +60,7 @@ LaplaceSPT::LaplaceSPT(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0) {
   }
 
   // Temporary array for taking FFTs
-  int ncz = mesh->LocalNz;
+  int ncz = mesh->localNz;
   dc1d = new dcomplex[ncz/2 + 1];
 }
 
@@ -88,13 +88,13 @@ const FieldPerp LaplaceSPT::solve(const FieldPerp &b, const FieldPerp &x0) {
     if((inner_boundary_flags & INVERT_SET) && mesh->firstX()) {
       // Copy x0 inner boundary into bs
       for(int ix=0;ix<xbndry;ix++)
-        for(int iz=0;iz<mesh->LocalNz;iz++)
+        for(int iz=0;iz<mesh->localNz;iz++)
           bs[ix][iz] = x0[ix][iz];
     }
     if((outer_boundary_flags & INVERT_SET) && mesh->lastX()) {
       // Copy x0 outer boundary into bs
-      for(int ix=mesh->LocalNx-1;ix>=mesh->LocalNx-xbndry;ix--)
-        for(int iz=0;iz<mesh->LocalNz;iz++)
+      for(int ix=mesh->localNx-1;ix>=mesh->localNx-xbndry;ix--)
+        for(int iz=0;iz<mesh->localNz;iz++)
           bs[ix][iz] = x0[ix][iz];
     }
     start(bs, slicedata);
@@ -158,15 +158,15 @@ const Field3D LaplaceSPT::solve(const Field3D &b, const Field3D &x0) {
     if((inner_boundary_flags & INVERT_SET) && mesh->firstX()) {
       // Copy x0 inner boundary into bs
       for(int ix=0;ix<xbndry;ix++)
-        for(int iy=0;iy<mesh->LocalNy;iy++)
-          for(int iz=0;iz<mesh->LocalNz;iz++)
+        for(int iy=0;iy<mesh->localNy;iy++)
+          for(int iz=0;iz<mesh->localNz;iz++)
             bs(ix,iy,iz) = x0(ix,iy,iz);
     }
     if((outer_boundary_flags & INVERT_SET) && mesh->lastX()) {
       // Copy x0 outer boundary into bs
-      for(int ix=mesh->LocalNx-1;ix>=mesh->LocalNx-xbndry;ix--)
-        for(int iy=0;iy<mesh->LocalNy;iy++)
-          for(int iz=0;iz<mesh->LocalNz;iz++)
+      for(int ix=mesh->localNx-1;ix>=mesh->localNx-xbndry;ix--)
+        for(int iy=0;iy<mesh->localNy;iy++)
+          for(int iz=0;iz<mesh->localNz;iz++)
             bs(ix,iy,iz) = x0(ix,iy,iz);
     }
     return solve(bs);
@@ -266,14 +266,14 @@ int LaplaceSPT::start(const FieldPerp &b, SPT_data &data) {
 
   data.jy = b.getIndex();
 
-  int mm = mesh->LocalNz/2 + 1;
-  data.allocate(mm, mesh->LocalNx); // Make sure data is allocated. Already allocated -> does nothing
+  int mm = mesh->localNz/2 + 1;
+  data.allocate(mm, mesh->localNx); // Make sure data is allocated. Already allocated -> does nothing
   
   /// Take FFTs of data
 
-  int ncz = mesh->LocalNz;
+  int ncz = mesh->localNz;
   
-  for(int ix=0; ix < mesh->LocalNx; ix++) {
+  for(int ix=0; ix < mesh->localNx; ix++) {
     rfft(b[ix], ncz, dc1d);
     for(int kz = 0; kz <= maxmode; kz++)
       data.bk[kz][ix] = dc1d[kz];
@@ -353,7 +353,7 @@ int LaplaceSPT::next(SPT_data &data) {
 	// Back-substitute
 	gp = 0.0;
 	up = 0.0;
-	tridagBack(data.xk[kz]+mesh->xstart, mesh->LocalNx-mesh->xstart, 
+	tridagBack(data.xk[kz]+mesh->xstart, mesh->localNx-mesh->xstart, 
                    data.gam[kz]+mesh->xstart, gp, up);
 	data.buffer[4*kz]     = gp.real();
 	data.buffer[4*kz + 1] = gp.imag();
@@ -450,8 +450,8 @@ int LaplaceSPT::next(SPT_data &data) {
   @param[out]   x      The result
 */
 void LaplaceSPT::finish(SPT_data &data, FieldPerp &x) {
-  int ncx = mesh->LocalNx-1;
-  int ncz = mesh->LocalNz;
+  int ncx = mesh->localNx-1;
+  int ncz = mesh->localNz;
 
   x.allocate();
   x.setIndex(data.jy);
@@ -478,14 +478,14 @@ void LaplaceSPT::finish(SPT_data &data, FieldPerp &x) {
   if(!mesh->firstX()) {
     // Set left boundary to zero (Prevent unassigned values in corners)
     for(int ix=0; ix<mesh->xstart; ix++){
-      for(int kz=0;kz<mesh->LocalNz;kz++)
+      for(int kz=0;kz<mesh->localNz;kz++)
 	x(ix,kz) = 0.0;
     }
   }
   if(!mesh->lastX()) {
     // Same for right boundary
-    for(int ix=mesh->xend+1; ix<mesh->LocalNx; ix++){
-      for(int kz=0;kz<mesh->LocalNz;kz++)
+    for(int ix=mesh->xend+1; ix<mesh->localNx; ix++){
+      for(int kz=0;kz<mesh->localNz;kz++)
 	x(ix,kz) = 0.0;
     }
   }

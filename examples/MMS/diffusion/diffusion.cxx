@@ -71,7 +71,7 @@ int physics_init(bool restarting) {
   //Set initial condition to MS at t = 0.
   for (int xi = mesh->xstart; xi < mesh->xend +1; xi++){
     for (int yj = mesh->ystart; yj < mesh->yend + 1; yj++){
-      for (int zk = 0; zk < mesh->LocalNz; zk++) {
+      for (int zk = 0; zk < mesh->localNz; zk++) {
         output.write("Initial condition at %d,%d,%d\n", xi, yj, zk);
         N(xi, yj, zk) = MS(0.,mesh->GlobalX(xi)*Lx,mesh->GlobalY(yj)*Ly,coord->dz*zk);
       }
@@ -128,15 +128,15 @@ BoutReal dxMS(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z) {
 
 //Manufactured solution
 void solution(Field3D &f, BoutReal t, BoutReal D) {
-  int bx = (mesh->LocalNx - (mesh->xend - mesh->xstart + 1)) / 2;
-  int by = (mesh->LocalNy - (mesh->yend - mesh->ystart + 1)) / 2;
+  int bx = (mesh->localNx - (mesh->xend - mesh->xstart + 1)) / 2;
+  int by = (mesh->localNy - (mesh->yend - mesh->ystart + 1)) / 2;
   BoutReal x,y,z;
 
   for (int xi = mesh->xstart - bx; xi < mesh->xend + bx + 1; xi++){
     for (int yj = mesh->ystart - by; yj < mesh->yend + by + 1; yj++){
       x = mesh->GlobalX(xi);
       y = mesh->GlobalY(yj);//GlobalY not fixed yet
-      for (int zk = 0; zk < mesh->LocalNz; zk++) {
+      for (int zk = 0; zk < mesh->localNz; zk++) {
         z = coord->dz*zk;
         output.write("Solution at %d,%d,%d\n", xi, yj, zk);
         f(xi, yj, zk) = MS(t,x,y,z);
@@ -159,7 +159,7 @@ Field3D MMS_Source(BoutReal t)
 
   for(xi=mesh->xstart;xi<mesh->xend+1;xi++)
     for(yj=mesh->ystart;yj < mesh->yend+1;yj++){
-      for(zk=0;zk<mesh->LocalNz;zk++){
+      for(zk=0;zk<mesh->localNz;zk++){
         x = mesh->GlobalX(xi)*Lx;
         y = mesh->GlobalY(yj)*Ly;
         z = zk*coord->dz;
@@ -177,7 +177,7 @@ int error_monitor(Solver *solver, BoutReal simtime, int iter, int NOUT) {
   E_N = 0.;
   for (int xi = mesh->xstart; xi < mesh->xend + 1; xi++){
     for (int yj = mesh->ystart ; yj < mesh->yend + 1; yj++){
-      for (int zk = 0; zk < mesh->LocalNz ; zk++) {
+      for (int zk = 0; zk < mesh->localNz ; zk++) {
         E_N(xi, yj, zk) = N(xi, yj, zk) - S(xi, yj, zk);
 
         output.write("Error(%d,%d,%d): %e, %e -> %e\n",

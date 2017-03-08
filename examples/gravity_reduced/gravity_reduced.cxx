@@ -325,7 +325,7 @@ int physics_run(BoutReal t)
   for(rlow.first(); !rlow.isDone(); rlow.next()) {
     int x = rlow.ind;
     for(int y=2;y>=0;y--) 
-      for(int z=0;z<mesh->LocalNz;z++) {
+      for(int z=0;z<mesh->localNz;z++) {
         ddt(rho)(x,y,z) = ddt(rho)(x,y+1,z);
         ddt(p)(x,y,z) = ddt(p)(x,y+1,z);
         ddt(Psi)(x,y,z) = ddt(Psi)(x,y+1,z);

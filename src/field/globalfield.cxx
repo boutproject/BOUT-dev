@@ -72,7 +72,7 @@ void GlobalField::proc_size(int proc, int *lx, int *ly, int *lz) const {
   *lx = mesh->xend - mesh->xstart + 1;
   *ly = mesh->yend - mesh->ystart + 1;
   if(lz != NULL)
-    *lz = mesh->LocalNz;
+    *lz = mesh->localNz;
   
   int nxpe = mesh->getNXPE();
   int pex = proc % nxpe;
@@ -247,7 +247,7 @@ int GlobalField2D::msg_len(int proc) const {
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-GlobalField3D::GlobalField3D(Mesh *m, int proc) : GlobalField(m, proc, m->GlobalNx, m->GlobalNy-2*m->ystart, m->LocalNz), 
+GlobalField3D::GlobalField3D(Mesh *m, int proc) : GlobalField(m, proc, m->GlobalNx, m->GlobalNy-2*m->ystart, m->localNz), 
   data_valid(false) {
   
   if((proc < 0) || (proc >= npes))
@@ -301,7 +301,7 @@ void GlobalField3D::gather(const Field3D &f) {
     
     for(int x=0;x<xsize;x++)
       for(int y=0;y<ysize;y++) 
-        for(int z=0;z<mesh->LocalNz;z++) {
+        for(int z=0;z<mesh->localNz;z++) {
           (*this)(x+xorig,y+yorig,z) =  f(local_xorig+x, local_yorig+y, z);
         }
     
@@ -318,11 +318,11 @@ void GlobalField3D::gather(const Field3D &f) {
           proc_origin(pe, &xorig, &yorig);
           int xsize, ysize;
           proc_size(pe, &xsize, &ysize);
-          int zsize = mesh->LocalNz;
+          int zsize = mesh->localNz;
           
           for(int x=0;x<xsize;x++)
             for(int y=0;y<ysize;y++)
-              for(int z=0;z<mesh->LocalNz;z++) {
+              for(int z=0;z<mesh->localNz;z++) {
                 (*this)(x+xorig,y+yorig,z) =  buffer[pe][x*ysize*zsize + y*zsize + z];
               }
           
@@ -338,11 +338,11 @@ void GlobalField3D::gather(const Field3D &f) {
     proc_local_origin(mype, &local_xorig, &local_yorig);
     int xsize, ysize;
     proc_size(mype, &xsize, &ysize);
-    int zsize = mesh->LocalNz;
+    int zsize = mesh->localNz;
     
     for(int x=0;x<xsize;x++)
       for(int y=0;y<ysize;y++)
-        for(int z=0;z<mesh->LocalNz;z++) {
+        for(int z=0;z<mesh->localNz;z++) {
           buffer[0][x*ysize*zsize + y*zsize + z] = f(local_xorig+x, local_yorig+y, z);
         }
     
@@ -366,7 +366,7 @@ const Field3D GlobalField3D::scatter() const {
       proc_origin(p, &xorig, &yorig);
       int xsize, ysize;
       proc_size(p, &xsize, &ysize);
-      int zsize = mesh->LocalNz;
+      int zsize = mesh->localNz;
       
       // Send to processor p
       for(int x=0;x<xsize;x++)
@@ -384,7 +384,7 @@ const Field3D GlobalField3D::scatter() const {
     proc_origin(mype, &xorig, &yorig);
     int xsize, ysize;
     proc_size(mype, &xsize, &ysize);
-    int zsize = mesh->LocalNz;
+    int zsize = mesh->localNz;
     
     // Copy to result
     for(int x=0;x<xsize;x++)
@@ -402,7 +402,7 @@ const Field3D GlobalField3D::scatter() const {
     proc_origin(mype, &xorig, &yorig);
     int xsize, ysize;
     proc_size(mype, &xsize, &ysize);
-    int zsize = mesh->LocalNz;
+    int zsize = mesh->localNz;
     
     for(int x=0;x<xsize;x++)
       for(int y=0;y<ysize;y++) 
@@ -416,6 +416,6 @@ const Field3D GlobalField3D::scatter() const {
 int GlobalField3D::msg_len(int proc) const {
   int xsize, ysize;
   proc_size(proc, &xsize, &ysize);
-  int zsize = mesh->LocalNz;
+  int zsize = mesh->localNz;
   return xsize * ysize * zsize;
 }

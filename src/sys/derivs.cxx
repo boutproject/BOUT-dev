@@ -328,9 +328,9 @@ const Field3D D2DYDZ(const Field3D &f) {
   result.allocate();
   for(int i=mesh->xstart;i<=mesh->xend;i++)
     for(int j=mesh->ystart;j<=mesh->yend;j++) 
-      for(int k=0;k<mesh->LocalNz;k++) {
-        int kp = (k+1) % (mesh->LocalNz);
-        int km = (k-1+mesh->LocalNz) % (mesh->LocalNz);
+      for(int k=0;k<mesh->localNz;k++) {
+        int kp = (k+1) % (mesh->localNz);
+        int km = (k-1+mesh->localNz) % (mesh->localNz);
         result(i,j,k) = 0.25*( +(f(i,j+1,kp) - f(i,j-1,kp))/(mesh->coordinates()->dy(i,j+1))
                                -(f(i,j+1,km) - f(i,j-1,km))/(mesh->coordinates()->dy(i,j-1)) )
           / mesh->coordinates()->dz;

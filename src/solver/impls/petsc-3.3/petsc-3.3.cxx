@@ -331,7 +331,7 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
     PetscInt ny = mesh->yend;//MYSUB;
 
     /* number of z points */
-    PetscInt nz  = mesh->LocalNz;
+    PetscInt nz  = mesh->localNz;
 
     /* number of degrees (variables) at each grid point */
     PetscInt dof = n3Dvars();
@@ -431,7 +431,7 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
             xmin = 0; // This processor includes a boundary region
           int xmax = mesh->xend;
           if(mesh->lastX())
-            xmax = mesh->LocalNx-1;
+            xmax = mesh->localNx-1;
 
           for(i=xmin; i <= xmax; i++) {
             gi = mesh->XGLOBAL(i);

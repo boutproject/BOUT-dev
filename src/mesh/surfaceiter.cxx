@@ -76,7 +76,7 @@ void SurfaceIter::next() {
     return;
   
   xpos++;
-  if(xpos >= m->LocalNx)
+  if(xpos >= m->localNx)
     xpos = -1;
 }
 

@@ -45,9 +45,9 @@ Field3D::Field3D(Mesh *msh) : background(nullptr), fieldmesh(msh), deriv(nullptr
 #endif
 
   if(fieldmesh) {
-    nx = fieldmesh->LocalNx;
-    ny = fieldmesh->LocalNy;
-    nz = fieldmesh->LocalNz;
+    nx = fieldmesh->localNx;
+    ny = fieldmesh->localNy;
+    nz = fieldmesh->localNz;
   }
 #ifdef CHECK
   else {
@@ -76,9 +76,9 @@ Field3D::Field3D(const Field3D& f) : background(nullptr),
 #endif
 
   if(fieldmesh) {
-    nx = fieldmesh->LocalNx;
-    ny = fieldmesh->LocalNy;
-    nz = fieldmesh->LocalNz;
+    nx = fieldmesh->localNx;
+    ny = fieldmesh->localNy;
+    nz = fieldmesh->localNz;
   }
 #ifdef CHECK
   else {
@@ -102,9 +102,9 @@ Field3D::Field3D(const Field2D& f) : background(nullptr), fieldmesh(nullptr), de
   boundaryIsSet = false;
 
   fieldmesh = mesh;
-  nx = fieldmesh->LocalNx;
-  ny = fieldmesh->LocalNy;
-  nz = fieldmesh->LocalNz;
+  nx = fieldmesh->localNx;
+  ny = fieldmesh->localNy;
+  nz = fieldmesh->localNz;
   
   *this = f;
 }
@@ -118,9 +118,9 @@ Field3D::Field3D(const BoutReal val) : background(nullptr), fieldmesh(nullptr), 
   boundaryIsSet = false;
 
   fieldmesh = mesh;
-  nx = fieldmesh->LocalNx;
-  ny = fieldmesh->LocalNy;
-  nz = fieldmesh->LocalNz;
+  nx = fieldmesh->localNx;
+  ny = fieldmesh->localNy;
+  nz = fieldmesh->localNz;
   
   *this = val;
 }
@@ -152,9 +152,9 @@ void Field3D::allocate() {
     if(!fieldmesh) {
       /// If no mesh, use the global
       fieldmesh = mesh;
-      nx = fieldmesh->LocalNx;
-      ny = fieldmesh->LocalNy;
-      nz = fieldmesh->LocalNz;
+      nx = fieldmesh->localNx;
+      ny = fieldmesh->localNy;
+      nz = fieldmesh->localNz;
     }
     data = Array<BoutReal>(nx*ny*nz);
   }else
@@ -1264,14 +1264,14 @@ const Field3D filter(const Field3D &var, int N0) {
   
   ASSERT1(var.isAllocated());
   
-  int ncz = mesh->LocalNz;
+  int ncz = mesh->localNz;
   Array<dcomplex> f(ncz/2 + 1);
   
   Field3D result;
   result.allocate();
   
-  for(int jx=0;jx<mesh->LocalNx;jx++) {
-    for(int jy=0;jy<mesh->LocalNy;jy++) {
+  for(int jx=0;jx<mesh->localNx;jx++) {
+    for(int jy=0;jy<mesh->localNy;jy++) {
 
       rfft(&(var(jx, jy, 0)), ncz, f.begin()); // Forward FFT
 
@@ -1303,7 +1303,7 @@ const Field3D lowPass(const Field3D &var, int zmax) {
 
   ASSERT1(var.isAllocated());
   
-  int ncz = mesh->LocalNz;
+  int ncz = mesh->localNz;
   
   // Create an array 
   Array<dcomplex> f(ncz/2 + 1);
@@ -1316,8 +1316,8 @@ const Field3D lowPass(const Field3D &var, int zmax) {
   Field3D result;
   result.allocate();
   
-  for(int jx=0;jx<mesh->LocalNx;jx++) {
-    for(int jy=0;jy<mesh->LocalNy;jy++) {
+  for(int jx=0;jx<mesh->localNx;jx++) {
+    for(int jy=0;jy<mesh->localNy;jy++) {
       // Take FFT in the Z direction
       rfft(&(var(jx,jy,0)), ncz, f.begin());
       
@@ -1345,7 +1345,7 @@ const Field3D lowPass(const Field3D &var, int zmax, int zmin) {
 
   ASSERT1(var.isAllocated());
 
-  int ncz = mesh->LocalNz;
+  int ncz = mesh->localNz;
   Array<dcomplex> f(ncz/2 + 1);
  
   if(((zmax >= ncz/2) || (zmax < 0)) && (zmin < 0)) {
@@ -1356,8 +1356,8 @@ const Field3D lowPass(const Field3D &var, int zmax, int zmin) {
   Field3D result;
   result.allocate();
   
-  for(int jx=0;jx<mesh->LocalNx;jx++) {
-    for(int jy=0;jy<mesh->LocalNy;jy++) {
+  for(int jx=0;jx<mesh->localNx;jx++) {
+    for(int jy=0;jy<mesh->localNy;jy++) {
       // Take FFT in the Z direction
       rfft(&(var(jx,jy,0)), ncz, f.begin());
       
@@ -1390,7 +1390,7 @@ void shiftZ(Field3D &var, int jx, int jy, double zangle) {
   ASSERT1(var.isAllocated()); // Check that var has some data
   var.allocate(); // Ensure that var is unique
   
-  int ncz = mesh->LocalNz;
+  int ncz = mesh->localNz;
   if(ncz == 1)
     return; // Shifting doesn't do anything
   
@@ -1409,8 +1409,8 @@ void shiftZ(Field3D &var, int jx, int jy, double zangle) {
 }
 
 void shiftZ(Field3D &var, double zangle) {
-  for(int x=0;x<mesh->LocalNx;x++) 
-    for(int y=0;mesh->LocalNy;y++)
+  for(int x=0;x<mesh->localNx;x++) 
+    for(int y=0;mesh->localNy;y++)
       shiftZ(var, x, y, zangle);
 }
 
@@ -1435,7 +1435,7 @@ void checkData(const Field3D &f)  {
     throw BoutException("Field3D: Operation on empty data\n");
   
   for(auto d : f) {
-    if( (d.x < mesh->xstart) or (d.x > mesh->xend) or (d.y < mesh->ystart) or (d.y > mesh->yend) or (d.z >= mesh->LocalNz))
+    if( (d.x < mesh->xstart) or (d.x > mesh->xend) or (d.y < mesh->ystart) or (d.y > mesh->yend) or (d.z >= mesh->localNz))
       continue; // Exclude boundary cells
     
     if(!finite(f[d]))
@@ -1466,12 +1466,12 @@ Field2D DC(const Field3D &f) {
   Field2D result;
   result.allocate();
 
-  for(int i=0;i<mesh->LocalNx;i++)
-    for(int j=0;j<mesh->LocalNy;j++) {
+  for(int i=0;i<mesh->localNx;i++)
+    for(int j=0;j<mesh->localNy;j++) {
       result(i,j) = 0.0;
-      for(int k=0;k<mesh->LocalNz;k++)
+      for(int k=0;k<mesh->localNz;k++)
 	result(i,j) += f(i,j,k);
-      result(i,j) /= (mesh->LocalNz);
+      result(i,j) /= (mesh->localNz);
     }
   
   return result;

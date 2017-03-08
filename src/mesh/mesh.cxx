@@ -200,16 +200,16 @@ void Mesh::communicate(FieldPerp &f) {
   comm_handle recv[2];
   
   int nin = xstart; // Number of x points in inner guard cell
-  int nout = LocalNx-xend-1; // Number of x points in outer guard cell
+  int nout = localNx-xend-1; // Number of x points in outer guard cell
 
   // Post receives for guard cell regions
 
-  recv[0] = irecvXIn(f[0],       nin*LocalNz, 0);
-  recv[1] = irecvXOut(f[xend+1], nout*LocalNz, 1);
+  recv[0] = irecvXIn(f[0],       nin*localNz, 0);
+  recv[1] = irecvXOut(f[xend+1], nout*localNz, 1);
   
   // Send data
-  sendXIn(f[xstart], nin*LocalNz, 1);
-  sendXOut(f[xend-nout+1], nout*LocalNz, 0);
+  sendXIn(f[xstart], nin*localNz, 1);
+  sendXOut(f[xend-nout+1], nout*localNz, 0);
  
   // Wait for receive
   wait(recv[0]);
@@ -222,7 +222,7 @@ int Mesh::msg_len(const vector<FieldData*> &var_list, int xge, int xlt, int yge,
   /// Loop over variables
   for(const auto& var : var_list) {
     if(var->is3D()) {
-      len += (xlt - xge) * (ylt - yge) * LocalNz * var->BoutRealSize();
+      len += (xlt - xge) * (ylt - yge) * localNz * var->BoutRealSize();
     } else {
       len += (xlt - xge) * (ylt - yge) * var->BoutRealSize();
     }

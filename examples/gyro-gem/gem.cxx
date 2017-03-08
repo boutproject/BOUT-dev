@@ -595,15 +595,15 @@ void calc_aux() {
     // at the boundary
     
     for(int i=0;i<jpar_bndry_width;i++)
-      for(int j=0;j<mesh->LocalNy;j++)
-	for(int k=0;k<mesh->LocalNz;k++) {
+      for(int j=0;j<mesh->localNy;j++)
+	for(int k=0;k<mesh->localNz;k++) {
 	  if(mesh->firstX()) {
 	    Ui[i][j][k] = 0.0;
             Ue[i][j][k] = 0.0;
           }
 	  if(mesh->lastX()) {
-	    Ui[mesh->LocalNx-1-i][j][k] = 0.0;
-            Ue[mesh->LocalNx-1-i][j][k] = 0.0;
+	    Ui[mesh->localNx-1-i][j][k] = 0.0;
+            Ue[mesh->localNx-1-i][j][k] = 0.0;
           }
 	}
   }
