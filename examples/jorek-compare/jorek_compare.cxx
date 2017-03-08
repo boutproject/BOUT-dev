@@ -431,15 +431,15 @@ int physics_run(BoutReal t) {
     // Boundary in jpar
     if(mesh->firstX()) {
       for(int i=jpar_bndry_width;i>=0;i--)
-        for(int j=0;j<mesh->localNy;j++)
-          for(int k=0;k<mesh->localNz;k++) {
+        for(int j=0;j<mesh->local_ny;j++)
+          for(int k=0;k<mesh->local_nz;k++) {
             Jpar[i][j][k] = 0.5*Jpar[i+1][j][k];
           }
     }
     if(mesh->lastX()) {
-      for(int i=mesh->localNx-jpar_bndry_width-1;i<mesh->localNx;i++)
-        for(int j=0;j<mesh->localNy;j++)
-          for(int k=0;k<mesh->localNz;k++) {
+      for(int i=mesh->local_nx-jpar_bndry_width-1;i<mesh->local_nx;i++)
+        for(int j=0;j<mesh->local_ny;j++)
+          for(int k=0;k<mesh->local_nz;k++) {
             Jpar[i][j][k] = 0.5*Jpar[i-1][j][k];
           }
     }

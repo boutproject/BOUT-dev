@@ -68,9 +68,9 @@ int physics_init(bool restarting) {
   }
   exp=3;
 
-  for (int jx=0;jx<mesh->localNx;++jx)
-    for (int jy=0;jy<mesh->localNy;++jy)
-      for (int jz=0;jz<mesh->localNz;++jz){
+  for (int jx=0;jx<mesh->local_nx;++jx)
+    for (int jy=0;jy<mesh->local_ny;++jy)
+      for (int jz=0;jz<mesh->local_nz;++jz){
 	if (d3(jx,jy,jz) != exp) {
 	  output.print("%d %d %d: expected %g got %g",jx,jy,jz,exp,d3(jx,jy,jz)) ;
 	};
@@ -84,13 +84,13 @@ int physics_init(bool restarting) {
     d3[i]=4;
   }
 
-  for (int jx=0;jx<mesh->localNx;++jx){
+  for (int jx=0;jx<mesh->local_nx;++jx){
     if (jx < mesh->xstart || jx > mesh->xend)
       exp=3;
     else
       exp=4;
-    for (int jy=0;jy<mesh->localNy;++jy)
-      for (int jz=0;jz<mesh->localNz;++jz)
+    for (int jy=0;jy<mesh->local_ny;++jy)
+      for (int jz=0;jz<mesh->local_nz;++jz)
 	assert(d3(jx,jy,jz)==exp);
   }
   d3=3;
@@ -99,13 +99,13 @@ int physics_init(bool restarting) {
     if (d3[i] != exp) PRINT_DEBUG;
     d3[i]=4;
   }
-  for (int jx=0;jx<mesh->localNx;++jx)
-    for (int jy=0;jy<mesh->localNy;++jy){
+  for (int jx=0;jx<mesh->local_nx;++jx)
+    for (int jy=0;jy<mesh->local_ny;++jy){
       if (jy < mesh->ystart || jy > mesh->yend)
 	exp=3;
       else
 	exp=4;
-      for (int jz=0;jz<mesh->localNz;++jz)
+      for (int jz=0;jz<mesh->local_nz;++jz)
 	assert(d3(jx,jy,jz)==exp);
     }
   d3=3;exp=3;
@@ -114,10 +114,10 @@ int physics_init(bool restarting) {
     if (d3[i] != exp) PRINT_DEBUG;
     d3[i]=4;
   }
-  for (int jx=0;jx<mesh->localNx;++jx)
-    for (int jy=0;jy<mesh->localNy;++jy)
-      for (int jz=0;jz<mesh->localNz;++jz){
-	if (jz == mesh->localNz)
+  for (int jx=0;jx<mesh->local_nx;++jx)
+    for (int jy=0;jy<mesh->local_ny;++jy)
+      for (int jz=0;jz<mesh->local_nz;++jz){
+	if (jz == mesh->local_nz)
 	  exp=3;
 	else
 	  exp=4;
@@ -129,10 +129,10 @@ int physics_init(bool restarting) {
     if (d3[i] != exp) PRINT_DEBUG;
     d3[i]=4;
   }
-  for (int jx=0;jx<mesh->localNx;++jx)
-    for (int jy=0;jy<mesh->localNy;++jy)
-      for (int jz=0;jz<mesh->localNz;++jz){
-	if (jz == mesh->localNz ||
+  for (int jx=0;jx<mesh->local_nx;++jx)
+    for (int jy=0;jy<mesh->local_ny;++jy)
+      for (int jz=0;jz<mesh->local_nz;++jz){
+	if (jz == mesh->local_nz ||
 	    jy < mesh->ystart || jy > mesh->yend ||
 	    jx < mesh->xstart || jx > mesh->xend)
 	  exp=3;
@@ -156,8 +156,8 @@ int physics_init(bool restarting) {
     d2[i]=3;
   }
   exp=3;
-  for (int jx=0;jx<mesh->localNx;++jx)
-    for (int jy=0;jy<mesh->localNy;++jy)
+  for (int jx=0;jx<mesh->local_nx;++jx)
+    for (int jy=0;jy<mesh->local_ny;++jy)
       assert(d2(jx,jy)==exp);
   /*
   d2=1;exp=1;
@@ -165,12 +165,12 @@ int physics_init(bool restarting) {
     if (d2[i] != exp) PRINT_DEBUG;
     d2[ i]=2;
   }
-  for (int jx=0;jx<mesh->localNx;++jx){
+  for (int jx=0;jx<mesh->local_nx;++jx){
     if (jx < mesh->xstart || jx > mesh->xend)
       exp=1;
     else
       exp=2;
-    for (int jy=0;jy<mesh->localNy;++jy)
+    for (int jy=0;jy<mesh->local_ny;++jy)
       assert(d2(jx,jy)==exp);
   }
   d2=1;exp=1;
@@ -178,8 +178,8 @@ int physics_init(bool restarting) {
     if (d2[i] != exp) PRINT_DEBUG;
     d2[i]=2;
   }
-  for (int jx=0;jx<mesh->localNx;++jx)
-    for (int jy=0;jy<mesh->localNy;++jy){
+  for (int jx=0;jx<mesh->local_nx;++jx)
+    for (int jy=0;jy<mesh->local_ny;++jy){
       if (jy < mesh->ystart || jy > mesh->yend)
 	exp=1;
       else
@@ -191,8 +191,8 @@ int physics_init(bool restarting) {
     if (d2[i] != exp) PRINT_DEBUG;
     d2[i]=2;
   }
-  for (int jx=0;jx<mesh->localNx;++jx)
-    for (int jy=0;jy<mesh->localNy;++jy){
+  for (int jx=0;jx<mesh->local_nx;++jx)
+    for (int jy=0;jy<mesh->local_ny;++jy){
       if (jx < mesh->xstart || jx > mesh->xend ||
 	  jy < mesh->ystart || jy > mesh->yend)
 	exp=1;

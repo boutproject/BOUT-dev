@@ -1031,7 +1031,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
   }
   if (mesh->freeboundary_yup) {
     for (RangeIterator it=mesh->iterateBndryUpperY(); !it.isDone(); it++)
-      for (bx.jy=mesh->yend+1; bx.jy<mesh->localNy; bx.jy++) {
+      for (bx.jy=mesh->yend+1; bx.jy<mesh->local_ny; bx.jy++) {
 	bx.jx=it.ind;
 	calc_index(&bx);
 	var.setXStencil(s, bx, loc);
@@ -1084,7 +1084,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
   start_index(&bx, RGN_NOX);
   stencil s;
   do {
-    for(bx.jz=0;bx.jz<mesh->localNz;bx.jz++) {
+    for(bx.jz=0;bx.jz<mesh->local_nz;bx.jz++) {
       var.setXStencil(s, bx, loc);
       result(bx.jx,bx.jy,bx.jz) = func(s);
     }
@@ -1098,7 +1098,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
   if (mesh->freeboundary_ydown) {
     for (RangeIterator it=mesh->iterateBndryLowerY(); !it.isDone(); it++)
       for (bx.jy=mesh->ystart-1; bx.jy>=0; bx.jy--)
-	for (bx.jz=0; bx.jz<mesh->localNz; bx.jz++) {
+	for (bx.jz=0; bx.jz<mesh->local_nz; bx.jz++) {
 	  bx.jx=it.ind;
 	  calc_index(&bx);
 	  var.setXStencil(s, bx, loc);
@@ -1110,8 +1110,8 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
   }
   if (mesh->freeboundary_yup) {
     for (RangeIterator it=mesh->iterateBndryUpperY(); !it.isDone(); it++)
-      for (bx.jy=mesh->yend+1; bx.jy<mesh->localNy; bx.jy++)
-	for (bx.jz=0; bx.jz<mesh->localNz; bx.jz++) {
+      for (bx.jy=mesh->yend+1; bx.jy<mesh->local_ny; bx.jy++)
+	for (bx.jz=0; bx.jz<mesh->local_nz; bx.jz++) {
 	  bx.jx=it.ind;
 	  calc_index(&bx);
 	  var.setXStencil(s, bx, loc);
@@ -1126,7 +1126,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
     Mesh::boundary_derivs_pair funcs_pair;
     bx.jx=mesh->xstart-1;
     for (bx.jy=mesh->ystart; bx.jy<=mesh->yend; bx.jy++)
-      for (bx.jz=0; bx.jz<mesh->localNz; bx.jz++) {
+      for (bx.jz=0; bx.jz<mesh->local_nz; bx.jz++) {
 	calc_index(&bx);
 	var.setXStencil(fs, bx, loc);
 	funcs_pair = func_in(fs);
@@ -1142,7 +1142,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
     Mesh::boundary_derivs_pair funcs_pair;
     bx.jx=mesh->xend+1;
     for (bx.jy=mesh->ystart; bx.jy<=mesh->yend; bx.jy++)
-      for (bx.jz=0; bx.jz<mesh->localNz; bx.jz++) {
+      for (bx.jz=0; bx.jz<mesh->local_nz; bx.jz++) {
 	calc_index(&bx);
 	var.setXStencil(bs, bx, loc);
 	funcs_pair = func_out(bs);
@@ -1189,7 +1189,7 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
     #endif
   }
   if (mesh->freeboundary_xout && mesh->lastX() && !mesh->periodicX) {
-    for (bx.jx=mesh->xend+1; bx.jx<mesh->localNx; bx.jx++)
+    for (bx.jx=mesh->xend+1; bx.jx<mesh->local_nx; bx.jx++)
       for (bx.jy=mesh->ystart; bx.jy<=mesh->ystart; bx.jy++) {
 	calc_index(&bx);
 	var.setYStencil(s, bx, loc);
@@ -1247,7 +1247,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
     start_index(&bx, RGN_NOBNDRY);
     stencil s;
     do {
-      for(bx.jz=0;bx.jz<mesh->localNz;bx.jz++) {
+      for(bx.jz=0;bx.jz<mesh->local_nz;bx.jz++) {
         var.setYStencil(s, bx, loc);
         result(bx.jx,bx.jy,bx.jz) = func(s);
       }
@@ -1281,7 +1281,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
   if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX) {
     for (bx.jx=mesh->xstart-1; bx.jx>=0; bx.jx--)
       for (bx.jy=mesh->ystart; bx.jy<=mesh->ystart; bx.jy++)
-	for (bx.jz=0; bx.jz<mesh->localNz; bx.jz++) {
+	for (bx.jz=0; bx.jz<mesh->local_nz; bx.jz++) {
           stencil s;
 	  calc_index(&bx);
 	  var.setYStencil(s, bx, loc);
@@ -1292,9 +1292,9 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
     #endif
   }
   if (mesh->freeboundary_xout && mesh->lastX() && !mesh->periodicX) {
-    for (bx.jx=mesh->xend+1; bx.jx<mesh->localNx; bx.jx++)
+    for (bx.jx=mesh->xend+1; bx.jx<mesh->local_nx; bx.jx++)
       for (bx.jy=mesh->ystart; bx.jy<=mesh->ystart; bx.jy++)
-	for (bx.jz=0; bx.jz<mesh->localNz; bx.jz++) {
+	for (bx.jz=0; bx.jz<mesh->local_nz; bx.jz++) {
           stencil s;
 	  calc_index(&bx);
 	  var.setYStencil(s, bx, loc);
@@ -1309,7 +1309,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
     Mesh::boundary_derivs_pair funcs_pair;
     bx.jy=mesh->ystart-1;
     for (RangeIterator it=mesh->iterateBndryLowerY(); !it.isDone(); it++)
-      for (bx.jz=0; bx.jz<mesh->localNz; bx.jz++) {
+      for (bx.jz=0; bx.jz<mesh->local_nz; bx.jz++) {
 	bx.jx = it.ind;
         stencil s;
 	calc_index(&bx);
@@ -1327,7 +1327,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
     Mesh::boundary_derivs_pair funcs_pair;
     bx.jy=mesh->yend+1;
     for (RangeIterator it=mesh->iterateBndryUpperY(); !it.isDone(); it++)
-      for (bx.jz=0; bx.jz<mesh->localNz; bx.jz++) {
+      for (bx.jz=0; bx.jz<mesh->local_nz; bx.jz++) {
 	bx.jx = it.ind;
         stencil s;
 	calc_index(&bx);
@@ -1362,7 +1362,7 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX) {
     for (bx.jx=mesh->xstart-1; bx.jx>=0; bx.jx--)
       for (bx.jy=mesh->ystart; bx.jy<=mesh->ystart; bx.jy++)
-	for (bx.jz=0; bx.jz<mesh->localNz; bx.jz++) {
+	for (bx.jz=0; bx.jz<mesh->local_nz; bx.jz++) {
 	  calc_index(&bx);
 	  var.setZStencil(s, bx, loc);
 	  result(bx.jx,bx.jy,bx.jz) = func(s);
@@ -1373,9 +1373,9 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   }
 
   if (mesh->freeboundary_xout && mesh->lastX() && !mesh->periodicX) {
-    for (bx.jx=mesh->xend+1; bx.jx<mesh->localNx; bx.jx++)
+    for (bx.jx=mesh->xend+1; bx.jx<mesh->local_nx; bx.jx++)
       for (bx.jy=mesh->ystart; bx.jy<=mesh->ystart; bx.jy++)
-	for (bx.jz=0; bx.jz<mesh->localNz; bx.jz++) {
+	for (bx.jz=0; bx.jz<mesh->local_nz; bx.jz++) {
 	  calc_index(&bx);
 	  var.setZStencil(s, bx, loc);
 	  result(bx.jx,bx.jy,bx.jz) = func(s);
@@ -1388,7 +1388,7 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   if (mesh->freeboundary_ydown) {
     for (RangeIterator it=mesh->iterateBndryLowerY(); !it.isDone(); it++)
       for (bx.jy=mesh->ystart-1; bx.jy>=0; bx.jy--)
-	for (bx.jz=0; bx.jz<mesh->localNz; bx.jz++) {
+	for (bx.jz=0; bx.jz<mesh->local_nz; bx.jz++) {
 	  bx.jx = it.ind;
 	  calc_index(&bx);
 	  var.setZStencil(s, bx, loc);
@@ -1401,8 +1401,8 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 
   if (mesh->freeboundary_yup) {
     for (RangeIterator it=mesh->iterateBndryUpperY(); !it.isDone(); it++)
-      for (bx.jy=mesh->yend; bx.jy<mesh->localNy; bx.jy++)
-	for (bx.jz=0; bx.jz<mesh->localNz; bx.jz++) {
+      for (bx.jy=mesh->yend; bx.jy<mesh->local_ny; bx.jy++)
+	for (bx.jz=0; bx.jz<mesh->local_nz; bx.jz++) {
 	  bx.jx = it.ind;
 	  calc_index(&bx);
 	  var.setZStencil(s, bx, loc);
@@ -1627,7 +1627,7 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
 
     result.allocate(); // Make sure data allocated
 
-    int ncz = mesh->localNz;
+    int ncz = mesh->local_nz;
     
 #ifndef _OPENMP
     static dcomplex *cv = (dcomplex*) NULL;
@@ -1667,16 +1667,16 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
       int ye = mesh->yend;
       if(inc_xbndry) { // Include x boundary region (for mixed XZ derivatives)
         xs = 0;
-        xe = mesh->localNx-1;
+        xe = mesh->local_nx-1;
       }
       if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX)
         xs = 0;
       if (mesh->freeboundary_xout && mesh->lastX() && !mesh->periodicX)
-        xe = mesh->localNx-1;
+        xe = mesh->local_nx-1;
       if (mesh->freeboundary_ydown)
         ys = 0;
       if (mesh->freeboundary_yup)
-        ye = mesh->localNy-1;
+        ye = mesh->local_ny-1;
       #pragma omp for
       for(int jx=xs;jx<=xe;jx++) {
         for(int jy=ys;jy<=ye;jy++) {
@@ -2002,7 +2002,7 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
     
     result.allocate(); // Make sure data allocated
 
-    int ncz = mesh->localNz;
+    int ncz = mesh->local_nz;
     
     static dcomplex *cv = (dcomplex*) NULL;
     
@@ -2016,16 +2016,16 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
     int ye = mesh->yend;
     if(inc_xbndry) { // Include x boundary region (for mixed XZ derivatives)
       xs = 0;
-      xe = mesh->localNx-1;
+      xe = mesh->local_nx-1;
     }
     if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX)
       xs = 0;
     if (mesh->freeboundary_xout && mesh->lastX() && !mesh->periodicX)
-      xe = mesh->localNx-1;
+      xe = mesh->local_nx-1;
     if (mesh->freeboundary_ydown)
       ys = 0;
     if (mesh->freeboundary_yup)
-      ye = mesh->localNy-1;
+      ye = mesh->local_ny-1;
       
     for(int jx=xs;jx<=xe;jx++) {
       for(int jy=ys;jy<=ye;jy++) {

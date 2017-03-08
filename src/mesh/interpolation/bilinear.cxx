@@ -31,8 +31,8 @@ Bilinear::Bilinear(int y_offset) :
   Interpolation(y_offset) {
 
   // Index arrays contain guard cells in order to get subscripts right
-  i_corner = i3tensor(mesh->localNx, mesh->localNy, mesh->localNz);
-  k_corner = i3tensor(mesh->localNx, mesh->localNy, mesh->localNz);
+  i_corner = i3tensor(mesh->local_nx, mesh->local_ny, mesh->local_nz);
+  k_corner = i3tensor(mesh->local_nx, mesh->local_ny, mesh->local_nz);
 
   // Allocate Field3D members
   w0.allocate();
@@ -45,7 +45,7 @@ void Bilinear::calcWeights(const Field3D &delta_x, const Field3D &delta_z) {
 
   for(int x=mesh->xstart;x<=mesh->xend;x++) {
     for(int y=mesh->ystart; y<=mesh->yend;y++) {
-      for(int z=0;z<mesh->localNz;z++) {
+      for(int z=0;z<mesh->local_nz;z++) {
 
         if (skip_mask(x, y, z)) continue;
 
@@ -90,14 +90,14 @@ Field3D Bilinear::interpolate(const Field3D& f) const {
 
   for(int x=mesh->xstart;x<=mesh->xend;x++) {
     for(int y=mesh->ystart; y<=mesh->yend;y++) {
-      for(int z=0;z<mesh->localNz;z++) {
+      for(int z=0;z<mesh->local_nz;z++) {
 
         if (skip_mask(x, y, z)) continue;
 
         int y_next = y + y_offset;
         // Due to lack of guard cells in z-direction, we need to ensure z-index
         // wraps around
-        int ncz = mesh->localNz;
+        int ncz = mesh->local_nz;
         int z_mod = ((k_corner[x][y][z] % ncz) + ncz) % ncz;
         int z_mod_p1 = (z_mod + 1) % ncz;
 

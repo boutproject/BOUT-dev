@@ -188,9 +188,9 @@ const Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3
   result.allocate();
 
   // Loop over output grid points
-  for(int jx=0;jx<mesh->localNx;jx++)
-    for(int jy=0;jy<mesh->localNy;jy++)
-      for(int jz=0;jz<mesh->localNz;jz++) {
+  for(int jx=0;jx<mesh->local_nx;jx++)
+    for(int jy=0;jy<mesh->local_ny;jy++)
+      for(int jz=0;jz<mesh->local_nz;jz++) {
 	// Need to get value of f at 
 	// [jx + delta_x[jx][jy][jz]][jy][jz + delta_z[jx][jy][jz]]
 
@@ -207,17 +207,17 @@ const Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3
 	if(jxmnew < 0) {
 	  jxmnew = 0;
 	  xs = 0.0;
-	}else if(jxmnew >= (mesh->localNx-1)) {
+	}else if(jxmnew >= (mesh->local_nx-1)) {
 	  // Want to always be able to use [jxnew] and [jxnew+1]
-	  jxmnew = mesh->localNx-2; 
+	  jxmnew = mesh->local_nx-2; 
 	  xs = 1.0;
 	}
 
 	int jx2mnew = (jxmnew == 0) ? 0 : (jxmnew - 1);
 	int jxpnew = jxmnew + 1;
-	int jx2pnew = (jxmnew == (mesh->localNx-2)) ? jxpnew : (jxpnew + 1);
+	int jx2pnew = (jxmnew == (mesh->local_nx-2)) ? jxpnew : (jxpnew + 1);
 
-	int ncz = mesh->localNz;
+	int ncz = mesh->local_nz;
 
 	// Get the 4 Z points
 	jzmnew = ((jzmnew % ncz) + ncz) % ncz;
@@ -268,9 +268,9 @@ const Field3D interpolate(const Field2D &f, const Field3D &delta_x) {
   result.allocate();
   
   // Loop over output grid points
-  for(int jx=0;jx<mesh->localNx;jx++)
-    for(int jy=0;jy<mesh->localNy;jy++)
-      for(int jz=0;jz<mesh->localNz;jz++) {
+  for(int jx=0;jx<mesh->local_nx;jx++)
+    for(int jy=0;jy<mesh->local_ny;jy++)
+      for(int jz=0;jz<mesh->local_nz;jz++) {
 	// Need to get value of f at 
 	// [jx + delta_x[jx][jy][jz]][jy][jz + delta_z[jx][jy][jz]]
 	
@@ -285,9 +285,9 @@ const Field3D interpolate(const Field2D &f, const Field3D &delta_x) {
 	if(jxnew < 0) {
 	  jxnew = 0;
 	  xs = 0.0;
-	}else if(jxnew >= (mesh->localNx-1)) {
+	}else if(jxnew >= (mesh->local_nx-1)) {
 	  // Want to always be able to use [jxnew] and [jxnew+1]
-	  jxnew = mesh->localNx-2; 
+	  jxnew = mesh->local_nx-2; 
 	  xs = 1.0;
 	}
 	// Interpolate in X

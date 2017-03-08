@@ -285,7 +285,7 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
       PetscMalloc( (localN)*sizeof(PetscInt), &o_nnz );
 
       // Set values for most points
-      if(mesh->localNz > 1) {
+      if(mesh->local_nz > 1) {
         // A 3D mesh, so need points in Z
 
         for(int i=0;i<localN;i++) {
@@ -309,7 +309,7 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
       if(mesh->firstX()) {
         // Lower X boundary
         for(int y=mesh->ystart;y<=mesh->yend;y++) {
-          for(int z=0;z<mesh->localNz;z++) {
+          for(int z=0;z<mesh->local_nz;z++) {
             int localIndex = ROUND(index(mesh->xstart, y, z));
             ASSERT2( (localIndex >= 0) && (localIndex < localN) );
             if(z == 0) {
@@ -326,7 +326,7 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
       }else {
         // On another processor
         for(int y=mesh->ystart;y<=mesh->yend;y++) {
-          for(int z=0;z<mesh->localNz;z++) {
+          for(int z=0;z<mesh->local_nz;z++) {
             int localIndex = ROUND(index(mesh->xstart, y, z));
             ASSERT2( (localIndex >= 0) && (localIndex < localN) );
             if(z == 0) {
@@ -349,7 +349,7 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
       if(mesh->lastX()) {
         // Upper X boundary
         for(int y=mesh->ystart;y<=mesh->yend;y++) {
-          for(int z=0;z<mesh->localNz;z++) {
+          for(int z=0;z<mesh->local_nz;z++) {
             int localIndex = ROUND(index(mesh->xend, y, z));
             ASSERT2( (localIndex >= 0) && (localIndex < localN) );
             if(z == 0) {
@@ -366,7 +366,7 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
       }else {
         // On another processor
         for(int y=mesh->ystart;y<=mesh->yend;y++) {
-          for(int z=0;z<mesh->localNz;z++) {
+          for(int z=0;z<mesh->local_nz;z++) {
             int localIndex = ROUND(index(mesh->xend, y, z));
             ASSERT2( (localIndex >= 0) && (localIndex < localN) );
             if(z == 0) {
@@ -402,7 +402,7 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
           o_nnz[localIndex+i] += (n3d + n2d);
         }
         
-        for(int z=1;z<mesh->localNz;z++) {
+        for(int z=1;z<mesh->local_nz;z++) {
           localIndex = ROUND(index(x, mesh->ystart, z));
           
           // Only 3D fields
@@ -420,7 +420,7 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
           o_nnz[localIndex+i] += (n3d + n2d);
         }
         
-        for(int z=1;z<mesh->localNz;z++) {
+        for(int z=1;z<mesh->local_nz;z++) {
           localIndex = ROUND(index(x, mesh->yend, z));
           
           // Only 3D fields
@@ -441,7 +441,7 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
           o_nnz[localIndex+i] -= (n3d + n2d);
         }
         
-        for(int z=1;z<mesh->localNz;z++) {
+        for(int z=1;z<mesh->local_nz;z++) {
           int localIndex = ROUND(index(it.ind, mesh->ystart, z));
           
           // Only 3D fields
@@ -461,7 +461,7 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
           o_nnz[localIndex+i] -= (n3d + n2d);
         }
         
-        for(int z=1;z<mesh->localNz;z++) {
+        for(int z=1;z<mesh->local_nz;z++) {
           int localIndex = ROUND(index(it.ind, mesh->yend, z));
           
           // Only 3D fields
@@ -513,7 +513,7 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
               int yi = y + yoffset[c];
                 
               if( (xi < 0) || (yi < 0) ||
-                  (xi >= mesh->localNx) || (yi >= mesh->localNy) )
+                  (xi >= mesh->local_nx) || (yi >= mesh->local_ny) )
                 continue;
               
               int ind2 = ROUND(index(xi, yi, 0));
@@ -532,7 +532,7 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
           }
           
           // 3D fields
-          for(int z=0;z<mesh->localNz;z++) {
+          for(int z=0;z<mesh->local_nz;z++) {
             
             int ind = ROUND(index(x,y,z));
             
@@ -554,7 +554,7 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
                 int yi = y + yoffset[c];
                 
                 if( (xi < 0) || (yi < 0) ||
-                    (xi >= mesh->localNx) || (yi >= mesh->localNy) )
+                    (xi >= mesh->local_nx) || (yi >= mesh->local_ny) )
                   continue;
                 
                 int ind2 = ROUND(index(xi, yi, z));
@@ -572,7 +572,7 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
                 }
               }
 
-              int nz = mesh->localNz;
+              int nz = mesh->local_nz;
               if(nz > 1) {
                 // Multiple points in z
                 
@@ -1294,7 +1294,7 @@ void IMEXBDF2::loopVars(BoutReal *u) {
 
       // Outer X
       if(mesh->lastX() && !mesh->periodicX) {
-        for(int jx=mesh->xend+1;jx<mesh->localNx;++jx)
+        for(int jx=mesh->xend+1;jx<mesh->local_nx;++jx)
           for(int jy=mesh->ystart;jy<=mesh->yend;++jy) {
             op.run(jx, jy, u); ++u;
           }
@@ -1308,7 +1308,7 @@ void IMEXBDF2::loopVars(BoutReal *u) {
 
       // Upper Y
       for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); ++xi) {
-        for(int jy=mesh->yend+1;jy<mesh->localNy;++jy) {
+        for(int jy=mesh->yend+1;jy<mesh->local_ny;++jy) {
           op.run(*xi, jy, u); ++u;
         }
       }
@@ -1331,31 +1331,31 @@ void IMEXBDF2::loopVars(BoutReal *u) {
       if(mesh->firstX() && !mesh->periodicX) {
         for(int jx=0;jx<mesh->xstart;++jx)
           for(int jy=mesh->ystart;jy<=mesh->yend;++jy)
-            for(int jz=0; jz < mesh->localNz; ++jz) {
+            for(int jz=0; jz < mesh->local_nz; ++jz) {
               op.run(jx, jy, jz, u); ++u;
             }
       }
 
       // Outer X
       if(mesh->lastX() && !mesh->periodicX) {
-        for(int jx=mesh->xend+1;jx<mesh->localNx;++jx)
+        for(int jx=mesh->xend+1;jx<mesh->local_nx;++jx)
           for(int jy=mesh->ystart;jy<=mesh->yend;++jy)
-            for(int jz=0; jz < mesh->localNz; ++jz) {
+            for(int jz=0; jz < mesh->local_nz; ++jz) {
               op.run(jx, jy, jz, u); ++u;
             }
       }
       // Lower Y
       for(RangeIterator xi = mesh->iterateBndryLowerY(); !xi.isDone(); ++xi) {
         for(int jy=0;jy<mesh->ystart;++jy)
-          for(int jz=0; jz < mesh->localNz; ++jz) {
+          for(int jz=0; jz < mesh->local_nz; ++jz) {
             op.run(*xi, jy, jz, u); ++u;
           }
       }
 
       // Upper Y
       for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); ++xi) {
-        for(int jy=mesh->yend+1;jy<mesh->localNy;++jy)
-          for(int jz=0; jz < mesh->localNz; ++jz) {
+        for(int jy=mesh->yend+1;jy<mesh->local_ny;++jy)
+          for(int jz=0; jz < mesh->local_nz; ++jz) {
             op.run(*xi, jy, jz, u); ++u;
           }
       }
@@ -1364,7 +1364,7 @@ void IMEXBDF2::loopVars(BoutReal *u) {
     // Bulk of points
     for(int jx=mesh->xstart; jx <= mesh->xend; ++jx)
       for(int jy=mesh->ystart; jy <= mesh->yend; ++jy)
-        for(int jz=0; jz < mesh->localNz; ++jz) {
+        for(int jz=0; jz < mesh->local_nz; ++jz) {
           op.run(jx, jy, jz, u); ++u;
         }
   }

@@ -406,15 +406,15 @@ int physics_run(BoutReal time) {
   // Boundary in jpar
   if(mesh->firstX()) {
     for(int i=4;i>=0;i--)
-      for(int j=0;j<mesh->localNy;j++)
-	for(int k=0;k<mesh->localNz;k++) {
+      for(int j=0;j<mesh->local_ny;j++)
+	for(int k=0;k<mesh->local_nz;k++) {
           jpar[i][j][k] = 0.5*jpar[i+1][j][k];
 	}
   }
   if(mesh->lastX()) {
-    for(int i=mesh->localNx-5;i<mesh->localNx;i++)
-      for(int j=0;j<mesh->localNy;j++)
-	for(int k=0;k<mesh->localNz;k++) {
+    for(int i=mesh->local_nx-5;i<mesh->local_nx;i++)
+      for(int j=0;j<mesh->local_ny;j++)
+	for(int k=0;k<mesh->local_nz;k++) {
           jpar[i][j][k] = 0.5*jpar[i-1][j][k];
 	}
   }
@@ -499,27 +499,27 @@ int physics_run(BoutReal time) {
   
   if(mesh->firstX()) {
     for(int i=3;i>=0;i--)
-      for(int j=0;j<mesh->localNy;j++)
-	for(int k=0;k<mesh->localNz;k++) {
+      for(int j=0;j<mesh->local_ny;j++)
+	for(int k=0;k<mesh->local_nz;k++) {
           ddt(Vpar)[i][j][k] = ddt(Vpar)[i+1][j][k];
           ddt(Vort)[i][j][k] = ddt(Vort)[i+1][j][k];
 	}
     
     // Subtract DC component
     for(int i=0;i<10;i++)
-      for(int j=0;j<mesh->localNy;j++) {
+      for(int j=0;j<mesh->local_ny;j++) {
         BoutReal avg = 0.;
-        for(int k=0;k<mesh->localNz;k++)
+        for(int k=0;k<mesh->local_nz;k++)
           avg += ddt(Vort)[i][j][k];
-        avg /= (BoutReal) mesh->localNz;
-        for(int k=0;k<mesh->localNz;k++)
+        avg /= (BoutReal) mesh->local_nz;
+        for(int k=0;k<mesh->local_nz;k++)
           ddt(Vort)[i][j][k] -= avg;
       }
   }
   if(mesh->lastX()) {
-    for(int i=mesh->localNx-3;i<mesh->localNx;i++)
-      for(int j=0;j<mesh->localNy;j++)
-	for(int k=0;k<mesh->localNz;k++) {
+    for(int i=mesh->local_nx-3;i<mesh->local_nx;i++)
+      for(int j=0;j<mesh->local_ny;j++)
+	for(int k=0;k<mesh->local_nz;k++) {
           ddt(Vpar)[i][j][k] = ddt(Vpar)[i-1][j][k];
           ddt(Vort)[i][j][k] = ddt(Vort)[i-1][j][k];
 	}

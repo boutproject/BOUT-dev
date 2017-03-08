@@ -339,15 +339,15 @@ void smooth_bndry(Field3D f, int bndry)
 {
     if(mesh->firstX()) {
       for(int i=bndry;i>=0;i--)
-	  for(int j=0;j<mesh->localNy;j++)
-	  for(int k=0;k<mesh->localNz;k++) {
+	  for(int j=0;j<mesh->local_ny;j++)
+	  for(int k=0;k<mesh->local_nz;k++) {
 	    f[i][j][k] = f[i+1][j][k];
 	  }
     }
     if(mesh->lastX()) {
-      for(int i=mesh->localNx-bndry-1;i<mesh->localNx;i++)
-	  for(int j=0;j<mesh->localNy;j++)
-	  for(int k=0;k<mesh->localNz;k++) {
+      for(int i=mesh->local_nx-bndry-1;i<mesh->local_nx;i++)
+	  for(int j=0;j<mesh->local_ny;j++)
+	  for(int k=0;k<mesh->local_nz;k++) {
 	    f[i][j][k] = f[i-1][j][k];
 	  }
     }
@@ -357,15 +357,15 @@ void set_bndry(Field3D f, BoutReal val, int bndry)
 {
     if(mesh->firstX()) {
       for(int i=bndry;i>=0;i--)
-	  for(int j=0;j<mesh->localNy;j++)
-	  for(int k=0;k<mesh->localNz;k++) {
+	  for(int j=0;j<mesh->local_ny;j++)
+	  for(int k=0;k<mesh->local_nz;k++) {
 	    f[i][j][k] = val;
 	  }
     }
     if(mesh->lastX()) {
-      for(int i=mesh->localNx-bndry-1;i<mesh->localNx;i++)
-	  for(int j=0;j<mesh->localNy;j++)
-	  for(int k=0;k<mesh->localNz;k++) {
+      for(int i=mesh->local_nx-bndry-1;i<mesh->local_nx;i++)
+	  for(int j=0;j<mesh->local_ny;j++)
+	  for(int k=0;k<mesh->local_nz;k++) {
 	    f[i][j][k] = val;
 	  }
     }

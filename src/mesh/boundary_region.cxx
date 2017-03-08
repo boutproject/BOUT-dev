@@ -61,15 +61,15 @@ BoundaryRegionXOut::BoundaryRegionXOut(const string &name, int ymin, int ymax)
   : BoundaryRegion(name, 1, 0), ys(ymin), ye(ymax)
 {
   location = BNDRY_XOUT;
-  width = mesh->localNx - mesh->xend - 1;
-  x = mesh->localNx - width; // First point inside the boundary
+  width = mesh->local_nx - mesh->xend - 1;
+  x = mesh->local_nx - width; // First point inside the boundary
   if(ye < ys)
     swap(ys, ye);
 }
 
 void BoundaryRegionXOut::first()
 {
-  x = mesh->localNx - width;
+  x = mesh->local_nx - width;
   y = ys;
 }
 
@@ -99,13 +99,13 @@ void BoundaryRegionXOut::nextX()
 void BoundaryRegionXOut::nextY()
 {
   y++;
-  if(x >= mesh->localNx)
-    x = mesh->localNx - width;
+  if(x >= mesh->local_nx)
+    x = mesh->local_nx - width;
 }
 
 bool BoundaryRegionXOut::isDone()
 {
-  return (x >= mesh->localNx) || (y > ye); // Return true if gone out of the boundary
+  return (x >= mesh->local_nx) || (y > ye); // Return true if gone out of the boundary
 }
 
 ///////////////////////////////////////////////////////////////
@@ -170,8 +170,8 @@ BoundaryRegionYUp::BoundaryRegionYUp(const string &name, int xmin, int xmax)
   : BoundaryRegion(name, 0, 1), xs(xmin), xe(xmax)
 {
   location = BNDRY_YUP;
-  width = mesh->localNy - mesh->yend - 1;
-  y = mesh->localNy - width; // First point inside the boundary
+  width = mesh->local_ny - mesh->yend - 1;
+  y = mesh->local_ny - width; // First point inside the boundary
   if(xe < xs)
     swap(xs, xe);
 }
@@ -179,15 +179,15 @@ BoundaryRegionYUp::BoundaryRegionYUp(const string &name, int xmin, int xmax)
 void BoundaryRegionYUp::first()
 {
   x = xs;
-  y = mesh->localNy - width;
+  y = mesh->local_ny - width;
 }
 
 void BoundaryRegionYUp::next()
 {
   // Loop over all points, from inside out
   y++;
-  if(y >= mesh->localNy) {
-    y = mesh->localNy - width;
+  if(y >= mesh->local_ny) {
+    y = mesh->local_ny - width;
     x++;
   }
 }
@@ -201,8 +201,8 @@ void BoundaryRegionYUp::next1d()
 void BoundaryRegionYUp::nextX()
 {
   x++;
-  if(y >= mesh->localNy)
-    y = mesh->localNy - width;
+  if(y >= mesh->local_ny)
+    y = mesh->local_ny - width;
 }
 
 void BoundaryRegionYUp::nextY()
@@ -214,5 +214,5 @@ void BoundaryRegionYUp::nextY()
 
 bool BoundaryRegionYUp::isDone()
 {
-  return (x > xe) || (y >= mesh->localNy); // Return true if gone out of the boundary
+  return (x > xe) || (y >= mesh->local_ny); // Return true if gone out of the boundary
 }

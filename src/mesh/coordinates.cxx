@@ -59,7 +59,7 @@ Coordinates::Coordinates(Mesh *mesh) {
     zperiod = ROUND(1.0 / (ZMAX - ZMIN));
   }
 
-  nz = mesh->localNz;
+  nz = mesh->local_nz;
   dz = (ZMAX-ZMIN)*TWOPI/nz;
   
   // Diagonal components of metric tensor g^{ij} (default to 1)
@@ -380,8 +380,8 @@ int Coordinates::calcCovariant() {
 
   BoutReal** a = matrix<BoutReal>(3, 3);
   
-  for(int jx=0;jx<mesh->localNx;jx++) {
-    for(int jy=0;jy<mesh->localNy;jy++) {
+  for(int jx=0;jx<mesh->local_nx;jx++) {
+    for(int jy=0;jy<mesh->local_ny;jy++) {
       // set elements of g
       a[0][0] = g11(jx, jy);
       a[1][1] = g22(jx, jy);
@@ -461,8 +461,8 @@ int Coordinates::calcContravariant() {
   
   BoutReal** a = matrix<BoutReal>(3, 3);
   
-  for(int jx=0;jx<mesh->localNx;jx++) {
-    for(int jy=0;jy<mesh->localNy;jy++) {
+  for(int jx=0;jx<mesh->local_nx;jx++) {
+    for(int jy=0;jy<mesh->local_ny;jy++) {
       // set elements of g
       a[0][0] = g_11(jx, jy);
       a[1][1] = g_22(jx, jy);
@@ -698,21 +698,21 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
   Field3D result;
   result.allocate();
   
-  int ncz = mesh->localNz;
+  int ncz = mesh->local_nz;
   
   static dcomplex **ft = (dcomplex**) NULL, **delft;
   if(ft == (dcomplex**) NULL) {
     // Allocate memory
-    ft = matrix<dcomplex>(mesh->localNx, ncz/2 + 1);
-    delft = matrix<dcomplex>(mesh->localNx, ncz/2 + 1);
+    ft = matrix<dcomplex>(mesh->local_nx, ncz/2 + 1);
+    delft = matrix<dcomplex>(mesh->local_nx, ncz/2 + 1);
   }
   
   // Loop over all y indices
-  for(int jy=0;jy<mesh->localNy;jy++) {
+  for(int jy=0;jy<mesh->local_ny;jy++) {
 
     // Take forward FFT
     
-    for(int jx=0;jx<mesh->localNx;jx++)
+    for(int jx=0;jx<mesh->local_nx;jx++)
       rfft(&f(jx,jy,0), ncz, ft[jx]);
 
     // Loop over kz
@@ -738,7 +738,7 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
     // Boundaries
     for(int jz=0;jz<ncz;jz++) {
       result(0,jy,jz) = 0.0;
-      result(mesh->localNx-1,jy,jz) = 0.0;
+      result(mesh->local_nx-1,jy,jz) = 0.0;
     }
   }
   
@@ -759,23 +759,23 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
   int jy = f.getIndex();
   result.setIndex(jy);
   
-  int ncz = mesh->localNz;
+  int ncz = mesh->local_nz;
   
   if(ft == (dcomplex**) NULL) {
     // Allocate memory
-    ft = matrix<dcomplex>(mesh->localNx, ncz/2 + 1);
-    delft = matrix<dcomplex>(mesh->localNx, ncz/2 + 1);
+    ft = matrix<dcomplex>(mesh->local_nx, ncz/2 + 1);
+    delft = matrix<dcomplex>(mesh->local_nx, ncz/2 + 1);
   }
   
   // Take forward FFT
-  for(int jx=0;jx<mesh->localNx;jx++)
+  for(int jx=0;jx<mesh->local_nx;jx++)
     rfft(f[jx], ncz, ft[jx]);
 
   // Loop over kz
   for(int jz=0;jz<=ncz/2;jz++) {
     
     // No smoothing in the x direction
-    for(int jx=2;jx<(mesh->localNx-2);jx++) {
+    for(int jx=2;jx<(mesh->local_nx-2);jx++) {
       // Perform x derivative
       
       dcomplex a, b, c;
@@ -786,14 +786,14 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
   }
   
   // Reverse FFT
-  for(int jx=1;jx<(mesh->localNx-1);jx++) {
+  for(int jx=1;jx<(mesh->local_nx-1);jx++) {
     irfft(delft[jx], ncz, result[jx]);
   }
 
   // Boundaries
   for(int jz=0;jz<ncz;jz++) {
     result(0,jz) = 0.0;
-    result(mesh->localNx-1,jz) = 0.0;
+    result(mesh->local_nx-1,jz) = 0.0;
   }
   
   return result;

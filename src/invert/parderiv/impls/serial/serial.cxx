@@ -52,12 +52,12 @@
 #include <cmath>
 
 InvertParSerial::InvertParSerial(Options *opt) : InvertPar(opt), A(1.0), B(0.0), C(0.0), D(0.0), E(0.0) {
-  rhs = matrix<dcomplex>(mesh->localNy, (mesh->localNz)/2 + 1);
-  rhsk = new dcomplex[mesh->localNy-4];
-  xk = new dcomplex[mesh->localNy-4];
-  a = new dcomplex[mesh->localNy-4];
-  b = new dcomplex[mesh->localNy-4];
-  c = new dcomplex[mesh->localNy-4];
+  rhs = matrix<dcomplex>(mesh->local_ny, (mesh->local_nz)/2 + 1);
+  rhsk = new dcomplex[mesh->local_ny-4];
+  xk = new dcomplex[mesh->local_ny-4];
+  a = new dcomplex[mesh->local_ny-4];
+  b = new dcomplex[mesh->local_ny-4];
+  c = new dcomplex[mesh->local_ny-4];
 }
 
 InvertParSerial::~InvertParSerial() {
@@ -88,20 +88,20 @@ const Field3D InvertParSerial::solve(const Field3D &f) {
       throw BoutException("InvertParSerial doesn't handle open surfaces");
     
     // Take Fourier transform 
-    for(int y=0;y<mesh->localNy-4;y++)
-      rfft(f(x,y+2), mesh->localNz, rhs[y]);
+    for(int y=0;y<mesh->local_ny-4;y++)
+      rfft(f(x,y+2), mesh->local_nz, rhs[y]);
     
     // Solve cyclic tridiagonal system for each k
-    int nyq = (mesh->localNz)/2;
+    int nyq = (mesh->local_nz)/2;
     for(int k=0;k<=nyq;k++) {
       // Copy component of rhs into 1D array
-      for(int y=0;y<mesh->localNy-4;y++)
+      for(int y=0;y<mesh->local_ny-4;y++)
         rhsk[y] = rhs[y][k];
       
       BoutReal kwave=k*2.0*PI/coord->zlength(); // wave number is 1/[rad]
       
       // Set up tridiagonal system
-      for(int y=0;y<mesh->localNy-4;y++) {
+      for(int y=0;y<mesh->local_ny-4;y++) {
         BoutReal acoef = A(x, y+2);                     // Constant
 	BoutReal bcoef = B(x, y+2) / coord->g_22(x,y+2); // d2dy2
         BoutReal ccoef = C(x, y+2);                     // d2dydz
@@ -123,19 +123,19 @@ const Field3D InvertParSerial::solve(const Field3D &f) {
       // Modify coefficients across twist-shift
       dcomplex phase(cos(kwave*ts) , -sin(kwave*ts));
       a[0] *= phase;
-      c[mesh->localNy-5] /= phase;
+      c[mesh->local_ny-5] /= phase;
       
       // Solve cyclic tridiagonal system
-      cyclic_tridag(a, b, c, rhsk, xk, mesh->localNy-4);
+      cyclic_tridag(a, b, c, rhsk, xk, mesh->local_ny-4);
       
       // Put back into rhs array
-      for(int y=0;y<mesh->localNy-4;y++)
+      for(int y=0;y<mesh->local_ny-4;y++)
         rhs[y][k] = xk[y];
     }
     
     // Inverse Fourier transform 
-    for(int y=0;y<mesh->localNy-4;y++)
-      irfft(rhs[y], mesh->localNz, result(x,y+2));
+    for(int y=0;y<mesh->local_ny-4;y++)
+      irfft(rhs[y], mesh->local_nz, result(x,y+2));
   }
   
 #ifdef CHECK

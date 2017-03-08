@@ -137,10 +137,10 @@ const Field3D genZMode(int n, BoutReal phase) {
 
   result.allocate();
   
-  for(int jz=0;jz<mesh->localNz;jz++) {
-    BoutReal val = sin(phase*PI +  TWOPI * ((BoutReal) jz)/ ((BoutReal) mesh->localNz) );
-    for(int jx=0;jx<mesh->localNx;jx++)
-      for(int jy=0;jy<mesh->localNy;jy++)
+  for(int jz=0;jz<mesh->local_nz;jz++) {
+    BoutReal val = sin(phase*PI +  TWOPI * ((BoutReal) jz)/ ((BoutReal) mesh->local_nz) );
+    for(int jx=0;jx<mesh->local_nx;jx++)
+      for(int jy=0;jy<mesh->local_ny;jy++)
 	result(jx,jy,jz) = val;
   }
   return result;

@@ -344,9 +344,9 @@ int BoutMesh::load() {
   }
 
   /// Number of grid cells is ng* = M*SUB + guard/boundary cells
-  localNx = MXSUB + 2*MXG;
-  localNy = MYSUB + 2*MYG;
-  localNz = MZ;
+  local_nx = MXSUB + 2*MXG;
+  local_ny = MYSUB + 2*MYG;
+  local_nz = MZ;
 
   // Set local index ranges
 
@@ -368,10 +368,10 @@ int BoutMesh::load() {
     // Try to read the shift angle from the grid file
     // NOTE: All processors should know the twist-shift angle (for invert_parderiv)
     
-    ShiftAngle.resize(localNx);
+    ShiftAngle.resize(local_nx);
       
     if(!source->get(this, ShiftAngle,  "ShiftAngle",
-                    localNx, XGLOBAL(0))) {
+                    local_nx, XGLOBAL(0))) {
       throw BoutException("WARNING: Twist-shift angle 'ShiftAngle' not found.");
     }
   }
@@ -804,7 +804,7 @@ void BoutMesh::post_receive(CommHandle &ch) {
   if(UDATA_OUTDEST != -1) {
     inbuff = &ch.umsg_recvbuff[len]; // pointer to second half of the buffer
     MPI_Irecv(inbuff,
-              msg_len(ch.var_list.get(), UDATA_XSPLIT, localNx, 0, MYG),
+              msg_len(ch.var_list.get(), UDATA_XSPLIT, local_nx, 0, MYG),
               PVEC_REAL_MPI_TYPE,
               UDATA_OUTDEST,
               OUT_SENT_DOWN,
@@ -829,7 +829,7 @@ void BoutMesh::post_receive(CommHandle &ch) {
   if(DDATA_OUTDEST != -1) {
     inbuff = &ch.dmsg_recvbuff[len];
     MPI_Irecv(inbuff,
-              msg_len(ch.var_list.get(), DDATA_XSPLIT, localNx, 0, MYG),
+              msg_len(ch.var_list.get(), DDATA_XSPLIT, local_nx, 0, MYG),
               PVEC_REAL_MPI_TYPE,
               DDATA_OUTDEST,
               OUT_SENT_UP,
@@ -868,7 +868,7 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   
   /// Work out length of buffer needed
   int xlen = msg_len(g.get(), 0, MXG, 0, MYSUB);
-  int ylen = msg_len(g.get(), 0, localNx, 0, MYG);
+  int ylen = msg_len(g.get(), 0, local_nx, 0, MYG);
 
   /// Get a communications handle of (at least) the needed size
   CommHandle *ch = get_handle(xlen, ylen);
@@ -907,7 +907,7 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   if(UDATA_OUTDEST != -1) { // if destination for outer x data
     outbuff = &(ch->umsg_sendbuff[len]); // A pointer to the start of the second part
                                    // of the buffer
-    len = pack_data(ch->var_list.get(), UDATA_XSPLIT, localNx, MYSUB, MYSUB+MYG, outbuff);
+    len = pack_data(ch->var_list.get(), UDATA_XSPLIT, local_nx, MYSUB, MYSUB+MYG, outbuff);
     // Send the data to processor UDATA_OUTDEST
     if(async_send) {
       MPI_Isend(outbuff,
@@ -951,7 +951,7 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   if(DDATA_OUTDEST != -1) { // if destination for outer x data
     outbuff = &(ch->dmsg_sendbuff[len]); // A pointer to the start of the second part
                                    // of the buffer
-    len = pack_data(ch->var_list.get(), DDATA_XSPLIT, localNx, MYG, 2*MYG, outbuff);
+    len = pack_data(ch->var_list.get(), DDATA_XSPLIT, local_nx, MYG, 2*MYG, outbuff);
     // Send the data to processor DDATA_OUTDEST
 
     if(async_send) {
@@ -1056,7 +1056,7 @@ int BoutMesh::wait(comm_handle handle) {
     }
     case 1: { // Up, outer
       len = msg_len(ch->var_list.get(), 0, UDATA_XSPLIT, 0, MYG);
-      unpack_data(ch->var_list.get(), UDATA_XSPLIT, localNx, MYSUB+MYG, MYSUB+2*MYG, &(ch->umsg_recvbuff[len]));
+      unpack_data(ch->var_list.get(), UDATA_XSPLIT, local_nx, MYSUB+MYG, MYSUB+2*MYG, &(ch->umsg_recvbuff[len]));
       break;
     }
     case 2: { // Down, inner
@@ -1065,7 +1065,7 @@ int BoutMesh::wait(comm_handle handle) {
     }
     case 3: { // Down, outer
       len = msg_len(ch->var_list.get(), 0, DDATA_XSPLIT, 0, MYG);
-      unpack_data(ch->var_list.get(), DDATA_XSPLIT, localNx, 0, MYG, &(ch->dmsg_recvbuff[len]));
+      unpack_data(ch->var_list.get(), DDATA_XSPLIT, local_nx, 0, MYG, &(ch->dmsg_recvbuff[len]));
       break;
     }
     case 4: { // inner
@@ -1113,7 +1113,7 @@ int BoutMesh::wait(comm_handle handle) {
             shiftZ(*var, jx, jy, ShiftAngle[jx]);
       }
       if(TS_down_out && (DDATA_OUTDEST  != -1)) {
-        for(jx=DDATA_XSPLIT;jx<localNx; jx++)
+        for(jx=DDATA_XSPLIT;jx<local_nx; jx++)
           for(jy=0;jy != MYG; jy++)
             shiftZ(*var, jx, jy, ShiftAngle[jx]);
       }
@@ -1121,12 +1121,12 @@ int BoutMesh::wait(comm_handle handle) {
       // Upper boundary
       if(TS_up_in && (UDATA_INDEST  != -1)) {
         for(jx=0;jx<UDATA_XSPLIT; jx++)
-          for(jy=localNy-MYG;jy != localNy; jy++)
+          for(jy=local_ny-MYG;jy != local_ny; jy++)
             shiftZ(*var, jx, jy, -ShiftAngle[jx]);
       }
       if(TS_up_out && (UDATA_OUTDEST  != -1)) {
-        for(jx=UDATA_XSPLIT;jx<localNx; jx++)
-          for(jy=localNy-MYG;jy != localNy; jy++)
+        for(jx=UDATA_XSPLIT;jx<local_nx; jx++)
+          for(jy=local_ny-MYG;jy != local_ny; jy++)
             shiftZ(*var, jx, jy, -ShiftAngle[jx]);
       }
     }
@@ -1662,12 +1662,12 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
   xge = XLOCAL(xge);
   xlt = XLOCAL(xlt);
 
-  if(( xge >= localNx ) || ( xlt <= 0 )) {
+  if(( xge >= local_nx ) || ( xlt <= 0 )) {
     return; // Not in this x domain
   }
 
   if(xge < 0)   xge = 0;
-  if(xlt > localNx) xlt = localNx;
+  if(xlt > local_nx) xlt = local_nx;
 
   if(MYPE == PROC_NUM(PE_XIND, ypeup)) { /* PROCESSOR SENDING +VE Y */
     /* Set the branch cut x position */
@@ -1675,7 +1675,7 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
       /* Connect on the inside */
       UDATA_XSPLIT = xlt;
       UDATA_INDEST = PROC_NUM(PE_XIND, ypedown);
-      if(UDATA_XSPLIT == localNx)
+      if(UDATA_XSPLIT == local_nx)
         UDATA_OUTDEST = -1;
 
       TS_up_in = ts; // Twist-shift
@@ -1701,7 +1701,7 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
       /* Connect on the inside */
       DDATA_XSPLIT = xlt;
       DDATA_INDEST = PROC_NUM(PE_XIND, ypeup);
-      if(DDATA_XSPLIT == localNx)
+      if(DDATA_XSPLIT == local_nx)
         DDATA_OUTDEST = -1;
 
       TS_down_in = ts;
@@ -1749,7 +1749,7 @@ void BoutMesh::add_target(int ypos, int xge, int xlt) {
   // Convert X coordinates into local indices
   xge = XLOCAL(xge);
   xlt = XLOCAL(xlt);
-  if(( xge >= localNx ) || ( xlt <= 0 )) {
+  if(( xge >= local_nx ) || ( xlt <= 0 )) {
     return; // Not in this x domain
   }
 
@@ -1759,7 +1759,7 @@ void BoutMesh::add_target(int ypos, int xge, int xlt) {
       // Target on inside
       UDATA_XSPLIT = xlt;
       UDATA_INDEST = -1;
-      if(xlt >= localNx)
+      if(xlt >= local_nx)
         UDATA_OUTDEST = -1;
       output.write("=> This processor has target upper inner\n");
     }else {
@@ -1779,7 +1779,7 @@ void BoutMesh::add_target(int ypos, int xge, int xlt) {
       // Target on inside
       DDATA_XSPLIT = xlt;
       DDATA_INDEST = -1;
-      if(xlt >= localNx)
+      if(xlt >= local_nx)
         DDATA_OUTDEST = -1;
       output.write("=> This processor has target lower inner\n");
     }else {
@@ -1881,10 +1881,10 @@ void BoutMesh::topology() {
     MYPE_IN_CORE = 1; /* processor is in the core */
   }
 
-  if(DDATA_XSPLIT > localNx)
-    DDATA_XSPLIT = localNx;
-  if(UDATA_XSPLIT > localNx)
-    UDATA_XSPLIT = localNx;
+  if(DDATA_XSPLIT > local_nx)
+    DDATA_XSPLIT = local_nx;
+  if(UDATA_XSPLIT > local_nx)
+    UDATA_XSPLIT = local_nx;
 
   // Print out settings
   output.write("\tMYPE_IN_CORE = %d\n", MYPE_IN_CORE);
@@ -2026,7 +2026,7 @@ int BoutMesh::pack_data(const vector<FieldData *> &var_list, int xge, int xlt, i
       if (var->is3D()) {
         // 3D variable
         for (int jy = yge; jy < ylt; jy++) {
-          for (int jz = 0; jz < localNz; jz++, len++) {
+          for (int jz = 0; jz < local_nz; jz++, len++) {
             buffer[len] = (*dynamic_cast<Field3D*>(var))(jx, jy, jz);
           }
         }
@@ -2053,7 +2053,7 @@ int BoutMesh::unpack_data(const vector<FieldData *> &var_list, int xge, int xlt,
       if (var->is3D()) {
         // 3D variable
         for (int jy = yge; jy < ylt; jy++) {
-          for (int jz = 0; jz < localNz; jz++, len++) {
+          for (int jz = 0; jz < local_nz; jz++, len++) {
             (*dynamic_cast<Field3D*>(var))(jx, jy, jz) = buffer[len];
           }
         }
@@ -2143,7 +2143,7 @@ MPI_Comm BoutMesh::getYcomm(int xpos) const {
 const RangeIterator BoutMesh::iterateBndryLowerY() const {
 
   int xs = 0;
-  int xe = localNx-1;
+  int xe = local_nx-1;
   if((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart))
     xs = DDATA_XSPLIT;
   if((DDATA_OUTDEST >= 0) && (DDATA_XSPLIT < xend+1))
@@ -2159,7 +2159,7 @@ const RangeIterator BoutMesh::iterateBndryLowerY() const {
 
 const RangeIterator BoutMesh::iterateBndryUpperY() const {
   int xs = 0;
-  int xe = localNx-1;
+  int xe = local_nx-1;
   if((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart))
     xs = UDATA_XSPLIT;
   if((UDATA_OUTDEST >= 0) && (UDATA_XSPLIT < xend+1))
@@ -2194,15 +2194,15 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
     result.allocate();
     if(XPROC(ixseps_inner) == PE_XIND) {
       int x = XLOCAL(ixseps_inner);
-      for(int y=0;y<localNy;y++)
-        for(int z=0;z<localNz;z++) {
+      for(int y=0;y<local_ny;y++)
+        for(int z=0;z<local_nz;z++) {
 	  result(x,y,z) = 0.5*(f(x,y,z) + f(x-1,y,z));
         }
     }
     if(XPROC(ixseps_inner-1) == PE_XIND) {
       int x = XLOCAL(ixseps_inner-1);
-      for(int y=0;y<localNy;y++)
-        for(int z=0;z<localNz;z++) {
+      for(int y=0;y<local_ny;y++)
+        for(int z=0;z<local_nz;z++) {
 	  result(x,y,z) = 0.5*(f(x,y,z) + f(x+1,y,z));
         }
     }
@@ -2211,15 +2211,15 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
     result.allocate();
     if(XPROC(ixseps_outer) == PE_XIND) {
       int x = XLOCAL(ixseps_outer);
-      for(int y=0;y<localNy;y++)
-        for(int z=0;z<localNz;z++) {
+      for(int y=0;y<local_ny;y++)
+        for(int z=0;z<local_nz;z++) {
           result(x,y,z) = 0.5*(f(x,y,z) + f(x-1,y,z));
         }
     }
     if(XPROC(ixseps_outer-1) == PE_XIND) {
       int x = XLOCAL(ixseps_outer-1);
-      for(int y=0;y<localNy;y++)
-        for(int z=0;z<localNz;z++) {
+      for(int y=0;y<local_ny;y++)
+        for(int z=0;z<local_nz;z++) {
           result(x,y,z) = 0.5*(f(x,y,z) + f(x+1,y,z));
         }
     }
@@ -2347,7 +2347,7 @@ void BoutMesh::outputVars(Datafile &file) {
   file.add(MYG,   "MYG",   0);
   file.add(nx,    "nx",    0 );
   file.add(ny,    "ny",    0 );
-  file.add(localNz,"MZ",    0);
+  file.add(local_nz,"MZ",    0);
   file.add(NXPE,  "NXPE",  0);
   file.add(NYPE,  "NYPE",  0);
   file.add(ZMAX,  "ZMAX",  0);
@@ -2408,7 +2408,7 @@ const Field2D BoutMesh::lowPass_poloidal(const Field2D &var,int mmax)
   int mmax1;
 
   mmax1 = mmax+1;
-  ncx = localNx;
+  ncx = local_nx;
   ncy = yend - ystart + 1;
   ncyall = ncy*NYPE;
 
@@ -2485,9 +2485,9 @@ const Field3D BoutMesh::Switch_YZ(const Field3D &var) {
   int i,j,ix;
   ncy = yend - ystart + 1;
   ncy_all = MY;
-  ncz = localNz ;
+  ncz = local_nz ;
 
-  if(MY != localNz){
+  if(MY != local_nz){
     throw new BoutException("Y and Z dimension is not same in Switch_YZ code"); }
 
   //memory allocation
@@ -2516,7 +2516,7 @@ const Field3D BoutMesh::Switch_YZ(const Field3D &var) {
 }
 
 const Field3D BoutMesh::Switch_XZ(const Field3D &var) {   
-    if(MX != localNz){
+    if(MX != local_nz){
         throw new BoutException("X and Z dimension must be the same to use Switch_XZ");
     }
     static BoutReal ***buffer = (BoutReal ***) NULL;
@@ -2526,9 +2526,9 @@ const Field3D BoutMesh::Switch_XZ(const Field3D &var) {
 
     Field3D result;
 
-    ncx = localNx - 2*MXG ;
-    ncy = localNy - 2*MYG ;
-    ncz = localNz ;
+    ncx = local_nx - 2*MXG ;
+    ncy = local_ny - 2*MYG ;
+    ncz = local_nz ;
 
     // Allocate Memory
     result.allocate();

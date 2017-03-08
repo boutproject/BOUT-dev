@@ -491,22 +491,22 @@ backward_stencil::backward_stencil()
 /* Given index centre, calculates shifted indices */
 void calc_index(bindex *bx) {
   bx->jxp = bx->jx+1;
-  if(bx->jxp >= mesh->localNx)
-    bx->jxp = mesh->localNx-1;
+  if(bx->jxp >= mesh->local_nx)
+    bx->jxp = mesh->local_nx-1;
   
   bx->jxm = bx->jx-1;
   if(bx->jxm < 0)
     bx->jxm = 0;
 
   if (bx->jx>1) bx->jx2m=bx->jx-2; else bx->jx2m=bx->jxm;
-  if (bx->jx<(mesh->localNx-2)) bx->jx2p=bx->jx+2; else bx->jx2p=bx->jxp;
+  if (bx->jx<(mesh->local_nx-2)) bx->jx2p=bx->jx+2; else bx->jx2p=bx->jxp;
 
   bx->jyp  = bx->jy+1;
   bx->jym  = bx->jy-1;
   if (bx->jy<mesh->yend || mesh->ystart>1) bx->jy2p = bx->jy+2; else bx->jy2p=bx->jy+1;
   if (bx->jy>mesh->ystart || mesh->ystart>1) bx->jy2m = bx->jy-2; else bx->jy2m=bx->jy-1;
 
-  int ncz = mesh->localNz;
+  int ncz = mesh->local_nz;
   
   bx->jzp  = (bx->jz+1)%ncz;
   bx->jzm  = (bx->jz+ncz-1)%ncz;
@@ -538,7 +538,7 @@ void start_index(bindex *bx, REGION region) {
 /* Loops the index over all points. Returns 0 when no more */
 int next_index3(bindex *bx) {
   bx->jz++;
-  if(bx->jz >= mesh->localNz) {
+  if(bx->jz >= mesh->local_nz) {
     
     bx->jz = 0;
     bx->jy++;
@@ -555,7 +555,7 @@ int next_index3(bindex *bx) {
 	}
       }else {
 	// Including X boundary regions
-	if(bx->jx >= mesh->localNx) {
+	if(bx->jx >= mesh->local_nx) {
 	  bx->jx = 0;
 	  return(0);
 	}
@@ -583,7 +583,7 @@ int next_index2(bindex *bx)
 	return(0);
       }
     }else
-      if(bx->jx >= mesh->localNx) {
+      if(bx->jx >= mesh->local_nx) {
 	bx->jx = 0;
 	return(0);
       }
@@ -598,7 +598,7 @@ int next_index2(bindex *bx)
 int next_indexperp(bindex *bx)
 {
   bx->jz++;
-  if(bx->jz >= mesh->localNz) {
+  if(bx->jz >= mesh->local_nz) {
     
     bx->jz = 0;
     bx->jx++;
@@ -618,13 +618,13 @@ int next_indexperp(bindex *bx)
 void reverse_start_index(bindex *bx, REGION region)
 {
 	// Initialize it to something
-  bx->jx = mesh->localNx-1;
+  bx->jx = mesh->local_nx-1;
 
   if((region == RGN_NOBNDRY) || (region == RGN_NOX))
     bx->jx = mesh->xend;
   
   bx->jy = mesh->yend;
-  bx->jz = mesh->localNz-1;
+  bx->jz = mesh->local_nz-1;
 
   bx->region = region;
 
@@ -654,7 +654,7 @@ int reverse_next_index3(bindex *bx)
   bx->jz--;
   if(bx->jz < 0) {
     
-    bx->jz = mesh->localNz-1;
+    bx->jz = mesh->local_nz-1;
     bx->jy--;
     
     if(bx->jy < mesh->ystart) {
@@ -670,7 +670,7 @@ int reverse_next_index3(bindex *bx)
       }else {
 	// Including X boundary regions
 	if(bx->jx < 0) {
-	  bx->jx = mesh->localNx-1;
+	  bx->jx = mesh->local_nx-1;
 	  return(0);
 	}
       }

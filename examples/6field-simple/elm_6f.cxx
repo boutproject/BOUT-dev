@@ -264,8 +264,8 @@ const Field2D Invert_laplace2(const Field2D &f, int flags)
   result_tmp = smooth_x(result_tmp);
   result_tmp = nl_filter_y(result_tmp, 1);
 
-  for(int jx=0;jx<mesh->localNx;jx++)
-    for(int jy=0;jy<mesh->localNy;jy++)
+  for(int jx=0;jx<mesh->local_nx;jx++)
+    for(int jy=0;jy<mesh->local_ny;jy++)
       result[jx][jy] = result_tmp[jx][jy][0];
 
   return(result);
@@ -328,12 +328,12 @@ const Field2D N0tanh(BoutReal n0_height, BoutReal n0_ave, BoutReal n0_width, Bou
       mesh->get(Jysep2, "jyseps2_2");
       //output.write("Jysep2_2 = %i   Ixsep1 = %i\n", int(Jysep2), int(Jxsep));
 
-      for(int jx=0;jx<mesh->localNx;jx++)
+      for(int jx=0;jx<mesh->local_nx;jx++)
 	{
 	  BoutReal mgx = mesh->GlobalX(jx);
 	  BoutReal xgrid_num = (Jxsep+1.)/Grid_NX;
 	  //output.write("mgx = %e xgrid_num = %e\n", mgx);
-	  for (int jy=0;jy<mesh->localNy;jy++)
+	  for (int jy=0;jy<mesh->local_ny;jy++)
 	    {
 	      int globaly = mesh->YGLOBAL(jy);
 	      //output.write("local y = %i;   global y: %i\n", jy, globaly);
@@ -348,7 +348,7 @@ const Field2D N0tanh(BoutReal n0_height, BoutReal n0_ave, BoutReal n0_width, Bou
     }
   else //circular geometry
     {
-      for(int jx=0;jx<mesh->localNx;jx++)
+      for(int jx=0;jx<mesh->local_nx;jx++)
 	{
 	  BoutReal mgx = mesh->GlobalX(jx);
 	  BoutReal xgrid_num = Grid_NXlimit/Grid_NX;
@@ -357,7 +357,7 @@ const Field2D N0tanh(BoutReal n0_height, BoutReal n0_ave, BoutReal n0_width, Bou
 	  BoutReal rlx = mgx - n0_center;
 	  BoutReal temp = exp(rlx/n0_width);
 	  BoutReal dampr = ((temp - 1.0 / temp) / (temp + 1.0 / temp));
-	  for(int jy=0;jy<mesh->localNy;jy++)
+	  for(int jy=0;jy<mesh->local_ny;jy++)
 	    result[jx][jy] = 0.5*(1.0 - dampr) * n0_height + n0_ave;  
 	}
     }
@@ -1211,9 +1211,9 @@ const Field3D Grad_parP(const Field3D &f, CELL_LOC loc = CELL_DEFAULT)
     fm = interpolate(f, Xim_x, Xim_z);
     
     result.allocate();
-    for(int i=0;i<mesh->localNx;i++)
-      for(int j=1;j<mesh->localNy-1;j++)
-	for(int k=0;k<mesh->localNz;k++) {
+    for(int i=0;i<mesh->local_nx;i++)
+      for(int j=1;j<mesh->local_ny-1;j++)
+	for(int k=0;k<mesh->local_nz;k++) {
 	  result[i][j][k] = (fp[i][j+1][k] - fm[i][j-1][k])/(2.*mesh->dy[i][j]*sqrt(mesh->g_22[i][j]));
 	}
   }else {
@@ -1370,12 +1370,12 @@ int physics_run(BoutReal t)
       // at the boundary
       
     for(int i=0;i<jpar_bndry_width;i++)
-      for(int j=0;j<mesh->localNy;j++)
-	for(int k=0;k<mesh->localNz;k++) {
+      for(int j=0;j<mesh->local_ny;j++)
+	for(int k=0;k<mesh->local_nz;k++) {
 	  if(mesh->firstX())
 	    Jpar[i][j][k] = 0.0;
 	  if(mesh->lastX())
-	    Jpar[mesh->localNx-1-i][j][k] = 0.0;
+	    Jpar[mesh->local_nx-1-i][j][k] = 0.0;
 	}
   }
 
@@ -1406,12 +1406,12 @@ int physics_run(BoutReal t)
       // at the boundary
       
     for(int i=0;i<jpar_bndry_width;i++)
-      for(int j=0;j<mesh->localNy;j++)
-	for(int k=0;k<mesh->localNz;k++) {
+      for(int j=0;j<mesh->local_ny;j++)
+	for(int k=0;k<mesh->local_nz;k++) {
 	  if(mesh->firstX())
 	    Jpar2[i][j][k] = 0.0;
 	  if(mesh->lastX())
-	    Jpar2[mesh->localNx-1-i][j][k] = 0.0;
+	    Jpar2[mesh->local_nx-1-i][j][k] = 0.0;
 	}
     }
   //output.write("I see you 3! \n");//xia
@@ -1673,12 +1673,12 @@ int physics_run(BoutReal t)
 
   if(damp_width > 0) {
     for(int i=0;i<damp_width;i++) {
-      for(int j=0;j<mesh->localNy;j++)
-	for(int k=0;k<mesh->localNz;k++) {
+      for(int j=0;j<mesh->local_ny;j++)
+	for(int k=0;k<mesh->local_nz;k++) {
 	  if(mesh->firstX())
 	    ddt(U)(i,j,k) -= U(i,j,k) / damp_t_const;
 	  if(mesh->lastX())
-	    ddt(U)(mesh->localNx-1-i,j,k) -= U(mesh->localNx-1-i,j,k) / damp_t_const;
+	    ddt(U)(mesh->local_nx-1-i,j,k) -= U(mesh->local_nx-1-i,j,k) / damp_t_const;
 	}
     }
   }

@@ -107,7 +107,7 @@ bool GridFromOptions::get(Mesh *m, vector<BoutReal> &var, const string &name, in
   }
   case GridDataSource::Z : {
     for(int z=0;z<len;z++){
-      var[z] = gen->generate(0.0, 0.0, TWOPI*((BoutReal) z + offset) / ((BoutReal) (m->localNz)), 0.0);
+      var[z] = gen->generate(0.0, 0.0, TWOPI*((BoutReal) z + offset) / ((BoutReal) (m->local_nz)), 0.0);
     }
     break;
   }

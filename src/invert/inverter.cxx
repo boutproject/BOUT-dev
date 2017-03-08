@@ -64,7 +64,7 @@ int Inverter::solve(const FieldPerp &b, FieldPerp &x, int flags, int restart, in
   int iterations;
   BoutReal residual;
   
-  int status = gmres_solve(*(b.getData()), *(x.getData()), mesh->localNx*mesh->localNz, 
+  int status = gmres_solve(*(b.getData()), *(x.getData()), mesh->local_nx*mesh->local_nz, 
 			   restart, itmax, tol, iterations, residual);
   
   // Iterations and residual now set by GMRES method
@@ -77,7 +77,7 @@ int Inverter::solve(const Field3D &b, Field3D &x,
 		    int restart, int itmax,
 		    BoutReal tol)
 {
-  int ys = 0, ye = mesh->localNy-1;
+  int ys = 0, ye = mesh->local_ny-1;
   // NOTE: REFINE THIS TO ONLY SOLVE IN BOUNDARY Y CELLS
   
   FieldPerp xperp;
@@ -151,9 +151,9 @@ void Inverter::applyBoundary(FieldPerp &f, int flags)
   Coordinates *coord = mesh->coordinates();
   
   int nin = mesh->xstart; // Number of inner points
-  int nout = mesh->localNx-mesh->xend-1; // Number of outer points
+  int nout = mesh->local_nx-mesh->xend-1; // Number of outer points
   
-  int ncz = mesh->localNz;
+  int ncz = mesh->local_nz;
   
   int jy = f.getIndex();
 
@@ -198,7 +198,7 @@ void Inverter::applyBoundary(FieldPerp &f, int flags)
 
 void Inverter::calcBoundary(dcomplex **cdata, int n, BoutReal *h, int flags)
 {
-  int ncz = mesh->localNz;
+  int ncz = mesh->local_nz;
   
   // DC component
   if(flags & (INVERT_DC_IN_GRAD | INVERT_DC_OUT_GRAD)) {

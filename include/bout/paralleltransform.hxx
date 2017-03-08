@@ -160,9 +160,9 @@ private:
   /*!
    * Shift a given 1D array, assumed to be in Z, by the given \p zangle
    *
-   * @param[in] in  A 1D array of length mesh.localNz
-   * @param[in] phs Phase shift, assumed to have length (mesh.localNz/2 + 1) i.e. the number of modes
-   * @param[out] out  A 1D array of length mesh.localNz, already allocated
+   * @param[in] in  A 1D array of length mesh.local_nz
+   * @param[in] phs Phase shift, assumed to have length (mesh.local_nz/2 + 1) i.e. the number of modes
+   * @param[out] out  A 1D array of length mesh.local_nz, already allocated
    */
   void shiftZ(const BoutReal *in, const std::vector<dcomplex> &phs, BoutReal *out);
 };

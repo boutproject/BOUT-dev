@@ -814,7 +814,7 @@ int Solver::getLocalN() {
   int n2d = n2Dvars();
   int n3d = n3Dvars();
   
-  int ncz = mesh->localNz;
+  int ncz = mesh->local_nz;
   int MYSUB = mesh->yend - mesh->ystart + 1;
 
   int local_N = (mesh->xend - mesh->xstart + 1) *
@@ -838,7 +838,7 @@ int Solver::getLocalN() {
   
   // Y up
   for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); xi++) {
-    local_N +=  (mesh->localNy - mesh->yend - 1) * (n2dbndry + ncz * n3dbndry);
+    local_N +=  (mesh->local_ny - mesh->yend - 1) * (n2dbndry + ncz * n3dbndry);
   }
   
   // Y down
@@ -854,7 +854,7 @@ int Solver::getLocalN() {
 
   // X outer
   if(mesh->lastX() && !mesh->periodicX) {
-    local_N += (mesh->localNx - mesh->xend - 1) * MYSUB * (n2dbndry + ncz * n3dbndry);
+    local_N += (mesh->local_nx - mesh->xend - 1) * MYSUB * (n2dbndry + ncz * n3dbndry);
     output.write("\tBoundary region outer X\n");
   }
   
@@ -894,7 +894,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
       p++;
     }
     
-    for (jz=0; jz < mesh->localNz; jz++) {
+    for (jz=0; jz < mesh->local_nz; jz++) {
       
       // Loop over 3D variables
       for(const auto& f : f3d) {
@@ -918,7 +918,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
       p++;
     }
     
-    for (jz=0; jz < mesh->localNz; jz++) {
+    for (jz=0; jz < mesh->local_nz; jz++) {
       
       // Loop over 3D variables
       for(const auto& f : f3d) {
@@ -946,7 +946,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
       p++;
     }
     
-    for (jz=0; jz < mesh->localNz; jz++) {
+    for (jz=0; jz < mesh->local_nz; jz++) {
       
       // Loop over 3D variables
       for(const auto& f : f3d) {
@@ -974,7 +974,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
       p++;
     }
     
-    for (jz=0; jz < mesh->localNz; jz++) {
+    for (jz=0; jz < mesh->local_nz; jz++) {
       
       // Loop over 3D variables
       for(const auto& f : f3d) {
@@ -997,7 +997,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
       p++;
     }
     
-    for (jz=0; jz < mesh->localNz; jz++) {
+    for (jz=0; jz < mesh->local_nz; jz++) {
       
       // Loop over 3D variables
       for(const auto& f : f3d) {
@@ -1039,13 +1039,13 @@ void Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op) {
   
   // Upper Y boundary condition
   for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); xi++) {
-    for(jy=mesh->yend+1;jy<mesh->localNy;jy++)
+    for(jy=mesh->yend+1;jy<mesh->local_ny;jy++)
       loop_vars_op(*xi, jy, udata, p, op, true);
   }
 
   // Outer X boundary
   if(mesh->lastX() && !mesh->periodicX) {
-    for(jx=mesh->xend+1;jx<mesh->localNx;jx++)
+    for(jx=mesh->xend+1;jx<mesh->local_nx;jx++)
       for(jy=mesh->ystart;jy<=mesh->yend;jy++)
 	loop_vars_op(jx, jy, udata, p, op, true);
   }
@@ -1181,7 +1181,7 @@ const Field3D Solver::globalIndex(int localStart) {
           // Zero index contains 2D and 3D variables
           index(jx, jy, 0) = ind;
           ind += n2dbndry + n3dbndry;
-          for(int jz=1;jz<mesh->localNz; jz++) {
+          for(int jz=1;jz<mesh->local_nz; jz++) {
             index(jx, jy, jz) = ind;
             ind += n3dbndry;
           }
@@ -1193,7 +1193,7 @@ const Field3D Solver::globalIndex(int localStart) {
       for(int jy=0;jy<mesh->ystart;jy++) {
         index(*xi, jy, 0) = ind;
         ind += n2dbndry + n3dbndry;
-        for(int jz=1;jz<mesh->localNz; jz++) {
+        for(int jz=1;jz<mesh->local_nz; jz++) {
           index(*xi, jy, jz) = ind;
           ind += n3dbndry;
         }
@@ -1206,7 +1206,7 @@ const Field3D Solver::globalIndex(int localStart) {
     for (int jy=mesh->ystart; jy <= mesh->yend; jy++) {
       index(jx, jy, 0) = ind;
       ind += n2d + n3d;
-      for(int jz=1;jz<mesh->localNz; jz++) {
+      for(int jz=1;jz<mesh->local_nz; jz++) {
         index(jx, jy, jz) = ind;
         ind += n3d;
       }
@@ -1217,10 +1217,10 @@ const Field3D Solver::globalIndex(int localStart) {
     
     // Upper Y boundary condition
     for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); xi++) {
-      for(int jy=mesh->yend+1;jy<mesh->localNy;jy++) {
+      for(int jy=mesh->yend+1;jy<mesh->local_ny;jy++) {
         index(*xi, jy, 0) = ind;
         ind += n2dbndry + n3dbndry;
-        for(int jz=1;jz<mesh->localNz; jz++) {
+        for(int jz=1;jz<mesh->local_nz; jz++) {
           index(*xi, jy, jz) = ind;
           ind += n3dbndry;
         }
@@ -1229,11 +1229,11 @@ const Field3D Solver::globalIndex(int localStart) {
     
     // Outer X boundary
     if(mesh->lastX() && !mesh->periodicX) {
-      for(int jx=mesh->xend+1;jx<mesh->localNx;jx++)
+      for(int jx=mesh->xend+1;jx<mesh->local_nx;jx++)
         for(int jy=mesh->ystart;jy<=mesh->yend;jy++) {
           index(jx, jy, 0) = ind;
           ind += n2dbndry + n3dbndry;
-          for(int jz=1;jz<mesh->localNz; jz++) {
+          for(int jz=1;jz<mesh->local_nz; jz++) {
             index(jx, jy, jz) = ind;
             ind += n3dbndry;
           }

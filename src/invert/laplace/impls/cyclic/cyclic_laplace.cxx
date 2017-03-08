@@ -49,7 +49,7 @@ LaplaceCyclic::LaplaceCyclic(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1
   OPTION(opt, dst, false);
 
   if(dst) {
-    nmode = mesh->localNz-2;
+    nmode = mesh->local_nz-2;
   }else
     nmode = maxmode+1; // Number of Z modes. maxmode set in invert_laplace.cxx from options
 
@@ -63,7 +63,7 @@ LaplaceCyclic::LaplaceCyclic(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1
   }
   xe = mesh->xend;   // Last X index
   if(mesh->lastX() && !mesh->periodicX){ // Only want to include guard cells at boundaries (unless periodic in x)
-	  xe = mesh->localNx-1;
+	  xe = mesh->local_nx-1;
   }
   int n = xe - xs + 1;  // Number of X points on this processor,
                         // including boundaries but not guard cells
@@ -75,9 +75,9 @@ LaplaceCyclic::LaplaceCyclic(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1
   bcmplx = matrix<dcomplex>(nsys, n);
 
   if(dst)
-    k1d = new dcomplex[mesh->localNz];         // DST has different k space
+    k1d = new dcomplex[mesh->local_nz];         // DST has different k space
   else
-    k1d = new dcomplex[(mesh->localNz)/2 + 1]; // ZFFT routine expects input of this length
+    k1d = new dcomplex[(mesh->local_nz)/2 + 1]; // ZFFT routine expects input of this length
 
   // Create a cyclic reduction object, operating on dcomplex values
   cr = new CyclicReduce<dcomplex>(mesh->getXcomm(), n);
@@ -127,10 +127,10 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
       if(((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && mesh->firstX()) ||
          ((xe-ix < outbndry) && (outer_boundary_flags & INVERT_SET) && mesh->lastX())) {
         // Use the values in x0 in the boundary
-        DST(x0[ix]+1, mesh->localNz-2 , k1d);
+        DST(x0[ix]+1, mesh->local_nz-2 , k1d);
       }else {
         //	  int length = sizeof(*rhs[ix])/sizeof(FieldPerp);
-        DST(rhs[ix]+1, mesh->localNz-2 , k1d);
+        DST(rhs[ix]+1, mesh->local_nz-2 , k1d);
       }
 
       // Copy into array, transposing so kz is first index
@@ -141,7 +141,7 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
     // Get elements of the tridiagonal matrix
     // including boundary conditions
     for(int kz = 0; kz < nmode; kz++) {
-      BoutReal zlen = coord->dz*(mesh->localNz-3);
+      BoutReal zlen = coord->dz*(mesh->local_nz-3);
       BoutReal kwave=kz*2.0*PI/(2.*zlen); // wave number is 1/[rad]; DST has extra 2.
 
       tridagMatrix(a[kz], b[kz], c[kz],
@@ -164,13 +164,13 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
       for(int kz = 0; kz < nmode; kz++)
         k1d[kz] = xcmplx[kz][ix-xs];
 
-      for(int kz=nmode;kz<(mesh->localNz);kz++)
+      for(int kz=nmode;kz<(mesh->local_nz);kz++)
         k1d[kz] = 0.0; // Filtering out all higher harmonics
 
-      DST_rev(k1d, mesh->localNz-2, x[ix]+1);
+      DST_rev(k1d, mesh->local_nz-2, x[ix]+1);
 
       x[ix][0] = -x[ix][2];
-      x[ix][mesh->localNz-1] = -x[ix][mesh->localNz-3];
+      x[ix][mesh->local_nz-1] = -x[ix][mesh->local_nz-3];
     }
   }else {
     // Loop over X indices, including boundaries but not guard cells (unless periodic in x)
@@ -180,9 +180,9 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
     if(((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && mesh->firstX()) ||
        ((xe-ix < outbndry) && (outer_boundary_flags & INVERT_SET) && mesh->lastX())) {
         // Use the values in x0 in the boundary
-        rfft(x0[ix], mesh->localNz, k1d);
+        rfft(x0[ix], mesh->local_nz, k1d);
       }else {
-        rfft(rhs[ix], mesh->localNz, k1d);
+        rfft(rhs[ix], mesh->local_nz, k1d);
       }
 
       // Copy into array, transposing so kz is first index
@@ -214,10 +214,10 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
       for(int kz = 0; kz < nmode; kz++)
         k1d[kz] = xcmplx[kz][ix-xs];
 
-      for(int kz=nmode;kz<(mesh->localNz)/2 + 1;kz++)
+      for(int kz=nmode;kz<(mesh->local_nz)/2 + 1;kz++)
         k1d[kz] = 0.0; // Filtering out all higher harmonics
 
-      irfft(k1d, mesh->localNz, x[ix]);
+      irfft(k1d, mesh->local_nz, x[ix]);
     }
   }
   return x;

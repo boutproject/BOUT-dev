@@ -38,7 +38,7 @@ protected:
     BoutReal *bd = &b(0,0,0);
     BoutReal *cd = &c(0,0,0);
     SteadyClock start2 = steady_clock::now();
-    for(int i=0, iend=(mesh->localNx*mesh->localNy*mesh->localNz)-1; i != iend; i++) {
+    for(int i=0, iend=(mesh->local_nx*mesh->local_ny*mesh->local_nz)-1; i != iend; i++) {
       *rd = 2.*(*ad) + (*bd)*(*cd);
       rd++;
       ad++;

@@ -540,7 +540,7 @@ int Vector3D::getData(int jx, int jy, int jz, void *vptr) const
 {
 #ifdef CHECK
   // check ranges
-  if((jx < 0) || (jx >= mesh->localNx) || (jy < 0) || (jy >= mesh->localNy) || (jz < 0) || (jz >= mesh->localNz)) {
+  if((jx < 0) || (jx >= mesh->local_nx) || (jy < 0) || (jy >= mesh->local_ny) || (jz < 0) || (jz >= mesh->local_nz)) {
     throw BoutException("Vector3D: getData (%d,%d,%d) out of bounds\n", jx, jy, jz);
   }
 #endif
@@ -556,7 +556,7 @@ int Vector3D::getData(int jx, int jy, int jz, BoutReal *rptr) const
 {
 #ifdef CHECK
   // check ranges
-  if((jx < 0) || (jx >= mesh->localNx) || (jy < 0) || (jy > mesh->localNy) || (jz < 0) || (jz >= mesh->localNz)) {
+  if((jx < 0) || (jx >= mesh->local_nx) || (jy < 0) || (jy > mesh->local_ny) || (jz < 0) || (jz >= mesh->local_nz)) {
     throw BoutException("Vector3D: getData (%d,%d,%d) out of bounds\n", jx, jy, jz);
   }
 #endif
@@ -572,7 +572,7 @@ int Vector3D::setData(int jx, int jy, int jz, void *vptr)
 {
 #ifdef CHECK
   // check ranges
-  if((jx < 0) || (jx >= mesh->localNx) || (jy < 0) || (jy >= mesh->localNy) || (jz < 0) || (jz >= mesh->localNz)) {
+  if((jx < 0) || (jx >= mesh->local_nx) || (jy < 0) || (jy >= mesh->local_ny) || (jz < 0) || (jz >= mesh->local_nz)) {
     throw BoutException("Vector3D: setData (%d,%d,%d) out of bounds\n", jx, jy, jz);
   }
 #endif
@@ -588,7 +588,7 @@ int Vector3D::setData(int jx, int jy, int jz, BoutReal *rptr)
 {
 #ifdef CHECK
   // check ranges
-  if((jx < 0) || (jx >= mesh->localNx) || (jy < 0) || (jy >= mesh->localNy) || (jz < 0) || (jz >= mesh->localNz)) {
+  if((jx < 0) || (jx >= mesh->local_nx) || (jy < 0) || (jy >= mesh->local_ny) || (jz < 0) || (jz >= mesh->local_nz)) {
     throw BoutException("Vector3D: setData (%d,%d,%d) out of bounds\n", jx, jy, jz);
   }
 #endif

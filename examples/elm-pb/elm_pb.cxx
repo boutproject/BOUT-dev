@@ -571,12 +571,12 @@ int physics_init(bool restarting) {
 	rmp_Psi0 = 0.0;
 	if(mesh->lastX()) {
 	  // Set the outer boundary
-	  for(int jx=mesh->localNx-4;jx<mesh->localNx;jx++)
-	    for(int jy=0;jy<mesh->localNy;jy++)
-	      for(int jz=0;jz<mesh->localNz;jz++) {
+	  for(int jx=mesh->local_nx-4;jx<mesh->local_nx;jx++)
+	    for(int jy=0;jy<mesh->local_ny;jy++)
+	      for(int jz=0;jz<mesh->local_nz;jz++) {
 	      
 	        BoutReal angle = rmp_m * pol_angle(jx,jy) + rmp_n * ((BoutReal) jz) * mesh->coordinates()->dz;
-	        rmp_Psi0(jx,jy,jz) = (((BoutReal)(jx - 4)) / ((BoutReal)(mesh->localNx - 5))) * rmp_factor * cos(angle);
+	        rmp_Psi0(jx,jy,jz) = (((BoutReal)(jx - 4)) / ((BoutReal)(mesh->local_nx - 5))) * rmp_factor * cos(angle);
                 if(rmp_polwid > 0.0) {
                   // Multiply by a Gaussian in poloidal angle
                   BoutReal gx = ((pol_angle(jx,jy) / (2.*PI)) - rmp_polpeak) / rmp_polwid;
@@ -1236,12 +1236,12 @@ int physics_run(BoutReal t) {
       // at the boundary
       
       for(int i=0;i<jpar_bndry_width;i++)
-	for(int j=0;j<mesh->localNy;j++)
-	  for(int k=0;k<mesh->localNz;k++) {
+	for(int j=0;j<mesh->local_ny;j++)
+	  for(int k=0;k<mesh->local_nz;k++) {
 	    if(mesh->firstX())
 	      Jpar(i,j,k) = 0.0;
 	    if(mesh->lastX())
-	      Jpar(mesh->localNx-1-i,j,k) = 0.0;
+	      Jpar(mesh->local_nx-1-i,j,k) = 0.0;
 	  }
     }
 
@@ -1267,12 +1267,12 @@ int physics_run(BoutReal t) {
       // at the boundary
       
       for(int i=0;i<jpar_bndry_width;i++)
-	for(int j=0;j<mesh->localNy;j++)
-	  for(int k=0;k<mesh->localNz;k++) {
+	for(int j=0;j<mesh->local_ny;j++)
+	  for(int k=0;k<mesh->local_nz;k++) {
 	    if(mesh->firstX())
 	      Jpar2(i,j,k) = 0.0;
 	    if(mesh->lastX())
-	      Jpar2(mesh->localNx-1-i,j,k) = 0.0;
+	      Jpar2(mesh->local_nx-1-i,j,k) = 0.0;
 	  }
     }
     //xqx end
@@ -1290,7 +1290,7 @@ int physics_run(BoutReal t) {
     // At y = ystart (lower boundary)
     
     for(RangeIterator r=mesh->iterateBndryLowerY(); !r.isDone(); r++) {
-      for(int jz=0; jz<mesh->localNz; jz++) {
+      for(int jz=0; jz<mesh->local_nz; jz++) {
 		
 	// Zero-gradient potential
 	BoutReal phisheath = phi(r.ind, mesh->ystart, jz);
@@ -1312,7 +1312,7 @@ int physics_run(BoutReal t) {
     // At y = yend (upper boundary)
 
     for(RangeIterator r=mesh->iterateBndryUpperY(); !r.isDone(); r++) {
-      for(int jz=0; jz<mesh->localNz; jz++) {
+      for(int jz=0; jz<mesh->local_nz; jz++) {
 		
 	// Zero-gradient potential
 	BoutReal phisheath = phi(r.ind, mesh->yend, jz);
@@ -1611,12 +1611,12 @@ int physics_run(BoutReal t) {
 
   if(damp_width > 0) {
     for(int i=0;i<damp_width;i++) {
-      for(int j=0;j<mesh->localNy;j++)
-	for(int k=0;k<mesh->localNz;k++) {
+      for(int j=0;j<mesh->local_ny;j++)
+	for(int k=0;k<mesh->local_nz;k++) {
 	  if(mesh->firstX())
 	    ddt(U)(i,j,k) -= U(i,j,k) / damp_t_const;
 	  if(mesh->lastX())
-	    ddt(U)(mesh->localNx-1-i,j,k) -= U(mesh->localNx-1-i,j,k) / damp_t_const;
+	    ddt(U)(mesh->local_nx-1-i,j,k) -= U(mesh->local_nx-1-i,j,k) / damp_t_const;
 	}
     }
   }
@@ -1648,16 +1648,16 @@ int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
     // Boundary in jpar
     if(mesh->firstX()) {
       for(int i=jpar_bndry_width;i>=0;i--)
-        for(int j=0;j<mesh->localNy;j++)
-          for(int k=0;k<mesh->localNz;k++) {
+        for(int j=0;j<mesh->local_ny;j++)
+          for(int k=0;k<mesh->local_nz;k++) {
             Jrhs(i,j,k) = 0.5*Jrhs(i+1,j,k);
           }
 
     }
     if(mesh->lastX()) {
-      for(int i=mesh->localNx-jpar_bndry_width-1;i<mesh->localNx;i++)
-        for(int j=0;j<mesh->localNy;j++)
-          for(int k=0;k<mesh->localNz;k++) {
+      for(int i=mesh->local_nx-jpar_bndry_width-1;i<mesh->local_nx;i++)
+        for(int j=0;j<mesh->local_ny;j++)
+          for(int k=0;k<mesh->local_nz;k++) {
             Jrhs(i,j,k) = 0.5*Jrhs(i-1,j,k);
           }
     }

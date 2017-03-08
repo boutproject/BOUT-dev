@@ -148,15 +148,15 @@ bool Datafile::openw(const char *format, ...) {
   // If parallel do not want to write ghost points, and it is easier then to ignore the boundary guard cells as well
   if (parallel) {
     file->setLocalOrigin(0, 0, 0, mesh->xstart, mesh->ystart, 0);
-    Lx = mesh->localNx-2*mesh->xstart;
-    Ly = mesh->localNy-2*mesh->ystart;
-    Lz = mesh->localNz;
+    Lx = mesh->local_nx-2*mesh->xstart;
+    Ly = mesh->local_ny-2*mesh->ystart;
+    Lz = mesh->local_nz;
   }
   else {
     file->setGlobalOrigin(0,0,0);
-    Lx = mesh->localNx;
-    Ly = mesh->localNy;
-    Lz = mesh->localNz;
+    Lx = mesh->local_nx;
+    Ly = mesh->local_ny;
+    Lz = mesh->local_nz;
   }
   
   appending = false;
@@ -189,15 +189,15 @@ bool Datafile::opena(const char *format, ...) {
   // If parallel do not want to write ghost points, and it is easier then to ignore the boundary guard cells as well
   if (parallel) {
     file->setLocalOrigin(0, 0, 0, mesh->xstart, mesh->ystart, 0);
-    Lx = mesh->localNx-2*mesh->xstart;
-    Ly = mesh->localNy-2*mesh->ystart;
-    Lz = mesh->localNz;
+    Lx = mesh->local_nx-2*mesh->xstart;
+    Ly = mesh->local_ny-2*mesh->ystart;
+    Lz = mesh->local_nz;
   }
   else {
     file->setGlobalOrigin(0,0,0);
-    Lx = mesh->localNx;
-    Ly = mesh->localNy;
-    Lz = mesh->localNz;
+    Lx = mesh->local_nx;
+    Ly = mesh->local_ny;
+    Lz = mesh->local_nz;
   }
   
   appending = true;
@@ -568,7 +568,7 @@ bool Datafile::read_f2d(const string &name, Field2D *f, bool save_repeat) {
   f->allocate();
   
   if(save_repeat) {
-    if(!file->read_rec(&((*f)(0,0)), name, mesh->localNx, mesh->localNy)) {
+    if(!file->read_rec(&((*f)(0,0)), name, mesh->local_nx, mesh->local_ny)) {
       if(init_missing) {
         output.write("\tWARNING: Could not read 2D field %s. Setting to zero\n", name.c_str());
         *f = 0.0;
@@ -578,7 +578,7 @@ bool Datafile::read_f2d(const string &name, Field2D *f, bool save_repeat) {
       return false;
     }
   }else {
-    if(!file->read(&((*f)(0,0)), name, mesh->localNx, mesh->localNy)) {
+    if(!file->read(&((*f)(0,0)), name, mesh->local_nx, mesh->local_ny)) {
       if(init_missing) {
         output.write("\tWARNING: Could not read 2D field %s. Setting to zero\n", name.c_str());
         *f = 0.0;
@@ -595,7 +595,7 @@ bool Datafile::read_f3d(const string &name, Field3D *f, bool save_repeat) {
   f->allocate();
   
   if(save_repeat) {
-    if(!file->read_rec(&((*f)(0,0,0)), name, mesh->localNx, mesh->localNy, mesh->localNz)) {
+    if(!file->read_rec(&((*f)(0,0,0)), name, mesh->local_nx, mesh->local_ny, mesh->local_nz)) {
       if(init_missing) {
         output.write("\tWARNING: Could not read 3D field %s. Setting to zero\n", name.c_str());
         *f = 0.0;
@@ -605,7 +605,7 @@ bool Datafile::read_f3d(const string &name, Field3D *f, bool save_repeat) {
       return false;
     }
   }else {
-    if(!file->read(&((*f)(0,0,0)), name, mesh->localNx, mesh->localNy, mesh->localNz)) {
+    if(!file->read(&((*f)(0,0,0)), name, mesh->local_nx, mesh->local_ny, mesh->local_nz)) {
       if(init_missing) {
         output.write("\tWARNING: Could not read 3D field %s. Setting to zero\n", name.c_str());
         *f = 0.0;
@@ -639,10 +639,10 @@ bool Datafile::write_f2d(const string &name, Field2D *f, bool save_repeat) {
     throw BoutException("Datafile::write_f2d: Field2D is not allocated!");
   
   if(save_repeat) {
-    if (!file->write_rec(&((*f)(0,0)), name, mesh->localNx, mesh->localNy))
+    if (!file->write_rec(&((*f)(0,0)), name, mesh->local_nx, mesh->local_ny))
       throw BoutException("Datafile::write_f2d: Failed to write %s!",name.c_str());
   }else {
-    if (!file->write(&((*f)(0,0)), name, mesh->localNx, mesh->localNy))
+    if (!file->write(&((*f)(0,0)), name, mesh->local_nx, mesh->local_ny))
       throw BoutException("Datafile::write_f2d: Failed to write %s!",name.c_str());
   }
   return true;
@@ -662,9 +662,9 @@ bool Datafile::write_f3d(const string &name, Field3D *f, bool save_repeat) {
   }
 
   if(save_repeat) {
-    return file->write_rec(&(f_out(0,0,0)), name, mesh->localNx, mesh->localNy, mesh->localNz);
+    return file->write_rec(&(f_out(0,0,0)), name, mesh->local_nx, mesh->local_ny, mesh->local_nz);
   }else {
-    return file->write(&(f_out(0,0,0)), name, mesh->localNx, mesh->localNy, mesh->localNz);
+    return file->write(&(f_out(0,0,0)), name, mesh->local_nx, mesh->local_ny, mesh->local_nz);
   }
 }
 
