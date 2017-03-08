@@ -318,10 +318,10 @@ class Mesh {
   virtual int ySize(int jx) const; ///< The number of points in Y at fixed X index \p jx
 
   // Y communications
-  virtual bool firstY() = 0; ///< Is this processor first in Y? i.e. is there a boundary at lower Y?
-  virtual bool lastY() = 0; ///< Is this processor last in Y? i.e. is there a boundary at upper Y?
-  virtual bool firstY(int xpos) = 0; ///< Is this processor first in Y? i.e. is there a boundary at lower Y?
-  virtual bool lastY(int xpos) = 0; ///< Is this processor last in Y? i.e. is there a boundary at upper Y?
+  virtual bool firstY() const = 0; ///< Is this processor first in Y? i.e. is there a boundary at lower Y?
+  virtual bool lastY() const = 0; ///< Is this processor last in Y? i.e. is there a boundary at upper Y?
+  virtual bool firstY(int xpos) const = 0; ///< Is this processor first in Y? i.e. is there a boundary at lower Y?
+  virtual bool lastY(int xpos) const = 0; ///< Is this processor last in Y? i.e. is there a boundary at upper Y?
   virtual int UpXSplitIndex() = 0;  ///< If the upper Y guard cells are split in two, return the X index where the split occurs
   virtual int DownXSplitIndex() = 0; ///< If the lower Y guard cells are split in two, return the X index where the split occurs
 

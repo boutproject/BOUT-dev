@@ -1296,7 +1296,7 @@ bool BoutMesh::lastY() const {
   return PE_YIND == NYPE-1;
 }
 
-bool BoutMesh::firstY(int xpos) {
+bool BoutMesh::firstY(int xpos) const{
   int xglobal = XGLOBAL(xpos);
   int rank;
 
@@ -1312,7 +1312,7 @@ bool BoutMesh::firstY(int xpos) {
   return rank == 0;
 }
 
-bool BoutMesh::lastY(int xpos) {
+bool BoutMesh::lastY(int xpos) const{
   int xglobal = XGLOBAL(xpos);
   int rank;
   int size;
@@ -2143,7 +2143,7 @@ MPI_Comm BoutMesh::getYcomm(int xpos) const {
 const RangeIterator BoutMesh::iterateBndryLowerInnerY() const {
 
   int xs = 0;
-  int xe = ngx-1;
+  int xe = LocalNx-1;
   
   if(!firstY()){
     xs = -1;
@@ -2165,7 +2165,7 @@ const RangeIterator BoutMesh::iterateBndryLowerInnerY() const {
 const RangeIterator BoutMesh::iterateBndryLowerOuterY() const {
 
   int xs = 0;
-  int xe = ngx-1;
+  int xe = LocalNx-1;
   if(!firstY()){
     if((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart))
       xs = DDATA_XSPLIT;
@@ -2201,7 +2201,7 @@ const RangeIterator BoutMesh::iterateBndryLowerY() const {
 
 const RangeIterator BoutMesh::iterateBndryUpperInnerY() const {
   int xs = 0;
-  int xe = ngx-1;
+  int xe = LocalNx-1;
   
   if(!lastY()){
     if((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart))
@@ -2222,7 +2222,7 @@ const RangeIterator BoutMesh::iterateBndryUpperInnerY() const {
 
 const RangeIterator BoutMesh::iterateBndryUpperOuterY() const {
   int xs = 0;
-  int xe = ngx-1;
+  int xe = LocalNx-1;
 
   if(!lastY()){
     xs = -1;
