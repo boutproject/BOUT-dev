@@ -1,4 +1,4 @@
-*!
+/*!
  * \file datafile.hxx
  *
  * \brief Data file handling object definition
