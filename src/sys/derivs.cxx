@@ -61,7 +61,7 @@
 
 const Field3D DDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if ( f.getNx() == 1){
-    return 0;
+    return 0.;
   } else {
     Field3D result =  mesh->indexDDX(f,outloc, method) / mesh->coordinates()->dx;
 
@@ -89,8 +89,8 @@ const Field2D DDX(const Field2D &f) {
 ////////////// Y DERIVATIVE /////////////////
 
 const Field3D DDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
-  if (f.getNy == 1){
-    return 0;
+  if (f.getNy() == 1){
+    return 0.;
   } else {
     return mesh->indexDDY(f,outloc, method) / mesh->coordinates()->dy;
   }
