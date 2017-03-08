@@ -372,6 +372,12 @@ class Mesh {
 
   /// Iterate over the upper Y boundary
   virtual const RangeIterator iterateBndryUpperY() const = 0;
+  virtual const RangeIterator iterateBndryLowerOuterY() const = 0;
+  virtual const RangeIterator iterateBndryLowerInnerY() const = 0;
+  virtual const RangeIterator iterateBndryUpperOuterY() const = 0;
+  virtual const RangeIterator iterateBndryUpperInnerY() const = 0;
+
+
   
   bool hasBndryLowerY(); ///< Is there a boundary on the lower guard cells in Y?
   bool hasBndryUpperY(); ///< Is there a boundary on the upper guard cells in Y?
