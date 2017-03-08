@@ -1,4 +1,4 @@
-/*!
+*!
  * \file datafile.hxx
  *
  * \brief Data file handling object definition
@@ -28,6 +28,7 @@ class Datafile;
 
 #include <vector>
 #include <string>
+#include <memory>
 
 /*!
   Uses a generic interface to file formats (DataFormat)
@@ -36,10 +37,11 @@ class Datafile;
 class Datafile {
  public:
   Datafile(Options *opt = NULL);
-  Datafile(const Datafile &other);
+  Datafile(Datafile &&other);
   ~Datafile(); // need to delete filename
   
-  Datafile& operator=(const Datafile &rhs);
+  Datafile& operator=(Datafile &&rhs);
+  Datafile& operator=(const Datafile &rhs) = delete;
 
   bool openr(const char *filename, ...);
   bool openw(const char *filename, ...); // Overwrites existing file
@@ -85,11 +87,14 @@ class Datafile {
   bool init_missing; // Initialise missing variables?
   bool shiftOutput; //Do we want to write out in shifted space?
 
-  DataFormat *file;
+  std::unique_ptr<DataFormat> file;
   int filenamelen;
   static const int FILENAMELEN=512;
   char *filename;
   bool appending;
+
+  /// Shallow copy, not including dataformat, therefore private
+  Datafile(const Datafile& other);
 
   /// A structure to hold a pointer to a class, and associated name and flags
   template <class T>

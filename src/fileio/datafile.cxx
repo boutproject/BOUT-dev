@@ -61,27 +61,40 @@ Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), f
   OPTION(opt, shiftOutput, false); //Do we want to write 3D fields in shifted space?
 }
 
+Datafile::Datafile(Datafile &&other) :
+  parallel(other.parallel), flush(other.flush), guards(other.guards),
+  floats(other.floats), openclose(other.openclose), Lx(other.Lx), Ly(other.Ly), Lz(other.Lz),
+  enabled(other.enabled), shiftOutput(other.shiftOutput), file(other.file.release()), int_arr(other.int_arr),
+  BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr),
+  f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {
+  filenamelen=FILENAMELEN;
+  filename=new char[filenamelen];
+  other.file = nullptr;
+}
+
 Datafile::Datafile(const Datafile &other) :
-  parallel(other.parallel), flush(other.flush), guards(other.guards), 
-  floats(other.floats), openclose(other.openclose), Lx(other.Lx), Ly(other.Ly), Lz(other.Lz), 
-  enabled(other.enabled), shiftOutput(other.shiftOutput), file(nullptr), int_arr(other.int_arr), 
-  BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr), 
+  parallel(other.parallel), flush(other.flush), guards(other.guards),
+  floats(other.floats), openclose(other.openclose), Lx(other.Lx), Ly(other.Ly), Lz(other.Lz),
+  enabled(other.enabled), shiftOutput(other.shiftOutput), file(nullptr), int_arr(other.int_arr),
+  BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr),
   f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {
   filenamelen=FILENAMELEN;
   filename=new char[filenamelen];
   // Same added variables, but the file not the same 
 }
 
-Datafile& Datafile::operator=(const Datafile &rhs) {
+
+Datafile& Datafile::operator=(Datafile &&rhs) {
   parallel     = rhs.parallel;
   flush        = rhs.flush;
   guards       = rhs.guards;
-  floats     = rhs.floats;
+  floats       = rhs.floats;
   openclose    = rhs.openclose;
   enabled      = rhs.enabled;
   init_missing = rhs.init_missing;
   shiftOutput  = rhs.shiftOutput;
-  file         = nullptr; // All values copied except this
+  file         = std::move(rhs.file);
+  rhs.file     = nullptr; // not needed?
   int_arr      = rhs.int_arr;
   BoutReal_arr = rhs.BoutReal_arr;
   f2d_arr      = rhs.f2d_arr;
@@ -92,11 +105,7 @@ Datafile& Datafile::operator=(const Datafile &rhs) {
 }
 
 Datafile::~Datafile() {
-  if (file != nullptr){
-    delete file;
-    file = nullptr;
-  }
-  delete[] filename;
+  // noting needed, unique_ptr frees ...
 }
 
 bool Datafile::openr(const char *format, ...) {
@@ -226,7 +235,7 @@ void Datafile::close() {
     return;
   if(!openclose)
     file->close();
-  delete file;
+  // free:
   file = nullptr;
 }
 
@@ -537,13 +546,13 @@ bool Datafile::write(const char *format, ...) const {
 
   // Create a new datafile
   Datafile tmp(*this);
-  
+
   tmp.openw(filename);
   bool ret = tmp.write();
   tmp.close();
 
   delete[] filename;
-  
+
   return ret;
 }
 
