@@ -1000,6 +1000,9 @@ void Mesh::derivs_init(Options* options) {
 // X derivative
 
 const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc) {
+  if (var.getNx() == 1){
+    return 0.;
+  }
   Field2D result;
   result.allocate(); // Make sure data allocated
 
@@ -1076,6 +1079,9 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
 }
 
 const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc) {
+  if (var.getNx() == 1){
+    return 0.;
+  }
   Field3D result;
   result.allocate(); // Make sure data allocated
 
@@ -1160,6 +1166,9 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
 // Y derivative
 
 const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc) {
+  if (var.getNy() == 1){
+    return 0.;
+  }
   Field2D result;
   result.allocate(); // Make sure data allocated
   
@@ -1236,6 +1245,9 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
 }
 
 const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc) {
+  if (var.getNy() == 1){
+    return 0.;
+  }
   Field3D result;
   result.allocate(); // Make sure data allocated
   
