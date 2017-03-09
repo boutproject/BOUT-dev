@@ -332,7 +332,7 @@ FieldGenerator* ExpressionParser::parseExpression(LexInfo &lex) {
 ExpressionParser::LexInfo::LexInfo(string input) {
   ss.clear();
   ss.str(input); // Set the input stream
-  ss.seekg(0, ios_base::beg);
+  ss.seekg(0, std::ios_base::beg);
   
   LastChar = ss.get(); // First char from stream
   nextToken(); // Get first token

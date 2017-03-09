@@ -31,7 +31,7 @@ void Options::cleanup() {
 }
 
 void Options::set(const string &key, const int &val, const string &source) {
-  stringstream ss;
+  std::stringstream ss;
   ss << val;
   set(key, ss.str(), source);
 }
@@ -44,7 +44,7 @@ void Options::set(const string &key, BoutReal val, const string &source) {
 }
 
 void Options::set(const string &key, const bool &val, const string &source) {
-  stringstream ss;
+  std::stringstream ss;
   ss << val;
   set(key, ss.str(), source);
 }
