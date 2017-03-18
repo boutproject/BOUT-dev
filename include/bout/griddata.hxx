@@ -70,7 +70,7 @@ class GridDataSource {
  */
 class GridFile : public GridDataSource {
  public:
-  GridFile(DataFormat *format, string gridfilename);
+  GridFile(unique_ptr<DataFormat> format, string gridfilename);
   ~GridFile();
   
   bool hasVar(const string &name);
@@ -86,7 +86,7 @@ class GridFile : public GridDataSource {
  private:
   GridFile();
   
-  DataFormat *file;
+  unique_ptr<DataFormat> file;
   string filename;
 
   bool readgrid_3dvar_fft(Mesh *m, const string &name, 

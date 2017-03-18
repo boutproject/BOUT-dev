@@ -22,7 +22,7 @@
  * format     Pointer to DataFormat. This will be deleted in
  *            destructor
  */
-GridFile::GridFile(DataFormat *format, const string gridfilename) : file(format), filename(gridfilename) {
+GridFile::GridFile(unique_ptr<DataFormat> format, const string gridfilename) : file(format.release()), filename(gridfilename) {
   TRACE("GridFile constructor");
   
   if (! file->openr(filename) ) {
@@ -35,7 +35,6 @@ GridFile::GridFile(DataFormat *format, const string gridfilename) : file(format)
 
 GridFile::~GridFile() {
   file->close();
-  delete file;
 }
 
 /*!
