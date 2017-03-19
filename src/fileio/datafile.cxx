@@ -42,6 +42,7 @@
 #include <output.hxx>
 #include <boutcomm.hxx>
 #include <utils.hxx>
+#include <msg_stack.hxx>
 #include "formatfactory.hxx"
 
 Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), floats(false), openclose(true), enabled(true), shiftOutput(false), file(nullptr) {
@@ -433,6 +434,8 @@ bool Datafile::write() {
   if(!enabled)
     return true; // Just pretend it worked
   
+  TRACE("Datafile::write()");
+  
   if(!file)
     throw BoutException("Datafile::write: File is not valid!");
   
@@ -636,7 +639,7 @@ bool Datafile::write_real(const string &name, BoutReal *f, bool save_repeat) {
 
 bool Datafile::write_f2d(const string &name, Field2D *f, bool save_repeat) {
   if(!f->isAllocated())
-    throw BoutException("Datafile::write_f2d: Field2D is not allocated!");
+    throw BoutException("Datafile::write_f2d: Field2D '%s' is not allocated!", name.c_str());
   
   if(save_repeat) {
     if (!file->write_rec(&((*f)(0,0)), name, mesh->LocalNx, mesh->LocalNy))
@@ -650,7 +653,7 @@ bool Datafile::write_f2d(const string &name, Field2D *f, bool save_repeat) {
 
 bool Datafile::write_f3d(const string &name, Field3D *f, bool save_repeat) {
   if(!f->isAllocated()) {
-    throw BoutException("Datafile::write_f3d: Field3D is not allocated!");
+    throw BoutException("Datafile::write_f3d: Field3D '%s' is not allocated!", name.c_str());
   }
 
   //Deal with shifting the output
