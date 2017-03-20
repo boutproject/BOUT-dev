@@ -4,11 +4,19 @@
 #include "field_data.hxx"
 #include <field3d.hxx>
 
+#include <vector2d.hxx>
+#include <vector3d.hxx>
+
 #include <vector>
 
 #include <algorithm>
 
 /// Group together fields
+///
+/// Note: The FieldData class is used as a base class,
+/// which is inherited by Field2D, Field3D, Vector2D and Vector3D
+/// however Vector2D and Vector3D are stored by reference to their
+/// components (x,y,z) as Field2D or Field3D objects.
 class FieldGroup {
  public:
   FieldGroup() {}
@@ -16,7 +24,20 @@ class FieldGroup {
   FieldGroup(const FieldGroup &other) : fvec(other.fvec), f3vec(other.f3vec) {}
   
   FieldGroup(FieldData &f) {fvec.push_back(&f); }
+  
+  /// Constructor with a single Field3D
   FieldGroup(Field3D &f) {fvec.push_back(&f); f3vec.push_back(&f); }
+  
+  /// Constructor with a single Vector2D
+  /// This is needed so that fvec only contains Field2D or Field3D
+  FieldGroup(Vector2D &v) {
+    fvec.push_back(&v.x); fvec.push_back(&v.y); fvec.push_back(&v.z);
+  }
+  
+  FieldGroup(Vector3D &v) {
+    fvec.push_back(&v.x); fvec.push_back(&v.y); fvec.push_back(&v.z);
+    f3vec.push_back(&v.x); f3vec.push_back(&v.y); f3vec.push_back(&v.z);
+  }
 
   /*
    * Variadic constructor. Allows an arbitrary number of
@@ -64,6 +85,15 @@ class FieldGroup {
     f3vec.push_back(&f);
   }
   
+  void add(Vector2D &v) {
+    fvec.push_back(&v.x); fvec.push_back(&v.y); fvec.push_back(&v.z);
+  }
+  
+  void add(Vector3D &v) {
+    fvec.push_back(&v.x); fvec.push_back(&v.y); fvec.push_back(&v.z);
+    f3vec.push_back(&v.x); f3vec.push_back(&v.y); f3vec.push_back(&v.z);
+  }
+  
   /*!
    * add( FieldData ... ) 
    * 
@@ -79,6 +109,18 @@ class FieldGroup {
 
   template <typename... Ts>
   void add(Field3D& t, Ts&... ts) {
+    add(t);     // Add the first using functions above
+    add(ts...); // Add the rest
+  }
+
+  template <typename... Ts>
+  void add(Vector3D& t, Ts&... ts) {
+    add(t);     // Add the first using functions above
+    add(ts...); // Add the rest
+  }
+  
+  template <typename... Ts>
+  void add(Vector2D& t, Ts&... ts) {
     add(t);     // Add the first using functions above
     add(ts...); // Add the rest
   }
