@@ -73,6 +73,13 @@ private:
     return 0;
   }
 
+  /// This function is called every output, before
+  /// the data is written to file. It can therefore be used
+  /// to calculate diagnostics
+  /// 
+  /// @param[in] simtime   Simulation time
+  /// @param[in] iter      Output step
+  /// @param[in] NOUT      Total number of outputs requested
   int outputMonitor(BoutReal UNUSED(simtime), int UNUSED(iter), int UNUSED(NOUT)) override {
     // Calculate divergence of magnetic field
     divB = Div(B);
@@ -82,8 +89,7 @@ private:
   int rhs(BoutReal t) override {
     // Communicate variables
     
-    //mesh->communicate(v, B, p, rho);
-    mesh->communicate(p, rho, v.x,v.y,v.z, B.x,B.y,B.z);
+    mesh->communicate(v, B, p, rho);
     
     {
       TRACE("ddt(rho)");
