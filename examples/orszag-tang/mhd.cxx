@@ -55,6 +55,7 @@ private:
   
     divB.setBoundary("DivB"); // Set boundary conditions from options
     
+    
     if(!restarting) {
       // Set variables to these values (+ the initial perturbation)
       // NOTE: This must be after the calls to bout_solve
@@ -72,10 +73,18 @@ private:
     return 0;
   }
 
+  int outputMonitor(BoutReal UNUSED(simtime), int UNUSED(iter), int UNUSED(NOUT)) override {
+    // Calculate divergence of magnetic field
+    divB = Div(B);
+    return 0;
+  }
+
   int rhs(BoutReal t) override {
     // Communicate variables
-    mesh->communicate(v, B, p, rho);
-
+    
+    //mesh->communicate(v, B, p, rho);
+    mesh->communicate(p, rho, v.x,v.y,v.z, B.x,B.y,B.z);
+    
     {
       TRACE("ddt(rho)");
       ddt(rho) = -V_dot_Grad(v, rho) - rho*Div(v);
