@@ -8,7 +8,6 @@ class BoutException;
 #include <string>
 
 using std::string;
-//using namespace std;
 
 void BoutParallelThrowRhsFail(int &status, const char* message);
 
