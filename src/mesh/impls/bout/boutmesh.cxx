@@ -1288,15 +1288,15 @@ comm_handle BoutMesh::irecvXIn(BoutReal *buffer, int size, int tag) {
  * Intended mainly to handle the non-local heat flux integrations
  ****************************************************************/
 
-bool BoutMesh::firstY() {
+bool BoutMesh::firstY() const {
   return PE_YIND == 0;
 }
 
-bool BoutMesh::lastY() {
+bool BoutMesh::lastY() const {
   return PE_YIND == NYPE-1;
 }
 
-bool BoutMesh::firstY(int xpos) {
+bool BoutMesh::firstY(int xpos) const{
   int xglobal = XGLOBAL(xpos);
   int rank;
 
@@ -1312,7 +1312,7 @@ bool BoutMesh::firstY(int xpos) {
   return rank == 0;
 }
 
-bool BoutMesh::lastY(int xpos) {
+bool BoutMesh::lastY(int xpos) const{
   int xglobal = XGLOBAL(xpos);
   int rank;
   int size;
@@ -2140,8 +2140,50 @@ MPI_Comm BoutMesh::getYcomm(int xpos) const {
  *                 Range iteration
  ****************************************************************/
 
-const RangeIterator BoutMesh::iterateBndryLowerY() const {
+const RangeIterator BoutMesh::iterateBndryLowerInnerY() const {
 
+  int xs = 0;
+  int xe = LocalNx-1;
+  
+  if(!firstY()){
+    xs = -1;
+    xe = -2; 
+  }else{
+    if((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart))
+       xs = DDATA_XSPLIT;
+    if((DDATA_OUTDEST >= 0) && (DDATA_XSPLIT < xend+1))
+       xe = DDATA_XSPLIT-1;
+ 
+    if(xs < xstart)
+      xs = xstart;
+    if(xe > xend)
+      xe = xend;
+  }
+  return RangeIterator(xs, xe);
+}
+
+const RangeIterator BoutMesh::iterateBndryLowerOuterY() const {
+
+  int xs = 0;
+  int xe = LocalNx-1;
+  if(!firstY()){
+    if((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart))
+      xs = DDATA_XSPLIT;
+    if((DDATA_OUTDEST >= 0) && (DDATA_XSPLIT < xend+1))
+      xe = DDATA_XSPLIT-1;
+
+    if(xs < xstart)
+      xs = xstart;
+    if(xe > xend)
+      xe = xend;
+  }else{
+    xs = -1;
+    xe = -2;
+  }
+    return RangeIterator(xs, xe);
+}
+
+const RangeIterator BoutMesh::iterateBndryLowerY() const {
   int xs = 0;
   int xe = LocalNx-1;
   if((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart))
@@ -2155,6 +2197,48 @@ const RangeIterator BoutMesh::iterateBndryLowerY() const {
     xe = xend;
 
   return RangeIterator(xs, xe);
+}
+
+const RangeIterator BoutMesh::iterateBndryUpperInnerY() const {
+  int xs = 0;
+  int xe = LocalNx-1;
+  
+  if(!lastY()){
+    if((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart))
+      xs = UDATA_XSPLIT;
+    if((UDATA_OUTDEST >= 0) && (UDATA_XSPLIT < xend+1)) 
+      xe = UDATA_XSPLIT-1;
+
+    if(xs < xstart)
+      xs = xstart;
+    if(xe > xend)
+      xe = xend;
+  }else{
+    xs = -1;
+    xe = -2;
+  }
+  return RangeIterator(xs, xe);
+}
+
+const RangeIterator BoutMesh::iterateBndryUpperOuterY() const {
+  int xs = 0;
+  int xe = LocalNx-1;
+
+  if(!lastY()){
+    xs = -1;
+    xe = -2;
+  }else{
+    if((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart))
+      xs = UDATA_XSPLIT;
+    if((UDATA_OUTDEST >= 0) && (UDATA_XSPLIT < xend+1))
+      xe = UDATA_XSPLIT-1;
+
+    if(xs < xstart)
+      xs = xstart;
+    if(xe > xend)
+      xe = xend;
+  }
+    return RangeIterator(xs, xe);
 }
 
 const RangeIterator BoutMesh::iterateBndryUpperY() const {

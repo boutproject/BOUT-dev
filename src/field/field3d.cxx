@@ -182,11 +182,14 @@ void Field3D::splitYupYdown() {
 void Field3D::mergeYupYdown() {
   TRACE("Field3D::mergeYupYdown");
   
-  if(yup_field == this)
+  if(yup_field == this && ydown_field == this)
     return;
 
-  if(yup_field != nullptr) {
+  if(yup_field != nullptr){
     delete yup_field;
+  }
+
+  if(ydown_field != nullptr) {
     delete ydown_field;
   }
 

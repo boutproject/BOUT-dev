@@ -113,10 +113,10 @@ class BoutMesh : public Mesh {
   /////////////////////////////////////////////
   // Y communications
   
-  bool firstY();
-  bool lastY();  
-  bool firstY(int xpos);
-  bool lastY(int xpos);
+  bool firstY() const;
+  bool lastY() const;
+  bool firstY(int xpos) const;
+  bool lastY(int xpos) const;
   int UpXSplitIndex();
   int DownXSplitIndex();
   int sendYOutIndest(BoutReal *buffer, int size, int tag);
@@ -131,6 +131,11 @@ class BoutMesh : public Mesh {
   // Boundary iteration
   const RangeIterator iterateBndryLowerY() const;
   const RangeIterator iterateBndryUpperY() const;
+  const RangeIterator iterateBndryLowerInnerY() const;
+  const RangeIterator iterateBndryLowerOuterY() const;
+  const RangeIterator iterateBndryUpperInnerY() const;
+  const RangeIterator iterateBndryUpperOuterY() const;
+
 
   // Boundary regions
   vector<BoundaryRegion*> getBoundaries();
