@@ -77,7 +77,7 @@ const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
   Field3D result;
   result.allocate();
   
-  int ncz = mesh->LocalNz;
+  int ncz = mesh->local_nz;
 
   Coordinates *metric = mesh->coordinates();
   
@@ -85,13 +85,13 @@ const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
   gys.allocate();
 
   // Need Y derivative everywhere
-  for(int x=1;x<=mesh->LocalNx-2;x++)
-    for(int y=1;y<=mesh->LocalNy-2;y++)
+  for(int x=1;x<=mesh->local_nx-2;x++)
+    for(int y=1;y<=mesh->local_ny-2;y++)
       for(int z=0;z<ncz;z++) {
         gys(x, y, z) = (f.yup()(x, y+1, z) - f.ydown()(x, y-1, z))/(0.5*metric->dy(x, y+1) + metric->dy(x, y) + 0.5*metric->dy(x, y-1));
       }
   
-  for(int x=1;x<=mesh->LocalNx-2;x++) {
+  for(int x=1;x<=mesh->local_nx-2;x++) {
     for(int y=mesh->ystart;y<=mesh->yend;y++) {
       BoutReal by = 1./sqrt(metric->g_22(x, y));
       for(int z=0;z<ncz;z++) {
@@ -200,7 +200,7 @@ const Field3D Div_par(const Field3D &f, const Field3D &v) {
   
   for(int i=mesh->xstart;i<=mesh->xend;i++)
     for(int j=mesh->ystart;j<=mesh->yend;j++) {
-      for(int k=0;k<mesh->LocalNz;k++) {
+      for(int k=0;k<mesh->local_nz;k++) {
 	
 	// Value of f and v at left cell face
 	BoutReal fL = 0.5*(f(i,j,k) + f.ydown()(i,j-1,k));
@@ -245,9 +245,9 @@ const Field3D Grad_par_CtoL(const Field3D &var) {
   Coordinates *metric = mesh->coordinates();
   
   // NOTE: Need to calculate one more point than centred vars
-  for(int jx=0; jx<mesh->LocalNx;jx++) {
-    for(int jy=1;jy<mesh->LocalNy;jy++) {
-      for(int jz=0;jz<mesh->LocalNz;jz++) {
+  for(int jx=0; jx<mesh->local_nx;jx++) {
+    for(int jy=1;jy<mesh->local_ny;jy++) {
+      for(int jz=0;jz<mesh->local_nz;jz++) {
 	result(jx, jy, jz) = 2.*(var(jx, jy, jz) - var.ydown()(jx, jy-1, jz)) / (metric->dy(jx, jy) * sqrt(metric->g_22(jx, jy)) + metric->dy(jx, jy-1) * sqrt(metric->g_22(jx, jy-1)));
       }
     }
@@ -285,9 +285,9 @@ const Field3D Grad_par_LtoC(const Field3D &var) {
   
   Coordinates *metric = mesh->coordinates();
   
-  for(int jx=0; jx<mesh->LocalNx;jx++) {
-    for(int jy=0;jy<mesh->LocalNy-1;jy++) {
-      for(int jz=0;jz<mesh->LocalNz;jz++) {
+  for(int jx=0; jx<mesh->local_nx;jx++) {
+    for(int jy=0;jy<mesh->local_ny-1;jy++) {
+      for(int jz=0;jz<mesh->local_nz;jz++) {
 	result(jx, jy, jz) = (var.yup()(jx, jy+1, jz) - var(jx, jy, jz)) / (metric->dy(jx, jy) * sqrt(metric->g_22(jx, jy)));
       }
     }
@@ -625,7 +625,7 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
     
     result.allocate();
     
-    int ncz = mesh->LocalNz;
+    int ncz = mesh->local_nz;
     for(int x=mesh->xstart;x<=mesh->xend;x++)
       for(int y=mesh->ystart;y<=mesh->yend;y++) {
 	for(int z=0;z<ncz;z++) {
@@ -661,7 +661,7 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
     // Arakawa scheme for perpendicular flow. Here as a test
 
     result.allocate();
-    int ncz = mesh->LocalNz;
+    int ncz = mesh->local_nz;
     for(int jx=mesh->xstart;jx<=mesh->xend;jx++)
       for(int jy=mesh->ystart;jy<=mesh->yend;jy++)
 	for(int jz=0;jz<ncz;jz++) {
@@ -764,9 +764,9 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
     vx.allocate();
     vz.allocate();
     
-    int ncz = mesh->LocalNz;
+    int ncz = mesh->local_nz;
     for(int y=mesh->ystart;y<=mesh->yend;y++) {
-      for(int x=1;x<=mesh->LocalNx-2;x++) {
+      for(int x=1;x<=mesh->local_nx-2;x++) {
         for(int z=0;z<ncz;z++) {
           int zm = (z - 1 + ncz) % ncz;
           int zp = (z + 1) % ncz;
@@ -839,7 +839,7 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
     
     result.allocate();
     
-    int ncz = mesh->LocalNz;
+    int ncz = mesh->local_nz;
 
     // We need to discard const qualifier in order to manipulate
     // storage array directly
@@ -887,7 +887,7 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
     
     result.allocate();
 
-    int ncz = mesh->LocalNz;
+    int ncz = mesh->local_nz;
     for(int jx=mesh->xstart;jx<=mesh->xend;jx++)
       for(int jy=mesh->ystart;jy<=mesh->yend;jy++)
         for(int jz=0;jz<ncz;jz++) {

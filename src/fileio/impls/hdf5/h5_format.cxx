@@ -415,9 +415,9 @@ bool H5Format::write(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type, con
     init_size[0]=mesh->GlobalNx-2*mesh->xstart; init_size[1]=mesh->GlobalNy-2*mesh->ystart; init_size[2]=mesh->GlobalNz;
   }
   else {
-    init_size[0]=mesh->LocalNx; init_size[1]=mesh->LocalNy; init_size[2]=mesh->LocalNz;
+    init_size[0]=mesh->local_nx; init_size[1]=mesh->local_ny; init_size[2]=mesh->local_nz;
   }
-  init_size_local[0]=mesh->LocalNx; init_size_local[1]=mesh->LocalNy; init_size_local[2]=mesh->LocalNz;
+  init_size_local[0]=mesh->local_nx; init_size_local[1]=mesh->local_ny; init_size_local[2]=mesh->local_nz;
   
   if (nd==0) {
     // Need to write a scalar, not a 0-d array
@@ -547,9 +547,9 @@ bool H5Format::read_rec(void *data, hid_t hdf5_type, const char *name, int lx, i
     init_size[0]=mesh->GlobalNx-2*mesh->xstart; init_size[1]=mesh->GlobalNy-2*mesh->ystart; init_size[2]=mesh->GlobalNz;
   }
   else {
-    init_size[0]=mesh->LocalNx; init_size[1]=mesh->LocalNy; init_size[2]=mesh->LocalNz;
+    init_size[0]=mesh->local_nx; init_size[1]=mesh->local_ny; init_size[2]=mesh->local_nz;
   }
-  init_size_local[0]=mesh->LocalNx; init_size_local[1]=mesh->LocalNy; init_size_local[2]=mesh->LocalNz;
+  init_size_local[0]=mesh->local_nx; init_size_local[1]=mesh->local_ny; init_size_local[2]=mesh->local_nz;
   
   if (nd==1) {
     // Need to write a time-series of scalars
@@ -650,9 +650,9 @@ bool H5Format::write_rec(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type,
     init_size[0]=1;init_size[1]=mesh->GlobalNx-2*mesh->xstart; init_size[2]=mesh->GlobalNy-2*mesh->ystart; init_size[3]=mesh->GlobalNz;
   }
   else {
-    init_size[0]=1;init_size[1]=mesh->LocalNx; init_size[2]=mesh->LocalNy; init_size[3]=mesh->LocalNz;
+    init_size[0]=1;init_size[1]=mesh->local_nx; init_size[2]=mesh->local_ny; init_size[3]=mesh->local_nz;
   }
-  init_size_local[0]=mesh->LocalNx; init_size_local[1]=mesh->LocalNy; init_size_local[2]=mesh->LocalNz;
+  init_size_local[0]=mesh->local_nx; init_size_local[1]=mesh->local_ny; init_size_local[2]=mesh->local_nz;
   
   if (nd_local==0) {
     nd_local = 1;

@@ -30,7 +30,7 @@ namespace FV {
 
     for(int i=xs;i<=xe;i++)
       for(int j=mesh->ystart;j<=mesh->yend;j++) {
-	for(int k=0;k<mesh->LocalNz;k++) {
+	for(int k=0;k<mesh->local_nz;k++) {
 	  // Calculate flux from i to i+1
 	
 	  BoutReal fout = (coord->J(i,j)*a(i,j,k)*coord->g11(i,j) + coord->J(i+1,j)*a(i+1,j,k)*coord->g11(i+1,j)) *
@@ -47,10 +47,10 @@ namespace FV {
       
 	BoutReal coef = 0.5*(coord->g_23(i,j)/SQ(coord->J(i,j)*coord->Bxy(i,j)) + coord->g_23(i,j+1)/SQ(coord->J(i,j+1)*coord->Bxy(i,j+1)));
       
-	for(int k=0;k<mesh->LocalNz;k++) {
+	for(int k=0;k<mesh->local_nz;k++) {
 	  // Calculate flux between j and j+1
-	  int kp = (k + 1) % (mesh->LocalNz);
-	  int km = (k - 1 + (mesh->LocalNz)) % (mesh->LocalNz);
+	  int kp = (k + 1) % (mesh->local_nz);
+	  int km = (k - 1 + (mesh->local_nz)) % (mesh->local_nz);
           
 	  // Calculate Z derivative at y boundary
 	  BoutReal dfdz = 0.25*(f(i,j,kp) - f(i,j,km)
@@ -88,9 +88,9 @@ namespace FV {
 	  / (coord->dy(i,j+1) + 2.*coord->dy(i,j) + coord->dy(i,j-1))
 	  / SQ(coord->J(i,j)*coord->Bxy(i,j));
 	
-	for(int k=0;k<mesh->LocalNz;k++) {
+	for(int k=0;k<mesh->local_nz;k++) {
 	  // Calculate flux between k and k+1
-	  int kp = (k + 1) % (mesh->LocalNz);
+	  int kp = (k + 1) % (mesh->local_nz);
 	
 	  BoutReal fout = 0.5*(a(i,j,k) + a(i,j,kp)) * coord->g33(i,j)*
 	    ( 
@@ -117,7 +117,7 @@ namespace FV {
     
     for(int i=mesh->xstart;i<=mesh->xend;i++)
       for(int j=mesh->ystart;j<=mesh->yend;j++)
-	for(int k=0;k<mesh->LocalNz;k++) {
+	for(int k=0;k<mesh->local_nz;k++) {
           // Calculate flux at upper surface
         
 	  if(bndry_flux || !mesh->lastY() || (j != mesh->yend)) {

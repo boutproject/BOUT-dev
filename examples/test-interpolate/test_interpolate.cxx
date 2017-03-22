@@ -80,7 +80,7 @@ public:
       // Get the global indices
       BoutReal x = mesh->GlobalX(dx);
       BoutReal y = TWOPI*mesh->GlobalY(index.y);
-      BoutReal z = TWOPI*((BoutReal) dz) / ((BoutReal) (mesh->LocalNz));
+      BoutReal z = TWOPI*((BoutReal) dz) / ((BoutReal) (mesh->local_nz));
       // Generate the analytic solution at the displacements
       a_solution[index] = a_gen->generate(x, y, z, 0.0);
       b_solution[index] = b_gen->generate(x, y, z, 0.0);

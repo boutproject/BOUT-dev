@@ -99,8 +99,8 @@ bool NcFormat::openr(const char *name) {
     xDim = NULL;
   }else if(mesh != NULL) {
     // Check that the dimension size is correct
-    if(xDim->size() != mesh->LocalNx) {
-      throw BoutException("X dimension incorrect. Expected %d, got %d", mesh->LocalNx, xDim->size());
+    if(xDim->size() != mesh->local_nx) {
+      throw BoutException("X dimension incorrect. Expected %d, got %d", mesh->local_nx, xDim->size());
     }
   }
   
@@ -114,8 +114,8 @@ bool NcFormat::openr(const char *name) {
     yDim = NULL;
   }else if(mesh != NULL) {
     // Check that the dimension size is correct
-    if(yDim->size() != mesh->LocalNy) {
-      throw BoutException("Y dimension incorrect. Expected %d, got %d", mesh->LocalNy, yDim->size());
+    if(yDim->size() != mesh->local_ny) {
+      throw BoutException("Y dimension incorrect. Expected %d, got %d", mesh->local_ny, yDim->size());
     }
   }
   
@@ -127,8 +127,8 @@ bool NcFormat::openr(const char *name) {
     zDim = NULL;
   }else if(mesh != NULL) {
     // Check that the dimension size is correct
-    if(zDim->size() != mesh->LocalNz) {
-      throw BoutException("Z dimension incorrect. Expected %d, got %d", mesh->LocalNz, zDim->size());
+    if(zDim->size() != mesh->local_nz) {
+      throw BoutException("Z dimension incorrect. Expected %d, got %d", mesh->local_nz, zDim->size());
     }
   }
   
@@ -205,7 +205,7 @@ bool NcFormat::openw(const char *name, bool append) {
 
     /// Test they're the right size (and t is unlimited)
     
-    if((xDim->size() != mesh->LocalNx) || (yDim->size() != mesh->LocalNy) || (zDim->size() != mesh->LocalNz)
+    if((xDim->size() != mesh->local_nx) || (yDim->size() != mesh->local_ny) || (zDim->size() != mesh->local_nz)
        || (!tDim->is_unlimited()) ) {
       delete dataFile;
       dataFile = NULL;
@@ -226,19 +226,19 @@ bool NcFormat::openw(const char *name, bool append) {
 
     /// Add the dimensions
     
-    if(!(xDim = dataFile->add_dim("x", mesh->LocalNx))) {
+    if(!(xDim = dataFile->add_dim("x", mesh->local_nx))) {
       delete dataFile;
       dataFile = NULL;
       return false;
     }
   
-    if(!(yDim = dataFile->add_dim("y", mesh->LocalNy))) {
+    if(!(yDim = dataFile->add_dim("y", mesh->local_ny))) {
       delete dataFile;
       dataFile = NULL;
       return false;
     }
     
-    if(!(zDim = dataFile->add_dim("z", mesh->LocalNz))) {
+    if(!(zDim = dataFile->add_dim("z", mesh->local_nz))) {
       delete dataFile;
       dataFile = NULL;
       return false;

@@ -48,17 +48,17 @@ const Field3D smooth_x(const Field3D &f, bool BoutRealspace) {
   result.allocate();
   
   // Copy boundary region
-  for(int jy=0;jy<mesh->LocalNy;jy++)
-    for(int jz=0;jz<mesh->LocalNz;jz++) {
+  for(int jy=0;jy<mesh->local_ny;jy++)
+    for(int jz=0;jz<mesh->local_nz;jz++) {
       result(0,jy,jz) = f(0,jy,jz);
-      result(mesh->LocalNx-1,jy,jz) = f(mesh->LocalNx-1,jy,jz);
+      result(mesh->local_nx-1,jy,jz) = f(mesh->local_nx-1,jy,jz);
     }
 
   // Smooth using simple 1-2-1 filter
 
-  for(int jx=1;jx<mesh->LocalNx-1;jx++)
-    for(int jy=0;jy<mesh->LocalNy;jy++)
-      for(int jz=0;jz<mesh->LocalNz;jz++) {
+  for(int jx=1;jx<mesh->local_nx-1;jx++)
+    for(int jy=0;jy<mesh->local_ny;jy++)
+      for(int jz=0;jz<mesh->local_nz;jz++) {
 	result(jx,jy,jz) = 0.5*f(jx,jy,jz) + 0.25*( f(jx-1,jy,jz) + f(jx+1,jy,jz) );
       }
 
@@ -76,17 +76,17 @@ const Field3D smooth_y(const Field3D &f) {
   result.allocate();
   
   // Copy boundary region
-  for(int jx=0;jx<mesh->LocalNx;jx++)
-    for(int jz=0;jz<mesh->LocalNz;jz++) {
+  for(int jx=0;jx<mesh->local_nx;jx++)
+    for(int jz=0;jz<mesh->local_nz;jz++) {
       result(jx,0,jz) = f(jx,0,jz);
-      result(jx,mesh->LocalNy-1,jz) = f(jx,mesh->LocalNy-1,jz);
+      result(jx,mesh->local_ny-1,jz) = f(jx,mesh->local_ny-1,jz);
     }
   
   // Smooth using simple 1-2-1 filter
 
-  for(int jx=0;jx<mesh->LocalNx;jx++)
-    for(int jy=1;jy<mesh->LocalNy-1;jy++)
-      for(int jz=0;jz<mesh->LocalNz;jz++) {
+  for(int jx=0;jx<mesh->local_nx;jx++)
+    for(int jy=1;jy<mesh->local_ny-1;jy++)
+      for(int jz=0;jz<mesh->local_nz;jz++) {
 	result(jx,jy,jz) = 0.5*f(jx,jy,jz) + 0.25*( f.ydown()(jx,jy-1,jz) + f.yup()(jx,jy+1,jz) );
       }
 
@@ -109,8 +109,8 @@ const Field3D smooth_y(const Field3D &f) {
 const Field2D averageX(const Field2D &f) {
   TRACE("averageX(Field2D)");
  
-  int ngx = mesh->LocalNx;
-  int ngy = mesh->LocalNy;
+  int ngx = mesh->local_nx;
+  int ngy = mesh->local_ny;
 
   Array<BoutReal> input(ngy), result(ngy);
   
@@ -166,9 +166,9 @@ const Field3D averageX(const Field3D &f) {
 
   TRACE("averageX(Field3D)");
 
-  int ngx = mesh->LocalNx;
-  int ngy = mesh->LocalNy;
-  int ngz = mesh->LocalNz;
+  int ngx = mesh->local_nx;
+  int ngy = mesh->local_ny;
+  int ngz = mesh->local_nz;
 
   if(input == NULL) {
     input = matrix<BoutReal>(ngy, ngz);
@@ -215,8 +215,8 @@ const Field3D averageX(const Field3D &f) {
 const Field2D averageY(const Field2D &f) {
   TRACE("averageY(Field2D)");
  
-  int ngx = mesh->LocalNx;
-  int ngy = mesh->LocalNy;
+  int ngx = mesh->local_nx;
+  int ngy = mesh->local_ny;
 
   Array<BoutReal> input(ngx), result(ngx);
   
@@ -258,9 +258,9 @@ const Field3D averageY(const Field3D &f) {
     
   msg_stack.push("averageY(Field3D)");
 
-  int ngx = mesh->LocalNx;
-  int ngy = mesh->LocalNy;
-  int ngz = mesh->LocalNz;
+  int ngx = mesh->local_nx;
+  int ngy = mesh->local_ny;
+  int ngz = mesh->local_nz;
   
   if(input == NULL) {
     input = matrix<BoutReal>(ngx, ngz);
@@ -350,9 +350,9 @@ const Field3D smoothXY(const Field3D &f) {
   Field3D result;
   result.allocate();
 
-  for(int x=2;x<mesh->LocalNx-2;x++)
-    for(int y=2;y<mesh->LocalNy-2;y++)
-      for(int z=0;z<mesh->LocalNz;z++) {
+  for(int x=2;x<mesh->local_nx-2;x++)
+    for(int y=2;y<mesh->local_ny-2;y++)
+      for(int z=0;z<mesh->local_nz;z++) {
         result(x,y,z) = 0.5*f(x,y,z) + 0.125*( 0.5*f(x+1,y,z) + 0.125*(f(x+2,y,z) + f(x,y,z) + f(x+1,y-1,z) + f(x+1,y+1,z)) +
                                                    0.5*f(x-1,y,z) + 0.125*(f(x,y,z) + f(x-2,y,z) + f(x-1,y-1,z) + f(x-1,y+1,z)) +
                                                    0.5*f(x,y-1,z) + 0.125*(f(x+1,y-1,z) + f(x-1,y-1,z) + f(x,y-2,z) + f(x,y,z)) +
@@ -397,8 +397,8 @@ const Field3D nl_filter_x(const Field3D &f, BoutReal w) {
     Field3D result;
   rvec v;
   
-  for(int jy=0;jy<mesh->LocalNy;jy++)
-    for(int jz=0;jz<mesh->LocalNz;jz++) {
+  for(int jy=0;jy<mesh->local_ny;jy++)
+    for(int jz=0;jz<mesh->local_nz;jz++) {
       f.getXArray(jy, jz, v);
       nl_filter(v, w);
       result.setXArray(jy, jz, v);
@@ -413,8 +413,8 @@ const Field3D nl_filter_y(const Field3D &fs, BoutReal w) {
   Field3D result;
   rvec v;
   
-  for(int jx=0;jx<mesh->LocalNx;jx++)
-    for(int jz=0;jz<mesh->LocalNz;jz++) {
+  for(int jx=0;jx<mesh->local_nx;jx++)
+    for(int jz=0;jz<mesh->local_nz;jz++) {
       fs.getYArray(jx, jz, v);
       nl_filter(v, w);
       result.setYArray(jx, jz, v);
@@ -429,8 +429,8 @@ const Field3D nl_filter_z(const Field3D &fs, BoutReal w) {
   Field3D result;
   rvec v;
   
-  for(int jx=0;jx<mesh->LocalNx;jx++)
-    for(int jy=0;jy<mesh->LocalNy;jy++) {
+  for(int jx=0;jx<mesh->local_nx;jx++)
+    for(int jy=0;jy<mesh->local_ny;jy++) {
       fs.getZArray(jx, jy, v);
       nl_filter(v, w);
       result.setZArray(jx, jy, v);

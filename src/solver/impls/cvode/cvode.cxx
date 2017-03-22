@@ -650,13 +650,13 @@ void CvodeSolver::set_abstol_values(BoutReal* abstolvec_data, vector<BoutReal> &
   
   // Upper Y boundary condition
   for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); xi++) {
-    for(jy=mesh->yend+1;jy<mesh->LocalNy;jy++)
+    for(jy=mesh->yend+1;jy<mesh->local_ny;jy++)
       loop_abstol_values_op(*xi, jy, abstolvec_data, p, f2dtols, f3dtols, true);
   }
 
   // Outer X boundary
   if(mesh->lastX() && !mesh->periodicX) {
-    for(jx=mesh->xend+1;jx<mesh->LocalNx;jx++)
+    for(jx=mesh->xend+1;jx<mesh->local_nx;jx++)
       for(jy=mesh->ystart;jy<=mesh->yend;jy++)
 	loop_abstol_values_op(jx, jy, abstolvec_data, p, f2dtols, f3dtols, true);
   }
@@ -672,7 +672,7 @@ void CvodeSolver::loop_abstol_values_op(int jx, int jy, BoutReal* abstolvec_data
     p++;
   }
   
-  for (int jz=0; jz < mesh->LocalNz; jz++) {
+  for (int jz=0; jz < mesh->local_nz; jz++) {
     // Loop over 3D variables
     for(vector<BoutReal>::size_type i=0; i<f3dtols.size(); i++) {
       if(bndry && !f3d[i].evolve_bndry) {

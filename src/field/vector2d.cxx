@@ -401,7 +401,7 @@ void Vector2D::accept(FieldVisitor &v) {
 int Vector2D::getData(int jx, int jy, int jz, void *vptr) const {
 #ifdef CHECK
   // check ranges
-  if((jx < 0) || (jx >= mesh->LocalNx) || (jy < 0) || (jy >= mesh->LocalNy) || (jz < 0) || (jz >= mesh->LocalNz)) {
+  if((jx < 0) || (jx >= mesh->local_nx) || (jy < 0) || (jy >= mesh->local_ny) || (jz < 0) || (jz >= mesh->local_nz)) {
     output.write("Vector2D: getData (%d,%d,%d) out of bounds\n", jx, jy, jz);
     exit(1);
   }
@@ -417,7 +417,7 @@ int Vector2D::getData(int jx, int jy, int jz, void *vptr) const {
 int Vector2D::getData(int jx, int jy, int jz, BoutReal *rptr) const {
 #ifdef CHECK
   // check ranges
-  if((jx < 0) || (jx >= mesh->LocalNx) || (jy < 0) || (jy >= mesh->LocalNy) || (jz < 0) || (jz >= mesh->LocalNz)) {
+  if((jx < 0) || (jx >= mesh->local_nx) || (jy < 0) || (jy >= mesh->local_ny) || (jz < 0) || (jz >= mesh->local_nz)) {
     output.write("Vector2D: getData (%d,%d,%d) out of bounds\n", jx, jy, jz);
     exit(1);
   }
@@ -433,7 +433,7 @@ int Vector2D::getData(int jx, int jy, int jz, BoutReal *rptr) const {
 int Vector2D::setData(int jx, int jy, int jz, void *vptr) {
 #ifdef CHECK
   // check ranges
-  if((jx < 0) || (jx >= mesh->LocalNx) || (jy < 0) || (jy >= mesh->LocalNy) || (jz < 0) || (jz >= mesh->LocalNz)) {
+  if((jx < 0) || (jx >= mesh->local_nx) || (jy < 0) || (jy >= mesh->local_ny) || (jz < 0) || (jz >= mesh->local_nz)) {
     output.write("Vector2D: setData (%d,%d,%d) out of bounds\n", jx, jy, jz);
     exit(1);
   }
@@ -449,7 +449,7 @@ int Vector2D::setData(int jx, int jy, int jz, void *vptr) {
 int Vector2D::setData(int jx, int jy, int jz, BoutReal *rptr) {
 #ifdef CHECK
   // check ranges
-  if((jx < 0) || (jx >= mesh->LocalNx) || (jy < 0) || (jy >= mesh->LocalNy) || (jz < 0) || (jz >= mesh->LocalNz)) {
+  if((jx < 0) || (jx >= mesh->local_nx) || (jy < 0) || (jy >= mesh->local_ny) || (jz < 0) || (jz >= mesh->local_nz)) {
     output.write("Vector2D: setData (%d,%d,%d) out of bounds\n", jx, jy, jz);
     exit(1);
   }

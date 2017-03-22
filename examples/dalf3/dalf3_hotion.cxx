@@ -398,15 +398,15 @@ int physics_run(BoutReal time) {
     // Boundary in jpar
     if(mesh->firstX()) {
       for(int i=jpar_boundary-1;i>=0;i--)
-        for(int j=0;j<mesh->LocalNy;j++)
-  	  for(int k=0;k<mesh->LocalNz;k++) {
+        for(int j=0;j<mesh->local_ny;j++)
+  	  for(int k=0;k<mesh->local_nz;k++) {
             jpar[i][j][k] = 0.0; //0.5*jpar[i+1][j][k];
 	  }
     }
     if(mesh->lastX()) {
-      for(int i=mesh->LocalNx-jpar_boundary;i<mesh->LocalNx;i++)
-        for(int j=0;j<mesh->LocalNy;j++)
-  	for(int k=0;k<mesh->LocalNz;k++) {
+      for(int i=mesh->local_nx-jpar_boundary;i<mesh->local_nx;i++)
+        for(int j=0;j<mesh->local_ny;j++)
+  	for(int k=0;k<mesh->local_nz;k++) {
             jpar[i][j][k] = 0.0; //0.5*jpar[i-1][j][k];
   	}
     }
@@ -502,27 +502,27 @@ int physics_run(BoutReal time) {
   
   if(mesh->firstX()) {
     for(int i=3;i>=0;i--)
-      for(int j=0;j<mesh->LocalNy;j++)
-	for(int k=0;k<mesh->LocalNz;k++) {
+      for(int j=0;j<mesh->local_ny;j++)
+	for(int k=0;k<mesh->local_nz;k++) {
           ddt(Vpar)[i][j][k] = ddt(Vpar)[i+1][j][k];
           ddt(Vort)[i][j][k] = ddt(Vort)[i+1][j][k];
 	}
     
     // Subtract DC component
     for(int i=0;i<10;i++)
-      for(int j=0;j<mesh->LocalNy;j++) {
+      for(int j=0;j<mesh->local_ny;j++) {
         BoutReal avg = 0.;
-        for(int k=0;k<mesh->LocalNz;k++)
+        for(int k=0;k<mesh->local_nz;k++)
           avg += ddt(Vort)[i][j][k];
-        avg /= (BoutReal) mesh->LocalNz;
-        for(int k=0;k<mesh->LocalNz;k++)
+        avg /= (BoutReal) mesh->local_nz;
+        for(int k=0;k<mesh->local_nz;k++)
           ddt(Vort)[i][j][k] -= avg;
       }
   }
   if(mesh->lastX()) {
-    for(int i=mesh->LocalNx-3;i<mesh->LocalNx;i++)
-      for(int j=0;j<mesh->LocalNy;j++)
-	for(int k=0;k<mesh->LocalNz;k++) {
+    for(int i=mesh->local_nx-3;i<mesh->local_nx;i++)
+      for(int j=0;j<mesh->local_ny;j++)
+	for(int k=0;k<mesh->local_nz;k++) {
           ddt(Vpar)[i][j][k] = ddt(Vpar)[i-1][j][k];
           ddt(Vort)[i][j][k] = ddt(Vort)[i-1][j][k];
 	}

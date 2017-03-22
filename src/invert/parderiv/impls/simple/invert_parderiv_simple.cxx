@@ -74,14 +74,14 @@ const Field3D InvertParSimple::solve(const Field3D &rc) {
 
   // Decide on x range. Solve in boundary conditions
   int xs = (mesh->firstX()) ? 0 : 2;
-  int xe = (mesh->lastX()) ? mesh->LocalNx-1 : (mesh->LocalNx-3);
+  int xe = (mesh->lastX()) ? mesh->local_nx-1 : (mesh->local_nx-3);
 
   int nxsolve = xe - xs + 1; // Number of X points to solve    
   int nylocal = mesh->yend - mesh->ystart + 1;
 
   if(max_size == 0) {
     // allocate working memory
-    senddata = new BoutReal[nxsolve * nylocal * (2 + mesh->LocalNz) ]; // Problem data sent out
+    senddata = new BoutReal[nxsolve * nylocal * (2 + mesh->local_nz) ]; // Problem data sent out
   }
     
   // coefficients for derivative term
@@ -125,8 +125,8 @@ const Field3D InvertParSimple::solve(const Field3D &rc) {
         delete[] recvdata;
         delete[] resultdata;
       }
-      recvdata = new BoutReal[ysize * (3+mesh->LocalNz)];  // Problem data received (to be solved)
-      resultdata = new BoutReal[ysize*mesh->LocalNz];  // Inverted result
+      recvdata = new BoutReal[ysize * (3+mesh->local_nz)];  // Problem data received (to be solved)
+      resultdata = new BoutReal[ysize*mesh->local_nz];  // Inverted result
       max_size = ysize;
     }
       
@@ -186,7 +186,7 @@ void InvertParSimple::cyclicSolve(int ysize, int xpos, BoutReal *data, BoutReal 
   static BoutReal *avec, *bvec, *cvec; // Matrix coefficients
   static BoutReal *rvec, *xvec;
     
-  int ncz = mesh->LocalNz;
+  int ncz = mesh->local_nz;
     
   if(ysize > ylen) {
     // Initialise

@@ -27,7 +27,7 @@ const Field3D HLL(const Field3D &f, const Field3D &u, BoutReal SL, BoutReal SR) 
   
   for(int i=mesh->xstart;i<=mesh->xend;i++)
     for(int j=mesh->ystart; j<=mesh->yend; j++)
-      for(int k=0;k<mesh->LocalNz;k++) {
+      for(int k=0;k<mesh->local_nz;k++) {
           
         BoutReal fp = (SR*f(i,j,k) - SL*f(i+1,j,k) + SL*SR*(u(i+1,j,k) - u(i,j,k)) ) / (SR - SL);
           BoutReal fm = (SR*f(i-1,j,k) - SL*f(i,j,k) + SL*SR*(u(i,j,k) - u(i-1,j,k)) ) / (SR - SL);
@@ -100,7 +100,7 @@ protected:
     if(mesh->StaggerGrids) {
       for (int xi = mesh->xstart; xi < mesh->xend +1; xi++){
 	for (int yj = mesh->ystart; yj < mesh->yend + 1; yj++){
-	  for (int zk = 0; zk < mesh->LocalNz; zk++) {
+	  for (int zk = 0; zk < mesh->local_nz; zk++) {
 	    f(xi, yj, zk) = MS_f(0.,mesh->GlobalX(xi),mesh->GlobalY(yj),coord->dz*zk);
 	    g(xi, yj, zk) = MS_g(0.,0.5*(mesh->GlobalX(xi)+mesh->GlobalX(xi-1)),mesh->GlobalY(yj),coord->dz*zk);
 	  }
@@ -109,7 +109,7 @@ protected:
     }else {
       for (int xi = mesh->xstart; xi < mesh->xend +1; xi++){
 	for (int yj = mesh->ystart; yj < mesh->yend + 1; yj++){
-	  for (int zk = 0; zk < mesh->LocalNz; zk++) {
+	  for (int zk = 0; zk < mesh->local_nz; zk++) {
 	    f(xi, yj, zk) = MS_f(0.,mesh->GlobalX(xi),mesh->GlobalY(yj),coord->dz*zk);
 	    g(xi, yj, zk) = MS_g(0.,mesh->GlobalX(xi),mesh->GlobalY(yj),coord->dz*zk);
 	  }
@@ -156,7 +156,7 @@ protected:
     E_g = 0.;
     for (int xi = mesh->xstart; xi < mesh->xend + 1; xi++){
       for (int yj = mesh->ystart ; yj < mesh->yend + 1; yj++){
-        for (int zk = 0; zk < mesh->LocalNz ; zk++) {
+        for (int zk = 0; zk < mesh->local_nz ; zk++) {
           
           E_f(xi,yj,zk) = f(xi,yj,zk) - Sf(xi,yj,zk);
           E_g(xi,yj,zk) = g(xi,yj,zk) - Sg(xi,yj,zk);
@@ -192,14 +192,14 @@ const Field3D Wave1D::solution_f(BoutReal t) {
   Field3D S;
   S.allocate();
   
-  int bx = (mesh->LocalNx - (mesh->xend - mesh->xstart + 1)) / 2;
-  int by = (mesh->LocalNy - (mesh->yend - mesh->ystart + 1)) / 2;
+  int bx = (mesh->local_nx - (mesh->xend - mesh->xstart + 1)) / 2;
+  int by = (mesh->local_ny - (mesh->yend - mesh->ystart + 1)) / 2;
 
   for (int xi = mesh->xstart - bx; xi < mesh->xend + bx + 1; xi++){
     for (int yj = mesh->ystart - by; yj < mesh->yend + by + 1; yj++){
       BoutReal x = mesh->GlobalX(xi);
       BoutReal y = mesh->GlobalY(yj);//GlobalY not fixed yet
-      for (int zk = 0; zk < mesh->LocalNz; zk++) {
+      for (int zk = 0; zk < mesh->local_nz; zk++) {
         BoutReal z = coord->dz*zk;
         S(xi, yj, zk) = MS_f(t,x,y,z);
       }
@@ -217,7 +217,7 @@ const Field3D Wave1D::source_f(BoutReal t) {
 
   for(xi=mesh->xstart;xi<mesh->xend+1;xi++)
     for(yj=mesh->ystart;yj < mesh->yend+1;yj++){
-      for(zk=0;zk<mesh->LocalNz;zk++){
+      for(zk=0;zk<mesh->local_nz;zk++){
         x = mesh->GlobalX(xi)*Lx;
         y = mesh->GlobalY(yj)*Ly;
         z = zk*coord->dz;
@@ -251,8 +251,8 @@ const Field3D Wave1D::solution_g(BoutReal t) {
   
   S.setLocation(CELL_XLOW);
   
-  int bx = (mesh->LocalNx - (mesh->xend - mesh->xstart + 1)) / 2;
-  int by = (mesh->LocalNy - (mesh->yend - mesh->ystart + 1)) / 2;
+  int bx = (mesh->local_nx - (mesh->xend - mesh->xstart + 1)) / 2;
+  int by = (mesh->local_ny - (mesh->yend - mesh->ystart + 1)) / 2;
 
   for (int xi = mesh->xstart - bx; xi < mesh->xend + bx + 1; xi++){
     for (int yj = mesh->ystart - by; yj < mesh->yend + by + 1; yj++){
@@ -261,7 +261,7 @@ const Field3D Wave1D::solution_g(BoutReal t) {
 	x = 0.5*(mesh->GlobalX(xi-1) + mesh->GlobalX(xi));
       }
       BoutReal y = mesh->GlobalY(yj);//GlobalY not fixed yet
-      for (int zk = 0; zk < mesh->LocalNz; zk++) {
+      for (int zk = 0; zk < mesh->local_nz; zk++) {
         BoutReal z = coord->dz*zk;
         S(xi, yj, zk) = MS_g(t,x,y,z);
       }
@@ -281,7 +281,7 @@ const Field3D Wave1D::source_g(BoutReal t) {
 
   for(xi=mesh->xstart;xi<mesh->xend+1;xi++)
     for(yj=mesh->ystart;yj < mesh->yend+1;yj++){
-      for(zk=0;zk<mesh->LocalNz;zk++){
+      for(zk=0;zk<mesh->local_nz;zk++){
 	if(mesh->StaggerGrids) {
 	  x = 0.5*(mesh->GlobalX(xi-1)+mesh->GlobalX(xi))*Lx;
 	}else {

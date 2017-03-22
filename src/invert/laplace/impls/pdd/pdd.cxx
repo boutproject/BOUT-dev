@@ -65,7 +65,7 @@ const Field3D LaplacePDD::solve(const Field3D &b) {
   if(mesh->hasBndryLowerY())
     ys = 0; // Mesh contains a lower boundary
   if(mesh->hasBndryUpperY())
-    ye = mesh->LocalNy-1; // Contains upper boundary
+    ye = mesh->local_ny-1; // Contains upper boundary
   
   if(low_mem) {
     // Solve one slice at a time
@@ -118,7 +118,7 @@ const Field3D LaplacePDD::solve(const Field3D &b) {
 void LaplacePDD::start(const FieldPerp &b, PDD_data &data) {
   int ix, kz;
   
-  int ncz = mesh->LocalNz;
+  int ncz = mesh->local_nz;
 
   data.jy = b.getIndex();
 
@@ -133,19 +133,19 @@ void LaplacePDD::start(const FieldPerp &b, PDD_data &data) {
     // Need to allocate working memory
     
     // RHS vector
-    data.bk = matrix<dcomplex>(maxmode + 1, mesh->LocalNx);
+    data.bk = matrix<dcomplex>(maxmode + 1, mesh->local_nx);
     
     // Matrix to be solved
-    data.avec = matrix<dcomplex>(maxmode + 1, mesh->LocalNx);
-    data.bvec = matrix<dcomplex>(maxmode + 1, mesh->LocalNx);
-    data.cvec = matrix<dcomplex>(maxmode + 1, mesh->LocalNx);
+    data.avec = matrix<dcomplex>(maxmode + 1, mesh->local_nx);
+    data.bvec = matrix<dcomplex>(maxmode + 1, mesh->local_nx);
+    data.cvec = matrix<dcomplex>(maxmode + 1, mesh->local_nx);
     
     // Working vectors
-    data.v = matrix<dcomplex>(maxmode + 1, mesh->LocalNx);
-    data.w = matrix<dcomplex>(maxmode + 1, mesh->LocalNx);
+    data.v = matrix<dcomplex>(maxmode + 1, mesh->local_nx);
+    data.w = matrix<dcomplex>(maxmode + 1, mesh->local_nx);
 
     // Result
-    data.xk = matrix<dcomplex>(maxmode + 1, mesh->LocalNx);
+    data.xk = matrix<dcomplex>(maxmode + 1, mesh->local_nx);
 
     // Communication buffers. Space for 2 complex values for each kz
     data.snd = new BoutReal[4*(maxmode+1)];
@@ -160,7 +160,7 @@ void LaplacePDD::start(const FieldPerp &b, PDD_data &data) {
   if(bk1d == NULL)
     bk1d = new dcomplex[ncz/2 + 1];
 
-  for(ix=0; ix < mesh->LocalNx; ix++) {
+  for(ix=0; ix < mesh->local_nx; ix++) {
     rfft(b[ix], ncz, bk1d);
     for(kz = 0; kz <= maxmode; kz++)
       data.bk[kz][ix] = bk1d[kz];
@@ -179,8 +179,8 @@ void LaplacePDD::start(const FieldPerp &b, PDD_data &data) {
 
     static dcomplex *e = NULL;
     if(e == NULL) {
-      e = new dcomplex[mesh->LocalNx];
-      for(ix=0;ix<mesh->LocalNx;ix++)
+      e = new dcomplex[mesh->local_nx];
+      for(ix=0;ix<mesh->local_nx;ix++)
 	e[ix] = 0.0;
     }
 
@@ -323,7 +323,7 @@ void LaplacePDD::finish(PDD_data &data, FieldPerp &x) {
   
   if(!mesh->lastX()) {
     for(kz = 0; kz <= maxmode; kz++) {
-      for(ix=0; ix < mesh->LocalNx; ix++)
+      for(ix=0; ix < mesh->local_nx; ix++)
 	data.xk[kz][ix] -= data.w[kz][ix] * data.y2i[kz];
     }
   }
@@ -334,7 +334,7 @@ void LaplacePDD::finish(PDD_data &data, FieldPerp &x) {
     for(kz = 0; kz <= maxmode; kz++) {
       dcomplex y2m = dcomplex(data.rcv[2*kz], data.rcv[2*kz+1]);
       
-      for(ix=0; ix < mesh->LocalNx; ix++)
+      for(ix=0; ix < mesh->local_nx; ix++)
 	data.xk[kz][ix] -= data.v[kz][ix] * y2m;
     }
   }
@@ -343,7 +343,7 @@ void LaplacePDD::finish(PDD_data &data, FieldPerp &x) {
 
   static dcomplex *xk1d = NULL; ///< 1D in Z for taking FFTs
 
-  int ncz = mesh->LocalNz;
+  int ncz = mesh->local_nz;
 
   if(xk1d == NULL) {
     xk1d = new dcomplex[ncz/2 + 1];
@@ -351,7 +351,7 @@ void LaplacePDD::finish(PDD_data &data, FieldPerp &x) {
       xk1d[kz] = 0.0;
   }
 
-  for(ix=0; ix<mesh->LocalNx; ix++){
+  for(ix=0; ix<mesh->local_nx; ix++){
     
     for(kz = 0; kz <= maxmode; kz++) {
       xk1d[kz] = data.xk[kz][ix];

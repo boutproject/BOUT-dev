@@ -659,7 +659,7 @@ const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
       int ind = globalIndex(mesh->xend+1,y);
       PetscScalar val;
       VecGetValues(xs, 1, &ind, &val );
-      for(int x=mesh->xend+1;x < mesh->LocalNx;x++)
+      for(int x=mesh->xend+1;x < mesh->local_nx;x++)
         result(x,y) = val;
     }
   }
@@ -678,7 +678,7 @@ const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
     int ind = globalIndex(it.ind, mesh->yend+1);
     PetscScalar val;
     VecGetValues(xs, 1, &ind, &val );
-    for(int y=mesh->yend+1;y<mesh->LocalNy;y++)
+    for(int y=mesh->yend+1;y<mesh->local_ny;y++)
       result(it.ind, y) = val;
   }
   
@@ -780,8 +780,8 @@ int LaplaceXY::localSize() {
 }
 
 int LaplaceXY::globalIndex(int x, int y) {
-  if( (x < 0) || (x >= mesh->LocalNx) ||
-      (y < 0) || (y >= mesh->LocalNy) )
+  if( (x < 0) || (x >= mesh->local_nx) ||
+      (y < 0) || (y >= mesh->local_ny) )
     return -1; // Out of range
  
   // Get the index from a Field2D, round to integer

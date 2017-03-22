@@ -40,8 +40,8 @@ int main(int argc, char **argv) {
 
   // Check the result
   int passed = 1;
-  for (int y = 2; y < mesh->LocalNy - 2; y++) {
-    for (int z = 0; z < mesh->LocalNz; z++) {
+  for (int y = 2; y < mesh->local_ny - 2; y++) {
+    for (int z = 0; z < mesh->local_nz; z++) {
       output.write("result: [%d,%d] : %e, %e, %e\n", y, z, input(2, y, z),
                    result(2, y, z), deriv(2, y, z));
       if (abs(input(2, y, z) - deriv(2, y, z)) > tol)

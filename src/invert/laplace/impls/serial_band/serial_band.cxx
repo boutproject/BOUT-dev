@@ -45,14 +45,14 @@ LaplaceSerialBand::LaplaceSerialBand(Options *opt) : Laplacian(opt), Acoef(0.0),
     }
   // Allocate memory
 
-  int ncz = mesh->LocalNz;
-  bk = matrix<dcomplex>(mesh->LocalNx, ncz/2 + 1);
-  bk1d = new dcomplex[mesh->LocalNx];
+  int ncz = mesh->local_nz;
+  bk = matrix<dcomplex>(mesh->local_nx, ncz/2 + 1);
+  bk1d = new dcomplex[mesh->local_nx];
   
-  xk = matrix<dcomplex>(mesh->LocalNx, ncz/2 + 1);
-  xk1d = new dcomplex[mesh->LocalNx];
+  xk = matrix<dcomplex>(mesh->local_nx, ncz/2 + 1);
+  xk1d = new dcomplex[mesh->local_nx];
   
-  A = matrix<dcomplex>(mesh->LocalNx, 5);
+  A = matrix<dcomplex>(mesh->local_nx, 5);
 }
 
 LaplaceSerialBand::~LaplaceSerialBand() {
@@ -77,15 +77,15 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
 
   Coordinates *coord = mesh->coordinates();
   
-  int ncz = mesh->LocalNz;
-  int ncx = mesh->LocalNx-1;
+  int ncz = mesh->local_nz;
+  int ncx = mesh->local_nx-1;
 
   int xbndry = 2; // Width of the x boundary
   if(global_flags & INVERT_BOTH_BNDRY_ONE)
     xbndry = 1;
 
   #pragma omp parallel for
-  for(int ix=0;ix<mesh->LocalNx;ix++) {
+  for(int ix=0;ix<mesh->local_nx;ix++) {
     // for fixed ix,jy set a complex vector rho(z)
     
     if(((ix < xbndry) && (inner_boundary_flags & INVERT_SET)) ||
@@ -103,7 +103,7 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
     xend = ncx-xbndry;
   }else {
     xstart = 2;
-    xend = mesh->LocalNx-2;
+    xend = mesh->local_nx-2;
   }
 
   for(int iz=0;iz<=ncz/2;iz++) {
@@ -119,7 +119,7 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
     if (iz>maxmode) flt=0.0; else flt=1.0;
 
     // set bk1d
-    for(int ix=0;ix<mesh->LocalNx;ix++)
+    for(int ix=0;ix<mesh->local_nx;ix++)
       bk1d[ix] = bk[ix][iz]*flt;
 
     // Fill in interior points
@@ -165,7 +165,7 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
 
       // A first order derivative term (1/c)\nabla_perp c\cdot\nabla_\perp x
     
-      if((ix > 1) && (ix < (mesh->LocalNx-2)))
+      if((ix > 1) && (ix < (mesh->local_nx-2)))
         coef4 += coord->g11(ix,jy) * (Ccoef(ix-2,jy) - 8.*Ccoef(ix-1,jy) + 8.*Ccoef(ix+1,jy) - Ccoef(ix+2,jy)) / (12.*coord->dx(ix,jy)*(Ccoef(ix,jy)));
 
       // Put into matrix
@@ -378,7 +378,7 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
     }
     
     // Perform inversion
-    cband_solve(A, mesh->LocalNx, 2, 2, bk1d);
+    cband_solve(A, mesh->local_nx, 2, 2, bk1d);
 
     if((global_flags & INVERT_KX_ZERO) && (iz == 0)) {
       // Set the Kx = 0, n = 0 component to zero. For now just subtract

@@ -601,9 +601,9 @@ int physics_run(BoutReal t) {
       // Use BOUT-06 method, no communications
       
       jpar.allocate();
-      for(int jx=0;jx<mesh->LocalNx;jx++)
-	for(int jy=0;jy<mesh->LocalNy;jy++)
-	  for(int jz=0;jz<mesh->LocalNz;jz++) {
+      for(int jx=0;jx<mesh->local_nx;jx++)
+	for(int jy=0;jy<mesh->local_ny;jy++)
+	  for(int jz=0;jz<mesh->local_nz;jz++) {
 	    BoutReal dNi_dpar, dPhi_dpar;
 	  
 	    // parallel derivs at left guard point
