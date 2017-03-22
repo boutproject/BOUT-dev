@@ -127,8 +127,20 @@ int BoutMesh::load() {
   output << "\tGrid size: " << nx << " x " << ny << " x " << MZ << endl;
 
   // Get guard cell sizes
-  options->get("MXG", MXG, 2);
-  options->get("MYG", MYG, 2);
+  // Try to read from grid file first, then if not found
+  // get from options
+  if (Mesh::get(MXG, "MXG")) {
+    // Error code returned
+    options->get("MXG", MXG, 2);
+  }
+  ASSERT0(MXG >= 0);
+  
+  if (Mesh::get(MYG, "MYG")) {
+    options->get("MYG", MYG, 2);
+  }
+  ASSERT0(MYG >= 0);
+  
+  output << "\tGuard cells (x,y): " << MXG << ", " << MYG << std::endl;
 
   // Check that nx is large enough
   if(nx <= 2*MXG) {
