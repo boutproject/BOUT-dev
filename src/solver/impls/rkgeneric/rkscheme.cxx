@@ -28,13 +28,13 @@ RKScheme::~RKScheme(){
   ///we really free them there as well?
   
   //stageCoeffs
-  free_rmatrix(stageCoeffs);
+  free_matrix(stageCoeffs);
 
   //resultCoeffs
-  free_rmatrix(resultCoeffs);
+  free_matrix(resultCoeffs);
 
   //steps
-  free_rmatrix(steps);
+  free_matrix(steps);
 
   //timeCoeffs
   delete[] timeCoeffs;
@@ -58,7 +58,7 @@ void RKScheme::init(const int nlocalIn, const int neqIn, const bool adaptiveIn, 
   adaptive = adaptiveIn;
 
   //Allocate storage for stages
-  steps = rmatrix(getStageCount(),nlocal);
+  steps = matrix<BoutReal>(getStageCount(),nlocal);
   zeroSteps();
 
   //Allocate array for storing alternative order result

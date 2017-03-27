@@ -19,7 +19,9 @@
 #
 #####################################################################
 #
-# Process this file with autoconf to produce a configure script.
+# Process this file with autoreconf to produce a configure script.
+#
+#     $ autoreconf -if 
 #
 # Changelog:
 #
@@ -120,6 +122,23 @@ AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_PROG_RANLIB
 
+AC_SUBST(ARFLAGS)
+
+ARFLAGS=''
+for flag in cruU cru
+do
+  echo 1 > artest1
+  ar $flag artest artest1 &&ar $flag artest artest1
+  arexit=$?
+  rm -f artest1 artest
+  if test $arexit -eq 0
+  then
+    ARFLAGS="$flag"
+    break;
+  fi
+done
+test -z $ARFLAGS && AC_MSG_ERROR([Failed to find suitable flags for ar])
+
 # Check for and enable C++11 support
 # Error if not supported
 AX_CXX_COMPILE_STDCXX([11], [noext], [mandatory])
@@ -154,7 +173,7 @@ then
   echo "Enabling all debug options"
   enable_checks="3"
   # use -Og with available, otherwise fall back to -O0
-  OPT_FLAGS="-g -O0 -Og"
+  OPT_FLAGS="-g -O0 -Og -fno-inline -hipa1"
 elif test $enable_optimize ; then
   optimize=$enable_optimize
   test $optimize -eq 0 2>/dev/null
@@ -353,9 +372,11 @@ AS_IF([test "x$with_netcdf" != "xno"],
 
         save_LIBS=$LIBS
         save_LDFLAGS=$LDFLAGS
+        save_CXXFLAGS=$CXXFLAGS
         AC_LANG_PUSH([C++])
         LIBS="$save_LIBS $NCLIB"
-        LDFALGS="save_LDFLAGS $NCINC"
+        LDFLAGS="$save_LDFLAGS $NCLIB"
+        CXXFLAGS="$save_CXXFLAGS $NCINC"
         AC_LINK_IFELSE(
           [AC_LANG_PROGRAM([
              #include <netcdfcpp.h>
@@ -367,7 +388,7 @@ AS_IF([test "x$with_netcdf" != "xno"],
         AC_LANG_POP([C++])
         LIBS=$save_LIBS
         LDFLAGS=$save_LDFLAGS
-        CXXFLAGS="$CXXFLAGS -DNCDF"
+        CXXFLAGS="$save_CXXFLAGS -DNCDF"
        ])
       EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
 

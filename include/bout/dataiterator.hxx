@@ -76,11 +76,12 @@ public:
     xstart(xs),   ystart(ys),   zstart(zs),
     xmin(xstart), ymin(ystart), zmin(zstart),
     xend(xe),     yend(ye),     zend(ze),
-    xmax(xend),   ymax(yend),   zmax(zend)
+    xmax(xend),   ymax(yend),   zmax(zend),
 #else
-    xmin(xstart), ymin(ys), zmin(zs),
-    xmax(xend),   ymax(ye),   zmax(ze)
+    xmin(xstart), ymin(ys),     zmin(zs),
+    xmax(xend),   ymax(ye),     zmax(ze),
 #endif
+    isEnd(false)
   {
     omp_init(xs,xe,false);
   }
@@ -97,11 +98,12 @@ public:
     xstart(xs),   ystart(ys),   zstart(zs),
     xmin(xstart), ymin(ystart), zmin(zstart),
     xend(xe),     yend(ye),     zend(ze),
-    xmax(xend),   ymax(yend),   zmax(zend)
+    xmax(xend),   ymax(yend),   zmax(zend),
 #else
     xmin(xstart), ymin(ys),   zmin(zs),
-    xmax(xend),   ymax(ye),   zmax(ze)
+    xmax(xend),   ymax(ye),   zmax(ze),
 #endif
+    isEnd(true)
   {
     omp_init(xs,xe,true);
     next();
@@ -127,7 +129,12 @@ public:
 
   /// Comparison operator. Most common use is in for loops
   inline bool operator!=(const DataIterator& rhs) const {
-    return (x != rhs.x) || (y != rhs.y) || (z != rhs.z);
+    //return  !(x == rhs.x && y == rhs.y && z == rhs.z);
+    if (rhs.isEnd){
+      return !this->done();
+    } else {
+      return  !(x == rhs.x && y == rhs.y && z == rhs.z);
+    }
   }
   
   /*!
@@ -151,8 +158,17 @@ public:
    * Add an offset to the index for general stencils
    */
   const Indices offset(int dx, int dy, int dz) const {
-    int nz = zend-zstart+1;
-    return {x+dx, y+dy, ((z+dz-zstart + nz) % nz) + zstart};
+    if (dz>0){
+      int zp=z;
+      for (int j=0;j<dz;++j)
+        zp=(zp == zend ? zstart : zp+1);
+      return {x+dx, y+dy, zp };
+    } else {
+      int zm=z;
+      for (;dz!= 0;++dz)
+        zm = (zm == zstart ? zend : zm-1);
+      return {x+dx, y+dy, zm };
+    }
   }
   
   /*
@@ -193,7 +209,13 @@ public:
    * using the more idiomatic it != DataIterator::end() ?
    */
   bool done() const {
+#ifndef _OPENMP
     return (x > xend) || (x < xstart);
+#else //_OPENMP
+    return (x == xend && y == yend && z > zend)
+      || x > xend ||
+      (x <= xstart && y <= ystart && z < zstart)  ;
+#endif //_OPENMP
   }
   
 private:
@@ -214,7 +236,7 @@ private:
 #else
   int xmax, ymax, zmax;
 #endif
-  
+  const bool isEnd;
   /// Advance to the next index
   void next() {
     ++z;

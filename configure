@@ -677,6 +677,7 @@ GREP
 CXXCPP
 CXX11_FLAGS
 HAVE_CXX11
+ARFLAGS
 RANLIB
 SET_MAKE
 LN_S
@@ -3528,6 +3529,23 @@ else
 fi
 
 
+
+
+ARFLAGS=''
+for flag in cruU cru
+do
+  echo 1 > artest1
+  ar $flag artest artest1 &&ar $flag artest artest1
+  arexit=$?
+  rm -f artest1 artest
+  if test $arexit -eq 0
+  then
+    ARFLAGS="$flag"
+    break;
+  fi
+done
+test -z $ARFLAGS && as_fn_error $? "Failed to find suitable flags for ar" "$LINENO" 5
+
 # Check for and enable C++11 support
 # Error if not supported
       ax_cxx_compile_cxx11_required=true
@@ -4885,7 +4903,7 @@ then
   echo "Enabling all debug options"
   enable_checks="3"
   # use -Og with available, otherwise fall back to -O0
-  OPT_FLAGS="-g -O0 -Og"
+  OPT_FLAGS="-g -O0 -Og -fno-inline -hipa1"
 elif test $enable_optimize ; then
   optimize=$enable_optimize
   test $optimize -eq 0 2>/dev/null
@@ -5342,6 +5360,7 @@ $as_echo_n "checking if we can compile NetCDF with C++... " >&6; }
 
         save_LIBS=$LIBS
         save_LDFLAGS=$LDFLAGS
+        save_CXXFLAGS=$CXXFLAGS
         ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -5349,7 +5368,8 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
         LIBS="$save_LIBS $NCLIB"
-        LDFALGS="save_LDFLAGS $NCINC"
+        LDFLAGS="$save_LDFLAGS $NCLIB"
+        CXXFLAGS="$save_CXXFLAGS $NCINC"
         cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -5385,7 +5405,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
         LIBS=$save_LIBS
         LDFLAGS=$save_LDFLAGS
-        CXXFLAGS="$CXXFLAGS -DNCDF"
+        CXXFLAGS="$save_CXXFLAGS -DNCDF"
 
 fi
       EXTRA_LIBS="$EXTRA_LIBS $NCLIB"

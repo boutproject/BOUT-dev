@@ -36,7 +36,7 @@ class LaplaceCyclic;
 #include <dcomplex.hxx>
 #include <options.hxx>
 
-/// 
+/// Solves the 2D Laplacian equation using the CyclicReduce class
 /*!
  * 
  */

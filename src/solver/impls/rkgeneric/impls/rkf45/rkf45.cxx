@@ -11,8 +11,8 @@ RKF45Scheme::RKF45Scheme(Options *options):RKScheme(options){
   OPTION(options, followHighOrder, followHighOrder);
 
   //Allocate coefficient arrays
-  stageCoeffs = rmatrix(numStages,numStages);
-  resultCoeffs = rmatrix(numStages,numOrders);
+  stageCoeffs = matrix<BoutReal>(numStages,numStages);
+  resultCoeffs = matrix<BoutReal>(numStages,numOrders);
   timeCoeffs = new BoutReal[numStages];
 
   //Zero out arrays (shouldn't be needed, but do for testing)

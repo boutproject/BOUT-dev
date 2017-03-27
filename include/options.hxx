@@ -116,7 +116,7 @@ public:
 
   // Setting options
   void set(const string &key, const int &val, const string &source="");
-  void set(const string &key, const BoutReal &val, const string &source="");
+  void set(const string &key, BoutReal val, const string &source="");
   void set(const string &key, const bool &val, const string &source="");
   void set(const string &key, const string &val, const string &source="");
 
@@ -128,7 +128,7 @@ public:
 
   // Getting options
   void get(const string &key, int &val, const int &def, bool log=true);
-  void get(const string &key, BoutReal &val, const BoutReal &def, bool log=true);
+  void get(const string &key, BoutReal &val, BoutReal def, bool log=true);
   void get(const string &key, bool &val, const bool &def, bool log=true);
   void get(const string &key, string &val, const string &def, bool log=true);
 

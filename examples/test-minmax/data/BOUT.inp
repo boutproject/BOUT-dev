@@ -19,11 +19,10 @@ iyseps2_2	= -1
 StaggerGrids=true
 
 [All]
-bndry_all = neumann(0)
+bndry_all = none
 function=x
 scale=2
 
 [n2]
 function=x
 scale=2
-bndry_all= neumann

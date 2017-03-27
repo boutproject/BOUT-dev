@@ -1,4 +1,6 @@
 /*!
+ * \file deprecated.hxx
+ *
  * Defines a DEPRECATED macro, to mark functions for future removal
  * 
  * Example

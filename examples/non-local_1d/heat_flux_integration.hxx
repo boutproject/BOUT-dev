@@ -57,10 +57,10 @@ public:
   
   Field3D integral_below;
   Field3D integral_above;
-  void	calculateIntegralBelow_cell_centre(const BoutReal &eigenvalue, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, const int &counter);
-  void	calculateIntegralAbove_cell_centre(const BoutReal &eigenvalue, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, const int &counter);
-  void	calculateIntegralBelow_cell_ylow(const BoutReal &eigenvalue, const Field3D &dimensionless_length_deltas_below, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, CubicSpline &cubic_spline_gradT, const int &counter);
-  void	calculateIntegralAbove_cell_ylow(const BoutReal &eigenvalue, const Field3D &dimensionless_length_deltas_below, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, CubicSpline &cubic_spline_gradT, const int &counter);
+  void	calculateIntegralBelow_cell_centre(BoutReal eigenvalue, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, const int &counter);
+  void	calculateIntegralAbove_cell_centre(BoutReal eigenvalue, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, const int &counter);
+  void	calculateIntegralBelow_cell_ylow(BoutReal eigenvalue, const Field3D &dimensionless_length_deltas_below, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, CubicSpline &cubic_spline_gradT, const int &counter);
+  void	calculateIntegralAbove_cell_ylow(BoutReal eigenvalue, const Field3D &dimensionless_length_deltas_below, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, CubicSpline &cubic_spline_gradT, const int &counter);
  
 private:
   bindex * position;

@@ -50,14 +50,14 @@ public:
 protected:
   GlobalField(Mesh *m, int proc, int xsize, int ysize, int zsize);
   
-  Mesh *mesh;
+  Mesh *mesh; ///< The mesh we're gathering/scattering over
 
-  int data_on_proc; // Which processor is this data on?  
-  int nx, ny, nz;
-  BoutReal *data;
+  int data_on_proc; ///< Which processor is this data on?  
+  int nx, ny, nz; ///< Global field sizes
+  BoutReal *data; ///< The global data, if on this processor
 
-  MPI_Comm comm;
-  int npes, mype;
+  MPI_Comm comm; ///< Communicator for all mesh
+  int npes, mype; ///< Number of MPI processes, this processor index
   
   void proc_local_origin(int proc, int *x, int *y, int *z = NULL) const;
   void proc_origin(int proc, int *x, int *y, int *z = NULL) const;  ///< Return the global origin of processor proc
@@ -112,10 +112,16 @@ private:
  */ 
 class GlobalField2D : public GlobalField {
 public:
+  /// Construct, giving a mesh and an optional processor
+  ///
+  /// @param[in] mesh   The mesh to gather over
+  /// @param[in] proc   The processor index where everything will be gathered/scattered to/from
   GlobalField2D(Mesh *m, int proc = 0);
+
+  /// Destructor
   virtual ~GlobalField2D();
   
-  bool valid() const {return data_valid;}
+  bool valid() const {return data_valid;} ///< Is the data valid and on this processor?
   
   void gather(const Field2D &f); ///< Gather all data onto one processor
   const Field2D scatter() const; ///< Scatter data back from one to many processors
@@ -127,19 +133,26 @@ public:
     return *this;
   }
   
-  // Data access by index
+  /// Data access by global index
   BoutReal& operator()(int jx, int jy) {return GlobalField::operator()(jx, jy, 0);}
   const BoutReal& operator()(int jx, int jy) const {return GlobalField::operator()(jx, jy, 0);}
   
 protected:
   
 private:
-  GlobalField2D();
+  GlobalField2D(); ///< Private so can't be constructed without args
   
+  /// Buffer for sending and receiving. First index
+  /// is the processor index, and second is the data
   BoutReal** buffer;
   
+  /// The length of message (in BoutReals) to
+  /// be sent to or from processor \p proc
+  ///
+  /// @param[in] proc  MPI processor index
   int msg_len(int proc) const;
-  
+
+  /// Is the data valid and on this processor?
   bool data_valid;
 };
 
@@ -190,7 +203,13 @@ private:
  */
 class GlobalField3D : public GlobalField {
 public:
+  /// Construct, giving a mesh and an optional processor
+  ///
+  /// @param[in] mesh   The mesh to gather over
+  /// @param[in] proc   The processor index where everything will be gathered/scattered to/from
   GlobalField3D(Mesh *m, int proc = 0);
+
+  /// Destructor
   virtual ~GlobalField3D();
   
   /*!
@@ -211,12 +230,19 @@ public:
 protected:
   
 private:
-  GlobalField3D();
-  
-  BoutReal** buffer;
-  
+  GlobalField3D(); ///< Private so can't be constructed without args
+
+  /// Buffer for sending and receiving. First index
+  /// is the processor index, and second is the data
+  BoutReal** buffer; 
+
+  /// The length of message (in BoutReals) to
+  /// be sent to or from processor \p proc
+  ///
+  /// @param[in] proc  MPI processor index
   int msg_len(int proc) const;
-  
+
+  /// Is the data valid and on this processor?
   bool data_valid;
 };
 

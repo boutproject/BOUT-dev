@@ -28,8 +28,9 @@ CXX			= @MPICXX@
 CC                      = $(CXX)
 
 AR			= ar
+ARFLAGS                 = @ARFLAGS@
 RANLIB			= @RANLIB@
-MKDIR			= @MKDIR@
+MKDIR			= @MKDIR_P@
 
 ####################################################################
 # Do not need to alter anything below
@@ -143,7 +144,7 @@ ifeq ("$(TARGET)", "lib")
 lib: makefile $(BOUT_TOP)/make.config $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ)
 ifneq ("$(OBJ)foo", "foo")
 	@echo "Adding $(OBJ) to libbout++.a"
-	@$(AR) cru $(LIB) $(OBJ)
+	@$(AR) $(ARFLAGS) $(LIB) $(OBJ)
 	@$(RANLIB) $(LIB)
 endif
 
@@ -221,3 +222,21 @@ distclean: clean
 	@echo externalpackages cleaned
 	@touch $(BOUT_TOP)/configure
 	@echo autom4te.cache cleaned
+
+####################################################################
+# Documentation
+####################################################################
+
+MANUAL_DIR=$(BOUT_TOP)/manual
+
+doxygen:
+	cd $(MANUAL_DIR)/doxygen && doxygen Doxyfile
+
+breathe-autogen: doxygen
+	breathe-apidoc -f -o $(MANUAL_DIR)/sphinx/_breathe_autogen $(MANUAL_DIR)/doxygen/bout/xml
+
+sphinx-docs-html: breathe-autogen
+	sphinx-build -b html $(MANUAL_DIR)/sphinx/ $(MANUAL_DIR)/sphinx/_build/
+
+sphinx-docs-latex: breathe-autogen
+	sphinx-build -b latex $(MANUAL_DIR)/sphinx/ $(MANUAL_DIR)/sphinx/_build/

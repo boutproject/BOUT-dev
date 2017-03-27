@@ -21,11 +21,11 @@ shell("make > make.log")
 for nproc in [1]:
   stdout.write("Checking %d processors ... " % (nproc))
 
+  shell("rm -f ./data*nc")
   s, out = launch("./test_griddata -d screw", runcmd=MPIRUN, nproc=nproc, pipe=True)
 
-  f = open("run.log."+str(nproc), "w")
-  f.write(out)
-  f.close()
+  with open("run.log."+str(nproc), "w") as f:
+    f.write(out)
 
   prefix = "data"
   Rxy = collect("Rxy", prefix=prefix, info=False)
