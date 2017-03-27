@@ -1,20 +1,20 @@
 /*!*************************************************************************
  * \file imex-bdf2.cxx
- * 
+ *
  * 2nd order IMEX-BDF scheme
- * 
+ *
  * Scheme taken from this paper: http://homepages.cwi.nl/~willem/DOCART/JCP07.pdf
  * W.Hundsdorfer, S.J.Ruuth "IMEX extensions of linear multistep methods with general
  * monotonicity and boundedness properties" JCP 225 (2007) 2016-2042
- *  
- * 
+ *
+ *
  * Uses PETSc for the SNES interface
- * 
+ *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -58,7 +58,7 @@ class IMEXBDF2;
 ///
 /// The method has been extended to variable order, variable timestep,
 /// and includes some adaptive capabilities
-/// 
+///
 class IMEXBDF2 : public Solver {
  public:
   IMEXBDF2(Options *opt = NULL);
@@ -83,21 +83,21 @@ class IMEXBDF2 : public Solver {
   ///
   ///     f = (x - gamma*G(x)) - rhs
   ///
-  /// 
+  ///
   /// @param[in] x  The state vector
   /// @param[out] f  The vector for the result f(x)
   /// @param[in] linear   Specifies that the SNES solver is in a linear (KSP) inner loop, so the operator should be linearised if possible
   PetscErrorCode snes_function(Vec x, Vec f, bool linear);
 
-  /// Preconditioner. Called by PCapply 
+  /// Preconditioner. Called by PCapply
   /// via a C-style static function.
   ///
   /// @param[in] x  The vector to be operated on
   /// @param[out] f  The result of the operation
-  PetscErrorCode precon(Vec x, Vec f); 
+  PetscErrorCode precon(Vec x, Vec f);
  private:
   static const int MAX_SUPPORTED_ORDER = 4; //Should this be #defined instead?
-  
+
   int maxOrder; ///< Specify the maximum order of the scheme to use (1/2/3)
 
   BoutReal out_timestep; ///< The output timestep
@@ -118,26 +118,26 @@ class IMEXBDF2 : public Solver {
   BoutReal dtMin; ///< Minimum timestep we want to use
   BoutReal dtMax; ///< Maximum timestep we want to use
   BoutReal dtMinFatal; ///< If timestep wants to drop below this we abort. Set -ve to deactivate
-  
+
   //Scheme coefficients
   vector<BoutReal> uFac, fFac, gFac;
   BoutReal dtImp;
 
   int nlocal, neq; ///< Number of variables on local processor and in total
-  
+
   /// Take a full step at requested order
   ///
   /// @param[in] curtime  The current simulation time
   /// @param[in] dt       The time step to take
   /// @param[in] order    The order of accuracy
-  void take_step(BoutReal curtime, BoutReal dt, int order=2); 
+  void take_step(BoutReal curtime, BoutReal dt, int order=2);
 
   /// Setup a SNES object
   /// This includes creating, setting functions, options,
   /// and internal (KSP) solver, and Jacobian options
   /// including coloring.
-  /// 
-  void constructSNES(SNES *snesIn); 
+  ///
+  void constructSNES(SNES *snesIn);
 
   /// Shuffle state along one step
   void shuffleState();
@@ -146,7 +146,7 @@ class IMEXBDF2 : public Solver {
   void calculateCoeffs(int order);
 
   // Working memory
-  BoutReal *u ; ///< System state at current time 
+  BoutReal *u ; ///< System state at current time
   vector<BoutReal*> uV; ///< The solution history
   vector<BoutReal*> fV; ///< The non-stiff solution history
   //vector<BoutReal*> gV; ///< The stiff solution history
@@ -169,14 +169,15 @@ class IMEXBDF2 : public Solver {
 
   // Diagnostics
   bool diagnose;  ///< Output diagnostics every timestep
+  bool verbose;  ///< Gives a more verbose output for each timestep
   int linear_fails;   ///< Number of linear (KSP) convergence failures
   int nonlinear_fails;  ///< Numbef of nonlinear (SNES) convergence failures
 
   bool have_constraints; ///< Are there any constraint variables?
   BoutReal *is_dae; ///< If using constraints, 1 -> DAE, 0 -> AE
-  
+
   MatFDColoring fdcoloring; ///< Matrix coloring context, used for finite difference Jacobian evaluation
-  
+
   template< class Op >
   void loopVars(BoutReal *u);
 
