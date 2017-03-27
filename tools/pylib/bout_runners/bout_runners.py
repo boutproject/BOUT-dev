@@ -34,7 +34,7 @@ import numpy as np
 from boututils.run_wrapper import shell, launch, getmpirun
 from boututils.options import BOUTOptions
 from boututils.datafile import DataFile
-from boutdata.restart import redistribute, addnoise, expand, resize
+from boutdata.restart import redistribute, addnoise, resizeZ, resize
 
 #{{{class basic_runner
 # As a child class uses the super function, the class must allow an
@@ -268,7 +268,7 @@ class basic_runner(object):
         use_expand : bool
             Only used when restarting.
             If there is a mismatch in nz between the requested nz and
-            the nz found in the restart file, boutdata.restart.expand
+            the nz found in the restart file, boutdata.restart.resizeZ
             will be used if use_expand = True, if not
             boutdata.restart.resize will be used
         max_proc : int
@@ -1388,7 +1388,7 @@ class basic_runner(object):
         if self._dz is not None:
             self._errors.append("TypeError")
             message = ("dz can currently just be set through zmin and zmax\n"\
-                       "dz = 2*pi*(zmax-zmin)/(MZ-1)")
+                       "dz = 2*pi*(zmax-zmin)/(MZ)")
             raise TypeError (message)
         #}}}
 
@@ -2023,8 +2023,8 @@ class basic_runner(object):
         - Redistribute restart files if redistribute and restart is set
         - Resize the runs (change nx, ny and/or nz) if the dimension is
           changed.
-        - Expand the runs (change nz) if nz is set and it deviates from
-          what is found in the restart files.
+        - resizeZ if nz is set and it deviates from what is found in the
+          restart files.
         - Add noise to the restart files if add_noise and restart is set
         - Copy files if restart is set to overwrite
         - Copy the source files to the final folder is cpy_source is True.
@@ -2240,13 +2240,11 @@ class basic_runner(object):
                         nx = NXPE * MXSUB + 2*MXG
                         ny = NYPE * MYSUB
 
-                        # nz contains one extra plane
-                        if nx == cur_nx and ny == cur_ny and nz-1  == cur_nz:
+                        if nx == cur_nx and ny == cur_ny and nz == cur_nz:
                             call_resize = False
                             break
-                        elif nx == cur_nx and ny == cur_ny and nz-1 != cur_nz:
-                            # nz contains extra plane
-                            if nz-1 == 1:
+                        elif nx == cur_nx and ny == cur_ny and nz != cur_nz:
+                            if nz == 1:
                                 # Override user specification to save time
                                 self._use_expand = True
                             if self._use_expand:
@@ -2265,7 +2263,7 @@ class basic_runner(object):
                                 "Requested ny = {}, ny in restart file = {}\n"\
                                 "Requested nz = {}, nz in restart file = {}\n"\
                                 "Resizing:\n").\
-                                format(cur_nx, nx, cur_ny, ny, cur_nz, nz-1)
+                                format(cur_nx, nx, cur_ny, ny, cur_nz, nz)
                                 raise IOError(message)
                             else:
                                 break
@@ -2304,14 +2302,13 @@ class basic_runner(object):
                             .format(cur_nx, nx, cur_ny, ny))
                     the_nz = nz
                 else:
-                    # Extra plane in nz
                     print("\nDimension change found:\n"
                           "Requested nx = {}, nx in restart file = {}\n"
                           "Requested ny = {}, ny in restart file = {}\n"
                           "Requested nz = {}, nz in restart file = {}\n"
                           "Resizing:\n"\
-                            .format(cur_nx, nx, cur_ny, ny, cur_nz, nz-1))
-                    the_nz = cur_nz + 1
+                            .format(cur_nx, nx, cur_ny, ny, cur_nz, nz))
+                    the_nz = cur_nz
 
                 # NOTE: Different definition for nx and ny
                 success = resize(cur_nx, cur_ny+2*MYG, the_nz,\
@@ -2366,7 +2363,7 @@ class basic_runner(object):
                 resized = True
         #}}}
 
-        #{{{ Expand nz
+        #{{{ Resize nz only
         if self._restart and do_run\
            and self._nz and not resized and self._use_expand:
             # The current nz should be in the second index as any
@@ -2442,9 +2439,7 @@ class basic_runner(object):
                         if f.ndims(var) == 3:
                             nx, ny, nz = data.shape
 
-                            if nz == cur_nz\
-                            or nz+1 == cur_nz\
-                            or nz-1 == cur_nz:
+                            if nz == cur_nz:
                                 call_expand = False
                             else:
                                 if nz < cur_nz:
@@ -2462,14 +2457,8 @@ class basic_runner(object):
                                     raise IOError(message)
 
                 if call_expand:
-                    # NOTE: Self expand currently uses the extra z plane
-                    if cur_nz % 2 == 0:
-                        newz = cur_nz + 1
-                    else:
-                        newz = cur_nz
-
                     print("\nnz is bigger than in restart file, expanding:\n")
-                    success = expand(newz,\
+                    success = resizeZ(newz,\
                                      path = location,\
                                      output = self._dmp_folder)
                     print("\n")
@@ -2480,7 +2469,7 @@ class basic_runner(object):
                             print("Something went wrong: Reomving {}\n".\
                                   format(os.path.split(location)[0]))
                             shutil.rmtree(os.path.split(location)[0])
-                        message = "Expand failed, skipping run."
+                        message = "resizeZ failed, skipping run."
                         self._warnings.append(message)
                         self._warning_printer(message)
         #}}}
