@@ -11,14 +11,14 @@ BOUT/examples/bout_runners_example.
 #       denotes the start of a fold, and a hash-symbol followed by three
 #       }'s denotes the end of a fold
 # NOTE: Improvement suggestions:
+#       It would be beneficial to refactor bout_runners
 #       1. Better design: Shorter functions
 #       2. Better input parsing: The input for the constructors are rather long.
 #          One alternative could be to have setters for a grouping of
 #          parameters
 __authors__ = "Michael Loeiten"
-__email__   = "mmag@fysik.dtu.dk"
-__version__ = "1.0614"
-__date__    = "2016.12.17"
+__version__ = "1.07"
+__date__    = "2017.03.27"
 
 import os
 import sys
@@ -3759,19 +3759,21 @@ class PBS_runner(basic_runner):
 # The constructor
 #{{{__init__
     def __init__(self,\
-                 BOUT_nodes            = 1         ,\
-                 BOUT_ppn              = 1         ,\
-                 BOUT_walltime         = None      ,\
-                 BOUT_queue            = None      ,\
-                 BOUT_mail             = None      ,\
-                 BOUT_run_name         = None      ,\
-                 post_process_nproc    = None      ,\
-                 post_process_nodes    = None      ,\
-                 post_process_ppn      = None      ,\
-                 post_process_walltime = None      ,\
-                 post_process_queue    = None      ,\
-                 post_process_mail     = None      ,\
-                 post_process_run_name = None      ,\
+                 BOUT_nodes            = 1   ,\
+                 BOUT_ppn              = 1   ,\
+                 BOUT_walltime         = None,\
+                 BOUT_queue            = None,\
+                 BOUT_mail             = None,\
+                 BOUT_run_name         = None,\
+                 BOUT_account          = None,\
+                 post_process_nproc    = None,\
+                 post_process_nodes    = None,\
+                 post_process_ppn      = None,\
+                 post_process_walltime = None,\
+                 post_process_queue    = None,\
+                 post_process_mail     = None,\
+                 post_process_run_name = None,\
+                 post_process_account  = None,\
                  **kwargs):
         #{{{docstring
         """
@@ -3796,6 +3798,8 @@ class PBS_runner(basic_runner):
             Mail address to notify when a BOUT job has finished
         BOUT_run_name : str
             Name of the BOUT run on the cluster (optional)
+        BOUT_account : str
+            Account number to use for the run (optional)
         post_process_nproc : int
             Total number of processors for one submitted post processing
             job
@@ -3812,6 +3816,8 @@ class PBS_runner(basic_runner):
             finished
         post_process_run_name : str
             Name of the post processing run on the cluster (optional)
+        post_process_account : str
+            Account number to use for the post processing (optional)
         **kwargs : any
             As the constructor of bout_runners is called, this
             additional keyword makes it possible to specify the member
@@ -3833,12 +3839,13 @@ class PBS_runner(basic_runner):
         super(PBS_runner, self).__init__(**kwargs)
 
         # Options set for the BOUT runs
-        self._BOUT_nodes            = BOUT_nodes
-        self._BOUT_ppn              = BOUT_ppn
-        self._BOUT_walltime         = BOUT_walltime
-        self._BOUT_mail             = BOUT_mail
-        self._BOUT_queue            = BOUT_queue
-        self._BOUT_run_name         = BOUT_run_name
+        self._BOUT_nodes     = BOUT_nodes
+        self._BOUT_ppn       = BOUT_ppn
+        self._BOUT_walltime  = BOUT_walltime
+        self._BOUT_mail      = BOUT_mail
+        self._BOUT_queue     = BOUT_queue
+        self._BOUT_run_name  = BOUT_run_name
+        self._BOUT_account   = BOUT_account
         # Options set for the post_processing runs
         self._post_process_nproc    = post_process_nproc
         self._post_process_nodes    = post_process_nodes
@@ -3847,6 +3854,7 @@ class PBS_runner(basic_runner):
         self._post_process_mail     = post_process_mail
         self._post_process_queue    = post_process_queue
         self._post_process_run_name = post_process_run_name
+        self._post_process_account  = post_process_account
 
         # Options set for all runs
         self._run_type      = "basic_PBS"
@@ -3936,14 +3944,16 @@ class PBS_runner(basic_runner):
 
         #{{{Check if walltime, mail and queue is a string if set
         check_if_str = (\
-                        (self._BOUT_walltime,        "BOUT_walltime")       ,\
-                        (self._BOUT_mail,            "BOUT_mail")           ,\
-                        (self._BOUT_queue,           "BOUT_queue")          ,\
-                        (self._BOUT_run_name,        "BOUT_run_name")       ,\
-                        (self._post_process_walltime,"BOUT_walltime")       ,\
-                        (self._post_process_mail,    "post_process_mail")   ,\
-                        (self._post_process_queue,   "post_process_queue")  ,\
-                        (self._post_process_run_name,"post_process_run_name")\
+            (self._BOUT_walltime        , "BOUT_walltime"        ),\
+            (self._BOUT_mail            , "BOUT_mail"            ),\
+            (self._BOUT_queue           , "BOUT_queue"           ),\
+            (self._BOUT_run_name        , "BOUT_run_name"        ),\
+            (self._BOUT_account         , "BOUT_account"         ),\
+            (self._post_process_walltime, "BOUT_walltime"        ),\
+            (self._post_process_mail    , "post_process_mail"    ),\
+            (self._post_process_queue   , "post_process_queue"   ),\
+            (self._post_process_run_name, "post_process_run_name"),\
+            (self._post_process_account , "post_process_account" ),\
                        )
         self._check_for_correct_type(var = check_if_str,\
                                       the_type = str,\
@@ -4142,7 +4152,8 @@ class PBS_runner(basic_runner):
                                 ppn      = self._post_process_ppn     ,\
                                 walltime = self._post_process_walltime,\
                                 mail     = self._post_process_mail    ,\
-                                queue    = self._post_process_queue    \
+                                queue    = self._post_process_queue   ,\
+                                account  = self._post_process_account ,\
                                 )
         # Call the python script in the submission
 
@@ -4197,12 +4208,13 @@ class PBS_runner(basic_runner):
 
         #{{{ Creating the core job string
         job_string = self._create_PBS_core_string(\
-                                job_name         = job_name           ,\
-                                nodes            = self._BOUT_nodes   ,\
-                                ppn              = self._BOUT_ppn     ,\
-                                walltime         = self._BOUT_walltime,\
-                                mail             = self._BOUT_mail    ,\
-                                queue            = self._BOUT_queue    \
+                                job_name = job_name           ,\
+                                nodes    = self._BOUT_nodes   ,\
+                                ppn      = self._BOUT_ppn     ,\
+                                walltime = self._BOUT_walltime,\
+                                mail     = self._BOUT_mail    ,\
+                                queue    = self._BOUT_queue   ,\
+                                account  = self._BOUT_account ,\
                                 )
         #}}}
 
@@ -4285,7 +4297,8 @@ class PBS_runner(basic_runner):
                                 ppn      = None,\
                                 walltime = None,\
                                 mail     = None,\
-                                queue    = None \
+                                queue    = None,\
+                                account  = None,\
                                 ):
         """
         Creates the core of a PBS script as a string
@@ -4307,11 +4320,14 @@ class PBS_runner(basic_runner):
                         format(os.path.join(self._dmp_folder, job_name))
         job_string += "#PBS -e {}.err\n".\
                         format(os.path.join(self._dmp_folder, job_name))
+        if account is not None:
+            job_string += "#PBS -A {}\n".format(account)
         # If we want to be notified by mail
         if mail is not None:
             job_string += "#PBS -M e {}\n".format(mail)
         # #PBS -m abe
         # a=aborted b=begin e=ended
+#FIXME: Add mail which works!
         job_string += "#PBS -m e\n"
         # cd to the folder you are sending the qsub from
         job_string += "cd $PBS_O_WORKDIR\n"
