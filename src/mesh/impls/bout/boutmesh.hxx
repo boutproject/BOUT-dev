@@ -196,7 +196,6 @@ class BoutMesh : public Mesh {
 
   // Processor number, local <-> global translation
   int PROC_NUM(int xind, int yind); // (PE_XIND, PE_YIND) -> MYPE
-  bool IS_MYPROC(int xind, int yind);
   int XLOCAL(int xglo) const;
   int YGLOBAL(int yloc, int yproc) const;
   int YLOCAL(int yglo) const;

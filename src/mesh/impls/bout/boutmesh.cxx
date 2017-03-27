@@ -1534,12 +1534,6 @@ int BoutMesh::PROC_NUM(int xind, int yind)
   return yind * NXPE + xind;
 }
 
-/// Returns true if the given grid-point coordinates are in this processor
-bool BoutMesh::IS_MYPROC(int xind, int yind)
-{
-  return ((xind / MXSUB) == PE_XIND) && ((yind / MYSUB) == PE_YIND);
-}
-
 /// Returns the global X index given a local index
 int BoutMesh::XGLOBAL(int xloc) const {
   return xloc + PE_XIND * MXSUB;
