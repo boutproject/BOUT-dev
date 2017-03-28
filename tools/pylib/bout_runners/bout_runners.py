@@ -3054,6 +3054,8 @@ class basic_runner(object):
         combination = combination.split()
 
         #{{{Append from eventual grid file
+        # FIXME: The grid-file names can become long if adding these,
+        #        consider using just path name to gridfile
         # If there is a grid file, we will extract the values from the
         # file, and put it into this local combination variable, so that
         # a proper dmp folder can be made on basis on the variables
@@ -3093,6 +3095,10 @@ class basic_runner(object):
                 grid_variable = f.read(mesh_type[1])
                 # If the variable is found
                 if grid_variable is not None:
+                    if len(grid_variable.shape) > 0:
+                        # Chosing the first
+                        grid_variable =\
+                                "{:.2e}".format(grid_variable.flatten()[0])
                     # Append it to the combinations list
                     combination.append("{}{}={}".format(mesh_type[0],\
                                                         mesh_type[1],\
@@ -3145,6 +3151,10 @@ class basic_runner(object):
                 # Remove "mesh:", and append it to the mesh folder
                 cur_mesh = elem.replace("mesh:","")
                 cur_mesh = cur_mesh.replace("=","_")
+                # Simplify the mesh spacing
+                if ("dx" in elem) or ("dy" in elem) or ("dz" in elem):
+                    cur_mesh=cur_mesh.split("_")
+                    cur_mesh="{}_{:.2e}".format(cur_mesh[0],float(cur_mesh[1]))
                 mesh.append(cur_mesh)
 
             # If a grid file is in the combination
