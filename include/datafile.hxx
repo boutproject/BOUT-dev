@@ -88,8 +88,8 @@ class Datafile {
   bool shiftOutput; //Do we want to write out in shifted space?
 
   std::unique_ptr<DataFormat> file;
-  int filenamelen;
-  static const int FILENAMELEN=512;
+  size_t filenamelen;
+  static const size_t FILENAMELEN=512;
   char *filename;
   bool appending;
 

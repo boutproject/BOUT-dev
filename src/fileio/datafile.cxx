@@ -42,6 +42,7 @@
 #include <output.hxx>
 #include <boutcomm.hxx>
 #include <utils.hxx>
+#include <string.h>
 #include "formatfactory.hxx"
 
 Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), floats(false), openclose(true), enabled(true), shiftOutput(false), file(nullptr) {
@@ -67,8 +68,10 @@ Datafile::Datafile(Datafile &&other) :
   enabled(other.enabled), shiftOutput(other.shiftOutput), file(other.file.release()), int_arr(other.int_arr),
   BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr),
   f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {
-  filenamelen=FILENAMELEN;
-  filename=new char[filenamelen];
+  filenamelen=other.filenamelen;
+  filename=other.filename;
+  other.filenamelen=0;
+  other.filename=nullptr;
   other.file = nullptr;
 }
 
@@ -78,8 +81,9 @@ Datafile::Datafile(const Datafile &other) :
   enabled(other.enabled), shiftOutput(other.shiftOutput), file(nullptr), int_arr(other.int_arr),
   BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr),
   f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {
-  filenamelen=FILENAMELEN;
+  filenamelen=other.filenamelen;
   filename=new char[filenamelen];
+  strncpy(filename,other.filename,filenamelen);
   // Same added variables, but the file not the same 
 }
 
@@ -101,11 +105,21 @@ Datafile& Datafile::operator=(Datafile &&rhs) {
   f3d_arr      = rhs.f3d_arr;
   v2d_arr      = rhs.v2d_arr;
   v3d_arr      = rhs.v3d_arr;
+  if (filenamelen < rhs.filenamelen){
+    delete[] filename;
+    filenamelen=rhs.filenamelen;
+    filename=new char[filenamelen];
+  }
+  strncpy(filename,rhs.filename,filenamelen);
   return *this;
 }
 
 Datafile::~Datafile() {
-  // noting needed, unique_ptr frees ...
+  if (filename != nullptr){
+    delete[] filename;
+    filename=nullptr;
+    filenamelen=0;
+  }
 }
 
 bool Datafile::openr(const char *format, ...) {
