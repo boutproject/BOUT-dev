@@ -53,7 +53,11 @@ class Field;
  */
 class Field {
  public:
-  Field();
+  Field() {
+#ifdef CHECK
+    bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true;
+#endif
+  }
   virtual ~Field() { }
 
   //virtual void setStencil(bstencil *val, bindex *bx) const = 0;
@@ -121,9 +125,14 @@ class Field {
   bool bndry_xin, bndry_xout, bndry_yup, bndry_ydown;
 #endif
  protected:
-  /// Supplies an error method. Currently just prints and exits, but
-  /// should do something more cunning...
-  void error(const char *s, ...) const;
+  /// Throw an exception, possibly including field name if compiled with TRACK
+  void error(const std::string &message) const {
+#ifdef TRACK
+    throw BoutException("Error in '%s': %s", name.c_str(), message);
+#else
+    throw BoutException("Error in field: %s", message);
+#endif
+  }
 };
 
 #endif /* __FIELD_H__ */
