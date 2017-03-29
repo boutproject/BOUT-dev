@@ -39,19 +39,14 @@ void Output::disable() {
   enabled = false;
 }
 
-int Output::open(const char* fname, ...) {
+int Output::open(const std::string &fname) {
   
-  if(fname == (const char*) NULL)
-    return 1;
-
-  bout_vsnprintf(buffer, buffer_len, fname);
-
   close();
 
-  file.open(buffer);
+  file.open(fname);
 
   if(!file.is_open()) {
-    fprintf(stderr, "Could not open log file '%s'\n", buffer);
+    fprintf(stderr, "Could not open log file '%s'\n", fname);
     return 1;
   }
 
@@ -68,32 +63,16 @@ void Output::close() {
   file.close();
 }
 
-void Output::write(const char* string, ...) {
-
-  if(string == (const char*) NULL)
-    return;
-  
-  bout_vsnprintf(buffer, buffer_len, string);
-
-  multioutbuf_init::buf()->sputn(buffer, strlen(buffer));
+void Output::write(const std::string &format) {
+  multioutbuf_init::buf()->sputn(format.c_str(), format.length());
 }
 
-void Output::print(const char* string, ...) {
-  va_list ap;  // List of arguments
-
+void Output::print(const std::string &format) {
   if(!enabled)
     return; // Only output if to screen
 
-  if(string == (const char*) NULL)
-    return;
-  
-  va_start(ap, string);
-    vprintf(string, ap);
-  va_end(ap);
-  
-  fflush(stdout);
+  std::cout << format << std::endl;
 }
-
 
 Output* Output::instance = NULL;
 
