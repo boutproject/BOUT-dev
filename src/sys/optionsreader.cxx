@@ -18,22 +18,16 @@ OptionsReader* OptionsReader::getInstance() {
   return instance;
 }
 
-void OptionsReader::read(Options *options, const char *file, ...) {
-  if(file == (const char*) NULL) throw new BoutException("OptionsReader::read passed NULL filename\n");
+void OptionsReader::read(Options *options, const std::string &filename) {
+  if(filename.empty()) throw new BoutException("OptionsReader::read passed empty filename\n");
 
-  int buf_len=512;
-  char * filename=new char[buf_len];
-
-  bout_vsnprintf(filename,buf_len, file);
-
-  output.write("Reading options file %s\n", filename);
+  output << "Reading options file " << filename << "\n";
 
   // Need to decide what file format to use
   OptionParser *parser = new OptionINI();
 
   parser->read(options, filename);
 
-  delete[] filename;
   delete parser;
 }
 
