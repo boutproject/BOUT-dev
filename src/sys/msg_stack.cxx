@@ -1,12 +1,12 @@
 /*!************************************************************************
- * Provides a message stack to print more useful error 
+ * Provides a message stack to print more useful error
  * messages.
  *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -30,98 +30,50 @@
 #include <string>
 #include <stdarg.h>
 
-MsgStack::MsgStack()
-{
-  nmsg = 0;
-  size = 0;
-}
-
-MsgStack::~MsgStack()
-{
-  clear();
-}
-
 #if CHECK > 1
-int MsgStack::push(const char *s, ...)
-{
-  va_list ap;  // List of arguments
-  msg_item_t *m;
-
-  if(size > nmsg) {
-    m = &msg[nmsg];
-  }else {
-    // need to allocate more memory
-    if(size == 0) {
-      msg = (msg_item_t*) malloc(sizeof(msg_item_t)*10);
-      size = 10;
-      m = msg;
-    }else {
-      msg = (msg_item_t*) realloc(msg, sizeof(msg_item_t)*(size + 10));
-      m = &msg[size];
-      size += 10;
-    }
-  }
-
-  if(s != NULL) {
-
-    va_start(ap, s);
-      vsnprintf(buffer,MSG_MAX_SIZE, s, ap);
-    va_end(ap);
-    
-    strncpy(m->str, buffer, MSG_MAX_SIZE);
-
-    //output.write("Pushing '%s' -> %d\n", buffer, nmsg);
-  }else
-    m->str[0] = '\0';
-
-  nmsg++;
-  return nmsg-1;
+int MsgStack::push(const std::string &message) {
+  message_stack.push_back(message);
+  return message_stack.size() - 1;
 }
 
 int MsgStack::setPoint() {
   // Create an empty message
-  return push(NULL);
+  return push("");
 }
 
 void MsgStack::pop() {
-  if(nmsg <= 0)
+  if (message_stack.size() <= 0) {
     return;
+  }
 
-  nmsg--;
+  message_stack.pop_back();
 }
 
 void MsgStack::pop(int id) {
-  if(id < 0)
+  if (id < 0) {
     id = 0;
+  }
 
-  if(id > nmsg)
+  if (id > message_stack.size()) {
     return;
+  }
 
-  nmsg = id;
+  // Erase from message id to end
+  message_stack.erase(std::begin(message_stack) + id, std::end(message_stack));
 }
 
-void MsgStack::clear() {
-  if(size > 0)
-    free(msg);
-  size = 0;
-  nmsg = 0;
-}
+void MsgStack::clear() { message_stack.clear(); }
 
-void MsgStack::dump() {
-  output << this->getDump();
-}
+void MsgStack::dump() { output << this->getDump(); }
 
 std::string MsgStack::getDump() {
-  std::string res = "====== Back trace ======\n";
-  //output.write("====== Back trace ======\n");
-  for(int i=nmsg-1;i>=0;i--) {
-    if(msg[i].str[0] != '\0') {
-      res+=" -> ";
-      res+=msg[i].str;
-      res+="\n";
-    }
+  std::string result = "====== Back trace ======\n";
+  // Loop backwards over message stack
+  for (auto index = std::rbegin(message_stack); index != std::rend(message_stack);
+       ++index) {
+    result += " -> " + *index + "\n";
   }
-  return res;
+  return result;
 }
 
 #endif
