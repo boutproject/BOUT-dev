@@ -46,7 +46,7 @@ int Output::open(const std::string &fname) {
   file.open(fname);
 
   if(!file.is_open()) {
-    fprintf(stderr, "Could not open log file '%s'\n", fname);
+    fprintf(stderr, "Could not open log file '%s'\n", fname.c_str());
     return 1;
   }
 

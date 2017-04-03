@@ -69,7 +69,7 @@ void MsgStack::dump() { output << this->getDump(); }
 std::string MsgStack::getDump() {
   std::string result = "====== Back trace ======\n";
   // Loop backwards over message stack
-  for (auto index = std::rbegin(message_stack); index != std::rend(message_stack);
+  for (auto index = message_stack.rbegin(); index != message_stack.rend();
        ++index) {
     result += " -> " + *index + "\n";
   }

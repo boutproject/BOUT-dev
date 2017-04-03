@@ -128,9 +128,9 @@ class Field {
   /// Throw an exception, possibly including field name if compiled with TRACK
   void error(const std::string &message) const {
 #ifdef TRACK
-    throw BoutException("Error in '%s': %s", name.c_str(), message);
+    throw BoutException("Error in '%s': %s", name.c_str(), message.c_str());
 #else
-    throw BoutException("Error in field: %s", message);
+    throw BoutException("Error in field: %s", message.c_str());
 #endif
   }
 };
