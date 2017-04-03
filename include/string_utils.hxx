@@ -125,6 +125,36 @@ std::string trimComments(const std::string &s, const std::string &c="#;");
 
 /// Format a string using C printf-style formatting
 ///
+/// Can be used to replace C-style variadic functions that use the
+/// bout_vsnprintf macro:
+///
+/// `include/datafile.hxx`:
+///
+///     bool openr(const char *filename, ...);
+///
+/// `src/fileio/datafile.cxx`:
+///
+///     bool Datafile::openr(const char *format, ...) {
+///       if(format == (const char*) NULL)
+///         throw BoutException("Datafile::open: No argument given for opening file!");
+///       bout_vsnprintf(filename,filenamelen, format);
+///
+/// which can be replaced with:
+///
+/// `include/datafile.hxx`:
+///
+///     template <typename... Args>
+///     bool openr(const std::string &filename, Args... args) {
+///       return openr(string_format(filename, args...));
+///     }
+///     bool openr(const std::string &filename);
+///
+/// `filename` can then be used directly in `Datafile::openr`.
+///
+/// Warning: \p args should not contain anything of type std::string, as
+/// the printf functions cannot handle them; if you need to call string_format
+/// with a std::string, make sure to pass `foo.c_str()` instead
+///
 /// Taken from http://stackoverflow.com/a/26221725/2043465
 ///
 /// @param format printf-style format string
