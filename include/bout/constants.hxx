@@ -20,6 +20,7 @@ namespace SI {
   const BoutReal qe  = 1.60217646e-19;      ///< Electron charge
   const BoutReal Me  = 9.1093816e-31;      ///< Electron mass
   const BoutReal Mp  = 1.67262158e-27; ///< Proton mass
+  const BoutReal kb  = 1.38E-23;      ///<Boltzmanns constant
 }
 
 #endif // __CONSTANTS_H__
