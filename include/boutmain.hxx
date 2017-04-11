@@ -69,6 +69,24 @@ protected:
   
 };
 
+/// Global functions used by some legacy models
+template<class T>
+void bout_solve(T &var, const char *name) {
+  solver->add(var, name);
+}
+
+/*!
+ * Add a contraint variable
+ */
+bool bout_constrain(Field3D &var, Field3D &F_var, const char *name) {
+  if (!solver->constraints()) return false; // Doesn't support constraints
+
+  // Add to solver
+  solver->constraint(var, F_var, name);
+
+  return true;
+}
+
 /// Main function
 BOUTMAIN(LegacyModel);
 
