@@ -602,7 +602,9 @@ int Solver::init(bool restarting, int nout, BoutReal tstep) {
     /// Add basic variables to the restart file
     restart.add(simtime,  "tt",    0);
     restart.add(iteration, "hist_hi", 0);
-    
+
+    // Note: Mesh variables added later so they're not
+    // overwritten during restart read.
     restart.add(NPES, "NPES", 0);
     restart.add(mesh->NXPE, "NXPE", 0);
 
@@ -645,7 +647,7 @@ int Solver::init(bool restarting, int nout, BoutReal tstep) {
     if(!restart.read())
       throw BoutException("Error: Could not read restart file\n");
     restart.close();
-
+    
     if(NPES == 0) {
       // Old restart file
       output.write("WARNING: Cannot verify processor numbers\n");
@@ -654,18 +656,16 @@ int Solver::init(bool restarting, int nout, BoutReal tstep) {
     }else {
       // Check the processor numbers match
       if(NPES != tmp_NP) {
-	output.write("ERROR: Number of processors (%d) doesn't match restart file number (%d)\n",
-		     tmp_NP, NPES);
-	return(1);
+	throw BoutException("ERROR: Number of processors (%d) doesn't match restart file number (%d)\n",
+                            tmp_NP, NPES);
       }
       if(mesh->NXPE != tmp_NX) {
-	output.write("ERROR: Number of X processors (%d) doesn't match restart file number (%d)\n",
-		     tmp_NX, mesh->NXPE);
-	return(1);
+	throw BoutException("ERROR: Number of X processors (%d) doesn't match restart file number (%d)\n",
+                            tmp_NX, mesh->NXPE);
       }
-
-      output.write("Restarting at iteration %d, simulation time %e\n", iteration, simtime);
     }
+    
+    output.write("Restarting at iteration %d, simulation time %e\n", iteration, simtime);
     
   }else {
     // Not restarting
@@ -673,6 +673,14 @@ int Solver::init(bool restarting, int nout, BoutReal tstep) {
   }
   
   if(enablerestart) {
+    
+    // Add mesh information to restart file
+    // Note this is done after reading, so mesh variables
+    // are not overwritten.
+    mesh->outputVars(restart);
+    // Version expected by collect routine
+    restart.addOnce(const_cast<BoutReal&>(BOUT_VERSION), "BOUT_VERSION");
+    
     /// Open the restart file for writing
     if(!restart.openw("%s/BOUT.restart.%s", restartdir.c_str(), restartext.c_str()))
       throw BoutException("Error: Could not open restart file for writing\n");

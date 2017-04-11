@@ -261,8 +261,15 @@ void Datafile::setLowPrecision() {
 }
 
 void Datafile::add(int &i, const char *name, bool save_repeat) {
-  if(varAdded(string(name)))
-    throw BoutException("Variable '%s' already added to Datafile", name);
+  TRACE("DataFile::add(int)");
+  if (varAdded(string(name))) {
+    // Check if it's the same variable
+    if (&i == varPtr(string(name))) {
+      output.write("WARNING: variable '%s' added again to Datafile\n", name);
+    }else {
+      throw BoutException("Variable '%s' already added to Datafile", name);
+    }
+  }
 
   VarStr<int> d;
 
@@ -274,8 +281,15 @@ void Datafile::add(int &i, const char *name, bool save_repeat) {
 }
 
 void Datafile::add(BoutReal &r, const char *name, bool save_repeat) {
-  if(varAdded(string(name)))
-    throw BoutException("Variable '%s' already added to Datafile", name);
+  TRACE("DataFile::add(BoutReal)");
+  if (varAdded(string(name))) {
+    // Check if it's the same variable
+    if (&r == varPtr(string(name))) {
+      output.write("WARNING: variable '%s' added again to Datafile\n", name);
+    }else {
+      throw BoutException("Variable '%s' already added to Datafile", name);
+    }
+  }
   
   VarStr<BoutReal> d;
 
@@ -287,8 +301,15 @@ void Datafile::add(BoutReal &r, const char *name, bool save_repeat) {
 }
 
 void Datafile::add(Field2D &f, const char *name, bool save_repeat) {
-  if(varAdded(string(name)))
-    throw BoutException("Variable '%s' already added to Datafile", name);
+  TRACE("DataFile::add(Field2D)");
+  if (varAdded(string(name))) {
+    // Check if it's the same variable
+    if (&f == varPtr(string(name))) {
+      output.write("WARNING: variable '%s' added again to Datafile", name);
+    }else {
+      throw BoutException("Variable '%s' already added to Datafile", name);
+    }
+  }
   
   VarStr<Field2D> d;
 
@@ -300,8 +321,15 @@ void Datafile::add(Field2D &f, const char *name, bool save_repeat) {
 }
 
 void Datafile::add(Field3D &f, const char *name, bool save_repeat) {
-  if(varAdded(string(name)))
-    throw BoutException("Variable '%s' already added to Datafile", name);
+  TRACE("DataFile::add(Field3D)");
+  if (varAdded(string(name))) {
+    // Check if it's the same variable
+    if (&f == varPtr(string(name))) {
+      output.write("WARNING: variable '%s' added again to Datafile\n", name);
+    }else {
+      throw BoutException("Variable '%s' already added to Datafile", name);
+    }
+  }
   
   VarStr<Field3D> d;
 
@@ -313,8 +341,15 @@ void Datafile::add(Field3D &f, const char *name, bool save_repeat) {
 }
 
 void Datafile::add(Vector2D &f, const char *name, bool save_repeat) {
-  if(varAdded(string(name)))
-    throw BoutException("Variable '%s' already added to Datafile", name);
+  TRACE("DataFile::add(Vector2D)");
+  if (varAdded(string(name))) {
+    // Check if it's the same variable
+    if (&f == varPtr(string(name))) {
+      output.write("WARNING: variable '%s' added again to Datafile\n", name);
+    }else {
+      throw BoutException("Variable '%s' already added to Datafile", name);
+    }
+  }
   
   VarStr<Vector2D> d;
 
@@ -327,8 +362,15 @@ void Datafile::add(Vector2D &f, const char *name, bool save_repeat) {
 }
 
 void Datafile::add(Vector3D &f, const char *name, bool save_repeat) {
-  if(varAdded(string(name)))
-    throw BoutException("Variable '%s' already added to Datafile", name);
+  TRACE("DataFile::add(Vector3D)");
+  if (varAdded(string(name))) {
+    // Check if it's the same variable
+    if (&f == varPtr(string(name))) {
+      output.write("WARNING: variable '%s' added again to Datafile\n", name);
+    }else {
+      throw BoutException("Variable '%s' already added to Datafile", name);
+    }
+  }
   
   VarStr<Vector3D> d;
 
@@ -726,4 +768,37 @@ bool Datafile::varAdded(const string &name) {
       return true;
   }
   return false;
+}
+
+void* Datafile::varPtr(const string &name) {
+  for(const auto& var : int_arr ) {
+    if(name == var.name)
+      return static_cast<void*>(var.ptr);
+  }
+
+  for(const auto& var : BoutReal_arr ) {
+    if(name == var.name)
+      return static_cast<void*>(var.ptr);
+  }
+
+  for(const auto& var : f2d_arr ) {
+    if(name == var.name)
+      return static_cast<void*>(var.ptr);
+  }
+  
+  for(const auto& var : f3d_arr ) {
+    if(name == var.name)
+      return static_cast<void*>(var.ptr);
+  }
+  
+  for(const auto& var : v2d_arr ) {
+    if(name == var.name)
+      return static_cast<void*>(var.ptr);
+  }
+
+  for(const auto& var : v3d_arr ) {
+    if(name == var.name)
+      return static_cast<void*>(var.ptr);
+  }
+  return nullptr;
 }
