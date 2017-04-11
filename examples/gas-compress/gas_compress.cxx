@@ -1,29 +1,7 @@
-/*******************************************************************
- * Compressible gas-dynamics
- *
- * B.Dudson, December 2007
- *******************************************************************/
 
-#include <bout.hxx>
-#include <boutmain.hxx>
+#include "gas_compress.hxx"
 
-// Evolving variables 
-Field3D N, P; // Density, Pressure
-Vector3D V;   // velocity
-
-// parameters
-BoutReal gamma_ratio;   // Ratio of specific heats
-BoutReal nu;      // Viscosity
-bool include_viscosity;
-
-Vector2D g; // Acceleration
-
-int physics_init(bool restarting)
-{
-  // 2D initial profiles
-  Field2D N0, P0;
-  Vector2D V0;
-  BoutReal v0_multiply;
+int GasCompress::init(bool restarting) {
 
   // Read initial conditions
 
@@ -42,9 +20,12 @@ int physics_init(bool restarting)
   options->get("gamma", gamma_ratio, 5./3.);
   options->get("viscosity", nu, 0.1);
   options->get("include_viscosity", include_viscosity, false);
-  options->get("v0_multiply", v0_multiply, 1.0);
   
+  BoutReal v0_multiply;
+  options->get("v0_multiply", v0_multiply, 1.0);
   V0 *= v0_multiply;
+  
+  options->get("sub_initial", sub_initial, false);
   
   V.y.setLocation(CELL_YLOW); // Stagger
   
@@ -65,18 +46,24 @@ int physics_init(bool restarting)
   return 0;
 }
 
-int physics_run(BoutReal t)
-{
+int GasCompress::rhs(BoutReal t) {
   // Run communications
   mesh->communicate(N,P,V);
-
+  
   // Density
   
+  //ddt(N) = -V_dot_Grad(V, N) - N*Div(V);
   ddt(N) = -Div(V, N);
   
   // Velocity 
   
-  ddt(V) = -V_dot_Grad(V, V) - Grad(P, CELL_DEFAULT, CELL_YLOW)/N + g;
+  
+  if(sub_initial) {
+    // Subtract force balance of initial profiles
+    ddt(V) = -V_dot_Grad(V, V) - Grad(P - P0, CELL_DEFAULT, CELL_YLOW)/N;
+  }else {
+    ddt(V) = -V_dot_Grad(V, V) - Grad(P, CELL_DEFAULT, CELL_YLOW)/N + g;
+  }
 
   if(include_viscosity) {
     // Add viscosity
@@ -87,9 +74,11 @@ int physics_run(BoutReal t)
   
   // Pressure
 
+  //ddt(P) = -V_dot_Grad(V, P) - gamma_ratio*P*Div(V);
   ddt(P) = -Div(V, P) - (gamma_ratio-1.)*P*Div(V);
   
   return 0;
 }
 
-
+// Create a simple main() function
+BOUTMAIN(GasCompress);
