@@ -40,7 +40,6 @@ class OptionINI;
 
 #include <string>
 #include <fstream>
-using namespace std;
 
 /// Class for reading INI style configuration files
 /*!
@@ -51,13 +50,19 @@ public:
   OptionINI();
   ~OptionINI();
 
-  /// Read options from grid file
-  void read(Options *options, const string &filename);
+  /// Read options from file
+  void read(Options *options, const std::string &filename) override;
 
+  /// Write options to file
+  void write(Options *options, const std::string &filename) override;
 private:
 
-  void parse(const string &, string &, string &);
-  string getNextLine(ifstream &);
+  // Helper functions for reading
+  void parse(const std::string &, std::string &, std::string &);
+  string getNextLine(std::ifstream &fin);
+
+  // Helper functions for writing
+  void writeSection(Options *options, std::ofstream &fout);
 };
 
 #endif // __OPTIONS_INI_H__
