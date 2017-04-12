@@ -43,6 +43,7 @@
 #include <boutcomm.hxx>
 #include <utils.hxx>
 #include <msg_stack.hxx>
+#include <cstring>
 #include "formatfactory.hxx"
 
 Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), floats(false), openclose(true), enabled(true), shiftOutput(false), file(nullptr) {
