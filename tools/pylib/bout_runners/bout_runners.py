@@ -18,7 +18,7 @@ BOUT/examples/bout_runners_example.
 #          parameters
 __authors__ = "Michael Loeiten"
 __version__ = "1.07"
-__date__    = "2017.03.27"
+__date__    = "2017.04.12"
 
 import os
 import sys
@@ -4323,11 +4323,10 @@ class PBS_runner(basic_runner):
             job_string += "#PBS -A {}\n".format(account)
         # If we want to be notified by mail
         if mail is not None:
-            job_string += "#PBS -M e {}\n".format(mail)
-        # #PBS -m abe
-        # a=aborted b=begin e=ended
-#FIXME: Add mail which works!
-        job_string += "#PBS -m e\n"
+            job_string += "#PBS -M {}\n".format(mail)
+            # #PBS -m abe
+            # a=aborted b=begin e=ended
+            job_string += "#PBS -m e\n"
         # cd to the folder you are sending the qsub from
         job_string += "cd $PBS_O_WORKDIR\n"
 
