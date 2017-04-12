@@ -260,6 +260,9 @@ int BoutInitialise(int &argc, char **&argv) {
 
     // Get options override from command-line
     reader->parseCommandLine(options, argc, argv);
+
+    // Save settings
+    reader->write(options, "%s/BOUT.settings", data_dir);
   }catch(BoutException &e) {
     output << "Error encountered during initialisation\n";
     output << e.what() << endl;
@@ -326,6 +329,19 @@ int bout_run(Solver *solver, rhsfunc physics_run) {
 }
 
 int BoutFinalise() {
+
+  // Output the settings, showing which options were used
+  // This overwrites the file written during initialisation
+  try {
+    string data_dir;
+    Options::getRoot()->get("datadir", data_dir, "data");
+
+    OptionsReader *reader = OptionsReader::getInstance();
+    reader->write(Options::getRoot(), "%s/BOUT.settings", data_dir.c_str());
+  }catch(BoutException &e) {
+    output << "Error whilst writing settings" << endl;
+    output << e.what() << endl;
+  }
   
   // Delete the mesh
   delete mesh;
