@@ -50,10 +50,10 @@ class OptionParser {
  public:
   OptionParser() {}
   virtual ~OptionParser() {}
-  
+
   virtual void read(Options *options, const std::string &filename) = 0;
-  
-  virtual void write(Options *options, const std::string &filename) { throw BoutException("Write method not implemented");}
+
+  virtual void write(Options *options, const std::string &filename) = 0;
  private:
 };
 

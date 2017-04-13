@@ -178,10 +178,12 @@ void OptionINI::writeSection(Options *options, std::ofstream &fout) {
   }
   // Iterate over all values
   for(const auto& it : options->values()) {
-    fout << it.first << " = " << it.second.value
-         << "  # " << it.second.source
-         << ", used = " << it.second.used
-         << endl;
+    fout << it.first << " = " << it.second.value;
+    if (! it.second.used ) {
+      fout << "  # not used , from: "
+	   << it.second.source;
+    }
+    fout << endl;
   }
 
   // Iterate over sub-sections
