@@ -179,7 +179,7 @@ void OptionINI::writeSection(Options *options, std::ofstream &fout) {
   // Iterate over all values
   for(const auto& it : options->values()) {
     fout << it.first << " = " << it.second.value;
-    if (! it.secound.used ) {
+    if (! it.second.used ) {
       fout << "  # not used , from: "
 	   << it.second.source;
     }
