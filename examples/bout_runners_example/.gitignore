@@ -6,5 +6,7 @@ MMS/MMS-mms_True*
 MMS/mms_True*
 *run_log*
 *tmp*
+*.log
+*.err
 diffusion_3D
 grid_files/

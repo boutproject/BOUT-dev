@@ -3,7 +3,7 @@
 A tutorial on how to use `bout_runners`.
 
 Extra documentation of `bout_runners` can be found in the
-`bout_runners`' docstrings.
+docstring of `bout_runners`.
 
 ## Contents
 ### The program:
