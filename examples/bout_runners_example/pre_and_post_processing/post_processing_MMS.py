@@ -219,7 +219,7 @@ def do_plot(data, order_2, order_inf, root_folder, name, extension, show_plot):
                 data['error_inf'][-1]\
              ),\
              'm--',\
-             label=r"$\mathcal{O}_{L_\infty}"+"%.2f"%(order_inf)+r"$")
+             label=r"$\mathcal{O}_{L_\infty}="+"%.2f"%(order_inf)+r"$")
     # Order in the 2 norm
     ax.plot(\
              (data['spacing'][-1],\
@@ -231,7 +231,7 @@ def do_plot(data, order_2, order_inf, root_folder, name, extension, show_plot):
                 data['error_2'][-1]\
              ),\
              'c--',\
-             label=r"$\mathcal{O}_{L_2}"+"%.2f"%(order_2)+r"$")
+             label=r"$\mathcal{O}_{L_2}="+"%.2f"%(order_2)+r"$")
 
     # Set logaraithmic scale
     ax.set_yscale('log')
@@ -247,8 +247,6 @@ def do_plot(data, order_2, order_inf, root_folder, name, extension, show_plot):
     leg.get_frame().set_alpha(0.5)
     # Plot the grid
     ax.grid()
-    # Make sure no collision between the ticks
-    ax.xaxis.set_major_locator(MaxNLocator(prune='lower'))
     # Includes the xlabel if outside
     plt.tight_layout()
 
