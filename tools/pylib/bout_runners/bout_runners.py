@@ -2458,7 +2458,7 @@ class basic_runner(object):
 
                 if call_expand:
                     print("\nnz is bigger than in restart file, expanding:\n")
-                    success = resizeZ(newz,\
+                    success = resizeZ(cur_nz,\
                                      path = location,\
                                      output = self._dmp_folder)
                     print("\n")
