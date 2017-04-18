@@ -31,37 +31,42 @@ Coordinates::Coordinates(Mesh *mesh) {
   
   g_11 = 1.0; g_22 = 1.0; g_33 = 1.0;
   g_12 = 0.0; g_13 = 0.0; g_23 = 0.0;
-  
-  if(mesh->get(dx, "dx")) {
+
+  if (mesh->get(dx, "dx")) {
     output.write("\tWARNING: differencing quantity 'dx' not found. Set to 1.0\n");
     dx = 1.0;
   }
 
-  if(mesh->periodicX)
+  if (mesh->periodicX) {
     mesh->communicate(dx);
+  }
 
-  if(mesh->get(dy, "dy")) {
+  if (mesh->get(dy, "dy")) {
     output.write("\tWARNING: differencing quantity 'dy' not found. Set to 1.0\n");
     dy = 1.0;
   }
-  
-  int zperiod;
-  BoutReal ZMIN, ZMAX;
-  Options* options = Options::getRoot();
-  if(options->isSet("zperiod")) {
-    OPTION(options, zperiod, 1);
-    ZMIN = 0.0;
-    ZMAX = 1.0 / (double) zperiod;
-  }else {
-    OPTION(options, ZMIN, 0.0);
-    OPTION(options, ZMAX, 1.0);
-    
-    zperiod = ROUND(1.0 / (ZMAX - ZMIN));
-  }
 
   nz = mesh->LocalNz;
-  dz = (ZMAX-ZMIN)*TWOPI/nz;
-  
+
+  if (mesh->get(dz, "dz")) {
+    // Couldn't read dz from input
+    int zperiod;
+    BoutReal ZMIN, ZMAX;
+    Options *options = Options::getRoot();
+    if (options->isSet("zperiod")) {
+      OPTION(options, zperiod, 1);
+      ZMIN = 0.0;
+      ZMAX = 1.0 / (double)zperiod;
+    } else {
+      OPTION(options, ZMIN, 0.0);
+      OPTION(options, ZMAX, 1.0);
+
+      zperiod = ROUND(1.0 / (ZMAX - ZMIN));
+    }
+
+    dz = (ZMAX - ZMIN) * TWOPI / nz;
+  }
+
   // Diagonal components of metric tensor g^{ij} (default to 1)
   mesh->get(g11, "g11", 1.0);
   mesh->get(g22, "g22", 1.0);
