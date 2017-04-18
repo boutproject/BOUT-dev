@@ -26,6 +26,11 @@ coordinates = [
     "geometry", "calcCovariant", "calcContravariant", "jacobian"
 ]
 
+local_mesh = [
+    ("ngx", "LocalNx"),
+    ("ngy", "LocalNy"),
+    ("ngz", "LocalNz"),
+]
 
 def fix_nonmembers(line_text, filename, line_num, replace=False):
     """Replace member functions with nonmembers
@@ -93,6 +98,24 @@ def fix_coordinates(line_text, filename, line_num, replace=False):
         return line_text
 
 
+def fix_local_mesh_size(line_text, filename, line_num, replace=False):
+    """Replaces ng@ with LocalNg@, where @ is in {x,y,z}
+    """
+
+    old_line_text = line_text
+
+    for lm in local_mesh:
+        pattern = re.compile(lm[0])
+        matches = re.findall(pattern, line_text)
+        for match in matches:
+            line_text = re.sub(pattern, lm[1], line_text)
+            if not replace:
+                name_num = "{name}:{num}:".format(name=filename, num=line_num)
+                print("{name_num}{line}".format(name_num=name_num, line=old_line_text), end='')
+                print(" "*len(name_num) + line_text)
+    if replace:
+        return line_text
+
 if __name__ == '__main__':
 
     epilog = """
@@ -129,6 +152,9 @@ if __name__ == '__main__':
         line = new_line if args.replace else line
 
         new_line = fix_coordinates(line, filename, line_num, args.replace)
+        line = new_line if args.replace else line
+
+        new_line = fix_local_mesh_size(line, filename, line_num, args.replace)
         line = new_line if args.replace else line
 
         # If we're doing a replacement, then we need to print all lines, without a newline
