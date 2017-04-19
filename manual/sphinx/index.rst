@@ -27,6 +27,7 @@ The documentation is divided into two main sections:
    user_docs/boundary_options
    user_docs/iterating
    user_docs/input_grids
+   user_docs/parallel-transforms
    user_docs/laplacian
    user_docs/fluid_equations
    user_docs/fluid_equations_2
