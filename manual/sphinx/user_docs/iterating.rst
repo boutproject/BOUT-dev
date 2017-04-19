@@ -42,7 +42,7 @@ syntax:
 ::
 
     Field3D f(0.0);
-    for (auto i : f.region(RGN_NOBNDRY) {
+    for (auto i : f.region(RGN_NOBNDRY)) {
        f[i] = 1.0;
     }
 
