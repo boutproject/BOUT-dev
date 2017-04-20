@@ -17,8 +17,8 @@ BOUT/examples/bout_runners_example.
 #          One alternative could be to have setters for a grouping of
 #          parameters
 __authors__ = "Michael Loeiten"
-__version__ = "1.07"
-__date__    = "2017.04.12"
+__version__ = "1.071"
+__date__    = "2017.04.18"
 
 import os
 import sys
@@ -2458,7 +2458,7 @@ class basic_runner(object):
 
                 if call_expand:
                     print("\nnz is bigger than in restart file, expanding:\n")
-                    success = resizeZ(newz,\
+                    success = resizeZ(cur_nz,\
                                      path = location,\
                                      output = self._dmp_folder)
                     print("\n")
