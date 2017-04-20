@@ -3,6 +3,7 @@
 import argparse
 import re
 import fileinput
+import sys
 
 nonmembers = {
     'DC': ['DC', 1],
@@ -26,6 +27,20 @@ coordinates = [
     "geometry", "calcCovariant", "calcContravariant", "jacobian"
 ]
 
+local_mesh = [
+    ("ngx", "LocalNx"),
+    ("ngy", "LocalNy"),
+]
+
+warnings = [
+    (r"\^", "Use pow(a,b) instead of a^b"),
+    (r"\.max\(", "Use max(a) instead of a.max()"),
+    ("ngz", ("ngz is changed to LocalNz in v4."
+             " The extra point in z has been removed."
+             " Change ngz -> LocalNz, and ensure that"
+             " the number of points are correct")
+    )
+]
 
 def fix_nonmembers(line_text, filename, line_num, replace=False):
     """Replace member functions with nonmembers
@@ -93,6 +108,41 @@ def fix_coordinates(line_text, filename, line_num, replace=False):
         return line_text
 
 
+def fix_local_mesh_size(line_text, filename, line_num, replace=False):
+    """Replaces ng@ with LocalNg@, where @ is in {x,y,z}
+    """
+
+    old_line_text = line_text
+
+    for lm in local_mesh:
+        pattern = re.compile(lm[0])
+        matches = re.findall(pattern, line_text)
+        for match in matches:
+            line_text = re.sub(pattern, lm[1], line_text)
+            if not replace:
+                name_num = "{name}:{num}:".format(name=filename, num=line_num)
+                print("{name_num}{line}".format(name_num=name_num, line=old_line_text), end='')
+                print(" "*len(name_num) + line_text)
+    if replace:
+        return line_text
+
+
+def throw_warnings(line_text, filename, line_num):
+    """Throws a warning for ^, .max() and ngz
+    """
+
+    for warn in warnings:
+        pattern = re.compile(warn[0])
+        matches = re.findall(pattern, line_text)
+        for match in matches:
+            name_num = "{name}:{num}:".format(name=filename, num=line_num)
+            # stdout is redirected to the file if --replace is given,
+            # therefore use stderr
+            sys.stderr.write("{name_num}{line}".format(name_num=name_num, line=line_text))
+            # Coloring with \033[91m, end coloring with \033[0m\n
+            sys.stderr.write(" "*len(name_num) + "\033[91m!!!WARNING: {}\033[0m\n\n".format(warn[1]))
+
+
 if __name__ == '__main__':
 
     epilog = """
@@ -130,6 +180,11 @@ if __name__ == '__main__':
 
         new_line = fix_coordinates(line, filename, line_num, args.replace)
         line = new_line if args.replace else line
+
+        new_line = fix_local_mesh_size(line, filename, line_num, args.replace)
+        line = new_line if args.replace else line
+
+        new_line = throw_warnings(line, filename, line_num)
 
         # If we're doing a replacement, then we need to print all lines, without a newline
         if args.replace:
