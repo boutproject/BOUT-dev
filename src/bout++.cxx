@@ -67,6 +67,7 @@ const char DEFAULT_OPT[] = "BOUT.inp";
 using std::string;
 using std::list;
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #ifdef _OPENMP
@@ -167,6 +168,17 @@ int BoutInitialise(int &argc, char **&argv) {
       i++;
       opt_file = argv[i];
     }
+  }
+
+  // Check that data_dir exists. We do not check whether we can write, as it is
+  // sufficient that the files we need are writeable ...
+  struct stat test;
+  if (stat(data_dir, &test) == 0){
+    if (!S_ISDIR(test.st_mode)){
+      throw BoutException("DataDir \"%s\" is not a directory\n",data_dir);
+    }
+  } else {
+    throw BoutException("DataDir \"%s\" does not exist or is not accessible\n",data_dir);
   }
 
   // Set options
