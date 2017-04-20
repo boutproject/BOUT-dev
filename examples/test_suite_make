@@ -14,12 +14,16 @@ from boututils.run_wrapper import shell
 
 # Get list of directories containing test cases
 tests=[]
-for test in open('test_suite_list'):
-    test=test.strip()
-    if test.startswith("#"):
-        pass
-    else:
-        tests.append(test)
+with open('test_suite_list') as testfile:
+    for test in testfile:
+        print(test)
+        test=test.strip()
+        if test.startswith("#"):
+            pass
+        elif test.startswith(";"):
+            pass
+        else:
+            tests.append(test)
 
 ##################################################################
 

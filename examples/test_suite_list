@@ -11,7 +11,7 @@ test-delp2
 test-minmax
 test-vec
 test-griddata
-test-initial
+;test-initial
 MMS/diffusion
 MMS/wave-1d
 MMS/wave-1d-y
@@ -19,4 +19,4 @@ MMS/wave-1d-y
 drift-instability
 interchange-instability
 # test coding style
-test-code-style
+;test-code-style

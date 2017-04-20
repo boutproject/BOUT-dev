@@ -13,12 +13,16 @@ from __future__ import print_function
 
 # Get list of directories containing test cases
 tests=[]
-for test in open('test_suite_list'):
-    test=test.strip()
-    if test.startswith("#"):
-        pass
-    else:
-        tests.append(test)
+with open('test_suite_list') as testfile:
+    for test in testfile:
+        test=test.strip()
+        print(test)
+        if test.startswith("#"):
+            pass
+        elif test.startswith(";"):
+            tests.append(test[1:])
+        else:
+            tests.append(test)
 
 ##################################################################
 
