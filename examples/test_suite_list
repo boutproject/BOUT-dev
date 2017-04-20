@@ -1,0 +1,22 @@
+# List of all the tests
+test-io
+test-field
+test-fieldfactory
+test-laplace
+test-cyclic
+test-invpar
+test-smooth
+test-gyro
+test-delp2
+test-minmax
+test-vec
+test-griddata
+test-initial
+MMS/diffusion
+MMS/wave-1d
+MMS/wave-1d-y
+# More complex tests
+drift-instability
+interchange-instability
+# test coding style
+test-code-style
