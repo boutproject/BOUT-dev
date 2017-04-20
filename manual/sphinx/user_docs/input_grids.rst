@@ -205,7 +205,7 @@ figure [fig:boutmesh-comms].
 
 In the Y direction, each boundary region (**U**\ p and **D**\ own in Y)
 can be split into two, with ``0 <= x < UDATA_XSPLIT`` going to the
-processor index ``UDATA_INDEST``, and ``UDATA_INDEST <= x < ngx`` going
+processor index ``UDATA_INDEST``, and ``UDATA_INDEST <= x < LocalNx`` going
 to ``UDATA_OUTDEST``. Similarly for the Down boundary. Since there are
 no branch-cuts in the X direction, there is just one destination for the
 **I**\ nner and **O**\ uter boundaries. In all cases a negative
