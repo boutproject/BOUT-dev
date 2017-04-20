@@ -16,10 +16,9 @@ tests=[]
 with open('test_suite_list') as testfile:
     for test in testfile:
         test=test.strip()
-        print(test)
         if test.startswith("#"):
             pass
-        elif test.startswith(";"):
+        elif test.startswith("!"):
             tests.append(test[1:])
         else:
             tests.append(test)

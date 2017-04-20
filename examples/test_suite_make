@@ -20,7 +20,7 @@ with open('test_suite_list') as testfile:
         test=test.strip()
         if test.startswith("#"):
             pass
-        elif test.startswith(";"):
+        elif test.startswith("!"):
             pass
         else:
             tests.append(test)
