@@ -10,16 +10,14 @@ TIMESTEP = 1.0e-1   # time between outputs
 ShiftXderivs = false # use shifted radial derivatives?
 TwistShift = false  # use twist-shift condition?
 
-MZ = 129     # number of points in z direction (2^n + 1)
+MZ = 129     # number of points in z direction
 ZMIN = 0.0
 ZMAX = 0.0318310  # 0.2 NOTE: Length of y is 1 and this *2pi is Z length
 
-MXG = 2
+MXG = 0
 MYG = 2
 
-grid="data/rt.grd.nc"
-
-NXPE = 1
+grid="rt.grd.nc"
 
 ##################################################
 # derivative methods
@@ -32,7 +30,7 @@ upwind = U1 # order of upwinding method (1, 4, or 0 = TVD)
 
 [mesh:ddy]
 
-first = C4
+first = C2
 second = C2
 upwind = U1
 
@@ -64,33 +62,21 @@ sub_initial = true
 [All]
 scale = 0.0 # default size of initial perturbations
 
-# form of initial profile:
-# 0 - constant
-# 1 - Gaussian
-# 2 - Sinusoidal
-# 3 - Mix of mode numbers (like original BOUT)
-
-xs_opt = 0
-
-ys_opt = 1
-zs_opt = 2
-
-ys_s0 = 0.5
-ys_wd = 0.2
-
-zs_mode = 1 # toroidal mode number
-
 # Boundary conditions
 # dirichlet = zero value
 # neumann = zero gradient
 
-# most variables zero-gradient at boundaries
-bndry_all = neumann
+# most variables free at boundaries
+bndry_all = free_o3
 
 [v] 
 
+bndry_all = dirichlet
+
 [vy] # evolving contravariant components
 scale = 1.0e-3 # initial velocity perturbation
+
+function = exp(-((y-pi)/0.2)^2)*sin(z)
 
 # zero velocity into boundaries
 bndry_yup = dirichlet

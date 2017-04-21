@@ -2,32 +2,32 @@
 #
 # Simple 1D advection test case
 #
-# By default everything in NetCDF.
-# To change to PDB format, change the settings to
-#   grid="data/advect.grd.pdb"
-#   dump_format = "pdb"
 
 ##################################################
 # settings used by the core code
 
 NOUT = 20       # number of time-steps
-TIMESTEP = 1.0e-2   # time between outputs
+TIMESTEP = 0.05   # time between outputs
 
-ShiftXderivs = false # use shifted radial derivatives?
-TwistShift = false  # use twist-shift condition?
+MXG = 0   # Guard cells in X
+MYG = 2   # Guard cells in Y
 
-MZ = 2     # number of points in z direction (2^n + 1)
-ZMIN = 0.0
-ZMAX = 0.25
+[mesh]
 
-MXG = 2
-MYG = 2
+ixseps1 = 5
+ixseps2 = 5
 
-grid="sod.grd.nc"  # Grid file
+nx = 1
+ny = 128
+nz = 1
 
-dump_format = "nc" # Output format. nc = NetCDF
+dx = 1.
+dy = 1 / ny 
+dz = 1
 
-StaggerGrids = false
+vy = 1.
+pressure = 0.6
+density = 1.0 + H(y - pi/2)*H(3*pi/2 - y)
 
 ##################################################
 # derivative methods
@@ -40,10 +40,9 @@ upwind = U1 # order of upwinding method (1, 4, or 0 = TVD)
 
 [mesh:ddy]
 
-first = C4
+first = C2
 second = C2
 upwind = U1
-flux = split
 
 [mesh:ddz]
 
@@ -94,6 +93,7 @@ zs_mode = 1 # toroidal mode number
 # neumann = zero gradient
 
 bndry_all = neumann # Set all boundaries to Neumann
-bndry_target = neumann_2ndorder
 
 [density]
+scale = 0.5
+
