@@ -10,3 +10,6 @@ endif
 #examples
 
 include make.config
+
+check:
+	@$(MAKE) --no-print-directory -C examples check
