@@ -31,8 +31,8 @@ include $(BOUT_TOP)/make.config
 libfast:
 	@echo "Recreating libbout++.a"
 	@rm -f $(BOUT_TOP)/lib/libbout++.a
-	@$(AR) $(ARFLAGS) $(LIB) $(shell find|grep '\.o'\$ )
-	@$(RANLIB) $(LIB)
+	@$(AR) $(ARFLAGS) $(LIB) $(shell find|grep '\.o$$' )
+	@#$(RANLIB) $(LIB)
 
 # Then set the last two preqrequisites for 'all'
 all: lib end_message
