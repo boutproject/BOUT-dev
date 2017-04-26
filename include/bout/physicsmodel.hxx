@@ -80,7 +80,9 @@ public:
     
     // Post-initialise, which reads restart files
     // This function can be overridden by the user
-    postInit(restarting);
+    if (postInit(restarting)) {
+      throw BoutException("Couldn't restart physics model");
+    }
   }
   
   /*!
@@ -174,7 +176,7 @@ protected:
   ///
   /// @param[in] restarting   If true, will load state from restart file
   ///
-  virtual void postInit(bool restarting);
+  virtual int postInit(bool restarting);
   
   /*!
    * @brief This function is called by the time integration solver

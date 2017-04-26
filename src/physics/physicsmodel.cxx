@@ -93,7 +93,7 @@ void PhysicsModel::bout_solve(Vector3D &var, const char *name) {
   solver->add(var, name);
 }
 
-void PhysicsModel::postInit(bool restarting) {
+int PhysicsModel::postInit(bool restarting) {
   TRACE("PhysicsModel::postInit");
   
   // Add the solver variables to the restart file
@@ -130,4 +130,6 @@ void PhysicsModel::postInit(bool restarting) {
   /// Open the restart file for writing
   if (!restart.openw(filename.c_str()))
     throw BoutException("Error: Could not open restart file for writing\n");
+
+  return 0;
 }
