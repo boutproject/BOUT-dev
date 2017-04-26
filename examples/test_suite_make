@@ -16,7 +16,6 @@ from boututils.run_wrapper import shell
 tests=[]
 with open('test_suite_list') as testfile:
     for test in testfile:
-        print(test)
         test=test.strip()
         if test.startswith("#"):
             pass
