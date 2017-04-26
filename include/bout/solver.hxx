@@ -166,11 +166,11 @@ enum SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
  * 
  * To specify NOUT and TIMESTEP, pass the values to solve:
  *
- *     solver->solver(NOUT, TIMESTEP);
+ *     solver->solve(NOUT, TIMESTEP);
  */
 class Solver {
  public:
-  Solver(Options *opts = NULL);
+  Solver(Options *opts = nullptr);
   virtual ~Solver() { }
 
   /////////////////////////////////////////////
@@ -246,7 +246,7 @@ class Solver {
   /// Initialise the solver
   /// NOTE: nout and tstep should be passed to run, not init.
   ///       Needed because of how the PETSc TS code works
-  virtual int init(bool restarting, int nout, BoutReal tstep);
+  virtual int init(int nout, BoutReal tstep);
 
   /*!
    * Run the solver, calling monitors nout times, at intervals of tstep 
@@ -272,11 +272,12 @@ class Solver {
   bool splitOperator() {return split_operator;}
 
   bool canReset;
-  void setRestartDir(const string &dir);
-  void setRestartDir(const char* dir) {string s = string(dir); setRestartDir(s); }
   
-  /// Add evolving variables to output (dump) file
-  void outputVars(Datafile &outputfile);
+  /// Add evolving variables to output (dump) file or restart file
+  ///
+  /// @param[inout] outputfile   The file to add variable to
+  /// @param[in] save_repeat    If true, add variables with time dimension
+  void outputVars(Datafile &outputfile, bool save_repeat=true);
 
   /*!
    * Create a Solver object. This uses the "type" option
@@ -301,15 +302,11 @@ class Solver {
   
   /*!
    * Add extra variables to the restart files, which store
-   * system state.
+   * system state. This is now deprecated, since the restart file
+   * is handled by PhysicsModel rather than Solver.
    */
-  void addToRestart(BoutReal &var, const string &name) {
-    // Add a variable to the restart file
-    restart.add(var, name.c_str(), 0);
-  }
+  DEPRECATED(void addToRestart(BoutReal &var, const string &name));
 protected:
-  bool restarting;
-  bool dump_on_restart;  // True if initial values should be written to file
   
   // Command-line arguments
   static int* pargc;
@@ -343,12 +340,6 @@ protected:
   vector< VarStr<Vector2D> > v2d;
   vector< VarStr<Vector3D> > v3d;
   
-  Datafile restart; ///< Restart file object
-  
-  string restartdir;  ///< Directory for restart files
-  string restartext;  ///< Restart file extension
-  int archive_restart;
-
   bool has_constraints; ///< Can this solver.hxxandle constraints? Set to true if so.
   bool initialised; ///< Has init been called yet?
 

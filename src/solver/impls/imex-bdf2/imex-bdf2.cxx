@@ -101,12 +101,12 @@ static PetscErrorCode imexbdf2PCapply(PC pc,Vec x,Vec y) {
  * Initialisation routine. Called once before solve.
  *
  */
-int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
+int IMEXBDF2::init(int nout, BoutReal tstep) {
 
   TRACE("Initialising IMEX-BDF2 solver");
 
   /// Call the generic initialisation first
-  if(Solver::init(restarting, nout, tstep))
+  if (Solver::init(nout, tstep))
     return 1;
 
   output << "\n\tIMEX-BDF2 time-integration solver\n";
