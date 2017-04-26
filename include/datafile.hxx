@@ -121,7 +121,12 @@ class Datafile {
   bool write_f2d(const string &name, Field2D *f, bool save_repeat);
   bool write_f3d(const string &name, Field3D *f, bool save_repeat);
 
-  bool varAdded(const string &name); // Check if a variable has already been added
+  /// Check if a variable has already been added
+  bool varAdded(const string &name);
+
+  /// Get the pointer to the variable, nullptr if not added
+  /// This is used to check if the same variable is being added
+  void* varPtr(const string &name);
 };
 
 /// Write this variable once to the grid file
