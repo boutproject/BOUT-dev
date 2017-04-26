@@ -4,6 +4,7 @@
 test-io
 test-field
 test-fieldfactory
+test-restarting
 test-laplace
 test-cyclic
 test-invpar
