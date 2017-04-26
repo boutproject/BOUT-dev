@@ -300,7 +300,7 @@ class Mesh {
   /// @param[in] tag     A label for the communication. Must be the same as sent
   virtual comm_handle irecvXIn(BoutReal *buffer, int size, int tag) = 0;
 
-  DEPRECATED(MPI_Comm getXcomm()) {return getXcomm(0);} ///< Return communicator containing all processors in X
+  MPI_Comm getXcomm() {return getXcomm(0);} ///< Return communicator containing all processors in X
   virtual MPI_Comm getXcomm(int jy) const = 0; ///< Return X communicator
   virtual MPI_Comm getYcomm(int jx) const = 0; ///< Return Y communicator
   
