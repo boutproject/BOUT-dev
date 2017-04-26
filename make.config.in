@@ -90,14 +90,20 @@ libfast: $(BOUT_TOP)/config.status $(BOUT_TOP)/make.config $(DIRS)
 # Recursively run make through subdirs
 ####################################################################
 
-ifneq ("$(TARGET)" , "libfast")
+ifeq ("$(TARGET)" , "lib")
 $(DIRS):
 	@#echo make $@ slowly TARGET $(TARGET)
 	@$(MAKE) -s --no-print-directory TARGET=lib -C $@ all
 else
+ifeq ("$(TARGET)","libfast")
 $(DIRS):
 	@#echo make $@ fast
 	@$(MAKE) -s --no-print-directory TARGET=$(TARGET) -C $@ $(TARGET)
+else
+$(DIRS):
+	@#echo make $@ fast
+	@$(MAKE) -s --no-print-directory -C $@
+endif
 endif
 
 # Create 'lib' and 'include' incase they don't exist
@@ -153,28 +159,28 @@ install: libfast
 # Builds the library with $(OBJ) which is defined from the SOURCEC variable
 ####################################################################
 
+ifeq ("$(TARGET)", "libfast")
 libfast: makefile $(BOUT_TOP)/make.config $(BOUT_TOP)/include $(OBJ) $(DIRS)
+endif
 
+ifeq ("$(TARGET)", "lib")
 lib: makefile $(BOUT_TOP)/make.config $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ)
 ifneq ("$(OBJ)foo", "foo")
 	@echo "Adding $(OBJ) to libbout++.a"
 	@$(AR) $(ARFLAGS) $(LIB) $(OBJ)
 	@$(RANLIB) $(LIB)
 endif
-
-#END 'lib'
-#else
-
-ifeq ("$(TARGET)", "sub")
-
-LIB=$(MODULE_DIR)/$(SUB_NAME).a
 endif
 
+
+ifeq ("$(TARGET)", "sub")
+LIB=$(MODULE_DIR)/$(SUB_NAME).a
 sub: makefile $(BOUT_TOP)/make.config $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ)
 ifneq ("$(OBJ)foo", "foo")
-	@echo "Adding $(OBJ)"
+	@echo "Adding $(OBJ) to $(LIB)"
 	@$(AR) cru $(LIB) $(OBJ)
 	@$(RANLIB) $(LIB)
+endif
 endif
 
 runtest:
@@ -189,7 +195,7 @@ ifneq ("$(TARGET)", "runtest")
 ####################################################################
 # Make libbout++.a if it doesn't exist with the checklib target
 ####################################################################
-%.a:
+libbout++.a:
 	@echo "Rebuilding out-of-date bout++ library"
 	@$(MAKE) --no-print-directory -C $(BOUT_TOP)
  
