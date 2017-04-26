@@ -1,0 +1,17 @@
+#!/bin/bash
+
+if ! test -e $1
+then
+    echo "Error: folder or file as argument needed"
+    echo "usage:"
+    echo "	$0 <path>"
+    exit 1
+fi
+
+for d in x y z; do for f in ` find $1 -type f | grep x\$` ; do sed "s/LocalN$d/local_n$d/g" $f -i ; done;done
+for d in x y z; do for f in ` find $1 -type f | grep x\$` ; do sed "s/GlobalN$d/global_n$d/g" $f -i ; done;done
+for d in x y z; do for f in ` find $1 -type f | grep x\$` ; do sed "s/OffsetN$d/offset_n$d/g" $f -i ; done;done
+
+#Further changes:
+
+${d}end should be changed to ${d}end+1
