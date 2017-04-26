@@ -38,8 +38,6 @@ if f2d_1.shape != f2d_0.shape:
 
 if np.max(np.abs(f3d_1 - f3d_0)) > 1e-10:
     print("Fail: Field3D values differ")
-    print f3d_0
-    print f3d_1
     exit(1)
 
 if np.max(np.abs(f2d_1 - f2d_0)) > 1e-10:
