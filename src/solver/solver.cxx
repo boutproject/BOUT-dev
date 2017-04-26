@@ -630,62 +630,66 @@ int Solver::init(bool restarting, int nout, BoutReal tstep) {
       /// NOTE: boundary conditions on the initial profiles have also been set in add()
     }
   }
-  
-  if(restarting) {
+
+  if (restarting) {
     /// Load state from the restart file
-    
+
     // Copy processor numbers for comparison after. Very useful for checking
     // that the restart file is for the correct number of processors etc.
     int tmp_NP = NPES;
     int tmp_NX = mesh->NXPE;
-    
+
     TRACE("Loading restart file");
-    
+
     /// Load restart file
-    if(!restart.openr("%s/BOUT.restart.%s", restartdir.c_str(), restartext.c_str()))
+    if (!restart.openr("%s/BOUT.restart.%s", restartdir.c_str(), restartext.c_str()))
       throw BoutException("Error: Could not open restart file\n");
-    if(!restart.read())
+    if (!restart.read())
       throw BoutException("Error: Could not read restart file\n");
     restart.close();
-    
-    if(NPES == 0) {
+
+    if (NPES == 0) {
       // Old restart file
       output.write("WARNING: Cannot verify processor numbers\n");
       NPES = tmp_NP;
       mesh->NXPE = tmp_NX;
-    }else {
+    } else {
       // Check the processor numbers match
-      if(NPES != tmp_NP) {
-	throw BoutException("ERROR: Number of processors (%d) doesn't match restart file number (%d)\n",
-                            tmp_NP, NPES);
+      if (NPES != tmp_NP) {
+        throw BoutException(
+            "ERROR: Number of processors (%d) doesn't match restart file number (%d)\n",
+            tmp_NP, NPES);
       }
-      if(mesh->NXPE != tmp_NX) {
-	throw BoutException("ERROR: Number of X processors (%d) doesn't match restart file number (%d)\n",
-                            tmp_NX, mesh->NXPE);
+      if (mesh->NXPE != tmp_NX) {
+        throw BoutException(
+            "ERROR: Number of X processors (%d) doesn't match restart file number (%d)\n",
+            tmp_NX, mesh->NXPE);
       }
     }
-    
+
     output.write("Restarting at iteration %d, simulation time %e\n", iteration, simtime);
-    
-  }else {
+
+  } else {
     // Not restarting
-    simtime = 0.0; iteration = 0;
+    simtime = 0.0;
+    iteration = 0;
   }
-  
-  if(enablerestart) {
-    
+
+  if (enablerestart) {
+
     // Add mesh information to restart file
     // Note this is done after reading, so mesh variables
     // are not overwritten.
     mesh->outputVars(restart);
     // Version expected by collect routine
-    restart.addOnce(const_cast<BoutReal&>(BOUT_VERSION), "BOUT_VERSION");
-    
+    restart.addOnce(const_cast<BoutReal &>(BOUT_VERSION), "BOUT_VERSION");
+
     /// Open the restart file for writing
-    if(!restart.openw("%s/BOUT.restart.%s", restartdir.c_str(), restartext.c_str()))
+    if (!restart.openw("%s/BOUT.restart.%s", restartdir.c_str(), restartext.c_str())) {
       throw BoutException("Error: Could not open restart file for writing\n");
+    }
   }
-  
+
   /// Mark as initialised. No more variables can be added
   initialised = true;
 
