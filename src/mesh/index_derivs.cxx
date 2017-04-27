@@ -1067,23 +1067,103 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
 }
 
 const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc) {
-  if (var.getNx() == 1){
+  if (var.getNx() == 1) {
     return 0.;
   }
+  
+  // Check that the input variable has data
+  ASSERT1(var.isAllocated());
+
   Field3D result;
   result.allocate(); // Make sure data allocated
-
-  bindex bx;
   
-  start_index(&bx, RGN_NOX);
-  stencil s;
-  do {
-    for(bx.jz=0;bx.jz<mesh->LocalNz;bx.jz++) {
-      var.setXStencil(s, bx, loc);
-      result(bx.jx,bx.jy,bx.jz) = func(s);
-    }
-  }while(next_index2(&bx));
+  if (mesh->StaggerGrids && 
+      (loc != CELL_DEFAULT) && (loc != var.getLocation())) {
+    // Staggered differencing
 
+    CELL_LOC location = var.getLocation();
+    
+    if (mesh->xstart > 1) {
+      // More than one guard cell, so set pp and mm values
+      // This allows higher-order methods to be used
+      for(const auto &i : result.region(RGN_NOX)) {
+        stencil s;
+        s.c = var[i];
+        s.p = var[i.xp()];
+        s.m = var[i.xm()];
+        s.pp = var[i.offset(2,0,0)];
+        s.mm = var[i.offset(-2,0,0)];
+        
+        if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
+          // Producing a stencil centred around a lower X value
+          s.pp = s.p;
+          s.p  = s.c;
+        } else if (location == CELL_XLOW) {
+          // Stencil centred around a cell centre
+          s.mm = s.m;
+          s.m  = s.c;
+        }
+
+        result[i] = func(s);
+      }
+    } else {
+      // Only one guard cell, so no pp or mm values
+      for(const auto &i : result.region(RGN_NOX)) {
+        stencil s;
+        s.c = var[i];
+        s.p = var[i.xp()];
+        s.m = var[i.xm()];
+        s.pp = nan("");
+        s.mm = nan("");
+        
+        if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
+          // Producing a stencil centred around a lower X value
+          s.pp = s.p;
+          s.p  = s.c;
+        } else if (location == CELL_XLOW) {
+          // Stencil centred around a cell centre
+          s.mm = s.m;
+          s.m  = s.c;
+        }
+        
+        result[i] = func(s);
+      }
+    }
+    
+  } else {
+    // Non-staggered differencing
+    
+    if (mesh->xstart > 1) {
+      // More than one guard cell, so set pp and mm values
+      // This allows higher-order methods to be used
+      for(const auto &i : result.region(RGN_NOX)) {
+        stencil s;
+        s.c = var[i];
+        s.p = var[i.xp()];
+        s.m = var[i.xm()];
+        s.pp = var[i.offset(2,0,0)];
+        s.mm = var[i.offset(-2,0,0)];
+        
+        result[i] = func(s);
+      }
+    } else {
+      // Only one guard cell, so no pp or mm values
+      for(const auto &i : result.region(RGN_NOX)) {
+        stencil s;
+        s.c = var[i];
+        s.p = var[i.xp()];
+        s.m = var[i.xm()];
+        s.pp = nan("");
+        s.mm = nan("");
+        
+        result[i] = func(s);
+      }
+    }
+  }
+  
+  bindex bx;
+  stencil s;
+  
 #ifdef CHECK
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
@@ -1154,21 +1234,48 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
 // Y derivative
 
 const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc) {
-  if (var.getNy() == 1){
+  if (var.getNy() == 1) {
     return 0.;
   }
+
+  // Check that the input variable has data
+  ASSERT1(var.isAllocated());
+
   Field2D result;
   result.allocate(); // Make sure data allocated
   
-  bindex bx;
-  
-  start_index(&bx, RGN_NOBNDRY);
-  stencil s;
-  do{
-    var.setYStencil(s, bx, loc);
-    result(bx.jx,bx.jy) = func(s);
-  }while(next_index2(&bx));
+  if (mesh->ystart > 1) {
+    // More than one guard cell, so set pp and mm values
+    // This allows higher-order methods to be used
+    
+    for(const auto &i : result.region(RGN_NOBNDRY)) {
+      // Set stencils
+      stencil s;
+      s.c = var[i];
+      s.p = var[i.yp()];
+      s.m = var[i.ym()];
+      s.pp = var[i.offset(0,2,0)];
+      s.mm = var[i.offset(0,-2,0)];
 
+      result[i] = func(s);
+    }
+  } else {
+    // Only one guard cell, so no pp or mm values
+    for(const auto &i : result.region(RGN_NOBNDRY)) {
+      // Set stencils
+      stencil s;
+      s.c = var[i];
+      s.p = var[i.yp()];
+      s.m = var[i.ym()];
+      s.pp = nan("");
+      s.mm = nan("");
+
+      result[i] = func(s);
+    }
+  }
+    
+  bindex bx;
+  stencil s;
 #ifdef CHECK
   // Mark boundaries as invalid
   result.bndry_yup = result.bndry_ydown = false;
@@ -1236,37 +1343,151 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
   if (var.getNy() == 1){
     return 0.;
   }
+
+  // Check that the input variable has data
+  ASSERT1(var.isAllocated());
+
   Field3D result;
   result.allocate(); // Make sure data allocated
   
-  bindex bx;
-  if(var.hasYupYdown()) {
-    // Field "var" has yup and ydown fields which will be used
-    // to calculate a derivative along the magnetic field
+  if (var.hasYupYdown() && 
+      ( (&var.yup() != &var) || (&var.ydown() != &var))) {
+    // Field "var" has distinct yup and ydown fields which
+    // will be used to calculate a derivative along 
+    // the magnetic field
     
-    start_index(&bx, RGN_NOBNDRY);
-    stencil s;
-    do {
-      for(bx.jz=0;bx.jz<mesh->LocalNz;bx.jz++) {
-        var.setYStencil(s, bx, loc);
-        result(bx.jx,bx.jy,bx.jz) = func(s);
+    if (mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != var.getLocation())) {
+      // Staggered differencing
+
+      // Cell location of the input field
+      CELL_LOC location = var.getLocation();
+      
+      for(const auto &i : result.region(RGN_NOBNDRY)) {
+        // Set stencils
+        stencil s;
+        s.c = var[i];
+        s.p = var.yup()[i.yp()];
+        s.m = var.ydown()[i.ym()];
+        s.pp = nan("");
+        s.mm = nan("");
+        
+        if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
+          // Producing a stencil centred around a lower Y value
+          s.pp = s.p;
+          s.p  = s.c;
+        } else if(location == CELL_YLOW) {
+          // Stencil centred around a cell centre
+          s.mm = s.m;
+          s.m  = s.c;
+        }
+
+        result[i] = func(s);
       }
-    }while(next_index2(&bx));
+    } else {
+      // Non-staggered
+      for(const auto &i : result.region(RGN_NOBNDRY)) {
+        // Set stencils
+        stencil s;
+        s.c = var[i];
+        s.p = var.yup()[i.yp()];
+        s.m = var.ydown()[i.ym()];
+        s.pp = nan("");
+        s.mm = nan("");
+        
+        result[i] = func(s);
+      }
+    }
   }else {
     // var has no yup/ydown fields, so we need to shift into field-aligned coordinates
     
     Field3D var_fa = mesh->toFieldAligned(var);
     
-    for(const auto &i : result.region(RGN_NOBNDRY)) {
-      // Set stencils
-      stencil s;
-      s.c = var_fa[i];
-      s.p = var_fa[i.yp()];
-      s.m = var_fa[i.ym()];
-      s.pp = nan("");
-      s.mm = nan("");
+    if (mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != var.getLocation())) {
+      // Staggered differencing
       
-      result[i] = func(s);
+      // Cell location of the input field
+      CELL_LOC location = var.getLocation();
+      
+      if (mesh->ystart > 1) {
+        // More than one guard cell, so set pp and mm values
+        // This allows higher-order methods to be used
+        for(const auto &i : result.region(RGN_NOBNDRY)) {
+          // Set stencils
+          stencil s;
+          s.c = var_fa[i];
+          s.p = var_fa[i.yp()];
+          s.m = var_fa[i.ym()];
+          s.pp = var_fa[i.offset(0,2,0)];
+          s.mm = var_fa[i.offset(0,-2,0)];
+          
+          if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
+            // Producing a stencil centred around a lower Y value
+            s.pp = s.p;
+            s.p  = s.c;
+          } else if(location == CELL_YLOW) {
+            // Stencil centred around a cell centre
+            s.mm = s.m;
+            s.m  = s.c;
+          }
+          
+          result[i] = func(s);
+        }
+      } else {
+        // Only one guard cell, so no pp or mm values
+        for(const auto &i : result.region(RGN_NOBNDRY)) {
+          // Set stencils
+          stencil s;
+          s.c = var_fa[i];
+          s.p = var_fa[i.yp()];
+          s.m = var_fa[i.ym()];
+          s.pp = nan("");
+          s.mm = nan("");
+          
+          if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
+            // Producing a stencil centred around a lower Y value
+            s.pp = s.p;
+            s.p  = s.c;
+          } else if(location == CELL_YLOW) {
+            // Stencil centred around a cell centre
+            s.mm = s.m;
+            s.m  = s.c;
+          }
+          
+          result[i] = func(s);
+        }
+      }
+      
+    } else {
+      // Non-staggered differencing
+      
+      if (mesh->ystart > 1) {
+        // More than one guard cell, so set pp and mm values
+        // This allows higher-order methods to be used
+        for(const auto &i : result.region(RGN_NOBNDRY)) {
+          // Set stencils
+          stencil s;
+          s.c = var_fa[i];
+          s.p = var_fa[i.yp()];
+          s.m = var_fa[i.ym()];
+          s.pp = var_fa[i.offset(0,2,0)];
+          s.mm = var_fa[i.offset(0,-2,0)];
+          
+          result[i] = func(s);
+        }
+      } else {
+        // Only one guard cell, so no pp or mm values
+        for(const auto &i : result.region(RGN_NOBNDRY)) {
+          // Set stencils
+          stencil s;
+          s.c = var_fa[i];
+          s.p = var_fa[i.yp()];
+          s.m = var_fa[i.ym()];
+          s.pp = nan("");
+          s.mm = nan("");
+          
+          result[i] = func(s);
+        }
+      }
     }
     
     // Shift result back
@@ -1278,6 +1499,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
   
+  bindex bx;
   if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX) {
     for (bx.jx=mesh->xstart-1; bx.jx>=0; bx.jx--)
       for (bx.jy=mesh->ystart; bx.jy<=mesh->ystart; bx.jy++)
@@ -1350,14 +1572,22 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   Field3D result;
   result.allocate(); // Make sure data allocated
   
-  bindex bx;
+  // Check that the input variable has data
+  ASSERT1(var.isAllocated());
+  
+  for(const auto &i : result.region(RGN_ALL)) {
+    stencil s;
+    s.c = var[i];
+    s.p = var[i.zp()];
+    s.m = var[i.zm()];
+    s.pp = var[i.offset(0,0,2)];
+    s.mm = var[i.offset(0,0,-2)];
+    
+    result[i] = func(s);
+  }
 
-  start_index(&bx, RGN_NOZ);
+  bindex bx;
   stencil s;
-  do {
-    var.setZStencil(s, bx, loc);
-    result(bx.jx,bx.jy,bx.jz) = func(s);
-  }while(next_index3(&bx));
 
   if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX) {
     for (bx.jx=mesh->xstart-1; bx.jx>=0; bx.jx--)
