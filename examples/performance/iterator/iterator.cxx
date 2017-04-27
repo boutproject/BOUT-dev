@@ -69,15 +69,6 @@ private:
   }
 };
 
-// Begin/end iterators
-MeshIterator begin(Mesh* mesh) {
-  return MeshIterator(0, 0, 0);
-}
-
-MeshIterator end(Mesh* mesh) {
-  return MeshIterator(mesh->LocalNx-1, mesh->LocalNy-1, mesh->LocalNz);
-}
-
 int main(int argc, char **argv) {
   BoutInitialise(argc, argv);
 
@@ -138,7 +129,7 @@ int main(int argc, char **argv) {
   // DataIterator using begin(), end()
   SteadyClock start4 = steady_clock::now();
   for(int x=0;x<10;x++) {
-    for(DataIterator i = begin(result), rend=end(result); i != rend; ++i){
+    for(DataIterator i = std::begin(result), rend=std::end(result); i != rend; ++i){
       result(i.x,i.y,i.z) = a(i.x,i.y,i.z) + b(i.x,i.y,i.z);
     }
   }
@@ -147,7 +138,7 @@ int main(int argc, char **argv) {
   // DataIterator with done()
   SteadyClock start5 = steady_clock::now();
   for(int x=0;x<10;x++) {
-    for(DataIterator i = begin(result); !i.done() ; ++i){
+    for(DataIterator i = std::begin(result); !i.done() ; ++i){
       result(i.x,i.y,i.z) = a(i.x,i.y,i.z) + b(i.x,i.y,i.z);
     }
   }
@@ -165,7 +156,7 @@ int main(int argc, char **argv) {
   // Range based DataIterator 
   SteadyClock start9 = steady_clock::now();
   for (int x=0;x<10;++x) {
-    for (auto i : result) {
+    for (const auto &i : result) {
       result[i] = a[i] + b[i];
     }
   }
