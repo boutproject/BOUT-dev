@@ -255,7 +255,7 @@ protected:
     string ptstr;
     Options::getRoot()->getSection("mesh")->get("paralleltransform", ptstr, "identity");
 
-    if(lowercase(ptstr) == "shifted") {
+    if (lowercase(ptstr) == "shifted") {
       ShearFactor = 0.0;  // I disappears from metric
       b0xcv.z += I*b0xcv.x;
     }
