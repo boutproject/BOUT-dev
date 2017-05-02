@@ -97,49 +97,13 @@ H5Format::H5Format(const char *name, bool parallel_in) {
 
   if (H5Eset_auto(H5E_DEFAULT, NULL, NULL) < 0) // Disable automatic printing of error messages so that we can catch errors without printing error messages to stdout
     throw BoutException("Failed to set error stack to not print errors");
-  openr(name);
-}
 
-H5Format::H5Format(const string &name, bool parallel_in) {
-  parallel = parallel_in;
-  x0 = y0 = z0 = t0 = 0;
-  lowPrecision = false;
-  fname = NULL;
-  dataFile = -1;
-  chunk_length = 10; // could change this to try to optimize IO performance (i.e. allocate new chunks of disk space less often)
-  
-  dataFile_plist = H5Pcreate(H5P_FILE_ACCESS);
-  if (dataFile_plist < 0)
-    throw BoutException("Failed to create dataFile_plist");
-
-#ifdef PHDF5
-  if (parallel)
-    if (H5Pset_fapl_mpio(dataFile_plist, BoutComm::get(), MPI_INFO_NULL) < 0)
-      throw BoutException("Failed to set dataFile_plist");
-#endif
-  
-  dataSet_plist = H5Pcreate(H5P_DATASET_XFER);
-  if (dataSet_plist < 0)
-    throw BoutException("Failed to create dataSet_plist");
-
-#ifdef PHDF5
-  if (parallel)
-    if (H5Pset_dxpl_mpio(dataSet_plist, H5FD_MPIO_COLLECTIVE) < 0)
-      throw BoutException("Failed to set dataSet_plist");
-#endif
-  
-  if (H5Eset_auto(H5E_DEFAULT, NULL, NULL) < 0) // Disable automatic printing of error messages so that we can catch errors without printing error messages to stdout
-    throw BoutException("Failed to set error stack to not print errors");
   openr(name);
 }
 
 H5Format::~H5Format() {
   close();
   H5Pclose(dataFile_plist);
-}
-
-bool H5Format::openr(const string &name) {
-  return openr(name.c_str());
 }
 
 bool H5Format::openr(const char *name) {
@@ -160,10 +124,6 @@ bool H5Format::openr(const char *name) {
 #endif
 
   return true;
-}
-
-bool H5Format::openw(const string &name, bool append) {
-  return openw(name.c_str(), append);
 }
 
 bool H5Format::openw(const char *name, bool append) {
@@ -260,7 +220,7 @@ const vector<int> H5Format::getSize(const char *name) {
 #endif
   }
   else {
-    hsize_t dims[nd];
+    hsize_t* dims = new hsize_t[nd];
     int error = H5Sget_simple_extent_dims(dataSpace, dims, NULL);
     if (error < 0)
       throw BoutException("Failed to get dimensions of dataSpace");
@@ -272,6 +232,8 @@ const vector<int> H5Format::getSize(const char *name) {
     
     for (int i=0; i<nd; i++)
       size.push_back(dims[i]);
+
+    delete[] dims;
     
 #ifdef CHECK
     msg_stack.pop();

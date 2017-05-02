@@ -42,37 +42,92 @@ class Options;
 #include "bout_types.hxx"
 
 #include <map>
-using std::map;
 #include <string>
 using std::string;
 
 /// Class to represent hierarchy of options
 /*!
-* 
-*/
+ * 
+ * 
+ * Getting and setting values
+ * --------------------------
+ * 
+ * Each Options object represents a collection of key-value pairs
+ * which can be used as a map. 
+ *
+ *     Options options;
+ *     options.set("key", 1.0, "code"); // Sets a key
+ *    
+ *     int val;
+ *     options.get("key", val, 0.0); // Sets val to 1.0
+ *
+ * If a variable has not been set then the default value is used
+ *
+ *     int other;
+ *     options.get("otherkey", other, 2.0); // Sets other to 2.0 because "otherkey" not found
+ *     
+ * Internally, all values are stored as strings, so conversion is performed silently:
+ * 
+ *     options.set("value", "2.34", "here"); // Set a string
+ *
+ *     BoutReal value;
+ *     options.get("value", value, 0.0); // Sets value to 2.34
+ * 
+ * If a conversion cannot be done, then an exception is thrown
+ *
+ * Sections
+ * --------
+ *
+ * Each Options object can also contain any number of sections, which are
+ * themselves Options objects. 
+ * 
+ *     Options *section = options.getSection("section"); 
+ * 
+ * This always succeeds; if the section does not exist then it is created.
+ * Options also know about their parents:
+ * 
+ *     section->getParent() == &options // Pointer to options object
+ *
+ * Root options object
+ * -------------------
+ * 
+ * For convenience, to avoid having to pass Options objects around everywhere,
+ * there is a global singleton Options object which can be accessed with a static function
+ *
+ * Options *root = Options::getRoot();
+ *
+ * This is used to represent all the options passed to BOUT++ either in a file or on the
+ * command line.
+ */
 class Options {
 public:
  Options() : parent(NULL) {}
  Options(Options *p, string s) : parent(p), sectionName(s) {};
   ~Options();
 
-  /// Get a pointer to the only root instance
+  /// Get a pointer to the only root instance (singleton)
   static Options* getRoot();
 
+  /*!
+   * Free all memory
+   */ 
   static void cleanup();
 
   // Setting options
   void set(const string &key, const int &val, const string &source="");
-  void set(const string &key, const BoutReal &val, const string &source="");
+  void set(const string &key, BoutReal val, const string &source="");
   void set(const string &key, const bool &val, const string &source="");
   void set(const string &key, const string &val, const string &source="");
 
-  // Testing if set
+  /*!
+   * Test if a key is set to a value
+   *
+   */
   bool isSet(const string &key);
 
   // Getting options
   void get(const string &key, int &val, const int &def, bool log=true);
-  void get(const string &key, BoutReal &val, const BoutReal &def, bool log=true);
+  void get(const string &key, BoutReal &val, BoutReal def, bool log=true);
   void get(const string &key, bool &val, const bool &def, bool log=true);
   void get(const string &key, string &val, const string &def, bool log=true);
 
@@ -80,19 +135,17 @@ public:
   Options* getSection(const string &name);
   Options* getParent() {return parent;}
 
-  // Print string representation
+  /*!
+   * Print string representation of this object and all sections in a tree structure
+   */
   string str();
 
   /// Print the options which haven't been used
   void printUnused();
- private:
-  static Options *root; ///< Only instance of the root section
-  
-  Options *parent;
-  string sectionName; // section name (if any), for logging only
 
+  
   /*!
-   * Private class, used to store values, together with
+   * Class used to store values, together with
    * information about their origin and usage
    */
   struct OptionValue {
@@ -101,8 +154,19 @@ public:
     bool used;         // Set to true when used
   };
   
-  map<string, OptionValue> options;
-  map<string, Options*> sections;
+  /// Read-only access to internal options and sections
+  /// to allow iteration over the tree
+  const std::map<string, OptionValue>& values() const {return options;}
+  const std::map<string, Options*>& subsections() const {return sections;}
+  
+ private:
+  static Options *root; ///< Only instance of the root section
+  
+  Options *parent;
+  string sectionName; // section name (if any), for logging only
+  
+  std::map<string, OptionValue> options;
+  std::map<string, Options*> sections;
 };
 
 /// Define for reading options which passes the variable name

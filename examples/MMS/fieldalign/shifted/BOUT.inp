@@ -1,32 +1,42 @@
-
 nout = 100
 timestep = 1e-1
 
 twistshift = true
 
-MXG = 0  # No X derivatives needed
+MXG = 2  # No X derivatives needed
 
 [mesh]
 symmetricGlobalY = true
+symmetricGlobalX = true
 
 nx = 1
 ny = 32
 nz = 32
 
+dx = 1. / (nx-2.*MXG)
 dy = 2*pi / ny
 dz = 2*pi / nz
 
-g22 = 1.
-g33 = 1 + nu^2
-g23 = -nu
+g11 = 1.
+g22 = G^2 + eta^2
+g33 = 1 + HH^2 + I^2
+g13 = -I
+g12 = -eta
+g23 = eta*I - G*HH
+
+vx = G + eta + G*I + HH*eta
+vy = 1. + HH
+vz = G
 
 zShift = 0.1*y
 nu = 0.1
+shiftangle = 2.*pi/10.
+I = 0
+HH = 0.1
 
-vy = 1 + nu
-vz = 1
-
-shiftangle = 0.1 * 2*pi
+eta = 0
+yShift = 0
+G = 1
 
 [solver]
 
@@ -37,6 +47,6 @@ mms = true
 scale = 0.0
 function = 0  # Initial condition
 
-solution = cos(-t + 1.1*y + z)^2
-
-source = 6*sin(-t + 1.1*y + z)*cos(-t + 1.1*y + z)
+solution = cos(-t + x + 1.1*y + z)^2
+source = 8.0*sin(-t + x + 1.1*y + z)*cos(-t + x + 1.1*y + z)
+bndry_all = dirichlet_o2(f:solution)

@@ -1,0 +1,15 @@
+#!/bin/bash
+
+make
+
+mpirun -np 4 ./testVec  > log.4
+
+exit=$?
+
+if test $exit -gt 0
+then
+    echo "Failed to vector communication test"
+    exit $exit
+fi
+
+echo "Test successfull."

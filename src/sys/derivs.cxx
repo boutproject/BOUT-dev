@@ -1,9 +1,9 @@
 /**************************************************************************
  * Basic derivative methods
  *
- * 
+ *
  * Four kinds of differencing methods:
- * 
+ *
  * 1. First derivative DD*
  *    Central differencing e.g. Div(f)
  *
@@ -20,7 +20,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -35,7 +35,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  **************************************************************************/
 
 #include <globals.hxx>
@@ -61,12 +61,12 @@
 
 const Field3D DDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   Field3D result =  mesh->indexDDX(f,outloc, method) / mesh->coordinates()->dx;
-  
+
   if(mesh->IncIntShear) {
     // Using BOUT-06 style shifting
     result += mesh->coordinates()->IntShiftTorsion * DDZ(f, outloc);
   }
-  
+
   return result;
 }
 
@@ -100,28 +100,6 @@ const Field2D DDY(const Field2D &f) {
   return mesh->coordinates()->DDY(f);
 }
 
-/*
-const Field3D DDY_MUSCL(const Field3D &F, const Field3D &u, const Field2D &Vmax) {
-  Field3D result;
-  result.allocate(); // Make sure data allocated
-  
-  bindex bx;
-  start_index(&bx, RGN_NOBNDRY);
-
-  stencil fs, us;
-  do {
-    for(bx.jz=0;bx.jz<mesh->LocalNz;bx.jz++) {
-      F.setYStencil(fs, bx);
-      u.setYStencil(us, bx);
-      
-      result(bx.jx,bx.jy,bx.jz) = DDX_KT(fs, us, Vmax(bx.jx,bx.jy)) / mesh->dy(bx.jx, bx.jy);
-    }
-  }while(next_index2(&bx));
-  
-  return result;
-}
-*/
-
 ////////////// Z DERIVATIVE /////////////////
 
 const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool inc_xbndry) {
@@ -147,11 +125,22 @@ const Field2D DDZ(const Field2D &UNUSED(f)) {
 const Vector3D DDZ(const Vector3D &v, CELL_LOC outloc, DIFF_METHOD method) {
   Vector3D result;
 
-  result.covariant = v.covariant;
+  Coordinates *metric = mesh->coordinates();
 
-  result.x = DDZ(v.x, outloc, method);
-  result.y = DDZ(v.y, outloc, method);
-  result.z = DDZ(v.z, outloc, method);
+  if(v.covariant){
+    // From equation (2.6.32) in D'Haeseleer
+    result.x = DDZ(v.x, outloc, method) - v.x*metric->G1_13 - v.y*metric->G2_13 - v.z*metric->G3_13;
+    result.y = DDZ(v.y, outloc, method) - v.x*metric->G1_23 - v.y*metric->G2_23 - v.z*metric->G3_23;
+    result.z = DDZ(v.z, outloc, method) - v.x*metric->G1_33 - v.y*metric->G2_33 - v.z*metric->G3_33;
+    result.covariant = true;
+  }
+  else{
+    // From equation (2.6.31) in D'Haeseleer
+    result.x = DDZ(v.x, outloc, method) + v.x*metric->G1_13 + v.y*metric->G1_23 + v.z*metric->G1_33;
+    result.y = DDZ(v.y, outloc, method) + v.x*metric->G2_13 + v.y*metric->G2_23 + v.z*metric->G2_33;
+    result.z = DDZ(v.z, outloc, method) + v.x*metric->G3_13 + v.y*metric->G3_23 + v.z*metric->G3_33;
+    result.covariant = false;
+  }
 
   return result;
 }
@@ -165,6 +154,9 @@ const Vector2D DDZ(const Vector2D &v) {
 
   result.covariant = v.covariant;
 
+  // Vector 2D is constant in the z direction
+  // Gx_y3 contains z-derivatives (where G is the Christoffel symbol of the
+  // second kind, and x and y in {1, 2, 3})
   result.x = 0.;
   result.y = 0.;
   result.z = 0.;
@@ -235,12 +227,16 @@ const Field2D D2DY2(const Field2D &f) {
 
 ////////////// Z DERIVATIVE /////////////////
 
-const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
-  return mesh->indexD2DZ2(f, outloc, method) / SQ(mesh->coordinates()->dz);
+const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool inc_xbndry) {
+  return mesh->indexD2DZ2(f, outloc, method, inc_xbndry) / SQ(mesh->coordinates()->dz);
 }
 
-const Field3D D2DZ2(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
-  return D2DZ2(f, outloc, method);
+const Field3D D2DZ2(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc, bool inc_xbndry) {
+  return D2DZ2(f, outloc, method, inc_xbndry);
+}
+
+const Field3D D2DZ2(const Field3D &f, bool inc_xbndry) {
+  return D2DZ2(f, CELL_DEFAULT, DIFF_DEFAULT, inc_xbndry);
 }
 
 const Field2D D2DZ2(const Field2D &UNUSED(f)) {
@@ -272,22 +268,36 @@ const Field3D D4DZ4(const Field3D &f) {
 }
 
 const Field2D D4DZ4(const Field2D &f) {
-  CELL_LOC loc = f.getLocation() ; 
+  CELL_LOC loc = f.getLocation() ;
   Field2D result = Field2D(0.0);
   result.setLocation(loc) ;
-  return result ;  
+  return result ;
 }
 
 /*******************************************************************************
  * Mixed derivatives
  *******************************************************************************/
 
+/*!
+ * Mixed derivative in X and Y
+ *
+ * This first takes derivatives in X, then in Y.
+ *
+ * ** Applies Neumann boundary in Y, communicates
+ */
 const Field2D D2DXDY(const Field2D &f) {
   Field2D dfdy = DDY(f);
   mesh->communicate(dfdy);
   return DDX(dfdy);
 }
 
+/*!
+ * Mixed derivative in X and Y
+ *
+ * This first takes derivatives in X, then in Y.
+ *
+ * ** Applies Neumann boundary in Y, communicates
+ */
 const Field3D D2DXDY(const Field3D &f) {
   Field3D dfdy = DDY(f);
   mesh->communicate(dfdy);
@@ -301,11 +311,11 @@ const Field2D D2DXDZ(const Field2D &UNUSED(f)) {
 /// X-Z mixed derivative
 const Field3D D2DXDZ(const Field3D &f) {
   Field3D result;
-  
+
   // Take derivative in Z, including in X boundaries. Then take derivative in X
   // Maybe should average results of DDX(DDZ) and DDZ(DDX)?
   result = DDX(DDZ(f, true));
-  
+
   return result;
 }
 
@@ -330,7 +340,7 @@ const Field3D D2DYDZ(const Field3D &f) {
 
 /*******************************************************************************
  * Advection schemes
- * 
+ *
  * Jan 2009  - Re-written to use Set*Stencil routines
  *******************************************************************************/
 
@@ -338,7 +348,6 @@ const Field3D D2DYDZ(const Field3D &f) {
 
 /// Special case where both arguments are 2D. Output location ignored for now
 const Field2D VDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
-
   return mesh->indexVDDX(v, f, outloc, method) / mesh->coordinates()->dx;
 }
 

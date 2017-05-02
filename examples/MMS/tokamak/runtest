@@ -61,7 +61,7 @@ for nx,nproc in zip(nxlist, nprocs):
         shape.write(nx,nx, f)
         f.close()
     
-    args = " MZ="+str(nx)+" grid="+filename #+" solver:timestep="+str(0.1/nx)
+    args = " MZ="+str(nx)+" grid="+filename #+" solver:timestep="+str(0.001/nx)
         
     print("  Running with " + args)
 

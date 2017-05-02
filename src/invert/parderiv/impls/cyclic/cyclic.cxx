@@ -52,7 +52,7 @@ InvertParCR::InvertParCR(Options *opt) : InvertPar(opt), A(1.0), B(0.0), C(0.0),
   // Number of k equations to solve for each x location
   nsys = 1 + (mesh->LocalNz)/2; 
 
-  rhs = cmatrix(mesh->LocalNy, nsys);
+  rhs = matrix<dcomplex>(mesh->LocalNy, nsys);
   
   // Find out if we are on a boundary
   int size = mesh->LocalNy-4;
@@ -72,21 +72,21 @@ InvertParCR::InvertParCR(Options *opt) : InvertPar(opt), A(1.0), B(0.0), C(0.0),
     }
   }
   
-  rhsk = cmatrix(nsys, size);
-  xk = cmatrix(nsys, size);
-  a = cmatrix(nsys, size);
-  b = cmatrix(nsys, size);
-  c = cmatrix(nsys, size);
+  rhsk = matrix<dcomplex>(nsys, size);
+  xk = matrix<dcomplex>(nsys, size);
+  a = matrix<dcomplex>(nsys, size);
+  b = matrix<dcomplex>(nsys, size);
+  c = matrix<dcomplex>(nsys, size);
 }
 
 InvertParCR::~InvertParCR() {
-  free_cmatrix(rhs);
+  free_matrix(rhs);
   
-  free_cmatrix(rhsk);
-  free_cmatrix(xk);
-  free_cmatrix(a);
-  free_cmatrix(b);
-  free_cmatrix(c);
+  free_matrix(rhsk);
+  free_matrix(xk);
+  free_matrix(a);
+  free_matrix(b);
+  free_matrix(c);
 }
 
 const Field3D InvertParCR::solve(const Field3D &f) {

@@ -20,7 +20,7 @@ RKScheme::RKScheme(Options *opts){
 
   //Initialise internals
   dtfac = 1.0; //Time step factor
-};
+}
 
 //Cleanup
 RKScheme::~RKScheme(){
@@ -28,19 +28,19 @@ RKScheme::~RKScheme(){
   ///we really free them there as well?
   
   //stageCoeffs
-  free_rmatrix(stageCoeffs);
+  free_matrix(stageCoeffs);
 
   //resultCoeffs
-  free_rmatrix(resultCoeffs);
+  free_matrix(resultCoeffs);
 
   //steps
-  free_rmatrix(steps);
+  free_matrix(steps);
 
   //timeCoeffs
   delete[] timeCoeffs;
   
   if(adaptive) delete[] resultAlt;
-};
+}
 
 //Finish generic initialisation
 void RKScheme::init(const int nlocalIn, const int neqIn, const bool adaptiveIn, const BoutReal atolIn, 
@@ -58,7 +58,7 @@ void RKScheme::init(const int nlocalIn, const int neqIn, const bool adaptiveIn, 
   adaptive = adaptiveIn;
 
   //Allocate storage for stages
-  steps = rmatrix(getStageCount(),nlocal);
+  steps = matrix<BoutReal>(getStageCount(),nlocal);
   zeroSteps();
 
   //Allocate array for storing alternative order result
@@ -68,13 +68,13 @@ void RKScheme::init(const int nlocalIn, const int neqIn, const bool adaptiveIn, 
   if(diagnose){
     verifyCoeffs();
     printButcherTableau();
-  };
-};
+  }
+}
 
 //Get the time at given stage
 BoutReal RKScheme::setCurTime(const BoutReal timeIn, const BoutReal dt, const int curStage){
   return timeIn+dt*timeCoeffs[curStage];
-};
+}
 
 //Get the state vector at given stage
 void RKScheme::setCurState(const BoutReal *start, BoutReal *out, const int curStage, 
@@ -94,9 +94,9 @@ void RKScheme::setCurState(const BoutReal *start, BoutReal *out, const int curSt
     BoutReal fac=stageCoeffs[curStage][j]*dt;
     for(int i=0;i<nlocal;i++){
       out[i] = out[i] + fac*steps[j][i];
-    };
-  };
-};
+    }
+  }
+}
 
 //Construct the system state at the next time
 BoutReal RKScheme::setOutputStates(const BoutReal *start, const BoutReal dt, BoutReal *resultFollow){
@@ -120,7 +120,7 @@ BoutReal RKScheme::setOutputStates(const BoutReal *start, const BoutReal dt, Bou
 	    constructOutputs;
 	  }else{
             constructOutput;
-	  };
+	  }
    */
 
   //Get the result
@@ -148,7 +148,7 @@ BoutReal RKScheme::getErr(BoutReal *solA, BoutReal *solB){
   BoutReal err=0.;
 
   //If not adaptive don't care about the error
-  if(!adaptive){return err;};
+  if(!adaptive){return err;}
 
   //Get local part of relative error
   BoutReal local_err = 0.;
@@ -163,14 +163,14 @@ BoutReal RKScheme::getErr(BoutReal *solA, BoutReal *solB){
   err /= (BoutReal) neq;
   
   return err;
-};
+}
 
 void RKScheme::constructOutput(const BoutReal *start, const BoutReal dt, 
 			       const int index, BoutReal *sol){
   //Initialise the return data
   for(int i=0;i<nlocal;i++){
     sol[i]=start[i];
-  };
+  }
 
   //Construct the solution
   for(int curStage=0;curStage<getStageCount();curStage++){
@@ -181,7 +181,7 @@ void RKScheme::constructOutput(const BoutReal *start, const BoutReal dt,
     }
   }
   
-};
+}
 
 void RKScheme::constructOutputs(const BoutReal *start, const BoutReal dt, 
 				const int indexFollow, const int indexAlt, 
@@ -190,7 +190,7 @@ void RKScheme::constructOutputs(const BoutReal *start, const BoutReal dt,
   for(int i=0;i<nlocal;i++){
     solFollow[i]=start[i];
     solAlt[i]=start[i];
-  };
+  }
 
   //Construct the solution
   for(int curStage=0;curStage<getStageCount();curStage++){
@@ -203,7 +203,7 @@ void RKScheme::constructOutputs(const BoutReal *start, const BoutReal dt,
     }
   }
   
-};
+}
 
 //Check that the coefficients are consistent
 void RKScheme::verifyCoeffs(){
@@ -221,10 +221,10 @@ void RKScheme::verifyCoeffs(){
     BoutReal tmp=0;
     for(int j=0;j<i;j++){
       tmp+=stageCoeffs[i][j];
-    };
+    }
     output<<setw(10)<<timeCoeffs[i]<<" | "<<setw(10)<<tmp<<endl;
     if(fabs(timeCoeffs[i]-tmp)>atol) warn=true;
-  };
+  }
 
   //Optional warning
   if(warn){
@@ -232,7 +232,7 @@ void RKScheme::verifyCoeffs(){
     output<<"WARNING: Stage/Time coefficients not consistent"<<endl;
     output<<string(50,'=')<<endl;
     warn=false;
-  };
+  }
 
   //Check results coefficients
   output<<string(50,'-')<<endl;
@@ -241,7 +241,7 @@ void RKScheme::verifyCoeffs(){
     BoutReal tmp=0;
     for(int i=0;i<getStageCount();i++){
       tmp+=resultCoeffs[i][j];
-    };
+    }
     output<<"Order : "<<j<<" = "<<tmp<<endl;
     if(fabs(1.0-tmp)>atol) warn=true;
   }
@@ -252,7 +252,7 @@ void RKScheme::verifyCoeffs(){
     output<<"WARNING: Result coefficients not consistent"<<endl;
     output<<string(50,'=')<<endl;
     warn=false;
-  };
+  }
 
   //Footer
   output<<string(50,'-')<<endl;
@@ -276,7 +276,7 @@ void RKScheme::printButcherTableau(){
       output<<setw(width)<<stageCoeffs[i][j];
     }
     output<<endl;
-  };
+  }
 
   //Divider
   output<<string(width,'-')<<" | "<<string(width*getStageCount(),'-')<<endl;
@@ -288,12 +288,12 @@ void RKScheme::printButcherTableau(){
       output<<setw(width)<<resultCoeffs[j][i];
     }
     output<<endl;
-  };
+  }
 
   //Footer
   output<<string(totalWidth,'-')<<endl;
   output<<endl;
-};
+}
 
 void RKScheme::zeroSteps(){
   for(int i=0;i<getStageCount();i++){
@@ -301,5 +301,5 @@ void RKScheme::zeroSteps(){
       steps[i][j]=0.;
     }
   }
-};
+}
 

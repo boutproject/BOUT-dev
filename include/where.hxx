@@ -1,4 +1,6 @@
-/**************************************************************************
+/*!*************************************************************************
+ * \file where.hxx
+ * 
  * A set of functions which choose between two values
  *
  **************************************************************************
@@ -29,6 +31,12 @@
 #include "field3d.hxx"
 #include "field2d.hxx"
 
+/// For each point, choose between two inputs based on a third input
+///
+/// @param[in] test   The value which determines which input to use
+/// @param[in] gt0    Uses this value if test > 0.0
+/// @param[in] le0    Uses this value if test <= 0.0
+///
 const Field3D where(const Field2D &test, const Field3D &gt0, const Field3D &le0);
 const Field3D where(const Field2D &test, const Field3D &gt0, BoutReal le0);
 const Field3D where(const Field2D &test, BoutReal gt0, const Field3D &le0);

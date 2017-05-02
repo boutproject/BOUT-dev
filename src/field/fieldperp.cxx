@@ -125,7 +125,7 @@ FPERP_OP_FIELD(/=, /, Field3D);
 FPERP_OP_FIELD(/=, /, Field2D);
 
 #define FPERP_OP_REAL(op, bop)  			\
-  FieldPerp& FieldPerp::operator op(const BoutReal &rhs) { \
+  FieldPerp& FieldPerp::operator op(BoutReal rhs) { \
     if(data.unique()) {                                 \
       /* Only reference to the data */           	\
       for(int i=0;i<nx;i++)                             \
@@ -198,7 +198,7 @@ FPERP_FPERP_OP_FIELD(/, Field2D);
 
 // Operator on FieldPerp and BoutReal
 #define FPERP_FPERP_OP_REAL(op)                     	                   \
-  const FieldPerp operator op(const FieldPerp &lhs, const BoutReal &rhs) { \
+  const FieldPerp operator op(const FieldPerp &lhs, BoutReal rhs) { \
     FieldPerp result;                                                     \
     result.allocate();                                                    \
                                                                           \
@@ -217,7 +217,7 @@ FPERP_FPERP_OP_REAL(*);
 FPERP_FPERP_OP_REAL(/);
 
 #define FPERP_REAL_OP_FPERP(op)                     	                   \
-  const FieldPerp operator op(const BoutReal &lhs, const FieldPerp &rhs) { \
+  const FieldPerp operator op(BoutReal lhs, const FieldPerp &rhs) { \
     FieldPerp result;                                                     \
     result.allocate();                                                    \
                                                                           \
@@ -240,10 +240,6 @@ const FieldPerp copy(const FieldPerp &f) {
   return fcopy;
 }
 
-const FieldPerp SQ(const FieldPerp &f) {
-  return f*f;
-}
- 
 const FieldPerp sliceXZ(const Field3D& f, int y) {
   // Source field should be valid
   ASSERT1(f.isAllocated());

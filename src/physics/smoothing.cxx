@@ -107,7 +107,7 @@ const Field3D smooth_y(const Field3D &f) {
   so no processor/branch cuts in X
  */
 const Field2D averageX(const Field2D &f) {
-  MsgStackItem trace("averageX(Field2D)");
+  TRACE("averageX(Field2D)");
  
   int ngx = mesh->LocalNx;
   int ngy = mesh->LocalNy;
@@ -164,15 +164,15 @@ const Field2D averageX(const Field2D &f) {
 const Field3D averageX(const Field3D &f) {
   static BoutReal **input = NULL, **result;
 
-  MsgStackItem trace("averageX(Field3D)");
+  TRACE("averageX(Field3D)");
 
   int ngx = mesh->LocalNx;
   int ngy = mesh->LocalNy;
   int ngz = mesh->LocalNz;
 
   if(input == NULL) {
-    input = rmatrix(ngy, ngz);
-    result = rmatrix(ngy, ngz);
+    input = matrix<BoutReal>(ngy, ngz);
+    result = matrix<BoutReal>(ngy, ngz);
   }
   
   // Average on this processor
@@ -212,18 +212,8 @@ const Field3D averageX(const Field3D &f) {
   return r;
 }
 
-/*!
-
-  Issues
-  ======
-  
-  Important: Only works if there are no branch cuts
-
-  Assumes every processor has the same domain shape
-  
- */
 const Field2D averageY(const Field2D &f) {
-  MsgStackItem trace("averageY(Field2D)");
+  TRACE("averageY(Field2D)");
  
   int ngx = mesh->LocalNx;
   int ngy = mesh->LocalNy;
@@ -263,20 +253,6 @@ const Field2D averageY(const Field2D &f) {
   return r;
 }
 
-/*!
-
-  Issues
-  ======
-  
-  Important: Only works if there are no branch cuts
-
-  Creates static arrays
-  
-  Not thread safe
-  
-  Assumes every processor has the same domain shape
-  
- */
 const Field3D averageY(const Field3D &f) {
   static BoutReal **input = NULL, **result;
     
@@ -287,8 +263,8 @@ const Field3D averageY(const Field3D &f) {
   int ngz = mesh->LocalNz;
   
   if(input == NULL) {
-    input = rmatrix(ngx, ngz);
-    result = rmatrix(ngx, ngz);
+    input = matrix<BoutReal>(ngx, ngz);
+    result = matrix<BoutReal>(ngx, ngz);
   }
   
   // Average on this processor
@@ -333,18 +309,7 @@ const Field3D averageY(const Field3D &f) {
   return r;
 }
 
-/*!
-  Volume integral of Field2D variable
-  Developed by T. Rhee and S. S. Kim
-  
-  Issues
-  ======
-  
-  Assumes every processor has the same domain shape
-  
-  Will only work if X communicator is constant in Y
-  so no processor/branch cuts in X
- */
+
 BoutReal Average_XY(const Field2D &var) {
   Field2D result;
   BoutReal Vol_Loc, Vol_Glb;
@@ -397,15 +362,7 @@ const Field3D smoothXY(const Field3D &f) {
   return result;
 }
 
-/// Nonlinear filtering to remove grid-scale noise
-/*!
-  From a paper:
 
-  W.Shyy et. al. JCP 102 (1) September 1992 page 49
-
-  "On the Suppression of Numerical Oscillations Using a Non-Linear Filter"
-  
- */
 void nl_filter(rvec &f, BoutReal w) {
   for(size_t i=1; i<f.size()-1; i++) {
     
@@ -435,7 +392,7 @@ void nl_filter(rvec &f, BoutReal w) {
 
 const Field3D nl_filter_x(const Field3D &f, BoutReal w) {
 
-  MsgStackItem trace("nl_filter_x( Field3D )");
+  TRACE("nl_filter_x( Field3D )");
   
     Field3D result;
   rvec v;
@@ -451,7 +408,7 @@ const Field3D nl_filter_x(const Field3D &f, BoutReal w) {
 }
 
 const Field3D nl_filter_y(const Field3D &fs, BoutReal w) {
-  MsgStackItem trace("nl_filter_x( Field3D )");
+  TRACE("nl_filter_x( Field3D )");
   
   Field3D result;
   rvec v;
@@ -467,7 +424,7 @@ const Field3D nl_filter_y(const Field3D &fs, BoutReal w) {
 }
 
 const Field3D nl_filter_z(const Field3D &fs, BoutReal w) {
-  MsgStackItem trace("nl_filter_z( Field3D )");
+  TRACE("nl_filter_z( Field3D )");
   
   Field3D result;
   rvec v;

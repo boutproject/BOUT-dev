@@ -11,16 +11,20 @@ try:
 except:
   pass
 
+from boututils.run_wrapper import shell, launch, getmpirun
+from boutdata.collect import collect
+from numpy import abs, seterr
+from sys import stdout, exit
+
+# Good chance we'll do 0.0/0.0, which generates a warning
+# Ignore this warning
+seterr(divide='ignore', invalid='ignore')
+
 varCorrect="fld1"
 varsComp  = ["fld2", "fld3"]
 name = "FieldGroup comm"
 exeName = "test"
-tol = 1e-6  # Relative tolerance
-
-from boututils.run_wrapper import shell, launch, getmpirun
-from boutdata.collect import collect
-from numpy import abs
-from sys import stdout, exit
+tol = 1e-10  # Relative tolerance
 
 MPIRUN=getmpirun()
 
@@ -37,17 +41,17 @@ for nproc in [1,2,4]:
   
   cmd = "./{exe} ".format(exe=exeName)
   
-  shell("rm data/BOUT.dmp.*.nc")
+  shell("rm -f data/BOUT.dmp.*.nc")
 
   print("   %d processors ...." % (nproc))
   s, out = launch(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
-  f = open("run.log."+str(nproc), "w")
-  f.write(out)
-  f.close()
-  
+  with open("run.log."+str(nproc), "w") as f:
+    f.write(out)
+
   #Analyse result
   #/"Correct" answer
-  f1 = collect(varCorrect, path="data", info=False) ; f1max=abs(f1).max()
+  f1 = collect(varCorrect, path="data", info=False)
+  f1max = abs(f1).max()
   #/Two different fields which should be identical to correct
   err=[]
   for v in varsComp:
