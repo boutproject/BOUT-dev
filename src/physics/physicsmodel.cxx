@@ -118,13 +118,6 @@ int PhysicsModel::postInit(bool restarting) {
   string filename = restart_dir + "/BOUT.restart."+restart_ext;
   if (restarting) {
     output.write("Loading restart file: %s\n", filename.c_str());
-    
-    // Add mesh information to restart file
-    // Note this is done after reading, so mesh variables
-    // are not overwritten.
-    mesh->outputVars(restart);
-    // Version expected by collect routine
-    restart.addOnce(const_cast<BoutReal &>(BOUT_VERSION), "BOUT_VERSION");
 
     /// Load restart file
     if (!restart.openr(filename.c_str()))
@@ -133,6 +126,13 @@ int PhysicsModel::postInit(bool restarting) {
       throw BoutException("Error: Could not read restart file\n");
     restart.close();
   }
+
+  // Add mesh information to restart file
+  // Note this is done after reading, so mesh variables
+  // are not overwritten.
+  mesh->outputVars(restart);
+  // Version expected by collect routine
+  restart.addOnce(const_cast<BoutReal &>(BOUT_VERSION), "BOUT_VERSION");
 
   /// Open the restart file for writing
   if (!restart.openw(filename.c_str()))
