@@ -133,12 +133,12 @@ Vector2D & Vector2D::operator=(const Vector2D &rhs) {
   return *this;
 }
 
-BoutReal Vector2D::operator=(const BoutReal val) {
+Vector2D & Vector2D::operator=(const BoutReal val) {
   x = val;
   y = val;
   z = val;
 
-  return val;
+  return *this;
 }
 
 ////////////////// ADDITION //////////////////////

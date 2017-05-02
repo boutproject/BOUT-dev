@@ -30,6 +30,7 @@
 #include <bout/sys/timer.hxx>
 #include <boutcomm.hxx>
 #include <bout/assert.hxx>
+#include <utils.hxx>
 
 #define KSP_RICHARDSON "richardson"
 #define KSP_CHEBYSHEV   "chebyshev"
@@ -136,7 +137,7 @@ LaplacePetsc::LaplacePetsc(Options *opt) :
   PetscMalloc( (localN)*sizeof(PetscInt), &d_nnz );
   PetscMalloc( (localN)*sizeof(PetscInt), &o_nnz );
   if (fourth_order) {
-    // first and last 2*mesh-localNz entries are the edge x-values that (may) have 'off-diagonal' components (i.e. on another processor)
+    // first and last 2*mesh-LocalNz entries are the edge x-values that (may) have 'off-diagonal' components (i.e. on another processor)
     if ( mesh->firstX() && mesh->lastX() ) {
       for (int i=0; i<mesh->LocalNz; i++) {
         d_nnz[i]=15;
@@ -407,22 +408,24 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b) {
   return solve(b,b);
 }
 
+/*!
+ * Solves Ax=b for x given a b and an initial guess for x (x0)
+ *
+ * This function will:
+ *      1. Set the matrix element of the matrix A, used to solve Ax=b
+ *         (this includes setting the values for the bounary condition)
+ *      2. Solve the matrix Ax = b
+ *
+ * \param[in] b     The RHS of the equation Ax=b.
+ *                  This is an y-slice of the original field. The field wil be
+ *                  flattened to an 1D array in order to write the equation on
+ *                  the form Ax=b
+ * \param[in] x0    The initial guess for the solver.
+ *                  May also contain the  boundary condition if flag 32 - INVERT_SET is set
+ *
+ * \returns sol     The solution x of the problem Ax=b.
+ */
 const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
-  /* Function: LaplacePetsc::solve
-   * Purpose:  - Set the matrix element of the matrix A, used to solve Ax=b
-   *             (this includes setting the values for the bounary condition)
-   *           - Solve the matrix Ax = b
-   *
-   * Input
-   * b         - The RHS of the equation Ax=b. This is an y-slice of the
-   *             original field. The field wil be flattened to an 1D array in
-   *             order to write the equation on the form Ax=b
-   * x0        - The initial guess for the solver. May also contain the
-   *             boundary condition if flag 32 - INVERT_SET is set
-   *
-   * Output
-   * sol       - The solution x of the problem Ax=b
-   */
   #ifdef CHECK
     // Checking flags are set to something which is not implemented (see
     // constructor for details)
@@ -437,10 +440,10 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
       throw BoutException("Attempted to set Laplacian inversion boundary flag that is not implemented in petsc_laplace.cxx");
     }
   #endif
-  
+
   // Get the metric tensor
   Coordinates* coord = mesh->coordinates();
-  
+
   int y = b.getIndex(); // Get the Y index
   sol.setIndex(y);      // Initialize the solution field.
   sol = 0.;
@@ -479,22 +482,22 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
                   // Set values corresponding to nodes adjacent in x
                   if( fourth_order ) {
                       // Fourth Order Accuracy on Boundary
-                      Element(i,x,z, 0, 0, -25.0 / (12.0*coord->dx(x,y)) / sqrt(coord->g_11(x,y)), MatA ); 
-                      Element(i,x,z, 1, 0,   4.0 / coord->dx(x,y) / sqrt(coord->g_11(x,y)), MatA ); 
+                      Element(i,x,z, 0, 0, -25.0 / (12.0*coord->dx(x,y)) / sqrt(coord->g_11(x,y)), MatA );
+                      Element(i,x,z, 1, 0,   4.0 / coord->dx(x,y) / sqrt(coord->g_11(x,y)), MatA );
                       Element(i,x,z, 2, 0,  -3.0 / coord->dx(x,y) / sqrt(coord->g_11(x,y)), MatA );
-                      Element(i,x,z, 3, 0,   4.0 / (3.0*coord->dx(x,y)) / sqrt(coord->g_11(x,y)), MatA ); 
+                      Element(i,x,z, 3, 0,   4.0 / (3.0*coord->dx(x,y)) / sqrt(coord->g_11(x,y)), MatA );
                       Element(i,x,z, 4, 0,  -1.0 / (4.0*coord->dx(x,y)) / sqrt(coord->g_11(x,y)), MatA );
                   } else {
 //                    // Second Order Accuracy on Boundary
-//                    Element(i,x,z, 0, 0, -3.0 / (2.0*coord->dx(x,y)), MatA ); 
-//                    Element(i,x,z, 1, 0,  2.0 / coord->dx(x,y), MatA ); 
-//                    Element(i,x,z, 2, 0, -1.0 / (2.0*coord->dx(x,y)), MatA ); 
+//                    Element(i,x,z, 0, 0, -3.0 / (2.0*coord->dx(x,y)), MatA );
+//                    Element(i,x,z, 1, 0,  2.0 / coord->dx(x,y), MatA );
+//                    Element(i,x,z, 2, 0, -1.0 / (2.0*coord->dx(x,y)), MatA );
 // //                   Element(i,x,z, 3, 0, 0.0, MatA );  // Reset these elements to 0 in case 4th order flag was used previously: not allowed now
 // //                   Element(i,x,z, 4, 0, 0.0, MatA );
                       // Second Order Accuracy on Boundary, set half-way between grid points
-                      Element(i,x,z, 0, 0, -1.0 / coord->dx(x,y) / sqrt(coord->g_11(x,y)), MatA ); 
-                      Element(i,x,z, 1, 0,  1.0 / coord->dx(x,y) / sqrt(coord->g_11(x,y)), MatA ); 
-                      Element(i,x,z, 2, 0, 0.0, MatA ); 
+                      Element(i,x,z, 0, 0, -1.0 / coord->dx(x,y) / sqrt(coord->g_11(x,y)), MatA );
+                      Element(i,x,z, 1, 0,  1.0 / coord->dx(x,y) / sqrt(coord->g_11(x,y)), MatA );
+                      Element(i,x,z, 2, 0, 0.0, MatA );
 //                      Element(i,x,z, 3, 0, 0.0, MatA );  // Reset these elements to 0 in case 4th order flag was used previously: not allowed now
 //                      Element(i,x,z, 4, 0, 0.0, MatA );
                     }
@@ -537,23 +540,23 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
             }
         }
     }
-  
+
   // Set the values for the main domain
   for(int x=mesh->xstart; x <= mesh->xend; x++) {
     for(int z=0; z<mesh->LocalNz; z++) {
         // NOTE: Only A0 is the A from setCoefA ()
         BoutReal A0, A1, A2, A3, A4, A5;
         A0 = A(x,y,z);
-          
+
         // Set the matrix coefficients
         Coeffs( x, y, z, A1, A2, A3, A4, A5 );
-            
+
         BoutReal dx   = coord->dx(x,y);
         BoutReal dx2  = pow( coord->dx(x,y) , 2.0 );
         BoutReal dz   = coord->dz;
         BoutReal dz2  = pow( coord->dz, 2.0 );
         BoutReal dxdz = coord->dx(x,y) * coord->dz;
-          
+
           // Set Matrix Elements
           PetscScalar val=0.;
           if (fourth_order) {
@@ -719,23 +722,23 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
                   // Set values corresponding to nodes adjacent in x
                   if( fourth_order ) {
                       // Fourth Order Accuracy on Boundary
-                      Element(i,x,z,  0, 0, 25.0 / (12.0*coord->dx(x,y)) / sqrt(coord->g_11(x,y)), MatA ); 
-                      Element(i,x,z, -1, 0, -4.0 / coord->dx(x,y) / sqrt(coord->g_11(x,y)), MatA ); 
+                      Element(i,x,z,  0, 0, 25.0 / (12.0*coord->dx(x,y)) / sqrt(coord->g_11(x,y)), MatA );
+                      Element(i,x,z, -1, 0, -4.0 / coord->dx(x,y) / sqrt(coord->g_11(x,y)), MatA );
                       Element(i,x,z, -2, 0,  3.0 / coord->dx(x,y) / sqrt(coord->g_11(x,y)), MatA );
-                      Element(i,x,z, -3, 0, -4.0 / (3.0*coord->dx(x,y)) / sqrt(coord->g_11(x,y)), MatA ); 
+                      Element(i,x,z, -3, 0, -4.0 / (3.0*coord->dx(x,y)) / sqrt(coord->g_11(x,y)), MatA );
                       Element(i,x,z, -4, 0,  1.0 / (4.0*coord->dx(x,y)) / sqrt(coord->g_11(x,y)), MatA );
                     }
                   else {
 //                    // Second Order Accuracy on Boundary
-//                    Element(i,x,z,  0, 0,  3.0 / (2.0*coord->dx(x,y)), MatA ); 
-//                    Element(i,x,z, -1, 0, -2.0 / coord->dx(x,y), MatA ); 
-//                    Element(i,x,z, -2, 0,  1.0 / (2.0*coord->dx(x,y)), MatA ); 
+//                    Element(i,x,z,  0, 0,  3.0 / (2.0*coord->dx(x,y)), MatA );
+//                    Element(i,x,z, -1, 0, -2.0 / coord->dx(x,y), MatA );
+//                    Element(i,x,z, -2, 0,  1.0 / (2.0*coord->dx(x,y)), MatA );
 // //                   Element(i,x,z, -3, 0,  0.0, MatA );  // Reset these elements to 0 in case 4th order flag was used previously: not allowed now
 // //                   Element(i,x,z, -4, 0,  0.0, MatA );
                       // Second Order Accuracy on Boundary, set half-way between grid points
-                      Element(i,x,z,  0, 0,  1.0 / coord->dx(x,y) / sqrt(coord->g_11(x,y)), MatA ); 
-                      Element(i,x,z, -1, 0, -1.0 / coord->dx(x,y) / sqrt(coord->g_11(x,y)), MatA ); 
-                      Element(i,x,z, -2, 0,  0.0, MatA ); 
+                      Element(i,x,z,  0, 0,  1.0 / coord->dx(x,y) / sqrt(coord->g_11(x,y)), MatA );
+                      Element(i,x,z, -1, 0, -1.0 / coord->dx(x,y) / sqrt(coord->g_11(x,y)), MatA );
+                      Element(i,x,z, -2, 0,  0.0, MatA );
 //                      Element(i,x,z, -3, 0,  0.0, MatA );  // Reset these elements to 0 in case 4th order flag was used previously: not allowed now
 //                      Element(i,x,z, -4, 0,  0.0, MatA );
                     }
@@ -910,25 +913,24 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
   return sol;
 }
 
+/*!
+ * Sets the elements of the matrix A, which is used to solve the problem Ax=b.
+ *
+ * \param[in]
+ * i
+ * The row of the PETSc matrix
+ * \param[in] x         Local x index of the mesh
+ * \param[in] z         Local z index of the mesh
+ * \param[in] xshift    The shift in rows from the index x
+ * \param[in] zshift    The shift in columns from the index z
+ * \param[in] ele       Value of the element
+ * \param[in] MatA      The matrix A used in the inversion
+ *
+ * \param[out] MatA     The matrix A used in the inversion
+ */
 void LaplacePetsc::Element(int i, int x, int z,
                            int xshift, int zshift,
                            PetscScalar ele, Mat &MatA ) {
-  /* Function: LaplacePetsc::Element
-   * Purpose:  Set the elements of the matrix A, which is used to solve the
-   *           problem Ax=b
-   *
-   * Input:
-   * i         - The row of the PETSc matrix
-   * x         - Local x index of the mesh
-   * z         - Local z index of the mesh
-   * xshift    - The shift in rows from the index x
-   * zshift    - The shift in columns from the index z
-   * ele       - Value of the element
-   * MatA      - The matrix A used in the inversion
-   *
-   * Output:
-   * MatA      - The matrix A used in the inversion
-   */
 
   // Need to convert LOCAL x to GLOBAL x in order to correctly calculate
   // PETSC Matrix Index.
@@ -961,39 +963,46 @@ void LaplacePetsc::Element(int i, int x, int z,
   MatSetValues(MatA,1,&i,1,&index,&ele,INSERT_VALUES);
 }
 
+/*!
+ * Set the matrix components of A in Ax=b, solving
+ * D*Laplace_perp(x) + (1/C1)Grad_perp(C2)*Grad_perp(x) + Ax = B
+ *
+ * \note "A" in the equation above is not added here.
+ * For calculations of the coefficients, please refer to the user manual.
+ *
+ * \param[in] x The current x index
+ * \param[in] y The current y index
+ * \param[in] z The current y index
+ * \param[in] coef1  Placeholder for convenient variable used to set matrix
+ *                   (see manual for details)
+ * \param[in] coef2  Convenient variable used to set matrix
+ *                   (see manual for details)
+ * \param[in] coef3  Placeholder for convenient variable used to set matrix
+ *                   (see manual for details)
+ * \param[in] coef4  Placeholder for convenient variable used to set matrix
+ *                   (see manual for details)
+ * \param[in] coef5  Placeholder for convenient variable used to set matrix
+ *                   (see manual for details)
+ *
+ * \param[out] coef1    Convenient variable used to set matrix
+ *                      (see manual for details)
+ * \param[out] coef2    Convenient variable used to set matrix
+ *                      (see manual for details)
+ * \param[out] coef3    Convenient variable used to set matrix
+ *                      (see manual for details)
+ * \param[out] coef4    Convenient variable used to set matrix
+ *                      (see manual for details)
+ * \param[out] coef5    Convenient variable used to set matrix
+ *                      (see manual for details)
+ */
 void LaplacePetsc::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2, BoutReal &coef3, BoutReal &coef4, BoutReal &coef5 ) {
-  /* Function: Laplacian::Coeffs
-   * Purpose:  - Set the matrix components of A in Ax=b, solving
-   *             D*Laplace_perp(x) + (1/C1)Grad_perp(C2)*Grad_perp(x) + Ax = B
-   *
-   *             NOTE: A in the equation above is not added here.
-   *             For calculations of the coefficients, please refer to the user
-   *             manual
-   *
-   * Input:
-   * x         - The current x index
-   * y         - The current y index
-   * z         - The current y index
-   * coef1     - Convenient variable used to set matrix (see manual for details)
-   * coef2     - Convenient variable used to set matrix (see manual for details)
-   * coef3     - Convenient variable used to set matrix (see manual for details)
-   * coef4     - Convenient variable used to set matrix (see manual for details)
-   * coef5     - Convenient variable used to set matrix (see manual for details)
-   *
-   * Output:
-   * coef1     - Convenient variable used to set matrix (see manual for details)
-   * coef2     - Convenient variable used to set matrix (see manual for details)
-   * coef3     - Convenient variable used to set matrix (see manual for details)
-   * coef4     - Convenient variable used to set matrix (see manual for details)
-   * coef5     - Convenient variable used to set matrix (see manual for details)
-   */
 
   Coordinates *coord = mesh->coordinates(); // Get metric tensor
 
   coef1 = coord->g11(x,y);     // X 2nd derivative coefficient
   coef2 = coord->g33(x,y);     // Z 2nd derivative coefficient
   coef3 = 2.*coord->g13(x,y);  // X-Z mixed derivative coefficient
-  
+
   coef4 = 0.0;
   coef5 = 0.0;
   // If global flag all_terms are set (true by default)
@@ -1009,7 +1018,7 @@ void LaplacePetsc::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2
     }
   }
 
-  if(mesh->ShiftXderivs && mesh->IncIntShear) {
+  if(mesh->IncIntShear) {
     // d2dz2 term
     coef2 += coord->g11(x,y) * coord->IntShiftTorsion(x,y) * coord->IntShiftTorsion(x,y);
     // Mixed derivative
@@ -1051,7 +1060,7 @@ void LaplacePetsc::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2
             // Second order discretization of C in z
             ddz_C = (C2(x,y,zp) - C2(x,y,zm)) / (2.*coord->dz*(C1(x,y,z)));
           }
-          
+
           coef4 += coord->g11(x,y) * ddx_C + coord->g13(x,y) * ddz_C;
           coef5 += coord->g13(x,y) * ddx_C + coord->g33(x,y) * ddz_C;
         }

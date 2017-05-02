@@ -33,9 +33,9 @@ for nproc in [1,2,4]:
 
         # Run the case
         s, out = launch(cmd+" "+f, runcmd=MPIRUN, nproc=nproc, pipe=True)
-        f = open("run.log."+str(nproc)+"."+str(r), "w")
-        f.write(out)
-        f.close()
+        with open("run.log."+str(nproc)+"."+str(r), "w") as f:
+          f.write(out)
+
         r = r + 1
 
         # Find out if it worked

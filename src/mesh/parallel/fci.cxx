@@ -297,7 +297,7 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) :
 
 
 void FCITransform::calcYUpDown(Field3D &f) {
-  MsgStackItem trace("FCITransform::calcYUpDown");
+  TRACE("FCITransform::calcYUpDown");
 
   // Ensure that yup and ydown are different fields
   f.splitYupYdown();

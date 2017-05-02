@@ -46,10 +46,10 @@ LaplaceSerialTri::LaplaceSerialTri(Options *opt) : Laplacian(opt), A(0.0), C(1.0
 
   int ncz = mesh->LocalNz;
 
-  bk = cmatrix(mesh->LocalNx, ncz/2 + 1);
+  bk = matrix<dcomplex>(mesh->LocalNx, ncz/2 + 1);
   bk1d = new dcomplex[mesh->LocalNx];
 
-  xk = cmatrix(mesh->LocalNx, ncz/2 + 1);
+  xk = matrix<dcomplex>(mesh->LocalNx, ncz/2 + 1);
   xk1d = new dcomplex[mesh->LocalNx];
 
   avec = new dcomplex[mesh->LocalNx];
@@ -58,9 +58,9 @@ LaplaceSerialTri::LaplaceSerialTri(Options *opt) : Laplacian(opt), A(0.0), C(1.0
 }
 
 LaplaceSerialTri::~LaplaceSerialTri() {
-  free_cmatrix(bk);
+  free_matrix(bk);
   delete[] bk1d;
-  free_cmatrix(xk);
+  free_matrix(xk);
   delete[] xk1d;
 
   delete[] avec;
@@ -72,24 +72,27 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b) {
   return solve(b,b);   // Call the solver below
 }
 
+/*!
+ * Solve Ax=b for x given b
+ *
+ * This function will
+ *      1. Take the fourier transform of the y-slice given in the input
+ *      2. For each fourier mode
+ *          a) Set up the tridiagonal matrix
+ *          b) Call the solver which inverts the matrix Ax_mode = b_mode
+ *      3. Collect all the modes in a 2D array
+ *      4. Back transform the y-slice
+ *
+ * Input:
+ * \param[in] b     A 2D variable that will be fourier decomposed, each fourier
+ *                  mode of this variable is going to be the right hand side of
+ *                  the equation Ax = b
+ * \param[in] x0    Variable used to set BC (if the right flags are set, see
+ *                  the user manual)
+ *
+ * \param[out] x    The inverted variable.
+ */
 const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0) {
-  /* Function: LaplaceSerialTri::solve
-   * Purpose:  - Take the fourier transform of the y-slice given in the input
-   *           - For each fourier mode
-   *             - Set up the tridiagonal matrix
-   *             - Call the solver which inverts the matrix Ax_mode = b_mode
-   *           - Collect all the modes in a 2D array
-   *           - Back transform the y-slice
-   *
-   * Input:
-   * b        - A 2D variable that will be fourier decomposed, each fourier
-   *            mode of this variable is going to be the right hand side of the
-   *            equation Ax = b
-   * x0       - Variable eventually used to set BC
-   *
-   * Output:
-   * x        - The inverted variable.
-   */
   FieldPerp x;
   x.allocate();
 
@@ -208,7 +211,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
 
     if(global_flags & INVERT_ZERO_DC)
       xk[ix][0] = 0.0;
-    
+
     irfft(xk[ix], ncz, x[ix]);
 
 #if CHECK > 2

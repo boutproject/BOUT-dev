@@ -1,0 +1,60 @@
+nout = 100
+timestep = 1e-1
+
+twistshift = true
+
+MXG = 1  # No X derivatives needed
+
+[mesh]
+symmetricGlobalY = true
+symmetricGlobalX = true
+
+nx = 1
+ny = 32
+nz = 32
+
+dx = 1. / (nx-2.*MXG)
+dy = 2*pi / ny
+dz = 2*pi / nz
+
+g11 = 1.
+g22 = G^2 + eta^2
+g33 = 1 + HH^2 + I^2
+g13 = -I
+g12 = -eta
+g23 = eta*I - G*HH
+
+vx = G + eta + G*I + HH*eta
+vy = 1. + HH
+vz = G
+
+zShift = 0.02*x + 0.1*y
+nu = 0.1
+shiftangle = 2.*pi/10.
+I = 0
+HH = 0.1
+
+eta = 0.2
+yShift = 0.2*x
+G = 1
+
+[solver]
+
+mms = true
+
+[f]
+
+scale = 0.0
+function = 0  # Initial condition
+
+solution = cos(-t + 1.22*x + 1.1*y + z)^2
+source = 8*sin(-t + 1.22*x + 1.1*y + z)*cos(-t + 1.22*x + 1.1*y + z)
+
+#bndry_all = dirichlet_o2(f:solution)
+
+dfdpsi = -2*sin(-t + 1.22*x + 1.1*y + z)*cos(-t + 1.22*x + 1.1*y + z)
+dfdtheta = -2*sin(-t + 1.22*x + 1.1*y + z)*cos(-t + 1.22*x + 1.1*y + z)
+bndry_xin = neumann_o2(f:dfdpsi)
+bndry_xout = neumann_o2(f:dfdpsi)
+bndry_yup = neumann_o2(f:dfdtheta)
+bndry_ydown = neumann_o2(f:dfdtheta)

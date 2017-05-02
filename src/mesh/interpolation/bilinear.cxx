@@ -83,7 +83,7 @@ void Bilinear::calcWeights(const Field3D &delta_x, const Field3D &delta_z, BoutM
   calcWeights(delta_x, delta_z);
 }
 
-const Field3D Bilinear::interpolate(const Field3D& f) const {
+Field3D Bilinear::interpolate(const Field3D& f) const {
 
   Field3D f_interp;
   f_interp.allocate();
@@ -112,12 +112,12 @@ const Field3D Bilinear::interpolate(const Field3D& f) const {
   return f_interp;
 }
 
-const Field3D Bilinear::interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z) {
+Field3D Bilinear::interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z) {
   calcWeights(delta_x, delta_z);
   return interpolate(f);
 }
 
-const Field3D Bilinear::interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z, BoutMask mask) {
+Field3D Bilinear::interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z, BoutMask mask) {
   calcWeights(delta_x, delta_z, mask);
   return interpolate(f);
 }

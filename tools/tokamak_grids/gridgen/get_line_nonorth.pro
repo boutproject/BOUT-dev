@@ -1,0 +1,25 @@
+FUNCTION get_line_nonorth, interp_data, R, Z, ri0, zi0, fto, npt=npt, vec=vec, weight=weight
+  IF NOT KEYWORD_SET(npt) THEN npt=10
+  ; Get starting f
+  
+  local_gradient, interp_data, ri0, zi0, status=status, f=ffrom
+  IF status THEN BEGIN
+    PRINT, "WARNING: get_line starting location "+STR([ri0,zi0])+" is out of domain"
+    RETURN, [[ri0,ri0],[zi0,zi0]]
+  ENDIF
+
+  rixpt = FLTARR(npt+1)
+  zixpt = rixpt
+  rixpt[0] = ri0
+  zixpt[0] = zi0
+  FOR j=0, npt-1 DO BEGIN
+    d = FLOAT(j+1)/FLOAT(npt)
+    ftarg = d*fto + (1.0 - d)*ffrom
+    follow_gradient_nonorth, interp_data, R, Z, rixpt[j], zixpt[j], $
+      ftarg, rinext, zinext, vec=vec, weight=weight
+    rixpt[j+1] = rinext
+    zixpt[j+1] = zinext
+  ENDFOR
+  
+  RETURN, [[rixpt], [zixpt]]
+END

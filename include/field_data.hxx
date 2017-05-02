@@ -31,6 +31,8 @@ class FieldData;
 #define __FIELD_DATA_H__
 
 #include "bout_types.hxx"
+#include "bout/deprecated.hxx"
+#include "unused.hxx"
 
 #include <string>
 using std::string;
@@ -73,11 +75,11 @@ public:
   virtual int byteSize() const = 0; ///< Number of bytes for a single point
   virtual int BoutRealSize() const { return 0; } ///< Number of BoutReals (not implemented if not BoutReal)
 
-  virtual int getData(int x, int y, int z, void *vptr) const = 0; ///< Return number of bytes
-  virtual int getData(int x, int y, int z, BoutReal *rptr) const = 0; ///< Return number of BoutReals
+  DEPRECATED(virtual int getData(int x, int y, int z, void *vptr) const) = 0; ///< Return number of bytes
+  DEPRECATED(virtual int getData(int x, int y, int z, BoutReal *rptr) const) = 0; ///< Return number of BoutReals
   
-  virtual int setData(int x, int y, int z, void *vptr) = 0;
-  virtual int setData(int x, int y, int z, BoutReal *rptr) = 0;
+  DEPRECATED(virtual int setData(int x, int y, int z, void *vptr)) = 0;
+  DEPRECATED(virtual int setData(int x, int y, int z, BoutReal *rptr)) = 0;
 
 #ifdef CHECK
   virtual void doneComms() { }; // Notifies that communications done
@@ -89,7 +91,7 @@ public:
 
   void copyBoundary(const FieldData &f); ///< Copy the boundary conditions from another field
 
-  virtual void applyBoundary() {}
+  virtual void applyBoundary(bool UNUSED(init)=false) {}
   virtual void applyTDerivBoundary() {};
 //JMAD
   void addBndryFunction(FuncPtr userfunc, BndryLoc location);

@@ -17,7 +17,7 @@ class LaplaceXZpetsc;
 class LaplaceXZpetsc : public LaplaceXZ {
 public:
   LaplaceXZpetsc(Mesh *m, Options *options) : LaplaceXZ(m, options) {
-    throw BoutException("No PETSc LaplaceXY solver available");
+    throw BoutException("No PETSc LaplaceXZ solver available");
   }
   void setCoefs(const Field2D &UNUSED(A), const Field2D &UNUSED(B)) {}
   Field3D solve(const Field3D &UNUSED(b), const Field3D &UNUSED(x0)) {return 0.;}
@@ -75,10 +75,7 @@ private:
   int reuse_count; ///< How many times has it been reused?
 
   bool coefs_set; ///< Have coefficients been set?
-
-  static const int INVERT_AC_GRAD  = 2;  // Use zero neumann (NOTE: AC is a misnomer)
-  static const int INVERT_SET      = 16; // Set boundary to x0 value
-  static const int INVERT_RHS      = 32; // Set boundary to b value
+  
   #ifdef CHECK
     // Currently implemented flags
     static const int implemented_boundary_flags =   INVERT_AC_GRAD

@@ -3,8 +3,28 @@
 
 BOUT_TOP	= ..
 
-DIRS		= advect1d rayleigh-taylor drift-instability \
-                  lapd-drift orszag-tang interchange-instability \
-                  rb-tokamak shear-alfven-wave uedge-benchmark advdiff
+list=test_suite_list
+
+BUILD		= $(shell grep '^[^\#!]' $(list) )
+
+CHECKING	= $(shell grep '^[^\#]'  $(list) |sed s/\!// )
 
 include $(BOUT_TOP)/make.config
+
+
+CHECKING_=$(CHECKING:%=%_checking)
+
+.PHONY: $(BUILD) $(CHECKING_) check
+
+all: $(BUILD)
+
+buildncheck: all check
+
+$(BUILD):
+	@$(MAKE) --no-print-directory -C $@
+
+check: $(CHECKING_)
+	@echo $(CHECKING_)
+
+$(CHECKING_):
+	@$(MAKE) --no-print-directory -C $(@:%_checking=%) runtest

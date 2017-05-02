@@ -47,6 +47,7 @@
 #include <msg_stack.hxx>
 #include <bout/constants.hxx>
 
+/// MPI type of BoutReal for communications
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 
 //#define COMMDEBUG 1   // Uncomment to print communications debugging information
@@ -57,7 +58,7 @@ BoutMesh::BoutMesh(GridDataSource *s, Options *options) : Mesh(s, options) {
 
   OPTION(options, symmetricGlobalX,  true);
   OPTION(options, symmetricGlobalY,  false);
-  
+
   comm_x = MPI_COMM_NULL;
   comm_inner = MPI_COMM_NULL;
   comm_middle = MPI_COMM_NULL;
@@ -71,7 +72,7 @@ BoutMesh::~BoutMesh() {
   // Delete the boundary regions
   for(const auto& bndry : boundary)
     delete bndry;
-  
+
   if(comm_x != MPI_COMM_NULL)
     MPI_Comm_free(&comm_x);
   if(comm_inner != MPI_COMM_NULL)
@@ -126,8 +127,20 @@ int BoutMesh::load() {
   output << "\tGrid size: " << nx << " x " << ny << " x " << MZ << endl;
 
   // Get guard cell sizes
-  options->get("MXG", MXG, 2);
-  options->get("MYG", MYG, 2);
+  // Try to read from grid file first, then if not found
+  // get from options
+  if (Mesh::get(MXG, "MXG")) {
+    // Error code returned
+    options->get("MXG", MXG, 2);
+  }
+  ASSERT0(MXG >= 0);
+
+  if (Mesh::get(MYG, "MYG")) {
+    options->get("MYG", MYG, 2);
+  }
+  ASSERT0(MYG >= 0);
+
+  output << "\tGuard cells (x,y): " << MXG << ", " << MYG << std::endl;
 
   // Check that nx is large enough
   if(nx <= 2*MXG) {
@@ -141,7 +154,7 @@ int BoutMesh::load() {
 
   if(2*MXG >= nx)
     throw BoutException("nx must be greater than 2*MXG");
-  
+
   // separatrix location
   if(Mesh::get(ixseps1, "ixseps1")) {
     ixseps1 = GlobalNx;
@@ -330,7 +343,7 @@ int BoutMesh::load() {
   OffsetX = PE_XIND*MXSUB;
   OffsetY = PE_YIND*MYSUB;
   OffsetZ = 0;
-  
+
   if(options->isSet("zperiod")) {
     OPTION(options, zperiod, 1);
     ZMIN = 0.0;
@@ -358,25 +371,23 @@ int BoutMesh::load() {
   ///////////////////// TOPOLOGY //////////////////////////
   /// Call topology to set layout of grid
   topology();
-  
+
   OPTION(options, TwistShift,   false);
-  
+
   if(TwistShift) {
     output.write("Applying Twist-Shift condition. Interpolation: FFT\n");
-    
+
     // Try to read the shift angle from the grid file
     // NOTE: All processors should know the twist-shift angle (for invert_parderiv)
-    
+
     ShiftAngle.resize(LocalNx);
-      
+
     if(!source->get(this, ShiftAngle,  "ShiftAngle",
                     LocalNx, XGLOBAL(0))) {
-      output.write("\tWARNING: Twist-shift angle 'ShiftAngle' not found. Setting to zero\n");
-      for(int i=0;i<LocalNx;i++)
-        ShiftAngle[i] = 0.0;
+      throw BoutException("WARNING: Twist-shift angle 'ShiftAngle' not found.");
     }
   }
-  
+
   //////////////////////////////////////////////////////
   /// Communicator
 
@@ -715,7 +726,7 @@ int BoutMesh::load() {
 #ifdef COMMDEBUG
   output << "Got communicators" << endl;
 #endif
-  
+
   //////////////////////////////////////////////////////
   // Boundary regions
   if(!periodicX && (MXG > 0) ) {
@@ -777,13 +788,13 @@ int BoutMesh::load() {
  *                 COMMUNICATIONS
  ****************************************************************/
 
-const int IN_SENT_UP    = 0;
-const int OUT_SENT_UP   = 1;
-const int IN_SENT_DOWN  = 2;
-const int OUT_SENT_DOWN = 3;
+const int IN_SENT_UP    = 0; ///< Data lower in X than branch-cut, at upper boundary in Y
+const int OUT_SENT_UP   = 1; ///< Data higher in X than branch-cut, at upper boundary in Y
+const int IN_SENT_DOWN  = 2; ///< Data lower in X than branch-cut, at lower boundary in Y
+const int OUT_SENT_DOWN = 3; ///< Data higher in X than branch-cut, at lower boundary in Y
 // X communication signals
-const int IN_SENT_OUT = 4;
-const int OUT_SENT_IN  = 5;
+const int IN_SENT_OUT = 4; ///< Data going in positive X direction (in to out)
+const int OUT_SENT_IN  = 5; ///< Data going in negative X direction (out to in)
 
 void BoutMesh::post_receive(CommHandle &ch) {
   BoutReal *inbuff;
@@ -866,7 +877,7 @@ void BoutMesh::post_receive(CommHandle &ch) {
 comm_handle BoutMesh::send(FieldGroup &g) {
   /// Start timer
   Timer timer("comms");
-  
+
   /// Work out length of buffer needed
   int xlen = msg_len(g.get(), 0, MXG, 0, MYSUB);
   int ylen = msg_len(g.get(), 0, LocalNx, 0, MYG);
@@ -1022,7 +1033,7 @@ comm_handle BoutMesh::send(FieldGroup &g) {
 
 int BoutMesh::wait(comm_handle handle) {
   TRACE("BoutMesh::wait(comm_handle)");
-  
+
   if(handle == NULL)
     return 1;
 
@@ -1104,7 +1115,7 @@ int BoutMesh::wait(comm_handle handle) {
   if(TwistShift) {
     int jx, jy;
 
-    // Perform Twist-shift using shifting method 
+    // Perform Twist-shift using shifting method
     // Loop over 3D fields
     for(const auto& var : ch->var_list.field3d()) {
       // Lower boundary
@@ -1118,7 +1129,7 @@ int BoutMesh::wait(comm_handle handle) {
           for(jy=0;jy != MYG; jy++)
             shiftZ(*var, jx, jy, ShiftAngle[jx]);
       }
-      
+
       // Upper boundary
       if(TS_up_in && (UDATA_INDEST  != -1)) {
         for(jx=0;jx<UDATA_XSPLIT; jx++)
@@ -1132,7 +1143,7 @@ int BoutMesh::wait(comm_handle handle) {
       }
     }
   }
-  
+
 #ifdef CHECK
   // Keeping track of whether communications have been done
   for(const auto& var : ch->var_list)
@@ -1289,15 +1300,15 @@ comm_handle BoutMesh::irecvXIn(BoutReal *buffer, int size, int tag) {
  * Intended mainly to handle the non-local heat flux integrations
  ****************************************************************/
 
-bool BoutMesh::firstY() {
+bool BoutMesh::firstY() const {
   return PE_YIND == 0;
 }
 
-bool BoutMesh::lastY() {
+bool BoutMesh::lastY() const {
   return PE_YIND == NYPE-1;
 }
 
-bool BoutMesh::firstY(int xpos) {
+bool BoutMesh::firstY(int xpos) const{
   int xglobal = XGLOBAL(xpos);
   int rank;
 
@@ -1313,7 +1324,7 @@ bool BoutMesh::firstY(int xpos) {
   return rank == 0;
 }
 
-bool BoutMesh::lastY(int xpos) {
+bool BoutMesh::lastY(int xpos) const{
   int xglobal = XGLOBAL(xpos);
   int rank;
   int size;
@@ -1521,12 +1532,6 @@ int BoutMesh::PROC_NUM(int xind, int yind)
     return -1;
 
   return yind * NXPE + xind;
-}
-
-/// Returns true if the given grid-point coordinates are in this processor
-bool BoutMesh::IS_MYPROC(int xind, int yind)
-{
-  return ((xind / MXSUB) == PE_XIND) && ((yind / MYSUB) == PE_YIND);
 }
 
 /// Returns the global X index given a local index
@@ -2016,57 +2021,58 @@ void BoutMesh::clear_handles() {
  *                   Communication utilities
  ****************************************************************/
 
-int BoutMesh::pack_data(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer) {
-  int jx, jy, jz;
+int BoutMesh::pack_data(const vector<FieldData *> &var_list, int xge, int xlt, int yge,
+                        int ylt, BoutReal *buffer) {
+
   int len = 0;
-  std::vector<FieldData*>::iterator it;
 
-  for(jx=xge; jx != xlt; jx++) {
-
+  for (int jx = xge; jx != xlt; jx++) {
     /// Loop over variables
-    for(const auto& var : var_list) {
-      if(var->is3D()) {
+    for (const auto &var : var_list) {
+      if (var->is3D()) {
         // 3D variable
-
-        for(jy=yge;jy < ylt;jy++)
-          for(jz=0;jz < LocalNz;jz++)
-            len += var->getData(jx,jy,jz,buffer+len);
+        for (int jy = yge; jy < ylt; jy++) {
+          for (int jz = 0; jz < LocalNz; jz++, len++) {
+            buffer[len] = (*dynamic_cast<Field3D*>(var))(jx, jy, jz);
+          }
+        }
       } else {
         // 2D variable
-        for(jy=yge;jy < ylt;jy++)
-          len += var->getData(jx,jy,0,buffer+len);
+        for (int jy = yge; jy < ylt; jy++, len++) {
+          buffer[len] = (*dynamic_cast<Field2D*>(var))(jx, jy);
+        }
       }
     }
   }
 
-  return(len);
+  return (len);
 }
 
-int BoutMesh::unpack_data(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer)
-{
-  int jx, jy, jz;
+int BoutMesh::unpack_data(const vector<FieldData *> &var_list, int xge, int xlt, int yge,
+                          int ylt, BoutReal *buffer) {
+
   int len = 0;
-  std::vector<FieldData*>::iterator it;
 
-  for(jx=xge; jx != xlt; jx++) {
-
+  for (int jx = xge; jx != xlt; jx++) {
     /// Loop over variables
-    for(const auto& var : var_list) {
-      if(var->is3D()) {
+    for (const auto &var : var_list) {
+      if (var->is3D()) {
         // 3D variable
-
-        for(jy=yge;jy < ylt;jy++)
-          for(jz=0;jz < LocalNz;jz++)
-            len += var->setData(jx,jy,jz,buffer+len);
+        for (int jy = yge; jy < ylt; jy++) {
+          for (int jz = 0; jz < LocalNz; jz++, len++) {
+            (*dynamic_cast<Field3D*>(var))(jx, jy, jz) = buffer[len];
+          }
+        }
       } else {
         // 2D variable
-        for(jy=yge;jy < ylt;jy++)
-          len += var->setData(jx,jy,0,buffer+len);
+        for (int jy = yge; jy < ylt; jy++, len++) {
+          (*dynamic_cast<Field2D*>(var))(jx, jy) = buffer[len];
+        }
       }
     }
   }
 
-  return(len);
+  return (len);
 }
 
 /****************************************************************
@@ -2140,8 +2146,50 @@ MPI_Comm BoutMesh::getYcomm(int xpos) const {
  *                 Range iteration
  ****************************************************************/
 
-const RangeIterator BoutMesh::iterateBndryLowerY() const {
+const RangeIterator BoutMesh::iterateBndryLowerInnerY() const {
 
+  int xs = 0;
+  int xe = LocalNx-1;
+
+  if(!firstY()){
+    xs = -1;
+    xe = -2;
+  }else{
+    if((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart))
+       xs = DDATA_XSPLIT;
+    if((DDATA_OUTDEST >= 0) && (DDATA_XSPLIT < xend+1))
+       xe = DDATA_XSPLIT-1;
+
+    if(xs < xstart)
+      xs = xstart;
+    if(xe > xend)
+      xe = xend;
+  }
+  return RangeIterator(xs, xe);
+}
+
+const RangeIterator BoutMesh::iterateBndryLowerOuterY() const {
+
+  int xs = 0;
+  int xe = LocalNx-1;
+  if(!firstY()){
+    if((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart))
+      xs = DDATA_XSPLIT;
+    if((DDATA_OUTDEST >= 0) && (DDATA_XSPLIT < xend+1))
+      xe = DDATA_XSPLIT-1;
+
+    if(xs < xstart)
+      xs = xstart;
+    if(xe > xend)
+      xe = xend;
+  }else{
+    xs = -1;
+    xe = -2;
+  }
+    return RangeIterator(xs, xe);
+}
+
+const RangeIterator BoutMesh::iterateBndryLowerY() const {
   int xs = 0;
   int xe = LocalNx-1;
   if((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart))
@@ -2155,6 +2203,48 @@ const RangeIterator BoutMesh::iterateBndryLowerY() const {
     xe = xend;
 
   return RangeIterator(xs, xe);
+}
+
+const RangeIterator BoutMesh::iterateBndryUpperInnerY() const {
+  int xs = 0;
+  int xe = LocalNx-1;
+
+  if(!lastY()){
+    if((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart))
+      xs = UDATA_XSPLIT;
+    if((UDATA_OUTDEST >= 0) && (UDATA_XSPLIT < xend+1))
+      xe = UDATA_XSPLIT-1;
+
+    if(xs < xstart)
+      xs = xstart;
+    if(xe > xend)
+      xe = xend;
+  }else{
+    xs = -1;
+    xe = -2;
+  }
+  return RangeIterator(xs, xe);
+}
+
+const RangeIterator BoutMesh::iterateBndryUpperOuterY() const {
+  int xs = 0;
+  int xe = LocalNx-1;
+
+  if(!lastY()){
+    xs = -1;
+    xe = -2;
+  }else{
+    if((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart))
+      xs = UDATA_XSPLIT;
+    if((UDATA_OUTDEST >= 0) && (UDATA_XSPLIT < xend+1))
+      xe = UDATA_XSPLIT-1;
+
+    if(xs < xstart)
+      xs = xstart;
+    if(xe > xend)
+      xe = xend;
+  }
+    return RangeIterator(xs, xe);
 }
 
 const RangeIterator BoutMesh::iterateBndryUpperY() const {
@@ -2196,14 +2286,14 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
       int x = XLOCAL(ixseps_inner);
       for(int y=0;y<LocalNy;y++)
         for(int z=0;z<LocalNz;z++) {
-	  result(x,y,z) = 0.5*(f(x,y,z) + f(x-1,y,z));
+          result(x,y,z) = 0.5*(f(x,y,z) + f(x-1,y,z));
         }
     }
     if(XPROC(ixseps_inner-1) == PE_XIND) {
       int x = XLOCAL(ixseps_inner-1);
       for(int y=0;y<LocalNy;y++)
         for(int z=0;z<LocalNz;z++) {
-	  result(x,y,z) = 0.5*(f(x,y,z) + f(x+1,y,z));
+          result(x,y,z) = 0.5*(f(x,y,z) + f(x+1,y,z));
         }
     }
   }
@@ -2345,12 +2435,21 @@ void BoutMesh::outputVars(Datafile &file) {
   file.add(MYSUB, "MYSUB", 0);
   file.add(MXG,   "MXG",   0);
   file.add(MYG,   "MYG",   0);
+  file.add(nx,    "nx",    0 );
+  file.add(ny,    "ny",    0 );
   file.add(LocalNz,"MZ",    0);
   file.add(NXPE,  "NXPE",  0);
   file.add(NYPE,  "NYPE",  0);
   file.add(ZMAX,  "ZMAX",  0);
   file.add(ZMIN,  "ZMIN",  0);
-  
+  file.add(ixseps1,  "ixseps1",  0);
+  file.add(ixseps2,  "ixseps2",  0);
+  file.add(jyseps1_1,  "jyseps1_1",  0);
+  file.add(jyseps1_2,  "jyseps1_2",  0);
+  file.add(jyseps2_1,  "jyseps2_1",  0);
+  file.add(jyseps2_2,  "jyseps2_2",  0);
+
+
   coordinates()->outputVars(file);
 }
 
@@ -2395,15 +2494,13 @@ const Field2D BoutMesh::lowPass_poloidal(const Field2D &var,int mmax)
 
   int ncx, ncy;
   int jx, jy;
-  int ncyall,ncyall2;   // nype is number of processors in the Y dir.
-  int t1; //return value for setData of Field2D
+  int ncyall;   // nype is number of processors in the Y dir.
   int mmax1;
 
   mmax1 = mmax+1;
   ncx = LocalNx;
   ncy = yend - ystart + 1;
   ncyall = ncy*NYPE;
-  ncyall2 = ncyall/2;
 
   result.allocate();  //initialize
   if(f1d == (BoutReal*) NULL)
@@ -2424,7 +2521,7 @@ const Field2D BoutMesh::lowPass_poloidal(const Field2D &var,int mmax)
   for(jx=0;jx<ncx;jx++){ //start x
      //saving the real 2D data
      slice_r_y(&var(jx,0),f1d,ystart,ncy); // 2d -> 1d
-     
+
      for(jy=0;jy<ncy;jy++)
        ayn[jy]=dcomplex(f1d[jy],0.);
 
@@ -2455,10 +2552,11 @@ const Field2D BoutMesh::lowPass_poloidal(const Field2D &var,int mmax)
      set_ri(ayn,ncy,aynReal,aynImag);
 
      for(jy=0;jy<ncy;jy++)
-      f1d[jy]=ayn[jy].real();
+       f1d[jy]=ayn[jy].real();
 
-    for(jy=0;jy<ncy;jy++)
-      t1=result.setData(jx,jy+ystart,1,f1d+jy);
+     for(jy=0;jy<ncy;jy++) {
+       result(jx,jy+ystart,1) = f1d[jy];
+     }
   }//end of x
 
   return result;
@@ -2485,9 +2583,9 @@ const Field3D BoutMesh::Switch_YZ(const Field3D &var) {
   //memory allocation
   result.allocate();
   if(ayz == (BoutReal**) NULL)
-    ayz=rmatrix(ncy,ncz);
+    ayz=matrix<BoutReal>(ncy,ncz);
   if(ayz_all == (BoutReal**) NULL)
-    ayz_all=rmatrix(ncy_all,ncz);
+    ayz_all=matrix<BoutReal>(ncy_all,ncz);
 
   for(ix=xstart;ix<=xend;ix++){
     //Field 3D to rmatrix of local
@@ -2507,7 +2605,7 @@ const Field3D BoutMesh::Switch_YZ(const Field3D &var) {
   return result;
 }
 
-const Field3D BoutMesh::Switch_XZ(const Field3D &var) {   
+const Field3D BoutMesh::Switch_XZ(const Field3D &var) {
     if(MX != LocalNz){
         throw new BoutException("X and Z dimension must be the same to use Switch_XZ");
     }
@@ -2532,10 +2630,10 @@ const Field3D BoutMesh::Switch_XZ(const Field3D &var) {
     // Put input data into buffer.  X needs to be contiguous in memory
     for (i=0; i<ncx ; i++){
       for (j=0; j<ncy ; j++){
-	for (k=0; k<ncz ; k++){
-	  buffer[k][j][i] = var(MXG+i,MYG+j,k) ;
-	  // sendbuffer2[i + ncx*j + ncx*ncy*k] = var[MXG+i][MYG+j][k] ;
-	}
+        for (k=0; k<ncz ; k++){
+          buffer[k][j][i] = var(MXG+i,MYG+j,k) ;
+          // sendbuffer2[i + ncx*j + ncx*ncy*k] = var[MXG+i][MYG+j][k] ;
+        }
       }
     }
 
@@ -2546,13 +2644,13 @@ const Field3D BoutMesh::Switch_XZ(const Field3D &var) {
     // Need to transpose on each process appropriately.
     for (i=0; i < NXPE; i++){
       for (j=0; j<ncx ; j++){
-	for (k=0; k<ncy ; k++){
-	  for (l=0; l<ncx ; l++){
-	    result(MXG+j,MYG+k,l+i*ncx) = buffer[j+i*ncx][k][l] ;
-	  }
-	}
+        for (k=0; k<ncy ; k++){
+          for (l=0; l<ncx ; l++){
+            result(MXG+j,MYG+k,l+i*ncx) = buffer[j+i*ncx][k][l] ;
+          }
+        }
       }
     }
-    
+
     return result;
 }

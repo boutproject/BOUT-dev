@@ -50,11 +50,11 @@ KarniadakisSolver::~KarniadakisSolver() {
   
 }
 
-int KarniadakisSolver::init(bool restarting, int nout, BoutReal tstep) {
-  int msg_point = msg_stack.push("Initialising Karniadakis solver");
+int KarniadakisSolver::init(int nout, BoutReal tstep) {
+  TRACE("Initialising Karniadakis solver");
   
   /// Call the generic initialisation first
-  if(Solver::init(restarting, nout, tstep))
+  if (Solver::init(nout, tstep))
     return 1;
   
   output << "\n\tKarniadakis solver\n";
@@ -105,8 +105,6 @@ int KarniadakisSolver::init(bool restarting, int nout, BoutReal tstep) {
 
   timestep = tstep / ((float) nsubsteps);
   
-  msg_stack.pop(msg_point);
-
   return 0;
 }
 

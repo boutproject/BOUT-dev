@@ -67,7 +67,7 @@ public:
   BoutMask() : BoutMask(*mesh) {}
 
   // Assignment from bool
-  BoutMask& operator=(const bool value) {
+  BoutMask& operator=(bool value) {
     mask = vec3bool(nx, std::vector<std::vector<bool>>
                     (ny, std::vector<bool>
                      (nz, value)));
@@ -76,7 +76,7 @@ public:
 
   // vector<bool> is weird nonsense and doesn't actually store bools.
   // Hence we need to return the vector<bool>::reference member type
-  inline std::vector<bool>::reference operator()(const int jx, const int jy, const int jz) {
+  inline std::vector<bool>::reference operator()(int jx,int jy,int jz) {
 #if CHECK > 2
     // Perform bounds checking
     if((jx < 0) || (jx >= nx) ||
@@ -87,7 +87,7 @@ public:
 #endif
     return mask[jx][jy][jz];
   }
-  inline const std::vector<bool>::const_reference operator()(const int jx, const int jy, const int jz) const {
+  inline std::vector<bool>::const_reference operator()(int jx,int jy,int jz) const {
 #if CHECK > 2
     // Perform bounds checking
     if((jx < 0) || (jx >= nx) ||

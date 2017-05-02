@@ -1,5 +1,5 @@
 /*!
- * \file lapack_routines.cpp
+ * \file lapack_routines.cxx
  *
  * Serial code to invert a complex tridiagonal system
  *
@@ -55,11 +55,10 @@ extern "C" {
   void dgtsv_(int *n, int *nrhs, BoutReal *dl, BoutReal *d, BoutReal *du, BoutReal *b, int *ldb, int *info); 
   /// Complex band solver
   void zgbsv_(int *n, int *kl, int *ku, int *nrhs, fcmplx *ab, int *ldab, int *ipiv, fcmplx *b, int *ldb, int *info);
-};
+}
 
 /// Use LAPACK routine ZGTSV. About 25% slower than the simple NR routine for 260 points
-int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcomplex *r, dcomplex *u, int n)
-{
+int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcomplex *r, dcomplex *u, int n) {
   int nrhs = 1;
   int info;
 
@@ -129,8 +128,7 @@ int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcompl
  * 
  * Returns true on success
  */
-bool tridag(const BoutReal *a, const BoutReal *b, const BoutReal *c, const BoutReal *r, BoutReal *u, int n)
-{
+bool tridag(const BoutReal *a, const BoutReal *b, const BoutReal *c, const BoutReal *r, BoutReal *u, int n) {
   int nrhs = 1;
   int info;
 
@@ -196,8 +194,7 @@ bool tridag(const BoutReal *a, const BoutReal *b, const BoutReal *c, const BoutR
  * 
  * Uses Sherman-Morrison formula
  */
-void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal *x, int n)
-{
+void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal *x, int n) {
   if(n <= 2)
     throw BoutException("n too small in cyclic_tridag");
   
@@ -226,7 +223,7 @@ void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal 
   
   // Solve tridiagonal system Ax=r
   if(!tridag(a, b, c, r, x, n))
-    bout_error("ERROR: first tridag call failed in cyclic_tridag\n");
+    throw BoutException("ERROR: first tridag call failed in cyclic_tridag\n");
   
   u[0] = gamma;
   u[n-1] = c[n-1];
@@ -235,7 +232,7 @@ void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal 
   
   // Solve Az = u
   if(!tridag(a, b, c, u, z, n))
-    bout_error("ERROR: second tridag call failed in cyclic_tridag\n");
+    throw BoutException("ERROR: second tridag call failed in cyclic_tridag\n");
   
   BoutReal fact = (x[0] + a[0]*x[n-1]/gamma) /
     (1.0 + z[0] + a[0]*z[n-1]/gamma); 
@@ -264,8 +261,7 @@ void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal 
  * This code is about 25% faster than NR
  * Timing for 260 points (s): NR: 5.698204e-05, LAPACK: 4.410744e-05
  */
-void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b)
-{
+void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b) {
   int kl, ku, nrhs;
   int ldab, ldb;
   int info;
@@ -334,8 +330,7 @@ void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b)
 #include <utils.hxx>
 
 /// Tri-diagonal complex matrix inversion (from Numerical Recipes)
-int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcomplex *r, dcomplex *u, int n)
-{
+int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcomplex *r, dcomplex *u, int n) {
   int j;  
 
   dcomplex bet;
@@ -375,8 +370,7 @@ int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcompl
 }
 
 /// Tri-diagonal matrix inversion (BoutReal)
-bool tridag(const BoutReal *a, const BoutReal *b, const BoutReal *c, const BoutReal *r, BoutReal *x, int n)
-{
+bool tridag(const BoutReal *a, const BoutReal *b, const BoutReal *c, const BoutReal *r, BoutReal *x, int n) {
   int j;  
   
   BoutReal bet;
@@ -416,8 +410,7 @@ bool tridag(const BoutReal *a, const BoutReal *b, const BoutReal *c, const BoutR
 }
 
 /// Solve a cyclic tridiagonal matrix
-void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal *x, int n)
-{
+void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal *x, int n) {
   if(n <= 2)
     throw BoutException("ERROR: n too small in cyclic_tridag(BoutReal)");
   
@@ -472,8 +465,7 @@ void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal 
 const BoutReal TINY = 1.0e-20;
 
 void cbandec(dcomplex **a, unsigned long n, unsigned int m1, unsigned int m2,
-	     dcomplex **al, unsigned long indx[], dcomplex *d)
-{
+	     dcomplex **al, unsigned long indx[], dcomplex *d) {
   unsigned long i,j,k,l;
   unsigned int mm;
   dcomplex dum;
@@ -514,8 +506,7 @@ void cbandec(dcomplex **a, unsigned long n, unsigned int m1, unsigned int m2,
 }
 
 void cbanbks(dcomplex **a, unsigned long n, unsigned int m1, unsigned int m2,
-	     dcomplex **al, unsigned long indx[], dcomplex b[])
-{
+	     dcomplex **al, unsigned long indx[], dcomplex b[]) {
   unsigned long i,k,l;
   unsigned int mm;
   dcomplex dum;
@@ -537,8 +528,7 @@ void cbanbks(dcomplex **a, unsigned long n, unsigned int m1, unsigned int m2,
   }
 }
 
-void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b)
-{
+void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b) {
   static dcomplex **al;
   static unsigned long *indx;
   static int an = 0, am1 = 0; //.allocated sizes
@@ -546,10 +536,10 @@ void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b)
   
   if(an < n) {
     if(an != 0) {
-      free_cmatrix(al);
+      free_matrix(al);
       delete[] indx;
     }
-    al = cmatrix(n, m1);
+    al = matrix<dcomplex>(n, m1);
     indx = new unsigned long[n];
     an = n;
     am1 = m1;
@@ -557,8 +547,8 @@ void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b)
   
   if(am1 < m1) {
     if(am1 != 0)
-      free_cmatrix(al);
-    al =  cmatrix(an, m1);
+      free_matrix(al);
+    al =  matrix<dcomplex>(an, m1);
     am1 = m1;
   }
 
@@ -574,8 +564,7 @@ void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b)
 // Common functions
 
 /// Solve a cyclic tridiagonal matrix
-void cyclic_tridag(dcomplex *a, dcomplex *b, dcomplex *c, dcomplex *r, dcomplex *x, int n)
-{
+void cyclic_tridag(dcomplex *a, dcomplex *b, dcomplex *c, dcomplex *r, dcomplex *x, int n) {
   if(n <= 2)
     throw BoutException("n too small in cyclic_tridag(dcomplex)");
   

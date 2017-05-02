@@ -13,7 +13,7 @@ except:
 
 vars = ['pade1', 'pade2']
   
-tol = 1e-5                  # Absolute tolerance
+tol = 1e-10                  # Absolute tolerance
 
 from boututils.run_wrapper import shell, launch, getmpirun
 from boutdata.collect import collect
@@ -29,7 +29,7 @@ shell("make > make.log")
 print("Reading benchmark data")
 bmk = {}
 for v in vars:
-  bmk[v] = collect(v, path="data", prefix="benchmark", info=False)
+  bmk[v] = collect(v, path="data", prefix="benchmark", info=False, xguards=False)
 
 print("Running Gyro-average inversion test")
 success = True
@@ -45,14 +45,13 @@ for nproc in [1,2,4]:
 
   print("   %d processors (nxpe = %d)...." % (nproc, nxpe))
   s, out = launch(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
-  f = open("run.log."+str(nproc), "w")
-  f.write(out)
-  f.close()
-  
+  with open("run.log."+str(nproc), "w") as f:
+    f.write(out)
+
    # Collect output data
   for v in vars:
     stdout.write("      Checking variable "+v+" ... ")
-    result = collect(v, path="data", info=False)
+    result = collect(v, path="data", info=False, xguards=False)
     # Compare benchmark and output
     if np.shape(bmk[v]) != np.shape(result):
       print("Fail, wrong shape")

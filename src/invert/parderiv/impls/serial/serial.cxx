@@ -52,7 +52,7 @@
 #include <cmath>
 
 InvertParSerial::InvertParSerial(Options *opt) : InvertPar(opt), A(1.0), B(0.0), C(0.0), D(0.0), E(0.0) {
-  rhs = cmatrix(mesh->LocalNy, (mesh->LocalNz)/2 + 1);
+  rhs = matrix<dcomplex>(mesh->LocalNy, (mesh->LocalNz)/2 + 1);
   rhsk = new dcomplex[mesh->LocalNy-4];
   xk = new dcomplex[mesh->LocalNy-4];
   a = new dcomplex[mesh->LocalNy-4];
@@ -61,7 +61,7 @@ InvertParSerial::InvertParSerial(Options *opt) : InvertPar(opt), A(1.0), B(0.0),
 }
 
 InvertParSerial::~InvertParSerial() {
-  free_cmatrix(rhs);
+  free_matrix(rhs);
   delete[] rhsk;
   delete[] xk;
   delete[] a;
