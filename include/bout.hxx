@@ -103,7 +103,7 @@ int BoutInitialise(int &argc, char **&argv);
 int bout_run(Solver *solver, rhsfunc physics_run);
 
 /*!
- * Monitor function, called by the solver every output timestep
+ * Monitor class for output. Called by the solver every output timestep.
  * 
  * This is added to the solver in bout_run (for C-style models)
  * or in bout/physicsmodel.hxx
