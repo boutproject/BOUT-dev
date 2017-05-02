@@ -109,24 +109,24 @@ private:
     // LOAD DATA FROM GRID FILE
     
     // Load 2D profiles (set to zero if not found)
-    mesh->get(Ni0,    "Ni0");
-    mesh->get(Ti0,    "Ti0");
-    mesh->get(Te0,    "Te0");
-    mesh->get(Vi0,    "Vi0");
-    mesh->get(Ve0,    "Ve0");
-    mesh->get(phi0,   "phi0");
-    mesh->get(rho0,   "rho0");
-    mesh->get(Ajpar0, "Ajpar0");
+    GRID_LOAD(Ni0);
+    GRID_LOAD(Ti0);
+    GRID_LOAD(Te0);
+    GRID_LOAD(Vi0);
+    GRID_LOAD(Ve0);
+    GRID_LOAD(phi0);
+    GRID_LOAD(rho0);
+    GRID_LOAD(Ajpar0);
     
     // Load magnetic curvature term
     b0xcv.covariant = false; // Read contravariant components
     mesh->get(b0xcv, "bxcv"); // b0xkappa terms
 
     // Load metrics
-    mesh->get(Rxy,  "Rxy");
-    mesh->get(Bpxy, "Bpxy");
-    mesh->get(Btxy, "Btxy");
-    mesh->get(hthe, "hthe");
+    GRID_LOAD(Rxy);
+    GRID_LOAD(Bpxy);
+    GRID_LOAD(Btxy);
+    GRID_LOAD(hthe);
     
     Field2D dx;
     if(!mesh->get(dx,   "dpsi")) {
@@ -139,10 +139,10 @@ private:
     mesh->get(I,    "sinty");
     
     // Load normalisation values
-    mesh->get(Te_x, "Te_x");
-    mesh->get(Ti_x, "Ti_x");
-    mesh->get(Ni_x, "Ni_x");
-    mesh->get(bmag, "bmag");
+    GRID_LOAD(Te_x);
+    GRID_LOAD(Ti_x);
+    GRID_LOAD(Ni_x);
+    GRID_LOAD(bmag);
     
     Ni_x *= 1.0e14;
     bmag *= 1.0e4;
@@ -205,10 +205,10 @@ private:
     OPTION(options, laplace_extra_rho_term, false);
     OPTION(options, vort_include_pi, false);
     
-    options->get("lowPass_z",  lowPass_z,  -1);
-    
-    options->get("phi_flags",   phi_flags,   0);
-    options->get("apar_flags",  apar_flags,  0);
+    OPTION(options, lowPass_z,  -1);
+  
+    OPTION(options, phi_flags,   0);
+    OPTION(options, apar_flags,  0);
     
     (globalOptions->getSection("Ni"))->get("evolve", evolve_ni,    true);
     (globalOptions->getSection("rho"))->get("evolve", evolve_rho,   true);
@@ -423,7 +423,6 @@ private:
     if (evolve_te) {
       SOLVE_FOR(Te);
       comms.add(Te);
-      
       output.write("te\n");
     } else {
       initial_profile("Te", Te);
