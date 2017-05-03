@@ -81,7 +81,11 @@ endif
 # Phony targets since they are directory names
 .PHONY: $(DIRS) lib install
 
+ifndef RELEASE
 all: $(BOUT_TOP)/config.status $(BOUT_TOP)/make.config $(DIRS) $(TARGET)
+else
+all: $(BOUT_TOP)/make.config $(DIRS) $(TARGET)
+endif
 
 ####################################################################
 # Recursively run make through subdirs
