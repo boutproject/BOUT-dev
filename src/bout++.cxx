@@ -193,7 +193,7 @@ int BoutInitialise(int &argc, char **&argv) {
   }
 
   /// Print intro
-  output.write("\nBOUT++ version %.2f\n", BOUT_VERSION);
+  output.write("BOUT++ version %s\n", BOUT_VERSION_STRING);
 #ifdef REVISION
   output.write("Revision: %s\n", REV);
 #endif
