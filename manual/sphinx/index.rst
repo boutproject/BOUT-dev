@@ -14,6 +14,7 @@ The documentation is divided into two main sections:
    :name: user-docs
 
    user_docs/introduction
+   user_docs/overview
    user_docs/getting_started
    user_docs/advanced_install
    user_docs/running_bout
@@ -26,6 +27,7 @@ The documentation is divided into two main sections:
    user_docs/boundary_options
    user_docs/iterating
    user_docs/input_grids
+   user_docs/parallel-transforms
    user_docs/laplacian
    user_docs/fluid_equations
    user_docs/fluid_equations_2

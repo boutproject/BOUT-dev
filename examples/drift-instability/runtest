@@ -17,7 +17,7 @@ try:
   from past.utils import old_div
 except:
   def old_div(a,b):
-    return a / b
+    return int(a / b)
 
 from math import isnan
 
@@ -129,8 +129,8 @@ for zeff in zlist:
 
     lpar = np.sum(((grid['Bxy']/grid['Bpxy']))*grid['dlthe']) / grid['nx'] # [m], average over flux surfaces
     kpar = 2*np.pi/(1e2*lpar) # cm-1
-    spar = (old_div(kpar,kperp))**2 * wci * wce / (0.51 * nuei) # [1/s]
-    sparn = old_div(spar, wstar)
+    spar = (kpar/kperp)**2 * wci * wce / (0.51 * nuei) # [1/s]
+    sparn = spar / wstar
 
     wpe   = 5.64e4*np.sqrt(1e14*grid['Ni_x']) # electron plasma frequency, [rad/s]
     mu    = (cLight*kperp/wpe)**2
@@ -171,26 +171,26 @@ for zeff in zlist:
                 peak[i:(nt-nt0)] = peak[i:(nt-nt0)] - nz
 
     # Fit y = a + gamma*x
-    a, gamma = linear_regression(old_div(t_array[nt0:nt],wci), np.log(maxVal))
+    a, gamma = linear_regression((t_array[nt0:nt]/wci), np.log(maxVal))
 
     # Get phase velocity
-    a, Vphase = linear_regression(old_div(t_array[nt0:nt],wci), peak*lbNorm/(nz-1))
+    a, Vphase = linear_regression((t_array[nt0:nt]/wci), peak*lbNorm/(nz-1))
 
     # Calculate normalised quantities
     omega=np.abs(Vphase)*kperp/wstar
-    gamma=old_div(gamma,wstar)
+    gamma=gamma / wstar
 
     # Calculate analytic result
     t = 0.5*( np.sqrt(sparn**4 + 16*sparn**2) - sparn**2 )
     wr = 0.5*np.sqrt(t)
-    wi = old_div(sparn,np.sqrt(t)) - 0.5*sparn
+    wi = (sparn/np.sqrt(t)) - 0.5*sparn
 
     try:
         origr = omega_orig[zeff]
         origi = gamma_orig[zeff]
 
-        omegadiff = old_div(abs(omega - origr), origr)
-        gammadiff = old_div(abs(gamma - origi), origi)
+        omegadiff = (abs(omega - origr) / origr)
+        gammadiff = (abs(gamma - origi) / origi)
     except:
         origr = None
         origi = None
