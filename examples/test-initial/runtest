@@ -208,8 +208,12 @@ for nproc in nprocs:
             if E2 < tolerance:
                 success_string = "PASS"
             else:
-                success_string = "FAIL"
-                success = False
+                if ( var == "mixmode" or var == "mixmode_seed" ) and E2 < 1e-3:
+                    # This can happen due tue excess precision e.g. on X87 architecture
+                    success_string = "WARNING"
+                else:
+                    success_string = "FAIL"
+                    success = False
             print("\tChecking {var:<12}: l-2: {err:.4e} ... {success}".format(var=var, err=E2,
                                                                       success=success_string))
 
