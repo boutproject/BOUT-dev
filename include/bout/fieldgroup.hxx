@@ -27,6 +27,17 @@ class FieldGroup {
 
   /// Constructor with a single Field3D
   FieldGroup(Field3D &f) {fvec.push_back(&f); f3vec.push_back(&f); }
+  
+  /// Constructor with a single Vector2D
+  /// This is needed so that fvec only contains Field2D or Field3D
+  FieldGroup(Vector2D &v) {
+    fvec.push_back(&v.x); fvec.push_back(&v.y); fvec.push_back(&v.z);
+  }
+  
+  FieldGroup(Vector3D &v) {
+    fvec.push_back(&v.x); fvec.push_back(&v.y); fvec.push_back(&v.z);
+    f3vec.push_back(&v.x); f3vec.push_back(&v.y); f3vec.push_back(&v.z);
+  }
 
   /// Constructor with a single Vector2D
   /// This is needed so that fvec only contains Field2D or Field3D

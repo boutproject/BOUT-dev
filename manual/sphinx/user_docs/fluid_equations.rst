@@ -470,23 +470,23 @@ Note that it might be both if ``NXPE = 1``, or neither if ``NXPE > 2``.
         // At the left of the X domain
         // set f[0:1][*][*] i.e. first two points in X, all Y and all Z
         for(int x=0; x < 2; x++)
-          for(int y=0; y < mesh->ngy; y++)
-            for(int z=0; z < mesh->ngz; z++) {
+          for(int y=0; y < mesh->LocalNy; y++)
+            for(int z=0; z < mesh->LocalNz; z++) {
               f[x][y][z] = ...
             }
       }
       if(mesh->lastX()) {
         // At the right of the X domain
         // Set last two points in X
-        for(int x=mesh->ngx-2; x < mesh->ngx; x++)
-          for(int y=0; y < mesh->ngy; y++)
-            for(int z=0; z < mesh->ngz; z++) {
+        for(int x=mesh->LocalNx-2; x < mesh->LocalNx; x++)
+          for(int y=0; y < mesh->LocalNy; y++)
+            for(int z=0; z < mesh->LocalNz; z++) {
               f[x][y][z] = ...
             }
       }
 
 note the size of the local mesh including guard cells is given by
-``mesh->ngx``, ``mesh->ngy``, and ``mesh->ngz``. The functions
+``mesh->LocalNx``, ``mesh->LocalNy``, and ``mesh->LocalNz``. The functions
 ``mesh->firstX()`` and ``mesh->lastX()`` return true only if the current
 processor is on the left or right of the X domain respectively.
 
@@ -503,7 +503,7 @@ the boundary, we need to use a more general iterator:
       for(it.first(); !it.isDone(); it++) {
         // it.ind contains the x index
         for(int y=2;y>=0;y--)  // Boundary width 3 points
-          for(int z=0;z<mesh->ngz;z++) {
+          for(int z=0;z<mesh->LocalNz;z++) {
             ddt(f)[it.ind][y][z] = 0.;  // Set time-derivative to zero in boundary
           }
       }
@@ -518,8 +518,8 @@ boundary:
       RangeIterator it = mesh->iterateBndryUpperY();
       for(it.first(); !it.isDone(); it++) {
         // it.ind contains the x index
-        for(int y=mesh->ngy-3;y<mesh->ngy;y--)  // Boundary width 3 points
-          for(int z=0;z<mesh->ngz;z++) {
+        for(int y=mesh->LocalNy-3;y<mesh->LocalNy;y--)  // Boundary width 3 points
+          for(int z=0;z<mesh->LocalNz;z++) {
             ddt(f)[it.ind][y][z] = 0.;  // Set time-derivative to zero in boundary
           }
       }
@@ -661,4 +661,3 @@ or in IDL:
     IDL> var = collect(var="name", prefix="mydata")
 
 By default the prefix is “BOUT.dmp”.
-
