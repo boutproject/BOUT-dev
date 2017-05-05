@@ -109,6 +109,7 @@ public:
     next();
   }
   
+#ifndef _OPENMP
   /*!
    * Copy constructor. Note that xmin, ymin, ..., zmax are 
    * initialised with this->xstart, this->ystart,..., this->zend
@@ -124,6 +125,15 @@ public:
     xend(d.xend), yend(d.yend), zend(d.zend),
     xmax(xend),   ymax(yend),   zmax(zend),
     isEnd(d.isEnd) {}
+    
+  DataIterator& operator=(const DataIterator &d) :
+    x(d.x), y(d.y), z(d.z),
+    xstart(d.xstart), ystart(d.ystart), zstart(d.zstart),
+    xmin(xstart), ymin(ystart), zmin(zstart),
+    xend(d.xend), yend(d.yend), zend(d.zend),
+    xmax(xend),   ymax(yend),   zmax(zend),
+    isEnd(d.isEnd) {}
+#endif
   
   /*!
    * The index variables, updated during loop
