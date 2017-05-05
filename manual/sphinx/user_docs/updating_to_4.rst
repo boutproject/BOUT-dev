@@ -16,6 +16,11 @@ likely to come across are:
 
 * Changed some :cpp:class:`Field3D` member functions into non-member functions
 
+* The shifted metric method has changed in version 4, so that fields are
+  stored in orthogonal X-Z coordinates rather than field aligned coordinates.
+  This has implications for boundary conditions and post-processing. See
+  :ref:`sec-parallel-transforms` for more information.
+  
 A new tool is provided, ``bin/bout_3to4.py``, which can identify these changes,
 and fix most of them automatically. Simply run this program on your physic model
 to see how to update it to work with version 4:

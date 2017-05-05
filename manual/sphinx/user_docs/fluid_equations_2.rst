@@ -149,5 +149,21 @@ off the stack again:
        msg_stack.pop();
 
 If an error occurs, the message stack is printed out, and this can then
-help track down where the error originated.
+help track down where the error originated. An easy way to use this message
+stack is to use the ``TRACE`` macro:
+
+::
+	{
+      	  TRACE("Some message here"); // message pushed
+	
+	} // Scope ends, message popped
+
+This will push the message, then pop the message when the current scope ends
+(except when an exception occurs).
+The error message will also have the file name and line number appended, to help find
+where an error occurred. The run-time overhead of this should be small,
+but can be removed entirely if the compile-time flag ``CHECK`` is not defined. This turns off checking,
+and ``TRACE`` becomes an empty macro.
+ 
+
 

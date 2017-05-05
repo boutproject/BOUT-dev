@@ -1,6 +1,8 @@
 Getting started
 ===============
 
+.. _sec-getting-started:
+
 This section goes through the process of getting, installing, and
 starting to run BOUT++. Only the basic functionality needed to use
 BOUT++ is described here; the next section ([sec:advancedinstall]) goes

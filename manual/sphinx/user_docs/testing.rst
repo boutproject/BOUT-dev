@@ -43,6 +43,9 @@ This will have the following effect:
 #. For each evolving variable, the solution will be used to initialise
    and to calculate the error
 
+#. For each evolving variable, a source function will be read from the input file
+   and added to the time derivative.
+   
 Choosing manufactured solutions
 -------------------------------
 
