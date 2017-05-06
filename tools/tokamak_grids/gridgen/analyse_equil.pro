@@ -289,19 +289,23 @@ FUNCTION analyse_equil, F, R, Z
         farr[j] = INTERPOLATE(F, opt_ri[ind] + dr*FLOAT(j), opt_zi[ind] + dz*FLOAT(j))
       ENDFOR
       
+      IF farr[n-1] LT farr[0] THEN BEGIN
+        farr *= -1.0 ; Reverse, so maximum is always at the X-point
+      ENDIF
       ; farr should be monotonic, and shouldn't cross any other separatrices
       
       ma = MAX(farr, maxind)
       mi = MIN(farr, minind)
-      IF (maxind LT minind) THEN SWAP, maxind, minind
       
-      ; Allow a little leeway to account for errors
-      ; NOTE: This needs a bit of refining
-      IF (maxind GT (n-3)) AND (minind LT 3) THEN BEGIN
-        ; Monotonic, so add this to a list of x-points to keep
-        IF nkeep EQ 0 THEN keep = [i] ELSE keep = [keep, i]
-        nkeep = nkeep + 1
-      ENDIF
+      ; Discard if there is more than a 5% discrepancy in normalised
+      ; psi between the maximum and the X-point, or the minimum and
+      ; the O-point.
+      IF (ma - farr[n-1])/(ma - farr[0]) GT 0.05 THEN continue
+      IF (farr[0] - mi)/(farr[n-1] - mi) GT 0.05 THEN continue
+      
+      ; Monotonic, so add this to a list of x-points to keep
+      IF nkeep EQ 0 THEN keep = [i] ELSE keep = [keep, i]
+      nkeep = nkeep + 1
     ENDFOR
     
     IF nkeep GT 0 THEN BEGIN
@@ -312,12 +316,42 @@ FUNCTION analyse_equil, F, R, Z
     ENDIF ELSE PRINT, "No x-points kept"
     n_xpoint = nkeep
 
+    ; Check for duplicates
+    
+    IF n_xpoint GT 1 THEN BEGIN
+      i = 1
+      REPEAT BEGIN
+        m = MIN((xpt_ri[0:(i-1)] - xpt_ri[i])^2 + (xpt_zi[0:(i-1)] - xpt_zi[i])^2, ind)
+        IF m LT 4. THEN BEGIN
+          PRINT, "Duplicates: ", i, ind
+          
+          IF ABS(opt_f[ind] - xpt_f[i]) LT ABS(opt_f[ind] - xpt_f[ind]) THEN BEGIN
+            ; i is closer to O-point than ind.
+            
+            xpt_ri[ind] = xpt_ri[n_xpoint-1]
+            xpt_zi[ind] = xpt_zi[n_xpoint-1]
+            xpt_f[ind] = xpt_f[n_xpoint-1]
+          ENDIF ELSE BEGIN
+            xpt_ri[i] = xpt_ri[n_xpoint-1]
+            xpt_zi[i] = xpt_zi[n_xpoint-1]
+            xpt_f[i] = xpt_f[n_xpoint-1]
+          ENDELSE
+          xpt_ri = xpt_ri[0:(n_xpoint - 2)]
+          xpt_zi = xpt_zi[0:(n_xpoint - 2)]
+          xpt_f = xpt_f[0:(n_xpoint - 2)]
+          n_xpoint = n_xpoint - 1
+        ENDIF
+        i = i + 1
+      ENDREP UNTIL i GE n_xpoint
+    ENDIF
+    
     ; Now find x-point closest to primary O-point
     s = SORT(ABS(opt_f[ind] - xpt_f))
     xpt_ri = xpt_ri[s]
     xpt_zi = xpt_zi[s]
     xpt_f = xpt_f[s]
     inner_sep = 0
+    
   ENDIF ELSE BEGIN
     ; No x-points. Pick mid-point in f
    

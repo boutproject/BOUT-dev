@@ -4,14 +4,200 @@ Output and post-processing
 ==========================
 
 The majority of the existing analysis and post-processing code is
-written in IDL. The directory ``idllib`` contains many useful routines
-for reading output files and analysing data. A summary of available IDL
-routines is given in Appendix [apx:idl\_routines].
+written in Python and IDL. Routines to read BOUT++ output data,
+usually called "collect" because it collects data from multiple files,
+are also available in Matlab, Mathematica and Octave. All these
+post-processing routines are in the ``tools`` directory, with Python
+modules in ``pylib`` and IDL routines in ``idllib``. A summary of available IDL
+routines is given in Appendix [apx:idl\_routines], and Python routines
+in Appendix [apx:py\_routines].
 
-Post-processing using Python is also possible, and there are some
-modules in the ``pylib`` directory, and a list of routines in
-Appendix [apx:py\_routines]. This is a more recent addition, and so is
-not yet as developed as the IDL support.
+.. _sec-pythonroutines:
+
+Python routines
+---------------
+
+To read data from a BOUT++ simulation into Python, there is a ``collect`` routine.
+This gathers together the data from multiple processors, taking care of the correct
+layout.
+
+.. code-block:: python
+
+    from boutdata.collect import collect
+
+    Ni = collect("Ni")  # Collect the variable "Ni"
+
+The result is a 4D NumPy array, ``Ni`` in this case. This is ordered
+``[t,x,y,z]``:
+
+.. code-block:: pycon
+
+    >>> Ni.shape
+    [10,1,2,3]
+
+so ``Ni`` would have 10 time slices, 1 point in x, 2 in y, and 3 in z.
+This should correspond to the grid size used in the simulation.
+Since the collected data is a NumPy array, all the useful routines
+in NumPy, SciPy and Matplotlib can be used for further analysis. 
+
+To access both the input options (in the BOUT.inp file) and output data, there
+is the ``BoutData`` class.
+
+.. code-block:: pycon
+
+    >>> from boutdata.data import BoutData
+    >>> d = BoutData(path=".")
+
+where the path is optional, and should point to the directory containing the BOUT.inp 
+(input) and BOUT.dmp.* (output) files. This will return a dictionary with keys
+"path" (the given path to the data), "options" (the input options) and "outputs" (the output data).
+The tree of options can be printed:
+
+.. code-block:: pycon
+
+    >>> print d["options"]
+      options
+       |- timestep = 50
+       |- myg = 0
+       |- nout = 50
+       |- mxg = 2
+       |- all
+       |   |- bndry_all = neumann
+       |   |- scale = 0.0
+       |- phisolver
+       |   |- fourth_order = true        
+       ...
+
+and accessed as a tree of dictionaries:
+
+.. code-block:: pycon
+
+    >>> print d["options"]["phisolver"]["fourth_order"]
+    true
+
+Currently the values are either integers, floats, or strings, so in the above example "true" is a string,
+not a Boolean.
+
+In a similar way the outputs are available as dictionary keys:
+
+.. code-block:: pycon
+
+    >>> print d["outputs"]
+    ZMAX
+    rho_s
+    zperiod
+    BOUT_VERSION
+    ...
+    >>> d["outputs"]["rho_s"]
+    0.00092165524660235405
+    
+There are several modules available for reading NetCDF files, so to
+provide a consistent interface, file access is wrapped into a class
+DataFile. This provides a simple interface for reading and writing files
+from any of the following modules: ``netCDF4``;
+``Scientific.IO.NetCDF``; and ``scipy.io.netcdf``. The DataFile class
+also provides allows access to HDF5 files through the same interface,
+using the ``h5py`` module. To open a file using DataFile:
+
+.. code-block:: python
+
+    from boututils.datafile import DataFile
+
+    f = DataFile("file.nc")  # Open the file
+    var = f.read("variable") # Read a variable from the file
+    f.close()                # Close the file
+
+or similarly for an HDF5 file
+
+.. code-block:: python
+
+    from boututils.datafile import DataFile
+
+    f = DataFile("file.hdf5")  # Open the file
+    var = f.read("variable")   # Read a variable from the file
+    f.close()                  # Close the file
+
+A more robust way to read from DataFiles is to use the context manager
+syntax:
+
+.. code-block:: python
+
+    from boututils.datafile import DataFile
+
+    with DataFile("file.hdf5") as f: # Open the file
+        var = f.read("variable")     # Read a variable from the file
+
+This way the DataFile is automatically closed at the end of the ``with``
+block, even if there is an error in ``f.read``. To list the variables in
+a file e.g.
+
+.. code-block:: pycon
+
+    >>> f = DataFile("test_io.grd.nc")
+    >>> print(f.list())
+    ['f3d', 'f2d', 'nx', 'ny', 'rvar', 'ivar']
+
+and to list the names of the dimensions
+
+.. code-block:: pycon
+
+    >>> print(f.dimensions("f3d"))
+    ('x', 'y', 'z')
+
+or to get the sizes of the dimensions
+
+.. code-block:: pycon
+
+    >>> print(f.size("f3d"))
+    [12, 12, 5]
+
+To read in all variables in a file into a dictionary there is the
+``file_import`` function
+
+.. code-block:: python
+
+    from boututils.file_import import file_import
+
+    grid = file_import("grid.nc")
+
+Python analysis routines
+------------------------
+
+The analysis and postprocessing routines are currently divided into two Python modules:
+``boutdata``, which contains BOUT++ specific things like ``collect``, and ``boututils``
+which contains more generic useful routines.
+
+To plot data, a convenient wrapper around matplotlib is ``plotdata``
+
+.. code-block:: python
+
+    from boutdata import collect
+    n = collect("n") # Read data as NumPy array [t,x,y,z]
+    
+    from boututils.plotdata import plotdata
+    plotdata(n[-1,:,0,:])
+
+If given a 2D array as in the above example, plotdata produces a contour plot
+(using matplotlib pyplot.contourf) with colour bar. If given a 1D array then it will plot
+a line plot (using pyplot.plot).
+
+It is sometimes useful to see an animation of a simulation. To do this there is
+``showdata``, which again is a wrapper around matplotlib:
+
+.. code-block:: python
+
+    from boutdata import collect
+    n = collect("n") # Read data as NumPy array [t,x,y,z]
+    
+    from boututils.showdata import showdata
+    showdata(n[:,:,0,:])
+
+This always assumes that the first index is time and will be animated over. The above example
+animates the variable ``n`` in time, at each time point plotting a contour plot in ``x`` and ``z`` dimensions.
+The colour range is kept constant by default. If a 2D array is given to ``showdata`` then a line plot will be
+drawn at each time, with the scale being kept constant.
+
+
 
 Reading BOUT++ output into IDL
 ------------------------------
@@ -240,89 +426,6 @@ variable:
 
 There are many other useful routines in the ``idllib`` directory. See
 the ``idllib/README`` file for a short description of each one.
-
-.. _sec-pythonroutines:
-
-Python routines
----------------
-
-There are several modules available for reading NetCDF files, so to
-provide a consistent interface, file access is wrapped into a class
-DataFile. This provides a simple interface for reading and writing files
-from any of the following modules: ``netCDF4``;
-``Scientific.IO.NetCDF``; and ``scipy.io.netcdf``. The DataFile class
-also provides allows access to HDF5 files through the same interface,
-using the ``h5py`` module. To open a file using DataFile:
-
-.. code-block:: python
-
-    from boututils.datafile import DataFile
-
-    f = DataFile("file.nc")  # Open the file
-    var = f.read("variable") # Read a variable from the file
-    f.close()                # Close the file
-
-or similarly for an HDF5 file
-
-.. code-block:: python
-
-    from boututils.datafile import DataFile
-
-    f = DataFile("file.hdf5")  # Open the file
-    var = f.read("variable")   # Read a variable from the file
-    f.close()                  # Close the file
-
-A more robust way to read from DataFiles is to use the context manager
-syntax:
-
-.. code-block:: python
-
-    from boututils.datafile import DataFile
-
-    with DataFile("file.hdf5") as f: # Open the file
-        var = f.read("variable")     # Read a variable from the file
-
-This way the DataFile is automatically closed at the end of the ``with``
-block, even if there is an error in ``f.read``. To list the variables in
-a file e.g.
-
-.. code-block:: pycon
-
-    >>> f = DataFile("test_io.grd.nc")
-    >>> print(f.list())
-    ['f3d', 'f2d', 'nx', 'ny', 'rvar', 'ivar']
-
-and to list the names of the dimensions
-
-.. code-block:: pycon
-
-    >>> print(f.dimensions("f3d"))
-    ('x', 'y', 'z')
-
-or to get the sizes of the dimensions
-
-.. code-block:: pycon
-
-    >>> print(f.size("f3d"))
-    [12, 12, 5]
-
-To read in all variables in a file into a dictionary there is the
-``file_import`` function
-
-.. code-block:: python
-
-    from boututils.file_import import file_import
-
-    grid = file_import("grid.nc")
-
-As for IDL, there is a ``collect`` routine which reads gathers together
-the data from multiple processors
-
-.. code-block:: python
-
-    from boutdata.collect import collect
-
-    Ni = collect("Ni")  # Collect the variable "Ni"
 
 Matlab routines
 ---------------

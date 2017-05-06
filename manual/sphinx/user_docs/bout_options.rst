@@ -131,12 +131,12 @@ the options file:
 
 .. code-block:: bash
 
-    MZ = 33
+    [mesh]
+    nz = 32
 
-This must be :math:`\texttt{MZ} = 2^n + 1`, and can be
-:math:`2,3,5,9,\ldots`. The power of 2 is so that FFTs can be used in
-this direction; the :math:`+1` is for historical reasons (inherited from
-BOUT) and is going to be removed at some point.
+It is recommended, but not necessary, that this be :math:`\texttt{nz} = 2^n`, i.e.
+:math:`1,2,4,8,\ldots`. This is because FFTs are usually slightly faster
+with power-of-two length arrays, and FFTs are used quite frequently in many models.
 
 Since the Z dimension is periodic, the domain size is specified as
 multiples or fractions of :math:`2\pi`. To specify a fraction of
@@ -160,9 +160,18 @@ not an angle), there are the options
 which specify the range in multiples of :math:`2\pi`.
 
 In BOUT++, grids can be split between processors in both X and Y
-directions. By default only Y decomposition is used, and to use X
-decomposition you must specify the number of processors in the X
-direction:
+directions. By default BOUT++ automatically divides the grid in both X and Y,
+finding the decomposition with domains closest to square, whilst satisfying
+constraints. These constraints are:
+
+- Every processor must have the same size and shape domain 
+
+- Branch cuts, mostly at X-points, must be on processor boundaries.
+  This is because the connection between grid points is modified in BOUT++
+  by changing which processors communicate.
+
+To specify a splitting manually, the number of processors in the X
+direction can be specified:
 
 .. code-block:: bash
 
