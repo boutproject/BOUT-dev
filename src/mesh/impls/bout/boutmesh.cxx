@@ -304,7 +304,7 @@ int BoutMesh::load() {
 
     NYPE = NPES / NXPE;
 
-    output.write("\tDomain split (%d, %d) into domains (%d, %d)\n",
+    output.write("\tDomain split (NXPE=%d, NYPE=%d) into domains (localNx=%d, localNy=%d)\n",
                  NXPE, NYPE, MX / NXPE, ny / NYPE);
   }
 
