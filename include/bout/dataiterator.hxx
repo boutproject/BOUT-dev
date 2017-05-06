@@ -125,25 +125,6 @@ public:
     xend(d.xend), yend(d.yend), zend(d.zend),
     xmax(xend),   ymax(yend),   zmax(zend),
     isEnd(d.isEnd) {}
-    
-  DataIterator& operator=(const DataIterator &d){
-    x=d.x;
-    y=d.y;
-    z=d.z;
-    xstart=d.xstart;
-    ystart=d.ystart;
-    zstart=d.zstart;
-    xmin=xstart;
-    ymin=ystart;
-    zmin=zstart;
-    xend=d.xend;
-    yend=d.yend;
-    zend=d.zend;
-    xmax=xend;
-    ymax=yend;
-    zmax=zend;
-    isEnd=d.isEnd;
-  }
 #endif
   
   /*!
