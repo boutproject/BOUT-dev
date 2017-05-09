@@ -53,11 +53,12 @@
 //#define COMMDEBUG 1   // Uncomment to print communications debugging information
 
 BoutMesh::BoutMesh(GridDataSource *s, Options *options) : Mesh(s, options) {
-  if(options == NULL)
+  if (options == NULL) {
     options = Options::getRoot()->getSection("mesh");
-
+  }
+  
   OPTION(options, symmetricGlobalX,  true);
-  OPTION(options, symmetricGlobalY,  false);
+  OPTION(options, symmetricGlobalY,  true);
 
   comm_x = MPI_COMM_NULL;
   comm_inner = MPI_COMM_NULL;

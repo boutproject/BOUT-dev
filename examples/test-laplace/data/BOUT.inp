@@ -13,6 +13,7 @@ dump_format = "nc"  # NetCDF format. Alternative is "pdb"
 
 [mesh]
 symmetricGlobalX = false
+symmetricGlobalY = false
 
 [laplace]
 all_terms = false
