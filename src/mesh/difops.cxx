@@ -243,14 +243,29 @@ const Field3D Grad_par_CtoL(const Field3D &var) {
   result.allocate();
   
   Coordinates *metric = mesh->coordinates();
-  
-  // NOTE: Need to calculate one more point than centred vars
-  for(int jx=0; jx<mesh->LocalNx;jx++) {
-    for(int jy=1;jy<mesh->LocalNy;jy++) {
-      for(int jz=0;jz<mesh->LocalNz;jz++) {
-	result(jx, jy, jz) = 2.*(var(jx, jy, jz) - var.ydown()(jx, jy-1, jz)) / (metric->dy(jx, jy) * sqrt(metric->g_22(jx, jy)) + metric->dy(jx, jy-1) * sqrt(metric->g_22(jx, jy-1)));
+
+  if (var.hasYupYdown()) {
+    // NOTE: Need to calculate one more point than centred vars
+    for(int jx=0; jx<mesh->LocalNx;jx++) {
+      for(int jy=1;jy<mesh->LocalNy;jy++) {
+        for(int jz=0;jz<mesh->LocalNz;jz++) {
+          result(jx, jy, jz) = 2.*(var(jx, jy, jz) - var.ydown()(jx, jy-1, jz)) / (metric->dy(jx, jy) * sqrt(metric->g_22(jx, jy)) + metric->dy(jx, jy-1) * sqrt(metric->g_22(jx, jy-1)));
+      }
       }
     }
+  } else {
+    // No yup/ydown fields, so transform to cell centred
+    Field3D var_fa = mesh->toFieldAligned(var);
+    
+    for(int jx=0; jx<mesh->LocalNx;jx++) {
+      for(int jy=1;jy<mesh->LocalNy;jy++) {
+        for(int jz=0;jz<mesh->LocalNz;jz++) {
+          result(jx, jy, jz) = 2.*(var_fa(jx, jy, jz) - var_fa(jx, jy-1, jz)) / (metric->dy(jx, jy) * sqrt(metric->g_22(jx, jy)) + metric->dy(jx, jy-1) * sqrt(metric->g_22(jx, jy-1)));
+        }
+      }
+    }
+
+    result = mesh->fromFieldAligned(result);
   }
 
   return result;
@@ -280,17 +295,24 @@ const Field3D Vpar_Grad_par_LCtoC(const Field &v, const Field &f) {
 }
 
 const Field3D Grad_par_LtoC(const Field3D &var) {
-	Field3D result;
-	result.allocate();
+  Field3D result;
+  result.allocate();
   
   Coordinates *metric = mesh->coordinates();
-  
-  for(int jx=0; jx<mesh->LocalNx;jx++) {
-    for(int jy=0;jy<mesh->LocalNy-1;jy++) {
-      for(int jz=0;jz<mesh->LocalNz;jz++) {
-	result(jx, jy, jz) = (var.yup()(jx, jy+1, jz) - var(jx, jy, jz)) / (metric->dy(jx, jy) * sqrt(metric->g_22(jx, jy)));
-      }
+
+  if (var.hasYupYdown()) {
+    for (auto &i : result.region(RGN_NOBNDRY)) {
+      result[i] = (var.yup()[i.yp()] - var[i]) / (metric->dy[i]*sqrt(metric->g_22[i]));
     }
+  } else {
+    // No yup/ydown field, so transform to field aligned
+
+    Field3D var_fa = mesh->toFieldAligned(var);
+
+    for(auto &i : result.region(RGN_NOBNDRY)) {
+      result[i] = (var_fa[i.yp()] - var_fa[i]) / (metric->dy[i]*sqrt(metric->g_22[i]));
+    }
+    result = mesh->fromFieldAligned(result);
   }
   
   return result;

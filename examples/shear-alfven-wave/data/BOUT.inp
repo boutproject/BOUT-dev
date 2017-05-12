@@ -6,15 +6,11 @@
 NOUT = 100       # number of time-steps
 TIMESTEP = 2.5e1   # time between outputs
 
-ShiftXderivs = false # use shifted radial derivatives?
 TwistShift = false  # use twist-shift condition?
 
-MZ = 17     # number of points in z direction (2^n + 1)
+MZ = 16     # number of points in z direction (2^n)
 ZMIN = 0.0
 ZMAX = 3.0246e-4
-
-# old zmax: 0.15, 0.25, 0.50, 1.0
-# new zmax (/4.959337e+02): 3.0246e-4, 5.0410e-4, 1.0082e-3, 2.0164e-3
 
 MXG = 2
 MYG = 2
@@ -34,7 +30,7 @@ upwind = W3 # order of upwinding method
 
 [mesh:ddy]
 
-first = C4
+first = C2
 second = C2
 upwind = W3
 
@@ -122,3 +118,5 @@ evolve = false
 
 [Ajpar]
 scale = 1.0e-3
+
+function = sin(z) * exp( -((y/(2*pi) - 0.5)/0.5)^2 )
