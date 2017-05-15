@@ -58,6 +58,10 @@ BoutMesh::BoutMesh(GridDataSource *s, Options *options) : Mesh(s, options) {
   }
   
   OPTION(options, symmetricGlobalX,  true);
+  if (! options->isSet("symmetricGlobalY")){
+    output << "WARNING: The default of this option has changed in release 4.1.\n\
+If you want the old setting, you have to specify mesh:symmetricGlobalY=false in BOUT.inp\n";
+  }
   OPTION(options, symmetricGlobalY,  true);
 
   comm_x = MPI_COMM_NULL;
