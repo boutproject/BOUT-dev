@@ -21,6 +21,7 @@ class Monitor{
   friend class Solver; // needs access to timestep and freq
 public:
   Monitor(BoutReal timestep_=-1):timestep(timestep_){};
+  virtual ~Monitor(){};
   virtual int call(Solver * solver, BoutReal time, int iter, int nout)=0;
   bool operator==(const Monitor& rhs) const;
 private:
@@ -33,6 +34,7 @@ typedef int (* MonitorFuncPointer )(Solver *solver, BoutReal simtime, int iter, 
 class MonitorFunc: public Monitor{
 public:
   MonitorFunc(MonitorFuncPointer pntr);
+  virtual ~MonitorFunc(){};
   virtual int call(Solver * solver, BoutReal time, int iter, int nout);
 private:
   MonitorFuncPointer callFunc;
