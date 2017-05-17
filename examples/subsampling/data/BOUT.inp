@@ -1,5 +1,5 @@
-timestep = 1.
-nout = 10
+timestep = 2.
+nout = 5
 
 MZ = 1
 
