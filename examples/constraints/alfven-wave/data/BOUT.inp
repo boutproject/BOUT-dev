@@ -4,9 +4,10 @@ TIMESTEP = 2
 
 grid = "d3d_119919.nc"
 
-ShiftXderivs = true
-
 MZ = 1
+
+[mesh]
+paralleltransform = shifted
 
 [solver]
 

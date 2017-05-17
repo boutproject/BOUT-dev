@@ -53,7 +53,7 @@ public:
   
   PhysicsModel();
   
-  ~PhysicsModel();
+  virtual ~PhysicsModel();
   
   /*!
    * Initialse the model, calling the init() and postInit() methods
