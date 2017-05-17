@@ -61,7 +61,9 @@ private:
    * This initialises OpenMP threads if enabled, and
    * divides iteration index ranges between threads
    */
-  void omp_init(int xs,int xe,bool end);
+#ifdef _OPENMP
+  void omp_init(bool end);
+#endif
 public:
   /*!
    * Constructor. This sets index ranges.
@@ -78,12 +80,14 @@ public:
     xmin(xstart), ymin(ystart), zmin(zstart),
     xmax(xend),   ymax(yend),   zmax(zend),
 #else
-    xmin(xstart), ymin(ys),     zmin(zs),
-    xmax(xend),   ymax(ye),     zmax(ze)
+    xmin(xs),     ymin(ys),     zmin(zs),
+    xmax(xe),     ymax(ye),     zmax(ze),
 #endif
     isEnd(false)
   {
-    omp_init(xs,xe,false);
+#ifdef _OPENMP
+    omp_init(false);
+#endif
   }
 
   /*!
@@ -105,7 +109,9 @@ public:
 #endif
     isEnd(true)
   {
-    omp_init(xs,xe,true);
+#ifdef _OPENMP
+    omp_init(true);
+#endif
     next();
   }
   
@@ -237,19 +243,22 @@ public:
 private:
   DataIterator(); // Disable null constructor
 
-  int xstart, ystart, zstart;
-  int xend,   yend,   zend;
 #ifndef _OPENMP
-  int &xmin, &ymin, &zmin;
+  const int xstart, ystart, zstart;
 #else
-  int xmin, ymin, zmin;
+  int xstart, ystart, zstart;
 #endif
 
+  int xmin, ymin, zmin;
+
 #ifndef _OPENMP
-  int &xmax, &ymax, &zmax;
+  const int xend, yend, zend;
 #else
-  int xmax, ymax, zmax;
+  int xend, yend, zend;
 #endif
+
+  int xmax, ymax, zmax;
+
   const bool isEnd;
   /// Advance to the next index
   void next() {
@@ -342,9 +351,7 @@ inline int DI_spread_work(int work,int cp,int np){
   return result;
 };
 
-inline void DataIterator::omp_init(int xs, int xe,bool end){
-  xmin=xs;
-  xmax=xe;
+inline void DataIterator::omp_init(bool end){
   // In the case of OPENMP we need to calculate the range
   int threads=omp_get_num_threads();
   if (threads > 1){
@@ -370,8 +377,8 @@ inline void DataIterator::omp_init(int xs, int xe,bool end){
     zend   = zmax;
     ystart = ymin;
     yend   = ymax;
-    xstart = xs;
-    xend   = xe;
+    xstart = xmin;
+    xend   = xmax;
   }
   if (!end){
     x=xstart;
@@ -383,8 +390,6 @@ inline void DataIterator::omp_init(int xs, int xe,bool end){
     z=zend;
   }
 };
-#else
-inline void DataIterator::omp_init(int UNUSED(xs), int UNUSED(xe), bool UNUSED(end)){;}
 #endif
 
 #endif // __DATAITERATOR_H__

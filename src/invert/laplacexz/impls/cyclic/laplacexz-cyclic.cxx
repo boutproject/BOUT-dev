@@ -4,6 +4,7 @@
 #include <fft.hxx>
 #include <bout/constants.hxx>
 #include <bout/sys/timer.hxx>
+#include <msg_stack.hxx>
 
 #include <output.hxx>
 
@@ -66,11 +67,15 @@ LaplaceXZcyclic::~LaplaceXZcyclic() {
 }
 
 void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
+  TRACE("LaplaceXZcyclic::setCoefs");
   Timer timer("invert");
-
+  
   // Set coefficients
 
   Coordinates *coord = mesh->coordinates();
+
+  // NOTE: For now the X-Z terms are omitted, so check that they are small
+  ASSERT2(max(abs(coord->g13)) < 1e-5);
   
   int ind = 0;
   for(int y=mesh->ystart; y <= mesh->yend; y++) {

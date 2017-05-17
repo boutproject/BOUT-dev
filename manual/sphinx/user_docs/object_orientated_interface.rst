@@ -4,8 +4,8 @@ Object-orientated interface
 ===========================
 
 | If you prefer to create classes rather than global variables and C
-  functions for your physics model, this can be done using a (somewhat
-  experimental) interface. To see the difference, compare
+  functions for your physics model, this can be done using a C++
+  interface. To see the difference, compare
   ``examples/advect1d/gas_compress.cxx`` with
 | ``examples/advect1d-newapi/gas_compress.cxx``. The disadvantage of
   this interface is that it’s marginally more complicated to set up, but

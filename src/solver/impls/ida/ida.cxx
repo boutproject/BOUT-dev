@@ -62,31 +62,22 @@ static int ida_pre(BoutReal t, N_Vector yy,
 		   BoutReal cj, BoutReal delta, 
 		   void *user_data, N_Vector tmp);
 
-IdaSolver::IdaSolver(Options *opts) : Solver(opts)
-{
+IdaSolver::IdaSolver(Options *opts) : Solver(opts) {
   has_constraints = true; ///< This solver has constraints
 }
 
-IdaSolver::~IdaSolver()
-{
-  if(initialised) {
-    // Free IDA memory
-    
-    
-    
-  }
-}
+IdaSolver::~IdaSolver() { }
 
 /**************************************************************************
  * Initialise
  **************************************************************************/
 
- int IdaSolver::init(bool restarting, int nout, BoutReal tstep) {
+ int IdaSolver::init(int nout, BoutReal tstep) {
 
   TRACE("Initialising IDA solver");
 
   /// Call the generic initialisation first
-  if(Solver::init(restarting, nout, tstep))
+  if (Solver::init(nout, tstep))
     return 1;
   
   // Save nout and tstep for use in run

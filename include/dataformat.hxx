@@ -35,6 +35,7 @@ class DataFormat;
 
 #include "bout_types.hxx"
 #include <string>
+#include <memory>
 using std::string;
 
 #include <vector>
@@ -100,6 +101,6 @@ class DataFormat {
 };
 
 // For backwards compatability. In formatfactory.cxx
-DataFormat* data_format(const char *filename = NULL);
+std::unique_ptr<DataFormat> data_format(const char *filename = NULL);
 
 #endif // __DATAFORMAT_H__

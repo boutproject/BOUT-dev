@@ -95,6 +95,19 @@ class Field2D : public Field, public FieldData {
   /// Return a pointer to the time-derivative field
   Field2D* timeDeriv();
 
+  /*!
+   * Return the number of nx points
+   */
+  int getNx() const {return nx;};
+  /*!
+   * Return the number of nx points
+   */
+  int getNy() const {return ny;};
+  /*!
+   * Return the number of nx points
+   */
+  int getNz() const {return 1;};
+
   // Operators
 
   /*!

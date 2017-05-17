@@ -182,11 +182,14 @@ void Field3D::splitYupYdown() {
 void Field3D::mergeYupYdown() {
   TRACE("Field3D::mergeYupYdown");
   
-  if(yup_field == this)
+  if(yup_field == this && ydown_field == this)
     return;
 
-  if(yup_field != nullptr) {
+  if(yup_field != nullptr){
     delete yup_field;
+  }
+
+  if(ydown_field != nullptr) {
     delete ydown_field;
   }
 
@@ -567,8 +570,13 @@ void Field3D::setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
   fval.c = (*this)(bx.jx,bx.jy,bx.jz);
   fval.p = yup()(bx.jx,bx.jyp,bx.jz);
   fval.m = ydown()(bx.jx,bx.jym,bx.jz);
-  fval.pp = nan("");
-  fval.mm = nan("");
+  if (yup_field == this && ydown_field == this){
+    fval.pp = (*this)(bx.jx,bx.jy2p,bx.jz);
+    fval.pp = (*this)(bx.jx,bx.jy2m,bx.jz);
+  } else {
+    fval.pp = nan("");
+    fval.mm = nan("");
+  }
 
   if(mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
     // Non-centred stencil

@@ -6,7 +6,9 @@ DIRS			= field fileio invert mesh physics precon solver sys facets
 SOURCEC		= bout++.cxx
 SOURCEH		= bout.hxx
 CXXFLAGS       += -DMD5SUM=$(CHECKSUM) -DREVISION="$(REVISION)"
+ifndef TARGET
 TARGET		= lib
+endif
 
 # Checksum passed to bout++.cxx
 CHECKSUM := $(shell cat $(foreach DIR,$(DIRS),$(wildcard $(DIR)/*.cxx $(DIR)/*.hxx)) | md5sum | head -c 32 )
@@ -23,6 +25,15 @@ all: initial_message
 # Then the config file is included, which has all the other prerequisites for 'all'
 include $(BOUT_TOP)/make.config
 
+
+.PHONY: bout++.cxx
+
+libfast:
+	@echo "Recreating libbout++.a"
+	@rm -f $(BOUT_TOP)/lib/libbout++.a
+	@$(AR) $(ARFLAGS) $(LIB) $(shell find|grep '\.o$$' )
+	@#$(RANLIB) $(LIB)
+
 # Then set the last two preqrequisites for 'all'
 all: lib end_message
 
@@ -31,7 +42,6 @@ checksum:
 
 # This to make sure build time is always printed correctly
 initial_message:
-	@touch $(SOURCEC)
 	@echo ""
 	@echo "----- Compiling BOUT++ -----" 
 	@echo "CXX      = " $(CXX)

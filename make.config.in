@@ -30,7 +30,7 @@ CC                      = $(CXX)
 AR			= ar
 ARFLAGS                 = @ARFLAGS@
 RANLIB			= @RANLIB@
-MKDIR			= @MKDIR@
+MKDIR			= @MKDIR_P@
 
 ####################################################################
 # Do not need to alter anything below
@@ -77,16 +77,28 @@ endif
 ####################################################################
 
 # Phony targets since they are directory names
-.PHONY: $(DIRS) lib install
+.PHONY: $(DIRS) lib install libfast runtest
 
+ifneq ("$(TARGET)","libfast")
 all: $(BOUT_TOP)/config.status $(BOUT_TOP)/make.config $(DIRS) $(TARGET)
+else
+all: $(BOUT_TOP)/config.status $(BOUT_TOP)/make.config $(DIRS)
+endif
+libfast: $(BOUT_TOP)/config.status $(BOUT_TOP)/make.config $(DIRS)
 
 ####################################################################
 # Recursively run make through subdirs
 ####################################################################
 
+ifneq ("$(TARGET)" , "libfast")
 $(DIRS):
-	@$(MAKE) --no-print-directory -s -C $@ all
+	@#echo make $@ slowly TARGET $(TARGET)
+	@$(MAKE) -s --no-print-directory TARGET=lib -C $@ all
+else
+$(DIRS):
+	@#echo make $@ fast
+	@$(MAKE) -s --no-print-directory TARGET=$(TARGET) -C $@ $(TARGET)
+endif
 
 # Create 'lib' and 'include' incase they don't exist
 $(BOUT_TOP)/include $(BOUT_TOP)/lib:
@@ -97,7 +109,7 @@ $(BOUT_TOP)/include $(BOUT_TOP)/lib:
 ####################################################################
 prefix = @prefix@
 exec_prefix = @exec_prefix@
-install: all
+install: libfast
 	@$(MKDIR) $(DESTDIR)${prefix}
 	@$(MKDIR) $(DESTDIR)${prefix}/include
 	@$(MKDIR) $(DESTDIR)${prefix}/lib
@@ -112,7 +124,7 @@ install: all
 # into an executable
 ####################################################################
 
-ifeq ("$(TARGET)", "lib")
+#ifeq ("$(TARGET)", "lib")
 #BEGIN 'lib'
 
 ####################################################################
@@ -141,6 +153,8 @@ ifeq ("$(TARGET)", "lib")
 # Builds the library with $(OBJ) which is defined from the SOURCEC variable
 ####################################################################
 
+libfast: makefile $(BOUT_TOP)/make.config $(BOUT_TOP)/include $(OBJ) $(DIRS)
+
 lib: makefile $(BOUT_TOP)/make.config $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ)
 ifneq ("$(OBJ)foo", "foo")
 	@echo "Adding $(OBJ) to libbout++.a"
@@ -149,11 +163,12 @@ ifneq ("$(OBJ)foo", "foo")
 endif
 
 #END 'lib'
-else
+#else
 
 ifeq ("$(TARGET)", "sub")
 
 LIB=$(MODULE_DIR)/$(SUB_NAME).a
+endif
 
 sub: makefile $(BOUT_TOP)/make.config $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ)
 ifneq ("$(OBJ)foo", "foo")
@@ -162,9 +177,14 @@ ifneq ("$(OBJ)foo", "foo")
 	@$(RANLIB) $(LIB)
 endif
 
+runtest:
+	./runtest
 
 
-else
+ifneq ("$(TARGET)", "sub")
+ifneq ("$(TARGET)", "libfast")
+ifneq ("$(TARGET)", "lib")
+ifneq ("$(TARGET)", "runtest")
 
 ####################################################################
 # Make libbout++.a if it doesn't exist with the checklib target
@@ -191,7 +211,8 @@ ifneq ("$(CHANGED)foo", "foo")
 endif
 
 endif
-
+endif
+endif
 endif
 
 %.o: $(BOUT_TOP)/make.config %.cxx

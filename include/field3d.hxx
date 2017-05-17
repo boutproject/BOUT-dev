@@ -210,6 +210,19 @@ class Field3D : public Field, public FieldData {
   Field3D* timeDeriv();
 
   /*!
+   * Return the number of nx points
+   */
+  int getNx() const {return nx;};
+  /*!
+   * Return the number of nx points
+   */
+  int getNy() const {return ny;};
+  /*!
+   * Return the number of nx points
+   */
+  int getNz() const {return nz;};
+
+  /*!
    * Ensure that this field has separate fields
    * for yup and ydown.
    */
@@ -402,7 +415,7 @@ class Field3D : public Field, public FieldData {
   /////////////////////////////////////////////////////////
   // Operators
   
-  const Field3D operator+() {return *this;}
+  const Field3D operator+() const {return *this;}
   
   /// Assignment operators
   ///@{

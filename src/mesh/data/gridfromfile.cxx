@@ -22,7 +22,7 @@
  * format     Pointer to DataFormat. This will be deleted in
  *            destructor
  */
-GridFile::GridFile(DataFormat *format, const string gridfilename) : file(format), filename(gridfilename) {
+GridFile::GridFile(std::unique_ptr<DataFormat> format, const string gridfilename) : file(format.release()), filename(gridfilename) {
   TRACE("GridFile constructor");
   
   if (! file->openr(filename) ) {
@@ -35,7 +35,6 @@ GridFile::GridFile(DataFormat *format, const string gridfilename) : file(format)
 
 GridFile::~GridFile() {
   file->close();
-  delete file;
 }
 
 /*!
@@ -166,27 +165,65 @@ bool GridFile::get(Mesh *m, Field2D &var,   const string &name, BoutReal def) {
   int ys = m->OffsetY;
 
   // Index offsets into destination
-  int xd = 0;
-  int yd = m->ystart;
+  int xd = -1;
+  int yd = -1;
 
-  // Number of points to read
-  int nx = m->LocalNx;
-  int ny = m->yend - m->ystart + 1;
-  
-  for(int x=xs;x < xs+nx; x++) {
+  ///Ghost region widths.
+  int mxg = (m->LocalNx - (m->xend - m->xstart + 1)) / 2;
+  int myg = (m->LocalNy - (m->yend - m->ystart + 1)) / 2;
+  ///Check that ghost region widths are in fact integers
+  ASSERT1((m->LocalNx - (m->xend - m->xstart + 1)) % 2 == 0);
+  ASSERT1((m->LocalNy - (m->yend - m->ystart + 1)) % 2 == 0);
+
+  ///Global (x,y) dimensions of field
+  const vector<int> field_dimensions = file->getSize(name);
+
+  // Number of points to read.
+  int nx_to_read = -1;
+  int ny_to_read = -1;
+
+  ///Check if field dimensions are correct. x-direction
+  if (field_dimensions[0] == m->GlobalNx) { ///including ghostpoints
+    nx_to_read = m->LocalNx;
+    xd = 0;
+  } else if ( field_dimensions[0] == m->GlobalNx - 2*mxg ) {///including ghostpoints
+    nx_to_read = m->LocalNx - 2*mxg;
+    xd = mxg;
+  } else {
+    throw BoutException("Could not read '%s' from file: x-dimension = %i do neither match nx = %i"
+                "nor nx-2*mxg = %i ", name.c_str(), field_dimensions[0], m->GlobalNx, m->GlobalNx-2*mxg);
+  }
+
+  ///Check if field dimensions are correct. y-direction
+  if (field_dimensions[1] == m->GlobalNy) { ///including ghostpoints
+    ny_to_read = m->LocalNy;
+    yd = 0;
+  } else if ( field_dimensions[1] == m->GlobalNy - 2*myg ) {///including ghostpoints
+    ny_to_read = m->LocalNy - 2*myg;
+    yd = myg;
+  } else {
+    throw BoutException("Could not read '%s' from file: y-dimension = %i do neither match ny = %i"
+                "nor ny-2*myg = %i ", name.c_str(), field_dimensions[1], m->GlobalNy, m->GlobalNy-2*myg);
+  }
+
+  ///Now read data from file
+  for(int x=xs;x < xs+nx_to_read; x++) {
     file->setGlobalOrigin(x,ys,0);
-    if (!file->read(&var(x-xs+xd, yd), name, 1, ny) ) {
+    if (!file->read(&var(x-xs+xd, yd), name, 1, ny_to_read) ) {
       throw BoutException("Could not fetch data for '%s'", name.c_str());
     }
   }
-  // Upper and lower Y boundaries copied from nearest point
-  for(int x=0;x<m->LocalNx;x++) {
-    for(int y=0;y<m->ystart;y++)
-      var(x, y) = var(x, m->ystart);
-    for(int y=m->yend+1;y<m->LocalNy;y++)
-      var(x, y) = var(x, m->yend);
+
+  ///If field does not include ghost points in y-direction ->
+  ///Upper and lower Y boundaries copied from nearest point
+  if (field_dimensions[1] == m->GlobalNy - 2*myg ) {
+    for(int x=0;x<m->LocalNx;x++) {
+      for(int y=0;y<m->ystart;y++)
+        var(x, y) = var(x, m->ystart);
+      for(int y=m->yend+1;y<m->LocalNy;y++)
+        var(x, y) = var(x, m->yend);
+    }
   }
-  
   file->setGlobalOrigin();
   
   // Communicate to get guard cell data
@@ -261,9 +298,7 @@ bool GridFile::get(Mesh *m, Field3D &var,   const string &name, BoutReal def) {
 			       var) ) {
 	      throw BoutException("\tWARNING: Could not read '%s' from grid. Setting to zero\n", name.c_str());
       }
-    }
-    else
-    {
+    } else {
       // No Z size specified in file. Assume FFT format
       if (! readgrid_3dvar_fft(m, name,
 			      m->OffsetY,// Start reading at global index
@@ -375,9 +410,7 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const string &name,
   if (zperiod > maxmode) {
     // Domain is too small: Only DC
     output.write(" => Only reading n = 0 component\n");
-  }
-  else
-  {
+  } else {
     // Get maximum mode in the input which is a multiple of zperiod
     int mm = ((int) (maxmode/zperiod))*zperiod;
     if ( (ncz/2)*zperiod < mm )
@@ -385,9 +418,7 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const string &name,
     
     if (mm == zperiod) {
       output.write(" => Reading n = 0, %d\n", zperiod);
-    }
-    else
-    {
+    } else {
       output.write(" => Reading n = 0, %d ... %d\n", zperiod, mm);
     }
   }
@@ -419,9 +450,7 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const string &name,
         if (modenr <= maxmode) {
           // Have data for this mode
           fdata[i] = dcomplex(zdata[modenr*2 - 1], zdata[modenr*2]);
-        }
-        else
-        {
+        } else {
           fdata[i] = 0.0;
         }
       }

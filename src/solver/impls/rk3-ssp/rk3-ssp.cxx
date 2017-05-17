@@ -32,12 +32,12 @@ void RK3SSP::setMaxTimestep(BoutReal dt) {
   timestep = dt; // Won't be used this time, but next
 }
 
-int RK3SSP::init(bool restarting, int nout, BoutReal tstep) {
+int RK3SSP::init(int nout, BoutReal tstep) {
 
-  int msg_point = msg_stack.push("Initialising RK3 SSP solver");
+  TRACE("Initialising RK3 SSP solver");
   
   /// Call the generic initialisation first
-  if(Solver::init(restarting, nout, tstep))
+  if (Solver::init(nout, tstep))
     return 1;
   
   output << "\n\tRunge-Kutta 3rd-order SSP solver\n";
@@ -75,8 +75,6 @@ int RK3SSP::init(bool restarting, int nout, BoutReal tstep) {
   OPTION(options, max_timestep, tstep); // Maximum timestep
   OPTION(options, timestep, max_timestep); // Starting timestep
   OPTION(options, mxstep, 500); // Maximum number of steps between outputs
-
-  msg_stack.pop(msg_point);
 
   return 0;
 }

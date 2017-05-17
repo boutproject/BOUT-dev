@@ -96,7 +96,7 @@ PetscSolver::~PetscSolver() {
  * Initialise
  **************************************************************************/
 
-int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
+int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   PetscErrorCode  ierr;
   int             neq;
   int             mudq, mldq, mukeep, mlkeep;
@@ -106,9 +106,7 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
   MPI_Comm        comm = PETSC_COMM_WORLD;
   PetscMPIInt     rank;
 
-#ifdef CHECK
-  int msg_point = msg_stack.push("Initialising PETSc-3.5 solver");
-#endif
+  TRACE("Initialising PETSc-3.5 solver");
 
   PetscFunctionBegin;
   PetscLogEventRegister("PetscSolver::init",PETSC_VIEWER_CLASSID,&init_event);
@@ -116,7 +114,7 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
   PetscLogEventRegister("solver_f",PETSC_VIEWER_CLASSID,&solver_event);
 
   /// Call the generic initialisation first
-  Solver::init(restarting, NOUT, TIMESTEP);
+  Solver::init(NOUT, TIMESTEP);
 
   ierr = PetscLogEventBegin(init_event,0,0,0,0);CHKERRQ(ierr);
   output.write("Initialising PETSc-3.5 solver\n");
@@ -575,9 +573,6 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
   }
 
   ierr = PetscLogEventEnd(init_event,0,0,0,0);CHKERRQ(ierr);
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 
   PetscFunctionReturn(0);
 }
@@ -909,8 +904,6 @@ PetscErrorCode PetscMonitor(TS ts,PetscInt step,PetscReal t,Vec X,void *ctx) {
     ierr = VecRestoreArrayRead(interpolatedX,&x);CHKERRQ(ierr);
 
     if (s->call_monitors(simtime,i++,s->nout)) {
-      s->restart.write("%s/BOUT.final.%s", s->restartdir.c_str(), s->restartext.c_str());
-
       output.write("Monitor signalled to quit. Returning\n");
     }
 

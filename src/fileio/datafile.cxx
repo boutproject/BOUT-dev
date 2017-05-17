@@ -42,6 +42,8 @@
 #include <output.hxx>
 #include <boutcomm.hxx>
 #include <utils.hxx>
+#include <msg_stack.hxx>
+#include <cstring>
 #include "formatfactory.hxx"
 
 Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), floats(false), openclose(true), enabled(true), shiftOutput(false), file(nullptr) {
@@ -61,42 +63,64 @@ Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), f
   OPTION(opt, shiftOutput, false); //Do we want to write 3D fields in shifted space?
 }
 
-Datafile::Datafile(const Datafile &other) :
-  parallel(other.parallel), flush(other.flush), guards(other.guards), 
-  floats(other.floats), openclose(other.openclose), Lx(other.Lx), Ly(other.Ly), Lz(other.Lz), 
-  enabled(other.enabled), shiftOutput(other.shiftOutput), file(nullptr), int_arr(other.int_arr), 
-  BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr), 
+Datafile::Datafile(Datafile &&other) :
+  parallel(other.parallel), flush(other.flush), guards(other.guards),
+  floats(other.floats), openclose(other.openclose), Lx(other.Lx), Ly(other.Ly), Lz(other.Lz),
+  enabled(other.enabled), shiftOutput(other.shiftOutput), file(other.file.release()), int_arr(other.int_arr),
+  BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr),
   f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {
-  filenamelen=FILENAMELEN;
+  filenamelen=other.filenamelen;
+  filename=other.filename;
+  other.filenamelen=0;
+  other.filename=nullptr;
+  other.file = nullptr;
+}
+
+Datafile::Datafile(const Datafile &other) :
+  parallel(other.parallel), flush(other.flush), guards(other.guards),
+  floats(other.floats), openclose(other.openclose), Lx(other.Lx), Ly(other.Ly), Lz(other.Lz),
+  enabled(other.enabled), shiftOutput(other.shiftOutput), file(nullptr), int_arr(other.int_arr),
+  BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr),
+  f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {
+  filenamelen=other.filenamelen;
   filename=new char[filenamelen];
+  strncpy(filename,other.filename,filenamelen);
   // Same added variables, but the file not the same 
 }
 
-Datafile& Datafile::operator=(const Datafile &rhs) {
+
+Datafile& Datafile::operator=(Datafile &&rhs) {
   parallel     = rhs.parallel;
   flush        = rhs.flush;
   guards       = rhs.guards;
-  floats     = rhs.floats;
+  floats       = rhs.floats;
   openclose    = rhs.openclose;
   enabled      = rhs.enabled;
   init_missing = rhs.init_missing;
   shiftOutput  = rhs.shiftOutput;
-  file         = nullptr; // All values copied except this
+  file         = std::move(rhs.file);
+  rhs.file     = nullptr; // not needed?
   int_arr      = rhs.int_arr;
   BoutReal_arr = rhs.BoutReal_arr;
   f2d_arr      = rhs.f2d_arr;
   f3d_arr      = rhs.f3d_arr;
   v2d_arr      = rhs.v2d_arr;
   v3d_arr      = rhs.v3d_arr;
+  if (filenamelen < rhs.filenamelen){
+    delete[] filename;
+    filenamelen=rhs.filenamelen;
+    filename=new char[filenamelen];
+  }
+  strncpy(filename,rhs.filename,filenamelen);
   return *this;
 }
 
 Datafile::~Datafile() {
-  if (file != nullptr){
-    delete file;
-    file = nullptr;
+  if (filename != nullptr){
+    delete[] filename;
+    filename=nullptr;
+    filenamelen=0;
   }
-  delete[] filename;
 }
 
 bool Datafile::openr(const char *format, ...) {
@@ -226,7 +250,7 @@ void Datafile::close() {
     return;
   if(!openclose)
     file->close();
-  delete file;
+  // free:
   file = nullptr;
 }
 
@@ -238,82 +262,124 @@ void Datafile::setLowPrecision() {
 }
 
 void Datafile::add(int &i, const char *name, bool save_repeat) {
-  if(varAdded(string(name)))
-    throw BoutException("Variable '%s' already added to Datafile", name);
+  TRACE("DataFile::add(int)");
+  if (varAdded(string(name))) {
+    // Check if it's the same variable
+    if (&i == varPtr(string(name))) {
+      output.write("WARNING: variable '%s' added again to Datafile\n", name);
+    } else {
+      throw BoutException("Variable '%s' already added to Datafile", name);
+    }
+  }
 
   VarStr<int> d;
 
   d.ptr = &i;
   d.name = string(name);
   d.save_repeat = save_repeat;
-  
+
   int_arr.push_back(d);
 }
 
 void Datafile::add(BoutReal &r, const char *name, bool save_repeat) {
-  if(varAdded(string(name)))
-    throw BoutException("Variable '%s' already added to Datafile", name);
-  
+  TRACE("DataFile::add(BoutReal)");
+  if (varAdded(string(name))) {
+    // Check if it's the same variable
+    if (&r == varPtr(string(name))) {
+      output.write("WARNING: variable '%s' added again to Datafile\n", name);
+    } else {
+      throw BoutException("Variable '%s' already added to Datafile", name);
+    }
+  }
+
   VarStr<BoutReal> d;
 
   d.ptr = &r;
   d.name = string(name);
   d.save_repeat = save_repeat;
-  
+
   BoutReal_arr.push_back(d);
 }
 
 void Datafile::add(Field2D &f, const char *name, bool save_repeat) {
-  if(varAdded(string(name)))
-    throw BoutException("Variable '%s' already added to Datafile", name);
-  
+  TRACE("DataFile::add(Field2D)");
+  if (varAdded(string(name))) {
+    // Check if it's the same variable
+    if (&f == varPtr(string(name))) {
+      output.write("WARNING: variable '%s' added again to Datafile", name);
+    } else {
+      throw BoutException("Variable '%s' already added to Datafile", name);
+    }
+  }
+
   VarStr<Field2D> d;
 
   d.ptr = &f;
   d.name = string(name);
   d.save_repeat = save_repeat;
-  
+
   f2d_arr.push_back(d);
 }
 
 void Datafile::add(Field3D &f, const char *name, bool save_repeat) {
-  if(varAdded(string(name)))
-    throw BoutException("Variable '%s' already added to Datafile", name);
-  
+  TRACE("DataFile::add(Field3D)");
+  if (varAdded(string(name))) {
+    // Check if it's the same variable
+    if (&f == varPtr(string(name))) {
+      output.write("WARNING: variable '%s' added again to Datafile\n", name);
+    } else {
+      throw BoutException("Variable '%s' already added to Datafile", name);
+    }
+  }
+
   VarStr<Field3D> d;
 
   d.ptr = &f;
   d.name = string(name);
   d.save_repeat = save_repeat;
-  
+
   f3d_arr.push_back(d);
 }
 
 void Datafile::add(Vector2D &f, const char *name, bool save_repeat) {
-  if(varAdded(string(name)))
-    throw BoutException("Variable '%s' already added to Datafile", name);
-  
+  TRACE("DataFile::add(Vector2D)");
+  if (varAdded(string(name))) {
+    // Check if it's the same variable
+    if (&f == varPtr(string(name))) {
+      output.write("WARNING: variable '%s' added again to Datafile\n", name);
+    } else {
+      throw BoutException("Variable '%s' already added to Datafile", name);
+    }
+  }
+
   VarStr<Vector2D> d;
 
   d.ptr = &f;
   d.name = string(name);
   d.save_repeat = save_repeat;
   d.covar = f.covariant;
-  
+
   v2d_arr.push_back(d);
 }
 
 void Datafile::add(Vector3D &f, const char *name, bool save_repeat) {
-  if(varAdded(string(name)))
-    throw BoutException("Variable '%s' already added to Datafile", name);
-  
+  TRACE("DataFile::add(Vector3D)");
+  if (varAdded(string(name))) {
+    // Check if it's the same variable
+    if (&f == varPtr(string(name))) {
+      output.write("WARNING: variable '%s' added again to Datafile\n", name);
+    } else {
+      throw BoutException("Variable '%s' already added to Datafile", name);
+    }
+  }
+
   VarStr<Vector3D> d;
 
   d.ptr = &f;
   d.name = string(name);
   d.save_repeat = save_repeat;
   d.covar = f.covariant;
-  
+
   v3d_arr.push_back(d);
 }
 
@@ -432,10 +498,12 @@ bool Datafile::read() {
 bool Datafile::write() {
   if(!enabled)
     return true; // Just pretend it worked
-  
+
+  TRACE("Datafile::write()");
+
   if(!file)
     throw BoutException("Datafile::write: File is not valid!");
-  
+
   if(openclose) {
     // Open the file
     int MYPE;
@@ -537,13 +605,13 @@ bool Datafile::write(const char *format, ...) const {
 
   // Create a new datafile
   Datafile tmp(*this);
-  
+
   tmp.openw(filename);
   bool ret = tmp.write();
   tmp.close();
 
   delete[] filename;
-  
+
   return ret;
 }
 
@@ -635,22 +703,24 @@ bool Datafile::write_real(const string &name, BoutReal *f, bool save_repeat) {
 }
 
 bool Datafile::write_f2d(const string &name, Field2D *f, bool save_repeat) {
-  if(!f->isAllocated())
-    throw BoutException("Datafile::write_f2d: Field2D is not allocated!");
-  
-  if(save_repeat) {
-    if (!file->write_rec(&((*f)(0,0)), name, mesh->LocalNx, mesh->LocalNy))
-      throw BoutException("Datafile::write_f2d: Failed to write %s!",name.c_str());
-  }else {
-    if (!file->write(&((*f)(0,0)), name, mesh->LocalNx, mesh->LocalNy))
-      throw BoutException("Datafile::write_f2d: Failed to write %s!",name.c_str());
+  if (!f->isAllocated()) {
+    throw BoutException("Datafile::write_f2d: Field2D '%s' is not allocated!", name.c_str());
+  }
+  if (save_repeat) {
+    if (!file->write_rec(&((*f)(0, 0)), name, mesh->LocalNx, mesh->LocalNy)) {
+      throw BoutException("Datafile::write_f2d: Failed to write %s!", name.c_str());
+    }
+  } else {
+    if (!file->write(&((*f)(0, 0)), name, mesh->LocalNx, mesh->LocalNy)) {
+      throw BoutException("Datafile::write_f2d: Failed to write %s!", name.c_str());
+    }
   }
   return true;
 }
 
 bool Datafile::write_f3d(const string &name, Field3D *f, bool save_repeat) {
-  if(!f->isAllocated()) {
-    throw BoutException("Datafile::write_f3d: Field3D is not allocated!");
+  if (!f->isAllocated()) {
+    throw BoutException("Datafile::write_f3d: Field3D '%s' is not allocated!", name.c_str());
   }
 
   //Deal with shifting the output
@@ -699,4 +769,43 @@ bool Datafile::varAdded(const string &name) {
       return true;
   }
   return false;
+}
+
+void *Datafile::varPtr(const string &name) {
+  for (const auto &var : int_arr) {
+    if (name == var.name) {
+      return static_cast<void *>(var.ptr);
+    }
+  }
+
+  for (const auto &var : BoutReal_arr) {
+    if (name == var.name) {
+      return static_cast<void *>(var.ptr);
+    }
+  }
+
+  for (const auto &var : f2d_arr) {
+    if (name == var.name) {
+      return static_cast<void *>(var.ptr);
+    }
+  }
+
+  for (const auto &var : f3d_arr) {
+    if (name == var.name) {
+      return static_cast<void *>(var.ptr);
+    }
+  }
+
+  for (const auto &var : v2d_arr) {
+    if (name == var.name) {
+      return static_cast<void *>(var.ptr);
+    }
+  }
+
+  for (const auto &var : v3d_arr) {
+    if (name == var.name) {
+      return static_cast<void *>(var.ptr);
+    }
+  }
+  return nullptr;
 }
