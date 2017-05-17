@@ -128,7 +128,7 @@ public:
   
   /// Assignment from a 2D field. Shorthand for a gather, and must be called on all processors
   /// The scatter assignment operator needs to be a member of Field2D.
-  GlobalField& operator=(const Field2D &rhs) {
+  GlobalField2D& operator=(const Field2D &rhs) {
     gather(rhs);
     return *this;
   }

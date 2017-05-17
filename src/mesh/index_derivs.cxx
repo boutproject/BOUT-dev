@@ -711,36 +711,24 @@ bool isImplemented(DiffLookup* table, DIFF_METHOD method) {
 /// This function is used during initialisation only (i.e. doesn't need to be particularly fast)
 /// Returns DIFF_METHOD, rather than function so can be applied to central and upwind tables
 DIFF_METHOD lookupFunc(DiffLookup *table, const string &label) {
-  DIFF_METHOD matchtype; // code which matches just the first letter ('C', 'U' or 'W')
 
   if(label.empty())
     return table[0].method;
 
-  matchtype = DIFF_DEFAULT;
-
   // Loop through the name lookup table
-  int i = 0;
-  do {
-    if((toupper(DiffNameTable[i].label[0]) == toupper(label[0])) && isImplemented(table, DiffNameTable[i].method)) {
-      matchtype = DiffNameTable[i].method;
-
-      if(strcasecmp(label.c_str(), DiffNameTable[i].label) == 0) {// Whole match
-	return matchtype;
-      }
+  for (int i = 0; DiffNameTable[i].method != DIFF_DEFAULT ; ++i ){
+    if(strcasecmp(label.c_str(), DiffNameTable[i].label) == 0) {// Whole match
+      return  DiffNameTable[i].method;
     }
-    i++;
-  }while(DiffNameTable[i].method != DIFF_DEFAULT);
+  }
   
-  // No exact match, so return matchtype.
-
-  if(matchtype == DIFF_DEFAULT) {
-    // No type match either. Return the first value in the table
-    matchtype = table[0].method;
-    output << " No match for '" << label << "' -> ";
-  }else
-    output << " Type match for '" << label << "' ->";
-
-  return matchtype;
+  // No exact match, so throw
+  std::string avail{};
+  for (int i = 0; DiffNameTable[i].method != DIFF_DEFAULT ; ++i ){
+    avail += DiffNameTable[i].label;
+    avail += "\n";
+  }
+  throw BoutException("Unknown option %s.\nAvailable options are:\n%s",label.c_str(),avail.c_str());
 }
 
 void printFuncName(DIFF_METHOD method) {
@@ -1000,6 +988,9 @@ void Mesh::derivs_init(Options* options) {
 // X derivative
 
 const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc) {
+  if (var.getNx() == 1){
+    return 0.;
+  }
   Field2D result;
   result.allocate(); // Make sure data allocated
 
@@ -1076,6 +1067,9 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
 }
 
 const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc) {
+  if (var.getNx() == 1){
+    return 0.;
+  }
   Field3D result;
   result.allocate(); // Make sure data allocated
 
@@ -1160,6 +1154,9 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
 // Y derivative
 
 const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc) {
+  if (var.getNy() == 1){
+    return 0.;
+  }
   Field2D result;
   result.allocate(); // Make sure data allocated
   
@@ -1236,6 +1233,9 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
 }
 
 const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc) {
+  if (var.getNy() == 1){
+    return 0.;
+  }
   Field3D result;
   result.allocate(); // Make sure data allocated
   

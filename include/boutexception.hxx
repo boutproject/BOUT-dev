@@ -7,11 +7,11 @@ class BoutException;
 #include <exception>
 #include <string>
 
-using namespace std;
+using std::string;
 
 void BoutParallelThrowRhsFail(int &status, const char* message);
 
-class BoutException : public exception {
+class BoutException : public std::exception {
 public:
   BoutException(const char *, ...);
   BoutException(const std::string);

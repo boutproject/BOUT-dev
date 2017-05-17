@@ -42,7 +42,6 @@ class Options;
 #include "bout_types.hxx"
 
 #include <map>
-using std::map;
 #include <string>
 using std::string;
 
@@ -143,14 +142,10 @@ public:
 
   /// Print the options which haven't been used
   void printUnused();
- private:
-  static Options *root; ///< Only instance of the root section
-  
-  Options *parent;
-  string sectionName; // section name (if any), for logging only
 
+  
   /*!
-   * Private class, used to store values, together with
+   * Class used to store values, together with
    * information about their origin and usage
    */
   struct OptionValue {
@@ -159,8 +154,19 @@ public:
     bool used;         // Set to true when used
   };
   
-  map<string, OptionValue> options;
-  map<string, Options*> sections;
+  /// Read-only access to internal options and sections
+  /// to allow iteration over the tree
+  const std::map<string, OptionValue>& values() const {return options;}
+  const std::map<string, Options*>& subsections() const {return sections;}
+  
+ private:
+  static Options *root; ///< Only instance of the root section
+  
+  Options *parent;
+  string sectionName; // section name (if any), for logging only
+  
+  std::map<string, OptionValue> options;
+  std::map<string, Options*> sections;
 };
 
 /// Define for reading options which passes the variable name

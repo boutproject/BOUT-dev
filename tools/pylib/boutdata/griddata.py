@@ -7,7 +7,7 @@ except ImportError:
     print("ERROR: restart module needs DataFile")
     raise
 
-from numpy import ndarray, zeros
+from numpy import ndarray, zeros, concatenate
 
 def slice(infile, outfile, region = None, xind=None, yind=None):
     """
@@ -161,7 +161,8 @@ import matplotlib.pyplot as plt
 from numpy import linspace, amin, amax
 
 def gridcontourf(grid, data2d, nlevel=31, show=True, mind=None, maxd=None, cmap=None, ax=None,
-                 xlabel="Major radius [m]", ylabel="Height [m]"):
+                 xlabel="Major radius [m]", ylabel="Height [m]",
+                 separatrix=False):
     """
     Plots a 2D contour plot, taking into account branch cuts (X-points).
     
@@ -173,6 +174,8 @@ def gridcontourf(grid, data2d, nlevel=31, show=True, mind=None, maxd=None, cmap=
     nlevel - Number of levels in the contour plot
     mind   - Minimum data level
     maxd   - Maximum data level
+    
+    separatrix  - Add separatrix
     """
 
     if cmap is None:
@@ -298,6 +301,23 @@ def gridcontourf(grid, data2d, nlevel=31, show=True, mind=None, maxd=None, cmap=
         ax.set_xlabel(xlabel)
     if ylabel is not None:
         ax.set_ylabel(ylabel)
+
+    if separatrix: 
+        # Plot separatrix
+        
+        # Lower X-point location
+        Rx = 0.125*(R[ix1-1,j11] + R[ix1,j11] + R[ix1,j11+1] + R[ix1-1,j11+1]
+                    + R[ix1-1,j22+1] + R[ix1,j22+1] + R[ix1,j22] + R[ix1-1,j22])
+        Zx = 0.125*(Z[ix1-1,j11] + Z[ix1,j11] + Z[ix1,j11+1] + Z[ix1-1,j11+1]
+                    + Z[ix1-1,j22+1] + Z[ix1,j22+1] + Z[ix1,j22] + Z[ix1-1,j22])
+        # Lower inner leg
+        ax.plot( concatenate( (0.5*(R[ix1-1,0:(j11+1)] + R[ix1,0:(j11+1)]), [Rx]) ), concatenate( (0.5*(Z[ix1-1,0:(j11+1)] + Z[ix1,0:(j11+1)]), [Zx]) ), 'k-')
+        # Lower outer leg
+        ax.plot( concatenate( ([Rx],0.5*(R[ix1-1,(j22+1):] + R[ix1,(j22+1):])) ), concatenate( ([Zx], 0.5*(Z[ix1-1,(j22+1):] + Z[ix1,(j22+1):])) ), 'k-')
+        # Core
+        
+        ax.plot( concatenate( ([Rx], 0.5*(R[ix1-1,(j11+1):(j21+1)] + R[ix1,(j11+1):(j21+1)]), 0.5*(R[ix1-1,(j12+1):(j22+1)] + R[ix1,(j12+1):(j22+1)]), [Rx]) ),
+                 concatenate( ([Zx], 0.5*(Z[ix1-1,(j11+1):(j21+1)] + Z[ix1,(j11+1):(j21+1)]), 0.5*(Z[ix1-1,(j12+1):(j22+1)] + Z[ix1,(j12+1):(j22+1)]), [Zx]) ), 'k-')
     if show:
       plt.show()
       

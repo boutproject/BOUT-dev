@@ -67,6 +67,7 @@ const char DEFAULT_OPT[] = "BOUT.inp";
 using std::string;
 using std::list;
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #ifdef _OPENMP
@@ -169,6 +170,17 @@ int BoutInitialise(int &argc, char **&argv) {
     }
   }
 
+  // Check that data_dir exists. We do not check whether we can write, as it is
+  // sufficient that the files we need are writeable ...
+  struct stat test;
+  if (stat(data_dir, &test) == 0){
+    if (!S_ISDIR(test.st_mode)){
+      throw BoutException("DataDir \"%s\" is not a directory\n",data_dir);
+    }
+  } else {
+    throw BoutException("DataDir \"%s\" does not exist or is not accessible\n",data_dir);
+  }
+
   // Set options
   Options::getRoot()->set("datadir", string(data_dir));
   Options::getRoot()->set("optionfile", string(opt_file));
@@ -260,6 +272,9 @@ int BoutInitialise(int &argc, char **&argv) {
 
     // Get options override from command-line
     reader->parseCommandLine(options, argc, argv);
+
+    // Save settings
+    reader->write(options, "%s/BOUT.settings", data_dir);
   }catch(BoutException &e) {
     output << "Error encountered during initialisation\n";
     output << e.what() << endl;
@@ -326,6 +341,19 @@ int bout_run(Solver *solver, rhsfunc physics_run) {
 }
 
 int BoutFinalise() {
+
+  // Output the settings, showing which options were used
+  // This overwrites the file written during initialisation
+  try {
+    string data_dir;
+    Options::getRoot()->get("datadir", data_dir, "data");
+
+    OptionsReader *reader = OptionsReader::getInstance();
+    reader->write(Options::getRoot(), "%s/BOUT.settings", data_dir.c_str());
+  }catch(BoutException &e) {
+    output << "Error whilst writing settings" << endl;
+    output << e.what() << endl;
+  }
   
   // Delete the mesh
   delete mesh;

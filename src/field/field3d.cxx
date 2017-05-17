@@ -182,11 +182,14 @@ void Field3D::splitYupYdown() {
 void Field3D::mergeYupYdown() {
   TRACE("Field3D::mergeYupYdown");
   
-  if(yup_field == this)
+  if(yup_field == this && ydown_field == this)
     return;
 
-  if(yup_field != nullptr) {
+  if(yup_field != nullptr){
     delete yup_field;
+  }
+
+  if(ydown_field != nullptr) {
     delete ydown_field;
   }
 
@@ -336,7 +339,7 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
   return *this;
 }
 
-Field3D & Field3D::operator=(const FieldPerp &rhs) {
+void Field3D::operator=(const FieldPerp &rhs) {
   ASSERT1(rhs.isAllocated());
   
   /// Make sure there's a unique array to copy data into
@@ -346,11 +349,9 @@ Field3D & Field3D::operator=(const FieldPerp &rhs) {
   for(auto i : rhs) {
     (*this)[i] = rhs[i];
   }
-
-  return *this;
 }
 
-const bvalue & Field3D::operator=(const bvalue &bv) {
+void Field3D::operator=(const bvalue &bv) {
   TRACE("Field3D = bvalue");
   
   allocate();
@@ -362,11 +363,9 @@ const bvalue & Field3D::operator=(const bvalue &bv) {
 #endif
 
   operator()(bv.jx, bv.jy,bv.jz) = bv.val;
-  
-  return bv;
 }
 
-BoutReal Field3D::operator=(const BoutReal val) {
+Field3D & Field3D::operator=(const BoutReal val) {
   TRACE("Field3D = BoutReal");
   allocate();
 
@@ -381,7 +380,7 @@ BoutReal Field3D::operator=(const BoutReal val) {
   //location = CELL_CENTRE;
   // DON'T RE-SET LOCATION
 
-  return val;
+  return *this;
 }
 
 /***************************************************************
@@ -525,8 +524,13 @@ void Field3D::setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
   fval.c = (*this)(bx.jx,bx.jy,bx.jz);
   fval.p = yup()(bx.jx,bx.jyp,bx.jz);
   fval.m = ydown()(bx.jx,bx.jym,bx.jz);
-  fval.pp = nan("");
-  fval.mm = nan("");
+  if (yup_field == this && ydown_field == this){
+    fval.pp = (*this)(bx.jx,bx.jy2p,bx.jz);
+    fval.pp = (*this)(bx.jx,bx.jy2m,bx.jz);
+  } else {
+    fval.pp = nan("");
+    fval.mm = nan("");
+  }
 
   if(mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
     // Non-centred stencil

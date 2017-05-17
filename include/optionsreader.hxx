@@ -64,6 +64,12 @@ class OptionsReader {
   /// @param[in] file  The name of the file. printf style arguments can be used to create the file name.
   void read(Options *options, const char *file, ...);
 
+  /// Write options to file
+  ///
+  /// @param[in] options  The options tree to be written
+  /// @param[in] file   The name of the file to (over)write
+  void write(Options *options, const char *file, ...);
+  
   /// Parse options from the command line
   ///
   /// @param[inout] options The options section to insert values and subsections into

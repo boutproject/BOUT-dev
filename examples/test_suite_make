@@ -12,12 +12,17 @@ from __future__ import print_function
 import os
 from boututils.run_wrapper import shell
 
-# List of directories containing test cases
-tests = ['test-io', 'test-field', 'test-fieldfactory', 'test-laplace', 
-         "test-cyclic", "test-invpar", "test-smooth", "test-gyro",
-         "test-delp2", "test-minmax",
-         "MMS/diffusion","MMS/wave-1d",
-         "drift-instability", 'interchange-instability']
+# Get list of directories containing test cases
+tests=[]
+with open('test_suite_list') as testfile:
+    for test in testfile:
+        test=test.strip()
+        if test.startswith("#"):
+            pass
+        elif test.startswith("!"):
+            pass
+        else:
+            tests.append(test)
 
 ##################################################################
 

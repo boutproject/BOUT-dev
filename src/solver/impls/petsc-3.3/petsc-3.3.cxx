@@ -84,7 +84,7 @@ PetscSolver::~PetscSolver() {
  * Initialise
  **************************************************************************/
 
-int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
+int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   PetscErrorCode  ierr;
   int             neq;
   int             mudq, mldq, mukeep, mlkeep;
@@ -104,7 +104,7 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
   PetscLogEventRegister("solver_f",PETSC_VIEWER_CLASSID,&solver_event);
 
   /// Call the generic initialisation first
-  Solver::init(restarting, NOUT, TIMESTEP);
+  Solver::init(NOUT, TIMESTEP);
 
   ierr = PetscLogEventBegin(init_event,0,0,0,0);CHKERRQ(ierr);
   output.write("Initialising PETSc-3.3 solver\n");

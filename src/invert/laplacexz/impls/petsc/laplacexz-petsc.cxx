@@ -362,6 +362,9 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
 
     Coordinates *coords = mesh->coordinates();
 
+    // NOTE: For now the X-Z terms are omitted, so check that they are small
+    ASSERT2(max(abs(coords->g13)) < 1e-5);
+    
     for(int x=mesh->xstart; x <= mesh->xend; x++) {
       for(int z=0; z < mesh->LocalNz; z++) {
         // stencil entries

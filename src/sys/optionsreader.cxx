@@ -1,5 +1,7 @@
 #include <optionsreader.hxx>
 #include <boutexception.hxx>
+#include <msg_stack.hxx>
+#include <bout/assert.hxx>
 #include <utils.hxx>
 
 // Interface for option file parsers
@@ -32,6 +34,26 @@ void OptionsReader::read(Options *options, const char *file, ...) {
   OptionParser *parser = new OptionINI();
 
   parser->read(options, filename);
+
+  delete[] filename;
+  delete parser;
+}
+
+void OptionsReader::write(Options *options, const char *file, ...) {
+  TRACE("OptionsReader::write");
+  ASSERT0(file != nullptr);
+
+  int buf_len=512;
+  char * filename=new char[buf_len];
+
+  bout_vsnprintf(filename,buf_len, file);
+  
+  output.write("Writing options to file %s\n", filename);
+
+  // Need to decide what file format to use
+  OptionParser *parser = new OptionINI();
+
+  parser->write(options, filename);
 
   delete[] filename;
   delete parser;

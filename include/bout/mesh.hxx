@@ -300,7 +300,7 @@ class Mesh {
   /// @param[in] tag     A label for the communication. Must be the same as sent
   virtual comm_handle irecvXIn(BoutReal *buffer, int size, int tag) = 0;
 
-  DEPRECATED(MPI_Comm getXcomm()) {return getXcomm(0);} ///< Return communicator containing all processors in X
+  MPI_Comm getXcomm() {return getXcomm(0);} ///< Return communicator containing all processors in X
   virtual MPI_Comm getXcomm(int jy) const = 0; ///< Return X communicator
   virtual MPI_Comm getYcomm(int jx) const = 0; ///< Return Y communicator
   
@@ -318,10 +318,10 @@ class Mesh {
   virtual int ySize(int jx) const; ///< The number of points in Y at fixed X index \p jx
 
   // Y communications
-  virtual bool firstY() = 0; ///< Is this processor first in Y? i.e. is there a boundary at lower Y?
-  virtual bool lastY() = 0; ///< Is this processor last in Y? i.e. is there a boundary at upper Y?
-  virtual bool firstY(int xpos) = 0; ///< Is this processor first in Y? i.e. is there a boundary at lower Y?
-  virtual bool lastY(int xpos) = 0; ///< Is this processor last in Y? i.e. is there a boundary at upper Y?
+  virtual bool firstY() const = 0; ///< Is this processor first in Y? i.e. is there a boundary at lower Y?
+  virtual bool lastY() const = 0; ///< Is this processor last in Y? i.e. is there a boundary at upper Y?
+  virtual bool firstY(int xpos) const = 0; ///< Is this processor first in Y? i.e. is there a boundary at lower Y?
+  virtual bool lastY(int xpos) const = 0; ///< Is this processor last in Y? i.e. is there a boundary at upper Y?
   virtual int UpXSplitIndex() = 0;  ///< If the upper Y guard cells are split in two, return the X index where the split occurs
   virtual int DownXSplitIndex() = 0; ///< If the lower Y guard cells are split in two, return the X index where the split occurs
 
@@ -372,6 +372,12 @@ class Mesh {
 
   /// Iterate over the upper Y boundary
   virtual const RangeIterator iterateBndryUpperY() const = 0;
+  virtual const RangeIterator iterateBndryLowerOuterY() const = 0;
+  virtual const RangeIterator iterateBndryLowerInnerY() const = 0;
+  virtual const RangeIterator iterateBndryUpperOuterY() const = 0;
+  virtual const RangeIterator iterateBndryUpperInnerY() const = 0;
+
+
   
   bool hasBndryLowerY(); ///< Is there a boundary on the lower guard cells in Y?
   bool hasBndryUpperY(); ///< Is there a boundary on the upper guard cells in Y?

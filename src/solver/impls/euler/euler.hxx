@@ -43,9 +43,9 @@ class EulerSolver : public Solver {
   void setMaxTimestep(BoutReal dt);
   BoutReal getCurrentTimestep() {return timestep; }
   
-  int init(bool restarting, int nout, BoutReal tstep);
+  int init(int nout, BoutReal tstep) override;
   
-  int run();
+  int run() override;
  private:
   int mxstep; // Maximum number of internal steps between outputs
   BoutReal cfl_factor; // Factor by which timestep must be smaller than maximum
