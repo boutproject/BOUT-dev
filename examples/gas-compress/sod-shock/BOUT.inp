@@ -1,0 +1,88 @@
+# settings file for BOUT++
+#
+# Sod shock problem in 1D
+#
+
+##################################################
+# settings used by the core code
+
+NOUT = 20       # number of time-steps
+TIMESTEP = 1.0e-2   # time between outputs
+
+MZ = 1
+
+MXG = 2
+MYG = 2
+
+grid="sod.grd.nc"  # Grid file
+
+StaggerGrids = false
+
+##################################################
+# derivative methods
+
+[mesh:ddx]
+
+first = C4  # order of first x derivatives (options are 2 or 4)
+second = C4 # order of second x derivatives (2 or 4)
+upwind = U1 # order of upwinding method (1, 4, or 0 = TVD)
+
+[mesh:ddy]
+
+first = C2
+second = C2
+upwind = U1
+flux = split
+
+[mesh:ddz]
+
+first = C4
+second = C2
+upwind = U1
+
+##################################################
+# Solver settings
+
+[solver]
+
+# mudq, mldq, mukeep, mlkeep preconditioner options
+ATOL = 1.0e-10 # absolute tolerance
+RTOL = 1.0e-5  # relative tolerance
+
+##################################################
+# settings for gas_compress
+
+[gas]
+
+include_viscosity = false
+viscosity = 0.0
+
+v0_multiply = -1.0
+
+[All]
+scale = 0.0 # default size of initial perturbations
+
+# form of initial profile:
+# 0 - constant
+# 1 - Gaussian
+# 2 - Sinusoidal
+# 3 - Mix of mode numbers (like original BOUT)
+
+xs_opt = 0
+
+ys_opt = 1
+zs_opt = 2
+
+ys_s0 = 0.5
+ys_wd = 0.1
+
+zs_mode = 1 # toroidal mode number
+
+# Boundary conditions
+# dirichlet = zero value
+# neumann = zero gradient
+
+bndry_all = neumann # Set all boundaries to Neumann
+bndry_target = neumann_2ndorder
+
+[density]

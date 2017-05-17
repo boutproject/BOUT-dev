@@ -52,7 +52,7 @@ void InterpolationFactory::cleanup() {
 
   // Just delete the instance
   delete instance;
-  instance == nullptr;
+  instance = nullptr;
 }
 
 /**

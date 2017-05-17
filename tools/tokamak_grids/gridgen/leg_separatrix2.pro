@@ -5,8 +5,12 @@
 ; return lines between the x-point and boundary
 ;
 ; INPUTS
-; R, Z  
 ;
+; interp_data   Input to local_gradient, describes interpolation
+; R, Z          1D arrays of major radius, height [m]
+; xpt_ri, xpt_zi   Indices of the X-point into R and Z arrays
+; opt_ri, opt_zi   Indices of the primary O-point into R and Z arrays
+; 
 ; OPTIONAL INPUTS
 ; 
 ; boundary (in)  Optional 2D array [2,n] of points on the boundary
@@ -47,7 +51,7 @@ FUNCTION leg_separatrix2, interp_data, R, Z, xpt_ri, xpt_zi, $
   ncore = 0
   npf = 0
 
-  ; Find where the separatrix intersects the circle
+  ; Find where the separatrix intersects a circle around the X-point
   FOR i=0, nsep-1 DO BEGIN
     sep_ri = REFORM(xy[0,info[i].offset:(info[i].offset+info[i].n-1)])
     sep_zi = REFORM(xy[1,info[i].offset:(info[i].offset+info[i].n-1)])

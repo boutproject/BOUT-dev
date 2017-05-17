@@ -1,0 +1,99 @@
+# settings file for BOUT++
+#
+# Simple 1D advection test case
+#
+
+##################################################
+# settings used by the core code
+
+NOUT = 20       # number of time-steps
+TIMESTEP = 0.05   # time between outputs
+
+MXG = 0   # Guard cells in X
+MYG = 2   # Guard cells in Y
+
+[mesh]
+
+ixseps1 = 5
+ixseps2 = 5
+
+nx = 1
+ny = 128
+nz = 1
+
+dx = 1.
+dy = 1 / ny 
+dz = 1
+
+vy = 1.
+pressure = 0.6
+density = 1.0 + H(y - pi/2)*H(3*pi/2 - y)
+
+##################################################
+# derivative methods
+
+[mesh:ddx]
+
+first = C4  # order of first x derivatives (options are 2 or 4)
+second = C4 # order of second x derivatives (2 or 4)
+upwind = U1 # order of upwinding method (1, 4, or 0 = TVD)
+
+[mesh:ddy]
+
+first = C2
+second = C2
+upwind = U1
+
+[mesh:ddz]
+
+first = C4
+second = C2
+upwind = U1
+
+##################################################
+# Solver settings
+
+[solver]
+
+# mudq, mldq, mukeep, mlkeep preconditioner options
+ATOL = 1.0e-10 # absolute tolerance
+RTOL = 1.0e-5  # relative tolerance
+
+##################################################
+# settings for gas_compress
+
+[gas]
+
+include_viscosity = false
+viscosity = 0.0
+
+v0_multiply = -1.0
+
+[All]
+scale = 0.0 # default size of initial perturbations
+
+# form of initial profile:
+# 0 - constant
+# 1 - Gaussian
+# 2 - Sinusoidal
+# 3 - Mix of mode numbers (like original BOUT)
+
+xs_opt = 0
+
+ys_opt = 1
+zs_opt = 2
+
+ys_s0 = 0.5
+ys_wd = 0.1
+
+zs_mode = 1 # toroidal mode number
+
+# Boundary conditions
+# dirichlet = zero value
+# neumann = zero gradient
+
+bndry_all = neumann # Set all boundaries to Neumann
+
+[density]
+scale = 0.5
+

@@ -130,7 +130,7 @@ int physics_init(bool restarting) {
     evolve_ajpar = false; // Don't need ajpar - calculated from ohm's law
 
   /************* SHIFTED RADIAL COORDINATES ************/
-bool ShiftXderivs;
+  bool ShiftXderivs;
   globalOptions->get("shiftXderivs", ShiftXderivs, false); // Read global flag
   if(ShiftXderivs) {
     ShearFactor = 0.0;  // I disappears from metric

@@ -44,15 +44,16 @@ class OptionParser;
 
 #include "bout_types.hxx"
 #include "options.hxx"
-
-using namespace std;
+#include <boutexception.hxx>
 
 class OptionParser {
  public:
   OptionParser() {}
   virtual ~OptionParser() {}
-  
-  virtual void read(Options *options, const string &filename) = 0;
+
+  virtual void read(Options *options, const std::string &filename) = 0;
+
+  virtual void write(Options *options, const std::string &filename) = 0;
  private:
 };
 

@@ -112,7 +112,7 @@ InvertParHypre::InvertParHypre(Mesh *mi) {
     HYPRE_StructGridAssemble(grid[surf->xpos]);
     
     // Set up the matrices, one for each k
-    int nk = (m->localNz)/2 + 1;
+    int nk = (m->LocalNz)/2 + 1;
     
     int stencil_indices[5] = {0,1,2,3,4}; // Labels for stencil entries
     int *values = new int[nyloc * 5];

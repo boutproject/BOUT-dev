@@ -232,9 +232,9 @@ BoutReal FieldMixmode::genRand(BoutReal seed) {
   // Round the seed to get the number of iterations
   int niter = 11 + (23 + ROUND(seed)) % 79;
 
-  // Start x between 0 and 1
+  // Start x between 0 and 1 (exclusive)
   const BoutReal A = 0.01, B = 1.23456789;
-  BoutReal x = (A + fmod(seed,B)) / (B - 2.*A);
+  BoutReal x = (A + fmod(seed,B)) / (B + 2.*A);
 
   // Iterate logistic map
   for(int i=0;i!=niter;++i)
@@ -274,7 +274,7 @@ BoutReal FieldTanhHat::generate(double x, double y, double z, double t) {
   BoutReal c = center   ->generate(0,0,0,0);
   BoutReal s = steepness->generate(0,0,0,0);
   return 0.5*(
-                 tanh(  s*(X->generate(x,y,z,t) - (c - 0.5*w)) )
-               + tanh( -s*(X->generate(x,y,z,t) - (c + 0.5*w)) )
+                 tanh( s*(X->generate(x,y,z,t) - (c - 0.5*w)) )
+               - tanh( s*(X->generate(x,y,z,t) - (c + 0.5*w)) )
              );
 }

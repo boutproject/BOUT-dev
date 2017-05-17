@@ -13,7 +13,7 @@ public:
   /// Return a pointer to the only instance
   static FormatFactory* getInstance();
   
-  DataFormat* createDataFormat(const char *filename = NULL, bool parallel=true);
+  std::unique_ptr<DataFormat> createDataFormat(const char *filename = NULL, bool parallel=true);
 private:
   static FormatFactory* instance; ///< The only instance of this class (Singleton)
   

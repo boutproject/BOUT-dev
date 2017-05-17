@@ -1,9 +1,8 @@
 /**
- * @file	BoutIfc.hxx
+ * @file	bout_facets.hxx
  *
  * @brief	BOUT++ object implemented through C++
  *
- * @version	$Id: BoutIfc.hxx 1389 2010-06-29 15:27:44Z sveta $
  */
 
 #ifndef BOUT_IFC

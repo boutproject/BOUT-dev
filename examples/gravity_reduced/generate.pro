@@ -488,7 +488,7 @@ PRO generate
     
     status = file_write(fp, "nx", nx)
     status = file_write(fp, "ny", ny)
-    status = file_write(fp, "nz", nz)
+;    status = file_write(fp, "nz", nz) ; Don't write nz if using FFT in Z
     
     status = file_write(fp, "dx", dx)
     status = file_write(fp, "dy", dy)

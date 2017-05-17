@@ -67,7 +67,7 @@ PvodeSolver::~PvodeSolver() {
  * Initialise
  **************************************************************************/
 
-int PvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
+int PvodeSolver::init(int nout, BoutReal tstep) {
   int mudq, mldq, mukeep, mlkeep;
   boole optIn;
   int i;
@@ -81,7 +81,7 @@ int PvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
   int msg_point = msg_stack.push("Initialising PVODE solver");
 
   /// Call the generic initialisation first
-  if(Solver::init(restarting, nout, tstep))
+  if(Solver::init(nout, tstep))
     return 1;
   
   // Save nout and tstep for use in run
@@ -307,7 +307,7 @@ void PvodeSolver::rhs(int N, BoutReal t, BoutReal *udata, BoutReal *dudata) {
   load_vars(udata);
 
   // Call function
-  int flag = run_rhs(t);
+  run_rhs(t);
 
   // Save derivatives to CVODE
   save_derivs(dudata);
@@ -328,7 +328,7 @@ void PvodeSolver::gloc(int N, BoutReal t, BoutReal *udata, BoutReal *dudata) {
   load_vars(udata);
 
   // Call function
-  int flag = run_rhs(t);
+  run_rhs(t);
 
   // Save derivatives to CVODE
   save_derivs(dudata);

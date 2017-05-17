@@ -1,0 +1,21 @@
+nout = 10
+timestep = 0.1
+
+mxg = 0
+myg = 0
+
+[mesh]
+nx = 1
+ny = 1
+nz = 1
+
+[solver]
+rtol = 1e-14
+atol = 1e-18
+
+[f3d]
+function = 1
+
+[f2d]
+function = 1
+

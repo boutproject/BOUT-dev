@@ -69,7 +69,7 @@ int physics_run(BoutReal t) {
   
   if(Dz > 0.0)
     ddt(N) += Dz * D2DZ2(N);
-  
+
   return 0;
 }
 

@@ -70,7 +70,7 @@ PetscSolver::~PetscSolver() {
  * Initialise
  **************************************************************************/
 
-int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
+int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   PetscErrorCode  ierr;
   int             neq;
   int             mudq, mldq, mukeep, mlkeep;
@@ -83,7 +83,7 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
   int msg_point = msg_stack.push("Initialising PETSc 3.2 solver");
   
   /// Call the generic initialisation first
-  Solver::init(restarting, NOUT, TIMESTEP);
+  Solver::init(NOUT, TIMESTEP);
 
   output.write("Initialising PETSc 3.2 solver\n");
   ierr = MPI_Comm_rank(comm, &rank);CHKERRQ(ierr);
@@ -256,7 +256,7 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
     PetscInt nz  = mesh->LocalNz;
 
     /* number of degrees (variables) at each grid point */
-    if(n2Dvars() != 0) bout_error("PETSc 3.2 solver can't handle 2D variables yet. Sorry\n");
+    if(n2Dvars() != 0) throw BoutException("PETSc 3.2 solver can't handle 2D variables yet. Sorry\n");
 
     PetscInt dof = n3Dvars();
 

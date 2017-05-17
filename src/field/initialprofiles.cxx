@@ -49,7 +49,7 @@
 #include <stdlib.h>
 
 void initial_profile(const string &name, Field3D &var) {
-  MsgStackItem trace("initial_profile(string, Field3D)");
+  TRACE("initial_profile(string, Field3D)");
   
   CELL_LOC loc = CELL_DEFAULT;
   if (mesh->StaggerGrids) {

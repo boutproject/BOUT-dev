@@ -1,0 +1,65 @@
+#!/usr/bin/env python
+
+from __future__ import print_function
+
+from boututils.run_wrapper import shell, launch, getmpirun
+from boutdata.collect import collect
+from sys import stdout, exit
+
+from numpy import amax, abs
+
+# Set to either "square" or "torus" to run test cases
+path = "torus"
+
+# Set this to False to turn off plotting
+interactive = True
+
+print("Making test")
+shell("make > make.log")
+
+print("Running test")
+s, out = launch("./test -d "+path, runcmd=getmpirun(), nproc=1, pipe=True)
+
+# Analyse data
+
+orig = collect("input", path=path)
+result = collect("result", path=path)
+
+# Remove x boundaries
+orig = orig[2:-2,:]
+result = result[2:-2,:]
+
+
+absdiff = amax(abs(orig - result))
+print("Magnitude of orig: ",amax(abs(orig)))
+print("Maximum difference: ", absdiff)
+
+if interactive:
+   # Interactive. Display results
+   import matplotlib.pyplot as plt
+
+   plt.figure()
+   
+   plt.subplot(221)
+   plt.contourf(orig, 30)
+   plt.title("Original")
+   plt.colorbar()
+   
+   plt.subplot(222)
+   plt.contourf(result, 30)
+   plt.title("Result")
+   plt.colorbar()
+   
+   plt.subplot(223)
+   plt.contourf(orig - result, 30)
+   plt.title("Original - result")
+   plt.colorbar()
+   
+   plt.show()
+
+if absdiff < 1e-2:
+   print(" => Test passed")
+   exit(0)
+
+print(" => Test failed")
+exit(1)
