@@ -304,7 +304,7 @@ int BoutMesh::load() {
 
     NYPE = NPES / NXPE;
 
-    output.write("\tDomain split (%d, %d) into domains (%d, %d)\n",
+    output.write("\tDomain split (NXPE=%d, NYPE=%d) into domains (localNx=%d, localNy=%d)\n",
                  NXPE, NYPE, MX / NXPE, ny / NYPE);
   }
 
@@ -2031,6 +2031,8 @@ int BoutMesh::pack_data(const vector<FieldData *> &var_list, int xge, int xlt, i
     for (const auto &var : var_list) {
       if (var->is3D()) {
         // 3D variable
+        ASSERT2(dynamic_cast<Field3D*>(var)->isAllocated());
+        
         for (int jy = yge; jy < ylt; jy++) {
           for (int jz = 0; jz < LocalNz; jz++, len++) {
             buffer[len] = (*dynamic_cast<Field3D*>(var))(jx, jy, jz);
@@ -2038,6 +2040,8 @@ int BoutMesh::pack_data(const vector<FieldData *> &var_list, int xge, int xlt, i
         }
       } else {
         // 2D variable
+        ASSERT2(dynamic_cast<Field2D*>(var)->isAllocated());
+        
         for (int jy = yge; jy < ylt; jy++, len++) {
           buffer[len] = (*dynamic_cast<Field2D*>(var))(jx, jy);
         }

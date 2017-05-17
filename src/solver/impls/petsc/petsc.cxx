@@ -66,8 +66,8 @@ PetscSolver::PetscSolver(Options *opts) {
   initialised = false;
   bout_snes_time = .0;
 
-  prefunc = NULL;
-  jacfunc = NULL;
+  prefunc = nullptr;
+  jacfunc = nullptr;
 
   output_flag = PETSC_FALSE;
 }
@@ -90,7 +90,7 @@ PetscSolver::~PetscSolver() {
  * Initialise
  **************************************************************************/
 
-int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
+int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   PetscErrorCode  ierr;
   int             neq;
   int             mudq, mldq, mukeep, mlkeep;
@@ -100,7 +100,7 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
   MPI_Comm        comm = PETSC_COMM_WORLD;
   PetscMPIInt     rank;
 
-  int msg_point = msg_stack.push("Initialising PETSc-dev solver");
+  TRACE("Initialising PETSc-dev solver");
 
   PetscFunctionBegin;
   PetscLogEventRegister("PetscSolver::init",PETSC_VIEWER_CLASSID,&init_event);
@@ -108,7 +108,7 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
   PetscLogEventRegister("solver_f",PETSC_VIEWER_CLASSID,&solver_event);
 
   /// Call the generic initialisation first
-  Solver::init(restarting, NOUT, TIMESTEP);
+  Solver::init(NOUT, TIMESTEP);
 
   ierr = PetscLogEventBegin(init_event,0,0,0,0);CHKERRQ(ierr);
   output.write("Initialising PETSc-dev solver\n");
@@ -259,7 +259,7 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
 
   // Matrix free Jacobian
 
-  if(use_jacobian && (jacfunc != NULL)) {
+  if(use_jacobian && (jacfunc != nullptr)) {
     // Use a user-supplied Jacobian function
     ierr = MatCreateShell(comm, local_N, local_N, neq, neq, this, &Jmf);
     ierr = MatShellSetOperation(Jmf, MATOP_MULT, (void (*)(void)) PhysicsJacobianApply); CHKERRQ(ierr);
@@ -276,7 +276,7 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
 
   ierr = KSPGetPC(ksp,&pc);CHKERRQ(ierr);
 
-  if(use_precon && (prefunc != NULL)) {
+  if(use_precon && (prefunc != nullptr)) {
 
 #if PETSC_VERSION_GE(3,5,0)
     ierr = SNESGetNPC(snes,&psnes);CHKERRQ(ierr);
@@ -606,9 +606,6 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
   }
 
   ierr = PetscLogEventEnd(init_event,0,0,0,0);CHKERRQ(ierr);
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 
   PetscFunctionReturn(0);
 }

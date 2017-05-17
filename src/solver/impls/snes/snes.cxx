@@ -32,12 +32,12 @@ static PetscErrorCode FormFunction(SNES snes,Vec x, Vec f, void* ctx) {
   return static_cast<SNESSolver*>(ctx)->snes_function(x, f);
 }
 
-int SNESSolver::init(bool restarting, int nout, BoutReal tstep) {
+int SNESSolver::init(int nout, BoutReal tstep) {
 
-  int msg_point = msg_stack.push("Initialising SNES solver");
+  TRACE("Initialising SNES solver");
   
   /// Call the generic initialisation first
-  if(Solver::init(restarting, nout, tstep))
+  if (Solver::init(nout, tstep))
     return 1;
   
   output << "\n\tSNES steady state solver\n";
@@ -108,8 +108,6 @@ int SNESSolver::init(bool restarting, int nout, BoutReal tstep) {
   // Get runtime options
   SNESSetFromOptions(snes);
   
-  msg_stack.pop(msg_point);
-
   return 0;
 }
 
