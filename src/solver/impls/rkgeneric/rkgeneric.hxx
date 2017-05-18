@@ -44,10 +44,10 @@ class RKGenericSolver : public Solver {
   BoutReal getCurrentTimestep() {return timestep; }
 
   //Setup solver and scheme
-  int init(bool restarting, int nout, BoutReal tstep);
+  int init(int nout, BoutReal tstep) override;
 
   //Actually evolve
-  int run();
+  int run() override;
 
  private:
   //Take a step using the scheme

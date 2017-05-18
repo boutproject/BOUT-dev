@@ -8,12 +8,9 @@
 NOUT = 200     # number of time-steps
 TIMESTEP = 1.e0   # time between outputs
 
-ShiftXderivs = true # use shifted radial derivatives?
 TwistShift = true  # use twist-shift condition?
-ballooning = true
-shiftinitial = false
 
-MZ = 65     # number of points in z direction (2^n + 1)
+MZ = 64     # number of points in z direction (2^n)
 
 ZPERIOD = 20 # Fraction of a torus
 
@@ -25,7 +22,8 @@ twistshift_pf = true # Grid has twist-shift in PF region
 
 dump_format = "nc"   # Set extension for dump files (nc = NetCDF)
 
-NXPE = 2 
+[mesh]
+paralleltransform = shifted  # Use shifted metric method
 
 ##################################################
 # derivative methods
@@ -120,23 +118,6 @@ apar_flags = 0 # flags for apar inversion
 [All]
 scale = 0.0 # default size of initial perturbations
 
-# form of initial profile:
-# 0 - constant
-# 1 - Gaussian
-# 2 - Sinusoidal
-# 3 - Mix of mode numbers (like original BOUT)
-
-xs_opt = 1
-ys_opt = 1
-zs_opt = 2
-
-xs_wd = 0.25
-xs_s0 = 0.5
-ys_mode = 1 
-ys_wd = 0.6 
-zs_mode = 2 # toroidal mode number
-zs_wd = 0.2
-
 # boundary conditions
 # -------------------
 # dirichlet    - Zero value
@@ -156,6 +137,9 @@ bndry_all = relax(neumann)
 
 [Ni]
 scale = 1.0e-3 # Initial perturbation size
+
+# Form of the initial perturbation
+function = ballooning( exp(-((x-0.5)/0.25)^2) * exp(-((y/(2*pi)-0.5)/0.6)^2) * sin(z) )
 
 # ExB advection terms
 ni1_phi0 = false
@@ -192,7 +176,6 @@ evolve = false
 # VORTICITY
 
 [rho]
-#scale = 1.0e-3
 
 bndry_xin = relax(dirichlet)
 bndry_xout = relax(dirichlet)

@@ -80,11 +80,11 @@ CvodeSolver::~CvodeSolver() {
  * Initialise
  **************************************************************************/
 
-int CvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
+int CvodeSolver::init(int nout, BoutReal tstep) {
   int msg_point = msg_stack.push("Initialising CVODE solver");
 
   /// Call the generic initialisation first
-  if(Solver::init(restarting, nout, tstep))
+  if(Solver::init(nout, tstep))
     return 1;
 
   // Save nout and tstep for use in run

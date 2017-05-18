@@ -47,9 +47,9 @@ class SNESSolver : public Solver {
   SNESSolver(Options *opt = NULL);
   ~SNESSolver();
   
-  int init(bool restarting, int nout, BoutReal tstep);
+  int init(int nout, BoutReal tstep) override;
   
-  int run();
+  int run() override;
   
   PetscErrorCode snes_function(Vec x, Vec f); // Nonlinear function
  private:

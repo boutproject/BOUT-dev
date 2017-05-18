@@ -1,6 +1,6 @@
 
 BOUT_TOP	= ../..
 
-SOURCEC		= 2fluid.cxx
+SOURCEC		= test_restarting.cxx
 
 include $(BOUT_TOP)/make.config

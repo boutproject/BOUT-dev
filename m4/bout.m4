@@ -71,6 +71,11 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
 ])
 
 
+dnl define the macro to check for header files
+dnl first  argument is the name of the header file
+dnl secound  arg is to be executed if found
+dnl third  arg is to be executed if not found
+dnl forth  arg is an additional path to check
 AC_DEFUN([BOUT_ADDPATH_CHECK_HEADER],[
     AC_MSG_CHECKING([for $1])
     CPPFLAGS_save=$CPPFLAGS
