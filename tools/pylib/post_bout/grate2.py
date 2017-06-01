@@ -12,7 +12,7 @@ from boututils.moment_xyzt import moment_xyzt
 
 def avgrate(p, y=None, tind=None):
 
-    if tind == None : tind =0
+    if tind is None : tind =0
 
     rmsp_f=moment_xyzt(p, 'RMS').rms
 
@@ -34,7 +34,7 @@ def avgrate(p, y=None, tind=None):
 # http://stackoverflow.com/questions/5480694/numpy-calculate-averages-with-nans-removed
 
     print('Total average growth rate= ', np.mean(np.ma.masked_array(d,np.isinf(d))))
-    if y != None : print('Growth rate in plane', y, '= ', np.mean(np.ma.masked_array(growth[:,y],np.isnan(growth[:,y]))))
+    if y is not None : print('Growth rate in plane', y, '= ', np.mean(np.ma.masked_array(growth[:,y],np.isnan(growth[:,y]))))
 
 
 

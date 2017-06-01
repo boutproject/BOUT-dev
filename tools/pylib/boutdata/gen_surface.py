@@ -29,7 +29,7 @@ def gen_surface(grid):
     ny = grid.read("ny")
 
     npol = grid.read("npol")
-    if npol == None:
+    if npol is None:
         # Domains not stored in file (BOUT style input)
         ixseps1 = grid.read("ixseps1")
         ixseps2 = grid.read("ixseps2")
@@ -113,7 +113,7 @@ def gen_surface(grid):
                 domain = i
                 break
 
-        if domain == None:
+        if domain is None:
             # All domains visited
             x = x + 1 # Go to next x surface
             visited = np.zeros(ndomains) # Clear the visited array
@@ -141,7 +141,7 @@ def gen_surface(grid):
                 break;
             # Get range of y indices in this domain
             yi = np.arange(ystart[domain], ystart[domain+1])
-            if yinds == None:
+            if yinds is None:
                 yinds = yi
             else:
                 yinds = np.concatenate((yinds, yi))

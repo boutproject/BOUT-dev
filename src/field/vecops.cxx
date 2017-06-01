@@ -37,7 +37,7 @@
 const Vector2D Grad(const Field2D &f, CELL_LOC UNUSED(outloc)) {
   Vector2D result;
   
-  MsgStackItem trace("Grad( Field2D )");
+  TRACE("Grad( Field2D )");
   
   result.x = DDX(f);
   result.y = DDY(f);
@@ -52,7 +52,7 @@ const Vector3D Grad(const Field3D &f,
                     CELL_LOC outloc_x, CELL_LOC outloc_y, CELL_LOC outloc_z) {
   Vector3D result;
 
-  MsgStackItem trace("Grad( Field3D )");
+  TRACE("Grad( Field3D )");
 
   if(outloc_x == CELL_DEFAULT)
     outloc_x = f.getLocation();
@@ -70,8 +70,7 @@ const Vector3D Grad(const Field3D &f,
   return result;
 }
 
-const Vector3D Grad(const Field3D &f, CELL_LOC outloc)
-{
+const Vector3D Grad(const Field3D &f, CELL_LOC outloc) {
   if(outloc == CELL_VSHIFT)
     return Grad(f, CELL_XLOW, CELL_YLOW, CELL_ZLOW);
   
@@ -82,7 +81,7 @@ const Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc_x,
                          CELL_LOC UNUSED(outloc_y), CELL_LOC outloc_z) {
   Vector3D result;
 
-  MsgStackItem trace("Grad_perp( Field3D )");
+  TRACE("Grad_perp( Field3D )");
 
   Coordinates *metric = mesh->coordinates();
 
@@ -110,7 +109,7 @@ const Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc_x,
 const Field2D Div(const Vector2D &v, CELL_LOC UNUSED(outloc)) {
   Field2D result;
 
-  MsgStackItem trace("Div( Vector2D )");
+  TRACE("Div( Vector2D )");
   
   Coordinates *metric = mesh->coordinates();
   
@@ -129,7 +128,7 @@ const Field2D Div(const Vector2D &v, CELL_LOC UNUSED(outloc)) {
 const Field3D Div(const Vector3D &v, CELL_LOC outloc) {
   Field3D result;
 
-  MsgStackItem trace("Div( Vector3D )");
+  TRACE("Div( Vector3D )");
   
   Coordinates *metric = mesh->coordinates();
 
@@ -153,7 +152,7 @@ const Field3D Div(const Vector3D &v, CELL_LOC outloc) {
  **************************************************************************/
 
 const Field2D Div(const Vector2D &v, const Field2D &f) {
-  MsgStackItem trace("Div( Vector2D, Field2D )");
+  TRACE("Div( Vector2D, Field2D )");
   
   Coordinates *metric = mesh->coordinates();
   
@@ -173,7 +172,7 @@ const Field2D Div(const Vector2D &v, const Field2D &f) {
 const Field3D Div(const Vector3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
   Field3D result;
   
-  MsgStackItem trace("Div( Vector3D, Field3D )");
+  TRACE("Div( Vector3D, Field3D )");
   
   Coordinates *metric = mesh->coordinates();
   
@@ -206,7 +205,7 @@ const Field3D Div(const Vector3D &v, const Field3D &f) {
 
 const Vector2D Curl(const Vector2D &v, CELL_LOC UNUSED(outloc)) {
 
-  MsgStackItem trace("Curl( Vector2D )");
+  TRACE("Curl( Vector2D )");
   
   Coordinates *metric = mesh->coordinates();
   
@@ -231,7 +230,7 @@ const Vector2D Curl(const Vector2D &v, CELL_LOC UNUSED(outloc)) {
 const Vector3D Curl(const Vector3D &v, 
                     CELL_LOC outloc_x, CELL_LOC outloc_y, CELL_LOC outloc_z) {
 
-  MsgStackItem trace("Curl( Vector3D )");
+  TRACE("Curl( Vector3D )");
 
   Coordinates *metric = mesh->coordinates();
 
@@ -264,13 +263,10 @@ const Vector3D Curl(const Vector3D &v, CELL_LOC outloc) {
  * Upwinding operators
  **************************************************************************/
 
-const Field2D V_dot_Grad(const Vector2D &v, const Field2D &f)
-{
+const Field2D V_dot_Grad(const Vector2D &v, const Field2D &f) {
   Field2D result;
   
-#ifdef CHECK
-  int msg_pos = msg_stack.push("V_dot_Grad( Vector2D , Field2D )");
-#endif
+  TRACE("V_dot_Grad( Vector2D , Field2D )");
 
   // Get contravariant components of v
   Vector2D vcn = v;
@@ -278,20 +274,13 @@ const Field2D V_dot_Grad(const Vector2D &v, const Field2D &f)
 
   result = VDDX(vcn.x, f) + VDDY(vcn.y, f) + VDDZ(vcn.z, f);
 
-#ifdef CHECK
-  msg_stack.pop(msg_pos);
-#endif
-
   return result;
 }
 
-const Field3D V_dot_Grad(const Vector2D &v, const Field3D &f)
-{
+const Field3D V_dot_Grad(const Vector2D &v, const Field3D &f) {
   Field3D result;
   
-#ifdef CHECK
-  int msg_pos = msg_stack.push("V_dot_Grad( Vector2D , Field3D )");
-#endif
+  TRACE("V_dot_Grad( Vector2D , Field3D )");
 
   // Get contravariant components of v
   Vector2D vcn = v;
@@ -299,20 +288,13 @@ const Field3D V_dot_Grad(const Vector2D &v, const Field3D &f)
 
   result = VDDX(vcn.x, f) + VDDY(vcn.y, f) + VDDZ(vcn.z, f);
 
-#ifdef CHECK
-  msg_stack.pop(msg_pos);
-#endif
-
   return result;
 }
 
-const Field3D V_dot_Grad(const Vector3D &v, const Field2D &f)
-{
+const Field3D V_dot_Grad(const Vector3D &v, const Field2D &f) {
   Field3D result;
   
-#ifdef CHECK
-  int msg_pos = msg_stack.push("V_dot_Grad( Vector3D , Field2D )");
-#endif
+  TRACE("V_dot_Grad( Vector3D , Field2D )");
 
   // Get contravariant components of v
   Vector3D vcn = v;
@@ -320,30 +302,19 @@ const Field3D V_dot_Grad(const Vector3D &v, const Field2D &f)
 
   result = VDDX(vcn.x, f) + VDDY(vcn.y, f) + VDDZ(vcn.z, f);
 
-#ifdef CHECK
-  msg_stack.pop(msg_pos);
-#endif
-
   return result;
 }
 
-const Field3D V_dot_Grad(const Vector3D &v, const Field3D &f)
-{
+const Field3D V_dot_Grad(const Vector3D &v, const Field3D &f) {
   Field3D result;
   
-#ifdef CHECK
-  int msg_pos = msg_stack.push("V_dot_Grad( Vector3D , Field3D )");
-#endif
+  TRACE("V_dot_Grad( Vector3D , Field3D )");
 
   // Get contravariant components of v
   Vector3D vcn = v;
   vcn.toContravariant();
   
   result = VDDX(vcn.x, f) + VDDY(vcn.y, f) + VDDZ(vcn.z, f);
-
-#ifdef CHECK
-  msg_stack.pop(msg_pos);
-#endif
 
   return result;
 }
@@ -351,9 +322,7 @@ const Field3D V_dot_Grad(const Vector3D &v, const Field3D &f)
 const Vector2D V_dot_Grad(const Vector2D &v, const Vector2D &a) {
   Vector2D result;
 
-#ifdef CHECK
-  int msg_pos = msg_stack.push("V_dot_Grad( Vector2D , Vector2D )");
-#endif
+  TRACE("V_dot_Grad( Vector2D , Vector2D )");
 
   Coordinates *metric = mesh->coordinates();
 
@@ -364,17 +333,17 @@ const Vector2D V_dot_Grad(const Vector2D &v, const Vector2D &a) {
     
     result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x) + VDDZ(vcn.z, a.x);
     result.x -= vcn.x*(metric->G1_11*a.x + metric->G2_11*a.y + metric->G3_11*a.z);
-    result.x -= vcn.y*(metric->G1_12*a.x + metric->G2_12*a.y);
-    result.x -= vcn.z*(metric->G1_13*a.x + metric->G3_13*a.z);
+    result.x -= vcn.y*(metric->G1_12*a.x + metric->G2_12*a.y + metric->G3_12*a.z);
+    result.x -= vcn.z*(metric->G1_13*a.x + metric->G2_13*a.y + metric->G3_13*a.z);
 
     result.y = VDDX(vcn.x, a.y) + VDDY(vcn.y, a.y) + VDDZ(vcn.z, a.y);
-    result.y -= vcn.x*(metric->G1_12*a.x + metric->G2_12*a.y);
+    result.y -= vcn.x*(metric->G1_12*a.x + metric->G2_12*a.y + metric->G3_12*a.z);
     result.y -= vcn.y*(metric->G1_22*a.x + metric->G2_22*a.y + metric->G3_22*a.z);
-    result.y -= vcn.z*(metric->G2_23*a.y + metric->G3_23*a.z);
+    result.y -= vcn.z*(metric->G1_23*a.x + metric->G2_23*a.y + metric->G3_23*a.z);
 
     result.z = VDDX(vcn.x, a.z) + VDDY(vcn.y, a.z) + VDDZ(vcn.z, a.z);
-    result.z -= vcn.x*(metric->G1_13*a.x + metric->G3_13*a.z);
-    result.z -= vcn.y*(metric->G2_23*a.y + metric->G3_23*a.z);
+    result.z -= vcn.x*(metric->G1_13*a.x + metric->G2_13*a.y + metric->G3_13*a.z);
+    result.z -= vcn.y*(metric->G1_23*a.x + metric->G2_23*a.y + metric->G3_23*a.z);
     result.z -= vcn.z*(metric->G1_33*a.x + metric->G2_33*a.y + metric->G3_33*a.z);
 
     result.covariant = true;
@@ -382,25 +351,21 @@ const Vector2D V_dot_Grad(const Vector2D &v, const Vector2D &a) {
     
     result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x) + VDDZ(vcn.z, a.x);
     result.x += vcn.x*(metric->G1_11*a.x + metric->G1_12*a.y + metric->G1_13*a.z);
-    result.x += vcn.y*(metric->G1_12*a.x + metric->G1_22*a.y);
-    result.x += vcn.z*(metric->G1_13*a.x + metric->G1_33*a.z);
-    
+    result.x += vcn.y*(metric->G1_12*a.x + metric->G1_22*a.y + metric->G1_23*a.z);
+    result.x += vcn.z*(metric->G1_13*a.x + metric->G1_23*a.y + metric->G1_33*a.z);
+
     result.y = VDDX(vcn.x, a.y) + VDDY(vcn.y, a.y) + VDDZ(vcn.z, a.y);
-    result.y += vcn.x*(metric->G2_11*a.x + metric->G2_12*a.y);
+    result.y += vcn.x*(metric->G2_11*a.x + metric->G2_12*a.y + metric->G2_13*a.z);
     result.y += vcn.y*(metric->G2_12*a.x + metric->G2_22*a.y + metric->G2_23*a.z);
-    result.y += vcn.z*(metric->G2_23*a.y + metric->G2_33*a.z);
-    
+    result.y += vcn.z*(metric->G2_13*a.x + metric->G2_23*a.y + metric->G2_33*a.z);
+
     result.z = VDDX(vcn.x, a.z) + VDDY(vcn.y, a.z) + VDDZ(vcn.z, a.z);
-    result.z += vcn.x*(metric->G3_11*a.x + metric->G3_13*a.z);
-    result.z += vcn.y*(metric->G3_22*a.y + metric->G3_23*a.z);
+    result.z += vcn.x*(metric->G3_11*a.x + metric->G3_12*a.y + metric->G3_13*a.z);
+    result.z += vcn.y*(metric->G3_12*a.x + metric->G3_22*a.y + metric->G3_23*a.z);
     result.z += vcn.z*(metric->G3_13*a.x + metric->G3_23*a.y + metric->G3_33*a.z);
 
     result.covariant = false;
   }
-  
-#ifdef CHECK
-  msg_stack.pop(msg_pos);
-#endif
 
   return result;
 }
@@ -408,9 +373,7 @@ const Vector2D V_dot_Grad(const Vector2D &v, const Vector2D &a) {
 const Vector3D V_dot_Grad(const Vector2D &v, const Vector3D &a) {
   Vector3D result;
 
-#ifdef CHECK
-  int msg_pos = msg_stack.push("V_dot_Grad( Vector2D , Vector3D )");
-#endif
+  TRACE("V_dot_Grad( Vector2D , Vector3D )");
 
   Coordinates *metric = mesh->coordinates();
 
@@ -420,42 +383,38 @@ const Vector3D V_dot_Grad(const Vector2D &v, const Vector3D &a) {
   if(a.covariant) {
     result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x) + VDDZ(vcn.z, a.x);
     result.x -= vcn.x*(metric->G1_11*a.x + metric->G2_11*a.y + metric->G3_11*a.z);
-    result.x -= vcn.y*(metric->G1_12*a.x + metric->G2_12*a.y);
-    result.x -= vcn.z*(metric->G1_13*a.x + metric->G3_13*a.z);
+    result.x -= vcn.y*(metric->G1_12*a.x + metric->G2_12*a.y + metric->G3_12*a.z);
+    result.x -= vcn.z*(metric->G1_13*a.x + metric->G2_13*a.y + metric->G3_13*a.z);
 
     result.y = VDDX(vcn.x, a.y) + VDDY(vcn.y, a.y) + VDDZ(vcn.z, a.y);
-    result.y -= vcn.x*(metric->G1_12*a.x + metric->G2_12*a.y);
+    result.y -= vcn.x*(metric->G1_12*a.x + metric->G2_12*a.y + metric->G3_12*a.z);
     result.y -= vcn.y*(metric->G1_22*a.x + metric->G2_22*a.y + metric->G3_22*a.z);
-    result.y -= vcn.z*(metric->G2_23*a.y + metric->G3_23*a.z);
+    result.y -= vcn.z*(metric->G1_23*a.x + metric->G2_23*a.y + metric->G3_23*a.z);
 
     result.z = VDDX(vcn.x, a.z) + VDDY(vcn.y, a.z) + VDDZ(vcn.z, a.z);
-    result.z -= vcn.x*(metric->G1_13*a.x + metric->G3_13*a.z);
-    result.z -= vcn.y*(metric->G2_23*a.y + metric->G3_23*a.z);
+    result.z -= vcn.x*(metric->G1_13*a.x + metric->G2_13*a.y + metric->G3_13*a.z);
+    result.z -= vcn.y*(metric->G1_23*a.x + metric->G2_23*a.y + metric->G3_23*a.z);
     result.z -= vcn.z*(metric->G1_33*a.x + metric->G2_33*a.y + metric->G3_33*a.z);
 
     result.covariant = true;
   }else {
     result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x) + VDDZ(vcn.z, a.x);
     result.x += vcn.x*(metric->G1_11*a.x + metric->G1_12*a.y + metric->G1_13*a.z);
-    result.x += vcn.y*(metric->G1_12*a.x + metric->G1_22*a.y);
-    result.x += vcn.z*(metric->G1_13*a.x + metric->G1_33*a.z);
+    result.x += vcn.y*(metric->G1_12*a.x + metric->G1_22*a.y + metric->G1_23*a.z);
+    result.x += vcn.z*(metric->G1_13*a.x + metric->G1_23*a.y + metric->G1_33*a.z);
 
     result.y = VDDX(vcn.x, a.y) + VDDY(vcn.y, a.y) + VDDZ(vcn.z, a.y);
-    result.y += vcn.x*(metric->G2_11*a.x + metric->G2_12*a.y);
+    result.y += vcn.x*(metric->G2_11*a.x + metric->G2_12*a.y + metric->G2_13*a.z);
     result.y += vcn.y*(metric->G2_12*a.x + metric->G2_22*a.y + metric->G2_23*a.z);
-    result.y += vcn.z*(metric->G2_23*a.y + metric->G2_33*a.z);
+    result.y += vcn.z*(metric->G2_13*a.x + metric->G2_23*a.y + metric->G2_33*a.z);
 
     result.z = VDDX(vcn.x, a.z) + VDDY(vcn.y, a.z) + VDDZ(vcn.z, a.z);
-    result.z += vcn.x*(metric->G3_11*a.x + metric->G3_13*a.z);
-    result.z += vcn.y*(metric->G3_22*a.y + metric->G3_23*a.z);
+    result.z += vcn.x*(metric->G3_11*a.x + metric->G3_12*a.y + metric->G3_13*a.z);
+    result.z += vcn.y*(metric->G3_12*a.x + metric->G3_22*a.y + metric->G3_23*a.z);
     result.z += vcn.z*(metric->G3_13*a.x + metric->G3_23*a.y + metric->G3_33*a.z);
 
     result.covariant = false;
   }
-  
-#ifdef CHECK
-  msg_stack.pop(msg_pos);
-#endif
 
   return result;
 }
@@ -463,9 +422,7 @@ const Vector3D V_dot_Grad(const Vector2D &v, const Vector3D &a) {
 const Vector3D V_dot_Grad(const Vector3D &v, const Vector2D &a) {
   Vector3D result;
   
-#ifdef CHECK
-  int msg_pos = msg_stack.push("V_dot_Grad( Vector3D , Vector2D )");
-#endif
+  TRACE("V_dot_Grad( Vector3D , Vector2D )");
 
   Coordinates *metric = mesh->coordinates();
 
@@ -475,53 +432,46 @@ const Vector3D V_dot_Grad(const Vector3D &v, const Vector2D &a) {
   if(a.covariant) {
     result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x) + VDDZ(vcn.z, a.x);
     result.x -= vcn.x*(metric->G1_11*a.x + metric->G2_11*a.y + metric->G3_11*a.z);
-    result.x -= vcn.y*(metric->G1_12*a.x + metric->G2_12*a.y);
-    result.x -= vcn.z*(metric->G1_13*a.x + metric->G3_13*a.z);
+    result.x -= vcn.y*(metric->G1_12*a.x + metric->G2_12*a.y + metric->G3_12*a.z);
+    result.x -= vcn.z*(metric->G1_13*a.x + metric->G2_13*a.y + metric->G3_13*a.z);
 
     result.y = VDDX(vcn.x, a.y) + VDDY(vcn.y, a.y) + VDDZ(vcn.z, a.y);
-    result.y -= vcn.x*(metric->G1_12*a.x + metric->G2_12*a.y);
+    result.y -= vcn.x*(metric->G1_12*a.x + metric->G2_12*a.y + metric->G3_12*a.z);
     result.y -= vcn.y*(metric->G1_22*a.x + metric->G2_22*a.y + metric->G3_22*a.z);
-    result.y -= vcn.z*(metric->G2_23*a.y + metric->G3_23*a.z);
+    result.y -= vcn.z*(metric->G1_23*a.x + metric->G2_23*a.y + metric->G3_23*a.z);
 
     result.z = VDDX(vcn.x, a.z) + VDDY(vcn.y, a.z) + VDDZ(vcn.z, a.z);
-    result.z -= vcn.x*(metric->G1_13*a.x + metric->G3_13*a.z);
-    result.z -= vcn.y*(metric->G2_23*a.y + metric->G3_23*a.z);
+    result.z -= vcn.x*(metric->G1_13*a.x + metric->G2_13*a.y + metric->G3_13*a.z);
+    result.z -= vcn.y*(metric->G1_23*a.x + metric->G2_23*a.y + metric->G3_23*a.z);
     result.z -= vcn.z*(metric->G1_33*a.x + metric->G2_33*a.y + metric->G3_33*a.z);
 
     result.covariant = true;
   }else {
     result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x) + VDDZ(vcn.z, a.x);
     result.x += vcn.x*(metric->G1_11*a.x + metric->G1_12*a.y + metric->G1_13*a.z);
-    result.x += vcn.y*(metric->G1_12*a.x + metric->G1_22*a.y);
-    result.x += vcn.z*(metric->G1_13*a.x + metric->G1_33*a.z);
+    result.x += vcn.y*(metric->G1_12*a.x + metric->G1_22*a.y + metric->G1_23*a.z);
+    result.x += vcn.z*(metric->G1_13*a.x + metric->G1_23*a.y + metric->G1_33*a.z);
 
     result.y = VDDX(vcn.x, a.y) + VDDY(vcn.y, a.y) + VDDZ(vcn.z, a.y);
-    result.y += vcn.x*(metric->G2_11*a.x + metric->G2_12*a.y);
+    result.y += vcn.x*(metric->G2_11*a.x + metric->G2_12*a.y + metric->G2_13*a.z);
     result.y += vcn.y*(metric->G2_12*a.x + metric->G2_22*a.y + metric->G2_23*a.z);
-    result.y += vcn.z*(metric->G2_23*a.y + metric->G2_33*a.z);
+    result.y += vcn.z*(metric->G2_13*a.x + metric->G2_23*a.y + metric->G2_33*a.z);
 
     result.z = VDDX(vcn.x, a.z) + VDDY(vcn.y, a.z) + VDDZ(vcn.z, a.z);
-    result.z += vcn.x*(metric->G3_11*a.x + metric->G3_13*a.z);
-    result.z += vcn.y*(metric->G3_22*a.y + metric->G3_23*a.z);
+    result.z += vcn.x*(metric->G3_11*a.x + metric->G3_12*a.y + metric->G3_13*a.z);
+    result.z += vcn.y*(metric->G3_12*a.x + metric->G3_22*a.y + metric->G3_23*a.z);
     result.z += vcn.z*(metric->G3_13*a.x + metric->G3_23*a.y + metric->G3_33*a.z);
 
     result.covariant = false;
   }
-  
-#ifdef CHECK
-  msg_stack.pop(msg_pos);
-#endif
 
   return result;
 }
 
-const Vector3D V_dot_Grad(const Vector3D &v, const Vector3D &a)
-{
+const Vector3D V_dot_Grad(const Vector3D &v, const Vector3D &a) {
   Vector3D result;
 
-#ifdef CHECK
-  int msg_pos = msg_stack.push("V_dot_Grad( Vector3D , Vector3D )");
-#endif
+  TRACE("V_dot_Grad( Vector3D , Vector3D )");
 
   Coordinates *metric = mesh->coordinates();
 
@@ -531,42 +481,38 @@ const Vector3D V_dot_Grad(const Vector3D &v, const Vector3D &a)
   if(a.covariant) {
     result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x) + VDDZ(vcn.z, a.x);
     result.x -= vcn.x*(metric->G1_11*a.x + metric->G2_11*a.y + metric->G3_11*a.z);
-    result.x -= vcn.y*(metric->G1_12*a.x + metric->G2_12*a.y);
-    result.x -= vcn.z*(metric->G1_13*a.x + metric->G3_13*a.z);
-    
+    result.x -= vcn.y*(metric->G1_12*a.x + metric->G2_12*a.y + metric->G3_12*a.z);
+    result.x -= vcn.z*(metric->G1_13*a.x + metric->G2_13*a.y + metric->G3_13*a.z);
+
     result.y = VDDX(vcn.x, a.y) + VDDY(vcn.y, a.y) + VDDZ(vcn.z, a.y);
-    result.y -= vcn.x*(metric->G1_12*a.x + metric->G2_12*a.y);
+    result.y -= vcn.x*(metric->G1_12*a.x + metric->G2_12*a.y + metric->G3_12*a.z);
     result.y -= vcn.y*(metric->G1_22*a.x + metric->G2_22*a.y + metric->G3_22*a.z);
-    result.y -= vcn.z*(metric->G2_23*a.y + metric->G3_23*a.z);
+    result.y -= vcn.z*(metric->G1_23*a.x + metric->G2_23*a.y + metric->G3_23*a.z);
 
     result.z = VDDX(vcn.x, a.z) + VDDY(vcn.y, a.z) + VDDZ(vcn.z, a.z);
-    result.z -= vcn.x*(metric->G1_13*a.x + metric->G3_13*a.z);
-    result.z -= vcn.y*(metric->G2_23*a.y + metric->G3_23*a.z);
+    result.z -= vcn.x*(metric->G1_13*a.x + metric->G2_13*a.y + metric->G3_13*a.z);
+    result.z -= vcn.y*(metric->G1_23*a.x + metric->G2_23*a.y + metric->G3_23*a.z);
     result.z -= vcn.z*(metric->G1_33*a.x + metric->G2_33*a.y + metric->G3_33*a.z);
 
     result.covariant = true;
   }else {
     result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x) + VDDZ(vcn.z, a.x);
     result.x += vcn.x*(metric->G1_11*a.x + metric->G1_12*a.y + metric->G1_13*a.z);
-    result.x += vcn.y*(metric->G1_12*a.x + metric->G1_22*a.y);
-    result.x += vcn.z*(metric->G1_13*a.x + metric->G1_33*a.z);
-    
+    result.x += vcn.y*(metric->G1_12*a.x + metric->G1_22*a.y + metric->G1_23*a.z);
+    result.x += vcn.z*(metric->G1_13*a.x + metric->G1_23*a.y + metric->G1_33*a.z);
+
     result.y = VDDX(vcn.x, a.y) + VDDY(vcn.y, a.y) + VDDZ(vcn.z, a.y);
-    result.y += vcn.x*(metric->G2_11*a.x + metric->G2_12*a.y);
+    result.y += vcn.x*(metric->G2_11*a.x + metric->G2_12*a.y + metric->G2_13*a.z);
     result.y += vcn.y*(metric->G2_12*a.x + metric->G2_22*a.y + metric->G2_23*a.z);
-    result.y += vcn.z*(metric->G2_23*a.y + metric->G2_33*a.z);
-    
+    result.y += vcn.z*(metric->G2_13*a.x + metric->G2_23*a.y + metric->G2_33*a.z);
+
     result.z = VDDX(vcn.x, a.z) + VDDY(vcn.y, a.z) + VDDZ(vcn.z, a.z);
-    result.z += vcn.x*(metric->G3_11*a.x + metric->G3_13*a.z);
-    result.z += vcn.y*(metric->G3_22*a.y + metric->G3_23*a.z);
+    result.z += vcn.x*(metric->G3_11*a.x + metric->G3_12*a.y + metric->G3_13*a.z);
+    result.z += vcn.y*(metric->G3_12*a.x + metric->G3_22*a.y + metric->G3_23*a.z);
     result.z += vcn.z*(metric->G3_13*a.x + metric->G3_23*a.y + metric->G3_33*a.z);
 
     result.covariant = false;
   }
-  
-#ifdef CHECK
-  msg_stack.pop(msg_pos);
-#endif
 
   return result;
 }

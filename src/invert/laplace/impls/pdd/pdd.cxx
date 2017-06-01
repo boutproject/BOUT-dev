@@ -133,19 +133,19 @@ void LaplacePDD::start(const FieldPerp &b, PDD_data &data) {
     // Need to allocate working memory
     
     // RHS vector
-    data.bk = cmatrix(maxmode + 1, mesh->LocalNx);
+    data.bk = matrix<dcomplex>(maxmode + 1, mesh->LocalNx);
     
     // Matrix to be solved
-    data.avec = cmatrix(maxmode + 1, mesh->LocalNx);
-    data.bvec = cmatrix(maxmode + 1, mesh->LocalNx);
-    data.cvec = cmatrix(maxmode + 1, mesh->LocalNx);
+    data.avec = matrix<dcomplex>(maxmode + 1, mesh->LocalNx);
+    data.bvec = matrix<dcomplex>(maxmode + 1, mesh->LocalNx);
+    data.cvec = matrix<dcomplex>(maxmode + 1, mesh->LocalNx);
     
     // Working vectors
-    data.v = cmatrix(maxmode + 1, mesh->LocalNx);
-    data.w = cmatrix(maxmode + 1, mesh->LocalNx);
+    data.v = matrix<dcomplex>(maxmode + 1, mesh->LocalNx);
+    data.w = matrix<dcomplex>(maxmode + 1, mesh->LocalNx);
 
     // Result
-    data.xk = cmatrix(maxmode + 1, mesh->LocalNx);
+    data.xk = matrix<dcomplex>(maxmode + 1, mesh->LocalNx);
 
     // Communication buffers. Space for 2 complex values for each kz
     data.snd = new BoutReal[4*(maxmode+1)];

@@ -1,6 +1,8 @@
+/// \file surfaceiter.hxx
+/// Defines a class for iterating over flux surfaces (surfaces of constant x)
+/// 
 
 class SurfaceIter;
-class DistribSurfaceIter;
 
 #ifndef __SURFACEITER_H__
 #define __SURFACEITER_H__
@@ -8,28 +10,53 @@ class DistribSurfaceIter;
 #include "mesh.hxx"
 
 /// Iterates over Y-Z surfaces, optionally distributing work between processors
+///
+/// Example
+/// -------
+///
+/// SurfaceIter si(mesh);
+///
+/// for( si.first(); si.next(); !si.isDone() ) {
+///   // Perform operation at x = si.xpos
+///   if(si.closed()) {
+///     // A closed flux surface (no boundaries in Y)
+///   }else {
+///     // Open, so boundaries in Y
+///     if(si.firstY()) {
+///       // Boundary at lower Y on this processor
+///     }
+///     if(si.lastY()) {
+///       // Boundary at upper Y on this processor
+///     }
+///   }
+/// } 
 class SurfaceIter {
  public:
+  /// Constructor, needs a mesh to iterate over
+  /// @param[in] mesh   The mesh to iterate over
   SurfaceIter(Mesh *mesh) : m(mesh) {}
   
-  int xpos; // X position
-  int ySize(); // Return the size of the current surface
+  int xpos;    ///< X position where iteration is currently at
+  int ySize(); ///< Return the length of the current surface in Y
   
-  bool closed(); // Test if the current surface is closed
+  bool closed(); ///< Test if the current surface is closed
+
+  /// Test if the current surface (x = xpos) is closed
+  /// @param[out] ts   The twist-shift angle by which points are shifted in Z between the end and beginning of Y
   bool closed(BoutReal &ts);
   
-  MPI_Comm communicator(); // Communicator for this surface
+  MPI_Comm communicator(); ///< Communicator for this surface
   
-  int yGlobal(int yloc); // Return global y index of given local index
+  int yGlobal(int yloc); ///< Return global y index of given local index \p yloc
 
   bool firstY(); ///< Is this processor at the lower end?
   bool lastY();  ///< Is this processor at the upper end?
 
-  void first();
-  void next();
-  bool isDone();
+  void first(); ///< Begin iteration
+  void next();  ///< Move to next flux surface
+  bool isDone(); ///< Are we done iterating?
 private:
-  Mesh *m;
+  Mesh *m; ///< The mesh being iterated over
 };
 
 #endif // __SURFACEITER_H__

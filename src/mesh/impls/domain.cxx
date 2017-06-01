@@ -139,13 +139,13 @@ void Domain::removeBoundary(list<Bndry*>::iterator &it) {
 
 Domain* Domain::splitX(int xind) {
 
-  cout << "SplitX " << this << " (" << nx << "," << ny << ") " << xind << "\n" ;
+  std::cout << "SplitX " << this << " (" << nx << "," << ny << ") " << xind << "\n" ;
   
   Domain *d = create(xind, ny); // New domain on the right
   nx -= xind;
   
-  cout << "   " << this << " (" << nx << "," << ny << ")\n";
-  cout << "   " << d << " (" << d->nx << "," << d->ny << ")\n";
+  std::cout << "   " << this << " (" << nx << "," << ny << ")\n";
+  std::cout << "   " << d << " (" << d->nx << "," << d->ny << ")\n";
   
   // Copy the list of boundaries so not iterating over a changing list
   list<Bndry*> oldboundary(boundary);
@@ -205,13 +205,13 @@ Domain* Domain::splitY(int yind) {
   
   assert( (yind > 0) && (yind < ny) );
 
-  cout << "SplitY " << this << " (" << nx << "," << ny << ") " << yind << "\n";
+  std::cout << "SplitY " << this << " (" << nx << "," << ny << ") " << yind << "\n";
 
   Domain *d = create(nx, yind);
   ny -= yind;
   
-  cout << "   " << this << " (" << nx << "," << ny << ")\n";
-  cout << "   " << d << " (" << d->nx << "," << d->ny << ")\n";
+  std::cout << "   " << this << " (" << nx << "," << ny << ")\n";
+  std::cout << "   " << d << " (" << d->nx << "," << d->ny << ")\n";
 
   // Copy the list of boundaries
   list<Bndry*> oldboundary(boundary);
@@ -270,7 +270,7 @@ Domain* Domain::splitY(int yind) {
 }
 
 std::ostream& operator<<(std::ostream &os, const Domain &d) {
-  os << "Domain " << &d << endl;
+  os << "Domain " << &d << std::endl;
   os << "Size: " << d.nx << " x " << d.ny << std::endl;
   os << "Connections: ";
   if(d.boundary.empty()) {

@@ -1,23 +1,28 @@
-#include <bout.hxx>
-#include <boutmain.hxx>
+#include <bout/physicsmodel.hxx>
 
-Field3D n;
-BoutReal D;
+class TestDelp2 : public PhysicsModel {
+protected:
 
-int physics_init(bool restarting) {
+  int init(bool restarting) {
+    Options *opt = Options::getRoot()->getSection("diffusion");
+    OPTION(opt, D, 0.1);
   
-  Options *opt = Options::getRoot()->getSection("diffusion");
-  OPTION(opt, D, 0.1);
+    SOLVE_FOR(n);
   
-  SOLVE_FOR(n);
-  
-  return 0;
-}
+    return 0;
+  }
 
-int physics_run(BoutReal t) {
-  mesh->communicate(n);
+  int rhs(BoutReal t) {
+    mesh->communicate(n);
   
-  ddt(n) = D * Delp2(n);
+    ddt(n) = D * Delp2(n);
   
-  return 0;
-}
+    return 0;
+  }
+
+private:
+  Field3D n;
+  BoutReal D;
+};
+
+BOUTMAIN(TestDelp2);

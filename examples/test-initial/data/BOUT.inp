@@ -36,13 +36,13 @@ function = abs(x - 0.5)
 function = x + 2
 
 [asin]
-function = asin(x)
+function = asin(y/(2*pi))
 
 [acos]
-function = acos(x)
+function = acos(y/(2*pi))
 
 [atan]
-function = atan(x)
+function = atan(y/(2*pi))
 
 [atan_y]
 function = atan(y,x)
@@ -76,7 +76,7 @@ function = gauss(x, 1.0)
 function = H(x)
 
 [log]
-function = log(x)
+function = log(abs(x))
 
 [max]
 function = max(4*x,y-pi,z^3)
@@ -97,7 +97,7 @@ function = mixmode(x, 0.5)
 function = z - pi
 
 [power]
-function = power(x,y)
+function = power(abs(x), y)
 
 [sin]
 function = sin(x)
@@ -106,7 +106,7 @@ function = sin(x)
 function = sinh(x)
 
 [sqrt]
-function = sqrt(x)
+function = sqrt(abs(x))
 
 [square]
 function = y^2

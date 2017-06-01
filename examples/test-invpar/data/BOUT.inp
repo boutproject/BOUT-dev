@@ -1,7 +1,4 @@
-# Simple I/O test
-#
-# Load variables from a grid file, then write them out
-# to a data file.
+# Test of parallel tridiagonal solver
 #
 
 NOUT = 0  # No timesteps
@@ -12,8 +9,10 @@ grid = "test_io.grd.nc"
 
 dump_format = "nc"  # NetCDF format. Alternative is "pdb"
 
-TwistShift = true
+TwistShift = false
 Ballooning = false
+
+tol = 1e-10
 
 [All]
 # Boundary options

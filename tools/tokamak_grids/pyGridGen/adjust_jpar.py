@@ -98,8 +98,8 @@ def adjust_jpar( grid, smoothp=None, jpar=None, noplot=None):
     ind = numpy.argmax(numpy.abs(dj))
     s = numpy.sign(dj[ind])
 
-    w = numpy.sum(numpy.where(dj * s < 0.0)) # find where contribution reverses
-    if w > 0 : dj[w] = 0.0 # just zero in this region
+    w = numpy.where(dj * s < 0.0)[0] # find where contribution reverses
+    if w.size > 0 : dj[w] = 0.0 # just zero in this region
 
 
     jpar = ps

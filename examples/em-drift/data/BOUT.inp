@@ -6,13 +6,10 @@
 NOUT = 30       # number of time-steps
 TIMESTEP = 1e1   # time between outputs
 
-ShiftXderivs = false # use shifted radial derivatives?
 TwistShift = false  # use twist-shift condition?
 
 MZ = 33     # number of points in z direction (2^n + 1)
 ZMIN = 0.0
-#ZMAX = 2.37871e-3
-#ZMAX = 1.91125e-4
 ZMAX = 1.53566e-05
 
 MXG = 2
@@ -91,24 +88,12 @@ apar_flags = 0 # flags for apar inversion
 [All]
 scale = 0.0 # default size of initial perturbations
 
-# form of initial profile:
-# 0 - constant
-# 1 - Gaussian
-# 2 - Sinusoidal
-# 3 - Mix of mode numbers (like original BOUT)
-
-xs_opt = 0
-ys_opt = 2
-zs_opt = 2
-
-ys_mode = 1#
-
-zs_mode = 1 # toroidal mode number
-
 bndry_all = neumann # Zero gradient
 
 [Ni]
 scale = 1.0e-8 # only perturbing Ni
+
+function = sin(y) * sin(z)
 
 [Vi]
 evolve = false

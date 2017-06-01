@@ -332,7 +332,7 @@ FieldGenerator* ExpressionParser::parseExpression(LexInfo &lex) {
 ExpressionParser::LexInfo::LexInfo(string input) {
   ss.clear();
   ss.str(input); // Set the input stream
-  ss.seekg(0, ios_base::beg);
+  ss.seekg(0, std::ios_base::beg);
   
   LastChar = ss.get(); // First char from stream
   nextToken(); // Get first token
@@ -406,17 +406,15 @@ int ExpressionParser::LexInfo::getPos() {
 
 
 ParseException::ParseException(const char *s, ...) {
-  va_list ap;  // List of arguments
-
   if(s == (const char*) NULL)
     return;
-  
-  char buffer[1024];
-  va_start(ap, s);
-    vsprintf(buffer, s, ap);
-  va_end(ap);
+
+  int buf_len=1024;
+  char * buffer= new char[buf_len];
+  bout_vsnprintf(buffer,buf_len, s);
   
   message.assign(buffer);
+  delete[] buffer;
 }
 
 const char* ParseException::what() const throw() {

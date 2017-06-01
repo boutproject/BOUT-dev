@@ -39,7 +39,7 @@ def genRand(seed):
     # Start x between 0 and 1
     A = 0.01
     B = 1.23456789
-    x = (A + np.mod(seed, B)) / (B - 2.*A)
+    x = (A + np.mod(seed, B)) / (B + 2.*A)
 
     # Iterate logistic map
     for i in range(niter):
@@ -143,7 +143,7 @@ pi = np.pi
 
 # Some parameters
 success = True
-tolerance = 1.e-5
+tolerance = 1e-13
 cmd = "./test_initial"
 datadir = "data"
 inputfile = os.path.join(datadir, "BOUT.inp")
@@ -187,9 +187,9 @@ for nproc in nprocs:
         exit(status)
 
     # Collect the coordinate arrays separately
-    x = collect("var_x", xguards=False, yguards=False, path=datadir, info=False)
-    y = collect("var_y", xguards=False, yguards=False, path=datadir, info=False)
-    z = collect("var_z", xguards=False, yguards=False, path=datadir, info=False)
+    x = collect("var_x", xguards=True, yguards=True, path=datadir, info=False)
+    y = collect("var_y", xguards=True, yguards=True, path=datadir, info=False)
+    z = collect("var_z", xguards=True, yguards=True, path=datadir, info=False)
 
     # Evaluate the functions
     for var in varlist:
@@ -203,7 +203,7 @@ for nproc in nprocs:
         except NotImplementedError as err:
             print("{} not implemented, skipping".format(err.args[0]))
         else:
-            data = collect(var, xguards=False, yguards=False, path=datadir, info=False)
+            data = collect(var, xguards=True, yguards=True, path=datadir, info=False)
             E2 = np.sqrt(np.mean((analytic - data)**2))
             if E2 < tolerance:
                 success_string = "PASS"
