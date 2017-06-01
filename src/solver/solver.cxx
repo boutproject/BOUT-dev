@@ -1359,6 +1359,7 @@ int Solver::run_diffusive(BoutReal t, bool linear) {
     }else
       status = (*phys_run)(t);
   }
+  rhs_ncalls++;
   rhs_ncalls_i++;
   return status;
 }
