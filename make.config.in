@@ -100,9 +100,11 @@ $(DIRS):
 	@#echo make $@ fast
 	@$(MAKE) -s --no-print-directory TARGET=$(TARGET) -C $@ $(TARGET)
 else
+ifndef MODULE_DIR
+MODULE_DIR=$(shell pwd)
+endif
 $(DIRS):
-	@#echo make $@ fast
-	@$(MAKE) -s --no-print-directory -C $@
+	@$(MAKE) -s --no-print-directory MODULE_DIR=$(MODULE_DIR) SUB_NAME=$(shell f=$@ ; g=$${f%/} ; echo $${g##*/}) TARGET=sub -C $@
 endif
 endif
 
@@ -178,7 +180,7 @@ LIB=$(MODULE_DIR)/$(SUB_NAME).a
 sub: makefile $(BOUT_TOP)/make.config $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ)
 ifneq ("$(OBJ)foo", "foo")
 	@echo "Adding $(OBJ) to $(LIB)"
-	@$(AR) cru $(LIB) $(OBJ)
+	@$(AR) $(ARFLAGS) $(LIB) $(OBJ)
 	@$(RANLIB) $(LIB)
 endif
 endif
@@ -202,7 +204,9 @@ libbout++.a:
 ####################################################################
 # Make the target (e.g. gas_compress)
 ####################################################################
-SUB_LIBS=$(DIRS:%=%.a)
+DIRS_=$(DIRS:%/=%)
+DIRS__=$(shell for f in $(DIRS_) ; do echo $${f\#\#*/};done)
+SUB_LIBS=$(DIRS__:%=%.a)
 
 $(SOURCEC): checklib
 $(SOURCEC:%.cxx=%.o): $(LIB)
