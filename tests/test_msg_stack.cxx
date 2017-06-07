@@ -6,7 +6,39 @@
 
 TEST(MsgStackTest, BasicTest) {
 
+  MsgStack msg_stack;
+  msg_stack.push("First");
+  auto first = msg_stack.getDump();
+  auto first_dump = "====== Back trace ======\n -> First\n";
+
+  EXPECT_EQ(first_dump, first);
+}
+
+TEST(MsgStackTest, PopTest) {
+
+  MsgStack msg_stack;
+  msg_stack.push("First");
+  msg_stack.pop();
+
+  auto first = msg_stack.getDump();
+  auto first_dump = "====== Back trace ======\n -> First\n";
+
+  EXPECT_NE(first_dump, first);
+}
+
+TEST(MsgStackTest, CanUseGlobal) {
+
   // msg_stack is global variable defined in msg_stack.hxx
+  msg_stack.push("First");
+  auto first = msg_stack.getDump();
+  auto first_dump = "====== Back trace ======\n -> First\n";
+
+  msg_stack.pop();
+  EXPECT_EQ(first_dump, first);
+}
+
+TEST(MsgStackTest, TraceMacroTest) {
+
   msg_stack.push("First");
   auto first = msg_stack.getDump();
   auto first_dump = "====== Back trace ======\n -> First\n";
