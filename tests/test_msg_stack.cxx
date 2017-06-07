@@ -1,5 +1,5 @@
-#include "msg_stack.hxx"
 #include "gtest/gtest.h"
+#include "msg_stack.hxx"
 
 #include <iostream>
 #include <string>
@@ -18,7 +18,7 @@ TEST(MsgStackTest, BasicTest) {
     TRACE("Second");
     auto second = msg_stack.getDump();
     auto second_dump = "====== Back trace ======\n -> Second on line " + line +
-                       " of 'msg_stack_test.cxx'\n -> First\n";
+                       " of 'test_msg_stack.cxx'\n -> First\n";
 
     EXPECT_EQ(second_dump, second);
   }
