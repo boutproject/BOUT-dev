@@ -73,3 +73,7 @@ all_tests: makefile $(BOUT_TOP)/make.config $(OBJ) $(SUB_LIBS) $(TEST_OBJECTS) g
 
 check: all_tests
 	./all_tests
+
+%.o: $(BOUT_TOP)/make.config %.cxx
+	@echo "  Compiling " $(@:.o=.cxx)
+	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c $(@:.o=.cxx) -o $(@)

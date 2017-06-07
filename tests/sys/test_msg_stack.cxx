@@ -50,7 +50,7 @@ TEST(MsgStackTest, TraceMacroTest) {
     TRACE("Second");
     auto second = msg_stack.getDump();
     auto second_dump = "====== Back trace ======\n -> Second on line " + line +
-                       " of 'test_msg_stack.cxx'\n -> First\n";
+                       " of 'sys/test_msg_stack.cxx'\n -> First\n";
 
     EXPECT_EQ(second_dump, second);
   }
