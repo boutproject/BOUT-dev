@@ -83,7 +83,7 @@ ArkodeSolver::~ArkodeSolver() {
  **************************************************************************/
 
 int ArkodeSolver::init(int nout, BoutReal tstep) {
-  int msg_point = msg_stack.push("Initialising ARKODE solver");
+  TRACE("Initialising ARKODE solver");
 
   /// Call the generic initialisation first
   if (Solver::init(nout, tstep))
@@ -403,11 +403,6 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
 		throw BoutException("ARKodeSetOptimalParams failed");
 	}
   msg_stack.pop();
- 
-  
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 
   return 0;
 }
@@ -418,11 +413,7 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
  **************************************************************************/
 
 int ArkodeSolver::run() {
-#ifdef CHECK
-  int msg_point = msg_stack.push("ArkodeSolver::run()");
-#endif
-
-  
+  TRACE("ArkodeSolver::run()");
 
   if(!initialised)
     throw BoutException("ArkodeSolver not initialised\n");
@@ -469,10 +460,6 @@ int ArkodeSolver::run() {
       break;
     }
   }
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 
   return 0;
 }

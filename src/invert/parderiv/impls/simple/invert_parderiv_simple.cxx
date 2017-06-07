@@ -60,14 +60,12 @@
  
 /// Parallel inversion routine
 const Field3D InvertParSimple::solve(const Field3D &rc) {
+  TRACE("invert_parderiv");
+
   static BoutReal *senddata;
   static BoutReal *recvdata;
   static int max_size = 0;
   static BoutReal *resultdata;
-
-#ifdef CHECK
-  msg_stack.push("invert_parderiv");
-#endif
 
   // Copy (to get rid of const)
   Field3D r = rc;
@@ -151,10 +149,6 @@ const Field3D InvertParSimple::solve(const Field3D &rc) {
     // Scatter the result back
     surf->scatter(resultdata, result);
   }
-    
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 
   // done
   return result;

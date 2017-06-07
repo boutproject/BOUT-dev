@@ -86,9 +86,7 @@ BoutMesh::~BoutMesh() {
 }
 
 int BoutMesh::load() {
-#ifdef CHECK
-  int msg = msg_stack.push("BoutMesh::load()");
-#endif
+  TRACE("BoutMesh::load()");
 
   output << "Loading mesh" << endl;
 
@@ -776,10 +774,6 @@ int BoutMesh::load() {
   }
 
   output.write("\tdone\n");
-
-#ifdef CHECK
-  msg_stack.pop(msg);
-#endif
 
   return 0;
 }

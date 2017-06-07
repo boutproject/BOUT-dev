@@ -195,9 +195,7 @@ IdaSolver::~IdaSolver() { }
  **************************************************************************/
 
 int IdaSolver::run() {
-#ifdef CHECK
-  int msg_point = msg_stack.push("IDA IdaSolver::run()");
-#endif
+  TRACE("IDA IdaSolver::run()");
   
   if(!initialised)
     throw BoutException("IdaSolver not initialised\n");
@@ -222,20 +220,16 @@ int IdaSolver::run() {
     }
   }
 
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
-
   return 0;
 }
 
 BoutReal IdaSolver::run(BoutReal tout) {
-  if(!initialised)
-    throw BoutException("ERROR: Running IDA solver without initialisation\n");
-
 #ifdef CHECK
   int msg_point = msg_stack.push("Running solver: solver::run(%e)", tout);
 #endif
+
+  if(!initialised)
+    throw BoutException("ERROR: Running IDA solver without initialisation\n");
   
   rhs_ncalls = 0;
 

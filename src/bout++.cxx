@@ -405,13 +405,13 @@ int BoutFinalise() {
  **************************************************************************/
 
 int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
-  // Data used for timing
-  static bool first_time = true;
-  static BoutReal wall_limit, mpi_start_time; // Keep track of remaining wall time
-
 #ifdef CHECK
   int msg_point = msg_stack.push("bout_monitor(%e, %d, %d)", t, iter, NOUT);
 #endif
+
+  // Data used for timing
+  static bool first_time = true;
+  static BoutReal wall_limit, mpi_start_time; // Keep track of remaining wall time
 
   // Set the global variables. This is done because they need to be
   // written to the output file before the first step (initial condition)

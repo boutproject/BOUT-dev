@@ -409,9 +409,11 @@ int Field2D::setData(int x, int y, int UNUSED(z), BoutReal *rptr) {
 ///////////////////// BOUNDARY CONDITIONS //////////////////
 
 void Field2D::applyBoundary(bool init) {
+  TRACE("Field2D::applyBoundary()");
+
 #ifdef CHECK
   if (init) {
-    msg_stack.push("Field2D::applyBoundary()");
+
     if(!boundaryIsSet)
       output << "WARNING: Call to Field2D::applyBoundary(), but no boundary set" << endl;
   }
@@ -419,7 +421,6 @@ void Field2D::applyBoundary(bool init) {
   for(const auto& bndry : bndry_op)
     if ( !bndry->apply_to_ddt || init) // Always apply to the values when initialising fields, otherwise apply only if wanted
       bndry->apply(*this);
-  msg_stack.pop();
 }
 
 void Field2D::applyBoundary(const string &condition) {

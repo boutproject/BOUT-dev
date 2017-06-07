@@ -81,7 +81,7 @@ CvodeSolver::~CvodeSolver() {
  **************************************************************************/
 
 int CvodeSolver::init(int nout, BoutReal tstep) {
-  int msg_point = msg_stack.push("Initialising CVODE solver");
+  TRACE("Initialising CVODE solver");
 
   /// Call the generic initialisation first
   if(Solver::init(nout, tstep))
@@ -228,7 +228,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
     msg_stack.push("Calling CVodeSStolerances");
     if( CVodeSVtolerances(cvode_mem, reltol, abstolvec) < 0 )
       throw BoutException("CVodeSStolerances failed\n");
-  msg_stack.pop();
+    msg_stack.pop();
   }
   else {
     if( CVodeSStolerances(cvode_mem, reltol, abstol) < 0 )
@@ -311,10 +311,6 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   }else {
     output.write("\tUsing Functional iteration\n");
   }
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 
   return 0;
 }

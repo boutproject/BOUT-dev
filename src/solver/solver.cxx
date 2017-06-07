@@ -1294,13 +1294,14 @@ void Solver::post_rhs(BoutReal t) {
       f.var->applyTDerivBoundary();
   }
 #if CHECK > 2
-  msg_stack.push("Solver checking time derivatives");
-  for(const auto& f : f3d) {
-    msg_stack.push("Variable: %s", f.name.c_str());
-    checkData(*f.F_var);
-    msg_stack.pop();
+  {
+    TRACE("Solver checking time derivatives");
+    for(const auto& f : f3d) {
+      msg_stack.push("Variable: %s", f.name.c_str());
+      checkData(*f.F_var);
+      msg_stack.pop();
+    }
   }
-  msg_stack.pop();
 #endif
 }
 
