@@ -438,8 +438,7 @@ int BoutMesh::load() {
   // Outer SOL regions
   if(jyseps1_2 == jyseps2_1) {
     // Single-null. All processors with same PE_XIND
-
-    msg_stack.push("Creating Outer SOL communicators for Single Null operation");
+    TRACE("Creating Outer SOL communicators for Single Null operation");
 
     for(int i=0;i<NXPE;i++) {
       proc[0] = PROC_NUM(i, 0);
@@ -462,11 +461,9 @@ int BoutMesh::load() {
       }
       MPI_Group_free(&group);
     }
-    msg_stack.pop();
   }else {
     // Double null
-
-    msg_stack.push("Creating Outer SOL communicators for Double Null operation");
+    TRACE("Creating Outer SOL communicators for Double Null operation");
 
     for(int i=0;i<NXPE;i++) {
       // Inner SOL
@@ -495,8 +492,6 @@ int BoutMesh::load() {
       }
       MPI_Group_free(&group);
     }
-
-    msg_stack.pop();
   }
 
   for(int i=0;i<NXPE;i++) {
@@ -620,7 +615,7 @@ int BoutMesh::load() {
     }
 
     // Core region
-    msg_stack.push("Creating core communicators");
+    TRACE("Creating core communicators");
     proc[0] = PROC_NUM(i, YPROC(jyseps1_1+1));
     proc[1] = PROC_NUM(i, YPROC(jyseps2_1));
 #ifdef COMMDEBUG
@@ -655,8 +650,6 @@ int BoutMesh::load() {
     if(group_tmp2 != MPI_GROUP_EMPTY)
       MPI_Group_free(&group_tmp2);
     MPI_Group_free(&group);
-
-    msg_stack.pop();
   }
 
   if(ixseps_inner == ixseps_outer) {
@@ -671,8 +664,7 @@ int BoutMesh::load() {
 
     if(ixseps_upper > ixseps_lower) {
       // middle is connected to the bottom
-
-      msg_stack.push("Creating unbalanced lower communicators");
+      TRACE("Creating unbalanced lower communicators");
 
       for(int i=0;i<NXPE;i++) {
         proc[0] = PROC_NUM(i, 0);
@@ -692,11 +684,10 @@ int BoutMesh::load() {
           MPI_Group_free(&group_tmp2);
         MPI_Group_free(&group);
       }
-      msg_stack.pop();
     }else {
       // middle is connected to the top
+      TRACE("Creating unbalanced upper communicators");
 
-      msg_stack.push("Creating unbalanced upper communicators");
       for(int i=0;i<NXPE;i++) {
         proc[0] = PROC_NUM(i, YPROC(ny_inner));
         proc[1] = PROC_NUM(i, YPROC(jyseps2_2));
@@ -715,7 +706,6 @@ int BoutMesh::load() {
           MPI_Group_free(&group_tmp2);
         MPI_Group_free(&group);
       }
-      msg_stack.pop();
     }
   }
   MPI_Group_free(&group_world);
