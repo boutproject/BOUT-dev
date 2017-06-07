@@ -46,7 +46,7 @@
 #include <cstring>
 #include "formatfactory.hxx"
 
-Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), floats(false), openclose(true), enabled(true), shiftOutput(false), writeFlushCounter(0), writeFlushFreq(1), file(nullptr) {
+Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), floats(false), openclose(true), enabled(true), shiftOutput(false), flushFrequencyCounter(0), flushFrequency(1), file(nullptr) {
   filenamelen=FILENAMELEN;
   filename=new char[filenamelen];
 
@@ -62,16 +62,14 @@ Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), f
   OPTION(opt, enabled, true);
   OPTION(opt, init_missing, false); // Initialise missing variables?
   OPTION(opt, shiftOutput, false); //Do we want to write 3D fields in shifted space?
-
-  writeFlushCounter = 0;
-  OPTION(opt, writeFlushFreq, 1); //How frequently do we flush the file
+  OPTION(opt, flushFrequency, 1); //How frequently do we flush the file
   
 }
 
 Datafile::Datafile(Datafile &&other) :
   parallel(other.parallel), flush(other.flush), guards(other.guards),
   floats(other.floats), openclose(other.openclose), Lx(other.Lx), Ly(other.Ly), Lz(other.Lz),
-  enabled(other.enabled), shiftOutput(other.shiftOutput), writeFlushCounter(other.writeFlushCounter), writeFlushFreq(other.writeFlushFreq), 
+  enabled(other.enabled), shiftOutput(other.shiftOutput), flushFrequencyCounter(other.flushFrequencyCounter), flushFrequency(other.flushFrequency), 
   file(other.file.release()), int_arr(other.int_arr),
   BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr),
   f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {
@@ -85,7 +83,7 @@ Datafile::Datafile(Datafile &&other) :
 Datafile::Datafile(const Datafile &other) :
   parallel(other.parallel), flush(other.flush), guards(other.guards),
   floats(other.floats), openclose(other.openclose), Lx(other.Lx), Ly(other.Ly), Lz(other.Lz),
-  enabled(other.enabled), shiftOutput(other.shiftOutput), writeFlushCounter(other.writeFlushCounter), writeFlushFreq(other.writeFlushFreq), 
+  enabled(other.enabled), shiftOutput(other.shiftOutput), flushFrequencyCounter(other.flushFrequencyCounter), flushFrequency(other.flushFrequency), 
   file(nullptr), int_arr(other.int_arr),
   BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr),
   f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {
@@ -105,8 +103,8 @@ Datafile& Datafile::operator=(Datafile &&rhs) {
   enabled      = rhs.enabled;
   init_missing = rhs.init_missing;
   shiftOutput  = rhs.shiftOutput;
-  writeFlushCounter = rhs.writeFlushCounter;
-  writeFlushFreq = rhs.writeFlushFreq;
+  flushFrequencyCounter = 0;
+  flushFrequency = rhs.flushFrequency;
   file         = std::move(rhs.file);
   rhs.file     = nullptr; // not needed?
   int_arr      = rhs.int_arr;
@@ -513,14 +511,14 @@ bool Datafile::write() {
   if(!file)
     throw BoutException("Datafile::write: File is not valid!");
 
-  if(openclose && (writeFlushCounter % writeFlushFreq == 0)) {
+  if(openclose && (flushFrequencyCounter % flushFrequency == 0)) {
     // Open the file
     int MYPE;
     MPI_Comm_rank(BoutComm::get(), &MYPE);
     if(!file->openw(filename, MYPE, appending))
       throw BoutException("Datafile::write: Failed to open file!");
     appending = true;
-    writeFlushCounter = 0;
+    flushFrequencyCounter = 0;
   }
   
   if(!file->is_valid())
@@ -595,10 +593,10 @@ bool Datafile::write() {
     }
   }
   
-  if(openclose  && (writeFlushCounter+1 % writeFlushFreq == 0)){
+  if(openclose  && (flushFrequencyCounter+1 % flushFrequency == 0)){
     file->close();
   }
-  writeFlushCounter++;
+  flushFrequencyCounter++;
   return true;
 }
 
