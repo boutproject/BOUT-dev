@@ -30,6 +30,7 @@ class MsgStack;
 #define __MSG_STACK_H__
 
 #include <stdio.h>
+#include <stdarg.h>
 #include <string>
 
 /// The maximum length (in chars) of messages, not including terminating '0'
@@ -119,11 +120,18 @@ GLOBAL MsgStack msg_stack;
  */
 class MsgStackItem {
 public:
-  MsgStackItem(const char* msg) {
+  MsgStackItem(const char* msg) { //Not currently used anywhere
     point = msg_stack.push(msg);
   }
   MsgStackItem(const char* msg, const char* file, int line) {
     point = msg_stack.push("%s on line %d of '%s'", msg, line, file);
+  }
+  MsgStackItem(const char* msg, const char* file, int line, const char* msg2, ...) {
+    va_list args;
+    va_start(args, msg2);
+    vsnprintf(buffer,MSG_MAX_SIZE, msg, args);
+    point = msg_stack.push("%s on line %d of '%s'", buffer, line, file);
+    va_end(args);
   }
   ~MsgStackItem() {
     // If an exception has occurred, don't pop the message
@@ -132,6 +140,7 @@ public:
   }
 private:
   int point;
+  char buffer[256];
 };
 
 /// To concatenate strings for a variable name
@@ -152,9 +161,24 @@ private:
  * } // Scope ends, message popped
  */
 #ifdef CHECK
-#define TRACE(message) MsgStackItem CONCATENATE(msgTrace_ , __LINE__) (message, __FILE__, __LINE__)
+/* Would like to have something like TRACE(message, ...) so that we can directly refer
+   to the (required) first argument, which is the main message string. However because
+   we want to allow TRACE("Message with no args") we have to deal with the case where
+   __VA_ARGS__ is empty. There's a GCC specific extension such that 
+    //#define TRACE(message, ...) MsgStackItem CONCATENATE(msgTrace_ , __LINE__) (message, __FILE__, __LINE__, ##__VA_ARGS__) //## is non-standard here
+    would achieve this for us. However to be more portable have to instead do a bit of "magic" 
+    to be able to handle cases with and without extra arguments. In particular we extract the
+    first of the variadic arguments and say this is the message. We can then pass this as the
+    first argument and then pass the full list of args as the last argument. In the constructor
+    we then note that we actually want to skip the first of the variable arguments, so declare
+    the routine with an extra required msg argument after line. This means we can skip the first
+    entry in the __VA_ARGS__ list by using va_start(args,msg2)
+ */
+#define GET_1ST_ARG(arg1, ...) arg1
+#define TRACE(...) MsgStackItem CONCATENATE(msgTrace_ , __LINE__) (GET_1ST_ARG(__VA_ARGS__), __FILE__, __LINE__, __VA_ARGS__)
+
 #else
-#define TRACE(message)
+#define TRACE(...)
 #endif
 
 #endif // __MSG_STACK_H__
