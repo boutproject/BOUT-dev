@@ -165,9 +165,7 @@ const Field3D InvertParSimple::solve(const Field3D &rc) {
  * @param[out]   result
  */
 void InvertParSimple::cyclicSolve(int ysize, int xpos, BoutReal *data, BoutReal *result, bool coef3d) {
-#ifdef CHECK
-  msg_stack.push("cyclic_solve(%d, %d)", ysize, xpos);
-#endif
+  TRACE("cyclic_solve(%d, %d)", ysize, xpos);
 
   BoutReal ts; // Twist-shift angle
   if(!mesh->periodicY(xpos,ts))
@@ -277,9 +275,5 @@ void InvertParSimple::cyclicSolve(int ysize, int xpos, BoutReal *data, BoutReal 
         z0 = i;
     }
   }while(z0 != -1); // Keep going until everything's been inverted
-    
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 }
 

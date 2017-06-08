@@ -465,9 +465,7 @@ int ArkodeSolver::run() {
 }
 
 BoutReal ArkodeSolver::run(BoutReal tout) {
-#ifdef CHECK
-  int msg_point = msg_stack.push("Running solver: solver::run(%e)", tout);
-#endif
+  TRACE("Running solver: solver::run(%e)", tout);
 
   MPI_Barrier(BoutComm::get());
 
@@ -514,10 +512,6 @@ BoutReal ArkodeSolver::run(BoutReal tout) {
     return -1.0;
   }
 
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
-
   return simtime;
 }
 
@@ -526,9 +520,7 @@ BoutReal ArkodeSolver::run(BoutReal tout) {
  **************************************************************************/
 
 void ArkodeSolver::rhs_e(BoutReal t, BoutReal *udata, BoutReal *dudata) {
-#ifdef CHECK
-  int msg_point = msg_stack.push("Running RHS: ArkodeSolver::rhs_e(%e)", t);
-#endif
+  TRACE("Running RHS: ArkodeSolver::rhs_e(%e)", t);
 
   // Load state from udata
   load_vars(udata);
@@ -542,10 +534,6 @@ void ArkodeSolver::rhs_e(BoutReal t, BoutReal *udata, BoutReal *dudata) {
 
   // Save derivatives to dudata
   save_derivs(dudata);
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 }
 
 
@@ -554,42 +542,28 @@ void ArkodeSolver::rhs_e(BoutReal t, BoutReal *udata, BoutReal *dudata) {
  **************************************************************************/
 
 void ArkodeSolver::rhs_i(BoutReal t, BoutReal *udata, BoutReal *dudata) {
-#ifdef CHECK
-  int msg_point = msg_stack.push("Running RHS: ArkodeSolver::rhs_i(%e)", t);
-#endif
+  TRACE("Running RHS: ArkodeSolver::rhs_i(%e)", t);
 
   load_vars(udata);
   ARKodeGetLastStep(arkode_mem, &hcur);
   // Call Implicit RHS function
   run_diffusive(t);
   save_derivs(dudata);
-  
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
-  }
+}
   
   
 /**************************************************************************
  *   Full  RHS function du = F(t, u)
  **************************************************************************/
 void ArkodeSolver::rhs(BoutReal t, BoutReal *udata, BoutReal *dudata) {
-#ifdef CHECK
-  int msg_point = msg_stack.push("Running RHS: ArkodeSolver::rhs(%e)", t);
-#endif
+  TRACE("Running RHS: ArkodeSolver::rhs(%e)", t);
 
   load_vars(udata);
   ARKodeGetLastStep(arkode_mem, &hcur);
   // Call Implicit RHS function
   run_rhs(t);
   save_derivs(dudata);
-  
-  #ifdef CHECK
-     msg_stack.pop(msg_point);
-  #endif
-   }
-  
-
+}
 
 
 /**************************************************************************
@@ -597,9 +571,7 @@ void ArkodeSolver::rhs(BoutReal t, BoutReal *udata, BoutReal *dudata) {
  **************************************************************************/
 
 void ArkodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal *udata, BoutReal *rvec, BoutReal *zvec) {
-#ifdef CHECK
-  int msg_point = msg_stack.push("Running preconditioner: ArkodeSolver::pre(%e)", t);
-#endif
+  TRACE("Running preconditioner: ArkodeSolver::pre(%e)", t);
 
   BoutReal tstart = MPI_Wtime();
 
@@ -626,10 +598,6 @@ void ArkodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal *uda
 
   pre_Wtime += MPI_Wtime() - tstart;
   pre_ncalls++;
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 }
 
 /**************************************************************************
@@ -637,9 +605,7 @@ void ArkodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal *uda
  **************************************************************************/
 
 void ArkodeSolver::jac(BoutReal t, BoutReal *ydata, BoutReal *vdata, BoutReal *Jvdata) {
-#ifdef CHECK
-  int msg_point = msg_stack.push("Running Jacobian: ArkodeSolver::jac(%e)", t);
-#endif
+  TRACE("Running Jacobian: ArkodeSolver::jac(%e)", t);
   
   if(jacfunc == NULL)
     throw BoutException("ERROR: No jacobian function supplied!\n");
@@ -655,10 +621,6 @@ void ArkodeSolver::jac(BoutReal t, BoutReal *ydata, BoutReal *vdata, BoutReal *J
 
   // Save Jv from vars
   save_derivs(Jvdata);
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 }
 
 /**************************************************************************

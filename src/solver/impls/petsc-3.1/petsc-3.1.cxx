@@ -452,9 +452,7 @@ PetscErrorCode PetscSolver::run()
 
 PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata)
 {
-#ifdef CHECK
-  int msg_point = msg_stack.push("Running RHS: Petsc31Solver::rhs(%e)", t);
-#endif
+  TRACE("Running RHS: Petsc31Solver::rhs(%e)", t);
 
   int flag;
   BoutReal *udata_array, *dudata_array;
@@ -498,10 +496,6 @@ PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata)
     outputnext = false;
     next_time = simtime + tstep; // Set the next output time
   }
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 
   PetscFunctionReturn(0);
 }

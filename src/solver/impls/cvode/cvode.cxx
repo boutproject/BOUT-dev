@@ -401,9 +401,7 @@ int CvodeSolver::run() {
 }
 
 BoutReal CvodeSolver::run(BoutReal tout) {
-#ifdef CHECK
-  int msg_point = msg_stack.push("Running solver: solver::run(%e)", tout);
-#endif
+  TRACE("Running solver: solver::run(%e)", tout);
 
   MPI_Barrier(BoutComm::get());
   
@@ -449,10 +447,6 @@ BoutReal CvodeSolver::run(BoutReal tout) {
     return -1.0;
   }
 
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
-
   return simtime;
 }
 
@@ -461,9 +455,7 @@ BoutReal CvodeSolver::run(BoutReal tout) {
  **************************************************************************/
 
 void CvodeSolver::rhs(BoutReal t, BoutReal *udata, BoutReal *dudata) {
-#ifdef CHECK
-  int msg_point = msg_stack.push("Running RHS: CvodeSolver::res(%e)", t);
-#endif
+  TRACE("Running RHS: CvodeSolver::res(%e)", t);
 
   // Load state from udata
   load_vars(udata);
@@ -477,10 +469,6 @@ void CvodeSolver::rhs(BoutReal t, BoutReal *udata, BoutReal *dudata) {
 
   // Save derivatives to dudata
   save_derivs(dudata);
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 }
 
 /**************************************************************************
@@ -488,9 +476,7 @@ void CvodeSolver::rhs(BoutReal t, BoutReal *udata, BoutReal *dudata) {
  **************************************************************************/
 
 void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal *udata, BoutReal *rvec, BoutReal *zvec) {
-#ifdef CHECK
-  int msg_point = msg_stack.push("Running preconditioner: CvodeSolver::pre(%e)", t);
-#endif
+  TRACE("Running preconditioner: CvodeSolver::pre(%e)", t);
 
   BoutReal tstart = MPI_Wtime();
 
@@ -516,10 +502,6 @@ void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal *udat
 
   pre_Wtime += MPI_Wtime() - tstart;
   pre_ncalls++;
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 }
 
 /**************************************************************************
@@ -527,9 +509,7 @@ void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal *udat
  **************************************************************************/
 
 void CvodeSolver::jac(BoutReal t, BoutReal *ydata, BoutReal *vdata, BoutReal *Jvdata) {
-#ifdef CHECK
-  int msg_point = msg_stack.push("Running Jacobian: CvodeSolver::jac(%e)", t);
-#endif
+  TRACE("Running Jacobian: CvodeSolver::jac(%e)", t);
   
   if(jacfunc == NULL)
     throw BoutException("ERROR: No jacobian function supplied!\n");
@@ -545,10 +525,6 @@ void CvodeSolver::jac(BoutReal t, BoutReal *ydata, BoutReal *vdata, BoutReal *Jv
 
   // Save Jv from vars
   save_derivs(Jvdata);
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 }
 
 /**************************************************************************

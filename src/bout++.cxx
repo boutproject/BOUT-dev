@@ -405,9 +405,7 @@ int BoutFinalise() {
  **************************************************************************/
 
 int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
-#ifdef CHECK
-  int msg_point = msg_stack.push("bout_monitor(%e, %d, %d)", t, iter, NOUT);
-#endif
+  TRACE("bout_monitor(%e, %d, %d)", t, iter, NOUT);
 
   // Data used for timing
   static bool first_time = true;
@@ -488,18 +486,11 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
       // Less than 1 time-step left
       output.write("Only %e seconds left. Quitting\n", t_remain);
 
-#ifdef CHECK
-      msg_stack.pop(msg_point);
-#endif
       return 1; // Return an error code to quit
     } else {
       output.print(" Wall %s", (time_to_hms(t_remain)).c_str());
     }
   }
-  
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 
   return 0;
 }

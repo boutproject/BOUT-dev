@@ -224,9 +224,7 @@ int IdaSolver::run() {
 }
 
 BoutReal IdaSolver::run(BoutReal tout) {
-#ifdef CHECK
-  int msg_point = msg_stack.push("Running solver: solver::run(%e)", tout);
-#endif
+  TRACE("Running solver: solver::run(%e)", tout);
 
   if(!initialised)
     throw BoutException("ERROR: Running IDA solver without initialisation\n");
@@ -248,10 +246,6 @@ BoutReal IdaSolver::run(BoutReal tout) {
     output.write("ERROR IDA solve failed at t = %e, flag = %d\n", simtime, flag);
     return -1.0;
   }
-  
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 
   return simtime;
 }
@@ -262,9 +256,7 @@ BoutReal IdaSolver::run(BoutReal tout) {
 
 void IdaSolver::res(BoutReal t, BoutReal *udata, BoutReal *dudata, BoutReal *rdata)
 {
-#ifdef CHECK
-  int msg_point = msg_stack.push("Running RHS: IdaSolver::res(%e)", t);
-#endif
+  TRACE("Running RHS: IdaSolver::res(%e)", t);
   
   // Load state from udata
   load_vars(udata);
@@ -282,10 +274,6 @@ void IdaSolver::res(BoutReal t, BoutReal *udata, BoutReal *dudata, BoutReal *rda
     if(idd[i] > 0.5) // 1 -> differential, 0 -> algebraic
       rdata[i] -= dudata[i];
   }
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 }
 
 /**************************************************************************
@@ -293,9 +281,7 @@ void IdaSolver::res(BoutReal t, BoutReal *udata, BoutReal *dudata, BoutReal *rda
  **************************************************************************/
 
 void IdaSolver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal *udata, BoutReal *rvec, BoutReal *zvec) {
-#ifdef CHECK
-  int msg_point = msg_stack.push("Running preconditioner: IdaSolver::pre(%e)", t);
-#endif
+  TRACE("Running preconditioner: IdaSolver::pre(%e)", t);
 
   BoutReal tstart = MPI_Wtime();
 
@@ -321,10 +307,6 @@ void IdaSolver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal *udata, Bo
 
   pre_Wtime += MPI_Wtime() - tstart;
   pre_ncalls++;
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 }
 
 /**************************************************************************

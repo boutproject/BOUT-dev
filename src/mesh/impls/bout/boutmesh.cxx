@@ -499,12 +499,11 @@ int BoutMesh::load() {
 
     if((jyseps1_1 >= 0) || (jyseps2_2+1 < ny)) {
       // A lower PF region exists
+      TRACE("Creating lower PF communicators for xp=%d", i);
 
 #ifdef COMMDEBUG
       output << "Creating lower PF communicators for xp = " << i << endl;
 #endif
-
-      msg_stack.push("Creating lower PF communicators for xp=%d", i);
 
       if(jyseps1_1 >= 0) {
         proc[0] = PROC_NUM(i, 0);
@@ -558,17 +557,16 @@ int BoutMesh::load() {
 #ifdef COMMDEBUG
       output << "done lower PF\n";
 #endif
-      msg_stack.pop();
     }
 
     if(jyseps2_1 != jyseps1_2) {
       // Upper PF region
       // Note need to order processors so that a continuous surface is formed
+      TRACE("Creating upper PF communicators for xp=%d", i);
 
 #ifdef COMMDEBUG
       output << "Creating upper PF communicators for xp = " << i << endl;
 #endif
-      msg_stack.push("Creating upper PF communicators for xp=%d", i);
 
       proc[0] = PROC_NUM(i, YPROC(ny_inner));
       proc[1] = PROC_NUM(i, YPROC(jyseps1_2));
@@ -608,7 +606,6 @@ int BoutMesh::load() {
         MPI_Group_free(&group_tmp1);
       if(group_tmp2 != MPI_GROUP_EMPTY)
         MPI_Group_free(&group_tmp2);
-      msg_stack.pop();
 #ifdef COMMDEBUG
       output << "done upper PF\n";
 #endif
