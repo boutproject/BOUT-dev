@@ -5,7 +5,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -29,10 +29,13 @@ class Output;
 #ifndef __OUTPUT_H__
 #define __OUTPUT_H__
 
+#include "utils.hxx"
+
 #include <stdio.h>
 #include "multiostream.hxx"
 #include <iostream>
 #include <fstream>
+#include <string>
 
 using std::endl;
 
@@ -50,40 +53,49 @@ using std::endl;
   will be written to the file. In addition, output to stdout can be enabled
   and disabled.
 */
-class Output : private multioutbuf_init<char, std::char_traits<char> >, 
+class Output : private multioutbuf_init<char, std::char_traits<char> >,
                public std::basic_ostream<char, std::char_traits<char> > {
 
   typedef std::char_traits<char> _Tr;
   typedef ::multioutbuf_init<char, _Tr> multioutbuf_init;
-  
+
  public:
-  Output() : multioutbuf_init(), 
+  Output() : multioutbuf_init(),
     std::basic_ostream<char, _Tr>(multioutbuf_init::buf()) {
-    buffer_len=BUFFER_LEN;
-    buffer=new char[buffer_len];
     enable();
   }
-    
+
   /// Specify a log file to open
-  Output(const char *fname) : multioutbuf_init(), 
+  Output(const std::string &fname) : multioutbuf_init(),
     std::basic_ostream<char, _Tr>(multioutbuf_init::buf()) {
-    buffer_len=BUFFER_LEN;
-    buffer=new char[buffer_len];
     enable();
     open(fname);
-  } 
-  ~Output() {close();
-    delete[] buffer;}
-  
+  }
+  ~Output() { close(); }
+
   void enable();  ///< Enables writing to stdout (default)
   void disable(); ///< Disables stdout
 
-  int open(const char *fname, ...); ///< Open an output log file
-  void close();                    ///< Close the log file
+  /// Open an output log file
+  template <typename... Args> int open(const std::string &fname, Args... args) {
+    return open(string_format(fname, args...));
+  }
+  int open(const std::string &fname);
 
-  void write(const char*string, ...); ///< Write a string using C printf format
+  /// Close the log file
+  void close();
 
-  void print(const char*string, ...); ///< Same as write, but only to screen
+  /// Write a string using C printf format
+  template <typename... Args> void write(const std::string &format, Args... args) {
+    return write(string_format(format, args...));
+  }
+  void write(const std::string &format);
+
+  /// Same as write, but only to screen
+  template <typename... Args> void print(const std::string &format, Args... args) {
+    return print(string_format(format, args...));
+  }
+  void print(const std::string &format);
 
   /// Add an output stream. All output will be sent to all streams
   void add(std::basic_ostream<char, _Tr>& str) {
@@ -99,11 +111,8 @@ class Output : private multioutbuf_init<char, std::char_traits<char> >,
   static void cleanup();   ///< Delete the instance
  private:
   static Output *instance; ///< Default instance of this class
-  
+
   std::ofstream file; ///< Log file stream
-  static const int BUFFER_LEN=1024; ///< default length
-  int buffer_len; ///< the current length
-  char * buffer; ///< Buffer used for C style output
   bool enabled;      ///< Whether output to stdout is enabled
 };
 

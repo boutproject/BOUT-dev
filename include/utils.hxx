@@ -35,10 +35,7 @@
 
 #include "bout/deprecated.hxx"
 
-#include <string>
-#include <list>
 #include <cmath>
-#include <algorithm>
 
 using std::abs;
 using std::swap;
@@ -261,117 +258,5 @@ T SIGN(T a) { // Return +1 or -1 (0 -> +1)
 inline BoutReal MINMOD(BoutReal a, BoutReal b) {
   return 0.5*(SIGN(a) + SIGN(b)) * BOUTMIN(fabs(a), fabs(b));
 }
-
-/*!
- * Allocate memory and copy string \p s
- */ 
-char* copy_string(const char* s);
-
-/*!
- * Convert a value to a string
- * by writing to a stringstream
- */
-template <class T>
-const string toString(const T& val) {
-  std::stringstream ss;
-  ss << val;
-  return ss.str();
-}
-
-/*!
- * Convert a string to lower case
- */
-const string lowercase(const string &str);
-
-/*!
- * Convert to lower case, except inside quotes (" or ')
- */
-const string lowercasequote(const string &str);
-
-/*!
- * Convert a string to a BoutReal
- * Throws BoutException if can't be done
- */ 
-BoutReal stringToReal(const std::string &s);
-
-/*!
- * Convert a string to an int
- * 
- * Throws BoutException if can't be done
- */
-int stringToInt(const std::string &s);
-
-/*!
- * Split a string on a given delimiter
- *
- * @param[in] s     The string to split (not modified by call)
- * @param[in] delim The delimiter to split on (single char)
- * @param[in, out] elems  A list to which the pieces will be appended using push_back
- */
-std::list<std::string> &strsplit(const std::string &s, char delim, std::list<std::string> &elems);
-
-/*!
- * Split a string on a given delimiter
- * 
- * @param[in] s     The string to split (not modified by call)
- * @param[in] delim The delimiter to split on (single char)
- */
-std::list<std::string> strsplit(const std::string &s, char delim);
-
-/*!
- * Strips leading and trailing spaces from a string
- * 
- * @param[in] s   The string to trim (not modified)
- * @param[in] c   Collection of characters to remove
- */
-string trim(const string &s, const string &c=" \t\r");
-
-/*!
- * Strips leading spaces from a string
- * 
- * @param[in] s   The string to trim (not modified)
- * @param[in] c   Collection of characters to remove
- */
-string trimLeft(const string &, const string &c=" \t");
-
-/*!
- * Strips leading spaces from a string
- * 
- * @param[in] s   The string to trim (not modified)
- * @param[in] c   Collection of characters to remove
- */
-string trimRight(const string &, const string &c=" \t\r");
-
-/*! 
- * Strips the comments from a string
- * Removes anything after the first appearance of one 
- * of the characters in \p c
- * 
- */
-string trimComments(const string &, const string &c="#;");
-
-/// the bout_vsnprintf macro:
-/// The first argument is an char * buffer of length len.
-/// It needs to have been allocated with new[], as it may be
-/// reallocated.
-/// len: the length of said buffer. May be changed, mussn't be const.
-/// fmt: the const char * descriping the format.
-/// note that fmt should be the first argument of the function of type
-/// const char * and has to be directly followed by the variable arguments.
-#define bout_vsnprintf(buf,len,fmt) {                   \
-    va_list va;                                         \
-    va_start(va, fmt);                                  \
-    int _vsnprintflen=vsnprintf(buf,len,fmt,va);        \
-    va_end(va);                                         \
-    if ( _vsnprintflen+1 > len){                        \
-      _vsnprintflen+=1;                                 \
-      delete[] buf;                                     \
-      buf = new char[_vsnprintflen];                    \
-      len = _vsnprintflen;                              \
-      va_start(va,fmt);                                 \
-      vsnprintf(buf,len,fmt,va);                        \
-      va_end(va);                                       \
-    }                                                   \
-  }
 
 #endif // __UTILS_H__

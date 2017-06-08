@@ -35,6 +35,7 @@ class OptionsReader;
 #define __OPTIONSREADER_H__
 
 #include "options.hxx"
+#include "string_utils.hxx"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -61,8 +62,12 @@ class OptionsReader {
   /// the options tree.
   ///
   /// @param[inout] options  The options section to insert values and subsections into
-  /// @param[in] file  The name of the file. printf style arguments can be used to create the file name.
-  void read(Options *options, const char *file, ...);
+  /// @param[in] filename  The name of the file. printf style arguments can be used to create the file name.
+  template <typename... Args>
+  void read(Options *options, const std::string &filename, Args... args) {
+    return read(options, string_format(filename, args...));
+  }
+  void read(Options *options, const std::string &filename);
 
   /// Write options to file
   ///

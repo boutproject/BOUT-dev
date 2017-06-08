@@ -20,6 +20,7 @@ class Datafile;
 #include "vector2d.hxx"
 #include "vector3d.hxx"
 #include "options.hxx"
+#include "utils.hxx"
 
 #include "dataformat.hxx"
 
@@ -38,15 +39,28 @@ class Datafile {
  public:
   Datafile(Options *opt = NULL);
   Datafile(Datafile &&other);
-  ~Datafile(); // need to delete filename
-  
+
   Datafile& operator=(Datafile &&rhs);
   Datafile& operator=(const Datafile &rhs) = delete;
 
-  bool openr(const char *filename, ...);
-  bool openw(const char *filename, ...); // Overwrites existing file
-  bool opena(const char *filename, ...); // Appends if exists
-  
+  /// Open a file read-only
+  template <typename... Args> bool openr(const std::string &format, Args... args) {
+    return openr(string_format(format, args...));
+  }
+  bool openr(const std::string &format);
+
+  /// Overwrites existing file
+  template <typename... Args> bool openw(const std::string &format, Args... args) {
+    return openw(string_format(format, args...));
+  }
+  bool openw(const std::string &format);
+
+  /// Appends if exists
+  template <typename... Args> bool opena(const std::string &format, Args... args) {
+    return opena(string_format(format, args...));
+  }
+  bool opena(const std::string &format);
+
   bool isValid();  // Checks if the data source is valid
 
   void close();
@@ -70,8 +84,13 @@ class Datafile {
   bool read();  ///< Read data into added variables 
   bool write(); ///< Write added variables
 
-  bool write(const char *filename, ...) const; ///< Opens, writes, closes file
-  
+  /// Opens, writes, closes file
+  template <typename... Args>
+  bool write(const std::string &format, Args... args) const {
+    return write(string_format(format, args...));
+  }
+  bool write(const std::string &format) const;
+
   // Write a variable to the file now
   DEPRECATED(bool writeVar(const int &i, const char *name));
   DEPRECATED(bool writeVar(BoutReal r, const char *name));
@@ -87,10 +106,8 @@ class Datafile {
   bool init_missing; // Initialise missing variables?
   bool shiftOutput; //Do we want to write out in shifted space?
 
-  std::unique_ptr<DataFormat> file;
-  size_t filenamelen;
-  static const size_t FILENAMELEN=512;
-  char *filename;
+  std::unique_ptr<DataFormat> file; ///< File object
+  std::string filename; ///< Name of the file
   bool appending;
 
   /// Shallow copy, not including dataformat, therefore private

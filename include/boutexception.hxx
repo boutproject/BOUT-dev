@@ -7,33 +7,42 @@ class BoutException;
 #include <exception>
 #include <string>
 
+#include "string_utils.hxx"
+
 using std::string;
 
-void BoutParallelThrowRhsFail(int &status, const char* message);
+void BoutParallelThrowRhsFail(int &status, const std::string &message);
 
 class BoutException : public std::exception {
 public:
-  BoutException(const char *, ...);
-  BoutException(const std::string);
-  virtual ~BoutException() throw();
+  template <typename... Args>
+  BoutException(const std::string &message, Args... args) :
+    BoutException(string_format(message, args...)) {}
+  BoutException(const std::string &message);
+  virtual ~BoutException() throw() {}
   
-  const char* what() const throw();
+  const char* what() const throw() { return message.c_str(); }
   void Backtrace();
 protected:
-  char * buffer;
-  static const int BUFFER_LEN = 1024; // Length of char buffer for printing
-  int buflen; // Length of char buffer for printing
-  string message;
+  std::string message;
 };
 
 class BoutRhsFail : public BoutException {
 public:
-  BoutRhsFail(const char *, ...);
+  template <typename... Args>
+  BoutRhsFail(const std::string &message, Args... args) :
+    BoutException(string_format(message, args...)) {}
+  BoutRhsFail(const std::string &message) :
+    BoutException(message) {}
 };
 
 class BoutIterationFail : public BoutException {
 public:
-  BoutIterationFail(const char *, ...);
+  template <typename... Args>
+  BoutIterationFail(const std::string &message, Args... args) :
+    BoutException(string_format(message, args...)) {}
+  BoutIterationFail(const std::string &message) :
+    BoutException(message) {}
 };
 
 #endif

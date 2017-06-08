@@ -10,17 +10,12 @@
 #endif
 #include <utils.hxx>
 
-void BoutParallelThrowRhsFail(int &status, const char* message) {
+void BoutParallelThrowRhsFail(int &status, const std::string &message) {
   int allstatus;
-  MPI_Allreduce(&status,&allstatus,1,MPI_INT,MPI_LOR,BoutComm::get());
+  MPI_Allreduce(&status, &allstatus, 1, MPI_INT, MPI_LOR, BoutComm::get());
 
-  if (allstatus) throw BoutRhsFail(message);
-}
-
-BoutException::~BoutException() throw() {
-  if (buffer != nullptr) {
-    delete[] buffer;
-    buffer = nullptr;
+  if (allstatus) {
+    throw BoutRhsFail(message);
   }
 }
 
@@ -74,58 +69,8 @@ void BoutException::Backtrace() {
 #endif
 }
 
-#define INIT_EXCEPTION(s) {                     \
-    buflen=0;                                   \
-    buffer=nullptr;                             \
-    if(s == (const char*) NULL) {               \
-      message="No error message given!\n";      \
-    } else {                                    \
-      buflen=BoutException::BUFFER_LEN;         \
-      buffer = new char[buflen];                \
-      bout_vsnprintf(buffer, buflen, s);        \
-      for (int i=0;i<buflen;++i){               \
-        if (buffer[i]==0){                      \
-          if (i>0 && buffer[i-1]=='\n'){        \
-            buffer[i-1]=0;                      \
-          }                                     \
-          break;                                \
-        }                                       \
-      }                                         \
-      message.assign(buffer);                   \
-      delete[] buffer;                          \
-      buffer = nullptr;                         \
-    }                                           \
-    message="====== Exception thrown ======\n"  \
-      +message+"\n";                            \
-                                                \
-    this->Backtrace();                          \
-  }
-
-BoutException::BoutException(const char* s, ...)
-{
-  
-  INIT_EXCEPTION(s);
-}
-BoutException::BoutException(const std::string msg)
-{
-  message="====== Exception thrown ======\n"+msg+"\n";
+BoutException::BoutException(const std::string &msg) {
+  message = "====== Exception thrown ======\n" + msg + "\n";
 
   this->Backtrace();
-}
-
-const char* BoutException::what() const throw()
-{
-  return message.c_str();
-}
-
-BoutRhsFail::BoutRhsFail(const char* s, ...)  : BoutException::BoutException(NULL ){
-
-  INIT_EXCEPTION(s);
-  
-}
-
-BoutIterationFail::BoutIterationFail(const char* s, ...) : BoutException::BoutException(NULL) {
-  
-  INIT_EXCEPTION(s);
-  
 }

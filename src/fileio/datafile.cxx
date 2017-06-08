@@ -47,8 +47,6 @@
 #include "formatfactory.hxx"
 
 Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), floats(false), openclose(true), enabled(true), shiftOutput(false), file(nullptr) {
-  filenamelen=FILENAMELEN;
-  filename=new char[filenamelen];
   if(opt == NULL)
     return; // To allow static initialisation
   // Read options
@@ -69,11 +67,8 @@ Datafile::Datafile(Datafile &&other) :
   enabled(other.enabled), shiftOutput(other.shiftOutput), file(other.file.release()), int_arr(other.int_arr),
   BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr),
   f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {
-  filenamelen=other.filenamelen;
-  filename=other.filename;
-  other.filenamelen=0;
-  other.filename=nullptr;
-  other.file = nullptr;
+  filename = other.filename;
+  other.filename.clear();
 }
 
 Datafile::Datafile(const Datafile &other) :
@@ -82,9 +77,6 @@ Datafile::Datafile(const Datafile &other) :
   enabled(other.enabled), shiftOutput(other.shiftOutput), file(nullptr), int_arr(other.int_arr),
   BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr),
   f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {
-  filenamelen=other.filenamelen;
-  filename=new char[filenamelen];
-  strncpy(filename,other.filename,filenamelen);
   // Same added variables, but the file not the same 
 }
 
@@ -106,29 +98,14 @@ Datafile& Datafile::operator=(Datafile &&rhs) {
   f3d_arr      = rhs.f3d_arr;
   v2d_arr      = rhs.v2d_arr;
   v3d_arr      = rhs.v3d_arr;
-  if (filenamelen < rhs.filenamelen){
-    delete[] filename;
-    filenamelen=rhs.filenamelen;
-    filename=new char[filenamelen];
-  }
-  strncpy(filename,rhs.filename,filenamelen);
+  filename     = rhs.filename;
   return *this;
 }
 
-Datafile::~Datafile() {
-  if (filename != nullptr){
-    delete[] filename;
-    filename=nullptr;
-    filenamelen=0;
-  }
-}
+bool Datafile::openr(const std::string& format) {
 
-bool Datafile::openr(const char *format, ...) {
-  if(format == (const char*) NULL) 
-    throw BoutException("Datafile::open: No argument given for opening file!");
+  filename = format;
 
-  bout_vsnprintf(filename,filenamelen, format);
-  
   // Get the data format
   file = FormatFactory::getInstance()->createDataFormat(filename, parallel);
   
@@ -154,15 +131,12 @@ bool Datafile::openr(const char *format, ...) {
   return true;
 }
 
-bool Datafile::openw(const char *format, ...) {
+bool Datafile::openw(const std::string &format) {
   if(!enabled)
     return true;
   
-  if(format == (const char*) NULL)
-    throw BoutException("Datafile::open: No argument given for opening file!");
+  filename = format;
 
-  bout_vsnprintf(filename, filenamelen, format);
-  
   // Get the data format
   file = FormatFactory::getInstance()->createDataFormat(filename, parallel);
   
@@ -195,14 +169,11 @@ bool Datafile::openw(const char *format, ...) {
   return true;
 }
 
-bool Datafile::opena(const char *format, ...) {
+bool Datafile::opena(const std::string &format) {
   if(!enabled)
     return true;
   
-  if(format == (const char*) NULL)
-    throw BoutException("Datafile::open: No argument given for opening file!");
-
-  bout_vsnprintf(filename, filenamelen, format);
+  filename = format;
 
   // Get the data format
   file = FormatFactory::getInstance()->createDataFormat(filename, parallel);
@@ -591,26 +562,16 @@ bool Datafile::write() {
   return true;
 }
 
-bool Datafile::write(const char *format, ...) const {
+bool Datafile::write(const std::string &format) const {
   if(!enabled)
     return true;
-
-  if(format == (const char*) NULL)
-    throw BoutException("Datafile::write: No argument given!");
-
-  int filenamelen=FILENAMELEN;
-  char * filename=new char[filenamelen];
-
-  bout_vsnprintf(filename, filenamelen, format);
 
   // Create a new datafile
   Datafile tmp(*this);
 
-  tmp.openw(filename);
+  tmp.openw(format);
   bool ret = tmp.write();
   tmp.close();
-
-  delete[] filename;
 
   return ret;
 }

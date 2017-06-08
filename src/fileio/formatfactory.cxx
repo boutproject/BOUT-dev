@@ -29,7 +29,6 @@ std::unique_ptr<DataFormat> FormatFactory::createDataFormat(const char *filename
   if((filename == NULL) || (strcasecmp(filename, "default") == 0)) {
     // Return default file format
     
-
 #ifdef PNCDF
     if(parallel)
       return std::unique_ptr<DataFormat>(new PncFormat);

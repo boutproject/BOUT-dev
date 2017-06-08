@@ -1,12 +1,12 @@
 /*!************************************************************************
- * Provides a message stack to print more useful error 
+ * Provides a message stack to print more useful error
  * messages.
  *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -29,22 +29,15 @@ class MsgStack;
 #ifndef __MSG_STACK_H__
 #define __MSG_STACK_H__
 
+#include "string_utils.hxx"
+
+#include <exception>
 #include <stdio.h>
 #include <string>
-
-/// The maximum length (in chars) of messages, not including terminating '0'
-#define MSG_MAX_SIZE 127
+#include <vector>
 
 /*!
- * Each message consists of a fixed length buffer
- */
-typedef struct {
-  char str[MSG_MAX_SIZE+1];
-}msg_item_t;
-
-
-/*!
- * Message stack 
+ * Message stack
  *
  * Implements a stack of messages which can be pushed onto the top
  * and popped off the top. This is used for debugging: messages are put
@@ -56,47 +49,50 @@ typedef struct {
  * the optimiser
  */
 class MsgStack {
- public:
-  MsgStack();
-  ~MsgStack();
-  
+public:
+  MsgStack() {}
+  ~MsgStack() {}
+
 #if CHECK > 1
-  int push(const char *s, ...); ///< Add a message to the stack. Returns a message id
-  
-  int setPoint();     ///< get a message point
-  
-  void pop();          ///< Remove the last message
-  void pop(int id);    ///< Remove all messages back to msg <id>
-  void clear();        ///< Clear all message
-  
-  void dump();         ///< Write out all messages (using output)
-  std::string getDump();    ///< Write out all messages to a string
+  /// Add a message to the stack. Returns a message id
+  template <typename... Args> int push(const std::string &message, Args... args) {
+    return push(string_format(message, args...));
+  }
+  int push(const std::string &message);
+
+  int setPoint();        ///< get a message point
+
+  void pop();            ///< Remove the last message
+  void pop(int id);      ///< Remove all messages back to msg <id>
+  void clear();          ///< Clear all message
+
+  void dump();           ///< Write out all messages (using output)
+  std::string getDump(); ///< Write out all messages to a string
 #else
   /// Dummy functions which should be optimised out
-  int push(const char *s, ...) {return 0;}
-  
-  int setPoint() {return 0;}
-  
+  template <typename... Args> int push(const std::string &message, Args... args) {
+    return 0;
+  }
+  int push(const std::string &message) { return 0; }
+
+  int setPoint() { return 0; }
+
   void pop() {}
   void pop(int id) {}
   void clear() {}
-  
+
   void dump() {}
 #endif
-  
- private:
-  char buffer[256];
-  
-  msg_item_t *msg;  ///< Message stack;
-  int nmsg;    ///< Current number of messages
-  int size;    ///< Size of the stack
+
+private:
+  std::vector<std::string> message_stack; ///< The stack of messages
 };
 
 /*!
  * This is a way to define a global object,
  * so that it is declared extern in all files except one
  * where GLOBALORIGIN is defined.
- */ 
+ */
 #ifndef GLOBALORIGIN
 #define GLOBAL extern
 #else
@@ -108,28 +104,25 @@ GLOBAL MsgStack msg_stack;
 
 #undef GLOBAL
 
-#include <exception>
-
 /*!
  * MsgStackItem
- * 
+ *
  * Simple class to manage pushing and popping messages
- * from the message stack. Pushes a message in the 
+ * from the message stack. Pushes a message in the
  * constructor, and pops the message on destruction.
  */
 class MsgStackItem {
 public:
-  MsgStackItem(const char* msg) {
-    point = msg_stack.push(msg);
-  }
-  MsgStackItem(const char* msg, const char* file, int line) {
+  MsgStackItem(const char *msg) { point = msg_stack.push(msg); }
+  MsgStackItem(const char *msg, const char *file, int line) {
     point = msg_stack.push("%s on line %d of '%s'", msg, line, file);
   }
   ~MsgStackItem() {
     // If an exception has occurred, don't pop the message
-    if(!std::uncaught_exception())
+    if (!std::uncaught_exception())
       msg_stack.pop(point);
   }
+
 private:
   int point;
 };
@@ -142,13 +135,13 @@ private:
 /*!
  * The TRACE macro provides a convenient way to put messages onto the msg_stack
  * It pushes a message onto the stack, and pops it when the scope ends
- * 
+ *
  * Example
  * -------
- * 
+ *
  * {
  *   TRACE("Starting calculation")
- * 
+ *
  * } // Scope ends, message popped
  */
 #ifdef CHECK
@@ -158,4 +151,3 @@ private:
 #endif
 
 #endif // __MSG_STACK_H__
-
