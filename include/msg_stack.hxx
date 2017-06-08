@@ -123,12 +123,12 @@ public:
   MsgStackItem(const char* msg) { //Not currently used anywhere
     point = msg_stack.push(msg);
   }
-  MsgStackItem(const char* msg, const char* file, int line) {
+  MsgStackItem(const char* msg, const char* file, int line) {  //Not currently used anywhere
     point = msg_stack.push("%s on line %d of '%s'", msg, line, file);
   }
-  MsgStackItem(const char* msg, const char* file, int line, const char* msg2, ...) {
+  MsgStackItem(const char* file, int line, const char* msg, ...) {
     va_list args;
-    va_start(args, msg2);
+    va_start(args, msg);
     vsnprintf(buffer,MSG_MAX_SIZE, msg, args);
     point = msg_stack.push("%s on line %d of '%s'", buffer, line, file);
     va_end(args);
@@ -166,17 +166,11 @@ private:
    we want to allow TRACE("Message with no args") we have to deal with the case where
    __VA_ARGS__ is empty. There's a GCC specific extension such that 
     //#define TRACE(message, ...) MsgStackItem CONCATENATE(msgTrace_ , __LINE__) (message, __FILE__, __LINE__, ##__VA_ARGS__) //## is non-standard here
-    would achieve this for us. However to be more portable have to instead do a bit of "magic" 
-    to be able to handle cases with and without extra arguments. In particular we extract the
-    first of the variadic arguments and say this is the message. We can then pass this as the
-    first argument and then pass the full list of args as the last argument. In the constructor
-    we then note that we actually want to skip the first of the variable arguments, so declare
-    the routine with an extra required msg argument after line. This means we can skip the first
-    entry in the __VA_ARGS__ list by using va_start(args,msg2)
+    would achieve this for us. However to be more portable have to instead just reorder
+    the arguments from the original MsgStackItem constructor so that the message is the
+    last of the required arguments and the optional arguments follow from there.
  */
-#define GET_1ST_ARG(arg1, ...) arg1
-#define TRACE(...) MsgStackItem CONCATENATE(msgTrace_ , __LINE__) (GET_1ST_ARG(__VA_ARGS__), __FILE__, __LINE__, __VA_ARGS__)
-
+#define TRACE(...) MsgStackItem CONCATENATE(msgTrace_ , __LINE__) (__FILE__, __LINE__, __VA_ARGS__)
 #else
 #define TRACE(...)
 #endif
