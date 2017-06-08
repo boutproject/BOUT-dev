@@ -37,16 +37,19 @@ void Options::set(const string &key, const int &val, const string &source) {
 }
 
 void Options::set(const string &key, BoutReal val, const string &source) {
-  if(val) {
-    set(key, "true", source);
-  }else
-    set(key, "false", source);
-}
-
-void Options::set(const string &key, const bool &val, const string &source) {
   std::stringstream ss;
   ss << val;
   set(key, ss.str(), source);
+}
+
+void Options::set(const string &key, const bool &val, const string &source) {
+  std::string str;
+  if (val) {
+    str = "true";
+  } else {
+    str = "false";
+  }
+  set(key, str, source);
 }
 
 void Options::set(const string &key, const string &val, const string &source) {
