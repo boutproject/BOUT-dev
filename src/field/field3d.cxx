@@ -1171,14 +1171,11 @@ Field3D pow(BoutReal lhs, const Field3D &rhs) {
 }
 
 BoutReal min(const Field3D &f, bool allpe) {
+  TRACE("Field3D::Min() %s",allpe? "over all PEs" : "");
+
 #ifdef CHECK
   if(!f.isAllocated())
     throw BoutException("Field3D: min() method on empty data");
-
-  if(allpe) {
-    msg_stack.push("Field3D::Min() over all PEs");
-  }else
-    msg_stack.push("Field3D::Min()");
 #endif
 
   BoutReal result = f[f.region(RGN_NOBNDRY).begin()];
@@ -1193,21 +1190,15 @@ BoutReal min(const Field3D &f, bool allpe) {
     MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MIN, BoutComm::get());
   }
 
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-
   return result;
 }
 
 BoutReal max(const Field3D &f, bool allpe) {
+  TRACE("Field3D::Max() %s",allpe? "over all PEs" : "");
+
 #ifdef CHECK
   if(!f.isAllocated())
     throw BoutException("Field3D: max() method on empty data");
-  if(allpe) {
-    msg_stack.push("Field3D::Max() over all PEs");
-  }else
-    msg_stack.push("Field3D::Max()");
 #endif
   
   BoutReal result = f[f.region(RGN_NOBNDRY).begin()];
@@ -1222,10 +1213,6 @@ BoutReal max(const Field3D &f, bool allpe) {
     MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MAX, BoutComm::get());
   }
   
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-
   return result;
 }
 
