@@ -4,6 +4,10 @@
 #include <iostream>
 #include <string>
 
+TEST(BoutExceptionTest, ThrowCorrect) {
+  EXPECT_THROW(throw BoutException("test"), BoutException);
+}
+
 TEST(BoutExceptionTest, WhatTest) {
   try {
     throw BoutException("Test message");
