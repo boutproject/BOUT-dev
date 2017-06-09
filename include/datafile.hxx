@@ -86,6 +86,8 @@ class Datafile {
   bool enabled;  // Enable / Disable writing
   bool init_missing; // Initialise missing variables?
   bool shiftOutput; //Do we want to write out in shifted space?
+  int flushFrequencyCounter; //Counter used in determining when next openclose required
+  int flushFrequency; //How many write calls do we want between openclose
 
   std::unique_ptr<DataFormat> file;
   size_t filenamelen;

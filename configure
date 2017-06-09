@@ -11159,7 +11159,7 @@ echo
 echo "Make sure that the tools/idllib directory is in your IDL_PATH"
 echo "e.g. by adding to your ~/.bashrc file"
 echo
-echo "    export IDL_PATH=$PWD/tools/idllib:\$IDL_PATH"
+echo "    export IDL_PATH=+$PWD/tools/idllib:'<IDL_DEFAULT>':\$IDL_PATH"
 echo
 echo "=== Python ==="
 echo
