@@ -12,4 +12,4 @@ endif
 include make.config
 
 check:
-	@$(MAKE) --no-print-directory -C examples check
+	@$(MAKE) --no-print-directory -C tests check
