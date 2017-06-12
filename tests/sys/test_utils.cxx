@@ -81,10 +81,12 @@ TEST(NumberUtilitiesTest, MinModInt) {
 }
 
 TEST(StringUtilitiesTest, CopyString) {
-  char* hello = "Hello, world";
+  const char hello[] = "Hello, world";
   char* copy = copy_string(hello);
 
   EXPECT_STREQ(hello, copy);
+
+  free(copy);
 }
 
 TEST(StringUtilitiesTest, LowerCaseString) {
