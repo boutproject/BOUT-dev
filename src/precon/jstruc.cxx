@@ -38,7 +38,7 @@ int NNEIB=6; //-number of neighbors on stencil
 
 void nrerror(string error_text)
 {
-  msg_stack.push("Run-time error...\n%s\n", error_text.c_str());
+  TRACE("Run-time error...\n%s\n", error_text.c_str());
   throw BoutException("...now exiting to system...");
 }
 

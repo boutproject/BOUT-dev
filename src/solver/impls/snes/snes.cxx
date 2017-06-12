@@ -112,7 +112,7 @@ int SNESSolver::init(int nout, BoutReal tstep) {
 }
 
 int SNESSolver::run() {
-  int msg_point = msg_stack.push("SNESSolver::run()");
+  TRACE("SNESSolver::run()");
   
   /*
   output << "Computing Jacobian\n";
@@ -152,9 +152,7 @@ int SNESSolver::run() {
   if(call_monitors(0.0, 1, 1)) {
     // User signalled to quit
   }
-  
-  msg_stack.pop(msg_point);
-  
+    
   return 0;
 }
 
