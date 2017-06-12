@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 File I/O class
 A wrapper around various NetCDF libraries, used by
