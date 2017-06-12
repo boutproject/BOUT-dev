@@ -1130,7 +1130,7 @@ int BoutMesh::wait(comm_handle handle) {
     }
   }
 
-#ifdef CHECK
+#if CHECK > 0
   // Keeping track of whether communications have been done
   for(const auto& var : ch->var_list)
     var->doneComms();

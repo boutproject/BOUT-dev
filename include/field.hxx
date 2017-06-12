@@ -102,7 +102,7 @@ class Field {
   std::string name;
 #endif
 
-#ifdef CHECK
+#if CHECK > 0
   // Routines to test guard/boundary cells set
   
   virtual bool bndryValid() {

@@ -250,7 +250,7 @@ class Field2D : public Field, public FieldData {
   DEPRECATED(int setData(int x, int y, int z, void *vptr));
   DEPRECATED(int setData(int x, int y, int z, BoutReal *rptr));
   
-#ifdef CHECK
+#if CHECK > 0
   void doneComms() { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
 #else
   void doneComms() {}
@@ -414,7 +414,7 @@ Field2D pow(const Field2D &lhs, const Field2D &rhs);
 Field2D pow(const Field2D &lhs, BoutReal rhs);
 Field2D pow(BoutReal lhs, const Field2D &rhs);
 
-#ifdef CHECK
+#if CHECK > 0
 void checkData(const Field2D &f);
 #else
 inline void checkData(const Field2D &f) {}
