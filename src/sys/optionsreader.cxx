@@ -21,7 +21,9 @@ OptionsReader* OptionsReader::getInstance() {
 }
 
 void OptionsReader::read(Options *options, const char *file, ...) {
-  if(file == (const char*) NULL) throw new BoutException("OptionsReader::read passed NULL filename\n");
+  if (file == nullptr) {
+    throw BoutException("OptionsReader::read passed NULL filename\n");
+  }
 
   int buf_len=512;
   char * filename=new char[buf_len];
