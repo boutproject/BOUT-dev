@@ -3,8 +3,10 @@
 # for the (very) rare occasions when autoconf fails
 
 # extra compilation flags:
-# -DCHECK      Enables a host of additional checks on each operation
-#              such as uninitialised data. Helps when debugging
+# -DCHECK=lvl  Enables a host of additional checks on each operation
+#              such as uninitialised data if lvl is > 0. -DCHECK=3
+#              enables all tests, while -DCHECK=0 disables them.
+#              Helps when debugging
 # -DTRACK      Keeps track of variable names.
 #              Enables more useful error messages
 # for SSE2: -msse2 -mfpmath=sse
