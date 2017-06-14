@@ -4,8 +4,8 @@
 the grids by hand (see 6b-run_with_MMS_post_processing_grid_file.py to
 see how to do the same is done by using grid files)"""
 
-from bout_runners.bout_runners import basic_runner
-from post_processing_MMS import perform_MMS_test
+from bout_runners import basic_runner
+from pre_and_post_processing.post_processing_MMS import perform_MMS_test
 
 my_runs = basic_runner(\
             nproc = 1,\
@@ -17,11 +17,11 @@ my_runs = basic_runner(\
             # Set mms to true
             mms = True,\
             # Set the spatial domain
-            nx = [4, 8, 16],\
-            ny = [4, 8, 16],\
-            nz = [4, 8, 16],\
+            nx = (5, 8, 16),\
+            ny = (5, 8, 16),\
+            nz = (4, 8, 16),\
             # Additional (put here to illustrate the sorting)
-            series_add = [('cst','D_par',[1,2]), ('cst','D_perp',[0.5,1])],\
+            series_add = (('cst','D_par',(1,2)), ('cst','D_perp',(0.5,1))),\
             # Since we would like to do a MMS test, we would like to run
             # the runs in a particular order. In this example, we would
             # like to run all the possible spatial variables before
@@ -42,7 +42,7 @@ my_runs = basic_runner(\
             # variable, followed by the spatial_domain. The post
             # processing function will be called when all possibilities
             # of these variables has been run
-            # sort_by = ['cst:D_par', 'spatial_domain']\
+            # sort_by = ('cst:D_par', 'spatial_domain')\
             )
 
 # Put this in the post-processing function

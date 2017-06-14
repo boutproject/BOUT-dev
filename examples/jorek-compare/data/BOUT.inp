@@ -6,14 +6,9 @@
 NOUT = 100     # number of time-steps
 TIMESTEP = 1e-3  # time between outputs
 
-archive=10
-
-wall_limit = 4
-
-ShiftXderivs = true # use shifted radial derivatives?
 TwistShift = true  # use twist-shift condition?
 
-MZ = 64     # number of points in z direction (2^n + 1)
+MZ = 64     # number of points in z direction (2^n)
 
 ZPERIOD = 10 # Fraction of a torus
 
@@ -26,9 +21,10 @@ grid="d3d_119919.nc"
 
 dump_format = "nc"   # Set extension for dump files (nc = NetCDF)
 
-NXPE = 1 
-
 #StaggerGrids = true
+
+[mesh]
+paralleltransform = shifted # Use shifted metric method
 
 ##################################################
 # derivative methods
@@ -117,7 +113,7 @@ include_profiles = false
 
 parallel_lc = true  # Use LtoC and CtoL differencing
 
-bracket_method = 3  # 0 = std, 1=simplified, 2 = arakawa, 3 = ctu
+bracket_method = 2  # 0 = std, 1=simplified, 2 = arakawa, 3 = ctu
 
 # field inversion flags: Add the following
 #  1 - Zero-gradient DC component on inner boundary
@@ -143,23 +139,6 @@ phi_flags = 769  # inversion flags for phi
 [All]
 scale = 0.0 # default size of initial perturbations
 
-# form of initial profile:
-# 0 - constant
-# 1 - Gaussian
-# 2 - Sinusoidal
-# 3 - Mix of mode numbers (like original BOUT)
-
-xs_opt = 1
-ys_opt = 1
-zs_opt = 2
-
-xs_wd = 0.25
-xs_s0 = 0.4
-ys_mode = 1 
-ys_wd = 0.6 
-zs_mode = 1 # toroidal mode number
-zs_wd = 0.2
-
 # boundary conditions
 # -------------------
 # dirichlet    - Zero value
@@ -175,6 +154,8 @@ bndry_all = neumann # Default zero value
 
 scale=1.e-3
 
+function = exp(-((x - 0.4) / 0.25)^2) * exp(-((y/(2*pi) - 0.5)/0.6)^2) * sin(z)
+
 [Vpar]
 
 bndry_pf = dirichlet
@@ -187,7 +168,6 @@ bndry_sol = dirichlet
 
 
 [u] # Vorticity
-#scale = 1.0e-3 # Initial perturbation size
 
 #bndry_xin = zerolaplace
 #bndry_xout = zerolaplace

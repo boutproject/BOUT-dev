@@ -120,6 +120,10 @@ AX_PROG_CXX_MPI([], [], [
 AC_PROG_MKDIR_P
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
+
+# Set MAKE to gmake if possible, otherwise make
+AC_CHECK_PROG(MAKE, gmake, gmake, make)
+
 AC_PROG_RANLIB
 
 AC_SUBST(ARFLAGS)
@@ -1190,16 +1194,16 @@ then
 
    PVODE_FLAGS="$CXXFLAGS $OPENMP_CXXFLAGS $CXX11_FLAGS"
    # Clean PVODE
-   CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-   CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+   CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+   CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
    #make -C externalpackages/PVODE/ clean
 
     echo "* Building PVODE" | tee -a config-build.log
     echo "*************************************************************" >> config-build.log
 
-    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" make -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" make -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
     if [[ -f externalpackages/PVODE/lib/libpvode.a ]]
     then
@@ -1353,7 +1357,7 @@ echo
 echo "Make sure that the tools/idllib directory is in your IDL_PATH"
 echo "e.g. by adding to your ~/.bashrc file"
 echo
-echo "    export IDL_PATH=$PWD/tools/idllib:\$IDL_PATH"
+echo "    export IDL_PATH=+$PWD/tools/idllib:'<IDL_DEFAULT>':\$IDL_PATH"
 echo
 echo "=== Python ==="
 echo
@@ -1367,6 +1371,8 @@ echo
 echo "Add the following to ~/.octaverc"
 echo "   addpath('$PWD/tools/octave')"
 echo
+echo "*** Now run '$MAKE' to compile BOUT++ ***"
+echo
 
 # Only make.config is altered by configure
 AC_OUTPUT(make.config)
@@ -1378,8 +1384,8 @@ AC_OUTPUT(make.config)
 # as PETSc
 #############################################################
 
-CONFIG_CFLAGS=`make cflags -f output.make`
-CONFIG_LDFLAGS=`make ldflags -f output.make`
+CONFIG_CFLAGS=`$MAKE cflags -f output.make`
+CONFIG_LDFLAGS=`$MAKE ldflags -f output.make`
 
 #############################################################
 # Write configuration to bout-config

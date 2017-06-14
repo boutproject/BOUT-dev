@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """Collection of functions which can be used to make a BOUT++ run"""
 
 import os

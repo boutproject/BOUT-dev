@@ -109,7 +109,7 @@ int KarniadakisSolver::init(int nout, BoutReal tstep) {
 }
 
 int KarniadakisSolver::run() {
-  int msg_point = msg_stack.push("KarniadakisSolver::run()");
+  TRACE("KarniadakisSolver::run()");
   
   for(int i=0;i<nsteps;i++) {
     // Run through a fixed number of steps
@@ -150,8 +150,6 @@ int KarniadakisSolver::run() {
     rhs_ncalls_i = 0;
     rhs_ncalls_e = 0;
   }
-  
-  msg_stack.pop(msg_point);
   
   return 0;
 }

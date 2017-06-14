@@ -200,7 +200,7 @@ const IndexRange Field2D::region(REGION rgn) const {
 
 #define F2D_UPDATE_FIELD(op,bop,ftype)                       \
   Field2D & Field2D::operator op(const ftype &rhs) {         \
-    msg_stack.push("Field2D: %s %s", #op, #ftype);           \
+    TRACE("Field2D: %s %s", #op, #ftype);           \
     checkData(rhs) ;                                         \
     checkData(*this);                                        \
     if(data.unique()) {                                      \
@@ -211,7 +211,6 @@ const IndexRange Field2D::region(REGION rgn) const {
       /* Shared data */                                      \
       (*this) = (*this) bop rhs;                             \
     }                                                        \
-    msg_stack.pop();                                         \
     return *this;                                            \
   }
 
@@ -222,7 +221,7 @@ F2D_UPDATE_FIELD(/=, /, Field2D); // operator/=(const Field2D &rhs)
 
 #define F2D_UPDATE_REAL(op,bop)                              \
   Field2D & Field2D::operator op(const BoutReal rhs) {       \
-    msg_stack.push("Field2D: %s Field2D", #op);              \
+    TRACE("Field2D: %s Field2D", #op);              \
     if(!finite(rhs))                                         \
       throw BoutException("Field2D: %s operator passed non-finite BoutReal number", #op); \
     checkData(*this);                                        \
@@ -235,7 +234,6 @@ F2D_UPDATE_FIELD(/=, /, Field2D); // operator/=(const Field2D &rhs)
       /* Need to put result in a new block */                \
       (*this) = (*this) bop rhs;                             \
     }                                                        \
-    msg_stack.pop();                                         \
     return *this;                                            \
   }
 
@@ -247,7 +245,7 @@ F2D_UPDATE_REAL(/=,/);    // operator/= BoutReal
 ////////////////////// STENCILS //////////////////////////
 
 void Field2D::getXArray(int y, int UNUSED(z), rvec &xv) const {
-  ASSERT0(isAllocated());
+  ASSERT1(isAllocated());
 
   xv.resize(nx);
   
@@ -256,7 +254,7 @@ void Field2D::getXArray(int y, int UNUSED(z), rvec &xv) const {
 }
 
 void Field2D::getYArray(int x, int UNUSED(z), rvec &yv) const {
-  ASSERT0(isAllocated());
+  ASSERT1(isAllocated());
 
   yv.resize(ny);
   
@@ -265,7 +263,7 @@ void Field2D::getYArray(int x, int UNUSED(z), rvec &yv) const {
 }
 
 void Field2D::getZArray(int x, int y, rvec &zv) const {
-  ASSERT0(isAllocated());
+  ASSERT1(isAllocated());
 
   zv.resize(mesh->LocalNz);
   
@@ -350,7 +348,7 @@ void Field2D::setZStencil(stencil &fval, const bindex &bx, CELL_LOC UNUSED(loc))
 ///////////////////// FieldData VIRTUAL FUNCTIONS //////////
 
 int Field2D::getData(int x, int y, int z, void *vptr) const {
-  ASSERT0(isAllocated()); // Check data set
+  ASSERT1(isAllocated()); // Check data set
   
 #if CHECK > 2
   // check ranges
@@ -365,7 +363,7 @@ int Field2D::getData(int x, int y, int z, void *vptr) const {
 }
 
 int Field2D::getData(int x, int y, int z, BoutReal *rptr) const {
-  ASSERT0(isAllocated()); // Check data set
+  ASSERT1(isAllocated()); // Check data set
   
 #if CHECK > 2
   // check ranges
@@ -409,9 +407,11 @@ int Field2D::setData(int x, int y, int UNUSED(z), BoutReal *rptr) {
 ///////////////////// BOUNDARY CONDITIONS //////////////////
 
 void Field2D::applyBoundary(bool init) {
+  TRACE("Field2D::applyBoundary()");
+
 #ifdef CHECK
   if (init) {
-    msg_stack.push("Field2D::applyBoundary()");
+
     if(!boundaryIsSet)
       output << "WARNING: Call to Field2D::applyBoundary(), but no boundary set" << endl;
   }
@@ -419,7 +419,6 @@ void Field2D::applyBoundary(bool init) {
   for(const auto& bndry : bndry_op)
     if ( !bndry->apply_to_ddt || init) // Always apply to the values when initialising fields, otherwise apply only if wanted
       bndry->apply(*this);
-  msg_stack.pop();
 }
 
 void Field2D::applyBoundary(const string &condition) {
@@ -657,7 +656,7 @@ bool finite(const Field2D &f) {
  */
 #define F2D_FUNC(name, func)                               \
   const Field2D name(const Field2D &f) {                   \
-    msg_stack.push(#name "(Field2D)");                     \
+    TRACE(#name "(Field2D)");                     \
     /* Check if the input is allocated */                  \
     ASSERT1(f.isAllocated());                              \
     /* Define and allocate the output result */            \
@@ -669,7 +668,6 @@ bool finite(const Field2D &f) {
       /* If checking is set to 3 or higher, test result */ \
       ASSERT3(finite(result[d]));                          \
     }                                                      \
-    msg_stack.pop();                                       \
     return result;                                         \
   }
 

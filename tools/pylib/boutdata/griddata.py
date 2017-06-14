@@ -208,7 +208,7 @@ def gridcontourf(grid, data2d, nlevel=31, show=True, mind=None, maxd=None, cmap=
           j12 = j12[0]
           j21 = j21[0]
           j22 = j22[0]
-          ix1 = ix2[0]
+          ix1 = ix1[0]
           ix2 = ix2[0]
           nin = nin[0]
           nx  = nx[0]

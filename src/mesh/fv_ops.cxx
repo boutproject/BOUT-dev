@@ -2,6 +2,7 @@
 #include <bout/fv_ops.hxx>
 #include <globals.hxx>
 #include <utils.hxx>
+#include <msg_stack.hxx>
 
 #include <output.hxx>
 
@@ -109,25 +110,49 @@ namespace FV {
     return result;
   }
 
-  const Field3D Div_par_K_Grad_par(const Field3D &K, const Field3D &f, bool bndry_flux) {
-    Field3D result;
-    result = 0.0;
+  const Field3D Div_par_K_Grad_par(const Field3D &Kin, const Field3D &fin, bool bndry_flux) {
+    TRACE("FV::Div_par_K_Grad_par");
+    
+    Field3D result(0.0);
+    
+    // K and f fields in yup and ydown directions
+    Field3D Kup, Kdown;
+    Field3D fup, fdown;
+    Field3D f = fin;
+    Field3D K = Kin;
+    if (K.hasYupYdown() && f.hasYupYdown()) {
+      // Both inputs have yup and ydown
+      Kup = K.yup();
+      Kdown = K.ydown();
+      
+      fup = f.yup();
+      fdown = f.ydown();
+    } else {
+      // At least one input doesn't have yup/ydown fields.
+      // Need to shift to/from field aligned coordinates
+      
+      f = mesh->toFieldAligned(fin);
+      K = mesh->toFieldAligned(Kin);
+      
+      fup = fdown = f;
+      Kup = Kdown = K;
+    }
     
     Coordinates *coord = mesh->coordinates();
     
-    for(int i=mesh->xstart;i<=mesh->xend;i++)
-      for(int j=mesh->ystart;j<=mesh->yend;j++)
-	for(int k=0;k<mesh->LocalNz;k++) {
+    for (int i=mesh->xstart;i<=mesh->xend;i++)
+      for (int j=mesh->ystart;j<=mesh->yend;j++)
+	for (int k=0;k<mesh->LocalNz;k++) {
           // Calculate flux at upper surface
         
-	  if(bndry_flux || !mesh->lastY() || (j != mesh->yend)) {
+	  if (bndry_flux || !mesh->lastY() || (j != mesh->yend)) {
 	    
-            BoutReal c = 0.5*(K(i,j,k) + K.yup()(i,j+1,k)); // K at the upper boundary
+            BoutReal c = 0.5*(K(i,j,k) + Kup(i,j+1,k)); // K at the upper boundary
             BoutReal J = 0.5*(coord->J(i,j) + coord->J(i,j+1)); // Jacobian at boundary
             
             BoutReal g_22 = 0.5*(coord->g_22(i,j) + coord->g_22(i,j+1));
             
-            BoutReal gradient = 2.*(f.yup()(i,j+1,k) - f(i,j,k)) / (coord->dy(i,j) + coord->dy(i,j+1));
+            BoutReal gradient = 2.*(fup(i,j+1,k) - f(i,j,k)) / (coord->dy(i,j) + coord->dy(i,j+1));
         
             BoutReal flux = c * J * gradient / g_22;
             
@@ -136,18 +161,24 @@ namespace FV {
 
           // Calculate flux at lower surface
           if(bndry_flux || !mesh->firstY() || (j != mesh->ystart)) {
-            BoutReal c = 0.5*(K(i,j,k) + K.ydown()(i,j-1,k)); // K at the lower boundary
+            BoutReal c = 0.5*(K(i,j,k) + Kdown(i,j-1,k)); // K at the lower boundary
             BoutReal J = 0.5*(coord->J(i,j) + coord->J(i,j-1)); // Jacobian at boundary
             
             BoutReal g_22 = 0.5*(coord->g_22(i,j) + coord->g_22(i,j+1));
             
-            BoutReal gradient = 2.*(f(i,j,k) - f.ydown()(i,j-1,k)) / (coord->dy(i,j) + coord->dy(i,j-1));
+            BoutReal gradient = 2.*(f(i,j,k) - fdown(i,j-1,k)) / (coord->dy(i,j) + coord->dy(i,j-1));
         
             BoutReal flux = c * J * gradient / g_22;
             
             result(i,j,k) -= flux / (coord->dy(i,j) * coord->J(i,j));
 	  }
 	}
+    
+    if (!(K.hasYupYdown() && f.hasYupYdown())) {
+      // Shifted to field aligned coordinates, so need to shift back
+      result = mesh->fromFieldAligned(result);
+    }
+    
     return result;
   }
 

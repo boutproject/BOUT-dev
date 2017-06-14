@@ -10,7 +10,7 @@
 #include <output.hxx>
 
 int PowerSolver::init(int nout, BoutReal tstep) {
-  int msg_point = msg_stack.push("Initialising Power solver");
+  TRACE("Initialising Power solver");
   
   /// Call the generic initialisation first
   if(Solver::init(nout, tstep))
@@ -43,14 +43,12 @@ int PowerSolver::init(int nout, BoutReal tstep) {
   
   // Put starting values into f0
   save_vars(f0);
-  
-  msg_stack.pop(msg_point);
 
   return 0;
 }
 
 int PowerSolver::run() {
-  int msg_point = msg_stack.push("PowerSolver::run()");
+  TRACE("PowerSolver::run()");
   
   // Make sure that f0 has a norm of 1
   divide(f0, norm(f0));
@@ -80,8 +78,6 @@ int PowerSolver::run() {
     // Reset iteration and wall-time count
     rhs_ncalls = 0;
   }
-  
-  msg_stack.pop(msg_point);
   
   return 0;
 }

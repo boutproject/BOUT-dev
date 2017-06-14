@@ -254,9 +254,9 @@ const Field2D averageY(const Field2D &f) {
 }
 
 const Field3D averageY(const Field3D &f) {
+  TRACE("averageY(Field3D)");
+
   static BoutReal **input = NULL, **result;
-    
-  msg_stack.push("averageY(Field3D)");
 
   int ngx = mesh->LocalNx;
   int ngy = mesh->LocalNy;
@@ -301,10 +301,6 @@ const Field3D averageY(const Field3D &f) {
           r(x,y,z) = input[x][z];
         }
   }
-
-#ifdef CHECK
-  msg_stack.pop();
-#endif
   
   return r;
 }
@@ -391,51 +387,74 @@ void nl_filter(rvec &f, BoutReal w) {
 }
 
 const Field3D nl_filter_x(const Field3D &f, BoutReal w) {
-
   TRACE("nl_filter_x( Field3D )");
   
-    Field3D result;
-  rvec v;
+  Field3D result;
+  result.allocate();
+  rvec v(mesh->LocalNx);
   
-  for(int jy=0;jy<mesh->LocalNy;jy++)
-    for(int jz=0;jz<mesh->LocalNz;jz++) {
-      f.getXArray(jy, jz, v);
+  for (int jy=0;jy<mesh->LocalNy;jy++) {
+    for (int jz=0;jz<mesh->LocalNz;jz++) {
+      for (int jx=0;jx<mesh->LocalNx;jx++) {
+        v[jx] = f(jx,jy,jz);
+      }
       nl_filter(v, w);
-      result.setXArray(jy, jz, v);
+      for (int jx=0;jx<mesh->LocalNx;jx++) {
+         result(jx,jy,jz) = v[jx];
+      }
     }
+  }
   
   return result;
 }
 
-const Field3D nl_filter_y(const Field3D &fs, BoutReal w) {
+const Field3D nl_filter_y(const Field3D &f, BoutReal w) {
   TRACE("nl_filter_x( Field3D )");
   
   Field3D result;
-  rvec v;
+  result.allocate();
+
+  rvec v(mesh->LocalNy); // Temporary array
   
-  for(int jx=0;jx<mesh->LocalNx;jx++)
-    for(int jz=0;jz<mesh->LocalNz;jz++) {
-      fs.getYArray(jx, jz, v);
+  // Transform into field-aligned coordinates
+  Field3D fs = mesh->toFieldAligned(f);
+
+  for (int jx=0;jx<mesh->LocalNx;jx++) {
+    for (int jz=0;jz<mesh->LocalNz;jz++) {
+      for (int jy=0;jy<mesh->LocalNy;jy++) {
+        v[jy] = fs(jx,jy,jz);
+      }
       nl_filter(v, w);
-      result.setYArray(jx, jz, v);
+      for (int jy=0;jy<mesh->LocalNy;jy++) {
+        result(jx,jy,jz) = v[jy];
+      }
     }
+  }
   
-  return result;
+  // Tranform the field back from field aligned coordinates
+  return mesh->fromFieldAligned(result);
 }
 
 const Field3D nl_filter_z(const Field3D &fs, BoutReal w) {
   TRACE("nl_filter_z( Field3D )");
   
   Field3D result;
-  rvec v;
+  result.allocate();
   
-  for(int jx=0;jx<mesh->LocalNx;jx++)
-    for(int jy=0;jy<mesh->LocalNy;jy++) {
-      fs.getZArray(jx, jy, v);
+  rvec v(mesh->LocalNz);
+  
+  for (int jx=0;jx<mesh->LocalNx;jx++) {
+    for (int jy=0;jy<mesh->LocalNy;jy++) {
+      for (int jz=0;jz<mesh->LocalNz;jz++) {
+        v[jz] = fs(jx,jy,jz);
+      }
       nl_filter(v, w);
-      result.setZArray(jx, jy, v);
+      for (int jz=0;jz<mesh->LocalNz;jz++) {
+        result(jx,jy,jz) = v[jz];
+      }
     }
-
+  }
+  
   return result;
 }
 

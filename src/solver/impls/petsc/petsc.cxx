@@ -649,13 +649,12 @@ PetscErrorCode PetscSolver::run() {
  **************************************************************************/
 
 PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata) {
+  TRACE("Running RHS: PetscSolver::rhs(%e)", t);
+
   int flag;
   BoutReal *udata_array, *dudata_array;
 
   PetscFunctionBegin;
-#ifdef CHECK
-  int msg_point = msg_stack.push("Running RHS: PetscSolver::rhs(%e)", t);
-#endif
 
   // Load state from PETSc
   VecGetArray(udata, &udata_array);
@@ -670,10 +669,6 @@ PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata) {
   save_derivs(dudata_array);
   VecRestoreArray(dudata, &dudata_array);
 
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
-
   PetscFunctionReturn(0);
 }
 
@@ -682,9 +677,8 @@ PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata) {
  **************************************************************************/
 
 PetscErrorCode PetscSolver::pre(PC pc, Vec x, Vec y) {
-#ifdef CHECK
-  int msg_point = msg_stack.push("PetscSolver::pre()");
-#endif
+  TRACE("PetscSolver::pre()");
+
   BoutReal *data;
 
   if(diagnose)
@@ -711,9 +705,6 @@ PetscErrorCode PetscSolver::pre(PC pc, Vec x, Vec y) {
   // Petsc's definition of Jacobian differs by a factor from Sundials'
   PetscErrorCode ierr = VecScale(y, shift); CHKERRQ(ierr);
 
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
    return 0;
  }
 
@@ -722,9 +713,7 @@ PetscErrorCode PetscSolver::pre(PC pc, Vec x, Vec y) {
  **************************************************************************/
 
 PetscErrorCode PetscSolver::jac(Vec x, Vec y) {
-#ifdef CHECK
-  int msg_point = msg_stack.push("PetscSolver::jac()");
-#endif
+  TRACE("PetscSolver::jac()");
 
   BoutReal *data;
 
@@ -752,9 +741,6 @@ PetscErrorCode PetscSolver::jac(Vec x, Vec y) {
   // y = a * x - y
   int ierr = VecAXPBY(y, shift, -1.0, x);
 
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
   return 0;
 }
 
