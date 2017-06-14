@@ -104,7 +104,7 @@ void Solver::setModel(PhysicsModel *m) {
  **************************************************************************/
 
 void Solver::add(Field2D &v, const char* name) {
-  int msg_point = msg_stack.push("Adding 2D field: Solver::add(%s)", name);
+  TRACE("Adding 2D field: Solver::add(%s)", name);
   
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Solver", name);
@@ -156,15 +156,12 @@ void Solver::add(Field2D &v, const char* name) {
   v.applyBoundary(true);
 
   f2d.push_back(d);
-
-  msg_stack.pop(msg_point);
 }
 
 void Solver::add(Field3D &v, const char* name) {
+  TRACE("Adding 3D field: Solver::add(%s)", name);
 
-#ifdef CHECK
-  int msg_point = msg_stack.push("Adding 3D field: Solver::add(%s)", name);
-  
+#ifdef CHECK  
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Solver", name);
 #endif
@@ -218,15 +215,10 @@ void Solver::add(Field3D &v, const char* name) {
   v.setLocation(d.location); // Restore location if changed
   
   f3d.push_back(d);
-              
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 }
 
 void Solver::add(Vector2D &v, const char* name) {
-
-  int msg_point = msg_stack.push("Adding 2D vector: Solver::add(%s)", name);
+  TRACE("Adding 2D vector: Solver::add(%s)", name);
   
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Solver", name);
@@ -264,13 +256,10 @@ void Solver::add(Vector2D &v, const char* name) {
   
   /// Make sure initial profile obeys boundary conditions
   v.applyBoundary(true);
-
-  msg_stack.pop(msg_point);
 }
 
 void Solver::add(Vector3D &v, const char* name) {
-
-  int msg_point = msg_stack.push("Adding 3D vector: Solver::add(%s)", name);
+  TRACE("Adding 3D vector: Solver::add(%s)", name);
   
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Solver", name);
@@ -304,8 +293,6 @@ void Solver::add(Vector3D &v, const char* name) {
   }
 
   v.applyBoundary(true);
-
-  msg_stack.pop(msg_point);
 }
 
 /**************************************************************************
@@ -313,10 +300,9 @@ void Solver::add(Vector3D &v, const char* name) {
  **************************************************************************/
 
 void Solver::constraint(Field2D &v, Field2D &C_v, const char* name) {
+  TRACE("Constrain 2D scalar: Solver::constraint(%s)", name);
 
-#ifdef CHECK
-  int msg_point = msg_stack.push("Constrain 2D scalar: Solver::constraint(%s)", name);
-  
+#ifdef CHECK  
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Solver", name);
 #endif
@@ -338,17 +324,12 @@ void Solver::constraint(Field2D &v, Field2D &C_v, const char* name) {
   d.name = string(name);
 
   f2d.push_back(d);
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 }
 
 void Solver::constraint(Field3D &v, Field3D &C_v, const char* name) {
+  TRACE("Constrain 3D scalar: Solver::constraint(%s)", name);
 
 #ifdef CHECK
-  int msg_point = msg_stack.push("Constrain 3D scalar: Solver::constraint(%s)", name);
-
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Solver", name);
 #endif
@@ -371,17 +352,12 @@ void Solver::constraint(Field3D &v, Field3D &C_v, const char* name) {
   d.name = string(name);
   
   f3d.push_back(d);
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 }
 
 void Solver::constraint(Vector2D &v, Vector2D &C_v, const char* name) {
+  TRACE("Constrain 2D vector: Solver::constraint(%s)", name);
 
-#ifdef CHECK
-  int msg_point = msg_stack.push("Constrain 2D vector: Solver::constraint(%s)", name);
-  
+#ifdef CHECK  
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Solver", name);
 #endif
@@ -415,17 +391,12 @@ void Solver::constraint(Vector2D &v, Vector2D &C_v, const char* name) {
     constraint(v.y, C_v.y, (d.name+"x").c_str());
     constraint(v.z, C_v.z, (d.name+"x").c_str());
   }
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 }
 
 void Solver::constraint(Vector3D &v, Vector3D &C_v, const char* name) {
+  TRACE("Constrain 3D vector: Solver::constraint(%s)", name);
 
-#ifdef CHECK
-  int msg_point = msg_stack.push("Constrain 3D vector: Solver::constraint(%s)", name);
-  
+#ifdef CHECK  
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Solver", name);
 #endif
@@ -459,10 +430,6 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, const char* name) {
     constraint(v.y, C_v.y, (d.name+"x").c_str());
     constraint(v.z, C_v.z, (d.name+"x").c_str());
   }
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 }
 
 /**************************************************************************
@@ -1294,13 +1261,13 @@ void Solver::post_rhs(BoutReal t) {
       f.var->applyTDerivBoundary();
   }
 #if CHECK > 2
-  msg_stack.push("Solver checking time derivatives");
-  for(const auto& f : f3d) {
-    msg_stack.push("Variable: %s", f.name.c_str());
-    checkData(*f.F_var);
-    msg_stack.pop();
+  {
+    TRACE("Solver checking time derivatives");
+    for(const auto& f : f3d) {
+      TRACE("Variable: %s", f.name.c_str());
+      checkData(*f.F_var);
+    }
   }
-  msg_stack.pop();
 #endif
 }
 

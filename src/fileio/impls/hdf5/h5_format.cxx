@@ -107,9 +107,7 @@ H5Format::~H5Format() {
 }
 
 bool H5Format::openr(const char *name) {
-#ifdef CHECK
-  msg_stack.push("H5Format::openr");
-#endif
+  TRACE("H5Format::openr");
 
   if(dataFile > 0) // Already open. Close then re-open
     close();
@@ -118,18 +116,12 @@ bool H5Format::openr(const char *name) {
   if( dataFile < 0 ) {
     throw BoutException("Failed to open dataFile");
   }
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 
   return true;
 }
 
 bool H5Format::openw(const char *name, bool append) {
-#ifdef CHECK
-  msg_stack.push("H5Format::openw");
-#endif
+  TRACE("H5Format::openw");
   
   if(dataFile > 0) // Already open. Close then re-open
     close(); 
@@ -146,10 +138,6 @@ bool H5Format::openw(const char *name, bool append) {
 
   fname = copy_string(name);
 
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-
   return true;
 }
 
@@ -160,18 +148,12 @@ bool H5Format::is_valid() {
 }
 
 void H5Format::close() {
-  #ifdef CHECK
-  msg_stack.push("H5Format::close");
-#endif
+  TRACE("H5Format::close");
   
   if (is_valid()) {
     H5Fclose(dataFile);
     dataFile = -1;
   }
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 }
 
 void H5Format::flush() {
@@ -184,14 +166,12 @@ void H5Format::flush() {
 }
 
 const vector<int> H5Format::getSize(const char *name) {
+  TRACE("H5Format::getSize");
+
   vector<int> size;
 
   if(!is_valid())
     return size;
-
-#ifdef CHECK
-  msg_stack.push("H5Format::getSize");
-#endif
   
   hid_t dataSet = H5Dopen(dataFile, name, H5P_DEFAULT);
   if (dataSet < 0) {
@@ -215,9 +195,6 @@ const vector<int> H5Format::getSize(const char *name) {
     
     size.push_back(1);
     return size;
-#ifdef CHECK
-    msg_stack.pop();
-#endif
   }
   else {
     hsize_t* dims = new hsize_t[nd];
@@ -234,10 +211,6 @@ const vector<int> H5Format::getSize(const char *name) {
       size.push_back(dims[i]);
 
     delete[] dims;
-    
-#ifdef CHECK
-    msg_stack.pop();
-#endif
   }
 
   return size;
@@ -293,15 +266,13 @@ bool H5Format::read(BoutReal *var, const string &name, int lx, int ly, int lz) {
 }
 
 bool H5Format::read(void *data, hid_t hdf5_type, const char *name, int lx, int ly, int lz) {
+  TRACE("H5Format::read(void)");
+
   if(!is_valid())
     return false;
 
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
-
-#ifdef CHECK
-  msg_stack.push("H5Format::read(void)");
-#endif
   
   int nd = 0; // Number of dimensions
   if(lx != 0) nd = 1;
@@ -343,10 +314,6 @@ bool H5Format::read(void *data, hid_t hdf5_type, const char *name, int lx, int l
     throw BoutException("Failed to close dataSpace");
   if (H5Dclose(dataSet) < 0)
     throw BoutException("Failed to close dataSet");
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 
   return true;
 }
@@ -390,6 +357,8 @@ bool H5Format::write(BoutReal *var, const string &name, int lx, int ly, int lz) 
 }
 
 bool H5Format::write(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type, const char *name, int lx, int ly, int lz) {
+  TRACE("H5Format::write(void)");
+
   if(!is_valid())
     return false;
 
@@ -398,10 +367,6 @@ bool H5Format::write(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type, con
 
 //   // Check for valid name
 //   checkName(name);
-  
-#ifdef CHECK
-  msg_stack.push("H5Format::write(void)");
-#endif
   
   int nd = 0; // Number of dimensions
   if(lx != 0) nd = 1;
@@ -496,10 +461,6 @@ bool H5Format::write(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type, con
     throw BoutException("Failed to close dataSpace");
   if (H5Dclose(dataSet) < 0)
     throw BoutException("Failed to close dataSet");
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 
   return true;
 }/***************************************************************************

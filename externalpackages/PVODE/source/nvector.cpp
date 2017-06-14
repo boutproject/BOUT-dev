@@ -104,7 +104,7 @@ void *PVecInitMPI(MPI_Comm comm,  integer local_vec_length,
     }
   env->init_by_user = initflag;
 
-  env->comm = (comm == (MPI_Comm)NULL) ? MPI_COMM_WORLD : comm; 
+  env->comm = (comm == MPI_COMM_NULL) ? MPI_COMM_WORLD : comm; 
 
   /* If this PE is inactive, return now */
   if (local_vec_length <= 0) return(env);

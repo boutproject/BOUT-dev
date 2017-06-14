@@ -90,14 +90,32 @@ libfast: $(BOUT_TOP)/config.status $(BOUT_TOP)/make.config $(DIRS)
 # Recursively run make through subdirs
 ####################################################################
 
-ifneq ("$(TARGET)" , "libfast")
+ifeq ("$(TARGET)" , "lib")
 $(DIRS):
-	@#echo make $@ slowly TARGET $(TARGET)
+# make $@ slowly using the old method where parallel builds can cause
+# race conditions that 
 	@$(MAKE) -s --no-print-directory TARGET=lib -C $@ all
 else
+ifeq ("$(TARGET)","libfast")
 $(DIRS):
-	@#echo make $@ fast
+# make $@ using the libfast method, where all .o files
+# are only created in the end
 	@$(MAKE) -s --no-print-directory TARGET=$(TARGET) -C $@ $(TARGET)
+else
+ifndef MODULE_DIR
+MODULE_DIR=$(shell pwd)
+endif
+$(DIRS):
+# MODULE_DIR: pass the module directory, where the libraries should be
+# created.
+# SUB_NAME is used for creating a library with the expected name.
+# first a potential trailing slash is removed, and after that the
+# directory name is extracted. This allows to e.g. specify a directory
+# as fuu/bar/ and still get an archive named bar.a
+# The # probably doesn't need to be escaped as everything in the
+# recipy is passed to the shell, even lines starting with #
+	@$(MAKE) -s --no-print-directory MODULE_DIR=$(MODULE_DIR) SUB_NAME=$(shell f=$@ ; g=$${f%/} ; echo $${g##*/}) TARGET=sub -C $@
+endif
 endif
 
 # Create 'lib' and 'include' incase they don't exist
@@ -153,28 +171,28 @@ install: libfast
 # Builds the library with $(OBJ) which is defined from the SOURCEC variable
 ####################################################################
 
+ifeq ("$(TARGET)", "libfast")
 libfast: makefile $(BOUT_TOP)/make.config $(BOUT_TOP)/include $(OBJ) $(DIRS)
+endif
 
+ifeq ("$(TARGET)", "lib")
 lib: makefile $(BOUT_TOP)/make.config $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ)
 ifneq ("$(OBJ)foo", "foo")
 	@echo "Adding $(OBJ) to libbout++.a"
 	@$(AR) $(ARFLAGS) $(LIB) $(OBJ)
 	@$(RANLIB) $(LIB)
 endif
-
-#END 'lib'
-#else
-
-ifeq ("$(TARGET)", "sub")
-
-LIB=$(MODULE_DIR)/$(SUB_NAME).a
 endif
 
+
+ifeq ("$(TARGET)", "sub")
+LIB=$(MODULE_DIR)/$(SUB_NAME).a
 sub: makefile $(BOUT_TOP)/make.config $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ)
 ifneq ("$(OBJ)foo", "foo")
-	@echo "Adding $(OBJ)"
-	@$(AR) cru $(LIB) $(OBJ)
+	@echo "Adding $(OBJ) to $(LIB)"
+	@$(AR) $(ARFLAGS) $(LIB) $(OBJ)
 	@$(RANLIB) $(LIB)
+endif
 endif
 
 runtest:
@@ -189,14 +207,22 @@ ifneq ("$(TARGET)", "runtest")
 ####################################################################
 # Make libbout++.a if it doesn't exist with the checklib target
 ####################################################################
-%.a:
+libbout++.a:
 	@echo "Rebuilding out-of-date bout++ library"
 	@$(MAKE) --no-print-directory -C $(BOUT_TOP)
  
 ####################################################################
 # Make the target (e.g. gas_compress)
 ####################################################################
-SUB_LIBS=$(DIRS:%=%.a)
+# first we remove a trailing slash, if present. Note that currently we
+# dont support several trailing slashes, as in fuu/bar/// 
+DIRS_=$(DIRS:%/=%)
+# then we extract the directory name, in case it is a longer path
+# We are not in a recipe, so # needs to be escaped
+# $$ is an escaped $
+DIRS__=$(shell for f in $(DIRS_) ; do echo $${f\#\#*/};done)
+# now we can generate a list of libraries
+SUB_LIBS=$(DIRS__:%=%.a)
 
 $(SOURCEC): checklib
 $(SOURCEC:%.cxx=%.o): $(LIB)

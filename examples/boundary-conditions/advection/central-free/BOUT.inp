@@ -1,0 +1,34 @@
+# 1D demonstration of boundary conditions for advection equation
+#
+# This uses 2nd order central differencing with the "free" boundary
+# condition on the downstream boundary
+
+nout = 20
+timestep = 0.05
+
+MXG=0
+
+[mesh]
+
+length = 1  # Length of the domain
+ny = 200     # Number of grid points
+
+nx = 1
+nz = 1
+
+dx = 1
+dy = length / ny
+dz = 1
+
+ixseps1 = -1
+
+[mesh:ddy]
+
+upwind = c2   # Use 2nd-order central differencing
+
+[f]
+
+function = exp(-((y-pi)/0.2)^2)
+
+bndry_yup = free
+

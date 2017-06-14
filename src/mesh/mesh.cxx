@@ -117,7 +117,7 @@ int Mesh::get(Field3D &var, const string &name, BoutReal def, bool communicate) 
  **************************************************************************/
 
 int Mesh::get(Vector2D &var, const string &name) {
-  msg_stack.push("Loading 2D vector: Mesh::get(Vector2D, %s)", name.c_str());
+  TRACE("Loading 2D vector: Mesh::get(Vector2D, %s)", name.c_str());
 
   if(var.covariant) {
     output << "\tReading covariant vector " << name << endl;
@@ -133,14 +133,12 @@ int Mesh::get(Vector2D &var, const string &name) {
     get(var.y, name+"y");
     get(var.z, name+"z");
   }
-
-  msg_stack.pop();
 
   return 0;
 }
 
 int Mesh::get(Vector3D &var, const string &name) {
-  msg_stack.push("Loading 3D vector: Mesh::get(Vector3D, %s)", name.c_str());
+  TRACE("Loading 3D vector: Mesh::get(Vector3D, %s)", name.c_str());
 
   if(var.covariant) {
     output << "\tReading covariant vector " << name << endl;
@@ -156,8 +154,6 @@ int Mesh::get(Vector3D &var, const string &name) {
     get(var.y, name+"y");
     get(var.z, name+"z");
   }
-
-  msg_stack.pop();
 
   return 0;
 }

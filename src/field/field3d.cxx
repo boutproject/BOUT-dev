@@ -519,14 +519,14 @@ void Field3D::setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
   fval.jy = bx.jy;
   fval.jz = bx.jz;
 
-  ASSERT0(isAllocated());
+  ASSERT1(isAllocated());
   
   fval.c = (*this)(bx.jx,bx.jy,bx.jz);
   fval.p = yup()(bx.jx,bx.jyp,bx.jz);
   fval.m = ydown()(bx.jx,bx.jym,bx.jz);
   if (yup_field == this && ydown_field == this){
     fval.pp = (*this)(bx.jx,bx.jy2p,bx.jz);
-    fval.pp = (*this)(bx.jx,bx.jy2m,bx.jz);
+    fval.mm = (*this)(bx.jx,bx.jy2m,bx.jz);
   } else {
     fval.pp = nan("");
     fval.mm = nan("");
@@ -556,7 +556,7 @@ void Field3D::setYStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc)
   fval.jy = bx.jy;
   fval.jz = bx.jz;
 
-  ASSERT0(isAllocated());
+  ASSERT1(isAllocated());
   
   if(mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
     // Non-centred stencil
@@ -596,7 +596,7 @@ void Field3D::setYStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc
   fval.jy = bx.jy;
   fval.jz = bx.jz;
 
-  ASSERT0(isAllocated());
+  ASSERT1(isAllocated());
 
   if(mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
     // Non-centred stencil
@@ -636,7 +636,7 @@ void Field3D::setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const {
   fval.jy = bx.jy;
   fval.jz = bx.jz;
 
-  ASSERT0(isAllocated());
+  ASSERT1(isAllocated());
 
   fval.c = operator()(bx.jx,bx.jy,bx.jz);
 
@@ -669,7 +669,7 @@ void Field3D::setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const {
 int Field3D::getData(int x, int y, int z, void *vptr) const {
 
   // Check data set
-  ASSERT0(isAllocated());
+  ASSERT1(isAllocated());
 
 #if CHECK > 2
   // check ranges
@@ -684,7 +684,7 @@ int Field3D::getData(int x, int y, int z, void *vptr) const {
 }
 
 int Field3D::getData(int x, int y, int z, BoutReal *rptr) const {
-  ASSERT0(isAllocated());
+  ASSERT1(isAllocated());
   
 #if CHECK > 2
   // check ranges
@@ -1062,14 +1062,11 @@ Field3D pow(BoutReal lhs, const Field3D &rhs) {
 }
 
 BoutReal min(const Field3D &f, bool allpe) {
+  TRACE("Field3D::Min() %s",allpe? "over all PEs" : "");
+
 #ifdef CHECK
   if(!f.isAllocated())
     throw BoutException("Field3D: min() method on empty data");
-
-  if(allpe) {
-    msg_stack.push("Field3D::Min() over all PEs");
-  }else
-    msg_stack.push("Field3D::Min()");
 #endif
 
   BoutReal result = f[f.region(RGN_NOBNDRY).begin()];
@@ -1084,21 +1081,15 @@ BoutReal min(const Field3D &f, bool allpe) {
     MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MIN, BoutComm::get());
   }
 
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-
   return result;
 }
 
 BoutReal max(const Field3D &f, bool allpe) {
+  TRACE("Field3D::Max() %s",allpe? "over all PEs" : "");
+
 #ifdef CHECK
   if(!f.isAllocated())
     throw BoutException("Field3D: max() method on empty data");
-  if(allpe) {
-    msg_stack.push("Field3D::Max() over all PEs");
-  }else
-    msg_stack.push("Field3D::Max()");
 #endif
   
   BoutReal result = f[f.region(RGN_NOBNDRY).begin()];
@@ -1113,10 +1104,6 @@ BoutReal max(const Field3D &f, bool allpe) {
     MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MAX, BoutComm::get());
   }
   
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-
   return result;
 }
 
@@ -1125,7 +1112,7 @@ BoutReal max(const Field3D &f, bool allpe) {
 
 #define F3D_FUNC(name, func)                               \
   const Field3D name(const Field3D &f) {                   \
-    msg_stack.push(#name "(Field3D)");                     \
+    TRACE(#name "(Field3D)");                     \
     /* Check if the input is allocated */                  \
     ASSERT1(f.isAllocated());                              \
     /* Define and allocate the output result */            \
@@ -1138,7 +1125,6 @@ BoutReal max(const Field3D &f, bool allpe) {
       ASSERT3(finite(result[d]));                          \
     }                                                      \
     result.setLocation(f.getLocation());                   \
-    msg_stack.pop();                                       \
     return result;                                         \
   }
 
@@ -1195,8 +1181,7 @@ const Field3D filter(const Field3D &var, int N0) {
 
 // Fourier filter in z
 const Field3D lowPass(const Field3D &var, int zmax) {
-  
-  msg_stack.push("lowPass(Field3D, %d)", zmax);
+  TRACE("lowPass(Field3D, %d)", zmax);
 
   ASSERT1(var.isAllocated());
   
@@ -1228,17 +1213,12 @@ const Field3D lowPass(const Field3D &var, int zmax) {
   
   result.setLocation(var.getLocation());
 
-  msg_stack.pop();
-  
   return result;
 }
 
 // Fourier filter in z with zmin
 const Field3D lowPass(const Field3D &var, int zmax, int zmin) {
-
-#ifdef CHECK
-  msg_stack.push("lowPass(Field3D, %d, %d)", zmax, zmin);
-#endif
+  TRACE("lowPass(Field3D, %d, %d)", zmax, zmin);
 
   ASSERT1(var.isAllocated());
 
@@ -1271,10 +1251,6 @@ const Field3D lowPass(const Field3D &var, int zmax, int zmin) {
   }
   
   result.setLocation(var.getLocation());
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
   
   return result;
 }
