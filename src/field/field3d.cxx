@@ -570,7 +570,7 @@ void Field3D::setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
   fval.m = ydown()(bx.jx,bx.jym,bx.jz);
   if (yup_field == this && ydown_field == this){
     fval.pp = (*this)(bx.jx,bx.jy2p,bx.jz);
-    fval.pp = (*this)(bx.jx,bx.jy2m,bx.jz);
+    fval.mm = (*this)(bx.jx,bx.jy2m,bx.jz);
   } else {
     fval.pp = nan("");
     fval.mm = nan("");
