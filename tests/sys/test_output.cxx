@@ -124,7 +124,6 @@ TEST_F(OutputTest, CleanupAndGetInstance) {
 
   // Get a new instance
   Output *new_output = Output::getInstance();
-  EXPECT_NE(local_output, new_output);
 
   *new_output << "Hello, world!\n";
 

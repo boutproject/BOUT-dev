@@ -67,7 +67,7 @@ $(TARGET): makefile $(BOUT_TOP)/make.config $(OBJ) $(SUB_LIBS) gtest_main.a
 TEST_SOURCES = $(shell find $(BOUT_TEST_DIR) -type f -name "test_*.cxx" 2> /dev/null)
 TEST_OBJECTS = $(TEST_SOURCES:%.cxx=%.o)
 
-all_tests: makefile $(BOUT_TOP)/make.config $(OBJ) $(SUB_LIBS) $(TEST_OBJECTS) gtest_main.a
+all_tests: makefile $(BOUT_TOP)/make.config $(OBJ) $(LIB) $(SUB_LIBS) $(TEST_OBJECTS) gtest_main.a
 	@echo "  Linking tests"
 	@$(LD) $(LDFLAGS) -o $@ $(OBJ) $(TEST_OBJECTS) gtest_main.a $(BOUT_LIBS) $(SUB_LIBS)
 
