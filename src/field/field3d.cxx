@@ -563,7 +563,7 @@ void Field3D::setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
   fval.jy = bx.jy;
   fval.jz = bx.jz;
 
-  ASSERT0(isAllocated());
+  ASSERT1(isAllocated());
   
   fval.c = (*this)(bx.jx,bx.jy,bx.jz);
   fval.p = yup()(bx.jx,bx.jyp,bx.jz);
@@ -600,7 +600,7 @@ void Field3D::setYStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc)
   fval.jy = bx.jy;
   fval.jz = bx.jz;
 
-  ASSERT0(isAllocated());
+  ASSERT1(isAllocated());
   
   if(mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
     // Non-centred stencil
@@ -640,7 +640,7 @@ void Field3D::setYStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc
   fval.jy = bx.jy;
   fval.jz = bx.jz;
 
-  ASSERT0(isAllocated());
+  ASSERT1(isAllocated());
 
   if(mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
     // Non-centred stencil
@@ -680,7 +680,7 @@ void Field3D::setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const {
   fval.jy = bx.jy;
   fval.jz = bx.jz;
 
-  ASSERT0(isAllocated());
+  ASSERT1(isAllocated());
 
   fval.c = operator()(bx.jx,bx.jy,bx.jz);
 
@@ -713,7 +713,7 @@ void Field3D::setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const {
 int Field3D::getData(int x, int y, int z, void *vptr) const {
 
   // Check data set
-  ASSERT0(isAllocated());
+  ASSERT1(isAllocated());
 
 #if CHECK > 2
   // check ranges
@@ -728,7 +728,7 @@ int Field3D::getData(int x, int y, int z, void *vptr) const {
 }
 
 int Field3D::getData(int x, int y, int z, BoutReal *rptr) const {
-  ASSERT0(isAllocated());
+  ASSERT1(isAllocated());
   
 #if CHECK > 2
   // check ranges
