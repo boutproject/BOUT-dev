@@ -245,7 +245,7 @@ F2D_UPDATE_REAL(/=,/);    // operator/= BoutReal
 ////////////////////// STENCILS //////////////////////////
 
 void Field2D::getXArray(int y, int UNUSED(z), rvec &xv) const {
-  ASSERT0(isAllocated());
+  ASSERT1(isAllocated());
 
   xv.resize(nx);
   
@@ -254,7 +254,7 @@ void Field2D::getXArray(int y, int UNUSED(z), rvec &xv) const {
 }
 
 void Field2D::getYArray(int x, int UNUSED(z), rvec &yv) const {
-  ASSERT0(isAllocated());
+  ASSERT1(isAllocated());
 
   yv.resize(ny);
   
@@ -263,7 +263,7 @@ void Field2D::getYArray(int x, int UNUSED(z), rvec &yv) const {
 }
 
 void Field2D::getZArray(int x, int y, rvec &zv) const {
-  ASSERT0(isAllocated());
+  ASSERT1(isAllocated());
 
   zv.resize(mesh->LocalNz);
   
@@ -348,7 +348,7 @@ void Field2D::setZStencil(stencil &fval, const bindex &bx, CELL_LOC UNUSED(loc))
 ///////////////////// FieldData VIRTUAL FUNCTIONS //////////
 
 int Field2D::getData(int x, int y, int z, void *vptr) const {
-  ASSERT0(isAllocated()); // Check data set
+  ASSERT1(isAllocated()); // Check data set
   
 #if CHECK > 2
   // check ranges
@@ -363,7 +363,7 @@ int Field2D::getData(int x, int y, int z, void *vptr) const {
 }
 
 int Field2D::getData(int x, int y, int z, BoutReal *rptr) const {
-  ASSERT0(isAllocated()); // Check data set
+  ASSERT1(isAllocated()); // Check data set
   
 #if CHECK > 2
   // check ranges

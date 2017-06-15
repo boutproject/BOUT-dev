@@ -147,7 +147,7 @@ This will push the message, then pop the message when the current scope ends
 (except when an exception occurs).
 The error message will also have the file name and line number appended, to help find
 where an error occurred. The run-time overhead of this should be small,
-but can be removed entirely if the compile-time flag ``CHECK`` is not defined. This turns off checking,
+but can be removed entirely if the compile-time flag ``-DCHECK`` is not defined or set to ``0``. This turns off checking,
 and ``TRACE`` becomes an empty macro.
 It is possible to use standard ``printf`` like formatting with the trace macro, for example.
  

@@ -433,7 +433,7 @@ Mesh::boundary_derivs_pair D2DX2_B2_stag(backward_stencil &f) {
   return result;
 }
 
-BoutReal D2DX2_C4_stag(stencil &f) {
+BoutReal D2DX2_C2_stag(stencil &f) {
   return ( f.pp + f.mm - f.p - f.m ) / 2.;
 }
 
@@ -592,7 +592,7 @@ static DiffLookup FirstStagDerivTable[] = { {DIFF_C2, DDX_C2_stag, DDX_F2_stag, 
 					    {DIFF_DEFAULT, NULL, NULL, NULL, NULL, NULL, NULL, NULL}};
 
 /// Second staggered derivative lookup
-static DiffLookup SecondStagDerivTable[] = { {DIFF_C4, D2DX2_C4_stag, D2DX2_F4_stag, D2DX2_B4_stag, NULL, NULL, NULL, NULL},
+static DiffLookup SecondStagDerivTable[] = { {DIFF_C2, D2DX2_C2_stag, D2DX2_F2_stag, D2DX2_B2_stag, NULL, NULL, NULL, NULL},
 					     {DIFF_DEFAULT, NULL, NULL, NULL, NULL, NULL, NULL, NULL}};
 
 /// Upwinding staggered lookup
