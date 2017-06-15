@@ -5016,7 +5016,7 @@ then
 fi
 
 CHECK_LEVEL="0"
-if test "enable_checks" != "no"
+if test ".$enable_checks" != ".no"
 then
   echo "Run-time checking enabled"
   if test "$enable_checks" = "1"
