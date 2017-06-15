@@ -49,7 +49,7 @@ Field3D::Field3D(Mesh *msh) : background(nullptr), fieldmesh(msh), deriv(nullptr
     ny = fieldmesh->LocalNy;
     nz = fieldmesh->LocalNz;
   }
-#ifdef CHECK
+#if CHECK > 0
   else {
     nx=-1;
     ny=-1;
@@ -80,7 +80,7 @@ Field3D::Field3D(const Field3D& f) : background(nullptr),
     ny = fieldmesh->LocalNy;
     nz = fieldmesh->LocalNz;
   }
-#ifdef CHECK
+#if CHECK > 0
   else {
     nx=-1;
     ny=-1;
@@ -349,7 +349,7 @@ void Field3D::operator=(const bvalue &bv) {
   
   allocate();
 
-#ifdef CHECK
+#if CHECK > 0
   if(!finite(bv.val))
     throw BoutException("Field3D: assignment from non-finite value at (%d,%d,%d)\n", 
 			bv.jx, bv.jy,bv.jz);
@@ -362,7 +362,7 @@ Field3D & Field3D::operator=(const BoutReal val) {
   TRACE("Field3D = BoutReal");
   allocate();
 
-#ifdef CHECK
+#if CHECK > 0
   if(!finite(val))
     throw BoutException("Field3D: Assignment from non-finite BoutReal\n");
 #endif
@@ -436,7 +436,7 @@ void Field3D::setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const {
   fval.jy = bx.jy;
   fval.jz = bx.jz;
   
-#ifdef CHECK
+#if CHECK > 0
   // Check data set
   if(data.empty())
     throw BoutException("Field3D: Setting X stencil for empty data\n");
@@ -473,7 +473,7 @@ void Field3D::setXStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc)
   fval.jy = bx.jy;
   fval.jz = bx.jz;
   
-#ifdef CHECK
+#if CHECK > 0
   // Check data set
   if(data.empty())
     throw BoutException("Field3D: Setting X stencil for empty data\n");
@@ -796,7 +796,7 @@ void Field3D::applyBoundary(bool init) {
 void Field3D::applyBoundary(BoutReal t) {
   TRACE("Field3D::applyBoundary()");
   
-#ifdef CHECK
+#if CHECK > 0
   if(!boundaryIsSet)
     output << "WARNING: Call to Field3D::applyBoundary(t), but no boundary set." << endl;
 #endif
@@ -1173,7 +1173,7 @@ Field3D pow(BoutReal lhs, const Field3D &rhs) {
 BoutReal min(const Field3D &f, bool allpe) {
   TRACE("Field3D::Min() %s",allpe? "over all PEs" : "");
 
-#ifdef CHECK
+#if CHECK > 0
   if(!f.isAllocated())
     throw BoutException("Field3D: min() method on empty data");
 #endif
@@ -1196,7 +1196,7 @@ BoutReal min(const Field3D &f, bool allpe) {
 BoutReal max(const Field3D &f, bool allpe) {
   TRACE("Field3D::Max() %s",allpe? "over all PEs" : "");
 
-#ifdef CHECK
+#if CHECK > 0
   if(!f.isAllocated())
     throw BoutException("Field3D: max() method on empty data");
 #endif
@@ -1410,7 +1410,7 @@ bool finite(const Field3D &f) {
   return true;
 }
 
-#ifdef CHECK
+#if CHECK > 0
 /// Check if the data is valid
 void checkData(const Field3D &f)  {
   if(!f.isAllocated())

@@ -34,7 +34,7 @@
 #include <utils.hxx>
 
 Field::Field() {
-#ifdef CHECK
+#if CHECK > 0
   bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true;
 #endif
 }

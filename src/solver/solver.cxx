@@ -161,7 +161,7 @@ void Solver::add(Field2D &v, const char* name) {
 void Solver::add(Field3D &v, const char* name) {
   TRACE("Adding 3D field: Solver::add(%s)", name);
 
-#ifdef CHECK  
+#if CHECK > 0  
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Solver", name);
 #endif
@@ -302,7 +302,7 @@ void Solver::add(Vector3D &v, const char* name) {
 void Solver::constraint(Field2D &v, Field2D &C_v, const char* name) {
   TRACE("Constrain 2D scalar: Solver::constraint(%s)", name);
 
-#ifdef CHECK  
+#if CHECK > 0  
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Solver", name);
 #endif
@@ -329,7 +329,7 @@ void Solver::constraint(Field2D &v, Field2D &C_v, const char* name) {
 void Solver::constraint(Field3D &v, Field3D &C_v, const char* name) {
   TRACE("Constrain 3D scalar: Solver::constraint(%s)", name);
 
-#ifdef CHECK
+#if CHECK > 0
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Solver", name);
 #endif
@@ -357,7 +357,7 @@ void Solver::constraint(Field3D &v, Field3D &C_v, const char* name) {
 void Solver::constraint(Vector2D &v, Vector2D &C_v, const char* name) {
   TRACE("Constrain 2D vector: Solver::constraint(%s)", name);
 
-#ifdef CHECK  
+#if CHECK > 0  
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Solver", name);
 #endif
@@ -396,7 +396,7 @@ void Solver::constraint(Vector2D &v, Vector2D &C_v, const char* name) {
 void Solver::constraint(Vector3D &v, Vector3D &C_v, const char* name) {
   TRACE("Constrain 3D vector: Solver::constraint(%s)", name);
 
-#ifdef CHECK  
+#if CHECK > 0  
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Solver", name);
 #endif
@@ -1222,7 +1222,7 @@ void Solver::pre_rhs(BoutReal t) {
 }
 
 void Solver::post_rhs(BoutReal t) {
-#ifdef CHECK
+#if CHECK > 0
   for(const auto& f : f3d) {
     if(!f.F_var->isAllocated())
       throw BoutException("Time derivative for '%s' not set", f.name.c_str());

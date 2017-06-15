@@ -997,7 +997,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
     result(bx.jx,bx.jy) = func(s);
   }while(next_index2(&bx));
 
-#ifdef CHECK
+#if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
@@ -1010,7 +1010,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
 	var.setXStencil(s, bx, loc);
 	result(bx.jx,bx.jy) = func(s);
       }
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_ydown = true;
     #endif
   }
@@ -1022,7 +1022,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
 	var.setXStencil(s, bx, loc);
 	result(bx.jx,bx.jy) = func(s);
       }
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_yup = true;
     #endif
   }
@@ -1037,7 +1037,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
       result(bx.jx,bx.jy) = funcs_pair.inner;
       result(bx.jxm,bx.jy) = funcs_pair.outer;
     }
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_xin = true;
     #endif
   }
@@ -1052,7 +1052,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
       result(bx.jx,bx.jy) = funcs_pair.inner;
       result(bx.jxp,bx.jy) = funcs_pair.outer;
     }
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_xout = true;
     #endif
   }
@@ -1078,7 +1078,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
     }
   }while(next_index2(&bx));
 
-#ifdef CHECK
+#if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
@@ -1092,7 +1092,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
 	  var.setXStencil(s, bx, loc);
 	  result(bx.jx,bx.jy,bx.jz) = func(s);
 	}
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_ydown = true;
     #endif
   }
@@ -1105,7 +1105,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
 	  var.setXStencil(s, bx, loc);
 	  result(bx.jx,bx.jy,bx.jz) = func(s);
 	}
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_yup = true;
     #endif
   }
@@ -1121,7 +1121,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
 	result(bx.jx,bx.jy,bx.jz) = funcs_pair.inner;
 	result(bx.jxm,bx.jy,bx.jz) = funcs_pair.outer;
       }
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_xin = true;
     #endif
   }
@@ -1137,7 +1137,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
 	result(bx.jx,bx.jy,bx.jz) = funcs_pair.inner;
 	result(bx.jxp,bx.jy,bx.jz) = funcs_pair.outer;
       }
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_xout = true;
     #endif
   }
@@ -1163,7 +1163,7 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
     result(bx.jx,bx.jy) = func(s);
   }while(next_index2(&bx));
 
-#ifdef CHECK
+#if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_yup = result.bndry_ydown = false;
 #endif
@@ -1175,7 +1175,7 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
 	var.setYStencil(s, bx, loc);
 	result(bx.jx,bx.jy) = func(s);
       }
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_xin = true;
     #endif
   }
@@ -1186,7 +1186,7 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
 	var.setYStencil(s, bx, loc);
 	result(bx.jx,bx.jy) = func(s);
       }
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_xout = true;
     #endif
   }
@@ -1202,7 +1202,7 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
       result(bx.jx,bx.jy) = funcs_pair.inner;
       result(bx.jx,bx.jym) = funcs_pair.outer;
     }
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_ydown = true;
     #endif
   }
@@ -1218,7 +1218,7 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
       result(bx.jx,bx.jy) = funcs_pair.inner;
       result(bx.jx,bx.jyp) = funcs_pair.outer;
     }
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_yup = true;
     #endif
   }
@@ -1267,7 +1267,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
     
     result = mesh->fromFieldAligned(result);
   }
-#ifdef CHECK
+#if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
@@ -1281,7 +1281,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
 	  var.setYStencil(s, bx, loc);
 	  result(bx.jx,bx.jy,bx.jz) = func(s);
 	}
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_xin = true;
     #endif
   }
@@ -1294,7 +1294,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
 	  var.setYStencil(s, bx, loc);
 	  result(bx.jx,bx.jy,bx.jz) = func(s);
 	}
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_xout = true;
     #endif
   }
@@ -1312,7 +1312,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
 	result(bx.jx,bx.jy,bx.jz) = funcs_pair.inner;
 	result(bx.jx,bx.jym,bx.jz) = funcs_pair.outer;
       }
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_ydown = true;
     #endif
   }
@@ -1330,7 +1330,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
 	result(bx.jx,bx.jy,bx.jz) = funcs_pair.inner;
 	result(bx.jx,bx.jyp,bx.jz) = funcs_pair.outer;
       }
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_yup = true;
     #endif
   }
@@ -1361,7 +1361,7 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 	  var.setZStencil(s, bx, loc);
 	  result(bx.jx,bx.jy,bx.jz) = func(s);
 	}
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_xin = true;
     #endif
   }
@@ -1374,7 +1374,7 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 	  var.setZStencil(s, bx, loc);
 	  result(bx.jx,bx.jy,bx.jz) = func(s);
 	}
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_xout = true;
     #endif
   }
@@ -1388,7 +1388,7 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 	  var.setZStencil(s, bx, loc);
 	  result(bx.jx,bx.jy,bx.jz) = func(s);
 	}
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_ydown = true;
     #endif
   }
@@ -1402,7 +1402,7 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 	  var.setZStencil(s, bx, loc);
 	  result(bx.jx,bx.jy,bx.jz) = func(s);
 	}
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_yup = true;
     #endif
   }
@@ -1692,7 +1692,7 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
     }
     // End of parallel section
     
-#ifdef CHECK
+#if CHECK > 0
     // Mark boundaries as invalid
     if (mesh->freeboundary_xin) result.bndry_xin = true;
     else result.bndry_xin = false;
@@ -2038,7 +2038,7 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
       }
     }
 
-#ifdef CHECK
+#if CHECK > 0
     // Mark boundaries as invalid
     if (mesh->freeboundary_xin) result.bndry_xin = true;
     else result.bndry_xin = false;
@@ -2137,7 +2137,7 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC UNUSE
     result(bx.jx,bx.jy) = func(v[{bx.jx,bx.jy,0}], fs);
   }while(next_index2(&bx));
 
-#ifdef CHECK
+#if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = false;
 #endif
@@ -2222,7 +2222,7 @@ const Field3D Mesh::indexVDDX(const Field &v, const Field &f, CELL_LOC outloc, D
   
   result.setLocation(inloc);
 
-#ifdef CHECK
+#if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
@@ -2307,7 +2307,7 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
   }
   result.setLocation(inloc);
     
-#ifdef CHECK
+#if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
@@ -2393,7 +2393,7 @@ const Field3D Mesh::indexVDDY(const Field &v, const Field &f, CELL_LOC outloc, D
   
   result.setLocation(inloc);
     
-#ifdef CHECK
+#if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
@@ -2480,7 +2480,7 @@ const Field3D Mesh::indexVDDZ(const Field &v, const Field &f, CELL_LOC outloc, D
   
   result.setLocation(inloc);
   
-#ifdef CHECK
+#if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
@@ -2519,7 +2519,7 @@ const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
     result(bx.jx, bx.jy) = func(vs, fs);
   }while(next_index2(&bx));
 
-#ifdef CHECK
+#if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = false;
 #endif
@@ -2592,7 +2592,7 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
   
   result.setLocation(inloc);
 
-#ifdef CHECK
+#if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
@@ -2629,7 +2629,7 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
     result(bx.jx, bx.jy) = func(vs, fs);
   }while(next_index2(&bx));
 
-#ifdef CHECK
+#if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = false;
 #endif
@@ -2707,7 +2707,7 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   result.setLocation(inloc);
 
-#ifdef CHECK
+#if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
@@ -2781,7 +2781,7 @@ const Field3D Mesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
   
   result.setLocation(inloc);
 
-#ifdef CHECK
+#if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif

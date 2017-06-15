@@ -224,7 +224,7 @@ int BoutInitialise(int &argc, char **&argv) {
 
   output.write("Compile-time options:\n");
 
-#ifdef CHECK
+#if CHECK > 0
   output.write("\tChecking enabled, level %d\n", CHECK);
 #else
   output.write("\tChecking disabled\n");

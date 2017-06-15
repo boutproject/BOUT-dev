@@ -81,7 +81,7 @@ public:
   DEPRECATED(virtual int setData(int x, int y, int z, void *vptr)) = 0;
   DEPRECATED(virtual int setData(int x, int y, int z, BoutReal *rptr)) = 0;
 
-#ifdef CHECK
+#if CHECK > 0
   virtual void doneComms() { }; // Notifies that communications done
 #endif
   

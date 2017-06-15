@@ -160,7 +160,7 @@ private:
  * 
  * } // Scope ends, message popped
  */
-#ifdef CHECK
+#if CHECK > 0
 /* Would like to have something like TRACE(message, ...) so that we can directly refer
    to the (required) first argument, which is the main message string. However because
    we want to allow TRACE("Message with no args") we have to deal with the case where
