@@ -2,7 +2,7 @@
 Routines for generating structured meshes on poloidal domains
 """
 
-from numpy import pi, linspace, sqrt, cos, sin, append, zeros
+from numpy import pi, linspace, sqrt, cos, sin, append, zeros, argmin
 from scipy.interpolate import splrep, splev, interp1d
 from scipy.integrate import cumtrapz
 
@@ -49,30 +49,23 @@ class RZline:
         self._rspl = splrep(append(self.theta,2*pi), append(r,r[0]), per=True)
         self._zspl = splrep(append(self.theta,2*pi), append(z,z[0]), per=True)
         
-    def Rvalue(self, theta):
+    def Rvalue(self, theta=None, deriv=0):
         """
         Calculate the value of R at given theta locations
         """
-        return splev(theta, self._rspl, der=0)
+        if theta is None:
+            theta = self.theta
+        return splev(theta, self._rspl, der=deriv)
 
-    def Zvalue(self, theta):
+    def Zvalue(self, theta=None, deriv=0):
         """
         Calculate the value of Z at given theta locations
         """
-        return splev(theta, self._zspl, der=0)
+        if theta is None:
+            theta = self.theta
+        return splev(theta, self._zspl, der=deriv)
         
-    def dRdtheta(self):
-        """
-        Calculate the derivative of R w.r.t. theta
-        """
-        return splev(self.theta, self._rspl, der=1)
 
-    def dZdtheta(self):
-        """
-        Calculate the derivative of Z w.r.t. theta
-        """
-        return splev(self.theta, self._zspl, der=1)
-        
     def distance(self):
         """
         Integrates the distance along the line.
@@ -84,7 +77,7 @@ class RZline:
         """
         
         # variation of length with angle dl/dtheta
-        dldtheta = sqrt(self.dRdtheta()**2 + self.dZdtheta()**2)
+        dldtheta = sqrt(self.Rvalue(deriv=1)**2 + self.Zvalue(deriv=1)**2)
         
         # Make periodic by repeating the first point
         dldtheta = append(dldtheta, dldtheta[0])
@@ -113,8 +106,41 @@ class RZline:
         new_theta = thetavals(positions)
         
         return RZline( self.Rvalue(new_theta), self.Zvalue(new_theta) )
+ 
+    def closestPoint(self, R,Z):
+        """
+        Find the closest point on the curve to the given (R,Z) point
         
-def circular_boundaries(R0=1.0, rin=1.0, rout=2.0, n=20):
+        Returns the value of theta (angle)
+        """
+        
+        # First find the closest control point
+        ind = argmin((self.R - R)**2 + (self.Z - Z)**2)
+        theta = self.theta[ind]
+
+        # Refine using Newton's method to find where derivative goes to zero
+        # distance = dR**2 + dZ**2
+        # d(distance)/dtheta = 2.*dR*(dR/dtheta) + 2.*dZ*(dZ/dtheta)
+        # d^2(distance)/dtheta^22 = 2*( (dR/dtheta)^2 + dR*(d^2R/dtheta^2) + (dZ/dtheta)^2 + dZ*(d^2Z/dtheta^2) )
+        for i in range(3):
+            dR = self.Rvalue(theta) - R
+            dZ = self.Zvalue(theta) - Z
+            
+            dRdtheta = self.Rvalue(theta, deriv=1)
+            dZdtheta = self.Zvalue(theta, deriv=1)
+            
+            d2Rdtheta2 = self.Rvalue(theta, deriv=2)
+            d2Zdtheta2 = self.Zvalue(theta, deriv=2)
+
+            d_dtheta = 2.*(dR*dRdtheta + dZ*dZdtheta)
+            d2_dtheta2 = 2.*( dRdtheta**2 + dR*d2Rdtheta2 + dZdtheta**2 + dZ*d2Zdtheta2 )
+            
+            theta = theta - d_dtheta/d2_dtheta2
+            
+        return theta
+        
+       
+def circle(R0=1.0, r= 0.5, n=20):
     """
     Creates a pair of RZline objects, for inner and outer boundaries
 
@@ -123,7 +149,7 @@ def circular_boundaries(R0=1.0, rin=1.0, rout=2.0, n=20):
     # Define an angle coordinate
     theta = linspace(0,2*pi,n, endpoint=False)
     
-    return RZline( R0 + rin*cos(theta), rin*sin(theta) ), RZline( R0 + rout*cos(theta), rout*sin(theta) )
+    return RZline( R0 + r*cos(theta), r*sin(theta) )
     
     
 
@@ -164,8 +190,84 @@ def grid_annulus(inner, outer, nx, ny, show=True):
         plt.show()
         
 
-if __name__ == "__main__":
-    inner,outer = circular_boundaries(R0=1.0, rin=1.0, rout=2.0, n=50)
+def grid_weighted_distance(inner, outer, nx, ny, show=True, equidistant=False):
+    """
+    Grid region using weighted distance from inner and outer
+    boundaries as a streamline function
     
-    grid_annulus(inner, outer, 10, 20, show=True)
+    nx   Number of radial surfaces including edges. Must be >=2
+    ny   Number of poloidal surfaces. Must be > 1
+
+    equidistant  Poloidal points on each surface are equally spaced
+    
+    """
+    
+    assert nx >= 2
+    assert ny > 1
+    
+    R = zeros((nx, ny))
+    Z = zeros((nx, ny))
+    
+    # Order both boundaries by distance
+    inner = inner.orderByDistance()
+    outer = outer.orderByDistance()
+    
+    # Radial coordinate
+    xvals = linspace(0, 1.0, nx, endpoint=True)
+    
+    # Generate angle values, which should now be equally spaced
+    # in distance along inner and outer boundaries
+    thetavals = linspace(0, 2*pi, ny, endpoint=False)
+    
+    plt.plot(inner.R, inner.Z)
+    plt.plot(outer.R, outer.Z)
+    
+    # Inner boundary
+    R[0,:] = inner.Rvalue(thetavals)
+    Z[0,:] = inner.Zvalue(thetavals)
+
+    for i in range(1,nx):
+        for j, theta in enumerate(thetavals):
+            # Start on inner boundary and find shortest path to outer boundary
+            Rpos = R[i-1,j]
+            Zpos = Z[i-1,j]
+        
+            plt.plot(Rpos, Zpos, 'x')
+            
+            # Find the closest location on the outer boundary
+            outtheta = outer.closestPoint(Rpos, Zpos)
+            outR = outer.Rvalue(outtheta)
+            outZ = outer.Zvalue(outtheta)
+            
+            # Take a small step towards the outer boundary
+            frac = 1./(nx-i) # Fraction of distance to move
+            Rpos += frac*(outR - Rpos)
+            Zpos += frac*(outZ - Zpos)
+            
+            R[i,j] = Rpos
+            Z[i,j] = Zpos
+        
+        if equidistant:
+            # Put all points on a surface into an RZline object
+            surf = RZline(R[i,:], Z[i,:])
+            # Remap so equidistant 
+            surf = surf.orderByDistance()
+            R[i,:] = surf.R
+            Z[i,:] = surf.Z
+        
+        
+    plt.plot(Rpos, Zpos, 'o')
+    plt.show()
+    
+    
+
+if __name__ == "__main__":
+    inner = circle(R0=1.5, r=1.0, n=50)
+    outer = circle(R0=1.0, r=2.0, n=50)
+    
+    grid_weighted_distance(inner, outer, 10, 20, show=True)
+    
+    theta = outer.closestPoint(3.0,1.0)
+    print(theta)
+    
     

@@ -3,11 +3,8 @@ from . import poloidal_grid as grid
 import numpy as np
 
 def test_circular_boundaries():
-    result = grid.circular_boundaries(R0=1.0, rin=1.0, rout=2.0, n=20)
-    
-    assert len(result) == 2 # Should return two values
-    
-    inner, outer = result
+    inner = grid.circle(R0=1.0, r=1.0, n=20)
+    outer = grid.circle(R0=1.0, r=2.0, n=20)
     
     assert np.amax(inner.R) <= 2.0
     assert np.amin(inner.R) >= 0.0
@@ -17,7 +14,8 @@ def test_distance():
     # Check the RZline.distance() function
     
     n = 50
-    inner,outer = grid.circular_boundaries(R0=1.0, rin=1.0, rout=2.0, n=n)
+    inner = grid.circle(R0=1.0, r=1.0, n=n)
+    outer = grid.circle(R0=1.0, r=2.0, n=n)
     
     dist = inner.distance()
 
@@ -36,8 +34,8 @@ def test_distance():
     
 def test_order_by_distance():
     # Check the RZline.orderByDistance function
-    
-    inner,outer = grid.circular_boundaries(R0=1.0, rin=1.0, rout=2.0, n=20)
+    inner = grid.circle(R0=1.0, r=1.0, n=20)
+    outer = grid.circle(R0=1.0, r=2.0, n=20)
     
     new_inner = inner.orderByDistance(n=10)
     
@@ -45,8 +43,11 @@ def test_order_by_distance():
     
     
 def test_grid_annulus():
+    n = 50
+    inner = grid.circle(R0=1.0, r=1.0, n=n)
+    outer = grid.circle(R0=1.0, r=2.0, n=n)
     
-    inner,outer = grid.circular_boundaries(R0=1.0, rin=1.0, rout=2.0, n=50)
     
-    grid.grid_annulus(inner, outer, 5, 10, show=True)
+    grid.grid_annulus(inner, outer, 5, 10)
+    
     
