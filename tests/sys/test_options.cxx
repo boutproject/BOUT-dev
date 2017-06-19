@@ -64,6 +64,18 @@ TEST(OptionsTest, SetGetBool) {
   EXPECT_EQ(value, true);
 }
 
+TEST(OptionsTest, SetGetBoolFalse) {
+  Options options;
+  options.set("bool_key", false, "code");
+
+  ASSERT_TRUE(options.isSet("bool_key"));
+
+  bool value;
+  options.get("bool_key", value, true, false);
+
+  EXPECT_EQ(value, false);
+}
+
 TEST(OptionsTest, GetBoolFromString) {
   Options options;
   options.set("bool_key", "true", "code");
@@ -138,10 +150,11 @@ TEST(OptionsTest, CheckUsed) {
   std::cout.rdbuf(buffer.rdbuf());
 
   Options options;
+  Options *section1 = options.getSection("section1");
   options.set("key1", "a", "code");
-  options.set("key2", "b", "code");
+  section1->set("key2", "b", "code");
   options.set("key3", "c", "code");
-  options.set("key4", "d", "code");
+  section1->set("key4", "d", "code");
 
   options.printUnused();
 
@@ -156,21 +169,21 @@ TEST(OptionsTest, CheckUsed) {
 
   std::string value;
   options.get("key1", value, "--", false);
-  options.get("key2", value, "--", false);
+  section1->get("key2", value, "--", false);
 
   options.printUnused();
 
   // Check only key3, key4 are in buffer
   EXPECT_FALSE(IsSubString(buffer.str(), "key1"));
-  EXPECT_FALSE(IsSubString(buffer.str(), "key2"));
+  EXPECT_FALSE(IsSubString(buffer.str(), "section1:key2"));
   EXPECT_TRUE(IsSubString(buffer.str(), "key3"));
-  EXPECT_TRUE(IsSubString(buffer.str(), "key4"));
+  EXPECT_TRUE(IsSubString(buffer.str(), "section1:key4"));
 
   // Clear buffer
   buffer.str("");
 
   options.get("key3", value, "--", false);
-  options.get("key4", value, "--", false);
+  section1->get("key4", value, "--", false);
 
   options.printUnused();
 
