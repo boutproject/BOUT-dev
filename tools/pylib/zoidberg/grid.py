@@ -1,6 +1,5 @@
 from __future__ import division
 from builtins import object
-from past.utils import old_div
 
 import numpy as np
 
@@ -37,16 +36,16 @@ class Grid(object):
         self.Ly = float(Ly)
         self.Lz = float(Lz)
 
-        self.delta_x = old_div(self.Lx,(nx-2.*MXG))
-        self.delta_y = old_div(self.Ly,ny)
-        self.delta_z = old_div(self.Lz,nz)
+        self.delta_x = self.Lx/float(nx-2.*MXG)
+        self.delta_y = self.Ly/float(ny)
+        self.delta_z = self.Lz/float(nz)
 
         # Coord arrays
         self.xarray = Lx * (np.arange(nx) - MXG + 0.5)/(nx - 2.*MXG)  # 0 and 1 half-way between cells
         self.yarray = np.linspace(0,Ly,ny,endpoint=False)
         self.zarray = np.linspace(0,Lz,nz,endpoint=False)
 
-        self.xcentre = old_div(Lx, 2.)#0.5*max(self.xarray)
+        self.xcentre = Lx/2.#0.5*max(self.xarray)
         self.zcentre = 0.5*max(self.zarray)
 
         self.x_3d, self.y_3d, self.z_3d = np.meshgrid(self.xarray, self.yarray, self.zarray,

@@ -1,6 +1,5 @@
 from __future__ import division
 from builtins import object
-from past.utils import old_div
 
 import numpy as np
 from boututils import datafile as bdata

@@ -1,10 +1,8 @@
 from builtins import object
-from past.utils import old_div
 
 # from math import pi, atan, cos, sin
 
 import numpy as np
-from sympy import Symbol, Derivative, atan, atan2, cos, sin, log, pi, sqrt, lambdify
 
 # from . import grid
 
@@ -147,10 +145,10 @@ class Slab(MagneticField):
         self.Bpprime = Bpprime
 
         # Effective major radius
-        R = old_div(self.grid.Ly, (2.*np.pi))
+        R = self.grid.Ly/float(2.*np.pi)
 
         # Set poloidal magnetic field
-        Bpx = self.Bp + (self.grid.xarray-old_div(self.grid.Lx,2)) * self.Bpprime
+        Bpx = self.Bp + (self.grid.xarray-self.grid.Lx/2.) * self.Bpprime
 
         self.Bpxy = np.resize(Bpx, (self.grid.nz, self.grid.ny, self.grid.nx))
         self.Bpxy = np.transpose(self.Bpxy, (2,1,0))
@@ -164,64 +162,69 @@ class Slab(MagneticField):
 
         super().__init__(grid, Bxfunc, Bzfunc)
 
+try:
+    from sympy import Symbol, Derivative, atan, atan2, cos, sin, log, pi, sqrt, lambdify
+    
+    class Stellarator(MagneticField):
+        def coil(self, radius, angle, iota, I):
+            """Defines a single coil
+            
+            Inputs
+            ------
+            radius - radius to coil
+            angle - initial angle of coil
+            iota - rotational transform of coil
+            I - current through coil
+            
+            Returns
+            -------
+            (x, z) - x, z coordinates of coils along phi
+            """
+            
+            return (self.grid.xcentre + radius * cos(angle + iota * self.phi),
+                    self.grid.zcentre + radius * sin(angle + iota * self.phi), I)
+            
+        def __init__(self, grid, radius=0.8, iota=1, I_coil=0.05, smooth=False, smooth_args={}):
 
-class Stellarator(MagneticField):
-    def coil(self, radius, angle, iota, I):
-        """Defines a single coil
+            self.x = Symbol('x')
+            self.z = Symbol('z')
+            self.y = Symbol('y')
+            self.r = Symbol('r')
+            self.r = (self.x**2 + self.z**2)**(0.5)
+            self.phi = Symbol('phi')
+            
+            self.radius = radius * ((grid.Lx + grid.Lz)*0.5)
+            self.grid = grid
 
-        Inputs
-        ------
-        radius - radius to coil
-        angle - initial angle of coil
-        iota - rotational transform of coil
-        I - current through coil
+            # Four coils equally spaced, alternating direction for current
+            self.coil_list = [self.coil(self.radius, n*pi, iota, ((-1)**np.mod(i,2))*I_coil)
+                              for i, n in enumerate(np.arange(4)/2.)]
 
-        Returns
-        -------
-        (x, z) - x, z coordinates of coils along phi
-        """
+            A = 0.0
+            Bx = 0.0
+            Bz = 0.0
+            
+            for c in self.coil_list:
+                xc, zc, Ic = c
+                rc = (xc**2 + zc**2)**(0.5)
+                r2 = (self.x - xc)**2 + (self.z - zc)**2
+                theta = atan2(self.z - zc, self.x - xc) # Angle relative to coil
+                
+                A -= Ic * 0.1 * log(r2)
+                
+                B = Ic * 0.2/sqrt(r2)
+                
+                Bx += B * sin(theta)
+                Bz -= B * cos(theta)
+                
+            self.Afunc  = lambdify((self.x, self.z, self.phi), A, "numpy")
+            self.Bxfunc = lambdify((self.x, self.z, self.phi), Bx, "numpy")
+            self.Bzfunc = lambdify((self.x, self.z, self.phi), Bz, "numpy")
+            
+            super().__init__(self.grid, self.Bxfunc, self.Bzfunc, smooth=smooth, smooth_args=smooth_args)
 
-        return (self.grid.xcentre + radius * cos(angle + iota * self.phi),
-                self.grid.zcentre + radius * sin(angle + iota * self.phi), I)
-
-    def __init__(self, grid, radius=0.8, iota=1, I_coil=0.05, smooth=False, smooth_args={}):
-
-        self.x = Symbol('x')
-        self.z = Symbol('z')
-        self.y = Symbol('y')
-        self.r = Symbol('r')
-        self.r = (self.x**2 + self.z**2)**(0.5)
-        self.phi = Symbol('phi')
-
-        self.radius = radius * ((grid.Lx + grid.Lz)*0.5)
-        self.grid = grid
-
-        # Four coils equally spaced, alternating direction for current
-        self.coil_list = [self.coil(self.radius, n*pi, iota, ((-1)**np.mod(i,2))*I_coil)
-                          for i, n in enumerate(np.arange(4)/2.)]
-
-        A = 0.0
-        Bx = 0.0
-        Bz = 0.0
-
-        for c in self.coil_list:
-            xc, zc, Ic = c
-            rc = (xc**2 + zc**2)**(0.5)
-            r2 = (self.x - xc)**2 + (self.z - zc)**2
-            theta = atan2(self.z - zc, self.x - xc) # Angle relative to coil
-
-            A -= Ic * 0.1 * log(r2)
-
-            B = Ic * 0.2/sqrt(r2)
-
-            Bx += B * sin(theta)
-            Bz -= B * cos(theta)
-
-        self.Afunc  = lambdify((self.x, self.z, self.phi), A, "numpy")
-        self.Bxfunc = lambdify((self.x, self.z, self.phi), Bx, "numpy")
-        self.Bzfunc = lambdify((self.x, self.z, self.phi), Bz, "numpy")
-
-        super().__init__(self.grid, self.Bxfunc, self.Bzfunc, smooth=smooth, smooth_args=smooth_args)
+except ImportError:
+    print("No Sympy module: Can't generate Stellarator fields")
 
 
 class VMEC(object):
