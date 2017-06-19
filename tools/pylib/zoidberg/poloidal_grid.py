@@ -151,7 +151,20 @@ def circle(R0=1.0, r= 0.5, n=20):
     
     return RZline( R0 + r*cos(theta), r*sin(theta) )
     
+def shaped_line(R0=3.0, a=1.0, elong=0.0, triang=0.0, indent=0.0, n=20):
+    """
+    Parametrisation of plasma shape from J. Manickam, Nucl. Fusion 24 595 (1984)
     
+    R0  Major radius
+    a   Minor radius
+    elong   Elongation, 0 for a circle
+    triang  Triangularity, 0 for a circle
+    indent  Indentation, 0 for a circle
+    """
+    theta = linspace(0,2*pi,n, endpoint=False)
+    return RZline( R0 - indent + (a + indent*cos(theta))*cos(theta + triang*sin(theta)),
+                   (1.+elong)*a*sin(theta) )
+
 
 def grid_annulus(inner, outer, nx, ny, show=True):
     """
@@ -264,10 +277,11 @@ def grid_weighted_distance(inner, outer, nx, ny, show=True, equidistant=False):
 if __name__ == "__main__":
     inner = circle(R0=1.5, r=1.0, n=50)
     outer = circle(R0=1.0, r=2.0, n=50)
+
+    #inner = shaped_line(R0=3.0, a=0.5, elong=1.0, triang=0.0, indent=1.0, n=50)
+    #outer = shaped_line(R0=2.8, a=1.5, elong=1.0, triang=0.0, indent=0.2, n=50)
+    #outer = shaped_line(R0=3.0, a=1.0, elong=1.0, triang=0.0, indent=1.0, n=50)
     
-    grid_weighted_distance(inner, outer, 10, 20, show=True)
-    
-    theta = outer.closestPoint(3.0,1.0)
-    print(theta)
-    
+    grid_weighted_distance(inner, outer, 10, 20, show=True, equidistant=False)
+        
     
