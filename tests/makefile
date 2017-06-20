@@ -14,7 +14,7 @@ GTEST_SOURCES = $(GTEST_DIR)/src/gtest-all.cc
 # Flags passed to the preprocessor.
 # Set Google Test's header directory as a system directory, such that
 # the compiler doesn't generate warnings in Google Test headers.
-CXXFLAGS += -isystem ${GTEST_DIR}/include -I${GTEST_DIR}
+CXXFLAGS += -isystem ${GTEST_DIR}/include -I${GTEST_DIR} -I${BOUT_TEST_DIR}
 
 # Flags passed to the C++ compiler.
 CXXFLAGS += -g -Wall -Wextra -pthread

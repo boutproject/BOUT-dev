@@ -1,10 +1,12 @@
 #include "gtest/gtest.h"
+#include "test_extras.hxx"
 #include "optionsreader.hxx"
 
 #include "boutexception.hxx"
 #include "utils.hxx"
 
 #include <fstream>
+#include <cstdio>
 
 // stdout redirection code from https://stackoverflow.com/a/4043813/2043465
 class OptionsReaderTest : public ::testing::Test {
