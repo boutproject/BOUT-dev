@@ -120,6 +120,7 @@ install: libfast
 	@$(MKDIR) $(DESTDIR)@includedir@/bout
 	@$(MKDIR) $(DESTDIR)@includedir@/bout/sys
 	@$(MKDIR) $(DESTDIR)@libdir@
+	@$(MKDIR) $(DESTDIR)@bindir@
 	@echo "Installing header files into $(DESTDIR)@includedir@"
 	@cp include/*.hxx $(DESTDIR)@includedir@
 	@cp include/bout/*.hxx $(DESTDIR)@includedir@/bout
@@ -127,6 +128,8 @@ install: libfast
 	@cp make.config $(DESTDIR)@includedir@/bout/make.config
 	@echo "Installing library files into $(DESTDIR)@libdir@"
 	@cp lib/*.a $(DESTDIR)@libdir@
+	@echo "Installing scripts into $(DESTDIR)@bindir@"
+	@cp bin/* $(DESTDIR)@bindir@
 
 ####################################################################
 # A bit of a clever hack that determines wheter the TARGET variable is 'lib'
