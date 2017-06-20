@@ -149,6 +149,13 @@ public:
     // Don't use the store anymore
     use_store = false;
   }
+
+  /*!
+   * Enable the store, allowing memory reuse
+   */
+  static void enableStore() {
+    use_store = true;
+  }
   
   /*!
    * Returns true if the Array is empty

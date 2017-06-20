@@ -8,7 +8,13 @@
 // different sized arrays in order to not just reuse the data from
 // previous tests
 
-TEST(ArrayTest, ArraySize) {
+class ArrayTest : public ::testing::Test {
+public:
+  ArrayTest() { Array<double>::enableStore(); }
+  ~ArrayTest() { Array<double>::cleanup(); }
+};
+
+TEST_F(ArrayTest, ArraySize) {
   Array<double> a(5);
 
   ASSERT_FALSE(a.empty());
@@ -16,7 +22,7 @@ TEST(ArrayTest, ArraySize) {
   EXPECT_TRUE(a.unique());
 }
 
-TEST(ArrayTest, ArrayValues) {
+TEST_F(ArrayTest, ArrayValues) {
   Array<double> a(10);
 
   int count = 0;
@@ -28,7 +34,7 @@ TEST(ArrayTest, ArrayValues) {
   EXPECT_DOUBLE_EQ(a[9], 9);
 }
 
-TEST(ArrayTest, CopyArray) {
+TEST_F(ArrayTest, CopyArray) {
   Array<double> a(15);
 
   int count = 0;
@@ -45,7 +51,7 @@ TEST(ArrayTest, CopyArray) {
   EXPECT_FALSE(b.unique());
 }
 
-TEST(ArrayTest, MakeUnique) {
+TEST_F(ArrayTest, MakeUnique) {
   Array<double> a(20);
 
   int count = 0;
@@ -63,13 +69,12 @@ TEST(ArrayTest, MakeUnique) {
   EXPECT_EQ(b.size(), 20);
 
   // Should have the same values
-  for(auto ai = a.begin(), bi = b.begin();
-      ai != a.end(); ++ai, ++bi) {
+  for (auto ai = a.begin(), bi = b.begin(); ai != a.end(); ++ai, ++bi) {
     EXPECT_DOUBLE_EQ(*ai, *bi);
   }
 }
 
-TEST(ArrayTest, ReleaseData) {
+TEST_F(ArrayTest, ReleaseData) {
   Array<double> a(25);
   Array<double> b(a);
   // Make both b and a unique
@@ -82,7 +87,7 @@ TEST(ArrayTest, ReleaseData) {
   EXPECT_EQ(a.size(), 0);
 }
 
-TEST(ArrayTest, RetrieveData) {
+TEST_F(ArrayTest, RetrieveData) {
   Array<double> a(30);
 
   int count = 0;
@@ -112,7 +117,7 @@ TEST(ArrayTest, RetrieveData) {
   EXPECT_TRUE(a.unique());
 }
 
-TEST(ArrayTest, Assignment) {
+TEST_F(ArrayTest, Assignment) {
   Array<double> a(35);
   Array<double> b(35);
   // Assign
