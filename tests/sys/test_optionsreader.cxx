@@ -104,6 +104,8 @@ TEST_F(OptionsReaderTest, ParseCommandLineGlobalInstance) {
   options->get("int_key", value, -1, false);
 
   EXPECT_EQ(value, 42);
+
+  reader->cleanup();
 }
 
 TEST_F(OptionsReaderTest, ParseCommandLineWithSpaces) {
@@ -195,12 +197,12 @@ TEST_F(OptionsReaderTest, ParseCommandLineWithSection) {
 
 TEST_F(OptionsReaderTest, ReadFile) {
   const std::string text = R"(
+flag
 [section1]
 int_key = 34
 real_key = 42.34e-67
 [section1:subsection2]
 bool_key = false
-flag
 )";
 
   char *filename = std::tmpnam(nullptr);
@@ -211,6 +213,13 @@ flag
   OptionsReader reader;
   Options *options = Options::getRoot();
   reader.read(options, filename);
+
+  ASSERT_TRUE(options->isSet("flag"));
+
+  bool flag;
+  options->get("flag", flag, false);
+
+  EXPECT_TRUE(flag);
 
   EXPECT_FALSE(options->isSet("int_key"));
 
@@ -239,12 +248,7 @@ flag
 
   EXPECT_FALSE(bool_value);
 
-  ASSERT_TRUE(subsection2->isSet("flag"));
-
-  bool flag;
-  subsection2->get("flag", flag, false);
-
-  EXPECT_TRUE(flag);
+  std::remove(filename);
 }
 
 TEST_F(OptionsReaderTest, ReadBadFile) {
@@ -252,4 +256,34 @@ TEST_F(OptionsReaderTest, ReadBadFile) {
   OptionsReader reader;
   Options *options = Options::getRoot();
   EXPECT_THROW(reader.read(options, filename), BoutException);
+}
+
+TEST_F(OptionsReaderTest, WriteFile) {
+  char *filename = std::tmpnam(nullptr);
+  OptionsReader reader;
+  Options *options = Options::getRoot();
+
+  options->set("bool_key", true, "test");
+  Options *section1 = options->getSection("section1");
+  section1->set("int_key", 17, "test");
+  section1->set("real_key", 6.17e23, "test");
+  Options *subsection2 = section1->getSection("subsection2");
+  subsection2->set("string_key", "BOUT++", "test");
+
+  reader.write(options, filename);
+
+  std::ifstream test_file(filename);
+  std::stringstream test_buffer;
+  test_buffer << test_file.rdbuf();
+  test_file.close();
+
+  std::vector<std::string> expected = {"bool_key = true",        "[section1]",
+                                       "int_key = 17",           "real_key = 6.17e+23",
+                                       "[section1:subsection2]", "string_key = BOUT++"};
+
+  for (auto &result : expected) {
+    EXPECT_TRUE(IsSubString(test_buffer.str(), result));
+  }
+
+  std::remove(filename);
 }

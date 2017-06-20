@@ -59,9 +59,12 @@ TEST_F(OutputTest, OpenFile) {
   std::ifstream test_file(filename);
   std::stringstream test_buffer;
   test_buffer << test_file.rdbuf();
+  test_file.close();
 
   EXPECT_EQ(test_output, test_buffer.str());
   EXPECT_EQ(test_output, buffer.str());
+
+  std::remove(filename);
 }
 
 TEST_F(OutputTest, JustPrint) {
@@ -78,9 +81,12 @@ TEST_F(OutputTest, JustPrint) {
   std::ifstream test_file(filename);
   std::stringstream test_buffer;
   test_buffer << test_file.rdbuf();
+  test_file.close();
 
   EXPECT_EQ("", test_buffer.str());
   EXPECT_EQ(test_output, buffer.str());
+
+  std::remove(filename);
 }
 
 TEST_F(OutputTest, DisableEnableStdout) {
@@ -114,6 +120,9 @@ TEST_F(OutputTest, DisableEnableStdout) {
   // File should contain both outputs, stdout only latter
   EXPECT_EQ(file_only + file_and_stdout, test_buffer.str());
   EXPECT_EQ(file_and_stdout, buffer.str());
+
+  test_file.close();
+  std::remove(filename);
 }
 
 TEST_F(OutputTest, CleanupAndGetInstance) {
