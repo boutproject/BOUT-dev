@@ -4,7 +4,7 @@ Routines for generating structured meshes on poloidal domains
 
 import numpy as np
 from numpy import pi, linspace, sqrt, cos, sin, append, zeros, argmin
-from scipy.interpolate import splrep, splev, interp1d
+from scipy.interpolate import splrep, splev, interp1d, RectBivariateSpline
 from scipy.integrate import cumtrapz
 
 import matplotlib.pyplot as plt
@@ -273,11 +273,29 @@ def grid_weighted_distance(inner, outer, nx, ny, show=True, equidistant=False):
     plt.plot(Rpos, Zpos, 'o')
     plt.show()
     
-def grid_elliptic(inner, outer, nx, ny, show=True, tol=1e-10):
+def grid_elliptic(inner, outer, nx, ny, show=False, tol=1e-10, restrict_size=20, restrict_factor=2):
     """
     Create a structured grid between inner and outer boundaries
     using elliptic method
     
+    Input
+    -----
+
+    inner, outer   RZline objects describing inner and outer domain boundaries
+    nx             The required radial resolution, including boundaries
+    ny             The required poloidal resolution
+    show           Display plots of intermediate results
+    tol            Controls when iteration stops
+    restrict_size    The size (nx or ny) above which the grid is coarsened
+    restrict_factor  The factor by which the grid is divided if coarsened
+
+    Returns
+    -------
+
+
+    Details
+    -------
+
     Coordinates x = x(R, Z) and y = y(R,Z)
     obey an elliptic equation
 
@@ -310,13 +328,6 @@ def grid_elliptic(inner, outer, nx, ny, show=True, tol=1e-10):
     assert nx >= 2
     assert ny > 1
     
-    R = zeros((nx, ny))
-    Z = zeros((nx, ny))
-
-    # Order both boundaries by distance
-    inner = inner.orderByDistance()
-    outer = outer.orderByDistance()
-    
     # Generate angle values (y coordinate), 
     # which should now be equally spaced
     # in distance along inner and outer boundaries
@@ -324,19 +335,51 @@ def grid_elliptic(inner, outer, nx, ny, show=True, tol=1e-10):
 
     # Radial coordinate
     xvals = linspace(0, 1.0, nx, endpoint=True)
-    
-    # Interpolate coordinates of inner and outer boundary
-    Rinner = inner.Rvalue(thetavals)
-    Zinner = inner.Zvalue(thetavals)
-    
-    Router = outer.Rvalue(thetavals)
-    Zouter = outer.Zvalue(thetavals)
-    
-    # Interpolate in x between inner and outer
-    # to get starting guess for a grid
-    for i in range(nx):
-        R[i,:] = xvals[i]*Router + (1.-xvals[i])*Rinner
-        Z[i,:] = xvals[i]*Zouter + (1.-xvals[i])*Zinner
+
+    if (nx > restrict_size) or (ny > restrict_size):
+        # Create a coarse grid first to get a starting guess
+        # Only restrict the dimensions which exceed restrict_size
+        # Note that this might result in multiple levels of resolution
+        
+        nx_r = nx
+        if nx > restrict_size:
+            nx_r = int(nx / restrict_factor)
+            
+        ny_r = ny
+        if ny > restrict_size:
+            ny_r = int(ny / restrict_factor)
+
+        # Create the coarse mesh
+        R_r, Z_r = grid_elliptic(inner, outer, nx_r, ny_r, 
+                                 tol=tol, restrict_size=restrict_size, restrict_factor=restrict_factor)
+
+        y_r = linspace(0, 2*pi, ny_r+1, endpoint=True) # Add on the final point duplicating the first
+        x_r = linspace(0, 1.0, nx_r, endpoint=True)
+        
+        R_r = np.concatenate((R_r, np.reshape(R_r[:,0], (nx_r, 1))), axis=1)
+        Z_r = np.concatenate((Z_r, np.reshape(Z_r[:,0], (nx_r, 1))), axis=1)
+        
+        # Now interpolate
+        spl = RectBivariateSpline(x_r, y_r, R_r)
+        R = spl(xvals, thetavals, grid=True)
+        spl = RectBivariateSpline(x_r, y_r, Z_r)
+        Z = spl(xvals, thetavals, grid=True)
+        
+    else:
+        # Interpolate coordinates of inner and outer boundary
+        Rinner = inner.Rvalue(thetavals)
+        Zinner = inner.Zvalue(thetavals)
+        
+        Router = outer.Rvalue(thetavals)
+        Zouter = outer.Zvalue(thetavals)
+        
+        # Interpolate in x between inner and outer
+        # to get starting guess for a grid
+        R = zeros((nx, ny))
+        Z = zeros((nx, ny))
+        for i in range(nx):
+            R[i,:] = xvals[i]*Router + (1.-xvals[i])*Rinner
+            Z[i,:] = xvals[i]*Zouter + (1.-xvals[i])*Zinner
     
     dx = xvals[1] - xvals[0]
     dy = thetavals[1] - thetavals[0]
