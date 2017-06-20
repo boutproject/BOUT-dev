@@ -10,7 +10,7 @@ TEST(BoutExceptionTest, ThrowCorrect) {
 
 TEST(BoutExceptionTest, WhatTest) {
   try {
-    throw BoutException("Test message");
+    throw BoutException(std::string("Test message"));
   } catch (BoutException &e) {
     std::string message(e.what());
     EXPECT_NE(message.find("Test message"), std::string::npos);
@@ -21,4 +21,12 @@ TEST(BoutExceptionTest, WhatTest) {
     std::string message(e.what());
     EXPECT_NE(message.find("second"), std::string::npos);
   }
+}
+
+TEST(BoutRhsFailTest, ThrowCorrect) {
+  EXPECT_THROW(throw BoutRhsFail("RHS Fail test"), BoutRhsFail);
+}
+
+TEST(BoutIterationFailTest, ThrowCorrect) {
+  EXPECT_THROW(throw BoutIterationFail("Iteration fail test"), BoutIterationFail);
 }
