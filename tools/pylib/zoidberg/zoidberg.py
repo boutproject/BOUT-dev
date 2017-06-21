@@ -1,5 +1,8 @@
 from __future__ import division
-from builtins import object
+try:
+    from builtins import object
+except:
+    pass
 
 import numpy as np
 from boututils import datafile as bdata
@@ -33,7 +36,12 @@ def make_maps(grid, magnetic_field, quiet=False, **kwargs):
     **kwargs       - Arguments for field line tracing, etc.
     """
 
-    nx, ny, nz = (grid.nx, grid.ny, grid.nz)
+    # Get number of points
+    # Note: Assumes that all poloidal grids have the same number of x and z(y) points
+    ny = grid.numberOfPoloidalGrids()
+    pol, _ = grid.getPoloidalGrid(0)
+    nx = pol.nx
+    nz = pol.ny
 
     # Arrays to store X index at end of field-line
     # starting from (x,y,z) and going forward in toroidal angle (y)
@@ -43,8 +51,7 @@ def make_maps(grid, magnetic_field, quiet=False, **kwargs):
     # Same but going backwards in toroidal angle
     backward_xt_prime = np.zeros( (nx, ny, nz) )
     backward_zt_prime = np.zeros( (nx, ny, nz) )
-
-    x2d, z2d = np.meshgrid(grid.xarray, grid.zarray, indexing='ij')
+    
     field_tracer = fieldtracer.FieldTracer(magnetic_field)
 
     try:
@@ -57,19 +64,34 @@ def make_maps(grid, magnetic_field, quiet=False, **kwargs):
         if not quiet:
             update_progress(float(j)/float(ny-1), **kwargs)
 
-        # Go forwards from yarray[j] by an angle delta_y
-        y_coords = [grid.yarray[j], grid.yarray[j]+grid.delta_y]
-        # We only want the end point, as [0,...] is the initial position
-        coord = field_tracer.follow_field_lines(x2d, z2d, y_coords, rtol=rtol)[1,...]
-        forward_xt_prime[:,j,:] = (grid.MXG - 0.5) + coord[:,:,0] / grid.delta_x # X index
-        forward_zt_prime[:,j,:] = coord[:,:,1] / grid.delta_z # Z index
+        # Get this poloidal grid
+        pol, ycoord = grid.getPoloidalGrid(j)
 
-        # Go backwards from yarray[j] by an angle -delta_y
-        y_coords = [grid.yarray[j], grid.yarray[j]-grid.delta_y]
+        # Get the next (forward) poloidal grid
+        pol_forward, y_forward = grid.getPoloidalGrid(j+1)
+
+        y_coords = [ycoord, y_forward]
+        
         # We only want the end point, as [0,...] is the initial position
-        coord = field_tracer.follow_field_lines(x2d, z2d, y_coords, rtol=rtol)[1,...]
-        backward_xt_prime[:,j,:] = (grid.MXG - 0.5) + coord[:,:,0] / grid.delta_x # X index
-        backward_zt_prime[:,j,:] = coord[:,:,1] / grid.delta_z # Z index
+        coord = field_tracer.follow_field_lines(pol.R, pol.Z, y_coords, rtol=rtol)[1,...]
+
+        # Find the indices for these new locations on the forward poloidal grid
+        xind, zind = pol_forward.findIndex(coord[:,:,0], coord[:,:,1])
+        forward_xt_prime[:,j,:] = xind
+        forward_zt_prime[:,j,:] = zind
+
+        # Go backwards one poloidal grid
+        pol_back, y_back = grid.getPoloidalGrid(j-1)
+        
+        y_coords = [ycoord, y_back]
+        # We only want the end point, as [0,...] is the initial position
+        coord = field_tracer.follow_field_lines(pol.R, pol.Z, y_coords, rtol=rtol)[1,...]
+        
+        # Find the indices for these new locations on the backward poloidal grid
+        xind, zind = pol_back.findIndex(coord[:,:,0], coord[:,:,1])
+        
+        backward_xt_prime[:,j,:] = xind
+        backward_zt_prime[:,j,:] = zind
 
     maps = {
         'forward_xt_prime' : forward_xt_prime,

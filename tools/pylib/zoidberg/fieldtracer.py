@@ -1,4 +1,7 @@
-from builtins import object
+try:
+    from builtins import object
+except:
+    pass
 
 import numpy as np
 from scipy.integrate import odeint

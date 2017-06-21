@@ -29,6 +29,11 @@ class RectangularPoloidalGrid(object):
     Represents a poloidal grid consisting of a rectangular domain
     
     Note: Here the 2D plane (R,Z) is labelled by (x,y) indices
+
+    Members
+    -------
+    
+    nx, ny  Number of points in x and y
     
     """
 
@@ -137,6 +142,12 @@ class RectangularPoloidalGrid(object):
 class StructuredPoloidalGrid(object):
     """
     Represents a structured poloidal grid in R-Z
+
+    Members
+    -------
+
+    nx, ny  Number of points in x and y
+    R, Z    2D NumPy arrays (nx,ny) of coordinates
     
     """
     def __init__(self, R, Z):
@@ -162,6 +173,10 @@ class StructuredPoloidalGrid(object):
         
         # Create splines for quick interpolation of coordinates
         nx,ny = R.shape
+
+        self.nx = nx
+        self.ny = ny
+        
         xinds = np.arange(nx)
         yinds = np.arange(ny+1)
         # Repeat the final point in y since periodic in y

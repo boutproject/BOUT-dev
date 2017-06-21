@@ -6,7 +6,7 @@ import numpy as np
 # Import classes representing poloidal grids
 from poloidal_grid import RectangularPoloidalGrid, StructuredPoloidalGrid
 
-class Grid(object):
+class OldGrid(object):
     def __init__(self, nx, ny, nz,
                  Lx=0.1, Ly=10., Lz = 1.,
                  name="fci_grid", MXG=2):
@@ -65,11 +65,11 @@ class Grid(object):
             nx=self.nx, ny=self.ny, nz=self.nz, Lx=self.Lx, Ly=self.Ly, Lz=self.Lz, name=self.name)
 
 
-class NewGrid(object):
+class Grid(object):
     """
     Represents a 3D grid, consisting of a collection of poloidal grids
     """
-    def __init__(self, poloidal_grids, ycoords, ymin, Ly, yperiodic=False, name="fci_grid"):
+    def __init__(self, poloidal_grids, ycoords, Ly, yperiodic=False, name="fci_grid"):
         """
         Inputs
         ------
@@ -104,7 +104,6 @@ class NewGrid(object):
         self.poloidal_grids = poloidal_grids
         self._ngrids = ngrids  # This is an implementation detail, whether we have one or multiple separate grids
         self.ycoords = np.asfarray(ycoords)
-        self.ymin = ymin
         self.Ly = Ly
         self.yperiodic = yperiodic
         
@@ -116,6 +115,7 @@ class NewGrid(object):
         """
         Returns the number of poloidal grids i.e. number of points in Y
         """
+        print self.ycoords
         return self.ycoords.size
 
     def getPoloidalGrid(self, yindex):
@@ -134,27 +134,37 @@ class NewGrid(object):
             if self._ngrids == 1:
                 # Only one grid
                 return self.poloidal_grids, self.ycoords[yindex]
-            else:
-                return self.poloidal_grids[index], self.ycoords[yindex]
+            return self.poloidal_grids[index], self.ycoords[yindex]
                 
         # Out of range
-        if self.yperiod is None:
-            # Not periodic
-            if yindex < 0:
-                return None, ymin   # Hit the lower end in Y
-            return None, ymin + Ly  # Hit the upper end in Y
         
-        # Periodic domain
+        if self.yperiodic:
+            # Periodic domain
+
+            # Map index into domain
+            y_remap = ((yindex % ny) + ny) % ny  # 0 <= yremap < ny
+
+            # Get number of periods around the domain. Note this can be negative
+            nperiods = np.floor( float(yindex) / float(ny) )
+
+            ycoord = self.ycoords[y_remap] + nperiods*self.Ly
+            
+            if self._ngrids == 1:
+                return self.poloidal_grids, ycoord
+            return self.poloidal_grids[y_remap], ycoord
+                        
+        # Not periodic
         
         if yindex < 0:
-            periods = np.ceil(yindex / ny) # Number of periods
+            return None, 0.0   # Hit the lower end in Y
+        return None, self.Ly  # Hit the upper end in Y
             
             
         
 
 def rectangular_grid(nx, ny, nz,
                      Lx=1.0, Ly=10., Lz=1.0,
-                     xmin=0.0, ymin=0.0, zmin=0.0,
+                     xmin=0.0, zmin=0.0,
                      yperiodic=False):
     """
     Create a rectangular grid in (x,y,z). Here y is along the
@@ -163,7 +173,7 @@ def rectangular_grid(nx, ny, nz,
     
     nx,ny,nz   Number of points in x,y,z
     Lx,Ly,Lz   Size of the domain in x,y,z
-    xmin, ymin, zmin   The lower edge of the domain
+    xmin, zmin   The lower edge of the domain
     yperiodic   Determines if the y direction is periodic
     
     
@@ -175,14 +185,23 @@ def rectangular_grid(nx, ny, nz,
     poloidal_grid = RectangularPoloidalGrid(nx, nz, Lx, Lz, 
                                             xmin + 0.5*Lx,
                                             zmin + 0.5*Lz)
+
+    if yperiodic:
+        ycoords = np.linspace(0.0, Ly, ny, endpoint=False)
+    else:
+        # Doesn't include the end points
+        ycoords = (np.arange(ny) + 0.5)*Ly/float(ny+1)
     
-    return NewGrid( poloidal_grid, 
-                    np.linspace(ymin, ymin+Ly, endpoint = not yperiodic), 
-                    ymin, Ly,
-                    yperiodic=yperiodic )
-    
+    return Grid( poloidal_grid, 
+                 ycoords, 
+                 Ly,
+                 yperiodic=yperiodic )
+
     
 if __name__ == "__main__":
     
     grid = rectangular_grid(10,10,10)
+
+    p = grid.getPoloidalGrid(-2)
+    
     print(grid)

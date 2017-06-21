@@ -57,6 +57,8 @@ def plot_poincare(grid, magnetic_field, nplot=3, phi_slices=None, revs=100,
     #######################################################
     # Plotting
 
+    # Define starting location
+    
     xpos = grid.xcentre + np.linspace(0, 0.5*np.max(grid.xarray), 10)
     zpos = grid.zcentre + np.zeros(xpos.shape)
 
