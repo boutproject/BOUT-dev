@@ -1,5 +1,19 @@
 """
 Routines for generating structured meshes on poloidal domains
+
+Classes
+-------
+
+RectangularPoloidalGrid   Simple rectangles in R-Z
+StructuredPoloidalGrid    Curvilinear structured grids in R-Z
+
+Functions
+---------
+
+grid_elliptic   Create a StructuredPoloidalGrid 
+                from inner and outer RZLine objects
+                using elliptic meshing method.
+
 """
 
 import numpy as np
@@ -9,9 +23,121 @@ from scipy.spatial import cKDTree as KDTree
 
 import matplotlib.pyplot as plt
 
-class PoloidalGrid(object):
+
+class RectangularPoloidalGrid(object):
     """
-    Represents a poloidal grid in R-Z
+    Represents a poloidal grid consisting of a rectangular domain
+    
+    Note: Here the 2D plane (R,Z) is labelled by (x,y) indices
+    
+    """
+
+    def __init__(self, nx, ny, Lx, Ly, Rcentre=0.0, Zcentre=0.0):
+        """
+        Inputs
+        ------
+        
+        nx  Number of points in major radius (including boundaries)
+        ny  Number of points in height (including boundaries)
+        Lx  Radial domain size  [m]
+        Ly  Vertical domain size [m]
+        
+        Rmid 
+        """
+        
+        self.nx = nx
+        self.ny = ny
+
+        self.Lx = Lx
+        self.Ly = Ly
+        
+        self.Rcentre = Rcentre
+        self.Zcentre = Zcentre
+
+        # Some useful derived quantities
+        self.dR = self.Lx/(self.nx-1)
+        self.dZ = self.Ly/(self.ny-1)
+        self.Rmin = self.Rcentre - 0.5*self.Lx
+        self.Zmin = self.Zcentre - 0.5*self.Ly
+        
+    def __repr__(self):
+        return "RectangularPoloidalGrid({0},{1},{2},{3},Rcentre={4},Zcentre={5})".format(self.nx, self.ny, self.Lx, self.Ly, self.Rcentre, self.Zcentre)
+        
+    def getCoordinate(self, xind, yind, dx=0, dy=0):
+        """
+        Get coordinates (R,Z) at given (xind,yind) index
+    
+        Inputs
+        ------
+
+        xind, yind   Indices in X and Y. These should be the same shape
+        dx  Order of x derivative
+        dy  Order of y derivative
+        
+        Returns
+        -------
+        
+        R, Z  Locations of point
+        or derivatives of R,Z with respect to indices if dx,dy != 0
+        
+        """
+        
+        # Convert to NumPy arrays if not already
+        xind = np.asfarray(xind)
+        yind = np.asfarray(yind)
+        # Make sure dx and dy are integers
+        dx = int(dx)
+        dy = int(dy)
+        
+        assert xind.shape == yind.shape
+        assert dx >= 0
+        assert dy >= 0
+        
+        shape = xind.shape
+        
+        if dx + dy > 2:
+            # Second derivatives and mixed derivatives all zero
+            return np.zeros(shape), np.zeros(shape)
+        
+        if dx == 1:
+            # dR/dx, dZ/dx
+            return np.full(shape, self.dR), np.zeros(shape)
+        elif dy == 1:
+            # dR/dy, dZ/dy
+            return np.zeros(shape), np.full(shape, self.dZ)
+        # Return (R,Z) location
+        return self.Rmin + xind*self.dR,  self.Zmin + yind*self.dZ
+        
+
+    def findIndex(self, R, Z):
+        """
+        Finds the (x,y) index corresponding to the given (R,Z) coordinate
+        
+        Inputs
+        ------
+
+        R,Z    Locations. Can be scalar or array, must be the same shape 
+        
+        Returns
+        -------
+        
+        x,y index as a float, same shape as R,Z
+
+        """
+
+        # Make sure inputs are NumPy arrays
+        R = np.asfarray(R)
+        Z = np.asfarray(Z)
+        
+        # Check that they have the same shape
+        assert R.shape == Z.shape
+        
+        return (R - self.Rmin)/self.dR, (Z - self.Zmin)/self.dZ
+
+class StructuredPoloidalGrid(object):
+    """
+    Represents a structured poloidal grid in R-Z
+    
     """
     def __init__(self, R, Z):
         """
@@ -29,35 +155,136 @@ class PoloidalGrid(object):
         self.R = R
         self.Z = Z
         
+        # Create a KDTree for quick lookup of nearest points
         n = R.size
-        print R.shape, n
         data = np.concatenate( (R.reshape((n,1)), Z.reshape((n,1)) ), axis=1)
         self.tree = KDTree(data)
         
-    def nearestCoordinate(self, R, Z):
-        """
-        Finds the nearest coordinate to the given point
+        # Create splines for quick interpolation of coordinates
+        nx,ny = R.shape
+        xinds = np.arange(nx)
+        yinds = np.arange(ny+1)
+        # Repeat the final point in y since periodic in y
+        R_ext = np.concatenate((R, np.reshape(R[:,0], (nx, 1))), axis=1)
+        Z_ext = np.concatenate((Z, np.reshape(Z[:,0], (nx, 1))), axis=1)
         
-        """
-        try:
-            shape = R.shape
-            position = np.concatenate( (R.reshape((n,1)), Z.reshape((n,1)) ), axis=1)
-        except:
-            # Probably just a single number
-            shape = None
-            position = [R,Z]
+        self._spl_r = RectBivariateSpline(xinds, yinds, R_ext)
+        self._spl_z = RectBivariateSpline(xinds, yinds, Z_ext)
         
-        # Returns distances and indices into data
-        dists, inds = self.tree.query(position)
-        
-        # inds now contains nearest index
-        print inds
-        plt.plot(self.R, self.Z, '.')
-        plt.plot(R, Z, 'x')
-        plt.plot(self.R.ravel()[inds], self.Z.ravel()[inds], 'o')
-        plt.show()
+    def __repr__(self):
+        return "StructuredPoloidalGrid()"
 
-def grid_annulus(inner, outer, nx, ny, show=True):
+    def getCoordinate(self, xind, yind, dx=0, dy=0):
+        """
+        Get coordinates (R,Z) at given (xind,yind) index
+    
+        Inputs
+        ------
+
+        xind, yind   Indices in X and Y. These should be the same shape
+        dx  Order of x derivative
+        dy  Order of y derivative
+        
+        Returns
+        -------
+        
+        R, Z  Locations of point
+        or derivatives of R,Z with respect to indices if dx,dy != 0
+        
+        """
+        nx,ny = self.R.shape
+        if (np.amin(xind) < 0) or (np.amax(xind) > nx-1):
+            raise ValueError("x index out of range")
+        if (np.amin(yind) < 0) or (np.amax(yind) > ny-1):
+            raise ValueError("y index out of range")
+            
+        R = self._spl_r(xind, yind, dx=dx, dy=dy, grid=False)
+        Z = self._spl_z(xind, yind, dx=dx, dy=dy, grid=False)
+        
+        return R,Z
+        
+    def findIndex(self, R, Z, tol=1e-10, show=False):
+        """
+        Finds the (x,y) index corresponding to the given (R,Z) coordinate
+        
+        Inputs
+        ------
+
+        R,Z    Locations. Can be scalar or array, must be the same shape 
+        tol    Maximum tolerance on the square distance
+        
+        Returns
+        -------
+        
+        x,y index as a float, same shape as R,Z
+
+        """
+
+        # Make sure inputs are NumPy arrays
+        R = np.asfarray(R)
+        Z = np.asfarray(Z)
+        
+        # Check that they have the same shape
+        assert R.shape == Z.shape
+        
+        input_shape = R.shape  # So output has same shape as input
+        
+        # Get distance and index into flattened data
+        # Note ind can be an integer, or an array of ints
+        # with the same number of elements as the input (R,Z) arrays
+        n = R.size
+        position = np.concatenate( (R.reshape((n,1)), Z.reshape((n,1)) ), axis=1)
+        dists, ind = self.tree.query(position)
+        
+        # Calculate (x,y) index
+        nx,ny = self.R.shape
+        xind = np.floor_divide(ind, ny)
+        yind = ind - xind*ny
+        
+        # Convert indices to float
+        xind = np.asfarray(xind)
+        yind = np.asfarray(yind)
+        
+        if show:
+            plt.plot(self.R, self.Z, '.')
+            plt.plot(R, Z, 'x')
+        
+        while True:
+            # Use Newton iteration to find the index
+            # dR, dZ are the distance away from the desired point
+            Rpos,Zpos = self.getCoordinate(xind, yind)
+            if show:
+                plt.plot(Rpos, Zpos, 'o')
+            dR = Rpos - R
+            dZ = Zpos - Z
+            
+            # Check if close enough
+            if np.amax(dR**2 + dZ**2) < tol:
+                break
+            
+            # Calculate derivatives
+            dRdx, dZdx = self.getCoordinate(xind, yind, dx=1)
+            dRdy, dZdy = self.getCoordinate(xind, yind, dy=1)
+        
+            # Invert 2x2 matrix to get change in coordinates
+            #
+            # (x) -=  ( dR/dx   dR/dy )^-1  (dR) 
+            # (y)     ( dZ/dx   dZ/dy )     (dz) 
+            #
+            #
+            # (x) -=  ( dZ/dy  -dR/dy ) (dR) 
+            # (y)     (-dZ/dx   dR/dx ) (dZ) / (dR/dx*dZ/dy - dR/dy*dZ/dx)
+            determinant = dRdx*dZdy - dRdy*dZdx
+            
+            xind -= (dZdy*dR - dRdy*dZ) / determinant
+            yind -= (dRdx*dZ - dZdx*dR) / determinant
+            
+        if show:
+            plt.show()
+            
+        return xind.reshape(input_shape), yind.reshape(input_shape)
+
+def grid_annulus(inner, outer, nx, ny, show=True, return_coords=False):
     """
     Grid an annular region, given inner and outer boundaries
     both of which are RZline objects
@@ -96,6 +323,10 @@ def grid_annulus(inner, outer, nx, ny, show=True):
         plt.plot(R, Z, 'x')
         
         plt.show()
+
+    if return_coords:
+        return R, Z
+    return StructuredPoloidalGrid(R,Z)
         
 def grid_elliptic(inner, outer, nx, ny, show=False, tol=1e-10, restrict_size=20, restrict_factor=2, return_coords=False):
     """
@@ -117,7 +348,7 @@ def grid_elliptic(inner, outer, nx, ny, show=False, tol=1e-10, restrict_size=20,
     Returns
     -------
     If return_coords is true, returns R,Z as arrays. 
-    If return_coords is false, returns a PoloidalGrid object
+    If return_coords is false, returns a StructuredPoloidalGrid object
 
     Details
     -------
@@ -282,7 +513,7 @@ def grid_elliptic(inner, outer, nx, ny, show=False, tol=1e-10, restrict_size=20,
         
     if return_coords:
         return R, Z
-    return PoloidalGrid(R,Z)
+    return StructuredPoloidalGrid(R,Z)
 
 if __name__ == "__main__":
     
@@ -297,6 +528,9 @@ if __name__ == "__main__":
     
     grid = grid_elliptic(inner, outer, 100, 100, show=True)
     
-    grid.nearestCoordinate(2.0, 1.5)
+    #grid.findIndex(2.0, 1.5)
+    x,y = grid.findIndex([2.0,1.9], [1.5,2.0])
+    print x,y
+    
     
     
