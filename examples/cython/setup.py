@@ -9,6 +9,5 @@ setup(
     ext_modules = cythonize("field3d.pyx",
                             language="c++",             # generate C++ code
                             include_path=['../../include'],
-                            extra_compile_args=["-std=c++14"]
                             )
 )
