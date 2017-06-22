@@ -545,7 +545,7 @@ if __name__ == "__main__":
     
     #grid.findIndex(2.0, 1.5)
     x,y = grid.findIndex([2.0,1.9], [1.5,2.0])
-    print x,y
+    print(x,y)
     
     
     

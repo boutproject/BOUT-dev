@@ -4,7 +4,7 @@ from __future__ import division
 import numpy as np
 
 # Import classes representing poloidal grids
-from poloidal_grid import RectangularPoloidalGrid, StructuredPoloidalGrid
+from .poloidal_grid import RectangularPoloidalGrid, StructuredPoloidalGrid
 
 class OldGrid(object):
     def __init__(self, nx, ny, nz,
@@ -115,7 +115,6 @@ class Grid(object):
         """
         Returns the number of poloidal grids i.e. number of points in Y
         """
-        print self.ycoords
         return self.ycoords.size
 
     def getPoloidalGrid(self, yindex):

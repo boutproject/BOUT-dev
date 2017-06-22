@@ -140,11 +140,26 @@ class MagneticField(object):
 
 
 class Slab(MagneticField):
-    def __init__(self, grid, Bt=1.0, Bp = 0.1, Bpprime = 1.0):
+    """
+    Represents a magnetic field in an infinite slab
+    
+    """
+    def __init__(self, Bt=1.0, Bp = 0.1, xcentre = 0.0, Bpprime = 1.0):
+        """
+        
+        Bt   Toroidal field (float)
+        Bp   Poloidal field at xcentre (float)
+        xcentre  Reference x coordinate
+        
+        """
+        
+        Bt = float(Bt)
+        Bp = float(Bp)
+        
 
-        self.grid = grid
         self.Bt = Bt
         self.Bp = Bp
+        self.xcentre = xcentre
         self.Bpprime = Bpprime
 
         # Effective major radius
