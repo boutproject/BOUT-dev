@@ -34,9 +34,12 @@ class RectangularPoloidalGrid(object):
     -------
     
     nx, ny  Number of points in x and y
+
+    R  2D Numpy array of R coordinates
+    Z  2D Numpy array of Z coordinates
     
     """
-
+    
     def __init__(self, nx, ny, Lx, Ly, Rcentre=0.0, Zcentre=0.0):
         """
         Inputs
@@ -64,6 +67,11 @@ class RectangularPoloidalGrid(object):
         self.dZ = self.Ly/(self.ny-1)
         self.Rmin = self.Rcentre - 0.5*self.Lx
         self.Zmin = self.Zcentre - 0.5*self.Ly
+
+        # Generate 2D arrays
+        # Using getCoordinate to ensure consistency
+        xind, yind = np.meshgrid(np.arange(nx), np.arange(ny), indexing='ij')
+        self.R, self.Z = self.getCoordinate(xind, yind)
         
     def __repr__(self):
         return "RectangularPoloidalGrid({0},{1},{2},{3},Rcentre={4},Zcentre={5})".format(self.nx, self.ny, self.Lx, self.Ly, self.Rcentre, self.Zcentre)

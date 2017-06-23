@@ -6,9 +6,6 @@ except:
 import numpy as np
 from scipy.integrate import odeint
 
-# from . import grid
-# from . import field
-
 class FieldTracer(object):
     def __init__(self, field):
         """Create a FieldTracer object

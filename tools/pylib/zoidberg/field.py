@@ -70,24 +70,24 @@ class MagneticField(object):
         else:
             x,z = pos
 
-        By = self.Byfunc(x,z,phi)
-        Rmaj = self.Rfunc(x,z,phi) # Major radius. None if Cartesian
+        By = self.Byfunc(x,z,ycoord)
+        Rmaj = self.Rfunc(x,z,ycoord) # Major radius. None if Cartesian
         
         if Rmaj is not None:
             # In cylindrical coordinates
 
             R_By = Rmaj / By
             # Rate of change of x location [m] with y angle [radians]
-            dxdphi =  R_By * self.Bxfunc(x,z,phi)
+            dxdphi =  R_By * self.Bxfunc(x,z,ycoord)
             # Rate of change of z location [m] with y angle [radians]
-            dzdphi =  R_By * self.Bzfunc(x,z,phi)
+            dzdphi =  R_By * self.Bzfunc(x,z,ycoord)
         else:
             # In Cartesian coordinates
             
             # Rate of change of x location [m] with y angle [radians]
-            dxdphi =  self.Bxfunc(x,z,phi) / By
+            dxdphi =  self.Bxfunc(x,z,ycoord) / By
             # Rate of change of z location [m] with y angle [radians]
-            dzdphi =  self.Bzfunc(x,z,phi) / By
+            dzdphi =  self.Bzfunc(x,z,ycoord) / By
         
         if flatten:
             result = np.column_stack((dxdphi, dzdphi)).flatten()

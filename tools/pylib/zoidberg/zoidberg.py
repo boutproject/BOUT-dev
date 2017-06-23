@@ -69,23 +69,34 @@ def make_maps(grid, magnetic_field, quiet=False, **kwargs):
 
         # Get the next (forward) poloidal grid
         pol_forward, y_forward = grid.getPoloidalGrid(j+1)
-        
-        # We only want the end point, as [0,...] is the initial position
-        coord = field_tracer.follow_field_lines(pol.R, pol.Z, [ycoord, y_forward], rtol=rtol)[1,...]
 
-        # Find the indices for these new locations on the forward poloidal grid
-        xind, zind = pol_forward.findIndex(coord[:,:,0], coord[:,:,1])
+        if pol_forward is None:
+            # No forward grid, so hit a boundary
+            xind = -1
+            zind = -1
+        else:
+            
+            # We only want the end point, as [0,...] is the initial position
+            coord = field_tracer.follow_field_lines(pol.R, pol.Z, [ycoord, y_forward], rtol=rtol)[1,...]
+
+            # Find the indices for these new locations on the forward poloidal grid
+            xind, zind = pol_forward.findIndex(coord[:,:,0], coord[:,:,1])
         forward_xt_prime[:,j,:] = xind
         forward_zt_prime[:,j,:] = zind
 
         # Go backwards one poloidal grid
         pol_back, y_back = grid.getPoloidalGrid(j-1)
+
+        if pol_back is None:
+            # Hit boundary
+            xind = -1
+            zind = -1
+        else:
+            # We only want the end point, as [0,...] is the initial position
+            coord = field_tracer.follow_field_lines(pol.R, pol.Z, [ycoord, y_back], rtol=rtol)[1,...]
         
-        # We only want the end point, as [0,...] is the initial position
-        coord = field_tracer.follow_field_lines(pol.R, pol.Z, [ycoord, y_back], rtol=rtol)[1,...]
-        
-        # Find the indices for these new locations on the backward poloidal grid
-        xind, zind = pol_back.findIndex(coord[:,:,0], coord[:,:,1])
+            # Find the indices for these new locations on the backward poloidal grid
+            xind, zind = pol_back.findIndex(coord[:,:,0], coord[:,:,1])
         
         backward_xt_prime[:,j,:] = xind
         backward_zt_prime[:,j,:] = zind
