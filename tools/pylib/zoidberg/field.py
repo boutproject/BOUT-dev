@@ -195,7 +195,7 @@ try:
     from sympy import Symbol, Derivative, atan, atan2, cos, sin, log, pi, sqrt, lambdify
     
     class StraightStellarator(MagneticField):
-        def coil(self, radius, angle, iota, I):
+        def coil(self, xcentre, zcentre, radius, angle, iota, I):
             """Defines a single coil
             
             Inputs
@@ -210,18 +210,24 @@ try:
             (x, z) - x, z coordinates of coils along phi
             """
             
-            return (self.grid.xcentre + radius * cos(angle + iota * self.phi),
-                    self.grid.zcentre + radius * sin(angle + iota * self.phi), I)
+            return (xcentre + radius * cos(angle + iota * self.phi),
+                    zcentre + radius * sin(angle + iota * self.phi), I)
             
-        def __init__(self, radius=0.8, iota=1, I_coil=0.05, smooth=False, smooth_args={}):
+        def __init__(self, xcentre=0.0, zcentre=0.0, radius=0.8, iota=1, I_coil=0.05, smooth=False, smooth_args={}):
             """
             
             Inputs
             ------
             
+            xcentre   Middle of the domain in x [m]
+            zcentre   Middle of the domain in z [m]
             radius    Radius of coils [meters]
             
             """
+
+            xcentre = float(xcentre)
+            zcentre = float(zcentre)
+            radius = float(radius)
             
             self.x = Symbol('x')
             self.z = Symbol('z')
@@ -229,11 +235,13 @@ try:
             self.r = Symbol('r')
             self.r = (self.x**2 + self.z**2)**(0.5)
             self.phi = Symbol('phi')
-            
+
+            self.xcentre = xcentre
+            self.zcentre = zcentre
             self.radius = radius
 
             # Four coils equally spaced, alternating direction for current
-            self.coil_list = [self.coil(self.radius, n*pi, iota, ((-1)**np.mod(i,2))*I_coil)
+            self.coil_list = [self.coil(xcentre, zcentre, radius, n*pi, iota, ((-1)**np.mod(i,2))*I_coil)
                               for i, n in enumerate(np.arange(4)/2.)]
 
             A = 0.0

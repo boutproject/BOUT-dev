@@ -163,7 +163,7 @@ class Grid(object):
 
 def rectangular_grid(nx, ny, nz,
                      Lx=1.0, Ly=10., Lz=1.0,
-                     xmin=0.0, zmin=0.0,
+                     xcentre=0.0, zcentre=0.0,
                      yperiodic=False):
     """
     Create a rectangular grid in (x,y,z). Here y is along the
@@ -172,7 +172,7 @@ def rectangular_grid(nx, ny, nz,
     
     nx,ny,nz   Number of points in x,y,z
     Lx,Ly,Lz   Size of the domain in x,y,z
-    xmin, zmin   The lower edge of the domain
+    xcentre, zcentre   The middle of the domain
     yperiodic   Determines if the y direction is periodic
     
     
@@ -182,8 +182,8 @@ def rectangular_grid(nx, ny, nz,
     # to represent all poloidal planes
     
     poloidal_grid = RectangularPoloidalGrid(nx, nz, Lx, Lz, 
-                                            xmin + 0.5*Lx,
-                                            zmin + 0.5*Lz)
+                                            xcentre,
+                                            zcentre)
 
     if yperiodic:
         ycoords = np.linspace(0.0, Ly, ny, endpoint=False)
