@@ -213,7 +213,7 @@ try:
             return (xcentre + radius * cos(angle + iota * self.phi),
                     zcentre + radius * sin(angle + iota * self.phi), I)
             
-        def __init__(self, xcentre=0.0, zcentre=0.0, radius=0.8, iota=1, I_coil=0.05, smooth=False, smooth_args={}):
+        def __init__(self, xcentre=0.0, zcentre=0.0, radius=0.8, yperiod=np.pi, I_coil=0.05, smooth=False, smooth_args={}):
             """
             
             Inputs
@@ -222,12 +222,19 @@ try:
             xcentre   Middle of the domain in x [m]
             zcentre   Middle of the domain in z [m]
             radius    Radius of coils [meters]
+
+            yperiod   The period over which the coils return to their original position
+            
+            I_coil    Current in each coil
             
             """
-
+            
             xcentre = float(xcentre)
             zcentre = float(zcentre)
             radius = float(radius)
+            yperiod = float(yperiod)
+
+            iota = 2.*np.pi / yperiod
             
             self.x = Symbol('x')
             self.z = Symbol('z')

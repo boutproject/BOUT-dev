@@ -24,15 +24,21 @@ class RZline:
     R,Z and theta all have the same length
  
     """
-    def __init__(self, r, z):
+    def __init__(self, r, z, anticlockwise=True):
         """
         r,z   1D arrays of the major radius (r) and height (z)
               which are of the same length. A periodic domain
               is assumed, so the last point connects to the first.
 
+        anticlockwise   Ensure that the line goes anticlockwise
+                        in the R-Z plane (positive theta)
+
         Note that the last point in (r,z) arrays should not be the same
         as the first point. The (r,z) points are in [0,2pi)
         
+        The input r,z points will be reordered, so that the
+        theta angle goes anticlockwise in the R-Z plane
+
         """
         r = np.asfarray(r)
         z = np.asfarray(z)
@@ -42,13 +48,14 @@ class RZline:
         assert len(z) == n
         assert r.shape == (n,)
         assert z.shape == (n,)
-        
-        # Ensure that the line is going anticlockwise (positive theta)
-        mid_ind = np.argmax(r) # Outboard midplane index
-        if z[(mid_ind+1)%n] < z[mid_ind]:
-            # Line going down at outboard midplane. Need to reverse
-            r = r[::-1] #r = np.flip(r)
-            z = z[::-1] #z = np.flip(z)
+
+        if anticlockwise:
+            # Ensure that the line is going anticlockwise (positive theta)
+            mid_ind = np.argmax(r) # Outboard midplane index
+            if z[(mid_ind+1)%n] < z[mid_ind]:
+                # Line going down at outboard midplane. Need to reverse
+                r = r[::-1] #r = np.flip(r)
+                z = z[::-1] #z = np.flip(z)
         
         self.R = r
         self.Z = z
@@ -99,24 +106,28 @@ class RZline:
         indp = (ind+1) % n
         return (rem*self.R[indp] + (1.-rem)*self.R[ind]), (rem*self.Z[indp] + (1.-rem)*self.Z[ind])
         
-    def distance(self):
+    def distance(self, sample=20):
         """
         Integrates the distance along the line.
+        
+        sample   Number of samples to take per point 
         
         Returns
         -------
         An array one longer than theta. The first element is zero,
         and the last element is the total distance around the loop
         """
+
+        sample = int(sample)
+        assert sample >= 1
+
+        thetavals = np.linspace(0.0, 2.*np.pi, sample*len(self.theta) + 1, endpoint=True)
         
         # variation of length with angle dl/dtheta
-        dldtheta = sqrt(self.Rvalue(deriv=1)**2 + self.Zvalue(deriv=1)**2)
+        dldtheta = sqrt(self.Rvalue(thetavals, deriv=1)**2 + self.Zvalue(thetavals, deriv=1)**2)
         
-        # Make periodic by repeating the first point
-        dldtheta = append(dldtheta, dldtheta[0])
-
-        # Integrate cumulatively
-        return cumtrapz(dldtheta, append(self.theta, 2.*pi), initial=0.0)
+        # Integrate cumulatively, then take only the values at the grid points (including end)
+        return cumtrapz(dldtheta, thetavals, initial=0.0)[::sample]
 
     def orderByDistance(self, n=None):
         """
@@ -341,19 +352,64 @@ def line_from_points(rarray, zarray, show=False):
     return best_line 
     
 if __name__ == "__main__":
-    
-    original = shaped_line(R0=3.0, a=1.0, elong=1.0, triang=0.4, indent=1.0, n=20)
-    
-    # Permute points
-    from numpy import random
-    random.seed(1235)
-    indx = random.permutation(original.R.size)
-    R = original.R[indx]
-    Z = original.Z[indx]
 
-    reconstructed = line_from_points(R, Z)
+    import field
+    import fieldtracer 
+    import poloidal_grid
 
-    plt.plot(R, Z, 'x')
-    plt.plot(original.R, original.Z)
-    plt.plot(reconstructed.R, reconstructed.Z)
-    plt.show()
+    #############################################################################
+    # Define the magnetic field
+    
+    # Length in y after which the coils return to their starting (R,Z) locations
+    yperiod = 10.
+    
+    magnetic_field = field.StraightStellarator(I_coil=0.3, radius = 1.0, yperiod = yperiod)
+
+    #############################################################################
+    # Create the inner flux surface, starting at a point at phi=0
+    # To do this we need to define the y locations of the poloidal points
+    # where we will construct grids
+    
+    start_r = 0.2
+    start_z = 0.0
+    
+    nslices = 8  # Number of poloidal slices
+    ycoords = np.linspace(0, yperiod, nslices)
+    npoints = 20  # Points per poloidal slice
+    
+    # Create a field line tracer
+    tracer = fieldtracer.FieldTracer(magnetic_field)
+    
+    # Extend the y coordinates so the tracer loops npoints times around yperiod
+    ycoords_all = ycoords
+    for i in range(1,npoints):
+        ycoords_all = np.append(ycoords_all, ycoords + i*yperiod)
+    
+    coord = tracer.follow_field_lines(start_r, start_z, ycoords_all, rtol=1e-12)
+
+    inner_lines = []
+    for i in range(nslices):
+        r = coord[i::nslices,0]
+        z = coord[i::nslices,1]
+        line = line_from_points(r,z)
+        # Re-map the points so they're approximately uniform in distance along the surface
+        # Note that this results in some motion of the line
+        line = line.orderByDistance()
+        inner_lines.append(line)
+
+    # Now have a list of y coordinates (ycoords) and inner lines (inner_lines)
+
+    #############################################################################
+    # Generate a fixed circle for the outer boundary
+    
+    outer_line = circle(R0=0.0, r=0.8)
+
+    #############################################################################
+    # Now have inner and outer boundaries for each poloidal slice
+    # Generate a grid on each poloidal slice using the elliptic grid generator
+    
+    nx = 20
+    ny = 20
+    
+    pol_slices = [ poloidal_grid.grid_elliptic(inner_line, outer_line, nx,ny, show=True) for inner_line in inner_lines ]
+    

@@ -23,7 +23,12 @@ from scipy.spatial import cKDTree as KDTree
 
 import matplotlib.pyplot as plt
 
-
+try:
+    from . import rzline
+except:
+    # Python 2
+    import rzline
+    
 class RectangularPoloidalGrid(object):
     """
     Represents a poloidal grid consisting of a rectangular domain
@@ -351,7 +356,7 @@ def grid_annulus(inner, outer, nx, ny, show=True, return_coords=False):
         return R, Z
     return StructuredPoloidalGrid(R,Z)
         
-def grid_elliptic(inner, outer, nx, ny, show=False, tol=1e-10, restrict_size=20, restrict_factor=2, return_coords=False):
+def grid_elliptic(inner, outer, nx, ny, show=False, tol=1e-10, align=True, restrict_size=20, restrict_factor=2, return_coords=False):
     """
     Create a structured grid between inner and outer boundaries
     using elliptic method
@@ -364,6 +369,7 @@ def grid_elliptic(inner, outer, nx, ny, show=False, tol=1e-10, restrict_size=20,
     ny             The required poloidal resolution
     show           Display plots of intermediate results
     tol            Controls when iteration stops
+    align          Attempt to align the inner and outer boundaries
     restrict_size    The size (nx or ny) above which the grid is coarsened
     restrict_factor  The factor by which the grid is divided if coarsened
     
@@ -416,6 +422,16 @@ def grid_elliptic(inner, outer, nx, ny, show=False, tol=1e-10, restrict_size=20,
     # Radial coordinate
     xvals = linspace(0, 1.0, nx, endpoint=True)
 
+    if align:
+        # Align inner and outer boundaries
+        # Easiest way is to roll both boundaries
+        # so that index 0 is on the outboard midplane
+        
+        ind = np.argmax( inner.R )
+        inner = rzline.RZline( np.roll(inner.R, -ind), np.roll(inner.Z, -ind) )
+        ind = np.argmax( outer.R )
+        outer = rzline.RZline( np.roll(outer.R, -ind), np.roll(outer.Z, -ind) )
+    
     if (nx > restrict_size) or (ny > restrict_size):
         # Create a coarse grid first to get a starting guess
         # Only restrict the dimensions which exceed restrict_size
@@ -430,7 +446,7 @@ def grid_elliptic(inner, outer, nx, ny, show=False, tol=1e-10, restrict_size=20,
             ny_r = int(ny / restrict_factor)
 
         # Create the coarse mesh
-        R_r, Z_r = grid_elliptic(inner, outer, nx_r, ny_r, 
+        R_r, Z_r = grid_elliptic(inner, outer, nx_r, ny_r, align=False, 
                                  tol=tol, restrict_size=restrict_size, restrict_factor=restrict_factor, return_coords=True)
 
         y_r = linspace(0, 2*pi, ny_r+1, endpoint=True) # Add on the final point duplicating the first
@@ -465,9 +481,19 @@ def grid_elliptic(inner, outer, nx, ny, show=False, tol=1e-10, restrict_size=20,
     dy = thetavals[1] - thetavals[0]
 
     if show:
-        plt.plot(inner.R, inner.Z)
-        plt.plot(outer.R, outer.Z)
-        #plt.plot(R, Z, 'o') # Starting locations
+        # Markers on original points on inner and outer boundaries
+        plt.plot(inner.R, inner.Z, '-o')
+        plt.plot(outer.R, outer.Z, '-o')
+        
+        # Black lines through inner and outer boundaries
+        r,z = inner.position(np.linspace(0,2*np.pi, 100))
+        plt.plot(r,z, 'k')
+        r,z = outer.position(np.linspace(0,2*np.pi, 100))
+        plt.plot(r,z, 'k')
+
+        # Red dots to mark the inner and outer boundaries
+        plt.plot(R[0,:], Z[0,:], 'ro')
+        plt.plot(R[-1,:], Z[-1,:], 'ro')
         
     # Start solver loop
     while True:
@@ -476,8 +502,8 @@ def grid_elliptic(inner, outer, nx, ny, show=False, tol=1e-10, restrict_size=20,
         
         R_xm = R[:-2,:]   # R(x-1,y)
         R_xp = R[2:, :]   # R(x+1,y)
-        R_ym = np.roll(R, 1) # R(x, y-1)
-        R_yp = np.roll(R,-1) # R(x, y+1)
+        R_ym = np.roll(R, 1, axis=1) # R(x, y-1)
+        R_yp = np.roll(R,-1, axis=1) # R(x, y+1)
         R_xmym = R_ym[:-2,:] # R(x-1, y-1)
         R_xpym = R_ym[2:,:]  # R(x+1, y-1)
         R_xmyp = R_yp[:-2,:] # R(x-1, y+1)
@@ -487,8 +513,8 @@ def grid_elliptic(inner, outer, nx, ny, show=False, tol=1e-10, restrict_size=20,
         
         Z_xm = Z[:-2,:]
         Z_xp = Z[2:, :]
-        Z_ym = np.roll(Z, 1)
-        Z_yp = np.roll(Z,-1)
+        Z_ym = np.roll(Z, 1, axis=1)
+        Z_yp = np.roll(Z,-1, axis=1)
         Z_xmym = Z_ym[:-2,:] 
         Z_xpym = Z_ym[2:,:]
         Z_xmyp = Z_yp[:-2,:]
@@ -524,7 +550,6 @@ def grid_elliptic(inner, outer, nx, ny, show=False, tol=1e-10, restrict_size=20,
         
 
         maxchange_sq = np.amax((R-Rold)**2 + (Z-Zold)**2)
-        #print(maxchange_sq)
         
         if maxchange_sq < tol:
             break
