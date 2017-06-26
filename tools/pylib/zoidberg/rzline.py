@@ -2,6 +2,10 @@
 Routines and classes for representing periodic lines in R-Z poloidal planes
 
 """
+
+import numpy as np
+import matplotlib.pyplot as plt
+
 from numpy import pi, linspace, sqrt, cos, sin, append, zeros, argmin
 from scipy.interpolate import splrep, splev, interp1d
 from scipy.integrate import cumtrapz
@@ -30,14 +34,24 @@ class RZline:
         as the first point. The (r,z) points are in [0,2pi)
         
         """
-        self.R = r
-        self.Z = z
+        r = np.asfarray(r)
+        z = np.asfarray(z)
         
         # Check the sizes of the variables
         n = len(r)
         assert len(z) == n
         assert r.shape == (n,)
         assert z.shape == (n,)
+        
+        # Ensure that the line is going anticlockwise (positive theta)
+        mid_ind = np.argmax(r) # Outboard midplane index
+        if z[(mid_ind+1)%n] < z[mid_ind]:
+            # Line going down at outboard midplane. Need to reverse
+            r = r[::-1] #r = np.flip(r)
+            z = z[::-1] #z = np.flip(z)
+        
+        self.R = r
+        self.Z = z
         
         # Define an angle variable
         self.theta = linspace(0,2*pi,n, endpoint=False)
@@ -53,6 +67,9 @@ class RZline:
         """
         if theta is None:
             theta = self.theta
+        else:
+            theta = np.remainder(theta, 2*np.pi)
+        
         return splev(theta, self._rspl, der=deriv)
 
     def Zvalue(self, theta=None, deriv=0):
@@ -61,9 +78,27 @@ class RZline:
         """
         if theta is None:
             theta = self.theta
+        else:
+            theta = np.remainder(theta, 2*np.pi)
         return splev(theta, self._zspl, der=deriv)
         
+    def position(self, theta=None):
+        """
+        R,Z position at given theta
+        """
+        return self.Rvalue(theta=theta), self.Zvalue(theta=theta)
 
+    def positionPolygon(self, theta=None):
+        if theta is None:
+            return self.R, self.Z
+        n = len(self.R)
+        theta = np.remainder(theta, 2.*pi)
+        dtheta = 2.*np.pi/n
+        ind = np.trunc(theta/dtheta )
+        rem = np.remainder(theta, dtheta)
+        indp = (ind+1) % n
+        return (rem*self.R[indp] + (1.-rem)*self.R[ind]), (rem*self.Z[indp] + (1.-rem)*self.Z[ind])
+        
     def distance(self):
         """
         Integrates the distance along the line.
@@ -105,7 +140,7 @@ class RZline:
         
         return RZline( self.Rvalue(new_theta), self.Zvalue(new_theta) )
  
-    def closestPoint(self, R,Z):
+    def closestPoint(self, R,Z, niter=3, subdivide=20):
         """
         Find the closest point on the curve to the given (R,Z) point
         
@@ -114,28 +149,21 @@ class RZline:
         
         # First find the closest control point
         ind = argmin((self.R - R)**2 + (self.Z - Z)**2)
-        theta = self.theta[ind]
-
-        # Refine using Newton's method to find where derivative goes to zero
-        # distance = dR**2 + dZ**2
-        # d(distance)/dtheta = 2.*dR*(dR/dtheta) + 2.*dZ*(dZ/dtheta)
-        # d^2(distance)/dtheta^22 = 2*( (dR/dtheta)^2 + dR*(d^2R/dtheta^2) + (dZ/dtheta)^2 + dZ*(d^2Z/dtheta^2) )
-        for i in range(3):
-            dR = self.Rvalue(theta) - R
-            dZ = self.Zvalue(theta) - Z
+        theta0 = self.theta[ind]
+        dtheta = self.theta[1] - self.theta[0]
+        
+        # Iteratively refine and find new minimum
+        for i in range(niter):
+            # Create a new set of points between point (ind +/- 1)
+            # By using dtheta, wrapping around [0,2pi] is handled
+            thetas = np.linspace(theta0 - dtheta, theta0 + dtheta, subdivide, endpoint=False)
+            Rpos, Zpos = self.positionPolygon(thetas)
             
-            dRdtheta = self.Rvalue(theta, deriv=1)
-            dZdtheta = self.Zvalue(theta, deriv=1)
-            
-            d2Rdtheta2 = self.Rvalue(theta, deriv=2)
-            d2Zdtheta2 = self.Zvalue(theta, deriv=2)
-
-            d_dtheta = 2.*(dR*dRdtheta + dZ*dZdtheta)
-            d2_dtheta2 = 2.*( dRdtheta**2 + dR*d2Rdtheta2 + dZdtheta**2 + dZ*d2Zdtheta2 )
-            
-            theta = theta - d_dtheta/d2_dtheta2
-            
-        return theta
+            ind = argmin((Rpos - R)**2 + (Zpos - Z)**2)
+            theta0 = thetas[ind]
+            dtheta = thetas[1] - thetas[0]
+        
+        return np.remainder(theta0, 2*np.pi)
         
        
 def circle(R0=1.0, r= 0.5, n=20):
@@ -163,3 +191,169 @@ def shaped_line(R0=3.0, a=1.0, elong=0.0, triang=0.0, indent=0.0, n=20):
     return RZline( R0 - indent + (a + indent*cos(theta))*cos(theta + triang*sin(theta)),
                    (1.+elong)*a*sin(theta) )
 
+
+def line_from_points_poly(rarray, zarray, show=False):
+    """
+    Find a periodic line which goes through the given
+    (r,z) points
+    
+    This function starts with a triangle, then adds points
+    one by one, inserting into the polygon along the nearest
+    edge
+    
+    Inputs
+    ------
+
+    rarray, zarray   NumPy arrays or lists of r,z coordinates
+                     These arrays should be the same length
+
+    Returns
+    -------
+
+    An RZline object representing a periodic line
+    """
+    
+    rarray = np.asfarray(rarray)
+    zarray = np.asfarray(zarray)
+
+    assert rarray.size >= 3
+    assert rarray.shape == zarray.shape
+
+    npoints = rarray.size
+
+    rvals = rarray.copy()
+    zvals = zarray.copy() 
+    
+    # Take the first three points to make a triangle
+
+    if show:
+        plt.figure()
+        plt.plot(rarray, zarray, 'x')
+        plt.plot(np.append(rvals[:3], rvals[0]), np.append(zvals[:3], zvals[0])) # Starting triangle
+    
+    for i in range(3, npoints):
+        line = RZline(rvals[:i], zvals[:i])
+        
+        angle = np.linspace(0,2*pi,100)
+        r,z = line.position(angle)
+        
+        # Next point to add
+        #plt.plot(rarray[i], zarray[i], 'o')
+        
+        # Find the closest point on the line
+        theta = line.closestPoint(rarray[i],zarray[i])
+
+        rl, zl = line.position(theta)
+        
+        ind = np.floor(float(i)*theta / (2.*np.pi))
+        
+        # Insert after this index
+        
+        if ind != i-1:
+            # If not the last point, then need to shift other points along
+            rvals[ind+2:i+1] = rvals[ind+1:i]
+            zvals[ind+2:i+1] = zvals[ind+1:i]
+        rvals[ind+1] = rarray[i]
+        zvals[ind+1] = zarray[i]
+        
+        if show:
+            plt.plot([rarray[i], rl], [zarray[i],zl])
+            plt.plot(np.append(rvals[:(i+1)], rvals[0]), np.append(zvals[:(i+1)], zvals[0])) # New line
+
+    if show:
+        plt.show()
+    return RZline(rvals, zvals)
+
+def line_from_points(rarray, zarray, show=False):
+    """
+    Find a periodic line which goes through the given
+    (r,z) points
+    
+    This function starts at a point, and finds the nearest
+    neighbour which is not already in the line
+    
+    Inputs
+    ------
+
+    rarray, zarray   NumPy arrays or lists of r,z coordinates
+                     These arrays should be the same length
+
+    Returns
+    -------
+
+    An RZline object representing a periodic line
+    """
+
+    # Make sure we have Numpy arrays
+    rarray = np.asfarray(rarray)
+    zarray = np.asfarray(zarray)
+
+    assert rarray.size == zarray.size
+    
+    # We can get different answers depending on which point
+    # we start the line on.
+    # Therefore start the line from every point in turn,
+    # and keep the line with the shortest total distance
+
+    best_line = None  # The best line found so far
+    best_dist = 0.0  # Distance around best line
+    
+    for start_ind in range(rarray.size):
+        
+        # Create an array of remaining points
+        # Make copies since we edit the array later
+        rarr = np.roll(rarray, start_ind).copy()
+        zarr = np.roll(zarray, start_ind).copy()
+        
+        # Create new lists for the result
+        rvals = [rarr[0]]
+        zvals = [zarr[0]]
+        
+        rarr = rarr[1:]
+        zarr = zarr[1:]
+
+        while rarr.size > 1:
+            # Find the index in array closest to last point
+            ind = np.argmin( (rvals[-1] - rarr)**2 + (zvals[-1] - zarr)**2 )
+
+            rvals.append(rarr[ind])
+            zvals.append(zarr[ind])
+            # Shift arrays
+            rarr[ind:-1] = rarr[(ind+1):]
+            zarr[ind:-1] = zarr[(ind+1):]
+            # Chop off last point
+            rarr = rarr[:-1]
+            zarr = zarr[:-1]
+        
+        # One left, add to the end
+        rvals.append(rarr[0])
+        zvals.append(zarr[0])
+
+        new_line = RZline(rvals, zvals)
+        new_dist = new_line.distance()[-1] # Total distance
+        
+        if (best_line is None) or ( new_dist < best_dist ):
+            # Either if we haven't got a line, or found
+            # a better line
+            best_line = new_line
+            best_dist = new_dist
+            
+    return best_line 
+    
+if __name__ == "__main__":
+    
+    original = shaped_line(R0=3.0, a=1.0, elong=1.0, triang=0.4, indent=1.0, n=20)
+    
+    # Permute points
+    from numpy import random
+    random.seed(1235)
+    indx = random.permutation(original.R.size)
+    R = original.R[indx]
+    Z = original.Z[indx]
+
+    reconstructed = line_from_points(R, Z)
+
+    plt.plot(R, Z, 'x')
+    plt.plot(original.R, original.Z)
+    plt.plot(reconstructed.R, reconstructed.Z)
+    plt.show()

@@ -41,4 +41,26 @@ def test_order_by_distance():
     
     assert len(new_inner.R) == 10
     
+def test_line_from_points():
+    # Create a shaped periodic line
+    original = rzline.shaped_line(R0=3.0, a=1.0, elong=1.0, triang=0.4, indent=1.0, n=20)
+    
+    # Permute points
+    from numpy import random
+    random.seed(1235) # Fix seed so same every time
+    indx = random.permutation(original.R.size)
+    
+    R = original.R[indx]
+    Z = original.Z[indx]
+    
+    reconstructed = rzline.line_from_points(R, Z)
+
+    # Reconstructed should now be a rotated version of original
+    match = False
+    for i in range(len(R)):
+        if np.allclose(original.R, np.roll(reconstructed.R, i)) and np.allclose(original.Z, np.roll(reconstructed.Z, i)):
+            match = True
+            break
+    
+    assert match
     
