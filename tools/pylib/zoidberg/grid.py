@@ -133,7 +133,7 @@ class Grid(object):
             if self._ngrids == 1:
                 # Only one grid
                 return self.poloidal_grids, self.ycoords[yindex]
-            return self.poloidal_grids[index], self.ycoords[yindex]
+            return self.poloidal_grids[yindex], self.ycoords[yindex]
                 
         # Out of range
         

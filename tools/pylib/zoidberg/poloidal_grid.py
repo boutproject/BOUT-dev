@@ -223,9 +223,10 @@ class StructuredPoloidalGrid(object):
         nx,ny = self.R.shape
         if (np.amin(xind) < 0) or (np.amax(xind) > nx-1):
             raise ValueError("x index out of range")
-        if (np.amin(yind) < 0) or (np.amax(yind) > ny-1):
-            raise ValueError("y index out of range")
             
+        # Periodic in y
+        yind = np.remainder(yind, ny)
+        
         R = self._spl_r(xind, yind, dx=dx, dy=dy, grid=False)
         Z = self._spl_z(xind, yind, dx=dx, dy=dy, grid=False)
         
@@ -261,7 +262,11 @@ class StructuredPoloidalGrid(object):
         # Note ind can be an integer, or an array of ints
         # with the same number of elements as the input (R,Z) arrays
         n = R.size
-        position = np.concatenate( (R.reshape((n,1)), Z.reshape((n,1)) ), axis=1)
+        position = np.concatenate( (R.reshape((n,1)), Z.reshape((n,1))), axis=1)
+        
+        R = R.reshape((n,))
+        Z = Z.reshape((n,))
+        
         dists, ind = self.tree.query(position)
         
         # Calculate (x,y) index
@@ -272,6 +277,11 @@ class StructuredPoloidalGrid(object):
         # Convert indices to float
         xind = np.asfarray(xind)
         yind = np.asfarray(yind)
+        
+        # Create a mask for the positions
+        mask = np.ones(xind.shape)
+        mask[ np.logical_or((xind < 0.5), (xind > (nx-1.5))) ] = 0.0 # Set to zero if near the boundary 
+        
         
         if show:
             plt.plot(self.R, self.Z, '.')
@@ -287,7 +297,8 @@ class StructuredPoloidalGrid(object):
             dZ = Zpos - Z
             
             # Check if close enough
-            if np.amax(dR**2 + dZ**2) < tol:
+            # Note: only check the points which are not in the boundary
+            if np.amax(mask*(dR**2 + dZ**2)) < tol:
                 break
             
             # Calculate derivatives
@@ -304,12 +315,20 @@ class StructuredPoloidalGrid(object):
             # (y)     (-dZ/dx   dR/dx ) (dZ) / (dR/dx*dZ/dy - dR/dy*dZ/dx)
             determinant = dRdx*dZdy - dRdy*dZdx
             
-            xind -= (dZdy*dR - dRdy*dZ) / determinant
-            yind -= (dRdx*dZ - dZdx*dR) / determinant
+            xind -= mask * ((dZdy*dR - dRdy*dZ) / determinant)
+            yind -= mask * ((dRdx*dZ - dZdx*dR) / determinant)
             
+            # Re-check for boundary
+            in_boundary = np.logical_or((xind < 0.5), (xind > (nx-1.5)))
+            mask[ in_boundary ] = 0.0 # Set to zero if near the boundary 
+            xind[ in_boundary ] = 0.0
+
         if show:
             plt.show()
             
+        # Set xind to -1 if in the boundary
+        xind = xind*mask + -1*(1.-mask)
+        
         return xind.reshape(input_shape), yind.reshape(input_shape)
 
 def grid_annulus(inner, outer, nx, ny, show=True, return_coords=False):
