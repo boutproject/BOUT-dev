@@ -193,7 +193,7 @@ class CurvedSlab(MagneticField):
         
 try:
     from sympy import Symbol, Derivative, atan, atan2, cos, sin, log, pi, sqrt, lambdify
-    
+
     class StraightStellarator(MagneticField):
         def coil(self, xcentre, zcentre, radius, angle, iota, I):
             """Defines a single coil
@@ -275,8 +275,16 @@ try:
             
 
 except ImportError:
-    print("No Sympy module: Can't generate Stellarator fields")
+    class StraightStellarator(MagneticField):
+        """
+        Invalid StraightStellarator, since no Sympy module.
 
+        Rather than printing an error on startup, which may
+        be missed or ignored, this raises
+        an exception if StraightStellarator is ever used.
+        """
+        def __init__(self, *args, **kwargs):
+            raise ImportError("No Sympy module: Can't generate StraightStellarator fields")
 
 class VMEC(MagneticField):
     """Read a VMEC equilibrium file

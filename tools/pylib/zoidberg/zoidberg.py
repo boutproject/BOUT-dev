@@ -1,7 +1,7 @@
 from __future__ import division
 try:
     from builtins import object
-except:
+except ImportError:
     pass
 
 import numpy as np
