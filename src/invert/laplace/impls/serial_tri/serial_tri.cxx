@@ -143,15 +143,12 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
    * Note that only the non-degenerate fourier modes are being used (i.e. the
    * offset and all the modes up to the Nyquist frequency)
    */
-  for(int kz=0;kz<=ncz/2;kz++) {
+  for(int kz=0;kz<=maxmode;kz++) {
 
     // set bk1d
-    BoutReal flt;
-    if (kz>maxmode) flt=0.0; else flt=1.0;
-
     for(int ix=0;ix<=ncx;ix++)
       // Get bk of the current fourier mode
-      bk1d[ix] = bk[ix][kz] * flt;
+      bk1d[ix] = bk[ix][kz];
 
     /* Set the matrix A used in the inversion of Ax=b
      * by calling tridagCoef and setting the BC
