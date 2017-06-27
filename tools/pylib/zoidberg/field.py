@@ -497,45 +497,49 @@ class VMEC(MagneticField):
         return x
 
 
-class FieldInterpolator(object):
-    """Given Bx, By, Bz on a grid, interpolate them for zoidberg
-
-    """
-    def __init__(self, Bx, By, Bz):
-        pass
-
-
 class SmoothedMagneticField(MagneticField):
     """
     Represents a magnetic field which is smoothed so it never leaves
     the boundaries of a given grid.
     """
-    def __init__(self, field, grid, args={}):
+    def __init__(self, field, grid, xboundary=None, zboundary=None):
         """
-        
-        args   Dict containing arguments to smooth_field_line
+        field       A MagneticField object
+        grid        A Grid object
+        xboundary   Number of grid points in x over which the magnetic field is smoothed
+        zboundary   Number of grid points in x over which the magnetic field is smoothed
         """
-        
-        self.smooth_func = np.vectorize(self.smooth_field_line)
 
-        self.x_width = smooth_args["x_width"] if "z_width" in smooth_args else 4
-        self.z_width = smooth_args["z_width"] if "z_width" in smooth_args else 4
-        
-        self.xr_inner = smooth_args["xr_inner"] if "xr_inner" in smooth_args else self.grid.xarray[-self.x_width-1]
-        self.xr_outer = smooth_args["xr_outer"] if "xr_outer" in smooth_args else self.grid.xarray[-1]
-        self.xl_inner = smooth_args["xl_inner"] if "xl_inner" in smooth_args else self.grid.xarray[self.x_width]
-        self.xl_outer = smooth_args["xl_outer"] if "xl_outer" in smooth_args else self.grid.xarray[0]
-        self.zt_inner = smooth_args["zt_inner"] if "zt_inner" in smooth_args else self.grid.zarray[-self.z_width-1]
-        self.zt_outer = smooth_args["zt_outer"] if "zt_outer" in smooth_args else self.grid.zarray[-1]
-        self.zb_inner = smooth_args["zb_inner"] if "zb_inner" in smooth_args else self.grid.zarray[self.z_width]
-        self.zb_outer = smooth_args["zb_outer"] if "zb_outer" in smooth_args else self.grid.zarray[0]
-        
-        if self.smooth:
-            P = self.smooth_func(self.grid.x_3d, self.grid.z_3d)
-            self.bx *= P
-            self.bz *= P
+        self.field = field
+        self.grid = grid
+        self.xboundary = xboundary
+        self.zboundary = zboundary
 
-        
+    def Bxfunc(self, x, z, phi):
+        # Get closest y (phi) grid index
+        ind = np.argmin(np.abs( phi - self.grid.ycoords))
+        if phi < self.grid.ycoords[ind]:
+            ind -= 1
+        # phi now between ind and ind+1
+        grid_d, y_d = self.grid.getPoloidalGrid(ind)
+        grid_u, y_u = self.grid.getPoloidalGrid(ind+1)
+
+        # Get x,z indices from poloidal grids
+        x_d, z_d = grid_d.findIndex(x, z)
+        x_u, z_u = grid_d.findIndex(x, z)
+    
+    def Byfunc(self, x, z, phi):
+        """
+        Not modified by smoothing
+        """
+        return self.field.Byfunc(x, z, phi)
+
+    def Bxfunc(self, x, z, phi):
+        pass
+    
+    def Rfunc(self, x,z,phi):
+        return self.field.Rfunc(x, z, phi)
+
     def smooth_field_line(self, xa, za):
         """Linearly damp the field to be parallel to the edges of the box
 

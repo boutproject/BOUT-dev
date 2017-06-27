@@ -141,7 +141,7 @@ class Grid(object):
             # Periodic domain
 
             # Map index into domain
-            y_remap = ((yindex % ny) + ny) % ny  # 0 <= yremap < ny
+            y_remap = np.remainder(yindex, ny) # 0 <= yremap < ny
 
             # Get number of periods around the domain. Note this can be negative
             nperiods = np.floor( float(yindex) / float(ny) )
