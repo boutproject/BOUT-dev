@@ -128,25 +128,34 @@ def plot_poincare(magnetic_field, xpos, zpos, yperiod, nplot=3, phi_slices=None,
 
     return fig, ax
 
-def plot_3d_field_line(grid, magnetic_field, cycles=20, y_res=50):
+def plot_3d_field_line(magnetic_field, xpos, zpos, yperiod, cycles=20, y_res=50):
     """Make a 3D plot of field lines
 
     Inputs
     ------
-    grid           - Grid object
     magnetic_field - Magnetic field object
+
+    xpos             Starting X location. Can be scalar or list/array
+    zpos             Starting Z location. Can be scalar or list/array
+    
+    yperiod          Length of period in y domain
+
     cycles         - Number of times to go round in y [20]
     y_res          - Number of points in y in each cycle [50]
     """
-    # Go round toroidally cycles times
-    phivals_hires = np.linspace(0, cycles*2*np.pi, num=y_res*cycles, endpoint=False)
 
-    xpos = grid.xcentre + 0.45*np.max(grid.xarray)
+    yperiod = float(yperiod)
+
+    # Go round toroidally cycles times
+    phivals_hires = np.linspace(0, cycles*yperiod, num=y_res*cycles, endpoint=False)
+    
+    xpos = np.asfarray(xpos)
+    zpos = np.asfarray(zpos)
 
     field_tracer = fieldtracer.FieldTracer(magnetic_field)
-    result_hires = field_tracer.follow_field_lines(xpos, grid.zcentre, phivals_hires)
-    # Get phivals_hires into [0,Ly]
-    phivals_hires_mod = np.mod(phivals_hires, grid.Ly)
+    result_hires = field_tracer.follow_field_lines(xpos, zpos, phivals_hires)
+    # Get phivals_hires into [0,yperiod]
+    phivals_hires_mod = np.remainder(phivals_hires, yperiod)
     # There are cycles sets of field lines y_res points long each
     # and we also need to transpose for reasons
     phivals_hires_mod = phivals_hires_mod.reshape( (cycles, y_res) ).T
