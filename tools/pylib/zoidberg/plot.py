@@ -56,13 +56,17 @@ def plot_poincare(magnetic_field, xpos, zpos, yperiod, nplot=3, phi_slices=None,
     ########################################################
     # Extend the domain from [0,yperiod] to [0,revs*yperiod]
 
+    
     phi_values = phi_slices[:]
     for n in np.arange(1, revs):
         phi_values = np.append(phi_values, n*yperiod + phi_values[:nplot])
-
-    phi_indices = np.arange(0, nplot * revs)
-    phi_indices = phi_indices.reshape( (revs, nplot) ).T
-
+        
+    nover = 20 # Over-sample
+    phi_values_over = np.zeros( ( nplot * revs * nover - (nover-1)) )
+    phi_values_over[::nover] = phi_values
+    for i in range(1,nover):
+        phi_values_over[i::nover] = (float(i)/float(nover))*phi_values[1:] + (float(nover-i)/float(nover))*phi_values[:-1]
+    
     #######################################################
     # Plotting
 
@@ -71,7 +75,9 @@ def plot_poincare(magnetic_field, xpos, zpos, yperiod, nplot=3, phi_slices=None,
     zpos = np.asfarray(zpos)
 
     field_tracer = fieldtracer.FieldTracer(magnetic_field)
-    result = field_tracer.follow_field_lines(xpos, zpos, phi_values)
+    result = field_tracer.follow_field_lines(xpos, zpos, phi_values_over)
+
+    result = result[::nover,...] # Remove unneeded points
 
     fig, ax = plt.subplots(1,1)
     
@@ -154,6 +160,7 @@ def plot_3d_field_line(magnetic_field, xpos, zpos, yperiod, cycles=20, y_res=50)
 
     field_tracer = fieldtracer.FieldTracer(magnetic_field)
     result_hires = field_tracer.follow_field_lines(xpos, zpos, phivals_hires)
+
     # Get phivals_hires into [0,yperiod]
     phivals_hires_mod = np.remainder(phivals_hires, yperiod)
     # There are cycles sets of field lines y_res points long each

@@ -83,6 +83,11 @@ class MagneticField(object):
         if Rmaj is not None:
             # In cylindrical coordinates
 
+            if np.amin(np.abs(By)) < 1e-8:
+                # Very small By
+                print(x,z,ycoord, By)
+                raise ValueError("Small By")
+
             R_By = Rmaj / By
             # Rate of change of x location [m] with y angle [radians]
             dxdphi =  R_By * self.Bxfunc(x,z,ycoord)
@@ -422,32 +427,7 @@ class VMEC(MagneticField):
         self.br = bu*drdu + bv*drdv
         self.bphi = self.r_stz*bv
         self.bz = bu*dzdu + bv*dzdv
-
-    # def adjust_grid(self, grid):
-    #     """Adjust grid to be consistent with the VMEC grid
-    #     """
-    #     grid.nx = self.nr
-    #     grid.ny = self.nzeta
-    #     grid.nz = self.nz
-
-    #     grid.xarray = self.r_1D
-    #     grid.yarray = self.zeta
-    #     grid.zarray = self.z_1D
-
-    #     grid.delta_x = grid.xarray[1] - grid.xarray[0]
-    #     grid.delta_y = grid.yarray[1] - grid.yarray[0]
-    #     grid.delta_z = grid.zarray[1] - grid.zarray[0]
-
-    #     grid.Lx = grid.xarray[-1] - grid.xarray[0]
-    #     grid.Ly = 2.*np.pi
-    #     grid.Lz = grid.zarray[-1] - grid.zarray[0]
-
-    #     grid.xcentre = grid.xarray[0] + 0.5*grid.Lx
-    #     grid.zcentre = grid.zarray[0] + 0.5*grid.Lz
-
-    #     grid.x_3d, grid.y_3d, grid.z_3d = np.meshgrid(grid.xarray, grid.yarray, grid.zarray,
-    #                                                   indexing='ij')
-
+        
     def __init__(self, vmec_file, ntheta=None, nzeta=None, nr=32, nz=32):
         # Only needed here
         from scipy.interpolate import griddata, RegularGridInterpolator
@@ -485,19 +465,19 @@ class VMEC(MagneticField):
         self.bz_interp = RegularGridInterpolator(points, self.bz_rz, bounds_error=False, fill_value=0.0)
         self.bphi_interp = RegularGridInterpolator(points, self.bphi_rz, bounds_error=False, fill_value=1.0)
 
-    def Bxfunc(x, z, phi):
+    def Bxfunc(self, x, z, phi):
         phi = np.mod(phi, 2.*np.pi)
         return self.br_interp((x, z, phi))
 
-    def Bzfunc(x, z, phi):
+    def Bzfunc(self, x, z, phi):
         phi = np.mod(phi, 2.*np.pi)
         return self.bz_interp((x, z, phi))
 
-    def Byfunc(x, z, phi):
+    def Byfunc(self, x, z, phi):
         phi = np.mod(phi, 2.*np.pi)
         return self.bphi_interp((x, z, phi))
-
-    def Rfunc(x,z,phi):
+        
+    def Rfunc(self, x,z,phi):
         """
         Major radius
         """
