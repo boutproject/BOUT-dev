@@ -73,6 +73,14 @@ grid = zoidberg.grid.Grid( pol_grids, ycoords, yperiod, yperiodic=True)
 maps = zoidberg.make_maps(grid, magnetic_field)
 
 #############################################################################
+# Write grid file
+
+filename = "stellarator.fci.nc"
+
+print("Writing to grid file '{0}'".format(filename))
+zoidberg.write_maps(grid, magnetic_field, maps, gridfile=filename)
+
+#############################################################################
 # Plot maps
 
 yslice = 0

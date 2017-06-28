@@ -41,7 +41,7 @@ def make_maps(grid, magnetic_field, quiet=False, **kwargs):
     ny = grid.numberOfPoloidalGrids()
     pol, _ = grid.getPoloidalGrid(0)
     nx = pol.nx
-    nz = pol.ny
+    nz = pol.nz
 
     shape = (nx, ny, nz)
 
@@ -138,7 +138,7 @@ def make_maps(grid, magnetic_field, quiet=False, **kwargs):
 
     return maps
 
-def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc', legacy=False):
+def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc'):
     """Write FCI maps to BOUT++ grid file
 
     Inputs
@@ -147,49 +147,64 @@ def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc', legacy=False)
     magnetic_field - Zoidberg magnetic field object
     maps           - Dictionary of FCI maps
     gridfile       - Output filename
-    legacy         - If true, write FCI maps using FFTs
     """
 
-    nx, ny, nz = (grid.nx, grid.ny, grid.nz)
-    xarray, yarray, zarray = (grid.xarray, grid.yarray, grid.zarray)
+    nx, ny, nz = grid.shape
+    # Get metric tensor
+    metric = grid.metric()
 
-    g_22 = np.ones((nx,ny))# + 1./grid.Rmaj(grid.xarray,grid.yarray)**2
-
+    # Check if the magnetic field is in cylindrical coordinates
+    # If so, we need to change the gyy and g_yy metrics
+    pol_grid,ypos = grid.getPoloidalGrid(0)
+    Rmaj = magnetic_field.Rfunc(pol_grid.R, pol_grid.Z, ypos)
+    if Rmaj is not None:
+        # In cylindrical coordinates
+        Rmaj = np.zeros(grid.shape)
+        for yindex in range(grid.numberOfPoloidalGrids()):
+            pol_grid,ypos = grid.getPoloidalGrid(yindex)
+            Rmaj[:,yindex,:] = magnetic_field.Rfunc(pol_grid.R, pol_grid.Z, ypos)
+        metric["g22"] = 1./Rmaj**2
+        metric["g_22"] = Rmaj**2
+        
+    # Get magnetic field
+    Bmag = np.zeros(grid.shape)
+    for yindex in range(grid.numberOfPoloidalGrids()):
+        pol_grid,ypos = grid.getPoloidalGrid(yindex)
+        Bmag[:,yindex,:] = magnetic_field.Bmag(pol_grid.R, pol_grid.Z, ypos)
+        
+    
     with bdata.DataFile(gridfile, write=True, create=True) as f:
         ixseps = nx+1
-        f.write('nx', grid.nx)
-        f.write('ny', grid.ny)
-        if not legacy:
-            # Legacy files don't need nz
-            f.write('nz', grid.nz)
+        f.write('nx', nx)
+        f.write('ny', ny)
+        f.write('nz', nz)
 
-        f.write("dx", grid.delta_x)
-        f.write("dy", grid.delta_y)
-        f.write("dz", grid.delta_z)
+        f.write("dx", metric["dx"])
+        f.write("dy", metric["dy"])
+        f.write("dz", metric["dz"])
 
         f.write("ixseps1",ixseps)
         f.write("ixseps2",ixseps)
 
-        f.write("g_22", g_22)
-
-        f.write("Bxy", magnetic_field.b_mag[:,:,0])
-        f.write("bx", magnetic_field.bx)
-        f.write("bz", magnetic_field.bz)
-
-        # Legacy grid files need to FFT 3D arrays
-        if legacy:
-            from boutdata.input import transform3D
-            f.write('forward_xt_prime',  transform3D(maps['forward_xt_prime']))
-            f.write('forward_zt_prime',  transform3D(maps['forward_zt_prime']))
-
-            f.write('backward_xt_prime', transform3D(maps['backward_xt_prime']))
-            f.write('backward_zt_prime', transform3D(maps['backward_zt_prime']))
-        else:
-            f.write('forward_xt_prime',  maps['forward_xt_prime'])
-            f.write('forward_zt_prime',  maps['forward_zt_prime'])
-
-            f.write('backward_xt_prime', maps['backward_xt_prime'])
-            f.write('backward_zt_prime', maps['backward_zt_prime'])
+        # Metric tensor
+        
+        # Translate between output variable names and metric names
+        metric_keys = {"g_22":"g_yy",
+                       "g11":"gxx",
+                       "g13":"gxz",
+                       "g33":"gzz",
+                       "g_11":"g_xx",
+                       "g_13":"g_xz",
+                       "g_33":"g_zz"}
+        for key, val in metric_keys.items():
+            f.write(key, metric[val])
+        
+        # Magnetic field
+        f.write("B", Bmag)
+        
+        # Maps - write everything to file
+        for key in maps:
+            f.write(key, maps[key])
 
 def write_Bfield_to_vtk(grid, magnetic_field, scale=5, vtkfile="fci_zoidberg", psi=True):
     """Write the magnetic field to a VTK file

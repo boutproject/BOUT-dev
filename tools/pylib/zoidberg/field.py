@@ -47,6 +47,13 @@ class MagneticField(object):
         """
         return None
     
+    def Bmag(self, x,z,phi):
+        """
+        Magnitude of the magnetic field
+        Bmag = sqrt(Bx**2 + By**2 + Bz**2)
+        """
+        return np.sqrt( self.Bxfunc(x,z,phi)**2 + self.Byfunc(x,z,phi)**2 + self.Bzfunc(x,z,phi)**2 )
+
     def field_direction(self, pos, ycoord, flatten=False):
         """Calculate the direction of the magnetic field
         Returns the change in x with phi and change in z with phi

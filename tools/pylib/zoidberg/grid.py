@@ -68,6 +68,12 @@ class OldGrid(object):
 class Grid(object):
     """
     Represents a 3D grid, consisting of a collection of poloidal grids
+
+    Members
+    -------
+    
+    shape     tuple of grid sizes (nx,ny,nz)
+    
     """
     def __init__(self, poloidal_grids, ycoords, Ly, yperiodic=False, name="fci_grid"):
         """
@@ -97,15 +103,23 @@ class Grid(object):
             
             # Check this is the same length as ycoords
             assert len(ycoords) == ngrids
+
+            nx = poloidal_grids[0].nx
+            nz = poloidal_grids[0].nz
         except TypeError:
             # No len(), assume single poloidal grid
             ngrids = 1
+            nx = poloidal_grids.nx
+            nz = poloidal_grids.nz
 
         self.poloidal_grids = poloidal_grids
         self._ngrids = ngrids  # This is an implementation detail, whether we have one or multiple separate grids
         self.ycoords = np.asfarray(ycoords)
         self.Ly = Ly
         self.yperiodic = yperiodic
+        
+        # Define the shape of the grid
+        self.shape = (nx, len(ycoords), nz)
         
     def __repr__(self):
         return "Grid({0}, {1}:{2}:{3}, yperiodic={4})".format(self.poloidal_grids, 
@@ -157,9 +171,54 @@ class Grid(object):
         if yindex < 0:
             return None, 0.0   # Hit the lower end in Y
         return None, self.Ly  # Hit the upper end in Y
-            
-            
         
+    def metric(self):
+        """
+        Return the metric tensor, dx and dz
+        """
+        
+        # Gather dx,dz and x-z metrics from poloidal slices
+        dx = np.zeros(self.shape)
+        dz = np.zeros(self.shape)
+        
+        gxx = np.zeros(self.shape)
+        gxz = np.zeros(self.shape)
+        gzz = np.zeros(self.shape)
+        
+        g_xx = np.zeros(self.shape)
+        g_xz = np.zeros(self.shape)
+        g_zz = np.zeros(self.shape)
+        
+        # Separate grids for each slice
+        for y in range(self.shape[1]):
+            pol_metric = self.getPoloidalGrid(y)[0].metric()
+            dx[:,y,:] = pol_metric["dx"]
+            dz[:,y,:] = pol_metric["dz"]
+                
+            gxx[:,y,:] = pol_metric["gxx"]
+            gxz[:,y,:] = pol_metric["gxz"]
+            gzz[:,y,:] = pol_metric["gzz"]
+            
+            g_xx[:,y,:] = pol_metric["g_xx"]
+            g_xz[:,y,:] = pol_metric["g_xz"]
+            g_zz[:,y,:] = pol_metric["g_zz"]
+        
+        # Calculate the gradient of the y coordinate w.r.t index
+        # To avoid edge effects, repeat array three times then take the middle
+        ycoords = np.concatenate( (self.ycoords - self.Ly, self.ycoords, self.ycoords + self.Ly) )
+        ny = self.ycoords.size
+        dy = np.gradient(ycoords[ny:(2*ny)])
+        
+        # Note: These y metrics are for Cartesian coordinates
+        # If in cylindrical coordinates then these should be different
+        g_yy = 1.0   # Rmaj**2
+        gyy = 1.0    # 1/Rmaj**2
+
+        return {"dx":dx, "dy":dy, "dz": dz,
+                "gyy": gyy,  "g_yy":g_yy,
+                "gxx": gxx,  "g_xx":g_xx,
+                "gxz": gxz,  "g_xz":g_xz,
+                "gzz": gzz,  "g_zz":g_zz}
 
 def rectangular_grid(nx, ny, nz,
                      Lx=1.0, Ly=10., Lz=1.0,
