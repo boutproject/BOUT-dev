@@ -29,20 +29,13 @@ nslices = 8  # Number of poloidal slices
 ycoords = np.linspace(0, yperiod, nslices)
 npoints = 20  # Points per poloidal slice
 
-# Create a field line tracer
-tracer = zoidberg.fieldtracer.FieldTracer(magnetic_field)
-
-# Extend the y coordinates so the tracer loops npoints times around yperiod
-ycoords_all = ycoords
-for i in range(1,npoints):
-    ycoords_all = np.append(ycoords_all, ycoords + i*yperiod)
-    
-coord = tracer.follow_field_lines(start_r, start_z, ycoords_all, rtol=1e-12)
+rzcoord, ycoords = zoidberg.fieldtracer.trace_poincare(magnetic_field, start_r, start_z, yperiod,
+                                                     y_slices=ycoords, revs=npoints)
     
 inner_lines = []
 for i in range(nslices):
-    r = coord[i::nslices,0]
-    z = coord[i::nslices,1]
+    r = rzcoord[:,i,0]
+    z = rzcoord[:,i,1]
     line = zoidberg.rzline.line_from_points(r,z)
     # Re-map the points so they're approximately uniform in distance along the surface
     # Note that this results in some motion of the line

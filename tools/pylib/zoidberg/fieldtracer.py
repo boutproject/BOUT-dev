@@ -251,3 +251,84 @@ class FieldTracerReversible(object):
             result[yindex,...,1] = z_pos
             
         return result
+
+def trace_poincare(magnetic_field, xpos, zpos, yperiod, nplot=3, y_slices=None, revs=20, nover=20):
+    """Plot a Poincare graph of the field lines.
+
+    Inputs
+    ------
+    magnetic_field   Magnetic field object
+    
+    xpos       Starting X location. Can be scalar or list/array
+    
+    zpos       Starting Z location. Can be scalar or list/array
+    
+    yperiod    Length of period in y domain
+
+    nplot      Number of equally spaced y-slices to plot
+    
+    y_slices   List of y-slices to plot; overrides nplot
+    
+    revs       Number of revolutions (times around y)
+
+    nover      Over-sample. Produced additional points in y then discards.
+               This seems to be needed for accurate results in some cases
+
+    Returns
+    -------
+    
+    coords, y_slices
+
+    coords is a Numpy array of data
+    
+    [revs, nplot, ..., R/Z]
+    
+    where the first index is the revolution, second is the y slice,
+    and last is 0 for R, 1 for Z. The middle indices are the shape 
+    of the input xpos,zpos
+    """
+    
+    if nplot is None and y_slices is None:
+        raise ValueError("nplot and y_slices cannot both be None")
+    
+    if y_slices is not None:
+        y_slices = np.asfarray(y_slices)
+        
+        if np.amin(y_slices) < 0.0 or np.amax(y_slices) > yperiod:
+            raise ValueError("y_slices must all be between 0.0 and yperiod ({yperiod})"
+                             .format(yperiod=yperiod))
+        # Make sure y_slices is monotonically increasing
+        y_slices.sort()
+        # If y_slices is given, then nplot is the number of slices
+        nplot = len(y_slices)
+    else:
+        # nplot equally spaced phi slices
+        nplot = int(nplot)
+        y_slices = np.linspace(0, yperiod, nplot, endpoint=False)
+
+    # Extend the domain from [0,yperiod] to [0,revs*yperiod]
+    
+    revs = int(revs)    
+    y_values = y_slices[:]
+    for n in np.arange(1, revs):
+        y_values = np.append(y_values, n*yperiod + y_values[:nplot])
+        
+    nover = int(nover) # Over-sample
+    y_values_over = np.zeros( ( nplot * revs * nover - (nover-1)) )
+    y_values_over[::nover] = y_values
+    for i in range(1,nover):
+        y_values_over[i::nover] = (float(i)/float(nover))*y_values[1:] + (float(nover-i)/float(nover))*y_values[:-1]
+        
+    # Starting location
+    xpos = np.asfarray(xpos)
+    zpos = np.asfarray(zpos)
+
+    field_tracer = FieldTracer(magnetic_field)
+    result = field_tracer.follow_field_lines(xpos, zpos, y_values_over)
+
+    result = result[::nover,...] # Remove unneeded points
+
+    # Reshape data. Loops fastest over planes (nplot)
+    result = np.reshape(result, (revs, nplot)+result.shape[1:])
+
+    return result, y_slices

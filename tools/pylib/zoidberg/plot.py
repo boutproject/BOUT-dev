@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.integrate import odeint
 
-def plot_poincare(magnetic_field, xpos, zpos, yperiod, nplot=3, phi_slices=None, revs=100,
+def plot_poincare(magnetic_field, xpos, zpos, yperiod, nplot=3, y_slices=None, revs=40, nover=20,
                   interactive=False):
     """Plot a Poincare graph of the field lines.
 
@@ -19,71 +19,35 @@ def plot_poincare(magnetic_field, xpos, zpos, yperiod, nplot=3, phi_slices=None,
     
     yperiod          Length of period in y domain
 
-    nplot            Number of equally spaced phi-slices to plot [3]
+    nplot            Number of equally spaced y-slices to plot
     
-    phi_slices       List of phi-slices to plot; overrides nplot
+    y_slices         List of y-slices to plot; overrides nplot
     
-    revs             Number of revolutions (times around phi) [40]
+    revs             Number of revolutions (times around phi)
     
     interactive      Left-click on the plot to trace a field-line from that point
                      Right-click to add an additional trace
                      Middle-click to clear added traces
     """
 
-    colours = ["k", "b", "r", "g", "c", "m"]
-
-    # Check arguments are ok
-    if nplot is None and phi_slices is None:
-        raise ValueError("nplot and phi_slices cannot both be None")
-    if phi_slices is not None:
-        phi_slices = np.asfarray(phi_slices)
-        
-        if np.amin(phi_slices) < 0.0 or np.amax(phi_slices) > yperiod:
-            raise ValueError("phi_slices must all be between 0.0 and yperiod ({yperiod})"
-                             .format(yperiod=yperiod))
-        # Make sure phi_slices is monotonically increasing
-        phi_slices.sort()
-        # If phi_slices is given, then nplot is the number of slices
-        nplot = len(phi_slices)
-    else:
-        # nplot equally spaced phi slices
-        nplot = int(nplot)
-        phi_slices = np.linspace(0, yperiod, nplot, endpoint=False)
-        
-    if nplot > len(colours):
-        colours += colours * np.floor(nplot/len(colours))
-
-    ########################################################
-    # Extend the domain from [0,yperiod] to [0,revs*yperiod]
-
-    
-    phi_values = phi_slices[:]
-    for n in np.arange(1, revs):
-        phi_values = np.append(phi_values, n*yperiod + phi_values[:nplot])
-        
-    nover = 20 # Over-sample
-    phi_values_over = np.zeros( ( nplot * revs * nover - (nover-1)) )
-    phi_values_over[::nover] = phi_values
-    for i in range(1,nover):
-        phi_values_over[i::nover] = (float(i)/float(nover))*phi_values[1:] + (float(nover-i)/float(nover))*phi_values[:-1]
+    # Get Poincare plot
+    result, y_slices = fieldtracer.trace_poincare(magnetic_field, xpos, zpos, yperiod,
+                                                  nplot=nplot, y_slices=y_slices, revs=revs,
+                                                  nover=nover)
+    nplot = len(y_slices)
     
     #######################################################
     # Plotting
 
-    # Starting location
-    xpos = np.asfarray(xpos)
-    zpos = np.asfarray(zpos)
-
-    field_tracer = fieldtracer.FieldTracer(magnetic_field)
-    result = field_tracer.follow_field_lines(xpos, zpos, phi_values_over)
-
-    result = result[::nover,...] # Remove unneeded points
-
+    colours = ["k", "b", "r", "g", "c", "m"]
+    if nplot > len(colours):
+        colours += colours * np.floor(nplot/len(colours))
+        
     fig, ax = plt.subplots(1,1)
     
     for index in range(nplot):
-        r = result[index::nplot,..., 0]
-        z = result[index::nplot,..., 1]
+        r = result[:,index,..., 0]
+        z = result[:,index,..., 1]
         style = {
             'marker'    : '.',
             'color'     : colours[index],
@@ -94,8 +58,8 @@ def plot_poincare(magnetic_field, xpos, zpos, yperiod, nplot=3, phi_slices=None,
     ax.set_xlabel("Radius [m]", fontsize=20)
     ax.set_ylabel("Height [m]", fontsize=20)
     ax.tick_params(axis='both', labelsize=15)
-
-    for phi, colour in zip(phi_slices, colours):
+    
+    for phi, colour in zip(y_slices, colours):
         ax.plot([], [], color=colour, label=r'$Y = {0:.2f}$'.format(phi))
 
     ax.legend()
@@ -112,7 +76,7 @@ def plot_poincare(magnetic_field, xpos, zpos, yperiod, nplot=3, phi_slices=None,
             x_ = []
             z_ = []
         else:
-            result = field_tracer.follow_field_lines(event.xdata, event.ydata, phi_values)
+            result = field_tracer.follow_field_lines(event.xdata, event.ydata, y_values)
             # Right mouse
             if event.button is 3:
                 x_, z_ = overplot.get_data()
@@ -129,6 +93,13 @@ def plot_poincare(magnetic_field, xpos, zpos, yperiod, nplot=3, phi_slices=None,
         fig.canvas.draw()
 
     if interactive:
+        field_tracer = fieldtracer.FieldTracer(magnetic_field)
+        
+        revs = int(revs)    
+        y_values = y_slices[:]
+        for n in np.arange(1, revs):
+            y_values = np.append(y_values, n*yperiod + y_values[:nplot])
+        
         fig.canvas.mpl_connect('button_press_event', onclick)
     plt.show()
 
