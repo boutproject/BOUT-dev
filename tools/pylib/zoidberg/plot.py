@@ -6,18 +6,26 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.integrate import odeint
 
-def plot_poincare(grid, magnetic_field, nplot=3, phi_slices=None, revs=100,
+def plot_poincare(magnetic_field, xpos, zpos, yperiod, nplot=3, phi_slices=None, revs=100,
                   interactive=False):
     """Plot a Poincare graph of the field lines.
 
     Inputs
     ------
-    grid           - Grid object
-    magnetic_field - Magnetic field object
-    nplot          - Number of equally spaced phi-slices to plot [3]
-    phi_slices     - List of phi-slices to plot; overrides nplot
-    revs           - Number of revolutions (times around phi) [40]
-    interactive    - Left-click on the plot to trace a field-line from that point
+    magnetic_field   Magnetic field object
+    
+    xpos             Starting X location. Can be scalar or list/array
+    zpos             Starting Z location. Can be scalar or list/array
+    
+    yperiod          Length of period in y domain
+
+    nplot            Number of equally spaced phi-slices to plot [3]
+    
+    phi_slices       List of phi-slices to plot; overrides nplot
+    
+    revs             Number of revolutions (times around phi) [40]
+    
+    interactive      Left-click on the plot to trace a field-line from that point
                      Right-click to add an additional trace
                      Middle-click to clear added traces
     """
@@ -28,28 +36,29 @@ def plot_poincare(grid, magnetic_field, nplot=3, phi_slices=None, revs=100,
     if nplot is None and phi_slices is None:
         raise ValueError("nplot and phi_slices cannot both be None")
     if phi_slices is not None:
-        if min(phi_slices) < 0.0 or max(phi_slices) > grid.Ly:
-            raise ValueError("phi_slices must all be between 0.0 and grid.Ly ({Ly})"
-                             .format(Ly=grid.Ly))
+        phi_slices = np.asfarray(phi_slices)
+        
+        if np.amin(phi_slices) < 0.0 or np.amax(phi_slices) > yperiod:
+            raise ValueError("phi_slices must all be between 0.0 and yperiod ({yperiod})"
+                             .format(yperiod=yperiod))
         # Make sure phi_slices is monotonically increasing
-        phi_slices = np.array(phi_slices)
         phi_slices.sort()
         # If phi_slices is given, then nplot is the number of slices
         nplot = len(phi_slices)
-
-    # nplot equally spaced phi slices
-    if phi_slices is None:
-        phi_slices = np.linspace(0, grid.Ly, nplot, endpoint=False)
-
+    else:
+        # nplot equally spaced phi slices
+        nplot = int(nplot)
+        phi_slices = np.linspace(0, yperiod, nplot, endpoint=False)
+        
     if nplot > len(colours):
         colours += colours * np.floor(nplot/len(colours))
 
     ########################################################
-    # Extend the domain from [0,grid.Ly] to [0,revs*grid.Ly]
+    # Extend the domain from [0,yperiod] to [0,revs*yperiod]
 
     phi_values = phi_slices[:]
     for n in np.arange(1, revs):
-        phi_values = np.append(phi_values, n*grid.Ly + phi_values[:nplot])
+        phi_values = np.append(phi_values, n*yperiod + phi_values[:nplot])
 
     phi_indices = np.arange(0, nplot * revs)
     phi_indices = phi_indices.reshape( (revs, nplot) ).T
@@ -57,22 +66,24 @@ def plot_poincare(grid, magnetic_field, nplot=3, phi_slices=None, revs=100,
     #######################################################
     # Plotting
 
-    # Define starting location
-    
-    xpos = grid.xcentre + np.linspace(0, 0.5*np.max(grid.xarray), 10)
-    zpos = grid.zcentre + np.zeros(xpos.shape)
+    # Starting location
+    xpos = np.asfarray(xpos)
+    zpos = np.asfarray(zpos)
 
     field_tracer = fieldtracer.FieldTracer(magnetic_field)
     result = field_tracer.follow_field_lines(xpos, zpos, phi_values)
 
     fig, ax = plt.subplots(1,1)
-    for index, colour in zip(phi_indices, colours):
+    
+    for index in range(nplot):
+        r = result[index::nplot,..., 0]
+        z = result[index::nplot,..., 1]
         style = {
             'marker'    : '.',
-            'color'     : colour,
+            'color'     : colours[index],
             'linestyle' : 'None',
             }
-        ax.plot(result[index,:,0], result[index,:,1], **style)
+        ax.plot(r, z, **style)
 
     ax.set_xlabel("Radius [m]", fontsize=20)
     ax.set_ylabel("Height [m]", fontsize=20)
