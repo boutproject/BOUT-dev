@@ -138,7 +138,7 @@ def make_maps(grid, magnetic_field, quiet=False, **kwargs):
 
     return maps
 
-def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc', new_names=True):
+def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc', new_names=True, metric2d=False):
     """Write FCI maps to BOUT++ grid file
 
     Inputs
@@ -147,6 +147,10 @@ def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc', new_names=Tru
     magnetic_field - Zoidberg magnetic field object
     maps           - Dictionary of FCI maps
     gridfile       - Output filename
+    
+    new_names      - Write "g_yy" rather than "g_22"
+    metric2d       - Output only 2D metrics. 
+    
     """
 
     nx, ny, nz = grid.shape
@@ -172,7 +176,21 @@ def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc', new_names=Tru
         pol_grid,ypos = grid.getPoloidalGrid(yindex)
         Bmag[:,yindex,:] = magnetic_field.Bmag(pol_grid.R, pol_grid.Z, ypos)
         
-    
+    # Metric is now 3D
+    if metric2d:
+        # Remove the Z dimension from metric components
+        print("WARNING: Outputting 2D metrics, discarding metric information.")
+        for key in metric:
+            try:
+                metric[key] = metric[key][:,:,0]
+            except:
+                pass
+        # Make dz a constant
+        metric["dz"] = metric["dz"][0,0]
+        # Add Rxy, Bxy
+        metric["Rxy"] = maps["R"][:,:,0]
+        metric["Bxy"] = Bmag[:,:,0]
+
     with bdata.DataFile(gridfile, write=True, create=True) as f:
         ixseps = nx+1
         f.write('nx', nx)
@@ -193,16 +211,21 @@ def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc', new_names=Tru
                 f.write(key, val)
         else:
             # Translate between output variable names and metric names
-            metric_keys = {"g_22":"g_yy",
-                           "g22":"gyy",
-                           "g11":"gxx",
-                           "g13":"gxz",
-                           "g33":"gzz",
-                           "g_11":"g_xx",
-                           "g_13":"g_xz",
-                           "g_33":"g_zz"}
-            for key, val in metric_keys.items():
-                f.write(key, metric[val])
+            # Map from new to old names. Anything not in this dict
+            # is output unchanged
+            name_changes = {"g_yy":"g_22",
+                            "gyy":"g22",
+                            "gxx":"g11",
+                            "gxz":"g13",
+                            "gzz":"g33",
+                            "g_xx":"g_11",
+                            "g_xz":"g_13",
+                            "g_zz":"g_33"}
+            for key in metric:
+                name = key
+                if name in name_changes:
+                    name = name_changes[name]
+                f.write(name, metric[key])
                 
         # Magnetic field
         f.write("B", Bmag)
