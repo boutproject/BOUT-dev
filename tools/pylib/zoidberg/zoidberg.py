@@ -138,7 +138,7 @@ def make_maps(grid, magnetic_field, quiet=False, **kwargs):
 
     return maps
 
-def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc'):
+def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc', new_names=True):
     """Write FCI maps to BOUT++ grid file
 
     Inputs
@@ -163,8 +163,8 @@ def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc'):
         for yindex in range(grid.numberOfPoloidalGrids()):
             pol_grid,ypos = grid.getPoloidalGrid(yindex)
             Rmaj[:,yindex,:] = magnetic_field.Rfunc(pol_grid.R, pol_grid.Z, ypos)
-        metric["g22"] = 1./Rmaj**2
-        metric["g_22"] = Rmaj**2
+        metric["gyy"] = 1./Rmaj**2
+        metric["g_yy"] = Rmaj**2
         
     # Get magnetic field
     Bmag = np.zeros(grid.shape)
@@ -188,17 +188,22 @@ def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc'):
 
         # Metric tensor
         
-        # Translate between output variable names and metric names
-        metric_keys = {"g_22":"g_yy",
-                       "g11":"gxx",
-                       "g13":"gxz",
-                       "g33":"gzz",
-                       "g_11":"g_xx",
-                       "g_13":"g_xz",
-                       "g_33":"g_zz"}
-        for key, val in metric_keys.items():
-            f.write(key, metric[val])
-        
+        if new_names:
+            for key, val in metric.items():
+                f.write(key, val)
+        else:
+            # Translate between output variable names and metric names
+            metric_keys = {"g_22":"g_yy",
+                           "g22":"gyy",
+                           "g11":"gxx",
+                           "g13":"gxz",
+                           "g33":"gzz",
+                           "g_11":"g_xx",
+                           "g_13":"g_xz",
+                           "g_33":"g_zz"}
+            for key, val in metric_keys.items():
+                f.write(key, metric[val])
+                
         # Magnetic field
         f.write("B", Bmag)
         

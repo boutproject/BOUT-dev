@@ -209,12 +209,16 @@ class Grid(object):
         ny = self.ycoords.size
         dy = np.gradient(ycoords[ny:(2*ny)])
         
+        dy3d = np.zeros(self.shape)
+        for i in range(self.shape[1]):
+            dy3d[:,i,:] = dy[i]
+
         # Note: These y metrics are for Cartesian coordinates
         # If in cylindrical coordinates then these should be different
         g_yy = 1.0   # Rmaj**2
         gyy = 1.0    # 1/Rmaj**2
 
-        return {"dx":dx, "dy":dy, "dz": dz,
+        return {"dx":dx, "dy":dy3d, "dz": dz,
                 "gyy": gyy,  "g_yy":g_yy,
                 "gxx": gxx,  "g_xx":g_xx,
                 "gxz": gxz,  "g_xz":g_xz,
