@@ -531,6 +531,14 @@ def grid_elliptic(inner, outer, nx, nz, show=False, tol=1e-10, align=True, restr
         spl = RectBivariateSpline(x_r, z_r, Z_r)
         Z = spl(xvals, thetavals, grid=True)
         
+        # Make sure that the inner and outer boundaries are on the
+        # inner and outer RZline, not interpolated
+        R[0,:] = inner.Rvalue(thetavals)
+        Z[0,:] = inner.Zvalue(thetavals)
+        
+        R[-1,:] = outer.Rvalue(thetavals)
+        Z[-1,:] = outer.Zvalue(thetavals)
+        
     else:
         # Interpolate coordinates of inner and outer boundary
         Rinner = inner.Rvalue(thetavals)
