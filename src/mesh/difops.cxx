@@ -689,13 +689,11 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
       for(int jy=mesh->ystart;jy<=mesh->yend;jy++){
 	const BoutReal spacingFactor = partialFactor / metric->dx(jx,jy);
 	for(int jz=0;jz<ncz;jz++) {
-	  //Following could be replaced with ternary to avoid %, e.g.
-	  //const int jzp jz+1<ncz ? jz + 1 : 0;
-	  //where we've used the fact that jz+1 can never be bigger than ncz
-	  //so the modulus would just return 0 in this special case. Similar for jzm
-	  int jzp = (jz + 1) % ncz;
-	  int jzm = (jz - 1 + ncz) % ncz;
-          
+	  const int jzp = jz+1 < ncz ? jz + 1 : 0;
+	  //Above is alternative to const int jzp = (jz + 1) % ncz;
+	  const int jzm = jz-1 >=  0 ? jz - 1 : ncz-1;
+	  //Above is alternative to const int jzmTmp = (jz - 1 + ncz) % ncz;
+
           // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
           BoutReal Jpp = ( (f(jx,jy,jzp) - f(jx,jy,jzm))*
 			   (g(jx+1,jy) - g(jx-1,jy)) -
@@ -878,16 +876,18 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
     for(int jx=mesh->xstart;jx<=mesh->xend;jx++){
       for(int jy=mesh->ystart;jy<=mesh->yend;jy++){
         const BoutReal spacingFactor = partialFactor / metric->dx(jx, jy);
-        BoutReal *Fxm = f_temp(jx-1, jy);
-        BoutReal *Fx  = f_temp(jx,   jy);
-        BoutReal *Fxp = f_temp(jx+1, jy);
-        BoutReal *Gxm = g_temp(jx-1, jy);
-        BoutReal *Gx  = g_temp(jx,   jy);
-        BoutReal *Gxp = g_temp(jx+1, jy);
+        const BoutReal *Fxm = f_temp(jx-1, jy);
+        const BoutReal *Fx  = f_temp(jx,   jy);
+        const BoutReal *Fxp = f_temp(jx+1, jy);
+        const BoutReal *Gxm = g_temp(jx-1, jy);
+        const BoutReal *Gx  = g_temp(jx,   jy);
+        const BoutReal *Gxp = g_temp(jx+1, jy);
         for(int jz=0;jz<ncz;jz++) {
-          int jzp = (jz + 1) % ncz;
-          int jzm = (jz - 1 + ncz) % ncz;
-          
+	  const int jzp = jz+1 < ncz ? jz + 1 : 0;
+	  //Above is alternative to const int jzp = (jz + 1) % ncz;
+	  const int jzm = jz-1 >=  0 ? jz - 1 : ncz-1;
+	  //Above is alternative to const int jzm = (jz - 1 + ncz) % ncz;
+
           // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
           BoutReal Jpp = ((Fx[jzp] - Fx[jzm])*(Gxp[jz] - Gxm[jz]) - 
 			  (Fxp[jz] - Fxm[jz])*(Gx[jzp] - Gx[jzm]));
@@ -921,8 +921,10 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
       for(int jy=mesh->ystart;jy<=mesh->yend;jy++){
         const BoutReal spacingFactor = partialFactor / metric->dx(jx, jy);
         for(int jz=0;jz<ncz;jz++) {
-          int jzp = (jz + 1) % ncz;
-          int jzm = (jz - 1 + ncz) % ncz;
+	  const int jzp = jz+1 < ncz ? jz + 1 : 0;
+	  //Above is alternative to const int jzp = (jz + 1) % ncz;
+	  const int jzm = jz-1 >=  0 ? jz - 1 : ncz-1;
+	  //Above is alternative to const int jzm = (jz - 1 + ncz) % ncz;
           
           // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
           BoutReal Jpp = ( (f(jx,jy,jzp) - f(jx,jy,jzm))*
