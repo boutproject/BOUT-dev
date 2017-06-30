@@ -49,8 +49,22 @@ LaplaceSerialTri::LaplaceSerialTri(Options *opt) : Laplacian(opt), A(0.0), C(1.0
   bk = matrix<dcomplex>(mesh->LocalNx, ncz/2 + 1);
   bk1d = new dcomplex[mesh->LocalNx];
 
+  //Initialise bk to 0 as we only visit 0<= kz <= maxmode in solve
+  for(int kz=maxmode+1; kz < ncz/2 + 1; kz++){
+    for (int ix=0; ix<mesh->LocalNx; ix++){
+      bk[ix][kz] = 0.0;
+    }
+  }
+
   xk = matrix<dcomplex>(mesh->LocalNx, ncz/2 + 1);
   xk1d = new dcomplex[mesh->LocalNx];
+
+  //Initialise xk to 0 as we only visit 0<= kz <= maxmode in solve
+  for(int kz=maxmode+1; kz < ncz/2 + 1; kz++){
+    for (int ix=0; ix<mesh->LocalNx; ix++){
+      xk[ix][kz] = 0.0;
+    }
+  }
 
   avec = new dcomplex[mesh->LocalNx];
   bvec = new dcomplex[mesh->LocalNx];
