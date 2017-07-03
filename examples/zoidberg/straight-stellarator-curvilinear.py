@@ -71,7 +71,7 @@ maps = zoidberg.make_maps(grid, magnetic_field)
 filename = "stellarator.fci.nc"
 
 print("Writing to grid file '{0}'".format(filename))
-zoidberg.write_maps(grid, magnetic_field, maps, gridfile=filename)
+zoidberg.write_maps(grid, magnetic_field, maps, gridfile=filename, new_names=False, metric2d=True)
 
 #############################################################################
 # Plot maps
@@ -89,10 +89,15 @@ forward_R = maps['forward_R'][:,yslice,:]
 forward_Z = maps['forward_Z'][:,yslice,:]
 plt.plot(np.ravel(forward_R), np.ravel(forward_Z), 'ro', label="Forward map from slice {0}".format(yslice))
 
-# Mark the points which hit the boundary
+# Mark the points which hit the inner boundary
 # These are marked with a negative x index
 in_boundary = maps['forward_xt_prime'][:,yslice,:] < 0.0
-plt.plot( np.ravel(forward_R[ in_boundary ]), np.ravel(forward_Z[ in_boundary ]), 'ko', label="Boundary points")
+plt.plot( np.ravel(forward_R[ in_boundary ]), np.ravel(forward_Z[ in_boundary ]), 'ko', label="Inner boundary points")
+
+# Outer boundary marked with x index nx
+out_boundary = maps['forward_xt_prime'][:,yslice,:] > nx-0.5
+plt.plot( np.ravel(forward_R[ out_boundary ]), np.ravel(forward_Z[ out_boundary ]), 'bo', label="Outer boundary points")
+
 
 plt.legend()
 

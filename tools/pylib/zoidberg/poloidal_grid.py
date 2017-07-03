@@ -331,15 +331,21 @@ class StructuredPoloidalGrid(object):
             zind -= mask * ((dRdx*dZ - dZdx*dR) / determinant)
             
             # Re-check for boundary
-            in_boundary = np.logical_or((xind < 0.5), (xind > (nx-1.5)))
+            in_boundary = xind < 0.5
             mask[ in_boundary ] = 0.0 # Set to zero if near the boundary 
             xind[ in_boundary ] = 0.0
+            out_boundary = xind > (nx-1.5)
+            mask[ out_boundary ] = 0.0 # Set to zero if near the boundary 
+            xind[ out_boundary ] = nx-1
 
         if show:
             plt.show()
             
-        # Set xind to -1 if in the boundary
-        xind = xind*mask + -1*(1.-mask)
+        # Set xind to -1 if in the inner boundary, nx if in outer boundary
+        in_boundary = xind < 0.5
+        xind[ in_boundary ] = -1
+        out_boundary = xind > (nx-1.5)
+        xind[ out_boundary ] = nx
         
         return xind.reshape(input_shape), zind.reshape(input_shape)
 

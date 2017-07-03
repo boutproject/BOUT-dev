@@ -20,14 +20,16 @@ def test_out_of_domain():
     # Test out of domain
 
     x,y = grid.findIndex(2.5,0)
+    assert np.allclose(x, 10) # Should mark out of domain at outer x
     
-    assert np.allclose(x, -1.0) # Should mark out of domain
+    x,y = grid.findIndex(0.5,0.2)
+    assert np.allclose(x, -1) # Should mark out of domain at inner x
     
     # Test a mix of values inside and outside domain
     
     x,y = grid.findIndex([2.5, 1.0], [0.0, 0.5])
     
-    assert np.allclose(x[0], -1.0) # First one out of domain
+    assert np.allclose(x[0], 10) # First one out of domain
     
     r,z = grid.getCoordinate(x[1],y[1])
     assert np.allclose(r, 1.0) and np.allclose(z, 0.5)  # Second point in domain
