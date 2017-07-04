@@ -4,3 +4,7 @@ helper.cxx
 helper.h
 resolve_enum.pxd
 setup.py
+boutcore.cpp
+boutcore.so
+\#*#
+.#*
