@@ -1,0 +1,33 @@
+grep enum ../../include/bout_types.hxx| \
+    while read line
+do
+    what=${line:5}
+    #echo $what
+    name=${what%\{*}
+    tmp=${what#*\{}
+    enums=${tmp%\}*}
+    echo "cdef extern from \"bout_types.hxx\":"
+    echo "    cpdef enum ${name}:"
+    while test "$enums"
+    do
+        cur=${enums%%,*}
+        test "$cur" == "$enums" && enums=
+        cur=$(echo $cur)
+        enums=${enums#*,}
+        shrt=${cur%=*}
+        shrts+=" $shrt"
+        echo "        $cur,"
+        #echo $enums
+    done
+    echo
+    echo "cdef inline $name resolve_${name,,}(str):"
+    echo "    opts={"
+    for shrt in $shrts
+    do
+        echo "        \"$shrt\":$shrt,"
+    done
+    echo "          }"
+    echo "    return opts[str]"
+    echo
+    shrts=
+done

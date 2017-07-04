@@ -12,6 +12,10 @@ cdef extern from "field3d.hxx":
 cdef extern from "bout/mesh.hxx":
     cppclass Mesh:
         Mesh()
+        @staticmethod
+        Mesh * create()
+        void load()
+        void setParallelTransform()
 
 cdef extern from "meshfactory.hxx":
     cppclass MeshFactory:

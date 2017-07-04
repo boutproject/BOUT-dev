@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+
+import boutcore
+
+from boutdata import collect
+
+boutcore.init(["-d","data","-f","BOUT.settings","MZ=1", "MXG=1", "mesh:nx=3"])
+n=collect("n",path='data',tind=-1,yguards=True)
+print(n.shape)
+T=collect("T",path='data',tind=-1,yguards=True)
+
+
+print("initialized mesh")
+mesh=boutcore.Mesh.getGlobal();
+#mesh=boutcore.Mesh()
+print("initialized mesh")
+
+dens=boutcore.Field3D.fromMesh(mesh)
+dens.setAll(n.reshape(n.shape[1:]))
+temp=boutcore.Field3D.fromMesh(mesh)
+temp.setAll(T.reshape(T.shape[1:]))
+pres=dens+temp
+
+p=pres.getAll()
+pn=(n+T)
+pn=pn.reshape(p.shape)
+#print(p [::50,::10,::20])
+#print(pn[::50,::10,::20])
+if not ((p==pn).all()):
+    error
+pres=dens*temp
+p=pres.getAll()
+pn=n*T
+pn=pn.reshape(p.shape)
+if not ((p==pn).all()):
+    error
+print(p.shape)
+print(pn.shape)
+diff=boutcore.DDZ(pres)
+
+

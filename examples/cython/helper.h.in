@@ -1,0 +1,23 @@
+cat <<EOF
+#include <field3d.hxx>
+#include <bout_types.hxx>
+
+void c_set_f3d_all(Field3D * f3d, double * data);
+void c_get_f3d_all(Field3D * f3d, double * data);
+EOF
+for f in "add:+" "mul:*" "div:/" "sub:-"
+do
+    n=${f%:*}
+    o=${f#*:}
+    echo "Field3D * f$n( Field3D*,Field3D*);"
+done
+cat <<EOF
+int getNx(Field3D * a);
+int getNy(Field3D * a);
+int getNz(Field3D * a);
+
+Mesh * c_get_global_mesh();
+
+Field3D * c_ddz(Field3D*, CELL_LOC,DIFF_METHOD,bool);
+
+EOF
