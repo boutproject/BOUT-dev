@@ -17,9 +17,3 @@ cdef extern from "bout/mesh.hxx":
         void load()
         void setParallelTransform()
 
-cdef extern from "meshfactory.hxx":
-    cppclass MeshFactory:
-        @staticmethod
-        MeshFactory * getInstance()
-        Mesh * createMesh()
-

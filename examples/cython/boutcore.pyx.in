@@ -120,10 +120,6 @@ do
         fu=Field3D()
         fu.cobj=f$n((<Field3D?>self).cobj , (<Field3D?>other).cobj)
         return fu"
-    # def __mul__(self,other):
-    #     fu=Field3D()
-    #     fu.cobj=fmul((<Field3D?>self).cobj , (<Field3D?>other).cobj)
-    #     return fu
 done
 cat <<EOF
     def __del__(self):
