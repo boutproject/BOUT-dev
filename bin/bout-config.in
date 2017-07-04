@@ -9,7 +9,6 @@
 cc="@MPICXX@"
 cxx="@MPICXX@"
 ld="@MPICXX@"
-fc="none"
 checks="@CHECK_LEVEL@"
 cflags="@CONFIG_CFLAGS@"
 libs="@CONFIG_LDFLAGS@"
