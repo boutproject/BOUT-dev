@@ -42,6 +42,9 @@ class Field;
 
 #include "unused.hxx"
 
+class Mesh;
+extern Mesh * mesh;
+
 #ifdef TRACK
 #include <string>
 #endif
@@ -54,6 +57,7 @@ class Field;
 class Field {
  public:
   Field();
+  Field(Mesh * msh);
   virtual ~Field() { }
 
   //virtual void setStencil(bstencil *val, bindex *bx) const = 0;
@@ -120,7 +124,18 @@ class Field {
   // Status of the 4 boundaries
   bool bndry_xin, bndry_xout, bndry_yup, bndry_ydown;
 #endif
+  virtual Mesh * getMesh() const{
+    if (fieldmesh){
+      return fieldmesh;
+    } else {
+      return mesh;
+    }
+  }
+  virtual int getNx() const;
+  virtual int getNy() const;
+  virtual int getNz() const;
  protected:
+  Mesh * fieldmesh;
   /// Supplies an error method. Currently just prints and exits, but
   /// should do something more cunning...
   void error(const char *s, ...) const;

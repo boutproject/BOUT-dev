@@ -39,7 +39,7 @@
 #include <bout/assert.hxx>
 
 /// Constructor
-Field3D::Field3D(Mesh *msh) : background(nullptr), fieldmesh(msh), deriv(nullptr), yup_field(nullptr), ydown_field(nullptr) {
+Field3D::Field3D(Mesh *msh) : background(nullptr), Field(msh), deriv(nullptr), yup_field(nullptr), ydown_field(nullptr) {
 #ifdef TRACK
   name = "<F3D>";
 #endif
@@ -64,7 +64,7 @@ Field3D::Field3D(Mesh *msh) : background(nullptr), fieldmesh(msh), deriv(nullptr
 
 /// Doesn't copy any data, just create a new reference to the same data (copy on change later)
 Field3D::Field3D(const Field3D& f) : background(nullptr),
-				     fieldmesh(f.fieldmesh), // The mesh containing array sizes
+				     Field(f.fieldmesh), // The mesh containing array sizes
 				     data(f.data),   // This handles references to the data array
 				     deriv(nullptr),
 				     yup_field(nullptr), ydown_field(nullptr) {
@@ -93,7 +93,7 @@ Field3D::Field3D(const Field3D& f) : background(nullptr),
   boundaryIsSet = false;
 }
 
-Field3D::Field3D(const Field2D& f) : background(nullptr), fieldmesh(nullptr), deriv(nullptr), yup_field(nullptr), ydown_field(nullptr) {
+Field3D::Field3D(const Field2D& f) : background(nullptr), Field(nullptr), deriv(nullptr), yup_field(nullptr), ydown_field(nullptr) {
   
   TRACE("Field3D: Copy constructor from Field2D");
   
@@ -109,7 +109,7 @@ Field3D::Field3D(const Field2D& f) : background(nullptr), fieldmesh(nullptr), de
   *this = f;
 }
 
-Field3D::Field3D(const BoutReal val) : background(nullptr), fieldmesh(nullptr), deriv(nullptr), yup_field(nullptr), ydown_field(nullptr) {
+Field3D::Field3D(const BoutReal val) : background(nullptr), Field(nullptr), deriv(nullptr), yup_field(nullptr), ydown_field(nullptr) {
   
   TRACE("Field3D: Copy constructor from value");
 
