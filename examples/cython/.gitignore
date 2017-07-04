@@ -1,0 +1,6 @@
+debug* 
+boutcore.pyx
+helper.cxx
+helper.h
+resolve_enum.pxd
+setup.py
