@@ -53,10 +53,11 @@ do
     echo "     void fi$n( c.Field3D*, double)"
 done
 cat <<EOF
+     c.Field3D c_minus( c.Field3D )
      c.Mesh * c_get_global_mesh()
      c.Field3D * c_ddz( c.Field3D * ,benum.CELL_LOC,benum.DIFF_METHOD,bool)
      void c_laplacian_solve(c.Laplacian *, c.Field3D *, c.Field3D*)
-
+     c.Field3D c_Grad_perp_dot_Grad_perp(c.Field3D,c.Field3D);
      
 cdef Field3D f3dFromObj(c.Field3D i):
     fu=Field3D()
@@ -114,36 +115,49 @@ cdef class Field3D:
     def interp_to(self,location):
         cdef benum.CELL_LOC location_ = benum.resolve_cell_loc(location)
         return f3dFromObj(c.interp_to(self.cobj[0],location_))
+    def __neg__(self):
+        return f3dFromObj(c_minus(self.cobj[0]))
+    def isAllocated(self):
+        return self.cobj.isAllocated()
 EOF
 for f in "add:+" "mul:*" "div:/" "sub:-"
 do
     n=${f%:*}
     #o=${f#*:}
-    echo "
+    cat <<EOF
     def __${n}__(self,other):
+        #print("call __${n}__")
         fu=Field3D()
-        if isinstance(other,Field3D):
+        import numbers
+        if isinstance(self,Field3D) and isinstance(other,Field3D):
             fu.cobj=f$n((<Field3D?>self).cobj , (<Field3D?>other).cobj)
-        elif isinstance(other,float) or isinstance(other,int):
+        elif isinstance(self,Field3D) and isinstance(other, numbers.Number):
             fu.cobj=f$n((<Field3D?>self).cobj , (<double?>float(other)))
+        elif isinstance(self,numbers.Number) and isinstance(other, Field3D):
+            fu.cobj=f$n(<double?>float(self),(<Field3D?>other).cobj)
         else:
-            raise NotImplemented(\"Unexpected lhs - not supported (yet?).\")
+            print("$n",type(self),type(other),isinstance(self,numbers.Number))
+            return NotImplemented
         return fu
+
     def __r${n}__(self,lhs):
+        #print("call __r${n}__")
         fu=Field3D()
         if isinstance(lhs,float) or isinstance(lhs,int):
             fu.cobj=f$n(<double?>float(lhs),(<Field3D?>self).cobj)
         else:
-            raise NotImplemented(\"Unexpected lhs - not supported (yet?).\")
+            raise NotImplemented("Unexpected lhs - not supported (yet?).")
         return fu
+
     def __i${n}__(self,other):
         if isinstance(other,Field3D):
             fi$n((<Field3D?>self).cobj , (<Field3D?>other).cobj)
         elif isinstance(other,float) or isinstance(other,int):
             fi$n((<Field3D?>self).cobj , (<double?>float(other)))
         else:
-            raise NotImplemented(\"Unexpected lhs - not supported (yet?).\")
-    "
+            raise NotImplemented("Unexpected lhs - not supported (yet?).")
+
+EOF
     
 done
 cat <<EOF
@@ -214,11 +228,25 @@ def Div_par(Field3D J, outloc="CELL_DEFAULT"):
     cdef benum.CELL_LOC outloc_=benum.resolve_cell_loc(outloc)
     return f3dFromObj(c.Div_par((J.cobj)[0],outloc_))
 
-
 def bracket(Field3D a, Field3D b, method="BRACKET_STD", outloc="CELL_DEFAULT"):
     cdef benum.CELL_LOC outloc_=benum.resolve_cell_loc(outloc)
     cdef benum.BRACKET_METHOD method_=benum.resolve_bracket_method(method)
     return f3dFromObj(c.bracket(a.cobj[0],b.cobj[0],method_,outloc_))
+
+def sqrt(Field3D a):
+    return f3dFromObj(c.sqrt(a.cobj[0]))
+
+def exp(Field3D a):
+    return f3dFromObj(c.exp(a.cobj[0]))
+
+def Delp2(Field3D a, zsmooth=-1):
+    return f3dFromObj(c.Delp2(a.cobj[0],float(zsmooth)))
+
+def Delp2(Field3D a, zsmooth=-1):
+    return f3dFromObj(c.Delp2(a.cobj[0],float(zsmooth)))
+
+def Grad_perp_dot_Grad_perp(Field3D a, Field3D b):
+    return f3dFromObj(c_Grad_perp_dot_Grad_perp(a.cobj[0],b.cobj[0]))
 EOF
 
 #cat resolve_enum.pxd

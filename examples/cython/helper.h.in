@@ -16,13 +16,13 @@ do
     echo "void fi$n( Field3D*,double);"
 done
 cat <<EOF
-int getNx(Field3D * a);
-int getNy(Field3D * a);
-int getNz(Field3D * a);
+    Field3D c_minus(Field3D a){return -a;};
+    
 
 Mesh * c_get_global_mesh();
 
-Field3D * c_ddz(Field3D*, CELL_LOC,DIFF_METHOD,bool);
-
+Field3D c_Grad_perp_dot_Grad_perp(Field3D a, Field3D b){
+  return Grad_perp(a)*Grad_perp(b);
+}
 
 EOF

@@ -1,4 +1,4 @@
-
+from libcpp cimport bool
 cdef extern from "field3d.hxx":
     cppclass Field3D:
         Field3D(Mesh * mesh);
@@ -7,6 +7,9 @@ cdef extern from "field3d.hxx":
         int getNx()
         int getNy()
         int getNz()
+        bool isAllocated()
+    Field3D sqrt(Field3D)
+    Field3D exp(Field3D)
 
 
 cdef extern from "bout/mesh.hxx":
@@ -29,6 +32,7 @@ cdef extern from "difops.hxx":
     Field3D Div_par(Field3D, benum.CELL_LOC)
     Field3D Vpar_Grad_par(Field3D, Field3D, benum.CELL_LOC, benum.DIFF_METHOD)
     Field3D bracket(Field3D,Field3D, benum.BRACKET_METHOD, benum.CELL_LOC)
+    Field3D Delp2(Field3D,double)
 
 cdef extern from "derivs.hxx":
     Field3D DDZ(Field3D, benum.CELL_LOC, benum.DIFF_METHOD,bool)
