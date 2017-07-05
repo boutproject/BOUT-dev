@@ -1,4 +1,7 @@
-grep enum ../../include/bout_types.hxx| \
+for file in ../../include/bout_types.hxx other_enums.hxx
+do
+end=${file##*/}
+grep enum $file| \
     while read line
 do
     what=${line:5}
@@ -6,7 +9,7 @@ do
     name=${what%\{*}
     tmp=${what#*\{}
     enums=${tmp%\}*}
-    echo "cdef extern from \"bout_types.hxx\":"
+    echo "cdef extern from \"$end\":"
     echo "    cpdef enum ${name}:"
     while test "$enums"
     do
@@ -30,4 +33,5 @@ do
     echo "    return opts[str]"
     echo
     shrts=
+done
 done

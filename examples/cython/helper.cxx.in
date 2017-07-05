@@ -2,6 +2,8 @@ cat <<EOF
 #include <field3d.hxx>
 #include <globals.hxx>
 #include <derivs.hxx>
+#include <difops.hxx>
+#include <invert_laplace.hxx>
 
 void c_set_f3d_all(Field3D * f3d, double * data){
   int j=0;
@@ -34,6 +36,23 @@ Field3D * f$n( Field3D*a,Field3D*b){
   *r $o= *b;
   return r;
 }
+
+Field3D * f$n( Field3D*a,double b){
+  Field3D * r=new Field3D(*a);
+  *r $o= b;
+  return r;
+}
+
+Field3D * f$n( double b,Field3D*a){
+  return new Field3D(b $o *a);
+}
+
+void fi$n( Field3D*a,Field3D*b){
+  *a $o= *b;
+}
+void fi$n( Field3D*a,double b){
+  *a $o= b;
+}
 EOF
 done
 
@@ -58,5 +77,5 @@ Field3D * c_ddz(Field3D * in, CELL_LOC out,DIFF_METHOD diff, bool inc_x){
   *r = DDZ(*in,out,diff,inc_x);
   return r;
 }
-  
+
 EOF

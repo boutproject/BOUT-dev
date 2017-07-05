@@ -10,6 +10,10 @@ do
     n=${f%:*}
     o=${f#*:}
     echo "Field3D * f$n( Field3D*,Field3D*);"
+    echo "Field3D * f$n( Field3D*,double);"
+    echo "Field3D * f$n( double,Field3D*);"
+    echo "void fi$n( Field3D*,Field3D*);"
+    echo "void fi$n( Field3D*,double);"
 done
 cat <<EOF
 int getNx(Field3D * a);
@@ -19,5 +23,6 @@ int getNz(Field3D * a);
 Mesh * c_get_global_mesh();
 
 Field3D * c_ddz(Field3D*, CELL_LOC,DIFF_METHOD,bool);
+
 
 EOF

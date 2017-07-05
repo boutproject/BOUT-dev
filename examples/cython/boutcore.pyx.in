@@ -33,7 +33,6 @@ cat <<EOF
 # distutils: extra_compile_args = $flags
 
 cimport boutcpp as c
-print "hello World"
 import numpy as np
 cimport numpy as np
 import atexit
@@ -47,39 +46,22 @@ EOF
 for f in "add:+" "mul:*" "div:/" "sub:-"
 do
     n=${f%:*}
-    echo "     c.Field3D * f$n( c.Field3D*,c.Field3D*)"
+    echo "     c.Field3D * f$n( c.Field3D*, c.Field3D*)"
+    echo "     c.Field3D * f$n( c.Field3D*, double)"
+    echo "     c.Field3D * f$n( double, c.Field3D*)"
+    echo "     void fi$n( c.Field3D*, c.Field3D*)"
+    echo "     void fi$n( c.Field3D*, double)"
 done
 cat <<EOF
      c.Mesh * c_get_global_mesh()
      c.Field3D * c_ddz( c.Field3D * ,benum.CELL_LOC,benum.DIFF_METHOD,bool)
+     void c_laplacian_solve(c.Laplacian *, c.Field3D *, c.Field3D*)
 
-# cdef extern from "bout_types.hxx":
-#     cdef enum CELL_LOC:
-#         CELL_DEFAULT,
-#         CELL_CENTRE,
-#         CELL_CENTER,
-#         CELL_XLOW,
-#         CELL_YLOW,
-#         CELL_ZLOW,
-#         CELL_VSHIFT
-
-# cdef inline CELL_LOC  resolve_cell_loc (str):
-#     opts={
-#         "CELL_DEFAULT":CELL_DEFAULT,
-#         "CELL_CENTRE":CELL_CENTRE,
-#         "CELL_CENTER":CELL_CENTER,
-#         "CELL_XLOW":CELL_XLOW,
-#         "CELL_YLOW":CELL_YLOW,
-#         "CELL_ZLOW":CELL_ZLOW,
-#         "CELL_VSHIFT":CELL_VSHIFT,
-#           }
-#     return opts[str]
-
-EOF
-#cat resolve_enum.pxd
-cat <<EOF
-
-
+     
+cdef Field3D f3dFromObj(c.Field3D i):
+    fu=Field3D()
+    fu.cobj=new c.Field3D(<const c.Field3D & ?>i)
+    return fu
 cdef class Field3D:
     """A wrapper for the Field3D"""
     cdef c.Field3D * cobj
@@ -88,7 +70,26 @@ cdef class Field3D:
         fu=Field3D()
         fu.cobj=new c.Field3D((<Mesh?>mesh).cobj)
         return fu
-    
+    #@classmethod
+    @classmethod
+    def fromCollect(cls,name,tind=-1,mesh=None, **kwargs):
+        """Create a Field3D from reading in a datafile via collect.
+        Options:
+            tind: time slice to read
+            mesh: if not defined, use global mesh
+        remaining arguments are passed to collect
+        """
+        from boutdata import collect
+        data=collect(name,yguards=True,tind=tind,**kwargs)
+        data=data.reshape(data.shape[1:])
+        if len(data.shape) != 3:
+            raise TypeError("expected 3d data")
+        if mesh is None:
+            mesh=Mesh.getGlobal()
+        f3d=cls.fromMesh(mesh)
+        f3d.setAll(data)
+        return f3d
+            
     def __cinit__(self,Field3D obj=None):
         self.cobj=NULL
         if obj:
@@ -103,13 +104,16 @@ cdef class Field3D:
         #self.cobj.setData(0,0,0,data[0,0,0])
 
     def getAll(self):
-        nx=c.getNx(self.cobj)
-        ny=c.getNy(self.cobj)
-        nz=c.getNz(self.cobj)
-        print(nx,ny,nz)
+        nx=self.cobj.getNx()
+        ny=self.cobj.getNy()
+        nz=self.cobj.getNz()
+        #print(nx,ny,nz)
         cdef np.ndarray[double, mode="c", ndim=3] data_ = np.ascontiguousarray(np.zeros((nx,ny,nz)))
         c_get_f3d_all(self.cobj,&data_[0,0,0]);
         return data_
+    def interp_to(self,location):
+        cdef benum.CELL_LOC location_ = benum.resolve_cell_loc(location)
+        return f3dFromObj(c.interp_to(self.cobj[0],location_))
 EOF
 for f in "add:+" "mul:*" "div:/" "sub:-"
 do
@@ -118,8 +122,29 @@ do
     echo "
     def __${n}__(self,other):
         fu=Field3D()
-        fu.cobj=f$n((<Field3D?>self).cobj , (<Field3D?>other).cobj)
-        return fu"
+        if isinstance(other,Field3D):
+            fu.cobj=f$n((<Field3D?>self).cobj , (<Field3D?>other).cobj)
+        elif isinstance(other,float) or isinstance(other,int):
+            fu.cobj=f$n((<Field3D?>self).cobj , (<double?>float(other)))
+        else:
+            raise NotImplemented(\"Unexpected lhs - not supported (yet?).\")
+        return fu
+    def __r${n}__(self,lhs):
+        fu=Field3D()
+        if isinstance(lhs,float) or isinstance(lhs,int):
+            fu.cobj=f$n(<double?>float(lhs),(<Field3D?>self).cobj)
+        else:
+            raise NotImplemented(\"Unexpected lhs - not supported (yet?).\")
+        return fu
+    def __i${n}__(self,other):
+        if isinstance(other,Field3D):
+            fi$n((<Field3D?>self).cobj , (<Field3D?>other).cobj)
+        elif isinstance(other,float) or isinstance(other,int):
+            fi$n((<Field3D?>self).cobj , (<double?>float(other)))
+        else:
+            raise NotImplemented(\"Unexpected lhs - not supported (yet?).\")
+    "
+    
 done
 cat <<EOF
     def __del__(self):
@@ -141,6 +166,13 @@ cdef class Mesh:
         msh = Mesh(create=False);
         msh.cobj = c_get_global_mesh();
         return msh
+
+cdef class Laplacian:
+    cdef c.Laplacian * cobj
+    def __init__(self):
+        self.cobj = c.Laplacian.create()
+    def solve(self,Field3D a, Field3D b):
+        self.cobj.solve(a.cobj[0],b.cobj[0])
 
 cdef extern from "bout.hxx":
     int BoutInitialise(int&, char **&)
@@ -168,12 +200,25 @@ def finalise():
     BoutFinalise()
     isInit=False
 
-def DDZ(field, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", inc_xbndry=True):
-    ret=Field3D()
+def DDZ(Field3D field, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", inc_xbndry=True):
     cdef benum.CELL_LOC outloc_= benum.resolve_cell_loc(outloc)
     cdef benum.DIFF_METHOD method_=benum.resolve_diff_method(method)
-    ret.cobj = c_ddz((<Field3D?>field).cobj,outloc_,method_,inc_xbndry)
-    
+    return f3dFromObj(c.DDZ(field.cobj[0],outloc_,method_,inc_xbndry))
+
+def Vpar_Grad_par(Field3D V, Field3D f, outloc="CELL_DEFAULT",method="DIFF_DEFAULT"):
+    cdef benum.CELL_LOC outloc_= benum.resolve_cell_loc(outloc)
+    cdef benum.DIFF_METHOD method_=benum.resolve_diff_method(method)
+    return f3dFromObj(c.Vpar_Grad_par(V.cobj[0],f.cobj[0],outloc_,method_))
+
+def Div_par(Field3D J, outloc="CELL_DEFAULT"):
+    cdef benum.CELL_LOC outloc_=benum.resolve_cell_loc(outloc)
+    return f3dFromObj(c.Div_par((J.cobj)[0],outloc_))
+
+
+def bracket(Field3D a, Field3D b, method="BRACKET_STD", outloc="CELL_DEFAULT"):
+    cdef benum.CELL_LOC outloc_=benum.resolve_cell_loc(outloc)
+    cdef benum.BRACKET_METHOD method_=benum.resolve_bracket_method(method)
+    return f3dFromObj(c.bracket(a.cobj[0],b.cobj[0],method_,outloc_))
 EOF
 
 #cat resolve_enum.pxd
