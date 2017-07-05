@@ -1,14 +1,14 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import boutcore
 
 from boutdata import collect
 
-boutcore.init(["-d","data","-f","BOUT.settings","MZ=1", "MXG=1", "mesh:nx=3"])
-n=collect("n",path='data',tind=-1,yguards=True)
+boutcore.init(["-d","data"])#,"-f","BOUT.settings"])
+n=collect("f2d",path='data',tind=-1,yguards=True)
 print(n.shape)
-T=collect("T",path='data',tind=-1,yguards=True)
-
+T=collect("f3d",path='data',tind=-1,yguards=True)
+print(n.shape)
 
 print("initialized mesh")
 mesh=boutcore.Mesh.getGlobal();
@@ -16,10 +16,10 @@ mesh=boutcore.Mesh.getGlobal();
 print("initialized mesh")
 
 dens=boutcore.Field3D.fromMesh(mesh)
-dens.setAll(n.reshape(n.shape[1:]))
+dens.setAll(n.reshape((1,1,1)))
 #temp=boutcore.Field3D.fromMesh(mesh)
 #temp.setAll(T.reshape(T.shape[1:]))
-temp=boutcore.Field3D.fromCollect("T",path="data")
+temp=boutcore.Field3D.fromCollect("f3d",path="data")
 pres=dens+temp
 
 p=pres.getAll()

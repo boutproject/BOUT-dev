@@ -289,3 +289,6 @@ sphinx-docs-html: breathe-autogen
 
 sphinx-docs-latex: breathe-autogen
 	sphinx-build -b latex $(MANUAL_DIR)/sphinx/ $(MANUAL_DIR)/sphinx/_build/
+
+python:
+	$(MAKE) -C tools/pylib

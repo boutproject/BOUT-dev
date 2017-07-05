@@ -1,4 +1,4 @@
-for file in ../../include/bout_types.hxx other_enums.hxx
+for file in ../../../include/bout_types.hxx other_enums.hxx
 do
 end=${file##*/}
 grep enum $file| \

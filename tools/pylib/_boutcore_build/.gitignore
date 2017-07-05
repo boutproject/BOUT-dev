@@ -5,6 +5,7 @@ helper.h
 resolve_enum.pxd
 setup.py
 boutcore.cpp
-boutcore.so
 \#*#
 .#*
+BOUT.settings
+BOUT.log.0

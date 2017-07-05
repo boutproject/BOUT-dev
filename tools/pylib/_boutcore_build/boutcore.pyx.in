@@ -198,7 +198,8 @@ def init(args):
     fu=[]
     cdef char * tmp
     for i in range(len(args)):
-        tmp=args[i]
+        t2=str.encode(args[i])
+        tmp=t2
         fu.append(tmp)
         string_buf[i]=<char*>fu[i]
     cdef int fuu=len(args)
