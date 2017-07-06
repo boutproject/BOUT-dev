@@ -66,6 +66,8 @@ AC_ARG_WITH(mumps,        [AS_HELP_STRING([--with-mumps],
         [Link with MUMPS library for direct matrix inversions])],,[])
 AC_ARG_WITH(arkode,       [AS_HELP_STRING([--with-arkode],
         [Use the SUNDIALS ARKODE solver])],,[])
+AC_ARG_WITH(scorep,       [AS_HELP_STRING([--with-scorep],
+        [Enable support for scorep based instrumentation])],,[])
 
 dnl --with-hdf5 flags are set in AX_LIB_{PARALLEL}HDF5
 
@@ -1227,6 +1229,53 @@ then
 fi
 
 #############################################################
+# Scorep setup
+#############################################################
+
+HAS_SCOREP="no"
+if ( test "$with_scorep" != "no" )
+
+  echo "Searching for Scorep executable"
+
+  if test "$with_scorep" != ""
+  then
+    # Given a path to the library
+    AC_CHECK_FILES($with_scorep/scorep, SCOREPPATH=$with_scorep,)
+    if test "$SCOREPPATH" == ""
+    then
+      echo "scorep not found in given directory"
+    fi
+  fi
+
+  # Find the scorep binary
+  if test "$SCOREPPATH" == ""
+  then
+    path=`which scorep`
+    if test "$path" != ""
+    then
+      path=`dirname $path`
+      path=$path/..
+      AC_CHECK_FILES($path/scorep , SCOREPPATH=$path,)
+    fi
+  fi
+
+
+  if test "$SCOREPPATH" == ""
+  then
+      echo "SCOREP support disabled"
+  else
+      # Set a compile-time flag
+      CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SCOREP"
+      MPICXX="scorep --user --nocompiler $MPICXX"
+      AC_CHECK_PRETTYFUNCTION
+      HAS_SCOREP="yes"
+      echo "Scorep support enabled"
+  fi
+
+echo ""
+fi
+
+#############################################################
 # Check environment
 #############################################################
 
@@ -1347,6 +1396,8 @@ echo "  HDF5 support: $HAS_HDF5 (parallel: $HAS_PHDF5)" | tee -a config-build.lo
 echo "  Hypre support: $HAS_HYPRE" | tee -a config-build.log
 
 echo "  MUMPS support: $HAS_MUMPS" | tee -a config-build.log
+
+echo "  Scorep support: $HAS_SCOREP" | tee -a config-build.log
 
 echo ""
 echo
