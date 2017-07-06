@@ -194,6 +194,7 @@ cdef extern from "bout.hxx":
     
 isInit=False
 def init(args):
+    args.insert(0,"boutcore")
     cdef char **string_buf = <char **>malloc(len(args) * sizeof(char*))
     fu=[]
     cdef char * tmp
