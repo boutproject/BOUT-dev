@@ -94,13 +94,15 @@ class Field {
   virtual void setZArray(int UNUSED(x), int UNUSED(y), const rvec &UNUSED(zv)) {
     error("Field: Base class does not implement setZarray");
   }
-    
+
 #ifdef TRACK
   std::string getName() const { return name; }
   void setName(std::string s) { name = s; }
-
-  std::string name;
+#else
+  std::string getName() const { return ""; }
+  void setName(std::string s) { ;}
 #endif
+  std::string name;
 
 #if CHECK > 0
   // Routines to test guard/boundary cells set
