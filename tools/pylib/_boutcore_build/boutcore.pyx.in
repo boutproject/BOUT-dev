@@ -225,9 +225,15 @@ def Vpar_Grad_par(Field3D V, Field3D f, outloc="CELL_DEFAULT",method="DIFF_DEFAU
     cdef benum.DIFF_METHOD method_=benum.resolve_diff_method(method)
     return f3dFromObj(c.Vpar_Grad_par(V.cobj[0],f.cobj[0],outloc_,method_))
 
-def Div_par(Field3D J, outloc="CELL_DEFAULT"):
+def Div_par(Field3D J, outloc="CELL_DEFAULT",method="DIFF_DEFAULT"):
     cdef benum.CELL_LOC outloc_=benum.resolve_cell_loc(outloc)
-    return f3dFromObj(c.Div_par((J.cobj)[0],outloc_))
+    cdef benum.DIFF_METHOD method_=benum.resolve_diff_method(method)
+    return f3dFromObj(c.Div_par((J.cobj)[0],outloc_,method_))
+
+def Grad_par(Field3D J, outloc="CELL_DEFAULT",method="DIFF_DEFAULT"):
+    cdef benum.CELL_LOC outloc_=benum.resolve_cell_loc(outloc)
+    cdef benum.DIFF_METHOD method_=benum.resolve_diff_method(method)
+    return f3dFromObj(c.Grad_par((J.cobj)[0],outloc_,method_))
 
 def bracket(Field3D a, Field3D b, method="BRACKET_STD", outloc="CELL_DEFAULT"):
     cdef benum.CELL_LOC outloc_=benum.resolve_cell_loc(outloc)

@@ -29,7 +29,8 @@ cdef extern from "invert_laplace.hxx":
 cimport resolve_enum as benum
 
 cdef extern from "difops.hxx":
-    Field3D Div_par(Field3D, benum.CELL_LOC)
+    Field3D Div_par(Field3D, benum.CELL_LOC, benum.DIFF_METHOD)
+    Field3D Grad_par(Field3D, benum.CELL_LOC, benum.DIFF_METHOD)
     Field3D Vpar_Grad_par(Field3D, Field3D, benum.CELL_LOC, benum.DIFF_METHOD)
     Field3D bracket(Field3D,Field3D, benum.BRACKET_METHOD, benum.CELL_LOC)
     Field3D Delp2(Field3D,double)
