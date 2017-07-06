@@ -161,7 +161,7 @@ EOF
     
 done
 cat <<EOF
-    def __del__(self):
+    def __dealloc__(self):
         del self.cobj
         
 cdef class Mesh:
