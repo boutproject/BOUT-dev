@@ -16,7 +16,7 @@ $(TOGEN): Makefile
 boutcore.so: boutcore.pyx setup.py helper.cxx helper.h $(TOGEN)
 	@$(PY) setup.py build_ext --inplace
 
-test: all
+test: boutcore.so
 	@$(PY) ./runtest
 
 check: test
