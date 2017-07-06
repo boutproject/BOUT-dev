@@ -143,7 +143,7 @@ $4
   CXXFLAGS="$save_CXXFLAGS -D$3=$sundials_int_type"
 ])
 
-AC_DEFUN([CHECK_PRETTYFUNCTION], [
+AC_DEFUN([BOUT_CHECK_PRETTYFUNCTION], [
   AC_LANG_PUSH([C++])
   set_function_name=no
 
@@ -153,7 +153,7 @@ AC_DEFUN([CHECK_PRETTYFUNCTION], [
                  [[const char* name = __PRETTY_FUNCTION__;]])],
     [AC_MSG_RESULT(yes)
      set_function_name=yes
-     CXXFLAGS="$CXXFLAGS -D__HAS_PRETTY_FUNCTION"],
+     CXXFLAGS="$CXXFLAGS -DHAS_PRETTY_FUNCTION"],
     [AC_MSG_RESULT(no)])
   AC_LANG_POP([C++])
 ])

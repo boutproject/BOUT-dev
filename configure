@@ -10996,12 +10996,13 @@ fi
 #############################################################
 
 HAS_SCOREP="no"
-if ( test "$with_scorep" != "no" )
-then
-  echo "Searching for Scorep executable"
+if test "$with_scorep" != "no"; then :
 
-  if test "$with_scorep" != ""
-  then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: \"Searching for Scorep executable\"" >&5
+$as_echo "$as_me: \"Searching for Scorep executable\"" >&6;}
+
+  if test "$with_scorep" != ""; then :
+
     # Given a path to the library
     as_ac_File=`$as_echo "ac_cv_file_$with_scorep/scorep" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_scorep/scorep" >&5
@@ -11028,18 +11029,21 @@ _ACEOF
 SCOREPPATH=$with_scorep
 fi
 
-    if test "$SCOREPPATH" == ""
-    then
-      echo "scorep not found in given directory"
-    fi
-  fi
+    if test "$SCOREPPATH" == ""; then :
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: \"scorep not found in given directory\"" >&5
+$as_echo "$as_me: \"scorep not found in given directory\"" >&6;}
+
+fi
+
+fi
 
   # Find the scorep binary
-  if test "$SCOREPPATH" == ""
-  then
+  if test "$SCOREPPATH" == ""; then :
+
     path=`which scorep`
-    if test "$path" != ""
-    then
+    if test "$path" != ""; then :
+
       path=`dirname $path`
       path=$path/..
       as_ac_File=`$as_echo "ac_cv_file_$path/bin/scorep" | $as_tr_sh`
@@ -11067,14 +11071,19 @@ _ACEOF
 SCOREPPATH=$path
 fi
 
-    fi
-  fi
+
+fi
+
+fi
 
 
-  if test "$SCOREPPATH" == ""
-  then
-      echo "SCOREP support disabled"
-  else
+  if test "$SCOREPPATH" == ""; then :
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: \"SCOREP support disabled\"" >&5
+$as_echo "$as_me: \"SCOREP support disabled\"" >&6;}
+
+else
+
       # Set a compile-time flag
       CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SCOREP"
       MPICXX="scorep --user --nocompiler $MPICXX"
@@ -11104,7 +11113,7 @@ if ac_fn_cxx_try_compile "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
      set_function_name=yes
-     CXXFLAGS="$CXXFLAGS -D__HAS_PRETTY_FUNCTION"
+     CXXFLAGS="$CXXFLAGS -DHAS_PRETTY_FUNCTION"
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -11118,11 +11127,20 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
       HAS_SCOREP="yes"
-      echo "Scorep support enabled"
-  fi
+      { $as_echo "$as_me:${as_lineno-$LINENO}: \"Scorep support enabled\"" >&5
+$as_echo "$as_me: \"Scorep support enabled\"" >&6;}
 
-  echo ""
 fi
+
+
+else
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Scorep support disabled" >&5
+$as_echo "$as_me: Scorep support disabled" >&6;}
+
+fi
+
+echo ""
 
 #############################################################
 # Download + Build PVODE '98
