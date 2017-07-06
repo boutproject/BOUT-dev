@@ -1182,6 +1182,54 @@ extern int arkode_bbd_rhs(ARKODEINT Nlocal,
       ], [ARKBBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, arkode_bbd_rhs, nullptr);])
 ], [])
 
+
+#############################################################
+# Scorep setup
+#############################################################
+
+HAS_SCOREP="no"
+if ( test "$with_scorep" != "no" )
+then
+  echo "Searching for Scorep executable"
+
+  if test "$with_scorep" != ""
+  then
+    # Given a path to the library
+    AC_CHECK_FILES($with_scorep/scorep, SCOREPPATH=$with_scorep,)
+    if test "$SCOREPPATH" == ""
+    then
+      echo "scorep not found in given directory"
+    fi
+  fi
+
+  # Find the scorep binary
+  if test "$SCOREPPATH" == ""
+  then
+    path=`which scorep`
+    if test "$path" != ""
+    then
+      path=`dirname $path`
+      path=$path/..
+      AC_CHECK_FILES($path/bin/scorep , SCOREPPATH=$path,)
+    fi
+  fi
+
+
+  if test "$SCOREPPATH" == ""
+  then
+      echo "SCOREP support disabled"
+  else
+      # Set a compile-time flag
+      CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SCOREP"
+      MPICXX="scorep --user --nocompiler $MPICXX"
+      CHECK_PRETTYFUNCTION
+      HAS_SCOREP="yes"
+      echo "Scorep support enabled"
+  fi
+
+  echo ""
+fi
+
 #############################################################
 # Download + Build PVODE '98
 #############################################################
@@ -1226,53 +1274,6 @@ then
   EXTRA_LIBS="$EXTRA_LIBS -L\$(BOUT_TOP)/lib -lpvode -lpvpre"
   CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PVODE"
   HAS_PVODE="yes"
-fi
-
-#############################################################
-# Scorep setup
-#############################################################
-
-HAS_SCOREP="no"
-if ( test "$with_scorep" != "no" )
-
-  echo "Searching for Scorep executable"
-
-  if test "$with_scorep" != ""
-  then
-    # Given a path to the library
-    AC_CHECK_FILES($with_scorep/scorep, SCOREPPATH=$with_scorep,)
-    if test "$SCOREPPATH" == ""
-    then
-      echo "scorep not found in given directory"
-    fi
-  fi
-
-  # Find the scorep binary
-  if test "$SCOREPPATH" == ""
-  then
-    path=`which scorep`
-    if test "$path" != ""
-    then
-      path=`dirname $path`
-      path=$path/..
-      AC_CHECK_FILES($path/scorep , SCOREPPATH=$path,)
-    fi
-  fi
-
-
-  if test "$SCOREPPATH" == ""
-  then
-      echo "SCOREP support disabled"
-  else
-      # Set a compile-time flag
-      CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SCOREP"
-      MPICXX="scorep --user --nocompiler $MPICXX"
-      AC_CHECK_PRETTYFUNCTION
-      HAS_SCOREP="yes"
-      echo "Scorep support enabled"
-  fi
-
-echo ""
 fi
 
 #############################################################

@@ -153,7 +153,7 @@ AC_DEFUN([CHECK_PRETTYFUNCTION], [
                  [[const char* name = __PRETTY_FUNCTION__;]])],
     [AC_MSG_RESULT(yes)
      set_function_name=yes
-     CXXFLAGS="$CXXFLAGS -D__HAS_PRETTY_FUNCTION",
+     CXXFLAGS="$CXXFLAGS -D__HAS_PRETTY_FUNCTION"],
     [AC_MSG_RESULT(no)])
   AC_LANG_POP([C++])
 ])
