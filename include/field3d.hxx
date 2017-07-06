@@ -214,11 +214,11 @@ class Field3D : public Field, public FieldData {
    */
   int getNx() const override {return nx;};
   /*!
-   * Return the number of nx points
+   * Return the number of ny points
    */
   int getNy() const override {return ny;};
   /*!
-   * Return the number of nx points
+   * Return the number of nz points
    */
   int getNz() const override {return nz;};
 

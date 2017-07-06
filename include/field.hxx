@@ -131,8 +131,17 @@ class Field {
       return mesh;
     }
   }
+  /*!
+   * Return the number of nx points
+   */
   virtual int getNx() const;
+  /*!
+   * Return the number of ny points
+   */
   virtual int getNy() const;
+  /*!
+   * Return the number of nz points
+   */
   virtual int getNz() const;
  protected:
   Mesh * fieldmesh;
