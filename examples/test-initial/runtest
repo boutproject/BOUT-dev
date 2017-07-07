@@ -209,8 +209,16 @@ for nproc in nprocs:
                 success_string = "PASS"
             else:
                 if ( var == "mixmode" or var == "mixmode_seed" ) and E2 < 1e-3:
-                    # This can happen due tue excess precision e.g. on X87 architecture
-                    success_string = "WARNING"
+                    import platform
+                    arch=platform.machine()
+                    if arch=='i686':
+                        # This can happen due tue excess precision e.g. on X87 architecture
+                        success_string = "WARNING"
+                    else:
+                        print("This should only happen in i686 with an x87 math architecture.")
+                        print("We detected however an %s architecture."%arch)
+                        success_string = "FAIL"
+                        success = False
                 else:
                     success_string = "FAIL"
                     success = False
