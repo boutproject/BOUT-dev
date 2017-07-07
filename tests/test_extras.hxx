@@ -12,6 +12,9 @@
 ::testing::AssertionResult IsSubString(const std::string &str,
                                        const std::string &substring);
 
+::testing::AssertionResult IsField3DEqualBoutReal(const Field3D &field,
+                                                  const BoutReal number);
+
 /// FakeMesh has just enough information to create fields
 class FakeMesh : public Mesh {
 public:

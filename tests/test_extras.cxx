@@ -9,3 +9,16 @@
     return ::testing::AssertionFailure() << substring << " not found in " << str;
   }
 }
+
+::testing::AssertionResult IsField3DEqualBoutReal(const Field3D &field,
+                                                  const BoutReal number) {
+
+  for (auto &i : field) {
+    if (field[i] != number) {
+      return ::testing::AssertionFailure() << "Field3D(" << i.x << ", " << i.y << ", " << i.z << ") == "
+                                           << field[i] << "; Expected: " << number;
+    }
+  }
+
+  return ::testing::AssertionSuccess();
+}
