@@ -166,28 +166,60 @@ cat <<EOF
         
 cdef class Mesh:
     cdef c.Mesh * cobj;
-    def __init__(self, create=True):
+    cdef c.bool isGlobal
+    factory=FieldFactory()
+    def __init__(self, create=True,OptionSection=None):
+        self.cobj=<c.Mesh*>0
+        cdef c.string tmp
+        isGlobal=False
+        #self.fact=<c.FieldFactory*>0
         if create:
-            self.cobj = c.Mesh.create()
+            if OptionSection:
+                tmp = str.encode(OptionSection)
+                self.cobj=c.Mesh.create(c.Options.getRoot().getSection(tmp))
+            else:
+                self.cobj = c.Mesh.create(<c.Options *>0)
             if self.cobj == NULL:
                 raise MemoryError('Not enough memory, allocation failed.')
             self.cobj.load()
             self.cobj.setParallelTransform()
-            self.cobj.load()
-            self.cobj.setParallelTransform()
+            #self.cobj.load()
+            #self.cobj.setParallelTransform()
+
     @classmethod
     def getGlobal(cls):
         msh = Mesh(create=False);
         msh.cobj = c_get_global_mesh();
+        msh.isGlobal=True
         return msh
 
+    def __dealloc__(self):
+        if self.cobj and not self.isGlobal:
+            del self.cobj
+
+    cdef getFactory(self):
+        if (<FieldFactory>self.factory).cobj == <c.FieldFactory*>0:
+            (<FieldFactory?>self.factory).cobj = new c.FieldFactory(self.cobj,<c.Options*>0)
+        return self.factory
 cdef class Laplacian:
     cdef c.Laplacian * cobj
     def __init__(self):
         self.cobj = c.Laplacian.create()
     def solve(self,Field3D a, Field3D b):
-        self.cobj.solve(a.cobj[0],b.cobj[0])
+        return f3dFromObj(self.cobj.solve(a.cobj[0],b.cobj[0]))
 
+cdef class FieldFactory:
+    cdef c.FieldFactory * cobj
+    def __init__(self):
+        cobj=< c.FieldFactory*>0
+    def __dealloc__(self):
+        if self.cobj != <c.FieldFactory*>0:
+            del self.cobj
+    # @classmethod
+    # def fromPtr(cls,FieldFactory * cobj_):
+    #     fu=cls()
+    #     fu.cobj=cobj_
+    #     return fu
 cdef extern from "bout.hxx":
     int BoutInitialise(int&, char **&)
     void BoutFinalise()
@@ -210,7 +242,7 @@ def init(args):
         BoutFinalise()
     else:
         isInit=True
-    atexit.register(finalise)
+    #atexit.register(finalise)
 
 def finalise():
     BoutFinalise()
@@ -255,6 +287,17 @@ def Delp2(Field3D a, zsmooth=-1):
 
 def Grad_perp_dot_Grad_perp(Field3D a, Field3D b):
     return f3dFromObj(c_Grad_perp_dot_Grad_perp(a.cobj[0],b.cobj[0]))
+
+#from libcpp.string cimport string as cppstring
+
+def create3D(string, Mesh msh,outloc="CELL_DEFAULT",time=0):
+    cdef benum.CELL_LOC outloc_=benum.resolve_cell_loc(outloc)
+    fact=msh.getFactory()
+    cdef c.string str_=string.encode('ascii')
+    #cdef char * func=string_
+    return f3dFromObj(
+        (<FieldFactory>fact).cobj.create3D(str_,<c.Options*>0,<c.Mesh*>0,outloc_,time))
+    
 EOF
 
 #cat resolve_enum.pxd

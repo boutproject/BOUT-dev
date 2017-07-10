@@ -19,3 +19,8 @@ function = 1
 [f2d]
 function = 1
 
+
+[mesh2]
+nx=5
+ny=5
+nz=5

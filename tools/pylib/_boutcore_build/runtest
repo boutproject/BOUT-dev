@@ -40,3 +40,9 @@ print(pn.shape)
 diff=boutcore.DDZ(pres)
 
 
+mesh2=boutcore.Mesh("mesh2")
+f=boutcore.create3D("x+y",mesh2)
+print(f.getAll())
+
+
+#boutcore.finalise()
