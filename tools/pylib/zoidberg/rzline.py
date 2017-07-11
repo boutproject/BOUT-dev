@@ -96,6 +96,13 @@ class RZline:
         return self.Rvalue(theta=theta), self.Zvalue(theta=theta)
 
     def positionPolygon(self, theta=None):
+        """
+        Calculates (R,Z) position at given theta angle
+        by joining points by straight lines rather than
+        a spline. This avoids the overshoots which can
+        occur with splines.
+        
+        """
         if theta is None:
             return self.R, self.Z
         n = len(self.R)
