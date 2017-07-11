@@ -32,12 +32,31 @@
 #include <msg_stack.hxx>
 #include <boutexception.hxx>
 #include <utils.hxx>
+#include <bout/mesh.hxx>
 
-Field::Field() {
+Field::Field() : fieldmesh(nullptr){
 #if CHECK > 0
   bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true;
 #endif
 }
+
+Field::Field(Mesh * msh) : fieldmesh(msh){
+#if CHECK > 0
+  bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true;
+#endif
+}
+
+int Field::getNx() const{
+  return getMesh()->LocalNx;
+};
+
+int Field::getNy() const{
+  return getMesh()->LocalNy;
+};
+
+int Field::getNz() const{
+  return getMesh()->LocalNz;
+};
 
 /////////////////// PROTECTED ////////////////////
 

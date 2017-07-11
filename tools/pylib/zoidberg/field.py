@@ -397,7 +397,7 @@ class VMEC(object):
 
         # Make a new rectangular grid in (R,Z)
         self.r_1D = np.linspace(self.r_stz.min(), self.r_stz.max(), nr)
-        self.z_1D = np.linspace(self.z_stz.min(), self.z_stz.max(), nr)
+        self.z_1D = np.linspace(self.z_stz.min(), self.z_stz.max(), nz)
         self.R_2D, self.Z_2D = np.meshgrid(self.r_1D, self.z_1D, indexing='ij')
 
         # First, interpolate the magnetic field components onto (R,Z)

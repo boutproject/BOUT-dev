@@ -48,9 +48,13 @@ class FieldGroup {
   /*
    * Variadic constructor. Allows an arbitrary number of
    * FieldData arguments
+   *
+   * The explicit keyword prevents FieldGroup being constructed with arbitrary
+   * types. In particular arguments to add() cannot be implicitly converted
+   * to FieldGroup, leading to an infinite loop.
    */
   template <typename... Ts>
-  FieldGroup(Ts&... ts) { add(ts...); }
+  explicit FieldGroup(Ts&... ts) { add(ts...); }
 
 
   /*!

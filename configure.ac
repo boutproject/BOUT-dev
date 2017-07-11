@@ -66,6 +66,8 @@ AC_ARG_WITH(mumps,        [AS_HELP_STRING([--with-mumps],
         [Link with MUMPS library for direct matrix inversions])],,[])
 AC_ARG_WITH(arkode,       [AS_HELP_STRING([--with-arkode],
         [Use the SUNDIALS ARKODE solver])],,[])
+AC_ARG_WITH(scorep,       [AS_HELP_STRING([--with-scorep],
+        [Enable support for scorep based instrumentation])],,[])
 
 dnl --with-hdf5 flags are set in AX_LIB_{PARALLEL}HDF5
 
@@ -229,7 +231,7 @@ then
 fi
 
 CHECK_LEVEL="0"
-if test "enable_checks" != "no"
+if test ".$enable_checks" != ".no"
 then
   echo "Run-time checking enabled"
   if test "$enable_checks" = "1"
@@ -1180,6 +1182,53 @@ extern int arkode_bbd_rhs(ARKODEINT Nlocal,
       ], [ARKBBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, arkode_bbd_rhs, nullptr);])
 ], [])
 
+
+#############################################################
+# Scorep setup
+#############################################################
+
+HAS_SCOREP="no"
+AS_IF([test "$with_scorep" != "no"], [
+  AC_MSG_NOTICE(["Searching for Scorep executable"])
+
+  AS_IF([test "$with_scorep" != ""], [
+    # Given a path to the library
+    AC_CHECK_FILES($with_scorep/scorep, SCOREPPATH=$with_scorep,)
+    AS_IF([test "$SCOREPPATH" == ""],[
+      AC_MSG_NOTICE(["scorep not found in given directory"])
+    ],[])
+  ], 
+  [])
+
+  # Find the scorep binary
+  AS_IF([test "$SCOREPPATH" == ""], [
+    path=`which scorep`
+    AS_IF([test "$path" != ""], [
+      path=`dirname $path`
+      path=$path/..
+      AC_CHECK_FILES($path/bin/scorep , SCOREPPATH=$path,)
+      ], [])
+  ],
+  [])
+
+
+  AS_IF([test "$SCOREPPATH" == ""], [
+      AC_MSG_NOTICE(["SCOREP support disabled"])
+  ],[
+      # Set a compile-time flag
+      CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SCOREP"
+      MPICXX="scorep --user --nocompiler $MPICXX"
+      BOUT_CHECK_PRETTYFUNCTION
+      HAS_SCOREP="yes"
+      AC_MSG_NOTICE(["Scorep support enabled"])
+  ])
+
+  ],[
+  AC_MSG_NOTICE([Scorep support disabled])
+])
+
+echo ""
+
 #############################################################
 # Download + Build PVODE '98
 #############################################################
@@ -1347,6 +1396,8 @@ echo "  HDF5 support: $HAS_HDF5 (parallel: $HAS_PHDF5)" | tee -a config-build.lo
 echo "  Hypre support: $HAS_HYPRE" | tee -a config-build.log
 
 echo "  MUMPS support: $HAS_MUMPS" | tee -a config-build.log
+
+echo "  Scorep support: $HAS_SCOREP" | tee -a config-build.log
 
 echo ""
 echo

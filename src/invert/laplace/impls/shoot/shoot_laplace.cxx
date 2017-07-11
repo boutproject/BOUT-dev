@@ -37,6 +37,8 @@
 #include <bout/constants.hxx>
 
 LaplaceShoot::LaplaceShoot(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0) {
+  throw BoutException("LaplaceShoot is a test implementation and does not currently work. Please select a different implementation.");
+
   if(mesh->periodicX) {
         throw BoutException("LaplaceShoot does not work with periodicity in the x direction (mesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
   }

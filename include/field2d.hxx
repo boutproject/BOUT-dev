@@ -98,15 +98,15 @@ class Field2D : public Field, public FieldData {
   /*!
    * Return the number of nx points
    */
-  int getNx() const {return nx;};
+  int getNx() const override {return nx;};
   /*!
-   * Return the number of nx points
+   * Return the number of ny points
    */
-  int getNy() const {return ny;};
+  int getNy() const override {return ny;};
   /*!
-   * Return the number of nx points
+   * Return the number of nz points
    */
-  int getNz() const {return 1;};
+  int getNz() const override {return 1;};
 
   // Operators
 
