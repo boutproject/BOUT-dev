@@ -23,7 +23,8 @@ do
         #echo $enums
     done
     echo
-    echo "cdef inline $name resolve_${name,,}(str):"
+    lower=$(echo ${name}|tr [:upper:] [:lower:])
+    echo "cdef inline $name resolve_${lower}(str):"
     echo "    opts={"
     for shrt in $shrts
     do
