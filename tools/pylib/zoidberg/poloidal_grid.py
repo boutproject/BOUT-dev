@@ -28,8 +28,46 @@ try:
 except:
     # Python 2
     import rzline
+
+class PoloidalGrid(object):
+    """
+    Represents a poloidal grid 
     
-class RectangularPoloidalGrid(object):
+    Note: Here the 2D plane (R,Z) is labelled by (x,z) indices
+
+    Members
+    -------
+    
+    nx, nz  Number of points in x and z
+
+    R  2D Numpy array of R coordinates
+    Z  2D Numpy array of Z coordinates
+    
+    """
+    
+    def plot(self, axis=None, show=True):
+        """
+        Plot grid using matplotlib
+        
+        axis    The matplotlib axis to plot on. 
+                By default a new figure is created
+        
+        show    Calls plt.show() at the end
+        
+        """
+        if axis is None:
+            fig = plt.figure()
+            axis = fig.add_subplot(1,1,1)
+
+        axis.plot(self.R, self.Z, 'k-')
+        axis.plot(self.R.T, self.Z.T, 'k-')
+
+        if show:
+            plt.show()
+            
+        return axis
+    
+class RectangularPoloidalGrid(PoloidalGrid):
     """
     Represents a poloidal grid consisting of a rectangular domain
     
@@ -162,9 +200,8 @@ class RectangularPoloidalGrid(object):
                 "gxz": 0.0,  "g_xz":0.0,
                 "gzz": 1.0,  "g_zz":1.0}
                 
-        
 
-class StructuredPoloidalGrid(object):
+class StructuredPoloidalGrid(PoloidalGrid):
     """
     Represents a structured poloidal grid in R-Z
 
