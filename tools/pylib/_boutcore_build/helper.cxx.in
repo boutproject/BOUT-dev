@@ -78,4 +78,11 @@ Field3D * c_ddz(Field3D * in, CELL_LOC out,DIFF_METHOD diff, bool inc_x){
   return r;
 }
 
+void c_mesh_normalise(Mesh * msh, double norm){
+  printf("%g\n",norm);
+  auto coord = msh->coordinates();
+  coord->dx/=norm;
+  coord->dy/=norm;
+  coord->dz/=norm;
+}
 EOF

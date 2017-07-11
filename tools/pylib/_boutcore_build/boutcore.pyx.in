@@ -58,6 +58,7 @@ cat <<EOF
      c.Field3D * c_ddz( c.Field3D * ,benum.CELL_LOC,benum.DIFF_METHOD,bool)
      void c_laplacian_solve(c.Laplacian *, c.Field3D *, c.Field3D*)
      c.Field3D c_Grad_perp_dot_Grad_perp(c.Field3D,c.Field3D);
+     void c_mesh_normalise(c.Mesh* , double)
      
 cdef Field3D f3dFromObj(c.Field3D i):
     fu=Field3D()
@@ -167,11 +168,13 @@ cat <<EOF
 cdef class Mesh:
     cdef c.Mesh * cobj;
     cdef c.bool isGlobal
+    cdef double isNormalised
     factory=FieldFactory()
     def __init__(self, create=True,OptionSection=None):
         self.cobj=<c.Mesh*>0
         cdef c.string tmp
-        isGlobal=False
+        self.isGlobal=False
+        self.isNormalised=-1
         #self.fact=<c.FieldFactory*>0
         if create:
             if OptionSection:
@@ -201,6 +204,13 @@ cdef class Mesh:
         if (<FieldFactory>self.factory).cobj == <c.FieldFactory*>0:
             (<FieldFactory?>self.factory).cobj = new c.FieldFactory(self.cobj,<c.Options*>0)
         return self.factory
+    def normalise(self,double norm):
+        if self.isNormalised>0:
+            t=norm
+            norm=norm/self.isNormalised
+            self.isNormalised=t
+        c_mesh_normalise(self.cobj,norm)
+        
 cdef class Laplacian:
     cdef c.Laplacian * cobj
     def __init__(self):

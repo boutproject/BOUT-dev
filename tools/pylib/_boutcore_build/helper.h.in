@@ -25,4 +25,6 @@ Field3D c_Grad_perp_dot_Grad_perp(Field3D a, Field3D b){
   return Grad_perp(a)*Grad_perp(b);
 }
 
+void c_mesh_normalise(Mesh * , double);
+
 EOF
