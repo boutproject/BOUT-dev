@@ -3,7 +3,7 @@
 echo "Running field test"
 
 make
-./test_field > test.log
+mpirun -n 1 ./test_field > test.log
 
 status=$?
 if [ $status -eq 0 ] ; then 
