@@ -1,3 +1,6 @@
+// These tests rely on MsgStack::getDump, and so won't work without it
+#if CHECK > 1
+
 #include "gtest/gtest.h"
 #include "msg_stack.hxx"
 
@@ -60,3 +63,4 @@ TEST(MsgStackTest, TraceMacroTest) {
 
   EXPECT_EQ(first_dump, third);
 }
+#endif
