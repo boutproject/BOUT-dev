@@ -8,8 +8,8 @@
 #include <string>
 
 TEST(MsgStackTest, BasicTest) {
-
   MsgStack msg_stack;
+
   msg_stack.push("First");
   auto first = msg_stack.getDump();
   auto first_dump = "====== Back trace ======\n -> First\n";
@@ -18,18 +18,32 @@ TEST(MsgStackTest, BasicTest) {
 }
 
 TEST(MsgStackTest, PopTest) {
-
   MsgStack msg_stack;
+
   msg_stack.push("First");
   msg_stack.pop();
 
-  auto first = msg_stack.getDump();
-  auto first_dump = "====== Back trace ======\n -> First\n";
+  auto dump = msg_stack.getDump();
+  auto expected_dump = "====== Back trace ======\n";
 
-  EXPECT_NE(first_dump, first);
+  EXPECT_EQ(dump, expected_dump);
+}
+
+TEST(MsgStackTest, ClearTest) {
+  MsgStack msg_stack;
+
+  msg_stack.push("First");
+  msg_stack.push("Second");
+  msg_stack.clear();
+
+  auto dump = msg_stack.getDump();
+  auto expected_dump = "====== Back trace ======\n";
+
+  EXPECT_EQ(dump, expected_dump);
 }
 
 TEST(MsgStackTest, CanUseGlobal) {
+  msg_stack.clear();
 
   // msg_stack is global variable defined in msg_stack.hxx
   msg_stack.push("First");
@@ -41,6 +55,7 @@ TEST(MsgStackTest, CanUseGlobal) {
 }
 
 TEST(MsgStackTest, TraceMacroTest) {
+  msg_stack.clear();
 
   msg_stack.push("First");
   auto first = msg_stack.getDump();
