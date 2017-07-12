@@ -9,11 +9,16 @@
 #include "field3d.hxx"
 #include "unused.hxx"
 
+const BoutReal BoutRealTolerance = 1e-15;
+
+/// Does \p str contain \p substring?
 ::testing::AssertionResult IsSubString(const std::string &str,
                                        const std::string &substring);
 
-::testing::AssertionResult IsField3DEqualBoutReal(const Field3D &field,
-                                                  const BoutReal number);
+/// Is \p field equal to \p number, with a tolerance of \p tolerance?
+::testing::AssertionResult
+IsField3DEqualBoutReal(const Field3D &field, const BoutReal number,
+                       const BoutReal tolerance = BoutRealTolerance);
 
 /// FakeMesh has just enough information to create fields
 class FakeMesh : public Mesh {

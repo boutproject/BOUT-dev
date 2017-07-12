@@ -1,6 +1,8 @@
 #include "gtest/gtest.h"
 #include "test_extras.hxx"
 
+#include <cmath>
+
 ::testing::AssertionResult IsSubString(const std::string &str,
                                        const std::string &substring) {
   if (str.find(substring) != std::string::npos) {
@@ -11,12 +13,13 @@
 }
 
 ::testing::AssertionResult IsField3DEqualBoutReal(const Field3D &field,
-                                                  const BoutReal number) {
-
+                                                  const BoutReal number,
+                                                  const BoutReal tolerance) {
   for (auto &i : field) {
-    if (field[i] != number) {
-      return ::testing::AssertionFailure() << "Field3D(" << i.x << ", " << i.y << ", " << i.z << ") == "
-                                           << field[i] << "; Expected: " << number;
+    if (fabs(field[i] - number) > tolerance) {
+      return ::testing::AssertionFailure() << "Field3D(" << i.x << ", " << i.y << ", "
+                                           << i.z << ") == " << field[i]
+                                           << "; Expected: " << number;
     }
   }
 
