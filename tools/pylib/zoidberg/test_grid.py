@@ -12,9 +12,18 @@ def test_getPoloidalGrid():
     # Try to get points outside the domain
     p, y = grid.getPoloidalGrid(-1)
     assert p == None
+    assert np.allclose(y, 0.0)
 
     p, y = grid.getPoloidalGrid(10)
     assert p == None
+    assert np.allclose(y, 10.)
+
+    # Check values of y at the start and end of the domain
+    p, y = grid.getPoloidalGrid(0)
+    assert  np.allclose(y, 0.5)
+
+    p, y = grid.getPoloidalGrid(9)
+    assert  np.allclose(y, 9.5)
 
 def test_getPoloidalGrid_periodic():
     # Create a periodic grid

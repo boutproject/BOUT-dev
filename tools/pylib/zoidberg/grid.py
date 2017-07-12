@@ -252,7 +252,7 @@ def rectangular_grid(nx, ny, nz,
         ycoords = np.linspace(0.0, Ly, ny, endpoint=False)
     else:
         # Doesn't include the end points
-        ycoords = (np.arange(ny) + 0.5)*Ly/float(ny+1)
+        ycoords = (np.arange(ny) + 0.5)*Ly/float(ny)
     
     return Grid( poloidal_grid, 
                  ycoords, 
