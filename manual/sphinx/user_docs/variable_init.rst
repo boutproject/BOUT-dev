@@ -57,6 +57,8 @@ In a BOUT++ simulation some variables are typically evolved in time. The
 initialisation of these variables is handled by the time integration
 solver.
 
+.. _sec-init-time-evolved-vars
+
 Initialisation of time evolved variables
 ----------------------------------------
 

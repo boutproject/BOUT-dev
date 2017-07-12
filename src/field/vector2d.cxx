@@ -133,12 +133,12 @@ Vector2D & Vector2D::operator=(const Vector2D &rhs) {
   return *this;
 }
 
-BoutReal Vector2D::operator=(const BoutReal val) {
+Vector2D & Vector2D::operator=(const BoutReal val) {
   x = val;
   y = val;
   z = val;
 
-  return val;
+  return *this;
 }
 
 ////////////////// ADDITION //////////////////////
@@ -399,7 +399,7 @@ void Vector2D::accept(FieldVisitor &v) {
 }
 
 int Vector2D::getData(int jx, int jy, int jz, void *vptr) const {
-#ifdef CHECK
+#if CHECK > 0
   // check ranges
   if((jx < 0) || (jx >= mesh->LocalNx) || (jy < 0) || (jy >= mesh->LocalNy) || (jz < 0) || (jz >= mesh->LocalNz)) {
     output.write("Vector2D: getData (%d,%d,%d) out of bounds\n", jx, jy, jz);
@@ -415,7 +415,7 @@ int Vector2D::getData(int jx, int jy, int jz, void *vptr) const {
 }
 
 int Vector2D::getData(int jx, int jy, int jz, BoutReal *rptr) const {
-#ifdef CHECK
+#if CHECK > 0
   // check ranges
   if((jx < 0) || (jx >= mesh->LocalNx) || (jy < 0) || (jy >= mesh->LocalNy) || (jz < 0) || (jz >= mesh->LocalNz)) {
     output.write("Vector2D: getData (%d,%d,%d) out of bounds\n", jx, jy, jz);
@@ -431,7 +431,7 @@ int Vector2D::getData(int jx, int jy, int jz, BoutReal *rptr) const {
 }
 
 int Vector2D::setData(int jx, int jy, int jz, void *vptr) {
-#ifdef CHECK
+#if CHECK > 0
   // check ranges
   if((jx < 0) || (jx >= mesh->LocalNx) || (jy < 0) || (jy >= mesh->LocalNy) || (jz < 0) || (jz >= mesh->LocalNz)) {
     output.write("Vector2D: setData (%d,%d,%d) out of bounds\n", jx, jy, jz);
@@ -447,7 +447,7 @@ int Vector2D::setData(int jx, int jy, int jz, void *vptr) {
 }
 
 int Vector2D::setData(int jx, int jy, int jz, BoutReal *rptr) {
-#ifdef CHECK
+#if CHECK > 0
   // check ranges
   if((jx < 0) || (jx >= mesh->LocalNx) || (jy < 0) || (jy >= mesh->LocalNy) || (jz < 0) || (jz >= mesh->LocalNz)) {
     output.write("Vector2D: setData (%d,%d,%d) out of bounds\n", jx, jy, jz);

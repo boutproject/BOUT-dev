@@ -62,31 +62,22 @@ static int ida_pre(BoutReal t, N_Vector yy,
 		   BoutReal cj, BoutReal delta, 
 		   void *user_data, N_Vector tmp);
 
-IdaSolver::IdaSolver(Options *opts) : Solver(opts)
-{
+IdaSolver::IdaSolver(Options *opts) : Solver(opts) {
   has_constraints = true; ///< This solver has constraints
 }
 
-IdaSolver::~IdaSolver()
-{
-  if(initialised) {
-    // Free IDA memory
-    
-    
-    
-  }
-}
+IdaSolver::~IdaSolver() { }
 
 /**************************************************************************
  * Initialise
  **************************************************************************/
 
- int IdaSolver::init(bool restarting, int nout, BoutReal tstep) {
+ int IdaSolver::init(int nout, BoutReal tstep) {
 
   TRACE("Initialising IDA solver");
 
   /// Call the generic initialisation first
-  if(Solver::init(restarting, nout, tstep))
+  if (Solver::init(nout, tstep))
     return 1;
   
   // Save nout and tstep for use in run
@@ -204,9 +195,7 @@ IdaSolver::~IdaSolver()
  **************************************************************************/
 
 int IdaSolver::run() {
-#ifdef CHECK
-  int msg_point = msg_stack.push("IDA IdaSolver::run()");
-#endif
+  TRACE("IDA IdaSolver::run()");
   
   if(!initialised)
     throw BoutException("IdaSolver not initialised\n");
@@ -231,20 +220,14 @@ int IdaSolver::run() {
     }
   }
 
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
-
   return 0;
 }
 
 BoutReal IdaSolver::run(BoutReal tout) {
+  TRACE("Running solver: solver::run(%e)", tout);
+
   if(!initialised)
     throw BoutException("ERROR: Running IDA solver without initialisation\n");
-
-#ifdef CHECK
-  int msg_point = msg_stack.push("Running solver: solver::run(%e)", tout);
-#endif
   
   rhs_ncalls = 0;
 
@@ -263,10 +246,6 @@ BoutReal IdaSolver::run(BoutReal tout) {
     output.write("ERROR IDA solve failed at t = %e, flag = %d\n", simtime, flag);
     return -1.0;
   }
-  
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 
   return simtime;
 }
@@ -277,9 +256,7 @@ BoutReal IdaSolver::run(BoutReal tout) {
 
 void IdaSolver::res(BoutReal t, BoutReal *udata, BoutReal *dudata, BoutReal *rdata)
 {
-#ifdef CHECK
-  int msg_point = msg_stack.push("Running RHS: IdaSolver::res(%e)", t);
-#endif
+  TRACE("Running RHS: IdaSolver::res(%e)", t);
   
   // Load state from udata
   load_vars(udata);
@@ -297,10 +274,6 @@ void IdaSolver::res(BoutReal t, BoutReal *udata, BoutReal *dudata, BoutReal *rda
     if(idd[i] > 0.5) // 1 -> differential, 0 -> algebraic
       rdata[i] -= dudata[i];
   }
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 }
 
 /**************************************************************************
@@ -308,9 +281,7 @@ void IdaSolver::res(BoutReal t, BoutReal *udata, BoutReal *dudata, BoutReal *rda
  **************************************************************************/
 
 void IdaSolver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal *udata, BoutReal *rvec, BoutReal *zvec) {
-#ifdef CHECK
-  int msg_point = msg_stack.push("Running preconditioner: IdaSolver::pre(%e)", t);
-#endif
+  TRACE("Running preconditioner: IdaSolver::pre(%e)", t);
 
   BoutReal tstart = MPI_Wtime();
 
@@ -336,10 +307,6 @@ void IdaSolver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal *udata, Bo
 
   pre_Wtime += MPI_Wtime() - tstart;
   pre_ncalls++;
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 }
 
 /**************************************************************************

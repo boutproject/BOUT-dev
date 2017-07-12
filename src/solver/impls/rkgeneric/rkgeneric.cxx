@@ -37,16 +37,16 @@ void RKGenericSolver::setMaxTimestep(BoutReal dt) {
     timestep = dt; // Won't be used this time, but next
 }
 
-int RKGenericSolver::init(bool restarting, int nout, BoutReal tstep) {
+int RKGenericSolver::init(int nout, BoutReal tstep) {
 
-  int msg_point = msg_stack.push("Initialising RKGeneric solver");
+  TRACE("Initialising RKGeneric solver");
   
   /// Call the generic initialisation first
-  if(Solver::init(restarting, nout, tstep))
+  if (Solver::init(nout, tstep))
     return 1;
 
   //Read options
-  if(options == NULL)
+  if(options == nullptr)
     options = Options::getRoot()->getSection("solver");
 
   output << "\n\tRunge-Kutta generic solver with scheme type "<<scheme->getType()<<"\n";
@@ -87,13 +87,11 @@ int RKGenericSolver::init(bool restarting, int nout, BoutReal tstep) {
   //Initialise scheme
   scheme->init(nlocal,neq,adaptive,atol,rtol,options);
 
-  msg_stack.pop(msg_point);
-
   return 0;
 }
 
 int RKGenericSolver::run() {
-  int msg_point = msg_stack.push("RKGenericSolver::run()");
+  TRACE("RKGenericSolver::run()");
   
   for(int s=0;s<nsteps;s++) {
     BoutReal target = simtime + out_timestep;
@@ -169,8 +167,6 @@ int RKGenericSolver::run() {
     // Reset iteration and wall-time count
     rhs_ncalls = 0;
   }
-  
-  msg_stack.pop(msg_point);
   
   return 0;
 }

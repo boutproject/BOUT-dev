@@ -64,7 +64,9 @@ PetscSolver::~PetscSolver() {
  * Initialise
  **************************************************************************/
 
-int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
+int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
+  TRACE("Initialising PETSc-3.1 solver");
+
   PetscErrorCode  ierr;
   int             neq;
   int             mudq, mldq, mukeep, mlkeep;
@@ -77,12 +79,8 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
   nout = NOUT;
   tstep = TIMESTEP;
 
-#ifdef CHECK
-  int msg_point = msg_stack.push("Initialising PETSc-3.1 solver");
-#endif
-
   /// Call the generic initialisation first
-  Solver::init(restarting, NOUT, TIMESTEP);
+  Solver::init(NOUT, TIMESTEP);
 
   output.write("Initialising PETSc-3.1 solver\n");
 
@@ -428,10 +426,6 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
 
   ierr = TSSetFromOptions(ts);CHKERRQ(ierr);   // enable PETSc runtime options
 
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
-
   return(0);
 }
 
@@ -458,13 +452,12 @@ PetscErrorCode PetscSolver::run()
 
 PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata)
 {
+  TRACE("Running RHS: Petsc31Solver::rhs(%e)", t);
+
   int flag;
   BoutReal *udata_array, *dudata_array;
 
   PetscFunctionBegin;
-#ifdef CHECK
-  int msg_point = msg_stack.push("Running RHS: Petsc31Solver::rhs(%e)", t);
-#endif
 
   // Load state from PETSc
   VecGetArray(udata, &udata_array);
@@ -503,10 +496,6 @@ PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata)
     outputnext = false;
     next_time = simtime + tstep; // Set the next output time
   }
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 
   PetscFunctionReturn(0);
 }

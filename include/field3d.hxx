@@ -210,6 +210,19 @@ class Field3D : public Field, public FieldData {
   Field3D* timeDeriv();
 
   /*!
+   * Return the number of nx points
+   */
+  int getNx() const override {return nx;};
+  /*!
+   * Return the number of ny points
+   */
+  int getNy() const override {return ny;};
+  /*!
+   * Return the number of nz points
+   */
+  int getNz() const override {return nz;};
+
+  /*!
    * Ensure that this field has separate fields
    * for yup and ydown.
    */
@@ -396,15 +409,17 @@ class Field3D : public Field, public FieldData {
   /////////////////////////////////////////////////////////
   // Operators
   
-  const Field3D operator+() {return *this;}
+  const Field3D operator+() const {return *this;}
   
   /// Assignment operators
   ///@{
   Field3D & operator=(const Field3D &rhs);
   Field3D & operator=(const Field2D &rhs);
-  Field3D & operator=(const FieldPerp &rhs);
-  const bvalue & operator=(const bvalue &val);
-  BoutReal operator=(BoutReal val);
+  /// return void, as only part initialised
+  void      operator=(const FieldPerp &rhs);
+  /// return void, as only part initialised
+  void      operator=(const bvalue &val);
+  Field3D & operator=(BoutReal val);
   ///@}
 
   /// Addition operators
@@ -459,7 +474,7 @@ class Field3D : public Field, public FieldData {
   /// Visitor pattern support
   void accept(FieldVisitor &v) override { v.accept(*this); }
   
-#ifdef CHECK
+#if CHECK > 0
   void doneComms() { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
 #else
   void doneComms() {}
@@ -487,7 +502,6 @@ private:
   /// Boundary - add a 2D field
   const Field2D *background;
 
-  Mesh *fieldmesh; ///< The mesh over which the field is defined
   int nx, ny, nz;  ///< Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
   
   /// Internal data array. Handles allocation/freeing of memory
@@ -670,7 +684,7 @@ const Field3D tanh(const Field3D &f);
 bool finite(const Field3D &var);
 
 
-#ifdef CHECK
+#if CHECK > 0
 void checkData(const Field3D &f); ///< Checks if the data is valid.
 void checkData(BoutReal f); ///< Checks if the data is valid.
 #else

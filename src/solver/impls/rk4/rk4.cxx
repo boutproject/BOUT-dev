@@ -37,12 +37,12 @@ void RK4Solver::setMaxTimestep(BoutReal dt) {
     timestep = dt; // Won't be used this time, but next
 }
 
-int RK4Solver::init(bool restarting, int nout, BoutReal tstep) {
+int RK4Solver::init(int nout, BoutReal tstep) {
 
-  int msg_point = msg_stack.push("Initialising RK4 solver");
+  TRACE("Initialising RK4 solver");
   
   /// Call the generic initialisation first
-  if(Solver::init(restarting, nout, tstep))
+  if (Solver::init(nout, tstep))
     return 1;
   
   output << "\n\tRunge-Kutta 4th-order solver\n";
@@ -87,13 +87,11 @@ int RK4Solver::init(bool restarting, int nout, BoutReal tstep) {
   OPTION(options, mxstep, 500); // Maximum number of steps between outputs
   OPTION(options, adaptive, false);
 
-  msg_stack.pop(msg_point);
-
   return 0;
 }
 
 int RK4Solver::run() {
-  int msg_point = msg_stack.push("RK4Solver::run()");
+  TRACE("RK4Solver::run()");
   
   for(int s=0;s<nsteps;s++) {
     BoutReal target = simtime + out_timestep;
@@ -177,8 +175,6 @@ int RK4Solver::run() {
     // Reset iteration and wall-time count
     rhs_ncalls = 0;
   }
-  
-  msg_stack.pop(msg_point);
   
   return 0;
 }

@@ -31,37 +31,42 @@ Coordinates::Coordinates(Mesh *mesh) {
   
   g_11 = 1.0; g_22 = 1.0; g_33 = 1.0;
   g_12 = 0.0; g_13 = 0.0; g_23 = 0.0;
-  
-  if(mesh->get(dx, "dx")) {
+
+  if (mesh->get(dx, "dx")) {
     output.write("\tWARNING: differencing quantity 'dx' not found. Set to 1.0\n");
     dx = 1.0;
   }
 
-  if(mesh->periodicX)
+  if (mesh->periodicX) {
     mesh->communicate(dx);
+  }
 
-  if(mesh->get(dy, "dy")) {
+  if (mesh->get(dy, "dy")) {
     output.write("\tWARNING: differencing quantity 'dy' not found. Set to 1.0\n");
     dy = 1.0;
   }
-  
-  int zperiod;
-  BoutReal ZMIN, ZMAX;
-  Options* options = Options::getRoot();
-  if(options->isSet("zperiod")) {
-    OPTION(options, zperiod, 1);
-    ZMIN = 0.0;
-    ZMAX = 1.0 / (double) zperiod;
-  }else {
-    OPTION(options, ZMIN, 0.0);
-    OPTION(options, ZMAX, 1.0);
-    
-    zperiod = ROUND(1.0 / (ZMAX - ZMIN));
-  }
 
   nz = mesh->LocalNz;
-  dz = (ZMAX-ZMIN)*TWOPI/nz;
-  
+
+  if (mesh->get(dz, "dz")) {
+    // Couldn't read dz from input
+    int zperiod;
+    BoutReal ZMIN, ZMAX;
+    Options *options = Options::getRoot();
+    if (options->isSet("zperiod")) {
+      OPTION(options, zperiod, 1);
+      ZMIN = 0.0;
+      ZMAX = 1.0 / (double)zperiod;
+    } else {
+      OPTION(options, ZMIN, 0.0);
+      OPTION(options, ZMAX, 1.0);
+
+      zperiod = ROUND(1.0 / (ZMAX - ZMIN));
+    }
+
+    dz = (ZMAX - ZMIN) * TWOPI / nz;
+  }
+
   // Diagonal components of metric tensor g^{ij} (default to 1)
   mesh->get(g11, "g11", 1.0);
   mesh->get(g22, "g22", 1.0);
@@ -640,18 +645,17 @@ const Field3D Coordinates::Div_par(const Field3D &f, CELL_LOC outloc, DIFF_METHO
 // Note: For parallel Laplacian use Laplace_par
 
 const Field2D Coordinates::Grad2_par2(const Field2D &f) {
-  msg_stack.push("Coordinates::Grad2_par2( Field2D )");
+  TRACE("Coordinates::Grad2_par2( Field2D )");
 
   Field2D sg = sqrt(g_22);
   Field2D result = DDY(1./sg)*DDY(f)/sg + D2DY2(f)/g_22;
   //Field2D result = D2DY2(f)/mesh->g_22;
 
-  msg_stack.pop();
   return result;
 }
 
 const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc) {
-  msg_stack.push("Coordinates::Grad2_par2( Field3D )");
+  TRACE("Coordinates::Grad2_par2( Field3D )");
 
   Field2D sg;
   Field3D result, r2;
@@ -669,7 +673,6 @@ const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc) {
   
   result = sg*result + r2;
   
-  msg_stack.pop();
   return result;
 }
 
@@ -679,11 +682,9 @@ const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc) {
 #include <invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
 
 const Field2D Coordinates::Delp2(const Field2D &f) {
-  msg_stack.push("Coordinates::Delp2( Field2D )");
+  TRACE("Coordinates::Delp2( Field2D )");
  
   Field2D result =  G1*DDX(f) + g11*D2DX2(f);
-
-  msg_stack.pop();
 
   return result;
 }

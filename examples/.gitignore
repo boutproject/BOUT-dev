@@ -1,9 +1,8 @@
 *.dmp.*
 *.log.*
 *.restart.*
-
 *.pdf
-
+BOUT.settings
 gas_compress
 2fluid
 mhd

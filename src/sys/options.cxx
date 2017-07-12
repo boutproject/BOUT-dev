@@ -31,7 +31,7 @@ void Options::cleanup() {
 }
 
 void Options::set(const string &key, const int &val, const string &source) {
-  stringstream ss;
+  std::stringstream ss;
   ss << val;
   set(key, ss.str(), source);
 }
@@ -44,7 +44,7 @@ void Options::set(const string &key, BoutReal val, const string &source) {
 }
 
 void Options::set(const string &key, const bool &val, const string &source) {
-  stringstream ss;
+  std::stringstream ss;
   ss << val;
   set(key, ss.str(), source);
 }
@@ -59,12 +59,12 @@ void Options::set(const string &key, const string &val, const string &source) {
 }
 
 bool Options::isSet(const string &key) {
-  map<string, OptionValue>::iterator it(options.find(lowercase(key)));
+  std::map<string, OptionValue>::iterator it(options.find(lowercase(key)));
   return it != options.end();
 }
 
 void Options::get(const string &key, int &val, const int &def, bool log) {
-  map<string, OptionValue>::iterator it(options.find(lowercase(key)));
+  std::map<string, OptionValue>::iterator it(options.find(lowercase(key)));
   if(it == options.end()) {
     val = def;
     if(log) {
@@ -104,7 +104,7 @@ void Options::get(const string &key, int &val, const int &def, bool log) {
 }
 
 void Options::get(const string &key, BoutReal &val, BoutReal def, bool log) {
-  map<string, OptionValue>::iterator it(options.find(lowercase(key)));
+  std::map<string, OptionValue>::iterator it(options.find(lowercase(key)));
   if(it == options.end()) {
     val = def;
     if(log)
@@ -136,7 +136,7 @@ void Options::get(const string &key, BoutReal &val, BoutReal def, bool log) {
 }
 
 void Options::get(const string &key, bool &val, const bool &def, bool log) {
-  map<string, OptionValue>::iterator it(options.find(lowercase(key)));
+  std::map<string, OptionValue>::iterator it(options.find(lowercase(key)));
   if(it == options.end()) {
     val = def;
     if(log) {
@@ -171,7 +171,7 @@ void Options::get(const string &key, bool &val, const bool &def, bool log) {
 }
 
 void Options::get(const string &key, string &val, const string &def, bool log) {
-  map<string, OptionValue>::iterator it(options.find(lowercase(key)));
+  std::map<string, OptionValue>::iterator it(options.find(lowercase(key)));
   if(it == options.end()) {
     val = def;
     if(log)
@@ -196,7 +196,7 @@ Options* Options::getSection(const string &name) {
   if(name.empty()) {
     return this;
   }
-  map<string, Options*>::iterator it(sections.find(lowercase(name)));
+  std::map<string, Options*>::iterator it(sections.find(lowercase(name)));
   if(it != sections.end())
     return it->second;
   
@@ -210,13 +210,8 @@ Options* Options::getSection(const string &name) {
 }
 
 string Options::str() {
-  if(parent == NULL) {
-    return sectionName;
-  }
-  string name = parent->str();
-  if(name.length() > 0)
-    name += string(":");
-  return  name + sectionName;
+  // Note: name of parent already prepended in getSection
+  return sectionName;
 }
 
 void Options::printUnused() {

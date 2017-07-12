@@ -10,13 +10,18 @@
 
 from __future__ import print_function
 
-# List of directories containing test cases
-tests = ['test-io', 'test-field', 'test-fieldfactory', 'test-laplace', 
-         "test-cyclic", "test-invpar", "test-smooth", "test-gyro",
-         "test-delp2", "test-griddata", "test-initial",
-         "MMS/diffusion","MMS/wave-1d","MMS/wave-1d-y",
-         "drift-instability", 'interchange-instability',
-         "test-minmax","test-code-style"]
+
+# Get list of directories containing test cases
+tests=[]
+with open('test_suite_list') as testfile:
+    for test in testfile:
+        test=test.strip()
+        if test.startswith("#"):
+            pass
+        elif test.startswith("!"):
+            tests.append(test[1:])
+        else:
+            tests.append(test)
 
 ##################################################################
 

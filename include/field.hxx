@@ -42,6 +42,9 @@ class Field;
 
 #include "unused.hxx"
 
+class Mesh;
+extern Mesh * mesh;
+
 #ifdef TRACK
 #include <string>
 #endif
@@ -54,6 +57,7 @@ class Field;
 class Field {
  public:
   Field();
+  Field(Mesh * msh);
   virtual ~Field() { }
 
   //virtual void setStencil(bstencil *val, bindex *bx) const = 0;
@@ -94,15 +98,17 @@ class Field {
   virtual void setZArray(int UNUSED(x), int UNUSED(y), const rvec &UNUSED(zv)) {
     error("Field: Base class does not implement setZarray");
   }
-    
+
 #ifdef TRACK
   std::string getName() const { return name; }
   void setName(std::string s) { name = s; }
-
-  std::string name;
+#else
+  std::string getName() const { return ""; }
+  void setName(std::string s) { ;}
 #endif
+  std::string name;
 
-#ifdef CHECK
+#if CHECK > 0
   // Routines to test guard/boundary cells set
   
   virtual bool bndryValid() {
@@ -120,7 +126,27 @@ class Field {
   // Status of the 4 boundaries
   bool bndry_xin, bndry_xout, bndry_yup, bndry_ydown;
 #endif
+  virtual Mesh * getMesh() const{
+    if (fieldmesh){
+      return fieldmesh;
+    } else {
+      return mesh;
+    }
+  }
+  /*!
+   * Return the number of nx points
+   */
+  virtual int getNx() const;
+  /*!
+   * Return the number of ny points
+   */
+  virtual int getNy() const;
+  /*!
+   * Return the number of nz points
+   */
+  virtual int getNz() const;
  protected:
+  Mesh * fieldmesh;
   /// Supplies an error method. Currently just prints and exits, but
   /// should do something more cunning...
   void error(const char *s, ...) const;

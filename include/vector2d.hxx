@@ -82,7 +82,7 @@ class Vector2D : public FieldData {
    *
    * The only real use for this is setting vector to zero.
    */
-  BoutReal operator=(BoutReal val);
+  Vector2D & operator=(BoutReal val);
 
   // operators
 

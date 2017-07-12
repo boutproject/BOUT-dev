@@ -101,12 +101,12 @@ static PetscErrorCode imexbdf2PCapply(PC pc,Vec x,Vec y) {
  * Initialisation routine. Called once before solve.
  *
  */
-int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
+int IMEXBDF2::init(int nout, BoutReal tstep) {
 
   TRACE("Initialising IMEX-BDF2 solver");
 
   /// Call the generic initialisation first
-  if(Solver::init(restarting, nout, tstep))
+  if (Solver::init(nout, tstep))
     return 1;
 
   output << "\n\tIMEX-BDF2 time-integration solver\n";
@@ -183,8 +183,8 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
 
   rhs = new BoutReal[nlocal];
 
-  OPTION(options, adaptive, false); //Do we try to estimate the error?
-  OPTION(options, nadapt, 1); //How often do we check the error
+  OPTION(options, adaptive, true); //Do we try to estimate the error?
+  OPTION(options, nadapt, 4); //How often do we check the error
   OPTION(options, dtMinFatal, 1.0e-10);
   OPTION(options, dtMax, out_timestep);
   OPTION(options, dtMin, dtMinFatal);
@@ -677,7 +677,9 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
   BoutReal atol, rtol; // Tolerances for SNES solver
   options->get("atol", atol, 1e-16);
   options->get("rtol", rtol, 1e-10);
-  SNESSetTolerances(*snesIn,atol,rtol,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);
+  int max_nonlinear_it; // Maximum nonlinear (SNES) iterations
+  options->get("max_nonlinear_it", max_nonlinear_it, 5);
+  SNESSetTolerances(*snesIn,atol,rtol,PETSC_DEFAULT,max_nonlinear_it,PETSC_DEFAULT);
 
   /////////////////////////////////////////////////////
   // Predictor method
@@ -700,6 +702,14 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
     KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
   }
 
+  int maxl; // Maximum number of linear iterations
+  OPTION(options, maxl, 20);
+  KSPSetTolerances(ksp, 
+                   PETSC_DEFAULT,  // rtol
+                   PETSC_DEFAULT,  // abstol
+                   PETSC_DEFAULT,  // dtol (divergence tolerance)
+                   maxl);  // Maximum number of iterations
+
   // Get PC context from KSP
   PC pc;
   KSPGetPC(ksp,&pc);
@@ -717,18 +727,26 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
   }else if(matrix_free){
     PCSetType(pc, PCNONE);
   }
-
+  
+  /////////////////////////////////////////////////////
+  // diagnostics
+  
+  OPTION(options, diagnose, false); // Print diagnostics
+  OPTION(options, verbose, false); // More outputs at each timestep
+  
   /////////////////////////////////////////////////////
   // Get runtime options
   SNESSetFromOptions(*snesIn);
 
-  // //Some reporting
-  // PCType pctype; PCGetType(pc, &pctype);
-  // KSPType ksptype; KSPGetType(ksp, &ksptype);
-  // SNESType snestype; SNESGetType(*snesIn, &snestype);
-  // output<<"SNES Type : "<<snestype<<endl;
-  // output<<"KSP Type : "<<ksptype<<endl;
-  // output<<"PC Type : "<<pctype<<endl;
+  if(diagnose) {
+    //Some reporting
+    PCType pctype; PCGetType(pc, &pctype);
+    KSPType ksptype; KSPGetType(ksp, &ksptype);
+    SNESType snestype; SNESGetType(*snesIn, &snestype);
+    output<<"SNES Type : "<<snestype<<endl;
+    output<<"KSP Type : "<<ksptype<<endl;
+    output<<"PC Type : "<<pctype<<endl;
+  }
 
 };
 
@@ -750,9 +768,10 @@ int IMEXBDF2::run() {
   for(int s=0;s<nsteps;s++) {
     BoutReal cumulativeTime = 0.;
     int counter = 0; //How many iterations in this output step
-
-    //output<<endl;
-
+    
+    // Reset linear and nonlinear fail counts
+    linear_fails = 0;
+    nonlinear_fails = 0;
     while(cumulativeTime<out_timestep){
       //Move state history along one stage (i.e. u_2-->u_3,u_1-->u_2, u-->u_1 etc.)
       //Note: This sets the current timestep to be the same as the last timestep.
@@ -772,6 +791,7 @@ int IMEXBDF2::run() {
       bool running = true;
       bool checkingErr = adaptive && (internalCounter%nadapt) ==0 && order>1;
       int adaptCounter=0;
+      int failCounter = 0; // Number of failed steps
       while(running){
 	running = false;
 
@@ -788,18 +808,18 @@ int IMEXBDF2::run() {
 	//Check if we will go past the target time (i.e. past the output step).
 	//If so we want to limit the timestep.
 	//There's potential for this to confuse the adaptive calculation so
-	//we'll set a flag to alert us to this forced change. Not currently used
-	//but we may want to use this to override the dtNext at the end of the 
-	//step to be what we originally wanted to use (i.e. what dtNext is prior
-	//to following if block).
+	//we'll set a flag to alert us to this forced change. 
 	bool artificalLimit = false;
+        BoutReal dtNoLimit = dtNext; // What dt would have been without artificial limit
 	if(cumulativeTime+dtNext > out_timestep){
 	  artificalLimit = true;
 	  dtNext = out_timestep - cumulativeTime;
 	}
 
-	// output << "Attempting internal step "<<counter<<" (attempt "<<adaptCounter<<")"<<endl;
-	// output << "Using dt = "<<dtNext<<endl;
+        if(verbose) {
+          output << endl << "At t=" << cumulativeTime << " attempting internal step "<<counter<<" (attempt "<<adaptCounter<<")"<<endl;
+          output << "Using dt = "<<dtNext<<endl;
+        }
 
 	//Set the current timestep to try -- Has to be before calculateCoeffs call
 	timesteps[0] = dtNext;
@@ -813,7 +833,22 @@ int IMEXBDF2::run() {
 	  snesUse = snesAlt;
 
 	  //Solve
-	  take_step(simtime, timesteps[0], order-1);
+          try {
+            take_step(simtime, timesteps[0], order-1);
+          }catch (const BoutException &e) {
+            // An error occurred. If adaptive, reduce timestep
+            if(!adaptive)
+              throw e;
+          
+            failCounter++;
+            if(failCounter > 10) {
+              throw BoutException("Too many failed steps\n");
+            }
+            
+            running = true; // Retry
+            dtNext = timesteps[0]*0.5;
+            continue;
+          }
 	  
 	  //Store this solution in err
 	  for(int i=0;i<nlocal;i++){
@@ -832,7 +867,22 @@ int IMEXBDF2::run() {
 	}
 
 	//Now we complete the timestep by constructing rhs and solving the implicit part
-	take_step(simtime, timesteps[0], order);
+        try {
+          take_step(simtime, timesteps[0], order);
+        }catch (const BoutException &e) {
+          // An error occurred. If adaptive, reduce timestep
+          if(!adaptive)
+            throw e;
+          
+          failCounter++;
+          if(failCounter > 10) {
+            throw BoutException("Too many failed steps\n");
+          }
+
+          running = true; // Retry
+          dtNext = timesteps[0]*0.5;
+          continue;
+        }
 
 	//Now we can calculate the error and decide what we want to do
 	if(checkingErr){
@@ -851,8 +901,10 @@ int IMEXBDF2::run() {
 	  MPI_Allreduce(&errTot,&errGlobTot,3,MPI_DOUBLE,MPI_SUM,BoutComm::get());
 
 	  BoutReal aRtol = errGlobTot[0]/errGlobTot[1];
-	  //output<<"The average errors are aerr = "<<errGlobTot[0]<<" and rerr = "<<aRtol<<endl;
-	  //output<<"The err mag is "<<errGlobTot[2]<<" and the sol mag is "<<errGlobTot[1]<<endl;
+          if(verbose) {
+            output<<"The average errors are aerr = "<<errGlobTot[0]<<" and rerr = "<<aRtol<<endl;
+            output<<"The err mag is "<<errGlobTot[2]<<" and the sol mag is "<<errGlobTot[1]<<endl;
+          }
 
 	  /*
 	   * The following is how we argue the timestep should be scaled (s) 
@@ -878,25 +930,30 @@ int IMEXBDF2::run() {
 	  if(s<scaleCushDown){
 	    running = true;
 	    dtNext = timesteps[0]*s; 
-	  }else if(s>=scaleCushUp && adaptCounter==0){ 
-	    //Here we decide to increase the timestep
-	    //but note we only allow this if this is the first attempt at this step.
-	    //This is designed to prevent oscillation in timestep.
+	  }else if( (s>=scaleCushUp) && (adaptCounter==0) && (failCounter == 0) ){ 
+	    // Here we decide to increase the timestep
+	    // but note we only allow this if this is the first attempt at this step.
+            // and if there have been no failed steps
+	    // This is designed to prevent oscillation in timestep.
+            
+            s = BOUTMIN(s, 1.25); // Limit increase 
 	    dtNext = timesteps[0]*s;
 	  }else{ //No change to the timestep
 	    dtNext = timesteps[0];
 	  }
 
-	  //output << "Error ratio is "<<delta<<" so scaling factor is "<<s<<" and dtNext is "<<dtNext<<endl;
-
+          if(verbose) {
+            output << "Error ratio is "<<delta<<" so scaling factor is "<<s<<" and dtNext is "<<dtNext<<endl;
+          }
 	
 	  adaptCounter++;
 	  if(adaptCounter>mxstepAdapt){
 	    throw BoutException("Aborting: Maximum number of adapative iterations (%i) exceeded", mxstepAdapt);
 	  }
-	}else {
-          // Reset dtNext in case it was artificially limited
-          dtNext = dt;
+	}else if(artificalLimit) {
+          // Reset dtNext if it was artificially limited
+          // to the value it would have been without artificial limit
+          dtNext = dtNoLimit;
         }
       }//End of running -- Done a single internal step
 
@@ -921,6 +978,11 @@ int IMEXBDF2::run() {
       if(counter>mxstep){
 	throw BoutException("Aborting: Maximum number of internal iterations (%i) exceeded", mxstep);
       };
+    }
+
+    if(diagnose) {
+      output.write("\n   Last dt = %e, order = %d\n", timesteps[0], lastOrder);
+      output.write("   Linear fails = %d, nonlinear fails = %d\n", linear_fails, nonlinear_fails);
     }
 
     loadVars(u);// Put result into variables
@@ -1022,11 +1084,6 @@ void IMEXBDF2::calculateCoeffs(int order){
     gFac[i] /= uCurrFac;
   }
   dtImp /= uCurrFac;
-  
-  // for(int i=0;i<order;i++){
-  //   output<<i+1<<"/"<<order<<" uF = "<<uFac[i]<<" fF = "<<fFac[i]/timesteps[0]<<endl;
-  // };
-  // output<<"dtImp = "<<dtImp/timesteps[0]<<endl;
 }
 
 /*!
@@ -1145,19 +1202,9 @@ PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
     }
   }
   }
-  //output.write("\nIMEX: Solving, %e, %e, %e, (%e)\n", u[0], u_2[0], u_1[0], xdata[0]);
 
   ierr = VecRestoreArray(snes_x,&xdata);CHKERRQ(ierr);
-
-  /*
-  output << "Computing Jacobian\n";
-  MatStructure  flag;
-  implicit_curtime = curtime;
-  implicit_gamma = gamma;
-  SNESComputeFunction(snes, snes_x, snes_f);
-  SNESComputeJacobian(snes,snes_x,&Jmf,&Jmf,&flag);
-  MatView(Jmf,  PETSC_VIEWER_STDOUT_SELF);
-  */
+  
   SNESSolve(snesUse,NULL,snes_x);
 
   // Find out if converged
@@ -1170,21 +1217,31 @@ PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
     KSPConvergedReason kreason;
     KSPGetConvergedReason(ksp,&kreason);
     if(kreason<0){
-      output<<"KSP Failed to converge with reason "<<kreason<<endl;
+      if(verbose) {
+        output<<"KSP Failed to converge with reason "<<kreason<<endl;
+      }
+      linear_fails++;
     }else{
-      output<<"KSP Succeeded with reason "<<kreason<<endl;
+      nonlinear_fails++;
+      if(verbose) {
+        output << "KSP Succeeded with reason "<<kreason<<endl;
+      }
     };
+    if(verbose) {
+      output << "SNES failed to converge with reason " << reason << endl;
+    }
     throw BoutException("SNES failed to converge. Reason: %d\n", reason);
   }
 
   int its;
   SNESGetIterationNumber(snesUse,&its);
 
-  //output << "Number of SNES iterations: " << its << endl;
-
+  if(verbose) {
+    output << "Number of SNES iterations: " << its << endl;
+  }
+    
   // Put the result into u
   ierr = VecGetArray(snes_x,&xdata);CHKERRQ(ierr);
-  //output.write("\nIMEX: Done -> %e\n", xdata[0]);
 
   for(int i=0;i<nlocal;i++)
     u[i] = xdata[i];

@@ -17,6 +17,7 @@ Ballooning = false
 
 [mesh]
 symmetricGlobalX = false
+symmetricGlobalY = false
 
 [output]
 floats = true

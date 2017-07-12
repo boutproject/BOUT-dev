@@ -26,11 +26,11 @@ void EulerSolver::setMaxTimestep(BoutReal dt) {
   timestep_reduced = true;
 }
 
-int EulerSolver::init(bool restarting, int nout, BoutReal tstep) {
-  int msg_point = msg_stack.push("Initialising Euler solver");
+int EulerSolver::init(int nout, BoutReal tstep) {
+  TRACE("Initialising Euler solver");
   
   /// Call the generic initialisation first
-  if(Solver::init(restarting, nout, tstep))
+  if (Solver::init(nout, tstep))
     return 1;
   
   output << "\n\tEuler solver\n";
@@ -62,13 +62,11 @@ int EulerSolver::init(bool restarting, int nout, BoutReal tstep) {
   // Put starting values into f0
   save_vars(f0);
   
-  msg_stack.pop(msg_point);
-
   return 0;
 }
 
 int EulerSolver::run() {
-  int msg_point = msg_stack.push("EulerSolver::run()");
+  TRACE("EulerSolver::run()");
   
   for(int s=0;s<nsteps;s++) {
     BoutReal target = simtime + out_timestep;
@@ -139,8 +137,6 @@ int EulerSolver::run() {
     // Reset iteration and wall-time count
     rhs_ncalls = 0;
   }
-  
-  msg_stack.pop(msg_point);
   
   return 0;
 }
