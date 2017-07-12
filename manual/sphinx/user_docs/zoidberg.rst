@@ -5,15 +5,148 @@ Zoidberg grid generator
 
 The Zoidberg grid generator creates inputs for the Flux Coordinate Independent (FCI)
 parallel transform (section :ref:`sec-parallel-transforms`). The domain is
-divided into a set of 2D grids, and the magnetic field is followed from each
-grid to where it either intersects the forward and backward grid, or hits a boundary.
+divided into a set of 2D grids in the X-Z coordinates, and the magnetic field is followed 
+along the Y coordinate from each 2D grid to where it either intersects the forward
+and backward grid, or hits a boundary.
 
-Creating a grid consists of the following steps:
+The simplest code which creates an output file is:
+
+.. code:: python
+
+   import zoidberg
+
+   # Define the magnetic field
+   field = zoidberg.field.Slab()
+   # Define the grid points
+   grid = zoidberg.grid.rectangular_grid(10,10,10)
+   # Follow magnetic fields from each point
+   maps = zoidberg.make_maps(grid, field)
+   # Write everything to file
+   zoidberg.write_maps(grid, field, maps, gridfile="grid.fci.nc")
+
+As in the above code, creating an output file consists of the following steps:
 
 1. Define a magnetic field
-2. Create the 2D "poloidal" grids
-3. Create maps from each grid to its neighbours
-4. Save grids to file
+2. Define the grid points. This can be broken down into:
+   
+   a) Define 2D "poloidal" grids
+   b) Form a 3D grid by putting 2D grids together along the Y direction
+
+3. Create maps from each 2D grid to its neighbours
+4. Save grids, fields and maps to file
+
+Each of these stages can be customised to handle more complicated
+magnetic fields, more complicated grids, and particular output formats. 
+Details of the functionality available are described in sections below; 
+here we will describe the key concepts.
+
+An important input is the size of the domain in Y, and
+whether the domain is periodic. By default ``rectangular_grid`` makes
+a non-periodic rectangular box which is of length 10 in the Y direction.
+This means that there are boundaries at :math:`y=0` and at :math:`y=10`.
+``rectangular_grid`` puts the y slices at equally spaced intervals, and puts
+the first and last points half an interval away from boundaries in y.
+In this case with 10 points in y (second argument to ``rectangular_grid(nx,ny,nz)``)
+the y locations are :math:`\left(0.5, 1.5, 2.5, \ldots, 9.5\right)`.
+
+At each of these y locations ``rectangular_grid`` defines a rectangular 2D poloidal grid in
+the X-Z coordinates, by default with a length of 1 in each direction and centred on :math:`x=0,z=0`. 
+These 2D poloidal grids are then put together into a 3D ``Grid``. This process can be customised
+by separating step 2 (the ``rectangular_grid`` call) into stages 2a) and 2b). 
+For example, to create a periodic rectangular grid we could call:
+
+.. code:: python
+   
+   import numpy as np
+
+   # Create a 10x10 grid in X-Z with sides of length 1
+   poloidal_grid = zoidberg.poloidal_grid.RectangularPoloidalGrid(10, 10, 1.0, 1.0)
+   # Define the length of the domain in y
+   ylength = 10.0
+   # Define the y locations
+   ycoords = np.linspace(0.0, ylength, 10, endpoint=False)
+   # Create the 3D grid by putting together 2D poloidal grids
+   grid = zoidberg.grid.Grid(poloidal_grid, ycoords, ylength, yperiodic=True)
+
+In the above code the length of the domain in the y direction needs to be given to ``Grid``
+so that it knows where to put boundaries (if not periodic), or where to wrap the domain
+(if periodic). The array of y locations ycoords can be arbitrary, but note that finite
+difference methods (like FCI) work best if grid point spacing varies smoothly.
+
+In the last example only one poloidal grid was created (a ``RectangularPoloidalGrid``)
+and then re-used for each y slice. We can instead define a different grid for each y
+position. For example, to define a grid which expands along y (for some reason) we could do:
+
+.. code:: python
+
+   ylength = 10.0
+   ycoords = np.linspace(0.0, ylength, 10, endpoint=False)
+   # Create a list of poloidal grids, one for each y location
+   poloidal_grids = [ RectangularPoloidalGrid(10, 10, 1.0 + y/10., 1.0 + y/10.)
+                      for y in ycoords ]
+   # Create the 3D grid by putting together 2D poloidal grids
+   grid = zoidberg.grid.Grid(poloidal_grids, ycoords, ylength, yperiodic=True)
+
+Note: Currently there is an assumption that the number of X and Z points is the
+same on every poloidal grid. The shape of the grid can however be completely
+different. The construction of a 3D ``Grid`` is the same in all cases, so for now
+we will concentrate on producing different poloidal grids.
+
+The FCI technique is not restricted to rectangular grids, and in particular
+Zoidberg can handle structured grids in an annulus with quite complicated shapes.
+The `StructuredPoloidalGrid` class handles more general geometries,
+but still assumes that the grid is structured and logically rectangular.
+Currently it also assumes that the z index is periodic.
+
+One way to create this grid is to define the grid points manually e.g.:
+
+
+.. code:: python
+          
+   import numpy as np
+   import zoidberg
+          
+   r,theta = np.meshgrid(np.linspace(1,2,10),  # minor radius
+                         np.linspace(0,2*np.pi, 10), # angle
+                         indexing='ij')
+   
+   R = r * np.sin(theta)
+   Z = r * np.cos(theta)
+
+   poloidal_grid = zoidberg.poloidal_grid.StructuredPoloidalGrid(R,Z)
+
+For more complicated shapes than circles, Zoidberg comes with an elliptic grid
+generator which needs to be given only the inner and outer 
+boundaries.
+
+.. code:: python
+
+   import zoidberg
+
+   inner = zoidberg.rzline.shaped_line(R0=3.0, a=0.5,
+                            elong=1.0, triang=0.0, indent=1.0,
+                            n=50)
+   
+   outer = zoidberg.rzline.shaped_line(R0=2.8, a=1.5,
+                            elong=1.0, triang=0.0, indent=0.2,
+                            n=50)
+   
+   grid = zoidberg.poloidal_grid.grid_elliptic(inner, outer, 100, 100, show=True)
+
+
+which should produce the figure below:
+
+.. figure:: ../figs/zoidberg/elliptic_grid.png
+   :name: elliptic
+   :alt: 
+   :scale: 50
+   
+   A grid produced by ``grid_elliptic`` from shaped inner and outer lines
+
+
+
+
+
 
 There are several examples in the `examples/zoidberg` directory
    
@@ -32,7 +165,7 @@ The simplest magnetic field is a straight slab geometry:
    import zoidberg
    field = zoidberg.field.Slab()
 
-By default this has a magnetic field :math:`\mathbf{B} = \left(0, 1, 0.1 + x\right)`.    
+By default this has a magnetic field :math:`\mathbf{B} = \left(0, 1, 0.1 + x\right)`.
 
 A variant is a curved slab, which is defined in cylindrical coordinates
 and has a given major radius (default 1):
@@ -132,58 +265,7 @@ but this can be changed with the `Rcentre` and `Zcentre` options.
 Curvilinear structured grids
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The `StructuredPoloidalGrid` class handles more general geometries,
-but still assumes that the grid is logically rectangular.
-Currently it also assumes that the z index is periodic,
-i.e. an annulus.
 
-One way to create this grid is to define the grid points manually e.g.:
-
-
-.. code:: python
-          
-   import numpy as np
-   import zoidberg
-          
-   r,theta = np.meshgrid(np.linspace(1,2,10),  # minor radius
-                         np.linspace(0,2*np.pi, 10), # angle
-                         indexing='ij')
-   
-   R = r * np.sin(theta)
-   Z = r * np.cos(theta)
-
-   grid = zoidberg.poloidal_grid.StructuredPoloidalGrid(R,Z)
-
-   
-For more complicated shapes than circles, it is better to use
-a grid generator rather than try to manually specify the
-grid point locations. Zoidberg comes with an elliptic grid
-generator which needs to be given only the inner and outer 
-boundaries.
-
-.. code:: python
-
-   import zoidberg
-
-   inner = zoidberg.rzline.shaped_line(R0=3.0, a=0.5,
-                            elong=1.0, triang=0.0, indent=1.0,
-                            n=50)
-   
-   outer = zoidberg.rzline.shaped_line(R0=2.8, a=1.5,
-                            elong=1.0, triang=0.0, indent=0.2,
-                            n=50)
-   
-   grid = zoidberg.poloidal_grid.grid_elliptic(inner, outer, 100, 100, show=True)
-
-
-which should produce the figure below:
-
-.. figure:: ../figs/zoidberg/elliptic_grid.png
-   :name: elliptic
-   :alt: 
-   :scale: 50
-   
-   A grid produced by ``grid_elliptic`` from shaped inner and outer lines
    
 Here the ``shaped_line`` function creates RZline shapes with the following formula:
 
