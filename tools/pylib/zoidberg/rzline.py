@@ -183,7 +183,27 @@ class RZline:
         
         return np.remainder(theta0, 2*np.pi)
         
-       
+    def plot(self, axis=None, show=True):
+        """
+        Plot the RZline, either on the given axis or a new figure
+        axis    The matplotlib axis to plot on. 
+                By default a new figure is created
+        
+        show    Calls plt.show() at the end
+        """
+        if axis is None:
+            fig = plt.figure()
+            axis = fig.add_subplot(1,1,1)
+
+        theta = np.linspace(0,2*np.pi, 100, endpoint=True)
+        axis.plot(self.Rvalue(theta), self.Zvalue(theta), 'k-')
+        axis.plot(self.R, self.Z, 'ro')
+        
+        if show:
+            plt.show()
+
+        return axis
+    
 def circle(R0=1.0, r= 0.5, n=20):
     """
     Creates a pair of RZline objects, for inner and outer boundaries
