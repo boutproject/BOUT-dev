@@ -25,3 +25,17 @@
 
   return ::testing::AssertionSuccess();
 }
+
+::testing::AssertionResult IsField2DEqualBoutReal(const Field2D &field,
+                                                  const BoutReal number,
+                                                  const BoutReal tolerance) {
+  for (auto &i : field) {
+    if (fabs(field[i] - number) > tolerance) {
+      return ::testing::AssertionFailure() << "Field2D(" << i.x << ", " << i.y
+                                           << ") == " << field[i]
+                                           << "; Expected: " << number;
+    }
+  }
+
+  return ::testing::AssertionSuccess();
+}

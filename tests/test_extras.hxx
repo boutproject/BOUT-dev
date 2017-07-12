@@ -20,6 +20,11 @@ const BoutReal BoutRealTolerance = 1e-15;
 IsField3DEqualBoutReal(const Field3D &field, const BoutReal number,
                        const BoutReal tolerance = BoutRealTolerance);
 
+/// Is \p field equal to \p number, with a tolerance of \p tolerance?
+::testing::AssertionResult
+IsField2DEqualBoutReal(const Field2D &field, const BoutReal number,
+                       const BoutReal tolerance = BoutRealTolerance);
+
 /// FakeMesh has just enough information to create fields
 class FakeMesh : public Mesh {
 public:
