@@ -1398,15 +1398,17 @@ void shiftZ(Field3D &var, double zangle) {
 
 bool finite(const Field3D &f) {
   TRACE("finite( Field3D )");
-  
-  if(!f.isAllocated()) {
+
+  if (!f.isAllocated()) {
     return false;
   }
-  
-  for(auto d : f)
-    if(!finite(f[d]))
+
+  for (auto &i : f) {
+    if (!finite(f[i])) {
       return false;
-  
+    }
+  }
+
   return true;
 }
 
