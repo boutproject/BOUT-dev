@@ -55,8 +55,12 @@ public:
   bool lastX() { return true; }
   int sendXOut(BoutReal *UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) { return 0; }
   int sendXIn(BoutReal *UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) { return 0; }
-  comm_handle irecvXOut(BoutReal *UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) { return nullptr; }
-  comm_handle irecvXIn(BoutReal *UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) { return nullptr; }
+  comm_handle irecvXOut(BoutReal *UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) {
+    return nullptr;
+  }
+  comm_handle irecvXIn(BoutReal *UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) {
+    return nullptr;
+  }
   MPI_Comm getXcomm(int UNUSED(jy)) const { return MPI_COMM_NULL; }
   MPI_Comm getYcomm(int UNUSED(jx)) const { return MPI_COMM_NULL; }
   bool periodicY(int UNUSED(jx), BoutReal &UNUSED(ts)) const { return true; }
@@ -66,22 +70,42 @@ public:
   bool lastY(int UNUSED(xpos)) const { return true; }
   int UpXSplitIndex() { return 0; }
   int DownXSplitIndex() { return 0; }
-  int sendYOutIndest(BoutReal *UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) { return 0; }
-  int sendYOutOutdest(BoutReal *UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) { return 0; }
-  int sendYInIndest(BoutReal *UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) { return 0; }
-  int sendYInOutdest(BoutReal *UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) { return 0; }
-  comm_handle irecvYOutIndest(BoutReal *UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) { return nullptr; }
-  comm_handle irecvYOutOutdest(BoutReal *UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) { return nullptr; }
-  comm_handle irecvYInIndest(BoutReal *UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) { return nullptr; }
-  comm_handle irecvYInOutdest(BoutReal *UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) { return nullptr; }
+  int sendYOutIndest(BoutReal *UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) {
+    return 0;
+  }
+  int sendYOutOutdest(BoutReal *UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) {
+    return 0;
+  }
+  int sendYInIndest(BoutReal *UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) {
+    return 0;
+  }
+  int sendYInOutdest(BoutReal *UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) {
+    return 0;
+  }
+  comm_handle irecvYOutIndest(BoutReal *UNUSED(buffer), int UNUSED(size),
+                              int UNUSED(tag)) {
+    return nullptr;
+  }
+  comm_handle irecvYOutOutdest(BoutReal *UNUSED(buffer), int UNUSED(size),
+                               int UNUSED(tag)) {
+    return nullptr;
+  }
+  comm_handle irecvYInIndest(BoutReal *UNUSED(buffer), int UNUSED(size),
+                             int UNUSED(tag)) {
+    return nullptr;
+  }
+  comm_handle irecvYInOutdest(BoutReal *UNUSED(buffer), int UNUSED(size),
+                              int UNUSED(tag)) {
+    return nullptr;
+  }
   const RangeIterator iterateBndryLowerY() const { return RangeIterator(); }
   const RangeIterator iterateBndryUpperY() const { return RangeIterator(); }
   const RangeIterator iterateBndryLowerOuterY() const { return RangeIterator(); }
   const RangeIterator iterateBndryLowerInnerY() const { return RangeIterator(); }
   const RangeIterator iterateBndryUpperOuterY() const { return RangeIterator(); }
   const RangeIterator iterateBndryUpperInnerY() const { return RangeIterator(); }
-  vector<BoundaryRegion*> getBoundaries() { return vector<BoundaryRegion*>(); }
-  vector<BoundaryRegionPar*> getBoundariesPar() { return vector<BoundaryRegionPar*>(); }
+  vector<BoundaryRegion *> getBoundaries() { return vector<BoundaryRegion *>(); }
+  vector<BoundaryRegionPar *> getBoundariesPar() { return vector<BoundaryRegionPar *>(); }
   BoutReal GlobalX(int UNUSED(jx)) const { return 0; }
   BoutReal GlobalY(int UNUSED(jy)) const { return 0; }
   BoutReal GlobalX(BoutReal UNUSED(jx)) const { return 0; }
@@ -90,10 +114,12 @@ public:
   int YGLOBAL(int UNUSED(yloc)) const { return 0; }
   const Field3D Switch_YZ(const Field3D &UNUSED(var)) { return Field3D(0.0); }
   const Field3D Switch_XZ(const Field3D &UNUSED(var)) { return Field3D(0.0); }
-  void slice_r_y(const BoutReal *, BoutReal *, int , int) {}
-  void get_ri(dcomplex *UNUSED(ayn), int UNUSED(n), BoutReal *UNUSED(r), BoutReal *UNUSED(i)) {}
-  void set_ri(dcomplex *UNUSED(ayn), int UNUSED(n), BoutReal *UNUSED(r), BoutReal *UNUSED(i)) {}
-  const Field2D lowPass_poloidal(const Field2D &,int) { return Field2D(0.0); }
+  void slice_r_y(const BoutReal *, BoutReal *, int, int) {}
+  void get_ri(dcomplex *UNUSED(ayn), int UNUSED(n), BoutReal *UNUSED(r),
+              BoutReal *UNUSED(i)) {}
+  void set_ri(dcomplex *UNUSED(ayn), int UNUSED(n), BoutReal *UNUSED(r),
+              BoutReal *UNUSED(i)) {}
+  const Field2D lowPass_poloidal(const Field2D &, int) { return Field2D(0.0); }
 };
 
 #endif //  TEST_EXTRAS_H__
