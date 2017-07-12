@@ -627,12 +627,17 @@ BoutReal max(const Field2D &f, bool allpe) {
 
 bool finite(const Field2D &f) {
   TRACE("finite(Field2D)");
-  ASSERT0(f.isAllocated());
 
-  for(auto i : f)
-    if(!::finite(f[i]))
+  if (!f.isAllocated()) {
+    return false;
+  }
+
+  for (auto &i : f) {
+    if (!::finite(f[i])) {
       return false;
-  
+    }
+  }
+
   return true;
 }
 
