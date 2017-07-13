@@ -323,7 +323,7 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
   allocate();
 
   /// Copy data
-  for(auto i : (*this))
+  for(const auto& i : (*this))
     (*this)[i] = rhs[i];
   
   /// Only 3D fields have locations for now
@@ -339,7 +339,7 @@ void Field3D::operator=(const FieldPerp &rhs) {
   allocate();
 
   /// Copy data
-  for(auto i : rhs) {
+  for(const auto& i : rhs) {
     (*this)[i] = rhs[i];
   }
 }
@@ -366,7 +366,7 @@ Field3D & Field3D::operator=(const BoutReal val) {
   if(!finite(val))
     throw BoutException("Field3D: Assignment from non-finite BoutReal\n");
 #endif
-  for(auto i : (*this))
+  for(const auto& i : (*this))
     (*this)[i] = val;
 
   // Only 3D fields have locations
@@ -385,7 +385,7 @@ Field3D & Field3D::operator=(const BoutReal val) {
     checkData(*this);                                        \
     if(data.unique()) {                                      \
       /* This is the only reference to this data */          \
-      for(auto i : (*this))                                  \
+      for(const auto& i : (*this))                                  \
         (*this)[i] op rhs[i];                                \
     }else {                                                  \
       /* Shared data */                                      \
@@ -413,7 +413,7 @@ F3D_UPDATE_FIELD(/=, /, Field2D);    // operator/= Field2D
                                                              \
     if(data.unique()) {                                      \
       /* This is the only reference to this data */          \
-      for(auto i : (*this))                                  \
+      for(const auto& i : (*this))                                  \
         (*this)[i] op rhs;                                   \
     }else {                                                  \
       /* Need to put result in a new block */                \
@@ -1033,7 +1033,7 @@ const Field3D operator-(const Field3D &f) {
     FieldPerp result;                                                     \
     result.allocate();                                                    \
     result.setIndex(rhs.getIndex());                                      \
-    for(auto i : rhs)                                                     \
+    for(const auto& i : rhs)                                                     \
       result[i] = lhs[i] op rhs[i];                                       \
     return result;                                                        \
   }
@@ -1047,7 +1047,7 @@ F3D_OP_FPERP(*);
   const Field3D operator op(const Field3D &lhs, const ftype &rhs) { \
     Field3D result;                                                 \
     result.allocate();                                              \
-    for(auto i : lhs)                                               \
+    for(const auto& i : lhs)                                               \
       result[i] = lhs[i] op rhs[i];                                 \
     result.setLocation( lhs.getLocation() );                        \
     return result;                                                  \
@@ -1067,7 +1067,7 @@ F3D_OP_FIELD(/, Field2D);   // Field3D / Field2D
   const Field3D operator op(const Field3D &lhs, BoutReal rhs) { \
     Field3D result;                                             \
     result.allocate();                                          \
-    for(auto i : lhs)                                           \
+    for(const auto& i : lhs)                                           \
       result[i] = lhs[i] op rhs;                                \
     result.setLocation( lhs.getLocation() );                    \
     return result;                                              \
@@ -1082,7 +1082,7 @@ F3D_OP_REAL(/); // Field3D / BoutReal
   const Field3D operator op(BoutReal lhs, const Field3D &rhs) { \
     Field3D result;                                             \
     result.allocate();                                          \
-    for(auto i : rhs)                                           \
+    for(const auto& i : rhs)                                           \
       result[i] = lhs op rhs[i];                                \
     result.setLocation( rhs.getLocation() );                    \
     return result;                                              \
@@ -1107,7 +1107,7 @@ Field3D pow(const Field3D &lhs, const Field3D &rhs) {
   result.allocate();
 
   // Iterate over indices
-  for(auto i : result) {
+  for(const auto& i : result) {
     result[i] = ::pow(lhs[i], rhs[i]);
     ASSERT2( ::finite( result[i] ) );
   }
@@ -1124,7 +1124,7 @@ Field3D pow(const Field3D &lhs, const Field2D &rhs) {
   result.allocate();
 
   // Iterate over indices
-  for(auto i : result) {
+  for(const auto& i : result) {
     result[i] = ::pow(lhs[i], rhs[i]);
     ASSERT2( ::finite( result[i] ) );
   }
@@ -1141,7 +1141,7 @@ Field3D pow(const Field3D &lhs, const FieldPerp &rhs) {
   result.allocate();
 
   // Iterate over indices
-  for(auto i : result) {
+  for(const auto& i : result) {
     result[i] = ::pow(lhs[i], rhs[i]);
     ASSERT2( ::finite( result[i] ) );
   }
@@ -1153,7 +1153,7 @@ Field3D pow(const Field3D &lhs, const FieldPerp &rhs) {
 Field3D pow(const Field3D &f, BoutReal rhs) {
   Field3D result;
   result.allocate();
-  for(auto i : result)
+  for(const auto& i : result)
     result[i] = ::pow(f[i], rhs);
   
   result.setLocation( f.getLocation() );
@@ -1163,7 +1163,7 @@ Field3D pow(const Field3D &f, BoutReal rhs) {
 Field3D pow(BoutReal lhs, const Field3D &rhs) {
   Field3D result;
   result.allocate();
-  for(auto i : result)
+  for(const auto& i : result)
     result[i] = ::pow(lhs, rhs[i]);
   
   result.setLocation( rhs.getLocation() );
@@ -1180,7 +1180,7 @@ BoutReal min(const Field3D &f, bool allpe) {
 
   BoutReal result = f[f.region(RGN_NOBNDRY).begin()];
   
-  for(auto i: f.region(RGN_NOBNDRY))
+  for(const auto& i: f.region(RGN_NOBNDRY))
     if(f[i] < result)
       result = f[i];
   
@@ -1203,7 +1203,7 @@ BoutReal max(const Field3D &f, bool allpe) {
   
   BoutReal result = f[f.region(RGN_NOBNDRY).begin()];
   
-  for(auto i: f.region(RGN_NOBNDRY))
+  for(const auto& i: f.region(RGN_NOBNDRY))
     if(f[i] > result)
       result = f[i];
   
@@ -1228,7 +1228,7 @@ BoutReal max(const Field3D &f, bool allpe) {
     Field3D result;                                        \
     result.allocate();                                     \
     /* Loop over domain */                                 \
-    for(auto d : result) {                                 \
+    for(const auto& d : result) {                                 \
       result[d] = func(f[d]);                              \
       /* If checking is set to 3 or higher, test result */ \
       ASSERT3(finite(result[d]));                          \
@@ -1403,7 +1403,7 @@ bool finite(const Field3D &f) {
     return false;
   }
 
-  for (auto &i : f) {
+  for (const auto &i : f) {
     if (!finite(f[i])) {
       return false;
     }
@@ -1418,7 +1418,7 @@ void checkData(const Field3D &f)  {
   if(!f.isAllocated())
     throw BoutException("Field3D: Operation on empty data\n");
   
-  for(auto d : f) {
+  for(const auto& d : f) {
     if( (d.x < mesh->xstart) or (d.x > mesh->xend) or (d.y < mesh->ystart) or (d.y > mesh->yend) or (d.z >= mesh->LocalNz))
       continue; // Exclude boundary cells
     
@@ -1437,7 +1437,7 @@ const Field3D copy(const Field3D &f) {
 const Field3D floor(const Field3D &var, BoutReal f) {
   Field3D result = copy(var);
   
-  for(auto d : result)
+  for(const auto& d : result)
     if(result[d] < f)
       result[d] = f;
   
