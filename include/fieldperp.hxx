@@ -52,7 +52,7 @@ class FieldPerp : public Field {
   /*!
    * Constructor
    */
-  FieldPerp();
+  FieldPerp(Mesh * fieldmesh);
 
   /*!
    * Copy constructor. After this the data

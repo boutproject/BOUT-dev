@@ -57,7 +57,7 @@ inline BoutReal sgn(BoutReal val) {
 // Calculate all the coefficients needed for the spline interpolation
 // dir MUST be either +1 or -1
 FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) :
-  dir(dir), boundary_mask(mesh) {
+  dir(dir), boundary_mask(mesh) , y_prime(&mesh) {
 
   interp = InterpolationFactory::getInstance()->create();
   interp->setYOffset(dir);
@@ -72,9 +72,9 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) :
   bool y_boundary;     // has the field line left the domain through the y-sides
   bool z_boundary;     // has the field line left the domain through the z-sides
 
-  Field3D xt_prime, zt_prime;
-  Field3D R, Z; // Real-space coordinates of grid points
-  Field3D R_prime, Z_prime; // Real-space coordinates of forward/backward points
+  Field3D xt_prime(&mesh), zt_prime(&mesh);
+  Field3D R(&mesh), Z(&mesh); // Real-space coordinates of grid points
+  Field3D R_prime(&mesh), Z_prime(&mesh); // Real-space coordinates of forward/backward points
 
   mesh.get(R, "R", 0.0, false);
   mesh.get(Z, "Z", 0.0, false);

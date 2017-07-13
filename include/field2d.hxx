@@ -83,7 +83,7 @@ class Field2D : public Field, public FieldData {
    * allocates data, and assigns the value \p val to all points including
    * boundary cells.
    */ 
-  Field2D(BoutReal val);
+  Field2D(BoutReal val, Mesh *msh = nullptr);
 
   /*!
    * Destructor

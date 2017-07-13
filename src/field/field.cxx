@@ -41,6 +41,9 @@ Field::Field() : fieldmesh(nullptr){
 }
 
 Field::Field(Mesh * msh) : fieldmesh(msh){
+  if (fieldmesh ==nullptr){
+    fieldmesh=mesh;
+  }
 #if CHECK > 0
   bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true;
 #endif

@@ -812,7 +812,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, CELL_L
 
 const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc, REGION region) {
   if (var.getNx() == 1) {
-    return 0.;
+    return Field3D(0.,var.getMesh());
   }
   // Check that the input variable has data
   ASSERT1(var.isAllocated());
@@ -970,7 +970,7 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, CELL_L
 
 const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc, REGION region) {
   if (var.getNy() == 1){
-    return 0.;
+    return Field3D(0.,var.getMesh());
   }
 
   // Check that the input variable has data
@@ -1137,7 +1137,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 
 const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc, REGION region) {
   if (var.getNz()==1){
-    return 0.;
+    return Field3D(0.,var.getMesh());
   }
 
   ASSERT1(this == var.getMesh());
