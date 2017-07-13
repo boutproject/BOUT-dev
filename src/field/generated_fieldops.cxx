@@ -16,7 +16,7 @@ void autogen_Field3D_Field3D_Field3D_mul(  BoutReal * __restrict__ result , cons
 // Provide the C++ wrapper for mul of Field3D and Field3D
 Field3D operator*(const Field3D & lhs,const Field3D & rhs){
   Indices i{0,0,0};
-  Field3D result;
+  Field3D result(lhs.getMesh());
   result.allocate();
   checkData(lhs);
   checkData(rhs);
@@ -44,7 +44,7 @@ void autogen_Field3D_Field3D_Field3D_div(  BoutReal * __restrict__ result , cons
 // Provide the C++ wrapper for div of Field3D and Field3D
 Field3D operator/(const Field3D & lhs,const Field3D & rhs){
   Indices i{0,0,0};
-  Field3D result;
+  Field3D result(lhs.getMesh());
   result.allocate();
   checkData(lhs);
   checkData(rhs);
@@ -72,7 +72,7 @@ void autogen_Field3D_Field3D_Field3D_plus(  BoutReal * __restrict__ result , con
 // Provide the C++ wrapper for plus of Field3D and Field3D
 Field3D operator+(const Field3D & lhs,const Field3D & rhs){
   Indices i{0,0,0};
-  Field3D result;
+  Field3D result(lhs.getMesh());
   result.allocate();
   checkData(lhs);
   checkData(rhs);
@@ -100,7 +100,7 @@ void autogen_Field3D_Field3D_Field3D_minus(  BoutReal * __restrict__ result , co
 // Provide the C++ wrapper for minus of Field3D and Field3D
 Field3D operator-(const Field3D & lhs,const Field3D & rhs){
   Indices i{0,0,0};
-  Field3D result;
+  Field3D result(lhs.getMesh());
   result.allocate();
   checkData(lhs);
   checkData(rhs);
@@ -132,7 +132,7 @@ void autogen_Field3D_Field3D_Field2D_mul(  BoutReal * __restrict__ result , cons
 // Provide the C++ wrapper for mul of Field3D and Field2D
 Field3D operator*(const Field3D & lhs,const Field2D & rhs){
   Indices i{0,0,0};
-  Field3D result;
+  Field3D result(lhs.getMesh());
   result.allocate();
   checkData(lhs);
   checkData(rhs);
@@ -159,7 +159,7 @@ void autogen_Field3D_Field3D_Field2D_div(  BoutReal * __restrict__ result , cons
 // Provide the C++ wrapper for div of Field3D and Field2D
 Field3D operator/(const Field3D & lhs,const Field2D & rhs){
   Indices i{0,0,0};
-  Field3D result;
+  Field3D result(lhs.getMesh());
   result.allocate();
   checkData(lhs);
   checkData(rhs);
@@ -186,7 +186,7 @@ void autogen_Field3D_Field3D_Field2D_plus(  BoutReal * __restrict__ result , con
 // Provide the C++ wrapper for plus of Field3D and Field2D
 Field3D operator+(const Field3D & lhs,const Field2D & rhs){
   Indices i{0,0,0};
-  Field3D result;
+  Field3D result(lhs.getMesh());
   result.allocate();
   checkData(lhs);
   checkData(rhs);
@@ -213,7 +213,7 @@ void autogen_Field3D_Field3D_Field2D_minus(  BoutReal * __restrict__ result , co
 // Provide the C++ wrapper for minus of Field3D and Field2D
 Field3D operator-(const Field3D & lhs,const Field2D & rhs){
   Indices i{0,0,0};
-  Field3D result;
+  Field3D result(lhs.getMesh());
   result.allocate();
   checkData(lhs);
   checkData(rhs);
@@ -236,7 +236,7 @@ void autogen_Field3D_Field3D_BoutReal_mul(  BoutReal * __restrict__ result , con
 // Provide the C++ wrapper for mul of Field3D and BoutReal
 Field3D operator*(const Field3D & lhs,BoutReal rhs){
   Indices i{0,0,0};
-  Field3D result;
+  Field3D result(lhs.getMesh());
   result.allocate();
   checkData(lhs);
   checkData(rhs);
@@ -259,7 +259,7 @@ void autogen_Field3D_Field3D_BoutReal_div(  BoutReal * __restrict__ result , con
 // Provide the C++ wrapper for div of Field3D and BoutReal
 Field3D operator/(const Field3D & lhs,BoutReal rhs){
   Indices i{0,0,0};
-  Field3D result;
+  Field3D result(lhs.getMesh());
   result.allocate();
   checkData(lhs);
   checkData(rhs);
@@ -282,7 +282,7 @@ void autogen_Field3D_Field3D_BoutReal_plus(  BoutReal * __restrict__ result , co
 // Provide the C++ wrapper for plus of Field3D and BoutReal
 Field3D operator+(const Field3D & lhs,BoutReal rhs){
   Indices i{0,0,0};
-  Field3D result;
+  Field3D result(lhs.getMesh());
   result.allocate();
   checkData(lhs);
   checkData(rhs);
@@ -305,7 +305,7 @@ void autogen_Field3D_Field3D_BoutReal_minus(  BoutReal * __restrict__ result , c
 // Provide the C++ wrapper for minus of Field3D and BoutReal
 Field3D operator-(const Field3D & lhs,BoutReal rhs){
   Indices i{0,0,0};
-  Field3D result;
+  Field3D result(lhs.getMesh());
   result.allocate();
   checkData(lhs);
   checkData(rhs);
@@ -332,7 +332,7 @@ void autogen_Field3D_Field2D_Field3D_mul(  BoutReal * __restrict__ result , cons
 // Provide the C++ wrapper for mul of Field2D and Field3D
 Field3D operator*(const Field2D & lhs,const Field3D & rhs){
   Indices i{0,0,0};
-  Field3D result;
+  Field3D result(lhs.getMesh());
   result.allocate();
   checkData(lhs);
   checkData(rhs);
@@ -359,7 +359,7 @@ void autogen_Field3D_Field2D_Field3D_div(  BoutReal * __restrict__ result , cons
 // Provide the C++ wrapper for div of Field2D and Field3D
 Field3D operator/(const Field2D & lhs,const Field3D & rhs){
   Indices i{0,0,0};
-  Field3D result;
+  Field3D result(lhs.getMesh());
   result.allocate();
   checkData(lhs);
   checkData(rhs);
@@ -386,7 +386,7 @@ void autogen_Field3D_Field2D_Field3D_plus(  BoutReal * __restrict__ result , con
 // Provide the C++ wrapper for plus of Field2D and Field3D
 Field3D operator+(const Field2D & lhs,const Field3D & rhs){
   Indices i{0,0,0};
-  Field3D result;
+  Field3D result(lhs.getMesh());
   result.allocate();
   checkData(lhs);
   checkData(rhs);
@@ -413,7 +413,7 @@ void autogen_Field3D_Field2D_Field3D_minus(  BoutReal * __restrict__ result , co
 // Provide the C++ wrapper for minus of Field2D and Field3D
 Field3D operator-(const Field2D & lhs,const Field3D & rhs){
   Indices i{0,0,0};
-  Field3D result;
+  Field3D result(lhs.getMesh());
   result.allocate();
   checkData(lhs);
   checkData(rhs);
@@ -436,7 +436,7 @@ void autogen_Field2D_Field2D_Field2D_mul(  BoutReal * __restrict__ result , cons
 // Provide the C++ wrapper for mul of Field2D and Field2D
 Field2D operator*(const Field2D & lhs,const Field2D & rhs){
   Indices i{0,0,0};
-  Field2D result;
+  Field2D result(lhs.getMesh());
   result.allocate();
   checkData(lhs);
   checkData(rhs);
@@ -458,7 +458,7 @@ void autogen_Field2D_Field2D_Field2D_div(  BoutReal * __restrict__ result , cons
 // Provide the C++ wrapper for div of Field2D and Field2D
 Field2D operator/(const Field2D & lhs,const Field2D & rhs){
   Indices i{0,0,0};
-  Field2D result;
+  Field2D result(lhs.getMesh());
   result.allocate();
   checkData(lhs);
   checkData(rhs);
@@ -480,7 +480,7 @@ void autogen_Field2D_Field2D_Field2D_plus(  BoutReal * __restrict__ result , con
 // Provide the C++ wrapper for plus of Field2D and Field2D
 Field2D operator+(const Field2D & lhs,const Field2D & rhs){
   Indices i{0,0,0};
-  Field2D result;
+  Field2D result(lhs.getMesh());
   result.allocate();
   checkData(lhs);
   checkData(rhs);
@@ -502,7 +502,7 @@ void autogen_Field2D_Field2D_Field2D_minus(  BoutReal * __restrict__ result , co
 // Provide the C++ wrapper for minus of Field2D and Field2D
 Field2D operator-(const Field2D & lhs,const Field2D & rhs){
   Indices i{0,0,0};
-  Field2D result;
+  Field2D result(lhs.getMesh());
   result.allocate();
   checkData(lhs);
   checkData(rhs);
@@ -524,7 +524,7 @@ void autogen_Field2D_Field2D_BoutReal_mul(  BoutReal * __restrict__ result , con
 // Provide the C++ wrapper for mul of Field2D and BoutReal
 Field2D operator*(const Field2D & lhs,BoutReal rhs){
   Indices i{0,0,0};
-  Field2D result;
+  Field2D result(lhs.getMesh());
   result.allocate();
   checkData(lhs);
   checkData(rhs);
@@ -546,7 +546,7 @@ void autogen_Field2D_Field2D_BoutReal_div(  BoutReal * __restrict__ result , con
 // Provide the C++ wrapper for div of Field2D and BoutReal
 Field2D operator/(const Field2D & lhs,BoutReal rhs){
   Indices i{0,0,0};
-  Field2D result;
+  Field2D result(lhs.getMesh());
   result.allocate();
   checkData(lhs);
   checkData(rhs);
@@ -568,7 +568,7 @@ void autogen_Field2D_Field2D_BoutReal_plus(  BoutReal * __restrict__ result , co
 // Provide the C++ wrapper for plus of Field2D and BoutReal
 Field2D operator+(const Field2D & lhs,BoutReal rhs){
   Indices i{0,0,0};
-  Field2D result;
+  Field2D result(lhs.getMesh());
   result.allocate();
   checkData(lhs);
   checkData(rhs);
@@ -590,7 +590,7 @@ void autogen_Field2D_Field2D_BoutReal_minus(  BoutReal * __restrict__ result , c
 // Provide the C++ wrapper for minus of Field2D and BoutReal
 Field2D operator-(const Field2D & lhs,BoutReal rhs){
   Indices i{0,0,0};
-  Field2D result;
+  Field2D result(lhs.getMesh());
   result.allocate();
   checkData(lhs);
   checkData(rhs);
@@ -612,7 +612,7 @@ void autogen_Field3D_BoutReal_Field3D_mul(  BoutReal * __restrict__ result , con
 // Provide the C++ wrapper for mul of BoutReal and Field3D
 Field3D operator*(BoutReal lhs,const Field3D & rhs){
   Indices i{0,0,0};
-  Field3D result;
+  Field3D result(rhs.getMesh());
   result.allocate();
   checkData(lhs);
   checkData(rhs);
@@ -635,7 +635,7 @@ void autogen_Field3D_BoutReal_Field3D_div(  BoutReal * __restrict__ result , con
 // Provide the C++ wrapper for div of BoutReal and Field3D
 Field3D operator/(BoutReal lhs,const Field3D & rhs){
   Indices i{0,0,0};
-  Field3D result;
+  Field3D result(rhs.getMesh());
   result.allocate();
   checkData(lhs);
   checkData(rhs);
@@ -658,7 +658,7 @@ void autogen_Field3D_BoutReal_Field3D_plus(  BoutReal * __restrict__ result , co
 // Provide the C++ wrapper for plus of BoutReal and Field3D
 Field3D operator+(BoutReal lhs,const Field3D & rhs){
   Indices i{0,0,0};
-  Field3D result;
+  Field3D result(rhs.getMesh());
   result.allocate();
   checkData(lhs);
   checkData(rhs);
@@ -681,7 +681,7 @@ void autogen_Field3D_BoutReal_Field3D_minus(  BoutReal * __restrict__ result , c
 // Provide the C++ wrapper for minus of BoutReal and Field3D
 Field3D operator-(BoutReal lhs,const Field3D & rhs){
   Indices i{0,0,0};
-  Field3D result;
+  Field3D result(rhs.getMesh());
   result.allocate();
   checkData(lhs);
   checkData(rhs);
@@ -704,7 +704,7 @@ void autogen_Field2D_BoutReal_Field2D_mul(  BoutReal * __restrict__ result , con
 // Provide the C++ wrapper for mul of BoutReal and Field2D
 Field2D operator*(BoutReal lhs,const Field2D & rhs){
   Indices i{0,0,0};
-  Field2D result;
+  Field2D result(rhs.getMesh());
   result.allocate();
   checkData(lhs);
   checkData(rhs);
@@ -726,7 +726,7 @@ void autogen_Field2D_BoutReal_Field2D_div(  BoutReal * __restrict__ result , con
 // Provide the C++ wrapper for div of BoutReal and Field2D
 Field2D operator/(BoutReal lhs,const Field2D & rhs){
   Indices i{0,0,0};
-  Field2D result;
+  Field2D result(rhs.getMesh());
   result.allocate();
   checkData(lhs);
   checkData(rhs);
@@ -748,7 +748,7 @@ void autogen_Field2D_BoutReal_Field2D_plus(  BoutReal * __restrict__ result , co
 // Provide the C++ wrapper for plus of BoutReal and Field2D
 Field2D operator+(BoutReal lhs,const Field2D & rhs){
   Indices i{0,0,0};
-  Field2D result;
+  Field2D result(rhs.getMesh());
   result.allocate();
   checkData(lhs);
   checkData(rhs);
@@ -770,7 +770,7 @@ void autogen_Field2D_BoutReal_Field2D_minus(  BoutReal * __restrict__ result , c
 // Provide the C++ wrapper for minus of BoutReal and Field2D
 Field2D operator-(BoutReal lhs,const Field2D & rhs){
   Indices i{0,0,0};
-  Field2D result;
+  Field2D result(rhs.getMesh());
   result.allocate();
   checkData(lhs);
   checkData(rhs);
