@@ -50,9 +50,11 @@
 
 void initial_profile(const string &name, Field3D &var) {
   TRACE("initial_profile(string, Field3D)");
+
+  Mesh * msh = var.getMesh();
   
   CELL_LOC loc = CELL_DEFAULT;
-  if (mesh->StaggerGrids) {
+  if (msh->StaggerGrids) {
     loc = var.getLocation();
   }
   
@@ -61,7 +63,7 @@ void initial_profile(const string &name, Field3D &var) {
   
   // Use FieldFactory to generate values
     
-  FieldFactory f(mesh);
+  FieldFactory f(msh);
 
   string function;
   VAROPTION(varOpts, function, "0.0");
@@ -79,14 +81,16 @@ void initial_profile(const string &name, Field3D &var) {
 void initial_profile(const string &name, Field2D &var) {
   
   CELL_LOC loc = var.getLocation();
-  
+
+  Mesh * msh = var.getMesh();
+
   // Get the section for this variable
   Options *varOpts = Options::getRoot()->getSection(name);
   output << name;
   
   // Use FieldFactory to generate values
     
-  FieldFactory f(mesh);
+  FieldFactory f(msh);
 
   string function;
   VAROPTION(varOpts, function, "0.0");
@@ -133,10 +137,11 @@ void initial_profile(const string &name, Vector3D &var) {
   @param[in] phase  Phase shift in units of pi
 */
 const Field3D genZMode(int n, BoutReal phase) {
-  Field3D result;
+  Field3D result(nullptr);
+  throw BoutException("No mesh given!");
 
   result.allocate();
-  
+
   for(int jz=0;jz<mesh->LocalNz;jz++) {
     BoutReal val = sin(phase*PI +  TWOPI * ((BoutReal) jz)/ ((BoutReal) mesh->LocalNz) );
     for(int jx=0;jx<mesh->LocalNx;jx++)

@@ -1,6 +1,9 @@
 *.dmp.*
 *.log.*
 *.restart.*
+
+*.pdf
+
 BOUT.settings
 gas_compress
 2fluid
@@ -9,3 +12,7 @@ ue_bmark
 lapd_drift
 test_io
 jorek_compare
+wave
+cyto
+test
+test_[^.]*
