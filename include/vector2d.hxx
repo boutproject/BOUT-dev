@@ -47,7 +47,7 @@ class Vector3D; //#include "vector3d.hxx"
  */ 
 class Vector2D : public FieldData {
  public:
-  Vector2D();
+  Vector2D(Mesh * fieldmesh = nullptr);
   Vector2D(const Vector2D &f);
   ~Vector2D();
 

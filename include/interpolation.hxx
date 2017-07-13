@@ -77,6 +77,7 @@ class HermiteSpline : public Interpolation {
   int*** i_corner;      // x-index of bottom-left grid point
   int*** k_corner;      // z-index of bottom-left grid point
 
+  Mesh * msh;
   // Basis functions for cubic Hermite spline interpolation
   //    see http://en.wikipedia.org/wiki/Cubic_Hermite_spline
   // The h00 and h01 basis functions are applied to the function itself
@@ -158,7 +159,7 @@ class Bilinear : public Interpolation {
   Field3D w0, w1, w2, w3;
 
 public:
-  Bilinear(int y_offset=0);
+  Bilinear(int y_offset=0,Mesh * mesh = nullptr);
   Bilinear(BoutMask mask, int y_offset=0) : Bilinear(y_offset) {
     skip_mask = mask;}
 
