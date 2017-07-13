@@ -1392,7 +1392,7 @@ void shiftZ(Field3D &var, int jx, int jy, double zangle) {
 
 void shiftZ(Field3D &var, double zangle) {
   for(int x=0;x<mesh->LocalNx;x++) 
-    for(int y=0;mesh->LocalNy;y++)
+    for(int y=0;y<mesh->LocalNy;y++)
       shiftZ(var, x, y, zangle);
 }
 
