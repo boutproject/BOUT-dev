@@ -196,6 +196,7 @@ const IndexRange Field2D::region(REGION rgn) const {
   };
 }
 
+
 ////////////////////// STENCILS //////////////////////////
 
 void Field2D::getXArray(int y, int UNUSED(z), rvec &xv) const {

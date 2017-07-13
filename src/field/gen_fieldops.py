@@ -47,11 +47,14 @@ class Field(object):
 
 # Declare what fields we currently support:
 # Field perp is currently missing
-f3d =Field('Field3D' ,['x','y','z'],'f3d')
-f2d =Field('Field2D' ,['x','y'    ],'f2d')
-real=Field('BoutReal',[           ],'real')
+f3d =Field('Field3D'  ,['x','y','z'],'f3d')
+f2d =Field('Field2D'  ,['x','y'    ],'f2d')
+fp  =Field('FieldPerp',['x',    'z'],'fp')
+real=Field('BoutReal' ,[           ],'real')
 fields=[f3d,f2d,real]
 import sys
+
+# a function to see what field is `larger`. Is used to determine a suitable returb type
 def mymax(f1,f2):
     if f1.i==f2.i:
         return f1
@@ -178,7 +181,7 @@ for lhs in fields:
             print(");")
             # hardcode to only check field location for Field 3D
             if lhs.i == rhs.i == 'f3d':
-                print("#ifdef CHECK")
+                print("#ifdef CHECK > 0")
                 print("  if (lhs.getLocation() != rhs.getLocation()){")
                 print('    throw BoutException("Trying to %s fields of different locations. lhs is at %%s, rhs is at %%s!",strLocation(lhs.getLocation()),strLocation(rhs.getLocation()));'%op_names[op])
                 print('  }')
@@ -289,7 +292,7 @@ for lhs in fields:
                 print(");")
                 # if both are f3d, make sure they are in the same location
                 if lhs.i == rhs.i == 'f3d':
-                    print("#ifdef CHECK")
+                    print("#ifdef CHECK > 0")
                     print("  if (this->getLocation() != rhs.getLocation()){")
                     print('    throw BoutException("Trying to %s fields of different locations!");'%op_names[op])
                     print('  }')
