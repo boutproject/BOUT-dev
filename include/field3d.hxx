@@ -184,7 +184,7 @@ class Field3D : public Field, public FieldData {
   /// Constructor from 2D field
   Field3D(const Field2D& f);
   /// Constructor from value
-  Field3D(BoutReal val ,Mesh * localmesh = nullptr);
+  Field3D(BoutReal val, Mesh *localmesh = nullptr);
   /// Destructor
   ~Field3D();
 

@@ -156,7 +156,7 @@ for lhs in fields:
             print("// Provide the C++ wrapper for %s of %s and %s"%(opn,lhs.n,rhs.n))
             print("%s operator%s(%s lhs,%s rhs){"%(out.n,op,lhs.a,rhs.a))
             print("  Indices i{0,0,0};")
-            print("  %s result;"%(out.n))
+            print("  %s result(%s.getMesh());"%(out.n,"lhs" if not lhs.i == 'real' else "rhs"))
             print("  result.allocate();")
             print("  checkData(lhs);")
             print("  checkData(rhs);")
