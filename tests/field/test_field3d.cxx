@@ -469,6 +469,17 @@ TEST_F(Field3DTest, AddEqualsBoutReal) {
   EXPECT_TRUE(IsField3DEqualBoutReal(a, 6.0));
 }
 
+TEST_F(Field3DTest, AddEqualsField2D) {
+  Field3D a;
+  Field2D b;
+
+  a = 2.0;
+  b = 3.0;
+  a += b;
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(a, 5.0));
+}
+
 TEST_F(Field3DTest, AddEqualsField3D) {
   Field3D a, b;
 
@@ -497,6 +508,28 @@ TEST_F(Field3DTest, AddBoutRealField3D) {
   EXPECT_TRUE(IsField3DEqualBoutReal(b, 4.0));
 }
 
+TEST_F(Field3DTest, AddField2DField3D) {
+  Field2D a;
+  Field3D b, c;
+
+  a = 1.0;
+  b = 2.0;
+  c = a + b;
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(c, 3.0));
+}
+
+TEST_F(Field3DTest, AddField3DField2D) {
+  Field3D a, c;
+  Field2D b;
+
+  a = 1.0;
+  b = 2.0;
+  c = a + b;
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(c, 3.0));
+}
+
 TEST_F(Field3DTest, AddField3DField3D) {
   Field3D a, b, c;
 
@@ -514,6 +547,17 @@ TEST_F(Field3DTest, MultiplyEqualsBoutReal) {
   a *= 1.5;
 
   EXPECT_TRUE(IsField3DEqualBoutReal(a, 3.0));
+}
+
+TEST_F(Field3DTest, MultiplyEqualsField2D) {
+  Field3D a;
+  Field2D b;
+
+  a = 2.5;
+  b = 4.0;
+  a *= b;
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(a, 10.0));
 }
 
 TEST_F(Field3DTest, MultiplyEqualsField3D) {
@@ -544,6 +588,28 @@ TEST_F(Field3DTest, MultiplyBoutRealField3D) {
   EXPECT_TRUE(IsField3DEqualBoutReal(b, 7.5));
 }
 
+TEST_F(Field3DTest, MultiplyField2DField3D) {
+  Field2D a;
+  Field3D b, c;
+
+  a = 4.0;
+  b = 4.0;
+  c = a * b;
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(c, 16.0));
+}
+
+TEST_F(Field3DTest, MultiplyField3DField2D) {
+  Field3D a, c;
+  Field2D b;
+
+  a = 8.0;
+  b = 8.0;
+  c = a * b;
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(c, 64.0));
+}
+
 TEST_F(Field3DTest, MultiplyField3DField3D) {
   Field3D a, b, c;
 
@@ -561,6 +627,17 @@ TEST_F(Field3DTest, SubtractEqualsBoutReal) {
   a -= 5.0;
 
   EXPECT_TRUE(IsField3DEqualBoutReal(a, -4.0));
+}
+
+TEST_F(Field3DTest, SubtractEqualsField2D) {
+  Field3D a;
+  Field2D b;
+
+  a = 2.0;
+  b = 7.0;
+  a -= b;
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(a, -5.0));
 }
 
 TEST_F(Field3DTest, SubtractEqualsField3D) {
@@ -591,6 +668,28 @@ TEST_F(Field3DTest, SubtractBoutRealField3D) {
   EXPECT_TRUE(IsField3DEqualBoutReal(b, -7.0));
 }
 
+TEST_F(Field3DTest, SubtractField2DField3D) {
+  Field2D a;
+  Field3D b, c;
+
+  a = 10.0;
+  b = 20.0;
+  c = a - b;
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(c, -10.0));
+}
+
+TEST_F(Field3DTest, SubtractField3DField2D) {
+  Field3D a, c;
+  Field2D b;
+
+  a = 10.0;
+  b = 20.0;
+  c = a - b;
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(c, -10.0));
+}
+
 TEST_F(Field3DTest, SubtractField3DField3D) {
   Field3D a, b, c;
 
@@ -608,6 +707,17 @@ TEST_F(Field3DTest, DivideEqualsBoutReal) {
   a /= 5.0;
 
   EXPECT_TRUE(IsField3DEqualBoutReal(a, 0.5));
+}
+
+TEST_F(Field3DTest, DivideEqualsField2D) {
+  Field3D a;
+  Field2D b;
+
+  a = 5.0;
+  b = 2.5;
+  a /= b;
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(a, 2.0));
 }
 
 TEST_F(Field3DTest, DivideEqualsField3D) {
@@ -638,6 +748,28 @@ TEST_F(Field3DTest, DivideBoutRealField3D) {
   EXPECT_TRUE(IsField3DEqualBoutReal(b, 4.0));
 }
 
+TEST_F(Field3DTest, DivideField2DField3D) {
+  Field2D a;
+  Field3D b, c;
+
+  a = 32.0;
+  b = 8.0;
+  c = a / b;
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(c, 4.0));
+}
+
+TEST_F(Field3DTest, DivideField3DField2D) {
+  Field3D a, c;
+  Field2D b;
+
+  a = 32.0;
+  b = 8.0;
+  c = a / b;
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(c, 4.0));
+}
+
 TEST_F(Field3DTest, DivideField3DField3D) {
   Field3D a, b, c;
 
@@ -662,6 +794,17 @@ TEST_F(Field3DTest, PowField3DBoutReal) {
   b = pow(a, 2.0);
 
   EXPECT_TRUE(IsField3DEqualBoutReal(b, 25.0));
+}
+
+TEST_F(Field3DTest, PowField3DField2D) {
+  Field3D a, c;
+  Field2D b;
+
+  a = 2.0;
+  b = 6.0;
+  c = pow(a, b);
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(c, 64.0));
 }
 
 TEST_F(Field3DTest, PowField3DField3D) {
