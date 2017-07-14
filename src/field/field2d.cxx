@@ -45,7 +45,7 @@
 
 #include <bout/assert.hxx>
 
-Field2D::Field2D(Mesh *msh) : fieldmesh(msh), deriv(nullptr) { 
+Field2D::Field2D(Mesh *msh) : Field(msh), deriv(nullptr) { 
 
   boundaryIsSet = false;
 
@@ -59,7 +59,7 @@ Field2D::Field2D(Mesh *msh) : fieldmesh(msh), deriv(nullptr) {
 #endif
 }
 
-Field2D::Field2D(const Field2D& f) : fieldmesh(f.fieldmesh), // The mesh containing array sizes
+Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing array sizes
                                      data(f.data), // This handles references to the data array
                                      deriv(nullptr) {
   if(fieldmesh) {
@@ -71,7 +71,7 @@ Field2D::Field2D(const Field2D& f) : fieldmesh(f.fieldmesh), // The mesh contain
   *this = f;
 }
 
-Field2D::Field2D(BoutReal val) : fieldmesh(nullptr), deriv(nullptr) {
+Field2D::Field2D(BoutReal val) : Field(nullptr), deriv(nullptr) {
   boundaryIsSet = false;
   
   fieldmesh = mesh;
@@ -101,7 +101,7 @@ void Field2D::allocate() {
 
 Field2D* Field2D::timeDeriv() {
   if(deriv == nullptr)
-    deriv = new Field2D();
+    deriv = new Field2D(fieldmesh);
   return deriv;
 }
 
