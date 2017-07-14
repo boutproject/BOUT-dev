@@ -2476,13 +2476,13 @@ void BoutMesh::set_ri( dcomplex * ayn, int ncy, BoutReal * ayn_Real, BoutReal * 
 const Field2D BoutMesh::lowPass_poloidal(const Field2D &var,int mmax)
 {
   Field2D result;
-  static BoutReal *f1d = (BoutReal *) NULL;
-  static dcomplex *aynall = (dcomplex*)NULL;
-  static BoutReal *aynall_Real = (BoutReal *) NULL;
-  static BoutReal *aynall_Imag = (BoutReal *) NULL;
-  static dcomplex *ayn = (dcomplex*) NULL;
-  static BoutReal *aynReal = (BoutReal *) NULL;
-  static BoutReal *aynImag = (BoutReal *) NULL;
+  static BoutReal *f1d = (BoutReal *) NULL; //Never freed
+  static dcomplex *aynall = (dcomplex*)NULL; //Never freed
+  static BoutReal *aynall_Real = (BoutReal *) NULL; //Never freed
+  static BoutReal *aynall_Imag = (BoutReal *) NULL; //Never freed
+  static dcomplex *ayn = (dcomplex*) NULL; //Never freed
+  static BoutReal *aynReal = (BoutReal *) NULL; //Never freed
+  static BoutReal *aynImag = (BoutReal *) NULL; //Never freed
 
   int ncx, ncy;
   int jx, jy;

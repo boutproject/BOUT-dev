@@ -2365,8 +2365,8 @@ void BoundaryZeroLaplace::apply(Field3D &f) {
   
   if(c0 == (dcomplex*) NULL) {
     // allocate memory
-    c0 = new dcomplex[ncz/2 + 1];
-    c1 = new dcomplex[ncz/2 + 1];
+    c0 = new dcomplex[ncz/2 + 1]; //Never freed
+    c1 = new dcomplex[ncz/2 + 1]; //Never freed
   }
   
   if((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
@@ -2448,9 +2448,9 @@ void BoundaryZeroLaplace2::apply(Field3D &f) {
 
   if(c0 == (dcomplex*) NULL) {
     // allocate memory
-    c0 = new dcomplex[ncz/2 + 1];
-    c1 = new dcomplex[ncz/2 + 1];
-    c2 = new dcomplex[ncz/2 + 1];
+    c0 = new dcomplex[ncz/2 + 1]; //Never freed
+    c1 = new dcomplex[ncz/2 + 1]; //Never freed
+    c2 = new dcomplex[ncz/2 + 1]; //Never freed
   }
   
   if((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
@@ -2549,9 +2549,9 @@ void BoundaryConstLaplace::apply(Field3D &f) {
   int ncz = mesh->ngz-1;
   if(c0 == (dcomplex*) NULL) {
     //allocate memory
-    c0 = new dcomplex[ncz/2 + 1];
-    c1 = new dcomplex[ncz/2 + 1];
-    c2 = new dcomplex[ncz/2 + 1];
+    c0 = new dcomplex[ncz/2 + 1]; //Never freed
+    c1 = new dcomplex[ncz/2 + 1]; //Never freed
+    c2 = new dcomplex[ncz/2 + 1]; //Never freed
   }
   
   int bx = bndry->bx;
