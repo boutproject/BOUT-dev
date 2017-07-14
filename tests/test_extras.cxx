@@ -12,9 +12,8 @@
   }
 }
 
-::testing::AssertionResult IsField3DEqualBoutReal(const Field3D &field,
-                                                  const BoutReal number,
-                                                  const BoutReal tolerance) {
+::testing::AssertionResult IsField3DEqualBoutReal(const Field3D &field, BoutReal number,
+                                                  BoutReal tolerance) {
   for (const auto &i : field) {
     if (fabs(field[i] - number) > tolerance) {
       return ::testing::AssertionFailure() << "Field3D(" << i.x << ", " << i.y << ", "
@@ -26,9 +25,8 @@
   return ::testing::AssertionSuccess();
 }
 
-::testing::AssertionResult IsField2DEqualBoutReal(const Field2D &field,
-                                                  const BoutReal number,
-                                                  const BoutReal tolerance) {
+::testing::AssertionResult IsField2DEqualBoutReal(const Field2D &field, BoutReal number,
+                                                  BoutReal tolerance) {
   for (const auto &i : field) {
     if (fabs(field[i] - number) > tolerance) {
       return ::testing::AssertionFailure() << "Field2D(" << i.x << ", " << i.y

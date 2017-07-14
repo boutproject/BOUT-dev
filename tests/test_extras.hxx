@@ -16,14 +16,12 @@ const BoutReal BoutRealTolerance = 1e-15;
                                        const std::string &substring);
 
 /// Is \p field equal to \p number, with a tolerance of \p tolerance?
-::testing::AssertionResult
-IsField3DEqualBoutReal(const Field3D &field, const BoutReal number,
-                       const BoutReal tolerance = BoutRealTolerance);
+::testing::AssertionResult IsField3DEqualBoutReal(const Field3D &field, BoutReal number,
+                                                  BoutReal tolerance = BoutRealTolerance);
 
 /// Is \p field equal to \p number, with a tolerance of \p tolerance?
-::testing::AssertionResult
-IsField2DEqualBoutReal(const Field2D &field, const BoutReal number,
-                       const BoutReal tolerance = BoutRealTolerance);
+::testing::AssertionResult IsField2DEqualBoutReal(const Field2D &field, BoutReal number,
+                                                  BoutReal tolerance = BoutRealTolerance);
 
 /// FakeMesh has just enough information to create fields
 class FakeMesh : public Mesh {
