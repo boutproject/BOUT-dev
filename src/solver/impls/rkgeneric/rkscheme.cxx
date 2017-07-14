@@ -16,6 +16,7 @@ RKScheme::RKScheme(Options *opts){
   stageCoeffs = (BoutReal**)NULL;
   resultCoeffs = (BoutReal**)NULL;
   timeCoeffs = (BoutReal*)NULL;
+  resultAlt = (BoutReal*)NULL;
   steps = (BoutReal**)NULL;
 
   //Initialise internals
