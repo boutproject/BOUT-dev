@@ -117,6 +117,8 @@ TEST_F(Field3DTest, CreateOnGivenMesh) {
   delete fieldmesh;
 }
 
+//-------------------- Iteration tests --------------------
+
 /// This test is split into two parts: a very basic sanity check first
 /// (do we visit the right number of elements?), followed by a
 /// slightly more complex check one which checks certain indices are
@@ -378,6 +380,8 @@ TEST_F(Field3DTest, Indexing) {
   EXPECT_DOUBLE_EQ(field(2, 2, 2), 6);
 }
 
+//-------------------- Checking tests --------------------
+
 #if CHECK > 2
 TEST_F(Field3DTest, CheckNotEmpty) {
   Field3D field;
@@ -430,6 +434,8 @@ TEST_F(Field3DTest, CheckData) {
 
 #endif // CHECK > 2
 
+//-------------------- Assignment tests --------------------
+
 TEST_F(Field3DTest, CreateFromBoutReal) {
   Field3D field(1.0);
 
@@ -451,6 +457,26 @@ TEST_F(Field3DTest, AssignFromBoutReal) {
   EXPECT_TRUE(IsField3DEqualBoutReal(field, 2.0));
 }
 
+TEST_F(Field3DTest, AssignFromField2D) {
+  Field3D field;
+  Field2D field2(2.0);
+
+  field = field2;
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(field, 2.0));
+}
+
+TEST_F(Field3DTest, AssignFromField3D) {
+  Field3D field, field2;
+
+  field2 = -99.0;
+  field = field2;
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(field, -99.0));
+}
+
+//-------------------- Arithmetic tests --------------------
+
 TEST_F(Field3DTest, UnaryMinus) {
   Field3D field;
 
@@ -458,6 +484,7 @@ TEST_F(Field3DTest, UnaryMinus) {
   field = -field;
 
   EXPECT_TRUE(IsField3DEqualBoutReal(field, -2.0));
+  EXPECT_TRUE(IsField3DEqualBoutReal(-field, 2.0));
 }
 
 TEST_F(Field3DTest, AddEqualsBoutReal) {
@@ -957,4 +984,15 @@ TEST_F(Field3DTest, Max) {
   const BoutReal max_value = 60.0;
 
   EXPECT_TRUE(IsField3DEqualBoutReal(max(field, false), max_value));
+}
+
+TEST_F(Field3DTest, DC) {
+  Field3D field;
+
+  field = 1.0;
+  for (const auto& i : field) {
+    field[i] = i.z;
+  }
+
+  EXPECT_TRUE(IsField2DEqualBoutReal(DC(field), 3.0));
 }
