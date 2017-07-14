@@ -1,6 +1,0 @@
-#!/usr/bin/env sh
-make || exit
-
-mpirun -n 1 ./test > log || exit
-
-echo "Test Successful"
