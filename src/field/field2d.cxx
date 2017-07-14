@@ -117,44 +117,6 @@ Field2D* Field2D::timeDeriv() {
   return deriv;
 }
 
-///////////// OPERATORS ////////////////
-
-Field2D & Field2D::operator=(const Field2D &rhs) {
-  // Check for self-assignment
-  if(this == &rhs)
-    return(*this); // skip this assignment
-
-  TRACE("Field2D: Assignment from Field2D");
-
-  checkData(rhs);
-  
-#ifdef TRACK
-  name = rhs.name;
-#endif
-
-  // Copy the data and data sizes
-  fieldmesh = rhs.fieldmesh;
-  nx = rhs.nx; ny = rhs.ny; 
-
-  // Copy reference to data
-  data = rhs.data;
-
-  return *this;
-}
-
-Field2D & Field2D::operator=(const BoutReal rhs) {
-  TRACE("Field2D = BoutReal");
-#ifdef TRACK
-  name = "<r2D>";
-#endif
-  
-  allocate();
-  for(const auto& i : (*this))
-    (*this)[i] = rhs;
-  
-  return *this;
-}
-
 ////////////// Indexing ///////////////////
 
 const DataIterator Field2D::iterator() const {
@@ -205,7 +167,50 @@ const IndexRange Field2D::region(REGION rgn) const {
   };
 }
 
-///////// Operators
+///////////// OPERATORS ////////////////
+
+Field2D & Field2D::operator=(const Field2D &rhs) {
+  // Check for self-assignment
+  if(this == &rhs)
+    return(*this); // skip this assignment
+
+  TRACE("Field2D: Assignment from Field2D");
+
+  checkData(rhs);
+  
+#ifdef TRACK
+  name = rhs.name;
+#endif
+
+  // Copy the data and data sizes
+  fieldmesh = rhs.fieldmesh;
+  nx = rhs.nx; ny = rhs.ny; 
+
+  // Copy reference to data
+  data = rhs.data;
+
+  return *this;
+}
+
+Field2D & Field2D::operator=(const BoutReal rhs) {
+#ifdef TRACK
+  name = "<r2D>";
+#endif
+  
+  TRACE("Field2D = BoutReal");
+  allocate();
+
+#if CHECK > 0
+  if(!finite(rhs))
+    throw BoutException("Field2D: Assignment from non-finite BoutReal\n");
+#endif
+  for(const auto& i : (*this))
+    (*this)[i] = rhs;
+  
+  return *this;
+}
+
+/////////////////////////////////////////////////////////////////////
 
 #define F2D_UPDATE_FIELD(op,bop,ftype)                       \
   Field2D & Field2D::operator op(const ftype &rhs) {         \
@@ -425,6 +430,9 @@ void Field2D::applyBoundary(bool init) {
       output << "WARNING: Call to Field2D::applyBoundary(), but no boundary set" << endl;
   }
 #endif
+
+  ASSERT1(isAllocated());
+
   for(const auto& bndry : bndry_op)
     if ( !bndry->apply_to_ddt || init) // Always apply to the values when initialising fields, otherwise apply only if wanted
       bndry->apply(*this);
@@ -432,15 +440,9 @@ void Field2D::applyBoundary(bool init) {
 
 void Field2D::applyBoundary(const string &condition) {
   TRACE("Field2D::applyBoundary(condition)");
-  
-#if CHECK > 0
-  if(!isAllocated())
-    output << "WARNING: Empty data in Field2D::applyBoundary(condition)" << endl;
-#endif
-  
-  if(!isAllocated())
-    return;
 
+  ASSERT1(isAllocated());
+  
   /// Get the boundary factory (singleton)
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
   
@@ -471,8 +473,7 @@ void Field2D::applyBoundary(const string &condition) {
 }
 
 void Field2D::applyBoundary(const string &region, const string &condition) {
-  if(!isAllocated())
-    return;
+  ASSERT1(isAllocated());
 
   /// Get the boundary factory (singleton)
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
@@ -507,6 +508,12 @@ void Field2D::applyBoundary(const string &region, const string &condition) {
 }
 
 void Field2D::applyTDerivBoundary() {
+  TRACE("Field2D::applyTDerivBoundary()");
+  
+  ASSERT1(isAllocated());
+  ASSERT1(deriv != NULL);
+  ASSERT1(deriv->isAllocated());
+
   for(const auto& bndry : bndry_op)
     bndry->apply_ddt(*this);
 }
@@ -595,11 +602,11 @@ const Field2D operator-(const Field2D &f) {
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
 BoutReal min(const Field2D &f, bool allpe) {
-  TRACE("min(Field2D)");
+  TRACE("Field2D::Min() %s",allpe? "over all PEs" : "");
   
   ASSERT2(f.isAllocated());
 
-  BoutReal result = f(mesh->xstart,mesh->ystart);
+  BoutReal result = f[f.region(RGN_NOBNDRY).begin()];
 
   for(const auto& i : f.region(RGN_NOBNDRY))
     if(f[i] < result)
@@ -615,11 +622,11 @@ BoutReal min(const Field2D &f, bool allpe) {
 }
 
 BoutReal max(const Field2D &f, bool allpe) {
-  TRACE("max(Field2D)");
+  TRACE("Field2D::Max() %s",allpe? "over all PEs" : "");
   
   ASSERT2(f.isAllocated());
 
-  BoutReal result = f(mesh->xstart,mesh->ystart);
+  BoutReal result = f[f.region(RGN_NOBNDRY).begin()];
 
   for(const auto& i : f.region(RGN_NOBNDRY))
     if(f[i] > result)
