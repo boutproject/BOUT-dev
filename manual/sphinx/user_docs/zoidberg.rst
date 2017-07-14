@@ -233,7 +233,7 @@ by placing points at equal distances along the line:
 
 .. code:: python
 
-   line = line.orderByDistance()
+   line = line.equallySpaced()
 
 
    

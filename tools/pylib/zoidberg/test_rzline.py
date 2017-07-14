@@ -33,11 +33,11 @@ def test_distance():
     assert np.allclose(dist_outer[-1], 4.*np.pi)
     
 def test_order_by_distance():
-    # Check the RZline.orderByDistance function
+    # Check the RZline.equallySpaced function
     inner = rzline.circle(R0=1.0, r=1.0, n=20)
     outer = rzline.circle(R0=1.0, r=2.0, n=20)
     
-    new_inner = inner.orderByDistance(n=10)
+    new_inner = inner.equallySpaced(n=10)
     
     assert len(new_inner.R) == 10
     

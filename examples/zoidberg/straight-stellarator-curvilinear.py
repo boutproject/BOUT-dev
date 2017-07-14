@@ -39,7 +39,7 @@ for i in range(nslices):
     line = zoidberg.rzline.line_from_points(r,z)
     # Re-map the points so they're approximately uniform in distance along the surface
     # Note that this results in some motion of the line
-    line = line.orderByDistance()
+    line = line.equallySpaced()
     inner_lines.append(line)
     
 # Now have a list of y coordinates (ycoords) and inner lines (inner_lines)

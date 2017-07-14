@@ -136,7 +136,7 @@ class RZline:
         # Integrate cumulatively, then take only the values at the grid points (including end)
         return cumtrapz(dldtheta, thetavals, initial=0.0)[::sample]
 
-    def orderByDistance(self, n=None):
+    def equallySpaced(self, n=None):
         """
         Returns a new RZline which has a theta uniform
         in distance along the line
@@ -421,7 +421,7 @@ if __name__ == "__main__":
         line = line_from_points(r,z)
         # Re-map the points so they're approximately uniform in distance along the surface
         # Note that this results in some motion of the line
-        line = line.orderByDistance()
+        line = line.equallySpaced()
         inner_lines.append(line)
 
     # Now have a list of y coordinates (ycoords) and inner lines (inner_lines)
