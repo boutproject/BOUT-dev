@@ -53,6 +53,12 @@ Field2D::Field2D(Mesh *msh) : Field(msh), deriv(nullptr) {
     nx = fieldmesh->LocalNx;
     ny = fieldmesh->LocalNy;
   }
+#if CHECK > 0
+  else {
+    nx=-1;
+    ny=-1;
+  }
+#endif
   
 #ifdef TRACK
   name = "<F2D>";
@@ -66,6 +72,12 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing 
     nx = fieldmesh->LocalNx;
     ny = fieldmesh->LocalNy;
   }
+#if CHECK > 0
+  else {
+    nx=-1;
+    ny=-1;
+  }
+#endif
   
   boundaryIsSet = false;
   *this = f;
@@ -146,21 +158,18 @@ Field2D & Field2D::operator=(const BoutReal rhs) {
 ////////////// Indexing ///////////////////
 
 const DataIterator Field2D::iterator() const {
-  return DataIterator(0, mesh->LocalNx-1, 
-                      0, mesh->LocalNy-1,
+  return DataIterator(0, nx-1, 
+                      0, ny-1,
                       0, 0);
 }
 
 const DataIterator Field2D::begin() const {
-  /*return DataIterator(0, 0, mesh->LocalNx-1,
-                      0, 0, mesh->LocalNy-1,
-                      0, 0, 0);*/
   return Field2D::iterator();
 }
 
 const DataIterator Field2D::end() const {
-  return DataIterator(0, mesh->LocalNx-1, 
-                      0, mesh->LocalNy-1,
+  return DataIterator(0, nx-1, 
+                      0, ny-1,
                       0, 0, DI_GET_END);
 }
 
