@@ -86,8 +86,7 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing 
 #endif
   
   boundaryIsSet = false;
-  *this = f; //This copies all the data -- unlike 3D which delays, using Copy on write+ref counting
-}
+  *this = f; //This line is probably not required as we init data from f.data above.
 
 Field2D::Field2D(BoutReal val) : Field(nullptr), deriv(nullptr) {
   boundaryIsSet = false;
