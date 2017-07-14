@@ -752,3 +752,33 @@ TEST_F(Field2DTest, Floor) {
 
   EXPECT_TRUE(IsField2DEqualBoutReal(floor(field, floor_value), floor_value));
 }
+
+TEST_F(Field2DTest, Min) {
+  Field2D field;
+
+  field = 50.0;
+  field(0, 0) = -99.0;
+  field(1, 1) = 60.0;
+  field(1, 2) = 40.0;
+  field(2, 4) = 99.0;
+
+  // min doesn't include guard cells
+  const BoutReal min_value = 40.0;
+
+  EXPECT_TRUE(IsField2DEqualBoutReal(min(field, false), min_value));
+}
+
+TEST_F(Field2DTest, Max) {
+  Field2D field;
+
+  field = 50.0;
+  field(0, 0) = -99.0;
+  field(1, 1) = 40.0;
+  field(1, 2) = 60.0;
+  field(2, 4) = 99.0;
+
+  // max doesn't include guard cells
+  const BoutReal max_value = 60.0;
+
+  EXPECT_TRUE(IsField2DEqualBoutReal(max(field, false), max_value));
+}
