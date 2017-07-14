@@ -42,20 +42,22 @@
 #include <msg_stack.hxx>
 #include <output.hxx>
 
-KarniadakisSolver::KarniadakisSolver(Options *options) : Solver(options) {
+KarniadakisSolver::KarniadakisSolver(Options *options) : Solver(options), f1(nullptr) {
   canReset = true;  
 }
 
 KarniadakisSolver::~KarniadakisSolver() {
-  delete[] f1;
-  delete[] f0;
-  delete[] fm1;
-  delete[] fm2;
-  
-  delete[] S0;
-  delete[] Sm1;
-  delete[] Sm2;
-  delete[] D0;
+  if(f1 != nullptr){
+    delete[] f1;
+    delete[] f0;
+    delete[] fm1;
+    delete[] fm2;
+    
+    delete[] S0;
+    delete[] Sm1;
+    delete[] Sm2;
+    delete[] D0;
+  }
 }
 
 int KarniadakisSolver::init(int nout, BoutReal tstep) {
