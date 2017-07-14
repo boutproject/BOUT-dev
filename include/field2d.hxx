@@ -158,7 +158,7 @@ class Field2D : public Field, public FieldData {
     return operator()(i.x, i.y);
   }
   /// const Indices data access
-  inline const BoutReal& operator[](const Indices &i) const {
+  inline const BoutReal& operator[](const Indices &i) const override {
     return operator()(i.x, i.y);
   }
 
@@ -219,50 +219,50 @@ class Field2D : public Field, public FieldData {
 
   // Stencils
 
-  void getXArray(int y, int z, rvec &xv) const;
-  void getYArray(int x, int z, rvec &yv) const;
-  void getZArray(int x, int y, rvec &zv) const;
+  void getXArray(int y, int z, rvec &xv) const override;
+  void getYArray(int x, int z, rvec &yv) const override;
+  void getZArray(int x, int y, rvec &zv) const override;
 
-  void setXArray(int y, int z, const rvec &xv);
-  void setYArray(int x, int z, const rvec &yv);
+  void setXArray(int y, int z, const rvec &xv) override;
+  void setYArray(int x, int z, const rvec &yv) override;
 
   //void setStencil(bstencil *fval, bindex *bx) const;
-  void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
+  void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const override;
   void setXStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   void setXStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
-  void setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
+  void setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const override;
   void setYStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   void setYStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
-  void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
+  void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const override;
   
   // FieldData virtual functions
 
   /// Visitor pattern support
   void accept(FieldVisitor &v) override {v.accept(*this);}
   
-  bool isReal() const   { return true; }         // Consists of BoutReal values
-  bool is3D() const     { return false; }        // Field is 2D
-  int  byteSize() const { return sizeof(BoutReal); } // Just one BoutReal
-  int  BoutRealSize() const { return 1; }
+  bool isReal() const override  { return true; }         // Consists of BoutReal values
+  bool is3D() const override    { return false; }        // Field is 2D
+  int  byteSize() const override { return sizeof(BoutReal); } // Just one BoutReal
+  int  BoutRealSize() const override { return 1; }
 
-  DEPRECATED(int getData(int x, int y, int z, void *vptr) const);
-  DEPRECATED(int getData(int x, int y, int z, BoutReal *rptr) const);
-  DEPRECATED(int setData(int x, int y, int z, void *vptr));
-  DEPRECATED(int setData(int x, int y, int z, BoutReal *rptr));
+  DEPRECATED(int getData(int x, int y, int z, void *vptr) const override);
+  DEPRECATED(int getData(int x, int y, int z, BoutReal *rptr) const override);
+  DEPRECATED(int setData(int x, int y, int z, void *vptr) override);
+  DEPRECATED(int setData(int x, int y, int z, BoutReal *rptr) override);
   
 #if CHECK > 0
-  void doneComms() { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
+  void doneComms() override { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
 #else
-  void doneComms() {}
+  void doneComms() override {}
 #endif
 
   friend class Vector2D;
   
-  void applyBoundary(bool init=false);
+  void applyBoundary(bool init=false) override;
   void applyBoundary(const string &condition);
   void applyBoundary(const char* condition) { applyBoundary(string(condition)); }
   void applyBoundary(const string &region, const string &condition);
-  void applyTDerivBoundary();
+  void applyTDerivBoundary() override;
   void setBoundaryTo(const Field2D &f2d); ///< Copy the boundary region
   
  private:
