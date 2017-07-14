@@ -29,16 +29,19 @@ IsField2DEqualBoutReal(const Field2D &field, const BoutReal number,
 class FakeMesh : public Mesh {
 public:
   FakeMesh(int nx, int ny, int nz) {
+    // Mesh only on one process, so global and local indices are the
+    // same
     GlobalNx = nx;
     GlobalNy = ny;
     GlobalNz = nz;
     LocalNx = nx;
     LocalNy = ny;
     LocalNz = nz;
-    xstart = 0;
-    xend = nx;
-    ystart = 0;
-    yend = ny;
+    // Small "inner" region
+    xstart = 1;
+    xend = nx - 2;
+    ystart = 1;
+    yend = ny - 2;
   }
 
   comm_handle send(FieldGroup &UNUSED(g)) { return nullptr; };
