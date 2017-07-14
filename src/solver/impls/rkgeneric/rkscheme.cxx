@@ -9,15 +9,9 @@
 ////////////////////
 
 //Initialise
-RKScheme::RKScheme(Options *opts){
+RKScheme::RKScheme(Options *opts): stageCoeffs(nullptr), resultCoeffs(nullptr),
+                                   timeCoeffs(nullptr), resultAlt(nullptr), steps(nullptr){
   //Currently not reading anything from the options here
-
-  //Init the pointer arrays to null
-  stageCoeffs = (BoutReal**)NULL;
-  resultCoeffs = (BoutReal**)NULL;
-  timeCoeffs = (BoutReal*)NULL;
-  resultAlt = (BoutReal*)NULL;
-  steps = (BoutReal**)NULL;
 
   //Initialise internals
   dtfac = 1.0; //Time step factor
@@ -29,18 +23,18 @@ RKScheme::~RKScheme(){
   ///we really free them there as well?
   
   //stageCoeffs
-  free_matrix(stageCoeffs);
+  if(stageCoeffs != nullptr) free_matrix(stageCoeffs);
 
   //resultCoeffs
-  free_matrix(resultCoeffs);
+  if(stageCoeffs != nullptr) free_matrix(resultCoeffs);
 
   //steps
-  free_matrix(steps);
+  if(stageCoeffs != nullptr) free_matrix(steps);
 
   //timeCoeffs
-  delete[] timeCoeffs;
+  if(stageCoeffs != nullptr) delete[] timeCoeffs;
   
-  if(adaptive) delete[] resultAlt;
+  if(stageCoeffs != nullptr) delete[] resultAlt;
 }
 
 //Finish generic initialisation
