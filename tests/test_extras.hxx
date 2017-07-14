@@ -37,11 +37,25 @@ public:
     LocalNx = nx;
     LocalNy = ny;
     LocalNz = nz;
+    GlobalNx = 0;
+    GlobalNy = 0;
+    GlobalNz = 0;
     // Small "inner" region
     xstart = 1;
     xend = nx - 2;
     ystart = 1;
     yend = ny - 2;
+
+    // Unused variables
+    periodicX = false;
+    NXPE = 1;
+    PE_XIND = 0;
+    StaggerGrids = false;
+    IncIntShear = false;
+    freeboundary_xin = false;
+    freeboundary_xout = false;
+    freeboundary_ydown = false;
+    freeboundary_yup = false;
   }
 
   comm_handle send(FieldGroup &UNUSED(g)) { return nullptr; };

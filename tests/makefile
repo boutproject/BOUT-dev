@@ -30,9 +30,9 @@ include $(BOUT_TOP)/make.config
 # House-keeping build targets.
 
 clean ::
-	rm -f gtest.a gtest_main.a *.o $(TEST_OBJECTS)
+	rm -f gtest.a bout_test_main.a *.o $(TEST_OBJECTS)
 
-# Builds gtest.a and gtest_main.a.
+# Builds gtest.a and bout_test_main.a.
 
 # Usually you shouldn't tweak such internal variables, indicated by a
 # trailing _.
@@ -47,22 +47,22 @@ gtest-all.o : $(GTEST_SRCS_)
 	@$(CXX) $(CPPFLAGS) -I$(GTEST_DIR) $(CXXFLAGS) -c \
             $(GTEST_DIR)/src/gtest-all.cc
 
-gtest_main.o : $(GTEST_SRCS_)
+bout_test_main.o : $(GTEST_SRCS_)
 	@echo "  Compiling" $@
-	@$(CXX) $(CPPFLAGS) -I$(GTEST_DIR) $(CXXFLAGS) -c \
-            $(GTEST_DIR)/src/gtest_main.cc
+	@$(CXX) $(CPPFLAGS) -I$(GTEST_DIR) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c \
+            $(BOUT_TEST_DIR)/bout_test_main.cxx
 
 gtest.a : gtest-all.o
 	@echo "  Linking" $@
 	@$(AR) $(ARFLAGS) $@ $^
 
-gtest_main.a : gtest-all.o gtest_main.o
+bout_test_main.a : gtest-all.o bout_test_main.o
 	@echo "  Linking" $@
 	@$(AR) $(ARFLAGS) $@ $^
 
-$(TARGET): makefile $(BOUT_TOP)/make.config $(OBJ) $(SUB_LIBS) gtest_main.a
+$(TARGET): makefile $(BOUT_TOP)/make.config $(OBJ) $(SUB_LIBS) bout_test_main.a
 	@echo "  Linking" $(TARGET)
-	@$(LD) $(LDFLAGS) -o $(TARGET) $(OBJ) $(BOUT_LIBS) $(SUB_LIBS) gtest_main.a
+	@$(LD) $(LDFLAGS) -o $(TARGET) $(OBJ) $(BOUT_LIBS) $(SUB_LIBS) bout_test_main.a
 
 TEST_SOURCES = $(shell find $(BOUT_TEST_DIR) -type f -name "test_*.cxx" 2> /dev/null)
 TEST_OBJECTS = $(TEST_SOURCES:%.cxx=%.o)
@@ -70,9 +70,9 @@ TEST_OBJECTS = $(TEST_SOURCES:%.cxx=%.o)
 $(TEST_SOURCES): checklib
 $(TEST_OBJECTS): $(LIB)
 
-all_tests: makefile $(BOUT_TOP)/make.config $(OBJ) $(LIB) $(SUB_LIBS) $(TEST_OBJECTS) gtest_main.a
+all_tests: makefile $(BOUT_TOP)/make.config $(OBJ) $(LIB) $(SUB_LIBS) $(TEST_OBJECTS) bout_test_main.a
 	@echo "  Linking tests"
-	@$(LD) $(LDFLAGS) -o $@ $(OBJ) $(TEST_OBJECTS) gtest_main.a $(BOUT_LIBS) $(SUB_LIBS)
+	@$(LD) $(LDFLAGS) -o $@ $(TEST_OBJECTS) bout_test_main.a $(BOUT_LIBS) $(SUB_LIBS)
 
 check: all_tests
 	./all_tests
