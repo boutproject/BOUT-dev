@@ -217,14 +217,14 @@ class Field2D : public Field, public FieldData {
   Field2D & operator/=(const Field2D &rhs); ///< In-place division. Copy-on-write used if data is shared
   Field2D & operator/=(BoutReal rhs);       ///< In-place division. Copy-on-write used if data is shared
 
+  DEPRECATED(void getXArray(int y, int z, rvec &xv) const);
+  DEPRECATED(void getYArray(int x, int z, rvec &yv) const);
+  DEPRECATED(void getZArray(int x, int y, rvec &zv) const);
+
+  DEPRECATED(void setXArray(int y, int z, const rvec &xv));
+  DEPRECATED(void setYArray(int x, int z, const rvec &yv));
+
   // Stencils
-
-  void getXArray(int y, int z, rvec &xv) const;
-  void getYArray(int x, int z, rvec &yv) const;
-  void getZArray(int x, int y, rvec &zv) const;
-
-  void setXArray(int y, int z, const rvec &xv);
-  void setYArray(int x, int z, const rvec &yv);
 
   //void setStencil(bstencil *fval, bindex *bx) const;
   void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
