@@ -68,6 +68,12 @@ Field2D::Field2D(Mesh *msh) : Field(msh), deriv(nullptr) {
 Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing array sizes
                                      data(f.data), // This handles references to the data array
                                      deriv(nullptr) {
+  TRACE("Field2D(Field2D&)");
+  
+#if CHECK > 2
+  checkData(f);
+#endif
+
   if(fieldmesh) {
     nx = fieldmesh->LocalNx;
     ny = fieldmesh->LocalNy;
@@ -80,7 +86,7 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing 
 #endif
   
   boundaryIsSet = false;
-  *this = f;
+  *this = f; //This copies all the data -- unlike 3D which delays, using Copy on write+ref counting
 }
 
 Field2D::Field2D(BoutReal val) : Field(nullptr), deriv(nullptr) {
@@ -304,6 +310,12 @@ void Field2D::setYArray(int x, int UNUSED(z), const rvec &yv) {
 }
 
 void Field2D::setXStencil(stencil &fval, const bindex &bx, CELL_LOC UNUSED(loc)) const {
+  fval.jx = bx.jx;
+  fval.jy = bx.jy;
+  fval.jz = bx.jz;
+
+  ASSERT1(isAllocated());
+
   fval.mm = operator()(bx.jx2m,bx.jy);
   fval.m  = operator()(bx.jxm,bx.jy);
   fval.c  = operator()(bx.jx,bx.jy);
@@ -312,6 +324,12 @@ void Field2D::setXStencil(stencil &fval, const bindex &bx, CELL_LOC UNUSED(loc))
 }
 
 void Field2D::setXStencil(forward_stencil &fval, const bindex &bx, CELL_LOC UNUSED(loc)) const {
+  fval.jx = bx.jx;
+  fval.jy = bx.jy;
+  fval.jz = bx.jz;
+
+  ASSERT1(isAllocated());
+
   fval.m  = operator()(bx.jxm,bx.jy);
   fval.c  = operator()(bx.jx,bx.jy);
   fval.p  = operator()(bx.jxp,bx.jy);
@@ -321,6 +339,12 @@ void Field2D::setXStencil(forward_stencil &fval, const bindex &bx, CELL_LOC UNUS
 }
 
 void Field2D::setXStencil(backward_stencil &fval, const bindex &bx, CELL_LOC UNUSED(loc)) const {
+  fval.jx = bx.jx;
+  fval.jy = bx.jy;
+  fval.jz = bx.jz;
+
+  ASSERT1(isAllocated());
+
   fval.m4 = operator()(bx.jx-4,bx.jy);
   fval.m3 = operator()(bx.jx-3,bx.jy);
   fval.m2 = operator()(bx.jx2m,bx.jy);
@@ -330,6 +354,12 @@ void Field2D::setXStencil(backward_stencil &fval, const bindex &bx, CELL_LOC UNU
 }
 
 void Field2D::setYStencil(stencil &fval, const bindex &bx, CELL_LOC UNUSED(loc)) const {
+  fval.jx = bx.jx;
+  fval.jy = bx.jy;
+  fval.jz = bx.jz;
+
+  ASSERT1(isAllocated());
+
   fval.mm = operator()(bx.jx,bx.jy2m);
   fval.m  = operator()(bx.jx,bx.jym);
   fval.c  = operator()(bx.jx,bx.jy);
@@ -338,6 +368,12 @@ void Field2D::setYStencil(stencil &fval, const bindex &bx, CELL_LOC UNUSED(loc))
 }
 
 void Field2D::setYStencil(forward_stencil &fval, const bindex &bx, CELL_LOC UNUSED(loc)) const {
+  fval.jx = bx.jx;
+  fval.jy = bx.jy;
+  fval.jz = bx.jz;
+
+  ASSERT1(isAllocated());
+
   fval.m  = operator()(bx.jx,bx.jym);
   fval.c  = operator()(bx.jx,bx.jy);
   fval.p  = operator()(bx.jx,bx.jyp);
@@ -347,6 +383,12 @@ void Field2D::setYStencil(forward_stencil &fval, const bindex &bx, CELL_LOC UNUS
 }
 
 void Field2D::setYStencil(backward_stencil &fval, const bindex &bx, CELL_LOC UNUSED(loc)) const {
+  fval.jx = bx.jx;
+  fval.jy = bx.jy;
+  fval.jz = bx.jz;
+
+  ASSERT1(isAllocated());
+
   fval.m4 = operator()(bx.jx,bx.jy-4);
   fval.m3 = operator()(bx.jx,bx.jy-3);
   fval.m2 = operator()(bx.jx,bx.jy2m);
@@ -356,6 +398,12 @@ void Field2D::setYStencil(backward_stencil &fval, const bindex &bx, CELL_LOC UNU
 }
 
 void Field2D::setZStencil(stencil &fval, const bindex &bx, CELL_LOC UNUSED(loc)) const {
+  fval.jx = bx.jx;
+  fval.jy = bx.jy;
+  fval.jz = bx.jz;
+
+  ASSERT1(isAllocated());
+
   fval = operator()(bx.jx,bx.jy);
 }
 
