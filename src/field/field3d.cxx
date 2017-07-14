@@ -453,7 +453,7 @@ void Field3D::setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const {
   fval.pp = operator()(bx.jx2p, bx.jy, bx.jz);
   fval.mm = operator()(bx.jx2m, bx.jy, bx.jz);
 
-  if(mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
+  if(fieldmesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
     // Non-centred stencil
 
     if((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
@@ -484,7 +484,7 @@ void Field3D::setXStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc)
     throw BoutException("Field3D: Setting X stencil for empty data\n");
 #endif
   
-  if(mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
+  if(fieldmesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
     // Non-centred stencil
 
     if((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
@@ -527,7 +527,7 @@ void Field3D::setXStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc
 
   ASSERT1(isAllocated());
 
-  if(mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
+  if(fieldmesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
     // Non-centred stencil
 
     if((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
@@ -581,7 +581,7 @@ void Field3D::setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
     fval.mm = nan("");
   }
 
-  if(mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
+  if(fieldmesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
     // Non-centred stencil
 
     if((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
@@ -607,7 +607,7 @@ void Field3D::setYStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc)
 
   ASSERT1(isAllocated());
   
-  if(mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
+  if(fieldmesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
     // Non-centred stencil
 
     if((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
@@ -647,7 +647,7 @@ void Field3D::setYStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc
 
   ASSERT1(isAllocated());
 
-  if(mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
+  if(fieldmesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
     // Non-centred stencil
 
     if((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
@@ -694,7 +694,7 @@ void Field3D::setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const {
   fval.pp = operator()(bx.jx,bx.jy,bx.jz2p);
   fval.mm = operator()(bx.jx,bx.jy,bx.jz2m);
 
-  if(mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
+  if(fieldmesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
     // Non-centred stencil
 
     if((location == CELL_CENTRE) && (loc == CELL_ZLOW)) {
@@ -853,6 +853,8 @@ void Field3D::applyBoundary(const string &condition) {
     op->apply(*this);
     delete op;
   }
+
+  //Field2D sets the corners to zero here, should we do the same here?
 }
 
 void Field3D::applyBoundary(const string &region, const string &condition) {
@@ -870,6 +872,8 @@ void Field3D::applyBoundary(const string &region, const string &condition) {
       break;
     }
   }
+
+  //Field2D sets the corners to zero here, should we do the same here?
 }
 
 void Field3D::applyTDerivBoundary() {
@@ -964,7 +968,7 @@ void Field3D::applyParallelBoundary(const string &condition) {
     BoundaryFactory *bfact = BoundaryFactory::getInstance();
 
     /// Loop over the mesh boundary regions
-    for(const auto& reg : mesh->getBoundariesPar()) {
+    for(const auto& reg : fieldmesh->getBoundariesPar()) {
       BoundaryOpPar* op = static_cast<BoundaryOpPar*>(bfact->create(condition, reg));
       op->apply(*this);
       delete op;
@@ -988,7 +992,7 @@ void Field3D::applyParallelBoundary(const string &region, const string &conditio
     BoundaryFactory *bfact = BoundaryFactory::getInstance();
 
     /// Loop over the mesh boundary regions
-    for(const auto& reg : mesh->getBoundariesPar()) {
+    for(const auto& reg : fieldmesh->getBoundariesPar()) {
       if(reg->label.compare(region) == 0) {
         BoundaryOpPar* op = static_cast<BoundaryOpPar*>(bfact->create(condition, reg));
         op->apply(*this);
@@ -1015,7 +1019,7 @@ void Field3D::applyParallelBoundary(const string &region, const string &conditio
     BoundaryFactory *bfact = BoundaryFactory::getInstance();
 
     /// Loop over the mesh boundary regions
-    for(const auto& reg : mesh->getBoundariesPar()) {
+    for(const auto& reg : fieldmesh->getBoundariesPar()) {
       if(reg->label.compare(region) == 0) {
         // BoundaryFactory can't create boundaries using Field3Ds, so get temporary
         // boundary of the right type

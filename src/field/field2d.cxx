@@ -279,9 +279,9 @@ void Field2D::getYArray(int x, int UNUSED(z), rvec &yv) const {
 void Field2D::getZArray(int x, int y, rvec &zv) const {
   ASSERT1(isAllocated());
 
-  zv.resize(mesh->LocalNz);
+  zv.resize(fieldmesh->LocalNz);
   
-  for(int z=0;z<mesh->LocalNz;z++)
+  for(int z=0;z<fieldmesh->LocalNz;z++)
     zv[z] = operator()(x,y);
 }
 
@@ -297,9 +297,9 @@ void Field2D::setXArray(int y, int UNUSED(z), const rvec &xv) {
 void Field2D::setYArray(int x, int UNUSED(z), const rvec &yv) {
   allocate();
 
-  ASSERT0(yv.capacity() == (unsigned int) mesh->LocalNy);
+  ASSERT0(yv.capacity() == (unsigned int) fieldmesh->LocalNy);
 
-  for(int y=0;y<mesh->LocalNy;y++)
+  for(int y=0;y<fieldmesh->LocalNy;y++)
     operator()(x,y) = yv[y];
 }
 
@@ -447,26 +447,26 @@ void Field2D::applyBoundary(const string &condition) {
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
   
   /// Loop over the mesh boundary regions
-  for(const auto& reg : mesh->getBoundaries()) {
+  for(const auto& reg : fieldmesh->getBoundaries()) {
     BoundaryOp* op = static_cast<BoundaryOp*>(bfact->create(condition, reg));
     op->apply(*this);
     delete op;
   }
   
   // Set the corners to zero
-  for(int jx=0;jx<mesh->xstart;jx++) {
-    for(int jy=0;jy<mesh->ystart;jy++) {
+  for(int jx=0;jx<fieldmesh->xstart;jx++) {
+    for(int jy=0;jy<fieldmesh->ystart;jy++) {
       operator()(jx,jy) = 0.;
     }
-    for(int jy=mesh->yend+1;jy<mesh->LocalNy;jy++) {
+    for(int jy=fieldmesh->yend+1;jy<fieldmesh->LocalNy;jy++) {
       operator()(jx,jy) = 0.;
     }
   }
-  for(int jx=mesh->xend+1;jx<mesh->LocalNx;jx++) {
-    for(int jy=0;jy<mesh->ystart;jy++) {
+  for(int jx=fieldmesh->xend+1;jx<fieldmesh->LocalNx;jx++) {
+    for(int jy=0;jy<fieldmesh->ystart;jy++) {
       operator()(jx,jy) = 0.;
     }
-    for(int jy=mesh->yend+1;jy<mesh->LocalNy;jy++) {
+    for(int jy=fieldmesh->yend+1;jy<fieldmesh->LocalNy;jy++) {
       operator()(jx,jy) = 0.;
     }
   }
@@ -479,7 +479,7 @@ void Field2D::applyBoundary(const string &region, const string &condition) {
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
   
   /// Loop over the mesh boundary regions
-  for(const auto& reg : mesh->getBoundaries()) {
+  for(const auto& reg : fieldmesh->getBoundaries()) {
     if(reg->label.compare(region) == 0) {
       BoundaryOp* op = static_cast<BoundaryOp*>(bfact->create(condition, reg));
       op->apply(*this);
@@ -489,19 +489,19 @@ void Field2D::applyBoundary(const string &region, const string &condition) {
   }
   
   // Set the corners to zero
-  for(int jx=0;jx<mesh->xstart;jx++) {
-    for(int jy=0;jy<mesh->ystart;jy++) {
+  for(int jx=0;jx<fieldmesh->xstart;jx++) {
+    for(int jy=0;jy<fieldmesh->ystart;jy++) {
       operator()(jx,jy) = 0.;
     }
-    for(int jy=mesh->yend+1;jy<mesh->LocalNy;jy++) {
+    for(int jy=fieldmesh->yend+1;jy<fieldmesh->LocalNy;jy++) {
       operator()(jx,jy) = 0.;
     }
   }
-  for(int jx=mesh->xend+1;jx<mesh->LocalNx;jx++) {
-    for(int jy=0;jy<mesh->ystart;jy++) {
+  for(int jx=fieldmesh->xend+1;jx<fieldmesh->LocalNx;jx++) {
+    for(int jy=0;jy<fieldmesh->ystart;jy++) {
       operator()(jx,jy) = 0.;
     }
-    for(int jy=mesh->yend+1;jy<mesh->LocalNy;jy++) {
+    for(int jy=fieldmesh->yend+1;jy<fieldmesh->LocalNy;jy++) {
       operator()(jx,jy) = 0.;
     }
   }
@@ -525,7 +525,7 @@ void Field2D::setBoundaryTo(const Field2D &f2d) {
   ASSERT0(f2d.isAllocated());
 
   /// Loop over boundary regions
-  for(const auto& reg : mesh->getBoundaries()) {
+  for(const auto& reg : fieldmesh->getBoundaries()) {
     /// Loop within each region
     for(reg->first(); !reg->isDone(); reg->next()) {
       // Get value half-way between cells
