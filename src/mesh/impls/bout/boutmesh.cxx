@@ -79,6 +79,8 @@ BoutMesh::~BoutMesh() {
   // Delete the boundary regions
   for(const auto& bndry : boundary)
     delete bndry;
+  for(const auto& bndry : par_boundary)
+    delete bndry;
 
   if(comm_x != MPI_COMM_NULL)
     MPI_Comm_free(&comm_x);
