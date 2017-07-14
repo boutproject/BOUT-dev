@@ -87,6 +87,7 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing 
   
   boundaryIsSet = false;
   *this = f; //This line is probably not required as we init data from f.data above.
+}
 
 Field2D::Field2D(BoutReal val) : Field(nullptr), deriv(nullptr) {
   boundaryIsSet = false;
