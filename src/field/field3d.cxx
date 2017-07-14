@@ -1,4 +1,9 @@
-/**************************************************************************
+/*!*************************************************************************
+ * \file field3d.cxx
+ *
+ * Class for 3D X-Y-Z scalar fields
+ *
+ **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
@@ -323,7 +328,7 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
   allocate();
 
   /// Copy data
-  for(auto i : (*this))
+  for(const auto& i : (*this))
     (*this)[i] = rhs[i];
   
   /// Only 3D fields have locations for now
@@ -339,7 +344,7 @@ void Field3D::operator=(const FieldPerp &rhs) {
   allocate();
 
   /// Copy data
-  for(auto i : rhs) {
+  for(const auto& i : rhs) {
     (*this)[i] = rhs[i];
   }
 }
@@ -366,7 +371,7 @@ Field3D & Field3D::operator=(const BoutReal val) {
   if(!finite(val))
     throw BoutException("Field3D: Assignment from non-finite BoutReal\n");
 #endif
-  for(auto i : (*this))
+  for(const auto& i : (*this))
     (*this)[i] = val;
 
   // Only 3D fields have locations
@@ -385,7 +390,7 @@ Field3D & Field3D::operator=(const BoutReal val) {
     checkData(*this);                                        \
     if(data.unique()) {                                      \
       /* This is the only reference to this data */          \
-      for(auto i : (*this))                                  \
+      for(const auto& i : (*this))                                  \
         (*this)[i] op rhs[i];                                \
     }else {                                                  \
       /* Shared data */                                      \
@@ -413,7 +418,7 @@ F3D_UPDATE_FIELD(/=, /, Field2D);    // operator/= Field2D
                                                              \
     if(data.unique()) {                                      \
       /* This is the only reference to this data */          \
-      for(auto i : (*this))                                  \
+      for(const auto& i : (*this))                                  \
         (*this)[i] op rhs;                                   \
     }else {                                                  \
       /* Need to put result in a new block */                \
@@ -435,12 +440,8 @@ void Field3D::setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const {
   fval.jx = bx.jx;
   fval.jy = bx.jy;
   fval.jz = bx.jz;
-  
-#if CHECK > 0
-  // Check data set
-  if(data.empty())
-    throw BoutException("Field3D: Setting X stencil for empty data\n");
-#endif
+
+  ASSERT1(isAllocated());
   
   fval.c  = operator()(bx.jx,  bx.jy, bx.jz);
   fval.p  = operator()(bx.jxp, bx.jy, bx.jz);
@@ -448,7 +449,7 @@ void Field3D::setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const {
   fval.pp = operator()(bx.jx2p, bx.jy, bx.jz);
   fval.mm = operator()(bx.jx2m, bx.jy, bx.jz);
 
-  if(mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
+  if(fieldmesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
     // Non-centred stencil
 
     if((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
@@ -472,14 +473,10 @@ void Field3D::setXStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc)
   fval.jx = bx.jx;
   fval.jy = bx.jy;
   fval.jz = bx.jz;
+
+  ASSERT1(isAllocated());  
   
-#if CHECK > 0
-  // Check data set
-  if(data.empty())
-    throw BoutException("Field3D: Setting X stencil for empty data\n");
-#endif
-  
-  if(mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
+  if(fieldmesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
     // Non-centred stencil
 
     if((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
@@ -522,7 +519,7 @@ void Field3D::setXStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc
 
   ASSERT1(isAllocated());
 
-  if(mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
+  if(fieldmesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
     // Non-centred stencil
 
     if((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
@@ -576,7 +573,7 @@ void Field3D::setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
     fval.mm = nan("");
   }
 
-  if(mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
+  if(fieldmesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
     // Non-centred stencil
 
     if((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
@@ -602,7 +599,7 @@ void Field3D::setYStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc)
 
   ASSERT1(isAllocated());
   
-  if(mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
+  if(fieldmesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
     // Non-centred stencil
 
     if((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
@@ -642,7 +639,7 @@ void Field3D::setYStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc
 
   ASSERT1(isAllocated());
 
-  if(mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
+  if(fieldmesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
     // Non-centred stencil
 
     if((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
@@ -689,7 +686,7 @@ void Field3D::setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const {
   fval.pp = operator()(bx.jx,bx.jy,bx.jz2p);
   fval.mm = operator()(bx.jx,bx.jy,bx.jz2m);
 
-  if(mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
+  if(fieldmesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
     // Non-centred stencil
 
     if((location == CELL_CENTRE) && (loc == CELL_ZLOW)) {
@@ -776,6 +773,14 @@ void Field3D::setBackground(const Field2D &f2d) {
 void Field3D::applyBoundary(bool init) {
   TRACE("Field3D::applyBoundary()");
 
+#if CHECK > 0
+  if (init) {
+
+    if(!boundaryIsSet)
+      output << "WARNING: Call to Field3D::applyBoundary(), but no boundary set" << endl;
+  }
+#endif
+
   ASSERT1(isAllocated());
   
   if(background != NULL) {
@@ -840,6 +845,8 @@ void Field3D::applyBoundary(const string &condition) {
     op->apply(*this);
     delete op;
   }
+
+  //Field2D sets the corners to zero here, should we do the same here?
 }
 
 void Field3D::applyBoundary(const string &region, const string &condition) {
@@ -857,6 +864,8 @@ void Field3D::applyBoundary(const string &region, const string &condition) {
       break;
     }
   }
+
+  //Field2D sets the corners to zero here, should we do the same here?
 }
 
 void Field3D::applyTDerivBoundary() {
@@ -951,7 +960,7 @@ void Field3D::applyParallelBoundary(const string &condition) {
     BoundaryFactory *bfact = BoundaryFactory::getInstance();
 
     /// Loop over the mesh boundary regions
-    for(const auto& reg : mesh->getBoundariesPar()) {
+    for(const auto& reg : fieldmesh->getBoundariesPar()) {
       BoundaryOpPar* op = static_cast<BoundaryOpPar*>(bfact->create(condition, reg));
       op->apply(*this);
       delete op;
@@ -975,7 +984,7 @@ void Field3D::applyParallelBoundary(const string &region, const string &conditio
     BoundaryFactory *bfact = BoundaryFactory::getInstance();
 
     /// Loop over the mesh boundary regions
-    for(const auto& reg : mesh->getBoundariesPar()) {
+    for(const auto& reg : fieldmesh->getBoundariesPar()) {
       if(reg->label.compare(region) == 0) {
         BoundaryOpPar* op = static_cast<BoundaryOpPar*>(bfact->create(condition, reg));
         op->apply(*this);
@@ -1002,7 +1011,7 @@ void Field3D::applyParallelBoundary(const string &region, const string &conditio
     BoundaryFactory *bfact = BoundaryFactory::getInstance();
 
     /// Loop over the mesh boundary regions
-    for(const auto& reg : mesh->getBoundariesPar()) {
+    for(const auto& reg : fieldmesh->getBoundariesPar()) {
       if(reg->label.compare(region) == 0) {
         // BoundaryFactory can't create boundaries using Field3Ds, so get temporary
         // boundary of the right type
@@ -1033,7 +1042,7 @@ const Field3D operator-(const Field3D &f) {
     FieldPerp result;                                                     \
     result.allocate();                                                    \
     result.setIndex(rhs.getIndex());                                      \
-    for(auto i : rhs)                                                     \
+    for(const auto& i : rhs)                                                     \
       result[i] = lhs[i] op rhs[i];                                       \
     return result;                                                        \
   }
@@ -1047,7 +1056,7 @@ F3D_OP_FPERP(*);
   const Field3D operator op(const Field3D &lhs, const ftype &rhs) { \
     Field3D result;                                                 \
     result.allocate();                                              \
-    for(auto i : lhs)                                               \
+    for(const auto& i : lhs)                                               \
       result[i] = lhs[i] op rhs[i];                                 \
     result.setLocation( lhs.getLocation() );                        \
     return result;                                                  \
@@ -1067,7 +1076,7 @@ F3D_OP_FIELD(/, Field2D);   // Field3D / Field2D
   const Field3D operator op(const Field3D &lhs, BoutReal rhs) { \
     Field3D result;                                             \
     result.allocate();                                          \
-    for(auto i : lhs)                                           \
+    for(const auto& i : lhs)                                           \
       result[i] = lhs[i] op rhs;                                \
     result.setLocation( lhs.getLocation() );                    \
     return result;                                              \
@@ -1082,7 +1091,7 @@ F3D_OP_REAL(/); // Field3D / BoutReal
   const Field3D operator op(BoutReal lhs, const Field3D &rhs) { \
     Field3D result;                                             \
     result.allocate();                                          \
-    for(auto i : rhs)                                           \
+    for(const auto& i : rhs)                                           \
       result[i] = lhs op rhs[i];                                \
     result.setLocation( rhs.getLocation() );                    \
     return result;                                              \
@@ -1107,7 +1116,7 @@ Field3D pow(const Field3D &lhs, const Field3D &rhs) {
   result.allocate();
 
   // Iterate over indices
-  for(auto i : result) {
+  for(const auto& i : result) {
     result[i] = ::pow(lhs[i], rhs[i]);
     ASSERT2( ::finite( result[i] ) );
   }
@@ -1119,14 +1128,18 @@ Field3D pow(const Field3D &lhs, const Field3D &rhs) {
 
 Field3D pow(const Field3D &lhs, const Field2D &rhs) {
   TRACE("pow(Field3D, Field2D)");
-  
+  // Check if the inputs are allocated
+  ASSERT1(lhs.isAllocated());
+  ASSERT1(rhs.isAllocated());
+
+  // Define and allocate the output result  
   Field3D result;
   result.allocate();
 
   // Iterate over indices
-  for(auto i : result) {
+  for(const auto& i : result) {
     result[i] = ::pow(lhs[i], rhs[i]);
-    ASSERT2( ::finite( result[i] ) );
+    ASSERT3( ::finite( result[i] ) );
   }
 
   result.setLocation( lhs.getLocation() );
@@ -1141,7 +1154,7 @@ Field3D pow(const Field3D &lhs, const FieldPerp &rhs) {
   result.allocate();
 
   // Iterate over indices
-  for(auto i : result) {
+  for(const auto& i : result) {
     result[i] = ::pow(lhs[i], rhs[i]);
     ASSERT2( ::finite( result[i] ) );
   }
@@ -1150,21 +1163,35 @@ Field3D pow(const Field3D &lhs, const FieldPerp &rhs) {
   return result;
 }
 
-Field3D pow(const Field3D &f, BoutReal rhs) {
+Field3D pow(const Field3D &lhs, BoutReal rhs) {
+  TRACE("pow(Field3D, BoutReal)");
+  // Check if the inputs are allocated
+  ASSERT1(lhs.isAllocated());
+
   Field3D result;
   result.allocate();
-  for(auto i : result)
-    result[i] = ::pow(f[i], rhs);
+  for(const auto& i : result){
+    result[i] = ::pow(lhs[i], rhs);
+    ASSERT3(finite(result[i]));
+  }
   
-  result.setLocation( f.getLocation() );
+  result.setLocation( lhs.getLocation() );
   return result;
 }
 
 Field3D pow(BoutReal lhs, const Field3D &rhs) {
+  TRACE("pow(lhs, Field3D)");
+  // Check if the inputs are allocated
+  ASSERT1(rhs.isAllocated());
+
+  // Define and allocate the output result
   Field3D result;
   result.allocate();
-  for(auto i : result)
+
+  for(const auto& i : result){
     result[i] = ::pow(lhs, rhs[i]);
+    ASSERT3(finite(result[i]));
+  }
   
   result.setLocation( rhs.getLocation() );
   return result;
@@ -1173,14 +1200,11 @@ Field3D pow(BoutReal lhs, const Field3D &rhs) {
 BoutReal min(const Field3D &f, bool allpe) {
   TRACE("Field3D::Min() %s",allpe? "over all PEs" : "");
 
-#if CHECK > 0
-  if(!f.isAllocated())
-    throw BoutException("Field3D: min() method on empty data");
-#endif
+  ASSERT2(f.isAllocated());
 
   BoutReal result = f[f.region(RGN_NOBNDRY).begin()];
   
-  for(auto i: f.region(RGN_NOBNDRY))
+  for(const auto& i: f.region(RGN_NOBNDRY))
     if(f[i] < result)
       result = f[i];
   
@@ -1196,14 +1220,11 @@ BoutReal min(const Field3D &f, bool allpe) {
 BoutReal max(const Field3D &f, bool allpe) {
   TRACE("Field3D::Max() %s",allpe? "over all PEs" : "");
 
-#if CHECK > 0
-  if(!f.isAllocated())
-    throw BoutException("Field3D: max() method on empty data");
-#endif
+  ASSERT2(f.isAllocated());
   
   BoutReal result = f[f.region(RGN_NOBNDRY).begin()];
   
-  for(auto i: f.region(RGN_NOBNDRY))
+  for(const auto& i: f.region(RGN_NOBNDRY))
     if(f[i] > result)
       result = f[i];
   
@@ -1228,7 +1249,7 @@ BoutReal max(const Field3D &f, bool allpe) {
     Field3D result;                                        \
     result.allocate();                                     \
     /* Loop over domain */                                 \
-    for(auto d : result) {                                 \
+    for(const auto& d : result) {                                 \
       result[d] = func(f[d]);                              \
       /* If checking is set to 3 or higher, test result */ \
       ASSERT3(finite(result[d]));                          \
@@ -1392,7 +1413,7 @@ void shiftZ(Field3D &var, int jx, int jy, double zangle) {
 
 void shiftZ(Field3D &var, double zangle) {
   for(int x=0;x<mesh->LocalNx;x++) 
-    for(int y=0;mesh->LocalNy;y++)
+    for(int y=0;y<mesh->LocalNy;y++)
       shiftZ(var, x, y, zangle);
 }
 
@@ -1403,7 +1424,7 @@ bool finite(const Field3D &f) {
     return false;
   }
 
-  for (auto &i : f) {
+  for (const auto &i : f) {
     if (!finite(f[i])) {
       return false;
     }
@@ -1418,13 +1439,14 @@ void checkData(const Field3D &f)  {
   if(!f.isAllocated())
     throw BoutException("Field3D: Operation on empty data\n");
   
-  for(auto d : f) {
-    if( (d.x < mesh->xstart) or (d.x > mesh->xend) or (d.y < mesh->ystart) or (d.y > mesh->yend) or (d.z >= mesh->LocalNz))
-      continue; // Exclude boundary cells
-    
-    if(!finite(f[d]))
+#if CHECK > 2
+  //Do full checks
+  for(const auto& d : f.region(RGN_NOBNDRY)) {
+    if(!finite(f[d])) {
       throw BoutException("Field3D: Operation on non-finite data at [%d][%d][%d]\n", d.x, d.y, d.z);
+    }
   }
+#endif
 }
 #endif
 
@@ -1437,7 +1459,7 @@ const Field3D copy(const Field3D &f) {
 const Field3D floor(const Field3D &var, BoutReal f) {
   Field3D result = copy(var);
   
-  for(auto d : result)
+  for(const auto& d : result)
     if(result[d] < f)
       result[d] = f;
   

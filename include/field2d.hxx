@@ -266,7 +266,6 @@ class Field2D : public Field, public FieldData {
   void setBoundaryTo(const Field2D &f2d); ///< Copy the boundary region
   
  private:
-  Mesh *fieldmesh; ///< The mesh over which the field is defined
   int nx, ny;      ///< Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
   
   /// Internal data array. Handles allocation/freeing of memory

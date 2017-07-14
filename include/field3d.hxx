@@ -586,7 +586,7 @@ BoutReal max(const Field3D &f, bool allpe=false);
 Field3D pow(const Field3D &lhs, const Field3D &rhs);
 Field3D pow(const Field3D &lhs, const Field2D &rhs);
 Field3D pow(const Field3D &lhs, const FieldPerp &rhs);
-Field3D pow(const Field3D &f, BoutReal rhs);
+Field3D pow(const Field3D &lhs, BoutReal rhs);
 Field3D pow(BoutReal lhs, const Field3D &rhs);
 
 /*!
