@@ -15,7 +15,7 @@
 ::testing::AssertionResult IsField3DEqualBoutReal(const Field3D &field,
                                                   const BoutReal number,
                                                   const BoutReal tolerance) {
-  for (auto &i : field) {
+  for (const auto &i : field) {
     if (fabs(field[i] - number) > tolerance) {
       return ::testing::AssertionFailure() << "Field3D(" << i.x << ", " << i.y << ", "
                                            << i.z << ") == " << field[i]
@@ -29,7 +29,7 @@
 ::testing::AssertionResult IsField2DEqualBoutReal(const Field2D &field,
                                                   const BoutReal number,
                                                   const BoutReal tolerance) {
-  for (auto &i : field) {
+  for (const auto &i : field) {
     if (fabs(field[i] - number) > tolerance) {
       return ::testing::AssertionFailure() << "Field2D(" << i.x << ", " << i.y
                                            << ") == " << field[i]

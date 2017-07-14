@@ -137,7 +137,7 @@ TEST_F(Field3DTest, IterateOverWholeField) {
 
   // Basic test first: do we visit the correct number of elements?
   int count = 0;
-  for (auto &UNUSED(i) : field) {
+  for (const auto &UNUSED(i) : field) {
     ++count;
   }
 
@@ -162,7 +162,7 @@ TEST_F(Field3DTest, IterateOverWholeField) {
   const int num_sentinels = test_indices.size();
 
   // Assign sentinel value to watch out for to our chosen points
-  for (auto index : test_indices) {
+  for (const auto& index : test_indices) {
     field(index[0], index[1], index[2]) = sentinel;
   }
 
@@ -170,7 +170,7 @@ TEST_F(Field3DTest, IterateOverWholeField) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (auto &i : field) {
+  for (const auto &i : field) {
     sum += field[i];
     if (field[i] == sentinel) {
       result_indices.insert({i.x, i.y, i.z});
@@ -202,7 +202,7 @@ TEST_F(Field3DTest, IterateOverRGN_ALL) {
   const int num_sentinels = test_indices.size();
 
   // Assign sentinel value to watch out for to our chosen points
-  for (auto index : test_indices) {
+  for (const auto index : test_indices) {
     field(index[0], index[1], index[2]) = sentinel;
   }
 
@@ -210,7 +210,7 @@ TEST_F(Field3DTest, IterateOverRGN_ALL) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (auto &i : field.region(RGN_ALL)) {
+  for (const auto &i : field.region(RGN_ALL)) {
     sum += field[i];
     if (field[i] == sentinel) {
       result_indices.insert({i.x, i.y, i.z});
@@ -247,7 +247,7 @@ TEST_F(Field3DTest, IterateOverRGN_NOBNDRY) {
   const int num_sentinels = region_indices.size();
 
   // Assign sentinel value to watch out for to our chosen points
-  for (auto &index : test_indices) {
+  for (const auto &index : test_indices) {
     field(index[0], index[1], index[2]) = sentinel;
   }
 
@@ -255,7 +255,7 @@ TEST_F(Field3DTest, IterateOverRGN_NOBNDRY) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (auto &i : field.region(RGN_NOBNDRY)) {
+  for (const auto &i : field.region(RGN_NOBNDRY)) {
     sum += field[i];
     if (field[i] == sentinel) {
       result_indices.insert({i.x, i.y, i.z});
@@ -264,7 +264,8 @@ TEST_F(Field3DTest, IterateOverRGN_NOBNDRY) {
   }
 
   EXPECT_EQ(found_sentinels, num_sentinels);
-  EXPECT_EQ(sum, (((nx - 2) * (ny - 2) * nz) - num_sentinels) + (num_sentinels * sentinel));
+  EXPECT_EQ(sum,
+            (((nx - 2) * (ny - 2) * nz) - num_sentinels) + (num_sentinels * sentinel));
   EXPECT_TRUE(region_indices == result_indices);
 }
 
@@ -294,7 +295,7 @@ TEST_F(Field3DTest, IterateOverRGN_NOX) {
   const int num_sentinels = region_indices.size();
 
   // Assign sentinel value to watch out for to our chosen points
-  for (auto index : test_indices) {
+  for (const auto index : test_indices) {
     field(index[0], index[1], index[2]) = sentinel;
   }
 
@@ -302,7 +303,7 @@ TEST_F(Field3DTest, IterateOverRGN_NOX) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (auto &i : field.region(RGN_NOX)) {
+  for (const auto &i : field.region(RGN_NOX)) {
     sum += field[i];
     if (field[i] == sentinel) {
       result_indices.insert({i.x, i.y, i.z});
@@ -343,7 +344,7 @@ TEST_F(Field3DTest, IterateOverRGN_NOY) {
   const int num_sentinels = region_indices.size();
 
   // Assign sentinel value to watch out for to our chosen points
-  for (auto index : test_indices) {
+  for (const auto index : test_indices) {
     field(index[0], index[1], index[2]) = sentinel;
   }
 
@@ -351,7 +352,7 @@ TEST_F(Field3DTest, IterateOverRGN_NOY) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (auto &i : field.region(RGN_NOY)) {
+  for (const auto &i : field.region(RGN_NOY)) {
     sum += field[i];
     if (field[i] == sentinel) {
       result_indices.insert({i.x, i.y, i.z});
