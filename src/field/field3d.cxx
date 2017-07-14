@@ -1,4 +1,9 @@
-/**************************************************************************
+/*!*************************************************************************
+ * \file field3d.cxx
+ *
+ * Class for 3D X-Y-Z scalar fields
+ *
+ **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
@@ -776,6 +781,14 @@ void Field3D::setBackground(const Field2D &f2d) {
 void Field3D::applyBoundary(bool init) {
   TRACE("Field3D::applyBoundary()");
 
+#if CHECK > 0
+  if (init) {
+
+    if(!boundaryIsSet)
+      output << "WARNING: Call to Field3D::applyBoundary(), but no boundary set" << endl;
+  }
+#endif
+
   ASSERT1(isAllocated());
   
   if(background != NULL) {
@@ -1119,14 +1132,18 @@ Field3D pow(const Field3D &lhs, const Field3D &rhs) {
 
 Field3D pow(const Field3D &lhs, const Field2D &rhs) {
   TRACE("pow(Field3D, Field2D)");
-  
+  // Check if the inputs are allocated
+  ASSERT1(lhs.isAllocated());
+  ASSERT1(rhs.isAllocated());
+
+  // Define and allocate the output result  
   Field3D result;
   result.allocate();
 
   // Iterate over indices
   for(const auto& i : result) {
     result[i] = ::pow(lhs[i], rhs[i]);
-    ASSERT2( ::finite( result[i] ) );
+    ASSERT3( ::finite( result[i] ) );
   }
 
   result.setLocation( lhs.getLocation() );
@@ -1150,21 +1167,35 @@ Field3D pow(const Field3D &lhs, const FieldPerp &rhs) {
   return result;
 }
 
-Field3D pow(const Field3D &f, BoutReal rhs) {
+Field3D pow(const Field3D &lhs, BoutReal rhs) {
+  TRACE("pow(Field3D, BoutReal)");
+  // Check if the inputs are allocated
+  ASSERT1(lhs.isAllocated());
+
   Field3D result;
   result.allocate();
-  for(const auto& i : result)
-    result[i] = ::pow(f[i], rhs);
+  for(const auto& i : result){
+    result[i] = ::pow(lhs[i], rhs);
+    ASSERT3(finite(result[i]));
+  }
   
-  result.setLocation( f.getLocation() );
+  result.setLocation( lhs.getLocation() );
   return result;
 }
 
 Field3D pow(BoutReal lhs, const Field3D &rhs) {
+  TRACE("pow(lhs, Field3D)");
+  // Check if the inputs are allocated
+  ASSERT1(rhs.isAllocated());
+
+  // Define and allocate the output result
   Field3D result;
   result.allocate();
-  for(const auto& i : result)
+
+  for(const auto& i : result){
     result[i] = ::pow(lhs, rhs[i]);
+    ASSERT3(finite(result[i]));
+  }
   
   result.setLocation( rhs.getLocation() );
   return result;
@@ -1173,10 +1204,7 @@ Field3D pow(BoutReal lhs, const Field3D &rhs) {
 BoutReal min(const Field3D &f, bool allpe) {
   TRACE("Field3D::Min() %s",allpe? "over all PEs" : "");
 
-#if CHECK > 0
-  if(!f.isAllocated())
-    throw BoutException("Field3D: min() method on empty data");
-#endif
+  ASSERT2(f.isAllocated());
 
   BoutReal result = f[f.region(RGN_NOBNDRY).begin()];
   
@@ -1196,10 +1224,7 @@ BoutReal min(const Field3D &f, bool allpe) {
 BoutReal max(const Field3D &f, bool allpe) {
   TRACE("Field3D::Max() %s",allpe? "over all PEs" : "");
 
-#if CHECK > 0
-  if(!f.isAllocated())
-    throw BoutException("Field3D: max() method on empty data");
-#endif
+  ASSERT2(f.isAllocated());
   
   BoutReal result = f[f.region(RGN_NOBNDRY).begin()];
   
@@ -1418,13 +1443,14 @@ void checkData(const Field3D &f)  {
   if(!f.isAllocated())
     throw BoutException("Field3D: Operation on empty data\n");
   
-  for(const auto& d : f) {
-    if( (d.x < mesh->xstart) or (d.x > mesh->xend) or (d.y < mesh->ystart) or (d.y > mesh->yend) or (d.z >= mesh->LocalNz))
-      continue; // Exclude boundary cells
-    
-    if(!finite(f[d]))
+#if CHECK > 2
+  //Do full checks
+  for(const auto& d : f.region(RGN_NOBNDRY)) {
+    if(!finite(f[d])) {
       throw BoutException("Field3D: Operation on non-finite data at [%d][%d][%d]\n", d.x, d.y, d.z);
+    }
   }
+#endif
 }
 #endif
 
