@@ -118,6 +118,12 @@ public:
   void set(const string &key, BoutReal val, const string &source="");
   void set(const string &key, const bool &val, const string &source="");
   void set(const string &key, const string &val, const string &source="");
+  
+  /// Set a string with a char* array. This converts to std::string
+  /// rather than allow an implicit conversion to bool
+  void set(const string &key, const char* val, const string &source="") {
+    set(key, string(val), source);
+  }
 
   /*!
    * Test if a key is set to a value
