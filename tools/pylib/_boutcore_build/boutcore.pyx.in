@@ -142,7 +142,6 @@ do
         return fu
 
     def __r${n}__(self,lhs):
-        #print("call __r${n}__")
         fu=Field3D()
         if isinstance(lhs,float) or isinstance(lhs,int):
             fu.cobj=f$n(<double?>float(lhs),(<Field3D?>self).cobj)
@@ -186,8 +185,6 @@ cdef class Mesh:
                 raise MemoryError('Not enough memory, allocation failed.')
             self.cobj.load()
             self.cobj.setParallelTransform()
-            #self.cobj.load()
-            #self.cobj.setParallelTransform()
 
     @classmethod
     def getGlobal(cls):
