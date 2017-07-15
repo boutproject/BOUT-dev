@@ -23,4 +23,16 @@ function = 1
 [mesh2]
 nx=5
 ny=5
-nz=5
+nz=4
+
+[meshz2]
+nx=1
+ny=1
+nz=2
+n=2
+
+
+[meshz4]
+nx=1
+ny=1
+nz=4

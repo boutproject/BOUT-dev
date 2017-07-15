@@ -40,11 +40,18 @@ print(pn.shape)
 diff=boutcore.DDZ(pres)
 
 
-mesh2=boutcore.Mesh(OptionSection="mesh2")
-f=boutcore.create3D("sin(z)",mesh2)
-dfdz=boutcore.DDZ(f)
-print(dfdz.getAll())
-print(f.getAll())
+mesh2=boutcore.Mesh(OptionSection="meshz2")
+#dfdz=boutcore.DDZ(f)
+#print(dfdz.getAll())
+#print(f.getAll())
+mesh4=boutcore.Mesh(OptionSection="meshz4")
+f4=boutcore.create3D("sin(z)",mesh4)
+f2=boutcore.create3D("sin(z)",mesh2)
+df2dz=boutcore.DDZ(f2)
+df4dz=boutcore.DDZ(f4)
+print(df2dz.getAll())
+print(df4dz.getAll())
+print(f2.getAll())
 
 
 #boutcore.finalise()

@@ -168,13 +168,13 @@ cdef class Mesh:
     cdef c.Mesh * cobj;
     cdef c.bool isGlobal
     cdef double isNormalised
-    factory=FieldFactory()
+    cdef FieldFactory factory
     def __init__(self, create=True,OptionSection=None):
         self.cobj=<c.Mesh*>0
         cdef c.string tmp
         self.isGlobal=False
         self.isNormalised=-1
-        #self.fact=<c.FieldFactory*>0
+        self.factory = FieldFactory()
         if create:
             if OptionSection:
                 tmp = str.encode(OptionSection)
@@ -289,22 +289,23 @@ def exp(Field3D a):
 def Delp2(Field3D a, zsmooth=-1):
     return f3dFromObj(c.Delp2(a.cobj[0],float(zsmooth)))
 
-def Delp2(Field3D a, zsmooth=-1):
-    return f3dFromObj(c.Delp2(a.cobj[0],float(zsmooth)))
-
 def Grad_perp_dot_Grad_perp(Field3D a, Field3D b):
     return f3dFromObj(c_Grad_perp_dot_Grad_perp(a.cobj[0],b.cobj[0]))
 
-#from libcpp.string cimport string as cppstring
-
 def create3D(string, Mesh msh,outloc="CELL_DEFAULT",time=0):
     cdef benum.CELL_LOC outloc_=benum.resolve_cell_loc(outloc)
-    fact=msh.getFactory()
+    cdef FieldFactory fact=msh.getFactory()
     cdef c.string str_=string.encode('ascii')
     #cdef char * func=string_
     return f3dFromObj(
-        (<FieldFactory>fact).cobj.create3D(str_,<c.Options*>0,<c.Mesh*>0,outloc_,time))
-    
-EOF
+        (<FieldFactory>fact).cobj.create3D(str_,<c.Options*>0,<c.Mesh*>0
+                                           ,outloc_,time))
 
-#cat resolve_enum.pxd
+def setOption(name, value):
+    cdef c.Options * opt = c.Options.getRoot()
+    cdef c.string key = name
+    cdef c.string value_ = value
+    cdef c.string source = "PyInterface"
+    opt.set(key,value_, source)
+
+EOF
