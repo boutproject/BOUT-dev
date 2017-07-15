@@ -40,6 +40,7 @@ class Options;
 #define __OPTIONS_H__
 
 #include "bout_types.hxx"
+#include "unused.hxx"
 
 #include <map>
 #include <string>
@@ -98,16 +99,36 @@ using std::string;
  *
  * This is used to represent all the options passed to BOUT++ either in a file or on the
  * command line.
+ *
+ * Logging
+ * -------
+ *
+ * When options are requested a line can be sent to output with the option key, value
+ * and source. This is now disabled by default, but can be enabled by calling
+ * the "setLogging(true)" function. This turns on logging for the section and all subsections.
+ * To turn on logging for all options therefore:
+ *
+ * Options::getRoot()->setLogging(true)
  */
 class Options {
 public:
- Options() : parent(NULL) {}
- Options(Options *p, string s) : parent(p), sectionName(s) {};
+  /// Constructor. This is called to create the root object,
+  /// so the log setting is the default value
+  Options() : parent(nullptr), log(false) {}
+
+  /// Constructor used to create non-root objects
+  ///
+  /// @param[in] p         Parent object
+  /// @param[in[ secname   Name of the section, including path from the root
+  /// @param[in] logging   Enable or disable logging of options
+  Options(Options *p, string secname, bool logging) : parent(p), sectionName(secname),log(logging) {};
+
+  /// Destructor
   ~Options();
 
   /// Get a pointer to the only root instance (singleton)
   static Options* getRoot();
-
+  
   /*!
    * Free all memory
    */ 
@@ -125,6 +146,14 @@ public:
     set(key, string(val), source);
   }
 
+  /// Turn on and off logging for this section and all subsections
+  void setLogging(bool logoptions) {
+    log = logoptions;
+    for (auto &it : sections) {
+      it.second->setLogging(log);
+    }
+  }
+  
   /*!
    * Test if a key is set to a value
    *
@@ -132,11 +161,18 @@ public:
   bool isSet(const string &key);
 
   // Getting options
-  void get(const string &key, int &val, const int &def, bool log=true);
-  void get(const string &key, BoutReal &val, BoutReal def, bool log=true);
-  void get(const string &key, bool &val, const bool &def, bool log=true);
-  void get(const string &key, string &val, const string &def, bool log=true);
+  void get(const string &key, int &val, const int &def);
+  void get(const string &key, BoutReal &val, const BoutReal &def);
+  void get(const string &key, bool &val, const bool &def);
+  void get(const string &key, string &val, const string &def);
 
+  // This is a temporary replacement for 4-argument get
+  // and will be removed in the next major release
+  template<typename T, typename U>
+  void get(const string &key, T &val, const U &def, bool UNUSED(log)) {
+    get(key, val, def);
+  }
+  
   /// Creates new section if doesn't exist
   Options* getSection(const string &name);
   Options* getParent() {return parent;}
@@ -170,6 +206,8 @@ public:
   
   Options *parent;
   string sectionName; // section name (if any), for logging only
+
+  bool log; ///< True if printing options to log file
   
   std::map<string, OptionValue> options;
   std::map<string, Options*> sections;
