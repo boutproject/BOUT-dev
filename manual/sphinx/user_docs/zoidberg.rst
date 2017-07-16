@@ -223,8 +223,14 @@ An example of calculating a Poincare plot on a single y slice (y=0) and producin
 
    line.plot()
 
+
+**Note**: Currently there is no checking that the line created is a good solution. The line
+could cross itself, but this has to be diagnosed manually at the moment. If the line is not a good
+approximation to the flux surface, increase the number of points by setting the ``revs`` keyword
+(y revolutions) in the ``trace_poincare`` call.
+
 In general the points along this line are not evenly
-distributed, but tend to cluster together in some regions. 
+distributed, but tend to cluster together in some regions and have large gaps in others. 
 The elliptic grid generator places grid points on the boundaries
 which are uniform in the index of the ``RZline`` it is given.
 Passing a very uneven set of points will therefore result in
@@ -235,12 +241,34 @@ by placing points at equal distances along the line:
 
    line = line.equallySpaced()
 
+The example zoidberg/straight-stellarator-curvilinear.py puts the above methods together
+to create a grid file for a straight stellarator.
 
+Sections below now describe each part of Zoidberg in more detail. Further documentation
+of the API can be found in the docstrings and unit tests.
    
 Magnetic fields
 ---------------
 
 The magnetic field is represented by a ``MagneticField`` class, in ``zoidberg.field``.
+Magnetic fields can be defined in either cylindrical or Cartesian coordinates:
+
+* In Cartesian coordinates all (x,y,z) directions have the same units of length
+* In cylindrical coordinates the y coordinate is assumed to be an angle, so that
+  the distance in y is given by :math:`ds = R dy` where :math:`R` is the major radius.  
+
+Which coordinate is used is controlled by the ``Rfunc`` method, which should return the
+major radius if using a cylindrical coordinate system.
+Should return ``None`` for a Cartesian coordinate system (the default). 
+  
+Several implementations inherit from ``MagneticField``, and provide:
+``Bxfunc``, ``Byfunc``, ``Bzfunc`` which give the components of the magnetic field in
+the x,y and z directions respectively. These should be in the same units (e.g. Tesla) for
+both Cartesian and cylindrical coordinates, but the way they are integrated changes depending
+on the coordinate system.
+
+Using these functions the ``MagneticField`` class provides a ``Bmag`` method and ``field_direction``
+method, which are called by the field line tracer routines (in ``zoidberg.field_tracer``).
 
 Slabs and curved slabs
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -280,15 +308,27 @@ an exception will be raised.
    field = zoidberg.StraightStellarator()
 
 
+VMEC files
+~~~~~~~~~~
+
+The VMEC format describes 3D magnetic fields in toroidal geometry, but only includes closed
+flux surfaces. 
+   
+.. code:: python
+
+   import zoidberg
+   field = zoidberg.VMEC("w7x.wout")
+
 
    
 
 Plotting the magnetic field
 ---------------------------
 
-Routines to plot the magnetic field are in ``zoidberg.plot``. 
+Routines to plot the magnetic field are in ``zoidberg.plot``. They include Poincare plots
+and 3D field line plots. 
 
-         
+
 Creating poloidal grids
 -----------------------
 
@@ -330,9 +370,9 @@ but this can be changed with the `Rcentre` and `Zcentre` options.
 Curvilinear structured grids
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-
-   
-Here the ``shaped_line`` function creates RZline shapes with the following formula:
+To create the structured curvilinear grids inner and outer lines are needed
+(two ``RZline`` objects). The ``shaped_line`` function creates ``RZline`` shapes
+with the following formula:
 
 .. math::
    
