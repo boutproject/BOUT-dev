@@ -268,7 +268,7 @@ def get_for_loop_z(sten,field,stag):
 def get_for_loop(d,mode,field,guards,sten_name ):
     if sten_name == 'main':
         print '#ifdef CHECK'
-        print '  if (mesh->%sstart < %d){'%(d,max(guards))
+        print '  if (msh->%sstart < %d){'%(d,max(guards))
         print '    throw BoutException("Cannot compute derivative - need at least %d guard cells in %s direction!");'%(max(guards),d.upper())
         print '  }'
         print '#endif'
@@ -404,11 +404,12 @@ def gen_functions_normal(to_gen):
         print "static void "+name+"_"+field.lower()+"(BoutReal * __restrict__ result_ptr,",
         if flux:
             print "const BoutReal * __restrict__ v_in_ptr,",
-            print "const BoutReal * __restrict__ f_in_ptr) {"
+            print "const BoutReal * __restrict__ f_in_ptr,",
         else:
-            print "const BoutReal * __restrict__ in_ptr) {"
+            print "const BoutReal * __restrict__ in_ptr,",
+        print "Mesh * msh) {"
         for d2 in dirs[field]:
-            print "  const int N%s = mesh->LocalN%s;"%(d2,d2)
+            print "  const int N%s = msh->LocalN%s;"%(d2,d2)
         stencils={'main':None,
                   'forward':None,
                   'backward':None}
@@ -451,8 +452,8 @@ def gen_functions_normal(to_gen):
                 #print "  }"
                 continue;
             if guards_[0] == 0 and sten_name=='forward':# and mode=='off' and guards ==1:
-                #print "  if (mesh->%sstart > 0){"%d
-                #print "    DataIterator i(0,mesh->LocalNx,0,mesh->LocalNy,0,mesh->LocalNz);"
+                #print "  if (msh->%sstart > 0){"%d
+                #print "    DataIterator i(0,msh->LocalNx,0,msh->LocalNy,0,msh->LocalNz);"
                 print "    int",d,";"
                 continue;
             if d=='z':
@@ -480,7 +481,7 @@ def gen_functions_normal(to_gen):
                         print >>sys.stderr,result_, body,sten.body
                         print "      "+get_diff('c()',"result",field,d)+"=result_.inner;"
                         raise "Fuuu"
-                    #print "      if (mesh->%sstart >1 ){"%d
+                    #print "      if (msh->%sstart >1 ){"%d
 
                     if guards > 1:
                         #print >> sys.stderr, stencils[todo[0]].body[0]
@@ -505,15 +506,18 @@ def gen_functions_normal(to_gen):
         print "static",field,name,"(const",field,
         if flux:
             print "&v_in, const",field,"&f_in){"
+            print "  Mesh * msh = v_in.getMesh();"
+            print "  ASSERT1(msh == f_in.getMesh());"
         else:
             print "&in){"
+            print "  Mesh * msh = in.getMesh();"
         print '  //output.write("Using method %s!\\n");'%name
         if d=='z':
-            print '  if (mesh->LocalN%s == 1) {'%(d)
+            print '  if (msh->LocalN%s == 1) {'%(d)
             print '    return 0.;'
             print '  }'
         print '#ifdef CHECK'
-        print '  if (mesh->LocalN%s < %d) {'%(d,sum(guards_)+1)
+        print '  if (msh->LocalN%s < %d) {'%(d,sum(guards_)+1)
         print '    throw BoutException("AiolosMesh::%s - Not enough guards cells to take derivative!");'%(name)
         print '  }'
         print '#endif'
@@ -527,9 +531,9 @@ def gen_functions_normal(to_gen):
         else:
             get_pointer("in",field,True)
         if flux:
-            print "  "+name+"_"+field.lower()+"(result_ptr,v_in_ptr,f_in_ptr);"
+            print "  "+name+"_"+field.lower()+"(result_ptr,v_in_ptr,f_in_ptr, msh);"
         else:
-            print "  "+name+"_"+field.lower()+"(result_ptr,in_ptr);"
+            print "  "+name+"_"+field.lower()+"(result_ptr,in_ptr, msh);"
         if mode == "on":
             print "  result.setLocation(CELL_%sLOW);"%d.upper()
         elif mode == "off":
@@ -596,11 +600,12 @@ for mode in ['on','off']:
         line=replace_stencil(line,'f.',"in",field,mode,sten_name,d)
         print "static void interp_to_%s_%s_%s("%(mode,field,d),
         if use_field_operator:
-            print field+"& result, const "+field+" & in){"
+            print field+"& result, const "+field+" & in,",
         else:
-            print "BoutReal * __restrict__ result_ptr, const BoutReal * __restrict__ in_ptr){"
+            print "BoutReal * __restrict__ result_ptr, const BoutReal * __restrict__ in_ptr,",
+        print " Mesh * msh ){"
         for d2 in dirs[field]:
-            print "  const int N%s = mesh->LocalN%s;"%(d2,d2)
+            print "  const int N%s = msh->LocalN%s;"%(d2,d2)
         if d == 'z':
             sten=function()
             sten.body=interp
@@ -645,7 +650,8 @@ for mode in ['on','off']:
         print "}"
 
 print "const Field3D AiolosMesh::interp_to_do(const Field3D &f, CELL_LOC loc) const {"
-print "  Field3D result;"
+print "  Mesh * msh = f.getMesh();"
+print "  Field3D result(msh);"
 print "  result.allocate();"
 print "  if (f.getLocation() != CELL_CENTRE){"
 print "    // we first need to go back to centre before we can go anywhere else"
@@ -653,9 +659,9 @@ print "    switch (f.getLocation()){"
 for d in dirs[field]:
     print "    case CELL_%sLOW:"%d.upper()
     if use_field_operator:
-        print "      interp_to_off_%s_%s(result,f);"%(field,d)
+        print "      interp_to_off_%s_%s(result,f,msh);"%(field,d)
     else:
-        print "      interp_to_off_%s_%s(&result(0,0,0),&f(0,0,0));"%(field,d)
+        print "      interp_to_off_%s_%s(&result(0,0,0),&f(0,0,0),msh);"%(field,d)
     print "      result.setLocation(CELL_CENTRE);"
     print "      // return or interpolate again"
     print "      return interp_to(result,loc);"
@@ -669,9 +675,9 @@ print "  switch (loc){"
 for d in dirs[field]:
     print "    case CELL_%sLOW:"%d.upper()
     if use_field_operator:
-        print "      interp_to_on_%s_%s(result,f);"%(field,d)
+        print "      interp_to_on_%s_%s(result,f,msh);"%(field,d)
     else:
-        print "      interp_to_on_%s_%s(&result(0,0,0),&f(0,0,0));"%(field,d)
+        print "      interp_to_on_%s_%s(&result(0,0,0),&f(0,0,0),msh);"%(field,d)
     print "      result.setLocation(CELL_%sLOW);"%d.upper()
     print "      // return or interpolate again"
     print "      return interp_to(result,loc);"
