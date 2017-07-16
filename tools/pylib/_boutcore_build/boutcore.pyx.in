@@ -303,9 +303,13 @@ def create3D(string, Mesh msh,outloc="CELL_DEFAULT",time=0):
 
 def setOption(name, value):
     cdef c.Options * opt = c.Options.getRoot()
-    cdef c.string key = name
-    cdef c.string value_ = value
-    cdef c.string source = "PyInterface"
+    cdef c.string sec_
+    for sec in name.split(":")[:-1]:
+        sec_=sec.encode('ascii')
+        opt=opt.getSection(sec_)
+    cdef c.string key = name.split(":")[-1].encode('ascii')
+    cdef c.string value_ = value.encode('ascii')
+    cdef c.string source = "PyInterface".encode('ascii')
     opt.set(key,value_, source)
 
 EOF
