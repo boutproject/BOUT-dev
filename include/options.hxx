@@ -161,8 +161,8 @@ public:
   bool isSet(const string &key);
 
   // Getting options
-  void get(const string &key, int &val, const int &def);
-  void get(const string &key, BoutReal &val, const BoutReal &def);
+  void get(const string &key, int &val, const int def);
+  void get(const string &key, BoutReal &val, const BoutReal def);
   void get(const string &key, bool &val, const bool &def);
   void get(const string &key, string &val, const string &def);
 
