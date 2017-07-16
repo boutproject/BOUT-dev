@@ -73,10 +73,7 @@ void HeatFluxIntegration::initialise(const bool pass_electron_heat_flux_location
  **********************************************************************************/
 
 void HeatFluxIntegration::calculateIntegralBelow_cell_centre(BoutReal eigenvalue, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, const int &counter) {
-
-  #ifdef CHECK
-  msg_stack.push("HeatFluxIntegration::calculateIntegralBelow()");
-  #endif
+  TRACE("HeatFluxIntegration::calculateIntegralBelow()");
 
   start_index(position);
   do {
@@ -148,18 +145,10 @@ void HeatFluxIntegration::calculateIntegralBelow_cell_centre(BoutReal eigenvalue
     }
     
   } while (next_indexperp(position));
-  
-  #ifdef CHECK
-  msg_stack.pop();
-  #endif
-  
 }
 
 void HeatFluxIntegration::calculateIntegralAbove_cell_centre(BoutReal eigenvalue, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, const int &counter) {
-
-  #ifdef CHECK
-  msg_stack.push("HeatFluxIntegration::calculateIntegralAbove()");
-  #endif
+  TRACE("HeatFluxIntegration::calculateIntegralAbove()");
 
   start_index_lasty(position);
   do {
@@ -236,20 +225,12 @@ void HeatFluxIntegration::calculateIntegralAbove_cell_centre(BoutReal eigenvalue
     }
     
   } while (next_indexperp(position));
-
-  #ifdef CHECK
-  msg_stack.pop();
-  #endif
-  
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void HeatFluxIntegration::calculateIntegralBelow_cell_ylow(BoutReal eigenvalue, const Field3D &dimensionless_length_deltas_below, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, CubicSpline &cubic_spline_gradT, const int &counter) {
-  
-  #ifdef CHECK
-  msg_stack.push("HeatFluxIntegration::calculateIntegralBelow()");
-  #endif
+  TRACE("HeatFluxIntegration::calculateIntegralBelow()");
 
   start_index(position);
   do {
@@ -417,18 +398,10 @@ void HeatFluxIntegration::calculateIntegralBelow_cell_ylow(BoutReal eigenvalue, 
     }
     
   } while (next_indexperp(position));
-  
-  #ifdef CHECK
-  msg_stack.pop();
-  #endif
-  
 }
 
 void HeatFluxIntegration::calculateIntegralAbove_cell_ylow(BoutReal eigenvalue, const Field3D &dimensionless_length_deltas_below, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, CubicSpline &cubic_spline_gradT, const int &counter) {
-
-  #ifdef CHECK
-  msg_stack.push("HeatFluxIntegration::calculateIntegralAbove()");
-  #endif
+  TRACE("HeatFluxIntegration::calculateIntegralAbove()");
 
   start_index_lasty(position);
   do {
@@ -600,9 +573,4 @@ void HeatFluxIntegration::calculateIntegralAbove_cell_ylow(BoutReal eigenvalue, 
     }
     
   } while (next_indexperp(position));
-
-  #ifdef CHECK
-  msg_stack.pop();
-  #endif
-  
 }

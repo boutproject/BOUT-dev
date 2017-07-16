@@ -16,12 +16,14 @@ test-vec
 test-griddata
 test-dataiterator
 test-dataiterator2
+!test-fieldgroup
 !test-initial
 MMS/diffusion
 MMS/wave-1d
 MMS/wave-1d-y
 MMS/interpolation
 MMS/derivatives
+test-subdir
 # More complex tests
 drift-instability
 interchange-instability

@@ -254,9 +254,9 @@ const Field2D averageY(const Field2D &f) {
 }
 
 const Field3D averageY(const Field3D &f) {
+  TRACE("averageY(Field3D)");
+
   static BoutReal **input = NULL, **result;
-    
-  msg_stack.push("averageY(Field3D)");
 
   int ngx = mesh->LocalNx;
   int ngy = mesh->LocalNy;
@@ -301,10 +301,6 @@ const Field3D averageY(const Field3D &f) {
           r(x,y,z) = input[x][z];
         }
   }
-
-#ifdef CHECK
-  msg_stack.pop();
-#endif
   
   return r;
 }

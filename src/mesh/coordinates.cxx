@@ -645,18 +645,17 @@ const Field3D Coordinates::Div_par(const Field3D &f, CELL_LOC outloc, DIFF_METHO
 // Note: For parallel Laplacian use Laplace_par
 
 const Field2D Coordinates::Grad2_par2(const Field2D &f) {
-  msg_stack.push("Coordinates::Grad2_par2( Field2D )");
+  TRACE("Coordinates::Grad2_par2( Field2D )");
 
   Field2D sg = sqrt(g_22);
   Field2D result = DDY(1./sg)*DDY(f)/sg + D2DY2(f)/g_22;
   //Field2D result = D2DY2(f)/mesh->g_22;
 
-  msg_stack.pop();
   return result;
 }
 
 const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc) {
-  msg_stack.push("Coordinates::Grad2_par2( Field3D )");
+  TRACE("Coordinates::Grad2_par2( Field3D )");
 
   Field2D sg;
   Field3D result, r2;
@@ -674,7 +673,6 @@ const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc) {
   
   result = sg*result + r2;
   
-  msg_stack.pop();
   return result;
 }
 
@@ -684,11 +682,9 @@ const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc) {
 #include <invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
 
 const Field2D Coordinates::Delp2(const Field2D &f) {
-  msg_stack.push("Coordinates::Delp2( Field2D )");
+  TRACE("Coordinates::Delp2( Field2D )");
  
   Field2D result =  G1*DDX(f) + g11*D2DX2(f);
-
-  msg_stack.pop();
 
   return result;
 }

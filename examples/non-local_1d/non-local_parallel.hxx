@@ -242,7 +242,7 @@ private:
 						 , const Field3D &viscosity_boundary_condition
 					       #endif
   );
-  #ifdef CHECK
+  #if CHECK > 0
     bool calculated_before_setting_bcs;
   #endif
 };

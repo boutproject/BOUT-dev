@@ -91,7 +91,7 @@ int RKGenericSolver::init(int nout, BoutReal tstep) {
 }
 
 int RKGenericSolver::run() {
-  int msg_point = msg_stack.push("RKGenericSolver::run()");
+  TRACE("RKGenericSolver::run()");
   
   for(int s=0;s<nsteps;s++) {
     BoutReal target = simtime + out_timestep;
@@ -167,8 +167,6 @@ int RKGenericSolver::run() {
     // Reset iteration and wall-time count
     rhs_ncalls = 0;
   }
-  
-  msg_stack.pop(msg_point);
   
   return 0;
 }

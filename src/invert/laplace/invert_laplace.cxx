@@ -124,10 +124,9 @@ void Laplacian::cleanup() {
  **********************************************************************************/
 
 const Field3D Laplacian::solve(const Field3D &b) {
+  TRACE("Laplacian::solve(Field3D)");
+
   Timer timer("invert");
-#ifdef CHECK
-  msg_stack.push("Laplacian::solve(Field3D)");
-#endif
   int ys = mesh->ystart, ye = mesh->yend;
 
   if(mesh->hasBndryLowerY()) {
@@ -159,10 +158,6 @@ const Field3D Laplacian::solve(const Field3D &b) {
   }
   BoutParallelThrowRhsFail(status, "Laplacian inversion took too many iterations.");
 
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-
   x.setLocation(b.getLocation());
 
   return x;
@@ -185,10 +180,9 @@ const Field2D Laplacian::solve(const Field2D &b) {
  * \returns x All the y-slices of x_slice in the equation A*x_slice = b_slice
  */
 const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
+  TRACE("Laplacian::solve(Field3D, Field3D)");
+
   Timer timer("invert");
-#ifdef CHECK
-  msg_stack.push("Laplacian::solve(Field3D, Field3D)");
-#endif
 
   // Setting the start and end range of the y-slices
   int ys = mesh->ystart, ye = mesh->yend;
@@ -212,10 +206,6 @@ const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
     status = 1;
   }
   BoutParallelThrowRhsFail(status, "Laplacian inversion took too many iterations.");
-
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 
   x.setLocation(b.getLocation());
 

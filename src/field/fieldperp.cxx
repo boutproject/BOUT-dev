@@ -41,7 +41,7 @@ FieldPerp::FieldPerp() {
     nz = mesh->LocalNz;
   }
   
-#ifdef CHECK
+#if CHECK > 0
   else {
     nx=-1;
     nz=-1;

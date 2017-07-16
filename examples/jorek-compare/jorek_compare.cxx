@@ -400,8 +400,7 @@ private:
   }
   
   int rhs(BoutReal t) override {
-    
-    int sp = msg_stack.push("Started physics_run(%e)", t);
+    TRACE("Started physics_run(%e)", t);
   
     // Invert laplacian for phi
     if (vorticity_momentum) {
@@ -701,7 +700,6 @@ private:
     if (low_pass_z > 0)
       ddt(Apar) = lowPass(ddt(Apar), low_pass_z);
     
-    msg_stack.pop(sp);
     return 0;
   }
 };
