@@ -521,7 +521,7 @@ def gen_functions_normal(to_gen):
         print '    throw BoutException("AiolosMesh::%s - Not enough guards cells to take derivative!");'%(name)
         print '  }'
         print '#endif'
-        print " ",field,"result;"
+        print " ",field,"result(msh);"
         print "  result.allocate();"
         #print "  checkData(result);"
         get_pointer("result",field,False)
