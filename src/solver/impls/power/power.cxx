@@ -9,6 +9,10 @@
 
 #include <output.hxx>
 
+PowerSolver::~PowerSolver(){
+  if(f0 != nullptr) delete[] f0;
+}
+
 int PowerSolver::init(int nout, BoutReal tstep) {
   TRACE("Initialising Power solver");
   

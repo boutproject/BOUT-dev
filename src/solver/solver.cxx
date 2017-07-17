@@ -80,6 +80,36 @@ Solver::Solver(Options *opts) : options(opts), model(0), prefunc(0) {
 }
 
 /**************************************************************************
+ * Destructor
+ **************************************************************************/
+Solver::~Solver(){
+  //Ensure all MMS_err fields allocated here are destroyed etc.
+  for(const auto& f : f3d) {
+    if(f.MMS_err) {
+      delete f.MMS_err;
+    }
+  }
+
+  for(const auto& f : f2d) {
+    if(f.MMS_err) {
+      delete f.MMS_err;
+    }
+  }
+
+  for(const auto& f : v3d) {
+    if(f.MMS_err) {
+      delete f.MMS_err;
+    }
+  }
+
+  for(const auto& f : v2d) {
+    if(f.MMS_err) {
+      delete f.MMS_err;
+    }
+  }
+}
+
+/**************************************************************************
  * Add physics models
  **************************************************************************/
 
@@ -145,6 +175,8 @@ void Solver::add(Field2D &v, const char* name) {
   if(mms) {
     // Allocate storage for error variable
     d.MMS_err = new Field2D(0.0);
+  } else {
+    d.MMS_err = nullptr;
   }
   
   // Check if the boundary regions should be evolved
@@ -203,6 +235,8 @@ void Solver::add(Field3D &v, const char* name) {
   if(mms) {
     d.MMS_err = new Field3D();
     (*d.MMS_err) = 0.0;
+  } else {
+    d.MMS_err = nullptr;
   }
   
   // Check if the boundary regions should be evolved

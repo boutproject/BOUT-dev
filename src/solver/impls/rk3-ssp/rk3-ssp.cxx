@@ -10,12 +10,12 @@
 
 #include <output.hxx>
 
-RK3SSP::RK3SSP(Options *opt) : Solver(opt), f(0) {
+RK3SSP::RK3SSP(Options *opt) : Solver(opt), f(nullptr) {
   
 }
 
 RK3SSP::~RK3SSP() {
-  if(f != 0) {
+  if(f != nullptr) {
     delete[] f;
     
     delete[] u1;

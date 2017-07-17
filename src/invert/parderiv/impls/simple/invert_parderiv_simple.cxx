@@ -79,7 +79,7 @@ const Field3D InvertParSimple::solve(const Field3D &rc) {
 
   if(max_size == 0) {
     // allocate working memory
-    senddata = new BoutReal[nxsolve * nylocal * (2 + mesh->LocalNz) ]; // Problem data sent out
+    senddata = new BoutReal[nxsolve * nylocal * (2 + mesh->LocalNz) ]; // Problem data sent out //Never freed (or used)
   }
     
   // coefficients for derivative term
@@ -123,8 +123,8 @@ const Field3D InvertParSimple::solve(const Field3D &rc) {
         delete[] recvdata;
         delete[] resultdata;
       }
-      recvdata = new BoutReal[ysize * (3+mesh->LocalNz)];  // Problem data received (to be solved)
-      resultdata = new BoutReal[ysize*mesh->LocalNz];  // Inverted result
+      recvdata = new BoutReal[ysize * (3+mesh->LocalNz)];  // Problem data received (to be solved)  //Never freed
+      resultdata = new BoutReal[ysize*mesh->LocalNz];  // Inverted result //Never freed
       max_size = ysize;
     }
       
@@ -190,13 +190,13 @@ void InvertParSimple::cyclicSolve(int ysize, int xpos, BoutReal *data, BoutReal 
       delete[] rvec;
       delete[] xvec;
     }
-    done = new bool[ncz];
+    done = new bool[ncz]; //Never freed
     //.allocate largest possible array
-    avec = new BoutReal[ysize * ncz];
-    bvec = new BoutReal[ysize * ncz];
-    cvec = new BoutReal[ysize * ncz];
-    rvec = new BoutReal[ysize * ncz];
-    xvec = new BoutReal[ysize * ncz];
+    avec = new BoutReal[ysize * ncz]; //Never freed
+    bvec = new BoutReal[ysize * ncz]; //Never freed
+    cvec = new BoutReal[ysize * ncz]; //Never freed
+    rvec = new BoutReal[ysize * ncz]; //Never freed
+    xvec = new BoutReal[ysize * ncz]; //Never freed
 
     ylen = ysize;
   }
