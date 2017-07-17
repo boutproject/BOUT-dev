@@ -254,6 +254,19 @@ public:
   const T& operator[](int ind) const {
     return ptr->data[ind];
   }
+
+  /*!
+   * Exchange contents with another Array of the same type.
+   * Sizes of the arrays may differ.
+   *
+   * This is called by the template function swap(Array&, Array&)
+   */
+  void swap(Array<T> &other) {
+    ArrayData* tmp_ptr = ptr;
+    ptr = other.ptr;
+    other.ptr = tmp_ptr;
+  }
+  
 private:
 
   /*!
@@ -359,6 +372,15 @@ Array<T>& copy(const Array<T> &other) {
   Array<T> a(other);
   a.ensureUnique();
   return a;
+}
+
+/*!
+ * Exchange contents of two Arrays of the same type.
+ * Sizes of the arrays may differ.
+ */
+template<typename T>
+void swap(Array<T> &a, Array<T> &b) {
+  a.swap(b);
 }
 
 #endif // __ARRAY_H__
