@@ -267,7 +267,7 @@ def get_for_loop_z(sten,field,stag):
                                                 # if d=='z': # aka z                                                 
 def get_for_loop(d,mode,field,guards,sten_name ):
     if sten_name == 'main':
-        print '#ifdef CHECK'
+        print '#if CHECK > 0'
         print '  if (msh->%sstart < %d){'%(d,max(guards))
         print '    throw BoutException("Cannot compute derivative - need at least %d guard cells in %s direction!");'%(max(guards),d.upper())
         print '  }'
@@ -515,8 +515,10 @@ def gen_functions_normal(to_gen):
         if d=='z':
             print '  if (msh->LocalN%s == 1) {'%(d)
             print '    return 0.;'
+            # TODO: if constructor exists, better use this:
+            #print '    return %s(0.,msh);'%field
             print '  }'
-        print '#ifdef CHECK'
+        print '#if CHECK > 0'
         print '  if (msh->LocalN%s < %d) {'%(d,sum(guards_)+1)
         print '    throw BoutException("AiolosMesh::%s - Not enough guards cells to take derivative!");'%(name)
         print '  }'
