@@ -520,7 +520,14 @@ def gen_functions_normal(to_gen):
             print '  }'
         print '#if CHECK > 0'
         print '  if (msh->LocalN%s < %d) {'%(d,sum(guards_)+1)
-        print '    throw BoutException("AiolosMesh::%s - Not enough guards cells to take derivative!");'%(name)
+        print '    if (msh->xstart == 0) {'
+        print '      //return %s(0.,msh);'%field
+        print '      %s result{msh};'%field
+        print '      result=0;'
+        print '      return result;'
+        print '    } else {'
+        print '      throw BoutException("AiolosMesh::%s - Not enough guards cells to take derivative!");'%(name)
+        print '    }'
         print '  }'
         print '#endif'
         print " ",field,"result(msh);"
