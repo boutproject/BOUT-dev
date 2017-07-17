@@ -25,14 +25,9 @@ nx=5
 ny=5
 nz=4
 
-[meshz2]
+[meshz]
 nx=1
 ny=1
-nz=2
+nz=n
 n=2
 
-
-[meshz4]
-nx=1
-ny=1
-nz=4
