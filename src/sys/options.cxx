@@ -240,3 +240,7 @@ void Options::printUnused() {
     it.second->printUnused();
   }
 }
+
+void Options::cleanCache() {
+  FieldFactory::get()->cleanCache();
+}

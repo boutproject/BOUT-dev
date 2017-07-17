@@ -65,6 +65,9 @@ public:
 
   // Singleton object
   static FieldFactory *get();
+
+  /// clean the cache of parsed strings
+  void cleanCache();
 protected:
   // These functions called by the parser
   FieldGenerator* resolve(std::string &name);

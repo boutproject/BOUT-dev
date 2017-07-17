@@ -374,3 +374,7 @@ FieldFactory* FieldFactory::get() {
 
   return &instance;
 }
+
+void FieldFactory::cleanCache() {
+  cache.clear();
+}
