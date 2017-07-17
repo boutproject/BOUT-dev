@@ -29,9 +29,9 @@ $(generated):gen_derivs.py \
 		tables_cleaned.cxx gen_stencils.py stencils_cleaned.cxx \
 		common.py
 	python $< > generated_derivs.cxx || ( rm $@ ; exit 1)
-	@(astyle -n $(generated) ) || exit 0 # ignore failure
+	@(clang-format -i $(generated) || astyle -n $(generated) ) || exit 0 # ignore failure
 
 clean:: clean-generated
 
 clean-generated:
-	@rm $(generated)
+	@rm -f $(generated)
