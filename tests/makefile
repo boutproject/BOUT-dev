@@ -30,7 +30,7 @@ include $(BOUT_TOP)/make.config
 # House-keeping build targets.
 
 clean ::
-	rm -f gtest.a bout_test_main.a *.o $(TEST_OBJECTS)
+	@$(RM) -f gtest.a bout_test_main.a *.o $(TEST_OBJECTS)
 
 # Builds gtest.a and bout_test_main.a.
 

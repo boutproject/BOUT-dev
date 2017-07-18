@@ -168,6 +168,27 @@ AC_FUNC_VPRINTF
 AC_OPENMP
 
 #############################################################
+# Code coverage using gcov
+#
+# Mutally exclusive with optimisation, therefore needs to come first
+# so we can turn off optimisation if coverage is enabled
+#############################################################
+
+AX_CODE_COVERAGE()
+AS_IF([test "x$enable_code_coverage" = "xyes"],
+[
+    AS_IF([test "x$enable_optimize"], [
+        AC_MSG_WARN([Code coverage clashes with optimisations, disabling optimisations])
+        enable_optimize="no"
+    ])
+    COVERAGE_FLAGS="--coverage --no-inline"
+    LDFLAGS="$LDFLAGS --coverage"
+], [
+    COVERAGE_FLAGS=
+])
+AC_SUBST([COVERAGE_FLAGS])
+
+#############################################################
 # General Options
 #############################################################
 
