@@ -65,7 +65,7 @@ bool Options::isSet(const string &key) {
   return it != options.end();
 }
 
-void Options::get(const string &key, int &val, const int def) {
+void Options::get(const string &key, int &val, int def) {
   std::map<string, OptionValue>::iterator it(options.find(lowercase(key)));
   if (it == options.end()) {
     // Option not found
@@ -121,7 +121,7 @@ void Options::get(const string &key, int &val, const int def) {
   }
 }
 
-void Options::get(const string &key, BoutReal &val, const BoutReal def) {
+void Options::get(const string &key, BoutReal &val, BoutReal def) {
   std::map<string, OptionValue>::iterator it(options.find(lowercase(key)));
   if (it == options.end()) {
     set(key, def, "default");
@@ -164,7 +164,7 @@ void Options::get(const string &key, BoutReal &val, const BoutReal def) {
   }
 }
 
-void Options::get(const string &key, bool &val, const bool &def) {
+void Options::get(const string &key, bool &val, bool def) {
   std::map<string, OptionValue>::iterator it(options.find(lowercase(key)));
   if (it == options.end()) {
     set(key, def, "default");

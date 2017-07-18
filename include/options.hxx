@@ -161,15 +161,15 @@ public:
   bool isSet(const string &key);
 
   // Getting options
-  void get(const string &key, int &val, const int def);
-  void get(const string &key, BoutReal &val, const BoutReal def);
-  void get(const string &key, bool &val, const bool &def);
+  void get(const string &key, int &val, int def);
+  void get(const string &key, BoutReal &val, BoutReal def);
+  void get(const string &key, bool &val, bool def);
   void get(const string &key, string &val, const string &def);
 
   // This is a temporary replacement for 4-argument get
   // and will be removed in the next major release
   template<typename T, typename U>
-  void get(const string &key, T &val, const U &def, bool UNUSED(log)) {
+  void get(const string &key, T &val, U def, bool UNUSED(log)) {
     get(key, val, def);
   }
   
