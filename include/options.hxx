@@ -45,6 +45,7 @@ class Options;
 #include <string>
 using std::string;
 
+class ConditionalOutput;
 /// Class to represent hierarchy of options
 /*!
  * 
@@ -101,8 +102,8 @@ using std::string;
  */
 class Options {
 public:
- Options() : parent(NULL) {}
- Options(Options *p, string s) : parent(p), sectionName(s) {};
+  Options();
+  Options(Options *p, string s) : parent(p), sectionName(s) , output_ptr(p->output_ptr) {};
   ~Options();
 
   /// Get a pointer to the only root instance (singleton)
@@ -167,6 +168,8 @@ public:
   
   std::map<string, OptionValue> options;
   std::map<string, Options*> sections;
+
+  ConditionalOutput * output_ptr;
 };
 
 /// Define for reading options which passes the variable name

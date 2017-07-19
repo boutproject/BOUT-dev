@@ -6,6 +6,13 @@
 
 #include <field_factory.hxx> // Used for parsing expressions
 
+#undef output
+Options::Options():
+  parent(NULL) , output_ptr(new ConditionalOutput(&output_info))
+{};
+
+#define output (*output_ptr)
+
 Options::~Options() {
   // Delete sub-sections
   for(const auto& it : sections) {
