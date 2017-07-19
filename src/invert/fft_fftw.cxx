@@ -238,6 +238,16 @@ void rfft(const BoutReal *in, int length, dcomplex *out) {
     out[i] = dcomplex(fout[i][0], fout[i][1]) * fac; // Normalise
 }
 
+const Array<dcomplex> rfft(const Array<BoutReal> &in) {
+  ASSERT1(!in.empty()); // Check that there is data
+  
+  int size = in.size();
+  Array<dcomplex> out(size); // Allocates data array
+  
+  rfft(in.begin(), size, out.begin());
+  return out;
+}
+
 void irfft(const dcomplex *in, int length, BoutReal *out) {
   // static variables initialized once
   static fftw_complex *fin;
