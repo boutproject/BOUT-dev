@@ -67,29 +67,48 @@ void Output::close() {
   remove(file);
   file.close();
 }
+#define bout_vsnprintf_(buf,len,fmt,va) {	        \
+    int _vsnprintflen=vsnprintf(buf,len,fmt,va);        \
+    if ( _vsnprintflen+1 > len){                        \
+      _vsnprintflen+=1;                                 \
+      delete[] buf;                                     \
+      buf = new char[_vsnprintflen];                    \
+      len = _vsnprintflen;                              \
+      vsnprintf(buf,len,fmt,va);                        \
+    }                                                   \
+  }
 
 void Output::write(const char* string, ...) {
+  va_list va;
+  va_start(va, string);
+  this->vwrite(string,va);
+  va_end(va);
+}
 
+void Output::vwrite(const char * string, va_list va){
   if(string == (const char*) NULL)
     return;
   
-  bout_vsnprintf(buffer, buffer_len, string);
+  bout_vsnprintf_(buffer, buffer_len, string,va);
 
   multioutbuf_init::buf()->sputn(buffer, strlen(buffer));
 }
 
 void Output::print(const char* string, ...) {
-  va_list ap;  // List of arguments
+  va_list va;
+  va_start(va, string);
+  this->vprint(string,va);
+  va_end(va);
+}
 
+void Output::vprint(const char* string, va_list ap) {
   if(!enabled)
     return; // Only output if to screen
 
   if(string == (const char*) NULL)
     return;
   
-  va_start(ap, string);
-    vprintf(string, ap);
-  va_end(ap);
+  vprintf(string, ap);
   
   fflush(stdout);
 }
@@ -112,3 +131,35 @@ void Output::cleanup() {
   delete instance;
   instance = NULL;
 }
+
+void ConditionalOutput::write(const char * str,...){
+  if (enabled){
+    va_list va;
+    va_start(va, str);
+    base->vwrite(str,va);
+    va_end(va);
+  }
+}
+
+void ConditionalOutput::print(const char * str, ...){
+  if (enabled){
+    va_list va;
+    va_start(va, str);
+    base->vprint(str,va);
+    va_end(va);
+  }
+}
+
+
+
+#ifdef DEBUG_ENABLED
+ConditionalOutput output_debug(Output::getInstance());
+#else
+DummyOutput output_debug;
+#endif
+ConditionalOutput output_warn(Output::getInstance());
+ConditionalOutput output_info(Output::getInstance());
+ConditionalOutput output_prog(Output::getInstance());
+ConditionalOutput output_error(Output::getInstance());
+
+#undef bout_vsnprint_pre

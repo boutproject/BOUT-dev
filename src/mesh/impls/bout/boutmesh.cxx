@@ -62,7 +62,7 @@ BoutMesh::BoutMesh(GridDataSource *s, Options *options) : Mesh(s, options) {
     std::string optionfile;
     OPTION(Options::getRoot(),optionfile,"");
     output << "WARNING: The default of this option has changed in release 4.1.\n\
-If you want the old setting, you have to specify mesh:symmetricGlobalY=false in %s\n",optionfile.c_str();
+If you want the old setting, you have to specify mesh:symmetricGlobalY=false in " << optionfile <<"\n";
   }
   OPTION(options, symmetricGlobalY,  true);
 
