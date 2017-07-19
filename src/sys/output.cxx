@@ -142,13 +142,13 @@ void ConditionalOutput::write(const char * str,...){
 }
 
 void ConditionalOutput::print(const char * str, ...){
-    if (enabled){
-      va_list va;
-      va_start(va, str);
-      base->vprint(str,va);
-      va_end(va);
-    }
+  if (enabled){
+    va_list va;
+    va_start(va, str);
+    base->vprint(str,va);
+    va_end(va);
   }
+}
 
 
 
@@ -161,28 +161,5 @@ ConditionalOutput output_warn(Output::getInstance());
 ConditionalOutput output_info(Output::getInstance());
 ConditionalOutput output_prog(Output::getInstance());
 ConditionalOutput output_error(Output::getInstance());
-
-// TypedOutput::TypedOutput(const char * const char * prefix, bool enabled)
-//   : Output(), prefix(prefix),disabled(!enabled){
-//   if (this->prefix.length() > buffer_len/2){
-//     delete[] buffer;
-//     buffer_len+=this->prefix.length()+1;
-//     buffer= new char[buffer_len];
-//   }
-//   sprintf(buffer,"%s",this->prefix.c_str());
-//   buffer+=this->prefix.length();
-// }
-// TypedOutput::TypedOutput(const char * fname, const char * prefix, bool enabled)
-//   : Output(), prefix(prefix),disabled(!enabled){
-//   if (this->prefix.length() > buffer_len/2){
-//     delete[] buffer;
-//     buffer_len+=this->prefix.length()+1;
-//     buffer= new char[buffer_len];
-//   }
-//   sprintf(buffer,"%s",this->prefix.c_str());
-//   buffer+=this->prefix.length();
-// }
-
-
 
 #undef bout_vsnprint_pre
