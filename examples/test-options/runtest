@@ -1,1 +1,14 @@
-make && ./test-options > log && echo "Success"
+make
+./test-options > log 
+
+# Check return code
+if [ $? -eq 0 ]; then
+  echo "Success"
+  exit 0
+else 
+  echo "Failed."
+  # print log so it's seen in Travis output
+  cat log
+  exit 1
+fi
+
