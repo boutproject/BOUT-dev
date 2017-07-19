@@ -788,7 +788,7 @@ Mesh::outer_boundary_upwind_func sfFDDX_out, sfFDDY_out;
 /// Set the derivative method, given a table and option name
 void derivs_set(Options *options, DiffLookup *table, const char* name, Mesh::deriv_func &f) {
   string label;
-  options->get(name, label, "", false);
+  options->get(name, label, "C2");
 
   DIFF_METHOD method = lookupFunc(table, label); // Find the function
   printFuncName(method); // Print differential function name
@@ -797,7 +797,7 @@ void derivs_set(Options *options, DiffLookup *table, const char* name, Mesh::der
 
 void derivs_set(Options *options, DiffLookup *table, const char* name, Mesh::upwind_func &f) {
   string label;
-  options->get(name, label, "", false);
+  options->get(name, label, "U1");
 
   DIFF_METHOD method = lookupFunc(table, label); // Find the function
   printFuncName(method); // Print differential function name
@@ -806,7 +806,7 @@ void derivs_set(Options *options, DiffLookup *table, const char* name, Mesh::upw
 
 void derivs_set(Options *options, DiffLookup *table, const char* name, Mesh::flux_func &f) {
   string label;
-  options->get(name, label, "", false);
+  options->get(name, label, "C2");
 
   DIFF_METHOD method = lookupFunc(table, label); // Find the function
   printFuncName(method); // Print differential function name
@@ -816,7 +816,7 @@ void derivs_set(Options *options, DiffLookup *table, const char* name, Mesh::flu
 /// Set the derivative methods including for boundaries, given a table and option name
 void derivs_set(Options *options, DiffLookup *table, const char* name, Mesh::deriv_func &f, Mesh::inner_boundary_deriv_func &f_in, Mesh::outer_boundary_deriv_func &f_out) {
   string label;
-  options->get(name, label, "", false);
+  options->get(name, label, "C2");
 
   DIFF_METHOD method = lookupFunc(table, label); // Find the function
   printFuncName(method); // Print differential function name
@@ -827,7 +827,7 @@ void derivs_set(Options *options, DiffLookup *table, const char* name, Mesh::der
 
 void derivs_set(Options *options, DiffLookup *table, const char* name, Mesh::upwind_func &f, Mesh::inner_boundary_upwind_func &f_in, Mesh::outer_boundary_upwind_func &f_out) {
   string label;
-  options->get(name, label, "", false);
+  options->get(name, label, "U1");
 
   DIFF_METHOD method = lookupFunc(table, label); // Find the function
   printFuncName(method); // Print differential function name
@@ -838,7 +838,7 @@ void derivs_set(Options *options, DiffLookup *table, const char* name, Mesh::upw
 
 void derivs_set(Options *options, DiffLookup *table, const char* name, Mesh::flux_func &f, Mesh::inner_boundary_upwind_func &f_in, Mesh::outer_boundary_upwind_func &f_out) {
   string label;
-  options->get(name, label, "", false);
+  options->get(name, label, "C2", false);
 
   DIFF_METHOD method = lookupFunc(table, label); // Find the function
   printFuncName(method); // Print differential function name
