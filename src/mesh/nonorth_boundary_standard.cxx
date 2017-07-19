@@ -2360,14 +2360,10 @@ void BoundaryZeroLaplace::apply(Field2D &f) {
 }
 
 void BoundaryZeroLaplace::apply(Field3D &f) {
-  static dcomplex *c0 = (dcomplex*) NULL, *c1;
   int ncz = mesh->ngz-1;
-  
-  if(c0 == (dcomplex*) NULL) {
-    // allocate memory
-    c0 = new dcomplex[ncz/2 + 1]; //Never freed
-    c1 = new dcomplex[ncz/2 + 1]; //Never freed
-  }
+
+  Array<dcomplex> c0(ncz / 2 + 1);
+  Array<dcomplex> c1(ncz / 2 + 1);
   
   if((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
     // Can't apply this boundary condition to non-X boundaries
@@ -2443,15 +2439,10 @@ void BoundaryZeroLaplace2::apply(Field2D &f) {
 }
 
 void BoundaryZeroLaplace2::apply(Field3D &f) {
-  static dcomplex *c0 = (dcomplex*) NULL, *c1, *c2;
-  int ncz = mesh->ngz-1;
-
-  if(c0 == (dcomplex*) NULL) {
-    // allocate memory
-    c0 = new dcomplex[ncz/2 + 1]; //Never freed
-    c1 = new dcomplex[ncz/2 + 1]; //Never freed
-    c2 = new dcomplex[ncz/2 + 1]; //Never freed
-  }
+  int ncz = mesh->LocalNz;
+  
+  // allocate memory
+  Array<dcomplex> c0(ncz / 2 + 1), c1(ncz / 2 + 1), c2(ncz / 2 + 1);
   
   if((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
     // Can't apply this boundary condition to non-X boundaries
