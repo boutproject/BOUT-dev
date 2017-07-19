@@ -2016,28 +2016,29 @@ int BoutMesh::pack_data(const vector<FieldData *> &var_list, int xge, int xlt, i
 
   int len = 0;
 
-  for (int jx = xge; jx != xlt; jx++) {
-    /// Loop over variables
-    for (const auto &var : var_list) {
-      if (var->is3D()) {
-        // 3D variable
-        ASSERT2(dynamic_cast<Field3D*>(var)->isAllocated());
-        
-        for (int jy = yge; jy < ylt; jy++) {
-          for (int jz = 0; jz < LocalNz; jz++, len++) {
-            buffer[len] = (*dynamic_cast<Field3D*>(var))(jx, jy, jz);
-          }
-        }
-      } else {
-        // 2D variable
-        ASSERT2(dynamic_cast<Field2D*>(var)->isAllocated());
-        
-        for (int jy = yge; jy < ylt; jy++, len++) {
-          buffer[len] = (*dynamic_cast<Field2D*>(var))(jx, jy);
-        }
+  /// Loop over variables
+  for (const auto &var : var_list) {
+    if (var->is3D()) {
+      // 3D variable
+      ASSERT2(static_cast<Field3D*>(var)->isAllocated());
+      for (int jx = xge; jx != xlt; jx++) {        
+	for (int jy = yge; jy < ylt; jy++) {
+	  for (int jz = 0; jz < LocalNz; jz++, len++) {
+	    buffer[len] = (*static_cast<Field3D*>(var))(jx, jy, jz);
+	  }
+	}
+      }
+    } else {
+      // 2D variable
+      ASSERT2(static_cast<Field2D*>(var)->isAllocated());
+      for (int jx = xge; jx != xlt; jx++) {
+	for (int jy = yge; jy < ylt; jy++, len++) {
+	  buffer[len] = (*static_cast<Field2D*>(var))(jx, jy);
+	}
       }
     }
   }
+
 
   return (len);
 }
@@ -2047,21 +2048,23 @@ int BoutMesh::unpack_data(const vector<FieldData *> &var_list, int xge, int xlt,
 
   int len = 0;
 
-  for (int jx = xge; jx != xlt; jx++) {
-    /// Loop over variables
-    for (const auto &var : var_list) {
-      if (var->is3D()) {
-        // 3D variable
-        for (int jy = yge; jy < ylt; jy++) {
-          for (int jz = 0; jz < LocalNz; jz++, len++) {
-            (*dynamic_cast<Field3D*>(var))(jx, jy, jz) = buffer[len];
-          }
-        }
-      } else {
-        // 2D variable
-        for (int jy = yge; jy < ylt; jy++, len++) {
-          (*dynamic_cast<Field2D*>(var))(jx, jy) = buffer[len];
-        }
+  /// Loop over variables
+  for (const auto &var : var_list) {
+    if (var->is3D()) {
+      // 3D variable
+      for (int jx = xge; jx != xlt; jx++) {
+	for (int jy = yge; jy < ylt; jy++) {
+	  for (int jz = 0; jz < LocalNz; jz++, len++) {
+	    (*static_cast<Field3D*>(var))(jx, jy, jz) = buffer[len];
+	  }
+	}
+      }
+    } else {
+      // 2D variable
+      for (int jx = xge; jx != xlt; jx++) {
+	for (int jy = yge; jy < ylt; jy++, len++) {
+	  (*static_cast<Field2D*>(var))(jx, jy) = buffer[len];
+	}
       }
     }
   }
