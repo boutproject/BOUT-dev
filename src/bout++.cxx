@@ -145,7 +145,6 @@ int BoutInitialise(int &argc, char **&argv) {
 	      "  -d <data directory>\tLook in <data directory> for input/output files\n"
 	      "  -f <options filename>\tUse OPTIONS given in <options filename>\n"
 	      "  -o <settings filename>\tSave used OPTIONS given to <options filename>\n"
-              "  -v, --verbose\t\tOutput more logging\n" 
 	      "  -h, --help\t\tThis message\n"
 	      "  restart [append]\tRestart the simulation. If append is specified, append to the existing output files, otherwise overwrite them\n"
 	      "  VAR=VALUE\t\tSpecify a VALUE for input parameter VAR\n"
@@ -181,12 +180,6 @@ int BoutInitialise(int &argc, char **&argv) {
       }
       i++;
       set_file = argv[i];
-    }
-    if (string(argv[i]) == "-v" ||
-    	string(argv[i]) == "--verbose") {
-      // Turn on logging for the root options
-      // This should propagate to all options
-      Options::getRoot()->setLogging(true);
     }
   }
 

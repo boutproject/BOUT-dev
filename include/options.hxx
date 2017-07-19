@@ -100,28 +100,17 @@ using std::string;
  * This is used to represent all the options passed to BOUT++ either in a file or on the
  * command line.
  *
- * Logging
- * -------
- *
- * When options are requested a line can be sent to output with the option key, value
- * and source. This is now disabled by default, but can be enabled by calling
- * the "setLogging(true)" function. This turns on logging for the section and all subsections.
- * To turn on logging for all options therefore:
- *
- * Options::getRoot()->setLogging(true)
  */
 class Options {
 public:
-  /// Constructor. This is called to create the root object,
-  /// so the log setting is the default value
-  Options() : parent(nullptr), log(false) {}
+  /// Constructor. This is called to create the root object
+  Options() : parent(nullptr) {}
 
   /// Constructor used to create non-root objects
   ///
   /// @param[in] p         Parent object
   /// @param[in[ secname   Name of the section, including path from the root
-  /// @param[in] logging   Enable or disable logging of options
-  Options(Options *p, string secname, bool logging) : parent(p), sectionName(secname),log(logging) {};
+  Options(Options *p, string secname) : parent(p), sectionName(secname) {};
 
   /// Destructor
   ~Options();
@@ -144,14 +133,6 @@ public:
   /// rather than allow an implicit conversion to bool
   void set(const string &key, const char* val, const string &source="") {
     set(key, string(val), source);
-  }
-
-  /// Turn on and off logging for this section and all subsections
-  void setLogging(bool logoptions) {
-    log = logoptions;
-    for (auto &it : sections) {
-      it.second->setLogging(log);
-    }
   }
   
   /*!
@@ -206,8 +187,6 @@ public:
   
   Options *parent;
   string sectionName; // section name (if any), for logging only
-
-  bool log; ///< True if printing options to log file
   
   std::map<string, OptionValue> options;
   std::map<string, Options*> sections;
