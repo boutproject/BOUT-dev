@@ -10,12 +10,15 @@
 
 #include <output.hxx>
 
-EulerSolver::EulerSolver(Options *options) : Solver(options) {
+EulerSolver::EulerSolver(Options *options) : Solver(options), f0(nullptr) {
   
 }
 
 EulerSolver::~EulerSolver() {
-
+  if(f0 != nullptr){
+    delete[] f0;
+    delete[] f1;
+  }
 }
 
 void EulerSolver::setMaxTimestep(BoutReal dt) {

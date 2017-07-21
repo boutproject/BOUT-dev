@@ -1669,7 +1669,7 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
 #ifndef _OPENMP
       // Serial, so can have a single static array
       if(cv == (dcomplex*) NULL)
-        cv = new dcomplex[ncz/2 + 1];
+        cv = new dcomplex[ncz/2 + 1];  //Never freed
 #else
       // Parallel, so allocate a separate array for each thread
       
@@ -1680,7 +1680,7 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
           // Allocate memory in thread zero
           if(nthreads > 0)
             delete[] globalcv;
-          globalcv = new dcomplex[n_th*(ncz/2 + 1)];
+          globalcv = new dcomplex[n_th*(ncz/2 + 1)];  //Never freed
           nthreads = n_th;
         }
       }
@@ -2039,7 +2039,7 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
     
     // Serial, so can have a single static array
     if(cv == (dcomplex*) NULL)
-      cv = new dcomplex[ncz/2 + 1];
+      cv = new dcomplex[ncz/2 + 1]; //Never freed
 
     int xs = mesh->xstart;
     int xe = mesh->xend;

@@ -71,7 +71,7 @@ int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcompl
     if(len > 0)
       delete[] dl;
 
-    dl = new fcmplx[4*n];
+    dl = new fcmplx[4*n]; //Never freed
     d = dl + n;
     du = d + n;
     x = du + n;
@@ -141,7 +141,7 @@ bool tridag(const BoutReal *a, const BoutReal *b, const BoutReal *c, const BoutR
     if(len > 0)
       delete[] dl;
 
-    dl = new BoutReal[4*n];
+    dl = new BoutReal[4*n]; //Never freed
     d = dl + n;
     du = d + n;
     x = du + n;
@@ -206,8 +206,8 @@ void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal 
       delete[] u;
       delete[] z;
     }
-    u = new BoutReal[n];
-    z = new BoutReal[n];
+    u = new BoutReal[n]; //Never freed
+    z = new BoutReal[n]; //Never freed
     len = n;
   }
   
@@ -279,7 +279,7 @@ void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b) {
   if(alen < ldab*n) {
     if(alen > 0)
       delete[] AB;
-    AB = new fcmplx[ldab*n];
+    AB = new fcmplx[ldab*n]; //Never freed
     alen = ldab*n;
   }
   if(len < n) {
@@ -288,8 +288,8 @@ void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b) {
       delete[] x;
     }
     
-    ipiv = new int[n];
-    x = new fcmplx[n];
+    ipiv = new int[n]; //Never freed
+    x = new fcmplx[n]; //Never freed
     len = n;
   }
 
@@ -340,7 +340,7 @@ int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcompl
   if(n > len) {
     if(len > 0)
       delete [] gam;
-    gam = new dcomplex[n];
+    gam = new dcomplex[n]; //Never freed
     len = n;
   }
   
@@ -380,7 +380,7 @@ bool tridag(const BoutReal *a, const BoutReal *b, const BoutReal *c, const BoutR
   if(n > len) {
     if(len > 0)
       delete [] gam;
-    gam = new BoutReal[n];
+    gam = new BoutReal[n]; //Never freed
     len = n;
   }
   
@@ -422,8 +422,8 @@ void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal 
       delete[] u;
       delete[] z;
     }
-    u = new BoutReal[n];
-    z = new BoutReal[n];
+    u = new BoutReal[n]; //Never freed
+    z = new BoutReal[n]; //Never freed
     len = n;
   }
   
@@ -539,8 +539,8 @@ void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b) {
       free_matrix(al);
       delete[] indx;
     }
-    al = matrix<dcomplex>(n, m1);
-    indx = new unsigned long[n];
+    al = matrix<dcomplex>(n, m1); //Never freed
+    indx = new unsigned long[n]; //Never freed
     an = n;
     am1 = m1;
   }
@@ -576,8 +576,8 @@ void cyclic_tridag(dcomplex *a, dcomplex *b, dcomplex *c, dcomplex *r, dcomplex 
       delete[] u;
       delete[] z;
     }
-    u = new dcomplex[n];
-    z = new dcomplex[n];
+    u = new dcomplex[n]; //Never freed
+    z = new dcomplex[n]; //Never freed
     len = n;
   }
   

@@ -34,8 +34,8 @@ class PowerSolver;
 
 class PowerSolver : public Solver {
  public:
-  PowerSolver() : Solver() {}
-  ~PowerSolver() {}
+  PowerSolver() : Solver(), f0(nullptr) {}
+  ~PowerSolver();
   
   int init(int nout, BoutReal tstep) override;
   
