@@ -3,8 +3,8 @@
 BOUT++ options
 ==============
 
-The inputs to BOUT++ are a text file containing options, and for complex
-grids a binary grid file in NetCDF or HDF5 format. Generating input
+The inputs to BOUT++ are a text file containing options, command-line options,
+and for complex grids a binary grid file in NetCDF or HDF5 format. Generating input
 grids for tokamaks is described in :ref:`sec-gridgen`. The grid file
 describes the size and topology of the X-Y domain, metric tensor
 components and usually some initial profiles. The option file specifies
@@ -12,6 +12,12 @@ the size of the domain in the symmetric direction (Z), and controls how
 the equations are evolved e.g. differencing schemes to use, and boundary
 conditions. In most situations, the grid file will be used in many
 different simulations, but the options may be changed frequently.
+
+All options used in a simulation are saved to a ``BOUT.settings`` file.
+This includes values which are not explicitly set in ``BOUT.inp``.
+
+BOUT.inp input file
+-------------------
 
 The text input file ``BOUT.inp`` is always in a subdirectory called
 ``data`` for all examples. The files include comments (starting with
@@ -50,8 +56,20 @@ Have a look through the examples to see how the options are used.
 Command line options
 --------------------
 
-All options can be set on the command line, and will override those set
-in BOUT.inp. The most commonly used are “restart” and “append”,
+Command-line switches are:
+
+=============   ============================================================
+   Switch               Description
+=============   ============================================================
+-h, --help      Prints a help message and quits
+-v, --verbose   Outputs more messages to BOUT.log files
+-d <directory>  Look in <directory> for input/output files (default "data")
+-f <file>       Use OPTIONS given in <file>
+-o <file>       Save used OPTIONS given to <file> (default BOUT.settings)
+=============   ============================================================
+
+In addition all options in the BOUT.inp file can be set on the command line,
+and will override those set in BOUT.inp. The most commonly used are “restart” and “append”,
 described in :ref:`sec-running`. If values are not given for
 command-line arguments, then the value is set to ``true`` , so putting
 ``restart`` is equivalent to ``restart=true`` .
@@ -298,17 +316,17 @@ options organised into sections which can be nested. To represent this
 tree structure there is the ``Options`` class defined in
 ``bout++/include/options.hxx``
 
-::
+.. code:: c++
 
     class Options {
      public:
       // Setting options
-      void set(const string &key,const int &val,const string &source="");
+      void set(const string &key, int value, const string &source="");
       ...
       // Testing if set
       bool isSet(const string &key);
       // Getting options
-      void get(const string &key,int &val,const int &def,bool log=true);
+      void get(const string &key,int &val,const int default);
       ...
       // Get a subsection. Creates if doesn't exist
       Options* getSection(const string &name);
@@ -348,7 +366,7 @@ will be created.
 To get options, use the ``get()`` method which take the name of the
 option, the variable to set, and the default value.
 
-::
+.. code:: c++
 
       int nout;
       options->get("nout", nout, 1);
@@ -356,7 +374,7 @@ option, the variable to set, and the default value.
 Internally, ``Options`` converts all types to strings and does type
 conversion when needed, so the following code would work:
 
-::
+.. code:: c++
 
       Options *options = Options::getRoot();
       options->set("test", "123");
@@ -366,13 +384,30 @@ conversion when needed, so the following code would work:
 This is because often the type of the option is not known at the time
 when it’s set, but only when it’s requested.
 
-By default, the ``get`` methods output a message to the log files giving
-the value used and the source of that value. To suppress this, set the
-``log`` argument to ``false`` :
 
-::
+If the verbose flag is set (``-v`` on command line) , then ``get`` methods output a
+message to the log files giving the value used and the source of that value.
+This is controlled by the ``log`` member of Options and can be turned on and off
+by calling ``setLogging`` e.g.
 
-      options->get("test", val, 1, false);
+.. code:: c++
+   
+   options->getRoot()->setLogging(false); // Turn off logging of options
+
+Changes to logging propagate to all sub-sections, so setting the logging
+of the root options object sets it for all sections. To see logs from
+a particular subset of the options tree set the logging for that section:
+
+.. code:: c++
+   
+   options->getRoot()->getSection("mesh")->setLogging(true); // Turn on some logging
+
+so the above code turns on logging of options for the "mesh" section and all subsections of mesh.
+
+Note: This logging only affects messages printed to screen and to ``BOUT.log`` files.
+It does not affect the ``BOUT.settings`` file, which should always contain a full list
+of options used and their values.
+
 
 Reading options
 ---------------
