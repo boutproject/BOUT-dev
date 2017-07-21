@@ -308,7 +308,6 @@ warn()
 print "void AiolosMesh::derivs_init(Options * option) {"
 print "  std::string name;"
 print "  Options * dirOption;"
-print '  Options * defOption = option->getSection("diff");'
 for d in dirs['Field3D']:
     print "  output.write(\"\\tSetting derivatives for direction %s:\\n\");"%d
     print '  dirOption = option->getSection("dd%s");'%d
@@ -324,25 +323,24 @@ for d in dirs['Field3D']:
             warn()
             print '  // Setting derivatives for dd%s and %s'%(d,i+stag)
             print ' ',
-            for option in ['dirOption','defOption']:
+            if i == 'Second' and stag == "Stag":
+                print '    name="C2";'
+            if i == 'Flux' or i == 'Upwind':
+                default_diff="U1"
+            else:
+                default_diff="C2"
+            for option in ['dirOption']:
                 if stag == "Stag":
                     names = [ i+stag,i,"all" ]
                 else:
                     names = [ i,"all" ]
                 for name in names:
                     print 'if (%s->isSet("%s")){'%(option,name)
-                    print '    %s->get("%s",name,"");'%(option,name)
+                    print '    %s->get("%s",name,"%s");'%(option,name,default_diff)
                     print '  } else',
-            print '{'
-            if i == 'Second' and stag == "Stag":
-                print '    name="C2";'
-            elif i == 'Flux':
-                print '    name="SPLIT";'
-            elif i == 'Upwind':
-                print '    name="U1";'
-            else:
-                print '    name="C2";'
+            print '  {'
             #elif i == ''
+            print '    name="%s";'%default_diff
             print '  }'
             print ' ',
             options=""
