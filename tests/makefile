@@ -70,12 +70,12 @@ TEST_OBJECTS = $(TEST_SOURCES:%.cxx=%.o)
 $(TEST_SOURCES): checklib
 $(TEST_OBJECTS): $(LIB)
 
-all_tests: makefile $(BOUT_TOP)/make.config $(OBJ) $(LIB) $(SUB_LIBS) $(TEST_OBJECTS) bout_test_main.a
+serial_tests: makefile $(BOUT_TOP)/make.config $(OBJ) $(LIB) $(SUB_LIBS) $(TEST_OBJECTS) bout_test_main.a
 	@echo "  Linking tests"
 	@$(LD) $(LDFLAGS) -o $@ $(TEST_OBJECTS) bout_test_main.a $(BOUT_LIBS) $(SUB_LIBS)
 
-check: all_tests
-	./all_tests
+check: serial_tests
+	./serial_tests
 
 %.o: $(BOUT_TOP)/make.config %.cxx
 	@echo "  Compiling " $(@:.o=.cxx)
