@@ -114,10 +114,10 @@ void Output::vprint(const char* string, va_list ap) {
 }
 
 
-Output* Output::instance = NULL;
+Output* Output::instance = nullptr;
 
 Output* Output::getInstance() {
-  if(instance == NULL) {
+  if(instance == nullptr) {
     // Create the instance
     instance = new Output();
   }
@@ -125,11 +125,11 @@ Output* Output::getInstance() {
 }
 
 void Output::cleanup() {
-  if(instance == NULL)
+  if(instance == nullptr)
     return;
   
   delete instance;
-  instance = NULL;
+  instance = nullptr;
 }
 
 void ConditionalOutput::write(const char * str,...){
@@ -161,5 +161,6 @@ ConditionalOutput output_warn(Output::getInstance());
 ConditionalOutput output_info(Output::getInstance());
 ConditionalOutput output_prog(Output::getInstance());
 ConditionalOutput output_error(Output::getInstance());
+ConditionalOutput output(Output::getInstance());
 
 #undef bout_vsnprint_pre

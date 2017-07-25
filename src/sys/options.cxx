@@ -8,12 +8,7 @@
 
 const string DEFAULT_SOURCE {"default"}; // The source label given to default values
 
-#undef output
-Options::Options():
-  parent(NULL) , output_ptr(new ConditionalOutput(&output_info))
-{};
-
-#define output (*output_ptr)
+Options::Options(): parent(nullptr) {}
 
 Options::~Options() {
   // Delete sub-sections
@@ -84,7 +79,7 @@ void Options::get(const string &key, int &val, int def) {
     
     // Set the return value
     val = def;
-    output << "\tOption " << sectionName << ":" << key << " = " << def << " (default)" << endl;
+    output_info << "\tOption " << sectionName << ":" << key << " = " << def << " (default)" << endl;
     return;
   }
   
@@ -117,12 +112,12 @@ void Options::get(const string &key, int &val, int def) {
   
   it->second.used = true;
   
-  output << "\tOption " << sectionName << ":" << it->first << " = " << val;
+  output_info << "\tOption " << sectionName << ":" << it->first << " = " << val;
   if (!it->second.source.empty()) {
     // Specify the source of the setting
-    output << " (" << it->second.source << ")";
+    output_info << " (" << it->second.source << ")";
   }
-  output << endl;
+  output_info << endl;
 }
 
 void Options::get(const string &key, BoutReal &val, BoutReal def) {
@@ -133,7 +128,7 @@ void Options::get(const string &key, BoutReal &val, BoutReal def) {
     
     val = def;
     
-    output << "\tOption " << sectionName << ":" << key << " = " << def << " (default)" << endl;
+    output_info << "\tOption " << sectionName << ":" << key << " = " << def << " (default)" << endl;
     return;
   }
   
@@ -158,10 +153,10 @@ void Options::get(const string &key, BoutReal &val, BoutReal def) {
   // Mark this option as used
   it->second.used = true;
   
-  output << "\tOption " << sectionName << ":" << it->first << " = " << val;
+  output_info << "\tOption " << sectionName << ":" << it->first << " = " << val;
   if (!it->second.source.empty()) {
     // Specify the source of the setting
-    output << " (" << it->second.source << ")";
+    output_info << " (" << it->second.source << ")";
   }
 }
 
@@ -174,9 +169,9 @@ void Options::get(const string &key, bool &val, bool def) {
     val = def;
     
     if (def) {
-      output << "\tOption " << sectionName << ":" << key << " = true   (default)" << endl;
+      output_info << "\tOption " << sectionName << ":" << key << " = true   (default)" << endl;
     } else {
-      output << "\tOption " << sectionName << ":" << key << " = false  (default)" << endl;
+      output_info << "\tOption " << sectionName << ":" << key << " = false  (default)" << endl;
     }
     return;
   }
@@ -186,19 +181,19 @@ void Options::get(const string &key, bool &val, bool def) {
   char c = toupper((it->second.value)[0]);
   if ((c == 'Y') || (c == 'T') || (c == '1')) {
     val = true;
-    output << "\tOption " << sectionName << ":" << it->first << " = true";
+    output_info << "\tOption " << sectionName << ":" << it->first << " = true";
   } else if((c == 'N') || (c == 'F') || (c == '0')) {
     val = false;
-    output << "\tOption " << sectionName << ":" << it->first << " = false";
+    output_info << "\tOption " << sectionName << ":" << it->first << " = false";
   } else {
     throw BoutException("\tOption '%s': Boolean expected. Got '%s'\n", 
                         it->first.c_str(), it->second.value.c_str());
   }
   if (!it->second.source.empty()) {
     // Specify the source of the setting
-    output << " (" << it->second.source << ")";
+    output_info << " (" << it->second.source << ")";
   }
-  output << endl;
+  output_info << endl;
 }
 
 void Options::get(const string &key, string &val, const string &def) {
@@ -209,7 +204,7 @@ void Options::get(const string &key, string &val, const string &def) {
     
     val = def;
     
-    output << "\tOption " << sectionName << ":" << key << " = " << def << " (default)" << endl;
+    output_info << "\tOption " << sectionName << ":" << key << " = " << def << " (default)" << endl;
     return;
   }
   
@@ -225,12 +220,12 @@ void Options::get(const string &key, string &val, const string &def) {
   
   it->second.used = true;
   
-  output << "\tOption " << sectionName << ":" << it->first << " = " << val;
+  output_info << "\tOption " << sectionName << ":" << it->first << " = " << val;
   if (!it->second.source.empty()) {
     // Specify the source of the setting
-    output << " (" << it->second.source << ")";
+    output_info << " (" << it->second.source << ")";
   }
-  output << endl;
+  output_info << endl;
 }
 
 Options* Options::getSection(const string &name) {
@@ -267,15 +262,15 @@ void Options::printUnused() {
     }
   }
   if (allused) {
-    output << "All options used\n";
+    output_info << "All options used\n";
   } else {
-    output << "Unused options:\n";
+    output_info << "Unused options:\n";
     for (const auto& it : options) {
       if (!it.second.used) {
-        output << "\t" << sectionName << ":" << it.first << " = " << it.second.value;
+        output_info << "\t" << sectionName << ":" << it.first << " = " << it.second.value;
         if (!it.second.source.empty())
-          output << " (" << it.second.source << ")";
-        output << endl;
+          output_info << " (" << it.second.source << ")";
+        output_info << endl;
       }
     }
   }

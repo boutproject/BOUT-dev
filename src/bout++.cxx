@@ -221,22 +221,28 @@ int BoutInitialise(int &argc, char **&argv) {
   int NPES = BoutComm::size();
   int MYPE = BoutComm::rank();
 
-  /// Set up the output
-  #undef output
-  Output & output = *Output::getInstance();
-  if (MYPE == 0) output.enable(); // Enable writing to stdout
-  else output.disable(); // No writing to stdout
+  /// Set up the output, accessing underlying Output object
+  {
+    Output &output = *Output::getInstance();
+    if (MYPE == 0) output.enable(); // Enable writing to stdout
+    else output.disable(); // No writing to stdout
 
-  /// Open an output file to echo everything to
-  /// On processor 0 anything written to output will go to stdout and the file
-  if (output.open("%s/BOUT.log.%d", data_dir, MYPE)) {
-    return 1;
+    /// Open an output file to echo everything to
+    /// On processor 0 anything written to output will go to stdout and the file
+    if (output.open("%s/BOUT.log.%d", data_dir, MYPE)) {
+      return 1;
+    }
   }
+  
   output_error.enable(verbosity>0);
   output_warn.enable(verbosity>1);
   output_prog.enable(verbosity>2);
   output_info.enable(verbosity>3);
   output_debug.enable(verbosity>4);
+  
+  // The backward-compatible output object same as prog
+  output.enable(verbosity>2);
+  
   /// Print intro
   output_info.write("\nBOUT++ version %.2f\n", BOUT_VERSION);
 #ifdef REVISION

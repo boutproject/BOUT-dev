@@ -217,15 +217,8 @@ extern ConditionalOutput output_prog;
 extern ConditionalOutput output_info;
 extern ConditionalOutput output_error;
 
+/// Generic output, given the same level as output_info
+extern ConditionalOutput output;
 
 #endif // __OUTPUT_H__
 
-// Allow to reinclude this file, to set output macro again ...
-#ifndef output
-/// the old output should not be used anymore
-#define output (_Pragma("GCC warning \"DEPRECATED: use debug, info, warn or error instead of output.\"") *Output::getInstance())
-/// disable all old output
-//#define output (*dynamic_cast<DummyOutput*>(Output::getInstance()))
-/// use the old output without warning
-//#define output (*Output::getInstance())
-#endif
