@@ -232,7 +232,6 @@ int BoutInitialise(int &argc, char **&argv) {
   if (output.open("%s/BOUT.log.%d", data_dir, MYPE)) {
     return 1;
   }
-  output << verbosity << endl;
   output_error.enable(verbosity>0);
   output_warn.enable(verbosity>1);
   output_prog.enable(verbosity>2);

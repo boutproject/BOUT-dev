@@ -29,7 +29,6 @@ class Output;
 #ifndef __OUTPUT_H__
 #define __OUTPUT_H__
 
-#include <stdio.h>
 #include "multiostream.hxx"
 #include <iostream>
 #include <fstream>
@@ -125,11 +124,9 @@ public:
 class ConditionalOutput: public Output{
 public:
   ConditionalOutput(Output * base_):
-    base(base_), enabled(true), base_is_cond(false){
-    printf("init from out\n");};
+    base(base_), enabled(true), base_is_cond(false){};
   ConditionalOutput(ConditionalOutput * base_):
-    base(base_), enabled(base_->enabled), base_is_cond(true){
-    printf("init from cond: %d\n",enabled);};
+    base(base_), enabled(base_->enabled), base_is_cond(true){};
   void write(const char * str,...)override;
   void vwrite(const char * str, va_list va)override{
     if (enabled){
@@ -183,30 +180,26 @@ operator <<(DummyOutput& out, std::ostream & (*pf)(std::ostream &))
 inline ConditionalOutput &
 operator <<( ConditionalOutput& out, std::ostream & (*pf)(std::ostream &))
 {
-  if (out.isEnabled())
+  if (out.isEnabled()) {
     *out.getBase() << pf;
-  else
-    printf("Do not print NL");
+  }
   return out;
 };
 
 template<typename T>
-ConditionalOutput & operator <<(ConditionalOutput& out, T const & t)
-{
-  if (out.isEnabled())
+ConditionalOutput & operator <<(ConditionalOutput& out, T const & t) {
+  if (out.isEnabled()) {
     *out.getBase() << t;
-  else
-    printf("Do not print");
+  }
   return out;
 };
 
 template<typename T>
 ConditionalOutput & operator <<(ConditionalOutput& out, const T * t)
 {
-  if (out.isEnabled())
+  if (out.isEnabled()) {
     *out.getBase() << t;
-  else
-    printf("Do not print");
+  }
   return out;
 };
 
