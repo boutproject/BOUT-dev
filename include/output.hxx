@@ -5,7 +5,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -49,161 +49,158 @@ using std::endl;
   will be written to the file. In addition, output to stdout can be enabled
   and disabled.
 */
-class Output : private multioutbuf_init<char, std::char_traits<char> >, 
-               public std::basic_ostream<char, std::char_traits<char> > {
+class Output : private multioutbuf_init<char, std::char_traits<char>>,
+               public std::basic_ostream<char, std::char_traits<char>> {
 
   typedef std::char_traits<char> _Tr;
   typedef ::multioutbuf_init<char, _Tr> multioutbuf_init;
-  
- public:
-  Output() : multioutbuf_init(), 
-    std::basic_ostream<char, _Tr>(multioutbuf_init::buf()) {
-    buffer_len=BUFFER_LEN;
-    buffer=new char[buffer_len];
+
+public:
+  Output() : multioutbuf_init(), std::basic_ostream<char, _Tr>(multioutbuf_init::buf()) {
+    buffer_len = BUFFER_LEN;
+    buffer = new char[buffer_len];
     enable();
   }
-    
+
   /// Specify a log file to open
-  Output(const char *fname) : multioutbuf_init(), 
-    std::basic_ostream<char, _Tr>(multioutbuf_init::buf()) {
-    buffer_len=BUFFER_LEN;
-    buffer=new char[buffer_len];
+  Output(const char *fname)
+      : multioutbuf_init(), std::basic_ostream<char, _Tr>(multioutbuf_init::buf()) {
+    buffer_len = BUFFER_LEN;
+    buffer = new char[buffer_len];
     enable();
     open(fname);
-  } 
-  virtual ~Output() {close();
-    delete[] buffer;}
-  
+  }
+  virtual ~Output() {
+    close();
+    delete[] buffer;
+  }
+
   virtual void enable();  ///< Enables writing to stdout (default)
   virtual void disable(); ///< Disables stdout
 
   int open(const char *fname, ...); ///< Open an output log file
-  void close();                    ///< Close the log file
+  void close();                     ///< Close the log file
 
-  virtual void write(const char*string, ...); ///< Write a string using C printf format
+  virtual void write(const char *string, ...); ///< Write a string using C printf format
 
-  virtual void print(const char*string, ...); ///< Same as write, but only to screen
+  virtual void print(const char *string, ...); ///< Same as write, but only to screen
 
-  virtual void vwrite(const char*string, va_list args); ///< Write a string using C vprintf format
+  virtual void vwrite(const char *string,
+                      va_list args); ///< Write a string using C vprintf format
 
-  virtual void vprint(const char*string, va_list args); ///< Same as vwrite, but only to screen
+  virtual void vprint(const char *string,
+                      va_list args); ///< Same as vwrite, but only to screen
 
   /// Add an output stream. All output will be sent to all streams
-  void add(std::basic_ostream<char, _Tr>& str) {
-    multioutbuf_init::buf()->add(str);
-  }
+  void add(std::basic_ostream<char, _Tr> &str) { multioutbuf_init::buf()->add(str); }
 
   /// Remove an output stream
-  void remove(std::basic_ostream<char, _Tr>& str) {
+  void remove(std::basic_ostream<char, _Tr> &str) {
     multioutbuf_init::buf()->remove(str);
   }
 
   static Output *getInstance(); ///< Return pointer to instance
-  static void cleanup();   ///< Delete the instance
+  static void cleanup();        ///< Delete the instance
 
- private:
+private:
   static Output *instance; ///< Default instance of this class
-  
-  std::ofstream file; ///< Log file stream
-  static const int BUFFER_LEN=1024; ///< default length
-  int buffer_len; ///< the current length
-  char * buffer; ///< Buffer used for C style output
-  bool enabled;      ///< Whether output to stdout is enabled
+
+  std::ofstream file;                 ///< Log file stream
+  static const int BUFFER_LEN = 1024; ///< default length
+  int buffer_len;                     ///< the current length
+  char *buffer;                       ///< Buffer used for C style output
+  bool enabled;                       ///< Whether output to stdout is enabled
 };
 
-
-class DummyOutput: public Output{
+class DummyOutput : public Output {
 public:
-  void write(const char * str,...)override{};
-  void print(const char * str,...)override{};
-  void enable()override{throw BoutException("DummyOutput cannot be enabled.\nTry compiling with --enable-debug or be less verbose?");};
-  void disable()override{};
-  void enable(bool en){if (en) this->enable();};
+  void write(const char *str, ...) override{};
+  void print(const char *str, ...) override{};
+  void enable() override {
+    throw BoutException("DummyOutput cannot be enabled.\nTry compiling with "
+                        "--enable-debug or be less verbose?");
+  };
+  void disable() override{};
+  void enable(bool en) {
+    if (en)
+      this->enable();
+  };
 };
 
-class ConditionalOutput: public Output{
+class ConditionalOutput : public Output {
 public:
-  ConditionalOutput(Output * base_):
-    base(base_), enabled(true), base_is_cond(false){};
-  ConditionalOutput(ConditionalOutput * base_):
-    base(base_), enabled(base_->enabled), base_is_cond(true){};
-  void write(const char * str,...)override;
-  void vwrite(const char * str, va_list va)override{
-    if (enabled){
-      base->vwrite(str,va);
+  ConditionalOutput(Output *base_) : base(base_), enabled(true), base_is_cond(false) {};
+  ConditionalOutput(ConditionalOutput *base_)
+      : base(base_), enabled(base_->enabled), base_is_cond(true) {};
+  void write(const char *str, ...) override;
+  void vwrite(const char *str, va_list va) override {
+    if (enabled) {
+      base->vwrite(str, va);
     }
   }
-  void print(const char * str,...)override;
-  void vprint(const char * str, va_list va)override{
-    if (enabled){
-      base->vprint(str,va);
+  void print(const char *str, ...) override;
+  void vprint(const char *str, va_list va) override {
+    if (enabled) {
+      base->vprint(str, va);
     }
   }
-  Output * getBase(){
-    if (base_is_cond){
-      return dynamic_cast<ConditionalOutput*>(base)->getBase();
+  Output *getBase() {
+    if (base_is_cond) {
+      return dynamic_cast<ConditionalOutput *>(base)->getBase();
     } else {
       return base;
     }
   };
-  void enable(bool enable_){enabled=enable_;};
-  void enable()override{enabled=true;};
-  void disable()override{enabled=false;};
-  bool isEnabled(){return enabled && (!base_is_cond || (dynamic_cast<ConditionalOutput*>(base))->isEnabled());};
+  void enable(bool enable_) { enabled = enable_; };
+  void enable() override { enabled = true; };
+  void disable() override { enabled = false; };
+  bool isEnabled() {
+    return enabled &&
+           (!base_is_cond || (dynamic_cast<ConditionalOutput *>(base))->isEnabled());
+  };
 
-  Output * base;
+  Output *base;
   bool enabled;
+
 private:
   bool base_is_cond;
+
 private:
 };
 
-
-template<typename T>
-DummyOutput & operator <<(DummyOutput& out, T const & t)
-{
+template <typename T> DummyOutput &operator<<(DummyOutput &out, T const &t) {
   return out;
 }
 
-template<typename T>
-DummyOutput & operator <<(DummyOutput& out, const T * t)
-{
+template <typename T> DummyOutput &operator<<(DummyOutput &out, const T *t) {
   return out;
 }
 
-inline DummyOutput &
-operator <<(DummyOutput& out, std::ostream & (*pf)(std::ostream &))
-{
+inline DummyOutput &operator<<(DummyOutput &out, std::ostream &(*pf)(std::ostream &)) {
   return out;
 }
 
-inline ConditionalOutput &
-operator <<( ConditionalOutput& out, std::ostream & (*pf)(std::ostream &))
-{
+inline ConditionalOutput &operator<<(ConditionalOutput &out,
+                                     std::ostream &(*pf)(std::ostream &)) {
   if (out.isEnabled()) {
     *out.getBase() << pf;
   }
   return out;
 };
 
-template<typename T>
-ConditionalOutput & operator <<(ConditionalOutput& out, T const & t) {
+template <typename T> ConditionalOutput &operator<<(ConditionalOutput &out, T const &t) {
   if (out.isEnabled()) {
     *out.getBase() << t;
   }
   return out;
 };
 
-template<typename T>
-ConditionalOutput & operator <<(ConditionalOutput& out, const T * t)
-{
+template <typename T> ConditionalOutput &operator<<(ConditionalOutput &out, const T *t) {
   if (out.isEnabled()) {
     *out.getBase() << t;
   }
   return out;
 };
-
-
 
 /// To allow statements like "output.write(...)" or "output << ..."
 /// Output for debugging
@@ -221,4 +218,3 @@ extern ConditionalOutput output_error;
 extern ConditionalOutput output;
 
 #endif // __OUTPUT_H__
-
