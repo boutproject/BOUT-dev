@@ -112,10 +112,14 @@ private:
   bool enabled;                       ///< Whether output to stdout is enabled
 };
 
+/// Class which behaves like Output, but has no effect.
+/// This is to allow debug outputs to be disabled at compile time
+/// 
+/// 
 class DummyOutput : public Output {
 public:
-  void write(const char *str, ...) override{};
-  void print(const char *str, ...) override{};
+  void write(const char *str, ...) override {};
+  void print(const char *str, ...) override {};
   void enable() override {
     throw BoutException("DummyOutput cannot be enabled.\nTry compiling with "
                         "--enable-debug or be less verbose?");
@@ -127,23 +131,44 @@ public:
   };
 };
 
+/// Layer on top of Output which passes through calls to write, print etc
+/// if it is enabled, but discards messages otherwise.
+/// This is used to provide different levels of output
+/// (info, prog, warn, error) which can be enabled and disabled at run time.
+///
 class ConditionalOutput : public Output {
 public:
+  /// @params[in] base    The Output object which will be written to if enabled
   ConditionalOutput(Output *base_) : base(base_), enabled(true), base_is_cond(false) {};
+
+  /// Constuctor taking ConditionalOutput. This allows several layers of conditions
+  /// 
+  /// @params[in] base    A ConditionalOutput which will be written to if enabled
+  /// 
   ConditionalOutput(ConditionalOutput *base_)
       : base(base_), enabled(base_->enabled), base_is_cond(true) {};
+
+  /// If enabled, writes a string using C printf formatting
+  /// by calling base->vwrite
+  /// This string is then sent to log file and stdout (on processor 0)
   void write(const char *str, ...) override;
+  
   void vwrite(const char *str, va_list va) override {
     if (enabled) {
       base->vwrite(str, va);
     }
   }
+
+  /// If enabled, print a string to stdout using C printf formatting
+  /// note: unlike write, this is not also sent to log files
   void print(const char *str, ...) override;
   void vprint(const char *str, va_list va) override {
     if (enabled) {
       base->vprint(str, va);
     }
   }
+  
+  /// Get the Output object which is the base of this ConditionalOutput
   Output *getBase() {
     if (base_is_cond) {
       return dynamic_cast<ConditionalOutput *>(base)->getBase();
@@ -151,9 +176,19 @@ public:
       return base;
     }
   };
+  
+  /// Set whether this ConditionalOutput is enabled
+  /// If set to false (disabled), then all print and write calls do nothing
   void enable(bool enable_) { enabled = enable_; };
+
+  /// Turn on outputs through calls to print and write
   void enable() override { enabled = true; };
+
+  /// Turn off outputs through calls to print and write
+  /// This includes log files and stdout
   void disable() override { enabled = false; };
+
+  /// Check if output is enabled
   bool isEnabled() {
     return enabled &&
            (!base_is_cond || (dynamic_cast<ConditionalOutput *>(base))->isEnabled());
@@ -168,6 +203,10 @@ private:
 private:
 };
 
+/// Catch stream outputs to DummyOutput objects. This is so that
+/// statements like
+///    output_debug << "debug message";
+/// compile but have no effect if DEBUG_ENABLED is false
 template <typename T> DummyOutput &operator<<(DummyOutput &out, T const &t) {
   return out;
 }
@@ -209,12 +248,12 @@ extern Output output_debug;
 #else
 extern DummyOutput output_debug;
 #endif
-extern ConditionalOutput output_warn;
-extern ConditionalOutput output_prog;
-extern ConditionalOutput output_info;
-extern ConditionalOutput output_error;
+extern ConditionalOutput output_warn;  ///< warnings
+extern ConditionalOutput output_prog;  ///< progress
+extern ConditionalOutput output_info;  ///< information 
+extern ConditionalOutput output_error; ///< errors
 
-/// Generic output, given the same level as output_info
+/// Generic output, given the same level as output_prog
 extern ConditionalOutput output;
 
 #endif // __OUTPUT_H__
