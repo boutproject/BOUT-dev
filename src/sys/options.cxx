@@ -8,6 +8,13 @@
 
 const string DEFAULT_SOURCE {"default"}; // The source label given to default values
 
+#undef output
+Options::Options():
+  parent(NULL) , output_ptr(new ConditionalOutput(&output_info))
+{};
+
+#define output (*output_ptr)
+
 Options::~Options() {
   // Delete sub-sections
   for (const auto& it : sections) {

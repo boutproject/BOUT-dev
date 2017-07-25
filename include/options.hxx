@@ -46,6 +46,7 @@ class Options;
 #include <string>
 using std::string;
 
+class ConditionalOutput;
 /// Class to represent hierarchy of options
 /*!
  * 
@@ -104,14 +105,14 @@ using std::string;
 class Options {
 public:
   /// Constructor. This is called to create the root object
-  Options() : parent(nullptr) {}
-
+  Options();
+  
   /// Constructor used to create non-root objects
   ///
   /// @param[in] p         Parent object
   /// @param[in[ secname   Name of the section, including path from the root
-  Options(Options *p, string secname) : parent(p), sectionName(secname) {};
-
+  Options(Options *p, string s) : parent(p), sectionName(s) , output_ptr(p->output_ptr) {};
+  
   /// Destructor
   ~Options();
 
@@ -190,6 +191,8 @@ public:
   
   std::map<string, OptionValue> options;
   std::map<string, Options*> sections;
+
+  ConditionalOutput * output_ptr;
 };
 
 /// Define for reading options which passes the variable name

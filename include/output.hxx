@@ -33,7 +33,7 @@ class Output;
 #include "multiostream.hxx"
 #include <iostream>
 #include <fstream>
-
+#include <boutexception.hxx>
 using std::endl;
 
 /// Class for text output to stdout and/or log file
@@ -72,18 +72,22 @@ class Output : private multioutbuf_init<char, std::char_traits<char> >,
     enable();
     open(fname);
   } 
-  ~Output() {close();
+  virtual ~Output() {close();
     delete[] buffer;}
   
-  void enable();  ///< Enables writing to stdout (default)
-  void disable(); ///< Disables stdout
+  virtual void enable();  ///< Enables writing to stdout (default)
+  virtual void disable(); ///< Disables stdout
 
   int open(const char *fname, ...); ///< Open an output log file
   void close();                    ///< Close the log file
 
-  void write(const char*string, ...); ///< Write a string using C printf format
+  virtual void write(const char*string, ...); ///< Write a string using C printf format
 
-  void print(const char*string, ...); ///< Same as write, but only to screen
+  virtual void print(const char*string, ...); ///< Same as write, but only to screen
+
+  virtual void vwrite(const char*string, va_list args); ///< Write a string using C vprintf format
+
+  virtual void vprint(const char*string, va_list args); ///< Same as vwrite, but only to screen
 
   /// Add an output stream. All output will be sent to all streams
   void add(std::basic_ostream<char, _Tr>& str) {
@@ -97,6 +101,7 @@ class Output : private multioutbuf_init<char, std::char_traits<char> >,
 
   static Output *getInstance(); ///< Return pointer to instance
   static void cleanup();   ///< Delete the instance
+
  private:
   static Output *instance; ///< Default instance of this class
   
@@ -107,7 +112,127 @@ class Output : private multioutbuf_init<char, std::char_traits<char> >,
   bool enabled;      ///< Whether output to stdout is enabled
 };
 
+
+class DummyOutput: public Output{
+public:
+  void write(const char * str,...)override{};
+  void print(const char * str,...)override{};
+  void enable()override{throw BoutException("DummyOutput cannot be enabled.\nTry compiling with --enable-debug or be less verbose?");};
+  void disable()override{};
+  void enable(bool en){if (en) this->enable();};
+};
+
+class ConditionalOutput: public Output{
+public:
+  ConditionalOutput(Output * base_):
+    base(base_), enabled(true), base_is_cond(false){
+    printf("init from out\n");};
+  ConditionalOutput(ConditionalOutput * base_):
+    base(base_), enabled(base_->enabled), base_is_cond(true){
+    printf("init from cond: %d\n",enabled);};
+  void write(const char * str,...)override;
+  void vwrite(const char * str, va_list va)override{
+    if (enabled){
+      base->vwrite(str,va);
+    }
+  }
+  void print(const char * str,...)override;
+  void vprint(const char * str, va_list va)override{
+    if (enabled){
+      base->vprint(str,va);
+    }
+  }
+  Output * getBase(){
+    if (base_is_cond){
+      return dynamic_cast<ConditionalOutput*>(base)->getBase();
+    } else {
+      return base;
+    }
+  };
+  void enable(bool enable_){enabled=enable_;};
+  void enable()override{enabled=true;};
+  void disable()override{enabled=false;};
+  bool isEnabled(){return enabled && (!base_is_cond || (dynamic_cast<ConditionalOutput*>(base))->isEnabled());};
+
+  Output * base;
+  bool enabled;
+private:
+  bool base_is_cond;
+private:
+};
+
+
+template<typename T>
+DummyOutput & operator <<(DummyOutput& out, T const & t)
+{
+  return out;
+}
+
+template<typename T>
+DummyOutput & operator <<(DummyOutput& out, const T * t)
+{
+  return out;
+}
+
+inline DummyOutput &
+operator <<(DummyOutput& out, std::ostream & (*pf)(std::ostream &))
+{
+  return out;
+}
+
+inline ConditionalOutput &
+operator <<( ConditionalOutput& out, std::ostream & (*pf)(std::ostream &))
+{
+  if (out.isEnabled())
+    *out.getBase() << pf;
+  else
+    printf("Do not print NL");
+  return out;
+};
+
+template<typename T>
+ConditionalOutput & operator <<(ConditionalOutput& out, T const & t)
+{
+  if (out.isEnabled())
+    *out.getBase() << t;
+  else
+    printf("Do not print");
+  return out;
+};
+
+template<typename T>
+ConditionalOutput & operator <<(ConditionalOutput& out, const T * t)
+{
+  if (out.isEnabled())
+    *out.getBase() << t;
+  else
+    printf("Do not print");
+  return out;
+};
+
+
+
 /// To allow statements like "output.write(...)" or "output << ..."
-#define output (*Output::getInstance())
+/// Output for debugging
+#ifdef DEBUG_ENABLED
+extern Output output_debug;
+#else
+extern DummyOutput output_debug;
+#endif
+extern ConditionalOutput output_warn;
+extern ConditionalOutput output_prog;
+extern ConditionalOutput output_info;
+extern ConditionalOutput output_error;
+
 
 #endif // __OUTPUT_H__
+
+// Allow to reinclude this file, to set output macro again ...
+#ifndef output
+/// the old output should not be used anymore
+#define output (_Pragma("GCC warning \"DEPRECATED: use debug, info, warn or error instead of output.\"") *Output::getInstance())
+/// disable all old output
+//#define output (*dynamic_cast<DummyOutput*>(Output::getInstance()))
+/// use the old output without warning
+//#define output (*Output::getInstance())
+#endif
