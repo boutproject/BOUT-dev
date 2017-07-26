@@ -148,6 +148,9 @@ int BoutInitialise(int &argc, char **&argv) {
 	      "  -o <settings filename>\tSave used OPTIONS given to <options filename>\n"
 	      "  -v \t\tIncrease verbosity\n"
 	      "  -q \t\tDecrease verbosity\n"
+#ifdef LOGCOLOR
+              "  -c \t\tColor output using bout-log-color\n"
+#endif
 	      "  -h, --help\t\tThis message\n"
 	      "  restart [append]\tRestart the simulation. If append is specified, append to the existing output files, otherwise overwrite them\n"
 	      "  VAR=VALUE\t\tSpecify a VALUE for input parameter VAR\n"
@@ -156,6 +159,7 @@ int BoutInitialise(int &argc, char **&argv) {
       return -1;
     }
   }
+  bool color_output = false; // Will be set true if -c is in the options
   for (int i=1;i<argc;i++) {
     if (string(argv[i]) == "-d") {
       // Set data directory
@@ -165,8 +169,8 @@ int BoutInitialise(int &argc, char **&argv) {
       }
       i++;
       data_dir = argv[i];
-    }
-    if (string(argv[i]) == "-f") {
+      
+    } else if (string(argv[i]) == "-f") {
       // Set options file
       if (i+1 >= argc) {
         fprintf(stderr, "Usage is %s -f <options filename>\n", argv[0]);
@@ -174,8 +178,8 @@ int BoutInitialise(int &argc, char **&argv) {
       }
       i++;
       opt_file = argv[i];
-    }
-    if (string(argv[i]) == "-o") {
+      
+    } else if (string(argv[i]) == "-o") {
       // Set options file
       if (i+1 >= argc) {
         fprintf(stderr, "Usage is %s -o <settings filename>\n", argv[0]);
@@ -183,15 +187,21 @@ int BoutInitialise(int &argc, char **&argv) {
       }
       i++;
       set_file = argv[i];
-    }
-    if (string(argv[i]) == "-v") {
+      
+    } else if (string(argv[i]) == "-v") {
       verbosity++;
-    }
-    if (string(argv[i]) == "-q") {
+      
+    } else if (string(argv[i]) == "-q") {
       verbosity--;
+      
+    } else if (string(argv[i]) == "-c") {
+      // Add color to the output by piping through bout-log-color
+      // This is done after checking all command-line inputs
+      // in case -c is set multiple times
+      color_output = true;
     }
   }
-
+  
   if (std::string(set_file) == std::string(opt_file)){
     throw BoutException("Input and output file for settings must be different.\nProvide -o <settings file> to avoid this issue.\n");
   }
@@ -207,6 +217,40 @@ int BoutInitialise(int &argc, char **&argv) {
     throw BoutException("DataDir \"%s\" does not exist or is not accessible\n",data_dir);
   }
 
+#ifdef LOGCOLOR
+  if (color_output) {
+    // Color stdout by piping through bout-log-color script
+    // This uses popen, fileno and dup2 functions, which are POSIX
+    bool success = false;
+
+    // Run bout-log-color through the shell. This should share stdout with BOUT++,
+    // and read stdin from the pipe
+    FILE *outpipe = popen("bout-log-color", "w");
+    
+    if (outpipe != NULL) {
+      // Valid pipe
+      // Get the integer file descriptor
+      int fno = fileno(outpipe);
+      if (fno != -1) {
+        // Valid file descriptor
+
+        // Note: We can get to here if bout-log-color failed to run
+        // This seems to cause code to fail later
+        
+        // Replace stdout with the pipe.
+        int status = dup2(fno, STDOUT_FILENO);
+        if (status != -1) {
+          success = true;
+        }
+      }
+    }
+    if (!success) {
+      // Failed . Probably not important enough to stop the simulation
+      fprintf(stderr, "Could not run bout-log-color. Make sure it is in your PATH\n");
+    }
+  }
+#endif // LOGCOLOR
+  
   // Set options
   Options::getRoot()->set("datadir", string(data_dir));
   Options::getRoot()->set("optionfile", string(opt_file));

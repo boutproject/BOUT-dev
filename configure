@@ -755,6 +755,7 @@ with_arkode
 with_scorep
 enable_checks
 enable_signal
+enable_color
 enable_track
 enable_debug
 enable_optimize
@@ -1393,6 +1394,7 @@ Optional Features:
   --enable-checks=no/1/2/3
                           Set run-time checking level
   --disable-signal        Disable SEGFAULT handling
+  --disable-color         Disable -c option to color output
   --enable-track          Enable variable tracking
   --enable-debug          Enable all debugging flags
   --enable-optimize=1/2/3 Enable optimization
@@ -2564,6 +2566,11 @@ fi
 # Check whether --enable-signal was given.
 if test "${enable_signal+set}" = set; then :
   enableval=$enable_signal;
+fi
+
+# Check whether --enable-color was given.
+if test "${enable_color+set}" = set; then :
+  enableval=$enable_color;
 fi
 
 # Check whether --enable-track was given.
@@ -5052,6 +5059,14 @@ then
   CXXFLAGS="$CXXFLAGS -DSIGHANDLE"
 else
   echo "Segmentation fault handling disabled"
+fi
+
+if test "$enable_signal" != "no"
+then
+  echo "Output coloring enabled"
+  CXXFLAGS="$CXXFLAGS -DLOGCOLOR"
+else
+  echo "Output coloring disabled"
 fi
 
 if test ."$enable_track" == ."yes"
@@ -11094,8 +11109,6 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-  set_function_name=no
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking does C++ compiler support __PRETTY_FUNCTION__" >&5
 $as_echo_n "checking does C++ compiler support __PRETTY_FUNCTION__... " >&6; }
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -11112,7 +11125,6 @@ _ACEOF
 if ac_fn_cxx_try_compile "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-     set_function_name=yes
      CXXFLAGS="$CXXFLAGS -DHAS_PRETTY_FUNCTION"
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5

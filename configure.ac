@@ -75,6 +75,8 @@ AC_ARG_ENABLE(checks,       [AS_HELP_STRING([--enable-checks=no/1/2/3],
         [Set run-time checking level])],,[])
 AC_ARG_ENABLE(signal,       [AS_HELP_STRING([--disable-signal],
         [Disable SEGFAULT handling])],,[])
+AC_ARG_ENABLE(color,        [AS_HELP_STRING([--disable-color],
+        [Disable -c option to color output])],,[])
 AC_ARG_ENABLE(track,        [AS_HELP_STRING([--enable-track],
         [Enable variable tracking])],,[])
 AC_ARG_ENABLE(debug,        [AS_HELP_STRING([--enable-debug],
@@ -259,6 +261,14 @@ then
   CXXFLAGS="$CXXFLAGS -DSIGHANDLE"
 else
   echo "Segmentation fault handling disabled"
+fi
+
+if test "$enable_signal" != "no"
+then
+  echo "Output coloring enabled"
+  CXXFLAGS="$CXXFLAGS -DLOGCOLOR"
+else
+  echo "Output coloring disabled"
 fi
 
 if test ."$enable_track" == ."yes"
