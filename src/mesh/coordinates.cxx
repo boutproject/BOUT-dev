@@ -33,7 +33,7 @@ Coordinates::Coordinates(Mesh *mesh) {
   g_12 = 0.0; g_13 = 0.0; g_23 = 0.0;
 
   if (mesh->get(dx, "dx")) {
-    output.write("\tWARNING: differencing quantity 'dx' not found. Set to 1.0\n");
+    output_warn.write("\tWARNING: differencing quantity 'dx' not found. Set to 1.0\n");
     dx = 1.0;
   }
 
@@ -42,7 +42,7 @@ Coordinates::Coordinates(Mesh *mesh) {
   }
 
   if (mesh->get(dy, "dy")) {
-    output.write("\tWARNING: differencing quantity 'dy' not found. Set to 1.0\n");
+    output_warn.write("\tWARNING: differencing quantity 'dy' not found. Set to 1.0\n");
     dy = 1.0;
   }
 
@@ -110,10 +110,10 @@ Coordinates::Coordinates(Mesh *mesh) {
       mesh->get(g_13, "g_13");
       mesh->get(g_23, "g_23");
 
-      output.write("\tWARNING! Covariant components of metric tensor set manually. Contravariant components NOT recalculated\n");
+      output_warn.write("\tWARNING! Covariant components of metric tensor set manually. Contravariant components NOT recalculated\n");
 
     } else {
-      output.write("Not all covariant components of metric tensor found. Calculating all from the contravariant tensor\n");
+      output_warn.write("Not all covariant components of metric tensor found. Calculating all from the contravariant tensor\n");
       /// Calculate contravariant metric components if not found
       if(calcCovariant()) {
         throw BoutException("Error in calcCovariant call");
@@ -133,11 +133,11 @@ Coordinates::Coordinates(Mesh *mesh) {
   // Attempt to read J from the grid file
   Field2D Jcalc = J;
   if(mesh->get(J, "J")) {
-    output.write("\tWARNING: Jacobian 'J' not found. Calculating from metric tensor\n");
+    output_warn.write("\tWARNING: Jacobian 'J' not found. Calculating from metric tensor\n");
     J = Jcalc;
   }else {
     // Compare calculated and loaded values  
-    output.write("\tMaximum difference in J is %e\n", max(abs(J - Jcalc)));
+    output_warn.write("\tMaximum difference in J is %e\n", max(abs(J - Jcalc)));
     
     // Re-evaluate Bxy using new J
     Bxy = sqrt(g_22)/J;
@@ -146,10 +146,10 @@ Coordinates::Coordinates(Mesh *mesh) {
   // Attempt to read Bxy from the grid file
   Field2D Bcalc = Bxy;
   if(mesh->get(Bxy, "Bxy")) {
-    output.write("\tWARNING: Magnitude of B field 'Bxy' not found. Calculating from metric tensor\n");
+    output_warn.write("\tWARNING: Magnitude of B field 'Bxy' not found. Calculating from metric tensor\n");
     Bxy = Bcalc;
   }else {
-    output.write("\tMaximum difference in Bxy is %e\n", max(abs(Bxy - Bcalc)));
+    output_warn.write("\tMaximum difference in Bxy is %e\n", max(abs(Bxy - Bcalc)));
     // Check Bxy
     if(!finite(Bxy))
       throw BoutException("\tERROR: Bxy not finite everywhere!\n");
@@ -169,19 +169,20 @@ Coordinates::Coordinates(Mesh *mesh) {
   Field2D d2x, d2y; // d^2 x / d i^2
   // Read correction for non-uniform meshes
   if(mesh->get(d2x, "d2x")) {
-    output.write("\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
+    output_warn.write("\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
     d1_dx = mesh->indexDDX(1./dx); // d/di(1/dx)
-  }else
+  }else {
     d1_dx = -d2x / (dx*dx);
+  }
   
   if(mesh->get(d2y, "d2y")) {
-    output.write("\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
+    output_warn.write("\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
     d1_dy = mesh->indexDDY(1./dy); // d/di(1/dy)
   }else
     d1_dy = -d2y / (dy*dy);
 
   if(mesh->get(ShiftTorsion, "ShiftTorsion")) {
-    output.write("\tWARNING: No Torsion specified for zShift. Derivatives may not be correct\n");
+    output_warn.write("\tWARNING: No Torsion specified for zShift. Derivatives may not be correct\n");
     ShiftTorsion = 0.0;
   }
   
@@ -189,7 +190,7 @@ Coordinates::Coordinates(Mesh *mesh) {
   
   if(mesh->IncIntShear) {
     if(mesh->get(IntShiftTorsion, "IntShiftTorsion")) {
-      output.write("\tWARNING: No Integrated torsion specified\n");
+      output_warn.write("\tWARNING: No Integrated torsion specified\n");
       IntShiftTorsion = 0.0;
     }
   }
@@ -221,7 +222,7 @@ void Coordinates::outputVars(Datafile &file) {
 int Coordinates::geometry() {
   TRACE("Coordinates::geometry");
 
-  output.write("Calculating differential geometry terms\n");
+  output_prog.write("Calculating differential geometry terms\n");
 
   if(min(abs(dx)) < 1e-8)
     throw BoutException("dx magnitude less than 1e-8");
@@ -335,7 +336,7 @@ int Coordinates::geometry() {
   G3 = (DDX(J*g13) + DDY(J*g23) + DDZ(J*g33))/J;
 
   // Communicate christoffel symbol terms
-  output.write("\tCommunicating connection terms\n");
+  output_prog.write("\tCommunicating connection terms\n");
 
   FieldGroup com;
 
@@ -398,7 +399,7 @@ int Coordinates::calcCovariant() {
       
       // invert
       if(gaussj(a, 3)) {
-        output.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
+        output_error.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
         return 1;
       }
       
@@ -421,14 +422,17 @@ int Coordinates::calcCovariant() {
 		     g_13*g13)- 1 ));
   if((err = max(abs( (g_12*g12 +
 		      g_22*g22 +
-		      g_23*g23) - 1 ))) > maxerr)
+		      g_23*g23) - 1 ))) > maxerr) {
     maxerr = err;
+  }
   
   if((err = max(abs( (g_13*g13 + 
 		      g_23*g23 + 
-		      g_33*g33) - 1 ))) > maxerr)
-    maxerr = err; 
-  output.write("\tMaximum error in diagonal inversion is %e\n", maxerr);
+		      g_33*g33) - 1 ))) > maxerr) {
+    maxerr = err;
+  }
+  
+  output_info.write("\tMaximum error in diagonal inversion is %e\n", maxerr);
   
   
   maxerr = max(abs(g_11*g12 + 
@@ -437,15 +441,17 @@ int Coordinates::calcCovariant() {
   
   if((err = max(abs(g_11*g13 + 
 		    g_12*g23 + 
-		    g_13*g33))) > maxerr)
+		    g_13*g33))) > maxerr) {
     maxerr = err;
+  }
   
   if((err = max(abs(g_12*g13 + 
 		    g_22*g23 + 
-		    g_23*g33))) > maxerr)
+		    g_23*g33))) > maxerr) {
     maxerr = err;
+  }
   
-  output.write("\tMaximum error in off-diagonal inversion is %e\n", maxerr);
+  output_info.write("\tMaximum error in off-diagonal inversion is %e\n", maxerr);
 
   return 0;
 }
@@ -479,7 +485,7 @@ int Coordinates::calcContravariant() {
       
       // invert
       if(gaussj(a, 3)) {
-        output.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
+        output_error.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
         return 1;
       }
       
@@ -502,14 +508,16 @@ int Coordinates::calcContravariant() {
 		     g_13*g13)- 1 ));
   if((err = max(abs( (g_12*g12 +
 		      g_22*g22 +
-		      g_23*g23) - 1 ))) > maxerr)
+		      g_23*g23) - 1 ))) > maxerr) {
     maxerr = err;
+  }
   
   if((err = max(abs( (g_13*g13 + 
 		      g_23*g23 + 
-		      g_33*g33) - 1 ))) > maxerr)
-    maxerr = err; 
-  output.write("\tMaximum error in diagonal inversion is %e\n", maxerr);
+ 		      g_33*g33) - 1 ))) > maxerr) {
+    maxerr = err;
+  }
+  output_info.write("\tMaximum error in diagonal inversion is %e\n", maxerr);
   
   
   maxerr = max(abs(g_11*g12 + 
@@ -518,15 +526,17 @@ int Coordinates::calcContravariant() {
   
   if((err = max(abs(g_11*g13 + 
 		    g_12*g23 + 
-		    g_13*g33))) > maxerr)
+		    g_13*g33))) > maxerr) {
     maxerr = err;
+  }
   
   if((err = max(abs(g_12*g13 + 
 		    g_22*g23 + 
-		    g_23*g33))) > maxerr)
+		    g_23*g33))) > maxerr) {
     maxerr = err;
+  }
   
-  output.write("\tMaximum error in off-diagonal inversion is %e\n", maxerr);
+  output_info.write("\tMaximum error in off-diagonal inversion is %e\n", maxerr);
   return 0;
 }
 

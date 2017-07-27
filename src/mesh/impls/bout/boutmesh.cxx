@@ -50,8 +50,6 @@
 /// MPI type of BoutReal for communications
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 
-//#define COMMDEBUG 1   // Uncomment to print communications debugging information
-
 BoutMesh::BoutMesh(GridDataSource *s, Options *options) : Mesh(s, options) {
   if (options == NULL) {
     options = Options::getRoot()->getSection("mesh");
@@ -61,7 +59,7 @@ BoutMesh::BoutMesh(GridDataSource *s, Options *options) : Mesh(s, options) {
   if (! options->isSet("symmetricGlobalY")){
     std::string optionfile;
     OPTION(Options::getRoot(),optionfile,"");
-    output << "WARNING: The default of this option has changed in release 4.1.\n\
+    output_warn << "WARNING: The default of this option has changed in release 4.1.\n\
 If you want the old setting, you have to specify mesh:symmetricGlobalY=false in " << optionfile <<"\n";
   }
   OPTION(options, symmetricGlobalY,  true);
@@ -97,7 +95,7 @@ BoutMesh::~BoutMesh() {
 int BoutMesh::load() {
   TRACE("BoutMesh::load()");
 
-  output << "Loading mesh" << endl;
+  output_prog << "Loading mesh" << endl;
 
   // Use root level options
   Options *options = Options::getRoot();
@@ -125,13 +123,13 @@ int BoutMesh::load() {
     OPTION(options, MZ,           64);
     if(!is_pow2(MZ)) {
       // Should be a power of 2 for efficient FFTs
-      output.write("WARNING: Number of toroidal points should be 2^n\n", MZ);
+      output_warn.write("WARNING: Number of toroidal points should be 2^n\n", MZ);
     }
   }else {
-    output.write("\tRead nz from input grid file\n");
+    output_info.write("\tRead nz from input grid file\n");
   }
 
-  output << "\tGrid size: " << nx << " x " << ny << " x " << MZ << endl;
+  output_info << "\tGrid size: " << nx << " x " << ny << " x " << MZ << endl;
 
   // Get guard cell sizes
   // Try to read from grid file first, then if not found
@@ -147,7 +145,7 @@ int BoutMesh::load() {
   }
   ASSERT0(MYG >= 0);
 
-  output << "\tGuard cells (x,y): " << MXG << ", " << MYG << std::endl;
+  output_info << "\tGuard cells (x,y): " << MXG << ", " << MYG << std::endl;
 
   // Check that nx is large enough
   if(nx <= 2*MXG) {
@@ -165,52 +163,52 @@ int BoutMesh::load() {
   // separatrix location
   if(Mesh::get(ixseps1, "ixseps1")) {
     ixseps1 = GlobalNx;
-    output.write("\tWARNING: Separatrix location 'ixseps1' not found. Setting to %d\n", ixseps1);
+    output_warn.write("\tWARNING: Separatrix location 'ixseps1' not found. Setting to %d\n", ixseps1);
   }
   if(Mesh::get(ixseps2, "ixseps2")) {
     ixseps2 = GlobalNx;
-    output.write("\tWARNING: Separatrix location 'ixseps2' not found. Setting to %d\n", ixseps2);
+    output_warn.write("\tWARNING: Separatrix location 'ixseps2' not found. Setting to %d\n", ixseps2);
   }
   if(Mesh::get(jyseps1_1,"jyseps1_1")) {
     jyseps1_1 = -1;
-    output.write("\tWARNING: Branch-cut 'jyseps1_1' not found. Setting to %d\n", jyseps1_1);
+    output_warn.write("\tWARNING: Branch-cut 'jyseps1_1' not found. Setting to %d\n", jyseps1_1);
   }
   if(Mesh::get(jyseps1_2,"jyseps1_2")) {
     jyseps1_2 = ny/2;
-    output.write("\tWARNING: Branch-cut 'jyseps1_2' not found. Setting to %d\n", jyseps1_2);
+    output_warn.write("\tWARNING: Branch-cut 'jyseps1_2' not found. Setting to %d\n", jyseps1_2);
   }
   if(Mesh::get(jyseps2_1,"jyseps2_1")) {
     jyseps2_1 = jyseps1_2;
-    output.write("\tWARNING: Branch-cut 'jyseps2_1' not found. Setting to %d\n", jyseps2_1);
+    output_warn.write("\tWARNING: Branch-cut 'jyseps2_1' not found. Setting to %d\n", jyseps2_1);
   }
   if(Mesh::get(jyseps2_2,"jyseps2_2")) {
     jyseps2_2 = ny-1;
-    output.write("\tWARNING: Branch-cut 'jyseps2_2' not found. Setting to %d\n", jyseps2_2);
+    output_warn.write("\tWARNING: Branch-cut 'jyseps2_2' not found. Setting to %d\n", jyseps2_2);
   }
 
   if(Mesh::get(ny_inner,"ny_inner")) {
     ny_inner = jyseps2_1;
-    output.write("\tWARNING: Number of inner y points 'ny_inner' not found. Setting to %d\n", ny_inner);
+    output_warn.write("\tWARNING: Number of inner y points 'ny_inner' not found. Setting to %d\n", ny_inner);
   }
 
   /// Check inputs
   if(jyseps1_1 < -1) {
-    output.write("\tWARNING: jyseps1_1 (%d) must be >= -1. Setting to -1\n", jyseps1_1);
+    output_warn.write("\tWARNING: jyseps1_1 (%d) must be >= -1. Setting to -1\n", jyseps1_1);
     jyseps1_1 = -1;
   }
 
   if(jyseps2_1 <= jyseps1_1) {
-    output.write("\tWARNING: jyseps2_1 (%d) must be > jyseps1_1 (%d). Setting to %d\n",
+    output_warn.write("\tWARNING: jyseps2_1 (%d) must be > jyseps1_1 (%d). Setting to %d\n",
                  jyseps2_1, jyseps1_1, jyseps1_1+1);
     jyseps2_1 = jyseps1_1 + 1;
   }
   if(jyseps1_2 < jyseps2_1) {
-    output.write("\tWARNING: jyseps1_2 (%d) must be >= jyseps2_1 (%d). Setting to %d\n",
+    output_warn.write("\tWARNING: jyseps1_2 (%d) must be >= jyseps2_1 (%d). Setting to %d\n",
                  jyseps1_2, jyseps2_1, jyseps2_1);
     jyseps1_2 = jyseps2_1;
   }
   if(jyseps2_2 >= ny) {
-    output.write("\tWARNING: jyseps2_2 (%d) must be < ny (%d). Setting to %d\n",
+    output_warn.write("\tWARNING: jyseps2_2 (%d) must be < ny (%d). Setting to %d\n",
                  jyseps2_2, ny, ny-1);
     jyseps2_2 = ny - 1;
   }
@@ -232,29 +230,28 @@ int BoutMesh::load() {
 
     BoutReal ideal = sqrt(MX * NPES / ((double) ny)); // Results in square domains
 
-    output.write("Finding value for NXPE\n");
+    output_prog.write("Finding value for NXPE\n");
 
     for(int i=1; i<= NPES; i++) { // Loop over all possibilities
-      //output.write("Testing %d: %d, %d, %d, %d, %d\n",
-      //             i, NPES % i, MX % i, MX / i, ny % (NPES/i), ny / (NPES/i));
+      
       if( (NPES % i == 0) &&      // Processors divide equally
           (MX % i == 0) &&        // Mesh in X divides equally
     //      (MX / i >= MXG) &&      // Resulting mesh is large enough
           (ny % (NPES/i) == 0) ) { // Mesh in Y divides equally
 
-        output.write("\tCandidate value: %d\n", i);
+        output_info.write("\tCandidate value: %d\n", i);
 
         int nyp = NPES/i;
         int ysub = ny / nyp;
 
         // Check size of Y mesh
         if(ysub < MYG) {
-          output.write("\t -> ny/NYPE (%d/%d = %d) must be >= MYG (%d)\n", ny, nyp, ysub, MYG);
+          output_info.write("\t -> ny/NYPE (%d/%d = %d) must be >= MYG (%d)\n", ny, nyp, ysub, MYG);
           continue;
         }
         // Check branch cuts
         if( (jyseps1_1+1) % ysub != 0 ) {
-          output.write("\t -> Leg region jyseps1_1+1 (%d) must be a multiple of MYSUB (%d)\n", jyseps1_1+1, ysub);
+          output_info.write("\t -> Leg region jyseps1_1+1 (%d) must be a multiple of MYSUB (%d)\n", jyseps1_1+1, ysub);
           continue;
         }
 
@@ -262,43 +259,43 @@ int BoutMesh::load() {
           // Double Null
 
           if( (jyseps2_1-jyseps1_1) % ysub != 0 ) {
-            output.write("\t -> Core region jyseps2_1-jyseps1_1 (%d-%d = %d) must be a multiple of MYSUB (%d)\n",
+            output_info.write("\t -> Core region jyseps2_1-jyseps1_1 (%d-%d = %d) must be a multiple of MYSUB (%d)\n",
                          jyseps2_1, jyseps1_1, jyseps2_1-jyseps1_1, ysub);
             continue;
           }
 
           if( (jyseps2_2 - jyseps1_2) % ysub != 0 ) {
-            output.write("\t -> Core region jyseps2_2-jyseps1_2 (%d-%d = %d) must be a multiple of MYSUB (%d)\n",
+            output_info.write("\t -> Core region jyseps2_2-jyseps1_2 (%d-%d = %d) must be a multiple of MYSUB (%d)\n",
                          jyseps2_2, jyseps1_2, jyseps2_2-jyseps1_2, ysub);
             continue;
           }
 
           // Check upper legs
           if( (ny_inner - jyseps2_1-1) % ysub != 0 ) {
-            output.write("\t -> leg region ny_inner-jyseps2_1-1 (%d-%d-1 = %d) must be a multiple of MYSUB (%d)\n",
+            output_info.write("\t -> leg region ny_inner-jyseps2_1-1 (%d-%d-1 = %d) must be a multiple of MYSUB (%d)\n",
                          ny_inner, jyseps2_1, ny_inner-jyseps2_1-1, ysub);
             continue;
           }
           if( (jyseps1_2-ny_inner+1) % ysub != 0 ) {
-            output.write("\t -> leg region jyseps1_2-ny_inner+1 (%d-%d+1 = %d) must be a multiple of MYSUB (%d)\n",
+            output_info.write("\t -> leg region jyseps1_2-ny_inner+1 (%d-%d+1 = %d) must be a multiple of MYSUB (%d)\n",
                          jyseps1_2, ny_inner, jyseps1_2-ny_inner+1, ysub);
             continue;
           }
         }else {
           // Single Null
           if( (jyseps2_2-jyseps1_1) % ysub != 0 ) {
-            output.write("\t -> Core region jyseps2_2-jyseps1_1 (%d-%d = %d) must be a multiple of MYSUB (%d)\n",
+            output_info.write("\t -> Core region jyseps2_2-jyseps1_1 (%d-%d = %d) must be a multiple of MYSUB (%d)\n",
                          jyseps2_2, jyseps1_1, jyseps2_2-jyseps1_1, ysub);
             continue;
           }
         }
 
         if( (ny - jyseps2_2 - 1) % ysub != 0) {
-          output.write("\t -> leg region ny-jyseps2_2-1 (%d-%d-1 = %d) must be a multiple of MYSUB (%d)\n",
+          output_info.write("\t -> leg region ny-jyseps2_2-1 (%d-%d-1 = %d) must be a multiple of MYSUB (%d)\n",
                        ny, jyseps2_2, ny - jyseps2_2 - 1, ysub);
           continue;
         }
-        output.write("\t -> Good value\n");
+        output_info.write("\t -> Good value\n");
         // Found an acceptable value
         if((NXPE < 1) ||
            (fabs(ideal - i) < fabs(ideal - NXPE)))
@@ -307,12 +304,12 @@ int BoutMesh::load() {
     }
 
     if(NXPE < 1)
-      throw BoutException("Could not find a valid value for NXPE");
+      throw BoutException("Could not find a valid value for NXPE. Try a different number of processors.");
 
     NYPE = NPES / NXPE;
 
-    output.write("\tDomain split (NXPE=%d, NYPE=%d) into domains (localNx=%d, localNy=%d)\n",
-                 NXPE, NYPE, MX / NXPE, ny / NYPE);
+    output_prog.write("\tDomain split (NXPE=%d, NYPE=%d) into domains (localNx=%d, localNy=%d)\n",
+                      NXPE, NYPE, MX / NXPE, ny / NYPE);
   }
 
   /// Get X and Y processor indices
@@ -382,7 +379,7 @@ int BoutMesh::load() {
   OPTION(options, TwistShift,   false);
 
   if(TwistShift) {
-    output.write("Applying Twist-Shift condition. Interpolation: FFT\n");
+    output_info.write("Applying Twist-Shift condition. Interpolation: FFT\n");
 
     // Try to read the shift angle from the grid file
     // NOTE: All processors should know the twist-shift angle (for invert_parderiv)
@@ -391,7 +388,7 @@ int BoutMesh::load() {
 
     if(!source->get(this, ShiftAngle,  "ShiftAngle",
                     LocalNx, XGLOBAL(0))) {
-      throw BoutException("WARNING: Twist-shift angle 'ShiftAngle' not found.");
+      throw BoutException("ERROR: Twist-shift angle 'ShiftAngle' not found.");
     }
   }
 
@@ -413,10 +410,9 @@ int BoutMesh::load() {
     proc[0] = PROC_NUM(0, yp);      // First
     proc[1] = PROC_NUM(NXPE-1, yp); // Last
     proc[2] = 1;                    // stride
-
-#ifdef COMMDEBUG
-    output << "XCOMM " << proc[0] << ", " << proc[1] << endl;
-#endif
+    
+    output_debug << "XCOMM " << proc[0] << ", " << proc[1] << endl;
+    
     if(MPI_Group_range_incl(group_world, 1, &proc, &group) != MPI_SUCCESS)
       throw BoutException("Could not create X communication group for yp=%d (xind=%d,yind=%d)\n",
                           yp, PE_XIND, PE_YIND);
@@ -452,9 +448,9 @@ int BoutMesh::load() {
     for(int i=0;i<NXPE;i++) {
       proc[0] = PROC_NUM(i, 0);
       proc[1] = PROC_NUM(i, NYPE-1);
-#ifdef COMMDEBUG
-    output << "Outer SOL " << proc[0] << ", " << proc[1] << endl;
-#endif
+      
+      output_debug << "Outer SOL " << proc[0] << ", " << proc[1] << endl;
+      
       MPI_Group_range_incl(group_world, 1, &proc, &group);
       MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
       if(i == PE_XIND) {
@@ -478,9 +474,9 @@ int BoutMesh::load() {
       // Inner SOL
       proc[0] = PROC_NUM(i, 0);
       proc[1] = PROC_NUM(i, YPROC(ny_inner-1));
-#ifdef COMMDEBUG
-    output << "Double Null inner SOL " << proc[0] << ", " << proc[1] << endl;
-#endif
+      
+      output_debug << "Double Null inner SOL " << proc[0] << ", " << proc[1] << endl;
+      
       if(MPI_Group_range_incl(group_world, 1, &proc, &group) != MPI_SUCCESS)
         throw BoutException("MPI_Group_range_incl failed for xp = %d", NXPE);
       MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
@@ -491,9 +487,9 @@ int BoutMesh::load() {
       // Outer SOL
       proc[0] = PROC_NUM(i, YPROC(ny_inner));
       proc[1] = PROC_NUM(i, NYPE-1);
-#ifdef COMMDEBUG
-    output << "Double Null outer SOL " << proc[0] << ", " << proc[1] << endl;
-#endif
+
+      output_debug << "Double Null outer SOL " << proc[0] << ", " << proc[1] << endl;
+      
       MPI_Group_range_incl(group_world, 1, &proc, &group);
       MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
       if(comm_tmp != MPI_COMM_NULL) {
@@ -510,16 +506,14 @@ int BoutMesh::load() {
       // A lower PF region exists
       TRACE("Creating lower PF communicators for xp=%d", i);
 
-#ifdef COMMDEBUG
-      output << "Creating lower PF communicators for xp = " << i << endl;
-#endif
+      output_debug << "Creating lower PF communicators for xp = " << i << endl;
 
       if(jyseps1_1 >= 0) {
         proc[0] = PROC_NUM(i, 0);
         proc[1] = PROC_NUM(i, YPROC(jyseps1_1));
-#ifdef COMMDEBUG
-        output << "PF1 "<< proc[0] << ", " << proc[1] << endl;
-#endif
+        
+        output_debug << "PF1 "<< proc[0] << ", " << proc[1] << endl;
+        
         MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
       }else
         group_tmp1 = MPI_GROUP_EMPTY;
@@ -527,12 +521,13 @@ int BoutMesh::load() {
       if(jyseps2_2+1 < ny) {
         proc[0] = PROC_NUM(i, YPROC(jyseps2_2+1));
         proc[1] = PROC_NUM(i, NYPE-1);
-#ifdef COMMDEBUG
-        output << "PF2 "<< proc[0] << ", " << proc[1] << endl;
-#endif
+        
+        output_debug << "PF2 "<< proc[0] << ", " << proc[1] << endl;
+        
         MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
-      }else
+      } else {
         group_tmp2 = MPI_GROUP_EMPTY;
+      }
 
       MPI_Group_union(group_tmp1, group_tmp2, &group);
       MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
@@ -540,22 +535,22 @@ int BoutMesh::load() {
         comm_inner = comm_tmp;
         if(ixseps_lower == ixseps_outer) {
           // Between the separatrices is still in the PF region
-#ifdef COMMDEBUG
-          output << "-> Inner and middle\n";
-#endif
+          
+          output_debug << "-> Inner and middle\n";
+          
           comm_middle = comm_inner;
           //MPI_Comm_dup(comm_inner, &comm_middle);
         }else {
-#ifdef COMMDEBUG
-          output << "-> Outer and middle\n";
-#endif
+          
+          output_debug << "-> Outer and middle\n";
+          
           comm_middle = comm_outer;
           //MPI_Comm_dup(comm_outer, &comm_middle); // Error! Needs to be collective on comm_outer
         }
       }
-#ifdef COMMDEBUG
-      output << "Freeing\n";
-#endif
+      
+      output_debug << "Freeing\n";
+      
       MPI_Group_free(&group);
       if(group_tmp1 != MPI_GROUP_EMPTY) {
         MPI_Group_free(&group_tmp1);
@@ -563,9 +558,9 @@ int BoutMesh::load() {
       if(group_tmp2 != MPI_GROUP_EMPTY) {
         MPI_Group_free(&group_tmp2);
       }
-#ifdef COMMDEBUG
-      output << "done lower PF\n";
-#endif
+      
+      output_debug << "done lower PF\n";
+      
     }
 
     if(jyseps2_1 != jyseps1_2) {
@@ -573,69 +568,67 @@ int BoutMesh::load() {
       // Note need to order processors so that a continuous surface is formed
       TRACE("Creating upper PF communicators for xp=%d", i);
 
-#ifdef COMMDEBUG
-      output << "Creating upper PF communicators for xp = " << i << endl;
-#endif
-
+      output_debug << "Creating upper PF communicators for xp = " << i << endl;
+      
       proc[0] = PROC_NUM(i, YPROC(ny_inner));
       proc[1] = PROC_NUM(i, YPROC(jyseps1_2));
-#ifdef COMMDEBUG
-      output << "PF3 "<< proc[0] << ", " << proc[1] << endl;
-#endif
+
+      output_debug << "PF3 "<< proc[0] << ", " << proc[1] << endl;
+      
       MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
       proc[0] = PROC_NUM(i, YPROC(jyseps2_1+1));
       proc[1] = PROC_NUM(i, YPROC(ny_inner-1));
-#ifdef COMMDEBUG
-      output << "PF4 "<< proc[0] << ", " << proc[1] << endl;
-#endif
+      
+      output_debug << "PF4 "<< proc[0] << ", " << proc[1] << endl;
+      
       MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
       MPI_Group_union(group_tmp1, group_tmp2, &group);
       MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
       if(comm_tmp != MPI_COMM_NULL) {
         comm_inner = comm_tmp;
         if(ixseps_upper == ixseps_outer) {
-#ifdef COMMDEBUG
-          output << "-> Inner and middle\n";
-#endif
+          
+          output_debug << "-> Inner and middle\n";
+          
           comm_middle = comm_inner;
           //MPI_Comm_dup(comm_inner, &comm_middle);
         }else {
-#ifdef COMMDEBUG
-          output << "-> Outer and middle\n";
-#endif
+          
+          output_debug << "-> Outer and middle\n";
+          
           comm_middle = comm_outer;
           //MPI_Comm_dup(comm_outer, &comm_middle);
         }
       }
-#ifdef COMMDEBUG
-      output << "Freeing\n";
-#endif
+      
+      output_debug << "Freeing\n";
+      
       MPI_Group_free(&group);
       if(group_tmp1 != MPI_GROUP_EMPTY)
         MPI_Group_free(&group_tmp1);
       if(group_tmp2 != MPI_GROUP_EMPTY)
         MPI_Group_free(&group_tmp2);
-#ifdef COMMDEBUG
-      output << "done upper PF\n";
-#endif
+      
+      output_debug << "done upper PF\n";
+      
     }
 
     // Core region
     TRACE("Creating core communicators");
     proc[0] = PROC_NUM(i, YPROC(jyseps1_1+1));
     proc[1] = PROC_NUM(i, YPROC(jyseps2_1));
-#ifdef COMMDEBUG
-    output << "CORE1 "<< proc[0] << ", " << proc[1] << endl;
-#endif
+    
+    output_debug << "CORE1 "<< proc[0] << ", " << proc[1] << endl;
+    
     if( (proc[0] < 0) || (proc[1] < 0) )
       throw BoutException("Invalid processor range for core processors");
     MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
 
     proc[0] = PROC_NUM(i, YPROC(jyseps1_2+1));
     proc[1] = PROC_NUM(i, YPROC(jyseps2_2));
-#ifdef COMMDEBUG
-    output << "CORE2 "<< proc[0] << ", " << proc[1] << endl;
-#endif
+    
+    output_debug << "CORE2 "<< proc[0] << ", " << proc[1] << endl;
+    
     if( (proc[0] < 0) || (proc[1] < 0) ) {
       group_tmp2 = MPI_GROUP_EMPTY;
     }else {
@@ -663,11 +656,9 @@ int BoutMesh::load() {
     MPI_Comm_dup(comm_inner, &comm_middle);
   }else {
     // Need to handle unbalanced double-null case
-
-#ifdef COMMDEBUG
-    output << "Unbalanced " << endl;
-#endif
-
+    
+    output_debug << "Unbalanced " << endl;
+    
     if(ixseps_upper > ixseps_lower) {
       // middle is connected to the bottom
       TRACE("Creating unbalanced lower communicators");
@@ -717,9 +708,7 @@ int BoutMesh::load() {
   MPI_Group_free(&group_world);
   // Now have communicators for all regions.
 
-#ifdef COMMDEBUG
-  output << "Got communicators" << endl;
-#endif
+  output_debug << "Got communicators" << endl;
 
   //////////////////////////////////////////////////////
   // Boundary regions
@@ -760,16 +749,16 @@ int BoutMesh::load() {
   }
 
   if(!boundary.empty()) {
-    output << "Boundary regions in this processor: ";
+    output_info << "Boundary regions in this processor: ";
     for(const auto& bndry : boundary) {
-      output << bndry->label << ", ";
+      output_info << bndry->label << ", ";
     }
-    output << endl;
+    output_info << endl;
   }else {
-    output << "No boundary regions in this processor" << endl;
+    output_info << "No boundary regions in this processor" << endl;
   }
 
-  output.write("\tdone\n");
+  output_info.write("\tdone\n");
 
   return 0;
 }
@@ -1618,11 +1607,11 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
     return;
 
   if((ypos1 < 0) || (ypos1 >= MY)) {
-    output.write("WARNING adding connection: poloidal index %d out of range\n", ypos1);
+    output_warn.write("WARNING adding connection: poloidal index %d out of range\n", ypos1);
     return;
   }
   if((ypos2 < 0) || (ypos2 >= MY)) {
-    output.write("WARNING adding connection: poloidal index %d out of range\n", ypos2);
+    output_warn.write("WARNING adding connection: poloidal index %d out of range\n", ypos2);
     return;
   }
 
@@ -1650,8 +1639,8 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
                             ypos1, ypos2, xge, xlt);
   }
 
-  output.write("Connection between top of Y processor %d and bottom of %d in range %d <= x < %d\n",
-               ypeup, ypedown, xge, xlt);
+  output_info.write("Connection between top of Y processor %d and bottom of %d in range %d <= x < %d\n",
+                    ypeup, ypedown, xge, xlt);
 
   // Convert X coordinates into local indices
 
@@ -1676,7 +1665,7 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
 
       TS_up_in = ts; // Twist-shift
 
-      output.write("=> This processor sending in up\n");
+      output_info.write("=> This processor sending in up\n");
     }else {
       /* Connect on the outside */
       if(UDATA_XSPLIT <= 0)
@@ -1687,7 +1676,7 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
         UDATA_INDEST = -1;
 
       TS_up_out = ts;
-      output.write("=> This processor sending out up\n");
+      output_info.write("=> This processor sending out up\n");
     }
   }
 
@@ -1702,7 +1691,7 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
 
       TS_down_in = ts;
 
-      output.write("=> This processor sending in down\n");
+      output_info.write("=> This processor sending in down\n");
     }else {
       /* Connect on the outside */
       if(DDATA_XSPLIT <= 0)
@@ -1714,7 +1703,7 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
 
       TS_down_out = ts;
 
-      output.write("=> This processor sending out down\n");
+      output_info.write("=> This processor sending out down\n");
     }
   }
 }
@@ -1730,7 +1719,7 @@ void BoutMesh::add_target(int ypos, int xge, int xlt) {
     return;
 
   if((ypos < 0) || (ypos >= MY)) {
-    output.write("WARNING adding target: poloidal index %d out of range\n", ypos);
+    output_warn.write("WARNING adding target: poloidal index %d out of range\n", ypos);
     return;
   }
 
@@ -1740,7 +1729,7 @@ void BoutMesh::add_target(int ypos, int xge, int xlt) {
     throw BoutException("Adding target at y=%d in middle of processor %d\n", ypos, ypeup);
   }
 
-  output.write("Target at top of Y processor %d and bottom of %d in range %d <= x < %d\n", ypeup, ypedown, xge, xlt);
+  output_info.write("Target at top of Y processor %d and bottom of %d in range %d <= x < %d\n", ypeup, ypedown, xge, xlt);
 
   // Convert X coordinates into local indices
   xge = XLOCAL(xge);
@@ -1757,7 +1746,7 @@ void BoutMesh::add_target(int ypos, int xge, int xlt) {
       UDATA_INDEST = -1;
       if(xlt >= LocalNx)
         UDATA_OUTDEST = -1;
-      output.write("=> This processor has target upper inner\n");
+      output_info.write("=> This processor has target upper inner\n");
     }else {
       // Target on outside
       if(UDATA_XSPLIT <= 0)
@@ -1766,7 +1755,7 @@ void BoutMesh::add_target(int ypos, int xge, int xlt) {
       UDATA_OUTDEST = -1;
       if(xge <= 0)
         UDATA_INDEST = -1;
-      output.write("=> This processor has target upper outer\n");
+      output_info.write("=> This processor has target upper outer\n");
     }
   }
   if(MYPE == PROC_NUM(PE_XIND, ypedown)) {
@@ -1777,7 +1766,7 @@ void BoutMesh::add_target(int ypos, int xge, int xlt) {
       DDATA_INDEST = -1;
       if(xlt >= LocalNx)
         DDATA_OUTDEST = -1;
-      output.write("=> This processor has target lower inner\n");
+      output_info.write("=> This processor has target lower inner\n");
     }else {
       // Target on outside
       if(DDATA_XSPLIT <= 0)
@@ -1786,7 +1775,7 @@ void BoutMesh::add_target(int ypos, int xge, int xlt) {
       DDATA_OUTDEST = -1;
       if(xge <= 0)
         DDATA_INDEST = -1;
-      output.write("=> This processor has target lower outer\n");
+      output_info.write("=> This processor has target lower outer\n");
     }
   }
 }
@@ -1818,7 +1807,7 @@ void BoutMesh::topology() {
 
   if(jyseps2_1 == jyseps1_2) {
     /********* SINGLE NULL OPERATION *************/
-    output.write("\tEQUILIBRIUM IS SINGLE NULL (SND) \n");
+    output_info.write("\tEQUILIBRIUM IS SINGLE NULL (SND) \n");
 
     /* Set separatrices - x location all the same */
     ixseps_inner = ixseps_outer = ixseps_upper = ixseps_lower = ixseps1;
@@ -1836,23 +1825,23 @@ void BoutMesh::topology() {
       throw BoutException("\tTopology error: Upper inner leg does not have integer number of processors\n");
     }
     if((jyseps1_2-ny_inner+1) % MYSUB != 0) {
-      output.write("\tTopology error: Upper outer leg does not have integer number of processors\n");
+      throw BoutException("\tTopology error: Upper outer leg does not have integer number of processors\n");
     }
 
     if(ixseps1 == ixseps2) {
       /*************** CONNECTED (balanced) DOUBLE NULL ******************/
-      output.write("\tEQUILIBRIUM IS CONNECTED DOUBLE NULL (CDND)\n");
+      output_info.write("\tEQUILIBRIUM IS CONNECTED DOUBLE NULL (CDND)\n");
       /* all separatrix indices the same */
       ixseps_inner = ixseps_outer = ixseps_upper = ixseps_lower = ixseps1;
 
     }else if(ixseps1 < ixseps2){
       /*************** LOWER DOUBLE NULL **********************/
-      output.write("\tEQUILIBRIUM IS LOWER DOUBLE NULL (LDND)\n");
+      output_info.write("\tEQUILIBRIUM IS LOWER DOUBLE NULL (LDND)\n");
       ixseps_inner = ixseps_lower = ixseps1;
       ixseps_outer = ixseps_upper = ixseps2;
     }else {
       /*************** UPPER DOUBLE NULL **********************/
-      output.write("\tEQUILIBRIUM IS UPPER DOUBLE NULL (UDND)\n");
+      output_info.write("\tEQUILIBRIUM IS UPPER DOUBLE NULL (UDND)\n");
       ixseps_inner = ixseps_upper = ixseps2;
       ixseps_outer = ixseps_lower = ixseps1;
     }
@@ -1883,24 +1872,24 @@ void BoutMesh::topology() {
     UDATA_XSPLIT = LocalNx;
 
   // Print out settings
-  output.write("\tMYPE_IN_CORE = %d\n", MYPE_IN_CORE);
-  output.write("\tDXS = %d, DIN = %d. DOUT = %d\n",
-               DDATA_XSPLIT, DDATA_INDEST, DDATA_OUTDEST);
-  output.write("\tUXS = %d, UIN = %d. UOUT = %d\n",
-               UDATA_XSPLIT, UDATA_INDEST, UDATA_OUTDEST);
-  output.write("\tXIN = %d, XOUT = %d\n",
-               IDATA_DEST, ODATA_DEST);
+  output_info.write("\tMYPE_IN_CORE = %d\n", MYPE_IN_CORE);
+  output_info.write("\tDXS = %d, DIN = %d. DOUT = %d\n",
+                    DDATA_XSPLIT, DDATA_INDEST, DDATA_OUTDEST);
+  output_info.write("\tUXS = %d, UIN = %d. UOUT = %d\n",
+                    UDATA_XSPLIT, UDATA_INDEST, UDATA_OUTDEST);
+  output_info.write("\tXIN = %d, XOUT = %d\n",
+                    IDATA_DEST, ODATA_DEST);
 
-  output.write("\tTwist-shift: ");
+  output_info.write("\tTwist-shift: ");
   if(TS_down_in)
-    output.write("DI ");
+    output_info.write("DI ");
   if(TS_down_out)
-    output.write("DO ");
+    output_info.write("DO ");
   if(TS_up_in)
-    output.write("UI ");
+    output_info.write("UI ");
   if(TS_up_out)
-    output.write("UO ");
-  output.write("\n");
+    output_info.write("UO ");
+  output_info.write("\n");
 }
 
 /****************************************************************
@@ -2270,8 +2259,8 @@ vector<BoundaryRegionPar*> BoutMesh::getBoundariesPar() {
 }
 
 void BoutMesh::addBoundaryPar(BoundaryRegionPar* bndry) {
-  output << "Adding new parallel boundary: " << bndry->label;
-  output << endl;
+  output_prog << "Adding new parallel boundary: " << bndry->label;
+  output_prog << endl;
   par_boundary.push_back(bndry);
 }
 
@@ -2375,8 +2364,6 @@ BoutReal BoutMesh::GlobalY(int jy) const {
       ly = nycore;
     }
   }
-
-  //output.write("GlobalY: %d, %d, %d, %d -> %e\n", jy, YGLOBAL(jy), ly, nycore, ((BoutReal) ly) / ((BoutReal) nycore));
 
   return ((BoutReal) ly) / ((BoutReal) nycore);
 }
