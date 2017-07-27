@@ -946,9 +946,11 @@ then
       CVODELIBS=""
     ] )
     AC_CHECK_FILES( $with_cvode/lib/libsundials_cvode.a $with_cvode/lib/libsundials_nvecparallel.a, CVODELIBSLIB='lib',
-      AC_CHECK_FILES( $with_cvode/lib64/libsundials_cvode.a $with_cvode/lib64/libsundials_nvecparallel.a, CVODELIBSLIB='lib64',  [
-      CVODELIBS=""
-    ]) )
+      AC_CHECK_FILES( $with_cvode/lib64/libsundials_cvode.a $with_cvode/lib64/libsundials_nvecparallel.a, CVODELIBSLIB='lib64',
+        AC_CHECK_FILES( $with_cvode/lib/libsundials_cvode.so $with_cvode/lib/libsundials_nvecparallel.so, CVODELIBSLIB='lib',
+          AC_CHECK_FILES( $with_cvode/lib64/libsundials_cvode.so $with_cvode/lib64/libsundials_nvecparallel.so, CVODELIBSLIB='lib64', [
+          CVODELIBS=""
+        ]) ) ) )
 
 
     if test "$CVODELIBS" != ""
@@ -978,9 +980,11 @@ then
       CVODELIBS=""
     ])
         AC_CHECK_FILES( $CVODELIBS/lib/libsundials_cvode.a $CVODELIBS/lib/libsundials_nvecparallel.a, CVODELIBSLIB='lib',
-          AC_CHECK_FILES( $CVODELIBS/lib64/libsundials_cvode.a $CVODELIBS/lib64/libsundials_nvecparallel.a, CVODELIBSLIB='lib64',  [
+          AC_CHECK_FILES( $CVODELIBS/lib64/libsundials_cvode.a $CVODELIBS/lib64/libsundials_nvecparallel.a, CVODELIBSLIB='lib64',
+            AC_CHECK_FILES( $CVODELIBS/lib/libsundials_cvode.so $CVODELIBS/lib/libsundials_nvecparallel.so, CVODELIBSLIB='lib',
+          AC_CHECK_FILES( $CVODELIBS/lib64/libsundials_cvode.so $CVODELIBS/lib64/libsundials_nvecparallel.so, CVODELIBSLIB='lib64', [
             CVODELIBS=""
-          ]) )
+          ]) ) ) )
     fi
     if test "$CVODELIBS" != ""
     then
