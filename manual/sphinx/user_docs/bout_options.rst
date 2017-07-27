@@ -63,6 +63,7 @@ Command-line switches are:
 =============   ============================================================
 -h, --help      Prints a help message and quits
 -v, --verbose   Outputs more messages to BOUT.log files
+-q              Outputs fewer messages to log files 
 -d <directory>  Look in <directory> for input/output files (default "data")
 -f <file>       Use OPTIONS given in <file>
 -o <file>       Save used OPTIONS given to <file> (default BOUT.settings)
