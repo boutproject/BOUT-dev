@@ -20,6 +20,7 @@
 
 int GBS::init(bool restarting) {
   Options *opt = Options::getRoot();
+  coords = mesh->coordinates();
 
   // Switches in model section
   Options *optgbs = opt->getSection("GBS");
@@ -228,7 +229,9 @@ int GBS::init(bool restarting) {
     bxcv.covariant = false; // Read contravariant components
     GRID_LOAD(bxcv);        // Specified components of b0 x kappa
     
-    if(mesh->ShiftXderivs) {
+    bool ShiftXderivs;
+    Options::getRoot()->get("shiftXderivs", ShiftXderivs, false); // Read global flag
+    if(ShiftXderivs) {
       Field2D sinty; GRID_LOAD(sinty);
       bxcv.z += sinty*bxcv.x;
     }
@@ -245,7 +248,7 @@ int GBS::init(bool restarting) {
     break;
   }
   case 3: { // logB, taken from mesh
-    logB = log(mesh->Bxy);
+    logB = log(coords->Bxy);
   }
   default:
     throw BoutException("Invalid value for curv_method");
@@ -256,17 +259,17 @@ int GBS::init(bool restarting) {
   phiSolver  = Laplacian::create(opt->getSection("phiSolver"));
   aparSolver = Laplacian::create(opt->getSection("aparSolver"));
 
-  dx4 = SQ(SQ(mesh->dx));
-  dy4 = SQ(SQ(mesh->dy));
-  dz4 = SQ(SQ(mesh->dz));
+  dx4 = SQ(SQ(coords->dx));
+  dy4 = SQ(SQ(coords->dy));
+  dz4 = SQ(SQ(coords->dz));
 
   SAVE_REPEAT(Ve);
   
-  output.write("dx = %e, dy = %e, dz = %e\n", mesh->dx(2,2), mesh->dy(2,2), mesh->dz);
-  output.write("g11 = %e, g22 = %e, g33 = %e\n", mesh->g11(2,2), mesh->g22(2,2), mesh->g33(2,2));
-  output.write("g12 = %e, g23 = %e\n", mesh->g12(2,2), mesh->g23(2,2));
-  output.write("g_11 = %e, g_22 = %e, g_33 = %e\n", mesh->g_11(2,2), mesh->g_22(2,2), mesh->g_33(2,2));
-  output.write("g_12 = %e, g_23 = %e\n", mesh->g_12(2,2), mesh->g_23(2,2));
+  output.write("dx = %e, dy = %e, dz = %e\n", coords->dx(2,2), coords->dy(2,2), coords->dz);
+  output.write("g11 = %e, g22 = %e, g33 = %e\n", coords->g11(2,2), coords->g22(2,2), coords->g33(2,2));
+  output.write("g12 = %e, g23 = %e\n", coords->g12(2,2), coords->g23(2,2));
+  output.write("g_11 = %e, g_22 = %e, g_33 = %e\n", coords->g_11(2,2), coords->g_22(2,2), coords->g_33(2,2));
+  output.write("g_12 = %e, g_23 = %e\n", coords->g_12(2,2), coords->g_23(2,2));
 
 
   FieldGenerator *gen = FieldFactory::get()->parse("source", Options::getRoot()->getSection("ne"));
@@ -284,31 +287,25 @@ void GBS::LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
   Field2D dx;
   if(!mesh->get(dx,   "dpsi")) {
     output << "\tUsing dpsi as the x grid spacing\n";
-    mesh->dx = dx; // Only use dpsi if found
+    coords->dx = dx; // Only use dpsi if found
   }else {
     // dx will have been read already from the grid
     output << "\tUsing dx as the x grid spacing\n";
-  }
-  Field2D qinty;
-  if(!mesh->get(qinty, "qinty")) {
-    output << "\tUsing qinty as the Z shift\n";
-    mesh->zShift = qinty;
-  }else {
-    // Keep zShift
-    output << "\tUsing zShift as the Z shift\n";
   }
 
   Rxy      /= Lnorm;
   hthe     /= Lnorm;
   sinty    *= SQ(Lnorm)*Bnorm;
-  mesh->dx /= SQ(Lnorm)*Bnorm;
+  coords->dx /= SQ(Lnorm)*Bnorm;
   
   Bpxy /= Bnorm;
   Btxy /= Bnorm;
-  mesh->Bxy  /= Bnorm;
+  coords->Bxy  /= Bnorm;
   
   // Calculate metric components
-  if(mesh->ShiftXderivs) {
+  bool ShiftXderivs;
+  Options::getRoot()->get("shiftXderivs", ShiftXderivs, false); // Read global flag
+  if(ShiftXderivs) {
     sinty = 0.0;  // I disappears from metric
   }
   
@@ -316,23 +313,23 @@ void GBS::LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
   if(min(Bpxy, true) < 0.0)
     sbp = -1.0;
   
-  mesh->g11 = (Rxy*Bpxy)^2;
-  mesh->g22 = 1.0 / (hthe^2);
-  mesh->g33 = (sinty^2)*mesh->g11 + (mesh->Bxy^2)/mesh->g11;
-  mesh->g12 = 0.0;
-  mesh->g13 = -sinty*mesh->g11;
-  mesh->g23 = -sbp*Btxy/(hthe*Bpxy*Rxy);
+  coords->g11 = SQ(Rxy*Bpxy);
+  coords->g22 = 1.0 / SQ(hthe);
+  coords->g33 = SQ(sinty)*coords->g11 + SQ(coords->Bxy)/coords->g11;
+  coords->g12 = 0.0;
+  coords->g13 = -sinty*coords->g11;
+  coords->g23 = -sbp*Btxy/(hthe*Bpxy*Rxy);
   
-  mesh->J = hthe / Bpxy;
+  coords->J = hthe / Bpxy;
   
-  mesh->g_11 = 1.0/mesh->g11 + ((sinty*Rxy)^2);
-  mesh->g_22 = (mesh->Bxy*hthe/Bpxy)^2;
-  mesh->g_33 = Rxy*Rxy;
-  mesh->g_12 = sbp*Btxy*hthe*sinty*Rxy/Bpxy;
-  mesh->g_13 = sinty*Rxy*Rxy;
-  mesh->g_23 = sbp*Btxy*hthe*Rxy/Bpxy;
+  coords->g_11 = 1.0/coords->g11 + SQ(sinty*Rxy);
+  coords->g_22 = SQ(coords->Bxy*hthe/Bpxy);
+  coords->g_33 = Rxy*Rxy;
+  coords->g_12 = sbp*Btxy*hthe*sinty*Rxy/Bpxy;
+  coords->g_13 = sinty*Rxy*Rxy;
+  coords->g_23 = sbp*Btxy*hthe*Rxy/Bpxy;
   
-  mesh->geometry();
+  coords->geometry();
 }
 
 // just define a macro for V_E dot Grad
@@ -361,6 +358,7 @@ int GBS::rhs(BoutReal t) {
   if(estatic) {
     // Electrostatic
     Ve = VePsi;
+    mesh->communicate(Ve);
   }else {
     aparSolver->setCoefA(-Ne*0.5*mi_me*beta_e);
     psi = aparSolver->solve(Ne*(Vi - VePsi));
@@ -377,20 +375,28 @@ int GBS::rhs(BoutReal t) {
 
   // Stress tensor
   
-  Field3D tau_e = Omega_ci*tau_e0 * (Te^1.5)/Ne; // Normalised collision time
+  Field3D tau_e = Omega_ci*tau_e0 * pow(Te, 1.5)/Ne; // Normalised collision time
 
   Gi = 0.0;
   if(ionvis) {
     Field3D tau_i = Omega_ci*tau_i0 * pow(Ti, 1.5) / Ne;
-    Gi = -(0.96*Ti*Ne*tau_i) * ( 2.*Grad_par(Vi) + C(phi)/mesh->Bxy );
+    Gi = -(0.96*Ti*Ne*tau_i) * ( 2.*Grad_par(Vi) + C(phi)/coords->Bxy );
     mesh->communicate(Gi);
     Gi.applyBoundary("neumann");
+  }else{
+    mesh->communicate(Gi);
   }
+
+  Field3D logNe = log(Ne);
+  mesh->communicate(logNe);
+
   Ge = 0.0;
   if(elecvis) {
-    Ge = -(0.73*Te*Ne*tau_e) * (2.*Grad_par(Ve) + (5.*C(Te) + 5.*Te*C(log(Ne)) + C(phi))/mesh->Bxy);
+    Ge = -(0.73*Te*Ne*tau_e) * (2.*Grad_par(Ve) + (5.*C(Te) + 5.*Te*C(logNe) + C(phi))/coords->Bxy);
     mesh->communicate(Ge);
     Ge.applyBoundary("neumann");
+  }else{
+    mesh->communicate(Ge);
   }
   
   // Collisional damping (normalised)
@@ -402,7 +408,7 @@ int GBS::rhs(BoutReal t) {
     // Density
     ddt(Ne) = 
       - vE_Grad(Ne, phi)    // ExB term
-      + (2./mesh->Bxy) * (C(Pe) - Ne*C(phi)) // Perpendicular compression
+      + (2./coords->Bxy) * (C(Pe) - Ne*C(phi)) // Perpendicular compression
       + D(Ne, Dn)
       + H(Ne, Hn)
       ;
@@ -421,14 +427,14 @@ int GBS::rhs(BoutReal t) {
     // Electron temperature
     ddt(Te) = 
       - vE_Grad(Te, phi)
-      + (4./3.)*(Te/mesh->Bxy)*( (7./2.)*C(Te) + (Te/Ne)*C(Ne) - C(phi) )
+      + (4./3.)*(Te/coords->Bxy)*( (7./2.)*C(Te) + (Te/Ne)*C(Ne) - C(phi) )
       + D(Te, Dte)
       + H(Te, Hte)
       ;
     
     if(parallel) {
       ddt(Te) -= Vpar_Grad_par(Ve, Te);
-      ddt(Te) += (2./3.)*Te*( 0.71*Grad_par(Vi) - 1.71*Grad_par(Ve) + 0.71*(Vi-Ve)*Grad_par(log(Ne)));
+      ddt(Te) += (2./3.)*Te*( 0.71*Grad_par(Vi) - 1.71*Grad_par(Ve) + 0.71*(Vi-Ve)*Grad_par(logNe));
     }
     
     if(!mms) {
@@ -445,14 +451,16 @@ int GBS::rhs(BoutReal t) {
     // Vorticity
     ddt(Vort) = 
       - vE_Grad(Vort, phi)     // ExB term
-      + 2.*mesh->Bxy*C(Pe)/Ne + mesh->Bxy*C(Gi)/(3.*Ne)
+      + 2.*coords->Bxy*C(Pe)/Ne + coords->Bxy*C(Gi)/(3.*Ne)
       + D(Vort, Dvort)
       + H(Vort, Hvort)
       ;
 
     if(parallel) {
+      Field3D delV = Vi-Ve;
+      mesh->communicate(delV);
       ddt(Vort) -= Vpar_Grad_par(Vi, Vort); // Parallel advection
-      ddt(Vort) += SQ(mesh->Bxy)*( Grad_par(Vi - Ve) + (Vi - Ve)*Grad_par(log(Ne)) );
+      ddt(Vort) += SQ(coords->Bxy)*( Grad_par(delV) + (Vi - Ve)*Grad_par(logNe) );
     }
   }
   
@@ -465,7 +473,7 @@ int GBS::rhs(BoutReal t) {
       - mi_me*(2./3.)*Grad_par(Ge)
       - mi_me*nu*(Ve - Vi)
       + mi_me*Grad_par(phi)
-      - mi_me*(  Te*Grad_par(log(Ne)) + 1.71*Grad_par(Te) )
+      - mi_me*(  Te*Grad_par(logNe) + 1.71*Grad_par(Te) )
       + D(Ve, Dve)
       + H(Ve, Hve)
       ;
@@ -478,7 +486,7 @@ int GBS::rhs(BoutReal t) {
       - vE_Grad(Vi, phi)
       - Vpar_Grad_par(Vi, Vi)
       - (2./3.)*Grad_par(Gi)
-      - (Grad_par(Te) + Te*Grad_par(log(Ne))) // Parallel pressure
+      - (Grad_par(Te) + Te*Grad_par(logNe)) // Parallel pressure
       + D(Vi, Dvi)
       + H(Vi, Hvi)
       ;
@@ -488,13 +496,18 @@ int GBS::rhs(BoutReal t) {
 }
 
 const Field3D GBS::C(const Field3D &f) { // Curvature operator
+  Field3D g; //Temporary in case we need to communicate
   switch(curv_method) {
   case 0:
-    return V_dot_Grad(bxcv, f);
+    g = f ; 
+    mesh->communicate(g);
+    return V_dot_Grad(bxcv, g);
   case 1:
-    return bxcv*Grad(f);
+    g = f ; 
+    mesh->communicate(g);
+    return bxcv*Grad(g);
   }
-  return mesh->Bxy*bracket(logB, f, BRACKET_ARAKAWA);
+  return coords->Bxy*bracket(logB, f, BRACKET_ARAKAWA);
 }
 
 const Field3D GBS::D(const Field3D &f, BoutReal d) { // Diffusion operator

@@ -32,14 +32,11 @@
 #include <gyro_average.hxx>
 #include <invert_laplace.hxx>
 
-/// Approximate G(f) = f + rho^2*Delp2(f) using Taylor expansion
 const Field3D gyroTaylor0(const Field3D &f, const Field3D &rho) {
   return f + SQ(rho) * Delp2(f);
 }
 
-/// Pade approximation G_0 = (1 - rho^2*Delp2)g = f
 const Field3D gyroPade0(const Field3D &f, BoutReal rho, int flags) {
-  /// Have to use Z average of rho for efficient inversion
   
   Field2D a = 1.0;
   Field2D d = -rho*rho;
@@ -62,10 +59,9 @@ const Field3D gyroPade0(const Field3D &f, const Field2D &rho, int flags) {
 /// Pade approximation G_0 = (1 - rho^2*Delp2)g = f
 const Field3D gyroPade0(const Field3D &f, const Field3D &rho, int flags) {
   /// Have to use Z average of rho for efficient inversion
-  return gyroPade0(f, rho.DC(), flags);
+  return gyroPade0(f, DC(rho), flags);
 }
 
-/// Pade approximation G_1 = (1 - 0.5*rho^2*Delp2)g = f
 const Field3D gyroPade1(const Field3D &f, BoutReal rho, int flags) {
   Field2D a = 1.0;
   Field2D d = -0.5*rho*rho;
@@ -85,18 +81,17 @@ const Field3D gyroPade1(const Field3D &f, const Field2D &rho, int flags) {
 
 /// Pade approximation G_1 = (1 - 0.5*rho^2*Delp2)g = f
 const Field3D gyroPade1(const Field3D &f, const Field3D &rho, int flags) {
-  /// Have to use Z average of rho for efficient inversion
-  return gyroPade1(f, rho.DC(), flags);
+  return gyroPade1(f, DC(rho), flags);
 }
 
+/// Pade approximation G_1 = (1 - 0.5*rho^2*Delp2)g = f
 const Field2D gyroPade1(const Field2D &f, const Field2D &rho, int flags) {
   // Very inefficient implementation
   Field3D tmp = f;
   tmp = gyroPade1(tmp, rho, flags);
-  return tmp.DC();
+  return DC(tmp);
 }
 
-/// Pade approximation G_2 = (1 - 0.5*rho^2*Delp2)g = f
 const Field3D gyroPade2(const Field3D &f, BoutReal rho, int flags) {
   Field3D result = gyroPade1(gyroPade1(f, rho, flags), rho, flags);
   mesh->communicate(result);
@@ -105,7 +100,6 @@ const Field3D gyroPade2(const Field3D &f, BoutReal rho, int flags) {
   return result;
 }
 
-/// Pade approximation G_2 = (1 - 0.5*rho^2*Delp2)g = f
 const Field3D gyroPade2(const Field3D &f, const Field2D &rho, int flags) {
   Field3D result = gyroPade1(gyroPade1(f, rho, flags), rho, flags);
   mesh->communicate(result);
@@ -114,9 +108,8 @@ const Field3D gyroPade2(const Field3D &f, const Field2D &rho, int flags) {
   return result;
 }
 
-/// Pade approximation G_2 = (1 - 0.5*rho^2*Delp2)g = f
 const Field3D gyroPade2(const Field3D &f, const Field3D &rho, int flags) {
   /// Have to use Z average of rho for efficient inversion
-  return gyroPade2(f, rho.DC(), flags);
+  return gyroPade2(f, DC(rho), flags);
 }
 

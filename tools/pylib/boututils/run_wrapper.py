@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """Collection of functions which can be used to make a BOUT++ run"""
 
 import os
@@ -27,7 +25,7 @@ def getmpirun( default="mpirun -np" ):
   """
   MPIRUN = getenv("MPIRUN")
 
-  if MPIRUN == None:
+  if MPIRUN is None:
     MPIRUN = default
     print("getmpirun: using the default " + str(default))
 
@@ -138,7 +136,7 @@ def  determineNumberOfCPUs():
 
         res = 0
         for pd in pseudoDevices:
-            if expr.match(pd) != None:
+            if expr.match(pd) is not None:
                 res += 1
 
         if res > 0:
@@ -177,13 +175,13 @@ def launch(command, runcmd="mpirun -np", nproc=None, output=None, pipe=False, ve
     output     Optional name of file for output
     """
 
-    if nproc == None:
+    if nproc is None:
         # Determine number of CPUs on this machine
         nproc = determineNumberOfCPUs()
 
     cmd = runcmd + " " + str(nproc) + " " + command
 
-    if output != None:
+    if output is not None:
         cmd = cmd + " > "+output
 
     if verbose == True:

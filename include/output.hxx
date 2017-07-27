@@ -59,18 +59,21 @@ class Output : private multioutbuf_init<char, std::char_traits<char> >,
  public:
   Output() : multioutbuf_init(), 
     std::basic_ostream<char, _Tr>(multioutbuf_init::buf()) {
-    
+    buffer_len=BUFFER_LEN;
+    buffer=new char[buffer_len];
     enable();
   }
     
   /// Specify a log file to open
   Output(const char *fname) : multioutbuf_init(), 
     std::basic_ostream<char, _Tr>(multioutbuf_init::buf()) {
-    
+    buffer_len=BUFFER_LEN;
+    buffer=new char[buffer_len];
     enable();
     open(fname);
   } 
-  ~Output() {close();}
+  ~Output() {close();
+    delete[] buffer;}
   
   void enable();  ///< Enables writing to stdout (default)
   void disable(); ///< Disables stdout
@@ -81,22 +84,26 @@ class Output : private multioutbuf_init<char, std::char_traits<char> >,
   void write(const char*string, ...); ///< Write a string using C printf format
 
   void print(const char*string, ...); ///< Same as write, but only to screen
-  
+
+  /// Add an output stream. All output will be sent to all streams
   void add(std::basic_ostream<char, _Tr>& str) {
     multioutbuf_init::buf()->add(str);
   }
 
+  /// Remove an output stream
   void remove(std::basic_ostream<char, _Tr>& str) {
     multioutbuf_init::buf()->remove(str);
   }
 
   static Output *getInstance(); ///< Return pointer to instance
-  static void cleanup();
+  static void cleanup();   ///< Delete the instance
  private:
   static Output *instance; ///< Default instance of this class
   
   std::ofstream file; ///< Log file stream
-  char buffer[1024]; ///< Buffer used for C style output
+  static const int BUFFER_LEN=1024; ///< default length
+  int buffer_len; ///< the current length
+  char * buffer; ///< Buffer used for C style output
   bool enabled;      ///< Whether output to stdout is enabled
 };
 

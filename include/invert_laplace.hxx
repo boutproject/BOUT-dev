@@ -1,4 +1,6 @@
-/**************************************************************************
+/*!*************************************************************************
+ * \file invert_laplace.hxx
+ *
  * Perpendicular Laplacian inversion using FFT and Tridiagonal solver
  *
  * Equation solved is: d*\nabla^2_\perp x + (1/c)\nabla_perp c\cdot\nabla_\perp x + a x = b
@@ -40,29 +42,30 @@ class Laplacian;
 #include "field3d.hxx"
 #include "field2d.hxx"
 #include <boutexception.hxx>
+#include "unused.hxx"
 
 #include "dcomplex.hxx"
 #include "options.hxx"
 
 // Inversion flags for each boundary
-const int INVERT_DC_GRAD  = 1;
-const int INVERT_AC_GRAD  = 2;
-const int INVERT_AC_LAP   = 4;
-const int INVERT_SYM      = 8; // Use symmetry to enforce either zero-value or zero-gradient
-const int INVERT_SET      = 16; // Set boundary to value
-const int INVERT_RHS      = 32; // Use input value in RHS boundary
-const int INVERT_DC_LAP   = 64;
-const int INVERT_BNDRY_ONE = 128;
+const int INVERT_DC_GRAD  = 1; ///< Zero-gradient for DC (constant in Z) component. Default is zero value
+const int INVERT_AC_GRAD  = 2; ///< Zero-gradient for AC (non-constant in Z) component. Default is zero value
+const int INVERT_AC_LAP   = 4; ///< Use zero-laplacian (decaying solution) to AC component
+const int INVERT_SYM      = 8; ///< Use symmetry to enforce either zero-value or zero-gradient
+const int INVERT_SET      = 16; ///< Set boundary to value
+const int INVERT_RHS      = 32; ///< Use input value in RHS boundary
+const int INVERT_DC_LAP   = 64; ///< Use zero-laplacian solution for DC component
+const int INVERT_BNDRY_ONE = 128; ///< Only use one boundary point
 const int INVERT_DC_GRADPAR = 256;
 const int INVERT_DC_GRADPARINV = 512;
-const int INVERT_IN_CYLINDER = 1024; // For use in cylindrical coordiate system.  
+const int INVERT_IN_CYLINDER = 1024; ///< For use in cylindrical coordiate system.
 
 // Global flags
-const int INVERT_ZERO_DC     = 1;
-const int INVERT_START_NEW   = 2;
-const int INVERT_BOTH_BNDRY_ONE = 4; // Sets the width of the boundary to 1
-const int INVERT_4TH_ORDER   = 8; // Use band solver for 4th order in x
-const int INVERT_KX_ZERO     = 16; // Zero the kx=0, n = 0 component
+const int INVERT_ZERO_DC     = 1; ///< Zero the DC (constant in Z) component of the solution
+const int INVERT_START_NEW   = 2; ///< Iterative method start from solution=0. Has no effect for direct solvers
+const int INVERT_BOTH_BNDRY_ONE = 4; ///< Sets the width of the boundaries to 1
+const int INVERT_4TH_ORDER   = 8; ///< Use band solver for 4th order in x
+const int INVERT_KX_ZERO     = 16; ///< Zero the kx=0, n = 0 component
 
 /*
 // Legacy flags, can be used in calls to setFlags()
@@ -96,8 +99,8 @@ const int INVERT_KX_ZERO     = 16; // Zero the kx=0, n = 0 component
   const int INVERT_DC_IN_GRADPARINV = 2097152;
  */
 
-const int INVERT_IN_RHS  = 16384; // Use input value in RHS at inner boundary
-const int INVERT_OUT_RHS = 32768; // Use input value in RHS at outer boundary
+const int INVERT_IN_RHS  = 16384; ///< Use input value in RHS at inner boundary
+const int INVERT_OUT_RHS = 32768; ///< Use input value in RHS at outer boundary
 
 /// Base class for Laplacian inversion
 class Laplacian {
@@ -107,32 +110,36 @@ public:
   
   /// Set coefficients for inversion. Re-builds matrices if necessary
   virtual void setCoefA(const Field2D &val) = 0;
-  virtual void setCoefA(const Field3D &val) { setCoefA(val.DC()); }
-  virtual void setCoefA(const BoutReal &r) { Field2D f(r); setCoefA(f); }
+  virtual void setCoefA(const Field3D &val) { setCoefA(DC(val)); }
+  virtual void setCoefA(BoutReal r) { Field2D f(r); setCoefA(f); }
   
   virtual void setCoefC(const Field2D &val) = 0;
-  virtual void setCoefC(const Field3D &val) { setCoefC(val.DC()); }
-  virtual void setCoefC(const BoutReal &r) { Field2D f(r); setCoefC(f); }
+  virtual void setCoefC(const Field3D &val) { setCoefC(DC(val)); }
+  virtual void setCoefC(BoutReal r) { Field2D f(r); setCoefC(f); }
   
-  virtual void setCoefC1(const Field2D &val) { throw BoutException("setCoefC1 is not implemented for this Laplacian solver"); }
-  virtual void setCoefC1(const Field3D &val) { setCoefC1(val.DC()); }
-  virtual void setCoefC1(const BoutReal &r) { Field2D f(r); setCoefC1(f); }
+  virtual void setCoefC1(const Field2D &UNUSED(val)) {
+    throw BoutException("setCoefC1 is not implemented for this Laplacian solver");
+  }
+  virtual void setCoefC1(const Field3D &val) { setCoefC1(DC(val)); }
+  virtual void setCoefC1(BoutReal r) { Field2D f(r); setCoefC1(f); }
   
-  virtual void setCoefC2(const Field2D &val) { throw BoutException("setCoefC2 is not implemented for this Laplacian solver"); }
-  virtual void setCoefC2(const Field3D &val) { setCoefC2(val.DC()); }
-  virtual void setCoefC2(const BoutReal &r) { Field2D f(r); setCoefC2(f); }
+  virtual void setCoefC2(const Field2D &UNUSED(val)) {
+    throw BoutException("setCoefC2 is not implemented for this Laplacian solver");
+  }
+  virtual void setCoefC2(const Field3D &val) { setCoefC2(DC(val)); }
+  virtual void setCoefC2(BoutReal r) { Field2D f(r); setCoefC2(f); }
   
   virtual void setCoefD(const Field2D &val) = 0;
-  virtual void setCoefD(const Field3D &val) { setCoefD(val.DC()); }
-  virtual void setCoefD(const BoutReal &r) { Field2D f(r); setCoefD(f); }
+  virtual void setCoefD(const Field3D &val) { setCoefD(DC(val)); }
+  virtual void setCoefD(BoutReal r) { Field2D f(r); setCoefD(f); }
   
   virtual void setCoefEx(const Field2D &val) = 0;
-  virtual void setCoefEx(const Field3D &val) { setCoefEx(val.DC()); }
-  virtual void setCoefEx(const BoutReal &r) { Field2D f(r); setCoefEx(f); }
+  virtual void setCoefEx(const Field3D &val) { setCoefEx(DC(val)); }
+  virtual void setCoefEx(BoutReal r) { Field2D f(r); setCoefEx(f); }
   
   virtual void setCoefEz(const Field2D &val) = 0;
-  virtual void setCoefEz(const Field3D &val) { setCoefEz(val.DC()); }
-  virtual void setCoefEz(const BoutReal &r) { Field2D f(r); setCoefD(f); }
+  virtual void setCoefEz(const Field3D &val) { setCoefEz(DC(val)); }
+  virtual void setCoefEz(BoutReal r) { Field2D f(r); setCoefD(f); }
   
   virtual void setFlags(int f);
   virtual void setGlobalFlags(int f) { global_flags = f; }
@@ -143,28 +150,33 @@ public:
   virtual const Field3D solve(const Field3D &b);
   virtual const Field2D solve(const Field2D &b);
   
-  virtual const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) { return solve(b); }
+  virtual const FieldPerp solve(const FieldPerp &b, const FieldPerp &UNUSED(x0)) { return solve(b); }
   virtual const Field3D solve(const Field3D &b, const Field3D &x0);
   virtual const Field2D solve(const Field2D &b, const Field2D &x0);
 
   /// Coefficients in tridiagonal inversion
   void tridagCoefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcomplex &c, const Field2D *ccoef = NULL, const Field2D *d=NULL);
-  
-  static Laplacian* create(Options *opt = NULL);  ///< Create a new Laplacian solver
+
+  /*!
+   * Create a new Laplacian solver
+   * 
+   * @param[in] opt  The options section to use. By default "laplace" will be used
+   */ 
+  static Laplacian* create(Options *opt = NULL);
   static Laplacian* defaultInstance(); ///< Return pointer to global singleton
   
-  static void cleanup(); // Frees all memory
+  static void cleanup(); ///< Frees all memory
 protected:
   bool async_send; ///< If true, use asyncronous send in parallel algorithms
   
   int maxmode;     ///< The maximum Z mode to solve for
   
   bool low_mem;    ///< If true, reduce the amount of memory used
-  bool all_terms;  // applies to Delp2 operator and laplacian inversion
-  bool nonuniform; // Non-uniform mesh correction
-  bool include_yguards; // solve in y-guard cells, default true.
-  int extra_yguards_lower; // exclude some number of points at the lower boundary, useful for staggered grids or when boundary conditions make inversion redundant
-  int extra_yguards_upper; // exclude some number of points at the upper boundary, useful for staggered grids or when boundary conditions make inversion redundant
+  bool all_terms;  ///< applies to Delp2 operator and laplacian inversion
+  bool nonuniform; ///< Non-uniform mesh correction
+  bool include_yguards; ///< solve in y-guard cells, default true.
+  int extra_yguards_lower; ///< exclude some number of points at the lower boundary, useful for staggered grids or when boundary conditions make inversion redundant
+  int extra_yguards_upper; ///< exclude some number of points at the upper boundary, useful for staggered grids or when boundary conditions make inversion redundant
   
   int global_flags;       ///< Default flags
   int inner_boundary_flags; ///< Flags to set inner boundary condition

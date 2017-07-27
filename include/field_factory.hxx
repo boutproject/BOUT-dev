@@ -38,6 +38,8 @@ class FieldFactory;
 #include "field3d.hxx"
 #include "options.hxx"
 
+#include "unused.hxx"
+
 #include <string>
 #include <map>
 #include <list>
@@ -99,10 +101,10 @@ private:
 
 class FieldNull : public FieldGenerator {
 public:
-  double generate(double x, double y, double z, double t) {
+  double generate(double UNUSED(x), double UNUSED(y), double UNUSED(z), double UNUSED(t)) {
     return 0.0;
   }
-  FieldGenerator* clone(const std::list<FieldGenerator*> args) {
+  FieldGenerator* clone(const std::list<FieldGenerator*> UNUSED(args)) {
     return this;
   }
   /// Singeton

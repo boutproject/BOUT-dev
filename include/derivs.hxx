@@ -1,4 +1,6 @@
-/**************************************************************************
+/*!************************************************************************
+ * \file derivs.hxx
+ *
  * Basic differential functions
  *
  **************************************************************************
@@ -33,35 +35,247 @@
 
 #include "bout_types.hxx" // See this for codes
 
-int derivs_init();
-
 ////////// FIRST DERIVATIVES //////////
 
+/*!
+ * Calculate first partial derivative in X
+ *
+ *   $\partial / \partial x$
+ *
+ * @param[in] f       The field to be differentiated
+ * @param[in] outloc  The cell location where the result is desired. If staggered grids is not enabled then this has no effect
+ * @param[in] method  Differencing method to use. This overrides the default 
+ *
+ *
+ */
 const Field3D DDX(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT);
+
+/*!
+ * Calculate first partial derivative in X
+ *
+ *   $\partial / \partial x$
+ *
+ * @param[in] f       The field to be differentiated
+ * @param[in] method  Differencing method to use. This overrides the default 
+ * @param[in] outloc  The cell location where the result is desired. If staggered grids is not enabled then this has no effect
+ * 
+ */
 const Field3D DDX(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc);
+
+/*!
+ * Calculate first partial derivative in X
+ *
+ *   $\partial / \partial x$
+ *
+ * @param[in] f       The field to be differentiated
+ * @param[in] method  Differencing method to use. This overrides the default 
+ *
+ */
 const Field3D DDX(const Field3D &f, DIFF_METHOD method);
+
+/*!
+ * Calculate first partial derivative in X
+ *
+ *   $\partial / \partial x$
+ *
+ * @param[in] f       The field to be differentiated
+ *
+ * This uses the default method, and the result will be 
+ * at the same cell location as the input
+ *
+ */
 const Field2D DDX(const Field2D &f);
 
+/*!
+ * Calculate first partial derivative in Y
+ *
+ *   $\partial / \partial y$
+ *
+ * @param[in] f       The field to be differentiated
+ * @param[in] outloc  The cell location where the result is desired. If staggered grids is not enabled then this has no effect
+ * @param[in] method  Differencing method to use. This overrides the default 
+ *
+ *
+ */
 const Field3D DDY(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT);
-const Field3D DDY(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc);
-const Field3D DDY(const Field3D &f, DIFF_METHOD method);
-const Field2D DDY(const Field2D &f);
-const Field3D DDY_MUSCL(const Field3D &F, const Field3D &u, const Field2D &Vmax);
 
+/*!
+ * Calculate first partial derivative in Y
+ *
+ *   $\partial / \partial y$
+ *
+ * @param[in] f       The field to be differentiated
+ * @param[in] method  Differencing method to use. This overrides the default 
+ * @param[in] outloc  The cell location where the result is desired. If staggered grids is not enabled then this has no effect
+ * 
+ */
+const Field3D DDY(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc);
+
+/*!
+ * Calculate first partial derivative in Y
+ *
+ *   $\partial / \partial y$
+ *
+ * @param[in] f       The field to be differentiated
+ * @param[in] method  Differencing method to use. This overrides the default 
+ *
+ * The result will be at the same cell location as the input
+ * 
+ */
+const Field3D DDY(const Field3D &f, DIFF_METHOD method);
+
+/*!
+ * Calculate first partial derivative in Y
+ *
+ *   $\partial / \partial y$
+ *
+ * @param[in] f       The field to be differentiated
+ *
+ * This uses the default method, and the result will be 
+ * at the same cell location as the input
+ *
+ */
+const Field2D DDY(const Field2D &f);
+
+/*!
+ * Calculate first partial derivative in Z
+ *
+ *   $\partial / \partial z$
+ *
+ * @param[in] f       The field to be differentiated
+ * @param[in] outloc  The cell location where the result is desired. If staggered grids is not enabled then this has no effect
+ * @param[in] method  Differencing method to use. This overrides the default 
+ * @param[in] inc_xbndry  Determines whether the derivative should be calculated in the X boundaries. This allows mixed operators (e.g. D2DXDZ) without additional communication
+ *
+ */
 const Field3D DDZ(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT, bool inc_xbndry = false);
+
+/*!
+ * Calculate first partial derivative in Z
+ *
+ *   $\partial / \partial z$
+ *
+ * @param[in] f       The field to be differentiated
+ * @param[in] method  Differencing method to use. This overrides the default  
+*  @param[in] outloc  The cell location where the result is desired. If staggered grids is not enabled then this has no effect
+ * @param[in] inc_xbndry  Determines whether the derivative should be calculated in the X boundaries. This allows mixed operators (e.g. D2DXDZ) without additional communication
+ *
+ */
 const Field3D DDZ(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc, bool inc_xbndry=false);
+
+/*!
+ * Calculate first partial derivative in Z
+ *
+ *   $\partial / \partial z$
+ *
+ * @param[in] f       The field to be differentiated
+ * @param[in] method  Differencing method to use. This overrides the default  
+*  @param[in] outloc  The cell location where the result is desired. If staggered grids is not enabled then this has no effect
+ * @param[in] inc_xbndry  Determines whether the derivative should be calculated in the X boundaries. This allows mixed operators (e.g. D2DXDZ) without additional communication
+ *
+ */
 const Field3D DDZ(const Field3D &f, DIFF_METHOD method, bool inc_xbndry = false);
+
+/*!
+ * Calculate first partial derivative in Z
+ *
+ *   $\partial / \partial z$
+ *
+ * @param[in] f       The field to be differentiated
+ * @param[in] inc_xbndry  Determines whether the derivative should be calculated in the X boundaries. This allows mixed operators (e.g. D2DXDZ) without additional communication
+ *
+ */
 const Field3D DDZ(const Field3D &f, bool inc_xbndry);
+
+/*!
+ * Calculate first partial derivative in Z
+ *
+ *   $\partial / \partial z$
+ *
+ * @param[in] f       The field to be differentiated
+ *
+ */
 const Field2D DDZ(const Field2D &f);
 
+/*!
+ * Calculate first partial derivative in Z. 
+ * 
+ * Note: This just takes the derivative of the components
+ * not the basis vectors.
+ *
+ *   $\partial / \partial z$
+ *
+ * @param[in] v       The vector to be differentiated
+*  @param[in] outloc  The cell location where the result is desired. If staggered grids is not enabled then this has no effect
+ * @param[in] method  Differencing method to use. This overrides the default  
+ *
+ */
 const Vector3D DDZ(const Vector3D &v, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT);
+
+/*!
+ * Calculate first partial derivative in Z. 
+ * 
+ * Note: This just takes the derivative of the components
+ * not the basis vectors.
+ *
+ *   $\partial / \partial z$
+ *
+ * @param[in] v       The vector to be differentiated
+*  @param[in] outloc  The cell location where the result is desired. If staggered grids is not enabled then this has no effect
+ * @param[in] method  Differencing method to use. This overrides the default  
+ *
+ */
 const Vector3D DDZ(const Vector3D &v, DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT);
+
+/*!
+ * Calculate first partial derivative in Z. 
+ * 
+ * Note: This just takes the derivative of the components
+ * not the basis vectors.
+ *
+ *   $\partial / \partial z$
+ *
+ * @param[in] v       The vector to be differentiated
+ *
+ */
 const Vector2D DDZ(const Vector2D &v);
 
 ////////// SECOND DERIVATIVES //////////
 
+/*!
+ * Calculate second partial derivative in X 
+ * 
+ *
+ *   $\partial^2 / \partial x^2$
+ *
+ * @param[in] f       The field to be differentiated
+ * @param[in] outloc  The cell location where the result is desired. If staggered grids is not enabled then this has no effect
+ * @param[in] method  Differencing method to use. This overrides the default 
+ * 
+ */
 const Field3D D2DX2(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT);
+
+/*!
+ * Calculate second partial derivative in X 
+ * 
+ *
+ *   $\partial^2 / \partial x^2$
+ *
+ * @param[in] f       The field to be differentiated
+ * @param[in] method  Differencing method to use. This overrides the default 
+ * @param[in] outloc  The cell location where the result is desired. If staggered grids is not enabled then this has no effect
+ * 
+ */
 const Field3D D2DX2(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT);
+
+/*!
+ * Calculate second partial derivative in X 
+ * 
+ *
+ *   $\partial^2 / \partial x^2$
+ *
+ * 
+ */
 const Field2D D2DX2(const Field2D &f);
 
 const Field3D D2DY2(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT);

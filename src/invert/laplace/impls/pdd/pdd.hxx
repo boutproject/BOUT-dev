@@ -45,8 +45,8 @@ public:
   void setCoefA(const Field2D &val) { A = val; }
   void setCoefC(const Field2D &val) { C = val; }
   void setCoefD(const Field2D &val) { D = val; }
-  void setCoefEx(const Field2D &val) { bout_error("LaplaceSPT does not have Ex coefficient"); }
-  void setCoefEz(const Field2D &val) { bout_error("LaplaceSPT does not have Ez coefficient"); }
+  void setCoefEx(const Field2D &UNUSED(val)) { throw BoutException("LaplaceSPT does not have Ex coefficient"); }
+  void setCoefEz(const Field2D &UNUSED(val)) { throw BoutException("LaplaceSPT does not have Ez coefficient"); }
   
   const FieldPerp solve(const FieldPerp &b);
   const Field3D solve(const Field3D &b);

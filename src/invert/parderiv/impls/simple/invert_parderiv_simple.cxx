@@ -60,28 +60,26 @@
  
 /// Parallel inversion routine
 const Field3D InvertParSimple::solve(const Field3D &rc) {
+  TRACE("invert_parderiv");
+
   static BoutReal *senddata;
   static BoutReal *recvdata;
   static int max_size = 0;
   static BoutReal *resultdata;
-
-#ifdef CHECK
-  msg_stack.push("invert_parderiv");
-#endif
 
   // Copy (to get rid of const)
   Field3D r = rc;
 
   // Decide on x range. Solve in boundary conditions
   int xs = (mesh->firstX()) ? 0 : 2;
-  int xe = (mesh->lastX()) ? mesh->ngx-1 : (mesh->ngx-3);
+  int xe = (mesh->lastX()) ? mesh->LocalNx-1 : (mesh->LocalNx-3);
 
   int nxsolve = xe - xs + 1; // Number of X points to solve    
   int nylocal = mesh->yend - mesh->ystart + 1;
 
   if(max_size == 0) {
-    //.allocate working memory
-    senddata = new BoutReal[nxsolve * nylocal * (2 + mesh->ngz) ]; // Problem data sent out
+    // allocate working memory
+    senddata = new BoutReal[nxsolve * nylocal * (2 + mesh->LocalNz) ]; // Problem data sent out //Never freed (or used)
   }
     
   // coefficients for derivative term
@@ -125,8 +123,8 @@ const Field3D InvertParSimple::solve(const Field3D &rc) {
         delete[] recvdata;
         delete[] resultdata;
       }
-      recvdata = new BoutReal[ysize * (3+mesh->ngz)];  // Problem data received (to be solved)
-      resultdata = new BoutReal[ysize*mesh->ngz];  // Inverted result
+      recvdata = new BoutReal[ysize * (3+mesh->LocalNz)];  // Problem data received (to be solved)  //Never freed
+      resultdata = new BoutReal[ysize*mesh->LocalNz];  // Inverted result //Never freed
       max_size = ysize;
     }
       
@@ -144,17 +142,13 @@ const Field3D InvertParSimple::solve(const Field3D &rc) {
                     resultdata);
       }else {
         // Open field-lines
-        bout_error("Sorry; invertParSimple can't cope with open field lines yet\n");
+        throw BoutException("Sorry; invertParSimple can't cope with open field lines yet\n");
       }
     }
       
     // Scatter the result back
     surf->scatter(resultdata, result);
   }
-    
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 
   // done
   return result;
@@ -171,9 +165,7 @@ const Field3D InvertParSimple::solve(const Field3D &rc) {
  * @param[out]   result
  */
 void InvertParSimple::cyclicSolve(int ysize, int xpos, BoutReal *data, BoutReal *result, bool coef3d) {
-#ifdef CHECK
-  msg_stack.push("cyclic_solve(%d, %d)", ysize, xpos);
-#endif
+  TRACE("cyclic_solve(%d, %d)", ysize, xpos);
 
   BoutReal ts; // Twist-shift angle
   if(!mesh->periodicY(xpos,ts))
@@ -186,7 +178,7 @@ void InvertParSimple::cyclicSolve(int ysize, int xpos, BoutReal *data, BoutReal 
   static BoutReal *avec, *bvec, *cvec; // Matrix coefficients
   static BoutReal *rvec, *xvec;
     
-  int ncz = mesh->ngz-1;
+  int ncz = mesh->LocalNz;
     
   if(ysize > ylen) {
     // Initialise
@@ -198,13 +190,13 @@ void InvertParSimple::cyclicSolve(int ysize, int xpos, BoutReal *data, BoutReal 
       delete[] rvec;
       delete[] xvec;
     }
-    done = new bool[ncz];
+    done = new bool[ncz]; //Never freed
     //.allocate largest possible array
-    avec = new BoutReal[ysize * ncz];
-    bvec = new BoutReal[ysize * ncz];
-    cvec = new BoutReal[ysize * ncz];
-    rvec = new BoutReal[ysize * ncz];
-    xvec = new BoutReal[ysize * ncz];
+    avec = new BoutReal[ysize * ncz]; //Never freed
+    bvec = new BoutReal[ysize * ncz]; //Never freed
+    cvec = new BoutReal[ysize * ncz]; //Never freed
+    rvec = new BoutReal[ysize * ncz]; //Never freed
+    xvec = new BoutReal[ysize * ncz]; //Never freed
 
     ylen = ysize;
   }
@@ -251,7 +243,7 @@ void InvertParSimple::cyclicSolve(int ysize, int xpos, BoutReal *data, BoutReal 
 
       if((zpos != z0) && done[zpos]) {
         // Somehow hit a different fieldline. Should never happen
-        bout_error("ERROR: Crossed streams in invpar::cyclic_solve!\n");
+        throw BoutException("ERROR: Crossed streams in invpar::cyclic_solve!\n");
       }
 	
     }while(zpos != z0);
@@ -283,9 +275,5 @@ void InvertParSimple::cyclicSolve(int ysize, int xpos, BoutReal *data, BoutReal 
         z0 = i;
     }
   }while(z0 != -1); // Keep going until everything's been inverted
-    
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 }
 

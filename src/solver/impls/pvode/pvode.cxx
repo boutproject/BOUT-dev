@@ -67,7 +67,9 @@ PvodeSolver::~PvodeSolver() {
  * Initialise
  **************************************************************************/
 
-int PvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
+int PvodeSolver::init(int nout, BoutReal tstep) {
+  TRACE("Initialising PVODE solver");
+
   int mudq, mldq, mukeep, mlkeep;
   boole optIn;
   int i;
@@ -78,10 +80,8 @@ int PvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
   int n2d = n2Dvars(); // Number of 2D variables
   int n3d = n3Dvars(); // Number of 3D variables
 
-  int msg_point = msg_stack.push("Initialising PVODE solver");
-
   /// Call the generic initialisation first
-  if(Solver::init(restarting, nout, tstep))
+  if(Solver::init(nout, tstep))
     return 1;
   
   // Save nout and tstep for use in run
@@ -187,8 +187,6 @@ int PvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
 
   /*  CVSpgmr(cvode_mem, NONE, MODIFIED_GS, 10, 0.0, PVBBDPrecon, PVBBDPSol, pdata); */
   
-  msg_stack.pop(msg_point);
-  
   return(0);
 }
 
@@ -197,9 +195,7 @@ int PvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
  **************************************************************************/
 
 int PvodeSolver::run() {
-#ifdef CHECK
-  int msg_point = msg_stack.push("PvodeSolver::run()");
-#endif
+  TRACE("PvodeSolver::run()");
   
   if(!initialised)
     throw BoutException("PvodeSolver not initialised\n");
@@ -226,19 +222,13 @@ int PvodeSolver::run() {
     }
   }
   
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
-
   return 0;
 }
 
 BoutReal PvodeSolver::run(BoutReal tout) {
-  BoutReal *udata;
+  TRACE("Running solver: solver::run(%e)", tout);
 
-#ifdef CHECK
-  int msg_point = msg_stack.push("Running solver: solver::run(%e)", tout);
-#endif
+  BoutReal *udata;
   
   rhs_ncalls = 0;
 
@@ -284,10 +274,6 @@ BoutReal PvodeSolver::run(BoutReal tout) {
     return(-1.0);
   }
 
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
-
   return simtime;
 }
 
@@ -296,9 +282,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
  **************************************************************************/
 
 void PvodeSolver::rhs(int N, BoutReal t, BoutReal *udata, BoutReal *dudata) {
-#ifdef CHECK
-  int msg_point = msg_stack.push("Running RHS: PvodeSolver::rhs(%e)", t);
-#endif
+  TRACE("Running RHS: PvodeSolver::rhs(%e)", t);
 
   // Get current timestep
   hcur = 0.0; //((CVodeMemRec*) cvode_mem)->cv_h;
@@ -307,20 +291,14 @@ void PvodeSolver::rhs(int N, BoutReal t, BoutReal *udata, BoutReal *dudata) {
   load_vars(udata);
 
   // Call function
-  int flag = run_rhs(t);
+  run_rhs(t);
 
   // Save derivatives to CVODE
   save_derivs(dudata);
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 }
 
 void PvodeSolver::gloc(int N, BoutReal t, BoutReal *udata, BoutReal *dudata) {
-#ifdef CHECK
-  int msg_point = msg_stack.push("Running RHS: PvodeSolver::gloc(%e)", t);
-#endif
+  TRACE("Running RHS: PvodeSolver::gloc(%e)", t);
 
   Timer timer("rhs");
 
@@ -328,16 +306,12 @@ void PvodeSolver::gloc(int N, BoutReal t, BoutReal *udata, BoutReal *dudata) {
   load_vars(udata);
 
   // Call function
-  int flag = run_rhs(t);
+  run_rhs(t);
 
   // Save derivatives to CVODE
   save_derivs(dudata);
   
   rhs_ncalls++;
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 }
 
 /**************************************************************************

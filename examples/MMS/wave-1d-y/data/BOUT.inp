@@ -12,12 +12,13 @@ MZ = 1 # Number of points in z
 MYG = 1
 MXG = 0
 
-StaggerGrids = true
-
 [output]
 floats = false #false -> output in doubles
 
 [mesh]  
+
+StaggerGrids = true
+
 ixseps1 = -1     
 ixseps2 = -1             # Set x location of separatrix 2
 
@@ -31,21 +32,21 @@ dy = 0.0625
 symmetricGlobalY = true 
 
 ##################################################
-[ddx]   # Methods used for perp (x) derivative terms
+[mesh:ddx]   # Methods used for perp (x) derivative terms
 
 first = C2
 second = C2
 upwind = W3
 flux = SPLIT
 
-[ddy]   # Methods used for parallel (y) derivative terms
+[mesh:ddy]   # Methods used for parallel (y) derivative terms
 
 first = C2
 second = C2
 upwind = W3
 flux = SPLIT
 
-[ddz]   # Methods used for perp (z) derivative terms
+[mesh:ddz]   # Methods used for perp (z) derivative terms
 
 first = C2
 second = C2

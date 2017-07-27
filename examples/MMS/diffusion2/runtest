@@ -26,17 +26,18 @@ shell("make > make.log")
 # List of input directories
 inputs = [
     ("X", ["mesh:nx"]),
-    ("Y",["mesh:ny"])#,
+    ("Y",["mesh:ny"]),
+    ("Z",["MZ"])#, 
     #("XYZ", ["mesh:nx", "mesh:ny", "MZ"])
     ]
 
 # List of NX values to use
-nxlist = [4, 8, 16, 32, 64] #, 128]
+nxlist = [4, 8, 16, 32, 64, 128, 256]
 #nxlist = [128,256,512,1024,2048,4096]
 
 nout = 1
 #timestep = 0.1
-timestep = 1000
+timestep = 0.1
 
 nproc = 2
 
@@ -81,6 +82,8 @@ for dir,sizes in inputs:
         print("  -> Error norm: l-2 %f l-inf %f" % (l2, linf))
         
     # Calculate grid spacing
+    #This is only correct in the x-direction if MXG = 1. In the other directions 
+    #dy = 1/ny, dz = 1/(MZ-1)
     dx = 1. / (array(nxlist) - 2.)
 
     # Calculate convergence order

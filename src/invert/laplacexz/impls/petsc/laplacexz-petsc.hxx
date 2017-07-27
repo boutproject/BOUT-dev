@@ -17,10 +17,10 @@ class LaplaceXZpetsc;
 class LaplaceXZpetsc : public LaplaceXZ {
 public:
   LaplaceXZpetsc(Mesh *m, Options *options) : LaplaceXZ(m, options) {
-    throw BoutException("No PETSc LaplaceXY solver available");
+    throw BoutException("No PETSc LaplaceXZ solver available");
   }
-  void setCoefs(const Field2D &A, const Field2D &B) {}
-  Field3D solve(const Field3D &b, const Field3D &x0) {}
+  void setCoefs(const Field2D &UNUSED(A), const Field2D &UNUSED(B)) {}
+  Field3D solve(const Field3D &UNUSED(b), const Field3D &UNUSED(x0)) {return 0.;}
 private:
 };
 
@@ -76,7 +76,7 @@ private:
 
   bool coefs_set; ///< Have coefficients been set?
   
-  #ifdef CHECK
+  #if CHECK > 0
     // Currently implemented flags
     static const int implemented_boundary_flags =   INVERT_AC_GRAD
                                                   + INVERT_SET

@@ -22,13 +22,7 @@
 #ifndef __BOUT_TYPES_H__
 #define __BOUT_TYPES_H__
 
-/*
 #include <vector>
-#include <string>
-
-using std::string; // String class 
-using std::vector;
-*/
 
 typedef double BoutReal;
 
@@ -45,6 +39,5 @@ enum REGION {RGN_ALL, RGN_NOBNDRY, RGN_NOX, RGN_NOY, RGN_NOZ};
 
 //jmad Boundary condition function
 typedef BoutReal (*FuncPtr)(BoutReal t, BoutReal x, BoutReal y, BoutReal z);
-
 
 #endif // __BOUT_TYPES_H__

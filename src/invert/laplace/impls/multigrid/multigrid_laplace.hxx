@@ -7,6 +7,7 @@
  *
  **************************************************************************
  * Copyright 2015 K.S. Kang
+ * Modified version Aeptember 2015
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
  * 
@@ -40,6 +41,102 @@
 
 #define MAXGM 15
 
+// In multigrid_alg.cxx
+
+class MultigridAlg{
+public:
+  MultigridAlg(int ,int ,int ,int ,int ,MPI_Comm ,int);
+  virtual ~MultigridAlg();
+
+  void setMultigridC(int );
+  void getSolution(BoutReal *,BoutReal *,int ); 
+  void cleanMem();
+
+  int mglevel,mgplag,cftype,mgsm,pcheck,xNP,zNP,rProcI;
+  BoutReal rtol,atol,dtol,omega;
+  int *gnx,*gnz,*lnx,*lnz;
+  BoutReal **matmg;
+
+protected:
+  /******* Start implementation ********/
+  int numP,xProcI,zProcI,xProcP,xProcM,zProcP,zProcM;
+
+  MPI_Comm commMG;
+
+  void communications(BoutReal *, int );
+  void setMatrixC(int );
+
+  void cycleMG(int ,BoutReal *, BoutReal *);
+  void smoothings(int , BoutReal *, BoutReal *);
+  void projection(int , BoutReal *, BoutReal *);
+  void prolongation(int ,BoutReal *, BoutReal *);
+  void pGMRES(BoutReal *, BoutReal *, int , int);
+  void solveMG(BoutReal *, BoutReal *, int );
+  void multiAVec(int , BoutReal *, BoutReal *);
+  void residualVec(int , BoutReal *, BoutReal *, BoutReal *);
+  BoutReal vectorProd(int , BoutReal *, BoutReal *); 
+
+  virtual void lowestSolver(BoutReal *, BoutReal *, int );
+  
+};
+
+
+// Define three different type of multigrid solver
+// in multigrid_solver.cxx
+
+class MultigridSerial: public MultigridAlg{
+public:
+  MultigridSerial(int ,int ,int ,int ,int ,MPI_Comm ,int );
+  ~MultigridSerial();
+
+  void convertMatrixF(BoutReal *); 
+
+private:
+  
+};
+
+class Multigrid2DPf1D: public MultigridAlg{
+public:
+  Multigrid2DPf1D(int ,int ,int ,int ,int ,int ,int ,int ,MPI_Comm ,int );
+  ~Multigrid2DPf1D();
+
+  void setMultigridC(int );
+  void setPcheck(int );
+  void setValueS();
+  void cleanS();
+  int kflag;
+
+private:
+  MultigridSerial *sMG;
+  void convertMatrixFS(int  ); 
+  void lowestSolver(BoutReal *, BoutReal *, int );
+  
+};
+
+class Multigrid1DP: public MultigridAlg{
+public:
+  Multigrid1DP(int ,int ,int ,int ,int ,int, MPI_Comm ,int );
+  ~Multigrid1DP();
+  void setMultigridC(int );
+  void setPcheck(int );
+  void setValueS();
+  void cleanS();
+
+  int kflag;
+
+
+private:
+  MPI_Comm comm2D;
+  MultigridSerial *sMG;
+  Multigrid2DPf1D *rMG;
+  void convertMatrixF2D(int ); 
+  void convertMatrixFS(int ); 
+  void lowestSolver(BoutReal *, BoutReal *, int );
+  
+};
+
+
+
 class LaplaceMultigrid : public Laplacian {
 public:
   LaplaceMultigrid(Options *opt = NULL);
@@ -59,7 +156,7 @@ public:
   void setCoefC2(const Field3D &val) { C2 = val; }
   void setCoefD(const Field3D &val) { D = val; }
   
-  const FieldPerp solve(const FieldPerp &b) { FieldPerp zero; zero = 0.; solve(b, zero); }
+  const FieldPerp solve(const FieldPerp &b) { FieldPerp zero; zero = 0.; return solve(b, zero); }
   const FieldPerp solve(const FieldPerp &b_in, const FieldPerp &x0);
   
 private:
@@ -68,36 +165,20 @@ private:
   int yindex; // y-position of the current solution phase
   BoutReal *x; // solution vector
   BoutReal *b; // RHS vector
+  Multigrid1DP *kMG;
 
   /******* Start implementation ********/
-  int mglevel,mgplag,cftype,mgsm,pcheck;
-  int xNP,zNP,xProcI,yProcI,zProcI,xProcP,xProcM,zProcP,zProcM;
-  int *gnx,*gnz,*lnx,*lnz;
-  BoutReal **matmg;
+  int mglevel,mgplag,cftype,mgsm,pcheck,tcheck;
+  int xNP,xProcI;
+  int mgcount,mgmpi;
 
   Options *opts;
-  BoutReal rtol,atol,dtol;
-  MPI_Comm commXZ,commX,commZ;
-
-  void communications(BoutReal *, int );// Doing
-  void generateMatrixF(int ); //Done
-  void setMatrixC(int );//Done
-
-  /************ In multigrid_cycle.cxx **************/
-  void cycleMG(int ,BoutReal *, BoutReal *);
-  void smoothings(int , BoutReal *, BoutReal *);
-  void projection(int , BoutReal *, BoutReal *);
-  void prolongation(int ,BoutReal *, BoutReal *);
-  void pGMRES(BoutReal *, BoutReal *, int , int);
-  void solveMG(BoutReal *, BoutReal *, int );
-  void multiAVec(int , BoutReal *, BoutReal *);//Done
-  void residualVec(int , BoutReal *, BoutReal *, BoutReal *);//Done
-
-  BoutReal vectorProd(int , BoutReal *, BoutReal *); //Done
-
-  /******************************************/
+  BoutReal rtol,atol,dtol,omega;
+  MPI_Comm commX;
 
   int comms_tagbase;
+
+  void generateMatrixF(int);
 };
 
 #endif // __MULTIGRID_LAPLACE_H__

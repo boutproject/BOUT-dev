@@ -248,7 +248,7 @@ def View3D(g,path=None, gb=None):
 
   mlab.show()
 
-  if(path != None):
+  if(path is not None):
   #BOUT data
   #path='../Aiba/'
   #

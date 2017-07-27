@@ -97,39 +97,7 @@ H5Format::H5Format(const char *name, bool parallel_in) {
 
   if (H5Eset_auto(H5E_DEFAULT, NULL, NULL) < 0) // Disable automatic printing of error messages so that we can catch errors without printing error messages to stdout
     throw BoutException("Failed to set error stack to not print errors");
-  openr(name);
-}
 
-H5Format::H5Format(const string &name, bool parallel_in) {
-  parallel = parallel_in;
-  x0 = y0 = z0 = t0 = 0;
-  lowPrecision = false;
-  fname = NULL;
-  dataFile = -1;
-  chunk_length = 10; // could change this to try to optimize IO performance (i.e. allocate new chunks of disk space less often)
-  
-  dataFile_plist = H5Pcreate(H5P_FILE_ACCESS);
-  if (dataFile_plist < 0)
-    throw BoutException("Failed to create dataFile_plist");
-
-#ifdef PHDF5
-  if (parallel)
-    if (H5Pset_fapl_mpio(dataFile_plist, BoutComm::get(), MPI_INFO_NULL) < 0)
-      throw BoutException("Failed to set dataFile_plist");
-#endif
-  
-  dataSet_plist = H5Pcreate(H5P_DATASET_XFER);
-  if (dataSet_plist < 0)
-    throw BoutException("Failed to create dataSet_plist");
-
-#ifdef PHDF5
-  if (parallel)
-    if (H5Pset_dxpl_mpio(dataSet_plist, H5FD_MPIO_COLLECTIVE) < 0)
-      throw BoutException("Failed to set dataSet_plist");
-#endif
-  
-  if (H5Eset_auto(H5E_DEFAULT, NULL, NULL) < 0) // Disable automatic printing of error messages so that we can catch errors without printing error messages to stdout
-    throw BoutException("Failed to set error stack to not print errors");
   openr(name);
 }
 
@@ -138,14 +106,8 @@ H5Format::~H5Format() {
   H5Pclose(dataFile_plist);
 }
 
-bool H5Format::openr(const string &name) {
-  return openr(name.c_str());
-}
-
 bool H5Format::openr(const char *name) {
-#ifdef CHECK
-  msg_stack.push("H5Format::openr");
-#endif
+  TRACE("H5Format::openr");
 
   if(dataFile > 0) // Already open. Close then re-open
     close();
@@ -154,22 +116,12 @@ bool H5Format::openr(const char *name) {
   if( dataFile < 0 ) {
     throw BoutException("Failed to open dataFile");
   }
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 
   return true;
 }
 
-bool H5Format::openw(const string &name, bool append) {
-  return openw(name.c_str(), append);
-}
-
 bool H5Format::openw(const char *name, bool append) {
-#ifdef CHECK
-  msg_stack.push("H5Format::openw");
-#endif
+  TRACE("H5Format::openw");
   
   if(dataFile > 0) // Already open. Close then re-open
     close(); 
@@ -186,10 +138,6 @@ bool H5Format::openw(const char *name, bool append) {
 
   fname = copy_string(name);
 
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-
   return true;
 }
 
@@ -200,18 +148,12 @@ bool H5Format::is_valid() {
 }
 
 void H5Format::close() {
-  #ifdef CHECK
-  msg_stack.push("H5Format::close");
-#endif
+  TRACE("H5Format::close");
   
   if (is_valid()) {
     H5Fclose(dataFile);
     dataFile = -1;
   }
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 }
 
 void H5Format::flush() {
@@ -224,14 +166,12 @@ void H5Format::flush() {
 }
 
 const vector<int> H5Format::getSize(const char *name) {
+  TRACE("H5Format::getSize");
+
   vector<int> size;
 
   if(!is_valid())
     return size;
-
-#ifdef CHECK
-  msg_stack.push("H5Format::getSize");
-#endif
   
   hid_t dataSet = H5Dopen(dataFile, name, H5P_DEFAULT);
   if (dataSet < 0) {
@@ -255,12 +195,9 @@ const vector<int> H5Format::getSize(const char *name) {
     
     size.push_back(1);
     return size;
-#ifdef CHECK
-    msg_stack.pop();
-#endif
   }
   else {
-    hsize_t dims[nd];
+    hsize_t* dims = new hsize_t[nd];
     int error = H5Sget_simple_extent_dims(dataSpace, dims, NULL);
     if (error < 0)
       throw BoutException("Failed to get dimensions of dataSpace");
@@ -272,10 +209,8 @@ const vector<int> H5Format::getSize(const char *name) {
     
     for (int i=0; i<nd; i++)
       size.push_back(dims[i]);
-    
-#ifdef CHECK
-    msg_stack.pop();
-#endif
+
+    delete[] dims;
   }
 
   return size;
@@ -331,15 +266,13 @@ bool H5Format::read(BoutReal *var, const string &name, int lx, int ly, int lz) {
 }
 
 bool H5Format::read(void *data, hid_t hdf5_type, const char *name, int lx, int ly, int lz) {
+  TRACE("H5Format::read(void)");
+
   if(!is_valid())
     return false;
 
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
-
-#ifdef CHECK
-  msg_stack.push("H5Format::read(void)");
-#endif
   
   int nd = 0; // Number of dimensions
   if(lx != 0) nd = 1;
@@ -349,7 +282,6 @@ bool H5Format::read(void *data, hid_t hdf5_type, const char *name, int lx, int l
   counts[0]=lx; counts[1]=ly; counts[2]=lz;
   offset[0]=x0; offset[1]=y0; offset[2]=z0;
   offset_local[0]=x0_local;offset_local[1]=y0_local;offset_local[2]=z0_local;
-//   init_size_local[0]=mesh->ngx; init_size_local[1]=mesh->ngy; init_size_local[2]=mesh->ngz;
   init_size_local[0]=offset_local[0]+counts[0]; init_size_local[1]=offset_local[1]+counts[1]; init_size_local[2]=offset_local[2]+counts[2]; // Want to be able to use without needing mesh to be initialised; makes hyperslab selection redundant
   
   hid_t mem_space = H5Screate_simple(nd, init_size_local, init_size_local);
@@ -382,10 +314,6 @@ bool H5Format::read(void *data, hid_t hdf5_type, const char *name, int lx, int l
     throw BoutException("Failed to close dataSpace");
   if (H5Dclose(dataSet) < 0)
     throw BoutException("Failed to close dataSet");
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 
   return true;
 }
@@ -429,6 +357,8 @@ bool H5Format::write(BoutReal *var, const string &name, int lx, int ly, int lz) 
 }
 
 bool H5Format::write(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type, const char *name, int lx, int ly, int lz) {
+  TRACE("H5Format::write(void)");
+
   if(!is_valid())
     return false;
 
@@ -437,10 +367,6 @@ bool H5Format::write(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type, con
 
 //   // Check for valid name
 //   checkName(name);
-  
-#ifdef CHECK
-  msg_stack.push("H5Format::write(void)");
-#endif
   
   int nd = 0; // Number of dimensions
   if(lx != 0) nd = 1;
@@ -454,9 +380,9 @@ bool H5Format::write(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type, con
     init_size[0]=mesh->GlobalNx-2*mesh->xstart; init_size[1]=mesh->GlobalNy-2*mesh->ystart; init_size[2]=mesh->GlobalNz;
   }
   else {
-    init_size[0]=mesh->ngx; init_size[1]=mesh->ngy; init_size[2]=mesh->ngz;
+    init_size[0]=mesh->LocalNx; init_size[1]=mesh->LocalNy; init_size[2]=mesh->LocalNz;
   }
-  init_size_local[0]=mesh->ngx; init_size_local[1]=mesh->ngy; init_size_local[2]=mesh->ngz;
+  init_size_local[0]=mesh->LocalNx; init_size_local[1]=mesh->LocalNy; init_size_local[2]=mesh->LocalNz;
   
   if (nd==0) {
     // Need to write a scalar, not a 0-d array
@@ -535,10 +461,6 @@ bool H5Format::write(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type, con
     throw BoutException("Failed to close dataSpace");
   if (H5Dclose(dataSet) < 0)
     throw BoutException("Failed to close dataSet");
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 
   return true;
 }/***************************************************************************
@@ -586,9 +508,9 @@ bool H5Format::read_rec(void *data, hid_t hdf5_type, const char *name, int lx, i
     init_size[0]=mesh->GlobalNx-2*mesh->xstart; init_size[1]=mesh->GlobalNy-2*mesh->ystart; init_size[2]=mesh->GlobalNz;
   }
   else {
-    init_size[0]=mesh->ngx; init_size[1]=mesh->ngy; init_size[2]=mesh->ngz;
+    init_size[0]=mesh->LocalNx; init_size[1]=mesh->LocalNy; init_size[2]=mesh->LocalNz;
   }
-  init_size_local[0]=mesh->ngx; init_size_local[1]=mesh->ngy; init_size_local[2]=mesh->ngz;
+  init_size_local[0]=mesh->LocalNx; init_size_local[1]=mesh->LocalNy; init_size_local[2]=mesh->LocalNz;
   
   if (nd==1) {
     // Need to write a time-series of scalars
@@ -689,9 +611,9 @@ bool H5Format::write_rec(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type,
     init_size[0]=1;init_size[1]=mesh->GlobalNx-2*mesh->xstart; init_size[2]=mesh->GlobalNy-2*mesh->ystart; init_size[3]=mesh->GlobalNz;
   }
   else {
-    init_size[0]=1;init_size[1]=mesh->ngx; init_size[2]=mesh->ngy; init_size[3]=mesh->ngz;
+    init_size[0]=1;init_size[1]=mesh->LocalNx; init_size[2]=mesh->LocalNy; init_size[3]=mesh->LocalNz;
   }
-  init_size_local[0]=mesh->ngx; init_size_local[1]=mesh->ngy; init_size_local[2]=mesh->ngz;
+  init_size_local[0]=mesh->LocalNx; init_size_local[1]=mesh->LocalNy; init_size_local[2]=mesh->LocalNz;
   
   if (nd_local==0) {
     nd_local = 1;

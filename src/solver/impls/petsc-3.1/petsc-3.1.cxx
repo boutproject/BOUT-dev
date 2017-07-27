@@ -64,7 +64,9 @@ PetscSolver::~PetscSolver() {
  * Initialise
  **************************************************************************/
 
-int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
+int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
+  TRACE("Initialising PETSc-3.1 solver");
+
   PetscErrorCode  ierr;
   int             neq;
   int             mudq, mldq, mukeep, mlkeep;
@@ -77,12 +79,8 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
   nout = NOUT;
   tstep = TIMESTEP;
 
-#ifdef CHECK
-  int msg_point = msg_stack.push("Initialising PETSc-3.1 solver");
-#endif
-
   /// Call the generic initialisation first
-  Solver::init(restarting, NOUT, TIMESTEP);
+  Solver::init(NOUT, TIMESTEP);
 
   output.write("Initialising PETSc-3.1 solver\n");
 
@@ -226,12 +224,12 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
     PetscInt nx = mesh->xend;//MXSUB;
     PetscInt ny = mesh->yend;//MYSUB;
 
-    /* number of z points (need to subtract one because of historical reasons that MZ has an extra point) */
-    PetscInt nz  = mesh->ngz - 1;
+    /* number of z points */
+    PetscInt nz  = mesh->LocalNz;
 
     /* number of degrees (variables) at each grid point */
     if(n2Dvars() != 0) {
-      bout_error("PETSc solver can't handle 2D variables yet. Sorry\n");
+      throw BoutException("PETSc solver can't handle 2D variables yet. Sorry\n");
     }
     
     PetscInt dof = n3Dvars();
@@ -320,7 +318,7 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
             xmin = 0; // This processor includes a boundary region
           int xmax = mesh->xend;
           if(mesh->lastX())
-            xmax = mesh->ngx-1;
+            xmax = mesh->LocalNx-1;
             
           for(i=xmin; i <= xmax; i++) {
             gi = mesh->XGLOBAL(i);
@@ -428,10 +426,6 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
 
   ierr = TSSetFromOptions(ts);CHKERRQ(ierr);   // enable PETSc runtime options
 
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
-
   return(0);
 }
 
@@ -458,13 +452,12 @@ PetscErrorCode PetscSolver::run()
 
 PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata)
 {
+  TRACE("Running RHS: Petsc31Solver::rhs(%e)", t);
+
   int flag;
   BoutReal *udata_array, *dudata_array;
 
   PetscFunctionBegin;
-#ifdef CHECK
-  int msg_point = msg_stack.push("Running RHS: Petsc31Solver::rhs(%e)", t);
-#endif
 
   // Load state from PETSc
   VecGetArray(udata, &udata_array);
@@ -503,10 +496,6 @@ PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata)
     outputnext = false;
     next_time = simtime + tstep; // Set the next output time
   }
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 
   PetscFunctionReturn(0);
 }

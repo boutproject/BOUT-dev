@@ -3,8 +3,10 @@
 # for the (very) rare occasions when autoconf fails
 
 # extra compilation flags:
-# -DCHECK      Enables a host of additional checks on each operation
-#              such as uninitialised data. Helps when debugging
+# -DCHECK=lvl  Enables a host of additional checks on each operation
+#              such as uninitialised data if lvl is > 0. -DCHECK=3
+#              enables all tests, while -DCHECK=0 disables them.
+#              Helps when debugging
 # -DTRACK      Keeps track of variable names.
 #              Enables more useful error messages
 # for SSE2: -msse2 -mfpmath=sse
@@ -13,9 +15,14 @@
 # -DPDBF  PDB format (need to include pdb_format.cxx)
 # -DNCDF  NetCDF format (nc_format.cxx)
 
+# PETSc config variables need to be first, else they may clobber other
+# options (e.g. CXX, CXXFLAGS)
+@PETSC@
+@SLEPC_VARS@
+
 # Created this variable so that a user won't overwrite the CXXFLAGS variable
 # on the command line, just add to this one
-BOUT_FLAGS		= $(CXXFLAGS) @CXXFLAGS@
+BOUT_FLAGS		= $(CXXFLAGS) @CXXFLAGS@ @OPENMP_CXXFLAGS@ @CXX11_FLAGS@
 
 # Specify the MPI C++ compiler in CXX
 
@@ -23,8 +30,9 @@ CXX			= @MPICXX@
 CC                      = $(CXX)
 
 AR			= ar
+ARFLAGS                 = @ARFLAGS@
 RANLIB			= @RANLIB@
-MKDIR			= @MKDIR@
+MKDIR			= @MKDIR_P@
 
 ####################################################################
 # Do not need to alter anything below
@@ -40,10 +48,7 @@ LDFLAGS = @LDFLAGS@
 ####################################################################
 
 EXTRA_INCS		= @EXTRA_INCS@
-EXTRA_LIBS		= @EXTRA_LIBS@
-
-@PETSC@
-@SLEPC_VARS@
+EXTRA_LIBS		= @EXTRA_LIBS@ @OPENMP_CXXFLAGS@
 
 PRECON_SOURCE	= @PRECON_SOURCE@
 FACETS_SOURCE   = @FACETS_SOURCE@
@@ -74,16 +79,46 @@ endif
 ####################################################################
 
 # Phony targets since they are directory names
-.PHONY: $(DIRS) lib install
+.PHONY: $(DIRS) lib install libfast runtest
 
+ifneq ("$(TARGET)","libfast")
 all: $(BOUT_TOP)/config.status $(BOUT_TOP)/make.config $(DIRS) $(TARGET)
+else
+all: $(BOUT_TOP)/config.status $(BOUT_TOP)/make.config $(DIRS)
+endif
+libfast: $(BOUT_TOP)/config.status $(BOUT_TOP)/make.config $(DIRS)
 
 ####################################################################
 # Recursively run make through subdirs
 ####################################################################
 
+ifeq ("$(TARGET)" , "lib")
 $(DIRS):
-	@$(MAKE) --no-print-directory -s -C $@ all
+# make $@ slowly using the old method where parallel builds can cause
+# race conditions that 
+	@$(MAKE) -s --no-print-directory TARGET=lib -C $@ all
+else
+ifeq ("$(TARGET)","libfast")
+$(DIRS):
+# make $@ using the libfast method, where all .o files
+# are only created in the end
+	@$(MAKE) -s --no-print-directory TARGET=$(TARGET) -C $@ $(TARGET)
+else
+ifndef MODULE_DIR
+MODULE_DIR=$(shell pwd)
+endif
+$(DIRS):
+# MODULE_DIR: pass the module directory, where the libraries should be
+# created.
+# SUB_NAME is used for creating a library with the expected name.
+# first a potential trailing slash is removed, and after that the
+# directory name is extracted. This allows to e.g. specify a directory
+# as fuu/bar/ and still get an archive named bar.a
+# The # probably doesn't need to be escaped as everything in the
+# recipy is passed to the shell, even lines starting with #
+	@$(MAKE) -s --no-print-directory MODULE_DIR=$(MODULE_DIR) SUB_NAME=$(shell f=$@ ; g=$${f%/} ; echo $${g##*/}) TARGET=sub -C $@
+endif
+endif
 
 # Create 'lib' and 'include' incase they don't exist
 $(BOUT_TOP)/include $(BOUT_TOP)/lib:
@@ -94,7 +129,7 @@ $(BOUT_TOP)/include $(BOUT_TOP)/lib:
 ####################################################################
 prefix = @prefix@
 exec_prefix = @exec_prefix@
-install: all
+install: libfast
 	@$(MKDIR) $(DESTDIR)${prefix}
 	@$(MKDIR) $(DESTDIR)${prefix}/include
 	@$(MKDIR) $(DESTDIR)${prefix}/lib
@@ -109,7 +144,7 @@ install: all
 # into an executable
 ####################################################################
 
-ifeq ("$(TARGET)", "lib")
+#ifeq ("$(TARGET)", "lib")
 #BEGIN 'lib'
 
 ####################################################################
@@ -138,32 +173,64 @@ ifeq ("$(TARGET)", "lib")
 # Builds the library with $(OBJ) which is defined from the SOURCEC variable
 ####################################################################
 
+ifeq ("$(TARGET)", "libfast")
+libfast: makefile $(BOUT_TOP)/make.config $(BOUT_TOP)/include $(OBJ) $(DIRS)
+endif
+
+ifeq ("$(TARGET)", "lib")
 lib: makefile $(BOUT_TOP)/make.config $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ)
 ifneq ("$(OBJ)foo", "foo")
 	@echo "Adding $(OBJ) to libbout++.a"
-	@$(AR) cru $(LIB) $(OBJ)
+	@$(AR) $(ARFLAGS) $(LIB) $(OBJ)
 	@$(RANLIB) $(LIB)
 endif
+endif
 
-#END 'lib'
-else
 
+ifeq ("$(TARGET)", "sub")
+LIB=$(MODULE_DIR)/$(SUB_NAME).a
+sub: makefile $(BOUT_TOP)/make.config $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ)
+ifneq ("$(OBJ)foo", "foo")
+	@echo "Adding $(OBJ) to $(LIB)"
+	@$(AR) $(ARFLAGS) $(LIB) $(OBJ)
+	@$(RANLIB) $(LIB)
+endif
+endif
+
+runtest:
+	./runtest
+
+
+ifneq ("$(TARGET)", "sub")
+ifneq ("$(TARGET)", "libfast")
+ifneq ("$(TARGET)", "lib")
+ifneq ("$(TARGET)", "runtest")
 
 ####################################################################
 # Make libbout++.a if it doesn't exist with the checklib target
 ####################################################################
-%.a:
+libbout++.a:
 	@echo "Rebuilding out-of-date bout++ library"
 	@$(MAKE) --no-print-directory -C $(BOUT_TOP)
  
 ####################################################################
 # Make the target (e.g. gas_compress)
 ####################################################################
-$(TARGET).cxx: checklib
-$(TARGET).o: $(LIB)
-$(TARGET): makefile $(BOUT_TOP)/make.config $(OBJ)
+# first we remove a trailing slash, if present. Note that currently we
+# dont support several trailing slashes, as in fuu/bar/// 
+DIRS_=$(DIRS:%/=%)
+# then we extract the directory name, in case it is a longer path
+# We are not in a recipe, so # needs to be escaped
+# $$ is an escaped $
+DIRS__=$(shell for f in $(DIRS_) ; do echo $${f\#\#*/};done)
+# now we can generate a list of libraries
+SUB_LIBS=$(DIRS__:%=%.a)
+
+$(SOURCEC): checklib
+$(SOURCEC:%.cxx=%.o): $(LIB)
+$(TARGET): makefile $(BOUT_TOP)/make.config $(OBJ) $(SUB_LIBS)
 	@echo "  Linking" $(TARGET)
-	@$(LD) $(LDFLAGS) -o $(TARGET) $(OBJ) $(BOUT_LIBS)
+	@$(LD) $(LDFLAGS) -o $(TARGET) $(OBJ) $(BOUT_LIBS) $(SUB_LIBS)
 
 checklib:
 ifneq ("$(CHANGED)foo", "foo")
@@ -171,6 +238,9 @@ ifneq ("$(CHANGED)foo", "foo")
 	@$(MAKE) --no-print-directory -C $(BOUT_TOP)
 endif
 
+endif
+endif
+endif
 endif
 
 %.o: $(BOUT_TOP)/make.config %.cxx
@@ -201,3 +271,21 @@ distclean: clean
 	@echo externalpackages cleaned
 	@touch $(BOUT_TOP)/configure
 	@echo autom4te.cache cleaned
+
+####################################################################
+# Documentation
+####################################################################
+
+MANUAL_DIR=$(BOUT_TOP)/manual
+
+doxygen:
+	cd $(MANUAL_DIR)/doxygen && doxygen Doxyfile
+
+breathe-autogen: doxygen
+	breathe-apidoc -f -o $(MANUAL_DIR)/sphinx/_breathe_autogen $(MANUAL_DIR)/doxygen/bout/xml
+
+sphinx-docs-html: breathe-autogen
+	sphinx-build -b html $(MANUAL_DIR)/sphinx/ $(MANUAL_DIR)/sphinx/_build/
+
+sphinx-docs-latex: breathe-autogen
+	sphinx-build -b latex $(MANUAL_DIR)/sphinx/ $(MANUAL_DIR)/sphinx/_build/

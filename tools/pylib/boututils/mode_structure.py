@@ -59,8 +59,8 @@ def mode_structure( var_in, grid_in, period=1,
   #
   # period = 1 ; default = full torus
 
-    if n==None :
-        if filter != None :
+    if n is None :
+        if filter is not None :
             n = filter*period
         else: n = period
   
@@ -213,7 +213,7 @@ def mode_structure( var_in, grid_in, period=1,
       
         if numpy.max(theta) > 1.0 :
           # mis-match between q and nu (integration error?)
-            if quiet==None : print("Mismatch  ", x, numpy.max(theta))
+            if quiet is None : print("Mismatch  ", x, numpy.max(theta))
             theta = old_div(theta, (numpy.max(theta) + numpy.abs(theta[1] - theta[0])))
        
       
@@ -246,18 +246,18 @@ def mode_structure( var_in, grid_in, period=1,
     inds = numpy.argsort(fmax)[::-1]
  
 
-    if pmodes == None : pmodes = 10
+    if pmodes is None : pmodes = 10
 
     qprof = old_div(numpy.abs(shiftangle), (2.0*numpy.pi))
 
     xarr = numpy.arange(nx)
     xtitle="Radial index"
-    if xq != None :
+    if xq is not None :
         # show as a function of q*n
         xarr = qprof*numpy.float(n)
 
         xtitle="q * n"
-    elif xpsi != None :
+    elif xpsi is not None :
         # show as a function of psi. Should be normalised psi
         xarr = psixy[:,0]
 
@@ -284,7 +284,7 @@ def mode_structure( var_in, grid_in, period=1,
      
 
   
-    if slow != None :
+    if slow is not None :
         # plot modes slowly for examination
         #safe_colors, /first
 #        ax = fig.add_subplot(111)
@@ -311,10 +311,10 @@ def mode_structure( var_in, grid_in, period=1,
             
          
     
-    elif ergos != None :
+    elif ergos is not None :
         # ERGOS - style output
     
-        if output != None and slow == None :
+        if output is not None and slow is None :
             savefig('output.png')
             
         
@@ -346,13 +346,13 @@ def mode_structure( var_in, grid_in, period=1,
 #        ENDIF
 
     else:
-        if output != None and slow == None :
+        if output is not None and slow is None :
             savefig('output.png')
          #  savefig('output.ps')
         
   #  
   #  
-        if subset != None :
+        if subset is not None :
       
             # get number of modes larger than 5% of the maximum
             count = numpy.size(numpy.where(fmax > 0.10*numpy.max(fmax)))

@@ -174,10 +174,10 @@ BoutReal FieldBallooning::generate(double x, double y, double z, double t) {
 
     for(int i=1; i<= ball_n; i++) {
       // y - i * 2pi
-      value += arg->generate(x,y - i*TWOPI,z + i*ts*TWOPI/mesh->zlength(),t);
+      value += arg->generate(x,y - i*TWOPI,z + i*ts*TWOPI/mesh->coordinates()->zlength(),t);
 
       // y + i * 2pi
-      value += arg->generate(x,y + i*TWOPI,z - i*ts*TWOPI/mesh->zlength(),t);
+      value += arg->generate(x,y + i*TWOPI,z - i*ts*TWOPI/mesh->coordinates()->zlength(),t);
     }
     return value;
   }
@@ -232,9 +232,9 @@ BoutReal FieldMixmode::genRand(BoutReal seed) {
   // Round the seed to get the number of iterations
   int niter = 11 + (23 + ROUND(seed)) % 79;
 
-  // Start x between 0 and 1
+  // Start x between 0 and 1 (exclusive)
   const BoutReal A = 0.01, B = 1.23456789;
-  BoutReal x = (A + fmod(seed,B)) / (B - 2.*A);
+  BoutReal x = (A + fmod(seed,B)) / (B + 2.*A);
 
   // Iterate logistic map
   for(int i=0;i!=niter;++i)

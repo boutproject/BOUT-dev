@@ -31,13 +31,92 @@
 #include "vector2d.hxx"
 #include "vector3d.hxx"
 
-int initial_profile(const char *name, Field3D &var);
-int initial_profile(const char *name, Field2D &var);
+/*!
+ * Set a field from options
+ * 
+ * This is called by Solver for each evolving field at the beginning
+ * of a simulation. 
+ *
+ *
+ * @param[in] name   The name of the field. This will be used
+ *                   as the section name in the options
+ * @param[out] var   The field, which will be set to a value
+ *                   depending on the options
+ *
+ *
+ * To create the value, it looks for a setting "function"
+ * in a section called name. If that is not found, then it looks 
+ * for "function" in a section called "All". If that is also not
+ * found, then the value defaults to zero.
+ * 
+ * A second variable, "scale", can be used to multiply the function,
+ * and defaults to 1.0
+ * 
+ * Example
+ * -------
+ * Given the input file:
+ *
+ * [All] 
+ * function = sin(y)
+ * 
+ * [pressure]
+ *
+ * [density]
+ * scale = 0.2
+ * 
+ * [vorticity]
+ * function = cos(y)
+ * 
+ * initial_profile would generate:
+ * 
+ * o pressure -> sin(y)
+ * o density  -> 0.2*sin(y)
+ * o vorticity -> cos(y)
+ * 
+ */ 
+void initial_profile(const string &name, Field3D &var);
 
-int initial_profile(const char *name, Vector2D &var);
-int initial_profile(const char *name, Vector3D &var);
+/*!
+ * Set a Field2D from options
+ *
+ * @param[in] name   The name of the field, used as a section name
+ * 
+ * @param[out] var   The field which will be set to a value
+ */
+void initial_profile(const string &name, Field2D &var);
 
-// Generate a 3D field with a given Z oscillation
+/*!
+ * Set a vector to a value. The options used depend
+ * on whether the vector is covariant or contravariant.
+ * 
+ * If covariant, then each component will be initialised
+ * by adding "_x", "_y", "_z" to the name.
+ * 
+ * If contravariant, then each component will be initialised
+ * by adding "x", "y" and "z" to the name.
+ */
+void initial_profile(const string &name, Vector2D &var);
+
+/*!
+ * Set a vector to a value. The options used depend
+ * on whether the vector is covariant or contravariant.
+ * 
+ * If covariant, then each component will be initialised
+ * by adding "_x", "_y", "_z" to the name.
+ * 
+ * If contravariant, then each component will be initialised
+ * by adding "x", "y" and "z" to the name.
+ *
+ * 
+ */
+void initial_profile(const string &name, Vector3D &var);
+
+/*!
+ * Generate a 3D field with a given Z oscillation
+ *
+ * @param[in] n      Mode number. Note that this is mode-number in the domain
+ * @param[in] phase  Phase shift in units of pi
+ */
 const Field3D genZMode(int n, BoutReal phase = 0.0);
 
 #endif // __INITIALPROF_H__

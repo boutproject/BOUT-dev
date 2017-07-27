@@ -26,9 +26,9 @@ shell("make > make.log")
 # List of options to be passed for each test
 options = [
     ("method=2", "Arakawa", "-^"),
-    ("method=0 ddx:upwind=u1 ddz:upwind=u1", "1st order upwind", "-o"),
-    ("method=0 ddx:upwind=c2 ddz:upwind=c2", "2nd order central", "-x"),
-    ("method=0 ddx:upwind=w3 ddz:upwind=w3", "3rd order WENO", "-s")
+    ("method=0 mesh:ddx:upwind=u1 mesh:ddz:upwind=u1", "1st order upwind", "-o"),
+    ("method=0 mesh:ddx:upwind=c2 mesh:ddz:upwind=c2", "2nd order central", "-x"),
+    ("method=0 mesh:ddx:upwind=w3 mesh:ddz:upwind=w3", "3rd order WENO", "-s")
     ]
 
 # List of NX values to use
@@ -140,7 +140,6 @@ with open("advection.pkl", "wb") as output:
 # Plot all results for comparison
 try:
     import matplotlib.pyplot as plt
-
     plt.figure()
     for e, label, sym in err_2_all:
         plt.plot(dx, e, sym, label=label)
@@ -170,8 +169,8 @@ try:
     plt.ylabel(r'$l^\infty$ error norm')
     plt.savefig("advection_norm_linf.pdf")
     plt.close()
-except:
-    print("Failed to plot results")
+except ImportError:
+    pass
 
 if success:
   print(" => All tests passed")

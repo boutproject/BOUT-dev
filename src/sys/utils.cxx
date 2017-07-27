@@ -97,32 +97,6 @@ int **imatrix(int xsize, int ysize) {
   return(m);
 }
 
-template <class T>
-T **matrix(int xsize, int ysize) {
-  long i;
-  T **m;
-
-  if(xsize == 0)
-     xsize = 1;
-  if(ysize == 0)
-     ysize = 1;
-
-  if((m = new T*[xsize]) == NULL)
-    throw BoutException("Error: could not allocate memory:%d\n", xsize);
-  
-  if((m[0] = new T[xsize*ysize]) == NULL)
-    throw BoutException("Error: could not allocate memory\n");
-
-  for(i=1;i<xsize;i++) {
-    m[i] = m[i-1] + ysize;
-  }
-  return m;
-}
-
-// Need explicit instantiation of some types
-template BoutReal **matrix<BoutReal>(int,int);
-template dcomplex **matrix<dcomplex>(int,int);
-
 void free_rmatrix(BoutReal **m) {
   free(m[0]);
   free(m);
@@ -132,15 +106,6 @@ void free_imatrix(int **m) {
   free(m[0]);
   free(m);
 }
-
-template <class T>
-void free_matrix(T **m) {
-  delete[] m[0];
-  delete[] m;
-}
-
-template void free_matrix<BoutReal>(BoutReal**);
-template void free_matrix<dcomplex>(dcomplex**);
 
 BoutReal ***r3tensor(int nrow, int ncol, int ndep) {
   int i,j;
@@ -219,90 +184,13 @@ void free_cmatrix(dcomplex** m) {
   delete[] m;
 }
 
-BoutReal randomu() {
-  return ((BoutReal) rand()) / ((BoutReal) RAND_MAX);
-}
 
-BoutReal SQ(BoutReal x) {
-  return(x*x);
-}
-
-int ROUND(BoutReal x) {
-  return (x > 0.0) ? (int) (x + 0.5) : (int) (x - 0.5);
-}
-
-int BOUTMAX(int a, int b) {
-  return (a > b) ? a : b;
-}
-
-BoutReal BOUTMAX(BoutReal a, BoutReal b) {
-  return (a > b) ? a : b;
-}
-
-BoutReal BOUTMAX(BoutReal a, BoutReal b, BoutReal c) {
-  return BOUTMAX(BOUTMAX(a,b), c);
-}
-
-BoutReal BOUTMIN(BoutReal a, BoutReal b) {
-  return (a < b) ? a : b;
-}
-BoutReal BOUTMIN(BoutReal a, BoutReal b, BoutReal c) {
-  return BOUTMIN(BOUTMIN(a,b),c);
-}
-
-bool is_pow2(int x) {
-  return x && !((x-1) & x);
-}
-
-BoutReal SIGN(BoutReal a) {
-  return (a >= 0) ? 1.0 : -1.0;
-}
-
-BoutReal MINMOD(BoutReal a, BoutReal b) {
-  return 0.5*(SIGN(a) + SIGN(b)) * BOUTMIN(fabs(a), fabs(b));
-}
-
-/*
-// integer power
-BoutReal operator^(BoutReal lhs, int n)
-{
-  BoutReal result;
-  
-  if(n == 0)
-    return 1.0;
-  
-  if(n < 0) {
-    lhs = 1.0 / lhs;
-    n *= -1;
-  }
-  
-  result = 1.0;
-  
-  while(n > 1) {
-    if( (n & 1) == 0 ) {
-      lhs *= lhs;
-      n /= 2;
-    }else {
-      result *= lhs;
-      n--;
-    }
-  }
-  result *= lhs;
-
-  return result;
-}
-
-BoutReal operator^(BoutReal lhs, const BoutReal &rhs)
-{
-  return pow(lhs, rhs);
-}
-*/
 
 /**************************************************************************
  * String routines
  **************************************************************************/
 
-/// Allocate memory for a copy of given string
+// Allocate memory for a copy of given string
 char* copy_string(const char* s) {
   char *s2;
   int n;
@@ -315,26 +203,6 @@ char* copy_string(const char* s) {
   strcpy(s2, s);
   return s2;
 }
-
-/// Concatenate a string. This is a mildly nasty hack, and not thread-safe.
-/// Simplifies some code though.
-char *strconcat(const char* left, const char *right) {
-  static char buffer[128];
-
-  snprintf(buffer, 128, "%s%s", left, right);
-  return buffer;
-}
-
-// Convert a value to a string
-template <class T>
-const string toString(const T& val) {
-  std::stringstream ss;
-  ss << val;
-  return ss.str();
-}
-
-template const string toString(const int& val);
-template const string toString(const BoutReal& val);
 
 /// Convert a string to lower case
 const string lowercase(const string &str) {
@@ -349,7 +217,7 @@ const string lowercasequote(const string &str) {
   string strlow(str);
 
   bool quote = false, dquote = false;
-  for(int i=0;i<strlow.length(); i++) {
+  for(string::size_type i=0;i<strlow.length(); i++) {
     if(strlow[i] == '\'') {
       quote ^= true;
     }else if(strlow[i] == '"') {
@@ -364,14 +232,18 @@ const string lowercasequote(const string &str) {
 BoutReal stringToReal(const std::string &s) {
   std::stringstream ss(s);
   BoutReal val;
-  ss >> val;
+  if(!(ss >> val)) {
+    throw BoutException("Could not convert string '%s' to BoutReal\n", s.c_str());
+  }
   return val;
 }
 
 int stringToInt(const std::string &s) {
   std::stringstream ss(s);
   int val;
-  ss >> val;
+  if(!(ss >> val)) {
+    throw BoutException("Could not convert string '%s' to int\n", s.c_str());
+  }
   return val;
 }
 

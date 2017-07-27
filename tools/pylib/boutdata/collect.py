@@ -105,7 +105,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
 
         data = f.read(varname)
         return data
-    
+
     file_list_nc = glob.glob(os.path.join(path, prefix+".*nc"))
     file_list_h5 = glob.glob(os.path.join(path, prefix+".*hdf5"))
     if file_list_nc != [] and file_list_h5 != []:
@@ -116,7 +116,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
     else:
         suffix = ".nc"
         file_list = file_list_nc
-        
+
     file_list.sort()
     if file_list == []:
         raise IOError("ERROR: No data files found")
@@ -136,14 +136,20 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
         else:
             # Find the variable
             varname = findVar(varname, f.list())
-            
+
             dimens = f.dimensions(varname)
             #ndims = len(dimens)
             ndims = f.ndims(varname)
-    
+
+    # ndims is 0 for reals, and 1 for f.ex. t_array
     if ndims < 2:
         # Just read from file
-        data = f.read(varname)
+        if varname != 't_array':
+            data = f.read(varname)
+        elif (varname == 't_array') and (tind is None):
+            data = f.read(varname)
+        elif (varname == 't_array') and (tind is not None):
+            data = f.read(varname, ranges=[tind[0],tind[1]+1])
         f.close()
         return data
 
@@ -168,33 +174,45 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
 
     # Get the version of BOUT++ (should be > 0.6 for NetCDF anyway)
     try:
-        v = f.read("BOUT_VERSION")
-
-        # 2D decomposition
-        nxpe = f.read("NXPE")
-        mxg  = f.read("MXG")
-        nype = f.read("NYPE")
-        npe = nxpe * nype
-
-        if info:
-            print("nxpe = %d, nype = %d, npe = %d\n" % (nxpe, nype, npe))
-            if npe < nfiles:
-                print("WARNING: More files than expected (" + str(npe) + ")")
-            elif npe > nfiles:
-                print("WARNING: Some files missing. Expected " + str(npe))
-
-        if xguards:
-            nx = nxpe * mxsub + 2*mxg
-        else:
-            nx = nxpe * mxsub
+        version = f["BOUT_VERSION"]
     except KeyError:
         print("BOUT++ version : Pre-0.2")
-        # Assume number of files is correct
-        # No decomposition in X
-        nx = mxsub
-        mxg = 0
+        version = 0
+    if version < 3.5:
+        # Remove extra point
+        nz = mz-1
+    else:
+        nz = mz
+
+    # Fallback to sensible (?) defaults
+    try:
+        nxpe = f["NXPE"]
+    except KeyError:
         nxpe = 1
+        print("NXPE not found, setting to {}".format(nxpe))
+    try:
+        mxg  = f["MXG"]
+    except KeyError:
+        mxg = 0
+        print("MXG not found, setting to {}".format(mxg))
+    try:
+        nype = f["NYPE"]
+    except KeyError:
         nype = nfiles
+        print("NYPE not found, setting to {}".format(nype))
+
+    npe = nxpe * nype
+    if info:
+        print("nxpe = %d, nype = %d, npe = %d\n" % (nxpe, nype, npe))
+        if npe < nfiles:
+            print("WARNING: More files than expected (" + str(npe) + ")")
+        elif npe > nfiles:
+            print("WARNING: Some files missing. Expected " + str(npe))
+
+    if xguards:
+        nx = nxpe * mxsub + 2*mxg
+    else:
+        nx = nxpe * mxsub
 
     if yguards:
         ny = mysub * nype + 2*myg
@@ -207,7 +225,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
 
     def check_range(r, low, up, name="range"):
         r2 = r
-        if r != None:
+        if r is not None:
             try:
                 n = len(r2)
             except:
@@ -219,12 +237,16 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
             else:
                 if len(r2) == 1:
                     r2 = [r2,r2]
+                if r2[0] < 0 and low >= 0:
+                    r2[0]+=(up-low+1)
+                if r2[1] < 0 and low >= 0:
+                    r2[1]+=(up-low+1)
                 if r2[0] < low:
                     r2[0] = low
                 if r2[0] > up:
                     r2[0] = up
-                if r2[1] < 0:
-                    r2[1] = 0
+                if r2[1] < low:
+                    r2[1] = low
                 if r2[1] > up:
                     r2[1] = up
                 if r2[0] > r2[1]:
@@ -237,7 +259,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
 
     xind = check_range(xind, 0, nx-1, "xind")
     yind = check_range(yind, 0, ny-1, "yind")
-    zind = check_range(zind, 0, mz-2, "zind")
+    zind = check_range(zind, 0, nz-1, "zind")
     tind = check_range(tind, 0, nt-1, "tind")
 
     xsize = xind[1] - xind[0] + 1
@@ -356,7 +378,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
 
         if not inrange:
             continue # Don't need this file
-        
+
         filename = os.path.join(path, prefix+"." + str(i) + suffix)
         if info:
             sys.stdout.write("\rReading from " + filename + ": [" + \
@@ -391,11 +413,6 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
             d = f.read(varname, ranges=[xmin, xmax+1,
                                         ymin, ymax+1])
             data[(xgmin-xind[0]):(xgmin-xind[0]+nx_loc), (ygmin-yind[0]):(ygmin-yind[0]+ny_loc)] = d
-        elif ndims == 1:
-            if dimens[0] == 't':
-                # t
-                d = f.read(varname, ranges=[tind[0],tind[1]+1])
-                data[:] = d
 
         f.close()
 

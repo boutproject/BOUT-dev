@@ -5,15 +5,11 @@
 #include "mathematica.h"
 #include <bout/constants.hxx>
 
-const Field3D solution_f(BoutReal t);
 BoutReal MS_f(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z);
 BoutReal dxMS_f(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z);
-const Field3D source_f(BoutReal t);
 
-const Field3D solution_g(BoutReal t);
 BoutReal MS_g(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z);
 BoutReal dxMS_g(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z);
-const Field3D source_g(BoutReal t);
 
 BoutReal Lx, Ly, Lz; // Size of the domain
 
@@ -26,14 +22,17 @@ const Field3D HLL(const Field3D &f, const Field3D &u, BoutReal SL, BoutReal SR) 
   // First-order accurate
   Field3D result;
   result.allocate();
+  
+  Coordinates *coord = mesh->coordinates();
+  
   for(int i=mesh->xstart;i<=mesh->xend;i++)
     for(int j=mesh->ystart; j<=mesh->yend; j++)
-      for(int k=0;k<mesh->ngz-1;k++) {
+      for(int k=0;k<mesh->LocalNz;k++) {
           
         BoutReal fp = (SR*f(i,j,k) - SL*f(i+1,j,k) + SL*SR*(u(i+1,j,k) - u(i,j,k)) ) / (SR - SL);
           BoutReal fm = (SR*f(i-1,j,k) - SL*f(i,j,k) + SL*SR*(u(i,j,k) - u(i-1,j,k)) ) / (SR - SL);
           
-          result(i,j,k) = (fm - fp) / mesh->dx(i,j);
+          result(i,j,k) = (fm - fp) / coord->dx(i,j);
         }
   return result;
 }
@@ -42,9 +41,19 @@ class Wave1D : public PhysicsModel {
 private:
   Field3D f, g; // Evolving variables
   Field3D E_f, E_g; // Error vectors
+
+  Coordinates *coord;
   
+  const Field3D solution_f(BoutReal t);
+  const Field3D source_f(BoutReal t);
+  
+  const Field3D solution_g(BoutReal t);
+  const Field3D source_g(BoutReal t);
 protected:
   int init(bool restarting) {
+    // Coordinate system
+    coord = mesh->coordinates();
+    
     // Get the options
     Options *meshoptions = Options::getRoot()->getSection("mesh");
     
@@ -53,26 +62,26 @@ protected:
     
     /*this assumes equidistant grid*/
     int nguard = mesh->xstart;
-    mesh->dx = Lx/(mesh->GlobalNx - 2*nguard);
-    mesh->dy = Ly/(mesh->GlobalNy - 2*nguard);
+    coord->dx = Lx/(mesh->GlobalNx - 2*nguard);
+    coord->dy = Ly/(mesh->GlobalNy - 2*nguard);
     
     SAVE_ONCE2(Lx,Ly);
     
     //set mesh
-    mesh->g11 = 1.0;
-    mesh->g22 = 1.0;
-    mesh->g33 = 1.0;
-    mesh->g12 = 0.0;
-    mesh->g13 = 0.0;
-    mesh->g23 = 0.0;
+    coord->g11 = 1.0;
+    coord->g22 = 1.0;
+    coord->g33 = 1.0;
+    coord->g12 = 0.0;
+    coord->g13 = 0.0;
+    coord->g23 = 0.0;
     
-    mesh->g_11 = 1.0;
-    mesh->g_22 = 1.0;
-    mesh->g_33 = 1.0;
-    mesh->g_12 = 0.0;
-    mesh->g_13 = 0.0;
-    mesh->g_23 = 0.0;
-    mesh->geometry();
+    coord->g_11 = 1.0;
+    coord->g_22 = 1.0;
+    coord->g_33 = 1.0;
+    coord->g_12 = 0.0;
+    coord->g_13 = 0.0;
+    coord->g_23 = 0.0;
+    coord->geometry();
 
     g.setLocation(CELL_XLOW); // g staggered to the left of f
     
@@ -91,18 +100,18 @@ protected:
     if(mesh->StaggerGrids) {
       for (int xi = mesh->xstart; xi < mesh->xend +1; xi++){
 	for (int yj = mesh->ystart; yj < mesh->yend + 1; yj++){
-	  for (int zk = 0; zk < mesh->ngz-1; zk++) {
-	    f(xi, yj, zk) = MS_f(0.,mesh->GlobalX(xi),mesh->GlobalY(yj),mesh->dz*zk);
-	    g(xi, yj, zk) = MS_g(0.,0.5*(mesh->GlobalX(xi)+mesh->GlobalX(xi-1)),mesh->GlobalY(yj),mesh->dz*zk);
+	  for (int zk = 0; zk < mesh->LocalNz; zk++) {
+	    f(xi, yj, zk) = MS_f(0.,mesh->GlobalX(xi),mesh->GlobalY(yj),coord->dz*zk);
+	    g(xi, yj, zk) = MS_g(0.,0.5*(mesh->GlobalX(xi)+mesh->GlobalX(xi-1)),mesh->GlobalY(yj),coord->dz*zk);
 	  }
 	}
       }
     }else {
       for (int xi = mesh->xstart; xi < mesh->xend +1; xi++){
 	for (int yj = mesh->ystart; yj < mesh->yend + 1; yj++){
-	  for (int zk = 0; zk < mesh->ngz-1; zk++) {
-	    f(xi, yj, zk) = MS_f(0.,mesh->GlobalX(xi),mesh->GlobalY(yj),mesh->dz*zk);
-	    g(xi, yj, zk) = MS_g(0.,mesh->GlobalX(xi),mesh->GlobalY(yj),mesh->dz*zk);
+	  for (int zk = 0; zk < mesh->LocalNz; zk++) {
+	    f(xi, yj, zk) = MS_f(0.,mesh->GlobalX(xi),mesh->GlobalY(yj),coord->dz*zk);
+	    g(xi, yj, zk) = MS_g(0.,mesh->GlobalX(xi),mesh->GlobalY(yj),coord->dz*zk);
 	  }
 	}
       }
@@ -126,8 +135,8 @@ protected:
     //ddt(g) = HLL(-f, g, -1.0, 1.0);
 
     // Central differencing
-    ddt(f) = DDX(g, CELL_CENTRE);// + 20*SQ(mesh->dx)*D2DX2(f);
-    ddt(g) = DDX(f, CELL_XLOW);// + 20*SQ(mesh->dx)*D2DX2(g);
+    ddt(f) = DDX(g, CELL_CENTRE);// + 20*SQ(coord->dx)*D2DX2(f);
+    ddt(g) = DDX(f, CELL_XLOW);// + 20*SQ(coord->dx)*D2DX2(g);
     
     //add MMS source term
     ddt(f) += source_f(t);
@@ -147,12 +156,12 @@ protected:
     E_g = 0.;
     for (int xi = mesh->xstart; xi < mesh->xend + 1; xi++){
       for (int yj = mesh->ystart ; yj < mesh->yend + 1; yj++){
-        for (int zk = 0; zk < mesh->ngz-1 ; zk++) {
+        for (int zk = 0; zk < mesh->LocalNz ; zk++) {
           
-          E_f[xi][yj][zk] = f[xi][yj][zk] - Sf[xi][yj][zk];
-          E_g[xi][yj][zk] = g[xi][yj][zk] - Sg[xi][yj][zk];
+          E_f(xi,yj,zk) = f(xi,yj,zk) - Sf(xi,yj,zk);
+          E_g(xi,yj,zk) = g(xi,yj,zk) - Sg(xi,yj,zk);
           output.write("Error at %d,%d,%d = %e, %e",
-                       xi, yj, zk, E_f[xi][yj][zk], E_g[xi][yj][zk]);
+                       xi, yj, zk, E_f(xi,yj,zk), E_g(xi,yj,zk));
         }
       }
     }
@@ -179,19 +188,19 @@ BoutReal dxMS_f(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z) {
 }
 
 //Manufactured solution
-const Field3D solution_f(BoutReal t) {
+const Field3D Wave1D::solution_f(BoutReal t) {
   Field3D S;
   S.allocate();
   
-  int bx = (mesh->ngx - (mesh->xend - mesh->xstart + 1)) / 2;
-  int by = (mesh->ngy - (mesh->yend - mesh->ystart + 1)) / 2;
+  int bx = (mesh->LocalNx - (mesh->xend - mesh->xstart + 1)) / 2;
+  int by = (mesh->LocalNy - (mesh->yend - mesh->ystart + 1)) / 2;
 
   for (int xi = mesh->xstart - bx; xi < mesh->xend + bx + 1; xi++){
     for (int yj = mesh->ystart - by; yj < mesh->yend + by + 1; yj++){
       BoutReal x = mesh->GlobalX(xi);
       BoutReal y = mesh->GlobalY(yj);//GlobalY not fixed yet
-      for (int zk = 0; zk < mesh->ngz-1; zk++) {
-        BoutReal z = mesh->dz*zk;
+      for (int zk = 0; zk < mesh->LocalNz; zk++) {
+        BoutReal z = coord->dz*zk;
         S(xi, yj, zk) = MS_f(t,x,y,z);
       }
     }
@@ -199,7 +208,7 @@ const Field3D solution_f(BoutReal t) {
   return S;
 }
 
-const Field3D source_f(BoutReal t) {
+const Field3D Wave1D::source_f(BoutReal t) {
   BoutReal x,y,z;
   Field3D result;
   result.allocate();
@@ -208,11 +217,11 @@ const Field3D source_f(BoutReal t) {
 
   for(xi=mesh->xstart;xi<mesh->xend+1;xi++)
     for(yj=mesh->ystart;yj < mesh->yend+1;yj++){
-      for(zk=0;zk<mesh->ngz-1;zk++){
+      for(zk=0;zk<mesh->LocalNz;zk++){
         x = mesh->GlobalX(xi)*Lx;
         y = mesh->GlobalY(yj)*Ly;
-        z = zk*mesh->dz;
-        result[xi][yj][zk] = -0.8*x*Cos(7*t)*Cos(2.0*Power(x,2)) - 2.0*Sin(10*t)*Sin(5.0*Power(x,2)) - 0.7;
+        z = zk*coord->dz;
+        result(xi,yj,zk) = -0.8*x*Cos(7*t)*Cos(2.0*Power(x,2)) - 2.0*Sin(10*t)*Sin(5.0*Power(x,2)) - 0.7;
       }
     }
   return result;
@@ -236,14 +245,14 @@ BoutReal dxMS_g(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z) {
 }
 
 //Manufactured solution
-const Field3D solution_g(BoutReal t) {
+const Field3D Wave1D::solution_g(BoutReal t) {
   Field3D S;
   S.allocate();
   
   S.setLocation(CELL_XLOW);
   
-  int bx = (mesh->ngx - (mesh->xend - mesh->xstart + 1)) / 2;
-  int by = (mesh->ngy - (mesh->yend - mesh->ystart + 1)) / 2;
+  int bx = (mesh->LocalNx - (mesh->xend - mesh->xstart + 1)) / 2;
+  int by = (mesh->LocalNy - (mesh->yend - mesh->ystart + 1)) / 2;
 
   for (int xi = mesh->xstart - bx; xi < mesh->xend + bx + 1; xi++){
     for (int yj = mesh->ystart - by; yj < mesh->yend + by + 1; yj++){
@@ -252,8 +261,8 @@ const Field3D solution_g(BoutReal t) {
 	x = 0.5*(mesh->GlobalX(xi-1) + mesh->GlobalX(xi));
       }
       BoutReal y = mesh->GlobalY(yj);//GlobalY not fixed yet
-      for (int zk = 0; zk < mesh->ngz-1; zk++) {
-        BoutReal z = mesh->dz*zk;
+      for (int zk = 0; zk < mesh->LocalNz; zk++) {
+        BoutReal z = coord->dz*zk;
         S(xi, yj, zk) = MS_g(t,x,y,z);
       }
     }
@@ -261,7 +270,7 @@ const Field3D solution_g(BoutReal t) {
   return S;
 }
 
-const Field3D source_g(BoutReal t) {
+const Field3D Wave1D::source_g(BoutReal t) {
   BoutReal x,y,z;
   Field3D result;
   result.allocate();
@@ -272,15 +281,15 @@ const Field3D source_g(BoutReal t) {
 
   for(xi=mesh->xstart;xi<mesh->xend+1;xi++)
     for(yj=mesh->ystart;yj < mesh->yend+1;yj++){
-      for(zk=0;zk<mesh->ngz-1;zk++){
+      for(zk=0;zk<mesh->LocalNz;zk++){
 	if(mesh->StaggerGrids) {
 	  x = 0.5*(mesh->GlobalX(xi-1)+mesh->GlobalX(xi))*Lx;
 	}else {
 	  x = mesh->GlobalX(xi)*Lx;
 	}
         y = mesh->GlobalY(yj)*Ly;
-        z = zk*mesh->dz;
-        result[xi][yj][zk] = -2.0*x*Cos(10*t)*Cos(5.0*Power(x,2)) - 1.4*Sin(7*t)*Sin(2.0*Power(x,2)) - 0.9;
+        z = zk*coord->dz;
+        result(xi,yj,zk) = -2.0*x*Cos(10*t)*Cos(5.0*Power(x,2)) - 1.4*Sin(7*t)*Sin(2.0*Power(x,2)) - 0.9;
       }
     }
   return result;

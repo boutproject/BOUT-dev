@@ -76,16 +76,16 @@ typedef struct snes_info {
 
 class PetscSolver : public Solver {
  public:
-  PetscSolver(Options *opts = NULL);
+  PetscSolver(Options *opts = nullptr);
   ~PetscSolver();
 
   // Can be called from physics initialisation to supply callbacks
   void setPrecon(PhysicsPrecon f) {prefunc = f;}
   void setJacobian(Jacobian j) {jacfunc = j; }
 
-  int init(bool restarting, int NOUT, BoutReal TIMESTEP);
+  int init(int NOUT, BoutReal TIMESTEP) override;
 
-  int run();
+  int run() override;
 
   // These functions used internally (but need to be public)
 
