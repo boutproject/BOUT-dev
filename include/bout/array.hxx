@@ -336,7 +336,7 @@ private:
    * Returns a pointer to an ArrayData object with no
    * references. This is either from the store, or newly allocated
    */
-#pragma omp critical store
+#pragma omp critical(store)
   ArrayData* get(int len) {
     std::vector<ArrayData* >& st = store()[len];
     if(st.empty()) {
@@ -351,7 +351,7 @@ private:
    * Release an ArrayData object, reducing its reference count by one. 
    * If no more references, then put back into the store.
    */
-#pragma omp critical store
+#pragma omp critical(store)
   void release(ArrayData *d) {
     if (!d)
       return;
