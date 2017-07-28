@@ -928,7 +928,7 @@ void Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op) {
   }
 }
 
-void Solver::load_vars(BoutReal *udata) {
+void Solver::load_vars(const BoutReal *udata) {
   // Make sure data is allocated
   for(const auto& f : f2d) 
     f.var->allocate();
@@ -937,7 +937,8 @@ void Solver::load_vars(BoutReal *udata) {
     f.var->setLocation(f.location);
   }
 
-  loop_vars(udata, LOAD_VARS);
+  // Note: loop_vars doesn't modify udata if using LOAD_VARS
+  loop_vars(const_cast<BoutReal*>(udata), LOAD_VARS);
 
   // Mark each vector as either co- or contra-variant
 
@@ -947,7 +948,7 @@ void Solver::load_vars(BoutReal *udata) {
     v.var->covariant = v.covariant;
 }
 
-void Solver::load_derivs(BoutReal *udata) {
+void Solver::load_derivs(const BoutReal *udata) {
   // Make sure data is allocated
   for(const auto& f : f2d) 
     f.F_var->allocate();
@@ -956,7 +957,8 @@ void Solver::load_derivs(BoutReal *udata) {
     f.F_var->setLocation(f.location);
   }
 
-  loop_vars(udata, LOAD_DERIVS);
+  // Note: loop_vars doesn't modify udata if using LOAD_DERIVS
+  loop_vars(const_cast<BoutReal*>(udata), LOAD_DERIVS);
 
   // Mark each vector as either co- or contra-variant
 

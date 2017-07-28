@@ -359,8 +359,8 @@ protected:
   int run_precon(BoutReal t, BoutReal gamma, BoutReal delta);
   
   // Loading data from BOUT++ to/from solver
-  void load_vars(BoutReal *udata);
-  void load_derivs(BoutReal *udata);
+  void load_vars(const BoutReal *udata);
+  void load_derivs(const BoutReal *udata);
   void save_vars(BoutReal *udata);
   void save_derivs(BoutReal *dudata);
   void set_id(BoutReal *udata);
