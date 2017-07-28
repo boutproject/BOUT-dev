@@ -1996,12 +1996,9 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
 
     int ncz = mesh->LocalNz;
     
-    static dcomplex *cv = (dcomplex*) NULL;
+    ASSERT1(ncz % 2 == 0); // Must be a power of 2
+    Array<dcomplex> cv(ncz/2 + 1);
     
-    // Serial, so can have a single static array
-    if(cv == (dcomplex*) NULL)
-      cv = new dcomplex[ncz/2 + 1]; //Never freed
-
     int xs = mesh->xstart;
     int xe = mesh->xend;
     int ys = mesh->ystart;
@@ -2022,7 +2019,7 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
     for(int jx=xs;jx<=xe;jx++) {
       for(int jy=ys;jy<=ye;jy++) {
           
-	rfft(f(jx,jy), ncz, cv); // Forward FFT
+	rfft(f(jx,jy), ncz, cv.begin()); // Forward FFT
 	
 	for(int jz=0;jz<=ncz/2;jz++) {
 	  BoutReal kwave=jz*2.0*PI/ncz; // wave number is 1/[rad]
@@ -2032,7 +2029,7 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
 	    cv[jz] *= exp(0.5*Im * (shift * kwave));
 	}
 
-	irfft(cv, ncz, result(jx,jy)); // Reverse FFT
+	irfft(cv.begin(), ncz, result(jx,jy)); // Reverse FFT
       }
     }
 

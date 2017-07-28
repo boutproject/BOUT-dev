@@ -305,15 +305,7 @@ bool tridag(const BoutReal *a, const BoutReal *b, const BoutReal *c, const BoutR
   int j;  
   
   BoutReal bet;
-  static BoutReal *gam;
-  static int len = 0;
-  
-  if(n > len) {
-    if(len > 0)
-      delete [] gam;
-    gam = new BoutReal[n]; //Never freed
-    len = n;
-  }
+  Array<BoutReal> gam(n);
   
   if(b[0] == 0.0) {
     output.write("Tridag: Rewrite equations\n");
@@ -342,21 +334,10 @@ bool tridag(const BoutReal *a, const BoutReal *b, const BoutReal *c, const BoutR
 
 /// Solve a cyclic tridiagonal matrix
 void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal *x, int n) {
-  if(n <= 2)
+  if (n <= 2)
     throw BoutException("ERROR: n too small in cyclic_tridag(BoutReal)");
   
-  static int len = 0;
-  static BoutReal *u, *z;
-  
-  if(n > len) {
-    if(len > 0) {
-      delete[] u;
-      delete[] z;
-    }
-    u = new BoutReal[n]; //Never freed
-    z = new BoutReal[n]; //Never freed
-    len = n;
-  }
+  Array<BoutReal> u(n), z(n);
   
   BoutReal gamma = -b[0];
   
@@ -461,8 +442,7 @@ void cbanbks(dcomplex **a, unsigned long n, unsigned int m1, unsigned int m2,
 
 void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b) {
   static dcomplex **al;
-  static unsigned long *indx;
-  static int an = 0, am1 = 0; //.allocated sizes
+  static int an = 0, am1 = 0; // Allocated sizes
   dcomplex d;
   
   if(an < n) {
@@ -471,7 +451,6 @@ void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b) {
       delete[] indx;
     }
     al = matrix<dcomplex>(n, m1); //Never freed
-    indx = new unsigned long[n]; //Never freed
     an = n;
     am1 = m1;
   }
@@ -483,11 +462,13 @@ void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b) {
     am1 = m1;
   }
 
+  Array<unsigned long> indx(n);
+  
   // LU decompose matrix
-  cbandec(a, n, m1, m2, al, indx, &d);
+  cbandec(a, n, m1, m2, al, indx.begin(), &d);
 
   // Solve
-  cbanbks(a, n, m1, m2, al, indx, b);
+  cbanbks(a, n, m1, m2, al, indx.begin(), b);
 }
 
 #endif // LAPACK
@@ -496,21 +477,10 @@ void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b) {
 
 /// Solve a cyclic tridiagonal matrix
 void cyclic_tridag(dcomplex *a, dcomplex *b, dcomplex *c, dcomplex *r, dcomplex *x, int n) {
-  if(n <= 2)
+  if (n <= 2)
     throw BoutException("n too small in cyclic_tridag(dcomplex)");
   
-  static int len = 0;
-  static dcomplex *u, *z;
-  
-  if(n > len) {
-    if(len > 0) {
-      delete[] u;
-      delete[] z;
-    }
-    u = new dcomplex[n]; //Never freed
-    z = new dcomplex[n]; //Never freed
-    len = n;
-  }
+  Array<dcomplex> u(n), z(n);
   
   dcomplex gamma = -b[0];
   
@@ -532,7 +502,7 @@ void cyclic_tridag(dcomplex *a, dcomplex *b, dcomplex *c, dcomplex *r, dcomplex 
     u[i] = 0.;
   
   // Solve Az = u
-  if(tridag(a, b, c, u, z, n))
+  if(tridag(a, b, c, u.begin(), z.begin(), n))
     throw BoutException("Second tridag call failed in cyclic_tridag(dcomplex)\n");
   
   dcomplex fact = (x[0] + a[0]*x[n-1]/gamma) / // v.x / (1 + v.z)
