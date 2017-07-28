@@ -1262,11 +1262,11 @@ void IMEXBDF2::shuffleState(){
 PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
   implicit_curtime = curtime;
   implicit_gamma = gamma;
-
+  
   // Set initial guess at the solution
   BoutReal *xdata;
   int ierr;
-  ierr = VecGetArray(snes_x,&xdata);CHKERRQ(ierr);
+  ierr = VecGetArray(snes_x, &xdata); CHKERRQ(ierr);
 
   switch(predictor) {
   case 0: {
@@ -1338,20 +1338,33 @@ PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
   }
     
   // Put the result into u
+#if PETSC_VERSION_GE(3, 4, 0)
+  const BoutReal *xread;
+  ierr = VecGetArrayRead(snes_x,&xread);CHKERRQ(ierr); // Read-only
+  for (int i=0;i<nlocal;i++)
+    u[i] = xread[i];
+  ierr = VecRestoreArrayRead(snes_x,&xread);CHKERRQ(ierr);
+#else
   ierr = VecGetArray(snes_x,&xdata);CHKERRQ(ierr);
-
-  for(int i=0;i<nlocal;i++)
+  for (int i=0;i<nlocal;i++)
     u[i] = xdata[i];
   ierr = VecRestoreArray(snes_x,&xdata);CHKERRQ(ierr);
+#endif
+
 }
 
 // f = (x - gamma*G(x)) - rhs
 PetscErrorCode IMEXBDF2::snes_function(Vec x, Vec f, bool linear) {
-  BoutReal *xdata, *fdata;
   int ierr;
 
   // Get data from PETSc into BOUT++ fields
-  ierr = VecGetArray(x,&xdata);CHKERRQ(ierr);
+#if PETSC_VERSION_GE(3,4,0)
+  const BoutReal *xdata;
+  ierr = VecGetArrayRead(x,&xdata); CHKERRQ(ierr);
+#else
+  BoutReal *xdata;
+  ierr = VecGetArray(x,&xdata); CHKERRQ(ierr);
+#endif
 
   loadVars(xdata);
 
@@ -1359,6 +1372,7 @@ PetscErrorCode IMEXBDF2::snes_function(Vec x, Vec f, bool linear) {
   run_diffusive(implicit_curtime, linear);
 
   // Copy derivatives back
+  BoutReal *fdata;
   ierr = VecGetArray(f,&fdata);CHKERRQ(ierr);
   saveDerivs(fdata);
 
@@ -1382,7 +1396,11 @@ PetscErrorCode IMEXBDF2::snes_function(Vec x, Vec f, bool linear) {
 
   // Restore data arrays to PETSc
   ierr = VecRestoreArray(f,&fdata);CHKERRQ(ierr);
+#if PETSC_VERSION_GE(3,4,0)
+  ierr = VecRestoreArrayRead(x,&xdata);CHKERRQ(ierr);
+#else
   ierr = VecRestoreArray(x,&xdata);CHKERRQ(ierr);
+#endif
 
   return 0;
 }
@@ -1401,17 +1419,31 @@ PetscErrorCode IMEXBDF2::precon(Vec x, Vec f) {
   // Get data from PETSc into BOUT++ fields
   Vec solution;
   SNESGetSolution(snes, &solution);
+
+#if PETSC_VERSION_GE(3,4,0)
+  const BoutReal *soldata;
+  ierr = VecGetArrayRead(x,&soldata);CHKERRQ(ierr);
+  load_vars(soldata);
+  ierr = VecRestoreArrayRead(solution,&soldata);CHKERRQ(ierr);
+
+  // Load vector to be inverted into ddt() variables
+  const BoutReal *xdata;
+  ierr = VecGetArrayRead(x,&xdata);CHKERRQ(ierr);
+  load_derivs(xdata);
+  ierr = VecRestoreArrayRead(x,&xdata);CHKERRQ(ierr);
+#else 
   BoutReal *soldata;
   ierr = VecGetArray(x,&soldata);CHKERRQ(ierr);
   load_vars(soldata);
   ierr = VecRestoreArray(solution,&soldata);CHKERRQ(ierr);
-
+  
   // Load vector to be inverted into ddt() variables
   BoutReal *xdata;
   ierr = VecGetArray(x,&xdata);CHKERRQ(ierr);
   load_derivs(xdata);
   ierr = VecRestoreArray(x,&xdata);CHKERRQ(ierr);
-
+#endif
+  
   // Run the preconditioner
   run_precon(implicit_curtime, implicit_gamma, 0.0);
 
@@ -1581,7 +1613,7 @@ private:
 /*!
  * Copy data from array into fields
  */
-void IMEXBDF2::loadVars(BoutReal *u) {
+void IMEXBDF2::loadVars(const BoutReal *u) {
   //loopVars<LoadVarOp>(u);
   load_vars(u);
 }

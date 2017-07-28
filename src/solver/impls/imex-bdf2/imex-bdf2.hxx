@@ -185,7 +185,7 @@ class IMEXBDF2 : public Solver {
   void saveVars(BoutReal *u);
 
   /// Load variables from input vector u into BOUT++ fields
-  void loadVars(BoutReal *u);
+  void loadVars(const BoutReal *u);
 
   /// Save time derivatives from ddt() fields into
   /// a preallocated array \p u.
