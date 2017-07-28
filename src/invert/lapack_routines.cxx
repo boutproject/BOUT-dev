@@ -62,7 +62,7 @@ int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcompl
   
   // Lapack routines overwrite their inputs, so need to copy
   // allocate memory
-  Array<dcomplex> dl(n), d(n), du(n), x(n);
+  Array<fcmplx> dl(n), d(n), du(n), x(n);
 
   for (int i = 0; i < n; i++) {
     // Diagonal
@@ -224,6 +224,12 @@ void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal 
  * Timing for 260 points (s): NR: 5.698204e-05, LAPACK: 4.410744e-05
  */
 void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b) {
+  int nrhs = 1;
+  int kl = m1;
+  int ku = m2;
+  int ldab = 2 * kl + ku + 1;
+  int ldb = n;
+  
   Array<fcmplx> AB(ldab * n);
   Array<int> ipiv(n);
   Array<fcmplx> x(n);
@@ -233,13 +239,7 @@ void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b) {
     x[i].r = b[i].real();
     x[i].i = b[i].imag();
   }
-
-  int nrhs = 1;
-  int kl = m1;
-  int ku = m2;
-  int ldab = 2 * kl + ku + 1;
-  int ldb = n;
-
+  
   // Put matrix elements into AB(ldab, N) (FORTRAN -> loops over ldab fastest)
   // A is organised into rows, but AB is in columns. First kl not set
   for (int j = 0; j < n; j++) {

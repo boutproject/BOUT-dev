@@ -1667,9 +1667,9 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
       if (mesh->freeboundary_yup)
         ye = mesh->LocalNy-1;
       #pragma omp for
-      for(int jx=xs;jx<=xe;jx++) {
-        for(int jy=ys;jy<=ye;jy++) {
-          rfft(f(jx, jy), ncz, cv); // Forward FFT
+      for (int jx=xs;jx<=xe;jx++) {
+        for (int jy=ys;jy<=ye;jy++) {
+          rfft(f(jx, jy), ncz, cv.begin()); // Forward FFT
           
         for(int jz=0;jz<=ncz/2;jz++) {
             BoutReal kwave=jz*2.0*PI/ncz; // wave number is 1/[rad]
@@ -1681,7 +1681,7 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
             cv[jz] *= exp(Im * (shift * kwave));
         }
           
-        irfft(cv, ncz, result(jx,jy)); // Reverse FFT
+        irfft(cv.begin(), ncz, result(jx,jy)); // Reverse FFT
       }
     }
     }
