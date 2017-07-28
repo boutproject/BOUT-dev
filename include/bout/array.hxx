@@ -2,7 +2,7 @@
  * Handle arrays of data
  * 
  * Provides an interface to create, iterate over and release
- * arrays of templated tyoes.
+ * arrays of templated types.
  *
  * Each type and array size has an object store, so when
  * arrays are released they are put into a store. Rather
@@ -71,6 +71,7 @@ public:
    */
   Array(int len) {
     ptr = get(len);
+#pragma omp atomic
     ptr->refs++;
   }
   
@@ -86,6 +87,7 @@ public:
    */
   Array(const Array &other) {
     ptr = other.ptr;
+#pragma omp atomic
     ptr->refs++;
   }
 
@@ -98,6 +100,7 @@ public:
 
     // Add reference
     ptr = other.ptr;
+#pragma omp atomic
     ptr->refs++;
 
     // Release the old data
@@ -333,6 +336,7 @@ private:
    * Returns a pointer to an ArrayData object with no
    * references. This is either from the store, or newly allocated
    */
+#pragma omp critical store
   ArrayData* get(int len) {
     std::vector<ArrayData* >& st = store()[len];
     if(st.empty()) {
@@ -342,11 +346,12 @@ private:
     st.pop_back();
     return p;
   }
-
+  
   /*!
    * Release an ArrayData object, reducing its reference count by one. 
    * If no more references, then put back into the store.
    */
+#pragma omp critical store
   void release(ArrayData *d) {
     if (!d)
       return;
