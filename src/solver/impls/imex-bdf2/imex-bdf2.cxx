@@ -772,8 +772,8 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
   /////////////////////////////////////////////////////
   // Set tolerances
   BoutReal atol, rtol; // Tolerances for SNES solver
-  options->get("atol", atol, 1e-16);
-  options->get("rtol", rtol, 1e-10);
+  options->get("atol", atol, 1e-12);
+  options->get("rtol", rtol, 1e-5);
   int max_nonlinear_it; // Maximum nonlinear (SNES) iterations
   options->get("max_nonlinear_it", max_nonlinear_it, 5);
   SNESSetTolerances(*snesIn,atol,rtol,PETSC_DEFAULT,max_nonlinear_it,PETSC_DEFAULT);

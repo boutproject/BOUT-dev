@@ -20,35 +20,25 @@ can be made faster, and the problem more "stiff".
 Running with CVODE, treating both convective and diffusive parts together:
 
     $ ./test-drift
-
-    1.000e+02        556              556       1.81e+00    62.0   29.4    3.3    0.3    5.0
-    2.000e+02        253              253       8.30e-01    61.8   29.3    3.2    0.8    4.9
-    3.000e+02        366              366       1.17e+00    62.1   29.3    3.3    0.5    4.9
+    
+    1.000e+02        467              467       5.40e-01    50.9   38.5    2.1    0.5    8.0
+    2.000e+02        159              159       1.91e-01    49.2   37.3    2.0    1.4   10.2
+    3.000e+02         99               99       1.22e-01    47.8   36.1    2.0    2.1   12.0
 
 and with IMEXBDF2 (adaptive timestep):
 
     $ ./test-drift solver:type=imexbdf2 solver:maxl=50
+    
+    1.000e+02          2                7       1.55e-02    20.0   13.2    0.9   16.1   49.8
+    2.000e+02          2               18       2.36e-02    31.7   19.1    1.2   10.7   37.3
+    3.000e+02          2               25       2.88e-02    35.5   21.1    1.3    8.6   33.4
 
 
-    1.000e+02          5              310       1.28e+00    39.9   14.9    1.9    0.5   42.8
-    2.000e+02         11             1690       4.43e+00    42.3   15.7    2.1    0.1   39.7
-    3.000e+02          8              272       6.92e-01    42.4   16.0    2.1    0.9   38.6
+Things to try:
 
-Increasing the maximum number of linear iterations to 100:
+1. Turning off adaptive timestepping: solver:adaptive=false
+2. Modifying maximum linear iterations (solver:maxl) and nonlinear iterations (max_nonlinear_it)
 
-    $ ./test-drift solver:type=imexbdf2 solver:maxl=100
-
-    1.000e+02          2               64       2.54e-01    41.8   15.6    2.1    2.5   38.1
-    2.000e+02          2               57       2.24e-01    42.3   15.9    2.1    2.8   36.9
-    3.000e+02          2               53       2.08e-01    42.3   15.9    2.1    3.1   36.6
-   
-Without adaptive timestep:
-
-    $ ./test-drift solver:type=imexbdf2 solver:maxl=100 solver:adaptive=false
-
-    1.000e+02          2               64       2.53e-01    42.0   15.7    2.0    2.7   37.6
-    2.000e+02          2               57       2.23e-01    42.4   15.9    2.0    3.1   36.5
-    3.000e+02          2               53       2.08e-01    42.4   15.9    2.1    3.3   36.3
 
 
 
