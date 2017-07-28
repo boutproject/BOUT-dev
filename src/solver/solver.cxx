@@ -50,7 +50,7 @@ char*** Solver::pargv = 0;
  **************************************************************************/
 
 Solver::Solver(Options *opts) : options(opts), model(0), prefunc(0) {
-  if(options == NULL)
+  if(options == nullptr)
     options = Options::getRoot()->getSection("solver");
 
   // Set flags to defaults
@@ -62,35 +62,51 @@ Solver::Solver(Options *opts) : options(opts), model(0), prefunc(0) {
   rhs_ncalls = 0;
   rhs_ncalls_e = 0;
   rhs_ncalls_i = 0;
-  // Restart directory
-  if(options->isSet("restartdir")) {
-    // Solver-specific restart directory
-    options->get("restartdir", restartdir, "data");
-  }else {
-    // Use the root data directory
-    Options::getRoot()->get("datadir", restartdir, "data");
-  }
-  
-  // Restart option
-  options->get("enablerestart", enablerestart, true);
-  if(enablerestart) {
-    Options::getRoot()->get("restart", restarting, false);
-  }else
-    restarting = false;
-
-  // Set up restart options
-  restart = Datafile(Options::getRoot()->getSection("restart"));
   
   // Split operator
   split_operator = false;
   max_dt = -1.0;
-
+  
+  // Set simulation time and iteration count
+  // This may be modified by restart
+  simtime = 0.0; iteration = 0;
+  
   // Output monitor
   options->get("monitor_timestep", monitor_timestep, false);
   
   // Method of Manufactured Solutions (MMS)
   options->get("mms", mms, false);
   options->get("mms_initialise", mms_initialise, mms);
+}
+
+/**************************************************************************
+ * Destructor
+ **************************************************************************/
+Solver::~Solver(){
+  //Ensure all MMS_err fields allocated here are destroyed etc.
+  for(const auto& f : f3d) {
+    if(f.MMS_err) {
+      delete f.MMS_err;
+    }
+  }
+
+  for(const auto& f : f2d) {
+    if(f.MMS_err) {
+      delete f.MMS_err;
+    }
+  }
+
+  for(const auto& f : v3d) {
+    if(f.MMS_err) {
+      delete f.MMS_err;
+    }
+  }
+
+  for(const auto& f : v2d) {
+    if(f.MMS_err) {
+      delete f.MMS_err;
+    }
+  }
 }
 
 /**************************************************************************
@@ -104,8 +120,8 @@ void Solver::setModel(PhysicsModel *m) {
   if(initialised)
     throw BoutException("Solver already initialised");
   
-  if(m->initialise(this, restarting))
-    throw BoutException("Couldn't initialise physics model");
+  // Initialise them model, which specifies which variables to evolve
+  m->initialise(this);
   
   // Check if the model is split operator
   split_operator = m->splitOperator();
@@ -118,7 +134,7 @@ void Solver::setModel(PhysicsModel *m) {
  **************************************************************************/
 
 void Solver::add(Field2D &v, const char* name) {
-  int msg_point = msg_stack.push("Adding 2D field: Solver::add(%s)", name);
+  TRACE("Adding 2D field: Solver::add(%s)", name);
   
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Solver", name);
@@ -159,6 +175,8 @@ void Solver::add(Field2D &v, const char* name) {
   if(mms) {
     // Allocate storage for error variable
     d.MMS_err = new Field2D(0.0);
+  } else {
+    d.MMS_err = nullptr;
   }
   
   // Check if the boundary regions should be evolved
@@ -170,15 +188,12 @@ void Solver::add(Field2D &v, const char* name) {
   v.applyBoundary(true);
 
   f2d.push_back(d);
-
-  msg_stack.pop(msg_point);
 }
 
 void Solver::add(Field3D &v, const char* name) {
+  TRACE("Adding 3D field: Solver::add(%s)", name);
 
-#ifdef CHECK
-  int msg_point = msg_stack.push("Adding 3D field: Solver::add(%s)", name);
-  
+#if CHECK > 0  
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Solver", name);
 #endif
@@ -220,6 +235,8 @@ void Solver::add(Field3D &v, const char* name) {
   if(mms) {
     d.MMS_err = new Field3D();
     (*d.MMS_err) = 0.0;
+  } else {
+    d.MMS_err = nullptr;
   }
   
   // Check if the boundary regions should be evolved
@@ -232,15 +249,10 @@ void Solver::add(Field3D &v, const char* name) {
   v.setLocation(d.location); // Restore location if changed
   
   f3d.push_back(d);
-              
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 }
 
 void Solver::add(Vector2D &v, const char* name) {
-
-  int msg_point = msg_stack.push("Adding 2D vector: Solver::add(%s)", name);
+  TRACE("Adding 2D vector: Solver::add(%s)", name);
   
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Solver", name);
@@ -278,13 +290,10 @@ void Solver::add(Vector2D &v, const char* name) {
   
   /// Make sure initial profile obeys boundary conditions
   v.applyBoundary(true);
-
-  msg_stack.pop(msg_point);
 }
 
 void Solver::add(Vector3D &v, const char* name) {
-
-  int msg_point = msg_stack.push("Adding 3D vector: Solver::add(%s)", name);
+  TRACE("Adding 3D vector: Solver::add(%s)", name);
   
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Solver", name);
@@ -318,8 +327,6 @@ void Solver::add(Vector3D &v, const char* name) {
   }
 
   v.applyBoundary(true);
-
-  msg_stack.pop(msg_point);
 }
 
 /**************************************************************************
@@ -327,10 +334,9 @@ void Solver::add(Vector3D &v, const char* name) {
  **************************************************************************/
 
 void Solver::constraint(Field2D &v, Field2D &C_v, const char* name) {
+  TRACE("Constrain 2D scalar: Solver::constraint(%s)", name);
 
-#ifdef CHECK
-  int msg_point = msg_stack.push("Constrain 2D scalar: Solver::constraint(%s)", name);
-  
+#if CHECK > 0  
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Solver", name);
 #endif
@@ -352,17 +358,12 @@ void Solver::constraint(Field2D &v, Field2D &C_v, const char* name) {
   d.name = string(name);
 
   f2d.push_back(d);
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 }
 
 void Solver::constraint(Field3D &v, Field3D &C_v, const char* name) {
+  TRACE("Constrain 3D scalar: Solver::constraint(%s)", name);
 
-#ifdef CHECK
-  int msg_point = msg_stack.push("Constrain 3D scalar: Solver::constraint(%s)", name);
-
+#if CHECK > 0
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Solver", name);
 #endif
@@ -385,17 +386,12 @@ void Solver::constraint(Field3D &v, Field3D &C_v, const char* name) {
   d.name = string(name);
   
   f3d.push_back(d);
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 }
 
 void Solver::constraint(Vector2D &v, Vector2D &C_v, const char* name) {
+  TRACE("Constrain 2D vector: Solver::constraint(%s)", name);
 
-#ifdef CHECK
-  int msg_point = msg_stack.push("Constrain 2D vector: Solver::constraint(%s)", name);
-  
+#if CHECK > 0  
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Solver", name);
 #endif
@@ -429,17 +425,12 @@ void Solver::constraint(Vector2D &v, Vector2D &C_v, const char* name) {
     constraint(v.y, C_v.y, (d.name+"x").c_str());
     constraint(v.z, C_v.z, (d.name+"x").c_str());
   }
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 }
 
 void Solver::constraint(Vector3D &v, Vector3D &C_v, const char* name) {
+  TRACE("Constrain 3D vector: Solver::constraint(%s)", name);
 
-#ifdef CHECK
-  int msg_point = msg_stack.push("Constrain 3D vector: Solver::constraint(%s)", name);
-  
+#if CHECK > 0  
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Solver", name);
 #endif
@@ -473,10 +464,6 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, const char* name) {
     constraint(v.y, C_v.y, (d.name+"x").c_str());
     constraint(v.z, C_v.z, (d.name+"x").c_str());
   }
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 }
 
 /**************************************************************************
@@ -485,16 +472,12 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, const char* name) {
 
 int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   
-  dump_on_restart = false;
-  bool append = false;
+  Options *globaloptions = Options::getRoot(); // Default from global options
+  
   if(NOUT < 0) {
     /// Get options
-    
-    Options *globaloptions = Options::getRoot(); // Default from global options
     OPTION(globaloptions, NOUT, 1);
     OPTION(globaloptions, TIMESTEP, 1.0);
-    OPTION(globaloptions, append, false);
-    OPTION(globaloptions, dump_on_restart, !restarting || !append);
     
     // Check specific solver options, which override global options
     OPTION(options, NOUT, NOUT);
@@ -504,7 +487,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   output.write("Solver running for %d outputs with output timestep of %e\n", NOUT, TIMESTEP);
   
   // Initialise
-  if(init(restarting, NOUT, TIMESTEP)) {
+  if(init(NOUT, TIMESTEP)) {
     throw BoutException("Failed to initialise solver-> Aborting\n");
   }
   
@@ -516,6 +499,12 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   
   Timer timer("run"); // Start timer
   
+  bool restart;
+  OPTION(globaloptions, restart, false);
+  bool append;
+  OPTION(globaloptions, append, false);
+  bool dump_on_restart;
+  OPTION(globaloptions, dump_on_restart, !restart || !append);
   if ( dump_on_restart ) {
     /// Write initial state as time-point 0
     
@@ -553,12 +542,6 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   }catch(BoutException &e) {
     output << "Error encountered in solver run\n";
     output << e.what() << endl;
-    
-    if(enablerestart) {
-      // Write restart to a different file
-      restart.write("%s/BOUT.failed.%s", restartdir.c_str(), restartext.c_str());
-    }
-    
     throw e;
   }
 
@@ -570,7 +553,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
  * Initialisation
  **************************************************************************/
 
-int Solver::init(bool restarting, int nout, BoutReal tstep) {
+int Solver::init(int nout, BoutReal tstep) {
   
   TRACE("Solver::init()");
 
@@ -582,121 +565,29 @@ int Solver::init(bool restarting, int nout, BoutReal tstep) {
   MPI_Comm_size(BoutComm::get(), &NPES);
   MPI_Comm_rank(BoutComm::get(), &MYPE);
   
-  if(enablerestart) {
-    // Set up restart file
-    
-    options->get("archive", archive_restart, -1);
-
-    if(archive_restart > 0) {
-      output.write("Archiving restart files every %d iterations\n",
-                   archive_restart);
-    }
-    
-    /// Get restart file extension
-    string dump_ext, restart_ext;
-    
-    options->get("dump_format", dump_ext, "nc");
-    options->get("restart_format", restart_ext, dump_ext);
-    restartext = string(restart_ext);
-  
-    /// Add basic variables to the restart file
-    restart.add(simtime,  "tt",    0);
-    restart.add(iteration, "hist_hi", 0);
-    
-    restart.add(NPES, "NPES", 0);
-    restart.add(mesh->NXPE, "NXPE", 0);
-
-    /// Add variables to the restart and dump files.
-    /// NOTE: Since vector components are already in the field arrays,
-    ///       only loop over scalars, not vectors
-    for(const auto& f : f2d) {
-      // Add to restart file (not appending)
-      restart.add(*(f.var), f.name.c_str(), 0);
-      
-      /// NOTE: Initial perturbations have already been set in add()
-      
-      /// Make sure boundary condition is satisfied
-      //f.var->applyBoundary();
-      /// NOTE: boundary conditions on the initial profiles have also been set in add()
-    }  
-    for(const auto& f : f3d) {
-      // Add to restart file (not appending)
-      restart.add(*(f.var), f.name.c_str(), 0);
-      
-      /// Make sure boundary condition is satisfied
-      //f.var->applyBoundary();
-      /// NOTE: boundary conditions on the initial profiles have also been set in add()
-    }
-  }
-  
-  if(restarting) {
-    /// Load state from the restart file
-    
-    // Copy processor numbers for comparison after. Very useful for checking
-    // that the restart file is for the correct number of processors etc.
-    int tmp_NP = NPES;
-    int tmp_NX = mesh->NXPE;
-    
-    TRACE("Loading restart file");
-    
-    /// Load restart file
-    if(!restart.openr("%s/BOUT.restart.%s", restartdir.c_str(), restartext.c_str()))
-      throw BoutException("Error: Could not open restart file\n");
-    if(!restart.read())
-      throw BoutException("Error: Could not read restart file\n");
-    restart.close();
-
-    if(NPES == 0) {
-      // Old restart file
-      output.write("WARNING: Cannot verify processor numbers\n");
-      NPES = tmp_NP;
-      mesh->NXPE = tmp_NX;
-    }else {
-      // Check the processor numbers match
-      if(NPES != tmp_NP) {
-	output.write("ERROR: Number of processors (%d) doesn't match restart file number (%d)\n",
-		     tmp_NP, NPES);
-	return(1);
-      }
-      if(mesh->NXPE != tmp_NX) {
-	output.write("ERROR: Number of X processors (%d) doesn't match restart file number (%d)\n",
-		     tmp_NX, mesh->NXPE);
-	return(1);
-      }
-
-      output.write("Restarting at iteration %d, simulation time %e\n", iteration, simtime);
-    }
-    
-  }else {
-    // Not restarting
-    simtime = 0.0; iteration = 0;
-  }
-  
-  if(enablerestart) {
-    /// Open the restart file for writing
-    if(!restart.openw("%s/BOUT.restart.%s", restartdir.c_str(), restartext.c_str()))
-      throw BoutException("Error: Could not open restart file for writing\n");
-  }
-  
   /// Mark as initialised. No more variables can be added
   initialised = true;
 
   return 0;
 }
 
-void Solver::outputVars(Datafile &outputfile) {
+void Solver::outputVars(Datafile &outputfile, bool save_repeat) {
+  /// Add basic variables to the file
+  outputfile.addOnce(simtime,  "tt");
+  outputfile.addOnce(iteration, "hist_hi");
+
   // Add 2D and 3D evolving fields to output file
   for(const auto& f : f2d) {
     // Add to dump file (appending)
-    outputfile.add(*(f.var), f.name.c_str(), 1);
+    outputfile.add(*(f.var), f.name.c_str(), save_repeat);
   }  
   for(const auto& f : f3d) {
     // Add to dump file (appending)
-    outputfile.add(*(f.var), f.name.c_str(), 1);
+    outputfile.add(*(f.var), f.name.c_str(), save_repeat);
     
     if(mms) {
       // Add an error variable
-      dump.add(*(f.MMS_err), (string("E_")+f.name).c_str(), 1);
+      outputfile.add(*(f.MMS_err), (string("E_")+f.name).c_str(), save_repeat);
     }
   }
 }
@@ -720,15 +611,6 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
     calculate_mms_error(simtime);
   }
   
-  if( enablerestart ) {
-    /// Write the restart file
-    restart.write();
-    
-    if((archive_restart > 0) && (iteration % archive_restart == 0)) {
-      restart.write("%s/BOUT.restart_%04d.%s", restartdir.c_str(), iteration, restartext.c_str());
-    }
-  }
-  
   try {
     // Call physics model monitor
     if(model) {
@@ -744,13 +626,6 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
         throw BoutException("Monitor signalled to quit");
     }
   } catch (BoutException &e) {
-
-    // User signalled to quit
-    if (enablerestart) {
-      // Write restart to a different file
-      restart.write("%s/BOUT.final.%s", restartdir.c_str(), restartext.c_str());
-    }
-
     output.write("Monitor signalled to quit\n");
     throw e;
   }
@@ -793,9 +668,10 @@ int Solver::call_timestep_monitors(BoutReal simtime, BoutReal lastdt) {
   return 0;
 }
 
-void Solver::setRestartDir(const string &dir) {
-  restartdir = dir;
-}
+ void Solver::addToRestart(BoutReal &var, const string &name) {
+   if(model)
+     model->addToRestart(var, name);
+ }
 
 /**************************************************************************
  * Useful routines (protected)
@@ -1380,7 +1256,7 @@ void Solver::pre_rhs(BoutReal t) {
 }
 
 void Solver::post_rhs(BoutReal t) {
-#ifdef CHECK
+#if CHECK > 0
   for(const auto& f : f3d) {
     if(!f.F_var->isAllocated())
       throw BoutException("Time derivative for '%s' not set", f.name.c_str());
@@ -1419,13 +1295,13 @@ void Solver::post_rhs(BoutReal t) {
       f.var->applyTDerivBoundary();
   }
 #if CHECK > 2
-  msg_stack.push("Solver checking time derivatives");
-  for(const auto& f : f3d) {
-    msg_stack.push("Variable: %s", f.name.c_str());
-    checkData(*f.F_var);
-    msg_stack.pop();
+  {
+    TRACE("Solver checking time derivatives");
+    for(const auto& f : f3d) {
+      TRACE("Variable: %s", f.name.c_str());
+      checkData(*f.F_var);
+    }
   }
-  msg_stack.pop();
 #endif
 }
 

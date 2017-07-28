@@ -4,6 +4,7 @@
 test-io
 test-field
 test-fieldfactory
+test-restarting
 test-laplace
 test-cyclic
 test-invpar
@@ -13,10 +14,13 @@ test-delp2
 test-minmax
 test-vec
 test-griddata
+!test-fieldgroup
 !test-initial
 MMS/diffusion
 MMS/wave-1d
 MMS/wave-1d-y
+test-subdir
+test-options
 # More complex tests
 drift-instability
 interchange-instability

@@ -86,6 +86,8 @@ class Datafile {
   bool enabled;  // Enable / Disable writing
   bool init_missing; // Initialise missing variables?
   bool shiftOutput; //Do we want to write out in shifted space?
+  int flushFrequencyCounter; //Counter used in determining when next openclose required
+  int flushFrequency; //How many write calls do we want between openclose
 
   std::unique_ptr<DataFormat> file;
   size_t filenamelen;
@@ -121,7 +123,12 @@ class Datafile {
   bool write_f2d(const string &name, Field2D *f, bool save_repeat);
   bool write_f3d(const string &name, Field3D *f, bool save_repeat);
 
-  bool varAdded(const string &name); // Check if a variable has already been added
+  /// Check if a variable has already been added
+  bool varAdded(const string &name);
+
+  /// Get the pointer to the variable, nullptr if not added
+  /// This is used to check if the same variable is being added
+  void* varPtr(const string &name);
 };
 
 /// Write this variable once to the grid file

@@ -1,0 +1,5 @@
+#!/bin/sh
+
+make || exit
+
+./subdirs

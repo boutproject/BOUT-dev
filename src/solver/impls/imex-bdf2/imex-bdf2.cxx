@@ -16,14 +16,14 @@
 #include "petscsnes.h"
 #include "petscmat.h"
 
-IMEXBDF2::IMEXBDF2(Options *opt) : Solver(opt), u(0) {
+IMEXBDF2::IMEXBDF2(Options *opt) : Solver(opt), u(nullptr) {
 
   has_constraints = true; ///< This solver can handle constraints
   
 }
 
 IMEXBDF2::~IMEXBDF2() {
-  if(u) {
+  if(u != nullptr) {
     delete[] u;
     for(int i=0;i<uV.size();i++){
       delete[] uV[i];
@@ -31,9 +31,6 @@ IMEXBDF2::~IMEXBDF2() {
     for(int i=0;i<fV.size();i++){
       delete[] fV[i];
     }
-    // for(int i=0;i<gV.size();i++){
-    //   delete[] gV[i];
-    // }
 
     delete[] rhs;
 
@@ -101,12 +98,12 @@ static PetscErrorCode imexbdf2PCapply(PC pc,Vec x,Vec y) {
  * Initialisation routine. Called once before solve.
  *
  */
-int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
+int IMEXBDF2::init(int nout, BoutReal tstep) {
 
   TRACE("Initialising IMEX-BDF2 solver");
 
   /// Call the generic initialisation first
-  if(Solver::init(restarting, nout, tstep))
+  if (Solver::init(nout, tstep))
     return 1;
 
   output << "\n\tIMEX-BDF2 time-integration solver\n";

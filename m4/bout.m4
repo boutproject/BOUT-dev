@@ -71,6 +71,11 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
 ])
 
 
+dnl define the macro to check for header files
+dnl first  argument is the name of the header file
+dnl secound  arg is to be executed if found
+dnl third  arg is to be executed if not found
+dnl forth  arg is an additional path to check
 AC_DEFUN([BOUT_ADDPATH_CHECK_HEADER],[
     AC_MSG_CHECKING([for $1])
     CPPFLAGS_save=$CPPFLAGS
@@ -136,4 +141,16 @@ $4
       ])
   AC_LANG_POP([C++])
   CXXFLAGS="$save_CXXFLAGS -D$3=$sundials_int_type"
+])
+
+AC_DEFUN([BOUT_CHECK_PRETTYFUNCTION], [
+  AC_LANG_PUSH([C++])
+  AC_MSG_CHECKING([does C++ compiler support __PRETTY_FUNCTION__])
+  AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM([[]],
+                 [[const char* name = __PRETTY_FUNCTION__;]])],
+    [AC_MSG_RESULT(yes)
+     CXXFLAGS="$CXXFLAGS -DHAS_PRETTY_FUNCTION"],
+    [AC_MSG_RESULT(no)])
+  AC_LANG_POP([C++])
 ])

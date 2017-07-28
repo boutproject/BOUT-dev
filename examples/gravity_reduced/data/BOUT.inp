@@ -13,11 +13,9 @@
 NOUT = 200        # number of time-steps
 TIMESTEP = 1e-1   # time between outputs
 
-ShiftXderivs = false # use shifted radial derivatives?
 TwistShift = false   # use twist-shift condition?
 
-MZ = 33     # number of points in z direction (2^n + 1)
-
+MZ = 32     # number of points in z direction (2^n)
 
 
 ZPERIOD = 1
@@ -117,18 +115,6 @@ phi_flags = 0  # inversion flags for phi
 
 [All]
 scale = 0.0 # default size of initial perturbations
-
-# form of initial profile:
-# 0 - constant
-# 1 - Gaussian
-# 2 - Sinusoidal
-# 3 - Mix of mode numbers (like original BOUT)
-
-xs_opt = 0
-ys_opt = 0
-zs_opt = 2
-
-zs_mode = 4 # toroidal mode number
 
 # boundary conditions
 # -------------------

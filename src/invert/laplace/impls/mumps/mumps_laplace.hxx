@@ -134,7 +134,7 @@ private:
   Options *opts;              // Laplace Section Options Object
   bool fourth_order;
 
-  #ifdef CHECK
+  #if CHECK > 0
     int implemented_flags;
     int implemented_boundary_flags;
   #endif
