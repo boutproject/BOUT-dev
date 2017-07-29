@@ -336,14 +336,18 @@ private:
    * Returns a pointer to an ArrayData object with no
    * references. This is either from the store, or newly allocated
    */
-#pragma omp critical(store)
   ArrayData* get(int len) {
-    std::vector<ArrayData* >& st = store()[len];
-    if(st.empty()) {
-      return new ArrayData(len);
+    ArrayData *p;
+#pragma omp critical (store)
+    {
+      std::vector<ArrayData* >& st = store()[len];
+      if (!st.empty()) {
+        p = st.back();
+        st.pop_back();
+      } else {
+        p = new ArrayData(len);
+      }
     }
-    ArrayData *p = st.back();
-    st.pop_back();
     return p;
   }
   
@@ -351,18 +355,20 @@ private:
    * Release an ArrayData object, reducing its reference count by one. 
    * If no more references, then put back into the store.
    */
-#pragma omp critical(store)
   void release(ArrayData *d) {
     if (!d)
       return;
     
     // Reduce reference count, and if zero return to store
-    if (!--d->refs) {
-      if (useStore()) {
-        // Put back into store
-        store()[d->len].push_back(d);
-      } else {
-        delete d;
+#pragma omp critical (store)
+    {
+      if (!--d->refs) {
+        if (useStore()) {
+          // Put back into store
+          store()[d->len].push_back(d);
+        } else {
+          delete d;
+        }
       }
     }
   }

@@ -293,7 +293,7 @@ int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcompl
     u[j] = (r[j] - a[j] * u[j - 1]) / bet;
   }
 
-  for (j = n - 2; j >= 0; j--) {
+  for (int j = n - 2; j >= 0; j--) {
     u[j] = u[j] - gam[j + 1] * u[j + 1];
   }
 
@@ -359,7 +359,7 @@ void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal 
     u[i] = 0.;
   
   // Solve Az = u
-  if(!tridag(a, b, c, u, z, n))
+  if(!tridag(a, b, c, u.begin(), z.begin(), n))
     throw BoutException("ERROR: second tridag call failed in cyclic_tridag(BoutReal)\n");
   
   BoutReal fact = (x[0] + a[0]*x[n-1]/gamma) / // v.x / (1 + v.z)
@@ -448,7 +448,6 @@ void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b) {
   if(an < n) {
     if(an != 0) {
       free_matrix(al);
-      delete[] indx;
     }
     al = matrix<dcomplex>(n, m1); //Never freed
     an = n;
