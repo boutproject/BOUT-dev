@@ -4,7 +4,7 @@
 # settings used by the core code
 
 NOUT = 400       # number of time-steps
-TIMESTEP = 1	 # time between outputs
+TIMESTEP = 2	 # time between outputs
 
 MZ = 32     # number of points in z direction (2^n + 1)
 ZPERIOD = 5  # Number of periods
@@ -14,23 +14,23 @@ non_uniform = true
 [mesh]
 # Simple mesh for linear device
 
-nx = 68        # Number of radial grid points, including guards
-ny = 64        # Number of parallel (Y) grid points
+nx = 54        # Number of radial grid points, including guards
+ny = 32        # Number of parallel (Y) grid points
 
-Length = 1     # length of machine in meters
-Rmin = 5e-3    # minimum radius in meters
-Rmax = 5e-2    # maximum radius
+Length = 17     # length of machine in meters
+Rmin = 0.15    # minimum radius in meters
+Rmax = 0.45  # maximum radius
 
-Bxy = 0.15     # magnetic field in Tesla
+Bxy = 0.04     # magnetic field in Tesla
 
-Ni0  = 1e-3 + 1e-2*exp(-(x/0.5)^2)  # Density in units of 10^20 m^-3
+Ni0  = 5e-3 + 2e-2*exp(-(x/0.4)^2)  # Density in units of 10^20 m^-3
 Te0  = 5               # Electron temperature in eV
 Ti0  = 0.1             # Ion temperature in eV
 
-Ni_x = 1e-2            # Density normalisation in units of 10^20 m^-3
-Te_x = 2               # Electron normalisation in eV
+Ni_x = 2.5e-2            # Density normalisation in units of 10^20 m^-3
+Te_x = 5               # Electron normalisation in eV
 Ti_x = Te_x            # Ion normalisation in eV
-bmag = 0.15            # Magnetic field normalisation in Tesla
+bmag = 0.04            # Magnetic field normalisation in Tesla
 
 Bpxy = Bxy
 Btxy = 0
@@ -50,19 +50,19 @@ ixseps2 = 10000
 ##################################################
 # derivative methods
 
-[mesh:ddx]
+[ddx]
 
 first = C4    # C4 = 4th order central, C2 = 2nd order central
 second = C4
 upwind = W3   # U1 = 1st order upwind, W3 = 3rd order WENO
 
-[mesh:ddy]
+[ddy]
 
 first = C4
 second = C4
 upwind = W3
 
-[mesh:ddz]
+[ddz]
 
 first = C4
 second = C4
@@ -217,7 +217,7 @@ rho_ve2t = false
 
 scale = -1.0e-8
 
-bndry_all = dirichlet_o2
+bndry_all = neumann_o2
 
 # Section for only the Ajpar equation
 # Contains switches for terms
