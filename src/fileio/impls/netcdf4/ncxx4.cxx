@@ -72,9 +72,7 @@ Ncxx4::~Ncxx4() {
 }
 
 bool Ncxx4::openr(const char *name) {
-#ifdef CHECK
-  msg_stack.push("Ncxx4::openr");
-#endif
+  TRACE("Ncxx4::openr");
 
 #ifdef NCDF_VERBOSE
   output.write("Ncxx4:: openr(%s)\n", name); 
@@ -124,17 +122,11 @@ bool Ncxx4::openr(const char *name) {
 
   fname = copy_string(name);
 
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-
   return true;
 }
 
 bool Ncxx4::openw(const char *name, bool append) {
-#ifdef CHECK
-  msg_stack.push("Ncxx4::openw");
-#endif
+  TRACE("Ncxx4::openw");
   
 #ifdef NCDF_VERBOSE
   output.write("Ncxx4:: openw(%s, %d)\n", name, static_cast<int>(append)); 
@@ -248,10 +240,6 @@ bool Ncxx4::openw(const char *name, bool append) {
 
   fname = copy_string(name);
 
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-
   return true;
 }
 
@@ -262,32 +250,28 @@ bool Ncxx4::is_valid() {
 }
 
 void Ncxx4::close() {
+  TRACE("Ncxx4::close");
+
 #ifdef NCDF_VERBOSE
   output.write("Ncxx4:: close()\n"); 
 #endif
 
   if(dataFile == NULL)
     return;
-
-#ifdef CHECK
-  msg_stack.push("Ncxx4::close");
-#endif
   
   delete dataFile;
   dataFile = NULL;
   
   free(fname);
   fname = NULL;
-
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 }
 
 void Ncxx4::flush() {
 }
 
 const vector<int> Ncxx4::getSize(const char *name) {
+  TRACE("Ncxx4::getSize");
+
 #ifdef NCDF_VERBOSE
   output.write("Ncxx4:: getSize(%s)\n", name); 
 #endif
@@ -295,10 +279,6 @@ const vector<int> Ncxx4::getSize(const char *name) {
 
   if(!is_valid())
     return size;
-
-#ifdef CHECK
-  msg_stack.push("Ncxx4::getSize");
-#endif
 
   NcVar var;
   
@@ -314,10 +294,6 @@ const vector<int> Ncxx4::getSize(const char *name) {
   for(const auto& dim: var.getDims()) {
     size.push_back(dim.getSize());
   }
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 
   return size;
 }
@@ -341,6 +317,8 @@ bool Ncxx4::setRecord(int t) {
 }
 
 bool Ncxx4::read(int *data, const char *name, int lx, int ly, int lz) {
+  TRACE("Ncxx4::read(int)");
+
 #ifdef NCDF_VERBOSE
   output.write("Ncxx4:: read(int, %s)\n", name); 
 #endif
@@ -350,18 +328,11 @@ bool Ncxx4::read(int *data, const char *name, int lx, int ly, int lz) {
 
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
-  
-#ifdef CHECK
-  msg_stack.push("Ncxx4::read(int)");
-#endif
-  
+    
   NcVar var = dataFile->getVar(name);
   if(var.isNull()) {
 #ifdef NCDF_VERBOSE
     output.write("INFO: NetCDF variable '%s' not found\n", name);
-#endif
-#ifdef CHECK
-    msg_stack.pop();
 #endif
     return false;
   }
@@ -372,10 +343,6 @@ bool Ncxx4::read(int *data, const char *name, int lx, int ly, int lz) {
   counts[0] = lx; counts[1] = ly; counts[2] = lz;
   
   var.getVar(start, counts, data);
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 
   return true;
 }
@@ -385,6 +352,8 @@ bool Ncxx4::read(int *var, const string &name, int lx, int ly, int lz) {
 }
 
 bool Ncxx4::read(BoutReal *data, const char *name, int lx, int ly, int lz) {
+  TRACE("Ncxx4::read(BoutReal)");
+
 #ifdef NCDF_VERBOSE
   output.write("Ncxx4:: read(BoutReal, %s)\n", name); 
 #endif
@@ -393,17 +362,10 @@ bool Ncxx4::read(BoutReal *data, const char *name, int lx, int ly, int lz) {
 
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
-
-#ifdef CHECK
-  msg_stack.push("Ncxx4::read(BoutReal)");
-#endif
   
   NcVar var = dataFile->getVar(name);
   
   if(var.isNull()) {
-#ifdef CHECK
-    msg_stack.pop();
-#endif
     return false;
   }
 
@@ -414,10 +376,6 @@ bool Ncxx4::read(BoutReal *data, const char *name, int lx, int ly, int lz) {
   
   var.getVar(start, counts, data);
   
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-
   return true;
 }
 
@@ -426,6 +384,8 @@ bool Ncxx4::read(BoutReal *var, const string &name, int lx, int ly, int lz) {
 }
 
 bool Ncxx4::write(int *data, const char *name, int lx, int ly, int lz) {
+  TRACE("Ncxx4::write(int)");
+
 #ifdef NCDF_VERBOSE
   output.write("Ncxx4:: write(int, %s)\n", name);
 #endif
@@ -439,10 +399,6 @@ bool Ncxx4::write(int *data, const char *name, int lx, int ly, int lz) {
   if(lx != 0) nd = 1;
   if(ly != 0) nd = 2;
   if(lz != 0) nd = 3;
-
-#ifdef CHECK
-  msg_stack.push("Ncxx4::write(int)");
-#endif
 
   NcVar var = dataFile->getVar(name);
   if(var.isNull()) {
@@ -474,10 +430,6 @@ bool Ncxx4::write(int *data, const char *name, int lx, int ly, int lz) {
   output.write("Ncxx4:: write { Done } \n");
 #endif
 
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-
   return true;
 }
 
@@ -486,6 +438,8 @@ bool Ncxx4::write(int *var, const string &name, int lx, int ly, int lz) {
 }
 
 bool Ncxx4::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
+  TRACE("Ncxx4::write(BoutReal)");
+
 #ifdef NCDF_VERBOSE
   output.write("Ncxx4:: write(BoutReal, %s)\n", name); 
 #endif
@@ -495,10 +449,6 @@ bool Ncxx4::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
   
-#ifdef CHECK
-  msg_stack.push("Ncxx4::write(BoutReal)");
-#endif
-
   int nd = 0; // Number of dimensions
   if(lx != 0) nd = 1;
   if(ly != 0) nd = 2;
@@ -542,10 +492,6 @@ bool Ncxx4::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
   }
 
   var.putVar(start, counts, data);
-
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 
   return true;
 }
@@ -687,6 +633,8 @@ bool Ncxx4::write_rec(int *var, const string &name, int lx, int ly, int lz) {
 }
 
 bool Ncxx4::write_rec(BoutReal *data, const char *name, int lx, int ly, int lz) {
+  TRACE("Ncxx4::write_rec(BoutReal)");
+
 #ifdef NCDF_VERBOSE
   output.write("Ncxx4::write_rec(BoutReal, %s)\n", name); 
 #endif
@@ -695,10 +643,6 @@ bool Ncxx4::write_rec(BoutReal *data, const char *name, int lx, int ly, int lz) 
 
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
-
-#ifdef CHECK
-  msg_stack.push("Ncxx4::write_rec(BoutReal)");
-#endif
 
   int nd = 1; // Number of dimensions
   if(lx != 0) nd = 2;
@@ -721,9 +665,6 @@ bool Ncxx4::write_rec(BoutReal *data, const char *name, int lx, int ly, int lz) 
     if(var.isNull()) {
 #ifdef NCDF_VERBOSE
       output.write("ERROR: NetCDF Could not add variable '%s' to file '%s'\n", name, fname);
-#endif
-#ifdef CHECK
-  msg_stack.pop();
 #endif
       return false;
     }
@@ -769,10 +710,6 @@ bool Ncxx4::write_rec(BoutReal *data, const char *name, int lx, int ly, int lz) 
   
   // Increment record number
   rec_nr[name] = rec_nr[name] + 1;
-
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 
   return true;
 }

@@ -1,7 +1,7 @@
 #include <boutcomm.hxx>
 #include <bout_types.hxx>
 
-BoutComm* BoutComm::instance = 0;
+BoutComm* BoutComm::instance = nullptr;
 
 BoutComm::BoutComm() : pargc(0), pargv(0), hasBeenSet(false), comm(MPI_COMM_NULL) {
 }
@@ -62,7 +62,7 @@ int BoutComm::size() {
 }
 
 BoutComm* BoutComm::getInstance() {
-  if(instance == 0) {
+  if(instance == nullptr) {
     // Create the singleton object
     instance = new BoutComm();
   }
@@ -70,6 +70,6 @@ BoutComm* BoutComm::getInstance() {
 }
 
 void BoutComm::cleanup() {
-  delete instance;
+  if(instance != nullptr) delete instance;
   instance = 0;
 }

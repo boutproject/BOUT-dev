@@ -12,9 +12,7 @@
 
 #include <output.hxx>
 
-RKGenericSolver::RKGenericSolver(Options *options) : Solver(options) {
-  f0 = 0; // Mark as uninitialised
-
+RKGenericSolver::RKGenericSolver(Options *options) : Solver(options), f0(nullptr) {
   //Create scheme
   scheme=RKSchemeFactory::getInstance()->createRKScheme(options);
 }
@@ -22,7 +20,7 @@ RKGenericSolver::RKGenericSolver(Options *options) : Solver(options) {
 RKGenericSolver::~RKGenericSolver() {
   delete scheme;
 
-  if(f0 != 0) {
+  if(f0 != nullptr) {
     delete[] f0;
     delete[] f2;
     delete[] tmpState;
@@ -91,7 +89,7 @@ int RKGenericSolver::init(int nout, BoutReal tstep) {
 }
 
 int RKGenericSolver::run() {
-  int msg_point = msg_stack.push("RKGenericSolver::run()");
+  TRACE("RKGenericSolver::run()");
   
   for(int s=0;s<nsteps;s++) {
     BoutReal target = simtime + out_timestep;
@@ -167,8 +165,6 @@ int RKGenericSolver::run() {
     // Reset iteration and wall-time count
     rhs_ncalls = 0;
   }
-  
-  msg_stack.pop(msg_point);
   
   return 0;
 }

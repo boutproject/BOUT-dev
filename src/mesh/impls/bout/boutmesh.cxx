@@ -53,11 +53,18 @@
 //#define COMMDEBUG 1   // Uncomment to print communications debugging information
 
 BoutMesh::BoutMesh(GridDataSource *s, Options *options) : Mesh(s, options) {
-  if(options == NULL)
+  if (options == NULL) {
     options = Options::getRoot()->getSection("mesh");
-
+  }
+  
   OPTION(options, symmetricGlobalX,  true);
-  OPTION(options, symmetricGlobalY,  false);
+  if (! options->isSet("symmetricGlobalY")){
+    std::string optionfile;
+    OPTION(Options::getRoot(),optionfile,"");
+    output << "WARNING: The default of this option has changed in release 4.1.\n\
+If you want the old setting, you have to specify mesh:symmetricGlobalY=false in %s\n",optionfile.c_str();
+  }
+  OPTION(options, symmetricGlobalY,  true);
 
   comm_x = MPI_COMM_NULL;
   comm_inner = MPI_COMM_NULL;
@@ -71,6 +78,8 @@ BoutMesh::~BoutMesh() {
 
   // Delete the boundary regions
   for(const auto& bndry : boundary)
+    delete bndry;
+  for(const auto& bndry : par_boundary)
     delete bndry;
 
   if(comm_x != MPI_COMM_NULL)
@@ -86,9 +95,7 @@ BoutMesh::~BoutMesh() {
 }
 
 int BoutMesh::load() {
-#ifdef CHECK
-  int msg = msg_stack.push("BoutMesh::load()");
-#endif
+  TRACE("BoutMesh::load()");
 
   output << "Loading mesh" << endl;
 
@@ -304,7 +311,7 @@ int BoutMesh::load() {
 
     NYPE = NPES / NXPE;
 
-    output.write("\tDomain split (%d, %d) into domains (%d, %d)\n",
+    output.write("\tDomain split (NXPE=%d, NYPE=%d) into domains (localNx=%d, localNy=%d)\n",
                  NXPE, NYPE, MX / NXPE, ny / NYPE);
   }
 
@@ -440,8 +447,7 @@ int BoutMesh::load() {
   // Outer SOL regions
   if(jyseps1_2 == jyseps2_1) {
     // Single-null. All processors with same PE_XIND
-
-    msg_stack.push("Creating Outer SOL communicators for Single Null operation");
+    TRACE("Creating Outer SOL communicators for Single Null operation");
 
     for(int i=0;i<NXPE;i++) {
       proc[0] = PROC_NUM(i, 0);
@@ -464,11 +470,9 @@ int BoutMesh::load() {
       }
       MPI_Group_free(&group);
     }
-    msg_stack.pop();
   }else {
     // Double null
-
-    msg_stack.push("Creating Outer SOL communicators for Double Null operation");
+    TRACE("Creating Outer SOL communicators for Double Null operation");
 
     for(int i=0;i<NXPE;i++) {
       // Inner SOL
@@ -497,8 +501,6 @@ int BoutMesh::load() {
       }
       MPI_Group_free(&group);
     }
-
-    msg_stack.pop();
   }
 
   for(int i=0;i<NXPE;i++) {
@@ -506,12 +508,11 @@ int BoutMesh::load() {
 
     if((jyseps1_1 >= 0) || (jyseps2_2+1 < ny)) {
       // A lower PF region exists
+      TRACE("Creating lower PF communicators for xp=%d", i);
 
 #ifdef COMMDEBUG
       output << "Creating lower PF communicators for xp = " << i << endl;
 #endif
-
-      msg_stack.push("Creating lower PF communicators for xp=%d", i);
 
       if(jyseps1_1 >= 0) {
         proc[0] = PROC_NUM(i, 0);
@@ -565,17 +566,16 @@ int BoutMesh::load() {
 #ifdef COMMDEBUG
       output << "done lower PF\n";
 #endif
-      msg_stack.pop();
     }
 
     if(jyseps2_1 != jyseps1_2) {
       // Upper PF region
       // Note need to order processors so that a continuous surface is formed
+      TRACE("Creating upper PF communicators for xp=%d", i);
 
 #ifdef COMMDEBUG
       output << "Creating upper PF communicators for xp = " << i << endl;
 #endif
-      msg_stack.push("Creating upper PF communicators for xp=%d", i);
 
       proc[0] = PROC_NUM(i, YPROC(ny_inner));
       proc[1] = PROC_NUM(i, YPROC(jyseps1_2));
@@ -615,14 +615,13 @@ int BoutMesh::load() {
         MPI_Group_free(&group_tmp1);
       if(group_tmp2 != MPI_GROUP_EMPTY)
         MPI_Group_free(&group_tmp2);
-      msg_stack.pop();
 #ifdef COMMDEBUG
       output << "done upper PF\n";
 #endif
     }
 
     // Core region
-    msg_stack.push("Creating core communicators");
+    TRACE("Creating core communicators");
     proc[0] = PROC_NUM(i, YPROC(jyseps1_1+1));
     proc[1] = PROC_NUM(i, YPROC(jyseps2_1));
 #ifdef COMMDEBUG
@@ -657,8 +656,6 @@ int BoutMesh::load() {
     if(group_tmp2 != MPI_GROUP_EMPTY)
       MPI_Group_free(&group_tmp2);
     MPI_Group_free(&group);
-
-    msg_stack.pop();
   }
 
   if(ixseps_inner == ixseps_outer) {
@@ -673,8 +670,7 @@ int BoutMesh::load() {
 
     if(ixseps_upper > ixseps_lower) {
       // middle is connected to the bottom
-
-      msg_stack.push("Creating unbalanced lower communicators");
+      TRACE("Creating unbalanced lower communicators");
 
       for(int i=0;i<NXPE;i++) {
         proc[0] = PROC_NUM(i, 0);
@@ -694,11 +690,10 @@ int BoutMesh::load() {
           MPI_Group_free(&group_tmp2);
         MPI_Group_free(&group);
       }
-      msg_stack.pop();
     }else {
       // middle is connected to the top
+      TRACE("Creating unbalanced upper communicators");
 
-      msg_stack.push("Creating unbalanced upper communicators");
       for(int i=0;i<NXPE;i++) {
         proc[0] = PROC_NUM(i, YPROC(ny_inner));
         proc[1] = PROC_NUM(i, YPROC(jyseps2_2));
@@ -717,7 +712,6 @@ int BoutMesh::load() {
           MPI_Group_free(&group_tmp2);
         MPI_Group_free(&group);
       }
-      msg_stack.pop();
     }
   }
   MPI_Group_free(&group_world);
@@ -776,10 +770,6 @@ int BoutMesh::load() {
   }
 
   output.write("\tdone\n");
-
-#ifdef CHECK
-  msg_stack.pop(msg);
-#endif
 
   return 0;
 }
@@ -1144,7 +1134,7 @@ int BoutMesh::wait(comm_handle handle) {
     }
   }
 
-#ifdef CHECK
+#if CHECK > 0
   // Keeping track of whether communications have been done
   for(const auto& var : ch->var_list)
     var->doneComms();
@@ -2026,24 +2016,29 @@ int BoutMesh::pack_data(const vector<FieldData *> &var_list, int xge, int xlt, i
 
   int len = 0;
 
-  for (int jx = xge; jx != xlt; jx++) {
-    /// Loop over variables
-    for (const auto &var : var_list) {
-      if (var->is3D()) {
-        // 3D variable
-        for (int jy = yge; jy < ylt; jy++) {
-          for (int jz = 0; jz < LocalNz; jz++, len++) {
-            buffer[len] = (*dynamic_cast<Field3D*>(var))(jx, jy, jz);
-          }
-        }
-      } else {
-        // 2D variable
-        for (int jy = yge; jy < ylt; jy++, len++) {
-          buffer[len] = (*dynamic_cast<Field2D*>(var))(jx, jy);
-        }
+  /// Loop over variables
+  for (const auto &var : var_list) {
+    if (var->is3D()) {
+      // 3D variable
+      ASSERT2(static_cast<Field3D*>(var)->isAllocated());
+      for (int jx = xge; jx != xlt; jx++) {        
+	for (int jy = yge; jy < ylt; jy++) {
+	  for (int jz = 0; jz < LocalNz; jz++, len++) {
+	    buffer[len] = (*static_cast<Field3D*>(var))(jx, jy, jz);
+	  }
+	}
+      }
+    } else {
+      // 2D variable
+      ASSERT2(static_cast<Field2D*>(var)->isAllocated());
+      for (int jx = xge; jx != xlt; jx++) {
+	for (int jy = yge; jy < ylt; jy++, len++) {
+	  buffer[len] = (*static_cast<Field2D*>(var))(jx, jy);
+	}
       }
     }
   }
+
 
   return (len);
 }
@@ -2053,21 +2048,23 @@ int BoutMesh::unpack_data(const vector<FieldData *> &var_list, int xge, int xlt,
 
   int len = 0;
 
-  for (int jx = xge; jx != xlt; jx++) {
-    /// Loop over variables
-    for (const auto &var : var_list) {
-      if (var->is3D()) {
-        // 3D variable
-        for (int jy = yge; jy < ylt; jy++) {
-          for (int jz = 0; jz < LocalNz; jz++, len++) {
-            (*dynamic_cast<Field3D*>(var))(jx, jy, jz) = buffer[len];
-          }
-        }
-      } else {
-        // 2D variable
-        for (int jy = yge; jy < ylt; jy++, len++) {
-          (*dynamic_cast<Field2D*>(var))(jx, jy) = buffer[len];
-        }
+  /// Loop over variables
+  for (const auto &var : var_list) {
+    if (var->is3D()) {
+      // 3D variable
+      for (int jx = xge; jx != xlt; jx++) {
+	for (int jy = yge; jy < ylt; jy++) {
+	  for (int jz = 0; jz < LocalNz; jz++, len++) {
+	    (*static_cast<Field3D*>(var))(jx, jy, jz) = buffer[len];
+	  }
+	}
+      }
+    } else {
+      // 2D variable
+      for (int jx = xge; jx != xlt; jx++) {
+	for (int jy = yge; jy < ylt; jy++, len++) {
+	  (*static_cast<Field2D*>(var))(jx, jy) = buffer[len];
+	}
       }
     }
   }
@@ -2484,13 +2481,13 @@ void BoutMesh::set_ri( dcomplex * ayn, int ncy, BoutReal * ayn_Real, BoutReal * 
 const Field2D BoutMesh::lowPass_poloidal(const Field2D &var,int mmax)
 {
   Field2D result;
-  static BoutReal *f1d = (BoutReal *) NULL;
-  static dcomplex *aynall = (dcomplex*)NULL;
-  static BoutReal *aynall_Real = (BoutReal *) NULL;
-  static BoutReal *aynall_Imag = (BoutReal *) NULL;
-  static dcomplex *ayn = (dcomplex*) NULL;
-  static BoutReal *aynReal = (BoutReal *) NULL;
-  static BoutReal *aynImag = (BoutReal *) NULL;
+  static BoutReal *f1d = (BoutReal *) NULL; //Never freed
+  static dcomplex *aynall = (dcomplex*)NULL; //Never freed
+  static BoutReal *aynall_Real = (BoutReal *) NULL; //Never freed
+  static BoutReal *aynall_Imag = (BoutReal *) NULL; //Never freed
+  static dcomplex *ayn = (dcomplex*) NULL; //Never freed
+  static BoutReal *aynReal = (BoutReal *) NULL; //Never freed
+  static BoutReal *aynImag = (BoutReal *) NULL; //Never freed
 
   int ncx, ncy;
   int jx, jy;
