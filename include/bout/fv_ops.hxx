@@ -26,9 +26,39 @@ namespace FV {
    * 4th-order derivative in Y, using derivatives
    * on cell boundaries.
    *
+   * A one-sided 3rd-order derivative, given a value
+   * at a boundary is:
+   *
+   * d3f/dx3 ~= 16/5 f_b - 6 f_0 + 4 f_1 - 6/5 f_2
+   *
+   * where f_b is the value on the boundary; f_0 is the cell
+   * to the left of the boundary; f_1 to the left of f_0 and f_2
+   * to the left of f_1
+   *
+   *    f_2 | f_1 | f_0 |
+   *                   f_b
+   *
    * NB: Uses to/from FieldAligned coordinates
    */
   const Field3D D4DY4(const Field3D &d, const Field3D &f);
+
+  /*
+   * 4th-order dissipation term
+   *
+   *
+   * A one-sided 3rd-order derivative, given a value
+   * at a boundary is:
+   *
+   * d3f/dx3 ~= 16/5 f_b - 6 f_0 + 4 f_1 - 6/5 f_2
+   *
+   * where f_b is the value on the boundary; f_0 is the cell
+   * to the left of the boundary; f_1 to the left of f_0 and f_2
+   * to the left of f_1
+   *
+   *    f_2 | f_1 | f_0 |
+   *                   f_b
+   */
+  const Field3D D4DY4_Index(const Field3D &f, bool bndry_flux = true);
   
   /*!
    * Stencil used for Finite Volume calculations
@@ -94,63 +124,60 @@ namespace FV {
       return b;
     }
   };
+
+  /*!
+   * Monotonised Central (MC) second order slope limiter (Van Leer)
+   * 
+   * Limits the slope based on taking the slope with 
+   * the minimum absolute value from central, 2*left and
+   * 2*right. If any of these slopes have different signs
+   * then the slope reverts to zero (i.e. 1st-order upwinding).
+   */
+  struct MC {
+    void operator()(Stencil1D &n) {
+      BoutReal slope = minmod(2. * (n.p - n.c),  // 2*right difference
+                              0.5 * (n.p - n.m), // Central difference
+                              2. * (n.c - n.m) ); // 2*left difference
+      n.L = n.c - 0.5*slope;
+      n.R = n.c + 0.5*slope;
+    }
+  private:
+    // Return zero if any signs are different
+    // otherwise return the value with the minimum magnitude
+    BoutReal minmod(BoutReal a, BoutReal b, BoutReal c) {
+      // if any of the signs are different, return zero gradient
+      if ((a * b <= 0.0) || (a * c <= 0.0)) {
+        return 0.0;
+      }
+
+      // Return the minimum absolute value
+      return SIGN(a) * BOUTMIN(fabs(a), fabs(b), fabs(c));
+    }
+  };
   
   /*!
    * Communicate fluxes between processors
    * Takes values in guard cells, and adds them to cells
    */
-  void communicateFluxes(Field3D &f) {
-    
-    // Use X=0 as temporary buffer 
-    if(mesh->xstart != 2)
-      throw BoutException("communicateFluxes: Sorry!");
-    
-    int size = mesh->LocalNy * mesh->LocalNz;
-    comm_handle xin, xout;
-    if(!mesh->firstX())
-      xin = mesh->irecvXIn(f(0,0), size, 0);
-    
-    if(!mesh->lastX())
-      xout = mesh->irecvXOut(f(mesh->LocalNx-1,0), size, 1);
-    
-    // Send X=1 values
-    if(!mesh->firstX())
-      mesh->sendXIn(f(1,0), size, 1);
-    
-    if(!mesh->lastX())
-      mesh->sendXOut(f(mesh->LocalNx-2,0), size, 0);
-    
-    // Wait
-    if(!mesh->firstX()) {
-      mesh->wait(xin);
-      // Add to cells
-      for(int y=mesh->ystart;y<=mesh->yend;y++) 
-        for(int z=0;z<mesh->LocalNz;z++) {
-          f(2,y,z) += f(0,y,z);
-        }
-    }
-    if(!mesh->lastX()) {
-      mesh->wait(xout);
-      // Add to cells
-      for(int y=mesh->ystart;y<=mesh->yend;y++) 
-        for(int z=0;z<mesh->LocalNz;z++) {
-          f(mesh->LocalNx-3,y,z) += f(mesh->LocalNx-1,y,z);
-        }
-    }
-  }
+  void communicateFluxes(Field3D &f);
   
   /*!
    * Finite volume parallel divergence
    * 
    * Preserves the sum of f*J*dx*dy*dz over the domain
    * 
-   * @param[in] f  The field being advected. This will be reconstructed at cell faces using the given method
-   * @param[in] v  The advection velocity. This will be interpolated to cell boundaries using linear interpolation
+   * @param[in] f_in  The field being advected. 
+   *                   This will be reconstructed at cell faces
+   *                   using the given CellEdges method
+   * @param[in] v_in   The advection velocity. 
+   *                   This will be interpolated to cell boundaries 
+   *                   using linear interpolation
    *
    * NB: Uses to/from FieldAligned coordinates
    */
-  template<typename CellEdges = Fromm>
-  const Field3D Div_par(const Field3D &f_in, const Field3D &v_in) {
+  template<typename CellEdges = MC>
+  const Field3D Div_par(const Field3D &f_in, const Field3D &v_in,
+                        const Field3D &a, bool fixflux=true) {
     CellEdges cellboundary;
     
     Field3D f = mesh->toFieldAligned(f_in);
@@ -164,96 +191,138 @@ namespace FV {
     // Instead calculate in guard cells to preserve fluxes
     int ys = mesh->ystart-1;
     int ye = mesh->yend+1;
-    
-    for(int i=mesh->xstart;i<=mesh->xend;i++)
-      for(int j=ys;j<=ye;j++) {
-        for(int k=0;k<mesh->LocalNz;k++) {
+
+    for (int i = mesh->xstart; i <= mesh->xend; i++) {
+
+      if (!mesh->firstY(i) || mesh->periodicY(i)) {
+        // Calculate in guard cell to get fluxes consistent between processors
+        ys = mesh->ystart - 1;
+      } else {
+        // Don't include the boundary cell. Note that this implies special
+        // handling of boundaries later
+        ys = mesh->ystart;
+      }
+
+      if (!mesh->lastY(i) || mesh->periodicY(i)) {
+        // Calculate in guard cells
+        ye = mesh->yend + 1;
+      } else {
+        // Not in boundary cells
+        ye = mesh->yend;
+      }
+
+      for (int j = ys; j <= ye; j++) {
+        // Pre-calculate factors which multiply fluxes
+
+        // For right cell boundaries
+        BoutReal common_factor = (coord->J(i, j) + coord->J(i, j + 1)) /
+          (sqrt(coord->g_22(i, j)) + sqrt(coord->g_22(i, j + 1)));
         
+        BoutReal flux_factor_rc = common_factor / (coord->dy(i, j) * coord->J(i, j));
+        BoutReal flux_factor_rp = common_factor / (coord->dy(i, j + 1) * coord->J(i, j + 1));
+
+        // For left cell boundaries
+        common_factor = (coord->J(i, j) + coord->J(i, j - 1)) /
+          (sqrt(coord->g_22(i, j)) + sqrt(coord->g_22(i, j - 1)));
+
+        BoutReal flux_factor_lc = common_factor / (coord->dy(i, j) * coord->J(i, j));
+        BoutReal flux_factor_lm = common_factor / (coord->dy(i, j - 1) * coord->J(i, j - 1));
+        
+        for (int k = 0; k < mesh->LocalNz; k++) {
+
+          ////////////////////////////////////////////
+          // Reconstruct f at the cell faces
+          // This calculates s.R and s.L for the Right and Left
+          // face values on this cell
+          
           // Reconstruct f at the cell faces
           Stencil1D s;
-          s.c  = f(i,j,  k);
-          s.m  = f(i,j-1,k);
-          s.p  = f(i,j+1,k);
-          
+          s.c = f(i, j, k);
+          s.m = f(i, j - 1, k);
+          s.p = f(i, j + 1, k);
+
           cellboundary(s); // Calculate s.R and s.L
-        
+
+          ////////////////////////////////////////////
+          // Right boundary
+
           // Calculate velocity at right boundary (y+1/2)
-          BoutReal vpar = 0.5*(v(i,j,k) + v(i,j+1,k));
-          
-          if(vpar > 0.0) {
-            // Out of this cell; use s.R
-            
-            if(mesh->lastY(i) && (j == mesh->yend) && !mesh->periodicY(i)) {
-              // Last point in domain: Use mid-point to be consistent with boundary conditions
-              s.R = 0.5*(s.c + s.p);
+          BoutReal vpar = 0.5 * (v(i, j, k) + v(i, j + 1, k));
+          BoutReal flux;
+
+          if (mesh->lastY(i) && (j == mesh->yend) && !mesh->periodicY(i)) {
+            // Last point in domain
+
+            BoutReal bndryval = 0.5 * (s.c + s.p);
+            if (fixflux) {
+              // Use mid-point to be consistent with boundary conditions
+              flux = bndryval * vpar;
+            } else {
+              // Add flux due to difference in boundary values
+              
+              flux = s.R * vpar + a(i, j, k) * (s.R - bndryval);
             }
-            BoutReal flux = s.R * vpar * (coord->J(i,j) + coord->J(i,j+1)) / (sqrt(coord->g_22(i,j))+ sqrt(coord->g_22(i,j+1)));
+          } else {
             
-            result(i,j,k)   += flux / (coord->dy(i,j)*coord->J(i,j));
-            result(i,j+1,k) -= flux / (coord->dy(i,j+1)*coord->J(i,j+1));
+            // Maximum wave speed in the two cells
+            BoutReal amax = BOUTMAX(a(i, j, k), a(i, j + 1, k));
             
+            if (vpar > amax) {
+              // Supersonic flow out of this cell
+              flux = s.R * vpar;
+            } else if (vpar < -amax) {
+              // Supersonic flow into this cell
+              flux = 0.0;
+            } else {
+              // Subsonic flow, so a mix of right and left fluxes
+              flux = s.R * 0.5 * (vpar + amax);
+            }
           }
           
+          result(i, j, k) += flux * flux_factor_rc;
+          result(i, j + 1, k) -= flux * flux_factor_rp;
+
+          ////////////////////////////////////////////
           // Calculate at left boundary
-          vpar = 0.5*(v(i,j,k) + v(i,j-1,k));
           
-          if(vpar < 0.0) {
-            // Out of this cell; use s.L
-            
-            
-            if(mesh->firstY(i) && (j == mesh->ystart) && !mesh->periodicY(i)) {
-              // First point in domain
-              s.L = 0.5*(s.c + s.m);
+          vpar = 0.5 * (v(i, j, k) + v(i, j - 1, k));
+
+          if (mesh->firstY(i) && (j == mesh->ystart) && !mesh->periodicY(i)) {
+            // First point in domain
+            BoutReal bndryval = 0.5 * (s.c + s.m);
+            if (fixflux) {
+              // Use mid-point to be consistent with boundary conditions
+              flux = bndryval * vpar;
+            } else {
+              // Add flux due to difference in boundary values
+              
+              flux = s.L * vpar - a(i, j, k) * (s.L - bndryval);
             }
-            BoutReal flux = s.L * vpar * (coord->J(i,j) + coord->J(i,j-1)) / (sqrt(coord->g_22(i,j)) + sqrt(coord->g_22(i,j-1)));
+          } else {
             
-            result(i,j,k)   -= flux / (coord->dy(i,j)*coord->J(i,j));
-            result(i,j-1,k) += flux / (coord->dy(i,j-1)*coord->J(i,j-1));
+            // Maximum wave speed in the two cells
+            BoutReal amax = BOUTMAX(a(i, j, k), a(i, j - 1, k));
+            
+            if (vpar < -amax) {
+              // Supersonic out of this cell
+              flux = s.L * vpar;
+            } else if (vpar > amax) {
+              // Supersonic into this cell
+              flux = 0.0;
+            } else {
+              flux = s.L * 0.5 * (vpar - amax);
+            }
           }
+          
+          result(i, j, k) -= flux * flux_factor_lc;
+          result(i, j - 1, k) += flux * flux_factor_lm;
           
         }
-        
       }
+    }
     return mesh->fromFieldAligned(result);
   }
   
-  /*!
-   * Finite volume parallel gradient
-   * 
-   * NB: uses mesh to/from FieldAligned
-   */ 
-  template<typename CellEdges = Fromm>
-  const Field3D Grad_par(const Field3D &f_in) {
-    
-    CellEdges cellboundary;
-    
-    Field3D f = mesh->toFieldAligned(f_in);
-
-    Coordinates *coord = mesh->coordinates();
-    
-    Field3D result = 0.0;
-    
-    int ys = mesh->ystart-1;
-    int ye = mesh->yend+1;
-    
-    for(int i=mesh->xstart;i<=mesh->xend;i++)
-      for(int j=ys;j<=ye;j++) {
-        for(int k=0;k<mesh->LocalNz;k++) {
-          
-          // Reconstruct f at the cell faces
-          Stencil1D s;
-          s.c  = f(i,j,  k);
-          s.m  = f(i,j-1,k);
-          s.p  = f(i,j+1,k);
-          
-          cellboundary(s);
-          
-          result(i,j,k) = (s.R - s.L)/(coord->dy(i,j) * sqrt(coord->g_22(i,j)));
-        }
-      }
-    return mesh->fromFieldAligned(result);
-  }
-
   /*!
    * Div ( n * v )  -- Magnetic drifts
    *
@@ -277,7 +346,7 @@ namespace FV {
       throw BoutException("Div_f_v_XPPM passed a covariant v");
     }
     
-    Field3D result = 0;
+    Field3D result = 0.0;
     
     Field3D vx = v.x;
     Field3D vz = v.z;

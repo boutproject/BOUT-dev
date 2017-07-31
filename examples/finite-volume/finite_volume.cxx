@@ -10,7 +10,7 @@ int main(int argc, char** argv) {
   
   mesh->communicate(f);
   
-  Field3D g = FV::Grad_par(f);
+  Field3D g = FV::D4DY4_Index(f);
   
   BoutFinalise();
   return 0;
