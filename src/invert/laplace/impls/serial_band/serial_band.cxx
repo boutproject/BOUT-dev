@@ -46,22 +46,36 @@ LaplaceSerialBand::LaplaceSerialBand(Options *opt) : Laplacian(opt), Acoef(0.0),
   // Allocate memory
 
   int ncz = mesh->LocalNz;
-  bk = cmatrix(mesh->LocalNx, ncz/2 + 1);
+  bk = matrix<dcomplex>(mesh->LocalNx, ncz/2 + 1);
   bk1d = new dcomplex[mesh->LocalNx];
+
+  //Initialise bk to 0 as we only visit 0<= kz <= maxmode in solve
+  for(int kz=maxmode+1; kz < ncz/2 + 1; kz++){
+    for (int ix=0; ix<mesh->LocalNx; ix++){
+      bk[ix][kz] = 0.0;
+    }
+  }
   
-  xk = cmatrix(mesh->LocalNx, ncz/2 + 1);
+  xk = matrix<dcomplex>(mesh->LocalNx, ncz/2 + 1);
   xk1d = new dcomplex[mesh->LocalNx];
+
+  //Initialise xk to 0 as we only visit 0<= kz <= maxmode in solve
+  for(int kz=maxmode+1; kz < ncz/2 + 1; kz++){
+    for (int ix=0; ix<mesh->LocalNx; ix++){
+      xk[ix][kz] = 0.0;
+    }
+  }
   
-  A = cmatrix(mesh->LocalNx, 5);
+  A = matrix<dcomplex>(mesh->LocalNx, 5);
 }
 
 LaplaceSerialBand::~LaplaceSerialBand() {
-  free_cmatrix(bk);
+  free_matrix(bk);
   delete[] bk1d;
-  free_cmatrix(xk);
+  free_matrix(xk);
   delete[] xk1d;
   
-  free_cmatrix(A);
+  free_matrix(A);
 }
 
 const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b) {
@@ -106,21 +120,19 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
     xend = mesh->LocalNx-2;
   }
 
-  for(int iz=0;iz<=ncz/2;iz++) {
+  for(int iz=0;iz<=maxmode;iz++) {
     // solve differential equation in x
     
     BoutReal coef1=0.0, coef2=0.0, coef3=0.0, coef4=0.0, 
-      coef5=0.0, coef6=0.0, kwave, flt;
+      coef5=0.0, coef6=0.0, kwave;
     ///////// PERFORM INVERSION /////////
       
     // shift freqs according to FFT convention
     kwave=iz*2.0*PI/coord->zlength(); // wave number is 1/[rad]
-      
-    if (iz>maxmode) flt=0.0; else flt=1.0;
 
     // set bk1d
     for(int ix=0;ix<mesh->LocalNx;ix++)
-      bk1d[ix] = bk[ix][iz]*flt;
+      bk1d[ix] = bk[ix][iz];
 
     // Fill in interior points
 

@@ -64,7 +64,7 @@ public:
 //   NonLocalParallel();
   ~NonLocalParallel();
   int moments_number;
-  void initialise(const BoutReal &pass_electron_charge, const BoutReal &pass_electron_mass, const BoutReal &pass_ion_mass, const BoutReal &pass_epsilon_0, const BoutReal &pass_logLambda, const bool pass_fluxes_location_is_ylow=false, const BoutReal &pass_gamma_factor=5./3.);
+  void initialise(BoutReal pass_electron_charge, BoutReal pass_electron_mass, BoutReal pass_ion_mass, BoutReal pass_epsilon_0, BoutReal pass_logLambda, const bool pass_fluxes_location_is_ylow=false, BoutReal pass_gamma_factor=5./3.);
   #ifdef CALCULATE_HEATFLUX
     Field3D electron_heat_flux;
   #endif
@@ -242,7 +242,7 @@ private:
 						 , const Field3D &viscosity_boundary_condition
 					       #endif
   );
-  #ifdef CHECK
+  #if CHECK > 0
     bool calculated_before_setting_bcs;
   #endif
 };

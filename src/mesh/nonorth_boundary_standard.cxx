@@ -2365,8 +2365,8 @@ void BoundaryZeroLaplace::apply(Field3D &f) {
   
   if(c0 == (dcomplex*) NULL) {
     // allocate memory
-    c0 = new dcomplex[ncz/2 + 1];
-    c1 = new dcomplex[ncz/2 + 1];
+    c0 = new dcomplex[ncz/2 + 1]; //Never freed
+    c1 = new dcomplex[ncz/2 + 1]; //Never freed
   }
   
   if((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
@@ -2448,9 +2448,9 @@ void BoundaryZeroLaplace2::apply(Field3D &f) {
 
   if(c0 == (dcomplex*) NULL) {
     // allocate memory
-    c0 = new dcomplex[ncz/2 + 1];
-    c1 = new dcomplex[ncz/2 + 1];
-    c2 = new dcomplex[ncz/2 + 1];
+    c0 = new dcomplex[ncz/2 + 1]; //Never freed
+    c1 = new dcomplex[ncz/2 + 1]; //Never freed
+    c2 = new dcomplex[ncz/2 + 1]; //Never freed
   }
   
   if((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
@@ -2549,9 +2549,9 @@ void BoundaryConstLaplace::apply(Field3D &f) {
   int ncz = mesh->ngz-1;
   if(c0 == (dcomplex*) NULL) {
     //allocate memory
-    c0 = new dcomplex[ncz/2 + 1];
-    c1 = new dcomplex[ncz/2 + 1];
-    c2 = new dcomplex[ncz/2 + 1];
+    c0 = new dcomplex[ncz/2 + 1]; //Never freed
+    c1 = new dcomplex[ncz/2 + 1]; //Never freed
+    c2 = new dcomplex[ncz/2 + 1]; //Never freed
   }
   
   int bx = bndry->bx;
@@ -3221,9 +3221,7 @@ void BoundaryRelax::apply(Field3D &f) {
 }
 
 void BoundaryRelax::apply_ddt(Field2D &f) {
-#ifdef CHECK
-  msg_stack.push("BoundaryRelax::apply_ddt(Field2D)");
-#endif
+  TRACE("BoundaryRelax::apply_ddt(Field2D)");
 
   // Make a copy of f
   Field2D g = f;
@@ -3244,16 +3242,10 @@ void BoundaryRelax::apply_ddt(Field2D &f) {
     */
     ddt(f)[bndry->x][bndry->y] = r * (g[bndry->x][bndry->y] - f[bndry->x][bndry->y]);
   }
-
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 }
 
 void BoundaryRelax::apply_ddt(Field3D &f) {
-#ifdef CHECK
-  msg_stack.push("BoundaryRelax::apply_ddt(Field2D)");
-#endif
+  TRACE("BoundaryRelax::apply_ddt(Field2D)");
   
   // Make a copy of f
   Field3D g = f; // NOTE: This is not very efficient... copying entire field
@@ -3272,10 +3264,6 @@ void BoundaryRelax::apply_ddt(Field3D &f) {
       */
       ddt(f)[bndry->x][bndry->y][z] = r * (g[bndry->x][bndry->y][z] - f[bndry->x][bndry->y][z]);
     }
-
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 }
 
 ///////////////////////////////////////////////////////////////
@@ -3295,12 +3283,10 @@ void BoundaryShifted::apply(Field2D &f) {
 }
 
 void BoundaryShifted::apply(Field3D &f) {
-  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
-    Field3D g = f.shiftZ(true); // Shift into orthogonal coordinates
-    op->apply(g);               // Apply the boundary condition
-    f = g.shiftZ(false);        // Shift back to field-aligned
-  }else
-    op->apply(f);
+  // ShiftXderivs removed in BOUT-v4.0
+  // Input fields are in X-Z orthogonal coordinates
+  
+  op->apply(f);
 }
 
 void BoundaryShifted::apply_ddt(Field2D &f) {
@@ -3308,18 +3294,10 @@ void BoundaryShifted::apply_ddt(Field2D &f) {
 }
 
 void BoundaryShifted::apply_ddt(Field3D &f) {
-  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
-    // Shift both the field and its time-derivative into orthogonal coordinates
-    // This is in case the boundary condition depends on both (e.g. relaxing)
-    Field3D g = f.shiftZ(true);
-    ddt(g) = ddt(f).shiftZ(true);
+  // ShiftXderivs removed in BOUT-v4.0
+  // Input fields are in X-Z orthogonal coordinates
 
-    op->apply_ddt(g);             // Apply the boundary condition
-    
-    // Shift the time-derivative back 
-    ddt(f) = ddt(g).shiftZ(false);       // Shift back to field-aligned
-  }else
-    op->apply_ddt(f);
+  op->apply_ddt(f);
 }
 
 ///////////////////////////////////////////////////////////////

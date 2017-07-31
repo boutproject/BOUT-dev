@@ -132,7 +132,7 @@ class Vector3D : public FieldData {
   // Assignment
   Vector3D & operator=(const Vector3D &rhs);
   Vector3D & operator=(const Vector2D &rhs);
-  BoutReal operator=(const BoutReal val);
+  Vector3D & operator=(BoutReal val);
   
   // Operators
   Vector3D & operator+=(const Vector3D &rhs);
@@ -142,11 +142,11 @@ class Vector3D : public FieldData {
   Vector3D & operator-=(const Vector3D &rhs);
   Vector3D & operator-=(const Vector2D &rhs);
   
-  Vector3D & operator*=(const BoutReal rhs);
+  Vector3D & operator*=(BoutReal rhs);
   Vector3D & operator*=(const Field2D &rhs);
   Vector3D & operator*=(const Field3D &rhs);
   
-  Vector3D & operator/=(const BoutReal rhs);
+  Vector3D & operator/=(BoutReal rhs);
   Vector3D & operator/=(const Field2D &rhs);
   Vector3D & operator/=(const Field3D &rhs);
 
@@ -161,11 +161,11 @@ class Vector3D : public FieldData {
   const Vector3D operator-(const Vector3D &rhs) const;
   const Vector3D operator-(const Vector2D &rhs) const;
 
-  const Vector3D operator*(const BoutReal rhs) const;
+  const Vector3D operator*(BoutReal rhs) const;
   const Vector3D operator*(const Field2D &rhs) const;
   const Vector3D operator*(const Field3D &rhs) const;
 
-  const Vector3D operator/(const BoutReal rhs) const;
+  const Vector3D operator/(BoutReal rhs) const;
   const Vector3D operator/(const Field2D &rhs) const;
   const Vector3D operator/(const Field3D &rhs) const;
 
@@ -198,24 +198,24 @@ class Vector3D : public FieldData {
   
   // FieldData virtual functions
   
-  bool isReal() const   { return true; }
-  bool is3D() const     { return true; }
-  int  byteSize() const { return 3*sizeof(BoutReal); }
-  int  BoutRealSize() const { return 3; }
-  int  getData(int jx, int jy, int jz, void *vptr) const;
-  int  getData(int jx, int jy, int jz, BoutReal *rptr) const;
-  int  setData(int jx, int jy, int jz, void *vptr);
-  int  setData(int jx, int jy, int jz, BoutReal *rptr);
+  bool isReal() const override   { return true; }
+  bool is3D() const override     { return true; }
+  int  byteSize() const override { return 3*sizeof(BoutReal); }
+  int  BoutRealSize() const override { return 3; }
+  int  getData(int jx, int jy, int jz, void *vptr) const override;
+  int  getData(int jx, int jy, int jz, BoutReal *rptr) const override;
+  int  setData(int jx, int jy, int jz, void *vptr) override;
+  int  setData(int jx, int jy, int jz, BoutReal *rptr) override;
   
-  void applyBoundary(bool init=false);
-  void applyTDerivBoundary();
+  void applyBoundary(bool init=false) override;
+  void applyTDerivBoundary() override;
  private:
   Vector3D *deriv; ///< Time-derivative, can be NULL
 };
 
 // Non-member overloaded operators
 
-const Vector3D operator*(const BoutReal lhs, const Vector3D &rhs);
+const Vector3D operator*(BoutReal lhs, const Vector3D &rhs);
 const Vector3D operator*(const Field2D &lhs, const Vector3D &rhs);
 const Vector3D operator*(const Field3D &lhs, const Vector3D &rhs);
 

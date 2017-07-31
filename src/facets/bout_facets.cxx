@@ -1,9 +1,8 @@
 /**
- * @file	BoutIfc.cpp
+ * @file	bout_facets.cxx
  *
  * @brief	Implementation of calling BOUT through FACETS
  *
- * @version	$Id: BoutIfc.cpp 1436 2010-12-23 00:34:12Z cary $
  */
 
 // std includes

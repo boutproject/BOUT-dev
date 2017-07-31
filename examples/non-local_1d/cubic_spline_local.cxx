@@ -41,7 +41,7 @@ void CubicSpline::initialise(const char &inputdirection, const bool pass_include
   if (direction == 'y'){
     
   }
-  else bout_error("CubicSpline: direction is not valid");
+  else throw BoutException("CubicSpline: direction is not valid");
   include_boundary_guard_cells = pass_include_boundary_guard_cells;
   upper_boundary_offset=pass_upper_boundary_offset;
   coeffs = new BoutReal[4];

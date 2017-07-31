@@ -84,17 +84,19 @@ class Output : private multioutbuf_init<char, std::char_traits<char> >,
   void write(const char*string, ...); ///< Write a string using C printf format
 
   void print(const char*string, ...); ///< Same as write, but only to screen
-  
+
+  /// Add an output stream. All output will be sent to all streams
   void add(std::basic_ostream<char, _Tr>& str) {
     multioutbuf_init::buf()->add(str);
   }
 
+  /// Remove an output stream
   void remove(std::basic_ostream<char, _Tr>& str) {
     multioutbuf_init::buf()->remove(str);
   }
 
   static Output *getInstance(); ///< Return pointer to instance
-  static void cleanup();
+  static void cleanup();   ///< Delete the instance
  private:
   static Output *instance; ///< Default instance of this class
   

@@ -82,7 +82,7 @@ class Vector2D : public FieldData {
    *
    * The only real use for this is setting vector to zero.
    */
-  BoutReal operator=(const BoutReal val);
+  Vector2D & operator=(BoutReal val);
 
   // operators
 
@@ -95,13 +95,13 @@ class Vector2D : public FieldData {
   Vector2D & operator-=(const Vector2D &rhs);
 
   /// Multiply all components by \p rhs
-  Vector2D & operator*=(const BoutReal rhs);
+  Vector2D & operator*=(BoutReal rhs);
 
   /// Multiply all components by \p rhs
   Vector2D & operator*=(const Field2D &rhs);
 
   /// Divide all components by \p rhs
-  Vector2D & operator/=(const BoutReal rhs);
+  Vector2D & operator/=(BoutReal rhs);
 
   /// Divide all components by \p rhs
   Vector2D & operator/=(const Field2D &rhs);
@@ -117,11 +117,11 @@ class Vector2D : public FieldData {
   const Vector2D operator-(const Vector2D &rhs) const; ///< Subtract vector \p rhs
   const Vector3D operator-(const Vector3D &rhs) const; ///< Subtract vector \p rhs
 
-  const Vector2D operator*(const BoutReal rhs) const; ///< Multiply all components by \p rhs
+  const Vector2D operator*(BoutReal rhs) const; ///< Multiply all components by \p rhs
   const Vector2D operator*(const Field2D &rhs) const; ///< Multiply all components by \p rhs
   const Vector3D operator*(const Field3D &rhs) const; ///< Multiply all components by \p rhs
 
-  const Vector2D operator/(const BoutReal rhs) const; ///< Divides all components by \p rhs
+  const Vector2D operator/(BoutReal rhs) const; ///< Divides all components by \p rhs
   const Vector2D operator/(const Field2D &rhs) const; ///< Divides all components by \p rhs
   const Vector3D operator/(const Field3D &rhs) const; ///< Divides all components by \p rhs
 
@@ -136,18 +136,18 @@ class Vector2D : public FieldData {
   
   // FieldData virtual functions
   
-  bool isReal() const   { return true; }
-  bool is3D() const     { return false; }
-  int  byteSize() const { return 3*sizeof(BoutReal); }
-  int  BoutRealSize() const { return 3; }
-  int  getData(int jx, int jy, int jz, void *vptr) const;
-  int  getData(int jx, int jy, int jz, BoutReal *rptr) const;
-  int  setData(int jx, int jy, int jz, void *vptr);
-  int  setData(int jx, int jy, int jz, BoutReal *rptr);
+  bool isReal() const override   { return true; }
+  bool is3D() const override     { return false; }
+  int  byteSize() const override { return 3*sizeof(BoutReal); }
+  int  BoutRealSize() const override { return 3; }
+  int  getData(int jx, int jy, int jz, void *vptr) const override;
+  int  getData(int jx, int jy, int jz, BoutReal *rptr) const override;
+  int  setData(int jx, int jy, int jz, void *vptr) override;
+  int  setData(int jx, int jy, int jz, BoutReal *rptr) override;
 
   /// Apply boundary condition to all fields
-  void applyBoundary(bool init=false);
-  void applyTDerivBoundary();
+  void applyBoundary(bool init=false) override;
+  void applyTDerivBoundary() override;
  private:
   
   Vector2D *deriv; ///< Time-derivative, can be NULL
@@ -155,7 +155,7 @@ class Vector2D : public FieldData {
 
 // Non-member overloaded operators
 
-const Vector2D operator*(const BoutReal lhs, const Vector2D &rhs);
+const Vector2D operator*(BoutReal lhs, const Vector2D &rhs);
 const Vector2D operator*(const Field2D &lhs, const Vector2D &rhs);
 const Vector3D operator*(const Field3D &lhs, const Vector2D &rhs);
 

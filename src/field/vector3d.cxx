@@ -147,13 +147,13 @@ Vector3D & Vector3D::operator=(const Vector2D &rhs) {
   return *this;
 }
 
-BoutReal Vector3D::operator=(const BoutReal val)
+Vector3D & Vector3D::operator=(const BoutReal val)
 {
   x = val;
   y = val;
   z = val;
   
-  return val;
+  return *this;
 }
 
 ////////////////// ADDITION //////////////////////
@@ -538,7 +538,7 @@ void Vector3D::accept(FieldVisitor &v) {
 
 int Vector3D::getData(int jx, int jy, int jz, void *vptr) const
 {
-#ifdef CHECK
+#if CHECK > 0
   // check ranges
   if((jx < 0) || (jx >= mesh->LocalNx) || (jy < 0) || (jy >= mesh->LocalNy) || (jz < 0) || (jz >= mesh->LocalNz)) {
     throw BoutException("Vector3D: getData (%d,%d,%d) out of bounds\n", jx, jy, jz);
@@ -554,7 +554,7 @@ int Vector3D::getData(int jx, int jy, int jz, void *vptr) const
 
 int Vector3D::getData(int jx, int jy, int jz, BoutReal *rptr) const
 {
-#ifdef CHECK
+#if CHECK > 0
   // check ranges
   if((jx < 0) || (jx >= mesh->LocalNx) || (jy < 0) || (jy > mesh->LocalNy) || (jz < 0) || (jz >= mesh->LocalNz)) {
     throw BoutException("Vector3D: getData (%d,%d,%d) out of bounds\n", jx, jy, jz);
@@ -570,7 +570,7 @@ int Vector3D::getData(int jx, int jy, int jz, BoutReal *rptr) const
 
 int Vector3D::setData(int jx, int jy, int jz, void *vptr)
 {
-#ifdef CHECK
+#if CHECK > 0
   // check ranges
   if((jx < 0) || (jx >= mesh->LocalNx) || (jy < 0) || (jy >= mesh->LocalNy) || (jz < 0) || (jz >= mesh->LocalNz)) {
     throw BoutException("Vector3D: setData (%d,%d,%d) out of bounds\n", jx, jy, jz);
@@ -586,7 +586,7 @@ int Vector3D::setData(int jx, int jy, int jz, void *vptr)
 
 int Vector3D::setData(int jx, int jy, int jz, BoutReal *rptr)
 {
-#ifdef CHECK
+#if CHECK > 0
   // check ranges
   if((jx < 0) || (jx >= mesh->LocalNx) || (jy < 0) || (jy >= mesh->LocalNy) || (jz < 0) || (jz >= mesh->LocalNz)) {
     throw BoutException("Vector3D: setData (%d,%d,%d) out of bounds\n", jx, jy, jz);

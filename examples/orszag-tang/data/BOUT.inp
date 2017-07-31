@@ -4,7 +4,7 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 20       # number of time-steps
+NOUT = 30       # number of time-steps
 TIMESTEP = 0.02   # time between outputs
 
 ShiftXderivs = false # use shifted radial derivatives?
@@ -27,9 +27,9 @@ upwind = U1 # order of upwinding method (1, 4, or 0 = TVD)
 
 [mesh:ddy]
 
-first = C4
-second = C4
-upwind = W3
+first = C2
+second = C2
+upwind = U1
 
 [mesh:ddz]
 

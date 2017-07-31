@@ -67,7 +67,7 @@ class FieldPerp : public Field {
    * Assignment operators
    */
   FieldPerp & operator=(const FieldPerp &rhs);
-  FieldPerp & operator=(const BoutReal rhs);
+  FieldPerp & operator=(BoutReal rhs);
   
   /*!
    * Iterators and data access
@@ -191,7 +191,7 @@ class FieldPerp : public Field {
   FieldPerp & operator+=(const FieldPerp &rhs);
   FieldPerp & operator+=(const Field3D &rhs);
   FieldPerp & operator+=(const Field2D &rhs);
-  FieldPerp & operator+=(const BoutReal &rhs);
+  FieldPerp & operator+=(BoutReal rhs);
 
   /*!
    * Subtraction, modifying in place. 
@@ -200,7 +200,7 @@ class FieldPerp : public Field {
   FieldPerp & operator-=(const FieldPerp &rhs);
   FieldPerp & operator-=(const Field3D &rhs);
   FieldPerp & operator-=(const Field2D &rhs);
-  FieldPerp & operator-=(const BoutReal &rhs);
+  FieldPerp & operator-=(BoutReal rhs);
 
   /*!
    * Multiplication, modifying in place. 
@@ -209,7 +209,7 @@ class FieldPerp : public Field {
   FieldPerp & operator*=(const FieldPerp &rhs);
   FieldPerp & operator*=(const Field3D &rhs);
   FieldPerp & operator*=(const Field2D &rhs);
-  FieldPerp & operator*=(const BoutReal &rhs);
+  FieldPerp & operator*=(BoutReal rhs);
 
   /*!
    * Division, modifying in place. 
@@ -218,7 +218,7 @@ class FieldPerp : public Field {
   FieldPerp & operator/=(const FieldPerp &rhs);
   FieldPerp & operator/=(const Field3D &rhs);
   FieldPerp & operator/=(const Field2D &rhs);
-  FieldPerp & operator/=(const BoutReal &rhs);
+  FieldPerp & operator/=(BoutReal rhs);
   
   // Stencils
 
@@ -226,6 +226,8 @@ class FieldPerp : public Field {
   void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   void setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
+
+  virtual int getNy() const override{ return 1;};
   
  private:
   int yindex; ///< The Y index at which this FieldPerp is defined
@@ -242,30 +244,30 @@ class FieldPerp : public Field {
 const FieldPerp operator+(const FieldPerp &lhs, const FieldPerp &rhs);
 const FieldPerp operator+(const FieldPerp &lhs, const Field3D &rhs);
 const FieldPerp operator+(const FieldPerp &lhs, const Field2D &rhs);
-const FieldPerp operator+(const FieldPerp &lhs, const BoutReal &rhs);
-inline const FieldPerp operator+(const BoutReal &lhs, const FieldPerp &rhs) {
+const FieldPerp operator+(const FieldPerp &lhs, BoutReal rhs);
+inline const FieldPerp operator+(BoutReal lhs, const FieldPerp &rhs) {
   return rhs + lhs;
 }
 
 const FieldPerp operator-(const FieldPerp &lhs, const FieldPerp &other);
 const FieldPerp operator-(const FieldPerp &lhs, const Field3D &other);
 const FieldPerp operator-(const FieldPerp &lhs, const Field2D &other);
-const FieldPerp operator-(const FieldPerp &lhs, const BoutReal &rhs);
-const FieldPerp operator-(const BoutReal &lhs, const FieldPerp &rhs);
+const FieldPerp operator-(const FieldPerp &lhs, BoutReal rhs);
+const FieldPerp operator-(BoutReal lhs, const FieldPerp &rhs);
 
 const FieldPerp operator*(const FieldPerp &lhs, const FieldPerp &other);
 const FieldPerp operator*(const FieldPerp &lhs, const Field3D &other);
 const FieldPerp operator*(const FieldPerp &lhs, const Field2D &other);
-const FieldPerp operator*(const FieldPerp &lhs, const BoutReal &rhs);
-inline const FieldPerp operator*(const BoutReal lhs, const FieldPerp &rhs) {
+const FieldPerp operator*(const FieldPerp &lhs, BoutReal rhs);
+inline const FieldPerp operator*(BoutReal lhs, const FieldPerp &rhs) {
   return rhs * lhs;
 }
 
 const FieldPerp operator/(const FieldPerp &lhs, const FieldPerp &other);
 const FieldPerp operator/(const FieldPerp &lhs, const Field3D &other);
 const FieldPerp operator/(const FieldPerp &lhs, const Field2D &other);
-const FieldPerp operator/(const FieldPerp &lhs, const BoutReal &rhs);
-const FieldPerp operator/(const BoutReal lhs, const FieldPerp &rhs);
+const FieldPerp operator/(const FieldPerp &lhs, BoutReal rhs);
+const FieldPerp operator/(BoutReal lhs, const FieldPerp &rhs);
   
 /*!
  * Create a unique copy of a FieldPerp, ensuring 

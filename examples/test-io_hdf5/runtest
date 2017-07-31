@@ -38,9 +38,8 @@ for nproc in [1,2,4]:
   
   print "   %d processor...." % (nproc)
   s, out = launch(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
-  f = open("run.log."+str(nproc), "w")
-  f.write(out)
-  f.close()
+  with open("run.log."+str(nproc), "w") as f:
+    f.write(out)
 
   # Collect output data
   for v in vars:

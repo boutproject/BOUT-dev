@@ -130,8 +130,8 @@ void cfft(dcomplex *cv, int length, int isign)
       inall = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * length * n_th);
       outall = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * length * n_th);
 
-      pf = new fftw_plan[n_th];
-      pb = new fftw_plan[n_th];
+      pf = new fftw_plan[n_th]; //Never freed
+      pb = new fftw_plan[n_th]; //Never freed
 
       unsigned int flags = FFTW_ESTIMATE;
       if(fft_measure)
@@ -228,10 +228,14 @@ void rfft(const BoutReal *in, int length, dcomplex *out) {
 
   // fftw call executing the fft
   fftw_execute(p);
+  
+  //Normalising factor
+  const BoutReal fac = 1.0/((double) n);
+  const int nmodes = (n/2) + 1;
 
   // Store the output in out, and normalize
-  for(int i=0;i<(n/2)+1;i++)
-    out[i] = dcomplex(fout[i][0], fout[i][1]) / ((double) n); // Normalise
+  for(int i=0;i<nmodes;i++)
+    out[i] = dcomplex(fout[i][0], fout[i][1]) * fac; // Normalise
 }
 
 void irfft(const dcomplex *in, int length, BoutReal *out) {
@@ -277,7 +281,8 @@ void irfft(const dcomplex *in, int length, BoutReal *out) {
   }
 
   // Store the real and imaginary parts in the proper way
-  for(int i=0;i<(n/2)+1;i++) {
+  const int nmodes = (n/2) + 1;
+  for(int i=0;i<nmodes;i++) {
     fin[i][0] = in[i].real();
     fin[i][1] = in[i].imag();
   }
@@ -318,7 +323,7 @@ void rfft(const BoutReal *in, int length, dcomplex *out) {
 
       finall = (double*) fftw_malloc(sizeof(double) * length * n_th);
       foutall = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (length/2 + 1) * n_th);
-      p = new fftw_plan[n_th];
+      p = new fftw_plan[n_th]; //Never freed
 
       unsigned int flags = FFTW_ESTIMATE;
       if(fft_measure)
@@ -345,8 +350,12 @@ void rfft(const BoutReal *in, int length, dcomplex *out) {
   // fftw call executing the fft
   fftw_execute(p[th_id]);
 
-  for(int i=0;i<(length/2)+1;i++)
-    out[i] = dcomplex(fout[i][0], fout[i][1]) / ((double) length); // Normalise
+  //Normalising factor
+  const BoutReal fac = 1.0 / ((double) length);
+  const int nmodes = (length/2) + 1;
+
+  for(int i=0;i<nmodes;i++)
+    out[i] = dcomplex(fout[i][0], fout[i][1]) * fac; // Normalise
 }
 
 void irfft(const dcomplex *in, int length, BoutReal *out) {
@@ -376,7 +385,7 @@ void irfft(const dcomplex *in, int length, BoutReal *out) {
       finall = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (length/2 + 1) * n_th);
       foutall = (double*) fftw_malloc(sizeof(double) * length * n_th);
 
-      p = new fftw_plan[n_th];
+      p = new fftw_plan[n_th]; //Never freed
 
       unsigned int flags = FFTW_ESTIMATE;
       if(fft_measure)
@@ -394,7 +403,9 @@ void irfft(const dcomplex *in, int length, BoutReal *out) {
   fftw_complex *fin = finall + th_id * (length/2 + 1);
   double *fout = foutall + th_id * length;
 
-  for(int i=0;i<(length/2)+1;i++) {
+  const int nmodes = (length/2) + 1;
+
+  for(int i=0;i<nmodes;i++) {
     fin[i][0] = in[i].real();
     fin[i][1] = in[i].imag();
   }

@@ -61,7 +61,9 @@ private:
    * This initialises OpenMP threads if enabled, and
    * divides iteration index ranges between threads
    */
-  void omp_init(int xs,int xe,bool end);
+#ifdef _OPENMP
+  void omp_init(bool end);
+#endif
 public:
   /*!
    * Constructor. This sets index ranges.
@@ -78,12 +80,14 @@ public:
     xend(xe),     yend(ye),     zend(ze),
     xmax(xend),   ymax(yend),   zmax(zend),
 #else
-    xmin(xstart), ymin(ys),     zmin(zs),
-    xmax(xend),   ymax(ye),     zmax(ze),
+    xmin(xs),     ymin(ys),     zmin(zs),
+    xmax(xe),     ymax(ye),     zmax(ze),
 #endif
     isEnd(false)
   {
-    omp_init(xs,xe,false);
+#ifdef _OPENMP
+    omp_init(false);
+#endif
   }
 
   /*!
@@ -105,7 +109,9 @@ public:
 #endif
     isEnd(true)
   {
-    omp_init(xs,xe,true);
+#ifdef _OPENMP
+    omp_init(true);
+#endif
     next();
   }
   
@@ -158,8 +164,17 @@ public:
    * Add an offset to the index for general stencils
    */
   const Indices offset(int dx, int dy, int dz) const {
-    int nz = zend-zstart+1;
-    return {x+dx, y+dy, ((z+dz-zstart + nz) % nz) + zstart};
+    if (dz>0){
+      int zp=z;
+      for (int j=0;j<dz;++j)
+        zp=(zp == zend ? zstart : zp+1);
+      return {x+dx, y+dy, zp };
+    } else {
+      int zm=z;
+      for (;dz!= 0;++dz)
+        zm = (zm == zstart ? zend : zm-1);
+      return {x+dx, y+dy, zm };
+    }
   }
   
   /*
@@ -212,21 +227,22 @@ public:
 private:
   DataIterator(); // Disable null constructor
 
+#ifndef _OPENMP
+  const int xstart, ystart, zstart;
+#else
   int xstart, ystart, zstart;
+#endif
 
-#ifndef _OPENMP
-  int &xmin, &ymin, &zmin;
-#else
   int xmin, ymin, zmin;
-#endif
-
-  int xend, yend, zend;
 
 #ifndef _OPENMP
-  int &xmax, &ymax, &zmax;
+  const int xend, yend, zend;
 #else
-  int xmax, ymax, zmax;
+  int xend, yend, zend;
 #endif
+
+  int xmax, ymax, zmax;
+
   const bool isEnd;
   /// Advance to the next index
   void next() {
@@ -319,9 +335,7 @@ inline int DI_spread_work(int work,int cp,int np){
   return result;
 };
 
-inline void DataIterator::omp_init(int xs, int xe,bool end){
-  xmin=xs;
-  xmax=xe;
+inline void DataIterator::omp_init(bool end){
   // In the case of OPENMP we need to calculate the range
   int threads=omp_get_num_threads();
   if (threads > 1){
@@ -347,8 +361,8 @@ inline void DataIterator::omp_init(int xs, int xe,bool end){
     zend   = zmax;
     ystart = ymin;
     yend   = ymax;
-    xstart = xs;
-    xend   = xe;
+    xstart = xmin;
+    xend   = xmax;
   }
   if (!end){
     x=xstart;
@@ -360,8 +374,6 @@ inline void DataIterator::omp_init(int xs, int xe,bool end){
     z=zend;
   }
 };
-#else
-inline void DataIterator::omp_init(int UNUSED(xs), int UNUSED(xe), bool UNUSED(end)){;}
 #endif
 
 #endif // __DATAITERATOR_H__

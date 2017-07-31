@@ -46,11 +46,25 @@ LaplaceSerialTri::LaplaceSerialTri(Options *opt) : Laplacian(opt), A(0.0), C(1.0
 
   int ncz = mesh->LocalNz;
 
-  bk = cmatrix(mesh->LocalNx, ncz/2 + 1);
+  bk = matrix<dcomplex>(mesh->LocalNx, ncz/2 + 1);
   bk1d = new dcomplex[mesh->LocalNx];
 
-  xk = cmatrix(mesh->LocalNx, ncz/2 + 1);
+  //Initialise bk to 0 as we only visit 0<= kz <= maxmode in solve
+  for(int kz=maxmode+1; kz < ncz/2 + 1; kz++){
+    for (int ix=0; ix<mesh->LocalNx; ix++){
+      bk[ix][kz] = 0.0;
+    }
+  }
+
+  xk = matrix<dcomplex>(mesh->LocalNx, ncz/2 + 1);
   xk1d = new dcomplex[mesh->LocalNx];
+
+  //Initialise xk to 0 as we only visit 0<= kz <= maxmode in solve
+  for(int kz=maxmode+1; kz < ncz/2 + 1; kz++){
+    for (int ix=0; ix<mesh->LocalNx; ix++){
+      xk[ix][kz] = 0.0;
+    }
+  }
 
   avec = new dcomplex[mesh->LocalNx];
   bvec = new dcomplex[mesh->LocalNx];
@@ -58,9 +72,9 @@ LaplaceSerialTri::LaplaceSerialTri(Options *opt) : Laplacian(opt), A(0.0), C(1.0
 }
 
 LaplaceSerialTri::~LaplaceSerialTri() {
-  free_cmatrix(bk);
+  free_matrix(bk);
   delete[] bk1d;
-  free_cmatrix(xk);
+  free_matrix(xk);
   delete[] xk1d;
 
   delete[] avec;
@@ -143,15 +157,12 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
    * Note that only the non-degenerate fourier modes are being used (i.e. the
    * offset and all the modes up to the Nyquist frequency)
    */
-  for(int kz=0;kz<=ncz/2;kz++) {
+  for(int kz=0;kz<=maxmode;kz++) {
 
     // set bk1d
-    BoutReal flt;
-    if (kz>maxmode) flt=0.0; else flt=1.0;
-
     for(int ix=0;ix<=ncx;ix++)
       // Get bk of the current fourier mode
-      bk1d[ix] = bk[ix][kz] * flt;
+      bk1d[ix] = bk[ix][kz];
 
     /* Set the matrix A used in the inversion of Ax=b
      * by calling tridagCoef and setting the BC

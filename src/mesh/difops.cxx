@@ -62,25 +62,6 @@ const Field3D Grad_par(const Field3D &var, DIFF_METHOD method, CELL_LOC outloc) 
   return mesh->coordinates()->Grad_par(var, outloc, method);
 }
 
-/*
-// Model dvar/dt = Grad_par(f) with a maximum velocity of Vmax
-const Field3D Grad_par(const Field3D &f, const Field3D &var, const Field2D &Vmax) {
-  int msg_pos = msg_stack.push("Grad_par( Field3D, Field3D, Field2D )");
-
-  Field2D sg = sqrt(mesh->coordinates()->g_22);
-  Field3D result = DDY_MUSCL(f, var, sg*Vmax)/sg;
-  
-  msg_stack.pop(msg_pos);
-  
-  return result;
-}
-
-const Field3D Grad_par(const Field3D &f, const Field3D &var, BoutReal Vmax) {
-	Field2D V = Vmax;
-	return Grad_par(f, var, V);
-}
-*/
-
 /*******************************************************************************
 * Grad_parP
 *
@@ -262,14 +243,29 @@ const Field3D Grad_par_CtoL(const Field3D &var) {
   result.allocate();
   
   Coordinates *metric = mesh->coordinates();
-  
-  // NOTE: Need to calculate one more point than centred vars
-  for(int jx=0; jx<mesh->LocalNx;jx++) {
-    for(int jy=1;jy<mesh->LocalNy;jy++) {
-      for(int jz=0;jz<mesh->LocalNz;jz++) {
-	result(jx, jy, jz) = 2.*(var(jx, jy, jz) - var.ydown()(jx, jy-1, jz)) / (metric->dy(jx, jy) * sqrt(metric->g_22(jx, jy)) + metric->dy(jx, jy-1) * sqrt(metric->g_22(jx, jy-1)));
+
+  if (var.hasYupYdown()) {
+    // NOTE: Need to calculate one more point than centred vars
+    for(int jx=0; jx<mesh->LocalNx;jx++) {
+      for(int jy=1;jy<mesh->LocalNy;jy++) {
+        for(int jz=0;jz<mesh->LocalNz;jz++) {
+          result(jx, jy, jz) = 2.*(var(jx, jy, jz) - var.ydown()(jx, jy-1, jz)) / (metric->dy(jx, jy) * sqrt(metric->g_22(jx, jy)) + metric->dy(jx, jy-1) * sqrt(metric->g_22(jx, jy-1)));
+      }
       }
     }
+  } else {
+    // No yup/ydown fields, so transform to cell centred
+    Field3D var_fa = mesh->toFieldAligned(var);
+    
+    for(int jx=0; jx<mesh->LocalNx;jx++) {
+      for(int jy=1;jy<mesh->LocalNy;jy++) {
+        for(int jz=0;jz<mesh->LocalNz;jz++) {
+          result(jx, jy, jz) = 2.*(var_fa(jx, jy, jz) - var_fa(jx, jy-1, jz)) / (metric->dy(jx, jy) * sqrt(metric->g_22(jx, jy)) + metric->dy(jx, jy-1) * sqrt(metric->g_22(jx, jy-1)));
+        }
+      }
+    }
+
+    result = mesh->fromFieldAligned(result);
   }
 
   return result;
@@ -299,17 +295,24 @@ const Field3D Vpar_Grad_par_LCtoC(const Field &v, const Field &f) {
 }
 
 const Field3D Grad_par_LtoC(const Field3D &var) {
-	Field3D result;
-	result.allocate();
+  Field3D result;
+  result.allocate();
   
   Coordinates *metric = mesh->coordinates();
-  
-  for(int jx=0; jx<mesh->LocalNx;jx++) {
-    for(int jy=0;jy<mesh->LocalNy-1;jy++) {
-      for(int jz=0;jz<mesh->LocalNz;jz++) {
-	result(jx, jy, jz) = (var.yup()(jx, jy+1, jz) - var(jx, jy, jz)) / (metric->dy(jx, jy) * sqrt(metric->g_22(jx, jy)));
-      }
+
+  if (var.hasYupYdown()) {
+    for (auto &i : result.region(RGN_NOBNDRY)) {
+      result[i] = (var.yup()[i.yp()] - var[i]) / (metric->dy[i]*sqrt(metric->g_22[i]));
     }
+  } else {
+    // No yup/ydown field, so transform to field aligned
+
+    Field3D var_fa = mesh->toFieldAligned(var);
+
+    for(auto &i : result.region(RGN_NOBNDRY)) {
+      result[i] = (var_fa[i.yp()] - var_fa[i]) / (metric->dy[i]*sqrt(metric->g_22[i]));
+    }
+    result = mesh->fromFieldAligned(result);
   }
   
   return result;
@@ -357,39 +360,28 @@ const Field3D Grad2_par2(const Field3D &f, CELL_LOC outloc) {
 * Parallel divergence of diffusive flux, K*Grad_par
 *******************************************************************************/
 
-const Field2D Div_par_K_Grad_par(BoutReal kY, Field2D &f) {
+const Field2D Div_par_K_Grad_par(BoutReal kY, const Field2D &f) {
   return kY*Grad2_par2(f);
 }
 
-const Field3D Div_par_K_Grad_par(BoutReal kY, Field3D &f) {
+const Field3D Div_par_K_Grad_par(BoutReal kY, const Field3D &f) {
   return kY*Grad2_par2(f);
 }
 
-const Field2D Div_par_K_Grad_par(Field2D &kY, Field2D &f) {
+const Field2D Div_par_K_Grad_par(const Field2D &kY, const Field2D &f) {
   return kY*Grad2_par2(f) + Div_par(kY)*Grad_par(f);
 }
 
-const Field3D Div_par_K_Grad_par(Field2D &kY, Field3D &f) {
+const Field3D Div_par_K_Grad_par(const Field2D &kY, const Field3D &f) {
   return kY*Grad2_par2(f) + Div_par(kY)*Grad_par(f);
 }
 
-const Field3D Div_par_K_Grad_par(Field3D &kY, Field2D &f) {
+const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field2D &f) {
   return kY*Grad2_par2(f) + Div_par(kY)*Grad_par(f);
 }
 
-const Field3D Div_par_K_Grad_par(Field3D &kY, Field3D &f) {
+const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field3D &f) {
   return kY*Grad2_par2(f) + Div_par(kY)*Grad_par(f);
-}
-
-/*******************************************************************************
-* Div_K_perp_Grad_perp
-* Divergence of perpendicular diffusive flux kperp*Grad_perp
-*******************************************************************************/
-
-const Field3D Div_K_perp_Grad_perp(const Field2D &UNUSED(kperp), const Field3D &UNUSED(f)) {
-  throw BoutException("Div_K_perp_Grad_per not implemented yet");
-  Field3D result = 0.0;
-  return result;
 }
 
 /*******************************************************************************
@@ -691,35 +683,39 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
     // Arakawa scheme for perpendicular flow. Here as a test
 
     result.allocate();
-    int ncz = mesh->LocalNz;
-    for(int jx=mesh->xstart;jx<=mesh->xend;jx++)
-      for(int jy=mesh->ystart;jy<=mesh->yend;jy++)
+    const int ncz = mesh->LocalNz;
+    const BoutReal partialFactor = 1.0/(12 * metric->dz);
+    for(int jx=mesh->xstart;jx<=mesh->xend;jx++){
+      for(int jy=mesh->ystart;jy<=mesh->yend;jy++){
+	const BoutReal spacingFactor = partialFactor / metric->dx(jx,jy);
 	for(int jz=0;jz<ncz;jz++) {
-	  int jzp = (jz + 1) % ncz;
-	  int jzm = (jz - 1 + ncz) % ncz;
-          
-          // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
-          BoutReal Jpp = 0.25*( (f(jx,jy,jzp) - f(jx,jy,jzm))*
-                                (g(jx+1,jy) - g(jx-1,jy)) -
-                                (f(jx+1,jy,jz) - f(jx-1,jy,jz))*
-                                (g(jx,jy) - g(jx,jy)) )
-            / (metric->dx(jx,jy) * metric->dz);
+	  const int jzp = jz+1 < ncz ? jz + 1 : 0;
+	  //Above is alternative to const int jzp = (jz + 1) % ncz;
+	  const int jzm = jz-1 >=  0 ? jz - 1 : ncz-1;
+	  //Above is alternative to const int jzmTmp = (jz - 1 + ncz) % ncz;
 
+          // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
+          BoutReal Jpp = ( (f(jx,jy,jzp) - f(jx,jy,jzm))*
+			   (g(jx+1,jy) - g(jx-1,jy)) -
+			   (f(jx+1,jy,jz) - f(jx-1,jy,jz))*
+			   (g(jx,jy) - g(jx,jy)) );
+      
           // J+x
-          BoutReal Jpx = 0.25*( g(jx+1,jy)*(f(jx+1,jy,jzp)-f(jx+1,jy,jzm)) -
-                                g(jx-1,jy)*(f(jx-1,jy,jzp)-f(jx-1,jy,jzm)) -
-                                g(jx,jy)*(f(jx+1,jy,jzp)-f(jx-1,jy,jzp)) +
-                                g(jx,jy)*(f(jx+1,jy,jzm)-f(jx-1,jy,jzm)))
-            / (metric->dx(jx,jy) * metric->dz);
+          BoutReal Jpx = ( g(jx+1,jy)*(f(jx+1,jy,jzp)-f(jx+1,jy,jzm)) -
+			   g(jx-1,jy)*(f(jx-1,jy,jzp)-f(jx-1,jy,jzm)) -
+			   g(jx,jy)*(f(jx+1,jy,jzp)-f(jx-1,jy,jzp)) +
+			   g(jx,jy)*(f(jx+1,jy,jzm)-f(jx-1,jy,jzm)));
+
           // Jx+
-          BoutReal Jxp = 0.25*( g(jx+1,jy)*(f(jx,jy,jzp)-f(jx+1,jy,jz)) -
-                                g(jx-1,jy)*(f(jx-1,jy,jz)-f(jx,jy,jzm)) -
-                                g(jx-1,jy)*(f(jx,jy,jzp)-f(jx-1,jy,jz)) +
-                                g(jx+1,jy)*(f(jx+1,jy,jz)-f(jx,jy,jzm)))
-            / (metric->dx(jx,jy) * metric->dz);
+          BoutReal Jxp = ( g(jx+1,jy)*(f(jx,jy,jzp)-f(jx+1,jy,jz)) -
+			   g(jx-1,jy)*(f(jx-1,jy,jz)-f(jx,jy,jzm)) -
+			   g(jx-1,jy)*(f(jx,jy,jzp)-f(jx-1,jy,jz)) +
+			   g(jx+1,jy)*(f(jx+1,jy,jz)-f(jx,jy,jzm)));
           
-          result(jx,jy,jz) = (Jpp + Jpx + Jxp) / 3.;
-        }
+          result(jx,jy,jz) = (Jpp + Jpx + Jxp) * spacingFactor;
+	  }
+	}
+      }
     
     break;
   }
@@ -869,7 +865,8 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
     
     result.allocate();
     
-    int ncz = mesh->LocalNz;
+    const int ncz = mesh->LocalNz;
+    const BoutReal partialFactor = 1.0/(12 * metric->dz);
 
     // We need to discard const qualifier in order to manipulate
     // storage array directly
@@ -878,35 +875,36 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
 
     for(int jx=mesh->xstart;jx<=mesh->xend;jx++){
       for(int jy=mesh->ystart;jy<=mesh->yend;jy++){
-        BoutReal meshdx = metric->dx(jx, jy);
-        BoutReal *Fxm = f_temp(jx-1, jy);
-        BoutReal *Fx  = f_temp(jx,   jy);
-        BoutReal *Fxp = f_temp(jx+1, jy);
-        BoutReal *Gxm = g_temp(jx-1, jy);
-        BoutReal *Gx  = g_temp(jx,   jy);
-        BoutReal *Gxp = g_temp(jx+1, jy);
+        const BoutReal spacingFactor = partialFactor / metric->dx(jx, jy);
+        const BoutReal *Fxm = f_temp(jx-1, jy);
+        const BoutReal *Fx  = f_temp(jx,   jy);
+        const BoutReal *Fxp = f_temp(jx+1, jy);
+        const BoutReal *Gxm = g_temp(jx-1, jy);
+        const BoutReal *Gx  = g_temp(jx,   jy);
+        const BoutReal *Gxp = g_temp(jx+1, jy);
         for(int jz=0;jz<ncz;jz++) {
-          int jzp = (jz + 1) % ncz;
-          int jzm = (jz - 1 + ncz) % ncz;
-          
+	  const int jzp = jz+1 < ncz ? jz + 1 : 0;
+	  //Above is alternative to const int jzp = (jz + 1) % ncz;
+	  const int jzm = jz-1 >=  0 ? jz - 1 : ncz-1;
+	  //Above is alternative to const int jzm = (jz - 1 + ncz) % ncz;
+
           // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
-          BoutReal Jpp = 0.25*( (Fx[jzp] - Fx[jzm])*(Gxp[jz] - Gxm[jz]) - (Fxp[jz] - Fxm[jz])*(Gx[jzp] - Gx[jzm]) )
-            / (meshdx * metric->dz);
+          BoutReal Jpp = ((Fx[jzp] - Fx[jzm])*(Gxp[jz] - Gxm[jz]) - 
+			  (Fxp[jz] - Fxm[jz])*(Gx[jzp] - Gx[jzm]));
 
           // J+x
-          BoutReal Jpx = 0.25*( Gxp[jz]*(Fxp[jzp]-Fxp[jzm]) -
-                                Gxm[jz]*(Fxm[jzp]-Fxm[jzm]) -
-                                Gx[jzp]*(Fxp[jzp]-Fxm[jzp]) +
-                                Gx[jzm]*(Fxp[jzm]-Fxm[jzm]))
-            / (meshdx * metric->dz);
+          BoutReal Jpx = ( Gxp[jz]*(Fxp[jzp]-Fxp[jzm]) -
+			   Gxm[jz]*(Fxm[jzp]-Fxm[jzm]) -
+			   Gx[jzp]*(Fxp[jzp]-Fxm[jzp]) +
+			   Gx[jzm]*(Fxp[jzm]-Fxm[jzm])) ;
+
           // Jx+
-          BoutReal Jxp = 0.25*( Gxp[jzp]*(Fx[jzp]-Fxp[jz]) -
-                                Gxm[jzm]*(Fxm[jz]-Fx[jzm]) -
-                                Gxm[jzp]*(Fx[jzp]-Fxm[jz]) +
-                                Gxp[jzm]*(Fxp[jz]-Fx[jzm]))
-            / (meshdx * metric->dz);
+          BoutReal Jxp = ( Gxp[jzp]*(Fx[jzp]-Fxp[jz]) -
+			   Gxm[jzm]*(Fxm[jz]-Fx[jzm]) -
+			   Gxm[jzp]*(Fx[jzp]-Fxm[jz]) +
+			   Gxp[jzm]*(Fxp[jz]-Fx[jzm]));
 			  
-          result(jx, jy, jz) = (Jpp + Jpx + Jxp) / 3.;
+          result(jx, jy, jz) = (Jpp + Jpx + Jxp) * spacingFactor;
         }
       }
     }
@@ -917,35 +915,39 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
     
     result.allocate();
 
-    int ncz = mesh->LocalNz;
-    for(int jx=mesh->xstart;jx<=mesh->xend;jx++)
-      for(int jy=mesh->ystart;jy<=mesh->yend;jy++)
+    const int ncz = mesh->LocalNz;
+    const BoutReal partialFactor = 1.0/(12 * metric->dz);
+    for(int jx=mesh->xstart;jx<=mesh->xend;jx++){
+      for(int jy=mesh->ystart;jy<=mesh->yend;jy++){
+        const BoutReal spacingFactor = partialFactor / metric->dx(jx, jy);
         for(int jz=0;jz<ncz;jz++) {
-          int jzp = (jz + 1) % ncz;
-          int jzm = (jz - 1 + ncz) % ncz;
+	  const int jzp = jz+1 < ncz ? jz + 1 : 0;
+	  //Above is alternative to const int jzp = (jz + 1) % ncz;
+	  const int jzm = jz-1 >=  0 ? jz - 1 : ncz-1;
+	  //Above is alternative to const int jzm = (jz - 1 + ncz) % ncz;
           
           // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
-          BoutReal Jpp = 0.25*( (f(jx,jy,jzp) - f(jx,jy,jzm))*
-                                (g(jx+1,jy,jz) - g(jx-1,jy,jz)) -
-                                (f(jx+1,jy,jz) - f(jx-1,jy,jz))*
-                                (g(jx,jy,jzp) - g(jx,jy,jzm)) )
-            / (metric->dx(jx,jy) * metric->dz);
+          BoutReal Jpp = ( (f(jx,jy,jzp) - f(jx,jy,jzm))*
+			   (g(jx+1,jy,jz) - g(jx-1,jy,jz)) -
+			   (f(jx+1,jy,jz) - f(jx-1,jy,jz))*
+			   (g(jx,jy,jzp) - g(jx,jy,jzm)) );
 
           // J+x
-          BoutReal Jpx = 0.25*( g(jx+1,jy,jz)*(f(jx+1,jy,jzp)-f(jx+1,jy,jzm)) -
-                                g(jx-1,jy,jz)*(f(jx-1,jy,jzp)-f(jx-1,jy,jzm)) -
-                                g(jx,jy,jzp)*(f(jx+1,jy,jzp)-f(jx-1,jy,jzp)) +
-                                g(jx,jy,jzm)*(f(jx+1,jy,jzm)-f(jx-1,jy,jzm)))
-            / (metric->dx(jx,jy) * metric->dz);
+          BoutReal Jpx = ( g(jx+1,jy,jz)*(f(jx+1,jy,jzp)-f(jx+1,jy,jzm)) -
+			   g(jx-1,jy,jz)*(f(jx-1,jy,jzp)-f(jx-1,jy,jzm)) -
+			   g(jx,jy,jzp)*(f(jx+1,jy,jzp)-f(jx-1,jy,jzp)) +
+			   g(jx,jy,jzm)*(f(jx+1,jy,jzm)-f(jx-1,jy,jzm)));
+
           // Jx+
-          BoutReal Jxp = 0.25*( g(jx+1,jy,jzp)*(f(jx,jy,jzp)-f(jx+1,jy,jz)) -
-                                g(jx-1,jy,jzm)*(f(jx-1,jy,jz)-f(jx,jy,jzm)) -
-                                g(jx-1,jy,jzp)*(f(jx,jy,jzp)-f(jx-1,jy,jz)) +
-                                g(jx+1,jy,jzm)*(f(jx+1,jy,jz)-f(jx,jy,jzm)))
-            / (metric->dx(jx,jy) * metric->dz);
+          BoutReal Jxp = ( g(jx+1,jy,jzp)*(f(jx,jy,jzp)-f(jx+1,jy,jz)) -
+			   g(jx-1,jy,jzm)*(f(jx-1,jy,jz)-f(jx,jy,jzm)) -
+			   g(jx-1,jy,jzp)*(f(jx,jy,jzp)-f(jx-1,jy,jz)) +
+			   g(jx+1,jy,jzm)*(f(jx+1,jy,jz)-f(jx,jy,jzm)));
           
-          result(jx,jy,jz) = (Jpp + Jpx + Jxp) / 3.;
+          result(jx,jy,jz) = (Jpp + Jpx + Jxp) * spacingFactor;
         }
+      }
+    }
     break;
   }
   case BRACKET_SIMPLE: {

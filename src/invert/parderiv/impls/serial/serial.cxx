@@ -52,7 +52,7 @@
 #include <cmath>
 
 InvertParSerial::InvertParSerial(Options *opt) : InvertPar(opt), A(1.0), B(0.0), C(0.0), D(0.0), E(0.0) {
-  rhs = cmatrix(mesh->LocalNy, (mesh->LocalNz)/2 + 1);
+  rhs = matrix<dcomplex>(mesh->LocalNy, (mesh->LocalNz)/2 + 1);
   rhsk = new dcomplex[mesh->LocalNy-4];
   xk = new dcomplex[mesh->LocalNy-4];
   a = new dcomplex[mesh->LocalNy-4];
@@ -61,7 +61,7 @@ InvertParSerial::InvertParSerial(Options *opt) : InvertPar(opt), A(1.0), B(0.0),
 }
 
 InvertParSerial::~InvertParSerial() {
-  free_cmatrix(rhs);
+  free_matrix(rhs);
   delete[] rhsk;
   delete[] xk;
   delete[] a;
@@ -70,9 +70,7 @@ InvertParSerial::~InvertParSerial() {
 }
 
 const Field3D InvertParSerial::solve(const Field3D &f) {
-#ifdef CHECK
-  msg_stack.push("InvertParSerial::solve(Field3D)");
-#endif
+  TRACE("InvertParSerial::solve(Field3D)");
   
   Field3D result;
   result.allocate();
@@ -137,10 +135,6 @@ const Field3D InvertParSerial::solve(const Field3D &f) {
     for(int y=0;y<mesh->LocalNy-4;y++)
       irfft(rhs[y], mesh->LocalNz, result(x,y+2));
   }
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
   
   return result;
 }

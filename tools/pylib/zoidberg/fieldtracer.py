@@ -17,7 +17,7 @@ class FieldTracer(object):
 
         self.field_direction = field.field_direction
 
-    def follow_field_lines(self, x_values, z_values, y_values):
+    def follow_field_lines(self, x_values, z_values, y_values, rtol=None):
         """Uses field_direction to follow the magnetic field
         from every grid (x,z) point at toroidal angle y
         through a change in toroidal angle dy
@@ -76,6 +76,7 @@ class FieldTracer(object):
             x_values = x_values.flatten()
             z_values = z_values.flatten()
         position = np.column_stack((x_values, z_values)).flatten()
-        result = odeint(self.field_direction, position, y_values, args=(True,))
+        result = odeint(self.field_direction, position, y_values, args=(True,),
+                        rtol=rtol)
 
         return result.reshape(y_values.shape + array_shape + (2,))

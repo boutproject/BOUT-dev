@@ -64,9 +64,9 @@ protected:
    */
   int diffusive(BoutReal time, bool linear) {
     mesh->communicate(f);
-    if(!linear) {
+    if (!linear) {
       // Update diffusion coefficient
-      D = f ^ alpha;
+      D = pow(f, alpha);
     }
 
     // Finite volume parallel diffusion term
@@ -100,7 +100,7 @@ protected:
     // Preconditioner
     
     static InvertPar *inv = NULL;
-    if(!inv) {
+    if (!inv) {
       // Initialise parallel inversion class
       inv = InvertPar::Create();
       inv->setCoefA(1.0);

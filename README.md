@@ -1,7 +1,7 @@
 #BOUT++
 <!---Build nice shields at shields.io-->
 [![Build Status](https://travis-ci.org/boutproject/BOUT-dev.svg?branch=master)](https://travis-ci.org/boutproject/BOUT-dev)
-[![License](https://img.shields.io/badge/license-GPL-blue.svg)](https://img.shields.io/badge/license-GPL-blue.svg)
+[![License](https://img.shields.io/badge/license-LGPL-blue.svg)](https://img.shields.io/badge/license-LGPL-blue.svg)
 [![py3comp](https://img.shields.io/badge/py3-compatible-brightgreen.svg)](https://img.shields.io/badge/py3-compatible-brightgreen.svg)
 > ```
 > .______     ______    __    __  .___________.
@@ -26,6 +26,7 @@ Homepage found at [http://boutproject.github.io/](http://boutproject.github.io/)
 ## Table of Contents
 * [Usage and installation](#usage-and-installation)
 * [Overview of files](#overview-of-files)
+* [Contributing](#contributing)
 * [Terms of use](#terms-of-use)
 * [License](#license)
 
@@ -43,8 +44,8 @@ This directory contains
 * **manual**                Manuals and documentation (also [doxygen](http://www.stack.nl/~dimitri/doxygen/) documentation)
 * **src**                   The main code directory
 * **CITATION**              Contains the paper citation for BOUT++
-* **LICENSE**               GPL license
-* **LICENSE.LESSER**        LGPL license
+* **LICENSE**               LGPL license
+* **LICENSE.GPL**           GPL license
 * **tools**                 Tools for helping with analysis, mesh generation, and data managment
 
   * **archiving**               Routines for managing input/output files e.g. compressing data, converting formats, and managing runs
@@ -79,6 +80,10 @@ This directory contains
     * **shifted_circle**  Produce shifted cirle equilibria input grids
 
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Terms of use
 
 BOUT++ is released under the LGPL, but since BOUT++ is a
@@ -112,5 +117,5 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU Lesser General Public License for more details.
 
-A copy of the LGPL license is in [LICENSE.LESSER](LICENSE.LESSER). Since this is based
-on (and refers to) the GPL, this is included in [LICENSE](LICENSE).
+A copy of the LGPL license is in [LICENSE](LICENSE). Since this is based
+on (and refers to) the GPL, this is included in [LICENSE.GPL](LICENSE.GPL).

@@ -2,6 +2,7 @@
 #include <bout/fv_ops.hxx>
 #include <globals.hxx>
 #include <utils.hxx>
+#include <msg_stack.hxx>
 
 #include <output.hxx>
 
@@ -108,15 +109,38 @@ namespace FV {
   
     return result;
   }
-  
-  
-  const Field3D Div_par_K_Grad_par(const Field3D &K, const Field3D &f, bool bndry_flux) {
-    Field3D result;
-    result = 0.0;
+
+  const Field3D Div_par_K_Grad_par(const Field3D &Kin, const Field3D &fin, bool bndry_flux) {
+    TRACE("FV::Div_par_K_Grad_par");
+    
+    Field3D result(0.0);
+    
+    // K and f fields in yup and ydown directions
+    Field3D Kup, Kdown;
+    Field3D fup, fdown;
+    Field3D f = fin;
+    Field3D K = Kin;
+    if (K.hasYupYdown() && f.hasYupYdown()) {
+      // Both inputs have yup and ydown
+      Kup = K.yup();
+      Kdown = K.ydown();
+      
+      fup = f.yup();
+      fdown = f.ydown();
+    } else {
+      // At least one input doesn't have yup/ydown fields.
+      // Need to shift to/from field aligned coordinates
+      
+      f = mesh->toFieldAligned(fin);
+      K = mesh->toFieldAligned(Kin);
+      
+      fup = fdown = f;
+      Kup = Kdown = K;
+    }
     
     Coordinates *coord = mesh->coordinates();
     
-    for( auto i: result ) {
+    for( auto &i: result ) {
       // Calculate flux at upper surface
       
       auto iyp = i.yp();
@@ -126,16 +150,15 @@ namespace FV {
         
         BoutReal c = 0.5*(K[i] + K.yup()[iyp]); // K at the upper boundary
         BoutReal J = 0.5*(coord->J[i] + coord->J[iyp]); // Jacobian at boundary
-            
         BoutReal g_22 = 0.5*(coord->g_22[i] + coord->g_22[iyp]);
-            
+        
         BoutReal gradient = 2.*(f.yup()[iyp] - f[i]) / (coord->dy[i] + coord->dy[iyp]);
         
         BoutReal flux = c * J * gradient / g_22;
             
         result[i] += flux / (coord->dy[i] * coord->J[i]);
       }
-
+      
       // Calculate flux at lower surface
       if(bndry_flux || !mesh->firstY() || (i.y != mesh->ystart)) {
         BoutReal c = 0.5*(K[i] + K.ydown()[iym]); // K at the lower boundary
@@ -150,6 +173,12 @@ namespace FV {
         result[i] -= flux / (coord->dy[i] * coord->J[i]);
       }
     }
+    
+    if (!(K.hasYupYdown() && f.hasYupYdown())) {
+      // Shifted to field aligned coordinates, so need to shift back
+      result = mesh->fromFieldAligned(result);
+    }
+    
     return result;
   }
 
