@@ -104,8 +104,8 @@ namespace FV {
       // Choose the gradient within the cell
       // as the minimum (smoothest) solution
       BoutReal slope = _minmod(n.p - n.c, n.c - n.m);
-      n.L = n.c - 0.5*slope; //0.25*(n.p - n.m);
-      n.R = n.c + 0.5*slope; //0.25*(n.p - n.m);
+      n.L = n.c - 0.5*slope;
+      n.R = n.c + 0.5*slope;
     }
   private:
     /*!

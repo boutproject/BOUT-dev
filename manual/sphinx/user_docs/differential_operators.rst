@@ -279,3 +279,131 @@ The bracket operators
 Setting differencing method
 ---------------------------
 
+
+Finite volume, conservative finite difference methods
+=====================================================
+
+These schemes aim to conserve the integral of the advected quantity
+over the domain. If :math:`f` is being advected, then
+
+.. math::
+
+   \sum_i \left(f J dx dy dz\right)_i = const
+
+is conserved, where the index :math:`i` refers to cell index. This
+is done by calculating fluxes between cells: Whatever leaves one
+cell is added to another. There are several caveats to this:
+
+* Boundary fluxes can still lead to changes in the total, unless
+  no-flow boundary conditions are used
+
+* When using an implicit time integration scheme, such as the default
+  PVODE / CVODE, the total is not guaranteed to be conserved, but
+  may vary depending on the solver tolerances.
+
+* There will always be a small rounding error, even with double
+  precision.
+
+The methods can be used by including the header:
+
+::
+
+   #include <bout/fv_ops.hxx>
+
+
+**Note** The methods are defined in a namespace ``FV``.
+   
+Some methods (those with templates) are defined in the header, but others
+are defined in ``src/mesh/fv_ops.cxx``.
+
+
+Parallel divergence ``Div_par``
+-------------------------------
+
+This function calculates the divergence of a flow in :math:`y` (parallel
+to the magnetic field) by a given velocity.
+
+::
+
+   template<typename CellEdges = MC>
+   const Field3D Div_par(const Field3D &f_in, const Field3D &v_in,
+                         const Field3D &a, bool fixflux=true);
+   
+
+where ``f_in`` is the quantity being advected (e.g. density), ``v_in``
+is the parallel advection velocity. The third input, ``a``, is the maximum
+wave speed, which multiplies the dissipation term in the method.
+
+::
+
+   ddt(n) = -FV::Div_par( n, v, cs );
+
+
+By default the ``MC`` slope limiter is used to calculate cell edges, but this can
+be changed at compile time:
+
+::
+
+   ddt(n) = -FV::Div_par<FV::Fromm>( n, v, cs ); 
+
+A list of available limiters is given in section :ref:`sec-slope-limiters` below.
+
+
+Example and convergence test
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The example code ``examples/finite-volume/fluid/`` solves the Euler equations
+for a 1D adiabatic fluid, using ``FV::Div_par`` for the advection terms. 
+
+.. math::
+
+   \frac{\partial n}{\partial t} + \nabla_{||}\left(n v_{||}\right) = 0
+
+   \frac{\partial p}{\partial t} + \nabla_{||}\left(p v_{||}\right) = -(\gamma-1) p \nabla_{||}v_{||}
+
+   \frac{\partial}{\partial t}\left(nv_{||}\right) + \nabla_{||}\left(nv_{||}v_{||}\right) = -\partial_{||} p
+
+where :math:`n` is the density, :math:`p` is the pressure, and `nv_{||}` is the
+momentum in the direction parallel to the magnetic field.
+The operator :math:`\nabla_{||}` represents the divergence of a parallel flow (``Div_par``),
+and :math:`\partial_{||} = \mathbf{b}\cdot\nabla` is the gradient in the parallel direction.
+
+There is a convergence test using the Method of Manufactured Solutions (MMS) for this example.
+See section :ref:`sec-mms` for details of the testing method. Running the ``runtest``
+script should produce the graph
+
+.. figure:: ../figs/fluid_norm_mc.png
+   :name: fluid_norm_mc
+   :alt: Convergence test of the fluid example using ``FV::Div_par`` operator
+
+   Convergence test, showing :math:`l^2` (RMS) and :math:`l^{\infty}` (maximum) error for
+   the evolving fields `n` (density), `p` (pressure) and `nv` (momentum). All fields are
+   shown to converge at the expected second order accuracy.
+
+
+.. _sec-slope-limiters
+
+Slope limiters
+--------------
+
+Here limiters are implemented as slope limiters: The value of a given
+quantity is calculated at the faces of a cell based on the cell-centre
+values. Several slope limiters are defined in ``fv_ops.hxx``:
+
+* ``Upwind`` - First order upwinding, in which the left and right edges
+  of the cell are the same as the centre (zero slope).
+
+* ``Fromm`` - A second-order scheme which is a fixed weighted average
+  of upwinding and central difference schemes.
+
+* ``MinMod`` - This second order scheme switches between the upwind and
+  downwind gradient, choosing the one with the smallest absolute value.
+  If the gradients have different signs, as at a maximum or minimum,
+  then the method reverts to first order upwinding (zero slope).
+
+* ``MC`` (Monotonised Central) is a second order scheme which switches
+  between central, upwind and downwind differencing in a similar way
+  to ``MinMod``. It has smaller dissipation than ``MinMod`` so is the
+  default.
+
+  
