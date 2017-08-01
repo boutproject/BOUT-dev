@@ -1483,3 +1483,35 @@ Field2D DC(const Field3D &f) {
   return result;
 }
 
+void invalidateGuards(Field3D &var){
+#if CHECK > 0  //Strip out if not checking
+  //Inner x -- both y and all z
+  for(int ix=0; ix<mesh->xstart; ix++){
+    for(int iy=0; iy<mesh->ystart; iy++){
+      for(int iz=0; iy<mesh->LocalNz; iz++){
+	var(ix,iy,iz) = nan("");
+      }
+    }
+    for(int iy=mesh->yend+1; iy<mesh->LocalNy; iy++){
+      for(int iz=0; iy<mesh->LocalNz; iz++){
+	var(ix,iy,iz) = nan("");
+      }
+    }
+  }
+
+  //Outer x -- both y and all z
+  for(int ix=mesh->xend+1; ix<mesh->LocalNx; ix++){
+    for(int iy=0; iy<mesh->ystart; iy++){
+      for(int iz=0; iy<mesh->LocalNz; iz++){
+	var(ix,iy,iz) = nan("");
+      }
+    }
+    for(int iy=mesh->yend+1; iy<mesh->LocalNy; iy++){
+      for(int iz=0; iy<mesh->LocalNz; iz++){
+	var(ix,iy,iz) = nan("");
+      }
+    }
+  }
+#endif  
+  return;
+}

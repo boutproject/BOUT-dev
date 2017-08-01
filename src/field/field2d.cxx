@@ -840,3 +840,28 @@ void checkData(const Field2D &f) {
 #endif
 }
 #endif
+
+void invalidateGuards(Field2D &var){
+#if CHECK > 0  //Strip out if not checking
+  //Inner x -- both y
+  for(int ix=0; ix<mesh->xstart; ix++){
+    for(int iy=0; iy<mesh->ystart; iy++){
+      var(ix,iy) = nan("");
+    }
+    for(int iy=mesh->yend+1; iy<mesh->LocalNy; iy++){
+      var(ix,iy) = nan("");
+    }
+  }
+
+  //Outer x -- both y and all z
+  for(int ix=mesh->xend+1; ix<mesh->LocalNx; ix++){
+    for(int iy=0; iy<mesh->ystart; iy++){
+      var(ix,iy) = nan("");
+    }
+    for(int iy=mesh->yend+1; iy<mesh->LocalNy; iy++){
+      var(ix,iy) = nan("");
+    }
+  }
+#endif  
+  return;
+}
