@@ -1,0 +1,44 @@
+#
+# MMS test of fluid model
+#
+
+NOUT = 100
+timestep = 0.1
+
+MXG = 0
+
+[mesh]
+
+nx = 1
+ny = 100
+nz = 1
+
+Ly = 10 #2 * pi
+
+dy = Ly / ny
+
+ixseps1 = 2
+ixseps2 = 2
+
+[solver]
+
+mms = true  # Run with MMS sources and output diagnostics
+
+[fluid]
+
+gamma = 5/3   # Adiabatic index
+
+[n]
+solution = -0.1*sin(t - 2.0*y) + 1
+
+source = -0.1*cos(t - 2.0*y) + 0.0628318530717959*cos(2*t + y)
+
+[p]
+solution = 0.1*cos(t + 3.0*y) + 1
+
+source = (0.0628318530717959*cos(2*t + y)/(-0.1*sin(t - 2.0*y) + 1) - 0.0125663706143592*sin(2*t + y)*cos(t - 2.0*y)/(-0.1*sin(t - 2.0*y) + 1)^2)*(0.0666666666666667*cos(t + 3.0*y) + 0.666666666666667) - 0.1*sin(t + 3.0*y) + 0.0628318530717959*(0.1*cos(t + 3.0*y) + 1)*cos(2*t + y)/(-0.1*sin(t - 2.0*y) + 1) - 0.0188495559215388*sin(t + 3.0*y)*sin(2*t + y)/(-0.1*sin(t - 2.0*y) + 1) - 0.0125663706143592*(0.1*cos(t + 3.0*y) + 1)*sin(2*t + y)*cos(t - 2.0*y)/(-0.1*sin(t - 2.0*y) + 1)^2
+
+[nv]
+solution = 0.1*sin(2*t + y)
+
+source = -0.188495559215388*sin(t + 3.0*y) + 0.2*cos(2*t + y) + 0.0125663706143592*sin(2*t + y)*cos(2*t + y)/(-0.1*sin(t - 2.0*y) + 1) - 0.00125663706143592*sin(2*t + y)^2*cos(t - 2.0*y)/(-0.1*sin(t - 2.0*y) + 1)^2

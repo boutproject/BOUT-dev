@@ -21,3 +21,32 @@ the FV::Div_par function in `bout/fv_ops.hxx`. This uses the MC
 slope limiter, together with a Lax flux at the local sound speed
 to provide dissipation and minimise unphysical oscillations. 
 
+MMS test
+--------
+
+To run an MMS convergence test, use the Python script:
+
+    $ ./runtest
+
+This will use the analytic solution and sources calculated in `mms.py`,
+and given in the `mms/BOUT.inp` inputs. The return code indicates success (0)
+or failure (1). If matplotlib is installed, then this should also output a
+figure "fluid_norm.pdf" and "fluid_norm.png".
+
+The default slope limiter used by `FV::Div_par` is Monotonised Central (MC).
+To test other limiters, replace
+
+    FV::Div_par
+
+with
+
+    FV::Div_par<FV::Upwind>
+
+for the first order upwinding method, or
+
+    FV::Div_par<FV::MinMod>
+
+for the second order MinMod method.
+
+
+

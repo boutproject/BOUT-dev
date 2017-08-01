@@ -6,6 +6,7 @@
 /// A 1D fluid equation (in y) 
 /// 
 /// Evolves density, pressure and momentum
+///
 class Fluid : public PhysicsModel {
 protected:
 
