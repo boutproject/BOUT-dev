@@ -91,7 +91,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   NOUT = nout;
   TIMESTEP = tstep;
 
-  output.write("Initialising SUNDIALS' CVODE solver\n");
+  output_prog.write("Initialising SUNDIALS' CVODE solver\n");
 
   // Calculate number of variables (in generic_solver)
   int local_N = getLocalN();
@@ -99,14 +99,13 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   // Get total problem size
   int neq;
   {TRACE("Allreduce localN -> GlobalN");
-    if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
-      output.write("\tERROR: MPI_Allreduce failed!\n");
-      return 1;
+    if (MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
+      throw BoutException("ERROR: MPI_Allreduce failed!\n");
     }
   }
 
-  output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
-                n3Dvars(), n2Dvars(), neq, local_N);
+  output_info.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
+                    n3Dvars(), n2Dvars(), neq, local_N);
 
   // Allocate memory
   {TRACE("Allocating memory with N_VNew_Parallel");
@@ -180,10 +179,10 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
     if(adams_moulton) {
       // By default use functional iteration for Adams-Moulton
       lmm = CV_ADAMS;
-      output.write("\tUsing Adams-Moulton implicit multistep method\n");
+      output_info.write("\tUsing Adams-Moulton implicit multistep method\n");
       options->get("func_iter", func_iter, true); 
     }else {
-      output.write("\tUsing BDF method\n");
+      output_info.write("\tUsing BDF method\n");
       // Use Newton iteration for BDF
       options->get("func_iter", func_iter, false); 
     }
@@ -254,30 +253,30 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   }
 
   /// Newton method can include Preconditioners and Jacobian function
-  if(!func_iter) {
-    output.write("\tUsing Newton iteration\n");
+  if (!func_iter) {
+    output_info.write("\tUsing Newton iteration\n");
     /// Set Preconditioner
     TRACE("Setting preconditioner");
-    if(use_precon) {
+    if (use_precon) {
 
       int prectype = PREC_LEFT;
       bool rightprec;
       options->get("rightprec", rightprec, false);
-      if(rightprec)
+      if (rightprec)
         prectype = PREC_RIGHT;
       
-      if( CVSpgmr(cvode_mem, prectype, maxl) != CVSPILS_SUCCESS )
+      if ( CVSpgmr(cvode_mem, prectype, maxl) != CVSPILS_SUCCESS )
         throw BoutException("ERROR: CVSpgmr failed\n");
 
-      if(!have_user_precon()) {
-        output.write("\tUsing BBD preconditioner\n");
+      if (!have_user_precon()) {
+        output_info.write("\tUsing BBD preconditioner\n");
 
         if( CVBBDPrecInit(cvode_mem, local_N, mudq, mldq, 
               mukeep, mlkeep, ZERO, cvode_bbd_rhs, NULL) )
           throw BoutException("ERROR: CVBBDPrecInit failed\n");
 
       } else {
-        output.write("\tUsing user-supplied preconditioner\n");
+        output_info.write("\tUsing user-supplied preconditioner\n");
 
         if( CVSpilsSetPreconditioner(cvode_mem, NULL, cvode_pre) )
           throw BoutException("ERROR: CVSpilsSetPreconditioner failed\n");
@@ -285,7 +284,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
     }else {
       // Not using preconditioning
 
-      output.write("\tNo preconditioning\n");
+      output_info.write("\tNo preconditioning\n");
 
       if( CVSpgmr(cvode_mem, PREC_NONE, maxl) != CVSPILS_SUCCESS )
         throw BoutException("ERROR: CVSpgmr failed\n");
@@ -294,15 +293,15 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
     /// Set Jacobian-vector multiplication function
 
     if((use_jacobian) && (jacfunc != NULL)) {
-      output.write("\tUsing user-supplied Jacobian function\n");
+      output_info.write("\tUsing user-supplied Jacobian function\n");
 
       TRACE("Setting Jacobian-vector multiply");
       if( CVSpilsSetJacTimesVecFn(cvode_mem, cvode_jac) != CVSPILS_SUCCESS )
         throw BoutException("ERROR: CVSpilsSetJacTimesVecFn failed\n");
     }else
-      output.write("\tUsing difference quotient approximation for Jacobian\n");
+      output_info.write("\tUsing difference quotient approximation for Jacobian\n");
   }else {
-    output.write("\tUsing Functional iteration\n");
+    output_info.write("\tUsing Functional iteration\n");
   }
 
   return 0;
@@ -328,12 +327,12 @@ int CvodeSolver::run() {
     /// Check if the run succeeded
     if(simtime < 0.0) {
       // Step failed
-      output.write("Timestep failed. Aborting\n");
+      output_error.write("Timestep failed. Aborting\n");
       
       throw BoutException("SUNDIALS timestep failed\n");
     }
     
-    if(diagnose) {
+    if (diagnose) {
       // Print additional diagnostics
       long int nsteps, nfevals, nniters, npevals, nliters;
       
@@ -404,10 +403,10 @@ BoutReal CvodeSolver::run(BoutReal tout) {
   pre_ncalls = 0.0;
 
   int flag;
-  if(!monitor_timestep) {
+  if (!monitor_timestep) {
     // Run in normal mode
     flag = CVode(cvode_mem, tout, uvec, &simtime, CV_NORMAL);
-  }else {
+  } else {
     // Run in single step mode, to call timestep monitors
     BoutReal internal_time;
     CVodeGetCurrentTime(cvode_mem, &internal_time);
@@ -416,9 +415,8 @@ BoutReal CvodeSolver::run(BoutReal tout) {
       BoutReal last_time = internal_time;
       flag = CVode(cvode_mem, tout, uvec, &internal_time, CV_ONE_STEP);
       
-      if(flag < 0) {
-        output.write("ERROR CVODE solve failed at t = %e, flag = %d\n", internal_time, flag);
-        return -1.0;
+      if (flag < 0) {
+        throw BoutException("ERROR CVODE solve failed at t = %e, flag = %d\n", internal_time, flag);
       }
       
       // Call timestep monitor
@@ -435,9 +433,8 @@ BoutReal CvodeSolver::run(BoutReal tout) {
   // Call rhs function to get extra variables at this time
   run_rhs(simtime);
 
-  if(flag < 0) {
-    output.write("ERROR CVODE solve failed at t = %e, flag = %d\n", simtime, flag);
-    return -1.0;
+  if (flag < 0) {
+    throw BoutException("ERROR CVODE solve failed at t = %e, flag = %d\n", simtime, flag);
   }
 
   return simtime;

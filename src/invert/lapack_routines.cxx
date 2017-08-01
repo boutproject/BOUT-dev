@@ -38,7 +38,6 @@
 #include <globals.hxx>
 #include <dcomplex.hxx>
 #include <boutexception.hxx>
-#include <output.hxx>
 
 #ifdef LAPACK
 
@@ -66,7 +65,7 @@ int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcompl
   static int len = 0;
   static fcmplx *dl, *d, *du, *x;
 
-  if(n > len) {
+  if (n > len) {
     //.allocate more memory (as a single block)
     if(len > 0)
       delete[] dl;
@@ -79,13 +78,13 @@ int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcompl
     len = n;
   }
 
-  for(int i=0;i<n;i++) {
+  for (int i=0;i<n;i++) {
     // Diagonal
     d[i].r = b[i].real();
     d[i].i = b[i].imag();
     
     // Off-diagonal terms
-    if(i != (n-1)) {
+    if (i != (n-1)) {
       dl[i].r = a[i+1].real();
       dl[i].i = a[i+1].imag();
       
@@ -110,10 +109,9 @@ int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcompl
 
   zgtsv_(&n, &nrhs, dl, d, du, x, &n, &info);
 
-  if(info != 0) {
+  if (info != 0) {
     // Some sort of problem
-    output.write("Problem in LAPACK ZGTSV routine\n");
-     return 1;
+    throw BoutException("Problem in LAPACK ZGTSV routine\n");
   }
 
   // Copy result back
@@ -176,10 +174,9 @@ bool tridag(const BoutReal *a, const BoutReal *b, const BoutReal *c, const BoutR
 
   dgtsv_(&n, &nrhs, dl, d, du, x, &n, &info);
 
-  if(info != 0) {
+  if (info != 0) {
     // Some sort of problem
-    output.write("Problem in LAPACK DGTSV routine\n");
-    return false;
+    throw BoutException("Problem in LAPACK DGTSV routine\n");
   }
 
   // Copy result back
@@ -385,8 +382,7 @@ bool tridag(const BoutReal *a, const BoutReal *b, const BoutReal *c, const BoutR
   }
   
   if(b[0] == 0.0) {
-    output.write("Tridag: Rewrite equations\n");
-    return false;
+    throw BoutException("Tridag: Rewrite equations\n");
   }
   
   bet = b[0];
@@ -396,8 +392,7 @@ bool tridag(const BoutReal *a, const BoutReal *b, const BoutReal *c, const BoutR
     gam[j] = c[j-1]/bet;
     bet = b[j]-a[j]*gam[j];
     if(bet == 0.0) {
-      output.write("Tridag: Zero pivot\n");
-      return false;
+      throw BoutException("Tridag: Zero pivot\n");
     }
     x[j] = (r[j]-a[j]*x[j-1])/bet;
   }

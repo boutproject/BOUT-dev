@@ -475,7 +475,7 @@ void Field2D::applyBoundary(bool init) {
   if (init) {
 
     if(!boundaryIsSet)
-      output << "WARNING: Call to Field2D::applyBoundary(), but no boundary set" << endl;
+      output_warn << "WARNING: Call to Field2D::applyBoundary(), but no boundary set" << endl;
   }
 #endif
 

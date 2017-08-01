@@ -777,7 +777,7 @@ void Field3D::applyBoundary(bool init) {
   if (init) {
 
     if(!boundaryIsSet)
-      output << "WARNING: Call to Field3D::applyBoundary(), but no boundary set" << endl;
+      output_warn << "WARNING: Call to Field3D::applyBoundary(), but no boundary set" << endl;
   }
 #endif
 
@@ -803,7 +803,7 @@ void Field3D::applyBoundary(BoutReal t) {
   
 #if CHECK > 0
   if(!boundaryIsSet)
-    output << "WARNING: Call to Field3D::applyBoundary(t), but no boundary set." << endl;
+    output_warn << "WARNING: Call to Field3D::applyBoundary(t), but no boundary set." << endl;
 #endif
 
   ASSERT1(isAllocated())

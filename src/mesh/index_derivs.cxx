@@ -737,14 +737,14 @@ void printFuncName(DIFF_METHOD method) {
   int i = 0;
   do {
     if(DiffNameTable[i].method == method) {
-      output.write(" %s (%s)\n", DiffNameTable[i].name, DiffNameTable[i].label);
+      output_info.write(" %s (%s)\n", DiffNameTable[i].name, DiffNameTable[i].label);
       return;
     }
     i++;
   }while(DiffNameTable[i].method != DIFF_DEFAULT);
 
   // None
-  output.write(" == INVALID DIFFERENTIAL METHOD ==\n");
+  output_error.write(" == INVALID DIFFERENTIAL METHOD ==\n");
 }
 
 /*******************************************************************************
@@ -859,28 +859,28 @@ void derivs_initialise(Options *options, bool StaggerGrids,
                  Mesh::deriv_func &fd2d, Mesh::deriv_func &sfd2d, 
                  Mesh::upwind_func &fu, Mesh::flux_func &sfu,
                  Mesh::flux_func &ff, Mesh::flux_func &sff) {
-  output.write("\tFirst       : ");
+  output_info.write("\tFirst       : ");
   derivs_set(options, FirstDerivTable, "first",  fdd);
-  if(StaggerGrids) {
-    output.write("\tStag. First : ");
+  if (StaggerGrids) {
+    output_info.write("\tStag. First : ");
     derivs_set(options, FirstStagDerivTable, "first",  sfdd);
   }
-  output.write("\tSecond      : ");
+  output_info.write("\tSecond      : ");
   derivs_set(options, SecondDerivTable, "second", fd2d);
-  if(StaggerGrids) {
-    output.write("\tStag. Second: ");
+  if (StaggerGrids) {
+    output_info.write("\tStag. Second: ");
     derivs_set(options, SecondStagDerivTable, "second", sfd2d);
   }
-  output.write("\tUpwind      : ");
+  output_info.write("\tUpwind      : ");
   derivs_set(options, UpwindTable,     "upwind", fu);
-  if(StaggerGrids) {
-    output.write("\tStag. Upwind: ");
+  if (StaggerGrids) {
+    output_info.write("\tStag. Upwind: ");
     derivs_set(options, UpwindStagTable,     "upwind", sfu);
   }
-  output.write("\tFlux        : ");
+  output_info.write("\tFlux        : ");
   derivs_set(options, FluxTable,     "flux", ff);
-  if(StaggerGrids) {
-    output.write("\tStag. Flux  : ");
+  if (StaggerGrids) {
+    output_info.write("\tStag. Flux  : ");
     derivs_set(options, FluxStagTable,     "flux", sff);
   }
 }
@@ -899,28 +899,28 @@ void derivs_initialise(Options *options, bool StaggerGrids,
                  Mesh::inner_boundary_upwind_func &inner_ff, Mesh::inner_boundary_upwind_func &inner_sff,
                  Mesh::outer_boundary_upwind_func &outer_ff, Mesh::outer_boundary_upwind_func &outer_sff
 		) {
-  output.write("\tFirst       : ");
+  output_info.write("\tFirst       : ");
   derivs_set(options, FirstDerivTable, "first",  fdd, inner_fdd, outer_fdd);
   if(StaggerGrids) {
-    output.write("\tStag. First : ");
+    output_info.write("\tStag. First : ");
     derivs_set(options, FirstStagDerivTable, "first",  sfdd, inner_sfdd, outer_sfdd);
   }
-  output.write("\tSecond      : ");
+  output_info.write("\tSecond      : ");
   derivs_set(options, SecondDerivTable, "second", fd2d, inner_fd2d, outer_fd2d);
   if(StaggerGrids) {
-    output.write("\tStag. Second: ");
+    output_info.write("\tStag. Second: ");
     derivs_set(options, SecondStagDerivTable, "second", sfd2d, inner_sfd2d, outer_sfd2d);
   }
-  output.write("\tUpwind      : ");
+  output_info.write("\tUpwind      : ");
   derivs_set(options, UpwindTable,     "upwind", fu, inner_fu, outer_fu);
   if(StaggerGrids) {
-    output.write("\tStag. Upwind: ");
+    output_info.write("\tStag. Upwind: ");
     derivs_set(options, UpwindStagTable,     "upwind", sfu, inner_sfu, outer_sfu);
   }
-  output.write("\tFlux        : ");
+  output_info.write("\tFlux        : ");
   derivs_set(options, FluxTable,     "flux", ff, inner_ff, outer_ff);
   if(StaggerGrids) {
-    output.write("\tStag. Flux  : ");
+    output_info.write("\tStag. Flux  : ");
     derivs_set(options, FluxStagTable,     "flux", sff, inner_sff, outer_sff);
   }
 }
@@ -929,7 +929,7 @@ void derivs_initialise(Options *options, bool StaggerGrids,
 void Mesh::derivs_init(Options* options) {
   TRACE("Initialising derivatives");
 
-  output.write("Setting X differencing methods\n");
+  output_prog.write("Setting X differencing methods\n");
   derivs_initialise(options->getSection("ddx"), 
               StaggerGrids,
               fDDX, sfDDX, 
@@ -946,10 +946,10 @@ void Mesh::derivs_init(Options* options) {
               fFDDX_out, sfFDDX_out
  	    );
   
-  if((fDDX == NULL) || (fD2DX2 == NULL))
+  if ((fDDX == NULL) || (fD2DX2 == NULL))
     throw BoutException("FFT cannot be used in X\n");
   
-  output.write("Setting Y differencing methods\n");
+  output_prog.write("Setting Y differencing methods\n");
   derivs_initialise(options->getSection("ddy"), 
               StaggerGrids,
               fDDY, sfDDY, 
@@ -965,10 +965,10 @@ void Mesh::derivs_init(Options* options) {
               fFDDX_in, sfFDDX_in,
               fFDDX_out, sfFDDX_out);
   
-  if((fDDY == NULL) || (fD2DY2 == NULL))
+  if ((fDDY == NULL) || (fD2DY2 == NULL))
     throw BoutException("FFT cannot be used in Y\n");
   
-  output.write("Setting Z differencing methods\n");
+  output_prog.write("Setting Z differencing methods\n");
   derivs_initialise(options->getSection("ddz"), 
               StaggerGrids,
               fDDZ, sfDDZ, 
@@ -1533,13 +1533,9 @@ const Field3D Mesh::indexDDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
   if(mesh->StaggerGrids && (outloc != inloc)) {
     // Shifting to a new location
     
-    //output.write("\nSHIFTING %s -> %s\n", strLocation(inloc), strLocation(outloc));
-
     if(((inloc == CELL_CENTRE) && (outloc == CELL_YLOW)) ||
       ((inloc == CELL_YLOW) && (outloc == CELL_CENTRE))) {
       // Shifting in Y. Centre -> Ylow, or Ylow -> Centre
-      
-      //output.write("SHIFT");
 
       func = sfDDY; // Set default
       func_in = sfDDY_in;
@@ -1575,7 +1571,6 @@ const Field3D Mesh::indexDDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
   }
   
   result = applyYdiff(f, func, func_in, func_out, diffloc);
-  //output.write("SETTING LOC %s -> %s\n", strLocation(diffloc), strLocation(outloc));
   result.setLocation(diffloc); // Set the result location
   
   return interp_to(result, outloc); // Interpolate if necessary
