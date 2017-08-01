@@ -253,14 +253,6 @@ bool Mesh::hasBndryLowerY() {
   return answer;
 }
 
-Coordinates* Mesh::coordinates() {
-  if(!coords) {
-    // No coordinate system set. Create default
-    coords = new Coordinates(this);
-  }
-  return coords;
-}
-
 bool Mesh::hasBndryUpperY() {
   static bool calc = false, answer;
   if(calc) return answer; // Already calculated
@@ -329,4 +321,8 @@ ParallelTransform& Mesh::getParallelTransform() {
   
   // Return a reference to the ParallelTransform object
   return *transform;
+}
+
+Coordinates *Mesh::createDefaultCoordinates() {
+  return new Coordinates(this);
 }

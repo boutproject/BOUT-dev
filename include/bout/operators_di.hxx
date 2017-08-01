@@ -69,40 +69,53 @@ BoutReal Delp2_C2(const Field3D &f, const DataIterator &i) {
 ///
 BoutReal bracket_arakawa(const Field3D &f, const Field3D &g, const DataIterator &i) {
   Coordinates *metric = mesh->coordinates();
-  
-  BoutReal fxp = f[i.xp()];
-  BoutReal fxm = f[i.xm()];
-  BoutReal fzp = f[i.zp()];
-  BoutReal fzm = f[i.zm()];
 
-  BoutReal fpp = f[i.offset(1,0,1)];
-  BoutReal fpm = f[i.offset(1,0,-1)];
-  BoutReal fmp = f[i.offset(-1,0,1)];
-  BoutReal fmm = f[i.offset(-1,0,-1)];
+  // Indexing
+  const auto xp = i.xp();
+  const auto xm = i.xm();
+  const auto zp = i.zp();
+  const auto zm = i.zm();
+
+  const auto xpzp = i.offset(1,0,1);
+  const auto xpzm = i.offset(1,0,-1);
+  const auto xmzp = i.offset(-1,0,1);
+  const auto xmzm = i.offset(-1,0,-1);
   
-  BoutReal gxp = g[i.xp()];
-  BoutReal gxm = g[i.xm()];
-  BoutReal gzp = g[i.zp()];
-  BoutReal gzm = g[i.zm()];
+  const BoutReal fxp = f[xp];
+  const BoutReal fxm = f[xm];
+  const BoutReal fzp = f[zp];
+  const BoutReal fzm = f[zm];
+
+  const BoutReal fpp = f[xpzp];
+  const BoutReal fpm = f[xpzm];
+  const BoutReal fmp = f[xmzp];
+  const BoutReal fmm = f[xmzm];
+  
+  const BoutReal gxp = g[xp];
+  const BoutReal gxm = g[xm];
+  const BoutReal gzp = g[zp];
+  const BoutReal gzm = g[zm];
 
   // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
-  BoutReal Jpp = 0.25*( (fzp - fzm)*
-                        (gxp - gxm) -
-                        (fxp - fxm)*
-                        (gzp - gzm) );
-  
+  BoutReal Jpp =
+    (fzp - fzm) * (gxp - gxm)
+    - (fxp - fxm) * (gzp - gzm);
+
   // J+x
-  BoutReal Jpx = 0.25*( gxp*(fpp-fpm) -
-                        gxm*(fmp-fmm) -
-                        gzp*(fpp-fmp) +
-                        gzm*(fpm-fmm));
+  BoutReal Jpx =
+    gxp * (fpp - fpm)
+    - gxm * (fmp - fmm)
+    - gzp * (fpp - fmp)
+    + gzm * (fpm - fmm);
+
   // Jx+
-  BoutReal Jxp = 0.25*( g[i.offset(1,0,1)]*(fzp-fxp) -
-                        g[i.offset(-1,0,-1)]*(fxm-fzm) -
-                        g[i.offset(-1,0,1)]*(fzp-fxm) +
-                        g[i.offset(1,0,-1)]*(fxp-fzm) );
-  
-  return (Jpp + Jpx + Jxp) / (3. * metric->dx[i] * metric->dz);
+  BoutReal Jxp =
+    g[xpzp] * (fzp - fxp)
+    - g[xmzm] * (fxm - fzm)
+    - g[xmzp] * (fzp - fxm)
+    + g[xpzm] * (fxp - fzm);
+
+  return (Jpp + Jpx + Jxp) / (12. * metric->dx[i] * metric->dz);
 }
 
 #endif // __OPERATORS_DI_H__
