@@ -335,7 +335,7 @@ namespace FV {
    * Note: Uses to/from FieldAligned
    *
    */
-  template<typename CellEdges = Fromm>
+  template<typename CellEdges = MC>
   const Field3D Div_f_v(const Field3D &n_in, const Vector3D &v, bool bndry_flux) {
     CellEdges cellboundary;
     

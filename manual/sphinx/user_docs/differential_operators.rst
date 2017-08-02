@@ -340,7 +340,7 @@ wave speed, which multiplies the dissipation term in the method.
 
 
 By default the ``MC`` slope limiter is used to calculate cell edges, but this can
-be changed at compile time:
+be changed at compile time e.g:
 
 ::
 
@@ -379,6 +379,46 @@ script should produce the graph
    Convergence test, showing :math:`l^2` (RMS) and :math:`l^{\infty}` (maximum) error for
    the evolving fields `n` (density), `p` (pressure) and `nv` (momentum). All fields are
    shown to converge at the expected second order accuracy.
+
+Algorithm
+~~~~~~~~~
+
+
+Parallel diffusion
+------------------
+
+The parallel diffusion operator calculates :math:`\nabla_{||}\left[k\partial_||\left(f\right)\right]`
+
+::
+
+   const Field3D Div_par_K_Grad_par(const Field3D &k, const Field3D &f,
+                                    bool bndry_flux=true);
+
+
+This is done by calculating the flux :math:`k\partial_||\left(f\right)` on cell boundaries
+using central differencing.
+
+
+Advection in 3D
+---------------
+
+This operator calculates :math:`\nabla\cdot\left( n \mathbf{v} \right)` where
+:math:`\mathbf{v}` is a 3D vector. It is written in flux form by discretising the expression
+
+.. math::
+   
+   \nabla\cdot\left( \mathbf{A} \right) = \frac{1}{J}\partial_i \left(J A^i\right)
+
+Like the ``Div_par`` operator, a slope limiter is used to calculate the value of
+the field :math:`n` on cell boundaries. By default this is the MC method, but
+this can be set as a template parameter.
+
+::
+   
+   template<typename CellEdges = MC>
+   const Field3D Div_f_v(const Field3D &n, const Vector3D &v, bool bndry_flux)
+
+
 
 
 .. _sec-slope-limiters
