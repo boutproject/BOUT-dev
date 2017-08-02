@@ -987,7 +987,7 @@ void Mesh::derivs_init(Options* options) {
 
 // X derivative
 
-const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc) {
+const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc, REGION region) {
   if (var.getNx() == 1){
     return 0.;
   }
@@ -1007,7 +1007,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
     if (mesh->xstart > 1) {
       // More than one guard cell, so set pp and mm values
       // This allows higher-order methods to be used
-      for(const auto &i : result.region(RGN_NOX)) {
+      for(const auto &i : result.region(region)) {
         stencil s;
         s.c = var[i];
         s.p = var[i.xp()];
@@ -1029,7 +1029,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
       }
     } else {
       // Only one guard cell, so no pp or mm values
-      for(const auto &i : result.region(RGN_NOX)) {
+      for(const auto &i : result.region(region)) {
         stencil s;
         s.c = var[i];
         s.p = var[i.xp()];
@@ -1057,7 +1057,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
     if (mesh->xstart > 1) {
       // More than one guard cell, so set pp and mm values
       // This allows higher-order methods to be used
-      for(const auto &i : result.region(RGN_NOX)) {
+      for(const auto &i : result.region(region)) {
         stencil s;
         s.c = var[i];
         s.p = var[i.xp()];
@@ -1069,7 +1069,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
       }
     } else {
       // Only one guard cell, so no pp or mm values
-      for(const auto &i : result.region(RGN_NOX)) {
+      for(const auto &i : result.region(region)) {
         stencil s;
         s.c = var[i];
         s.p = var[i.xp()];
@@ -1148,7 +1148,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
   return result;
 }
 
-const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc) {
+const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc, REGION region) {
   if (var.getNx() == 1) {
     return 0.;
   }
@@ -1170,7 +1170,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
     if (mesh->xstart > 1) {
       // More than one guard cell, so set pp and mm values
       // This allows higher-order methods to be used
-      for(const auto &i : result.region(RGN_NOX)) {
+      for(const auto &i : result.region(region)) {
         stencil s;
         s.c = var[i];
         s.p = var[i.xp()];
@@ -1192,7 +1192,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
       }
     } else {
       // Only one guard cell, so no pp or mm values
-      for(const auto &i : result.region(RGN_NOX)) {
+      for(const auto &i : result.region(region)) {
         stencil s;
         s.c = var[i];
         s.p = var[i.xp()];
@@ -1220,7 +1220,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
     if (mesh->xstart > 1) {
       // More than one guard cell, so set pp and mm values
       // This allows higher-order methods to be used
-      for(const auto &i : result.region(RGN_NOX)) {
+      for(const auto &i : result.region(region)) {
         stencil s;
         s.c = var[i];
         s.p = var[i.xp()];
@@ -1232,7 +1232,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
       }
     } else {
       // Only one guard cell, so no pp or mm values
-      for(const auto &i : result.region(RGN_NOX)) {
+      for(const auto &i : result.region(region)) {
         stencil s;
         s.c = var[i];
         s.p = var[i.xp()];
@@ -1317,7 +1317,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
 
 // Y derivative
 
-const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc) {
+const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc, REGION region) {
   if (var.getNy() == 1) {
     return 0.;
   }
@@ -1334,7 +1334,7 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
     // More than one guard cell, so set pp and mm values
     // This allows higher-order methods to be used
     
-    for(const auto &i : result.region(RGN_NOBNDRY)) {
+    for(const auto &i : result.region(region)) {
       // Set stencils
       stencil s;
       s.c = var[i];
@@ -1347,7 +1347,7 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
     }
   } else {
     // Only one guard cell, so no pp or mm values
-    for(const auto &i : result.region(RGN_NOBNDRY)) {
+    for(const auto &i : result.region(region)) {
       // Set stencils
       stencil s;
       s.c = var[i];
@@ -1425,7 +1425,7 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
   return result;
 }
 
-const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc) {
+const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc, REGION region) {
   if (var.getNy() == 1){
     return 0.;
   }
@@ -1450,7 +1450,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
       // Cell location of the input field
       CELL_LOC location = var.getLocation();
       
-      for(const auto &i : result.region(RGN_NOBNDRY)) {
+      for(const auto &i : result.region(region)) {
         // Set stencils
         stencil s;
         s.c = var[i];
@@ -1473,7 +1473,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
       }
     } else {
       // Non-staggered
-      for(const auto &i : result.region(RGN_NOBNDRY)) {
+      for(const auto &i : result.region(region)) {
         // Set stencils
         stencil s;
         s.c = var[i];
@@ -1499,7 +1499,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
       if (mesh->ystart > 1) {
         // More than one guard cell, so set pp and mm values
         // This allows higher-order methods to be used
-        for(const auto &i : result.region(RGN_NOBNDRY)) {
+        for(const auto &i : result.region(region)) {
           // Set stencils
           stencil s;
           s.c = var_fa[i];
@@ -1522,7 +1522,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
         }
       } else {
         // Only one guard cell, so no pp or mm values
-        for(const auto &i : result.region(RGN_NOBNDRY)) {
+        for(const auto &i : result.region(region)) {
           // Set stencils
           stencil s;
           s.c = var_fa[i];
@@ -1551,7 +1551,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
       if (mesh->ystart > 1) {
         // More than one guard cell, so set pp and mm values
         // This allows higher-order methods to be used
-        for(const auto &i : result.region(RGN_NOBNDRY)) {
+        for(const auto &i : result.region(region)) {
           // Set stencils
           stencil s;
           s.c = var_fa[i];
@@ -1564,7 +1564,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
         }
       } else {
         // Only one guard cell, so no pp or mm values
-        for(const auto &i : result.region(RGN_NOBNDRY)) {
+        for(const auto &i : result.region(region)) {
           // Set stencils
           stencil s;
           s.c = var_fa[i];
@@ -1656,7 +1656,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
 
 // Z derivative
 
-const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc) {
+const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc, REGION region) {
   if (var.getNz()==1){
     return 0.;
   }
@@ -1669,7 +1669,7 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   // Check that the input variable has data
   ASSERT1(var.isAllocated());
   
-  for(const auto &i : result.region(RGN_ALL)) {
+  for(const auto &i : result.region(region)) {
     stencil s;
     s.c = var[i];
     s.p = var[i.zp()];
