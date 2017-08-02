@@ -8546,7 +8546,166 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 IDALIBSLIB='lib64'
 else
+  as_ac_File=`$as_echo "ac_cv_file_$with_ida/lib/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/lib/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $with_ida/lib/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_ida/lib/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_ida/lib/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$with_ida/lib64/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/lib64/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $with_ida/lib64/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_ida/lib64/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_ida/lib64/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib64'
+else
   IDALIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$with_ida/lib64/libsundials_ida.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/lib64/libsundials_ida.so" >&5
+$as_echo_n "checking for $with_ida/lib64/libsundials_ida.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_ida/lib64/libsundials_ida.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_ida/lib64/libsundials_ida.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib64'
+else
+  IDALIBS=""
+
+fi
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$with_ida/lib/libsundials_ida.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/lib/libsundials_ida.so" >&5
+$as_echo_n "checking for $with_ida/lib/libsundials_ida.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_ida/lib/libsundials_ida.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_ida/lib/libsundials_ida.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$with_ida/lib64/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/lib64/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $with_ida/lib64/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_ida/lib64/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_ida/lib64/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib64'
+else
+  IDALIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$with_ida/lib64/libsundials_ida.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/lib64/libsundials_ida.so" >&5
+$as_echo_n "checking for $with_ida/lib64/libsundials_ida.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_ida/lib64/libsundials_ida.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_ida/lib64/libsundials_ida.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib64'
+else
+  IDALIBS=""
+
+fi
+
+fi
 
 fi
 as_ac_File=`$as_echo "ac_cv_file_$with_ida/lib64/libsundials_ida.a" | $as_tr_sh`
@@ -8573,7 +8732,166 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 IDALIBSLIB='lib64'
 else
+  as_ac_File=`$as_echo "ac_cv_file_$with_ida/lib/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/lib/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $with_ida/lib/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_ida/lib/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_ida/lib/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$with_ida/lib64/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/lib64/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $with_ida/lib64/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_ida/lib64/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_ida/lib64/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib64'
+else
   IDALIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$with_ida/lib64/libsundials_ida.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/lib64/libsundials_ida.so" >&5
+$as_echo_n "checking for $with_ida/lib64/libsundials_ida.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_ida/lib64/libsundials_ida.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_ida/lib64/libsundials_ida.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib64'
+else
+  IDALIBS=""
+
+fi
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$with_ida/lib/libsundials_ida.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/lib/libsundials_ida.so" >&5
+$as_echo_n "checking for $with_ida/lib/libsundials_ida.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_ida/lib/libsundials_ida.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_ida/lib/libsundials_ida.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$with_ida/lib64/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/lib64/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $with_ida/lib64/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_ida/lib64/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_ida/lib64/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib64'
+else
+  IDALIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$with_ida/lib64/libsundials_ida.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/lib64/libsundials_ida.so" >&5
+$as_echo_n "checking for $with_ida/lib64/libsundials_ida.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_ida/lib64/libsundials_ida.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_ida/lib64/libsundials_ida.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib64'
+else
+  IDALIBS=""
+
+fi
+
+fi
 
 fi
 
@@ -8626,7 +8944,166 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 IDALIBSLIB='lib64'
 else
+  as_ac_File=`$as_echo "ac_cv_file_$with_ida/lib/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/lib/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $with_ida/lib/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_ida/lib/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_ida/lib/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$with_ida/lib64/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/lib64/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $with_ida/lib64/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_ida/lib64/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_ida/lib64/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib64'
+else
   IDALIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$with_ida/lib64/libsundials_ida.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/lib64/libsundials_ida.so" >&5
+$as_echo_n "checking for $with_ida/lib64/libsundials_ida.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_ida/lib64/libsundials_ida.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_ida/lib64/libsundials_ida.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib64'
+else
+  IDALIBS=""
+
+fi
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$with_ida/lib/libsundials_ida.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/lib/libsundials_ida.so" >&5
+$as_echo_n "checking for $with_ida/lib/libsundials_ida.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_ida/lib/libsundials_ida.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_ida/lib/libsundials_ida.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$with_ida/lib64/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/lib64/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $with_ida/lib64/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_ida/lib64/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_ida/lib64/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib64'
+else
+  IDALIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$with_ida/lib64/libsundials_ida.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/lib64/libsundials_ida.so" >&5
+$as_echo_n "checking for $with_ida/lib64/libsundials_ida.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_ida/lib64/libsundials_ida.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_ida/lib64/libsundials_ida.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib64'
+else
+  IDALIBS=""
+
+fi
+
+fi
 
 fi
 as_ac_File=`$as_echo "ac_cv_file_$with_ida/lib64/libsundials_ida.a" | $as_tr_sh`
@@ -8653,7 +9130,166 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 IDALIBSLIB='lib64'
 else
+  as_ac_File=`$as_echo "ac_cv_file_$with_ida/lib/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/lib/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $with_ida/lib/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_ida/lib/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_ida/lib/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$with_ida/lib64/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/lib64/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $with_ida/lib64/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_ida/lib64/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_ida/lib64/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib64'
+else
   IDALIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$with_ida/lib64/libsundials_ida.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/lib64/libsundials_ida.so" >&5
+$as_echo_n "checking for $with_ida/lib64/libsundials_ida.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_ida/lib64/libsundials_ida.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_ida/lib64/libsundials_ida.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib64'
+else
+  IDALIBS=""
+
+fi
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$with_ida/lib/libsundials_ida.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/lib/libsundials_ida.so" >&5
+$as_echo_n "checking for $with_ida/lib/libsundials_ida.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_ida/lib/libsundials_ida.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_ida/lib/libsundials_ida.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$with_ida/lib64/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/lib64/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $with_ida/lib64/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_ida/lib64/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_ida/lib64/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib64'
+else
+  IDALIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$with_ida/lib64/libsundials_ida.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/lib64/libsundials_ida.so" >&5
+$as_echo_n "checking for $with_ida/lib64/libsundials_ida.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_ida/lib64/libsundials_ida.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_ida/lib64/libsundials_ida.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib64'
+else
+  IDALIBS=""
+
+fi
+
+fi
 
 fi
 
@@ -8920,7 +9556,7 @@ else
 
 fi
 
-        as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/lib/libsundials_nvecparallel.a" | $as_tr_sh`
+    as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/lib/libsundials_nvecparallel.a" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/lib/libsundials_nvecparallel.a" >&5
 $as_echo_n "checking for $IDALIBS/lib/libsundials_nvecparallel.a... " >&6; }
 if eval \${$as_ac_File+:} false; then :
@@ -8968,7 +9604,166 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 IDALIBSLIB='lib64'
 else
+  as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/lib/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/lib/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $IDALIBS/lib/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$IDALIBS/lib/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$IDALIBS/lib/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/lib64/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/lib64/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $IDALIBS/lib64/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$IDALIBS/lib64/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$IDALIBS/lib64/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib64'
+else
   IDALIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/lib64/libsundials_ida.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/lib64/libsundials_ida.so" >&5
+$as_echo_n "checking for $IDALIBS/lib64/libsundials_ida.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$IDALIBS/lib64/libsundials_ida.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$IDALIBS/lib64/libsundials_ida.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib64'
+else
+  IDALIBS=""
+
+fi
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/lib/libsundials_ida.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/lib/libsundials_ida.so" >&5
+$as_echo_n "checking for $IDALIBS/lib/libsundials_ida.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$IDALIBS/lib/libsundials_ida.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$IDALIBS/lib/libsundials_ida.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/lib64/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/lib64/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $IDALIBS/lib64/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$IDALIBS/lib64/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$IDALIBS/lib64/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib64'
+else
+  IDALIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/lib64/libsundials_ida.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/lib64/libsundials_ida.so" >&5
+$as_echo_n "checking for $IDALIBS/lib64/libsundials_ida.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$IDALIBS/lib64/libsundials_ida.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$IDALIBS/lib64/libsundials_ida.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib64'
+else
+  IDALIBS=""
+
+fi
+
+fi
 
 fi
 as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/lib64/libsundials_ida.a" | $as_tr_sh`
@@ -8995,7 +9790,166 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 IDALIBSLIB='lib64'
 else
+  as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/lib/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/lib/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $IDALIBS/lib/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$IDALIBS/lib/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$IDALIBS/lib/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/lib64/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/lib64/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $IDALIBS/lib64/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$IDALIBS/lib64/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$IDALIBS/lib64/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib64'
+else
   IDALIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/lib64/libsundials_ida.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/lib64/libsundials_ida.so" >&5
+$as_echo_n "checking for $IDALIBS/lib64/libsundials_ida.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$IDALIBS/lib64/libsundials_ida.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$IDALIBS/lib64/libsundials_ida.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib64'
+else
+  IDALIBS=""
+
+fi
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/lib/libsundials_ida.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/lib/libsundials_ida.so" >&5
+$as_echo_n "checking for $IDALIBS/lib/libsundials_ida.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$IDALIBS/lib/libsundials_ida.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$IDALIBS/lib/libsundials_ida.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/lib64/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/lib64/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $IDALIBS/lib64/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$IDALIBS/lib64/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$IDALIBS/lib64/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib64'
+else
+  IDALIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/lib64/libsundials_ida.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/lib64/libsundials_ida.so" >&5
+$as_echo_n "checking for $IDALIBS/lib64/libsundials_ida.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$IDALIBS/lib64/libsundials_ida.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$IDALIBS/lib64/libsundials_ida.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib64'
+else
+  IDALIBS=""
+
+fi
+
+fi
 
 fi
 
@@ -9048,7 +10002,166 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 IDALIBSLIB='lib64'
 else
+  as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/lib/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/lib/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $IDALIBS/lib/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$IDALIBS/lib/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$IDALIBS/lib/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/lib64/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/lib64/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $IDALIBS/lib64/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$IDALIBS/lib64/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$IDALIBS/lib64/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib64'
+else
   IDALIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/lib64/libsundials_ida.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/lib64/libsundials_ida.so" >&5
+$as_echo_n "checking for $IDALIBS/lib64/libsundials_ida.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$IDALIBS/lib64/libsundials_ida.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$IDALIBS/lib64/libsundials_ida.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib64'
+else
+  IDALIBS=""
+
+fi
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/lib/libsundials_ida.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/lib/libsundials_ida.so" >&5
+$as_echo_n "checking for $IDALIBS/lib/libsundials_ida.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$IDALIBS/lib/libsundials_ida.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$IDALIBS/lib/libsundials_ida.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/lib64/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/lib64/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $IDALIBS/lib64/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$IDALIBS/lib64/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$IDALIBS/lib64/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib64'
+else
+  IDALIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/lib64/libsundials_ida.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/lib64/libsundials_ida.so" >&5
+$as_echo_n "checking for $IDALIBS/lib64/libsundials_ida.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$IDALIBS/lib64/libsundials_ida.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$IDALIBS/lib64/libsundials_ida.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib64'
+else
+  IDALIBS=""
+
+fi
+
+fi
 
 fi
 as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/lib64/libsundials_ida.a" | $as_tr_sh`
@@ -9075,7 +10188,166 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 IDALIBSLIB='lib64'
 else
+  as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/lib/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/lib/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $IDALIBS/lib/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$IDALIBS/lib/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$IDALIBS/lib/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/lib64/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/lib64/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $IDALIBS/lib64/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$IDALIBS/lib64/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$IDALIBS/lib64/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib64'
+else
   IDALIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/lib64/libsundials_ida.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/lib64/libsundials_ida.so" >&5
+$as_echo_n "checking for $IDALIBS/lib64/libsundials_ida.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$IDALIBS/lib64/libsundials_ida.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$IDALIBS/lib64/libsundials_ida.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib64'
+else
+  IDALIBS=""
+
+fi
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/lib/libsundials_ida.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/lib/libsundials_ida.so" >&5
+$as_echo_n "checking for $IDALIBS/lib/libsundials_ida.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$IDALIBS/lib/libsundials_ida.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$IDALIBS/lib/libsundials_ida.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/lib64/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/lib64/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $IDALIBS/lib64/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$IDALIBS/lib64/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$IDALIBS/lib64/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib64'
+else
+  IDALIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/lib64/libsundials_ida.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/lib64/libsundials_ida.so" >&5
+$as_echo_n "checking for $IDALIBS/lib64/libsundials_ida.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$IDALIBS/lib64/libsundials_ida.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$IDALIBS/lib64/libsundials_ida.so" | $as_tr_cpp` 1
+_ACEOF
+IDALIBSLIB='lib64'
+else
+  IDALIBS=""
+
+fi
+
+fi
 
 fi
 
@@ -11275,8 +12547,170 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 ARKODELIBSLIB='lib64'
 else
+  as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib/libsundials_arkode.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib/libsundials_arkode.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib/libsundials_arkode.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib/libsundials_arkode.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
-        ARKODELIBS=""
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib/libsundials_arkode.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_arkode.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib64/libsundials_arkode.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib64/libsundials_arkode.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib64/libsundials_arkode.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib64/libsundials_arkode.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib64'
+else
+
+            ARKODELIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib64/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib64/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib64/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib64/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib64'
+else
+
+            ARKODELIBS=""
+
+fi
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_arkode.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib64/libsundials_arkode.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib64/libsundials_arkode.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib64/libsundials_arkode.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib64/libsundials_arkode.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib64'
+else
+
+            ARKODELIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib64/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib64/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib64/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib64/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib64'
+else
+
+            ARKODELIBS=""
+
+fi
+
+fi
 
 fi
 as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_nvecparallel.a" | $as_tr_sh`
@@ -11303,8 +12737,170 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 ARKODELIBSLIB='lib64'
 else
+  as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib/libsundials_arkode.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib/libsundials_arkode.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib/libsundials_arkode.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib/libsundials_arkode.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
-        ARKODELIBS=""
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib/libsundials_arkode.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_arkode.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib64/libsundials_arkode.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib64/libsundials_arkode.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib64/libsundials_arkode.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib64/libsundials_arkode.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib64'
+else
+
+            ARKODELIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib64/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib64/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib64/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib64/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib64'
+else
+
+            ARKODELIBS=""
+
+fi
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_arkode.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib64/libsundials_arkode.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib64/libsundials_arkode.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib64/libsundials_arkode.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib64/libsundials_arkode.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib64'
+else
+
+            ARKODELIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib64/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib64/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib64/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib64/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib64'
+else
+
+            ARKODELIBS=""
+
+fi
+
+fi
 
 fi
 
@@ -11357,8 +12953,170 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 ARKODELIBSLIB='lib64'
 else
+  as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib/libsundials_arkode.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib/libsundials_arkode.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib/libsundials_arkode.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib/libsundials_arkode.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
-        ARKODELIBS=""
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib/libsundials_arkode.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_arkode.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib64/libsundials_arkode.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib64/libsundials_arkode.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib64/libsundials_arkode.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib64/libsundials_arkode.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib64'
+else
+
+            ARKODELIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib64/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib64/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib64/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib64/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib64'
+else
+
+            ARKODELIBS=""
+
+fi
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_arkode.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib64/libsundials_arkode.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib64/libsundials_arkode.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib64/libsundials_arkode.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib64/libsundials_arkode.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib64'
+else
+
+            ARKODELIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib64/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib64/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib64/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib64/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib64'
+else
+
+            ARKODELIBS=""
+
+fi
+
+fi
 
 fi
 as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_nvecparallel.a" | $as_tr_sh`
@@ -11385,8 +13143,170 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 ARKODELIBSLIB='lib64'
 else
+  as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib/libsundials_arkode.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib/libsundials_arkode.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib/libsundials_arkode.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib/libsundials_arkode.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
-        ARKODELIBS=""
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib/libsundials_arkode.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_arkode.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib64/libsundials_arkode.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib64/libsundials_arkode.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib64/libsundials_arkode.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib64/libsundials_arkode.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib64'
+else
+
+            ARKODELIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib64/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib64/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib64/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib64/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib64'
+else
+
+            ARKODELIBS=""
+
+fi
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_arkode.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib64/libsundials_arkode.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib64/libsundials_arkode.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib64/libsundials_arkode.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib64/libsundials_arkode.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib64'
+else
+
+            ARKODELIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib64/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib64/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib64/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib64/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib64'
+else
+
+            ARKODELIBS=""
+
+fi
+
+fi
 
 fi
 
@@ -11646,8 +13566,170 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 ARKODELIBSLIB='lib64'
 else
+  as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib/libsundials_arkode.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib/libsundials_arkode.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib/libsundials_arkode.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib/libsundials_arkode.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
-            ARKODELIBS=""
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib/libsundials_arkode.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_arkode.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib64/libsundials_arkode.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib64/libsundials_arkode.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib64/libsundials_arkode.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib64/libsundials_arkode.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib64'
+else
+
+                ARKODELIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib64/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib64/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib64/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib64/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib64'
+else
+
+                ARKODELIBS=""
+
+fi
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_arkode.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib64/libsundials_arkode.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib64/libsundials_arkode.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib64/libsundials_arkode.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib64/libsundials_arkode.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib64'
+else
+
+                ARKODELIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib64/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib64/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib64/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib64/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib64'
+else
+
+                ARKODELIBS=""
+
+fi
+
+fi
 
 fi
 as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_nvecparallel.a" | $as_tr_sh`
@@ -11674,8 +13756,170 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 ARKODELIBSLIB='lib64'
 else
+  as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib/libsundials_arkode.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib/libsundials_arkode.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib/libsundials_arkode.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib/libsundials_arkode.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
-            ARKODELIBS=""
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib/libsundials_arkode.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_arkode.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib64/libsundials_arkode.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib64/libsundials_arkode.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib64/libsundials_arkode.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib64/libsundials_arkode.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib64'
+else
+
+                ARKODELIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib64/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib64/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib64/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib64/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib64'
+else
+
+                ARKODELIBS=""
+
+fi
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_arkode.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib64/libsundials_arkode.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib64/libsundials_arkode.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib64/libsundials_arkode.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib64/libsundials_arkode.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib64'
+else
+
+                ARKODELIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib64/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib64/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib64/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib64/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib64'
+else
+
+                ARKODELIBS=""
+
+fi
+
+fi
 
 fi
 
@@ -11728,8 +13972,170 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 ARKODELIBSLIB='lib64'
 else
+  as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib/libsundials_arkode.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib/libsundials_arkode.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib/libsundials_arkode.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib/libsundials_arkode.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
-            ARKODELIBS=""
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib/libsundials_arkode.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_arkode.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib64/libsundials_arkode.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib64/libsundials_arkode.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib64/libsundials_arkode.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib64/libsundials_arkode.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib64'
+else
+
+                ARKODELIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib64/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib64/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib64/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib64/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib64'
+else
+
+                ARKODELIBS=""
+
+fi
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_arkode.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib64/libsundials_arkode.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib64/libsundials_arkode.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib64/libsundials_arkode.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib64/libsundials_arkode.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib64'
+else
+
+                ARKODELIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib64/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib64/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib64/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib64/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib64'
+else
+
+                ARKODELIBS=""
+
+fi
+
+fi
 
 fi
 as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_nvecparallel.a" | $as_tr_sh`
@@ -11756,8 +14162,170 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 ARKODELIBSLIB='lib64'
 else
+  as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib/libsundials_arkode.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib/libsundials_arkode.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib/libsundials_arkode.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib/libsundials_arkode.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
-            ARKODELIBS=""
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib/libsundials_arkode.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_arkode.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib64/libsundials_arkode.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib64/libsundials_arkode.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib64/libsundials_arkode.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib64/libsundials_arkode.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib64'
+else
+
+                ARKODELIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib64/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib64/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib64/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib64/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib64'
+else
+
+                ARKODELIBS=""
+
+fi
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_arkode.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib64/libsundials_arkode.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib64/libsundials_arkode.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib64/libsundials_arkode.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib64/libsundials_arkode.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib64'
+else
+
+                ARKODELIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_nvecparallel.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ARKODELIBS/lib64/libsundials_nvecparallel.so" >&5
+$as_echo_n "checking for $ARKODELIBS/lib64/libsundials_nvecparallel.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$ARKODELIBS/lib64/libsundials_nvecparallel.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ARKODELIBS/lib64/libsundials_nvecparallel.so" | $as_tr_cpp` 1
+_ACEOF
+ARKODELIBSLIB='lib64'
+else
+
+                ARKODELIBS=""
+
+fi
+
+fi
 
 fi
 
