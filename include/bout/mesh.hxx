@@ -460,10 +460,19 @@ class Mesh {
   bool StaggerGrids;    ///< Enable staggered grids (Centre, Lower). Otherwise all vars are cell centred (default).
   
   bool IncIntShear; ///< Include integrated shear (if shifting X)
-  
+
   /// Coordinate system
-  Coordinates* coordinates();
-  
+  Coordinates *coordinates() {
+    if (coords) { // True branch most common, returns immediately
+      return coords;
+    }
+    // No coordinate system set. Create default
+    // Note that this can't be allocated here due to incomplete type
+    // (circular dependency between Mesh and Coordinates)
+    coords = createDefaultCoordinates();
+    return coords;
+  }
+
   bool freeboundary_xin, freeboundary_xout, freeboundary_ydown, freeboundary_yup; ///< Applying free boundaries in derivative operations?
 
   // First derivatives in index space
@@ -631,7 +640,8 @@ class Mesh {
   const Field3D applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc = CELL_DEFAULT);
   
 private:
-  
+  /// Allocates a default Coordinates object
+  Coordinates *createDefaultCoordinates();
 };
 
 #endif // __MESH_H__
