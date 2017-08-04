@@ -13,9 +13,6 @@ test-delp2
 test-vec
 test-griddata
 !test-initial
-MMS/diffusion
-MMS/wave-1d
-MMS/wave-1d-y
 # More complex tests
 test-drift-instability
 test-interchange-instability

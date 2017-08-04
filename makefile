@@ -11,5 +11,17 @@ endif
 
 include make.config
 
-check:
-	@$(MAKE) --no-print-directory -C tests check
+######################################################################
+# Tests
+######################################################################
+
+check-unit-tests:
+	@$(MAKE) --no-print-directory -C tests/unit check
+
+check-mms-tests:
+	@$(MAKE) --no-print-directory -C tests/MMS check
+
+check-integrated-tests:
+	@$(MAKE) --no-print-directory -C tests/integrated check
+
+check: check-unit-tests check-integrated-tests check-mms-tests
