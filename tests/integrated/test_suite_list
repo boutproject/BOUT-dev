@@ -17,7 +17,7 @@ MMS/diffusion
 MMS/wave-1d
 MMS/wave-1d-y
 # More complex tests
-drift-instability
-interchange-instability
+test-drift-instability
+test-interchange-instability
 # test coding style
 !test-code-style
