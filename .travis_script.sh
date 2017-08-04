@@ -16,8 +16,8 @@ then
     cat config-build.log
     exit $conf
 fi
-time make || exit
-time make check || exit
 export PYTHONPATH=$(pwd)/tools/pylib/:$PYTHONPATH
-cd ./examples
-time ./test_suite_make && ./test_suite
+time make || exit
+time make check-unit-tests || exit
+time make check-integrated-tests || exit
+time make check-mms-tests || exit
