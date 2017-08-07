@@ -2,4 +2,4 @@
 
 make || exit
 
-./subdirs
+mpirun -n 1 ./subdirs

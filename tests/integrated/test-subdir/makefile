@@ -1,4 +1,4 @@
-BOUT_TOP	= ../..
+BOUT_TOP	= ../../..
 SOURCEH =
 SOURCEC = subdirs.cxx
 
