@@ -1,6 +1,6 @@
 
 BOUT_TOP	= ../../..
 
-SOURCEC		= test_fieldgroup.cxx
+SOURCEC		= test_fail.cxx
 
 include $(BOUT_TOP)/make.config

@@ -10,10 +10,10 @@ echo ""
 echo "Running FieldGroup test"
 
 # Ensure we clean old run, in case it succeeded last time
-make -f makefile_fail clean
+make clean
 
 # This test should fail to compile
-make -f makefile_fail > run.log  2>&1
+make > run.log 2>&1
 
 if [ $? -eq 0 ]; then
   # Compiled ok, something wrong
@@ -24,27 +24,5 @@ if [ $? -eq 0 ]; then
   exit 1;
 fi
 
-# Second test should pass
-
-make clean
-make >> run.log 2>&1
-
-if [ $? -ne 0 ]; then
-  echo "Fail. Log follows:"
-  echo ""
-  cat run.log
-  exit 2;
-fi
-
-./test_fieldgroup >> run.log 2>&1
-if [ $? -ne 0 ]; then
-  echo "Fail. Log follows"
-  echo ""
-  cat run.log
-  exit 3;
-fi
-
 echo "Passed"
-
 exit 0
-
