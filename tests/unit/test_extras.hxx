@@ -24,6 +24,16 @@ const BoutReal BoutRealTolerance = 1e-15;
                                                   BoutReal tolerance = BoutRealTolerance);
 
 /// FakeMesh has just enough information to create fields
+///
+/// Notes:
+///
+/// - This is a mesh for a single process, so the global and local
+/// indices are the same.
+///
+/// - There is a single guard cell at each of the start/end x/y grids.
+///
+/// - Only the **grid** information is assumed to be used -- anything
+///   else will likely **not** work!
 class FakeMesh : public Mesh {
 public:
   FakeMesh(int nx, int ny, int nz) {
