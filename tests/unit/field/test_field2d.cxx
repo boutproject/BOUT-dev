@@ -3,7 +3,7 @@
 #include "bout/constants.hxx"
 #include "bout/mesh.hxx"
 #include "boutexception.hxx"
-#include "field3d.hxx"
+#include "field2d.hxx"
 #include "test_extras.hxx"
 #include "unused.hxx"
 
