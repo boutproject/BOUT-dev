@@ -156,6 +156,7 @@ void Options::get(const string &key, BoutReal &val, BoutReal def) {
     // Specify the source of the setting
     output << " (" << it->second.source << ")";
   }
+  output << endl;
 }
 
 void Options::get(const string &key, bool &val, bool def) {
