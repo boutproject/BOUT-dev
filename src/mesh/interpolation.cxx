@@ -56,10 +56,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
     //output.write("\nINTERPOLATING %s -> %s\n", strLocation(var.getLocation()), strLocation(loc));
 
     // Staggered grids enabled, and need to perform interpolation
-
-#ifdef CHECK
-    msg_stack.push("Interpolating %s -> %s", strLocation(var.getLocation()), strLocation(loc));
-#endif
+    TRACE("Interpolating %s -> %s", strLocation(var.getLocation()), strLocation(loc));
 
     Field3D result;
 
@@ -125,10 +122,6 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
       result = interp_to( interp_to(var, CELL_CENTRE) , loc);
     }
     result.setLocation(loc);
-
-#ifdef CHECK
-    msg_stack.pop();
-#endif
 
     return result;
   }

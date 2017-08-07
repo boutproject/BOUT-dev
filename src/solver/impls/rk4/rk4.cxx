@@ -10,13 +10,12 @@
 
 #include <output.hxx>
 
-RK4Solver::RK4Solver(Options *options) : Solver(options) {
-  f0 = 0; // Mark as uninitialised
+RK4Solver::RK4Solver(Options *options) : Solver(options), f0(nullptr) {
   canReset = true;
 }
 
 RK4Solver::~RK4Solver() {
-  if(f0 != 0) {
+  if(f0 != nullptr) {
     delete[] f0;
     delete[] f1;
     delete[] f2;
@@ -91,7 +90,7 @@ int RK4Solver::init(int nout, BoutReal tstep) {
 }
 
 int RK4Solver::run() {
-  int msg_point = msg_stack.push("RK4Solver::run()");
+  TRACE("RK4Solver::run()");
   
   for(int s=0;s<nsteps;s++) {
     BoutReal target = simtime + out_timestep;
@@ -175,8 +174,6 @@ int RK4Solver::run() {
     // Reset iteration and wall-time count
     rhs_ncalls = 0;
   }
-  
-  msg_stack.pop(msg_point);
   
   return 0;
 }

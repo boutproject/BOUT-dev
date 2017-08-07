@@ -3,11 +3,12 @@
 """Driver which runs 3d_diffusion for several different combinations of
 the input. """
 
-from bout_runners.bout_runners import basic_runner
+from bout_runners import basic_runner
 
 # With a few exceptions: All variables in the constructor can be given
-# as an iterable When execute_runs is called, all combinations of the
-# member data is going to be runned
+# as an iterable.
+# When execute_runs is called, bout_runners will run all combinations of
+# the member data
 my_runs = basic_runner(\
             # nx, ny and nz must be of the same size as they constitute
             # one "part" of the combination (i.e. there will be no
@@ -23,7 +24,7 @@ my_runs = basic_runner(\
             # The differencing option
             ddz_second = ('FFT','C2'),\
             # Additional options
-            additional = [('cst','D_perp',[1, 2])]\
+            additional = (('cst','D_perp',(1, 2)))\
             )
 
 # Execute all the runs

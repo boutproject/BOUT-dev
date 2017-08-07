@@ -2571,8 +2571,8 @@ void BoundaryZeroLaplace::apply(Field3D &f) {
   
   if(c0 == (dcomplex*) NULL) {
     // allocate memory
-    c0 = new dcomplex[ncz/2 + 1];
-    c1 = new dcomplex[ncz/2 + 1];
+    c0 = new dcomplex[ncz/2 + 1]; //Never freed
+    c1 = new dcomplex[ncz/2 + 1]; //Never freed
   }
   
   if((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {

@@ -12,7 +12,9 @@ test-gyro
 test-delp2
 test-vec
 test-griddata
+!test-fieldgroup
 !test-initial
+test-subdir
 # More complex tests
 test-drift-instability
 test-interchange-instability

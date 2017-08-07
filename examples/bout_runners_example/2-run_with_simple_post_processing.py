@@ -2,8 +2,8 @@
 
 """Driver which runs 3d_diffusion, and calls the function show_the_data when done"""
 
-from post_processing_show_the_data import show_the_data
-from bout_runners.bout_runners import basic_runner
+from pre_and_post_processing.post_processing_show_the_data import show_the_data
+from bout_runners import basic_runner
 
 
 my_runs = basic_runner()

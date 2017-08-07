@@ -13,6 +13,7 @@ NXPE = 1
 
 [mesh]
 symmetricGlobalX = true
+symmetricGlobalY = false
 
 nx = 7
 ny = 12

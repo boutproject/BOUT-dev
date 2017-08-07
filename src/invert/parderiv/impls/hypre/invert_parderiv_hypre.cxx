@@ -115,7 +115,7 @@ InvertParHypre::InvertParHypre(Mesh *mi) {
     int nk = (m->LocalNz)/2 + 1;
     
     int stencil_indices[5] = {0,1,2,3,4}; // Labels for stencil entries
-    int *values = new int[nyloc * 5];
+    int *values = new int[nyloc * 5]; //Never freed
     for(int k=0;k<nk;k++) {
       HYPRE_StructMatrixCreate(surf->communicator(), grid[surf->xpos], stencil, &mat[surf->xpos][k]);
       HYPRE_StructMatrixInitialize(mat[surf->xpos][k]);
@@ -137,6 +137,9 @@ InvertParHypre::InvertParHypre(Mesh *mi) {
 InvertParHypre::~InvertParHypre() {
   free_cmatrix(crhs);
   free_cmatrix(cresult);
+  delete[] grid;
+  delete[] mat[0];
+  delete[] mat;
 }
 
 const Field3D InvertParHypre::solve(const Field3D &f) {

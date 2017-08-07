@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 # note - these commands are only run by default in interactive mode
 from __future__ import print_function
 from __future__ import absolute_import
