@@ -10,7 +10,7 @@
 
 class ArrayTest : public ::testing::Test {
 public:
-  ArrayTest() { Array<double>::enableStore(); }
+  ArrayTest() { Array<double>::useStore(true); }
   ~ArrayTest() { Array<double>::cleanup(); }
 };
 

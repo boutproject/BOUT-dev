@@ -163,6 +163,8 @@ TEST(OptionsTest, CheckUsed) {
   options.get("key1", value, "--", false);
   section1->get("key2", value, "--", false);
 
+  // Clear buffer
+  buffer.str("");
   options.printUnused();
 
   // Check only key3, key4 are in buffer
