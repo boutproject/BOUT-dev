@@ -684,3 +684,48 @@ To stop a simulation using this method, just create an empty file in the output 
 
 just remember to delete the file afterwards.
 
+Manipulating restart files
+--------------------------
+
+It is sometimes useful to change the number of processors used in a simulation,
+or to modify restart files in various ways. For example, a 3D turbulence
+simulation might start with a quick 2D simulation with diffusive transport to reach
+a steady-state. The restart files can then be extended into 3D, noise added to seed
+instabilities, and the files split over a more processors.
+
+Routines to modify restart files are in ``tools/pylib/boutdata/restart.py``:
+
+.. code-block:: pycon
+
+    >>> from boutdata import restart
+    >>> help(restart)
+
+Changing number of processors
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To change the number of processors use the ``redistribute`` function:
+
+.. code-block:: pycon
+
+    >>> from boutdata import restart
+    >>> restart.redistribute(32, path="../oldrun", output=".")
+
+where in this example ``32`` is the number of processors desired; ``path`` sets
+the path to the existing restart files, and ``output`` is the path where
+the new restart files should go.
+**Note** Make sure that ``path`` and ``output`` are different.
+
+If your simulation is divided in X and Y directions then you should also specify
+the number of processors in the X direction, ``NXPE``:
+
+.. code-block:: pycon
+
+    >>> restart.redistribute(32, path="../oldrun", output=".", nxpe=8)
+
+**Note** Currently this routine doesn't check that this split is consistent with
+branch cuts, e.g. for X-point tokamak simulations. If an inconsistent choice is made
+then the BOUT++ restart will fail.
+
+**Note** It is a good idea to set ``nxpe`` in the ``BOUT.inp`` file to be consistent with
+what you set here. If it is inconsistent then the restart will fail, but the error message may
+not be particularly enlightening.
