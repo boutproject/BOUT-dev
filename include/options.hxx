@@ -40,6 +40,7 @@ class Options;
 #define __OPTIONS_H__
 
 #include "bout_types.hxx"
+#include "unused.hxx"
 
 #include <map>
 #include <string>
@@ -98,16 +99,25 @@ using std::string;
  *
  * This is used to represent all the options passed to BOUT++ either in a file or on the
  * command line.
+ *
  */
 class Options {
 public:
- Options() : parent(NULL) {}
- Options(Options *p, string s) : parent(p), sectionName(s) {};
+  /// Constructor. This is called to create the root object
+  Options() : parent(nullptr) {}
+
+  /// Constructor used to create non-root objects
+  ///
+  /// @param[in] p         Parent object
+  /// @param[in[ secname   Name of the section, including path from the root
+  Options(Options *p, string secname) : parent(p), sectionName(secname) {};
+
+  /// Destructor
   ~Options();
 
   /// Get a pointer to the only root instance (singleton)
   static Options* getRoot();
-
+  
   /*!
    * Free all memory
    */ 
@@ -118,7 +128,13 @@ public:
   void set(const string &key, BoutReal val, const string &source="");
   void set(const string &key, const bool &val, const string &source="");
   void set(const string &key, const string &val, const string &source="");
-
+  
+  /// Set a string with a char* array. This converts to std::string
+  /// rather than allow an implicit conversion to bool
+  void set(const string &key, const char* val, const string &source="") {
+    set(key, string(val), source);
+  }
+  
   /*!
    * Test if a key is set to a value
    *
@@ -126,11 +142,18 @@ public:
   bool isSet(const string &key);
 
   // Getting options
-  void get(const string &key, int &val, const int &def, bool log=true);
-  void get(const string &key, BoutReal &val, BoutReal def, bool log=true);
-  void get(const string &key, bool &val, const bool &def, bool log=true);
-  void get(const string &key, string &val, const string &def, bool log=true);
+  void get(const string &key, int &val, int def);
+  void get(const string &key, BoutReal &val, BoutReal def);
+  void get(const string &key, bool &val, bool def);
+  void get(const string &key, string &val, const string &def);
 
+  // This is a temporary replacement for 4-argument get
+  // and will be removed in the next major release
+  template<typename T, typename U>
+  void get(const string &key, T &val, U def, bool UNUSED(log)) {
+    get(key, val, def);
+  }
+  
   /// Creates new section if doesn't exist
   Options* getSection(const string &name);
   Options* getParent() {return parent;}

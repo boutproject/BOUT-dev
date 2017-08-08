@@ -20,6 +20,7 @@ MMS/diffusion
 MMS/wave-1d
 MMS/wave-1d-y
 test-subdir
+test-options
 # More complex tests
 drift-instability
 interchange-instability
