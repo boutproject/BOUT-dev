@@ -34,6 +34,7 @@ class FieldData;
 #include "bout/deprecated.hxx"
 #include "unused.hxx"
 
+#include <memory>
 #include <string>
 using std::string;
 
@@ -93,9 +94,9 @@ public:
   virtual void applyTDerivBoundary() {};
 //JMAD
   void addBndryFunction(FuncPtr userfunc, BndryLoc location);
-  void addBndryGenerator(FieldGenerator* gen, BndryLoc location);
+  void addBndryGenerator(std::shared_ptr<FieldGenerator> gen, BndryLoc location);
   
-  FieldGenerator* getBndryGenerator(BndryLoc location);
+  std::shared_ptr<FieldGenerator> getBndryGenerator(BndryLoc location);
 
 protected:
   vector<BoundaryOp*> bndry_op; // Boundary conditions
@@ -104,7 +105,7 @@ protected:
   // Parallel boundaries
   vector<BoundaryOpPar*> bndry_op_par; // Boundary conditions
 
- std::map <BndryLoc,FieldGenerator*> bndry_generator;
+  std::map <BndryLoc,std::shared_ptr<FieldGenerator>> bndry_generator;
 };
 
 #include "bout/field_visitor.hxx"

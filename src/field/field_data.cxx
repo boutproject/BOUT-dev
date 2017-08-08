@@ -70,11 +70,11 @@ void FieldData::copyBoundary(const FieldData &f) {
 //JMAD
 void FieldData::addBndryFunction(FuncPtr userfunc, BndryLoc location){
   /// NOTE: This will allocate memory, which may never be free'd
-  addBndryGenerator( new FieldFunction(userfunc), location );
+  addBndryGenerator( std::shared_ptr<FieldGenerator>(new FieldFunction(userfunc)), location );
 }
 
 
-void FieldData::addBndryGenerator(FieldGenerator* gen, BndryLoc location){
+void FieldData::addBndryGenerator(std::shared_ptr<FieldGenerator> gen, BndryLoc location){
   if(location == BNDRY_ALL){
     for(const auto& reg : mesh->getBoundaries()) {
       bndry_generator[reg->location] = gen;
@@ -84,8 +84,8 @@ void FieldData::addBndryGenerator(FieldGenerator* gen, BndryLoc location){
   }
 }
 
-FieldGenerator* FieldData::getBndryGenerator(BndryLoc location) {
-  std::map<BndryLoc,FieldGenerator*>::iterator it = bndry_generator.find(location);
+std::shared_ptr<FieldGenerator> FieldData::getBndryGenerator(BndryLoc location) {
+  std::map<BndryLoc,std::shared_ptr<FieldGenerator> >::iterator it = bndry_generator.find(location);
   if(it == bndry_generator.end())
     return 0;
   
