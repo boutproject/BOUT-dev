@@ -414,27 +414,16 @@ int Coordinates::calcCovariant() {
 
   free_matrix(a);
 
-  BoutReal maxerr, err;
-  maxerr = max(abs((g_11 * g11 + g_12 * g12 + g_13 * g13) - 1));
-  if ((err = max(abs((g_12 * g12 + g_22 * g22 + g_23 * g23) - 1))) > maxerr) {
-    maxerr = err;
-  }
-
-  if ((err = max(abs((g_13 * g13 + g_23 * g23 + g_33 * g33) - 1))) > maxerr) {
-    maxerr = err;
-  }
+  BoutReal maxerr;
+  maxerr= BOUTMAX(max(abs((g_11 * g11 + g_12 * g12 + g_13 * g13) - 1)),
+                  max(abs((g_12 * g12 + g_22 * g22 + g_23 * g23) - 1)),
+                  max(abs((g_13 * g13 + g_23 * g23 + g_33 * g33) - 1)));
 
   output_info.write("\tMaximum error in diagonal inversion is %e\n", maxerr);
 
-  maxerr = max(abs(g_11 * g12 + g_12 * g22 + g_13 * g23));
-
-  if ((err = max(abs(g_11 * g13 + g_12 * g23 + g_13 * g33))) > maxerr) {
-    maxerr = err;
-  }
-
-  if ((err = max(abs(g_12 * g13 + g_22 * g23 + g_23 * g33))) > maxerr) {
-    maxerr = err;
-  }
+  maxerr = BOUTMAX(max(abs(g_11 * g12 + g_12 * g22 + g_13 * g23)),
+                   max(abs(g_11 * g13 + g_12 * g23 + g_13 * g33)),
+                   max(abs(g_12 * g13 + g_22 * g23 + g_23 * g33)));
 
   output_info.write("\tMaximum error in off-diagonal inversion is %e\n", maxerr);
 
@@ -487,26 +476,16 @@ int Coordinates::calcContravariant() {
 
   free_matrix(a);
 
-  BoutReal maxerr, err;
-  maxerr = max(abs((g_11 * g11 + g_12 * g12 + g_13 * g13) - 1));
-  if ((err = max(abs((g_12 * g12 + g_22 * g22 + g_23 * g23) - 1))) > maxerr) {
-    maxerr = err;
-  }
+  BoutReal maxerr;
+  maxerr = BOUTMAX(max(abs((g_11 * g11 + g_12 * g12 + g_13 * g13) - 1)),
+                   max(abs((g_12 * g12 + g_22 * g22 + g_23 * g23) - 1)),
+                   max(abs((g_13 * g13 + g_23 * g23 + g_33 * g33) - 1)));
 
-  if ((err = max(abs((g_13 * g13 + g_23 * g23 + g_33 * g33) - 1))) > maxerr) {
-    maxerr = err;
-  }
   output_info.write("\tMaximum error in diagonal inversion is %e\n", maxerr);
 
-  maxerr = max(abs(g_11 * g12 + g_12 * g22 + g_13 * g23));
-
-  if ((err = max(abs(g_11 * g13 + g_12 * g23 + g_13 * g33))) > maxerr) {
-    maxerr = err;
-  }
-
-  if ((err = max(abs(g_12 * g13 + g_22 * g23 + g_23 * g33))) > maxerr) {
-    maxerr = err;
-  }
+  maxerr = BOUTMAX(max(abs(g_11 * g12 + g_12 * g22 + g_13 * g23)),
+                   max(abs(g_11 * g13 + g_12 * g23 + g_13 * g33)),
+                   max(abs(g_12 * g13 + g_22 * g23 + g_23 * g33)));
 
   output_info.write("\tMaximum error in off-diagonal inversion is %e\n", maxerr);
   return 0;
