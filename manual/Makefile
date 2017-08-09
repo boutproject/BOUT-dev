@@ -3,7 +3,11 @@ TEXDIR=tex_files
 VPATH=$(TEXDIR)
 .PHONY:all
 
-all: user_manual.pdf \
+all: sphinx
+
+sphinx:
+	$(MAKE) -C sphinx
+old: user_manual.pdf \
 	developer_manual.pdf \
 	preconditioning.pdf \
 	coordinates.pdf \
@@ -22,7 +26,7 @@ all: user_manual.pdf \
 	@cd $(TEXDIR) &&\
 	rm -f *.dvi *.aux *.out *.log *.toc *.idx *.ilg *.ind *.bbl *.blg
 
-.PHONY:clean
+.PHONY:clean sphinx
 
 clean:
 	@echo "Cleaning up..."

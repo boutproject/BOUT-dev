@@ -1,8 +1,15 @@
-#BOUT++ documentation
-To build these LaTeX files into a PDF document, run "make":
+BOUT++ documentation
+====================
+The documentation has been moved to sphinx.
+It can be build localy with `make`.
+To read the documentation run e.g. `firefox html/index.html`.
+A online version can be found at https://bout-dev.readthedocs.io/en/latest/
+
+
+To build the (deprecated) LaTeX files into a PDF document, run "make old":
 
 ```bash
-$ make
+$ make old
 ```
 
 
