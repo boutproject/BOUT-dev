@@ -44,89 +44,95 @@
 #include <bout/assert.hxx>
 
 /// Constructor
-Field3D::Field3D(Mesh *msh) : background(nullptr), Field(msh), deriv(nullptr), yup_field(nullptr), ydown_field(nullptr) {
+Field3D::Field3D(Mesh *msh)
+    : Field(msh), background(nullptr), deriv(nullptr), yup_field(nullptr),
+      ydown_field(nullptr) {
 #ifdef TRACK
   name = "<F3D>";
 #endif
 
-  if(fieldmesh) {
+  if (fieldmesh) {
     nx = fieldmesh->LocalNx;
     ny = fieldmesh->LocalNy;
     nz = fieldmesh->LocalNz;
   }
 #if CHECK > 0
   else {
-    nx=-1;
-    ny=-1;
-    nz=-1;
+    nx = -1;
+    ny = -1;
+    nz = -1;
   }
 #endif
-  
+
   location = CELL_CENTRE; // Cell centred variable by default
 
   boundaryIsSet = false;
 }
 
-/// Doesn't copy any data, just create a new reference to the same data (copy on change later)
-Field3D::Field3D(const Field3D& f) : background(nullptr),
-				     Field(f.fieldmesh), // The mesh containing array sizes
-				     data(f.data),   // This handles references to the data array
-				     deriv(nullptr),
-				     yup_field(nullptr), ydown_field(nullptr) {
+/// Doesn't copy any data, just create a new reference to the same data (copy on change
+/// later)
+Field3D::Field3D(const Field3D &f)
+    : Field(f.fieldmesh),                // The mesh containing array sizes
+      background(nullptr), data(f.data), // This handles references to the data array
+      deriv(nullptr), yup_field(nullptr), ydown_field(nullptr) {
 
   TRACE("Field3D(Field3D&)");
-  
+
 #if CHECK > 2
   checkData(f);
 #endif
 
-  if(fieldmesh) {
+  if (fieldmesh) {
     nx = fieldmesh->LocalNx;
     ny = fieldmesh->LocalNy;
     nz = fieldmesh->LocalNz;
   }
 #if CHECK > 0
   else {
-    nx=-1;
-    ny=-1;
-    nz=-1;
+    nx = -1;
+    ny = -1;
+    nz = -1;
   }
 #endif
 
   location = f.location;
- 
+
   boundaryIsSet = false;
 }
 
-Field3D::Field3D(const Field2D& f) : background(nullptr), Field(nullptr), deriv(nullptr), yup_field(nullptr), ydown_field(nullptr) {
-  
+Field3D::Field3D(const Field2D &f)
+    : Field(nullptr), background(nullptr), deriv(nullptr), yup_field(nullptr),
+      ydown_field(nullptr) {
+
   TRACE("Field3D: Copy constructor from Field2D");
-  
+
   location = CELL_CENTRE; // Cell centred variable by default
-  
+
   boundaryIsSet = false;
 
   fieldmesh = mesh;
   nx = fieldmesh->LocalNx;
   ny = fieldmesh->LocalNy;
   nz = fieldmesh->LocalNz;
-  
+
   *this = f;
 }
 
-Field3D::Field3D(const BoutReal val) : background(nullptr), Field(nullptr), deriv(nullptr), yup_field(nullptr), ydown_field(nullptr) {
-  
+Field3D::Field3D(const BoutReal val)
+    : Field(nullptr), background(nullptr), deriv(nullptr), yup_field(nullptr),
+      ydown_field(nullptr) {
+
   TRACE("Field3D: Copy constructor from value");
 
   location = CELL_CENTRE; // Cell centred variable by default
-  
+
   boundaryIsSet = false;
 
   fieldmesh = mesh;
   nx = fieldmesh->LocalNx;
   ny = fieldmesh->LocalNy;
   nz = fieldmesh->LocalNz;
-  
+
   *this = val;
 }
 

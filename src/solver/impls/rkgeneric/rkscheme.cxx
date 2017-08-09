@@ -9,12 +9,13 @@
 ////////////////////
 
 //Initialise
-RKScheme::RKScheme(Options *opts): stageCoeffs(nullptr), resultCoeffs(nullptr),
-                                   timeCoeffs(nullptr), resultAlt(nullptr), steps(nullptr){
-  //Currently not reading anything from the options here
+RKScheme::RKScheme(Options *opts)
+    : steps(nullptr), stageCoeffs(nullptr), resultCoeffs(nullptr), timeCoeffs(nullptr),
+      resultAlt(nullptr) {
+  // Currently not reading anything from the options here
 
-  //Initialise internals
-  dtfac = 1.0; //Time step factor
+  // Initialise internals
+  dtfac = 1.0; // Time step factor
 }
 
 //Cleanup
