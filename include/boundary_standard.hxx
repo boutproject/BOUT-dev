@@ -28,7 +28,7 @@ class BoundaryDirichlet_2ndOrder : public BoundaryOp {
 class BoundaryDirichlet : public BoundaryOp {
  public:
   BoundaryDirichlet() : gen(nullptr) {}
-  BoundaryDirichlet(BoundaryRegion *region, FieldGenerator *g) : BoundaryOp(region), gen(g) {}
+  BoundaryDirichlet(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g) : BoundaryOp(region), gen(g) {}
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
   void apply(Field2D &f);
   void apply(Field2D &f,BoutReal t);
@@ -38,7 +38,7 @@ class BoundaryDirichlet : public BoundaryOp {
   void apply_ddt(Field2D &f);
   void apply_ddt(Field3D &f);
  private:
-  FieldGenerator* gen; // Generator
+  std::shared_ptr<FieldGenerator>  gen; // Generator
 };
 
 BoutReal default_func(BoutReal t, int x, int y, int z);
@@ -47,7 +47,7 @@ BoutReal default_func(BoutReal t, int x, int y, int z);
 class BoundaryDirichlet_O3 : public BoundaryOp {
  public:
   BoundaryDirichlet_O3() : gen(NULL) {}
-  BoundaryDirichlet_O3(BoundaryRegion *region, FieldGenerator *g) : BoundaryOp(region), gen(g) {}
+  BoundaryDirichlet_O3(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g) : BoundaryOp(region), gen(g) {}
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
   void apply(Field2D &f);
   void apply(Field2D &f,BoutReal t);
@@ -57,14 +57,14 @@ class BoundaryDirichlet_O3 : public BoundaryOp {
   void apply_ddt(Field2D &f);
   void apply_ddt(Field3D &f);
  private:
-  FieldGenerator* gen; // Generator
+  std::shared_ptr<FieldGenerator>  gen; // Generator
 };
 
 /// 4th-order boundary condition
 class BoundaryDirichlet_O4 : public BoundaryOp {
  public:
   BoundaryDirichlet_O4() : gen(NULL) {}
-  BoundaryDirichlet_O4(BoundaryRegion *region, FieldGenerator *g) : BoundaryOp(region), gen(g) {}
+  BoundaryDirichlet_O4(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g) : BoundaryOp(region), gen(g) {}
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
   void apply(Field2D &f);
   void apply(Field2D &f,BoutReal t);
@@ -74,7 +74,7 @@ class BoundaryDirichlet_O4 : public BoundaryOp {
   void apply_ddt(Field2D &f);
   void apply_ddt(Field3D &f);
  private:
-  FieldGenerator* gen; // Generator
+  std::shared_ptr<FieldGenerator>  gen; // Generator
 };
 
 /// Dirichlet boundary condition set half way between guard cell and grid cell at 4th order accuracy
@@ -136,7 +136,7 @@ class BoundaryNeumann_2ndOrder : public BoundaryOp {
 class BoundaryNeumann : public BoundaryOp {
  public:
   BoundaryNeumann() : gen(NULL) {}
-  BoundaryNeumann(BoundaryRegion *region, FieldGenerator*g):BoundaryOp(region), gen(g) {}
+  BoundaryNeumann(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g):BoundaryOp(region), gen(g) {}
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
   void apply(Field2D &f);
   void apply(Field2D &f, BoutReal t);
@@ -146,7 +146,7 @@ class BoundaryNeumann : public BoundaryOp {
   void apply_ddt(Field2D &f);
   void apply_ddt(Field3D &f);
  private:
-  FieldGenerator *gen;
+  std::shared_ptr<FieldGenerator> gen;
 };
 
 /// Neumann boundary condition set half way between guard cell and grid cell at 4th order accuracy
@@ -169,7 +169,7 @@ class BoundaryNeumann_4thOrder : public BoundaryOp {
 class BoundaryNeumann_O4 : public BoundaryOp {
  public:
   BoundaryNeumann_O4() : gen(NULL) {}
-  BoundaryNeumann_O4(BoundaryRegion *region, FieldGenerator*g):BoundaryOp(region), gen(g) {}
+  BoundaryNeumann_O4(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g):BoundaryOp(region), gen(g) {}
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
   void apply(Field2D &f);
   void apply(Field2D &f, BoutReal t);
@@ -179,7 +179,7 @@ class BoundaryNeumann_O4 : public BoundaryOp {
   void apply_ddt(Field2D &f);
   void apply_ddt(Field3D &f);
  private:
-  FieldGenerator *gen;
+  std::shared_ptr<FieldGenerator> gen;
 };
 
 /// NeumannPar (zero-gradient) boundary condition on

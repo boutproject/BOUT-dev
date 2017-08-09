@@ -67,7 +67,7 @@ LaplacePetsc::LaplacePetsc(Options *opt) :
   if (!opt) opts = Options::getRoot()->getSection("laplace");
   else opts=opt;
 
-  #ifdef CHECK
+  #if CHECK > 0
     // These are the implemented flags
     implemented_flags = INVERT_START_NEW;
     implemented_boundary_flags = INVERT_AC_GRAD
@@ -426,7 +426,7 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b) {
  * \returns sol     The solution x of the problem Ax=b.
  */
 const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
-  #ifdef CHECK
+  #if CHECK > 0
     // Checking flags are set to something which is not implemented (see
     // constructor for details)
     if ( global_flags & !implemented_flags) {

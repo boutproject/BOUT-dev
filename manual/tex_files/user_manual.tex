@@ -8320,9 +8320,11 @@ a perturbation about the equilibrium.
 
 \subsection{Compile options}
 %
-Compiling with \code{-DCHECK} enables a lot of checks of operations performed
+Compiling with \code{-DCHECK=3} enables a lot of checks of operations performed
 by the field objects. This is very useful for debugging a code, and can be
-omitted once bugs have been removed.
+omitted once bugs have been removed. \code{-DCHECK=0} disables the
+checks. \code{-DCHECK=2} is the default, and provides a better balance
+between performance and checking.
 
 For (sometimes) more useful error messages, there is the \code{-DTRACK} option.
 This keeps track of the names of variables and includes these in error

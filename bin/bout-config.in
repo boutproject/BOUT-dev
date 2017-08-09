@@ -9,7 +9,6 @@
 cc="@MPICXX@"
 cxx="@MPICXX@"
 ld="@MPICXX@"
-fc="none"
 checks="@CHECK_LEVEL@"
 cflags="@CONFIG_CFLAGS@"
 libs="@CONFIG_LDFLAGS@"
@@ -46,11 +45,10 @@ Usage: bout-config [OPTION]
 Available values for OPTION include:
 
   --help      display this help message and exit
-  --all       Print all cofiguration
+  --all       Print all configuration
 
   --cc        C compiler
   --cxx       C++ compiler
-  --fc        Fortran compiler
   --ld        Linker
   --cflags    pre-processor and compiler flags
   --libs      library linking flags

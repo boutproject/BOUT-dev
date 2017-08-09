@@ -171,7 +171,7 @@ enum SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
 class Solver {
  public:
   Solver(Options *opts = nullptr);
-  virtual ~Solver() { }
+  virtual ~Solver();
 
   /////////////////////////////////////////////
   // New API
