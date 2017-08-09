@@ -24,7 +24,7 @@ print("Making stopCheck test")
 shell("make > make.log")
 
 checkVal=[True,False]
-nstepExpect=[2,11]
+nstepExpect=[1,11]
 dats = ["data","dataSecond"]
 datStopFiles = ["BOUT.stop","otherStop.check"]
  
