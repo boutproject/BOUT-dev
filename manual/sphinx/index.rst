@@ -43,6 +43,7 @@ The documentation is divided into two main sections:
    user_docs/bout_functions_for_physics
    user_docs/idl
    user_docs/python
+   user_docs/python_boutcore
    user_docs/fourier_transform_derivatives
    user_docs/examples
 
