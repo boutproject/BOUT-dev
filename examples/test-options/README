@@ -1,5 +1,0 @@
-Options test
-============
-
-This is a short unit test of the Options class. It tests if the get and set
-methods work, and that the default values are handled correctly.

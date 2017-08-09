@@ -2575,7 +2575,7 @@ const Field3D BoutMesh::Switch_YZ(const Field3D &var) {
   ncz = LocalNz ;
 
   if(MY != LocalNz){
-    throw new BoutException("Y and Z dimension is not same in Switch_YZ code"); }
+    throw BoutException("Y and Z dimension is not same in Switch_YZ code"); }
 
   //memory allocation
   result.allocate();
@@ -2604,7 +2604,7 @@ const Field3D BoutMesh::Switch_YZ(const Field3D &var) {
 
 const Field3D BoutMesh::Switch_XZ(const Field3D &var) {
     if(MX != LocalNz){
-        throw new BoutException("X and Z dimension must be the same to use Switch_XZ");
+        throw BoutException("X and Z dimension must be the same to use Switch_XZ");
     }
     static BoutReal ***buffer = (BoutReal ***) NULL;
 

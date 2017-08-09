@@ -79,6 +79,10 @@ typedef void* comm_handle;
 class Mesh {
  public:
 
+  /// Constructor for a "bare", uninitialised Mesh
+  /// Only useful for testing
+  Mesh() : source(nullptr), coords(nullptr), options(nullptr) {}
+
   /// Constructor
   /// @param[in] s  The source to be used for loading variables
   /// @param[in] options  The options section for settings
