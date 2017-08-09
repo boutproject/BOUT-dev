@@ -363,7 +363,7 @@ string trimComments(const string &, const string &c="#;");
     va_start(va, fmt);                                  \
     int _vsnprintflen=vsnprintf(buf,len,fmt,va);        \
     va_end(va);                                         \
-    if ( _vsnprintflen+1 > len){                        \
+    if ( _vsnprintflen + 1 > int(len)) {                \
       _vsnprintflen+=1;                                 \
       delete[] buf;                                     \
       buf = new char[_vsnprintflen];                    \
