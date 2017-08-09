@@ -58,7 +58,9 @@ FACETS_SOURCE   = @FACETS_SOURCE@
 # Files that are needed by configure and should be dependencies for 'all'
 
 OBJ						= $(SOURCEC:%.cxx=%.o)
+ifndef RELEASE
 LIB						= $(BOUT_TOP)/lib/libbout++.a
+endif
 
 BOUT_INCLUDE	= -I$(BOUT_TOP)/include $(CXXINCLUDE) $(EXTRA_INCS)
 BOUT_LIBS			= -lm -L$(BOUT_TOP)/lib -lbout++ $(EXTRA_LIBS)
@@ -80,7 +82,11 @@ endif
 .PHONY: $(DIRS) lib install libfast
 
 ifneq ("$(TARGET)","libfast")
+ifndef RELEASE
 all: $(BOUT_TOP)/config.status $(BOUT_TOP)/make.config $(DIRS) $(TARGET)
+else
+all: $(BOUT_TOP)/make.config $(DIRS) $(TARGET)
+endif
 else
 all: $(BOUT_TOP)/config.status $(BOUT_TOP)/make.config $(DIRS)
 endif
@@ -110,13 +116,20 @@ $(BOUT_TOP)/include $(BOUT_TOP)/lib:
 prefix = @prefix@
 exec_prefix = @exec_prefix@
 install: libfast
-	@$(MKDIR) $(DESTDIR)${prefix}
-	@$(MKDIR) $(DESTDIR)${prefix}/include
-	@$(MKDIR) $(DESTDIR)${prefix}/lib
+	@$(MKDIR) $(DESTDIR)@includedir@
+	@$(MKDIR) $(DESTDIR)@includedir@/bout
+	@$(MKDIR) $(DESTDIR)@includedir@/bout/sys
+	@$(MKDIR) $(DESTDIR)@libdir@
+	@$(MKDIR) $(DESTDIR)@bindir@
 	@echo "Installing header files into $(DESTDIR)@includedir@"
 	@cp include/*.hxx $(DESTDIR)@includedir@
+	@cp include/bout/*.hxx $(DESTDIR)@includedir@/bout
+	@cp include/bout/sys/*.hxx $(DESTDIR)@includedir@/bout/sys
+	@cp make.config $(DESTDIR)@includedir@/bout/make.config
 	@echo "Installing library files into $(DESTDIR)@libdir@"
 	@cp lib/*.a $(DESTDIR)@libdir@
+	@echo "Installing scripts into $(DESTDIR)@bindir@"
+	@cp bin/* $(DESTDIR)@bindir@
 
 ####################################################################
 # A bit of a clever hack that determines wheter the TARGET variable is 'lib'
