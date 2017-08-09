@@ -58,9 +58,9 @@ class FieldPerp : public Field {
    * Copy constructor. After this the data
    * will be shared (non unique)
    */
-  FieldPerp(const FieldPerp& f) : yindex(f.yindex),
-				  nx(f.nx), nz(f.nz),
-				  data(f.data) { }
+  FieldPerp(const FieldPerp &f)
+      : Field(f.fieldmesh), yindex(f.yindex), nx(f.nx), nz(f.nz), data(f.data) {}
+
   ~FieldPerp() {}
 
   /*!
