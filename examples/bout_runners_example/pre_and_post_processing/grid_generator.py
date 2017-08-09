@@ -5,6 +5,7 @@
 from boututils.datafile import DataFile
 from boututils.options import BOUTOptions
 import numpy as np
+import os
 
 # Define pi, in case it is found in the BOUT.inp file
 pi = np.pi
@@ -72,8 +73,14 @@ def generate_grid(nx        = 20  ,\
     ixseps1 = -1
     ixseps2 = -2
 
+    # Check that folder exists
+    grid_folder = os.path.split(file_name)[0]
+    if grid_folder != "":
+        if not os.path.exists(grid_folder):
+                os.makedirs(grid_folder)
+
     # Write the grid file
-    with DataFile(file_name + ".nc", write=True, create=True) as grid:
+    with DataFile(file_name, write=True, create=True) as grid:
         # Write the dimensions to the grid file
         grid.write("nx", nx)
         grid.write("ny", ny)

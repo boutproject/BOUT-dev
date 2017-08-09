@@ -104,7 +104,7 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt)
   // Getting the boundary flags
   OPTION(opt, inner_boundary_flags, 0);
   OPTION(opt, outer_boundary_flags, 0);
-  #ifdef CHECK
+  #if CHECK > 0
     // Checking flags are set to something which is not implemented
     // This is done binary (which is possible as each flag is a power of 2)
     if ( inner_boundary_flags & ~implemented_boundary_flags ) {
@@ -267,7 +267,7 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
 
   TRACE("LaplaceXZpetsc::setCoefs");
 
-  #ifdef CHECK
+  #if CHECK > 0
     // Checking flags are set to something which is not implemented
     // This is done binary (which is possible as each flag is a power of 2)
     if ( inner_boundary_flags & ~implemented_boundary_flags ) {

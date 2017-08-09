@@ -27,6 +27,7 @@
 
 const char DEFAULT_DIR[] = "data";
 const char DEFAULT_OPT[] = "BOUT.inp";
+const char DEFAULT_SET[] = "BOUT.settings";
 
 // MD5 Checksum passed at compile-time
 #define CHECKSUM1_(x) #x
@@ -114,6 +115,7 @@ int BoutInitialise(int &argc, char **&argv) {
 
   const char *data_dir; ///< Directory for data input/output
   const char *opt_file; ///< Filename for the options file
+  const char *set_file; ///< Filename for the options file
 
 #ifdef SIGHANDLE
   /// Set a signal handler for segmentation faults
@@ -129,6 +131,7 @@ int BoutInitialise(int &argc, char **&argv) {
   // Set default data directory
   data_dir = DEFAULT_DIR;
   opt_file = DEFAULT_OPT;
+  set_file = DEFAULT_SET;
 
   /// Check command-line arguments
   /// NB: "restart" and "append" are now caught by options
@@ -141,6 +144,7 @@ int BoutInitialise(int &argc, char **&argv) {
       fprintf(stdout, "\n"
 	      "  -d <data directory>\tLook in <data directory> for input/output files\n"
 	      "  -f <options filename>\tUse OPTIONS given in <options filename>\n"
+	      "  -o <settings filename>\tSave used OPTIONS given to <options filename>\n"
 	      "  -h, --help\t\tThis message\n"
 	      "  restart [append]\tRestart the simulation. If append is specified, append to the existing output files, otherwise overwrite them\n"
 	      "  VAR=VALUE\t\tSpecify a VALUE for input parameter VAR\n"
@@ -168,6 +172,19 @@ int BoutInitialise(int &argc, char **&argv) {
       i++;
       opt_file = argv[i];
     }
+    if (string(argv[i]) == "-o") {
+      // Set options file
+      if (i+1 >= argc) {
+        fprintf(stderr, "Usage is %s -o <settings filename>\n", argv[0]);
+        return 1;
+      }
+      i++;
+      set_file = argv[i];
+    }
+  }
+
+  if (std::string(set_file) == std::string(opt_file)){
+    throw BoutException("Input and output file for settings must be different.\nProvide -o <settings file> to avoid this issue.\n");
   }
 
   // Check that data_dir exists. We do not check whether we can write, as it is
@@ -184,6 +201,7 @@ int BoutInitialise(int &argc, char **&argv) {
   // Set options
   Options::getRoot()->set("datadir", string(data_dir));
   Options::getRoot()->set("optionfile", string(opt_file));
+  Options::getRoot()->set("settingsfile", string(set_file));
 
   // Set the command-line arguments
   SlepcLib::setArgs(argc, argv); // SLEPc initialisation
@@ -224,7 +242,7 @@ int BoutInitialise(int &argc, char **&argv) {
 
   output.write("Compile-time options:\n");
 
-#ifdef CHECK
+#if CHECK > 0
   output.write("\tChecking enabled, level %d\n", CHECK);
 #else
   output.write("\tChecking disabled\n");
@@ -274,7 +292,7 @@ int BoutInitialise(int &argc, char **&argv) {
     reader->parseCommandLine(options, argc, argv);
 
     // Save settings
-    reader->write(options, "%s/BOUT.settings", data_dir);
+    reader->write(options, "%s/%s", data_dir,set_file);
   }catch(BoutException &e) {
     output << "Error encountered during initialisation\n";
     output << e.what() << endl;
@@ -349,7 +367,9 @@ int BoutFinalise() {
     Options::getRoot()->get("datadir", data_dir, "data");
 
     OptionsReader *reader = OptionsReader::getInstance();
-    reader->write(Options::getRoot(), "%s/BOUT.settings", data_dir.c_str());
+    std::string settingsfile;
+    OPTION(Options::getRoot(),settingsfile,"");
+    reader->write(Options::getRoot(), "%s/%s", data_dir.c_str(),settingsfile.c_str());
   }catch(BoutException &e) {
     output << "Error whilst writing settings" << endl;
     output << e.what() << endl;
@@ -405,15 +425,19 @@ int BoutFinalise() {
  **************************************************************************/
 
 int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
+  TRACE("bout_monitor(%e, %d, %d)", t, iter, NOUT);
+
   // Data used for timing
   static bool first_time = true;
-  static bool stopCheck;
   static BoutReal wall_limit, mpi_start_time; // Keep track of remaining wall time
-  static string stopCheckName;
+  
+  static bool stopCheck;       // Check for file, exit if exists?
+  static string stopCheckName; // File checked, whose existence triggers a stop
+  
 #ifdef CHECK
   int msg_point = msg_stack.push("bout_monitor(%e, %d, %d)", t, iter, NOUT);
 #endif
-
+  
   // Set the global variables. This is done because they need to be
   // written to the output file before the first step (initial condition)
   simtime = t;
@@ -441,16 +465,16 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
     /// Get some options
     Options *options = Options::getRoot();
     OPTION(options, wall_limit, -1.0); // Wall time limit. By default, no limit
-    wall_limit *= 60.0*60.0;  // Convert from hours to seconds
+    wall_limit *= 60.0 * 60.0;         // Convert from hours to seconds
 
     OPTION(options, stopCheck, false);
-    if(stopCheck){
-      //Get name of file whose existence triggers a stop
+    if (stopCheck) {
+      // Get name of file whose existence triggers a stop
       OPTION(options, stopCheckName, "BOUT.stop");
-      //Now add data directory to start of name to ensure we look in a run specific location
+      // Now add data directory to start of name to ensure we look in a run specific location
       string data_dir;
       Options::getRoot()->get("datadir", data_dir, string(DEFAULT_DIR));
-      stopCheckName = data_dir + "/" + stopCheckName; 
+      stopCheckName = data_dir + "/" + stopCheckName;
     }
 
     /// Record the starting time
@@ -459,15 +483,16 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
     first_time = false;
 
     /// Print the column header for timing info
-    if(!output_split){
-	    output.write("Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n\n");
-    }else{
-	    output.write("Sim Time  |  RHS_e evals  | RHS_I evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n\n");
+    if (!output_split) {
+      output.write("Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm    I/O   "
+                   "SOLVER\n\n");
+    } else {
+      output.write("Sim Time  |  RHS_e evals  | RHS_I evals  | Wall Time |  Calc    Inv  "
+                   " Comm    I/O   SOLVER\n\n");
     }
   }
-  
- 
-  if(!output_split){
+
+  if (!output_split) {
     output.write("%.3e      %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n", 
                simtime, ncalls, wtime,
                100.0*(wtime_rhs - wtime_comms - wtime_invert)/wtime,
@@ -475,7 +500,7 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
                100.0*wtime_comms/wtime,  // Communications
                100.* wtime_io / wtime,      // I/O
                100.*(wtime - wtime_io - wtime_rhs)/wtime); // Everything else
-  }else{
+  } else {
     output.write("%.3e      %5d            %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n",
                simtime, ncalls_e, ncalls_i, wtime,
                100.0*(wtime_rhs - wtime_comms - wtime_invert)/wtime,
@@ -499,23 +524,20 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
       // Less than 1 time-step left
       output.write("Only %e seconds left. Quitting\n", t_remain);
 
-#ifdef CHECK
-      msg_stack.pop(msg_point);
-#endif
       return 1; // Return an error code to quit
     } else {
       output.print(" Wall %s", (time_to_hms(t_remain)).c_str());
     }
   }
 
-  //Check if the user has created the stop file and if so trigger an exit
+  // Check if the user has created the stop file and if so trigger an exit
   if (stopCheck) {
-    std::ifstream f(stopCheckName.c_str());
-    if(f.good()){
-      output<<"\n"<<"File "<<stopCheckName<<" exists -- triggering exit."<<endl;
-
+    std::ifstream f(stopCheckName);
+    if (f.good()) {
+      output << "\n" << "File " << stopCheckName
+             << " exists -- triggering exit." << endl;
 #ifdef CHECK
-  msg_stack.pop(msg_point);
+      msg_stack.pop(msg_point);
 #endif
       return 1;
     }
@@ -524,7 +546,7 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
 #ifdef CHECK
   msg_stack.pop(msg_point);
 #endif
-
+  
   return 0;
 }
 

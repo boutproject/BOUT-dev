@@ -162,8 +162,8 @@ void Inverter::applyBoundary(FieldPerp &f, int flags)
   static BoutReal *h;
   if(cdata == NULL) {
     int size = BOUTMAX(nin, nout)+2;
-    cdata = cmatrix(size, ncz/2 + 1);
-    h = new BoutReal[size];
+    cdata = cmatrix(size, ncz/2 + 1); //Never freed
+    h = new BoutReal[size]; //Never freed
   }
   
   //////////////////////////////////////

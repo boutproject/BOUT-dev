@@ -106,7 +106,7 @@ void verifyNumPoints(BoundaryRegion *region, int ptsRequired) {
 BoundaryOp* BoundaryDirichlet::clone(BoundaryRegion *region, const list<string> &args){
   verifyNumPoints(region,1);
 
-  FieldGenerator* newgen = 0;
+  std::shared_ptr<FieldGenerator> newgen;
   if(!args.empty()) {
     // First argument should be an expression
     newgen = FieldFactory::get()->parse(args.front());
@@ -125,7 +125,7 @@ void BoundaryDirichlet::apply(Field2D &f,BoutReal t) {
   bndry->first();
 
   // Decide which generator to use
-  FieldGenerator* fg = gen;
+  std::shared_ptr<FieldGenerator> fg = gen;
   if(!fg)
     fg = f.getBndryGenerator(bndry->location);
 
@@ -314,7 +314,7 @@ void BoundaryDirichlet::apply(Field3D &f,BoutReal t) {
   bndry->first();
 
   // Decide which generator to use
-  FieldGenerator* fg = gen;
+  std::shared_ptr<FieldGenerator>  fg = gen;
   if(!fg)
     fg = f.getBndryGenerator(bndry->location);
 
@@ -578,7 +578,7 @@ void BoundaryDirichlet::apply_ddt(Field3D &f) {
 
 BoundaryOp* BoundaryDirichlet_O3::clone(BoundaryRegion *region, const list<string> &args){
   verifyNumPoints(region,2);
-  FieldGenerator* newgen = 0;
+  std::shared_ptr<FieldGenerator>  newgen = 0;
   if(!args.empty()) {
     // First argument should be an expression
     newgen = FieldFactory::get()->parse(args.front());
@@ -597,7 +597,7 @@ void BoundaryDirichlet_O3::apply(Field2D &f,BoutReal t) {
   bndry->first();
 
   // Decide which generator to use
-  FieldGenerator* fg = gen;
+  std::shared_ptr<FieldGenerator>  fg = gen;
   if(!fg)
     fg = f.getBndryGenerator(bndry->location);
 
@@ -782,7 +782,7 @@ void BoundaryDirichlet_O3::apply(Field3D &f,BoutReal t) {
   bndry->first();
 
   // Decide which generator to use
-  FieldGenerator* fg = gen;
+  std::shared_ptr<FieldGenerator>  fg = gen;
   if(!fg)
     fg = f.getBndryGenerator(bndry->location);
 
@@ -1054,7 +1054,7 @@ void BoundaryDirichlet_O3::apply_ddt(Field3D &f) {
 
 BoundaryOp* BoundaryDirichlet_O4::clone(BoundaryRegion *region, const list<string> &args){
   verifyNumPoints(region,3);
-  FieldGenerator* newgen = 0;
+  std::shared_ptr<FieldGenerator>  newgen = 0;
   if(!args.empty()) {
     // First argument should be an expression
     newgen = FieldFactory::get()->parse(args.front());
@@ -1073,7 +1073,7 @@ void BoundaryDirichlet_O4::apply(Field2D &f,BoutReal t) {
   bndry->first();
 
   // Decide which generator to use
-  FieldGenerator* fg = gen;
+  std::shared_ptr<FieldGenerator>  fg = gen;
   if(!fg)
     fg = f.getBndryGenerator(bndry->location);
 
@@ -1272,7 +1272,7 @@ void BoundaryDirichlet_O4::apply(Field3D &f,BoutReal t) {
   bndry->first();
 
   // Decide which generator to use
-  FieldGenerator* fg = gen;
+  std::shared_ptr<FieldGenerator>  fg = gen;
   if(!fg)
     fg = f.getBndryGenerator(bndry->location);
 
@@ -1810,7 +1810,7 @@ void BoundaryNeumann_2ndOrder::apply_ddt(Field3D &f) {
 
 BoundaryOp* BoundaryNeumann::clone(BoundaryRegion *region, const list<string> &args){
   verifyNumPoints(region,1);
-  FieldGenerator *newgen = 0;
+  std::shared_ptr<FieldGenerator> newgen = 0;
   if(!args.empty()) {
     // First argument should be an expression
     newgen = FieldFactory::get()->parse(args.front());
@@ -1832,7 +1832,7 @@ void BoundaryNeumann::apply(Field2D &f,BoutReal t) {
   bndry->first();
   
   // Decide which generator to use
-  FieldGenerator* fg = gen;
+  std::shared_ptr<FieldGenerator>  fg = gen;
   if(!fg)
     fg = f.getBndryGenerator(bndry->location);
   
@@ -2031,7 +2031,7 @@ void BoundaryNeumann::apply(Field3D &f,BoutReal t) {
   bndry->first();
   
   // Decide which generator to use
-  FieldGenerator* fg = gen;
+  std::shared_ptr<FieldGenerator>  fg = gen;
   if(!fg)
     fg = f.getBndryGenerator(bndry->location);
   
@@ -2242,7 +2242,7 @@ void BoundaryNeumann::apply_ddt(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryNeumann_O4::clone(BoundaryRegion *region, const list<string> &args){
-  FieldGenerator *newgen = 0;
+  std::shared_ptr<FieldGenerator> newgen = 0;
   if(!args.empty()) {
     // First argument should be an expression
     newgen = FieldFactory::get()->parse(args.front());
@@ -2261,7 +2261,7 @@ void BoundaryNeumann_O4::apply(Field2D &f,BoutReal t) {
   bndry->first();
 
   // Decide which generator to use
-  FieldGenerator* fg = gen;
+  std::shared_ptr<FieldGenerator>  fg = gen;
   if(!fg)
     fg = f.getBndryGenerator(bndry->location);
 
@@ -2315,7 +2315,7 @@ void BoundaryNeumann_O4::apply(Field3D &f,BoutReal t) {
   bndry->first();
 
   // Decide which generator to use
-  FieldGenerator* fg = gen;
+  std::shared_ptr<FieldGenerator>  fg = gen;
   if(!fg)
     fg = f.getBndryGenerator(bndry->location);
 
@@ -2571,8 +2571,8 @@ void BoundaryZeroLaplace::apply(Field3D &f) {
   
   if(c0 == (dcomplex*) NULL) {
     // allocate memory
-    c0 = new dcomplex[ncz/2 + 1];
-    c1 = new dcomplex[ncz/2 + 1];
+    c0 = new dcomplex[ncz/2 + 1]; //Never freed
+    c1 = new dcomplex[ncz/2 + 1]; //Never freed
   }
   
   if((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {

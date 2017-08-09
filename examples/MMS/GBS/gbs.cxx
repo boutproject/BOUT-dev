@@ -272,7 +272,7 @@ int GBS::init(bool restarting) {
   output.write("g_12 = %e, g_23 = %e\n", coords->g_12(2,2), coords->g_23(2,2));
 
 
-  FieldGenerator *gen = FieldFactory::get()->parse("source", Options::getRoot()->getSection("ne"));
+  std::shared_ptr<FieldGenerator> gen = FieldFactory::get()->parse("source", Options::getRoot()->getSection("ne"));
   output << "Ne::source = " << gen->str() << endl;
   
   return 0;
