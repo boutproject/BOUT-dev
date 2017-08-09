@@ -57,7 +57,7 @@ for nz in nzs:
     sim=boutcore.DDZ(f)
     ana=boutcore.create3D("cos(z)",mesh)
     err=sim-ana
-    err=boutcore.max(boutcore.abs(err))
+    err=np.max(np.abs(err.getAll()))
     errors.append(err)
 if doPlot:
     from matplotlib import pyplot as plt
