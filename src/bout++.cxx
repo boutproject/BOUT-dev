@@ -432,11 +432,7 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
   static BoutReal wall_limit, mpi_start_time; // Keep track of remaining wall time
   
   static bool stopCheck;       // Check for file, exit if exists?
-  static string stopCheckName; // File checked, whose existence triggers a stop
-  
-#ifdef CHECK
-  int msg_point = msg_stack.push("bout_monitor(%e, %d, %d)", t, iter, NOUT);
-#endif
+  static std::string stopCheckName; // File checked, whose existence triggers a stop
   
   // Set the global variables. This is done because they need to be
   // written to the output file before the first step (initial condition)
@@ -472,7 +468,7 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
       // Get name of file whose existence triggers a stop
       OPTION(options, stopCheckName, "BOUT.stop");
       // Now add data directory to start of name to ensure we look in a run specific location
-      string data_dir;
+      std::string data_dir;
       Options::getRoot()->get("datadir", data_dir, string(DEFAULT_DIR));
       stopCheckName = data_dir + "/" + stopCheckName;
     }
@@ -536,17 +532,10 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
     if (f.good()) {
       output << "\n" << "File " << stopCheckName
              << " exists -- triggering exit." << endl;
-#ifdef CHECK
-      msg_stack.pop(msg_point);
-#endif
       return 1;
     }
   }
 
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
-  
   return 0;
 }
 
