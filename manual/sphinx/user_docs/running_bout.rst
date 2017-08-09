@@ -649,3 +649,38 @@ The above will take time point 10 from the BOUT.dmp.\* files in the
 “data” directory. For each one, it will output a BOUT.restart file in
 the output directory “.”.
 
+Stopping simulations
+--------------------
+
+If you need to stop a simulation early this can be done by Ctrl-C in a terminal,
+but this will stop the simulation immediately without shutting down cleanly. Most
+of the time this will be fine, but interrupting a simulation while it is writing
+data to file could result in inconsistent or corrupted data.
+
+Stop file
+~~~~~~~~~
+
+**Note** This method needs to be enabled before the simulation starts by setting
+``stopCheck=true`` on the command line or input options:
+
+.. code-block:: bash
+
+    $ mpirun -np 4 ./conduction stopCheck=true
+
+or in the top section of ``BOUT.inp`` set ``stopCheck=true``.
+
+At every output time, the monitor checks for the existence of a file, by default called
+``BOUT.stop``, in the same directory as the output data. If the file exists then
+the monitor signals the time integration solver to quit. This should result in a clean
+shutdown.
+
+To stop a simulation using this method, just create an empty file in the output directory
+
+.. code-block:: bash
+
+    $ mpirun -np 4 ./conduction stopCheck=true
+    ...
+    $ touch data/BOUT.stop
+
+just remember to delete the file afterwards.
+
