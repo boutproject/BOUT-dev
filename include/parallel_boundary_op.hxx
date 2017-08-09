@@ -13,7 +13,7 @@
 class BoundaryOpPar : public BoundaryOpBase {
 public:
   BoundaryOpPar() : bndry(NULL), real_value(0.), value_type(REAL) {}
-  BoundaryOpPar(BoundaryRegionPar *region, FieldGenerator* value) :
+  BoundaryOpPar(BoundaryRegionPar *region, std::shared_ptr<FieldGenerator>  value) :
     bndry(region),
     gen_values(value),
     value_type(GEN) {}
@@ -51,7 +51,7 @@ public:
 protected:
 
   /// Possible ways to get boundary values
-  FieldGenerator* gen_values;
+  std::shared_ptr<FieldGenerator>  gen_values;
   Field3D* field_values;
   BoutReal real_value;
 
@@ -73,7 +73,7 @@ public:
     BoundaryOpPar(NULL, 0.) {}
   BoundaryOpPar_dirichlet(BoundaryRegionPar *region) :
     BoundaryOpPar(region, 0.) {}
-  BoundaryOpPar_dirichlet(BoundaryRegionPar *region, FieldGenerator* value) :
+  BoundaryOpPar_dirichlet(BoundaryRegionPar *region, std::shared_ptr<FieldGenerator>  value) :
     BoundaryOpPar(region, value) {}
   BoundaryOpPar_dirichlet(BoundaryRegionPar *region, Field3D* value) :
     BoundaryOpPar(region, value) {}
@@ -93,7 +93,7 @@ public:
     BoundaryOpPar(NULL, 0.) {}
   BoundaryOpPar_dirichlet_O3(BoundaryRegionPar *region) :
     BoundaryOpPar(region, 0.) {}
-  BoundaryOpPar_dirichlet_O3(BoundaryRegionPar *region, FieldGenerator* value) :
+  BoundaryOpPar_dirichlet_O3(BoundaryRegionPar *region, std::shared_ptr<FieldGenerator>  value) :
     BoundaryOpPar(region, value) {}
   BoundaryOpPar_dirichlet_O3(BoundaryRegionPar *region, Field3D* value) :
     BoundaryOpPar(region, value) {}
@@ -113,7 +113,7 @@ public:
     BoundaryOpPar(NULL, 0.) {}
   BoundaryOpPar_dirichlet_interp(BoundaryRegionPar *region) :
     BoundaryOpPar(region, 0.) {}
-  BoundaryOpPar_dirichlet_interp(BoundaryRegionPar *region, FieldGenerator* value) :
+  BoundaryOpPar_dirichlet_interp(BoundaryRegionPar *region, std::shared_ptr<FieldGenerator>  value) :
     BoundaryOpPar(region, value) {}
   BoundaryOpPar_dirichlet_interp(BoundaryRegionPar *region, Field3D* value) :
     BoundaryOpPar(region, value) {}
@@ -133,7 +133,7 @@ public:
     BoundaryOpPar(NULL, 0.) {}
   BoundaryOpPar_neumann(BoundaryRegionPar *region) :
     BoundaryOpPar(region, 0.) {}
-  BoundaryOpPar_neumann(BoundaryRegionPar *region, FieldGenerator* value) :
+  BoundaryOpPar_neumann(BoundaryRegionPar *region, std::shared_ptr<FieldGenerator>  value) :
     BoundaryOpPar(region, value) {}
   BoundaryOpPar_neumann(BoundaryRegionPar *region, Field3D* value) :
     BoundaryOpPar(region, value) {}

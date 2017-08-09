@@ -12,9 +12,7 @@
 
 #include <output.hxx>
 
-RKGenericSolver::RKGenericSolver(Options *options) : Solver(options) {
-  f0 = 0; // Mark as uninitialised
-
+RKGenericSolver::RKGenericSolver(Options *options) : Solver(options), f0(nullptr) {
   //Create scheme
   scheme=RKSchemeFactory::getInstance()->createRKScheme(options);
 }
@@ -22,7 +20,7 @@ RKGenericSolver::RKGenericSolver(Options *options) : Solver(options) {
 RKGenericSolver::~RKGenericSolver() {
   delete scheme;
 
-  if(f0 != 0) {
+  if(f0 != nullptr) {
     delete[] f0;
     delete[] f2;
     delete[] tmpState;

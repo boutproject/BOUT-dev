@@ -79,6 +79,8 @@ BoutMesh::~BoutMesh() {
   // Delete the boundary regions
   for(const auto& bndry : boundary)
     delete bndry;
+  for(const auto& bndry : par_boundary)
+    delete bndry;
 
   if(comm_x != MPI_COMM_NULL)
     MPI_Comm_free(&comm_x);
@@ -2014,28 +2016,29 @@ int BoutMesh::pack_data(const vector<FieldData *> &var_list, int xge, int xlt, i
 
   int len = 0;
 
-  for (int jx = xge; jx != xlt; jx++) {
-    /// Loop over variables
-    for (const auto &var : var_list) {
-      if (var->is3D()) {
-        // 3D variable
-        ASSERT2(dynamic_cast<Field3D*>(var)->isAllocated());
-        
-        for (int jy = yge; jy < ylt; jy++) {
-          for (int jz = 0; jz < LocalNz; jz++, len++) {
-            buffer[len] = (*dynamic_cast<Field3D*>(var))(jx, jy, jz);
-          }
-        }
-      } else {
-        // 2D variable
-        ASSERT2(dynamic_cast<Field2D*>(var)->isAllocated());
-        
-        for (int jy = yge; jy < ylt; jy++, len++) {
-          buffer[len] = (*dynamic_cast<Field2D*>(var))(jx, jy);
-        }
+  /// Loop over variables
+  for (const auto &var : var_list) {
+    if (var->is3D()) {
+      // 3D variable
+      ASSERT2(static_cast<Field3D*>(var)->isAllocated());
+      for (int jx = xge; jx != xlt; jx++) {        
+	for (int jy = yge; jy < ylt; jy++) {
+	  for (int jz = 0; jz < LocalNz; jz++, len++) {
+	    buffer[len] = (*static_cast<Field3D*>(var))(jx, jy, jz);
+	  }
+	}
+      }
+    } else {
+      // 2D variable
+      ASSERT2(static_cast<Field2D*>(var)->isAllocated());
+      for (int jx = xge; jx != xlt; jx++) {
+	for (int jy = yge; jy < ylt; jy++, len++) {
+	  buffer[len] = (*static_cast<Field2D*>(var))(jx, jy);
+	}
       }
     }
   }
+
 
   return (len);
 }
@@ -2045,21 +2048,23 @@ int BoutMesh::unpack_data(const vector<FieldData *> &var_list, int xge, int xlt,
 
   int len = 0;
 
-  for (int jx = xge; jx != xlt; jx++) {
-    /// Loop over variables
-    for (const auto &var : var_list) {
-      if (var->is3D()) {
-        // 3D variable
-        for (int jy = yge; jy < ylt; jy++) {
-          for (int jz = 0; jz < LocalNz; jz++, len++) {
-            (*dynamic_cast<Field3D*>(var))(jx, jy, jz) = buffer[len];
-          }
-        }
-      } else {
-        // 2D variable
-        for (int jy = yge; jy < ylt; jy++, len++) {
-          (*dynamic_cast<Field2D*>(var))(jx, jy) = buffer[len];
-        }
+  /// Loop over variables
+  for (const auto &var : var_list) {
+    if (var->is3D()) {
+      // 3D variable
+      for (int jx = xge; jx != xlt; jx++) {
+	for (int jy = yge; jy < ylt; jy++) {
+	  for (int jz = 0; jz < LocalNz; jz++, len++) {
+	    (*static_cast<Field3D*>(var))(jx, jy, jz) = buffer[len];
+	  }
+	}
+      }
+    } else {
+      // 2D variable
+      for (int jx = xge; jx != xlt; jx++) {
+	for (int jy = yge; jy < ylt; jy++, len++) {
+	  (*static_cast<Field2D*>(var))(jx, jy) = buffer[len];
+	}
       }
     }
   }
@@ -2476,13 +2481,13 @@ void BoutMesh::set_ri( dcomplex * ayn, int ncy, BoutReal * ayn_Real, BoutReal * 
 const Field2D BoutMesh::lowPass_poloidal(const Field2D &var,int mmax)
 {
   Field2D result(this);
-  static BoutReal *f1d = (BoutReal *) NULL;
-  static dcomplex *aynall = (dcomplex*)NULL;
-  static BoutReal *aynall_Real = (BoutReal *) NULL;
-  static BoutReal *aynall_Imag = (BoutReal *) NULL;
-  static dcomplex *ayn = (dcomplex*) NULL;
-  static BoutReal *aynReal = (BoutReal *) NULL;
-  static BoutReal *aynImag = (BoutReal *) NULL;
+  static BoutReal *f1d = (BoutReal *) NULL; //Never freed
+  static dcomplex *aynall = (dcomplex*)NULL; //Never freed
+  static BoutReal *aynall_Real = (BoutReal *) NULL; //Never freed
+  static BoutReal *aynall_Imag = (BoutReal *) NULL; //Never freed
+  static dcomplex *ayn = (dcomplex*) NULL; //Never freed
+  static BoutReal *aynReal = (BoutReal *) NULL; //Never freed
+  static BoutReal *aynImag = (BoutReal *) NULL; //Never freed
 
   int ncx, ncy;
   int jx, jy;
@@ -2570,7 +2575,7 @@ const Field3D BoutMesh::Switch_YZ(const Field3D &var) {
   ncz = LocalNz ;
 
   if(MY != LocalNz){
-    throw new BoutException("Y and Z dimension is not same in Switch_YZ code"); }
+    throw BoutException("Y and Z dimension is not same in Switch_YZ code"); }
 
   //memory allocation
   result.allocate();
@@ -2599,7 +2604,7 @@ const Field3D BoutMesh::Switch_YZ(const Field3D &var) {
 
 const Field3D BoutMesh::Switch_XZ(const Field3D &var) {
     if(MX != LocalNz){
-        throw new BoutException("X and Z dimension must be the same to use Switch_XZ");
+        throw BoutException("X and Z dimension must be the same to use Switch_XZ");
     }
     static BoutReal ***buffer = (BoutReal ***) NULL;
 

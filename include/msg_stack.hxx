@@ -83,6 +83,7 @@ class MsgStack {
   void clear() {}
   
   void dump() {}
+  std::string getDump() { return ""; }
 #endif
   
  private:

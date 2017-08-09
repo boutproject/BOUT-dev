@@ -46,6 +46,10 @@
  * a map, rather than being freed. 
  * If the same size arrays are used repeatedly then this
  * avoids the need to use new and delete.
+ *
+ * This behaviour can be disabled by calling the static function useStore:
+ *
+ * Array<dcomplex>::useStore(false); // Disables memory store
  * 
  */
 template<typename T>
@@ -127,6 +131,25 @@ public:
 #endif
 
   /*!
+   * Holds a static variable which controls whether
+   * memory blocks (ArrayData) are put into a store
+   * or new/deleted each time. 
+   *
+   * The variable is initialised to true on first use,
+   * but can be set to false by passing "false" as input.
+   * Once set to false it can't be changed back to true.
+   */
+  static bool useStore( bool keep_using = true ) {
+    static bool value = true;
+    if (keep_using) {
+      return value; 
+    }
+    // Change to false
+    value = false;
+    return value;
+  }
+  
+  /*!
    * Release data. After this the Array is empty and any data access
    * will be invalid
    */
@@ -139,17 +162,12 @@ public:
    * Delete all data from the store
    */
   static void cleanup() {
-    for(auto &p : store) {
-      auto &v = p.second;
-      for(ArrayData* a : v) {
-        delete a;
-      }
-      v.clear();
-    }
+    // Clean the store, deleting data
+    store(true);
     // Don't use the store anymore
-    use_store = false;
+    useStore(false);
   }
-  
+
   /*!
    * Returns true if the Array is empty
    */
@@ -269,17 +287,41 @@ private:
 
   /*!
    * This maps from array size (int) to vectors of pointers to ArrayData objects
-   * For each data type T, an instance should be declared once (and once only)
+   *
+   * By putting the static store inside a function it is initialised on first use,
+   * and doesn't need to be separately declared for each type T
+   *
+   * Inputs
+   * ------
+   *
+   * @param[in] cleanup   If set to true, deletes all ArrayData and clears the store
    */
-  static std::map< int, std::vector<ArrayData* > > store;
-  static bool use_store; ///< Should the store be used?
+  static std::map< int, std::vector<ArrayData* > > & store(bool cleanup=false) {
+    static std::map< int, std::vector<ArrayData* > > store = {};
+    
+    if (!cleanup) {
+      return store;
+    }
+    
+    // Clean by deleting all data
+    for (auto &p : store) {
+      auto &v = p.second;
+      for (ArrayData* a : v) {
+        delete a;
+      }
+      v.clear();
+    }
+    store.clear();
+    
+    return store;
+  }
   
   /*!
    * Returns a pointer to an ArrayData object with no
    * references. This is either from the store, or newly allocated
    */
   ArrayData* get(int len) {
-    std::vector<ArrayData* >& st = store[len];
+    std::vector<ArrayData* >& st = store()[len];
     if(st.empty()) {
       return new ArrayData(len);
     }
@@ -293,15 +335,15 @@ private:
    * If no more references, then put back into the store.
    */
   void release(ArrayData *d) {
-    if(!d)
+    if (!d)
       return;
     
     // Reduce reference count, and if zero return to store
-    if(!--d->refs) {
-      if(use_store) {
+    if (!--d->refs) {
+      if (useStore()) {
         // Put back into store
-        store[d->len].push_back(d);
-      }else {
+        store()[d->len].push_back(d);
+      } else {
         delete d;
       }
     }

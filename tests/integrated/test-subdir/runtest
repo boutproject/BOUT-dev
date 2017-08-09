@@ -1,0 +1,5 @@
+#!/bin/sh
+
+make || exit
+
+mpirun -n 1 ./subdirs

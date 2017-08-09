@@ -48,7 +48,7 @@ int full_gmres(const Field3D &b, fgfunc A, Field3D &x, void *extra, int m)
   int it;
 
   if(v == NULL) {
-    v = new Field3D[m];
+    v = new Field3D[m]; //Never freed
   }
 
   normb = norm_vector(b);
