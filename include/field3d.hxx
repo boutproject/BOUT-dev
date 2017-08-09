@@ -175,12 +175,17 @@ class Field3D : public Field, public FieldData {
    * fields may be created before the mesh is.
    */
   Field3D(Mesh *msh = nullptr);
-  
-  /*! 
+
+  /*!
    * Copy constructor
    */
   Field3D(const Field3D& f);
-  
+
+  /*!
+   * Move constructor
+   */
+  Field3D(Field3D&& f) = default;
+
   /// Constructor from 2D field
   Field3D(const Field2D& f);
   /// Constructor from value
@@ -414,6 +419,7 @@ class Field3D : public Field, public FieldData {
   /// Assignment operators
   ///@{
   Field3D & operator=(const Field3D &rhs);
+  Field3D & operator=(Field3D &&rhs) = default;
   Field3D & operator=(const Field2D &rhs);
   /// return void, as only part initialised
   void      operator=(const FieldPerp &rhs);
