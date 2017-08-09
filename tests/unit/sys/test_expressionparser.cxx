@@ -20,7 +20,7 @@ public:
 };
 
 TEST_F(ExpressionParserTest, Parse2) {
-  FieldGenerator *fieldgen = parser.parseString("2");
+  auto fieldgen = parser.parseString("2");
   EXPECT_EQ(fieldgen->str(), "2");
 
   for (auto x : x_array) {
@@ -35,7 +35,7 @@ TEST_F(ExpressionParserTest, Parse2) {
 }
 
 TEST_F(ExpressionParserTest, ParseX) {
-  FieldGenerator *fieldgen = parser.parseString("x");
+  auto fieldgen = parser.parseString("x");
   EXPECT_EQ(fieldgen->str(), "x");
 
   for (auto x : x_array) {
@@ -50,7 +50,7 @@ TEST_F(ExpressionParserTest, ParseX) {
 }
 
 TEST_F(ExpressionParserTest, ParseY) {
-  FieldGenerator *fieldgen = parser.parseString("y");
+  auto fieldgen = parser.parseString("y");
   EXPECT_EQ(fieldgen->str(), "y");
 
   for (auto x : x_array) {
@@ -65,7 +65,7 @@ TEST_F(ExpressionParserTest, ParseY) {
 }
 
 TEST_F(ExpressionParserTest, ParseZ) {
-  FieldGenerator *fieldgen = parser.parseString("z");
+  auto fieldgen = parser.parseString("z");
   EXPECT_EQ(fieldgen->str(), "z");
 
   for (auto x : x_array) {
@@ -80,7 +80,7 @@ TEST_F(ExpressionParserTest, ParseZ) {
 }
 
 TEST_F(ExpressionParserTest, ParseT) {
-  FieldGenerator *fieldgen = parser.parseString("t");
+  auto fieldgen = parser.parseString("t");
   EXPECT_EQ(fieldgen->str(), "t");
 
   for (auto x : x_array) {
@@ -95,7 +95,7 @@ TEST_F(ExpressionParserTest, ParseT) {
 }
 
 TEST_F(ExpressionParserTest, ParseXPlus2) {
-  FieldGenerator *fieldgen = parser.parseString("x + 2");
+  auto fieldgen = parser.parseString("x + 2");
 
   for (auto x : x_array) {
     for (auto y : y_array) {
@@ -109,7 +109,7 @@ TEST_F(ExpressionParserTest, ParseXPlus2) {
 }
 
 TEST_F(ExpressionParserTest, ParseXTimesMinus4) {
-  FieldGenerator *fieldgen = parser.parseString("x*(-4)");
+  auto fieldgen = parser.parseString("x*(-4)");
 
   for (auto x : x_array) {
     for (auto y : y_array) {
@@ -123,7 +123,7 @@ TEST_F(ExpressionParserTest, ParseXTimesMinus4) {
 }
 
 TEST_F(ExpressionParserTest, ParseXDividedBy3e8) {
-  FieldGenerator *fieldgen = parser.parseString("x / 3.e8");
+  auto fieldgen = parser.parseString("x / 3.e8");
 
   for (auto x : x_array) {
     for (auto y : y_array) {
@@ -137,7 +137,7 @@ TEST_F(ExpressionParserTest, ParseXDividedBy3e8) {
 }
 
 TEST_F(ExpressionParserTest, ParseXSquared) {
-  FieldGenerator *fieldgen = parser.parseString("x^2");
+  auto fieldgen = parser.parseString("x^2");
 
   for (auto x : x_array) {
     for (auto y : y_array) {
@@ -151,13 +151,13 @@ TEST_F(ExpressionParserTest, ParseXSquared) {
 }
 
 TEST_F(ExpressionParserTest, MissingBracket) {
-  EXPECT_THROW(FieldGenerator *fieldgen = parser.parseString("sin(x"), ParseException);
+  EXPECT_THROW(parser.parseString("sin(x"), ParseException);
 }
 
 TEST_F(ExpressionParserTest, BadNumbers) {
-  EXPECT_THROW(FieldGenerator *fieldgen = parser.parseString("1.1.4"), ParseException);
-  EXPECT_THROW(FieldGenerator *fieldgen = parser.parseString("2.1e4.5."), ParseException);
-  EXPECT_THROW(FieldGenerator *fieldgen = parser.parseString("3.e8e4"), ParseException);
-  EXPECT_THROW(FieldGenerator *fieldgen = parser.parseString("4ee"), ParseException);
-  EXPECT_THROW(FieldGenerator *fieldgen = parser.parseString("5G"), ParseException);
+  EXPECT_THROW(parser.parseString("1.1.4"), ParseException);
+  EXPECT_THROW(parser.parseString("2.1e4.5."), ParseException);
+  EXPECT_THROW(parser.parseString("3.e8e4"), ParseException);
+  EXPECT_THROW(parser.parseString("4ee"), ParseException);
+  EXPECT_THROW(parser.parseString("5G"), ParseException);
 }
