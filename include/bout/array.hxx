@@ -167,7 +167,7 @@ public:
     // Don't use the store anymore
     useStore(false);
   }
-  
+
   /*!
    * Returns true if the Array is empty
    */

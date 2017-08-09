@@ -22,7 +22,7 @@
 
 # Created this variable so that a user won't overwrite the CXXFLAGS variable
 # on the command line, just add to this one
-BOUT_FLAGS		= $(CXXFLAGS) @CXXFLAGS@ @OPENMP_CXXFLAGS@ @CXX11_FLAGS@
+BOUT_FLAGS		= $(CXXFLAGS) @CXXFLAGS@ @OPENMP_CXXFLAGS@ @CXX11_FLAGS@ @COVERAGE_FLAGS@
 
 # Specify the MPI C++ compiler in CXX
 
@@ -258,7 +258,7 @@ clean::
 	-@$(RM) -rf $(OBJ) $(DEPS) $(TARGET)
 	@for pp in $(DIRS); do echo "  " $$pp cleaned; $(MAKE) --no-print-directory -C $$pp clean; done
 
-distclean: clean
+distclean:: clean clean-tests
 	@echo include cleaned
 # Removing the externalpackage installation. When we have more packages, need a better way
 	@$(RM) -rf $(BOUT_TOP)/include/pvode
@@ -271,6 +271,9 @@ distclean: clean
 	@echo externalpackages cleaned
 	@touch $(BOUT_TOP)/configure
 	@echo autom4te.cache cleaned
+
+clean-tests: clean
+	@$(MAKE) --no-print-directory -C tests clean
 
 ####################################################################
 # Documentation
@@ -289,3 +292,15 @@ sphinx-docs-html: breathe-autogen
 
 sphinx-docs-latex: breathe-autogen
 	sphinx-build -b latex $(MANUAL_DIR)/sphinx/ $(MANUAL_DIR)/sphinx/_build/
+
+
+######################################################################
+# Code coverage
+######################################################################
+
+GCOV = @GCOV@
+LCOV = @LCOV@
+GENHTML = @GENHTML@
+abs_builddir = @abs_builddir@
+
+@CODE_COVERAGE_RULES@
