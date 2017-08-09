@@ -105,8 +105,7 @@ public:
     
     return *this;
   }
-  
-#if __cplusplus >= 201103L
+
   /*!
    * Move constructor
    */
@@ -128,7 +127,6 @@ public:
     
     return *this;
   }
-#endif
 
   /*!
    * Holds a static variable which controls whether
