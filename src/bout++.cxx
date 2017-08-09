@@ -222,7 +222,16 @@ int BoutInitialise(int &argc, char **&argv) {
   if (output.open("%s/BOUT.log.%d", data_dir, MYPE)) {
     return 1;
   }
-
+  {
+    const size_t len=512;
+    char buf[len];
+    snprintf(buf,len,"%s/.BOUT.pid.%d",data_dir, MYPE);
+    FILE * fp = fopen(buf, "w");
+    if (fp == nullptr)
+      return 1;
+    fprintf(fp,"%d\n",getpid());
+    fclose(fp);
+  }
   /// Print intro
   output.write("\nBOUT++ version %.2f\n", BOUT_VERSION);
 #ifdef REVISION
