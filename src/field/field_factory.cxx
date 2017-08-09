@@ -34,13 +34,13 @@
 #include "fieldgenerators.hxx"
 
 /// Helper function to create a FieldValue generator from a BoutReal
-FieldGenerator* generator(BoutReal value) {
-  return new FieldValue(value);
+std::shared_ptr<FieldGenerator> generator(BoutReal value) {
+  return std::shared_ptr<FieldGenerator>( new FieldValue(value));
 }
 
 /// Helper function to create a FieldValuePtr from a pointer to BoutReal
-FieldGenerator* generator(BoutReal *ptr) {
-  return new FieldValuePtr(ptr);
+std::shared_ptr<FieldGenerator> generator(BoutReal *ptr) {
+  return std::shared_ptr<FieldGenerator>( new FieldValuePtr(ptr));
 }
 
 //////////////////////////////////////////////////////////
@@ -52,44 +52,44 @@ FieldFactory::FieldFactory(Mesh *m, Options *opt) : fieldmesh(m), options(opt) {
     options = Options::getRoot();
 
   // Useful values
-  addGenerator("pi", new FieldValue(PI));
+  addGenerator("pi", std::shared_ptr<FieldGenerator>( new FieldValue(PI)));
 
   // Some standard functions
-  addGenerator("sin", new FieldSin(NULL));
-  addGenerator("cos", new FieldCos(NULL));
-  addGenerator("tan", new FieldGenOneArg<tan>(NULL));
+  addGenerator("sin", std::shared_ptr<FieldGenerator>( new FieldSin(NULL)));
+  addGenerator("cos", std::shared_ptr<FieldGenerator>( new FieldCos(NULL)));
+  addGenerator("tan", std::shared_ptr<FieldGenerator>( new FieldGenOneArg<tan>(NULL)));
 
-  addGenerator("acos", new FieldGenOneArg<acos>(NULL));
-  addGenerator("asin", new FieldGenOneArg<asin>(NULL));
-  addGenerator("atan", new FieldATan(NULL));
+  addGenerator("acos", std::shared_ptr<FieldGenerator>( new FieldGenOneArg<acos>(NULL)));
+  addGenerator("asin", std::shared_ptr<FieldGenerator>( new FieldGenOneArg<asin>(NULL)));
+  addGenerator("atan", std::shared_ptr<FieldGenerator>( new FieldATan(NULL)));
 
-  addGenerator("sinh", new FieldSinh(NULL));
-  addGenerator("cosh", new FieldCosh(NULL));
-  addGenerator("tanh", new FieldTanh());
+  addGenerator("sinh", std::shared_ptr<FieldGenerator>( new FieldSinh(NULL)));
+  addGenerator("cosh", std::shared_ptr<FieldGenerator>( new FieldCosh(NULL)));
+  addGenerator("tanh", std::shared_ptr<FieldGenerator>( new FieldTanh()));
 
-  addGenerator("exp", new FieldGenOneArg<exp>(NULL));
-  addGenerator("log", new FieldGenOneArg<log>(NULL));
-  addGenerator("gauss", new FieldGaussian(NULL, NULL));
-  addGenerator("abs", new FieldAbs(NULL));
-  addGenerator("sqrt", new FieldSqrt(NULL));
-  addGenerator("h", new FieldHeaviside(NULL));
-  addGenerator("erf", new FieldErf(NULL));
+  addGenerator("exp", std::shared_ptr<FieldGenerator>( new FieldGenOneArg<exp>(NULL)));
+  addGenerator("log", std::shared_ptr<FieldGenerator>( new FieldGenOneArg<log>(NULL)));
+  addGenerator("gauss", std::shared_ptr<FieldGenerator>( new FieldGaussian(NULL, NULL)));
+  addGenerator("abs", std::shared_ptr<FieldGenerator>( new FieldAbs(NULL)));
+  addGenerator("sqrt", std::shared_ptr<FieldGenerator>( new FieldSqrt(NULL)));
+  addGenerator("h", std::shared_ptr<FieldGenerator>( new FieldHeaviside(NULL)));
+  addGenerator("erf", std::shared_ptr<FieldGenerator>( new FieldErf(NULL)));
 
-  addGenerator("min", new FieldMin());
-  addGenerator("max", new FieldMax());
+  addGenerator("min", std::shared_ptr<FieldGenerator>( new FieldMin()));
+  addGenerator("max", std::shared_ptr<FieldGenerator>( new FieldMax()));
 
-  addGenerator("power", new FieldGenTwoArg<pow>(NULL,NULL));
+  addGenerator("power", std::shared_ptr<FieldGenerator>( new FieldGenTwoArg<pow>(NULL,NULL)));
 
-  addGenerator("round", new FieldRound(NULL));
+  addGenerator("round", std::shared_ptr<FieldGenerator>( new FieldRound(NULL)));
   
   // Ballooning transform
-  addGenerator("ballooning", new FieldBallooning(fieldmesh));
+  addGenerator("ballooning", std::shared_ptr<FieldGenerator>( new FieldBallooning(fieldmesh)));
 
   // Mixmode function
-  addGenerator("mixmode", new FieldMixmode());
+  addGenerator("mixmode", std::shared_ptr<FieldGenerator>( new FieldMixmode()));
 
   // TanhHat function
-  addGenerator("tanhhat", new FieldTanhHat(NULL, NULL, NULL, NULL));
+  addGenerator("tanhhat", std::shared_ptr<FieldGenerator>( new FieldTanhHat(NULL, NULL, NULL, NULL)));
 }
 
 FieldFactory::~FieldFactory() {
@@ -109,7 +109,7 @@ const Field2D FieldFactory::create2D(const string &value, Options *opt, Mesh *m,
   if(m == NULL)
     throw BoutException("Not a valid mesh");
 
-  FieldGenerator* gen = parse(value, opt);
+  std::shared_ptr<FieldGenerator> gen = parse(value, opt);
   if(!gen) {
     output << "FieldFactory error: Couldn't create 2D field from '"
            << value
@@ -172,7 +172,7 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt, Mesh *m,
   result.setLocation(loc);
 
   // Parse expression to create a tree of generators
-  FieldGenerator* gen = parse(value, opt);
+  std::shared_ptr<FieldGenerator> gen = parse(value, opt);
   if(!gen) {
     throw BoutException("FieldFactory error: Couldn't create 3D field from '%s'", value.c_str());
   }
@@ -276,7 +276,7 @@ Options* FieldFactory::findOption(Options *opt, const string &name, string &val)
   return result;
 }
 
-FieldGenerator* FieldFactory::resolve(string &name) {
+std::shared_ptr<FieldGenerator> FieldFactory::resolve(string &name) {
   if(options) {
     // Check if in cache
     string key;
@@ -290,7 +290,7 @@ FieldGenerator* FieldFactory::resolve(string &name) {
       key += name;
     }
 
-    map<string, FieldGenerator*>::iterator it = cache.find(key);
+    auto it = cache.find(key);
     if(it != cache.end()) {
       // Found in cache
       return it->second;
@@ -320,7 +320,7 @@ FieldGenerator* FieldFactory::resolve(string &name) {
     lookup.push_back(key);
 
     // Parse
-    FieldGenerator *g = parse(value, section);
+    std::shared_ptr<FieldGenerator> g = parse(value, section);
 
     // Cache
     cache[key] = g;
@@ -334,7 +334,7 @@ FieldGenerator* FieldFactory::resolve(string &name) {
   return NULL;
 }
 
-FieldGenerator* FieldFactory::parse(const string &input, Options *opt) {
+std::shared_ptr<FieldGenerator> FieldFactory::parse(const string &input, Options *opt) {
 
   //output.write("FieldFactory::parse('%s')", input.c_str());
 
@@ -344,7 +344,7 @@ FieldGenerator* FieldFactory::parse(const string &input, Options *opt) {
   if(opt)
     key = opt->str()+key; // Include options context in key
 
-  map<string, FieldGenerator*>::iterator it = cache.find(key);
+  auto it = cache.find(key);
   if(it != cache.end()) {
     // Found in cache
     return it->second;
@@ -358,7 +358,7 @@ FieldGenerator* FieldFactory::parse(const string &input, Options *opt) {
     options = opt;
 
   // Parse
-  FieldGenerator *expr = parseString(input);
+  std::shared_ptr<FieldGenerator> expr = parseString(input);
 
   // Add to cache
   cache[key] = expr;
@@ -373,4 +373,8 @@ FieldFactory* FieldFactory::get() {
   static FieldFactory instance(NULL, Options::getRoot());
 
   return &instance;
+}
+
+void FieldFactory::cleanCache() {
+  cache.clear();
 }

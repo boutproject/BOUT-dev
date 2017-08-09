@@ -28,7 +28,7 @@ public:
   TestInterpolate() {}
 
   /// Get a FieldGenerator from the options for a variable
-  FieldGenerator* getGeneratorFromOptions(const std::string varname, std::string &func) {
+  std::shared_ptr<FieldGenerator> getGeneratorFromOptions(const std::string varname, std::string &func) {
     Options *options = Options::getRoot()->getSection(varname);
     options->get("solution", func, "0.0");
 
@@ -42,19 +42,19 @@ public:
 
     // Set up generators and solutions for three different analtyic functions
     std::string a_func;
-    FieldGenerator* a_gen = getGeneratorFromOptions("a", a_func);
+    std::shared_ptr<FieldGenerator> a_gen = getGeneratorFromOptions("a", a_func);
     Field3D a = f.create3D(a_func);
     Field3D a_solution = 0;
     Field3D a_interp = 0;
 
     std::string b_func;
-    FieldGenerator* b_gen = getGeneratorFromOptions("b", b_func);
+    std::shared_ptr<FieldGenerator> b_gen = getGeneratorFromOptions("b", b_func);
     Field3D b = f.create3D(b_func);
     Field3D b_solution = 0;
     Field3D b_interp = 0;
 
     std::string c_func;
-    FieldGenerator* c_gen = getGeneratorFromOptions("c", c_func);
+    std::shared_ptr<FieldGenerator> c_gen = getGeneratorFromOptions("c", c_func);
     Field3D c = f.create3D(c_func);
     Field3D c_solution = 0;
     Field3D c_interp = 0;

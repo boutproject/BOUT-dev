@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
   
   FieldFactory fact(mesh);
 
-  FieldGenerator *gen = fact.parse("input");
+  std::shared_ptr<FieldGenerator> gen = fact.parse("input");
   output << "GEN = " << gen->str() << endl;
 
   Field3D input = fact.create3D("input");

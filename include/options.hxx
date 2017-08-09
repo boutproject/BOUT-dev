@@ -166,6 +166,8 @@ public:
   /// Print the options which haven't been used
   void printUnused();
 
+  /// clean the cache of parsed options
+  static void cleanCache();
 
   /*!
    * Class used to store values, together with
