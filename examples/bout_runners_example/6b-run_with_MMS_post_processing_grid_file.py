@@ -5,17 +5,18 @@ the grids by using grid_files (see
 6a-run_with_MMS_post_processing_specify_numbers.py to see how to do the
 same is done by specifying the grid manually)"""
 
-from bout_runners.bout_runners import basic_runner
-from post_processing_MMS import perform_MMS_test
-from grid_generator import  generate_grid
+from bout_runners import basic_runner
+from pre_and_post_processing.post_processing_MMS import perform_MMS_test
+from pre_and_post_processing.grid_generator import  generate_grid
+import os
 
 # Generate the grids
 # Specify the grid dimensions
-grid_numbers = [4, 8, 16]
+grid_numbers = (5, 8, 16)
 # Make an append able list
 grid_files = []
 for grid_number in grid_numbers:
-    file_name = 'grid_file_' + str(grid_number)
+    file_name = os.path.join("grid_files","grid_file_{}.nc".format(grid_number))
     # Generate the grids
     generate_grid(nx        = grid_number,\
                   ny        = grid_number,\
@@ -23,7 +24,7 @@ for grid_number in grid_numbers:
                   inp_path  = 'MMS'      ,\
                   file_name = file_name)
     # Append the grid_files list
-    grid_files.append(file_name + '.nc')
+    grid_files.append(file_name)
 
 my_runs = basic_runner(\
             nproc     = 1,\

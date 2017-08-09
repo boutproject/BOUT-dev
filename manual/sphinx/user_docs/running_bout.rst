@@ -3,6 +3,9 @@
 Running BOUT++
 ==============
 
+Quick start
+-----------
+
 The ``examples/`` directory contains some test cases for a variety of
 fluid models. The ones starting ``test-`` are short tests, which often
 just run a part of the code rather than a complete simulation. The
@@ -74,6 +77,11 @@ run, and produce a bunch of files in the ``data/`` subdirectory.
    useful because if one process crashes it may only put an error
    message into its own log.
 
+-  ``BOUT.settings`` contains all the options used in the code, including
+   options which were not set and used the default values. It's in the same
+   format as BOUT.inp, so can be renamed and used to re-run simulations
+   if needed.
+   
 -  ``BOUT.restart.*.nc`` are the restart files for the last time point.
    Currently each processor saves its own state in a separate file, but
    there is experimental support for parallel I/O. For the settings, see
@@ -98,6 +106,17 @@ again. If you want to keep the output from the first run, add “append”
 
 which will then append any new outputs to the end of the old data files.
 For more information on restarting, see :ref:`sec-restarting`.
+
+To see some of the other command-line options try "-h":
+
+.. code-block:: bash
+
+   $ ./conduction -h
+
+and see the section on options (:ref:`sec-options`).
+
+Analysing the output
+--------------------
 
 To analyse the output of the simulation, cd into the ``data``
 subdirectory and start IDL. If you don’t have IDL, don’t panic as all

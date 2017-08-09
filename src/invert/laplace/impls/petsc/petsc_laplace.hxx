@@ -148,7 +148,7 @@ private:
   void vecToField(Vec x, FieldPerp &f);        // Copy a vector into a fieldperp
   void fieldToVec(const FieldPerp &f, Vec x);  // Copy a fieldperp into a vector
 
-  #ifdef CHECK
+  #if CHECK > 0
     int implemented_flags;
     int implemented_boundary_flags;
   #endif

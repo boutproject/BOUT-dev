@@ -160,11 +160,20 @@ def rotate(gridfile, yshift, output=None):
 import matplotlib.pyplot as plt        
 from numpy import linspace, amin, amax
 
-def gridcontourf(grid, data2d, nlevel=31, show=True, mind=None, maxd=None, cmap=None, ax=None,
+def gridcontourf(grid, data2d, nlevel=31, show=True, 
+                 mind=None, maxd=None, symmetric=False,
+                 cmap=None, ax=None,
                  xlabel="Major radius [m]", ylabel="Height [m]",
                  separatrix=False):
     """
     Plots a 2D contour plot, taking into account branch cuts (X-points).
+    
+    To put a plot into an axis with a color bar:
+    
+    >>> fig, axis = plt.subplots()
+    >>> c = gridcontourf(grid, data, show=False, ax=axis)
+    >>> fig.colorbar(c, ax=axis)
+    >>> plt.show()
     
     Inputs
     ------
@@ -174,6 +183,7 @@ def gridcontourf(grid, data2d, nlevel=31, show=True, mind=None, maxd=None, cmap=
     nlevel - Number of levels in the contour plot
     mind   - Minimum data level
     maxd   - Maximum data level
+    symmetric   Make mind, maxd symmetric about zero
     
     separatrix  - Add separatrix
     """
@@ -208,7 +218,7 @@ def gridcontourf(grid, data2d, nlevel=31, show=True, mind=None, maxd=None, cmap=
           j12 = j12[0]
           j21 = j21[0]
           j22 = j22[0]
-          ix1 = ix2[0]
+          ix1 = ix1[0]
           ix2 = ix2[0]
           nin = nin[0]
           nx  = nx[0]
@@ -232,6 +242,11 @@ def gridcontourf(grid, data2d, nlevel=31, show=True, mind=None, maxd=None, cmap=
       mind = amin(data2d)
     if maxd is None:
       maxd = amax(data2d)    
+
+    if symmetric:
+        # Make mind, maxd symmetric about zero
+        maxd = max([maxd, abs(mind)])
+        mind = -maxd
 
     levels = linspace(mind, maxd, nlevel, endpoint=True)
 

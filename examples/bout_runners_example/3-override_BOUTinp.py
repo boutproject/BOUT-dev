@@ -2,7 +2,7 @@
 
 """Driver which runs 3d_diffusion with other options than given in BOUT.inp"""
 
-from bout_runners.bout_runners import basic_runner
+from bout_runners import basic_runner
 
 my_runs = basic_runner(\
             # Number of processors
@@ -63,7 +63,7 @@ my_runs = basic_runner(\
             # tuple[0] - section name
             # tuple[1] - variable name for the section
             # tuple[2] - value of the variable name in the section
-            additional = [('cst','D_perp',5), ('cst', 'D_par', 0.5)],\
+            additional = (('cst','D_perp',5), ('cst', 'D_par', 0.5)),\
             # Can set this to overwrite or append
             restart    = None,\
             # Will copy the source file

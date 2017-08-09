@@ -117,7 +117,7 @@ int Mesh::get(Field3D &var, const string &name, BoutReal def, bool communicate) 
  **************************************************************************/
 
 int Mesh::get(Vector2D &var, const string &name) {
-  msg_stack.push("Loading 2D vector: Mesh::get(Vector2D, %s)", name.c_str());
+  TRACE("Loading 2D vector: Mesh::get(Vector2D, %s)", name.c_str());
 
   if(var.covariant) {
     output << "\tReading covariant vector " << name << endl;
@@ -133,14 +133,12 @@ int Mesh::get(Vector2D &var, const string &name) {
     get(var.y, name+"y");
     get(var.z, name+"z");
   }
-
-  msg_stack.pop();
 
   return 0;
 }
 
 int Mesh::get(Vector3D &var, const string &name) {
-  msg_stack.push("Loading 3D vector: Mesh::get(Vector3D, %s)", name.c_str());
+  TRACE("Loading 3D vector: Mesh::get(Vector3D, %s)", name.c_str());
 
   if(var.covariant) {
     output << "\tReading covariant vector " << name << endl;
@@ -156,8 +154,6 @@ int Mesh::get(Vector3D &var, const string &name) {
     get(var.y, name+"y");
     get(var.z, name+"z");
   }
-
-  msg_stack.pop();
 
   return 0;
 }
@@ -257,14 +253,6 @@ bool Mesh::hasBndryLowerY() {
   return answer;
 }
 
-Coordinates* Mesh::coordinates() {
-  if(!coords) {
-    // No coordinate system set. Create default
-    coords = new Coordinates(this);
-  }
-  return coords;
-}
-
 bool Mesh::hasBndryUpperY() {
   static bool calc = false, answer;
   if(calc) return answer; // Already calculated
@@ -333,4 +321,8 @@ ParallelTransform& Mesh::getParallelTransform() {
   
   // Return a reference to the ParallelTransform object
   return *transform;
+}
+
+Coordinates *Mesh::createDefaultCoordinates() {
+  return new Coordinates(this);
 }
