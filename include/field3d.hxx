@@ -466,11 +466,6 @@ class Field3D : public Field, public FieldData {
   int  byteSize() const override { return sizeof(BoutReal); } // Just one BoutReal
   int  BoutRealSize() const override { return 1; }
 
-  DEPRECATED(int getData(int x, int y, int z, void *vptr) const override);
-  DEPRECATED(int getData(int x, int y, int z, BoutReal *rptr) const override);
-  DEPRECATED(int setData(int x, int y, int z, void *vptr) override);
-  DEPRECATED(int setData(int x, int y, int z, BoutReal *rptr) override);
-
   /// Visitor pattern support
   void accept(FieldVisitor &v) override { v.accept(*this); }
   

@@ -705,65 +705,6 @@ void Field3D::setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const {
   }
 }
 
-///////////////////// FieldData VIRTUAL FUNCTIONS //////////
-
-int Field3D::getData(int x, int y, int z, void *vptr) const {
-
-  // Check data set
-  ASSERT1(isAllocated());
-
-#if CHECK > 2
-  // check ranges
-  if((x < 0) || (x >= nx) || (y < 0) || (y >= ny) || (z < 0) || (z >= nz))
-    throw BoutException("Field3D: getData (%d,%d,%d) out of bounds\n", x, y, z);
-#endif
-  
-  BoutReal *ptr = (BoutReal*) vptr;
-  *ptr = operator()(x,y,z);
-  
-  return sizeof(BoutReal);
-}
-
-int Field3D::getData(int x, int y, int z, BoutReal *rptr) const {
-  ASSERT1(isAllocated());
-  
-#if CHECK > 2
-  // check ranges
-  if((x < 0) || (x >= nx) || (y < 0) || (y >= ny) || (z < 0) || (z >= nz))
-    throw BoutException("Field3D: getData (%d,%d,%d) out of bounds\n", x, y, z);
-#endif
-
-  *rptr = operator()(x,y,z);
-  return 1;
-}
-
-int Field3D::setData(int x, int y, int z, void *vptr) {
-  allocate();
-  
-#if CHECK > 2
-  // check ranges
-  if((x < 0) || (x >= nx) || (y < 0) || (y >= ny) || (z < 0) || (z >= nz))
-    throw BoutException("Field3D: setData (%d,%d,%d) out of bounds\n", x, y, z);
-#endif
-  BoutReal *ptr = (BoutReal*) vptr;
-  operator()(x,y,z) = *ptr;
-  
-  return sizeof(BoutReal);
-}
-
-int Field3D::setData(int x, int y, int z, BoutReal *rptr) {
-  allocate();
-  
-#if CHECK > 2
-  // check ranges
-  if((x < 0) || (x >= nx) || (y < 0) || (y >= ny) || (z < 0) || (z >= nz))
-    throw BoutException("Field3D: setData (%d,%d,%d) out of bounds\n", x, y, z);
-#endif
-
-  operator()(x,y,z) = *rptr;
-  return 1;
-}
-
 ///////////////////// BOUNDARY CONDITIONS //////////////////
 
 void Field3D::setBackground(const Field2D &f2d) {

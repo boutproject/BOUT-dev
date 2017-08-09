@@ -407,65 +407,6 @@ void Field2D::setZStencil(stencil &fval, const bindex &bx, CELL_LOC UNUSED(loc))
   fval = operator()(bx.jx,bx.jy);
 }
 
-///////////////////// FieldData VIRTUAL FUNCTIONS //////////
-
-int Field2D::getData(int x, int y, int z, void *vptr) const {
-  ASSERT1(isAllocated()); // Check data set
-
-#if CHECK > 2
-  // check ranges
-  if((x < 0) || (x >= nx) || (y < 0) || (y >= ny)) {
-    throw BoutException("Field2D: getData (%d,%d,%d) out of bounds\n", x, y, z);
-  }
-#endif
-  BoutReal *ptr = (BoutReal*) vptr;
-  *ptr = operator()(x,y);
-
-  return sizeof(BoutReal);
-}
-
-int Field2D::getData(int x, int y, int z, BoutReal *rptr) const {
-  ASSERT1(isAllocated()); // Check data set
-
-#if CHECK > 2
-  // check ranges
-  if((x < 0) || (x >= nx) || (y < 0) || (y >= ny)) {
-    throw BoutException("Field2D: getData (%d,%d,%d) out of bounds\n", x, y, z);
-  }
-#endif
-
-  *rptr = operator()(x,y);
-  return 1;
-}
-
-int Field2D::setData(int x, int y, int z, void *vptr) {
-  allocate();
-
-#if CHECK > 2
-  // check ranges
-  if((x < 0) || (x >= nx) || (y < 0) || (y >= ny)) {
-    throw BoutException("Field2D: setData (%d,%d,%d) out of bounds\n", x, y, z);
-  }
-#endif
-  BoutReal *ptr = (BoutReal*) vptr;
-  operator()(x,y) = *ptr;
-
-  return sizeof(BoutReal);
-}
-
-int Field2D::setData(int x, int y, int UNUSED(z), BoutReal *rptr) {
-  allocate();
-#if CHECK > 2
-  // check ranges
-  if((x < 0) || (x >= nx) || (y < 0) || (y >= ny) ) {
-    throw BoutException("Field2D: setData (%d,%d) out of bounds\n", x, y);
-  }
-#endif
-
-  operator()(x,y) = *rptr;
-  return 1;
-}
-
 ///////////////////// BOUNDARY CONDITIONS //////////////////
 
 void Field2D::applyBoundary(bool init) {

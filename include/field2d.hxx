@@ -245,11 +245,6 @@ class Field2D : public Field, public FieldData {
   int  byteSize() const override { return sizeof(BoutReal); } // Just one BoutReal
   int  BoutRealSize() const override { return 1; }
 
-  DEPRECATED(int getData(int x, int y, int z, void *vptr) const override);
-  DEPRECATED(int getData(int x, int y, int z, BoutReal *rptr) const override);
-  DEPRECATED(int setData(int x, int y, int z, void *vptr) override);
-  DEPRECATED(int setData(int x, int y, int z, BoutReal *rptr) override);
-  
 #if CHECK > 0
   void doneComms() override { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
 #else
