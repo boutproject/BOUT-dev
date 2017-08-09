@@ -598,13 +598,18 @@ void MultigridAlg::communications(BoutReal* x, int level) {
     MPI_Datatype xvector;
     //    output<<"Start Z-comm"<<endl;
     ierr = MPI_Type_vector(lnx[level], 1, lnz[level]+2, MPI_DOUBLE, &xvector);
+    ASSERT1(ierr == MPI_SUCCESS);
+    
     ierr = MPI_Type_commit(&xvector);
+    ASSERT1(ierr == MPI_SUCCESS);
+    
     // Send to z+ and recieve from z-
     stag = rProcI;
     rtag = zProcM;
     // output<<"before to z+:"<<stag<<":"<<rtag<<endl;
     ierr = MPI_Sendrecv(&x[2*(lnz[level]+2)-2],1,xvector,zProcP,stag,
                         &x[lnz[level]+2],1,xvector,zProcM,rtag,commMG,status);
+    ASSERT1(ierr == MPI_SUCCESS);
     // Send to z- and recieve from z+
     stag = rProcI+numP;
     rtag = zProcP+numP;
@@ -612,31 +617,34 @@ void MultigridAlg::communications(BoutReal* x, int level) {
     ierr = MPI_Sendrecv(&x[lnz[level]+3],1,xvector,zProcM,stag,
                         &x[2*(lnz[level]+2)-1],1,xvector,zProcP,rtag,
                         commMG,status);
+    ASSERT1(ierr == MPI_SUCCESS);
+    
     ierr = MPI_Type_free(&xvector);
-  }
-  else {
-    for(int i=1;i<lnx[level]+1;i++) {
+    ASSERT1(ierr == MPI_SUCCESS);
+  } else {
+    for (int i=1;i<lnx[level]+1;i++) {
       x[i*(lnz[level]+2)] = x[(i+1)*(lnz[level]+2)-2];
       x[(i+1)*(lnz[level]+2)-1] = x[i*(lnz[level]+2)+1];
     }
   }
-  if(xNP > 1) {
+  if (xNP > 1) {
     // Send to x+ and recieve from x-
     stag = rProcI; 
     rtag = xProcM;
     ierr = MPI_Sendrecv(&x[lnx[level]*(lnz[level]+2)],lnz[level]+2,
                 MPI_DOUBLE,xProcP,stag,&x[0],lnz[level]+2,MPI_DOUBLE,
                 xProcM,rtag,commMG,status);
+    ASSERT1(ierr == MPI_SUCCESS);
+    
     // Send to x- and recieve from x+
     stag = rProcI+xNP;
     rtag = xProcP+xNP;;
     ierr = MPI_Sendrecv(&x[lnz[level]+2],lnz[level]+2,MPI_DOUBLE,xProcM,stag,
                         &x[(lnx[level]+1)*(lnz[level]+2)],lnz[level]+2,
                         MPI_DOUBLE,xProcP,rtag,commMG,status);
-
-  }
-  else {
-    for(int i=0;i<lnz[level]+2;i++) {
+    ASSERT1(ierr == MPI_SUCCESS);
+  }  else {
+    for (int i=0;i<lnz[level]+2;i++) {
       x[i] = x[lnx[level]*(lnz[level]+2)+i];
       x[(lnx[level]+1)*(lnz[level]+2)+i] = x[(lnz[level]+2)+i];
     }
