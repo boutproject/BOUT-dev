@@ -430,7 +430,10 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
   // Data used for timing
   static bool first_time = true;
   static BoutReal wall_limit, mpi_start_time; // Keep track of remaining wall time
-
+  
+  static bool stopCheck;       // Check for file, exit if exists?
+  static std::string stopCheckName; // File checked, whose existence triggers a stop
+  
   // Set the global variables. This is done because they need to be
   // written to the output file before the first step (initial condition)
   simtime = t;
@@ -458,7 +461,17 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
     /// Get some options
     Options *options = Options::getRoot();
     OPTION(options, wall_limit, -1.0); // Wall time limit. By default, no limit
-    wall_limit *= 60.0*60.0;  // Convert from hours to seconds
+    wall_limit *= 60.0 * 60.0;         // Convert from hours to seconds
+
+    OPTION(options, stopCheck, false);
+    if (stopCheck) {
+      // Get name of file whose existence triggers a stop
+      OPTION(options, stopCheckName, "BOUT.stop");
+      // Now add data directory to start of name to ensure we look in a run specific location
+      std::string data_dir;
+      Options::getRoot()->get("datadir", data_dir, string(DEFAULT_DIR));
+      stopCheckName = data_dir + "/" + stopCheckName;
+    }
 
     /// Record the starting time
     mpi_start_time = MPI_Wtime() - wtime;
@@ -466,15 +479,16 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
     first_time = false;
 
     /// Print the column header for timing info
-    if(!output_split){
-	    output.write("Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n\n");
-    }else{
-	    output.write("Sim Time  |  RHS_e evals  | RHS_I evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n\n");
+    if (!output_split) {
+      output.write("Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm    I/O   "
+                   "SOLVER\n\n");
+    } else {
+      output.write("Sim Time  |  RHS_e evals  | RHS_I evals  | Wall Time |  Calc    Inv  "
+                   " Comm    I/O   SOLVER\n\n");
     }
   }
-  
- 
-  if(!output_split){
+
+  if (!output_split) {
     output.write("%.3e      %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n", 
                simtime, ncalls, wtime,
                100.0*(wtime_rhs - wtime_comms - wtime_invert)/wtime,
@@ -482,7 +496,7 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
                100.0*wtime_comms/wtime,  // Communications
                100.* wtime_io / wtime,      // I/O
                100.*(wtime - wtime_io - wtime_rhs)/wtime); // Everything else
-  }else{
+  } else {
     output.write("%.3e      %5d            %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n",
                simtime, ncalls_e, ncalls_i, wtime,
                100.0*(wtime_rhs - wtime_comms - wtime_invert)/wtime,
@@ -509,6 +523,16 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
       return 1; // Return an error code to quit
     } else {
       output.print(" Wall %s", (time_to_hms(t_remain)).c_str());
+    }
+  }
+
+  // Check if the user has created the stop file and if so trigger an exit
+  if (stopCheck) {
+    std::ifstream f(stopCheckName);
+    if (f.good()) {
+      output << "\n" << "File " << stopCheckName
+             << " exists -- triggering exit." << endl;
+      return 1;
     }
   }
 
