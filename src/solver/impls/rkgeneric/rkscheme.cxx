@@ -248,7 +248,6 @@ void RKScheme::verifyCoeffs(){
     output<<string(50,'=')<<endl;
     output<<"WARNING: Result coefficients not consistent"<<endl;
     output<<string(50,'=')<<endl;
-    warn=false;
   }
 
   //Footer

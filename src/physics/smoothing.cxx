@@ -335,7 +335,6 @@ BoutReal Vol_Integral(const Field2D &var) {
   
   result = metric->J * var * metric->dx * metric->dy;
 
-  Int_Glb = 0.;
   Int_Glb = Average_XY(result);
   Int_Glb *= (BoutReal) ( (mesh->GlobalNx-2*mesh->xstart)*mesh->GlobalNy )*PI * 2.;
 
