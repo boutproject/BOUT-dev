@@ -1522,18 +1522,6 @@ const Field3D Mesh::indexD2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
   
   result = interp_to(result, outloc);
 
-  /*
-  if(mesh->ShiftXderivs && mesh->IncIntShear) {
-    mesh->IncIntShear = false; // So DDX doesn't try to include I again
-    // Add I^2 d^2/dz^2 term
-    result += mesh->IntShiftTorsion^2 * D2DZ2(f, outloc);
-    // Mixed derivative
-    result += 2.*mesh->IntShiftTorsion * D2DXDZ(f);
-    // DDZ term
-    result += DDX(mesh->IntShiftTorsion) * DDZ(f, outloc);
-    mesh->IncIntShear = true;
-  }
-  */
   return result;
 }
 
