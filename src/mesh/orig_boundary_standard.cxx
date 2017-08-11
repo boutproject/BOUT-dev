@@ -2628,12 +2628,7 @@ void BoundaryDivCurl::apply(Vector3D &var) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryFree::clone(BoundaryRegion *region, const list<string> &args) {
-  if (region->location & BNDRY_XIN) mesh->freeboundary_xin = true;
-  if (region->location & BNDRY_XOUT) mesh->freeboundary_xout = true;
-  if (region->location & BNDRY_YDOWN) mesh->freeboundary_ydown = true;
-  if (region->location & BNDRY_YUP) mesh->freeboundary_yup = true;
-  
+BoundaryOp* BoundaryFree::clone(BoundaryRegion *region, const list<string> &args) { 
   if(!args.empty()) {
     // First argument should be a value
     val = stringToReal(args.front());
