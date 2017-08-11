@@ -454,7 +454,7 @@ void MultigridAlg::pGMRES(BoutReal *sol,BoutReal *rhs,int level,int iplag) {
   return; 
 }
 
-void MultigridAlg::setMultigridC(int plag) {
+void MultigridAlg::setMultigridC(int UNUSED(plag)) {
 
   int level = mglevel - 1;
   for(int n = level;n>0;n--) {
@@ -466,12 +466,9 @@ void MultigridAlg::setMultigridC(int plag) {
   }
 }
 
-void MultigridAlg::lowestSolver(BoutReal *x,BoutReal *b,int plag) {
-  pGMRES(x,b,0,0);
+void MultigridAlg::lowestSolver(BoutReal *x, BoutReal *b, int UNUSED(plag)) {
+  pGMRES(x, b, 0, 0);
 }
-
-
-
 
 BoutReal MultigridAlg::vectorProd(int level,BoutReal* x,BoutReal* y) {
   // nx does not include guard cells

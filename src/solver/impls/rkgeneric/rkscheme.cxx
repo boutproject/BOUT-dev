@@ -3,13 +3,14 @@
 #include <output.hxx>
 #include <cmath>
 #include <boutcomm.hxx>
+#include "unused.hxx"
 
 ////////////////////
 // PUBLIC
 ////////////////////
 
 //Initialise
-RKScheme::RKScheme(Options *opts)
+RKScheme::RKScheme(Options *UNUSED(opts))
     : steps(nullptr), stageCoeffs(nullptr), resultCoeffs(nullptr), timeCoeffs(nullptr),
       resultAlt(nullptr) {
   // Currently not reading anything from the options here

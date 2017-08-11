@@ -8,6 +8,8 @@
 #include <sourcex.hxx>
 #include <msg_stack.hxx>
 
+#include "unused.hxx"
+
 /* hyperbolic tangent */
 //template<typename TYPE> inline TYPE TanH(TYPE &a)
 
@@ -17,7 +19,7 @@ BoutReal TanH(BoutReal a) {
 }
 
 // create radial buffer zones to set jpar zero near radial boundaries
-const Field2D source_tanhx(const Field2D &f,BoutReal swidth,BoutReal slength) {
+const Field2D source_tanhx(const Field2D &UNUSED(f), BoutReal swidth, BoutReal slength) {
   Field2D result;
   result.allocate();
   
@@ -41,7 +43,7 @@ const Field2D source_tanhx(const Field2D &f,BoutReal swidth,BoutReal slength) {
 }
 
 // create radial buffer zones to set jpar zero near radial boundaries
-const Field2D source_expx2(const Field2D &f,BoutReal swidth,BoutReal slength) {
+const Field2D source_expx2(const Field2D &UNUSED(f), BoutReal swidth, BoutReal slength) {
   Field2D  result;
 
   result.allocate();
@@ -64,7 +66,8 @@ const Field2D source_expx2(const Field2D &f,BoutReal swidth,BoutReal slength) {
 }
 
 // create radial buffer zones to set jpar zero near radial boundaries
-const Field3D sink_tanhx(const Field2D &f0, const Field3D &f,BoutReal swidth,BoutReal slength, bool BoutRealspace) {
+const Field3D sink_tanhx(const Field2D &UNUSED(f0), const Field3D &f, BoutReal swidth,
+                         BoutReal slength, bool UNUSED(BoutRealspace)) {
   Field3D result;
   result.allocate();
  
@@ -86,7 +89,7 @@ const Field3D sink_tanhx(const Field2D &f0, const Field3D &f,BoutReal swidth,Bou
 }
 
 // create radial buffer zones to set jpar zero near radial boundaries
-const Field3D mask_x(const Field3D &f, bool BoutRealspace) {
+const Field3D mask_x(const Field3D &f, bool UNUSED(BoutRealspace)) {
   TRACE("mask_x");
   
   Field3D result;
@@ -109,7 +112,8 @@ const Field3D mask_x(const Field3D &f, bool BoutRealspace) {
 }
 
 // create radial buffer zones to set jpar zero near radial boundaries
-const Field3D sink_tanhxl(const Field2D &f0, const Field3D &f,BoutReal swidth,BoutReal slength, bool BoutRealspace) {
+const Field3D sink_tanhxl(const Field2D &UNUSED(f0), const Field3D &f, BoutReal swidth,
+                          BoutReal slength, bool UNUSED(BoutRealspace)) {
   TRACE("sink_tanhx");
   
   Field3D result;
@@ -131,7 +135,8 @@ const Field3D sink_tanhxl(const Field2D &f0, const Field3D &f,BoutReal swidth,Bo
 }
 
 // create radial buffer zones to set jpar zero near radial boundaries
-const Field3D sink_tanhxr(const Field2D &f0, const Field3D &f,BoutReal swidth,BoutReal slength, bool BoutRealspace) {
+const Field3D sink_tanhxr(const Field2D &UNUSED(f0), const Field3D &f, BoutReal swidth,
+                          BoutReal slength, bool UNUSED(BoutRealspace)) {
   TRACE("sink_tanhxr");
   Field3D result;
   result.allocate();
@@ -150,7 +155,7 @@ const Field3D sink_tanhxr(const Field2D &f0, const Field3D &f,BoutReal swidth,Bo
 }
 
 // create radial buffer zones to damp Psi to zero near radial boundaries
-const Field3D buff_x(const Field3D &f, bool BoutRealspace) {
+const Field3D buff_x(const Field3D &f, bool UNUSED(BoutRealspace)) {
   TRACE("buff_x");
   
   Field3D result;
