@@ -30,7 +30,7 @@ const Field2D source_tanhx(const Field2D &UNUSED(f), BoutReal swidth, BoutReal s
   BoutReal length  = slength;
   BoutReal width   = swidth;
   
-  for(auto i : result) {
+  for(const auto &i : result) {
     BoutReal lx = mesh->GlobalX(i.x) - length;
     BoutReal dampl = TanH(lx/width);
     result[i] = 0.5*(1.0 - dampl);
@@ -53,7 +53,7 @@ const Field2D source_expx2(const Field2D &UNUSED(f), BoutReal swidth, BoutReal s
   //  BoutReal slength = 0.5;
   //  BoutReal width = 20.0;
 
-  for(auto i : result) {
+  for(const auto &i : result) {
     BoutReal lx = mesh->GlobalX(i.x) - slength;
     BoutReal dampl = exp(-lx*lx/swidth/swidth);
     result[i] = dampl;
@@ -76,7 +76,7 @@ const Field3D sink_tanhx(const Field2D &UNUSED(f0), const Field3D &f, BoutReal s
   //  BoutReal slength = 0.15;
   //  BoutReal width = 20.0;
   
-  for(auto i : result) {
+  for(const auto &i : result) {
     BoutReal rlx = 1. - mesh->GlobalX(i.x) - slength;
     BoutReal dampr = TanH(rlx/swidth);
     result[i] = 0.5*(1.0 - dampr)*f[i];
@@ -97,7 +97,7 @@ const Field3D mask_x(const Field3D &f, bool UNUSED(BoutRealspace)) {
   
   // create a radial buffer zone to set jpar zero near radial boundary
 
-  for(auto i : result) {
+  for(const auto &i : result) {
     BoutReal lx = mesh->GlobalX(i.x);
     BoutReal dampl = TanH(lx/40.0);
     BoutReal dampr = TanH((1. - lx)/40.0);
@@ -120,7 +120,7 @@ const Field3D sink_tanhxl(const Field2D &UNUSED(f0), const Field3D &f, BoutReal 
  
   result.allocate();
   
-  for(auto i : result) {
+  for(const auto &i : result) {
     
     BoutReal lx = mesh->GlobalX(i.x) - slength;
     BoutReal dampl = TanH(lx/swidth);
@@ -141,7 +141,7 @@ const Field3D sink_tanhxr(const Field2D &UNUSED(f0), const Field3D &f, BoutReal 
   Field3D result;
   result.allocate();
   
-  for(auto i : result) {
+  for(const auto &i : result) {
     BoutReal rlx = 1. - mesh->GlobalX(i.x) - slength;
     BoutReal dampr = TanH(rlx/swidth);
 
@@ -161,7 +161,7 @@ const Field3D buff_x(const Field3D &f, bool UNUSED(BoutRealspace)) {
   Field3D result;
   result.allocate();
   
-  for(auto i : result) {
+  for(const auto &i : result) {
     BoutReal lx = mesh->GlobalX(i.x);
     BoutReal rlx = 1. - lx;
     BoutReal dampl = 1.e0;
