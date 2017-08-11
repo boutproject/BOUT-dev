@@ -41,7 +41,7 @@
 #include <bout/constants.hxx>
 
 // Smooth using simple 1-2-1 filter
-const Field3D smooth_x(const Field3D &f, bool BoutRealspace) {
+const Field3D smooth_x(const Field3D &f) {
   TRACE("smooth_x");
   
   Field3D result;
