@@ -499,17 +499,11 @@ bool H5Format::read_rec(void *data, hid_t hdf5_type, const char *name, int lx, i
   if(lx != 0) nd = 2;
   if(ly != 0) nd = 3;
   if(lz != 0) nd = 4;
-  hsize_t counts[4],offset[4],init_size[3];
+  hsize_t counts[4],offset[4];
   hsize_t offset_local[3],init_size_local[3];
   counts[0]=1; counts[1]=lx; counts[2]=ly; counts[3]=lz;
   offset[0]=t0; offset[1]=x0; offset[2]=y0; offset[3]=z0;
   offset_local[0]=x0_local;offset_local[1]=y0_local;offset_local[2]=z0_local;
-  if (parallel) {
-    init_size[0]=mesh->GlobalNx-2*mesh->xstart; init_size[1]=mesh->GlobalNy-2*mesh->ystart; init_size[2]=mesh->GlobalNz;
-  }
-  else {
-    init_size[0]=mesh->LocalNx; init_size[1]=mesh->LocalNy; init_size[2]=mesh->LocalNz;
-  }
   init_size_local[0]=mesh->LocalNx; init_size_local[1]=mesh->LocalNy; init_size_local[2]=mesh->LocalNz;
   
   if (nd==1) {
@@ -517,7 +511,6 @@ bool H5Format::read_rec(void *data, hid_t hdf5_type, const char *name, int lx, i
     nd = 1;
     counts[1] = 1;
     offset[1] = 0;
-    init_size[0] = 1;
     init_size_local[0] = 1;
   }
   
