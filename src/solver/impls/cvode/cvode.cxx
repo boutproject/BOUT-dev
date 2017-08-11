@@ -123,7 +123,8 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
 
   /// Get options
   BoutReal abstol, reltol;
-  N_Vector abstolvec;
+  // Initialise abstolvec to nullptr to avoid compiler maybed-uninitialised warning
+  N_Vector abstolvec = nullptr;
   int maxl;
   int mudq, mldq;
   int mukeep, mlkeep;
