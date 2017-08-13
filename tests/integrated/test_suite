@@ -64,7 +64,8 @@ print("\n")
 if nfailed > 0:
     print("======= FAILURES ========")
     for test, output in failed:
-        print("\n----- {0} -----\n{1}".format(test, output))
+        # Note: need Unicode string in case output contains unicode
+        print(u"\n----- {0} -----\n{1}".format(test, output))
         
     print("======= {0} failed in {1:.2f} seconds ========".format(nfailed, elapsed_time))
     
