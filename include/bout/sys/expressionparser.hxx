@@ -182,9 +182,9 @@ private:
 class ParseException : public std::exception {
 public:
   ParseException(const char *, ...);
-  virtual ~ParseException() throw() {}
+  virtual ~ParseException() {}
   
-  const char* what() const throw();
+  const char* what() const noexcept;
   
 protected:
   std::string message;

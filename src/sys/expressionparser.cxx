@@ -417,7 +417,7 @@ ParseException::ParseException(const char *s, ...) {
   delete[] buffer;
 }
 
-const char* ParseException::what() const throw() {
+const char* ParseException::what() const noexcept {
   return message.c_str();
 }
 
