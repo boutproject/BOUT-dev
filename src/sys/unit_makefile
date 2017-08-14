@@ -1,8 +1,0 @@
-
-BOUT_TOP=../../
-
-SOURCE=unit_tests.cxx range.cxx
-
-test: $(SOURCE)
-	g++ -g $(SOURCE) -o $@ -I$(BOUT_TOP)/include
-
