@@ -89,6 +89,7 @@ public:
   }
   MPI_Comm getXcomm(int UNUSED(jy)) const { return MPI_COMM_NULL; }
   MPI_Comm getYcomm(int UNUSED(jx)) const { return MPI_COMM_NULL; }
+  bool periodicY(int UNUSED(jx)) const { return true; }
   bool periodicY(int UNUSED(jx), BoutReal &UNUSED(ts)) const { return true; }
   bool firstY() const { return true; }
   bool lastY() const { return true; }
