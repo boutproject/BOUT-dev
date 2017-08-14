@@ -529,7 +529,6 @@ void BoundaryDirichlet::apply(Field3D &f,BoutReal t) {
 				
 				
 	// Need to set second guard cell, as may be used for interpolation or upwinding derivatives
-        /*
 	for(int i=1;i<bndry->width;i++) {
 	  int xi = bndry->x + i*bndry->bx;
 	  int yi = bndry->y + i*bndry->by;
@@ -538,22 +537,21 @@ void BoundaryDirichlet::apply(Field3D &f,BoutReal t) {
 	  // f(xi, yi, zk) = 3.0*f(xi - bndry->bx, yi - bndry->by, zk) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by, zk) + f(xi - 3*bndry->bx, yi - 3*bndry->by, zk);
           
 	}
-        */			
       }
       
-      for(int i=1;i<bndry->width;i++) {
-        // Set any other guard cells using the values on the cells
-        int xi = bndry->x + i*bndry->bx;
-        int yi = bndry->y + i*bndry->by;
-        xnorm = mesh->GlobalX(xi);
-        ynorm = mesh->GlobalY(yi);
-        for(int zk=0;zk<mesh->LocalNz;zk++) {
-          if(fg) {
-            val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
-          }
-          f(xi, yi, zk) = val;
-        }
-      }
+      // for(int i=1;i<bndry->width;i++) {
+      //   // Set any other guard cells using the values on the cells
+      //   int xi = bndry->x + i*bndry->bx;
+      //   int yi = bndry->y + i*bndry->by;
+      //   xnorm = mesh->GlobalX(xi);
+      //   ynorm = mesh->GlobalY(yi);
+      //   for(int zk=0;zk<mesh->LocalNz;zk++) {
+      //     if(fg) {
+      //       val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
+      //     }
+      //     f(xi, yi, zk) = val;
+      //   }
+      // }
     }
   }
 }
