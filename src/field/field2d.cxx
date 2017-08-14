@@ -147,25 +147,21 @@ const IndexRange Field2D::region(REGION rgn) const {
     return IndexRange{0, nx-1,
         0, ny-1,
         0, 0};
-    break;
   }
   case RGN_NOBNDRY: {
     return IndexRange{fieldmesh->xstart, fieldmesh->xend,
         fieldmesh->ystart, fieldmesh->yend,
         0, 0};
-    break;
   }
   case RGN_NOX: {
     return IndexRange{fieldmesh->xstart, fieldmesh->xend,
         0, ny-1,
         0, 0};
-    break;
   }
   case RGN_NOY: {
     return IndexRange{0, nx-1,
         fieldmesh->ystart, fieldmesh->yend,
         0, 0};
-    break;
   }
   default: {
     throw BoutException("Field2D::region() : Requested region not implemented");
