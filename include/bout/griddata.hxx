@@ -103,7 +103,7 @@ class GridFile : public GridDataSource {
  * be set in the input file or on the command line. This is done
  * using FieldFactory to convert string expressions into fields.
  */
-class GridFromOptions : GridDataSource {
+class GridFromOptions : public GridDataSource {
 public:
   /*!
    * Constructor, passing optional Options object
