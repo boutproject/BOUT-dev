@@ -74,6 +74,11 @@ class Field2D : public Field, public FieldData {
   Field2D(const Field2D& f);
 
   /*!
+   * Move constructor
+   */
+  Field2D(Field2D&& f) = default;
+
+  /*!
    * Constructor. This creates a Field2D using the global Mesh pointer (mesh)
    * allocates data, and assigns the value \p val to all points including
    * boundary cells.
@@ -117,6 +122,7 @@ class Field2D : public Field, public FieldData {
    * function.
    */
   Field2D & operator=(const Field2D &rhs);
+  Field2D & operator=(Field2D &&rhs) = default;
 
   /*!
    * Allocates data if not already allocated, then
@@ -241,11 +247,6 @@ class Field2D : public Field, public FieldData {
   int  byteSize() const override { return sizeof(BoutReal); } // Just one BoutReal
   int  BoutRealSize() const override { return 1; }
 
-  DEPRECATED(int getData(int x, int y, int z, void *vptr) const override);
-  DEPRECATED(int getData(int x, int y, int z, BoutReal *rptr) const override);
-  DEPRECATED(int setData(int x, int y, int z, void *vptr) override);
-  DEPRECATED(int setData(int x, int y, int z, BoutReal *rptr) override);
-  
 #if CHECK > 0
   void doneComms() override { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
 #else

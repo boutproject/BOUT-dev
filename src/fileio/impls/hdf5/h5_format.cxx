@@ -485,68 +485,79 @@ bool H5Format::read_rec(BoutReal *var, const string &name, int lx, int ly, int l
   return read_rec(var, name.c_str(), lx, ly, lz);
 }
 
-bool H5Format::read_rec(void *data, hid_t hdf5_type, const char *name, int lx, int ly, int lz) {
-  if(!is_valid())
+bool H5Format::read_rec(void *data, hid_t hdf5_type, const char *name, int lx, int ly,
+                        int lz) {
+  if (!is_valid()) {
     return false;
+  }
 
-  if((lx < 0) || (ly < 0) || (lz < 0))
+  if ((lx < 0) || (ly < 0) || (lz < 0)) {
     return false;
+  }
 
-//   // Check for valid name
-//   checkName(name);
-  
   int nd = 1; // Number of dimensions
-  if(lx != 0) nd = 2;
-  if(ly != 0) nd = 3;
-  if(lz != 0) nd = 4;
-  hsize_t counts[4],offset[4],init_size[3];
-  hsize_t offset_local[3],init_size_local[3];
-  counts[0]=1; counts[1]=lx; counts[2]=ly; counts[3]=lz;
-  offset[0]=t0; offset[1]=x0; offset[2]=y0; offset[3]=z0;
-  offset_local[0]=x0_local;offset_local[1]=y0_local;offset_local[2]=z0_local;
-  if (parallel) {
-    init_size[0]=mesh->GlobalNx-2*mesh->xstart; init_size[1]=mesh->GlobalNy-2*mesh->ystart; init_size[2]=mesh->GlobalNz;
+  if (lx != 0) {
+    nd = 2;
   }
-  else {
-    init_size[0]=mesh->LocalNx; init_size[1]=mesh->LocalNy; init_size[2]=mesh->LocalNz;
+  if (ly != 0) {
+    nd = 3;
   }
-  init_size_local[0]=mesh->LocalNx; init_size_local[1]=mesh->LocalNy; init_size_local[2]=mesh->LocalNz;
-  
-  if (nd==1) {
+  if (lz != 0) {
+    nd = 4;
+  }
+  hsize_t counts[4], offset[4];
+  hsize_t offset_local[3], init_size_local[3];
+  counts[0] = 1;
+  counts[1] = lx;
+  counts[2] = ly;
+  counts[3] = lz;
+  offset[0] = t0;
+  offset[1] = x0;
+  offset[2] = y0;
+  offset[3] = z0;
+  offset_local[0] = x0_local;
+  offset_local[1] = y0_local;
+  offset_local[2] = z0_local;
+  init_size_local[0] = mesh->LocalNx;
+  init_size_local[1] = mesh->LocalNy;
+  init_size_local[2] = mesh->LocalNz;
+
+  if (nd == 1) {
     // Need to write a time-series of scalars
     nd = 1;
     counts[1] = 1;
     offset[1] = 0;
-    init_size[0] = 1;
     init_size_local[0] = 1;
   }
-  
+
   hid_t mem_space = H5Screate_simple(nd, init_size_local, init_size_local);
   if (mem_space < 0)
     throw BoutException("Failed to create mem_space");
-  if (H5Sselect_hyperslab(mem_space, H5S_SELECT_SET, offset_local, /*stride=*/NULL, counts, /*block=*/NULL) < 0)
+  if (H5Sselect_hyperslab(mem_space, H5S_SELECT_SET, offset_local, /*stride=*/NULL,
+                          counts, /*block=*/NULL) < 0)
     throw BoutException("Failed to select hyperslab");
-  
+
   hid_t dataSet = H5Dopen(dataFile, name, H5P_DEFAULT);
   if (dataSet < 0)
     throw BoutException("Failed to open dataSet");
-  
+
   hid_t dataSpace = H5Dget_space(dataSet);
   if (dataSpace < 0)
     throw BoutException("Failed to create dataSpace");
-  if (H5Sselect_hyperslab(dataSpace, H5S_SELECT_SET, offset, /*stride=*/NULL, counts, /*block=*/NULL) < 0)
+  if (H5Sselect_hyperslab(dataSpace, H5S_SELECT_SET, offset, /*stride=*/NULL, counts,
+                          /*block=*/NULL) < 0)
     throw BoutException("Failed to select hyperslab");
-  
+
   if (H5Dread(dataSet, hdf5_type, mem_space, dataSpace, H5P_DEFAULT, data) < 0)
     throw BoutException("Failed to read data");
-  
+
   if (H5Sclose(mem_space) < 0)
     throw BoutException("Failed to close mem_space");
   if (H5Sclose(dataSpace) < 0)
     throw BoutException("Failed to close dataSpace");
   if (H5Dclose(dataSet) < 0)
     throw BoutException("Failed to close dataSet");
-  
+
   return true;
 }
 

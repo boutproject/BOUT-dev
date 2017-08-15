@@ -42,6 +42,8 @@
 
 #include <output.hxx>
 
+#include "unused.hxx"
+
 #define ZERO        RCONST(0.)
 #define ONE         RCONST(1.0)
 
@@ -124,7 +126,8 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
 
   /// Get options
   BoutReal abstol, reltol;
-  N_Vector abstolvec;
+  // Initialise abstolvec to nullptr to avoid compiler maybed-uninitialised warning
+  N_Vector abstolvec = nullptr;
   int maxl;
   int mudq, mldq;
   int mukeep, mlkeep;
@@ -663,23 +666,18 @@ static int arkode_rhs(BoutReal t,
     return 1;
       }
     return 0;
-  }
-                            
+}
 
 /// RHS function for BBD preconditioner
-static int arkode_bbd_rhs(ARKODEINT Nlocal, BoutReal t, 
-			 N_Vector u, N_Vector du, 
-			 void *user_data)
-{
+static int arkode_bbd_rhs(ARKODEINT UNUSED(Nlocal), BoutReal t, N_Vector u, N_Vector du,
+                          void *user_data) {
   return arkode_rhs_i(t, u, du, user_data);
 }
 
 /// Preconditioner function
-static int arkode_pre(BoutReal t, N_Vector yy, N_Vector yp,
-		     N_Vector rvec, N_Vector zvec,
-		     BoutReal gamma, BoutReal delta, int lr,
-		     void *user_data, N_Vector tmp)
-{
+static int arkode_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector rvec,
+                      N_Vector zvec, BoutReal gamma, BoutReal delta, int UNUSED(lr),
+                      void *user_data, N_Vector UNUSED(tmp)) {
   BoutReal *udata = NV_DATA_P(yy);
   BoutReal *rdata = NV_DATA_P(rvec);
   BoutReal *zdata = NV_DATA_P(zvec);
@@ -693,10 +691,8 @@ static int arkode_pre(BoutReal t, N_Vector yy, N_Vector yp,
 }
 
 /// Jacobian-vector multiplication function
-static int arkode_jac(N_Vector v, N_Vector Jv,
-		     realtype t, N_Vector y, N_Vector fy,
-		     void *user_data, N_Vector tmp)
-{
+static int arkode_jac(N_Vector v, N_Vector Jv, realtype t, N_Vector y,
+                      N_Vector UNUSED(fy), void *user_data, N_Vector UNUSED(tmp)) {
   BoutReal *ydata = NV_DATA_P(y);   ///< System state
   BoutReal *vdata = NV_DATA_P(v);   ///< Input vector
   BoutReal *Jvdata = NV_DATA_P(Jv);  ///< Jacobian*vector output
@@ -750,7 +746,10 @@ void ArkodeSolver::set_abstol_values(BoutReal* abstolvec_data, vector<BoutReal> 
   }
 }
 
-void ArkodeSolver::loop_abstol_values_op(int jx, int jy, BoutReal* abstolvec_data, int &p, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols, bool bndry) {
+void ArkodeSolver::loop_abstol_values_op(int UNUSED(jx), int UNUSED(jy),
+                                         BoutReal *abstolvec_data, int &p,
+                                         vector<BoutReal> &f2dtols,
+                                         vector<BoutReal> &f3dtols, bool bndry) {
   // Loop over 2D variables
   for(vector<BoutReal>::size_type i=0; i<f2dtols.size(); i++) {
     if(bndry && !f2d[i].evolve_bndry)

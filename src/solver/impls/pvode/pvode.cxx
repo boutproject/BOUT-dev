@@ -33,6 +33,8 @@
 #include <bout/sys/timer.hxx>
 #include <boutexception.hxx>
 
+#include "unused.hxx"
+
 #include <pvode/iterativ.h>  // contains the enum for types of preconditioning
 #include <pvode/cvspgmr.h>   // use CVSPGMR linear solver each internal step
 #include <pvode/pvbbdpre.h>  // band preconditioner function prototypes
@@ -281,7 +283,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
  * RHS function
  **************************************************************************/
 
-void PvodeSolver::rhs(int N, BoutReal t, BoutReal *udata, BoutReal *dudata) {
+void PvodeSolver::rhs(int UNUSED(N), BoutReal t, BoutReal *udata, BoutReal *dudata) {
   TRACE("Running RHS: PvodeSolver::rhs(%e)", t);
 
   // Get current timestep
@@ -297,7 +299,7 @@ void PvodeSolver::rhs(int N, BoutReal t, BoutReal *udata, BoutReal *dudata) {
   save_derivs(dudata);
 }
 
-void PvodeSolver::gloc(int N, BoutReal t, BoutReal *udata, BoutReal *dudata) {
+void PvodeSolver::gloc(int UNUSED(N), BoutReal t, BoutReal *udata, BoutReal *dudata) {
   TRACE("Running RHS: PvodeSolver::gloc(%e)", t);
 
   Timer timer("rhs");
@@ -318,8 +320,7 @@ void PvodeSolver::gloc(int N, BoutReal t, BoutReal *udata, BoutReal *dudata) {
  * CVODE rhs function
  **************************************************************************/
 
-void solver_f(integer N, BoutReal t, N_Vector u, N_Vector udot, void *f_data)
-{
+void solver_f(integer N, BoutReal t, N_Vector u, N_Vector udot, void *f_data) {
   BoutReal *udata, *dudata;
   PvodeSolver *s;
 
@@ -332,18 +333,17 @@ void solver_f(integer N, BoutReal t, N_Vector u, N_Vector udot, void *f_data)
 }
 
 // Preconditioner RHS
-void solver_gloc(integer N, BoutReal t, BoutReal* u, BoutReal* udot, void *f_data)
-{
+void solver_gloc(integer N, BoutReal t, BoutReal *u, BoutReal *udot, void *f_data) {
   PvodeSolver *s;
-  
+
   s = (PvodeSolver*) f_data;
 
   s->gloc(N, t, u, udot);
 }
 
 // Preconditioner communication function
-void solver_cfn(integer N, BoutReal t, N_Vector u, void *f_data)
-{
+void solver_cfn(integer UNUSED(N), BoutReal UNUSED(t), N_Vector UNUSED(u),
+                void *UNUSED(f_data)) {
   // doesn't do anything at the moment
 }
 

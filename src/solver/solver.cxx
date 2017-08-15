@@ -553,7 +553,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
  * Initialisation
  **************************************************************************/
 
-int Solver::init(int nout, BoutReal tstep) {
+int Solver::init(int UNUSED(nout), BoutReal UNUSED(tstep)) {
   
   TRACE("Solver::init()");
 
@@ -1255,7 +1255,7 @@ void Solver::pre_rhs(BoutReal t) {
   
 }
 
-void Solver::post_rhs(BoutReal t) {
+void Solver::post_rhs(BoutReal UNUSED(t)) {
 #if CHECK > 0
   for(const auto& f : f3d) {
     if(!f.F_var->isAllocated())

@@ -104,7 +104,7 @@ class Field {
   void setName(std::string s) { name = s; }
 #else
   std::string getName() const { return ""; }
-  void setName(std::string s) { ;}
+  void setName(std::string UNUSED(s)) {}
 #endif
   std::string name;
 

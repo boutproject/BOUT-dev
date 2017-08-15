@@ -175,12 +175,17 @@ class Field3D : public Field, public FieldData {
    * fields may be created before the mesh is.
    */
   Field3D(Mesh *msh = nullptr);
-  
-  /*! 
+
+  /*!
    * Copy constructor
    */
   Field3D(const Field3D& f);
-  
+
+  /*!
+   * Move constructor
+   */
+  Field3D(Field3D&& f) = default;
+
   /// Constructor from 2D field
   Field3D(const Field2D& f);
   /// Constructor from value
@@ -414,6 +419,7 @@ class Field3D : public Field, public FieldData {
   /// Assignment operators
   ///@{
   Field3D & operator=(const Field3D &rhs);
+  Field3D & operator=(Field3D &&rhs) = default;
   Field3D & operator=(const Field2D &rhs);
   /// return void, as only part initialised
   void      operator=(const FieldPerp &rhs);
@@ -461,11 +467,6 @@ class Field3D : public Field, public FieldData {
   bool is3D() const override     { return true; }         // Field is 3D
   int  byteSize() const override { return sizeof(BoutReal); } // Just one BoutReal
   int  BoutRealSize() const override { return 1; }
-
-  DEPRECATED(int getData(int x, int y, int z, void *vptr) const override);
-  DEPRECATED(int getData(int x, int y, int z, BoutReal *rptr) const override);
-  DEPRECATED(int setData(int x, int y, int z, void *vptr) override);
-  DEPRECATED(int setData(int x, int y, int z, BoutReal *rptr) override);
 
   /// Visitor pattern support
   void accept(FieldVisitor &v) override { v.accept(*this); }

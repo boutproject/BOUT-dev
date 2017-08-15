@@ -436,6 +436,8 @@ void DST(const BoutReal *in, int length, dcomplex *out) {
   static fftw_plan p;
   static int n = 0;
 
+  ASSERT1(length > 0);
+
   if(length != n) {
     if(n > 0) {
       fftw_destroy_plan(p);
@@ -487,6 +489,8 @@ void DST_rev(dcomplex *in, int length, BoutReal *out) {
   static double *fout;
   static fftw_plan p;
   static int n = 0;
+
+  ASSERT1(length > 0);
 
   if(length != n) {
     if(n > 0) {

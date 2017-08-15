@@ -272,8 +272,19 @@ distclean:: clean clean-tests
 	@touch $(BOUT_TOP)/configure
 	@echo autom4te.cache cleaned
 
-clean-tests: clean
-	@$(MAKE) --no-print-directory -C tests clean
+clean-tests: clean-unit-tests clean-integrated-tests clean-mms-tests
+
+clean-unit-tests:
+	@echo "   tests/unit cleaned"
+	@$(MAKE) --no-print-directory -C tests/unit clean
+
+clean-integrated-tests:
+	@echo "   tests/integrated cleaned"
+	@$(MAKE) --no-print-directory -C tests/integrated clean
+
+clean-mms-tests:
+	@echo "   tests/MMS cleaned"
+	@$(MAKE) --no-print-directory -C tests/MMS clean
 
 ####################################################################
 # Documentation
