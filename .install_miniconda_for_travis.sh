@@ -16,7 +16,7 @@ fi
 
 #Check to see if the miniconda build already exists (thanks to caching)
 #if it does then we can skip the install of conda etc.
-if [[ ! -e ${TARGET_DIR} ]]
+if [[ ! -e ${TARGET_DIR}/bin/activate ]]
 then
     bash ${DOWNLOAD_TARGET}/miniconda.sh -b -p ${TARGET_DIR} -f
     hash -r
