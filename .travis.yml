@@ -5,7 +5,9 @@ compiler: gcc
 cache:
   apt: true
   directories:
+  - ${HOME}/download
   - ${HOME}/miniconda
+
 addons:
   apt:
     packages:
