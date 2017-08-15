@@ -31,9 +31,7 @@ before_install:
   ##################################################
   # Install Conda for python 3
   ##################################################
-  - export PATH="$HOME/miniconda/bin:$PATH"
-  - ./.install_miniconda_for_travis.sh
-  - source activate test-environment
+  - source .install_miniconda_for_travis.sh
 
   ##################################################
 
