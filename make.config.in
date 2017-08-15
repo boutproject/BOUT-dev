@@ -129,14 +129,37 @@ $(BOUT_TOP)/include $(BOUT_TOP)/lib:
 ####################################################################
 prefix = @prefix@
 exec_prefix = @exec_prefix@
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = ${INSTALL}
+INSTALL_DATA = ${INSTALL} -m 644
+
 install: libfast
-	@$(MKDIR) $(DESTDIR)${prefix}
-	@$(MKDIR) $(DESTDIR)${prefix}/include
-	@$(MKDIR) $(DESTDIR)${prefix}/lib
+	$(PRE_INSTALL)     # Pre-install commands follow.
+	$(NORMAL_INSTALL)  # Normal commands follow.
 	@echo "Installing header files into $(DESTDIR)@includedir@"
-	@cp include/*.hxx $(DESTDIR)@includedir@
+	$(INSTALL_DATA) -D include/*.hxx -t $(DESTDIR)@includedir@
 	@echo "Installing library files into $(DESTDIR)@libdir@"
-	@cp lib/*.a $(DESTDIR)@libdir@
+	$(INSTALL_DATA) -D lib/libbout++.a -t $(DESTDIR)@libdir@
+	$(INSTALL_DATA) -D lib/libpvode.a -t $(DESTDIR)@libdir@
+	$(INSTALL_DATA) -D lib/libpvpre.a -t $(DESTDIR)@libdir@
+	@echo "Installing scripts into $(DESTDIR)@bindir@"
+	$(INSTALL_PROGRAM) -D bin/bout-config -t $(DESTDIR)@bindir@
+	@echo "Installing IDL libraries to $(DESTDIR)@datadir@/bout++/idllib"
+	$(INSTALL_DATA) -D tools/idllib/* -t $(DESTDIR)@datadir@/bout++/idllib/
+	@echo "Installing python libraries to $(DESTDIR)@datadir@/bout++/pylib"
+	$(INSTALL_DATA) -D tools/pylib/boutdata/* -t $(DESTDIR)@datadir@/bout++/pylib/boutdata/
+	$(INSTALL_DATA) -D tools/pylib/boututils/* -t $(DESTDIR)@datadir@/bout++/pylib/boututils/
+	$(POST_INSTALL)    # Post-install commands follow.
+
+uninstall:
+	$(PRE_UNINSTALL)     # Pre-uninstall commands follow.
+	$(NORMAL_UNINSTALL)  # Normal commands follow.
+	rm $(DESTDIR)@bindir@/bout-config
+	rm $(DESTDIR)@libdir@/libbout++.a
+	rm $(DESTDIR)@libdir@/libpvode.a
+	rm $(DESTDIR)@libdir@/libpvpre.a
+	$(POST_UNINSTALL)    # Post-uninstall commands follow.
 
 ####################################################################
 # A bit of a clever hack that determines wheter the TARGET variable is 'lib'
