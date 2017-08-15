@@ -6,6 +6,16 @@ cache:
   apt: true
   directories:
   - ${HOME}/miniconda
+addons:
+  apt:
+    packages:
+    - openmpi-bin
+    - libopenmpi-dev
+    - libfftw3-dev
+    - libnetcdf-dev
+    - libhdf5-serial-dev
+    - netcdf-bin
+    - hdf5-tools
 
 matrix:
   include:
@@ -18,15 +28,6 @@ matrix:
     compiler: clang
 
 before_install:
-  ##################################################
-  # System packages
-  ##################################################
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq openmpi-bin libopenmpi-dev
-                             libfftw3-dev libnetcdf-dev
-                             libhdf5-serial-dev netcdf-bin
-                             hdf5-tools
-
   ##################################################
   # Install Conda for python 3
   ##################################################
