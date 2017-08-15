@@ -17,8 +17,8 @@ then
     exit $conf
 fi
 export PYTHONPATH=$(pwd)/tools/pylib/:$PYTHONPATH
-njobs=4
-time make -j ${njobs} || exit
-time make -j ${njobs} check-unit-tests || exit
-time make -j ${njobs} check-integrated-tests || exit
-time make -j ${njobs} check-mms-tests || exit
+export MAKEFLAGS="-j 2"
+time make || exit
+time make check-unit-tests || exit
+time make check-integrated-tests || exit
+time make check-mms-tests || exit
