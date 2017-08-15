@@ -29,12 +29,6 @@ Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), coords(0), options(opt)
   /// Get mesh options
   OPTION(options, StaggerGrids,   false); // Stagger grids
 
-  // Will be set to true if any variable has a free boundary condition applied to the corresponding boundary
-  freeboundary_xin = false;
-  freeboundary_xout = false;
-  freeboundary_ydown = false;
-  freeboundary_yup = false;
-  
   // Initialise derivatives
   derivs_init(options);  // in index_derivs.cxx for now
 }

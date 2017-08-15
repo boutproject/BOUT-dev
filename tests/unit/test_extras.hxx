@@ -60,10 +60,6 @@ public:
     PE_XIND = 0;
     StaggerGrids = false;
     IncIntShear = false;
-    freeboundary_xin = false;
-    freeboundary_xout = false;
-    freeboundary_ydown = false;
-    freeboundary_yup = false;
   }
 
   comm_handle send(FieldGroup &UNUSED(g)) { return nullptr; };
