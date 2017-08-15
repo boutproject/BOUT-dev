@@ -1035,7 +1035,6 @@ void BoundaryDirichlet_O3::apply_ddt(Field2D &f) {
 }
 
 void BoundaryDirichlet_O3::apply_ddt(Field3D &f) {
-  output.write("\nI'm getting called \n") ; //Looks like this may just be experimental -- should we warn/remove?
   Field3D *dt = f.timeDeriv();
   // CELL_LOC loc = f.getLocation();
   bndry->first() ; 
