@@ -123,4 +123,4 @@ def slab(nx, ny, nz,
 
 
 if __name__ == "__main__":
-    slab('fci.grid.nc', 34, 64, 64)
+    slab(34, 64, 64, filename="fci.grid.nc")
