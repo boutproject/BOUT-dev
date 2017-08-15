@@ -68,7 +68,7 @@ Multigrid1DP::Multigrid1DP(int level,int lx, int lz, int gx, int dl, int merge,
     // Find levels for more coarser spaces
     if(numP > merge) {
       int nn = numP;
-      int mm = sqrt(numP);
+      int mm = static_cast<int>(sqrt(numP));
       kk = 1;      
       for(int n = nn; n>1;n--) {
         if(nn%2 != 0) n = 1;

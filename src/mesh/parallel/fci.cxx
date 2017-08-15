@@ -126,22 +126,24 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) :
 
         // The integer part of xt_prime, zt_prime are the indices of the cell
         // containing the field line end-point
-        i_corner[x][y][z] = floor(xt_prime(x,y,z));
+        i_corner[x][y][z] = static_cast<int>(floor(xt_prime(x,y,z)));
 
         // z is periodic, so make sure the z-index wraps around
         if (zperiodic) {
-          zt_prime(x,y,z) = zt_prime(x,y,z) - ncz * ( (int)(zt_prime(x,y,z) / ((BoutReal) ncz)) );
+          zt_prime(x, y, z) =
+              zt_prime(x, y, z) -
+              ncz * (static_cast<int>(zt_prime(x, y, z) / static_cast<BoutReal>(ncz)));
 
           if (zt_prime(x,y,z) < 0.0)
             zt_prime(x,y,z) += ncz;
         }
 
-        k_corner[x][y][z] = floor(zt_prime(x,y,z));
+        k_corner[x][y][z] = static_cast<int>(floor(zt_prime(x,y,z)));
 
         // t_x, t_z are the normalised coordinates \in [0,1) within the cell
         // calculated by taking the remainder of the floating point index
-        t_x = xt_prime(x,y,z) - (BoutReal)i_corner[x][y][z];
-        t_z = zt_prime(x,y,z) - (BoutReal)k_corner[x][y][z];
+        t_x = xt_prime(x,y,z) - static_cast<BoutReal>(i_corner[x][y][z]);
+        t_z = zt_prime(x,y,z) - static_cast<BoutReal>(k_corner[x][y][z]);
 
         //----------------------------------------
         // Boundary stuff

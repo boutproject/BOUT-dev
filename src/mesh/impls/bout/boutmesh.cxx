@@ -1532,7 +1532,7 @@ int BoutMesh::XGLOBAL(int xloc) const {
 /// Returns the global X index given a local index
 int BoutMesh::XGLOBAL(BoutReal xloc, BoutReal &xglo) const {
   xglo = xloc + PE_XIND * MXSUB;
-  return xglo;
+  return static_cast<int>(xglo);
 }
 
 /// Returns a local X index given a global index
@@ -1548,7 +1548,7 @@ int BoutMesh::YGLOBAL(int yloc) const {
 /// Returns the global Y index given a local index
 int BoutMesh::YGLOBAL(BoutReal yloc, BoutReal &yglo) const {
   yglo = yloc + PE_YIND*MYSUB - MYG;
-  return yglo;
+  return static_cast<int>(yglo);
 }
 
 /// Global Y index given local index and processor
