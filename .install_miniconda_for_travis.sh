@@ -28,4 +28,5 @@ then
 else
     echo "Using cached version of minconda test-environment"
 fi
+ls -l ${TARGET_DIR}/bin
 source ${TARGET_DIR}/bin/activate test-environment
