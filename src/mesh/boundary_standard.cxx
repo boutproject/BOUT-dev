@@ -1257,44 +1257,29 @@ void BoundaryDirichlet_O4::apply(Field3D &f,BoutReal t) {
 	}
       }
       if (bndry->by != 0){
-	// y boundaries
-				
-	for(; !bndry->isDone(); bndry->next1d()) {
-	  // x norm is shifted by half a grid point because it is staggered.
-	  // y norm is located half way between first grid cell and guard cell.
-	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - 1) ); 
-	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) ); 
-      
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
-	    if(fg)
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
-	
-	    f(bndry->x,bndry->y,zk) = (16./5)*val - 3.*f(bndry->x-bndry->bx, bndry->y-bndry->by,zk) + f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by,zk) - (1./5)*f(bndry->x-3*bndry->bx, bndry->y-3*bndry->by,zk);
-	
-	  }
-	  for(int i=1;i<bndry->width;i++) {
-	    // Set any other guard cells using the values on the cells
-	    int xi = bndry->x + i*bndry->bx;
-	    int yi = bndry->y + i*bndry->by;
-	    xnorm = mesh->GlobalX(xi);
-	    ynorm = mesh->GlobalY(yi);
-	    for(int zk=0;zk<mesh->LocalNz;zk++) {
-	      if(fg) {
-		val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
-	      }
-	      f(xi, yi, zk) = val;
-							
-	      // Need to set remaining guard cells, as may be used for interpolation or upwinding derivatives
-	      for(int i=1;i<bndry->width;i++) {
-		int xi = bndry->x + i*bndry->bx;
-		int yi = bndry->y + i*bndry->by;
-		f(xi, yi, zk) = 4.0*f(xi - bndry->bx, yi - bndry->by, zk) - 6.0*f(xi - 2*bndry->bx, yi - 2*bndry->by, zk) 
-		  + 4.0*f(xi - 3*bndry->bx, yi - 3*bndry->by, zk) - f(xi - 4*bndry->bx, yi - 4*bndry->by, zk);
-	      }
-							
-	    }
-	  }
-	}
+        // y boundaries
+
+        for(; !bndry->isDone(); bndry->next1d()) {
+          // x norm is shifted by half a grid point because it is staggered.
+          // y norm is located half way between first grid cell and guard cell.
+          BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - 1) );
+          BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) );
+
+          for(int zk=0;zk<mesh->LocalNz;zk++) {
+            if(fg) {
+              val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
+            }
+            f(bndry->x,bndry->y,zk) = (16./5)*val - 3.*f(bndry->x-bndry->bx, bndry->y-bndry->by,zk) + f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by,zk) - (1./5)*f(bndry->x-3*bndry->bx, bndry->y-3*bndry->by,zk);
+
+            // Need to set remaining guard cells, as may be used for interpolation or upwinding derivatives
+            for(int i=1;i<bndry->width;i++) {
+              int xi = bndry->x + i*bndry->bx;
+              int yi = bndry->y + i*bndry->by;
+              f(xi, yi, zk) = 4.0*f(xi - bndry->bx, yi - bndry->by, zk) - 6.0*f(xi - 2*bndry->bx, yi - 2*bndry->by, zk)
+                + 4.0*f(xi - 3*bndry->bx, yi - 3*bndry->by, zk) - f(xi - 4*bndry->bx, yi - 4*bndry->by, zk);
+            }
+          }
+        }
       }
     }
     else if( loc == CELL_YLOW ) {
