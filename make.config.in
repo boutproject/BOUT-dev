@@ -90,13 +90,9 @@ endif
 .PHONY: $(DIRS) lib install libfast runtest
 
 ifneq ("$(TARGET)","libfast")
-ifndef RELEASE
-all: $(BOUT_TOP)/config.status $(BOUT_CONFIG_FILE) $(DIRS) $(TARGET)
-else
 all: $(BOUT_CONFIG_FILE) $(DIRS) $(TARGET)
-endif
 else
-all: $(BOUT_TOP)/config.status $(BOUT_TOP)/make.config $(DIRS)
+all: $(BOUT_TOP)/config.status $(BOUT_CONFIG_FILE) $(DIRS)
 endif
 libfast: $(BOUT_CONFIG_FILE) $(DIRS)
 
@@ -162,9 +158,10 @@ install: libfast
 	$(INSTALL_DATA) -D lib/libpvode.a -t $(DESTDIR)@libdir@
 	$(INSTALL_DATA) -D lib/libpvpre.a -t $(DESTDIR)@libdir@
 	$(INSTALL_PROGRAM) -D bin/bout-config -t $(DESTDIR)@bindir@
-	$(INSTALL_DATA) -D tools/idllib/* -t $(DESTDIR)@datadir@/bout++/idllib/
-	$(INSTALL_DATA) -D tools/pylib/boutdata/* -t $(DESTDIR)@datadir@/bout++/pylib/boutdata/
-	$(INSTALL_DATA) -D tools/pylib/boututils/* -t $(DESTDIR)@datadir@/bout++/pylib/boututils/
+	$(INSTALL_DATA) -D tools/idllib/*.pro -t $(DESTDIR)@datadir@/bout++/idllib/
+	$(INSTALL_DATA) -D tools/idllib/README -t $(DESTDIR)@datadir@/bout++/idllib/
+	$(INSTALL_DATA) -D tools/pylib/boutdata/*.py -t $(DESTDIR)@datadir@/bout++/pylib/boutdata/
+	$(INSTALL_DATA) -D tools/pylib/boututils/*.py -t $(DESTDIR)@datadir@/bout++/pylib/boututils/
 	$(INSTALL_DATA) -D make.config -t $(DESTDIR)@datadir@/bout++/
 
 	$(POST_INSTALL)    # Post-install commands follow.
