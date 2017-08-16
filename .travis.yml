@@ -30,7 +30,7 @@ matrix:
 	  - ubuntu-toolchain-r-test
 	packages:
 	  - g++-6
-     env: CONFIGURE_OPTIONS='' MPICH_CC=gcc-6 MPICH_CXX=g++-6 OMPI_CC=gcc-6 OMPI_CXX=g++-6
+    env: CONFIGURE_OPTIONS='' MPICH_CC=gcc-6 MPICH_CXX=g++-6 OMPI_CC=gcc-6 OMPI_CXX=g++-6
       
 before_install:
   ##################################################
