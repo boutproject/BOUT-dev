@@ -66,7 +66,7 @@ FACETS_SOURCE   = @FACETS_SOURCE@
 # Files that are needed by configure and should be dependencies for 'all'
 
 OBJ						= $(SOURCEC:%.cxx=%.o)
-LIB						= $(BOUT_TOP)/lib/libbout++.a
+LIB						= $(BOUT_LIB_PATH)/libbout++.a
 
 BOUT_INCLUDE	= -I$(BOUT_INCLUDE_PATH) $(CXXINCLUDE) $(EXTRA_INCS)
 BOUT_LIBS  = -lm -L$(BOUT_LIB_PATH) -lbout++ $(EXTRA_LIBS)
@@ -88,11 +88,11 @@ endif
 .PHONY: $(DIRS) lib install libfast runtest
 
 ifneq ("$(TARGET)","libfast")
-all: $(BOUT_TOP)/config.status $(BOUT_CONFIG_FILE) $(DIRS) $(TARGET)
+all: $(BOUT_CONFIG_FILE) $(DIRS) $(TARGET)
 else
-all: $(BOUT_TOP)/config.status $(BOUT_CONFIG_FILE) $(DIRS)
+all: $(BOUT_CONFIG_FILE) $(DIRS)
 endif
-libfast: $(BOUT_TOP)/config.status $(BOUT_CONFIG_FILE) $(DIRS)
+libfast: $(BOUT_CONFIG_FILE) $(DIRS)
 
 ####################################################################
 # Recursively run make through subdirs
