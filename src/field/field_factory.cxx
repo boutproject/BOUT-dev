@@ -290,27 +290,28 @@ std::shared_ptr<FieldGenerator> FieldFactory::resolve(string &name) {
       key += name;
     }
 
-    auto it = cache.find(key);
-    if(it != cache.end()) {
+    auto cached_value = cache.find(key);
+    if (cached_value != cache.end()) {
       // Found in cache
-      return it->second;
+      return cached_value->second;
     }
 
     // Look up in options
 
     // Check if already looking up this symbol
-    for(const auto& it : lookup) {
-      if( key.compare(it) == 0 ) {
+    for (const auto &lookup_value : lookup) {
+      if (key.compare(lookup_value) == 0) {
         // Name matches, so already looking up
         output << "ExpressionParser lookup stack:\n";
-        for(const auto& it : lookup) {
-          output << it << " -> ";
+        for (const auto &stack_value : lookup) {
+          output << stack_value << " -> ";
         }
         output << name << endl;
-        throw BoutException("ExpressionParser: Infinite recursion in parsing '%s'", name.c_str());
+        throw BoutException("ExpressionParser: Infinite recursion in parsing '%s'",
+                            name.c_str());
       }
     }
-    
+
     // Find the option, including traversing sections.
     // Throws exception if not found
     string value;
