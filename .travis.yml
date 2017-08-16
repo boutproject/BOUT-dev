@@ -34,9 +34,12 @@ matrix:
           - libhdf5-serial-dev
           - netcdf-bin
           - hdf5-tools
+          - libsundials-serial-dev
           - libsundials-cvodes2
           - libsundials-ida2
           - libhypre-dev
+          - libmetis-dev
+          - libparmetis-dev
           - libmumps-dev
           - libmumps-ptscotch-dev
           - libmumps-scotch-dev
