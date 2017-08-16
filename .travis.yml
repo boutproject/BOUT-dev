@@ -30,7 +30,15 @@ matrix:
           - ubuntu-toolchain-r-test
         packages:
           - g++-6
-    env: CONFIGURE_OPTIONS='' CC=gcc-6 CXX=g++-6 MPICH_CC=gcc-6 MPICH_CXX=g++-6 OMPI_CC=gcc-6 OMPI_CXX=g++-6 MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
+          - openmpi-bin
+          - libopenmpi-dev
+          - libfftw3-dev
+          - libnetcdf-dev
+          - libhdf5-serial-dev
+          - netcdf-bin
+          - hdf5-tools
+
+env: CONFIGURE_OPTIONS='' CC=gcc-6 CXX=g++-6 MPICH_CC=gcc-6 MPICH_CXX=g++-6 OMPI_CC=gcc-6 OMPI_CXX=g++-6 MPICXX=g++-6 MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
 
       
 before_install:
