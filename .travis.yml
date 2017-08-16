@@ -38,13 +38,8 @@ matrix:
           - libsundials-cvodes2
           - libsundials-ida2
           - libhypre-dev
-          - libmetis-dev
-          - libparmetis-dev
-          - libmumps-dev
-          - libmumps-ptscotch-dev
-          - libmumps-scotch-dev
           - libpetsc3.4.2-dev
-    env: CONFIGURE_OPTIONS='--with-sundials --with-ida --with-hypre --with-mumps --with-petsc' PETSC_DIR=/usr/lib/petscdir/3.4.2 PETSC_ARCH=linux-gnu-c-opt
+    env: CONFIGURE_OPTIONS='--with-sundials --with-ida --with-hypre --with-petsc' PETSC_DIR=/usr/lib/petscdir/3.4.2 PETSC_ARCH=linux-gnu-c-opt
           
 before_install:
   ##################################################
