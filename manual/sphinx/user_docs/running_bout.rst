@@ -649,3 +649,83 @@ The above will take time point 10 from the BOUT.dmp.\* files in the
 “data” directory. For each one, it will output a BOUT.restart file in
 the output directory “.”.
 
+Stopping simulations
+--------------------
+
+If you need to stop a simulation early this can be done by Ctrl-C in a terminal,
+but this will stop the simulation immediately without shutting down cleanly. Most
+of the time this will be fine, but interrupting a simulation while it is writing
+data to file could result in inconsistent or corrupted data.
+
+Stop file
+~~~~~~~~~
+
+**Note** This method needs to be enabled before the simulation starts by setting
+``stopCheck=true`` on the command line or input options:
+
+.. code-block:: bash
+
+    $ mpirun -np 4 ./conduction stopCheck=true
+
+or in the top section of ``BOUT.inp`` set ``stopCheck=true``.
+
+At every output time, the monitor checks for the existence of a file, by default called
+``BOUT.stop``, in the same directory as the output data. If the file exists then
+the monitor signals the time integration solver to quit. This should result in a clean
+shutdown.
+
+To stop a simulation using this method, just create an empty file in the output directory
+
+.. code-block:: bash
+
+    $ mpirun -np 4 ./conduction stopCheck=true
+    ...
+    $ touch data/BOUT.stop
+
+just remember to delete the file afterwards.
+
+Manipulating restart files
+--------------------------
+
+It is sometimes useful to change the number of processors used in a simulation,
+or to modify restart files in various ways. For example, a 3D turbulence
+simulation might start with a quick 2D simulation with diffusive transport to reach
+a steady-state. The restart files can then be extended into 3D, noise added to seed
+instabilities, and the files split over a more processors.
+
+Routines to modify restart files are in ``tools/pylib/boutdata/restart.py``:
+
+.. code-block:: pycon
+
+    >>> from boutdata import restart
+    >>> help(restart)
+
+Changing number of processors
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To change the number of processors use the ``redistribute`` function:
+
+.. code-block:: pycon
+
+    >>> from boutdata import restart
+    >>> restart.redistribute(32, path="../oldrun", output=".")
+
+where in this example ``32`` is the number of processors desired; ``path`` sets
+the path to the existing restart files, and ``output`` is the path where
+the new restart files should go.
+**Note** Make sure that ``path`` and ``output`` are different.
+
+If your simulation is divided in X and Y directions then you should also specify
+the number of processors in the X direction, ``NXPE``:
+
+.. code-block:: pycon
+
+    >>> restart.redistribute(32, path="../oldrun", output=".", nxpe=8)
+
+**Note** Currently this routine doesn't check that this split is consistent with
+branch cuts, e.g. for X-point tokamak simulations. If an inconsistent choice is made
+then the BOUT++ restart will fail.
+
+**Note** It is a good idea to set ``nxpe`` in the ``BOUT.inp`` file to be consistent with
+what you set here. If it is inconsistent then the restart will fail, but the error message may
+not be particularly enlightening.

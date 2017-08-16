@@ -46,6 +46,8 @@
 
 #include <output.hxx>
 
+#include "unused.hxx"
+
 #define ZERO        RCONST(0.)
 #define ONE         RCONST(1.0)
 
@@ -330,20 +332,15 @@ static int idares(BoutReal t,
 }
 
 /// Residual function for BBD preconditioner
-static int ida_bbd_res(IDAINT Nlocal, BoutReal t, 
-		       N_Vector u, N_Vector du, N_Vector rr, 
-		       void *user_data)
-{
+static int ida_bbd_res(IDAINT UNUSED(Nlocal), BoutReal t, N_Vector u, N_Vector du,
+                       N_Vector rr, void *user_data) {
   return idares(t, u, du, rr, user_data);
 }
 
 // Preconditioner function
-static int ida_pre(BoutReal t, N_Vector yy, 	 
-		   N_Vector yp, N_Vector rr, 	 
-		   N_Vector rvec, N_Vector zvec, 	 
-		   BoutReal cj, BoutReal delta, 
-		   void *user_data, N_Vector tmp)
-{
+static int ida_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector UNUSED(rr),
+                   N_Vector rvec, N_Vector zvec, BoutReal cj, BoutReal delta,
+                   void *user_data, N_Vector UNUSED(tmp)) {
   BoutReal *udata = NV_DATA_P(yy);
   BoutReal *rdata = NV_DATA_P(rvec);
   BoutReal *zdata = NV_DATA_P(zvec);

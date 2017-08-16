@@ -156,9 +156,9 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) :
 
         // Parameterised distance to intersection with boundary
         // for the three different boundaries
-        BoutReal s_intersect_x;
-        BoutReal s_intersect_y;
-        BoutReal s_intersect_z;
+        BoutReal s_intersect_x = nan("");
+        BoutReal s_intersect_y = nan("");
+        BoutReal s_intersect_z = nan("");
 
         // Total (signed) distance (in index space) from this point
         BoutReal p_x = xt_prime(x, y, z) - x;

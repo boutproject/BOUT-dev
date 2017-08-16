@@ -41,7 +41,7 @@
 #include <bout/constants.hxx>
 
 // Smooth using simple 1-2-1 filter
-const Field3D smooth_x(const Field3D &f, bool BoutRealspace) {
+const Field3D smooth_x(const Field3D &f) {
   TRACE("smooth_x");
   
   Field3D result;
@@ -335,7 +335,6 @@ BoutReal Vol_Integral(const Field2D &var) {
   
   result = metric->J * var * metric->dx * metric->dy;
 
-  Int_Glb = 0.;
   Int_Glb = Average_XY(result);
   Int_Glb *= (BoutReal) ( (mesh->GlobalNx-2*mesh->xstart)*mesh->GlobalNy )*PI * 2.;
 

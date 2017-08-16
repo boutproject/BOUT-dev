@@ -3,18 +3,20 @@
 #include <output.hxx>
 #include <cmath>
 #include <boutcomm.hxx>
+#include "unused.hxx"
 
 ////////////////////
 // PUBLIC
 ////////////////////
 
 //Initialise
-RKScheme::RKScheme(Options *opts): stageCoeffs(nullptr), resultCoeffs(nullptr),
-                                   timeCoeffs(nullptr), resultAlt(nullptr), steps(nullptr){
-  //Currently not reading anything from the options here
+RKScheme::RKScheme(Options *UNUSED(opts))
+    : steps(nullptr), stageCoeffs(nullptr), resultCoeffs(nullptr), timeCoeffs(nullptr),
+      resultAlt(nullptr) {
+  // Currently not reading anything from the options here
 
-  //Initialise internals
-  dtfac = 1.0; //Time step factor
+  // Initialise internals
+  dtfac = 1.0; // Time step factor
 }
 
 //Cleanup
@@ -246,7 +248,6 @@ void RKScheme::verifyCoeffs(){
     output<<string(50,'=')<<endl;
     output<<"WARNING: Result coefficients not consistent"<<endl;
     output<<string(50,'=')<<endl;
-    warn=false;
   }
 
   //Footer
