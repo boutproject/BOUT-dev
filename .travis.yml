@@ -2,11 +2,6 @@ sudo: false
 dist: trusty
 language: cpp
 compiler: gcc
-cache:
-  apt: true
-  directories:
-  - ${HOME}/download
-  - ${HOME}/miniconda
 
 addons:
   apt:
