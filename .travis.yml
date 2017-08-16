@@ -41,7 +41,7 @@ matrix:
           - libmumps-ptscotch-dev
           - libmumps-scotch-dev
           - libpetsc3.4.2-dev
-    env: CONFIGURE_OPTIONS='--with-sundials --with-ida --with-hypre --with-mumps --with-petsc'
+    env: CONFIGURE_OPTIONS='--with-sundials --with-ida --with-hypre --with-mumps --with-petsc' PETSC_DIR=/usr/lib/petscdir PETSC_ARCH=3.4.2
           
 before_install:
   ##################################################
