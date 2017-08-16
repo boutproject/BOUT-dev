@@ -21,6 +21,7 @@ addons:
 
 matrix:
   include:
+  - env: CONFIGURE_OPTIONS=''
   - env: CONFIGURE_OPTIONS='--enable-openmp' OMP_NUM_THREADS=2
   - env: CONFIGURE_OPTIONS='--enable-debug'
   - env: CONFIGURE_OPTIONS='--enable-checks=no --enable-optimize=3 --disable-signal --disable-track --disable-backtrace'
