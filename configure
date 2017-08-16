@@ -642,6 +642,8 @@ BOUT_VERSION
 PYTHONCONFIGPATH
 IDLCONFIGPATH
 PREFIX
+BOUT_INCLUDE_PATH
+BOUT_LIB_PATH
 CONFIG_LDFLAGS
 CONFIG_CFLAGS
 LTLIBOBJS
@@ -15528,7 +15530,7 @@ then
   as_dir=include/pvode; as_fn_mkdir_p
   cp externalpackages/PVODE/precon/pvbbdpre.h externalpackages/PVODE/include/*.h include/pvode
   cp externalpackages/PVODE/lib/*.a lib/
-  EXTRA_LIBS="$EXTRA_LIBS -L\$(BOUT_TOP)/lib -lpvode -lpvpre"
+  EXTRA_LIBS="$EXTRA_LIBS -L\$(BOUT_LIB_PATH) -lpvode -lpvpre"
   CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PVODE"
   HAS_PVODE="yes"
 fi
@@ -16873,6 +16875,14 @@ CONFIG_LDFLAGS=`$MAKE ldflags -f output.make`
 #############################################################
 # Write configuration to bout-config
 #############################################################
+
+
+
+
+# Set path to lib and include here.
+# If make install is run then that replaces these paths
+BOUT_LIB_PATH=$PWD/lib
+BOUT_INCLUDE_PATH=$PWD/include
 
 
 
