@@ -66,7 +66,9 @@ FACETS_SOURCE   = @FACETS_SOURCE@
 # Files that are needed by configure and should be dependencies for 'all'
 
 OBJ						= $(SOURCEC:%.cxx=%.o)
+ifndef RELEASE
 LIB						= $(BOUT_LIB_PATH)/libbout++.a
+endif
 
 BOUT_INCLUDE	= -I$(BOUT_INCLUDE_PATH) $(CXXINCLUDE) $(EXTRA_INCS)
 BOUT_LIBS  = -lm -L$(BOUT_LIB_PATH) -lbout++ $(EXTRA_LIBS)
@@ -88,9 +90,13 @@ endif
 .PHONY: $(DIRS) lib install libfast runtest
 
 ifneq ("$(TARGET)","libfast")
-all: $(BOUT_CONFIG_FILE) $(DIRS) $(TARGET)
+ifndef RELEASE
+all: $(BOUT_TOP)/config.status $(BOUT_CONFIG_FILE) $(DIRS) $(TARGET)
 else
-all: $(BOUT_CONFIG_FILE) $(DIRS)
+all: $(BOUT_CONFIG_FILE) $(DIRS) $(TARGET)
+endif
+else
+all: $(BOUT_TOP)/config.status $(BOUT_TOP)/make.config $(DIRS)
 endif
 libfast: $(BOUT_CONFIG_FILE) $(DIRS)
 
@@ -177,6 +183,7 @@ install: libfast
 
 uninstall:
 	$(PRE_UNINSTALL)     # Pre-uninstall commands follow.
+
 	$(NORMAL_UNINSTALL)  # Normal commands follow.
 	rm $(DESTDIR)@datadir@/bout++/make.config
 	rm -r $(DESTDIR)@datadir@/bout++/pylib/boututils/
@@ -187,6 +194,7 @@ uninstall:
 	rm $(DESTDIR)@libdir@/libpvode.a
 	rm $(DESTDIR)@libdir@/libpvpre.a
 	rm -r  $(DESTDIR)@includedir@/bout++/
+
 	$(POST_UNINSTALL)    # Post-uninstall commands follow.
 
 ####################################################################

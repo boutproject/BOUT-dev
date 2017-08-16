@@ -31,10 +31,8 @@
 #    * Searching for libs in lib and lib64
 #
 
-BOUT_VERSION="2.0"
-
 AC_PREREQ(2.59)
-AC_INIT(BOUT++, BOUT_VERSION, bd512@york.ac.uk)
+AC_INIT(BOUT++, 4.0.0, bd512@york.ac.uk)
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -294,6 +292,12 @@ then
 fi
 
 echo
+
+BOUT_VERSION=$PACKAGE_VERSION
+BOUT_VERSION_MAJOR=${PACKAGE_VERSION%%.*}
+BOUT_VERSION_MINOR=${PACKAGE_VERSION#*.}
+BOUT_VERSION_DOUBLE=${BOUT_VERSION_MAJOR}.${BOUT_VERSION_MINOR/./}
+CXXFLAGS+=" -DBOUT_VERSION_STRING=\"\\\"$BOUT_VERSION\\\"\" -DBOUT_VERSION_DOUBLE=$BOUT_VERSION_DOUBLE "
 
 #############################################################
 # Enable Backtrace if possible
