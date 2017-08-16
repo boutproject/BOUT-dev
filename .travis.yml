@@ -34,12 +34,9 @@ matrix:
           - libhdf5-serial-dev
           - netcdf-bin
           - hdf5-tools
-          - libsundials-serial-dev
-          - libsundials-cvodes2
-          - libsundials-ida2
           - libhypre-dev
           - libpetsc3.4.2-dev
-    env: CONFIGURE_OPTIONS='--with-sundials --with-ida --with-hypre --with-petsc' PETSC_DIR=/usr/lib/petscdir/3.4.2 PETSC_ARCH=linux-gnu-c-opt
+    env: CONFIGURE_OPTIONS='--with-hypre --with-petsc' PETSC_DIR=/usr/lib/petscdir/3.4.2 PETSC_ARCH=linux-gnu-c-opt
           
 before_install:
   ##################################################
