@@ -40,7 +40,7 @@ matrix:
           - libmumps-dev
           - libmumps-ptscotch-dev
           - libmumps-scotch-dev
-          - libpetsc3.6.2-dev
+          - libpetsc3.4.2-dev
     env: CONFIGURE_OPTIONS='--with-sundials --with-ida --with-hypre --with-mumps --with-petsc'
           
 before_install:
