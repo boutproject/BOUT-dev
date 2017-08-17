@@ -60,8 +60,6 @@ class Field {
   Field(Mesh * msh);
   virtual ~Field() { }
 
-  //virtual void setStencil(bstencil *val, bindex *bx) const = 0;
-
   // These routines only set a stencil in one dimension
   // Should be faster, and replaces the above SetStencil function.
   virtual void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const = 0;

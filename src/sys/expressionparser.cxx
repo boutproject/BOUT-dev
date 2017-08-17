@@ -136,19 +136,6 @@ ExpressionParser::ExpressionParser() {
   addGenerator("t", std::shared_ptr<FieldGenerator>( new FieldT()));
 }
 
-ExpressionParser::~ExpressionParser() {
-  // // Free memory
-  // for(const auto& it : gen)
-  //   delete it.second;
-  
-  // for(const auto& it : bin_op)
-  //   delete it.second.first;
-  
-  // // Delete allocated generators
-  // for(const auto& it : genheap)
-  //   delete it;
-}
-
 void ExpressionParser::addGenerator(string name, std::shared_ptr<FieldGenerator> g) {
   gen[name] = g;
 }
@@ -252,8 +239,6 @@ std::shared_ptr<FieldGenerator> ExpressionParser::parsePrimary(LexInfo &lex) {
   }
   case '-': {
     // Unary minus
-    //lex.nextToken(); // Eat '-'
-    //return record( std::shared_ptr<FieldGenerator>( new FieldUnary(parsePrimary(lex)) ));
     // Don't eat the minus, and return an implicit zero
     return record( std::shared_ptr<FieldGenerator>( new FieldValue(0.0) ));
   }

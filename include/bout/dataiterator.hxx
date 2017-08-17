@@ -135,7 +135,6 @@ public:
 
   /// Comparison operator. Most common use is in for loops
   inline bool operator!=(const DataIterator& rhs) const {
-    //return  !(x == rhs.x && y == rhs.y && z == rhs.z);
     if (rhs.isEnd){
       return !this->done();
     } else {

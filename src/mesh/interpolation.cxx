@@ -52,8 +52,6 @@ BoutReal interp(const stencil &s)
 const Field3D interp_to(const Field3D &var, CELL_LOC loc)
 {
   if(mesh->StaggerGrids && (var.getLocation() != loc)) {
-    
-    //output.write("\nINTERPOLATING %s -> %s\n", strLocation(var.getLocation()), strLocation(loc));
 
     // Staggered grids enabled, and need to perform interpolation
     TRACE("Interpolating %s -> %s", strLocation(var.getLocation()), strLocation(loc));

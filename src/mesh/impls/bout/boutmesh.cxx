@@ -86,9 +86,6 @@ BoutMesh::~BoutMesh() {
     MPI_Comm_free(&comm_x);
   if(comm_inner != MPI_COMM_NULL)
     MPI_Comm_free(&comm_inner);
-  //if(comm_middle != MPI_COMM_NULL)
-  //  MPI_Comm_free(&comm_middle); // Already freed
-
   if(comm_outer != MPI_COMM_NULL)
     MPI_Comm_free(&comm_outer);
 
@@ -235,11 +232,8 @@ int BoutMesh::load() {
     output.write("Finding value for NXPE\n");
 
     for(int i=1; i<= NPES; i++) { // Loop over all possibilities
-      //output.write("Testing %d: %d, %d, %d, %d, %d\n",
-      //             i, NPES % i, MX % i, MX / i, ny % (NPES/i), ny / (NPES/i));
       if( (NPES % i == 0) &&      // Processors divide equally
           (MX % i == 0) &&        // Mesh in X divides equally
-    //      (MX / i >= MXG) &&      // Resulting mesh is large enough
           (ny % (NPES/i) == 0) ) { // Mesh in Y divides equally
 
         output.write("\tCandidate value: %d\n", i);
@@ -544,13 +538,11 @@ int BoutMesh::load() {
           output << "-> Inner and middle\n";
 #endif
           comm_middle = comm_inner;
-          //MPI_Comm_dup(comm_inner, &comm_middle);
         }else {
 #ifdef COMMDEBUG
           output << "-> Outer and middle\n";
 #endif
           comm_middle = comm_outer;
-          //MPI_Comm_dup(comm_outer, &comm_middle); // Error! Needs to be collective on comm_outer
         }
       }
 #ifdef COMMDEBUG
@@ -598,13 +590,11 @@ int BoutMesh::load() {
           output << "-> Inner and middle\n";
 #endif
           comm_middle = comm_inner;
-          //MPI_Comm_dup(comm_inner, &comm_middle);
         }else {
 #ifdef COMMDEBUG
           output << "-> Outer and middle\n";
 #endif
           comm_middle = comm_outer;
-          //MPI_Comm_dup(comm_outer, &comm_middle);
         }
       }
 #ifdef COMMDEBUG
@@ -2317,7 +2307,6 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
 BoutReal BoutMesh::GlobalX(int jx) const {
   if(symmetricGlobalX) {
     // Symmetric X index, mainly for reconnection studies
-    //return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) nx-1);
     //jmad. With this definition the boundary sits dx/2 away form the first/last inner points
     return ((BoutReal) (0.5 + XGLOBAL(jx) - ((BoutReal)(nx-MX))*0.5)) / ((BoutReal) MX);
   }
@@ -2332,7 +2321,6 @@ BoutReal BoutMesh::GlobalX(BoutReal jx) const {
 
   if(symmetricGlobalX) {
     // Symmetric X index, mainly for reconnection studies
-    //return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) nx-1);
     //jmad. With this definition the boundary sits dx/2 away form the first/last inner points
     return ((BoutReal) (0.5 + xglo - ((BoutReal)(nx-MX))*0.5)) / ((BoutReal) MX);
   }
@@ -2375,8 +2363,6 @@ BoutReal BoutMesh::GlobalY(int jy) const {
       ly = nycore;
     }
   }
-
-  //output.write("GlobalY: %d, %d, %d, %d -> %e\n", jy, YGLOBAL(jy), ly, nycore, ((BoutReal) ly) / ((BoutReal) nycore));
 
   return ((BoutReal) ly) / ((BoutReal) nycore);
 }
@@ -2629,7 +2615,6 @@ const Field3D BoutMesh::Switch_XZ(const Field3D &var) {
       for (j=0; j<ncy ; j++){
         for (k=0; k<ncz ; k++){
           buffer[k][j][i] = var(MXG+i,MYG+j,k) ;
-          // sendbuffer2[i + ncx*j + ncx*ncy*k] = var[MXG+i][MYG+j][k] ;
         }
       }
     }

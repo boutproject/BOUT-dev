@@ -200,7 +200,6 @@ void partitionAll(Domain* d, int n) {
   int total = 0;
   int ndomains = 0;
   for(auto&& it : *d) {
-  // for(Domain::iterator it = d->begin(); it != d->end(); it++) {
     domains.push_back(&it);
     // Get size of domain
     int area = it.area();

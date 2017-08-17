@@ -438,9 +438,8 @@ void BoundaryDirichlet::apply(Field3D &f,BoutReal t) {
 	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
 	    }
 	    f(bndry->x,bndry->y - bndry->by, zk) = val;
-	    // f(bndry->x,bndry->y,zk) = f(bndry->x,bndry->y - bndry->by,zk);
-						
-	    // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+
+            // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
 	    for(int i=0;i<bndry->width;i++) {
 	      int xi = bndry->x ;
 	      int yi = bndry->y + i*bndry->by;
@@ -491,20 +490,21 @@ void BoundaryDirichlet::apply(Field3D &f,BoutReal t) {
 	  val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
 	}
 	f(bndry->x,bndry->y,zk) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by, zk);
-	// f(bndry->x,bndry->y,zk) = (8./3.)*val - 2.*f(bndry->x-bndry->bx, bndry->y-bndry->by,zk) + f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by,zk)/3.;
 
-        // We've set the first boundary point using extrapolation in the line above.
-        // The below block of code is attempting to set the rest of the boundary cells
-        // also using extrapolation. Whilst this choice doesn't impact 2nd order methods
-        // it has been observed that with higher order methods, which actually use these
-        // points,
-        // the use of extrapolation can be unstable. For this reason we have commented out
-        // the below block and replaced it with the loop several lines below, which just
-        // sets all the rest of the boundary points to be the specified value.
-        // We've not removed the commented out code as we may wish to revisit this in the
-        // future, however it may be that this is eventually removed.
-        // It can be noted that we *don't* apply this treatment for other boundary
-        // treatments,
+        // We've set the first boundary point using extrapolation in
+        // the line above.  The below block of code is attempting to
+        // set the rest of the boundary cells also using
+        // extrapolation. Whilst this choice doesn't impact 2nd order
+        // methods it has been observed that with higher order
+        // methods, which actually use these points, the use of
+        // extrapolation can be unstable. For this reason we have
+        // commented out the below block and replaced it with the loop
+        // several lines below, which just sets all the rest of the
+        // boundary points to be the specified value.  We've not
+        // removed the commented out code as we may wish to revisit
+        // this in the future, however it may be that this is
+        // eventually removed.  It can be noted that we *don't* apply
+        // this treatment for other boundary treatments,
         // i.e. elsewhere we tend to extrapolate.
 
         // // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
@@ -847,7 +847,6 @@ void BoundaryDirichlet_O3::apply(Field3D &f,BoutReal t) {
 	    }	
 	  }
 	}
-				
       }
     }
     else if( loc == CELL_YLOW ) {
@@ -960,7 +959,7 @@ void BoundaryDirichlet_O3::apply_ddt(Field2D &f) {
 
 void BoundaryDirichlet_O3::apply_ddt(Field3D &f) {
   Field3D *dt = f.timeDeriv();
-  // CELL_LOC loc = f.getLocation();
+
   bndry->first() ; 
   for(bndry->first(); !bndry->isDone(); bndry->next()){
     for(int z=0;z<mesh->LocalNz;z++){
@@ -1041,9 +1040,8 @@ void BoundaryDirichlet_O4::apply(Field2D &f,BoutReal t) {
 	  }
           
 	  f(bndry->x - bndry->bx,bndry->y) = val;
-	  // f(bndry->x,bndry->y) = f(bndry->x - bndry->bx,bndry->y);
-					
-	  // Need to set remaining guard cells, as may be used for interpolation or upwinding derivatives
+
+          // Need to set remaining guard cells, as may be used for interpolation or upwinding derivatives
 	  for(int i=0;i<bndry->width;i++) {
 	    int xi = bndry->x + i*bndry->bx;
 	    int yi = bndry->y + i*bndry->by;
@@ -1112,9 +1110,8 @@ void BoundaryDirichlet_O4::apply(Field2D &f,BoutReal t) {
 	  }
           
 	  f(bndry->x,bndry->y - bndry->by) = val;
-	  // f(bndry->x,bndry->y) = f(bndry->x,bndry->y - bndry->by);
-					
-	  // Need to set remaining guard cells, as may be used for interpolation or upwinding derivatives
+
+          // Need to set remaining guard cells, as may be used for interpolation or upwinding derivatives
 	  for(int i=0;i<bndry->width;i++) {
 	    int xi = bndry->x + i*bndry->bx;
 	    int yi = bndry->y + i*bndry->by;
@@ -1244,9 +1241,8 @@ void BoundaryDirichlet_O4::apply(Field3D &f,BoutReal t) {
 	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
 	    
 	    f(bndry->x - bndry->bx,bndry->y, zk) = val;
-	    // f(bndry->x,bndry->y, zk) = f(bndry->x - bndry->bx,bndry->y, zk);
-						
-	    // Need to set remaining guard cells, as may be used for interpolation or upwinding derivatives
+
+            // Need to set remaining guard cells, as may be used for interpolation or upwinding derivatives
 	    for(int i=0;i<bndry->width;i++) {
 	      int xi = bndry->x + i*bndry->bx;
 	      int yi = bndry->y + i*bndry->by;
@@ -1321,9 +1317,8 @@ void BoundaryDirichlet_O4::apply(Field3D &f,BoutReal t) {
 	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
 	    
 	    f(bndry->x,bndry->y - bndry->by, zk) = val;
-	    // f(bndry->x,bndry->y,zk) = f(bndry->x,bndry->y - bndry->by,zk);
-						
-	    // Need to set remaining guard cells, as may be used for interpolation or upwinding derivatives
+
+            // Need to set remaining guard cells, as may be used for interpolation or upwinding derivatives
 	    for(int i=0;i<bndry->width;i++) {
 	      int xi = bndry->x + i*bndry->bx;
 	      int yi = bndry->y + i*bndry->by;
@@ -1961,9 +1956,8 @@ void BoundaryNeumann::apply(Field3D &f,BoutReal t) {
 	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz),t) * metric->dx(bndry->x - bndry->bx, bndry->y);
             
 	    f(bndry->x - bndry->bx,bndry->y, zk) = (4.*f(bndry->x - 2*bndry->bx, bndry->y,zk) - f(bndry->x - 3*bndry->bx, bndry->y,zk) - 2.*val)/3.;
-	    // f(bndry->x,bndry->y,zk) = f(bndry->x - bndry->bx,bndry->y,zk);
-	    
-	    // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+
+            // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
 	    for(int i=0;i<bndry->width;i++) {
 	      int xi = bndry->x + i*bndry->bx;
 	      int yi = bndry->y + i*bndry->by;
@@ -2037,9 +2031,6 @@ void BoundaryNeumann::apply(Field3D &f,BoutReal t) {
 	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz),t) * metric->dy(bndry->x, bndry->y - bndry->by);
             
 	    f(bndry->x,bndry->y - bndry->by,zk) = (4.*f(bndry->x, bndry->y - 2*bndry->by,zk) - f(bndry->x, bndry->y - 3*bndry->by,zk) - 2.*val)/3.;
-	    
-	    
-	    // bndry->x,bndry->y,zk) = f(bndry->x,bndry->y - bndry->by,zk);
 	    
 	    // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
 	    for(int i=0;i<bndry->width;i++) {
@@ -2570,7 +2561,6 @@ void BoundaryZeroLaplace2::apply(Field3D &f) {
       // cycle c0 -> c1 -> c2 -> c0
       swap(c0, c2);
       swap(c2, c1);
-      // dcomplex *tmp = c2; c2 = c1; c1 = c0; c0 = tmp;
 
       bndry->nextX();
       x = bndry->x;

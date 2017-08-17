@@ -1247,14 +1247,10 @@ const Field3D Mesh::indexDDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
 
   if(mesh->StaggerGrids && (outloc != inloc)) {
     // Shifting to a new location
-    
-    //output.write("\nSHIFTING %s -> %s\n", strLocation(inloc), strLocation(outloc));
 
     if(((inloc == CELL_CENTRE) && (outloc == CELL_YLOW)) ||
       ((inloc == CELL_YLOW) && (outloc == CELL_CENTRE))) {
       // Shifting in Y. Centre -> Ylow, or Ylow -> Centre
-      
-      //output.write("SHIFT");
 
       func = sfDDY; // Set default
       table = FirstStagDerivTable; // Set table for others
@@ -1284,7 +1280,7 @@ const Field3D Mesh::indexDDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
   }
   
   result = applyYdiff(f, func, diffloc);
-  //output.write("SETTING LOC %s -> %s\n", strLocation(diffloc), strLocation(outloc));
+
   result.setLocation(diffloc); // Set the result location
   
   return interp_to(result, outloc); // Interpolate if necessary
