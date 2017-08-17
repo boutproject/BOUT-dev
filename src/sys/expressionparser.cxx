@@ -334,13 +334,13 @@ ExpressionParser::LexInfo::LexInfo(string input) {
   ss.str(input); // Set the input stream
   ss.seekg(0, std::ios_base::beg);
   
-  LastChar = static_cast<char>(ss.get()); // First char from stream
+  LastChar = static_cast<signed char>(ss.get()); // First char from stream
   nextToken(); // Get first token
 }
 
 char ExpressionParser::LexInfo::nextToken() {
   while(isspace(LastChar))
-    LastChar = static_cast<char>(ss.get());
+    LastChar = static_cast<signed char>(ss.get());
   
   if(!ss.good()) {
     curtok = 0;
@@ -351,7 +351,7 @@ char ExpressionParser::LexInfo::nextToken() {
     curident.clear();
     do {
       curident += LastChar;
-      LastChar = static_cast<char>(ss.get());
+      LastChar = static_cast<signed char>(ss.get());
     }while(isalnum(LastChar) || (LastChar == '_') || (LastChar == ':'));
     curtok = -2;
     return curtok;
@@ -376,7 +376,7 @@ char ExpressionParser::LexInfo::nextToken() {
         gotexponent = true;
         // Next character should be a '+' or '-' or digit
         NumStr += 'e';
-        LastChar = static_cast<char>(ss.get());
+        LastChar = static_cast<signed char>(ss.get());
         if((LastChar != '+') && (LastChar != '-') && !isdigit(LastChar)) {
           throw ParseException("ExpressionParser error: Expecting '+', '-' or number after 'e'");
         }
@@ -384,7 +384,7 @@ char ExpressionParser::LexInfo::nextToken() {
         break;
       
       NumStr += LastChar;
-      LastChar = static_cast<char>(ss.get());
+      LastChar = static_cast<signed char>(ss.get());
     }
     
     curval = strtod(NumStr.c_str(), 0);
@@ -394,7 +394,7 @@ char ExpressionParser::LexInfo::nextToken() {
 
   // LastChar is unsigned, explicitly cast
   curtok = static_cast<signed char>(LastChar);
-  LastChar = static_cast<char>(ss.get());
+  LastChar = static_cast<signed char>(ss.get());
   return curtok;
 }
 

@@ -127,7 +127,7 @@ private:
     signed char curtok;  ///< Current token. -1 for number, -2 for string, 0 for "end of input"
     double curval; ///< Value if a number
     std::string curident; ///< Identifier, variable or function name
-    char LastChar;   ///< The last character read from the string
+    signed char LastChar;   ///< The last character read from the string
     std::stringstream ss; ///< Used to read values from the input string
     char nextToken(); ///< Get the next token in the string
     
