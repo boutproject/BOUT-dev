@@ -399,7 +399,7 @@ char ExpressionParser::LexInfo::nextToken() {
 }
 
 int ExpressionParser::LexInfo::getPos() {
-  return (int) ss.tellg();
+  return static_cast<int>(ss.tellg());
 }
 
 //////////////////////////////////////////////////////////
@@ -407,7 +407,7 @@ int ExpressionParser::LexInfo::getPos() {
 
 
 ParseException::ParseException(const char *s, ...) {
-  if(s == (const char*) NULL)
+  if(s == nullptr)
     return;
 
   int buf_len=1024;
