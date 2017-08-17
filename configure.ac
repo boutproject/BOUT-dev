@@ -31,10 +31,8 @@
 #    * Searching for libs in lib and lib64
 #
 
-BOUT_VERSION="2.0"
-
 AC_PREREQ(2.59)
-AC_INIT(BOUT++, BOUT_VERSION, bd512@york.ac.uk)
+AC_INIT(BOUT++, 4.0.0, bd512@york.ac.uk)
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -122,6 +120,7 @@ AX_PROG_CXX_MPI([], [], [
 AC_PROG_MKDIR_P
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
+AC_PROG_INSTALL
 
 # Set MAKE to gmake if possible, otherwise make
 AC_CHECK_PROG(MAKE, gmake, gmake, make)
@@ -293,6 +292,12 @@ then
 fi
 
 echo
+
+BOUT_VERSION=$PACKAGE_VERSION
+BOUT_VERSION_MAJOR=${PACKAGE_VERSION%%.*}
+BOUT_VERSION_MINOR=${PACKAGE_VERSION#*.}
+BOUT_VERSION_DOUBLE=${BOUT_VERSION_MAJOR}.${BOUT_VERSION_MINOR/./}
+CXXFLAGS+=" -DBOUT_VERSION_STRING=\"\\\"$BOUT_VERSION\\\"\" -DBOUT_VERSION_DOUBLE=$BOUT_VERSION_DOUBLE "
 
 #############################################################
 # Enable Backtrace if possible
@@ -1305,7 +1310,7 @@ then
   AS_MKDIR_P(include/pvode)
   cp externalpackages/PVODE/precon/pvbbdpre.h externalpackages/PVODE/include/*.h include/pvode
   cp externalpackages/PVODE/lib/*.a lib/
-  EXTRA_LIBS="$EXTRA_LIBS -L\$(BOUT_TOP)/lib -lpvode -lpvpre"
+  EXTRA_LIBS="$EXTRA_LIBS -L\$(BOUT_LIB_PATH) -lpvode -lpvpre"
   CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PVODE"
   HAS_PVODE="yes"
 fi
@@ -1479,6 +1484,14 @@ CONFIG_LDFLAGS=`$MAKE ldflags -f output.make`
 
 AC_SUBST(CONFIG_CFLAGS)
 AC_SUBST(CONFIG_LDFLAGS)
+
+# Set path to lib and include here.
+# If make install is run then that replaces these paths
+BOUT_LIB_PATH=$PWD/lib
+BOUT_INCLUDE_PATH=$PWD/include
+AC_SUBST(BOUT_LIB_PATH)
+AC_SUBST(BOUT_INCLUDE_PATH)
+
 
 AC_SUBST(PREFIX)
 AC_SUBST(IDLCONFIGPATH)
