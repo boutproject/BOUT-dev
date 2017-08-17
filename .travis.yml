@@ -47,6 +47,8 @@ before_install:
   ##################################################
   # Job specific setup
   ##################################################
+  # The following eval is the way to force CC/CXX to desired values as travis forces values
+  # for these in the pre-before_install stage, see https://docs.travis-ci.com/user/languages/cpp/#C11-C%2B%2B11-(and-Beyond)-and-Toolchain-Versioning
   - eval "${MATRIX_EVAL}"
   - echo "${CC} $(${CC} --version)"
   ##################################################
