@@ -26,6 +26,19 @@ matrix:
     compiler: clang
   - addons:
       apt:
+        packages:
+          - openmpi-bin
+          - libopenmpi-dev
+          - libfftw3-dev
+          - libnetcdf-dev
+          - libhdf5-serial-dev
+          - netcdf-bin
+          - hdf5-tools
+          - libhypre-dev
+          - libpetsc3.4.2-dev
+    env: CONFIGURE_OPTIONS='--with-hypre --with-petsc' PETSC_DIR=/usr/lib/petscdir/3.4.2 PETSC_ARCH=linux-gnu-c-opt
+  - addons:
+      apt:
         sources:
           - ubuntu-toolchain-r-test
         packages:
@@ -42,7 +55,7 @@ matrix:
     #disable a noisy message arising from the relatively old version of openmpi
     #in use in combination with the relatively new version of gcc. We should be able
     #to remove this if a newer openmpi version is introduced.
-      
+
 before_install:
   ##################################################
   # Job specific setup
