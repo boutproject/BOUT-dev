@@ -147,7 +147,6 @@ std::shared_ptr<FieldGenerator> FieldBallooning::clone(const list<std::shared_pt
   } // Fall through
   case 1: {
     return std::shared_ptr<FieldGenerator>( new FieldBallooning(mesh, args.front(), n));
-    break;
   }
   };
 

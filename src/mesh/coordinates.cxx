@@ -840,7 +840,7 @@ int Coordinates::gaussj(BoutReal **a, int n) {
   TRACE("Coordinates::gaussj");
   
   int i, icol, irow, j, k, l, ll;
-  float big, dum, pivinv;
+  BoutReal big, dum, pivinv;
 
   // Make sure enough temporary memory is allocated
   indxc.resize(n);

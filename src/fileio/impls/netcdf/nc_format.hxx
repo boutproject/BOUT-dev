@@ -63,8 +63,10 @@ class NcFormat : public DataFormat {
   NcFormat(const string &name) : NcFormat(name.c_str()) {}
   ~NcFormat();
 
-  bool openr(const char *name);
-  bool openw(const char *name, bool append=false);
+  using DataFormat::openr;
+  bool openr(const char *name) override;
+  using DataFormat::openw;
+  bool openw(const char *name, bool append=false) override;
   
   bool is_valid();
   

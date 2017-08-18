@@ -1085,20 +1085,20 @@ int BoutMesh::wait(comm_handle handle) {
 
   if(async_send) {
     /// Asyncronous sending: Need to check if sends have completed (frees MPI memory)
-    MPI_Status status;
+    MPI_Status async_status;
 
     if(UDATA_INDEST != -1)
-      MPI_Wait(ch->sendreq, &status);
+      MPI_Wait(ch->sendreq, &async_status);
     if(UDATA_OUTDEST != -1)
-      MPI_Wait(ch->sendreq+1, &status);
+      MPI_Wait(ch->sendreq+1, &async_status);
     if(DDATA_INDEST != -1)
-      MPI_Wait(ch->sendreq+2, &status);
+      MPI_Wait(ch->sendreq+2, &async_status);
     if(DDATA_OUTDEST != -1)
-      MPI_Wait(ch->sendreq+3, &status);
+      MPI_Wait(ch->sendreq+3, &async_status);
     if(IDATA_DEST != -1)
-      MPI_Wait(ch->sendreq+4, &status);
+      MPI_Wait(ch->sendreq+4, &async_status);
     if(ODATA_DEST != -1)
-      MPI_Wait(ch->sendreq+5, &status);
+      MPI_Wait(ch->sendreq+5, &async_status);
   }
 
   // TWIST-SHIFT CONDITION
@@ -1532,7 +1532,7 @@ int BoutMesh::XGLOBAL(int xloc) const {
 /// Returns the global X index given a local index
 int BoutMesh::XGLOBAL(BoutReal xloc, BoutReal &xglo) const {
   xglo = xloc + PE_XIND * MXSUB;
-  return xglo;
+  return static_cast<int>(xglo);
 }
 
 /// Returns a local X index given a global index
@@ -1548,7 +1548,7 @@ int BoutMesh::YGLOBAL(int yloc) const {
 /// Returns the global Y index given a local index
 int BoutMesh::YGLOBAL(BoutReal yloc, BoutReal &yglo) const {
   yglo = yloc + PE_YIND*MYSUB - MYG;
-  return yglo;
+  return static_cast<int>(yglo);
 }
 
 /// Global Y index given local index and processor

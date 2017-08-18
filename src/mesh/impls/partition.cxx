@@ -154,8 +154,8 @@ void partition(Domain* d, int n) {
   double val = D(beta) * n / alpha;
   
   // Find an integer s such that s(s-1) < val <= s(s+1)
-  int s = (int) ( 0.5 + 0.5*sqrt(1. + 4.*val) );
-  
+  int s = static_cast<int>(0.5 + 0.5 * sqrt(1. + 4. * val));
+
   // Check value
   if( s*(s-1) > val )
     s--;
@@ -165,9 +165,9 @@ void partition(Domain* d, int n) {
   if( (s*(s-1) > val) || (s*(s+1) < val) )
     throw BoutException("Partition couldn't find s(s-1) < %e < s(s+1)", val);
 
-  int r = n - floor( D(n) / D(s) ) * s;
-  int t = floor( D(n) / D(s) ) - r;
-  
+  int r = n - static_cast<int>(floor(D(n) / D(s)) * s);
+  int t = static_cast<int>(floor(D(n) / D(s)) - r);
+
   if( D(s+1)/D(t + r + 1) < D(beta)/D(alpha) ) {
     // V(s, t, r) is minimal equidissection
     if(swapped) {

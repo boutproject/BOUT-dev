@@ -103,7 +103,7 @@ class GridFile : public GridDataSource {
  * be set in the input file or on the command line. This is done
  * using FieldFactory to convert string expressions into fields.
  */
-class GridFromOptions : GridDataSource {
+class GridFromOptions : public GridDataSource {
 public:
   /*!
    * Constructor, passing optional Options object
@@ -195,23 +195,4 @@ private:
   Options *options;
 };
 
-/*
-class GridDataGroup : GridDataSource {
-public:
-  GridDataGroup() {}
-  GridDataGroup(GridDataSource *a, GridDataSource *b = NULL, GridDataSource *c = NULL, GridDataSource *d = NULL) {
-    add(a); add(b); add(c); add(d);
-  }
-  
-  /// Add a data source
-  void add(GridDataSource &source) {add(&source);}
-  void add(GridDataSource *source);
-  
-private:
-  std::list<GridDataSource*> source_list; ///< List of sources
-  
-  GridDataSource *findSource(const char *name);
-  GridDataSource *findSource(const string &name) {return findSource(name.c_str());}
-};
-*/
 #endif // __GRIDDATA_H__

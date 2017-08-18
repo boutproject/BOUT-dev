@@ -277,7 +277,7 @@ void MultigridAlg::smoothings(int level, BoutReal *x, BoutReal *b) {
 }
 
 void MultigridAlg::pGMRES(BoutReal *sol,BoutReal *rhs,int level,int iplag) {
-  int k,it,etest = 1,MAXIT;
+  int it,etest = 1,MAXIT;
   BoutReal ini_e,error,a0,a1,rederr,perror;
   BoutReal **v,*p,*q,*r;
   BoutReal c[MAXGM+1],s[MAXGM+1],y[MAXGM+1],g[MAXGM+1],h[MAXGM+1][MAXGM+1];
@@ -340,7 +340,7 @@ void MultigridAlg::pGMRES(BoutReal *sol,BoutReal *rhs,int level,int iplag) {
       for(int i=0;i<it+1;i++) h[i][it] = vectorProd(level,v[it+1],v[i]);
       for(int i=0;i<it+1;i++) {
         a0 = -h[i][it];
-        for(k=0;k<ldim;k++) v[it+1][k] += a0*v[i][k]; 
+        for(int k=0;k<ldim;k++) v[it+1][k] += a0*v[i][k];
       }
       a1 = vectorProd(level,v[it+1],v[it+1]);
       a1 = sqrt(a1);
