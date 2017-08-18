@@ -337,10 +337,7 @@ std::shared_ptr<FieldGenerator> FieldFactory::resolve(string &name) {
 
 std::shared_ptr<FieldGenerator> FieldFactory::parse(const string &input, Options *opt) {
 
-  //output.write("FieldFactory::parse('%s')", input.c_str());
-
   // Check if in the cache
-
   string key = string("#") + input;
   if(opt)
     key = opt->str()+key; // Include options context in key

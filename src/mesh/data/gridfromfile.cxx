@@ -225,9 +225,6 @@ bool GridFile::get(Mesh *m, Field2D &var,   const string &name, BoutReal def) {
     }
   }
   file->setGlobalOrigin();
-  
-  // Communicate to get guard cell data
-  //m->communicate(var);
 
   return true;
 }

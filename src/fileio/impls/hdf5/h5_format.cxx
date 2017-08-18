@@ -287,14 +287,9 @@ bool H5Format::read(void *data, hid_t hdf5_type, const char *name, int lx, int l
   hid_t mem_space = H5Screate_simple(nd, init_size_local, init_size_local);
   if (mem_space < 0)
     throw BoutException("Failed to create mem_space");
-//   if (nd > 0 && !(nd==1 && lx==1))
-//     if (H5Sselect_hyperslab(mem_space, H5S_SELECT_SET, offset_local, /*stride=*/NULL, counts, /*block=*/NULL) < 0)
-//       throw BoutException("Failed to select hyperslab");
-  
+
   hid_t dataSet = H5Dopen(dataFile, name, H5P_DEFAULT);
   if (dataSet < 0) {
-    // Variable does not exist (presumably)
-//     throw BoutException("Failed to open dataSet");
     return false;
   }
   
@@ -365,9 +360,6 @@ bool H5Format::write(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type, con
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
 
-//   // Check for valid name
-//   checkName(name);
-  
   int nd = 0; // Number of dimensions
   if(lx != 0) nd = 1;
   if(ly != 0) nd = 2;
@@ -603,9 +595,6 @@ bool H5Format::write_rec(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type,
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
 
-//   // Check for valid name
-//   checkName(name);
-  
   int nd = 1; // Number of dimensions
   if(lx != 0) nd = 2;
   if(ly != 0) nd = 3;
@@ -629,12 +618,8 @@ bool H5Format::write_rec(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type,
   if (nd_local==0) {
     nd_local = 1;
     // Need to write a time-series of scalars
-//     nd = 1;
-//     counts[1] = 1;
     counts_local[0] = 1;
-//     offset[1] = 0;
     offset_local[0] = 0;
-//     init_size[1] = 1;
     init_size_local[0] = 1;
   }
   
@@ -748,21 +733,6 @@ bool H5Format::write_rec(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type,
   
   return true;
 }
-
-/***************************************************************************
- * Private functions
- ***************************************************************************/
-
-// void H5Format::checkName(const char* name) {
-//   // Check if this name contains an invalid character
-//   
-//   const char* c = name;
-//   while(*c != 0) {
-//     if(*c == '*')
-//       throw BoutException("Invalid character (*) in NetCDF variable name '%s'", name);
-//     c++;
-//   }
-// }
 
 #endif // HDF5
 

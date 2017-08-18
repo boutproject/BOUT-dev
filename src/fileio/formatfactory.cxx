@@ -41,7 +41,6 @@ std::unique_ptr<DataFormat> FormatFactory::createDataFormat(const char *filename
 #else
 
 #ifdef NCDF
-    //output.write("\tUsing default format (NetCDF)\n");
     return std::unique_ptr<DataFormat>(new NcFormat);
 #else
 

@@ -76,7 +76,7 @@ public:
 class ExpressionParser {
 public:
   ExpressionParser();
-  virtual ~ExpressionParser();
+  virtual ~ExpressionParser() {};
 
   /// Add a generator to the parser, which can then be recognised and used
   /// in expressions.

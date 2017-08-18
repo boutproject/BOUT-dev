@@ -231,8 +231,6 @@ class Field2D : public Field, public FieldData {
   DEPRECATED(void setYArray(int x, int z, const rvec &yv) override);
 
   // Stencils
-
-  //void setStencil(bstencil *fval, bindex *bx) const;
   void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const override;
   void setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const override;
   void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const override;

@@ -191,7 +191,6 @@ bool Ncxx4::openw(const char *name, bool append) {
     default_rec = tDim.getSize();
     
   }else {
-    //dataFile = new NcFile(name, NcFile::replace, NcFile::classic64); // Broken support for classic64
     dataFile = new NcFile(name, NcFile::replace);
     
     if(dataFile->isNull()) {
@@ -612,9 +611,9 @@ bool Ncxx4::write_rec(int *data, const char *name, int lx, int ly, int lz) {
   }
   
   vector<size_t> start(1);
-  start[0] = rec_nr[name];// start[1] = x0; start[2] = y0; start[3] = z0;
+  start[0] = rec_nr[name];
   vector<size_t> counts(1);
-  counts[0] = 1; //counts[1] = lx; counts[2] = ly; counts[3] = lz;
+  counts[0] = 1;
 
 #ifdef NCDF_VERBOSE
   output.write("Ncxx4:: write_rec { Writing variable } \n");
