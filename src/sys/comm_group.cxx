@@ -85,8 +85,8 @@ namespace comm_group {
     
     if(root == handle->myrank) {
       // All arriving on this processor. Post receives
-      
-      handle->request = (MPI_Request*) malloc(sizeof(MPI_Request)*(handle->nprocs-1));
+
+      handle->request = (MPI_Request *)malloc(sizeof(MPI_Request) * (handle->nprocs - 1));
       handle->nreq = handle->nprocs-1;
       
       MPI_Request *r = handle->request;
@@ -109,8 +109,8 @@ namespace comm_group {
 	     nlocal*type_size);
     }else {
       // Sending to root processor
-      
-      handle->request = (MPI_Request*) malloc(sizeof(MPI_Request));
+
+      handle->request = (MPI_Request *)malloc(sizeof(MPI_Request));
       handle->nreq = 1;
 
       MPI_Isend(local,

@@ -528,12 +528,12 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
     output.write("Run time : ");
 
     int dt = end_time - start_time;
-    int i = (int) (dt / (60.*60.));
+    int i = static_cast<int>(dt / (60. * 60.));
     if (i > 0) {
       output.write("%d h ", i);
       dt -= i*60*60;
     }
-    i = (int) (dt / 60.);
+    i = static_cast<int>(dt / 60.);
     if (i > 0) {
       output.write("%d m ", i);
       dt -= i*60;

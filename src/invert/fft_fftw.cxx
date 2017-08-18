@@ -162,7 +162,7 @@ void cfft(dcomplex *cv, int length, int isign)
     // Forward transform
     fftw_execute(pf[th_id]);
     for(int i=0;i<length;i++)
-      cv[i] = dcomplex(out[i][0], out[i][1]) / ((double) length); // Normalise
+      cv[i] = dcomplex(out[i][0], out[i][1]) / static_cast<double>(length); // Normalise
   }else {
     // Backward
     fftw_execute(pb[th_id]);
@@ -361,7 +361,7 @@ void rfft(const BoutReal *in, int length, dcomplex *out) {
   fftw_execute(p[th_id]);
 
   //Normalising factor
-  const BoutReal fac = 1.0 / ((double) length);
+  const BoutReal fac = 1.0 / static_cast<double>(length);
   const int nmodes = (length/2) + 1;
 
   for(int i=0;i<nmodes;i++)
@@ -481,7 +481,7 @@ void DST(const BoutReal *in, int length, dcomplex *out) {
   out[length-1]=0.0;
 
   for(int i=1;i<length-1;i++)
-    out[i] = -fout[i][1]/ ((double) length-1); // Normalise
+    out[i] = -fout[i][1] / (static_cast<double>(length) - 1); // Normalise
 }
 
 void DST_rev(dcomplex *in, int length, BoutReal *out) {

@@ -510,7 +510,7 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
 
   BoutReal t_elapsed = MPI_Wtime() - mpi_start_time;
   output.print("%c  Step %d of %d. Elapsed %s", get_spin(), iteration+1, NOUT, (time_to_hms(t_elapsed)).c_str());
-  output.print(" ETA %s", (time_to_hms(wtime * ((BoutReal) (NOUT - iteration - 1)))).c_str());
+  output.print(" ETA %s", (time_to_hms(wtime * static_cast<BoutReal>(NOUT - iteration - 1))).c_str());
 
   if (wall_limit > 0.0) {
     // Check if enough time left
@@ -591,11 +591,13 @@ void bout_signal_handler(int sig) {
 const string time_to_hms(BoutReal t) {
   int h, m;
 
-  h = (int) (t / 3600); t -= 3600.*((BoutReal) h);
-  m = (int) (t / 60);   t -= 60 * ((BoutReal) m);
+  h = static_cast<int>(t / 3600);
+  t -= 3600. * static_cast<BoutReal>(h);
+  m = static_cast<int>(t / 60);
+  t -= 60 * static_cast<BoutReal>(m);
 
   char buffer[256];
-  sprintf(buffer,"%d:%02d:%04.1f", h, m, t);
+  sprintf(buffer, "%d:%02d:%04.1f", h, m, t);
 
   return string(buffer);
 }

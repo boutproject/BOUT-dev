@@ -322,8 +322,8 @@ static int idares(BoutReal t,
   BoutReal *udata = NV_DATA_P(u);
   BoutReal *dudata = NV_DATA_P(du);
   BoutReal *rdata = NV_DATA_P(rr);
-  
-  IdaSolver *s = (IdaSolver*) user_data;
+
+  IdaSolver *s = static_cast<IdaSolver *>(user_data);
 
   // Calculate residuals
   s->res(t, udata, dudata, rdata);
@@ -344,8 +344,8 @@ static int ida_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector UNUSED
   BoutReal *udata = NV_DATA_P(yy);
   BoutReal *rdata = NV_DATA_P(rvec);
   BoutReal *zdata = NV_DATA_P(zvec);
-  
-  IdaSolver *s = (IdaSolver*) user_data;
+
+  IdaSolver *s = static_cast<IdaSolver *>(user_data);
 
   // Calculate residuals
   s->pre(t, cj, delta, udata, rdata, zdata);

@@ -188,7 +188,7 @@ DEPRECATED(void free_cmatrix(dcomplex** cm));
  * Get Random number between 0 and 1
  */
 inline BoutReal randomu() {
-  return ((BoutReal) rand()) / ((BoutReal) RAND_MAX);
+  return static_cast<BoutReal>(rand()) / static_cast<BoutReal>(RAND_MAX);
 }
 
 /*!
@@ -204,7 +204,7 @@ T SQ(T t){
  * Round \p x to the nearest integer
  */
 inline int ROUND(BoutReal x){
-  return (x > 0.0) ? (int) (x + 0.5) : (int) (x - 0.5);
+  return (x > 0.0) ? static_cast<int>(x + 0.5) : static_cast<int>(x - 0.5);
 }
 
 /*!

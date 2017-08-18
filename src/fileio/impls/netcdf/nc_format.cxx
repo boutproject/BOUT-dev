@@ -327,7 +327,7 @@ const vector<int> NcFormat::getSize(const char *name) {
   
   long *ls = var->edges();
   for(int i=0;i<nd;i++)
-    size.push_back((int) ls[i]);
+    size.push_back(static_cast<int>(ls[i]));
 
   delete[] ls;
 

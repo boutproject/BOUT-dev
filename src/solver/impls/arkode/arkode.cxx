@@ -427,11 +427,11 @@ int ArkodeSolver::run() {
                    nsteps, nfe_evals, nfi_evals, nniters, npevals, nliters);
       
       output.write("    -> Newton iterations per step: %e\n", 
-                   ((double) nniters) / ((double) nsteps));
+                   static_cast<double>(nniters) / static_cast<double>(nsteps));
       output.write("    -> Linear iterations per Newton iteration: %e\n",
-                   ((double) nliters) / ((double) nniters));
+                   static_cast<double>(nliters) / static_cast<double>(nniters));
       output.write("    -> Preconditioner evaluations per Newton: %e\n",
-                   ((double) npevals) / ((double) nniters));
+                   static_cast<double>(npevals) / static_cast<double>(nniters));
     }
 
     /// Call the monitor function
@@ -615,7 +615,7 @@ static int arkode_rhs_e(BoutReal t,
   BoutReal *udata = NV_DATA_P(u);
   BoutReal *dudata = NV_DATA_P(du);
   
-  ArkodeSolver *s = (ArkodeSolver*) user_data;
+  ArkodeSolver *s = static_cast<ArkodeSolver*>(user_data);
   
   // Calculate RHS function
   try {
@@ -636,7 +636,7 @@ static int arkode_rhs_i(BoutReal t,
   BoutReal *udata = NV_DATA_P(u);
   BoutReal *dudata = NV_DATA_P(du);
 
-  ArkodeSolver *s = (ArkodeSolver*) user_data;
+  ArkodeSolver *s = static_cast<ArkodeSolver*>(user_data);
 
   //Calculate RHS function
   try {
@@ -656,7 +656,7 @@ static int arkode_rhs(BoutReal t,
   BoutReal *udata = NV_DATA_P(u);
   BoutReal *dudata = NV_DATA_P(du);
 
-  ArkodeSolver *s = (ArkodeSolver*) user_data;
+  ArkodeSolver *s = static_cast<ArkodeSolver*>(user_data);
 
   //Calculate RHS function
   try {
@@ -682,7 +682,7 @@ static int arkode_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector rve
   BoutReal *rdata = NV_DATA_P(rvec);
   BoutReal *zdata = NV_DATA_P(zvec);
   
-  ArkodeSolver *s = (ArkodeSolver*) user_data;
+  ArkodeSolver *s = static_cast<ArkodeSolver*>(user_data);
 
   // Calculate residuals
   s->pre(t, gamma, delta, udata, rdata, zdata);
@@ -697,7 +697,7 @@ static int arkode_jac(N_Vector v, N_Vector Jv, realtype t, N_Vector y,
   BoutReal *vdata = NV_DATA_P(v);   ///< Input vector
   BoutReal *Jvdata = NV_DATA_P(Jv);  ///< Jacobian*vector output
   
-  ArkodeSolver *s = (ArkodeSolver*) user_data;
+  ArkodeSolver *s = static_cast<ArkodeSolver*>(user_data);
   
   s->jac(t, ydata, vdata, Jvdata);
   

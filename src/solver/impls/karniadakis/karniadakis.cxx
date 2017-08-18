@@ -109,12 +109,12 @@ int KarniadakisSolver::init(int nout, BoutReal tstep) {
   // Make sure timestep divides into tstep
   
   // Number of sub-steps, rounded up
-  nsubsteps = (int) (0.5 + tstep / timestep);
-  
+  nsubsteps = static_cast<int>(0.5 + tstep / timestep);
+
   output.write("\tNumber of substeps: %e / %e -> %d\n", tstep, timestep, nsubsteps);
 
-  timestep = tstep / ((float) nsubsteps);
-  
+  timestep = tstep / static_cast<float>(nsubsteps);
+
   return 0;
 }
 
