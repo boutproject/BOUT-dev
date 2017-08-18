@@ -12,7 +12,7 @@
 
 #ifdef _OPENMP
 #include <omp.h>
-int DI_spread_work(int num_work, int thread, int max_thread);
+inline int DI_spread_work(int num_work, int thread, int max_thread);
 #endif
 
 /*!
@@ -62,7 +62,7 @@ private:
    * divides iteration index ranges between threads
    */
 #ifdef _OPENMP
-  void omp_init(bool end);
+  inline void omp_init(bool end);
 #endif
 public:
   /*!
