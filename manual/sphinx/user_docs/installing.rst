@@ -93,7 +93,7 @@ It is common to organise libraries using the ``modules`` system, so try typing
    modules avail
 
 to get a list of available modules. Some instructions for specific machines can
-be found in appendix [apx:machineinstructions]. See your system’s
+be found in section sec-machine-specific_. See your system’s
 documentation on modules and which ones to load. If you don’t know, or
 modules don’t work, you can still install libraries in your home
 directory by following the instructions below for :ref:`FFTW <sec-fftw-from-source`
@@ -392,14 +392,21 @@ This will install the following files under ``/usr/local/``:
 * ``/usr/local/share/bout++/make.config`` A ``makefile`` configuration, used to compile many BOUT++ examples
 
 
-To install BOUT++ under a different directory, use the ``--prefix=`` flag e.g. to install
-in your home directory:
+To install BOUT++ under a different directory, use the ``--prefix=`` flag e.g. to install in your home directory:
 
   .. code-block:: bash
 
    $ make install --prefix=$HOME/local/
 
-Alternatively, more control over where files are installed is possible by passing options to
+You can also specify this prefix when configuring, in the usual way (section sec-config-bout_):
+   
+  .. code-block:: bash
+
+     $ ./configure --prefix=$HOME/local/
+     $ make
+     $ make install
+
+More control over where files are installed is possible by passing options to
 ``configure``, following the GNU conventions:
 
 * ``--bindir=``  sets where ``bout-config`` will be installed ( default ``/usr/local/bin``)
@@ -411,7 +418,7 @@ Alternatively, more control over where files are installed is possible by passin
 * ``--datadir=`` sets where ``idllib``, ``pylib`` and ``make.config`` are installed (default ``/usr/local/share/``)
 
 
-After installing, check that you can run ``bout-config`` e.g
+After installing, that you can run ``bout-config`` e.g
 
 .. code-block:: bash
 
@@ -420,9 +427,24 @@ After installing, check that you can run ``bout-config`` e.g
 which should print out the list of configuration settings which ``bout-config`` can provide.
 If this doesn't work, check that the directory containing ``bout-config`` is in your ``PATH``.
 
-  
-Appendix A: Installing MPICH from source
-----------------------------------------
+The python and IDL analysis scripts can be configured using ``bout-config`` rather than manually
+setting paths as in section sec-configanalysis_. Add this line to your startup file (e.g. ``$HOME/.bashrc``):
+
+.. code-block:: bash
+   
+   export PYTHONPATH=`bout-config --python`:$PYTHONPATH
+
+note the back ticks around ``bout-config --python`` not quotes. Similarly for IDL:
+
+.. code-block:: bash
+   
+   export IDL_PATH=`bout-config --idl`:'<IDL_DEFAULT>':$IDL_PATH
+
+More details on using bout-config are in the :ref:`section on makefiles <sec-bout-config>`.
+
+
+Installing MPICH from source
+----------------------------
 
 .. _sec-mpi-from-source
 
@@ -481,8 +503,8 @@ you’re using CSH rather than BASH, the command is
 and the startup file is ``$HOME/.cshrc``. You should now be able to run
 ``mpicc`` and so have a working MPI compiler.
 
-Appendix B: Installing FFTW from source
----------------------------------------
+Installing FFTW from source
+---------------------------
 
 .. _sec-fftw-from-source
 
@@ -508,8 +530,8 @@ configure and install the FFTW library into ``$HOME/local`` by running:
     $ make install
 
 
-Appendix C: Installing NetCDF from source
------------------------------------------
+Installing NetCDF from source
+-----------------------------
 
 .. _sec-netcdf-from-source
 

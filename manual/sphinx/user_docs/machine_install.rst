@@ -1,6 +1,8 @@
 Machine-specific installation
 =============================
 
+.. _sec-machine-specific:
+
 Archer
 ------
 
