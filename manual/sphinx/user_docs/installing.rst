@@ -37,7 +37,7 @@ Obtaining BOUT++
 ----------------
 
 BOUT++ is hosted publicly on github at
-http://github.com/boutproject/BOUT-dev. You can the latest stable
+https://github.com/boutproject/BOUT-dev. You can the latest stable
 version from https://github.com/boutproject/BOUT-dev/releases. If you
 want to develop BOUT++, you should use git to clone the repository. To
 obtain a copy of the latest version, run
@@ -69,12 +69,12 @@ Installing dependencies
 To compile and run BOUT++ needs:
 
 #. An MPI compiler such as OpenMPI (`www.open-mpi.org/ <www.open-mpi.org/>`__),
-   MPICH ( `http://www.mpich.org/ <http://www.mpich.org/>`__) or
+   MPICH ( `https://www.mpich.org/ <https://www.mpich.org/>`__) or
    LAM (`www.lam-mpi.org/ <www.lam-mpi.org/>`__)
    
 #. The FFTW-3 library ( `http://www.fftw.org/ <http://www.fftw.org/>`__ )
    
-#. The NetCDF library ( `http://www.unidata.ucar.edu/downloads/netcdf <http://www.unidata.ucar.edu/downloads/netcdf>`__ )
+#. The NetCDF library ( `https://www.unidata.ucar.edu/downloads/netcdf <https://www.unidata.ucar.edu/downloads/netcdf>`__ )
 
 
 On a cluster or supercomputer
@@ -220,7 +220,7 @@ everything is installed, run
 
     $ python -c "import scipy"
 
-If not, see the SciPy website http://www.scipy.org for instructions on
+If not, see the SciPy website https://www.scipy.org for instructions on
 installing.
 
 To do this, the path to ``tools/pylib`` should be added to the
@@ -458,7 +458,7 @@ code, and one called “local” where we’ll install the MPI compiler:
     $ mkdir install
     $ mkdir local
 
-Download the latest stable version of MPICH from http://www.mpich.org/ and put the
+Download the latest stable version of MPICH from https://www.mpich.org/ and put the
 file in the “install” subdirectory created above. At the time of writing
 (June 2012), the file was called ``mpich2-1.4.1p1.tar.gz``. Untar the
 file:
@@ -538,7 +538,7 @@ Installing NetCDF from source
 The latest versions of NetCDF have separated out the C++ API from the
 main C library. As a result, you will need to download and install both.
 Download the latest versions of the NetCDF-C and NetCDF-4 C++ libraries
-from http://www.unidata.ucar.edu/downloads/netcdf. As of
+from https://www.unidata.ucar.edu/downloads/netcdf. As of
 January 2017, these are versions 4.4.1.1 and 4.3.0 respectively.
 
 Untar the file and ’cd’ into the resulting directory:
