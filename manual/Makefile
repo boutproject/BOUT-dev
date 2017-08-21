@@ -1,9 +1,17 @@
 # Makefile for the reference and user manuals
 TEXDIR=tex_files
 VPATH=$(TEXDIR)
-.PHONY:all
+.PHONY:all clean sphinx
 
-all: user_manual.pdf \
+all: sphinx
+
+sphinx:
+	sphinx-build -b latex sphinx/ build/
+	cd build && latexmk -pdf BOUT
+	test -e BOUT.pdf || ln -s build/BOUT.pdf .
+	@echo "Documentation is available in BOUT.pdf"
+
+old: user_manual.pdf \
 	developer_manual.pdf \
 	preconditioning.pdf \
 	coordinates.pdf \
@@ -21,8 +29,6 @@ all: user_manual.pdf \
 	mv *.pdf ./..
 	@cd $(TEXDIR) &&\
 	rm -f *.dvi *.aux *.out *.log *.toc *.idx *.ilg *.ind *.bbl *.blg
-
-.PHONY:clean
 
 clean:
 	@echo "Cleaning up..."
