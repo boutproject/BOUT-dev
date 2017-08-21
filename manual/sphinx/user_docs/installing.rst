@@ -396,7 +396,7 @@ To install BOUT++ under a different directory, use the ``--prefix=`` flag e.g. t
 
   .. code-block:: bash
 
-   $ make install --prefix=$HOME/local/
+   $ make install prefix=$HOME/local/
 
 You can also specify this prefix when configuring, in the usual way (section sec-config-bout_):
    
