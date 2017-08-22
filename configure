@@ -706,7 +706,6 @@ CPPFLAGS
 CXX
 ac_ct_MPICXX
 MPICXX
-FACETS_SOURCE
 PRECON_SOURCE
 MKDIR_P
 LDLIBS
@@ -760,7 +759,6 @@ with_pnetcdf
 with_ida
 with_cvode
 with_sundials
-with_facets
 with_fftw
 with_lapack
 with_petsc
@@ -1427,7 +1425,6 @@ Optional Packages:
   --with-ida=/path/to/ida Use the SUNDIALS IDA solver
   --with-cvode            Use the SUNDIALS CVODE solver
   --with-sundials         Use CVODE and IDA
-  --with-facets           Build the interface to FACETS
   --with-fftw             Set directory of FFTW3 library
   --with-lapack           Use the LAPACK library
   --with-petsc            Enable PETSc interface
@@ -2514,12 +2511,6 @@ if test "${with_sundials+set}" = set; then :
 fi
 
 
-# Check whether --with-facets was given.
-if test "${with_facets+set}" = set; then :
-  withval=$with_facets;
-fi
-
-
 # Check whether --with-fftw was given.
 if test "${with_fftw+set}" = set; then :
   withval=$with_fftw;
@@ -2624,7 +2615,6 @@ rm config-build.log
 
 
 # Adding variables for additional sources
-
 
 
 # We're using C++
@@ -8012,148 +8002,6 @@ fi
 
 
     echo ""
-fi
-
-#############################################################
-# FACETS
-#############################################################
-
-if test "x$with_facets" != "x"
-then
-    FACETS="$with_facets"
-      as_ac_File=`$as_echo "ac_cv_file_$FACETS/include/FacetsIfc.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $FACETS/include/FacetsIfc.h" >&5
-$as_echo_n "checking for $FACETS/include/FacetsIfc.h... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$FACETS/include/FacetsIfc.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-  FIFCPATH=$FACETS
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /usr/include/FacetsIfc.h" >&5
-$as_echo_n "checking for /usr/include/FacetsIfc.h... " >&6; }
-if ${ac_cv_file__usr_include_FacetsIfc_h+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "/usr/include/FacetsIfc.h"; then
-  ac_cv_file__usr_include_FacetsIfc_h=yes
-else
-  ac_cv_file__usr_include_FacetsIfc_h=no
-fi
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_file__usr_include_FacetsIfc_h" >&5
-$as_echo "$ac_cv_file__usr_include_FacetsIfc_h" >&6; }
-if test "x$ac_cv_file__usr_include_FacetsIfc_h" = xyes; then :
-  FIFCPATH=/usr
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /usr/local/include/FacetsIfc.h" >&5
-$as_echo_n "checking for /usr/local/include/FacetsIfc.h... " >&6; }
-if ${ac_cv_file__usr_local_include_FacetsIfc_h+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "/usr/local/include/FacetsIfc.h"; then
-  ac_cv_file__usr_local_include_FacetsIfc_h=yes
-else
-  ac_cv_file__usr_local_include_FacetsIfc_h=no
-fi
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_file__usr_local_include_FacetsIfc_h" >&5
-$as_echo "$ac_cv_file__usr_local_include_FacetsIfc_h" >&6; }
-if test "x$ac_cv_file__usr_local_include_FacetsIfc_h" = xyes; then :
-  FIFCPATH=/usr/local
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /opt/local/include/FacetsIfc.h" >&5
-$as_echo_n "checking for /opt/local/include/FacetsIfc.h... " >&6; }
-if ${ac_cv_file__opt_local_include_FacetsIfc_h+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "/opt/local/include/FacetsIfc.h"; then
-  ac_cv_file__opt_local_include_FacetsIfc_h=yes
-else
-  ac_cv_file__opt_local_include_FacetsIfc_h=no
-fi
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_file__opt_local_include_FacetsIfc_h" >&5
-$as_echo "$ac_cv_file__opt_local_include_FacetsIfc_h" >&6; }
-if test "x$ac_cv_file__opt_local_include_FacetsIfc_h" = xyes; then :
-  FIFCPATH=/opt/local
-else
-  as_ac_File=`$as_echo "ac_cv_file_$HOME/local/include/FacetsIfc.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $HOME/local/include/FacetsIfc.h" >&5
-$as_echo_n "checking for $HOME/local/include/FacetsIfc.h... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$HOME/local/include/FacetsIfc.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-  FIFCPATH=$HOME/local
-else
-  as_ac_File=`$as_echo "ac_cv_file_$HOME/software/facetsifc/include/FacetsIfc.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $HOME/software/facetsifc/include/FacetsIfc.h" >&5
-$as_echo_n "checking for $HOME/software/facetsifc/include/FacetsIfc.h... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$HOME/software/facetsifc/include/FacetsIfc.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-  FIFCPATH=$HOME/software/facetsifc
-fi
-
-fi
-
-fi
-
-fi
-
-fi
-
-fi
-
-  if test "x$FIFCPATH" != "x"
-  then
-    echo "Enabling FACETS interface"
-    EXTRA_INCS="$EXTRA_INCS -I$FIFCPATH/include"
-    FACETS_SOURCE="$FACETS_SOURCE bout_facets.cxx"
-  else
-    as_fn_error $? "*** --with-facets was specified but could not find the FACETS interface" "$LINENO" 5
-  fi
 fi
 
 #############################################################
@@ -15274,12 +15122,6 @@ PREFIX=$PWD
 IDLCONFIGPATH=$PWD/tools/idllib
 PYTHONCONFIGPATH=$PWD/tools/pylib
 
-HAS_FACETS="yes"
-if test "$FACETS_SOURCE" = ""
-then
-  HAS_FACETS="no"
-fi
-
 HAS_IDA="yes"
 if test "$IDALIBS" = ""
 then
@@ -15335,8 +15177,6 @@ fi
 echo
 echo "Configuration summary"  | tee -a config-build.log
 echo
-
-echo "  FACETS support: $HAS_FACETS"   | tee -a config-build.log
 
 if test "$PETSC" = ""
 then

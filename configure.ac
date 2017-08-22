@@ -46,8 +46,6 @@ AC_ARG_WITH(cvode,        [AS_HELP_STRING([--with-cvode],
         [Use the SUNDIALS CVODE solver])],,[])
 AC_ARG_WITH(sundials,     [AS_HELP_STRING([--with-sundials],
         [Use CVODE and IDA])],,[])
-AC_ARG_WITH(facets,       [AS_HELP_STRING([--with-facets],
-        [Build the interface to FACETS])],,[])
 AC_ARG_WITH(fftw,         [AS_HELP_STRING([--with-fftw],
         [Set directory of FFTW3 library])],,[])
 AC_ARG_WITH(lapack,       [AS_HELP_STRING([--with-lapack],
@@ -100,7 +98,6 @@ AC_SUBST(EXTRA_LIBS)
 
 # Adding variables for additional sources
 AC_SUBST(PRECON_SOURCE)
-AC_SUBST(FACETS_SOURCE)
 
 # We're using C++
 AC_LANG(C++)
@@ -580,30 +577,6 @@ then
         ]	, [ AS_IF( [test .$with_lapack = ".yes"], AC_MSG_ERROR("LAPACK requested but not found.")) ] , $lapack_path)
 
     echo ""
-fi
-
-#############################################################
-# FACETS
-#############################################################
-
-if test "x$with_facets" != "x"
-then
-    FACETS="$with_facets"
-      AC_CHECK_FILE($FACETS/include/FacetsIfc.h, FIFCPATH=$FACETS,
-      AC_CHECK_FILE(/usr/include/FacetsIfc.h, FIFCPATH=/usr,
-      AC_CHECK_FILE(/usr/local/include/FacetsIfc.h, FIFCPATH=/usr/local,
-      AC_CHECK_FILE(/opt/local/include/FacetsIfc.h, FIFCPATH=/opt/local,
-      AC_CHECK_FILE($HOME/local/include/FacetsIfc.h, FIFCPATH=$HOME/local,
-      AC_CHECK_FILE($HOME/software/facetsifc/include/FacetsIfc.h, FIFCPATH=$HOME/software/facetsifc,
-      ))))))
-  if test "x$FIFCPATH" != "x"
-  then
-    echo "Enabling FACETS interface"
-    EXTRA_INCS="$EXTRA_INCS -I$FIFCPATH/include"
-    FACETS_SOURCE="$FACETS_SOURCE bout_facets.cxx"
-  else
-    AC_MSG_ERROR([*** --with-facets was specified but could not find the FACETS interface])
-  fi
 fi
 
 #############################################################
@@ -1280,12 +1253,6 @@ PREFIX=$PWD
 IDLCONFIGPATH=$PWD/tools/idllib
 PYTHONCONFIGPATH=$PWD/tools/pylib
 
-HAS_FACETS="yes"
-if test "$FACETS_SOURCE" = ""
-then
-  HAS_FACETS="no"
-fi
-
 HAS_IDA="yes"
 if test "$IDALIBS" = ""
 then
@@ -1341,8 +1308,6 @@ fi
 echo
 echo "Configuration summary"  | tee -a config-build.log
 echo
-
-echo "  FACETS support: $HAS_FACETS"   | tee -a config-build.log
 
 if test "$PETSC" = ""
 then
