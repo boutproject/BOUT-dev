@@ -1,6 +1,0 @@
-
-BOUT_TOP=../../../
-
-test: unit_tests.cxx domain.cxx partition.cxx
-	g++ -g unit_tests.cxx domain.cxx partition.cxx -o $@ -I$(BOUT_TOP)/include
-
