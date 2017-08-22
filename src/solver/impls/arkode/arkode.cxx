@@ -427,11 +427,11 @@ int ArkodeSolver::run() {
                    nsteps, nfe_evals, nfi_evals, nniters, npevals, nliters);
       
       output.write("    -> Newton iterations per step: %e\n", 
-                   static_cast<double>(nniters) / static_cast<double>(nsteps));
+                   static_cast<BoutReal>(nniters) / static_cast<BoutReal>(nsteps));
       output.write("    -> Linear iterations per Newton iteration: %e\n",
-                   static_cast<double>(nliters) / static_cast<double>(nniters));
+                   static_cast<BoutReal>(nliters) / static_cast<BoutReal>(nniters));
       output.write("    -> Preconditioner evaluations per Newton: %e\n",
-                   static_cast<double>(npevals) / static_cast<double>(nniters));
+                   static_cast<BoutReal>(npevals) / static_cast<BoutReal>(nniters));
     }
 
     /// Call the monitor function

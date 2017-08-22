@@ -227,7 +227,7 @@ int BoutMesh::load() {
 
     NXPE = -1; // Best option
 
-    BoutReal ideal = sqrt(MX * NPES / static_cast<double>(ny)); // Results in square domains
+    BoutReal ideal = sqrt(MX * NPES / static_cast<BoutReal>(ny)); // Results in square domains
 
     output.write("Finding value for NXPE\n");
 
@@ -348,7 +348,7 @@ int BoutMesh::load() {
   if(options->isSet("zperiod")) {
     OPTION(options, zperiod, 1);
     ZMIN = 0.0;
-    ZMAX = 1.0 / static_cast<double>(zperiod);
+    ZMAX = 1.0 / static_cast<BoutReal>(zperiod);
   }else {
     OPTION(options, ZMIN, 0.0);
     OPTION(options, ZMAX, 1.0);

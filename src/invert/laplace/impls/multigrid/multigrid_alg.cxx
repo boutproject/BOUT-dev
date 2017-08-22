@@ -429,7 +429,7 @@ void MultigridAlg::pGMRES(BoutReal *sol,BoutReal *rhs,int level,int iplag) {
 
   if(level == 0) {
     if((rProcI == 0) && (pcheck == 1)) {
-      rederr = log(error / ini_e) / static_cast<double>(num);
+      rederr = log(error / ini_e) / static_cast<BoutReal>(num);
       rederr = exp(rederr);      
       printf("The average error reduction of GMRES %d: %14.8f(%18.10f)\n",num,rederr,error);
       fflush(stdout);
@@ -437,7 +437,7 @@ void MultigridAlg::pGMRES(BoutReal *sol,BoutReal *rhs,int level,int iplag) {
   }
   else {
     if((rProcI == 0) && (pcheck == 1)) {
-      rederr = log(error / ini_e) / static_cast<double>(num);
+      rederr = log(error / ini_e) / static_cast<BoutReal>(num);
       rederr = exp(rederr);      
       printf("The average error reduction of PGMRES %d: %14.8f(%18.10f)\n",num,rederr,error);
       fflush(stdout);
@@ -697,7 +697,7 @@ void MultigridAlg::solveMG(BoutReal *sol,BoutReal *rhs,int level) {
   }
 
   if((rProcI == 0) && (pcheck == 1)) {
-    rederr = log(error / ini_e) / (static_cast<double>(m) + 1.0);
+    rederr = log(error / ini_e) / (static_cast<BoutReal>(m) + 1.0);
     rederr = exp(rederr); 
     if(m == MAXIT) 
       printf("Reached maximum iteration: %14.8f\n",error);

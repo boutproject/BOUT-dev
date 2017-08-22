@@ -56,7 +56,7 @@ Coordinates::Coordinates(Mesh *mesh) {
     if (options->isSet("zperiod")) {
       OPTION(options, zperiod, 1);
       ZMIN = 0.0;
-      ZMAX = 1.0 / static_cast<double>(zperiod);
+      ZMAX = 1.0 / static_cast<BoutReal>(zperiod);
     } else {
       OPTION(options, ZMIN, 0.0);
       OPTION(options, ZMAX, 1.0);

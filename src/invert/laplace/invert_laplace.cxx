@@ -66,7 +66,7 @@ Laplacian::Laplacian(Options *options) {
   OPTION(options, filter, 0.0);
   int ncz = mesh->LocalNz;
   // convert filtering into an integer number of modes
-  maxmode = ROUND((1.0 - filter) * static_cast<double>(ncz / 2));
+  maxmode = ROUND((1.0 - filter) * static_cast<BoutReal>(ncz / 2));
   // Can be overriden by max_mode option
   OPTION(options, maxmode, maxmode);
   if(maxmode < 0) maxmode = 0;
