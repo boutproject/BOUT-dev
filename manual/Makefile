@@ -3,12 +3,13 @@ TEXDIR=tex_files
 VPATH=$(TEXDIR)
 .PHONY:all clean sphinx html pdf old doxygen
 
-all: sphinx
 # some distros may provide sphinx-build-3 and sphinx-build-2 instead
 # of sphinx-build. An automatic check would be helpfull, but at least
 # with this, it should be easy to change:
-sphinx-build=sphinx-build-3
+sphinx-build=sphinx-build
 
+all: sphinx
+manual: all
 # set some shorter names
 pdf: sphinx-pdf
 html: sphinx-html

@@ -1,18 +1,28 @@
 #BOUT++ documentation
 
 The most up to date documentation consists of reStructuredText in the "sphinx"
-subdirectory. This is used to create the online manual at http://bout-dev.readthedocs.io/en/latest/
+subdirectory. This is used to create the online manual at https://bout-dev.readthedocs.io/en/latest/
 
 These documents can be built into a PDF using "sphinx-build":
 
 ```bash
-$ sphinx-build -b latex sphinx/ build/
-$ cd build
-$ pdflatex BOUT.tex
-$ pdflatex BOUT.tex
+$ make
 ```
 
-This should create a file "BOUT.pdf" in the "build" directory.
+To use e.g. "sphinx-build-3" instead of "sphinx-build", run
+```bash
+$ make sphinx-build=sphinx-build-3
+```
+
+This should create a file "BOUT.pdf" in the "manual" directory.
+
+To get a local html version, run
+
+```bash
+$ make html
+```
+
+This should create a file "index.html" in the "manual/html" directory.
 
 ## LaTeX documents
 
@@ -21,7 +31,7 @@ a detailed derivation of the coordinate system, which are not (yet) in the RST d
 To build the LaTeX files into a PDF document, run "make":
 
 ```bash
-$ make
+$ make old
 ```
 
 This should build:
