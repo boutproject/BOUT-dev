@@ -227,7 +227,7 @@ int BoutMesh::load() {
 
     NXPE = -1; // Best option
 
-    BoutReal ideal = sqrt(MX * NPES / ((double) ny)); // Results in square domains
+    BoutReal ideal = sqrt(MX * NPES / static_cast<BoutReal>(ny)); // Results in square domains
 
     output.write("Finding value for NXPE\n");
 
@@ -348,7 +348,7 @@ int BoutMesh::load() {
   if(options->isSet("zperiod")) {
     OPTION(options, zperiod, 1);
     ZMIN = 0.0;
-    ZMAX = 1.0 / (double) zperiod;
+    ZMAX = 1.0 / static_cast<BoutReal>(zperiod);
   }else {
     OPTION(options, ZMIN, 0.0);
     OPTION(options, ZMAX, 1.0);
@@ -1008,7 +1008,7 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   /// Mark communication handle as in progress
   ch->in_progress = true;
 
-  return (void*) ch;
+  return static_cast<void*>(ch);
 }
 
 int BoutMesh::wait(comm_handle handle) {
@@ -1017,7 +1017,7 @@ int BoutMesh::wait(comm_handle handle) {
   if(handle == NULL)
     return 1;
 
-  CommHandle *ch = (CommHandle*) handle;
+  CommHandle *ch = static_cast<CommHandle*>(handle);
 
   if(!ch->in_progress)
     return 2;
@@ -1169,7 +1169,7 @@ comm_handle BoutMesh::receiveFromProc(int xproc, int yproc, BoutReal *buffer, in
 
   ch->in_progress = true;
 
-  return (comm_handle) ch;
+  return static_cast<comm_handle>(ch);
 }
 
 int BoutMesh::getNXPE() {
@@ -1249,7 +1249,7 @@ comm_handle BoutMesh::irecvXOut(BoutReal *buffer, int size, int tag) {
 
   ch->in_progress = true;
 
-  return (comm_handle) ch;
+  return static_cast<comm_handle>(ch);
 }
 
 comm_handle BoutMesh::irecvXIn(BoutReal *buffer, int size, int tag) {
@@ -1271,7 +1271,7 @@ comm_handle BoutMesh::irecvXIn(BoutReal *buffer, int size, int tag) {
 
   ch->in_progress = true;
 
-  return (comm_handle) ch;
+  return static_cast<comm_handle>(ch);
 }
 
 /****************************************************************
@@ -1416,7 +1416,7 @@ comm_handle BoutMesh::irecvYOutIndest(BoutReal *buffer, int size, int tag) {
 
   ch->in_progress = true;
 
-  return (comm_handle) ch;
+  return static_cast<comm_handle>(ch);
 }
 
 comm_handle BoutMesh::irecvYOutOutdest(BoutReal *buffer, int size, int tag) {
@@ -1440,7 +1440,7 @@ comm_handle BoutMesh::irecvYOutOutdest(BoutReal *buffer, int size, int tag) {
 
   ch->in_progress = true;
 
-  return (comm_handle) ch;
+  return static_cast<comm_handle>(ch);
 }
 
 comm_handle BoutMesh::irecvYInIndest(BoutReal *buffer, int size, int tag) {
@@ -1464,7 +1464,7 @@ comm_handle BoutMesh::irecvYInIndest(BoutReal *buffer, int size, int tag) {
 
   ch->in_progress = true;
 
-  return (comm_handle) ch;
+  return static_cast<comm_handle>(ch);
 }
 
 comm_handle BoutMesh::irecvYInOutdest(BoutReal *buffer, int size, int tag) {
@@ -1488,7 +1488,7 @@ comm_handle BoutMesh::irecvYInOutdest(BoutReal *buffer, int size, int tag) {
 
   ch->in_progress = true;
 
-  return (comm_handle) ch;
+  return static_cast<comm_handle>(ch);
 }
 
 /****************************************************************
@@ -2308,9 +2308,9 @@ BoutReal BoutMesh::GlobalX(int jx) const {
   if(symmetricGlobalX) {
     // Symmetric X index, mainly for reconnection studies
     //jmad. With this definition the boundary sits dx/2 away form the first/last inner points
-    return ((BoutReal) (0.5 + XGLOBAL(jx) - ((BoutReal)(nx-MX))*0.5)) / ((BoutReal) MX);
+    return static_cast<BoutReal>((0.5 + XGLOBAL(jx) - static_cast<BoutReal>(nx-MX)*0.5)) / static_cast<BoutReal>(MX);
   }
-  return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) MX);
+  return static_cast<BoutReal>(XGLOBAL(jx)) / static_cast<BoutReal>(MX);
 }
 
 BoutReal BoutMesh::GlobalX(BoutReal jx) const {
@@ -2322,9 +2322,9 @@ BoutReal BoutMesh::GlobalX(BoutReal jx) const {
   if(symmetricGlobalX) {
     // Symmetric X index, mainly for reconnection studies
     //jmad. With this definition the boundary sits dx/2 away form the first/last inner points
-    return ((BoutReal) (0.5 + xglo - ((BoutReal)(nx-MX))*0.5)) / ((BoutReal) MX);
+    return static_cast<BoutReal>((0.5 + xglo - static_cast<BoutReal>(nx-MX)*0.5)) / static_cast<BoutReal>(MX);
   }
-  return xglo / ((BoutReal) MX);
+  return xglo / static_cast<BoutReal>(MX);
 }
 
 BoutReal BoutMesh::GlobalY(int jy) const {
@@ -2364,7 +2364,7 @@ BoutReal BoutMesh::GlobalY(int jy) const {
     }
   }
 
-  return ((BoutReal) ly) / ((BoutReal) nycore);
+  return static_cast<BoutReal>(ly) / static_cast<BoutReal>(nycore);
 }
 
 BoutReal BoutMesh::GlobalY(BoutReal jy) const {
@@ -2409,7 +2409,7 @@ BoutReal BoutMesh::GlobalY(BoutReal jy) const {
     }
   }
 
-  return yglo / ((BoutReal) nycore);
+  return yglo / static_cast<BoutReal>(nycore);
 }
 
 void BoutMesh::outputVars(Datafile &file) {

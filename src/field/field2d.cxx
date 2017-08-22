@@ -290,7 +290,7 @@ void Field2D::getZArray(int x, int y, rvec &zv) const {
 void Field2D::setXArray(int y, int UNUSED(z), const rvec &xv) {
   allocate();
 
-  ASSERT0(xv.capacity() == (unsigned int) nx);
+  ASSERT0(xv.capacity() == static_cast<unsigned int>(nx));
 
   for(int x=0;x<nx;x++)
     operator()(x,y) = xv[x];
@@ -299,7 +299,7 @@ void Field2D::setXArray(int y, int UNUSED(z), const rvec &xv) {
 void Field2D::setYArray(int x, int UNUSED(z), const rvec &yv) {
   allocate();
 
-  ASSERT0(yv.capacity() == (unsigned int) fieldmesh->LocalNy);
+  ASSERT0(yv.capacity() == static_cast<unsigned int>(fieldmesh->LocalNy));
 
   for(int y=0;y<fieldmesh->LocalNy;y++)
     operator()(x,y) = yv[y];
