@@ -34,9 +34,8 @@ matrix:
           - libhdf5-serial-dev
           - netcdf-bin
           - hdf5-tools
-          - libhypre-dev
           - libpetsc3.4.2-dev
-    env: CONFIGURE_OPTIONS='--with-hypre --with-petsc' PETSC_DIR=/usr/lib/petscdir/3.4.2 PETSC_ARCH=linux-gnu-c-opt
+    env: CONFIGURE_OPTIONS='--with-petsc' PETSC_DIR=/usr/lib/petscdir/3.4.2 PETSC_ARCH=linux-gnu-c-opt
   - addons:
       apt:
         sources:

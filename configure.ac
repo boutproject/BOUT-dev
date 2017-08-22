@@ -46,8 +46,6 @@ AC_ARG_WITH(cvode,        [AS_HELP_STRING([--with-cvode],
         [Use the SUNDIALS CVODE solver])],,[])
 AC_ARG_WITH(sundials,     [AS_HELP_STRING([--with-sundials],
         [Use CVODE and IDA])],,[])
-AC_ARG_WITH(facets,       [AS_HELP_STRING([--with-facets],
-        [Build the interface to FACETS])],,[])
 AC_ARG_WITH(fftw,         [AS_HELP_STRING([--with-fftw],
         [Set directory of FFTW3 library])],,[])
 AC_ARG_WITH(lapack,       [AS_HELP_STRING([--with-lapack],
@@ -58,8 +56,6 @@ AC_ARG_WITH(slepc,        [AS_HELP_STRING([--with-slepc],
         [Enable SLEPc interface])],,[])
 AC_ARG_WITH(pvode,        [AS_HELP_STRING([--with-pvode],
         [Build and enable PVODE 98 (DEFAULT)])],,[])
-AC_ARG_WITH(hypre,        [AS_HELP_STRING([--with-hypre],
-        [Link to the Hypre library])],,[])
 AC_ARG_WITH(mumps,        [AS_HELP_STRING([--with-mumps],
         [Link with MUMPS library for direct matrix inversions])],,[])
 AC_ARG_WITH(arkode,       [AS_HELP_STRING([--with-arkode],
@@ -102,7 +98,6 @@ AC_SUBST(EXTRA_LIBS)
 
 # Adding variables for additional sources
 AC_SUBST(PRECON_SOURCE)
-AC_SUBST(FACETS_SOURCE)
 
 # We're using C++
 AC_LANG(C++)
@@ -582,30 +577,6 @@ then
         ]	, [ AS_IF( [test .$with_lapack = ".yes"], AC_MSG_ERROR("LAPACK requested but not found.")) ] , $lapack_path)
 
     echo ""
-fi
-
-#############################################################
-# FACETS
-#############################################################
-
-if test "x$with_facets" != "x"
-then
-    FACETS="$with_facets"
-      AC_CHECK_FILE($FACETS/include/FacetsIfc.h, FIFCPATH=$FACETS,
-      AC_CHECK_FILE(/usr/include/FacetsIfc.h, FIFCPATH=/usr,
-      AC_CHECK_FILE(/usr/local/include/FacetsIfc.h, FIFCPATH=/usr/local,
-      AC_CHECK_FILE(/opt/local/include/FacetsIfc.h, FIFCPATH=/opt/local,
-      AC_CHECK_FILE($HOME/local/include/FacetsIfc.h, FIFCPATH=$HOME/local,
-      AC_CHECK_FILE($HOME/software/facetsifc/include/FacetsIfc.h, FIFCPATH=$HOME/software/facetsifc,
-      ))))))
-  if test "x$FIFCPATH" != "x"
-  then
-    echo "Enabling FACETS interface"
-    EXTRA_INCS="$EXTRA_INCS -I$FIFCPATH/include"
-    FACETS_SOURCE="$FACETS_SOURCE bout_facets.cxx"
-  else
-    AC_MSG_ERROR([*** --with-facets was specified but could not find the FACETS interface])
-  fi
 fi
 
 #############################################################
@@ -1128,65 +1099,6 @@ then
   fi
 fi
 
-#############################################################
-# Hypre
-#############################################################
-
-if test "$with_hypre" != "no"
-then
-  # Try to find a valid Hypre installation
-
-  HYPREPATH=""
-  if test "$with_hypre" != "yes"
-  then
-    # Path specified. Check that needed files exist
-    HYPREPATH=$with_hypre
-    echo "Looking for HYPRE in $HYPREPATH"
-    AC_CHECK_FILES( $HYPREPATH/include/HYPRE.h ,, [
-      echo " -> Given path not correct. Finding..."
-      HYPREPATH=""
-    ] )
-    AC_CHECK_FILES( $HYPREPATH/lib/libHYPRE.a ,   HYPREPATHLIB='lib',
-    AC_CHECK_FILES( $HYPREPATH/lib64/libHYPRE.a , HYPREPATHLIB='lib64', [
-      echo " -> Given path not correct. Finding..."
-      HYPREPATH=""
-    ] ))
-  fi
-
-  if test "$HYPREPATH" = ""
-  then
-    # try some known paths
-    AC_CHECK_FILE(/usr/include/HYPRE.h, HYPREPATH=/usr/,
-    AC_CHECK_FILE(/usr/local/include/HYPRE.h, HYPREPATH=/usr/local/,
-    AC_CHECK_FILE(/opt/local/include/HYPRE.h, HYPREPATH=/opt/local/,
-    AC_CHECK_FILE($HOME/local/include/HYPRE.h, HYPREPATH=$HOME/local,
-    AC_CHECK_FILE($HOME/include/HYPRE.h, HYPREPATH=$HOME,
-    )))))
-
-    if test "$HYPREPATH" = ""
-    then
-      # Check for the other files
-      AC_CHECK_FILES( $HYPREPATH/lib/libHYPRE.a , HYPREPATHLIB='lib',
-        AC_CHECK_FILES( $HYPREPATH/lib64/libHYPRE.a , HYPREPATHLIB='lib64', [
-          HYPREPATH=""
-        ] ))
-    fi
-  fi
-
-  if test "$HYPREPATH" != ""
-  then
-    echo "Support for Hypre enabled"
-    EXTRA_INCS="$EXTRA_INCS -I$HYPREPATH/include"
-    EXTRA_LIBS="$EXTRA_LIBS -L$HYPREPATH/$HYPREPATHLIB -lHYPRE"
-
-    CFLAGS="$CFLAGS -DBOUT_HAS_HYPRE"
-    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_HYPRE"
-  else
-    echo "Support for Hypre disabled"
-  fi
-  echo
-fi
-
 
 #############################################################
 # Check types for SUNDIALS
@@ -1341,12 +1253,6 @@ PREFIX=$PWD
 IDLCONFIGPATH=$PWD/tools/idllib
 PYTHONCONFIGPATH=$PWD/tools/pylib
 
-HAS_FACETS="yes"
-if test "$FACETS_SOURCE" = ""
-then
-  HAS_FACETS="no"
-fi
-
 HAS_IDA="yes"
 if test "$IDALIBS" = ""
 then
@@ -1377,12 +1283,6 @@ then
   HAS_PNETCDF="no"
 fi
 
-HAS_HYPRE="yes"
-if test "$HYPREPATH" = ""
-then
-  HAS_HYPRE="no"
-fi
-
 HAS_MUMPS="yes"
 if test "$MUMPS" = ""
 then
@@ -1409,8 +1309,6 @@ echo
 echo "Configuration summary"  | tee -a config-build.log
 echo
 
-echo "  FACETS support: $HAS_FACETS"   | tee -a config-build.log
-
 if test "$PETSC" = ""
 then
   echo "  PETSc support: no" | tee -a config-build.log
@@ -1432,8 +1330,6 @@ echo "  NetCDF support: $HAS_NETCDF" | tee -a config-build.log
 echo "  Parallel-NetCDF support: $HAS_PNETCDF" | tee -a config-build.log
 
 echo "  HDF5 support: $HAS_HDF5 (parallel: $HAS_PHDF5)" | tee -a config-build.log
-
-echo "  Hypre support: $HAS_HYPRE" | tee -a config-build.log
 
 echo "  MUMPS support: $HAS_MUMPS" | tee -a config-build.log
 
@@ -1508,7 +1404,6 @@ AC_SUBST(HAS_ARKODE)
 AC_SUBST(HAS_NETCDF)
 AC_SUBST(HAS_PNETCDF)
 AC_SUBST(HAS_HDF5)
-AC_SUBST(HAS_HYPRE)
 AC_SUBST(HAS_MUMPS)
 AC_SUBST(HAS_LAPACK)
 AC_SUBST(HAS_PETSC)
