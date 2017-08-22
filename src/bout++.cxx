@@ -292,10 +292,10 @@ int BoutInitialise(int &argc, char **&argv) {
     reader->parseCommandLine(options, argc, argv);
 
     // Save settings
-    if(BoutComm::rank()==0){
-      reader->write(options, "%s/%s", data_dir,set_file);
+    if (BoutComm::rank() == 0) {
+      reader->write(options, "%s/%s", data_dir, set_file);
     }
-  }catch(BoutException &e) {
+  } catch (BoutException &e) {
     output << "Error encountered during initialisation\n";
     output << e.what() << endl;
     return 1;
@@ -365,26 +365,26 @@ int BoutFinalise() {
   // Output the settings, showing which options were used
   // This overwrites the file written during initialisation
   try {
-    if(BoutComm::rank()==0){
+    if (BoutComm::rank() == 0) {
       string data_dir;
       Options::getRoot()->get("datadir", data_dir, "data");
-      
+
       OptionsReader *reader = OptionsReader::getInstance();
       std::string settingsfile;
-      OPTION(Options::getRoot(),settingsfile,"");
-      reader->write(Options::getRoot(), "%s/%s", data_dir.c_str(),settingsfile.c_str());
+      OPTION(Options::getRoot(), settingsfile, "");
+      reader->write(Options::getRoot(), "%s/%s", data_dir.c_str(), settingsfile.c_str());
     }
-  }catch(BoutException &e) {
+  } catch (BoutException &e) {
     output << "Error whilst writing settings" << endl;
     output << e.what() << endl;
   }
-  
+
   // Delete the mesh
   delete mesh;
 
   // Close the output file
   dump.close();
-  
+
   // Make sure all processes have finished writing before exit
   MPI_Barrier(BoutComm::get());
 
