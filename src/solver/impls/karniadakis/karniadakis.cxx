@@ -113,7 +113,7 @@ int KarniadakisSolver::init(int nout, BoutReal tstep) {
 
   output.write("\tNumber of substeps: %e / %e -> %d\n", tstep, timestep, nsubsteps);
 
-  timestep = tstep / static_cast<float>(nsubsteps);
+  timestep = tstep / static_cast<BoutReal>(nsubsteps);
 
   return 0;
 }
