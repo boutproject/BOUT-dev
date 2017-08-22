@@ -58,8 +58,6 @@ AC_ARG_WITH(slepc,        [AS_HELP_STRING([--with-slepc],
         [Enable SLEPc interface])],,[])
 AC_ARG_WITH(pvode,        [AS_HELP_STRING([--with-pvode],
         [Build and enable PVODE 98 (DEFAULT)])],,[])
-AC_ARG_WITH(hypre,        [AS_HELP_STRING([--with-hypre],
-        [Link to the Hypre library])],,[])
 AC_ARG_WITH(mumps,        [AS_HELP_STRING([--with-mumps],
         [Link with MUMPS library for direct matrix inversions])],,[])
 AC_ARG_WITH(arkode,       [AS_HELP_STRING([--with-arkode],
@@ -1128,65 +1126,6 @@ then
   fi
 fi
 
-#############################################################
-# Hypre
-#############################################################
-
-if test "$with_hypre" != "no"
-then
-  # Try to find a valid Hypre installation
-
-  HYPREPATH=""
-  if test "$with_hypre" != "yes"
-  then
-    # Path specified. Check that needed files exist
-    HYPREPATH=$with_hypre
-    echo "Looking for HYPRE in $HYPREPATH"
-    AC_CHECK_FILES( $HYPREPATH/include/HYPRE.h ,, [
-      echo " -> Given path not correct. Finding..."
-      HYPREPATH=""
-    ] )
-    AC_CHECK_FILES( $HYPREPATH/lib/libHYPRE.a ,   HYPREPATHLIB='lib',
-    AC_CHECK_FILES( $HYPREPATH/lib64/libHYPRE.a , HYPREPATHLIB='lib64', [
-      echo " -> Given path not correct. Finding..."
-      HYPREPATH=""
-    ] ))
-  fi
-
-  if test "$HYPREPATH" = ""
-  then
-    # try some known paths
-    AC_CHECK_FILE(/usr/include/HYPRE.h, HYPREPATH=/usr/,
-    AC_CHECK_FILE(/usr/local/include/HYPRE.h, HYPREPATH=/usr/local/,
-    AC_CHECK_FILE(/opt/local/include/HYPRE.h, HYPREPATH=/opt/local/,
-    AC_CHECK_FILE($HOME/local/include/HYPRE.h, HYPREPATH=$HOME/local,
-    AC_CHECK_FILE($HOME/include/HYPRE.h, HYPREPATH=$HOME,
-    )))))
-
-    if test "$HYPREPATH" = ""
-    then
-      # Check for the other files
-      AC_CHECK_FILES( $HYPREPATH/lib/libHYPRE.a , HYPREPATHLIB='lib',
-        AC_CHECK_FILES( $HYPREPATH/lib64/libHYPRE.a , HYPREPATHLIB='lib64', [
-          HYPREPATH=""
-        ] ))
-    fi
-  fi
-
-  if test "$HYPREPATH" != ""
-  then
-    echo "Support for Hypre enabled"
-    EXTRA_INCS="$EXTRA_INCS -I$HYPREPATH/include"
-    EXTRA_LIBS="$EXTRA_LIBS -L$HYPREPATH/$HYPREPATHLIB -lHYPRE"
-
-    CFLAGS="$CFLAGS -DBOUT_HAS_HYPRE"
-    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_HYPRE"
-  else
-    echo "Support for Hypre disabled"
-  fi
-  echo
-fi
-
 
 #############################################################
 # Check types for SUNDIALS
@@ -1377,12 +1316,6 @@ then
   HAS_PNETCDF="no"
 fi
 
-HAS_HYPRE="yes"
-if test "$HYPREPATH" = ""
-then
-  HAS_HYPRE="no"
-fi
-
 HAS_MUMPS="yes"
 if test "$MUMPS" = ""
 then
@@ -1432,8 +1365,6 @@ echo "  NetCDF support: $HAS_NETCDF" | tee -a config-build.log
 echo "  Parallel-NetCDF support: $HAS_PNETCDF" | tee -a config-build.log
 
 echo "  HDF5 support: $HAS_HDF5 (parallel: $HAS_PHDF5)" | tee -a config-build.log
-
-echo "  Hypre support: $HAS_HYPRE" | tee -a config-build.log
 
 echo "  MUMPS support: $HAS_MUMPS" | tee -a config-build.log
 
@@ -1508,7 +1439,6 @@ AC_SUBST(HAS_ARKODE)
 AC_SUBST(HAS_NETCDF)
 AC_SUBST(HAS_PNETCDF)
 AC_SUBST(HAS_HDF5)
-AC_SUBST(HAS_HYPRE)
 AC_SUBST(HAS_MUMPS)
 AC_SUBST(HAS_LAPACK)
 AC_SUBST(HAS_PETSC)
