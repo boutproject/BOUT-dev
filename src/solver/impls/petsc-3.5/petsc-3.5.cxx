@@ -436,7 +436,6 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
       for(k=0;k<nz;k++) {
         output << "----- " << k << " -----" << endl;
         for(j=mesh->ystart; j <= mesh->yend; j++) {
-          // cout << "j " << mesh->YGLOBAL(j) << ": ";
           gj = mesh->YGLOBAL(j);
 
           // X range depends on whether there are X boundaries
@@ -515,12 +514,8 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
               stencil[d].c = dof;
             }
             ierr = MatSetValuesBlockedStencil(J, 1, stencil, cols, stencil, one, INSERT_VALUES);CHKERRQ(ierr);
-            //printf("stencil: %d, %d, %d; -- %d %d %d %d\n",gi,gj,k,stencil[0].i,stencil[0].j,stencil[0].k,stencil[0].c);
-
           }
-          // cout << endl;
         }
-        // cout << endl;
       }
 
       ierr = MatAssemblyBegin(J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
@@ -583,12 +578,8 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
 
 PetscErrorCode PetscSolver::run() {
   PetscErrorCode ierr;
-  //integer steps;
   BoutReal ftime;
   FILE *fp = NULL;
-
-  // Set when the next call to monitor is desired
-  // next_output = simtime + tstep;
 
   PetscFunctionBegin;
 
@@ -735,17 +726,10 @@ PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_
 #define __FUNCT__ "solver_if"
 PetscErrorCode solver_if(TS ts, BoutReal t, Vec globalin,Vec globalindot, Vec globalout, void *f_data) {
   PetscErrorCode ierr;
-  //PetscReal      unorm,fnorm;
 
   PetscFunctionBegin;
   ierr = solver_f(ts,t, globalin,globalout, (void *)f_data);CHKERRQ(ierr);
-  //ierr = VecNorm(globalin,NORM_INFINITY,&unorm);
-  //ierr = VecNorm(globalout,NORM_INFINITY,&fnorm);
-  //printf("      solver_if(), t %g, unorm %g, globalout: %g, ",t,unorm,fnorm);
-
   ierr = VecAYPX(globalout,-1.0,globalindot);CHKERRQ(ierr); // globalout = globalindot + (-1)globalout
-  //ierr = VecNorm(globalout,NORM_INFINITY,&fnorm);
-  //printf(" udot-rhs: %g\n",fnorm);
   PetscFunctionReturn(0);
 }
 
@@ -755,8 +739,6 @@ PetscErrorCode solver_rhsjacobian(TS ts,BoutReal t,Vec globalin,Mat J,Mat Jpre,v
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
-  //printf("       solver_jacobian ... a dummy function\n");
-  //ierr = MatZeroEntries(*Jpre);CHKERRQ(ierr);
   ierr = MatAssemblyBegin(Jpre, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Jpre, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   if (J != Jpre){

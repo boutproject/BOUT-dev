@@ -31,7 +31,7 @@
 #include "field3d.hxx"
 
 /// Smooth in X using simple 1-2-1 filter
-const Field3D smooth_x(const Field3D &f, bool BoutRealspace = true);
+const Field3D smooth_x(const Field3D &f);
 
 /// Smooth in Y using 1-2-1 filter
 const Field3D smooth_y(const Field3D &f);

@@ -223,7 +223,7 @@ int BoutInitialise(int &argc, char **&argv) {
   }
 
   /// Print intro
-  output.write("\nBOUT++ version %.2f\n", BOUT_VERSION);
+  output.write("BOUT++ version %s\n", BOUT_VERSION_STRING);
 #ifdef REVISION
   output.write("Revision: %s\n", REV);
 #endif
@@ -292,8 +292,10 @@ int BoutInitialise(int &argc, char **&argv) {
     reader->parseCommandLine(options, argc, argv);
 
     // Save settings
-    reader->write(options, "%s/%s", data_dir,set_file);
-  }catch(BoutException &e) {
+    if (BoutComm::rank() == 0) {
+      reader->write(options, "%s/%s", data_dir, set_file);
+    }
+  } catch (BoutException &e) {
     output << "Error encountered during initialisation\n";
     output << e.what() << endl;
     return 1;
@@ -363,24 +365,26 @@ int BoutFinalise() {
   // Output the settings, showing which options were used
   // This overwrites the file written during initialisation
   try {
-    string data_dir;
-    Options::getRoot()->get("datadir", data_dir, "data");
+    if (BoutComm::rank() == 0) {
+      string data_dir;
+      Options::getRoot()->get("datadir", data_dir, "data");
 
-    OptionsReader *reader = OptionsReader::getInstance();
-    std::string settingsfile;
-    OPTION(Options::getRoot(),settingsfile,"");
-    reader->write(Options::getRoot(), "%s/%s", data_dir.c_str(),settingsfile.c_str());
-  }catch(BoutException &e) {
+      OptionsReader *reader = OptionsReader::getInstance();
+      std::string settingsfile;
+      OPTION(Options::getRoot(), settingsfile, "");
+      reader->write(Options::getRoot(), "%s/%s", data_dir.c_str(), settingsfile.c_str());
+    }
+  } catch (BoutException &e) {
     output << "Error whilst writing settings" << endl;
     output << e.what() << endl;
   }
-  
+
   // Delete the mesh
   delete mesh;
 
   // Close the output file
   dump.close();
-  
+
   // Make sure all processes have finished writing before exit
   MPI_Barrier(BoutComm::get());
 
@@ -510,7 +514,7 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
 
   BoutReal t_elapsed = MPI_Wtime() - mpi_start_time;
   output.print("%c  Step %d of %d. Elapsed %s", get_spin(), iteration+1, NOUT, (time_to_hms(t_elapsed)).c_str());
-  output.print(" ETA %s", (time_to_hms(wtime * ((BoutReal) (NOUT - iteration - 1)))).c_str());
+  output.print(" ETA %s", (time_to_hms(wtime * static_cast<BoutReal>(NOUT - iteration - 1))).c_str());
 
   if (wall_limit > 0.0) {
     // Check if enough time left
@@ -591,11 +595,13 @@ void bout_signal_handler(int sig) {
 const string time_to_hms(BoutReal t) {
   int h, m;
 
-  h = (int) (t / 3600); t -= 3600.*((BoutReal) h);
-  m = (int) (t / 60);   t -= 60 * ((BoutReal) m);
+  h = static_cast<int>(t / 3600);
+  t -= 3600. * static_cast<BoutReal>(h);
+  m = static_cast<int>(t / 60);
+  t -= 60 * static_cast<BoutReal>(m);
 
   char buffer[256];
-  sprintf(buffer,"%d:%02d:%04.1f", h, m, t);
+  sprintf(buffer, "%d:%02d:%04.1f", h, m, t);
 
   return string(buffer);
 }

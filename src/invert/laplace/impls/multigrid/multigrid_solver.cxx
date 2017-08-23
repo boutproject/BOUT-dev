@@ -28,6 +28,7 @@
  **************************************************************************/
 
 #include "multigrid_laplace.hxx"
+#include "unused.hxx"
 
 Multigrid1DP::Multigrid1DP(int level,int lx, int lz, int gx, int dl, int merge,
                     MPI_Comm comm,int check) : 
@@ -67,7 +68,7 @@ Multigrid1DP::Multigrid1DP(int level,int lx, int lz, int gx, int dl, int merge,
     // Find levels for more coarser spaces
     if(numP > merge) {
       int nn = numP;
-      int mm = sqrt(numP);
+      int mm = static_cast<int>(sqrt(numP));
       kk = 1;      
       for(int n = nn; n>1;n--) {
         if(nn%2 != 0) n = 1;
@@ -162,7 +163,7 @@ void Multigrid1DP::cleanS() {
   }
 }
 
-void Multigrid1DP::setMultigridC(int plag) {
+void Multigrid1DP::setMultigridC(int UNUSED(plag)) {
 
   int level = mglevel - 1;
   for(int n = level;n>0;n--) {
@@ -258,7 +259,7 @@ void Multigrid1DP::setPcheck(int check) {
   }
 }
 
-void Multigrid1DP::lowestSolver(BoutReal *x,BoutReal *b,int plag) {
+void Multigrid1DP::lowestSolver(BoutReal *x, BoutReal *b, int UNUSED(plag)) {
 
   if(kflag == 1) {
     int level = rMG->mglevel-1;
@@ -560,7 +561,7 @@ void Multigrid2DPf1D::cleanS() {
 }
 
 
-void Multigrid2DPf1D::setMultigridC(int plag) {
+void Multigrid2DPf1D::setMultigridC(int UNUSED(plag)) {
 
   int level = mglevel - 1;
   for(int n = level;n>0;n--) {
@@ -615,8 +616,7 @@ void Multigrid2DPf1D::setPcheck(int check) {
   }
 }
 
-
-void Multigrid2DPf1D::lowestSolver(BoutReal *x,BoutReal *b,int plag) {
+void Multigrid2DPf1D::lowestSolver(BoutReal *x, BoutReal *b, int UNUSED(plag)) {
 
   if(kflag == 2) {
     int level = sMG->mglevel-1;
@@ -692,16 +692,15 @@ void Multigrid2DPf1D::convertMatrixFS(int level) {
   delete [] yl;
 }
 
-
-MultigridSerial::MultigridSerial(int level,int gx,int gz, int px, int pz,
-				 MPI_Comm comm,int check) : 
-  MultigridAlg(level,gx,gz,gx,gz,comm,check) {
+MultigridSerial::MultigridSerial(int level, int gx, int gz, int UNUSED(px),
+                                 int UNUSED(pz), MPI_Comm comm, int check)
+    : MultigridAlg(level, gx, gz, gx, gz, comm, check) {
 
   // find level for Multigrid
 
   mglevel = level;
 
-  /* Momory allocate for Multigrid */
+  /* Memory allocate for Multigrid */
   gnx = new int[mglevel];
   gnz = new int[mglevel];
   lnx = new int[mglevel];

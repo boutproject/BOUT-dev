@@ -28,23 +28,16 @@ public:
   virtual ~BoundaryOpPar() {}
 
   // Note: All methods must implement clone, except for modifiers (see below)
-  virtual BoundaryOpPar* clone(BoundaryRegionPar *UNUSED(region), const list<string> &UNUSED(args)) {return NULL; }
-  virtual BoundaryOpPar* clone(BoundaryRegionPar *UNUSED(region), Field3D *UNUSED(f)) {return NULL; }
+  virtual BoundaryOpPar* clone(BoundaryRegionPar *UNUSED(region), const list<string> &UNUSED(args)) {return nullptr; }
+  virtual BoundaryOpPar* clone(BoundaryRegionPar *UNUSED(region), Field3D *UNUSED(f)) {return nullptr; }
 
-  void apply(Field2D &UNUSED(f))
-  {
+  using BoundaryOpBase::apply;
+  void apply(Field2D &UNUSED(f)) override {
     throw BoutException("Can't apply parallel boundary conditions to Field2D!");
   }
-  void apply(Field2D &UNUSED(f), BoutReal UNUSED(t))
-  {
+  void apply(Field2D &UNUSED(f), BoutReal UNUSED(t)) override {
     throw BoutException("Can't apply parallel boundary conditions to Field2D!");
   }
-  void apply(Field3D &UNUSED(f)) {}
-  void apply(Field3D &UNUSED(f), BoutReal UNUSED(t)) {}
-
-  // Apply to time derivative
-  // Unlikely to be used?
-  void apply_ddt(Field3D &UNUSED(f)) {};
 
   BoundaryRegionPar *bndry;
 
@@ -82,8 +75,9 @@ public:
   BoundaryOpPar* clone(BoundaryRegionPar *region, const list<string> &args);
   BoundaryOpPar* clone(BoundaryRegionPar *region, Field3D *f);
 
-  void apply(Field3D &f) {return apply(f, 0);}
-  void apply(Field3D &f, BoutReal t);
+  using BoundaryOpPar::apply;
+  void apply(Field3D &f) override {return apply(f, 0);}
+  void apply(Field3D &f, BoutReal t) override;
 
 };
 
@@ -102,8 +96,9 @@ public:
   BoundaryOpPar* clone(BoundaryRegionPar *region, const list<string> &args);
   BoundaryOpPar* clone(BoundaryRegionPar *region, Field3D *f);
 
-  void apply(Field3D &f) {return apply(f, 0);}
-  void apply(Field3D &f, BoutReal t);
+  using BoundaryOpPar::apply;
+  void apply(Field3D &f) override {return apply(f, 0);}
+  void apply(Field3D &f, BoutReal t) override;
 
 };
 
@@ -122,8 +117,9 @@ public:
   BoundaryOpPar* clone(BoundaryRegionPar *region, const list<string> &args);
   BoundaryOpPar* clone(BoundaryRegionPar *region, Field3D *f);
 
-  void apply(Field3D &f) {return apply(f, 0);}
-  void apply(Field3D &f, BoutReal t);
+  using BoundaryOpPar::apply;
+  void apply(Field3D &f) override {return apply(f, 0);}
+  void apply(Field3D &f, BoutReal t) override;
 
 };
 
@@ -142,8 +138,9 @@ public:
   BoundaryOpPar* clone(BoundaryRegionPar *region, const list<string> &args);
   BoundaryOpPar* clone(BoundaryRegionPar *region, Field3D *f);
 
-  void apply(Field3D &f) {return apply(f, 0);}
-  void apply(Field3D &f, BoutReal t);
+  using BoundaryOpPar::apply;
+  void apply(Field3D &f) override {return apply(f, 0);}
+  void apply(Field3D &f, BoutReal t) override;
 
 };
 
