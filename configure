@@ -5709,8 +5709,8 @@ if ac_fn_cxx_try_compile "$LINENO"; then :
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
     if test $BACH_found != yes ; then
-        for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
-            for path in $prefix $prefix/include ; do
+        for search_prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
+            for path in $search_prefix $search_prefix/include ; do
                 if test -d $path
                 then
                     CPPFLAGS="$CPPFLAGS_save -I$path"
@@ -5787,8 +5787,8 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
     if test $BACL_found != yes ; then
-        for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
-            for path in $prefix $prefix/lib $prefix/lib64 $prefix/x86_64-linux-gnu ; do
+        for search_prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
+            for path in $search_prefix $search_prefix/lib $search_prefix/lib64 $search_prefix/x86_64-linux-gnu ; do
                 if test -d $path
                 then
                     LDFLAGS="-L$path $LDFLAGS_save"
@@ -6040,8 +6040,8 @@ if ac_fn_cxx_try_compile "$LINENO"; then :
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
     if test $BACH_found != yes ; then
-        for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
-            for path in $prefix $prefix/include ; do
+        for search_prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
+            for path in $search_prefix $search_prefix/include ; do
                 if test -d $path
                 then
                     CPPFLAGS="$CPPFLAGS_save -I$path"
@@ -6113,8 +6113,8 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
     if test $BACL_found != yes ; then
-        for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
-            for path in $prefix $prefix/lib $prefix/lib64 $prefix/x86_64-linux-gnu ; do
+        for search_prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
+            for path in $search_prefix $search_prefix/lib $search_prefix/lib64 $search_prefix/x86_64-linux-gnu ; do
                 if test -d $path
                 then
                     LDFLAGS="-L$path $LDFLAGS_save"
@@ -6189,8 +6189,8 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
     if test $BACL_found != yes ; then
-        for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
-            for path in $prefix $prefix/lib $prefix/lib64 $prefix/x86_64-linux-gnu ; do
+        for search_prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
+            for path in $search_prefix $search_prefix/lib $search_prefix/lib64 $search_prefix/x86_64-linux-gnu ; do
                 if test -d $path
                 then
                     LDFLAGS="-L$path $LDFLAGS_save"
@@ -7862,8 +7862,8 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
     if test $BACL_found != yes ; then
-        for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
-            for path in $prefix $prefix/lib $prefix/lib64 $prefix/x86_64-linux-gnu ; do
+        for search_prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
+            for path in $search_prefix $search_prefix/lib $search_prefix/lib64 $search_prefix/x86_64-linux-gnu ; do
                 if test -d $path
                 then
                     LDFLAGS="-L$path $LDFLAGS_save"
@@ -7939,8 +7939,8 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
     if test $BACL_found != yes ; then
-        for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
-            for path in $prefix $prefix/lib $prefix/lib64 $prefix/x86_64-linux-gnu ; do
+        for search_prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
+            for path in $search_prefix $search_prefix/lib $search_prefix/lib64 $search_prefix/x86_64-linux-gnu ; do
                 if test -d $path
                 then
                     LDFLAGS="-L$path $LDFLAGS_save"
