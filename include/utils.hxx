@@ -248,7 +248,7 @@ inline bool is_pow2(int x) {
  */
 template <typename T>
 T SIGN(T a) { // Return +1 or -1 (0 -> +1)
-  return a > 0 ? 1 : -1;
+  return a < 0 ? -1 : +1;
 }
 
 /*!

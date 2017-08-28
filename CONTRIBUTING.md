@@ -43,6 +43,13 @@ Here are some rules for editing the core BOUT++ code:
    add or update documentation where appropriate, we may ask you to do so before
    it is merged.
 
+-  As well as documentation for new features, you must also include a
+   representative test to ensure that it works correctly. Please see
+   the [tests README][test_readme] for more information on tests in
+   BOUT++. Prefer to write unit tests that check the feature at the function
+   level, rather than integrated tests that require setting up a whole physics
+   model.
+
 ## Development workflow using Git ##
 
 The workflow we use is essentially ["gitflow"][gitflow].
@@ -263,3 +270,4 @@ Prefer a longer descriptive name over a shorter abbreviated one:
 [LLVM]: http://llvm.org/docs/CodingStandards.html
 [forking]: https://help.github.com/articles/fork-a-repo/
 [doxygen]: http://www.doxygen.org
+[test_readme]: ./tests/README.md

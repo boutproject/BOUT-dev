@@ -106,7 +106,7 @@ void verifyNumPoints(BoundaryRegion *region, int ptsRequired) {
 BoundaryOp* BoundaryDirichlet::clone(BoundaryRegion *region, const list<string> &args){
   verifyNumPoints(region,1);
 
-  FieldGenerator* newgen = 0;
+  std::shared_ptr<FieldGenerator> newgen;
   if(!args.empty()) {
     // First argument should be an expression
     newgen = FieldFactory::get()->parse(args.front());
@@ -125,7 +125,7 @@ void BoundaryDirichlet::apply(Field2D &f,BoutReal t) {
   bndry->first();
 
   // Decide which generator to use
-  FieldGenerator* fg = gen;
+  std::shared_ptr<FieldGenerator> fg = gen;
   if(!fg)
     fg = f.getBndryGenerator(bndry->location);
 
@@ -314,7 +314,7 @@ void BoundaryDirichlet::apply(Field3D &f,BoutReal t) {
   bndry->first();
 
   // Decide which generator to use
-  FieldGenerator* fg = gen;
+  std::shared_ptr<FieldGenerator>  fg = gen;
   if(!fg)
     fg = f.getBndryGenerator(bndry->location);
 
@@ -578,7 +578,7 @@ void BoundaryDirichlet::apply_ddt(Field3D &f) {
 
 BoundaryOp* BoundaryDirichlet_O3::clone(BoundaryRegion *region, const list<string> &args){
   verifyNumPoints(region,2);
-  FieldGenerator* newgen = 0;
+  std::shared_ptr<FieldGenerator>  newgen = 0;
   if(!args.empty()) {
     // First argument should be an expression
     newgen = FieldFactory::get()->parse(args.front());
@@ -597,7 +597,7 @@ void BoundaryDirichlet_O3::apply(Field2D &f,BoutReal t) {
   bndry->first();
 
   // Decide which generator to use
-  FieldGenerator* fg = gen;
+  std::shared_ptr<FieldGenerator>  fg = gen;
   if(!fg)
     fg = f.getBndryGenerator(bndry->location);
 
@@ -782,7 +782,7 @@ void BoundaryDirichlet_O3::apply(Field3D &f,BoutReal t) {
   bndry->first();
 
   // Decide which generator to use
-  FieldGenerator* fg = gen;
+  std::shared_ptr<FieldGenerator>  fg = gen;
   if(!fg)
     fg = f.getBndryGenerator(bndry->location);
 
@@ -1054,7 +1054,7 @@ void BoundaryDirichlet_O3::apply_ddt(Field3D &f) {
 
 BoundaryOp* BoundaryDirichlet_O4::clone(BoundaryRegion *region, const list<string> &args){
   verifyNumPoints(region,3);
-  FieldGenerator* newgen = 0;
+  std::shared_ptr<FieldGenerator>  newgen = 0;
   if(!args.empty()) {
     // First argument should be an expression
     newgen = FieldFactory::get()->parse(args.front());
@@ -1073,7 +1073,7 @@ void BoundaryDirichlet_O4::apply(Field2D &f,BoutReal t) {
   bndry->first();
 
   // Decide which generator to use
-  FieldGenerator* fg = gen;
+  std::shared_ptr<FieldGenerator>  fg = gen;
   if(!fg)
     fg = f.getBndryGenerator(bndry->location);
 
@@ -1272,7 +1272,7 @@ void BoundaryDirichlet_O4::apply(Field3D &f,BoutReal t) {
   bndry->first();
 
   // Decide which generator to use
-  FieldGenerator* fg = gen;
+  std::shared_ptr<FieldGenerator>  fg = gen;
   if(!fg)
     fg = f.getBndryGenerator(bndry->location);
 
@@ -1810,7 +1810,7 @@ void BoundaryNeumann_2ndOrder::apply_ddt(Field3D &f) {
 
 BoundaryOp* BoundaryNeumann::clone(BoundaryRegion *region, const list<string> &args){
   verifyNumPoints(region,1);
-  FieldGenerator *newgen = 0;
+  std::shared_ptr<FieldGenerator> newgen = 0;
   if(!args.empty()) {
     // First argument should be an expression
     newgen = FieldFactory::get()->parse(args.front());
@@ -1832,7 +1832,7 @@ void BoundaryNeumann::apply(Field2D &f,BoutReal t) {
   bndry->first();
   
   // Decide which generator to use
-  FieldGenerator* fg = gen;
+  std::shared_ptr<FieldGenerator>  fg = gen;
   if(!fg)
     fg = f.getBndryGenerator(bndry->location);
   
@@ -2031,7 +2031,7 @@ void BoundaryNeumann::apply(Field3D &f,BoutReal t) {
   bndry->first();
   
   // Decide which generator to use
-  FieldGenerator* fg = gen;
+  std::shared_ptr<FieldGenerator>  fg = gen;
   if(!fg)
     fg = f.getBndryGenerator(bndry->location);
   
@@ -2242,7 +2242,7 @@ void BoundaryNeumann::apply_ddt(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryNeumann_O4::clone(BoundaryRegion *region, const list<string> &args){
-  FieldGenerator *newgen = 0;
+  std::shared_ptr<FieldGenerator> newgen = 0;
   if(!args.empty()) {
     // First argument should be an expression
     newgen = FieldFactory::get()->parse(args.front());
@@ -2261,7 +2261,7 @@ void BoundaryNeumann_O4::apply(Field2D &f,BoutReal t) {
   bndry->first();
 
   // Decide which generator to use
-  FieldGenerator* fg = gen;
+  std::shared_ptr<FieldGenerator>  fg = gen;
   if(!fg)
     fg = f.getBndryGenerator(bndry->location);
 
@@ -2315,7 +2315,7 @@ void BoundaryNeumann_O4::apply(Field3D &f,BoutReal t) {
   bndry->first();
 
   // Decide which generator to use
-  FieldGenerator* fg = gen;
+  std::shared_ptr<FieldGenerator>  fg = gen;
   if(!fg)
     fg = f.getBndryGenerator(bndry->location);
 
@@ -2564,145 +2564,144 @@ void BoundaryZeroLaplace::apply(Field2D &f) {
 }
 
 void BoundaryZeroLaplace::apply(Field3D &f) {
-  static dcomplex *c0 = (dcomplex*) NULL, *c1;
   int ncz = mesh->LocalNz;
-  
+
   Coordinates *metric = mesh->coordinates();
-  
-  if(c0 == (dcomplex*) NULL) {
-    // allocate memory
-    c0 = new dcomplex[ncz/2 + 1]; //Never freed
-    c1 = new dcomplex[ncz/2 + 1]; //Never freed
-  }
-  
-  if((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
+
+  Array<dcomplex> c0(ncz / 2 + 1);
+  Array<dcomplex> c1(ncz / 2 + 1);
+
+  if ((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
     // Can't apply this boundary condition to non-X boundaries
-    throw BoutException("ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
+    throw BoutException(
+        "ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
   }
-  
+
   int bx = bndry->bx;
   // Loop over the Y dimension
-  for(bndry->first(); !bndry->isDone(); bndry->nextY()) {
+  for (bndry->first(); !bndry->isDone(); bndry->nextY()) {
     // bndry->(x,y) is the first point in the boundary
     // bndry->(x-bx,y) is the last "real" point in the domain
-    
+
     int x = bndry->x;
     int y = bndry->y;
-    
+
     // Take FFT of last 2 points in domain
-    rfft(f(x-bx,y), mesh->LocalNz, c0);
-    rfft(f(x-2*bx,y), mesh->LocalNz, c1);
+    rfft(f(x - bx, y), mesh->LocalNz, c0.begin());
+    rfft(f(x - 2 * bx, y), mesh->LocalNz, c1.begin());
     c1[0] = c0[0] - c1[0]; // Only need gradient
-    
+
     // Solve  metric->g11*d2f/dx2 - metric->g33*kz^2f = 0
     // Assume metric->g11, metric->g33 constant -> exponential growth or decay
-    
+
     // Loop in X towards edge of domain
     do {
       // kz = 0 solution
-      c0[0] += c1[0];  // Straight line
-      
+      c0[0] += c1[0]; // Straight line
+
       // kz != 0 solution
-      BoutReal coef = -1.0*sqrt(metric->g33(x,y) / metric->g11(x,y))*metric->dx(x,y);
-      for(int jz=1;jz<=ncz/2;jz++) {
-	BoutReal kwave=jz*2.0*PI/metric->zlength(); // wavenumber in [rad^-1]
-	c0[jz] *= exp(coef*kwave); // The decaying solution only
+      BoutReal coef =
+          -1.0 * sqrt(metric->g33(x, y) / metric->g11(x, y)) * metric->dx(x, y);
+      for (int jz = 1; jz <= ncz / 2; jz++) {
+        BoutReal kwave = jz * 2.0 * PI / metric->zlength(); // wavenumber in [rad^-1]
+        c0[jz] *= exp(coef * kwave);                        // The decaying solution only
       }
       // Reverse FFT
-      irfft(c0, mesh->LocalNz, f(x,y));
-      
+      irfft(c0.begin(), mesh->LocalNz, f(x, y));
+
       bndry->nextX();
-      x = bndry->x; y = bndry->y;
-    }while(!bndry->isDone());
+      x = bndry->x;
+      y = bndry->y;
+    } while (!bndry->isDone());
   }
 }
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryZeroLaplace2::clone(BoundaryRegion *region, const list<string> &args) {
-  verifyNumPoints(region,3);
-  if(!args.empty()) {
+BoundaryOp *BoundaryZeroLaplace2::clone(BoundaryRegion *region,
+                                        const list<string> &args) {
+  verifyNumPoints(region, 3);
+  if (!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryZeroLaplace2\n";
   }
   return new BoundaryZeroLaplace2(region);
 }
 
 void BoundaryZeroLaplace2::apply(Field2D &f) {
-  if((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
+  if ((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
     // Can't apply this boundary condition to non-X boundaries
-    throw BoutException("ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
+    throw BoutException(
+        "ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
   }
-  
+
   Coordinates *metric = mesh->coordinates();
-  
+
   // Constant X derivative
   int bx = bndry->bx;
   // Loop over the Y dimension
-  for(bndry->first(); !bndry->isDone(); bndry->nextY()) {
+  for (bndry->first(); !bndry->isDone(); bndry->nextY()) {
     int x = bndry->x;
     int y = bndry->y;
-    BoutReal g = (f(x-bx,y) - f(x-2*bx,y)) / metric->dx(x-bx,y);
+    BoutReal g = (f(x - bx, y) - f(x - 2 * bx, y)) / metric->dx(x - bx, y);
     // Loop in X towards edge of domain
     do {
-      f(x,y) = f(x-bx,y) + g*metric->dx(x,y);
+      f(x, y) = f(x - bx, y) + g * metric->dx(x, y);
       bndry->nextX();
-      x = bndry->x; y = bndry->y;
-    }while(!bndry->isDone());
+      x = bndry->x;
+      y = bndry->y;
+    } while (!bndry->isDone());
   }
 }
 
 void BoundaryZeroLaplace2::apply(Field3D &f) {
   int ncz = mesh->LocalNz;
 
+  ASSERT0(ncz % 2 == 0); // Allocation assumes even number
+  
   // allocate memory
-  Array<dcomplex> c0(ncz/2 + 1), c1(ncz/2 + 1), c2(ncz/2 + 1);
-  
-  if((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
+  Array<dcomplex> c0(ncz / 2 + 1), c1(ncz / 2 + 1), c2(ncz / 2 + 1);
+
+  if ((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
     // Can't apply this boundary condition to non-X boundaries
-    throw BoutException("ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
+    throw BoutException(
+        "ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
   }
-  
+
   int bx = bndry->bx;
   // Loop over the Y dimension
-  for(bndry->first(); !bndry->isDone(); bndry->nextY()) {
+  for (bndry->first(); !bndry->isDone(); bndry->nextY()) {
     // bndry->(x,y) is the first point in the boundary
     // bndry->(x-bx,y) is the last "real" point in the domain
-    
+
     int x = bndry->x;
     int y = bndry->y;
-    
+
     // Take FFT of last 2 points in domain
-    rfft(f(x-bx,y), ncz, c1.begin());
-    rfft(f(x-2*bx,y), ncz, c2.begin());
-    
+    rfft(f(x - bx, y), ncz, c1.begin());
+    rfft(f(x - 2 * bx, y), ncz, c2.begin());
+
     // Loop in X towards edge of domain
     do {
-      for(int jz=0;jz<=ncz/2;jz++) {
-	dcomplex la,lb,lc;
-	laplace_tridag_coefs(x-bx, y, jz, la, lb, lc);
-	if(bx > 0) {
-	  // Outer boundary
-	  swap(la, lc);
-	}
-	c0[jz] = -(lb*c1[jz] + lc*c2[jz]) / la;
-	/*
-	  if((y == 2) && (x == 1)) {
-	  output.write("Bndry %d: (%d,%d)\n", bx, x, jz);
-	  output << "\t[" << la << ", " << lb << ", " << lc << "]\n";
-	  output << "\t[" << c0[jz] << ", " << c1[jz] << ", " << c2[jz] << "]\n";
-	  }
-	*/
+      for (int jz = 0; jz <= ncz / 2; jz++) {
+        dcomplex la, lb, lc;
+        laplace_tridag_coefs(x - bx, y, jz, la, lb, lc);
+        if (bx > 0) {
+          // Outer boundary
+          swap(la, lc);
+        }
+        c0[jz] = -(lb * c1[jz] + lc * c2[jz]) / la;
       }
       // Reverse FFT
-      irfft(c0.begin(), ncz, f(x,y));
+      irfft(c0.begin(), ncz, f(x, y));
       // cycle c0 -> c1 -> c2 -> c0
       swap(c0, c2);
       swap(c2, c1);
-      //dcomplex *tmp = c2; c2 = c1; c1 = c0; c0 = tmp;
-      
+      // dcomplex *tmp = c2; c2 = c1; c1 = c0; c0 = tmp;
+
       bndry->nextX();
-      x = bndry->x; y = bndry->y;
-    }while(!bndry->isDone());
+      x = bndry->x;
+      y = bndry->y;
+    } while (!bndry->isDone());
   }
 }
 

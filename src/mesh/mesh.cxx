@@ -40,9 +40,11 @@ Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), coords(0), options(opt)
 }
 
 Mesh::~Mesh() {
-  delete source;
+  if (source) {
+    delete source;
+  }
 
-  if(coords) {
+  if (coords) {
     delete coords;
   }
 }

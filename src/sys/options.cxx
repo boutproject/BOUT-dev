@@ -84,7 +84,7 @@ void Options::get(const string &key, int &val, int def) {
   // Use FieldFactory to evaluate expression
   // Parse the string, giving this Option pointer for the context
   // then generate a value at t,x,y,z = 0,0,0,0
-  FieldGenerator* gen = FieldFactory::get()->parse( it->second.value, this );
+  std::shared_ptr<FieldGenerator>  gen = FieldFactory::get()->parse( it->second.value, this );
   if (!gen) {
     throw BoutException("Couldn't get integer from %s:%s = '%s'", 
                         sectionName.c_str(), key.c_str(), it->second.value.c_str());
@@ -133,7 +133,7 @@ void Options::get(const string &key, BoutReal &val, BoutReal def) {
   // Use FieldFactory to evaluate expression
   // Parse the string, giving this Option pointer for the context
   // then generate a value at t,x,y,z = 0,0,0,0
-  FieldGenerator* gen = FieldFactory::get()->parse( it->second.value, this );
+  std::shared_ptr<FieldGenerator>  gen = FieldFactory::get()->parse( it->second.value, this );
   if (!gen) {
     throw BoutException("Couldn't get BoutReal from %s:%s = '%s'", 
                         sectionName.c_str(), key.c_str(), it->second.value.c_str());
@@ -276,4 +276,8 @@ void Options::printUnused() {
   for (const auto& it : sections) {
     it.second->printUnused();
   }
+}
+
+void Options::cleanCache() {
+  FieldFactory::get()->cleanCache();
 }

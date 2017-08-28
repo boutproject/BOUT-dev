@@ -78,22 +78,20 @@ void Output::write(const char* string, ...) {
   multioutbuf_init::buf()->sputn(buffer, strlen(buffer));
 }
 
-void Output::print(const char* string, ...) {
-  va_list ap;  // List of arguments
+void Output::print(const char *string, ...) {
 
-  if(!enabled)
+  if (!enabled)
     return; // Only output if to screen
 
-  if(string == (const char*) NULL)
+  if (string == (const char *)NULL)
     return;
-  
-  va_start(ap, string);
-    vprintf(string, ap);
-  va_end(ap);
-  
-  fflush(stdout);
-}
 
+  bout_vsnprintf(buffer, buffer_len, string);
+
+  remove(file);
+  multioutbuf_init::buf()->sputn(buffer, strlen(buffer));
+  add(file);
+}
 
 Output* Output::instance = NULL;
 
