@@ -295,7 +295,6 @@ configuration:
 .. code-block:: bash
 
     Configuration summary
-      FACETS support: no
       PETSc support: no
       SLEPc support: no
       IDA support: yes
@@ -304,7 +303,6 @@ configuration:
       NetCDF support: yes
       Parallel-NetCDF support: no
       HDF5 support: yes (parallel: no)
-      Hypre support: no
       MUMPS support: no
 
 If not, see :ref:`sec-advancedinstall` for some things you can try to

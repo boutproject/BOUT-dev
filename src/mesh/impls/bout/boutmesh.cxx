@@ -86,9 +86,6 @@ BoutMesh::~BoutMesh() {
     MPI_Comm_free(&comm_x);
   if(comm_inner != MPI_COMM_NULL)
     MPI_Comm_free(&comm_inner);
-  //if(comm_middle != MPI_COMM_NULL)
-  //  MPI_Comm_free(&comm_middle); // Already freed
-
   if(comm_outer != MPI_COMM_NULL)
     MPI_Comm_free(&comm_outer);
 
@@ -230,16 +227,13 @@ int BoutMesh::load() {
 
     NXPE = -1; // Best option
 
-    BoutReal ideal = sqrt(MX * NPES / ((double) ny)); // Results in square domains
+    BoutReal ideal = sqrt(MX * NPES / static_cast<BoutReal>(ny)); // Results in square domains
 
     output.write("Finding value for NXPE\n");
 
     for(int i=1; i<= NPES; i++) { // Loop over all possibilities
-      //output.write("Testing %d: %d, %d, %d, %d, %d\n",
-      //             i, NPES % i, MX % i, MX / i, ny % (NPES/i), ny / (NPES/i));
       if( (NPES % i == 0) &&      // Processors divide equally
           (MX % i == 0) &&        // Mesh in X divides equally
-    //      (MX / i >= MXG) &&      // Resulting mesh is large enough
           (ny % (NPES/i) == 0) ) { // Mesh in Y divides equally
 
         output.write("\tCandidate value: %d\n", i);
@@ -354,7 +348,7 @@ int BoutMesh::load() {
   if(options->isSet("zperiod")) {
     OPTION(options, zperiod, 1);
     ZMIN = 0.0;
-    ZMAX = 1.0 / (double) zperiod;
+    ZMAX = 1.0 / static_cast<BoutReal>(zperiod);
   }else {
     OPTION(options, ZMIN, 0.0);
     OPTION(options, ZMAX, 1.0);
@@ -544,13 +538,11 @@ int BoutMesh::load() {
           output << "-> Inner and middle\n";
 #endif
           comm_middle = comm_inner;
-          //MPI_Comm_dup(comm_inner, &comm_middle);
         }else {
 #ifdef COMMDEBUG
           output << "-> Outer and middle\n";
 #endif
           comm_middle = comm_outer;
-          //MPI_Comm_dup(comm_outer, &comm_middle); // Error! Needs to be collective on comm_outer
         }
       }
 #ifdef COMMDEBUG
@@ -598,13 +590,11 @@ int BoutMesh::load() {
           output << "-> Inner and middle\n";
 #endif
           comm_middle = comm_inner;
-          //MPI_Comm_dup(comm_inner, &comm_middle);
         }else {
 #ifdef COMMDEBUG
           output << "-> Outer and middle\n";
 #endif
           comm_middle = comm_outer;
-          //MPI_Comm_dup(comm_outer, &comm_middle);
         }
       }
 #ifdef COMMDEBUG
@@ -1018,7 +1008,7 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   /// Mark communication handle as in progress
   ch->in_progress = true;
 
-  return (void*) ch;
+  return static_cast<void*>(ch);
 }
 
 int BoutMesh::wait(comm_handle handle) {
@@ -1027,7 +1017,7 @@ int BoutMesh::wait(comm_handle handle) {
   if(handle == NULL)
     return 1;
 
-  CommHandle *ch = (CommHandle*) handle;
+  CommHandle *ch = static_cast<CommHandle*>(handle);
 
   if(!ch->in_progress)
     return 2;
@@ -1085,20 +1075,20 @@ int BoutMesh::wait(comm_handle handle) {
 
   if(async_send) {
     /// Asyncronous sending: Need to check if sends have completed (frees MPI memory)
-    MPI_Status status;
+    MPI_Status async_status;
 
     if(UDATA_INDEST != -1)
-      MPI_Wait(ch->sendreq, &status);
+      MPI_Wait(ch->sendreq, &async_status);
     if(UDATA_OUTDEST != -1)
-      MPI_Wait(ch->sendreq+1, &status);
+      MPI_Wait(ch->sendreq+1, &async_status);
     if(DDATA_INDEST != -1)
-      MPI_Wait(ch->sendreq+2, &status);
+      MPI_Wait(ch->sendreq+2, &async_status);
     if(DDATA_OUTDEST != -1)
-      MPI_Wait(ch->sendreq+3, &status);
+      MPI_Wait(ch->sendreq+3, &async_status);
     if(IDATA_DEST != -1)
-      MPI_Wait(ch->sendreq+4, &status);
+      MPI_Wait(ch->sendreq+4, &async_status);
     if(ODATA_DEST != -1)
-      MPI_Wait(ch->sendreq+5, &status);
+      MPI_Wait(ch->sendreq+5, &async_status);
   }
 
   // TWIST-SHIFT CONDITION
@@ -1179,7 +1169,7 @@ comm_handle BoutMesh::receiveFromProc(int xproc, int yproc, BoutReal *buffer, in
 
   ch->in_progress = true;
 
-  return (comm_handle) ch;
+  return static_cast<comm_handle>(ch);
 }
 
 int BoutMesh::getNXPE() {
@@ -1259,7 +1249,7 @@ comm_handle BoutMesh::irecvXOut(BoutReal *buffer, int size, int tag) {
 
   ch->in_progress = true;
 
-  return (comm_handle) ch;
+  return static_cast<comm_handle>(ch);
 }
 
 comm_handle BoutMesh::irecvXIn(BoutReal *buffer, int size, int tag) {
@@ -1281,7 +1271,7 @@ comm_handle BoutMesh::irecvXIn(BoutReal *buffer, int size, int tag) {
 
   ch->in_progress = true;
 
-  return (comm_handle) ch;
+  return static_cast<comm_handle>(ch);
 }
 
 /****************************************************************
@@ -1426,7 +1416,7 @@ comm_handle BoutMesh::irecvYOutIndest(BoutReal *buffer, int size, int tag) {
 
   ch->in_progress = true;
 
-  return (comm_handle) ch;
+  return static_cast<comm_handle>(ch);
 }
 
 comm_handle BoutMesh::irecvYOutOutdest(BoutReal *buffer, int size, int tag) {
@@ -1450,7 +1440,7 @@ comm_handle BoutMesh::irecvYOutOutdest(BoutReal *buffer, int size, int tag) {
 
   ch->in_progress = true;
 
-  return (comm_handle) ch;
+  return static_cast<comm_handle>(ch);
 }
 
 comm_handle BoutMesh::irecvYInIndest(BoutReal *buffer, int size, int tag) {
@@ -1474,7 +1464,7 @@ comm_handle BoutMesh::irecvYInIndest(BoutReal *buffer, int size, int tag) {
 
   ch->in_progress = true;
 
-  return (comm_handle) ch;
+  return static_cast<comm_handle>(ch);
 }
 
 comm_handle BoutMesh::irecvYInOutdest(BoutReal *buffer, int size, int tag) {
@@ -1498,7 +1488,7 @@ comm_handle BoutMesh::irecvYInOutdest(BoutReal *buffer, int size, int tag) {
 
   ch->in_progress = true;
 
-  return (comm_handle) ch;
+  return static_cast<comm_handle>(ch);
 }
 
 /****************************************************************
@@ -1532,7 +1522,7 @@ int BoutMesh::XGLOBAL(int xloc) const {
 /// Returns the global X index given a local index
 int BoutMesh::XGLOBAL(BoutReal xloc, BoutReal &xglo) const {
   xglo = xloc + PE_XIND * MXSUB;
-  return xglo;
+  return static_cast<int>(xglo);
 }
 
 /// Returns a local X index given a global index
@@ -1548,7 +1538,7 @@ int BoutMesh::YGLOBAL(int yloc) const {
 /// Returns the global Y index given a local index
 int BoutMesh::YGLOBAL(BoutReal yloc, BoutReal &yglo) const {
   yglo = yloc + PE_YIND*MYSUB - MYG;
-  return yglo;
+  return static_cast<int>(yglo);
 }
 
 /// Global Y index given local index and processor
@@ -2317,11 +2307,10 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
 BoutReal BoutMesh::GlobalX(int jx) const {
   if(symmetricGlobalX) {
     // Symmetric X index, mainly for reconnection studies
-    //return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) nx-1);
     //jmad. With this definition the boundary sits dx/2 away form the first/last inner points
-    return ((BoutReal) (0.5 + XGLOBAL(jx) - ((BoutReal)(nx-MX))*0.5)) / ((BoutReal) MX);
+    return static_cast<BoutReal>((0.5 + XGLOBAL(jx) - static_cast<BoutReal>(nx-MX)*0.5)) / static_cast<BoutReal>(MX);
   }
-  return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) MX);
+  return static_cast<BoutReal>(XGLOBAL(jx)) / static_cast<BoutReal>(MX);
 }
 
 BoutReal BoutMesh::GlobalX(BoutReal jx) const {
@@ -2332,11 +2321,10 @@ BoutReal BoutMesh::GlobalX(BoutReal jx) const {
 
   if(symmetricGlobalX) {
     // Symmetric X index, mainly for reconnection studies
-    //return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) nx-1);
     //jmad. With this definition the boundary sits dx/2 away form the first/last inner points
-    return ((BoutReal) (0.5 + xglo - ((BoutReal)(nx-MX))*0.5)) / ((BoutReal) MX);
+    return static_cast<BoutReal>((0.5 + xglo - static_cast<BoutReal>(nx-MX)*0.5)) / static_cast<BoutReal>(MX);
   }
-  return xglo / ((BoutReal) MX);
+  return xglo / static_cast<BoutReal>(MX);
 }
 
 BoutReal BoutMesh::GlobalY(int jy) const {
@@ -2376,9 +2364,7 @@ BoutReal BoutMesh::GlobalY(int jy) const {
     }
   }
 
-  //output.write("GlobalY: %d, %d, %d, %d -> %e\n", jy, YGLOBAL(jy), ly, nycore, ((BoutReal) ly) / ((BoutReal) nycore));
-
-  return ((BoutReal) ly) / ((BoutReal) nycore);
+  return static_cast<BoutReal>(ly) / static_cast<BoutReal>(nycore);
 }
 
 BoutReal BoutMesh::GlobalY(BoutReal jy) const {
@@ -2423,7 +2409,7 @@ BoutReal BoutMesh::GlobalY(BoutReal jy) const {
     }
   }
 
-  return yglo / ((BoutReal) nycore);
+  return yglo / static_cast<BoutReal>(nycore);
 }
 
 void BoutMesh::outputVars(Datafile &file) {
@@ -2629,7 +2615,6 @@ const Field3D BoutMesh::Switch_XZ(const Field3D &var) {
       for (j=0; j<ncy ; j++){
         for (k=0; k<ncz ; k++){
           buffer[k][j][i] = var(MXG+i,MYG+j,k) ;
-          // sendbuffer2[i + ncx*j + ncx*ncy*k] = var[MXG+i][MYG+j][k] ;
         }
       }
     }

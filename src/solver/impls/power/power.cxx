@@ -91,9 +91,9 @@ BoutReal PowerSolver::norm(BoutReal *state) {
   
   for(int i=0;i<nlocal;i++)
     total += state[i]*state[i];
-  
-  total /= (BoutReal) nglobal;
-  
+
+  total /= static_cast<BoutReal>(nglobal);
+
   MPI_Allreduce(&total, &result, 1, MPI_DOUBLE, MPI_SUM, BoutComm::get());
   
   return sqrt(result);

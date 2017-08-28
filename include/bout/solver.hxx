@@ -403,8 +403,6 @@ private:
   void loop_vars(BoutReal *udata, SOLVER_VAR_OP op);
 
   bool varAdded(const string &name); // Check if a variable has already been added
-  
-  bool enablerestart; ///< Is restarting enabled?
 };
 
 #endif // __SOLVER_H__

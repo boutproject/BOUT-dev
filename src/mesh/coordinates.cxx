@@ -56,7 +56,7 @@ Coordinates::Coordinates(Mesh *mesh) {
     if (options->isSet("zperiod")) {
       OPTION(options, zperiod, 1);
       ZMIN = 0.0;
-      ZMAX = 1.0 / (double)zperiod;
+      ZMAX = 1.0 / static_cast<BoutReal>(zperiod);
     } else {
       OPTION(options, ZMIN, 0.0);
       OPTION(options, ZMAX, 1.0);
@@ -649,7 +649,6 @@ const Field2D Coordinates::Grad2_par2(const Field2D &f) {
 
   Field2D sg = sqrt(g_22);
   Field2D result = DDY(1./sg)*DDY(f)/sg + D2DY2(f)/g_22;
-  //Field2D result = D2DY2(f)/mesh->g_22;
 
   return result;
 }
@@ -691,8 +690,6 @@ const Field2D Coordinates::Delp2(const Field2D &f) {
 
 const Field3D Coordinates::Delp2(const Field3D &f) {
   TRACE("Coordinates::Delp2( Field3D )");
-
-  //return mesh->G1*DDX(f) + mesh->G3*DDZ(f) + mesh->g11*D2DX2(f) + mesh->g33*D2DZ2(f); //+ 2.0*mesh->g13*D2DXDZ(f)
 
   ASSERT2(mesh->xstart > 0); // Need at least one guard cell
   
@@ -840,7 +837,7 @@ int Coordinates::gaussj(BoutReal **a, int n) {
   TRACE("Coordinates::gaussj");
   
   int i, icol, irow, j, k, l, ll;
-  float big, dum, pivinv;
+  BoutReal big, dum, pivinv;
 
   // Make sure enough temporary memory is allocated
   indxc.resize(n);

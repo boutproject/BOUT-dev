@@ -177,7 +177,7 @@ void Options::get(const string &key, bool &val, bool def) {
   
   it->second.used = true;
   
-  char c = toupper((it->second.value)[0]);
+  char c = static_cast<char>(toupper((it->second.value)[0]));
   if ((c == 'Y') || (c == 'T') || (c == '1')) {
     val = true;
     output << "\tOption " << sectionName << ":" << it->first << " = true";

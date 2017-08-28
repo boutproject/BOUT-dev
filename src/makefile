@@ -1,7 +1,7 @@
 
 BOUT_TOP	= ..
 
-DIRS			= field fileio invert mesh physics precon solver sys facets
+DIRS			= field fileio invert mesh physics precon solver sys
 
 SOURCEC		= bout++.cxx
 SOURCEH		= bout.hxx

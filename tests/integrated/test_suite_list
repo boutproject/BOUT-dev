@@ -14,6 +14,7 @@ test-vec
 test-griddata
 !test-fieldgroup
 !test-initial
+test-stopCheck
 test-subdir
 # More complex tests
 test-drift-instability
