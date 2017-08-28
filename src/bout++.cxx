@@ -86,7 +86,7 @@ void bout_signal_handler(int sig);  // Handles signals
 
 BoutReal simtime;
 int iteration;
-int user_requested_exit=0;
+bool user_requested_exit=false;
 
 const string time_to_hms(BoutReal t);   // Converts to h:mm:ss.s format
 char get_spin();                    // Produces a spinning bar
@@ -223,14 +223,14 @@ int BoutInitialise(int &argc, char **&argv) {
     return 1;
   }
   {
-    const size_t len=512;
-    char buf[len];
-    snprintf(buf,len,"%s/.BOUT.pid.%d",data_dir, MYPE);
-    FILE * fp = fopen(buf, "w");
-    if (fp == nullptr)
-      return 1;
-    fprintf(fp,"%d\n",getpid());
-    fclose(fp);
+    std::string filename;
+    std::stringstream(filename) << data_dir << "/.BOUT.pid." << MYPE;
+    std::ofstream pid_file;
+    pid_file.open(filename, std::ios::out);
+    if (pid_file.is_open()) {
+      pid_file << getpid() << "\n";
+      pid_file.close();
+    }
   }
   /// Print intro
   output.write("\nBOUT++ version %.2f\n", BOUT_VERSION);
@@ -559,7 +559,7 @@ void bout_signal_handler(int sig) {
     throw BoutException("\n****** SigKill caught ******\n\n");
     break;
   case SIGUSR1:
-    user_requested_exit=1;
+    user_requested_exit=true;
     break;
   default:
     throw BoutException("\n****** Signal %d  caught ******\n\n",sig);
