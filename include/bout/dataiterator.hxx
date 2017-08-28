@@ -12,7 +12,7 @@
 
 #ifdef _OPENMP
 #include <omp.h>
-int DI_spread_work(int num_work, int thread, int max_thread);
+inline int DI_spread_work(int num_work, int thread, int max_thread);
 #endif
 
 /*!
@@ -62,7 +62,7 @@ private:
    * divides iteration index ranges between threads
    */
 #ifdef _OPENMP
-  void omp_init(bool end);
+  inline void omp_init(bool end);
 #endif
 public:
   /*!
@@ -104,8 +104,8 @@ public:
     xend(xe),     yend(ye),     zend(ze),
     xmax(xend),   ymax(yend),   zmax(zend),
 #else
-    xmin(xstart), ymin(ys),   zmin(zs),
-    xmax(xend),   ymax(ye),   zmax(ze),
+    xmin(xs), ymin(ys),   zmin(zs),
+    xmax(xe), ymax(ye),   zmax(ze),
 #endif
     isEnd(true)
   {
@@ -135,7 +135,6 @@ public:
 
   /// Comparison operator. Most common use is in for loops
   inline bool operator!=(const DataIterator& rhs) const {
-    //return  !(x == rhs.x && y == rhs.y && z == rhs.z);
     if (rhs.isEnd){
       return !this->done();
     } else {
@@ -343,19 +342,19 @@ inline void DataIterator::omp_init(bool end){
     int nz=zmax-zmin+1;
     int work  = (xmax-xmin+1)*ny*nz;
     int current_thread = omp_get_thread_num();
-    int begin = DI_spread_work(work,current_thread,threads);
-    int end   = DI_spread_work(work,current_thread+1,threads);
-    --end;
-    zend   = (end   % nz) + zmin;
-    zstart = (begin % nz) + zmin;
-    end   /= nz;
-    begin /= nz;
-    yend   = (end   % ny) + ymin;
-    ystart = (begin % ny) + ymin;
-    end   /= ny;
-    begin /= ny;
-    xend   = end;
-    xstart = begin;
+    int begin_index = DI_spread_work(work,current_thread,threads);
+    int end_index   = DI_spread_work(work,current_thread+1,threads);
+    --end_index;
+    zend   = (end_index   % nz) + zmin;
+    zstart = (begin_index % nz) + zmin;
+    end_index   /= nz;
+    begin_index /= nz;
+    yend   = (end_index   % ny) + ymin;
+    ystart = (begin_index % ny) + ymin;
+    end_index   /= ny;
+    begin_index /= ny;
+    xend   = end_index;
+    xstart = begin_index;
   } else {
     zstart = zmin;
     zend   = zmax;

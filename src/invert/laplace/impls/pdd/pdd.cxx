@@ -169,8 +169,8 @@ void LaplacePDD::start(const FieldPerp &b, PDD_data &data) {
   /// Create the matrices to be inverted (one for each z point)
 
   /// Set matrix elements
-  tridagMatrix(data.avec, data.bvec, data.cvec,
-               data.bk, data.jy, global_flags, inner_boundary_flags, outer_boundary_flags, &A, &C, &D);
+  tridagMatrix(data.avec, data.bvec, data.cvec, data.bk, data.jy, global_flags,
+               inner_boundary_flags, outer_boundary_flags, &Acoef, &Ccoef, &Dcoef);
 
   for(kz = 0; kz <= maxmode; kz++) {
     // Start PDD algorithm

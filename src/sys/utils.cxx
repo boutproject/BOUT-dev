@@ -223,7 +223,7 @@ const string lowercasequote(const string &str) {
     }else if(strlow[i] == '"') {
       dquote ^= true;
     }else if( (!quote) && (!dquote) ){
-      strlow[i] = tolower(strlow[i]);
+      strlow[i] = static_cast<char>(tolower(strlow[i]));
     }
   }
   return strlow;

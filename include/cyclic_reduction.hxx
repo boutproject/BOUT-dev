@@ -284,7 +284,6 @@ public:
 	  for(int i=0;i<myns; i++) {
 	    x1[sys0+i] = ifx[i][2*p];
 	    xn[sys0+i] = ifx[i][2*p+1];
-	    //output << "x1,xn[" << sys0+i << "] = " << x1[sys0+i] << ", " << xn[sys0+i] << endl;
 	  }
           req[p] = MPI_REQUEST_NULL;
 	}else if(nsp > 0) {

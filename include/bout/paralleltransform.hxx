@@ -25,6 +25,8 @@ class Mesh;
  */
 class ParallelTransform {
 public:
+  virtual ~ParallelTransform() {}
+
   /// Given a 3D field, calculate and set the Y up down fields
   virtual void calcYUpDown(Field3D &f) = 0;
   
