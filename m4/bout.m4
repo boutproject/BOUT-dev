@@ -36,6 +36,7 @@ dnl forth  arg is to be executed if not found
 dnl fifth  arg is an additional path to check
 AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
     AC_MSG_CHECKING([for lib$1])
+    AC_LANG_PUSH([C++])
     LDFLAGS_save=$LDFLAGS
     LIBS="$EXTRA_LIBS -l$1"
     BACL_found=no
@@ -68,6 +69,7 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
         AC_MSG_RESULT(no)
     fi
     AS_IF([test .$BACL_found = .yes], [$3],[$4])
+    AC_LANG_POP([C++])
 ])
 
 
