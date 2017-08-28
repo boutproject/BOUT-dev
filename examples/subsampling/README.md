@@ -11,7 +11,7 @@ added with `SAVE_REPEAT()` will be written out every second timeunit.
 In the code another monitor is added with an output timestep of 0.01.
 This Monitor uses a separat datafile, (via class `SimpleDatafile`, see monitor.cxx
 line 12 ff) to write the data. The options for the simple datafile are
-read fro the `[probes]` section in the input.
+read from the `[probes]` section in the input.
 As netcdf supports several unlimited dimension, it is also possible to
 extend the netcdf interface, to write it to the same output file, as
 all other data is going.

@@ -25,4 +25,4 @@ function=0
 [Probes]
 file = "PROBES.dmp"
 floats = true
-opencloase = true # false if it should be fast
+openclose = true # false if it should be fast
