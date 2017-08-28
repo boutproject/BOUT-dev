@@ -693,6 +693,9 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
       }
     }
   } catch (BoutException &e) {
+    for (auto it: monitors){
+      it->cleanup();
+    }
     output.write("Monitor signalled to quit\n");
     throw e;
   }
@@ -703,7 +706,13 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
     rhs_ncalls_i = 0;
     rhs_ncalls_e = 0;
   }
-  
+
+  if ( iter == NOUT ){
+    for (auto it: monitors){
+      it->cleanup();
+    }
+  }
+
   return 0;
 }
 

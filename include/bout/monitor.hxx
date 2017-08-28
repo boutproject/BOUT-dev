@@ -23,6 +23,7 @@ public:
   Monitor(BoutReal timestep_=-1):timestep(timestep_){};
   virtual ~Monitor(){};
   virtual int call(Solver * solver, BoutReal time, int iter, int nout)=0;
+  virtual void cleanup(){};
   bool operator==(const Monitor& rhs) const;
 private:
   BoutReal timestep;
