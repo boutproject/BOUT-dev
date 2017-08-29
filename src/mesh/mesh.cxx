@@ -29,12 +29,6 @@ Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), coords(0), options(opt)
   /// Get mesh options
   OPTION(options, StaggerGrids,   false); // Stagger grids
 
-  // Will be set to true if any variable has a free boundary condition applied to the corresponding boundary
-  freeboundary_xin = false;
-  freeboundary_xout = false;
-  freeboundary_ydown = false;
-  freeboundary_yup = false;
-  
   // Initialise derivatives
   derivs_init(options);  // in index_derivs.cxx for now
 }
@@ -247,10 +241,10 @@ bool Mesh::hasBndryLowerY() {
   static bool calc = false, answer;
   if(calc) return answer; // Already calculated
 
-  int mybndry = (int) !(iterateBndryLowerY().isDone());
+  int mybndry = static_cast<int>(!(iterateBndryLowerY().isDone()));
   int allbndry;
   MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(yend));
-  answer = (bool) allbndry;
+  answer = static_cast<bool>(allbndry);
   calc = true;
   return answer;
 }
@@ -259,10 +253,10 @@ bool Mesh::hasBndryUpperY() {
   static bool calc = false, answer;
   if(calc) return answer; // Already calculated
 
-  int mybndry = (int) !(iterateBndryUpperY().isDone());
+  int mybndry = static_cast<int>(!(iterateBndryUpperY().isDone()));
   int allbndry;
   MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(ystart));
-  answer = (bool) allbndry;
+  answer = static_cast<bool>(allbndry);
   calc = true;
   return answer;
 }

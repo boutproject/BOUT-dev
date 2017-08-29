@@ -76,7 +76,7 @@ public:
 class ExpressionParser {
 public:
   ExpressionParser();
-  virtual ~ExpressionParser();
+  virtual ~ExpressionParser() {};
 
   /// Add a generator to the parser, which can then be recognised and used
   /// in expressions.
@@ -182,9 +182,9 @@ private:
 class ParseException : public std::exception {
 public:
   ParseException(const char *, ...);
-  virtual ~ParseException() throw() {}
+  virtual ~ParseException() {}
   
-  const char* what() const throw();
+  const char* what() const noexcept;
   
 protected:
   std::string message;

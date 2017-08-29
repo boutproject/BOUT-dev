@@ -4,6 +4,7 @@
 #include <boundary_factory.hxx>
 #include <output.hxx>
 #include <field_factory.hxx>
+#include "unused.hxx"
 
 FieldData::FieldData() : boundaryIsCopy(false), boundaryIsSet(true) {
   
@@ -44,7 +45,7 @@ void FieldData::setBoundary(const string &name) {
   boundaryIsCopy = false;
 }
 
-void FieldData::setBoundary(const string &region, BoundaryOp *op) {
+void FieldData::setBoundary(const string &UNUSED(region), BoundaryOp *op) {
   /// Get the mesh boundary regions
   vector<BoundaryRegion*> reg = mesh->getBoundaries();
  

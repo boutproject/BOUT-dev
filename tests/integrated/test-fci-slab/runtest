@@ -55,10 +55,10 @@ for n in nlist:
 
     # Define the magnetic field using new poloidal gridding method
     field = zb.field.Slab(Bz=0.05, Bzprime=0.1)
-    # Create rectangular poloidal grids such that dx=dz=1.0
-    poloidal_grid = zb.poloidal_grid.RectangularPoloidalGrid(nx,n,nx,n,Rcentre=nx/2.,Zcentre=n/2.)
-    # Set the ylength and y locations such that dy=1.0
-    ylength = n
+    # Create rectangular poloidal grids
+    poloidal_grid = zb.poloidal_grid.RectangularPoloidalGrid(nx,n,1.,1.)
+    # Set the ylength and y locations
+    ylength = 10.
     ycoords = linspace(0.0, ylength, n, endpoint=False)
     # Create the grid
     grid = zb.grid.Grid(poloidal_grid, ycoords, ylength, yperiodic=True)

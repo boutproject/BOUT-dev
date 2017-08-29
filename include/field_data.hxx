@@ -76,12 +76,6 @@ public:
   virtual int byteSize() const = 0; ///< Number of bytes for a single point
   virtual int BoutRealSize() const { return 0; } ///< Number of BoutReals (not implemented if not BoutReal)
 
-  DEPRECATED(virtual int getData(int x, int y, int z, void *vptr) const) = 0; ///< Return number of bytes
-  DEPRECATED(virtual int getData(int x, int y, int z, BoutReal *rptr) const) = 0; ///< Return number of BoutReals
-  
-  DEPRECATED(virtual int setData(int x, int y, int z, void *vptr)) = 0;
-  DEPRECATED(virtual int setData(int x, int y, int z, BoutReal *rptr)) = 0;
-
   virtual void doneComms() { }; // Notifies that communications done
   
   // Boundary conditions

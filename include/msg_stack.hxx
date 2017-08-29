@@ -29,6 +29,8 @@ class MsgStack;
 #ifndef __MSG_STACK_H__
 #define __MSG_STACK_H__
 
+#include "unused.hxx"
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <string>
@@ -74,12 +76,12 @@ class MsgStack {
   std::string getDump();    ///< Write out all messages to a string
 #else
   /// Dummy functions which should be optimised out
-  int push(const char *s, ...) {return 0;}
+  int push(const char *UNUSED(s), ...) {return 0;}
   
   int setPoint() {return 0;}
   
   void pop() {}
-  void pop(int id) {}
+  void pop(int UNUSED(id)) {}
   void clear() {}
   
   void dump() {}
