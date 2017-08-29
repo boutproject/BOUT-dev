@@ -48,9 +48,13 @@ class FieldGroup {
   /*
    * Variadic constructor. Allows an arbitrary number of
    * FieldData arguments
+   *
+   * The explicit keyword prevents FieldGroup being constructed with arbitrary
+   * types. In particular arguments to add() cannot be implicitly converted
+   * to FieldGroup, leading to an infinite loop.
    */
   template <typename... Ts>
-  FieldGroup(Ts&... ts) { add(ts...); }
+  explicit FieldGroup(Ts&... ts) { add(ts...); }
 
 
   /*!
@@ -142,6 +146,13 @@ class FieldGroup {
    */
   int size() const {
     return fvec.size();
+  }
+
+  /*!
+   * Return number of Field3Ds
+   */
+  int size_field3d() const {
+    return f3vec.size();
   }
 
   /*!

@@ -4,9 +4,11 @@ Notes
 Compile options
 ---------------
 
-Compiling with ``-DCHECK`` enables a lot of checks of operations
+Compiling with ``-DCHECK=3`` enables a lot of checks of operations
 performed by the field objects. This is very useful for debugging a
 code, and can be omitted once bugs have been removed.
+``-DCHECK=2`` enables less checking, especially the computationally
+rather expensive ones, while ``-DCHECK=0`` disables most checks.
 
 For (sometimes) more useful error messages, there is the ``-DTRACK``
 option. This keeps track of the names of variables and includes these in

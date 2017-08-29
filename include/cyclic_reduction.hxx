@@ -127,7 +127,7 @@ public:
     // Multiple RHS
     
     if(nrhs != Nsys)
-      throw new BoutException("Sorry, can't yet handle nrhs != nsys");
+      throw BoutException("Sorry, can't yet handle nrhs != nsys");
     
     // Insert RHS into coefs array. Ordered to allow efficient partitioning
     // for MPI send/receives

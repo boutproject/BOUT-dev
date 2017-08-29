@@ -787,8 +787,9 @@ Mesh::outer_boundary_upwind_func sfFDDX_out, sfFDDY_out;
 
 /// Set the derivative method, given a table and option name
 void derivs_set(Options *options, DiffLookup *table, const char* name, Mesh::deriv_func &f) {
+  TRACE("derivs_set( deriv_func )");
   string label;
-  options->get(name, label, "", false);
+  options->get(name, label, "C2");
 
   DIFF_METHOD method = lookupFunc(table, label); // Find the function
   printFuncName(method); // Print differential function name
@@ -796,8 +797,9 @@ void derivs_set(Options *options, DiffLookup *table, const char* name, Mesh::der
 }
 
 void derivs_set(Options *options, DiffLookup *table, const char* name, Mesh::upwind_func &f) {
+  TRACE("derivs_set( upwind_func )");
   string label;
-  options->get(name, label, "", false);
+  options->get(name, label, "U1");
 
   DIFF_METHOD method = lookupFunc(table, label); // Find the function
   printFuncName(method); // Print differential function name
@@ -805,8 +807,9 @@ void derivs_set(Options *options, DiffLookup *table, const char* name, Mesh::upw
 }
 
 void derivs_set(Options *options, DiffLookup *table, const char* name, Mesh::flux_func &f) {
+  TRACE("derivs_set( flux_func )");
   string label;
-  options->get(name, label, "", false);
+  options->get(name, label, "U1");
 
   DIFF_METHOD method = lookupFunc(table, label); // Find the function
   printFuncName(method); // Print differential function name
@@ -815,8 +818,9 @@ void derivs_set(Options *options, DiffLookup *table, const char* name, Mesh::flu
 
 /// Set the derivative methods including for boundaries, given a table and option name
 void derivs_set(Options *options, DiffLookup *table, const char* name, Mesh::deriv_func &f, Mesh::inner_boundary_deriv_func &f_in, Mesh::outer_boundary_deriv_func &f_out) {
+  TRACE("derivs_set( deriv_func, inner, outer )");
   string label;
-  options->get(name, label, "", false);
+  options->get(name, label, "C2");
 
   DIFF_METHOD method = lookupFunc(table, label); // Find the function
   printFuncName(method); // Print differential function name
@@ -826,8 +830,9 @@ void derivs_set(Options *options, DiffLookup *table, const char* name, Mesh::der
 }
 
 void derivs_set(Options *options, DiffLookup *table, const char* name, Mesh::upwind_func &f, Mesh::inner_boundary_upwind_func &f_in, Mesh::outer_boundary_upwind_func &f_out) {
+  TRACE("derivs_set( upwind_func, inner, outer )");
   string label;
-  options->get(name, label, "", false);
+  options->get(name, label, "U1");
 
   DIFF_METHOD method = lookupFunc(table, label); // Find the function
   printFuncName(method); // Print differential function name
@@ -837,8 +842,9 @@ void derivs_set(Options *options, DiffLookup *table, const char* name, Mesh::upw
 }
 
 void derivs_set(Options *options, DiffLookup *table, const char* name, Mesh::flux_func &f, Mesh::inner_boundary_upwind_func &f_in, Mesh::outer_boundary_upwind_func &f_out) {
+  TRACE("derivs_set( flux_func, inner, outer )");
   string label;
-  options->get(name, label, "", false);
+  options->get(name, label, "U1", false);
 
   DIFF_METHOD method = lookupFunc(table, label); // Find the function
   printFuncName(method); // Print differential function name
@@ -981,23 +987,105 @@ void Mesh::derivs_init(Options* options) {
 
 // X derivative
 
-const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc) {
+const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc, REGION region) {
   if (var.getNx() == 1){
     return 0.;
   }
-  Field2D result;
+
+  ASSERT1(var.isAllocated());
+  ASSERT1(this == var.getMesh());
+
+  Field2D result(this);
   result.allocate(); // Make sure data allocated
 
+  if (mesh->StaggerGrids && 
+      (loc != CELL_DEFAULT) && (loc != var.getLocation())) {
+    // Staggered differencing
+
+    CELL_LOC location = var.getLocation();
+    
+    if (mesh->xstart > 1) {
+      // More than one guard cell, so set pp and mm values
+      // This allows higher-order methods to be used
+      for(const auto &i : result.region(region)) {
+        stencil s;
+        s.c = var[i];
+        s.p = var[i.xp()];
+        s.m = var[i.xm()];
+        s.pp = var[i.offset(2,0,0)];
+        s.mm = var[i.offset(-2,0,0)];
+        
+        if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
+          // Producing a stencil centred around a lower X value
+          s.pp = s.p;
+          s.p  = s.c;
+        } else if (location == CELL_XLOW) {
+          // Stencil centred around a cell centre
+          s.mm = s.m;
+          s.m  = s.c;
+        }
+
+        result[i] = func(s);
+      }
+    } else {
+      // Only one guard cell, so no pp or mm values
+      for(const auto &i : result.region(region)) {
+        stencil s;
+        s.c = var[i];
+        s.p = var[i.xp()];
+        s.m = var[i.xm()];
+        s.pp = nan("");
+        s.mm = nan("");
+        
+        if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
+          // Producing a stencil centred around a lower X value
+          s.pp = s.p;
+          s.p  = s.c;
+        } else if (location == CELL_XLOW) {
+          // Stencil centred around a cell centre
+          s.mm = s.m;
+          s.m  = s.c;
+        }
+        
+        result[i] = func(s);
+      }
+    }
+    
+  } else {
+    // Non-staggered differencing
+    
+    if (mesh->xstart > 1) {
+      // More than one guard cell, so set pp and mm values
+      // This allows higher-order methods to be used
+      for(const auto &i : result.region(region)) {
+        stencil s;
+        s.c = var[i];
+        s.p = var[i.xp()];
+        s.m = var[i.xm()];
+        s.pp = var[i.offset(2,0,0)];
+        s.mm = var[i.offset(-2,0,0)];
+        
+        result[i] = func(s);
+      }
+    } else {
+      // Only one guard cell, so no pp or mm values
+      for(const auto &i : result.region(region)) {
+        stencil s;
+        s.c = var[i];
+        s.p = var[i.xp()];
+        s.m = var[i.xm()];
+        s.pp = nan("");
+        s.mm = nan("");
+        
+        result[i] = func(s);
+      }
+    }
+  }
+  
   bindex bx;
-
-  start_index(&bx, RGN_NOX);
   stencil s;
-  do {
-    var.setXStencil(s, bx, loc);
-    result(bx.jx,bx.jy) = func(s);
-  }while(next_index2(&bx));
 
-#ifdef CHECK
+#if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
@@ -1010,7 +1098,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
 	var.setXStencil(s, bx, loc);
 	result(bx.jx,bx.jy) = func(s);
       }
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_ydown = true;
     #endif
   }
@@ -1022,7 +1110,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
 	var.setXStencil(s, bx, loc);
 	result(bx.jx,bx.jy) = func(s);
       }
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_yup = true;
     #endif
   }
@@ -1037,7 +1125,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
       result(bx.jx,bx.jy) = funcs_pair.inner;
       result(bx.jxm,bx.jy) = funcs_pair.outer;
     }
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_xin = true;
     #endif
   }
@@ -1052,7 +1140,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
       result(bx.jx,bx.jy) = funcs_pair.inner;
       result(bx.jxp,bx.jy) = funcs_pair.outer;
     }
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_xout = true;
     #endif
   }
@@ -1060,25 +1148,107 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
   return result;
 }
 
-const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc) {
-  if (var.getNx() == 1){
+const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc, REGION region) {
+  if (var.getNx() == 1) {
     return 0.;
   }
-  Field3D result;
+  // Check that the input variable has data
+  ASSERT1(var.isAllocated());
+
+  // Check that the mesh is correct
+  ASSERT1(this == var.getMesh());
+
+  Field3D result(this);
   result.allocate(); // Make sure data allocated
-
-  bindex bx;
   
-  start_index(&bx, RGN_NOX);
-  stencil s;
-  do {
-    for(bx.jz=0;bx.jz<mesh->LocalNz;bx.jz++) {
-      var.setXStencil(s, bx, loc);
-      result(bx.jx,bx.jy,bx.jz) = func(s);
-    }
-  }while(next_index2(&bx));
+  if (mesh->StaggerGrids && 
+      (loc != CELL_DEFAULT) && (loc != var.getLocation())) {
+    // Staggered differencing
 
-#ifdef CHECK
+    CELL_LOC location = var.getLocation();
+    
+    if (mesh->xstart > 1) {
+      // More than one guard cell, so set pp and mm values
+      // This allows higher-order methods to be used
+      for(const auto &i : result.region(region)) {
+        stencil s;
+        s.c = var[i];
+        s.p = var[i.xp()];
+        s.m = var[i.xm()];
+        s.pp = var[i.offset(2,0,0)];
+        s.mm = var[i.offset(-2,0,0)];
+        
+        if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
+          // Producing a stencil centred around a lower X value
+          s.pp = s.p;
+          s.p  = s.c;
+        } else if (location == CELL_XLOW) {
+          // Stencil centred around a cell centre
+          s.mm = s.m;
+          s.m  = s.c;
+        }
+
+        result[i] = func(s);
+      }
+    } else {
+      // Only one guard cell, so no pp or mm values
+      for(const auto &i : result.region(region)) {
+        stencil s;
+        s.c = var[i];
+        s.p = var[i.xp()];
+        s.m = var[i.xm()];
+        s.pp = nan("");
+        s.mm = nan("");
+        
+        if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
+          // Producing a stencil centred around a lower X value
+          s.pp = s.p;
+          s.p  = s.c;
+        } else if (location == CELL_XLOW) {
+          // Stencil centred around a cell centre
+          s.mm = s.m;
+          s.m  = s.c;
+        }
+        
+        result[i] = func(s);
+      }
+    }
+    
+  } else {
+    // Non-staggered differencing
+    
+    if (mesh->xstart > 1) {
+      // More than one guard cell, so set pp and mm values
+      // This allows higher-order methods to be used
+      for(const auto &i : result.region(region)) {
+        stencil s;
+        s.c = var[i];
+        s.p = var[i.xp()];
+        s.m = var[i.xm()];
+        s.pp = var[i.offset(2,0,0)];
+        s.mm = var[i.offset(-2,0,0)];
+        
+        result[i] = func(s);
+      }
+    } else {
+      // Only one guard cell, so no pp or mm values
+      for(const auto &i : result.region(region)) {
+        stencil s;
+        s.c = var[i];
+        s.p = var[i.xp()];
+        s.m = var[i.xm()];
+        s.pp = nan("");
+        s.mm = nan("");
+        
+        result[i] = func(s);
+      }
+    }
+  }
+  
+  bindex bx;
+  stencil s;
+
+#if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
@@ -1092,7 +1262,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
 	  var.setXStencil(s, bx, loc);
 	  result(bx.jx,bx.jy,bx.jz) = func(s);
 	}
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_ydown = true;
     #endif
   }
@@ -1105,7 +1275,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
 	  var.setXStencil(s, bx, loc);
 	  result(bx.jx,bx.jy,bx.jz) = func(s);
 	}
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_yup = true;
     #endif
   }
@@ -1121,7 +1291,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
 	result(bx.jx,bx.jy,bx.jz) = funcs_pair.inner;
 	result(bx.jxm,bx.jy,bx.jz) = funcs_pair.outer;
       }
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_xin = true;
     #endif
   }
@@ -1137,7 +1307,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
 	result(bx.jx,bx.jy,bx.jz) = funcs_pair.inner;
 	result(bx.jxp,bx.jy,bx.jz) = funcs_pair.outer;
       }
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_xout = true;
     #endif
   }
@@ -1147,23 +1317,52 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
 
 // Y derivative
 
-const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc) {
-  if (var.getNy() == 1){
+const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc, REGION region) {
+  if (var.getNy() == 1) {
     return 0.;
   }
-  Field2D result;
+  
+  // Check that the input variable has data
+  ASSERT1(var.isAllocated());
+  
+  ASSERT1(this == var.getMesh());
+
+  Field2D result(this);
   result.allocate(); // Make sure data allocated
   
-  bindex bx;
-  
-  start_index(&bx, RGN_NOBNDRY);
-  stencil s;
-  do{
-    var.setYStencil(s, bx, loc);
-    result(bx.jx,bx.jy) = func(s);
-  }while(next_index2(&bx));
+  if (mesh->ystart > 1) {
+    // More than one guard cell, so set pp and mm values
+    // This allows higher-order methods to be used
+    
+    for(const auto &i : result.region(region)) {
+      // Set stencils
+      stencil s;
+      s.c = var[i];
+      s.p = var[i.yp()];
+      s.m = var[i.ym()];
+      s.pp = var[i.offset(0,2,0)];
+      s.mm = var[i.offset(0,-2,0)];
 
-#ifdef CHECK
+      result[i] = func(s);
+    }
+  } else {
+    // Only one guard cell, so no pp or mm values
+    for(const auto &i : result.region(region)) {
+      // Set stencils
+      stencil s;
+      s.c = var[i];
+      s.p = var[i.yp()];
+      s.m = var[i.ym()];
+      s.pp = nan("");
+      s.mm = nan("");
+
+      result[i] = func(s);
+    }
+  }
+    
+  bindex bx;
+  stencil s;
+#if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_yup = result.bndry_ydown = false;
 #endif
@@ -1175,7 +1374,7 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
 	var.setYStencil(s, bx, loc);
 	result(bx.jx,bx.jy) = func(s);
       }
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_xin = true;
     #endif
   }
@@ -1186,7 +1385,7 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
 	var.setYStencil(s, bx, loc);
 	result(bx.jx,bx.jy) = func(s);
       }
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_xout = true;
     #endif
   }
@@ -1202,7 +1401,7 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
       result(bx.jx,bx.jy) = funcs_pair.inner;
       result(bx.jx,bx.jym) = funcs_pair.outer;
     }
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_ydown = true;
     #endif
   }
@@ -1218,7 +1417,7 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
       result(bx.jx,bx.jy) = funcs_pair.inner;
       result(bx.jx,bx.jyp) = funcs_pair.outer;
     }
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_yup = true;
     #endif
   }
@@ -1226,52 +1425,169 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
   return result;
 }
 
-const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc) {
+const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc, REGION region) {
   if (var.getNy() == 1){
     return 0.;
   }
-  Field3D result;
+
+  // Check that the input variable has data
+  ASSERT1(var.isAllocated());
+
+  ASSERT1(this == var.getMesh());
+
+  Field3D result(this);
   result.allocate(); // Make sure data allocated
   
-  bindex bx;
-  if(var.hasYupYdown()) {
-    // Field "var" has yup and ydown fields which will be used
-    // to calculate a derivative along the magnetic field
+  if (var.hasYupYdown() && 
+      ( (&var.yup() != &var) || (&var.ydown() != &var))) {
+    // Field "var" has distinct yup and ydown fields which
+    // will be used to calculate a derivative along 
+    // the magnetic field
     
-    start_index(&bx, RGN_NOBNDRY);
-    stencil s;
-    do {
-      for(bx.jz=0;bx.jz<mesh->LocalNz;bx.jz++) {
-        var.setYStencil(s, bx, loc);
-        result(bx.jx,bx.jy,bx.jz) = func(s);
+    if (mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != var.getLocation())) {
+      // Staggered differencing
+
+      // Cell location of the input field
+      CELL_LOC location = var.getLocation();
+      
+      for(const auto &i : result.region(region)) {
+        // Set stencils
+        stencil s;
+        s.c = var[i];
+        s.p = var.yup()[i.yp()];
+        s.m = var.ydown()[i.ym()];
+        s.pp = nan("");
+        s.mm = nan("");
+        
+        if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
+          // Producing a stencil centred around a lower Y value
+          s.pp = s.p;
+          s.p  = s.c;
+        } else if(location == CELL_YLOW) {
+          // Stencil centred around a cell centre
+          s.mm = s.m;
+          s.m  = s.c;
+        }
+
+        result[i] = func(s);
       }
-    }while(next_index2(&bx));
-  }else {
+    } else {
+      // Non-staggered
+      for(const auto &i : result.region(region)) {
+        // Set stencils
+        stencil s;
+        s.c = var[i];
+        s.p = var.yup()[i.yp()];
+        s.m = var.ydown()[i.ym()];
+        s.pp = nan("");
+        s.mm = nan("");
+        
+        result[i] = func(s);
+      }
+    }
+  } else {
     // var has no yup/ydown fields, so we need to shift into field-aligned coordinates
     
     Field3D var_fa = mesh->toFieldAligned(var);
     
-    for(const auto &i : result.region(RGN_NOBNDRY)) {
-      // Set stencils
-      stencil s;
-      s.c = var_fa[i];
-      s.p = var_fa[i.yp()];
-      s.m = var_fa[i.ym()];
-      s.pp = nan("");
-      s.mm = nan("");
+    if (mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != var.getLocation())) {
+      // Staggered differencing
       
-      result[i] = func(s);
+      // Cell location of the input field
+      CELL_LOC location = var.getLocation();
+      
+      if (mesh->ystart > 1) {
+        // More than one guard cell, so set pp and mm values
+        // This allows higher-order methods to be used
+        for(const auto &i : result.region(region)) {
+          // Set stencils
+          stencil s;
+          s.c = var_fa[i];
+          s.p = var_fa[i.yp()];
+          s.m = var_fa[i.ym()];
+          s.pp = var_fa[i.offset(0,2,0)];
+          s.mm = var_fa[i.offset(0,-2,0)];
+          
+          if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
+            // Producing a stencil centred around a lower Y value
+            s.pp = s.p;
+            s.p  = s.c;
+          } else if(location == CELL_YLOW) {
+            // Stencil centred around a cell centre
+            s.mm = s.m;
+            s.m  = s.c;
+          }
+          
+          result[i] = func(s);
+        }
+      } else {
+        // Only one guard cell, so no pp or mm values
+        for(const auto &i : result.region(region)) {
+          // Set stencils
+          stencil s;
+          s.c = var_fa[i];
+          s.p = var_fa[i.yp()];
+          s.m = var_fa[i.ym()];
+          s.pp = nan("");
+          s.mm = nan("");
+          
+          if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
+            // Producing a stencil centred around a lower Y value
+            s.pp = s.p;
+            s.p  = s.c;
+          } else if(location == CELL_YLOW) {
+            // Stencil centred around a cell centre
+            s.mm = s.m;
+            s.m  = s.c;
+          }
+          
+          result[i] = func(s);
+        }
+      }
+      
+    } else {
+      // Non-staggered differencing
+      
+      if (mesh->ystart > 1) {
+        // More than one guard cell, so set pp and mm values
+        // This allows higher-order methods to be used
+        for(const auto &i : result.region(region)) {
+          // Set stencils
+          stencil s;
+          s.c = var_fa[i];
+          s.p = var_fa[i.yp()];
+          s.m = var_fa[i.ym()];
+          s.pp = var_fa[i.offset(0,2,0)];
+          s.mm = var_fa[i.offset(0,-2,0)];
+          
+          result[i] = func(s);
+        }
+      } else {
+        // Only one guard cell, so no pp or mm values
+        for(const auto &i : result.region(region)) {
+          // Set stencils
+          stencil s;
+          s.c = var_fa[i];
+          s.p = var_fa[i.yp()];
+          s.m = var_fa[i.ym()];
+          s.pp = nan("");
+          s.mm = nan("");
+          
+          result[i] = func(s);
+        }
+      }
     }
     
     // Shift result back
     
     result = mesh->fromFieldAligned(result);
   }
-#ifdef CHECK
+#if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
   
+  bindex bx;
   if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX) {
     for (bx.jx=mesh->xstart-1; bx.jx>=0; bx.jx--)
       for (bx.jy=mesh->ystart; bx.jy<=mesh->ystart; bx.jy++)
@@ -1281,7 +1597,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
 	  var.setYStencil(s, bx, loc);
 	  result(bx.jx,bx.jy,bx.jz) = func(s);
 	}
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_xin = true;
     #endif
   }
@@ -1294,7 +1610,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
 	  var.setYStencil(s, bx, loc);
 	  result(bx.jx,bx.jy,bx.jz) = func(s);
 	}
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_xout = true;
     #endif
   }
@@ -1312,7 +1628,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
 	result(bx.jx,bx.jy,bx.jz) = funcs_pair.inner;
 	result(bx.jx,bx.jym,bx.jz) = funcs_pair.outer;
       }
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_ydown = true;
     #endif
   }
@@ -1330,7 +1646,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
 	result(bx.jx,bx.jy,bx.jz) = funcs_pair.inner;
 	result(bx.jx,bx.jyp,bx.jz) = funcs_pair.outer;
       }
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_yup = true;
     #endif
   }
@@ -1340,18 +1656,32 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
 
 // Z derivative
 
-const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc) {
-  Field3D result;
+const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc, REGION region) {
+  if (var.getNz()==1){
+    return 0.;
+  }
+
+  ASSERT1(this == var.getMesh());
+
+  Field3D result(this);
   result.allocate(); // Make sure data allocated
   
-  bindex bx;
+  // Check that the input variable has data
+  ASSERT1(var.isAllocated());
+  
+  for(const auto &i : result.region(region)) {
+    stencil s;
+    s.c = var[i];
+    s.p = var[i.zp()];
+    s.m = var[i.zm()];
+    s.pp = var[i.offset(0,0,2)];
+    s.mm = var[i.offset(0,0,-2)];
+    
+    result[i] = func(s);
+  }
 
-  start_index(&bx, RGN_NOZ);
+  bindex bx;
   stencil s;
-  do {
-    var.setZStencil(s, bx, loc);
-    result(bx.jx,bx.jy,bx.jz) = func(s);
-  }while(next_index3(&bx));
 
   if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX) {
     for (bx.jx=mesh->xstart-1; bx.jx>=0; bx.jx--)
@@ -1361,7 +1691,7 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 	  var.setZStencil(s, bx, loc);
 	  result(bx.jx,bx.jy,bx.jz) = func(s);
 	}
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_xin = true;
     #endif
   }
@@ -1374,7 +1704,7 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 	  var.setZStencil(s, bx, loc);
 	  result(bx.jx,bx.jy,bx.jz) = func(s);
 	}
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_xout = true;
     #endif
   }
@@ -1388,7 +1718,7 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 	  var.setZStencil(s, bx, loc);
 	  result(bx.jx,bx.jy,bx.jz) = func(s);
 	}
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_ydown = true;
     #endif
   }
@@ -1402,7 +1732,7 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 	  var.setZStencil(s, bx, loc);
 	  result(bx.jx,bx.jy,bx.jz) = func(s);
 	}
-    #ifdef CHECK
+    #if CHECK > 0
       result.bndry_yup = true;
     #endif
   }
@@ -1425,7 +1755,9 @@ const Field3D Mesh::indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
   CELL_LOC inloc = f.getLocation(); // Input location
   CELL_LOC diffloc = inloc; // Location of differential result
 
-  Field3D result;
+  ASSERT1(this == f.getMesh());
+
+  Field3D result(this);
 
   if(mesh->StaggerGrids && (outloc == CELL_DEFAULT)) {
     // Take care of CELL_DEFAULT case
@@ -1495,7 +1827,9 @@ const Field3D Mesh::indexDDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
   CELL_LOC inloc = f.getLocation(); // Input location
   CELL_LOC diffloc = inloc; // Location of differential result
 
-  Field3D result;
+  ASSERT1(this == f.getMesh());
+
+  Field3D result(this);
 
   if(mesh->StaggerGrids && (outloc == CELL_DEFAULT)) {
     // Take care of CELL_DEFAULT case
@@ -1566,7 +1900,8 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
   CELL_LOC inloc = f.getLocation(); // Input location
   CELL_LOC diffloc = inloc; // Location of differential result
 
-  Field3D result;
+  ASSERT1(this == f.getMesh());
+  Field3D result(this);
 
   if(mesh->StaggerGrids && (outloc == CELL_DEFAULT)) {
     // Take care of CELL_DEFAULT case
@@ -1623,38 +1958,10 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
 
     int ncz = mesh->LocalNz;
     
-#ifndef _OPENMP
-    static dcomplex *cv = (dcomplex*) NULL;
-#else
-    static dcomplex *globalcv;
-    static int nthreads = 0;
-#endif 
-
     #pragma omp parallel
     {
-#ifndef _OPENMP
-      // Serial, so can have a single static array
-      if(cv == (dcomplex*) NULL)
-        cv = new dcomplex[ncz/2 + 1];
-#else
-      // Parallel, so allocate a separate array for each thread
+      Array<dcomplex> cv(ncz/2 + 1);
       
-      int th_id = omp_get_thread_num(); // thread ID
-        int n_th = omp_get_num_threads();
-      if(th_id == 0) {
-        if(nthreads < n_th) {
-          // Allocate memory in thread zero
-          if(nthreads > 0)
-            delete[] globalcv;
-          globalcv = new dcomplex[n_th*(ncz/2 + 1)];
-          nthreads = n_th;
-        }
-      }
-      // Wait for memory to be allocated
-      #pragma omp barrier
-      
-      dcomplex *cv = globalcv + th_id*(ncz/2 + 1); // Separate array for each thread
-#endif
       int xs = mesh->xstart;
       int xe = mesh->xend;
       int ys = mesh->ystart;
@@ -1672,9 +1979,9 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
       if (mesh->freeboundary_yup)
         ye = mesh->LocalNy-1;
       #pragma omp for
-      for(int jx=xs;jx<=xe;jx++) {
-        for(int jy=ys;jy<=ye;jy++) {
-          rfft(f(jx, jy), ncz, cv); // Forward FFT
+      for (int jx=xs;jx<=xe;jx++) {
+        for (int jy=ys;jy<=ye;jy++) {
+          rfft(f(jx, jy), ncz, cv.begin()); // Forward FFT
           
         for(int jz=0;jz<=ncz/2;jz++) {
             BoutReal kwave=jz*2.0*PI/ncz; // wave number is 1/[rad]
@@ -1686,13 +1993,13 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
             cv[jz] *= exp(Im * (shift * kwave));
         }
           
-        irfft(cv, ncz, result(jx,jy)); // Reverse FFT
+        irfft(cv.begin(), ncz, result(jx,jy)); // Reverse FFT
       }
     }
     }
     // End of parallel section
     
-#ifdef CHECK
+#if CHECK > 0
     // Mark boundaries as invalid
     if (mesh->freeboundary_xin) result.bndry_xin = true;
     else result.bndry_xin = false;
@@ -1714,8 +2021,9 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
   return interp_to(result, outloc);
 }
 
-const Field2D Mesh::indexDDZ(const Field2D &UNUSED(f)) {
-  Field2D result;
+const Field2D Mesh::indexDDZ(const Field2D &f) {
+  ASSERT1(this == f.getMesh());
+  Field2D result(this);
   result = 0.0;
   return result;
 }
@@ -1748,8 +2056,10 @@ const Field3D Mesh::indexD2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
   
   CELL_LOC inloc = f.getLocation(); // Input location
   CELL_LOC diffloc = inloc; // Location of differential result
-  
-  Field3D result;
+
+  ASSERT1(this == f.getMesh());
+
+  Field3D result(this);
   
   if(StaggerGrids && (outloc == CELL_DEFAULT)) {
     // Take care of CELL_DEFAULT case
@@ -1827,11 +2137,7 @@ const Field3D Mesh::indexD2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
  *
  */
 const Field2D Mesh::indexD2DX2(const Field2D &f) {
-  Field2D result;
-  
-  result = applyXdiff(f, fD2DX2, fD2DX2_in, fD2DX2_out);
-  
-  return result;
+  return applyXdiff(f, fD2DX2, fD2DX2_in, fD2DX2_out);
 }
 
 ////////////// Y DERIVATIVE /////////////////
@@ -1854,8 +2160,10 @@ const Field3D Mesh::indexD2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
   
   CELL_LOC inloc = f.getLocation(); // Input location
   CELL_LOC diffloc = inloc; // Location of differential result
-  
-  Field3D result;
+
+  ASSERT1(this == f.getMesh());
+
+  Field3D result(this);
   
   if(StaggerGrids && (outloc == CELL_DEFAULT)) {
     // Take care of CELL_DEFAULT case
@@ -1940,8 +2248,10 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
   
   CELL_LOC inloc = f.getLocation(); // Input location
   CELL_LOC diffloc = inloc; // Location of differential result
-  
-  Field3D result;
+
+  ASSERT1(this == f.getMesh());
+
+  Field3D result(this);
 
   if(StaggerGrids && (outloc == CELL_DEFAULT)) {
     // Take care of CELL_DEFAULT case
@@ -1998,12 +2308,9 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
 
     int ncz = mesh->LocalNz;
     
-    static dcomplex *cv = (dcomplex*) NULL;
+    ASSERT1(ncz % 2 == 0); // Must be a power of 2
+    Array<dcomplex> cv(ncz/2 + 1);
     
-    // Serial, so can have a single static array
-    if(cv == (dcomplex*) NULL)
-      cv = new dcomplex[ncz/2 + 1];
-
     int xs = mesh->xstart;
     int xe = mesh->xend;
     int ys = mesh->ystart;
@@ -2024,7 +2331,7 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
     for(int jx=xs;jx<=xe;jx++) {
       for(int jy=ys;jy<=ye;jy++) {
           
-	rfft(f(jx,jy), ncz, cv); // Forward FFT
+	rfft(f(jx,jy), ncz, cv.begin()); // Forward FFT
 	
 	for(int jz=0;jz<=ncz/2;jz++) {
 	  BoutReal kwave=jz*2.0*PI/ncz; // wave number is 1/[rad]
@@ -2034,11 +2341,11 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
 	    cv[jz] *= exp(0.5*Im * (shift * kwave));
 	}
 
-	irfft(cv, ncz, result(jx,jy)); // Reverse FFT
+	irfft(cv.begin(), ncz, result(jx,jy)); // Reverse FFT
       }
     }
 
-#ifdef CHECK
+#if CHECK > 0
     // Mark boundaries as invalid
     if (mesh->freeboundary_xin) result.bndry_xin = true;
     else result.bndry_xin = false;
@@ -2125,7 +2432,11 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC UNUSE
     func = lookupUpwindFunc(UpwindTable, method);
   }
 
-  Field2D result;
+  ASSERT1(this == f.getMesh());
+  ASSERT1(this == v.getMesh());
+
+
+  Field2D result(this);
   result.allocate(); // Make sure data allocated
 
   bindex bx;
@@ -2137,7 +2448,7 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC UNUSE
     result(bx.jx,bx.jy) = func(v[{bx.jx,bx.jy,0}], fs);
   }while(next_index2(&bx));
 
-#ifdef CHECK
+#if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = false;
 #endif
@@ -2148,8 +2459,11 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC UNUSE
 /// General version for 2 or 3-D objects
 const Field3D Mesh::indexVDDX(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method) {
   TRACE("Mesh::indexVDDX(Field, Field)");
-  
-  Field3D result;
+
+  ASSERT1(this == v.getMesh());
+  ASSERT1(this == f.getMesh());
+
+  Field3D result(this);
   result.allocate(); // Make sure data allocated
   
   CELL_LOC vloc = v.getLocation();
@@ -2222,7 +2536,7 @@ const Field3D Mesh::indexVDDX(const Field &v, const Field &f, CELL_LOC outloc, D
   
   result.setLocation(inloc);
 
-#ifdef CHECK
+#if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
@@ -2235,8 +2549,11 @@ const Field3D Mesh::indexVDDX(const Field &v, const Field &f, CELL_LOC outloc, D
 // special case where both are 2D
 const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
   TRACE("Mesh::indexVDDY");
-  
-  Field2D result;
+
+  ASSERT1(this == v.getMesh());
+  ASSERT1(this == f.getMesh());
+
+  Field2D result(this);
   result.allocate(); // Make sure data allocated
 
   CELL_LOC vloc = v.getLocation();
@@ -2307,7 +2624,7 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
   }
   result.setLocation(inloc);
     
-#ifdef CHECK
+#if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
@@ -2318,8 +2635,11 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
 // general case
 const Field3D Mesh::indexVDDY(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method) {
   TRACE("Mesh::indexVDDY(Field, Field)");
-  
-  Field3D result;
+
+  ASSERT1(this == v.getMesh());
+  ASSERT1(this == f.getMesh());
+
+  Field3D result(this);
   result.allocate(); // Make sure data allocated
 
   CELL_LOC vloc = v.getLocation();
@@ -2393,7 +2713,7 @@ const Field3D Mesh::indexVDDY(const Field &v, const Field &f, CELL_LOC outloc, D
   
   result.setLocation(inloc);
     
-#ifdef CHECK
+#if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
@@ -2407,7 +2727,10 @@ const Field3D Mesh::indexVDDY(const Field &v, const Field &f, CELL_LOC outloc, D
 const Field3D Mesh::indexVDDZ(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method) {
   TRACE("Mesh::indexVDDZ");
   
-  Field3D result;
+  ASSERT1(this == v.getMesh());
+  ASSERT1(this == f.getMesh());
+
+  Field3D result(this);
   result.allocate(); // Make sure data allocated
 
   CELL_LOC vloc = v.getLocation();
@@ -2480,7 +2803,7 @@ const Field3D Mesh::indexVDDZ(const Field &v, const Field &f, CELL_LOC outloc, D
   
   result.setLocation(inloc);
   
-#ifdef CHECK
+#if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
@@ -2506,7 +2829,11 @@ const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
     // Lookup function
     func = lookupFluxFunc(FluxTable, method);
   }
-  Field2D result;
+  
+  ASSERT1(this == v.getMesh());
+  ASSERT1(this == f.getMesh());
+
+  Field2D result(this);
   result.allocate(); // Make sure data allocated
 
   bindex bx;
@@ -2519,7 +2846,7 @@ const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
     result(bx.jx, bx.jy) = func(vs, fs);
   }while(next_index2(&bx));
 
-#ifdef CHECK
+#if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = false;
 #endif
@@ -2575,8 +2902,11 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
     // Lookup function
     func = lookupFluxFunc(table, method);
   }
-  
-  Field3D result;
+
+  ASSERT1(this == f.getMesh());
+  ASSERT1(this == v.getMesh());
+
+  Field3D result(this);
   result.allocate(); // Make sure data allocated
 
   bindex bx;
@@ -2592,7 +2922,7 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
   
   result.setLocation(inloc);
 
-#ifdef CHECK
+#if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
@@ -2616,7 +2946,11 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
     // Lookup function
     func = lookupFluxFunc(FluxTable, method);
   }
-  Field2D result;
+
+  ASSERT1(this == v.getMesh());
+  ASSERT1(this == f.getMesh());
+
+  Field2D result(this);
   result.allocate(); // Make sure data allocated
 
   bindex bx;
@@ -2629,7 +2963,7 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
     result(bx.jx, bx.jy) = func(vs, fs);
   }while(next_index2(&bx));
 
-#ifdef CHECK
+#if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = false;
 #endif
@@ -2690,7 +3024,10 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
     return indexVDDY(v, f, outloc, DIFF_DEFAULT) + indexDDY(v, outloc, DIFF_DEFAULT) * f;
   }
 
-  Field3D result;
+  ASSERT1(this == v.getMesh());
+  ASSERT1(this == f.getMesh());
+
+  Field3D result(this);
   result.allocate(); // Make sure data allocated
 
   bindex bx;
@@ -2707,7 +3044,7 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   result.setLocation(inloc);
 
-#ifdef CHECK
+#if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
@@ -2764,8 +3101,11 @@ const Field3D Mesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
     // Lookup function
     func = lookupFluxFunc(table, method);
   }
-  
-  Field3D result;
+
+  ASSERT1(this == v.getMesh());
+  ASSERT1(this == f.getMesh());
+
+  Field3D result(this);
   result.allocate(); // Make sure data allocated
 
   bindex bx;
@@ -2781,7 +3121,7 @@ const Field3D Mesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
   
   result.setLocation(inloc);
 
-#ifdef CHECK
+#if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif

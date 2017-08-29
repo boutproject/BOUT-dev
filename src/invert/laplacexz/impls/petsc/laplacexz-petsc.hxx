@@ -76,7 +76,7 @@ private:
 
   bool coefs_set; ///< Have coefficients been set?
   
-  #ifdef CHECK
+  #if CHECK > 0
     // Currently implemented flags
     static const int implemented_boundary_flags =   INVERT_AC_GRAD
                                                   + INVERT_SET
