@@ -56,7 +56,7 @@ inline BoutReal sgn(BoutReal val) {
 // Calculate all the coefficients needed for the spline interpolation
 // dir MUST be either +1 or -1
 FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) :
-  dir(dir), boundary_mask(mesh) {
+  dir(dir), boundary_mask(mesh) , y_prime(&mesh) {
 
   interp = InterpolationFactory::getInstance()->create();
   interp->setYOffset(dir);
@@ -71,7 +71,7 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) :
   bool y_boundary;     // has the field line left the domain through the y-sides
   bool z_boundary;     // has the field line left the domain through the z-sides
 
-  Field3D xt_prime, zt_prime;
+  Field3D xt_prime(&mesh), zt_prime(&mesh);
 
   // Load the floating point indices from the grid file
   // Future, higher order parallel derivatives could require maps to +/-2 slices

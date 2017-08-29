@@ -58,7 +58,7 @@ class Vector3D : public FieldData {
    *
    * Does not initialise any of the fields
    */
-  Vector3D();
+  Vector3D(Mesh * fieldmesh = nullptr);
   
   /*!
    * Copy constructor. After this the components (x,y,z)

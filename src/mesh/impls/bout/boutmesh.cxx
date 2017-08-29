@@ -2480,7 +2480,7 @@ void BoutMesh::set_ri( dcomplex * ayn, int ncy, BoutReal * ayn_Real, BoutReal * 
 // Lowpass filter for n=0 mode, keeping poloidal mode number 0<=m<=mmax
 const Field2D BoutMesh::lowPass_poloidal(const Field2D &var,int mmax)
 {
-  Field2D result;
+  Field2D result(this);
   static BoutReal *f1d = (BoutReal *) NULL; //Never freed
   static dcomplex *aynall = (dcomplex*)NULL; //Never freed
   static BoutReal *aynall_Real = (BoutReal *) NULL; //Never freed
@@ -2567,7 +2567,7 @@ const Field2D BoutMesh::lowPass_poloidal(const Field2D &var,int mmax)
 const Field3D BoutMesh::Switch_YZ(const Field3D &var) {
   static BoutReal **ayz = (BoutReal **) NULL;
   static BoutReal **ayz_all = (BoutReal **) NULL;
-  Field3D  result;
+  Field3D  result(this);
   int ncy, ncy_all,ncz;
   int i,j,ix;
   ncy = yend - ystart + 1;
@@ -2611,7 +2611,7 @@ const Field3D BoutMesh::Switch_XZ(const Field3D &var) {
     int ncx, ncy, ncz ;
     int i, j, k, l ;
 
-    Field3D result;
+    Field3D result(this);
 
     ncx = LocalNx - 2*MXG ;
     ncy = LocalNy - 2*MYG ;

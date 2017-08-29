@@ -159,7 +159,10 @@ for lhs in fields:
             print("// Provide the C++ wrapper for %s of %s and %s"%(opn,lhs.n,rhs.n))
             print("%s operator%s(%s lhs,%s rhs){"%(out.n,op,lhs.a,rhs.a))
             print("  Indices i{0,0,0};")
-            print("  %s result;"%(out.n))
+            print("  Mesh * msh = %s.getMesh();"%("lhs" if not lhs.i == 'real' else "rhs"))
+            if lhs.i != 'real' and rhs.i != 'real':
+                print("  ASSERT1(msh == rhs.getMesh());")
+            print("  %s result(msh);"%out.n)
             print("  result.allocate();")
             print("  checkData(lhs);")
             print("  checkData(rhs);")
@@ -173,7 +176,7 @@ for lhs in fields:
             m=''
             print('\n             ', end=' ')
             for d in out.d:
-                print(m,"mesh->LocalN%s"%d, end=' ')
+                print(m,"msh->LocalN%s"%d, end=' ')
                 if elementwise:
                     m=','
                 else:
@@ -181,7 +184,7 @@ for lhs in fields:
             print(");")
             # hardcode to only check field location for Field 3D
             if lhs.i == rhs.i == 'f3d':
-                print("#ifdef CHECK > 0")
+                print("#if CHECK > 0")
                 print("  if (lhs.getLocation() != rhs.getLocation()){")
                 print('    throw BoutException("Trying to %s fields of different locations. lhs is at %%s, rhs is at %%s!",strLocation(lhs.getLocation()),strLocation(rhs.getLocation()));'%op_names[op])
                 print('  }')
@@ -271,6 +274,8 @@ for lhs in fields:
                 print("  // otherwise just call the non-inplace version")
                 print("  if (data.unique()){")
                 print("    Indices i{0,0,0};")
+                if not rhs.i == 'real':
+                    print("    ASSERT1(fieldmesh == rhs.getMesh());")
                 print("    checkData(*this);")
                 print("    checkData(rhs);")
                 print("    autogen_%s_%s_%s(&(*this)[i],"%(lhs.n,rhs.n,opn), end=' ')
@@ -284,7 +289,7 @@ for lhs in fields:
                 m=''
                 print('\n             ', end=' ')
                 for d in out.d:
-                    print(m,"mesh->LocalN%s"%d, end=' ')
+                    print(m,"fieldmesh->LocalN%s"%d, end=' ')
                     if elementwise:
                         m=','
                     else:
@@ -292,7 +297,7 @@ for lhs in fields:
                 print(");")
                 # if both are f3d, make sure they are in the same location
                 if lhs.i == rhs.i == 'f3d':
-                    print("#ifdef CHECK > 0")
+                    print("#if CHECK > 0")
                     print("  if (this->getLocation() != rhs.getLocation()){")
                     print('    throw BoutException("Trying to %s fields of different locations!");'%op_names[op])
                     print('  }')

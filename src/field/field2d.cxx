@@ -89,7 +89,7 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing 
   *this = f; //This line is probably not required as we init data from f.data above.
 }
 
-Field2D::Field2D(BoutReal val) : Field(nullptr), deriv(nullptr) {
+Field2D::Field2D(BoutReal val, Mesh * msh) : Field(msh), deriv(nullptr) {
   boundaryIsSet = false;
 
   fieldmesh = mesh;
@@ -630,7 +630,7 @@ bool finite(const Field2D &f) {
     /* Check if the input is allocated */                  \
     ASSERT1(f.isAllocated());                              \
     /* Define and allocate the output result */            \
-    Field2D result;                                        \
+    Field2D result(f.getMesh());			   \
     result.allocate();                                     \
     /* Loop over domain */                                 \
     for(const auto& d : result) {                                 \
@@ -679,7 +679,8 @@ Field2D pow(const Field2D &lhs, const Field2D &rhs) {
   ASSERT1(rhs.isAllocated());
 
   // Define and allocate the output result
-  Field2D result;
+  ASSERT1(lhs.getMesh()==rhs.getMesh());
+  Field2D result(lhs.getMesh());
   result.allocate();
 
   // Loop over domain
@@ -696,7 +697,7 @@ Field2D pow(const Field2D &lhs, BoutReal rhs) {
   ASSERT1(lhs.isAllocated());
 
   // Define and allocate the output result
-  Field2D result;
+  Field2D result(lhs.getMesh());
   result.allocate();
 
   // Loop over domain
@@ -713,7 +714,7 @@ Field2D pow(BoutReal lhs, const Field2D &rhs) {
   ASSERT1(rhs.isAllocated());
 
   // Define and allocate the output result
-  Field2D result;
+  Field2D result(rhs.getMesh());
   result.allocate();
 
   // Loop over domain

@@ -8,6 +8,7 @@ const Field3D LaplaceGMRES::invert(const Field3D &b, const Field3D &start, int i
 {
   flags = inv_flags;
 
+  Mesh * mesh = b.getMesh();
   enable_a = (a != NULL);
   if(enable_a)
     a3d = *a;
@@ -15,7 +16,7 @@ const Field3D LaplaceGMRES::invert(const Field3D &b, const Field3D &start, int i
   if(enable_c)
     c3d = *c;
  
-  Field3D rhs;
+  Field3D rhs(mesh);
 
   if(precon) {
     /// Get DC components for preconditioner
@@ -39,7 +40,7 @@ const Field3D LaplaceGMRES::invert(const Field3D &b, const Field3D &start, int i
   BoutReal tol=1.e-7;
   
   // Call the solver
-  Field3D result;
+  Field3D result(mesh);
   result = start;
   solve(rhs, result,
 		      flags, 
