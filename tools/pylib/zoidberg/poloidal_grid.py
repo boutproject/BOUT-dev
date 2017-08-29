@@ -21,7 +21,6 @@ from numpy import pi, linspace, zeros
 from scipy.interpolate import RectBivariateSpline
 from scipy.spatial import cKDTree as KDTree
 
-import matplotlib.pyplot as plt
 
 try:
     from . import rzline
@@ -55,6 +54,7 @@ class PoloidalGrid(object):
         show    Calls plt.show() at the end
         
         """
+        import matplotlib.pyplot as plt
         if axis is None:
             fig = plt.figure()
             axis = fig.add_subplot(1,1,1)
@@ -333,6 +333,7 @@ class StructuredPoloidalGrid(PoloidalGrid):
         
         
         if show:
+            import matplotlib.pyplot as plt
             plt.plot(self.R, self.Z, '.')
             plt.plot(R, Z, 'x')
         
@@ -456,6 +457,7 @@ def grid_annulus(inner, outer, nx, nz, show=True, return_coords=False):
         Z[i,:] = x*outerZ + (1.-x)*innerZ
         
     if show:
+        import matplotlib.pyplot as plt
         plt.plot(inner.R, inner.Z, '-o')
         plt.plot(outer.R, outer.Z, '-o')
         
@@ -602,6 +604,7 @@ def grid_elliptic(inner, outer, nx, nz, show=False, tol=1e-10, align=True, restr
     dz = thetavals[1] - thetavals[0]
 
     if show:
+        import matplotlib.pyplot as plt
         # Markers on original points on inner and outer boundaries
         plt.plot(inner.R, inner.Z, '-o')
         plt.plot(outer.R, outer.Z, '-o')
@@ -675,6 +678,7 @@ def grid_elliptic(inner, outer, nx, nz, show=False, tol=1e-10, align=True, restr
             break
 
     if show:
+        import matplotlib.pyplot as plt
         plt.plot(R,Z)
         plt.plot(np.transpose(R), np.transpose(Z))
         plt.show()
