@@ -18,8 +18,6 @@ except ImportError:
     except ImportError:
         have_evtk = False
 
-import matplotlib.pyplot as plt
-
 from . import grid
 from . import field
 from . import fieldtracer

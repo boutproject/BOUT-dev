@@ -4,7 +4,6 @@ Routines and classes for representing periodic lines in R-Z poloidal planes
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
 
 from numpy import pi, linspace, sqrt, cos, sin, append, zeros, argmin
 from scipy.interpolate import splrep, splev, interp1d
@@ -191,6 +190,7 @@ class RZline:
         
         show    Calls plt.show() at the end
         """
+        import matplotlib.pyplot as plt
         if axis is None:
             fig = plt.figure()
             axis = fig.add_subplot(1,1,1)
@@ -265,6 +265,7 @@ def line_from_points_poly(rarray, zarray, show=False):
     # Take the first three points to make a triangle
 
     if show:
+        import matplotlib.pyplot as plt
         plt.figure()
         plt.plot(rarray, zarray, 'x')
         plt.plot(np.append(rvals[:3], rvals[0]), np.append(zvals[:3], zvals[0])) # Starting triangle
