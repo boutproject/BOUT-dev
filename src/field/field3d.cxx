@@ -1061,7 +1061,7 @@ Field3D pow(const Field3D &lhs, BoutReal rhs) {
   // Check if the inputs are allocated
   ASSERT1(lhs.isAllocated());
 
-  Field3D result(f.getMesh());
+  Field3D result(lhs.getMesh());
   result.allocate();
   for(const auto& i : result){
     result[i] = ::pow(lhs[i], rhs);
