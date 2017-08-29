@@ -13,7 +13,10 @@ from boutdata.collect import collect
 
 from numpy import sqrt, max, abs, mean, array, log, pi, polyfit, linspace
 
-import matplotlib.pyplot as plt
+try:
+    import matplotlib.pyplot as plt
+except:
+    pass
 
 import pickle
 
@@ -35,6 +38,8 @@ markers = ['bo', 'r^']
 labels = [r'$f$', r'$g$']
 
 MPIRUN = getmpirun()
+
+success=True
 
 print("Making fci-slab test")
 shell("make > make.log")
@@ -96,34 +101,47 @@ with open("fci_mms.pkl", "wb") as output:
     pickle.dump(error_inf, output)
 
 # plot errors
-plt.figure()
+try:
+    plt.figure()
+except:
+    pass
 
 # Calculate convergence order
 for var,mark,label in zip(varlist, markers, labels):
-    plt.plot(dx, error_2[var], '-'+mark, label=label)
-    plt.plot(dx, error_inf[var], '--'+mark)
+    try:
+        plt.plot(dx, error_2[var], '-'+mark, label=label)
+        plt.plot(dx, error_inf[var], '--'+mark)
+    except:
+        pass
 
     fit = polyfit(log(dx), log(error_2[var]), 1)
     order = fit[0]
     stdout.write("%s Convergence order = %f" % (var, order))
 
-    if order < 1.5: # Should be second order accurate
+    if order > 1.5: # Should be second order accurate
+        print("............ PASS")
+    else:
         print("............ FAIL")
         success = False
-    else:
-        print("............ PASS")
 
+try:
+    plt.legend(loc="upper left")
+    plt.grid()
 
-plt.legend(loc="upper left")
-plt.grid()
+    plt.yscale('log')
+    plt.xscale('log')
 
-plt.yscale('log')
-plt.xscale('log')
+    plt.xlabel(r'Mesh spacing $\delta x$')
+    plt.ylabel("Error norm")
 
-plt.xlabel(r'Mesh spacing $\delta x$')
-plt.ylabel("Error norm")
+    plt.savefig("fci-norm.pdf")
 
-plt.savefig("fci-norm.pdf")
+    plt.show()
+    plt.close()
+except:
+    pass
 
-plt.show()
-plt.close()
+if success:
+    exit(0)
+else:
+    exit(1)
