@@ -348,14 +348,13 @@ int CvodeSolver::run() {
 
       output.write("\nCVODE: nsteps %ld, nfevals %ld, nniters %ld, npevals %ld, nliters %ld\n", 
                    nsteps, nfevals, nniters, npevals, nliters);
-      
-      output.write("    -> Newton iterations per step: %e\n", 
-                   ((double) nniters) / ((double) nsteps));
-      output.write("    -> Linear iterations per Newton iteration: %e\n",
-                   ((double) nliters) / ((double) nniters));
-      output.write("    -> Preconditioner evaluations per Newton: %e\n",
-                   ((double) npevals) / ((double) nniters));
 
+      output.write("    -> Newton iterations per step: %e\n",
+                   static_cast<BoutReal>(nniters) / static_cast<BoutReal>(nsteps));
+      output.write("    -> Linear iterations per Newton iteration: %e\n",
+                   static_cast<BoutReal>(nliters) / static_cast<BoutReal>(nniters));
+      output.write("    -> Preconditioner evaluations per Newton: %e\n",
+                   static_cast<BoutReal>(npevals) / static_cast<BoutReal>(nniters));
 
       // Last step size
       BoutReal last_step;
@@ -533,9 +532,9 @@ static int cvode_rhs(BoutReal t,
   
   BoutReal *udata = NV_DATA_P(u);
   BoutReal *dudata = NV_DATA_P(du);
-  
-  CvodeSolver *s = (CvodeSolver*) user_data;
-  
+
+  CvodeSolver *s = static_cast<CvodeSolver *>(user_data);
+
   // Calculate RHS function
   try {
     s->rhs(t, udata, dudata);
@@ -559,8 +558,8 @@ static int cvode_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector rvec
   BoutReal *udata = NV_DATA_P(yy);
   BoutReal *rdata = NV_DATA_P(rvec);
   BoutReal *zdata = NV_DATA_P(zvec);
-  
-  CvodeSolver *s = (CvodeSolver*) user_data;
+
+  CvodeSolver *s = static_cast<CvodeSolver *>(user_data);
 
   // Calculate residuals
   s->pre(t, gamma, delta, udata, rdata, zdata);
@@ -574,9 +573,9 @@ static int cvode_jac(N_Vector v, N_Vector Jv, realtype t, N_Vector y, N_Vector U
   BoutReal *ydata = NV_DATA_P(y);    ///< System state
   BoutReal *vdata = NV_DATA_P(v);    ///< Input vector
   BoutReal *Jvdata = NV_DATA_P(Jv);  ///< Jacobian*vector output
-  
-  CvodeSolver *s = (CvodeSolver*) user_data;
-  
+
+  CvodeSolver *s = static_cast<CvodeSolver *>(user_data);
+
   s->jac(t, ydata, vdata, Jvdata);
   
   return 0;

@@ -57,7 +57,6 @@ EXTRA_INCS		= @EXTRA_INCS@
 EXTRA_LIBS		= @EXTRA_LIBS@ @OPENMP_CXXFLAGS@
 
 PRECON_SOURCE	= @PRECON_SOURCE@
-FACETS_SOURCE   = @FACETS_SOURCE@
 
 ####################################################################
 # These are used for compiling physics modules using BOUT++ library

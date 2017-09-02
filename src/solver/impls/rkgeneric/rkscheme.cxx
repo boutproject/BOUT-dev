@@ -157,8 +157,8 @@ BoutReal RKScheme::getErr(BoutReal *solA, BoutReal *solB){
     throw BoutException("MPI_Allreduce failed");
   }
   //Normalise by number of values
-  err /= (BoutReal) neq;
-  
+  err /= static_cast<BoutReal>(neq);
+
   return err;
 }
 

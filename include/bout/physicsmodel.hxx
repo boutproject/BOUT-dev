@@ -299,11 +299,13 @@ private:
       ModelClass *model = new ModelClass();           \
       Solver *solver = Solver::create();              \
       solver->setModel(model);                        \
+      Monitor * bout_monitor = new BoutMonitor();     \
       solver->addMonitor(bout_monitor, Solver::BACK); \
       solver->outputVars(dump);                       \
       solver->solve();                                \
       delete model;                                   \
       delete solver;                                  \
+      delete bout_monitor;                            \
     }catch (BoutException &e) {                       \
       output << "Error encountered\n";                \
       output << e.what() << endl;                     \
