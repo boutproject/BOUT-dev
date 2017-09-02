@@ -41,6 +41,8 @@ checksum:
 	@echo $(CHECKSUM)
 
 # This to make sure build time is always printed correctly
+.PHONY: bout++.cxx
+
 initial_message:
 	@echo ""
 	@echo "----- Compiling BOUT++ -----" 

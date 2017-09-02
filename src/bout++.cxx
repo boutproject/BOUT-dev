@@ -354,6 +354,7 @@ int bout_run(Solver *solver, rhsfunc physics_run) {
   solver->setRHS(physics_run);
   
   /// Add the monitor function
+  Monitor * bout_monitor = new BoutMonitor();
   solver->addMonitor(bout_monitor, Solver::BACK);
 
   /// Run the simulation
@@ -428,8 +429,8 @@ int BoutFinalise() {
  * Called each timestep by the solver
  **************************************************************************/
 
-int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
-  TRACE("bout_monitor(%e, %d, %d)", t, iter, NOUT);
+int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
+  TRACE("BoutMonitor::call(%e, %d, %d)", t, iter, NOUT);
 
   // Data used for timing
   static bool first_time = true;
