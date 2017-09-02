@@ -528,22 +528,26 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
         index = j*intv
 
         for j in range(0,Nvar):
-                if (lineplot[j] == 1):
-                    for k in range(0,Nlines[j]):
-                        lines[j][k].set_data(x[j][k], vars[j][k][index,:])
-                elif (contour[j] == 1):
-                    plots[j] = ax[j].contourf(x[j][0],y[j],vars[j][0][index,:,:].T, Ncolors, lw=0, levels=clevels[j])
-                elif (surf[j] == 1):
-                    ax[j] = fig.add_subplot(row,col,j+1, projection='3d')
-                    plots[j] = ax[j].plot_wireframe(x[j][0], y[j], vars[j][0][index,:,:].T, rstride=ystride[j], cstride=xstride[j])
-                    ax[j].set_zlim(fmin[j],fmax[j])
-                    ax[j].set_xlabel(r'x')
-                    ax[j].set_ylabel(r'y')
-                    ax[j].set_title(titles[j])
-                elif (polar[j] == 1):
-                    plots[j] = ax[j].contourf(theta[j], r[j], vars[j][0][index,:,:].T, levels=clevels[j])
-                    ax[j].set_rmax(Nx[j][0]-1)
-
+            if (lineplot[j] == 1):
+                # No cla() call for line plots
+                for k in range(0,Nlines[j]):
+                    lines[j][k].set_data(x[j][k], vars[j][k][index,:])
+            elif (contour[j] == 1):
+                ax[j].cla()
+                plots[j] = ax[j].contourf(x[j][0],y[j],vars[j][0][index,:,:].T, Ncolors, lw=0, levels=clevels[j])
+            elif (surf[j] == 1):
+                ax[j].cla()
+                ax[j] = fig.add_subplot(row,col,j+1, projection='3d')
+                plots[j] = ax[j].plot_wireframe(x[j][0], y[j], vars[j][0][index,:,:].T, rstride=ystride[j], cstride=xstride[j])
+                ax[j].set_zlim(fmin[j],fmax[j])
+                ax[j].set_xlabel(r'x')
+                ax[j].set_ylabel(r'y')
+                ax[j].set_title(titles[j])
+            elif (polar[j] == 1):
+                ax[j].cla()
+                plots[j] = ax[j].contourf(theta[j], r[j], vars[j][0][index,:,:].T, levels=clevels[j])
+                ax[j].set_rmax(Nx[j][0]-1)
+            
         if (tslice == 0):
             title.set_text('t = %1.2e' % t[index])
         else:
