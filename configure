@@ -5172,6 +5172,12 @@ fi
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libfftw3" >&5
 $as_echo_n "checking for libfftw3... " >&6; }
+    ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
     LDFLAGS_save=$LDFLAGS
     LIBS="$EXTRA_LIBS -lfftw3"
     BACL_found=no
@@ -5249,6 +5255,12 @@ $as_echo "no" >&6; }
 else
   as_fn_error $? "\"FFTW3 is needed by BOUT++\"" "$LINENO" 5
 fi
+    ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
 
 
 echo ""
@@ -5498,6 +5510,12 @@ $as_echo "no" >&6; }
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libnetcdf" >&5
 $as_echo_n "checking for libnetcdf... " >&6; }
+    ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
     LDFLAGS_save=$LDFLAGS
     LIBS="$EXTRA_LIBS -lnetcdf"
     BACL_found=no
@@ -5574,6 +5592,12 @@ $as_echo "no" >&6; }
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libnetcdf_c++" >&5
 $as_echo_n "checking for libnetcdf_c++... " >&6; }
+    ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
     LDFLAGS_save=$LDFLAGS
     LIBS="$EXTRA_LIBS -lnetcdf_c++"
     BACL_found=no
@@ -5651,10 +5675,22 @@ $as_echo "no" >&6; }
 else
   NCFOUND=no
 fi
+    ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
 
 else
   NCFOUND=no
 fi
+    ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
 
 else
   NCFOUND=no
@@ -7316,6 +7352,12 @@ fi
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libblas" >&5
 $as_echo_n "checking for libblas... " >&6; }
+    ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
     LDFLAGS_save=$LDFLAGS
     LIBS="$EXTRA_LIBS -lblas"
     BACL_found=no
@@ -7393,6 +7435,12 @@ $as_echo "no" >&6; }
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for liblapack" >&5
 $as_echo_n "checking for liblapack... " >&6; }
+    ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
     LDFLAGS_save=$LDFLAGS
     LIBS="$EXTRA_LIBS -llapack"
     BACL_found=no
@@ -7475,6 +7523,12 @@ else
   as_fn_error $? "\"LAPACK requested but not found.\"" "$LINENO" 5
 fi
 fi
+    ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
 
 
 else
@@ -7482,6 +7536,12 @@ else
   as_fn_error $? "\"LAPACK requested but not found.\"" "$LINENO" 5
 fi
 fi
+    ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
 
 
     echo ""
