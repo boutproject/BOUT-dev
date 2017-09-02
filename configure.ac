@@ -263,7 +263,7 @@ else
   echo "Segmentation fault handling disabled"
 fi
 
-if test "$enable_signal" != "no"
+if test "$enable_color" != "no"
 then
   echo "Output coloring enabled"
   CXXFLAGS="$CXXFLAGS -DLOGCOLOR"

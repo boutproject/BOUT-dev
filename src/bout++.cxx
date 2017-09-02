@@ -149,7 +149,7 @@ int BoutInitialise(int &argc, char **&argv) {
 	      "  -v \t\tIncrease verbosity\n"
 	      "  -q \t\tDecrease verbosity\n"
 #ifdef LOGCOLOR
-              "  -c \t\tColor output using bout-log-color\n"
+              "  -c, --color\t\tColor output using bout-log-color\n"
 #endif
 	      "  -h, --help\t\tThis message\n"
 	      "  restart [append]\tRestart the simulation. If append is specified, append to the existing output files, otherwise overwrite them\n"
@@ -194,7 +194,8 @@ int BoutInitialise(int &argc, char **&argv) {
     } else if (string(argv[i]) == "-q") {
       verbosity--;
       
-    } else if (string(argv[i]) == "-c") {
+    } else if ( (string(argv[i]) == "-c") ||
+                (string(argv[i]) == "--color") ) {
       // Add color to the output by piping through bout-log-color
       // This is done after checking all command-line inputs
       // in case -c is set multiple times
