@@ -13,4 +13,4 @@ include $(BOUT_TOP)/make.config
 
 generated_fieldops.cxx:gen_fieldops.py
 	python $< > $@
-	clang-format -i $@ || echo "Formatting failed"
+	@clang-format -i $@ || echo "Formatting failed"
