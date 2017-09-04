@@ -9,8 +9,8 @@
 // Do the actual mul of Field3D and Field3D
 void autogen_Field3D_Field3D_Field3D_mul(BoutReal *__restrict__ result,
                                          const BoutReal *__restrict__ lhs,
-                                         const BoutReal *__restrict__ rhs, int max) {
-  for (int i = 0; i < max; ++i) {
+                                         const BoutReal *__restrict__ rhs, int len) {
+  for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] * rhs[i];
   }
 }
@@ -42,8 +42,8 @@ Field3D operator*(const Field3D &lhs, const Field3D &rhs) {
 // Do the actual div of Field3D and Field3D
 void autogen_Field3D_Field3D_Field3D_div(BoutReal *__restrict__ result,
                                          const BoutReal *__restrict__ lhs,
-                                         const BoutReal *__restrict__ rhs, int max) {
-  for (int i = 0; i < max; ++i) {
+                                         const BoutReal *__restrict__ rhs, int len) {
+  for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] / rhs[i];
   }
 }
@@ -75,8 +75,8 @@ Field3D operator/(const Field3D &lhs, const Field3D &rhs) {
 // Do the actual plus of Field3D and Field3D
 void autogen_Field3D_Field3D_Field3D_plus(BoutReal *__restrict__ result,
                                           const BoutReal *__restrict__ lhs,
-                                          const BoutReal *__restrict__ rhs, int max) {
-  for (int i = 0; i < max; ++i) {
+                                          const BoutReal *__restrict__ rhs, int len) {
+  for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] + rhs[i];
   }
 }
@@ -108,8 +108,8 @@ Field3D operator+(const Field3D &lhs, const Field3D &rhs) {
 // Do the actual minus of Field3D and Field3D
 void autogen_Field3D_Field3D_Field3D_minus(BoutReal *__restrict__ result,
                                            const BoutReal *__restrict__ lhs,
-                                           const BoutReal *__restrict__ rhs, int max) {
-  for (int i = 0; i < max; ++i) {
+                                           const BoutReal *__restrict__ rhs, int len) {
+  for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] - rhs[i];
   }
 }
@@ -265,8 +265,8 @@ Field3D operator-(const Field3D &lhs, const Field2D &rhs) {
 // Do the actual mul of Field3D and BoutReal
 void autogen_Field3D_Field3D_BoutReal_mul(BoutReal *__restrict__ result,
                                           const BoutReal *__restrict__ lhs,
-                                          const BoutReal rhs, int max) {
-  for (int i = 0; i < max; ++i) {
+                                          const BoutReal rhs, int len) {
+  for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] * rhs;
   }
 }
@@ -290,8 +290,8 @@ Field3D operator*(const Field3D &lhs, const BoutReal rhs) {
 // Do the actual div of Field3D and BoutReal
 void autogen_Field3D_Field3D_BoutReal_div(BoutReal *__restrict__ result,
                                           const BoutReal *__restrict__ lhs,
-                                          const BoutReal rhs, int max) {
-  for (int i = 0; i < max; ++i) {
+                                          const BoutReal rhs, int len) {
+  for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] / rhs;
   }
 }
@@ -315,8 +315,8 @@ Field3D operator/(const Field3D &lhs, const BoutReal rhs) {
 // Do the actual plus of Field3D and BoutReal
 void autogen_Field3D_Field3D_BoutReal_plus(BoutReal *__restrict__ result,
                                            const BoutReal *__restrict__ lhs,
-                                           const BoutReal rhs, int max) {
-  for (int i = 0; i < max; ++i) {
+                                           const BoutReal rhs, int len) {
+  for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] + rhs;
   }
 }
@@ -340,8 +340,8 @@ Field3D operator+(const Field3D &lhs, const BoutReal rhs) {
 // Do the actual minus of Field3D and BoutReal
 void autogen_Field3D_Field3D_BoutReal_minus(BoutReal *__restrict__ result,
                                             const BoutReal *__restrict__ lhs,
-                                            const BoutReal rhs, int max) {
-  for (int i = 0; i < max; ++i) {
+                                            const BoutReal rhs, int len) {
+  for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] - rhs;
   }
 }
@@ -489,8 +489,8 @@ Field3D operator-(const Field2D &lhs, const Field3D &rhs) {
 // Do the actual mul of Field2D and Field2D
 void autogen_Field2D_Field2D_Field2D_mul(BoutReal *__restrict__ result,
                                          const BoutReal *__restrict__ lhs,
-                                         const BoutReal *__restrict__ rhs, int max) {
-  for (int i = 0; i < max; ++i) {
+                                         const BoutReal *__restrict__ rhs, int len) {
+  for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] * rhs[i];
   }
 }
@@ -514,8 +514,8 @@ Field2D operator*(const Field2D &lhs, const Field2D &rhs) {
 // Do the actual div of Field2D and Field2D
 void autogen_Field2D_Field2D_Field2D_div(BoutReal *__restrict__ result,
                                          const BoutReal *__restrict__ lhs,
-                                         const BoutReal *__restrict__ rhs, int max) {
-  for (int i = 0; i < max; ++i) {
+                                         const BoutReal *__restrict__ rhs, int len) {
+  for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] / rhs[i];
   }
 }
@@ -539,8 +539,8 @@ Field2D operator/(const Field2D &lhs, const Field2D &rhs) {
 // Do the actual plus of Field2D and Field2D
 void autogen_Field2D_Field2D_Field2D_plus(BoutReal *__restrict__ result,
                                           const BoutReal *__restrict__ lhs,
-                                          const BoutReal *__restrict__ rhs, int max) {
-  for (int i = 0; i < max; ++i) {
+                                          const BoutReal *__restrict__ rhs, int len) {
+  for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] + rhs[i];
   }
 }
@@ -564,8 +564,8 @@ Field2D operator+(const Field2D &lhs, const Field2D &rhs) {
 // Do the actual minus of Field2D and Field2D
 void autogen_Field2D_Field2D_Field2D_minus(BoutReal *__restrict__ result,
                                            const BoutReal *__restrict__ lhs,
-                                           const BoutReal *__restrict__ rhs, int max) {
-  for (int i = 0; i < max; ++i) {
+                                           const BoutReal *__restrict__ rhs, int len) {
+  for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] - rhs[i];
   }
 }
@@ -589,8 +589,8 @@ Field2D operator-(const Field2D &lhs, const Field2D &rhs) {
 // Do the actual mul of Field2D and BoutReal
 void autogen_Field2D_Field2D_BoutReal_mul(BoutReal *__restrict__ result,
                                           const BoutReal *__restrict__ lhs,
-                                          const BoutReal rhs, int max) {
-  for (int i = 0; i < max; ++i) {
+                                          const BoutReal rhs, int len) {
+  for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] * rhs;
   }
 }
@@ -613,8 +613,8 @@ Field2D operator*(const Field2D &lhs, const BoutReal rhs) {
 // Do the actual div of Field2D and BoutReal
 void autogen_Field2D_Field2D_BoutReal_div(BoutReal *__restrict__ result,
                                           const BoutReal *__restrict__ lhs,
-                                          const BoutReal rhs, int max) {
-  for (int i = 0; i < max; ++i) {
+                                          const BoutReal rhs, int len) {
+  for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] / rhs;
   }
 }
@@ -637,8 +637,8 @@ Field2D operator/(const Field2D &lhs, const BoutReal rhs) {
 // Do the actual plus of Field2D and BoutReal
 void autogen_Field2D_Field2D_BoutReal_plus(BoutReal *__restrict__ result,
                                            const BoutReal *__restrict__ lhs,
-                                           const BoutReal rhs, int max) {
-  for (int i = 0; i < max; ++i) {
+                                           const BoutReal rhs, int len) {
+  for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] + rhs;
   }
 }
@@ -661,8 +661,8 @@ Field2D operator+(const Field2D &lhs, const BoutReal rhs) {
 // Do the actual minus of Field2D and BoutReal
 void autogen_Field2D_Field2D_BoutReal_minus(BoutReal *__restrict__ result,
                                             const BoutReal *__restrict__ lhs,
-                                            const BoutReal rhs, int max) {
-  for (int i = 0; i < max; ++i) {
+                                            const BoutReal rhs, int len) {
+  for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] - rhs;
   }
 }
@@ -685,8 +685,8 @@ Field2D operator-(const Field2D &lhs, const BoutReal rhs) {
 // Do the actual mul of BoutReal and Field3D
 void autogen_Field3D_BoutReal_Field3D_mul(BoutReal *__restrict__ result,
                                           const BoutReal lhs,
-                                          const BoutReal *__restrict__ rhs, int max) {
-  for (int i = 0; i < max; ++i) {
+                                          const BoutReal *__restrict__ rhs, int len) {
+  for (int i = 0; i < len; ++i) {
     result[i] = lhs * rhs[i];
   }
 }
@@ -710,8 +710,8 @@ Field3D operator*(const BoutReal lhs, const Field3D &rhs) {
 // Do the actual div of BoutReal and Field3D
 void autogen_Field3D_BoutReal_Field3D_div(BoutReal *__restrict__ result,
                                           const BoutReal lhs,
-                                          const BoutReal *__restrict__ rhs, int max) {
-  for (int i = 0; i < max; ++i) {
+                                          const BoutReal *__restrict__ rhs, int len) {
+  for (int i = 0; i < len; ++i) {
     result[i] = lhs / rhs[i];
   }
 }
@@ -735,8 +735,8 @@ Field3D operator/(const BoutReal lhs, const Field3D &rhs) {
 // Do the actual plus of BoutReal and Field3D
 void autogen_Field3D_BoutReal_Field3D_plus(BoutReal *__restrict__ result,
                                            const BoutReal lhs,
-                                           const BoutReal *__restrict__ rhs, int max) {
-  for (int i = 0; i < max; ++i) {
+                                           const BoutReal *__restrict__ rhs, int len) {
+  for (int i = 0; i < len; ++i) {
     result[i] = lhs + rhs[i];
   }
 }
@@ -760,8 +760,8 @@ Field3D operator+(const BoutReal lhs, const Field3D &rhs) {
 // Do the actual minus of BoutReal and Field3D
 void autogen_Field3D_BoutReal_Field3D_minus(BoutReal *__restrict__ result,
                                             const BoutReal lhs,
-                                            const BoutReal *__restrict__ rhs, int max) {
-  for (int i = 0; i < max; ++i) {
+                                            const BoutReal *__restrict__ rhs, int len) {
+  for (int i = 0; i < len; ++i) {
     result[i] = lhs - rhs[i];
   }
 }
@@ -785,8 +785,8 @@ Field3D operator-(const BoutReal lhs, const Field3D &rhs) {
 // Do the actual mul of BoutReal and Field2D
 void autogen_Field2D_BoutReal_Field2D_mul(BoutReal *__restrict__ result,
                                           const BoutReal lhs,
-                                          const BoutReal *__restrict__ rhs, int max) {
-  for (int i = 0; i < max; ++i) {
+                                          const BoutReal *__restrict__ rhs, int len) {
+  for (int i = 0; i < len; ++i) {
     result[i] = lhs * rhs[i];
   }
 }
@@ -809,8 +809,8 @@ Field2D operator*(const BoutReal lhs, const Field2D &rhs) {
 // Do the actual div of BoutReal and Field2D
 void autogen_Field2D_BoutReal_Field2D_div(BoutReal *__restrict__ result,
                                           const BoutReal lhs,
-                                          const BoutReal *__restrict__ rhs, int max) {
-  for (int i = 0; i < max; ++i) {
+                                          const BoutReal *__restrict__ rhs, int len) {
+  for (int i = 0; i < len; ++i) {
     result[i] = lhs / rhs[i];
   }
 }
@@ -833,8 +833,8 @@ Field2D operator/(const BoutReal lhs, const Field2D &rhs) {
 // Do the actual plus of BoutReal and Field2D
 void autogen_Field2D_BoutReal_Field2D_plus(BoutReal *__restrict__ result,
                                            const BoutReal lhs,
-                                           const BoutReal *__restrict__ rhs, int max) {
-  for (int i = 0; i < max; ++i) {
+                                           const BoutReal *__restrict__ rhs, int len) {
+  for (int i = 0; i < len; ++i) {
     result[i] = lhs + rhs[i];
   }
 }
@@ -857,8 +857,8 @@ Field2D operator+(const BoutReal lhs, const Field2D &rhs) {
 // Do the actual minus of BoutReal and Field2D
 void autogen_Field2D_BoutReal_Field2D_minus(BoutReal *__restrict__ result,
                                             const BoutReal lhs,
-                                            const BoutReal *__restrict__ rhs, int max) {
-  for (int i = 0; i < max; ++i) {
+                                            const BoutReal *__restrict__ rhs, int len) {
+  for (int i = 0; i < len; ++i) {
     result[i] = lhs - rhs[i];
   }
 }
@@ -880,8 +880,8 @@ Field2D operator-(const BoutReal lhs, const Field2D &rhs) {
 // This file is autogenerated - see gen_fieldops.py
 // Provide the C function to update Field3D by mul with Field3D
 void autogen_Field3D_Field3D_mul(BoutReal *__restrict__ lhs,
-                                 const BoutReal *__restrict__ rhs, int max) {
-  for (int i = 0; i < max; ++i) {
+                                 const BoutReal *__restrict__ rhs, int len) {
+  for (int i = 0; i < len; ++i) {
     lhs[i] *= rhs[i];
   }
 }
@@ -913,8 +913,8 @@ Field3D &Field3D::operator*=(const Field3D &rhs) {
 // This file is autogenerated - see gen_fieldops.py
 // Provide the C function to update Field3D by div with Field3D
 void autogen_Field3D_Field3D_div(BoutReal *__restrict__ lhs,
-                                 const BoutReal *__restrict__ rhs, int max) {
-  for (int i = 0; i < max; ++i) {
+                                 const BoutReal *__restrict__ rhs, int len) {
+  for (int i = 0; i < len; ++i) {
     lhs[i] /= rhs[i];
   }
 }
@@ -946,8 +946,8 @@ Field3D &Field3D::operator/=(const Field3D &rhs) {
 // This file is autogenerated - see gen_fieldops.py
 // Provide the C function to update Field3D by plus with Field3D
 void autogen_Field3D_Field3D_plus(BoutReal *__restrict__ lhs,
-                                  const BoutReal *__restrict__ rhs, int max) {
-  for (int i = 0; i < max; ++i) {
+                                  const BoutReal *__restrict__ rhs, int len) {
+  for (int i = 0; i < len; ++i) {
     lhs[i] += rhs[i];
   }
 }
@@ -979,8 +979,8 @@ Field3D &Field3D::operator+=(const Field3D &rhs) {
 // This file is autogenerated - see gen_fieldops.py
 // Provide the C function to update Field3D by minus with Field3D
 void autogen_Field3D_Field3D_minus(BoutReal *__restrict__ lhs,
-                                   const BoutReal *__restrict__ rhs, int max) {
-  for (int i = 0; i < max; ++i) {
+                                   const BoutReal *__restrict__ rhs, int len) {
+  for (int i = 0; i < len; ++i) {
     lhs[i] -= rhs[i];
   }
 }
@@ -1140,8 +1140,8 @@ Field3D &Field3D::operator-=(const Field2D &rhs) {
 // This file is autogenerated - see gen_fieldops.py
 // Provide the C function to update Field3D by mul with BoutReal
 void autogen_Field3D_BoutReal_mul(BoutReal *__restrict__ lhs, const BoutReal rhs,
-                                  int max) {
-  for (int i = 0; i < max; ++i) {
+                                  int len) {
+  for (int i = 0; i < len; ++i) {
     lhs[i] *= rhs;
   }
 }
@@ -1166,8 +1166,8 @@ Field3D &Field3D::operator*=(const BoutReal rhs) {
 // This file is autogenerated - see gen_fieldops.py
 // Provide the C function to update Field3D by div with BoutReal
 void autogen_Field3D_BoutReal_div(BoutReal *__restrict__ lhs, const BoutReal rhs,
-                                  int max) {
-  for (int i = 0; i < max; ++i) {
+                                  int len) {
+  for (int i = 0; i < len; ++i) {
     lhs[i] /= rhs;
   }
 }
@@ -1192,8 +1192,8 @@ Field3D &Field3D::operator/=(const BoutReal rhs) {
 // This file is autogenerated - see gen_fieldops.py
 // Provide the C function to update Field3D by plus with BoutReal
 void autogen_Field3D_BoutReal_plus(BoutReal *__restrict__ lhs, const BoutReal rhs,
-                                   int max) {
-  for (int i = 0; i < max; ++i) {
+                                   int len) {
+  for (int i = 0; i < len; ++i) {
     lhs[i] += rhs;
   }
 }
@@ -1218,8 +1218,8 @@ Field3D &Field3D::operator+=(const BoutReal rhs) {
 // This file is autogenerated - see gen_fieldops.py
 // Provide the C function to update Field3D by minus with BoutReal
 void autogen_Field3D_BoutReal_minus(BoutReal *__restrict__ lhs, const BoutReal rhs,
-                                    int max) {
-  for (int i = 0; i < max; ++i) {
+                                    int len) {
+  for (int i = 0; i < len; ++i) {
     lhs[i] -= rhs;
   }
 }
@@ -1244,8 +1244,8 @@ Field3D &Field3D::operator-=(const BoutReal rhs) {
 // This file is autogenerated - see gen_fieldops.py
 // Provide the C function to update Field2D by mul with Field2D
 void autogen_Field2D_Field2D_mul(BoutReal *__restrict__ lhs,
-                                 const BoutReal *__restrict__ rhs, int max) {
-  for (int i = 0; i < max; ++i) {
+                                 const BoutReal *__restrict__ rhs, int len) {
+  for (int i = 0; i < len; ++i) {
     lhs[i] *= rhs[i];
   }
 }
@@ -1271,8 +1271,8 @@ Field2D &Field2D::operator*=(const Field2D &rhs) {
 // This file is autogenerated - see gen_fieldops.py
 // Provide the C function to update Field2D by div with Field2D
 void autogen_Field2D_Field2D_div(BoutReal *__restrict__ lhs,
-                                 const BoutReal *__restrict__ rhs, int max) {
-  for (int i = 0; i < max; ++i) {
+                                 const BoutReal *__restrict__ rhs, int len) {
+  for (int i = 0; i < len; ++i) {
     lhs[i] /= rhs[i];
   }
 }
@@ -1298,8 +1298,8 @@ Field2D &Field2D::operator/=(const Field2D &rhs) {
 // This file is autogenerated - see gen_fieldops.py
 // Provide the C function to update Field2D by plus with Field2D
 void autogen_Field2D_Field2D_plus(BoutReal *__restrict__ lhs,
-                                  const BoutReal *__restrict__ rhs, int max) {
-  for (int i = 0; i < max; ++i) {
+                                  const BoutReal *__restrict__ rhs, int len) {
+  for (int i = 0; i < len; ++i) {
     lhs[i] += rhs[i];
   }
 }
@@ -1325,8 +1325,8 @@ Field2D &Field2D::operator+=(const Field2D &rhs) {
 // This file is autogenerated - see gen_fieldops.py
 // Provide the C function to update Field2D by minus with Field2D
 void autogen_Field2D_Field2D_minus(BoutReal *__restrict__ lhs,
-                                   const BoutReal *__restrict__ rhs, int max) {
-  for (int i = 0; i < max; ++i) {
+                                   const BoutReal *__restrict__ rhs, int len) {
+  for (int i = 0; i < len; ++i) {
     lhs[i] -= rhs[i];
   }
 }
@@ -1352,8 +1352,8 @@ Field2D &Field2D::operator-=(const Field2D &rhs) {
 // This file is autogenerated - see gen_fieldops.py
 // Provide the C function to update Field2D by mul with BoutReal
 void autogen_Field2D_BoutReal_mul(BoutReal *__restrict__ lhs, const BoutReal rhs,
-                                  int max) {
-  for (int i = 0; i < max; ++i) {
+                                  int len) {
+  for (int i = 0; i < len; ++i) {
     lhs[i] *= rhs;
   }
 }
@@ -1378,8 +1378,8 @@ Field2D &Field2D::operator*=(const BoutReal rhs) {
 // This file is autogenerated - see gen_fieldops.py
 // Provide the C function to update Field2D by div with BoutReal
 void autogen_Field2D_BoutReal_div(BoutReal *__restrict__ lhs, const BoutReal rhs,
-                                  int max) {
-  for (int i = 0; i < max; ++i) {
+                                  int len) {
+  for (int i = 0; i < len; ++i) {
     lhs[i] /= rhs;
   }
 }
@@ -1404,8 +1404,8 @@ Field2D &Field2D::operator/=(const BoutReal rhs) {
 // This file is autogenerated - see gen_fieldops.py
 // Provide the C function to update Field2D by plus with BoutReal
 void autogen_Field2D_BoutReal_plus(BoutReal *__restrict__ lhs, const BoutReal rhs,
-                                   int max) {
-  for (int i = 0; i < max; ++i) {
+                                   int len) {
+  for (int i = 0; i < len; ++i) {
     lhs[i] += rhs;
   }
 }
@@ -1430,8 +1430,8 @@ Field2D &Field2D::operator+=(const BoutReal rhs) {
 // This file is autogenerated - see gen_fieldops.py
 // Provide the C function to update Field2D by minus with BoutReal
 void autogen_Field2D_BoutReal_minus(BoutReal *__restrict__ lhs, const BoutReal rhs,
-                                    int max) {
-  for (int i = 0; i < max; ++i) {
+                                    int len) {
+  for (int i = 0; i < len; ++i) {
     lhs[i] -= rhs;
   }
 }
