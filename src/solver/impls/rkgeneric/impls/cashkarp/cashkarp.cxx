@@ -11,8 +11,8 @@ CASHKARPScheme::CASHKARPScheme(Options *options):RKScheme(options){
   OPTION(options, followHighOrder, followHighOrder);
 
   //Allocate coefficient arrays
-  stageCoeffs = rmatrix(numStages,numStages);
-  resultCoeffs = rmatrix(numStages,numOrders);
+  stageCoeffs = matrix<BoutReal>(numStages,numStages);
+  resultCoeffs = matrix<BoutReal>(numStages,numOrders);
   timeCoeffs = new BoutReal[numStages];
 
   //Zero out arrays (shouldn't be needed, but do for testing)
@@ -78,10 +78,10 @@ CASHKARPScheme::CASHKARPScheme(Options *options):RKScheme(options){
   //Level 5
   timeCoeffs[5] = 7.0/8.0;
 
-};
+}
 
 CASHKARPScheme::~CASHKARPScheme(){
   //Do my cleanup
   
-};
+}
 

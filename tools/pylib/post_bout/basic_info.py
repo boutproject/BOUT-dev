@@ -47,7 +47,7 @@ def basic_info(data,meta,rescale=True,rotate=False,user_peak=0,nonlinear=None):
         print("no rescaling")
         ave = {'amp':amp,'dc':dc}
 
-    if nonlinear != None: #add nonlinear part if user provides
+    if nonlinear is not None: #add nonlinear part if user provides
         nl =  abs(nonlinear[:,mxg:-1.0*mxg,:,:]).max(1).max(1).max(1)
         nl_norm = (old_div(nl,dfdt)) *dt
 

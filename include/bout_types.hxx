@@ -22,17 +22,9 @@
 #ifndef __BOUT_TYPES_H__
 #define __BOUT_TYPES_H__
 
-/*
 #include <vector>
-#include <string>
-
-using std::string; // String class 
-using std::vector;
-*/
 
 typedef double BoutReal;
-
-//typedef vector<BoutReal> rvec;  // Vector of BoutReals
 
 /// 4 possible variable locations. Default is for passing to functions
 enum CELL_LOC {CELL_DEFAULT=0, CELL_CENTRE=1, CELL_CENTER=1, CELL_XLOW=2, CELL_YLOW=3, CELL_ZLOW=4, CELL_VSHIFT=5};
@@ -45,6 +37,5 @@ enum REGION {RGN_ALL, RGN_NOBNDRY, RGN_NOX, RGN_NOY, RGN_NOZ};
 
 //jmad Boundary condition function
 typedef BoutReal (*FuncPtr)(BoutReal t, BoutReal x, BoutReal y, BoutReal z);
-
 
 #endif // __BOUT_TYPES_H__

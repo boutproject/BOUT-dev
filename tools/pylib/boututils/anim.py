@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from __future__ import print_function
 from builtins import range
 from boutdata.collect import collect
@@ -47,7 +48,7 @@ def anim(s, d, *args, **kwargs):
    
     for i in range(nt):
         s.mlab_source.scalars = d[i,:,:]
-        if s1 != None : s1.mlab_source.scalars = d[i,:,:]
+        if s1 is not None : s1.mlab_source.scalars = d[i,:,:]
         title="t="+np.string0(i)
         mlab.title(title,height=1.1, size=0.26)
         if save == True : mlab.savefig('Movie/anim%d.png'%i)

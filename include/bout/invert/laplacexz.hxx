@@ -34,14 +34,15 @@
 #include <options.hxx>
 #include <field3d.hxx>
 #include <bout/mesh.hxx>
+#include <unused.hxx>
 
 class LaplaceXZ {
 public:
-  LaplaceXZ(Mesh *m, Options *options) {}
+  LaplaceXZ(Mesh *UNUSED(m), Options *UNUSED(options)) {}
   virtual ~LaplaceXZ() {}
 
   virtual void setCoefs(const Field2D &A, const Field2D &B) = 0;
-  virtual void setCoefs(const Field3D &A, const Field3D &B) { setCoefs(A.DC(), B.DC()); }
+  virtual void setCoefs(const Field3D &A, const Field3D &B) { setCoefs(DC(A), DC(B)); }
 
   virtual Field3D solve(const Field3D &b, const Field3D &x0) = 0;
 

@@ -36,7 +36,10 @@
 #include <fft.hxx>
 #include <bout/constants.hxx>
 
-LaplaceShoot::LaplaceShoot(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0) {
+LaplaceShoot::LaplaceShoot(Options *opt)
+    : Laplacian(opt), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
+  throw BoutException("LaplaceShoot is a test implementation and does not currently work. Please select a different implementation.");
+
   if(mesh->periodicX) {
         throw BoutException("LaplaceShoot does not work with periodicity in the x direction (mesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
   }
@@ -45,7 +48,7 @@ LaplaceShoot::LaplaceShoot(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0
   nmode = maxmode + 1; // Number of Z modes. maxmode set in invert_laplace.cxx from options
   
   // Allocate memory
-  int size = (mesh->ngz-1)/2 + 1;
+  int size = (mesh->LocalNz)/2 + 1;
   km = new dcomplex[size];
   kc = new dcomplex[size];
   kp = new dcomplex[size];
@@ -77,6 +80,8 @@ const FieldPerp LaplaceShoot::solve(const FieldPerp &rhs) {
   
   int jy = rhs.getIndex();  // Get the Y index
   x.setIndex(jy);
+
+  Coordinates *coord = mesh->coordinates();
   
   // Get the width of the boundary
   
@@ -95,7 +100,7 @@ const FieldPerp LaplaceShoot::solve(const FieldPerp &rhs) {
     xs = inbndry;
   xe = mesh->xend;  // Last X index
   if(mesh->lastX())
-    xe = mesh->ngx-outbndry-1;
+    xe = mesh->LocalNx-outbndry-1;
 
   if(mesh->lastX()) {
     // Set initial value and gradient to zero
@@ -106,8 +111,8 @@ const FieldPerp LaplaceShoot::solve(const FieldPerp &rhs) {
       kp[i] = 0.0;
     }
     
-    for(int ix=xe;ix<mesh->ngx;ix++)
-      for(int iz=0;iz<mesh->ngz-1;iz++) {
+    for(int ix=xe;ix<mesh->LocalNx;ix++)
+      for(int iz=0;iz<mesh->LocalNz;iz++) {
         x[ix][iz] = 0.0;
       }
       
@@ -123,30 +128,30 @@ const FieldPerp LaplaceShoot::solve(const FieldPerp &rhs) {
     }
     
     // Calculate solution at xe using kc
-    ZFFT_rev(kc, mesh->zShift(xe, jy), x[xe]);
+    irfft(kc, mesh->LocalNz, x[xe]);
   }
   
   // kc and kp now set to result at x and x+1 respectively
   // Use b at x to get km at x-1
   // Loop inwards from edge
   for(int ix=xe; ix >= xs; ix--) {
-    ZFFT(rhs[ix], mesh->zShift(ix, jy), rhsk);
+    rfft(rhs[ix], mesh->LocalNz, rhsk);
     
     for(int kz=0; kz<maxmode; kz++) {
-      BoutReal kwave=kz*2.0*PI/(mesh->zlength()); // wave number is 1/[rad]
+      BoutReal kwave=kz*2.0*PI/(coord->zlength()); // wave number is 1/[rad]
       
       // Get the coefficients
       dcomplex a,b,c;
-      tridagCoefs(ix, jy, kwave, a, b, c, &C, &D);
-      b += A(ix,jy);
-      
+      tridagCoefs(ix, jy, kwave, a, b, c, &Ccoef, &Dcoef);
+      b += Acoef(ix, jy);
+
       // a*km + b*kc + c*kp = rhsk
       
       km[kz] = (rhsk[kz] - b*kc[kz] - c*kp[kz]) / a;
     }
     
     // Inverse FFT to get x[ix-1]
-    ZFFT_rev(km, mesh->zShift(ix, jy), x[ix-1]);
+    irfft(km, mesh->LocalNz, x[ix-1]);
     
     // Cycle km->kc->kp
     
@@ -167,7 +172,7 @@ const FieldPerp LaplaceShoot::solve(const FieldPerp &rhs) {
   }else {
     // Set inner boundary
     for(int ix=xs-2;ix>=0;ix--) {
-      for(int iz=0;iz<mesh->ngz-1;iz++) {
+      for(int iz=0;iz<mesh->LocalNz;iz++) {
         x[ix][iz] = x[xs-1][iz];
       }
     }

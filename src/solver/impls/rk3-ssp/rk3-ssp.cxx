@@ -10,12 +10,12 @@
 
 #include <output.hxx>
 
-RK3SSP::RK3SSP(Options *opt) : Solver(opt), f(0) {
+RK3SSP::RK3SSP(Options *opt) : Solver(opt), f(nullptr) {
   
 }
 
 RK3SSP::~RK3SSP() {
-  if(f != 0) {
+  if(f != nullptr) {
     delete[] f;
     
     delete[] u1;
@@ -32,12 +32,12 @@ void RK3SSP::setMaxTimestep(BoutReal dt) {
   timestep = dt; // Won't be used this time, but next
 }
 
-int RK3SSP::init(bool restarting, int nout, BoutReal tstep) {
+int RK3SSP::init(int nout, BoutReal tstep) {
 
-  int msg_point = msg_stack.push("Initialising RK3 SSP solver");
+  TRACE("Initialising RK3 SSP solver");
   
   /// Call the generic initialisation first
-  if(Solver::init(restarting, nout, tstep))
+  if (Solver::init(nout, tstep))
     return 1;
   
   output << "\n\tRunge-Kutta 3rd-order SSP solver\n";
@@ -76,20 +76,17 @@ int RK3SSP::init(bool restarting, int nout, BoutReal tstep) {
   OPTION(options, timestep, max_timestep); // Starting timestep
   OPTION(options, mxstep, 500); // Maximum number of steps between outputs
 
-  msg_stack.pop(msg_point);
-
   return 0;
 }
 
 int RK3SSP::run() {
-  int msg_point = msg_stack.push("RK3SSP::run()");
+  TRACE("RK3SSP::run()");
   
   for(int s=0;s<nsteps;s++) {
     BoutReal target = simtime + out_timestep;
     
     BoutReal dt;
     bool running = true;
-    int internal_steps = 0;
     do {
       // Take a single time step
       
@@ -124,8 +121,6 @@ int RK3SSP::run() {
     // Reset iteration and wall-time count
     rhs_ncalls = 0;
   }
-  
-  msg_stack.pop(msg_point);
   
   return 0;
 }

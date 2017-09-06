@@ -7,18 +7,22 @@ class BoutException;
 #include <exception>
 #include <string>
 
-using namespace std;
+using std::string;
 
 void BoutParallelThrowRhsFail(int &status, const char* message);
 
-class BoutException : public exception {
+class BoutException : public std::exception {
 public:
   BoutException(const char *, ...);
-  virtual ~BoutException() throw();
+  BoutException(const std::string);
+  virtual ~BoutException();
   
-  const char* what() const throw();
-
+  const char* what() const noexcept;
+  void Backtrace();
 protected:
+  char *buffer = nullptr;
+  static const int BUFFER_LEN = 1024; // Length of char buffer for printing
+  int buflen; // Length of char buffer for printing
   string message;
 };
 

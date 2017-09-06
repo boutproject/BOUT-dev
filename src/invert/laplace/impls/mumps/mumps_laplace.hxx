@@ -36,16 +36,23 @@ class LaplaceMumps;
  
 class LaplaceMumps : public Laplacian {
  public:
-  LaplaceMumps(Options *opt = NULL) { throw BoutException("Mumps library not available"); }
+  LaplaceMumps(Options *UNUSED(opt) = NULL) { throw BoutException("Mumps library not available"); }
   
-  void setCoefA(const Field2D &val) {}
-  void setCoefB(const Field2D &val) {}
-  void setCoefC(const Field2D &val) {}
-  void setCoefD(const Field2D &val) {}
-  void setCoefEx(const Field2D &val) {}
-  void setCoefEz(const Field2D &val) {}
-  
-  const FieldPerp solve(const FieldPerp &b) {throw BoutException("PETSc not available");}
+  using Laplacian::setCoefA;
+  void setCoefA(const Field2D &UNUSED(val)) override {}
+  using Laplacian::setCoefC;
+  void setCoefC(const Field2D &UNUSED(val)) override {}
+  using Laplacian::setCoefD;
+  void setCoefD(const Field2D &UNUSED(val)) override {}
+  using Laplacian::setCoefEx;
+  void setCoefEx(const Field2D &UNUSED(val)) override {}
+  using Laplacian::setCoefEz;
+  void setCoefEz(const Field2D &UNUSED(val)) override {}
+
+  using Laplacian::solve;
+  const FieldPerp solve(const FieldPerp &UNUSED(b)) {
+    throw BoutException("Mumps library not available");
+  }
 };
  
 #else
@@ -134,7 +141,7 @@ private:
   Options *opts;              // Laplace Section Options Object
   bool fourth_order;
 
-  #ifdef CHECK
+  #if CHECK > 0
     int implemented_flags;
     int implemented_boundary_flags;
   #endif

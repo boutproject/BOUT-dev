@@ -330,15 +330,15 @@ void smooth_bndry(Field3D f, int bndry)
 {
     if(mesh->firstX()) {
       for(int i=bndry;i>=0;i--)
-	  for(int j=0;j<mesh->ngy;j++)
-	  for(int k=0;k<mesh->ngz-1;k++) {
+	  for(int j=0;j<mesh->LocalNy;j++)
+	  for(int k=0;k<mesh->LocalNz;k++) {
 	    f[i][j][k] = f[i+1][j][k];
 	  }
     }
     if(mesh->lastX()) {
-      for(int i=mesh->ngx-bndry-1;i<mesh->ngx;i++)
-	  for(int j=0;j<mesh->ngy;j++)
-	  for(int k=0;k<mesh->ngz-1;k++) {
+      for(int i=mesh->LocalNx-bndry-1;i<mesh->LocalNx;i++)
+	  for(int j=0;j<mesh->LocalNy;j++)
+	  for(int k=0;k<mesh->LocalNz;k++) {
 	    f[i][j][k] = f[i-1][j][k];
 	  }
     }

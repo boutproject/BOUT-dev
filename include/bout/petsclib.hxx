@@ -53,17 +53,40 @@ class PetscLib;
 #include <petsc.h>
 #include <petscversion.h>
 
+/*!
+ * Handles initialisation and finalisation of PETSc library.
+ * The first instance which is created initialises PETSc
+ * Keeps a count of the number of how many instances exist
+ * When the last instance is destroyed it finalises PETSc.
+ */ 
 class PetscLib {
 public:
+  /*!
+   * Ensure that PETSc has been initialised
+   */
   PetscLib();
+  
+  /*!
+   * Calls PetscFinalize when all PetscLib instances are destroyed
+   */ 
   ~PetscLib();
   
+  /*!
+   * This is called once to set the command-line options.
+   * Should be done early in the program, before any instances of
+   * PetscLib are created.
+   * The arguments will be passed to PetscInitialize()
+   */ 
   static void setArgs(int &c, char** &v) { pargc = &c; pargv = &v;}
   
-  static void cleanup(); // Force cleanup
+  /*!
+   * Force cleanup. This will call PetscFinalize, printing a warning
+   * if any instances of PetscLib still exist
+   */ 
+  static void cleanup(); 
 private:
-  static int count; // How many instances?
-  static char help[]; // Help string
+  static int count; ///< How many instances?
+  static char help[]; ///< Help string
   
   // Command-line arguments
   static int* pargc;
@@ -85,12 +108,14 @@ private:
 
 #else // BOUT_HAS_PETSC
 
+#include "unused.hxx"
+
 class PetscLib {
 public:
   PetscLib() {}
   ~PetscLib() {}
   
-  static void setArgs(int &c, char** &v) {}
+  static void setArgs(int &UNUSED(c), char** &UNUSED(v)) {}
   
   static void cleanup() {}
 };

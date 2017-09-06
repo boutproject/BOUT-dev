@@ -31,28 +31,46 @@
 #include <output.hxx>
 #include <msg_stack.hxx>
 #include <boutexception.hxx>
+#include <utils.hxx>
+#include <bout/mesh.hxx>
 
-Field::Field() {
-#ifdef CHECK
+Field::Field() : fieldmesh(nullptr){
+#if CHECK > 0
   bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true;
 #endif
 }
 
+Field::Field(Mesh * msh) : fieldmesh(msh){
+#if CHECK > 0
+  bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true;
+#endif
+}
+
+int Field::getNx() const{
+  return getMesh()->LocalNx;
+};
+
+int Field::getNy() const{
+  return getMesh()->LocalNy;
+};
+
+int Field::getNz() const{
+  return getMesh()->LocalNz;
+};
+
 /////////////////// PROTECTED ////////////////////
 
-char err_buffer[512];
 
 // Report an error occurring
 void Field::error(const char *s, ...) const {
-  va_list ap;  // List of arguments
+  int buf_len=512;
+  char * err_buffer=new char[buf_len];
 
   if(s == (const char*) NULL) {
     output.write("Unspecified error in field\n");
   }else {
   
-    va_start(ap, s);
-      vsprintf(err_buffer, s, ap);
-      va_end(ap);
+    bout_vsnprintf(err_buffer,buf_len, s);
 
 #ifdef TRACK
       output.write("Error in '%s': %s", name.c_str(), err_buffer);
@@ -60,7 +78,9 @@ void Field::error(const char *s, ...) const {
       output.write("Error in field: %s", err_buffer);
 #endif
   }
-  
-  throw BoutException("Error in field: %s", err_buffer);
+  std::string msg="Error in field: ";
+  msg+=err_buffer;
+  delete[] err_buffer;
+  throw BoutException(msg);
 }
 

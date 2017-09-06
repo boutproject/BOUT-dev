@@ -4,9 +4,7 @@
 # Global settings used by the core code
 
 NOUT = 100          # number of time-steps
-TIMESTEP = 100.0       # time between outputs
-archive = 20        # Archive restart files after this number of outputs
-wall_limit = 4  # wall time limit (in hours)
+TIMESTEP = 10.0       # time between outputs
 
 ShiftXderivs = true # use shifted radial derivatives?
 TwistShift = true   # use twist-shift condition?
@@ -18,8 +16,6 @@ ZPERIOD = 10        # Fraction of a torus to simulate
 
 MXG = 2
 MYG = 2
-
-NXPE = 32           # Number of processor in X
 
 grid = "cbm18_8_y064_x516_090309.nc"  # Grid file
 
@@ -40,38 +36,21 @@ pre_post = false        # Post receives as early as possible
 group_nonblock = false  # Use non-blocking group operations?
 
 ##################################################
-# Laplacian inversion routines
-
-[laplace]
-
-# max_mode = 16  # Maximum N to solve for
-all_terms = false
-laplace_nonuniform = false
-filter = 0.2   # Remove the top 20% of modes (BOUT-06 zwindow=0.4)
-
-##################################################
-# FFTs
-
-[fft]
-
-fft_measure = true  # If using FFTW, perform tests to determine fastest method
-
-##################################################
 # derivative methods
 
-[ddx]
+[mesh:ddx]
 
 first = C4  # order of first x derivatives (options are 2 or 4)
 second = C4 # order of second x derivatives (2 or 4)
 upwind = W3 # order of upwinding method (1, 4, 0 = TVD (DO NOT USE), 3 = WENO)
 
-[ddy]
+[mesh:ddy]
 
 first = C4
 second = C4
 upwind = W3
 
-[ddz]
+[mesh:ddz]
 
 first = C4  # Z derivatives can be done using FFT
 second = C4
@@ -93,9 +72,6 @@ mxstep = 5000   # Number of internal steps between outputs
 adams_moulton = false # Use Adams-Moulton method (default is BDF)
 func_iter = false     # Functional iteration (default is Newton)
 
-#type = euler
-#start_timestep = 1.0
-
 ##################################################
 
 [dalf3]
@@ -114,7 +90,7 @@ nonlinear = true
 
 filter_z = false # Keep only lowest harmonic
 
-bracket_method = 3  # 0 = std, 2 = arakawa, 3 = ctu
+bracket_method = 2  # 0 = std, 2 = arakawa, 3 = ctu
 
 viscosity = 0.01
 viscosity_par = 1.0
@@ -134,6 +110,8 @@ viscosity_par = 1.0
 
 phi_flags = 769
 apar_flags = 769
+
+split_n0 = true # Split into n=0 and n != 0
 
 [All]
 scale = 0.0 # default size of initial perturbations

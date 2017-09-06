@@ -1,0 +1,25 @@
+
+nout = 10
+timestep = 1.
+
+MZ = 1
+
+grid = "test-staggered.nc"
+
+StaggerGrids = true
+
+[mesh:ddy]
+
+first = c2
+flux = u1
+
+[all]
+scale = 1.
+
+bndry_all = neumann
+
+[n]
+function = gauss(y - pi)
+
+[v]
+function = 0.

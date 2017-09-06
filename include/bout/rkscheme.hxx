@@ -54,24 +54,24 @@ class RKScheme {
  public:
 
   RKScheme(Options *opts = NULL); //Options picks the scheme, pretty much everything else is automated
-  ~RKScheme();
+  virtual ~RKScheme();
 
   //Finish generic initialisation
-  void init(const int nlocalIn, const int neqIn, const bool adaptiveIn, const BoutReal atolIn,
+  void init(int nlocalIn,int neqIn,bool adaptiveIn,BoutReal atolIn,
 	    const BoutReal rtolIn, Options *options=NULL);
 
   //Get the time at given stage
-  BoutReal setCurTime(const BoutReal timeIn, const BoutReal dt, const int curStage);
+  BoutReal setCurTime(BoutReal timeIn,BoutReal dt,int curStage);
 
   //Get the state vector at given stage
-  virtual void setCurState(const BoutReal *start, BoutReal *out, const int curStage, 
+  virtual void setCurState(const BoutReal *start, BoutReal *out,int curStage, 
 			   const BoutReal dt);
 
   //Calculate the output state and return the error estimate (if adaptive)
-  virtual BoutReal setOutputStates(const BoutReal *start, const BoutReal dt, BoutReal *resultFollow);
+  virtual BoutReal setOutputStates(const BoutReal *start,BoutReal dt, BoutReal *resultFollow);
 
   //Update the timestep
-  virtual BoutReal updateTimestep(const BoutReal dt, const BoutReal err);
+  virtual BoutReal updateTimestep(BoutReal dt,BoutReal err);
 
   //Returns the string name for the given scheme
   virtual string getType(){return label;};
@@ -110,11 +110,11 @@ class RKScheme {
 
   virtual BoutReal getErr(BoutReal *solA, BoutReal *solB);
 
-  virtual void constructOutput(const BoutReal *start, const BoutReal dt, 
+  virtual void constructOutput(const BoutReal *start,BoutReal dt, 
 			       const int index, BoutReal *sol);
 
-  virtual void constructOutputs(const BoutReal *start, const BoutReal dt, 
-				const int indexFollow, const int indexAlt,
+  virtual void constructOutputs(const BoutReal *start,BoutReal dt, 
+				const int indexFollow,int indexAlt,
 				BoutReal *solFollow, BoutReal *solAlt);
 
  private:

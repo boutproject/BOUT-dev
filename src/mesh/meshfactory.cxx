@@ -8,12 +8,10 @@
 #include <boutexception.hxx>
 
 #include "impls/bout/boutmesh.hxx"
-//#include "impls/quilt/quiltmesh.hxx"
 
 MeshFactory *MeshFactory::instance = NULL;
 
 #define MESH_BOUT  "bout"
-//#define MESH_QUILT "quilt"
 
 MeshFactory* MeshFactory::getInstance() {
   if(instance == NULL) {
@@ -39,20 +37,22 @@ Mesh* MeshFactory::createMesh(GridDataSource *source, Options *options) {
       options->get("format", grid_ext, "");
       
       /// Create a grid file
-      source = (GridDataSource*) new GridFile(data_format( (grid_ext.empty()) ? grid_name.c_str() : grid_ext.c_str() ), 
-                                              grid_name.c_str());
+      source = static_cast<GridDataSource *>(new GridFile(
+          data_format((grid_ext.empty()) ? grid_name.c_str() : grid_ext.c_str()),
+          grid_name.c_str()));
     }else if(Options::getRoot()->isSet("grid")){
       // Get the global option
       Options::getRoot()->get("grid", grid_name, "");
       output << "\nGetting grid data from file " << grid_name << endl; 
       string grid_ext;
       Options::getRoot()->get("format", grid_ext, "");
-      
-      source = (GridDataSource*) new GridFile(data_format( (grid_ext.empty()) ? grid_name.c_str() : grid_ext.c_str() ), 
-                                              grid_name.c_str());
+
+      source = static_cast<GridDataSource *>(new GridFile(
+          data_format((grid_ext.empty()) ? grid_name.c_str() : grid_ext.c_str()),
+          grid_name.c_str()));
     }else {
-      output << "\nGetting grid data from options\n"; 
-      source = (GridDataSource*) new GridFromOptions(options);
+      output << "\nGetting grid data from options\n";
+      source = static_cast<GridDataSource *>(new GridFromOptions(options));
     }
   }
 
@@ -60,11 +60,9 @@ Mesh* MeshFactory::createMesh(GridDataSource *source, Options *options) {
   string type;
   options->get("type", type, MESH_BOUT);
   
-/*
-  if(!strcasecmp(type.c_str(), MESH_QUILT)) {
-    return new QuiltMesh(source, options);
+  if(!strcasecmp(type.c_str(), MESH_BOUT)) {
+    return new BoutMesh(source, options);
   }
-*/
-  
-  return new BoutMesh(source, options);
+
+  throw BoutException("Mesh type not implemented: %s",type.c_str());
 }

@@ -60,7 +60,7 @@ def slab(nx, ny, nz,
 
     Bpxy = np.transpose(np.resize(Bpx, (nz, ny, nx)), (2,1,0))
 
-    Bxy = np.sqrt(Bpxy**2 + Bt**2)
+    Bxy = np.sqrt(Bpxy**2 + Bt**2)[:,:,0]
 
     class Mappoint(object):
         def __init__(self, xt, zt):
@@ -89,8 +89,6 @@ def slab(nx, ny, nz,
         for i in np.arange(0,nx):
             for k in np.arange(0,nz):
                 result[i,k,:] = odeint(b_field, [x[i], z[k]], [0, delta_tor*direction])[1,:]
-                result[i,k,1] = np.mod(result[i,k,1], Lz)
-
                 map_list.append(Mappoint(result[i,k,0],result[i,k,1]))
 
         return result
@@ -111,25 +109,17 @@ def slab(nx, ny, nz,
         f.write("dx", delta_x)
         f.write("dy", delta_tor)
         f.write("g_22", g_22)
-        f.write("Bxy", transform3D(Bxy))
-
-        # Note: If "nz" is put into the file, then 3D variables
-        # should not be transformed since they will be read directly into
-        # BOUT++ arrays without Fourier transforming
+        f.write("Bxy", (Bxy))
 
         xt_prime = unroll_map_coeff(forward_map, 'xt_prime')
-        #f.write('forward_xt_prime', transform3D(xt_prime))
-        f.write('forward_xt_prime', xt_prime)
+        f.write('forward_xt_prime', (xt_prime))
         zt_prime = unroll_map_coeff(forward_map, 'zt_prime')
-        #f.write('forward_zt_prime', transform3D(zt_prime))
-        f.write('forward_zt_prime', zt_prime)
+        f.write('forward_zt_prime', (zt_prime))
 
         xt_prime = unroll_map_coeff(backward_map, 'xt_prime')
-        #f.write('backward_xt_prime', transform3D(xt_prime))
-        f.write('backward_xt_prime', xt_prime)
+        f.write('backward_xt_prime', (xt_prime))
         zt_prime = unroll_map_coeff(backward_map, 'zt_prime')
-        #f.write('backward_zt_prime', transform3D(zt_prime))
-        f.write('backward_zt_prime', zt_prime)
+        f.write('backward_zt_prime', (zt_prime))
 
 
 if __name__ == "__main__":

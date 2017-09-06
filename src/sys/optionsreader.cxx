@@ -1,5 +1,7 @@
 #include <optionsreader.hxx>
 #include <boutexception.hxx>
+#include <msg_stack.hxx>
+#include <bout/assert.hxx>
 #include <utils.hxx>
 
 // Interface for option file parsers
@@ -19,22 +21,55 @@ OptionsReader* OptionsReader::getInstance() {
 }
 
 void OptionsReader::read(Options *options, const char *file, ...) {
-  if(file == (const char*) NULL) throw new BoutException("OptionsReader::read passed NULL filename\n");
+  if (file == nullptr) {
+    throw BoutException("OptionsReader::read passed NULL filename\n");
+  }
 
-  va_list ap;  // List of arguments
-  char filename[512];
+  int buf_len=512;
+  char * filename=new char[buf_len];
 
-  va_start(ap, file);
-  vsprintf(filename, file, ap);
-  va_end(ap);
+  bout_vsnprintf(filename,buf_len, file);
 
   output.write("Reading options file %s\n", filename);
 
   // Need to decide what file format to use
   OptionParser *parser = new OptionINI();
 
-  parser->read(options, filename);
+  try {
+    parser->read(options, filename);
+  } catch (BoutException &e) {
+    delete[] filename;
+    delete parser;
+    throw;
+  }
 
+  delete[] filename;
+  delete parser;
+}
+
+void OptionsReader::write(Options *options, const char *file, ...) {
+  TRACE("OptionsReader::write");
+  ASSERT0(file != nullptr);
+
+  int buf_len=512;
+  char * filename=new char[buf_len];
+
+  bout_vsnprintf(filename,buf_len, file);
+  
+  output.write("Writing options to file %s\n", filename);
+
+  // Need to decide what file format to use
+  OptionParser *parser = new OptionINI();
+
+  try {
+    parser->write(options, filename);
+  } catch (BoutException &e) {
+    delete[] filename;
+    delete parser;
+    throw;
+  }
+
+  delete[] filename;
   delete parser;
 }
 
@@ -45,7 +80,7 @@ void OptionsReader::parseCommandLine(Options *options, int argc, char **argv) {
   string buffer;
 
   // Go through command-line arguments
-  for (size_t i=1;i<argc;i++) {
+  for (int i=1;i<argc;i++) {
 
     // Reset the section
     options = options->getRoot();
@@ -69,7 +104,7 @@ void OptionsReader::parseCommandLine(Options *options, int argc, char **argv) {
         i++;
         buffer.append(argv[i]);
         
-        if((argv[i][1] == 0) && (i < argc-2)) {
+        if((argv[i][1] == 0) && (i < argc-1)) {
           // End of string, so space after '=' sign too
           
           i++;

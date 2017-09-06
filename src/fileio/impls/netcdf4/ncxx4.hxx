@@ -57,13 +57,13 @@ class Ncxx4 : public DataFormat {
  public:
   Ncxx4();
   Ncxx4(const char *name);
-  Ncxx4(const std::string &name);
+  Ncxx4(const std::string &name) : Ncxx4(name.c_str()) {}
   ~Ncxx4();
-  
-  bool openr(const std::string &name);
-  bool openr(const char *name);
-  bool openw(const std::string &name, bool append=false);
-  bool openw(const char *name, bool append=false);
+
+  using DataFormat::openr;
+  bool openr(const char *name) override;
+  using DataFormat::openw;
+  bool openw(const char *name, bool append=false) override;
   
   bool is_valid();
   

@@ -62,7 +62,10 @@ public:
     MPI_Comm_size(c, &nprocs);
     MPI_Comm_rank(c, &myproc);
   }
-  
+
+  /// Set parameters
+  /// @param[in] c  The communicator of all processors involved in the solve
+  /// @param[in] size  The number of rows on this processor
   void setup(MPI_Comm c, int size) {
     comm = c;
     
@@ -80,14 +83,23 @@ public:
   ~CyclicReduce() {
     freeMemory();
   }
-  
+
+  /// Specify that the tridiagonal system is periodic
+  /// By default not periodic
   void setPeriodic(bool p=true) {periodic=p;}
   
   /// Set up a single equation to invert
   void setCoefs(T a[], T b[], T c[]) {
     setCoefs(1, &a, &b, &c);
   }
-  
+
+  /// Set the entries in the matrix to be inverted
+  ///
+  /// @param[in] nsys   The number of independent matrices to be solved
+  /// @param[in] a   Left diagonal. Should have size [nsys][N]
+  ///                where N is set in the constructor or setup
+  /// @param[in] b   Diagonal values. Should have size [nsys][N]
+  /// @param[in] c   Right diagonal. Should have size [nsys][N]
   void setCoefs(int nsys, T **a, T **b, T **c) {
     // Make sure correct memory arrays allocated
     allocMemory(nprocs, nsys, N);
@@ -101,17 +113,21 @@ public:
         // 4*i + 3 will contain RHS
       }
   }
-  
+
+  /// Solve a single triadiagonal system
+  /// 
   void solve(T rhs[], T x[]) {
     // Solving single system
     solve(1, &rhs, &x);
   }
-  
+
+  /// Solve a set of tridiagonal systems
+  /// 
   void solve(int nrhs, T **rhs, T **x) {
     // Multiple RHS
     
     if(nrhs != Nsys)
-      throw new BoutException("Sorry, can't yet handle nrhs != nsys");
+      throw BoutException("Sorry, can't yet handle nrhs != nsys");
     
     // Insert RHS into coefs array. Ordered to allow efficient partitioning
     // for MPI send/receives
@@ -131,7 +147,7 @@ public:
     int ns = Nsys / nprocs; // Number of systems to assign to all processors
     int nsextra = Nsys % nprocs;  // Number of processors with 1 extra 
     
-    MPI_Request req[nprocs];
+    MPI_Request* req = new MPI_Request[nprocs];
 
     if(myns > 0) {
       // Post receives from all other processors
@@ -268,7 +284,6 @@ public:
 	  for(int i=0;i<myns; i++) {
 	    x1[sys0+i] = ifx[i][2*p];
 	    xn[sys0+i] = ifx[i][2*p+1];
-	    //output << "x1,xn[" << sys0+i << "] = " << x1[sys0+i] << ", " << xn[sys0+i] << endl;
 	  }
           req[p] = MPI_REQUEST_NULL;
 	}else if(nsp > 0) {
@@ -343,29 +358,34 @@ public:
     ///////////////////////////////////////
     // Solve local equations
     back_solve(Nsys, N, coefs, x1, xn, x);
+    delete[] req;
   }
   
 private:
-  MPI_Comm comm;      // Communicator
-  int nprocs, myproc; // Number of processors and ID of my processor
+  MPI_Comm comm;      ///< Communicator
+  int nprocs, myproc; ///< Number of processors and ID of my processor
   
-  int N;         // Total size of the problem
-  int Nsys;      // Number of independent systems to solve
-  int myns;      // Number of systems for interface solve on this processor
-  int sys0;      // Starting system index for interface solve
+  int N;         ///< Total size of the problem
+  int Nsys;      ///< Number of independent systems to solve
+  int myns;      ///< Number of systems for interface solve on this processor
+  int sys0;      ///< Starting system index for interface solve
   
-  bool periodic; // Is the domain periodic?
+  bool periodic; ///< Is the domain periodic?
 
-  T **coefs;  // Starting coefficients, rhs [Nsys, {3*coef,rhs}*N]
-  T **myif;   // Interface equations for this processor
+  T **coefs;  ///< Starting coefficients, rhs [Nsys, {3*coef,rhs}*N]
+  T **myif;   ///< Interface equations for this processor
   
-  T **recvbuffer; // Buffer for receiving from other processors
-  T **ifcs;   // Coefficients for interface solve
-  T **if2x2;  // 2x2 interface equations on this processor
-  T **ifx;    // Solution of interface equations
-  T *ifp;     // Interface equations returned to processor p
-  T *x1, *xn; // Interface solutions for back-solving
-  
+  T **recvbuffer; ///< Buffer for receiving from other processors
+  T **ifcs;   ///< Coefficients for interface solve
+  T **if2x2;  ///< 2x2 interface equations on this processor
+  T **ifx;    ///< Solution of interface equations
+  T *ifp;     ///< Interface equations returned to processor p
+  T *x1, *xn; ///< Interface solutions for back-solving
+
+  /// Allocate memory arrays
+  /// @param[in[ np   Number of processors
+  /// @param[in] nsys  Number of independent systems to solve
+  /// @param[in] n     Size of each system of equations
   void allocMemory(int np, int nsys, int n) {
     if( (nsys == Nsys) && (n == N) && (np == nprocs))
       return; // No need to allocate memory
@@ -407,6 +427,8 @@ private:
     xn = new T[Nsys];
     
   }
+
+  /// Free all memory arrays allocated by allocMemory()
   void freeMemory() {
     if(Nsys == 0)
       return;
@@ -499,8 +521,8 @@ private:
     // Upper system couples {-1. 0, N-1}
   }
   
-  // Back-solve from x at ends (x1, xn) to obtain remaining values
-  // Coefficients ordered [ns, nloc*(a,b,c,r)]
+  /// Back-solve from x at ends (x1, xn) to obtain remaining values
+  /// Coefficients ordered [ns, nloc*(a,b,c,r)]
   void back_solve(int ns, int nloc, T **co, T *x1, T *xn, T **xa) {
     // Tridiagonal system, solve using serial Thomas algorithm
     

@@ -33,6 +33,8 @@
 #include <bout/sys/timer.hxx>
 #include <boutexception.hxx>
 
+#include "unused.hxx"
+
 #include <pvode/iterativ.h>  // contains the enum for types of preconditioning
 #include <pvode/cvspgmr.h>   // use CVSPGMR linear solver each internal step
 #include <pvode/pvbbdpre.h>  // band preconditioner function prototypes
@@ -67,7 +69,9 @@ PvodeSolver::~PvodeSolver() {
  * Initialise
  **************************************************************************/
 
-int PvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
+int PvodeSolver::init(int nout, BoutReal tstep) {
+  TRACE("Initialising PVODE solver");
+
   int mudq, mldq, mukeep, mlkeep;
   boole optIn;
   int i;
@@ -78,10 +82,8 @@ int PvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
   int n2d = n2Dvars(); // Number of 2D variables
   int n3d = n3Dvars(); // Number of 3D variables
 
-  int msg_point = msg_stack.push("Initialising PVODE solver");
-
   /// Call the generic initialisation first
-  if(Solver::init(restarting, nout, tstep))
+  if(Solver::init(nout, tstep))
     return 1;
   
   // Save nout and tstep for use in run
@@ -106,7 +108,7 @@ int PvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
 	       n3d, n2d, neq, local_N);
 
   // Set machEnv block
-  machEnv = (machEnvType) PVecInitMPI(BoutComm::get(), local_N, neq, pargc, pargv);
+  machEnv = static_cast<machEnvType>(PVecInitMPI(BoutComm::get(), local_N, neq, pargc, pargv));
 
   if (machEnv == NULL) {
     throw BoutException("\tError: PVecInitMPI failed\n");
@@ -133,7 +135,7 @@ int PvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
   options->get("mxstep", pvode_mxstep, 500);
 
   pdata = PVBBDAlloc(local_N, mudq, mldq, mukeep, mlkeep, ZERO, 
-                     solver_gloc, solver_cfn, (void*) this);
+                     solver_gloc, solver_cfn, static_cast<void*>(this));
   
   if (pdata == NULL) {
     throw BoutException("\tError: PVBBDAlloc failed.\n");
@@ -187,8 +189,6 @@ int PvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
 
   /*  CVSpgmr(cvode_mem, NONE, MODIFIED_GS, 10, 0.0, PVBBDPrecon, PVBBDPSol, pdata); */
   
-  msg_stack.pop(msg_point);
-  
   return(0);
 }
 
@@ -197,9 +197,7 @@ int PvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
  **************************************************************************/
 
 int PvodeSolver::run() {
-#ifdef CHECK
-  int msg_point = msg_stack.push("PvodeSolver::run()");
-#endif
+  TRACE("PvodeSolver::run()");
   
   if(!initialised)
     throw BoutException("PvodeSolver not initialised\n");
@@ -226,21 +224,15 @@ int PvodeSolver::run() {
     }
   }
   
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
-
   return 0;
 }
 
 BoutReal PvodeSolver::run(BoutReal tout) {
-  BoutReal *udata;
+  TRACE("Running solver: solver::run(%e)", tout);
 
-#ifdef CHECK
-  int msg_point = msg_stack.push("Running solver: solver::run(%e)", tout);
-#endif
+  BoutReal *udata;
   
-  rhs_ncalls = 0;
+  //rhs_ncalls = 0;
 
   // Set pointer to data array in vector u.
   udata = N_VDATA(u);
@@ -252,7 +244,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
     flag = CVode(cvode_mem, tout, u, &simtime, NORMAL);
   }else {
     // Run in single step mode, to call timestep monitors
-    BoutReal internal_time = ((CVodeMem) cvode_mem)->cv_tn;
+    BoutReal internal_time = static_cast<CVodeMem>(cvode_mem)->cv_tn;
     //CvodeGetCurrentTime(cvode_mem, &internal_time);
     
     while(internal_time < tout) {
@@ -284,10 +276,6 @@ BoutReal PvodeSolver::run(BoutReal tout) {
     return(-1.0);
   }
 
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
-
   return simtime;
 }
 
@@ -295,10 +283,8 @@ BoutReal PvodeSolver::run(BoutReal tout) {
  * RHS function
  **************************************************************************/
 
-void PvodeSolver::rhs(int N, BoutReal t, BoutReal *udata, BoutReal *dudata) {
-#ifdef CHECK
-  int msg_point = msg_stack.push("Running RHS: PvodeSolver::rhs(%e)", t);
-#endif
+void PvodeSolver::rhs(int UNUSED(N), BoutReal t, BoutReal *udata, BoutReal *dudata) {
+  TRACE("Running RHS: PvodeSolver::rhs(%e)", t);
 
   // Get current timestep
   hcur = 0.0; //((CVodeMemRec*) cvode_mem)->cv_h;
@@ -307,20 +293,14 @@ void PvodeSolver::rhs(int N, BoutReal t, BoutReal *udata, BoutReal *dudata) {
   load_vars(udata);
 
   // Call function
-  int flag = run_rhs(t);
+  run_rhs(t);
 
   // Save derivatives to CVODE
   save_derivs(dudata);
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 }
 
-void PvodeSolver::gloc(int N, BoutReal t, BoutReal *udata, BoutReal *dudata) {
-#ifdef CHECK
-  int msg_point = msg_stack.push("Running RHS: PvodeSolver::gloc(%e)", t);
-#endif
+void PvodeSolver::gloc(int UNUSED(N), BoutReal t, BoutReal *udata, BoutReal *dudata) {
+  TRACE("Running RHS: PvodeSolver::gloc(%e)", t);
 
   Timer timer("rhs");
 
@@ -328,48 +308,42 @@ void PvodeSolver::gloc(int N, BoutReal t, BoutReal *udata, BoutReal *dudata) {
   load_vars(udata);
 
   // Call function
-  int flag = run_rhs(t);
+  run_rhs(t);
 
   // Save derivatives to CVODE
   save_derivs(dudata);
   
   rhs_ncalls++;
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 }
 
 /**************************************************************************
  * CVODE rhs function
  **************************************************************************/
 
-void solver_f(integer N, BoutReal t, N_Vector u, N_Vector udot, void *f_data)
-{
+void solver_f(integer N, BoutReal t, N_Vector u, N_Vector udot, void *f_data) {
   BoutReal *udata, *dudata;
   PvodeSolver *s;
 
   udata = N_VDATA(u);
   dudata = N_VDATA(udot);
-  
-  s = (PvodeSolver*) f_data;
+
+  s = static_cast<PvodeSolver *>(f_data);
 
   s->rhs(N, t, udata, dudata);
 }
 
 // Preconditioner RHS
-void solver_gloc(integer N, BoutReal t, BoutReal* u, BoutReal* udot, void *f_data)
-{
+void solver_gloc(integer N, BoutReal t, BoutReal *u, BoutReal *udot, void *f_data) {
   PvodeSolver *s;
-  
-  s = (PvodeSolver*) f_data;
+
+  s = static_cast<PvodeSolver *>(f_data);
 
   s->gloc(N, t, u, udot);
 }
 
 // Preconditioner communication function
-void solver_cfn(integer N, BoutReal t, N_Vector u, void *f_data)
-{
+void solver_cfn(integer UNUSED(N), BoutReal UNUSED(t), N_Vector UNUSED(u),
+                void *UNUSED(f_data)) {
   // doesn't do anything at the moment
 }
 

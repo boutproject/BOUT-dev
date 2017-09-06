@@ -1,0 +1,49 @@
+NOUT = 1
+TIMESTEP = 0.1
+
+MZ = 16
+
+ZMAX = 1
+
+MXG = 2
+MYG = 1
+
+[mesh]
+
+dx = 0.3926990816 # 2pi / 16
+
+nx = 18
+symmetricGlobalX = true
+
+ny = 1
+
+[mesh:ddx]
+upwind=c2
+
+[mesh:ddz]
+upwind=c2
+
+[solver]
+
+#type = rk4
+
+ATOL = 1.0e-15  # absolute tolerance
+RTOL = 1.0e-15   # relative tolerance
+mxstep = 10000  # Maximum internal steps per output
+
+mms = true  # -> Enable MMS testing
+
+[output]
+floats = false # -> Output in double precision
+
+[g]
+solution = sin(6.0*x^2 - z)
+
+[f]
+solution = sin(t)*sin(3.0*x + 2.0*z) + cos(4.0*x^2 + z)
+
+ddx = -1.27323954473516*x*sin(4.0*x^2 + 1.0*z) + 0.477464829275686*sin(t)*cos(3.0*x + 2.0*z)
+
+source = -1.90985931710274*x*(2.0*sin(t)*cos(3.0*x + 2.0*z) - sin(4.0*x^2 + z))*cos(6.0*x^2 - z) - (-1.27323954473516*x*sin(4.0*x^2 + z) + 0.477464829275686*sin(t)*cos(3.0*x + 2.0*z))*cos(6.0*x^2 - 1.0*z) + sin(3.0*x + 2.0*z)*cos(t)
+
+bndry_all = dirichlet_o2(f:solution)

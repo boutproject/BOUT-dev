@@ -29,14 +29,35 @@ class MsgStack;
 #ifndef __MSG_STACK_H__
 #define __MSG_STACK_H__
 
-#include <stdio.h>
+#include "unused.hxx"
 
+#include <stdio.h>
+#include <stdarg.h>
+#include <string>
+
+/// The maximum length (in chars) of messages, not including terminating '0'
 #define MSG_MAX_SIZE 127
 
+/*!
+ * Each message consists of a fixed length buffer
+ */
 typedef struct {
   char str[MSG_MAX_SIZE+1];
 }msg_item_t;
 
+
+/*!
+ * Message stack 
+ *
+ * Implements a stack of messages which can be pushed onto the top
+ * and popped off the top. This is used for debugging: messages are put
+ * into this stack at the start of a section of code, and removed at the end.
+ * If an error occurs in between push and pop, then the message can be printed.
+ *
+ * This code is only enabled if CHECK > 1. If CHECK is disabled then this
+ * message stack code reverts to empty functions which should be removed by
+ * the optimiser
+ */
 class MsgStack {
  public:
   MsgStack();
@@ -52,17 +73,19 @@ class MsgStack {
   void clear();        ///< Clear all message
   
   void dump();         ///< Write out all messages (using output)
+  std::string getDump();    ///< Write out all messages to a string
 #else
   /// Dummy functions which should be optimised out
-  int push(const char *s, ...) {return 0;}
+  int push(const char *UNUSED(s), ...) {return 0;}
   
   int setPoint() {return 0;}
   
   void pop() {}
-  void pop(int id) {}
+  void pop(int UNUSED(id)) {}
   void clear() {}
   
   void dump() {}
+  std::string getDump() { return ""; }
 #endif
   
  private:
@@ -73,6 +96,11 @@ class MsgStack {
   int size;    ///< Size of the stack
 };
 
+/*!
+ * This is a way to define a global object,
+ * so that it is declared extern in all files except one
+ * where GLOBALORIGIN is defined.
+ */ 
 #ifndef GLOBALORIGIN
 #define GLOBAL extern
 #else
@@ -95,11 +123,18 @@ GLOBAL MsgStack msg_stack;
  */
 class MsgStackItem {
 public:
-  MsgStackItem(const char* msg) {
+  MsgStackItem(const char* msg) { //Not currently used anywhere
     point = msg_stack.push(msg);
   }
-  MsgStackItem(const char* msg, const char* file, int line) {
+  MsgStackItem(const char* msg, const char* file, int line) {  //Not currently used anywhere
     point = msg_stack.push("%s on line %d of '%s'", msg, line, file);
+  }
+  MsgStackItem(const char* file, int line, const char* msg, ...) {
+    va_list args;
+    va_start(args, msg);
+    vsnprintf(buffer,MSG_MAX_SIZE, msg, args);
+    point = msg_stack.push("%s on line %d of '%s'", buffer, line, file);
+    va_end(args);
   }
   ~MsgStackItem() {
     // If an exception has occurred, don't pop the message
@@ -108,19 +143,39 @@ public:
   }
 private:
   int point;
+  char buffer[256];
 };
 
-// To concatenate strings for a variable name
+/// To concatenate strings for a variable name
 #define CONCATENATE_DIRECT(s1, s2) s1##s2
+/// Need to use two levels due to macro strangeness
 #define CONCATENATE(s1, s2) CONCATENATE_DIRECT(s1, s2)
 
 /*!
  * The TRACE macro provides a convenient way to put messages onto the msg_stack
+ * It pushes a message onto the stack, and pops it when the scope ends
+ * 
+ * Example
+ * -------
+ * 
+ * {
+ *   TRACE("Starting calculation")
+ * 
+ * } // Scope ends, message popped
  */
-#ifdef CHECK
-#define TRACE(message) MsgStackItem CONCATENATE(msgTrace_ , __LINE__) (message, __FILE__, __LINE__)
+#if CHECK > 0
+/* Would like to have something like TRACE(message, ...) so that we can directly refer
+   to the (required) first argument, which is the main message string. However because
+   we want to allow TRACE("Message with no args") we have to deal with the case where
+   __VA_ARGS__ is empty. There's a GCC specific extension such that 
+    //#define TRACE(message, ...) MsgStackItem CONCATENATE(msgTrace_ , __LINE__) (message, __FILE__, __LINE__, ##__VA_ARGS__) //## is non-standard here
+    would achieve this for us. However to be more portable have to instead just reorder
+    the arguments from the original MsgStackItem constructor so that the message is the
+    last of the required arguments and the optional arguments follow from there.
+ */
+#define TRACE(...) MsgStackItem CONCATENATE(msgTrace_ , __LINE__) (__FILE__, __LINE__, __VA_ARGS__)
 #else
-#define TRACE(message)
+#define TRACE(...)
 #endif
 
 #endif // __MSG_STACK_H__

@@ -68,12 +68,22 @@ public:
   LaplaceSPT(Options *opt = NULL);
   ~LaplaceSPT();
   
-  void setCoefA(const Field2D &val) { A = val; }
-  void setCoefC(const Field2D &val) { C = val; }
-  void setCoefD(const Field2D &val) { D = val; }
-  void setCoefEx(const Field2D &val) { bout_error("LaplaceSPT does not have Ex coefficient"); }
-  void setCoefEz(const Field2D &val) { bout_error("LaplaceSPT does not have Ez coefficient"); }
-  
+  using Laplacian::setCoefA;
+  void setCoefA(const Field2D &val) override { Acoef = val; }
+  using Laplacian::setCoefC;
+  void setCoefC(const Field2D &val) override { Ccoef = val; }
+  using Laplacian::setCoefD;
+  void setCoefD(const Field2D &val) override { Dcoef = val; }
+  using Laplacian::setCoefEx;
+  void setCoefEx(const Field2D &UNUSED(val)) override {
+    throw BoutException("LaplaceSPT does not have Ex coefficient");
+  }
+  using Laplacian::setCoefEz;
+  void setCoefEz(const Field2D &UNUSED(val)) override {
+    throw BoutException("LaplaceSPT does not have Ez coefficient");
+  }
+
+  using Laplacian::solve;
   const FieldPerp solve(const FieldPerp &b);
   const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0);
   
@@ -82,7 +92,7 @@ public:
 private:
   enum { SPT_DATA = 1123 }; ///< 'magic' number for SPT MPI messages
   
-  Field2D A, C, D;
+  Field2D Acoef, Ccoef, Dcoef;
 
   /// Data structure for SPT algorithm
   struct SPT_data {

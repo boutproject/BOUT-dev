@@ -2,6 +2,7 @@
 #include <bout/surfaceiter.hxx>
 
 #include <boutexception.hxx>
+#include <unused.hxx>
 
 int SurfaceIter::ySize() {
   return m->ySize(xpos);
@@ -19,7 +20,7 @@ MPI_Comm SurfaceIter::communicator() {
   return m->getYcomm(xpos);
 }
 
-int SurfaceIter::yGlobal(int yloc) {
+int SurfaceIter::yGlobal(int UNUSED(yloc)) {
   // Communicator for this surface
   MPI_Comm comm = communicator();
   
@@ -75,7 +76,7 @@ void SurfaceIter::next() {
     return;
   
   xpos++;
-  if(xpos >= m->ngx)
+  if(xpos >= m->LocalNx)
     xpos = -1;
 }
 

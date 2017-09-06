@@ -51,7 +51,10 @@
 
 #include <utils.hxx>
 #include <boutexception.hxx>
+#include <msg_stack.hxx>
 #include "options_ini.hxx"
+
+using namespace std;
 
 OptionINI::OptionINI() {
 }
@@ -115,6 +118,23 @@ void OptionINI::read(Options *options, const string &filename) {
   fin.close();
 }
 
+void OptionINI::write(Options *options, const std::string &filename) {
+  TRACE("OptionsINI::write");
+  
+  std::ofstream fout;
+  fout.open(filename, ios::out | ios::trunc);
+
+  if (!fout.good()) {
+    throw BoutException("Could not open output file '%s'\n", filename.c_str());
+  }
+  
+  // Call recursive function to write to file
+  writeSection(options, fout);
+  
+  fout.close();
+}
+
+
 /**************************************************************************
  * Private functions
  **************************************************************************/
@@ -134,7 +154,6 @@ void OptionINI::parse(const string &buffer, string &key, string &value)
    // A key/value pair, separated by a '='
 
   size_t startpos = buffer.find_first_of("=");
-  size_t endpos   = buffer.find_last_of("=");
 
   if (startpos == string::npos) {
     // Just set a flag to true
@@ -148,4 +167,28 @@ void OptionINI::parse(const string &buffer, string &key, string &value)
   value = trim(buffer.substr(startpos+1), " \t\r\n\"");
 
   if(key.empty() || value.empty()) throw BoutException("\tEmpty key or value\n\tLine: %s", buffer.c_str());
+}
+
+void OptionINI::writeSection(Options *options, std::ofstream &fout) {
+  string section_name = options->str();
+
+  if (section_name.length() > 0) {
+    // Print the section name at the start
+    fout << "[" << section_name << "]" << endl;
+  }
+  // Iterate over all values
+  for(const auto& it : options->values()) {
+    fout << it.first << " = " << it.second.value;
+    if (! it.second.used ) {
+      fout << "  # not used , from: "
+	   << it.second.source;
+    }
+    fout << endl;
+  }
+
+  // Iterate over sub-sections
+  for(const auto& it : options->subsections()) {
+    fout << endl;
+    writeSection(it.second, fout);
+  }
 }

@@ -38,12 +38,22 @@ public:
   LaplaceSerialBand(Options *opt = NULL);
   ~LaplaceSerialBand();
   
-  void setCoefA(const Field2D &val) { Acoef = val; }
-  void setCoefC(const Field2D &val) { Ccoef = val; }
-  void setCoefD(const Field2D &val) { Dcoef = val; }
-  void setCoefEx(const Field2D &val) { bout_error("LaplaceSPT does not have Ex coefficient"); }
-  void setCoefEz(const Field2D &val) { bout_error("LaplaceSPT does not have Ez coefficient"); }
-  
+  using Laplacian::setCoefA;
+  void setCoefA(const Field2D &val) override { Acoef = val; }
+  using Laplacian::setCoefC;
+  void setCoefC(const Field2D &val) override { Ccoef = val; }
+  using Laplacian::setCoefD;
+  void setCoefD(const Field2D &val) override { Dcoef = val; }
+  using Laplacian::setCoefEx;
+  void setCoefEx(const Field2D &UNUSED(val)) override {
+    throw BoutException("LaplaceSerialBand does not have Ex coefficient");
+  }
+  using Laplacian::setCoefEz;
+  void setCoefEz(const Field2D &UNUSED(val)) override {
+    throw BoutException("LaplaceSerialBand does not have Ez coefficient");
+  }
+
+  using Laplacian::solve;
   const FieldPerp solve(const FieldPerp &b);
   const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0);
 private:

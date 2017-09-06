@@ -953,8 +953,9 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
     
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ; work out where to put the surfaces
-
-    nrad = settings.nrad
+    ; 
+    
+    nrad = settings.nrad  ; Number of radial points
     nnrad = N_ELEMENTS(nrad)
 
     
@@ -980,7 +981,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       ; Calculate number of grid points
       nrad = LONARR(critical.n_xpoint + 1)
       nrad[0] = FIX( 2.*(xpt_f[inner_sep] - f_inner) / ( (1.+rad_peaking)*dx0 ) + 0.5)
-      FOR i=1, critical.n_xpoint-1 DO nrad[i] = FIX((xpt_f[si[i]] - xpt_f[si[i-1]])/(rad_peaking*dx0)-0.5)
+      FOR i=1, critical.n_xpoint-1 DO nrad[i] = FIX((xpt_f[si[i]] - xpt_f[si[i-1]])/(rad_peaking*dx0)-0.5) 
       nrad[critical.n_xpoint] = n - TOTAL(nrad,/int)
       
       ;fvals = radial_grid(TOTAL(nrad), f_inner, f_outer, 1, 1, xpt_f, rad_peaking)
@@ -1098,7 +1099,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
 
     ; Make sure that the line goes clockwise
     
-    m = MAX(INTERPOLATE(Z, start_zi), ind)
+    m = MAX(INTERPOLATE(Z, start_zi), ind) ; Find the top (maximum Z)
     IF (DERIV(INTERPOLATE(R, start_ri)))[ind] LT 0.0 THEN BEGIN
       ; R should be increasing at the top. Need to reverse
       start_ri = REVERSE(start_ri)
@@ -1113,8 +1114,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
 
     xpt_ind = FLTARR(critical.n_xpoint)  ; index into start_*i
     
-    pf_info = PTRARR(critical.n_xpoint)
-    
+    pf_info = PTRARR(critical.n_xpoint)  ; Pointers to PF for each X-point
     
     FOR i=0, critical.n_xpoint-1 DO BEGIN
       PRINT, "Finding theta location of x-point "+STR(i)

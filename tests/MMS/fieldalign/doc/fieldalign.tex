@@ -1,0 +1,89 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage{calc}% http://ctan.org/pkg/calc
+\usepackage[
+  letterpaper,%
+  textheight={47\baselineskip+\topskip},%
+  textwidth={\paperwidth-126pt},%
+  footskip=75pt,%
+  marginparwidth=0pt,%
+  top={\topskip+0.75in}]{geometry}% http://ctan.org/pkg/geometry
+\usepackage{fancyhdr}% http://ctan.org/pkg/fancyhdr
+
+\newcommand{\kpar}{k_{||}}
+\newcommand{\kperp}{k_\perp}
+
+\pagestyle{fancy}
+%\fancyhead{}
+\fancyfoot{}% Clear header & footer
+%\fancyhead[L]{Electrostatic Ohm's law}% Set centered header
+%\fancyhead[R]{ 22$^{nd}$ March 2014 }
+\fancyfoot[C]{\thepage}% Set centered footer
+\renewcommand{\headrulewidth}{0.5pt}% Add header rule
+
+% Titling
+\title{ Testing non-orthogonal coordinates }% Your title
+\author{ Ben Dudson and Jarrod Leddy }% Your author
+\date{ 24$^{th}$ March 2015 }% Your date
+\makeatletter
+% Definition of proc.cls' \maketitle:
+\def\@maketitle{% 
+  \vbox to 1.25in{%
+    \vskip 0.5em
+    {\large \begin{tabular}[t]{ll}
+        Title: & \@title \\
+        Author: & \@author \\
+        Date: & \@date \\
+        Project: & 
+      \end{tabular}\par}
+    \vfil}\noindent\hrulefill
+    \vskip 2em}
+\makeatother
+\begin{document}
+\maketitle % Produce title
+\thispagestyle{fancy}% Override titling page style with fancy
+
+Solving the equation
+\[
+\frac{\partial f}{\partial t} = \frac{\partial f}{\partial \psi} + \frac{\partial f}{\partial \theta} + \frac{\partial f}{\partial \phi} = \left(\hat{\bf{e}}_\psi + \hat{\bf{e}}_\theta + \hat{\bf{e}}_\phi\right)\cdot\nabla f
+\]
+on a 3D $\left(\psi, \theta, \phi\right)$.\\
+
+Transform into coordinates
+\begin{eqnarray*}
+x &=& \psi \\
+y &=& \theta - \int_{\psi_0}^\psi \eta d\psi  \\
+z &=& \phi - \int_{y_0}^y \nu\left( 1 + \int_{\psi_0}^{\psi} \eta d\psi \right) dy
+\end{eqnarray*}
+with pitch $\nu$ and poloidal nonorthogonality parameter $\eta$. Taking the gradient of these expressions, and
+using $\nabla = \nabla x \frac{\partial}{\partial x} + \nabla y \frac{\partial}{\partial y} + \nabla z\frac{\partial}{\partial z}$ assuming
+\[
+\left|\nabla\psi\right| = 1 \qquad \left|\nabla\theta\right| = 1 \qquad \left|\nabla\phi\right| = 1
+\]
+gives
+\begin{eqnarray*}
+\nabla x &=& \nabla \psi \\
+\nabla y &=& G\nabla \theta - \eta \nabla \psi \\
+\nabla z &=& \nabla \phi - H \nabla \theta - I\nabla\psi
+\end{eqnarray*}
+with
+\begin{eqnarray*}
+G &=& 1 - \frac{\partial}{\partial\theta}\int_{x_0}^x \eta dx \\
+I &=& \frac{\partial}{\partial\psi}\int_{y_0}^y \nu\left(1+ \frac{\partial}{\partial y}\int_{x_0}^x \eta dx \right) dy \\
+I &=& \frac{\partial}{\partial\theta}\int_{y_0}^y \nu\left(1+ \frac{\partial}{\partial y}\int_{x_0}^x \eta dx \right) dy
+\end{eqnarray*}
+The evolution equation becomes
+\[
+\frac{\partial f}{\partial t} = \frac{1}{G}\left[ \left( G + \eta+GI+H\eta \right)\nabla x + \left(1 + H\right) \nabla y + G\nabla z \right] \cdot \nabla f
+\]
+which when expanded gives
+\begin{eqnarray*}
+\frac{\partial f}{\partial t} &=& \underbrace{\frac{G + \eta+GI+H\eta}{G}}_{v_x}\left[g^{xx} \frac{\partial f}{\partial x} + g^{xy} \frac{\partial f}{\partial y} + g^{xz}\frac{\partial f}{\partial z}\right] \\
+&+& \underbrace{\frac{H + \nu}{G}}_{v_y}\left[g^{xy} \frac{\partial f}{\partial x} + g^{yy} \frac{\partial f}{\partial y} + g^{yz}\frac{\partial f}{\partial z}\right] \\
+&+& \underbrace{1}_{v_z}\left[g^{xz} \frac{\partial f}{\partial x} + g^{yz}\frac{\partial f}{\partial y} + g^{zz} \frac{\partial f}{\partial z}\right]
+\end{eqnarray*}
+with
+\[
+g^{xx} = 1 \qquad g^{yy} = G^2+\eta^2 \qquad g^{zz} = 1 + H^2 + I^2 \qquad g^{xy} = -\eta \qquad g^{yz} = \eta I - GH \qquad g^{xz} = -I 
+\]
+
+\end{document}

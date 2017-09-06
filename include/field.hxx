@@ -34,8 +34,16 @@ class Field;
 #include "bout_types.hxx"
 #include "stencils.hxx"
 #include <bout/rvec.hxx>
+#include "boutexception.hxx"
 
 #include "bout/deprecated.hxx"
+
+#include "bout/dataiterator.hxx"
+
+#include "unused.hxx"
+
+class Mesh;
+extern Mesh * mesh;
 
 #ifdef TRACK
 #include <string>
@@ -49,28 +57,8 @@ class Field;
 class Field {
  public:
   Field();
+  Field(Mesh * msh);
   virtual ~Field() { }
-  
-  /// Clone function
-  /*!
-    C++ doesn't support statements like:
-      Field3D a;
-      a = ...
-      Field b = a;  // Error
-    The clone function implements a second-best
-      Field3D a;
-      a = ...
-      Field *b = a.clone();
-    This is useful where a const field must be modified within a function
-    and is used in the deriv.cpp functions.
-  */
-  DEPRECATED(virtual Field* clone() const) = 0;
-
-  virtual void shiftToReal(bool toBoutReal) {
-    // Does nothing by default
-  }
-
-  virtual void setStencil(bstencil *val, bindex *bx) const = 0;
 
   // These routines only set a stencil in one dimension
   // Should be faster, and replaces the above SetStencil function.
@@ -78,39 +66,47 @@ class Field {
   virtual void setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const = 0;
   virtual void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const = 0;
 
-  virtual void setLocation(CELL_LOC loc) { }
+  // Data access
+  virtual const BoutReal& operator[](const Indices &i) const = 0;
+
+  virtual void setLocation(CELL_LOC loc) {
+    if (loc != CELL_CENTRE)
+      throw BoutException("not implemented!");
+  }
   virtual CELL_LOC getLocation() const {
     return CELL_CENTRE;
   }
 
-  virtual void getXArray(int y, int z, rvec &xv) const {
+  DEPRECATED(virtual void getXArray(int UNUSED(y), int UNUSED(z), rvec &UNUSED(xv)) const) {
     error("Field: Base class does not implement getXarray");
   }
-  virtual void getYArray(int x, int z, rvec &yv) const {
+  DEPRECATED(virtual void getYArray(int UNUSED(x), int UNUSED(z), rvec &UNUSED(yv)) const) {
     error("Field: Base class does not implement getYarray");
   }
-  virtual void getZArray(int x, int y, rvec &zv) const {
+  DEPRECATED(virtual void getZArray(int UNUSED(x), int UNUSED(y), rvec &UNUSED(zv)) const) {
     error("Field: Base class does not implement getZarray");
   }
 
-  virtual void setXArray(int y, int z, const rvec &xv) {
+  DEPRECATED(virtual void setXArray(int UNUSED(y), int UNUSED(z), const rvec &UNUSED(xv))) {
     error("Field: Base class does not implement setXarray");
   }
-  virtual void setYArray(int x, int z, const rvec &yv) {
+  DEPRECATED(virtual void setYArray(int UNUSED(x), int UNUSED(z), const rvec &UNUSED(yv))) {
     error("Field: Base class does not implement setYarray");
   }
-  virtual void setZArray(int x, int y, const rvec &zv) {
+  DEPRECATED(virtual void setZArray(int UNUSED(x), int UNUSED(y), const rvec &UNUSED(zv))) {
     error("Field: Base class does not implement setZarray");
   }
-    
+
 #ifdef TRACK
   std::string getName() const { return name; }
   void setName(std::string s) { name = s; }
-
-  std::string name;
+#else
+  std::string getName() const { return ""; }
+  void setName(std::string UNUSED(s)) {}
 #endif
+  std::string name;
 
-#ifdef CHECK
+#if CHECK > 0
   // Routines to test guard/boundary cells set
   
   virtual bool bndryValid() {
@@ -128,7 +124,27 @@ class Field {
   // Status of the 4 boundaries
   bool bndry_xin, bndry_xout, bndry_yup, bndry_ydown;
 #endif
+  virtual Mesh * getMesh() const{
+    if (fieldmesh){
+      return fieldmesh;
+    } else {
+      return mesh;
+    }
+  }
+  /*!
+   * Return the number of nx points
+   */
+  virtual int getNx() const;
+  /*!
+   * Return the number of ny points
+   */
+  virtual int getNy() const;
+  /*!
+   * Return the number of nz points
+   */
+  virtual int getNz() const;
  protected:
+  Mesh * fieldmesh;
   /// Supplies an error method. Currently just prints and exits, but
   /// should do something more cunning...
   void error(const char *s, ...) const;

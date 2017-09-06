@@ -63,7 +63,7 @@
 
 #include "utils.hxx"
 
-const BoutReal BOUT_VERSION = 3;  ///< Version number
+const BoutReal BOUT_VERSION = BOUT_VERSION_DOUBLE;  ///< Version number
 
 // BOUT++ main functions
 
@@ -75,12 +75,42 @@ const BoutReal BOUT_VERSION = 3;  ///< Version number
  * has been configured with external libraries such as
  * PETSc then these will be initialised as well.
  * 
+ * Example
+ * -------
+ *
+ * A minimal BOUT++ program consists of:
+ *
+ *     int main(int argc, char** argv) {
+ *       BoutInitialise(argc, argv);
+ *       
+ *       BoutFinalise();
+ *     }
+ *
+ * Usually this function is called in a standard main() function,
+ * either by including boutmain.hxx or by including bout/physicsmodel.hxx
+ * and using the BOUTMAIN macro.
+ *     
  */
 int BoutInitialise(int &argc, char **&argv);
 
+/*!
+ * Run the given solver. This function is only used
+ * for old-style physics models with standalone C functions
+ * The main() function in boutmain.hxx calls this function
+ * to set up the RHS function and add bout_monitor.
+ * 
+ */
 int bout_run(Solver *solver, rhsfunc physics_run);
 
-int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT); 
+/*!
+ * Monitor class for output. Called by the solver every output timestep.
+ * 
+ * This is added to the solver in bout_run (for C-style models)
+ * or in bout/physicsmodel.hxx
+ */
+class BoutMonitor: public Monitor{
+  int call(Solver *solver, BoutReal t, int iter, int NOUT) override;
+};
 
 /*!
  * BOUT++ finalisation. This should be called at the

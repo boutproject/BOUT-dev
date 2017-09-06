@@ -39,6 +39,7 @@ FUNCTION critical_bndry, critical, bndryi
 
   ; Check the x-points
   n_xpoint = 0
+  w = [0]
   FOR i=0, critical.n_xpoint-1 DO BEGIN
     ; Test if outside boundary by drawing a line to the primary o-point
     cp = line_crossings([critical.xpt_ri[i], opt_ri[primary_opt]], $
@@ -61,15 +62,25 @@ FUNCTION critical_bndry, critical, bndryi
     inner_sep = 0
   ENDIF ELSE BEGIN
     ; Need to update inner_sep
-    w2 = WHERE(w EQ critical.inner_sep)
-    inner_sep = w2[0]
+    w2 = WHERE(w EQ critical.inner_sep, count)
+
+    IF count EQ 0 THEN BEGIN
+      ; Original inner sep not included
+      
+      s = SORT(ABS(opt_f[primary_opt] - critical.xpt_f[w]))
+      w = w[s]
+      inner_sep = 0
+    ENDIF ELSE BEGIN
+      inner_sep = w2[0]
+    ENDELSE
+    
   ENDELSE
 
   ; Select x-points
   xpt_ri = critical.xpt_ri[w]
   xpt_zi = critical.xpt_zi[w]
   xpt_f  = critical.xpt_f[w]
-
+  
   result = {n_opoint:n_opoint, n_xpoint:n_xpoint, $
             primary_opt:primary_opt, $
             inner_sep:inner_sep, $

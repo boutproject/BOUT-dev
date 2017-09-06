@@ -23,6 +23,7 @@
 .svn/
 .tmtags
 autom4te.cache/
+aclocal.m4
 data_*
 test*.py
 /bin/bout-config
@@ -31,3 +32,6 @@ test*.py
 /lib/
 /manual/*.pdf
 /tools/vagrant/.vagrant
+*.gcda
+*.gcno
+bout-coverage/
