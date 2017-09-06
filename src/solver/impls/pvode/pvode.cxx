@@ -108,7 +108,7 @@ int PvodeSolver::init(int nout, BoutReal tstep) {
 	       n3d, n2d, neq, local_N);
 
   // Set machEnv block
-  machEnv = (machEnvType) PVecInitMPI(BoutComm::get(), local_N, neq, pargc, pargv);
+  machEnv = static_cast<machEnvType>(PVecInitMPI(BoutComm::get(), local_N, neq, pargc, pargv));
 
   if (machEnv == NULL) {
     throw BoutException("\tError: PVecInitMPI failed\n");
@@ -135,7 +135,7 @@ int PvodeSolver::init(int nout, BoutReal tstep) {
   options->get("mxstep", pvode_mxstep, 500);
 
   pdata = PVBBDAlloc(local_N, mudq, mldq, mukeep, mlkeep, ZERO, 
-                     solver_gloc, solver_cfn, (void*) this);
+                     solver_gloc, solver_cfn, static_cast<void*>(this));
   
   if (pdata == NULL) {
     throw BoutException("\tError: PVBBDAlloc failed.\n");
@@ -232,7 +232,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
 
   BoutReal *udata;
   
-  rhs_ncalls = 0;
+  //rhs_ncalls = 0;
 
   // Set pointer to data array in vector u.
   udata = N_VDATA(u);
@@ -244,7 +244,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
     flag = CVode(cvode_mem, tout, u, &simtime, NORMAL);
   }else {
     // Run in single step mode, to call timestep monitors
-    BoutReal internal_time = ((CVodeMem) cvode_mem)->cv_tn;
+    BoutReal internal_time = static_cast<CVodeMem>(cvode_mem)->cv_tn;
     //CvodeGetCurrentTime(cvode_mem, &internal_time);
     
     while(internal_time < tout) {
@@ -326,8 +326,8 @@ void solver_f(integer N, BoutReal t, N_Vector u, N_Vector udot, void *f_data) {
 
   udata = N_VDATA(u);
   dudata = N_VDATA(udot);
-  
-  s = (PvodeSolver*) f_data;
+
+  s = static_cast<PvodeSolver *>(f_data);
 
   s->rhs(N, t, udata, dudata);
 }
@@ -336,7 +336,7 @@ void solver_f(integer N, BoutReal t, N_Vector u, N_Vector udot, void *f_data) {
 void solver_gloc(integer N, BoutReal t, BoutReal *u, BoutReal *udot, void *f_data) {
   PvodeSolver *s;
 
-  s = (PvodeSolver*) f_data;
+  s = static_cast<PvodeSolver *>(f_data);
 
   s->gloc(N, t, u, udot);
 }

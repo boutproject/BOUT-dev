@@ -241,10 +241,10 @@ bool Mesh::hasBndryLowerY() {
   static bool calc = false, answer;
   if(calc) return answer; // Already calculated
 
-  int mybndry = (int) !(iterateBndryLowerY().isDone());
+  int mybndry = static_cast<int>(!(iterateBndryLowerY().isDone()));
   int allbndry;
   MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(yend));
-  answer = (bool) allbndry;
+  answer = static_cast<bool>(allbndry);
   calc = true;
   return answer;
 }
@@ -253,10 +253,10 @@ bool Mesh::hasBndryUpperY() {
   static bool calc = false, answer;
   if(calc) return answer; // Already calculated
 
-  int mybndry = (int) !(iterateBndryUpperY().isDone());
+  int mybndry = static_cast<int>(!(iterateBndryUpperY().isDone()));
   int allbndry;
   MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(ystart));
-  answer = (bool) allbndry;
+  answer = static_cast<bool>(allbndry);
   calc = true;
   return answer;
 }

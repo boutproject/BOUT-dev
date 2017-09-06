@@ -409,7 +409,7 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const string &name,
     output.write(" => Only reading n = 0 component\n");
   } else {
     // Get maximum mode in the input which is a multiple of zperiod
-    int mm = ((int) (maxmode/zperiod))*zperiod;
+    int mm = static_cast<int>(maxmode / zperiod) * zperiod;
     if ( (ncz/2)*zperiod < mm )
       mm = (ncz/2)*zperiod; // Limited by Z resolution
     
