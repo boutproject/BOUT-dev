@@ -163,7 +163,7 @@ DummyOutput output_debug;
 #endif
 ConditionalOutput output_warn(Output::getInstance());
 ConditionalOutput output_info(Output::getInstance());
-ConditionalOutput output_prog(Output::getInstance());
+ConditionalOutput output_progress(Output::getInstance());
 ConditionalOutput output_error(Output::getInstance());
 ConditionalOutput output(Output::getInstance());
 

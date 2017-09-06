@@ -95,7 +95,7 @@ BoutMesh::~BoutMesh() {
 int BoutMesh::load() {
   TRACE("BoutMesh::load()");
 
-  output_prog << "Loading mesh" << endl;
+  output_progress << "Loading mesh" << endl;
 
   // Use root level options
   Options *options = Options::getRoot();
@@ -242,7 +242,7 @@ int BoutMesh::load() {
 
     BoutReal ideal = sqrt(MX * NPES / ((double)ny)); // Results in square domains
 
-    output_prog.write("Finding value for NXPE\n");
+    output_progress.write("Finding value for NXPE\n");
 
     for (int i = 1; i <= NPES; i++) { // Loop over all possibilities
 
@@ -329,7 +329,7 @@ int BoutMesh::load() {
 
     NYPE = NPES / NXPE;
 
-    output_prog.write(
+    output_progress.write(
         "\tDomain split (NXPE=%d, NYPE=%d) into domains (localNx=%d, localNy=%d)\n", NXPE,
         NYPE, MX / NXPE, ny / NYPE);
   }
@@ -2143,8 +2143,8 @@ vector<BoundaryRegion *> BoutMesh::getBoundaries() { return boundary; }
 vector<BoundaryRegionPar *> BoutMesh::getBoundariesPar() { return par_boundary; }
 
 void BoutMesh::addBoundaryPar(BoundaryRegionPar *bndry) {
-  output_prog << "Adding new parallel boundary: " << bndry->label;
-  output_prog << endl;
+  output_progress << "Adding new parallel boundary: " << bndry->label;
+  output_progress << endl;
   par_boundary.push_back(bndry);
 }
 

@@ -91,7 +91,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   NOUT = nout;
   TIMESTEP = tstep;
 
-  output_prog.write("Initialising SUNDIALS' CVODE solver\n");
+  output_progress.write("Initialising SUNDIALS' CVODE solver\n");
 
   // Calculate number of variables (in generic_solver)
   int local_N = getLocalN();

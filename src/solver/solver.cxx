@@ -484,7 +484,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
     options->get("output_step", TIMESTEP, TIMESTEP);
   }
   
-  output_prog.write("Solver running for %d outputs with output timestep of %e\n", NOUT, TIMESTEP);
+  output_progress.write("Solver running for %d outputs with output timestep of %e\n", NOUT, TIMESTEP);
   
   // Initialise
   if (init(NOUT, TIMESTEP)) {
@@ -495,7 +495,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   output_info.write("Running simulation\n\n");
   
   time_t start_time = time((time_t*) NULL);
-  output_prog.write("\nRun started at  : %s\n", ctime(&start_time));
+  output_progress.write("\nRun started at  : %s\n", ctime(&start_time));
   
   Timer timer("run"); // Start timer
   
@@ -524,21 +524,21 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
     status = run();
 
     time_t end_time = time((time_t*) NULL);
-    output_prog.write("\nRun finished at  : %s\n", ctime(&end_time));
-    output_prog.write("Run time : ");
+    output_progress.write("\nRun finished at  : %s\n", ctime(&end_time));
+    output_progress.write("Run time : ");
 
     int dt = end_time - start_time;
     int i = (int) (dt / (60.*60.));
     if (i > 0) {
-      output_prog.write("%d h ", i);
+      output_progress.write("%d h ", i);
       dt -= i*60*60;
     }
     i = (int) (dt / 60.);
     if (i > 0) {
-      output_prog.write("%d m ", i);
+      output_progress.write("%d m ", i);
       dt -= i*60;
     }
-    output_prog.write("%d s\n", dt);
+    output_progress.write("%d s\n", dt);
   } catch (BoutException &e) {
     output_error << "Error encountered in solver run\n";
     output_error << e.what() << endl;
@@ -560,7 +560,7 @@ int Solver::init(int nout, BoutReal tstep) {
   if (initialised)
     throw BoutException("ERROR: Solver is already initialised\n");
 
-  output_prog.write("Initialising solver\n");
+  output_progress.write("Initialising solver\n");
 
   MPI_Comm_size(BoutComm::get(), &NPES);
   MPI_Comm_rank(BoutComm::get(), &MYPE);

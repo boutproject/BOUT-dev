@@ -238,7 +238,7 @@ int BoutInitialise(int &argc, char **&argv) {
   
   output_error.enable(verbosity>0);
   output_warn.enable(verbosity>1);
-  output_prog.enable(verbosity>2);
+  output_progress.enable(verbosity>2);
   output_info.enable(verbosity>3);
   output_debug.enable(verbosity>4);
   
@@ -473,7 +473,7 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
   BoutReal wtime_comms  = Timer::resetTime("comms");  // Time spent communicating (part of RHS)
   BoutReal wtime_io     = Timer::resetTime("io");      // Time spend on I/O
 
-  output_prog.print("\r"); // Only goes to screen
+  output_progress.print("\r"); // Only goes to screen
 
   if (first_time) {
     /// First time the monitor has been called
@@ -490,15 +490,15 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
 
     /// Print the column header for timing info
     if(!output_split){
-	    output_prog.write("Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n\n");
+	    output_progress.write("Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n\n");
     }else{
-	    output_prog.write("Sim Time  |  RHS_e evals  | RHS_I evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n\n");
+	    output_progress.write("Sim Time  |  RHS_e evals  | RHS_I evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n\n");
     }
   }
   
  
   if(!output_split){
-    output_prog.write("%.3e      %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n", 
+    output_progress.write("%.3e      %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n", 
                simtime, ncalls, wtime,
                100.0*(wtime_rhs - wtime_comms - wtime_invert)/wtime,
                100.*wtime_invert/wtime,  // Inversions
@@ -506,7 +506,7 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
                100.* wtime_io / wtime,      // I/O
                100.*(wtime - wtime_io - wtime_rhs)/wtime); // Everything else
   }else{
-    output_prog.write("%.3e      %5d            %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n",
+    output_progress.write("%.3e      %5d            %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n",
                simtime, ncalls_e, ncalls_i, wtime,
                100.0*(wtime_rhs - wtime_comms - wtime_invert)/wtime,
                100.*wtime_invert/wtime,  // Inversions
@@ -518,8 +518,8 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
   // This bit only to screen, not log file
 
   BoutReal t_elapsed = MPI_Wtime() - mpi_start_time;
-  output_prog.print("%c  Step %d of %d. Elapsed %s", get_spin(), iteration+1, NOUT, (time_to_hms(t_elapsed)).c_str());
-  output_prog.print(" ETA %s", (time_to_hms(wtime * ((BoutReal) (NOUT - iteration - 1)))).c_str());
+  output_progress.print("%c  Step %d of %d. Elapsed %s", get_spin(), iteration+1, NOUT, (time_to_hms(t_elapsed)).c_str());
+  output_progress.print(" ETA %s", (time_to_hms(wtime * ((BoutReal) (NOUT - iteration - 1)))).c_str());
 
   if (wall_limit > 0.0) {
     // Check if enough time left
@@ -531,7 +531,7 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
 
       return 1; // Return an error code to quit
     } else {
-      output_prog.print(" Wall %s", (time_to_hms(t_remain)).c_str());
+      output_progress.print(" Wall %s", (time_to_hms(t_remain)).c_str());
     }
   }
 

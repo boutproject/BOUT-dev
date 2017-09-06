@@ -230,7 +230,7 @@ void Coordinates::outputVars(Datafile &file) {
 int Coordinates::geometry() {
   TRACE("Coordinates::geometry");
 
-  output_prog.write("Calculating differential geometry terms\n");
+  output_progress.write("Calculating differential geometry terms\n");
 
   if (min(abs(dx)) < 1e-8)
     throw BoutException("dx magnitude less than 1e-8");
@@ -334,7 +334,7 @@ int Coordinates::geometry() {
   G3 = (DDX(J * g13) + DDY(J * g23) + DDZ(J * g33)) / J;
 
   // Communicate christoffel symbol terms
-  output_prog.write("\tCommunicating connection terms\n");
+  output_progress.write("\tCommunicating connection terms\n");
 
   FieldGroup com;
 

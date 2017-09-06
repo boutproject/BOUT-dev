@@ -249,11 +249,11 @@ extern Output output_debug;
 extern DummyOutput output_debug;
 #endif
 extern ConditionalOutput output_warn;  ///< warnings
-extern ConditionalOutput output_prog;  ///< progress
+extern ConditionalOutput output_progress;  ///< progress
 extern ConditionalOutput output_info;  ///< information 
 extern ConditionalOutput output_error; ///< errors
 
-/// Generic output, given the same level as output_prog
+/// Generic output, given the same level as output_progress
 extern ConditionalOutput output;
 
 #endif // __OUTPUT_H__

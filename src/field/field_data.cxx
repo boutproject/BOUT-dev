@@ -27,7 +27,7 @@ void FieldData::setBoundary(const string &name) {
     BoundaryOp* op = static_cast<BoundaryOp*>(bfact->createFromOptions(name, reg));
     if(op != NULL)
       bndry_op.push_back(op);
-    output_prog << endl;
+    output_info << endl;
   }
 
   /// Get the mesh boundary regions
@@ -37,7 +37,7 @@ void FieldData::setBoundary(const string &name) {
     BoundaryOpPar* op = static_cast<BoundaryOpPar*>(bfact->createFromOptions(name, reg));
     if(op != NULL)
       bndry_op_par.push_back(op);
-    output_prog << endl;
+    output_info << endl;
   }
 
   boundaryIsSet = true;
