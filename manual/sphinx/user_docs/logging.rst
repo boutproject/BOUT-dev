@@ -29,15 +29,15 @@ crashes but no error message is printed, try looking at the ends of all log file
 For finer control over which messages are printed, several outputs are available,
 listed in the table below.
 
-====               ======
-Name               Useage
-====               ======
-``output_debug``   For highly verbose output messages, that are normally not needed.
-                   Needs to be enabled with a compile switch
-``output_info``    For infos like what options are used
-``output_prog``    For infos about the current progress
-``output_warn``    For warnings
-``output_error``   For errors
+====                  ======
+Name                  Useage
+====                  ======
+``output_debug``      For highly verbose output messages, that are normally not needed.
+                      Needs to be enabled with a compile switch
+``output_info``       For infos like what options are used
+``output_progress``   For infos about the current progress
+``output_warn``       For warnings
+``output_error``      For errors
 ====               ======
 
 

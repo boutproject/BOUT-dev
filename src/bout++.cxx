@@ -146,8 +146,8 @@ int BoutInitialise(int &argc, char **&argv) {
 	      "  -d <data directory>\tLook in <data directory> for input/output files\n"
 	      "  -f <options filename>\tUse OPTIONS given in <options filename>\n"
 	      "  -o <settings filename>\tSave used OPTIONS given to <options filename>\n"
-	      "  -v \t\tIncrease verbosity\n"
-	      "  -q \t\tDecrease verbosity\n"
+	      "  -v, --verbose\t\tIncrease verbosity\n"
+	      "  -q, --quiet\t\tDecrease verbosity\n"
 	      "  -h, --help\t\tThis message\n"
 	      "  restart [append]\tRestart the simulation. If append is specified, append to the existing output files, otherwise overwrite them\n"
 	      "  VAR=VALUE\t\tSpecify a VALUE for input parameter VAR\n"
@@ -389,16 +389,6 @@ int BoutFinalise() {
   // Output the settings, showing which options were used
   // This overwrites the file written during initialisation
   try {
-    string data_dir;
-    Options::getRoot()->get("datadir", data_dir, "data");
-
-    OptionsReader *reader = OptionsReader::getInstance();
-    std::string settingsfile;
-    OPTION(Options::getRoot(),settingsfile,"");
-    reader->write(Options::getRoot(), "%s/%s", data_dir.c_str(),settingsfile.c_str());
-  } catch (BoutException &e) {
-    output_error << "Error whilst writing settings" << endl;
-    output_error << e.what() << endl;
     if (BoutComm::rank() == 0) {
       string data_dir;
       Options::getRoot()->get("datadir", data_dir, "data");
@@ -408,6 +398,9 @@ int BoutFinalise() {
       OPTION(Options::getRoot(), settingsfile, "");
       reader->write(Options::getRoot(), "%s/%s", data_dir.c_str(), settingsfile.c_str());
     }
+  } catch (BoutException &e) {
+    output_error << "Error whilst writing settings" << endl;
+    output_error << e.what() << endl;
   }
 
   // Delete the mesh

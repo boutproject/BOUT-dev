@@ -239,7 +239,7 @@ int BoutMesh::load() {
     
     BoutReal ideal = sqrt(MX * NPES / static_cast<BoutReal>(ny)); // Results in square domains
 
-    output_info.write("Choosing value for NXPE (ideal = %d)\n", ideal);
+    output_info.write("Finding value for NXPE (ideal = %f)\n", ideal);
     
     for(int i=1; i<= NPES; i++) { // Loop over all possibilities
       if( (NPES % i == 0) &&      // Processors divide equally
@@ -2135,8 +2135,7 @@ vector<BoundaryRegion *> BoutMesh::getBoundaries() { return boundary; }
 vector<BoundaryRegionPar *> BoutMesh::getBoundariesPar() { return par_boundary; }
 
 void BoutMesh::addBoundaryPar(BoundaryRegionPar *bndry) {
-  output_progress << "Adding new parallel boundary: " << bndry->label;
-  output_progress << endl;
+  output_info << "Adding new parallel boundary: " << bndry->label << endl;
   par_boundary.push_back(bndry);
 }
 
