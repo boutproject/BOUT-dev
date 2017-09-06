@@ -32,7 +32,7 @@ class Output;
 #include "multiostream.hxx"
 #include <iostream>
 #include <fstream>
-#include <boutexception.hxx>
+#include "boutexception.hxx"
 using std::endl;
 
 /// Class for text output to stdout and/or log file
@@ -139,14 +139,14 @@ public:
 class ConditionalOutput : public Output {
 public:
   /// @params[in] base    The Output object which will be written to if enabled
-  ConditionalOutput(Output *base_) : base(base_), enabled(true), base_is_cond(false) {};
+  ConditionalOutput(Output *base) : base(base), enabled(true), base_is_cond(false) {};
 
   /// Constuctor taking ConditionalOutput. This allows several layers of conditions
   /// 
   /// @params[in] base    A ConditionalOutput which will be written to if enabled
   /// 
-  ConditionalOutput(ConditionalOutput *base_)
-      : base(base_), enabled(base_->enabled), base_is_cond(true) {};
+  ConditionalOutput(ConditionalOutput *base)
+      : base(base), enabled(base->enabled), base_is_cond(true) {};
 
   /// If enabled, writes a string using C printf formatting
   /// by calling base->vwrite

@@ -21,7 +21,7 @@ void FieldData::setBoundary(const string &name) {
   /// Get the boundary factory (singleton)
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
   
-  output_prog << "Setting boundary for variable " << name << endl;
+  output_info << "Setting boundary for variable " << name << endl;
   /// Loop over the mesh boundary regions
   for(const auto& reg : mesh->getBoundaries()) {
     BoundaryOp* op = static_cast<BoundaryOp*>(bfact->createFromOptions(name, reg));

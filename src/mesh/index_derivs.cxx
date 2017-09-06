@@ -929,7 +929,7 @@ void derivs_initialise(Options *options, bool StaggerGrids,
 void Mesh::derivs_init(Options* options) {
   TRACE("Initialising derivatives");
 
-  output_prog.write("Setting X differencing methods\n");
+  output_info.write("Setting X differencing methods\n");
   derivs_initialise(options->getSection("ddx"), 
               StaggerGrids,
               fDDX, sfDDX, 
@@ -949,7 +949,7 @@ void Mesh::derivs_init(Options* options) {
   if ((fDDX == NULL) || (fD2DX2 == NULL))
     throw BoutException("FFT cannot be used in X\n");
   
-  output_prog.write("Setting Y differencing methods\n");
+  output_info.write("Setting Y differencing methods\n");
   derivs_initialise(options->getSection("ddy"), 
               StaggerGrids,
               fDDY, sfDDY, 
@@ -968,7 +968,7 @@ void Mesh::derivs_init(Options* options) {
   if ((fDDY == NULL) || (fD2DY2 == NULL))
     throw BoutException("FFT cannot be used in Y\n");
   
-  output_prog.write("Setting Z differencing methods\n");
+  output_info.write("Setting Z differencing methods\n");
   derivs_initialise(options->getSection("ddz"), 
               StaggerGrids,
               fDDZ, sfDDZ, 

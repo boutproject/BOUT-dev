@@ -108,9 +108,9 @@ public:
   
   /// Constructor used to create non-root objects
   ///
-  /// @param[in] p         Parent object
-  /// @param[in[ secname   Name of the section, including path from the root
-  Options(Options *p, string s) : parent(p), sectionName(s) {};
+  /// @param[in] parent        Parent object
+  /// @param[in] sectionName   Name of the section, including path from the root
+  Options(Options *parent, string sectionName) : parent(parent), sectionName(sectionName) {};
   
   /// Destructor
   ~Options();
