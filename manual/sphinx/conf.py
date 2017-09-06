@@ -22,16 +22,17 @@ import argparse
 try:
     from breathe import apidoc
     has_breathe = True
-except ModuleNotFoundError:
+except ImportError:
     print("breathe module not installed")
     has_breathe = False
-    
+
+# Disable breathe
+has_breathe = False
+
 import os
 import subprocess
 import sys
 # sys.path.insert(0, os.path.abspath('.'))
-
-import sphinx_rtd_theme
 
 # Are we running on readthedocs?
 on_readthedocs = os.environ.get("READTHEDOCS") == "True"
@@ -41,16 +42,16 @@ if has_breathe and not on_readthedocs:
     # Run doxygen to generate the XML sources
     subprocess.call("cd ../doxygen; doxygen Doxyfile", shell=True)
     # Now use breathe.apidoc to autogen rst files for each XML file
-    apidoc_args = argparse.Namespace(destdir='_breathe_autogen/',
-                                     dryrun=False,
-                                     force=True,
-                                     notoc=False,
-                                     rootpath='../doxygen/bout/xml',
-                                     suffix='rst')
-    apidoc_args.rootpath = os.path.abspath(apidoc_args.rootpath)
-    apidoc.recurse_tree(apidoc_args)
-    for key, value in apidoc.TYPEDICT.items():
-        apidoc.create_modules_toc_file(key, value, apidoc_args)
+    #apidoc_args = argparse.Namespace(destdir='_breathe_autogen/',
+    #                                 dryrun=False,
+    #                                 force=True,
+    #                                 notoc=False,
+    #                                 rootpath='../doxygen/bout/xml',
+    #                                 suffix='rst')
+    #apidoc_args.rootpath = os.path.abspath(apidoc_args.rootpath)
+    #apidoc.recurse_tree(apidoc_args)
+    #for key, value in apidoc.TYPEDICT.items():
+    #    apidoc.create_modules_toc_file(key, value, apidoc_args)
 
     # -- Options for breathe extension ----------------------------------------
 
@@ -80,7 +81,7 @@ templates_path = ['_templates']
 try:
     from recommonmark.parser import CommonMarkParser
     source_parsers = {".md": CommonMarkParser}
-except ModuleNotFoundError:
+except ImportError:
     print("recommonmark module not installed")
     source_parsers = {}
 
@@ -136,6 +137,7 @@ highlight_language = 'cpp'
 # a list of builtin themes.
 #
 if on_readthedocs:
+    import sphinx_rtd_theme
     html_theme = 'sphinx_rtd_theme'
 else:
     html_theme = 'sphinxdoc'

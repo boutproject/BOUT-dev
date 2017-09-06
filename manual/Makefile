@@ -15,13 +15,13 @@ pdf: sphinx-pdf
 html: sphinx-html
 sphinx: sphinx-pdf
 
-sphinx-pdf: breathe-autogen
+sphinx-pdf: 
 	$(sphinx-build) -b latex sphinx/ build/
 	cd build && latexmk -pdf BOUT
 	test -e BOUT.pdf || ln -s build/BOUT.pdf .
 	@echo "Documentation is available in `pwd`/BOUT.pdf"
 
-sphinx-html: breathe-autogen
+sphinx-html:
 	$(sphinx-build) -b html sphinx/ html/
 	@echo "Documentation available in `pwd`/html/"
 
