@@ -327,9 +327,7 @@ int CvodeSolver::run() {
     /// Check if the run succeeded
     if(simtime < 0.0) {
       // Step failed
-      output_error.write("Timestep failed. Aborting\n");
-      
-      throw BoutException("SUNDIALS timestep failed\n");
+      throw BoutException("SUNDIALS CVODE timestep failed\n");
     }
     
     if (diagnose) {
