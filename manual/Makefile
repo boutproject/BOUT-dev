@@ -1,7 +1,7 @@
 # Makefile for the reference and user manuals
 TEXDIR=tex_files
 VPATH=$(TEXDIR)
-.PHONY:all clean sphinx html pdf old doxygen
+.PHONY:all clean sphinx html pdf old doxygen breathe-autogen
 
 # some distros may provide sphinx-build-3 and sphinx-build-2 instead
 # of sphinx-build. An automatic check would be helpfull, but at least
@@ -15,21 +15,23 @@ pdf: sphinx-pdf
 html: sphinx-html
 sphinx: sphinx-pdf
 
-sphinx-pdf:
+sphinx-pdf: breathe-autogen
 	$(sphinx-build) -b latex sphinx/ build/
 	cd build && latexmk -pdf BOUT
 	test -e BOUT.pdf || ln -s build/BOUT.pdf .
 	@echo "Documentation is available in `pwd`/BOUT.pdf"
 
-sphinx-html:
+sphinx-html: breathe-autogen
 	$(sphinx-build) -b html sphinx/ html/
 	@echo "Documentation available in `pwd`/html/"
 
+# Run doxygen, ignore if it fails (leading '-')
 doxygen:
-	cd doxygen && doxygen Doxyfile
+	-cd doxygen && doxygen Doxyfile
 
+# Run breathe-apidoc, ignore if it fails (leading '-')
 breathe-autogen: doxygen
-	breathe-apidoc -f -o sphinx/_breathe_autogen doxygen/bout/xml
+	-breathe-apidoc -f -o sphinx/_breathe_autogen doxygen/bout/xml
 
 old: old-pdf
 old-pdf: user_manual.pdf \

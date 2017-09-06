@@ -349,7 +349,7 @@ clean-mms-tests:
 MANUAL_DIR=$(BOUT_TOP)/manual
 
 doxygen:
-	$(MAKE) -C$ (MANUAL_DIR) doxygen
+	$(MAKE) -C $(MANUAL_DIR) doxygen
 
 breathe-autogen:
 	$(MAKE) -C $(MANUAL_DIR) breathe_autogen
