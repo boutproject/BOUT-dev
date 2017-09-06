@@ -50,14 +50,14 @@ BoundaryFactory::BoundaryFactory() {
 
 BoundaryFactory::~BoundaryFactory() {
   // Free any boundaries
-  for(const auto& it : opmap) {
+  for (const auto &it : opmap) {
     delete it.second;
   }
-  for(const auto& it : modmap) {
+  for (const auto &it : modmap) {
     delete it.second;
   }
-  for(map<string, BoundaryOpPar*>::iterator it = par_opmap.begin(); it != par_opmap.end(); it++) {
-    delete it->second;
+  for (const auto &it : par_opmap) {
+    delete it.second;
   }
 }
 

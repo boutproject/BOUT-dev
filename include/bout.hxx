@@ -63,7 +63,7 @@
 
 #include "utils.hxx"
 
-const BoutReal BOUT_VERSION = 4;  ///< Version number
+const BoutReal BOUT_VERSION = BOUT_VERSION_DOUBLE;  ///< Version number
 
 // BOUT++ main functions
 
@@ -103,12 +103,14 @@ int BoutInitialise(int &argc, char **&argv);
 int bout_run(Solver *solver, rhsfunc physics_run);
 
 /*!
- * Monitor function, called by the solver every output timestep
+ * Monitor class for output. Called by the solver every output timestep.
  * 
  * This is added to the solver in bout_run (for C-style models)
  * or in bout/physicsmodel.hxx
  */
-int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT); 
+class BoutMonitor: public Monitor{
+  int call(Solver *solver, BoutReal t, int iter, int NOUT) override;
+};
 
 /*!
  * BOUT++ finalisation. This should be called at the

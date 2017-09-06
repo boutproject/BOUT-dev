@@ -36,7 +36,7 @@ bool GridFromOptions::get(Mesh *UNUSED(m), BoutReal &rval, const string &name) {
   options->get(name, expr, "0");
 
   // Parse, and evaluate with x,y,z,t = 0
-  FieldGenerator* gen = FieldFactory::get()->parse(expr, options);
+  std::shared_ptr<FieldGenerator> gen = FieldFactory::get()->parse(expr, options);
   rval = gen->generate(0.0, 0.0, 0.0, 0.0);
 
   return true;
@@ -88,7 +88,7 @@ bool GridFromOptions::get(Mesh *m, vector<BoutReal> &var, const string &name, in
   options->get(name, expr, "0");
 
   // Parse, and evaluate with x,y,z,t = 0
-  FieldGenerator* gen = FieldFactory::get()->parse(expr, options);
+  std::shared_ptr<FieldGenerator> gen = FieldFactory::get()->parse(expr, options);
 
   var.resize(len);
 
@@ -107,7 +107,7 @@ bool GridFromOptions::get(Mesh *m, vector<BoutReal> &var, const string &name, in
   }
   case GridDataSource::Z : {
     for(int z=0;z<len;z++){
-      var[z] = gen->generate(0.0, 0.0, TWOPI*((BoutReal) z + offset) / ((BoutReal) (m->LocalNz)), 0.0);
+      var[z] = gen->generate(0.0, 0.0, TWOPI*(static_cast<BoutReal>(z) + offset) / static_cast<BoutReal>(m->LocalNz), 0.0);
     }
     break;
   }

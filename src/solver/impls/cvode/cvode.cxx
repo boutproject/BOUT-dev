@@ -41,6 +41,8 @@
 
 #include <output.hxx>
 
+#include "unused.hxx"
+
 #define ZERO        RCONST(0.)
 #define ONE         RCONST(1.0)
 
@@ -120,7 +122,8 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
 
   /// Get options
   BoutReal abstol, reltol;
-  N_Vector abstolvec;
+  // Initialise abstolvec to nullptr to avoid compiler maybed-uninitialised warning
+  N_Vector abstolvec = nullptr;
   int maxl;
   int mudq, mldq;
   int mukeep, mlkeep;
@@ -342,14 +345,13 @@ int CvodeSolver::run() {
 
       output.write("\nCVODE: nsteps %ld, nfevals %ld, nniters %ld, npevals %ld, nliters %ld\n", 
                    nsteps, nfevals, nniters, npevals, nliters);
-      
-      output.write("    -> Newton iterations per step: %e\n", 
-                   ((double) nniters) / ((double) nsteps));
-      output.write("    -> Linear iterations per Newton iteration: %e\n",
-                   ((double) nliters) / ((double) nniters));
-      output.write("    -> Preconditioner evaluations per Newton: %e\n",
-                   ((double) npevals) / ((double) nniters));
 
+      output.write("    -> Newton iterations per step: %e\n",
+                   static_cast<BoutReal>(nniters) / static_cast<BoutReal>(nsteps));
+      output.write("    -> Linear iterations per Newton iteration: %e\n",
+                   static_cast<BoutReal>(nliters) / static_cast<BoutReal>(nniters));
+      output.write("    -> Preconditioner evaluations per Newton: %e\n",
+                   static_cast<BoutReal>(npevals) / static_cast<BoutReal>(nniters));
 
       // Last step size
       BoutReal last_step;
@@ -525,9 +527,9 @@ static int cvode_rhs(BoutReal t,
   
   BoutReal *udata = NV_DATA_P(u);
   BoutReal *dudata = NV_DATA_P(du);
-  
-  CvodeSolver *s = (CvodeSolver*) user_data;
-  
+
+  CvodeSolver *s = static_cast<CvodeSolver *>(user_data);
+
   // Calculate RHS function
   try {
     s->rhs(t, udata, dudata);
@@ -539,24 +541,20 @@ static int cvode_rhs(BoutReal t,
 }
 
 /// RHS function for BBD preconditioner
-static int cvode_bbd_rhs(CVODEINT Nlocal, BoutReal t, 
-			 N_Vector u, N_Vector du, 
-			 void *user_data)
-{
+static int cvode_bbd_rhs(CVODEINT UNUSED(Nlocal), BoutReal t, N_Vector u, N_Vector du,
+                         void *user_data) {
   return cvode_rhs(t, u, du, user_data);
 }
 
 /// Preconditioner function
-static int cvode_pre(BoutReal t, N_Vector yy, N_Vector yp,
-		     N_Vector rvec, N_Vector zvec,
-		     BoutReal gamma, BoutReal delta, int lr,
-		     void *user_data, N_Vector tmp)
-{
+static int cvode_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector rvec,
+                     N_Vector zvec, BoutReal gamma, BoutReal delta, int UNUSED(lr),
+                     void *user_data, N_Vector UNUSED(tmp)) {
   BoutReal *udata = NV_DATA_P(yy);
   BoutReal *rdata = NV_DATA_P(rvec);
   BoutReal *zdata = NV_DATA_P(zvec);
-  
-  CvodeSolver *s = (CvodeSolver*) user_data;
+
+  CvodeSolver *s = static_cast<CvodeSolver *>(user_data);
 
   // Calculate residuals
   s->pre(t, gamma, delta, udata, rdata, zdata);
@@ -565,16 +563,14 @@ static int cvode_pre(BoutReal t, N_Vector yy, N_Vector yp,
 }
 
 /// Jacobian-vector multiplication function
-static int cvode_jac(N_Vector v, N_Vector Jv,
-		     realtype t, N_Vector y, N_Vector fy,
-		     void *user_data, N_Vector tmp)
-{
-  BoutReal *ydata = NV_DATA_P(y);   ///< System state
-  BoutReal *vdata = NV_DATA_P(v);   ///< Input vector
+static int cvode_jac(N_Vector v, N_Vector Jv, realtype t, N_Vector y, N_Vector UNUSED(fy),
+                     void *user_data, N_Vector UNUSED(tmp)) {
+  BoutReal *ydata = NV_DATA_P(y);    ///< System state
+  BoutReal *vdata = NV_DATA_P(v);    ///< Input vector
   BoutReal *Jvdata = NV_DATA_P(Jv);  ///< Jacobian*vector output
-  
-  CvodeSolver *s = (CvodeSolver*) user_data;
-  
+
+  CvodeSolver *s = static_cast<CvodeSolver *>(user_data);
+
   s->jac(t, ydata, vdata, Jvdata);
   
   return 0;
@@ -622,7 +618,10 @@ void CvodeSolver::set_abstol_values(BoutReal* abstolvec_data, vector<BoutReal> &
   }
 }
 
-void CvodeSolver::loop_abstol_values_op(int jx, int jy, BoutReal* abstolvec_data, int &p, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols, bool bndry) {
+void CvodeSolver::loop_abstol_values_op(int UNUSED(jx), int UNUSED(jy),
+                                        BoutReal *abstolvec_data, int &p,
+                                        vector<BoutReal> &f2dtols,
+                                        vector<BoutReal> &f3dtols, bool bndry) {
   // Loop over 2D variables
   for(vector<BoutReal>::size_type i=0; i<f2dtols.size(); i++) {
     if(bndry && !f2d[i].evolve_bndry) {

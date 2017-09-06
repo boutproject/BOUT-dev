@@ -277,7 +277,7 @@ void MultigridAlg::smoothings(int level, BoutReal *x, BoutReal *b) {
 }
 
 void MultigridAlg::pGMRES(BoutReal *sol,BoutReal *rhs,int level,int iplag) {
-  int k,it,etest = 1,MAXIT;
+  int it,etest = 1,MAXIT;
   BoutReal ini_e,error,a0,a1,rederr,perror;
   BoutReal **v,*p,*q,*r;
   BoutReal c[MAXGM+1],s[MAXGM+1],y[MAXGM+1],g[MAXGM+1],h[MAXGM+1][MAXGM+1];
@@ -340,7 +340,7 @@ void MultigridAlg::pGMRES(BoutReal *sol,BoutReal *rhs,int level,int iplag) {
       for(int i=0;i<it+1;i++) h[i][it] = vectorProd(level,v[it+1],v[i]);
       for(int i=0;i<it+1;i++) {
         a0 = -h[i][it];
-        for(k=0;k<ldim;k++) v[it+1][k] += a0*v[i][k]; 
+        for(int k=0;k<ldim;k++) v[it+1][k] += a0*v[i][k];
       }
       a1 = vectorProd(level,v[it+1],v[it+1]);
       a1 = sqrt(a1);
@@ -429,7 +429,7 @@ void MultigridAlg::pGMRES(BoutReal *sol,BoutReal *rhs,int level,int iplag) {
 
   if(level == 0) {
     if((rProcI == 0) && (pcheck == 1)) {
-      rederr = log(error/ini_e)/((double)num);
+      rederr = log(error / ini_e) / static_cast<BoutReal>(num);
       rederr = exp(rederr);      
       printf("The average error reduction of GMRES %d: %14.8f(%18.10f)\n",num,rederr,error);
       fflush(stdout);
@@ -437,7 +437,7 @@ void MultigridAlg::pGMRES(BoutReal *sol,BoutReal *rhs,int level,int iplag) {
   }
   else {
     if((rProcI == 0) && (pcheck == 1)) {
-      rederr = log(error/ini_e)/((double)num);
+      rederr = log(error / ini_e) / static_cast<BoutReal>(num);
       rederr = exp(rederr);      
       printf("The average error reduction of PGMRES %d: %14.8f(%18.10f)\n",num,rederr,error);
       fflush(stdout);
@@ -454,7 +454,7 @@ void MultigridAlg::pGMRES(BoutReal *sol,BoutReal *rhs,int level,int iplag) {
   return; 
 }
 
-void MultigridAlg::setMultigridC(int plag) {
+void MultigridAlg::setMultigridC(int UNUSED(plag)) {
 
   int level = mglevel - 1;
   for(int n = level;n>0;n--) {
@@ -466,12 +466,9 @@ void MultigridAlg::setMultigridC(int plag) {
   }
 }
 
-void MultigridAlg::lowestSolver(BoutReal *x,BoutReal *b,int plag) {
-  pGMRES(x,b,0,0);
+void MultigridAlg::lowestSolver(BoutReal *x, BoutReal *b, int UNUSED(plag)) {
+  pGMRES(x, b, 0, 0);
 }
-
-
-
 
 BoutReal MultigridAlg::vectorProd(int level,BoutReal* x,BoutReal* y) {
   // nx does not include guard cells
@@ -598,13 +595,18 @@ void MultigridAlg::communications(BoutReal* x, int level) {
     MPI_Datatype xvector;
     //    output<<"Start Z-comm"<<endl;
     ierr = MPI_Type_vector(lnx[level], 1, lnz[level]+2, MPI_DOUBLE, &xvector);
+    ASSERT1(ierr == MPI_SUCCESS);
+    
     ierr = MPI_Type_commit(&xvector);
+    ASSERT1(ierr == MPI_SUCCESS);
+    
     // Send to z+ and recieve from z-
     stag = rProcI;
     rtag = zProcM;
     // output<<"before to z+:"<<stag<<":"<<rtag<<endl;
     ierr = MPI_Sendrecv(&x[2*(lnz[level]+2)-2],1,xvector,zProcP,stag,
                         &x[lnz[level]+2],1,xvector,zProcM,rtag,commMG,status);
+    ASSERT1(ierr == MPI_SUCCESS);
     // Send to z- and recieve from z+
     stag = rProcI+numP;
     rtag = zProcP+numP;
@@ -612,31 +614,34 @@ void MultigridAlg::communications(BoutReal* x, int level) {
     ierr = MPI_Sendrecv(&x[lnz[level]+3],1,xvector,zProcM,stag,
                         &x[2*(lnz[level]+2)-1],1,xvector,zProcP,rtag,
                         commMG,status);
+    ASSERT1(ierr == MPI_SUCCESS);
+    
     ierr = MPI_Type_free(&xvector);
-  }
-  else {
-    for(int i=1;i<lnx[level]+1;i++) {
+    ASSERT1(ierr == MPI_SUCCESS);
+  } else {
+    for (int i=1;i<lnx[level]+1;i++) {
       x[i*(lnz[level]+2)] = x[(i+1)*(lnz[level]+2)-2];
       x[(i+1)*(lnz[level]+2)-1] = x[i*(lnz[level]+2)+1];
     }
   }
-  if(xNP > 1) {
+  if (xNP > 1) {
     // Send to x+ and recieve from x-
     stag = rProcI; 
     rtag = xProcM;
     ierr = MPI_Sendrecv(&x[lnx[level]*(lnz[level]+2)],lnz[level]+2,
                 MPI_DOUBLE,xProcP,stag,&x[0],lnz[level]+2,MPI_DOUBLE,
                 xProcM,rtag,commMG,status);
+    ASSERT1(ierr == MPI_SUCCESS);
+    
     // Send to x- and recieve from x+
     stag = rProcI+xNP;
     rtag = xProcP+xNP;;
     ierr = MPI_Sendrecv(&x[lnz[level]+2],lnz[level]+2,MPI_DOUBLE,xProcM,stag,
                         &x[(lnx[level]+1)*(lnz[level]+2)],lnz[level]+2,
                         MPI_DOUBLE,xProcP,rtag,commMG,status);
-
-  }
-  else {
-    for(int i=0;i<lnz[level]+2;i++) {
+    ASSERT1(ierr == MPI_SUCCESS);
+  }  else {
+    for (int i=0;i<lnz[level]+2;i++) {
       x[i] = x[lnx[level]*(lnz[level]+2)+i];
       x[(lnx[level]+1)*(lnz[level]+2)+i] = x[(lnz[level]+2)+i];
     }
@@ -692,7 +697,7 @@ void MultigridAlg::solveMG(BoutReal *sol,BoutReal *rhs,int level) {
   }
 
   if((rProcI == 0) && (pcheck == 1)) {
-    rederr = log(error/ini_e)/((double)m+1.0);
+    rederr = log(error / ini_e) / (static_cast<BoutReal>(m) + 1.0);
     rederr = exp(rederr); 
     if(m == MAXIT) 
       printf("Reached maximum iteration: %14.8f\n",error);
