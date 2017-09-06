@@ -184,10 +184,12 @@ int BoutInitialise(int &argc, char **&argv) {
       i++;
       set_file = argv[i];
     }
-    if (string(argv[i]) == "-v") {
+    if ( (string(argv[i]) == "-v") ||
+         (string(argv[i]) == "--verbose") ){
       verbosity++;
     }
-    if (string(argv[i]) == "-q") {
+    if ( (string(argv[i]) == "-q") ||
+         (string(argv[i]) == "--quiet")) {
       verbosity--;
     }
   }
