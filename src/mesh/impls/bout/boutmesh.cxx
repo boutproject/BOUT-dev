@@ -1822,10 +1822,10 @@ BoutMesh::CommHandle *BoutMesh::get_handle(int xlen, int ylen) {
   // Check that the buffers are big enough (NOTE: Could search list for bigger buffers)
   if (ch->ybufflen < ylen) {
     if (ch->ybufflen > 0) {
-      delete[] ch -> umsg_sendbuff;
-      delete[] ch -> umsg_recvbuff;
-      delete[] ch -> dmsg_sendbuff;
-      delete[] ch -> dmsg_recvbuff;
+      delete[] ch->umsg_sendbuff;
+      delete[] ch->umsg_recvbuff;
+      delete[] ch->dmsg_sendbuff;
+      delete[] ch->dmsg_recvbuff;
     }
 
     ch->umsg_sendbuff = new BoutReal[ylen];
@@ -1837,10 +1837,10 @@ BoutMesh::CommHandle *BoutMesh::get_handle(int xlen, int ylen) {
   }
   if (ch->xbufflen < xlen) {
     if (ch->xbufflen > 0) {
-      delete[] ch -> imsg_sendbuff;
-      delete[] ch -> imsg_recvbuff;
-      delete[] ch -> omsg_sendbuff;
-      delete[] ch -> omsg_recvbuff;
+      delete[] ch->imsg_sendbuff;
+      delete[] ch->imsg_recvbuff;
+      delete[] ch->omsg_sendbuff;
+      delete[] ch->omsg_recvbuff;
     }
 
     ch->imsg_sendbuff = new BoutReal[xlen];
@@ -1867,16 +1867,16 @@ void BoutMesh::clear_handles() {
   while (!comm_list.empty()) {
     CommHandle *ch = comm_list.front();
     if (ch->ybufflen > 0) {
-      delete[] ch -> umsg_sendbuff;
-      delete[] ch -> umsg_recvbuff;
-      delete[] ch -> dmsg_sendbuff;
-      delete[] ch -> dmsg_recvbuff;
+      delete[] ch->umsg_sendbuff;
+      delete[] ch->umsg_recvbuff;
+      delete[] ch->dmsg_sendbuff;
+      delete[] ch->dmsg_recvbuff;
     }
     if (ch->xbufflen > 0) {
-      delete[] ch -> imsg_sendbuff;
-      delete[] ch -> imsg_recvbuff;
-      delete[] ch -> omsg_sendbuff;
-      delete[] ch -> omsg_recvbuff;
+      delete[] ch->imsg_sendbuff;
+      delete[] ch->imsg_recvbuff;
+      delete[] ch->omsg_sendbuff;
+      delete[] ch->omsg_recvbuff;
     }
 
     delete ch;
