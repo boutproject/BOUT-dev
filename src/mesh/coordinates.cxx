@@ -419,13 +419,13 @@ int Coordinates::calcCovariant() {
                   max(abs((g_12 * g12 + g_22 * g22 + g_23 * g23) - 1)),
                   max(abs((g_13 * g13 + g_23 * g23 + g_33 * g33) - 1)));
 
-  output_info.write("\tMaximum error in diagonal inversion is %e\n", maxerr);
+  output_info.write("\tLocal maximum error in diagonal inversion is %e\n", maxerr);
 
   maxerr = BOUTMAX(max(abs(g_11 * g12 + g_12 * g22 + g_13 * g23)),
                    max(abs(g_11 * g13 + g_12 * g23 + g_13 * g33)),
                    max(abs(g_12 * g13 + g_22 * g23 + g_23 * g33)));
 
-  output_info.write("\tMaximum error in off-diagonal inversion is %e\n", maxerr);
+  output_info.write("\tLocal maximum error in off-diagonal inversion is %e\n", maxerr);
 
   return 0;
 }
