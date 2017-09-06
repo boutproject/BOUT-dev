@@ -113,10 +113,8 @@ void Output::vprint(const char *string, va_list ap) {
   if (string == (const char *)NULL) {
     return;
   }
-
-  vprintf(string, ap);
-
-  fflush(stdout);
+  bout_vsnprintf_(buffer, buffer_len, string, ap);
+  std::cout << std::string(buffer);
 }
 
 Output *Output::instance = nullptr;
