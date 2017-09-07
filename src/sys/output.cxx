@@ -113,10 +113,8 @@ void Output::vprint(const char *string, va_list ap) {
   if (string == (const char *)NULL) {
     return;
   }
-
-  vprintf(string, ap);
-
-  fflush(stdout);
+  bout_vsnprintf_(buffer, buffer_len, string, ap);
+  std::cout << std::string(buffer);
 }
 
 Output *Output::instance = nullptr;
@@ -163,7 +161,7 @@ DummyOutput output_debug;
 #endif
 ConditionalOutput output_warn(Output::getInstance());
 ConditionalOutput output_info(Output::getInstance());
-ConditionalOutput output_prog(Output::getInstance());
+ConditionalOutput output_progress(Output::getInstance());
 ConditionalOutput output_error(Output::getInstance());
 ConditionalOutput output(Output::getInstance());
 

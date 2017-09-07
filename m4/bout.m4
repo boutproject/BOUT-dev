@@ -45,8 +45,8 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
               BOUT_MSG_DEBUG([found $1 without path])
         ],)
     if test $BACL_found != yes ; then
-        for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
-            for path in $prefix $prefix/lib $prefix/lib64 $prefix/x86_64-linux-gnu ; do
+        for search_prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
+            for path in $search_prefix $search_prefix/lib $search_prefix/lib64 $search_prefix/x86_64-linux-gnu ; do
                 if test -d $path
                 then
                     LDFLAGS="-L$path $LDFLAGS_save"
@@ -85,8 +85,8 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_HEADER],[
             BOUT_MSG_DEBUG([found $1 without path])
         ],)
     if test $BACH_found != yes ; then
-        for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
-            for path in $prefix $prefix/include ; do
+        for search_prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
+            for path in $search_prefix $search_prefix/include ; do
                 if test -d $path
                 then
                     CPPFLAGS="$CPPFLAGS_save -I$path"

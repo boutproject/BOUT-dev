@@ -41,6 +41,8 @@
 
 #include <output.hxx>
 
+#include "unused.hxx"
+
 #define ZERO        RCONST(0.)
 #define ONE         RCONST(1.0)
 
@@ -91,7 +93,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   NOUT = nout;
   TIMESTEP = tstep;
 
-  output.write("Initialising SUNDIALS' CVODE solver\n");
+  output_progress.write("Initialising SUNDIALS' CVODE solver\n");
 
   // Calculate number of variables (in generic_solver)
   int local_N = getLocalN();
@@ -99,14 +101,13 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   // Get total problem size
   int neq;
   {TRACE("Allreduce localN -> GlobalN");
-    if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
-      output.write("\tERROR: MPI_Allreduce failed!\n");
-      return 1;
+    if (MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
+      throw BoutException("ERROR: MPI_Allreduce failed!\n");
     }
   }
 
-  output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
-                n3Dvars(), n2Dvars(), neq, local_N);
+  output_info.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
+                    n3Dvars(), n2Dvars(), neq, local_N);
 
   // Allocate memory
   {TRACE("Allocating memory with N_VNew_Parallel");
@@ -121,7 +122,8 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
 
   /// Get options
   BoutReal abstol, reltol;
-  N_Vector abstolvec;
+  // Initialise abstolvec to nullptr to avoid compiler maybed-uninitialised warning
+  N_Vector abstolvec = nullptr;
   int maxl;
   int mudq, mldq;
   int mukeep, mlkeep;
@@ -180,10 +182,10 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
     if(adams_moulton) {
       // By default use functional iteration for Adams-Moulton
       lmm = CV_ADAMS;
-      output.write("\tUsing Adams-Moulton implicit multistep method\n");
+      output_info.write("\tUsing Adams-Moulton implicit multistep method\n");
       options->get("func_iter", func_iter, true); 
     }else {
-      output.write("\tUsing BDF method\n");
+      output_info.write("\tUsing BDF method\n");
       // Use Newton iteration for BDF
       options->get("func_iter", func_iter, false); 
     }
@@ -254,30 +256,30 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   }
 
   /// Newton method can include Preconditioners and Jacobian function
-  if(!func_iter) {
-    output.write("\tUsing Newton iteration\n");
+  if (!func_iter) {
+    output_info.write("\tUsing Newton iteration\n");
     /// Set Preconditioner
     TRACE("Setting preconditioner");
-    if(use_precon) {
+    if (use_precon) {
 
       int prectype = PREC_LEFT;
       bool rightprec;
       options->get("rightprec", rightprec, false);
-      if(rightprec)
+      if (rightprec)
         prectype = PREC_RIGHT;
       
-      if( CVSpgmr(cvode_mem, prectype, maxl) != CVSPILS_SUCCESS )
+      if ( CVSpgmr(cvode_mem, prectype, maxl) != CVSPILS_SUCCESS )
         throw BoutException("ERROR: CVSpgmr failed\n");
 
-      if(!have_user_precon()) {
-        output.write("\tUsing BBD preconditioner\n");
+      if (!have_user_precon()) {
+        output_info.write("\tUsing BBD preconditioner\n");
 
         if( CVBBDPrecInit(cvode_mem, local_N, mudq, mldq, 
               mukeep, mlkeep, ZERO, cvode_bbd_rhs, NULL) )
           throw BoutException("ERROR: CVBBDPrecInit failed\n");
 
       } else {
-        output.write("\tUsing user-supplied preconditioner\n");
+        output_info.write("\tUsing user-supplied preconditioner\n");
 
         if( CVSpilsSetPreconditioner(cvode_mem, NULL, cvode_pre) )
           throw BoutException("ERROR: CVSpilsSetPreconditioner failed\n");
@@ -285,7 +287,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
     }else {
       // Not using preconditioning
 
-      output.write("\tNo preconditioning\n");
+      output_info.write("\tNo preconditioning\n");
 
       if( CVSpgmr(cvode_mem, PREC_NONE, maxl) != CVSPILS_SUCCESS )
         throw BoutException("ERROR: CVSpgmr failed\n");
@@ -294,15 +296,15 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
     /// Set Jacobian-vector multiplication function
 
     if((use_jacobian) && (jacfunc != NULL)) {
-      output.write("\tUsing user-supplied Jacobian function\n");
+      output_info.write("\tUsing user-supplied Jacobian function\n");
 
       TRACE("Setting Jacobian-vector multiply");
       if( CVSpilsSetJacTimesVecFn(cvode_mem, cvode_jac) != CVSPILS_SUCCESS )
         throw BoutException("ERROR: CVSpilsSetJacTimesVecFn failed\n");
     }else
-      output.write("\tUsing difference quotient approximation for Jacobian\n");
+      output_info.write("\tUsing difference quotient approximation for Jacobian\n");
   }else {
-    output.write("\tUsing Functional iteration\n");
+    output_info.write("\tUsing Functional iteration\n");
   }
 
   return 0;
@@ -328,12 +330,10 @@ int CvodeSolver::run() {
     /// Check if the run succeeded
     if(simtime < 0.0) {
       // Step failed
-      output.write("Timestep failed. Aborting\n");
-      
-      throw BoutException("SUNDIALS timestep failed\n");
+      throw BoutException("SUNDIALS CVODE timestep failed\n");
     }
     
-    if(diagnose) {
+    if (diagnose) {
       // Print additional diagnostics
       long int nsteps, nfevals, nniters, npevals, nliters;
       
@@ -345,14 +345,13 @@ int CvodeSolver::run() {
 
       output.write("\nCVODE: nsteps %ld, nfevals %ld, nniters %ld, npevals %ld, nliters %ld\n", 
                    nsteps, nfevals, nniters, npevals, nliters);
-      
-      output.write("    -> Newton iterations per step: %e\n", 
-                   ((double) nniters) / ((double) nsteps));
-      output.write("    -> Linear iterations per Newton iteration: %e\n",
-                   ((double) nliters) / ((double) nniters));
-      output.write("    -> Preconditioner evaluations per Newton: %e\n",
-                   ((double) npevals) / ((double) nniters));
 
+      output.write("    -> Newton iterations per step: %e\n",
+                   static_cast<BoutReal>(nniters) / static_cast<BoutReal>(nsteps));
+      output.write("    -> Linear iterations per Newton iteration: %e\n",
+                   static_cast<BoutReal>(nliters) / static_cast<BoutReal>(nniters));
+      output.write("    -> Preconditioner evaluations per Newton: %e\n",
+                   static_cast<BoutReal>(npevals) / static_cast<BoutReal>(nniters));
 
       // Last step size
       BoutReal last_step;
@@ -404,10 +403,10 @@ BoutReal CvodeSolver::run(BoutReal tout) {
   pre_ncalls = 0.0;
 
   int flag;
-  if(!monitor_timestep) {
+  if (!monitor_timestep) {
     // Run in normal mode
     flag = CVode(cvode_mem, tout, uvec, &simtime, CV_NORMAL);
-  }else {
+  } else {
     // Run in single step mode, to call timestep monitors
     BoutReal internal_time;
     CVodeGetCurrentTime(cvode_mem, &internal_time);
@@ -416,9 +415,8 @@ BoutReal CvodeSolver::run(BoutReal tout) {
       BoutReal last_time = internal_time;
       flag = CVode(cvode_mem, tout, uvec, &internal_time, CV_ONE_STEP);
       
-      if(flag < 0) {
-        output.write("ERROR CVODE solve failed at t = %e, flag = %d\n", internal_time, flag);
-        return -1.0;
+      if (flag < 0) {
+        throw BoutException("ERROR CVODE solve failed at t = %e, flag = %d\n", internal_time, flag);
       }
       
       // Call timestep monitor
@@ -435,9 +433,8 @@ BoutReal CvodeSolver::run(BoutReal tout) {
   // Call rhs function to get extra variables at this time
   run_rhs(simtime);
 
-  if(flag < 0) {
-    output.write("ERROR CVODE solve failed at t = %e, flag = %d\n", simtime, flag);
-    return -1.0;
+  if (flag < 0) {
+    throw BoutException("ERROR CVODE solve failed at t = %e, flag = %d\n", simtime, flag);
   }
 
   return simtime;
@@ -530,9 +527,9 @@ static int cvode_rhs(BoutReal t,
   
   BoutReal *udata = NV_DATA_P(u);
   BoutReal *dudata = NV_DATA_P(du);
-  
-  CvodeSolver *s = (CvodeSolver*) user_data;
-  
+
+  CvodeSolver *s = static_cast<CvodeSolver *>(user_data);
+
   // Calculate RHS function
   try {
     s->rhs(t, udata, dudata);
@@ -544,24 +541,20 @@ static int cvode_rhs(BoutReal t,
 }
 
 /// RHS function for BBD preconditioner
-static int cvode_bbd_rhs(CVODEINT Nlocal, BoutReal t, 
-			 N_Vector u, N_Vector du, 
-			 void *user_data)
-{
+static int cvode_bbd_rhs(CVODEINT UNUSED(Nlocal), BoutReal t, N_Vector u, N_Vector du,
+                         void *user_data) {
   return cvode_rhs(t, u, du, user_data);
 }
 
 /// Preconditioner function
-static int cvode_pre(BoutReal t, N_Vector yy, N_Vector yp,
-		     N_Vector rvec, N_Vector zvec,
-		     BoutReal gamma, BoutReal delta, int lr,
-		     void *user_data, N_Vector tmp)
-{
+static int cvode_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector rvec,
+                     N_Vector zvec, BoutReal gamma, BoutReal delta, int UNUSED(lr),
+                     void *user_data, N_Vector UNUSED(tmp)) {
   BoutReal *udata = NV_DATA_P(yy);
   BoutReal *rdata = NV_DATA_P(rvec);
   BoutReal *zdata = NV_DATA_P(zvec);
-  
-  CvodeSolver *s = (CvodeSolver*) user_data;
+
+  CvodeSolver *s = static_cast<CvodeSolver *>(user_data);
 
   // Calculate residuals
   s->pre(t, gamma, delta, udata, rdata, zdata);
@@ -570,16 +563,14 @@ static int cvode_pre(BoutReal t, N_Vector yy, N_Vector yp,
 }
 
 /// Jacobian-vector multiplication function
-static int cvode_jac(N_Vector v, N_Vector Jv,
-		     realtype t, N_Vector y, N_Vector fy,
-		     void *user_data, N_Vector tmp)
-{
-  BoutReal *ydata = NV_DATA_P(y);   ///< System state
-  BoutReal *vdata = NV_DATA_P(v);   ///< Input vector
+static int cvode_jac(N_Vector v, N_Vector Jv, realtype t, N_Vector y, N_Vector UNUSED(fy),
+                     void *user_data, N_Vector UNUSED(tmp)) {
+  BoutReal *ydata = NV_DATA_P(y);    ///< System state
+  BoutReal *vdata = NV_DATA_P(v);    ///< Input vector
   BoutReal *Jvdata = NV_DATA_P(Jv);  ///< Jacobian*vector output
-  
-  CvodeSolver *s = (CvodeSolver*) user_data;
-  
+
+  CvodeSolver *s = static_cast<CvodeSolver *>(user_data);
+
   s->jac(t, ydata, vdata, Jvdata);
   
   return 0;
@@ -627,7 +618,10 @@ void CvodeSolver::set_abstol_values(BoutReal* abstolvec_data, vector<BoutReal> &
   }
 }
 
-void CvodeSolver::loop_abstol_values_op(int jx, int jy, BoutReal* abstolvec_data, int &p, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols, bool bndry) {
+void CvodeSolver::loop_abstol_values_op(int UNUSED(jx), int UNUSED(jy),
+                                        BoutReal *abstolvec_data, int &p,
+                                        vector<BoutReal> &f2dtols,
+                                        vector<BoutReal> &f3dtols, bool bndry) {
   // Loop over 2D variables
   for(vector<BoutReal>::size_type i=0; i<f2dtols.size(); i++) {
     if(bndry && !f2d[i].evolve_bndry) {

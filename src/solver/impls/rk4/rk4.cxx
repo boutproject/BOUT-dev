@@ -129,8 +129,8 @@ int RK4Solver::run() {
             throw BoutException("MPI_Allreduce failed");
           }
 
-          err /= (BoutReal) neq;
-        
+          err /= static_cast<BoutReal>(neq);
+
           internal_steps++;
           if(internal_steps > mxstep)
             throw BoutException("ERROR: MXSTEP exceeded. timestep = %e, err=%e\n", timestep, err);

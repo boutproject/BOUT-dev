@@ -146,8 +146,8 @@ int BoutInitialise(int &argc, char **&argv) {
 	      "  -d <data directory>\tLook in <data directory> for input/output files\n"
 	      "  -f <options filename>\tUse OPTIONS given in <options filename>\n"
 	      "  -o <settings filename>\tSave used OPTIONS given to <options filename>\n"
-	      "  -v \t\tIncrease verbosity\n"
-	      "  -q \t\tDecrease verbosity\n"
+	      "  -v, --verbose\t\tIncrease verbosity\n"
+	      "  -q, --quiet\t\tDecrease verbosity\n"
 #ifdef LOGCOLOR
               "  -c, --color\t\tColor output using bout-log-color\n"
 #endif
@@ -188,10 +188,12 @@ int BoutInitialise(int &argc, char **&argv) {
       i++;
       set_file = argv[i];
       
-    } else if (string(argv[i]) == "-v") {
+    } else if ( (string(argv[i]) == "-v") ||
+                (string(argv[i]) == "--verbose") ){
       verbosity++;
       
-    } else if (string(argv[i]) == "-q") {
+    } else if ( (string(argv[i]) == "-q") ||
+                (string(argv[i]) == "--quiet")) {
       verbosity--;
       
     } else if ( (string(argv[i]) == "-c") ||
@@ -282,7 +284,7 @@ int BoutInitialise(int &argc, char **&argv) {
   
   output_error.enable(verbosity>0);
   output_warn.enable(verbosity>1);
-  output_prog.enable(verbosity>2);
+  output_progress.enable(verbosity>2);
   output_info.enable(verbosity>3);
   output_debug.enable(verbosity>4);
   
@@ -290,14 +292,14 @@ int BoutInitialise(int &argc, char **&argv) {
   output.enable(verbosity>2);
   
   /// Print intro
-  output_info.write("\nBOUT++ version %.2f\n", BOUT_VERSION);
+  output_progress.write("BOUT++ version %s\n", BOUT_VERSION_STRING);
 #ifdef REVISION
-  output_info.write("Revision: %s\n", REV);
+  output_progress.write("Revision: %s\n", REV);
 #endif
 #ifdef MD5SUM
-  output_info.write("MD5 checksum: %s\n", CHECKSUM);
+  output_progress.write("MD5 checksum: %s\n", CHECKSUM);
 #endif
-  output_info.write("Code compiled on %s at %s\n\n", __DATE__, __TIME__);
+  output_progress.write("Code compiled on %s at %s\n\n", __DATE__, __TIME__);
   output_info.write("B.Dudson (University of York), M.Umansky (LLNL) 2007\n");
   output_info.write("Based on BOUT by Xueqiao Xu, 1999\n\n");
 
@@ -359,8 +361,10 @@ int BoutInitialise(int &argc, char **&argv) {
     reader->parseCommandLine(options, argc, argv);
 
     // Save settings
-    reader->write(options, "%s/%s", data_dir,set_file);
-  }catch(BoutException &e) {
+    if (BoutComm::rank() == 0) {
+      reader->write(options, "%s/%s", data_dir, set_file);
+    }
+  } catch (BoutException &e) {
     output << "Error encountered during initialisation\n";
     output << e.what() << endl;
     return 1;
@@ -419,6 +423,7 @@ int bout_run(Solver *solver, rhsfunc physics_run) {
   solver->setRHS(physics_run);
   
   /// Add the monitor function
+  Monitor * bout_monitor = new BoutMonitor();
   solver->addMonitor(bout_monitor, Solver::BACK);
 
   /// Run the simulation
@@ -430,24 +435,26 @@ int BoutFinalise() {
   // Output the settings, showing which options were used
   // This overwrites the file written during initialisation
   try {
-    string data_dir;
-    Options::getRoot()->get("datadir", data_dir, "data");
+    if (BoutComm::rank() == 0) {
+      string data_dir;
+      Options::getRoot()->get("datadir", data_dir, "data");
 
-    OptionsReader *reader = OptionsReader::getInstance();
-    std::string settingsfile;
-    OPTION(Options::getRoot(),settingsfile,"");
-    reader->write(Options::getRoot(), "%s/%s", data_dir.c_str(),settingsfile.c_str());
-  }catch(BoutException &e) {
+      OptionsReader *reader = OptionsReader::getInstance();
+      std::string settingsfile;
+      OPTION(Options::getRoot(), settingsfile, "");
+      reader->write(Options::getRoot(), "%s/%s", data_dir.c_str(), settingsfile.c_str());
+    }
+  } catch (BoutException &e) {
     output_error << "Error whilst writing settings" << endl;
     output_error << e.what() << endl;
   }
-  
+
   // Delete the mesh
   delete mesh;
 
   // Close the output file
   dump.close();
-  
+
   // Make sure all processes have finished writing before exit
   MPI_Barrier(BoutComm::get());
 
@@ -491,13 +498,16 @@ int BoutFinalise() {
  * Called each timestep by the solver
  **************************************************************************/
 
-int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
-  TRACE("bout_monitor(%e, %d, %d)", t, iter, NOUT);
+int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
+  TRACE("BoutMonitor::call(%e, %d, %d)", t, iter, NOUT);
 
   // Data used for timing
   static bool first_time = true;
   static BoutReal wall_limit, mpi_start_time; // Keep track of remaining wall time
-
+  
+  static bool stopCheck;       // Check for file, exit if exists?
+  static std::string stopCheckName; // File checked, whose existence triggers a stop
+  
   // Set the global variables. This is done because they need to be
   // written to the output file before the first step (initial condition)
   simtime = t;
@@ -517,7 +527,7 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
   BoutReal wtime_comms  = Timer::resetTime("comms");  // Time spent communicating (part of RHS)
   BoutReal wtime_io     = Timer::resetTime("io");      // Time spend on I/O
 
-  output_prog.print("\r"); // Only goes to screen
+  output_progress.print("\r"); // Only goes to screen
 
   if (first_time) {
     /// First time the monitor has been called
@@ -525,7 +535,17 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
     /// Get some options
     Options *options = Options::getRoot();
     OPTION(options, wall_limit, -1.0); // Wall time limit. By default, no limit
-    wall_limit *= 60.0*60.0;  // Convert from hours to seconds
+    wall_limit *= 60.0 * 60.0;         // Convert from hours to seconds
+
+    OPTION(options, stopCheck, false);
+    if (stopCheck) {
+      // Get name of file whose existence triggers a stop
+      OPTION(options, stopCheckName, "BOUT.stop");
+      // Now add data directory to start of name to ensure we look in a run specific location
+      std::string data_dir;
+      Options::getRoot()->get("datadir", data_dir, string(DEFAULT_DIR));
+      stopCheckName = data_dir + "/" + stopCheckName;
+    }
 
     /// Record the starting time
     mpi_start_time = MPI_Wtime() - wtime;
@@ -533,24 +553,26 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
     first_time = false;
 
     /// Print the column header for timing info
-    if(!output_split){
-	    output_prog.write("Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n\n");
-    }else{
-	    output_prog.write("Sim Time  |  RHS_e evals  | RHS_I evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n\n");
+    if (!output_split) {
+      output_progress.write("Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm    I/O   "
+                            "SOLVER\n\n");
+    } else {
+      output_progress.write("Sim Time  |  RHS_e evals  | RHS_I evals  | Wall Time |  Calc    Inv  "
+                            " Comm    I/O   SOLVER\n\n");
     }
   }
-  
- 
-  if(!output_split){
-    output_prog.write("%.3e      %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n", 
+
+  if (!output_split) {
+    output_progress.write("%.3e      %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n", 
                simtime, ncalls, wtime,
                100.0*(wtime_rhs - wtime_comms - wtime_invert)/wtime,
                100.*wtime_invert/wtime,  // Inversions
                100.0*wtime_comms/wtime,  // Communications
                100.* wtime_io / wtime,      // I/O
                100.*(wtime - wtime_io - wtime_rhs)/wtime); // Everything else
-  }else{
-    output_prog.write("%.3e      %5d            %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n",
+
+  } else {
+    output_progress.write("%.3e      %5d            %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n",
                simtime, ncalls_e, ncalls_i, wtime,
                100.0*(wtime_rhs - wtime_comms - wtime_invert)/wtime,
                100.*wtime_invert/wtime,  // Inversions
@@ -562,8 +584,8 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
   // This bit only to screen, not log file
 
   BoutReal t_elapsed = MPI_Wtime() - mpi_start_time;
-  output_prog.print("%c  Step %d of %d. Elapsed %s", get_spin(), iteration+1, NOUT, (time_to_hms(t_elapsed)).c_str());
-  output_prog.print(" ETA %s", (time_to_hms(wtime * ((BoutReal) (NOUT - iteration - 1)))).c_str());
+  output_progress.print("%c  Step %d of %d. Elapsed %s", get_spin(), iteration+1, NOUT, (time_to_hms(t_elapsed)).c_str());
+  output_progress.print(" ETA %s", (time_to_hms(wtime * static_cast<BoutReal>(NOUT - iteration - 1))).c_str());
 
   if (wall_limit > 0.0) {
     // Check if enough time left
@@ -575,7 +597,17 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
 
       return 1; // Return an error code to quit
     } else {
-      output_prog.print(" Wall %s", (time_to_hms(t_remain)).c_str());
+      output_progress.print(" Wall %s", (time_to_hms(t_remain)).c_str());
+    }
+  }
+
+  // Check if the user has created the stop file and if so trigger an exit
+  if (stopCheck) {
+    std::ifstream f(stopCheckName);
+    if (f.good()) {
+      output << "\n" << "File " << stopCheckName
+             << " exists -- triggering exit." << endl;
+      return 1;
     }
   }
 
@@ -634,11 +666,13 @@ void bout_signal_handler(int sig) {
 const string time_to_hms(BoutReal t) {
   int h, m;
 
-  h = (int) (t / 3600); t -= 3600.*((BoutReal) h);
-  m = (int) (t / 60);   t -= 60 * ((BoutReal) m);
+  h = static_cast<int>(t / 3600);
+  t -= 3600. * static_cast<BoutReal>(h);
+  m = static_cast<int>(t / 60);
+  t -= 60 * static_cast<BoutReal>(m);
 
   char buffer[256];
-  sprintf(buffer,"%d:%02d:%04.1f", h, m, t);
+  sprintf(buffer, "%d:%02d:%04.1f", h, m, t);
 
   return string(buffer);
 }

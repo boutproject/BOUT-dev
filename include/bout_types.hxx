@@ -26,8 +26,6 @@
 
 typedef double BoutReal;
 
-//typedef vector<BoutReal> rvec;  // Vector of BoutReals
-
 /// 4 possible variable locations. Default is for passing to functions
 enum CELL_LOC {CELL_DEFAULT=0, CELL_CENTRE=1, CELL_CENTER=1, CELL_XLOW=2, CELL_YLOW=3, CELL_ZLOW=4, CELL_VSHIFT=5};
 

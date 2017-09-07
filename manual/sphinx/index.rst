@@ -27,10 +27,12 @@ The documentation is divided into two main sections:
    user_docs/boundary_options
    user_docs/iterating
    user_docs/input_grids
+   user_docs/zoidberg
    user_docs/parallel-transforms
    user_docs/laplacian
    user_docs/fluid_equations
    user_docs/fluid_equations_2
+   user_docs/logging       
    user_docs/object_orientated_interface
    user_docs/differential_operators
    user_docs/staggered_grids

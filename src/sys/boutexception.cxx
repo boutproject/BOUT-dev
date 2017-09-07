@@ -21,7 +21,7 @@ void BoutParallelThrowRhsFail(int &status, const char *message) {
   }
 }
 
-BoutException::~BoutException() throw() {
+BoutException::~BoutException() {
   if (buffer != nullptr) {
     delete[] buffer;
     buffer = nullptr;
@@ -118,7 +118,7 @@ BoutException::BoutException(const std::string msg) {
   this->Backtrace();
 }
 
-const char *BoutException::what() const throw() { return message.c_str(); }
+const char *BoutException::what() const noexcept { return message.c_str(); }
 
 BoutRhsFail::BoutRhsFail(const char *s, ...) : BoutException::BoutException(NULL) {
   INIT_EXCEPTION(s);

@@ -5,7 +5,7 @@ Getting started
 
 This section goes through the process of getting, installing, and
 starting to run BOUT++. Only the basic functionality needed to use
-BOUT++ is described here; the next section ([sec:advancedinstall]) goes
+BOUT++ is described here; the next section ([sec-advancedinstall]) goes
 through more advanced options, and how to fix some common problems.
 
 On large facilities (e.g NERSC or Archer), the compilers and libraries
@@ -295,7 +295,6 @@ configuration:
 .. code-block:: bash
 
     Configuration summary
-      FACETS support: no
       PETSc support: no
       SLEPc support: no
       IDA support: yes
@@ -304,7 +303,6 @@ configuration:
       NetCDF support: yes
       Parallel-NetCDF support: no
       HDF5 support: yes (parallel: no)
-      Hypre support: no
       MUMPS support: no
 
 If not, see :ref:`sec-advancedinstall` for some things you can try to
@@ -431,21 +429,26 @@ benjamin.dudson@york.ac.uk containing
 Running the test suite
 ----------------------
 
-In the ``examples/`` subdirectory there are a set of short test cases
-which are intended to test portions of the BOUT++ code and catch any
-bugs which could be introduced. To run the test cases, the Python
-libraries must first be set up by following the instructions in
-section [sec:configanalysis]. Go into the ``examples`` subdirectory and
-run
+BOUT++ comes with three sets of test suites: unit tests, integrated
+tests and method of manufactured solutions (MMS) tests. The easiest
+way to run all of them is to simply do
 
 .. code-block:: bash
 
-    $ ./test_suite
+    $ make check
 
-This will go through a set of tests, each on a variety of different
-processors. **Note:** currently this uses the ``mpirun`` command to
-launch the runs, so won’t work on machines which use a job submission
-system like PBS or SGE.
+from the top-level directory. Alternatively, if you just want to run
+one them individually, you can do
+
+.. code-block:: bash
+
+    $ make check-unit-tests
+    $ make check-integrated-tests
+    $ make check-mms-tests
+
+**Note:** The integrated test suite currently uses the ``mpirun``
+command to launch the runs, so won’t work on machines which use a job
+submission system like PBS or SGE.
 
 These tests should all pass, but if not please create an issue on
 Github containing:
@@ -458,5 +461,5 @@ Github containing:
 
 If the tests pass, congratulations! You have now got a working
 installation of BOUT++. Unless you want to use some experimental
-features of BOUT++, skip to section [sec:running] to start running the
+features of BOUT++, skip to section [sec-running] to start running the
 code.

@@ -188,7 +188,7 @@ DEPRECATED(void free_cmatrix(dcomplex** cm));
  * Get Random number between 0 and 1
  */
 inline BoutReal randomu() {
-  return ((BoutReal) rand()) / ((BoutReal) RAND_MAX);
+  return static_cast<BoutReal>(rand()) / static_cast<BoutReal>(RAND_MAX);
 }
 
 /*!
@@ -204,7 +204,7 @@ T SQ(T t){
  * Round \p x to the nearest integer
  */
 inline int ROUND(BoutReal x){
-  return (x > 0.0) ? (int) (x + 0.5) : (int) (x - 0.5);
+  return (x > 0.0) ? static_cast<int>(x + 0.5) : static_cast<int>(x - 0.5);
 }
 
 /*!
@@ -248,7 +248,7 @@ inline bool is_pow2(int x) {
  */
 template <typename T>
 T SIGN(T a) { // Return +1 or -1 (0 -> +1)
-  return a > 0 ? 1 : -1;
+  return a < 0 ? -1 : +1;
 }
 
 /*!
@@ -363,7 +363,7 @@ string trimComments(const string &, const string &c="#;");
     va_start(va, fmt);                                  \
     int _vsnprintflen=vsnprintf(buf,len,fmt,va);        \
     va_end(va);                                         \
-    if ( _vsnprintflen+1 > len){                        \
+    if ( _vsnprintflen + 1 > int(len)) {                \
       _vsnprintflen+=1;                                 \
       delete[] buf;                                     \
       buf = new char[_vsnprintflen];                    \
