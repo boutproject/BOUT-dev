@@ -769,6 +769,7 @@ with_arkode
 with_scorep
 enable_checks
 enable_signal
+enable_color
 enable_track
 enable_debug
 enable_optimize
@@ -1409,6 +1410,7 @@ Optional Features:
   --enable-checks=no/1/2/3
                           Set run-time checking level
   --disable-signal        Disable SEGFAULT handling
+  --disable-color         Disable -c option to color output
   --enable-track          Enable variable tracking
   --enable-debug          Enable all debugging flags
   --enable-optimize=1/2/3 Enable optimization
@@ -2568,6 +2570,11 @@ fi
 # Check whether --enable-signal was given.
 if test "${enable_signal+set}" = set; then :
   enableval=$enable_signal;
+fi
+
+# Check whether --enable-color was given.
+if test "${enable_color+set}" = set; then :
+  enableval=$enable_color;
 fi
 
 # Check whether --enable-track was given.
@@ -5588,6 +5595,14 @@ then
   CXXFLAGS="$CXXFLAGS -DSIGHANDLE"
 else
   echo "Segmentation fault handling disabled"
+fi
+
+if test "$enable_color" != "no"
+then
+  echo "Output coloring enabled"
+  CXXFLAGS="$CXXFLAGS -DLOGCOLOR"
+else
+  echo "Output coloring disabled"
 fi
 
 if test ."$enable_track" == ."yes"
