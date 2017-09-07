@@ -75,18 +75,18 @@ using std::list;
 #include <omp.h>
 #endif
 
-#ifdef SIGHANDLE
 #include <signal.h>
-void bout_signal_handler(int sig);  // Handles segmentation faults
-#endif
+void bout_signal_handler(int sig);  // Handles signals
 #ifdef BOUT_FPE
 #include <fenv.h>
 #endif
+
 
 #include <output.hxx>
 
 BoutReal simtime;
 int iteration;
+bool user_requested_exit=false;
 
 const string time_to_hms(BoutReal t);   // Converts to h:mm:ss.s format
 char get_spin();                    // Produces a spinning bar
@@ -120,14 +120,15 @@ int BoutInitialise(int &argc, char **&argv) {
 #ifdef SIGHANDLE
   /// Set a signal handler for segmentation faults
   signal(SIGSEGV, bout_signal_handler);
+#endif
 #ifdef BOUT_FPE
   signal(SIGFPE,  bout_signal_handler);
-#endif
-#endif
-#ifdef BOUT_FPE
   feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 #endif
-  
+
+  /// Trap SIGUSR1 to allow a clean exit after next write
+  signal(SIGUSR1, bout_signal_handler);
+
   // Set default data directory
   data_dir = DEFAULT_DIR;
   opt_file = DEFAULT_OPT;
@@ -221,7 +222,16 @@ int BoutInitialise(int &argc, char **&argv) {
   if (output.open("%s/BOUT.log.%d", data_dir, MYPE)) {
     return 1;
   }
-
+  {
+    std::string filename;
+    std::stringstream(filename) << data_dir << "/.BOUT.pid." << MYPE;
+    std::ofstream pid_file;
+    pid_file.open(filename, std::ios::out);
+    if (pid_file.is_open()) {
+      pid_file << getpid() << "\n";
+      pid_file.close();
+    }
+  }
   /// Print intro
   output.write("BOUT++ version %s\n", BOUT_VERSION_STRING);
 #ifdef REVISION
@@ -553,8 +563,7 @@ void bout_error(const char *str) {
   throw BoutException(str);
 }
 
-#ifdef SIGHANDLE
-/// Signal handler - catch segfaults
+/// Signal handler - handles all signals
 void bout_signal_handler(int sig) {
   /// Set signal handler back to default to prevent possible infinite loop
   signal(SIGSEGV, SIG_DFL);
@@ -578,15 +587,14 @@ void bout_signal_handler(int sig) {
   case SIGKILL:
     throw BoutException("\n****** SigKill caught ******\n\n");
     break;
+  case SIGUSR1:
+    user_requested_exit=true;
+    break;
   default:
     throw BoutException("\n****** Signal %d  caught ******\n\n",sig);
     break;
   }
-
-
-  exit(sig);
 }
-#endif
 
 /**************************************************************************
  * Utilities
