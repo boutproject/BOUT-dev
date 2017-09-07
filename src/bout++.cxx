@@ -217,10 +217,25 @@ int BoutInitialise(int &argc, char **&argv) {
   } else {
     throw BoutException("DataDir \"%s\" does not exist or is not accessible\n",data_dir);
   }
+  
+  // Set options
+  Options::getRoot()->set("datadir", string(data_dir));
+  Options::getRoot()->set("optionfile", string(opt_file));
+  Options::getRoot()->set("settingsfile", string(set_file));
 
+  // Set the command-line arguments
+  SlepcLib::setArgs(argc, argv); // SLEPc initialisation
+  PetscLib::setArgs(argc, argv); // PETSc initialisation
+  Solver::setArgs(argc, argv);   // Solver initialisation
+  BoutComm::setArgs(argc, argv); // MPI initialisation
+
+  int NPES = BoutComm::size();
+  int MYPE = BoutComm::rank();
+  
 #ifdef LOGCOLOR
-  if (color_output) {
+  if (color_output && (MYPE == 0)) {
     // Color stdout by piping through bout-log-color script
+    // Only done on processor 0, since this is the only processor which writes to stdout
     // This uses popen, fileno and dup2 functions, which are POSIX
     bool success = false;
 
@@ -252,20 +267,6 @@ int BoutInitialise(int &argc, char **&argv) {
   }
 #endif // LOGCOLOR
   
-  // Set options
-  Options::getRoot()->set("datadir", string(data_dir));
-  Options::getRoot()->set("optionfile", string(opt_file));
-  Options::getRoot()->set("settingsfile", string(set_file));
-
-  // Set the command-line arguments
-  SlepcLib::setArgs(argc, argv); // SLEPc initialisation
-  PetscLib::setArgs(argc, argv); // PETSc initialisation
-  Solver::setArgs(argc, argv);   // Solver initialisation
-  BoutComm::setArgs(argc, argv); // MPI initialisation
-
-  int NPES = BoutComm::size();
-  int MYPE = BoutComm::rank();
-
   /// Set up the output, accessing underlying Output object
   {
     Output &output = *Output::getInstance();
