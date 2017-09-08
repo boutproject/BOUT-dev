@@ -17,6 +17,7 @@ test-dataiterator2
 !test-fieldgroup
 !test-initial
 test-subdir
+test-aiolos
 # More complex tests
 test-drift-instability
 test-interchange-instability
