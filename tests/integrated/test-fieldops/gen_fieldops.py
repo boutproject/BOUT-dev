@@ -1,5 +1,7 @@
+from __future__ import print_function
+from builtins import object
 from random import randrange as rand
-class Field:
+class Field(object):
     n=''
     d=[]
     i=''
@@ -60,15 +62,15 @@ op_names={
 }
 
 for field in fields:
-    print "%s %s(const string &value){"%(field.n,field.i)
+    print("%s %s(const string &value){"%(field.n,field.i))
     if field.i == 'f3d':
-        print "  return FieldFactory::get()->create3D(value,NULL,mesh,CELL_CENTRE,0);"
+        print("  return FieldFactory::get()->create3D(value,NULL,mesh,CELL_CENTRE,0);")
     elif field.i == 'f2d':
-        print "  return FieldFactory::get()->create2D(value,NULL,mesh,CELL_CENTRE,0);"
+        print("  return FieldFactory::get()->create2D(value,NULL,mesh,CELL_CENTRE,0);")
     elif field.i == 'real':
-        print "  return atof(value.c_str());"
-    print "}"
-    print
+        print("  return atof(value.c_str());")
+    print("}")
+    print()
 
 for f1 in fields:
     for f2 in fields:
@@ -76,16 +78,16 @@ for f1 in fields:
             continue
         out=mymax(f1,f2)
         for op in ops:
-            print "void test_%s_%s_%s(){"%(f1.i,f2.i,op_names[op])
+            print("void test_%s_%s_%s(){"%(f1.i,f2.i,op_names[op]))
             for i1 in f1.posibles():
                 for i2 in f2.posibles():
-                    print "  compare(%s(\"(%s)%s(%s)\")"%(out.i,i1,op,i2)
-                    print '  \t,%s("%s")%s%s("%s")'%(f1.i,i1,op,f2.i,i2)
-                    print '  \t,"%s of %s(%s) and %s(%s)");'%(op_names[op],f1.n,i1,f2.n,i2)
+                    print("  compare(%s(\"(%s)%s(%s)\")"%(out.i,i1,op,i2))
+                    print('  \t,%s("%s")%s%s("%s")'%(f1.i,i1,op,f2.i,i2))
+                    print('  \t,"%s of %s(%s) and %s(%s)");'%(op_names[op],f1.n,i1,f2.n,i2))
                     #print '}'
-                    print
-            print "}"
-            print
+                    print()
+            print("}")
+            print()
 
 with open("test_fieldops.cxx","w") as out:
     for f1 in fields:
@@ -93,4 +95,4 @@ with open("test_fieldops.cxx","w") as out:
             if f1.i == f2.i == 'real':
                 continue
             for op in ops:
-                print >>out ,"  test_%s_%s_%s();"%(f1.i,f2.i,op_names[op])
+                print("  test_%s_%s_%s();"%(f1.i,f2.i,op_names[op]), file=out)
