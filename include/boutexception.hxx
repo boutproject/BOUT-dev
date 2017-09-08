@@ -20,7 +20,7 @@ public:
   const char* what() const throw();
   void Backtrace();
 protected:
-  char * buffer;
+  char *buffer = nullptr;
   static const int BUFFER_LEN = 1024; // Length of char buffer for printing
   int buflen; // Length of char buffer for printing
   string message;

@@ -418,7 +418,7 @@ Field2D pow(BoutReal lhs, const Field2D &rhs);
 #if CHECK > 0
 void checkData(const Field2D &f);
 #else
-inline void checkData(const Field2D &f) {}
+inline void checkData(const Field2D &UNUSED(f)) {}
 #endif
 
 

@@ -54,7 +54,7 @@ std::unique_ptr<DataFormat> FormatFactory::createDataFormat(const char *filename
 #endif // NCDF
 #endif // NCDF4
 #endif // PNCDF
-    throw new BoutException("Parallel I/O disabled, no serial library found");
+    throw BoutException("Parallel I/O disabled, no serial library found");
   }
 
   // Extract the file extension

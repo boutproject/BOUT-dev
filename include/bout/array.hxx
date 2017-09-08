@@ -2,7 +2,7 @@
  * Handle arrays of data
  * 
  * Provides an interface to create, iterate over and release
- * arrays of templated tyoes.
+ * arrays of templated types.
  *
  * Each type and array size has an object store, so when
  * arrays are released they are put into a store. Rather
@@ -71,6 +71,7 @@ public:
    */
   Array(int len) {
     ptr = get(len);
+#pragma omp atomic
     ptr->refs++;
   }
   
@@ -86,6 +87,7 @@ public:
    */
   Array(const Array &other) {
     ptr = other.ptr;
+#pragma omp atomic
     ptr->refs++;
   }
 
@@ -98,6 +100,7 @@ public:
 
     // Add reference
     ptr = other.ptr;
+#pragma omp atomic
     ptr->refs++;
 
     // Release the old data
@@ -167,7 +170,7 @@ public:
     // Don't use the store anymore
     useStore(false);
   }
-  
+
   /*!
    * Returns true if the Array is empty
    */
@@ -254,6 +257,19 @@ public:
   const T& operator[](int ind) const {
     return ptr->data[ind];
   }
+
+  /*!
+   * Exchange contents with another Array of the same type.
+   * Sizes of the arrays may differ.
+   *
+   * This is called by the template function swap(Array&, Array&)
+   */
+  void swap(Array<T> &other) {
+    ArrayData* tmp_ptr = ptr;
+    ptr = other.ptr;
+    other.ptr = tmp_ptr;
+  }
+  
 private:
 
   /*!
@@ -321,15 +337,20 @@ private:
    * references. This is either from the store, or newly allocated
    */
   ArrayData* get(int len) {
-    std::vector<ArrayData* >& st = store()[len];
-    if(st.empty()) {
-      return new ArrayData(len);
+    ArrayData *p;
+#pragma omp critical (store)
+    {
+      std::vector<ArrayData* >& st = store()[len];
+      if (!st.empty()) {
+        p = st.back();
+        st.pop_back();
+      } else {
+        p = new ArrayData(len);
+      }
     }
-    ArrayData *p = st.back();
-    st.pop_back();
     return p;
   }
-
+  
   /*!
    * Release an ArrayData object, reducing its reference count by one. 
    * If no more references, then put back into the store.
@@ -339,12 +360,15 @@ private:
       return;
     
     // Reduce reference count, and if zero return to store
-    if (!--d->refs) {
-      if (useStore()) {
-        // Put back into store
-        store()[d->len].push_back(d);
-      } else {
-        delete d;
+#pragma omp critical (store)
+    {
+      if (!--d->refs) {
+        if (useStore()) {
+          // Put back into store
+          store()[d->len].push_back(d);
+        } else {
+          delete d;
+        }
       }
     }
   }
@@ -359,6 +383,15 @@ Array<T>& copy(const Array<T> &other) {
   Array<T> a(other);
   a.ensureUnique();
   return a;
+}
+
+/*!
+ * Exchange contents of two Arrays of the same type.
+ * Sizes of the arrays may differ.
+ */
+template<typename T>
+void swap(Array<T> &a, Array<T> &b) {
+  a.swap(b);
 }
 
 #endif // __ARRAY_H__
