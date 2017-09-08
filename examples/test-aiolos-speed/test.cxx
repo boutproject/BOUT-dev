@@ -18,9 +18,9 @@ int physics_init(bool restart) {
     mesh->indexDDZ(n,CELL_DEFAULT,DIFF_DEFAULT,true);
     mesh->indexD2DX2(n,CELL_DEFAULT,DIFF_DEFAULT);
     mesh->indexD2DY2(n,CELL_DEFAULT,DIFF_DEFAULT);
-    mesh->indexD2DZ2(n,CELL_DEFAULT,DIFF_DEFAULT);
+    mesh->indexD2DZ2(n,CELL_DEFAULT,DIFF_DEFAULT,true);
   }
-  
+  SOLVE_FOR(n);
   return 0;
 }
 
