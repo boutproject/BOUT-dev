@@ -1958,38 +1958,11 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
 
     int ncz = this->LocalNz;
     
-#ifndef _OPENMP
-    static dcomplex *cv = (dcomplex*) NULL;
-#else
-    static dcomplex *globalcv;
-    static int nthreads = 0;
-#endif 
-
     #pragma omp parallel
     {
-#ifndef _OPENMP
-      // Serial, so can have a single static array
-      if(cv == (dcomplex*) NULL)
-        cv = new dcomplex[ncz/2 + 1];  //Never freed
-#else
-      // Parallel, so allocate a separate array for each thread
+      Array<dcomplex> cv(ncz/2 + 1);
       
-      int th_id = omp_get_thread_num(); // thread ID
-        int n_th = omp_get_num_threads();
-      if(th_id == 0) {
-        if(nthreads < n_th) {
-          // Allocate memory in thread zero
-          if(nthreads > 0)
-            delete[] globalcv;
-          globalcv = new dcomplex[n_th*(ncz/2 + 1)];  //Never freed
-          nthreads = n_th;
-        }
-      }
-      // Wait for memory to be allocated
-      #pragma omp barrier
-      
-      dcomplex *cv = globalcv + th_id*(ncz/2 + 1); // Separate array for each thread
-#endif
+
       int xs = this->xstart;
       int xe = this->xend;
       int ys = this->ystart;
@@ -2007,9 +1980,9 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
       if (this->freeboundary_yup)
         ye = this->LocalNy-1;
       #pragma omp for
-      for(int jx=xs;jx<=xe;jx++) {
-        for(int jy=ys;jy<=ye;jy++) {
-          rfft(f(jx, jy), ncz, cv); // Forward FFT
+      for (int jx=xs;jx<=xe;jx++) {
+        for (int jy=ys;jy<=ye;jy++) {
+          rfft(f(jx, jy), ncz, cv.begin()); // Forward FFT
           
         for(int jz=0;jz<=ncz/2;jz++) {
             BoutReal kwave=jz*2.0*PI/ncz; // wave number is 1/[rad]
@@ -2021,7 +1994,7 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
             cv[jz] *= exp(Im * (shift * kwave));
         }
           
-        irfft(cv, ncz, result(jx,jy)); // Reverse FFT
+        irfft(cv.begin(), ncz, result(jx,jy)); // Reverse FFT
       }
     }
     }
@@ -2336,12 +2309,9 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
 
     int ncz = this->LocalNz;
     
-    static dcomplex *cv = (dcomplex*) NULL;
+    ASSERT1(ncz % 2 == 0); // Must be a power of 2
+    Array<dcomplex> cv(ncz/2 + 1);
     
-    // Serial, so can have a single static array
-    if(cv == (dcomplex*) NULL)
-      cv = new dcomplex[ncz/2 + 1]; //Never freed
-
     int xs = this->xstart;
     int xe = this->xend;
     int ys = this->ystart;
@@ -2362,7 +2332,7 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
     for(int jx=xs;jx<=xe;jx++) {
       for(int jy=ys;jy<=ye;jy++) {
           
-	rfft(f(jx,jy), ncz, cv); // Forward FFT
+	rfft(f(jx,jy), ncz, cv.begin()); // Forward FFT
 	
 	for(int jz=0;jz<=ncz/2;jz++) {
 	  BoutReal kwave=jz*2.0*PI/ncz; // wave number is 1/[rad]
@@ -2372,7 +2342,7 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
 	    cv[jz] *= exp(0.5*Im * (shift * kwave));
 	}
 
-	irfft(cv, ncz, result(jx,jy)); // Reverse FFT
+	irfft(cv.begin(), ncz, result(jx,jy)); // Reverse FFT
       }
     }
 
