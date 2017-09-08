@@ -3,6 +3,7 @@
 # be run in test_suite
 test-io
 test-fieldfactory
+test-fieldops
 test-restarting
 test-laplace
 test-cyclic
