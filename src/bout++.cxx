@@ -134,6 +134,7 @@ int BoutInitialise(int &argc, char **&argv) {
   opt_file = DEFAULT_OPT;
   set_file = DEFAULT_SET;
 
+  int verbosity=4;
   /// Check command-line arguments
   /// NB: "restart" and "append" are now caught by options
   /// Check for help flag separately
@@ -146,6 +147,11 @@ int BoutInitialise(int &argc, char **&argv) {
 	      "  -d <data directory>\tLook in <data directory> for input/output files\n"
 	      "  -f <options filename>\tUse OPTIONS given in <options filename>\n"
 	      "  -o <settings filename>\tSave used OPTIONS given to <options filename>\n"
+	      "  -v, --verbose\t\tIncrease verbosity\n"
+	      "  -q, --quiet\t\tDecrease verbosity\n"
+#ifdef LOGCOLOR
+              "  -c, --color\t\tColor output using bout-log-color\n"
+#endif
 	      "  -h, --help\t\tThis message\n"
 	      "  restart [append]\tRestart the simulation. If append is specified, append to the existing output files, otherwise overwrite them\n"
 	      "  VAR=VALUE\t\tSpecify a VALUE for input parameter VAR\n"
@@ -154,6 +160,7 @@ int BoutInitialise(int &argc, char **&argv) {
       return -1;
     }
   }
+  bool color_output = false; // Will be set true if -c is in the options
   for (int i=1;i<argc;i++) {
     if (string(argv[i]) == "-d") {
       // Set data directory
@@ -163,8 +170,8 @@ int BoutInitialise(int &argc, char **&argv) {
       }
       i++;
       data_dir = argv[i];
-    }
-    if (string(argv[i]) == "-f") {
+      
+    } else if (string(argv[i]) == "-f") {
       // Set options file
       if (i+1 >= argc) {
         fprintf(stderr, "Usage is %s -f <options filename>\n", argv[0]);
@@ -172,8 +179,8 @@ int BoutInitialise(int &argc, char **&argv) {
       }
       i++;
       opt_file = argv[i];
-    }
-    if (string(argv[i]) == "-o") {
+      
+    } else if (string(argv[i]) == "-o") {
       // Set options file
       if (i+1 >= argc) {
         fprintf(stderr, "Usage is %s -o <settings filename>\n", argv[0]);
@@ -181,9 +188,24 @@ int BoutInitialise(int &argc, char **&argv) {
       }
       i++;
       set_file = argv[i];
+      
+    } else if ( (string(argv[i]) == "-v") ||
+                (string(argv[i]) == "--verbose") ){
+      verbosity++;
+      
+    } else if ( (string(argv[i]) == "-q") ||
+                (string(argv[i]) == "--quiet")) {
+      verbosity--;
+      
+    } else if ( (string(argv[i]) == "-c") ||
+                (string(argv[i]) == "--color") ) {
+      // Add color to the output by piping through bout-log-color
+      // This is done after checking all command-line inputs
+      // in case -c is set multiple times
+      color_output = true;
     }
   }
-
+  
   if (std::string(set_file) == std::string(opt_file)){
     throw BoutException("Input and output file for settings must be different.\nProvide -o <settings file> to avoid this issue.\n");
   }
@@ -198,7 +220,7 @@ int BoutInitialise(int &argc, char **&argv) {
   } else {
     throw BoutException("DataDir \"%s\" does not exist or is not accessible\n",data_dir);
   }
-
+  
   // Set options
   Options::getRoot()->set("datadir", string(data_dir));
   Options::getRoot()->set("optionfile", string(opt_file));
@@ -212,16 +234,65 @@ int BoutInitialise(int &argc, char **&argv) {
 
   int NPES = BoutComm::size();
   int MYPE = BoutComm::rank();
+  
+#ifdef LOGCOLOR
+  if (color_output && (MYPE == 0)) {
+    // Color stdout by piping through bout-log-color script
+    // Only done on processor 0, since this is the only processor which writes to stdout
+    // This uses popen, fileno and dup2 functions, which are POSIX
+    bool success = false;
 
-  /// Set up the output
-  if (MYPE == 0) output.enable(); // Enable writing to stdout
-  else output.disable(); // No writing to stdout
+    // Run bout-log-color through the shell. This should share stdout with BOUT++,
+    // and read stdin from the pipe
+    FILE *outpipe = popen("bout-log-color", "w");
+    
+    if (outpipe != NULL) {
+      // Valid pipe
+      // Get the integer file descriptor
+      int fno = fileno(outpipe);
+      if (fno != -1) {
+        // Valid file descriptor
 
-  /// Open an output file to echo everything to
-  /// On processor 0 anything written to output will go to stdout and the file
-  if (output.open("%s/BOUT.log.%d", data_dir, MYPE)) {
-    return 1;
+        // Note: We can get to here if bout-log-color failed to run
+        // This seems to cause code to fail later
+        
+        // Replace stdout with the pipe.
+        int status = dup2(fno, STDOUT_FILENO);
+        if (status != -1) {
+          success = true;
+        }
+      }
+    }
+    if (!success) {
+      // Failed . Probably not important enough to stop the simulation
+      fprintf(stderr, "Could not run bout-log-color. Make sure it is in your PATH\n");
+    }
   }
+#endif // LOGCOLOR
+  
+  /// Set up the output, accessing underlying Output object
+  {
+    Output &output = *Output::getInstance();
+    if (MYPE == 0) output.enable(); // Enable writing to stdout
+    else output.disable(); // No writing to stdout
+
+    /// Open an output file to echo everything to
+    /// On processor 0 anything written to output will go to stdout and the file
+    if (output.open("%s/BOUT.log.%d", data_dir, MYPE)) {
+      return 1;
+    }
+  }
+  
+  output_error.enable(verbosity>0);
+  output_warn.enable(verbosity>1);
+  output_progress.enable(verbosity>2);
+  output_info.enable(verbosity>3);
+  output_debug.enable(verbosity>4);
+  
+  // The backward-compatible output object same as prog
+  output.enable(verbosity>2);
+
+  // Save the PID of this process to file, so it can be shut down by user signal
   {
     std::string filename;
     std::stringstream(filename) << data_dir << "/.BOUT.pid." << MYPE;
@@ -232,62 +303,63 @@ int BoutInitialise(int &argc, char **&argv) {
       pid_file.close();
     }
   }
+  
   /// Print intro
-  output.write("BOUT++ version %s\n", BOUT_VERSION_STRING);
+  output_progress.write("BOUT++ version %s\n", BOUT_VERSION_STRING);
 #ifdef REVISION
-  output.write("Revision: %s\n", REV);
+  output_progress.write("Revision: %s\n", REV);
 #endif
 #ifdef MD5SUM
-  output.write("MD5 checksum: %s\n", CHECKSUM);
+  output_progress.write("MD5 checksum: %s\n", CHECKSUM);
 #endif
-  output.write("Code compiled on %s at %s\n\n", __DATE__, __TIME__);
-  output.write("B.Dudson (University of York), M.Umansky (LLNL) 2007\n");
-  output.write("Based on BOUT by Xueqiao Xu, 1999\n\n");
+  output_progress.write("Code compiled on %s at %s\n\n", __DATE__, __TIME__);
+  output_info.write("B.Dudson (University of York), M.Umansky (LLNL) 2007\n");
+  output_info.write("Based on BOUT by Xueqiao Xu, 1999\n\n");
 
-  output.write("Processor number: %d of %d\n\n", MYPE, NPES);
+  output_info.write("Processor number: %d of %d\n\n", MYPE, NPES);
 
-  output.write("pid: %d\n\n",getpid());
+  output_info.write("pid: %d\n\n",getpid());
 
   /// Print compile-time options
 
-  output.write("Compile-time options:\n");
+  output_info.write("Compile-time options:\n");
 
 #if CHECK > 0
-  output.write("\tChecking enabled, level %d\n", CHECK);
+  output_info.write("\tChecking enabled, level %d\n", CHECK);
 #else
-  output.write("\tChecking disabled\n");
+  output_info.write("\tChecking disabled\n");
 #endif
 
 #ifdef SIGHANDLE
-  output.write("\tSignal handling enabled\n");
+  output_info.write("\tSignal handling enabled\n");
 #else
-  output.write("\tSignal handling disabled\n");
+  output_info.write("\tSignal handling disabled\n");
 #endif
 
 #ifdef NCDF
-  output.write("\tnetCDF support enabled\n");
+  output_info.write("\tnetCDF support enabled\n");
 #else
-  output.write("\tnetCDF support disabled\n");
+  output_info.write("\tnetCDF support disabled\n");
 #endif
 
 #ifdef PNCDF
-  output.write("\tParallel NetCDF support enabled\n");
+  output_info.write("\tParallel NetCDF support enabled\n");
 #else
-  output.write("\tParallel NetCDF support disabled\n");
+  output_info.write("\tParallel NetCDF support disabled\n");
 #endif
 
 #ifdef _OPENMP
-  output.write("\tOpenMP parallelisation enabled, using %d threads\n",omp_get_max_threads());
+  output_info.write("\tOpenMP parallelisation enabled, using %d threads\n",omp_get_max_threads());
 #else
-  output.write("\tOpenMP parallelisation disabled\n");
+  output_info.write("\tOpenMP parallelisation disabled\n");
 #endif
 
 #ifdef METRIC3D
-  output.write("\tRUNNING IN 3D-METRIC MODE\n");
+  output_info.write("\tRUNNING IN 3D-METRIC MODE\n");
 #endif
 
 #ifdef BOUT_FPE
-  output.write("\tFloatingPointExceptions enabled\n");
+  output_info.write("\tFloatingPointExceptions enabled\n");
 #endif
 
   /// Get the options tree
@@ -351,7 +423,7 @@ int BoutInitialise(int &argc, char **&argv) {
     mesh->outputVars(dump); ///< Save mesh configuration into output file
     
   }catch(BoutException &e) {
-    output.write("Error encountered during initialisation: %s\n", e.what());
+    output_error.write("Error encountered during initialisation: %s\n", e.what());
     BoutComm::cleanup();
     throw;
   }
@@ -386,8 +458,8 @@ int BoutFinalise() {
       reader->write(Options::getRoot(), "%s/%s", data_dir.c_str(), settingsfile.c_str());
     }
   } catch (BoutException &e) {
-    output << "Error whilst writing settings" << endl;
-    output << e.what() << endl;
+    output_error << "Error whilst writing settings" << endl;
+    output_error << e.what() << endl;
   }
 
   // Delete the mesh
@@ -468,7 +540,7 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
   BoutReal wtime_comms  = Timer::resetTime("comms");  // Time spent communicating (part of RHS)
   BoutReal wtime_io     = Timer::resetTime("io");      // Time spend on I/O
 
-  output.print("\r"); // Only goes to screen
+  output_progress.print("\r"); // Only goes to screen
 
   if (first_time) {
     /// First time the monitor has been called
@@ -495,24 +567,25 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
 
     /// Print the column header for timing info
     if (!output_split) {
-      output.write("Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm    I/O   "
-                   "SOLVER\n\n");
+      output_progress.write("Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm    I/O   "
+                            "SOLVER\n\n");
     } else {
-      output.write("Sim Time  |  RHS_e evals  | RHS_I evals  | Wall Time |  Calc    Inv  "
-                   " Comm    I/O   SOLVER\n\n");
+      output_progress.write("Sim Time  |  RHS_e evals  | RHS_I evals  | Wall Time |  Calc    Inv  "
+                            " Comm    I/O   SOLVER\n\n");
     }
   }
 
   if (!output_split) {
-    output.write("%.3e      %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n", 
+    output_progress.write("%.3e      %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n", 
                simtime, ncalls, wtime,
                100.0*(wtime_rhs - wtime_comms - wtime_invert)/wtime,
                100.*wtime_invert/wtime,  // Inversions
                100.0*wtime_comms/wtime,  // Communications
                100.* wtime_io / wtime,      // I/O
                100.*(wtime - wtime_io - wtime_rhs)/wtime); // Everything else
+
   } else {
-    output.write("%.3e      %5d            %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n",
+    output_progress.write("%.3e      %5d            %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n",
                simtime, ncalls_e, ncalls_i, wtime,
                100.0*(wtime_rhs - wtime_comms - wtime_invert)/wtime,
                100.*wtime_invert/wtime,  // Inversions
@@ -524,8 +597,8 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
   // This bit only to screen, not log file
 
   BoutReal t_elapsed = MPI_Wtime() - mpi_start_time;
-  output.print("%c  Step %d of %d. Elapsed %s", get_spin(), iteration+1, NOUT, (time_to_hms(t_elapsed)).c_str());
-  output.print(" ETA %s", (time_to_hms(wtime * static_cast<BoutReal>(NOUT - iteration - 1))).c_str());
+  output_progress.print("%c  Step %d of %d. Elapsed %s", get_spin(), iteration+1, NOUT, (time_to_hms(t_elapsed)).c_str());
+  output_progress.print(" ETA %s", (time_to_hms(wtime * static_cast<BoutReal>(NOUT - iteration - 1))).c_str());
 
   if (wall_limit > 0.0) {
     // Check if enough time left
@@ -533,11 +606,11 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
     BoutReal t_remain = mpi_start_time + wall_limit - MPI_Wtime();
     if (t_remain < wtime) {
       // Less than 1 time-step left
-      output.write("Only %e seconds left. Quitting\n", t_remain);
+      output_warn.write("Only %e seconds left. Quitting\n", t_remain);
 
       return 1; // Return an error code to quit
     } else {
-      output.print(" Wall %s", (time_to_hms(t_remain)).c_str());
+      output_progress.print(" Wall %s", (time_to_hms(t_remain)).c_str());
     }
   }
 

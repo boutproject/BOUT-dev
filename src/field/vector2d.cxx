@@ -32,7 +32,7 @@
 
 #include <vector2d.hxx>
 #include <boundary_op.hxx>
-#include <output.hxx>
+#include <boutexception.hxx>
 
 Vector2D::Vector2D() : covariant(true), deriv(NULL) { }
 
