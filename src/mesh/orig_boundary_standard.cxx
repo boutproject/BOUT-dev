@@ -52,11 +52,11 @@ BndDirichlet_O2::BndDirichlet_O2() : gen(NULL) {
   
 }
 
-BndDirichlet_O2::BndDirichlet_O2(BoundaryRegion *region, FieldGenerator*g):BoundaryOp(region), gen(g){
+BndDirichlet_O2::BndDirichlet_O2(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g):BoundaryOp(region), gen(g){
 }
 
 BoundaryOp* BndDirichlet_O2::clone(BoundaryRegion *region, const list<string> &args){
-	FieldGenerator* newgen = 0;
+	std::shared_ptr<FieldGenerator> newgen = 0;
 	if(!args.empty()) {
 		// First argument should be an expression
 		newgen = FieldFactory::get()->parse(args.front());
@@ -79,7 +79,7 @@ void BndDirichlet_O2::apply(Field2D &f,BoutReal t) {
 	bndry->first();
 
 	// Decide which generator to use
-	FieldGenerator* fg = gen;
+	std::shared_ptr<FieldGenerator> fg = gen;
 	if(!fg)
 		fg = f.getBndryGenerator(bndry->location);
 
@@ -273,7 +273,7 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
 	bndry->first();
 
 	// Decide which generator to use
-	FieldGenerator* fg = gen;
+	std::shared_ptr<FieldGenerator> fg = gen;
 	if(!fg)
 		fg = f.getBndryGenerator(bndry->location);
 
@@ -537,7 +537,7 @@ void BndDirichlet_O2::apply_ddt(Field3D &f) {
 // New implementation, accurate to higher order
 
 BoundaryOp* BndDirichlet_O3::clone(BoundaryRegion *region, const list<string> &args){
-  FieldGenerator* newgen = 0;
+  std::shared_ptr<FieldGenerator> newgen = 0;
   if(!args.empty()) {
     // First argument should be an expression
     newgen = FieldFactory::get()->parse(args.front());
@@ -560,7 +560,7 @@ void BndDirichlet_O3::apply(Field2D &f,BoutReal t) {
   bndry->first();
 
   // Decide which generator to use
-  FieldGenerator* fg = gen;
+  std::shared_ptr<FieldGenerator> fg = gen;
   if(!fg)
     fg = f.getBndryGenerator(bndry->location);
 
@@ -749,7 +749,7 @@ void BndDirichlet_O3::apply(Field3D &f,BoutReal t) {
   bndry->first();
 
   // Decide which generator to use
-  FieldGenerator* fg = gen;
+  std::shared_ptr<FieldGenerator> fg = gen;
   if(!fg)
     fg = f.getBndryGenerator(bndry->location);
 
@@ -1021,7 +1021,7 @@ void BndDirichlet_O3::apply_ddt(Field3D &f) {
 // Extrapolate to calculate boundary cell to 4th-order
 
 BoundaryOp* BndDirichlet_O4::clone(BoundaryRegion *region, const list<string> &args){
-  FieldGenerator* newgen = 0;
+  std::shared_ptr<FieldGenerator> newgen = 0;
   if(!args.empty()) {
     // First argument should be an expression
     newgen = FieldFactory::get()->parse(args.front());
@@ -1044,7 +1044,7 @@ void BndDirichlet_O4::apply(Field2D &f,BoutReal t) {
   bndry->first();
 
   // Decide which generator to use
-  FieldGenerator* fg = gen;
+  std::shared_ptr<FieldGenerator> fg = gen;
   if(!fg)
     fg = f.getBndryGenerator(bndry->location);
 
@@ -1247,7 +1247,7 @@ void BndDirichlet_O4::apply(Field3D &f,BoutReal t) {
   bndry->first();
 
   // Decide which generator to use
-  FieldGenerator* fg = gen;
+  std::shared_ptr<FieldGenerator> fg = gen;
   if(!fg)
     fg = f.getBndryGenerator(bndry->location);
 
@@ -1699,7 +1699,7 @@ void BoundaryNeumann_2ndOrder::apply_ddt(Field3D &f) {
 /////JMAD///
 
 BoundaryOp* BndNeumann_O2::clone(BoundaryRegion *region, const list<string> &args){
-  FieldGenerator *newgen = 0;
+  std::shared_ptr<FieldGenerator> newgen = 0;
   if(!args.empty()) {
     // First argument should be an expression
     newgen = FieldFactory::get()->parse(args.front());
@@ -1722,7 +1722,7 @@ void BndNeumann_O2::apply(Field2D &f,BoutReal t) {
   bndry->first();
 
   // Decide which generator to use
-  FieldGenerator* fg = gen;
+  std::shared_ptr<FieldGenerator> fg = gen;
   if(!fg)
     fg = f.getBndryGenerator(bndry->location);
 
@@ -1922,7 +1922,7 @@ void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
   bndry->first();
 
   // Decide which generator to use
-  FieldGenerator* fg = gen;
+  std::shared_ptr<FieldGenerator> fg = gen;
   if(!fg)
     fg = f.getBndryGenerator(bndry->location);
 
@@ -2314,8 +2314,8 @@ void BoundaryZeroLaplace::apply(Field3D &f) {
   
   if(c0 == (dcomplex*) NULL) {
     // allocate memory
-    c0 = new dcomplex[ncz/2 + 1];
-    c1 = new dcomplex[ncz/2 + 1];
+    c0 = new dcomplex[ncz/2 + 1]; //Never freed
+    c1 = new dcomplex[ncz/2 + 1]; //Never freed
   }
   
   if((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
@@ -2397,9 +2397,9 @@ void BoundaryZeroLaplace2::apply(Field3D &f) {
 
   if(c0 == (dcomplex*) NULL) {
     // allocate memory
-    c0 = new dcomplex[ncz/2 + 1];
-    c1 = new dcomplex[ncz/2 + 1];
-    c2 = new dcomplex[ncz/2 + 1];
+    c0 = new dcomplex[ncz/2 + 1];//Never freed
+    c1 = new dcomplex[ncz/2 + 1];//Never freed
+    c2 = new dcomplex[ncz/2 + 1];//Never freed
   }
   
   if((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
@@ -2498,9 +2498,9 @@ void BoundaryConstLaplace::apply(Field3D &f) {
   int ncz = mesh->ngz-1;
   if(c0 == (dcomplex*) NULL) {
     //allocate memory
-    c0 = new dcomplex[ncz/2 + 1];
-    c1 = new dcomplex[ncz/2 + 1];
-    c2 = new dcomplex[ncz/2 + 1];
+    c0 = new dcomplex[ncz/2 + 1];//Never freed
+    c1 = new dcomplex[ncz/2 + 1];//Never freed
+    c2 = new dcomplex[ncz/2 + 1];//Never freed
   }
   
   int bx = bndry->bx;

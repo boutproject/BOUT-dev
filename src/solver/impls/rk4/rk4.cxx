@@ -10,13 +10,12 @@
 
 #include <output.hxx>
 
-RK4Solver::RK4Solver(Options *options) : Solver(options) {
-  f0 = 0; // Mark as uninitialised
+RK4Solver::RK4Solver(Options *options) : Solver(options), f0(nullptr) {
   canReset = true;
 }
 
 RK4Solver::~RK4Solver() {
-  if(f0 != 0) {
+  if(f0 != nullptr) {
     delete[] f0;
     delete[] f1;
     delete[] f2;

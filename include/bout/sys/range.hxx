@@ -31,6 +31,7 @@ class RangeIterator {
   RangeIterator(int start, int end, RangeIterator* join=0);
   RangeIterator(int start, int end, const RangeIterator& join);
   RangeIterator(const RangeIterator& r);
+  ~RangeIterator();
   
   void first();
   void next();
@@ -66,6 +67,7 @@ class RangeIterator {
   RangeIterator *n; // Next range. Doesn't change after creation
   RangeIterator *cur;  // Currently iterating. Changes during iteration
   int curend; // End of current range
+  bool delete_next = false; // Flag to delete this->n if we created it
 };
 
 #endif // __RANGE_H__

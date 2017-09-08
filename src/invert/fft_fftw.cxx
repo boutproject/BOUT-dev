@@ -130,8 +130,8 @@ void cfft(dcomplex *cv, int length, int isign)
       inall = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * length * n_th);
       outall = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * length * n_th);
 
-      pf = new fftw_plan[n_th];
-      pb = new fftw_plan[n_th];
+      pf = new fftw_plan[n_th]; //Never freed
+      pb = new fftw_plan[n_th]; //Never freed
 
       unsigned int flags = FFTW_ESTIMATE;
       if(fft_measure)
@@ -238,6 +238,16 @@ void rfft(const BoutReal *in, int length, dcomplex *out) {
     out[i] = dcomplex(fout[i][0], fout[i][1]) * fac; // Normalise
 }
 
+const Array<dcomplex> rfft(const Array<BoutReal> &in) {
+  ASSERT1(!in.empty()); // Check that there is data
+  
+  int size = in.size();
+  Array<dcomplex> out(size); // Allocates data array
+  
+  rfft(in.begin(), size, out.begin());
+  return out;
+}
+
 void irfft(const dcomplex *in, int length, BoutReal *out) {
   // static variables initialized once
   static fftw_complex *fin;
@@ -323,7 +333,7 @@ void rfft(const BoutReal *in, int length, dcomplex *out) {
 
       finall = (double*) fftw_malloc(sizeof(double) * length * n_th);
       foutall = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (length/2 + 1) * n_th);
-      p = new fftw_plan[n_th];
+      p = new fftw_plan[n_th]; //Never freed
 
       unsigned int flags = FFTW_ESTIMATE;
       if(fft_measure)
@@ -385,7 +395,7 @@ void irfft(const dcomplex *in, int length, BoutReal *out) {
       finall = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (length/2 + 1) * n_th);
       foutall = (double*) fftw_malloc(sizeof(double) * length * n_th);
 
-      p = new fftw_plan[n_th];
+      p = new fftw_plan[n_th]; //Never freed
 
       unsigned int flags = FFTW_ESTIMATE;
       if(fft_measure)
