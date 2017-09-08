@@ -157,6 +157,7 @@ install: libfast
 	$(INSTALL_DATA) -D lib/libpvode.a -t $(DESTDIR)@libdir@
 	$(INSTALL_DATA) -D lib/libpvpre.a -t $(DESTDIR)@libdir@
 	$(INSTALL_PROGRAM) -D bin/bout-config -t $(DESTDIR)@bindir@
+	$(INSTALL_PROGRAM) -D bin/bout-log-color -t $(DESTDIR)@bindir@
 	$(INSTALL_DATA) -D tools/idllib/*.pro -t $(DESTDIR)@datadir@/bout++/idllib/
 	$(INSTALL_DATA) -D tools/idllib/README -t $(DESTDIR)@datadir@/bout++/idllib/
 	$(INSTALL_DATA) -D tools/pylib/boutdata/*.py -t $(DESTDIR)@datadir@/bout++/pylib/boutdata/
@@ -186,6 +187,7 @@ uninstall:
 	rm -r $(DESTDIR)@datadir@/bout++/pylib/boutdata/
 	rm -r $(DESTDIR)@datadir@/bout++/idllib/
 	rm $(DESTDIR)@bindir@/bout-config
+	rm $(DESTDIR)@bindir@/bout-log-color
 	rm $(DESTDIR)@libdir@/libbout++.a
 	rm $(DESTDIR)@libdir@/libpvode.a
 	rm $(DESTDIR)@libdir@/libpvpre.a
