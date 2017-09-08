@@ -4,8 +4,8 @@ nout=1
 timestep=1
 
 periodicY=true
-MXG=1
-MYG=1
+MXG=2
+MYG=2
 
 Lz=mesh:lz
 zmax=lz/2/pi
