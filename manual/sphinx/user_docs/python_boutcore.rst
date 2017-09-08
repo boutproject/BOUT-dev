@@ -18,8 +18,14 @@ but getting all the
 dependencies can be difficult.
 ``make python`` creates both the python2 and the python3 module.
 
-To use boutcore on the login node, a self compiled version of mpi is
-required, as the provided one is only for the compute nodes.
+If problems arise, it might be worth checking a copy of the bout
+module out, to reduce the risk of causing issues with the old bout
+installation. This is especially true if you are trying to run
+boutcore not on compute nodes of a super computer but rather on
+post-processing/login/... nodes.
+
+To use boutcore on the login node, a self compiled version of mpi may be
+required, as the provided one may be only for the compute nodes.
 Further, numpy header files are required, therfore numpy needs to be
 compiled as well.
 Further, the header files need to be exposed to the boutcore cython
