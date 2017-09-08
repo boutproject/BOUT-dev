@@ -11,12 +11,7 @@ from boututils.run_wrapper import shell, launch, getmpirun
 from boututils.datafile import DataFile
 from boutdata.collect import collect
 
-from numpy import sqrt, max, abs, mean, array, log, pi, polyfit, linspace
-
-try:
-    import matplotlib.pyplot as plt
-except:
-    pass
+from numpy import sqrt, max, abs, mean, array, log, pi, polyfit, linspace, arange
 
 import pickle
 
@@ -50,27 +45,39 @@ for var in varlist:
     error_2[var]   = []  # The L2 error (RMS)
     error_inf[var] = []  # The maximum error
 
+
+yperiodic=True  # Run with periodic Y?
+
+    
 for n in nlist:
 
 
     # Define the magnetic field using new poloidal gridding method
-    field = zb.field.Slab(Bz=0.05, Bzprime=0.1)
+    field = zb.field.Slab(Bz=0.0, Bzprime=0.0)
     # Create rectangular poloidal grids
     poloidal_grid = zb.poloidal_grid.RectangularPoloidalGrid(nx,n,1.,1.)
     # Set the ylength and y locations
     ylength = 10.
-    ycoords = linspace(0.0, ylength, n, endpoint=False)
+
+    if yperiodic:
+        ycoords = linspace(0.0, ylength, n, endpoint=False)
+    else:
+        # Doesn't include the end points
+        ycoords = (arange(n) + 0.5)*ylength/float(n)
+    
     # Create the grid
-    grid = zb.grid.Grid(poloidal_grid, ycoords, ylength, yperiodic=True)
+    grid = zb.grid.Grid(poloidal_grid, ycoords, ylength, yperiodic=yperiodic)
     # Make and write maps
     maps = zb.make_maps(grid, field)
     zb.write_maps(grid, field, maps, new_names=False, metric2d=True)
-
-    args = " -d "+directory+" MZ="+str(n)
-
+    
+    args = " -d "+directory+" MZ="+str(n)+ " fci:y_periodic="+str(yperiodic)
+    
     # Command to run
     cmd = "./fci_slab "+args
 
+    print("Running command: "+cmd)
+    
     # Launch using MPI
     s, out = launch(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
 
@@ -99,25 +106,16 @@ with open("fci_mms.pkl", "wb") as output:
     pickle.dump(nlist, output)
     pickle.dump(error_2, output)
     pickle.dump(error_inf, output)
-
-# plot errors
-try:
-    plt.figure()
-except:
-    pass
-
+    
 # Calculate convergence order
 for var,mark,label in zip(varlist, markers, labels):
-    try:
-        plt.plot(dx, error_2[var], '-'+mark, label=label)
-        plt.plot(dx, error_inf[var], '--'+mark)
-    except:
-        pass
-
     fit = polyfit(log(dx), log(error_2[var]), 1)
     order = fit[0]
-    stdout.write("%s Convergence order = %f" % (var, order))
+    stdout.write("%s Convergence order = %f (fit)" % (var, order))
 
+    order = log(error_2[var][-2]/error_2[var][-1])/log(dx[-2]/dx[-1])
+    stdout.write(", %f (small spacing)" % (order,))
+    
     if order > 1.5: # Should be second order accurate
         print("............ PASS")
     else:
@@ -125,6 +123,15 @@ for var,mark,label in zip(varlist, markers, labels):
         success = False
 
 try:
+    # Plot using matplotlib if available
+    import matplotlib.pyplot as plt
+    
+    plt.figure()
+
+    for var,mark,label in zip(varlist, markers, labels):
+        plt.plot(dx, error_2[var], '-'+mark, label=label)
+        plt.plot(dx, error_inf[var], '--'+mark)
+    
     plt.legend(loc="upper left")
     plt.grid()
 
@@ -136,10 +143,12 @@ try:
 
     plt.savefig("fci-norm.pdf")
 
+    print("Plot saved to fci-norm.pdf")
+
     plt.show()
     plt.close()
 except:
-    pass
+    print("No matplotlib")
 
 if success:
     exit(0)
