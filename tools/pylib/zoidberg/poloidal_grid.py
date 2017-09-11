@@ -83,7 +83,7 @@ class RectangularPoloidalGrid(PoloidalGrid):
     
     """
     
-    def __init__(self, nx, nz, Lx, Lz, Rcentre=0.0, Zcentre=0.0):
+    def __init__(self, nx, nz, Lx, Lz, Rcentre=0.0, Zcentre=0.0, MXG=2):
         """
         Inputs
         ------
@@ -93,7 +93,12 @@ class RectangularPoloidalGrid(PoloidalGrid):
         Lx  Radial domain size  [m]
         Lz  Vertical domain size [m]
         
-        Rmid 
+        Rcentre  Coordinate at the middle of the domain
+        Zcentre  Coordinate at the middle of the domain
+        
+        MXG  Number of guard cells in X. The boundary is put half-way
+             between the guard cell and the domain
+        
         """
         
         self.nx = nx
@@ -104,12 +109,14 @@ class RectangularPoloidalGrid(PoloidalGrid):
         
         self.Rcentre = Rcentre
         self.Zcentre = Zcentre
-
+        
         # Some useful derived quantities
-        self.dR = self.Lx/(self.nx-1)
-        self.dZ = self.Lz/(self.nz-1)
-        self.Rmin = self.Rcentre - 0.5*self.Lx
-        self.Zmin = self.Zcentre - 0.5*self.Lz
+        # Note: index at the middle of the domain is (nx - 1)/2
+        #       e.g. nx=5 :  0 1 | 2 | 3 4
+        self.dR = self.Lx/(self.nx-2*MXG)
+        self.dZ = self.Lz/self.nz
+        self.Rmin = self.Rcentre - self.dR * (self.nx-1.0)/2.0
+        self.Zmin = self.Zcentre - self.dZ * (self.nz-1.0)/2.0
 
         # Generate 2D arrays
         # Using getCoordinate to ensure consistency

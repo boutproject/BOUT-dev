@@ -20,8 +20,8 @@ Ly = 10.
 Lz = 1.
 
 Bt = 1.0
-Bp = 0.0 # 0.05
-Bpprime = 0.0 #0.1
+Bp = 0.05
+Bpprime = 0.1
 
 Bpx = Bp + (x-0.5)*Lx * Bpprime  # Note: x in range [0,1]
 B = sqrt(Bpx**2 + Bt**2)
@@ -43,4 +43,5 @@ for v, dvdt, name in [ (f, dfdt, "f"), (g, dgdt, "g") ]:
     print("\n["+name+"]")
     print("solution = "+exprToStr(v))
     print("\nsource = "+exprToStr(S))
+    print("\nbndry_par_all = parallel_dirichlet("+name+":solution)")
     

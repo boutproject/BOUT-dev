@@ -22,7 +22,7 @@ import zoidberg as zb
 nx = 5 # Not changed for these tests
 
 # Resolution in y and z
-nlist = [8,16,32,64,128,256]
+nlist = [64,128] #[8,16,32,64,128,256]
 
 nproc = 4
 
@@ -45,15 +45,13 @@ for var in varlist:
     error_2[var]   = []  # The L2 error (RMS)
     error_inf[var] = []  # The maximum error
 
+yperiodic=False  # Run with periodic Y?
 
-yperiodic=True  # Run with periodic Y?
-
-    
 for n in nlist:
-
-
+    
     # Define the magnetic field using new poloidal gridding method
-    field = zb.field.Slab(Bz=0.0, Bzprime=0.0)
+    # Note that the Bz and Bzprime parameters here must be the same as in mms.py
+    field = zb.field.Slab(Bz=0.05, Bzprime=0.1)
     # Create rectangular poloidal grids
     poloidal_grid = zb.poloidal_grid.RectangularPoloidalGrid(nx,n,1.,1.)
     # Set the ylength and y locations
