@@ -65,6 +65,7 @@ The documentation is divided into the following sections:
    user_docs/output_and_post
    user_docs/idl
    user_docs/python
+   user_docs/logging
    
 .. toctree::
    :maxdepth: 2

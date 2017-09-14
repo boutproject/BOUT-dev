@@ -206,7 +206,7 @@ void Solver::add(Field3D &v, const char* name) {
   ddt(v).copyBoundary(v); // Set boundary to be the same as v
 
   if(mesh->StaggerGrids && (v.getLocation() != CELL_CENTRE)) {
-    output.write("\tVariable %s shifted to %s\n", name, strLocation(v.getLocation()));
+    output_info.write("\tVariable %s shifted to %s\n", name, strLocation(v.getLocation()));
     ddt(v).setLocation(v.getLocation()); // Make sure both at the same location
   }
 
@@ -510,22 +510,22 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   }
 
 
-  output.write("Solver running for %d outputs with output timestep of %e\n", NOUT, TIMESTEP);
+  output_progress.write("Solver running for %d outputs with output timestep of %e\n", NOUT, TIMESTEP);
   if (freqDefault > 1)
-    output.write("Solver running for %d outputs with monitor timestep of %e\n",
-                 NOUT/freqDefault, TIMESTEP*freqDefault);
+    output_progress.write("Solver running for %d outputs with monitor timestep of %e\n",
+                          NOUT/freqDefault, TIMESTEP*freqDefault);
   
   // Initialise
-  if(init(NOUT, TIMESTEP)) {
+  if (init(NOUT, TIMESTEP)) {
     throw BoutException("Failed to initialise solver-> Aborting\n");
   }
   initCalled=true;
   
   /// Run the solver
-  output.write("Running simulation\n\n");
+  output_info.write("Running simulation\n\n");
   
   time_t start_time = time((time_t*) NULL);
-  output.write("\nRun started at  : %s\n", ctime(&start_time));
+  output_progress.write("\nRun started at  : %s\n", ctime(&start_time));
   
   Timer timer("run"); // Start timer
   
@@ -554,24 +554,24 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
     status = run();
 
     time_t end_time = time((time_t*) NULL);
-    output.write("\nRun finished at  : %s\n", ctime(&end_time));
-    output.write("Run time : ");
+    output_progress.write("\nRun finished at  : %s\n", ctime(&end_time));
+    output_progress.write("Run time : ");
 
     int dt = end_time - start_time;
     int i = static_cast<int>(dt / (60. * 60.));
     if (i > 0) {
-      output.write("%d h ", i);
+      output_progress.write("%d h ", i);
       dt -= i*60*60;
     }
     i = static_cast<int>(dt / 60.);
     if (i > 0) {
-      output.write("%d m ", i);
+      output_progress.write("%d m ", i);
       dt -= i*60;
     }
-    output.write("%d s\n", dt);
-  }catch(BoutException &e) {
-    output << "Error encountered in solver run\n";
-    output << e.what() << endl;
+    output_progress.write("%d s\n", dt);
+  } catch (BoutException &e) {
+    output_error << "Error encountered in solver run\n";
+    output_error << e.what() << endl;
     throw e;
   }
 
@@ -587,10 +587,10 @@ int Solver::init(int UNUSED(nout), BoutReal UNUSED(tstep)) {
   
   TRACE("Solver::init()");
 
-  if(initialised)
+  if (initialised)
     throw BoutException("ERROR: Solver is already initialised\n");
 
-  output.write("Initialising solver\n");
+  output_progress.write("Initialising solver\n");
 
   MPI_Comm_size(BoutComm::get(), &NPES);
   MPI_Comm_rank(BoutComm::get(), &MYPE);
@@ -669,7 +669,13 @@ void Solver::removeMonitor(Monitor * f) {
   monitors.remove(f);
 }
 
+extern bool user_requested_exit;
 int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
+  bool abort;
+  MPI_Allreduce(&user_requested_exit,&abort,1,MPI_C_BOOL,MPI_LOR,MPI_COMM_WORLD);
+  if(abort){
+    NOUT=iter+1;
+  }
   if(mms) {
     // Calculate MMS errors
     calculate_mms_error(simtime);
@@ -696,12 +702,12 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
     for (auto it: monitors){
       it->cleanup();
     }
-    output.write("Monitor signalled to quit\n");
+    output_error.write("Monitor signalled to quit\n");
     throw e;
   }
 
   // Reset iteration and wall-time count
-  if ((iter%freqDefault) == 0){
+  if ((iter % freqDefault) == 0) {
     rhs_ncalls = 0;
     rhs_ncalls_i = 0;
     rhs_ncalls_e = 0;
@@ -713,6 +719,12 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
     }
   }
 
+  if (abort) {
+    // restart file should be written by physics model
+    output.write("User signalled to quit. Returning\n");
+    return 1;
+  }
+  
   return 0;
 }
 
@@ -804,13 +816,13 @@ int Solver::getLocalN() {
   // X inner
   if(mesh->firstX() && !mesh->periodicX) {
     local_N += mesh->xstart * MYSUB * (n2dbndry + ncz * n3dbndry);
-    output.write("\tBoundary region inner X\n");
+    output_info.write("\tBoundary region inner X\n");
   }
 
   // X outer
   if(mesh->lastX() && !mesh->periodicX) {
     local_N += (mesh->LocalNx - mesh->xend - 1) * MYSUB * (n2dbndry + ncz * n3dbndry);
-    output.write("\tBoundary region outer X\n");
+    output_info.write("\tBoundary region outer X\n");
   }
   
   cacheLocalN = local_N;
