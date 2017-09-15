@@ -86,7 +86,7 @@ endif
 ####################################################################
 
 # Phony targets since they are directory names
-.PHONY: $(DIRS) lib install libfast runtest
+.PHONY: $(DIRS) lib install libfast runtest manual sphinx doxygen
 
 ifneq ("$(TARGET)","libfast")
 all: $(BOUT_CONFIG_FILE) $(DIRS) $(TARGET)
@@ -350,17 +350,25 @@ clean-mms-tests:
 MANUAL_DIR=$(BOUT_TOP)/manual
 
 doxygen:
-	cd $(MANUAL_DIR)/doxygen && doxygen Doxyfile
+	$(MAKE) -C $(MANUAL_DIR) doxygen
 
-breathe-autogen: doxygen
-	breathe-apidoc -f -o $(MANUAL_DIR)/sphinx/_breathe_autogen $(MANUAL_DIR)/doxygen/bout/xml
+breathe-autogen:
+	$(MAKE) -C $(MANUAL_DIR) breathe_autogen
 
-sphinx-docs-html: breathe-autogen
-	sphinx-build -b html $(MANUAL_DIR)/sphinx/ $(MANUAL_DIR)/sphinx/_build/
+sphinx-docs-html:
+	$(MAKE) -C $(MANUAL_DIR) sphinx-html
 
-sphinx-docs-latex: breathe-autogen
-	sphinx-build -b latex $(MANUAL_DIR)/sphinx/ $(MANUAL_DIR)/sphinx/_build/
+sphinx-docs-latex:
+	$(MAKE) -C $(MANUAL_DIR) sphinx-pdf
 
+manual:
+	$(MAKE) -C $(MANUAL_DIR)
+
+manual-html:
+	$(MAKE) -C $(MANUAL_DIR) html
+
+manual-pdf:
+	$(MAKE) -C $(MANUAL_DIR) pdf
 
 ######################################################################
 # Code coverage

@@ -97,7 +97,7 @@ License and terms of use
     GNU Lesser General Public License for more details.
 
     You should have received a copy of the GNU Lesser General Public License
-    along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
+    along with BOUT++.  If not, see <https://www.gnu.org/licenses/>.
 
     A copy of the LGPL license is in COPYING.LESSER. Since this is based
     on (and refers to) the GPL, this is included in COPYING.
@@ -155,5 +155,5 @@ that you show professional courtesy when using this code:
       examples
 
 
-.. _B.Dudson et. al. Comp.Phys.Comm 2009: http://www.sciencedirect.com/science/article/B6TJ5-4VTCM95-3/2/ed200cd23916d02f86fda4ce6887d798
+.. _B.Dudson et. al. Comp.Phys.Comm 2009: https://www.sciencedirect.com/science/article/B6TJ5-4VTCM95-3/2/ed200cd23916d02f86fda4ce6887d798
 

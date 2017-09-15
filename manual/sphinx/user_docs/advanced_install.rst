@@ -21,7 +21,7 @@ widely used format. If you have multiple libraries installed then BOUT++
 can use them simultaneously, for example reading in grid files in NetCDF
 format, but writing output data in HDF5 format.
 
-.. _NetCDF-4: http://www.unidata.ucar.edu/software/netcdf/
+.. _NetCDF-4: https://www.unidata.ucar.edu/software/netcdf/
 .. _HDF5: https://www.hdfgroup.org/HDF5/
 
 To enable NetCDF support, you will need to install NetCDF version 4.0.1
@@ -103,7 +103,7 @@ SUNDIALS will allow you to select at run-time which solver to use. See
 PETSc
 -----
 
-BOUT++ can use PETSc http://www.mcs.anl.gov/petsc/ for time-integration
+BOUT++ can use PETSc https://www.mcs.anl.gov/petsc/ for time-integration
 and for solving elliptic problems, such as inverting Poisson and
 Helmholtz equations.
 

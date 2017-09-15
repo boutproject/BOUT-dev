@@ -115,14 +115,47 @@ To see some of the other command-line options try "-h":
 
 and see the section on options (:ref:`sec-options`).
 
-Analysing the output
---------------------
-
 To analyse the output of the simulation, cd into the ``data``
-subdirectory and start IDL. If you don’t have IDL, don’t panic as all
-this is also possible in Python and discussed in
-:ref:`sec-pythonroutines`. First, list the variables in one of the
-data files:
+subdirectory and start python or IDL (skip to :ref:`Using IDL <sec-intro-using-idl>` for IDL).
+
+Analysing the output Using python
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To print a list of variables in the output files, one way is to use the ``DataFile``
+class. This is a wrapper around the various NetCDF and HDF5 libraries for python:
+
+.. code-block:: pycon
+
+    >>> from boututils.datafile import DataFile
+    >>> DataFile("BOUT.dmp.0.nc").list()
+
+To collect a variable, reading in the data as a NumPy array:
+
+.. code-block:: pycon
+
+    >>> from boutdata.collect import collect
+    >>> T = collect("T")
+    >>> T.shape
+
+Note that the order of the indices is different in Python and IDL: In
+Python, 4D variables are arranged as ``[t, x, y, z]``. To show an
+animation
+
+.. code-block:: pycon
+
+    >>> from boututils.showdata import showdata
+    >>> showdata(T[:,0,:,0])
+
+The first index of the array passed to ``showdata`` is assumed to be time, amd the remaining
+indices are plotted. In this example we pass a 2D array ``[t,y]``, so ``showdata`` will animate
+a line plot.
+
+Analysing the output using IDL
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. _sec-intro-using-idl
+
+First, list the variables in one of the data files:
 
 .. code-block:: idl
 
@@ -175,30 +208,10 @@ and to make this a coloured contour plot
 
     IDL> showdata, T[*,*,0,*], /cont
 
-The equivalent commands in Python are as follows. To print a list of
-variables in a file:
+The equivalent commands in Python are as follows. 
 
-.. code-block:: pycon
-
-    >>> from boututils.datafile import DataFile
-    >>> DataFile("BOUT.dmp.0.nc").list()
-
-To collect a variable,
-
-.. code-block:: pycon
-
-    >>> from boutdata.collect import collect
-    >>> T = collect("T")
-    >>> T.shape
-
-Note that the order of the indices is different in Python and IDL: In
-Python, 4D variables are arranged as ``[t, x, y, z]``. To show an
-animation
-
-.. code-block:: pycon
-
-    >>> from boututils.showdata import showdata
-    >>> showdata(T[:,:,:,0])
+Further examples
+----------------
 
 The next example to look at is ``test-wave``, which is solving a wave
 equation using
@@ -225,6 +238,7 @@ Alternatively, one can run BOUT++ with the python wrapper
 ``bout_runners`` , as explained in section [sec:bout\_runners]. Examples
 of using ``bout_runners`` can be found in
 ``examples/bout_runners_example``.
+
 
 When things go wrong
 --------------------
