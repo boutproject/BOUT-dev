@@ -147,13 +147,13 @@ Vector3D & Vector3D::operator=(const Vector2D &rhs) {
   return *this;
 }
 
-BoutReal Vector3D::operator=(const BoutReal val)
+Vector3D & Vector3D::operator=(const BoutReal val)
 {
   x = val;
   y = val;
   z = val;
   
-  return val;
+  return *this;
 }
 
 ////////////////// ADDITION //////////////////////
@@ -534,70 +534,6 @@ const Field3D abs(const Vector3D &v) {
 // Visitor pattern support
 void Vector3D::accept(FieldVisitor &v) {
   v.accept(*this);
-}
-
-int Vector3D::getData(int jx, int jy, int jz, void *vptr) const
-{
-#ifdef CHECK
-  // check ranges
-  if((jx < 0) || (jx >= mesh->LocalNx) || (jy < 0) || (jy >= mesh->LocalNy) || (jz < 0) || (jz >= mesh->LocalNz)) {
-    throw BoutException("Vector3D: getData (%d,%d,%d) out of bounds\n", jx, jy, jz);
-  }
-#endif
-  BoutReal *ptr = (BoutReal*) vptr;
-  *ptr = x(jx,jy,jz); ptr++;
-  *ptr = y(jx,jy,jz); ptr++;
-  *ptr = z(jx,jy,jz);
-  
-  return 3*sizeof(BoutReal);
-}
-
-int Vector3D::getData(int jx, int jy, int jz, BoutReal *rptr) const
-{
-#ifdef CHECK
-  // check ranges
-  if((jx < 0) || (jx >= mesh->LocalNx) || (jy < 0) || (jy > mesh->LocalNy) || (jz < 0) || (jz >= mesh->LocalNz)) {
-    throw BoutException("Vector3D: getData (%d,%d,%d) out of bounds\n", jx, jy, jz);
-  }
-#endif
-
-  *rptr = x(jx,jy,jz); rptr++;
-  *rptr = y(jx,jy,jz); rptr++;
-  *rptr = z(jx,jy,jz);
-  
-  return 3;
-}
-
-int Vector3D::setData(int jx, int jy, int jz, void *vptr)
-{
-#ifdef CHECK
-  // check ranges
-  if((jx < 0) || (jx >= mesh->LocalNx) || (jy < 0) || (jy >= mesh->LocalNy) || (jz < 0) || (jz >= mesh->LocalNz)) {
-    throw BoutException("Vector3D: setData (%d,%d,%d) out of bounds\n", jx, jy, jz);
-  }
-#endif
-  BoutReal *rptr = (BoutReal*) vptr;
-  x(jx,jy,jz) = *rptr; rptr++;
-  y(jx,jy,jz) = *rptr; rptr++;
-  z(jx,jy,jz) = *rptr;
-
-  return 3*sizeof(BoutReal);
-}
-
-int Vector3D::setData(int jx, int jy, int jz, BoutReal *rptr)
-{
-#ifdef CHECK
-  // check ranges
-  if((jx < 0) || (jx >= mesh->LocalNx) || (jy < 0) || (jy >= mesh->LocalNy) || (jz < 0) || (jz >= mesh->LocalNz)) {
-    throw BoutException("Vector3D: setData (%d,%d,%d) out of bounds\n", jx, jy, jz);
-  }
-#endif
-
-  x(jx,jy,jz) = *rptr; rptr++;
-  y(jx,jy,jz) = *rptr; rptr++;
-  z(jx,jy,jz) = *rptr;
-  
-  return 3;
 }
 
 ///////////////////// BOUNDARY CONDITIONS //////////////////

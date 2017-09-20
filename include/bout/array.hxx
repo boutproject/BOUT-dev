@@ -2,7 +2,7 @@
  * Handle arrays of data
  * 
  * Provides an interface to create, iterate over and release
- * arrays of templated tyoes.
+ * arrays of templated types.
  *
  * Each type and array size has an object store, so when
  * arrays are released they are put into a store. Rather
@@ -46,6 +46,10 @@
  * a map, rather than being freed. 
  * If the same size arrays are used repeatedly then this
  * avoids the need to use new and delete.
+ *
+ * This behaviour can be disabled by calling the static function useStore:
+ *
+ * Array<dcomplex>::useStore(false); // Disables memory store
  * 
  */
 template<typename T>
@@ -67,6 +71,7 @@ public:
    */
   Array(int len) {
     ptr = get(len);
+#pragma omp atomic
     ptr->refs++;
   }
   
@@ -82,6 +87,7 @@ public:
    */
   Array(const Array &other) {
     ptr = other.ptr;
+#pragma omp atomic
     ptr->refs++;
   }
 
@@ -94,6 +100,7 @@ public:
 
     // Add reference
     ptr = other.ptr;
+#pragma omp atomic
     ptr->refs++;
 
     // Release the old data
@@ -101,8 +108,7 @@ public:
     
     return *this;
   }
-  
-#if __cplusplus >= 201103L
+
   /*!
    * Move constructor
    */
@@ -124,8 +130,26 @@ public:
     
     return *this;
   }
-#endif
 
+  /*!
+   * Holds a static variable which controls whether
+   * memory blocks (ArrayData) are put into a store
+   * or new/deleted each time. 
+   *
+   * The variable is initialised to true on first use,
+   * but can be set to false by passing "false" as input.
+   * Once set to false it can't be changed back to true.
+   */
+  static bool useStore( bool keep_using = true ) {
+    static bool value = true;
+    if (keep_using) {
+      return value; 
+    }
+    // Change to false
+    value = false;
+    return value;
+  }
+  
   /*!
    * Release data. After this the Array is empty and any data access
    * will be invalid
@@ -136,20 +160,18 @@ public:
   }
 
   /*!
-   * Delete all data from the store
+   * Delete all data from the store and disable the store
+   * 
+   * Note: After this is called the store cannot be re-enabled
    */
   static void cleanup() {
-    for(auto &p : store) {
-      auto &v = p.second;
-      for(ArrayData* a : v) {
-        delete a;
-      }
-      v.clear();
-    }
-    // Don't use the store anymore
-    use_store = false;
+    // Clean the store, deleting data
+    store(true);
+    // Don't use the store anymore. This is so that array releases
+    // after cleanup() get deleted rather than put into the store
+    useStore(false);
   }
-  
+
   /*!
    * Returns true if the Array is empty
    */
@@ -236,6 +258,19 @@ public:
   const T& operator[](int ind) const {
     return ptr->data[ind];
   }
+
+  /*!
+   * Exchange contents with another Array of the same type.
+   * Sizes of the arrays may differ.
+   *
+   * This is called by the template function swap(Array&, Array&)
+   */
+  void swap(Array<T> &other) {
+    ArrayData* tmp_ptr = ptr;
+    ptr = other.ptr;
+    other.ptr = tmp_ptr;
+  }
+  
 private:
 
   /*!
@@ -269,40 +304,72 @@ private:
 
   /*!
    * This maps from array size (int) to vectors of pointers to ArrayData objects
-   * For each data type T, an instance should be declared once (and once only)
+   *
+   * By putting the static store inside a function it is initialised on first use,
+   * and doesn't need to be separately declared for each type T
+   *
+   * Inputs
+   * ------
+   *
+   * @param[in] cleanup   If set to true, deletes all ArrayData and clears the store
    */
-  static std::map< int, std::vector<ArrayData* > > store;
-  static bool use_store; ///< Should the store be used?
+  static std::map< int, std::vector<ArrayData* > > & store(bool cleanup=false) {
+    static std::map< int, std::vector<ArrayData* > > store = {};
+    
+    if (!cleanup) {
+      return store;
+    }
+    
+    // Clean by deleting all data
+    for (auto &p : store) {
+      auto &v = p.second;
+      for (ArrayData* a : v) {
+        delete a;
+      }
+      v.clear();
+    }
+    store.clear();
+    
+    return store;
+  }
   
   /*!
    * Returns a pointer to an ArrayData object with no
    * references. This is either from the store, or newly allocated
    */
   ArrayData* get(int len) {
-    std::vector<ArrayData* >& st = store[len];
-    if(st.empty()) {
-      return new ArrayData(len);
+    ArrayData *p;
+#pragma omp critical (store)
+    {
+      std::vector<ArrayData* >& st = store()[len];
+      if (!st.empty()) {
+        p = st.back();
+        st.pop_back();
+      } else {
+        p = new ArrayData(len);
+      }
     }
-    ArrayData *p = st.back();
-    st.pop_back();
     return p;
   }
-
+  
   /*!
    * Release an ArrayData object, reducing its reference count by one. 
    * If no more references, then put back into the store.
    */
   void release(ArrayData *d) {
-    if(!d)
+    if (!d)
       return;
     
     // Reduce reference count, and if zero return to store
-    if(!--d->refs) {
-      if(use_store) {
-        // Put back into store
-        store[d->len].push_back(d);
-      }else {
-        delete d;
+#pragma omp critical (store)
+    {
+      if (!--d->refs) {
+        if (useStore()) {
+          // Put back into store
+          store()[d->len].push_back(d);
+        } else {
+          delete d;
+        }
       }
     }
   }
@@ -317,6 +384,15 @@ Array<T>& copy(const Array<T> &other) {
   Array<T> a(other);
   a.ensureUnique();
   return a;
+}
+
+/*!
+ * Exchange contents of two Arrays of the same type.
+ * Sizes of the arrays may differ.
+ */
+template<typename T>
+void swap(Array<T> &a, Array<T> &b) {
+  a.swap(b);
 }
 
 #endif // __ARRAY_H__

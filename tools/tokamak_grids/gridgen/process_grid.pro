@@ -667,8 +667,12 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
 
   Rxy = mesh.Rxy
   Zxy = mesh.Zxy
-  psixy = mesh.psixy*mesh.fnorm + mesh.faxis ; Non-normalised psi
 
+  ; Note: The mesh psi normalisation uses the separatrix as psi_n = 1
+  ; but the input EQDSK file may have a different normalisation
+  psixy = mesh.psixy*mesh.fnorm + mesh.faxis                              ; Non-normalised psi
+  psixy_eq = (psixy - rz_grid.simagx) / (rz_grid.sibdry - rz_grid.simagx) ; Normalised using EQDSK file conventions
+  
   pressure = FLTARR(nx, ny)
   
   ; Use splines to interpolate pressure profile
@@ -676,9 +680,10 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   REPEAT BEGIN
     ; Get the next domain
     yi = gen_surface(period=period, last=last, xi=xi)
-    IF period THEN BEGIN
+    IF period AND (psixy_eq[xi,yi[0]] GE 0) AND (psixy_eq[xi,yi[0]] LE 1) THEN BEGIN
       ; Pressure only given on core surfaces
-      pressure[xi,yi] = SPLINE(rz_grid.npsigrid, rz_grid.pres, mesh.psixy[xi,yi[0]], /double)
+      ; Since psi normalised differently, it might go out of range 
+      pressure[xi,yi] = SPLINE(rz_grid.npsigrid, rz_grid.pres, psixy_eq[xi,yi[0]], /double)
     ENDIF ELSE BEGIN
       pressure[xi,yi] = rz_grid.pres[N_ELEMENTS(rz_grid.pres)-1]
     ENDELSE
@@ -796,11 +801,11 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     ; Get the next domain
     yi = gen_surface(period=period, last=last, xi=xi)
 
-    IF period THEN BEGIN
+    IF period AND (psixy_eq[xi,yi[0]] GE 0) AND (psixy_eq[xi,yi[0]] LE 1) THEN BEGIN
       ; In the core
       ;fpol = INTERPOL(rz_grid.fpol, rz_grid.npsigrid, mesh.psixy[xi,yi], /spline)
-      fpol = SPLINE(rz_grid.npsigrid, rz_grid.fpol, mesh.psixy[xi,yi[0]], /double)
-      fprime[xi,yi] = SPLINE(rz_grid.npsigrid, fp, mesh.psixy[xi,yi[0]], /double)
+      fpol = SPLINE(rz_grid.npsigrid, rz_grid.fpol, psixy_eq[xi,yi[0]], /double)
+      fprime[xi,yi] = SPLINE(rz_grid.npsigrid, fp, psixy_eq[xi,yi[0]], /double)
     ENDIF ELSE BEGIN
       ; Outside core. Could be PF or SOL
       fpol = rz_grid.fpol[N_ELEMENTS(rz_grid.fpol)-1]

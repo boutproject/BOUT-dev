@@ -32,7 +32,7 @@
 #
 
 AC_PREREQ(2.59)
-AC_INIT(BOUT++, 4.0.1, bd512@york.ac.uk)
+AC_INIT(BOUT++, 4.1.0, bd512@york.ac.uk)
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -46,8 +46,6 @@ AC_ARG_WITH(cvode,        [AS_HELP_STRING([--with-cvode],
         [Use the SUNDIALS CVODE solver])],,[])
 AC_ARG_WITH(sundials,     [AS_HELP_STRING([--with-sundials],
         [Use CVODE and IDA])],,[])
-AC_ARG_WITH(facets,       [AS_HELP_STRING([--with-facets],
-        [Build the interface to FACETS])],,[])
 AC_ARG_WITH(fftw,         [AS_HELP_STRING([--with-fftw],
         [Set directory of FFTW3 library])],,[])
 AC_ARG_WITH(lapack,       [AS_HELP_STRING([--with-lapack],
@@ -58,12 +56,12 @@ AC_ARG_WITH(slepc,        [AS_HELP_STRING([--with-slepc],
         [Enable SLEPc interface])],,[])
 AC_ARG_WITH(pvode,        [AS_HELP_STRING([--with-pvode],
         [Build and enable PVODE 98 (DEFAULT)])],,[])
-AC_ARG_WITH(hypre,        [AS_HELP_STRING([--with-hypre],
-        [Link to the Hypre library])],,[])
 AC_ARG_WITH(mumps,        [AS_HELP_STRING([--with-mumps],
         [Link with MUMPS library for direct matrix inversions])],,[])
 AC_ARG_WITH(arkode,       [AS_HELP_STRING([--with-arkode],
         [Use the SUNDIALS ARKODE solver])],,[])
+AC_ARG_WITH(scorep,       [AS_HELP_STRING([--with-scorep],
+        [Enable support for scorep based instrumentation])],,[])
 
 dnl --with-hdf5 flags are set in AX_LIB_{PARALLEL}HDF5
 
@@ -71,6 +69,8 @@ AC_ARG_ENABLE(checks,       [AS_HELP_STRING([--enable-checks=no/1/2/3],
         [Set run-time checking level])],,[])
 AC_ARG_ENABLE(signal,       [AS_HELP_STRING([--disable-signal],
         [Disable SEGFAULT handling])],,[])
+AC_ARG_ENABLE(color,        [AS_HELP_STRING([--disable-color],
+        [Disable -c option to color output])],,[])
 AC_ARG_ENABLE(track,        [AS_HELP_STRING([--enable-track],
         [Enable variable tracking])],,[])
 AC_ARG_ENABLE(debug,        [AS_HELP_STRING([--enable-debug],
@@ -100,7 +100,6 @@ AC_SUBST(EXTRA_LIBS)
 
 # Adding variables for additional sources
 AC_SUBST(PRECON_SOURCE)
-AC_SUBST(FACETS_SOURCE)
 
 # We're using C++
 AC_LANG(C++)
@@ -118,6 +117,11 @@ AX_PROG_CXX_MPI([], [], [
 AC_PROG_MKDIR_P
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
+AC_PROG_INSTALL
+
+# Set MAKE to gmake if possible, otherwise make
+AC_CHECK_PROG(MAKE, gmake, gmake, make)
+
 AC_PROG_RANLIB
 
 AC_SUBST(ARFLAGS)
@@ -160,6 +164,27 @@ AC_FUNC_VPRINTF
 # Check for OpenMP support
 : ${enable_openmp=no}  # Disable by default
 AC_OPENMP
+
+#############################################################
+# Code coverage using gcov
+#
+# Mutally exclusive with optimisation, therefore needs to come first
+# so we can turn off optimisation if coverage is enabled
+#############################################################
+
+AX_CODE_COVERAGE()
+AS_IF([test "x$enable_code_coverage" = "xyes"],
+[
+    AS_IF([test "x$enable_optimize"], [
+        AC_MSG_WARN([Code coverage clashes with optimisations, disabling optimisations])
+        enable_optimize="no"
+    ])
+    COVERAGE_FLAGS="--coverage --no-inline"
+    LDFLAGS="$LDFLAGS --coverage"
+], [
+    COVERAGE_FLAGS=
+])
+AC_SUBST([COVERAGE_FLAGS])
 
 #############################################################
 # General Options
@@ -223,7 +248,7 @@ then
 fi
 
 CHECK_LEVEL="0"
-if test "enable_checks" != "no"
+if test ".$enable_checks" != ".no"
 then
   echo "Run-time checking enabled"
   if test "$enable_checks" = "1"
@@ -251,6 +276,14 @@ then
   CXXFLAGS="$CXXFLAGS -DSIGHANDLE"
 else
   echo "Segmentation fault handling disabled"
+fi
+
+if test "$enable_color" != "no"
+then
+  echo "Output coloring enabled"
+  CXXFLAGS="$CXXFLAGS -DLOGCOLOR"
+else
+  echo "Output coloring disabled"
 fi
 
 if test ."$enable_track" == ."yes"
@@ -557,30 +590,6 @@ then
 fi
 
 #############################################################
-# FACETS
-#############################################################
-
-if test "x$with_facets" != "x"
-then
-    FACETS="$with_facets"
-      AC_CHECK_FILE($FACETS/include/FacetsIfc.h, FIFCPATH=$FACETS,
-      AC_CHECK_FILE(/usr/include/FacetsIfc.h, FIFCPATH=/usr,
-      AC_CHECK_FILE(/usr/local/include/FacetsIfc.h, FIFCPATH=/usr/local,
-      AC_CHECK_FILE(/opt/local/include/FacetsIfc.h, FIFCPATH=/opt/local,
-      AC_CHECK_FILE($HOME/local/include/FacetsIfc.h, FIFCPATH=$HOME/local,
-      AC_CHECK_FILE($HOME/software/facetsifc/include/FacetsIfc.h, FIFCPATH=$HOME/software/facetsifc,
-      ))))))
-  if test "x$FIFCPATH" != "x"
-  then
-    echo "Enabling FACETS interface"
-    EXTRA_INCS="$EXTRA_INCS -I$FIFCPATH/include"
-    FACETS_SOURCE="$FACETS_SOURCE bout_facets.cxx"
-  else
-    AC_MSG_ERROR([*** --with-facets was specified but could not find the FACETS interface])
-  fi
-fi
-
-#############################################################
 # PETSc library
 #############################################################
 
@@ -866,8 +875,10 @@ then
     ] )
     AC_CHECK_FILES( $with_ida/lib/libsundials_nvecparallel.a $with_ida/lib/libsundials_ida.a, IDALIBSLIB='lib',
       AC_CHECK_FILES( $with_ida/lib64/libsundials_nvecparallel.a $with_ida/lib64/libsundials_ida.a, IDALIBSLIB='lib64',
+        AC_CHECK_FILES( $with_ida/lib/libsundials_nvecparallel.so $with_ida/lib/libsundials_ida.so, IDALIBSLIB='lib',
+          AC_CHECK_FILES( $with_ida/lib64/libsundials_nvecparallel.so $with_ida/lib64/libsundials_ida.so, IDALIBSLIB='lib64',
         IDALIBS=""
-    ) )
+    ) ) ) )
     if test "$IDALIBS" != ""
     then
     IDAINCS="-I$IDALIBS/include"
@@ -894,10 +905,12 @@ then
     AC_CHECK_FILES( $IDALIBS/include/ida/ida.h $IDALIBS/include/ida/ida_spgmr.h $IDALIBS/include/ida/ida_bbdpre.h $IDALIBS/include/nvector/nvector_parallel.h $IDALIBS/include/sundials/sundials_types.h , , [
           IDALIBS=""
         ] )
-        AC_CHECK_FILES( $IDALIBS/lib/libsundials_nvecparallel.a $IDALIBS/lib/libsundials_ida.a, IDALIBSLIB='lib',
-          AC_CHECK_FILES( $IDALIBS/lib64/libsundials_nvecparallel.a $IDALIBS/lib64/libsundials_ida.a, IDALIBSLIB='lib64',
-           IDALIBS=""
-    ) )
+    AC_CHECK_FILES( $IDALIBS/lib/libsundials_nvecparallel.a $IDALIBS/lib/libsundials_ida.a, IDALIBSLIB='lib',
+      AC_CHECK_FILES( $IDALIBS/lib64/libsundials_nvecparallel.a $IDALIBS/lib64/libsundials_ida.a, IDALIBSLIB='lib64',
+        AC_CHECK_FILES( $IDALIBS/lib/libsundials_nvecparallel.so $IDALIBS/lib/libsundials_ida.so, IDALIBSLIB='lib',
+          AC_CHECK_FILES( $IDALIBS/lib64/libsundials_nvecparallel.so $IDALIBS/lib64/libsundials_ida.so, IDALIBSLIB='lib64',
+            IDALIBS=""
+    ) ) ) )
     fi
 
     if test "$IDALIBS" != ""
@@ -944,9 +957,11 @@ then
       CVODELIBS=""
     ] )
     AC_CHECK_FILES( $with_cvode/lib/libsundials_cvode.a $with_cvode/lib/libsundials_nvecparallel.a, CVODELIBSLIB='lib',
-      AC_CHECK_FILES( $with_cvode/lib64/libsundials_cvode.a $with_cvode/lib64/libsundials_nvecparallel.a, CVODELIBSLIB='lib64',  [
-      CVODELIBS=""
-    ]) )
+      AC_CHECK_FILES( $with_cvode/lib64/libsundials_cvode.a $with_cvode/lib64/libsundials_nvecparallel.a, CVODELIBSLIB='lib64',
+        AC_CHECK_FILES( $with_cvode/lib/libsundials_cvode.so $with_cvode/lib/libsundials_nvecparallel.so, CVODELIBSLIB='lib',
+          AC_CHECK_FILES( $with_cvode/lib64/libsundials_cvode.so $with_cvode/lib64/libsundials_nvecparallel.so, CVODELIBSLIB='lib64', [
+          CVODELIBS=""
+        ]) ) ) )
 
 
     if test "$CVODELIBS" != ""
@@ -976,9 +991,11 @@ then
       CVODELIBS=""
     ])
         AC_CHECK_FILES( $CVODELIBS/lib/libsundials_cvode.a $CVODELIBS/lib/libsundials_nvecparallel.a, CVODELIBSLIB='lib',
-          AC_CHECK_FILES( $CVODELIBS/lib64/libsundials_cvode.a $CVODELIBS/lib64/libsundials_nvecparallel.a, CVODELIBSLIB='lib64',  [
+          AC_CHECK_FILES( $CVODELIBS/lib64/libsundials_cvode.a $CVODELIBS/lib64/libsundials_nvecparallel.a, CVODELIBSLIB='lib64',
+            AC_CHECK_FILES( $CVODELIBS/lib/libsundials_cvode.so $CVODELIBS/lib/libsundials_nvecparallel.so, CVODELIBSLIB='lib',
+          AC_CHECK_FILES( $CVODELIBS/lib64/libsundials_cvode.so $CVODELIBS/lib64/libsundials_nvecparallel.so, CVODELIBSLIB='lib64', [
             CVODELIBS=""
-          ]) )
+          ]) ) ) )
     fi
     if test "$CVODELIBS" != ""
     then
@@ -1028,9 +1045,12 @@ then
       ARKODELIBS=""
     ] )
     AC_CHECK_FILES( $ARKODELIBS/lib/libsundials_arkode.a $ARKODELIBS/lib/libsundials_nvecparallel.a, ARKODELIBSLIB='lib',
-      AC_CHECK_FILES( $ARKODELIBS/lib64/libsundials_arkode.a $ARKODELIBS/lib64/libsundials_nvecparallel.a, ARKODELIBSLIB='lib64',  [
-        ARKODELIBS=""
-      ]) )
+      AC_CHECK_FILES( $ARKODELIBS/lib64/libsundials_arkode.a $ARKODELIBS/lib64/libsundials_nvecparallel.a, ARKODELIBSLIB='lib64',
+        AC_CHECK_FILES( $ARKODELIBS/lib/libsundials_arkode.so $ARKODELIBS/lib/libsundials_nvecparallel.so, ARKODELIBSLIB='lib',
+          AC_CHECK_FILES( $ARKODELIBS/lib64/libsundials_arkode.so $ARKODELIBS/lib64/libsundials_nvecparallel.so, ARKODELIBSLIB='lib64',
+          [
+            ARKODELIBS=""
+      ]) ) ) )
 
     if test "$ARKODELIBS" != ""
     then
@@ -1059,9 +1079,12 @@ then
           ARKODELIBS=""
         ])
         AC_CHECK_FILES( $ARKODELIBS/lib/libsundials_arkode.a $ARKODELIBS/lib/libsundials_nvecparallel.a, ARKODELIBSLIB='lib',
-          AC_CHECK_FILES( $ARKODELIBS/lib64/libsundials_arkode.a $ARKODELIBS/lib64/libsundials_nvecparallel.a, ARKODELIBSLIB='lib64',  [
-            ARKODELIBS=""
-          ]) )
+          AC_CHECK_FILES( $ARKODELIBS/lib64/libsundials_arkode.a $ARKODELIBS/lib64/libsundials_nvecparallel.a, ARKODELIBSLIB='lib64',
+            AC_CHECK_FILES( $ARKODELIBS/lib/libsundials_arkode.so $ARKODELIBS/lib/libsundials_nvecparallel.so, ARKODELIBSLIB='lib',
+              AC_CHECK_FILES( $ARKODELIBS/lib64/libsundials_arkode.so $ARKODELIBS/lib64/libsundials_nvecparallel.so, ARKODELIBSLIB='lib64',
+              [
+                ARKODELIBS=""
+          ]) ) ) )
     fi
 
     if test "$ARKODELIBS" != ""
@@ -1084,65 +1107,6 @@ then
 
 
   fi
-fi
-
-#############################################################
-# Hypre
-#############################################################
-
-if test "$with_hypre" != "no"
-then
-  # Try to find a valid Hypre installation
-
-  HYPREPATH=""
-  if test "$with_hypre" != "yes"
-  then
-    # Path specified. Check that needed files exist
-    HYPREPATH=$with_hypre
-    echo "Looking for HYPRE in $HYPREPATH"
-    AC_CHECK_FILES( $HYPREPATH/include/HYPRE.h ,, [
-      echo " -> Given path not correct. Finding..."
-      HYPREPATH=""
-    ] )
-    AC_CHECK_FILES( $HYPREPATH/lib/libHYPRE.a ,   HYPREPATHLIB='lib',
-    AC_CHECK_FILES( $HYPREPATH/lib64/libHYPRE.a , HYPREPATHLIB='lib64', [
-      echo " -> Given path not correct. Finding..."
-      HYPREPATH=""
-    ] ))
-  fi
-
-  if test "$HYPREPATH" = ""
-  then
-    # try some known paths
-    AC_CHECK_FILE(/usr/include/HYPRE.h, HYPREPATH=/usr/,
-    AC_CHECK_FILE(/usr/local/include/HYPRE.h, HYPREPATH=/usr/local/,
-    AC_CHECK_FILE(/opt/local/include/HYPRE.h, HYPREPATH=/opt/local/,
-    AC_CHECK_FILE($HOME/local/include/HYPRE.h, HYPREPATH=$HOME/local,
-    AC_CHECK_FILE($HOME/include/HYPRE.h, HYPREPATH=$HOME,
-    )))))
-
-    if test "$HYPREPATH" = ""
-    then
-      # Check for the other files
-      AC_CHECK_FILES( $HYPREPATH/lib/libHYPRE.a , HYPREPATHLIB='lib',
-        AC_CHECK_FILES( $HYPREPATH/lib64/libHYPRE.a , HYPREPATHLIB='lib64', [
-          HYPREPATH=""
-        ] ))
-    fi
-  fi
-
-  if test "$HYPREPATH" != ""
-  then
-    echo "Support for Hypre enabled"
-    EXTRA_INCS="$EXTRA_INCS -I$HYPREPATH/include"
-    EXTRA_LIBS="$EXTRA_LIBS -L$HYPREPATH/$HYPREPATHLIB -lHYPRE"
-
-    CFLAGS="$CFLAGS -DBOUT_HAS_HYPRE"
-    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_HYPRE"
-  else
-    echo "Support for Hypre disabled"
-  fi
-  echo
 fi
 
 
@@ -1180,6 +1144,53 @@ extern int arkode_bbd_rhs(ARKODEINT Nlocal,
       ], [ARKBBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, arkode_bbd_rhs, nullptr);])
 ], [])
 
+
+#############################################################
+# Scorep setup
+#############################################################
+
+HAS_SCOREP="no"
+AS_IF([test "$with_scorep" != "no"], [
+  AC_MSG_NOTICE(["Searching for Scorep executable"])
+
+  AS_IF([test "$with_scorep" != ""], [
+    # Given a path to the library
+    AC_CHECK_FILES($with_scorep/scorep, SCOREPPATH=$with_scorep,)
+    AS_IF([test "$SCOREPPATH" == ""],[
+      AC_MSG_NOTICE(["scorep not found in given directory"])
+    ],[])
+  ], 
+  [])
+
+  # Find the scorep binary
+  AS_IF([test "$SCOREPPATH" == ""], [
+    path=`which scorep`
+    AS_IF([test "$path" != ""], [
+      path=`dirname $path`
+      path=$path/..
+      AC_CHECK_FILES($path/bin/scorep , SCOREPPATH=$path,)
+      ], [])
+  ],
+  [])
+
+
+  AS_IF([test "$SCOREPPATH" == ""], [
+      AC_MSG_NOTICE(["SCOREP support disabled"])
+  ],[
+      # Set a compile-time flag
+      CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SCOREP"
+      MPICXX="scorep --user --nocompiler $MPICXX"
+      BOUT_CHECK_PRETTYFUNCTION
+      HAS_SCOREP="yes"
+      AC_MSG_NOTICE(["Scorep support enabled"])
+  ])
+
+  ],[
+  AC_MSG_NOTICE([Scorep support disabled])
+])
+
+echo ""
+
 #############################################################
 # Download + Build PVODE '98
 #############################################################
@@ -1194,16 +1205,16 @@ then
 
    PVODE_FLAGS="$CXXFLAGS $OPENMP_CXXFLAGS $CXX11_FLAGS"
    # Clean PVODE
-   CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-   CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+   CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+   CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
    #make -C externalpackages/PVODE/ clean
 
     echo "* Building PVODE" | tee -a config-build.log
     echo "*************************************************************" >> config-build.log
 
-    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" make -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" make -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
     if [[ -f externalpackages/PVODE/lib/libpvode.a ]]
     then
@@ -1221,7 +1232,7 @@ then
   AS_MKDIR_P(include/pvode)
   cp externalpackages/PVODE/precon/pvbbdpre.h externalpackages/PVODE/include/*.h include/pvode
   cp externalpackages/PVODE/lib/*.a lib/
-  EXTRA_LIBS="$EXTRA_LIBS -L\$(BOUT_TOP)/lib -lpvode -lpvpre"
+  EXTRA_LIBS="$EXTRA_LIBS -L\$(BOUT_LIB_PATH) -lpvode -lpvpre"
   CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PVODE"
   HAS_PVODE="yes"
 fi
@@ -1251,12 +1262,6 @@ EXTRA_INCS="${EXTRA_INCS} ${CPPFLAGS}"
 PREFIX=$PWD
 IDLCONFIGPATH=$PWD/tools/idllib
 PYTHONCONFIGPATH=$PWD/tools/pylib
-
-HAS_FACETS="yes"
-if test "$FACETS_SOURCE" = ""
-then
-  HAS_FACETS="no"
-fi
 
 HAS_IDA="yes"
 if test "$IDALIBS" = ""
@@ -1288,12 +1293,6 @@ then
   HAS_PNETCDF="no"
 fi
 
-HAS_HYPRE="yes"
-if test "$HYPREPATH" = ""
-then
-  HAS_HYPRE="no"
-fi
-
 HAS_MUMPS="yes"
 if test "$MUMPS" = ""
 then
@@ -1320,8 +1319,6 @@ echo
 echo "Configuration summary"  | tee -a config-build.log
 echo
 
-echo "  FACETS support: $HAS_FACETS"   | tee -a config-build.log
-
 if test "$PETSC" = ""
 then
   echo "  PETSc support: no" | tee -a config-build.log
@@ -1344,9 +1341,9 @@ echo "  Parallel-NetCDF support: $HAS_PNETCDF" | tee -a config-build.log
 
 echo "  HDF5 support: $HAS_HDF5 (parallel: $HAS_PHDF5)" | tee -a config-build.log
 
-echo "  Hypre support: $HAS_HYPRE" | tee -a config-build.log
-
 echo "  MUMPS support: $HAS_MUMPS" | tee -a config-build.log
+
+echo "  Scorep support: $HAS_SCOREP" | tee -a config-build.log
 
 echo ""
 echo
@@ -1357,7 +1354,7 @@ echo
 echo "Make sure that the tools/idllib directory is in your IDL_PATH"
 echo "e.g. by adding to your ~/.bashrc file"
 echo
-echo "    export IDL_PATH=$PWD/tools/idllib:\$IDL_PATH"
+echo "    export IDL_PATH=+$PWD/tools/idllib:'<IDL_DEFAULT>':\$IDL_PATH"
 echo
 echo "=== Python ==="
 echo
@@ -1371,6 +1368,8 @@ echo
 echo "Add the following to ~/.octaverc"
 echo "   addpath('$PWD/tools/octave')"
 echo
+echo "*** Now run '$MAKE' to compile BOUT++ ***"
+echo
 
 # Only make.config is altered by configure
 AC_OUTPUT(make.config)
@@ -1382,8 +1381,8 @@ AC_OUTPUT(make.config)
 # as PETSc
 #############################################################
 
-CONFIG_CFLAGS=`make cflags -f output.make`
-CONFIG_LDFLAGS=`make ldflags -f output.make`
+CONFIG_CFLAGS=`$MAKE cflags -f output.make`
+CONFIG_LDFLAGS=`$MAKE ldflags -f output.make`
 
 #############################################################
 # Write configuration to bout-config
@@ -1391,6 +1390,14 @@ CONFIG_LDFLAGS=`make ldflags -f output.make`
 
 AC_SUBST(CONFIG_CFLAGS)
 AC_SUBST(CONFIG_LDFLAGS)
+
+# Set path to lib and include here.
+# If make install is run then that replaces these paths
+BOUT_LIB_PATH=$PWD/lib
+BOUT_INCLUDE_PATH=$PWD/include
+AC_SUBST(BOUT_LIB_PATH)
+AC_SUBST(BOUT_INCLUDE_PATH)
+
 
 AC_SUBST(PREFIX)
 AC_SUBST(IDLCONFIGPATH)
@@ -1407,7 +1414,6 @@ AC_SUBST(HAS_ARKODE)
 AC_SUBST(HAS_NETCDF)
 AC_SUBST(HAS_PNETCDF)
 AC_SUBST(HAS_HDF5)
-AC_SUBST(HAS_HYPRE)
 AC_SUBST(HAS_MUMPS)
 AC_SUBST(HAS_LAPACK)
 AC_SUBST(HAS_PETSC)

@@ -1,11 +1,9 @@
 *.dmp.*
 *.log.*
 *.restart.*
-
+BOUT.settings
 gas_compress
-2fluid
 mhd
 ue_bmark
 lapd_drift
-test_io
 jorek_compare

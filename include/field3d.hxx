@@ -175,12 +175,17 @@ class Field3D : public Field, public FieldData {
    * fields may be created before the mesh is.
    */
   Field3D(Mesh *msh = nullptr);
-  
-  /*! 
+
+  /*!
    * Copy constructor
    */
   Field3D(const Field3D& f);
-  
+
+  /*!
+   * Move constructor
+   */
+  Field3D(Field3D&& f) = default;
+
   /// Constructor from 2D field
   Field3D(const Field2D& f);
   /// Constructor from value
@@ -208,6 +213,19 @@ class Field3D : public Field, public FieldData {
    * allocated. Subsequent calls return the same field
    */
   Field3D* timeDeriv();
+
+  /*!
+   * Return the number of nx points
+   */
+  int getNx() const override {return nx;};
+  /*!
+   * Return the number of ny points
+   */
+  int getNy() const override {return ny;};
+  /*!
+   * Return the number of nz points
+   */
+  int getNz() const override {return nz;};
 
   /*!
    * Ensure that this field has separate fields
@@ -253,8 +271,8 @@ class Field3D : public Field, public FieldData {
   const Field3D& ynext(int dir) const;
 
   // Staggered grids
-  void setLocation(CELL_LOC loc); ///< Set variable location
-  CELL_LOC getLocation() const; ///< Variable location
+  void setLocation(CELL_LOC loc) override; ///< Set variable location
+  CELL_LOC getLocation() const override; ///< Variable location
   
   /////////////////////////////////////////////////////////
   // Data access
@@ -312,7 +330,7 @@ class Field3D : public Field, public FieldData {
   BoutReal& operator[](const Indices &i) {
     return operator()(i.x, i.y, i.z);
   }
-  const BoutReal& operator[](const Indices &i) const {
+  const BoutReal& operator[](const Indices &i) const override {
     return operator()(i.x, i.y, i.z);
   }
   
@@ -396,15 +414,18 @@ class Field3D : public Field, public FieldData {
   /////////////////////////////////////////////////////////
   // Operators
   
-  const Field3D operator+() {return *this;}
+  const Field3D operator+() const {return *this;}
   
   /// Assignment operators
   ///@{
   Field3D & operator=(const Field3D &rhs);
+  Field3D & operator=(Field3D &&rhs) = default;
   Field3D & operator=(const Field2D &rhs);
-  Field3D & operator=(const FieldPerp &rhs);
-  const bvalue & operator=(const bvalue &val);
-  BoutReal operator=(BoutReal val);
+  /// return void, as only part initialised
+  void      operator=(const FieldPerp &rhs);
+  /// return void, as only part initialised
+  void      operator=(const bvalue &val);
+  Field3D & operator=(BoutReal val);
   ///@}
 
   /// Addition operators
@@ -436,44 +457,35 @@ class Field3D : public Field, public FieldData {
   ///@}
 
   // Stencils for differencing
-  void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
-  void setXStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
-  void setXStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
-  void setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
-  void setYStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
-  void setYStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
-  void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
+  void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const override;
+  void setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const override;
+  void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const override;
   
   // FieldData virtual functions
   
-  bool isReal() const   { return true; }         // Consists of BoutReal values
-  bool is3D() const     { return true; }         // Field is 3D
-  int  byteSize() const { return sizeof(BoutReal); } // Just one BoutReal
-  int  BoutRealSize() const { return 1; }
-
-  DEPRECATED(int getData(int x, int y, int z, void *vptr) const);
-  DEPRECATED(int getData(int x, int y, int z, BoutReal *rptr) const);
-  DEPRECATED(int setData(int x, int y, int z, void *vptr));
-  DEPRECATED(int setData(int x, int y, int z, BoutReal *rptr));
+  bool isReal() const override   { return true; }         // Consists of BoutReal values
+  bool is3D() const override     { return true; }         // Field is 3D
+  int  byteSize() const override { return sizeof(BoutReal); } // Just one BoutReal
+  int  BoutRealSize() const override { return 1; }
 
   /// Visitor pattern support
   void accept(FieldVisitor &v) override { v.accept(*this); }
   
-#ifdef CHECK
-  void doneComms() { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
+#if CHECK > 0
+  void doneComms() override { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
 #else
-  void doneComms() {}
+  void doneComms() override {}
 #endif
 
   friend class Vector3D;
 
   DEPRECATED(void setBackground(const Field2D &f2d)); ///< Boundary is applied to the total of this and f2d
-  void applyBoundary(bool init=false);
+  void applyBoundary(bool init=false) override;
   void applyBoundary(BoutReal t);
   void applyBoundary(const string &condition);
   void applyBoundary(const char* condition) { applyBoundary(string(condition)); }
   void applyBoundary(const string &region, const string &condition);
-  void applyTDerivBoundary();
+  void applyTDerivBoundary() override;
   void setBoundaryTo(const Field3D &f3d); ///< Copy the boundary region
 
   void applyParallelBoundary();
@@ -487,7 +499,6 @@ private:
   /// Boundary - add a 2D field
   const Field2D *background;
 
-  Mesh *fieldmesh; ///< The mesh over which the field is defined
   int nx, ny, nz;  ///< Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
   
   /// Internal data array. Handles allocation/freeing of memory
@@ -572,7 +583,7 @@ BoutReal max(const Field3D &f, bool allpe=false);
 Field3D pow(const Field3D &lhs, const Field3D &rhs);
 Field3D pow(const Field3D &lhs, const Field2D &rhs);
 Field3D pow(const Field3D &lhs, const FieldPerp &rhs);
-Field3D pow(const Field3D &f, BoutReal rhs);
+Field3D pow(const Field3D &lhs, BoutReal rhs);
 Field3D pow(BoutReal lhs, const Field3D &rhs);
 
 /*!
@@ -670,10 +681,10 @@ const Field3D tanh(const Field3D &f);
 bool finite(const Field3D &var);
 
 
-#ifdef CHECK
+#if CHECK > 0
 void checkData(const Field3D &f); ///< Checks if the data is valid.
 #else
-inline void checkData(const Field3D &f){;}; ///< Checks if the data is valid.
+inline void checkData(const Field3D &UNUSED(f)){;}; ///< Checks if the data is valid.
 #endif
  
 /*!

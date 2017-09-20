@@ -1,18 +1,155 @@
 .. _sec-equations:
 
-Fluid equations
-===============
+
+BOUT++ physics models
+=====================
 
 Once you have tried some example codes, and generally got the hang of
 running BOUT++ and analysing the results, there will probably come a
 time when you want to change the equations being solved. This section
-uses the ideal MHD equations as an example, demonstrating how a BOUT++
-physics module is put together. It assumes you have a working knowledge
+demonstrates how a BOUT++ physics model is put together. It assumes you have a working knowledge
 of C or C++, but you don’t need to be an expert - most of the messy code
-is hidden away from the physics module. There are several good books on
+is hidden away from the physics model. There are several good books on
 C and C++, but I’d recommend online tutorials over books because there
 are a lot more of them, they’re quicker to scan through, and they’re
 cheaper.
+
+
+Heat conduction
+---------------
+
+The ``conduction`` example solves 1D heat conduction
+
+ .. math::
+
+   \frac{\partial T}{\partial t} = \nabla_{||}(\chi\partial_{||} T)
+
+The source code to solve this is in ``conduction.cxx`` which defines a class
+Conduction:
+
+::
+
+    class Conduction : public PhysicsModel {
+     private:
+     protected:
+      int init(bool restarting) override {
+      }
+      int rhs(BoutReal t) override {
+      }
+    };
+
+and then defines a standard main() function using a macro:
+
+::
+
+    BOUTMAIN(Conduction);
+
+You can define your own main() function, but for most cases this is enough.
+The two methods defined in Conduction, ``init`` and ``rhs``, are both needed to define
+a BOUT++ physics model. The ``init`` function is run once at the start,
+and should set up the simulation and specify which variables are evolving in time. 
+The ``rhs`` function should calculate the time derivative, and is called at least once
+per output timestep, depending on the time integration method used.
+
+Initialisation
+~~~~~~~~~~~~~~
+
+During initialisation (the ``init`` function), the conduction example first reads an 
+option from the input settings file (BOUT.inp):
+
+::
+
+    Options *options = Options::getRoot()->getSection("conduction");
+    OPTION(options, chi, 1.0); // Read from BOUT.inp, setting default to 1.0
+
+This first gets a section called "conduction", then requests an option called "chi" inside
+this section. If this setting is not found, then the default value of 1.0 will be used.
+To set this value the BOUT.inp file contains:
+
+.. code-block:: bash
+
+    [conduction]
+    chi = 1.0
+
+which defines a section called "conduction", and within that section a variable called "chi". 
+This value can be overridden by specifying the setting on the command line:
+
+
+.. code-block:: bash
+
+    $ ./conduction conduction:chi=2
+
+where "conduction:chi" means the variable "chi" in the section "conduction". When this option is
+read, a message is printed to the BOUT.log files, giving the value used and the source of that value:
+
+.. code-block:: bash
+
+    Option conduction:chi = 1 (data/BOUT.inp)
+
+After reading the chi option, the ``init`` method then specifies which variables to evolve
+using a macro:
+
+::
+
+    // Tell BOUT++ to solve T
+    SOLVE_FOR(T);
+
+This tells the BOUT++ time integration solver to set the variable T using values from the input settings. 
+It looks in a section with the same name as the variable ("T" here) for variables "scale" and "function":
+
+.. code-block:: bash
+
+    [T] # Settings for the T variable
+
+    scale = 1.0  # Size of the initial perturbation
+    function = gauss(y-pi, 0.2)  # The form of the initial perturbation. y from 0 to 2*pi
+
+The function is evaluated using expressions which can involve x,y and z coordinates. More details
+are given in section :ref:`sec-init-time-evolved-vars`. 
+
+Finally an error code is returned, here 0 indicates no error. If init returns non-zero then 
+the simulation will stop.
+
+Time evolution
+~~~~~~~~~~~~~~
+
+During time evolution, the time integration method (ODE integrator) calculates the system state
+(here "T") at a give time. It then calls the ``rhs`` function, which should calculate the
+time derivative of all the evolving variables. In this case the job of the ``rhs`` function
+is to calculate "ddt(T)", the **partial derivative** of the variable "T" with respect to time, given
+the value of "T": 
+
+ .. math::
+
+   \frac{\partial T}{\partial t} = \nabla_{||}(\chi\partial_{||} T)
+
+The first thing the ``rhs`` function function does is communicate the guard (halo) cells:
+
+::
+
+    mesh->communicate(T);
+
+This is because BOUT++ does not (generally) do communications, but leaves it up to the user to decide
+when the most efficient or convenient time to do them is. Before we can take derivatives of a variable (here T),
+the values of the function must be known in the boundaries and guard cells, which requires communication between
+processors. By default the values in the guard cells are set to NaN, so if they are accidentally used without
+first communicating then the code should crash fairly quickly with a non-finite number error.
+
+Once the guard cells have been communicated, we calculate the right hand side (RHS) of the equation
+above:
+
+::
+
+    ddt(T) = Div_par_K_Grad_par(chi, T);
+
+
+The function "Div_par_K_Grad_par" is a function in the BOUT++ library which calculates the divergence
+in the parallel (y) direction of a constant multiplied by the gradient of a function in the parallel direction.
+
+As with the init code, a non-zero return value indicates an error and will stop the simulation.
+
+Magnetohydrodynamics (MHD)
+--------------------------
 
 When going through this section, it may help to refer to the finished
 code, which is given in the file ``mhd.cxx`` in the BOUT++ examples

@@ -34,6 +34,7 @@ class FieldData;
 #include "bout/deprecated.hxx"
 #include "unused.hxx"
 
+#include <memory>
 #include <string>
 using std::string;
 
@@ -75,15 +76,7 @@ public:
   virtual int byteSize() const = 0; ///< Number of bytes for a single point
   virtual int BoutRealSize() const { return 0; } ///< Number of BoutReals (not implemented if not BoutReal)
 
-  DEPRECATED(virtual int getData(int x, int y, int z, void *vptr) const) = 0; ///< Return number of bytes
-  DEPRECATED(virtual int getData(int x, int y, int z, BoutReal *rptr) const) = 0; ///< Return number of BoutReals
-  
-  DEPRECATED(virtual int setData(int x, int y, int z, void *vptr)) = 0;
-  DEPRECATED(virtual int setData(int x, int y, int z, BoutReal *rptr)) = 0;
-
-#ifdef CHECK
   virtual void doneComms() { }; // Notifies that communications done
-#endif
   
   // Boundary conditions
   void setBoundary(const string &name); ///< Set the boundary conditions
@@ -95,9 +88,9 @@ public:
   virtual void applyTDerivBoundary() {};
 //JMAD
   void addBndryFunction(FuncPtr userfunc, BndryLoc location);
-  void addBndryGenerator(FieldGenerator* gen, BndryLoc location);
+  void addBndryGenerator(std::shared_ptr<FieldGenerator> gen, BndryLoc location);
   
-  FieldGenerator* getBndryGenerator(BndryLoc location);
+  std::shared_ptr<FieldGenerator> getBndryGenerator(BndryLoc location);
 
 protected:
   vector<BoundaryOp*> bndry_op; // Boundary conditions
@@ -106,7 +99,7 @@ protected:
   // Parallel boundaries
   vector<BoundaryOpPar*> bndry_op_par; // Boundary conditions
 
- std::map <BndryLoc,FieldGenerator*> bndry_generator;
+  std::map <BndryLoc,std::shared_ptr<FieldGenerator>> bndry_generator;
 };
 
 #include "bout/field_visitor.hxx"

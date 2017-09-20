@@ -48,9 +48,23 @@ LaplaceSerialBand::LaplaceSerialBand(Options *opt) : Laplacian(opt), Acoef(0.0),
   int ncz = mesh->LocalNz;
   bk = matrix<dcomplex>(mesh->LocalNx, ncz/2 + 1);
   bk1d = new dcomplex[mesh->LocalNx];
+
+  //Initialise bk to 0 as we only visit 0<= kz <= maxmode in solve
+  for(int kz=maxmode+1; kz < ncz/2 + 1; kz++){
+    for (int ix=0; ix<mesh->LocalNx; ix++){
+      bk[ix][kz] = 0.0;
+    }
+  }
   
   xk = matrix<dcomplex>(mesh->LocalNx, ncz/2 + 1);
   xk1d = new dcomplex[mesh->LocalNx];
+
+  //Initialise xk to 0 as we only visit 0<= kz <= maxmode in solve
+  for(int kz=maxmode+1; kz < ncz/2 + 1; kz++){
+    for (int ix=0; ix<mesh->LocalNx; ix++){
+      xk[ix][kz] = 0.0;
+    }
+  }
   
   A = matrix<dcomplex>(mesh->LocalNx, 5);
 }
@@ -106,21 +120,19 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
     xend = mesh->LocalNx-2;
   }
 
-  for(int iz=0;iz<=ncz/2;iz++) {
+  for(int iz=0;iz<=maxmode;iz++) {
     // solve differential equation in x
     
     BoutReal coef1=0.0, coef2=0.0, coef3=0.0, coef4=0.0, 
-      coef5=0.0, coef6=0.0, kwave, flt;
+      coef5=0.0, coef6=0.0, kwave;
     ///////// PERFORM INVERSION /////////
       
     // shift freqs according to FFT convention
     kwave=iz*2.0*PI/coord->zlength(); // wave number is 1/[rad]
-      
-    if (iz>maxmode) flt=0.0; else flt=1.0;
 
     // set bk1d
     for(int ix=0;ix<mesh->LocalNx;ix++)
-      bk1d[ix] = bk[ix][iz]*flt;
+      bk1d[ix] = bk[ix][iz];
 
     // Fill in interior points
 
@@ -143,15 +155,13 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
       coef3 = coord->g13(ix,jy);  // X-Z mixed derivatives
       coef4 = 0.0;          // X 1st derivative
       coef5 = 0.0;          // Z 1st derivative
-      coef6 = 0.0;          // Constant
+      coef6 = Acoef(ix,jy); // Constant
 
       // Multiply Delp2 component by a factor
       coef1 *= Dcoef(ix,jy);
       coef2 *= Dcoef(ix,jy);
       coef3 *= Dcoef(ix,jy);
 
-      coef6 = Acoef(ix,jy);
-	
       if(all_terms) {
         coef4 = coord->G1(ix,jy);
         coef5 = coord->G3(ix,jy);
@@ -387,7 +397,7 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
       dcomplex offset(0.0);
       for(int ix=0;ix<=ncx;ix++)
         offset += bk1d[ix];
-      offset /= (BoutReal) (ncx+1);
+      offset /= static_cast<BoutReal>(ncx + 1);
       for(int ix=0;ix<=ncx;ix++)
         bk1d[ix] -= offset;
     }

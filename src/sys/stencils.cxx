@@ -198,7 +198,7 @@ stencil & stencil::operator=(const BoutReal rhs)
 
 stencil & stencil::operator+=(const stencil &s)
 {
-#ifdef CHECK
+#if CHECK > 0
   if((jx != s.jx) || (jy != s.jy) || (jz != s.jz)) {
     output.write("Error: Stencil += not at same location\n");
     exit(1);
@@ -227,7 +227,7 @@ stencil & stencil::operator+=(BoutReal rhs)
 
 stencil & stencil::operator-=(const stencil &s)
 {
-#ifdef CHECK
+#if CHECK > 0
   if((jx != s.jx) || (jy != s.jy) || (jz != s.jz)) {
     output.write("Error: Stencil -= not at same location\n");
     exit(1);
@@ -256,7 +256,7 @@ stencil & stencil::operator-=(BoutReal rhs)
 
 stencil & stencil::operator*=(const stencil &s)
 {
-#ifdef CHECK
+#if CHECK > 0
   if((jx != s.jx) || (jy != s.jy) || (jz != s.jz)) {
     output.write("Error: Stencil *= not at same location\n");
     exit(1);
@@ -285,7 +285,7 @@ stencil & stencil::operator*=(BoutReal rhs)
 
 stencil & stencil::operator/=(const stencil &s)
 {
-#ifdef CHECK
+#if CHECK > 0
   if((jx != s.jx) || (jy != s.jy) || (jz != s.jz)) {
     output.write("Error: Stencil /= not at same location\n");
     exit(1);
@@ -462,26 +462,6 @@ BoutReal max(const stencil &s)
 const stencil abs(const stencil &s)
 {
   return s.abs();
-}
-
-/*******************************************************************************
- * forward_stencil class
- *******************************************************************************/
-
-forward_stencil::forward_stencil()
-{
-  jx = jy = jz = 0;
-  m = c = p = p2 = p3 = p4 = 0.0;
-}
-
-/*******************************************************************************
- * backward_stencil class
- *******************************************************************************/
-
-backward_stencil::backward_stencil()
-{
-  jx = jy = jz = 0;
-  p = c = m = m2 = m3 = m4 = 0.0;
 }
 
 /*******************************************************************************

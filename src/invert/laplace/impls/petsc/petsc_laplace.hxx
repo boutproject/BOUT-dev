@@ -39,13 +39,18 @@ class LaplacePetsc : public Laplacian {
 public:
   LaplacePetsc(Options *UNUSED(opt) = NULL) { throw BoutException("No PETSc solver available"); }
 
-  void setCoefA(const Field2D &UNUSED(val)) {}
-  void setCoefB(const Field2D &UNUSED(val)) {}
-  void setCoefC(const Field2D &UNUSED(val)) {}
-  void setCoefD(const Field2D &UNUSED(val)) {}
-  void setCoefEx(const Field2D &UNUSED(val)) {}
-  void setCoefEz(const Field2D &UNUSED(val)) {}
+  using Laplacian::setCoefA;
+  void setCoefA(const Field2D &UNUSED(val)) override {}
+  using Laplacian::setCoefC;
+  void setCoefC(const Field2D &UNUSED(val)) override {}
+  using Laplacian::setCoefD;
+  void setCoefD(const Field2D &UNUSED(val)) override {}
+  using Laplacian::setCoefEx;
+  void setCoefEx(const Field2D &UNUSED(val)) override {}
+  using Laplacian::setCoefEz;
+  void setCoefEz(const Field2D &UNUSED(val)) override {}
 
+  using Laplacian::solve;
   const FieldPerp solve(const FieldPerp &UNUSED(b)) {throw BoutException("PETSc not available");}
 };
 
@@ -148,7 +153,7 @@ private:
   void vecToField(Vec x, FieldPerp &f);        // Copy a vector into a fieldperp
   void fieldToVec(const FieldPerp &f, Vec x);  // Copy a fieldperp into a vector
 
-  #ifdef CHECK
+  #if CHECK > 0
     int implemented_flags;
     int implemented_boundary_flags;
   #endif

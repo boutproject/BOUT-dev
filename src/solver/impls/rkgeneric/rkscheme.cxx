@@ -3,23 +3,20 @@
 #include <output.hxx>
 #include <cmath>
 #include <boutcomm.hxx>
+#include "unused.hxx"
 
 ////////////////////
 // PUBLIC
 ////////////////////
 
 //Initialise
-RKScheme::RKScheme(Options *opts){
-  //Currently not reading anything from the options here
+RKScheme::RKScheme(Options *UNUSED(opts))
+    : steps(nullptr), stageCoeffs(nullptr), resultCoeffs(nullptr), timeCoeffs(nullptr),
+      resultAlt(nullptr) {
+  // Currently not reading anything from the options here
 
-  //Init the pointer arrays to null
-  stageCoeffs = (BoutReal**)NULL;
-  resultCoeffs = (BoutReal**)NULL;
-  timeCoeffs = (BoutReal*)NULL;
-  steps = (BoutReal**)NULL;
-
-  //Initialise internals
-  dtfac = 1.0; //Time step factor
+  // Initialise internals
+  dtfac = 1.0; // Time step factor
 }
 
 //Cleanup
@@ -28,18 +25,18 @@ RKScheme::~RKScheme(){
   ///we really free them there as well?
   
   //stageCoeffs
-  free_matrix(stageCoeffs);
+  if(stageCoeffs != nullptr) free_matrix(stageCoeffs);
 
   //resultCoeffs
-  free_matrix(resultCoeffs);
+  if(stageCoeffs != nullptr) free_matrix(resultCoeffs);
 
   //steps
-  free_matrix(steps);
+  if(stageCoeffs != nullptr) free_matrix(steps);
 
   //timeCoeffs
-  delete[] timeCoeffs;
+  if(stageCoeffs != nullptr) delete[] timeCoeffs;
   
-  if(adaptive) delete[] resultAlt;
+  if(stageCoeffs != nullptr) delete[] resultAlt;
 }
 
 //Finish generic initialisation
@@ -160,8 +157,8 @@ BoutReal RKScheme::getErr(BoutReal *solA, BoutReal *solB){
     throw BoutException("MPI_Allreduce failed");
   }
   //Normalise by number of values
-  err /= (BoutReal) neq;
-  
+  err /= static_cast<BoutReal>(neq);
+
   return err;
 }
 
@@ -251,7 +248,6 @@ void RKScheme::verifyCoeffs(){
     output<<string(50,'=')<<endl;
     output<<"WARNING: Result coefficients not consistent"<<endl;
     output<<string(50,'=')<<endl;
-    warn=false;
   }
 
   //Footer

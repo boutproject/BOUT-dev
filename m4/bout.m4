@@ -46,8 +46,8 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
               BOUT_MSG_DEBUG([found $1 without path])
         ],)
     if test $BACL_found != yes ; then
-        for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
-            for path in $prefix $prefix/lib $prefix/lib64 $prefix/x86_64-linux-gnu ; do
+        for search_prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
+            for path in $search_prefix $search_prefix/lib $search_prefix/lib64 $search_prefix/x86_64-linux-gnu ; do
                 if test -d $path
                 then
                     LDFLAGS="-L$path $LDFLAGS_save"
@@ -73,6 +73,11 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
 ])
 
 
+dnl define the macro to check for header files
+dnl first  argument is the name of the header file
+dnl secound  arg is to be executed if found
+dnl third  arg is to be executed if not found
+dnl forth  arg is an additional path to check
 AC_DEFUN([BOUT_ADDPATH_CHECK_HEADER],[
     AC_MSG_CHECKING([for $1])
     CPPFLAGS_save=$CPPFLAGS
@@ -82,8 +87,8 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_HEADER],[
             BOUT_MSG_DEBUG([found $1 without path])
         ],)
     if test $BACH_found != yes ; then
-        for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
-            for path in $prefix $prefix/include ; do
+        for search_prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
+            for path in $search_prefix $search_prefix/include ; do
                 if test -d $path
                 then
                     CPPFLAGS="$CPPFLAGS_save -I$path"
@@ -138,4 +143,16 @@ $4
       ])
   AC_LANG_POP([C++])
   CXXFLAGS="$save_CXXFLAGS -D$3=$sundials_int_type"
+])
+
+AC_DEFUN([BOUT_CHECK_PRETTYFUNCTION], [
+  AC_LANG_PUSH([C++])
+  AC_MSG_CHECKING([does C++ compiler support __PRETTY_FUNCTION__])
+  AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM([[]],
+                 [[const char* name = __PRETTY_FUNCTION__;]])],
+    [AC_MSG_RESULT(yes)
+     CXXFLAGS="$CXXFLAGS -DHAS_PRETTY_FUNCTION"],
+    [AC_MSG_RESULT(no)])
+  AC_LANG_POP([C++])
 ])

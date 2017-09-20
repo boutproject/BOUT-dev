@@ -38,6 +38,7 @@ class Solver;
 #include <bout_types.hxx>
 #include <boutexception.hxx>
 #include <unused.hxx>
+#include "bout/monitor.hxx"
 
 ///////////////////////////////////////////////////////////////////
 // C function pointer types
@@ -53,7 +54,6 @@ typedef int (*Jacobian)(BoutReal t);
 
 
 /// Solution monitor, called each timestep
-typedef int (*MonitorFunc)(Solver *solver, BoutReal simtime, int iter, int NOUT);
 typedef int (*TimestepMonitorFunc)(Solver *solver, BoutReal simtime, BoutReal lastdt);
 
 ///////////////////////////////////////////////////////////////////
@@ -166,12 +166,12 @@ enum SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
  * 
  * To specify NOUT and TIMESTEP, pass the values to solve:
  *
- *     solver->solver(NOUT, TIMESTEP);
+ *     solver->solve(NOUT, TIMESTEP);
  */
 class Solver {
  public:
-  Solver(Options *opts = NULL);
-  virtual ~Solver() { }
+  Solver(Options *opts = nullptr);
+  virtual ~Solver();
 
   /////////////////////////////////////////////
   // New API
@@ -194,8 +194,12 @@ class Solver {
   // Monitors
   
   enum MonitorPosition {BACK, FRONT}; ///< A type to set where in the list monitors are added
-  void addMonitor(MonitorFunc f, MonitorPosition pos=FRONT);     ///< Add a monitor function to be called every output
-  void removeMonitor(MonitorFunc f);  ///< Remove a monitor function previously added
+  /// Add a monitor function to be called every output
+  DEPRECATED(void addMonitor(int (&)(Solver *solver, BoutReal simtime, int iter, int NOUT)
+                             , MonitorPosition pos=FRONT));
+  /// Add a monitor to be called every output
+  void addMonitor(Monitor * f, MonitorPosition pos=FRONT);
+  void removeMonitor(Monitor * f);  ///< Remove a monitor function previously added
 
   void addTimestepMonitor(TimestepMonitorFunc f);    ///< Add a monitor function to be called every timestep
   void removeTimestepMonitor(TimestepMonitorFunc f); ///< Remove a previously added timestep monitor
@@ -246,7 +250,7 @@ class Solver {
   /// Initialise the solver
   /// NOTE: nout and tstep should be passed to run, not init.
   ///       Needed because of how the PETSc TS code works
-  virtual int init(bool restarting, int nout, BoutReal tstep);
+  virtual int init(int nout, BoutReal tstep);
 
   /*!
    * Run the solver, calling monitors nout times, at intervals of tstep 
@@ -258,7 +262,8 @@ class Solver {
   virtual int run() = 0;
 
   //Should wipe out internal field vector and reset from current field object data
-  virtual void resetInternalFields(){throw BoutException("resetInternalFields not supported by this Solver");}
+  virtual void resetInternalFields(){
+    throw BoutException("resetInternalFields not supported by this Solver");}
 
   // Solver status. Optional functions used to query the solver
   virtual int n2Dvars() const {return f2d.size();}  ///< Number of 2D variables. Vectors count as 3
@@ -272,11 +277,12 @@ class Solver {
   bool splitOperator() {return split_operator;}
 
   bool canReset;
-  void setRestartDir(const string &dir);
-  void setRestartDir(const char* dir) {string s = string(dir); setRestartDir(s); }
   
-  /// Add evolving variables to output (dump) file
-  void outputVars(Datafile &outputfile);
+  /// Add evolving variables to output (dump) file or restart file
+  ///
+  /// @param[inout] outputfile   The file to add variable to
+  /// @param[in] save_repeat    If true, add variables with time dimension
+  void outputVars(Datafile &outputfile, bool save_repeat=true);
 
   /*!
    * Create a Solver object. This uses the "type" option
@@ -301,15 +307,11 @@ class Solver {
   
   /*!
    * Add extra variables to the restart files, which store
-   * system state.
+   * system state. This is now deprecated, since the restart file
+   * is handled by PhysicsModel rather than Solver.
    */
-  void addToRestart(BoutReal &var, const string &name) {
-    // Add a variable to the restart file
-    restart.add(var, name.c_str(), 0);
-  }
+  DEPRECATED(void addToRestart(BoutReal &var, const string &name));
 protected:
-  bool restarting;
-  bool dump_on_restart;  // True if initial values should be written to file
   
   // Command-line arguments
   static int* pargc;
@@ -343,12 +345,6 @@ protected:
   vector< VarStr<Vector2D> > v2d;
   vector< VarStr<Vector3D> > v3d;
   
-  Datafile restart; ///< Restart file object
-  
-  string restartdir;  ///< Directory for restart files
-  string restartext;  ///< Restart file extension
-  int archive_restart;
-
   bool has_constraints; ///< Can this solver.hxxandle constraints? Set to true if so.
   bool initialised; ///< Has init been called yet?
 
@@ -380,6 +376,9 @@ protected:
   BoutReal max_dt; ///< Maximum internal timestep
   
 private:
+  bool initCalled=false; ///< Has the init function of the solver been called?
+  int freqDefault=1;     ///< Default sampling rate at which to call monitors - same as output to screen
+  BoutReal timestep=-1; ///< timestep - shouldn't be changed after init is called.
   PhysicsModel *model;    ///< physics model being evolved
 
   rhsfunc phys_run;       ///< The user's RHS function
@@ -393,7 +392,7 @@ private:
   void add_mms_sources(BoutReal t);
   void calculate_mms_error(BoutReal t);
   
-  std::list<MonitorFunc> monitors; ///< List of monitor functions
+  std::list<Monitor*> monitors; ///< List of monitor functions
   std::list<TimestepMonitorFunc> timestep_monitors; ///< List of timestep monitor functions
 
   void pre_rhs(BoutReal t); // Should be run before user RHS is called
@@ -404,8 +403,6 @@ private:
   void loop_vars(BoutReal *udata, SOLVER_VAR_OP op);
 
   bool varAdded(const string &name); // Check if a variable has already been added
-  
-  bool enablerestart; ///< Is restarting enabled?
 };
 
 #endif // __SOLVER_H__

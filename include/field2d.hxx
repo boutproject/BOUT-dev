@@ -74,6 +74,11 @@ class Field2D : public Field, public FieldData {
   Field2D(const Field2D& f);
 
   /*!
+   * Move constructor
+   */
+  Field2D(Field2D&& f) = default;
+
+  /*!
    * Constructor. This creates a Field2D using the global Mesh pointer (mesh)
    * allocates data, and assigns the value \p val to all points including
    * boundary cells.
@@ -95,6 +100,19 @@ class Field2D : public Field, public FieldData {
   /// Return a pointer to the time-derivative field
   Field2D* timeDeriv();
 
+  /*!
+   * Return the number of nx points
+   */
+  int getNx() const override {return nx;};
+  /*!
+   * Return the number of ny points
+   */
+  int getNy() const override {return ny;};
+  /*!
+   * Return the number of nz points
+   */
+  int getNz() const override {return 1;};
+
   // Operators
 
   /*!
@@ -104,6 +122,7 @@ class Field2D : public Field, public FieldData {
    * function.
    */
   Field2D & operator=(const Field2D &rhs);
+  Field2D & operator=(Field2D &&rhs) = default;
 
   /*!
    * Allocates data if not already allocated, then
@@ -145,7 +164,7 @@ class Field2D : public Field, public FieldData {
     return operator()(i.x, i.y);
   }
   /// const Indices data access
-  inline const BoutReal& operator[](const Indices &i) const {
+  inline const BoutReal& operator[](const Indices &i) const override {
     return operator()(i.x, i.y);
   }
 
@@ -204,56 +223,44 @@ class Field2D : public Field, public FieldData {
   Field2D & operator/=(const Field2D &rhs); ///< In-place division. Copy-on-write used if data is shared
   Field2D & operator/=(BoutReal rhs);       ///< In-place division. Copy-on-write used if data is shared
 
+  DEPRECATED(void getXArray(int y, int z, rvec &xv) const override);
+  DEPRECATED(void getYArray(int x, int z, rvec &yv) const override);
+  DEPRECATED(void getZArray(int x, int y, rvec &zv) const override);
+
+  DEPRECATED(void setXArray(int y, int z, const rvec &xv) override);
+  DEPRECATED(void setYArray(int x, int z, const rvec &yv) override);
+
   // Stencils
-
-  void getXArray(int y, int z, rvec &xv) const;
-  void getYArray(int x, int z, rvec &yv) const;
-  void getZArray(int x, int y, rvec &zv) const;
-
-  void setXArray(int y, int z, const rvec &xv);
-  void setYArray(int x, int z, const rvec &yv);
-
-  //void setStencil(bstencil *fval, bindex *bx) const;
-  void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
-  void setXStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
-  void setXStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
-  void setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
-  void setYStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
-  void setYStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
-  void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
+  void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const override;
+  void setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const override;
+  void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const override;
   
   // FieldData virtual functions
 
   /// Visitor pattern support
   void accept(FieldVisitor &v) override {v.accept(*this);}
   
-  bool isReal() const   { return true; }         // Consists of BoutReal values
-  bool is3D() const     { return false; }        // Field is 2D
-  int  byteSize() const { return sizeof(BoutReal); } // Just one BoutReal
-  int  BoutRealSize() const { return 1; }
+  bool isReal() const override  { return true; }         // Consists of BoutReal values
+  bool is3D() const override    { return false; }        // Field is 2D
+  int  byteSize() const override { return sizeof(BoutReal); } // Just one BoutReal
+  int  BoutRealSize() const override { return 1; }
 
-  DEPRECATED(int getData(int x, int y, int z, void *vptr) const);
-  DEPRECATED(int getData(int x, int y, int z, BoutReal *rptr) const);
-  DEPRECATED(int setData(int x, int y, int z, void *vptr));
-  DEPRECATED(int setData(int x, int y, int z, BoutReal *rptr));
-  
-#ifdef CHECK
-  void doneComms() { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
+#if CHECK > 0
+  void doneComms() override { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
 #else
-  void doneComms() {}
+  void doneComms() override {}
 #endif
 
   friend class Vector2D;
   
-  void applyBoundary(bool init=false);
+  void applyBoundary(bool init=false) override;
   void applyBoundary(const string &condition);
   void applyBoundary(const char* condition) { applyBoundary(string(condition)); }
   void applyBoundary(const string &region, const string &condition);
-  void applyTDerivBoundary();
+  void applyTDerivBoundary() override;
   void setBoundaryTo(const Field2D &f2d); ///< Copy the boundary region
   
  private:
-  Mesh *fieldmesh; ///< The mesh over which the field is defined
   int nx, ny;      ///< Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
   
   /// Internal data array. Handles allocation/freeing of memory
@@ -401,10 +408,10 @@ Field2D pow(const Field2D &lhs, const Field2D &rhs);
 Field2D pow(const Field2D &lhs, BoutReal rhs);
 Field2D pow(BoutReal lhs, const Field2D &rhs);
 
-#ifdef CHECK
+#if CHECK > 0
 void checkData(const Field2D &f);
 #else
-inline void checkData(const Field2D &f) {}
+inline void checkData(const Field2D &UNUSED(f)) {}
 #endif
 
 

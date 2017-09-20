@@ -32,3 +32,6 @@ test*.py
 /lib/
 /manual/*.pdf
 /tools/vagrant/.vagrant
+*.gcda
+*.gcno
+bout-coverage/

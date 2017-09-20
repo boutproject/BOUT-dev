@@ -1,0 +1,34 @@
+# 1D demonstration of boundary conditions for advection equation
+#
+# This uses 1st-order upwinding for the advection term,
+# with the default Dirichlet boundary condition on both boundaries.
+# Due to the choice of method, the downstream boundary is never used.
+#
+
+nout = 20
+timestep = 0.05
+
+MXG=0
+
+[mesh]
+
+length = 1  # Length of the domain
+ny = 200     # Number of grid points
+
+nx = 1
+nz = 1
+
+dx = 1
+dy = length / ny
+dz = 1
+
+ixseps1 = -1
+
+[mesh:ddy]
+
+upwind = u1   # Use 1st-order upwinding
+
+[f]
+
+function = exp(-((y-pi)/0.2)^2)
+
