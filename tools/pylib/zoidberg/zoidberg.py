@@ -18,8 +18,6 @@ except ImportError:
     except ImportError:
         have_evtk = False
 
-import matplotlib.pyplot as plt
-
 from . import grid
 from . import field
 from . import fieldtracer
@@ -138,7 +136,7 @@ def make_maps(grid, magnetic_field, quiet=False, **kwargs):
 
     return maps
 
-def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc', new_names=True, metric2d=False):
+def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc', new_names=False, metric2d=True):
     """Write FCI maps to BOUT++ grid file
 
     Inputs

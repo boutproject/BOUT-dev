@@ -1,10 +1,19 @@
 from . import fieldtracer
 
 import numpy as np
-import matplotlib.animation as anim
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 from scipy.integrate import odeint
+
+import warnings
+
+try:
+    import matplotlib.animation as anim
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D
+    plotting_available = True
+except ImportError:
+    warnings.warn("Couldn't import matplotlib, plotting not available.")
+    plotting_available = False
+
 
 def plot_poincare(magnetic_field, xpos, zpos, yperiod, nplot=3, y_slices=None, revs=40, nover=20,
                   interactive=False):
@@ -29,6 +38,10 @@ def plot_poincare(magnetic_field, xpos, zpos, yperiod, nplot=3, y_slices=None, r
                      Right-click to add an additional trace
                      Middle-click to clear added traces
     """
+
+    if not plotting_available:
+        warnings.warning("matplotlib not available, unable to plot")
+        return
 
     # Get Poincare plot
     result, y_slices = fieldtracer.trace_poincare(magnetic_field, xpos, zpos, yperiod,
@@ -121,6 +134,10 @@ def plot_3d_field_line(magnetic_field, xpos, zpos, yperiod, cycles=20, y_res=50)
     y_res          - Number of points in y in each cycle [50]
     """
 
+    if not plotting_available:
+        warnings.warning("matplotlib not available, unable to plot")
+        return
+
     yperiod = float(yperiod)
 
     # Go round toroidally cycles times
@@ -160,6 +177,10 @@ def plot_streamlines(grid, magnetic_field, y_slice=0, width=None, **kwargs):
     width          - If not None, line widths are proportional to the
                      magnitude of B times 'width' [ None ]
     """
+
+    if not plotting_available:
+        warnings.warning("matplotlib not available, unable to plot")
+        return
 
     fig, ax = plt.subplots(1,1)
     full_slice = np.s_[:, y_slice, :]

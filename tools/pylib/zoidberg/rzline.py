@@ -4,11 +4,20 @@ Routines and classes for representing periodic lines in R-Z poloidal planes
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
 
 from numpy import pi, linspace, sqrt, cos, sin, append, zeros, argmin
 from scipy.interpolate import splrep, splev, interp1d
 from scipy.integrate import cumtrapz
+
+import warnings
+
+try:
+    import matplotlib.pyplot as plt
+    plotting_available = True
+except ImportError:
+    warnings.warn("Couldn't import matplotlib, plotting not available.")
+    plotting_available = False
+
 
 class RZline:
     """
@@ -191,6 +200,11 @@ class RZline:
         
         show    Calls plt.show() at the end
         """
+
+        if not plotting_available:
+            warnings.warn("matplotlib not available, unable to plot")
+            return None
+
         if axis is None:
             fig = plt.figure()
             axis = fig.add_subplot(1,1,1)
@@ -264,11 +278,11 @@ def line_from_points_poly(rarray, zarray, show=False):
     
     # Take the first three points to make a triangle
 
-    if show:
+    if show and plotting_available:
         plt.figure()
         plt.plot(rarray, zarray, 'x')
         plt.plot(np.append(rvals[:3], rvals[0]), np.append(zvals[:3], zvals[0])) # Starting triangle
-    
+
     for i in range(3, npoints):
         line = RZline(rvals[:i], zvals[:i])
         
@@ -294,11 +308,11 @@ def line_from_points_poly(rarray, zarray, show=False):
         rvals[ind+1] = rarray[i]
         zvals[ind+1] = zarray[i]
         
-        if show:
+        if show and plotting_available:
             plt.plot([rarray[i], rl], [zarray[i],zl])
             plt.plot(np.append(rvals[:(i+1)], rvals[0]), np.append(zvals[:(i+1)], zvals[0])) # New line
 
-    if show:
+    if show and plotting_available:
         plt.show()
     return RZline(rvals, zvals)
 

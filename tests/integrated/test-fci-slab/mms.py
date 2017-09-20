@@ -43,4 +43,5 @@ for v, dvdt, name in [ (f, dfdt, "f"), (g, dgdt, "g") ]:
     print("\n["+name+"]")
     print("solution = "+exprToStr(v))
     print("\nsource = "+exprToStr(S))
+    print("\nbndry_par_all = parallel_dirichlet("+name+":solution)")
     

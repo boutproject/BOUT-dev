@@ -45,6 +45,7 @@
 #include <bout_types.hxx> // See this for codes
 #include <msg_stack.hxx>
 #include <utils.hxx>
+#include <bout/constants.hxx>
 
 /**
  * Return the sign of val
@@ -72,16 +73,25 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) :
   bool z_boundary;     // has the field line left the domain through the z-sides
 
   Field3D xt_prime, zt_prime;
+  Field3D R, Z; // Real-space coordinates of grid points
+  Field3D R_prime, Z_prime; // Real-space coordinates of forward/backward points
 
+  mesh.get(R, "R", 0.0, false);
+  mesh.get(Z, "Z", 0.0, false);
+  
   // Load the floating point indices from the grid file
   // Future, higher order parallel derivatives could require maps to +/-2 slices
   if (dir == +1) {
     mesh.get(xt_prime, "forward_xt_prime", 0.0, false);
     mesh.get(zt_prime, "forward_zt_prime", 0.0, false);
+    mesh.get(R_prime, "forward_R", 0.0, false);
+    mesh.get(Z_prime, "forward_Z", 0.0, false);
     boundary = new BoundaryRegionPar("FCI_forward", BNDRY_PAR_FWD, dir);
   } else if (dir == -1) {
     mesh.get(xt_prime, "backward_xt_prime", 0.0, false);
     mesh.get(zt_prime, "backward_zt_prime", 0.0, false);
+    mesh.get(R_prime, "backward_R", 0.0, false);
+    mesh.get(Z_prime, "backward_Z", 0.0, false);
     boundary = new BoundaryRegionPar("FCI_backward", BNDRY_PAR_BKWD, dir);
   } else {
     // Definitely shouldn't be called
@@ -147,135 +157,61 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) :
 
         //----------------------------------------
         // Boundary stuff
-
-        // Field line vector
-        RealVector b_hat = {t_x*coord.dx(x,y), coord.dy(x,y), t_z*coord.dz};
-        // Length of field line
-        BoutReal length = sqrt(dot(b_hat, b_hat));
-
-        // Parameterised distance to intersection point
-        BoutReal s_intersect;
-
-        // Parameterised distance to intersection with boundary
-        // for the three different boundaries
-        BoutReal s_intersect_x = nan("");
-        BoutReal s_intersect_y = nan("");
-        BoutReal s_intersect_z = nan("");
-
-        // Total (signed) distance (in index space) from this point
-        BoutReal p_x = xt_prime(x, y, z) - x;
-        BoutReal p_z = zt_prime(x, y, z) - z;
-
-        // Field line leaves through x boundary
-        bool x_lower = (mesh.firstX() && (xt_prime(x,y,z) < mesh.xstart));
-        bool x_upper = (mesh.lastX()  && (xt_prime(x,y,z) > mesh.xend));
-        if (x_lower || x_upper) {
-          x_boundary = true;
-          // Total distance (in index space) from the boundary
-          BoutReal boundary_dist;
-          if (x_lower) {
-            boundary_dist = abs((mesh.xstart - 0.5) - x);
-          } else {
-            boundary_dist = abs((mesh.xend + 0.5) - x);
-          }
-          s_intersect_x = boundary_dist / (abs(p_x));
-       } else {
-          x_boundary = false;
-        }
-
-        // Field line leaves through y boundary
-        // Only add this point if the domain is NOT periodic in y
-        bool y_lower = !yperiodic && (mesh.firstY() && (y + dir <= mesh.ystart - 0.5));
-        bool y_upper = !yperiodic && (mesh.lastY()  && (y + dir >= mesh.yend + 0.5));
-        if (y_lower || y_upper) {
-          y_boundary = true;
-          s_intersect_y = 0.5;
-        } else {
-          y_boundary = false;
-        }
-
-        // Field line leaves through z boundary
-        // Only add this point if the domain is NOT periodic in Z
-        bool z_lower = !zperiodic && (zt_prime(x,y,z) < 0.0);
-        bool z_upper = !zperiodic && (zt_prime(x,y,z) > ncz - 1);
-        if (z_lower || z_upper) {
-          z_boundary = true;
-          // Total distance (in index space) from the boundary
-          BoutReal boundary_dist;
-          if (z_lower) {
-            boundary_dist = abs(-0.5 - z);
-          } else {
-            boundary_dist = abs((ncz - 0.5) - z);
-          }
-          s_intersect_z = boundary_dist / (abs(p_z));
-        } else {
-          z_boundary = false;
-        }
-
-        // Find the closest intersection with a boundary - seven
-        // possible regions field line could end up in
-        if (x_boundary && !y_boundary && !z_boundary) {
-          // x
-          s_intersect = s_intersect_x;
-        } else if (!x_boundary && y_boundary && !z_boundary) {
-          // y
-          s_intersect = s_intersect_y;
-        } else if (!x_boundary && !y_boundary && z_boundary) {
-          // z
-          s_intersect = s_intersect_z;
-        } else if (!x_boundary && y_boundary && z_boundary) {
-          // y & z
-          s_intersect = std::min(s_intersect_y, s_intersect_z);
-        } else if (x_boundary && !y_boundary && z_boundary) {
-          // z & x
-          s_intersect = std::min(s_intersect_x, s_intersect_z);
-        } else if (x_boundary && y_boundary && !z_boundary) {
-          // x & y
-          s_intersect = std::min(s_intersect_x, s_intersect_y);
-        } else if (x_boundary && y_boundary && z_boundary) {
-          // x & y & z
-          s_intersect = std::min(std::min(s_intersect_x, s_intersect_y), s_intersect_z);
-        } else {
-          // none
-          s_intersect = 0;
-        }
-
-        // If field line leaves the domain at this point, then add it
-        // to the boundary
-        if (x_boundary || y_boundary || z_boundary) {
-          // Normal to boundary
-          RealVector norm;
-          // s_intersect is set to that of the closest boundary, so set the normal
-          // based on that
-          if (s_intersect == s_intersect_x) {
-            norm = {sgn(p_x), 0., 0.};
-          } else if (s_intersect == s_intersect_y) {
-            norm = {0., static_cast<BoutReal>(dir), 0.};
-          } else if (s_intersect == s_intersect_z) {
-            norm = {0., 0., sgn(p_z)};
-          } else {
-            // Shouldn't reach here - boundary set, but s_intersect not
-            // equal to a boundary s_intersect_(x|y|z)
-            throw BoutException("Something weird happened in FCIMap...");
-          }
-
-          // y-distance to boundary intersection
-          BoutReal y_prime = coord.dy(x,y) * s_intersect;
-
-          // Index-space coordinates of intersection
-          BoutReal s_x = x + s_intersect*p_x;
-          BoutReal s_y = y + s_intersect*dir;
-          BoutReal s_z = z + s_intersect*p_z;
-
-          // Angle between field line and boundary
-          BoutReal angle = asin( dot(norm, b_hat) / length );
-
-          // This would be correct, but need to work out correct modification to
-          // the boundary conditions to use it
-          // y_prime = s_intersect * length;
+        //
+        // If a field line leaves the domain, then the forward or backward
+        // indices (forward/backward_xt_prime and forward/backward_zt_prime)
+        // are set to -1
+        
+        if (xt_prime(x,y,z) < 0.0) {
+          // Hit a boundary
 
           boundary_mask(x, y, z) = true;
-          boundary->add_point(x, y, z, s_x, s_y, s_z, y_prime, angle);
+
+          // Need to specify the index of the boundary intersection, but
+          // this may not be defined in general. 
+          // We do however have the real-space (R,Z) coordinates. Here we extrapolate,
+          // using the change in R and Z to calculate the change in (x,z) indices
+          //
+          // ( dR ) = ( dR/dx  dR/dz ) ( dx )
+          // ( dZ )   ( dZ/dx  dZ/dz ) ( dz )
+          //
+          // where (dR,dZ) is the change in (R,Z) along the field,
+          // (dx,dz) is the change in (x,z) index along the field,
+          // and the gradients dR/dx etc. are evaluated at (x,y,z)
+
+          BoutReal dR_dx = 0.5 * ( R(x+1,y,z) - R(x-1,y,z) );
+          BoutReal dZ_dx = 0.5 * ( Z(x+1,y,z) - Z(x-1,y,z) );
+
+          BoutReal dR_dz, dZ_dz;
+          // Handle the edge cases in Z
+          if (z == 0) {
+            dR_dz = R(x,y,z+1) - R(x,y,z);
+            dZ_dz = Z(x,y,z+1) - Z(x,y,z);
+            
+          } else if (z == mesh.LocalNz-1) {
+            dR_dz = R(x,y,z) - R(x,y,z-1);
+            dZ_dz = Z(x,y,z) - Z(x,y,z-1);
+            
+          } else {
+            dR_dz = 0.5 * ( R(x,y,z+1) - R(x,y,z-1) );
+            dZ_dz = 0.5 * ( Z(x,y,z+1) - Z(x,y,z-1) );
+            
+          }
+
+          BoutReal det = dR_dx * dZ_dz - dR_dz * dZ_dx; // Determinant of 2x2 matrix
+
+          BoutReal dR = R_prime(x,y,z) - R(x,y,z);
+          BoutReal dZ = Z_prime(x,y,z) - Z(x,y,z);
+
+          // Invert 2x2 matrix to get change in index
+          BoutReal dx = (dZ_dz * dR - dR_dz * dZ) / det;
+          BoutReal dz = (dR_dx * dZ - dZ_dx * dR) / det;
+          
+          boundary->add_point(x, y, z, 
+                              x + dx, y + 0.5*dir, z + dz,  // Intersection point in local index space
+                              0.5*coord.dy(x,y), //sqrt( SQ(dR) + SQ(dZ) ),  // Distance to intersection
+                              PI   // Right-angle intersection
+                              );
         }
 
         //----------------------------------------

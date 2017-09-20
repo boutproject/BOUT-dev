@@ -1,7 +1,7 @@
 grid = fci.grid.nc
 
 nout = 1
-timestep = 0.2
+timestep = 0.01
 
 MZ = 64
 

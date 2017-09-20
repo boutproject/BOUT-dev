@@ -21,7 +21,14 @@ from numpy import pi, linspace, zeros
 from scipy.interpolate import RectBivariateSpline
 from scipy.spatial import cKDTree as KDTree
 
-import matplotlib.pyplot as plt
+import warnings
+
+try:
+    import matplotlib.pyplot as plt
+    plotting_available = True
+except ImportError:
+    warnings.warn("Couldn't import matplotlib, plotting not available.")
+    plotting_available = False
 
 try:
     from . import rzline
@@ -55,6 +62,11 @@ class PoloidalGrid(object):
         show    Calls plt.show() at the end
         
         """
+
+        if not plotting_available:
+            warnings.warn("matplotlib not available, unable to plot")
+            return None
+
         if axis is None:
             fig = plt.figure()
             axis = fig.add_subplot(1,1,1)
@@ -83,7 +95,7 @@ class RectangularPoloidalGrid(PoloidalGrid):
     
     """
     
-    def __init__(self, nx, nz, Lx, Lz, Rcentre=0.0, Zcentre=0.0):
+    def __init__(self, nx, nz, Lx, Lz, Rcentre=0.0, Zcentre=0.0, MXG=2):
         """
         Inputs
         ------
@@ -93,7 +105,12 @@ class RectangularPoloidalGrid(PoloidalGrid):
         Lx  Radial domain size  [m]
         Lz  Vertical domain size [m]
         
-        Rmid 
+        Rcentre  Coordinate at the middle of the domain
+        Zcentre  Coordinate at the middle of the domain
+        
+        MXG  Number of guard cells in X. The boundary is put half-way
+             between the guard cell and the domain
+        
         """
         
         self.nx = nx
@@ -104,12 +121,14 @@ class RectangularPoloidalGrid(PoloidalGrid):
         
         self.Rcentre = Rcentre
         self.Zcentre = Zcentre
-
+        
         # Some useful derived quantities
-        self.dR = self.Lx/(self.nx-1)
-        self.dZ = self.Lz/(self.nz-1)
-        self.Rmin = self.Rcentre - 0.5*self.Lx
-        self.Zmin = self.Zcentre - 0.5*self.Lz
+        # Note: index at the middle of the domain is (nx - 1)/2
+        #       e.g. nx=5 :  0 1 | 2 | 3 4
+        self.dR = self.Lx/(self.nx-2*MXG)
+        self.dZ = self.Lz/self.nz
+        self.Rmin = self.Rcentre - self.dR * (self.nx-1.0)/2.0
+        self.Zmin = self.Zcentre - self.dZ * (self.nz-1.0)/2.0
 
         # Generate 2D arrays
         # Using getCoordinate to ensure consistency
@@ -332,7 +351,7 @@ class StructuredPoloidalGrid(PoloidalGrid):
         mask[ np.logical_or((xind < 0.5), (xind > (nx-1.5))) ] = 0.0 # Set to zero if near the boundary 
         
         
-        if show:
+        if show and plotting_available:
             plt.plot(self.R, self.Z, '.')
             plt.plot(R, Z, 'x')
         
@@ -340,7 +359,7 @@ class StructuredPoloidalGrid(PoloidalGrid):
             # Use Newton iteration to find the index
             # dR, dZ are the distance away from the desired point
             Rpos,Zpos = self.getCoordinate(xind, zind)
-            if show:
+            if show and plotting_available:
                 plt.plot(Rpos, Zpos, 'o')
             dR = Rpos - R
             dZ = Zpos - Z
@@ -375,7 +394,7 @@ class StructuredPoloidalGrid(PoloidalGrid):
             mask[ out_boundary ] = 0.0 # Set to zero if near the boundary 
             xind[ out_boundary ] = nx-1
 
-        if show:
+        if show and plotting_available:
             plt.show()
             
         # Set xind to -1 if in the inner boundary, nx if in outer boundary
@@ -455,7 +474,7 @@ def grid_annulus(inner, outer, nx, nz, show=True, return_coords=False):
         R[i,:] = x*outerR + (1.-x)*innerR
         Z[i,:] = x*outerZ + (1.-x)*innerZ
         
-    if show:
+    if show and plotting_available:
         plt.plot(inner.R, inner.Z, '-o')
         plt.plot(outer.R, outer.Z, '-o')
         
@@ -601,7 +620,7 @@ def grid_elliptic(inner, outer, nx, nz, show=False, tol=1e-10, align=True, restr
     dx = xvals[1] - xvals[0]
     dz = thetavals[1] - thetavals[0]
 
-    if show:
+    if show and plotting_available:
         # Markers on original points on inner and outer boundaries
         plt.plot(inner.R, inner.Z, '-o')
         plt.plot(outer.R, outer.Z, '-o')
@@ -674,7 +693,7 @@ def grid_elliptic(inner, outer, nx, nz, show=False, tol=1e-10, align=True, restr
         if maxchange_sq < tol:
             break
 
-    if show:
+    if show and plotting_available:
         plt.plot(R,Z)
         plt.plot(np.transpose(R), np.transpose(Z))
         plt.show()
