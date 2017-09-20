@@ -21,6 +21,14 @@ from numpy import pi, linspace, zeros
 from scipy.interpolate import RectBivariateSpline
 from scipy.spatial import cKDTree as KDTree
 
+import warnings
+
+try:
+    import matplotlib.pyplot as plt
+    plotting_available = True
+except ImportError:
+    warnings.warn("Couldn't import matplotlib, plotting not available.")
+    plotting_available = False
 
 try:
     from . import rzline
@@ -54,7 +62,11 @@ class PoloidalGrid(object):
         show    Calls plt.show() at the end
         
         """
-        import matplotlib.pyplot as plt
+
+        if not plotting_available:
+            warnings.warn("matplotlib not available, unable to plot")
+            return None
+
         if axis is None:
             fig = plt.figure()
             axis = fig.add_subplot(1,1,1)
@@ -339,8 +351,7 @@ class StructuredPoloidalGrid(PoloidalGrid):
         mask[ np.logical_or((xind < 0.5), (xind > (nx-1.5))) ] = 0.0 # Set to zero if near the boundary 
         
         
-        if show:
-            import matplotlib.pyplot as plt
+        if show and plotting_available:
             plt.plot(self.R, self.Z, '.')
             plt.plot(R, Z, 'x')
         
@@ -348,7 +359,7 @@ class StructuredPoloidalGrid(PoloidalGrid):
             # Use Newton iteration to find the index
             # dR, dZ are the distance away from the desired point
             Rpos,Zpos = self.getCoordinate(xind, zind)
-            if show:
+            if show and plotting_available:
                 plt.plot(Rpos, Zpos, 'o')
             dR = Rpos - R
             dZ = Zpos - Z
@@ -383,7 +394,7 @@ class StructuredPoloidalGrid(PoloidalGrid):
             mask[ out_boundary ] = 0.0 # Set to zero if near the boundary 
             xind[ out_boundary ] = nx-1
 
-        if show:
+        if show and plotting_available:
             plt.show()
             
         # Set xind to -1 if in the inner boundary, nx if in outer boundary
@@ -463,8 +474,7 @@ def grid_annulus(inner, outer, nx, nz, show=True, return_coords=False):
         R[i,:] = x*outerR + (1.-x)*innerR
         Z[i,:] = x*outerZ + (1.-x)*innerZ
         
-    if show:
-        import matplotlib.pyplot as plt
+    if show and plotting_available:
         plt.plot(inner.R, inner.Z, '-o')
         plt.plot(outer.R, outer.Z, '-o')
         
@@ -610,8 +620,7 @@ def grid_elliptic(inner, outer, nx, nz, show=False, tol=1e-10, align=True, restr
     dx = xvals[1] - xvals[0]
     dz = thetavals[1] - thetavals[0]
 
-    if show:
-        import matplotlib.pyplot as plt
+    if show and plotting_available:
         # Markers on original points on inner and outer boundaries
         plt.plot(inner.R, inner.Z, '-o')
         plt.plot(outer.R, outer.Z, '-o')
@@ -684,8 +693,7 @@ def grid_elliptic(inner, outer, nx, nz, show=False, tol=1e-10, align=True, restr
         if maxchange_sq < tol:
             break
 
-    if show:
-        import matplotlib.pyplot as plt
+    if show and plotting_available:
         plt.plot(R,Z)
         plt.plot(np.transpose(R), np.transpose(Z))
         plt.show()

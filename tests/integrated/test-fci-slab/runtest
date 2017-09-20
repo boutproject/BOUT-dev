@@ -145,7 +145,7 @@ try:
 
     plt.show()
     plt.close()
-except:
+except ImportError:
     print("No matplotlib")
 
 if success:
