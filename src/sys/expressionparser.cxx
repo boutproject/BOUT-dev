@@ -136,19 +136,6 @@ ExpressionParser::ExpressionParser() {
   addGenerator("t", std::shared_ptr<FieldGenerator>( new FieldT()));
 }
 
-ExpressionParser::~ExpressionParser() {
-  // // Free memory
-  // for(const auto& it : gen)
-  //   delete it.second;
-  
-  // for(const auto& it : bin_op)
-  //   delete it.second.first;
-  
-  // // Delete allocated generators
-  // for(const auto& it : genheap)
-  //   delete it;
-}
-
 void ExpressionParser::addGenerator(string name, std::shared_ptr<FieldGenerator> g) {
   gen[name] = g;
 }
@@ -252,8 +239,6 @@ std::shared_ptr<FieldGenerator> ExpressionParser::parsePrimary(LexInfo &lex) {
   }
   case '-': {
     // Unary minus
-    //lex.nextToken(); // Eat '-'
-    //return record( std::shared_ptr<FieldGenerator>( new FieldUnary(parsePrimary(lex)) ));
     // Don't eat the minus, and return an implicit zero
     return record( std::shared_ptr<FieldGenerator>( new FieldValue(0.0) ));
   }
@@ -334,13 +319,13 @@ ExpressionParser::LexInfo::LexInfo(string input) {
   ss.str(input); // Set the input stream
   ss.seekg(0, std::ios_base::beg);
   
-  LastChar = ss.get(); // First char from stream
+  LastChar = static_cast<signed char>(ss.get()); // First char from stream
   nextToken(); // Get first token
 }
 
 char ExpressionParser::LexInfo::nextToken() {
   while(isspace(LastChar))
-    LastChar = ss.get();
+    LastChar = static_cast<signed char>(ss.get());
   
   if(!ss.good()) {
     curtok = 0;
@@ -351,7 +336,7 @@ char ExpressionParser::LexInfo::nextToken() {
     curident.clear();
     do {
       curident += LastChar;
-      LastChar = ss.get();
+      LastChar = static_cast<signed char>(ss.get());
     }while(isalnum(LastChar) || (LastChar == '_') || (LastChar == ':'));
     curtok = -2;
     return curtok;
@@ -376,7 +361,7 @@ char ExpressionParser::LexInfo::nextToken() {
         gotexponent = true;
         // Next character should be a '+' or '-' or digit
         NumStr += 'e';
-        LastChar = ss.get();
+        LastChar = static_cast<signed char>(ss.get());
         if((LastChar != '+') && (LastChar != '-') && !isdigit(LastChar)) {
           throw ParseException("ExpressionParser error: Expecting '+', '-' or number after 'e'");
         }
@@ -384,21 +369,22 @@ char ExpressionParser::LexInfo::nextToken() {
         break;
       
       NumStr += LastChar;
-      LastChar = ss.get();
+      LastChar = static_cast<signed char>(ss.get());
     }
     
     curval = strtod(NumStr.c_str(), 0);
     curtok = -1;
     return curtok;
   }
-  
-  curtok = LastChar;
-  LastChar = ss.get();
+
+  // LastChar is unsigned, explicitly cast
+  curtok = static_cast<signed char>(LastChar);
+  LastChar = static_cast<signed char>(ss.get());
   return curtok;
 }
 
 int ExpressionParser::LexInfo::getPos() {
-  return (int) ss.tellg();
+  return static_cast<int>(ss.tellg());
 }
 
 //////////////////////////////////////////////////////////
@@ -406,7 +392,7 @@ int ExpressionParser::LexInfo::getPos() {
 
 
 ParseException::ParseException(const char *s, ...) {
-  if(s == (const char*) NULL)
+  if(s == nullptr)
     return;
 
   int buf_len=1024;
@@ -417,7 +403,7 @@ ParseException::ParseException(const char *s, ...) {
   delete[] buffer;
 }
 
-const char* ParseException::what() const throw() {
+const char* ParseException::what() const noexcept {
   return message.c_str();
 }
 

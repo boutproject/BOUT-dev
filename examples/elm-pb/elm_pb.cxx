@@ -358,6 +358,7 @@ int physics_init(bool restarting) {
   OPTION(options, include_curvature, true);
   OPTION(options, include_jpar0,     true);
   OPTION(options, evolve_pressure,   true);
+  OPTION(options, nogradparj,       false);
   
   OPTION(options, compress0,          false);
   OPTION(options, gyroviscous,       false);

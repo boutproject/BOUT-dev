@@ -38,7 +38,6 @@
 #include <globals.hxx>
 #include <dcomplex.hxx>
 #include <boutexception.hxx>
-#include <output.hxx>
 
 #ifdef LAPACK
 
@@ -61,6 +60,7 @@ extern "C" {
 int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcomplex *r, dcomplex *u, int n) {
   
   // Lapack routines overwrite their inputs, so need to copy
+
   // allocate memory
   Array<fcmplx> dl(n), d(n), du(n), x(n);
 
@@ -73,7 +73,7 @@ int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcompl
     if (i != (n - 1)) {
       dl[i].r = a[i + 1].real();
       dl[i].i = a[i + 1].imag();
-
+      
       du[i].r = c[i].real();
       du[i].i = c[i].imag();
     }
@@ -95,7 +95,7 @@ int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcompl
   int nrhs = 1;
   int info;
   zgtsv_(&n, &nrhs, dl.begin(), d.begin(), du.begin(), x.begin(), &n, &info);
-
+  
   if (info != 0) {
     // Some sort of problem
     throw BoutException("Problem in LAPACK ZGTSV routine\n");
@@ -145,7 +145,7 @@ bool tridag(const BoutReal *a, const BoutReal *b, const BoutReal *c, const BoutR
   int nrhs = 1;
   int info;
   dgtsv_(&n, &nrhs, dl.begin(), d.begin(), du.begin(), x.begin(), &n, &info);
-
+  
   if (info != 0) {
     // Some sort of problem
     throw BoutException("Problem in LAPACK DGTSV routine\n");
@@ -308,8 +308,7 @@ bool tridag(const BoutReal *a, const BoutReal *b, const BoutReal *c, const BoutR
   Array<BoutReal> gam(n);
   
   if(b[0] == 0.0) {
-    output.write("Tridag: Rewrite equations\n");
-    return false;
+    throw BoutException("Tridag: Rewrite equations\n");
   }
   
   bet = b[0];
@@ -319,8 +318,7 @@ bool tridag(const BoutReal *a, const BoutReal *b, const BoutReal *c, const BoutR
     gam[j] = c[j-1]/bet;
     bet = b[j]-a[j]*gam[j];
     if(bet == 0.0) {
-      output.write("Tridag: Zero pivot\n");
-      return false;
+      throw BoutException("Tridag: Zero pivot\n");
     }
     x[j] = (r[j]-a[j]*x[j-1])/bet;
   }

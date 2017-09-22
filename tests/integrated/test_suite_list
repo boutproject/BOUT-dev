@@ -14,7 +14,10 @@ test-vec
 test-griddata
 !test-fieldgroup
 !test-initial
+test-stopCheck
 test-subdir
+#next one is broken
+test-fci-slab
 # More complex tests
 test-drift-instability
 test-interchange-instability

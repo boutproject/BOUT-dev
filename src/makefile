@@ -1,7 +1,7 @@
 
 BOUT_TOP	= ..
 
-DIRS			= field fileio invert mesh physics precon solver sys facets
+DIRS			= field fileio invert mesh physics precon solver sys
 
 SOURCEC		= bout++.cxx
 SOURCEH		= bout.hxx
@@ -41,6 +41,8 @@ checksum:
 	@echo $(CHECKSUM)
 
 # This to make sure build time is always printed correctly
+.PHONY: bout++.cxx
+
 initial_message:
 	@echo ""
 	@echo "----- Compiling BOUT++ -----" 

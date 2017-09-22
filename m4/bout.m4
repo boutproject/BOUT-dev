@@ -36,6 +36,7 @@ dnl forth  arg is to be executed if not found
 dnl fifth  arg is an additional path to check
 AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
     AC_MSG_CHECKING([for lib$1])
+    AC_LANG_PUSH([C++])
     LDFLAGS_save=$LDFLAGS
     LIBS="$EXTRA_LIBS -l$1"
     BACL_found=no
@@ -45,8 +46,8 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
               BOUT_MSG_DEBUG([found $1 without path])
         ],)
     if test $BACL_found != yes ; then
-        for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
-            for path in $prefix $prefix/lib $prefix/lib64 $prefix/x86_64-linux-gnu ; do
+        for search_prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
+            for path in $search_prefix $search_prefix/lib $search_prefix/lib64 $search_prefix/x86_64-linux-gnu ; do
                 if test -d $path
                 then
                     LDFLAGS="-L$path $LDFLAGS_save"
@@ -68,6 +69,7 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
         AC_MSG_RESULT(no)
     fi
     AS_IF([test .$BACL_found = .yes], [$3],[$4])
+    AC_LANG_POP([C++])
 ])
 
 
@@ -85,8 +87,8 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_HEADER],[
             BOUT_MSG_DEBUG([found $1 without path])
         ],)
     if test $BACH_found != yes ; then
-        for prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
-            for path in $prefix $prefix/include ; do
+        for search_prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
+            for path in $search_prefix $search_prefix/include ; do
                 if test -d $path
                 then
                     CPPFLAGS="$CPPFLAGS_save -I$path"

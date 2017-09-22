@@ -5,7 +5,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -39,10 +39,11 @@ void Output::disable() {
   enabled = false;
 }
 
-int Output::open(const char* fname, ...) {
-  
-  if(fname == (const char*) NULL)
+int Output::open(const char *fname, ...) {
+
+  if (fname == (const char *)NULL) {
     return 1;
+  }
 
   bout_vsnprintf(buffer, buffer_len, fname);
 
@@ -50,7 +51,7 @@ int Output::open(const char* fname, ...) {
 
   file.open(buffer);
 
-  if(!file.is_open()) {
+  if (!file.is_open()) {
     fprintf(stderr, "Could not open log file '%s'\n", buffer);
     return 1;
   }
@@ -61,42 +62,65 @@ int Output::open(const char* fname, ...) {
 }
 
 void Output::close() {
-  if(!file.is_open())
+  if (!file.is_open()) {
     return;
-  
+  }
+
   remove(file);
   file.close();
 }
+#define bout_vsnprintf_(buf, len, fmt, va)                                               \
+  {                                                                                      \
+    int _vsnprintflen = vsnprintf(buf, len, fmt, va);                                    \
+    if (_vsnprintflen + 1 > len) {                                                       \
+      _vsnprintflen += 1;                                                                \
+      delete[] buf;                                                                      \
+      buf = new char[_vsnprintflen];                                                     \
+      len = _vsnprintflen;                                                               \
+      vsnprintf(buf, len, fmt, va);                                                      \
+    }                                                                                    \
+  }
 
-void Output::write(const char* string, ...) {
+void Output::write(const char *string, ...) {
+  va_list va;
+  va_start(va, string);
+  this->vwrite(string, va);
+  va_end(va);
+}
 
-  if(string == (const char*) NULL)
+void Output::vwrite(const char *string, va_list va) {
+  if (string == (const char *)NULL) {
     return;
-  
-  bout_vsnprintf(buffer, buffer_len, string);
+  }
+
+  bout_vsnprintf_(buffer, buffer_len, string, va);
 
   multioutbuf_init::buf()->sputn(buffer, strlen(buffer));
 }
 
 void Output::print(const char *string, ...) {
-
-  if (!enabled)
-    return; // Only output if to screen
-
-  if (string == (const char *)NULL)
-    return;
-
-  bout_vsnprintf(buffer, buffer_len, string);
-
-  remove(file);
-  multioutbuf_init::buf()->sputn(buffer, strlen(buffer));
-  add(file);
+  va_list va;
+  va_start(va, string);
+  this->vprint(string, va);
+  va_end(va);
 }
 
-Output* Output::instance = NULL;
+void Output::vprint(const char *string, va_list ap) {
+  if (!enabled) {
+    return; // Only output if to screen
+  }
 
-Output* Output::getInstance() {
-  if(instance == NULL) {
+  if (string == (const char *)NULL) {
+    return;
+  }
+  bout_vsnprintf_(buffer, buffer_len, string, ap);
+  std::cout << std::string(buffer);
+}
+
+Output *Output::instance = nullptr;
+
+Output *Output::getInstance() {
+  if (instance == nullptr) {
     // Create the instance
     instance = new Output();
   }
@@ -104,9 +128,41 @@ Output* Output::getInstance() {
 }
 
 void Output::cleanup() {
-  if(instance == NULL)
+  if (instance == nullptr) {
     return;
-  
+  }
+
   delete instance;
-  instance = NULL;
+  instance = nullptr;
 }
+
+void ConditionalOutput::write(const char *str, ...) {
+  if (enabled) {
+    va_list va;
+    va_start(va, str);
+    base->vwrite(str, va);
+    va_end(va);
+  }
+}
+
+void ConditionalOutput::print(const char *str, ...) {
+  if (enabled) {
+    va_list va;
+    va_start(va, str);
+    base->vprint(str, va);
+    va_end(va);
+  }
+}
+
+#ifdef DEBUG_ENABLED
+ConditionalOutput output_debug(Output::getInstance());
+#else
+DummyOutput output_debug;
+#endif
+ConditionalOutput output_warn(Output::getInstance());
+ConditionalOutput output_info(Output::getInstance());
+ConditionalOutput output_progress(Output::getInstance());
+ConditionalOutput output_error(Output::getInstance());
+ConditionalOutput output(Output::getInstance());
+
+#undef bout_vsnprint_pre

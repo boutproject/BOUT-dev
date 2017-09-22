@@ -60,8 +60,10 @@ class Ncxx4 : public DataFormat {
   Ncxx4(const std::string &name) : Ncxx4(name.c_str()) {}
   ~Ncxx4();
 
-  bool openr(const char *name);
-  bool openw(const char *name, bool append=false);
+  using DataFormat::openr;
+  bool openr(const char *name) override;
+  using DataFormat::openw;
+  bool openw(const char *name, bool append=false) override;
   
   bool is_valid();
   

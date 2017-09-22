@@ -17,6 +17,7 @@ then
     exit $conf
 fi
 export PYTHONPATH=$(pwd)/tools/pylib/:$PYTHONPATH
+export MAKEFLAGS="-j 2 -k"
 time make || exit
 time make check-unit-tests || exit
 time make check-integrated-tests || exit

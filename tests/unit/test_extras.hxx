@@ -60,10 +60,6 @@ public:
     PE_XIND = 0;
     StaggerGrids = false;
     IncIntShear = false;
-    freeboundary_xin = false;
-    freeboundary_xout = false;
-    freeboundary_ydown = false;
-    freeboundary_yup = false;
   }
 
   comm_handle send(FieldGroup &UNUSED(g)) { return nullptr; };
@@ -93,6 +89,7 @@ public:
   }
   MPI_Comm getXcomm(int UNUSED(jy)) const { return MPI_COMM_NULL; }
   MPI_Comm getYcomm(int UNUSED(jx)) const { return MPI_COMM_NULL; }
+  bool periodicY(int UNUSED(jx)) const { return true; }
   bool periodicY(int UNUSED(jx), BoutReal &UNUSED(ts)) const { return true; }
   bool firstY() const { return true; }
   bool lastY() const { return true; }

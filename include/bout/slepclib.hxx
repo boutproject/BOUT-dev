@@ -70,12 +70,14 @@ private:
 
 #else // BOUT_HAS_SLEPC
 
+#include "unused.hxx"
+
 class SlepcLib {
 public:
   SlepcLib() {}
   ~SlepcLib() {}
   
-  static void setArgs(int &c, char** &v) {}
+  static void setArgs(int &UNUSED(c), char** &UNUSED(v)) {}
   
   static void cleanup() {}
 };
