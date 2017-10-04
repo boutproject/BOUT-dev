@@ -40,10 +40,7 @@ clean ::
 # Download Google Test
 $(GTEST_SENTINEL) :
 	echo "Downloading Google Test"
-	curdir=$(PWD)
-	cd $(BOUT_TOP)/googletest
 	git submodule update --init --recursive
-	cd $(curdir)
 
 # For simplicity and to avoid depending on Google Test's
 # implementation details, the dependencies specified below are
