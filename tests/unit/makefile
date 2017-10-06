@@ -27,6 +27,9 @@ GTEST_HEADERS = $(GTEST_DIR)/include/gtest/*.h \
 
 include $(BOUT_TOP)/make.config
 
+# Existence of this file indicates that GTEST has been downloaded
+GTEST_SENTINEL = $(BOUT_TOP)/googletest/README.md
+
 # House-keeping build targets.
 
 clean ::
@@ -34,20 +37,26 @@ clean ::
 
 # Builds gtest.a and bout_test_main.a.
 
-# Usually you shouldn't tweak such internal variables, indicated by a
-# trailing _.
-GTEST_SRCS_ = $(GTEST_DIR)/src/*.cc $(GTEST_DIR)/src/*.h $(GTEST_HEADERS)
+# Download Google Test
+$(GTEST_SENTINEL) :
+	echo "Downloading Google Test"
+	git submodule update --init --recursive
 
 # For simplicity and to avoid depending on Google Test's
 # implementation details, the dependencies specified below are
 # conservative and not optimized.  This is fine as Google Test
 # compiles fast and for ordinary users its source rarely changes.
-gtest-all.o : $(GTEST_SRCS_)
+#
+# Note: If the GoogleTest submodule has not been checked out when
+# this makefile is run, then the list of .cc and .h files is not
+# correctly captured. Since we will probably not be modifying googletest
+# this rule just depends on the sentinel file.
+gtest-all.o : $(GTEST_SENTINEL)
 	@echo "  Compiling" $@
 	@$(CXX) $(CPPFLAGS) -I$(GTEST_DIR) $(CXXFLAGS) -c \
             $(GTEST_DIR)/src/gtest-all.cc
 
-bout_test_main.o : $(GTEST_SRCS_)
+bout_test_main.o : $(TEST_SENTINEL)
 	@echo "  Compiling" $@
 	@$(CXX) $(CPPFLAGS) -I$(GTEST_DIR) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c \
             $(BOUT_TEST_DIR)/bout_test_main.cxx
@@ -74,9 +83,15 @@ serial_tests: makefile $(BOUT_TOP)/make.config $(OBJ) $(LIB) $(SUB_LIBS) $(TEST_
 	@echo "  Linking tests"
 	@$(LD) $(LDFLAGS) -o $@ $(TEST_OBJECTS) bout_test_main.a $(BOUT_LIBS) $(SUB_LIBS)
 
-check: serial_tests
+# Note: This depends on GTEST_SENTINEL, which checks out Google Test if not present
+#       The correct behaviour relies on the dependencies being checked in left-to-right order
+#       The GTEST_SENTINEL dependency cannot be added to the %.o target, since this results in the %.o
+#       target in make.config being used instead.
+check: $(GTEST_SENTINEL) serial_tests
 	./serial_tests
 
+# This is the same target as a make rule in make.config. Adding unmet dependencies here
+# results in makefile reverting to the make.config version.
 %.o: $(BOUT_TOP)/make.config %.cxx
 	@echo "  Compiling " $(@:.o=.cxx)
 	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c $(@:.o=.cxx) -o $(@)

@@ -19,6 +19,8 @@ from sys import stdout
 
 import zoidberg as zb
 
+showPlot = False #Do we want to show the plot as well as save it to file.
+
 nx = 5 # Not changed for these tests
 
 # Resolution in y and z
@@ -143,7 +145,8 @@ try:
 
     print("Plot saved to fci-norm.pdf")
 
-    plt.show()
+    if showPlot:
+        plt.show()
     plt.close()
 except ImportError:
     print("No matplotlib")
