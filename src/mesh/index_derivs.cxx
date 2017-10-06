@@ -692,6 +692,9 @@ void Mesh::derivs_init(Options* options) {
 		    fVDDZ, sfVDDZ,
 		    fFDDZ, sfFDDZ
 		    );
+
+  // Get the fraction of modes filtered out in FFT derivatives
+  options->getSection("ddz")->get("fft_filter", fft_derivs_filter, 0.0);
 }
 
 /*******************************************************************************
@@ -1338,17 +1341,17 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
     func = lookupFunc(table, method);
   }
 
-  if(func == NULL) {
+  if (func == NULL) {
     // Use FFT
-    
+
     BoutReal shift = 0.; // Shifting result in Z?
-    if(mesh->StaggerGrids) {
-      if((inloc == CELL_CENTRE) && (diffloc == CELL_ZLOW)) {
-	// Shifting down - multiply by exp(-0.5*i*k*dz)
-	shift = -1.;
-      }else if((inloc == CELL_ZLOW) && (diffloc == CELL_CENTRE)) {
-	// Shifting up
-	shift = 1.;
+    if (mesh->StaggerGrids) {
+      if ((inloc == CELL_CENTRE) && (diffloc == CELL_ZLOW)) {
+        // Shifting down - multiply by exp(-0.5*i*k*dz)
+        shift = -1.;
+      } else if ((inloc == CELL_ZLOW) && (diffloc == CELL_CENTRE)) {
+        // Shifting up
+        shift = 1.;
       }
     }
 
@@ -1364,28 +1367,39 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
       int xe = mesh->xend;
       int ys = mesh->ystart;
       int ye = mesh->yend;
-      if(inc_xbndry) { // Include x boundary region (for mixed XZ derivatives)
+      
+      if (inc_xbndry) { // Include x boundary region (for mixed XZ derivatives)
         xs = 0;
         xe = mesh->LocalNx-1;
       }
+
+      // Calculate how many Z wavenumbers will be removed
+      int kfilter = static_cast<int>(fft_derivs_filter * ncz / 2); // truncates, rounding down
+      if (kfilter < 0)
+        kfilter = 0;
+      if (kfilter > (ncz / 2))
+        kfilter = ncz / 2;
+      int kmax = ncz / 2 - kfilter; // Up to and including this wavenumber index
+
       #pragma omp for
-      for (int jx=xs;jx<=xe;jx++) {
-        for (int jy=ys;jy<=ye;jy++) {
+      for (int jx = xs; jx <= xe; jx++) {
+        for (int jy = ys; jy <= ye; jy++) {
           rfft(f(jx, jy), ncz, cv.begin()); // Forward FFT
+
+          for (int jz = 0; jz <= kmax; jz++) {
+            BoutReal kwave = jz * 2.0 * PI / ncz; // wave number is 1/[rad]
+
+            cv[jz] *= dcomplex(0.0, kwave);
+            if (mesh->StaggerGrids)
+              cv[jz] *= exp(Im * (shift * kwave));
+          }
+          for (int jz = kmax + 1; jz < ncz / 2; jz++) {
+            cv[jz] = 0.0;
+          }
           
-        for(int jz=0;jz<=ncz/2;jz++) {
-            BoutReal kwave=jz*2.0*PI/ncz; // wave number is 1/[rad]
-            
-          BoutReal flt;
-          if (jz>0.4*ncz) flt=1e-10; else flt=1.0;
-          cv[jz] *= dcomplex(0.0, kwave) * flt;
-          if(mesh->StaggerGrids)
-            cv[jz] *= exp(Im * (shift * kwave));
+          irfft(cv.begin(), ncz, result(jx, jy)); // Reverse FFT
         }
-          
-        irfft(cv.begin(), ncz, result(jx,jy)); // Reverse FFT
       }
-    }
     }
     // End of parallel section
     
