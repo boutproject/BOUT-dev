@@ -19,7 +19,7 @@ int main(int argc, char** argv) {
 
   MyVisitor v;
 
-  Field3D f {0};
+  Field3D f {0.0};
 
   f.accept(v);
   
