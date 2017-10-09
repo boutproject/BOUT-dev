@@ -49,7 +49,8 @@
 Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), floats(false), openclose(true), enabled(true), shiftOutput(false), flushFrequencyCounter(0), flushFrequency(1), file(nullptr) {
   filenamelen=FILENAMELEN;
   filename=new char[filenamelen];
-
+  filename[0] = 0; // Terminate the string
+  
   if(opt == NULL)
     return; // To allow static initialisation
   // Read options
