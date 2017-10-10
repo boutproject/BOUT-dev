@@ -285,7 +285,8 @@ void Datafile::add(int &i, const char *name, bool save_repeat) {
   d.ptr = &i;
   d.name = string(name);
   d.save_repeat = save_repeat;
-
+  d.covar = false;
+  
   int_arr.push_back(d);
 }
 
@@ -305,7 +306,8 @@ void Datafile::add(BoutReal &r, const char *name, bool save_repeat) {
   d.ptr = &r;
   d.name = string(name);
   d.save_repeat = save_repeat;
-
+  d.covar = false;
+  
   BoutReal_arr.push_back(d);
 }
 
@@ -325,7 +327,8 @@ void Datafile::add(Field2D &f, const char *name, bool save_repeat) {
   d.ptr = &f;
   d.name = string(name);
   d.save_repeat = save_repeat;
-
+  d.covar = false;
+  
   f2d_arr.push_back(d);
 }
 
@@ -345,7 +348,8 @@ void Datafile::add(Field3D &f, const char *name, bool save_repeat) {
   d.ptr = &f;
   d.name = string(name);
   d.save_repeat = save_repeat;
-
+  d.covar = false;
+  
   f3d_arr.push_back(d);
 }
 
