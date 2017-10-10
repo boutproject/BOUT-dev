@@ -478,6 +478,8 @@ class Mesh {
   // First derivatives in index space
   // Implemented in src/mesh/index_derivs.hxx
 
+  BoutReal fft_derivs_filter; ///< Fraction of modes to filter. This is set in derivs_init from option "ddz:fft_filter"
+  
   const Field3D indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method); ///< First derivative in X direction, in index space
   const Field2D indexDDX(const Field2D &f); ///< First derivative in X direction, in index space
   
