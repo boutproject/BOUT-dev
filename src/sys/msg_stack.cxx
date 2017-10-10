@@ -69,8 +69,6 @@ int MsgStack::push(const char *s, ...)
     va_end(ap);
     
     strncpy(m->str, buffer, MSG_MAX_SIZE);
-
-    //output.write("Pushing '%s' -> %d\n", buffer, nmsg);
   }else
     m->str[0] = '\0';
 
@@ -113,7 +111,6 @@ void MsgStack::dump() {
 
 std::string MsgStack::getDump() {
   std::string res = "====== Back trace ======\n";
-  //output.write("====== Back trace ======\n");
   for(int i=nmsg-1;i>=0;i--) {
     if(msg[i].str[0] != '\0') {
       res+=" -> ";

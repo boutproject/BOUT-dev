@@ -786,7 +786,7 @@ or put on the command line ``solver:monitor_timestep=true`` . When this
 is enabled, it will change how solvers like CVODE and PVODE (the default
 solvers) are used. Rather than being run in NORMAL mode, they will
 instead be run in SINGLE\_STEP mode (see the SUNDIALS notes
-here:\ http://computation.llnl.gov/casc/sundials/support/notes.html).
+here:\ https://computation.llnl.gov/casc/sundials/support/notes.html).
 This may in some cases be less efficient.
 
 .. [1]
@@ -794,7 +794,7 @@ This may in some cases be less efficient.
    https://bout2011.llnl.gov/pdf/talks/Chacon_bout2011.pdf
 
 .. [2]
-   See paper http://arxiv.org/abs/1209.2054 for an application to
+   See paper https://arxiv.org/abs/1209.2054 for an application to
    2-fluid equations
 
 .. [3]

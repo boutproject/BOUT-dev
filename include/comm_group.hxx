@@ -55,9 +55,6 @@ namespace comm_group {
   /// Wait for a single operation to finish
   bool Comm_wait(Comm_handle_t *handle);
   
-  /// Wait for any of the given communication to finish
-  //int Comm_gather_wait_any(int n, Comm_handle_t *handles);
-  
   /// Wait for all the communications to finish
   bool Comm_wait_all(int n, Comm_handle_t *handles);
 }

@@ -263,6 +263,9 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
       ierr = PetscPrintf(PETSC_COMM_SELF,"compute Jmat by slow fd...\n");CHKERRQ(ierr);
       ierr = TSDefaultComputeJacobian(ts,simtime,u,&J,&J,&J_structure,this);CHKERRQ(ierr);
     } else { // get sparse pattern of the Jacobian
+      throw BoutException("Path followed in PETSc solver not yet implemented in general "
+                          "-- experimental hard coded values here. Sorry\n");
+
       ierr = PetscPrintf(PETSC_COMM_SELF,"get sparse pattern of the Jacobian...\n");CHKERRQ(ierr);
       
       ISLocalToGlobalMapping ltog, ltogb;

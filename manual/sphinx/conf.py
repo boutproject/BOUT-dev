@@ -18,34 +18,46 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import argparse
-from breathe import apidoc
+
+try:
+    from breathe import apidoc
+    has_breathe = True
+except ImportError:
+    print("breathe module not installed")
+    has_breathe = False
+
+# Disable breathe
+has_breathe = False
+
 import os
 import subprocess
 import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
-import sphinx_rtd_theme
-from recommonmark.parser import CommonMarkParser
-
 # Are we running on readthedocs?
 on_readthedocs = os.environ.get("READTHEDOCS") == "True"
 
 # readthedocs currently runs out of memory if we actually dare to try to do this
-if on_readthedocs and False:
+if has_breathe and not on_readthedocs:
     # Run doxygen to generate the XML sources
     subprocess.call("cd ../doxygen; doxygen Doxyfile", shell=True)
     # Now use breathe.apidoc to autogen rst files for each XML file
-    apidoc_args = argparse.Namespace(destdir='_breathe_autogen/',
-                                     dryrun=False,
-                                     force=True,
-                                     notoc=False,
-                                     rootpath='../doxygen/bout/xml',
-                                     suffix='rst')
-    apidoc_args.rootpath = os.path.abspath(apidoc_args.rootpath)
-    apidoc.recurse_tree(apidoc_args)
-    for key, value in apidoc.TYPEDICT.items():
-        apidoc.create_modules_toc_file(key, value, apidoc_args)
+    #apidoc_args = argparse.Namespace(destdir='_breathe_autogen/',
+    #                                 dryrun=False,
+    #                                 force=True,
+    #                                 notoc=False,
+    #                                 rootpath='../doxygen/bout/xml',
+    #                                 suffix='rst')
+    #apidoc_args.rootpath = os.path.abspath(apidoc_args.rootpath)
+    #apidoc.recurse_tree(apidoc_args)
+    #for key, value in apidoc.TYPEDICT.items():
+    #    apidoc.create_modules_toc_file(key, value, apidoc_args)
 
+    # -- Options for breathe extension ----------------------------------------
+
+    breathe_projects = { "BOUT++": "../doxygen/bout/xml" }
+    breathe_default_project = "BOUT++"
+    breathe_default_members = ("members", "protected-members", "private-members", "undoc-members")
 
 # -- General configuration ------------------------------------------------
 
@@ -57,14 +69,21 @@ if on_readthedocs and False:
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = ['sphinx.ext.coverage',
-              'sphinx.ext.mathjax',
-              'breathe']
+              'sphinx.ext.mathjax']
+
+if has_breathe:
+    extensions.append('breathe')
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
 # How to parse markdown files
-source_parsers = {".md": CommonMarkParser}
+try:
+    from recommonmark.parser import CommonMarkParser
+    source_parsers = {".md": CommonMarkParser}
+except ImportError:
+    print("recommonmark module not installed")
+    source_parsers = {}
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
@@ -118,6 +137,7 @@ highlight_language = 'cpp'
 # a list of builtin themes.
 #
 if on_readthedocs:
+    import sphinx_rtd_theme
     html_theme = 'sphinx_rtd_theme'
 else:
     html_theme = 'sphinxdoc'
@@ -191,8 +211,4 @@ texinfo_documents = [
 ]
 
 
-# -- Options for breathe extension ----------------------------------------
 
-breathe_projects = { "BOUT++": "../doxygen/bout/xml" }
-breathe_default_project = "BOUT++"
-breathe_default_members = ("members", "protected-members", "private-members", "undoc-members")

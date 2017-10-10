@@ -104,14 +104,14 @@ using std::string;
 class Options {
 public:
   /// Constructor. This is called to create the root object
-  Options() : parent(nullptr) {}
-
+  Options();
+  
   /// Constructor used to create non-root objects
   ///
-  /// @param[in] p         Parent object
-  /// @param[in[ secname   Name of the section, including path from the root
-  Options(Options *p, string secname) : parent(p), sectionName(secname) {};
-
+  /// @param[in] parent        Parent object
+  /// @param[in] sectionName   Name of the section, including path from the root
+  Options(Options *parent, string sectionName) : parent(parent), sectionName(sectionName) {};
+  
   /// Destructor
   ~Options();
 

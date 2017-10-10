@@ -119,6 +119,8 @@ processor 0, anything written to the output will be written to screen
 reason not to, please use this ``output`` object when writing text
 output.
 
+More details are given in section :ref:`sec-logging`.
+
 Error handling
 --------------
 

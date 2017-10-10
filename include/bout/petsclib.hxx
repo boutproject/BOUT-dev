@@ -108,12 +108,14 @@ private:
 
 #else // BOUT_HAS_PETSC
 
+#include "unused.hxx"
+
 class PetscLib {
 public:
   PetscLib() {}
   ~PetscLib() {}
   
-  static void setArgs(int &c, char** &v) {}
+  static void setArgs(int &UNUSED(c), char** &UNUSED(v)) {}
   
   static void cleanup() {}
 };

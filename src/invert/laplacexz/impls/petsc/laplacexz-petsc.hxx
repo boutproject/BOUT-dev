@@ -19,8 +19,14 @@ public:
   LaplaceXZpetsc(Mesh *m, Options *options) : LaplaceXZ(m, options) {
     throw BoutException("No PETSc LaplaceXZ solver available");
   }
-  void setCoefs(const Field2D &UNUSED(A), const Field2D &UNUSED(B)) {}
-  Field3D solve(const Field3D &b, const Field3D &UNUSED(x0)) {return Field3D(0.,b.getMesh());}
+
+  using LaplaceXZ::setCoefs;
+  void setCoefs(const Field2D &UNUSED(A), const Field2D &UNUSED(B)) override {}
+
+  using LaplaceXZ::solve;
+  Field3D solve(const Field3D &UNUSED(b), const Field3D &UNUSED(x0)) override {
+    throw BoutException("No PETSc LaplaceXZ solver available");
+  }
 private:
 };
 
