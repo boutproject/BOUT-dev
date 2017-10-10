@@ -32,7 +32,10 @@ class Output;
 #include "multiostream.hxx"
 #include <iostream>
 #include <fstream>
+#include <functional>
 #include "boutexception.hxx"
+#include "unused.hxx"
+
 using std::endl;
 
 /// Class for text output to stdout and/or log file
@@ -118,15 +121,15 @@ private:
 /// 
 class DummyOutput : public Output {
 public:
-  void write(const char *str, ...) override {};
-  void print(const char *str, ...) override {};
+  void write(const char *UNUSED(str), ...) override{};
+  void print(const char *UNUSED(str), ...) override{};
   void enable() override {
     throw BoutException("DummyOutput cannot be enabled.\nTry compiling with "
                         "--enable-debug or be less verbose?");
   };
   void disable() override{};
-  void enable(bool en) {
-    if (en)
+  void enable(bool enable) {
+    if (enable)
       this->enable();
   };
 };
@@ -207,20 +210,22 @@ private:
 /// statements like
 ///    output_debug << "debug message";
 /// compile but have no effect if DEBUG_ENABLED is false
-template <typename T> DummyOutput &operator<<(DummyOutput &out, T const &t) {
+template <typename T> DummyOutput &operator<<(DummyOutput &out, T const &UNUSED(t)) {
   return out;
 }
 
-template <typename T> DummyOutput &operator<<(DummyOutput &out, const T *t) {
+template <typename T> DummyOutput &operator<<(DummyOutput &out, const T *UNUSED(t)) {
   return out;
 }
 
-inline DummyOutput &operator<<(DummyOutput &out, std::ostream &(*pf)(std::ostream &)) {
+// Function pointer so we can apply unused macro to pf in function below
+using stream_manipulator = std::ostream &(*)(std::ostream &);
+
+inline DummyOutput &operator<<(DummyOutput &out, stream_manipulator *UNUSED(pf)) {
   return out;
 }
 
-inline ConditionalOutput &operator<<(ConditionalOutput &out,
-                                     std::ostream &(*pf)(std::ostream &)) {
+inline ConditionalOutput &operator<<(ConditionalOutput &out, stream_manipulator *pf) {
   if (out.isEnabled()) {
     *out.getBase() << pf;
   }
