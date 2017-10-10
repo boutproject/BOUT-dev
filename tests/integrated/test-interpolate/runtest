@@ -4,7 +4,7 @@
 # Run the test, compare results against the benchmark
 #
 
-from boututils import shell,launch,getmpirun
+from boututils.run_wrapper import shell,launch,getmpirun
 from boutdata import collect
 from numpy import sqrt, max, abs, mean, array, log, pi, polyfit, meshgrid, exp, sin, cos
 from sys import stdout, exit
@@ -25,10 +25,10 @@ labels = [r'$'+var+r'$' for var in varlist]
 
 MPIRUN=getmpirun()
 
-print "Making Interpolation test"
+print("Making Interpolation test")
 shell("make > make.log")
 
-print "Running Interpolation test"
+print("Running Interpolation test")
 success = True
 
 error_2 = {}
@@ -100,8 +100,8 @@ plt.show()
 plt.close()
 
 if success:
-    print " => All Interpolation tests passed"
+    print(" => All Interpolation tests passed")
     exit(0)
 else:
-    print " => Some failed tests"
+    print(" => Some failed tests")
     exit(1)
