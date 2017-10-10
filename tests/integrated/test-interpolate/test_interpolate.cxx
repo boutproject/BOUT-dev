@@ -44,24 +44,24 @@ public:
     std::string a_func;
     std::shared_ptr<FieldGenerator> a_gen = getGeneratorFromOptions("a", a_func);
     Field3D a = f.create3D(a_func);
-    Field3D a_solution = 0;
-    Field3D a_interp = 0;
+    Field3D a_solution = 0.0;
+    Field3D a_interp = 0.0;
 
     std::string b_func;
     std::shared_ptr<FieldGenerator> b_gen = getGeneratorFromOptions("b", b_func);
     Field3D b = f.create3D(b_func);
-    Field3D b_solution = 0;
-    Field3D b_interp = 0;
+    Field3D b_solution = 0.0;
+    Field3D b_interp = 0.0;
 
     std::string c_func;
     std::shared_ptr<FieldGenerator> c_gen = getGeneratorFromOptions("c", c_func);
     Field3D c = f.create3D(c_func);
-    Field3D c_solution = 0;
-    Field3D c_interp = 0;
+    Field3D c_solution = 0.0;
+    Field3D c_interp = 0.0;
 
     // x and z displacements
-    Field3D deltax = 0;
-    Field3D deltaz = 0;
+    Field3D deltax = 0.0;
+    Field3D deltaz = 0.0;
 
     // Bind the random number generator and distribution into a single function
     auto dice = std::bind(distribution, generator);
