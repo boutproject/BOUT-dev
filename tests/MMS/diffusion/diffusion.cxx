@@ -7,7 +7,10 @@
 #include <bout/constants.hxx>
 
 void solution(Field3D &f, BoutReal t, BoutReal D);
-int error_monitor(Solver *solver, BoutReal simtime, int iter, int NOUT);
+class ErrorMonitor: public Monitor{
+public:
+  int call(Solver *solver, BoutReal simtime, int iter, int NOUT) override;
+};
 BoutReal MS(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z);
 BoutReal dxMS(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z);
 Field3D MMS_Source(BoutReal t);
@@ -20,7 +23,7 @@ BoutReal mu_N; // Parallel collisional diffusion coefficient
 BoutReal Lx, Ly, Lz;
 
 Coordinates *coord;
-
+ErrorMonitor error_monitor;
 int physics_init(bool restarting) {
   // Get the options
   Options *meshoptions = Options::getRoot()->getSection("mesh");
@@ -85,8 +88,8 @@ int physics_init(bool restarting) {
   source.allocate();
   SAVE_REPEAT(source);
 
-  error_monitor(NULL, 0,  0, 0);
-  solver->addMonitor(error_monitor);
+  error_monitor.call(NULL, 0,  0, 0);
+  solver->addMonitor(&error_monitor);
 
   return 0;
 }
@@ -170,7 +173,7 @@ Field3D MMS_Source(BoutReal t)
   return result;
 }
 
-int error_monitor(Solver *solver, BoutReal simtime, int iter, int NOUT) {
+int ErrorMonitor::call(Solver *solver, BoutReal simtime, int iter, int NOUT) {
   solution(S, simtime, mu_N);
 
   //Calculate the error. norms are calculated in the post-processing

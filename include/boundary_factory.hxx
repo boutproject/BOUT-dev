@@ -113,7 +113,7 @@ class BoundaryFactory {
   // Database of available boundary conditions and modifiers
   map<string, BoundaryOp*> opmap;
   map<string, BoundaryModifier*> modmap;
-  // Parallel boundary conditionscccc
+  // Parallel boundary conditions
   map<string, BoundaryOpPar*> par_opmap;
   // Modifiers to be implemented...
   // map<string, BoundaryModifier*> par_modmap;

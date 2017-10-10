@@ -32,7 +32,7 @@
 
 #include <vector2d.hxx>
 #include <boundary_op.hxx>
-#include <output.hxx>
+#include <boutexception.hxx>
 
 Vector2D::Vector2D() : covariant(true), deriv(NULL) { }
 
@@ -396,70 +396,6 @@ const Field2D abs(const Vector2D &v) {
 
 void Vector2D::accept(FieldVisitor &v) {
   v.accept(*this);
-}
-
-int Vector2D::getData(int jx, int jy, int jz, void *vptr) const {
-#if CHECK > 0
-  // check ranges
-  if((jx < 0) || (jx >= mesh->LocalNx) || (jy < 0) || (jy >= mesh->LocalNy) || (jz < 0) || (jz >= mesh->LocalNz)) {
-    output.write("Vector2D: getData (%d,%d,%d) out of bounds\n", jx, jy, jz);
-    exit(1);
-  }
-#endif
-  BoutReal *ptr = (BoutReal*) vptr;
-  *ptr = x(jx,jy); ptr++;
-  *ptr = y(jx,jy); ptr++;
-  *ptr = z(jx,jy);
-  
-  return 3*sizeof(BoutReal);
-}
-
-int Vector2D::getData(int jx, int jy, int jz, BoutReal *rptr) const {
-#if CHECK > 0
-  // check ranges
-  if((jx < 0) || (jx >= mesh->LocalNx) || (jy < 0) || (jy >= mesh->LocalNy) || (jz < 0) || (jz >= mesh->LocalNz)) {
-    output.write("Vector2D: getData (%d,%d,%d) out of bounds\n", jx, jy, jz);
-    exit(1);
-  }
-#endif
-
-  *rptr = x(jx,jy); rptr++;
-  *rptr = y(jx,jy); rptr++;
-  *rptr = z(jx,jy);
-  
-  return 3;
-}
-
-int Vector2D::setData(int jx, int jy, int jz, void *vptr) {
-#if CHECK > 0
-  // check ranges
-  if((jx < 0) || (jx >= mesh->LocalNx) || (jy < 0) || (jy >= mesh->LocalNy) || (jz < 0) || (jz >= mesh->LocalNz)) {
-    output.write("Vector2D: setData (%d,%d,%d) out of bounds\n", jx, jy, jz);
-    exit(1);
-  }
-#endif
-  BoutReal *rptr = (BoutReal*) vptr;
-  x(jx,jy) = *rptr; rptr++;
-  y(jx,jy) = *rptr; rptr++;
-  z(jx,jy) = *rptr;
-
-  return 3*sizeof(BoutReal);
-}
-
-int Vector2D::setData(int jx, int jy, int jz, BoutReal *rptr) {
-#if CHECK > 0
-  // check ranges
-  if((jx < 0) || (jx >= mesh->LocalNx) || (jy < 0) || (jy >= mesh->LocalNy) || (jz < 0) || (jz >= mesh->LocalNz)) {
-    output.write("Vector2D: setData (%d,%d,%d) out of bounds\n", jx, jy, jz);
-    exit(1);
-  }
-#endif
-
-  x(jx,jy) = *rptr; rptr++;
-  y(jx,jy) = *rptr; rptr++;
-  z(jx,jy) = *rptr;
-  
-  return 3;
 }
 
 ///////////////////// BOUNDARY CONDITIONS //////////////////

@@ -38,6 +38,7 @@ class Solver;
 #include <bout_types.hxx>
 #include <boutexception.hxx>
 #include <unused.hxx>
+#include "bout/monitor.hxx"
 
 ///////////////////////////////////////////////////////////////////
 // C function pointer types
@@ -53,7 +54,6 @@ typedef int (*Jacobian)(BoutReal t);
 
 
 /// Solution monitor, called each timestep
-typedef int (*MonitorFunc)(Solver *solver, BoutReal simtime, int iter, int NOUT);
 typedef int (*TimestepMonitorFunc)(Solver *solver, BoutReal simtime, BoutReal lastdt);
 
 ///////////////////////////////////////////////////////////////////
@@ -194,8 +194,12 @@ class Solver {
   // Monitors
   
   enum MonitorPosition {BACK, FRONT}; ///< A type to set where in the list monitors are added
-  void addMonitor(MonitorFunc f, MonitorPosition pos=FRONT);     ///< Add a monitor function to be called every output
-  void removeMonitor(MonitorFunc f);  ///< Remove a monitor function previously added
+  /// Add a monitor function to be called every output
+  DEPRECATED(void addMonitor(int (&)(Solver *solver, BoutReal simtime, int iter, int NOUT)
+                             , MonitorPosition pos=FRONT));
+  /// Add a monitor to be called every output
+  void addMonitor(Monitor * f, MonitorPosition pos=FRONT);
+  void removeMonitor(Monitor * f);  ///< Remove a monitor function previously added
 
   void addTimestepMonitor(TimestepMonitorFunc f);    ///< Add a monitor function to be called every timestep
   void removeTimestepMonitor(TimestepMonitorFunc f); ///< Remove a previously added timestep monitor
@@ -258,7 +262,8 @@ class Solver {
   virtual int run() = 0;
 
   //Should wipe out internal field vector and reset from current field object data
-  virtual void resetInternalFields(){throw BoutException("resetInternalFields not supported by this Solver");}
+  virtual void resetInternalFields(){
+    throw BoutException("resetInternalFields not supported by this Solver");}
 
   // Solver status. Optional functions used to query the solver
   virtual int n2Dvars() const {return f2d.size();}  ///< Number of 2D variables. Vectors count as 3
@@ -371,6 +376,9 @@ protected:
   BoutReal max_dt; ///< Maximum internal timestep
   
 private:
+  bool initCalled=false; ///< Has the init function of the solver been called?
+  int freqDefault=1;     ///< Default sampling rate at which to call monitors - same as output to screen
+  BoutReal timestep=-1; ///< timestep - shouldn't be changed after init is called.
   PhysicsModel *model;    ///< physics model being evolved
 
   rhsfunc phys_run;       ///< The user's RHS function
@@ -384,7 +392,7 @@ private:
   void add_mms_sources(BoutReal t);
   void calculate_mms_error(BoutReal t);
   
-  std::list<MonitorFunc> monitors; ///< List of monitor functions
+  std::list<Monitor*> monitors; ///< List of monitor functions
   std::list<TimestepMonitorFunc> timestep_monitors; ///< List of timestep monitor functions
 
   void pre_rhs(BoutReal t); // Should be run before user RHS is called
@@ -395,8 +403,6 @@ private:
   void loop_vars(BoutReal *udata, SOLVER_VAR_OP op);
 
   bool varAdded(const string &name); // Check if a variable has already been added
-  
-  bool enablerestart; ///< Is restarting enabled?
 };
 
 #endif // __SOLVER_H__

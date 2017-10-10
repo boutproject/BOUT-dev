@@ -4,6 +4,7 @@
 #include <boundary_factory.hxx>
 #include <output.hxx>
 #include <field_factory.hxx>
+#include "unused.hxx"
 
 FieldData::FieldData() : boundaryIsCopy(false), boundaryIsSet(true) {
   
@@ -21,13 +22,13 @@ void FieldData::setBoundary(const string &name) {
   /// Get the boundary factory (singleton)
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
   
-  output << "Setting boundary for variable " << name << endl;
+  output_info << "Setting boundary for variable " << name << endl;
   /// Loop over the mesh boundary regions
   for(const auto& reg : mesh->getBoundaries()) {
     BoundaryOp* op = static_cast<BoundaryOp*>(bfact->createFromOptions(name, reg));
     if(op != NULL)
       bndry_op.push_back(op);
-    output << endl;
+    output_info << endl;
   }
 
   /// Get the mesh boundary regions
@@ -37,14 +38,14 @@ void FieldData::setBoundary(const string &name) {
     BoundaryOpPar* op = static_cast<BoundaryOpPar*>(bfact->createFromOptions(name, reg));
     if(op != NULL)
       bndry_op_par.push_back(op);
-    output << endl;
+    output_info << endl;
   }
 
   boundaryIsSet = true;
   boundaryIsCopy = false;
 }
 
-void FieldData::setBoundary(const string &region, BoundaryOp *op) {
+void FieldData::setBoundary(const string &UNUSED(region), BoundaryOp *op) {
   /// Get the mesh boundary regions
   vector<BoundaryRegion*> reg = mesh->getBoundaries();
  

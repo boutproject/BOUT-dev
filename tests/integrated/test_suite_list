@@ -16,8 +16,10 @@ test-dataiterator
 test-dataiterator2
 !test-fieldgroup
 !test-initial
+test-stopCheck
 test-subdir
 test-aiolos
+test-fci-slab
 # More complex tests
 test-drift-instability
 test-interchange-instability

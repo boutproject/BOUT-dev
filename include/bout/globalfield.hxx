@@ -5,7 +5,6 @@
 
 class GlobalField;
 class GlobalField2D;
-//class GlobalField3D;
 
 #ifndef __GLOBALFIELD_H__
 #define __GLOBALFIELD_H__
