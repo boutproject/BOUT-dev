@@ -89,6 +89,30 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing 
   *this = f; //This line is probably not required as we init data from f.data above.
 }
 
+Field2D::Field2D(Field2D&& f) : Field(f.fieldmesh), // The mesh containing array sizes
+                                     data(f.data), // This handles references to the data array
+                                     deriv(f.deriv) {
+  TRACE("Field2D(Field2D&&)");
+
+#if CHECK > 2
+  checkData(f);
+#endif
+
+  if(fieldmesh) {
+    nx = fieldmesh->LocalNx;
+    ny = fieldmesh->LocalNy;
+  }
+#if CHECK > 0
+  else {
+    nx=-1;
+    ny=-1;
+  }
+#endif
+
+  boundaryIsSet = false;
+  *this = f; //This line is probably not required as we init data from f.data above.
+}
+
 Field2D::Field2D(BoutReal val) : Field(nullptr), deriv(nullptr) {
   boundaryIsSet = false;
 
