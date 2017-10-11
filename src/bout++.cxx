@@ -475,8 +475,12 @@ int BoutFinalise() {
   Laplacian::cleanup();
 
   // Delete field memory
-  Array<double>::cleanup();
-
+  Array<BoutReal>::cleanup();
+  Array<dcomplex>::cleanup();
+  Array<fcmplx>::cleanup();
+  Array<int>::cleanup();
+  Array<unsigned long>::cleanup();
+  
   // Cleanup boundary factory
   BoundaryFactory::cleanup();
   
