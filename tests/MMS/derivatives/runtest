@@ -122,7 +122,7 @@ for dir,sizes in inputs:
                     exit(2)
                 # Collect data
                 tr=[0,tmax-1]
-                incGuards=True
+                incGuards=False
                 E_N = collect("error", path='data', tind=tr,info=False,xguards=incGuards,yguards=incGuards)
 
 

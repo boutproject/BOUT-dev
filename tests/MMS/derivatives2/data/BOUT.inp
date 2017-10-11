@@ -18,7 +18,7 @@ dy=Ly/ny
 Lx=1
 dx=Lx/(nx-2*MXG)
 Lz=2*pi
-dz=mz/Lz
+dz=Lz/mz
 nx=5
 ny=6
 
