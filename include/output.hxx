@@ -103,11 +103,8 @@ public:
   }
 
   static Output *getInstance(); ///< Return pointer to instance
-  static void cleanup();        ///< Delete the instance
 
 private:
-  static Output *instance; ///< Default instance of this class
-
   std::ofstream file;                 ///< Log file stream
   static const int BUFFER_LEN = 1024; ///< default length
   int buffer_len;                     ///< the current length

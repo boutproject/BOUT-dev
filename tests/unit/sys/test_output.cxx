@@ -125,18 +125,14 @@ TEST_F(OutputTest, DisableEnableStdout) {
   std::remove(filename);
 }
 
-TEST_F(OutputTest, CleanupAndGetInstance) {
+TEST_F(OutputTest, GetInstance) {
   Output *local_output = Output::getInstance();
+
   EXPECT_NE(local_output, nullptr);
 
-  local_output->cleanup();
-
-  // Get a new instance
   Output *new_output = Output::getInstance();
 
-  *new_output << "Hello, world!\n";
-
-  EXPECT_EQ(buffer.str(), "Hello, world!\n");
+  EXPECT_EQ(local_output, new_output);
 }
 
 TEST_F(OutputTest, ConditionalGetBase) {

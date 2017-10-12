@@ -499,9 +499,6 @@ int BoutFinalise() {
 
   // Call PetscFinalize if not already called
   PetscLib::cleanup();
-    
-  // Logging output
-  Output::cleanup();
 
   // MPI communicator, including MPI_Finalize()
   BoutComm::cleanup();
