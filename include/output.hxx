@@ -155,7 +155,6 @@ public:
   /// by calling base->vwrite
   /// This string is then sent to log file and stdout (on processor 0)
   void write(const char *str, ...) override;
-  
   void vwrite(const char *str, va_list va) override {
     if (enabled) {
       base->vwrite(str, va);
@@ -171,7 +170,7 @@ public:
     }
   }
   
-  /// Get the Output object which is the base of this ConditionalOutput
+  /// Get the lowest-level Output object which is the base of this ConditionalOutput
   Output *getBase() {
     if (base_is_cond) {
       return dynamic_cast<ConditionalOutput *>(base)->getBase();
