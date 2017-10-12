@@ -198,12 +198,10 @@ public:
   };
 
   Output *base;
+
+private:
   bool enabled;
-
-private:
   bool base_is_cond;
-
-private:
 };
 
 /// Catch stream outputs to DummyOutput objects. This is so that
