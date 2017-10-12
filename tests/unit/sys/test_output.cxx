@@ -1,4 +1,5 @@
 #include "gtest/gtest.h"
+#include "boutexception.hxx"
 #include "output.hxx"
 
 #include <cstdio>
@@ -153,6 +154,8 @@ TEST_F(OutputTest, ConditionalCheckIsEnabled) {
   EXPECT_TRUE(local_output.isEnabled());
   local_output.enable(false);
   EXPECT_FALSE(local_output.isEnabled());
+  local_output.enable(true);
+  EXPECT_TRUE(local_output.isEnabled());
 }
 
 TEST_F(OutputTest, ConditionalJustStdOutCpp) {
@@ -210,6 +213,29 @@ TEST_F(OutputTest, ConditionalJustStdOutGlobalInstances) {
 #endif
 }
 
+TEST_F(OutputTest, ConditionalJustPrint) {
+  Output local_output_base;
+  ConditionalOutput local_output(&local_output_base);
+
+  // Get a filename for a temporary file
+  char *filename = std::tmpnam(nullptr);
+
+  std::string test_output = "To stdout only\n";
+
+  local_output.open(filename);
+  local_output.print(test_output.c_str());
+
+  std::ifstream test_file(filename);
+  std::stringstream test_buffer;
+  test_buffer << test_file.rdbuf();
+  test_file.close();
+
+  EXPECT_EQ("", test_buffer.str());
+  EXPECT_EQ(test_output, buffer.str());
+
+  std::remove(filename);
+}
+
 TEST_F(OutputTest, ConditionalMultipleLayersGetBase) {
   Output local_output_base;
   ConditionalOutput local_output_first(&local_output_base);
@@ -238,9 +264,46 @@ TEST_F(OutputTest, ConditionalMultipleLayersJustStdOutPrintf) {
   EXPECT_EQ(buffer.str(), "Hello, world!2\n");
 }
 
-TEST_F(OutputTest, DummyOutput) {
+TEST_F(OutputTest, DummyCheckEnableDoesntWork) {
+  DummyOutput dummy;
+
+  EXPECT_FALSE(dummy.isEnabled());
+  EXPECT_THROW(dummy.enable(), BoutException);
+  EXPECT_FALSE(dummy.isEnabled());
+  EXPECT_THROW(dummy.enable(true), BoutException);
+  EXPECT_FALSE(dummy.isEnabled());
+  EXPECT_NO_THROW(dummy.enable(false));
+  EXPECT_FALSE(dummy.isEnabled());
+  dummy.disable();
+  EXPECT_FALSE(dummy.isEnabled());
+}
+
+TEST_F(OutputTest, DummyOutputStdOut) {
   DummyOutput dummy;
   dummy << "Vanish to the void\n";
+  dummy.write("Vanish to the void\n");
 
   EXPECT_EQ(buffer.str(), "");
+}
+
+TEST_F(OutputTest, DummyJustPrint) {
+  DummyOutput dummy;
+
+  // Get a filename for a temporary file
+  char *filename = std::tmpnam(nullptr);
+
+  std::string test_output = "To stdout only\n";
+
+  dummy.open(filename);
+  dummy.print(test_output.c_str());
+
+  std::ifstream test_file(filename);
+  std::stringstream test_buffer;
+  test_buffer << test_file.rdbuf();
+  test_file.close();
+
+  EXPECT_EQ("", test_buffer.str());
+  EXPECT_EQ("", buffer.str());
+
+  std::remove(filename);
 }

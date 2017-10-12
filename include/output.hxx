@@ -129,6 +129,7 @@ public:
     if (enable)
       this->enable();
   };
+  bool isEnabled() { return false; }
 };
 
 /// Layer on top of Output which passes through calls to write, print etc
