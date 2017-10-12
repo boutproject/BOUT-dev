@@ -56,10 +56,9 @@ gtest-all.o : $(GTEST_SENTINEL)
 	@$(CXX) $(CPPFLAGS) -I$(GTEST_DIR) $(CXXFLAGS) -c \
             $(GTEST_DIR)/src/gtest-all.cc
 
-bout_test_main.o : $(TEST_SENTINEL)
+bout_test_main.o : $(TEST_SENTINEL) $(BOUT_TEST_DIR)/bout_test_main.cxx
 	@echo "  Compiling" $@
-	@$(CXX) $(CPPFLAGS) -I$(GTEST_DIR) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c \
-            $(BOUT_TEST_DIR)/bout_test_main.cxx
+	@$(CXX) $(CPPFLAGS) -I$(GTEST_DIR) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c $(@:.o=.cxx)
 
 gtest.a : gtest-all.o
 	@echo "  Linking" $@
