@@ -36,6 +36,8 @@
 #ifndef __BOUT_H__
 #define __BOUT_H__
 
+#include "bout/settings.hxx"
+
 #include "boutcomm.hxx"
 
 #include "globals.hxx"
