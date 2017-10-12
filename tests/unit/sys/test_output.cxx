@@ -138,3 +138,113 @@ TEST_F(OutputTest, CleanupAndGetInstance) {
 
   EXPECT_EQ(buffer.str(), "Hello, world!\n");
 }
+
+TEST_F(OutputTest, ConditionalGetBase) {
+  Output local_output_base;
+  ConditionalOutput local_output(&local_output_base);
+
+  EXPECT_EQ(local_output.getBase(), &local_output_base);
+}
+
+TEST_F(OutputTest, ConditionalCheckIsEnabled) {
+  Output local_output_base;
+  ConditionalOutput local_output(&local_output_base);
+
+  EXPECT_TRUE(local_output.isEnabled());
+  local_output.disable();
+  EXPECT_FALSE(local_output.isEnabled());
+  local_output.enable();
+  EXPECT_TRUE(local_output.isEnabled());
+  local_output.enable(false);
+  EXPECT_FALSE(local_output.isEnabled());
+}
+
+TEST_F(OutputTest, ConditionalJustStdOutCpp) {
+  Output local_output_base;
+  ConditionalOutput local_output(&local_output_base);
+
+  local_output << "Hello, world!" << 1 << "\n";
+
+  EXPECT_EQ(buffer.str(), "Hello, world!1\n");
+}
+
+TEST_F(OutputTest, ConditionalJustStdOutPrintf) {
+  Output local_output_base;
+  ConditionalOutput local_output(&local_output_base);
+
+  local_output.write("%s%d\n", "Hello, world!", 2);
+
+  EXPECT_EQ(buffer.str(), "Hello, world!2\n");
+}
+
+TEST_F(OutputTest, ConditionalDisable) {
+  Output local_output_base;
+  ConditionalOutput local_output(&local_output_base);
+
+  local_output.disable();
+  local_output << "Hello, world!" << 1 << "\n";
+
+  EXPECT_EQ(buffer.str(), "");
+}
+
+TEST_F(OutputTest, ConditionalJustStdOutGlobalInstances) {
+
+  output_warn.enable();
+  output_warn << "warn output\n";
+  EXPECT_EQ(buffer.str(), "warn output\n");
+
+  buffer.str("");
+  output_info << "info output\n";
+  EXPECT_EQ(buffer.str(), "info output\n");
+
+  buffer.str("");
+  output_progress << "progress output\n";
+  EXPECT_EQ(buffer.str(), "progress output\n");
+
+  buffer.str("");
+  output_error << "error output\n";
+  EXPECT_EQ(buffer.str(), "error output\n");
+
+  buffer.str("");
+  output_debug << "debug output\n";
+#ifdef DEBUG_ENABLED
+  EXPECT_EQ(buffer.str(), "debug output\n");
+#else
+  EXPECT_EQ(buffer.str(), "");
+#endif
+}
+
+TEST_F(OutputTest, ConditionalMultipleLayersGetBase) {
+  Output local_output_base;
+  ConditionalOutput local_output_first(&local_output_base);
+  ConditionalOutput local_output_second(&local_output_first);
+
+  EXPECT_EQ(local_output_second.getBase(), &local_output_base);
+}
+
+TEST_F(OutputTest, ConditionalMultipleLayersJustStdOut) {
+  Output local_output_base;
+  ConditionalOutput local_output_first(&local_output_base);
+  ConditionalOutput local_output_second(&local_output_first);
+
+  local_output_second << "Hello, world!" << 1 << "\n";
+
+  EXPECT_EQ(buffer.str(), "Hello, world!1\n");
+}
+
+TEST_F(OutputTest, ConditionalMultipleLayersJustStdOutPrintf) {
+  Output local_output_base;
+  ConditionalOutput local_output_first(&local_output_base);
+  ConditionalOutput local_output_second(&local_output_first);
+
+  local_output_second.write("%s%d\n", "Hello, world!", 2);
+
+  EXPECT_EQ(buffer.str(), "Hello, world!2\n");
+}
+
+TEST_F(OutputTest, DummyOutput) {
+  DummyOutput dummy;
+  dummy << "Vanish to the void\n";
+
+  EXPECT_EQ(buffer.str(), "");
+}
