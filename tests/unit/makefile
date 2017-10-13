@@ -80,7 +80,7 @@ $(TEST_OBJECTS): $(LIB)
 
 serial_tests: makefile $(BOUT_TOP)/make.config $(OBJ) $(LIB) $(SUB_LIBS) $(TEST_OBJECTS) bout_test_main.a
 	@echo "  Linking tests"
-	@$(LD) $(LDFLAGS) -o $@ $(TEST_OBJECTS) bout_test_main.a $(BOUT_LIBS) $(SUB_LIBS)
+	@$(LD) -o $@ $(TEST_OBJECTS) bout_test_main.a $(LDFLAGS) $(BOUT_LIBS) $(SUB_LIBS)
 
 # Note: This depends on GTEST_SENTINEL, which checks out Google Test if not present
 #       The correct behaviour relies on the dependencies being checked in left-to-right order
