@@ -28,7 +28,7 @@ public:
 
 TEST_F(OutputTest, JustStdOutCpp) {
   Output local_output;
-  local_output << "Hello, world!" << 1 << "\n";
+  local_output << "Hello, world!" << 1 << std::endl;
 
   EXPECT_EQ(buffer.str(), "Hello, world!1\n");
 }
@@ -41,9 +41,9 @@ TEST_F(OutputTest, JustStdOutPrintf) {
 }
 
 TEST_F(OutputTest, JustStdOutGlobalInstance) {
-  output << "Hello, world!\n";
+  output << "Hello, world!" << 3 << std::endl;
 
-  EXPECT_EQ(buffer.str(), "Hello, world!\n");
+  EXPECT_EQ(buffer.str(), "Hello, world!3\n");
 }
 
 TEST_F(OutputTest, OpenFile) {
@@ -162,18 +162,18 @@ TEST_F(OutputTest, ConditionalJustStdOutCpp) {
   Output local_output_base;
   ConditionalOutput local_output(&local_output_base);
 
-  local_output << "Hello, world!" << 1 << "\n";
+  local_output << "Hello, world!" << 4 << std::endl;
 
-  EXPECT_EQ(buffer.str(), "Hello, world!1\n");
+  EXPECT_EQ(buffer.str(), "Hello, world!4\n");
 }
 
 TEST_F(OutputTest, ConditionalJustStdOutPrintf) {
   Output local_output_base;
   ConditionalOutput local_output(&local_output_base);
 
-  local_output.write("%s%d\n", "Hello, world!", 2);
+  local_output.write("%s%d\n", "Hello, world!", 5);
 
-  EXPECT_EQ(buffer.str(), "Hello, world!2\n");
+  EXPECT_EQ(buffer.str(), "Hello, world!5\n");
 }
 
 TEST_F(OutputTest, ConditionalDisable) {
@@ -181,7 +181,8 @@ TEST_F(OutputTest, ConditionalDisable) {
   ConditionalOutput local_output(&local_output_base);
 
   local_output.disable();
-  local_output << "Hello, world!" << 1 << "\n";
+  local_output << "Hello, world!" << 6;
+  local_output << std::endl;
 
   EXPECT_EQ(buffer.str(), "");
 }
@@ -249,9 +250,9 @@ TEST_F(OutputTest, ConditionalMultipleLayersJustStdOut) {
   ConditionalOutput local_output_first(&local_output_base);
   ConditionalOutput local_output_second(&local_output_first);
 
-  local_output_second << "Hello, world!" << 1 << "\n";
+  local_output_second << "Hello, world!" << 7 << std::endl;
 
-  EXPECT_EQ(buffer.str(), "Hello, world!1\n");
+  EXPECT_EQ(buffer.str(), "Hello, world!7\n");
 }
 
 TEST_F(OutputTest, ConditionalMultipleLayersJustStdOutPrintf) {
@@ -259,9 +260,9 @@ TEST_F(OutputTest, ConditionalMultipleLayersJustStdOutPrintf) {
   ConditionalOutput local_output_first(&local_output_base);
   ConditionalOutput local_output_second(&local_output_first);
 
-  local_output_second.write("%s%d\n", "Hello, world!", 2);
+  local_output_second.write("%s%d\n", "Hello, world!", 8);
 
-  EXPECT_EQ(buffer.str(), "Hello, world!2\n");
+  EXPECT_EQ(buffer.str(), "Hello, world!8\n");
 }
 
 TEST_F(OutputTest, DummyCheckEnableDoesntWork) {
@@ -280,7 +281,7 @@ TEST_F(OutputTest, DummyCheckEnableDoesntWork) {
 
 TEST_F(OutputTest, DummyOutputStdOut) {
   DummyOutput dummy;
-  dummy << "Vanish to the void\n";
+  dummy << "Vanish to the void" << std::endl;
   dummy.write("Vanish to the void\n");
 
   EXPECT_EQ(buffer.str(), "");

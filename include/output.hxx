@@ -220,7 +220,7 @@ inline DummyOutput &operator<<(DummyOutput &out, stream_manipulator UNUSED(pf)) 
   return out;
 }
 
-inline ConditionalOutput &operator<<(ConditionalOutput &out, stream_manipulator *pf) {
+inline ConditionalOutput &operator<<(ConditionalOutput &out, stream_manipulator pf) {
   if (out.isEnabled()) {
     *out.getBase() << pf;
   }
