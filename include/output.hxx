@@ -216,7 +216,7 @@ template <typename T> DummyOutput &operator<<(DummyOutput &out, const T *UNUSED(
 // Function pointer so we can apply unused macro to pf in function below
 using stream_manipulator = std::ostream &(*)(std::ostream &);
 
-inline DummyOutput &operator<<(DummyOutput &out, stream_manipulator *UNUSED(pf)) {
+inline DummyOutput &operator<<(DummyOutput &out, stream_manipulator UNUSED(pf)) {
   return out;
 }
 
