@@ -339,7 +339,11 @@ int BoutInitialise(int &argc, char **&argv) {
 #ifdef NCDF
   output_info.write("\tnetCDF support enabled\n");
 #else
+#ifdef NCDF4
+  output_info.write("\tnetCDF4 support enabled\n");
+#else
   output_info.write("\tnetCDF support disabled\n");
+#endif
 #endif
 
 #ifdef PNCDF
