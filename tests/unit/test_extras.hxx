@@ -45,9 +45,6 @@ public:
     LocalNx = nx;
     LocalNy = ny;
     LocalNz = nz;
-    GlobalNx = 0;
-    GlobalNy = 0;
-    GlobalNz = 0;
     // Small "inner" region
     xstart = 1;
     xend = nx - 2;
@@ -131,7 +128,8 @@ public:
   const RangeIterator iterateBndryLowerInnerY() const { return RangeIterator(); }
   const RangeIterator iterateBndryUpperOuterY() const { return RangeIterator(); }
   const RangeIterator iterateBndryUpperInnerY() const { return RangeIterator(); }
-  vector<BoundaryRegion *> getBoundaries() { return vector<BoundaryRegion *>(); }
+  void addBoundary(BoundaryRegion* region) {boundaries.push_back(region);}
+  vector<BoundaryRegion *> getBoundaries() { return boundaries; }
   vector<BoundaryRegionPar *> getBoundariesPar() { return vector<BoundaryRegionPar *>(); }
   BoutReal GlobalX(int UNUSED(jx)) const { return 0; }
   BoutReal GlobalY(int UNUSED(jy)) const { return 0; }
@@ -147,6 +145,8 @@ public:
   void set_ri(dcomplex *UNUSED(ayn), int UNUSED(n), BoutReal *UNUSED(r),
               BoutReal *UNUSED(i)) {}
   const Field2D lowPass_poloidal(const Field2D &, int) { return Field2D(0.0); }
+private:
+  vector<BoundaryRegion *> boundaries;
 };
 
 #endif //  TEST_EXTRAS_H__
