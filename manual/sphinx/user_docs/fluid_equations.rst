@@ -1,6 +1,5 @@
 .. _sec-equations:
 
-
 BOUT++ physics models
 =====================
 
@@ -105,7 +104,7 @@ It looks in a section with the same name as the variable ("T" here) for variable
     function = gauss(y-pi, 0.2)  # The form of the initial perturbation. y from 0 to 2*pi
 
 The function is evaluated using expressions which can involve x,y and z coordinates. More details
-are given in section :ref:`sec-init-time-evolved-vars`. 
+are given in section :ref:`sec-init-time-evolved-vars`.
 
 Finally an error code is returned, here 0 indicates no error. If init returns non-zero then 
 the simulation will stop.

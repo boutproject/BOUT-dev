@@ -150,10 +150,10 @@ The first index of the array passed to ``showdata`` is assumed to be time, amd t
 indices are plotted. In this example we pass a 2D array ``[t,y]``, so ``showdata`` will animate
 a line plot.
 
+.. _sec-intro-using-idl:
+
 Analysing the output using IDL
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. _sec-intro-using-idl
 
 First, list the variables in one of the data files:
 
@@ -235,9 +235,9 @@ information on setting up and running BOUT++ is given in
 are given in :ref:`sec-output`.
 
 Alternatively, one can run BOUT++ with the python wrapper
-``bout_runners`` , as explained in section [sec:bout\_runners]. Examples
-of using ``bout_runners`` can be found in
-``examples/bout_runners_example``.
+``bout_runners``, as explained in section
+:ref:`sec-bout_runners`. Examples of using ``bout_runners`` can be
+found in ``examples/bout_runners_example``.
 
 
 When things go wrong
@@ -301,7 +301,7 @@ information makes it possible to verify precisely which version of the
 code was used for any given run.
 
 Next comes the compile-time options, which depend on how BOUT++ was
-configured (see :ref:`sec-installbout`)
+configured (see :ref:`sec-compile-bout`)
 
 .. code-block:: bash
 
