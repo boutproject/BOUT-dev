@@ -248,25 +248,36 @@ enough to discover a new bug. This is particularly likely if you’re
 modifying the physics module source code (see :ref:`sec-equations`)
 when you need a way to debug your code too.
 
--  Check the end of each processor’s log file (tail data/BOUT.log.\*).
-   When BOUT++ exits before it should, what is printed to screen is just
-   the output from processor 0. If an error occurred on another
-   processor then the error message will be written to it’s log file
-   instead.
+- Check the end of each processor’s log file (tail data/BOUT.log.\*).
+  When BOUT++ exits before it should, what is printed to screen is just
+  the output from processor 0. If an error occurred on another
+  processor then the error message will be written to it’s log file
+  instead.
 
--  By default when an error occurs a kind of stack trace is printed
-   which shows which functions were being run (most recent first). This
-   should give a good indication of where an error occurred. If this
-   stack isn’t printed, make sure checking is set to level 2 or higher
-   (``./configure –with-checks=2``)
+- By default when an error occurs a kind of stack trace is printed
+  which shows which functions were being run (most recent first). This
+  should give a good indication of where an error occurred. If this
+  stack isn’t printed, make sure checking is set to level 2 or higher
+  (``./configure –-enable-checks=2``).
 
--  If the error is a segmentation fault, you can try a debugger such as
-   totalview
+- If the error is due to non-finite numbers, increase the checking
+  level (``./configure –-enable-checks=3``) to perform more checking of
+  values and (hopefully) find an error as soon as possible after it
+  occurs.
 
--  If the error is due to non-finite numbers, increase the checking
-   level (``./configure –with-checks=3``) to perform more checking of
-   values and (hopefully) find an error as soon as possible after it
-   occurs.
+- If the error is a segmentation fault, you can try a debugger such as
+  gdb or totalview. You will likely need to compile with some
+  debugging flags (``./configure --enable-debug``).
+
+- You can also enable exceptions on floating point errors
+  (``./configure --enable-sigfpe``), though the majority of these
+  types of errors should be caught with checking level set to 3.
+
+- Expert users can try AddressSanitizer, which is a tool that comes
+  with recent versions of GCC and Clang. To enable AddressSanitizer,
+  include ``-fsanitize=leak -fsanitize=address -fsanitize=undefined``
+  in ``CXXFLAGS`` when configuring BOUT++, or add them to
+  ``BOUT_FLAGS``.
 
 Startup output
 --------------
