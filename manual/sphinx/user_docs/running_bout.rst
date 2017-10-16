@@ -6,11 +6,12 @@ Running BOUT++
 Quick start
 -----------
 
-The ``examples/`` directory contains some test cases for a variety of
-fluid models. The ones starting ``test-`` are short tests, which often
-just run a part of the code rather than a complete simulation. The
-simplest example to start with is ``examples/conduction/``. This solves
-a single equation for a 3D scalar field :math:`T`:
+The ``examples/`` directory contains some example physics models for a
+variety of fluid models. There are also some under
+``tests/integrated/``, which often just run a part of the code rather
+than a complete simulation. The simplest example to start with is
+``examples/conduction/``. This solves a single equation for a 3D
+scalar field :math:`T`:
 
 .. math::
 
@@ -213,8 +214,8 @@ The equivalent commands in Python are as follows.
 Further examples
 ----------------
 
-The next example to look at is ``test-wave``, which is solving a wave
-equation using
+The next example to look at is ``tests/integrated/test-wave``, which
+is solving a wave equation using
 
 .. math::
 
