@@ -147,6 +147,9 @@ TEST_F(OptionsTest, SingletonTest) {
 TEST_F(OptionsTest, CheckUsed) {
   // stdout redirection code from https://stackoverflow.com/a/4043813/2043465
 
+  // Need output_info enabled, as Options::printUnused writes to it
+  output_info.enable();
+
   std::stringstream buffer;
   // Save cout's buffer here
   std::streambuf *sbuf = std::cout.rdbuf();
