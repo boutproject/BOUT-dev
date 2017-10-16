@@ -1239,10 +1239,10 @@ way to debug your code too.
 \item By default when an error occurs a kind of stack trace is printed which shows which functions
 were being run (most recent first). This should give a good indication of where
 an error occurred.  If this stack isn't printed, make sure checking is set to
-level 2 or higher (\code{./configure --with-checks=2})
+level 2 or higher (\code{./configure --enable-checks=2})
 \item If the error is a segmentation fault, you can try a debugger such as totalview
 \item If the error is due to non-finite numbers, increase the checking level
-    (\code{./configure --with-checks=3}) to perform more checking of values and
+    (\code{./configure --enable-checks=3}) to perform more checking of values and
     (hopefully) find an error as soon as possible after it occurs.
 \end{itemize}
 %
