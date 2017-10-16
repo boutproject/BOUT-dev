@@ -21,7 +21,7 @@ Messages sent to ``output`` on processor 0 will be printed to console and saved 
 error message will usually only be in the log file, not printed to console. If BOUT++
 crashes but no error message is printed, try looking at the ends of all log files:
 
-::
+.. code-block:: bash
 
    $ tail BOUT.log.*
 

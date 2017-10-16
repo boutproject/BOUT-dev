@@ -107,21 +107,23 @@ Currently it also assumes that the z index is periodic.
 One way to create this grid is to define the grid points manually e.g.:
 
 .. code:: python
-          
+
    import numpy as np
    import zoidberg
-          
-   r,theta = np.meshgrid(np.linspace(1,2,10),  # minor radius
-                         np.linspace(0,2*np.pi, 10), # angle
-                         indexing='ij')
+
+   # First argument is minor radius, second is angle
+   r,theta = np.meshgrid(np.linspace(1,2,10),
+                         np.linspace(0,2*np.pi, 10),
+                         indexing="ij")
    
    R = r * np.sin(theta)
    Z = r * np.cos(theta)
-
+  
    poloidal_grid = zoidberg.poloidal_grid.StructuredPoloidalGrid(R,Z)
 
-For more complicated shapes than circles, Zoidberg comes with an elliptic grid
-generator which needs to be given only the inner and outer boundaries:
+For more complicated shapes than circles, Zoidberg comes with an
+elliptic grid generator which needs to be given only the inner and
+outer boundaries:
 
 .. code:: python
 
@@ -319,8 +321,6 @@ flux surfaces.
    import zoidberg
    field = zoidberg.VMEC("w7x.wout")
 
-
-   
 
 Plotting the magnetic field
 ---------------------------
