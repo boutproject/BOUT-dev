@@ -289,7 +289,7 @@ int BoutInitialise(int &argc, char **&argv) {
   output_info.enable(verbosity>3);
   output_debug.enable(verbosity>4);
   
-  // The backward-compatible output object same as prog
+  // The backward-compatible output object same as output_progress
   output.enable(verbosity>2);
 
   // Save the PID of this process to file, so it can be shut down by user signal
@@ -503,9 +503,6 @@ int BoutFinalise() {
 
   // Call PetscFinalize if not already called
   PetscLib::cleanup();
-    
-  // Logging output
-  Output::cleanup();
 
   // MPI communicator, including MPI_Finalize()
   BoutComm::cleanup();

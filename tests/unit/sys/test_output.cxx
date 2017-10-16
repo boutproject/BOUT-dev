@@ -1,4 +1,5 @@
 #include "gtest/gtest.h"
+#include "boutexception.hxx"
 #include "output.hxx"
 
 #include <cstdio>
@@ -27,7 +28,7 @@ public:
 
 TEST_F(OutputTest, JustStdOutCpp) {
   Output local_output;
-  local_output << "Hello, world!" << 1 << "\n";
+  local_output << "Hello, world!" << 1 << std::endl;
 
   EXPECT_EQ(buffer.str(), "Hello, world!1\n");
 }
@@ -40,9 +41,9 @@ TEST_F(OutputTest, JustStdOutPrintf) {
 }
 
 TEST_F(OutputTest, JustStdOutGlobalInstance) {
-  output << "Hello, world!\n";
+  output << "Hello, world!" << 3 << std::endl;
 
-  EXPECT_EQ(buffer.str(), "Hello, world!\n");
+  EXPECT_EQ(buffer.str(), "Hello, world!3\n");
 }
 
 TEST_F(OutputTest, OpenFile) {
@@ -125,16 +126,185 @@ TEST_F(OutputTest, DisableEnableStdout) {
   std::remove(filename);
 }
 
-TEST_F(OutputTest, CleanupAndGetInstance) {
+TEST_F(OutputTest, GetInstance) {
   Output *local_output = Output::getInstance();
+
   EXPECT_NE(local_output, nullptr);
 
-  local_output->cleanup();
-
-  // Get a new instance
   Output *new_output = Output::getInstance();
 
-  *new_output << "Hello, world!\n";
+  EXPECT_EQ(local_output, new_output);
+}
 
-  EXPECT_EQ(buffer.str(), "Hello, world!\n");
+TEST_F(OutputTest, ConditionalGetBase) {
+  Output local_output_base;
+  ConditionalOutput local_output(&local_output_base);
+
+  EXPECT_EQ(local_output.getBase(), &local_output_base);
+}
+
+TEST_F(OutputTest, ConditionalCheckIsEnabled) {
+  Output local_output_base;
+  ConditionalOutput local_output(&local_output_base);
+
+  EXPECT_TRUE(local_output.isEnabled());
+  local_output.disable();
+  EXPECT_FALSE(local_output.isEnabled());
+  local_output.enable();
+  EXPECT_TRUE(local_output.isEnabled());
+  local_output.enable(false);
+  EXPECT_FALSE(local_output.isEnabled());
+  local_output.enable(true);
+  EXPECT_TRUE(local_output.isEnabled());
+}
+
+TEST_F(OutputTest, ConditionalJustStdOutCpp) {
+  Output local_output_base;
+  ConditionalOutput local_output(&local_output_base);
+
+  local_output << "Hello, world!" << 4 << std::endl;
+
+  EXPECT_EQ(buffer.str(), "Hello, world!4\n");
+}
+
+TEST_F(OutputTest, ConditionalJustStdOutPrintf) {
+  Output local_output_base;
+  ConditionalOutput local_output(&local_output_base);
+
+  local_output.write("%s%d\n", "Hello, world!", 5);
+
+  EXPECT_EQ(buffer.str(), "Hello, world!5\n");
+}
+
+TEST_F(OutputTest, ConditionalDisable) {
+  Output local_output_base;
+  ConditionalOutput local_output(&local_output_base);
+
+  local_output.disable();
+  local_output << "Hello, world!" << 6;
+  local_output << std::endl;
+
+  EXPECT_EQ(buffer.str(), "");
+}
+
+TEST_F(OutputTest, ConditionalJustStdOutGlobalInstances) {
+
+  output_warn.enable();
+  output_warn << "warn output\n";
+  EXPECT_EQ(buffer.str(), "warn output\n");
+
+  buffer.str("");
+  output_info << "info output\n";
+  EXPECT_EQ(buffer.str(), "info output\n");
+
+  buffer.str("");
+  output_progress << "progress output\n";
+  EXPECT_EQ(buffer.str(), "progress output\n");
+
+  buffer.str("");
+  output_error << "error output\n";
+  EXPECT_EQ(buffer.str(), "error output\n");
+
+  buffer.str("");
+  output_debug << "debug output\n";
+#ifdef DEBUG_ENABLED
+  EXPECT_EQ(buffer.str(), "debug output\n");
+#else
+  EXPECT_EQ(buffer.str(), "");
+#endif
+}
+
+TEST_F(OutputTest, ConditionalJustPrint) {
+  Output local_output_base;
+  ConditionalOutput local_output(&local_output_base);
+
+  // Get a filename for a temporary file
+  char *filename = std::tmpnam(nullptr);
+
+  std::string test_output = "To stdout only\n";
+
+  local_output.open(filename);
+  local_output.print(test_output.c_str());
+
+  std::ifstream test_file(filename);
+  std::stringstream test_buffer;
+  test_buffer << test_file.rdbuf();
+  test_file.close();
+
+  EXPECT_EQ("", test_buffer.str());
+  EXPECT_EQ(test_output, buffer.str());
+
+  std::remove(filename);
+}
+
+TEST_F(OutputTest, ConditionalMultipleLayersGetBase) {
+  Output local_output_base;
+  ConditionalOutput local_output_first(&local_output_base);
+  ConditionalOutput local_output_second(&local_output_first);
+
+  EXPECT_EQ(local_output_second.getBase(), &local_output_base);
+}
+
+TEST_F(OutputTest, ConditionalMultipleLayersJustStdOut) {
+  Output local_output_base;
+  ConditionalOutput local_output_first(&local_output_base);
+  ConditionalOutput local_output_second(&local_output_first);
+
+  local_output_second << "Hello, world!" << 7 << std::endl;
+
+  EXPECT_EQ(buffer.str(), "Hello, world!7\n");
+}
+
+TEST_F(OutputTest, ConditionalMultipleLayersJustStdOutPrintf) {
+  Output local_output_base;
+  ConditionalOutput local_output_first(&local_output_base);
+  ConditionalOutput local_output_second(&local_output_first);
+
+  local_output_second.write("%s%d\n", "Hello, world!", 8);
+
+  EXPECT_EQ(buffer.str(), "Hello, world!8\n");
+}
+
+TEST_F(OutputTest, DummyCheckEnableDoesntWork) {
+  DummyOutput dummy;
+
+  EXPECT_FALSE(dummy.isEnabled());
+  EXPECT_THROW(dummy.enable(), BoutException);
+  EXPECT_FALSE(dummy.isEnabled());
+  EXPECT_THROW(dummy.enable(true), BoutException);
+  EXPECT_FALSE(dummy.isEnabled());
+  EXPECT_NO_THROW(dummy.enable(false));
+  EXPECT_FALSE(dummy.isEnabled());
+  dummy.disable();
+  EXPECT_FALSE(dummy.isEnabled());
+}
+
+TEST_F(OutputTest, DummyOutputStdOut) {
+  DummyOutput dummy;
+  dummy << "Vanish to the void" << std::endl;
+  dummy.write("Vanish to the void\n");
+
+  EXPECT_EQ(buffer.str(), "");
+}
+
+TEST_F(OutputTest, DummyJustPrint) {
+  DummyOutput dummy;
+
+  // Get a filename for a temporary file
+  char *filename = std::tmpnam(nullptr);
+
+  std::string test_output = "To stdout only\n";
+
+  dummy.open(filename);
+  dummy.print(test_output.c_str());
+
+  std::ifstream test_file(filename);
+  std::stringstream test_buffer;
+  test_buffer << test_file.rdbuf();
+  test_file.close();
+
+  EXPECT_EQ("", test_buffer.str());
+  EXPECT_EQ("", buffer.str());
+
+  std::remove(filename);
 }

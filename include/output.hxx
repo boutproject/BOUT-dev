@@ -32,7 +32,10 @@ class Output;
 #include "multiostream.hxx"
 #include <iostream>
 #include <fstream>
+#include <functional>
 #include "boutexception.hxx"
+#include "unused.hxx"
+
 using std::endl;
 
 /// Class for text output to stdout and/or log file
@@ -100,11 +103,8 @@ public:
   }
 
   static Output *getInstance(); ///< Return pointer to instance
-  static void cleanup();        ///< Delete the instance
 
 private:
-  static Output *instance; ///< Default instance of this class
-
   std::ofstream file;                 ///< Log file stream
   static const int BUFFER_LEN = 1024; ///< default length
   int buffer_len;                     ///< the current length
@@ -118,17 +118,18 @@ private:
 /// 
 class DummyOutput : public Output {
 public:
-  void write(const char *str, ...) override {};
-  void print(const char *str, ...) override {};
+  void write(const char *UNUSED(str), ...) override{};
+  void print(const char *UNUSED(str), ...) override{};
   void enable() override {
     throw BoutException("DummyOutput cannot be enabled.\nTry compiling with "
                         "--enable-debug or be less verbose?");
   };
   void disable() override{};
-  void enable(bool en) {
-    if (en)
+  void enable(bool enable) {
+    if (enable)
       this->enable();
   };
+  bool isEnabled() { return false; }
 };
 
 /// Layer on top of Output which passes through calls to write, print etc
@@ -152,7 +153,6 @@ public:
   /// by calling base->vwrite
   /// This string is then sent to log file and stdout (on processor 0)
   void write(const char *str, ...) override;
-  
   void vwrite(const char *str, va_list va) override {
     if (enabled) {
       base->vwrite(str, va);
@@ -168,7 +168,7 @@ public:
     }
   }
   
-  /// Get the Output object which is the base of this ConditionalOutput
+  /// Get the lowest-level Output object which is the base of this ConditionalOutput
   Output *getBase() {
     if (base_is_cond) {
       return dynamic_cast<ConditionalOutput *>(base)->getBase();
@@ -195,32 +195,32 @@ public:
   };
 
   Output *base;
+
+private:
   bool enabled;
-
-private:
   bool base_is_cond;
-
-private:
 };
 
 /// Catch stream outputs to DummyOutput objects. This is so that
 /// statements like
 ///    output_debug << "debug message";
 /// compile but have no effect if DEBUG_ENABLED is false
-template <typename T> DummyOutput &operator<<(DummyOutput &out, T const &t) {
+template <typename T> DummyOutput &operator<<(DummyOutput &out, T const &UNUSED(t)) {
   return out;
 }
 
-template <typename T> DummyOutput &operator<<(DummyOutput &out, const T *t) {
+template <typename T> DummyOutput &operator<<(DummyOutput &out, const T *UNUSED(t)) {
   return out;
 }
 
-inline DummyOutput &operator<<(DummyOutput &out, std::ostream &(*pf)(std::ostream &)) {
+// Function pointer so we can apply unused macro to pf in function below
+using stream_manipulator = std::ostream &(*)(std::ostream &);
+
+inline DummyOutput &operator<<(DummyOutput &out, stream_manipulator UNUSED(pf)) {
   return out;
 }
 
-inline ConditionalOutput &operator<<(ConditionalOutput &out,
-                                     std::ostream &(*pf)(std::ostream &)) {
+inline ConditionalOutput &operator<<(ConditionalOutput &out, stream_manipulator pf) {
   if (out.isEnabled()) {
     *out.getBase() << pf;
   }
