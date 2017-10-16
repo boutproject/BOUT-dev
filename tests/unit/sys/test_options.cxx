@@ -1,17 +1,29 @@
 #include "gtest/gtest.h"
 #include "test_extras.hxx"
 #include "options.hxx"
+#include "output.hxx"
 
 #include <string>
 
-TEST(OptionsTest, IsSet) {
+class OptionsTest : public ::testing::Test {
+public:
+  OptionsTest() {
+    output_info.disable();
+  }
+
+  ~OptionsTest() {
+    output_info.enable();
+  }
+};
+
+TEST_F(OptionsTest, IsSet) {
   Options options;
   options.set("int_key", 42, "code");
 
   ASSERT_TRUE(options.isSet("int_key"));
 }
 
-TEST(OptionsTest, SetGetInt) {
+TEST_F(OptionsTest, SetGetInt) {
   Options options;
   options.set("int_key", 42, "code");
 
@@ -23,7 +35,7 @@ TEST(OptionsTest, SetGetInt) {
   EXPECT_EQ(value, 42);
 }
 
-TEST(OptionsTest, DefaultValueInt) {
+TEST_F(OptionsTest, DefaultValueInt) {
   Options options;
 
   int value;
@@ -32,7 +44,7 @@ TEST(OptionsTest, DefaultValueInt) {
   EXPECT_EQ(value, 99);
 }
 
-TEST(OptionsTest, SetGetReal) {
+TEST_F(OptionsTest, SetGetReal) {
   Options options;
   options.set("real_key", 6.7e8, "code");
 
@@ -44,7 +56,7 @@ TEST(OptionsTest, SetGetReal) {
   EXPECT_DOUBLE_EQ(value, 6.7e8);
 }
 
-TEST(OptionsTest, DefaultValueReal) {
+TEST_F(OptionsTest, DefaultValueReal) {
   Options options;
 
   BoutReal value;
@@ -53,7 +65,7 @@ TEST(OptionsTest, DefaultValueReal) {
   EXPECT_DOUBLE_EQ(value, -78.0);
 }
 
-TEST(OptionsTest, SetGetBool) {
+TEST_F(OptionsTest, SetGetBool) {
   Options options;
   options.set("bool_key", true, "code");
 
@@ -65,7 +77,7 @@ TEST(OptionsTest, SetGetBool) {
   EXPECT_EQ(value, true);
 }
 
-TEST(OptionsTest, SetGetBoolFalse) {
+TEST_F(OptionsTest, SetGetBoolFalse) {
   Options options;
   options.set("bool_key", false, "code");
 
@@ -77,7 +89,7 @@ TEST(OptionsTest, SetGetBoolFalse) {
   EXPECT_EQ(value, false);
 }
 
-TEST(OptionsTest, GetBoolFromString) {
+TEST_F(OptionsTest, GetBoolFromString) {
   Options options;
   options.set("bool_key", "true", "code");
   options.set("bool_key2", "yes", "code");
@@ -95,7 +107,7 @@ TEST(OptionsTest, GetBoolFromString) {
   EXPECT_EQ(value2, true);
 }
 
-TEST(OptionsTest, DefaultValueBool) {
+TEST_F(OptionsTest, DefaultValueBool) {
   Options options;
 
   bool value;
@@ -104,7 +116,7 @@ TEST(OptionsTest, DefaultValueBool) {
   EXPECT_EQ(value, false);
 }
 
-TEST(OptionsTest, SetGetString) {
+TEST_F(OptionsTest, SetGetString) {
   Options options;
   options.set("string_key", "abcdef", "code");
 
@@ -116,7 +128,7 @@ TEST(OptionsTest, SetGetString) {
   EXPECT_EQ(value, "abcdef");
 }
 
-TEST(OptionsTest, DefaultValueString) {
+TEST_F(OptionsTest, DefaultValueString) {
   Options options;
 
   std::string value;
@@ -125,14 +137,14 @@ TEST(OptionsTest, DefaultValueString) {
   EXPECT_EQ(value, "ghijkl");
 }
 
-TEST(OptionsTest, SingletonTest) {
+TEST_F(OptionsTest, SingletonTest) {
   Options *root = Options::getRoot();
   Options *second = Options::getRoot();
 
   EXPECT_EQ(root, second);
 }
 
-TEST(OptionsTest, CheckUsed) {
+TEST_F(OptionsTest, CheckUsed) {
   // stdout redirection code from https://stackoverflow.com/a/4043813/2043465
 
   std::stringstream buffer;
@@ -187,14 +199,14 @@ TEST(OptionsTest, CheckUsed) {
   std::cout.rdbuf(sbuf);
 }
 
-TEST(OptionsTest, GetEmptySection) {
+TEST_F(OptionsTest, GetEmptySection) {
   Options options;
   Options *new_section = options.getSection("");
 
   EXPECT_EQ(new_section, &options);
 }
 
-TEST(OptionsTest, MakeNewSection) {
+TEST_F(OptionsTest, MakeNewSection) {
   Options options;
   Options *new_section = options.getSection("section1");
 
@@ -203,7 +215,7 @@ TEST(OptionsTest, MakeNewSection) {
   EXPECT_EQ(new_section->str(), "section1");
 }
 
-TEST(OptionsTest, GetExistingSection) {
+TEST_F(OptionsTest, GetExistingSection) {
   Options options;
   Options *new_section = options.getSection("section1");
   Options *old_section = options.getSection("section1");
@@ -211,7 +223,7 @@ TEST(OptionsTest, GetExistingSection) {
   EXPECT_EQ(new_section, old_section);
 }
 
-TEST(OptionsTest, CheckCaseSensitivity) {
+TEST_F(OptionsTest, CheckCaseSensitivity) {
   Options options;
   Options *new_section = options.getSection("section1");
   Options *old_section = options.getSection("SECTION1");
@@ -219,7 +231,7 @@ TEST(OptionsTest, CheckCaseSensitivity) {
   EXPECT_EQ(new_section, old_section);
 }
 
-TEST(OptionsTest, GetCorrectSection) {
+TEST_F(OptionsTest, GetCorrectSection) {
   Options options;
   Options *section1 = options.getSection("section1");
   options.getSection("section2");
@@ -229,7 +241,7 @@ TEST(OptionsTest, GetCorrectSection) {
   EXPECT_EQ(section1, old_section);
 }
 
-TEST(OptionsTest, MakeNestedSection) {
+TEST_F(OptionsTest, MakeNestedSection) {
   Options options;
   Options *section1 = options.getSection("section1");
   Options *section2 = section1->getSection("section2");
