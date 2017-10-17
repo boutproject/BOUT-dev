@@ -184,7 +184,7 @@ class Field3D : public Field, public FieldData {
   /// Constructor from 2D field
   Field3D(const Field2D& f);
   /// Constructor from value
-  Field3D(BoutReal val );
+  Field3D(BoutReal val);
   /// Destructor
   ~Field3D();
 
@@ -414,7 +414,6 @@ class Field3D : public Field, public FieldData {
   /// Assignment operators
   ///@{
   Field3D & operator=(const Field3D &rhs);
-  Field3D & operator=(Field3D &&rhs) = default;
   Field3D & operator=(const Field2D &rhs);
   /// return void, as only part initialised
   void      operator=(const FieldPerp &rhs);
