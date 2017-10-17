@@ -26,9 +26,6 @@ except ImportError:
     print("breathe module not installed")
     has_breathe = False
 
-# Disable breathe
-has_breathe = False
-
 import os
 import subprocess
 import sys
