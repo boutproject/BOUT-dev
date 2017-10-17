@@ -18,8 +18,7 @@ The documentation is divided into the following sections:
   
 * :ref:`developer-docs`
 
-..
-   * :ref:`api-ref`
+* :ref:`api-ref`
 
      
 .. toctree::
@@ -104,14 +103,14 @@ The documentation is divided into the following sections:
    developer_docs/file_io
    developer_docs/misc
 
-..
-   .. toctree::
-      :maxdepth: 1
-      :caption: API Reference
-      :name: api-ref
-      :glob:
 
-      _breathe_autogen/*
+.. toctree::
+   :maxdepth: 1
+   :caption: API Reference
+   :name: api-ref
+   :glob:
+
+   _breathe_autogen/*
 
 Indices and tables
 ==================

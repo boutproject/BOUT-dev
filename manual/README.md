@@ -37,6 +37,34 @@ $ make html
 
 This should create a file "index.html" in the "manual/html" directory.
 
+### API documentation
+
+The majority of the codebase is documented using
+[doxygen](www.doxygen.org). To build the API documentation, run
+
+```bash
+$ make doxygen
+```
+
+This creates html and LaTeX documentation under `doxygen/bout/html`
+and `doxygen/bout/latex`.
+
+It is possible to build the API documentation into the main manual
+using "breathe". Install breathe:
+
+```bash
+$ pip install --user breathe
+```
+
+and comment out the following line in `sphinx/conf.py`:
+
+```python
+# Disable breathe
+has_breathe = False
+```
+
+You can then build the sphinx documentation as normal.
+
 ## LaTeX documents
 
 The LaTeX documents under "tex_files" are not updated much, but include things like

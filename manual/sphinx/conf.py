@@ -32,7 +32,6 @@ has_breathe = False
 import os
 import subprocess
 import sys
-# sys.path.insert(0, os.path.abspath('.'))
 
 # Are we running on readthedocs?
 on_readthedocs = os.environ.get("READTHEDOCS") == "True"
@@ -42,16 +41,21 @@ if has_breathe and not on_readthedocs:
     # Run doxygen to generate the XML sources
     subprocess.call("cd ../doxygen; doxygen Doxyfile", shell=True)
     # Now use breathe.apidoc to autogen rst files for each XML file
-    #apidoc_args = argparse.Namespace(destdir='_breathe_autogen/',
-    #                                 dryrun=False,
-    #                                 force=True,
-    #                                 notoc=False,
-    #                                 rootpath='../doxygen/bout/xml',
-    #                                 suffix='rst')
-    #apidoc_args.rootpath = os.path.abspath(apidoc_args.rootpath)
-    #apidoc.recurse_tree(apidoc_args)
-    #for key, value in apidoc.TYPEDICT.items():
-    #    apidoc.create_modules_toc_file(key, value, apidoc_args)
+    apidoc_args = argparse.Namespace(destdir='_breathe_autogen/',
+                                     dryrun=False,
+                                     force=True,
+                                     notoc=False,
+                                     outtypes=("class", "file"),
+                                     project="BOUT++",
+                                     rootpath='../doxygen/bout/xml',
+                                     suffix='rst')
+    apidoc_args.rootpath = os.path.abspath(apidoc_args.rootpath)
+    if not os.path.isdir(apidoc_args.destdir):
+        if not apidoc_args.dryrun:
+            os.makedirs(apidoc_args.destdir)
+    apidoc.recurse_tree(apidoc_args)
+    for key, value in apidoc.TYPEDICT.items():
+       apidoc.create_modules_toc_file(key, value, apidoc_args)
 
     # -- Options for breathe extension ----------------------------------------
 
