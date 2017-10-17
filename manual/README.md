@@ -1,7 +1,20 @@
-#BOUT++ documentation
+# BOUT++ documentation
 
 The most up to date documentation consists of reStructuredText in the "sphinx"
-subdirectory. This is used to create the online manual at https://bout-dev.readthedocs.io/en/latest/
+subdirectory. This is used to create the online manual at
+https://bout-dev.readthedocs.io/en/latest/. You can switch between the
+manual for the last stable release and the latest development build by
+clicking the "Read the Docs" bar in the left-hand sidebar, and
+selecting either "stable" or "latest", respectively. You can also
+download the manual as a PDF or as html from this menu too.
+
+To build the manual locally, you need at least "sphinx" and
+"recommonmark", which you can install using pip (or pip3):
+
+```bash
+$ pip install --user sphinx
+$ pip install --user recommonmark
+```
 
 These documents can be built into a PDF using "sphinx-build":
 
