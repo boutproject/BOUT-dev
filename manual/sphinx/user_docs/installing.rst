@@ -22,7 +22,7 @@ This section will go through the following steps:
 
    #. :ref:`IDL <sec-config-idl>`
    
-#. :ref:`Compiling BOUT++ <sec-installbout>`
+#. :ref:`Compiling BOUT++ <sec-compile-bout>`
 
 #. :ref:`Running the test suite <sec-runtestsuite>`
 
@@ -93,10 +93,10 @@ It is common to organise libraries using the ``modules`` system, so try typing
    modules avail
 
 to get a list of available modules. Some instructions for specific machines can
-be found in section sec-machine-specific_. See your system’s
+be found in :ref:`sec-machine-specific`. See your system’s
 documentation on modules and which ones to load. If you don’t know, or
 modules don’t work, you can still install libraries in your home
-directory by following the instructions below for :ref:`FFTW <sec-fftw-from-source`
+directory by following the instructions below for :ref:`FFTW <sec-fftw-from-source>`
 and :ref:`NetCDF <sec-netcdf-from-source>`.
 
 
@@ -396,7 +396,7 @@ To install BOUT++ under a different directory, use the ``--prefix=`` flag e.g. t
 
    $ make install prefix=$HOME/local/
 
-You can also specify this prefix when configuring, in the usual way (section sec-config-bout_):
+You can also specify this prefix when configuring, in the usual way (see :ref:`sec-config-bout`):
    
   .. code-block:: bash
 
@@ -426,7 +426,7 @@ which should print out the list of configuration settings which ``bout-config`` 
 If this doesn't work, check that the directory containing ``bout-config`` is in your ``PATH``.
 
 The python and IDL analysis scripts can be configured using ``bout-config`` rather than manually
-setting paths as in section sec-configanalysis_. Add this line to your startup file (e.g. ``$HOME/.bashrc``):
+setting paths as in :ref:`sec-configanalysis`. Add this line to your startup file (e.g. ``$HOME/.bashrc``):
 
 .. code-block:: bash
    
@@ -441,10 +441,10 @@ note the back ticks around ``bout-config --python`` not quotes. Similarly for ID
 More details on using bout-config are in the :ref:`section on makefiles <sec-bout-config>`.
 
 
+.. _sec-mpi-from-source:
+
 Installing MPICH from source
 ----------------------------
-
-.. _sec-mpi-from-source
 
 In your home directory, create
 two subdirectories: One called “install” where we’ll put the source
@@ -501,10 +501,10 @@ you’re using CSH rather than BASH, the command is
 and the startup file is ``$HOME/.cshrc``. You should now be able to run
 ``mpicc`` and so have a working MPI compiler.
 
+.. _sec-fftw-from-source:
+
 Installing FFTW from source
 ---------------------------
-
-.. _sec-fftw-from-source
 
 If you haven’t already, create directories “install” and “local”
 in your home directory:
@@ -528,10 +528,10 @@ configure and install the FFTW library into ``$HOME/local`` by running:
     $ make install
 
 
+.. _sec-netcdf-from-source:
+
 Installing NetCDF from source
 -----------------------------
-
-.. _sec-netcdf-from-source
 
 The latest versions of NetCDF have separated out the C++ API from the
 main C library. As a result, you will need to download and install both.
