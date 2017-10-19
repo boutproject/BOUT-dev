@@ -19,7 +19,7 @@ except:
 #import numpy as np
 from mpl_toolkits.mplot3d import axes3d
 from matplotlib import pyplot as plt
-from matplotlib import animation
+from matplotlib import animation, cm
 from numpy import linspace, meshgrid, array, min, max, floor, pi
 from boutdata.collect import collect
 
@@ -40,7 +40,7 @@ pause = False
 ###################
 
 
-def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice = 0, movie = 0, intv = 1, Ncolors = 25, x = [], y = [], global_colors = False, symmetric_colors = False,hold_aspect=False):
+def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice = 0, movie = 0, fps=28, dpi=200, intv = 1, Ncolors = 25, x = [], y = [], global_colors = False, symmetric_colors = False, hold_aspect=False, cmap=None, clear_between_frames=False, return_animation=False):
     """
     A Function to animate time dependent data from BOUT++
     Requires numpy, mpl_toolkits, matplotlib, boutdata libaries.
@@ -63,17 +63,26 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
     showdata([var1,var2], surf = [1,0], polar = [0,1])
 
     Movies require FFmpeg to be installed.
+    
+    fps sets frames per second in movie, default: 28 fps
 
+    dpi sets the resolution of the movie, default: 200 dpi
+    
     The tslice variable is used to control the time value that is printed on each
     frame of the animation.  If the input data matches the time values found within
     BOUT++'s dmp data files, then these time values will be used.  Otherwise, an
     integer counter is used.
+
+    The cmap variable (if specified) will set the colormap used in the plot
+    cmap must be a matplotlib colormap instance, or the name of a registered matplotlib colormap 
 
     During animation click once to stop in the current frame. Click again to continue.
 
     global_colors = True: if "vars" is a list the colorlevels are determined from the mximum of the maxima and and the minimum of the  minima in all fields in vars.
 
     symmetric_colors = True: colorlevels are symmetric.
+
+    return_animation = True matplotlib animation object will be returned.
     """
     plt.ioff()
 
@@ -318,7 +327,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
         xnew.append([])
         try:
             xnew[i].append(x[i])
-        except:	
+        except: 
             for j in range(0, Nlines[i]):
                 xnew[i].append(linspace(0,Nx[i][j]-1, Nx[i][j]))
 
@@ -354,7 +363,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
         fmin.append(min(dummymin[i]))
 
         if(symmetric_colors):
-            absmax = max(abs(fmax[i]),abs(fmin[i]))
+            absmax =max(abs(array(fmax[i], fmin[i])))
             fmax[i] = absmax
             fmin[i] = -absmax
 
@@ -417,6 +426,12 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
     ystride = []
     r = []
     theta = []
+
+    if(cmap!=None):
+        try:
+            plt.set_cmap(cmap)
+        except Exception:
+            print("Not a valid colormap instance or registered colormap: colormap unchanged")
 
     # Initiate figure frame
     for i in range(0,Nvar):
@@ -528,15 +543,14 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
         index = j*intv
 
         for j in range(0,Nvar):
+            if(clear_between_frames):
+                ax[j].cla() #Clear axis between frames so that masked arrays can be plotted
             if (lineplot[j] == 1):
-                # No cla() call for line plots
                 for k in range(0,Nlines[j]):
                     lines[j][k].set_data(x[j][k], vars[j][k][index,:])
             elif (contour[j] == 1):
-                ax[j].cla()
                 plots[j] = ax[j].contourf(x[j][0],y[j],vars[j][0][index,:,:].T, Ncolors, lw=0, levels=clevels[j])
             elif (surf[j] == 1):
-                ax[j].cla()
                 ax[j] = fig.add_subplot(row,col,j+1, projection='3d')
                 plots[j] = ax[j].plot_wireframe(x[j][0], y[j], vars[j][0][index,:,:].T, rstride=ystride[j], cstride=xstride[j])
                 ax[j].set_zlim(fmin[j],fmax[j])
@@ -544,10 +558,9 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
                 ax[j].set_ylabel(r'y')
                 ax[j].set_title(titles[j])
             elif (polar[j] == 1):
-                ax[j].cla()
                 plots[j] = ax[j].contourf(theta[j], r[j], vars[j][0][index,:,:].T, levels=clevels[j])
                 ax[j].set_rmax(Nx[j][0]-1)
-            
+
         if (tslice == 0):
             title.set_text('t = %1.2e' % t[index])
         else:
@@ -573,21 +586,36 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
     # Save movie with given name
     if ((isinstance(movie,str)==1)):
         try:
-            anim.save(movie+'.mp4',writer = FFwriter, fps=30, extra_args=['-vcodec', 'libx264'])
+            anim.save(movie+'.mp4',writer = FFwriter, fps=fps, dpi=dpi, extra_args=['-vcodec', 'libx264'])
         except Exception:
-            print("Save failed: Check ffmpeg path")
+        #Try specifying writer by string if ffmpeg not found
+                    try:
+                        anim.save(movie+'.mp4',writer = 'ffmpeg', fps=fps, dpi=dpi, extra_args=['-vcodec', 'libx264'])
+                    except Exception:
+                        print("Save failed: Check ffmpeg path")
 
     # Save movie with default name
     if ((isinstance(movie,str)==0)):
         if (movie != 0):
             try:
-                anim.save('animation.mp4',writer = FFwriter, fps=28, extra_args=['-vcodec', 'libx264'])
+                anim.save('animation.mp4',writer = FFwriter, fps=fps, dpi=dpi, extra_args=['-vcodec', 'libx264'])
             except Exception:
-                print("Save failed: Check ffmpeg path")
+            #Try specifying writer by string if ffmpeg not found
+                try:
+                    anim.save('animation.mp4',writer = 'ffmpeg', fps=fps, dpi=dpi, extra_args=['-vcodec', 'libx264'])
+                except Exception:
+                    print("Save failed: Check ffmpeg path")
+                    
 
     # Show animation
-    if (movie == 0):
+    if (movie==0 and return_animation == 0):
         plt.show()
+    else:
+        plt.close()
+    
+    # Return animation object
+    if(return_animation == 1):
+        return(anim)    
 
 
 """
