@@ -178,10 +178,110 @@ void cfft(dcomplex *cv, int length, int isign)
 
 #ifndef _OPENMP
 // Serial code
+void fftshift(const Field3D &fld, const arr3Dvec &phase, Field3D &fldOut) {
+  // static variables initialized once
+  static double *fin;
+  static fftw_complex *fout;
+  static fftw_plan pForward, pBackward;
+  static int nmany = 0;
+  static int nx = 0;
+  static int ny = 0;
+  static int nz = 0;
+  static int nkz = 0;
 
+  //FFTW setup for new problem size
+  if(fld.getNx() != nx || fld.getNy() != ny || fld.getNz() != nz){
+    //If previously setup then destroy plan
+    if(nmany>0){
+      fftw_destroy_plan(pForward);
+      fftw_destroy_plan(pBackward);
+      fftw_free(fin);
+      fftw_free(fout);
+    }
+
+    fft_init();
+
+    //Problem size
+    nx = fld.getNx(); //Assuming we include guard cells in what is transformed
+    ny = fld.getNy(); //Assuming we include guard cells in what is transformed
+    nz = fld.getNz();
+
+    //Total number of problems
+    nmany = nx*ny;
+
+    //Number of wave numbers
+    nkz=(nz/2)+1;
+
+    //Allocate storage
+    fin = (double*) fftw_malloc(sizeof(double) * nmany*nz);
+    fout = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * nmany*nkz);
+
+    //Flags
+    unsigned int flags = FFTW_ESTIMATE;
+    if(fft_measure)
+      flags = FFTW_MEASURE;
+
+    //Get a pointer to the size of an individual problem
+    const int * sz = &nz;
+
+    //Setup the strides and distance between separate problems
+    int istride = 1, idist = nz; //Memory for single problem contiguous, problems separated by nz
+    int ostride = 1, odist = nkz;//Memory for single problem contiguous, inverse problems separated by nkz
+
+    //Create forward (rfft) plan
+    pForward = fftw_plan_many_dft_r2c(1, sz, nmany,
+			       fin, NULL, istride, idist,
+			       fout, NULL, ostride, odist, flags);
+
+    //Create backward (irfft) plan
+    pBackward = fftw_plan_many_dft_c2r(1, sz, nmany,
+			       fout, NULL, ostride, odist,
+			       fin, NULL, istride, idist, flags);
+
+  }
+
+  //Initialise counter 
+  int itot=0;
+  
+  //Loop over region to copy field data into fftw input
+  //Currently has to be region all -- if region changes must change nx,ny to represnt
+  //local size of region
+  for(const auto& i: fld){
+    fin[itot] = fld[i];
+    itot++;
+  }
+
+  //Do the forward transforms
+  fftw_execute(pForward);
+
+  //Now normalising and shifting data in place
+  itot = 0; //Reset counter
+  const BoutReal fac = 1.0/((BoutReal) nz); // Normalisation
+  for(int i=0;i<nx;i++){
+    for(int j=0;j<ny;j++){
+      for(int k=0;k<nkz;k++){
+	const auto tmp = dcomplex(fout[itot][0], fout[itot][1])*fac*phase[i][j][k];
+	fout[itot][0] = tmp.real();
+	fout[itot][1] = tmp.imag();
+	itot++;
+      }
+    }
+  }
+
+  //Do the backward transforms
+  fftw_execute(pBackward);
+
+  //Now copy data out, normalising as we go
+  itot = 0; //Reset counter
+  
+  for(const auto& i: fldOut){
+    fldOut[i] = fin[itot];
+    itot++;
+  }
+
+}
 
 void rfft(const Field3D &fld, dcomplex ***out) {
-
 
   // static variables initialized once
   static double *fin;

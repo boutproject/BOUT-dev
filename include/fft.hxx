@@ -30,9 +30,13 @@
 
 #include "dcomplex.hxx"
 
+typedef std::vector<std::vector<std::vector<dcomplex>>> arr3Dvec;
+
 /// Complex in-place FFT
 void cfft(dcomplex *cv, int length, int isign);
 
+void fftshift(const Field3D &fld, const arr3Dvec &phase, Field3D &fldOut);
+  
 /*!
  * Returns the fft of a real signal using fftw_forward
  *
