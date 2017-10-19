@@ -49,6 +49,10 @@ void cfft(dcomplex *cv, int length, int isign);
  * \param[out] Pointer to the complex 1D array which is the FFT of in
  */
 void rfft(const BoutReal *in, int length, dcomplex *out);
+/*!
+ * Modified version of rfft that operates on entire data at once
+ */
+void rfft(const Field3D &fld, dcomplex ***out);
 
 /*!
  * Take the inverse fft of signal where the outputs are only reals.
@@ -68,6 +72,10 @@ void rfft(const BoutReal *in, int length, dcomplex *out);
  * \param[out] Pointer to the complex 1D array which is IFFTed
  */
 void irfft(const dcomplex *in, int length, BoutReal *out);
+/*!
+ * Modified version of irfft that operates on an entire data at once
+ */
+void irfft(const dcomplex ***in, Field3D &fld);
 
 /*!
  * Discrete Sine Transform
