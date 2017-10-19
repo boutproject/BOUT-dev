@@ -21,7 +21,7 @@ Messages sent to ``output`` on processor 0 will be printed to console and saved 
 error message will usually only be in the log file, not printed to console. If BOUT++
 crashes but no error message is printed, try looking at the ends of all log files:
 
-::
+.. code-block:: bash
 
    $ tail BOUT.log.*
 
@@ -29,16 +29,16 @@ crashes but no error message is printed, try looking at the ends of all log file
 For finer control over which messages are printed, several outputs are available,
 listed in the table below.
 
-====                  ======
+===================   =================================================================
 Name                  Useage
-====                  ======
+===================   =================================================================
 ``output_debug``      For highly verbose output messages, that are normally not needed.
                       Needs to be enabled with a compile switch
 ``output_info``       For infos like what options are used
 ``output_progress``   For infos about the current progress
 ``output_warn``       For warnings
 ``output_error``      For errors
-====               ======
+===================   =================================================================
 
 
 Controlling logging level
