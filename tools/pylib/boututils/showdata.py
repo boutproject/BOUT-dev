@@ -40,7 +40,7 @@ pause = False
 ###################
 
 
-def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice = 0, movie = 0, fps=28, dpi=200, intv = 1, Ncolors = 25, x = [], y = [], global_colors = False, symmetric_colors = False, hold_aspect=False, cmap=None, clear_between_frames=False, return_animation=False):
+def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice = 0, movie = 0, fps=28, dpi=200, intv = 1, Ncolors = 25, x = [], y = [], global_colors = False, symmetric_colors = False, hold_aspect=False, cmap=None, clear_between_frames=None, return_animation=False):
     """
     A Function to animate time dependent data from BOUT++
     Requires numpy, mpl_toolkits, matplotlib, boutdata libaries.
@@ -81,6 +81,10 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
     global_colors = True: if "vars" is a list the colorlevels are determined from the mximum of the maxima and and the minimum of the  minima in all fields in vars.
 
     symmetric_colors = True: colorlevels are symmetric.
+
+    clear_between_frames: None all plots except line plots will clear between frames
+                          True all plots will clear between frames
+                          False no plots will clear between frames
 
     return_animation = True matplotlib animation object will be returned.
     """
@@ -543,7 +547,8 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
         index = j*intv
 
         for j in range(0,Nvar):
-            if(clear_between_frames):
+            #Default to clearing axis between frames on all plots except line plots
+            if (clear_between_frames is None and lineplot[j] != 1 ) or clear_between_frames is True:
                 ax[j].cla() #Clear axis between frames so that masked arrays can be plotted
             if (lineplot[j] == 1):
                 for k in range(0,Nlines[j]):
@@ -615,7 +620,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
     
     # Return animation object
     if(return_animation == 1):
-        return(anim)    
+        return(anim)
 
 
 """
