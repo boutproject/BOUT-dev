@@ -83,8 +83,8 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m) {
       for(int jz=0;jz<nmodes;jz++) {
   	BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
 
-  	yupPhs[jx][jy][jz] = dcomplex(cos(kwave*yupShift) , -sin(kwave*yupShift));
-  	ydownPhs[jx][jy][jz] = dcomplex(cos(kwave*ydownShift) , -sin(kwave*ydownShift));
+  	yupPhs[jx][jy+1][jz] = dcomplex(cos(kwave*yupShift) , -sin(kwave*yupShift));
+  	ydownPhs[jx][jy-1][jz] = dcomplex(cos(kwave*ydownShift) , -sin(kwave*ydownShift));
       }
     }
   }
@@ -100,20 +100,22 @@ void ShiftedMetric::calcYUpDown(Field3D &f) {
   Field3D& yup = f.yup();
   yup.allocate();
 
-  for(int jx=0;jx<mesh.LocalNx;jx++) {
-    for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
-      shiftZ(&(f(jx,jy+1,0)), yupPhs[jx][jy], &(yup(jx,jy+1,0)));
-    }
-  }
+  fftshift(f,yupPhs,yup);
+  // for(int jx=0;jx<mesh.LocalNx;jx++) {
+  //   for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
+  //     shiftZ(&(f(jx,jy+1,0)), yupPhs[jx][jy+1], &(yup(jx,jy+1,0)));
+  //   }
+  // }
 
   Field3D& ydown = f.ydown();
   ydown.allocate();
 
-  for(int jx=0;jx<mesh.LocalNx;jx++) {
-    for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
-      shiftZ(&(f(jx,jy-1,0)), ydownPhs[jx][jy], &(ydown(jx,jy-1,0)));
-    }
-  }
+  fftshift(f,ydownPhs,ydown);
+  // for(int jx=0;jx<mesh.LocalNx;jx++) {
+  //   for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
+  //     shiftZ(&(f(jx,jy-1,0)), ydownPhs[jx][jy-1], &(ydown(jx,jy-1,0)));
+  //   }
+  // }
 }
   
 /*!
