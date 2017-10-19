@@ -10,6 +10,7 @@
 #include <bout/mesh.hxx>
 #include <fft.hxx>
 #include <bout/constants.hxx>
+#include <bout/scorepwrapper.hxx>
 
 #include <cmath>
 
@@ -95,27 +96,31 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m) {
  * Calculate the Y up and down fields
  */
 void ShiftedMetric::calcYUpDown(Field3D &f) {
-  f.splitYupYdown();
+  SCOREP0();
+
+  fftshiftYupYdown(f,yupPhs,ydownPhs);
   
-  Field3D& yup = f.yup();
-  yup.allocate();
+  // f.splitYupYdown();
+  
+  // Field3D& yup = f.yup();
+  // yup.allocate();
 
-  fftshift(f,yupPhs,yup);
-  // for(int jx=0;jx<mesh.LocalNx;jx++) {
-  //   for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
-  //     shiftZ(&(f(jx,jy+1,0)), yupPhs[jx][jy+1], &(yup(jx,jy+1,0)));
-  //   }
-  // }
+  // fftshift(f,yupPhs,yup,+1);
+  // // for(int jx=0;jx<mesh.LocalNx;jx++) {
+  // //   for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
+  // //     shiftZ(&(f(jx,jy+1,0)), yupPhs[jx][jy+1], &(yup(jx,jy+1,0)));
+  // //   }
+  // // }
 
-  Field3D& ydown = f.ydown();
-  ydown.allocate();
+  // Field3D& ydown = f.ydown();
+  // ydown.allocate();
 
-  fftshift(f,ydownPhs,ydown);
-  // for(int jx=0;jx<mesh.LocalNx;jx++) {
-  //   for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
-  //     shiftZ(&(f(jx,jy-1,0)), ydownPhs[jx][jy-1], &(ydown(jx,jy-1,0)));
-  //   }
-  // }
+  // fftshift(f,ydownPhs,ydown,-1);
+  // // for(int jx=0;jx<mesh.LocalNx;jx++) {
+  // //   for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
+  // //     shiftZ(&(f(jx,jy-1,0)), ydownPhs[jx][jy-1], &(ydown(jx,jy-1,0)));
+  // //   }
+  // // }
 }
   
 /*!

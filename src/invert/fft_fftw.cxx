@@ -29,6 +29,7 @@
 #include <options.hxx>
 #include <fft.hxx>
 #include <bout/constants.hxx>
+#include <bout/scorepwrapper.hxx>
 
 #include <fftw3.h>
 #include <math.h>
@@ -177,8 +178,149 @@ void cfft(dcomplex *cv, int length, int isign)
  ***********************************************************/
 
 #ifndef _OPENMP
+
 // Serial code
+void fftshiftYupYdown(Field3D &fld, const arr3Dvec &phaseUp, const arr3Dvec &phaseDown) {
+  SCOREP0();
+  // static variables initialized once
+  static double *fin;
+  static fftw_complex *fout, *foutUp, *foutDown;
+  static fftw_plan pForward, pBackwardUp, pBackwardDown;
+  static int nmany = 0;
+  static int nx = 0;
+  static int ny = 0;
+  static int nz = 0;
+  static int nkz = 0;
+
+  //FFTW setup for new problem size
+  if(fld.getNx() != nx || fld.getNy() != ny || fld.getNz() != nz){
+    //If previously setup then destroy plan
+    if(nmany>0){
+      fftw_destroy_plan(pForward);
+      fftw_destroy_plan(pBackwardUp);
+      fftw_destroy_plan(pBackwardDown);
+      fftw_free(fin);
+      fftw_free(fout);
+      fftw_free(foutUp);
+      fftw_free(foutDown);
+    }
+
+    fft_init();
+
+    //Problem size
+    nx = fld.getNx(); //Assuming we include guard cells in what is transformed
+    ny = fld.getNy(); //Assuming we include guard cells in what is transformed
+    nz = fld.getNz();
+
+    //Total number of problems
+    nmany = nx*ny;
+
+    //Number of wave numbers
+    nkz=(nz/2)+1;
+
+    //Allocate storage
+    fin = (double*) fftw_malloc(sizeof(double) * nmany*nz);
+    fout = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * nmany*nkz);
+    foutUp = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * nmany*nkz);
+    foutDown = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * nmany*nkz);
+
+    //Flags
+    unsigned int flags = FFTW_ESTIMATE;
+    if(fft_measure)
+      flags = FFTW_MEASURE;
+
+    //Get a pointer to the size of an individual problem
+    const int * sz = &nz;
+
+    //Setup the strides and distance between separate problems
+    int istride = 1, idist = nz; //Memory for single problem contiguous, problems separated by nz
+    int ostride = 1, odist = nkz;//Memory for single problem contiguous, inverse problems separated by nkz
+
+    //Create forward (rfft) plan
+    pForward = fftw_plan_many_dft_r2c(1, sz, nmany,
+			       fin, NULL, istride, idist,
+			       fout, NULL, ostride, odist, flags);
+
+    //Create backward (irfft) plan -- yup
+    pBackwardUp = fftw_plan_many_dft_c2r(1, sz, nmany,
+			       foutUp, NULL, ostride, odist,
+			       fin, NULL, istride, idist, flags);
+    
+    //Create backward (irfft) plan -- ydown
+    pBackwardDown = fftw_plan_many_dft_c2r(1, sz, nmany,
+			       foutDown, NULL, ostride, odist,
+			       fin, NULL, istride, idist, flags);
+
+  }
+
+  fld.splitYupYdown();
+  Field3D& yup = fld.yup();
+  yup.allocate();
+  Field3D& ydown = fld.ydown();
+  ydown.allocate();
+  
+  //Initialise counter 
+  int itot=0;
+  
+  //Loop over region to copy field data into fftw input
+  //Currently has to be region all -- if region changes must change nx,ny to represnt
+  //local size of region
+  for(const auto& i: fld){
+    fin[itot] = fld(i.x,i.y,i.z);
+    itot++;
+  }
+
+  //Do the forward transforms
+  fftw_execute(pForward);
+
+  //Now normalising and shifting data in place
+  itot = 0; //Reset counter
+  const BoutReal fac = 1.0/((BoutReal) nz); // Normalisation
+  for(int i=0;i<nx;i++){
+    for(int j=0;j<ny;j++){
+      for(int k=0;k<nkz;k++){
+	//Shift in Up direction 
+	const auto tmpRu = fout[itot][0]*phaseUp[i][j][k].real() - fout[itot][1]*phaseUp[i][j][k].imag();
+	const auto tmpIu = fout[itot][0]*phaseUp[i][j][k].imag() + fout[itot][1]*phaseUp[i][j][k].real();
+	foutUp[itot][0] = tmpRu*fac;
+	foutUp[itot][1] = tmpIu*fac;
+	
+	//Shift in Down direction
+	const auto tmpRd = fout[itot][0]*phaseDown[i][j][k].real() - fout[itot][1]*phaseDown[i][j][k].imag();
+	const auto tmpId = fout[itot][0]*phaseDown[i][j][k].imag() + fout[itot][1]*phaseDown[i][j][k].real();
+	foutDown[itot][0] = tmpRd*fac;
+	foutDown[itot][1] = tmpId*fac;
+	itot++;
+      }
+    }
+  }
+
+  //Do the backward transforms -- about 50% cheaper than forward form?
+  fftw_execute(pBackwardUp);
+
+  //Now copy data out, normalising as we go
+  itot = 0; //Reset counter
+  
+  for(const auto& i: yup){
+    yup(i.x,i.y,i.z) = fin[itot];
+    itot++;
+  }
+
+  //Do the backward transforms -- about 50% cheaper than forward form?
+  fftw_execute(pBackwardDown);
+
+  //Now copy data out, normalising as we go
+  itot = 0; //Reset counter
+  
+  for(const auto& i: ydown){
+    ydown(i.x,i.y,i.z) = fin[itot];
+    itot++;
+  }
+
+}
+
 void fftshift(const Field3D &fld, const arr3Dvec &phase, Field3D &fldOut) {
+  SCOREP0();
   // static variables initialized once
   static double *fin;
   static fftw_complex *fout;
