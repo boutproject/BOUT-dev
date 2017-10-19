@@ -180,6 +180,92 @@ void cfft(dcomplex *cv, int length, int isign)
 // Serial code
 
 
+void rfft(const Field3D &fld, dcomplex ***out) {
+
+
+  // static variables initialized once
+  static double *fin;
+  static fftw_complex *fout;
+  static fftw_plan p;
+  static int nmany = 0;
+  static int nx = 0;
+  static int ny = 0;
+  static int nz = 0;
+  static int nkz = 0;
+
+  //FFTW setup for new problem size
+  if(fld.getNx() != nx || fld.getNy() != ny || fld.getNz() != nz){
+    //If previously setup then destroy plan
+    if(nmany>0){
+      fftw_destroy_plan(p);
+      fftw_free(fin);
+      fftw_free(fout);
+    }
+
+    fft_init();
+
+    //Problem size
+    nx = fld.getNx(); //Assuming we include guard cells in what is transformed
+    ny = fld.getNy(); //Assuming we include guard cells in what is transformed
+    nz = fld.getNz();
+
+    //Total number of problems
+    nmany = nx*ny;
+
+    //Number of wave numbers
+    nkz=(nz/2)+1;
+
+    //Allocate storage
+    fin = (double*) fftw_malloc(sizeof(double) * nmany*nz);
+    fout = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * nmany*nkz);
+
+    //Flags
+    unsigned int flags = FFTW_ESTIMATE;
+    if(fft_measure)
+      flags = FFTW_MEASURE;
+
+    //Get a pointer to the size of an individual problem
+    const int * sz = &nz;
+
+    //Setup the strides and distance between separate problems
+    int istride = 1, idist = nz; //Memory for single problem contiguous, problems separated by nz
+    int ostride = 1, odist = nkz;//Memory for single problem contiguous, inverse problems separated by nkz
+
+    //Create plan
+    p = fftw_plan_many_dft_r2c(1, sz, nmany,
+			       fin, NULL, istride, idist,
+			       fout, NULL, ostride, odist, flags);
+
+  }
+
+  //Initialise counter 
+  int itot=0;
+  
+  //Loop over region to copy field data into fftw input
+  //Currently has to be region all -- if region changes must change nx,ny to represnt
+  //local size of region
+  for(const auto& i: fld){
+    fin[itot] = fld[i];
+    itot++;
+  }
+
+  //Do the transforms
+  fftw_execute(p);
+
+  //Now copy data out, normalising as we go
+  itot = 0; //Reset counter
+  const BoutReal fac = 1.0/((BoutReal) nz); // Normalisation
+  
+  for(int i=0;i<nx;i++){
+    for(int j=0;j<ny;j++){
+      for(int k=0;k<nkz;k++){
+	out[i][j][k] = dcomplex(fout[itot][0], fout[itot][1])*fac;
+	itot++;
+      }
+    }
+  }
+}
+
 void rfft(const BoutReal *in, int length, dcomplex *out) {
   // static variables initialized once
   static double *fin;
@@ -246,6 +332,91 @@ const Array<dcomplex> rfft(const Array<BoutReal> &in) {
   
   rfft(in.begin(), size, out.begin());
   return out;
+}
+
+void irfft(const dcomplex ***in, Field3D &fld) {
+
+  // static variables initialized once
+  static double *fout;
+  static fftw_complex *fin;
+  static fftw_plan p;
+  static int nmany = 0;
+  static int nx = 0;
+  static int ny = 0;
+  static int nz = 0;
+  static int nkz = 0;
+
+  //FFTW setup for new problem size
+  if(fld.getNx() != nx || fld.getNy() != ny || fld.getNz() != nz){
+    //If previously setup then destroy plan
+    if(nmany>0){
+      fftw_destroy_plan(p);
+      fftw_free(fin);
+      fftw_free(fout);
+    }
+
+    fft_init();
+
+    //Problem size
+    nx = fld.getNx(); //Assuming we include guard cells in what is transformed
+    ny = fld.getNy(); //Assuming we include guard cells in what is transformed
+    nz = fld.getNz();
+
+    //Total number of problems
+    nmany = nx*ny;
+
+    //Number of wave numbers
+    nkz=(nz/2)+1;
+
+    //Allocate storage
+    fout = (double*) fftw_malloc(sizeof(double) * nmany*nz);
+    fin = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * nmany*nkz);
+
+    //Flags
+    unsigned int flags = FFTW_ESTIMATE;
+    if(fft_measure)
+      flags = FFTW_MEASURE;
+
+    //Get a pointer to the size of an individual problem
+    const int * sz = &nz;
+
+    //Setup the strides and distance between separate problems
+    int istride = 1, idist = nkz; //Memory for single problem contiguous, problems separated by nkz
+    int ostride = 1, odist = nz;//Memory for single problem contiguous, inverse problems separated by nz
+
+    //Create plan
+    p = fftw_plan_many_dft_c2r(1, sz, nmany,
+			       fin, NULL, istride, idist,
+			       fout, NULL, ostride, odist, flags);
+
+  }
+
+  //Initialise counter 
+  int itot=0;
+  
+  //Loop over region to copy field data into fftw input
+  //Currently has to be region all -- if region changes must change nx,ny to represnt
+  //local size of region
+  for(int i=0;i<nx;i++){
+    for(int j=0;j<ny;j++){
+      for(int k=0;k<nkz;k++){
+	fin[itot][0] = in[i][j][k].real();
+	fin[itot][1] = in[i][j][k].imag();
+	itot++;
+      }
+    }
+  }
+
+  //Do the transforms
+  fftw_execute(p);
+
+  //Now copy data out, normalising as we go
+  itot = 0; //Reset counter
+  
+  for(const auto& i: fld){
+    fld[i] = fout[itot];
+    itot++;
+  }
 }
 
 void irfft(const dcomplex *in, int length, BoutReal *out) {
