@@ -389,7 +389,7 @@ void fftshift(const Field3D &fld, const arr3Dvec &phase, Field3D &fldOut) {
   //Currently has to be region all -- if region changes must change nx,ny to represnt
   //local size of region
   for(const auto& i: fld){
-    fin[itot] = fld[i];
+    fin[itot] = fld(i.x,i.y,i.z);
     itot++;
   }
 
@@ -402,29 +402,30 @@ void fftshift(const Field3D &fld, const arr3Dvec &phase, Field3D &fldOut) {
   for(int i=0;i<nx;i++){
     for(int j=0;j<ny;j++){
       for(int k=0;k<nkz;k++){
-	const auto tmp = dcomplex(fout[itot][0], fout[itot][1])*fac*phase[i][j][k];
-	fout[itot][0] = tmp.real();
-	fout[itot][1] = tmp.imag();
+	//	const auto tmp = dcomplex(fout[itot][0], fout[itot][1])*fac*phase[i][j][k];
+	const auto tmpR = fout[itot][0]*phase[i][j][k].real() - fout[itot][1]*phase[i][j][k].imag();
+	const auto tmpI = fout[itot][0]*phase[i][j][k].imag() + fout[itot][1]*phase[i][j][k].real();
+	fout[itot][0] = tmpR*fac;
+	fout[itot][1] = tmpI*fac;
 	itot++;
       }
     }
   }
 
-  //Do the backward transforms
+  //Do the backward transforms -- about 50% cheaper than forward form?
   fftw_execute(pBackward);
 
   //Now copy data out, normalising as we go
   itot = 0; //Reset counter
   
-  for(const auto& i: fldOut){
-    fldOut[i] = fin[itot];
+  for(const auto& i: fldOut.region(RGN_NOY)){
+    fldOut(i.x,i.y,i.z) = fin[itot];
     itot++;
   }
-
 }
 
 void rfft(const Field3D &fld, dcomplex ***out) {
-
+  SCOREP0();
   // static variables initialized once
   static double *fin;
   static fftw_complex *fout;
@@ -577,7 +578,7 @@ const Array<dcomplex> rfft(const Array<BoutReal> &in) {
 }
 
 void irfft(const dcomplex ***in, Field3D &fld) {
-
+  SCOREP0();
   // static variables initialized once
   static double *fout;
   static fftw_complex *fin;
