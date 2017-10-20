@@ -111,7 +111,8 @@ void ShiftedMetric::calcYUpDown(Field3D &f) {
   Field3D& ydown = f.ydown();
   ydown.allocate();
 
-  const int nmodes = mesh.LocalNz/2 + 1;
+  const int nz = mesh.LocalNz;
+  const int nmodes = nz/2 + 1;
   std::vector<dcomplex> cmplxRes, cmplxUp, cmplxDown;
   cmplxRes.resize(nmodes);
   cmplxUp.resize(nmodes);
@@ -124,41 +125,41 @@ void ShiftedMetric::calcYUpDown(Field3D &f) {
     for(int jy=mesh.ystart-1;jy<=mesh.ystart;jy++) {
       
       // Take forward FFT
-      rfft(f(jx,jy), mesh.LocalNz, &cmplxRes[0]);
+      rfft(f(jx,jy), nz, cmplxRes.data());
       
       for(int jz=1;jz<nmodes;jz++) {
 	cmplxDown[jz] = cmplxRes[jz]*ydownPhs[jx][jy][jz];
       }
 
-      irfft(&cmplxDown[0], mesh.LocalNz, ydown(jx,jy)); // Reverse FFT
+      irfft(cmplxDown.data(), nz, ydown(jx,jy));
     }
 
     //Central part shared by both directions
     for(int jy=mesh.ystart+1;jy<=mesh.yend-1;jy++) {
       
       // Take forward FFT
-      rfft(f(jx,jy), mesh.LocalNz, &cmplxRes[0]);
+      rfft(f(jx,jy), nz, cmplxRes.data());
       
       for(int jz=1;jz<nmodes;jz++) {
 	cmplxUp[jz]   = cmplxRes[jz]*yupPhs[jx][jy][jz];
 	cmplxDown[jz] = cmplxRes[jz]*ydownPhs[jx][jy][jz];
       }
 
-      irfft(&cmplxUp[0],   mesh.LocalNz, yup(jx,jy)); // Reverse FFT
-      irfft(&cmplxDown[0], mesh.LocalNz, ydown(jx,jy)); // Reverse FFT
+      irfft(cmplxUp.data(),   nz, yup(jx,jy));
+      irfft(cmplxDown.data(), nz, ydown(jx,jy));
     }
 
     //Part just for yup
     for(int jy=mesh.yend;jy<=mesh.yend+1;jy++) {
       
       // Take forward FFT
-      rfft(f(jx,jy), mesh.LocalNz, &cmplxRes[0]);
+      rfft(f(jx,jy), nz, cmplxRes.data());
       
       for(int jz=1;jz<nmodes;jz++) {
 	cmplxUp[jz]   = cmplxRes[jz]*yupPhs[jx][jy][jz];
       }
 
-      irfft(&cmplxUp[0],   mesh.LocalNz, yup(jx,jy)); // Reverse FFT
+      irfft(cmplxUp.data(), nz, yup(jx,jy));
     }
 
   }
