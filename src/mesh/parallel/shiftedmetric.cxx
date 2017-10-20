@@ -92,36 +92,134 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m) {
 
 }
 
+
 /*!
  * Calculate the Y up and down fields
  */
 void ShiftedMetric::calcYUpDown(Field3D &f) {
   SCOREP0();
 
-  fftshiftYupYdown(f,yupPhs,ydownPhs);
+  ///////////////
+  /// Original opt method
+  /////////////////
+
+  f.splitYupYdown();
   
-  // f.splitYupYdown();
+  Field3D& yup = f.yup();
+  yup.allocate();
+
+  Field3D& ydown = f.ydown();
+  ydown.allocate();
+
+  const int nmodes = mesh.LocalNz/2 + 1;
+  std::vector<dcomplex> cmplxRes, cmplxUp, cmplxDown;
+  cmplxRes.resize(nmodes);
+  cmplxUp.resize(nmodes);
+  cmplxDown.resize(nmodes);
+  cmplxUp[0]   = 0.;
+  cmplxDown[0] = 0.;
   
-  // Field3D& yup = f.yup();
-  // yup.allocate();
+  for(int jx=0;jx<mesh.LocalNx;jx++) {
+    //Part just for ydown
+    for(int jy=mesh.ystart-1;jy<=mesh.ystart;jy++) {
+      
+      // Take forward FFT
+      rfft(f(jx,jy), mesh.LocalNz, &cmplxRes[0]);
+      
+      for(int jz=1;jz<nmodes;jz++) {
+	cmplxDown[jz] = cmplxRes[jz]*ydownPhs[jx][jy][jz];
+      }
 
-  // fftshift(f,yupPhs,yup,+1);
-  // // for(int jx=0;jx<mesh.LocalNx;jx++) {
-  // //   for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
-  // //     shiftZ(&(f(jx,jy+1,0)), yupPhs[jx][jy+1], &(yup(jx,jy+1,0)));
-  // //   }
-  // // }
+      irfft(&cmplxDown[0], mesh.LocalNz, ydown(jx,jy)); // Reverse FFT
+    }
 
-  // Field3D& ydown = f.ydown();
-  // ydown.allocate();
+    //Central part shared by both directions
+    for(int jy=mesh.ystart+1;jy<=mesh.yend-1;jy++) {
+      
+      // Take forward FFT
+      rfft(f(jx,jy), mesh.LocalNz, &cmplxRes[0]);
+      
+      for(int jz=1;jz<nmodes;jz++) {
+	cmplxUp[jz]   = cmplxRes[jz]*yupPhs[jx][jy][jz];
+	cmplxDown[jz] = cmplxRes[jz]*ydownPhs[jx][jy][jz];
+      }
 
-  // fftshift(f,ydownPhs,ydown,-1);
-  // // for(int jx=0;jx<mesh.LocalNx;jx++) {
-  // //   for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
-  // //     shiftZ(&(f(jx,jy-1,0)), ydownPhs[jx][jy-1], &(ydown(jx,jy-1,0)));
-  // //   }
-  // // }
+      irfft(&cmplxUp[0],   mesh.LocalNz, yup(jx,jy)); // Reverse FFT
+      irfft(&cmplxDown[0], mesh.LocalNz, ydown(jx,jy)); // Reverse FFT
+    }
+
+    //Part just for yup
+    for(int jy=mesh.yend;jy<=mesh.yend+1;jy++) {
+      
+      // Take forward FFT
+      rfft(f(jx,jy), mesh.LocalNz, &cmplxRes[0]);
+      
+      for(int jz=1;jz<nmodes;jz++) {
+	cmplxUp[jz]   = cmplxRes[jz]*yupPhs[jx][jy][jz];
+      }
+
+      irfft(&cmplxUp[0],   mesh.LocalNz, yup(jx,jy)); // Reverse FFT
+    }
+
+  }
 }
+// void ShiftedMetric::calcYUpDown(Field3D &f) {
+//   SCOREP0();
+
+//   ///////////////
+//   /// Hard coded fft shift method
+//   /////////////////
+
+//   fftshiftYupYdown(f,yupPhs,ydownPhs);
+// }  
+
+
+// void ShiftedMetric::calcYUpDown(Field3D &f) {
+//   SCOREP0();
+
+//   ///////////////
+//   /// Original method
+//   /////////////////
+
+//   f.splitYupYdown();
+  
+//   Field3D& yup = f.yup();
+//   yup.allocate();
+
+//   for(int jx=0;jx<mesh.LocalNx;jx++) {
+//     for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
+//       shiftZ(&(f(jx,jy+1,0)), yupPhs[jx][jy+1], &(yup(jx,jy+1,0)));
+//     }
+//   }
+
+//   Field3D& ydown = f.ydown();
+//   ydown.allocate();
+
+//   for(int jx=0;jx<mesh.LocalNx;jx++) {
+//     for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
+//       shiftZ(&(f(jx,jy-1,0)), ydownPhs[jx][jy-1], &(ydown(jx,jy-1,0)));
+//     }
+//   }
+// }
+
+
+// // void ShiftedMetric::calcYUpDown(Field3D &f) {
+// //   SCOREP0();
+
+// //   ///////////////
+// //   /// fftshift method
+// //   /////////////////
+
+//   f.splitYupYdown();
+  
+//   Field3D& yup = f.yup();
+//   yup.allocate();
+//   fftshift(f,yupPhs,yup,+1);
+
+//   Field3D& ydown = f.ydown();
+//   ydown.allocate();
+//   fftshift(f,ydownPhs,ydown,-1);
+// }
   
 /*!
  * Shift the field so that X-Z is not orthogonal,
