@@ -215,11 +215,11 @@ void ShiftedMetric::calcYUpDown(Field3D &f) {
   
 //   Field3D& yup = f.yup();
 //   yup.allocate();
-//   fftshift(f,yupPhs,yup,+1);
+//   fftshift(f,yupPhs,yup);
 
 //   Field3D& ydown = f.ydown();
 //   ydown.allocate();
-//   fftshift(f,ydownPhs,ydown,-1);
+//   fftshift(f,ydownPhs,ydown);
 // }
   
 /*!
