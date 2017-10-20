@@ -431,11 +431,6 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
     r = []
     theta = []
 
-    if(cmap!=None):
-        try:
-            plt.set_cmap(cmap)
-        except Exception:
-            print("Not a valid colormap instance or registered colormap: colormap unchanged")
 
     # Initiate figure frame
     for i in range(0,Nvar):
@@ -477,7 +472,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
             ax[i].set_title(titles[i])
             if hold_aspect:
                 ax[i].set_aspect('equal')
-            plots.append(ax[i].contourf(x[i][0],y[i],vars[i][0][0,:,:].T, Ncolors, lw=0, levels=clevels[i] ))
+            plots.append(ax[i].contourf(x[i][0],y[i],vars[i][0][0,:,:].T, Ncolors, cmap=cmap, lw=0, levels=clevels[i] ))
             plt.axes(ax[i])
             cbars.append(fig.colorbar(plots[i], format='%1.1e'))
             # Pad out unused list variables with zeros
@@ -514,7 +509,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
             theta.append(linspace(0,2*pi, Ny[i][0]))
             r[i],theta[i] = meshgrid(r[i], theta[i])
             ax.append(fig.add_subplot(row,col,i+1, projection='polar'))
-            plots.append(ax[i].contourf(theta[i], r[i], vars[i][0][0,:,:].T, levels=clevels[i]))
+            plots.append(ax[i].contourf(theta[i], r[i], vars[i][0][0,:,:].T, cmap=cmap, levels=clevels[i]))
             plt.axes(ax[i])
             cbars.append(fig.colorbar(plots[i], format='%1.1e'))
             ax[i].set_rmax(Nx[i][0]-1)
@@ -554,7 +549,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
                 for k in range(0,Nlines[j]):
                     lines[j][k].set_data(x[j][k], vars[j][k][index,:])
             elif (contour[j] == 1):
-                plots[j] = ax[j].contourf(x[j][0],y[j],vars[j][0][index,:,:].T, Ncolors, lw=0, levels=clevels[j])
+                plots[j] = ax[j].contourf(x[j][0],y[j],vars[j][0][index,:,:].T, Ncolors, cmap=cmap, lw=0, levels=clevels[j])
             elif (surf[j] == 1):
                 ax[j] = fig.add_subplot(row,col,j+1, projection='3d')
                 plots[j] = ax[j].plot_wireframe(x[j][0], y[j], vars[j][0][index,:,:].T, rstride=ystride[j], cstride=xstride[j])
@@ -563,7 +558,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
                 ax[j].set_ylabel(r'y')
                 ax[j].set_title(titles[j])
             elif (polar[j] == 1):
-                plots[j] = ax[j].contourf(theta[j], r[j], vars[j][0][index,:,:].T, levels=clevels[j])
+                plots[j] = ax[j].contourf(theta[j], r[j], vars[j][0][index,:,:].T,cmap=cmap, levels=clevels[j])
                 ax[j].set_rmax(Nx[j][0]-1)
 
         if (tslice == 0):
@@ -588,36 +583,27 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
     fig.canvas.mpl_connect('button_press_event', onClick)
     anim = animation.FuncAnimation(fig, animate, init_func=init, frames=Nframes)
 
-    # Save movie with given name
+    #If movie is not passed as a string assign the default filename
+    if (movie==1):
+        movie='animation'
+
+    # Save movie with given or default name
     if ((isinstance(movie,str)==1)):
         try:
             anim.save(movie+'.mp4',writer = FFwriter, fps=fps, dpi=dpi, extra_args=['-vcodec', 'libx264'])
         except Exception:
         #Try specifying writer by string if ffmpeg not found
-                    try:
-                        anim.save(movie+'.mp4',writer = 'ffmpeg', fps=fps, dpi=dpi, extra_args=['-vcodec', 'libx264'])
-                    except Exception:
-                        print("Save failed: Check ffmpeg path")
-
-    # Save movie with default name
-    if ((isinstance(movie,str)==0)):
-        if (movie != 0):
-            try:
-                anim.save('animation.mp4',writer = FFwriter, fps=fps, dpi=dpi, extra_args=['-vcodec', 'libx264'])
-            except Exception:
-            #Try specifying writer by string if ffmpeg not found
                 try:
-                    anim.save('animation.mp4',writer = 'ffmpeg', fps=fps, dpi=dpi, extra_args=['-vcodec', 'libx264'])
+                    anim.save(movie+'.mp4',writer = 'ffmpeg', fps=fps, dpi=dpi, extra_args=['-vcodec', 'libx264'])
                 except Exception:
-                    print("Save failed: Check ffmpeg path")
-                    
+                     print('Save failed: Check ffmpeg path')
+                     raise
 
-    # Show animation
+    # Show animation if not saved or returned, otherwise close the plot
     if (movie==0 and return_animation == 0):
         plt.show()
     else:
         plt.close()
-    
     # Return animation object
     if(return_animation == 1):
         return(anim)
@@ -626,7 +612,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
 """
 To do list
 1. Speed up animations ????
-2. Look at theta in polar plots - perioidic?!?
+2. Look at theta in polar plots - periodic?!?
 3. Log axes, colorbars
 4. Figureplot
 """
