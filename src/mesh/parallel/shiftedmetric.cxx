@@ -164,63 +164,6 @@ void ShiftedMetric::calcYUpDown(Field3D &f) {
 
   }
 }
-// void ShiftedMetric::calcYUpDown(Field3D &f) {
-//   SCOREP0();
-
-//   ///////////////
-//   /// Hard coded fft shift method
-//   /////////////////
-
-//   fftshiftYupYdown(f,yupPhs,ydownPhs);
-// }  
-
-
-// void ShiftedMetric::calcYUpDown(Field3D &f) {
-//   SCOREP0();
-
-//   ///////////////
-//   /// Original method
-//   /////////////////
-
-//   f.splitYupYdown();
-  
-//   Field3D& yup = f.yup();
-//   yup.allocate();
-
-//   for(int jx=0;jx<mesh.LocalNx;jx++) {
-//     for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
-//       shiftZ(&(f(jx,jy+1,0)), yupPhs[jx][jy+1], &(yup(jx,jy+1,0)));
-//     }
-//   }
-
-//   Field3D& ydown = f.ydown();
-//   ydown.allocate();
-
-//   for(int jx=0;jx<mesh.LocalNx;jx++) {
-//     for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
-//       shiftZ(&(f(jx,jy-1,0)), ydownPhs[jx][jy-1], &(ydown(jx,jy-1,0)));
-//     }
-//   }
-// }
-
-
-// // void ShiftedMetric::calcYUpDown(Field3D &f) {
-// //   SCOREP0();
-
-// //   ///////////////
-// //   /// fftshift method
-// //   /////////////////
-
-//   f.splitYupYdown();
-  
-//   Field3D& yup = f.yup();
-//   yup.allocate();
-//   fftshift(f,yupPhs,yup);
-
-//   Field3D& ydown = f.ydown();
-//   ydown.allocate();
-//   fftshift(f,ydownPhs,ydown);
-// }
   
 /*!
  * Shift the field so that X-Z is not orthogonal,
