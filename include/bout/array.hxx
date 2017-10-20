@@ -28,6 +28,8 @@
 #include <map>
 #include <vector>
 
+#include <bout/openmpwrap.hxx>
+
 /*!
  * Data array type with automatic memory management
  *
@@ -71,7 +73,7 @@ public:
    */
   Array(int len) {
     ptr = get(len);
-#pragma omp atomic
+BOUT_OMP(atomic)
     ptr->refs++;
   }
   
@@ -87,7 +89,7 @@ public:
    */
   Array(const Array &other) {
     ptr = other.ptr;
-#pragma omp atomic
+BOUT_OMP(atomic)
     ptr->refs++;
   }
 
@@ -100,7 +102,7 @@ public:
 
     // Add reference
     ptr = other.ptr;
-#pragma omp atomic
+BOUT_OMP(atomic)
     ptr->refs++;
 
     // Release the old data
@@ -339,7 +341,7 @@ private:
    */
   ArrayData* get(int len) {
     ArrayData *p;
-#pragma omp critical (store)
+BOUT_OMP(critical (store))
     {
       std::vector<ArrayData* >& st = store()[len];
       if (!st.empty()) {
@@ -361,7 +363,7 @@ private:
       return;
     
     // Reduce reference count, and if zero return to store
-#pragma omp critical (store)
+BOUT_OMP(critical (store))
     {
       if (!--d->refs) {
         if (useStore()) {

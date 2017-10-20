@@ -41,6 +41,7 @@
 #include <boutcomm.hxx>
 #include <msg_stack.hxx>
 #include <output.hxx>
+#include <bout/openmpwrap.hxx>
 
 KarniadakisSolver::KarniadakisSolver(Options *options) : Solver(options), f1(nullptr) {
   canReset = true;  
@@ -181,7 +182,7 @@ void KarniadakisSolver::take_step(BoutReal dt) {
   
   if(first_time) {
     // Initialise values
-    #pragma omp parallel for
+    BOUT_OMP(parallel for)
     for(int i=0;i<nlocal;i++) {
     //fm1[i] = fm2[i] = f0[i];
       fm1[i] = f0[i] - dt*S0[i];
@@ -191,7 +192,7 @@ void KarniadakisSolver::take_step(BoutReal dt) {
     first_time = false;
   }
 
-  #pragma omp parallel for
+  BOUT_OMP(parallel for)
   for(int i=0;i<nlocal;i++)
     f1[i] = (6./11.) * (3.*f0[i] - 1.5*fm1[i] + (1./3.)*fm2[i] + dt*(3.*S0[i] - 3.*Sm1[i] + Sm2[i]));
   
@@ -201,7 +202,7 @@ void KarniadakisSolver::take_step(BoutReal dt) {
   save_derivs(D0);
   
   // f1 = f1 + dt*D0
-  #pragma omp parallel for
+  BOUT_OMP(parallel for)
   for(int i=0;i<nlocal;i++)
     f1[i] += (6./11.) * dt*D0[i];
 }

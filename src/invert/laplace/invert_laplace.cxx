@@ -42,6 +42,7 @@
 #include <output.hxx>
 #include <msg_stack.hxx>
 #include <bout/constants.hxx>
+#include <bout/openmpwrap.hxx>
 
 #include "laplacefactory.hxx"
 
@@ -329,7 +330,7 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
 
   Coordinates *coord = mesh->coordinates();
 
-  #pragma omp parallel for
+  BOUT_OMP(parallel for)
   for(int kz = 0; kz <= maxmode; kz++) {
     BoutReal kwave=kz*2.0*PI/coord->zlength(); // wave number is 1/[rad]
 

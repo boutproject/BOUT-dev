@@ -51,6 +51,7 @@
 #include <fft.hxx>
 #include <interpolation.hxx>
 #include <bout/constants.hxx>
+#include <bout/openmpwrap.hxx>
 #include <msg_stack.hxx>
 
 #include <cmath>
@@ -1364,7 +1365,7 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
 
     int ncz = mesh->LocalNz;
     
-    #pragma omp parallel
+    BOUT_OMP(parallel)
     {
       Array<dcomplex> cv(ncz/2 + 1);
       
@@ -1386,7 +1387,7 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
         kfilter = ncz / 2;
       int kmax = ncz / 2 - kfilter; // Up to and including this wavenumber index
 
-      #pragma omp for
+      BOUT_OMP(for)
       for (int jx = xs; jx <= xe; jx++) {
         for (int jy = ys; jy <= ye; jy++) {
           rfft(f(jx, jy), ncz, cv.begin()); // Forward FFT

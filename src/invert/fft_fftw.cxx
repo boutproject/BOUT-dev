@@ -29,6 +29,7 @@
 #include <options.hxx>
 #include <fft.hxx>
 #include <bout/constants.hxx>
+#include <bout/openmpwrap.hxx>
 
 #include <fftw3.h>
 #include <math.h>
@@ -44,7 +45,7 @@ void fft_init()
 {
   if(fft_options)
     return;
-  //#pragma omp critical
+  //BOUT_OMP(critical)
   {
     Options *opt = Options::getRoot();
     opt = opt->getSection("fft");
@@ -110,7 +111,7 @@ void cfft(dcomplex *cv, int length, int isign)
   static int size = 0, nthreads;
 
   int th_id = omp_get_thread_num();
-  #pragma omp critical
+  BOUT_OMP(critical)
   {
     // Sort out memory. Also, FFTW planning routines not thread safe
     int n_th = omp_get_num_threads(); // Number of threads
@@ -314,7 +315,7 @@ void rfft(const BoutReal *in, int length, dcomplex *out) {
   static int size = 0, nthreads;
 
   int th_id = omp_get_thread_num();
-#pragma omp critical(rfft)
+BOUT_OMP(critical(rfft))
   {
     // Sort out memory. Also, FFTW planning routines not thread safe
     int n_th = omp_get_num_threads(); // Number of threads
@@ -376,7 +377,7 @@ void irfft(const dcomplex *in, int length, BoutReal *out) {
 
   int th_id = omp_get_thread_num();
   int n_th = omp_get_num_threads(); // Number of threads
-#pragma omp critical(irfft)
+BOUT_OMP(critical(irfft))
   {
     // Sort out memory. Also, FFTW planning routines not thread safe
 
