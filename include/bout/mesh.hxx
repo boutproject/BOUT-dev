@@ -597,6 +597,8 @@ class Mesh {
    * Set the parallel (y) transform from the options file
    */
   void setParallelTransform();
+
+  std::map<REGION, std::vector<int>> region_map ;
   
  protected:
   

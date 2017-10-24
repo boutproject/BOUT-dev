@@ -771,6 +771,11 @@ int BoutMesh::load() {
   } else {
     output_info << "No boundary regions in this processor" << endl;
   }
+  output_progress.write("Loading REGIONS\n");
+  get_region(RGN_ALL);
+  get_region(RGN_NOX);
+  get_region(RGN_NOY);
+  get_region(RGN_NOBNDRY);
 
   output_info.write("\tdone\n");
 
@@ -2500,4 +2505,102 @@ const Field3D BoutMesh::Switch_XZ(const Field3D &var) {
   }
 
   return result;
+}
+
+void BoutMesh::get_region(REGION rgn) {
+  // Check the map has finished being made.
+  // Simply checking that the map exists with
+  //   if(region_map.find(rgn) == region_map.end()){ 
+  // leads to segfaults.
+
+  if( region_map_set[rgn] == false ){
+#pragma omp master
+{
+    region_map[rgn] = single_index_region(rgn);
+}
+// All threads must wait for region_map to be made.
+// This synchronization is skipped in subsequent steps.
+#pragma omp barrier
+  } 
+    region_map_set[rgn] = true;
+}
+
+std::map<REGION,bool> BoutMesh::set_region_map_set() const {
+  // region_set is a map from REGION to bool stating whether the rgn
+  // vector for this REGION has been set. Initially none are set, so
+  // make all bools false.
+  std::map<REGION,bool> region_map_set;
+  region_map_set[RGN_ALL] = false;
+  region_map_set[RGN_NOX] = false;
+  region_map_set[RGN_NOY] = false;
+  region_map_set[RGN_NOBNDRY] = false;
+
+  return region_map_set;
+}
+
+const std::vector<int> BoutMesh::make_single_index_region(int xstart, int xend,
+                                                         int ystart, int yend,
+                                                         int zstart, int zend) const {
+
+  int len = (xend-xstart+1)*(yend-ystart+1)*(zend-zstart+1);
+  std::vector<int> region( len );
+  int j = 0;
+  int x = xstart;
+  int y = ystart;
+  int z = zstart;
+  int nx = LocalNx;
+  int ny = LocalNy;
+  int nz = LocalNz;
+
+  bool done = false;
+  j=-1;
+  while( !done ){
+      j++;
+      region[j] = (x*ny+y)*nz+z;
+      if(x == xend && y == yend && z == zend){
+	done = true;
+      }
+      ++z;
+      if(z > zend) {
+	z = zstart;
+	++y;
+	if(y > yend) {
+	  y = ystart;
+	  ++x;
+	}
+      }
+    }
+    return region;
+  }
+
+std::vector<int> BoutMesh::single_index_region(REGION rgn) const {
+  switch(rgn) {
+  case RGN_ALL: {
+    return make_single_index_region(0, LocalNx-1,
+                                    0, LocalNy-1,
+                                    0, LocalNz-1);
+    break;
+  }
+  case RGN_NOBNDRY: {
+    return make_single_index_region(xstart, xend,
+                                    ystart, yend,
+                                    0, LocalNz-1);
+    break;
+  }
+  case RGN_NOX: {
+    return make_single_index_region(xstart, xend,
+                                    0, LocalNy-1,
+                                    0, LocalNz-1);
+    break;
+  }
+  case RGN_NOY: {
+    return make_single_index_region(0, LocalNx-1,
+                                    ystart, yend,
+                                    0, LocalNz-1);
+    break;
+  }
+  default: {
+    throw BoutException("BoutMesh::region() : Requested region not implemented");
+  }
+  };
 }
