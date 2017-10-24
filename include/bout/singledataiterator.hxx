@@ -80,25 +80,25 @@ public:
 	       int nx, int ny, int nz, std::vector<int>& rgn) : 
 #ifndef _OPENMP
     x(xs), y(ys), z(zs),
-    xstart(xs),   ystart(ys),   zstart(zs),
-    xmin(xstart), ymin(ystart), zmin(zstart),
-    xend(xe),     yend(ye),     zend(ze),
-    xmax(xend),   ymax(yend),   zmax(zend),
-    i((x*ny+y)*nz+z), istart((xs*ny+ys)*nz+zs), imin(istart), iend((xe*ny+ye)*nz+ze), imax(iend),
+    i((x*ny+y)*nz+z),
     icount(0),
     icountstart(0),
     icountend((xe-xs+1)*(ye-ys+1)*(ze-zs+1)),
     nx(nx), ny(ny), nz(nz),
-#else
-    xmin(xs),     ymin(ys),     zmin(zs),
-    xmax(xe),     ymax(ye),     zmax(ze),
-    imin((xs*ny+ys)*nz+zs), imax((xe*ny+ye)*nz+ze), 
-    icount(0),
-    icountstart(0),
-    icountend((xe-xs+1)*(ye-ys+1)*(ze-zs+1)),
-    nx(nx), ny(ny), nz(nz),
-#endif
     rgn(rgn),
+    istart((xs*ny+ys)*nz+zs), xstart(xs),   ystart(ys),   zstart(zs),
+    imin(istart), xmin(xstart), ymin(ystart), zmin(zstart),
+    iend((xe*ny+ye)*nz+ze), xend(xe),     yend(ye),     zend(ze),
+    imax(iend), xmax(xend),   ymax(yend),   zmax(zend),
+#else
+    icount(0),
+    icountstart(0),
+    icountend((xe-xs+1)*(ye-ys+1)*(ze-zs+1)),
+    nx(nx), ny(ny), nz(nz),     
+    rgn(rgn),
+    imin((xs*ny+ys)*nz+zs), xmin(xs),     ymin(ys),     zmin(zs),  
+    imax((xe*ny+ye)*nz+ze), xmax(xe),     ymax(ye),     zmax(ze),
+#endif
     isEnd(false)
   {
 #ifdef _OPENMP
@@ -116,23 +116,25 @@ public:
 	       int nx, int ny, int nz, std::vector<int>& rgn, void* UNUSED(dummy)) : 
 #ifndef _OPENMP
     x(xs), y(ys), z(zs),
-    xstart(xs),   ystart(ys),   zstart(zs),
-    xmin(xstart), ymin(ystart), zmin(zstart),
-    xend(xe),     yend(ye),     zend(ze),
-    xmax(xend),   ymax(yend),   zmax(zend),
-    i((x*ny+y)*nz+z), istart((xs*ny+ys)*nz+zs), imin(istart), iend((xe*ny+ye)*nz+ze), imax(iend),
+    i((x*ny+y)*nz+z),    
     icount(0),
     icountstart(0),
     icountend((xe-xs+1)*(ye-ys+1)*(ze-zs+1)),
-#else
-    xmin(xs),     ymin(ys),     zmin(zs),
-    xmax(xe),     ymax(ye),     zmax(ze),
-    imin((xs*ny+ys)*nz+zs), imax((xe*ny+ye)*nz+ze), 
-    icount(0),
-    icountstart(0),
-    icountend((xe-xs+1)*(ye-ys+1)*(ze-zs+1)),
-#endif
+    nx(nx), ny(ny), nz(nz),
     rgn(rgn),
+    istart((xs*ny+ys)*nz+zs), xstart(xs),   ystart(ys),   zstart(zs),
+    imin(istart), xmin(xstart), ymin(ystart), zmin(zstart),
+    iend((xe*ny+ye)*nz+ze), xend(xe),     yend(ye),     zend(ze),
+    imax(iend), xmax(xend),   ymax(yend),   zmax(zend),
+#else
+    icount(0),
+    icountstart(0),
+    icountend((xe-xs+1)*(ye-ys+1)*(ze-zs+1)),
+    nx(nx), ny(ny), nz(nz),   
+    rgn(rgn),
+    imin((xs*ny+ys)*nz+zs),  xmin(xs),     ymin(ys),     zmin(zs),
+    imax((xe*ny+ye)*nz+ze),  xmax(xe),     ymax(ye),     zmax(ze),
+#endif
     isEnd(true)
   {
 #ifdef _OPENMP
@@ -145,9 +147,9 @@ public:
    * The index variables, updated during loop
    * Should make these private and provide getters?
    */
+  int x, y, z;
   int i, icount;
   int icountstart, icountend;
-  int x, y, z;
   int nx, ny, nz;
   const std::vector<int>& rgn;
 
