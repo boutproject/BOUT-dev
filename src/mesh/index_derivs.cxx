@@ -727,8 +727,8 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, CELL_L
     if (mesh->xstart > 1) {
       // More than one guard cell, so set pp and mm values
       // This allows higher-order methods to be used
+      stencil s;
       for(const auto &i : result.region(region)) {
-        stencil s;
         s.c = var[i];
         s.p = var[i.xp()];
         s.m = var[i.xm()];
@@ -832,13 +832,15 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
     if (mesh->xstart > 1) {
       // More than one guard cell, so set pp and mm values
       // This allows higher-order methods to be used
-      for(const auto &i : result.region(region)) {
-        stencil s;
-        s.c = var[i];
-        s.p = var[i.xp()];
-        s.m = var[i.xm()];
-        s.pp = var[i.offset(2,0,0)];
-        s.mm = var[i.offset(-2,0,0)];
+#pragma omp parallel
+{
+      stencil s;
+      for(SingleDataIterator i = result.sdi_region(region); !i.done(); ++i){
+        s.c = var(i);
+        s.p = var(i.xp());
+        s.m = var(i.xm());
+        s.pp = var(i.offset(2,0,0));
+        s.mm = var(i.offset(-2,0,0));
         
         if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
           // Producing a stencil centred around a lower X value
@@ -850,17 +852,20 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
           s.m  = s.c;
         }
 
-        result[i] = func(s);
+        result(i) = func(s);
       }
+}
     } else {
       // Only one guard cell, so no pp or mm values
-      for(const auto &i : result.region(region)) {
-        stencil s;
-        s.c = var[i];
-        s.p = var[i.xp()];
-        s.m = var[i.xm()];
-        s.pp = nan("");
-        s.mm = nan("");
+#pragma omp parallel
+{
+      stencil s;
+      s.pp = nan("");
+      s.mm = nan("");
+      for(SingleDataIterator i = result.sdi_region(region); !i.done(); ++i){
+        s.c = var(i);
+        s.p = var(i.xp());
+        s.m = var(i.xm());
         
         if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
           // Producing a stencil centred around a lower X value
@@ -872,8 +877,9 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
           s.m  = s.c;
         }
         
-        result[i] = func(s);
+        result(i) = func(s);
       }
+}
     }
     
   } else {
@@ -882,28 +888,34 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
     if (mesh->xstart > 1) {
       // More than one guard cell, so set pp and mm values
       // This allows higher-order methods to be used
-      for(const auto &i : result.region(region)) {
-        stencil s;
-        s.c = var[i];
-        s.p = var[i.xp()];
-        s.m = var[i.xm()];
-        s.pp = var[i.offset(2,0,0)];
-        s.mm = var[i.offset(-2,0,0)];
+#pragma omp parallel
+{
+      stencil s;
+      for(SingleDataIterator i = result.sdi_region(region); !i.done(); ++i){
+        s.c = var(i);
+        s.p = var(i.xp());
+        s.m = var(i.xm());
+        s.pp = var(i.offset(2,0,0));
+        s.mm = var(i.offset(-2,0,0));
         
-        result[i] = func(s);
+        result(i) = func(s);
       }
+}
     } else {
       // Only one guard cell, so no pp or mm values
-      for(const auto &i : result.region(region)) {
-        stencil s;
-        s.c = var[i];
-        s.p = var[i.xp()];
-        s.m = var[i.xm()];
-        s.pp = nan("");
-        s.mm = nan("");
+#pragma omp parallel
+{
+      stencil s;
+      s.pp = nan("");
+      s.mm = nan("");
+      for(SingleDataIterator i = result.sdi_region(region); !i.done(); ++i){
+        s.c = var(i);
+        s.p = var(i.xp());
+        s.m = var(i.xm());
         
-        result[i] = func(s);
+        result(i) = func(s);
       }
+}
     }
   }
 
@@ -1171,16 +1183,19 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   // Check that the input variable has data
   ASSERT1(var.isAllocated());
   
-  for(const auto &i : result.region(region)) {
-    stencil s;
-    s.c = var[i];
-    s.p = var[i.zp()];
-    s.m = var[i.zm()];
-    s.pp = var[i.offset(0,0,2)];
-    s.mm = var[i.offset(0,0,-2)];
+#pragma omp parallel
+{
+  stencil s;
+  for(SingleDataIterator i = result.sdi_region(region); !i.done(); ++i){
+    s.c = var(i);
+    s.p = var(i.zp());
+    s.m = var(i.zm());
+    s.pp = var(i.offset(0,0,2));
+    s.mm = var(i.offset(0,0,-2));
     
-    result[i] = func(s);
+    result(i) = func(s);
   }
+}
 
   return result;
 }
