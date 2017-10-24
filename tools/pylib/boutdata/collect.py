@@ -64,7 +64,7 @@ def findVar(varname, varlist):
         print("Variable '"+varname+"' not found, and is ambiguous. Could be one of: "+str(v))
     raise ValueError("Variable '"+varname+"' not found")
 
-def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguards=False, xguards=True, info=True,prefix="BOUT.dmp",strict=False):
+def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguards=False, xguards=True, info=True,prefix="BOUT.dmp",strict=False,tind_auto=False):
     """Collect a variable from a set of BOUT++ outputs.
 
     data = collect(name)
@@ -86,6 +86,8 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
                            definition of nx)
     info    = True         Print information about collect?
     strict  = False        Fail if the exact variable name is not found?
+    tind_auto = False      Read all files, to get the shortes length of time_indices
+                           usefull if writing got interrupted.
     """
 
     # Search for BOUT++ dump files in NetCDF format
@@ -168,6 +170,10 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
         t_array = np.zeros(1)
     else:
         nt = len(t_array)
+        if tind_auto:
+            for file in file_list:
+                t_array_=DataFile(file).read("t_array")
+                nt = min(len(t_array_),nt)
 
     if info:
         print("mxsub = %d mysub = %d mz = %d\n" % (mxsub, mysub, mz))
