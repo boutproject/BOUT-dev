@@ -102,7 +102,7 @@ import sys
 
 # a function to see what field is `larger`. Is used to determine a suitable return type
 def returnType(f1,f2):
-    if f1.i==f2.i:
+    if f1==f2:
         return copy(f1)
     elif f1.i == 'real':
         return copy(f2)
@@ -143,8 +143,9 @@ for lhs in fields:
         out=returnType(rhs,lhs)
         for op in ops:
             opn=op_names[op]
-            # *************************************************************
-            # start of the function header - doing the operation
+            # *****************************************************************
+            # start of the low level function header
+            # This function operates on the underlying data
             print(autogen_warn)
             print("// Do the actual %s of %s and %s"%(opn,lhs.fieldname,rhs.fieldname))
             print('void autogen_%s_%s_%s_%s('%(out.fieldname,lhs.fieldname,rhs.fieldname,opn), end=' ')
@@ -169,8 +170,9 @@ for lhs in fields:
                 print(' int len', end=' ')
             print('){')
             # end of function header.
-            # *************************************************************
-            # start of function:
+            # *****************************************************************
+            # start of low level function
+            # Update the data
             if elementwise:
                 # we need to loop over all dimension of the out file
                 dims= {"n"+x : x for x in out.dims()}
@@ -185,10 +187,17 @@ for lhs in fields:
             for d in dims:
                 print("  }")
             print("  }")
-            # end of function
-            # *************************************************************
-            # beginning of the function, taking the fields - the C++
-            # function. This does no actual computation.
+            # end of low level function
+            # *****************************************************************
+            # beginning of the C++ operator function
+            # It takes the Field objects. This function is doing some high
+            # level stuff, but does not modify the underlaying data.
+            # Stuff done here:
+            #  * conserve the mesh
+            #  * conserve the field location
+            #  * check the input & output data
+            #  * allocate data
+            #  * get the underlaying data for the low-level operation
             print(autogen_warn)
             print("// Provide the C++ wrapper for %s of %s and %s"%(opn,lhs.fieldname,rhs.fieldname))
             print("%s operator%s(%s,%s){"%(out.fieldname,op,lhs.getPass(),rhs.getPass()))
@@ -255,8 +264,9 @@ for lhs in fields:
         if out == lhs:
             for op in ops:
                 opn=op_names[op]
-                # *********************************************************
-                # start of the function header - doing the operation
+                # *************************************************************
+                # start of the low level function header
+                # This function operates on the underlying data
                 print(autogen_warn)
                 print("// Provide the C function to update %s by %s with %s"%(lhs.fieldname,opn,rhs.fieldname))
                 print('void autogen_%s_%s_%s('%(lhs.fieldname,rhs.fieldname,opn), end=' ')
@@ -274,8 +284,9 @@ for lhs in fields:
                     print(' int len', end=' ')
                 print('){')
                 # end of function header
-                # *********************************************************
-                # beginning of function
+                # *************************************************************
+                # beginning of low level function
+                # Updating the data in place
                 if elementwise:
                     # we need to loop over all dimension of the out file
                     dims= {"n"+x : x for x in out.dims()}
@@ -289,9 +300,17 @@ for lhs in fields:
                 for d in dims:
                     print("  }")
                 print("  }")
-                # end of function
+                # end of low level function
                 # *********************************************************
-                # beginning of C++ function
+                # beginning of the C++ operator function
+                # It takes the Field objects. This function is doing some high
+                # level stuff, but does not modify the underlaying data.
+                # Stuff done here:
+                #  * conserve the mesh
+                #  * conserve the field location
+                #  * check the input & output data
+                #  * allocate data
+                #  * get the underlaying data for the low-level operation
                 print(autogen_warn)
                 print("// Provide the C++ operator to update %s by %s with %s"%(lhs.fieldname,opn,rhs.fieldname))
                 print("%s & %s::operator %s="%(lhs.fieldname,lhs.fieldname,op), end=' ')
@@ -330,4 +349,3 @@ for lhs in fields:
                 print("}")
                 print()
                 print()
-                
