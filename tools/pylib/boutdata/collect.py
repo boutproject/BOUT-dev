@@ -86,8 +86,8 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
                            definition of nx)
     info    = True         Print information about collect?
     strict  = False        Fail if the exact variable name is not found?
-    tind_auto = False      Read all files, to get the shortes length of time_indices
-                           usefull if writing got interrupted.
+    tind_auto = False      Read all files, to get the shortest length of time_indices
+                           useful if writing got interrupted.
     """
 
     # Search for BOUT++ dump files in NetCDF format
