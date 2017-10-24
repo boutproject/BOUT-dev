@@ -18,13 +18,13 @@ public:
   MeshIterator() : x(0), y(0), z(0), xstart(0), ystart(0), zstart(0) {
     xend = mesh->LocalNx-1;
     yend = mesh->LocalNy-1;
-    zend = mesh->LocalNz;
+    zend = mesh->LocalNz-1;
   }
 
   MeshIterator(int x, int y, int z) : x(x), y(y), z(z), xstart(0), ystart(0), zstart(0) {
     xend = mesh->LocalNx-1;
     yend = mesh->LocalNy-1;
-    zend = mesh->LocalNz;
+    zend = mesh->LocalNz-1;
   }
 
   /// The index variables, updated during loop
