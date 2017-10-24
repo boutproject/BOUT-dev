@@ -183,7 +183,7 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt, Mesh *m,
       BoutReal xpos = 0.5*(m->GlobalX(i.x-1) + m->GlobalX(i.x));
       result[i] = gen->generate(xpos,
                                 TWOPI*m->GlobalY(i.y),
-                                TWOPI*((BoutReal) i.z) / ((BoutReal) (m->LocalNz)),  // Z
+                                TWOPI*static_cast<BoutReal>(i.z) / static_cast<BoutReal>(m->LocalNz),  // Z
                                 t); // T
     }
     break;
@@ -193,7 +193,7 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt, Mesh *m,
       BoutReal ypos = TWOPI*0.5*(m->GlobalY(i.y-1) + m->GlobalY(i.y));
       result[i] = gen->generate(m->GlobalX(i.x),
                                 ypos,
-                                TWOPI*((BoutReal) i.z) / ((BoutReal) (m->LocalNz)),  // Z
+                                TWOPI*static_cast<BoutReal>(i.z) / static_cast<BoutReal>(m->LocalNz),  // Z
                                 t); // T
     }
     break;
@@ -202,7 +202,7 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt, Mesh *m,
     for(auto i : result) {
       result[i] = gen->generate(m->GlobalX(i.x),
                                 TWOPI*m->GlobalY(i.y),
-                                TWOPI*(((BoutReal) i.z) - 0.5) / ((BoutReal) (m->LocalNz)),  // Z
+                                TWOPI*(static_cast<BoutReal>(i.z) - 0.5) / static_cast<BoutReal>(m->LocalNz),  // Z
                                 t); // T
     }
     break;
@@ -211,7 +211,7 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt, Mesh *m,
     for(auto i : result) {
       result[i] = gen->generate(m->GlobalX(i.x),
                                 TWOPI*m->GlobalY(i.y),
-                                TWOPI*((BoutReal) i.z) / ((BoutReal) (m->LocalNz)),  // Z
+                                TWOPI*static_cast<BoutReal>(i.z) / static_cast<BoutReal>(m->LocalNz),  // Z
                                 t); // T
     }
   }
@@ -290,27 +290,28 @@ std::shared_ptr<FieldGenerator> FieldFactory::resolve(string &name) {
       key += name;
     }
 
-    auto it = cache.find(key);
-    if(it != cache.end()) {
+    auto cached_value = cache.find(key);
+    if (cached_value != cache.end()) {
       // Found in cache
-      return it->second;
+      return cached_value->second;
     }
 
     // Look up in options
 
     // Check if already looking up this symbol
-    for(const auto& it : lookup) {
-      if( key.compare(it) == 0 ) {
+    for (const auto &lookup_value : lookup) {
+      if (key.compare(lookup_value) == 0) {
         // Name matches, so already looking up
         output << "ExpressionParser lookup stack:\n";
-        for(const auto& it : lookup) {
-          output << it << " -> ";
+        for (const auto &stack_value : lookup) {
+          output << stack_value << " -> ";
         }
         output << name << endl;
-        throw BoutException("ExpressionParser: Infinite recursion in parsing '%s'", name.c_str());
+        throw BoutException("ExpressionParser: Infinite recursion in parsing '%s'",
+                            name.c_str());
       }
     }
-    
+
     // Find the option, including traversing sections.
     // Throws exception if not found
     string value;
@@ -336,10 +337,7 @@ std::shared_ptr<FieldGenerator> FieldFactory::resolve(string &name) {
 
 std::shared_ptr<FieldGenerator> FieldFactory::parse(const string &input, Options *opt) {
 
-  //output.write("FieldFactory::parse('%s')", input.c_str());
-
   // Check if in the cache
-
   string key = string("#") + input;
   if(opt)
     key = opt->str()+key; // Include options context in key

@@ -118,30 +118,6 @@ class stencil {
   const stencil abs() const; ///< Stencil with all values replaced by absolute values
 };
 
-class forward_stencil {
-/// to be used only in lower/inner boundary guard cells
- public:
-  int jx, jy, jz; ///< central location
-  
-  BoutReal m, c, p, p2, p3, p4; ///< stencil 4 forward of the centre
-  
-  /// constructor
-  forward_stencil();
-
-};
-
-/// to be used only in upper/outer boundary guard cells
-class backward_stencil {
- public:
-  int jx, jy, jz; /// central location
-  
-  BoutReal p, c , m, m2, m3, m4; /// stencil 4 backward of the centre
-  
-  /// constructor
-  backward_stencil();
-
-};
-
 BoutReal min(const stencil &s); ///< Minimum value over a stencil
 BoutReal max(const stencil &s); ///< Maximum value over a stencil
 const stencil abs(const stencil &s);  ///< Copy of stencil with all values replaced by absolute values

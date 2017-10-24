@@ -70,15 +70,15 @@ void Field::error(const char *s, ...) const {
   char * err_buffer=new char[buf_len];
 
   if(s == (const char*) NULL) {
-    output.write("Unspecified error in field\n");
+    output_error.write("Unspecified error in field\n");
   }else {
   
     bout_vsnprintf(err_buffer,buf_len, s);
 
 #ifdef TRACK
-      output.write("Error in '%s': %s", name.c_str(), err_buffer);
+      output_error.write("Error in '%s': %s", name.c_str(), err_buffer);
 #else
-      output.write("Error in field: %s", err_buffer);
+      output_error.write("Error in field: %s", err_buffer);
 #endif
   }
   std::string msg="Error in field: ";

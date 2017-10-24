@@ -108,8 +108,7 @@ public:
     
     return *this;
   }
-  
-#if __cplusplus >= 201103L
+
   /*!
    * Move constructor
    */
@@ -131,7 +130,6 @@ public:
     
     return *this;
   }
-#endif
 
   /*!
    * Holds a static variable which controls whether
@@ -162,12 +160,15 @@ public:
   }
 
   /*!
-   * Delete all data from the store
+   * Delete all data from the store and disable the store
+   * 
+   * Note: After this is called the store cannot be re-enabled
    */
   static void cleanup() {
     // Clean the store, deleting data
     store(true);
-    // Don't use the store anymore
+    // Don't use the store anymore. This is so that array releases
+    // after cleanup() get deleted rather than put into the store
     useStore(false);
   }
 

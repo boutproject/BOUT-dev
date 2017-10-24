@@ -259,8 +259,7 @@ def resize(newNx, newNy, newNz, mxg=2, myg=2,\
             print("Changing {} => {}".format(f, new_f))
 
         # Open the restart file in read mode and create the new file
-        with DataFile(f) as old,\
-             DataFile(new_f, write=True, create=True) as new:
+        with DataFile(f) as old, DataFile(new_f, write=True, create=True) as new:
 
             # Find the dimension
             for var in old.list():
@@ -632,9 +631,9 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
         print("ERROR: No data found")
         return False
 
-    old_npes = f.read('NPES')
     old_nxpe = f.read('NXPE')
-    old_nype = int(old_npes/old_nxpe)
+    old_nype = f.read("NYPE")
+    old_npes = old_nxpe * old_nype
 
     if nfiles != old_npes:
         print("WARNING: Number of restart files inconsistent with NPES")

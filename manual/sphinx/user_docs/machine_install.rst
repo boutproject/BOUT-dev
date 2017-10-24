@@ -1,3 +1,5 @@
+.. _sec-machine-specific:
+
 Machine-specific installation
 =============================
 

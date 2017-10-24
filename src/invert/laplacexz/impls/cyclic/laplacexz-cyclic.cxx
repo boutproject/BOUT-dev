@@ -48,7 +48,7 @@ LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options) : LaplaceXZ(m, optio
   OPTION(options, outer_boundary_flags, 0);
 
   // Set default coefficients
-  setCoefs(1.0, 0.0);
+  setCoefs(Field2D(1.0), Field2D(0.0));
 }
 
 LaplaceXZcyclic::~LaplaceXZcyclic() {

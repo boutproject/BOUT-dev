@@ -6,11 +6,12 @@ Running BOUT++
 Quick start
 -----------
 
-The ``examples/`` directory contains some test cases for a variety of
-fluid models. The ones starting ``test-`` are short tests, which often
-just run a part of the code rather than a complete simulation. The
-simplest example to start with is ``examples/conduction/``. This solves
-a single equation for a 3D scalar field :math:`T`:
+The ``examples/`` directory contains some example physics models for a
+variety of fluid models. There are also some under
+``tests/integrated/``, which often just run a part of the code rather
+than a complete simulation. The simplest example to start with is
+``examples/conduction/``. This solves a single equation for a 3D
+scalar field :math:`T`:
 
 .. math::
 
@@ -115,14 +116,47 @@ To see some of the other command-line options try "-h":
 
 and see the section on options (:ref:`sec-options`).
 
-Analysing the output
---------------------
-
 To analyse the output of the simulation, cd into the ``data``
-subdirectory and start IDL. If you don’t have IDL, don’t panic as all
-this is also possible in Python and discussed in
-:ref:`sec-pythonroutines`. First, list the variables in one of the
-data files:
+subdirectory and start python or IDL (skip to :ref:`Using IDL <sec-intro-using-idl>` for IDL).
+
+Analysing the output Using python
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To print a list of variables in the output files, one way is to use the ``DataFile``
+class. This is a wrapper around the various NetCDF and HDF5 libraries for python:
+
+.. code-block:: pycon
+
+    >>> from boututils.datafile import DataFile
+    >>> DataFile("BOUT.dmp.0.nc").list()
+
+To collect a variable, reading in the data as a NumPy array:
+
+.. code-block:: pycon
+
+    >>> from boutdata.collect import collect
+    >>> T = collect("T")
+    >>> T.shape
+
+Note that the order of the indices is different in Python and IDL: In
+Python, 4D variables are arranged as ``[t, x, y, z]``. To show an
+animation
+
+.. code-block:: pycon
+
+    >>> from boututils.showdata import showdata
+    >>> showdata(T[:,0,:,0])
+
+The first index of the array passed to ``showdata`` is assumed to be time, amd the remaining
+indices are plotted. In this example we pass a 2D array ``[t,y]``, so ``showdata`` will animate
+a line plot.
+
+.. _sec-intro-using-idl:
+
+Analysing the output using IDL
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+First, list the variables in one of the data files:
 
 .. code-block:: idl
 
@@ -175,33 +209,13 @@ and to make this a coloured contour plot
 
     IDL> showdata, T[*,*,0,*], /cont
 
-The equivalent commands in Python are as follows. To print a list of
-variables in a file:
+The equivalent commands in Python are as follows. 
 
-.. code-block:: pycon
+Further examples
+----------------
 
-    >>> from boututils.datafile import DataFile
-    >>> DataFile("BOUT.dmp.0.nc").list()
-
-To collect a variable,
-
-.. code-block:: pycon
-
-    >>> from boutdata.collect import collect
-    >>> T = collect("T")
-    >>> T.shape
-
-Note that the order of the indices is different in Python and IDL: In
-Python, 4D variables are arranged as ``[t, x, y, z]``. To show an
-animation
-
-.. code-block:: pycon
-
-    >>> from boututils.showdata import showdata
-    >>> showdata(T[:,:,:,0])
-
-The next example to look at is ``test-wave``, which is solving a wave
-equation using
+The next example to look at is ``tests/integrated/test-wave``, which
+is solving a wave equation using
 
 .. math::
 
@@ -222,9 +236,10 @@ information on setting up and running BOUT++ is given in
 are given in :ref:`sec-output`.
 
 Alternatively, one can run BOUT++ with the python wrapper
-``bout_runners`` , as explained in section [sec:bout\_runners]. Examples
-of using ``bout_runners`` can be found in
-``examples/bout_runners_example``.
+``bout_runners``, as explained in section
+:ref:`sec-bout_runners`. Examples of using ``bout_runners`` can be
+found in ``examples/bout_runners_example``.
+
 
 When things go wrong
 --------------------
@@ -234,25 +249,36 @@ enough to discover a new bug. This is particularly likely if you’re
 modifying the physics module source code (see :ref:`sec-equations`)
 when you need a way to debug your code too.
 
--  Check the end of each processor’s log file (tail data/BOUT.log.\*).
-   When BOUT++ exits before it should, what is printed to screen is just
-   the output from processor 0. If an error occurred on another
-   processor then the error message will be written to it’s log file
-   instead.
+- Check the end of each processor’s log file (tail data/BOUT.log.\*).
+  When BOUT++ exits before it should, what is printed to screen is just
+  the output from processor 0. If an error occurred on another
+  processor then the error message will be written to it’s log file
+  instead.
 
--  By default when an error occurs a kind of stack trace is printed
-   which shows which functions were being run (most recent first). This
-   should give a good indication of where an error occurred. If this
-   stack isn’t printed, make sure checking is set to level 2 or higher
-   (``./configure –with-checks=2``)
+- By default when an error occurs a kind of stack trace is printed
+  which shows which functions were being run (most recent first). This
+  should give a good indication of where an error occurred. If this
+  stack isn’t printed, make sure checking is set to level 2 or higher
+  (``./configure –-enable-checks=2``).
 
--  If the error is a segmentation fault, you can try a debugger such as
-   totalview
+- If the error is due to non-finite numbers, increase the checking
+  level (``./configure –-enable-checks=3``) to perform more checking of
+  values and (hopefully) find an error as soon as possible after it
+  occurs.
 
--  If the error is due to non-finite numbers, increase the checking
-   level (``./configure –with-checks=3``) to perform more checking of
-   values and (hopefully) find an error as soon as possible after it
-   occurs.
+- If the error is a segmentation fault, you can try a debugger such as
+  gdb or totalview. You will likely need to compile with some
+  debugging flags (``./configure --enable-debug``).
+
+- You can also enable exceptions on floating point errors
+  (``./configure --enable-sigfpe``), though the majority of these
+  types of errors should be caught with checking level set to 3.
+
+- Expert users can try AddressSanitizer, which is a tool that comes
+  with recent versions of GCC and Clang. To enable AddressSanitizer,
+  include ``-fsanitize=leak -fsanitize=address -fsanitize=undefined``
+  in ``CXXFLAGS`` when configuring BOUT++, or add them to
+  ``BOUT_FLAGS``.
 
 Startup output
 --------------
@@ -287,7 +313,7 @@ information makes it possible to verify precisely which version of the
 code was used for any given run.
 
 Next comes the compile-time options, which depend on how BOUT++ was
-configured (see :ref:`sec-installbout`)
+configured (see :ref:`sec-compile-bout`)
 
 .. code-block:: bash
 
@@ -649,3 +675,118 @@ The above will take time point 10 from the BOUT.dmp.\* files in the
 “data” directory. For each one, it will output a BOUT.restart file in
 the output directory “.”.
 
+Stopping simulations
+--------------------
+
+If you need to stop a simulation early this can be done by Ctrl-C in a terminal,
+but this will stop the simulation immediately without shutting down cleanly. Most
+of the time this will be fine, but interrupting a simulation while it is writing
+data to file could result in inconsistent or corrupted data.
+
+Stop file
+~~~~~~~~~
+
+**Note** This method needs to be enabled before the simulation starts by setting
+``stopCheck=true`` on the command line or input options:
+
+.. code-block:: bash
+
+    $ mpirun -np 4 ./conduction stopCheck=true
+
+or in the top section of ``BOUT.inp`` set ``stopCheck=true``.
+
+At every output time, the monitor checks for the existence of a file, by default called
+``BOUT.stop``, in the same directory as the output data. If the file exists then
+the monitor signals the time integration solver to quit. This should result in a clean
+shutdown.
+
+To stop a simulation using this method, just create an empty file in the output directory
+
+.. code-block:: bash
+
+    $ mpirun -np 4 ./conduction stopCheck=true
+    ...
+    $ touch data/BOUT.stop
+
+just remember to delete the file afterwards.
+
+Send signal USR1
+~~~~~~~~~~~~~~~~
+
+Another option is to send signal `user defined signal 1`
+
+.. code-block:: bash
+
+    $ mpirun -np 4 ./conduction &
+    ...
+    $ killall -s USR1 conduction
+
+Note that this will stop all conduction simulation on this node.
+Many HPC systems provide tools to send signals to the simulation
+nodes, such as `qsig` on archer.
+
+To just stop one simulation, the `bout-stop-script` can send a signal
+based on the path of the simulation data dir:
+
+.. code-block:: bash
+
+    $ mpirun -np 4 ./conduction &
+    ...
+    $ bout-stop-script data
+
+This will stop the simulation cleanly, and
+
+.. code-block:: bash
+
+    $ mpirun -np 4 ./conduction &
+    ...
+    $ bout-stop-script data -force
+
+
+will kill the simulation immediately.
+
+Manipulating restart files
+--------------------------
+
+It is sometimes useful to change the number of processors used in a simulation,
+or to modify restart files in various ways. For example, a 3D turbulence
+simulation might start with a quick 2D simulation with diffusive transport to reach
+a steady-state. The restart files can then be extended into 3D, noise added to seed
+instabilities, and the files split over a more processors.
+
+Routines to modify restart files are in ``tools/pylib/boutdata/restart.py``:
+
+.. code-block:: pycon
+
+    >>> from boutdata import restart
+    >>> help(restart)
+
+Changing number of processors
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To change the number of processors use the ``redistribute`` function:
+
+.. code-block:: pycon
+
+    >>> from boutdata import restart
+    >>> restart.redistribute(32, path="../oldrun", output=".")
+
+where in this example ``32`` is the number of processors desired; ``path`` sets
+the path to the existing restart files, and ``output`` is the path where
+the new restart files should go.
+**Note** Make sure that ``path`` and ``output`` are different.
+
+If your simulation is divided in X and Y directions then you should also specify
+the number of processors in the X direction, ``NXPE``:
+
+.. code-block:: pycon
+
+    >>> restart.redistribute(32, path="../oldrun", output=".", nxpe=8)
+
+**Note** Currently this routine doesn't check that this split is consistent with
+branch cuts, e.g. for X-point tokamak simulations. If an inconsistent choice is made
+then the BOUT++ restart will fail.
+
+**Note** It is a good idea to set ``nxpe`` in the ``BOUT.inp`` file to be consistent with
+what you set here. If it is inconsistent then the restart will fail, but the error message may
+not be particularly enlightening.

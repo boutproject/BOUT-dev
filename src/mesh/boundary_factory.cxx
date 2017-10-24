@@ -50,14 +50,14 @@ BoundaryFactory::BoundaryFactory() {
 
 BoundaryFactory::~BoundaryFactory() {
   // Free any boundaries
-  for(const auto& it : opmap) {
+  for (const auto &it : opmap) {
     delete it.second;
   }
-  for(const auto& it : modmap) {
+  for (const auto &it : modmap) {
     delete it.second;
   }
-  for(map<string, BoundaryOpPar*>::iterator it = par_opmap.begin(); it != par_opmap.end(); it++) {
-    delete it->second;
+  for (const auto &it : par_opmap) {
+    delete it.second;
   }
 }
 
@@ -112,7 +112,7 @@ BoundaryOpBase* BoundaryFactory::create(const string &name, BoundaryRegionBase *
   // Contains a bracket. Find the last bracket and remove
   auto pos2 = name.rfind(')');
   if(pos2 == string::npos) {
-    output << "\tWARNING: Unmatched brackets in boundary condition: " << name << endl;
+    output_warn << "\tWARNING: Unmatched brackets in boundary condition: " << name << endl;
   }
 
   // Find the function name before the bracket
@@ -200,10 +200,10 @@ BoundaryOpBase* BoundaryFactory::create(const char* name, BoundaryRegionBase *re
 }
 
 BoundaryOpBase* BoundaryFactory::createFromOptions(const string &varname, BoundaryRegionBase *region) {
-  if(region == NULL)
-    return NULL;
+  if (region == nullptr)
+    return nullptr;
 
-  output << "\t" << region->label << " region: ";
+  output_info << "\t" << region->label << " region: ";
 
   string prefix("bndry_");
 
@@ -305,7 +305,7 @@ BoundaryOpBase* BoundaryFactory::createFromOptions(const char* varname, Boundary
 void BoundaryFactory::add(BoundaryOp* bop, const string &name) {
   if( (findBoundaryMod(name) != NULL) || (findBoundaryOp(name) != NULL) ) {
     // error - already exists
-    output << "ERROR: Trying to add an already existing boundary: " << name << endl;
+    output_error << "ERROR: Trying to add an already existing boundary: " << name << endl;
     return;
   }
   opmap[lowercase(name)] = bop;
@@ -318,7 +318,7 @@ void BoundaryFactory::add(BoundaryOp* bop, const char *name) {
 void BoundaryFactory::add(BoundaryOpPar* bop, const string &name) {
   if(findBoundaryOpPar(name) != NULL) {
     // error - already exists
-    output << "ERROR: Trying to add an already existing boundary: " << name << endl;
+    output_error << "ERROR: Trying to add an already existing boundary: " << name << endl;
     return;
   }
   par_opmap[lowercase(name)] = bop;
@@ -331,7 +331,7 @@ void BoundaryFactory::add(BoundaryOpPar* bop, const char *name) {
 void BoundaryFactory::addMod(BoundaryModifier* bmod, const string &name) {
   if( (findBoundaryMod(name) != NULL) || (findBoundaryOp(name) != NULL) ) {
     // error - already exists
-    output << "ERROR: Trying to add an already existing boundary modifier: " << name << endl;
+    output_error << "ERROR: Trying to add an already existing boundary modifier: " << name << endl;
     return;
   }
   modmap[lowercase(name)] = bmod;

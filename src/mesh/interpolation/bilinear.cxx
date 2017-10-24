@@ -50,8 +50,8 @@ void Bilinear::calcWeights(const Field3D &delta_x, const Field3D &delta_z) {
 
         // The integer part of xt_prime, zt_prime are the indices of the cell
         // containing the field line end-point
-        i_corner[x][y][z] = floor(delta_x(x,y,z));
-        k_corner[x][y][z] = floor(delta_z(x,y,z));
+        i_corner[x][y][z] = static_cast<int>(floor(delta_x(x,y,z)));
+        k_corner[x][y][z] = static_cast<int>(floor(delta_z(x,y,z)));
 
         // t_x, t_z are the normalised coordinates \in [0,1) within the cell
         // calculated by taking the remainder of the floating point index

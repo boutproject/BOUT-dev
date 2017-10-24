@@ -16,8 +16,6 @@ const Field3D sink_tanhx(const Field2D &f0, const Field3D &f,BoutReal swidth,Bou
 const Field3D sink_tanhxl(const Field2D &f0, const Field3D &f,BoutReal swidth,BoutReal slength, bool BoutRealspace = true);
 const Field3D sink_tanhxr(const Field2D &f0, const Field3D &f,BoutReal swidth,BoutReal slength, bool BoutRealspace = true);
 
-//const Field2D source_x(const Field2D &f);
-//const Field3D sink_x(const Field2D &f0, const Field3D &f, bool BoutRealspace = true);
 const Field3D buff_x(const Field3D &f, bool BoutRealspace = true);
 
 #endif // __MASKX_H__

@@ -15,9 +15,9 @@ class BoutException : public std::exception {
 public:
   BoutException(const char *, ...);
   BoutException(const std::string);
-  virtual ~BoutException() throw();
+  virtual ~BoutException();
   
-  const char* what() const throw();
+  const char* what() const noexcept;
   void Backtrace();
 protected:
   char *buffer = nullptr;

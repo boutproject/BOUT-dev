@@ -26,6 +26,8 @@ with open('test_suite_list') as testfile:
 ##################################################################
 
 import os
+import sys
+import time
 from boututils.run_wrapper import shell
 
 savepath = os.getcwd() # Save current working directory
@@ -33,31 +35,42 @@ npassed = 0
 nfailed = 0
 total = len(tests)
 failed = []
+
+start_time = time.time()
+
+print("======= Starting MMS tests ========")
+print("Running {0} tests".format(total))
 for t in tests:
     os.chdir(t)
 
-    status,out = shell("./runtest")
+    # Run test, piping stdout so it is not sent to console
+    status,out = shell("./runtest", pipe=True)
 
     if status != 0:
-        print("Test failed")
+        print("F", end='') # No newline
         nfailed = nfailed + 1
-        failed.append(t)
+        failed.append((t, out))
     else:
+        # Passed
+        print(".", end='') # No newline
         npassed = npassed + 1
+    sys.stdout.flush() # Make sure '.' or 'F' is flushed
     os.chdir(savepath)
 
-print("=============================")
-print("PASSED: %d / %d" % (npassed, total))
-print("FAILED: %d / %d" % (nfailed, total))
-print("")
+elapsed_time = time.time() - start_time
+
+print("\n")
 
 if nfailed > 0:
-    print("The following tests failed")
-    for t in failed:
-        print("   "+t)
-    import sys
+    print("======= FAILURES ========")
+    for test, output in failed:
+        # Note: need Unicode string in case output contains unicode
+        print(u"\n----- {0} -----\n{1}".format(test, output))
+        
+    print("======= {0} failed in {1:.2f} seconds ========".format(nfailed, elapsed_time))
+    
     sys.exit(1)
+    
 else:
-    print(" => All tests passed <=")
+    print("======= All tests passed in {0:.2f} seconds =======".format(elapsed_time))
 
-print("")

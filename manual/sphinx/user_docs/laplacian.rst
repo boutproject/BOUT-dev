@@ -421,18 +421,21 @@ We now introduce
 
 .. math::
 
-       &c_1 = \frac{dg^{xx}}{\text{d}x^2}& &c_2 = dg^{zz}& &c_3 =
-       \frac{2dg^{xz}}{2\text{d}x}& && \\ &c_4 = \frac{dG^x + g^{xx}\frac{-c_{n-1}
-       + c_{n+1}}{2c_n\text{d}x}}{2\text{d}x}& &c_5 = dG^z& &&
+   c_1 = \frac{dg^{xx}}{\text{d}x^2}
+
+   c_2 = dg^{zz}
+
+   c_3 = \frac{2dg^{xz}}{2\text{d}x}
+
+   c_4 = \frac{dG^x + g^{xx}\frac{-c_{n-1} + c_{n+1}}{2c_n\text{d}x}}{2\text{d}x}
+
+   c_5 = dG^z
 
 which inserted in equation (:eq:`discretized_laplace`) gives
 
 .. math::
 
-       &( c_1 - c_4 -ikc_3 ) F_{z,n-1} \\
-           +&( -2c_1 - k^2c_2 +ikc_5 + a ) F_{z,n} \\
-           +&( c_1 + c_4 + ikc_3 ) F_{z, n+1} \\
-        =& B_{z,n}
+       ( c_1 - c_4 -ikc_3 ) F_{z,n-1} + ( -2c_1 - k^2c_2 +ikc_5 + a ) F_{z,n} + ( c_1 + c_4 + ikc_3 ) F_{z, n+1} = B_{z,n}
 
 This can be formulated as the matrix equation
 
@@ -537,8 +540,9 @@ value of the field in the given direction.
 
   .. math::
 
-         &A_4 = dG^x + g^{xx}\texttt{ddx\_c} + g^{xz}\texttt{ddz\_c}& &A_5 = dG^z +
-         g^{xz}\texttt{ddx\_c} + g^{xx}\texttt{ddz\_c}&
+     A_4 = dG^x + g^{xx}\texttt{ddx\_c} + g^{xz}\texttt{ddz\_c}
+
+     A_5 = dG^z + g^{xz}\texttt{ddx\_c} + g^{xx}\texttt{ddz\_c}
 
   The coefficients :math:`c_{i+m,j+n}` are finally being set according
   to the appropriate order of discretisation. The coefficients can be

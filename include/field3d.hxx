@@ -175,8 +175,8 @@ class Field3D : public Field, public FieldData {
    * fields may be created before the mesh is.
    */
   Field3D(Mesh *msh = nullptr);
-  
-  /*! 
+
+  /*!
    * Copy constructor
    */
   Field3D(const Field3D& f);
@@ -452,11 +452,7 @@ class Field3D : public Field, public FieldData {
 
   // Stencils for differencing
   void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const override;
-  void setXStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
-  void setXStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   void setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const override;
-  void setYStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
-  void setYStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const override;
   
   // FieldData virtual functions
@@ -465,11 +461,6 @@ class Field3D : public Field, public FieldData {
   bool is3D() const override     { return true; }         // Field is 3D
   int  byteSize() const override { return sizeof(BoutReal); } // Just one BoutReal
   int  BoutRealSize() const override { return 1; }
-
-  DEPRECATED(int getData(int x, int y, int z, void *vptr) const override);
-  DEPRECATED(int getData(int x, int y, int z, BoutReal *rptr) const override);
-  DEPRECATED(int setData(int x, int y, int z, void *vptr) override);
-  DEPRECATED(int setData(int x, int y, int z, BoutReal *rptr) override);
 
   /// Visitor pattern support
   void accept(FieldVisitor &v) override { v.accept(*this); }
@@ -689,7 +680,7 @@ void checkData(const Field3D &f); ///< Checks if the data is valid.
 void checkData(BoutReal f); ///< Checks if the data is valid.
 #else
 inline void checkData(const Field3D &UNUSED(f)){;}; ///< if CHECK is disabled, ignore
-inline void checkData(BoutReal f){;}; ///< if CHECK is disabled, ignore
+inline void checkData(BoutReal UNUSED(f)){;}; ///< if CHECK is disabled, ignore
 #endif
  
 /*!

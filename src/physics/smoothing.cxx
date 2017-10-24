@@ -41,7 +41,7 @@
 #include <bout/constants.hxx>
 
 // Smooth using simple 1-2-1 filter
-const Field3D smooth_x(const Field3D &f, bool BoutRealspace) {
+const Field3D smooth_x(const Field3D &f) {
   TRACE("smooth_x");
   Mesh * mesh = f.getMesh();
   Field3D result(mesh);
@@ -141,7 +141,7 @@ const Field2D averageX(const Field2D &f) {
     MPI_Allreduce(input.begin(), result.begin(), ngy, MPI_DOUBLE, MPI_SUM, comm_x);
     for(int x=0;x<ngx;x++)
       for(int y=0;y<ngy;y++)
-        r(x,y) = result[y] / (BoutReal) np;
+        r(x,y) = result[y] / static_cast<BoutReal>(np);
   }
   
   return r;
@@ -201,7 +201,7 @@ const Field3D averageX(const Field3D &f) {
     for(int x=0;x<ngx;x++)
       for(int y=0;y<ngy;y++)
         for(int z=0;z<ngz;z++) {
-          r(x,y,z) = result[y][z] / (BoutReal) np;
+          r(x,y,z) = result[y][z] / static_cast<BoutReal>(np);
         }
   }else {
     for(int x=0;x<ngx;x++)
@@ -250,7 +250,7 @@ const Field2D averageY(const Field2D &f) {
     MPI_Allreduce(input.begin(), result.begin(), ngx, MPI_DOUBLE, MPI_SUM, comm_inner);
     for(int x=0;x<ngx;x++)
       for(int y=0;y<ngy;y++)
-        r(x,y) = result[x] / (BoutReal) np;
+        r(x,y) = result[x] / static_cast<BoutReal>(np);
   }
 
   return r;
@@ -296,7 +296,7 @@ const Field3D averageY(const Field3D &f) {
     for(int x=0;x<ngx;x++)
       for(int y=0;y<ngy;y++)
         for(int z=0;z<ngz;z++) {
-          r(x,y,z) = result[x][z] / (BoutReal) np;
+          r(x,y,z) = result[x][z] / static_cast<BoutReal>(np);
         }
   }else {
     for(int x=0;x<ngx;x++)
@@ -325,7 +325,7 @@ BoutReal Average_XY(const Field2D &var) {
   MPI_Comm comm_x = mesh->getXcomm();
 
   MPI_Allreduce(&Vol_Loc,&Vol_Glb,1,MPI_DOUBLE,MPI_SUM,comm_x);
-  Vol_Glb /= (BoutReal)(mesh->GlobalNx-2*mesh->xstart);
+  Vol_Glb /= static_cast<BoutReal>(mesh->GlobalNx-2*mesh->xstart);
 
   return Vol_Glb;
 }
@@ -337,9 +337,8 @@ BoutReal Vol_Integral(const Field2D &var) {
   
   Field2D result = metric->J * var * metric->dx * metric->dy;
 
-  Int_Glb = 0.;
   Int_Glb = Average_XY(result);
-  Int_Glb *= (BoutReal) ( (mesh->GlobalNx-2*mesh->xstart)*mesh->GlobalNy )*PI * 2.;
+  Int_Glb *= static_cast<BoutReal>((mesh->GlobalNx-2*mesh->xstart)*mesh->GlobalNy)*PI * 2.;
 
   return Int_Glb;
 }

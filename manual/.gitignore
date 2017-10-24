@@ -1,2 +1,4 @@
-# output from sphinx
-html
+html/
+build/
+doxygen/bout/
+sphinx/_breathe_autogen/
