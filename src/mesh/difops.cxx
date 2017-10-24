@@ -721,39 +721,29 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
   }
   case BRACKET_ARAKAWA_SDI: {
     // Arakawa scheme for perpendicular flow, implemented using SingleDataIterator to allow OpenMP parallelization
-    TRACE("BRACKET_ARAKAWA_SDI");
     
     result.allocate();
+    const BoutReal partialFactor = 1.0/(12 * metric->dz);
 
 #pragma omp parallel
     {
-    //output << "BRACKET_ARAKAWA_SDI "<<omp_get_thread_num()<<"\n";
     for(SingleDataIterator i = result.sdi_region(RGN_NOBNDRY); !i.done(); ++i){
-///          // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
-///          BoutReal Jpp = 0.0 ;
-///          BoutReal Jpp =  f(i.zp())  ; 
           BoutReal Jpp = ( (f(i.zp()) - f(i.zm()))*
                                 (g(i.xp()) - g(i.xm())) ) ;
 	                       // - (f(i.xp()) - f(i.xm()))*(g(i.zp()) - g(i.zm())) ) ; // this line is zero
-///          // J+x
-///          TRACE("After Jpp");
-///	  //output << "Jpx\n";
-///          BoutReal Jpx = 0.0 ;
+          // J+x
           BoutReal Jpx = ( g(i.xp())*(f(i.xpzp())-f(i.xpzm())) -
                                 g(i.xm())*(f(i.xmzp())-f(i.xmzm())) -
                                 g(i.zp())*(f(i.xpzp())-f(i.xmzp())) +
                                 g(i.zm())*(f(i.xpzm())-f(i.xmzm()))) ;
-///
-///          TRACE("After Jpx");
-///          // Jx+
-///	  //output << "Jxp\n";
-///          BoutReal Jxp = 0.0 ;
+
+          // Jx+
           BoutReal Jxp = ( g(i.xpzp())*(f(i.zp())-f(i.xp())) -
                                 g(i.xmzm())*(f(i.xm())-f(i.zm())) -
                                 g(i.xmzp())*(f(i.zp())-f(i.xm())) +
                                 g(i.xpzm())*(f(i.xp())-f(i.zm()))) ;
-///          
-          result(i) = 0.25 * (Jpp + Jpx + Jxp) / ( 3.0 * metric->dx(i) * metric->dz);
+          
+          result(i) = partialFactor * (Jpp + Jpx + Jxp) / metric->dx(i) ;
         }
     }
     break;
@@ -964,6 +954,7 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
     // Arakawa scheme for perpendicular flow, implemented using SingleDataIterator to allow OpenMP parallelization
     
     result.allocate();
+    const BoutReal partialFactor = 1.0/(12.0 * metric->dz);
 
 #pragma omp parallel
     {
@@ -974,19 +965,18 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
                                 (f(i.xp()) - f(i.xm()))*
                                 (g(i.zp()) - g(i.zm())) ) ;
           // J+x
-          BoutReal Jpx = ( g(i.xp())*(f(i.offset(1,0,1))-f(i.offset(1,0,-1))) -
-                                g(i.xm())*(f(i.offset(-1,0,1))-f(i.offset(-1,0,-1))) -
-                                g(i.zp())*(f(i.offset(1,0,1))-f(i.offset(-1,0,1))) +
-                                g(i.zm())*(f(i.offset(1,0,-1))-f(i.offset(-1,0,-1)))) ;
+          BoutReal Jpx = ( g(i.xp())*(f(i.xpzp())-f(i.xpzm())) -
+                                g(i.xm())*(f(i.xmzp())-f(i.xmzm())) -
+                                g(i.zp())*(f(i.xpzp())-f(i.xmzp())) +
+                                g(i.zm())*(f(i.xpzm())-f(i.xmzm()))) ;
 
           // Jx+
-          BoutReal Jxp = ( g(i.offset(1,0,1))*(f(i.zp())-f(i.xp())) -
-                                g(i.offset(-1,0,-1))*(f(i.xm())-f(i.zm())) -
-                                g(i.offset(-1,0,1))*(f(i.zp())-f(i.xm())) +
-                                g(i.offset(1,0,-1))*(f(i.xp())-f(i.zm()))) ;
+          BoutReal Jxp = ( g(i.xpzp())*(f(i.zp())-f(i.xp())) -
+                                g(i.xmzm())*(f(i.xm())-f(i.zm())) -
+                                g(i.xmzp())*(f(i.zp())-f(i.xm())) +
+                                g(i.xpzm())*(f(i.xp())-f(i.zm()))) ;
           
-          result(i) = 0.25 * (Jpp + Jpx + Jxp) / ( 3.0 * metric->dx(i) * metric->dz);
-          //result(i) = 0.25 * (Jpp + Jpx + Jxp) / ( 3.0 * metric->dx[i.i/i.nz] * metric->dz);
+          result(i) = partialFactor * (Jpp + Jpx + Jxp) / metric->dx(i) ;
         }
     }
     break;
