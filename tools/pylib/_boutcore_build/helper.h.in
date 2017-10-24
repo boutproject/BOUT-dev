@@ -4,6 +4,8 @@ cat <<EOF
 
 void c_set_f3d_all(Field3D * f3d, double * data);
 void c_get_f3d_all(Field3D * f3d, double * data);
+void c_get_f3d_part(const Field3D * f3d, double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz);
+void c_set_f3d_part(Field3D * f3d, const double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz);
 EOF
 for f in "add:+" "mul:*" "div:/" "sub:-"
 do

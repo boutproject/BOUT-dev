@@ -42,6 +42,8 @@ from libc.stdlib cimport malloc, free
 cdef extern from "helper.h":
      void c_set_f3d_all(c.Field3D * f3d, double * data)
      void c_get_f3d_all(c.Field3D * f3d, double * data)
+     void c_get_f3d_part(c.Field3D * f3d, double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz)
+     void c_set_f3d_part(c.Field3D * f3d, double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz)
 EOF
 for f in "add:+" "mul:*" "div:/" "sub:-"
 do
@@ -120,6 +122,46 @@ cdef class Field3D:
         return f3dFromObj(c_minus(self.cobj[0]))
     def isAllocated(self):
         return self.cobj.isAllocated()
+    def __getitem__(self,slices):
+        if len(slices)!=3:
+            raise IndexError("This is a 3D object!")
+        from helper import resolve_slices
+        inds=resolve_slices(slices,
+                            [self.cobj.getNx()
+                             ,self.cobj.getNy()
+                             ,self.cobj.getNz()])
+        dims=[]
+        for i in inds:
+            dims.append((i[1]-i[0])//i[2])
+        cdef np.ndarray[double, mode="c", ndim=3] data_ = np.ascontiguousarray(np.zeros(dims))
+        c_get_f3d_part(self.cobj,&data_[0,0,0],inds[0][0],inds[0][1],inds[0][2],inds[1][0],inds[1][1],inds[1][2],inds[2][0],inds[2][1],inds[2][2]);
+        return data_
+
+    def __setitem__(self,slices,data_):
+        if len(slices)!=3:
+            raise IndexError("This is a 3D object!")
+        from helper import resolve_slices
+        inds=resolve_slices(slices,
+                            [self.cobj.getNx()
+                             ,self.cobj.getNy()
+                             ,self.cobj.getNz()])
+        dims=[]
+        if isinstance(data_,Field3D):
+            # get all to get a numpy array
+            data_=data_[:,:,:]
+        try:
+            dims_in=data_.shape
+        except:
+            raise TypeError("Expected a Field3D or a numpy array")
+        for i in inds:
+            dims.append((i[1]-i[0])//i[2])
+        if len(dims_in) != 3:
+            raise IndexError()
+        for i in range(3):
+            if dims[i] != dims_in[i]:
+                raise IndexError()
+        cdef np.ndarray[double, mode="c", ndim=3] data__ = np.ascontiguousarray(data_)
+        c_set_f3d_part(self.cobj,&data__[0,0,0],inds[0][0],inds[0][1],inds[0][2],inds[1][0],inds[1][1],inds[1][2],inds[2][0],inds[2][1],inds[2][2]);
 EOF
 for f in "add:+" "mul:*" "div:/" "sub:-"
 do

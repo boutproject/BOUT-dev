@@ -13,15 +13,35 @@ void c_set_f3d_all(Field3D * f3d, double * data){
     (*f3d)[i]=data[j++];
   }
   f3d->operator()(0,0,0)=k;
-  //printf("%d %d %d  ",f3d->getNx(),f3d->getNy(),f3d->getNz());
-  //printf("%d written\n",j);
 }
 void c_get_f3d_all(Field3D * f3d, double * data){
   int j=0;
   for (auto i : (*f3d)){
     data[j++]=(*f3d)[i];
   }
-  //printf("%d read\n",j);
+}
+
+void c_get_f3d_part(const Field3D * f3d, double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz){
+  int j=0;
+  for (int x=xs;x!=xe;x+=dx){
+    for (int y=ys;y!=ye;y+=dy){
+      for (int z=zs;z!=ze;z+=dz){
+        data[j++]=(*f3d)(x,y,z);
+      }
+    }
+  }
+}
+
+void c_set_f3d_part(Field3D * f3d, const double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz){
+  f3d->allocate();
+  int j=0;
+  for (int x=xs;x!=xe;x+=dx){
+    for (int y=ys;y!=ye;y+=dy){
+      for (int z=zs;z!=ze;z+=dz){
+        (*f3d)(x,y,z)=data[j++];
+      }
+    }
+  }
 }
 
 EOF
