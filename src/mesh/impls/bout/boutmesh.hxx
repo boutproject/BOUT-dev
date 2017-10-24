@@ -30,6 +30,8 @@ class BoutMesh : public Mesh {
   std::map<REGION,bool> set_region_map_set() const ;
   std::map<REGION,bool> region_map_set;
   const std::vector<int> make_single_index_region(int xstart, int xend,
+                                                           int ystart, int yend,
+                                                           int zstart, int zend) const ;
   std::vector<int> single_index_region(REGION rgn) const ;
 
   /////////////////////////////////////////////
