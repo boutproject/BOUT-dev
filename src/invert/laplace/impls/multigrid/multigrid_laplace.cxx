@@ -387,39 +387,83 @@ BOUT_OMP(for)
       result(i2, k2) = x[i*lz2+k];
     }
   }
-  if (xProcI == 0) {
+  if (mesh->firstX()) {
     if ( inner_boundary_flags & INVERT_AC_GRAD ) {
       // Neumann boundary condition
-      int i2 = -1+mesh->xstart;
-      for (int k=1; k<lzz+1; k++) {
-        int k2 = k-1;
-        result(i2, k2) = x[lz2+k] - x[k];
+      if ( inner_boundary_flags & INVERT_SET ) {
+        // guard cells of x0 specify gradient to set at inner boundary
+        int i2 = -1+mesh->xstart;
+        for (int k=1; k<lzz+1; k++) {
+          int k2 = k-1;
+          result(i2, k2) = x[lz2+k] - x0(mesh->xstart-1, k2)*sqrt(coords->g_11(mesh->xstart, yindex))*coords->dx(mesh->xstart, yindex);
+        }
+      }
+      else {
+        // zero gradient inner boundary condition
+        int i2 = -1+mesh->xstart;
+        for (int k=1; k<lzz+1; k++) {
+          int k2 = k-1;
+          result(i2, k2) = x[lz2+k];
+        }
       }
     }
     else {
       // Dirichlet boundary condition
-      int i2 = -1+mesh->xstart;
-      for (int k=1; k<lzz+1; k++) {
-        int k2 = k-1;
-        result(i2, k2) = x[k]- x[lz2+k];
+      if ( inner_boundary_flags & INVERT_SET ) {
+        // guard cells of x0 specify value to set at inner boundary
+        int i2 = -1+mesh->xstart;
+        for (int k=1; k<lzz+1; k++) {
+          int k2 = k-1;
+          result(i2, k2) = 2.*x0(mesh->xstart-1,k2) - x[lz2+k];
+        }
+      }
+      else {
+        // zero value inner boundary condition
+        int i2 = -1+mesh->xstart;
+        for (int k=1; k<lzz+1; k++) {
+          int k2 = k-1;
+          result(i2, k2) = -x[lz2+k];
+        }
       }
     }
   }
-  if (xProcI == xNP-1) {
+  if (mesh->lastX()) {
     if ( outer_boundary_flags & INVERT_AC_GRAD ) {
       // Neumann boundary condition
-      int i2 = lxx+mesh->xstart;
-      for (int k=1; k<lzz+1; k++) {
-        int k2 = k-1;
-        result(i2, k2) = x[lxx*lz2+k]-x[(lxx+1)*lz2+k];
+      if ( inner_boundary_flags & INVERT_SET ) {
+        // guard cells of x0 specify gradient to set at outer boundary
+        int i2 = lxx+mesh->xstart;
+        for (int k=1; k<lzz+1; k++) {
+          int k2 = k-1;
+          result(i2, k2) = x[lxx*lz2+k] + x0(mesh->xend+1, k2)*sqrt(coords->g_11(mesh->xend, yindex))*coords->dx(mesh->xend, yindex);
+        }
+      }
+      else {
+        // zero gradient outer boundary condition
+        int i2 = lxx+mesh->xstart;
+        for (int k=1; k<lzz+1; k++) {
+          int k2 = k-1;
+          result(i2, k2) = x[lxx*lz2+k];
+        }
       }
     }
     else {
       // Dirichlet boundary condition
-      int i2 = lxx+mesh->xstart;
-      for (int k=1; k<lzz+1; k++) {
-        int k2 = k-1;
-        result(i2, k2) = x[(lxx+1)*lz2+k]-x[lxx*lz2+k];
+      if ( outer_boundary_flags & INVERT_SET ) {
+        // guard cells of x0 specify value to set at outer boundary
+        int i2 = lxx+mesh->xstart;
+        for (int k=1; k<lzz+1; k++) {
+          int k2 = k-1;
+          result(i2, k2) = 2.*x0(mesh->xend+1,k2) - x[lxx*lz2+k];
+        }
+      }
+      else {
+        // zero value inner boundary condition
+        int i2 = lxx+mesh->xstart;
+        for (int k=1; k<lzz+1; k++) {
+          int k2 = k-1;
+          result(i2, k2) = -x[lxx*lz2+k];
+        }
       }
     }
   }
