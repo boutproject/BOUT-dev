@@ -289,7 +289,7 @@ int BoutInitialise(int &argc, char **&argv) {
   output_info.enable(verbosity>3);
   output_debug.enable(verbosity>4);
   
-  // The backward-compatible output object same as prog
+  // The backward-compatible output object same as output_progress
   output.enable(verbosity>2);
 
   // Save the PID of this process to file, so it can be shut down by user signal
@@ -339,7 +339,11 @@ int BoutInitialise(int &argc, char **&argv) {
 #ifdef NCDF
   output_info.write("\tnetCDF support enabled\n");
 #else
+#ifdef NCDF4
+  output_info.write("\tnetCDF4 support enabled\n");
+#else
   output_info.write("\tnetCDF support disabled\n");
+#endif
 #endif
 
 #ifdef PNCDF
@@ -475,8 +479,12 @@ int BoutFinalise() {
   Laplacian::cleanup();
 
   // Delete field memory
-  Array<double>::cleanup();
-
+  Array<BoutReal>::cleanup();
+  Array<dcomplex>::cleanup();
+  Array<fcmplx>::cleanup();
+  Array<int>::cleanup();
+  Array<unsigned long>::cleanup();
+  
   // Cleanup boundary factory
   BoundaryFactory::cleanup();
   
@@ -495,9 +503,6 @@ int BoutFinalise() {
 
   // Call PetscFinalize if not already called
   PetscLib::cleanup();
-    
-  // Logging output
-  Output::cleanup();
 
   // MPI communicator, including MPI_Finalize()
   BoutComm::cleanup();

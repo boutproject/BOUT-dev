@@ -151,8 +151,10 @@ void Solver::add(Field2D &v, const char* name) {
   d.constraint = false;
   d.var = &v;
   d.F_var = &ddt(v);
+  d.location = v.getLocation();
+  d.covariant = false;
   d.name = string(name);
-
+  
 #ifdef TRACK
   v.name = name;
 #endif
@@ -216,6 +218,7 @@ void Solver::add(Field3D &v, const char* name) {
   d.var = &v;
   d.F_var = &ddt(v);
   d.location = v.getLocation();
+  d.covariant = false;
   d.name = string(name);
   
 #ifdef TRACK
@@ -269,6 +272,7 @@ void Solver::add(Vector2D &v, const char* name) {
   d.constraint = false;
   d.var = &v;
   d.F_var = &ddt(v);
+  d.location = CELL_DEFAULT;
   d.covariant = v.covariant;
   d.name = string(name);
 
@@ -310,6 +314,7 @@ void Solver::add(Vector3D &v, const char* name) {
   d.constraint = false;
   d.var = &v;
   d.F_var = &ddt(v);
+  d.location = CELL_DEFAULT;
   d.covariant = v.covariant;
   d.name = string(name);
   
