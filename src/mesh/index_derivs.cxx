@@ -1832,9 +1832,10 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC UNUSE
   return result;
 }
 
-/// General version for 2 or 3-D objects
-const Field3D Mesh::indexVDDX(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method) {
-  TRACE("Mesh::indexVDDX(Field, Field)");
+/// General version for 3D objects.
+/// 2D objects passed as input will result in copying
+const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+  TRACE("Mesh::indexVDDX(Field3D, Field3D)");
 
   ASSERT1(this == v.getMesh());
   ASSERT1(this == f.getMesh());
@@ -1845,71 +1846,175 @@ const Field3D Mesh::indexVDDX(const Field &v, const Field &f, CELL_LOC outloc, D
   CELL_LOC vloc = v.getLocation();
   CELL_LOC inloc = f.getLocation(); // Input location
   CELL_LOC diffloc = inloc; // Location of differential result
-  
-  if(StaggerGrids && (outloc == CELL_DEFAULT)) {
+
+  if (StaggerGrids && (outloc == CELL_DEFAULT)) {
     // Take care of CELL_DEFAULT case
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
-  
-  if(StaggerGrids && (vloc != inloc)) {
+
+  if (StaggerGrids && (vloc != inloc)) {
     // Staggered grids enabled, and velocity at different location to value
-    
+
     Mesh::flux_func func = sfVDDX;
     DiffLookup *table = UpwindTable;
-    
-    if(vloc == CELL_XLOW) {
+
+    if (vloc == CELL_XLOW) {
       // V staggered w.r.t. variable
       func = sfVDDX;
       table = UpwindStagTable;
       diffloc = CELL_CENTRE;
-    }else if((vloc == CELL_CENTRE) && (inloc == CELL_XLOW)) {
+    } else if ((vloc == CELL_CENTRE) && (inloc == CELL_XLOW)) {
       // Shifted
       func = sfVDDX;
       table = UpwindStagTable;
       diffloc = CELL_XLOW;
-    }else {
-      // More complicated. Deciding what to do here isn't straightforward
-      // For now, interpolate velocity to the same location as f.
+    } else {
+      // More complicated shifting. The user should probably
+      // be explicit about what interpolation should be done
 
-      // Should be able to do something like:
-      //return VDDX(interp_to(v, inloc), f, outloc, method);
-      
       throw BoutException("Unhandled shift in Mesh::indexVDDX");
     }
-    if(method != DIFF_DEFAULT) {
+    
+    if (method != DIFF_DEFAULT) {
       // Lookup function
       func = lookupFluxFunc(table, method);
     }
+
+    // Note: The velocity stencil contains only (mm, m, p, pp)
+    // v.p is v at +1/2, v.m is at -1/2 relative to the field f
     
-    bindex bx;
-    start_index(&bx);
-    stencil vval, fval;
-    do {
-      v.setXStencil(vval, bx, diffloc);
-      f.setXStencil(fval, bx); // Location is always the same as input
+    if (mesh->xstart > 1) {
+      // Two or more guard cells
       
-      result(bx.jx, bx.jy, bx.jz) = func(vval, fval);
-    }while(next_index3(&bx));
-    
-  }else {
+      if ((vloc == CELL_XLOW) && (diffloc == CELL_CENTRE)) {
+        stencil fs, vs;
+        vs.c = nan("");
+        
+        for (const auto &i : result.region(region)) {
+          fs.c = f[i];
+          fs.p = f[i.xp()];
+          fs.m = f[i.xm()];
+          fs.pp = f[i.offset(2, 0, 0)];
+          fs.mm = f[i.offset(-2, 0, 0)];
+          
+          vs.mm = v[i.xm()];
+          vs.m = v[i];
+          vs.p = v[i.xp()];
+          vs.pp = v[i.offset(2, 0, 0)];
+          
+          result[i] = func(vs, fs);
+        }
+        
+      } else if ((vloc == CELL_CENTRE) && (diffloc == CELL_XLOW) ) {
+        stencil fs, vs;
+        vs.c = nan("");
+        
+        for (const auto &i : result.region(region)) {
+          fs.c = f[i];
+          fs.p = f[i.xp()];
+          fs.m = f[i.xm()];
+          fs.pp = f[i.offset(2, 0, 0)];
+          fs.mm = f[i.offset(-2, 0, 0)];
+        
+          vs.mm = v[i.offset(-2, 0, 0)];
+          vs.m = v[i.xm()];
+          vs.p = v[i];
+          vs.pp = v[i.xp()];
+          
+          result[i] = func(vs, fs);
+        }
+      } else {
+        throw BoutException("Unhandled shift in Mesh::indexVDDX");
+      }
+    } else if (mesh->xstart == 1) {
+      // One guard cell
+
+      if ((vloc == CELL_XLOW) && (diffloc == CELL_CENTRE)) {
+        stencil fs, vs;
+        vs.c = nan("");
+        vs.pp = nan("");
+        fs.pp = nan("");
+        fs.mm = nan("");
+        
+        for (const auto &i : result.region(region)) {
+          fs.c = f[i];
+          fs.p = f[i.xp()];
+          fs.m = f[i.xm()];
+          
+          vs.mm = v[i.xm()];
+          vs.m = v[i];
+          vs.p = v[i.xp()];
+          
+          result[i] = func(vs, fs);
+        }
+        
+      } else if ((vloc == CELL_CENTRE) && (diffloc == CELL_XLOW) ) {
+        stencil fs, vs;
+        
+        fs.pp = nan("");
+        fs.mm = nan("");
+        vs.c = nan("");
+        vs.mm = nan("");
+        
+        for (const auto &i : result.region(region)) {
+          fs.c = f[i];
+          fs.p = f[i.xp()];
+          fs.m = f[i.xm()];
+        
+          vs.m = v[i.xm()];
+          vs.p = v[i];
+          vs.pp = v[i.xp()];
+          
+          result[i] = func(vs, fs);
+        }
+      } else {
+        throw BoutException("Unhandled shift in Mesh::indexVDDX");
+      }
+    } else {
+      // No guard cells
+      throw BoutException("Error: Derivatives in X requires at least one guard cell");
+    }
+
+  } else {
     // Not staggered
     Mesh::upwind_func func = fVDDX;
     DiffLookup *table = UpwindTable;
-    
-    if(method != DIFF_DEFAULT) {
+
+    if (method != DIFF_DEFAULT) {
       // Lookup function
       func = lookupUpwindFunc(table, method);
     }
-    
-    bindex bx;
-    start_index(&bx);
-    stencil vval, fval;
-    do {
-      f.setXStencil(fval, bx); // Location is always the same as input
-      result(bx.jx, bx.jy, bx.jz) = func(v[{bx.jx, bx.jy, bx.jz}], fval);
-    }while(next_index3(&bx));
+
+    if (mesh->xstart > 1) {
+      // Two or more guard cells
+      stencil fs;
+      for (const auto &i : result.region(region)) {
+        fs.c = f[i];
+        fs.p = f[i.xp()];
+        fs.m = f[i.xm()];
+        fs.pp = f[i.offset(2, 0, 0)];
+        fs.mm = f[i.offset(-2, 0, 0)];
+
+        result[i] = func(v[i], fs);
+      }
+    } else if (mesh->xstart == 1) {
+      // Only one guard cell
+      stencil fs;
+      fs.pp = nan("");
+      fs.mm = nan("");
+      for (const auto &i : result.region(region)) {
+        fs.c = f[i];
+        fs.p = f[i.xp()];
+        fs.m = f[i.xm()];
+
+        result[i] = func(v[i], fs);
+      }
+    } else {
+      // No guard cells
+      throw BoutException("Error: Derivatives in X requires at least one guard cell");
+    }
   }
-  
+
   result.setLocation(inloc);
 
 #if CHECK > 0
@@ -1923,7 +2028,7 @@ const Field3D Mesh::indexVDDX(const Field &v, const Field &f, CELL_LOC outloc, D
 ////////////// Y DERIVATIVE /////////////////
 
 // special case where both are 2D
-const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
   TRACE("Mesh::indexVDDY");
 
   ASSERT1(this == v.getMesh());
@@ -1982,22 +2087,50 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
       result(bx.jx, bx.jy) = func(vval,fval);
     }while(next_index2(&bx));
   }else {
+    // Not staggered
+
     Mesh::upwind_func func = fVDDY;
     DiffLookup *table = UpwindTable;
-    
-    if(method != DIFF_DEFAULT) {
+
+    if (method != DIFF_DEFAULT) {
       // Lookup function
       func = lookupUpwindFunc(table, method);
     }
-    bindex bx;
-    stencil fval, vval;
-    start_index(&bx);
-    do {
-      f.setYStencil(fval, bx);
-      result(bx.jx, bx.jy) = func(v[{bx.jx, bx.jy, 0}],fval);
-    }while(next_index2(&bx));
     
+    if (mesh->ystart > 1) {
+      // Two or more guard cells
+      stencil fs;
+      for (const auto &i : result.region(region)) {
+        
+        fs.c = f[i];
+        fs.p = f[i.yp()];
+        fs.m = f[i.ym()];
+        fs.pp = f[i.offset(0, 2, 0)];
+        fs.mm = f[i.offset(0, -2, 0)];
+        
+        result[i] = func(v[i], fs);
+      }
+      
+    } else if (mesh->ystart == 1) {
+      // Only one guard cell
+      
+      stencil fs;
+      fs.pp = nan("");
+      fs.mm = nan("");
+      
+      for (const auto &i : result.region(region)) {
+        fs.c = f[i];
+        fs.p = f[i.yp()];
+        fs.m = f[i.ym()];
+        
+        result[i] = func(v[i], fs);
+      }
+    } else {
+      // No guard cells
+      throw BoutException("Error: Derivatives in Y requires at least one guard cell");
+    }
   }
+  
   result.setLocation(inloc);
     
 #if CHECK > 0
@@ -2331,9 +2464,11 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
     if (StaggerGrids) {
       if ((vloc == CELL_CENTRE) && (diffloc == CELL_XLOW) ) {
         // Producing a stencil centred around a lower X value
+
+        stencil fs, vs;
+        vs.c = nan("");
         for (const auto &i : result.region(region)) {
           // Location of f always the same as the output
-          stencil fs;
           fs.c = f[i];
           fs.p = f[i.xp()];
           fs.m = f[i.xm()];
@@ -2341,10 +2476,9 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
           fs.mm = f[i.offset(-2, 0, 0)];
           
           // Note: Location in diffloc
-          stencil vs;
+          
           vs.mm = v[i.offset(-2, 0, 0)];
           vs.m = v[i.xm()];
-          vs.c = v[i];
           vs.p = v[i];
           vs.pp = v[i.xp()];
           
@@ -2352,19 +2486,18 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
         }
       } else if ((vloc == CELL_XLOW) && (diffloc == CELL_CENTRE)) {
         // Stencil centred around a cell centre
+        stencil fs, vs;
+        vs.c = nan("");
         for (const auto &i : result.region(region)) {
           // Location of f always the same as the output
-          stencil fs;
           fs.c = f[i];
           fs.p = f[i.xp()];
           fs.m = f[i.xm()];
           fs.pp = f[i.offset(2, 0, 0)];
           fs.mm = f[i.offset(-2, 0, 0)];
           
-          stencil vs;
           vs.mm = v[i.xm()];
           vs.m = v[i];
-          vs.c = v[i];
           vs.p = v[i.xp()];
           vs.pp = v[i.offset(2, 0, 0)];
           
@@ -2405,6 +2538,7 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
     stencil vs;
     vs.pp = nan("");
     vs.mm = nan("");
+    vs.c = nan("");
     
     if (StaggerGrids) {
       if ((vloc == CELL_CENTRE) && (diffloc == CELL_XLOW) ) {
@@ -2418,7 +2552,6 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
           
           // Note: Location in diffloc
           vs.m = v[i.xm()];
-          vs.c = v[i];
           vs.p = v[i];
           vs.pp = v[i.xp()];
           
@@ -2434,7 +2567,6 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
           
           vs.mm = v[i.xm()];
           vs.m = v[i];
-          vs.c = v[i];
           vs.p = v[i.xp()];
           
           result[i] = func(vs, fs);
