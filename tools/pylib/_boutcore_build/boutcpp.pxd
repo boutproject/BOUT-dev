@@ -1,6 +1,8 @@
 from libcpp cimport bool
 from libcpp.string cimport string
 
+cimport resolve_enum as benum
+
 cdef extern from "field3d.hxx":
     cppclass Field3D:
         Field3D(Mesh * mesh);
@@ -10,6 +12,7 @@ cdef extern from "field3d.hxx":
         int getNy()
         int getNz()
         bool isAllocated()
+        void setLocation(benum.CELL_LOC)
     Field3D sqrt(Field3D)
     Field3D exp(Field3D)
 
@@ -27,8 +30,6 @@ cdef extern from "invert_laplace.hxx":
         @staticmethod
         Laplacian * create()
         Field3D solve(Field3D,Field3D)
-
-cimport resolve_enum as benum
 
 cdef extern from "difops.hxx":
     Field3D Div_par(Field3D, benum.CELL_LOC, benum.DIFF_METHOD)
