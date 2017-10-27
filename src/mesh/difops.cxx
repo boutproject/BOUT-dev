@@ -164,11 +164,11 @@ const Field2D Vpar_Grad_par(const Field2D &v, const Field2D &f) {
   return mesh->coordinates()->Vpar_Grad_par(v, f);
 }
 
-const Field3D Vpar_Grad_par(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field3D Vpar_Grad_par(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   return mesh->coordinates()->Vpar_Grad_par(v, f, outloc, method);
 }
 
-const Field3D Vpar_Grad_par(const Field &v, const Field &f, DIFF_METHOD method, CELL_LOC outloc) {
+const Field3D Vpar_Grad_par(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
   return mesh->coordinates()->Vpar_Grad_par(v, f, outloc, method);
 }
 
