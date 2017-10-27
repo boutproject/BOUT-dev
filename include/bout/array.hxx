@@ -29,6 +29,9 @@
 #include <vector>
 #include <memory>
 
+#ifdef BOUT_ARRAY_WITH_VALARRAY
+#include <valarray>
+#endif
 /*!
  * Data array type with automatic memory management
  *
@@ -186,8 +189,11 @@ public:
   int size() const {
     if(!ptr)
       return 0;
-
+#ifdef BOUT_ARRAY_WITH_VALARRAY
+    return ptr->size();
+#else
     return ptr->len;
+#endif    
   }
   
   /*!
@@ -211,8 +217,12 @@ public:
     dataPtrType p = get(size());
 
     //Make copy of the underlying data
+#ifdef BOUT_ARRAY_WITH_VALARRAY    
+    p->operator=((*ptr));
+#else
     for(iterator it = begin(), ip = p->begin(); it != end(); ++it, ++ip)
       *ip = *it;
+#endif    
 
     //Update the local pointer and release old
     //could probably just do ptr=p as shared_ptr should
@@ -222,9 +232,12 @@ public:
     release(old);
   }
 
+  //////////////////////////////////////////////////////////
+  // Iterators -- only for non-valarray use currently
+#ifndef BOUT_ARRAY_WITH_VALARRAY //Valarray version could probably use std::begin(ptr.get()) and std::end(...)
   typedef T* iterator;
 
-  iterator begin() {
+  iterator begin() { 
     return (ptr) ? ptr->data : nullptr;
   }
 
@@ -242,7 +255,7 @@ public:
   const_iterator end() const {
     return (ptr) ? ptr->data + ptr->len : nullptr;
   }
-
+#endif
   //////////////////////////////////////////////////////////
   // Element access
 
@@ -252,10 +265,18 @@ public:
    * so the user should perform checks.
    */
   T& operator[](int ind) {
+#ifdef BOUT_ARRAY_WITH_VALARRAY
+    return ptr->operator[](ind);
+#else    
     return ptr->data[ind];
+#endif    
   }
   const T& operator[](int ind) const {
+#ifdef BOUT_ARRAY_WITH_VALARRAY
+    return ptr->operator[](ind);
+#else    
     return ptr->data[ind];
+#endif    
   }
 
   /*!
@@ -272,6 +293,7 @@ public:
   
 private:
 
+#ifndef BOUT_ARRAY_WITH_VALARRAY  
   /*!
    * ArrayData holds the actual data, and reference count
    * Handles the allocation and deletion of data
@@ -294,8 +316,15 @@ private:
       return data + len;
     }
   };
+#endif
+
     //Type defs to help keep things brief -- which backing do we use
+#ifdef BOUT_ARRAY_WITH_VALARRAY
+  typedef std::valarray<T> dataBlock;
+#else
   typedef ArrayData dataBlock;
+#endif
+
   typedef std::shared_ptr<dataBlock>  dataPtrType;
 
   /*!
@@ -357,6 +386,8 @@ private:
   /*!
    * Release an ArrayData object, reducing its reference count by one. 
    * If no more references, then put back into the store.
+   * It's important to pass a reference to the pointer, otherwise we get
+   * a copy of the shared_ptr, which therefore increases the use count
    * and doesn't allow us to free the pass pointer directly
    */
   void release(dataPtrType &d) {
@@ -369,7 +400,11 @@ private:
       if(d.use_count()==1) {
         if (useStore()) {
           // Put back into store
+#ifdef BOUT_ARRAY_WITH_VALARRAY
+	  store()[d->size()].push_back(std::move(d));
+#else	  
           store()[d->len].push_back(std::move(d));
+#endif	  
         } else {
 	  d = nullptr;
         }
