@@ -727,8 +727,8 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, CELL_L
     if (mesh->xstart > 1) {
       // More than one guard cell, so set pp and mm values
       // This allows higher-order methods to be used
+      stencil s;
       for(const auto &i : result.region(region)) {
-        stencil s;
         s.c = var[i];
         s.p = var[i.xp()];
         s.m = var[i.xm()];
@@ -832,8 +832,8 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
     if (mesh->xstart > 1) {
       // More than one guard cell, so set pp and mm values
       // This allows higher-order methods to be used
+      stencil s;
       for(const auto &i : result.region(region)) {
-        stencil s;
         s.c = var[i];
         s.p = var[i.xp()];
         s.m = var[i.xm()];
@@ -854,13 +854,13 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
       }
     } else {
       // Only one guard cell, so no pp or mm values
+      stencil s;
+      s.pp = nan("");
+      s.mm = nan("");
       for(const auto &i : result.region(region)) {
-        stencil s;
         s.c = var[i];
         s.p = var[i.xp()];
         s.m = var[i.xm()];
-        s.pp = nan("");
-        s.mm = nan("");
         
         if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
           // Producing a stencil centred around a lower X value
@@ -882,8 +882,8 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
     if (mesh->xstart > 1) {
       // More than one guard cell, so set pp and mm values
       // This allows higher-order methods to be used
+      stencil s;
       for(const auto &i : result.region(region)) {
-        stencil s;
         s.c = var[i];
         s.p = var[i.xp()];
         s.m = var[i.xm()];
@@ -894,13 +894,13 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
       }
     } else {
       // Only one guard cell, so no pp or mm values
+      stencil s;
+      s.pp = nan("");
+      s.mm = nan("");
       for(const auto &i : result.region(region)) {
-        stencil s;
         s.c = var[i];
         s.p = var[i.xp()];
         s.m = var[i.xm()];
-        s.pp = nan("");
-        s.mm = nan("");
         
         result[i] = func(s);
       }
@@ -993,14 +993,14 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
       // Cell location of the input field
       CELL_LOC location = var.getLocation();
       
+      stencil s;
+      s.pp = nan("");
+      s.mm = nan("");
       for(const auto &i : result.region(region)) {
         // Set stencils
-        stencil s;
         s.c = var[i];
         s.p = var.yup()[i.yp()];
         s.m = var.ydown()[i.ym()];
-        s.pp = nan("");
-        s.mm = nan("");
         
         if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
           // Producing a stencil centred around a lower Y value
@@ -1016,14 +1016,14 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
       }
     } else {
       // Non-staggered
+      stencil s;
+      s.pp = nan("");
+      s.mm = nan("");
       for(const auto &i : result.region(region)) {
         // Set stencils
-        stencil s;
         s.c = var[i];
         s.p = var.yup()[i.yp()];
         s.m = var.ydown()[i.ym()];
-        s.pp = nan("");
-        s.mm = nan("");
         
         result[i] = func(s);
       }
@@ -1042,9 +1042,9 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
       if (mesh->ystart > 1) {
         // More than one guard cell, so set pp and mm values
         // This allows higher-order methods to be used
+        stencil s;
         for(const auto &i : result.region(region)) {
           // Set stencils
-          stencil s;
           s.c = var_fa[i];
           s.p = var_fa[i.yp()];
           s.m = var_fa[i.ym()];
@@ -1065,14 +1065,14 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
         }
       } else {
         // Only one guard cell, so no pp or mm values
+        stencil s;
+        s.pp = nan("");
+        s.mm = nan("");
         for(const auto &i : result.region(region)) {
           // Set stencils
-          stencil s;
           s.c = var_fa[i];
           s.p = var_fa[i.yp()];
           s.m = var_fa[i.ym()];
-          s.pp = nan("");
-          s.mm = nan("");
           
           if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
             // Producing a stencil centred around a lower Y value
@@ -1094,9 +1094,9 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
       if (mesh->ystart > 1) {
         // More than one guard cell, so set pp and mm values
         // This allows higher-order methods to be used
+        stencil s;
         for(const auto &i : result.region(region)) {
           // Set stencils
-          stencil s;
           s.c = var_fa[i];
           s.p = var_fa[i.yp()];
           s.m = var_fa[i.ym()];
@@ -1107,14 +1107,14 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
         }
       } else {
         // Only one guard cell, so no pp or mm values
+        stencil s;
+        s.pp = nan("");
+        s.mm = nan("");
         for(const auto &i : result.region(region)) {
           // Set stencils
-          stencil s;
           s.c = var_fa[i];
           s.p = var_fa[i.yp()];
           s.m = var_fa[i.ym()];
-          s.pp = nan("");
-          s.mm = nan("");
           
           result[i] = func(s);
         }
@@ -1153,8 +1153,8 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   // Check that the input variable has data
   ASSERT1(var.isAllocated());
   
+  stencil s;
   for(const auto &i : result.region(region)) {
-    stencil s;
     s.c = var[i];
     s.p = var[i.zp()];
     s.m = var[i.zm()];
@@ -1794,8 +1794,8 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC UNUSE
   if (mesh->xstart > 1) {
     // Two or more guard cells
 
+    stencil s;
     for (const auto &i : result.region(region)) {
-      stencil s;
       s.c = f[i];
       s.p = f[i.xp()];
       s.m = f[i.xm()];
@@ -2478,15 +2478,15 @@ const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
   if (mesh->xstart > 1) {
     // Two or more guard cells
 
+    stencil fs;
+    stencil vs;
     for (const auto &i : result.region(region)) {
-      stencil fs;
       fs.c = f[i];
       fs.p = f[i.xp()];
       fs.m = f[i.xm()];
       fs.pp = f[i.offset(2, 0, 0)];
       fs.mm = f[i.offset(-2, 0, 0)];
 
-      stencil vs;
       vs.c = v[i];
       vs.p = v[i.xp()];
       vs.m = v[i.xm()];
@@ -2633,9 +2633,10 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
       }
     } else {
       // Non-staggered, two or more guard cells
+      stencil fs;
+      stencil vs;
       for (const auto &i : result.region(region)) {
         // Location of f always the same as the output
-        stencil fs;
         fs.c = f[i];
         fs.p = f[i.xp()];
         fs.m = f[i.xm()];
@@ -2643,7 +2644,6 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
         fs.mm = f[i.offset(-2, 0, 0)];
         
         // Note: Location in diffloc
-        stencil vs;
         vs.c = v[i];
         vs.p = v[i.xp()];
         vs.m = v[i.xm()];
