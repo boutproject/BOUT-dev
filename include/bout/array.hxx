@@ -27,6 +27,7 @@
 
 #include <map>
 #include <vector>
+#include <memory>
 
 /*!
  * Data array type with automatic memory management
@@ -56,7 +57,7 @@ template<typename T>
 class Array {
 public:
   typedef T data_type;
-  
+    
   /*!
    * Create an empty array
    * 
@@ -71,8 +72,6 @@ public:
    */
   Array(int len) {
     ptr = get(len);
-#pragma omp atomic
-    ptr->refs++;
   }
   
   /*!
@@ -86,9 +85,7 @@ public:
    * Copy constructor
    */
   Array(const Array &other) {
-    ptr = other.ptr;
-#pragma omp atomic
-    ptr->refs++;
+    ptr = other.ptr; 
   }
 
   /*!
@@ -96,12 +93,10 @@ public:
    * After this both Arrays share the same ArrayData
    */
   Array& operator=(const Array &other) {
-    ArrayData* const old = ptr;
+    dataPtrType old = ptr;
 
     // Add reference
     ptr = other.ptr;
-#pragma omp atomic
-    ptr->refs++;
 
     // Release the old data
     release(old);
@@ -114,6 +109,9 @@ public:
    */
   Array(Array&& other) {
     ptr = other.ptr;
+    //Release pointer and set it to nullptr -- should just call release?
+    //Actually probably shouldn't need this as move suggests the other object
+    //leaves scope and hence the smart shared_ptr will automatically be cleaned up
     other.ptr = nullptr;
   }
 
@@ -121,9 +119,13 @@ public:
    * Move assignment
    */
   Array& operator=(Array &&other) {
-    ArrayData* const old = ptr;
+    dataPtrType old = std::move(ptr);
 
-    ptr = other.ptr;
+    ptr = std::move(other.ptr);
+
+    //Release pointer and set it to nullptr -- should just call release?
+    //Actually probably shouldn't need this as move suggests the other object
+    //leaves scope and hence the smart shared_ptr will automatically be cleaned up
     other.ptr = nullptr;
 
     release(old);
@@ -156,7 +158,6 @@ public:
    */
   void clear() {
     release(ptr);
-    ptr = nullptr;
   }
 
   /*!
@@ -194,7 +195,7 @@ public:
    * 
    */
   bool unique() const {
-    return ptr->refs == 1;
+    return ptr.use_count() == 1;
   }
 
   /*!
@@ -207,21 +208,19 @@ public:
       return;
 
     // Get a new (unique) block of data
-    ArrayData* p = get(size());
+    dataPtrType p = get(size());
 
-    // Copy values
+    //Make copy of the underlying data
     for(iterator it = begin(), ip = p->begin(); it != end(); ++it, ++ip)
       *ip = *it;
 
-    ArrayData *old = ptr;
-    ptr = p;
-    ptr->refs++;
-    
+    //Update the local pointer and release old
+    //could probably just do ptr=p as shared_ptr should
+    //handle the rest.
+    dataPtrType old = ptr;
+    ptr = std::move(p);
     release(old);
   }
-  
-  //////////////////////////////////////////////////////////
-  // Iterators
 
   typedef T* iterator;
 
@@ -266,7 +265,7 @@ public:
    * This is called by the template function swap(Array&, Array&)
    */
   void swap(Array<T> &other) {
-    ArrayData* tmp_ptr = ptr;
+    dataPtrType tmp_ptr = ptr;
     ptr = other.ptr;
     other.ptr = tmp_ptr;
   }
@@ -295,12 +294,15 @@ private:
       return data + len;
     }
   };
+    //Type defs to help keep things brief -- which backing do we use
+  typedef ArrayData dataBlock;
+  typedef std::shared_ptr<dataBlock>  dataPtrType;
 
   /*!
-   * Pointer to the ArrayData object owned by this Array. 
+   * Pointer to the data container object owned by this Array. 
    * May be null
    */
-  ArrayData* ptr;
+  dataPtrType ptr;
 
   /*!
    * This maps from array size (int) to vectors of pointers to ArrayData objects
@@ -313,8 +315,8 @@ private:
    *
    * @param[in] cleanup   If set to true, deletes all ArrayData and clears the store
    */
-  static std::map< int, std::vector<ArrayData* > > & store(bool cleanup=false) {
-    static std::map< int, std::vector<ArrayData* > > store = {};
+  static std::map< int, std::vector<dataPtrType> > & store(bool cleanup=false) {
+    static std::map< int, std::vector<dataPtrType> > store = {};
     
     if (!cleanup) {
       return store;
@@ -323,8 +325,8 @@ private:
     // Clean by deleting all data
     for (auto &p : store) {
       auto &v = p.second;
-      for (ArrayData* a : v) {
-        delete a;
+      for (dataPtrType a : v) {
+	a = nullptr; //Could use a.reset() if clearer
       }
       v.clear();
     }
@@ -337,16 +339,16 @@ private:
    * Returns a pointer to an ArrayData object with no
    * references. This is either from the store, or newly allocated
    */
-  ArrayData* get(int len) {
-    ArrayData *p;
+  dataPtrType get(int len) {
+    dataPtrType p;
 #pragma omp critical (store)
     {
-      std::vector<ArrayData* >& st = store()[len];
+      std::vector<dataPtrType >& st = store()[len];
       if (!st.empty()) {
         p = st.back();
         st.pop_back();
       } else {
-        p = new ArrayData(len);
+	p = std::make_shared<dataBlock>(len);
       }
     }
     return p;
@@ -355,21 +357,24 @@ private:
   /*!
    * Release an ArrayData object, reducing its reference count by one. 
    * If no more references, then put back into the store.
+   * and doesn't allow us to free the pass pointer directly
    */
-  void release(ArrayData *d) {
+  void release(dataPtrType &d) {
     if (!d)
       return;
     
     // Reduce reference count, and if zero return to store
 #pragma omp critical (store)
     {
-      if (!--d->refs) {
+      if(d.use_count()==1) {
         if (useStore()) {
           // Put back into store
-          store()[d->len].push_back(d);
+          store()[d->len].push_back(std::move(d));
         } else {
-          delete d;
+	  d = nullptr;
         }
+      } else {
+	d = nullptr;
       }
     }
   }
