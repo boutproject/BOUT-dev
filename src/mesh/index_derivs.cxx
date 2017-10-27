@@ -2268,16 +2268,167 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
       func = lookupFluxFunc(table, method);
     }
 
-    bindex bx;
-    start_index(&bx);
-    stencil vval, fval;
-    do {
-      v.setYStencil(vval, bx, diffloc);
-      f.setYStencil(fval, bx);
-      
-      result(bx.jx, bx.jy, bx.jz) = func(vval, fval);
-    }while(next_index3(&bx));
+    // There are four cases, corresponding to whether or not f and v
+    // have yup, ydown fields. 
     
+    // If vUseUpDown is true, field "v" has distinct yup and ydown fields which
+    // will be used to calculate a derivative along 
+    // the magnetic field
+    bool vUseUpDown = (v.hasYupYdown() && ( (&v.yup() != &v) || (&v.ydown() != &v)));
+    bool fUseUpDown = (f.hasYupYdown() && ( (&f.yup() != &f) || (&f.ydown() != &f)));
+    
+    if( vUseUpDown && fUseUpDown ) {
+      // Both v and f have up/down fields
+
+///#pragma omp parallel
+///{
+      stencil vval, fval;
+      vval.pp = nan("");
+      vval.mm = nan("");
+      fval.pp = nan("");
+      fval.mm = nan("");
+      //for(SingleDataIterator i = result.sdi_region(region); !i.done(); ++i){
+      for (const auto &i : result.region(region)) {
+	vval.c = v[i];
+        vval.p = v.yup()[i.yp()];
+        vval.m = v.ydown()[i.ym()];
+	fval.c = f[i];
+	fval.p = f.yup()[i.yp()];
+	fval.m = f.ydown()[i.ym()];
+
+	if(diffloc != CELL_DEFAULT) {
+	  // Non-centred stencil
+	  if((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+	    // Producing a stencil centred around a lower Y value
+	    vval.pp = vval.p;
+	    vval.p  = vval.c;
+	  }else if(vloc == CELL_YLOW) {
+	    // Stencil centred around a cell centre
+	    vval.mm = vval.m;
+	    vval.m  = vval.c;
+	  }
+	  // Shifted in one direction -> shift in another
+	  // Could produce warning
+	}
+        result[i] = func(vval,fval);
+      }
+///}
+    }
+    else if( vUseUpDown ) {
+      // Only v has up/down fields
+      // f must shift to field aligned coordinates
+      Field3D f_fa = mesh->toFieldAligned(f);
+
+///#pragma omp parallel
+///{
+      stencil vval, fval;
+      vval.pp = nan("");
+      vval.mm = nan("");
+      //for(SingleDataIterator i = result.sdi_region(region); !i.done(); ++i){
+      for (const auto &i : result.region(region)) {
+	vval.c = v[i];
+        vval.p = v.yup()[i.yp()];
+        vval.m = v.ydown()[i.ym()];
+	fval.c = f_fa[i];
+	fval.p = f_fa[i.yp()];
+	fval.m = f_fa[i.ym()];
+        fval.pp = f_fa[i.offset(0,2,0)];
+        fval.mm = f_fa[i.offset(0,-2,0)];
+
+	if(diffloc != CELL_DEFAULT) {
+	  // Non-centred stencil
+	  if((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+	    // Producing a stencil centred around a lower Y value
+	    vval.pp = vval.p;
+	    vval.p  = vval.c;
+	  }else if(vloc == CELL_YLOW) {
+	    // Stencil centred around a cell centre
+	    vval.mm = vval.m;
+	    vval.m  = vval.c;
+	  }
+	  // Shifted in one direction -> shift in another
+	  // Could produce warning
+	}
+        result[i] = func(vval,fval);
+      }
+///}
+    }
+    else if( fUseUpDown ) { 
+      // Only f has up/down fields
+      // v must shift to field aligned coordinates
+      Field3D v_fa = mesh->toFieldAligned(v);
+///#pragma omp parallel
+///{
+      stencil vval, fval;
+      fval.pp = nan("");
+      fval.mm = nan("");
+      //for(SingleDataIterator i = result.sdi_region(region); !i.done(); ++i){
+      for (const auto &i : result.region(region)) {
+	vval.c = v_fa[i];
+        vval.p = v_fa[i.yp()];
+        vval.m = v_fa[i.ym()];
+        vval.pp = v_fa[i.offset(0,2,0)];
+        vval.mm = v_fa[i.offset(0,-2,0)];
+	fval.c = f[i];
+	fval.p = f.yup()[i.yp()];
+	fval.m = f.ydown()[i.ym()];
+
+	if(diffloc != CELL_DEFAULT) {
+	  // Non-centred stencil
+	  if((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+	    // Producing a stencil centred around a lower Y value
+	    vval.pp = vval.p;
+	    vval.p  = vval.c;
+	  }else if(vloc == CELL_YLOW) {
+	    // Stencil centred around a cell centre
+	    vval.mm = vval.m;
+	    vval.m  = vval.c;
+	  }
+	  // Shifted in one direction -> shift in another
+	  // Could produce warning
+	}
+        result[i] = func(vval,fval);
+      }
+///}
+    }
+    else {
+      // Both must shift to field aligned
+      Field3D v_fa = mesh->toFieldAligned(v);
+      Field3D f_fa = mesh->toFieldAligned(f);
+///#pragma omp parallel
+///{
+      stencil vval, fval;
+      //for(SingleDataIterator i = result.sdi_region(region); !i.done(); ++i){
+      for (const auto &i : result.region(region)) {
+	vval.c = v_fa[i];
+        vval.p = v_fa[i.yp()];
+        vval.m = v_fa[i.ym()];
+        vval.pp = v_fa[i.offset(0,2,0)];
+        vval.mm = v_fa[i.offset(0,-2,0)];
+	fval.c = f[i];
+	fval.p = f_fa[i.yp()];
+	fval.m = f_fa[i.ym()];
+        fval.pp = f_fa[i.offset(0,2,0)];
+        fval.mm = f_fa[i.offset(0,-2,0)];
+
+	if(diffloc != CELL_DEFAULT) {
+	  // Non-centred stencil
+	  if((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+	    // Producing a stencil centred around a lower Y value
+	    vval.pp = vval.p;
+	    vval.p  = vval.c;
+	  }else if(vloc == CELL_YLOW) {
+	    // Stencil centred around a cell centre
+	    vval.mm = vval.m;
+	    vval.m  = vval.c;
+	  }
+	  // Shifted in one direction -> shift in another
+	  // Could produce warning
+	}
+        result[i] = func(vval,fval);
+      }
+///}
+    }
   } else {
     // Non-staggered case
     
