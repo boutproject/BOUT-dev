@@ -22,6 +22,8 @@
 #ifndef __BOUT_TYPES_H__
 #define __BOUT_TYPES_H__
 
+#include <map>
+#include <string>
 #include <vector>
 
 typedef double BoutReal;
@@ -35,7 +37,14 @@ enum DIFF_METHOD {DIFF_DEFAULT, DIFF_U1, DIFF_U2, DIFF_C2, DIFF_W2, DIFF_W3, DIF
 /// Specify grid region for looping
 enum REGION {RGN_ALL, RGN_NOBNDRY, RGN_NOX, RGN_NOY, RGN_NOZ};
 
-//jmad Boundary condition function
+/// Convert REGION enum to string
+const std::map<REGION, std::string> REGIONtoString{{RGN_ALL, "RGN_ALL"},
+                                                   {RGN_NOBNDRY, "RGN_NOBNDRY"},
+                                                   {RGN_NOX, "RGN_NOX"},
+                                                   {RGN_NOY, "RGN_NOY"},
+                                                   {RGN_NOZ, "RGN_NOZ"}};
+
+// jmad Boundary condition function
 typedef BoutReal (*FuncPtr)(BoutReal t, BoutReal x, BoutReal y, BoutReal z);
 
 #endif // __BOUT_TYPES_H__

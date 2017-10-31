@@ -322,3 +322,63 @@ ParallelTransform& Mesh::getParallelTransform() {
 Coordinates *Mesh::createDefaultCoordinates() {
   return new Coordinates(this);
 }
+
+RegionIndices &Mesh::getRegion(const std::string &region_name) {
+  auto found = region_map.find(region_name);
+  if (found == end(region_map)) {
+    throw BoutException("Couldn't find region %s", region_name.c_str());
+  }
+  return found->second;
+}
+
+void Mesh::addRegion(const std::string &region_name, RegionIndices region) {
+  if (region_map.count(region_name)) {
+    output_error << "ERROR: Trying to add an already existing region: " << region_name << "\n";
+    return;
+  }
+  region_map[region_name] = region;
+}
+
+RegionIndices Mesh::makeSingleIndexRegion(int xstart, int xend, int ystart, int yend,
+                                    int zstart, int zend) const {
+
+  int len = (xend - xstart + 1) * (yend - ystart + 1) * (zend - zstart + 1);
+  RegionIndices region(len);
+  int j = 0;
+  int x = xstart;
+  int y = ystart;
+  int z = zstart;
+  int ny = LocalNy;
+  int nz = LocalNz;
+
+  bool done = false;
+  j = -1;
+  while (!done) {
+    j++;
+    region[j] = (x * ny + y) * nz + z;
+    if (x == xend && y == yend && z == zend) {
+      done = true;
+    }
+    ++z;
+    if (z > zend) {
+      z = zstart;
+      ++y;
+      if (y > yend) {
+        y = ystart;
+        ++x;
+      }
+    }
+  }
+  return region;
+}
+
+void Mesh::createDefaultRegions() {
+  addRegion("RGN_ALL",
+            makeSingleIndexRegion(0, LocalNx - 1, 0, LocalNy - 1, 0, LocalNz - 1));
+  addRegion("RGN_NOBNDRY",
+            makeSingleIndexRegion(xstart, xend, ystart, yend, 0, LocalNz - 1));
+  addRegion("RGN_NOX",
+            makeSingleIndexRegion(xstart, xend, 0, LocalNy - 1, 0, LocalNz - 1));
+  addRegion("RGN_NOY",
+            makeSingleIndexRegion(0, LocalNx - 1, ystart, yend, 0, LocalNz - 1));
+}

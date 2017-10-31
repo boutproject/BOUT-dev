@@ -8,6 +8,7 @@
 
 #include <iterator>
 #include <iostream>
+#include <vector>
 #include "unused.hxx"
 #include <output.hxx>
 
@@ -25,6 +26,11 @@ struct SIndices {
   int ny;
   int nz;
 };
+
+/*!
+ * Region for the SingleDataIterator to iterate over
+ */
+typedef std::vector<int> RegionIndices;
 
 #define DI_GET_END ((void *) NULL)
 
@@ -73,34 +79,25 @@ public:
    * Constructor. This sets index ranges.
    * If OpenMP is enabled, the index range is divided
    * between threads using the omp_init method.
-   */ 
-  SingleDataIterator(int xs, int xe,
-	       int ys, int ye,
-	       int zs, int ze,
-	       int nx, int ny, int nz, std::vector<int>& rgn) : 
+   */
+  SingleDataIterator(int xs, int xe, int ys, int ye, int zs, int ze, int nx, int ny,
+                     int nz, RegionIndices &rgn)
+      :
 #ifndef _OPENMP
-    x(xs), y(ys), z(zs),
-    i((x*ny+y)*nz+z),
-    icount(0),
-    icountstart(0),
-    icountend((xe-xs+1)*(ye-ys+1)*(ze-zs+1)),
-    nx(nx), ny(ny), nz(nz),
-    rgn(rgn),
-    istart((xs*ny+ys)*nz+zs), xstart(xs),   ystart(ys),   zstart(zs),
-    imin(istart), xmin(xstart), ymin(ystart), zmin(zstart),
-    iend((xe*ny+ye)*nz+ze), xend(xe),     yend(ye),     zend(ze),
-    imax(iend), xmax(xend),   ymax(yend),   zmax(zend),
+        x(xs),
+        y(ys), z(zs), i((x * ny + y) * nz + z), icount(0), icountstart(0),
+        icountend((xe - xs + 1) * (ye - ys + 1) * (ze - zs + 1)), nx(nx), ny(ny), nz(nz),
+        rgn(rgn), istart((xs * ny + ys) * nz + zs), xstart(xs), ystart(ys), zstart(zs),
+        imin(istart), xmin(xstart), ymin(ystart), zmin(zstart),
+        iend((xe * ny + ye) * nz + ze), xend(xe), yend(ye), zend(ze), imax(iend),
+        xmax(xend), ymax(yend), zmax(zend),
 #else
-    icount(0),
-    icountstart(0),
-    icountend((xe-xs+1)*(ye-ys+1)*(ze-zs+1)),
-    nx(nx), ny(ny), nz(nz),     
-    rgn(rgn),
-    imin((xs*ny+ys)*nz+zs), xmin(xs),     ymin(ys),     zmin(zs),  
-    imax((xe*ny+ye)*nz+ze), xmax(xe),     ymax(ye),     zmax(ze),
+        icount(0),
+        icountstart(0), icountend((xe - xs + 1) * (ye - ys + 1) * (ze - zs + 1)), nx(nx),
+        ny(ny), nz(nz), rgn(rgn), imin((xs * ny + ys) * nz + zs), xmin(xs), ymin(ys),
+        zmin(zs), imax((xe * ny + ye) * nz + ze), xmax(xe), ymax(ye), zmax(ze),
 #endif
-    isEnd(false)
-  {
+        isEnd(false) {
 #ifdef _OPENMP
     omp_init(false);
 #endif
@@ -110,33 +107,24 @@ public:
    * set end();
    * use as DataIterator(int,int,int,int,int,int,DI_GET_END);
    */
-  SingleDataIterator(int xs, int xe,
-	       int ys, int ye,
-	       int zs, int ze,
-	       int nx, int ny, int nz, std::vector<int>& rgn, void* UNUSED(dummy)) : 
+  SingleDataIterator(int xs, int xe, int ys, int ye, int zs, int ze, int nx, int ny,
+                     int nz, RegionIndices &rgn, void *UNUSED(dummy))
+      :
 #ifndef _OPENMP
-    x(xs), y(ys), z(zs),
-    i((x*ny+y)*nz+z),    
-    icount(0),
-    icountstart(0),
-    icountend((xe-xs+1)*(ye-ys+1)*(ze-zs+1)),
-    nx(nx), ny(ny), nz(nz),
-    rgn(rgn),
-    istart((xs*ny+ys)*nz+zs), xstart(xs),   ystart(ys),   zstart(zs),
-    imin(istart), xmin(xstart), ymin(ystart), zmin(zstart),
-    iend((xe*ny+ye)*nz+ze), xend(xe),     yend(ye),     zend(ze),
-    imax(iend), xmax(xend),   ymax(yend),   zmax(zend),
+        x(xs),
+        y(ys), z(zs), i((x * ny + y) * nz + z), icount(0), icountstart(0),
+        icountend((xe - xs + 1) * (ye - ys + 1) * (ze - zs + 1)), nx(nx), ny(ny), nz(nz),
+        rgn(rgn), istart((xs * ny + ys) * nz + zs), xstart(xs), ystart(ys), zstart(zs),
+        imin(istart), xmin(xstart), ymin(ystart), zmin(zstart),
+        iend((xe * ny + ye) * nz + ze), xend(xe), yend(ye), zend(ze), imax(iend),
+        xmax(xend), ymax(yend), zmax(zend),
 #else
-    icount(0),
-    icountstart(0),
-    icountend((xe-xs+1)*(ye-ys+1)*(ze-zs+1)),
-    nx(nx), ny(ny), nz(nz),   
-    rgn(rgn),
-    imin((xs*ny+ys)*nz+zs),  xmin(xs),     ymin(ys),     zmin(zs),
-    imax((xe*ny+ye)*nz+ze),  xmax(xe),     ymax(ye),     zmax(ze),
+        icount(0),
+        icountstart(0), icountend((xe - xs + 1) * (ye - ys + 1) * (ze - zs + 1)), nx(nx),
+        ny(ny), nz(nz), rgn(rgn), imin((xs * ny + ys) * nz + zs), xmin(xs), ymin(ys),
+        zmin(zs), imax((xe * ny + ye) * nz + ze), xmax(xe), ymax(ye), zmax(ze),
 #endif
-    isEnd(true)
-  {
+        isEnd(true) {
 #ifdef _OPENMP
     omp_init(true);
 #endif
@@ -151,7 +139,7 @@ public:
   int i, icount;
   int icountstart, icountend;
   int nx, ny, nz;
-  const std::vector<int>& rgn;
+  const RegionIndices& rgn;
 
   /// Pre-increment operator. Use this rather than post-increment when possible
   SingleDataIterator& operator++() { next(); return *this; }
@@ -341,8 +329,8 @@ struct SIndexRange {
   int xstart, xend;
   int ystart, yend;
   int zstart, zend;
-  std::vector<int>& rgn;
-  
+  RegionIndices &rgn;
+
   const SingleDataIterator begin() const {
     return SingleDataIterator(xstart, xend, 
                               ystart, yend,

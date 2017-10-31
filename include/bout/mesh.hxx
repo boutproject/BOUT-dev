@@ -69,9 +69,12 @@ class Mesh;
 #include "paralleltransform.hxx" // ParallelTransform class
 
 #include "unused.hxx"
+#include "singledataiterator.hxx"
 
 #include <list>
+#include <map>
 #include <memory>
+#include <utility>
 
 /// Type used to return pointers to handles
 typedef void* comm_handle;
@@ -581,26 +584,41 @@ class Mesh {
     return getParallelTransform().fromFieldAligned(f);
   }
 
-  /*!
-   * Unique pointer to ParallelTransform object
-   */
+  /// Unique pointer to ParallelTransform object
   typedef std::unique_ptr<ParallelTransform> PTptr;
-  
-  /*!
-   * Set the parallel (y) transform for this mesh.
-   * Unique pointer used so that ParallelTransform will be deleted
-   */
+
+  /// Set the parallel (y) transform for this mesh.
+  /// Unique pointer used so that ParallelTransform will be deleted
   void setParallelTransform(PTptr pt) {
     transform = std::move(pt);
   }
-  /*!
-   * Set the parallel (y) transform from the options file
-   */
+
+  /// Set the parallel (y) transform from the options file
   void setParallelTransform();
 
-  std::map<REGION, std::vector<int>> region_map ;
-  
- protected:
+  /// Get the named region from the region_map for the data iterator
+  ///
+  /// Throws if region_name not found
+  RegionIndices &getRegion(const std::string &region_name);
+
+  /// Add a new region to the region_map for the data iterator
+  ///
+  /// Outputs an error message if region_name already exists
+  void addRegion(const std::string &region_name, RegionIndices region);
+
+  /// Create the default regions for the data iterator
+  ///
+  /// Creates RGN_{ALL,NOBNDRY,NOX,NOY}
+  void createDefaultRegions();
+
+  /// Create a vector of indices for the SingleDataIterator
+  ///
+  /// Needs start/end indices for x, y, z, and total size in y, z (not
+  /// needed for x)
+  RegionIndices makeSingleIndexRegion(int xstart, int xend, int ystart, int yend,
+                                      int zstart, int zend) const;
+
+protected:
   
   GridDataSource *source; ///< Source for grid data
   
@@ -621,10 +639,10 @@ class Mesh {
   /// Calculates the size of a message for a given x and y range
   int msg_len(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt);
   
-  // Initialise derivatives
+  /// Initialise derivatives
   void derivs_init(Options* options);
   
-  // Loop over mesh, applying a stencil in the X direction
+  /// Loop over mesh, applying a stepppncil in the X direction
   const Field2D applyXdiff(const Field2D &var, deriv_func func, CELL_LOC loc = CELL_DEFAULT, REGION region = RGN_NOX);
   const Field3D applyXdiff(const Field3D &var, deriv_func func, CELL_LOC loc = CELL_DEFAULT, REGION region = RGN_NOX);
   
@@ -636,7 +654,9 @@ class Mesh {
 private:
   /// Allocates a default Coordinates object
   Coordinates *createDefaultCoordinates();
+
+  /// Named regions for the data iterator
+  std::map<std::string, RegionIndices> region_map;
 };
 
 #endif // __MESH_H__
-

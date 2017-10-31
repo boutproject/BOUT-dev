@@ -57,6 +57,8 @@ public:
     PE_XIND = 0;
     StaggerGrids = false;
     IncIntShear = false;
+
+    createDefaultRegions();
   }
 
   comm_handle send(FieldGroup &UNUSED(g)) { return nullptr; };
