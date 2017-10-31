@@ -69,8 +69,8 @@ private:
    *        LaplaceSerialTri::solve()
    * xk1d = The 1d array of xk
    */
-  dcomplex **bk, *bk1d;
-  dcomplex **xk, *xk1d;
+  dcomplex **bk, **bk1d;
+  dcomplex **xk, **xk1d;
 
   /* Coefficents in the tridiagonal solver matrix
    * Following the notation in "Numerical recipes"
@@ -80,7 +80,8 @@ private:
    * NOTE: Do not confuse avec, bvec and cvec with the A, C, and D coefficients
    *       above
    */
-  dcomplex *avec, *bvec, *cvec;
+  //dcomplex *avec, *bvec, *cvec;
+  dcomplex **avec, **bvec, **cvec;
 };
 
 #endif // __SERIAL_TRI_H__
