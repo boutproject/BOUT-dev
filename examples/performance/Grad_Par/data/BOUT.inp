@@ -1,0 +1,30 @@
+MXG = 2      # Number of X guard cells
+MYG = 0      # No y derivatives, so no guard cells needed in y
+
+[mesh]
+
+nx = 1028    # Note: 4 guard cells
+ny = 1
+nz = 1024 
+
+dx = 1      # Grid spacing [rho_s]
+dz = 1
+
+[phiBoussinesq]
+# By default type is tri (serial) or spt (parallel)
+flags = 0
+
+[All]
+scale = 0.0 # default size of initial perturbations
+
+bndry_all = neumann # Zero-gradient on all boundaries
+
+[n]  # Density
+scale = 1.0 # size of perturbation
+
+height = 0.5
+width = 0.15
+
+function = 1 + height * exp(-((x-0.25)/width)^2 - ((z/(2*pi) - 0.5)/width)^2)
+
+
