@@ -7,7 +7,7 @@
 
 #include "bout/mesh.hxx"
 #include "field3d.hxx"
-#include "singledataiterator.hxx"
+#include "bout/singledataiterator.hxx"
 #include "unused.hxx"
 
 #include <iostream>
