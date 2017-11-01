@@ -626,6 +626,9 @@ protected:
 
   Options *options; ///< Mesh options section
   
+  /// Named regions for the data iterator
+  std::map<std::string, RegionIndices> region_map;
+
   /*!
    * Return the parallel transform, setting it if need be
    */
@@ -654,9 +657,6 @@ protected:
 private:
   /// Allocates a default Coordinates object
   Coordinates *createDefaultCoordinates();
-
-  /// Named regions for the data iterator
-  std::map<std::string, RegionIndices> region_map;
 };
 
 #endif // __MESH_H__

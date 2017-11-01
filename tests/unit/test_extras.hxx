@@ -7,7 +7,12 @@
 
 #include "bout/mesh.hxx"
 #include "field3d.hxx"
+#include "singledataiterator.hxx"
 #include "unused.hxx"
+
+#include <iostream>
+#include <map>
+#include <string>
 
 const BoutReal BoutRealTolerance = 1e-15;
 
@@ -57,9 +62,10 @@ public:
     PE_XIND = 0;
     StaggerGrids = false;
     IncIntShear = false;
-
-    createDefaultRegions();
   }
+
+  /// Helper function for tests
+  std::map<std::string, RegionIndices> getRegionMap() const { return region_map; }
 
   comm_handle send(FieldGroup &UNUSED(g)) { return nullptr; };
   int wait(comm_handle UNUSED(handle)) { return 0; }
