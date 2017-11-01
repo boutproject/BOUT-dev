@@ -100,9 +100,9 @@ TEST_F(Field2DTest, GetGridSizes) {
 }
 
 TEST_F(Field2DTest, CreateOnGivenMesh) {
-  int test_nx = 2;
-  int test_ny = 3;
-  int test_nz = 5;
+  int test_nx = 4;
+  int test_ny = 8;
+  int test_nz = 9;
 
   FakeMesh *fieldmesh = new FakeMesh(test_nx, test_ny, test_nz);
 
