@@ -169,13 +169,6 @@ class Field2D : public Field, public FieldData {
     return operator()(i.x, i.y);
   }
 
-  BoutReal& operator()(const SIndices &i) {
-    return data[i.i/i.nz];
-  }
-  const BoutReal& operator()(const SIndices &i) const {
-    return data[i.i/i.nz];
-  }
-
   /*!
    * Access to the underlying data array. 
    * 
@@ -222,22 +215,24 @@ class Field2D : public Field, public FieldData {
     return operator()(jx, jy);
   }
 
-  BoutReal& operator()(const SingleDataIterator &i) {
-      return data[i.icount/i.nz];
+  BoutReal& operator()(const SIndices &i) {
+    return data[i.i2d()];
   }
 
-  const BoutReal& operator()(const SingleDataIterator &i) const {
-      return data[i.rgn[i.icount]/i.nz];
-  }
+  const BoutReal &operator()(const SIndices &i) const { return data[i.i2d()]; }
 
-  const BoutReal& operator[](const SingleDataIterator &i) const {
-      return data[i.rgn[i.icount]/i.nz];
-  }
+  const BoutReal &operator[](const SIndices &i) const { return operator()(i); }
 
-  const BoutReal& operator[](const SingleDataIterator &i) {
-      return data[i.i&(nz-1)];
-  }
-  
+  const BoutReal &operator[](const SIndices &i) { return operator()(i); }
+
+  BoutReal &operator()(const SingleDataIterator &i) { return operator()(*i); }
+
+  const BoutReal &operator()(const SingleDataIterator &i) const { return operator()(*i); }
+
+  const BoutReal &operator[](const SingleDataIterator &i) const { return operator()(i); }
+
+  const BoutReal &operator[](const SingleDataIterator &i) { return operator()(i); }
+
   Field2D & operator+=(const Field2D &rhs); ///< In-place addition. Copy-on-write used if data is shared
   Field2D & operator+=(BoutReal rhs);       ///< In-place addition. Copy-on-write used if data is shared
   Field2D & operator-=(const Field2D &rhs); ///< In-place subtraction. Copy-on-write used if data is shared

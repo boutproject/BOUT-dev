@@ -828,94 +828,97 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
     // Staggered differencing
 
     CELL_LOC location = var.getLocation();
-    
-    if (mesh->xstart > 1) {
-      // More than one guard cell, so set pp and mm values
-      // This allows higher-order methods to be used
-#pragma omp parallel
-{
-      stencil s;
-      for(SingleDataIterator i = result.sdi_region(region); !i.done(); ++i){
-        s.c = var(i);
-        s.p = var(i.xp());
-        s.m = var(i.xm());
-        s.pp = var(i.offset(2,0,0));
-        s.mm = var(i.offset(-2,0,0));
-        
-        if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
-          // Producing a stencil centred around a lower X value
-          s.pp = s.p;
-          s.p  = s.c;
-        } else if (location == CELL_XLOW) {
-          // Stencil centred around a cell centre
-          s.mm = s.m;
-          s.m  = s.c;
-        }
 
-        result(i) = func(s);
-      }
-}
-    } else {
-      // Only one guard cell, so no pp or mm values
+    if (mesh->xstart > 1) {
+// More than one guard cell, so set pp and mm values
+// This allows higher-order methods to be used
 #pragma omp parallel
-{
-      stencil s;
-      s.pp = nan("");
-      s.mm = nan("");
-      for(SingleDataIterator i = result.sdi_region(region); !i.done(); ++i){
-        s.c = var(i);
-        s.p = var(i.xp());
-        s.m = var(i.xm());
-        
-        if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
-          // Producing a stencil centred around a lower X value
-          s.pp = s.p;
-          s.p  = s.c;
-        } else if (location == CELL_XLOW) {
-          // Stencil centred around a cell centre
-          s.mm = s.m;
-          s.m  = s.c;
+      {
+        stencil s;
+        auto end = result.sdi_region(region).end();
+        for (auto i = result.sdi_region(region).begin(); i != end; ++i) {
+          s.c = var(*i);
+          s.p = var(i->xp());
+          s.m = var(i->xm());
+          s.pp = var(i->offset(2, 0, 0));
+          s.mm = var(i->offset(-2, 0, 0));
+
+          if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
+            // Producing a stencil centred around a lower X value
+            s.pp = s.p;
+            s.p = s.c;
+          } else if (location == CELL_XLOW) {
+            // Stencil centred around a cell centre
+            s.mm = s.m;
+            s.m = s.c;
+          }
+
+          result(*i) = func(s);
         }
-        
-        result(i) = func(s);
       }
-}
+    } else {
+// Only one guard cell, so no pp or mm values
+#pragma omp parallel
+      {
+        stencil s;
+        s.pp = nan("");
+        s.mm = nan("");
+        auto end = result.sdi_region(region).end();
+        for (auto i = result.sdi_region(region).begin(); i != end; ++i) {
+          s.c = var(*i);
+          s.p = var(i->xp());
+          s.m = var(i->xm());
+
+          if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
+            // Producing a stencil centred around a lower X value
+            s.pp = s.p;
+            s.p = s.c;
+          } else if (location == CELL_XLOW) {
+            // Stencil centred around a cell centre
+            s.mm = s.m;
+            s.m = s.c;
+          }
+
+          result(*i) = func(s);
+        }
+      }
     }
-    
   } else {
     // Non-staggered differencing
-    
+
     if (mesh->xstart > 1) {
-      // More than one guard cell, so set pp and mm values
-      // This allows higher-order methods to be used
+// More than one guard cell, so set pp and mm values
+// This allows higher-order methods to be used
 #pragma omp parallel
-{
-      stencil s;
-      for(SingleDataIterator i = result.sdi_region(region); !i.done(); ++i){
-        s.c = var(i);
-        s.p = var(i.xp());
-        s.m = var(i.xm());
-        s.pp = var(i.offset(2,0,0));
-        s.mm = var(i.offset(-2,0,0));
-        
-        result(i) = func(s);
+      {
+        stencil s;
+        auto end = result.sdi_region(region).end();
+        for (auto i = result.sdi_region(region).begin(); i != end; ++i) {
+          s.c = var(*i);
+          s.p = var(i->xp());
+          s.m = var(i->xm());
+          s.pp = var(i->offset(2, 0, 0));
+          s.mm = var(i->offset(-2, 0, 0));
+
+          result(*i) = func(s);
+        }
       }
-}
     } else {
-      // Only one guard cell, so no pp or mm values
+// Only one guard cell, so no pp or mm values
 #pragma omp parallel
-{
-      stencil s;
-      s.pp = nan("");
-      s.mm = nan("");
-      for(SingleDataIterator i = result.sdi_region(region); !i.done(); ++i){
-        s.c = var(i);
-        s.p = var(i.xp());
-        s.m = var(i.xm());
-        
-        result(i) = func(s);
+      {
+        stencil s;
+        s.pp = nan("");
+        s.mm = nan("");
+        auto end = result.sdi_region(region).end();
+        for (auto i = result.sdi_region(region).begin(); i != end; ++i) {
+          s.c = var(*i);
+          s.p = var(i->xp());
+          s.m = var(i->xm());
+
+          result(*i) = func(s);
+        }
       }
-}
     }
   }
 
@@ -1006,45 +1009,47 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
       CELL_LOC location = var.getLocation();
       
 #pragma omp parallel
-{
-      stencil s;
-      s.pp = nan("");
-      s.mm = nan("");
-      for(SingleDataIterator i = result.sdi_region(region); !i.done(); ++i){
-        // Set stencils
-        s.c = var(i);
-        s.p = var.yup()(i.yp());
-        s.m = var.ydown()(i.ym());
-        
-        if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
-          // Producing a stencil centred around a lower Y value
-          s.pp = s.p;
-          s.p  = s.c;
-        } else if(location == CELL_YLOW) {
-          // Stencil centred around a cell centre
-          s.mm = s.m;
-          s.m  = s.c;
-        }
+      {
+        stencil s;
+        s.pp = nan("");
+        s.mm = nan("");
+        auto end = result.sdi_region(region).end();
+        for (auto i = result.sdi_region(region).begin(); i != end; ++i) {
+          // Set stencils
+          s.c = var(*i);
+          s.p = var.yup()(i->yp());
+          s.m = var.ydown()(i->ym());
 
-        result(i) = func(s);
+          if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
+            // Producing a stencil centred around a lower Y value
+            s.pp = s.p;
+            s.p = s.c;
+          } else if (location == CELL_YLOW) {
+            // Stencil centred around a cell centre
+            s.mm = s.m;
+            s.m = s.c;
+          }
+
+          result(*i) = func(s);
+        }
       }
-}
     } else {
-      // Non-staggered
+// Non-staggered
 #pragma omp parallel
-{
-      stencil s;
-      s.pp = nan("");
-      s.mm = nan("");
-      for(SingleDataIterator i = result.sdi_region(region); !i.done(); ++i){
-        // Set stencils
-        s.c = var(i);
-        s.p = var.yup()(i.yp());
-        s.m = var.ydown()(i.ym());
-        
-        result(i) = func(s);
+      {
+        stencil s;
+        s.pp = nan("");
+        s.mm = nan("");
+        auto end = result.sdi_region(region).end();
+        for (auto i = result.sdi_region(region).begin(); i != end; ++i) {
+          // Set stencils
+          s.c = var(*i);
+          s.p = var.yup()(i->yp());
+          s.m = var.ydown()(i->ym());
+
+          result(*i) = func(s);
+        }
       }
-}
     }
   } else {
     // var has no yup/ydown fields, so we need to shift into field-aligned coordinates
@@ -1056,103 +1061,106 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
       
       // Cell location of the input field
       CELL_LOC location = var.getLocation();
-      
+
       if (mesh->ystart > 1) {
-        // More than one guard cell, so set pp and mm values
-        // This allows higher-order methods to be used
+// More than one guard cell, so set pp and mm values
+// This allows higher-order methods to be used
 #pragma omp parallel
-	{
-        stencil s;
-        for(SingleDataIterator i = result.sdi_region(region); !i.done(); ++i){
-          // Set stencils
-          s.c = var_fa(i);
-          s.p = var_fa(i.yp());
-          s.m = var_fa(i.ym());
-          s.pp = var_fa(i.offset(0,2,0));
-          s.mm = var_fa(i.offset(0,-2,0));
-          
-          if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
-            // Producing a stencil centred around a lower Y value
-            s.pp = s.p;
-            s.p  = s.c;
-          } else if(location == CELL_YLOW) {
-            // Stencil centred around a cell centre
-            s.mm = s.m;
-            s.m  = s.c;
+        {
+          stencil s;
+          auto end = result.sdi_region(region).end();
+          for (auto i = result.sdi_region(region).begin(); i != end; ++i) {
+            // Set stencils
+            s.c = var_fa(*i);
+            s.p = var_fa(i->yp());
+            s.m = var_fa(i->ym());
+            s.pp = var_fa(i->offset(0, 2, 0));
+            s.mm = var_fa(i->offset(0, -2, 0));
+
+            if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
+              // Producing a stencil centred around a lower Y value
+              s.pp = s.p;
+              s.p = s.c;
+            } else if (location == CELL_YLOW) {
+              // Stencil centred around a cell centre
+              s.mm = s.m;
+              s.m = s.c;
+            }
+
+            result(*i) = func(s);
           }
-          
-          result(i) = func(s);
         }
-	}
       } else {
-        // Only one guard cell, so no pp or mm values
+// Only one guard cell, so no pp or mm values
 #pragma omp parallel
-	{
-        stencil s;
-	s.pp = nan("");
-	s.mm = nan("");
-        for(SingleDataIterator i = result.sdi_region(region); !i.done(); ++i){
-          // Set stencils
-          s.c = var_fa(i);
-          s.p = var_fa(i.yp());
-          s.m = var_fa(i.ym());
-          
-          if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
-            // Producing a stencil centred around a lower Y value
-            s.pp = s.p;
-            s.p  = s.c;
-          } else if(location == CELL_YLOW) {
-            // Stencil centred around a cell centre
-            s.mm = s.m;
-            s.m  = s.c;
+        {
+          stencil s;
+          s.pp = nan("");
+          s.mm = nan("");
+          auto end = result.sdi_region(region).end();
+          for (auto i = result.sdi_region(region).begin(); i != end; ++i) {
+            // Set stencils
+            s.c = var_fa(*i);
+            s.p = var_fa(i->yp());
+            s.m = var_fa(i->ym());
+
+            if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
+              // Producing a stencil centred around a lower Y value
+              s.pp = s.p;
+              s.p = s.c;
+            } else if (location == CELL_YLOW) {
+              // Stencil centred around a cell centre
+              s.mm = s.m;
+              s.m = s.c;
+            }
+
+            result(*i) = func(s);
           }
-          
-          result(i) = func(s);
         }
-	}
       }
-      
+
     } else {
       // Non-staggered differencing
-      
+
       if (mesh->ystart > 1) {
-        // More than one guard cell, so set pp and mm values
-        // This allows higher-order methods to be used
+// More than one guard cell, so set pp and mm values
+// This allows higher-order methods to be used
 #pragma omp parallel
-	{
-        stencil s;
-        for(SingleDataIterator i = result.sdi_region(region); !i.done(); ++i){
-          // Set stencils
-          s.c = var_fa(i);
-          s.p = var_fa(i.yp());
-          s.m = var_fa(i.ym());
-          s.pp = var_fa(i.ypp());
-          s.mm = var_fa(i.ymm());
-          
-          result(i) = func(s);
-	}
+        {
+          stencil s;
+          auto end = result.sdi_region(region).end();
+          for (auto i = result.sdi_region(region).begin(); i != end; ++i) {
+            // Set stencils
+            s.c = var_fa(*i);
+            s.p = var_fa(i->yp());
+            s.m = var_fa(i->ym());
+            s.pp = var_fa(i->ypp());
+            s.mm = var_fa(i->ymm());
+
+            result(*i) = func(s);
+          }
         }
       } else {
-        // Only one guard cell, so no pp or mm values
+// Only one guard cell, so no pp or mm values
 #pragma omp parallel
-	{
-        stencil s;
-	s.pp = nan("");
-	s.mm = nan("");
-        for(SingleDataIterator i = result.sdi_region(RGN_NOBNDRY); !i.done(); ++i){
-          // Set stencils
-          s.c = var_fa(i);
-          s.p = var_fa(i.yp());
-          s.m = var_fa(i.ym());
-          
-          result(i) = func(s);
-	}
+        {
+          stencil s;
+          s.pp = nan("");
+          s.mm = nan("");
+          auto end = result.sdi_region(RGN_NOBNDRY).end();
+          for (auto i = result.sdi_region(RGN_NOBNDRY).begin(); i != end; ++i) {
+            // Set stencils
+            s.c = var_fa(*i);
+            s.p = var_fa(i->yp());
+            s.m = var_fa(i->ym());
+
+            result(*i) = func(s);
+          }
         }
       }
     }
-    
+
     // Shift result back
-    
     result = mesh->fromFieldAligned(result);
   }
 #if CHECK > 0
@@ -1184,18 +1192,19 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   ASSERT1(var.isAllocated());
   
 #pragma omp parallel
-{
-  stencil s;
-  for(SingleDataIterator i = result.sdi_region(region); !i.done(); ++i){
-    s.c = var(i);
-    s.p = var(i.zp());
-    s.m = var(i.zm());
-    s.pp = var(i.offset(0,0,2));
-    s.mm = var(i.offset(0,0,-2));
-    
-    result(i) = func(s);
+  {
+    stencil s;
+    auto end = result.sdi_region(region).end();
+    for (auto i = result.sdi_region(region).begin(); i != end; ++i) {
+      s.c = var(*i);
+      s.p = var(i->zp());
+      s.m = var(i->zm());
+      s.pp = var(i->offset(0, 0, 2));
+      s.mm = var(i->offset(0, 0, -2));
+
+      result(*i) = func(s);
+    }
   }
-}
 
   return result;
 }

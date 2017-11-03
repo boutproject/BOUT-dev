@@ -292,44 +292,44 @@ class Field3D : public Field, public FieldData {
    */
   const DataIterator begin() const;
   const DataIterator end() const;
-  BoutReal& operator[](const SingleDataIterator &i) {
-    return data[i.rgn[i.icount]];
-  }
-  BoutReal& operator()(const SingleDataIterator &i) {
-    return data[i.rgn[i.icount]];
-  }
+  BoutReal &operator[](const SingleDataIterator &i) { return data[*(i.region_iter)]; }
+  BoutReal &operator()(const SingleDataIterator &i) { return data[*(i.region_iter)]; }
+
+  BoutReal &operator()(const SIndices &i) { return data[i.i]; }
+
+  const BoutReal &operator()(const SIndices &i) const { return data[i.i]; }
+
+  const BoutReal &operator[](const SIndices &i) const { return operator()(i); }
+
+  const BoutReal &operator[](const SIndices &i) { return operator()(i); }
 
   /*!
    * Const indexing by single index
    *
    * @param[in] i  The single index
    */
-  const BoutReal& operator[](const SingleDataIterator &i) const {
-    return data[i.i];
-  }
-  const BoutReal& operator()(const SingleDataIterator &i) const {
-    return data[i.rgn[i.icount]];
-  }
+  const BoutReal &operator[](const SingleDataIterator &i) const { return operator()(*i); }
+  const BoutReal &operator()(const SingleDataIterator &i) const { return operator()(*i); }
 
   /*!
    * Returns a range of indices which can be iterated over
    * Uses the REGION flags in bout_types.hxx
-   * 
+   *
    * Example
    * -------
-   * 
+   *
    * This loops over the interior points, not the boundary
    * and inside the loop the index is used to calculate the difference
    * between the point one index up in x (i.xp()) and one index down
    * in x (i.xm()), putting the result into a different field 'g'
-   * 
+   *
    * for(auto i : f.region(RGN_NOBNDRY)) {
    *   g[i] = f[i.xp()] - f[i.xm()];
    * }
-   * 
+   *
    */
   const IndexRange region(REGION rgn) const;
-  const SingleDataIterator sdi_region(REGION rgn) ;
+  SingleDataIterator sdi_region(REGION rgn) const;
 
   /*!
    * Direct data access using DataIterator object.
@@ -347,12 +347,6 @@ class Field3D : public Field, public FieldData {
   }
   const BoutReal& operator[](const Indices &i) const override {
     return operator()(i.x, i.y, i.z);
-  }
-  BoutReal& operator()(const SIndices &i) {
-    return data[i.i];
-  }
-  const BoutReal& operator()(const SIndices &i) const {
-    return data[i.i];
   }
   
   BoutReal& operator[](bindex &bx) {

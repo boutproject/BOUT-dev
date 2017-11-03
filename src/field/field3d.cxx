@@ -294,27 +294,23 @@ const IndexRange Field3D::region(REGION rgn) const {
   }
   };
 }
-const SingleDataIterator Field3D::sdi_region(REGION rgn) {
+
+const SIndexRange Field3D::sdi_region(REGION rgn) const {
   switch (rgn) {
   case RGN_ALL: {
-    return SingleDataIterator(0, nx - 1, 0, ny - 1, 0, nz - 1, nx, ny, nz,
-                              fieldmesh->getRegion("RGN_ALL"));
+    return SIndexRange(nx, ny, nz, fieldmesh->getRegion("RGN_ALL"));
     break;
   }
   case RGN_NOBNDRY: {
-    return SingleDataIterator(fieldmesh->xstart, fieldmesh->xend, fieldmesh->ystart,
-                              fieldmesh->yend, 0, nz - 1, nx, ny, nz,
-                              fieldmesh->getRegion("RGN_NOBNDRY"));
+    return SIndexRange(nx, ny, nz, fieldmesh->getRegion("RGN_NOBNDRY"));
     break;
   }
   case RGN_NOX: {
-    return SingleDataIterator(fieldmesh->xstart, fieldmesh->xend, 0, ny - 1, 0, nz - 1,
-                              nx, ny, nz, fieldmesh->getRegion("RGN_NOX"));
+    return SIndexRange(nx, ny, nz, fieldmesh->getRegion("RGN_NOX"));
     break;
   }
   case RGN_NOY: {
-    return SingleDataIterator(0, nx - 1, fieldmesh->ystart, fieldmesh->yend, 0, nz - 1,
-                              nx, ny, nz, fieldmesh->getRegion("RGN_NOY"));
+    return SIndexRange(nx, ny, nz, fieldmesh->getRegion("RGN_NOY"));
     break;
   }
   default: {
@@ -862,8 +858,9 @@ F3D_OP_FPERP(*);
     result.allocate();                                              \
     _Pragma("omp parallel")                                         \
     {                                                               \
-    for(SingleDataIterator i = result.sdi_region(RGN_ALL); !i.done(); ++i){ \
-      result(i) = lhs(i) op rhs(i);                                 \
+      auto end = result.sdi_region(RGN_ALL).end();                        \
+      for(auto i = result.sdi_region(RGN_ALL).begin(); i != end; ++i){ \
+      result(*i) = lhs(*i) op rhs(*i);                                 \
     }                                                               \
     }                                                               \
     result.setLocation( lhs.getLocation() );                        \
@@ -886,8 +883,9 @@ F3D_OP_FIELD(/, Field2D);   // Field3D / Field2D
     result.allocate();                                          \
     _Pragma("omp parallel")                                     \
     {                                                           \
-      for(SingleDataIterator i = result.sdi_region(RGN_ALL); !i.done(); ++i){  \
-        result(i) = lhs(i) op rhs;                              \
+      auto end = result.sdi_region(RGN_ALL).end();                        \
+      for(auto i = result.sdi_region(RGN_ALL).begin(); i != end; ++i){ \
+        result(*i) = lhs(*i) op rhs;                              \
       }                                                         \
     }                                                           \
     result.setLocation( lhs.getLocation() );                    \
