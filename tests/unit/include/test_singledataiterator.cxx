@@ -35,9 +35,10 @@ TEST(SingleDataIterator, PostfixIncrement) {
   SingleDataIterator iter{2, 2, 2, region};
 
   iter.begin();
-  iter++;
+  auto foo = iter++;
 
   EXPECT_EQ(*(iter.region_iter), 1);
+  EXPECT_EQ(*(foo.region_iter), 0);
 }
 
 TEST(SingleDataIterator, PrefixDecrement) {
@@ -55,9 +56,10 @@ TEST(SingleDataIterator, PostfixDecrement) {
   SingleDataIterator iter{2, 2, 2, region};
 
   iter.end();
-  iter--;
+  auto foo = iter--;
 
   EXPECT_EQ(*(iter.region_iter), 8);
+  EXPECT_EQ(foo.region_iter, region.end());
 }
 
 TEST(SingleDataIterator, NotEquals) {
@@ -146,23 +148,29 @@ TEST(SingleDataIterator, MoreThanOrEqualTo) {
 TEST(SingleDataIterator, Iteration) {
   RegionIndices region{0, 1, 2, 3, 4, 5, 6, 7, 8};
   SingleDataIterator iter{2, 2, 2, region};
+  RegionIndices region2;
 
   int count = 0;
   for (auto foo = iter.begin(); foo != iter.end(); ++foo) {
     ++count;
+    region2.push_back(region[(*foo).i]);
   }
 
   EXPECT_EQ(count, region.size());
+  EXPECT_EQ(region2, region);
 }
 
 TEST(SingleDataIterator, RangeBasedForLoop) {
   RegionIndices region{0, 1, 2, 3, 4, 5, 6, 7, 8};
   SingleDataIterator iter{2, 2, 2, region};
+  RegionIndices region2;
 
   int count = 0;
-  for (auto &UNUSED(foo) : iter) {
+  for (const auto &foo : iter) {
     ++count;
+    region2.push_back(region[foo.i]);
   }
 
   EXPECT_EQ(count, region.size());
+  EXPECT_EQ(region2, region);
 }
