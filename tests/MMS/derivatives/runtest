@@ -39,8 +39,8 @@ if s:
 
 # List of input directories
 inputs = [
-#    ("X", ["mesh:nx"]),
-#    ("Y",["mesh:ny"]),
+    ("X", ["mesh:nx"]),
+    ("Y",["mesh:ny"]),
     ("Z",["MZ"]),
     ]
 
@@ -78,7 +78,7 @@ for i in [1,2]:
 for i in [1,2]:
     t_desc.append("L->L d_%d"%i)
 
-doPlot = 1 # 0, 1 or 2
+doPlot = 0 # 0, 1 or 2
 plotError=True
 if doPlot == 0:
     nxlist=nxlist[-2:] # just need behaviour in limit
@@ -99,7 +99,7 @@ for dir,sizes in inputs:
                 args += " diff_"+dir+":function="+diff[0].replace('x',dir)
                 args += " diff2_"+dir+":function="+diff[1].replace('x',dir)
                 args += " fac="+facs[dir]
-                #args += " mesh:dd%s:first=C%d mesh:dd%s:second=C%d mesh:dd%s:secondStag=C2"%(dir,setOrder,dir,setOrder,dir)
+                args += " mesh:dd%s:first=C%d mesh:dd%s:second=C%d mesh:dd%s:secondStag=C2"%(dir,setOrder,dir,setOrder,dir)
                 args = args.replace('(','\(').replace(')','\)')
 
                 #print("  Running with " + args)
@@ -118,7 +118,8 @@ for dir,sizes in inputs:
                 f.close()
 
                 if s:
-                    print("Run failed!")
+                    print("Run failed!\nPrinting log:\n\n")
+                    print(out)
                     exit(2)
                 # Collect data
                 tr=[0,tmax-1]
@@ -188,12 +189,12 @@ for dir,sizes in inputs:
             for t in range(tmax):
                 order = log(error_2[-1,t] / error_2[-2,t]) / log(dx[-1] / dx[-2])
 
-                if setOrder-.5 > order: # < setOrder+.5:
+                if not setOrder-.5 < order < setOrder+.5:
                     if t == 3 or t == 5:
                         print("Convergence order = %f" % (order))
                         print("C4 for staggered 2nd diff not implemented")
                     else:
-                        print("Convergence order = %f" % (order))
+                        print("Convergence order = %f (expected %.1f)" % (order,setOrder))
                         print(args, " - t=",t_desc[t])
                         print("=> FAILED\n")
                         success = False

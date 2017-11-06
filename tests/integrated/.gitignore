@@ -19,3 +19,6 @@ test-smooth/test_smooth
 test-subdir/subdirs
 test-vec/log.*
 test-vec/testVec
+test
+test-fci-slab/fci_slab
+test-stopCheck/test_stopCheck

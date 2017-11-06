@@ -12,7 +12,7 @@ zmax=lz/2/pi
 Lx=mesh:lx
 
 [MESH]
-#type=aiolos
+type=aiolos
 Ly=2*pi
 dy=Ly/ny
 Lx=1
@@ -27,15 +27,23 @@ ixseps2		= -1
 
 StaggerGrids=true
 
-[MESH:diff]
-#all=c4
-#Second=C4
+[MESH:ddx]
+all=c4
+Second=C4
+SecondStag=C2
+FluxStag=U1
+[MESH:ddy]
+first=c4
+Second=C4
 SecondStag=C2
 FluxStag=U1
 
-[mesh:ddz]
-first=FFT
-second=FFT
+[MESH:ddz]
+first=c4
+Second=C4
+SecondStag=C2
+FluxStag=U1
+
 
 [All]
 bndry_all = none

@@ -79,11 +79,16 @@ for dir,sizes in inputs:
     print("Running test in '%s'" % (dir))
     for inloc in range(1,5):
       for outloc in range(1,5):
+        expOrder=setOrder
         if inloc == outloc:
             continue
+            expOrder=float("inf")
+            pass
         if not shifts[dir] in [inloc,outloc]:
             #print("Skipping %d -> %d in %s MMS"%(inloc,outloc,dir))
             continue
+            expOrder=float("inf")
+            pass
         for fun,diff in funcs_periodic.iteritems():
             error_2   = zeros((len(nxlist),tmax))  # The L2 error (RMS)
             error_inf = zeros((len(nxlist),tmax))  # The maximum error
@@ -149,11 +154,11 @@ for dir,sizes in inputs:
                             else:
                                 fuuu(We, shouldn,'t be here ...')
                             #plot error:
-                            #plt.plot( E_N[i,:ix,:iy,:iz].flatten(), '-o', label=r'$e_%d$'%i)
+                            plt.plot( E_N[i,:ix,:iy,:iz].flatten(), '-o', label=r'$e_%d$'%i)
                             #plot result:
                             plt.plot( N  [i,:ix,:iy,:iz].flatten(), '-o', label=r'$d_%d$'%i)
                             #plot expcected result:
-                            #plt.plot( N_ [i,:ix,:iy,:iz].flatten(), '-o', label=r'$a_%d$'%i)
+                            plt.plot( N_ [i,:ix,:iy,:iz].flatten(), '-o', label=r'$a_%d$'%i)
                         plt.legend(loc="upper left")
                         plt.grid()
 
@@ -161,11 +166,17 @@ for dir,sizes in inputs:
                         plt.ylabel("Error/Messurement")
 
                         mkdir_p(join("data",dir,fun))
-                        plt.savefig(join("data",dir,fun,"%d_%d_"%(inloc,outloc)+str(t)+"_norm.pdf"))
+                        outf=join("data",dir,fun,"%d_%d_"%(inloc,outloc)+str(t)+"_%d.pdf"%nx)
+                        print("save to %s"%outf)
+                        plt.savefig(outf)
 
                         #plt.show()
                         plt.close()
+                    except KeyboardInterrupt:
+                        raise
                     except:
+                        print("plotting failed")
+                        raise
                         pass
 
             # Calculate grid spacing
@@ -176,11 +187,14 @@ for dir,sizes in inputs:
             #print(error_2)
             # Calculate convergence order
             for t in range(tmax):
-                order = log(error_2[-1,t] / error_2[-2,t]) / log(dx[-1] / dx[-2])
+                if error_2[-2,t] ==0:
+                    order=float("inf")
+                else:
+                    order = log(error_2[-1,t] / error_2[-2,t]) / log(dx[-1] / dx[-2])
                 
-                if order < setOrder-.5:
+                if (not expOrder-.5 < order < expOrder+.5) and (not expOrder == order):
                     failed_list.append(args)
-                    print("Convergence order = %f - FAILED" % (order))
+                    print("Convergence order = %f - FAILED (expected %.1f)" % (order,expOrder))
                     #print("=> FAILED\n")
                     success = False
                 else:
@@ -194,8 +208,8 @@ for dir,sizes in inputs:
                     #print(numpy.shape(dx),numpy.shape(error_2))
                     plt.plot(dx, error_2[:,t], '-o', label=r'$l^2$')
                     plt.plot(dx, error_inf[:,t], '-x', label=r'$l^\infty$')
-
-                    plt.plot(dx, error_2[-1,t]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
+                    if order < 1e3:
+                        plt.plot(dx, error_2[-1,t]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
 
                     plt.legend(loc="upper left")
                     plt.grid()

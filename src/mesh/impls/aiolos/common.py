@@ -17,45 +17,44 @@ for field in fields:
 
 off_diff=dict()
 for stag in ['on','off','norm']:
-    off_diff[stag]=dict()
-    curr=dict()
-    if stag=='off':
-        curr={'ppp':'ppp',
-              'pp' :'pp',
-              'p'  :'p',
-              'm'  :'c',
-              'mm' :'m',
-              'mmm':'mm'}
-    elif stag=='on':
-        curr={'ppp':'pp',
-              'pp' :'p',
-              'p'  :'c',
-              'm'  :'m',
-              'mm' :'mm',
-              'mmm':'mmm'}
-    elif stag=='norm':
-        curr={'ppp':'ppp',
-              'pp' :'pp',
-              'p'  :'p',
-              'c'  :'c',
-              'm'  :'m',
-              'mm' :'mm',
-              'mmm':'mmm'}
-    for d in curr:
-        curr[d]=curr[d]+'()'
-    if curr[d]=='mmm()':
-        curr[d]='m(3)'
-    if curr[d]=='ppp()':
-        curr[d]='p(3)'
-    if stag == 'on':
-        for i in range(1,6):
-            curr['m%d'%i]='m(%d)'%i
-            curr['p%d'%i]='p(%d)'%(i-1)
-    if stag == 'off':
-        for i in range(1,6):
-            curr['m%d'%i]='m(%d)'%(i-1)
-            curr['p%d'%i]='p(%d)'%(i)
-    off_diff[stag]=curr
+        curr=dict()
+        if stag=='off':
+            curr={'ppp':'ppp',
+                  'pp' :'pp',
+                  'p'  :'p',
+                  'm'  :'c',
+                  'mm' :'m',
+                  'mmm':'mm'}
+        elif stag=='on':
+            curr={'ppp':'pp',
+                  'pp' :'p',
+                  'p'  :'c',
+                  'm'  :'m',
+                  'mm' :'mm',
+                  'mmm':'mmm'}
+        elif stag=='norm':
+            curr={'ppp':'ppp',
+                  'pp' :'pp',
+                  'p'  :'p',
+                  'c'  :'c',
+                  'm'  :'m',
+                  'mm' :'mm',
+                  'mmm':'mmm'}
+        for d in curr:
+            curr[d]=curr[d]+'()'
+            if curr[d]=='mmm()':
+                curr[d]='m(3)'
+                if curr[d]=='ppp()':
+                    curr[d]='p(3)'
+        if stag == 'on':
+            for i in range(1,6):
+                curr['m%d'%i]='m(%d)'%i
+                curr['p%d'%i]='p(%d)'%(i-1)
+        if stag == 'off':
+            for i in range(1,6):
+                curr['m%d'%i]='m(%d)'%(i-1)
+                curr['p%d'%i]='p(%d)'%(i)
+        off_diff[stag]=curr
 
 diff2={'mm()': -2,
        'm()' : -1,

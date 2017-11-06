@@ -13,3 +13,4 @@ wave-1d/data/BOUT.dmp.*.nc
 wave-1d/data/BOUT.restart.*.nc
 wave-1d/wave
 wave-1d/wave_norm.pdf
+BOUT.settings
