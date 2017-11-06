@@ -46,38 +46,38 @@ struct SIndices {
    */
 
   /// The index one point +1 in x
-  const SIndices xp() const { return {i + ny * nz, nx, ny, nz}; }
-  const SIndices xpzp() const {
+  SIndices xp() const { return {i + ny * nz, nx, ny, nz}; }
+  SIndices xpzp() const {
     return {(i + 1) % nz == 0 ? i + ny * nz - nz + 1 : i + ny * nz + 1, nx, ny, nz};
   }
-  const SIndices xpzm() const {
+  SIndices xpzm() const {
     return {i % nz == 0 ? i + ny * nz + nz - 1 : i + ny * nz - 1, nx, ny, nz};
   }
   /// The index one point -1 in x
-  const SIndices xm() const { return {i - ny * nz, nx, ny, nz}; }
-  const SIndices xmzp() const {
+  SIndices xm() const { return {i - ny * nz, nx, ny, nz}; }
+  SIndices xmzp() const {
     return {(i + 1) % nz == 0 ? i - ny * nz - nz + 1 : i - ny * nz + 1, nx, ny, nz};
   }
-  const SIndices xmzm() const {
+  SIndices xmzm() const {
     return {i % nz == 0 ? i - ny * nz + nz - 1 : i - ny * nz - 1, nx, ny, nz};
   }
   /// The index one point +1 in y
-  const SIndices yp() const { return {i + nz, nx, ny, nz}; }
-  const SIndices ypp() const { return {i + 2 * nz, nx, ny, nz}; }
+  SIndices yp() const { return {i + nz, nx, ny, nz}; }
+  SIndices ypp() const { return {i + 2 * nz, nx, ny, nz}; }
   /// The index one point -1 in y
-  const SIndices ym() const { return {i - nz, nx, ny, nz}; }
-  const SIndices ymm() const { return {i - 2 * nz, nx, ny, nz}; }
+  SIndices ym() const { return {i - nz, nx, ny, nz}; }
+  SIndices ymm() const { return {i - 2 * nz, nx, ny, nz}; }
   /// The index one point +1 in z. Wraps around zend to zstart
-  const SIndices zp() const {
+  SIndices zp() const {
     return {(i + 1) % nz == 0 ? i - nz + 1 : i + 1, nx, ny, nz};
   }
   /// The index one point -1 in z. Wraps around zstart to zend
-  const SIndices zm() const { return {i % nz == 0 ? i + nz - 1 : i - 1, nx, ny, nz}; }
+  SIndices zm() const { return {i % nz == 0 ? i + nz - 1 : i - 1, nx, ny, nz}; }
 
   /*!
    * Add an offset to the index for general stencils
    */
-  const SIndices offset(int dx, int dy, int dz) const {
+  SIndices offset(int dx, int dy, int dz) const {
     int z0 = i % nz;
     if (dz > 0) {
       int zp = z0;
@@ -99,8 +99,6 @@ struct SIndices {
  * Region for the SingleDataIterator to iterate over
  */
 typedef std::vector<int> RegionIndices;
-
-#define SDI_GET_END ((void *)NULL)
 
 /*!
  * Provides range-based iteration over indices.
@@ -139,11 +137,13 @@ private:
 #ifdef _OPENMP
   void omp_init();
 #endif
-  void idx_to_xyz(int i);
 
   SingleDataIterator(); // Disable null constructor
 
-  const bool isEnd;
+  /// The internal start, end indices of region_iter, needed for OpenMP
+  int icountstart, icountend;
+  /// Vector of indices this SDI should iterate over
+  std::vector<int>::const_iterator region_iter;
 
 public:
   // iterator traits
@@ -153,39 +153,25 @@ public:
   using reference = const SIndices &;
   using iterator_category = std::random_access_iterator_tag;
 
+  // SIndexRange needs to be a friend so that it can modify the
+  // private members to create the begin and end iterators
+  friend class SIndexRange;
   /*!
    * Constructor. This sets index ranges.
    * If OpenMP is enabled, the index range is divided
    * between threads using the omp_init method.
    */
   SingleDataIterator(int nx, int ny, int nz, RegionIndices &region)
-      : isEnd(false), icountstart(0), icountend(region.size()),
-        region_iter(region.cbegin()), nx(nx), ny(ny), nz(nz), region(region) {
-#ifdef _OPENMP
-    omp_init();
-#endif
-  }
-
-  /*!
-   * set end();
-   * use as DataIterator(int,int,int,int,int,int,SDI_GET_END);
-   */
-  SingleDataIterator(int nx, int ny, int nz, RegionIndices &region, void *UNUSED(dummy))
-      : isEnd(true), icountstart(0), icountend(region.size()), region_iter(region.cend()),
+      : icountstart(0), icountend(region.size()), region_iter(region.cend()),
         nx(nx), ny(ny), nz(nz), region(region) {
 #ifdef _OPENMP
     omp_init();
 #endif
-    operator++();
   }
 
-  /*!
-   * The index variables, updated during loop
-   * Should make these private and provide getters?
-   */
-  int icountstart, icountend;
-  std::vector<int>::const_iterator region_iter;
+  /// Size of the x, y, z dimensions
   const int nx, ny, nz;
+  /// Set of indices to iterate over
   const RegionIndices &region;
 
   /// Pre-increment operator. Use this rather than post-increment when possible
@@ -217,14 +203,12 @@ public:
   /*!
    * Dereference operators
    */
-  SIndices operator*() { return {*region_iter, nx, ny, nz}; }
-  const SIndices operator*() const { return {*region_iter, nx, ny, nz}; }
+  SIndices operator*() const { return {*region_iter, nx, ny, nz}; }
   // This is a little gross, but required so that we don't need to do:
   //     (*iter).i
   // in order to access the elements of a SIndices, where iter is a
   // SingleDataIterator
-  SIndices operator->() { return {*region_iter, nx, ny, nz}; }
-  const SIndices operator->() const { return {*region_iter, nx, ny, nz}; }
+  SIndices operator->() const { return {*region_iter, nx, ny, nz}; }
 
   /// Arithmetic operators
   SingleDataIterator &operator+=(int n) {
@@ -234,9 +218,27 @@ public:
 
   SingleDataIterator &operator-=(int n) { return *this += -n; }
 
-  /// Indexing operators
-  SIndices operator[](int n) { return {*(region_iter + n), nx, ny, nz}; }
-  const SIndices operator[](int n) const { return {*(region_iter + n), nx, ny, nz}; }
+  /// Indexing operator
+  SIndices operator[](int n) const { return {*(region_iter + n), nx, ny, nz}; }
+
+  // The following three operators are friend functions so that they
+  // have access to the private region_iter
+
+  /// Equivalence operator
+  friend bool operator==(const SingleDataIterator &lhs, const SingleDataIterator &rhs) {
+    return lhs.region_iter == rhs.region_iter;
+  }
+
+  /// Less-than operator
+  friend bool operator<(const SingleDataIterator &lhs, const SingleDataIterator &rhs) {
+    return lhs.region_iter < rhs.region_iter;
+  }
+
+  /// Iterator difference operator
+  friend difference_type operator-(const SingleDataIterator &lhs,
+                                   const SingleDataIterator &rhs) {
+    return lhs.region_iter - rhs.region_iter;
+  }
 };
 
 /*!
@@ -273,7 +275,8 @@ public:
  * where REGION_NOBNDRY specifies a region not including
  * boundary/guard cells.
  */
-struct SIndexRange {
+class SIndexRange {
+public:
   SIndexRange(int nx, int ny, int nz, RegionIndices &region)
       : nx(nx), ny(ny), nz(nz), region(region) {}
 
@@ -283,7 +286,7 @@ struct SIndexRange {
   /*!
    * Resets DataIterator to the start of the range
    */
-  SingleDataIterator begin() {
+  SingleDataIterator begin() const {
     SingleDataIterator iter{nx, ny, nz, region};
     iter.region_iter = region.cbegin();
     std::advance(iter.region_iter, iter.icountstart);
@@ -293,21 +296,12 @@ struct SIndexRange {
   /*!
    * Sets DataIterator to one index past the end of the range
    */
-  SingleDataIterator end() {
+  SingleDataIterator end() const {
     SingleDataIterator iter{nx, ny, nz, region};
     iter.region_iter = region.cbegin();
     std::advance(iter.region_iter, iter.icountend);
     return iter;
   }
-};
-
-inline void SingleDataIterator::idx_to_xyz(int i) {
-  // function for debugging
-  // print x,y,z for a given icount
-
-  // i = (x*ny+y)*nz+z
-  output << "i = " << i << ", x = " << ((i / nz) / ny) << ", y = " << (i / nz) % ny
-         << ", z = " << (i % nz) << "\n";
 };
 
 #ifdef _OPENMP
@@ -338,17 +332,9 @@ inline void SingleDataIterator::omp_init() {
 };
 #endif
 
-/// Comparison operator
-inline bool operator==(const SingleDataIterator &lhs, const SingleDataIterator &rhs) {
-  return lhs.region_iter == rhs.region_iter;
-}
-
+/// Relational operators
 inline bool operator!=(const SingleDataIterator &lhs, const SingleDataIterator &rhs) {
   return !operator==(lhs, rhs);
-}
-
-inline bool operator<(const SingleDataIterator &lhs, const SingleDataIterator &rhs) {
-  return lhs.region_iter < rhs.region_iter;
 }
 
 inline bool operator>(const SingleDataIterator &lhs, const SingleDataIterator &rhs) {
@@ -363,15 +349,9 @@ inline bool operator>=(const SingleDataIterator &lhs, const SingleDataIterator &
   return !operator<(lhs, rhs);
 }
 
+/// Arithmetic operators with integers, needed for constant-time random access
 inline SingleDataIterator operator+(SingleDataIterator lhs, int n) { return lhs += n; }
-
 inline SingleDataIterator operator+(int n, SingleDataIterator rhs) { return rhs += n; }
-
 inline SingleDataIterator operator-(SingleDataIterator lhs, int n) { return lhs -= n; }
-
-inline SingleDataIterator::difference_type operator-(SingleDataIterator &lhs,
-                                                     SingleDataIterator &rhs) {
-  return lhs.region_iter - rhs.region_iter;
-}
 
 #endif // __SINGLEDATAITERATOR_H__

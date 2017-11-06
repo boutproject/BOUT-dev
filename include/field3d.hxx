@@ -329,7 +329,7 @@ class Field3D : public Field, public FieldData {
    *
    */
   const IndexRange region(REGION rgn) const;
-  SingleDataIterator sdi_region(REGION rgn) const;
+  const SIndexRange sdi_region(REGION rgn) const;
 
   /*!
    * Direct data access using DataIterator object.
