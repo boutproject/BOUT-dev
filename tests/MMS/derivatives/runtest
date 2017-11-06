@@ -39,8 +39,8 @@ if s:
 
 # List of input directories
 inputs = [
-    ("X", ["mesh:nx"]),
-    ("Y",["mesh:ny"]),
+#    ("X", ["mesh:nx"]),
+#    ("Y",["mesh:ny"]),
     ("Z",["MZ"]),
     ]
 
@@ -78,7 +78,7 @@ for i in [1,2]:
 for i in [1,2]:
     t_desc.append("L->L d_%d"%i)
 
-doPlot = 0 # 0, 1 or 2
+doPlot = 1 # 0, 1 or 2
 plotError=True
 if doPlot == 0:
     nxlist=nxlist[-2:] # just need behaviour in limit
@@ -99,7 +99,7 @@ for dir,sizes in inputs:
                 args += " diff_"+dir+":function="+diff[0].replace('x',dir)
                 args += " diff2_"+dir+":function="+diff[1].replace('x',dir)
                 args += " fac="+facs[dir]
-                args += " mesh:dd%s:first=C%d mesh:dd%s:second=C%d mesh:dd%s:secondStag=C2"%(dir,setOrder,dir,setOrder,dir)
+                #args += " mesh:dd%s:first=C%d mesh:dd%s:second=C%d mesh:dd%s:secondStag=C2"%(dir,setOrder,dir,setOrder,dir)
                 args = args.replace('(','\(').replace(')','\)')
 
                 #print("  Running with " + args)
@@ -142,7 +142,7 @@ for dir,sizes in inputs:
                         plt.figure()
                         import numpy
                         dim=numpy.shape(E_N)
-                        for i in range(dim[0])[1::2]:
+                        for i in range(dim[0]):
                             ix=1
                             iy=1
                             iz=1
@@ -157,7 +157,7 @@ for dir,sizes in inputs:
                             #plot error:
                             plt.plot( E_N[i,:ix,:iy,:iz].flatten(), '-o', label=r'$e: %s$'%t_desc[i])
                             #plot result:
-                            plt.plot( N  [i,:ix,:iy,:iz].flatten(), '-o', label=r'$d: %s$'%t_desc[i])
+                            #plt.plot( N  [i,:ix,:iy,:iz].flatten(), '-o', label=r'$d: %s$'%t_desc[i])
                             #plot expcected result:
                             #plt.plot( N_ [i,:ix,:iy,:iz].flatten(), '-o', label=r'$a_%d$'%i)
                         plt.legend(loc="upper left")
@@ -168,6 +168,7 @@ for dir,sizes in inputs:
 
                         mkdir_p(join("data",dir,fun))
                         plt.savefig(join("data",dir,fun,"%d_%d.pdf"%(nx,setOrder)))
+                        print("saved to %s",join("data",dir,fun,"%d_%d.pdf"%(nx,setOrder)))
 
                         #plt.show()
                         plt.close()
@@ -204,7 +205,7 @@ for dir,sizes in inputs:
                                 plt.figure()
                                 import numpy
                                 dim=numpy.shape(E_N)
-                                for i in range(dim[0])[1::2]:
+                                for i in range(dim[0]):
                                     ix=1
                                     iy=1
                                     iz=1
@@ -219,7 +220,7 @@ for dir,sizes in inputs:
                                     #plot error:
                                     plt.plot( E_N[i,:ix,:iy,:iz].flatten(), '-o', label=r'$e: %s$'%t_desc[i])
                                     #plot result:
-                                    plt.plot( N  [i,:ix,:iy,:iz].flatten(), '-o', label=r'$d: %s$'%t_desc[i])
+                                    #plt.plot( N  [i,:ix,:iy,:iz].flatten(), '-o', label=r'$d: %s$'%t_desc[i])
                                     #plot expcected result:
                                     #plt.plot( N_ [i,:ix,:iy,:iz].flatten(), '-o', label=r'$a_%d$'%i)
                                 plt.legend(loc="upper left")

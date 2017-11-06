@@ -28,10 +28,10 @@ ixseps2		= -1
 StaggerGrids=true
 
 [MESH:diff]
-all=c4
-Second=C2
-SecondStag=C2
-FluxStag=U1
+#all=c4
+#Second=C2
+#SecondStag=C2
+#FluxStag=U1
 
 [All]
 bndry_all = none

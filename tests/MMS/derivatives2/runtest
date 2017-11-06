@@ -118,6 +118,7 @@ for dir,sizes in inputs:
 
                 # Command to run
                 cmd = "./test "+args
+                print(cmd)
                 # Launch using MPI
                 s, out = launch(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
 
@@ -129,6 +130,7 @@ for dir,sizes in inputs:
 
                 if s:
                     print("Run failed! Output written to %s."%fname)
+                    print("Command was: %s"%cmd)
                     exit(2)
                 # Collect data
                 tr=[0,tmax-1]
