@@ -744,7 +744,7 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
                         g(i->xmzp()) * (f(i->zp()) - f(i->xm())) +
                         g(i->xpzm()) * (f(i->xp()) - f(i->zm())));
 
-        result(*i) = partialFactor * (Jpp + Jpx + Jxp) / metric->dx(i);
+        result(*i) = partialFactor * (Jpp + Jpx + Jxp) / metric->dx(*i);
       }
     }
     break;
@@ -977,7 +977,7 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
                         g(i->xmzp()) * (f(i->zp()) - f(i->xm())) +
                         g(i->xpzm()) * (f(i->xp()) - f(i->zm())));
 
-        result(*i) = partialFactor * (Jpp + Jpx + Jxp) / metric->dx(i);
+        result(*i) = partialFactor * (Jpp + Jpx + Jxp) / metric->dx(*i);
       }
     }
     break;

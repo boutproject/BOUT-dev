@@ -215,23 +215,11 @@ class Field2D : public Field, public FieldData {
     return operator()(jx, jy);
   }
 
-  BoutReal& operator()(const SIndices &i) {
-    return data[i.i2d()];
-  }
-
+  BoutReal &operator()(const SIndices &i) { return data[i.i2d()]; }
   const BoutReal &operator()(const SIndices &i) const { return data[i.i2d()]; }
 
+  BoutReal &operator[](const SIndices &i) { return operator()(i); }
   const BoutReal &operator[](const SIndices &i) const { return operator()(i); }
-
-  const BoutReal &operator[](const SIndices &i) { return operator()(i); }
-
-  BoutReal &operator()(const SingleDataIterator &i) { return operator()(*i); }
-
-  const BoutReal &operator()(const SingleDataIterator &i) const { return operator()(*i); }
-
-  const BoutReal &operator[](const SingleDataIterator &i) const { return operator()(i); }
-
-  const BoutReal &operator[](const SingleDataIterator &i) { return operator()(i); }
 
   Field2D & operator+=(const Field2D &rhs); ///< In-place addition. Copy-on-write used if data is shared
   Field2D & operator+=(BoutReal rhs);       ///< In-place addition. Copy-on-write used if data is shared

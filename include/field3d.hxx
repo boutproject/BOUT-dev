@@ -292,24 +292,11 @@ class Field3D : public Field, public FieldData {
    */
   const DataIterator begin() const;
   const DataIterator end() const;
-  BoutReal &operator[](const SingleDataIterator &i) { return data[*(i.region_iter)]; }
-  BoutReal &operator()(const SingleDataIterator &i) { return data[*(i.region_iter)]; }
-
   BoutReal &operator()(const SIndices &i) { return data[i.i]; }
-
   const BoutReal &operator()(const SIndices &i) const { return data[i.i]; }
 
+  BoutReal &operator[](const SIndices &i) { return operator()(i); }
   const BoutReal &operator[](const SIndices &i) const { return operator()(i); }
-
-  const BoutReal &operator[](const SIndices &i) { return operator()(i); }
-
-  /*!
-   * Const indexing by single index
-   *
-   * @param[in] i  The single index
-   */
-  const BoutReal &operator[](const SingleDataIterator &i) const { return operator()(*i); }
-  const BoutReal &operator()(const SingleDataIterator &i) const { return operator()(*i); }
 
   /*!
    * Returns a range of indices which can be iterated over
