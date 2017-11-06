@@ -72,7 +72,9 @@ Laplacian::Laplacian(Options *options) {
   if(maxmode < 0) maxmode = 0;
   if(maxmode > ncz/2) maxmode = ncz/2;
 
-  OPTION2(options, low_mem, nonuniform, false);
+  OPTION(options, low_mem, false);
+  
+  OPTION(options, nonuniform, mesh->coordinates()->non_uniform); // Default is the mesh setting
 
   OPTION(options, all_terms, true); // Include first derivative terms
 
