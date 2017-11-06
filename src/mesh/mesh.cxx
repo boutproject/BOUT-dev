@@ -340,36 +340,8 @@ void Mesh::addRegion(const std::string &region_name, RegionIndices region) {
 }
 
 RegionIndices Mesh::makeSingleIndexRegion(int xstart, int xend, int ystart, int yend,
-                                    int zstart, int zend) const {
-
-  int len = (xend - xstart + 1) * (yend - ystart + 1) * (zend - zstart + 1);
-  RegionIndices region(len);
-  int j = 0;
-  int x = xstart;
-  int y = ystart;
-  int z = zstart;
-  int ny = LocalNy;
-  int nz = LocalNz;
-
-  bool done = false;
-  j = -1;
-  while (!done) {
-    j++;
-    region[j] = (x * ny + y) * nz + z;
-    if (x == xend && y == yend && z == zend) {
-      done = true;
-    }
-    ++z;
-    if (z > zend) {
-      z = zstart;
-      ++y;
-      if (y > yend) {
-        y = ystart;
-        ++x;
-      }
-    }
-  }
-  return region;
+                                          int zstart, int zend) const {
+  return createRegionIndices(xstart, xend, ystart, yend, zstart, zend, LocalNy, LocalNz);
 }
 
 void Mesh::createDefaultRegions() {

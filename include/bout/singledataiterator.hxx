@@ -18,7 +18,7 @@ int SDI_spread_work(int num_work, int thread, int max_thread);
 #endif
 
 /*!
- * Set of indices - DataIterator is dereferenced into these
+ * Set of indices - SingleDataIterator is dereferenced into these
  */
 struct SIndices {
   SIndices(int i, int nx, int ny, int nz) : i(i), nx(nx), ny(ny), nz(nz) {}
@@ -95,46 +95,17 @@ struct SIndices {
   }
 };
 
-/*!
- * Region for the SingleDataIterator to iterate over
- */
+
+/// Region for the SingleDataIterator to iterate over
 typedef std::vector<int> RegionIndices;
 
-/*!
- * Provides range-based iteration over indices.
- * If OpenMP is enabled, then this divides work between threads.
- *
- * This is used mainly to loop over the indices of fields,
- * and provides convenient ways to index
- *
- * Example
- * -------
- *
- * Start,end values for (x,y,z) can be specified directly:
- *
- *     for(d = DataIterator(xs, xe, ys, ye, zs, ze); !d.done(); ++d) {
- *       // print index
- *       output.write("%d,%d,%d\n", d.x, d.y, d.z);
- *       // Index into a Field3D variable 'f'
- *       output.write("Value = %e\n", f[d]);
- *     }
- *
- * Usually DataIterator is used to loop over fields. Field3D::begin()
- * and Field3D::end() return DataIterator objects:
- *
- *     Field3D f(0.0); // Initialise field
- *     for(auto i : f) { // Loop over all indices, including guard cells
- *       f[i] = i.x; // Indexing using DataIterator
- *     }
- *
- */
+/// Provides range-based iteration over indices.
+/// If OpenMP is enabled, then this divides work between threads.
 class SingleDataIterator {
 private:
-/*!
- * This initialises OpenMP threads if enabled, and
- * divides iteration index ranges between threads
- */
 #ifdef _OPENMP
+  /// This initialises OpenMP threads if enabled, and
+  /// divides iteration index ranges between threads
   void omp_init();
 #endif
 
@@ -241,8 +212,58 @@ public:
   }
 };
 
+/// Relational operators
+inline bool operator!=(const SingleDataIterator &lhs, const SingleDataIterator &rhs) {
+  return !operator==(lhs, rhs);
+}
+
+inline bool operator>(const SingleDataIterator &lhs, const SingleDataIterator &rhs) {
+  return operator<(rhs, lhs);
+}
+
+inline bool operator<=(const SingleDataIterator &lhs, const SingleDataIterator &rhs) {
+  return !operator>(lhs, rhs);
+}
+
+inline bool operator>=(const SingleDataIterator &lhs, const SingleDataIterator &rhs) {
+  return !operator<(lhs, rhs);
+}
+
+/// Arithmetic operators with integers, needed for constant-time random access
+inline SingleDataIterator operator+(SingleDataIterator lhs, int n) { return lhs += n; }
+inline SingleDataIterator operator+(int n, SingleDataIterator rhs) { return rhs += n; }
+inline SingleDataIterator operator-(SingleDataIterator lhs, int n) { return lhs -= n; }
+
+#ifdef _OPENMP
+inline int SDI_spread_work(int work, int cp, int np) {
+  // Spread work between threads. If number of points do not
+  // spread evenly between threads, put the remaining "rest"
+  // points on the threads 0 ... rest-1.
+  int pp = work / np;
+  int rest = work % np;
+  int result = pp * cp;
+  if (rest > cp) {
+    result += cp;
+  } else {
+    result += rest;
+  }
+  return result;
+};
+
+inline void SingleDataIterator::omp_init() {
+  // In the case of OPENMP we need to calculate the range
+  int threads = omp_get_num_threads();
+  if (threads > 1) {
+    int work = region.size();
+    int current_thread = omp_get_thread_num();
+    icountstart = SDI_spread_work(work, current_thread, threads);
+    icountend = SDI_spread_work(work, current_thread + 1, threads);
+  }
+};
+#endif
+
 /*!
- * Specifies a range of indices which can be iterated over
+ * Specifies a vector of indices which can be iterated over
  * and begin() and end() methods for range-based for loops
  *
  * Example
@@ -250,25 +271,26 @@ public:
  *
  * Index ranges can be defined manually:
  *
- *     IndexRange r(0, 10, 0, 20, 0, 30);
+ *     RegionIndices region {0, 2, 4, 8};
+ *     SIndexRange r(2, 2, 2, region);
  *
  * then iterated over using begin() and end()
  *
- *     for( DataIterator i = r.begin(); i != r.end(); i++ ) {
+ *     for (auto i = r.begin(); i < r.end(); i++ ) {
  *       output.write("%d,%d,%d\n", i.x, i.y, i.z);
  *     }
  *
  * or the more convenient range for loop:
  *
- *     for( auto i : r ) {
- *       output.write("%d,%d,%d\n", i.x, i.y, i.z);
+ *     for (auto i : r) {
+ *       output.write("%d,%d,%d\n", i->x(), i->y(), i->z());
  *     }
  *
  * A common use for this class is to loop over
  * regions of a field:
  *
  *     Field3D f(0.0);
- *     for( auto i : f.region(REGION_NOBNDRY) ) {
+ *     for (auto i : f.region(REGION_NOBNDRY)) {
  *       f[i] = 1.0;
  *     }
  *
@@ -304,54 +326,37 @@ public:
   }
 };
 
-#ifdef _OPENMP
-inline int SDI_spread_work(int work, int cp, int np) {
-  // Spread work between threads. If number of points do not
-  // spread evenly between threads, put the remaining "rest"
-  // points on the threads 0 ... rest-1.
-  int pp = work / np;
-  int rest = work % np;
-  int result = pp * cp;
-  if (rest > cp) {
-    result += cp;
-  } else {
-    result += rest;
+/// Helper function to create a RegionIndices, given the start and end
+/// points in x, y, z, and the total y, z lengths
+inline RegionIndices createRegionIndices(int xstart, int xend, int ystart, int yend,
+                                         int zstart, int zend, int ny, int nz) {
+
+  int len = (xend - xstart + 1) * (yend - ystart + 1) * (zend - zstart + 1);
+  RegionIndices region(len);
+  int j = 0;
+  int x = xstart;
+  int y = ystart;
+  int z = zstart;
+
+  bool done = false;
+  j = -1;
+  while (!done) {
+    j++;
+    region[j] = (x * ny + y) * nz + z;
+    if (x == xend && y == yend && z == zend) {
+      done = true;
+    }
+    ++z;
+    if (z > zend) {
+      z = zstart;
+      ++y;
+      if (y > yend) {
+        y = ystart;
+        ++x;
+      }
+    }
   }
-  return result;
-};
-
-inline void SingleDataIterator::omp_init() {
-  // In the case of OPENMP we need to calculate the range
-  int threads = omp_get_num_threads();
-  if (threads > 1) {
-    int work = region.size();
-    int current_thread = omp_get_thread_num();
-    icountstart = SDI_spread_work(work, current_thread, threads);
-    icountend = SDI_spread_work(work, current_thread + 1, threads);
-  }
-};
-#endif
-
-/// Relational operators
-inline bool operator!=(const SingleDataIterator &lhs, const SingleDataIterator &rhs) {
-  return !operator==(lhs, rhs);
+  return region;
 }
-
-inline bool operator>(const SingleDataIterator &lhs, const SingleDataIterator &rhs) {
-  return operator<(rhs, lhs);
-}
-
-inline bool operator<=(const SingleDataIterator &lhs, const SingleDataIterator &rhs) {
-  return !operator>(lhs, rhs);
-}
-
-inline bool operator>=(const SingleDataIterator &lhs, const SingleDataIterator &rhs) {
-  return !operator<(lhs, rhs);
-}
-
-/// Arithmetic operators with integers, needed for constant-time random access
-inline SingleDataIterator operator+(SingleDataIterator lhs, int n) { return lhs += n; }
-inline SingleDataIterator operator+(int n, SingleDataIterator rhs) { return rhs += n; }
-inline SingleDataIterator operator-(SingleDataIterator lhs, int n) { return lhs -= n; }
 
 #endif // __SINGLEDATAITERATOR_H__

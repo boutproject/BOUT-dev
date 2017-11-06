@@ -254,3 +254,58 @@ TEST(SIndexRange, RangeBasedForLoop) {
   EXPECT_EQ(count, region.size());
   EXPECT_EQ(region2, region);
 }
+
+TEST(RegionIndices, CreateRegionIndicesAll) {
+  int xstart = 0, xend = 1;
+  int ystart = 0, yend = 2, ny = 3;
+  int zstart = 0, zend = 4, nz = 5;
+  RegionIndices region = createRegionIndices(xstart, xend, ystart, yend, zstart, zend, ny, nz);
+
+  RegionIndices expected = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29};
+
+  EXPECT_EQ(region, expected);
+}
+
+TEST(RegionIndices, CreateRegionIndicesNoX) {
+  int xstart = 1, xend = 1;
+  int ystart = 0, yend = 2, ny = 3;
+  int zstart = 0, zend = 4, nz = 5;
+  RegionIndices region = createRegionIndices(xstart, xend, ystart, yend, zstart, zend, ny, nz);
+
+  RegionIndices expected = {15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29};
+
+  EXPECT_EQ(region, expected);
+}
+
+TEST(RegionIndices, CreateRegionIndicesNoY) {
+  int xstart = 0, xend = 1;
+  int ystart = 1, yend = 1, ny = 3;
+  int zstart = 0, zend = 4, nz = 5;
+  RegionIndices region = createRegionIndices(xstart, xend, ystart, yend, zstart, zend, ny, nz);
+
+  RegionIndices expected = { 5, 6, 7, 8, 9, 20, 21, 22, 23, 24 };
+
+  EXPECT_EQ(region, expected);
+}
+
+TEST(RegionIndices, CreateRegionIndicesNoZ) {
+  int xstart = 0, xend = 1;
+  int ystart = 0, yend = 2, ny = 3;
+  int zstart = 1, zend = 3, nz = 5;
+  RegionIndices region = createRegionIndices(xstart, xend, ystart, yend, zstart, zend, ny, nz);
+
+  RegionIndices expected = {1, 2, 3, 6, 7, 8, 11, 12, 13, 16, 17, 18, 21, 22, 23, 26, 27, 28};
+
+  EXPECT_EQ(region, expected);
+}
+
+TEST(RegionIndices, CreateRegionIndicesNoXYZ) {
+  int xstart = 1, xend = 1;
+  int ystart = 1, yend = 1, ny = 3;
+  int zstart = 1, zend = 3, nz = 5;
+  RegionIndices region = createRegionIndices(xstart, xend, ystart, yend, zstart, zend, ny, nz);
+
+  RegionIndices expected = {21, 22, 23};
+
+  EXPECT_EQ(region, expected);
+}
