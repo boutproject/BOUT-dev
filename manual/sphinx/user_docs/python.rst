@@ -41,8 +41,10 @@ boutdata
 
 -  ``gen_surface()`` is a generator for iterating over flux surfaces
 
-bout\_runners
--------------
+.. _sec-bout_runners:
+
+bout_runners
+------------
 
 ``bout_runners`` contains classes which gives an alternative way of
 running BOUT++ simulations either normally using the class

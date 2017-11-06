@@ -117,23 +117,9 @@ void Output::vprint(const char *string, va_list ap) {
   std::cout << std::string(buffer);
 }
 
-Output *Output::instance = nullptr;
-
 Output *Output::getInstance() {
-  if (instance == nullptr) {
-    // Create the instance
-    instance = new Output();
-  }
-  return instance;
-}
-
-void Output::cleanup() {
-  if (instance == nullptr) {
-    return;
-  }
-
-  delete instance;
-  instance = nullptr;
+  static Output instance;
+  return &instance;
 }
 
 void ConditionalOutput::write(const char *str, ...) {

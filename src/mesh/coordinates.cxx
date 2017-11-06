@@ -693,8 +693,12 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
 
     // Boundaries
     for (int jz = 0; jz < ncz; jz++) {
-      result(0, jy, jz) = 0.0;
-      result(mesh->LocalNx - 1, jy, jz) = 0.0;
+      for (int jx = 0; jx<mesh->xstart; jx++) {
+	result(jx, jy, jz) = 0.0;
+      }
+      for (int jx = mesh->xend+1; jx<mesh->LocalNx; jx++) {
+	result(jx, jy, jz) = 0.0;
+      }
     }
   }
 

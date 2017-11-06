@@ -3,6 +3,7 @@
 #include "optionsreader.hxx"
 
 #include "boutexception.hxx"
+#include "output.hxx"
 #include "utils.hxx"
 
 #include <cstdio>
@@ -17,6 +18,7 @@ public:
   OptionsReaderTest() : sbuf(std::cout.rdbuf()) {
     // Redirect cout to our stringstream buffer or any other ostream
     std::cout.rdbuf(buffer.rdbuf());
+    output_info.disable();
   }
 
   ~OptionsReaderTest() {
@@ -27,6 +29,8 @@ public:
 
     // Make sure options singleton is clean
     Options::cleanup();
+
+    output_info.enable();
   }
 
   // Write cout to buffer instead of stdout

@@ -183,20 +183,6 @@ The current source code files are:
      interface by calling the Fastest Fourier Transform in the West
      (FFTW) library.
 
-   - :doc:`full_gmres.cxx<../_breathe_autogen/file/full__gmres_8cxx>`
-
-   - :doc:`inverter.cxx<../_breathe_autogen/file/inverter_8cxx>` is a
-     :cpp:class:`FieldPerp` inversion class currently under
-     development. It is intended to provide a way to solve nonlinear
-     problems using a GMRES iterative method.
-
-   - :doc:`invert_gmres.cxx<../_breathe_autogen/file/invert__gmres_8cxx>`
-
-   - :doc:`invert_laplace_gmres.cxx<../_breathe_autogen/file/invert__laplace__gmres_8cxx>` inherits
-     the :cpp:class:`Inverter` class and will solve more general
-     Laplacian problems, using the :cpp:func:`invert_laplace`
-     routines as preconditioners.
-
 - invert / laplace
 
    - :doc:`invert_laplace.cxx<../_breathe_autogen/file/invert__laplace_8cxx>` uses Fourier
@@ -290,14 +276,6 @@ The current source code files are:
      for all :cpp:class:`Mesh` implementations.
 
    - impls
-
-      - :doc:`domain.cxx<../_breathe_autogen/file/domain_8cxx>`
-
-      - :doc:`domain.hxx<../_breathe_autogen/file/domain_8hxx>`
-
-      - :doc:`partition.cxx<../_breathe_autogen/file/partition_8cxx>`
-
-      - :doc:`partition.hxx<../_breathe_autogen/file/partition_8hxx>`
 
       - bout
 
