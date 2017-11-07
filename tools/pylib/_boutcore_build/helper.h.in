@@ -74,10 +74,13 @@ public:
   void set_init_func(void (*init_func_)(bool)){
     init_func=init_func_;
   };
-  //void set_rhs_func(void (*rhs_func_)(void * , void *)){
   void set_rhs_func(PythonModelCallback * __rhs){
     _rhs=__rhs;
   };
+  void solve(){
+    solver->outputVars(dump);
+    solver->solve();
+  }
   Solver * getSolver(){
     return solver;
   };

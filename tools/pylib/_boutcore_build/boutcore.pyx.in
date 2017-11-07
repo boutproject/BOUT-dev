@@ -325,7 +325,8 @@ cdef class PhysicsModel:
         self.callback= <c.PythonModelCallback*> 0
 
     def solve(self):
-        self.cmodel.getSolver().solve()
+        self.cmodel.solve()
+        #self.cmodel.getSolver().solve()
 
     def solve_for(self,**kwargs):
         cdef char * tmp
