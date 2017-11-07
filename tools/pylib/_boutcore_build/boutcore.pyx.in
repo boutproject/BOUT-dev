@@ -63,12 +63,18 @@ cat <<EOF
      void c_mesh_normalise(c.Mesh* , double)
      
 cdef Field3D f3dFromObj(c.Field3D i):
-    fu=Field3D()
-    fu.cobj=new c.Field3D(<const c.Field3D & ?>i)
-    return fu
+    f3d=Field3D()
+    f3d.cobj=new c.Field3D(<const c.Field3D & ?>i)
+    return f3d
+cdef Field3D f3dFromPtr(c.Field3D * i):
+    f3d=Field3D()
+    f3d.cobj=i
+    f3d.isSelfOwned=False
+    return f3d
 cdef class Field3D:
     """A wrapper for the Field3D"""
     cdef c.Field3D * cobj
+    cdef c.bool isSelfOwned
     @classmethod
     def fromMesh(cls,mesh):
         fu=Field3D()
@@ -98,6 +104,7 @@ cdef class Field3D:
         self.cobj=NULL
         if obj:
             self.cobj=obj.cobj
+        self.isSelfOwned=True
         #self.cobj = (<c.Field3D * ?> cobj_)
         #if self.cobj == NULL:
         #    raise MemoryError('Not enough memory, allocation failed.')
@@ -122,6 +129,10 @@ cdef class Field3D:
         cdef benum.CELL_LOC location_ = benum.resolve_cell_loc(location)
         self.cobj[0].setLocation(location_)
         return self
+
+    def ddt(self):
+        return f3dFromPtr(&c.ddt(self.cobj[0]))
+
     def __neg__(self):
         return f3dFromObj(c_minus(self.cobj[0]))
     def isAllocated(self):
@@ -208,7 +219,9 @@ EOF
 done
 cat <<EOF
     def __dealloc__(self):
-        del self.cobj
+        if self.isSelfOwned and self.cobj!=NULL:
+            del self.cobj
+            self.cobj=NULL
         
 cdef class Mesh:
     cdef c.Mesh * cobj;
@@ -278,6 +291,62 @@ cdef class FieldFactory:
     #     fu=cls()
     #     fu.cobj=cobj_
     #     return fu
+
+cdef void callback(void * parameter, void * method):
+     cdef double time = (<double*>parameter)[0]
+     (<object?>method)(time)
+
+ctypedef void (*Method)(void *param)
+#, void *user_data)
+
+cdef class PythonModelCallback:
+    cdef c.PythonModelCallback * cobj
+
+    def __cinit__(self, method):
+        # 'callback' :: The pattern/converter method to fire a Python 
+        #               object method from C typed infos
+        # 'method'   :: The effective method passed by the Python user 
+       self.cobj = new c.PythonModelCallback(callback, <void*>method)
+
+    def __dealloc__(self):
+       if self.thisptr:
+           del self.thisptr
+
+    cpdef void execute(self, parameter):
+        # 'parameter' :: The parameter to be passed to the 'method'
+        self.cobj.cy_execute(<void*>parameter)
+
+cdef class PhysicsModel:
+    cdef c.PythonModel * cmodel
+    cdef c.PythonModelCallback * callback
+    def __init__(self):
+        self.cmodel  = new c.PythonModel()
+        self.cmodel.pyinit()
+        self.callback= <c.PythonModelCallback*> 0
+
+    def solve(self):
+        self.cmodel.getSolver().solve()
+
+    def solve_for(self,**kwargs):
+        cdef char * tmp
+        cdef c.Field3D * f3d
+        for key in kwargs:
+            t2=str.encode(key)
+            tmp=t2
+            f3d=(<Field3D?>kwargs[key]).cobj
+            self.cmodel.getSolver().add(f3d[0],tmp)
+
+    def setRhs(self,rhs):
+        if self.callback != <c.PythonModelCallback*>0:
+           del self.callback
+        self.callback = new c.PythonModelCallback(callback, <void*> rhs)
+        self.cmodel.set_rhs_func(self.callback)
+
+    def __dealloc__(self):
+        self.cmodel.free()
+        del self.cmodel
+        del self.callback
+
 cdef extern from "bout.hxx":
     int BoutInitialise(int&, char **&)
     void BoutFinalise()

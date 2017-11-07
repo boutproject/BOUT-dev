@@ -105,4 +105,5 @@ void c_mesh_normalise(Mesh * msh, double norm){
   coord->dy/=norm;
   coord->dz/=norm;
 }
+
 EOF

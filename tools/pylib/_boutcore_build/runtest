@@ -7,9 +7,9 @@ from boutdata import collect
 errorlist=""
 
 boutcore.init(["-d","data"])#,"-f","BOUT.settings"])
-n=collect("f2d",path='data',tind=-1,yguards=True)
+n=collect("f2d",path='input',tind=-1,yguards=True)
 print(n.shape)
-T=collect("f3d",path='data',tind=-1,yguards=True)
+T=collect("f3d",path='input',tind=-1,yguards=True)
 print(n.shape)
 
 print("initialized mesh")
@@ -21,7 +21,7 @@ dens=boutcore.Field3D.fromMesh(mesh)
 dens[:,:,:]=n.reshape((1,1,1))
 #temp=boutcore.Field3D.fromMesh(mesh)
 #temp.setAll(T.reshape(T.shape[1:]))
-temp=boutcore.Field3D.fromCollect("f3d",path="data")
+temp=boutcore.Field3D.fromCollect("f3d",path="input")
 pres=dens+temp
 print(slice(None,None,-2).indices(5))
 p=pres[::5,0,::-2]
@@ -73,4 +73,17 @@ else:
 if errorlist != "":
     print("Found errors:\n%s"%errorlist)
     exit(1)
+
+
+def rhs(time):
+    #print("Whaa")
+    n_ddt=dens.ddt()
+    n_ddt[:,:,:]=dens*0
+    n_ddt+=1
+
+model=boutcore.PhysicsModel()
+model.setRhs(rhs)
+model.solve_for(n=dens)
+model.solve()
+
 #boutcore.finalise()

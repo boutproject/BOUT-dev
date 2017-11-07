@@ -9,3 +9,5 @@ boutcore.cpp
 .#*
 BOUT.settings
 BOUT.log.0
+BOUT.restart.*.nc
+data/BOUT.dmp.0.nc
