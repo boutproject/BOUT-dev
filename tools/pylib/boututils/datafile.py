@@ -98,6 +98,9 @@ class DataFile:
         """List all variables in the file."""
         return self.impl.list()
 
+    def keys(self):
+        return self.list()
+
     def dimensions(self, varname):
         """Array of dimension names"""
         return self.impl.dimensions(varname)
@@ -244,6 +247,9 @@ class DataFile_netCDF(DataFile):
         if var is None:
             raise KeyError("No variable found: "+name)
         return var
+
+    def __setitem__(self, key, value):
+        self.write(key, value)
 
     def list(self):
         """List all variables in the file."""
@@ -516,6 +522,9 @@ class DataFile_HDF5(DataFile):
             raise KeyError("No variable found: "+name)
         return var
 
+    def __setitem__(self, key, value):
+        self.write(key, value)
+    
     def list(self):
         """List all variables in the file."""
         if self.handle is None: return []
