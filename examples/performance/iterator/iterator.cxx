@@ -75,6 +75,8 @@ private:
 int main(int argc, char **argv) {
   BoutInitialise(argc, argv);
 
+  BoutReal tolerance = 1e-15;
+
   Field3D a = 1.0;
   Field3D b = 2.0;
 
@@ -101,6 +103,9 @@ int main(int argc, char **argv) {
     }
   }
 
+  ASSERT0(fabs(rd[4] - 3.0) < tolerance);
+  result = 0.0;
+
   SteadyClock start1 = steady_clock::now();
   int len = mesh->LocalNx * mesh->LocalNy * mesh->LocalNz;
   for (int i = 0; i < NUM_LOOPS; ++i) {
@@ -111,13 +116,15 @@ int main(int argc, char **argv) {
   }
   Duration elapsed1 = steady_clock::now() - start1;
 
+  ASSERT0(fabs(rd[4] - 3.0) < tolerance);
+  result = 0.0;
+
   // Nested loops over block data
   SteadyClock start2 = steady_clock::now();
   for (int x = 0; x < NUM_LOOPS; x++) {
+#pragma omp parallel for collapse(3)
     for (int i = 0; i < mesh->LocalNx; ++i) {
       for (int j = 0; j < mesh->LocalNy; ++j) {
-#pragma ivdep
-#pragma omp parallel for
         for (int k = 0; k < mesh->LocalNz; ++k) {
           result(i, j, k) = a(i, j, k) + b(i, j, k);
         }
@@ -125,6 +132,9 @@ int main(int argc, char **argv) {
     }
   }
   Duration elapsed2 = steady_clock::now() - start2;
+
+  ASSERT0(fabs(result(2, 2, 2) - 3.0) < tolerance);
+  result = 0.0;
 
   // MeshIterator over block data
   SteadyClock start3 = steady_clock::now();
@@ -134,6 +144,9 @@ int main(int argc, char **argv) {
     }
   }
   Duration elapsed3 = steady_clock::now() - start3;
+
+  ASSERT0(fabs(result(2, 2, 2) - 3.0) < tolerance);
+  result = 0.0;
 
   // DataIterator using begin(), end()
   SteadyClock start4 = steady_clock::now();
@@ -147,6 +160,9 @@ int main(int argc, char **argv) {
   }
   Duration elapsed4 = steady_clock::now() - start4;
 
+  ASSERT0(fabs(result(2, 2, 2) - 3.0) < tolerance);
+  result = 0.0;
+
   // DataIterator with done()
   SteadyClock start5 = steady_clock::now();
   for (int x = 0; x < NUM_LOOPS; x++) {
@@ -159,14 +175,21 @@ int main(int argc, char **argv) {
   }
   Duration elapsed5 = steady_clock::now() - start5;
 
+  ASSERT0(fabs(result(2, 2, 2) - 3.0) < tolerance);
+  result = 0.0;
+
   // Range based for DataIterator with indices
   SteadyClock start6 = steady_clock::now();
   for (int x = 0; x < NUM_LOOPS; x++) {
-    for (auto i : result) {
+#pragma omp parallel
+    for (auto &i : result) {
       result(i.x, i.y, i.z) = a(i.x, i.y, i.z) + b(i.x, i.y, i.z);
     }
   }
   Duration elapsed6 = steady_clock::now() - start6;
+
+  ASSERT0(fabs(result(2, 2, 2) - 3.0) < tolerance);
+  result = 0.0;
 
   // SingleDataIterator
   SteadyClock start7 = steady_clock::now();
@@ -183,6 +206,9 @@ int main(int argc, char **argv) {
   }
   Duration elapsed7 = steady_clock::now() - start7;
 
+  ASSERT0(fabs(result(2, 2, 2) - 3.0) < tolerance);
+  result = 0.0;
+
   // SingleDataIterator range-based
   SteadyClock start8 = steady_clock::now();
   for (int x = 0; x < NUM_LOOPS; ++x) {
@@ -196,6 +222,9 @@ int main(int argc, char **argv) {
   }
   Duration elapsed8 = steady_clock::now() - start8;
 
+  ASSERT0(fabs(result(2, 2, 2) - 3.0) < tolerance);
+  result = 0.0;
+
   // Range based DataIterator
   SteadyClock start9 = steady_clock::now();
   for (int x = 0; x < NUM_LOOPS; ++x) {
@@ -204,6 +233,9 @@ int main(int argc, char **argv) {
     }
   }
   Duration elapsed9 = steady_clock::now() - start9;
+
+  ASSERT0(fabs(result(2, 2, 2) - 3.0) < tolerance);
+  result = 0.0;
 
   // DataIterator over fields
   SteadyClock start10 = steady_clock::now();
@@ -215,19 +247,25 @@ int main(int argc, char **argv) {
   }
   Duration elapsed10 = steady_clock::now() - start10;
 
-  output << "TIMING\n======\n";
-  output << "C loop                     : " << elapsed1.count() / NUM_LOOPS << std::endl;
-  output << "----- (x,y,z) indexing ----" << std::endl;
-  output << "Nested loops               : " << elapsed2.count() / NUM_LOOPS << std::endl;
-  output << "MeshIterator               : " << elapsed3.count() / NUM_LOOPS << std::endl;
-  output << "DataIterator (begin/end)   : " << elapsed4.count() / NUM_LOOPS << std::endl;
-  output << "DataIterator (begin/done)  : " << elapsed5.count() / NUM_LOOPS << std::endl;
-  output << "C++11 range-based for      : " << elapsed6.count() / NUM_LOOPS << std::endl;
-  output << "------ [i] indexing -------" << std::endl;
-  output << "Single index               : " << elapsed7.count() / NUM_LOOPS << std::endl;
-  output << "Single index (range-based) : " << elapsed8.count() / NUM_LOOPS << std::endl;
-  output << "C++11 Range-based for      : " << elapsed9.count() / NUM_LOOPS << std::endl;
-  output << "DataIterator (done)        : " << elapsed10.count() / NUM_LOOPS << std::endl;
+  ASSERT0(fabs(result(2, 2, 2) - 3.0) < tolerance);
+  result = 0.0;
+
+  ConditionalOutput time_output(Output::getInstance());
+  time_output.enable(true);
+
+  time_output << "TIMING\n======\n";
+  time_output << "C loop                     : " << elapsed1.count() / NUM_LOOPS << std::endl;
+  time_output << "----- (x,y,z) indexing ----" << std::endl;
+  time_output << "Nested loops               : " << elapsed2.count() / NUM_LOOPS << std::endl;
+  time_output << "MeshIterator               : " << elapsed3.count() / NUM_LOOPS << std::endl;
+  time_output << "DataIterator (begin/end)   : " << elapsed4.count() / NUM_LOOPS << std::endl;
+  time_output << "DataIterator (begin/done)  : " << elapsed5.count() / NUM_LOOPS << std::endl;
+  time_output << "C++11 range-based for      : " << elapsed6.count() / NUM_LOOPS << std::endl;
+  time_output << "------ [i] indexing -------" << std::endl;
+  time_output << "Single index               : " << elapsed7.count() / NUM_LOOPS << std::endl;
+  time_output << "Single index (range-based) : " << elapsed8.count() / NUM_LOOPS << std::endl;
+  time_output << "C++11 Range-based for      : " << elapsed9.count() / NUM_LOOPS << std::endl;
+  time_output << "DataIterator (done)        : " << elapsed10.count() / NUM_LOOPS << std::endl;
 
   BoutFinalise();
   return 0;
