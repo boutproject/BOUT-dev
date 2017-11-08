@@ -234,6 +234,7 @@ public:
     return (x > xend) || (x < xstart);
 #else //_OPENMP
     return (x == xend && y == yend && z > zend)
+      || (x == xend && y > yend)
       || x > xend ||
       (x <= xstart && y <= ystart && z < zstart)  ;
 #endif //_OPENMP
