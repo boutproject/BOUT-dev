@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Python script to run and analyse MMS test
 #
@@ -87,7 +87,7 @@ if doPlot > 1:
 for dir,sizes in inputs:
     print("Running test in '%s'" % (dir))
     for setOrder in [2, 4]:
-        for fun,diff in funcs_periodic.iteritems():
+        for fun,diff in funcs_periodic.items():
             error_2   = zeros((len(nxlist),tmax))  # The L2 error (RMS)
             error_inf = zeros((len(nxlist),tmax))  # The maximum error
             myindex=0

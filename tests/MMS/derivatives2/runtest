@@ -95,8 +95,8 @@ if doPlot == 0:
     nxlist=nxlist[-2:] # just need behaviour in limit
 for dir,sizes in inputs:
     print("Running test in '%s'" % (dir))
-    for method,setOrder in methods.iteritems():
-        for diff,funs in funcs_periodic.iteritems():
+    for method,setOrder in methods.items():
+        for diff,funs in funcs_periodic.items():
             error_2   = zeros((len(nxlist),tmax))  # The L2 error (RMS)
             error_inf = zeros((len(nxlist),tmax))  # The maximum error
             myindex=0
