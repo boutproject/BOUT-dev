@@ -1,5 +1,380 @@
 
 // This file is auto-generated - do not edit!
+const Field3D indexD2DX2_non_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+  if (method == DIFF_DEFAULT) {
+    method = default_x_SecondDeriv;
+  }
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  switch (method) {
+  case DIFF_C4:
+    return interp_to(indexD2DX2_norm_DIFF_C4(f), outloc);
+    break;
+  case DIFF_C2:
+    return interp_to(indexD2DX2_norm_DIFF_C2(f), outloc);
+    break;
+  default:
+    throw BoutException("Field3D AiolosMesh::indexD2DX2_non_stag unknown method "
+                        "%d.\nNote FFTs are not (yet) supported.",
+                        method);
+  }; // end switch
+}
+
+// This file is auto-generated - do not edit!
+const Field3D indexD2DY2_non_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+  if (method == DIFF_DEFAULT) {
+    method = default_y_SecondDeriv;
+  }
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  switch (method) {
+  case DIFF_C4:
+    return interp_to(indexD2DY2_norm_DIFF_C4(f), outloc);
+    break;
+  case DIFF_C2:
+    return interp_to(indexD2DY2_norm_DIFF_C2(f), outloc);
+    break;
+  default:
+    throw BoutException("Field3D AiolosMesh::indexD2DY2_non_stag unknown method "
+                        "%d.\nNote FFTs are not (yet) supported.",
+                        method);
+  }; // end switch
+}
+
+// This file is auto-generated - do not edit!
+const Field3D indexD2DZ2_non_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+  if (method == DIFF_DEFAULT) {
+    method = default_z_SecondDeriv;
+  }
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  switch (method) {
+  case DIFF_C4:
+    return interp_to(indexD2DZ2_norm_DIFF_C4(f), outloc);
+    break;
+  case DIFF_C2:
+    return interp_to(indexD2DZ2_norm_DIFF_C2(f), outloc);
+    break;
+  default:
+    throw BoutException("Field3D AiolosMesh::indexD2DZ2_non_stag unknown method "
+                        "%d.\nNote FFTs are not (yet) supported.",
+                        method);
+  }; // end switch
+}
+
+// This file is auto-generated - do not edit!
+const Field2D indexD2DX2_non_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
+  if (method == DIFF_DEFAULT) {
+    method = default_x_SecondDeriv;
+  }
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  switch (method) {
+  case DIFF_C4:
+    return interp_to(indexD2DX2_norm_DIFF_C4(f), outloc);
+    break;
+  case DIFF_C2:
+    return interp_to(indexD2DX2_norm_DIFF_C2(f), outloc);
+    break;
+  default:
+    throw BoutException("Field2D AiolosMesh::indexD2DX2_non_stag unknown method "
+                        "%d.\nNote FFTs are not (yet) supported.",
+                        method);
+  }; // end switch
+}
+
+// This file is auto-generated - do not edit!
+const Field2D indexD2DY2_non_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
+  if (method == DIFF_DEFAULT) {
+    method = default_y_SecondDeriv;
+  }
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  switch (method) {
+  case DIFF_C4:
+    return interp_to(indexD2DY2_norm_DIFF_C4(f), outloc);
+    break;
+  case DIFF_C2:
+    return interp_to(indexD2DY2_norm_DIFF_C2(f), outloc);
+    break;
+  default:
+    throw BoutException("Field2D AiolosMesh::indexD2DY2_non_stag unknown method "
+                        "%d.\nNote FFTs are not (yet) supported.",
+                        method);
+  }; // end switch
+}
+
+// This file is auto-generated - do not edit!
+const Field3D indexFDDX_non_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc,
+                                 DIFF_METHOD method) {
+  if (method == DIFF_DEFAULT) {
+    method = default_x_FluxDeriv;
+  }
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  switch (method) {
+  case DIFF_C4:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexFDDX_norm_DIFF_C4(v, f), outloc);
+    } else {
+      return interp_to(
+          indexFDDX_norm_DIFF_C4(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  case DIFF_U1:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexFDDX_norm_DIFF_U1(v, f), outloc);
+    } else {
+      return interp_to(
+          indexFDDX_norm_DIFF_U1(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  case DIFF_C2:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexFDDX_norm_DIFF_C2(v, f), outloc);
+    } else {
+      return interp_to(
+          indexFDDX_norm_DIFF_C2(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  case DIFF_NND:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexFDDX_norm_DIFF_NND(v, f), outloc);
+    } else {
+      return interp_to(
+          indexFDDX_norm_DIFF_NND(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  default:
+    throw BoutException("Field3D AiolosMesh::indexFDDX_non_stag unknown method %d.\nNote "
+                        "FFTs are not (yet) supported.",
+                        method);
+  }; // end switch
+}
+
+// This file is auto-generated - do not edit!
+const Field3D indexFDDY_non_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc,
+                                 DIFF_METHOD method) {
+  if (method == DIFF_DEFAULT) {
+    method = default_y_FluxDeriv;
+  }
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  switch (method) {
+  case DIFF_C4:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexFDDY_norm_DIFF_C4(v, f), outloc);
+    } else {
+      return interp_to(
+          indexFDDY_norm_DIFF_C4(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  case DIFF_U1:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexFDDY_norm_DIFF_U1(v, f), outloc);
+    } else {
+      return interp_to(
+          indexFDDY_norm_DIFF_U1(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  case DIFF_C2:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexFDDY_norm_DIFF_C2(v, f), outloc);
+    } else {
+      return interp_to(
+          indexFDDY_norm_DIFF_C2(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  case DIFF_NND:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexFDDY_norm_DIFF_NND(v, f), outloc);
+    } else {
+      return interp_to(
+          indexFDDY_norm_DIFF_NND(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  default:
+    throw BoutException("Field3D AiolosMesh::indexFDDY_non_stag unknown method %d.\nNote "
+                        "FFTs are not (yet) supported.",
+                        method);
+  }; // end switch
+}
+
+// This file is auto-generated - do not edit!
+const Field3D indexFDDZ_non_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc,
+                                 DIFF_METHOD method) {
+  if (method == DIFF_DEFAULT) {
+    method = default_z_FluxDeriv;
+  }
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  switch (method) {
+  case DIFF_C4:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexFDDZ_norm_DIFF_C4(v, f), outloc);
+    } else {
+      return interp_to(
+          indexFDDZ_norm_DIFF_C4(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  case DIFF_U1:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexFDDZ_norm_DIFF_U1(v, f), outloc);
+    } else {
+      return interp_to(
+          indexFDDZ_norm_DIFF_U1(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  case DIFF_C2:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexFDDZ_norm_DIFF_C2(v, f), outloc);
+    } else {
+      return interp_to(
+          indexFDDZ_norm_DIFF_C2(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  case DIFF_NND:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexFDDZ_norm_DIFF_NND(v, f), outloc);
+    } else {
+      return interp_to(
+          indexFDDZ_norm_DIFF_NND(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  default:
+    throw BoutException("Field3D AiolosMesh::indexFDDZ_non_stag unknown method %d.\nNote "
+                        "FFTs are not (yet) supported.",
+                        method);
+  }; // end switch
+}
+
+// This file is auto-generated - do not edit!
+const Field2D indexFDDX_non_stag(const Field2D &v, const Field2D &f, CELL_LOC outloc,
+                                 DIFF_METHOD method) {
+  if (method == DIFF_DEFAULT) {
+    method = default_x_FluxDeriv;
+  }
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  switch (method) {
+  case DIFF_C4:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexFDDX_norm_DIFF_C4(v, f), outloc);
+    } else {
+      return interp_to(
+          indexFDDX_norm_DIFF_C4(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  case DIFF_U1:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexFDDX_norm_DIFF_U1(v, f), outloc);
+    } else {
+      return interp_to(
+          indexFDDX_norm_DIFF_U1(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  case DIFF_C2:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexFDDX_norm_DIFF_C2(v, f), outloc);
+    } else {
+      return interp_to(
+          indexFDDX_norm_DIFF_C2(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  case DIFF_NND:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexFDDX_norm_DIFF_NND(v, f), outloc);
+    } else {
+      return interp_to(
+          indexFDDX_norm_DIFF_NND(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  default:
+    throw BoutException("Field2D AiolosMesh::indexFDDX_non_stag unknown method %d.\nNote "
+                        "FFTs are not (yet) supported.",
+                        method);
+  }; // end switch
+}
+
+// This file is auto-generated - do not edit!
+const Field2D indexFDDY_non_stag(const Field2D &v, const Field2D &f, CELL_LOC outloc,
+                                 DIFF_METHOD method) {
+  if (method == DIFF_DEFAULT) {
+    method = default_y_FluxDeriv;
+  }
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  switch (method) {
+  case DIFF_C4:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexFDDY_norm_DIFF_C4(v, f), outloc);
+    } else {
+      return interp_to(
+          indexFDDY_norm_DIFF_C4(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  case DIFF_U1:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexFDDY_norm_DIFF_U1(v, f), outloc);
+    } else {
+      return interp_to(
+          indexFDDY_norm_DIFF_U1(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  case DIFF_C2:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexFDDY_norm_DIFF_C2(v, f), outloc);
+    } else {
+      return interp_to(
+          indexFDDY_norm_DIFF_C2(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  case DIFF_NND:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexFDDY_norm_DIFF_NND(v, f), outloc);
+    } else {
+      return interp_to(
+          indexFDDY_norm_DIFF_NND(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  default:
+    throw BoutException("Field2D AiolosMesh::indexFDDY_non_stag unknown method %d.\nNote "
+                        "FFTs are not (yet) supported.",
+                        method);
+  }; // end switch
+}
+
+// This file is auto-generated - do not edit!
 const Field3D indexVDDX_non_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc,
                                  DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
@@ -9,33 +384,6 @@ const Field3D indexVDDX_non_stag(const Field3D &v, const Field3D &f, CELL_LOC ou
     outloc = f.getLocation();
   }
   switch (method) {
-  case DIFF_U1:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexVDDX_norm_DIFF_U1(v, f), outloc);
-    } else {
-      return interp_to(
-          indexVDDX_norm_DIFF_U1(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
-  case DIFF_U2:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexVDDX_norm_DIFF_U2(v, f), outloc);
-    } else {
-      return interp_to(
-          indexVDDX_norm_DIFF_U2(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
-  case DIFF_C2:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexVDDX_norm_DIFF_C2(v, f), outloc);
-    } else {
-      return interp_to(
-          indexVDDX_norm_DIFF_C2(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
   case DIFF_U4:
     if (v.getLocation() == f.getLocation()) {
       return interp_to(indexVDDX_norm_DIFF_U4(v, f), outloc);
@@ -51,6 +399,33 @@ const Field3D indexVDDX_non_stag(const Field3D &v, const Field3D &f, CELL_LOC ou
     } else {
       return interp_to(
           indexVDDX_norm_DIFF_C4(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  case DIFF_U1:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexVDDX_norm_DIFF_U1(v, f), outloc);
+    } else {
+      return interp_to(
+          indexVDDX_norm_DIFF_U1(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  case DIFF_C2:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexVDDX_norm_DIFF_C2(v, f), outloc);
+    } else {
+      return interp_to(
+          indexVDDX_norm_DIFF_C2(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  case DIFF_U2:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexVDDX_norm_DIFF_U2(v, f), outloc);
+    } else {
+      return interp_to(
+          indexVDDX_norm_DIFF_U2(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
           outloc);
     }
     break;
@@ -71,33 +446,6 @@ const Field3D indexVDDY_non_stag(const Field3D &v, const Field3D &f, CELL_LOC ou
     outloc = f.getLocation();
   }
   switch (method) {
-  case DIFF_U1:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexVDDY_norm_DIFF_U1(v, f), outloc);
-    } else {
-      return interp_to(
-          indexVDDY_norm_DIFF_U1(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
-  case DIFF_U2:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexVDDY_norm_DIFF_U2(v, f), outloc);
-    } else {
-      return interp_to(
-          indexVDDY_norm_DIFF_U2(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
-  case DIFF_C2:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexVDDY_norm_DIFF_C2(v, f), outloc);
-    } else {
-      return interp_to(
-          indexVDDY_norm_DIFF_C2(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
   case DIFF_U4:
     if (v.getLocation() == f.getLocation()) {
       return interp_to(indexVDDY_norm_DIFF_U4(v, f), outloc);
@@ -113,6 +461,33 @@ const Field3D indexVDDY_non_stag(const Field3D &v, const Field3D &f, CELL_LOC ou
     } else {
       return interp_to(
           indexVDDY_norm_DIFF_C4(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  case DIFF_U1:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexVDDY_norm_DIFF_U1(v, f), outloc);
+    } else {
+      return interp_to(
+          indexVDDY_norm_DIFF_U1(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  case DIFF_C2:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexVDDY_norm_DIFF_C2(v, f), outloc);
+    } else {
+      return interp_to(
+          indexVDDY_norm_DIFF_C2(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  case DIFF_U2:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexVDDY_norm_DIFF_U2(v, f), outloc);
+    } else {
+      return interp_to(
+          indexVDDY_norm_DIFF_U2(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
           outloc);
     }
     break;
@@ -133,33 +508,6 @@ const Field3D indexVDDZ_non_stag(const Field3D &v, const Field3D &f, CELL_LOC ou
     outloc = f.getLocation();
   }
   switch (method) {
-  case DIFF_U1:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexVDDZ_norm_DIFF_U1(v, f), outloc);
-    } else {
-      return interp_to(
-          indexVDDZ_norm_DIFF_U1(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
-  case DIFF_U2:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexVDDZ_norm_DIFF_U2(v, f), outloc);
-    } else {
-      return interp_to(
-          indexVDDZ_norm_DIFF_U2(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
-  case DIFF_C2:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexVDDZ_norm_DIFF_C2(v, f), outloc);
-    } else {
-      return interp_to(
-          indexVDDZ_norm_DIFF_C2(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
   case DIFF_U4:
     if (v.getLocation() == f.getLocation()) {
       return interp_to(indexVDDZ_norm_DIFF_U4(v, f), outloc);
@@ -175,6 +523,33 @@ const Field3D indexVDDZ_non_stag(const Field3D &v, const Field3D &f, CELL_LOC ou
     } else {
       return interp_to(
           indexVDDZ_norm_DIFF_C4(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  case DIFF_U1:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexVDDZ_norm_DIFF_U1(v, f), outloc);
+    } else {
+      return interp_to(
+          indexVDDZ_norm_DIFF_U1(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  case DIFF_C2:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexVDDZ_norm_DIFF_C2(v, f), outloc);
+    } else {
+      return interp_to(
+          indexVDDZ_norm_DIFF_C2(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  case DIFF_U2:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexVDDZ_norm_DIFF_U2(v, f), outloc);
+    } else {
+      return interp_to(
+          indexVDDZ_norm_DIFF_U2(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
           outloc);
     }
     break;
@@ -195,33 +570,6 @@ const Field2D indexVDDX_non_stag(const Field2D &v, const Field2D &f, CELL_LOC ou
     outloc = f.getLocation();
   }
   switch (method) {
-  case DIFF_U1:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexVDDX_norm_DIFF_U1(v, f), outloc);
-    } else {
-      return interp_to(
-          indexVDDX_norm_DIFF_U1(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
-  case DIFF_U2:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexVDDX_norm_DIFF_U2(v, f), outloc);
-    } else {
-      return interp_to(
-          indexVDDX_norm_DIFF_U2(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
-  case DIFF_C2:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexVDDX_norm_DIFF_C2(v, f), outloc);
-    } else {
-      return interp_to(
-          indexVDDX_norm_DIFF_C2(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
   case DIFF_U4:
     if (v.getLocation() == f.getLocation()) {
       return interp_to(indexVDDX_norm_DIFF_U4(v, f), outloc);
@@ -237,6 +585,33 @@ const Field2D indexVDDX_non_stag(const Field2D &v, const Field2D &f, CELL_LOC ou
     } else {
       return interp_to(
           indexVDDX_norm_DIFF_C4(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  case DIFF_U1:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexVDDX_norm_DIFF_U1(v, f), outloc);
+    } else {
+      return interp_to(
+          indexVDDX_norm_DIFF_U1(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  case DIFF_C2:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexVDDX_norm_DIFF_C2(v, f), outloc);
+    } else {
+      return interp_to(
+          indexVDDX_norm_DIFF_C2(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  case DIFF_U2:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexVDDX_norm_DIFF_U2(v, f), outloc);
+    } else {
+      return interp_to(
+          indexVDDX_norm_DIFF_U2(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
           outloc);
     }
     break;
@@ -257,33 +632,6 @@ const Field2D indexVDDY_non_stag(const Field2D &v, const Field2D &f, CELL_LOC ou
     outloc = f.getLocation();
   }
   switch (method) {
-  case DIFF_U1:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexVDDY_norm_DIFF_U1(v, f), outloc);
-    } else {
-      return interp_to(
-          indexVDDY_norm_DIFF_U1(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
-  case DIFF_U2:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexVDDY_norm_DIFF_U2(v, f), outloc);
-    } else {
-      return interp_to(
-          indexVDDY_norm_DIFF_U2(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
-  case DIFF_C2:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexVDDY_norm_DIFF_C2(v, f), outloc);
-    } else {
-      return interp_to(
-          indexVDDY_norm_DIFF_C2(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
   case DIFF_U4:
     if (v.getLocation() == f.getLocation()) {
       return interp_to(indexVDDY_norm_DIFF_U4(v, f), outloc);
@@ -302,128 +650,35 @@ const Field2D indexVDDY_non_stag(const Field2D &v, const Field2D &f, CELL_LOC ou
           outloc);
     }
     break;
+  case DIFF_U1:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexVDDY_norm_DIFF_U1(v, f), outloc);
+    } else {
+      return interp_to(
+          indexVDDY_norm_DIFF_U1(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  case DIFF_C2:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexVDDY_norm_DIFF_C2(v, f), outloc);
+    } else {
+      return interp_to(
+          indexVDDY_norm_DIFF_C2(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
+  case DIFF_U2:
+    if (v.getLocation() == f.getLocation()) {
+      return interp_to(indexVDDY_norm_DIFF_U2(v, f), outloc);
+    } else {
+      return interp_to(
+          indexVDDY_norm_DIFF_U2(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
+          outloc);
+    }
+    break;
   default:
     throw BoutException("Field2D AiolosMesh::indexVDDY_non_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
-                        method);
-  }; // end switch
-}
-
-// This file is auto-generated - do not edit!
-const Field3D indexFDDX_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                             DIFF_METHOD method) {
-  if (method == DIFF_DEFAULT) {
-    method = default_x_FluxStagDeriv;
-  }
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
-  switch (method) {
-  case DIFF_U1:
-    if (outloc == CELL_XLOW) {
-      return indexFDDX_on_DIFF_U1(interp_to(v, CELL_CENTRE), f);
-    } else {
-      return interp_to(indexFDDX_off_DIFF_U1(v, interp_to(f, CELL_CENTRE)), outloc);
-    }
-    break;
-  default:
-    throw BoutException("Field3D AiolosMesh::indexFDDX_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
-                        method);
-  }; // end switch
-}
-
-// This file is auto-generated - do not edit!
-const Field3D indexFDDY_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                             DIFF_METHOD method) {
-  if (method == DIFF_DEFAULT) {
-    method = default_y_FluxStagDeriv;
-  }
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
-  switch (method) {
-  case DIFF_U1:
-    if (outloc == CELL_YLOW) {
-      return indexFDDY_on_DIFF_U1(interp_to(v, CELL_CENTRE), f);
-    } else {
-      return interp_to(indexFDDY_off_DIFF_U1(v, interp_to(f, CELL_CENTRE)), outloc);
-    }
-    break;
-  default:
-    throw BoutException("Field3D AiolosMesh::indexFDDY_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
-                        method);
-  }; // end switch
-}
-
-// This file is auto-generated - do not edit!
-const Field3D indexFDDZ_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                             DIFF_METHOD method) {
-  if (method == DIFF_DEFAULT) {
-    method = default_z_FluxStagDeriv;
-  }
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
-  switch (method) {
-  case DIFF_U1:
-    if (outloc == CELL_ZLOW) {
-      return indexFDDZ_on_DIFF_U1(interp_to(v, CELL_CENTRE), f);
-    } else {
-      return interp_to(indexFDDZ_off_DIFF_U1(v, interp_to(f, CELL_CENTRE)), outloc);
-    }
-    break;
-  default:
-    throw BoutException("Field3D AiolosMesh::indexFDDZ_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
-                        method);
-  }; // end switch
-}
-
-// This file is auto-generated - do not edit!
-const Field2D indexFDDX_stag(const Field2D &v, const Field2D &f, CELL_LOC outloc,
-                             DIFF_METHOD method) {
-  if (method == DIFF_DEFAULT) {
-    method = default_x_FluxStagDeriv;
-  }
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
-  switch (method) {
-  case DIFF_U1:
-    if (outloc == CELL_XLOW) {
-      return indexFDDX_on_DIFF_U1(interp_to(v, CELL_CENTRE), f);
-    } else {
-      return interp_to(indexFDDX_off_DIFF_U1(v, interp_to(f, CELL_CENTRE)), outloc);
-    }
-    break;
-  default:
-    throw BoutException("Field2D AiolosMesh::indexFDDX_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
-                        method);
-  }; // end switch
-}
-
-// This file is auto-generated - do not edit!
-const Field2D indexFDDY_stag(const Field2D &v, const Field2D &f, CELL_LOC outloc,
-                             DIFF_METHOD method) {
-  if (method == DIFF_DEFAULT) {
-    method = default_y_FluxStagDeriv;
-  }
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
-  switch (method) {
-  case DIFF_U1:
-    if (outloc == CELL_YLOW) {
-      return indexFDDY_on_DIFF_U1(interp_to(v, CELL_CENTRE), f);
-    } else {
-      return interp_to(indexFDDY_off_DIFF_U1(v, interp_to(f, CELL_CENTRE)), outloc);
-    }
-    break;
-  default:
-    throw BoutException("Field2D AiolosMesh::indexFDDY_stag unknown method %d.\nNote "
                         "FFTs are not (yet) supported.",
                         method);
   }; // end switch
@@ -580,746 +835,6 @@ const Field2D indexDDY_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD metho
 }
 
 // This file is auto-generated - do not edit!
-const Field3D indexDDX_non_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
-  if (method == DIFF_DEFAULT) {
-    method = default_x_FirstDeriv;
-  }
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
-  switch (method) {
-  case DIFF_W2:
-    return interp_to(indexDDX_norm_DIFF_W2(f), outloc);
-    break;
-  case DIFF_S2:
-    return interp_to(indexDDX_norm_DIFF_S2(f), outloc);
-    break;
-  case DIFF_C4:
-    return interp_to(indexDDX_norm_DIFF_C4(f), outloc);
-    break;
-  case DIFF_C2:
-    return interp_to(indexDDX_norm_DIFF_C2(f), outloc);
-    break;
-  default:
-    throw BoutException("Field3D AiolosMesh::indexDDX_non_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
-                        method);
-  }; // end switch
-}
-
-// This file is auto-generated - do not edit!
-const Field3D indexDDY_non_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
-  if (method == DIFF_DEFAULT) {
-    method = default_y_FirstDeriv;
-  }
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
-  switch (method) {
-  case DIFF_W2:
-    return interp_to(indexDDY_norm_DIFF_W2(f), outloc);
-    break;
-  case DIFF_S2:
-    return interp_to(indexDDY_norm_DIFF_S2(f), outloc);
-    break;
-  case DIFF_C4:
-    return interp_to(indexDDY_norm_DIFF_C4(f), outloc);
-    break;
-  case DIFF_C2:
-    return interp_to(indexDDY_norm_DIFF_C2(f), outloc);
-    break;
-  default:
-    throw BoutException("Field3D AiolosMesh::indexDDY_non_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
-                        method);
-  }; // end switch
-}
-
-// This file is auto-generated - do not edit!
-const Field3D indexDDZ_non_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
-  if (method == DIFF_DEFAULT) {
-    method = default_z_FirstDeriv;
-  }
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
-  switch (method) {
-  case DIFF_W2:
-    return interp_to(indexDDZ_norm_DIFF_W2(f), outloc);
-    break;
-  case DIFF_S2:
-    return interp_to(indexDDZ_norm_DIFF_S2(f), outloc);
-    break;
-  case DIFF_C4:
-    return interp_to(indexDDZ_norm_DIFF_C4(f), outloc);
-    break;
-  case DIFF_C2:
-    return interp_to(indexDDZ_norm_DIFF_C2(f), outloc);
-    break;
-  default:
-    throw BoutException("Field3D AiolosMesh::indexDDZ_non_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
-                        method);
-  }; // end switch
-}
-
-// This file is auto-generated - do not edit!
-const Field2D indexDDX_non_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
-  if (method == DIFF_DEFAULT) {
-    method = default_x_FirstDeriv;
-  }
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
-  switch (method) {
-  case DIFF_W2:
-    return interp_to(indexDDX_norm_DIFF_W2(f), outloc);
-    break;
-  case DIFF_S2:
-    return interp_to(indexDDX_norm_DIFF_S2(f), outloc);
-    break;
-  case DIFF_C4:
-    return interp_to(indexDDX_norm_DIFF_C4(f), outloc);
-    break;
-  case DIFF_C2:
-    return interp_to(indexDDX_norm_DIFF_C2(f), outloc);
-    break;
-  default:
-    throw BoutException("Field2D AiolosMesh::indexDDX_non_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
-                        method);
-  }; // end switch
-}
-
-// This file is auto-generated - do not edit!
-const Field2D indexDDY_non_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
-  if (method == DIFF_DEFAULT) {
-    method = default_y_FirstDeriv;
-  }
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
-  switch (method) {
-  case DIFF_W2:
-    return interp_to(indexDDY_norm_DIFF_W2(f), outloc);
-    break;
-  case DIFF_S2:
-    return interp_to(indexDDY_norm_DIFF_S2(f), outloc);
-    break;
-  case DIFF_C4:
-    return interp_to(indexDDY_norm_DIFF_C4(f), outloc);
-    break;
-  case DIFF_C2:
-    return interp_to(indexDDY_norm_DIFF_C2(f), outloc);
-    break;
-  default:
-    throw BoutException("Field2D AiolosMesh::indexDDY_non_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
-                        method);
-  }; // end switch
-}
-
-// This file is auto-generated - do not edit!
-const Field3D indexVDDX_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                             DIFF_METHOD method) {
-  if (method == DIFF_DEFAULT) {
-    method = default_x_UpwindStagDeriv;
-  }
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
-  switch (method) {
-  case DIFF_U1:
-    if (outloc == CELL_XLOW) {
-      return indexVDDX_on_DIFF_U1(interp_to(v, CELL_CENTRE), f);
-    } else {
-      return interp_to(indexVDDX_off_DIFF_U1(v, interp_to(f, CELL_CENTRE)), outloc);
-    }
-    break;
-  case DIFF_U2:
-    if (outloc == CELL_XLOW) {
-      return indexVDDX_on_DIFF_U2(interp_to(v, CELL_CENTRE), f);
-    } else {
-      return interp_to(indexVDDX_off_DIFF_U2(v, interp_to(f, CELL_CENTRE)), outloc);
-    }
-    break;
-  case DIFF_C2:
-    if (outloc == CELL_XLOW) {
-      return indexVDDX_on_DIFF_C2(interp_to(v, CELL_CENTRE), f);
-    } else {
-      return interp_to(indexVDDX_off_DIFF_C2(v, interp_to(f, CELL_CENTRE)), outloc);
-    }
-    break;
-  case DIFF_C4:
-    if (outloc == CELL_XLOW) {
-      return indexVDDX_on_DIFF_C4(interp_to(v, CELL_CENTRE), f);
-    } else {
-      return interp_to(indexVDDX_off_DIFF_C4(v, interp_to(f, CELL_CENTRE)), outloc);
-    }
-    break;
-  default:
-    throw BoutException("Field3D AiolosMesh::indexVDDX_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
-                        method);
-  }; // end switch
-}
-
-// This file is auto-generated - do not edit!
-const Field3D indexVDDY_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                             DIFF_METHOD method) {
-  if (method == DIFF_DEFAULT) {
-    method = default_y_UpwindStagDeriv;
-  }
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
-  switch (method) {
-  case DIFF_U1:
-    if (outloc == CELL_YLOW) {
-      return indexVDDY_on_DIFF_U1(interp_to(v, CELL_CENTRE), f);
-    } else {
-      return interp_to(indexVDDY_off_DIFF_U1(v, interp_to(f, CELL_CENTRE)), outloc);
-    }
-    break;
-  case DIFF_U2:
-    if (outloc == CELL_YLOW) {
-      return indexVDDY_on_DIFF_U2(interp_to(v, CELL_CENTRE), f);
-    } else {
-      return interp_to(indexVDDY_off_DIFF_U2(v, interp_to(f, CELL_CENTRE)), outloc);
-    }
-    break;
-  case DIFF_C2:
-    if (outloc == CELL_YLOW) {
-      return indexVDDY_on_DIFF_C2(interp_to(v, CELL_CENTRE), f);
-    } else {
-      return interp_to(indexVDDY_off_DIFF_C2(v, interp_to(f, CELL_CENTRE)), outloc);
-    }
-    break;
-  case DIFF_C4:
-    if (outloc == CELL_YLOW) {
-      return indexVDDY_on_DIFF_C4(interp_to(v, CELL_CENTRE), f);
-    } else {
-      return interp_to(indexVDDY_off_DIFF_C4(v, interp_to(f, CELL_CENTRE)), outloc);
-    }
-    break;
-  default:
-    throw BoutException("Field3D AiolosMesh::indexVDDY_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
-                        method);
-  }; // end switch
-}
-
-// This file is auto-generated - do not edit!
-const Field3D indexVDDZ_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                             DIFF_METHOD method) {
-  if (method == DIFF_DEFAULT) {
-    method = default_z_UpwindStagDeriv;
-  }
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
-  switch (method) {
-  case DIFF_U1:
-    if (outloc == CELL_ZLOW) {
-      return indexVDDZ_on_DIFF_U1(interp_to(v, CELL_CENTRE), f);
-    } else {
-      return interp_to(indexVDDZ_off_DIFF_U1(v, interp_to(f, CELL_CENTRE)), outloc);
-    }
-    break;
-  case DIFF_U2:
-    if (outloc == CELL_ZLOW) {
-      return indexVDDZ_on_DIFF_U2(interp_to(v, CELL_CENTRE), f);
-    } else {
-      return interp_to(indexVDDZ_off_DIFF_U2(v, interp_to(f, CELL_CENTRE)), outloc);
-    }
-    break;
-  case DIFF_C2:
-    if (outloc == CELL_ZLOW) {
-      return indexVDDZ_on_DIFF_C2(interp_to(v, CELL_CENTRE), f);
-    } else {
-      return interp_to(indexVDDZ_off_DIFF_C2(v, interp_to(f, CELL_CENTRE)), outloc);
-    }
-    break;
-  case DIFF_C4:
-    if (outloc == CELL_ZLOW) {
-      return indexVDDZ_on_DIFF_C4(interp_to(v, CELL_CENTRE), f);
-    } else {
-      return interp_to(indexVDDZ_off_DIFF_C4(v, interp_to(f, CELL_CENTRE)), outloc);
-    }
-    break;
-  default:
-    throw BoutException("Field3D AiolosMesh::indexVDDZ_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
-                        method);
-  }; // end switch
-}
-
-// This file is auto-generated - do not edit!
-const Field2D indexVDDX_stag(const Field2D &v, const Field2D &f, CELL_LOC outloc,
-                             DIFF_METHOD method) {
-  if (method == DIFF_DEFAULT) {
-    method = default_x_UpwindStagDeriv;
-  }
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
-  switch (method) {
-  case DIFF_U1:
-    if (outloc == CELL_XLOW) {
-      return indexVDDX_on_DIFF_U1(interp_to(v, CELL_CENTRE), f);
-    } else {
-      return interp_to(indexVDDX_off_DIFF_U1(v, interp_to(f, CELL_CENTRE)), outloc);
-    }
-    break;
-  case DIFF_U2:
-    if (outloc == CELL_XLOW) {
-      return indexVDDX_on_DIFF_U2(interp_to(v, CELL_CENTRE), f);
-    } else {
-      return interp_to(indexVDDX_off_DIFF_U2(v, interp_to(f, CELL_CENTRE)), outloc);
-    }
-    break;
-  case DIFF_C2:
-    if (outloc == CELL_XLOW) {
-      return indexVDDX_on_DIFF_C2(interp_to(v, CELL_CENTRE), f);
-    } else {
-      return interp_to(indexVDDX_off_DIFF_C2(v, interp_to(f, CELL_CENTRE)), outloc);
-    }
-    break;
-  case DIFF_C4:
-    if (outloc == CELL_XLOW) {
-      return indexVDDX_on_DIFF_C4(interp_to(v, CELL_CENTRE), f);
-    } else {
-      return interp_to(indexVDDX_off_DIFF_C4(v, interp_to(f, CELL_CENTRE)), outloc);
-    }
-    break;
-  default:
-    throw BoutException("Field2D AiolosMesh::indexVDDX_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
-                        method);
-  }; // end switch
-}
-
-// This file is auto-generated - do not edit!
-const Field2D indexVDDY_stag(const Field2D &v, const Field2D &f, CELL_LOC outloc,
-                             DIFF_METHOD method) {
-  if (method == DIFF_DEFAULT) {
-    method = default_y_UpwindStagDeriv;
-  }
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
-  switch (method) {
-  case DIFF_U1:
-    if (outloc == CELL_YLOW) {
-      return indexVDDY_on_DIFF_U1(interp_to(v, CELL_CENTRE), f);
-    } else {
-      return interp_to(indexVDDY_off_DIFF_U1(v, interp_to(f, CELL_CENTRE)), outloc);
-    }
-    break;
-  case DIFF_U2:
-    if (outloc == CELL_YLOW) {
-      return indexVDDY_on_DIFF_U2(interp_to(v, CELL_CENTRE), f);
-    } else {
-      return interp_to(indexVDDY_off_DIFF_U2(v, interp_to(f, CELL_CENTRE)), outloc);
-    }
-    break;
-  case DIFF_C2:
-    if (outloc == CELL_YLOW) {
-      return indexVDDY_on_DIFF_C2(interp_to(v, CELL_CENTRE), f);
-    } else {
-      return interp_to(indexVDDY_off_DIFF_C2(v, interp_to(f, CELL_CENTRE)), outloc);
-    }
-    break;
-  case DIFF_C4:
-    if (outloc == CELL_YLOW) {
-      return indexVDDY_on_DIFF_C4(interp_to(v, CELL_CENTRE), f);
-    } else {
-      return interp_to(indexVDDY_off_DIFF_C4(v, interp_to(f, CELL_CENTRE)), outloc);
-    }
-    break;
-  default:
-    throw BoutException("Field2D AiolosMesh::indexVDDY_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
-                        method);
-  }; // end switch
-}
-
-// This file is auto-generated - do not edit!
-const Field3D indexD2DX2_non_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
-  if (method == DIFF_DEFAULT) {
-    method = default_x_SecondDeriv;
-  }
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
-  switch (method) {
-  case DIFF_C4:
-    return interp_to(indexD2DX2_norm_DIFF_C4(f), outloc);
-    break;
-  case DIFF_C2:
-    return interp_to(indexD2DX2_norm_DIFF_C2(f), outloc);
-    break;
-  default:
-    throw BoutException("Field3D AiolosMesh::indexD2DX2_non_stag unknown method "
-                        "%d.\nNote FFTs are not (yet) supported.",
-                        method);
-  }; // end switch
-}
-
-// This file is auto-generated - do not edit!
-const Field3D indexD2DY2_non_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
-  if (method == DIFF_DEFAULT) {
-    method = default_y_SecondDeriv;
-  }
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
-  switch (method) {
-  case DIFF_C4:
-    return interp_to(indexD2DY2_norm_DIFF_C4(f), outloc);
-    break;
-  case DIFF_C2:
-    return interp_to(indexD2DY2_norm_DIFF_C2(f), outloc);
-    break;
-  default:
-    throw BoutException("Field3D AiolosMesh::indexD2DY2_non_stag unknown method "
-                        "%d.\nNote FFTs are not (yet) supported.",
-                        method);
-  }; // end switch
-}
-
-// This file is auto-generated - do not edit!
-const Field3D indexD2DZ2_non_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
-  if (method == DIFF_DEFAULT) {
-    method = default_z_SecondDeriv;
-  }
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
-  switch (method) {
-  case DIFF_C4:
-    return interp_to(indexD2DZ2_norm_DIFF_C4(f), outloc);
-    break;
-  case DIFF_C2:
-    return interp_to(indexD2DZ2_norm_DIFF_C2(f), outloc);
-    break;
-  default:
-    throw BoutException("Field3D AiolosMesh::indexD2DZ2_non_stag unknown method "
-                        "%d.\nNote FFTs are not (yet) supported.",
-                        method);
-  }; // end switch
-}
-
-// This file is auto-generated - do not edit!
-const Field2D indexD2DX2_non_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
-  if (method == DIFF_DEFAULT) {
-    method = default_x_SecondDeriv;
-  }
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
-  switch (method) {
-  case DIFF_C4:
-    return interp_to(indexD2DX2_norm_DIFF_C4(f), outloc);
-    break;
-  case DIFF_C2:
-    return interp_to(indexD2DX2_norm_DIFF_C2(f), outloc);
-    break;
-  default:
-    throw BoutException("Field2D AiolosMesh::indexD2DX2_non_stag unknown method "
-                        "%d.\nNote FFTs are not (yet) supported.",
-                        method);
-  }; // end switch
-}
-
-// This file is auto-generated - do not edit!
-const Field2D indexD2DY2_non_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
-  if (method == DIFF_DEFAULT) {
-    method = default_y_SecondDeriv;
-  }
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
-  switch (method) {
-  case DIFF_C4:
-    return interp_to(indexD2DY2_norm_DIFF_C4(f), outloc);
-    break;
-  case DIFF_C2:
-    return interp_to(indexD2DY2_norm_DIFF_C2(f), outloc);
-    break;
-  default:
-    throw BoutException("Field2D AiolosMesh::indexD2DY2_non_stag unknown method "
-                        "%d.\nNote FFTs are not (yet) supported.",
-                        method);
-  }; // end switch
-}
-
-// This file is auto-generated - do not edit!
-const Field3D indexFDDX_non_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                                 DIFF_METHOD method) {
-  if (method == DIFF_DEFAULT) {
-    method = default_x_FluxDeriv;
-  }
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
-  switch (method) {
-  case DIFF_NND:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexFDDX_norm_DIFF_NND(v, f), outloc);
-    } else {
-      return interp_to(
-          indexFDDX_norm_DIFF_NND(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
-  case DIFF_U1:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexFDDX_norm_DIFF_U1(v, f), outloc);
-    } else {
-      return interp_to(
-          indexFDDX_norm_DIFF_U1(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
-  case DIFF_C4:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexFDDX_norm_DIFF_C4(v, f), outloc);
-    } else {
-      return interp_to(
-          indexFDDX_norm_DIFF_C4(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
-  case DIFF_C2:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexFDDX_norm_DIFF_C2(v, f), outloc);
-    } else {
-      return interp_to(
-          indexFDDX_norm_DIFF_C2(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
-  default:
-    throw BoutException("Field3D AiolosMesh::indexFDDX_non_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
-                        method);
-  }; // end switch
-}
-
-// This file is auto-generated - do not edit!
-const Field3D indexFDDY_non_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                                 DIFF_METHOD method) {
-  if (method == DIFF_DEFAULT) {
-    method = default_y_FluxDeriv;
-  }
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
-  switch (method) {
-  case DIFF_NND:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexFDDY_norm_DIFF_NND(v, f), outloc);
-    } else {
-      return interp_to(
-          indexFDDY_norm_DIFF_NND(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
-  case DIFF_U1:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexFDDY_norm_DIFF_U1(v, f), outloc);
-    } else {
-      return interp_to(
-          indexFDDY_norm_DIFF_U1(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
-  case DIFF_C4:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexFDDY_norm_DIFF_C4(v, f), outloc);
-    } else {
-      return interp_to(
-          indexFDDY_norm_DIFF_C4(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
-  case DIFF_C2:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexFDDY_norm_DIFF_C2(v, f), outloc);
-    } else {
-      return interp_to(
-          indexFDDY_norm_DIFF_C2(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
-  default:
-    throw BoutException("Field3D AiolosMesh::indexFDDY_non_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
-                        method);
-  }; // end switch
-}
-
-// This file is auto-generated - do not edit!
-const Field3D indexFDDZ_non_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                                 DIFF_METHOD method) {
-  if (method == DIFF_DEFAULT) {
-    method = default_z_FluxDeriv;
-  }
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
-  switch (method) {
-  case DIFF_NND:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexFDDZ_norm_DIFF_NND(v, f), outloc);
-    } else {
-      return interp_to(
-          indexFDDZ_norm_DIFF_NND(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
-  case DIFF_U1:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexFDDZ_norm_DIFF_U1(v, f), outloc);
-    } else {
-      return interp_to(
-          indexFDDZ_norm_DIFF_U1(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
-  case DIFF_C4:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexFDDZ_norm_DIFF_C4(v, f), outloc);
-    } else {
-      return interp_to(
-          indexFDDZ_norm_DIFF_C4(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
-  case DIFF_C2:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexFDDZ_norm_DIFF_C2(v, f), outloc);
-    } else {
-      return interp_to(
-          indexFDDZ_norm_DIFF_C2(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
-  default:
-    throw BoutException("Field3D AiolosMesh::indexFDDZ_non_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
-                        method);
-  }; // end switch
-}
-
-// This file is auto-generated - do not edit!
-const Field2D indexFDDX_non_stag(const Field2D &v, const Field2D &f, CELL_LOC outloc,
-                                 DIFF_METHOD method) {
-  if (method == DIFF_DEFAULT) {
-    method = default_x_FluxDeriv;
-  }
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
-  switch (method) {
-  case DIFF_NND:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexFDDX_norm_DIFF_NND(v, f), outloc);
-    } else {
-      return interp_to(
-          indexFDDX_norm_DIFF_NND(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
-  case DIFF_U1:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexFDDX_norm_DIFF_U1(v, f), outloc);
-    } else {
-      return interp_to(
-          indexFDDX_norm_DIFF_U1(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
-  case DIFF_C4:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexFDDX_norm_DIFF_C4(v, f), outloc);
-    } else {
-      return interp_to(
-          indexFDDX_norm_DIFF_C4(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
-  case DIFF_C2:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexFDDX_norm_DIFF_C2(v, f), outloc);
-    } else {
-      return interp_to(
-          indexFDDX_norm_DIFF_C2(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
-  default:
-    throw BoutException("Field2D AiolosMesh::indexFDDX_non_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
-                        method);
-  }; // end switch
-}
-
-// This file is auto-generated - do not edit!
-const Field2D indexFDDY_non_stag(const Field2D &v, const Field2D &f, CELL_LOC outloc,
-                                 DIFF_METHOD method) {
-  if (method == DIFF_DEFAULT) {
-    method = default_y_FluxDeriv;
-  }
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
-  switch (method) {
-  case DIFF_NND:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexFDDY_norm_DIFF_NND(v, f), outloc);
-    } else {
-      return interp_to(
-          indexFDDY_norm_DIFF_NND(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
-  case DIFF_U1:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexFDDY_norm_DIFF_U1(v, f), outloc);
-    } else {
-      return interp_to(
-          indexFDDY_norm_DIFF_U1(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
-  case DIFF_C4:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexFDDY_norm_DIFF_C4(v, f), outloc);
-    } else {
-      return interp_to(
-          indexFDDY_norm_DIFF_C4(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
-  case DIFF_C2:
-    if (v.getLocation() == f.getLocation()) {
-      return interp_to(indexFDDY_norm_DIFF_C2(v, f), outloc);
-    } else {
-      return interp_to(
-          indexFDDY_norm_DIFF_C2(interp_to(v, CELL_CENTRE), interp_to(f, CELL_CENTRE)),
-          outloc);
-    }
-    break;
-  default:
-    throw BoutException("Field2D AiolosMesh::indexFDDY_non_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
-                        method);
-  }; // end switch
-}
-
-// This file is auto-generated - do not edit!
 const Field3D indexD2DX2_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_x_SecondStagDeriv;
@@ -1429,6 +944,491 @@ const Field2D indexD2DY2_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD met
     break;
   default:
     throw BoutException("Field2D AiolosMesh::indexD2DY2_stag unknown method %d.\nNote "
+                        "FFTs are not (yet) supported.",
+                        method);
+  }; // end switch
+}
+
+// This file is auto-generated - do not edit!
+const Field3D indexDDX_non_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+  if (method == DIFF_DEFAULT) {
+    method = default_x_FirstDeriv;
+  }
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  switch (method) {
+  case DIFF_C4:
+    return interp_to(indexDDX_norm_DIFF_C4(f), outloc);
+    break;
+  case DIFF_S2:
+    return interp_to(indexDDX_norm_DIFF_S2(f), outloc);
+    break;
+  case DIFF_C2:
+    return interp_to(indexDDX_norm_DIFF_C2(f), outloc);
+    break;
+  case DIFF_W2:
+    return interp_to(indexDDX_norm_DIFF_W2(f), outloc);
+    break;
+  default:
+    throw BoutException("Field3D AiolosMesh::indexDDX_non_stag unknown method %d.\nNote "
+                        "FFTs are not (yet) supported.",
+                        method);
+  }; // end switch
+}
+
+// This file is auto-generated - do not edit!
+const Field3D indexDDY_non_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+  if (method == DIFF_DEFAULT) {
+    method = default_y_FirstDeriv;
+  }
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  switch (method) {
+  case DIFF_C4:
+    return interp_to(indexDDY_norm_DIFF_C4(f), outloc);
+    break;
+  case DIFF_S2:
+    return interp_to(indexDDY_norm_DIFF_S2(f), outloc);
+    break;
+  case DIFF_C2:
+    return interp_to(indexDDY_norm_DIFF_C2(f), outloc);
+    break;
+  case DIFF_W2:
+    return interp_to(indexDDY_norm_DIFF_W2(f), outloc);
+    break;
+  default:
+    throw BoutException("Field3D AiolosMesh::indexDDY_non_stag unknown method %d.\nNote "
+                        "FFTs are not (yet) supported.",
+                        method);
+  }; // end switch
+}
+
+// This file is auto-generated - do not edit!
+const Field3D indexDDZ_non_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+  if (method == DIFF_DEFAULT) {
+    method = default_z_FirstDeriv;
+  }
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  switch (method) {
+  case DIFF_C4:
+    return interp_to(indexDDZ_norm_DIFF_C4(f), outloc);
+    break;
+  case DIFF_S2:
+    return interp_to(indexDDZ_norm_DIFF_S2(f), outloc);
+    break;
+  case DIFF_C2:
+    return interp_to(indexDDZ_norm_DIFF_C2(f), outloc);
+    break;
+  case DIFF_W2:
+    return interp_to(indexDDZ_norm_DIFF_W2(f), outloc);
+    break;
+  default:
+    throw BoutException("Field3D AiolosMesh::indexDDZ_non_stag unknown method %d.\nNote "
+                        "FFTs are not (yet) supported.",
+                        method);
+  }; // end switch
+}
+
+// This file is auto-generated - do not edit!
+const Field2D indexDDX_non_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
+  if (method == DIFF_DEFAULT) {
+    method = default_x_FirstDeriv;
+  }
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  switch (method) {
+  case DIFF_C4:
+    return interp_to(indexDDX_norm_DIFF_C4(f), outloc);
+    break;
+  case DIFF_S2:
+    return interp_to(indexDDX_norm_DIFF_S2(f), outloc);
+    break;
+  case DIFF_C2:
+    return interp_to(indexDDX_norm_DIFF_C2(f), outloc);
+    break;
+  case DIFF_W2:
+    return interp_to(indexDDX_norm_DIFF_W2(f), outloc);
+    break;
+  default:
+    throw BoutException("Field2D AiolosMesh::indexDDX_non_stag unknown method %d.\nNote "
+                        "FFTs are not (yet) supported.",
+                        method);
+  }; // end switch
+}
+
+// This file is auto-generated - do not edit!
+const Field2D indexDDY_non_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
+  if (method == DIFF_DEFAULT) {
+    method = default_y_FirstDeriv;
+  }
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  switch (method) {
+  case DIFF_C4:
+    return interp_to(indexDDY_norm_DIFF_C4(f), outloc);
+    break;
+  case DIFF_S2:
+    return interp_to(indexDDY_norm_DIFF_S2(f), outloc);
+    break;
+  case DIFF_C2:
+    return interp_to(indexDDY_norm_DIFF_C2(f), outloc);
+    break;
+  case DIFF_W2:
+    return interp_to(indexDDY_norm_DIFF_W2(f), outloc);
+    break;
+  default:
+    throw BoutException("Field2D AiolosMesh::indexDDY_non_stag unknown method %d.\nNote "
+                        "FFTs are not (yet) supported.",
+                        method);
+  }; // end switch
+}
+
+// This file is auto-generated - do not edit!
+const Field3D indexFDDX_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc,
+                             DIFF_METHOD method) {
+  if (method == DIFF_DEFAULT) {
+    method = default_x_FluxStagDeriv;
+  }
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  switch (method) {
+  case DIFF_U1:
+    if (outloc == CELL_XLOW) {
+      return indexFDDX_on_DIFF_U1(interp_to(v, CELL_CENTRE), f);
+    } else {
+      return interp_to(indexFDDX_off_DIFF_U1(v, interp_to(f, CELL_CENTRE)), outloc);
+    }
+    break;
+  default:
+    throw BoutException("Field3D AiolosMesh::indexFDDX_stag unknown method %d.\nNote "
+                        "FFTs are not (yet) supported.",
+                        method);
+  }; // end switch
+}
+
+// This file is auto-generated - do not edit!
+const Field3D indexFDDY_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc,
+                             DIFF_METHOD method) {
+  if (method == DIFF_DEFAULT) {
+    method = default_y_FluxStagDeriv;
+  }
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  switch (method) {
+  case DIFF_U1:
+    if (outloc == CELL_YLOW) {
+      return indexFDDY_on_DIFF_U1(interp_to(v, CELL_CENTRE), f);
+    } else {
+      return interp_to(indexFDDY_off_DIFF_U1(v, interp_to(f, CELL_CENTRE)), outloc);
+    }
+    break;
+  default:
+    throw BoutException("Field3D AiolosMesh::indexFDDY_stag unknown method %d.\nNote "
+                        "FFTs are not (yet) supported.",
+                        method);
+  }; // end switch
+}
+
+// This file is auto-generated - do not edit!
+const Field3D indexFDDZ_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc,
+                             DIFF_METHOD method) {
+  if (method == DIFF_DEFAULT) {
+    method = default_z_FluxStagDeriv;
+  }
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  switch (method) {
+  case DIFF_U1:
+    if (outloc == CELL_ZLOW) {
+      return indexFDDZ_on_DIFF_U1(interp_to(v, CELL_CENTRE), f);
+    } else {
+      return interp_to(indexFDDZ_off_DIFF_U1(v, interp_to(f, CELL_CENTRE)), outloc);
+    }
+    break;
+  default:
+    throw BoutException("Field3D AiolosMesh::indexFDDZ_stag unknown method %d.\nNote "
+                        "FFTs are not (yet) supported.",
+                        method);
+  }; // end switch
+}
+
+// This file is auto-generated - do not edit!
+const Field2D indexFDDX_stag(const Field2D &v, const Field2D &f, CELL_LOC outloc,
+                             DIFF_METHOD method) {
+  if (method == DIFF_DEFAULT) {
+    method = default_x_FluxStagDeriv;
+  }
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  switch (method) {
+  case DIFF_U1:
+    if (outloc == CELL_XLOW) {
+      return indexFDDX_on_DIFF_U1(interp_to(v, CELL_CENTRE), f);
+    } else {
+      return interp_to(indexFDDX_off_DIFF_U1(v, interp_to(f, CELL_CENTRE)), outloc);
+    }
+    break;
+  default:
+    throw BoutException("Field2D AiolosMesh::indexFDDX_stag unknown method %d.\nNote "
+                        "FFTs are not (yet) supported.",
+                        method);
+  }; // end switch
+}
+
+// This file is auto-generated - do not edit!
+const Field2D indexFDDY_stag(const Field2D &v, const Field2D &f, CELL_LOC outloc,
+                             DIFF_METHOD method) {
+  if (method == DIFF_DEFAULT) {
+    method = default_y_FluxStagDeriv;
+  }
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  switch (method) {
+  case DIFF_U1:
+    if (outloc == CELL_YLOW) {
+      return indexFDDY_on_DIFF_U1(interp_to(v, CELL_CENTRE), f);
+    } else {
+      return interp_to(indexFDDY_off_DIFF_U1(v, interp_to(f, CELL_CENTRE)), outloc);
+    }
+    break;
+  default:
+    throw BoutException("Field2D AiolosMesh::indexFDDY_stag unknown method %d.\nNote "
+                        "FFTs are not (yet) supported.",
+                        method);
+  }; // end switch
+}
+
+// This file is auto-generated - do not edit!
+const Field3D indexVDDX_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc,
+                             DIFF_METHOD method) {
+  if (method == DIFF_DEFAULT) {
+    method = default_x_UpwindStagDeriv;
+  }
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  switch (method) {
+  case DIFF_C4:
+    if (outloc == CELL_XLOW) {
+      return indexVDDX_on_DIFF_C4(interp_to(v, CELL_CENTRE), f);
+    } else {
+      return interp_to(indexVDDX_off_DIFF_C4(v, interp_to(f, CELL_CENTRE)), outloc);
+    }
+    break;
+  case DIFF_U1:
+    if (outloc == CELL_XLOW) {
+      return indexVDDX_on_DIFF_U1(interp_to(v, CELL_CENTRE), f);
+    } else {
+      return interp_to(indexVDDX_off_DIFF_U1(v, interp_to(f, CELL_CENTRE)), outloc);
+    }
+    break;
+  case DIFF_C2:
+    if (outloc == CELL_XLOW) {
+      return indexVDDX_on_DIFF_C2(interp_to(v, CELL_CENTRE), f);
+    } else {
+      return interp_to(indexVDDX_off_DIFF_C2(v, interp_to(f, CELL_CENTRE)), outloc);
+    }
+    break;
+  case DIFF_U2:
+    if (outloc == CELL_XLOW) {
+      return indexVDDX_on_DIFF_U2(interp_to(v, CELL_CENTRE), f);
+    } else {
+      return interp_to(indexVDDX_off_DIFF_U2(v, interp_to(f, CELL_CENTRE)), outloc);
+    }
+    break;
+  default:
+    throw BoutException("Field3D AiolosMesh::indexVDDX_stag unknown method %d.\nNote "
+                        "FFTs are not (yet) supported.",
+                        method);
+  }; // end switch
+}
+
+// This file is auto-generated - do not edit!
+const Field3D indexVDDY_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc,
+                             DIFF_METHOD method) {
+  if (method == DIFF_DEFAULT) {
+    method = default_y_UpwindStagDeriv;
+  }
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  switch (method) {
+  case DIFF_C4:
+    if (outloc == CELL_YLOW) {
+      return indexVDDY_on_DIFF_C4(interp_to(v, CELL_CENTRE), f);
+    } else {
+      return interp_to(indexVDDY_off_DIFF_C4(v, interp_to(f, CELL_CENTRE)), outloc);
+    }
+    break;
+  case DIFF_U1:
+    if (outloc == CELL_YLOW) {
+      return indexVDDY_on_DIFF_U1(interp_to(v, CELL_CENTRE), f);
+    } else {
+      return interp_to(indexVDDY_off_DIFF_U1(v, interp_to(f, CELL_CENTRE)), outloc);
+    }
+    break;
+  case DIFF_C2:
+    if (outloc == CELL_YLOW) {
+      return indexVDDY_on_DIFF_C2(interp_to(v, CELL_CENTRE), f);
+    } else {
+      return interp_to(indexVDDY_off_DIFF_C2(v, interp_to(f, CELL_CENTRE)), outloc);
+    }
+    break;
+  case DIFF_U2:
+    if (outloc == CELL_YLOW) {
+      return indexVDDY_on_DIFF_U2(interp_to(v, CELL_CENTRE), f);
+    } else {
+      return interp_to(indexVDDY_off_DIFF_U2(v, interp_to(f, CELL_CENTRE)), outloc);
+    }
+    break;
+  default:
+    throw BoutException("Field3D AiolosMesh::indexVDDY_stag unknown method %d.\nNote "
+                        "FFTs are not (yet) supported.",
+                        method);
+  }; // end switch
+}
+
+// This file is auto-generated - do not edit!
+const Field3D indexVDDZ_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc,
+                             DIFF_METHOD method) {
+  if (method == DIFF_DEFAULT) {
+    method = default_z_UpwindStagDeriv;
+  }
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  switch (method) {
+  case DIFF_C4:
+    if (outloc == CELL_ZLOW) {
+      return indexVDDZ_on_DIFF_C4(interp_to(v, CELL_CENTRE), f);
+    } else {
+      return interp_to(indexVDDZ_off_DIFF_C4(v, interp_to(f, CELL_CENTRE)), outloc);
+    }
+    break;
+  case DIFF_U1:
+    if (outloc == CELL_ZLOW) {
+      return indexVDDZ_on_DIFF_U1(interp_to(v, CELL_CENTRE), f);
+    } else {
+      return interp_to(indexVDDZ_off_DIFF_U1(v, interp_to(f, CELL_CENTRE)), outloc);
+    }
+    break;
+  case DIFF_C2:
+    if (outloc == CELL_ZLOW) {
+      return indexVDDZ_on_DIFF_C2(interp_to(v, CELL_CENTRE), f);
+    } else {
+      return interp_to(indexVDDZ_off_DIFF_C2(v, interp_to(f, CELL_CENTRE)), outloc);
+    }
+    break;
+  case DIFF_U2:
+    if (outloc == CELL_ZLOW) {
+      return indexVDDZ_on_DIFF_U2(interp_to(v, CELL_CENTRE), f);
+    } else {
+      return interp_to(indexVDDZ_off_DIFF_U2(v, interp_to(f, CELL_CENTRE)), outloc);
+    }
+    break;
+  default:
+    throw BoutException("Field3D AiolosMesh::indexVDDZ_stag unknown method %d.\nNote "
+                        "FFTs are not (yet) supported.",
+                        method);
+  }; // end switch
+}
+
+// This file is auto-generated - do not edit!
+const Field2D indexVDDX_stag(const Field2D &v, const Field2D &f, CELL_LOC outloc,
+                             DIFF_METHOD method) {
+  if (method == DIFF_DEFAULT) {
+    method = default_x_UpwindStagDeriv;
+  }
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  switch (method) {
+  case DIFF_C4:
+    if (outloc == CELL_XLOW) {
+      return indexVDDX_on_DIFF_C4(interp_to(v, CELL_CENTRE), f);
+    } else {
+      return interp_to(indexVDDX_off_DIFF_C4(v, interp_to(f, CELL_CENTRE)), outloc);
+    }
+    break;
+  case DIFF_U1:
+    if (outloc == CELL_XLOW) {
+      return indexVDDX_on_DIFF_U1(interp_to(v, CELL_CENTRE), f);
+    } else {
+      return interp_to(indexVDDX_off_DIFF_U1(v, interp_to(f, CELL_CENTRE)), outloc);
+    }
+    break;
+  case DIFF_C2:
+    if (outloc == CELL_XLOW) {
+      return indexVDDX_on_DIFF_C2(interp_to(v, CELL_CENTRE), f);
+    } else {
+      return interp_to(indexVDDX_off_DIFF_C2(v, interp_to(f, CELL_CENTRE)), outloc);
+    }
+    break;
+  case DIFF_U2:
+    if (outloc == CELL_XLOW) {
+      return indexVDDX_on_DIFF_U2(interp_to(v, CELL_CENTRE), f);
+    } else {
+      return interp_to(indexVDDX_off_DIFF_U2(v, interp_to(f, CELL_CENTRE)), outloc);
+    }
+    break;
+  default:
+    throw BoutException("Field2D AiolosMesh::indexVDDX_stag unknown method %d.\nNote "
+                        "FFTs are not (yet) supported.",
+                        method);
+  }; // end switch
+}
+
+// This file is auto-generated - do not edit!
+const Field2D indexVDDY_stag(const Field2D &v, const Field2D &f, CELL_LOC outloc,
+                             DIFF_METHOD method) {
+  if (method == DIFF_DEFAULT) {
+    method = default_y_UpwindStagDeriv;
+  }
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  switch (method) {
+  case DIFF_C4:
+    if (outloc == CELL_YLOW) {
+      return indexVDDY_on_DIFF_C4(interp_to(v, CELL_CENTRE), f);
+    } else {
+      return interp_to(indexVDDY_off_DIFF_C4(v, interp_to(f, CELL_CENTRE)), outloc);
+    }
+    break;
+  case DIFF_U1:
+    if (outloc == CELL_YLOW) {
+      return indexVDDY_on_DIFF_U1(interp_to(v, CELL_CENTRE), f);
+    } else {
+      return interp_to(indexVDDY_off_DIFF_U1(v, interp_to(f, CELL_CENTRE)), outloc);
+    }
+    break;
+  case DIFF_C2:
+    if (outloc == CELL_YLOW) {
+      return indexVDDY_on_DIFF_C2(interp_to(v, CELL_CENTRE), f);
+    } else {
+      return interp_to(indexVDDY_off_DIFF_C2(v, interp_to(f, CELL_CENTRE)), outloc);
+    }
+    break;
+  case DIFF_U2:
+    if (outloc == CELL_YLOW) {
+      return indexVDDY_on_DIFF_U2(interp_to(v, CELL_CENTRE), f);
+    } else {
+      return interp_to(indexVDDY_off_DIFF_U2(v, interp_to(f, CELL_CENTRE)), outloc);
+    }
+    break;
+  default:
+    throw BoutException("Field2D AiolosMesh::indexVDDY_stag unknown method %d.\nNote "
                         "FFTs are not (yet) supported.",
                         method);
   }; // end switch

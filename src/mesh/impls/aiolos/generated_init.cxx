@@ -45,21 +45,21 @@ void AiolosMesh::derivs_init(Options *option) {
   } else {
     name = "C2";
   }
-  if (strcasecmp(name.c_str(), "W2") == 0) {
-    default_x_FirstDeriv = DIFF_W2;
-    output.write("	          First : Second order WENO\n");
+  if (strcasecmp(name.c_str(), "C4") == 0) {
+    default_x_FirstDeriv = DIFF_C4;
+    output.write("	          First : Fourth order central\n");
   } else if (strcasecmp(name.c_str(), "S2") == 0) {
     default_x_FirstDeriv = DIFF_S2;
     output.write("	          First : Smoothing 2nd order\n");
-  } else if (strcasecmp(name.c_str(), "C4") == 0) {
-    default_x_FirstDeriv = DIFF_C4;
-    output.write("	          First : Fourth order central\n");
   } else if (strcasecmp(name.c_str(), "C2") == 0) {
     default_x_FirstDeriv = DIFF_C2;
     output.write("	          First : Second order central\n");
+  } else if (strcasecmp(name.c_str(), "W2") == 0) {
+    default_x_FirstDeriv = DIFF_W2;
+    output.write("	          First : Second order WENO\n");
   } else {
     throw BoutException("Dont't know what diff method to use for First (direction x, "
-                        "tried to use %s)!\nOptions are:\n * W2\n * S2\n * C4\n * C2",
+                        "tried to use %s)!\nOptions are:\n * C4\n * S2\n * C2\n * W2",
                         name.c_str());
   }
 
@@ -137,25 +137,25 @@ void AiolosMesh::derivs_init(Options *option) {
   } else {
     name = "U1";
   }
-  if (strcasecmp(name.c_str(), "U1") == 0) {
-    default_x_UpwindDeriv = DIFF_U1;
-    output.write("	         Upwind : First order upwinding\n");
-  } else if (strcasecmp(name.c_str(), "U2") == 0) {
-    default_x_UpwindDeriv = DIFF_U2;
-    output.write("	         Upwind : Second order upwinding\n");
-  } else if (strcasecmp(name.c_str(), "C2") == 0) {
-    default_x_UpwindDeriv = DIFF_C2;
-    output.write("	         Upwind : Second order central\n");
-  } else if (strcasecmp(name.c_str(), "U4") == 0) {
+  if (strcasecmp(name.c_str(), "U4") == 0) {
     default_x_UpwindDeriv = DIFF_U4;
     output.write("	         Upwind : Fourth order upwinding\n");
   } else if (strcasecmp(name.c_str(), "C4") == 0) {
     default_x_UpwindDeriv = DIFF_C4;
     output.write("	         Upwind : Fourth order central\n");
+  } else if (strcasecmp(name.c_str(), "U1") == 0) {
+    default_x_UpwindDeriv = DIFF_U1;
+    output.write("	         Upwind : First order upwinding\n");
+  } else if (strcasecmp(name.c_str(), "C2") == 0) {
+    default_x_UpwindDeriv = DIFF_C2;
+    output.write("	         Upwind : Second order central\n");
+  } else if (strcasecmp(name.c_str(), "U2") == 0) {
+    default_x_UpwindDeriv = DIFF_U2;
+    output.write("	         Upwind : Second order upwinding\n");
   } else {
     throw BoutException("Dont't know what diff method to use for Upwind (direction x, "
-                        "tried to use %s)!\nOptions are:\n * U1\n * U2\n * C2\n * U4\n * "
-                        "C4",
+                        "tried to use %s)!\nOptions are:\n * U4\n * C4\n * U1\n * C2\n * "
+                        "U2",
                         name.c_str());
   }
 
@@ -170,21 +170,21 @@ void AiolosMesh::derivs_init(Options *option) {
   } else {
     name = "U1";
   }
-  if (strcasecmp(name.c_str(), "U1") == 0) {
+  if (strcasecmp(name.c_str(), "C4") == 0) {
+    default_x_UpwindStagDeriv = DIFF_C4;
+    output.write("	     UpwindStag : Fourth order central\n");
+  } else if (strcasecmp(name.c_str(), "U1") == 0) {
     default_x_UpwindStagDeriv = DIFF_U1;
     output.write("	     UpwindStag : First order upwinding\n");
-  } else if (strcasecmp(name.c_str(), "U2") == 0) {
-    default_x_UpwindStagDeriv = DIFF_U2;
-    output.write("	     UpwindStag : Second order upwinding\n");
   } else if (strcasecmp(name.c_str(), "C2") == 0) {
     default_x_UpwindStagDeriv = DIFF_C2;
     output.write("	     UpwindStag : Second order central\n");
-  } else if (strcasecmp(name.c_str(), "C4") == 0) {
-    default_x_UpwindStagDeriv = DIFF_C4;
-    output.write("	     UpwindStag : Fourth order central\n");
+  } else if (strcasecmp(name.c_str(), "U2") == 0) {
+    default_x_UpwindStagDeriv = DIFF_U2;
+    output.write("	     UpwindStag : Second order upwinding\n");
   } else {
     throw BoutException("Dont't know what diff method to use for UpwindStag (direction "
-                        "x, tried to use %s)!\nOptions are:\n * U1\n * U2\n * C2\n * C4",
+                        "x, tried to use %s)!\nOptions are:\n * C4\n * U1\n * C2\n * U2",
                         name.c_str());
   }
 
@@ -197,21 +197,21 @@ void AiolosMesh::derivs_init(Options *option) {
   } else {
     name = "U1";
   }
-  if (strcasecmp(name.c_str(), "NND") == 0) {
-    default_x_FluxDeriv = DIFF_NND;
-    output.write("	           Flux : NND\n");
+  if (strcasecmp(name.c_str(), "C4") == 0) {
+    default_x_FluxDeriv = DIFF_C4;
+    output.write("	           Flux : Fourth order central\n");
   } else if (strcasecmp(name.c_str(), "U1") == 0) {
     default_x_FluxDeriv = DIFF_U1;
     output.write("	           Flux : First order upwinding\n");
-  } else if (strcasecmp(name.c_str(), "C4") == 0) {
-    default_x_FluxDeriv = DIFF_C4;
-    output.write("	           Flux : Fourth order central\n");
   } else if (strcasecmp(name.c_str(), "C2") == 0) {
     default_x_FluxDeriv = DIFF_C2;
     output.write("	           Flux : Second order central\n");
+  } else if (strcasecmp(name.c_str(), "NND") == 0) {
+    default_x_FluxDeriv = DIFF_NND;
+    output.write("	           Flux : NND\n");
   } else {
     throw BoutException("Dont't know what diff method to use for Flux (direction x, "
-                        "tried to use %s)!\nOptions are:\n * NND\n * U1\n * C4\n * C2",
+                        "tried to use %s)!\nOptions are:\n * C4\n * U1\n * C2\n * NND",
                         name.c_str());
   }
 
@@ -246,21 +246,21 @@ void AiolosMesh::derivs_init(Options *option) {
   } else {
     name = "C2";
   }
-  if (strcasecmp(name.c_str(), "W2") == 0) {
-    default_y_FirstDeriv = DIFF_W2;
-    output.write("	          First : Second order WENO\n");
+  if (strcasecmp(name.c_str(), "C4") == 0) {
+    default_y_FirstDeriv = DIFF_C4;
+    output.write("	          First : Fourth order central\n");
   } else if (strcasecmp(name.c_str(), "S2") == 0) {
     default_y_FirstDeriv = DIFF_S2;
     output.write("	          First : Smoothing 2nd order\n");
-  } else if (strcasecmp(name.c_str(), "C4") == 0) {
-    default_y_FirstDeriv = DIFF_C4;
-    output.write("	          First : Fourth order central\n");
   } else if (strcasecmp(name.c_str(), "C2") == 0) {
     default_y_FirstDeriv = DIFF_C2;
     output.write("	          First : Second order central\n");
+  } else if (strcasecmp(name.c_str(), "W2") == 0) {
+    default_y_FirstDeriv = DIFF_W2;
+    output.write("	          First : Second order WENO\n");
   } else {
     throw BoutException("Dont't know what diff method to use for First (direction y, "
-                        "tried to use %s)!\nOptions are:\n * W2\n * S2\n * C4\n * C2",
+                        "tried to use %s)!\nOptions are:\n * C4\n * S2\n * C2\n * W2",
                         name.c_str());
   }
 
@@ -338,25 +338,25 @@ void AiolosMesh::derivs_init(Options *option) {
   } else {
     name = "U1";
   }
-  if (strcasecmp(name.c_str(), "U1") == 0) {
-    default_y_UpwindDeriv = DIFF_U1;
-    output.write("	         Upwind : First order upwinding\n");
-  } else if (strcasecmp(name.c_str(), "U2") == 0) {
-    default_y_UpwindDeriv = DIFF_U2;
-    output.write("	         Upwind : Second order upwinding\n");
-  } else if (strcasecmp(name.c_str(), "C2") == 0) {
-    default_y_UpwindDeriv = DIFF_C2;
-    output.write("	         Upwind : Second order central\n");
-  } else if (strcasecmp(name.c_str(), "U4") == 0) {
+  if (strcasecmp(name.c_str(), "U4") == 0) {
     default_y_UpwindDeriv = DIFF_U4;
     output.write("	         Upwind : Fourth order upwinding\n");
   } else if (strcasecmp(name.c_str(), "C4") == 0) {
     default_y_UpwindDeriv = DIFF_C4;
     output.write("	         Upwind : Fourth order central\n");
+  } else if (strcasecmp(name.c_str(), "U1") == 0) {
+    default_y_UpwindDeriv = DIFF_U1;
+    output.write("	         Upwind : First order upwinding\n");
+  } else if (strcasecmp(name.c_str(), "C2") == 0) {
+    default_y_UpwindDeriv = DIFF_C2;
+    output.write("	         Upwind : Second order central\n");
+  } else if (strcasecmp(name.c_str(), "U2") == 0) {
+    default_y_UpwindDeriv = DIFF_U2;
+    output.write("	         Upwind : Second order upwinding\n");
   } else {
     throw BoutException("Dont't know what diff method to use for Upwind (direction y, "
-                        "tried to use %s)!\nOptions are:\n * U1\n * U2\n * C2\n * U4\n * "
-                        "C4",
+                        "tried to use %s)!\nOptions are:\n * U4\n * C4\n * U1\n * C2\n * "
+                        "U2",
                         name.c_str());
   }
 
@@ -371,21 +371,21 @@ void AiolosMesh::derivs_init(Options *option) {
   } else {
     name = "U1";
   }
-  if (strcasecmp(name.c_str(), "U1") == 0) {
+  if (strcasecmp(name.c_str(), "C4") == 0) {
+    default_y_UpwindStagDeriv = DIFF_C4;
+    output.write("	     UpwindStag : Fourth order central\n");
+  } else if (strcasecmp(name.c_str(), "U1") == 0) {
     default_y_UpwindStagDeriv = DIFF_U1;
     output.write("	     UpwindStag : First order upwinding\n");
-  } else if (strcasecmp(name.c_str(), "U2") == 0) {
-    default_y_UpwindStagDeriv = DIFF_U2;
-    output.write("	     UpwindStag : Second order upwinding\n");
   } else if (strcasecmp(name.c_str(), "C2") == 0) {
     default_y_UpwindStagDeriv = DIFF_C2;
     output.write("	     UpwindStag : Second order central\n");
-  } else if (strcasecmp(name.c_str(), "C4") == 0) {
-    default_y_UpwindStagDeriv = DIFF_C4;
-    output.write("	     UpwindStag : Fourth order central\n");
+  } else if (strcasecmp(name.c_str(), "U2") == 0) {
+    default_y_UpwindStagDeriv = DIFF_U2;
+    output.write("	     UpwindStag : Second order upwinding\n");
   } else {
     throw BoutException("Dont't know what diff method to use for UpwindStag (direction "
-                        "y, tried to use %s)!\nOptions are:\n * U1\n * U2\n * C2\n * C4",
+                        "y, tried to use %s)!\nOptions are:\n * C4\n * U1\n * C2\n * U2",
                         name.c_str());
   }
 
@@ -398,21 +398,21 @@ void AiolosMesh::derivs_init(Options *option) {
   } else {
     name = "U1";
   }
-  if (strcasecmp(name.c_str(), "NND") == 0) {
-    default_y_FluxDeriv = DIFF_NND;
-    output.write("	           Flux : NND\n");
+  if (strcasecmp(name.c_str(), "C4") == 0) {
+    default_y_FluxDeriv = DIFF_C4;
+    output.write("	           Flux : Fourth order central\n");
   } else if (strcasecmp(name.c_str(), "U1") == 0) {
     default_y_FluxDeriv = DIFF_U1;
     output.write("	           Flux : First order upwinding\n");
-  } else if (strcasecmp(name.c_str(), "C4") == 0) {
-    default_y_FluxDeriv = DIFF_C4;
-    output.write("	           Flux : Fourth order central\n");
   } else if (strcasecmp(name.c_str(), "C2") == 0) {
     default_y_FluxDeriv = DIFF_C2;
     output.write("	           Flux : Second order central\n");
+  } else if (strcasecmp(name.c_str(), "NND") == 0) {
+    default_y_FluxDeriv = DIFF_NND;
+    output.write("	           Flux : NND\n");
   } else {
     throw BoutException("Dont't know what diff method to use for Flux (direction y, "
-                        "tried to use %s)!\nOptions are:\n * NND\n * U1\n * C4\n * C2",
+                        "tried to use %s)!\nOptions are:\n * C4\n * U1\n * C2\n * NND",
                         name.c_str());
   }
 
@@ -447,21 +447,21 @@ void AiolosMesh::derivs_init(Options *option) {
   } else {
     name = "C2";
   }
-  if (strcasecmp(name.c_str(), "W2") == 0) {
-    default_z_FirstDeriv = DIFF_W2;
-    output.write("	          First : Second order WENO\n");
+  if (strcasecmp(name.c_str(), "C4") == 0) {
+    default_z_FirstDeriv = DIFF_C4;
+    output.write("	          First : Fourth order central\n");
   } else if (strcasecmp(name.c_str(), "S2") == 0) {
     default_z_FirstDeriv = DIFF_S2;
     output.write("	          First : Smoothing 2nd order\n");
-  } else if (strcasecmp(name.c_str(), "C4") == 0) {
-    default_z_FirstDeriv = DIFF_C4;
-    output.write("	          First : Fourth order central\n");
   } else if (strcasecmp(name.c_str(), "C2") == 0) {
     default_z_FirstDeriv = DIFF_C2;
     output.write("	          First : Second order central\n");
+  } else if (strcasecmp(name.c_str(), "W2") == 0) {
+    default_z_FirstDeriv = DIFF_W2;
+    output.write("	          First : Second order WENO\n");
   } else {
     throw BoutException("Dont't know what diff method to use for First (direction z, "
-                        "tried to use %s)!\nOptions are:\n * W2\n * S2\n * C4\n * C2",
+                        "tried to use %s)!\nOptions are:\n * C4\n * S2\n * C2\n * W2",
                         name.c_str());
   }
 
@@ -539,25 +539,25 @@ void AiolosMesh::derivs_init(Options *option) {
   } else {
     name = "U1";
   }
-  if (strcasecmp(name.c_str(), "U1") == 0) {
-    default_z_UpwindDeriv = DIFF_U1;
-    output.write("	         Upwind : First order upwinding\n");
-  } else if (strcasecmp(name.c_str(), "U2") == 0) {
-    default_z_UpwindDeriv = DIFF_U2;
-    output.write("	         Upwind : Second order upwinding\n");
-  } else if (strcasecmp(name.c_str(), "C2") == 0) {
-    default_z_UpwindDeriv = DIFF_C2;
-    output.write("	         Upwind : Second order central\n");
-  } else if (strcasecmp(name.c_str(), "U4") == 0) {
+  if (strcasecmp(name.c_str(), "U4") == 0) {
     default_z_UpwindDeriv = DIFF_U4;
     output.write("	         Upwind : Fourth order upwinding\n");
   } else if (strcasecmp(name.c_str(), "C4") == 0) {
     default_z_UpwindDeriv = DIFF_C4;
     output.write("	         Upwind : Fourth order central\n");
+  } else if (strcasecmp(name.c_str(), "U1") == 0) {
+    default_z_UpwindDeriv = DIFF_U1;
+    output.write("	         Upwind : First order upwinding\n");
+  } else if (strcasecmp(name.c_str(), "C2") == 0) {
+    default_z_UpwindDeriv = DIFF_C2;
+    output.write("	         Upwind : Second order central\n");
+  } else if (strcasecmp(name.c_str(), "U2") == 0) {
+    default_z_UpwindDeriv = DIFF_U2;
+    output.write("	         Upwind : Second order upwinding\n");
   } else {
     throw BoutException("Dont't know what diff method to use for Upwind (direction z, "
-                        "tried to use %s)!\nOptions are:\n * U1\n * U2\n * C2\n * U4\n * "
-                        "C4",
+                        "tried to use %s)!\nOptions are:\n * U4\n * C4\n * U1\n * C2\n * "
+                        "U2",
                         name.c_str());
   }
 
@@ -572,21 +572,21 @@ void AiolosMesh::derivs_init(Options *option) {
   } else {
     name = "U1";
   }
-  if (strcasecmp(name.c_str(), "U1") == 0) {
+  if (strcasecmp(name.c_str(), "C4") == 0) {
+    default_z_UpwindStagDeriv = DIFF_C4;
+    output.write("	     UpwindStag : Fourth order central\n");
+  } else if (strcasecmp(name.c_str(), "U1") == 0) {
     default_z_UpwindStagDeriv = DIFF_U1;
     output.write("	     UpwindStag : First order upwinding\n");
-  } else if (strcasecmp(name.c_str(), "U2") == 0) {
-    default_z_UpwindStagDeriv = DIFF_U2;
-    output.write("	     UpwindStag : Second order upwinding\n");
   } else if (strcasecmp(name.c_str(), "C2") == 0) {
     default_z_UpwindStagDeriv = DIFF_C2;
     output.write("	     UpwindStag : Second order central\n");
-  } else if (strcasecmp(name.c_str(), "C4") == 0) {
-    default_z_UpwindStagDeriv = DIFF_C4;
-    output.write("	     UpwindStag : Fourth order central\n");
+  } else if (strcasecmp(name.c_str(), "U2") == 0) {
+    default_z_UpwindStagDeriv = DIFF_U2;
+    output.write("	     UpwindStag : Second order upwinding\n");
   } else {
     throw BoutException("Dont't know what diff method to use for UpwindStag (direction "
-                        "z, tried to use %s)!\nOptions are:\n * U1\n * U2\n * C2\n * C4",
+                        "z, tried to use %s)!\nOptions are:\n * C4\n * U1\n * C2\n * U2",
                         name.c_str());
   }
 
@@ -599,21 +599,21 @@ void AiolosMesh::derivs_init(Options *option) {
   } else {
     name = "U1";
   }
-  if (strcasecmp(name.c_str(), "NND") == 0) {
-    default_z_FluxDeriv = DIFF_NND;
-    output.write("	           Flux : NND\n");
+  if (strcasecmp(name.c_str(), "C4") == 0) {
+    default_z_FluxDeriv = DIFF_C4;
+    output.write("	           Flux : Fourth order central\n");
   } else if (strcasecmp(name.c_str(), "U1") == 0) {
     default_z_FluxDeriv = DIFF_U1;
     output.write("	           Flux : First order upwinding\n");
-  } else if (strcasecmp(name.c_str(), "C4") == 0) {
-    default_z_FluxDeriv = DIFF_C4;
-    output.write("	           Flux : Fourth order central\n");
   } else if (strcasecmp(name.c_str(), "C2") == 0) {
     default_z_FluxDeriv = DIFF_C2;
     output.write("	           Flux : Second order central\n");
+  } else if (strcasecmp(name.c_str(), "NND") == 0) {
+    default_z_FluxDeriv = DIFF_NND;
+    output.write("	           Flux : NND\n");
   } else {
     throw BoutException("Dont't know what diff method to use for Flux (direction z, "
-                        "tried to use %s)!\nOptions are:\n * NND\n * U1\n * C4\n * C2",
+                        "tried to use %s)!\nOptions are:\n * C4\n * U1\n * C2\n * NND",
                         name.c_str());
   }
 

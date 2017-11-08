@@ -1,6 +1,7 @@
+from __future__ import print_function
 # Define some constants, functions
 def warn():
-    print "\n// This file is auto-generated - do not edit!"
+    print("\n// This file is auto-generated - do not edit!")
 
 fields=['Field3D','Field2D']
 dirs=dict()
@@ -106,11 +107,11 @@ numGuards={ 'DDX_C2'       : 1,
 
 def duplicates(a):
     import collections
-    dup = [item for item, count in collections.Counter(a).items() if count > 1]
+    dup = [item for item, count in list(collections.Counter(a).items()) if count > 1]
     if dup:
         import sys
-        print >> sys.stderr , "found duplicates:"
-        print >> sys.stderr, dup
-        print >> sys.stderr , "in"
-        print >> sys.stderr , a
+        print("found duplicates:", file=sys.stderr)
+        print(dup, file=sys.stderr)
+        print("in", file=sys.stderr)
+        print(a, file=sys.stderr)
         raise "Exit"

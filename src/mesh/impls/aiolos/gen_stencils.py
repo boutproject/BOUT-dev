@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from common import *
 # Define some constants, functions
 
@@ -10,10 +12,12 @@ with open("stencils_cleaned.cxx","r") as f:
     fi=-1
     for line in f:
         line=line.strip()
-        line=line.replace("result","result_") # avoid to overwrite result
+        # avoid to overwrite result
+        line=line.replace("result","result_")
         if line == '':
             continue
-        if line.find("{") > -1: #start of function
+        # start of function
+        if line.find("{") > -1:
             if inFunc==0:
                 functions.append([])
                 fi+=1
@@ -29,6 +33,7 @@ dir=['x', 'y', 'z']
 
 for d in dir:
     func_db[d]=[]
+
 
 class function:
     name=""
@@ -106,7 +111,7 @@ for f in functions:
                 f.guards=2
         
 for f in functions:
-    if f.flux == False:
+    if not f.flux:
         if f.stag:
             for d in dir:
                 tmp="cart_diff_%s_%s_%%s"%(d,f.name)
@@ -122,7 +127,7 @@ for db in func_db:
 
 
 def replace_stencil(line,sten,fname,field,mode,sten_mbf,d,update=None,z0=None):
-    if update==None:
+    if update is None:
         update=sten_mbf=="main"
     pos=line.find(sten)
     part_of_offset=['p','m','c']
@@ -137,9 +142,9 @@ def replace_stencil(line,sten,fname,field,mode,sten_mbf,d,update=None,z0=None):
             line_=line
             line=line[:pos]+get_diff(off_diff[mode][off],fname,field,d,update,z0)+line[end:]
         except:
-            print >>sys.stderr,line_,mode,off,sten
+            print(line_,mode,off,sten, file=sys.stderr)
             debug(off_diff)
-            print >>sys.stderr,off_diff[mode]
+            print(off_diff[mode], file=sys.stderr)
             raise
         pos=line.find(sten)
     return line
@@ -156,7 +161,7 @@ def parse_body(sten,field,mode,d,z0=None):
                 line=replace_stencil(line,'f.',"f_in",field,"norm",sten.mbf,d,z0=z0)
             except:
                 import sys
-                print >>sys.stderr , sten.name, sten.mbf
+                print(sten.name, sten.mbf, file=sys.stderr)
                 raise
         else:
             line=replace_stencil(line,'f.',"in",field,mode,sten.mbf,d,z0=z0)
@@ -171,21 +176,21 @@ def parse_body(sten,field,mode,d,z0=None):
                         if tmp.find("=") > -1:
                             if result_[resi]!='':
                                 import sys
-                                print >> sys.stderr ,"Did not expect another defintion of",res
-                                print >> sys.stderr ,"The last one was %s = %s"%(res,result_[resi])
-                                print >> sys.stderr ,"thise one is ",line
+                                print("Did not expect another defintion of",res, file=sys.stderr)
+                                print("The last one was %s = %s"%(res,result_[resi]), file=sys.stderr)
+                                print("thise one is ",line, file=sys.stderr)
                                 exit(1)
                             result_[resi]=tmp[tmp.index("=")+1:]
                             toPrint=False
                 if toPrint:
                     if line.find("=") > -1:
                         import sys
-                        print >> sys.stderr ,"While parsing function %s"%sten.name
-                        print >> sys.stderr ,sten.body
-                        print >> sys.stderr ,sten.mbf
-                        print >> sys.stderr ,"Failed to parse - unexpected line: ",line
-                        print >> sys.stderr ,result_
-                        print >> sys.stderr ,line
+                        print("While parsing function %s"%sten.name, file=sys.stderr)
+                        print(sten.body, file=sys.stderr)
+                        print(sten.mbf, file=sys.stderr)
+                        print("Failed to parse - unexpected line: ",line, file=sys.stderr)
+                        print(result_, file=sys.stderr)
+                        print(line, file=sys.stderr)
                         raise "Fuu"
 
         else:
@@ -199,97 +204,97 @@ def parse_body(sten,field,mode,d,z0=None):
 
 def get_for_loop_z(sten,field,stag):
     d='z'
-    print '  if (Nz > 3) {'
+    print('  if (Nz > 3) {')
     for d2 in dirs[field]:
         if d!=d2:
-            print "  for (int %s = 0 ; %s < N%s; ++%s ){"%(d2,d2,d2,d2)
+            print("  for (int %s = 0 ; %s < N%s; ++%s ){"%(d2,d2,d2,d2))
     body,result,_ = parse_body(sten,field,stag,d)
     for i in range(guards_[0]):
-        print '    {'
-        print '      int z=%d;'%i
+        print('    {')
+        print('      int z=%d;'%i)
         body,result,_ = parse_body(sten,field,stag,d,z0=i+1)
-        print body
-        print "      "+get_diff('c()',"result",field,d)+"=",
+        print(body)
+        print("      "+get_diff('c()',"result",field,d)+"=", end=' ')
         if result:
-            print result;
+            print(result);
         else:
-            print 'result_;'
-        print '    }'
-    print '    for (int z=%d;z<Nz-%d;++z) {'%(guards_[0],guards_[1])
+            print('result_;')
+        print('    }')
+    print('    for (int z=%d;z<Nz-%d;++z) {'%(guards_[0],guards_[1]))
     body,result,_ = parse_body(sten,field,stag,d)
-    print body
-    print "      "+get_diff('c()',"result",field,d)+"=",
+    print(body)
+    print("      "+get_diff('c()',"result",field,d)+"=", end=' ')
     if result:
-        print result;
+        print(result);
     else:
-        print 'result_;'
-    print '    }'
+        print('result_;')
+    print('    }')
     for i in range(guards_[1],0,-1):
-        print '    {'
-        print '      int z=Nz-%d;'%i
+        print('    {')
+        print('      int z=Nz-%d;'%i)
         body,result,_ = parse_body(sten,field,stag,d,z0=-i)
-        print body
-        print "      "+get_diff('c()',"result",field,d)+"=",
+        print(body)
+        print("      "+get_diff('c()',"result",field,d)+"=", end=' ')
         if result:
-            print result;
+            print(result);
         else:
-            print 'result_;'
-        print '    }'
+            print('result_;')
+        print('    }')
     for d2 in dirs[field]:
         if d!=d2:
-            print "  }"
-    print '  } else {'
+            print("  }")
+    print('  } else {')
     for d2 in dirs[field]:
         if d!=d2:
-            print "  for (int %s = 0 ; %s < N%s; ++%s ){"%(d2,d2,d2,d2)
-    print '    for (int z=0;z<Nz;++z) {'
+            print("  for (int %s = 0 ; %s < N%s; ++%s ){"%(d2,d2,d2,d2))
+    print('    for (int z=0;z<Nz;++z) {')
     body,result,_ = parse_body(sten,field,stag,d,z0='secure')
-    print body
-    print "      "+get_diff('c()',"result",field,d)+"=",
+    print(body)
+    print("      "+get_diff('c()',"result",field,d)+"=", end=' ')
     if result:
-        print result;
+        print(result);
     else:
-        print 'result_;'
-    print '    }'
+        print('result_;')
+    print('    }')
     for d2 in dirs[field]:
         if d!=d2:
-            print "  }"
-    print '  }'
+            print("  }")
+    print('  }')
                                                 # if d=='z': # aka z                                                 
 def get_for_loop(d,mode,field,guards,sten_name ):
     #print >> sys.stderr, mode, guards,sten_name
     if sten_name == "main":
-        print '#if CHECK > 0'
-        print '  if (msh->%sstart < %d){'%(d,max(guards))
-        print '    throw BoutException("Cannot compute derivative - need at least %d guard cells in %s direction!");'%(max(guards),d.upper())
-        print '  }'
-        print '#endif'
+        print('#if CHECK > 0')
+        print('  if (msh->%sstart < %d){'%(d,max(guards)))
+        print('    throw BoutException("Cannot compute derivative - need at least %d guard cells in %s direction!");'%(max(guards),d.upper()))
+        print('  }')
+        print('#endif')
         dp=guards[0]
         dm=-guards[1]
         for d2 in dirs[field]:
             if d==d2:
-                print "  for (int %s = %d; %s < N%s%+d; ++%s ){"%(d,dp,d,d,dm,d)
+                print("  for (int %s = %d; %s < N%s%+d; ++%s ){"%(d,dp,d,d,dm,d))
             else:
-                print "  for (int %s = 0 ; %s < N%s; ++%s ){"%(d2,d2,d2,d2)
+                print("  for (int %s = 0 ; %s < N%s; ++%s ){"%(d2,d2,d2,d2))
     else:
         if sten_name == 'forward':
-            print "    int "+d,"=%d ;"%(guards_[0]-1)
+            print("    int "+d,"=%d ;"%(guards_[0]-1))
         else:
-            print "    "+d,"=N%s"%d,"-%d ;"%(guards_[1])
+            print("    "+d,"=N%s"%d,"-%d ;"%(guards_[1]))
             if guards_[1]>2:
-                print >>sys.stderr,guards_
+                print(guards_, file=sys.stderr)
                 raise "To many guards"
         for d2 in perp_dir[field][d]:
-            print "    for (int "+d2,"=0; "+d2,"< N"+d2,";++"+d2,") {"
+            print("    for (int "+d2,"=0; "+d2,"< N"+d2,";++"+d2,") {")
 
 
 def get_for_end(d,field, sten_name):
     if sten_name == 'main':
         for d2 in dirs[field]:
-            print "  }"
+            print("  }")
     else:
         for d2 in perp_dir[field][d]:
-            print "  }"
+            print("  }")
 
 def get_diff(diff,fname,field,d,update=False,z0=None):
     global use_field_operator
@@ -360,18 +365,18 @@ def get_diff(diff,fname,field,d,update=False,z0=None):
 
 def get_pointer(field, field_type,const):
     if const:
-        print '  checkData(%s);'%field
-        print "  const BoutReal * __restrict__",
+        print('  checkData(%s);'%field)
+        print("  const BoutReal * __restrict__", end=' ')
     else:
-        print "  BoutReal * __restrict__",
-    print "%s_ptr = &"%field,field,"(",
+        print("  BoutReal * __restrict__", end=' ')
+    print("%s_ptr = &"%field,field,"(", end=' ')
     first=True
     for d in dirs[field_type]:
         if not first:
-            print ',',
+            print(',', end=' ')
         first=False
-        print "0",
-    print ");"
+        print("0", end=' ')
+    print(");")
         
 
 def gen_functions_normal(to_gen):
@@ -389,15 +394,15 @@ def gen_functions_normal(to_gen):
         name=f_ar[0]
         flux=f_ar[-1]
         warn()
-        print "static void "+name+"_"+field.lower()+"(BoutReal * __restrict__ result_ptr,",
+        print("static void "+name+"_"+field.lower()+"(BoutReal * __restrict__ result_ptr,", end=' ')
         if flux:
-            print "const BoutReal * __restrict__ v_in_ptr,",
-            print "const BoutReal * __restrict__ f_in_ptr,",
+            print("const BoutReal * __restrict__ v_in_ptr,", end=' ')
+            print("const BoutReal * __restrict__ f_in_ptr,", end=' ')
         else:
-            print "const BoutReal * __restrict__ in_ptr,",
-        print "Mesh * msh) {"
+            print("const BoutReal * __restrict__ in_ptr,", end=' ')
+        print("Mesh * msh) {")
         for d2 in dirs[field]:
-            print "  const int N%s = msh->LocalN%s;"%(d2,d2)
+            print("  const int N%s = msh->LocalN%s;"%(d2,d2))
         for func in functions:
             if func.name==f_ar[4]:
                 stencil=func
@@ -406,18 +411,18 @@ def gen_functions_normal(to_gen):
         guards_=[0,0]
         if stencil is None:
             import sys
-            print >>sys.stderr,f_ar
+            print(f_ar, file=sys.stderr)
             for func in functions:
-                print >>sys.stderr,func.name
-            print >>sys.stderr,stencils
-            print >>sys.stderr,f_ar
-            print >>sys.stderr,"#error unexpected: sten is None for sten_name %s !"%sten_name
+                print(func.name, file=sys.stderr)
+            print(stencils, file=sys.stderr)
+            print(f_ar, file=sys.stderr)
+            print("#error unexpected: sten is None for sten_name %s !"%sten_name, file=sys.stderr)
             raise 1
         try:
             guards=stencil.guards #numGuards[f_ar[4]]
         except:
-            print >>sys.stderr,stencil
-            print >>sys.stderr,sten_name
+            print(stencil, file=sys.stderr)
+            print(sten_name, file=sys.stderr)
             raise
         if d=='z':
             get_for_loop_z(stencil,field,mode)
@@ -425,49 +430,49 @@ def gen_functions_normal(to_gen):
             body, result, result_ = parse_body(stencil,field,mode,d)
             get_for_loop(d,mode,field,guards_,"main")
             if body+result == '':
-                print >> sys.stderr, stencil.body
+                print(stencil.body, file=sys.stderr)
                 raise 1
-            print body
-            print "      "+get_diff('c()',"result",field,d)+"=",
+            print(body)
+            print("      "+get_diff('c()',"result",field,d)+"=", end=' ')
             if result:
-                print result;
+                print(result);
             else:
-                print 'result_;'
+                print('result_;')
             get_for_end(d,field,"main")
             
-        print "}"
+        print("}")
         warn()
-        print "static",field,name,"(const",field,
+        print("static",field,name,"(const",field, end=' ')
         if flux:
-            print "&v_in, const",field,"&f_in){"
-            print "  Mesh * msh = v_in.getMesh();"
-            print "  ASSERT1(msh == f_in.getMesh());"
+            print("&v_in, const",field,"&f_in){")
+            print("  Mesh * msh = v_in.getMesh();")
+            print("  ASSERT1(msh == f_in.getMesh());")
         else:
-            print "&in){"
-            print "  Mesh * msh = in.getMesh();"
-        print '  output_debug.write("Using method %s!\\n");'%name
+            print("&in){")
+            print("  Mesh * msh = in.getMesh();")
+        print('  output_debug.write("Using method %s!\\n");'%name)
         if d=='z':
-            print '  if (msh->LocalN%s == 1) {'%(d)
-            print '      %s result{msh};'%field
-            print '      result=0;'
-            print '      return result;'
+            print('  if (msh->LocalN%s == 1) {'%(d))
+            print('      %s result{msh};'%field)
+            print('      result=0;')
+            print('      return result;')
             # TODO: if constructor exists, better use this:
             #print '    return %s(0.,msh);'%field
-            print '  }'
-        print '#if CHECK > 0'
-        print '  if (msh->LocalN%s < %d) {'%(d,sum(guards_)+1)
-        print '    if (msh->xstart == 0) {'
-        print '      //return %s(0.,msh);'%field
-        print '      %s result{msh};'%field
-        print '      result=0;'
-        print '      return result;'
-        print '    } else {'
-        print '      throw BoutException("AiolosMesh::%s - Not enough guards cells to take derivative!");'%(name)
-        print '    }'
-        print '  }'
-        print '#endif'
-        print " ",field,"result(msh);"
-        print "  result.allocate();"
+            print('  }')
+        print('#if CHECK > 0')
+        print('  if (msh->LocalN%s < %d) {'%(d,sum(guards_)+1))
+        print('    if (msh->xstart == 0) {')
+        print('      //return %s(0.,msh);'%field)
+        print('      %s result{msh};'%field)
+        print('      result=0;')
+        print('      return result;')
+        print('    } else {')
+        print('      throw BoutException("AiolosMesh::%s - Not enough guards cells to take derivative!");'%(name))
+        print('    }')
+        print('  }')
+        print('#endif')
+        print(" ",field,"result(msh);")
+        print("  result.allocate();")
         get_pointer("result",field,False)
         if flux:
             get_pointer("v_in",field,True)
@@ -475,22 +480,22 @@ def gen_functions_normal(to_gen):
         else:
             get_pointer("in",field,True)
         if flux:
-            print "  "+name+"_"+field.lower()+"(result_ptr,v_in_ptr,f_in_ptr, msh);"
+            print("  "+name+"_"+field.lower()+"(result_ptr,v_in_ptr,f_in_ptr, msh);")
         else:
-            print "  "+name+"_"+field.lower()+"(result_ptr,in_ptr, msh);"
+            print("  "+name+"_"+field.lower()+"(result_ptr,in_ptr, msh);")
         if mode == "on":
-            print "  result.setLocation(CELL_%sLOW);"%d.upper()
+            print("  result.setLocation(CELL_%sLOW);"%d.upper())
         elif mode == "off":
-            print "  result.setLocation(CELL_CENTRE);"
+            print("  result.setLocation(CELL_CENTRE);")
         else:
             if flux:
-                print "  result.setLocation(f_in.getLocation());"
+                print("  result.setLocation(f_in.getLocation());")
             else:
-                print "  result.setLocation(in.getLocation());"
-        print """  checkData(result);
+                print("  result.setLocation(in.getLocation());")
+        print("""  checkData(result);
   return result;
 }
-"""
+""")
 #exit(1)
 
 
@@ -511,7 +516,7 @@ def get_interp_vals(order,pos):
     return facs
 def get_interp_sten(order,pos):
     if order%2:
-        print >>sys.stderr, "Cannot handle uneven order!"
+        print("Cannot handle uneven order!", file=sys.stderr)
         exit(4)
     oh=order/2
     if pos:
@@ -520,21 +525,19 @@ def get_interp_sten(order,pos):
     ret=""
     first=True
     for i in range(order):
-        #if not first:
-        #    ret+="+"
-        #first=False
         ret+="%+.5e*"%vals[i]
+        #debug(ret)
         if i < oh:
-            ret+='f.m'+(str(oh-i) if oh-i > 1 else "")
+            ret+='f.m'+(str(int(oh-i)) if oh-i > 1 else "")
         else:
-            ret+='f.p'+(str(i-oh+1) if i-oh+1 > 1 else "" )
+            ret+='f.p'+(str(int(i-oh+1)) if i-oh+1 > 1 else "" )
     #debug(vals)
-    debug(ret)
+    #debug(ret)
     return ret+" ;"
 
             
 def debug(txt):
-    print >> sys.stderr, txt
+    print(txt, file=sys.stderr)
 interp=['',"return "+get_interp_sten(4,0),'']
 #["return ( 9.*(s.m + s.p) - s.mm - s.pp ) / 16.;"]
 for mode in ['on','off']:
@@ -547,14 +550,14 @@ for mode in ['on','off']:
         #debug(line)
         line=replace_stencil(line,'f.',"in",field,mode,sten_name,d)
         #debug(line)
-        print "static void interp_to_%s_%s_%s("%(mode,field,d),
+        print("static void interp_to_%s_%s_%s("%(mode,field,d), end=' ')
         if use_field_operator:
-            print field+"& result, const "+field+" & in,",
+            print(field+"& result, const "+field+" & in,", end=' ')
         else:
-            print "BoutReal * __restrict__ result_ptr, const BoutReal * __restrict__ in_ptr,",
-        print " Mesh * msh ){"
+            print("BoutReal * __restrict__ result_ptr, const BoutReal * __restrict__ in_ptr,", end=' ')
+        print(" Mesh * msh ){")
         for d2 in dirs[field]:
-            print "  const int N%s = msh->LocalN%s;"%(d2,d2)
+            print("  const int N%s = msh->LocalN%s;"%(d2,d2))
         if d == 'z':
             sten=function()
             sten.body=['',interp[1],'']
@@ -563,7 +566,7 @@ for mode in ['on','off']:
             body= "    "+get_diff('c()',"result",field,d,update=True)+"= "+line[len("return")+line.index("return"):]+"\n"
             #debug(body + line)
             get_for_loop(d,mode,field,guards_,sten_name)
-            print body
+            print(body)
             guards__=guards_
             get_for_end(d,field,sten_name)
             #if d != 'z':
@@ -578,59 +581,59 @@ for mode in ['on','off']:
                 if d=='z':
                     sign=0
                 get_for_loop(d,mode,field,guards_,sten_name)
-                print "      "+get_diff('c()',"result",field,d)+"=",
-                print replace_stencil(get_interp_sten(4,sign),'f.',"in",field,mode,sten_name,d,False,z0=((guards_[sten_name_index])*_sign))
+                print("      "+get_diff('c()',"result",field,d)+"=", end=' ')
+                print(replace_stencil(get_interp_sten(4,sign),'f.',"in",field,mode,sten_name,d,False,z0=((guards_[sten_name_index])*_sign)))
                 guards_=guards__
                 if order/2 > 1:
-                    if ( sten_name == 'backward' and mode == 'on' ) or \
-                       ( sten_name == 'forward' and mode == 'off' ):
+                    if (sten_name == 'backward' and mode == 'on') or \
+                       (sten_name == 'forward' and mode == 'off'):
                         pass# dont do anything ...
                     else:
                         if sten_name == 'forward':
-                            print "        "+get_diff('m()',"result",field,d)+"=" ,
+                            print("        "+get_diff('m()',"result",field,d)+"=", end=' ')
                         else:
-                            print "        "+get_diff('p()',"result",field,d)+"=" ,
-                        print replace_stencil(get_interp_sten(4,sign*2),'f.',"in",field,mode,sten_name,d,False,z0=((guards_[sten_name_index])*_sign))
+                            print("        "+get_diff('p()',"result",field,d)+"=", end=' ')
+                        print(replace_stencil(get_interp_sten(4,sign*2),'f.',"in",field,mode,sten_name,d,False,z0=((guards_[sten_name_index])*_sign)))
                         guards_=guards__
                 get_for_end(d,field,sten_name)
-        print "}"
+        print("}")
 
-print "const Field3D AiolosMesh::interp_to_do(const Field3D &f, CELL_LOC loc) const {"
-print "  Mesh * msh = f.getMesh();"
-print "  Field3D result(msh);"
-print "  result.allocate();"
-print "  if (f.getLocation() != CELL_CENTRE){"
-print "    // we first need to go back to centre before we can go anywhere else"
-print "    switch (f.getLocation()){"
+print("const Field3D AiolosMesh::interp_to_do(const Field3D &f, CELL_LOC loc) const {")
+print("  Mesh * msh = f.getMesh();")
+print("  Field3D result(msh);")
+print("  result.allocate();")
+print("  if (f.getLocation() != CELL_CENTRE){")
+print("    // we first need to go back to centre before we can go anywhere else")
+print("    switch (f.getLocation()){")
 for d in dirs[field]:
-    print "    case CELL_%sLOW:"%d.upper()
+    print("    case CELL_%sLOW:"%d.upper())
     if use_field_operator:
-        print "      interp_to_off_%s_%s(result,f,msh);"%(field,d)
+        print("      interp_to_off_%s_%s(result,f,msh);"%(field,d))
     else:
-        print "      interp_to_off_%s_%s(&result(0,0,0),&f(0,0,0),msh);"%(field,d)
-    print "      result.setLocation(CELL_CENTRE);"
-    print "      // return or interpolate again"
-    print "      return interp_to(result,loc);"
-    print "      break;"
-print "    default:"
-print '      throw BoutException("AiolosMesh::interp_to: Cannot interpolate to %s!",strLocation(loc));'
-print "    }"
-print "  }"
-print "  // we are in CELL_CENTRE and need to go somewhere else ..."
-print "  switch (loc){"
+        print("      interp_to_off_%s_%s(&result(0,0,0),&f(0,0,0),msh);"%(field,d))
+    print("      result.setLocation(CELL_CENTRE);")
+    print("      // return or interpolate again")
+    print("      return interp_to(result,loc);")
+    print("      break;")
+print("    default:")
+print('      throw BoutException("AiolosMesh::interp_to: Cannot interpolate to %s!",strLocation(loc));')
+print("    }")
+print("  }")
+print("  // we are in CELL_CENTRE and need to go somewhere else ...")
+print("  switch (loc){")
 for d in dirs[field]:
-    print "    case CELL_%sLOW:"%d.upper()
+    print("    case CELL_%sLOW:"%d.upper())
     if use_field_operator:
-        print "      interp_to_on_%s_%s(result,f,msh);"%(field,d)
+        print("      interp_to_on_%s_%s(result,f,msh);"%(field,d))
     else:
-        print "      interp_to_on_%s_%s(&result(0,0,0),&f(0,0,0),msh);"%(field,d)
-    print "      result.setLocation(CELL_%sLOW);"%d.upper()
-    print "      // return or interpolate again"
-    print "      return interp_to(result,loc);"
-    print "      break;"
-print "    default:"
-print '      throw BoutException("AiolosMesh::interp_to: Cannot interpolate to %s!",strLocation(loc));'
-print "    }"
-print "}"
+        print("      interp_to_on_%s_%s(&result(0,0,0),&f(0,0,0),msh);"%(field,d))
+    print("      result.setLocation(CELL_%sLOW);"%d.upper())
+    print("      // return or interpolate again")
+    print("      return interp_to(result,loc);")
+    print("      break;")
+print("    default:")
+print('      throw BoutException("AiolosMesh::interp_to: Cannot interpolate to %s!",strLocation(loc));')
+print("    }")
+print("}")
 
 use_field_operator=False
