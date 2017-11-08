@@ -1,10 +1,11 @@
 from __future__ import print_function
 from common import *
 import sys
+from collections import OrderedDict
 
 # read tables
-func_tables={}
-first_entry={}
+func_tables=OrderedDict()
+first_entry=OrderedDict()
 cfunc=None
 with open("tables_cleaned.cxx","r") as f:
     inFunc=0;
@@ -20,7 +21,7 @@ with open("tables_cleaned.cxx","r") as f:
                 name=cfunc[0].split(" ")[2].split("[")[0]
                 if len(name) > 2:
                     #print name
-                    func_tables[name]={}
+                    func_tables[name]=OrderedDict()
                     for e in cfunc:
                         e=e.split('{')[-1]
                         e=e.split('}')[0]
@@ -43,15 +44,15 @@ with open("tables_cleaned.cxx","r") as f:
                 cfunc=None
 descriptions=func_tables.pop("DiffNameTable")
 descriptions.pop("DIFF_DEFAULT")
-
-funcname={ 'FirstDerivTable'      : 'indexDD%s',
-           'FirstStagDerivTable'  : 'indexDD%s',
-           'SecondDerivTable'     : 'indexD2D%s2',
-           'SecondStagDerivTable' : 'indexD2D%s2',
-           'UpwindTable'          : 'indexVDD%s',
-           'UpwindStagTable'      : 'indexVDD%s',
-           'FluxTable'            : 'indexFDD%s',
-           'FluxStagTable'        : 'indexFDD%s' }
+funcname=OrderedDict()
+funcname['FirstDerivTable']='indexDD%s'
+funcname['FirstStagDerivTable']='indexDD%s'
+funcname['SecondDerivTable']='indexD2D%s2'
+funcname['SecondStagDerivTable']='indexD2D%s2'
+funcname['UpwindTable']='indexVDD%s'
+funcname['UpwindStagTable']='indexVDD%s'
+funcname['FluxTable']='indexFDD%s'
+funcname['FluxStagTable']='indexFDD%s'
 
 funcs_to_gen=[]
 default_methods=dict()
