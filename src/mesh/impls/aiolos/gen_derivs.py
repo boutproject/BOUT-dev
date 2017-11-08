@@ -253,7 +253,7 @@ guards_=[]
 sys.stdout=open("generated_stencils.cxx","w")
 from gen_stencils import gen_functions_normal
 gen_functions_normal(funcs_to_gen)
-
+sys.stdout.flush()
 sys.stdout=open("generated_init.cxx","w")
 
 descriptions_cleaned=dict()
@@ -322,3 +322,4 @@ for d in dirs['Field3D']:
             print('  }')
 print("}")
 #exit(1)
+sys.stdout.flush()
