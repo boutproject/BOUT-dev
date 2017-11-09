@@ -452,6 +452,57 @@ def setOption(name, value):
     cdef c.string source = "PyInterface".encode('ascii')
     opt.set(key,value_, source)
 
+cdef class Options:
+    cdef c.Options * cobj
+
+    def __init__(self,name):
+        self.cobj = c.Options.getRoot()
+        cdef c.string sec_
+        for sec in name.split(":"):
+            sec_=sec.encode('ascii')
+            self.cobj=self.cobj.getSection(sec_)
+
+    def set(self,name,value,source="PyInterface"):
+        cdef c.Options * opt=self.cobj
+        cdef c.string sec_
+        for sec in name.split(":")[:-1]:
+            sec_=sec.encode('ascii')
+            opt=opt.getSection(sec_)
+        cdef c.string key = name.split(":")[-1].encode('ascii')
+        cdef c.string value_ = value.encode('ascii')
+        cdef c.string source_ = source.encode('ascii')
+        opt.set(key,value_, source_)
+        return self
+
+    def get(self,name,default):
+        cdef c.Options * opt=self.cobj
+        cdef c.string sec_
+        for sec in name.split(":")[:-1]:
+            sec_=sec.encode('ascii')
+            opt=opt.getSection(sec_)
+        cdef c.string key = name.split(":")[-1].encode('ascii')
+        import numbers
+        
+        cdef double ret_real=0
+        cdef c.bool ret_bool=False
+        cdef c.string default_
+        cdef c.string ret_str
+
+        if isinstance(default,bool):
+            #print("isbool")
+            opt.get(key,ret_bool, <c.bool> default)
+            return ret_bool
+        elif isinstance(default,numbers.Number):
+            #print("isreal")
+            opt.get(key,ret_real,<double> default)
+            return ret_real
+        else:
+            #print("isstr")
+            default_= str(default).encode('ascii')
+            opt.get(key,ret_str, default_)
+            return ret_str
+
+
 EOF
 
 cat helper.py

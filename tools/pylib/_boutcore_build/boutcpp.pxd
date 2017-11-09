@@ -53,6 +53,9 @@ cdef extern from "options.hxx":
         Options * getRoot()
         Options * getSection(string fu)
         void set(string ,string,string)
+        void get(string ,string& ,string)
+        void get(string ,double& ,double)
+        void get(string ,bool& ,bool)
     
 cdef extern from "derivs.hxx":
     Field3D DDZ(Field3D, benum.CELL_LOC, benum.DIFF_METHOD,bool)
