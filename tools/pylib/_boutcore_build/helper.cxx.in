@@ -5,16 +5,17 @@ cat <<EOF
 #include <difops.hxx>
 #include <invert_laplace.hxx>
 
-void c_set_f3d_all(Field3D * f3d, double * data){
+void c_set_f3d_all(Field3D * f3d, const double * data){
   int j=0;
   f3d->allocate();
-  auto k=data[j];
   for (auto i : (*f3d)){
     (*f3d)[i]=data[j++];
   }
-  f3d->operator()(0,0,0)=k;
 }
-void c_get_f3d_all(Field3D * f3d, double * data){
+void c_set_f3d_all_(Field3D * f3d, const double data){
+  (*f3d)=data;
+}
+void c_get_f3d_all(const Field3D * f3d, double * data){
   int j=0;
   for (auto i : (*f3d)){
     data[j++]=(*f3d)[i];
@@ -39,6 +40,17 @@ void c_set_f3d_part(Field3D * f3d, const double * data,int xs,int xe, int dx,int
     for (int y=ys;y!=ye;y+=dy){
       for (int z=zs;z!=ze;z+=dz){
         (*f3d)(x,y,z)=data[j++];
+      }
+    }
+  }
+}
+void c_set_f3d_part_(Field3D * f3d, const double data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz){
+  f3d->allocate();
+  int j=0;
+  for (int x=xs;x!=xe;x+=dx){
+    for (int y=ys;y!=ye;y+=dy){
+      for (int z=zs;z!=ze;z+=dz){
+        (*f3d)(x,y,z)=data;
       }
     }
   }

@@ -44,6 +44,8 @@ cdef extern from "helper.h":
      void c_get_f3d_all(c.Field3D * f3d, double * data)
      void c_get_f3d_part(c.Field3D * f3d, double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz)
      void c_set_f3d_part(c.Field3D * f3d, double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz)
+     void c_set_f3d_part_(c.Field3D * f3d, double data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz)
+     void c_set_f3d_all_(c.Field3D * f3d, double data)
 EOF
 for f in "add:+" "mul:*" "div:/" "sub:-"
 do
@@ -152,6 +154,9 @@ cdef class Field3D:
         c_get_f3d_part(self.cobj,&data_[0,0,0],inds[0][0],inds[0][1],inds[0][2],inds[1][0],inds[1][1],inds[1][2],inds[2][0],inds[2][1],inds[2][2]);
         return data_
 
+    def set(self,data_):
+        self.__setitem__([slice(None)]*3,data_)
+
     def __setitem__(self,slices,data_):
         if len(slices)!=3:
             raise IndexError("This is a 3D object!")
@@ -161,9 +166,13 @@ cdef class Field3D:
                              ,self.cobj.getNy()
                              ,self.cobj.getNz()])
         dims=[]
+        import numbers
         if isinstance(data_,Field3D):
             # get all to get a numpy array
             data_=data_[:,:,:]
+        elif isinstance(data_,numbers.Number):
+            c_set_f3d_part_(self.cobj,<double>data_,inds[0][0],inds[0][1],inds[0][2],inds[1][0],inds[1][1],inds[1][2],inds[2][0],inds[2][1],inds[2][2])
+            return
         try:
             dims_in=data_.shape
         except:
@@ -174,7 +183,7 @@ cdef class Field3D:
             raise IndexError()
         for i in range(3):
             if dims[i] != dims_in[i]:
-                raise IndexError()
+                raise IndexError("Expected %s but got %s."%(dims,dims_in))
         cdef np.ndarray[double, mode="c", ndim=3] data__ = np.ascontiguousarray(data_)
         c_set_f3d_part(self.cobj,&data__[0,0,0],inds[0][0],inds[0][1],inds[0][2],inds[1][0],inds[1][1],inds[1][2],inds[2][0],inds[2][1],inds[2][2]);
 EOF
