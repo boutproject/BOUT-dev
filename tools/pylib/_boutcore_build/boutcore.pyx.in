@@ -279,11 +279,22 @@ cdef class Mesh:
             norm=norm/self.isNormalised
             self.isNormalised=t
         c_mesh_normalise(self.cobj,norm)
-        
+    def communicate(self,*args):
+        cdef c.FieldGroup * fg = new c.FieldGroup()
+        for f in args:
+            fg.add((<Field3D?> f).cobj[0])
+        self.cobj.communicate(fg[0])
+        del fg
+        return self
+
 cdef class Laplacian:
     cdef c.Laplacian * cobj
-    def __init__(self):
-        self.cobj = c.Laplacian.create()
+    def __init__(self,section=None):
+        if section:
+           self.cobj = c.Laplacian.create((<Options?>section).cobj)
+        else:
+           self.cobj = c.Laplacian.create(NULL)
+        
     def solve(self,Field3D a, Field3D b):
         return f3dFromObj(self.cobj.solve(a.cobj[0],b.cobj[0]))
 

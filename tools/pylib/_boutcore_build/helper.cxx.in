@@ -46,7 +46,6 @@ void c_set_f3d_part(Field3D * f3d, const double * data,int xs,int xe, int dx,int
 }
 void c_set_f3d_part_(Field3D * f3d, const double data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz){
   f3d->allocate();
-  int j=0;
   for (int x=xs;x!=xe;x+=dx){
     for (int y=ys;y!=ye;y+=dy){
       for (int z=zs;z!=ze;z+=dz){

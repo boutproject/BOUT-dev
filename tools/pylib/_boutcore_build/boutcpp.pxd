@@ -25,11 +25,18 @@ cdef extern from "bout/mesh.hxx":
         Mesh * create(Options * option)
         void load()
         void setParallelTransform()
+        void communicate(FieldGroup&)
 
+cdef extern from "bout/fieldgroup.hxx":
+    cppclass FieldGroup:
+        FieldGroup()
+        void add(Field3D&)
 cdef extern from "invert_laplace.hxx":
     cppclass Laplacian:
         @staticmethod
         Laplacian * create()
+        @staticmethod
+        Laplacian * create(Options *)
         Field3D solve(Field3D,Field3D)
 
 cdef extern from "difops.hxx":
