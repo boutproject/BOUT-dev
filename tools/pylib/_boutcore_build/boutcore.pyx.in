@@ -142,7 +142,6 @@ cdef class Field3D:
     def __getitem__(self,slices):
         if len(slices)!=3:
             raise IndexError("This is a 3D object!")
-        from helper import resolve_slices
         inds=resolve_slices(slices,
                             [self.cobj.getNx()
                              ,self.cobj.getNy()
@@ -160,7 +159,6 @@ cdef class Field3D:
     def __setitem__(self,slices,data_):
         if len(slices)!=3:
             raise IndexError("This is a 3D object!")
-        from helper import resolve_slices
         inds=resolve_slices(slices,
                             [self.cobj.getNx()
                              ,self.cobj.getNy()
@@ -443,3 +441,5 @@ def setOption(name, value):
     opt.set(key,value_, source)
 
 EOF
+
+cat helper.py
