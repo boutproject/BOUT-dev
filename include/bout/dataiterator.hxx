@@ -166,12 +166,12 @@ public:
     if (dz>0){
       int zp=z;
       for (int j=0;j<dz;++j)
-        zp=(zp == zend ? zstart : zp+1);
+        zp=(zp == zmax ? zmin : zp+1);
       return {x+dx, y+dy, zp };
     } else {
       int zm=z;
       for (;dz!= 0;++dz)
-        zm = (zm == zstart ? zend : zm-1);
+        zm = (zm == zmin ? zmax : zm-1);
       return {x+dx, y+dy, zm };
     }
   }
@@ -194,13 +194,13 @@ public:
   const inline Indices zp(int i=1) const {
     int zp=z;
     for (int j=0;j<i;++j)
-      zp=(zp == zend ? zstart : zp+1);
+      zp=(zp == zmax ? zmin : zp+1);
     return {x, y, zp }; }
   /// The index one point -1 in z. Wraps around zstart to zend
   const inline Indices zm(int i=1) const {
     int zm=z;
     for (;i!= 0;--i)
-      zm = (zm == zstart ? zend : zm-1);
+      zm = (zm == zmin ? zmax : zm-1);
     return {x, y, zm }; }
   // and for 2 cells
   const inline Indices xpp() const { return xp(2); }
@@ -370,8 +370,8 @@ inline void DataIterator::omp_init(bool end){
     ystart = (begin_index % ny) + ymin;
     end_index   /= ny;
     begin_index /= ny;
-    xend   = end_index;
-    xstart = begin_index;
+    xend   = end_index   + xmin;
+    xstart = begin_index + xmin;
   } else {
     zstart = zmin;
     zend   = zmax;
