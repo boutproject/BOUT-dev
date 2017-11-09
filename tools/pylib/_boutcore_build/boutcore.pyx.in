@@ -47,7 +47,7 @@ cdef extern from "helper.h":
      void c_set_f3d_part_(c.Field3D * f3d, double data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz)
      void c_set_f3d_all_(c.Field3D * f3d, double data)
 EOF
-for f in "add:+" "mul:*" "div:/" "sub:-"
+for f in "add:+" "mul:*" "truediv:/" "div:/" "sub:-"
 do
     n=${f%:*}
     echo "     c.Field3D * f$n( c.Field3D*, c.Field3D*)"
@@ -185,7 +185,7 @@ cdef class Field3D:
         cdef np.ndarray[double, mode="c", ndim=3] data__ = np.ascontiguousarray(data_)
         c_set_f3d_part(self.cobj,&data__[0,0,0],inds[0][0],inds[0][1],inds[0][2],inds[1][0],inds[1][1],inds[1][2],inds[2][0],inds[2][1],inds[2][2]);
 EOF
-for f in "add:+" "mul:*" "div:/" "sub:-"
+for f in "add:+" "mul:*" "truediv:/" "div:/" "sub:-"
 do
     n=${f%:*}
     #o=${f#*:}
@@ -220,6 +220,7 @@ do
             fi$n((<Field3D?>self).cobj , (<double?>float(other)))
         else:
             raise NotImplemented("Unexpected lhs - not supported (yet?).")
+        return self
 
 EOF
     

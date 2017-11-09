@@ -58,7 +58,7 @@ void c_set_f3d_part_(Field3D * f3d, const double data,int xs,int xe, int dx,int 
 
 EOF
 
-for f in "add:+" "mul:*" "div:/" "sub:-"
+for f in "add:+" "mul:*" "truediv:/" "div:/" "sub:-"
 do
     n=${f%:*}
     o=${f#*:}
