@@ -8,6 +8,9 @@ void c_set_f3d_all_(Field3D * f3d, double data);
 void c_get_f3d_part(const Field3D * f3d, double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz);
 void c_set_f3d_part(Field3D * f3d, const double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz);
 void c_set_f3d_part_(Field3D * f3d, const double data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz);
+void c_set_f3d_from_f3d(Field3D * lhs,const Field3D * rhs){
+  *lhs=*rhs;
+}
 EOF
 for f in "add:+" "mul:*" "truediv:/" "div:/" "sub:-"
 do

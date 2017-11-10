@@ -1,10 +1,10 @@
 #!/bin/python3
 import boutcore
 import numpy as np
-boutcore.init(["mesh:n=2"])
+boutcore.init("mesh:n=2".split(" "))
 mesh=boutcore.Mesh.getGlobal();
 dens=boutcore.Field3D.fromMesh(mesh)
-dens.set(0)
+#dens.set(0)
 
 def rhs(time):
     n_ddt=dens.ddt()

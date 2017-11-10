@@ -70,10 +70,11 @@ def rhs(time):
 
     #Invert div(n grad(phi)) = grad(n) grad(phi) + n Delp_perp^2(phi) = omega
     ######################################
+    # Set the time derivative by adding/... to it
+    # make sure to never overwrite it
+    # ddt_n = bla does NOT set the time derivative
     ddt_n = n.ddt()
     ddt_n.set(0)
-    ddt_omega=omega.ddt()
-    ddt_omega.set(0)
     if not boussinesq:
       # Including full density in vorticit inversion
       phiSolver.setCoefC(n);  # Update the 'C' coefficient. See invert_laplace.hxx
@@ -100,12 +101,15 @@ def rhs(time):
     # Vorticity evolution
     ######################################/
 
-    ddt_omega += -bracket(phi,omega, "BRACKET_SIMPLE") # ExB term
+    ddt_omega = -bracket(phi,omega, "BRACKET_SIMPLE") # ExB term
     ddt_omega += 2*DDZ(n)*(rho_s/R_c)/n
     ddt_omega += D_vort*Delp2(omega)/n              # Viscous diffusion term
 
     if sheath:
       ddt_omega += phi * (rho_s/L_par);
+    # other option to set time derivaitve:
+    # create a field and set it in the end
+    omega.ddt(ddt_omega)
 
 model.setRhs(rhs)
 model.solve()

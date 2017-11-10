@@ -46,6 +46,7 @@ cdef extern from "helper.h":
      void c_set_f3d_part(c.Field3D * f3d, double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz)
      void c_set_f3d_part_(c.Field3D * f3d, double data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz)
      void c_set_f3d_all_(c.Field3D * f3d, double data)
+     void c_set_f3d_from_f3d(c.Field3D * f3d, c.Field3D * f3d)
 EOF
 for f in "add:+" "mul:*" "truediv:/" "div:/" "sub:-"
 do
@@ -132,7 +133,9 @@ cdef class Field3D:
         self.cobj[0].setLocation(location_)
         return self
 
-    def ddt(self):
+    def ddt(self,val=None):
+        if val:
+            c_set_f3d_from_f3d(&c.ddt(self.cobj[0]),(<Field3D?>val).cobj)
         return f3dFromPtr(&c.ddt(self.cobj[0]))
 
     def __neg__(self):
