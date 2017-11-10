@@ -141,7 +141,7 @@ cdef class Field3D:
         return self.cobj.isAllocated()
     def __getitem__(self,slices):
         if len(slices)!=3:
-            raise IndexError("This is a 3D object!")
+            raise IndexError("This is a 3D object, but got %d slics"%len(slices))
         inds=resolve_slices(slices,
                             [self.cobj.getNx()
                              ,self.cobj.getNy()
@@ -311,9 +311,17 @@ cdef class FieldFactory:
     #     fu.cobj=cobj_
     #     return fu
 
-cdef void callback(void * parameter, void * method):
-     cdef double time = (<double*>parameter)[0]
-     (<object?>method)(time)
+cdef void callback(void * parameter, void * method) with gil:
+    cdef double time = (<double*>parameter)[0]
+    cdef c.string str_
+    try:
+        (<object?>method)(time)
+    except BaseException, e:
+        str__="Exception in Python callback: type:%s info:%s %s"%(str(type(e)),str(e),str(e.args))
+        print(str__)
+        str_=str__.encode('ascii')
+        c.throw_BoutException(str_)
+
 
 ctypedef void (*Method)(void *param)
 #, void *user_data)
@@ -440,6 +448,7 @@ def create3D(string, Mesh msh,outloc="CELL_DEFAULT",time=0):
     return f3dFromObj(
         (<FieldFactory>fact).cobj.create3D(str_,<c.Options*>0,<c.Mesh*>0
                                            ,outloc_,time))
+
 
 def setOption(name, value):
     cdef c.Options * opt = c.Options.getRoot()

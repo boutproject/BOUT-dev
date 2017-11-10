@@ -94,6 +94,9 @@ private:
   Monitor * bout_monitor;
 };
 
+void throw_BoutException(std::string err){
+  throw BoutException(err);
+}
 
 
 EOF

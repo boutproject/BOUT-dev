@@ -93,3 +93,4 @@ cdef extern from "helper.h":
     cppclass PythonModelCallback:
         PythonModelCallback(Method method, void * user_data)
         void cy_execute(void * parameter)
+    void throw_BoutException(string)
