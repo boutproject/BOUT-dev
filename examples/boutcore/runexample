@@ -1,4 +1,8 @@
 #!/bin/bash
 
+cmd=./simulation.py
+cmd=./blob2d.py
+
 export PYTHONPATH=$PWD/../../tools/pylib:$PYTHONPATH
-./simulation.py
+$cmd
+#mpirun -np 4 $cmd
