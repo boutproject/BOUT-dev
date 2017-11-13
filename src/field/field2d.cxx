@@ -616,6 +616,14 @@ void checkData(const Field2D &f) {
       throw BoutException("Field2D: Operation on non-finite data at [%d][%d]\n", i.x, i.y);
     }
   }
+  if (f.isConstant()){
+    BoutReal val=f[{0,0,0}];
+    for(const auto& d : f) {
+      if (f[d]!=val){
+        throw BoutException("Field3D: isConstant(): broken guarantee - wrong data at [%d][%d][%d]\n", d.x, d.y, d.z);
+      }
+    }
+  }
 #endif
 }
 #endif

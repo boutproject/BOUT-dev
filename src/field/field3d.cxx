@@ -1119,6 +1119,14 @@ void checkData(const Field3D &f)  {
       throw BoutException("Field3D: Operation on non-finite data at [%d][%d][%d]\n", d.x, d.y, d.z);
     }
   }
+  if (f.isConstant()){
+    BoutReal val=f[{0,0,0}];
+    for(const auto& d : f) {
+      if (f[d]!=val){
+        throw BoutException("Field3D: isConstant(): broken guarantee - wrong data at [%d][%d][%d]\n", d.x, d.y, d.z);
+      }
+    }
+  }
 #endif
 }
 

@@ -34,13 +34,13 @@
 #include <utils.hxx>
 #include <bout/mesh.hxx>
 
-Field::Field() : fieldmesh(nullptr){
+Field::Field() : fieldmesh(nullptr), is_const(false){
 #if CHECK > 0
   bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true;
 #endif
 }
 
-Field::Field(Mesh * msh) : fieldmesh(msh){
+Field::Field(Mesh * msh) : fieldmesh(msh), is_const(false){
   if (fieldmesh ==nullptr){
     fieldmesh=mesh;
   }
@@ -87,3 +87,15 @@ void Field::error(const char *s, ...) const {
   throw BoutException(msg);
 }
 
+void Field::makeAutoConstant(){
+  BoutReal val = (*this)[Indices{0,0,0}];
+  for (auto i : *this){
+    if (val != (*this)[i]){
+      is_const=false;
+      output_info.write("difference!");
+      return;
+    }
+  }
+  output_info.write("field is const\n");
+  is_const=true;
+}

@@ -150,11 +150,41 @@ class Field {
    * Return the number of nz points
    */
   virtual int getNz() const;
+  /*!
+   * Tell the field that is constant
+   * This is a garantie to the library that the field will always be
+   * constant in space. If the promise is broken, unexpected behaviour
+   * is to be expected.
+   */
+  void makeConstant(){
+    is_const=true;
+  }
+  void makeUnConstant(){
+    is_const=false;
+  }
+  /*!
+   * Check if the field is constant, and set flag accordingly.
+   */
+  virtual void makeAutoConstant();
+  /*!
+   * Check whether the field is constant. Any value is representative
+   * of the whole field.
+   */
+  bool isConstant() const{
+    return is_const;
+  }
+  /*!
+   * Check whether the field is zero. Only checks if the field is const.
+   */
+  virtual bool isZero() const{
+    return is_const && (*this)[{0,0,0}]==0;
+  }
  protected:
   Mesh * fieldmesh;
   /// Supplies an error method. Currently just prints and exits, but
   /// should do something more cunning...
   void error(const char *s, ...) const;
+  bool is_const;
 };
 
 #endif /* __FIELD_H__ */
