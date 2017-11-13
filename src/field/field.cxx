@@ -92,10 +92,10 @@ void Field::makeAutoConstant(){
   for (auto i : *this){
     if (val != (*this)[i]){
       is_const=false;
-      output_info.write("difference!");
+      output_debug.write("difference in field!\n");
       return;
     }
   }
-  output_info.write("field is const\n");
+  output_debug.write("field is const\n");
   is_const=true;
 }

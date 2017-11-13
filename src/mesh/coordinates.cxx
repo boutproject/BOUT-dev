@@ -257,6 +257,12 @@ int Coordinates::geometry() {
     throw BoutException("\tERROR: Off-diagonal g_ij metrics are not finite!\n");
   }
 
+  for (auto f: {&dx, &dy,
+        &g11,  &g22,  &g33,  &g12,  &g13,  &g23,
+        &g_11, &g_22, &g_33, &g_12, &g_13, &g_23}){
+    checkData(*f);
+    f->makeAutoConstant();
+  }
   // Calculate Christoffel symbol terms (18 independent values)
   // Note: This calculation is completely general: metric
   // tensor can be 2D or 3D. For 2D, all DDZ terms are zero
@@ -360,6 +366,12 @@ int Coordinates::geometry() {
 
   mesh->communicate(com);
 
+  for (auto f: { &G1,  &G2,  &G3 ,
+        &G1_11,  &G1_22,  &G1_33,  &G1_12,  &G1_13,  &G1_23,
+        &G2_11,  &G2_22,  &G2_33,  &G2_12,  &G2_13,  &G2_23,
+        &G3_11,  &G3_22,  &G3_33,  &G3_12,  &G3_13,  &G3_23}){
+    f->makeAutoConstant();
+  }
   return 0;
 }
 
