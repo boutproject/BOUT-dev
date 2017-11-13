@@ -708,14 +708,16 @@ void Mesh::derivs_init(Options* options) {
 // X derivative
 
 const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, CELL_LOC loc, REGION region) {
-  if (var.getNx() == 1){
-    return 0.;
-  }
-
   ASSERT1(var.isAllocated());
   ASSERT1(this == var.getMesh());
 
   Field2D result(this);
+  if (var.getNx() == 1 || var.isConstant()){
+    result=0;
+    result.makeConstant();
+    return result;
+  }
+
   result.allocate(); // Make sure data allocated
 
   if (mesh->StaggerGrids && 
@@ -811,9 +813,6 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, CELL_L
 }
 
 const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc, REGION region) {
-  if (var.getNx() == 1) {
-    return Field3D(0.,var.getMesh());
-  }
   // Check that the input variable has data
   ASSERT1(var.isAllocated());
 
@@ -821,8 +820,14 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   ASSERT1(this == var.getMesh());
 
   Field3D result(this);
+  if (var.getNx() == 1|| var.isConstant()) {
+    result=0;
+    result.makeConstant();
+    return result;
+  }
+
   result.allocate(); // Make sure data allocated
-  
+
   if (mesh->StaggerGrids && 
       (loc != CELL_DEFAULT) && (loc != var.getLocation())) {
     // Staggered differencing
@@ -918,18 +923,20 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 // Y derivative
 
 const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, CELL_LOC loc, REGION region) {
-  if (var.getNy() == 1) {
-    return 0.;
-  }
-  
   // Check that the input variable has data
   ASSERT1(var.isAllocated());
   
   ASSERT1(this == var.getMesh());
 
   Field2D result(this);
+  if (var.getNy() == 1 || var.isConstant()) {
+    result=0;
+    result.makeConstant();
+    return result;
+  }
+
   result.allocate(); // Make sure data allocated
-  
+
   if (mesh->ystart > 1) {
     // More than one guard cell, so set pp and mm values
     // This allows higher-order methods to be used
@@ -969,18 +976,20 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, CELL_L
 }
 
 const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc, REGION region) {
-  if (var.getNy() == 1){
-    return Field3D(0.,var.getMesh());
-  }
-
   // Check that the input variable has data
   ASSERT1(var.isAllocated());
 
   ASSERT1(this == var.getMesh());
 
   Field3D result(this);
+  if (var.getNy() == 1 || var.isConstant()){
+    result=0;
+    result.makeConstant();
+    return result;
+  }
+
   result.allocate(); // Make sure data allocated
-  
+
   if (var.hasYupYdown() && 
       ( (&var.yup() != &var) || (&var.ydown() != &var))) {
     // Field "var" has distinct yup and ydown fields which
@@ -1136,10 +1145,6 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 // Z derivative
 
 const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc, REGION region) {
-  if (var.getNz()==1){
-    return Field3D(0.,var.getMesh());
-  }
-
   ASSERT1(this == var.getMesh());
 
   if (mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != var.getLocation())) {
@@ -1148,8 +1153,14 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   }
 
   Field3D result(this);
+  if (var.getNz()==1 || var.isConstant()){
+    result=0;
+    result.makeConstant();
+    return result;
+  }
+
   result.allocate(); // Make sure data allocated
-  
+
   // Check that the input variable has data
   ASSERT1(var.isAllocated());
   
