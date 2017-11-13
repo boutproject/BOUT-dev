@@ -215,6 +215,30 @@ for lhs in fields:
                     print("  ASSERT1(msh == rhs.getMesh());")
                 print("  %s result(msh);"%out.fieldname)
                 print("  result.allocate();")
+                if lhs.i != 'real' and rhs.i != 'real':
+                    with braces("  if (lhs.isConstant() && rhs.isConstant())"):
+                        print("    result=lhs[i] %s rhs[i];"%op)
+                        print("    result.makeConstant();")
+                        print("    checkData(result);");
+                        print("    return result;");
+                if lhs.i != 'real':
+                    with braces("  if (lhs.isConstant())"):
+                        if op == "+":
+                            with braces("    if (lhs[i]==0)"):
+                                print("      return rhs;")
+                        elif op == "*":
+                            with braces("    if (lhs[i]==1)"):
+                                print("      return rhs;")
+                        print("    return lhs[i] %s rhs;"%op)
+                if rhs.i != 'real':
+                    with braces("  if (rhs.isConstant())"):
+                        if op in "+-":
+                            with braces("    if (rhs[i]==0)"):
+                                print("      return lhs;")
+                        else:
+                            with braces("    if (rhs[i]==1)"):
+                                print("      return lhs;")
+                        print("    return lhs %s rhs[i];"%op)
                 print("  checkData(lhs);")
                 print("  checkData(rhs);")
                 # call the C function to do the work.
@@ -329,6 +353,22 @@ for lhs in fields:
                             print("    ASSERT1(fieldmesh == rhs.getMesh());")
                         print("    checkData(*this);")
                         print("    checkData(rhs);")
+                        if  rhs.i != 'real':
+                            with braces("  if (this->isConstant() && rhs.isConstant())"):
+                                print("    (*this)=(*this)[i] %s rhs[i];"%op)
+                                print("    checkData(*this);");
+                                print("    return *this;");
+                            with braces("  else if (this->isConstant())"):
+                                print("    throw BoutException(\"Updating constant %s (%s=) non-constant %s:\
+ does not preserve constness\");"%(lhs.fieldname,op,rhs.fieldname))
+                            with braces("  else if (rhs.isConstant())"):
+                                if op in "+-":
+                                    with braces("    if (rhs[i]==0)"):
+                                        print("      return *this;")
+                                else:
+                                    with braces("    if (rhs[i]==1)"):
+                                        print("      return *this;")
+                                print("    return (*this) %s=rhs[i];"%op)
                         print("    autogen_%s_%s_%s(&(*this)[i],"%(lhs.fieldname,rhs.fieldname,opn), end=' ')
                         print(rhs.get(ptr=True,data=False),',',end=' ')
                         m=''

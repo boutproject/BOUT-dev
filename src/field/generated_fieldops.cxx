@@ -22,6 +22,24 @@ Field3D operator*(const Field3D &lhs, const Field3D &rhs) {
   ASSERT1(msh == rhs.getMesh());
   Field3D result(msh);
   result.allocate();
+  if (lhs.isConstant() && rhs.isConstant()) {
+    result = lhs[i] * rhs[i];
+    result.makeConstant();
+    checkData(result);
+    return result;
+  }
+  if (lhs.isConstant()) {
+    if (lhs[i] == 1) {
+      return rhs;
+    }
+    return lhs[i] * rhs;
+  }
+  if (rhs.isConstant()) {
+    if (rhs[i] == 1) {
+      return lhs;
+    }
+    return lhs * rhs[i];
+  }
   checkData(lhs);
   checkData(rhs);
   autogen_Field3D_Field3D_Field3D_mul(&result[i], &lhs[i], &rhs[i],
@@ -55,6 +73,21 @@ Field3D operator/(const Field3D &lhs, const Field3D &rhs) {
   ASSERT1(msh == rhs.getMesh());
   Field3D result(msh);
   result.allocate();
+  if (lhs.isConstant() && rhs.isConstant()) {
+    result = lhs[i] / rhs[i];
+    result.makeConstant();
+    checkData(result);
+    return result;
+  }
+  if (lhs.isConstant()) {
+    return lhs[i] / rhs;
+  }
+  if (rhs.isConstant()) {
+    if (rhs[i] == 1) {
+      return lhs;
+    }
+    return lhs / rhs[i];
+  }
   checkData(lhs);
   checkData(rhs);
   autogen_Field3D_Field3D_Field3D_div(&result[i], &lhs[i], &rhs[i],
@@ -88,6 +121,24 @@ Field3D operator+(const Field3D &lhs, const Field3D &rhs) {
   ASSERT1(msh == rhs.getMesh());
   Field3D result(msh);
   result.allocate();
+  if (lhs.isConstant() && rhs.isConstant()) {
+    result = lhs[i] + rhs[i];
+    result.makeConstant();
+    checkData(result);
+    return result;
+  }
+  if (lhs.isConstant()) {
+    if (lhs[i] == 0) {
+      return rhs;
+    }
+    return lhs[i] + rhs;
+  }
+  if (rhs.isConstant()) {
+    if (rhs[i] == 0) {
+      return lhs;
+    }
+    return lhs + rhs[i];
+  }
   checkData(lhs);
   checkData(rhs);
   autogen_Field3D_Field3D_Field3D_plus(&result[i], &lhs[i], &rhs[i],
@@ -121,6 +172,21 @@ Field3D operator-(const Field3D &lhs, const Field3D &rhs) {
   ASSERT1(msh == rhs.getMesh());
   Field3D result(msh);
   result.allocate();
+  if (lhs.isConstant() && rhs.isConstant()) {
+    result = lhs[i] - rhs[i];
+    result.makeConstant();
+    checkData(result);
+    return result;
+  }
+  if (lhs.isConstant()) {
+    return lhs[i] - rhs;
+  }
+  if (rhs.isConstant()) {
+    if (rhs[i] == 0) {
+      return lhs;
+    }
+    return lhs - rhs[i];
+  }
   checkData(lhs);
   checkData(rhs);
   autogen_Field3D_Field3D_Field3D_minus(&result[i], &lhs[i], &rhs[i],
@@ -157,6 +223,24 @@ Field3D operator*(const Field3D &lhs, const Field2D &rhs) {
   ASSERT1(msh == rhs.getMesh());
   Field3D result(msh);
   result.allocate();
+  if (lhs.isConstant() && rhs.isConstant()) {
+    result = lhs[i] * rhs[i];
+    result.makeConstant();
+    checkData(result);
+    return result;
+  }
+  if (lhs.isConstant()) {
+    if (lhs[i] == 1) {
+      return rhs;
+    }
+    return lhs[i] * rhs;
+  }
+  if (rhs.isConstant()) {
+    if (rhs[i] == 1) {
+      return lhs;
+    }
+    return lhs * rhs[i];
+  }
   checkData(lhs);
   checkData(rhs);
   autogen_Field3D_Field3D_Field2D_mul(&result[i], &lhs[i], &rhs[i], msh->LocalNx,
@@ -186,6 +270,21 @@ Field3D operator/(const Field3D &lhs, const Field2D &rhs) {
   ASSERT1(msh == rhs.getMesh());
   Field3D result(msh);
   result.allocate();
+  if (lhs.isConstant() && rhs.isConstant()) {
+    result = lhs[i] / rhs[i];
+    result.makeConstant();
+    checkData(result);
+    return result;
+  }
+  if (lhs.isConstant()) {
+    return lhs[i] / rhs;
+  }
+  if (rhs.isConstant()) {
+    if (rhs[i] == 1) {
+      return lhs;
+    }
+    return lhs / rhs[i];
+  }
   checkData(lhs);
   checkData(rhs);
   autogen_Field3D_Field3D_Field2D_div(&result[i], &lhs[i], &rhs[i], msh->LocalNx,
@@ -215,6 +314,24 @@ Field3D operator+(const Field3D &lhs, const Field2D &rhs) {
   ASSERT1(msh == rhs.getMesh());
   Field3D result(msh);
   result.allocate();
+  if (lhs.isConstant() && rhs.isConstant()) {
+    result = lhs[i] + rhs[i];
+    result.makeConstant();
+    checkData(result);
+    return result;
+  }
+  if (lhs.isConstant()) {
+    if (lhs[i] == 0) {
+      return rhs;
+    }
+    return lhs[i] + rhs;
+  }
+  if (rhs.isConstant()) {
+    if (rhs[i] == 0) {
+      return lhs;
+    }
+    return lhs + rhs[i];
+  }
   checkData(lhs);
   checkData(rhs);
   autogen_Field3D_Field3D_Field2D_plus(&result[i], &lhs[i], &rhs[i], msh->LocalNx,
@@ -244,6 +361,21 @@ Field3D operator-(const Field3D &lhs, const Field2D &rhs) {
   ASSERT1(msh == rhs.getMesh());
   Field3D result(msh);
   result.allocate();
+  if (lhs.isConstant() && rhs.isConstant()) {
+    result = lhs[i] - rhs[i];
+    result.makeConstant();
+    checkData(result);
+    return result;
+  }
+  if (lhs.isConstant()) {
+    return lhs[i] - rhs;
+  }
+  if (rhs.isConstant()) {
+    if (rhs[i] == 0) {
+      return lhs;
+    }
+    return lhs - rhs[i];
+  }
   checkData(lhs);
   checkData(rhs);
   autogen_Field3D_Field3D_Field2D_minus(&result[i], &lhs[i], &rhs[i], msh->LocalNx,
@@ -269,6 +401,12 @@ Field3D operator*(const Field3D &lhs, const BoutReal rhs) {
   Mesh *msh = lhs.getMesh();
   Field3D result(msh);
   result.allocate();
+  if (lhs.isConstant()) {
+    if (lhs[i] == 1) {
+      return rhs;
+    }
+    return lhs[i] * rhs;
+  }
   checkData(lhs);
   checkData(rhs);
   autogen_Field3D_Field3D_BoutReal_mul(&result[i], &lhs[i], rhs,
@@ -294,6 +432,9 @@ Field3D operator/(const Field3D &lhs, const BoutReal rhs) {
   Mesh *msh = lhs.getMesh();
   Field3D result(msh);
   result.allocate();
+  if (lhs.isConstant()) {
+    return lhs[i] / rhs;
+  }
   checkData(lhs);
   checkData(rhs);
   autogen_Field3D_Field3D_BoutReal_div(&result[i], &lhs[i], rhs,
@@ -319,6 +460,12 @@ Field3D operator+(const Field3D &lhs, const BoutReal rhs) {
   Mesh *msh = lhs.getMesh();
   Field3D result(msh);
   result.allocate();
+  if (lhs.isConstant()) {
+    if (lhs[i] == 0) {
+      return rhs;
+    }
+    return lhs[i] + rhs;
+  }
   checkData(lhs);
   checkData(rhs);
   autogen_Field3D_Field3D_BoutReal_plus(&result[i], &lhs[i], rhs,
@@ -344,6 +491,9 @@ Field3D operator-(const Field3D &lhs, const BoutReal rhs) {
   Mesh *msh = lhs.getMesh();
   Field3D result(msh);
   result.allocate();
+  if (lhs.isConstant()) {
+    return lhs[i] - rhs;
+  }
   checkData(lhs);
   checkData(rhs);
   autogen_Field3D_Field3D_BoutReal_minus(&result[i], &lhs[i], rhs,
@@ -373,6 +523,24 @@ Field3D operator*(const Field2D &lhs, const Field3D &rhs) {
   ASSERT1(msh == rhs.getMesh());
   Field3D result(msh);
   result.allocate();
+  if (lhs.isConstant() && rhs.isConstant()) {
+    result = lhs[i] * rhs[i];
+    result.makeConstant();
+    checkData(result);
+    return result;
+  }
+  if (lhs.isConstant()) {
+    if (lhs[i] == 1) {
+      return rhs;
+    }
+    return lhs[i] * rhs;
+  }
+  if (rhs.isConstant()) {
+    if (rhs[i] == 1) {
+      return lhs;
+    }
+    return lhs * rhs[i];
+  }
   checkData(lhs);
   checkData(rhs);
   autogen_Field3D_Field2D_Field3D_mul(&result[i], &lhs[i], &rhs[i], msh->LocalNx,
@@ -402,6 +570,21 @@ Field3D operator/(const Field2D &lhs, const Field3D &rhs) {
   ASSERT1(msh == rhs.getMesh());
   Field3D result(msh);
   result.allocate();
+  if (lhs.isConstant() && rhs.isConstant()) {
+    result = lhs[i] / rhs[i];
+    result.makeConstant();
+    checkData(result);
+    return result;
+  }
+  if (lhs.isConstant()) {
+    return lhs[i] / rhs;
+  }
+  if (rhs.isConstant()) {
+    if (rhs[i] == 1) {
+      return lhs;
+    }
+    return lhs / rhs[i];
+  }
   checkData(lhs);
   checkData(rhs);
   autogen_Field3D_Field2D_Field3D_div(&result[i], &lhs[i], &rhs[i], msh->LocalNx,
@@ -431,6 +614,24 @@ Field3D operator+(const Field2D &lhs, const Field3D &rhs) {
   ASSERT1(msh == rhs.getMesh());
   Field3D result(msh);
   result.allocate();
+  if (lhs.isConstant() && rhs.isConstant()) {
+    result = lhs[i] + rhs[i];
+    result.makeConstant();
+    checkData(result);
+    return result;
+  }
+  if (lhs.isConstant()) {
+    if (lhs[i] == 0) {
+      return rhs;
+    }
+    return lhs[i] + rhs;
+  }
+  if (rhs.isConstant()) {
+    if (rhs[i] == 0) {
+      return lhs;
+    }
+    return lhs + rhs[i];
+  }
   checkData(lhs);
   checkData(rhs);
   autogen_Field3D_Field2D_Field3D_plus(&result[i], &lhs[i], &rhs[i], msh->LocalNx,
@@ -460,6 +661,21 @@ Field3D operator-(const Field2D &lhs, const Field3D &rhs) {
   ASSERT1(msh == rhs.getMesh());
   Field3D result(msh);
   result.allocate();
+  if (lhs.isConstant() && rhs.isConstant()) {
+    result = lhs[i] - rhs[i];
+    result.makeConstant();
+    checkData(result);
+    return result;
+  }
+  if (lhs.isConstant()) {
+    return lhs[i] - rhs;
+  }
+  if (rhs.isConstant()) {
+    if (rhs[i] == 0) {
+      return lhs;
+    }
+    return lhs - rhs[i];
+  }
   checkData(lhs);
   checkData(rhs);
   autogen_Field3D_Field2D_Field3D_minus(&result[i], &lhs[i], &rhs[i], msh->LocalNx,
@@ -486,6 +702,24 @@ Field2D operator*(const Field2D &lhs, const Field2D &rhs) {
   ASSERT1(msh == rhs.getMesh());
   Field2D result(msh);
   result.allocate();
+  if (lhs.isConstant() && rhs.isConstant()) {
+    result = lhs[i] * rhs[i];
+    result.makeConstant();
+    checkData(result);
+    return result;
+  }
+  if (lhs.isConstant()) {
+    if (lhs[i] == 1) {
+      return rhs;
+    }
+    return lhs[i] * rhs;
+  }
+  if (rhs.isConstant()) {
+    if (rhs[i] == 1) {
+      return lhs;
+    }
+    return lhs * rhs[i];
+  }
   checkData(lhs);
   checkData(rhs);
   autogen_Field2D_Field2D_Field2D_mul(&result[i], &lhs[i], &rhs[i],
@@ -511,6 +745,21 @@ Field2D operator/(const Field2D &lhs, const Field2D &rhs) {
   ASSERT1(msh == rhs.getMesh());
   Field2D result(msh);
   result.allocate();
+  if (lhs.isConstant() && rhs.isConstant()) {
+    result = lhs[i] / rhs[i];
+    result.makeConstant();
+    checkData(result);
+    return result;
+  }
+  if (lhs.isConstant()) {
+    return lhs[i] / rhs;
+  }
+  if (rhs.isConstant()) {
+    if (rhs[i] == 1) {
+      return lhs;
+    }
+    return lhs / rhs[i];
+  }
   checkData(lhs);
   checkData(rhs);
   autogen_Field2D_Field2D_Field2D_div(&result[i], &lhs[i], &rhs[i],
@@ -536,6 +785,24 @@ Field2D operator+(const Field2D &lhs, const Field2D &rhs) {
   ASSERT1(msh == rhs.getMesh());
   Field2D result(msh);
   result.allocate();
+  if (lhs.isConstant() && rhs.isConstant()) {
+    result = lhs[i] + rhs[i];
+    result.makeConstant();
+    checkData(result);
+    return result;
+  }
+  if (lhs.isConstant()) {
+    if (lhs[i] == 0) {
+      return rhs;
+    }
+    return lhs[i] + rhs;
+  }
+  if (rhs.isConstant()) {
+    if (rhs[i] == 0) {
+      return lhs;
+    }
+    return lhs + rhs[i];
+  }
   checkData(lhs);
   checkData(rhs);
   autogen_Field2D_Field2D_Field2D_plus(&result[i], &lhs[i], &rhs[i],
@@ -561,6 +828,21 @@ Field2D operator-(const Field2D &lhs, const Field2D &rhs) {
   ASSERT1(msh == rhs.getMesh());
   Field2D result(msh);
   result.allocate();
+  if (lhs.isConstant() && rhs.isConstant()) {
+    result = lhs[i] - rhs[i];
+    result.makeConstant();
+    checkData(result);
+    return result;
+  }
+  if (lhs.isConstant()) {
+    return lhs[i] - rhs;
+  }
+  if (rhs.isConstant()) {
+    if (rhs[i] == 0) {
+      return lhs;
+    }
+    return lhs - rhs[i];
+  }
   checkData(lhs);
   checkData(rhs);
   autogen_Field2D_Field2D_Field2D_minus(&result[i], &lhs[i], &rhs[i],
@@ -585,6 +867,12 @@ Field2D operator*(const Field2D &lhs, const BoutReal rhs) {
   Mesh *msh = lhs.getMesh();
   Field2D result(msh);
   result.allocate();
+  if (lhs.isConstant()) {
+    if (lhs[i] == 1) {
+      return rhs;
+    }
+    return lhs[i] * rhs;
+  }
   checkData(lhs);
   checkData(rhs);
   autogen_Field2D_Field2D_BoutReal_mul(&result[i], &lhs[i], rhs,
@@ -609,6 +897,9 @@ Field2D operator/(const Field2D &lhs, const BoutReal rhs) {
   Mesh *msh = lhs.getMesh();
   Field2D result(msh);
   result.allocate();
+  if (lhs.isConstant()) {
+    return lhs[i] / rhs;
+  }
   checkData(lhs);
   checkData(rhs);
   autogen_Field2D_Field2D_BoutReal_div(&result[i], &lhs[i], rhs,
@@ -633,6 +924,12 @@ Field2D operator+(const Field2D &lhs, const BoutReal rhs) {
   Mesh *msh = lhs.getMesh();
   Field2D result(msh);
   result.allocate();
+  if (lhs.isConstant()) {
+    if (lhs[i] == 0) {
+      return rhs;
+    }
+    return lhs[i] + rhs;
+  }
   checkData(lhs);
   checkData(rhs);
   autogen_Field2D_Field2D_BoutReal_plus(&result[i], &lhs[i], rhs,
@@ -657,6 +954,9 @@ Field2D operator-(const Field2D &lhs, const BoutReal rhs) {
   Mesh *msh = lhs.getMesh();
   Field2D result(msh);
   result.allocate();
+  if (lhs.isConstant()) {
+    return lhs[i] - rhs;
+  }
   checkData(lhs);
   checkData(rhs);
   autogen_Field2D_Field2D_BoutReal_minus(&result[i], &lhs[i], rhs,
@@ -681,6 +981,12 @@ Field3D operator*(const BoutReal lhs, const Field3D &rhs) {
   Mesh *msh = rhs.getMesh();
   Field3D result(msh);
   result.allocate();
+  if (rhs.isConstant()) {
+    if (rhs[i] == 1) {
+      return lhs;
+    }
+    return lhs * rhs[i];
+  }
   checkData(lhs);
   checkData(rhs);
   autogen_Field3D_BoutReal_Field3D_mul(&result[i], lhs, &rhs[i],
@@ -706,6 +1012,12 @@ Field3D operator/(const BoutReal lhs, const Field3D &rhs) {
   Mesh *msh = rhs.getMesh();
   Field3D result(msh);
   result.allocate();
+  if (rhs.isConstant()) {
+    if (rhs[i] == 1) {
+      return lhs;
+    }
+    return lhs / rhs[i];
+  }
   checkData(lhs);
   checkData(rhs);
   autogen_Field3D_BoutReal_Field3D_div(&result[i], lhs, &rhs[i],
@@ -731,6 +1043,12 @@ Field3D operator+(const BoutReal lhs, const Field3D &rhs) {
   Mesh *msh = rhs.getMesh();
   Field3D result(msh);
   result.allocate();
+  if (rhs.isConstant()) {
+    if (rhs[i] == 0) {
+      return lhs;
+    }
+    return lhs + rhs[i];
+  }
   checkData(lhs);
   checkData(rhs);
   autogen_Field3D_BoutReal_Field3D_plus(&result[i], lhs, &rhs[i],
@@ -756,6 +1074,12 @@ Field3D operator-(const BoutReal lhs, const Field3D &rhs) {
   Mesh *msh = rhs.getMesh();
   Field3D result(msh);
   result.allocate();
+  if (rhs.isConstant()) {
+    if (rhs[i] == 0) {
+      return lhs;
+    }
+    return lhs - rhs[i];
+  }
   checkData(lhs);
   checkData(rhs);
   autogen_Field3D_BoutReal_Field3D_minus(&result[i], lhs, &rhs[i],
@@ -781,6 +1105,12 @@ Field2D operator*(const BoutReal lhs, const Field2D &rhs) {
   Mesh *msh = rhs.getMesh();
   Field2D result(msh);
   result.allocate();
+  if (rhs.isConstant()) {
+    if (rhs[i] == 1) {
+      return lhs;
+    }
+    return lhs * rhs[i];
+  }
   checkData(lhs);
   checkData(rhs);
   autogen_Field2D_BoutReal_Field2D_mul(&result[i], lhs, &rhs[i],
@@ -805,6 +1135,12 @@ Field2D operator/(const BoutReal lhs, const Field2D &rhs) {
   Mesh *msh = rhs.getMesh();
   Field2D result(msh);
   result.allocate();
+  if (rhs.isConstant()) {
+    if (rhs[i] == 1) {
+      return lhs;
+    }
+    return lhs / rhs[i];
+  }
   checkData(lhs);
   checkData(rhs);
   autogen_Field2D_BoutReal_Field2D_div(&result[i], lhs, &rhs[i],
@@ -829,6 +1165,12 @@ Field2D operator+(const BoutReal lhs, const Field2D &rhs) {
   Mesh *msh = rhs.getMesh();
   Field2D result(msh);
   result.allocate();
+  if (rhs.isConstant()) {
+    if (rhs[i] == 0) {
+      return lhs;
+    }
+    return lhs + rhs[i];
+  }
   checkData(lhs);
   checkData(rhs);
   autogen_Field2D_BoutReal_Field2D_plus(&result[i], lhs, &rhs[i],
@@ -853,6 +1195,12 @@ Field2D operator-(const BoutReal lhs, const Field2D &rhs) {
   Mesh *msh = rhs.getMesh();
   Field2D result(msh);
   result.allocate();
+  if (rhs.isConstant()) {
+    if (rhs[i] == 0) {
+      return lhs;
+    }
+    return lhs - rhs[i];
+  }
   checkData(lhs);
   checkData(rhs);
   autogen_Field2D_BoutReal_Field2D_minus(&result[i], lhs, &rhs[i],
@@ -879,9 +1227,22 @@ Field3D &Field3D::operator*=(const Field3D &rhs) {
     ASSERT1(fieldmesh == rhs.getMesh());
     checkData(*this);
     checkData(rhs);
-    autogen_Field3D_Field3D_mul(&(*this)[i], &rhs[i], fieldmesh->LocalNx *
-                                                          fieldmesh->LocalNy *
-                                                          fieldmesh->LocalNz);
+    if (this->isConstant() && rhs.isConstant()) {
+      (*this) = (*this)[i] * rhs[i];
+      checkData(*this);
+      return *this;
+    } else if (this->isConstant()) {
+      throw BoutException("Updating constant Field3D (*=) non-constant Field3D: does not "
+                          "preserve constness");
+    } else if (rhs.isConstant()) {
+      if (rhs[i] == 1) {
+        return *this;
+      }
+      return (*this) *= rhs[i];
+    }
+    autogen_Field3D_Field3D_mul(&(*this)[i], &rhs[i],
+                                fieldmesh->LocalNx * fieldmesh->LocalNy *
+                                    fieldmesh->LocalNz);
 #if CHECK > 0
     if (this->getLocation() != rhs.getLocation()) {
       throw BoutException("Trying to mul fields of different locations!");
@@ -912,9 +1273,22 @@ Field3D &Field3D::operator/=(const Field3D &rhs) {
     ASSERT1(fieldmesh == rhs.getMesh());
     checkData(*this);
     checkData(rhs);
-    autogen_Field3D_Field3D_div(&(*this)[i], &rhs[i], fieldmesh->LocalNx *
-                                                          fieldmesh->LocalNy *
-                                                          fieldmesh->LocalNz);
+    if (this->isConstant() && rhs.isConstant()) {
+      (*this) = (*this)[i] / rhs[i];
+      checkData(*this);
+      return *this;
+    } else if (this->isConstant()) {
+      throw BoutException("Updating constant Field3D (/=) non-constant Field3D: does not "
+                          "preserve constness");
+    } else if (rhs.isConstant()) {
+      if (rhs[i] == 1) {
+        return *this;
+      }
+      return (*this) /= rhs[i];
+    }
+    autogen_Field3D_Field3D_div(&(*this)[i], &rhs[i],
+                                fieldmesh->LocalNx * fieldmesh->LocalNy *
+                                    fieldmesh->LocalNz);
 #if CHECK > 0
     if (this->getLocation() != rhs.getLocation()) {
       throw BoutException("Trying to div fields of different locations!");
@@ -945,9 +1319,22 @@ Field3D &Field3D::operator+=(const Field3D &rhs) {
     ASSERT1(fieldmesh == rhs.getMesh());
     checkData(*this);
     checkData(rhs);
-    autogen_Field3D_Field3D_plus(&(*this)[i], &rhs[i], fieldmesh->LocalNx *
-                                                           fieldmesh->LocalNy *
-                                                           fieldmesh->LocalNz);
+    if (this->isConstant() && rhs.isConstant()) {
+      (*this) = (*this)[i] + rhs[i];
+      checkData(*this);
+      return *this;
+    } else if (this->isConstant()) {
+      throw BoutException("Updating constant Field3D (+=) non-constant Field3D: does not "
+                          "preserve constness");
+    } else if (rhs.isConstant()) {
+      if (rhs[i] == 0) {
+        return *this;
+      }
+      return (*this) += rhs[i];
+    }
+    autogen_Field3D_Field3D_plus(&(*this)[i], &rhs[i],
+                                 fieldmesh->LocalNx * fieldmesh->LocalNy *
+                                     fieldmesh->LocalNz);
 #if CHECK > 0
     if (this->getLocation() != rhs.getLocation()) {
       throw BoutException("Trying to plus fields of different locations!");
@@ -978,9 +1365,22 @@ Field3D &Field3D::operator-=(const Field3D &rhs) {
     ASSERT1(fieldmesh == rhs.getMesh());
     checkData(*this);
     checkData(rhs);
-    autogen_Field3D_Field3D_minus(&(*this)[i], &rhs[i], fieldmesh->LocalNx *
-                                                            fieldmesh->LocalNy *
-                                                            fieldmesh->LocalNz);
+    if (this->isConstant() && rhs.isConstant()) {
+      (*this) = (*this)[i] - rhs[i];
+      checkData(*this);
+      return *this;
+    } else if (this->isConstant()) {
+      throw BoutException("Updating constant Field3D (-=) non-constant Field3D: does not "
+                          "preserve constness");
+    } else if (rhs.isConstant()) {
+      if (rhs[i] == 0) {
+        return *this;
+      }
+      return (*this) -= rhs[i];
+    }
+    autogen_Field3D_Field3D_minus(&(*this)[i], &rhs[i],
+                                  fieldmesh->LocalNx * fieldmesh->LocalNy *
+                                      fieldmesh->LocalNz);
 #if CHECK > 0
     if (this->getLocation() != rhs.getLocation()) {
       throw BoutException("Trying to minus fields of different locations!");
@@ -1014,6 +1414,19 @@ Field3D &Field3D::operator*=(const Field2D &rhs) {
     ASSERT1(fieldmesh == rhs.getMesh());
     checkData(*this);
     checkData(rhs);
+    if (this->isConstant() && rhs.isConstant()) {
+      (*this) = (*this)[i] * rhs[i];
+      checkData(*this);
+      return *this;
+    } else if (this->isConstant()) {
+      throw BoutException("Updating constant Field3D (*=) non-constant Field2D: does not "
+                          "preserve constness");
+    } else if (rhs.isConstant()) {
+      if (rhs[i] == 1) {
+        return *this;
+      }
+      return (*this) *= rhs[i];
+    }
     autogen_Field3D_Field2D_mul(&(*this)[i], &rhs[i], fieldmesh->LocalNx,
                                 fieldmesh->LocalNy, fieldmesh->LocalNz);
   } else {
@@ -1043,6 +1456,19 @@ Field3D &Field3D::operator/=(const Field2D &rhs) {
     ASSERT1(fieldmesh == rhs.getMesh());
     checkData(*this);
     checkData(rhs);
+    if (this->isConstant() && rhs.isConstant()) {
+      (*this) = (*this)[i] / rhs[i];
+      checkData(*this);
+      return *this;
+    } else if (this->isConstant()) {
+      throw BoutException("Updating constant Field3D (/=) non-constant Field2D: does not "
+                          "preserve constness");
+    } else if (rhs.isConstant()) {
+      if (rhs[i] == 1) {
+        return *this;
+      }
+      return (*this) /= rhs[i];
+    }
     autogen_Field3D_Field2D_div(&(*this)[i], &rhs[i], fieldmesh->LocalNx,
                                 fieldmesh->LocalNy, fieldmesh->LocalNz);
   } else {
@@ -1072,6 +1498,19 @@ Field3D &Field3D::operator+=(const Field2D &rhs) {
     ASSERT1(fieldmesh == rhs.getMesh());
     checkData(*this);
     checkData(rhs);
+    if (this->isConstant() && rhs.isConstant()) {
+      (*this) = (*this)[i] + rhs[i];
+      checkData(*this);
+      return *this;
+    } else if (this->isConstant()) {
+      throw BoutException("Updating constant Field3D (+=) non-constant Field2D: does not "
+                          "preserve constness");
+    } else if (rhs.isConstant()) {
+      if (rhs[i] == 0) {
+        return *this;
+      }
+      return (*this) += rhs[i];
+    }
     autogen_Field3D_Field2D_plus(&(*this)[i], &rhs[i], fieldmesh->LocalNx,
                                  fieldmesh->LocalNy, fieldmesh->LocalNz);
   } else {
@@ -1101,6 +1540,19 @@ Field3D &Field3D::operator-=(const Field2D &rhs) {
     ASSERT1(fieldmesh == rhs.getMesh());
     checkData(*this);
     checkData(rhs);
+    if (this->isConstant() && rhs.isConstant()) {
+      (*this) = (*this)[i] - rhs[i];
+      checkData(*this);
+      return *this;
+    } else if (this->isConstant()) {
+      throw BoutException("Updating constant Field3D (-=) non-constant Field2D: does not "
+                          "preserve constness");
+    } else if (rhs.isConstant()) {
+      if (rhs[i] == 0) {
+        return *this;
+      }
+      return (*this) -= rhs[i];
+    }
     autogen_Field3D_Field2D_minus(&(*this)[i], &rhs[i], fieldmesh->LocalNx,
                                   fieldmesh->LocalNy, fieldmesh->LocalNz);
   } else {
@@ -1227,6 +1679,19 @@ Field2D &Field2D::operator*=(const Field2D &rhs) {
     ASSERT1(fieldmesh == rhs.getMesh());
     checkData(*this);
     checkData(rhs);
+    if (this->isConstant() && rhs.isConstant()) {
+      (*this) = (*this)[i] * rhs[i];
+      checkData(*this);
+      return *this;
+    } else if (this->isConstant()) {
+      throw BoutException("Updating constant Field2D (*=) non-constant Field2D: does not "
+                          "preserve constness");
+    } else if (rhs.isConstant()) {
+      if (rhs[i] == 1) {
+        return *this;
+      }
+      return (*this) *= rhs[i];
+    }
     autogen_Field2D_Field2D_mul(&(*this)[i], &rhs[i],
                                 fieldmesh->LocalNx * fieldmesh->LocalNy);
   } else {
@@ -1253,6 +1718,19 @@ Field2D &Field2D::operator/=(const Field2D &rhs) {
     ASSERT1(fieldmesh == rhs.getMesh());
     checkData(*this);
     checkData(rhs);
+    if (this->isConstant() && rhs.isConstant()) {
+      (*this) = (*this)[i] / rhs[i];
+      checkData(*this);
+      return *this;
+    } else if (this->isConstant()) {
+      throw BoutException("Updating constant Field2D (/=) non-constant Field2D: does not "
+                          "preserve constness");
+    } else if (rhs.isConstant()) {
+      if (rhs[i] == 1) {
+        return *this;
+      }
+      return (*this) /= rhs[i];
+    }
     autogen_Field2D_Field2D_div(&(*this)[i], &rhs[i],
                                 fieldmesh->LocalNx * fieldmesh->LocalNy);
   } else {
@@ -1279,6 +1757,19 @@ Field2D &Field2D::operator+=(const Field2D &rhs) {
     ASSERT1(fieldmesh == rhs.getMesh());
     checkData(*this);
     checkData(rhs);
+    if (this->isConstant() && rhs.isConstant()) {
+      (*this) = (*this)[i] + rhs[i];
+      checkData(*this);
+      return *this;
+    } else if (this->isConstant()) {
+      throw BoutException("Updating constant Field2D (+=) non-constant Field2D: does not "
+                          "preserve constness");
+    } else if (rhs.isConstant()) {
+      if (rhs[i] == 0) {
+        return *this;
+      }
+      return (*this) += rhs[i];
+    }
     autogen_Field2D_Field2D_plus(&(*this)[i], &rhs[i],
                                  fieldmesh->LocalNx * fieldmesh->LocalNy);
   } else {
@@ -1305,6 +1796,19 @@ Field2D &Field2D::operator-=(const Field2D &rhs) {
     ASSERT1(fieldmesh == rhs.getMesh());
     checkData(*this);
     checkData(rhs);
+    if (this->isConstant() && rhs.isConstant()) {
+      (*this) = (*this)[i] - rhs[i];
+      checkData(*this);
+      return *this;
+    } else if (this->isConstant()) {
+      throw BoutException("Updating constant Field2D (-=) non-constant Field2D: does not "
+                          "preserve constness");
+    } else if (rhs.isConstant()) {
+      if (rhs[i] == 0) {
+        return *this;
+      }
+      return (*this) -= rhs[i];
+    }
     autogen_Field2D_Field2D_minus(&(*this)[i], &rhs[i],
                                   fieldmesh->LocalNx * fieldmesh->LocalNy);
   } else {
