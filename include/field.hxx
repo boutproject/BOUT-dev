@@ -66,7 +66,14 @@ class Field {
   virtual void setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const = 0;
   virtual void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const = 0;
 
+  // for loop iterator
+  virtual const DataIterator begin() const = 0;
+  virtual const DataIterator end() const = 0;
+
   // Data access
+  virtual BoutReal& operator[](const DataIterator &d) = 0;
+  virtual const BoutReal& operator[](const DataIterator &d) const = 0;
+  virtual BoutReal& operator[](const Indices &i) = 0;
   virtual const BoutReal& operator[](const Indices &i) const = 0;
 
   virtual void setLocation(CELL_LOC loc) {
