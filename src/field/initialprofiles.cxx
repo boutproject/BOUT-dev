@@ -127,26 +127,3 @@ void initial_profile(const string &name, Vector3D &var) {
     initial_profile(name + "z", var.z);
   }
 }
-
-/**************************************************************************
- * Routines to generate profiles 
- **************************************************************************/
-
-/// Generate a 3D field with a given Z oscillation
-/*!
-  @param[in] n      Mode number. Note that this is mode-number in the domain
-  @param[in] phase  Phase shift in units of pi
-*/
-const Field3D genZMode(int UNUSED(n), BoutReal phase) {
-  Field3D result(nullptr);
-
-  result.allocate();
-
-  for(int jz=0;jz<mesh->LocalNz;jz++) {
-    BoutReal val = sin(phase*PI +  TWOPI * static_cast<BoutReal>(jz) / static_cast<BoutReal>(mesh->LocalNz));
-    for(int jx=0;jx<mesh->LocalNx;jx++)
-      for(int jy=0;jy<mesh->LocalNy;jy++)
-	result(jx,jy,jz) = val;
-  }
-  return result;
-}

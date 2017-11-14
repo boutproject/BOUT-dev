@@ -111,12 +111,4 @@ void initial_profile(const string &name, Vector2D &var);
  */
 void initial_profile(const string &name, Vector3D &var);
 
-/*!
- * Generate a 3D field with a given Z oscillation
- *
- * @param[in] n      Mode number. Note that this is mode-number in the domain
- * @param[in] phase  Phase shift in units of pi
- */
-const Field3D genZMode(int n, BoutReal phase = 0.0);
-
 #endif // __INITIALPROF_H__
