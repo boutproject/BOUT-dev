@@ -8,6 +8,6 @@ boutcore.cpp
 \#*#
 .#*
 BOUT.settings
-BOUT.log.0
+BOUT.log.*
 BOUT.restart.*.nc
-data/BOUT.dmp.0.nc
+data/BOUT.dmp.*.nc

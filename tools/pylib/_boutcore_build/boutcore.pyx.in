@@ -93,13 +93,36 @@ cdef class Field3D:
         remaining arguments are passed to collect
         """
         from boutdata import collect
+
+        if mesh is None:
+            mesh=Mesh.getGlobal()
+        f3d=cls.fromMesh(mesh)
+        # Make it MPI aware
+        cdef c.Mesh* mesh_ = (<Mesh?>mesh).cobj
+        nxpe=mesh_.getNXPE()
+        nype=mesh_.getNYPE()
+        if (nxpe):
+            if "xind" in kwargs.keys():
+                raise "Error: Do not support xind slicing with MPI"
+            nxi=mesh_.getXProcIndex()
+            nxg=mesh_.xstart
+            nx=mesh_.LocalNx
+            nx_=nx-2*nxg
+            xstart=nx_*nxi
+            kwargs['xind']=[xstart,xstart+nx]
+        if (nype):
+            if "yind" in kwargs.keys():
+                raise "Error: Do not support yind slicing with MPI"
+            nyi=mesh_.getYProcIndex()
+            nyg=mesh_.ystart
+            ny=mesh_.LocalNy
+            ny_=ny-2*nyg
+            ystart=ny_*nyi
+            kwargs['yind']=[ystart,ystart+ny]
         data=collect(name,yguards=True,tind=tind,**kwargs)
         data=data.reshape(data.shape[1:])
         if len(data.shape) != 3:
             raise TypeError("expected 3d data")
-        if mesh is None:
-            mesh=Mesh.getGlobal()
-        f3d=cls.fromMesh(mesh)
         f3d.setAll(data)
         return f3d
             

@@ -26,6 +26,16 @@ cdef extern from "bout/mesh.hxx":
         void load()
         void setParallelTransform()
         void communicate(FieldGroup&)
+        int getNXPE()
+        int getNYPE()
+        int getXProcIndex()
+        int getYProcIndex()
+        int xstart
+        int ystart
+        int LocalNx
+        int LocalNy
+
+
 
 cdef extern from "bout/fieldgroup.hxx":
     cppclass FieldGroup:
