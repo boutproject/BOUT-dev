@@ -11,12 +11,12 @@ def resolve_slice(ind,num):
         if ind < 0:
             ind=num+ind
         if ind < 0 or ind >= num:
-            raise IndexError()
+            raise IndexError("%d is out of range [%d:%d]"%(ind,0,num))
         return [ind,ind+1,1]
         
 def resolve_slices(inds,nums):
     if len(inds)!= len(nums):
-        raise IndexError()
+        raise IndexError("Expexted %d dimensions, but got %d dimensions."%(len(nums),len(inds)))
     ret=[]
     for i in range(len(inds)):
         ret.append(resolve_slice(inds[i],nums[i]))

@@ -204,7 +204,7 @@ cdef class Field3D:
         for i in inds:
             dims.append((i[1]-i[0])//i[2])
         if len(dims_in) != 3:
-            raise IndexError()
+            raise IndexError("This is a 3D object, but got %d dimensions"%len(dims_in))
         for i in range(3):
             if dims[i] != dims_in[i]:
                 raise IndexError("Expected %s but got %s."%(dims,dims_in))
