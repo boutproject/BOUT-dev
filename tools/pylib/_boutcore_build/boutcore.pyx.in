@@ -51,11 +51,11 @@ EOF
 for f in "add:+" "mul:*" "truediv:/" "div:/" "sub:-"
 do
     n=${f%:*}
-    echo "     c.Field3D * f$n( c.Field3D*, c.Field3D*)"
-    echo "     c.Field3D * f$n( c.Field3D*, double)"
-    echo "     c.Field3D * f$n( double, c.Field3D*)"
-    echo "     void fi$n( c.Field3D*, c.Field3D*)"
-    echo "     void fi$n( c.Field3D*, double)"
+    echo "     c.Field3D * f$n( c.Field3D*, c.Field3D*) except +"
+    echo "     c.Field3D * f$n( c.Field3D*, double) except +"
+    echo "     c.Field3D * f$n( double, c.Field3D*) except +"
+    echo "     void fi$n( c.Field3D*, c.Field3D*) except +"
+    echo "     void fi$n( c.Field3D*, double) except +"
 done
 cat <<EOF
      c.Field3D c_minus( c.Field3D )
@@ -455,7 +455,7 @@ def bracket(Field3D a, Field3D b, method="BRACKET_STD", outloc="CELL_DEFAULT"):
     return f3dFromObj(c.bracket(a.cobj[0],b.cobj[0],method_,outloc_))
 
 EOF
-for fun in sqrt exp
+for fun in sqrt exp sin cos log
 do
     echo "def $fun(Field3D a):
     return f3dFromObj(c.$fun(a.cobj[0]))
@@ -466,6 +466,12 @@ cat <<EOF
 
 def pow(Field3D a, exponent):
     return f3dFromObj(c.pow(a.cobj[0],float(exponent)))
+
+def min(Field3D a):
+    return c.min(a.cobj[0])
+
+def min(Field3D a):
+    return c.min(a.cobj[0])
 
 def Delp2(Field3D a, zsmooth=-1):
     return f3dFromObj(c.Delp2(a.cobj[0],float(zsmooth)))

@@ -17,6 +17,11 @@ cdef extern from "field3d.hxx":
         void setLocation(benum.CELL_LOC)
     Field3D sqrt(Field3D)
     Field3D exp(Field3D)
+    Field3D log(Field3D)
+    Field3D sin(Field3D)
+    Field3D cos(Field3D)
+    double max(Field3D)
+    double min(Field3D)
     Field3D pow(Field3D,double)
     Field3D & ddt(Field3D)
 
