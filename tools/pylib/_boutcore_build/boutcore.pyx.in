@@ -25,7 +25,7 @@ do
 done
 
 cat <<EOF
-# distutils: language = c++
+# distutils: language=c++
 # distutils: include_dirs = $inc_dirs
 # distutils: libraries = $libs
 # distutils: library_dirs = $lib_dirs
@@ -454,11 +454,18 @@ def bracket(Field3D a, Field3D b, method="BRACKET_STD", outloc="CELL_DEFAULT"):
     cdef benum.BRACKET_METHOD method_=benum.resolve_bracket_method(method)
     return f3dFromObj(c.bracket(a.cobj[0],b.cobj[0],method_,outloc_))
 
-def sqrt(Field3D a):
-    return f3dFromObj(c.sqrt(a.cobj[0]))
+EOF
+for fun in sqrt exp
+do
+    echo "def $fun(Field3D a):
+    return f3dFromObj(c.$fun(a.cobj[0]))
 
-def exp(Field3D a):
-    return f3dFromObj(c.exp(a.cobj[0]))
+"
+done
+cat <<EOF
+
+def pow(Field3D a, exponent):
+    return f3dFromObj(c.pow(a.cobj[0],float(exponent)))
 
 def Delp2(Field3D a, zsmooth=-1):
     return f3dFromObj(c.Delp2(a.cobj[0],float(zsmooth)))

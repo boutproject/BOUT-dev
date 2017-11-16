@@ -1,3 +1,5 @@
+# distutils: language=c++
+
 from libcpp cimport bool
 from libcpp.string cimport string
 
@@ -15,6 +17,7 @@ cdef extern from "field3d.hxx":
         void setLocation(benum.CELL_LOC)
     Field3D sqrt(Field3D)
     Field3D exp(Field3D)
+    Field3D pow(Field3D,double)
     Field3D & ddt(Field3D)
 
 
