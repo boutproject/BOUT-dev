@@ -17,7 +17,7 @@ boutcore.so: boutcore.pyx setup.py helper.cxx helper.h $(TOGEN)
 	@$(PY) setup.py build_ext --inplace
 
 test: boutcore.so
-	@$(PY) ./runtest &>/dev/null
+	@$(PY) ./runtest > run.log
 
 check: test
 .PHONY:
