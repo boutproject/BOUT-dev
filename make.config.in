@@ -371,7 +371,12 @@ manual-pdf:
 	$(MAKE) -C $(MANUAL_DIR) pdf
 
 python:
-	$(MAKE) -C tools/pylib
+	$(MAKE) -C tools/pylib python3
+
+python2:
+	$(MAKE) -C tools/pylib python2
+
+python-all:python python2
 
 ######################################################################
 # Code coverage
