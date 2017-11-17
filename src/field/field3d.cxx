@@ -179,6 +179,13 @@ Field3D* Field3D::timeDeriv() {
   return deriv;
 }
 
+Field* Field3D::toFieldAligned() const {
+  //Field* result = new Field3D(getMesh());
+  //*result = fieldmesh->toFieldAligned(*this);
+  Field* result = new Field3D(fieldmesh->toFieldAligned(*this));
+  return result;
+}
+
 void Field3D::splitYupYdown() {
   TRACE("Field3D::splitYupYdown");
   

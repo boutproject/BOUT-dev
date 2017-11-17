@@ -123,6 +123,14 @@ Field2D* Field2D::timeDeriv() {
   return deriv;
 }
 
+Field* Field2D::toFieldAligned() const {
+  //Field* result = new Field2D(getMesh());
+  //*result = fieldmesh->toFieldAligned(*this);
+  // Field2D is already 'field aligned' so do nothing
+  Field* result = new Field2D(*this);
+  return result;
+}
+
 ////////////// Indexing ///////////////////
 
 const DataIterator Field2D::iterator() const {

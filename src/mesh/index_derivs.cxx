@@ -1970,7 +1970,7 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
 }
 
 // general case
-const Field3D Mesh::indexVDDY(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field3D Mesh::indexVDDY(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
   TRACE("Mesh::indexVDDY(Field, Field)");
 
   ASSERT1(this == v.getMesh());
@@ -2019,17 +2019,123 @@ const Field3D Mesh::indexVDDY(const Field &v, const Field &f, CELL_LOC outloc, D
       func = lookupFluxFunc(table, method);
     }
     
-    bindex bx;
-    start_index(&bx);
-    stencil vval, fval;
-    do {
-      v.setYStencil(vval, bx, diffloc);
-      f.setYStencil(fval, bx);
-      
-      result(bx.jx, bx.jy, bx.jz) = func(vval, fval);
-    }while(next_index3(&bx));
+    bool vtest = v.hasYupYdown() && ( (&v.yup() != &v) || (&v.ydown() != &v) );
+    bool ftest = f.hasYupYdown() && ( (&f.yup() != &f) || (&f.ydown() != &f) );
+    if (vtest && ftest) {
+      // v and f have distinct yup and ydown fields which
+      // will be used to calculate a derivative along
+      // the magnetic field
+      stencil vval, fval;
+      for(const auto &i : result.region(region)) {
+        // Set stencils
+        fval.c = f[i];
+        fval.p = f.yup()[i.yp()];
+        fval.m = f.ydown()[i.ym()];
+        fval.pp = nan("");
+        fval.mm = nan("");
+        vval.c = v[i];
+        vval.p = v.yup()[i.yp()];
+        vval.m = v.ydown()[i.ym()];
+        vval.pp = nan("");
+        vval.mm = nan("");
+
+        if ((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+          // Producing a stencil centred around a lower Y value
+          vval.pp = vval.p;
+          vval.p = vval.c;
+        }
+        else if ((vloc == CELL_YLOW) && (diffloc == CELL_CENTRE)) {
+          // Stencil centred around a cell centre
+          vval.mm = vval.m;
+          vval.m = vval.c;
+        }
+
+        result[i] = func(vval, fval);
+      }
+    }
+    else if (!vtest && !ftest) {
+      // v and f have no yup/ydown fields, so we need to shift into field-aligned coordinates
+      Field* v_fa = v.toFieldAligned();
+      Field* f_fa = f.toFieldAligned();
+      stencil fval, vval;
+
+      if (mesh->ystart > 1) {
+        // More than one guard cell, so set pp and mm values
+        // This allows higher-order methods to be used
+        for(const auto &i : result.region(region)) {
+          // Set stencils
+          fval.c = (*f_fa)[i];
+          fval.p = (*f_fa)[i.yp()];
+          fval.m = (*f_fa)[i.ym()];
+          fval.pp = (*f_fa)[i.offset(0,2,0)];
+          fval.mm = (*f_fa)[i.offset(0,-2,0)];
+
+          if ((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+            // Producing a stencil centred around a lower Y value
+            vval.p = (*v_fa)[i];
+            vval.m = (*v_fa)[i.ym()];
+            vval.pp = (*v_fa)[i.yp()];
+            vval.mm = (*v_fa)[i.offset(0,-2,0)];
+          }
+          else if ((vloc == CELL_YLOW) && (diffloc == CELL_CENTRE)) {
+            // Stencil centred around a cell centre
+            vval.p = (*v_fa)[i.yp()];
+            vval.m = (*v_fa)[i];
+            vval.pp = (*v_fa)[i.offset(0,2,0)];
+            vval.mm = (*v_fa)[i.ym()];
+          } else {
+            vval.c = (*v_fa)[i];
+            vval.p = (*v_fa)[i.yp()];
+            vval.m = (*v_fa)[i.ym()];
+            vval.pp = (*v_fa)[i.offset(0,2,0)];
+            vval.mm = (*v_fa)[i.offset(0,-2,0)];
+          }
+
+          result[i] = func(vval,fval);
+        }
+      } else {
+        // Only one guard cell, so no pp or mm values
+        for(const auto &i : result.region(region)) {
+          // Set stencils
+          fval.c = f[i];
+          fval.p = f[i.yp()];
+          fval.m = f[i.ym()];
+          fval.pp = nan("");
+          fval.mm = nan("");
+          vval.c = v[i];
+          vval.p = v[i.yp()];
+          vval.m = v[i.ym()];
+          vval.pp = nan("");
+          vval.mm = nan("");
+
+          if ((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+            // Producing a stencil centred around a lower Y value
+            vval.pp = vval.p;
+            vval.p = vval.c;
+          }
+          else if ((vloc == CELL_YLOW) && (diffloc == CELL_CENTRE)) {
+            // Stencil centred around a cell centre
+            vval.mm = vval.m;
+            vval.m = vval.c;
+          }
+
+          result[i] = func(vval,fval);
+        }
+      }
+      delete v_fa;
+      delete f_fa;
+    } else if (vtest && !ftest) {
+      // Case not handled at present
+      throw BoutException("Error: v has yup/ydown fields but f does not; case not handled at present");
+    } else if (!vtest && ftest) {
+      // Case not handled at present
+      throw BoutException("Error: f has yup/ydown fields but v does not; case not handled at present");
+    } else {
+      // This should never happen
+      throw BoutException("Error, unexpected case");
+    }
     
-  }else {
+  } else {
     Mesh::upwind_func func = fVDDY;
     DiffLookup *table = UpwindTable;
     
@@ -2038,14 +2144,67 @@ const Field3D Mesh::indexVDDY(const Field &v, const Field &f, CELL_LOC outloc, D
       func = lookupUpwindFunc(table, method);
     }
   
-    bindex bx;
-    start_index(&bx);
-    stencil vval, fval;
-    do {
-      f.setYStencil(fval, bx);
+    bool vtest = v.hasYupYdown() && ( (&v.yup() != &v) || (&v.ydown() != &v) );
+    bool ftest = f.hasYupYdown() && ( (&f.yup() != &f) || (&f.ydown() != &f) );
+    if (vtest && ftest) {
+      // f has distinct yup and ydown fields which
+      // will be used to calculate a derivative along
+      // the magnetic field
+      for (const auto &i : result.region(region)) {
+        // Set stencils
+        stencil fval;
+        fval.c = f[i];
+        fval.p = f.yup()[i.yp()];
+        fval.m = f.ydown()[i.ym()];
+        fval.pp = nan("");
+        fval.mm = nan("");
+
+        result[i] = func(v[i], fval);
+      }
+    } else if (!vtest && !ftest) {
+      // var has no yup/ydown fields, so we need to shift into field-aligned coordinates
       
-      result(bx.jx, bx.jy, bx.jz) = func(v[{bx.jx, bx.jy, bx.jz}], fval);
-    }while(next_index3(&bx));
+      Field* v_fa = v.toFieldAligned();
+      Field* f_fa = f.toFieldAligned();
+      if (mesh->ystart>1) {
+        // More than one guard cell, so set pp and mm values
+        // This allows higher-order methods to be used
+        for (const auto &i : result.region(region)) {
+          // Set stencils
+          stencil fval;
+          fval.c = (*f_fa)[i];
+          fval.p = (*f_fa)[i.yp()];
+          fval.m = (*f_fa)[i.ym()];
+          fval.pp = (*f_fa)[i.offset(0,2,0)];
+          fval.mm = (*f_fa)[i.offset(0,-2,0)];
+
+          result[i] = func((*v_fa)[i], fval);
+        }
+      } else {
+        for (const auto &i : result.region(region)) {
+          // Set stencils
+          stencil fval;
+          fval.c = f[i];
+          fval.p = f[i.yp()];
+          fval.m = f[i.ym()];
+          fval.pp = nan("");
+          fval.mm = nan("");
+
+          result[i] = func(v[i], fval);
+        }
+      }
+      delete v_fa;
+      delete f_fa;
+    } else if (vtest && !ftest) {
+      // Case not handled at present
+      throw BoutException("Error: v has yup/ydown fields but f does not; case not handled at present");
+    } else if (!vtest && ftest) {
+      // Case not handled at present
+      throw BoutException("Error: f has yup/ydown fields but v does not; case not handled at present");
+    } else {
+      // This should never happen
+      throw BoutException("Error, unexpected case");
+    }
   }
   
   result.setLocation(inloc);

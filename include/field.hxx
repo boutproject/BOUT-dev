@@ -68,6 +68,7 @@ class Field {
 
   // Data access
   virtual const BoutReal& operator[](const Indices &i) const = 0;
+  virtual const BoutReal& operator[](const DataIterator &i) const = 0;
 
   virtual void setLocation(CELL_LOC loc) {
     if (loc != CELL_CENTRE)
@@ -143,6 +144,37 @@ class Field {
    * Return the number of nz points
    */
   virtual int getNz() const;
+
+  // Utility method to get result of Mesh::toFieldAligned for different derived classes of Field
+  virtual Field* toFieldAligned() const {
+    throw BoutException("not implemented in Field base class");
+  }
+
+  /*
+   * Interface for yup and ydown fields
+   */
+  /// Check if this field has yup and ydown fields
+  /// Should be overridden in derived classes
+  virtual bool hasYupYdown() const {
+    return false;
+  }
+  /// Return reference to yup field
+  virtual Field& yup() {
+    throw BoutException("This is not implemented: should be overridden in derived classes");
+  }
+  /// Return const reference to yup field
+  virtual const Field& yup() const {
+    throw BoutException("This is not implemented: should be overridden in derived classes");
+  }
+  /// Return reference to ydown field
+  virtual Field& ydown() {
+    throw BoutException("This is not implemented: should be overridden in derived classes");
+  }
+  /// Return const reference to ydown field
+  virtual const Field& ydown() const {
+    throw BoutException("This is not implemented: should be overridden in derived classes");
+  }
+
  protected:
   Mesh * fieldmesh;
   /// Supplies an error method. Currently just prints and exits, but

@@ -113,6 +113,8 @@ class Field2D : public Field, public FieldData {
    */
   int getNz() const override {return 1;};
 
+  Field* toFieldAligned() const;
+
   // Operators
 
   /*!

@@ -222,6 +222,8 @@ class Field3D : public Field, public FieldData {
    */
   int getNz() const override {return nz;};
 
+  Field* toFieldAligned() const;
+
   /*!
    * Ensure that this field has separate fields
    * for yup and ydown.
