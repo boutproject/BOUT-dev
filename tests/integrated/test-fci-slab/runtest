@@ -7,6 +7,11 @@ from __future__ import print_function
 from builtins import zip
 from builtins import str
 
+import sys
+import codecs
+
+sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'replace')
+
 from boututils.run_wrapper import shell, launch, getmpirun
 from boututils.datafile import DataFile
 from boutdata.collect import collect
