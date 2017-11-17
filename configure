@@ -5884,7 +5884,7 @@ if test "x$with_netcdf" != "xno"; then :
   # check the path provided by --with-netcdf, appending "/bin" if need
   # be, then check system path
   # Set NCCONF to the full path of the found scropt
-  case `basename $with_netcdf` in #(
+  case `basename $with_netcdf 2> /dev/null` in #(
   "ncxx4-config") :
     NCCONF=$with_netcdf ;; #(
   "nc-config") :
@@ -5934,32 +5934,31 @@ fi
 
   test -n "$NCCONF" && break
 done
-test -n "$NCCONF" || NCCONF="as_fn_error $? "No configure script found. Specify path using --with-netcdf option" "$LINENO" 5"
  ;;
 esac
-
-  # If we found nc-config rather than ncxx4-config, we need to check if it supports C++
-  if test `basename $NCCONF` = 'nc-config'; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if $NCCONF has C++4 support" >&5
-$as_echo_n "checking if $NCCONF has C++4 support... " >&6; }
-         nc_has_cpp4=`$NCCONF --has-c++4`
-         { $as_echo "$as_me:${as_lineno-$LINENO}: result: $nc_has_cpp4" >&5
-$as_echo "$nc_has_cpp4" >&6; }
-         { $as_echo "$as_me:${as_lineno-$LINENO}: checking if $NCCONF has C++ support" >&5
-$as_echo_n "checking if $NCCONF has C++ support... " >&6; }
-         nc_has_cpp=`$NCCONF --has-c++`
-         { $as_echo "$as_me:${as_lineno-$LINENO}: result: $nc_has_cpp" >&5
-$as_echo "$nc_has_cpp" >&6; }
-
-else
-
-         nc_has_cpp4="yes"
-
-fi
 
   ##########################################
   # Get configuration
   if test "x$NCCONF" != "x" ; then :
+
+     # If we found nc-config rather than ncxx4-config, we need to check if it supports C++
+     if test `basename $NCCONF` = 'nc-config'; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if $NCCONF has C++4 support" >&5
+$as_echo_n "checking if $NCCONF has C++4 support... " >&6; }
+            nc_has_cpp4=`$NCCONF --has-c++4`
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $nc_has_cpp4" >&5
+$as_echo "$nc_has_cpp4" >&6; }
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking if $NCCONF has C++ support" >&5
+$as_echo_n "checking if $NCCONF has C++ support... " >&6; }
+            nc_has_cpp=`$NCCONF --has-c++`
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $nc_has_cpp" >&5
+$as_echo "$nc_has_cpp" >&6; }
+
+else
+
+            nc_has_cpp4="yes"
+
+fi
 
      NCINC=`$NCCONF --cflags`
      EXTRA_INCS="$EXTRA_INCS $NCINC"
