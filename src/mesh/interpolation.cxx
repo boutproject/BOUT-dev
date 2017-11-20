@@ -192,9 +192,14 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region)
   return var;
 }
 
-const Field2D interp_to(const Field2D &var, CELL_LOC UNUSED(loc)) {
-  // Currently do nothing
-  return var;
+const Field2D interp_to(const Field2D &var, CELL_LOC loc) {
+  // Throw exception if something needs to be done
+  if (loc == CELL_DEFAULT || var.getLocation() == loc || (loc == CELL_ZLOW && var.getLocation() == CELL_CENTRE) || (loc == CELL_CENTRE && var.getLocation() == CELL_ZLOW)) {
+    // Nothing needs to be done for Field2D if var is already at loc, or if the interpolation would be in the z-direction (since a Field2D is axi-symmetric)
+    return var;
+  } else {
+    throw BoutException("interp_to is not currently implemented for Field2D unless nothing needs to be done");
+  }
 }
 
 void printLocation(const Field3D &var) {
