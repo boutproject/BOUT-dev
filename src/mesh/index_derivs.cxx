@@ -1042,20 +1042,24 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
         for(const auto &i : result.region(region)) {
           // Set stencils
           stencil s;
-          s.c = var_fa[i];
-          s.p = var_fa[i.yp()];
-          s.m = var_fa[i.ym()];
-          s.pp = var_fa[i.offset(0,2,0)];
-          s.mm = var_fa[i.offset(0,-2,0)];
-          
           if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
             // Producing a stencil centred around a lower Y value
-            s.pp = s.p;
-            s.p  = s.c;
+            s.p = var_fa[i];
+            s.m = var_fa[i.ym()];
+            s.pp = var_fa[i.yp()];
+            s.mm = var_fa[i.offset(0,-2,0)];
           } else if(location == CELL_YLOW) {
             // Stencil centred around a cell centre
-            s.mm = s.m;
-            s.m  = s.c;
+            s.p = var_fa[i.yp()];
+            s.m = var_fa[i];
+            s.pp = var_fa[i.offset(0,2,0)];
+            s.mm = var_fa[i.ym()];
+          } else {
+            s.c = var_fa[i];
+            s.p = var_fa[i.yp()];
+            s.m = var_fa[i.ym()];
+            s.pp = var_fa[i.offset(0,2,0)];
+            s.mm = var_fa[i.offset(0,-2,0)];
           }
           
           result[i] = func(s);
@@ -1065,20 +1069,24 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
         for(const auto &i : result.region(region)) {
           // Set stencils
           stencil s;
-          s.c = var_fa[i];
-          s.p = var_fa[i.yp()];
-          s.m = var_fa[i.ym()];
-          s.pp = nan("");
-          s.mm = nan("");
-          
           if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
             // Producing a stencil centred around a lower Y value
-            s.pp = s.p;
-            s.p  = s.c;
+            s.p = var_fa[i];
+            s.m = var_fa[i.ym()];
+            s.pp = var_fa[i.yp()];
+            s.mm = nan("");
           } else if(location == CELL_YLOW) {
             // Stencil centred around a cell centre
-            s.mm = s.m;
-            s.m  = s.c;
+            s.p = var_fa[i.yp()];
+            s.m = var_fa[i];
+            s.pp = nan("");
+            s.mm = var_fa[i.ym()];
+          } else {
+            s.c = var_fa[i];
+            s.p = var_fa[i.yp()];
+            s.m = var_fa[i.ym()];
+            s.pp = nan("");
+            s.mm = nan("");
           }
           
           result[i] = func(s);
