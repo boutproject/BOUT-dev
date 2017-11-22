@@ -890,3 +890,31 @@ def resizeY(newy, path="data", output=".", informat="nc", outformat=None,myg=2):
                 
         infile.close()
         outfile.close()
+
+
+def addvar(var, value, path="."):
+    file_list = glob.glob(os.path.join(path, "BOUT.restart.*"))
+    nfiles = len(file_list)
+
+    print("Number of restart files: %d" % (nfiles,))
+    # Loop through all the restart files
+    for filename in file_list:
+        print(filename)
+        # Open the restart file for writing (modification)
+        with DataFile(filename, write=True) as df:
+            size = None
+            # Find a 3D variable and get its size
+            for varname in df.list():
+                size = df.size(varname)
+                if len(size) == 3:
+                    break
+            if size is None:
+                raise Exception("no 3D variables found")
+
+            # Create a new 3D array with input value
+            data = np.zeros(size) + value
+            
+            # Set the variable in the NetCDF file
+            #df[var] = data
+            df.write(var, data)
+            
