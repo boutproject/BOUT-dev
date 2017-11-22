@@ -924,6 +924,9 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, CELL_L
   
   ASSERT1(this == var.getMesh());
 
+  // Staggered differences not implemented, so check we do not return a wrong result
+  ASSERT1(loc == CELL_DEFAULT || loc == var.getLocation());
+
   Field2D result(this);
   result.allocate(); // Make sure data allocated
   
@@ -1412,7 +1415,7 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
     
   }else {
     // All other (non-FFT) functions 
-    result = applyZdiff(f, func);
+    result = applyZdiff(f, func, diffloc);
   }
   
   result.setLocation(diffloc);
@@ -1497,7 +1500,7 @@ const Field3D Mesh::indexD2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
       throw BoutException("Cannot use FFT for X derivatives");
   }
   
-  result = applyXdiff(f, func);
+  result = applyXdiff(f, func, diffloc);
   result.setLocation(diffloc);
   
   result = interp_to(result, outloc);
@@ -1581,7 +1584,7 @@ const Field3D Mesh::indexD2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
       throw BoutException("Cannot use FFT for Y derivatives");
   }
   
-  result = applyYdiff(f, func);
+  result = applyYdiff(f, func, diffloc);
   result.setLocation(diffloc);
 
   return interp_to(result, outloc);
@@ -1719,7 +1722,7 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
   }
   else {
     // All other (non-FFT) functions
-    result = applyZdiff(f, func);
+    result = applyZdiff(f, func, diffloc);
   }
 
   result.setLocation(diffloc);
