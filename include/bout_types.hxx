@@ -33,7 +33,7 @@ enum CELL_LOC {CELL_DEFAULT=0, CELL_CENTRE=1, CELL_CENTER=1, CELL_XLOW=2, CELL_Y
 enum DIFF_METHOD {DIFF_DEFAULT, DIFF_U1, DIFF_U2, DIFF_C2, DIFF_W2, DIFF_W3, DIFF_C4, DIFF_U4, DIFF_FFT, DIFF_SPLIT, DIFF_NND, DIFF_S2};
 
 /// Specify grid region for looping
-enum REGION {RGN_ALL, RGN_NOBNDRY, RGN_NOX, RGN_NOY, RGN_NOZ};
+enum REGION {RGN_ALL, RGN_NOBNDRY, RGN_NOX, RGN_NOY, RGN_NOZ, RGN_INTERP};
 
 //jmad Boundary condition function
 typedef BoutReal (*FuncPtr)(BoutReal t, BoutReal x, BoutReal y, BoutReal z);

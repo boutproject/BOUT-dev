@@ -49,25 +49,20 @@ BoutReal interp(const stencil &s)
   @param[in]   var  Input variable
   @param[in]   loc  Location of output values
 */
-const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region)
+const Field3D interp_to(const Field3D &var, CELL_LOC loc)
 {
+  REGION region = RGN_INTERP;
+
   if(mesh->StaggerGrids && (var.getLocation() != loc)) {
 
     // Staggered grids enabled, and need to perform interpolation
     TRACE("Interpolating %s -> %s", strLocation(var.getLocation()), strLocation(loc));
 
-    // Check region is compatible with stagger: at least 2 guard cells needed in direction of interpolation
-    if ( (var.getLocation() == CELL_XLOW || loc == CELL_XLOW)  ) {
-      ASSERT1(region == RGN_NOBNDRY || region == RGN_NOX)
-    }
-    if ( (var.getLocation() == CELL_YLOW || loc == CELL_YLOW) ) {
-      ASSERT1(region == RGN_NOBNDRY || region == RGN_NOY)
-    }
-
     Field3D result;
 
     result = var; // NOTE: This is just for boundaries. FIX!
     result.allocate();
+    result.setLocation(loc); // Set the result location
     
     if((var.getLocation() == CELL_CENTRE) || (loc == CELL_CENTRE)) {
       // Going between centred and shifted

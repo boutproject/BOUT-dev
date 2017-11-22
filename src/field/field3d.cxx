@@ -296,6 +296,23 @@ const IndexRange Field3D::region(REGION rgn) const {
         fieldmesh->ystart, fieldmesh->yend,
         0, nz-1};
   }
+  case RGN_INTERP: {
+    if (location == CELL_XLOW && fieldmesh->lastX() && !fieldmesh->periodicX) {
+      // Include extra point (which is on the boundary) if we are at the end of a non-periodic domain
+      return IndexRange{fieldmesh->xstart, fieldmesh->xend+1,
+          fieldmesh->ystart, fieldmesh->yend,
+          0, nz-1};
+    } else if (location == CELL_YLOW && fieldmesh->lastY() && !fieldmesh->periodicY(fieldmesh->xstart) && !fieldmesh->periodicY(fieldmesh->xend)) {
+      // Include extra point (which is on the boundary) if we are at the end of a non-periodic domain
+      return IndexRange{fieldmesh->xstart, fieldmesh->xend,
+          fieldmesh->ystart, fieldmesh->yend+1,
+          0, nz-1};
+    } else {
+      return IndexRange{fieldmesh->xstart, fieldmesh->xend,
+          fieldmesh->ystart, fieldmesh->yend,
+          0, nz-1};
+    }
+  }
   default: {
     throw BoutException("Field3D::region() : Requested region not implemented");
   }
