@@ -17,31 +17,26 @@
 
 #include <globals.hxx>
 
-Coordinates::Coordinates(Mesh *mesh) {
-
-  dx = 1.0;
-  dy = 1.0;
-  dz = 1.0;
-
-  J = 1.0;
-  Bxy = 1.0;
-
+Coordinates::Coordinates(Mesh *mesh) :
+  dx(1,mesh), dy(1,mesh), dz(1),
+  d1_dx(mesh), d1_dy(mesh),
+  J(1,mesh), Bxy(1,mesh),
   // Identity metric tensor
-
-  g11 = 1.0;
-  g22 = 1.0;
-  g33 = 1.0;
-  g12 = 0.0;
-  g13 = 0.0;
-  g23 = 0.0;
-
-  g_11 = 1.0;
-  g_22 = 1.0;
-  g_33 = 1.0;
-  g_12 = 0.0;
-  g_13 = 0.0;
-  g_23 = 0.0;
-
+  g11(1,mesh), g22(1,mesh), g33(1,mesh),
+  g12(0,mesh), g13(0,mesh), g23(0,mesh),
+  g_11(1,mesh), g_22(1,mesh), g_33(1,mesh),
+  g_12(0,mesh), g_13(0,mesh), g_23(0,mesh),
+  G1_11(mesh), G1_22(mesh), G1_33(mesh),
+  G1_12(mesh), G1_13(mesh), G1_23(mesh),
+  G2_11(mesh), G2_22(mesh), G2_33(mesh),
+  G2_12(mesh), G2_13(mesh), G2_23(mesh),
+  G3_11(mesh), G3_22(mesh), G3_33(mesh),
+  G3_12(mesh), G3_13(mesh), G3_23(mesh),
+  G1(mesh), G2(mesh), G3(mesh),
+  ShiftTorsion(mesh), IntShiftTorsion(mesh),
+  msh(mesh)
+{
+  
   if (mesh->get(dx, "dx")) {
     output_warn.write("\tWARNING: differencing quantity 'dx' not found. Set to 1.0\n");
     dx = 1.0;
@@ -171,10 +166,10 @@ Coordinates::Coordinates(Mesh *mesh) {
 
   //////////////////////////////////////////////////////
   /// Non-uniform meshes. Need to use DDX, DDY
-
-  OPTION(Options::getRoot(), non_uniform, false);
-
-  Field2D d2x, d2y; // d^2 x / d i^2
+  
+  OPTION(Options::getRoot(), non_uniform,  false);
+  
+  Field2D d2x(mesh), d2y(mesh); // d^2 x / d i^2
   // Read correction for non-uniform meshes
   if (mesh->get(d2x, "d2x")) {
     output_warn.write("\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
@@ -262,6 +257,12 @@ int Coordinates::geometry() {
     throw BoutException("\tERROR: Off-diagonal g_ij metrics are not finite!\n");
   }
 
+  for (auto f: {&dx, &dy,
+        &g11,  &g22,  &g33,  &g12,  &g13,  &g23,
+        &g_11, &g_22, &g_33, &g_12, &g_13, &g_23}){
+    checkData(*f);
+    f->makeAutoConstant();
+  }
   // Calculate Christoffel symbol terms (18 independent values)
   // Note: This calculation is completely general: metric
   // tensor can be 2D or 3D. For 2D, all DDZ terms are zero
@@ -365,6 +366,12 @@ int Coordinates::geometry() {
 
   mesh->communicate(com);
 
+  for (auto f: { &G1,  &G2,  &G3 ,
+        &G1_11,  &G1_22,  &G1_33,  &G1_12,  &G1_13,  &G1_23,
+        &G2_11,  &G2_22,  &G2_33,  &G2_12,  &G2_13,  &G2_23,
+        &G3_11,  &G3_22,  &G3_33,  &G3_12,  &G3_13,  &G3_23}){
+    f->makeAutoConstant();
+  }
   return 0;
 }
 
@@ -525,11 +532,17 @@ int Coordinates::jacobian() {
  *
  *******************************************************************************/
 
-const Field2D Coordinates::DDX(const Field2D &f) { return mesh->indexDDX(f) / dx; }
+const Field2D Coordinates::DDX(const Field2D &f) {
+  return msh->indexDDX(f) / dx;
+}
 
-const Field2D Coordinates::DDY(const Field2D &f) { return mesh->indexDDY(f) / dy; }
+const Field2D Coordinates::DDY(const Field2D &f) {
+  return msh->indexDDY(f) / dy;
+}
 
-const Field2D Coordinates::DDZ(const Field2D &UNUSED(f)) { return Field2D(0.0); }
+const Field2D Coordinates::DDZ(const Field2D &UNUSED(f)) {
+  return Field2D(0.0,msh);
+}
 
 #include <derivs.hxx>
 
@@ -614,9 +627,9 @@ const Field2D Coordinates::Grad2_par2(const Field2D &f) {
 const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc) {
   TRACE("Coordinates::Grad2_par2( Field3D )");
 
-  Field2D sg;
-  Field3D result, r2;
-
+  Field2D sg(msh);
+  Field3D result(msh), r2(msh);
+  
   sg = sqrt(g_22);
   sg = DDY(1. / sg) / sg;
   if (sg.getLocation() != outloc) {
@@ -650,43 +663,43 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
   TRACE("Coordinates::Delp2( Field3D )");
   
   ASSERT2(mesh->xstart > 0); // Need at least one guard cell
-
-  Field3D result;
+  
+  Field3D result(msh);
   result.allocate();
-
-  int ncz = mesh->LocalNz;
-
-  static dcomplex **ft = (dcomplex **)NULL, **delft;
-  if (ft == (dcomplex **)NULL) {
+  
+  int ncz = msh->LocalNz;
+  
+  static dcomplex **ft = (dcomplex**) NULL, **delft;
+  if(ft == (dcomplex**) NULL) {
     // Allocate memory
-    ft = matrix<dcomplex>(mesh->LocalNx, ncz / 2 + 1);
-    delft = matrix<dcomplex>(mesh->LocalNx, ncz / 2 + 1);
+    ft = matrix<dcomplex>(msh->LocalNx, ncz / 2 + 1);
+    delft = matrix<dcomplex>(msh->LocalNx, ncz / 2 + 1);
   }
 
   // Loop over all y indices
-  for (int jy = 0; jy < mesh->LocalNy; jy++) {
+  for (int jy = 0; jy < msh->LocalNy; jy++) {
 
     // Take forward FFT
-
-    for (int jx = 0; jx < mesh->LocalNx; jx++)
-      rfft(&f(jx, jy, 0), ncz, ft[jx]);
+    
+    for (int jx = 0; jx < msh->LocalNx; jx++)
+      rfft(&f(jx,jy,0), ncz, ft[jx]);
 
     // Loop over kz
     for (int jz = 0; jz <= ncz / 2; jz++) {
       dcomplex a, b, c;
 
       // No smoothing in the x direction
-      for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
-        // Perform x derivative
-
-        laplace_tridag_coefs(jx, jy, jz, a, b, c);
+      for (int jx = msh->xstart; jx <= msh->xend; jx++) {
+	// Perform x derivative
+	
+	laplace_tridag_coefs(jx, jy, jz, a, b, c);
 
         delft[jx][jz] = a * ft[jx - 1][jz] + b * ft[jx][jz] + c * ft[jx + 1][jz];
       }
     }
 
     // Reverse FFT
-    for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
+    for (int jx = msh->xstart; jx <= msh->xend; jx++) {
 
       irfft(delft[jx], ncz, &result(jx, jy, 0));
     }
@@ -710,32 +723,32 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
 
 const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
   TRACE("Coordinates::Delp2( FieldPerp )");
-
-  FieldPerp result;
+  
+  FieldPerp result(msh);
   result.allocate();
 
   static dcomplex **ft = (dcomplex **)NULL, **delft;
 
   int jy = f.getIndex();
   result.setIndex(jy);
-
-  int ncz = mesh->LocalNz;
-
-  if (ft == (dcomplex **)NULL) {
+  
+  int ncz = msh->LocalNz;
+  
+  if(ft == (dcomplex**) NULL) {
     // Allocate memory
-    ft = matrix<dcomplex>(mesh->LocalNx, ncz / 2 + 1);
-    delft = matrix<dcomplex>(mesh->LocalNx, ncz / 2 + 1);
+    ft = matrix<dcomplex>(msh->LocalNx, ncz / 2 + 1);
+    delft = matrix<dcomplex>(msh->LocalNx, ncz / 2 + 1);
   }
 
   // Take forward FFT
-  for (int jx = 0; jx < mesh->LocalNx; jx++)
+  for (int jx = 0; jx < msh->LocalNx; jx++)
     rfft(f[jx], ncz, ft[jx]);
 
   // Loop over kz
   for (int jz = 0; jz <= ncz / 2; jz++) {
 
     // No smoothing in the x direction
-    for (int jx = 2; jx < (mesh->LocalNx - 2); jx++) {
+    for (int jx = 2; jx < (msh->LocalNx - 2); jx++) {
       // Perform x derivative
 
       dcomplex a, b, c;
@@ -746,14 +759,14 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
   }
 
   // Reverse FFT
-  for (int jx = 1; jx < (mesh->LocalNx - 1); jx++) {
+  for (int jx = 1; jx < (msh->LocalNx - 1); jx++) {
     irfft(delft[jx], ncz, result[jx]);
   }
 
   // Boundaries
-  for (int jz = 0; jz < ncz; jz++) {
-    result(0, jz) = 0.0;
-    result(mesh->LocalNx - 1, jz) = 0.0;
+  for(int jz=0;jz<ncz;jz++) {
+    result(0,jz) = 0.0;
+    result(msh->LocalNx - 1, jz) = 0.0;
   }
 
   return result;

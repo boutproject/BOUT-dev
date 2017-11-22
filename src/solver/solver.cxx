@@ -236,7 +236,7 @@ void Solver::add(Field3D &v, const char* name) {
   }
   
   if(mms) {
-    d.MMS_err = new Field3D();
+    d.MMS_err = new Field3D(v.getMesh());
     (*d.MMS_err) = 0.0;
   } else {
     d.MMS_err = nullptr;
@@ -1124,7 +1124,7 @@ void Solver::set_id(BoutReal *udata) {
  *
  */
 const Field3D Solver::globalIndex(int localStart) {
-  Field3D index = -1; // Set to -1, indicating out of domain
+  Field3D index(-1,mesh); // Set to -1, indicating out of domain
 
   int n2d = f2d.size();
   int n3d = f3d.size();

@@ -34,7 +34,7 @@
 #include <boundary_op.hxx>
 #include <boutexception.hxx>
 
-Vector2D::Vector2D() : covariant(true), deriv(NULL) { }
+Vector2D::Vector2D(Mesh * msh) : covariant(true), deriv(NULL),x(msh),y(msh),z(msh) { }
 
 Vector2D::Vector2D(const Vector2D &f) : x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(NULL) { }
 
@@ -53,9 +53,10 @@ Vector2D::~Vector2D() {
 
 void Vector2D::toCovariant() {  
   if(!covariant) {
-    Field2D gx, gy, gz;
+    Mesh * msh = x.getMesh();
+    Field2D gx(msh), gy(msh), gz(msh);
 
-    Coordinates *metric = mesh->coordinates();
+    Coordinates *metric = msh->coordinates();
 
     // multiply by g_{ij}
     gx = metric->g_11*x + metric->g_12*y + metric->g_13*z;
@@ -73,10 +74,10 @@ void Vector2D::toCovariant() {
 void Vector2D::toContravariant() {  
   if(covariant) {
     // multiply by g^{ij}
-    
-    Field2D gx, gy, gz;
+    Mesh * msh = x.getMesh();
+    Field2D gx(msh), gy(msh), gz(msh);
 
-    Coordinates *metric = mesh->coordinates();
+    Coordinates *metric = msh->coordinates();
     
     gx = metric->g11*x + metric->g12*y + metric->g13*z;
     gy = metric->g12*x + metric->g22*y + metric->g23*z;
@@ -92,7 +93,7 @@ void Vector2D::toContravariant() {
 
 Vector2D* Vector2D::timeDeriv() {
   if(deriv == NULL) {
-    deriv = new Vector2D();
+    deriv = new Vector2D(x.getMesh());
     
     // Check if the components have a time-derivative
     // Need to make sure that ddt(v.x) = ddt(v).x
@@ -222,14 +223,14 @@ Vector2D & Vector2D::operator/=(const Field2D &rhs) {
 ///////////////// CROSS PRODUCT //////////////////
 
 Vector2D & Vector2D::operator^=(const Vector2D &rhs) {
-  Vector2D result;
+  Vector2D result(x.getMesh());
 
   // Make sure both vector components are covariant
   Vector2D rco = rhs;
   rco.toCovariant();
   toCovariant();
 
-  Coordinates *metric = mesh->coordinates();
+  Coordinates *metric = x.getMesh()->coordinates();
 
   // calculate contravariant components of cross-product
   result.x = (y*rco.z - z*rco.y)/metric->J;
@@ -268,7 +269,7 @@ const Vector2D Vector2D::operator-(const Vector2D &rhs) const {
 }
 
 const Vector3D Vector2D::operator-(const Vector3D &rhs) const {
-  Vector3D result;
+  Vector3D result(x.getMesh());
   result = *this;
   result -= rhs;
   return result;
@@ -289,7 +290,7 @@ const Vector2D Vector2D::operator*(const Field2D &rhs) const {
 }
 
 const Vector3D Vector2D::operator*(const Field3D &rhs) const {
-  Vector3D result;
+  Vector3D result(x.getMesh());
   result = *this;
   result *= rhs;
   return result;
@@ -310,7 +311,7 @@ const Vector2D Vector2D::operator/(const Field2D &rhs) const {
 }
 
 const Vector3D Vector2D::operator/(const Field3D &rhs) const {
-  Vector3D result;
+  Vector3D result(x.getMesh());
   result = *this;
   result /= rhs;
   return result;
@@ -319,14 +320,15 @@ const Vector3D Vector2D::operator/(const Field3D &rhs) const {
 ////////////////// DOT PRODUCT ///////////////////
 
 const Field2D Vector2D::operator*(const Vector2D &rhs) const {
-  Field2D result;
+  Mesh * msh = x.getMesh();
+  Field2D result(msh);
 
   if(rhs.covariant ^ covariant) {
     // Both different - just multiply components
     result = x*rhs.x + y*rhs.y + z*rhs.z;
   }else {
     // Both are covariant or contravariant
-    Coordinates *metric = mesh->coordinates();
+    Coordinates *metric = msh->coordinates();
     
     if(covariant) {
       // Both covariant

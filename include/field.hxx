@@ -66,7 +66,14 @@ class Field {
   virtual void setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const = 0;
   virtual void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const = 0;
 
+  // for loop iterator
+  virtual const DataIterator begin() const = 0;
+  virtual const DataIterator end() const = 0;
+
   // Data access
+  virtual BoutReal& operator[](const DataIterator &d) = 0;
+  virtual const BoutReal& operator[](const DataIterator &d) const = 0;
+  virtual BoutReal& operator[](const Indices &i) = 0;
   virtual const BoutReal& operator[](const Indices &i) const = 0;
 
   virtual void setLocation(CELL_LOC loc) {
@@ -143,11 +150,41 @@ class Field {
    * Return the number of nz points
    */
   virtual int getNz() const;
+  /*!
+   * Tell the field that is constant
+   * This is a garantie to the library that the field will always be
+   * constant in space. If the promise is broken, unexpected behaviour
+   * is to be expected.
+   */
+  void makeConstant(){
+    is_const=true;
+  }
+  void makeUnConstant(){
+    is_const=false;
+  }
+  /*!
+   * Check if the field is constant, and set flag accordingly.
+   */
+  virtual void makeAutoConstant();
+  /*!
+   * Check whether the field is constant. Any value is representative
+   * of the whole field.
+   */
+  bool isConstant() const{
+    return is_const;
+  }
+  /*!
+   * Check whether the field is zero. Only checks if the field is const.
+   */
+  virtual bool isZero() const{
+    return is_const && (*this)[{0,0,0}]==0;
+  }
  protected:
   Mesh * fieldmesh;
   /// Supplies an error method. Currently just prints and exits, but
   /// should do something more cunning...
   void error(const char *s, ...) const;
+  bool is_const;
 };
 
 #endif /* __FIELD_H__ */
