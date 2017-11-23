@@ -4,14 +4,21 @@
 make || exit 1
 
 # Remove directories which may be left from previous run
-rm -r data
-rm -r test
+rm -rf data
+rm -rf test
 
 # Run without any directory, check that an exception is thrown
 echo "=========== Running without input directory =============="
-./command-args 2> stderr.log
-if ! grep -i "exception thrown" stderr.log > output.log ; then
-    echo "FAIL: No exception thrown when missing input directory"
+if ./command-args 2> stderr.log; then
+    cat stderr.log
+    echo "FAIL: Run should fail when no input directory"
+    exit 1
+fi
+
+# Check that an error message was output
+if ! grep "\"data\" does not exist" stderr.log > output.log ; then
+    cat stderr.log
+    echo "FAIL: Error message not printed when missing input directory"
     exit 1
 fi
 
@@ -25,12 +32,12 @@ cp BOUT.inp data
 
 # Check that we have a BOUT.settings and BOUT.log.0 file
 
-if ! [ -e "data/BOUT.settings" ] ; then
+if ! [ -f "data/BOUT.settings" ] ; then
     echo "FAIL: No BOUT.settings file in data directory"
     exit 1
 fi
 
-if ! [ -e "data/BOUT.log.0" ] ; then
+if ! [ -f "data/BOUT.log.0" ] ; then
     echo "FAIL: No BOUT.log.0 file in data directory"
     exit 1
 fi
@@ -43,12 +50,12 @@ mkdir data
 cp BOUT.inp data
 ./command-args -l different.log
 
-if [ -e "data/BOUT.log.0" ] ; then
+if [ -f "data/BOUT.log.0" ] ; then
     echo "FAIL: BOUT.log.0 file in data directory"
     exit 1
 fi
 
-if ! [ -e "data/different.log.0" ] ; then
+if ! [ -f "data/different.log.0" ] ; then
     echo "FAIL: no different.log.0 file in data directory"
     exit 1
 fi
@@ -61,12 +68,12 @@ mkdir data
 cp BOUT.inp data
 ./command-args --log log
 
-if [ -e "data/BOUT.log.0" ] ; then
+if [ -f "data/BOUT.log.0" ] ; then
     echo "FAIL: BOUT.log.0 file in data directory"
     exit 1
 fi
 
-if ! [ -e "data/log.0" ] ; then
+if ! [ -f "data/log.0" ] ; then
     echo "FAIL: no log.0 file in data directory"
     exit 1
 fi
@@ -76,9 +83,10 @@ echo "=========== Running with -d arg in test directory =============="
 rm -r data
 mkdir test
 cp BOUT.inp test
-./command-args -d test 2>&1 | tee stderr.log
-if grep -i "exception thrown" stderr.log > output.log ; then
-    echo "FAIL: Exception thrown with '-d test' command-line arg"
+
+if ! ./command-args -d test 2> stderr.log ; then
+    cat stderr.log
+    echo "FAIL: Run fails with '-d test' command-line arg"
     exit 1
 fi
 
