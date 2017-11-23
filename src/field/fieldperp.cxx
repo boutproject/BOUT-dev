@@ -33,12 +33,12 @@
 #include <boutexception.hxx>
 #include <msg_stack.hxx>
 
-FieldPerp::FieldPerp(Mesh * msh) {
+FieldPerp::FieldPerp(Mesh * localmesh) {
   // Get mesh size
-  fieldmesh=msh;
-  if(msh) {
-    nx = msh->LocalNx;
-    nz = msh->LocalNz;
+  fieldmesh=localmesh;
+  if(localmesh) {
+    nx = localmesh->LocalNx;
+    nz = localmesh->LocalNz;
   }
   
 #if CHECK > 0

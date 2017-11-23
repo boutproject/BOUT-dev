@@ -34,7 +34,7 @@
 #include <boundary_op.hxx>
 #include <boutexception.hxx>
 
-Vector3D::Vector3D(Mesh * msh) : covariant(true), deriv() ,x(msh),y(msh),z(msh) { }
+Vector3D::Vector3D(Mesh * localmesh) : covariant(true), deriv() ,x(localmesh),y(localmesh),z(localmesh) { }
 
 Vector3D::Vector3D(const Vector3D &f) : covariant(f.covariant), deriv(),x(f.x),y(f.y),z(f.y) {
 }
@@ -54,10 +54,10 @@ Vector3D::~Vector3D() {
 
 void Vector3D::toCovariant() {  
   if(!covariant) {
-    Mesh * msh = x.getMesh();
-    Field3D gx(msh), gy(msh), gz(msh);
+    Mesh * localmesh = x.getMesh();
+    Field3D gx(localmesh), gy(localmesh), gz(localmesh);
 
-    Coordinates *metric = msh->coordinates();
+    Coordinates *metric = localmesh->coordinates();
     
     // multiply by g_{ij}
     gx = x*metric->g_11 + metric->g_12*y + metric->g_13*z;
@@ -74,10 +74,10 @@ void Vector3D::toCovariant() {
 void Vector3D::toContravariant() {  
   if(covariant) {
     // multiply by g^{ij}
-    Mesh * msh = x.getMesh();
-    Field3D gx(msh), gy(msh), gz(msh);
+    Mesh * localmesh = x.getMesh();
+    Field3D gx(localmesh), gy(localmesh), gz(localmesh);
 
-    Coordinates *metric = msh->coordinates();
+    Coordinates *metric = localmesh->coordinates();
 
     gx = x*metric->g11 + metric->g12*y + metric->g13*z;
     gy = y*metric->g22 + metric->g12*x + metric->g23*z;
@@ -291,15 +291,15 @@ Vector3D & Vector3D::operator/=(const Field3D &rhs)
 ///////////////// CROSS PRODUCT //////////////////
 
 Vector3D & Vector3D::operator^=(const Vector3D &rhs) {
-  Mesh * msh = x.getMesh();
-  Vector3D result(msh);
+  Mesh * localmesh = x.getMesh();
+  Vector3D result(localmesh);
 
   // Make sure both vector components are covariant
   Vector3D rco = rhs;
   rco.toCovariant();
   toCovariant();
 
-  Coordinates *metric = msh->coordinates();
+  Coordinates *metric = localmesh->coordinates();
   
   // calculate contravariant components of cross-product
   result.x = (y*rco.z - z*rco.y)/metric->J;
@@ -313,15 +313,15 @@ Vector3D & Vector3D::operator^=(const Vector3D &rhs) {
 }
 
 Vector3D & Vector3D::operator^=(const Vector2D &rhs) {
-  Mesh * msh = x.getMesh();
-  Vector3D result(msh);
+  Mesh * localmesh = x.getMesh();
+  Vector3D result(localmesh);
   
   // Make sure both vector components are covariant
   Vector2D rco = rhs;
   rco.toCovariant();
   toCovariant();
   
-  Coordinates *metric = msh->coordinates();
+  Coordinates *metric = localmesh->coordinates();
  
   // calculate contravariant components of cross-product
   result.x = (y*rco.z - z*rco.y)/metric->J;

@@ -45,7 +45,7 @@
 
 #include <bout/assert.hxx>
 
-Field2D::Field2D(Mesh *msh) : Field(msh), deriv(nullptr) {
+Field2D::Field2D(Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
 
   boundaryIsSet = false;
 
@@ -89,7 +89,7 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing 
   *this = f; //This line is probably not required as we init data from f.data above.
 }
 
-Field2D::Field2D(BoutReal val, Mesh * msh) : Field(msh), deriv(nullptr) {
+Field2D::Field2D(BoutReal val, Mesh * localmesh) : Field(localmesh), deriv(nullptr) {
   boundaryIsSet = false;
 
   nx = fieldmesh->LocalNx;
