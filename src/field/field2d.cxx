@@ -92,7 +92,6 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing 
 Field2D::Field2D(BoutReal val, Mesh * msh) : Field(msh), deriv(nullptr) {
   boundaryIsSet = false;
 
-  fieldmesh = mesh;
   nx = fieldmesh->LocalNx;
   ny = fieldmesh->LocalNy;
 
