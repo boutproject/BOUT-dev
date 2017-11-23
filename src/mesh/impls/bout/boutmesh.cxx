@@ -35,17 +35,17 @@
 
 #include "boutmesh.hxx"
 
-#include <utils.hxx>
-#include <fft.hxx>
-#include <derivs.hxx>
-#include <boutcomm.hxx>
-#include <dcomplex.hxx>
-#include <options.hxx>
-#include <boutexception.hxx>
-#include <output.hxx>
-#include <bout/sys/timer.hxx>
-#include <msg_stack.hxx>
 #include <bout/constants.hxx>
+#include <bout/sys/timer.hxx>
+#include <boutcomm.hxx>
+#include <boutexception.hxx>
+#include <dcomplex.hxx>
+#include <derivs.hxx>
+#include <fft.hxx>
+#include <msg_stack.hxx>
+#include <options.hxx>
+#include <output.hxx>
+#include <utils.hxx>
 
 /// MPI type of BoutReal for communications
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
@@ -240,11 +240,11 @@ int BoutMesh::load() {
     BoutReal ideal = sqrt(MX * NPES / static_cast<BoutReal>(ny)); // Results in square domains
 
     output_info.write("Finding value for NXPE (ideal = %f)\n", ideal);
-    
-    for(int i=1; i<= NPES; i++) { // Loop over all possibilities
-      if( (NPES % i == 0) &&      // Processors divide equally
-          (MX % i == 0) &&        // Mesh in X divides equally
-          (ny % (NPES/i) == 0) ) { // Mesh in Y divides equally
+
+    for (int i = 1; i <= NPES; i++) { // Loop over all possibilities
+      if ((NPES % i == 0) &&          // Processors divide equally
+          (MX % i == 0) &&            // Mesh in X divides equally
+          (ny % (NPES / i) == 0)) {   // Mesh in Y divides equally
 
         output_info.write("\tCandidate value: %d\n", i);
 
@@ -611,7 +611,6 @@ int BoutMesh::load() {
 
           comm_middle = comm_outer;
           // MPI_Comm_dup(comm_outer, &comm_middle);
-
         }
       }
 
@@ -948,8 +947,8 @@ comm_handle BoutMesh::send(FieldGroup &g) {
 
   /// Mark communication handle as in progress
   ch->in_progress = true;
-  
-  return static_cast<void*>(ch);
+
+  return static_cast<void *>(ch);
 }
 
 int BoutMesh::wait(comm_handle handle) {
@@ -957,9 +956,9 @@ int BoutMesh::wait(comm_handle handle) {
 
   if (handle == NULL)
     return 1;
-  
-  CommHandle *ch = static_cast<CommHandle*>(handle);
-  
+
+  CommHandle *ch = static_cast<CommHandle *>(handle);
+
   if (!ch->in_progress)
     return 2;
 
@@ -1021,7 +1020,7 @@ int BoutMesh::wait(comm_handle handle) {
   if (async_send) {
     /// Asyncronous sending: Need to check if sends have completed (frees MPI memory)
     MPI_Status async_status;
-    
+
     if (UDATA_INDEST != -1)
       MPI_Wait(ch->sendreq, &async_status);
     if (UDATA_OUTDEST != -1)
@@ -1107,7 +1106,7 @@ comm_handle BoutMesh::receiveFromProc(int xproc, int yproc, BoutReal *buffer, in
             BoutComm::get(), ch->request);
 
   ch->in_progress = true;
-  
+
   return static_cast<comm_handle>(ch);
 }
 
@@ -1166,7 +1165,7 @@ comm_handle BoutMesh::irecvXOut(BoutReal *buffer, int size, int tag) {
             BoutComm::get(), ch->request);
 
   ch->in_progress = true;
-  
+
   return static_cast<comm_handle>(ch);
 }
 
@@ -1183,7 +1182,7 @@ comm_handle BoutMesh::irecvXIn(BoutReal *buffer, int size, int tag) {
             BoutComm::get(), ch->request);
 
   ch->in_progress = true;
-  
+
   return static_cast<comm_handle>(ch);
 }
 
@@ -1304,7 +1303,7 @@ comm_handle BoutMesh::irecvYOutIndest(BoutReal *buffer, int size, int tag) {
     throw BoutException("Expected UDATA_INDEST to exist, but it does not.");
 
   ch->in_progress = true;
-  
+
   return static_cast<comm_handle>(ch);
 }
 
@@ -1324,7 +1323,7 @@ comm_handle BoutMesh::irecvYOutOutdest(BoutReal *buffer, int size, int tag) {
     throw BoutException("Expected UDATA_OUTDEST to exist, but it does not.");
 
   ch->in_progress = true;
-  
+
   return static_cast<comm_handle>(ch);
 }
 
@@ -1344,7 +1343,7 @@ comm_handle BoutMesh::irecvYInIndest(BoutReal *buffer, int size, int tag) {
     throw BoutException("Expected DDATA_INDEST to exist, but it does not.");
 
   ch->in_progress = true;
-  
+
   return static_cast<comm_handle>(ch);
 }
 
@@ -1364,7 +1363,7 @@ comm_handle BoutMesh::irecvYInOutdest(BoutReal *buffer, int size, int tag) {
     throw BoutException("Expected DDATA_OUTDEST to exist, but it does not.");
 
   ch->in_progress = true;
-  
+
   return static_cast<comm_handle>(ch);
 }
 
@@ -2334,13 +2333,13 @@ void BoutMesh::set_ri(dcomplex *ayn, int ncy, BoutReal *ayn_Real, BoutReal *ayn_
 // Lowpass filter for n=0 mode, keeping poloidal mode number 0<=m<=mmax
 const Field2D BoutMesh::lowPass_poloidal(const Field2D &var, int mmax) {
   Field2D result(this);
-  static BoutReal *f1d = (BoutReal *)NULL; // Never freed
-  static dcomplex *aynall = (dcomplex *)NULL; // Never freed
+  static BoutReal *f1d = (BoutReal *)NULL;         // Never freed
+  static dcomplex *aynall = (dcomplex *)NULL;      // Never freed
   static BoutReal *aynall_Real = (BoutReal *)NULL; // Never freed
   static BoutReal *aynall_Imag = (BoutReal *)NULL; // Never freed
-  static dcomplex *ayn = (dcomplex *)NULL; // Never freed
-  static BoutReal *aynReal = (BoutReal *)NULL; // Never freed
-  static BoutReal *aynImag = (BoutReal *)NULL; // Never freed
+  static dcomplex *ayn = (dcomplex *)NULL;         // Never freed
+  static BoutReal *aynReal = (BoutReal *)NULL;     // Never freed
+  static BoutReal *aynImag = (BoutReal *)NULL;     // Never freed
 
   int ncx, ncy;
   int jx, jy;
@@ -2414,15 +2413,15 @@ const Field2D BoutMesh::lowPass_poloidal(const Field2D &var, int mmax) {
 //================================================================*/
 
 const Field3D BoutMesh::Switch_YZ(const Field3D &var) {
-  static BoutReal **ayz = (BoutReal **) NULL;
-  static BoutReal **ayz_all = (BoutReal **) NULL;
-  Field3D  result(this);
-  int ncy, ncy_all,ncz;
-  int i,j,ix;
+  static BoutReal **ayz = (BoutReal **)NULL;
+  static BoutReal **ayz_all = (BoutReal **)NULL;
+  Field3D result(this);
+  int ncy, ncy_all, ncz;
+  int i, j, ix;
   ncy = yend - ystart + 1;
   ncy_all = MY;
   ncz = LocalNz;
-  
+
   if (MY != LocalNz) {
     throw BoutException("Y and Z dimension is not same in Switch_YZ code");
   }
@@ -2461,7 +2460,7 @@ const Field3D BoutMesh::Switch_XZ(const Field3D &var) {
   int ncx, ncy, ncz;
   int i, j, k, l;
 
-    Field3D result(this);
+  Field3D result(this);
 
   ncx = LocalNx - 2 * MXG;
   ncy = LocalNy - 2 * MYG;
@@ -2473,7 +2472,7 @@ const Field3D BoutMesh::Switch_XZ(const Field3D &var) {
     buffer = r3tensor(ncz, ncy,
                       ncx); // Note, this is deliberately such that x contiguous in memory
   }
-  
+
   // Put input data into buffer.  X needs to be contiguous in memory
   for (i = 0; i < ncx; i++) {
     for (j = 0; j < ncy; j++) {
