@@ -215,7 +215,7 @@ public:
   Field2D &operator-=(
       BoutReal rhs); ///< In-place subtraction. Copy-on-write used if data is shared
   Field2D &operator*=(const Field2D &rhs); ///< In-place multiplication. Copy-on-write
-                                           ///used if data is shared
+                                           /// used if data is shared
   Field2D &operator*=(
       BoutReal rhs); ///< In-place multiplication. Copy-on-write used if data is shared
   Field2D &operator/=(

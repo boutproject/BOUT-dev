@@ -34,7 +34,8 @@
 #include <boutexception.hxx>
 #include <vector3d.hxx>
 
-Vector3D::Vector3D(Mesh *localmesh) : covariant(true), deriv(), x(localmesh), y(localmesh), z(localmesh) {}
+Vector3D::Vector3D(Mesh *localmesh)
+    : covariant(true), deriv(), x(localmesh), y(localmesh), z(localmesh) {}
 
 Vector3D::Vector3D(const Vector3D &f)
     : covariant(f.covariant), deriv(), x(f.x), y(f.y), z(f.y) {}

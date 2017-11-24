@@ -514,7 +514,9 @@ const Field2D Coordinates::DDX(const Field2D &f) { return localmesh->indexDDX(f)
 
 const Field2D Coordinates::DDY(const Field2D &f) { return localmesh->indexDDY(f) / dy; }
 
-const Field2D Coordinates::DDZ(const Field2D &UNUSED(f)) { return Field2D(0.0, localmesh); }
+const Field2D Coordinates::DDZ(const Field2D &UNUSED(f)) {
+  return Field2D(0.0, localmesh);
+}
 
 #include <derivs.hxx>
 
