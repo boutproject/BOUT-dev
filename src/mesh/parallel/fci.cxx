@@ -71,7 +71,8 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool yperiodic, bool zperiodic)
 
   Field3D xt_prime(&mesh), zt_prime(&mesh);
   Field3D R(&mesh), Z(&mesh); // Real-space coordinates of grid points
-  Field3D R_prime(&mesh), Z_prime(&mesh); // Real-space coordinates of forward/backward points
+  Field3D R_prime(&mesh),
+      Z_prime(&mesh); // Real-space coordinates of forward/backward points
 
   mesh.get(R, "R", 0.0, false);
   mesh.get(Z, "Z", 0.0, false);
@@ -92,7 +93,8 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool yperiodic, bool zperiodic)
     boundary = new BoundaryRegionPar("FCI_backward", BNDRY_PAR_BKWD, dir);
   } else {
     // Definitely shouldn't be called
-    throw BoutException("FCIMap called with strange direction: %d. Only +/-1 currently supported.", dir);
+    throw BoutException(
+        "FCIMap called with strange direction: %d. Only +/-1 currently supported.", dir);
   }
 
   // Add the boundary region to the mesh's vector of parallel boundaries
@@ -201,11 +203,13 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool yperiodic, bool zperiodic)
           // Invert 2x2 matrix to get change in index
           BoutReal dx = (dZ_dz * dR - dR_dz * dZ) / det;
           BoutReal dz = (dR_dx * dZ - dZ_dx * dR) / det;
-          boundary->add_point(x, y, z, 
-                              x + dx, y + 0.5*dir, z + dz,  // Intersection point in local index space
-                              0.5*coord.dy(x,y), //sqrt( SQ(dR) + SQ(dZ) ),  // Distance to intersection
-                              PI   // Right-angle intersection
-                              );
+          boundary->add_point(
+              x, y, z, x + dx, y + 0.5 * dir,
+              z + dz, // Intersection point in local index space
+              0.5 *
+                  coord.dy(x, y), // sqrt( SQ(dR) + SQ(dZ) ),  // Distance to intersection
+              PI                  // Right-angle intersection
+              );
         }
 
         //----------------------------------------
