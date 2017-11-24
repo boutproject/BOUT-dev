@@ -234,21 +234,14 @@ const Field3D &Field3D::ynext(int dir) const {
 }
 
 void Field3D::setLocation(CELL_LOC loc) {
-  bool stag = mesh->StaggerGrids;
-  if (this->fieldmesh)
-    stag = this->fieldmesh->StaggerGrids;
-  if (stag) {
-    if (loc == CELL_VSHIFT)
-      throw BoutException(
-          "Field3D: CELL_VSHIFT cell location only makes sense for vectors");
+  if (loc == CELL_VSHIFT)
+    throw BoutException(
+        "Field3D: CELL_VSHIFT cell location only makes sense for vectors");
 
-    if (loc == CELL_DEFAULT)
-      loc = CELL_CENTRE;
+  if (loc == CELL_DEFAULT)
+    loc = CELL_CENTRE;
 
-    location = loc;
-  } else {
-    location = CELL_CENTRE;
-  }
+  location = loc;
 }
 
 CELL_LOC Field3D::getLocation() const { return location; }
@@ -1148,13 +1141,15 @@ Field2D DC(const Field3D &f) {
   Field2D result(localmesh);
   result.allocate();
 
-  for (int i = 0; i < localmesh->LocalNx; i++)
+  for (int i = 0; i < localmesh->LocalNx; i++) {
     for (int j = 0; j < localmesh->LocalNy; j++) {
       result(i, j) = 0.0;
-      for (int k = 0; k < localmesh->LocalNz; k++)
+      for (int k = 0; k < localmesh->LocalNz; k++) {
         result(i, j) += f(i, j, k);
+      }
       result(i, j) /= (localmesh->LocalNz);
     }
+  }
 
   return result;
 }

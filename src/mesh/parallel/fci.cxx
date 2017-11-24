@@ -1,6 +1,6 @@
 /**************************************************************************
  * Implements the Flux Coordinate Independent scheme for parallel derivatives
-
+ *
  * A method for field-aligned parallel derivatives which does not require
  * flux-coordinates in the perpendicular direction. Instead, parallel
  * derivatives are taken by following the field line to the adjacent
@@ -203,7 +203,6 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool yperiodic, bool zperiodic)
           // Invert 2x2 matrix to get change in index
           BoutReal dx = (dZ_dz * dR - dR_dz * dZ) / det;
           BoutReal dz = (dR_dx * dZ - dZ_dx * dR) / det;
-
           boundary->add_point(
               x, y, z, x + dx, y + 0.5 * dir,
               z + dz, // Intersection point in local index space
