@@ -33,13 +33,13 @@
  *
  */
 
-#include <globals.hxx>
-#include <boutexception.hxx>
-#include <utils.hxx>
-#include <fft.hxx>
-#include <bout/sys/timer.hxx>
 #include <bout/constants.hxx>
+#include <bout/sys/timer.hxx>
+#include <boutexception.hxx>
+#include <fft.hxx>
+#include <globals.hxx>
 #include <output.hxx>
+#include <utils.hxx>
 
 #include "cyclic_laplace.hxx"
 
@@ -49,36 +49,40 @@ LaplaceCyclic::LaplaceCyclic(Options *opt)
 
   OPTION(opt, dst, false);
 
-  if(dst) {
-    nmode = mesh->LocalNz-2;
-  }else
-    nmode = maxmode+1; // Number of Z modes. maxmode set in invert_laplace.cxx from options
+  if (dst) {
+    nmode = mesh->LocalNz - 2;
+  } else
+    nmode =
+        maxmode + 1; // Number of Z modes. maxmode set in invert_laplace.cxx from options
 
   // Allocate arrays
 
-  int nsys = nmode;     // Number of tridiagonal systems to solve simulaneously
+  int nsys = nmode; // Number of tridiagonal systems to solve simulaneously
 
-  xs = mesh->xstart; // Starting X index
-  if(mesh->firstX() && !mesh->periodicX){ // Only want to include guard cells at boundaries (unless periodic in x)
-	  xs = 0;
+  xs = mesh->xstart;                        // Starting X index
+  if (mesh->firstX() && !mesh->periodicX) { // Only want to include guard cells at
+                                            // boundaries (unless periodic in x)
+    xs = 0;
   }
-  xe = mesh->xend;   // Last X index
-  if(mesh->lastX() && !mesh->periodicX){ // Only want to include guard cells at boundaries (unless periodic in x)
-	  xe = mesh->LocalNx-1;
+  xe = mesh->xend;                         // Last X index
+  if (mesh->lastX() && !mesh->periodicX) { // Only want to include guard cells at
+                                           // boundaries (unless periodic in x)
+    xe = mesh->LocalNx - 1;
   }
-  int n = xe - xs + 1;  // Number of X points on this processor,
-                        // including boundaries but not guard cells
+  int n = xe - xs + 1; // Number of X points on this processor,
+                       // including boundaries but not guard cells
 
-  a   = matrix<dcomplex>(nsys, n);
-  b   = matrix<dcomplex>(nsys, n);
-  c   = matrix<dcomplex>(nsys, n);
+  a = matrix<dcomplex>(nsys, n);
+  b = matrix<dcomplex>(nsys, n);
+  c = matrix<dcomplex>(nsys, n);
   xcmplx = matrix<dcomplex>(nsys, n);
   bcmplx = matrix<dcomplex>(nsys, n);
 
-  if(dst)
-    k1d = new dcomplex[mesh->LocalNz];         // DST has different k space
+  if (dst)
+    k1d = new dcomplex[mesh->LocalNz]; // DST has different k space
   else
-    k1d = new dcomplex[(mesh->LocalNz)/2 + 1]; // ZFFT routine expects input of this length
+    k1d = new dcomplex[(mesh->LocalNz) / 2 +
+                       1]; // ZFFT routine expects input of this length
 
   // Create a cyclic reduction object, operating on dcomplex values
   cr = new CyclicReduce<dcomplex>(mesh->getXcomm(), n);
@@ -107,44 +111,47 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
 
   Coordinates *coord = mesh->coordinates();
 
-  int jy = rhs.getIndex();  // Get the Y index
+  int jy = rhs.getIndex(); // Get the Y index
   x.setIndex(jy);
 
   // Get the width of the boundary
 
-  int inbndry = 2, outbndry=2;
-  if(global_flags & INVERT_BOTH_BNDRY_ONE) {
+  int inbndry = 2, outbndry = 2;
+  if (global_flags & INVERT_BOTH_BNDRY_ONE) {
     inbndry = outbndry = 1;
   }
-  if(inner_boundary_flags & INVERT_BNDRY_ONE)
+  if (inner_boundary_flags & INVERT_BNDRY_ONE)
     inbndry = 1;
-  if(outer_boundary_flags & INVERT_BNDRY_ONE)
+  if (outer_boundary_flags & INVERT_BNDRY_ONE)
     outbndry = 1;
 
-  if(dst) {
-    // Loop over X indices, including boundaries but not guard cells. (unless periodic in x)
-    for(int ix=xs; ix <= xe; ix++) {
+  if (dst) {
+    // Loop over X indices, including boundaries but not guard cells. (unless periodic in
+    // x)
+    for (int ix = xs; ix <= xe; ix++) {
       // Take DST in Z direction and put result in k1d
 
-      if(((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && mesh->firstX()) ||
-         ((xe-ix < outbndry) && (outer_boundary_flags & INVERT_SET) && mesh->lastX())) {
+      if (((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && mesh->firstX()) ||
+          ((xe - ix < outbndry) && (outer_boundary_flags & INVERT_SET) &&
+           mesh->lastX())) {
         // Use the values in x0 in the boundary
-        DST(x0[ix]+1, mesh->LocalNz-2 , k1d);
-      }else {
+        DST(x0[ix] + 1, mesh->LocalNz - 2, k1d);
+      } else {
         //	  int length = sizeof(*rhs[ix])/sizeof(FieldPerp);
-        DST(rhs[ix]+1, mesh->LocalNz-2 , k1d);
+        DST(rhs[ix] + 1, mesh->LocalNz - 2, k1d);
       }
 
       // Copy into array, transposing so kz is first index
-      for(int kz = 0; kz < nmode; kz++)
-        bcmplx[kz][ix-xs] = k1d[kz];
+      for (int kz = 0; kz < nmode; kz++)
+        bcmplx[kz][ix - xs] = k1d[kz];
     }
 
     // Get elements of the tridiagonal matrix
     // including boundary conditions
-    for(int kz = 0; kz < nmode; kz++) {
-      BoutReal zlen = coord->dz*(mesh->LocalNz-3);
-      BoutReal kwave=kz*2.0*PI/(2.*zlen); // wave number is 1/[rad]; DST has extra 2.
+    for (int kz = 0; kz < nmode; kz++) {
+      BoutReal zlen = coord->dz * (mesh->LocalNz - 3);
+      BoutReal kwave =
+          kz * 2.0 * PI / (2. * zlen); // wave number is 1/[rad]; DST has extra 2.
 
       tridagMatrix(a[kz], b[kz], c[kz], bcmplx[kz], jy,
                    kz,    // wave number index
@@ -160,40 +167,42 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
     cr->solve(nmode, bcmplx, xcmplx);
 
     // FFT back to real space
-    for(int ix=xs; ix <= xe; ix++) {
-      for(int kz = 0; kz < nmode; kz++)
-        k1d[kz] = xcmplx[kz][ix-xs];
+    for (int ix = xs; ix <= xe; ix++) {
+      for (int kz = 0; kz < nmode; kz++)
+        k1d[kz] = xcmplx[kz][ix - xs];
 
-      for(int kz=nmode;kz<(mesh->LocalNz);kz++)
+      for (int kz = nmode; kz < (mesh->LocalNz); kz++)
         k1d[kz] = 0.0; // Filtering out all higher harmonics
 
-      DST_rev(k1d, mesh->LocalNz-2, x[ix]+1);
+      DST_rev(k1d, mesh->LocalNz - 2, x[ix] + 1);
 
       x[ix][0] = -x[ix][2];
-      x[ix][mesh->LocalNz-1] = -x[ix][mesh->LocalNz-3];
+      x[ix][mesh->LocalNz - 1] = -x[ix][mesh->LocalNz - 3];
     }
-  }else {
-    // Loop over X indices, including boundaries but not guard cells (unless periodic in x)
-    for(int ix=xs; ix <= xe; ix++) {
+  } else {
+    // Loop over X indices, including boundaries but not guard cells (unless periodic in
+    // x)
+    for (int ix = xs; ix <= xe; ix++) {
       // Take FFT in Z direction, apply shift, and put result in k1d
 
-    if(((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && mesh->firstX()) ||
-       ((xe-ix < outbndry) && (outer_boundary_flags & INVERT_SET) && mesh->lastX())) {
+      if (((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && mesh->firstX()) ||
+          ((xe - ix < outbndry) && (outer_boundary_flags & INVERT_SET) &&
+           mesh->lastX())) {
         // Use the values in x0 in the boundary
         rfft(x0[ix], mesh->LocalNz, k1d);
-      }else {
+      } else {
         rfft(rhs[ix], mesh->LocalNz, k1d);
       }
 
       // Copy into array, transposing so kz is first index
-      for(int kz = 0; kz < nmode; kz++)
-        bcmplx[kz][ix-xs] = k1d[kz];
+      for (int kz = 0; kz < nmode; kz++)
+        bcmplx[kz][ix - xs] = k1d[kz];
     }
 
     // Get elements of the tridiagonal matrix
     // including boundary conditions
-    for(int kz = 0; kz < nmode; kz++) {
-      BoutReal kwave=kz*2.0*PI/(coord->zlength()); // wave number is 1/[rad]
+    for (int kz = 0; kz < nmode; kz++) {
+      BoutReal kwave = kz * 2.0 * PI / (coord->zlength()); // wave number is 1/[rad]
       tridagMatrix(a[kz], b[kz], c[kz], bcmplx[kz], jy,
                    kz,    // True for the component constant (DC) in Z
                    kwave, // Z wave number
@@ -208,11 +217,11 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
     cr->solve(nmode, bcmplx, xcmplx);
 
     // FFT back to real space
-    for(int ix=xs; ix <= xe; ix++) {
-      for(int kz = 0; kz < nmode; kz++)
-        k1d[kz] = xcmplx[kz][ix-xs];
+    for (int ix = xs; ix <= xe; ix++) {
+      for (int kz = 0; kz < nmode; kz++)
+        k1d[kz] = xcmplx[kz][ix - xs];
 
-      for(int kz=nmode;kz<(mesh->LocalNz)/2 + 1;kz++)
+      for (int kz = nmode; kz < (mesh->LocalNz) / 2 + 1; kz++)
         k1d[kz] = 0.0; // Filtering out all higher harmonics
 
       irfft(k1d, mesh->LocalNz, x[ix]);

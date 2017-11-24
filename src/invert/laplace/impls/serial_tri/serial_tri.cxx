@@ -24,21 +24,22 @@
  *
  **************************************************************************/
 
-#include "globals.hxx"
 #include "serial_tri.hxx"
+#include "globals.hxx"
 
+#include <bout/constants.hxx>
 #include <boutexception.hxx>
-#include <utils.hxx>
+#include <cmath>
 #include <fft.hxx>
 #include <lapack_routines.hxx>
-#include <bout/constants.hxx>
-#include <cmath>
+#include <utils.hxx>
 
 #include <output.hxx>
 
-LaplaceSerialTri::LaplaceSerialTri(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0) {
+LaplaceSerialTri::LaplaceSerialTri(Options *opt)
+    : Laplacian(opt), A(0.0), C(1.0), D(1.0) {
 
-  if(!mesh->firstX() || !mesh->lastX()) {
+  if (!mesh->firstX() || !mesh->lastX()) {
     throw BoutException("LaplaceSerialTri only works for mesh->NXPE = 1");
   }
 
@@ -46,22 +47,22 @@ LaplaceSerialTri::LaplaceSerialTri(Options *opt) : Laplacian(opt), A(0.0), C(1.0
 
   int ncz = mesh->LocalNz;
 
-  bk = matrix<dcomplex>(mesh->LocalNx, ncz/2 + 1);
+  bk = matrix<dcomplex>(mesh->LocalNx, ncz / 2 + 1);
   bk1d = new dcomplex[mesh->LocalNx];
 
-  //Initialise bk to 0 as we only visit 0<= kz <= maxmode in solve
-  for(int kz=maxmode+1; kz < ncz/2 + 1; kz++){
-    for (int ix=0; ix<mesh->LocalNx; ix++){
+  // Initialise bk to 0 as we only visit 0<= kz <= maxmode in solve
+  for (int kz = maxmode + 1; kz < ncz / 2 + 1; kz++) {
+    for (int ix = 0; ix < mesh->LocalNx; ix++) {
       bk[ix][kz] = 0.0;
     }
   }
 
-  xk = matrix<dcomplex>(mesh->LocalNx, ncz/2 + 1);
+  xk = matrix<dcomplex>(mesh->LocalNx, ncz / 2 + 1);
   xk1d = new dcomplex[mesh->LocalNx];
 
-  //Initialise xk to 0 as we only visit 0<= kz <= maxmode in solve
-  for(int kz=maxmode+1; kz < ncz/2 + 1; kz++){
-    for (int ix=0; ix<mesh->LocalNx; ix++){
+  // Initialise xk to 0 as we only visit 0<= kz <= maxmode in solve
+  for (int kz = maxmode + 1; kz < ncz / 2 + 1; kz++) {
+    for (int ix = 0; ix < mesh->LocalNx; ix++) {
       xk[ix][kz] = 0.0;
     }
   }
@@ -83,7 +84,7 @@ LaplaceSerialTri::~LaplaceSerialTri() {
 }
 
 const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b) {
-  return solve(b,b);   // Call the solver below
+  return solve(b, b); // Call the solver below
 }
 
 /*!
@@ -116,38 +117,38 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
   int jy = b.getIndex();
   x.setIndex(jy);
 
-  int ncz = mesh->LocalNz; // No of z pnts (counts from 1 to easily convert to kz)
-  int ncx = mesh->LocalNx-1; // No of x pnts (counts from 0)
+  int ncz = mesh->LocalNz;     // No of z pnts (counts from 1 to easily convert to kz)
+  int ncx = mesh->LocalNx - 1; // No of x pnts (counts from 0)
 
   // Setting the width of the boundary.
   // NOTE: The default is a width of 2 guard cells
-  int inbndry = 2, outbndry=2;
+  int inbndry = 2, outbndry = 2;
 
   // If the flags to assign that only one guard cell should be used is set
-  if(global_flags & INVERT_BOTH_BNDRY_ONE) {
+  if (global_flags & INVERT_BOTH_BNDRY_ONE) {
     inbndry = outbndry = 1;
   }
-  if(inner_boundary_flags & INVERT_BNDRY_ONE)
+  if (inner_boundary_flags & INVERT_BNDRY_ONE)
     inbndry = 1;
-  if(outer_boundary_flags & INVERT_BNDRY_ONE)
+  if (outer_boundary_flags & INVERT_BNDRY_ONE)
     outbndry = 1;
 
-  #pragma omp parallel for
-  for(int ix=0;ix<mesh->LocalNx;ix++) {
+#pragma omp parallel for
+  for (int ix = 0; ix < mesh->LocalNx; ix++) {
     /* This for loop will set the bk (initialized by the constructor)
      * bk is the z fourier modes of b in z
      * If the INVERT_SET flag is set (meaning that x0 will be used to set the
      * bounadry values),
      */
-    if(((ix < inbndry) && (inner_boundary_flags & INVERT_SET)) ||
-       ((ncx-ix < outbndry) && (outer_boundary_flags & INVERT_SET))) {
+    if (((ix < inbndry) && (inner_boundary_flags & INVERT_SET)) ||
+        ((ncx - ix < outbndry) && (outer_boundary_flags & INVERT_SET))) {
       // Use the values in x0 in the boundary
 
       // x0 is the input
       // bk is the output
       rfft(x0[ix], ncz, bk[ix]);
 
-    }else {
+    } else {
       // b is the input
       // bk is the output
       rfft(b[ix], ncz, bk[ix]);
@@ -158,10 +159,10 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
    * Note that only the non-degenerate fourier modes are being used (i.e. the
    * offset and all the modes up to the Nyquist frequency)
    */
-  for(int kz=0;kz<=maxmode;kz++) {
+  for (int kz = 0; kz <= maxmode; kz++) {
 
     // set bk1d
-    for(int ix=0;ix<=ncx;ix++)
+    for (int ix = 0; ix <= ncx; ix++)
       // Get bk of the current fourier mode
       bk1d[ix] = bk[ix][kz];
 
@@ -182,53 +183,52 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
                  kz,
                  // wave number (different from kz only if we are taking a part
                  // of the z-domain [and not from 0 to 2*pi])
-                 kz*2.0*PI/coord->zlength(),
-                 global_flags, inner_boundary_flags, outer_boundary_flags,
-                 &A, &C, &D);
+                 kz * 2.0 * PI / coord->zlength(), global_flags, inner_boundary_flags,
+                 outer_boundary_flags, &A, &C, &D);
 
     ///////// PERFORM INVERSION /////////
-    if(!mesh->periodicX) {
+    if (!mesh->periodicX) {
       // Call tridiagonal solver
       tridag(avec, bvec, cvec, bk1d, xk1d, mesh->LocalNx);
 
     } else {
       // Periodic in X, so cyclic tridiagonal
-      cyclic_tridag(avec+2, bvec+2, cvec+2, bk1d+2, xk1d+2, mesh->LocalNx-4);
+      cyclic_tridag(avec + 2, bvec + 2, cvec + 2, bk1d + 2, xk1d + 2, mesh->LocalNx - 4);
 
       // Copy boundary regions
-      for(int ix=0;ix<2;ix++) {
-        xk1d[ix] = xk1d[mesh->LocalNx-4+ix];
-        xk1d[mesh->LocalNx-2+ix] = xk1d[2+ix];
+      for (int ix = 0; ix < 2; ix++) {
+        xk1d[ix] = xk1d[mesh->LocalNx - 4 + ix];
+        xk1d[mesh->LocalNx - 2 + ix] = xk1d[2 + ix];
       }
     }
 
     // If the global flag is set to INVERT_KX_ZERO
-    if((global_flags & INVERT_KX_ZERO) && (kz == 0)) {
+    if ((global_flags & INVERT_KX_ZERO) && (kz == 0)) {
       dcomplex offset(0.0);
-      for(int ix=0;ix<=ncx;ix++)
+      for (int ix = 0; ix <= ncx; ix++)
         offset += bk1d[ix];
       offset /= static_cast<BoutReal>(ncx + 1);
-      for(int ix=0;ix<=ncx;ix++)
+      for (int ix = 0; ix <= ncx; ix++)
         bk1d[ix] -= offset;
     }
 
     // Store the solution xk for the current fourier mode in a 2D array
-    for (int ix=0; ix<=ncx; ix++){
-      xk[ix][kz]=xk1d[ix];
+    for (int ix = 0; ix <= ncx; ix++) {
+      xk[ix][kz] = xk1d[ix];
     }
   }
 
   // Done inversion, transform back
-  for(int ix=0; ix<=ncx; ix++){
+  for (int ix = 0; ix <= ncx; ix++) {
 
-    if(global_flags & INVERT_ZERO_DC)
+    if (global_flags & INVERT_ZERO_DC)
       xk[ix][0] = 0.0;
 
     irfft(xk[ix], ncz, x[ix]);
 
 #if CHECK > 2
-    for(int kz=0;kz<ncz;kz++)
-      if(!finite(x(ix,kz)))
+    for (int kz = 0; kz < ncz; kz++)
+      if (!finite(x(ix, kz)))
         throw BoutException("Non-finite at %d, %d, %d", ix, jy, kz);
 #endif
   }

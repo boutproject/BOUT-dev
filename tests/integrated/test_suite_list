@@ -4,6 +4,7 @@
 test-io
 test-command-args
 test-fieldfactory
+test-fieldops
 test-restarting
 test-laplace
 test-cyclic

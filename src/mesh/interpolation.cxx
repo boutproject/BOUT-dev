@@ -1,11 +1,11 @@
 /**************************************************************************
  * Functions to interpolate between cell locations (e.g. lower Y and centred)
- * 
+ *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -25,33 +25,29 @@
 
 #include <globals.hxx>
 #include <interpolation.hxx>
-#include <stencils.hxx>
-#include <output.hxx>
 #include <msg_stack.hxx>
+#include <output.hxx>
+#include <stencils.hxx>
 #include <unused.hxx>
 
 /// Perform interpolation between centre -> shifted or vice-versa
 /*!
   Interpolate using 4th-order staggered formula
-  
+
   @param[in] s  Input stencil. mm -> -3/2, m -> -1/2, p -> +1/2, pp -> +3/2
 */
-BoutReal interp(const stencil &s)
-{
-  return ( 9.*(s.m + s.p) - s.mm - s.pp ) / 16.;
-}
+BoutReal interp(const stencil &s) { return (9. * (s.m + s.p) - s.mm - s.pp) / 16.; }
 
 /*!
   Interpolate between different cell locations
-  
+
   NOTE: This requires communication
 
   @param[in]   var  Input variable
   @param[in]   loc  Location of output values
 */
-const Field3D interp_to(const Field3D &var, CELL_LOC loc)
-{
-  if(mesh->StaggerGrids && (var.getLocation() != loc)) {
+const Field3D interp_to(const Field3D &var, CELL_LOC loc) {
+  if (mesh->StaggerGrids && (var.getLocation() != loc)) {
 
     // Staggered grids enabled, and need to perform interpolation
     TRACE("Interpolating %s -> %s", strLocation(var.getLocation()), strLocation(loc));
@@ -60,70 +56,69 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
 
     result = var; // NOTE: This is just for boundaries. FIX!
     result.allocate();
-    
-    if((var.getLocation() == CELL_CENTRE) || (loc == CELL_CENTRE)) {
+
+    if ((var.getLocation() == CELL_CENTRE) || (loc == CELL_CENTRE)) {
       // Going between centred and shifted
-      
+
       bindex bx;
       stencil s;
-      CELL_LOC dir; 
-      
+      CELL_LOC dir;
+
       // Get the non-centre location for interpolation direction
       dir = (loc == CELL_CENTRE) ? var.getLocation() : loc;
 
-      switch(dir) {
+      switch (dir) {
       case CELL_XLOW: {
-	start_index(&bx, RGN_NOX);
-	do {
-	  var.setXStencil(s, bx, loc);
-	  result(bx.jx,bx.jy,bx.jz) = interp(s);
-	}while(next_index3(&bx));
-	break;
-	// Need to communicate in X
+        start_index(&bx, RGN_NOX);
+        do {
+          var.setXStencil(s, bx, loc);
+          result(bx.jx, bx.jy, bx.jz) = interp(s);
+        } while (next_index3(&bx));
+        break;
+        // Need to communicate in X
       }
       case CELL_YLOW: {
-	start_index(&bx, RGN_NOY);
-	do {
-	  var.setYStencil(s, bx, loc);
-	  result(bx.jx,bx.jy,bx.jz) = interp(s);
-	}while(next_index3(&bx));
-	break;
-	// Need to communicate in Y
+        start_index(&bx, RGN_NOY);
+        do {
+          var.setYStencil(s, bx, loc);
+          result(bx.jx, bx.jy, bx.jz) = interp(s);
+        } while (next_index3(&bx));
+        break;
+        // Need to communicate in Y
       }
       case CELL_ZLOW: {
-	start_index(&bx, RGN_NOZ);
-	do {
-	  var.setZStencil(s, bx, loc);
-	  result(bx.jx,bx.jy,bx.jz) = interp(s);
-	}while(next_index3(&bx));
-	break;
+        start_index(&bx, RGN_NOZ);
+        do {
+          var.setZStencil(s, bx, loc);
+          result(bx.jx, bx.jy, bx.jz) = interp(s);
+        } while (next_index3(&bx));
+        break;
       }
       default: {
-	// This should never happen
-	throw BoutException("Don't know what to do");
+        // This should never happen
+        throw BoutException("Don't know what to do");
       }
       };
-      
-      if(dir != CELL_ZLOW) {
-	// COMMUNICATION
-	
-	mesh->communicate(result);
 
-	// BOUNDARIES
+      if (dir != CELL_ZLOW) {
+        // COMMUNICATION
 
+        mesh->communicate(result);
+
+        // BOUNDARIES
       }
 
-    }else {
+    } else {
       // Shifted -> shifted
       // For now, shift to centre then to shifted
-      
-      result = interp_to( interp_to(var, CELL_CENTRE) , loc);
+
+      result = interp_to(interp_to(var, CELL_CENTRE), loc);
     }
     result.setLocation(loc);
 
     return result;
   }
-  
+
   // Nothing to do - just return unchanged
   return var;
 }
@@ -133,12 +128,10 @@ const Field2D interp_to(const Field2D &var, CELL_LOC UNUSED(loc)) {
   return var;
 }
 
-void printLocation(const Field3D &var) {
-  output.write(strLocation(var.getLocation()));
-}
+void printLocation(const Field3D &var) { output.write(strLocation(var.getLocation())); }
 
-const char* strLocation(CELL_LOC loc) {
-  switch(loc) {
+const char *strLocation(CELL_LOC loc) {
+  switch (loc) {
   case CELL_CENTRE: {
     return " Cell centred";
   }
@@ -151,24 +144,21 @@ const char* strLocation(CELL_LOC loc) {
   case CELL_ZLOW: {
     return " Lower Z";
   }
-  default: {
-    return " Default (Unknown)";
-  }
+  default: { return " Default (Unknown)"; }
   };
 }
 
 // 4-point Lagrangian interpolation
 // offset must be between 0 and 1
-BoutReal lagrange_4pt(BoutReal v2m, BoutReal vm, BoutReal vp, BoutReal v2p, BoutReal offset)
-{
-  return -offset*(offset-1.0)*(offset-2.0)*v2m/6.0
-    + 0.5*(offset*offset - 1.0)*(offset-2.0)*vm
-    - 0.5*offset*(offset+1.0)*(offset-2.0)*vp
-    + offset*(offset*offset - 1.0)*v2p/6.0;
+BoutReal lagrange_4pt(BoutReal v2m, BoutReal vm, BoutReal vp, BoutReal v2p,
+                      BoutReal offset) {
+  return -offset * (offset - 1.0) * (offset - 2.0) * v2m / 6.0 +
+         0.5 * (offset * offset - 1.0) * (offset - 2.0) * vm -
+         0.5 * offset * (offset + 1.0) * (offset - 2.0) * vp +
+         offset * (offset * offset - 1.0) * v2p / 6.0;
 }
 
-BoutReal lagrange_4pt(BoutReal v[], BoutReal offset)
-{
+BoutReal lagrange_4pt(BoutReal v[], BoutReal offset) {
   return lagrange_4pt(v[0], v[1], v[2], v[3], offset);
 }
 
@@ -242,7 +232,8 @@ const Field3D interpolate(const Field3D &f, const Field3D &delta_x,
   return result;
 }
 
-const Field3D interpolate(const Field2D &f, const Field3D &delta_x, const Field3D &UNUSED(delta_z)) {
+const Field3D interpolate(const Field2D &f, const Field3D &delta_x,
+                          const Field3D &UNUSED(delta_z)) {
   return interpolate(f, delta_x);
 }
 
