@@ -125,7 +125,8 @@ Coordinates::Coordinates(Mesh *mesh)
   // Attempt to read J from the grid file
   Field2D Jcalc = J;
   if (mesh->get(J, "J")) {
-    output_warn.write("\tWARNING: Jacobian 'J' not found. Calculating from metric tensor\n");
+    output_warn.write(
+        "\tWARNING: Jacobian 'J' not found. Calculating from metric tensor\n");
     J = Jcalc;
   } else {
     // Compare calculated and loaded values
@@ -163,21 +164,24 @@ Coordinates::Coordinates(Mesh *mesh)
   Field2D d2x(mesh), d2y(mesh); // d^2 x / d i^2
   // Read correction for non-uniform meshes
   if (mesh->get(d2x, "d2x")) {
-    output_warn.write("\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
+    output_warn.write(
+        "\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
     d1_dx = mesh->indexDDX(1. / dx); // d/di(1/dx)
   } else {
     d1_dx = -d2x / (dx * dx);
   }
 
   if (mesh->get(d2y, "d2y")) {
-    output_warn.write("\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
+    output_warn.write(
+        "\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
     d1_dy = mesh->indexDDY(1. / dy); // d/di(1/dy)
   } else {
     d1_dy = -d2y / (dy * dy);
   }
 
   if (mesh->get(ShiftTorsion, "ShiftTorsion")) {
-    output_warn.write("\tWARNING: No Torsion specified for zShift. Derivatives may not be correct\n");
+    output_warn.write(
+        "\tWARNING: No Torsion specified for zShift. Derivatives may not be correct\n");
     ShiftTorsion = 0.0;
   }
 
