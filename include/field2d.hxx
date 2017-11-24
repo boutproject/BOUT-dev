@@ -7,7 +7,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -22,7 +22,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 class Field2D;
 
@@ -54,40 +54,40 @@ class Field3D; //#include "field3d.hxx"
  * as the Field3D class.
  */
 class Field2D : public Field, public FieldData {
- public:
+public:
   /*!
    * Constructor, taking an optional mesh pointer
    * This mesh pointer is not used until the data is allocated,
    * since Field2D objects can be globals, created before a mesh
    * has been created.
    *
-   * @param[in] msh  The mesh which defines the field size. 
-   * 
+   * @param[in] msh  The mesh which defines the field size.
+   *
    * By default the global Mesh pointer (mesh) is used.
-   */ 
+   */
   Field2D(Mesh *msh = nullptr);
 
   /*!
    * Copy constructor. After this both fields
    * will share the same underlying data.
    */
-  Field2D(const Field2D& f);
+  Field2D(const Field2D &f);
 
   /*!
    * Move constructor
    */
-  Field2D(Field2D&& f) = default;
+  Field2D(Field2D &&f) = default;
 
   /*!
    * Constructor. This creates a Field2D using the global Mesh pointer (mesh)
    * allocates data, and assigns the value \p val to all points including
    * boundary cells.
-   */ 
+   */
   Field2D(BoutReal val, Mesh *msh = nullptr);
 
   /*!
    * Destructor
-   */ 
+   */
   ~Field2D();
 
   /// Data type
@@ -98,20 +98,20 @@ class Field2D : public Field, public FieldData {
   bool isAllocated() const { return !data.empty(); } ///< Test if data is allocated
 
   /// Return a pointer to the time-derivative field
-  Field2D* timeDeriv();
+  Field2D *timeDeriv();
 
   /*!
    * Return the number of nx points
    */
-  int getNx() const override {return nx;};
+  int getNx() const override { return nx; };
   /*!
    * Return the number of ny points
    */
-  int getNy() const override {return ny;};
+  int getNy() const override { return ny; };
   /*!
    * Return the number of nz points
    */
-  int getNz() const override {return 1;};
+  int getNz() const override { return 1; };
 
   // Operators
 
@@ -121,14 +121,14 @@ class Field2D : public Field, public FieldData {
    * call .allocate() after assignment, or use the copy()
    * function.
    */
-  Field2D & operator=(const Field2D &rhs);
-  Field2D & operator=(Field2D &&rhs) = default;
+  Field2D &operator=(const Field2D &rhs);
+  Field2D &operator=(Field2D &&rhs) = default;
 
   /*!
    * Allocates data if not already allocated, then
    * sets all cells to \p rhs
-   */ 
-  Field2D & operator=(BoutReal rhs);
+   */
+  Field2D &operator=(BoutReal rhs);
 
   /////////////////////////////////////////////////////////
   // Data access
@@ -138,7 +138,7 @@ class Field2D : public Field, public FieldData {
 
   const DataIterator begin() const;
   const DataIterator end() const;
-  
+
   /*!
    * Returns a range of indices which can be iterated over
    * Uses the REGION flags in bout_types.hxx
@@ -149,79 +149,79 @@ class Field2D : public Field, public FieldData {
    * Direct access to the data array. Since operator() is used
    * to implement this, no checks are performed if CHECK <= 2
    */
-  inline BoutReal& operator[](const DataIterator &d) {
-    return operator()(d.x, d.y);
-  }
+  inline BoutReal &operator[](const DataIterator &d) { return operator()(d.x, d.y); }
 
   /// Const access to data array
-  inline const BoutReal& operator[](const DataIterator &d) const {
+  inline const BoutReal &operator[](const DataIterator &d) const {
     return operator()(d.x, d.y);
   }
 
   /// Indices are also used as a lightweight way to specify indexing
   /// for example DataIterator offsets (xp, xm, yp etc.) return Indices
-  inline BoutReal& operator[](const Indices &i) {
-    return operator()(i.x, i.y);
-  }
+  inline BoutReal &operator[](const Indices &i) { return operator()(i.x, i.y); }
   /// const Indices data access
-  inline const BoutReal& operator[](const Indices &i) const override {
+  inline const BoutReal &operator[](const Indices &i) const override {
     return operator()(i.x, i.y);
   }
 
   /*!
-   * Access to the underlying data array. 
-   * 
+   * Access to the underlying data array.
+   *
    * If CHECK <= 2 then no checks are performed
    *
    * If CHECK > 2 then both \p jx and \p jy are bounds checked. This will
    * significantly reduce performance.
    */
-  inline BoutReal& operator()(int jx, int jy) {
+  inline BoutReal &operator()(int jx, int jy) {
 #if CHECK > 2
-    if(!isAllocated())
+    if (!isAllocated())
       throw BoutException("Field2D: () operator on empty data");
-    
-    if((jx < 0) || (jx >= nx) || 
-       (jy < 0) || (jy >= ny) )
-      throw BoutException("Field2D: (%d, %d) index out of bounds (%d , %d)\n", 
-                          jx, jy, nx, ny);
+
+    if ((jx < 0) || (jx >= nx) || (jy < 0) || (jy >= ny))
+      throw BoutException("Field2D: (%d, %d) index out of bounds (%d , %d)\n", jx, jy, nx,
+                          ny);
 #endif
-  
-    return data[jx*ny + jy];
+
+    return data[jx * ny + jy];
   }
-  inline const BoutReal& operator()(int jx, int jy) const {
+  inline const BoutReal &operator()(int jx, int jy) const {
 #if CHECK > 2
-    if(!isAllocated())
+    if (!isAllocated())
       throw BoutException("Field2D: () operator on empty data");
-    
-    if((jx < 0) || (jx >= nx) || 
-       (jy < 0) || (jy >= ny) )
-      throw BoutException("Field2D: (%d, %d) index out of bounds (%d , %d)\n", 
-                          jx, jy, nx, ny);
+
+    if ((jx < 0) || (jx >= nx) || (jy < 0) || (jy >= ny))
+      throw BoutException("Field2D: (%d, %d) index out of bounds (%d , %d)\n", jx, jy, nx,
+                          ny);
 #endif
-  
-    return data[jx*ny + jy];
+
+    return data[jx * ny + jy];
   }
 
   /*!
    * DIrect access to underlying array. This version is for compatibility
    * with Field3D objects
    */
-  BoutReal& operator()(int jx, int jy, int UNUSED(jz)) {
+  BoutReal &operator()(int jx, int jy, int UNUSED(jz)) { return operator()(jx, jy); }
+  const BoutReal &operator()(int jx, int jy, int UNUSED(jz)) const {
     return operator()(jx, jy);
   }
-  const BoutReal& operator()(int jx, int jy, int UNUSED(jz)) const {
-    return operator()(jx, jy);
-  }
-  
-  Field2D & operator+=(const Field2D &rhs); ///< In-place addition. Copy-on-write used if data is shared
-  Field2D & operator+=(BoutReal rhs);       ///< In-place addition. Copy-on-write used if data is shared
-  Field2D & operator-=(const Field2D &rhs); ///< In-place subtraction. Copy-on-write used if data is shared
-  Field2D & operator-=(BoutReal rhs);       ///< In-place subtraction. Copy-on-write used if data is shared
-  Field2D & operator*=(const Field2D &rhs); ///< In-place multiplication. Copy-on-write used if data is shared
-  Field2D & operator*=(BoutReal rhs);       ///< In-place multiplication. Copy-on-write used if data is shared
-  Field2D & operator/=(const Field2D &rhs); ///< In-place division. Copy-on-write used if data is shared
-  Field2D & operator/=(BoutReal rhs);       ///< In-place division. Copy-on-write used if data is shared
+
+  Field2D &operator+=(
+      const Field2D &rhs); ///< In-place addition. Copy-on-write used if data is shared
+  Field2D &
+  operator+=(BoutReal rhs); ///< In-place addition. Copy-on-write used if data is shared
+  Field2D &operator-=(
+      const Field2D &rhs); ///< In-place subtraction. Copy-on-write used if data is shared
+  Field2D &operator-=(
+      BoutReal rhs); ///< In-place subtraction. Copy-on-write used if data is shared
+  Field2D &operator*=(const Field2D &rhs); ///< In-place multiplication. Copy-on-write
+                                           ///used if data is shared
+  Field2D &operator*=(
+      BoutReal rhs); ///< In-place multiplication. Copy-on-write used if data is shared
+  Field2D &operator/=(
+      const Field2D &rhs); ///< In-place division. Copy-on-write used if data is shared
+  Field2D &
+  operator/=(BoutReal rhs); ///< In-place division. Copy-on-write used if data is shared
 
   DEPRECATED(void getXArray(int y, int z, rvec &xv) const override);
   DEPRECATED(void getYArray(int x, int z, rvec &yv) const override);
@@ -231,19 +231,22 @@ class Field2D : public Field, public FieldData {
   DEPRECATED(void setYArray(int x, int z, const rvec &yv) override);
 
   // Stencils
-  void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const override;
-  void setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const override;
-  void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const override;
-  
+  void setXStencil(stencil &fval, const bindex &bx,
+                   CELL_LOC loc = CELL_DEFAULT) const override;
+  void setYStencil(stencil &fval, const bindex &bx,
+                   CELL_LOC loc = CELL_DEFAULT) const override;
+  void setZStencil(stencil &fval, const bindex &bx,
+                   CELL_LOC loc = CELL_DEFAULT) const override;
+
   // FieldData virtual functions
 
   /// Visitor pattern support
-  void accept(FieldVisitor &v) override {v.accept(*this);}
-  
-  bool isReal() const override  { return true; }         // Consists of BoutReal values
-  bool is3D() const override    { return false; }        // Field is 2D
-  int  byteSize() const override { return sizeof(BoutReal); } // Just one BoutReal
-  int  BoutRealSize() const override { return 1; }
+  void accept(FieldVisitor &v) override { v.accept(*this); }
+
+  bool isReal() const override { return true; } // Consists of BoutReal values
+  bool is3D() const override { return false; }  // Field is 2D
+  int byteSize() const override { return sizeof(BoutReal); } // Just one BoutReal
+  int BoutRealSize() const override { return 1; }
 
 #if CHECK > 0
   void doneComms() override { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
@@ -252,20 +255,21 @@ class Field2D : public Field, public FieldData {
 #endif
 
   friend class Vector2D;
-  
-  void applyBoundary(bool init=false) override;
+
+  void applyBoundary(bool init = false) override;
   void applyBoundary(const string &condition);
-  void applyBoundary(const char* condition) { applyBoundary(string(condition)); }
+  void applyBoundary(const char *condition) { applyBoundary(string(condition)); }
   void applyBoundary(const string &region, const string &condition);
   void applyTDerivBoundary() override;
   void setBoundaryTo(const Field2D &f2d); ///< Copy the boundary region
-  
- private:
-  int nx, ny;      ///< Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
-  
+
+private:
+  int nx,
+      ny; ///< Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
+
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;
-  
+
   Field2D *deriv; ///< Time-derivative, can be NULL
 };
 
@@ -307,29 +311,29 @@ const Field2D abs(const Field2D &f);
 
 /*!
  * Calculates the minimum of a field, excluding
- * the boundary/guard cells. 
+ * the boundary/guard cells.
  * By default this is only on the local processor,
  * but setting allpe=true does a collective Allreduce
  * over all processors.
  *
  * @param[in] f  The field to loop over
  * @param[in] allpe  Minimum over all processors?
- * 
+ *
  */
-BoutReal min(const Field2D &f, bool allpe=false);
+BoutReal min(const Field2D &f, bool allpe = false);
 
 /*!
  * Calculates the maximum of a field, excluding
- * the boundary/guard cells. 
+ * the boundary/guard cells.
  * By default this is only on the local processor,
  * but setting allpe=true does a collective Allreduce
  * over all processors.
  *
  * @param[in] f  The field to loop over
  * @param[in] allpe  Minimum over all processors?
- * 
+ *
  */
-BoutReal max(const Field2D &f, bool allpe=false);
+BoutReal max(const Field2D &f, bool allpe = false);
 
 /*!
  * Test if all values of this field are finite
@@ -344,7 +348,7 @@ const Field2D exp(const Field2D &f);
 const Field2D log(const Field2D &f);
 
 /*!
- * Sine trigonometric function. 
+ * Sine trigonometric function.
  *
  * @param[in] f  Angle in radians
  *
@@ -354,7 +358,7 @@ const Field2D log(const Field2D &f);
 const Field2D sin(const Field2D &f);
 
 /*!
- * Cosine trigonometric function. 
+ * Cosine trigonometric function.
  *
  * @param[in] f  Angle in radians
  *
@@ -364,7 +368,7 @@ const Field2D sin(const Field2D &f);
 const Field2D cos(const Field2D &f);
 
 /*!
- * Tangent trigonometric function. 
+ * Tangent trigonometric function.
  *
  * @param[in] f  Angle in radians
  *
@@ -374,7 +378,7 @@ const Field2D cos(const Field2D &f);
 const Field2D tan(const Field2D &f);
 
 /*!
- * Hyperbolic sine function. 
+ * Hyperbolic sine function.
  *
  * This loops over the entire domain, including guard/boundary cells
  * If CHECK >= 3 then the result will be checked for non-finite numbers
@@ -382,7 +386,7 @@ const Field2D tan(const Field2D &f);
 const Field2D sinh(const Field2D &f);
 
 /*!
- * Hyperbolic cosine function. 
+ * Hyperbolic cosine function.
  *
  * This loops over the entire domain, including guard/boundary cells
  * If CHECK >= 3 then the result will be checked for non-finite numbers
@@ -390,7 +394,7 @@ const Field2D sinh(const Field2D &f);
 const Field2D cosh(const Field2D &f);
 
 /*!
- * Hyperbolic tangent function. 
+ * Hyperbolic tangent function.
  *
  * This loops over the entire domain, including guard/boundary cells
  * If CHECK >= 3 then the result will be checked for non-finite numbers
@@ -414,15 +418,12 @@ void checkData(const Field2D &f);
 inline void checkData(const Field2D &UNUSED(f)) {}
 #endif
 
-
 /*!
  * @brief Returns a reference to the time-derivative of a field
- * 
+ *
  * Wrapper around member function f.timeDeriv()
  *
  */
-inline Field2D& ddt(Field2D &f) {
-  return *(f.timeDeriv());
-}
+inline Field2D &ddt(Field2D &f) { return *(f.timeDeriv()); }
 
 #endif /* __FIELD2D_H__ */

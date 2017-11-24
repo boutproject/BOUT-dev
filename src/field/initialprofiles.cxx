@@ -3,22 +3,22 @@
  *
  * ChangeLog
  * =========
- * 
+ *
  * 2011-02-12 Ben Dudson <bd512@york.ac.uk>
  *    * Changed to use new options system. For now the structure of the
  *      options is the same, but this could be modified more easily in future
  *
  * 2010-05-12 Ben Dudson <bd512@york.ac.uk>
- *    
+ *
  *    * Changed random numbers to use a hash of the parameters
  *      so that the phase doesn't vary with number of processors or grid size
  *      User can vary phase to give a different random sequence
- * 
+ *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -36,39 +36,39 @@
  *
  **************************************************************************/
 
-#include <globals.hxx>
-#include <initialprofiles.hxx>
+#include "unused.hxx"
+#include <bout/constants.hxx>
 #include <boutexception.hxx>
 #include <field_factory.hxx>
-#include <output.hxx>
-#include <bout/constants.hxx>
+#include <globals.hxx>
+#include <initialprofiles.hxx>
 #include <msg_stack.hxx>
-#include "unused.hxx"
+#include <output.hxx>
 
 #include <math.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 void initial_profile(const string &name, Field3D &var) {
   TRACE("initial_profile(string, Field3D)");
 
-  Mesh * msh = var.getMesh();
-  
+  Mesh *msh = var.getMesh();
+
   CELL_LOC loc = CELL_DEFAULT;
   if (msh->StaggerGrids) {
     loc = var.getLocation();
   }
-  
-  // Get the section for this specific variable 
+
+  // Get the section for this specific variable
   Options *varOpts = Options::getRoot()->getSection(name);
-  
+
   // Use FieldFactory to generate values
-    
+
   FieldFactory f(msh);
 
   string function;
   VAROPTION(varOpts, function, "0.0");
-  
+
   // Create a 3D variable
   var = f.create3D(function, varOpts, NULL, loc);
 
@@ -80,17 +80,17 @@ void initial_profile(const string &name, Field3D &var) {
 
 // For 2D variables almost identical, just no z dependence
 void initial_profile(const string &name, Field2D &var) {
-  
+
   CELL_LOC loc = var.getLocation();
 
-  Mesh * msh = var.getMesh();
+  Mesh *msh = var.getMesh();
 
   // Get the section for this variable
   Options *varOpts = Options::getRoot()->getSection(name);
   output << name;
-  
+
   // Use FieldFactory to generate values
-    
+
   FieldFactory f(msh);
 
   string function;
@@ -105,11 +105,11 @@ void initial_profile(const string &name, Field2D &var) {
 }
 
 void initial_profile(const string &name, Vector2D &var) {
-  if(var.covariant) {
+  if (var.covariant) {
     initial_profile(name + "_x", var.x);
     initial_profile(name + "_y", var.y);
     initial_profile(name + "_z", var.z);
-  }else {
+  } else {
     initial_profile(name + "x", var.x);
     initial_profile(name + "y", var.y);
     initial_profile(name + "z", var.z);
@@ -117,11 +117,11 @@ void initial_profile(const string &name, Vector2D &var) {
 }
 
 void initial_profile(const string &name, Vector3D &var) {
-  if(var.covariant) {
+  if (var.covariant) {
     initial_profile(name + "_x", var.x);
     initial_profile(name + "_y", var.y);
     initial_profile(name + "_z", var.z);
-  }else {
+  } else {
     initial_profile(name + "x", var.x);
     initial_profile(name + "y", var.y);
     initial_profile(name + "z", var.z);

@@ -5,7 +5,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -27,63 +27,55 @@
 
 #include <stdarg.h>
 
-#include <field.hxx>
-#include <output.hxx>
-#include <msg_stack.hxx>
-#include <boutexception.hxx>
-#include <utils.hxx>
 #include <bout/mesh.hxx>
+#include <boutexception.hxx>
+#include <field.hxx>
+#include <msg_stack.hxx>
+#include <output.hxx>
+#include <utils.hxx>
 
-Field::Field() : fieldmesh(nullptr){
+Field::Field() : fieldmesh(nullptr) {
 #if CHECK > 0
   bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true;
 #endif
 }
 
-Field::Field(Mesh * msh) : fieldmesh(msh){
-  if (fieldmesh ==nullptr){
-    fieldmesh=mesh;
+Field::Field(Mesh *msh) : fieldmesh(msh) {
+  if (fieldmesh == nullptr) {
+    fieldmesh = mesh;
   }
 #if CHECK > 0
   bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true;
 #endif
 }
 
-int Field::getNx() const{
-  return getMesh()->LocalNx;
-};
+int Field::getNx() const { return getMesh()->LocalNx; };
 
-int Field::getNy() const{
-  return getMesh()->LocalNy;
-};
+int Field::getNy() const { return getMesh()->LocalNy; };
 
-int Field::getNz() const{
-  return getMesh()->LocalNz;
-};
+int Field::getNz() const { return getMesh()->LocalNz; };
 
 /////////////////// PROTECTED ////////////////////
 
-
 // Report an error occurring
 void Field::error(const char *s, ...) const {
-  int buf_len=512;
-  char * err_buffer=new char[buf_len];
+  int buf_len = 512;
+  char *err_buffer = new char[buf_len];
 
-  if(s == (const char*) NULL) {
+  if (s == (const char *)NULL) {
     output_error.write("Unspecified error in field\n");
-  }else {
-  
-    bout_vsnprintf(err_buffer,buf_len, s);
+  } else {
+
+    bout_vsnprintf(err_buffer, buf_len, s);
 
 #ifdef TRACK
-      output_error.write("Error in '%s': %s", name.c_str(), err_buffer);
+    output_error.write("Error in '%s': %s", name.c_str(), err_buffer);
 #else
-      output_error.write("Error in field: %s", err_buffer);
+    output_error.write("Error in field: %s", err_buffer);
 #endif
   }
-  std::string msg="Error in field: ";
-  msg+=err_buffer;
+  std::string msg = "Error in field: ";
+  msg += err_buffer;
   delete[] err_buffer;
   throw BoutException(msg);
 }
-

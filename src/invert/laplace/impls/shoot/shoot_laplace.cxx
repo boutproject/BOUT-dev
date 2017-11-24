@@ -2,18 +2,18 @@
  * \file shoot_laplace.cxx
  *
  * \brief Laplacian solver using shooting method
- *  
+ *
  * CHANGELOG
  * =========
- * 
+ *
  * Feb 2014: Ben Dudson <benjamin.dudson@york.ac.uk>
  *         * Initial version
- * 
+ *
  **************************************************************************
  * Copyright 2014 B.D.Dudson
  *
  * Contact: Ben Dudson, benjamin.dudson@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -32,28 +32,31 @@
  */
 
 #include "shoot_laplace.hxx"
-#include <globals.hxx>
-#include <fft.hxx>
 #include <bout/constants.hxx>
+#include <fft.hxx>
+#include <globals.hxx>
 
 LaplaceShoot::LaplaceShoot(Options *opt)
     : Laplacian(opt), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
-  throw BoutException("LaplaceShoot is a test implementation and does not currently work. Please select a different implementation.");
+  throw BoutException("LaplaceShoot is a test implementation and does not currently "
+                      "work. Please select a different implementation.");
 
-  if(mesh->periodicX) {
-        throw BoutException("LaplaceShoot does not work with periodicity in the x direction (mesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
+  if (mesh->periodicX) {
+    throw BoutException("LaplaceShoot does not work with periodicity in the x direction "
+                        "(mesh->PeriodicX == true). Change boundary conditions or use "
+                        "serial-tri or cyclic solver instead");
   }
 
-	
-  nmode = maxmode + 1; // Number of Z modes. maxmode set in invert_laplace.cxx from options
-  
+  nmode =
+      maxmode + 1; // Number of Z modes. maxmode set in invert_laplace.cxx from options
+
   // Allocate memory
-  int size = (mesh->LocalNz)/2 + 1;
+  int size = (mesh->LocalNz) / 2 + 1;
   km = new dcomplex[size];
   kc = new dcomplex[size];
   kp = new dcomplex[size];
-  
-  for(int i=0;i<size;i++) {
+
+  for (int i = 0; i < size; i++) {
     km[i] = 0.0;
     kc[i] = 0.0;
     kp[i] = 0.0;
@@ -61,123 +64,126 @@ LaplaceShoot::LaplaceShoot(Options *opt)
 
   rhsk = new dcomplex[size];
 
-  buffer = new BoutReal[4*maxmode];
+  buffer = new BoutReal[4 * maxmode];
 }
 
 LaplaceShoot::~LaplaceShoot() {
   delete[] km;
   delete[] kc;
   delete[] kp;
-  
+
   delete[] rhsk;
-  
+
   delete[] buffer;
 }
 
 const FieldPerp LaplaceShoot::solve(const FieldPerp &rhs) {
-  Mesh * mesh = rhs.getMesh();
-  FieldPerp x(mesh);  // Result
+  Mesh *mesh = rhs.getMesh();
+  FieldPerp x(mesh); // Result
   x.allocate();
-  
-  int jy = rhs.getIndex();  // Get the Y index
+
+  int jy = rhs.getIndex(); // Get the Y index
   x.setIndex(jy);
 
   Coordinates *coord = mesh->coordinates();
-  
+
   // Get the width of the boundary
-  
-  int inbndry = 2, outbndry=2;
-  if(global_flags & INVERT_BOTH_BNDRY_ONE) {
+
+  int inbndry = 2, outbndry = 2;
+  if (global_flags & INVERT_BOTH_BNDRY_ONE) {
     inbndry = outbndry = 1;
   }
-  if(inner_boundary_flags & INVERT_BNDRY_ONE)
+  if (inner_boundary_flags & INVERT_BNDRY_ONE)
     inbndry = 1;
-  if(outer_boundary_flags & INVERT_BNDRY_ONE)
+  if (outer_boundary_flags & INVERT_BNDRY_ONE)
     outbndry = 1;
-  
+
   int xs, xe;
   xs = mesh->xstart; // Starting X index
-  if(mesh->firstX())
+  if (mesh->firstX())
     xs = inbndry;
-  xe = mesh->xend;  // Last X index
-  if(mesh->lastX())
-    xe = mesh->LocalNx-outbndry-1;
+  xe = mesh->xend; // Last X index
+  if (mesh->lastX())
+    xe = mesh->LocalNx - outbndry - 1;
 
-  if(mesh->lastX()) {
+  if (mesh->lastX()) {
     // Set initial value and gradient to zero
     // by setting kc and kp
-    
-    for(int i=0;i<maxmode;i++) {
+
+    for (int i = 0; i < maxmode; i++) {
       kc[i] = 0.0;
       kp[i] = 0.0;
     }
-    
-    for(int ix=xe;ix<mesh->LocalNx;ix++)
-      for(int iz=0;iz<mesh->LocalNz;iz++) {
+
+    for (int ix = xe; ix < mesh->LocalNx; ix++)
+      for (int iz = 0; iz < mesh->LocalNz; iz++) {
         x[ix][iz] = 0.0;
       }
-      
-  }else {
+
+  } else {
     // Wait for processor outer X
-    comm_handle handle = mesh->irecvXOut(buffer, 4*maxmode, jy);
+    comm_handle handle = mesh->irecvXOut(buffer, 4 * maxmode, jy);
     mesh->wait(handle);
-    
+
     // Copy into kc, kp
-    for(int i=0;i<maxmode;i++) {
-      kc[i] = dcomplex(buffer[4*i], buffer[4*i+1]);
-      kp[i] = dcomplex(buffer[4*i+2], buffer[4*i+3]);
+    for (int i = 0; i < maxmode; i++) {
+      kc[i] = dcomplex(buffer[4 * i], buffer[4 * i + 1]);
+      kp[i] = dcomplex(buffer[4 * i + 2], buffer[4 * i + 3]);
     }
-    
+
     // Calculate solution at xe using kc
     irfft(kc, mesh->LocalNz, x[xe]);
   }
-  
+
   // kc and kp now set to result at x and x+1 respectively
   // Use b at x to get km at x-1
   // Loop inwards from edge
-  for(int ix=xe; ix >= xs; ix--) {
+  for (int ix = xe; ix >= xs; ix--) {
     rfft(rhs[ix], mesh->LocalNz, rhsk);
-    
-    for(int kz=0; kz<maxmode; kz++) {
-      BoutReal kwave=kz*2.0*PI/(coord->zlength()); // wave number is 1/[rad]
-      
+
+    for (int kz = 0; kz < maxmode; kz++) {
+      BoutReal kwave = kz * 2.0 * PI / (coord->zlength()); // wave number is 1/[rad]
+
       // Get the coefficients
-      dcomplex a,b,c;
+      dcomplex a, b, c;
       tridagCoefs(ix, jy, kwave, a, b, c, &Ccoef, &Dcoef);
       b += Acoef(ix, jy);
 
       // a*km + b*kc + c*kp = rhsk
-      
-      km[kz] = (rhsk[kz] - b*kc[kz] - c*kp[kz]) / a;
+
+      km[kz] = (rhsk[kz] - b * kc[kz] - c * kp[kz]) / a;
     }
-    
+
     // Inverse FFT to get x[ix-1]
-    irfft(km, mesh->LocalNz, x[ix-1]);
-    
+    irfft(km, mesh->LocalNz, x[ix - 1]);
+
     // Cycle km->kc->kp
-    
+
     dcomplex *tmp;
-    tmp = kp; kp = kc; kc = km; km = tmp;
+    tmp = kp;
+    kp = kc;
+    kc = km;
+    km = tmp;
   }
-  
+
   // Finished on this processor. Send data to next inner processor
-  if(!mesh->firstX()) {
+  if (!mesh->firstX()) {
     // Should be able to send dcomplex buffers. For now copy into BoutReal buffer
-    for(int i=0;i<maxmode;i++) {
-      buffer[4*i]     = kc[i].real();
-      buffer[4*i + 1] = kc[i].imag();
-      buffer[4*i + 2] = kp[i].real();
-      buffer[4*i + 3] = kp[i].imag();
+    for (int i = 0; i < maxmode; i++) {
+      buffer[4 * i] = kc[i].real();
+      buffer[4 * i + 1] = kc[i].imag();
+      buffer[4 * i + 2] = kp[i].real();
+      buffer[4 * i + 3] = kp[i].imag();
     }
-    mesh->sendXIn(buffer, 4*maxmode, jy);
-  }else {
+    mesh->sendXIn(buffer, 4 * maxmode, jy);
+  } else {
     // Set inner boundary
-    for(int ix=xs-2;ix>=0;ix--) {
-      for(int iz=0;iz<mesh->LocalNz;iz++) {
-        x[ix][iz] = x[xs-1][iz];
+    for (int ix = xs - 2; ix >= 0; ix--) {
+      for (int iz = 0; iz < mesh->LocalNz; iz++) {
+        x[ix][iz] = x[xs - 1][iz];
       }
     }
   }
-  
+
   return x;
 }

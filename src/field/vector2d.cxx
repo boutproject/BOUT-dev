@@ -2,7 +2,7 @@
  * Class for 2D vectors. Built on the Field2D class,
  * all operators relating to vectors are here (none in Field classes)
  *
- * As with Field2D, Vector2D are constant in z (toroidal angle) 
+ * As with Field2D, Vector2D are constant in z (toroidal angle)
  *
  * B.Dudson, October 2007
  *
@@ -10,7 +10,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -30,84 +30,85 @@
 
 #include <globals.hxx>
 
-#include <vector2d.hxx>
 #include <boundary_op.hxx>
 #include <boutexception.hxx>
+#include <vector2d.hxx>
 
-Vector2D::Vector2D(Mesh * msh) : covariant(true), deriv(NULL),x(msh),y(msh),z(msh) { }
+Vector2D::Vector2D(Mesh *msh) : covariant(true), deriv(NULL), x(msh), y(msh), z(msh) {}
 
-Vector2D::Vector2D(const Vector2D &f) : x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(NULL) { }
+Vector2D::Vector2D(const Vector2D &f)
+    : x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(NULL) {}
 
 Vector2D::~Vector2D() {
-  if(deriv != NULL) {
+  if (deriv != NULL) {
     // The ddt of the components (x.ddt) point to the same place as ddt.x
     // only delete once
     x.deriv = NULL;
     y.deriv = NULL;
     z.deriv = NULL;
-    
+
     // Now delete them as part of the ddt vector
     delete deriv;
   }
 }
 
-void Vector2D::toCovariant() {  
-  if(!covariant) {
-    Mesh * msh = x.getMesh();
+void Vector2D::toCovariant() {
+  if (!covariant) {
+    Mesh *msh = x.getMesh();
     Field2D gx(msh), gy(msh), gz(msh);
 
     Coordinates *metric = msh->coordinates();
 
     // multiply by g_{ij}
-    gx = metric->g_11*x + metric->g_12*y + metric->g_13*z;
-    gy = metric->g_12*x + metric->g_22*y + metric->g_23*z;
-    gz = metric->g_13*x + metric->g_23*y + metric->g_33*z;
+    gx = metric->g_11 * x + metric->g_12 * y + metric->g_13 * z;
+    gy = metric->g_12 * x + metric->g_22 * y + metric->g_23 * z;
+    gz = metric->g_13 * x + metric->g_23 * y + metric->g_33 * z;
 
     x = gx;
     y = gy;
     z = gz;
-    
+
     covariant = true;
   }
 }
 
-void Vector2D::toContravariant() {  
-  if(covariant) {
+void Vector2D::toContravariant() {
+  if (covariant) {
     // multiply by g^{ij}
-    Mesh * msh = x.getMesh();
+    Mesh *msh = x.getMesh();
     Field2D gx(msh), gy(msh), gz(msh);
 
     Coordinates *metric = msh->coordinates();
-    
-    gx = metric->g11*x + metric->g12*y + metric->g13*z;
-    gy = metric->g12*x + metric->g22*y + metric->g23*z;
-    gz = metric->g13*x + metric->g23*y + metric->g33*z;
+
+    gx = metric->g11 * x + metric->g12 * y + metric->g13 * z;
+    gy = metric->g12 * x + metric->g22 * y + metric->g23 * z;
+    gz = metric->g13 * x + metric->g23 * y + metric->g33 * z;
 
     x = gx;
     y = gy;
     z = gz;
-    
+
     covariant = false;
   }
 }
 
-Vector2D* Vector2D::timeDeriv() {
-  if(deriv == NULL) {
+Vector2D *Vector2D::timeDeriv() {
+  if (deriv == NULL) {
     deriv = new Vector2D(x.getMesh());
-    
+
     // Check if the components have a time-derivative
     // Need to make sure that ddt(v.x) = ddt(v).x
-    
-    if(x.deriv != NULL) {
+
+    if (x.deriv != NULL) {
       // already set. Copy across then delete
       deriv->x = *(x.deriv);
       delete x.deriv;
     }
-    if(y.deriv != NULL) {
+    if (y.deriv != NULL) {
       deriv->y = *(y.deriv);
       delete y.deriv;
     }
-    if(z.deriv != NULL) {
+    if (z.deriv != NULL) {
       deriv->z = *(z.deriv);
       delete z.deriv;
     }
@@ -119,12 +120,12 @@ Vector2D* Vector2D::timeDeriv() {
 }
 
 /***************************************************************
- *                         OPERATORS 
+ *                         OPERATORS
  ***************************************************************/
 
 /////////////////// ASSIGNMENT ////////////////////
 
-Vector2D & Vector2D::operator=(const Vector2D &rhs) {
+Vector2D &Vector2D::operator=(const Vector2D &rhs) {
   x = rhs.x;
   y = rhs.y;
   z = rhs.z;
@@ -134,7 +135,7 @@ Vector2D & Vector2D::operator=(const Vector2D &rhs) {
   return *this;
 }
 
-Vector2D & Vector2D::operator=(const BoutReal val) {
+Vector2D &Vector2D::operator=(const BoutReal val) {
   x = val;
   y = val;
   z = val;
@@ -144,13 +145,13 @@ Vector2D & Vector2D::operator=(const BoutReal val) {
 
 ////////////////// ADDITION //////////////////////
 
-Vector2D & Vector2D::operator+=(const Vector2D &rhs) {
-  if(rhs.covariant) {
+Vector2D &Vector2D::operator+=(const Vector2D &rhs) {
+  if (rhs.covariant) {
     toCovariant();
-  }else {
+  } else {
     toContravariant();
   }
-  
+
   x += rhs.x;
   y += rhs.y;
   z += rhs.z;
@@ -170,13 +171,13 @@ const Vector2D Vector2D::operator-() const {
   return result;
 }
 
-Vector2D & Vector2D::operator-=(const Vector2D &rhs) {
-  if(rhs.covariant) {
+Vector2D &Vector2D::operator-=(const Vector2D &rhs) {
+  if (rhs.covariant) {
     toCovariant();
-  }else {
+  } else {
     toContravariant();
   }
-  
+
   x -= rhs.x;
   y -= rhs.y;
   z -= rhs.z;
@@ -186,33 +187,33 @@ Vector2D & Vector2D::operator-=(const Vector2D &rhs) {
 
 //////////////// MULTIPLICATION //////////////////
 
-Vector2D & Vector2D::operator*=(const BoutReal rhs) {
+Vector2D &Vector2D::operator*=(const BoutReal rhs) {
   x *= rhs;
   y *= rhs;
   z *= rhs;
-  
+
   return *this;
 }
 
-Vector2D & Vector2D::operator*=(const Field2D &rhs) {
+Vector2D &Vector2D::operator*=(const Field2D &rhs) {
   x *= rhs;
   y *= rhs;
   z *= rhs;
-  
+
   return *this;
 }
 
 /////////////////// DIVISION /////////////////////
 
-Vector2D & Vector2D::operator/=(const BoutReal rhs) {
+Vector2D &Vector2D::operator/=(const BoutReal rhs) {
   x /= rhs;
   y /= rhs;
   z /= rhs;
-  
+
   return *this;
 }
 
-Vector2D & Vector2D::operator/=(const Field2D &rhs) {
+Vector2D &Vector2D::operator/=(const Field2D &rhs) {
   x /= rhs;
   y /= rhs;
   z /= rhs;
@@ -222,7 +223,7 @@ Vector2D & Vector2D::operator/=(const Field2D &rhs) {
 
 ///////////////// CROSS PRODUCT //////////////////
 
-Vector2D & Vector2D::operator^=(const Vector2D &rhs) {
+Vector2D &Vector2D::operator^=(const Vector2D &rhs) {
   Vector2D result(x.getMesh());
 
   // Make sure both vector components are covariant
@@ -233,10 +234,10 @@ Vector2D & Vector2D::operator^=(const Vector2D &rhs) {
   Coordinates *metric = x.getMesh()->coordinates();
 
   // calculate contravariant components of cross-product
-  result.x = (y*rco.z - z*rco.y)/metric->J;
-  result.y = (z*rco.x - x*rco.z)/metric->J;
-  result.z = (x*rco.y - y*rco.x)/metric->J;
-  
+  result.x = (y * rco.z - z * rco.y) / metric->J;
+  result.y = (z * rco.x - x * rco.z) / metric->J;
+  result.z = (x * rco.y - y * rco.x) / metric->J;
+
   result.covariant = false;
 
   *this = result;
@@ -245,7 +246,7 @@ Vector2D & Vector2D::operator^=(const Vector2D &rhs) {
 }
 
 /***************************************************************
- *                      BINARY OPERATORS 
+ *                      BINARY OPERATORS
  ***************************************************************/
 
 ////////////////// ADDITION //////////////////////
@@ -256,9 +257,7 @@ const Vector2D Vector2D::operator+(const Vector2D &rhs) const {
   return result;
 }
 
-const Vector3D Vector2D::operator+(const Vector3D &rhs) const {
-  return rhs+(*this);
-}
+const Vector3D Vector2D::operator+(const Vector3D &rhs) const { return rhs + (*this); }
 
 ///////////////// SUBTRACTION ////////////////////
 
@@ -320,37 +319,37 @@ const Vector3D Vector2D::operator/(const Field3D &rhs) const {
 ////////////////// DOT PRODUCT ///////////////////
 
 const Field2D Vector2D::operator*(const Vector2D &rhs) const {
-  Mesh * msh = x.getMesh();
+  Mesh *msh = x.getMesh();
   Field2D result(msh);
 
-  if(rhs.covariant ^ covariant) {
+  if (rhs.covariant ^ covariant) {
     // Both different - just multiply components
-    result = x*rhs.x + y*rhs.y + z*rhs.z;
-  }else {
+    result = x * rhs.x + y * rhs.y + z * rhs.z;
+  } else {
     // Both are covariant or contravariant
     Coordinates *metric = msh->coordinates();
-    
-    if(covariant) {
+
+    if (covariant) {
       // Both covariant
-      result = x*rhs.x*metric->g11 + y*rhs.y*metric->g22 + z*rhs.z*metric->g33;
-      result += (x*rhs.y + y*rhs.x)*metric->g12
-	+ (x*rhs.z + z*rhs.x)*metric->g13
-	+ (y*rhs.z + z*rhs.y)*metric->g23;
-    }else {
+      result =
+          x * rhs.x * metric->g11 + y * rhs.y * metric->g22 + z * rhs.z * metric->g33;
+      result += (x * rhs.y + y * rhs.x) * metric->g12 +
+                (x * rhs.z + z * rhs.x) * metric->g13 +
+                (y * rhs.z + z * rhs.y) * metric->g23;
+    } else {
       // Both contravariant
-      result = x*rhs.x*metric->g_11 + y*rhs.y*metric->g_22 + z*rhs.z*metric->g_33;
-      result += (x*rhs.y + y*rhs.x)*metric->g_12
-	+ (x*rhs.z + z*rhs.x)*metric->g_13
-	+ (y*rhs.z + z*rhs.y)*metric->g_23;
+      result =
+          x * rhs.x * metric->g_11 + y * rhs.y * metric->g_22 + z * rhs.z * metric->g_33;
+      result += (x * rhs.y + y * rhs.x) * metric->g_12 +
+                (x * rhs.z + z * rhs.x) * metric->g_13 +
+                (y * rhs.z + z * rhs.y) * metric->g_23;
     }
   }
 
   return result;
 }
 
-const Field3D Vector2D::operator*(const Vector3D &rhs) const {
-  return rhs*(*this);
-}
+const Field3D Vector2D::operator*(const Vector3D &rhs) const { return rhs * (*this); }
 
 ///////////////// CROSS PRODUCT //////////////////
 
@@ -361,33 +360,25 @@ const Vector2D Vector2D::operator^(const Vector2D &rhs) const {
 }
 
 const Vector3D Vector2D::operator^(const Vector3D &rhs) const {
-  return -1.0*rhs^(*this);
+  return -1.0 * rhs ^ (*this);
 }
 
 /***************************************************************
  *               NON-MEMBER OVERLOADED OPERATORS
  ***************************************************************/
 
-const Vector2D operator*(const BoutReal lhs, const Vector2D &rhs) {
-  return rhs*lhs;
-}
+const Vector2D operator*(const BoutReal lhs, const Vector2D &rhs) { return rhs * lhs; }
 
-const Vector2D operator*(const Field2D &lhs, const Vector2D &rhs) {
-  return rhs*lhs;
-}
+const Vector2D operator*(const Field2D &lhs, const Vector2D &rhs) { return rhs * lhs; }
 
-const Vector3D operator*(const Field3D &lhs, const Vector2D &rhs) {
-  return rhs*lhs;
-}
+const Vector3D operator*(const Field3D &lhs, const Vector2D &rhs) { return rhs * lhs; }
 
 /***************************************************************
  *               NON-MEMBER FUNCTIONS
  ***************************************************************/
 
 // Return the magnitude of a vector
-const Field2D abs(const Vector2D &v) {
-  return sqrt(v*v);
-}
+const Field2D abs(const Vector2D &v) { return sqrt(v * v); }
 
 /***************************************************************
  *               FieldData VIRTUAL FUNCTIONS
@@ -396,22 +387,18 @@ const Field2D abs(const Vector2D &v) {
 ////////////////////////////////////////////////////////////
 // Visitor pattern support
 
-void Vector2D::accept(FieldVisitor &v) {
-  v.accept(*this);
-}
+void Vector2D::accept(FieldVisitor &v) { v.accept(*this); }
 
 ///////////////////// BOUNDARY CONDITIONS //////////////////
 
-void Vector2D::applyBoundary(bool init)
-{
-  for(const auto& bndry : bndry_op)
-    if ( !bndry->apply_to_ddt || init) // Always apply to the values when initialising fields, otherwise apply only if wanted
+void Vector2D::applyBoundary(bool init) {
+  for (const auto &bndry : bndry_op)
+    if (!bndry->apply_to_ddt || init) // Always apply to the values when initialising
+                                      // fields, otherwise apply only if wanted
       bndry->apply(*this);
 }
 
-void Vector2D::applyTDerivBoundary()
-{
-  for(const auto& bndry : bndry_op)
+void Vector2D::applyTDerivBoundary() {
+  for (const auto &bndry : bndry_op)
     bndry->apply_ddt(*this);
 }
-

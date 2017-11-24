@@ -11,8 +11,8 @@ Field3D n;
 template <typename T>
 void compare(T a, T b, std::string what){
   for (auto i: a){
-    if (abs(a[i]-b[i])>1e-12){
-      throw BoutException("Error detected in %s at element (%d,%d,%d)\n\tExpected %g but got %g",what.c_str(),i.x,i.y,i.z,a[i],b[i]);
+    if (abs(a[i]-b[i])>1e-13){
+      throw BoutException("Error detected in %s at element (%d,%d,%d)\n\tExpected %.30g but got %.30g",what.c_str(),i.x,i.y,i.z,a[i],b[i]);
     }
   }
 }

@@ -36,49 +36,47 @@
  *
  **************************************************************************/
 
-
 #include "fci.hxx"
 #include "interpolation_factory.hxx"
 #include "parallel_boundary_op.hxx"
 #include "parallel_boundary_region.hxx"
+#include <bout/constants.hxx>
 #include <bout/mesh.hxx>
 #include <bout_types.hxx> // See this for codes
 #include <msg_stack.hxx>
 #include <utils.hxx>
-#include <bout/constants.hxx>
 
 /**
  * Return the sign of val
  */
-inline BoutReal sgn(BoutReal val) {
-    return (BoutReal(0) < val) - (val < BoutReal(0));
-}
+inline BoutReal sgn(BoutReal val) { return (BoutReal(0) < val) - (val < BoutReal(0)); }
 
 // Calculate all the coefficients needed for the spline interpolation
 // dir MUST be either +1 or -1
-FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) :
-  dir(dir), boundary_mask(mesh) , y_prime(&mesh) {
+FCIMap::FCIMap(Mesh &mesh, int dir, bool yperiodic, bool zperiodic)
+    : dir(dir), boundary_mask(mesh), y_prime(&mesh) {
 
   interp = InterpolationFactory::getInstance()->create();
   interp->setYOffset(dir);
 
   // Index arrays contain guard cells in order to get subscripts right
   // x-index of bottom-left grid point
-  int*** i_corner = i3tensor(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz);
+  int ***i_corner = i3tensor(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz);
   // z-index of bottom-left grid point
-  int*** k_corner = i3tensor(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz);
+  int ***k_corner = i3tensor(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz);
 
-  bool x_boundary;     // has the field line left the domain through the x-sides
-  bool y_boundary;     // has the field line left the domain through the y-sides
-  bool z_boundary;     // has the field line left the domain through the z-sides
+  bool x_boundary; // has the field line left the domain through the x-sides
+  bool y_boundary; // has the field line left the domain through the y-sides
+  bool z_boundary; // has the field line left the domain through the z-sides
 
   Field3D xt_prime(&mesh), zt_prime(&mesh);
   Field3D R(&mesh), Z(&mesh); // Real-space coordinates of grid points
-  Field3D R_prime(&mesh), Z_prime(&mesh); // Real-space coordinates of forward/backward points
+  Field3D R_prime(&mesh),
+      Z_prime(&mesh); // Real-space coordinates of forward/backward points
 
   mesh.get(R, "R", 0.0, false);
   mesh.get(Z, "Z", 0.0, false);
-  
+
   // Load the floating point indices from the grid file
   // Future, higher order parallel derivatives could require maps to +/-2 slices
   if (dir == +1) {
@@ -95,7 +93,8 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) :
     boundary = new BoundaryRegionPar("FCI_backward", BNDRY_PAR_BKWD, dir);
   } else {
     // Definitely shouldn't be called
-    throw BoutException("FCIMap called with strange direction: %d. Only +/-1 currently supported.", dir);
+    throw BoutException(
+        "FCIMap called with strange direction: %d. Only +/-1 currently supported.", dir);
   }
 
   // Add the boundary region to the mesh's vector of parallel boundaries
@@ -106,7 +105,7 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) :
   int ncz = mesh.LocalNz;
   BoutReal t_x, t_z;
 
-  Coordinates& coord = *(mesh.coordinates());
+  Coordinates &coord = *(mesh.coordinates());
 
   // Vector in real space
   struct RealVector {
@@ -115,28 +114,27 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) :
     BoutReal z;
   };
 
-  for(int x=mesh.xstart; x<=mesh.xend; x++) {
-    for(int y=mesh.ystart;  y<=mesh.yend; y++) {
-      for(int z=0; z<ncz; z++) {
+  for (int x = mesh.xstart; x <= mesh.xend; x++) {
+    for (int y = mesh.ystart; y <= mesh.yend; y++) {
+      for (int z = 0; z < ncz; z++) {
 
         // Dot product of two vectors
         // Only needed in this function, so use a named lambda
         // Defined inside loop to capture x, y, z
         auto dot = [&](const RealVector &lhs, const RealVector &rhs) {
           BoutReal result;
-          result = lhs.x*rhs.x*coord.g11(x, y)
-          + lhs.y*rhs.y*coord.g22(x, y)
-          + lhs.z*rhs.z*coord.g33(x, y);
-          result += (lhs.x*rhs.y + lhs.y*rhs.x)*coord.g12(x, y)
-          + (lhs.x*rhs.z + lhs.z*rhs.x)*coord.g13(x, y)
-          + (lhs.y*rhs.z + lhs.z*rhs.y)*coord.g23(x, y);
+          result = lhs.x * rhs.x * coord.g11(x, y) + lhs.y * rhs.y * coord.g22(x, y) +
+                   lhs.z * rhs.z * coord.g33(x, y);
+          result += (lhs.x * rhs.y + lhs.y * rhs.x) * coord.g12(x, y) +
+                    (lhs.x * rhs.z + lhs.z * rhs.x) * coord.g13(x, y) +
+                    (lhs.y * rhs.z + lhs.z * rhs.y) * coord.g23(x, y);
 
           return result;
         };
 
         // The integer part of xt_prime, zt_prime are the indices of the cell
         // containing the field line end-point
-        i_corner[x][y][z] = static_cast<int>(floor(xt_prime(x,y,z)));
+        i_corner[x][y][z] = static_cast<int>(floor(xt_prime(x, y, z)));
 
         // z is periodic, so make sure the z-index wraps around
         if (zperiodic) {
@@ -144,16 +142,16 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) :
               zt_prime(x, y, z) -
               ncz * (static_cast<int>(zt_prime(x, y, z) / static_cast<BoutReal>(ncz)));
 
-          if (zt_prime(x,y,z) < 0.0)
-            zt_prime(x,y,z) += ncz;
+          if (zt_prime(x, y, z) < 0.0)
+            zt_prime(x, y, z) += ncz;
         }
 
-        k_corner[x][y][z] = static_cast<int>(floor(zt_prime(x,y,z)));
+        k_corner[x][y][z] = static_cast<int>(floor(zt_prime(x, y, z)));
 
         // t_x, t_z are the normalised coordinates \in [0,1) within the cell
         // calculated by taking the remainder of the floating point index
-        t_x = xt_prime(x,y,z) - static_cast<BoutReal>(i_corner[x][y][z]);
-        t_z = zt_prime(x,y,z) - static_cast<BoutReal>(k_corner[x][y][z]);
+        t_x = xt_prime(x, y, z) - static_cast<BoutReal>(i_corner[x][y][z]);
+        t_z = zt_prime(x, y, z) - static_cast<BoutReal>(k_corner[x][y][z]);
 
         //----------------------------------------
         // Boundary stuff
@@ -161,14 +159,14 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) :
         // If a field line leaves the domain, then the forward or backward
         // indices (forward/backward_xt_prime and forward/backward_zt_prime)
         // are set to -1
-        
-        if (xt_prime(x,y,z) < 0.0) {
+
+        if (xt_prime(x, y, z) < 0.0) {
           // Hit a boundary
 
           boundary_mask(x, y, z) = true;
 
           // Need to specify the index of the boundary intersection, but
-          // this may not be defined in general. 
+          // this may not be defined in general.
           // We do however have the real-space (R,Z) coordinates. Here we extrapolate,
           // using the change in R and Z to calculate the change in (x,z) indices
           //
@@ -179,50 +177,50 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) :
           // (dx,dz) is the change in (x,z) index along the field,
           // and the gradients dR/dx etc. are evaluated at (x,y,z)
 
-          BoutReal dR_dx = 0.5 * ( R(x+1,y,z) - R(x-1,y,z) );
-          BoutReal dZ_dx = 0.5 * ( Z(x+1,y,z) - Z(x-1,y,z) );
+          BoutReal dR_dx = 0.5 * (R(x + 1, y, z) - R(x - 1, y, z));
+          BoutReal dZ_dx = 0.5 * (Z(x + 1, y, z) - Z(x - 1, y, z));
 
           BoutReal dR_dz, dZ_dz;
           // Handle the edge cases in Z
           if (z == 0) {
-            dR_dz = R(x,y,z+1) - R(x,y,z);
-            dZ_dz = Z(x,y,z+1) - Z(x,y,z);
-            
-          } else if (z == mesh.LocalNz-1) {
-            dR_dz = R(x,y,z) - R(x,y,z-1);
-            dZ_dz = Z(x,y,z) - Z(x,y,z-1);
-            
+            dR_dz = R(x, y, z + 1) - R(x, y, z);
+            dZ_dz = Z(x, y, z + 1) - Z(x, y, z);
+
+          } else if (z == mesh.LocalNz - 1) {
+            dR_dz = R(x, y, z) - R(x, y, z - 1);
+            dZ_dz = Z(x, y, z) - Z(x, y, z - 1);
+
           } else {
-            dR_dz = 0.5 * ( R(x,y,z+1) - R(x,y,z-1) );
-            dZ_dz = 0.5 * ( Z(x,y,z+1) - Z(x,y,z-1) );
-            
+            dR_dz = 0.5 * (R(x, y, z + 1) - R(x, y, z - 1));
+            dZ_dz = 0.5 * (Z(x, y, z + 1) - Z(x, y, z - 1));
           }
 
           BoutReal det = dR_dx * dZ_dz - dR_dz * dZ_dx; // Determinant of 2x2 matrix
 
-          BoutReal dR = R_prime(x,y,z) - R(x,y,z);
-          BoutReal dZ = Z_prime(x,y,z) - Z(x,y,z);
+          BoutReal dR = R_prime(x, y, z) - R(x, y, z);
+          BoutReal dZ = Z_prime(x, y, z) - Z(x, y, z);
 
           // Invert 2x2 matrix to get change in index
           BoutReal dx = (dZ_dz * dR - dR_dz * dZ) / det;
           BoutReal dz = (dR_dx * dZ - dZ_dx * dR) / det;
-          
-          boundary->add_point(x, y, z, 
-                              x + dx, y + 0.5*dir, z + dz,  // Intersection point in local index space
-                              0.5*coord.dy(x,y), //sqrt( SQ(dR) + SQ(dZ) ),  // Distance to intersection
-                              PI   // Right-angle intersection
-                              );
+
+          boundary->add_point(
+              x, y, z, x + dx, y + 0.5 * dir,
+              z + dz, // Intersection point in local index space
+              0.5 *
+                  coord.dy(x, y), // sqrt( SQ(dR) + SQ(dZ) ),  // Distance to intersection
+              PI                  // Right-angle intersection
+              );
         }
 
         //----------------------------------------
 
         // Check that t_x and t_z are in range
-        if( (t_x < 0.0) || (t_x > 1.0) )
-          throw BoutException("t_x=%e out of range at (%d,%d,%d)", t_x, x,y,z);
+        if ((t_x < 0.0) || (t_x > 1.0))
+          throw BoutException("t_x=%e out of range at (%d,%d,%d)", t_x, x, y, z);
 
-        if( (t_z < 0.0) || (t_z > 1.0) )
-          throw BoutException("t_z=%e out of range at (%d,%d,%d)", t_z, x,y,z);
-
+        if ((t_z < 0.0) || (t_z > 1.0))
+          throw BoutException("t_z=%e out of range at (%d,%d,%d)", t_z, x, y, z);
       }
     }
   }
@@ -232,7 +230,6 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) :
   free_i3tensor(i_corner);
   free_i3tensor(k_corner);
 }
-
 
 void FCITransform::calcYUpDown(Field3D &f) {
   TRACE("FCITransform::calcYUpDown");
