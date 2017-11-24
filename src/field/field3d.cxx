@@ -44,8 +44,8 @@
 #include <bout/assert.hxx>
 
 /// Constructor
-Field3D::Field3D(Mesh *msh)
-    : Field(msh), background(nullptr), deriv(nullptr), yup_field(nullptr),
+Field3D::Field3D(Mesh *localmesh)
+    : Field(localmesh), background(nullptr), deriv(nullptr), yup_field(nullptr),
       ydown_field(nullptr) {
 #ifdef TRACK
   name = "<F3D>";
@@ -118,8 +118,8 @@ Field3D::Field3D(const Field2D& f)
   *this = f;
 }
 
-Field3D::Field3D(const BoutReal val, Mesh * msh)
-    : background(nullptr), Field(msh), deriv(nullptr), yup_field(nullptr),
+Field3D::Field3D(const BoutReal val, Mesh * localmesh)
+    : background(nullptr), Field(localmesh), deriv(nullptr), yup_field(nullptr),
       ydown_field(nullptr) {
 
   TRACE("Field3D: Copy constructor from value");
@@ -946,16 +946,16 @@ const Field3D filter(const Field3D &var, int N0) {
   
   ASSERT1(var.isAllocated());
 
-  Mesh * msh = var.getMesh();
+  Mesh * localmesh = var.getMesh();
 
-  int ncz = msh->LocalNz;
+  int ncz = localmesh->LocalNz;
   Array<dcomplex> f(ncz/2 + 1);
 
-  Field3D result(msh);
+  Field3D result(localmesh);
   result.allocate();
   
-  for(int jx=0;jx<msh->LocalNx;jx++) {
-    for(int jy=0;jy<msh->LocalNy;jy++) {
+  for(int jx=0;jx<localmesh->LocalNx;jx++) {
+    for(int jy=0;jy<localmesh->LocalNy;jy++) {
 
       rfft(&(var(jx, jy, 0)), ncz, f.begin()); // Forward FFT
 
@@ -986,8 +986,8 @@ const Field3D lowPass(const Field3D &var, int zmax) {
 
   ASSERT1(var.isAllocated());
 
-  Mesh * msh = var.getMesh();
-  int ncz = msh->LocalNz;
+  Mesh * localmesh = var.getMesh();
+  int ncz = localmesh->LocalNz;
   
   // Create an array 
   Array<dcomplex> f(ncz/2 + 1);
@@ -997,11 +997,11 @@ const Field3D lowPass(const Field3D &var, int zmax) {
     return var;
   }
 
-  Field3D result(msh);
+  Field3D result(localmesh);
   result.allocate();
   
-  for(int jx=0;jx<msh->LocalNx;jx++) {
-    for(int jy=0;jy<msh->LocalNy;jy++) {
+  for(int jx=0;jx<localmesh->LocalNx;jx++) {
+    for(int jy=0;jy<localmesh->LocalNy;jy++) {
       // Take FFT in the Z direction
       rfft(&(var(jx,jy,0)), ncz, f.begin());
       
@@ -1023,9 +1023,9 @@ const Field3D lowPass(const Field3D &var, int zmax, int zmin) {
   TRACE("lowPass(Field3D, %d, %d)", zmax, zmin);
 
   ASSERT1(var.isAllocated());
-  Mesh * msh = var.getMesh();
+  Mesh * localmesh = var.getMesh();
 
-  int ncz = msh->LocalNz;
+  int ncz = localmesh->LocalNz;
   Array<dcomplex> f(ncz/2 + 1);
  
   if(((zmax >= ncz/2) || (zmax < 0)) && (zmin < 0)) {
@@ -1033,11 +1033,11 @@ const Field3D lowPass(const Field3D &var, int zmax, int zmin) {
     return var;
   }
 
-  Field3D result(msh);
+  Field3D result(localmesh);
   result.allocate();
   
-  for(int jx=0;jx<msh->LocalNx;jx++) {
-    for(int jy=0;jy<msh->LocalNy;jy++) {
+  for(int jx=0;jx<localmesh->LocalNx;jx++) {
+    for(int jy=0;jy<localmesh->LocalNy;jy++) {
       // Take FFT in the Z direction
       rfft(&(var(jx,jy,0)), ncz, f.begin());
       
@@ -1148,16 +1148,16 @@ const Field3D floor(const Field3D &var, BoutReal f) {
 Field2D DC(const Field3D &f) {
   TRACE("DC(Field3D)");
 
-  Mesh * msh=f.getMesh();
-  Field2D result(msh);
+  Mesh * localmesh=f.getMesh();
+  Field2D result(localmesh);
   result.allocate();
 
-  for(int i=0;i<msh->LocalNx;i++)
-    for(int j=0;j<msh->LocalNy;j++) {
+  for(int i=0;i<localmesh->LocalNx;i++)
+    for(int j=0;j<localmesh->LocalNy;j++) {
       result(i,j) = 0.0;
-      for(int k=0;k<msh->LocalNz;k++)
+      for(int k=0;k<localmesh->LocalNz;k++)
 	result(i,j) += f(i,j,k);
-      result(i,j) /= (msh->LocalNz);
+      result(i,j) /= (localmesh->LocalNz);
     }
   
   return result;

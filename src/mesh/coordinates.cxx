@@ -34,7 +34,7 @@ Coordinates::Coordinates(Mesh *mesh) :
   G3_12(mesh), G3_13(mesh), G3_23(mesh),
   G1(mesh), G2(mesh), G3(mesh),
   ShiftTorsion(mesh), IntShiftTorsion(mesh),
-  msh(mesh)
+  localmesh(mesh)
 {
   
   if (mesh->get(dx, "dx")) {
@@ -521,15 +521,15 @@ int Coordinates::jacobian() {
  *******************************************************************************/
 
 const Field2D Coordinates::DDX(const Field2D &f) {
-  return msh->indexDDX(f) / dx;
+  return localmesh->indexDDX(f) / dx;
 }
 
 const Field2D Coordinates::DDY(const Field2D &f) {
-  return msh->indexDDY(f) / dy;
+  return localmesh->indexDDY(f) / dy;
 }
 
 const Field2D Coordinates::DDZ(const Field2D &UNUSED(f)) {
-  return Field2D(0.0,msh);
+  return Field2D(0.0,localmesh);
 }
 
 #include <derivs.hxx>
@@ -615,8 +615,8 @@ const Field2D Coordinates::Grad2_par2(const Field2D &f) {
 const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc) {
   TRACE("Coordinates::Grad2_par2( Field3D )");
 
-  Field2D sg(msh);
-  Field3D result(msh), r2(msh);
+  Field2D sg(localmesh);
+  Field3D result(localmesh), r2(localmesh);
   
   sg = sqrt(g_22);
   sg = DDY(1. / sg) / sg;
@@ -652,24 +652,24 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
   
   ASSERT2(mesh->xstart > 0); // Need at least one guard cell
   
-  Field3D result(msh);
+  Field3D result(localmesh);
   result.allocate();
   
-  int ncz = msh->LocalNz;
+  int ncz = localmesh->LocalNz;
   
   static dcomplex **ft = (dcomplex**) NULL, **delft;
   if(ft == (dcomplex**) NULL) {
     // Allocate memory
-    ft = matrix<dcomplex>(msh->LocalNx, ncz / 2 + 1);
-    delft = matrix<dcomplex>(msh->LocalNx, ncz / 2 + 1);
+    ft = matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
+    delft = matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
   }
 
   // Loop over all y indices
-  for (int jy = 0; jy < msh->LocalNy; jy++) {
+  for (int jy = 0; jy < localmesh->LocalNy; jy++) {
 
     // Take forward FFT
     
-    for (int jx = 0; jx < msh->LocalNx; jx++)
+    for (int jx = 0; jx < localmesh->LocalNx; jx++)
       rfft(&f(jx,jy,0), ncz, ft[jx]);
 
     // Loop over kz
@@ -677,7 +677,7 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
       dcomplex a, b, c;
 
       // No smoothing in the x direction
-      for (int jx = msh->xstart; jx <= msh->xend; jx++) {
+      for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
 	// Perform x derivative
 	
 	laplace_tridag_coefs(jx, jy, jz, a, b, c);
@@ -687,7 +687,7 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
     }
 
     // Reverse FFT
-    for (int jx = msh->xstart; jx <= msh->xend; jx++) {
+    for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
 
       irfft(delft[jx], ncz, &result(jx, jy, 0));
     }
@@ -712,7 +712,7 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
 const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
   TRACE("Coordinates::Delp2( FieldPerp )");
   
-  FieldPerp result(msh);
+  FieldPerp result(localmesh);
   result.allocate();
 
   static dcomplex **ft = (dcomplex **)NULL, **delft;
@@ -720,23 +720,23 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
   int jy = f.getIndex();
   result.setIndex(jy);
   
-  int ncz = msh->LocalNz;
+  int ncz = localmesh->LocalNz;
   
   if(ft == (dcomplex**) NULL) {
     // Allocate memory
-    ft = matrix<dcomplex>(msh->LocalNx, ncz / 2 + 1);
-    delft = matrix<dcomplex>(msh->LocalNx, ncz / 2 + 1);
+    ft = matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
+    delft = matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
   }
 
   // Take forward FFT
-  for (int jx = 0; jx < msh->LocalNx; jx++)
+  for (int jx = 0; jx < localmesh->LocalNx; jx++)
     rfft(f[jx], ncz, ft[jx]);
 
   // Loop over kz
   for (int jz = 0; jz <= ncz / 2; jz++) {
 
     // No smoothing in the x direction
-    for (int jx = 2; jx < (msh->LocalNx - 2); jx++) {
+    for (int jx = 2; jx < (localmesh->LocalNx - 2); jx++) {
       // Perform x derivative
 
       dcomplex a, b, c;
@@ -747,14 +747,14 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
   }
 
   // Reverse FFT
-  for (int jx = 1; jx < (msh->LocalNx - 1); jx++) {
+  for (int jx = 1; jx < (localmesh->LocalNx - 1); jx++) {
     irfft(delft[jx], ncz, result[jx]);
   }
 
   // Boundaries
   for(int jz=0;jz<ncz;jz++) {
     result(0,jz) = 0.0;
-    result(msh->LocalNx - 1, jz) = 0.0;
+    result(localmesh->LocalNx - 1, jz) = 0.0;
   }
 
   return result;

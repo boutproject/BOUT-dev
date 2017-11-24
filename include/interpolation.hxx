@@ -77,7 +77,7 @@ class HermiteSpline : public Interpolation {
   int*** i_corner;      // x-index of bottom-left grid point
   int*** k_corner;      // z-index of bottom-left grid point
 
-  Mesh * msh;
+  Mesh * localmesh;
   // Basis functions for cubic Hermite spline interpolation
   //    see http://en.wikipedia.org/wiki/Cubic_Hermite_spline
   // The h00 and h01 basis functions are applied to the function itself
