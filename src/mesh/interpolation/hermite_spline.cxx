@@ -27,8 +27,8 @@
 #include <vector>
 
 HermiteSpline::HermiteSpline(int y_offset)
-    : Interpolation(y_offset), msh(nullptr), h00_x(msh), h01_x(msh), h10_x(msh),
-      h11_x(msh), h00_z(msh), h01_z(msh), h10_z(msh), h11_z(msh) {
+    : Interpolation(y_offset), localmesh(nullptr), h00_x(localmesh), h01_x(localmesh), h10_x(localmesh),
+      h11_x(localmesh), h00_z(localmesh), h01_z(localmesh), h10_z(localmesh), h11_z(localmesh) {
 
   // Index arrays contain guard cells in order to get subscripts right
   i_corner = i3tensor(mesh->LocalNx, mesh->LocalNy, mesh->LocalNz);

@@ -18,14 +18,14 @@ void autogen_Field3D_Field3D_Field3D_mul(BoutReal *__restrict__ result,
 // Provide the C++ wrapper for mul of Field3D and Field3D
 Field3D operator*(const Field3D &lhs, const Field3D &rhs) {
   Indices i{0, 0, 0};
-  Mesh *msh = lhs.getMesh();
-  ASSERT1(msh == rhs.getMesh());
-  Field3D result(msh);
+  Mesh *localmesh = lhs.getMesh();
+  ASSERT1(localmesh == rhs.getMesh());
+  Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
   autogen_Field3D_Field3D_Field3D_mul(&result[i], &lhs[i], &rhs[i],
-                                      msh->LocalNx * msh->LocalNy * msh->LocalNz);
+                                      localmesh->LocalNx * localmesh->LocalNy * localmesh->LocalNz);
 #if CHECK > 0
   if (lhs.getLocation() != rhs.getLocation()) {
     throw BoutException(
@@ -51,14 +51,14 @@ void autogen_Field3D_Field3D_Field3D_div(BoutReal *__restrict__ result,
 // Provide the C++ wrapper for div of Field3D and Field3D
 Field3D operator/(const Field3D &lhs, const Field3D &rhs) {
   Indices i{0, 0, 0};
-  Mesh *msh = lhs.getMesh();
-  ASSERT1(msh == rhs.getMesh());
-  Field3D result(msh);
+  Mesh *localmesh = lhs.getMesh();
+  ASSERT1(localmesh == rhs.getMesh());
+  Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
   autogen_Field3D_Field3D_Field3D_div(&result[i], &lhs[i], &rhs[i],
-                                      msh->LocalNx * msh->LocalNy * msh->LocalNz);
+                                      localmesh->LocalNx * localmesh->LocalNy * localmesh->LocalNz);
 #if CHECK > 0
   if (lhs.getLocation() != rhs.getLocation()) {
     throw BoutException(
@@ -84,14 +84,14 @@ void autogen_Field3D_Field3D_Field3D_plus(BoutReal *__restrict__ result,
 // Provide the C++ wrapper for plus of Field3D and Field3D
 Field3D operator+(const Field3D &lhs, const Field3D &rhs) {
   Indices i{0, 0, 0};
-  Mesh *msh = lhs.getMesh();
-  ASSERT1(msh == rhs.getMesh());
-  Field3D result(msh);
+  Mesh *localmesh = lhs.getMesh();
+  ASSERT1(localmesh == rhs.getMesh());
+  Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
   autogen_Field3D_Field3D_Field3D_plus(&result[i], &lhs[i], &rhs[i],
-                                       msh->LocalNx * msh->LocalNy * msh->LocalNz);
+                                       localmesh->LocalNx * localmesh->LocalNy * localmesh->LocalNz);
 #if CHECK > 0
   if (lhs.getLocation() != rhs.getLocation()) {
     throw BoutException(
@@ -117,14 +117,14 @@ void autogen_Field3D_Field3D_Field3D_minus(BoutReal *__restrict__ result,
 // Provide the C++ wrapper for minus of Field3D and Field3D
 Field3D operator-(const Field3D &lhs, const Field3D &rhs) {
   Indices i{0, 0, 0};
-  Mesh *msh = lhs.getMesh();
-  ASSERT1(msh == rhs.getMesh());
-  Field3D result(msh);
+  Mesh *localmesh = lhs.getMesh();
+  ASSERT1(localmesh == rhs.getMesh());
+  Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
   autogen_Field3D_Field3D_Field3D_minus(&result[i], &lhs[i], &rhs[i],
-                                        msh->LocalNx * msh->LocalNy * msh->LocalNz);
+                                        localmesh->LocalNx * localmesh->LocalNy * localmesh->LocalNz);
 #if CHECK > 0
   if (lhs.getLocation() != rhs.getLocation()) {
     throw BoutException(
@@ -153,14 +153,14 @@ void autogen_Field3D_Field3D_Field2D_mul(BoutReal *__restrict__ result,
 // Provide the C++ wrapper for mul of Field3D and Field2D
 Field3D operator*(const Field3D &lhs, const Field2D &rhs) {
   Indices i{0, 0, 0};
-  Mesh *msh = lhs.getMesh();
-  ASSERT1(msh == rhs.getMesh());
-  Field3D result(msh);
+  Mesh *localmesh = lhs.getMesh();
+  ASSERT1(localmesh == rhs.getMesh());
+  Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field3D_Field3D_Field2D_mul(&result[i], &lhs[i], &rhs[i], msh->LocalNx,
-                                      msh->LocalNy, msh->LocalNz);
+  autogen_Field3D_Field3D_Field2D_mul(&result[i], &lhs[i], &rhs[i], localmesh->LocalNx,
+                                      localmesh->LocalNy, localmesh->LocalNz);
   result.setLocation(lhs.getLocation());
   checkData(result);
   return result;
@@ -182,14 +182,14 @@ void autogen_Field3D_Field3D_Field2D_div(BoutReal *__restrict__ result,
 // Provide the C++ wrapper for div of Field3D and Field2D
 Field3D operator/(const Field3D &lhs, const Field2D &rhs) {
   Indices i{0, 0, 0};
-  Mesh *msh = lhs.getMesh();
-  ASSERT1(msh == rhs.getMesh());
-  Field3D result(msh);
+  Mesh *localmesh = lhs.getMesh();
+  ASSERT1(localmesh == rhs.getMesh());
+  Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field3D_Field3D_Field2D_div(&result[i], &lhs[i], &rhs[i], msh->LocalNx,
-                                      msh->LocalNy, msh->LocalNz);
+  autogen_Field3D_Field3D_Field2D_div(&result[i], &lhs[i], &rhs[i], localmesh->LocalNx,
+                                      localmesh->LocalNy, localmesh->LocalNz);
   result.setLocation(lhs.getLocation());
   checkData(result);
   return result;
@@ -211,14 +211,14 @@ void autogen_Field3D_Field3D_Field2D_plus(BoutReal *__restrict__ result,
 // Provide the C++ wrapper for plus of Field3D and Field2D
 Field3D operator+(const Field3D &lhs, const Field2D &rhs) {
   Indices i{0, 0, 0};
-  Mesh *msh = lhs.getMesh();
-  ASSERT1(msh == rhs.getMesh());
-  Field3D result(msh);
+  Mesh *localmesh = lhs.getMesh();
+  ASSERT1(localmesh == rhs.getMesh());
+  Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field3D_Field3D_Field2D_plus(&result[i], &lhs[i], &rhs[i], msh->LocalNx,
-                                       msh->LocalNy, msh->LocalNz);
+  autogen_Field3D_Field3D_Field2D_plus(&result[i], &lhs[i], &rhs[i], localmesh->LocalNx,
+                                       localmesh->LocalNy, localmesh->LocalNz);
   result.setLocation(lhs.getLocation());
   checkData(result);
   return result;
@@ -240,14 +240,14 @@ void autogen_Field3D_Field3D_Field2D_minus(BoutReal *__restrict__ result,
 // Provide the C++ wrapper for minus of Field3D and Field2D
 Field3D operator-(const Field3D &lhs, const Field2D &rhs) {
   Indices i{0, 0, 0};
-  Mesh *msh = lhs.getMesh();
-  ASSERT1(msh == rhs.getMesh());
-  Field3D result(msh);
+  Mesh *localmesh = lhs.getMesh();
+  ASSERT1(localmesh == rhs.getMesh());
+  Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field3D_Field3D_Field2D_minus(&result[i], &lhs[i], &rhs[i], msh->LocalNx,
-                                        msh->LocalNy, msh->LocalNz);
+  autogen_Field3D_Field3D_Field2D_minus(&result[i], &lhs[i], &rhs[i], localmesh->LocalNx,
+                                        localmesh->LocalNy, localmesh->LocalNz);
   result.setLocation(lhs.getLocation());
   checkData(result);
   return result;
@@ -266,13 +266,13 @@ void autogen_Field3D_Field3D_BoutReal_mul(BoutReal *__restrict__ result,
 // Provide the C++ wrapper for mul of Field3D and BoutReal
 Field3D operator*(const Field3D &lhs, const BoutReal rhs) {
   Indices i{0, 0, 0};
-  Mesh *msh = lhs.getMesh();
-  Field3D result(msh);
+  Mesh *localmesh = lhs.getMesh();
+  Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
   autogen_Field3D_Field3D_BoutReal_mul(&result[i], &lhs[i], rhs,
-                                       msh->LocalNx * msh->LocalNy * msh->LocalNz);
+                                       localmesh->LocalNx * localmesh->LocalNy * localmesh->LocalNz);
   result.setLocation(lhs.getLocation());
   checkData(result);
   return result;
@@ -291,13 +291,13 @@ void autogen_Field3D_Field3D_BoutReal_div(BoutReal *__restrict__ result,
 // Provide the C++ wrapper for div of Field3D and BoutReal
 Field3D operator/(const Field3D &lhs, const BoutReal rhs) {
   Indices i{0, 0, 0};
-  Mesh *msh = lhs.getMesh();
-  Field3D result(msh);
+  Mesh *localmesh = lhs.getMesh();
+  Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
   autogen_Field3D_Field3D_BoutReal_div(&result[i], &lhs[i], rhs,
-                                       msh->LocalNx * msh->LocalNy * msh->LocalNz);
+                                       localmesh->LocalNx * localmesh->LocalNy * localmesh->LocalNz);
   result.setLocation(lhs.getLocation());
   checkData(result);
   return result;
@@ -316,13 +316,13 @@ void autogen_Field3D_Field3D_BoutReal_plus(BoutReal *__restrict__ result,
 // Provide the C++ wrapper for plus of Field3D and BoutReal
 Field3D operator+(const Field3D &lhs, const BoutReal rhs) {
   Indices i{0, 0, 0};
-  Mesh *msh = lhs.getMesh();
-  Field3D result(msh);
+  Mesh *localmesh = lhs.getMesh();
+  Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
   autogen_Field3D_Field3D_BoutReal_plus(&result[i], &lhs[i], rhs,
-                                        msh->LocalNx * msh->LocalNy * msh->LocalNz);
+                                        localmesh->LocalNx * localmesh->LocalNy * localmesh->LocalNz);
   result.setLocation(lhs.getLocation());
   checkData(result);
   return result;
@@ -341,13 +341,13 @@ void autogen_Field3D_Field3D_BoutReal_minus(BoutReal *__restrict__ result,
 // Provide the C++ wrapper for minus of Field3D and BoutReal
 Field3D operator-(const Field3D &lhs, const BoutReal rhs) {
   Indices i{0, 0, 0};
-  Mesh *msh = lhs.getMesh();
-  Field3D result(msh);
+  Mesh *localmesh = lhs.getMesh();
+  Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
   autogen_Field3D_Field3D_BoutReal_minus(&result[i], &lhs[i], rhs,
-                                         msh->LocalNx * msh->LocalNy * msh->LocalNz);
+                                         localmesh->LocalNx * localmesh->LocalNy * localmesh->LocalNz);
   result.setLocation(lhs.getLocation());
   checkData(result);
   return result;
@@ -369,14 +369,14 @@ void autogen_Field3D_Field2D_Field3D_mul(BoutReal *__restrict__ result,
 // Provide the C++ wrapper for mul of Field2D and Field3D
 Field3D operator*(const Field2D &lhs, const Field3D &rhs) {
   Indices i{0, 0, 0};
-  Mesh *msh = lhs.getMesh();
-  ASSERT1(msh == rhs.getMesh());
-  Field3D result(msh);
+  Mesh *localmesh = lhs.getMesh();
+  ASSERT1(localmesh == rhs.getMesh());
+  Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field3D_Field2D_Field3D_mul(&result[i], &lhs[i], &rhs[i], msh->LocalNx,
-                                      msh->LocalNy, msh->LocalNz);
+  autogen_Field3D_Field2D_Field3D_mul(&result[i], &lhs[i], &rhs[i], localmesh->LocalNx,
+                                      localmesh->LocalNy, localmesh->LocalNz);
   result.setLocation(rhs.getLocation());
   checkData(result);
   return result;
@@ -398,14 +398,14 @@ void autogen_Field3D_Field2D_Field3D_div(BoutReal *__restrict__ result,
 // Provide the C++ wrapper for div of Field2D and Field3D
 Field3D operator/(const Field2D &lhs, const Field3D &rhs) {
   Indices i{0, 0, 0};
-  Mesh *msh = lhs.getMesh();
-  ASSERT1(msh == rhs.getMesh());
-  Field3D result(msh);
+  Mesh *localmesh = lhs.getMesh();
+  ASSERT1(localmesh == rhs.getMesh());
+  Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field3D_Field2D_Field3D_div(&result[i], &lhs[i], &rhs[i], msh->LocalNx,
-                                      msh->LocalNy, msh->LocalNz);
+  autogen_Field3D_Field2D_Field3D_div(&result[i], &lhs[i], &rhs[i], localmesh->LocalNx,
+                                      localmesh->LocalNy, localmesh->LocalNz);
   result.setLocation(rhs.getLocation());
   checkData(result);
   return result;
@@ -427,14 +427,14 @@ void autogen_Field3D_Field2D_Field3D_plus(BoutReal *__restrict__ result,
 // Provide the C++ wrapper for plus of Field2D and Field3D
 Field3D operator+(const Field2D &lhs, const Field3D &rhs) {
   Indices i{0, 0, 0};
-  Mesh *msh = lhs.getMesh();
-  ASSERT1(msh == rhs.getMesh());
-  Field3D result(msh);
+  Mesh *localmesh = lhs.getMesh();
+  ASSERT1(localmesh == rhs.getMesh());
+  Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field3D_Field2D_Field3D_plus(&result[i], &lhs[i], &rhs[i], msh->LocalNx,
-                                       msh->LocalNy, msh->LocalNz);
+  autogen_Field3D_Field2D_Field3D_plus(&result[i], &lhs[i], &rhs[i], localmesh->LocalNx,
+                                       localmesh->LocalNy, localmesh->LocalNz);
   result.setLocation(rhs.getLocation());
   checkData(result);
   return result;
@@ -456,14 +456,14 @@ void autogen_Field3D_Field2D_Field3D_minus(BoutReal *__restrict__ result,
 // Provide the C++ wrapper for minus of Field2D and Field3D
 Field3D operator-(const Field2D &lhs, const Field3D &rhs) {
   Indices i{0, 0, 0};
-  Mesh *msh = lhs.getMesh();
-  ASSERT1(msh == rhs.getMesh());
-  Field3D result(msh);
+  Mesh *localmesh = lhs.getMesh();
+  ASSERT1(localmesh == rhs.getMesh());
+  Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field3D_Field2D_Field3D_minus(&result[i], &lhs[i], &rhs[i], msh->LocalNx,
-                                        msh->LocalNy, msh->LocalNz);
+  autogen_Field3D_Field2D_Field3D_minus(&result[i], &lhs[i], &rhs[i], localmesh->LocalNx,
+                                        localmesh->LocalNy, localmesh->LocalNz);
   result.setLocation(rhs.getLocation());
   checkData(result);
   return result;
@@ -482,14 +482,14 @@ void autogen_Field2D_Field2D_Field2D_mul(BoutReal *__restrict__ result,
 // Provide the C++ wrapper for mul of Field2D and Field2D
 Field2D operator*(const Field2D &lhs, const Field2D &rhs) {
   Indices i{0, 0, 0};
-  Mesh *msh = lhs.getMesh();
-  ASSERT1(msh == rhs.getMesh());
-  Field2D result(msh);
+  Mesh *localmesh = lhs.getMesh();
+  ASSERT1(localmesh == rhs.getMesh());
+  Field2D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
   autogen_Field2D_Field2D_Field2D_mul(&result[i], &lhs[i], &rhs[i],
-                                      msh->LocalNx * msh->LocalNy);
+                                      localmesh->LocalNx * localmesh->LocalNy);
   checkData(result);
   return result;
 }
@@ -507,14 +507,14 @@ void autogen_Field2D_Field2D_Field2D_div(BoutReal *__restrict__ result,
 // Provide the C++ wrapper for div of Field2D and Field2D
 Field2D operator/(const Field2D &lhs, const Field2D &rhs) {
   Indices i{0, 0, 0};
-  Mesh *msh = lhs.getMesh();
-  ASSERT1(msh == rhs.getMesh());
-  Field2D result(msh);
+  Mesh *localmesh = lhs.getMesh();
+  ASSERT1(localmesh == rhs.getMesh());
+  Field2D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
   autogen_Field2D_Field2D_Field2D_div(&result[i], &lhs[i], &rhs[i],
-                                      msh->LocalNx * msh->LocalNy);
+                                      localmesh->LocalNx * localmesh->LocalNy);
   checkData(result);
   return result;
 }
@@ -532,14 +532,14 @@ void autogen_Field2D_Field2D_Field2D_plus(BoutReal *__restrict__ result,
 // Provide the C++ wrapper for plus of Field2D and Field2D
 Field2D operator+(const Field2D &lhs, const Field2D &rhs) {
   Indices i{0, 0, 0};
-  Mesh *msh = lhs.getMesh();
-  ASSERT1(msh == rhs.getMesh());
-  Field2D result(msh);
+  Mesh *localmesh = lhs.getMesh();
+  ASSERT1(localmesh == rhs.getMesh());
+  Field2D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
   autogen_Field2D_Field2D_Field2D_plus(&result[i], &lhs[i], &rhs[i],
-                                       msh->LocalNx * msh->LocalNy);
+                                       localmesh->LocalNx * localmesh->LocalNy);
   checkData(result);
   return result;
 }
@@ -557,14 +557,14 @@ void autogen_Field2D_Field2D_Field2D_minus(BoutReal *__restrict__ result,
 // Provide the C++ wrapper for minus of Field2D and Field2D
 Field2D operator-(const Field2D &lhs, const Field2D &rhs) {
   Indices i{0, 0, 0};
-  Mesh *msh = lhs.getMesh();
-  ASSERT1(msh == rhs.getMesh());
-  Field2D result(msh);
+  Mesh *localmesh = lhs.getMesh();
+  ASSERT1(localmesh == rhs.getMesh());
+  Field2D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
   autogen_Field2D_Field2D_Field2D_minus(&result[i], &lhs[i], &rhs[i],
-                                        msh->LocalNx * msh->LocalNy);
+                                        localmesh->LocalNx * localmesh->LocalNy);
   checkData(result);
   return result;
 }
@@ -582,13 +582,13 @@ void autogen_Field2D_Field2D_BoutReal_mul(BoutReal *__restrict__ result,
 // Provide the C++ wrapper for mul of Field2D and BoutReal
 Field2D operator*(const Field2D &lhs, const BoutReal rhs) {
   Indices i{0, 0, 0};
-  Mesh *msh = lhs.getMesh();
-  Field2D result(msh);
+  Mesh *localmesh = lhs.getMesh();
+  Field2D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
   autogen_Field2D_Field2D_BoutReal_mul(&result[i], &lhs[i], rhs,
-                                       msh->LocalNx * msh->LocalNy);
+                                       localmesh->LocalNx * localmesh->LocalNy);
   checkData(result);
   return result;
 }
@@ -606,13 +606,13 @@ void autogen_Field2D_Field2D_BoutReal_div(BoutReal *__restrict__ result,
 // Provide the C++ wrapper for div of Field2D and BoutReal
 Field2D operator/(const Field2D &lhs, const BoutReal rhs) {
   Indices i{0, 0, 0};
-  Mesh *msh = lhs.getMesh();
-  Field2D result(msh);
+  Mesh *localmesh = lhs.getMesh();
+  Field2D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
   autogen_Field2D_Field2D_BoutReal_div(&result[i], &lhs[i], rhs,
-                                       msh->LocalNx * msh->LocalNy);
+                                       localmesh->LocalNx * localmesh->LocalNy);
   checkData(result);
   return result;
 }
@@ -630,13 +630,13 @@ void autogen_Field2D_Field2D_BoutReal_plus(BoutReal *__restrict__ result,
 // Provide the C++ wrapper for plus of Field2D and BoutReal
 Field2D operator+(const Field2D &lhs, const BoutReal rhs) {
   Indices i{0, 0, 0};
-  Mesh *msh = lhs.getMesh();
-  Field2D result(msh);
+  Mesh *localmesh = lhs.getMesh();
+  Field2D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
   autogen_Field2D_Field2D_BoutReal_plus(&result[i], &lhs[i], rhs,
-                                        msh->LocalNx * msh->LocalNy);
+                                        localmesh->LocalNx * localmesh->LocalNy);
   checkData(result);
   return result;
 }
@@ -654,13 +654,13 @@ void autogen_Field2D_Field2D_BoutReal_minus(BoutReal *__restrict__ result,
 // Provide the C++ wrapper for minus of Field2D and BoutReal
 Field2D operator-(const Field2D &lhs, const BoutReal rhs) {
   Indices i{0, 0, 0};
-  Mesh *msh = lhs.getMesh();
-  Field2D result(msh);
+  Mesh *localmesh = lhs.getMesh();
+  Field2D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
   autogen_Field2D_Field2D_BoutReal_minus(&result[i], &lhs[i], rhs,
-                                         msh->LocalNx * msh->LocalNy);
+                                         localmesh->LocalNx * localmesh->LocalNy);
   checkData(result);
   return result;
 }
@@ -678,13 +678,13 @@ void autogen_Field3D_BoutReal_Field3D_mul(BoutReal *__restrict__ result,
 // Provide the C++ wrapper for mul of BoutReal and Field3D
 Field3D operator*(const BoutReal lhs, const Field3D &rhs) {
   Indices i{0, 0, 0};
-  Mesh *msh = rhs.getMesh();
-  Field3D result(msh);
+  Mesh *localmesh = rhs.getMesh();
+  Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
   autogen_Field3D_BoutReal_Field3D_mul(&result[i], lhs, &rhs[i],
-                                       msh->LocalNx * msh->LocalNy * msh->LocalNz);
+                                       localmesh->LocalNx * localmesh->LocalNy * localmesh->LocalNz);
   result.setLocation(rhs.getLocation());
   checkData(result);
   return result;
@@ -703,13 +703,13 @@ void autogen_Field3D_BoutReal_Field3D_div(BoutReal *__restrict__ result,
 // Provide the C++ wrapper for div of BoutReal and Field3D
 Field3D operator/(const BoutReal lhs, const Field3D &rhs) {
   Indices i{0, 0, 0};
-  Mesh *msh = rhs.getMesh();
-  Field3D result(msh);
+  Mesh *localmesh = rhs.getMesh();
+  Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
   autogen_Field3D_BoutReal_Field3D_div(&result[i], lhs, &rhs[i],
-                                       msh->LocalNx * msh->LocalNy * msh->LocalNz);
+                                       localmesh->LocalNx * localmesh->LocalNy * localmesh->LocalNz);
   result.setLocation(rhs.getLocation());
   checkData(result);
   return result;
@@ -728,13 +728,13 @@ void autogen_Field3D_BoutReal_Field3D_plus(BoutReal *__restrict__ result,
 // Provide the C++ wrapper for plus of BoutReal and Field3D
 Field3D operator+(const BoutReal lhs, const Field3D &rhs) {
   Indices i{0, 0, 0};
-  Mesh *msh = rhs.getMesh();
-  Field3D result(msh);
+  Mesh *localmesh = rhs.getMesh();
+  Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
   autogen_Field3D_BoutReal_Field3D_plus(&result[i], lhs, &rhs[i],
-                                        msh->LocalNx * msh->LocalNy * msh->LocalNz);
+                                        localmesh->LocalNx * localmesh->LocalNy * localmesh->LocalNz);
   result.setLocation(rhs.getLocation());
   checkData(result);
   return result;
@@ -753,13 +753,13 @@ void autogen_Field3D_BoutReal_Field3D_minus(BoutReal *__restrict__ result,
 // Provide the C++ wrapper for minus of BoutReal and Field3D
 Field3D operator-(const BoutReal lhs, const Field3D &rhs) {
   Indices i{0, 0, 0};
-  Mesh *msh = rhs.getMesh();
-  Field3D result(msh);
+  Mesh *localmesh = rhs.getMesh();
+  Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
   autogen_Field3D_BoutReal_Field3D_minus(&result[i], lhs, &rhs[i],
-                                         msh->LocalNx * msh->LocalNy * msh->LocalNz);
+                                         localmesh->LocalNx * localmesh->LocalNy * localmesh->LocalNz);
   result.setLocation(rhs.getLocation());
   checkData(result);
   return result;
@@ -778,13 +778,13 @@ void autogen_Field2D_BoutReal_Field2D_mul(BoutReal *__restrict__ result,
 // Provide the C++ wrapper for mul of BoutReal and Field2D
 Field2D operator*(const BoutReal lhs, const Field2D &rhs) {
   Indices i{0, 0, 0};
-  Mesh *msh = rhs.getMesh();
-  Field2D result(msh);
+  Mesh *localmesh = rhs.getMesh();
+  Field2D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
   autogen_Field2D_BoutReal_Field2D_mul(&result[i], lhs, &rhs[i],
-                                       msh->LocalNx * msh->LocalNy);
+                                       localmesh->LocalNx * localmesh->LocalNy);
   checkData(result);
   return result;
 }
@@ -802,13 +802,13 @@ void autogen_Field2D_BoutReal_Field2D_div(BoutReal *__restrict__ result,
 // Provide the C++ wrapper for div of BoutReal and Field2D
 Field2D operator/(const BoutReal lhs, const Field2D &rhs) {
   Indices i{0, 0, 0};
-  Mesh *msh = rhs.getMesh();
-  Field2D result(msh);
+  Mesh *localmesh = rhs.getMesh();
+  Field2D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
   autogen_Field2D_BoutReal_Field2D_div(&result[i], lhs, &rhs[i],
-                                       msh->LocalNx * msh->LocalNy);
+                                       localmesh->LocalNx * localmesh->LocalNy);
   checkData(result);
   return result;
 }
@@ -826,13 +826,13 @@ void autogen_Field2D_BoutReal_Field2D_plus(BoutReal *__restrict__ result,
 // Provide the C++ wrapper for plus of BoutReal and Field2D
 Field2D operator+(const BoutReal lhs, const Field2D &rhs) {
   Indices i{0, 0, 0};
-  Mesh *msh = rhs.getMesh();
-  Field2D result(msh);
+  Mesh *localmesh = rhs.getMesh();
+  Field2D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
   autogen_Field2D_BoutReal_Field2D_plus(&result[i], lhs, &rhs[i],
-                                        msh->LocalNx * msh->LocalNy);
+                                        localmesh->LocalNx * localmesh->LocalNy);
   checkData(result);
   return result;
 }
@@ -850,13 +850,13 @@ void autogen_Field2D_BoutReal_Field2D_minus(BoutReal *__restrict__ result,
 // Provide the C++ wrapper for minus of BoutReal and Field2D
 Field2D operator-(const BoutReal lhs, const Field2D &rhs) {
   Indices i{0, 0, 0};
-  Mesh *msh = rhs.getMesh();
-  Field2D result(msh);
+  Mesh *localmesh = rhs.getMesh();
+  Field2D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
   autogen_Field2D_BoutReal_Field2D_minus(&result[i], lhs, &rhs[i],
-                                         msh->LocalNx * msh->LocalNy);
+                                         localmesh->LocalNx * localmesh->LocalNy);
   checkData(result);
   return result;
 }
