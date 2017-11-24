@@ -43,7 +43,7 @@
 // Smooth using simple 1-2-1 filter
 const Field3D smooth_x(const Field3D &f) {
   TRACE("smooth_x");
-  Mesh * mesh = f.getMesh();
+  Mesh *mesh = f.getMesh();
   Field3D result(mesh);
   result.allocate();
   
@@ -71,7 +71,7 @@ const Field3D smooth_x(const Field3D &f) {
 
 const Field3D smooth_y(const Field3D &f) {
   TRACE("smooth_y");
-  Mesh * mesh = f.getMesh();
+  Mesh *mesh = f.getMesh();
   Field3D result(mesh);
   result.allocate();
   
@@ -108,8 +108,8 @@ const Field3D smooth_y(const Field3D &f) {
  */
 const Field2D averageX(const Field2D &f) {
   TRACE("averageX(Field2D)");
-  Mesh * mesh = f.getMesh();
- 
+  Mesh *mesh = f.getMesh();
+
   int ngx = mesh->LocalNx;
   int ngy = mesh->LocalNy;
 
@@ -166,7 +166,7 @@ const Field3D averageX(const Field3D &f) {
   TRACE("averageX(Field3D)");
 
   static BoutReal **input = NULL, **result;
-  Mesh * mesh = f.getMesh();
+  Mesh *mesh = f.getMesh();
 
   int ngx = mesh->LocalNx;
   int ngy = mesh->LocalNy;
@@ -187,7 +187,7 @@ const Field3D averageX(const Field3D &f) {
       }
       input[y][z] /= (mesh->xend - mesh->xstart + 1);
     }
-  
+
   Field3D r(mesh);
   r.allocate();
   
@@ -217,7 +217,7 @@ const Field3D averageX(const Field3D &f) {
 const Field2D averageY(const Field2D &f) {
   TRACE("averageY(Field2D)");
 
-  Mesh * mesh = f.getMesh();
+  Mesh *mesh = f.getMesh();
   int ngx = mesh->LocalNx;
   int ngy = mesh->LocalNy;
 
@@ -260,7 +260,7 @@ const Field3D averageY(const Field3D &f) {
   TRACE("averageY(Field3D)");
 
   static BoutReal **input = NULL, **result;
-  Mesh * mesh = f.getMesh();
+  Mesh *mesh = f.getMesh();
 
   int ngx = mesh->LocalNx;
   int ngy = mesh->LocalNy;
@@ -281,7 +281,7 @@ const Field3D averageY(const Field3D &f) {
       }
       input[x][z] /= (mesh->yend - mesh->ystart + 1);
     }
-  
+
   Field3D r(mesh);
   r.allocate();
 
@@ -311,10 +311,10 @@ const Field3D averageY(const Field3D &f) {
 
 
 BoutReal Average_XY(const Field2D &var) {
-  Mesh * mesh = var.getMesh();
+  Mesh *mesh = var.getMesh();
   BoutReal Vol_Loc, Vol_Glb;
   int i;
-  Field2D result=averageY(var);
+  Field2D result = averageY(var);
 
   Vol_Loc = 0.;
   Vol_Glb = 0.;
@@ -331,10 +331,10 @@ BoutReal Average_XY(const Field2D &var) {
 }
 
 BoutReal Vol_Integral(const Field2D &var) {
-  Mesh * mesh = var.getMesh();
+  Mesh *mesh = var.getMesh();
   BoutReal Int_Glb;
   Coordinates *metric = mesh->coordinates();
-  
+
   Field2D result = metric->J * var * metric->dx * metric->dy;
 
   Int_Glb = Average_XY(result);
@@ -344,7 +344,7 @@ BoutReal Vol_Integral(const Field2D &var) {
 }
 
 const Field3D smoothXY(const Field3D &f) {
-  Mesh * mesh = f.getMesh();
+  Mesh *mesh = f.getMesh();
   Field3D result(mesh);
   result.allocate();
 
@@ -390,8 +390,8 @@ void nl_filter(rvec &f, BoutReal w) {
 
 const Field3D nl_filter_x(const Field3D &f, BoutReal w) {
   TRACE("nl_filter_x( Field3D )");
-  Mesh * mesh = f.getMesh();
-  
+  Mesh *mesh = f.getMesh();
+
   Field3D result(mesh);
   result.allocate();
   rvec v(mesh->LocalNx);
@@ -414,7 +414,7 @@ const Field3D nl_filter_x(const Field3D &f, BoutReal w) {
 const Field3D nl_filter_y(const Field3D &f, BoutReal w) {
   TRACE("nl_filter_x( Field3D )");
 
-  Mesh * mesh = f.getMesh();  
+  Mesh *mesh = f.getMesh();
   Field3D result(mesh);
   result.allocate();
 
@@ -442,7 +442,7 @@ const Field3D nl_filter_y(const Field3D &f, BoutReal w) {
 const Field3D nl_filter_z(const Field3D &fs, BoutReal w) {
   TRACE("nl_filter_z( Field3D )");
 
-  Mesh * mesh = fs.getMesh();  
+  Mesh *mesh = fs.getMesh();
   Field3D result(mesh);
   result.allocate();
   

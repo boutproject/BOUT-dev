@@ -506,16 +506,12 @@ int Coordinates::jacobian() {
  *
  *******************************************************************************/
 
-const Field2D Coordinates::DDX(const Field2D &f) {
-  return localmesh->indexDDX(f) / dx;
-}
+const Field2D Coordinates::DDX(const Field2D &f) { return localmesh->indexDDX(f) / dx; }
 
-const Field2D Coordinates::DDY(const Field2D &f) {
-  return localmesh->indexDDY(f) / dy;
-}
+const Field2D Coordinates::DDY(const Field2D &f) { return localmesh->indexDDY(f) / dy; }
 
 const Field2D Coordinates::DDZ(const Field2D &UNUSED(f)) {
-  return Field2D(0.0,localmesh);
+  return Field2D(0.0, localmesh);
 }
 
 #include <derivs.hxx>
@@ -603,7 +599,7 @@ const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc) {
 
   Field2D sg(localmesh);
   Field3D result(localmesh), r2(localmesh);
-  
+
   sg = sqrt(g_22);
   sg = DDY(1. / sg) / sg;
   if (sg.getLocation() != outloc) {
@@ -697,7 +693,7 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
 
 const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
   TRACE("Coordinates::Delp2( FieldPerp )");
-  
+
   FieldPerp result(localmesh);
   result.allocate();
 

@@ -75,8 +75,8 @@ LaplaceShoot::~LaplaceShoot() {
 }
 
 const FieldPerp LaplaceShoot::solve(const FieldPerp &rhs) {
-  Mesh * mesh = rhs.getMesh();
-  FieldPerp x(mesh);  // Result
+  Mesh *mesh = rhs.getMesh();
+  FieldPerp x(mesh); // Result
   x.allocate();
   
   int jy = rhs.getIndex();  // Get the Y index

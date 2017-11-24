@@ -1124,7 +1124,7 @@ void Solver::set_id(BoutReal *udata) {
  *
  */
 const Field3D Solver::globalIndex(int localStart) {
-  Field3D index(-1,mesh); // Set to -1, indicating out of domain
+  Field3D index(-1, mesh); // Set to -1, indicating out of domain
 
   int n2d = f2d.size();
   int n3d = f3d.size();

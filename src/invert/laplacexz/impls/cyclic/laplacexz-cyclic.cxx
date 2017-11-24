@@ -11,19 +11,19 @@
 LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options) : LaplaceXZ(m, options), mesh(m) {
 
   // Number of Z Fourier modes, including DC
-  nmode = (m->LocalNz)/2 + 1;
+  nmode = (m->LocalNz) / 2 + 1;
 
   // Number of independent systems of
   // equations to solve
-  nsys = nmode * (m->yend - m->ystart+1);
+  nsys = nmode * (m->yend - m->ystart + 1);
 
   // Start and end X index
   xstart = m->xstart; // Starting X index
-  if(m->firstX()) {
+  if (m->firstX()) {
     xstart -= 1;
   }
   xend = m->xend;
-  if(m->lastX()) {
+  if (m->lastX()) {
     xend += 1;
   }
 
@@ -37,8 +37,8 @@ LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options) : LaplaceXZ(m, optio
   xcmplx = matrix<dcomplex>(nsys, nloc);
   rhscmplx = matrix<dcomplex>(nsys, nloc);
 
-  k1d = new dcomplex[(m->LocalNz)/2 + 1];
-  k1d_2 = new dcomplex[(m->LocalNz)/2 + 1];
+  k1d = new dcomplex[(m->LocalNz) / 2 + 1];
+  k1d_2 = new dcomplex[(m->LocalNz) / 2 + 1];
 
   // Create a cyclic reduction object, operating on dcomplex values
   cr = new CyclicReduce<dcomplex>(mesh->getXcomm(), nloc);
@@ -168,7 +168,7 @@ void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
 Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &x0) {
   Timer timer("invert");
 
-  Mesh * mesh = rhs.getMesh();
+  Mesh *mesh = rhs.getMesh();
   // Create the rhs array
   int ind = 0;
   for(int y=mesh->ystart; y <= mesh->yend; y++) {

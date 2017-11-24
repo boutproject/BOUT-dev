@@ -27,8 +27,8 @@
 #include <string>
 #include <vector>
 
-Bilinear::Bilinear(int y_offset, Mesh * mesh) :
-  Interpolation(y_offset) , w0(mesh),w1(mesh),w2(mesh),w3(mesh){
+Bilinear::Bilinear(int y_offset, Mesh *mesh)
+    : Interpolation(y_offset), w0(mesh), w1(mesh), w2(mesh), w3(mesh) {
 
   // Index arrays contain guard cells in order to get subscripts right
   i_corner = i3tensor(mesh->LocalNx, mesh->LocalNy, mesh->LocalNz);
@@ -83,7 +83,7 @@ void Bilinear::calcWeights(const Field3D &delta_x, const Field3D &delta_z, BoutM
 }
 
 Field3D Bilinear::interpolate(const Field3D& f) const {
-  Mesh * mesh = f.getMesh();
+  Mesh *mesh = f.getMesh();
   Field3D f_interp(mesh);
   f_interp.allocate();
 

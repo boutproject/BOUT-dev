@@ -71,7 +71,7 @@ InvertParSerial::~InvertParSerial() {
 
 const Field3D InvertParSerial::solve(const Field3D &f) {
   TRACE("InvertParSerial::solve(Field3D)");
-  
+
   Field3D result(f.getMesh());
   result.allocate();
   

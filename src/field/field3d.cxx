@@ -101,8 +101,8 @@ Field3D::Field3D(const Field3D &f)
 }
 
 Field3D::Field3D(const Field2D &f)
-    : background(nullptr), Field(f.getMesh()), deriv(nullptr),
-      yup_field(nullptr), ydown_field(nullptr) {
+    : background(nullptr), Field(f.getMesh()), deriv(nullptr), yup_field(nullptr),
+      ydown_field(nullptr) {
 
   TRACE("Field3D: Copy constructor from Field2D");
 
@@ -118,7 +118,7 @@ Field3D::Field3D(const Field2D &f)
   *this = f;
 }
 
-Field3D::Field3D(const BoutReal val, Mesh * localmesh)
+Field3D::Field3D(const BoutReal val, Mesh *localmesh)
     : background(nullptr), Field(localmesh), deriv(nullptr), yup_field(nullptr),
       ydown_field(nullptr) {
 
@@ -887,7 +887,7 @@ Field3D pow(const Field3D &lhs, const Field3D &rhs) {
     return pow(lhs, interp_to(rhs, lhs.getLocation()));
   }
 
-  ASSERT1(lhs.getMesh()==rhs.getMesh());
+  ASSERT1(lhs.getMesh() == rhs.getMesh());
   Field3D result(lhs.getMesh());
   result.allocate();
 
@@ -907,9 +907,9 @@ Field3D pow(const Field3D &lhs, const Field2D &rhs) {
   // Check if the inputs are allocated
   ASSERT1(lhs.isAllocated());
   ASSERT1(rhs.isAllocated());
-  ASSERT1(lhs.getMesh()==rhs.getMesh());
+  ASSERT1(lhs.getMesh() == rhs.getMesh());
 
-  // Define and allocate the output result  
+  // Define and allocate the output result
   Field3D result(lhs.getMesh());
   result.allocate();
 
@@ -926,8 +926,8 @@ Field3D pow(const Field3D &lhs, const Field2D &rhs) {
 
 Field3D pow(const Field3D &lhs, const FieldPerp &rhs) {
   TRACE("pow(Field3D, FieldPerp)");
-  
-  ASSERT1(lhs.getMesh()==rhs.getMesh());
+
+  ASSERT1(lhs.getMesh() == rhs.getMesh());
   Field3D result(lhs.getMesh());
   result.allocate();
 
@@ -1018,22 +1018,22 @@ BoutReal max(const Field3D &f, bool allpe) {
 /////////////////////////////////////////////////////////////////////
 // Friend functions
 
-#define F3D_FUNC(name, func)                               \
-  const Field3D name(const Field3D &f) {                   \
-    TRACE(#name "(Field3D)");                     \
-    /* Check if the input is allocated */                  \
-    ASSERT1(f.isAllocated());                              \
-    /* Define and allocate the output result */            \
-    Field3D result(f.getMesh());			   \
-    result.allocate();                                     \
-    /* Loop over domain */                                 \
-    for(const auto& d : result) {                                 \
-      result[d] = func(f[d]);                              \
-      /* If checking is set to 3 or higher, test result */ \
-      ASSERT3(finite(result[d]));                          \
-    }                                                      \
-    result.setLocation(f.getLocation());                   \
-    return result;                                         \
+#define F3D_FUNC(name, func)                                                             \
+  const Field3D name(const Field3D &f) {                                                 \
+    TRACE(#name "(Field3D)");                                                            \
+    /* Check if the input is allocated */                                                \
+    ASSERT1(f.isAllocated());                                                            \
+    /* Define and allocate the output result */                                          \
+    Field3D result(f.getMesh());                                                         \
+    result.allocate();                                                                   \
+    /* Loop over domain */                                                               \
+    for (const auto &d : result) {                                                       \
+      result[d] = func(f[d]);                                                            \
+      /* If checking is set to 3 or higher, test result */                               \
+      ASSERT3(finite(result[d]));                                                        \
+    }                                                                                    \
+    result.setLocation(f.getLocation());                                                 \
+    return result;                                                                       \
   }
 
 F3D_FUNC(sqrt, ::sqrt);
@@ -1055,16 +1055,16 @@ const Field3D filter(const Field3D &var, int N0) {
   
   ASSERT1(var.isAllocated());
 
-  Mesh * localmesh = var.getMesh();
+  Mesh *localmesh = var.getMesh();
 
   int ncz = localmesh->LocalNz;
   Array<dcomplex> f(ncz/2 + 1);
 
   Field3D result(localmesh);
   result.allocate();
-  
-  for(int jx=0;jx<localmesh->LocalNx;jx++) {
-    for(int jy=0;jy<localmesh->LocalNy;jy++) {
+
+  for (int jx = 0; jx < localmesh->LocalNx; jx++) {
+    for (int jy = 0; jy < localmesh->LocalNy; jy++) {
 
       rfft(&(var(jx, jy, 0)), ncz, f.begin()); // Forward FFT
 
@@ -1095,9 +1095,9 @@ const Field3D lowPass(const Field3D &var, int zmax) {
 
   ASSERT1(var.isAllocated());
 
-  Mesh * localmesh = var.getMesh();
+  Mesh *localmesh = var.getMesh();
   int ncz = localmesh->LocalNz;
-  
+
   // Create an array 
   Array<dcomplex> f(ncz/2 + 1);
   
@@ -1108,9 +1108,9 @@ const Field3D lowPass(const Field3D &var, int zmax) {
 
   Field3D result(localmesh);
   result.allocate();
-  
-  for(int jx=0;jx<localmesh->LocalNx;jx++) {
-    for(int jy=0;jy<localmesh->LocalNy;jy++) {
+
+  for (int jx = 0; jx < localmesh->LocalNx; jx++) {
+    for (int jy = 0; jy < localmesh->LocalNy; jy++) {
       // Take FFT in the Z direction
       rfft(&(var(jx,jy,0)), ncz, f.begin());
       
@@ -1132,7 +1132,7 @@ const Field3D lowPass(const Field3D &var, int zmax, int zmin) {
   TRACE("lowPass(Field3D, %d, %d)", zmax, zmin);
 
   ASSERT1(var.isAllocated());
-  Mesh * localmesh = var.getMesh();
+  Mesh *localmesh = var.getMesh();
 
   int ncz = localmesh->LocalNz;
   Array<dcomplex> f(ncz/2 + 1);
@@ -1144,9 +1144,9 @@ const Field3D lowPass(const Field3D &var, int zmax, int zmin) {
 
   Field3D result(localmesh);
   result.allocate();
-  
-  for(int jx=0;jx<localmesh->LocalNx;jx++) {
-    for(int jy=0;jy<localmesh->LocalNy;jy++) {
+
+  for (int jx = 0; jx < localmesh->LocalNx; jx++) {
+    for (int jy = 0; jy < localmesh->LocalNy; jy++) {
       // Take FFT in the Z direction
       rfft(&(var(jx,jy,0)), ncz, f.begin());
       
@@ -1251,17 +1251,19 @@ const Field3D floor(const Field3D &var, BoutReal f) {
 Field2D DC(const Field3D &f) {
   TRACE("DC(Field3D)");
 
-  Mesh * localmesh=f.getMesh();
+  Mesh *localmesh = f.getMesh();
   Field2D result(localmesh);
   result.allocate();
 
-  for(int i=0;i<localmesh->LocalNx;i++)
-    for(int j=0;j<localmesh->LocalNy;j++) {
+  for (int i = 0; i < localmesh->LocalNx; i++) {
+    for (int j = 0; j < localmesh->LocalNy; j++) {
       result(i,j) = 0.0;
-      for(int k=0;k<localmesh->LocalNz;k++)
-	result(i,j) += f(i,j,k);
-      result(i,j) /= (localmesh->LocalNz);
+      for (int k = 0; k < localmesh->LocalNz; k++) {
+        result(i,j) += f(i,j,k);
+      }
+      result(i, j) /= (localmesh->LocalNz);
     }
+  }
   
   return result;
 }
