@@ -134,6 +134,7 @@ This is an IMplicit-EXplicit time integration solver, which allows the evolving 
 To use the IMEX-BDF2 solver, set the solver type to `imexbdf2`, e.g. on the command-line add `solver:type=imexbdf2` or in the options file:
 
 .. code-block:: bash
+
     [solver]
     type = imexbdf2
 
@@ -141,6 +142,7 @@ To use the IMEX-BDF2 solver, set the solver type to `imexbdf2`, e.g. on the comm
 The order of the method is set to 2 by default, but can be increased up to a maximum of 4:
 
 .. code-block:: bash
+
     [solver]
     type = imexbdf2
     maxOrder = 3

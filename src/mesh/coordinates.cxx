@@ -169,26 +169,7 @@ Coordinates::Coordinates(Mesh *mesh) {
     throw BoutException("Differential geometry failed\n");
   }
 
-  //////////////////////////////////////////////////////
-  /// Non-uniform meshes. Need to use DDX, DDY
 
-  OPTION(Options::getRoot(), non_uniform, false);
-
-  Field2D d2x, d2y; // d^2 x / d i^2
-  // Read correction for non-uniform meshes
-  if (mesh->get(d2x, "d2x")) {
-    output_warn.write("\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
-    d1_dx = mesh->indexDDX(1. / dx); // d/di(1/dx)
-  } else {
-    d1_dx = -d2x / (dx * dx);
-  }
-
-  if (mesh->get(d2y, "d2y")) {
-    output_warn.write("\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
-    d1_dy = mesh->indexDDY(1. / dy); // d/di(1/dy)
-  } else {
-    d1_dy = -d2y / (dy * dy);
-  }
 
   if (mesh->get(ShiftTorsion, "ShiftTorsion")) {
     output_warn.write("\tWARNING: No Torsion specified for zShift. Derivatives may not be correct\n");
@@ -365,6 +346,27 @@ int Coordinates::geometry() {
 
   mesh->communicate(com);
 
+  //////////////////////////////////////////////////////
+  /// Non-uniform meshes. Need to use DDX, DDY
+
+  OPTION(Options::getRoot(), non_uniform, false);
+
+  Field2D d2x, d2y; // d^2 x / d i^2
+  // Read correction for non-uniform meshes
+  if (mesh->get(d2x, "d2x")) {
+    output_warn.write("\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
+    d1_dx = mesh->indexDDX(1. / dx); // d/di(1/dx)
+  } else {
+    d1_dx = -d2x / (dx * dx);
+  }
+
+  if (mesh->get(d2y, "d2y")) {
+    output_warn.write("\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
+    d1_dy = mesh->indexDDY(1. / dy); // d/di(1/dy)
+  } else {
+    d1_dy = -d2y / (dy * dy);
+  }
+  
   return 0;
 }
 
@@ -693,8 +695,12 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
 
     // Boundaries
     for (int jz = 0; jz < ncz; jz++) {
-      result(0, jy, jz) = 0.0;
-      result(mesh->LocalNx - 1, jy, jz) = 0.0;
+      for (int jx = 0; jx<mesh->xstart; jx++) {
+	result(jx, jy, jz) = 0.0;
+      }
+      for (int jx = mesh->xend+1; jx<mesh->LocalNx; jx++) {
+	result(jx, jy, jz) = 0.0;
+      }
     }
   }
 

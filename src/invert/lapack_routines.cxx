@@ -41,11 +41,6 @@
 
 #ifdef LAPACK
 
-/// Complex type for passing data to/from FORTRAN
-struct fcmplx {
-  BoutReal r, i;
-};
-
 // LAPACK prototypes
 extern "C" {
   /// Complex tridiagonal inversion

@@ -1139,6 +1139,11 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 
   ASSERT1(this == var.getMesh());
 
+  if (mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != var.getLocation())) {
+    // Staggered differencing
+    throw BoutException("No one used this before. And no one implemented it.");
+  }
+
   Field3D result(this);
   result.allocate(); // Make sure data allocated
   

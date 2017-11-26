@@ -56,10 +56,9 @@ gtest-all.o : $(GTEST_SENTINEL)
 	@$(CXX) $(CPPFLAGS) -I$(GTEST_DIR) $(CXXFLAGS) -c \
             $(GTEST_DIR)/src/gtest-all.cc
 
-bout_test_main.o : $(TEST_SENTINEL)
+bout_test_main.o : $(GTEST_SENTINEL) $(BOUT_TEST_DIR)/bout_test_main.cxx
 	@echo "  Compiling" $@
-	@$(CXX) $(CPPFLAGS) -I$(GTEST_DIR) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c \
-            $(BOUT_TEST_DIR)/bout_test_main.cxx
+	@$(CXX) $(CPPFLAGS) -I$(GTEST_DIR) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c $(@:.o=.cxx)
 
 gtest.a : gtest-all.o
 	@echo "  Linking" $@
@@ -81,7 +80,7 @@ $(TEST_OBJECTS): $(LIB)
 
 serial_tests: makefile $(BOUT_TOP)/make.config $(OBJ) $(LIB) $(SUB_LIBS) $(TEST_OBJECTS) bout_test_main.a
 	@echo "  Linking tests"
-	@$(LD) $(LDFLAGS) -o $@ $(TEST_OBJECTS) bout_test_main.a $(BOUT_LIBS) $(SUB_LIBS)
+	@$(LD) -o $@ $(TEST_OBJECTS) bout_test_main.a $(LDFLAGS) $(BOUT_LIBS) $(SUB_LIBS)
 
 # Note: This depends on GTEST_SENTINEL, which checks out Google Test if not present
 #       The correct behaviour relies on the dependencies being checked in left-to-right order

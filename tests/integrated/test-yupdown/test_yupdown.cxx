@@ -9,6 +9,8 @@ const Field3D DDY_yud(const Field3D &f) {
   Field3D result;
   result.allocate();
 
+  result = 0.0;
+  
   for(int i=0;i<mesh->LocalNx;i++)
     for(int j=mesh->ystart;j<=mesh->yend;j++)
       for(int k=0;k<mesh->LocalNz;k++)
@@ -21,6 +23,7 @@ const Field3D DDY_yud(const Field3D &f) {
 const Field3D DDY_aligned(const Field3D &f) {
   Field3D result;
   result.allocate();
+  result = 0.0;
   
   for(int i=0;i<mesh->LocalNx;i++)
     for(int j=mesh->ystart;j<=mesh->yend;j++)
