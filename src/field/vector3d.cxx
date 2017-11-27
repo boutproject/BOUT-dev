@@ -34,10 +34,11 @@
 #include <boundary_op.hxx>
 #include <boutexception.hxx>
 
-Vector3D::Vector3D(Mesh * localmesh) : covariant(true), deriv() ,x(localmesh),y(localmesh),z(localmesh) { }
+Vector3D::Vector3D(Mesh *localmesh)
+    : covariant(true), deriv(), x(localmesh), y(localmesh), z(localmesh) {}
 
-Vector3D::Vector3D(const Vector3D &f) : covariant(f.covariant), deriv(),x(f.x),y(f.y),z(f.y) {
-}
+Vector3D::Vector3D(const Vector3D &f)
+    : covariant(f.covariant), deriv(), x(f.x), y(f.y), z(f.y) {}
 
 Vector3D::~Vector3D() {
   if(deriv != NULL) {
@@ -54,11 +55,11 @@ Vector3D::~Vector3D() {
 
 void Vector3D::toCovariant() {  
   if(!covariant) {
-    Mesh * localmesh = x.getMesh();
+    Mesh *localmesh = x.getMesh();
     Field3D gx(localmesh), gy(localmesh), gz(localmesh);
 
     Coordinates *metric = localmesh->coordinates();
-    
+
     // multiply by g_{ij}
     gx = x*metric->g_11 + metric->g_12*y + metric->g_13*z;
     gy = y*metric->g_22 + metric->g_12*x + metric->g_23*z;
@@ -74,7 +75,7 @@ void Vector3D::toCovariant() {
 void Vector3D::toContravariant() {  
   if(covariant) {
     // multiply by g^{ij}
-    Mesh * localmesh = x.getMesh();
+    Mesh *localmesh = x.getMesh();
     Field3D gx(localmesh), gy(localmesh), gz(localmesh);
 
     Coordinates *metric = localmesh->coordinates();
@@ -94,7 +95,7 @@ void Vector3D::toContravariant() {
 Vector3D* Vector3D::timeDeriv() {
   if(deriv == NULL) {
     deriv = new Vector3D(x.getMesh());
-    
+
     // Check if the components have a time-derivative
     // Need to make sure that ddt(v.x) = ddt(v).x
     
@@ -291,7 +292,7 @@ Vector3D & Vector3D::operator/=(const Field3D &rhs)
 ///////////////// CROSS PRODUCT //////////////////
 
 Vector3D & Vector3D::operator^=(const Vector3D &rhs) {
-  Mesh * localmesh = x.getMesh();
+  Mesh *localmesh = x.getMesh();
   Vector3D result(localmesh);
 
   // Make sure both vector components are covariant
@@ -300,7 +301,7 @@ Vector3D & Vector3D::operator^=(const Vector3D &rhs) {
   toCovariant();
 
   Coordinates *metric = localmesh->coordinates();
-  
+
   // calculate contravariant components of cross-product
   result.x = (y*rco.z - z*rco.y)/metric->J;
   result.y = (z*rco.x - x*rco.z)/metric->J;
@@ -313,16 +314,16 @@ Vector3D & Vector3D::operator^=(const Vector3D &rhs) {
 }
 
 Vector3D & Vector3D::operator^=(const Vector2D &rhs) {
-  Mesh * localmesh = x.getMesh();
+  Mesh *localmesh = x.getMesh();
   Vector3D result(localmesh);
-  
+
   // Make sure both vector components are covariant
   Vector2D rco = rhs;
   rco.toCovariant();
   toCovariant();
-  
+
   Coordinates *metric = localmesh->coordinates();
- 
+
   // calculate contravariant components of cross-product
   result.x = (y*rco.z - z*rco.y)/metric->J;
   result.y = (z*rco.x - x*rco.z)/metric->J;

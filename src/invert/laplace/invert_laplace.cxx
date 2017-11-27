@@ -72,7 +72,9 @@ Laplacian::Laplacian(Options *options) {
   if(maxmode < 0) maxmode = 0;
   if(maxmode > ncz/2) maxmode = ncz/2;
 
-  OPTION2(options, low_mem, nonuniform, false);
+  OPTION(options, low_mem, false);
+  
+  OPTION(options, nonuniform, mesh->coordinates()->non_uniform); // Default is the mesh setting
 
   OPTION(options, all_terms, true); // Include first derivative terms
 
@@ -125,7 +127,7 @@ void Laplacian::cleanup() {
 
 const Field3D Laplacian::solve(const Field3D &b) {
   TRACE("Laplacian::solve(Field3D)");
-  Mesh * mesh = b.getMesh();
+  Mesh *mesh = b.getMesh();
 
   Timer timer("invert");
   int ys = mesh->ystart, ye = mesh->yend;
@@ -185,7 +187,7 @@ const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
 
   Timer timer("invert");
 
-  Mesh * mesh = b.getMesh();
+  Mesh *mesh = b.getMesh();
   // Setting the start and end range of the y-slices
   int ys = mesh->ystart, ye = mesh->yend;
   if(mesh->hasBndryLowerY() && include_yguards)

@@ -107,7 +107,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b) {
  * \param[out] x    The inverted variable.
  */
 const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0) {
-  Mesh * mesh = b.getMesh();
+  Mesh *mesh = b.getMesh();
   FieldPerp x(mesh);
   x.allocate();
 

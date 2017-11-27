@@ -77,7 +77,7 @@ const FieldPerp LaplaceSPT::solve(const FieldPerp &b) {
 }
 
 const FieldPerp LaplaceSPT::solve(const FieldPerp &b, const FieldPerp &x0) {
-  Mesh * mesh = b.getMesh();
+  Mesh *mesh = b.getMesh();
   FieldPerp x(mesh);
   x.allocate();
   
@@ -115,7 +115,7 @@ const FieldPerp LaplaceSPT::solve(const FieldPerp &b, const FieldPerp &x0) {
  */
 const Field3D LaplaceSPT::solve(const Field3D &b) {
   Timer timer("invert");
-  Mesh * mesh = b.getMesh();
+  Mesh *mesh = b.getMesh();
   Field3D x(mesh);
   x.allocate();
   

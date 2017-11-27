@@ -4,39 +4,30 @@
  * given the contravariant metric tensor terms
  **************************************************************************/
 
+#include <bout/assert.hxx>
+#include <bout/constants.hxx>
 #include <bout/coordinates.hxx>
-#include <utils.hxx>
 #include <msg_stack.hxx>
 #include <output.hxx>
-#include <bout/constants.hxx>
-#include <bout/assert.hxx>
+#include <utils.hxx>
 
 #include <derivs.hxx>
-#include <interpolation.hxx>
 #include <fft.hxx>
+#include <interpolation.hxx>
 
 #include <globals.hxx>
 
-Coordinates::Coordinates(Mesh *mesh) :
-  dx(1,mesh), dy(1,mesh), dz(1),
-  d1_dx(mesh), d1_dy(mesh),
-  J(1,mesh), Bxy(1,mesh),
-  // Identity metric tensor
-  g11(1,mesh), g22(1,mesh), g33(1,mesh),
-  g12(0,mesh), g13(0,mesh), g23(0,mesh),
-  g_11(1,mesh), g_22(1,mesh), g_33(1,mesh),
-  g_12(0,mesh), g_13(0,mesh), g_23(0,mesh),
-  G1_11(mesh), G1_22(mesh), G1_33(mesh),
-  G1_12(mesh), G1_13(mesh), G1_23(mesh),
-  G2_11(mesh), G2_22(mesh), G2_33(mesh),
-  G2_12(mesh), G2_13(mesh), G2_23(mesh),
-  G3_11(mesh), G3_22(mesh), G3_33(mesh),
-  G3_12(mesh), G3_13(mesh), G3_23(mesh),
-  G1(mesh), G2(mesh), G3(mesh),
-  ShiftTorsion(mesh), IntShiftTorsion(mesh),
-  localmesh(mesh)
-{
-  
+Coordinates::Coordinates(Mesh *mesh)
+    : dx(1, mesh), dy(1, mesh), dz(1), d1_dx(mesh), d1_dy(mesh), J(1, mesh), Bxy(1, mesh),
+      // Identity metric tensor
+      g11(1, mesh), g22(1, mesh), g33(1, mesh), g12(0, mesh), g13(0, mesh), g23(0, mesh),
+      g_11(1, mesh), g_22(1, mesh), g_33(1, mesh), g_12(0, mesh), g_13(0, mesh),
+      g_23(0, mesh), G1_11(mesh), G1_22(mesh), G1_33(mesh), G1_12(mesh), G1_13(mesh),
+      G1_23(mesh), G2_11(mesh), G2_22(mesh), G2_33(mesh), G2_12(mesh), G2_13(mesh),
+      G2_23(mesh), G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh), G3_13(mesh),
+      G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
+      IntShiftTorsion(mesh), localmesh(mesh) {
+
   if (mesh->get(dx, "dx")) {
     output_warn.write("\tWARNING: differencing quantity 'dx' not found. Set to 1.0\n");
     dx = 1.0;
@@ -166,9 +157,9 @@ Coordinates::Coordinates(Mesh *mesh) :
 
   //////////////////////////////////////////////////////
   /// Non-uniform meshes. Need to use DDX, DDY
-  
-  OPTION(Options::getRoot(), non_uniform,  false);
-  
+
+  OPTION(Options::getRoot(), non_uniform, false);
+
   Field2D d2x(mesh), d2y(mesh); // d^2 x / d i^2
   // Read correction for non-uniform meshes
   if (mesh->get(d2x, "d2x")) {
@@ -273,10 +264,9 @@ int Coordinates::geometry() {
           0.5 * g13 * DDX(g_33);
   G1_23 = 0.5 * g11 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) +
           0.5 * g12 * (DDZ(g_22) + DDY(g_23) - DDY(g_23))
-              // + 0.5 *g13*(DDZ(g_32) + DDY(g_33) - DDZ(g_23));
-              // which equals
-          +
-          0.5 * g13 * DDY(g_33);
+          // + 0.5 *g13*(DDZ(g_32) + DDY(g_33) - DDZ(g_23));
+          // which equals
+          + 0.5 * g13 * DDY(g_33);
 
   G2_11 = 0.5 * g12 * DDX(g_11) + g22 * (DDX(g_12) - 0.5 * DDY(g_11)) +
           g23 * (DDX(g_13) - 0.5 * DDZ(g_11));
@@ -290,14 +280,12 @@ int Coordinates::geometry() {
       // 0.5 *g21*(DDZ(g_11) + DDX(g_13) - DDX(g_13))
       // which equals
       0.5 * g12 * (DDZ(g_11) + DDX(g_13) - DDX(g_13))
-          // + 0.5 *g22*(DDZ(g_21) + DDX(g_23) - DDY(g_13))
-          // which equals
-      +
-      0.5 * g22 * (DDZ(g_12) + DDX(g_23) - DDY(g_13))
-          // + 0.5 *g23*(DDZ(g_31) + DDX(g_33) - DDZ(g_13));
-          // which equals
-      +
-      0.5 * g23 * DDX(g_33);
+      // + 0.5 *g22*(DDZ(g_21) + DDX(g_23) - DDY(g_13))
+      // which equals
+      + 0.5 * g22 * (DDZ(g_12) + DDX(g_23) - DDY(g_13))
+      // + 0.5 *g23*(DDZ(g_31) + DDX(g_33) - DDZ(g_13));
+      // which equals
+      + 0.5 * g23 * DDX(g_33);
   G2_23 = 0.5 * g12 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) + 0.5 * g22 * DDZ(g_22) +
           0.5 * g23 * DDY(g_33);
 
@@ -311,14 +299,12 @@ int Coordinates::geometry() {
       // 0.5 *g31*(DDY(g_11) + DDX(g_12) - DDX(g_12))
       // which equals to
       0.5 * g13 * DDY(g_11)
-          // + 0.5 *g32*(DDY(g_21) + DDX(g_22) - DDY(g_12))
-          // which equals to
-      +
-      0.5 * g23 * DDX(g_22)
-          //+ 0.5 *g33*(DDY(g_31) + DDX(g_32) - DDZ(g_12));
-          // which equals to
-      +
-      0.5 * g33 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
+      // + 0.5 *g32*(DDY(g_21) + DDX(g_22) - DDY(g_12))
+      // which equals to
+      + 0.5 * g23 * DDX(g_22)
+      //+ 0.5 *g33*(DDY(g_31) + DDX(g_32) - DDZ(g_12));
+      // which equals to
+      + 0.5 * g33 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
   G3_13 = 0.5 * g13 * DDZ(g_11) + 0.5 * g23 * (DDZ(g_12) + DDX(g_23) - DDY(g_13)) +
           0.5 * g33 * DDX(g_33);
   G3_23 = 0.5 * g13 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) + 0.5 * g23 * DDZ(g_22) +
@@ -410,9 +396,9 @@ int Coordinates::calcCovariant() {
   free_matrix(a);
 
   BoutReal maxerr;
-  maxerr= BOUTMAX(max(abs((g_11 * g11 + g_12 * g12 + g_13 * g13) - 1)),
-                  max(abs((g_12 * g12 + g_22 * g22 + g_23 * g23) - 1)),
-                  max(abs((g_13 * g13 + g_23 * g23 + g_33 * g33) - 1)));
+  maxerr = BOUTMAX(max(abs((g_11 * g11 + g_12 * g12 + g_13 * g13) - 1)),
+                   max(abs((g_12 * g12 + g_22 * g22 + g_23 * g23) - 1)),
+                   max(abs((g_13 * g13 + g_23 * g23 + g_33 * g33) - 1)));
 
   output_info.write("\tLocal maximum error in diagonal inversion is %e\n", maxerr);
 
@@ -520,16 +506,12 @@ int Coordinates::jacobian() {
  *
  *******************************************************************************/
 
-const Field2D Coordinates::DDX(const Field2D &f) {
-  return localmesh->indexDDX(f) / dx;
-}
+const Field2D Coordinates::DDX(const Field2D &f) { return localmesh->indexDDX(f) / dx; }
 
-const Field2D Coordinates::DDY(const Field2D &f) {
-  return localmesh->indexDDY(f) / dy;
-}
+const Field2D Coordinates::DDY(const Field2D &f) { return localmesh->indexDDY(f) / dy; }
 
 const Field2D Coordinates::DDZ(const Field2D &UNUSED(f)) {
-  return Field2D(0.0,localmesh);
+  return Field2D(0.0, localmesh);
 }
 
 #include <derivs.hxx>
@@ -617,7 +599,7 @@ const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc) {
 
   Field2D sg(localmesh);
   Field3D result(localmesh), r2(localmesh);
-  
+
   sg = sqrt(g_22);
   sg = DDY(1. / sg) / sg;
   if (sg.getLocation() != outloc) {
@@ -649,16 +631,16 @@ const Field2D Coordinates::Delp2(const Field2D &f) {
 
 const Field3D Coordinates::Delp2(const Field3D &f) {
   TRACE("Coordinates::Delp2( Field3D )");
-  
+
   ASSERT2(mesh->xstart > 0); // Need at least one guard cell
-  
+
   Field3D result(localmesh);
   result.allocate();
-  
+
   int ncz = localmesh->LocalNz;
-  
-  static dcomplex **ft = (dcomplex**) NULL, **delft;
-  if(ft == (dcomplex**) NULL) {
+
+  static dcomplex **ft = (dcomplex **)NULL, **delft;
+  if (ft == (dcomplex **)NULL) {
     // Allocate memory
     ft = matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
     delft = matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
@@ -668,9 +650,9 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
   for (int jy = 0; jy < localmesh->LocalNy; jy++) {
 
     // Take forward FFT
-    
+
     for (int jx = 0; jx < localmesh->LocalNx; jx++)
-      rfft(&f(jx,jy,0), ncz, ft[jx]);
+      rfft(&f(jx, jy, 0), ncz, ft[jx]);
 
     // Loop over kz
     for (int jz = 0; jz <= ncz / 2; jz++) {
@@ -678,9 +660,9 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
 
       // No smoothing in the x direction
       for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
-	// Perform x derivative
-	
-	laplace_tridag_coefs(jx, jy, jz, a, b, c);
+        // Perform x derivative
+
+        laplace_tridag_coefs(jx, jy, jz, a, b, c);
 
         delft[jx][jz] = a * ft[jx - 1][jz] + b * ft[jx][jz] + c * ft[jx + 1][jz];
       }
@@ -694,11 +676,11 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
 
     // Boundaries
     for (int jz = 0; jz < ncz; jz++) {
-      for (int jx = 0; jx<mesh->xstart; jx++) {
-	result(jx, jy, jz) = 0.0;
+      for (int jx = 0; jx < mesh->xstart; jx++) {
+        result(jx, jy, jz) = 0.0;
       }
-      for (int jx = mesh->xend+1; jx<mesh->LocalNx; jx++) {
-	result(jx, jy, jz) = 0.0;
+      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
+        result(jx, jy, jz) = 0.0;
       }
     }
   }
@@ -711,7 +693,7 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
 
 const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
   TRACE("Coordinates::Delp2( FieldPerp )");
-  
+
   FieldPerp result(localmesh);
   result.allocate();
 
@@ -719,10 +701,10 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
 
   int jy = f.getIndex();
   result.setIndex(jy);
-  
+
   int ncz = localmesh->LocalNz;
-  
-  if(ft == (dcomplex**) NULL) {
+
+  if (ft == (dcomplex **)NULL) {
     // Allocate memory
     ft = matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
     delft = matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
@@ -752,8 +734,8 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
   }
 
   // Boundaries
-  for(int jz=0;jz<ncz;jz++) {
-    result(0,jz) = 0.0;
+  for (int jz = 0; jz < ncz; jz++) {
+    result(0, jz) = 0.0;
     result(localmesh->LocalNx - 1, jz) = 0.0;
   }
 

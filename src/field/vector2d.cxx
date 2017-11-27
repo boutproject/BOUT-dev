@@ -34,7 +34,8 @@
 #include <boundary_op.hxx>
 #include <boutexception.hxx>
 
-Vector2D::Vector2D(Mesh * localmesh) : covariant(true), deriv(NULL),x(localmesh),y(localmesh),z(localmesh) { }
+Vector2D::Vector2D(Mesh *localmesh)
+    : covariant(true), deriv(NULL), x(localmesh), y(localmesh), z(localmesh) {}
 
 Vector2D::Vector2D(const Vector2D &f) : x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(NULL) { }
 
@@ -53,7 +54,7 @@ Vector2D::~Vector2D() {
 
 void Vector2D::toCovariant() {  
   if(!covariant) {
-    Mesh * localmesh = x.getMesh();
+    Mesh *localmesh = x.getMesh();
     Field2D gx(localmesh), gy(localmesh), gz(localmesh);
 
     Coordinates *metric = localmesh->coordinates();
@@ -74,11 +75,11 @@ void Vector2D::toCovariant() {
 void Vector2D::toContravariant() {  
   if(covariant) {
     // multiply by g^{ij}
-    Mesh * localmesh = x.getMesh();
+    Mesh *localmesh = x.getMesh();
     Field2D gx(localmesh), gy(localmesh), gz(localmesh);
 
     Coordinates *metric = localmesh->coordinates();
-    
+
     gx = metric->g11*x + metric->g12*y + metric->g13*z;
     gy = metric->g12*x + metric->g22*y + metric->g23*z;
     gz = metric->g13*x + metric->g23*y + metric->g33*z;
@@ -94,7 +95,7 @@ void Vector2D::toContravariant() {
 Vector2D* Vector2D::timeDeriv() {
   if(deriv == NULL) {
     deriv = new Vector2D(x.getMesh());
-    
+
     // Check if the components have a time-derivative
     // Need to make sure that ddt(v.x) = ddt(v).x
     
@@ -320,7 +321,7 @@ const Vector3D Vector2D::operator/(const Field3D &rhs) const {
 ////////////////// DOT PRODUCT ///////////////////
 
 const Field2D Vector2D::operator*(const Vector2D &rhs) const {
-  Mesh * localmesh = x.getMesh();
+  Mesh *localmesh = x.getMesh();
   Field2D result(localmesh);
 
   if(rhs.covariant ^ covariant) {
@@ -329,7 +330,7 @@ const Field2D Vector2D::operator*(const Vector2D &rhs) const {
   }else {
     // Both are covariant or contravariant
     Coordinates *metric = localmesh->coordinates();
-    
+
     if(covariant) {
       // Both covariant
       result = x*rhs.x*metric->g11 + y*rhs.y*metric->g22 + z*rhs.z*metric->g33;

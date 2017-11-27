@@ -36,7 +36,7 @@
 
 const Vector2D Grad(const Field2D &f, CELL_LOC UNUSED(outloc)) {
   Vector2D result(f.getMesh());
-  
+
   TRACE("Grad( Field2D )");
   
   result.x = DDX(f);
@@ -109,11 +109,11 @@ const Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc_x,
 const Field2D Div(const Vector2D &v, CELL_LOC UNUSED(outloc)) {
   TRACE("Div( Vector2D )");
 
-  Mesh * localmesh = v.x.getMesh();
+  Mesh *localmesh = v.x.getMesh();
   Field2D result(localmesh);
-  
+
   Coordinates *metric = localmesh->coordinates();
-  
+
   // get contravariant components of v
   Vector2D vcn = v;
   vcn.toContravariant();
@@ -129,7 +129,7 @@ const Field2D Div(const Vector2D &v, CELL_LOC UNUSED(outloc)) {
 const Field3D Div(const Vector3D &v, CELL_LOC outloc) {
   TRACE("Div( Vector3D )");
 
-  Mesh * localmesh = v.x.getMesh();
+  Mesh *localmesh = v.x.getMesh();
   Field3D result(localmesh);
 
   Coordinates *metric = localmesh->coordinates();
@@ -156,10 +156,10 @@ const Field3D Div(const Vector3D &v, CELL_LOC outloc) {
 const Field2D Div(const Vector2D &v, const Field2D &f) {
   TRACE("Div( Vector2D, Field2D )");
 
-  Mesh * localmesh = f.getMesh();
-  
+  Mesh *localmesh = f.getMesh();
+
   Coordinates *metric = localmesh->coordinates();
-  
+
   // get contravariant components of v
   Vector2D vcn = v;
   vcn.toContravariant();
@@ -176,11 +176,11 @@ const Field2D Div(const Vector2D &v, const Field2D &f) {
 const Field3D Div(const Vector3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
   TRACE("Div( Vector3D, Field3D )");
 
-  Mesh * localmesh = f.getMesh();
+  Mesh *localmesh = f.getMesh();
   Field3D result(localmesh);
-  
+
   Coordinates *metric = localmesh->coordinates();
-  
+
   if(outloc == CELL_DEFAULT) 
     outloc = CELL_CENTRE;
 
@@ -212,9 +212,9 @@ const Vector2D Curl(const Vector2D &v, CELL_LOC UNUSED(outloc)) {
 
   TRACE("Curl( Vector2D )");
 
-  Mesh * localmesh = v.x.getMesh();
+  Mesh *localmesh = v.x.getMesh();
   Coordinates *metric = localmesh->coordinates();
-  
+
   // Get covariant components of v
   Vector2D vco = v;
   vco.toCovariant();
@@ -238,7 +238,7 @@ const Vector3D Curl(const Vector3D &v,
 
   TRACE("Curl( Vector3D )");
 
-  Mesh * localmesh = v.x.getMesh();
+  Mesh *localmesh = v.x.getMesh();
   Coordinates *metric = localmesh->coordinates();
 
   // Get covariant components of v
@@ -272,7 +272,7 @@ const Vector3D Curl(const Vector3D &v, CELL_LOC outloc) {
 
 const Field2D V_dot_Grad(const Vector2D &v, const Field2D &f) {
   Field2D result(f.getMesh());
-  
+
   TRACE("V_dot_Grad( Vector2D , Field2D )");
 
   // Get contravariant components of v
@@ -286,7 +286,7 @@ const Field2D V_dot_Grad(const Vector2D &v, const Field2D &f) {
 
 const Field3D V_dot_Grad(const Vector2D &v, const Field3D &f) {
   Field3D result(f.getMesh());
-  
+
   TRACE("V_dot_Grad( Vector2D , Field3D )");
 
   // Get contravariant components of v
@@ -300,7 +300,7 @@ const Field3D V_dot_Grad(const Vector2D &v, const Field3D &f) {
 
 const Field3D V_dot_Grad(const Vector3D &v, const Field2D &f) {
   Field3D result(f.getMesh());
-  
+
   TRACE("V_dot_Grad( Vector3D , Field2D )");
 
   // Get contravariant components of v
@@ -314,7 +314,7 @@ const Field3D V_dot_Grad(const Vector3D &v, const Field2D &f) {
 
 const Field3D V_dot_Grad(const Vector3D &v, const Field3D &f) {
   Field3D result(f.getMesh());
-  
+
   TRACE("V_dot_Grad( Vector3D , Field3D )");
 
   // Get contravariant components of v
@@ -329,7 +329,7 @@ const Field3D V_dot_Grad(const Vector3D &v, const Field3D &f) {
 const Vector2D V_dot_Grad(const Vector2D &v, const Vector2D &a) {
   TRACE("V_dot_Grad( Vector2D , Vector2D )");
 
-  Mesh * localmesh = v.x.getMesh();
+  Mesh *localmesh = v.x.getMesh();
   Vector2D result(localmesh);
 
   Coordinates *metric = localmesh->coordinates();
@@ -379,7 +379,7 @@ const Vector2D V_dot_Grad(const Vector2D &v, const Vector2D &a) {
 }
 
 const Vector3D V_dot_Grad(const Vector2D &v, const Vector3D &a) {
-  Mesh * localmesh = v.x.getMesh();
+  Mesh *localmesh = v.x.getMesh();
   Vector3D result(localmesh);
 
   TRACE("V_dot_Grad( Vector2D , Vector3D )");
@@ -429,9 +429,9 @@ const Vector3D V_dot_Grad(const Vector2D &v, const Vector3D &a) {
 }
 
 const Vector3D V_dot_Grad(const Vector3D &v, const Vector2D &a) {
-  Mesh * localmesh = v.x.getMesh();
+  Mesh *localmesh = v.x.getMesh();
   Vector3D result(localmesh);
-  
+
   TRACE("V_dot_Grad( Vector3D , Vector2D )");
 
   Coordinates *metric = localmesh->coordinates();
@@ -479,7 +479,7 @@ const Vector3D V_dot_Grad(const Vector3D &v, const Vector2D &a) {
 }
 
 const Vector3D V_dot_Grad(const Vector3D &v, const Vector3D &a) {
-  Mesh * localmesh = v.x.getMesh();
+  Mesh *localmesh = v.x.getMesh();
   Vector3D result(localmesh);
 
   TRACE("V_dot_Grad( Vector3D , Vector3D )");
