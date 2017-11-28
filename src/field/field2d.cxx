@@ -419,6 +419,7 @@ void Field2D::setBoundaryTo(const Field2D &f2d) {
 
 ////////////// NON-MEMBER OVERLOADED OPERATORS //////////////
 
+
 // Unary minus
 Field2D operator-(const Field2D &f) {
   return -1.0*f;
