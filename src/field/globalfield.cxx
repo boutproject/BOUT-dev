@@ -150,14 +150,14 @@ void GlobalField2D::gather(const Field2D &f) {
 
         if(pe != MPI_UNDEFINED) {
           // Unpack data from processor 'pe'
-          int xorig, yorig;
-          proc_origin(pe, &xorig, &yorig);
-          int xsize, ysize;
-          proc_size(pe, &xsize, &ysize);
+          int remote_xorig, remote_yorig;
+          proc_origin(pe, &remote_xorig, &remote_yorig);
+          int remote_xsize, remote_ysize;
+          proc_size(pe, &remote_xsize, &remote_ysize);
           
-          for(int x=0;x<xsize;x++)
-            for(int y=0;y<ysize;y++) {
-              (*this)(x+xorig,y+yorig) =  buffer[pe][x*ysize + y];
+          for(int x=0;x<remote_xsize;x++)
+            for(int y=0;y<remote_ysize;y++) {
+              (*this)(x+remote_xorig,y+remote_yorig) =  buffer[pe][x*remote_ysize + y];
             }
           
           req[pe] = MPI_REQUEST_NULL;
@@ -184,7 +184,7 @@ void GlobalField2D::gather(const Field2D &f) {
 }
 
 const Field2D GlobalField2D::scatter() const {
-  Field2D result;
+  Field2D result(mesh);
   result.allocate();
   
   MPI_Status status;
@@ -314,16 +314,16 @@ void GlobalField3D::gather(const Field3D &f) {
 
         if(pe != MPI_UNDEFINED) {
           // Unpack data from processor 'pe'
-          int xorig, yorig;
-          proc_origin(pe, &xorig, &yorig);
-          int xsize, ysize;
-          proc_size(pe, &xsize, &ysize);
+          int remote_xorig, remote_yorig;
+          proc_origin(pe, &remote_xorig, &remote_yorig);
+          int remote_xsize, remote_ysize;
+          proc_size(pe, &remote_xsize, &remote_ysize);
           int zsize = mesh->LocalNz;
           
-          for(int x=0;x<xsize;x++)
-            for(int y=0;y<ysize;y++)
+          for(int x=0;x<remote_xsize;x++)
+            for(int y=0;y<remote_ysize;y++)
               for(int z=0;z<mesh->LocalNz;z++) {
-                (*this)(x+xorig,y+yorig,z) =  buffer[pe][x*ysize*zsize + y*zsize + z];
+                (*this)(x+remote_xorig,y+remote_yorig,z) =  buffer[pe][x*remote_ysize*zsize + y*zsize + z];
               }
           
           req[pe] = MPI_REQUEST_NULL;
@@ -352,7 +352,7 @@ void GlobalField3D::gather(const Field3D &f) {
 }
 
 const Field3D GlobalField3D::scatter() const {
-  Field3D result;
+  Field3D result(mesh);
   result.allocate();
   
   MPI_Status status;

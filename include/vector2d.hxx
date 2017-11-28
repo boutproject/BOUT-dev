@@ -47,7 +47,7 @@ class Vector3D; //#include "vector3d.hxx"
  */ 
 class Vector2D : public FieldData {
  public:
-  Vector2D();
+  Vector2D(Mesh * fieldmesh = nullptr);
   Vector2D(const Vector2D &f);
   ~Vector2D();
 
@@ -140,13 +140,15 @@ class Vector2D : public FieldData {
   bool is3D() const override     { return false; }
   int  byteSize() const override { return 3*sizeof(BoutReal); }
   int  BoutRealSize() const override { return 3; }
-  int  getData(int jx, int jy, int jz, void *vptr) const override;
-  int  getData(int jx, int jy, int jz, BoutReal *rptr) const override;
-  int  setData(int jx, int jy, int jz, void *vptr) override;
-  int  setData(int jx, int jy, int jz, BoutReal *rptr) override;
 
   /// Apply boundary condition to all fields
   void applyBoundary(bool init=false) override;
+  void applyBoundary(const string &condition) {
+    x.applyBoundary(condition);
+    y.applyBoundary(condition);
+    z.applyBoundary(condition);
+  }
+  void applyBoundary(const char* condition) { applyBoundary(string(condition)); }
   void applyTDerivBoundary() override;
  private:
   

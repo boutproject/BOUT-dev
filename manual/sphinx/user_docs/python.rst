@@ -22,6 +22,8 @@ boututils
 
 -  ``linear_regression()``
 
+-  ``showdata()`` visualises and animates 2D data (time + 1 spatial dimension) or 3D data (time + 2 spatial dimensions). The animation object can be returned, or the animation can be saved to a file or displayed on screen. 
+
 boutdata
 --------
 
@@ -41,8 +43,10 @@ boutdata
 
 -  ``gen_surface()`` is a generator for iterating over flux surfaces
 
-bout\_runners
--------------
+.. _sec-bout_runners:
+
+bout_runners
+------------
 
 ``bout_runners`` contains classes which gives an alternative way of
 running BOUT++ simulations either normally using the class

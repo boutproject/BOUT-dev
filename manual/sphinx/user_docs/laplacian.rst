@@ -115,33 +115,37 @@ condition on both AC and DC components.
     lap->setOuterBoundaryFlags(Outer_Flags_Value);
     lap->setFlags(Flags_Value);
 
-+--------------------------+-------------------------------------------------------------------------+----------------------------------------+
-| Name                     | Meaning                                                                 | Default value                          |
-+==========================+=========================================================================+========================================+
-| ``type``                 | Which implementation to use                                             | ``tri`` (serial), ``spt`` (parallel)   |
-+--------------------------+-------------------------------------------------------------------------+----------------------------------------+
-| ``filter``               | Filter out modes above :math:`(1-`\ ``filter``\                         | 0                                      |
-|                          | :math:`)\times k_{max}`, if using Fourier solver                        |                                        |
-+--------------------------+-------------------------------------------------------------------------+----------------------------------------+
-| ``maxmode``              | Filter modes with :math:`n >`\ ``maxmode``                              | ``MZ``/2                               |
-+--------------------------+-------------------------------------------------------------------------+----------------------------------------+
-| ``all_terms``            | Include first derivative terms                                          | ``true``                               |
-+--------------------------+-------------------------------------------------------------------------+----------------------------------------+
-| ``global_flags``         | Sets global inversion options See table                                 | ``0``                                  |
-|                          | :ref:`Laplace global flags<tab-laplaceglobalflags>`                     |                                        |
-+--------------------------+-------------------------------------------------------------------------+----------------------------------------+
-| ``inner_boundary_flags`` | Sets boundary conditions on inner boundary. See table                   | ``0``                                  |
-|                          | :ref:`Laplace boundary flags<tab-laplaceBCflags>`                       |                                        |
-+--------------------------+-------------------------------------------------------------------------+----------------------------------------+
-| ``outer_boundary_flags`` | Sets boundary conditions on outer boundary. See table                   | ``0``                                  |
-|                          | :ref:`Laplace boundary flags<tab-laplaceBCflags>`                       |                                        |
-+--------------------------+-------------------------------------------------------------------------+----------------------------------------+
-| ``flags``                | DEPRECATED. Sets global solver options and boundary                     | ``0``                                  |
-|                          | conditions. See :ref:`Laplace flags<tab-laplaceflags>` or               |                                        |
-|                          | :doc:`invert_laplace.cxx<../_breathe_autogen/file/invert__laplace_8cxx>`|                                        |
-+--------------------------+-------------------------------------------------------------------------+----------------------------------------+
-| ``include_yguards``      | Perform inversion in :math:`y`\ -boundary guard cells                   | ``true``                               |
-+--------------------------+-------------------------------------------------------------------------+----------------------------------------+
++--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
+| Name                     | Meaning                                                                 | Default value                                |
++==========================+=========================================================================+==============================================+
+| ``type``                 | Which implementation to use                                             | ``tri`` (serial), ``spt`` (parallel)         |
++--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
+| ``filter``               | Filter out modes above :math:`(1-`\ ``filter``\                         | 0                                            |
+|                          | :math:`)\times k_{max}`, if using Fourier solver                        |                                              |
++--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
+| ``maxmode``              | Filter modes with :math:`n >`\ ``maxmode``                              | ``MZ``/2                                     |
++--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
+| ``all_terms``            | Include first derivative terms                                          | ``true``                                     |
++--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
+| ``nonuniform``           | Include                                                                 | Same as global ``non_uniform``.              |
+|                          | :ref:`corrections for non-uniform meshes <sec-diffmethod-nonuniform>`   | See :ref:`here <sec-diffmethod-nonuniform>`  |
+|                          | (dx not constant)                                                       |                                              |
++--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
+| ``global_flags``         | Sets global inversion options See table                                 | ``0``                                        |
+|                          | :ref:`Laplace global flags<tab-laplaceglobalflags>`                     |                                              |
++--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
+| ``inner_boundary_flags`` | Sets boundary conditions on inner boundary. See table                   | ``0``                                        |
+|                          | :ref:`Laplace boundary flags<tab-laplaceBCflags>`                       |                                              |
++--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
+| ``outer_boundary_flags`` | Sets boundary conditions on outer boundary. See table                   | ``0``                                        |
+|                          | :ref:`Laplace boundary flags<tab-laplaceBCflags>`                       |                                              |
++--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
+| ``flags``                | DEPRECATED. Sets global solver options and boundary                     | ``0``                                        |
+|                          | conditions. See :ref:`Laplace flags<tab-laplaceflags>` or               |                                              |
+|                          | :doc:`invert_laplace.cxx<../_breathe_autogen/file/invert__laplace_8cxx>`|                                              |
++--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
+| ``include_yguards``      | Perform inversion in :math:`y`\ -boundary guard cells                   | ``true``                                     |
++--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
 
 Table: Laplacian inversion options
 
@@ -421,18 +425,21 @@ We now introduce
 
 .. math::
 
-       &c_1 = \frac{dg^{xx}}{\text{d}x^2}& &c_2 = dg^{zz}& &c_3 =
-       \frac{2dg^{xz}}{2\text{d}x}& && \\ &c_4 = \frac{dG^x + g^{xx}\frac{-c_{n-1}
-       + c_{n+1}}{2c_n\text{d}x}}{2\text{d}x}& &c_5 = dG^z& &&
+   c_1 = \frac{dg^{xx}}{\text{d}x^2}
+
+   c_2 = dg^{zz}
+
+   c_3 = \frac{2dg^{xz}}{2\text{d}x}
+
+   c_4 = \frac{dG^x + g^{xx}\frac{-c_{n-1} + c_{n+1}}{2c_n\text{d}x}}{2\text{d}x}
+
+   c_5 = dG^z
 
 which inserted in equation (:eq:`discretized_laplace`) gives
 
 .. math::
 
-       &( c_1 - c_4 -ikc_3 ) F_{z,n-1} \\
-           +&( -2c_1 - k^2c_2 +ikc_5 + a ) F_{z,n} \\
-           +&( c_1 + c_4 + ikc_3 ) F_{z, n+1} \\
-        =& B_{z,n}
+       ( c_1 - c_4 -ikc_3 ) F_{z,n-1} + ( -2c_1 - k^2c_2 +ikc_5 + a ) F_{z,n} + ( c_1 + c_4 + ikc_3 ) F_{z, n+1} = B_{z,n}
 
 This can be formulated as the matrix equation
 
@@ -537,8 +544,9 @@ value of the field in the given direction.
 
   .. math::
 
-         &A_4 = dG^x + g^{xx}\texttt{ddx\_c} + g^{xz}\texttt{ddz\_c}& &A_5 = dG^z +
-         g^{xz}\texttt{ddx\_c} + g^{xx}\texttt{ddz\_c}&
+     A_4 = dG^x + g^{xx}\texttt{ddx\_c} + g^{xz}\texttt{ddz\_c}
+
+     A_5 = dG^z + g^{xz}\texttt{ddx\_c} + g^{xx}\texttt{ddz\_c}
 
   The coefficients :math:`c_{i+m,j+n}` are finally being set according
   to the appropriate order of discretisation. The coefficients can be

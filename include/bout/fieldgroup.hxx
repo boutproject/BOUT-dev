@@ -149,6 +149,13 @@ class FieldGroup {
   }
 
   /*!
+   * Return number of Field3Ds
+   */
+  int size_field3d() const {
+    return f3vec.size();
+  }
+
+  /*!
    * Test whether this group is empty
    */
   bool empty() const {

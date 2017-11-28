@@ -49,7 +49,7 @@ This will have the following effect:
    and added to the time derivative.
    
 Choosing manufactured solutions
--------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Manufactured solutions must be continuous and have continuous
 derivatives. Common mistakes:

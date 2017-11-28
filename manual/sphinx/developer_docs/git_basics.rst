@@ -11,7 +11,7 @@ For a full guide to using Git, see the `git website`_ or online
 tutorials. This manual just explains some basic ways to use Git, and the
 recommended work flow when working with BOUT++.
 
-.. _git website: http://git-scm.com/
+.. _git website: https://git-scm.com/
 
 If you’re just starting with BOUT++, current developers will want to
 check your changes before submitting them to the repository. In this

@@ -44,7 +44,7 @@ namespace { // These classes only visible in this file
   
   class FieldX : public FieldGenerator {
   public:
-    FieldGenerator* clone(const list<FieldGenerator*> UNUSED(args)) { return new FieldX(); }
+    std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > UNUSED(args)) { return std::shared_ptr<FieldGenerator>( new FieldX()); }
     double generate(double x, double UNUSED(y), double UNUSED(z), double UNUSED(t)) {
       return x;
     }
@@ -53,7 +53,7 @@ namespace { // These classes only visible in this file
   
   class FieldY : public FieldGenerator {
   public:
-    FieldGenerator* clone(const list<FieldGenerator*> UNUSED(args)) { return new FieldY(); }
+    std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > UNUSED(args)) { return std::shared_ptr<FieldGenerator>( new FieldY()); }
     double generate(double UNUSED(x), double y, double UNUSED(z), double UNUSED(t)) {
       return y;
     }
@@ -62,7 +62,7 @@ namespace { // These classes only visible in this file
 
   class FieldZ : public FieldGenerator {
   public:
-    FieldGenerator* clone(const list<FieldGenerator*> UNUSED(args)) { return new FieldZ(); }
+    std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > UNUSED(args)) { return std::shared_ptr<FieldGenerator>( new FieldZ()); }
     double generate(double UNUSED(x), double UNUSED(y), double z, double UNUSED(t)) {
       return z;
     }
@@ -71,7 +71,7 @@ namespace { // These classes only visible in this file
   
   class FieldT : public FieldGenerator {
   public:
-    FieldGenerator* clone(const list<FieldGenerator*> UNUSED(args)) { return new FieldT(); }
+    std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > UNUSED(args)) { return std::shared_ptr<FieldGenerator>( new FieldT()); }
     double generate(double UNUSED(x), double UNUSED(y), double UNUSED(z), double t) {
       return t;
     }
@@ -81,28 +81,28 @@ namespace { // These classes only visible in this file
   /// Unary minus
   class FieldUnary : public FieldGenerator {
   public:
-    FieldUnary(FieldGenerator* g) : gen(g) {}
+    FieldUnary(std::shared_ptr<FieldGenerator> g) : gen(g) {}
   
-    FieldGenerator* clone(const list<FieldGenerator*> args) {
+    std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > args) {
       if(args.size() != 1) {
         throw ParseException("Incorrect number of arguments to unary minus. Expecting 1, got %d", args.size());
       }
-      return new FieldUnary(args.front());
+      return std::shared_ptr<FieldGenerator>( new FieldUnary(args.front()));
     }
     double generate(double x, double y, double z, double t) {
       return -gen->generate(x,y,z,t);
     }
     const std::string str() {return std::string("(-")+gen->str()+std::string(")");}
   private:
-    FieldGenerator *gen;
+    std::shared_ptr<FieldGenerator> gen;
   };
 }
 
-FieldGenerator* FieldBinary::clone(const list<FieldGenerator*> args) {
+std::shared_ptr<FieldGenerator> FieldBinary::clone(const list<std::shared_ptr<FieldGenerator> > args) {
   if(args.size() != 2)
     throw ParseException("Binary operator expecting 2 arguments. Got '%d'", args.size());
   
-  return new FieldBinary(args.front(), args.back(), op);
+  return std::shared_ptr<FieldGenerator>( new FieldBinary(args.front(), args.back(), op));
 }
 
 BoutReal FieldBinary::generate(double x, double y, double z, double t) {
@@ -123,66 +123,53 @@ BoutReal FieldBinary::generate(double x, double y, double z, double t) {
 
 ExpressionParser::ExpressionParser() {
   // Add standard binary operations
-  addBinaryOp('+', new FieldBinary(NULL, NULL, '+'), 10);
-  addBinaryOp('-', new FieldBinary(NULL, NULL, '-'), 10);
-  addBinaryOp('*', new FieldBinary(NULL, NULL, '*'), 20);
-  addBinaryOp('/', new FieldBinary(NULL, NULL, '/'), 20);
-  addBinaryOp('^', new FieldBinary(NULL, NULL, '^'), 30);
+  addBinaryOp('+', std::shared_ptr<FieldGenerator>( new FieldBinary(NULL, NULL, '+')), 10);
+  addBinaryOp('-', std::shared_ptr<FieldGenerator>( new FieldBinary(NULL, NULL, '-')), 10);
+  addBinaryOp('*', std::shared_ptr<FieldGenerator>( new FieldBinary(NULL, NULL, '*')), 20);
+  addBinaryOp('/', std::shared_ptr<FieldGenerator>( new FieldBinary(NULL, NULL, '/')), 20);
+  addBinaryOp('^', std::shared_ptr<FieldGenerator>( new FieldBinary(NULL, NULL, '^')), 30);
   
   // Add standard generators
-  addGenerator("x", new FieldX());
-  addGenerator("y", new FieldY());
-  addGenerator("z", new FieldZ());
-  addGenerator("t", new FieldT());
+  addGenerator("x", std::shared_ptr<FieldGenerator>( new FieldX()));
+  addGenerator("y", std::shared_ptr<FieldGenerator>( new FieldY()));
+  addGenerator("z", std::shared_ptr<FieldGenerator>( new FieldZ()));
+  addGenerator("t", std::shared_ptr<FieldGenerator>( new FieldT()));
 }
 
-ExpressionParser::~ExpressionParser() {
-  // Free memory
-  for(const auto& it : gen)
-    delete it.second;
-  
-  for(const auto& it : bin_op)
-    delete it.second.first;
-  
-  // Delete allocated generators
-  for(const auto& it : genheap)
-    delete it;
-}
-
-void ExpressionParser::addGenerator(string name, FieldGenerator* g) {
+void ExpressionParser::addGenerator(string name, std::shared_ptr<FieldGenerator> g) {
   gen[name] = g;
 }
 
-void ExpressionParser::addBinaryOp(char sym, FieldGenerator* b, int precedence) {
-  bin_op[sym] = pair<FieldGenerator*, int>(b, precedence);
+void ExpressionParser::addBinaryOp(char sym, std::shared_ptr<FieldGenerator> b, int precedence) {
+  bin_op[sym] = pair<std::shared_ptr<FieldGenerator> , int>(b, precedence);
 }
 
-FieldGenerator* ExpressionParser::parseString(const string &input) {
+std::shared_ptr<FieldGenerator> ExpressionParser::parseString(const string &input) {
   // Allocate a new lexer
   LexInfo lex(input);
   
   // Parse
-  FieldGenerator *expr = parseExpression(lex);
+  std::shared_ptr<FieldGenerator> expr = parseExpression(lex);
   
-  return expr;
+  return std::shared_ptr<FieldGenerator>(expr);
 }
 
 //////////////////////////////////////////////////////////
 // Private functions
 
-FieldGenerator* ExpressionParser::parseIdentifierExpr(LexInfo &lex) {
+std::shared_ptr<FieldGenerator> ExpressionParser::parseIdentifierExpr(LexInfo &lex) {
   string name = lowercase(lex.curident);
   lex.nextToken();
   
   if(lex.curtok == '(') {
     // Argument list. Find if a generator or function
     
-    map<string, FieldGenerator*>::iterator it = gen.find(name);
+    map<string, std::shared_ptr<FieldGenerator>>::iterator it = gen.find(name);
     if(it == gen.end())
       throw ParseException("Couldn't find generator '%s'", name.c_str());
     
     // Parse arguments (if any)
-    list<FieldGenerator*> args;
+    list<std::shared_ptr<FieldGenerator> > args;
     
     lex.nextToken();
     if(lex.curtok == ')') {
@@ -192,7 +179,7 @@ FieldGenerator* ExpressionParser::parseIdentifierExpr(LexInfo &lex) {
     }
     do{
       // Should be an expression
-      FieldGenerator *a = parseExpression(lex);
+      std::shared_ptr<FieldGenerator> a = parseExpression(lex);
       if(!a) {
 	throw ParseException("Couldn't parse argument %d to function '%s'", 
                              args.size()+1, name.c_str());
@@ -215,23 +202,23 @@ FieldGenerator* ExpressionParser::parseIdentifierExpr(LexInfo &lex) {
     
   }else {
     // No arguments. Search in generator list
-    map<string, FieldGenerator*>::iterator it = gen.find(name);
+    map<string, std::shared_ptr<FieldGenerator> >::iterator it = gen.find(name);
     if(it == gen.end()) {
       // Not in internal map. Try to resolve
-      FieldGenerator* g = resolve(name);
+      std::shared_ptr<FieldGenerator> g = resolve(name);
       if(g == NULL)
         throw ParseException("Couldn't find generator '%s'", name.c_str());
       return g;
     }
-    list<FieldGenerator*> args;
+    list<std::shared_ptr<FieldGenerator>> args;
     return record( it->second->clone(args) );
   }
 }
 
-FieldGenerator* ExpressionParser::parseParenExpr(LexInfo &lex) {
+std::shared_ptr<FieldGenerator> ExpressionParser::parseParenExpr(LexInfo &lex) {
   lex.nextToken(); // eat '('
   
-  FieldGenerator* g = parseExpression(lex);
+  std::shared_ptr<FieldGenerator> g = parseExpression(lex);
   if(!g)
     return NULL;
   
@@ -241,21 +228,19 @@ FieldGenerator* ExpressionParser::parseParenExpr(LexInfo &lex) {
   return g;
 }
 
-FieldGenerator* ExpressionParser::parsePrimary(LexInfo &lex) {
+std::shared_ptr<FieldGenerator> ExpressionParser::parsePrimary(LexInfo &lex) {
   switch(lex.curtok) {
   case -1: { // a number
     lex.nextToken(); // Eat number
-    return record( new FieldValue(lex.curval) );
+    return record( std::shared_ptr<FieldGenerator>( new FieldValue(lex.curval) ));
   }
   case -2: {
     return parseIdentifierExpr(lex);
   }
   case '-': {
     // Unary minus
-    //lex.nextToken(); // Eat '-'
-    //return record( new FieldUnary(parsePrimary(lex)) );
     // Don't eat the minus, and return an implicit zero
-    return record( new FieldValue(0.0) );
+    return record( std::shared_ptr<FieldGenerator>( new FieldValue(0.0) ));
   }
   case '(':
   case '[':
@@ -264,7 +249,7 @@ FieldGenerator* ExpressionParser::parsePrimary(LexInfo &lex) {
   return NULL;
 }
 
-FieldGenerator* ExpressionParser::parseBinOpRHS(LexInfo &lex, int ExprPrec, FieldGenerator* lhs) {
+std::shared_ptr<FieldGenerator> ExpressionParser::parseBinOpRHS(LexInfo &lex, int ExprPrec, std::shared_ptr<FieldGenerator> lhs) {
   
   while(true) {
     // Check for end of input
@@ -272,12 +257,12 @@ FieldGenerator* ExpressionParser::parseBinOpRHS(LexInfo &lex, int ExprPrec, Fiel
       return lhs;
     
     // Next token should be a binary operator
-    map<char, pair<FieldGenerator*, int> >::iterator it = bin_op.find(lex.curtok);
+    map<char, pair<std::shared_ptr<FieldGenerator> , int> >::iterator it = bin_op.find(lex.curtok);
     
     if(it == bin_op.end())
       throw ParseException("Unexpected binary operator '%c'", lex.curtok);
     
-    FieldGenerator* op = it->second.first;
+    std::shared_ptr<FieldGenerator> op = it->second.first;
     int TokPrec = it->second.second;
   
     if (TokPrec < ExprPrec)
@@ -285,14 +270,14 @@ FieldGenerator* ExpressionParser::parseBinOpRHS(LexInfo &lex, int ExprPrec, Fiel
     
     lex.nextToken(); // Eat binop
     
-    FieldGenerator* rhs = parsePrimary(lex);
+    std::shared_ptr<FieldGenerator> rhs = parsePrimary(lex);
     if(!rhs)
       return NULL;
     
     if((lex.curtok == 0) || (lex.curtok == ')') || (lex.curtok == ',')) {
       // Done
     
-      list<FieldGenerator*> args;
+      list<std::shared_ptr<FieldGenerator> > args;
       args.push_front(lhs);
       args.push_back(rhs);
       return record( op->clone(args) );
@@ -312,15 +297,15 @@ FieldGenerator* ExpressionParser::parseBinOpRHS(LexInfo &lex, int ExprPrec, Fiel
     }
     
     // Merge lhs and rhs into new lhs
-    list<FieldGenerator*> args;
+    list<std::shared_ptr<FieldGenerator> > args;
     args.push_front(lhs);
     args.push_back(rhs);
     lhs = record( op->clone(args) );
   }
 }
 
-FieldGenerator* ExpressionParser::parseExpression(LexInfo &lex) {
-  FieldGenerator* lhs = parsePrimary(lex);
+std::shared_ptr<FieldGenerator> ExpressionParser::parseExpression(LexInfo &lex) {
+  std::shared_ptr<FieldGenerator> lhs = parsePrimary(lex);
   if(!lhs)
     return NULL;
   return parseBinOpRHS(lex, 0, lhs);
@@ -334,13 +319,13 @@ ExpressionParser::LexInfo::LexInfo(string input) {
   ss.str(input); // Set the input stream
   ss.seekg(0, std::ios_base::beg);
   
-  LastChar = ss.get(); // First char from stream
+  LastChar = static_cast<signed char>(ss.get()); // First char from stream
   nextToken(); // Get first token
 }
 
 char ExpressionParser::LexInfo::nextToken() {
   while(isspace(LastChar))
-    LastChar = ss.get();
+    LastChar = static_cast<signed char>(ss.get());
   
   if(!ss.good()) {
     curtok = 0;
@@ -351,7 +336,7 @@ char ExpressionParser::LexInfo::nextToken() {
     curident.clear();
     do {
       curident += LastChar;
-      LastChar = ss.get();
+      LastChar = static_cast<signed char>(ss.get());
     }while(isalnum(LastChar) || (LastChar == '_') || (LastChar == ':'));
     curtok = -2;
     return curtok;
@@ -376,7 +361,7 @@ char ExpressionParser::LexInfo::nextToken() {
         gotexponent = true;
         // Next character should be a '+' or '-' or digit
         NumStr += 'e';
-        LastChar = ss.get();
+        LastChar = static_cast<signed char>(ss.get());
         if((LastChar != '+') && (LastChar != '-') && !isdigit(LastChar)) {
           throw ParseException("ExpressionParser error: Expecting '+', '-' or number after 'e'");
         }
@@ -384,21 +369,22 @@ char ExpressionParser::LexInfo::nextToken() {
         break;
       
       NumStr += LastChar;
-      LastChar = ss.get();
+      LastChar = static_cast<signed char>(ss.get());
     }
     
     curval = strtod(NumStr.c_str(), 0);
     curtok = -1;
     return curtok;
   }
-  
-  curtok = LastChar;
-  LastChar = ss.get();
+
+  // LastChar is unsigned, explicitly cast
+  curtok = static_cast<signed char>(LastChar);
+  LastChar = static_cast<signed char>(ss.get());
   return curtok;
 }
 
 int ExpressionParser::LexInfo::getPos() {
-  return (int) ss.tellg();
+  return static_cast<int>(ss.tellg());
 }
 
 //////////////////////////////////////////////////////////
@@ -406,7 +392,7 @@ int ExpressionParser::LexInfo::getPos() {
 
 
 ParseException::ParseException(const char *s, ...) {
-  if(s == (const char*) NULL)
+  if(s == nullptr)
     return;
 
   int buf_len=1024;
@@ -417,7 +403,7 @@ ParseException::ParseException(const char *s, ...) {
   delete[] buffer;
 }
 
-const char* ParseException::what() const throw() {
+const char* ParseException::what() const noexcept {
   return message.c_str();
 }
 

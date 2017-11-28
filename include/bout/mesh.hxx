@@ -79,6 +79,10 @@ typedef void* comm_handle;
 class Mesh {
  public:
 
+  /// Constructor for a "bare", uninitialised Mesh
+  /// Only useful for testing
+  Mesh() : source(nullptr), coords(nullptr), options(nullptr) {}
+
   /// Constructor
   /// @param[in] s  The source to be used for loading variables
   /// @param[in] options  The options section for settings
@@ -376,8 +380,6 @@ class Mesh {
   virtual const RangeIterator iterateBndryLowerInnerY() const = 0;
   virtual const RangeIterator iterateBndryUpperOuterY() const = 0;
   virtual const RangeIterator iterateBndryUpperInnerY() const = 0;
-
-
   
   bool hasBndryLowerY(); ///< Is there a boundary on the lower guard cells in Y?
   bool hasBndryUpperY(); ///< Is there a boundary on the upper guard cells in Y?
@@ -460,15 +462,24 @@ class Mesh {
   bool StaggerGrids;    ///< Enable staggered grids (Centre, Lower). Otherwise all vars are cell centred (default).
   
   bool IncIntShear; ///< Include integrated shear (if shifting X)
-  
+
   /// Coordinate system
-  Coordinates* coordinates();
-  
-  bool freeboundary_xin, freeboundary_xout, freeboundary_ydown, freeboundary_yup; ///< Applying free boundaries in derivative operations?
+  Coordinates *coordinates() {
+    if (coords) { // True branch most common, returns immediately
+      return coords;
+    }
+    // No coordinate system set. Create default
+    // Note that this can't be allocated here due to incomplete type
+    // (circular dependency between Mesh and Coordinates)
+    coords = createDefaultCoordinates();
+    return coords;
+  }
 
   // First derivatives in index space
   // Implemented in src/mesh/index_derivs.hxx
 
+  BoutReal fft_derivs_filter; ///< Fraction of modes to filter. This is set in derivs_init from option "ddz:fft_filter"
+  
   const Field3D indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method); ///< First derivative in X direction, in index space
   const Field2D indexDDX(const Field2D &f); ///< First derivative in X direction, in index space
   
@@ -560,16 +571,6 @@ class Mesh {
   typedef BoutReal (*deriv_func)(stencil &); ///< Derivative functions of a single field stencil
   typedef BoutReal (*upwind_func)(BoutReal, stencil &); ///< Derivative functions of a BoutReal velocity, and field stencil
   typedef BoutReal (*flux_func)(stencil&, stencil &); ///< ///< Derivative functions of a velocity field, and field stencil v, f
-  
-  typedef struct {
-    BoutReal inner;
-    BoutReal outer;
-  } boundary_derivs_pair;
-  // More types for forward/backward differences to calculate derivatives in boundary guard cells for free boundary conditions
-  typedef boundary_derivs_pair (*inner_boundary_deriv_func)(forward_stencil &); // f
-  typedef boundary_derivs_pair (*outer_boundary_deriv_func)(backward_stencil &); // f
-  typedef boundary_derivs_pair (*inner_boundary_upwind_func)(forward_stencil &); // v,f
-  typedef boundary_derivs_pair (*outer_boundary_upwind_func)(backward_stencil &); // v,f
 
   /// Transform a field into field-aligned coordinates
   const Field3D toFieldAligned(const Field3D &f) {
@@ -622,16 +623,17 @@ class Mesh {
   void derivs_init(Options* options);
   
   // Loop over mesh, applying a stencil in the X direction
-  const Field2D applyXdiff(const Field2D &var, deriv_func func, inner_boundary_deriv_func func_in, outer_boundary_deriv_func func_out, CELL_LOC loc = CELL_DEFAULT);
-  const Field3D applyXdiff(const Field3D &var, deriv_func func, inner_boundary_deriv_func func_in, outer_boundary_deriv_func func_out, CELL_LOC loc = CELL_DEFAULT);
+  const Field2D applyXdiff(const Field2D &var, deriv_func func, CELL_LOC loc = CELL_DEFAULT, REGION region = RGN_NOX);
+  const Field3D applyXdiff(const Field3D &var, deriv_func func, CELL_LOC loc = CELL_DEFAULT, REGION region = RGN_NOX);
   
-  const Field2D applyYdiff(const Field2D &var, deriv_func func, inner_boundary_deriv_func func_in, outer_boundary_deriv_func func_out, CELL_LOC loc = CELL_DEFAULT);
-  const Field3D applyYdiff(const Field3D &var, deriv_func func, inner_boundary_deriv_func func_in, outer_boundary_deriv_func func_out, CELL_LOC loc = CELL_DEFAULT);
+  const Field2D applyYdiff(const Field2D &var, deriv_func func, CELL_LOC loc = CELL_DEFAULT, REGION region = RGN_NOBNDRY);
+  const Field3D applyYdiff(const Field3D &var, deriv_func func, CELL_LOC loc = CELL_DEFAULT, REGION region = RGN_NOBNDRY);
 
-  const Field3D applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc = CELL_DEFAULT);
+  const Field3D applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc = CELL_DEFAULT, REGION region = RGN_ALL);
   
 private:
-  
+  /// Allocates a default Coordinates object
+  Coordinates *createDefaultCoordinates();
 };
 
 #endif // __MESH_H__

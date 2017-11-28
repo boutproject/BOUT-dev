@@ -174,9 +174,9 @@ class Field3D : public Field, public FieldData {
    * Note: the global "mesh" can't be passed here because
    * fields may be created before the mesh is.
    */
-  Field3D(Mesh *msh = nullptr);
-  
-  /*! 
+  Field3D(Mesh *localmesh = nullptr);
+
+  /*!
    * Copy constructor
    */
   Field3D(const Field3D& f);
@@ -184,7 +184,7 @@ class Field3D : public Field, public FieldData {
   /// Constructor from 2D field
   Field3D(const Field2D& f);
   /// Constructor from value
-  Field3D(BoutReal val );
+  Field3D(BoutReal val ,Mesh * localmesh = nullptr);
   /// Destructor
   ~Field3D();
 
@@ -452,11 +452,7 @@ class Field3D : public Field, public FieldData {
 
   // Stencils for differencing
   void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const override;
-  void setXStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
-  void setXStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   void setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const override;
-  void setYStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
-  void setYStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const override;
   
   // FieldData virtual functions
@@ -465,11 +461,6 @@ class Field3D : public Field, public FieldData {
   bool is3D() const override     { return true; }         // Field is 3D
   int  byteSize() const override { return sizeof(BoutReal); } // Just one BoutReal
   int  BoutRealSize() const override { return 1; }
-
-  DEPRECATED(int getData(int x, int y, int z, void *vptr) const override);
-  DEPRECATED(int getData(int x, int y, int z, BoutReal *rptr) const override);
-  DEPRECATED(int setData(int x, int y, int z, void *vptr) override);
-  DEPRECATED(int setData(int x, int y, int z, BoutReal *rptr) override);
 
   /// Visitor pattern support
   void accept(FieldVisitor &v) override { v.accept(*this); }
@@ -687,7 +678,7 @@ bool finite(const Field3D &var);
 #if CHECK > 0
 void checkData(const Field3D &f); ///< Checks if the data is valid.
 #else
-inline void checkData(const Field3D &f){;}; ///< Checks if the data is valid.
+inline void checkData(const Field3D &UNUSED(f)){;}; ///< Checks if the data is valid.
 #endif
  
 /*!

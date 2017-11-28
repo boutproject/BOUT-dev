@@ -57,10 +57,8 @@ extern Mesh * mesh;
 class Field {
  public:
   Field();
-  Field(Mesh * msh);
+  Field(Mesh * localmesh);
   virtual ~Field() { }
-
-  //virtual void setStencil(bstencil *val, bindex *bx) const = 0;
 
   // These routines only set a stencil in one dimension
   // Should be faster, and replaces the above SetStencil function.
@@ -104,7 +102,7 @@ class Field {
   void setName(std::string s) { name = s; }
 #else
   std::string getName() const { return ""; }
-  void setName(std::string s) { ;}
+  void setName(std::string UNUSED(s)) {}
 #endif
   std::string name;
 

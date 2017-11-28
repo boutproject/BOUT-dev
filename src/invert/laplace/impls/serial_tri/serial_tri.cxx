@@ -107,7 +107,8 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b) {
  * \param[out] x    The inverted variable.
  */
 const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0) {
-  FieldPerp x;
+  Mesh *mesh = b.getMesh();
+  FieldPerp x(mesh);
   x.allocate();
 
   Coordinates *coord = mesh->coordinates();
@@ -206,7 +207,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
       dcomplex offset(0.0);
       for(int ix=0;ix<=ncx;ix++)
         offset += bk1d[ix];
-      offset /= (BoutReal) (ncx+1);
+      offset /= static_cast<BoutReal>(ncx + 1);
       for(int ix=0;ix<=ncx;ix++)
         bk1d[ix] -= offset;
     }

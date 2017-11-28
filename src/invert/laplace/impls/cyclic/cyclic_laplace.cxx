@@ -43,7 +43,8 @@
 
 #include "cyclic_laplace.hxx"
 
-LaplaceCyclic::LaplaceCyclic(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0) {
+LaplaceCyclic::LaplaceCyclic(Options *opt)
+    : Laplacian(opt), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
   // Get options
 
   OPTION(opt, dst, false);
@@ -100,7 +101,8 @@ LaplaceCyclic::~LaplaceCyclic() {
 }
 
 const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) {
-  FieldPerp x;  // Result
+  Mesh *mesh = rhs.getMesh();
+  FieldPerp x(mesh); // Result
   x.allocate();
 
   Coordinates *coord = mesh->coordinates();
@@ -144,14 +146,12 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
       BoutReal zlen = coord->dz*(mesh->LocalNz-3);
       BoutReal kwave=kz*2.0*PI/(2.*zlen); // wave number is 1/[rad]; DST has extra 2.
 
-      tridagMatrix(a[kz], b[kz], c[kz],
-                   bcmplx[kz],
-                   jy,
-                   kz, // wave number index
-                   kwave,   // kwave (inverse wave length)
-                   global_flags, inner_boundary_flags, outer_boundary_flags,
-                   &A, &C, &D,
-                   false);  // Don't include guard cells in arrays
+      tridagMatrix(a[kz], b[kz], c[kz], bcmplx[kz], jy,
+                   kz,    // wave number index
+                   kwave, // kwave (inverse wave length)
+                   global_flags, inner_boundary_flags, outer_boundary_flags, &Acoef,
+                   &Ccoef, &Dcoef,
+                   false); // Don't include guard cells in arrays
     }
 
     // Solve tridiagonal systems
@@ -194,14 +194,12 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
     // including boundary conditions
     for(int kz = 0; kz < nmode; kz++) {
       BoutReal kwave=kz*2.0*PI/(coord->zlength()); // wave number is 1/[rad]
-      tridagMatrix(a[kz], b[kz], c[kz],
-                   bcmplx[kz],
-                   jy,
-                   kz, // True for the component constant (DC) in Z
-                   kwave,   // Z wave number
-                   global_flags, inner_boundary_flags, outer_boundary_flags,
-                   &A, &C, &D,
-                   false);  // Don't include guard cells in arrays
+      tridagMatrix(a[kz], b[kz], c[kz], bcmplx[kz], jy,
+                   kz,    // True for the component constant (DC) in Z
+                   kwave, // Z wave number
+                   global_flags, inner_boundary_flags, outer_boundary_flags, &Acoef,
+                   &Ccoef, &Dcoef,
+                   false); // Don't include guard cells in arrays
     }
 
     // Solve tridiagonal systems

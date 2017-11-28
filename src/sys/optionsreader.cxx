@@ -21,19 +21,27 @@ OptionsReader* OptionsReader::getInstance() {
 }
 
 void OptionsReader::read(Options *options, const char *file, ...) {
-  if(file == (const char*) NULL) throw new BoutException("OptionsReader::read passed NULL filename\n");
+  if (file == nullptr) {
+    throw BoutException("OptionsReader::read passed NULL filename\n");
+  }
 
   int buf_len=512;
   char * filename=new char[buf_len];
 
   bout_vsnprintf(filename,buf_len, file);
 
-  output.write("Reading options file %s\n", filename);
+  output_info << "Reading options file " << filename << "\n";
 
   // Need to decide what file format to use
   OptionParser *parser = new OptionINI();
 
-  parser->read(options, filename);
+  try {
+    parser->read(options, filename);
+  } catch (BoutException &e) {
+    delete[] filename;
+    delete parser;
+    throw;
+  }
 
   delete[] filename;
   delete parser;
@@ -48,12 +56,18 @@ void OptionsReader::write(Options *options, const char *file, ...) {
 
   bout_vsnprintf(filename,buf_len, file);
   
-  output.write("Writing options to file %s\n", filename);
+  output_info << "Writing options to file " << filename << "\n";
 
   // Need to decide what file format to use
   OptionParser *parser = new OptionINI();
 
-  parser->write(options, filename);
+  try {
+    parser->write(options, filename);
+  } catch (BoutException &e) {
+    delete[] filename;
+    delete parser;
+    throw;
+  }
 
   delete[] filename;
   delete parser;
@@ -90,7 +104,7 @@ void OptionsReader::parseCommandLine(Options *options, int argc, char **argv) {
         i++;
         buffer.append(argv[i]);
         
-        if((argv[i][1] == 0) && (i < argc-2)) {
+        if((argv[i][1] == 0) && (i < argc-1)) {
           // End of string, so space after '=' sign too
           
           i++;

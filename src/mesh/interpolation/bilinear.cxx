@@ -27,8 +27,8 @@
 #include <string>
 #include <vector>
 
-Bilinear::Bilinear(int y_offset) :
-  Interpolation(y_offset) {
+Bilinear::Bilinear(int y_offset, Mesh *mesh)
+    : Interpolation(y_offset), w0(mesh), w1(mesh), w2(mesh), w3(mesh) {
 
   // Index arrays contain guard cells in order to get subscripts right
   i_corner = i3tensor(mesh->LocalNx, mesh->LocalNy, mesh->LocalNz);
@@ -42,7 +42,6 @@ Bilinear::Bilinear(int y_offset) :
 }
 
 void Bilinear::calcWeights(const Field3D &delta_x, const Field3D &delta_z) {
-
   for(int x=mesh->xstart;x<=mesh->xend;x++) {
     for(int y=mesh->ystart; y<=mesh->yend;y++) {
       for(int z=0;z<mesh->LocalNz;z++) {
@@ -51,8 +50,8 @@ void Bilinear::calcWeights(const Field3D &delta_x, const Field3D &delta_z) {
 
         // The integer part of xt_prime, zt_prime are the indices of the cell
         // containing the field line end-point
-        i_corner[x][y][z] = floor(delta_x(x,y,z));
-        k_corner[x][y][z] = floor(delta_z(x,y,z));
+        i_corner[x][y][z] = static_cast<int>(floor(delta_x(x,y,z)));
+        k_corner[x][y][z] = static_cast<int>(floor(delta_z(x,y,z)));
 
         // t_x, t_z are the normalised coordinates \in [0,1) within the cell
         // calculated by taking the remainder of the floating point index
@@ -84,8 +83,8 @@ void Bilinear::calcWeights(const Field3D &delta_x, const Field3D &delta_z, BoutM
 }
 
 Field3D Bilinear::interpolate(const Field3D& f) const {
-
-  Field3D f_interp;
+  Mesh *mesh = f.getMesh();
+  Field3D f_interp(mesh);
   f_interp.allocate();
 
   for(int x=mesh->xstart;x<=mesh->xend;x++) {

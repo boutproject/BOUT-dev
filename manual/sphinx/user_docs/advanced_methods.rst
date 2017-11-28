@@ -147,7 +147,7 @@ cell faces.
 .. math::
 
    \frac{1}{J}\frac{\partial}{\partial x}\left(Jg^{xx}\frac{\partial f}{\partial
-   x}\right) &\rightarrow&
+   x}\right) \rightarrow
            \frac{1}{J_i\mathrm{dx_i}}\left[J_{i+1/2}g^{xx}_{i+1/2}\left(\frac{f_{i+1}
                - f_{i}}{\mathrm{dx}_{i+1/2}}\right) -
                J_{i-1/2}g^{xx}_{i-1/2}\left(\frac{f_{i} -
