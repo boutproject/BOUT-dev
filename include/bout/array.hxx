@@ -96,13 +96,11 @@ public:
    * After this both Arrays share the same ArrayData
    */
   Array& operator=(const Array &other) {
-    dataPtrType old = ptr;
-
-    // Add reference
-    ptr = other.ptr;
-
     // Release the old data
-    release(old);
+    release(ptr);
+    
+    // Add reference to new data
+    ptr = other.ptr;
     
     return *this;
   }
@@ -111,27 +109,15 @@ public:
    * Move constructor
    */
   Array(Array&& other) {
-    ptr = other.ptr;
-    //Release pointer and set it to nullptr -- should just call release?
-    //Actually probably shouldn't need this as move suggests the other object
-    //leaves scope and hence the smart shared_ptr will automatically be cleaned up
-    other.ptr = nullptr;
+    ptr = std::move(other.ptr);
   }
 
   /*! 
    * Move assignment
    */
   Array& operator=(Array &&other) {
-    dataPtrType old = std::move(ptr);
-
+    release(ptr);
     ptr = std::move(other.ptr);
-
-    //Release pointer and set it to nullptr -- should just call release?
-    //Actually probably shouldn't need this as move suggests the other object
-    //leaves scope and hence the smart shared_ptr will automatically be cleaned up
-    other.ptr = nullptr;
-
-    release(old);
     
     return *this;
   }
@@ -225,11 +211,9 @@ public:
 #endif    
 
     //Update the local pointer and release old
-    //could probably just do ptr=p as shared_ptr should
-    //handle the rest.
-    dataPtrType old = ptr;
+    //Can't just do ptr=p as need to try to add to store.
+    release(ptr);
     ptr = std::move(p);
-    release(old);
   }
 
   //////////////////////////////////////////////////////////
@@ -286,9 +270,7 @@ public:
    * This is called by the template function swap(Array&, Array&)
    */
   void swap(Array<T> &other) {
-    dataPtrType tmp_ptr = ptr;
-    ptr = other.ptr;
-    other.ptr = tmp_ptr;
+    std::swap(ptr,other.ptr);
   }
   
 private:
@@ -299,11 +281,10 @@ private:
    * Handles the allocation and deletion of data
    */
   struct ArrayData {
-    int refs;   ///< Number of references to this data
     int len;    ///< Size of the array
     T *data;    ///< Array of data
     
-    ArrayData(int size) : refs(0), len(size) {
+    ArrayData(int size) : len(size) {
       data = new T[len];
     }
     ~ArrayData() {
@@ -404,14 +385,14 @@ private:
 	  store()[d->size()].push_back(std::move(d));
 #else	  
           store()[d->len].push_back(std::move(d));
-#endif	  
-        } else {
-	  d = nullptr;
-        }
-      } else {
-	d = nullptr;
+#endif
+	  //Could return here but seems to slow things down a lot
+	}
       }
     }
+
+    //Finish by setting pointer to nullptr if not putting on store
+    d=nullptr;
   }
   
 };
