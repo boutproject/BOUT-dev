@@ -463,7 +463,7 @@ void Field2D::setBoundaryTo(const Field2D &f2d) {
 ////////////// NON-MEMBER OVERLOADED OPERATORS //////////////
 
 #define F2D_OP_F2D(op)                                     \
-  const Field2D operator op(const Field2D &lhs, const Field2D &rhs) { \
+  Field2D operator op(const Field2D &lhs, const Field2D &rhs) { \
     Field2D result;                                                 \
     result.allocate();                                              \
     for(const auto& i : result)                                            \
@@ -477,7 +477,7 @@ F2D_OP_F2D(*);  // Field2D * Field2D
 F2D_OP_F2D(/);  // Field2D / Field2D
 
 #define F2D_OP_F3D(op)                                     \
-  const Field3D operator op(const Field2D &lhs, const Field3D &rhs) { \
+  Field3D operator op(const Field2D &lhs, const Field3D &rhs) { \
     Field3D result;                                                 \
     result.allocate();                                              \
     for(const auto& i : result)                                            \
@@ -491,7 +491,7 @@ F2D_OP_F3D(*);  // Field2D * Field3D
 F2D_OP_F3D(/);  // Field2D / Field3D
 
 #define F2D_OP_REAL(op)                                     \
-  const Field2D operator op(const Field2D &lhs, BoutReal rhs) {     \
+  Field2D operator op(const Field2D &lhs, BoutReal rhs) {     \
     Field2D result;                                                 \
     result.allocate();                                              \
     for(const auto& i : result)                                            \
@@ -505,7 +505,7 @@ F2D_OP_REAL(*);  // Field2D * BoutReal
 F2D_OP_REAL(/);  // Field2D / BoutReal
 
 #define REAL_OP_F2D(op)                                     \
-  const Field2D operator op(BoutReal lhs, const Field2D &rhs) {     \
+  Field2D operator op(BoutReal lhs, const Field2D &rhs) {     \
     Field2D result;                                                 \
     result.allocate();                                              \
     for(const auto& i : result)                                            \
@@ -519,7 +519,7 @@ REAL_OP_F2D(*);  // BoutReal * Field2D
 REAL_OP_F2D(/);  // BoutReal / Field2D
 
 // Unary minus
-const Field2D operator-(const Field2D &f) {
+Field2D operator-(const Field2D &f) {
   return -1.0*f;
 }
 

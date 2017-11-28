@@ -808,12 +808,12 @@ void Field3D::applyParallelBoundary(const string &region, const string &conditio
  ***************************************************************/
 
 
-const Field3D operator-(const Field3D &f) {
+Field3D operator-(const Field3D &f) {
   return -1.0*f;
 }
 
 #define F3D_OP_FPERP(op)                     	                          \
-  const FieldPerp operator op(const Field3D &lhs, const FieldPerp &rhs) { \
+  FieldPerp operator op(const Field3D &lhs, const FieldPerp &rhs) { \
     FieldPerp result;                                                     \
     result.allocate();                                                    \
     result.setIndex(rhs.getIndex());                                      \
@@ -828,7 +828,7 @@ F3D_OP_FPERP(/);
 F3D_OP_FPERP(*);
 
 #define F3D_OP_FIELD(op, ftype)                                     \
-  const Field3D operator op(const Field3D &lhs, const ftype &rhs) { \
+  Field3D operator op(const Field3D &lhs, const ftype &rhs) { \
     Field3D result;                                                 \
     result.allocate();                                              \
     for(const auto& i : lhs)                                               \
@@ -848,7 +848,7 @@ F3D_OP_FIELD(*, Field2D);   // Field3D * Field2D
 F3D_OP_FIELD(/, Field2D);   // Field3D / Field2D
 
 #define F3D_OP_REAL(op)                                         \
-  const Field3D operator op(const Field3D &lhs, BoutReal rhs) { \
+  Field3D operator op(const Field3D &lhs, BoutReal rhs) { \
     Field3D result;                                             \
     result.allocate();                                          \
     for(const auto& i : lhs)                                           \
@@ -863,7 +863,7 @@ F3D_OP_REAL(*); // Field3D * BoutReal
 F3D_OP_REAL(/); // Field3D / BoutReal
 
 #define REAL_OP_F3D(op)                                         \
-  const Field3D operator op(BoutReal lhs, const Field3D &rhs) { \
+  Field3D operator op(BoutReal lhs, const Field3D &rhs) { \
     Field3D result;                                             \
     result.allocate();                                          \
     for(const auto& i : rhs)                                           \
