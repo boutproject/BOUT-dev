@@ -57,7 +57,7 @@ extern Mesh * mesh;
 class Field {
  public:
   Field();
-  Field(Mesh * msh);
+  Field(Mesh * localmesh);
   virtual ~Field() { }
 
   // These routines only set a stencil in one dimension

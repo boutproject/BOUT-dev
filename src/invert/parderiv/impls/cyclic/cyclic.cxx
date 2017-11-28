@@ -91,8 +91,8 @@ InvertParCR::~InvertParCR() {
 
 const Field3D InvertParCR::solve(const Field3D &f) {
   TRACE("InvertParCR::solve(Field3D)");
-  
-  Field3D result;
+  Mesh *mesh = f.getMesh();
+  Field3D result(mesh);
   result.allocate();
   
   Coordinates *coord = mesh->coordinates();

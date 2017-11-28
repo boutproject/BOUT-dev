@@ -61,11 +61,11 @@ class Field2D : public Field, public FieldData {
    * since Field2D objects can be globals, created before a mesh
    * has been created.
    *
-   * @param[in] msh  The mesh which defines the field size. 
+   * @param[in] localmesh  The mesh which defines the field size. 
    * 
    * By default the global Mesh pointer (mesh) is used.
    */ 
-  Field2D(Mesh *msh = nullptr);
+  Field2D(Mesh *localmesh = nullptr);
 
   /*!
    * Copy constructor. After this both fields
@@ -83,7 +83,7 @@ class Field2D : public Field, public FieldData {
    * allocates data, and assigns the value \p val to all points including
    * boundary cells.
    */ 
-  Field2D(BoutReal val);
+  Field2D(BoutReal val, Mesh *localmesh = nullptr);
 
   /*!
    * Destructor
@@ -271,31 +271,31 @@ class Field2D : public Field, public FieldData {
 
 // Non-member overloaded operators
 
-const Field2D operator+(const Field2D &lhs, const Field2D &rhs);
-const Field2D operator-(const Field2D &lhs, const Field2D &rhs);
-const Field2D operator*(const Field2D &lhs, const Field2D &rhs);
-const Field2D operator/(const Field2D &lhs, const Field2D &rhs);
+Field2D operator+(const Field2D &lhs, const Field2D &rhs);
+Field2D operator-(const Field2D &lhs, const Field2D &rhs);
+Field2D operator*(const Field2D &lhs, const Field2D &rhs);
+Field2D operator/(const Field2D &lhs, const Field2D &rhs);
 
-const Field3D operator+(const Field2D &lhs, const Field3D &rhs);
-const Field3D operator-(const Field2D &lhs, const Field3D &rhs);
-const Field3D operator*(const Field2D &lhs, const Field3D &rhs);
-const Field3D operator/(const Field2D &lhs, const Field3D &rhs);
+Field3D operator+(const Field2D &lhs, const Field3D &rhs);
+Field3D operator-(const Field2D &lhs, const Field3D &rhs);
+Field3D operator*(const Field2D &lhs, const Field3D &rhs);
+Field3D operator/(const Field2D &lhs, const Field3D &rhs);
 
-const Field2D operator+(const Field2D &lhs, BoutReal rhs);
-const Field2D operator-(const Field2D &lhs, BoutReal rhs);
-const Field2D operator*(const Field2D &lhs, BoutReal rhs);
-const Field2D operator/(const Field2D &lhs, BoutReal rhs);
+Field2D operator+(const Field2D &lhs, BoutReal rhs);
+Field2D operator-(const Field2D &lhs, BoutReal rhs);
+Field2D operator*(const Field2D &lhs, BoutReal rhs);
+Field2D operator/(const Field2D &lhs, BoutReal rhs);
 
-const Field2D operator+(BoutReal lhs, const Field2D &rhs);
-const Field2D operator-(BoutReal lhs, const Field2D &rhs);
-const Field2D operator*(BoutReal lhs, const Field2D &rhs);
-const Field2D operator/(BoutReal lhs, const Field2D &rhs);
+Field2D operator+(BoutReal lhs, const Field2D &rhs);
+Field2D operator-(BoutReal lhs, const Field2D &rhs);
+Field2D operator*(BoutReal lhs, const Field2D &rhs);
+Field2D operator/(BoutReal lhs, const Field2D &rhs);
 
 /*!
  * Unary minus. Returns the negative of given field,
  * iterates over whole domain including guard/boundary cells.
  */
-const Field2D operator-(const Field2D &f);
+Field2D operator-(const Field2D &f);
 
 // Non-member functions
 

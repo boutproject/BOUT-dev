@@ -17,23 +17,28 @@ protected:
     // Delete any existing mesh
     if (mesh != nullptr) {
       // Delete boundary regions
-      for(auto &r : mesh->getBoundaries()) {
+      for (auto &r : mesh->getBoundaries()) {
         delete r;
       }
-      
+
       delete mesh;
       mesh = nullptr;
     }
     mesh = new FakeMesh(nx, ny, nz);
 
-    mesh->addBoundary(new BoundaryRegionXIn("core", 1, ny-2));
-    mesh->addBoundary(new BoundaryRegionXOut("sol", 1, ny-2));
-    mesh->addBoundary(new BoundaryRegionYUp("upper_target", 1, nx-2));
-    mesh->addBoundary(new BoundaryRegionYDown("lower_target", 1, nx-2));
-    
+    mesh->addBoundary(new BoundaryRegionXIn("core", 1, ny - 2));
+    mesh->addBoundary(new BoundaryRegionXOut("sol", 1, ny - 2));
+    mesh->addBoundary(new BoundaryRegionYUp("upper_target", 1, nx - 2));
+    mesh->addBoundary(new BoundaryRegionYDown("lower_target", 1, nx - 2));
   }
 
   static void TearDownTestCase() {
+    if (mesh != nullptr) {
+      // Delete boundary regions
+      for (auto &r : mesh->getBoundaries()) {
+        delete r;
+      }
+    }
     delete mesh;
     mesh = nullptr;
   }
