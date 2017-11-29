@@ -11,13 +11,13 @@ helper.cxx:helper.cxx.in
 TOGEN=setup.py boutcore.pyx resolve_enum.pxd helper.cxx helper.h
 $(TOGEN): Makefile
 	@echo generating $@
-	@PATH=../../../bin:$(PATH) bash $@.in > $@
+	@PATH=../../../bin:$$PATH bash $@.in > $@
 
 boutcore.so: boutcore.pyx setup.py helper.cxx helper.h $(TOGEN)
 	@$(PY) setup.py build_ext --inplace
 
 test: boutcore.so
-	@$(PY) ./runtest > run.log
+	@PYTHONPATH=..:$$PYTHONPATH $(PY) ./runtest > run.log
 
 check: test
 .PHONY:
