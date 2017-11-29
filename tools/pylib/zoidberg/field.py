@@ -562,3 +562,40 @@ class SmoothedMagneticField(MagneticField):
         if (P<0.):
             P=0.
         return P
+
+class GEQDSK(MagneticField):
+    """
+    Read a EFIT G-Eqdsk file for a toroidal equilibrium
+
+    This generates a grid in cylindrical geometry
+    """
+    
+    def __init__(self, gfile):
+        """
+        
+        Inputs
+        ------
+        
+        gfile  Name of the file to open
+        """
+
+        # Import utility to read G-Eqdsk files
+        from boututils import geqdsk
+        
+        g = geqdsk.Geqdsk()
+        g.openFile(gfile)
+        
+        # Get the range of major radius 
+        self.rmin = g.get('rleft')
+        self.rmax = g.get('rdim') + self.rmin
+        
+        self.zmin = g.get('zmid') - 0.5*g.get('zdim')
+        self.zmax = g.get('zmid') + 0.5*g.get('zdim')
+
+        # Poloidal flux
+        self.psi = g.get('psirz')
+
+        # Current flux function f = R * Bt
+        self.fpol = g.get('fpol')
+        
+        
