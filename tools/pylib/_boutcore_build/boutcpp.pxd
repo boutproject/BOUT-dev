@@ -20,6 +20,7 @@ cdef extern from "field3d.hxx":
     Field3D log(Field3D)
     Field3D sin(Field3D)
     Field3D cos(Field3D)
+    Field3D abs(Field3D)
     double max(Field3D)
     double min(Field3D)
     Field3D pow(Field3D,double)

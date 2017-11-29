@@ -455,7 +455,7 @@ def bracket(Field3D a, Field3D b, method="BRACKET_STD", outloc="CELL_DEFAULT"):
     return f3dFromObj(c.bracket(a.cobj[0],b.cobj[0],method_,outloc_))
 
 EOF
-for fun in sqrt exp sin cos log
+for fun in sqrt exp sin cos log abs
 do
     echo "def $fun(Field3D a):
     return f3dFromObj(c.$fun(a.cobj[0]))
