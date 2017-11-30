@@ -314,6 +314,9 @@ private:
    */
   dataPtrType ptr;
 
+  typedef std::map< int, std::vector<dataPtrType> > storeType;
+  typedef std::vector< storeType > arenaType;
+
   /*!
    * This maps from array size (int) to vectors of pointers to ArrayData objects
    *
@@ -325,24 +328,43 @@ private:
    *
    * @param[in] cleanup   If set to true, deletes all ArrayData and clears the store
    */
-  static std::map< int, std::vector<dataPtrType> > & store(bool cleanup=false) {
-    static std::map< int, std::vector<dataPtrType> > store = {};
+  static storeType& store(bool cleanup=false) {
+#ifdef _OPENMP    
+    static arenaType arena(omp_get_max_threads());
+#else
+    static arenaType arena(1);
+#endif
     
     if (!cleanup) {
-      return store;
+#ifdef _OPENMP 
+      return arena[omp_get_thread_num()];
+#else
+      return arena[0];
+#endif
     }
-    
-    // Clean by deleting all data
-    for (auto &p : store) {
-      auto &v = p.second;
-      for (dataPtrType a : v) {
-	a = nullptr; //Could use a.reset() if clearer
+
+    // Clean by deleting all data -- possible that just stores.clear() is
+    // sufficient rather than looping over each entry.
+#pragma omp single
+    {
+      for (auto &stores : arena) {
+	for (auto &p : stores) {
+	  auto &v = p.second;
+	  for (dataPtrType a : v) {
+	    a = nullptr; //Could use a.reset() if clearer
+	  }
+	  v.clear();
+	}
+	stores.clear();
       }
-      v.clear();
+      //Here we ensure there is exactly one empty map still
+      //left in the arena as we have to return one such item
+      arena.resize(1);
     }
-    store.clear();
-    
-    return store;
+
+    //Store should now be empty but we need to return something,
+    //so return an empty storeType from the arena.
+    return arena[0];
   }
   
   /*!
@@ -351,16 +373,16 @@ private:
    */
   dataPtrType get(int len) {
     dataPtrType p;
-#pragma omp critical (store)
-    {
-      std::vector<dataPtrType >& st = store()[len];
-      if (!st.empty()) {
-        p = st.back();
-        st.pop_back();
-      } else {
-	p = std::make_shared<dataBlock>(len);
-      }
+
+    auto& st = store()[len];
+    
+    if (!st.empty()) {
+      p = st.back();
+      st.pop_back();
+    } else {
+      p = std::make_shared<dataBlock>(len);
     }
+
     return p;
   }
   
@@ -376,18 +398,15 @@ private:
       return;
     
     // Reduce reference count, and if zero return to store
-#pragma omp critical (store)
-    {
-      if(d.use_count()==1) {
-        if (useStore()) {
-          // Put back into store
+    if(d.use_count()==1) {
+      if (useStore()) {
+	// Put back into store
 #ifdef BOUT_ARRAY_WITH_VALARRAY
-	  store()[d->size()].push_back(std::move(d));
+	store()[d->size()].push_back(std::move(d));
 #else	  
-          store()[d->len].push_back(std::move(d));
+	store()[d->len   ].push_back(std::move(d));
 #endif
-	  //Could return here but seems to slow things down a lot
-	}
+	//Could return here but seems to slow things down a lot
       }
     }
 
