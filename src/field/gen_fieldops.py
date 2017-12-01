@@ -248,23 +248,23 @@ for lhs in fields:
                   (out.fieldname, op, lhs.getPass(), rhs.getPass()))
             with braces():
                 print("  Indices i{0,0,0};")
-                print("  Mesh * msh = %s.getMesh();" %
+                print("  Mesh *localmesh = %s.getMesh();" %
                       ("lhs" if not lhs.i == 'real' else "rhs"))
                 if lhs.i != 'real' and rhs.i != 'real':
-                    print("  ASSERT1(msh == rhs.getMesh());")
-                print("  %s result(msh);" % out.fieldname)
+                    print("  ASSERT1(localmesh == rhs.getMesh());")
+                print("  %s result(localmesh);" % out.fieldname)
                 print("  result.allocate();")
                 print("  checkData(lhs);")
                 print("  checkData(rhs);")
                 # call the C function to do the work.
-                print("  autogen_%s_%s_%s_%s(" % (out.fieldname,
-                                                  lhs.fieldname, rhs.fieldname, opn), end=' ')
+                print("  autogen_%s_%s_%s_%s("
+                      % (out.fieldname, lhs.fieldname, rhs.fieldname, opn), end=' ')
                 for f in fs:
                     print("%s, " % (f.get(data=False, ptr=True)), end=' ')
                 m = ''
                 print('\n             ', end=' ')
                 for d in out.dimensions:
-                    print(m, "msh->LocalN%s" % d, end=' ')
+                    print(m, "localmesh->LocalN%s" % d, end=' ')
                     if elementwise:
                         m = ','
                     else:
