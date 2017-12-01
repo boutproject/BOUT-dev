@@ -156,12 +156,13 @@ def mymin(f1, f2):
         return f2
 
 
-# declare the possible operators + names
-ops = ['*', '/', '+', '-']
-op_names = {'*': 'mul',
-            '/': 'div',
-            '-': 'minus',
-            '+': 'plus'}
+# The arthimetic operators
+operators = {
+    '*': 'mul',
+    '/': 'div',
+    '+': 'plus',
+    '-': 'minus',
+}
 
 # loop over all fields for lhs and rhs of the operation. Generates the
 # not-in-place variants of the operations, returning a new field.
@@ -182,16 +183,15 @@ for lhs in fields:
             elementwise = False
         # the output of the operation. The `larger` of the two fields.
         out = returnType(rhs, lhs)
-        for op in ops:
-            opn = op_names[op]
+        for operator, operator_name in operators.items():
             # *****************************************************************
             # start of the low level function header
             # This function operates on the underlying data
             print(autogen_warn)
             print("// Do the actual %s of %s and %s" %
-                  (opn, lhs.fieldname, rhs.fieldname))
+                  (operator_name, lhs.fieldname, rhs.fieldname))
             print('void autogen_%s_%s_%s_%s(' %
-                  (out.fieldname, lhs.fieldname, rhs.fieldname, opn), end=' ')
+                  (out.fieldname, lhs.fieldname, rhs.fieldname, operator_name), end=' ')
             out.name = 'result'
             lhs.name = 'lhs'
             rhs.name = 'rhs'
@@ -228,7 +228,7 @@ for lhs in fields:
                 with braces():
                     print("    %s = %s %s %s;" % (out.get(data=elementwise),
                                                   lhs.get(data=elementwise),
-                                                  op,
+                                                  operator,
                                                   rhs.get(data=elementwise)))
             # end of low level function
             # *****************************************************************
@@ -243,9 +243,9 @@ for lhs in fields:
             #  * get the underlaying data for the low-level operation
             print(autogen_warn)
             print("// Provide the C++ wrapper for %s of %s and %s" %
-                  (opn, lhs.fieldname, rhs.fieldname))
+                  (operator_name, lhs.fieldname, rhs.fieldname))
             print("%s operator%s(%s,%s)" %
-                  (out.fieldname, op, lhs.getPass(), rhs.getPass()))
+                  (out.fieldname, operator, lhs.getPass(), rhs.getPass()))
             with braces():
                 print("  Indices i{0,0,0};")
                 print("  Mesh *localmesh = %s.getMesh();" %
@@ -258,7 +258,8 @@ for lhs in fields:
                 print("  checkData(rhs);")
                 # call the C function to do the work.
                 print("  autogen_%s_%s_%s_%s("
-                      % (out.fieldname, lhs.fieldname, rhs.fieldname, opn), end=' ')
+                      % (out.fieldname, lhs.fieldname, rhs.fieldname,
+                         operator_name), end=' ')
                 for f in fs:
                     print("%s, " % (f.get(data=False, ptr=True)), end=' ')
                 m = ''
@@ -275,7 +276,7 @@ for lhs in fields:
                     print("#if CHECK > 0")
                     with braces("  if (lhs.getLocation() != rhs.getLocation())"):
                         print(
-                            '    throw BoutException("Trying to %s fields of different locations. lhs is at %%s, rhs is at %%s!",strLocation(lhs.getLocation()),strLocation(rhs.getLocation()));' % op_names[op])
+                            '    throw BoutException("Trying to %s fields of different locations. lhs is at %%s, rhs is at %%s!",strLocation(lhs.getLocation()),strLocation(rhs.getLocation()));' % operator_name)
                     print('#endif')
                 # Set out location (again, only for f3d)
                 if out.i == 'f3d':
@@ -309,16 +310,15 @@ for lhs in fields:
         lhs.name = 'lhs'
         rhs.name = 'rhs'
         if out == lhs:
-            for op in ops:
-                opn = op_names[op]
+            for operator, operator_name in operators.items():
                 # *************************************************************
                 # start of the low level function header
                 # This function operates on the underlying data
                 print(autogen_warn)
                 print("// Provide the C function to update %s by %s with %s" %
-                      (lhs.fieldname, opn, rhs.fieldname))
+                      (lhs.fieldname, operator_name, rhs.fieldname))
                 print('void autogen_%s_%s_%s(' %
-                      (lhs.fieldname, rhs.fieldname, opn), end=' ')
+                      (lhs.fieldname, rhs.fieldname, operator_name), end=' ')
                 const = False
                 fs = [lhs, rhs]
                 for f in fs:
@@ -346,7 +346,7 @@ for lhs in fields:
                         print('  for (int %s=0;%s<%s;++%s)' % (i, i, d, i))
                     with braces():
                         print("    %s %s= %s;" % (lhs.get(data=elementwise),
-                                                  op,
+                                                  operator,
                                                   rhs.get(data=elementwise)))
                 # end of low level function
                 # *********************************************************
@@ -361,9 +361,9 @@ for lhs in fields:
                 #  * get the underlaying data for the low-level operation
                 print(autogen_warn)
                 print("// Provide the C++ operator to update %s by %s with %s" %
-                      (lhs.fieldname, opn, rhs.fieldname))
+                      (lhs.fieldname, operator_name, rhs.fieldname))
                 print("%s & %s::operator %s=" %
-                      (lhs.fieldname, lhs.fieldname, op), end=' ')
+                      (lhs.fieldname, lhs.fieldname, operator), end=' ')
                 print("(%s)" % (rhs.getPass(const=True)))
                 with braces():
                     print("  // only if data is unique we update the field")
@@ -375,7 +375,7 @@ for lhs in fields:
                         print("    checkData(*this);")
                         print("    checkData(rhs);")
                         print("    autogen_%s_%s_%s(&(*this)[i]," %
-                              (lhs.fieldname, rhs.fieldname, opn), end=' ')
+                              (lhs.fieldname, rhs.fieldname, operator_name), end=' ')
                         print(rhs.get(ptr=True, data=False), ',', end=' ')
                         m = ''
                         print('\n             ', end=' ')
@@ -390,12 +390,12 @@ for lhs in fields:
                         if lhs.i == rhs.i == 'f3d':
                             print("#if CHECK > 0")
                             with braces("  if (this->getLocation() != rhs.getLocation())"):
-                                print(
-                                    '    throw BoutException("Trying to %s fields of different locations!");' % op_names[op])
+                                print('    throw BoutException("Trying to %s fields of different locations!");'
+                                      % operator_name)
                             print('#endif')
                             print("    checkData(*this);")
                     with braces(" else "):  # if data is not unique
-                        print("    (*this)= (*this) %s rhs;" % op)
+                        print("    (*this)= (*this) %s rhs;" % operator)
                     print("  return *this;")
                 print()
                 print()
