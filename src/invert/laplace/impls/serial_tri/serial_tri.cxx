@@ -124,30 +124,30 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
   int inbndry = 2, outbndry=2;
 
   // If the flags to assign that only one guard cell should be used is set
-  if(global_flags & INVERT_BOTH_BNDRY_ONE) {
+  if (global_flags & INVERT_BOTH_BNDRY_ONE) {
     inbndry = outbndry = 1;
   }
-  if(inner_boundary_flags & INVERT_BNDRY_ONE)
+  if (inner_boundary_flags & INVERT_BNDRY_ONE)
     inbndry = 1;
-  if(outer_boundary_flags & INVERT_BNDRY_ONE)
+  if (outer_boundary_flags & INVERT_BNDRY_ONE)
     outbndry = 1;
 
   #pragma omp parallel for
-  for(int ix=0;ix<mesh->LocalNx;ix++) {
+  for (int ix = 0; ix < mesh->LocalNx; ix++) {
     /* This for loop will set the bk (initialized by the constructor)
      * bk is the z fourier modes of b in z
      * If the INVERT_SET flag is set (meaning that x0 will be used to set the
      * bounadry values),
      */
-    if(((ix < inbndry) && (inner_boundary_flags & INVERT_SET)) ||
-       ((ncx-ix < outbndry) && (outer_boundary_flags & INVERT_SET))) {
+    if (((ix < inbndry) && (inner_boundary_flags & INVERT_SET)) ||
+        ((ncx - ix < outbndry) && (outer_boundary_flags & INVERT_SET))) {
       // Use the values in x0 in the boundary
 
       // x0 is the input
       // bk is the output
       rfft(x0[ix], ncz, bk[ix]);
 
-    }else {
+    } else {
       // b is the input
       // bk is the output
       rfft(b[ix], ncz, bk[ix]);
@@ -158,12 +158,13 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
    * Note that only the non-degenerate fourier modes are being used (i.e. the
    * offset and all the modes up to the Nyquist frequency)
    */
-  for(int kz=0;kz<=maxmode;kz++) {
-
+  for (int kz = 0; kz <= maxmode; kz++) {
+    
     // set bk1d
-    for(int ix=0;ix<=ncx;ix++)
+    for (int ix = 0; ix <= ncx; ix++) {
       // Get bk of the current fourier mode
       bk1d[ix] = bk[ix][kz];
+    }
 
     /* Set the matrix A used in the inversion of Ax=b
      * by calling tridagCoef and setting the BC
@@ -187,29 +188,34 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
                  &A, &C, &D);
 
     ///////// PERFORM INVERSION /////////
-    if(!mesh->periodicX) {
+    if (!mesh->periodicX) {
       // Call tridiagonal solver
       tridag(avec, bvec, cvec, bk1d, xk1d, mesh->LocalNx);
 
     } else {
       // Periodic in X, so cyclic tridiagonal
-      cyclic_tridag(avec+2, bvec+2, cvec+2, bk1d+2, xk1d+2, mesh->LocalNx-4);
+
+      int xs = mesh->xstart;
+      cyclic_tridag(avec + xs, bvec + xs, cvec + xs, bk1d + xs, xk1d + xs,
+                    mesh->LocalNx - 2 * xs);
 
       // Copy boundary regions
-      for(int ix=0;ix<2;ix++) {
-        xk1d[ix] = xk1d[mesh->LocalNx-4+ix];
-        xk1d[mesh->LocalNx-2+ix] = xk1d[2+ix];
+      for (int ix = 0; ix < xs; ix++) {
+        xk1d[ix] = xk1d[mesh->LocalNx - 2*xs + ix];
+        xk1d[mesh->LocalNx - xs + ix] = xk1d[xs + ix];
       }
     }
 
     // If the global flag is set to INVERT_KX_ZERO
-    if((global_flags & INVERT_KX_ZERO) && (kz == 0)) {
+    if ((global_flags & INVERT_KX_ZERO) && (kz == 0)) {
       dcomplex offset(0.0);
-      for(int ix=0;ix<=ncx;ix++)
-        offset += bk1d[ix];
-      offset /= static_cast<BoutReal>(ncx + 1);
-      for(int ix=0;ix<=ncx;ix++)
-        bk1d[ix] -= offset;
+      for (int ix = mesh->xstart; ix <= mesh->xend; ix++) {
+        offset += xk1d[ix];
+      }
+      offset /= static_cast<BoutReal>(mesh->xend - mesh->xstart + 1);
+      for (int ix = mesh->xstart; ix <= mesh->xend; ix++) {
+        xk1d[ix] -= offset;
+      }
     }
 
     // Store the solution xk for the current fourier mode in a 2D array
