@@ -168,6 +168,50 @@ const IndexRange Field2D::region(REGION rgn) const {
   };
 }
 
+///////////// OPERATORS ////////////////
+
+Field2D &Field2D::operator=(const Field2D &rhs) {
+  // Check for self-assignment
+  if (this == &rhs)
+    return (*this); // skip this assignment
+
+  TRACE("Field2D: Assignment from Field2D");
+
+  checkData(rhs);
+
+#ifdef TRACK
+  name = rhs.name;
+#endif
+
+  // Copy the data and data sizes
+  fieldmesh = rhs.fieldmesh;
+  nx = rhs.nx;
+  ny = rhs.ny;
+
+  // Copy reference to data
+  data = rhs.data;
+
+  return *this;
+}
+
+Field2D &Field2D::operator=(const BoutReal rhs) {
+#ifdef TRACK
+  name = "<r2D>";
+#endif
+
+  TRACE("Field2D = BoutReal");
+  allocate();
+
+#if CHECK > 0
+  if (!finite(rhs))
+    throw BoutException("Field2D: Assignment from non-finite BoutReal\n");
+#endif
+  for (const auto &i : (*this))
+    (*this)[i] = rhs;
+
+  return *this;
+}
+
 ////////////////////// STENCILS //////////////////////////
 
 void Field2D::getXArray(int y, int UNUSED(z), rvec &xv) const {
