@@ -368,8 +368,6 @@ if __name__ == "__main__":
     #include <interpolation.hxx>
     """)
 
-    # loop over all fields for lhs and rhs of the operation. Generates the
-    # not-in-place variants of the operations, returning a new field.
     for lhs in fields:
         for rhs in fields:
             # we don't have define real real operations
@@ -387,38 +385,17 @@ if __name__ == "__main__":
                 elementwise = False
             # the output of the operation. The `larger` of the two fields.
             out = returnType(rhs, lhs)
-            for operator, operator_name in operators.items():
-
-                out.name = 'result'
-                lhs.name = 'lhs'
-                rhs.name = 'rhs'
-                args = [out, lhs, rhs]
-
-                low_level_function_generator(operator, operator_name, args)
-
-                high_level_function_generator(operator, operator_name, args)
-
-    # generate the operators for updating the lhs in place
-    for lhs in fields:
-        for rhs in fields:
-            # no real real operation
-            if lhs.i == rhs.i == 'real':
-                continue
-            if (lhs != rhs and mymin(lhs, rhs).i != 'real'):
-                elementwise = True
-            else:
-                elementwise = False
-            lhs = copy(lhs)
-            rhs = copy(rhs)
-            out = returnType(rhs, lhs)
             out.name = 'result'
             lhs.name = 'lhs'
             rhs.name = 'rhs'
-            if out == lhs:
-                for operator, operator_name in operators.items():
+            args = [out, lhs, rhs]
 
-                    low_level_inplace_function_generator(operator, operator_name,
-                                                         lhs, rhs)
+            for operator, operator_name in operators.items():
+                low_level_function_generator(operator, operator_name, args)
+                high_level_function_generator(operator, operator_name, args)
 
-                    high_level_inplace_function_generator(operator, operator_name,
-                                                          lhs, rhs)
+                if out == lhs:
+                    low_level_inplace_function_generator(
+                        operator, operator_name, lhs, rhs)
+                    high_level_inplace_function_generator(
+                        operator, operator_name, lhs, rhs)
