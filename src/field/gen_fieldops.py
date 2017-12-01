@@ -1,4 +1,4 @@
-#!/bin/python
+#!/usr/bin/env python3
 
 from __future__ import print_function
 
@@ -208,7 +208,7 @@ for lhs in fields:
                     dims = {"n" + x: x for x in out.dims()}
                 else:
                     dims = {"len": 'i'}
-                for d, i in dims.iteritems():
+                for d, i in dims.items():
                     print('  for (int %s=0;%s<%s;++%s)' % (i, i, d, i))
                 with braces():
                     print("    %s = %s %s %s;" % (out.get(data=elementwise),
@@ -327,7 +327,7 @@ for lhs in fields:
                         dims = {"n" + x: x for x in out.dims()}
                     else:
                         dims = {"len": 'i'}
-                    for d, i in dims.iteritems():
+                    for d, i in dims.items():
                         print('  for (int %s=0;%s<%s;++%s)' % (i, i, d, i))
                     with braces():
                         print("    %s %s= %s;" % (lhs.get(data=elementwise),
