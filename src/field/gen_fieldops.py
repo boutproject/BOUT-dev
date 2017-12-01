@@ -3,12 +3,8 @@
 from __future__ import print_function
 
 try:
-    from builtins import range
-except:
-    pass
-try:
     from builtins import object
-except:
+except ImportError:
     pass
 
 from copy import deepcopy as copy
@@ -34,10 +30,11 @@ print("""#include <field3d.hxx>
 #include <globals.hxx>
 #include <interpolation.hxx>
 """)
-# A class to keep all the data of the different fields
 
 
 class Field(object):
+    """A class to keep all the data of the different fields
+    """
     # name of the field, e.g. Field3D
     fieldname = ''
     # array: dimensions of the field
@@ -52,11 +49,17 @@ class Field(object):
         self.dimensions = dirs
         self.i = idn
         self.name = None
-    # how to pass data
-    #   const: Should it be const?
-    #   data:  Pass the raw data?
 
     def getPass(self, const=True, data=False):
+        """How to pass data
+
+        Inputs
+        ======
+        const: Should it be const?
+        data:  Pass the raw data?
+
+        """
+
         ret = ""
         if const:
             ret += "const "
@@ -72,11 +75,17 @@ class Field(object):
                 ret += '%s &' % (self.fieldname)
         ret += " %s" % self.name
         return ret
-    # how to get value from field
-    #   data: use x,y,z access on raw data?
-    #   ptr:  Do return pointer instead of data
 
     def get(self, data=True, ptr=False):
+        """How to get value from field
+
+        Inputs
+        ======
+        data: use x,y,z access on raw data?
+        ptr:  Do return pointer instead of data
+
+        """
+
         if self.i == 'real':
             return self.name
         ret = ''
@@ -93,15 +102,16 @@ class Field(object):
                 return NotImplemented
         else:
             return ret + "%s[i]" % self.name
-    # return the dimensions
 
     def dims(self):
+        """Return the dimensions
+        """
         return self.dimensions
 
     def __eq__(self, other):
         try:
             return self.i == other.i
-        except:
+        except AttributeError:
             return self.i == other
 
     def __ne__(self, other):
@@ -120,12 +130,12 @@ f3d = Field('Field3D', ['x', 'y', 'z'], 'f3d')
 f2d = Field('Field2D', ['x', 'y'], 'f2d')
 real = Field('BoutReal', [], 'real')
 fields = [f3d, f2d, real]
-import sys
-
-# a function to see what field is `larger`. Is used to determine a suitable return type
 
 
 def returnType(f1, f2):
+    """Determine a suitable return type, by seeing which field is 'larger'.
+
+    """
     if f1 == f2:
         return copy(f1)
     elif f1.i == 'real':
@@ -137,6 +147,9 @@ def returnType(f1, f2):
 
 
 def mymin(f1, f2):
+    """Return which of f1, f2 has the least number of dimensions
+
+    """
     if (len(f1.dimensions) < len(f2.dimensions)):
         return f1
     else:
@@ -154,7 +167,8 @@ op_names = {'*': 'mul',
 # not-in-place variants of the operations, returning a new field.
 for lhs in fields:
     for rhs in fields:
-        if lhs.i == rhs.i == 'real':  # we don't have define real real operations
+        # we don't have define real real operations
+        if lhs.i == rhs.i == 'real':
             continue
         rhs = copy(rhs)
         lhs = copy(lhs)
@@ -187,7 +201,8 @@ for lhs in fields:
             fs = [out, lhs, rhs]
             for f in fs:
                 print(f.getPass(const=const, data=True), ',', end=' ')
-                const = True  # first not const, but the remaining ones should be
+                # first not const, but the remaining ones should be
+                const = True
             # depending on how we loop over the fields, we need to now
             # x,y and z, or just the total number of elements
             if elementwise:
@@ -359,8 +374,8 @@ for lhs in fields:
                             print("    ASSERT1(fieldmesh == rhs.getMesh());")
                         print("    checkData(*this);")
                         print("    checkData(rhs);")
-                        print(
-                            "    autogen_%s_%s_%s(&(*this)[i]," % (lhs.fieldname, rhs.fieldname, opn), end=' ')
+                        print("    autogen_%s_%s_%s(&(*this)[i]," %
+                              (lhs.fieldname, rhs.fieldname, opn), end=' ')
                         print(rhs.get(ptr=True, data=False), ',', end=' ')
                         m = ''
                         print('\n             ', end=' ')
