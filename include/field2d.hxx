@@ -156,7 +156,7 @@ class Field2D : public Field, public FieldData {
   }
 
   /// Const access to data array
-  inline const BoutReal& operator[](const DataIterator &d) const {
+  inline const BoutReal& operator[](const DataIterator &d) const final {
     return operator()(d.x, d.y);
   }
 
@@ -166,7 +166,7 @@ class Field2D : public Field, public FieldData {
     return operator()(i.x, i.y);
   }
   /// const Indices data access
-  inline const BoutReal& operator[](const Indices &i) const override {
+  inline const BoutReal& operator[](const Indices &i) const final {
     return operator()(i.x, i.y);
   }
 

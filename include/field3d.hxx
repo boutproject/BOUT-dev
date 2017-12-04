@@ -321,13 +321,13 @@ class Field3D : public Field, public FieldData {
   BoutReal& operator[](const DataIterator &d) {
     return operator()(d.x, d.y, d.z);
   }
-  const BoutReal& operator[](const DataIterator &d) const {
+  const BoutReal& operator[](const DataIterator &d) const final {
     return operator()(d.x, d.y, d.z);
   }
   BoutReal& operator[](const Indices &i) {
     return operator()(i.x, i.y, i.z);
   }
-  const BoutReal& operator[](const Indices &i) const override {
+  const BoutReal& operator[](const Indices &i) const final {
     return operator()(i.x, i.y, i.z);
   }
   
