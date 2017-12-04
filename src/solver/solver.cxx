@@ -1373,10 +1373,8 @@ void Solver::post_rhs(BoutReal UNUSED(t)) {
 
   // Make sure 3D fields are at the correct cell location
   for(const auto& f : f3d) {
-    if(f.location != (f.F_var)->getLocation()) {
-      //output.write("SOLVER: Interpolating\n");
-      *(f.F_var) = interp_to(*(f.F_var), f.location);
-    }
+    ASSERT1(f.var->getLocation()==f.F_var->getLocation());
+    ASSERT1(f.var->getMesh()==f.F_var->getMesh());
   }
 
   // Apply boundary conditions to the time-derivatives
