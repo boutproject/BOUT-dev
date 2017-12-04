@@ -44,9 +44,9 @@ class RK4Solver : public Solver {
   void setMaxTimestep(BoutReal dt);
   BoutReal getCurrentTimestep() {return timestep; }
   
-  int init(int nout, BoutReal tstep) override;
+  int init(int nout, BoutReal tstep) final;
   
-  int run() override;
+  int run() final;
  private:
   BoutReal atol, rtol;   // Tolerances for adaptive timestepping
   BoutReal max_timestep; // Maximum timestep

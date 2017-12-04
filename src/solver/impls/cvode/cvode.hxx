@@ -63,9 +63,9 @@ class CvodeSolver : public Solver {
     
     BoutReal getCurrentTimestep() { return hcur; }
 
-    int init(int nout, BoutReal tstep) override;
+    int init(int nout, BoutReal tstep) final;
 
-    int run() override;
+    int run() final;
     BoutReal run(BoutReal tout);
     
     void resetInternalFields();

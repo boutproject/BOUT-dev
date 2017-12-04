@@ -63,9 +63,9 @@ class H5Format : public DataFormat {
   ~H5Format();
 
   using DataFormat::openr;
-  bool openr(const char *name) override;
+  bool openr(const char *name) final;
   using DataFormat::openw;
-  bool openw(const char *name, bool append=false) override;
+  bool openw(const char *name, bool append=false) final;
   
   bool is_valid();
   

@@ -47,9 +47,9 @@ class KarniadakisSolver : public Solver {
 
   BoutReal getCurrentTimestep() {return timestep; }
 
-  int init(int nout, BoutReal tstep) override;
+  int init(int nout, BoutReal tstep) final;
   
-  int run() override;
+  int run() final;
   void resetInternalFields();
 
  private:

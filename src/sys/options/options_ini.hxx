@@ -51,10 +51,10 @@ public:
   ~OptionINI();
 
   /// Read options from file
-  void read(Options *options, const std::string &filename) override;
+  void read(Options *options, const std::string &filename) final;
 
   /// Write options to file
-  void write(Options *options, const std::string &filename) override;
+  void write(Options *options, const std::string &filename) final;
 private:
 
   // Helper functions for reading

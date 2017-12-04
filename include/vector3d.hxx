@@ -194,17 +194,17 @@ class Vector3D : public FieldData {
   void setLocation(CELL_LOC loc); 
 
   /// Visitor pattern support
-  void accept(FieldVisitor &v) override;
+  void accept(FieldVisitor &v) final;
   
   // FieldData virtual functions
   
-  bool isReal() const override   { return true; }
-  bool is3D() const override     { return true; }
-  int  byteSize() const override { return 3*sizeof(BoutReal); }
-  int  BoutRealSize() const override { return 3; }
+  bool isReal() const final   { return true; }
+  bool is3D() const final     { return true; }
+  int  byteSize() const final { return 3*sizeof(BoutReal); }
+  int  BoutRealSize() const final { return 3; }
   
-  void applyBoundary(bool init=false) override;
-  void applyTDerivBoundary() override;
+  void applyBoundary(bool init=false) final;
+  void applyTDerivBoundary() final;
  private:
   Vector3D *deriv; ///< Time-derivative, can be NULL
 };

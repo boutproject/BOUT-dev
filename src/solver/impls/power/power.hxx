@@ -37,9 +37,9 @@ class PowerSolver : public Solver {
   PowerSolver() : Solver(), f0(nullptr) {}
   ~PowerSolver();
   
-  int init(int nout, BoutReal tstep) override;
+  int init(int nout, BoutReal tstep) final;
   
-  int run() override;
+  int run() final;
  private:
 
   BoutReal curtime; // Current simulation time (fixed)

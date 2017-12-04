@@ -39,15 +39,15 @@ class LaplaceMumps : public Laplacian {
   LaplaceMumps(Options *UNUSED(opt) = NULL) { throw BoutException("Mumps library not available"); }
   
   using Laplacian::setCoefA;
-  void setCoefA(const Field2D &UNUSED(val)) override {}
+  void setCoefA(const Field2D &UNUSED(val)) final {}
   using Laplacian::setCoefC;
-  void setCoefC(const Field2D &UNUSED(val)) override {}
+  void setCoefC(const Field2D &UNUSED(val)) final {}
   using Laplacian::setCoefD;
-  void setCoefD(const Field2D &UNUSED(val)) override {}
+  void setCoefD(const Field2D &UNUSED(val)) final {}
   using Laplacian::setCoefEx;
-  void setCoefEx(const Field2D &UNUSED(val)) override {}
+  void setCoefEx(const Field2D &UNUSED(val)) final {}
   using Laplacian::setCoefEz;
-  void setCoefEz(const Field2D &UNUSED(val)) override {}
+  void setCoefEz(const Field2D &UNUSED(val)) final {}
 
   using Laplacian::solve;
   const FieldPerp solve(const FieldPerp &UNUSED(b)) {

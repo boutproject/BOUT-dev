@@ -21,10 +21,10 @@ public:
   }
 
   using LaplaceXZ::setCoefs;
-  void setCoefs(const Field2D &UNUSED(A), const Field2D &UNUSED(B)) override {}
+  void setCoefs(const Field2D &UNUSED(A), const Field2D &UNUSED(B)) final {}
 
   using LaplaceXZ::solve;
-  Field3D solve(const Field3D &UNUSED(b), const Field3D &UNUSED(x0)) override {
+  Field3D solve(const Field3D &UNUSED(b), const Field3D &UNUSED(x0)) final {
     throw BoutException("No PETSc LaplaceXZ solver available");
   }
 private:

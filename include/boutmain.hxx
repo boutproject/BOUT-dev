@@ -54,7 +54,7 @@ Solver *solver;
 class LegacyModel : public PhysicsModel {
 protected:
   /// Initialise
-  int init(bool restarting) override {
+  int init(bool restarting) final {
     // Set the global solver pointer
     ::solver = this->solver;
     
@@ -63,7 +63,7 @@ protected:
   }
 
   /// Calculate time derivatives
-  int rhs(BoutReal t) override {
+  int rhs(BoutReal t) final {
     return physics_run(t);
   }
   

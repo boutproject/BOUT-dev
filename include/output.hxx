@@ -118,13 +118,13 @@ private:
 /// 
 class DummyOutput : public Output {
 public:
-  void write(const char *UNUSED(str), ...) override{};
-  void print(const char *UNUSED(str), ...) override{};
-  void enable() override {
+  void write(const char *UNUSED(str), ...) final{};
+  void print(const char *UNUSED(str), ...) final{};
+  void enable() final {
     throw BoutException("DummyOutput cannot be enabled.\nTry compiling with "
                         "--enable-debug or be less verbose?");
   };
-  void disable() override{};
+  void disable() final{};
   void enable(bool enable) {
     if (enable)
       this->enable();
@@ -152,8 +152,8 @@ public:
   /// If enabled, writes a string using C printf formatting
   /// by calling base->vwrite
   /// This string is then sent to log file and stdout (on processor 0)
-  void write(const char *str, ...) override;
-  void vwrite(const char *str, va_list va) override {
+  void write(const char *str, ...) final;
+  void vwrite(const char *str, va_list va) final {
     if (enabled) {
       base->vwrite(str, va);
     }
@@ -161,8 +161,8 @@ public:
 
   /// If enabled, print a string to stdout using C printf formatting
   /// note: unlike write, this is not also sent to log files
-  void print(const char *str, ...) override;
-  void vprint(const char *str, va_list va) override {
+  void print(const char *str, ...) final;
+  void vprint(const char *str, va_list va) final {
     if (enabled) {
       base->vprint(str, va);
     }
@@ -182,11 +182,11 @@ public:
   void enable(bool enable_) { enabled = enable_; };
 
   /// Turn on outputs through calls to print and write
-  void enable() override { enabled = true; };
+  void enable() final { enabled = true; };
 
   /// Turn off outputs through calls to print and write
   /// This includes log files and stdout
-  void disable() override { enabled = false; };
+  void disable() final { enabled = false; };
 
   /// Check if output is enabled
   bool isEnabled() {
