@@ -60,7 +60,6 @@ try:
 except ImportError:
     has_h5py = False
 
-
 class DataFile:
     impl = None
     def __init__(self, filename=None, write=False, create=False, format='NETCDF3_CLASSIC'):
@@ -120,6 +119,10 @@ class DataFile:
     def __setitem__(self, key, value):
         self.impl.__setitem__(key, value)
 
+    def attributes(self, varname):
+        """Return a dictionary of attributes"""
+        return self.impl.attributes(varname);
+        
 class DataFile_netCDF(DataFile):
     handle = None
     # Print warning if netcdf is used without the netcdf library
@@ -432,6 +435,35 @@ class DataFile_netCDF(DataFile):
             # And some others only this
             var[:] = data
 
+    def attributes(self, varname):
+        """Return a dictionary of variable attributes"""
+        if self.handle is None: return None
+        try:
+            var = self.handle.variables[varname]
+        except KeyError:
+            # Not found. Try to find using case-insensitive search
+            var = None
+            for n in list(self.handle.variables.keys()):
+                if n.lower() == varname.lower():
+                    print("WARNING: Reading '"+n+"' instead of '"+varname+"'")
+                    var = self.handle.variables[n]
+            if var is None:
+                return None
+            
+        result = {} # Map of attribute names to values
+        
+        try:
+            # This code tested with NetCDF4 library
+            attribs = var.ncattrs() # List of attributes
+            for attrname in attribs:
+                result[attrname] = var.getncattr(attrname) # Get all values and insert into map
+        except:
+            print("Error reading attributes")
+            # Result will be an empty map
+            
+        return result
+        
+
 class DataFile_HDF5(DataFile):
     handle = None
 
@@ -571,3 +603,8 @@ class DataFile_HDF5(DataFile):
             raise Exception("File not writeable. Open with write=True keyword")
 
         self.handle.create_dataset(name, data=data)
+        
+    def attributes(self, varname):
+        """Return a map of variable attributes"""
+        return {} # Empty for now
+    

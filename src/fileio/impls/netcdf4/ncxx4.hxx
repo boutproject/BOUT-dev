@@ -107,6 +107,11 @@ class Ncxx4 : public DataFormat {
   
   void setLowPrecision() { lowPrecision = true; }
 
+  // Attributes
+
+  void setAttribute(const string &varname, const string &attrname, const string &text) override;
+  void setAttribute(const string &varname, const string &attrname, int value) override;
+  
  private:
 
   char *fname; ///< Current file name
