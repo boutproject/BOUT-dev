@@ -221,10 +221,10 @@ public:
   }
 
   //////////////////////////////////////////////////////////
-  // Iterators -- only for non-valarray use currently
-#ifndef BOUT_ARRAY_WITH_VALARRAY //Valarray version could probably use std::begin(ptr.get()) and std::end(...)
+  // Iterators
   typedef T* iterator;
-
+  typedef const T* const_iterator;
+#ifndef BOUT_ARRAY_WITH_VALARRAY
   iterator begin() { 
     return (ptr) ? ptr->data : nullptr;
   }
@@ -233,9 +233,7 @@ public:
     return (ptr) ? ptr->data + ptr->len : nullptr;
   }
 
-  // Const iterators
-  typedef const T* const_iterator;
-  
+  // Const iterators  
   const_iterator begin() const {
     return (ptr) ? ptr->data : nullptr;
   }
@@ -243,6 +241,23 @@ public:
   const_iterator end() const {
     return (ptr) ? ptr->data + ptr->len : nullptr;
   }
+#else
+  iterator begin() { 
+    return (ptr) ? std::begin(*ptr) : nullptr;
+  }
+
+  iterator end() {
+    return (ptr) ? std::end(*ptr) : nullptr;
+  }
+
+  // Const iterators -- should revisit with cbegin and cend in c++14 and greater
+  const_iterator begin() const {
+    return (ptr) ? std::begin(*ptr) : nullptr;
+  }
+
+  const_iterator end() const {
+    return (ptr) ? std::end(*ptr) : nullptr;
+  } 
 #endif
   //////////////////////////////////////////////////////////
   // Element access
