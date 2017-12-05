@@ -6,7 +6,6 @@ except:
 # from math import pi, atan, cos, sin
 
 import numpy as np
-
 # from . import grid
 
 class MagneticField(object):
@@ -18,7 +17,7 @@ class MagneticField(object):
     Bxfunc = Function for magnetic field in x
     Bzfunc = Function for magnetic field in z
     Byfunc = Function for magnetic field in y (default = 1.)
-    Rfunc = Function for major radius. If None, z is in meters
+    Rfunc = Function for major radius. If None, y is in meters
     """
     
     def Bxfunc(self, x,z,phi):
@@ -589,13 +588,74 @@ class GEQDSK(MagneticField):
         self.rmin = g.get('rleft')
         self.rmax = g.get('rdim') + self.rmin
         
+        # Range of height
         self.zmin = g.get('zmid') - 0.5*g.get('zdim')
         self.zmax = g.get('zmid') + 0.5*g.get('zdim')
 
+        print("Major radius: {0} -> {1} m".format(self.rmin, self.rmax))
+        print("Height: {0} -> {1} m".format(self.zmin, self.zmax))
+        
         # Poloidal flux
-        self.psi = g.get('psirz')
+        self.psi = np.transpose(g.get('psirz'))
+        nr, nz = self.psi.shape
 
+        # Normalising factors: psi on axis and boundary
+        self.psi_axis = g.get('simag')
+        self.psi_bndry = g.get('sibry')
+        
         # Current flux function f = R * Bt
         self.fpol = g.get('fpol')
         
+        self.r = np.linspace(self.rmin, self.rmax, nr)
+        self.z = np.linspace(self.zmin, self.zmax, nz)
         
+        # Create a 2D spline interpolation for psi
+        from scipy import interpolate
+        self.psi_func = interpolate.RectBivariateSpline(self.r, self.z, self.psi)
+        
+        # Spline for interpolation of f = R*Bt
+        psinorm = np.linspace(0.0, 1.0, nr)
+        self.f_spl = interpolate.InterpolatedUnivariateSpline(psinorm, self.fpol, ext=3)
+        # ext=3 specifies that boundary values are used outside range
+        
+    def Bxfunc(self, x, z, phi):
+        """
+        Radial magnetic field
+        Br = -1/R dpsi/dZ
+        """
+        return -self.psi_func(x,z,dy=1,grid=False)/x
+
+    def Bzfunc(self, x, z, phi):
+        """
+        Vertical magnetic field
+        Bz = (1/R) dpsi/dR
+        """
+        
+        return self.psi_func(x,z,dx=1,grid=False)/x
+
+    def Byfunc(self, x, z, phi):
+        """
+        Toroidal magnetic field
+        """
+
+        # Interpolate to get flux surface psi
+        psi = self.psi_func(x,z, grid=False)
+        # Normalise
+        psinorm = (psi - self.psi_axis)/(self.psi_bndry - self.psi_axis)
+
+        # NOTE: If in the Private Flux region psinorm < 1
+        # - should handle this case by detecting when inside the LCFS
+        # or perhaps using a different 2D array for psinorm
+        
+        # interpolate fpol array
+        if hasattr(psinorm, "shape"):
+            return np.reshape(self.f_spl(np.ravel(psinorm)),psinorm.shape)
+        
+        return f_spl(psinorm)
+
+    def Rfunc(self, x, z, phi):
+        """
+        Major radius
+        """
+        return x
+    

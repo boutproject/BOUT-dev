@@ -76,6 +76,43 @@ so that it knows where to put boundaries (if not periodic), or where to wrap the
 (if periodic). The array of y locations ycoords can be arbitrary, but note that finite
 difference methods (like FCI) work best if grid point spacing varies smoothly.
 
+A more realistic example is creating a grid for a MAST tokamak equilibrium from a G-Eqdsk
+input file:
+
+.. code:: python
+   
+   import numpy as np
+   import zoidberg
+   
+   field = zoidberg.field.GEQDSK("g014220.00200") # Read magnetic field
+
+   grid = zoidberg.grid.rectangular_grid(100, 10, 100,
+          1.5-0.1, # Range in R (max - min)
+          2*np.pi, # Toroidal angle
+          3., # Range in Z
+          xcentre=(1.5+0.1)/2, # Middle of grid in R
+          yperiodic=True) # Periodic in toroidal angle
+
+   # Create the forward and backward maps
+   maps = zoidberg.make_maps(grid, field)
+   
+   # Save to file
+   zoidberg.write_maps(grid, field, maps, gridfile="grid.fci.nc")
+
+   # Plot grid points and the points they map to in the forward direction
+   yslice = 0
+   pol, ycoord = grid.getPoloidalGrid(yslice)
+   pol_next, ycoord_next = grid.getPoloidalGrid(yslice+1)
+
+   # Get forward maps and get their location on yslice = 1
+   R_next, Z_next = pol_next.getCoordinate( maps['forward_xt_prime'][:,yslice,:],
+                                            maps['forward_zt_prime'][:,yslice,:] )
+   
+   import matplotlib.pyplot as plt
+   plt.plot(pol.R, pol.Z, 'x')  # Plot points on y slice 0
+   plt.plot(R_next, Z_next, 'o') # Forward maps onto y slice 1
+   
+   
 In the last example only one poloidal grid was created (a ``RectangularPoloidalGrid``)
 and then re-used for each y slice. We can instead define a different grid for each y
 position. For example, to define a grid which expands along y (for some reason) we could do:
@@ -307,8 +344,19 @@ an exception will be raised.
 .. code:: python
    
    import zoidberg
-   field = zoidberg.StraightStellarator()
+   field = zoidberg.field.StraightStellarator()
 
+G-Eqdsk files
+-------------
+
+This format is commonly used for axisymmetric tokamak equilibria, for example output from EFIT equilibrium
+reconstruction. It consists of the poloidal flux psi, describing the magnetic field in R and Z, with the toroidal
+magnetic field Bt given by a 1D function f(psi) = R*Bt which depends only on psi.
+
+.. code:: python
+
+   import zoidberg
+   field = zoidberg.field.GEQDSK("gfile.eqdsk")
 
 VMEC files
 ~~~~~~~~~~
@@ -319,7 +367,7 @@ flux surfaces.
 .. code:: python
 
    import zoidberg
-   field = zoidberg.VMEC("w7x.wout")
+   field = zoidberg.field.VMEC("w7x.wout")
 
 
 Plotting the magnetic field
@@ -327,6 +375,23 @@ Plotting the magnetic field
 
 Routines to plot the magnetic field are in ``zoidberg.plot``. They include Poincare plots
 and 3D field line plots. 
+
+For example, to make a Poincare plot from a MAST equilibrium:
+
+.. code:: python
+
+   import numpy as np
+   import zoidberg
+   field = zoidberg.field.GEQDSK("g014220.00200")
+   zoidberg.plot.plot_poincare(field, 1.4, 0.0, 2*np.pi, interactive=True)
+
+This creates a flux surface starting at :math:`R=1.4` and :math:`Z=0.0`. The fourth input (``2*np.pi``) is
+the periodicity in the :math:`y` direction. Since this magnetic field is symmetric in y (toroidal angle),
+this parameter only affects the toroidal planes where the points are plotted.
+
+The ``interactive=True`` argument to ``plot_poincare`` generates a new set of points for every click
+on the plot window.
+
 
 
 Creating poloidal grids
@@ -364,7 +429,6 @@ to ``RectangularPoloidalGrid``:
 
 By default the middle of the rectangle is at :math:`\left(R,Z\right) = \left(0,0\right)`
 but this can be changed with the `Rcentre` and `Zcentre` options.
-
 
 
 Curvilinear structured grids
