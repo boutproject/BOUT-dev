@@ -31,7 +31,7 @@
 //where <x> is any number of valid omp options/environments (e.g. atomic, critical etc.)
 #define INDIRECT0(a) #a
 #define INDIRECT1(a) INDIRECT0(omp a)
-#define INDIRECT2(b) INDIRECT1(#b)
+#define INDIRECT2(b) INDIRECT1(b)
 
 //Define a macro wrapper to the use of `#pragma omp` to avoid unknown pragma
 //warnings when compiling without openmp support.
