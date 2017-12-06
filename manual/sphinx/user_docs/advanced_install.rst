@@ -132,12 +132,12 @@ To build PETSc without SUNDIALS, configure with
       --with-scalar-type=real \
       --with-shared-libraries=0
 
-Add ``–with-debugging=yes`` to ``./configure`` in order to allow
+Add ``--with-debugging=yes`` to ``./configure`` in order to allow
 debugging.
 
 | To build PETSc with SUNDIALS, install SUNDIALS as explained in section
   :ref:`sec-sundials`, and append ``./configure`` with
-  ``–with-sundials-dir=$HOME/local``
+  ``--with-sundials-dir=$HOME/local``
 |  
 | It is also possible to get PETSc to download and install MUMPS (see
   :ref:`sec-MUMPS`), by adding
@@ -160,7 +160,7 @@ to ``./configure`` To make PETSc, type
 
 Should blas, lapack or any other packages be missing, you will get an
 error, and a suggestion that you can append
-``–download-name-of-package`` to the ``./configure`` line. You may want
+``--download-name-of-package`` to the ``./configure`` line. You may want
 to test that everything is configured properly. To do this, type
 
 .. code-block:: bash

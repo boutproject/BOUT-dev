@@ -19,26 +19,28 @@ int main(int argc, char** argv) {
     mesh->get(B0,   "Bxy");  // T
     mesh->get(hthe, "hthe"); // m
     mesh->get(I,    "sinty");// m^-2 T^-1
-    
+
+    Coordinates *coord = mesh->coordinates();
+
     // Calculate metrics
-    mesh->g11 = (Rxy*Bpxy)^2;
-    mesh->g22 = 1.0 / (hthe^2);
-    mesh->g33 = (I^2)*mesh->g11 + (B0^2)/mesh->g11;
-    mesh->g12 = 0.0;
-    mesh->g13 = -I*mesh->g11;
-    mesh->g23 = -Btxy/(hthe*Bpxy*Rxy);
-    
-    mesh->J = hthe / Bpxy;
-    mesh->Bxy = B0;
-    
-    mesh->g_11 = 1.0/mesh->g11 + ((I*Rxy)^2);
-    mesh->g_22 = (B0*hthe/Bpxy)^2;
-    mesh->g_33 = Rxy*Rxy;
-    mesh->g_12 = Btxy*hthe*I*Rxy/Bpxy;
-    mesh->g_13 = I*Rxy*Rxy;
-    mesh->g_23 = Btxy*hthe*Rxy/Bpxy;
-    
-    mesh->geometry();
+    coord->g11 = SQ(Rxy * Bpxy);
+    coord->g22 = 1.0 / SQ(hthe);
+    coord->g33 = SQ(I) * coord->g11 + SQ(B0) / coord->g11;
+    coord->g12 = 0.0;
+    coord->g13 = -I * coord->g11;
+    coord->g23 = -Btxy / (hthe * Bpxy * Rxy);
+
+    coord->J = hthe / Bpxy;
+    coord->Bxy = B0;
+
+    coord->g_11 = 1.0 / coord->g11 + SQ(I * Rxy);
+    coord->g_22 = SQ(B0 * hthe / Bpxy);
+    coord->g_33 = Rxy * Rxy;
+    coord->g_12 = Btxy * hthe * I * Rxy / Bpxy;
+    coord->g_13 = I * Rxy * Rxy;
+    coord->g_23 = Btxy * hthe * Rxy / Bpxy;
+
+    coord->geometry();
   }
   ///////////////////////////////////////
   

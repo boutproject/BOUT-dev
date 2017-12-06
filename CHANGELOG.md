@@ -1,5 +1,82 @@
 # Change Log
 
+## [v4.1.2](https://github.com/boutproject/BOUT-dev/tree/v4.1.2) (2017-12-01)
+[Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.1.1...v4.1.2)
+
+**Fixed bugs:**
+
+- ./configure deadlock [\#744](https://github.com/boutproject/BOUT-dev/issues/744)
+- Typo in unit test makefile? [\#730](https://github.com/boutproject/BOUT-dev/issues/730)
+- Laplacian Serial\_tri incorrect operation [\#727](https://github.com/boutproject/BOUT-dev/issues/727)
+- memory leak in pylib/boututils/showdata [\#231](https://github.com/boutproject/BOUT-dev/issues/231)
+- Fix minor typo in unit test makefile [\#731](https://github.com/boutproject/BOUT-dev/pull/731) ([d7919](https://github.com/d7919))
+
+**Closed issues:**
+
+- Test fci-slab [\#748](https://github.com/boutproject/BOUT-dev/issues/748)
+- BOUT.log is hardcoded [\#745](https://github.com/boutproject/BOUT-dev/issues/745)
+- FFT for DDZ hard coded parameters [\#647](https://github.com/boutproject/BOUT-dev/issues/647)
+- genZMode no longer used? [\#645](https://github.com/boutproject/BOUT-dev/issues/645)
+- Vector applyBoundary [\#584](https://github.com/boutproject/BOUT-dev/issues/584)
+
+**Merged pull requests:**
+
+- Bug fix bout runners [\#758](https://github.com/boutproject/BOUT-dev/pull/758) ([loeiten](https://github.com/loeiten))
+- Fix bug in infinite recursion in configure when netcdf not found [\#754](https://github.com/boutproject/BOUT-dev/pull/754) ([ZedThree](https://github.com/ZedThree))
+- disable plotting in test-fci-slab [\#753](https://github.com/boutproject/BOUT-dev/pull/753) ([dschwoerer](https://github.com/dschwoerer))
+- Fixing bug in calculation of non-uniform correction [\#739](https://github.com/boutproject/BOUT-dev/pull/739) ([bendudson](https://github.com/bendudson))
+- Laplacexy examples fix [\#733](https://github.com/boutproject/BOUT-dev/pull/733) ([bendudson](https://github.com/bendudson))
+- Small fixes for serial\_tri Laplace solver [\#729](https://github.com/boutproject/BOUT-dev/pull/729) ([bendudson](https://github.com/bendudson))
+- Adding missing \_\_setitem\_\_ and keys\(\) functions [\#728](https://github.com/boutproject/BOUT-dev/pull/728) ([bendudson](https://github.com/bendudson))
+- Manual fix [\#721](https://github.com/boutproject/BOUT-dev/pull/721) ([dschwoerer](https://github.com/dschwoerer))
+
+## [v4.1.1](https://github.com/boutproject/BOUT-dev/tree/v4.1.1) (2017-10-18)
+[Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.1.0...v4.1.1)
+
+**Fixed bugs:**
+
+- Generalise the "boundaries" section of Delp2 for Field3D [\#708](https://github.com/boutproject/BOUT-dev/pull/708) ([d7919](https://github.com/d7919))
+- Cleanup array :: cleanup all at end of sim [\#706](https://github.com/boutproject/BOUT-dev/pull/706) ([d7919](https://github.com/d7919))
+- Ensure VarStr entries are initialised in all cases [\#705](https://github.com/boutproject/BOUT-dev/pull/705) ([d7919](https://github.com/d7919))
+- Initialise `covar` for all `VarStr` instances [\#704](https://github.com/boutproject/BOUT-dev/pull/704) ([d7919](https://github.com/d7919))
+- Removing Field3D move constructor [\#699](https://github.com/boutproject/BOUT-dev/pull/699) ([bendudson](https://github.com/bendudson))
+- Field3D default move constructor leading to segfaults [\#698](https://github.com/boutproject/BOUT-dev/issues/698)
+- Unit test seg fault \(`Output::cleanup`\) -- order dependent [\#693](https://github.com/boutproject/BOUT-dev/issues/693)
+- test-fci-slab fix: Don't show plot by default [\#692](https://github.com/boutproject/BOUT-dev/pull/692) ([d7919](https://github.com/d7919))
+
+**Closed issues:**
+
+- Integrated tests don't all compile and not all used [\#701](https://github.com/boutproject/BOUT-dev/issues/701)
+- PYTHONPATH in tests [\#695](https://github.com/boutproject/BOUT-dev/issues/695)
+- Dynamic casts in `ConditionalOutput` [\#691](https://github.com/boutproject/BOUT-dev/issues/691)
+- Segfault when increasing verbosity  [\#690](https://github.com/boutproject/BOUT-dev/issues/690)
+- v4.1 release candidate [\#640](https://github.com/boutproject/BOUT-dev/issues/640)
+- -DCHECK changes memory layout [\#594](https://github.com/boutproject/BOUT-dev/issues/594)
+- nx and ny constant for different processors [\#560](https://github.com/boutproject/BOUT-dev/issues/560)
+- release notes [\#504](https://github.com/boutproject/BOUT-dev/issues/504)
+- y initial conditions always at CELL\_YLOW [\#484](https://github.com/boutproject/BOUT-dev/issues/484)
+- Free boundaries [\#429](https://github.com/boutproject/BOUT-dev/issues/429)
+- Adding TRACE and BoutException to monitors [\#355](https://github.com/boutproject/BOUT-dev/issues/355)
+- indexDDZ \(staggered\) [\#335](https://github.com/boutproject/BOUT-dev/issues/335)
+- Reducing compiler warnings [\#322](https://github.com/boutproject/BOUT-dev/issues/322)
+- Derivatives: free boundary - Issues if MXG not 2 [\#250](https://github.com/boutproject/BOUT-dev/issues/250)
+
+**Merged pull requests:**
+
+- Fix broken links, code blocks and tables in documentation [\#722](https://github.com/boutproject/BOUT-dev/pull/722) ([ZedThree](https://github.com/ZedThree))
+- Small bug fixes for Options/OptionsReader and their tests [\#718](https://github.com/boutproject/BOUT-dev/pull/718) ([ZedThree](https://github.com/ZedThree))
+- Update user manual: --enable-checks is the configure option for checking [\#717](https://github.com/boutproject/BOUT-dev/pull/717) ([JosephThomasParker](https://github.com/JosephThomasParker))
+- Make sure link flags apply correctly to unit tests [\#715](https://github.com/boutproject/BOUT-dev/pull/715) ([ZedThree](https://github.com/ZedThree))
+- throw exception if staggererd deriv in z direction [\#714](https://github.com/boutproject/BOUT-dev/pull/714) ([dschwoerer](https://github.com/dschwoerer))
+- Set PYTHONPATH for tests [\#713](https://github.com/boutproject/BOUT-dev/pull/713) ([ZedThree](https://github.com/ZedThree))
+- A few small fixes and tests for Output/ConditionalOutput [\#712](https://github.com/boutproject/BOUT-dev/pull/712) ([ZedThree](https://github.com/ZedThree))
+- Output message if NetCDF4 support is enabled [\#711](https://github.com/boutproject/BOUT-dev/pull/711) ([ZedThree](https://github.com/ZedThree))
+- Make bout\_test\_main.o depend on source file [\#710](https://github.com/boutproject/BOUT-dev/pull/710) ([ZedThree](https://github.com/ZedThree))
+- Make shiftedmetric use const refs when possible [\#703](https://github.com/boutproject/BOUT-dev/pull/703) ([d7919](https://github.com/d7919))
+- Some fixes to the integrated tests [\#702](https://github.com/boutproject/BOUT-dev/pull/702) ([bendudson](https://github.com/bendudson))
+- Add an option "ddz:fft\_filter" to control filtering in DDZ [\#700](https://github.com/boutproject/BOUT-dev/pull/700) ([bendudson](https://github.com/bendudson))
+- Multigrid solver memory leak bugfix [\#696](https://github.com/boutproject/BOUT-dev/pull/696) ([johnomotani](https://github.com/johnomotani))
+- Bugfix: Checkout googletest if not available [\#694](https://github.com/boutproject/BOUT-dev/pull/694) ([bendudson](https://github.com/bendudson))
 
 ## [v4.1.0](https://github.com/boutproject/BOUT-dev/tree/v4.1.0) (2017-09-20)
 [Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.0.1...v4.1.0)

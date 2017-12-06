@@ -120,6 +120,7 @@ exactly which method to use.
 
 Non-uniform meshes
 ------------------
+.. _sec-diffmethod-nonuniform:
 
 **examples/test-nonuniform seems to not work?** Setting
 ``non_uniform = true`` in the BOUT.inp options file enables corrections
@@ -153,6 +154,9 @@ The correction factor is then calculated from ``d2x`` using
 
    {{\frac{\partial }{\partial i}}}(\frac{1}{\Delta x}) = -\frac{1}{\Delta x^2} {{\frac{\partial \Delta x}{\partial i}}}
 
+**Note**: There is a separate switch in the :ref:`Laplacian inversion code <sec-laplacian>`,
+which enables or disables non-uniform mesh corrections.
+   
 General operators
 -----------------
 

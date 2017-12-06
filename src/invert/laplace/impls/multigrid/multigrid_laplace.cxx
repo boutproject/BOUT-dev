@@ -175,7 +175,8 @@ LaplaceMultigrid::~LaplaceMultigrid() {
 const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &x0) {
 
   TRACE("LaplaceMultigrid::solve(const FieldPerp, const FieldPerp)");
-  
+
+  Mesh *mesh = b_in.getMesh();
   BoutReal t0,t1;
   
   Coordinates *coords = mesh->coordinates();
@@ -371,8 +372,8 @@ BOUT_OMP(for)
   if(mgcount%300 == 0) {
     output<<"Accumulated execution time at "<<mgcount<<" Sol "<<soltime<<" ( "<<settime<<" )"<<endl;
   }
-  
-  FieldPerp result;
+
+  FieldPerp result(mesh);
   result.allocate();
   #if CHECK>2
     // Make any unused elements NaN so that user does not try to do calculations with them

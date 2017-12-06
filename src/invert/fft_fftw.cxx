@@ -108,17 +108,26 @@ void cfft(dcomplex *cv, int length, int isign)
 {
   static fftw_complex *inall, *outall;
   static fftw_plan *pf, *pb;
-  static int size = 0, nthreads;
+  static int size = 0, nthreads = 0;
 
   int th_id = omp_get_thread_num();
-  BOUT_OMP(critical)
-  {
-    // Sort out memory. Also, FFTW planning routines not thread safe
-    int n_th = omp_get_num_threads(); // Number of threads
+  int n_th = omp_get_num_threads(); // Number of threads
+
+  // Sort out memory. Also, FFTW planning routines not thread safe
+  if ((size != length) || (nthreads < n_th)) {
+    // We make the check to see if the problem size has changed twice
+    // intentionally. The first check ensures we don't pay the cost of
+    // obtaining a lock for the critical section if we don't need to do
+    // any work here. The second check is required to make sure that
+    // only one thread does the actual setup when required. Note we can't
+    // use a `single` block here as that requires all threads to reach the
+    // block (implicit barrier) which may not be true in all cases (e.g.
+    // if there are 8 threads but only 4 call the fft routine).
+    BOUT_OMP(critical);
     if((size != length) || (nthreads < n_th)) {
       if(size > 0) {
         // Free all memory
-        for(int i=0;i<nthreads;i++) {
+        for (int i = 0; i < nthreads; i++) {
           fftw_destroy_plan(pf[i]);
           fftw_destroy_plan(pb[i]);
         }
@@ -139,9 +148,9 @@ void cfft(dcomplex *cv, int length, int isign)
         flags = FFTW_MEASURE;
 
       for(int i=0;i<n_th;i++) {
-        pf[i] = fftw_plan_dft_1d(length, inall+i*length, outall+i*length,
+        pf[i] = fftw_plan_dft_1d(length, inall + i * length, outall + i * length,
                                  FFTW_FORWARD, flags);
-        pb[i] = fftw_plan_dft_1d(length, inall+i*length, outall+i*length,
+        pb[i] = fftw_plan_dft_1d(length, inall + i * length, outall + i * length,
                                  FFTW_BACKWARD, flags);
       }
 
@@ -149,6 +158,7 @@ void cfft(dcomplex *cv, int length, int isign)
       size = length;
     }
   }
+
   // Get working arrays for this thread
   fftw_complex *in = inall+th_id*length;
   fftw_complex *out = outall+th_id*length;
@@ -312,15 +322,23 @@ void rfft(const BoutReal *in, int length, dcomplex *out) {
   static double *finall;
   static fftw_complex *foutall;
   static fftw_plan *p;
-  static int size = 0, nthreads;
+  static int size = 0, nthreads = 0;
 
   int th_id = omp_get_thread_num();
-BOUT_OMP(critical(rfft))
-  {
-    // Sort out memory. Also, FFTW planning routines not thread safe
-    int n_th = omp_get_num_threads(); // Number of threads
+  int n_th = omp_get_num_threads(); // Number of threads
 
-    if((size != length) || (nthreads < n_th)) {
+  // Sort out memory. Also, FFTW planning routines not thread safe
+  if ((size != length) || (nthreads < n_th)) {
+    // We make the check to see if the problem size has changed twice
+    // intentionally. The first check ensures we don't pay the cost of
+    // obtaining a lock for the critical section if we don't need to do
+    // any work here. The second check is required to make sure that
+    // only one thread does the actual setup when required. Note we can't
+    // use a `single` block here as that requires all threads to reach the
+    // block (implicit barrier) which may not be true in all cases (e.g.
+    // if there are 8 threads but only 4 call the fft routine).
+    BOUT_OMP(critical(rfft));
+    if ((size != length) || (nthreads < n_th)) {
       if(size > 0) {
         // Free all memory
         for(int i=0;i<nthreads;i++)
@@ -352,18 +370,18 @@ BOUT_OMP(critical(rfft))
   }
 
   // Get working arrays for this thread
-  double *fin = finall + th_id * length;
-  fftw_complex *fout = foutall + th_id * (length/2 + 1);
+  double *fin = finall + th_id * size;
+  fftw_complex *fout = foutall + th_id * (size / 2 + 1);
 
-  for(int i=0;i<length;i++)
+  for (int i = 0; i < size; i++)
     fin[i] = in[i];
 
   // fftw call executing the fft
   fftw_execute(p[th_id]);
 
   //Normalising factor
-  const BoutReal fac = 1.0 / static_cast<BoutReal>(length);
-  const int nmodes = (length/2) + 1;
+  const BoutReal fac = 1.0 / static_cast<BoutReal>(size);
+  const int nmodes = (size / 2) + 1;
 
   for(int i=0;i<nmodes;i++)
     out[i] = dcomplex(fout[i][0], fout[i][1]) * fac; // Normalise
@@ -373,18 +391,26 @@ void irfft(const dcomplex *in, int length, BoutReal *out) {
   static fftw_complex *finall;
   static double *foutall;
   static fftw_plan *p;
-  static int size = 0, nthreads;
+  static int size = 0, nthreads = 0;
 
   int th_id = omp_get_thread_num();
   int n_th = omp_get_num_threads(); // Number of threads
-BOUT_OMP(critical(irfft))
-  {
-    // Sort out memory. Also, FFTW planning routines not thread safe
 
-    if((size != length) || (nthreads < n_th)) {
-      if(size > 0) {
+  // Sort out memory. Also, FFTW planning routines not thread safe
+  if ((size != length) || (nthreads < n_th)) {
+    // We make the check to see if the problem size has changed twice
+    // intentionally. The first check ensures we don't pay the cost of
+    // obtaining a lock for the critical section if we don't need to do
+    // any work here. The second check is required to make sure that
+    // only one thread does the actual setup when required. Note we can't
+    // use a `single` block here as that requires all threads to reach the
+    // block (implicit barrier) which may not be true in all cases (e.g.
+    // if there are 8 threads but only 4 call the fft routine).
+    BOUT_OMP(critical(irfft));
+    if ((size != length) || (nthreads < n_th)) {
+      if (size > 0) {
         // Free all memory
-        for(int i=0;i<nthreads;i++)
+        for (int i = 0; i < nthreads; i++)
           fftw_destroy_plan(p[i]);
         delete[] p;
         fftw_free(finall);
@@ -393,28 +419,29 @@ BOUT_OMP(critical(irfft))
 
       fft_init();
 
-      finall = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (length/2 + 1) * n_th);
-      foutall = (double*) fftw_malloc(sizeof(double) * length * n_th);
+      finall =
+          (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * (length / 2 + 1) * n_th);
+      foutall = (double *)fftw_malloc(sizeof(double) * length * n_th);
 
-      p = new fftw_plan[n_th]; //Never freed
+      p = new fftw_plan[n_th]; // Never freed
 
       unsigned int flags = FFTW_ESTIMATE;
-      if(fft_measure)
+      if (fft_measure)
         flags = FFTW_MEASURE;
 
-      for(int i=0;i<n_th;i++)
-        p[i] = fftw_plan_dft_c2r_1d(length, finall+i*(length/2 + 1),
-                                    foutall+i*length, flags);
+      for (int i = 0; i < n_th; i++)
+        p[i] = fftw_plan_dft_c2r_1d(length, finall + i * (length / 2 + 1),
+                                    foutall + i * length, flags);
       size = length;
       nthreads = n_th;
     }
   }
 
   // Get working arrays for this thread
-  fftw_complex *fin = finall + th_id * (length/2 + 1);
-  double *fout = foutall + th_id * length;
+  fftw_complex *fin = finall + th_id * (size / 2 + 1);
+  double *fout = foutall + th_id * size;
 
-  const int nmodes = (length/2) + 1;
+  const int nmodes = (size / 2) + 1;
 
   for(int i=0;i<nmodes;i++) {
     fin[i][0] = in[i].real();
@@ -424,7 +451,7 @@ BOUT_OMP(critical(irfft))
   // fftw call executing the fft
   fftw_execute(p[th_id]);
 
-  for(int i=0;i<length;i++)
+  for (int i = 0; i < size; i++)
     out[i] = fout[i];
 }
 #endif
