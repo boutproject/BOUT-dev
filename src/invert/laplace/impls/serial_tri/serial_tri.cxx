@@ -133,7 +133,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
   if (outer_boundary_flags & INVERT_BNDRY_ONE)
     outbndry = 1;
 
-  BOUT_OMP(parallel for);
+  BOUT_OMP(parallel for)
   for (int ix = 0; ix < mesh->LocalNx; ix++) {
     /* This for loop will set the bk (initialized by the constructor)
      * bk is the z fourier modes of b in z
