@@ -136,6 +136,7 @@ TEST_F(Field2DTest, CopyCheckFieldmesh) {
   delete fieldmesh;
 }
 
+#if CHECK > 0
 TEST_F(Field2DTest, CreateOnNullMesh) {
   auto old_mesh = mesh;
   mesh = nullptr;
@@ -154,6 +155,7 @@ TEST_F(Field2DTest, CreateOnNullMesh) {
   EXPECT_EQ(field.getNy(), Field2DTest::ny);
   EXPECT_EQ(field.getNz(), 1);
 }
+#endif
 
 TEST_F(Field2DTest, TimeDeriv) {
   Field2D field;

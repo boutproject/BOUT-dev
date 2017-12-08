@@ -136,6 +136,7 @@ TEST_F(Field3DTest, CopyCheckFieldmesh) {
   delete fieldmesh;
 }
 
+#if CHECK > 0
 TEST_F(Field3DTest, CreateOnNullMesh) {
   auto old_mesh = mesh;
   mesh = nullptr;
@@ -154,6 +155,7 @@ TEST_F(Field3DTest, CreateOnNullMesh) {
   EXPECT_EQ(field.getNy(), Field3DTest::ny);
   EXPECT_EQ(field.getNz(), Field3DTest::nz);
 }
+#endif
 
 TEST_F(Field3DTest, TimeDeriv) {
   Field3D field;
