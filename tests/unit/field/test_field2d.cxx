@@ -100,9 +100,9 @@ TEST_F(Field2DTest, GetGridSizes) {
 }
 
 TEST_F(Field2DTest, CreateOnGivenMesh) {
-  int test_nx = 2;
-  int test_ny = 3;
-  int test_nz = 5;
+  int test_nx = Field2DTest::nx + 2;
+  int test_ny = Field2DTest::ny + 2;
+  int test_nz = Field2DTest::nz + 2;
 
   FakeMesh *fieldmesh = new FakeMesh(test_nx, test_ny, test_nz);
 
@@ -118,9 +118,9 @@ TEST_F(Field2DTest, CreateOnGivenMesh) {
 }
 
 TEST_F(Field2DTest, CopyCheckFieldmesh) {
-  int test_nx = 2;
-  int test_ny = 3;
-  int test_nz = 5;
+  int test_nx = Field2DTest::nx + 2;
+  int test_ny = Field2DTest::ny + 2;
+  int test_nz = Field2DTest::nz + 2;
 
   FakeMesh *fieldmesh = new FakeMesh(test_nx, test_ny, test_nz);
 

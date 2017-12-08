@@ -100,9 +100,9 @@ TEST_F(Field3DTest, GetGridSizes) {
 }
 
 TEST_F(Field3DTest, CreateOnGivenMesh) {
-  int test_nx = 2;
-  int test_ny = 3;
-  int test_nz = 5;
+  int test_nx = Field3DTest::nx + 2;
+  int test_ny = Field3DTest::ny + 2;
+  int test_nz = Field3DTest::nz + 2;
 
   FakeMesh *fieldmesh = new FakeMesh(test_nx, test_ny, test_nz);
 
@@ -118,9 +118,9 @@ TEST_F(Field3DTest, CreateOnGivenMesh) {
 }
 
 TEST_F(Field3DTest, CopyCheckFieldmesh) {
-  int test_nx = 2;
-  int test_ny = 3;
-  int test_nz = 5;
+  int test_nx = Field3DTest::nx + 2;
+  int test_ny = Field3DTest::ny + 2;
+  int test_nz = Field3DTest::nz + 2;
 
   FakeMesh *fieldmesh = new FakeMesh(test_nx, test_ny, test_nz);
 
