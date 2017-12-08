@@ -644,16 +644,21 @@ protected:
   
   /// Initialise derivatives
   void derivs_init(Options* options);
-  
-  /// Loop over mesh, applying a stepppncil in the X direction
-  const Field2D applyXdiff(const Field2D &var, deriv_func func, CELL_LOC loc = CELL_DEFAULT, REGION region = RGN_NOX);
-  const Field3D applyXdiff(const Field3D &var, deriv_func func, CELL_LOC loc = CELL_DEFAULT, REGION region = RGN_NOX);
-  
-  const Field2D applyYdiff(const Field2D &var, deriv_func func, CELL_LOC loc = CELL_DEFAULT, REGION region = RGN_NOBNDRY);
-  const Field3D applyYdiff(const Field3D &var, deriv_func func, CELL_LOC loc = CELL_DEFAULT, REGION region = RGN_NOBNDRY);
 
-  const Field3D applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc = CELL_DEFAULT, REGION region = RGN_ALL);
-  
+  /// Loop over mesh, applying a stencil in the X direction
+  const Field2D applyXdiff(const Field2D &var, deriv_func func,
+                           CELL_LOC loc = CELL_DEFAULT, REGION region = RGN_NOX);
+  const Field3D applyXdiff(const Field3D &var, deriv_func func,
+                           CELL_LOC loc = CELL_DEFAULT, REGION region = RGN_NOX);
+
+  const Field2D applyYdiff(const Field2D &var, deriv_func func,
+                           CELL_LOC loc = CELL_DEFAULT, REGION region = RGN_NOBNDRY);
+  const Field3D applyYdiff(const Field3D &var, deriv_func func,
+                           CELL_LOC loc = CELL_DEFAULT, REGION region = RGN_NOBNDRY);
+
+  const Field3D applyZdiff(const Field3D &var, Mesh::deriv_func func,
+                           CELL_LOC loc = CELL_DEFAULT, REGION region = RGN_ALL);
+
 private:
   /// Allocates a default Coordinates object
   Coordinates *createDefaultCoordinates();
