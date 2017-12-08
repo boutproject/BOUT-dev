@@ -163,13 +163,20 @@ TEST_F(Field3DTest, TimeDeriv) {
 
   auto deriv2 = field.timeDeriv();
   EXPECT_EQ(deriv, deriv2);
+
+  EXPECT_EQ(&(ddt(field)), deriv);
 }
 
 TEST_F(Field3DTest, SplitYupYDown) {
   Field3D field;
 
   field = 0.;
+
+  EXPECT_FALSE(field.hasYupYdown());
+
   field.splitYupYdown();
+
+  EXPECT_TRUE(field.hasYupYdown());
 
   auto& yup = field.yup();
   EXPECT_NE(&field, &yup);
@@ -191,7 +198,12 @@ TEST_F(Field3DTest, MergeYupYDown) {
   Field3D field;
 
   field = 0.;
+
+  EXPECT_FALSE(field.hasYupYdown());
+
   field.mergeYupYdown();
+
+  EXPECT_TRUE(field.hasYupYdown());
 
   auto& yup = field.yup();
   EXPECT_EQ(&field, &yup);

@@ -163,6 +163,8 @@ TEST_F(Field2DTest, TimeDeriv) {
 
   auto deriv2 = field.timeDeriv();
   EXPECT_EQ(deriv, deriv2);
+
+  EXPECT_EQ(&(ddt(field)), deriv);
 }
 
 /// This test is split into two parts: a very basic sanity check first
