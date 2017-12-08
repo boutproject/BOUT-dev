@@ -117,6 +117,54 @@ TEST_F(Field2DTest, CreateOnGivenMesh) {
   delete fieldmesh;
 }
 
+TEST_F(Field2DTest, CopyCheckFieldmesh) {
+  int test_nx = 2;
+  int test_ny = 3;
+  int test_nz = 5;
+
+  FakeMesh *fieldmesh = new FakeMesh(test_nx, test_ny, test_nz);
+
+  Field2D field(fieldmesh);
+  field.allocate();
+
+  Field2D field2(field);
+
+  EXPECT_EQ(field2.getNx(), test_nx);
+  EXPECT_EQ(field2.getNy(), test_ny);
+  EXPECT_EQ(field2.getNz(), 1);
+
+  delete fieldmesh;
+}
+
+TEST_F(Field2DTest, CreateOnNullMesh) {
+  auto old_mesh = mesh;
+  mesh = nullptr;
+
+  Field2D field;
+
+  EXPECT_EQ(field.getNx(), -1);
+  EXPECT_EQ(field.getNy(), -1);
+  EXPECT_EQ(field.getNz(), 1);
+
+  mesh = old_mesh;
+
+  field.allocate();
+
+  EXPECT_EQ(field.getNx(), Field2DTest::nx);
+  EXPECT_EQ(field.getNy(), Field2DTest::ny);
+  EXPECT_EQ(field.getNz(), 1);
+}
+
+TEST_F(Field2DTest, TimeDeriv) {
+  Field2D field;
+
+  auto deriv = field.timeDeriv();
+  EXPECT_NE(&field, deriv);
+
+  auto deriv2 = field.timeDeriv();
+  EXPECT_EQ(deriv, deriv2);
+}
+
 /// This test is split into two parts: a very basic sanity check first
 /// (do we visit the right number of elements?), followed by a
 /// slightly more complex check one which checks certain indices are
