@@ -1,7 +1,19 @@
-/*
-
-
- */
+/// Flexible iterator for Fields
+///
+/// The `SingleDataIterator` iterates over a vector of ints which are
+/// used to index a Field.
+///
+/// Three classes are defined here:
+///   1. `SIndexRange`
+///   2. `SingleDataIterator`
+///   3. `SIndices`
+/// plus a helper function, createRegionIndices, for creating the indices vectors.
+/// RegionIndices is just a typedef for `std::vector<int>`
+///
+/// `SIndexRange` is the utility class that should be used in `for`
+/// loops, etc.  `begin` and `end` can be used on a `SIndexRange`,
+/// returning a `Singledataiterator`, which in turn dereferences into
+/// a `SIndexRange`, which finally can be used to index a Field.
 
 #ifndef __SINGLEDATAITERATOR_H__
 #define __SINGLEDATAITERATOR_H__
@@ -17,9 +29,7 @@
 int SDI_spread_work(int num_work, int thread, int max_thread);
 #endif
 
-/*!
- * Set of indices - SingleDataIterator is dereferenced into these
- */
+/// Set of indices for Fields - SingleDataIterator is dereferenced into these
 struct SIndices {
   SIndices(int i, int nx, int ny, int nz) : i(i), nx(nx), ny(ny), nz(nz) {}
   int i; // index of array
@@ -27,8 +37,10 @@ struct SIndices {
   int ny;
   int nz;
 
-  // This is a little gross, but required so that dereferencing
-  // SingleDataIterators works as expected
+  /// Dereference operators -- need to define these so that the
+  /// dereference operators in SingleDataIterator work as
+  /// expected. The chain of dereference operators needs to end in a
+  /// bare pointer
   SIndices *operator->() { return this; }
   const SIndices *operator->() const { return this; }
 
@@ -40,43 +52,41 @@ struct SIndices {
   int y() const { return (i / nz) % ny; }
   int z() const { return (i % nz); }
 
-  /*
-   * Shortcuts for common offsets, one cell
-   * in each direction.
-   */
-
+  /// Shortcuts for common offsets, one cell in each direction.
   /// The index one point +1 in x
   SIndices xp() const { return {i + ny * nz, nx, ny, nz}; }
+  /// +1 in x, +1 in z
   SIndices xpzp() const {
     return {(i + 1) % nz == 0 ? i + ny * nz - nz + 1 : i + ny * nz + 1, nx, ny, nz};
   }
+  /// +1 in x, -1 in z
   SIndices xpzm() const {
     return {i % nz == 0 ? i + ny * nz + nz - 1 : i + ny * nz - 1, nx, ny, nz};
   }
   /// The index one point -1 in x
   SIndices xm() const { return {i - ny * nz, nx, ny, nz}; }
+  /// -1 in x, +1 in z
   SIndices xmzp() const {
     return {(i + 1) % nz == 0 ? i - ny * nz - nz + 1 : i - ny * nz + 1, nx, ny, nz};
   }
+  /// +1 in x, -1 in z
   SIndices xmzm() const {
     return {i % nz == 0 ? i - ny * nz + nz - 1 : i - ny * nz - 1, nx, ny, nz};
   }
   /// The index one point +1 in y
   SIndices yp() const { return {i + nz, nx, ny, nz}; }
+  /// +2 in y
   SIndices ypp() const { return {i + 2 * nz, nx, ny, nz}; }
   /// The index one point -1 in y
   SIndices ym() const { return {i - nz, nx, ny, nz}; }
+  /// -2 in y
   SIndices ymm() const { return {i - 2 * nz, nx, ny, nz}; }
   /// The index one point +1 in z. Wraps around zend to zstart
-  SIndices zp() const {
-    return {(i + 1) % nz == 0 ? i - nz + 1 : i + 1, nx, ny, nz};
-  }
+  SIndices zp() const { return {(i + 1) % nz == 0 ? i - nz + 1 : i + 1, nx, ny, nz}; }
   /// The index one point -1 in z. Wraps around zstart to zend
   SIndices zm() const { return {i % nz == 0 ? i + nz - 1 : i - 1, nx, ny, nz}; }
 
-  /*!
-   * Add an offset to the index for general stencils
-   */
+  /// Add an offset to the index for general stencils
   SIndices offset(int dx, int dy, int dz) const {
     int z0 = i % nz;
     if (dz > 0) {
@@ -95,7 +105,6 @@ struct SIndices {
   }
 };
 
-
 /// Region for the SingleDataIterator to iterate over
 typedef std::vector<int> RegionIndices;
 
@@ -109,7 +118,8 @@ private:
   void omp_init();
 #endif
 
-  SingleDataIterator(); // Disable null constructor
+  /// Disable default constructor
+  SingleDataIterator();
 
   /// The internal start, end indices of region_iter, needed for OpenMP
   int icountstart, icountend;
@@ -117,24 +127,23 @@ private:
   std::vector<int>::const_iterator region_iter;
 
 public:
-  // iterator traits
+  /// iterator traits
   using difference_type = int;
   using value_type = SIndices;
   using pointer = const SIndices *;
   using reference = const SIndices &;
   using iterator_category = std::random_access_iterator_tag;
 
-  // SIndexRange needs to be a friend so that it can modify the
-  // private members to create the begin and end iterators
+  /// SIndexRange needs to be a friend so that it can modify the
+  /// private members to create the begin and end iterators
   friend class SIndexRange;
-  /*!
-   * Constructor. This sets index ranges.
-   * If OpenMP is enabled, the index range is divided
-   * between threads using the omp_init method.
-   */
+
+  /// Constructor. This sets index ranges.
+  /// If OpenMP is enabled, the index range is divided
+  /// between threads using the omp_init method.
   SingleDataIterator(int nx, int ny, int nz, RegionIndices &region)
-      : icountstart(0), icountend(region.size()), region_iter(region.cend()),
-        nx(nx), ny(ny), nz(nz), region(region) {
+      : icountstart(0), icountend(region.size()), region_iter(region.cend()), nx(nx),
+        ny(ny), nz(nz), region(region) {
 #ifdef _OPENMP
     omp_init();
 #endif
@@ -171,14 +180,12 @@ public:
     return tmp;
   }
 
-  /*!
-   * Dereference operators
-   */
+  /// Dereference operators
+  /// This is a little gross, but required so that we don't need to do:
+  ///     (*iter).i
+  /// in order to access the elements of a SIndices, where iter is a
+  /// SingleDataIterator
   SIndices operator*() const { return {*region_iter, nx, ny, nz}; }
-  // This is a little gross, but required so that we don't need to do:
-  //     (*iter).i
-  // in order to access the elements of a SIndices, where iter is a
-  // SingleDataIterator
   SIndices operator->() const { return {*region_iter, nx, ny, nz}; }
 
   /// Arithmetic operators
@@ -187,6 +194,7 @@ public:
     return *this;
   }
 
+  /// Arithmetic operators
   SingleDataIterator &operator-=(int n) { return *this += -n; }
 
   /// Indexing operator
@@ -235,10 +243,10 @@ inline SingleDataIterator operator+(int n, SingleDataIterator rhs) { return rhs 
 inline SingleDataIterator operator-(SingleDataIterator lhs, int n) { return lhs -= n; }
 
 #ifdef _OPENMP
+/// Spread work between threads. If number of points do not spread
+/// evenly between threads, put the remaining "rest" points on the
+/// threads 0 ... rest-1.
 inline int SDI_spread_work(int work, int cp, int np) {
-  // Spread work between threads. If number of points do not
-  // spread evenly between threads, put the remaining "rest"
-  // points on the threads 0 ... rest-1.
   int pp = work / np;
   int rest = work % np;
   int result = pp * cp;
@@ -250,6 +258,7 @@ inline int SDI_spread_work(int work, int cp, int np) {
   return result;
 };
 
+/// Get the start and end of the range for each thread
 inline void SingleDataIterator::omp_init() {
   // In the case of OPENMP we need to calculate the range
   int threads = omp_get_num_threads();
@@ -262,41 +271,39 @@ inline void SingleDataIterator::omp_init() {
 };
 #endif
 
-/*!
- * Specifies a vector of indices which can be iterated over
- * and begin() and end() methods for range-based for loops
- *
- * Example
- * -------
- *
- * Index ranges can be defined manually:
- *
- *     RegionIndices region {0, 2, 4, 8};
- *     SIndexRange r(2, 2, 2, region);
- *
- * then iterated over using begin() and end()
- *
- *     for (auto i = r.begin(); i < r.end(); i++ ) {
- *       output.write("%d,%d,%d\n", i.x, i.y, i.z);
- *     }
- *
- * or the more convenient range for loop:
- *
- *     for (auto i : r) {
- *       output.write("%d,%d,%d\n", i->x(), i->y(), i->z());
- *     }
- *
- * A common use for this class is to loop over
- * regions of a field:
- *
- *     Field3D f(0.0);
- *     for (auto i : f.region(REGION_NOBNDRY)) {
- *       f[i] = 1.0;
- *     }
- *
- * where REGION_NOBNDRY specifies a region not including
- * boundary/guard cells.
- */
+/// Specifies a vector of indices which can be iterated over
+/// and begin() and end() methods for range-based for loops
+///
+/// Example
+/// -------
+///
+/// Index ranges can be defined manually:
+///
+///     RegionIndices region {0, 2, 4, 8};
+///     SIndexRange r(2, 2, 2, region);
+///
+/// then iterated over using begin() and end()
+///
+///     for (auto i = r.begin(); i < r.end(); i++ ) {
+///       output.write("%d,%d,%d\n", i->x(), i->y(), i->z());
+///     }
+///
+/// or the more convenient range for loop:
+///
+///     for (auto &i : r) {
+///       output.write("%d,%d,%d\n", i.x(), i.y(), i.z());
+///     }
+///
+/// A common use for this class is to loop over
+/// regions of a field:
+///
+///     Field3D f(0.0);
+///     for (auto &i : f.sdi_region("REGION_NOBNDRY")) {
+///       f[i] = 1.0;
+///     }
+///
+/// where REGION_NOBNDRY specifies a region not including
+/// boundary/guard cells.
 class SIndexRange {
 public:
   SIndexRange(int nx, int ny, int nz, RegionIndices &region)
@@ -305,9 +312,7 @@ public:
   int nx, ny, nz;
   RegionIndices &region;
 
-  /*!
-   * Resets DataIterator to the start of the range
-   */
+  /// Returns an iterator to the start of the range
   SingleDataIterator begin() const {
     SingleDataIterator iter{nx, ny, nz, region};
     iter.region_iter = region.cbegin();
@@ -315,9 +320,7 @@ public:
     return iter;
   }
 
-  /*!
-   * Sets DataIterator to one index past the end of the range
-   */
+  /// Returns an iterator to one past the end of the range
   SingleDataIterator end() const {
     SingleDataIterator iter{nx, ny, nz, region};
     iter.region_iter = region.cbegin();
