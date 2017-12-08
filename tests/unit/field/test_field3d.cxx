@@ -117,6 +117,158 @@ TEST_F(Field3DTest, CreateOnGivenMesh) {
   delete fieldmesh;
 }
 
+TEST_F(Field3DTest, CopyCheckFieldmesh) {
+  int test_nx = 2;
+  int test_ny = 3;
+  int test_nz = 5;
+
+  FakeMesh *fieldmesh = new FakeMesh(test_nx, test_ny, test_nz);
+
+  Field3D field(fieldmesh);
+  field.allocate();
+
+  Field3D field2(field);
+
+  EXPECT_EQ(field2.getNx(), test_nx);
+  EXPECT_EQ(field2.getNy(), test_ny);
+  EXPECT_EQ(field2.getNz(), test_nz);
+
+  delete fieldmesh;
+}
+
+TEST_F(Field3DTest, CreateOnNullMesh) {
+  auto old_mesh = mesh;
+  mesh = nullptr;
+
+  Field3D field;
+
+  EXPECT_EQ(field.getNx(), -1);
+  EXPECT_EQ(field.getNy(), -1);
+  EXPECT_EQ(field.getNz(), -1);
+
+  mesh = old_mesh;
+
+  field.allocate();
+
+  EXPECT_EQ(field.getNx(), Field3DTest::nx);
+  EXPECT_EQ(field.getNy(), Field3DTest::ny);
+  EXPECT_EQ(field.getNz(), Field3DTest::nz);
+}
+
+TEST_F(Field3DTest, TimeDeriv) {
+  Field3D field;
+
+  auto deriv = field.timeDeriv();
+  EXPECT_NE(&field, deriv);
+
+  auto deriv2 = field.timeDeriv();
+  EXPECT_EQ(deriv, deriv2);
+}
+
+TEST_F(Field3DTest, SplitYupYDown) {
+  Field3D field;
+
+  field = 0.;
+  field.splitYupYdown();
+
+  auto& yup = field.yup();
+  EXPECT_NE(&field, &yup);
+  auto& ydown = field.ydown();
+  EXPECT_NE(&field, &ydown);
+
+  // Should be able to split again without any problems
+  field.splitYupYdown();
+
+  // Would be nice to check yup2 != yup, but not sure this is possible
+  // to do in general
+  auto& yup2 = field.yup();
+  EXPECT_NE(&field, &yup2);
+  auto& ydown2 = field.ydown();
+  EXPECT_NE(&field, &ydown2);
+}
+
+TEST_F(Field3DTest, MergeYupYDown) {
+  Field3D field;
+
+  field = 0.;
+  field.mergeYupYdown();
+
+  auto& yup = field.yup();
+  EXPECT_EQ(&field, &yup);
+  auto& ydown = field.ydown();
+  EXPECT_EQ(&field, &ydown);
+
+  // Should be able to merge again without any problems
+  field.mergeYupYdown();
+
+  auto& yup2 = field.yup();
+  EXPECT_EQ(&field, &yup2);
+  auto& ydown2 = field.ydown();
+  EXPECT_EQ(&field, &ydown2);
+}
+
+TEST_F(Field3DTest, SplitThenMergeYupYDown) {
+  Field3D field;
+
+  field = 0.;
+  field.splitYupYdown();
+
+  auto& yup = field.yup();
+  EXPECT_NE(&field, &yup);
+  auto& ydown = field.ydown();
+  EXPECT_NE(&field, &ydown);
+
+  field.mergeYupYdown();
+
+  auto& yup2 = field.yup();
+  EXPECT_EQ(&field, &yup2);
+  auto& ydown2 = field.ydown();
+  EXPECT_EQ(&field, &ydown2);
+}
+
+TEST_F(Field3DTest, Ynext) {
+  Field3D field;
+
+  field = 0.;
+  field.splitYupYdown();
+
+  auto& yup = field.ynext(1);
+  EXPECT_NE(&field, &yup);
+  auto& ydown = field.ynext(-1);
+  EXPECT_NE(&field, &ydown);
+  EXPECT_NE(&yup, &ydown);
+
+  EXPECT_THROW(field.ynext(99), BoutException);
+}
+
+TEST_F(Field3DTest, ConstYnext) {
+  Field3D field(0.);
+
+  field.splitYupYdown();
+
+  const Field3D& field2 = field;
+
+  auto& yup = field2.ynext(1);
+  EXPECT_NE(&field2, &yup);
+  auto& ydown = field2.ynext(-1);
+  EXPECT_NE(&field2, &ydown);
+  EXPECT_NE(&yup, &ydown);
+
+  EXPECT_THROW(field2.ynext(99), BoutException);
+}
+
+TEST_F(Field3DTest, SetGetLocation) {
+  Field3D field;
+
+  field.setLocation(CELL_XLOW);
+  EXPECT_EQ(field.getLocation(), CELL_XLOW);
+
+  field.setLocation(CELL_DEFAULT);
+  EXPECT_EQ(field.getLocation(), CELL_CENTRE);
+
+  EXPECT_THROW(field.setLocation(CELL_VSHIFT), BoutException);
+}
+
 //-------------------- Iteration tests --------------------
 
 /// This test is split into two parts: a very basic sanity check first
@@ -445,6 +597,13 @@ TEST_F(Field3DTest, CreateFromBoutReal) {
 
 TEST_F(Field3DTest, CreateFromField3D) {
   Field3D field(99.0);
+  Field3D result(field);
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(result, 99.0));
+}
+
+TEST_F(Field3DTest, CreateFromField2D) {
+  Field2D field(99.0);
   Field3D result(field);
 
   EXPECT_TRUE(IsField3DEqualBoutReal(result, 99.0));
