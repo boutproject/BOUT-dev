@@ -1140,7 +1140,7 @@ TEST_F(Field3DTest, Min) {
   // min doesn't include guard cells
   const BoutReal min_value = 40.0;
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(min(field, false), min_value));
+  EXPECT_EQ(min(field, false), min_value);
 }
 
 TEST_F(Field3DTest, Max) {
@@ -1155,7 +1155,7 @@ TEST_F(Field3DTest, Max) {
   // max doesn't include guard cells
   const BoutReal max_value = 60.0;
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(max(field, false), max_value));
+  EXPECT_EQ(max(field, false), max_value);
 }
 
 TEST_F(Field3DTest, DC) {
