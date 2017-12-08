@@ -61,7 +61,7 @@ AC_ARG_WITH(mumps,        [AS_HELP_STRING([--with-mumps],
 AC_ARG_WITH(arkode,       [AS_HELP_STRING([--with-arkode],
         [Use the SUNDIALS ARKODE solver])],,[])
 AC_ARG_WITH(scorep,       [AS_HELP_STRING([--with-scorep],
-        [Enable support for scorep based instrumentation])],,[])
+        [Enable support for scorep based instrumentation])],,[with_scorep=no])
 
 dnl --with-hdf5 flags are set in AX_LIB_{PARALLEL}HDF5
 
@@ -1152,7 +1152,7 @@ HAS_SCOREP="no"
 AS_IF([test "$with_scorep" != "no"], [
   AC_MSG_NOTICE(["Searching for Scorep executable"])
 
-  AS_IF([test "$with_scorep" != ""], [
+  AS_IF([test "$with_scorep" != "yes"], [
     # Given a path to the library
     AC_CHECK_FILES($with_scorep/scorep, SCOREPPATH=$with_scorep,)
     AS_IF([test "$SCOREPPATH" == ""],[
@@ -1171,7 +1171,6 @@ AS_IF([test "$with_scorep" != "no"], [
       ], [])
   ],
   [])
-
 
   AS_IF([test "$SCOREPPATH" == ""], [
       AC_MSG_NOTICE(["SCOREP support disabled"])

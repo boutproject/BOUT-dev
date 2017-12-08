@@ -2558,6 +2558,8 @@ fi
 # Check whether --with-scorep was given.
 if test "${with_scorep+set}" = set; then :
   withval=$with_scorep;
+else
+  with_scorep=no
 fi
 
 
@@ -14986,7 +14988,7 @@ if test "$with_scorep" != "no"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: \"Searching for Scorep executable\"" >&5
 $as_echo "$as_me: \"Searching for Scorep executable\"" >&6;}
 
-  if test "$with_scorep" != ""; then :
+  if test "$with_scorep" != "yes"; then :
 
     # Given a path to the library
     as_ac_File=`$as_echo "ac_cv_file_$with_scorep/scorep" | $as_tr_sh`
@@ -15060,7 +15062,6 @@ fi
 fi
 
 fi
-
 
   if test "$SCOREPPATH" == ""; then :
 
