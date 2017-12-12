@@ -67,6 +67,7 @@ PRECON_SOURCE	= @PRECON_SOURCE@
 OBJ						= $(SOURCEC:%.cxx=%.o)
 ifndef RELEASE
 LIB						= $(BOUT_LIB_PATH)/libbout++.a
+LIB_SO						= $(BOUT_LIB_PATH)/libbout++.so
 endif
 
 BOUT_INCLUDE	= -I$(BOUT_INCLUDE_PATH) $(CXXINCLUDE) $(EXTRA_INCS)

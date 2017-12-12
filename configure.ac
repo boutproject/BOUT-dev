@@ -81,6 +81,8 @@ AC_ARG_ENABLE(sigfpe,       [AS_HELP_STRING([--enable-sigfpe],
         [Enable FloatingPointExceptions])],,[])
 AC_ARG_ENABLE(backtrace,    [AS_HELP_STRING([--disable-backtrace],
         [Disable function backtrace])],,[enable_backtrace=yes])
+AC_ARG_ENABLE(shared,       [AS_HELP_STRING([--enable-shared],
+        [Enable building bout++ into an shared object])],,[enable_shared=no])
 
 AC_ARG_VAR(EXTRA_INCS,[Extra compile flags])
 AC_ARG_VAR(EXTRA_LIBS,[Extra linking flags])
@@ -323,13 +325,30 @@ then
 fi
 
 #############################################################
+# Build into shared object (pic)
+#############################################################
+
+if test ."$enable_shared" == .yes
+then
+    # compile as position independent code.
+    # -fpic is apparently faster then -fPIC, but -fPIC works always.
+    # From a SO comment (https://stackoverflow.com/a/3544211/3384414):
+    #  What's more: I did a little experiment here (on x86_64
+    #  platform), -fPIC and -fpic appears to have generated the same
+    #  code. It seems they generate a different code only on m68k,
+    #  PowerPC and SPARC.
+    # Therfore use -fPIC for now
+    CXXFLAGS+=" -fPIC"
+fi
+
+#############################################################
 # Git revision number
 #############################################################
 
 rev=`git rev-parse HEAD`
 if test "$?" = "0"
 then
-  # Attach revision info to flags
+  dnl Revision not needed for build - is checked at compile time.
   dnl CXXFLAGS="$CXXFLAGS -DREVISION=$rev"
   echo "Revision ID: $rev"
 fi
