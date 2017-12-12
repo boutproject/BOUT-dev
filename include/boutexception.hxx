@@ -17,7 +17,7 @@ public:
   BoutException(const std::string);
   virtual ~BoutException();
   
-  const char* what();
+  const char* what() const noexcept override;
   void Backtrace();
 protected:
   char *buffer = nullptr;
@@ -29,8 +29,9 @@ protected:
   void *trace[TRACE_MAX];
   char **messages;
   int trace_size;
+  mutable std::string _tmp;
 #endif
-  void BacktraceGenerate();
+  std::string BacktraceGenerate() const;
 };
 
 class BoutRhsFail : public BoutException {
