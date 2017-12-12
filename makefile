@@ -32,12 +32,12 @@ check-unit-tests:
 	@export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH}; $(MAKE) --no-print-directory -C tests/unit check
 
 check-mms-tests:
-	@cd tests/MMS; export LD_LIBRARY_PATH=${PWD}/../../lib:${LD_LIBRARY_PATH} ; ./test_suite
+	@cd tests/MMS; export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH} ; ./test_suite
 
 check-integrated-tests:
-	@cd tests/integrated; LD_LIBRARY_PATH=${PWD}/../../lib:${LD_LIBRARY_PATH}./test_suite_make
-	@cd tests/integrated; export LD_LIBRARY_PATH=${PWD}/../../lib:${LD_LIBRARY_PATH} ; \
-		PYTHONPATH=${PWD}/../../tools/pylib/:${PYTHONPATH} ./test_suite
+	@cd tests/integrated; LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH}./test_suite_make
+	cd tests/integrated; export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH} ; \
+		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} ./test_suite
 
 
 check: check-unit-tests check-integrated-tests check-mms-tests
