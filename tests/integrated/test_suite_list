@@ -2,6 +2,7 @@
 # the tests starting with ! are ignored in the make process, but will
 # be run in test_suite
 test-io
+test-command-args
 test-fieldfactory
 test-fieldops
 test-restarting

@@ -175,10 +175,10 @@ BoutReal lagrange_4pt(BoutReal v[], BoutReal offset)
 const Field3D interpolate(const Field3D &f, const Field3D &delta_x,
                           const Field3D &delta_z) {
   TRACE("Interpolating 3D field");
-  
-  Mesh * mesh = f.getMesh();
-  ASSERT1(mesh==delta_x.getMesh());
-  ASSERT1(mesh==delta_z.getMesh());
+
+  Mesh *mesh = f.getMesh();
+  ASSERT1(mesh == delta_x.getMesh());
+  ASSERT1(mesh == delta_z.getMesh());
   Field3D result(mesh);
   result.allocate();
 
@@ -248,9 +248,9 @@ const Field3D interpolate(const Field2D &f, const Field3D &delta_x, const Field3
 
 const Field3D interpolate(const Field2D &f, const Field3D &delta_x) {
   TRACE("interpolate(Field2D, Field3D)");
-  
-  Mesh * mesh = f.getMesh();
-  ASSERT1(mesh==delta_x.getMesh());
+
+  Mesh *mesh = f.getMesh();
+  ASSERT1(mesh == delta_x.getMesh());
   Field3D result(mesh);
   result.allocate();
 

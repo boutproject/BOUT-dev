@@ -812,7 +812,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, CELL_L
 
 const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc, REGION region) {
   if (var.getNx() == 1) {
-    return Field3D(0.,var.getMesh());
+    return Field3D(0., var.getMesh());
   }
   // Check that the input variable has data
   ASSERT1(var.isAllocated());
@@ -970,7 +970,7 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, CELL_L
 
 const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc, REGION region) {
   if (var.getNy() == 1){
-    return Field3D(0.,var.getMesh());
+    return Field3D(0., var.getMesh());
   }
 
   // Check that the input variable has data
@@ -1031,7 +1031,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   } else {
     // var has no yup/ydown fields, so we need to shift into field-aligned coordinates
     
-    Field3D var_fa = this->toFieldAligned(var);
+    Field3D var_fa = mesh->toFieldAligned(var);
     
     if (mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != var.getLocation())) {
       // Staggered differencing
@@ -1123,7 +1123,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
     
     // Shift result back
     
-    result = this->fromFieldAligned(result);
+    result = mesh->fromFieldAligned(result);
   }
 #if CHECK > 0
   // Mark boundaries as invalid
@@ -1137,7 +1137,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 
 const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc, REGION region) {
   if (var.getNz()==1){
-    return Field3D(0.,var.getMesh());
+    return Field3D(0., var.getMesh());
   }
 
   ASSERT1(this == var.getMesh());
@@ -1184,12 +1184,12 @@ const Field3D Mesh::indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
 
   Field3D result(this);
 
-  if(this->StaggerGrids && (outloc == CELL_DEFAULT)) {
+  if(mesh->StaggerGrids && (outloc == CELL_DEFAULT)) {
     // Take care of CELL_DEFAULT case
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
 
-  if(this->StaggerGrids && (outloc != inloc)) {
+  if(mesh->StaggerGrids && (outloc != inloc)) {
     // Shifting to a new location
     
     if(((inloc == CELL_CENTRE) && (outloc == CELL_XLOW)) ||
@@ -1248,12 +1248,12 @@ const Field3D Mesh::indexDDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
 
   Field3D result(this);
 
-  if(this->StaggerGrids && (outloc == CELL_DEFAULT)) {
+  if(mesh->StaggerGrids && (outloc == CELL_DEFAULT)) {
     // Take care of CELL_DEFAULT case
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
 
-  if(this->StaggerGrids && (outloc != inloc)) {
+  if(mesh->StaggerGrids && (outloc != inloc)) {
     // Shifting to a new location
     if(((inloc == CELL_CENTRE) && (outloc == CELL_YLOW)) ||
       ((inloc == CELL_YLOW) && (outloc == CELL_CENTRE))) {
@@ -1309,12 +1309,12 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
   ASSERT1(this == f.getMesh());
   Field3D result(this);
 
-  if(this->StaggerGrids && (outloc == CELL_DEFAULT)) {
+  if(mesh->StaggerGrids && (outloc == CELL_DEFAULT)) {
     // Take care of CELL_DEFAULT case
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
 
-  if(this->StaggerGrids && (outloc != inloc)) {
+  if(mesh->StaggerGrids && (outloc != inloc)) {
     // Shifting to a new location
     
     if(((inloc == CELL_CENTRE) && (outloc == CELL_ZLOW)) ||
@@ -1350,7 +1350,7 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
     // Use FFT
 
     BoutReal shift = 0.; // Shifting result in Z?
-    if (this->StaggerGrids) {
+    if (mesh->StaggerGrids) {
       if ((inloc == CELL_CENTRE) && (diffloc == CELL_ZLOW)) {
         // Shifting down - multiply by exp(-0.5*i*k*dz)
         shift = -1.;
@@ -1364,19 +1364,20 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
 
     result.allocate(); // Make sure data allocated
 
-    int ncz = this->LocalNz;
+    int ncz = mesh->LocalNz;
     
     #pragma omp parallel
     {
       Array<dcomplex> cv(ncz/2 + 1);
       
-      int xs = this->xstart;
-      int xe = this->xend;
-      int ys = this->ystart;
-      int ye = this->yend;
-      if(inc_xbndry) { // Include x boundary region (for mixed XZ derivatives)
+      int xs = mesh->xstart;
+      int xe = mesh->xend;
+      int ys = mesh->ystart;
+      int ye = mesh->yend;
+      
+      if (inc_xbndry) { // Include x boundary region (for mixed XZ derivatives)
         xs = 0;
-        xe = this->LocalNx-1;
+        xe = mesh->LocalNx-1;
       }
 
       // Calculate how many Z wavenumbers will be removed
@@ -1399,11 +1400,10 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
             if (shift)
               cv[jz] *= exp(Im * (shift * kwave));
           }
-          for (int jz = kmax + 1; jz < ncz / 2; jz++) {
+          for (int jz = kmax + 1; jz <= ncz / 2; jz++) {
             cv[jz] = 0.0;
           }
           
-
           irfft(cv.begin(), ncz, result(jx, jy)); // Reverse FFT
         }
       }
@@ -1689,18 +1689,18 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
     
     result.allocate(); // Make sure data allocated
 
-    int ncz = this->LocalNz;
+    int ncz = mesh->LocalNz;
     
     ASSERT1(ncz % 2 == 0); // Must be a power of 2
     Array<dcomplex> cv(ncz/2 + 1);
     
-    int xs = this->xstart;
-    int xe = this->xend;
-    int ys = this->ystart;
-    int ye = this->yend;
+    int xs = mesh->xstart;
+    int xe = mesh->xend;
+    int ys = mesh->ystart;
+    int ye = mesh->yend;
     if(inc_xbndry) { // Include x boundary region (for mixed XZ derivatives)
       xs = 0;
-      xe = this->LocalNx-1;
+      xe = mesh->LocalNx-1;
     }
       
     for(int jx=xs;jx<=xe;jx++) {

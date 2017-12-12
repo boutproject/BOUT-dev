@@ -74,14 +74,17 @@ const Field3D Grad_par(const Field3D &var, DIFF_METHOD method, CELL_LOC outloc) 
 *******************************************************************************/
 
 const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
-  Field3D result;
+  Mesh *mesh = apar.getMesh();
+  ASSERT1(mesh == f.getMesh());
+
+  Field3D result(mesh);
   result.allocate();
   
   int ncz = mesh->LocalNz;
 
   Coordinates *metric = mesh->coordinates();
-  
-  Field3D gys;
+
+  Field3D gys(mesh);
   gys.allocate();
 
   // Need Y derivative everywhere
@@ -192,8 +195,9 @@ const Field3D Div_par(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
 const Field3D Div_par(const Field3D &f, const Field3D &v) {
   // Parallel divergence, using velocities at cell boundaries
   // Note: Not guaranteed to be flux conservative
-
-  Field3D result;
+  Mesh *mesh = f.getMesh();
+  ASSERT1(mesh == v.getMesh());
+  Field3D result(mesh);
   result.allocate();
 
   Coordinates *coord = mesh->coordinates();
@@ -239,7 +243,8 @@ const Field3D Div_par_flux(const Field3D &v, const Field3D &f, DIFF_METHOD metho
 *******************************************************************************/
 
 const Field3D Grad_par_CtoL(const Field3D &var) {
-  Field3D result;
+  Mesh *mesh = var.getMesh();
+  Field3D result(mesh);
   result.allocate();
   
   Coordinates *metric = mesh->coordinates();
@@ -274,8 +279,9 @@ const Field3D Grad_par_CtoL(const Field3D &var) {
 const Field3D Vpar_Grad_par_LCtoC(const Field &v, const Field &f) {
   bindex bx;
   stencil fval, vval;
-  Field3D result;
-  
+  ASSERT1(v.getMesh() == f.getMesh());
+  Field3D result(v.getMesh());
+
   result.allocate();
 	
   start_index(&bx);
@@ -295,10 +301,10 @@ const Field3D Vpar_Grad_par_LCtoC(const Field &v, const Field &f) {
 }
 
 const Field3D Grad_par_LtoC(const Field3D &var) {
-  Field3D result;
+  Field3D result(var.getMesh());
   result.allocate();
-  
-  Coordinates *metric = mesh->coordinates();
+
+  Coordinates *metric = var.getMesh()->coordinates();
 
   if (var.hasYupYdown()) {
     for (auto &i : result.region(RGN_NOBNDRY)) {
@@ -307,12 +313,12 @@ const Field3D Grad_par_LtoC(const Field3D &var) {
   } else {
     // No yup/ydown field, so transform to field aligned
 
-    Field3D var_fa = mesh->toFieldAligned(var);
+    Field3D var_fa = var.getMesh()->toFieldAligned(var);
 
     for(auto &i : result.region(RGN_NOBNDRY)) {
       result[i] = (var_fa[i.yp()] - var_fa[i]) / (metric->dy[i]*sqrt(metric->g_22[i]));
     }
-    result = mesh->fromFieldAligned(result);
+    result = var.getMesh()->fromFieldAligned(result);
   }
   
   return result;
@@ -476,34 +482,31 @@ const Field2D b0xGrad_dot_Grad(const Field2D &phi, const Field2D &A) {
 }
 
 const Field3D b0xGrad_dot_Grad(const Field2D &phi, const Field3D &A) {
-  Field2D dpdx, dpdy;
-  Field2D vx, vy, vz;
-  Field3D result;
-  
+  Mesh *mesh = phi.getMesh();
+  ASSERT1(mesh == A.getMesh());
+
   TRACE("b0xGrad_dot_Grad( Field2D , Field3D )");
 
   Coordinates *metric = mesh->coordinates();
   
   // Calculate phi derivatives
-  dpdx = DDX(phi); 
-  dpdy = DDY(phi);
-  
+  Field2D dpdx = DDX(phi);
+  Field2D dpdy = DDY(phi);
+
   // Calculate advection velocity
-  vx = -metric->g_23*dpdy;
-  vy = metric->g_23*dpdx;
-  vz = metric->g_12*dpdy - metric->g_22*dpdx;
-  
+  Field2D vx = -metric->g_23 * dpdy;
+  Field2D vy = metric->g_23 * dpdx;
+  Field2D vz = metric->g_12 * dpdy - metric->g_22 * dpdx;
+
   if(mesh->IncIntShear) {
     // BOUT-06 style differencing
     vz += metric->IntShiftTorsion * vx;
   }
 
   // Upwind A using these velocities
-  
-  result = VDDX(vx, A)
-    + VDDY(vy, A)
-    + VDDZ(vz, A);
-  
+
+  Field3D result = VDDX(vx, A) + VDDY(vy, A) + VDDZ(vz, A);
+
   result /= (metric->J*sqrt(metric->g_22));
 
 #ifdef TRACK
@@ -514,28 +517,24 @@ const Field3D b0xGrad_dot_Grad(const Field2D &phi, const Field3D &A) {
 }
 
 const Field3D b0xGrad_dot_Grad(const Field3D &p, const Field2D &A, CELL_LOC outloc) {
-  Field3D dpdx, dpdy, dpdz;
-  Field3D vx, vy;
-  Field3D result;
-  
   TRACE("b0xGrad_dot_Grad( Field3D , Field2D )");
 
-  Coordinates *metric = mesh->coordinates();
+  ASSERT1(p.getMesh() == A.getMesh());
+  Coordinates *metric = p.getMesh()->coordinates();
 
   // Calculate phi derivatives
-  dpdx = DDX(p, outloc);
-  dpdy = DDY(p, outloc);
-  dpdz = DDZ(p, outloc);
+  Field3D dpdx = DDX(p, outloc);
+  Field3D dpdy = DDY(p, outloc);
+  Field3D dpdz = DDZ(p, outloc);
 
   // Calculate advection velocity
-  vx = metric->g_22*dpdz - metric->g_23*dpdy;
-  vy = metric->g_23*dpdx - metric->g_12*dpdz;
-  
+  Field3D vx = metric->g_22 * dpdz - metric->g_23 * dpdy;
+  Field3D vy = metric->g_23 * dpdx - metric->g_12 * dpdz;
+
   // Upwind A using these velocities
-  
-  result = VDDX(vx, A)
-    + VDDY(vy, A);
-  
+
+  Field3D result = VDDX(vx, A) + VDDY(vy, A);
+
   result /=  (metric->J*sqrt(metric->g_22));
   
 #ifdef TRACK
@@ -546,33 +545,27 @@ const Field3D b0xGrad_dot_Grad(const Field3D &p, const Field2D &A, CELL_LOC outl
 }
 
 const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC outloc) {
-  Field3D dpdx, dpdy, dpdz;
-  Field3D vx, vy, vz;
-  Field3D result;
-  
   TRACE("b0xGrad_dot_Grad( Field3D , Field3D )");
 
   Coordinates *metric = mesh->coordinates();
 
   // Calculate phi derivatives
-  dpdx = DDX(phi, outloc);
-  dpdy = DDY(phi, outloc);
-  dpdz = DDZ(phi, outloc);
-  
+  Field3D dpdx = DDX(phi, outloc);
+  Field3D dpdy = DDY(phi, outloc);
+  Field3D dpdz = DDZ(phi, outloc);
+
   // Calculate advection velocity
-  vx = metric->g_22*dpdz - metric->g_23*dpdy;
-  vy = metric->g_23*dpdx - metric->g_12*dpdz;
-  vz = metric->g_12*dpdy - metric->g_22*dpdx;
-  
+  Field3D vx = metric->g_22 * dpdz - metric->g_23 * dpdy;
+  Field3D vy = metric->g_23 * dpdx - metric->g_12 * dpdz;
+  Field3D vz = metric->g_12 * dpdy - metric->g_22 * dpdx;
+
   if(mesh->IncIntShear) {
     // BOUT-06 style differencing
     vz += metric->IntShiftTorsion * vx;
   }
-  
-  result = VDDX(vx, A)
-    + VDDY(vy, A)
-    + VDDZ(vz, A);
-  
+
+  Field3D result = VDDX(vx, A) + VDDY(vy, A) + VDDZ(vz, A);
+
   result /=  (metric->J*sqrt(metric->g_22));
 
 #ifdef TRACK
@@ -612,7 +605,9 @@ CELL_LOC bracket_location(const CELL_LOC &f_loc, const CELL_LOC &g_loc, const CE
 
 const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method, CELL_LOC outloc, Solver *UNUSED(solver)) {
   TRACE("bracket(Field2D, Field2D)");
-  Field2D result;
+
+  ASSERT1(f.getMesh() == g.getMesh());
+  Field2D result(f.getMesh());
 
   // Sort out cell locations
   CELL_LOC result_loc = bracket_location(f.getLocation(), g.getLocation(), outloc);
@@ -630,9 +625,11 @@ const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method,
 
 const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method, CELL_LOC outloc, Solver *solver) {
   TRACE("bracket(Field3D, Field2D)");
-  
-  Field3D result;
-  
+
+  Mesh *mesh = f.getMesh();
+  ASSERT1(mesh = g.getMesh());
+  Field3D result(mesh);
+
   Coordinates *metric = mesh->coordinates();
 
   CELL_LOC result_loc = bracket_location(f.getLocation(), g.getLocation(), outloc);
@@ -735,8 +732,9 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
 
 const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method, CELL_LOC outloc, Solver *solver) {
   TRACE("bracket(Field2D, Field3D)");
-  
-  Field3D result;
+  Mesh *mesh = f.getMesh();
+  ASSERT1(mesh == g.getMesh());
+  Field3D result(mesh);
 
   CELL_LOC result_loc = bracket_location(f.getLocation(), g.getLocation(), outloc);
 
@@ -766,10 +764,12 @@ const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method,
 
 const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method, CELL_LOC outloc, Solver *solver) {
   TRACE("Field3D, Field3D");
-  
+
+  Mesh *mesh = f.getMesh();
+  ASSERT1(mesh == g.getMesh());
   Coordinates *metric = mesh->coordinates();
 
-  Field3D result;
+  Field3D result(mesh);
 
   CELL_LOC result_loc = bracket_location(f.getLocation(), g.getLocation(), outloc);
   
@@ -785,8 +785,8 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
     BoutReal dt = solver->getCurrentTimestep();
     
     result.allocate();
-    
-    FieldPerp vx, vz;
+
+    FieldPerp vx(mesh), vz(mesh);
     vx.allocate();
     vz.allocate();
     

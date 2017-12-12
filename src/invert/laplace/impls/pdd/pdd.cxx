@@ -44,8 +44,8 @@ const FieldPerp LaplacePDD::solve(const FieldPerp &b) {
     data.bk = NULL;
     allocated = true;
   }
-  
-  FieldPerp x;
+
+  FieldPerp x(b.getMesh());
   x.allocate();
   
   start(b, data);
@@ -56,9 +56,10 @@ const FieldPerp LaplacePDD::solve(const FieldPerp &b) {
 }
 
 const Field3D LaplacePDD::solve(const Field3D &b) {
-  Field3D x;
+  Mesh *mesh = b.getMesh();
+  Field3D x(mesh);
   x.allocate();
-  FieldPerp xperp;
+  FieldPerp xperp(mesh);
   xperp.allocate();
   
   int ys = mesh->ystart, ye = mesh->yend;
@@ -117,7 +118,8 @@ const Field3D LaplacePDD::solve(const Field3D &b) {
  */
 void LaplacePDD::start(const FieldPerp &b, PDD_data &data) {
   int ix, kz;
-  
+  Mesh *mesh = b.getMesh();
+
   int ncz = mesh->LocalNz;
 
   data.jy = b.getIndex();

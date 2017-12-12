@@ -717,6 +717,34 @@ bool Ncxx4::write_rec(BoutReal *var, const string &name, int lx, int ly, int lz)
   return write_rec(var, name.c_str(), lx, ly, lz);
 }
 
+
+/***************************************************************************
+ * Attributes
+ ***************************************************************************/
+
+void Ncxx4::setAttribute(const string &varname, const string &attrname, const string &text) {
+  TRACE("Ncxx4::setAttribute(string)");
+
+  NcVar var = dataFile->getVar(varname);
+  if (var.isNull()) {
+    throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+  }
+  
+  var.putAtt(attrname, text);
+}
+
+void Ncxx4::setAttribute(const string &varname, const string &attrname, int value) {
+  TRACE("Ncxx4::setAttribute(int)");
+
+  NcVar var = dataFile->getVar(varname);
+  if (var.isNull()) {
+    throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+  }
+  
+  var.putAtt(attrname, NcType::nc_INT, value);
+}
+
+
 /***************************************************************************
  * Private functions
  ***************************************************************************/
