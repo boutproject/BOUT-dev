@@ -32,7 +32,7 @@
 #
 
 AC_PREREQ(2.59)
-AC_INIT(BOUT++, 4.1.1, bd512@york.ac.uk)
+AC_INIT(BOUT++, 4.1.2, bd512@york.ac.uk)
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -61,7 +61,7 @@ AC_ARG_WITH(mumps,        [AS_HELP_STRING([--with-mumps],
 AC_ARG_WITH(arkode,       [AS_HELP_STRING([--with-arkode],
         [Use the SUNDIALS ARKODE solver])],,[])
 AC_ARG_WITH(scorep,       [AS_HELP_STRING([--with-scorep],
-        [Enable support for scorep based instrumentation])],,[])
+        [Enable support for scorep based instrumentation])],,[with_scorep=no])
 
 dnl --with-hdf5 flags are set in AX_LIB_{PARALLEL}HDF5
 
@@ -371,29 +371,28 @@ AS_IF([test "x$with_netcdf" != "xno"],
   # check the path provided by --with-netcdf, appending "/bin" if need
   # be, then check system path
   # Set NCCONF to the full path of the found scropt
-  AS_CASE([`basename $with_netcdf`],
+  AS_CASE([`basename $with_netcdf 2> /dev/null`],
     ["ncxx4-config"], [NCCONF=$with_netcdf],
     ["nc-config"], [NCCONF=$with_netcdf],
-    [AC_PATH_PROGS([NCCONF], [ncxx4-config nc-config],
-       [AC_MSG_ERROR([No configure script found. Specify path using --with-netcdf option])],
+    [AC_PATH_PROGS([NCCONF], [ncxx4-config nc-config], [],
        [$with_netcdf$PATH_SEPARATOR$with_netcdf/bin$PATH_SEPARATOR$PATH])])
-
-  # If we found nc-config rather than ncxx4-config, we need to check if it supports C++
-  AS_IF([test `basename $NCCONF` = 'nc-config'],
-        [AC_MSG_CHECKING([if $NCCONF has C++4 support])
-         nc_has_cpp4=`$NCCONF --has-c++4`
-         AC_MSG_RESULT([$nc_has_cpp4])
-         AC_MSG_CHECKING([if $NCCONF has C++ support])
-         nc_has_cpp=`$NCCONF --has-c++`
-         AC_MSG_RESULT([$nc_has_cpp])
-        ], [
-         nc_has_cpp4="yes"
-        ])
 
   ##########################################
   # Get configuration
   AS_IF([test "x$NCCONF" != "x" ],
   [
+     # If we found nc-config rather than ncxx4-config, we need to check if it supports C++
+     AS_IF([test `basename $NCCONF` = 'nc-config'],
+           [AC_MSG_CHECKING([if $NCCONF has C++4 support])
+            nc_has_cpp4=`$NCCONF --has-c++4`
+            AC_MSG_RESULT([$nc_has_cpp4])
+            AC_MSG_CHECKING([if $NCCONF has C++ support])
+            nc_has_cpp=`$NCCONF --has-c++`
+            AC_MSG_RESULT([$nc_has_cpp])
+           ], [
+            nc_has_cpp4="yes"
+           ])
+
      NCINC=`$NCCONF --cflags`
      EXTRA_INCS="$EXTRA_INCS $NCINC"
      AS_IF([test "x$nc_has_cpp4" = "xyes"],
@@ -1153,7 +1152,7 @@ HAS_SCOREP="no"
 AS_IF([test "$with_scorep" != "no"], [
   AC_MSG_NOTICE(["Searching for Scorep executable"])
 
-  AS_IF([test "$with_scorep" != ""], [
+  AS_IF([test "$with_scorep" != "yes"], [
     # Given a path to the library
     AC_CHECK_FILES($with_scorep/scorep, SCOREPPATH=$with_scorep,)
     AS_IF([test "$SCOREPPATH" == ""],[
@@ -1172,7 +1171,6 @@ AS_IF([test "$with_scorep" != "no"], [
       ], [])
   ],
   [])
-
 
   AS_IF([test "$SCOREPPATH" == ""], [
       AC_MSG_NOTICE(["SCOREP support disabled"])

@@ -137,14 +137,6 @@ public:
   BoutReal GlobalY(BoutReal UNUSED(jy)) const { return 0; }
   int XGLOBAL(int UNUSED(xloc)) const { return 0; }
   int YGLOBAL(int UNUSED(yloc)) const { return 0; }
-  const Field3D Switch_YZ(const Field3D &UNUSED(var)) { return Field3D(0.0); }
-  const Field3D Switch_XZ(const Field3D &UNUSED(var)) { return Field3D(0.0); }
-  void slice_r_y(const BoutReal *, BoutReal *, int, int) {}
-  void get_ri(dcomplex *UNUSED(ayn), int UNUSED(n), BoutReal *UNUSED(r),
-              BoutReal *UNUSED(i)) {}
-  void set_ri(dcomplex *UNUSED(ayn), int UNUSED(n), BoutReal *UNUSED(r),
-              BoutReal *UNUSED(i)) {}
-  const Field2D lowPass_poloidal(const Field2D &, int) { return Field2D(0.0); }
 private:
   vector<BoundaryRegion *> boundaries;
 };

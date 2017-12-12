@@ -1400,7 +1400,7 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
             if (shift)
               cv[jz] *= exp(Im * (shift * kwave));
           }
-          for (int jz = kmax + 1; jz < ncz / 2; jz++) {
+          for (int jz = kmax + 1; jz <= ncz / 2; jz++) {
             cv[jz] = 0.0;
           }
           

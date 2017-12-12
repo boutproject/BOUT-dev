@@ -98,6 +98,28 @@ class DataFormat {
   // Optional functions
   
   virtual void setLowPrecision() { }  // By default doesn't do anything
+
+  // Attributes
+
+  /// Sets a string attribute
+  ///
+  /// Inputs
+  /// ------
+  /// 
+  /// @param[in] varname     Variable name. The variable must already exist
+  /// @param[in] attrname    Attribute name
+  /// @param[in] text        A string attribute to attach to the variable
+  virtual void setAttribute(const string &varname, const string &attrname, const string &text) {}
+
+  /// Sets an integer attribute
+  ///
+  /// Inputs
+  /// ------
+  /// 
+  /// @param[in] varname     Variable name. The variable must already exist
+  /// @param[in] attrname    Attribute name
+  /// @param[in] value       A string attribute to attach to the variable
+  virtual void setAttribute(const string &varname, const string &attrname, int value) {}
 };
 
 // For backwards compatability. In formatfactory.cxx

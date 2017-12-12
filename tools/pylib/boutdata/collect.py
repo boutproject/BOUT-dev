@@ -69,7 +69,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
 
     data = collect(name)
 
-    name   Name of the variable (string)
+    varname   Name of the variable (string)
 
     Optional arguments:
 
@@ -433,3 +433,31 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
     if info:
         sys.stdout.write("\n")
     return data
+
+
+def attributes(varname, path=".", prefix="BOUT.dmp"):
+    """
+    Returns a dictionary of variable attributes
+
+    varname   Name of the variable (string)
+
+    Optional arguments:
+
+    path    = "."          Path to data files
+    prefix  = "BOUT.dmp"   File prefix
+    
+    """
+    # Search for BOUT++ dump files in NetCDF format
+    file_list_nc = glob.glob(os.path.join(path, prefix+"*.nc"))
+    file_list_h5 = glob.glob(os.path.join(path, prefix+"*.hdf5"))
+    if file_list_nc != [] and file_list_h5 != []:
+        raise IOError("Error: Both NetCDF and HDF5 files are present: do not know which to read.")
+    elif file_list_h5 != []:
+        file_list = file_list_h5
+    else:
+        file_list = file_list_nc
+
+    # Read data from the first file
+    f = DataFile(file_list[0])
+
+    return f.attributes(varname)
