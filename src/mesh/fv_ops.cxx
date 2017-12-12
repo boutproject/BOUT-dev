@@ -10,10 +10,8 @@ namespace FV {
 
   // Div ( a Laplace_perp(f) )  -- Vorticity
   const Field3D Div_a_Laplace_perp(const Field3D &a, const Field3D &f) {
-    Mesh * mesh = a.getMesh();
-
-    Field3D result(mesh);
-    result = 0.0;
+  
+    Field3D result = 0.0;
 
     Coordinates *coord = mesh->coordinates();
     
@@ -114,13 +112,12 @@ namespace FV {
 
   const Field3D Div_par_K_Grad_par(const Field3D &Kin, const Field3D &fin, bool bndry_flux) {
     TRACE("FV::Div_par_K_Grad_par");
-
-    Mesh * mesh =Kin.getMesh();
-    Field3D result(0.0,mesh);
+    
+    Field3D result(0.0);
     
     // K and f fields in yup and ydown directions
-    Field3D Kup(mesh), Kdown(mesh);
-    Field3D fup(mesh), fdown(mesh);
+    Field3D Kup, Kdown;
+    Field3D fup, fdown;
     Field3D f = fin;
     Field3D K = Kin;
     if (K.hasYupYdown() && f.hasYupYdown()) {

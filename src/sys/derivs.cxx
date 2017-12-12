@@ -123,7 +123,7 @@ const Field2D DDZ(const Field2D &UNUSED(f)) {
 }
 
 const Vector3D DDZ(const Vector3D &v, CELL_LOC outloc, DIFF_METHOD method) {
-  Vector3D result(v.x.getMesh());
+  Vector3D result;
 
   ASSERT2(v.x.getMesh()==v.y.getMesh());
   ASSERT2(v.x.getMesh()==v.z.getMesh());
@@ -152,7 +152,7 @@ const Vector3D DDZ(const Vector3D &v, DIFF_METHOD method, CELL_LOC outloc) {
 }
 
 const Vector2D DDZ(const Vector2D &v) {
-  Vector2D result(v.x.getMesh());
+  Vector2D result;
 
   result.covariant = v.covariant;
 
@@ -312,9 +312,11 @@ const Field2D D2DXDZ(const Field2D &UNUSED(f)) {
 
 /// X-Z mixed derivative
 const Field3D D2DXDZ(const Field3D &f) {
+  Field3D result;
+
   // Take derivative in Z, including in X boundaries. Then take derivative in X
   // Maybe should average results of DDX(DDZ) and DDZ(DDX)?
-  Field3D result = DDX(DDZ(f, true));
+  result = DDX(DDZ(f, true));
 
   return result;
 }
@@ -324,7 +326,7 @@ const Field2D D2DYDZ(const Field2D &UNUSED(f)) {
 }
 
 const Field3D D2DYDZ(const Field3D &f) {
-  Field3D result(f.getMesh());
+  Field3D result;
   result.allocate();
   for(int i=f.getMesh()->xstart;i<=f.getMesh()->xend;i++)
     for(int j=f.getMesh()->ystart;j<=f.getMesh()->yend;j++) 

@@ -269,7 +269,7 @@ bool GridFile::get(Mesh *m, Field3D &var,   const string &name, BoutReal def) {
   case 2: {
     // Read as 2D
     
-    Field2D var2d(m);
+    Field2D var2d;
     if (!get(m, var2d, name, def)) {
       throw BoutException("Couldn't read 2D variable '%s'\n", name.c_str());
     }

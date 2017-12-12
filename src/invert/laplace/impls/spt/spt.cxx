@@ -77,8 +77,7 @@ const FieldPerp LaplaceSPT::solve(const FieldPerp &b) {
 }
 
 const FieldPerp LaplaceSPT::solve(const FieldPerp &b, const FieldPerp &x0) {
-  Mesh * mesh = b.getMesh();
-  FieldPerp x(mesh);
+  FieldPerp x;
   x.allocate();
   
   if( (inner_boundary_flags & INVERT_SET) || (outer_boundary_flags & INVERT_SET) ) {
@@ -115,8 +114,7 @@ const FieldPerp LaplaceSPT::solve(const FieldPerp &b, const FieldPerp &x0) {
  */
 const Field3D LaplaceSPT::solve(const Field3D &b) {
   Timer timer("invert");
-  Mesh * mesh = b.getMesh();
-  Field3D x(mesh);
+  Field3D x;
   x.allocate();
   
   for(int jy=ys; jy <= ye; jy++) {
@@ -135,7 +133,7 @@ const Field3D LaplaceSPT::solve(const Field3D &b) {
       running = next(alldata[jy]) == 0;
   }while(running);
 
-  FieldPerp xperp(mesh);
+  FieldPerp xperp;
   xperp.allocate();
   
   // All calculations finished. Get result

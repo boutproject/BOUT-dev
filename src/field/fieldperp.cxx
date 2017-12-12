@@ -33,12 +33,12 @@
 #include <boutexception.hxx>
 #include <msg_stack.hxx>
 
-FieldPerp::FieldPerp(Mesh * msh) {
+FieldPerp::FieldPerp() {
   // Get mesh size
-  fieldmesh=msh;
-  if(msh) {
-    nx = msh->LocalNx;
-    nz = msh->LocalNz;
+
+  if(mesh) {
+    nx = mesh->LocalNx;
+    nz = mesh->LocalNz;
   }
   
 #if CHECK > 0
@@ -168,7 +168,7 @@ void FieldPerp::setZStencil(stencil &fval, const bindex &bx, CELL_LOC UNUSED(loc
 // Operator on FieldPerp and another field
 #define FPERP_FPERP_OP_FIELD(op, ftype)                     	          \
   const FieldPerp operator op(const FieldPerp &lhs, const ftype &rhs) {   \
-    FieldPerp result(lhs.getMesh());					\
+    FieldPerp result;                                                     \
     result.allocate();                                                    \
                                                                           \
     int y = lhs.getIndex();            		                          \
@@ -199,7 +199,7 @@ FPERP_FPERP_OP_FIELD(/, Field2D);
 // Operator on FieldPerp and BoutReal
 #define FPERP_FPERP_OP_REAL(op)                     	                   \
   const FieldPerp operator op(const FieldPerp &lhs, BoutReal rhs) { \
-    FieldPerp result(lhs.getMesh());					\
+    FieldPerp result;                                                     \
     result.allocate();                                                    \
                                                                           \
     int y = lhs.getIndex();                                               \
@@ -217,8 +217,8 @@ FPERP_FPERP_OP_REAL(*);
 FPERP_FPERP_OP_REAL(/);
 
 #define FPERP_REAL_OP_FPERP(op)                     	                   \
-  const FieldPerp operator op(BoutReal lhs, const FieldPerp &rhs) {	\
-    FieldPerp result(rhs.getMesh());					\
+  const FieldPerp operator op(BoutReal lhs, const FieldPerp &rhs) { \
+    FieldPerp result;                                                     \
     result.allocate();                                                    \
                                                                           \
     int y = rhs.getIndex();                                               \
@@ -244,7 +244,7 @@ const FieldPerp sliceXZ(const Field3D& f, int y) {
   // Source field should be valid
   ASSERT1(f.isAllocated());
   
-  FieldPerp result(f.getMesh());
+  FieldPerp result;
 
   // Allocate memory
   result.allocate();

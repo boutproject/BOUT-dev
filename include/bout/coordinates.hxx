@@ -137,7 +137,6 @@ private:
   int gaussj(BoutReal **a, int n);
   vector<int> indxc, indxr, ipiv;
   int nz; // Size of mesh in Z. This is mesh->ngz-1
-  Mesh * msh;
 };
 
 /*

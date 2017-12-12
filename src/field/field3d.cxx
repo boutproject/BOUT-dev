@@ -800,7 +800,7 @@ Field3D pow(const Field3D &lhs, const Field2D &rhs) {
   ASSERT1(rhs.isAllocated());
   ASSERT1(lhs.getMesh()==rhs.getMesh());
 
-  // Define and allocate the output result  
+  ASSERT1(lhs.getMesh()==rhs.getMesh());
   Field3D result(lhs.getMesh());
   result.allocate();
 
@@ -832,12 +832,8 @@ Field3D pow(const Field3D &lhs, const FieldPerp &rhs) {
   return result;
 }
 
-Field3D pow(const Field3D &lhs, BoutReal rhs) {
-  TRACE("pow(Field3D, BoutReal)");
-  // Check if the inputs are allocated
-  ASSERT1(lhs.isAllocated());
-
-  Field3D result(lhs.getMesh());
+Field3D pow(const Field3D &f, BoutReal rhs) {
+  Field3D result(f.getMesh());
   result.allocate();
   for(const auto& i : result){
     result[i] = ::pow(lhs[i], rhs);

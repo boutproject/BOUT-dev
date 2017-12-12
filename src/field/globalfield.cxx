@@ -184,7 +184,7 @@ void GlobalField2D::gather(const Field2D &f) {
 }
 
 const Field2D GlobalField2D::scatter() const {
-  Field2D result(mesh);
+  Field2D result;
   result.allocate();
   
   MPI_Status status;
@@ -352,7 +352,7 @@ void GlobalField3D::gather(const Field3D &f) {
 }
 
 const Field3D GlobalField3D::scatter() const {
-  Field3D result(mesh);
+  Field3D result;
   result.allocate();
   
   MPI_Status status;

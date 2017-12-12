@@ -125,7 +125,6 @@ void Laplacian::cleanup() {
 
 const Field3D Laplacian::solve(const Field3D &b) {
   TRACE("Laplacian::solve(Field3D)");
-  Mesh * mesh = b.getMesh();
 
   Timer timer("invert");
   int ys = mesh->ystart, ye = mesh->yend;
@@ -143,7 +142,7 @@ const Field3D Laplacian::solve(const Field3D &b) {
     ye -= extra_yguards_upper;
   }
 
-  Field3D x(mesh);
+  Field3D x;
   x.allocate();
 
   int status = 0;
@@ -185,7 +184,6 @@ const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
 
   Timer timer("invert");
 
-  Mesh * mesh = b.getMesh();
   // Setting the start and end range of the y-slices
   int ys = mesh->ystart, ye = mesh->yend;
   if(mesh->hasBndryLowerY() && include_yguards)
@@ -193,7 +191,7 @@ const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
   if(mesh->hasBndryUpperY() && include_yguards)
     ye = mesh->LocalNy-1; // Contains upper boundary
 
-  Field3D x(mesh);
+  Field3D x;
   x.allocate();
 
   int status = 0;

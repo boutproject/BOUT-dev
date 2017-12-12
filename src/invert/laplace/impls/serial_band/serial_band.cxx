@@ -83,8 +83,7 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b) {
 }
 
 const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0) {
-  Mesh * mesh = b.getMesh();
-  FieldPerp x(mesh);
+  FieldPerp x;
   x.allocate();
 
   int jy = b.getIndex();

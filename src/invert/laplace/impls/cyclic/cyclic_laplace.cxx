@@ -101,8 +101,7 @@ LaplaceCyclic::~LaplaceCyclic() {
 }
 
 const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) {
-  Mesh * mesh = rhs.getMesh();
-  FieldPerp x(mesh);  // Result
+  FieldPerp x;  // Result
   x.allocate();
 
   Coordinates *coord = mesh->coordinates();

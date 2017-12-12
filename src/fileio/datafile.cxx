@@ -738,7 +738,7 @@ bool Datafile::write_f3d(const string &name, Field3D *f, bool save_repeat) {
   }
 
   //Deal with shifting the output
-  Field3D f_out(f->getMesh());
+  Field3D f_out;
   if(shiftOutput) {
     f_out = mesh->toFieldAligned(*f);
   }else {

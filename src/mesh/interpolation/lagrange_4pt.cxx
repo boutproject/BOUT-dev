@@ -27,7 +27,7 @@
 #include <vector>
 
 Lagrange4pt::Lagrange4pt(int y_offset) :
-  Interpolation(y_offset) ,t_x(mesh),t_z(mesh){
+  Interpolation(y_offset) {
 
   // Index arrays contain guard cells in order to get subscripts right
   i_corner = i3tensor(mesh->LocalNx, mesh->LocalNy, mesh->LocalNz);
@@ -80,7 +80,7 @@ void Lagrange4pt::calcWeights(const Field3D &delta_x, const Field3D &delta_z, Bo
 
 Field3D Lagrange4pt::interpolate(const Field3D& f) const {
 
-  Field3D f_interp(f.getMesh());
+  Field3D f_interp;
   f_interp.allocate();
 
   for(int x=mesh->xstart;x<=mesh->xend;x++) {

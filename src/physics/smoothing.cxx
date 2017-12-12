@@ -43,8 +43,8 @@
 // Smooth using simple 1-2-1 filter
 const Field3D smooth_x(const Field3D &f) {
   TRACE("smooth_x");
-  Mesh * mesh = f.getMesh();
-  Field3D result(mesh);
+  
+  Field3D result;
   result.allocate();
   
   // Copy boundary region
@@ -71,8 +71,8 @@ const Field3D smooth_x(const Field3D &f) {
 
 const Field3D smooth_y(const Field3D &f) {
   TRACE("smooth_y");
-  Mesh * mesh = f.getMesh();
-  Field3D result(mesh);
+  
+  Field3D result;
   result.allocate();
   
   // Copy boundary region
@@ -108,7 +108,6 @@ const Field3D smooth_y(const Field3D &f) {
  */
 const Field2D averageX(const Field2D &f) {
   TRACE("averageX(Field2D)");
-  Mesh * mesh = f.getMesh();
  
   int ngx = mesh->LocalNx;
   int ngy = mesh->LocalNy;
@@ -125,7 +124,7 @@ const Field2D averageX(const Field2D &f) {
     input[y] /= (mesh->xend - mesh->xstart + 1);
   }
 
-  Field2D r(mesh);
+  Field2D r;
   r.allocate();
 
   MPI_Comm comm_x = mesh->getXcomm();
@@ -163,10 +162,9 @@ const Field2D averageX(const Field2D &f) {
   
  */
 const Field3D averageX(const Field3D &f) {
-  TRACE("averageX(Field3D)");
-
   static BoutReal **input = NULL, **result;
-  Mesh * mesh = f.getMesh();
+
+  TRACE("averageX(Field3D)");
 
   int ngx = mesh->LocalNx;
   int ngy = mesh->LocalNy;
@@ -188,7 +186,7 @@ const Field3D averageX(const Field3D &f) {
       input[y][z] /= (mesh->xend - mesh->xstart + 1);
     }
   
-  Field3D r(mesh);
+  Field3D r;
   r.allocate();
   
   MPI_Comm comm_x = mesh->getXcomm();
@@ -216,8 +214,7 @@ const Field3D averageX(const Field3D &f) {
 
 const Field2D averageY(const Field2D &f) {
   TRACE("averageY(Field2D)");
-
-  Mesh * mesh = f.getMesh();
+ 
   int ngx = mesh->LocalNx;
   int ngy = mesh->LocalNy;
 
@@ -233,7 +230,7 @@ const Field2D averageY(const Field2D &f) {
     input[x] /= (mesh->yend - mesh->ystart + 1);
   }
 
-  Field2D r(mesh);
+  Field2D r;
   r.allocate();
 
   /// NOTE: This only works if there are no branch-cuts
@@ -260,7 +257,6 @@ const Field3D averageY(const Field3D &f) {
   TRACE("averageY(Field3D)");
 
   static BoutReal **input = NULL, **result;
-  Mesh * mesh = f.getMesh();
 
   int ngx = mesh->LocalNx;
   int ngy = mesh->LocalNy;
@@ -282,7 +278,7 @@ const Field3D averageY(const Field3D &f) {
       input[x][z] /= (mesh->yend - mesh->ystart + 1);
     }
   
-  Field3D r(mesh);
+  Field3D r;
   r.allocate();
 
   /// NOTE: This only works if there are no branch-cuts
@@ -311,10 +307,11 @@ const Field3D averageY(const Field3D &f) {
 
 
 BoutReal Average_XY(const Field2D &var) {
-  Mesh * mesh = var.getMesh();
+  Field2D result;
   BoutReal Vol_Loc, Vol_Glb;
   int i;
-  Field2D result=averageY(var);
+  result.allocate();  //initialize
+  result=averageY(var);
 
   Vol_Loc = 0.;
   Vol_Glb = 0.;
@@ -331,11 +328,12 @@ BoutReal Average_XY(const Field2D &var) {
 }
 
 BoutReal Vol_Integral(const Field2D &var) {
-  Mesh * mesh = var.getMesh();
+  Field2D result;
   BoutReal Int_Glb;
+  result.allocate();  //initialize
   Coordinates *metric = mesh->coordinates();
   
-  Field2D result = metric->J * var * metric->dx * metric->dy;
+  result = metric->J * var * metric->dx * metric->dy;
 
   Int_Glb = Average_XY(result);
   Int_Glb *= static_cast<BoutReal>((mesh->GlobalNx-2*mesh->xstart)*mesh->GlobalNy)*PI * 2.;
@@ -344,8 +342,7 @@ BoutReal Vol_Integral(const Field2D &var) {
 }
 
 const Field3D smoothXY(const Field3D &f) {
-  Mesh * mesh = f.getMesh();
-  Field3D result(mesh);
+  Field3D result;
   result.allocate();
 
   for(int x=2;x<mesh->LocalNx-2;x++)
@@ -390,9 +387,8 @@ void nl_filter(rvec &f, BoutReal w) {
 
 const Field3D nl_filter_x(const Field3D &f, BoutReal w) {
   TRACE("nl_filter_x( Field3D )");
-  Mesh * mesh = f.getMesh();
   
-  Field3D result(mesh);
+  Field3D result;
   result.allocate();
   rvec v(mesh->LocalNx);
   
@@ -413,9 +409,8 @@ const Field3D nl_filter_x(const Field3D &f, BoutReal w) {
 
 const Field3D nl_filter_y(const Field3D &f, BoutReal w) {
   TRACE("nl_filter_x( Field3D )");
-
-  Mesh * mesh = f.getMesh();  
-  Field3D result(mesh);
+  
+  Field3D result;
   result.allocate();
 
   rvec v(mesh->LocalNy); // Temporary array
@@ -441,9 +436,8 @@ const Field3D nl_filter_y(const Field3D &f, BoutReal w) {
 
 const Field3D nl_filter_z(const Field3D &fs, BoutReal w) {
   TRACE("nl_filter_z( Field3D )");
-
-  Mesh * mesh = fs.getMesh();  
-  Field3D result(mesh);
+  
+  Field3D result;
   result.allocate();
   
   rvec v(mesh->LocalNz);
@@ -464,8 +458,9 @@ const Field3D nl_filter_z(const Field3D &fs, BoutReal w) {
 }
 
 const Field3D nl_filter(const Field3D &f, BoutReal w) {
+  Field3D result;
   /// Perform filtering in Z, Y then X
-  Field3D result = nl_filter_x(nl_filter_y(nl_filter_z(f, w), w), w);
+  result = nl_filter_x(nl_filter_y(nl_filter_z(f, w), w), w);
   /// Communicate boundaries
   mesh->communicate(result);
   return result;
