@@ -797,3 +797,21 @@ or in IDL:
     IDL> var = collect(var="name", prefix="mydata")
 
 By default the prefix is “BOUT.dmp”.
+
+Variable attributes
+-------------------
+
+An experimental feature is the ability to add attributes to output variables. Do this using   ::
+
+::
+
+   dump.setAttribute(variable, attribute, value);
+
+where ``variable`` is the name of the variable; ``attribute`` is the name of the attribute, and ``value`` can be
+either a string or an integer. For example:
+ 
+::
+
+   dump.setAttribute("Ni0", "units", "m^-3"); 
+
+

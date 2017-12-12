@@ -890,3 +890,44 @@ def resizeY(newy, path="data", output=".", informat="nc", outformat=None,myg=2):
                 
         infile.close()
         outfile.close()
+
+
+def addvar(var, value, path="."):
+    """Adds a variable with constant value to all restart files.
+
+    This is useful for restarting simulations whilst turning on new
+    equations. By default BOUT++ throws an error if an evolving
+    variable is not in the restart file. By setting an option the
+    variable can be set to zero. This allows it to start with a
+    non-zero value.
+
+    Input
+    -----
+    var      The variable to add
+    value    Constant value for the variable
+    path     Path to directory containing restart files
+    """
+
+    file_list = glob.glob(os.path.join(path, "BOUT.restart.*"))
+    nfiles = len(file_list)
+
+    print("Number of restart files: %d" % (nfiles,))
+    # Loop through all the restart files
+    for filename in file_list:
+        print(filename)
+        # Open the restart file for writing (modification)
+        with DataFile(filename, write=True) as df:
+            size = None
+            # Find a 3D variable and get its size
+            for varname in df.list():
+                size = df.size(varname)
+                if len(size) == 3:
+                    break
+            if size is None:
+                raise Exception("no 3D variables found")
+
+            # Create a new 3D array with input value
+            data = np.zeros(size) + value
+
+            # Set the variable in the NetCDF file
+            df.write(var, data)

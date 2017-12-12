@@ -35,17 +35,17 @@
 
 #include "boutmesh.hxx"
 
-#include <utils.hxx>
-#include <fft.hxx>
-#include <derivs.hxx>
-#include <boutcomm.hxx>
-#include <dcomplex.hxx>
-#include <options.hxx>
-#include <boutexception.hxx>
-#include <output.hxx>
-#include <bout/sys/timer.hxx>
-#include <msg_stack.hxx>
 #include <bout/constants.hxx>
+#include <bout/sys/timer.hxx>
+#include <boutcomm.hxx>
+#include <boutexception.hxx>
+#include <dcomplex.hxx>
+#include <derivs.hxx>
+#include <fft.hxx>
+#include <msg_stack.hxx>
+#include <options.hxx>
+#include <output.hxx>
+#include <utils.hxx>
 
 /// MPI type of BoutReal for communications
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
@@ -240,11 +240,11 @@ int BoutMesh::load() {
     BoutReal ideal = sqrt(MX * NPES / static_cast<BoutReal>(ny)); // Results in square domains
 
     output_info.write("Finding value for NXPE (ideal = %f)\n", ideal);
-    
-    for(int i=1; i<= NPES; i++) { // Loop over all possibilities
-      if( (NPES % i == 0) &&      // Processors divide equally
-          (MX % i == 0) &&        // Mesh in X divides equally
-          (ny % (NPES/i) == 0) ) { // Mesh in Y divides equally
+
+    for (int i = 1; i <= NPES; i++) { // Loop over all possibilities
+      if ((NPES % i == 0) &&          // Processors divide equally
+          (MX % i == 0) &&            // Mesh in X divides equally
+          (ny % (NPES / i) == 0)) {   // Mesh in Y divides equally
 
         output_info.write("\tCandidate value: %d\n", i);
 
@@ -611,7 +611,6 @@ int BoutMesh::load() {
 
           comm_middle = comm_outer;
           // MPI_Comm_dup(comm_outer, &comm_middle);
-
         }
       }
 
@@ -948,8 +947,8 @@ comm_handle BoutMesh::send(FieldGroup &g) {
 
   /// Mark communication handle as in progress
   ch->in_progress = true;
-  
-  return static_cast<void*>(ch);
+
+  return static_cast<void *>(ch);
 }
 
 int BoutMesh::wait(comm_handle handle) {
@@ -957,9 +956,9 @@ int BoutMesh::wait(comm_handle handle) {
 
   if (handle == NULL)
     return 1;
-  
-  CommHandle *ch = static_cast<CommHandle*>(handle);
-  
+
+  CommHandle *ch = static_cast<CommHandle *>(handle);
+
   if (!ch->in_progress)
     return 2;
 
@@ -1021,7 +1020,7 @@ int BoutMesh::wait(comm_handle handle) {
   if (async_send) {
     /// Asyncronous sending: Need to check if sends have completed (frees MPI memory)
     MPI_Status async_status;
-    
+
     if (UDATA_INDEST != -1)
       MPI_Wait(ch->sendreq, &async_status);
     if (UDATA_OUTDEST != -1)
@@ -1107,7 +1106,7 @@ comm_handle BoutMesh::receiveFromProc(int xproc, int yproc, BoutReal *buffer, in
             BoutComm::get(), ch->request);
 
   ch->in_progress = true;
-  
+
   return static_cast<comm_handle>(ch);
 }
 
@@ -1166,7 +1165,7 @@ comm_handle BoutMesh::irecvXOut(BoutReal *buffer, int size, int tag) {
             BoutComm::get(), ch->request);
 
   ch->in_progress = true;
-  
+
   return static_cast<comm_handle>(ch);
 }
 
@@ -1183,7 +1182,7 @@ comm_handle BoutMesh::irecvXIn(BoutReal *buffer, int size, int tag) {
             BoutComm::get(), ch->request);
 
   ch->in_progress = true;
-  
+
   return static_cast<comm_handle>(ch);
 }
 
@@ -1304,7 +1303,7 @@ comm_handle BoutMesh::irecvYOutIndest(BoutReal *buffer, int size, int tag) {
     throw BoutException("Expected UDATA_INDEST to exist, but it does not.");
 
   ch->in_progress = true;
-  
+
   return static_cast<comm_handle>(ch);
 }
 
@@ -1324,7 +1323,7 @@ comm_handle BoutMesh::irecvYOutOutdest(BoutReal *buffer, int size, int tag) {
     throw BoutException("Expected UDATA_OUTDEST to exist, but it does not.");
 
   ch->in_progress = true;
-  
+
   return static_cast<comm_handle>(ch);
 }
 
@@ -1344,7 +1343,7 @@ comm_handle BoutMesh::irecvYInIndest(BoutReal *buffer, int size, int tag) {
     throw BoutException("Expected DDATA_INDEST to exist, but it does not.");
 
   ch->in_progress = true;
-  
+
   return static_cast<comm_handle>(ch);
 }
 
@@ -1364,7 +1363,7 @@ comm_handle BoutMesh::irecvYInOutdest(BoutReal *buffer, int size, int tag) {
     throw BoutException("Expected DDATA_OUTDEST to exist, but it does not.");
 
   ch->in_progress = true;
-  
+
   return static_cast<comm_handle>(ch);
 }
 
@@ -2305,199 +2304,4 @@ void BoutMesh::outputVars(Datafile &file) {
   file.add(jyseps2_2, "jyseps2_2", 0);
 
   coordinates()->outputVars(file);
-}
-
-//================================================================
-// Poloidal lowpass filter for n=0 mode, keeping 0<=m<=mmax
-// Developed by T. Rhee and S. S. Kim
-//================================================================
-
-void BoutMesh::slice_r_y(const BoutReal *fori, BoutReal *fxy, int ystart, int ncy) {
-  int i;
-  for (i = 0; i < ncy; i++)
-    fxy[i] = fori[i + ystart];
-}
-
-void BoutMesh::get_ri(dcomplex *ayn, int ncy, BoutReal *ayn_Real, BoutReal *ayn_Imag) {
-  for (int i = 0; i < ncy; i++) {
-    ayn_Real[i] = ayn[i].real();
-    ayn_Imag[i] = ayn[i].imag();
-  }
-}
-
-void BoutMesh::set_ri(dcomplex *ayn, int ncy, BoutReal *ayn_Real, BoutReal *ayn_Imag) {
-  for (int i = 0; i < ncy; i++) {
-    ayn[i] = dcomplex(ayn_Real[i], ayn_Imag[i]);
-  }
-}
-
-// Lowpass filter for n=0 mode, keeping poloidal mode number 0<=m<=mmax
-const Field2D BoutMesh::lowPass_poloidal(const Field2D &var, int mmax) {
-  Field2D result;
-  static BoutReal *f1d = (BoutReal *)NULL; // Never freed
-  static dcomplex *aynall = (dcomplex *)NULL; // Never freed
-  static BoutReal *aynall_Real = (BoutReal *)NULL; // Never freed
-  static BoutReal *aynall_Imag = (BoutReal *)NULL; // Never freed
-  static dcomplex *ayn = (dcomplex *)NULL; // Never freed
-  static BoutReal *aynReal = (BoutReal *)NULL; // Never freed
-  static BoutReal *aynImag = (BoutReal *)NULL; // Never freed
-
-  int ncx, ncy;
-  int jx, jy;
-  int ncyall; // nype is number of processors in the Y dir.
-  int mmax1;
-
-  mmax1 = mmax + 1;
-  ncx = LocalNx;
-  ncy = yend - ystart + 1;
-  ncyall = ncy * NYPE;
-
-  result.allocate(); // initialize
-  if (f1d == (BoutReal *)NULL)
-    f1d = new BoutReal[ncy];
-  if (ayn == (dcomplex *)NULL)
-    ayn = new dcomplex[ncy];
-  if (aynall == (dcomplex *)NULL)
-    aynall = new dcomplex[ncyall];
-  if (aynall_Real == (BoutReal *)NULL)
-    aynall_Real = new BoutReal[ncyall];
-  if (aynall_Imag == (BoutReal *)NULL)
-    aynall_Imag = new BoutReal[ncyall];
-  if (aynReal == (BoutReal *)NULL)
-    aynReal = new BoutReal[ncy];
-  if (aynImag == (BoutReal *)NULL)
-    aynImag = new BoutReal[ncy];
-
-  for (jx = 0; jx < ncx; jx++) { // start x
-    // saving the real 2D data
-    slice_r_y(&var(jx, 0), f1d, ystart, ncy); // 2d -> 1d
-
-    for (jy = 0; jy < ncy; jy++)
-      ayn[jy] = dcomplex(f1d[jy], 0.);
-
-    // allgather from ayn to aynall
-    get_ri(ayn, ncy, aynReal, aynImag);
-    MPI_Allgather(aynReal, ncy, MPI_DOUBLE, aynall_Real, ncy, MPI_DOUBLE, comm_inner);
-    MPI_Allgather(aynImag, ncy, MPI_DOUBLE, aynall_Imag, ncy, MPI_DOUBLE, comm_inner);
-    set_ri(aynall, ncyall, aynall_Real, aynall_Imag);
-
-    // FFT in y over extended domain
-    cfft(aynall, ncyall, -1);
-
-    // lowpass filter
-    for (jy = mmax1; jy <= (ncyall - mmax1); jy++)
-      aynall[jy] = dcomplex(0., 0.);
-
-    // inverse FFT in y over extended domain
-    cfft(aynall, ncyall, 1);
-
-    // scatter data
-    get_ri(aynall, ncyall, aynall_Real, aynall_Imag);
-    MPI_Scatter(aynall_Real, ncy, MPI_DOUBLE, aynReal, ncy, MPI_DOUBLE, 0, comm_inner);
-    MPI_Scatter(aynall_Imag, ncy, MPI_DOUBLE, aynImag, ncy, MPI_DOUBLE, 0, comm_inner);
-    set_ri(ayn, ncy, aynReal, aynImag);
-
-    for (jy = 0; jy < ncy; jy++)
-      f1d[jy] = ayn[jy].real();
-
-    for (jy = 0; jy < ncy; jy++) {
-      result(jx, jy + ystart, 1) = f1d[jy];
-    }
-  } // end of x
-
-  return result;
-}
-
-/*================================================================
-// Volume integral of Field2D variable
-// Developed by T. Rhee and S. S. Kim
-//================================================================*/
-
-const Field3D BoutMesh::Switch_YZ(const Field3D &var) {
-  static BoutReal **ayz = (BoutReal **)NULL;
-  static BoutReal **ayz_all = (BoutReal **)NULL;
-  Field3D result;
-  int ncy, ncy_all, ncz;
-  int i, j, ix;
-  ncy = yend - ystart + 1;
-  ncy_all = MY;
-  ncz = LocalNz;
-  
-  if (MY != LocalNz) {
-    throw BoutException("Y and Z dimension is not same in Switch_YZ code");
-  }
-
-  // memory allocation
-  result.allocate();
-  if (ayz == (BoutReal **)NULL)
-    ayz = matrix<BoutReal>(ncy, ncz);
-  if (ayz_all == (BoutReal **)NULL)
-    ayz_all = matrix<BoutReal>(ncy_all, ncz);
-
-  for (ix = xstart; ix <= xend; ix++) {
-    // Field 3D to rmatrix of local
-    for (i = 0; i < ncy; i++)
-      for (j = 0; j < ncz; j++)
-        ayz[i][j] = var(ix, i + ystart, j);
-
-    // Collect to rmatrix of global from local
-    MPI_Allgather(ayz[0], ncy * ncz, MPI_DOUBLE, ayz_all[0], ncy * ncz, MPI_DOUBLE,
-                  comm_inner);
-
-    // Y 2 Z switch
-    for (i = ystart; i <= yend; i++)
-      for (j = 0; j < ncz; j++)
-        result(ix, i, j) = ayz_all[j][YGLOBAL(i)];
-  }
-  return result;
-}
-
-const Field3D BoutMesh::Switch_XZ(const Field3D &var) {
-  if (MX != LocalNz) {
-    throw BoutException("X and Z dimension must be the same to use Switch_XZ");
-  }
-  static BoutReal ***buffer = (BoutReal ***)NULL;
-
-  int ncx, ncy, ncz;
-  int i, j, k, l;
-
-  Field3D result;
-
-  ncx = LocalNx - 2 * MXG;
-  ncy = LocalNy - 2 * MYG;
-  ncz = LocalNz;
-
-  // Allocate Memory
-  result.allocate();
-  if (buffer == (BoutReal ***)NULL) {
-    buffer = r3tensor(ncz, ncy,
-                      ncx); // Note, this is deliberately such that x contiguous in memory
-  }
-  
-  // Put input data into buffer.  X needs to be contiguous in memory
-  for (i = 0; i < ncx; i++) {
-    for (j = 0; j < ncy; j++) {
-      for (k = 0; k < ncz; k++) {
-        buffer[k][j][i] = var(MXG + i, MYG + j, k);
-      }
-    }
-  }
-
-  int sendcount = ncx * ncy * ncz / NXPE;
-
-  MPI_Alltoall(MPI_IN_PLACE, sendcount, MPI_DOUBLE, buffer[0][0], sendcount, MPI_DOUBLE,
-               Mesh::getXcomm());
-
-  // Need to transpose on each process appropriately.
-  for (i = 0; i < NXPE; i++) {
-    for (j = 0; j < ncx; j++) {
-      for (k = 0; k < ncy; k++) {
-        for (l = 0; l < ncx; l++) {
-          result(MXG + j, MYG + k, l + i * ncx) = buffer[j + i * ncx][k][l];
-        }
-      }
-    }
-  }
-
-  return result;
 }

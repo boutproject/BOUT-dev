@@ -547,13 +547,59 @@ bool Datafile::write() {
   }
 
   // Write 2D fields
-  for(const auto& var : f2d_arr) {
+  for (const auto& var : f2d_arr) {
     write_f2d(var.name, var.ptr, var.save_repeat);
+
+    // Add string attributes
+    {
+      auto it = attrib_string.find(var.name);
+      if (it != attrib_string.end()) {
+        // Some string attributes are set
+        for (const auto &keyval : it->second) {
+          // keyval->first is the attribute name; second is the value
+          file->setAttribute(var.name, keyval.first, keyval.second);
+        }
+      }
+    }
+    // Add integer attributes
+    {
+      auto it = attrib_int.find(var.name);
+      if (it != attrib_int.end()) {
+        // Some string attributes are set
+        for (const auto &keyval : it->second) {
+          // keyval->first is the attribute name; second is the value
+          file->setAttribute(var.name, keyval.first, keyval.second);
+        }
+      }
+    }
   }
 
   // Write 3D fields
-  for(const auto& var : f3d_arr) {
+  for (const auto& var : f3d_arr) {
     write_f3d(var.name, var.ptr, var.save_repeat);
+
+    // Add string attributes
+    {
+      auto it = attrib_string.find(var.name);
+      if (it != attrib_string.end()) {
+        // Some string attributes are set
+        for (const auto& keyval : it->second) {
+          // keyval->first is the attribute name; second is the value
+          file->setAttribute(var.name, keyval.first, keyval.second);
+        }
+      }
+    }
+    // Add integer attributes
+    {
+      auto it = attrib_int.find(var.name);
+      if (it != attrib_int.end()) {
+        // Some string attributes are set
+        for (const auto &keyval : it->second) {
+          // keyval->first is the attribute name; second is the value
+          file->setAttribute(var.name, keyval.first, keyval.second);
+        }
+      }
+    }
   }
   
   // 2D vectors
@@ -738,7 +784,7 @@ bool Datafile::write_f3d(const string &name, Field3D *f, bool save_repeat) {
   }
 
   //Deal with shifting the output
-  Field3D f_out;
+  Field3D f_out(f->getMesh());
   if(shiftOutput) {
     f_out = mesh->toFieldAligned(*f);
   }else {

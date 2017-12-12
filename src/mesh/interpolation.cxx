@@ -57,7 +57,7 @@ const Field3D Mesh::interp_to(const Field3D &var, CELL_LOC loc) const
     // Staggered grids enabled, and need to perform interpolation
     TRACE("Interpolating %s -> %s", strLocation(var.getLocation()), strLocation(loc));
 
-    Field3D result;
+    Field3D result(var.getMesh());
 
     result = var; // NOTE: This is just for boundaries. FIX!
     result.allocate();
@@ -177,7 +177,10 @@ const Field3D interpolate(const Field3D &f, const Field3D &delta_x,
                           const Field3D &delta_z) {
   TRACE("Interpolating 3D field");
 
-  Field3D result;
+  Mesh *mesh = f.getMesh();
+  ASSERT1(mesh == delta_x.getMesh());
+  ASSERT1(mesh == delta_z.getMesh());
+  Field3D result(mesh);
   result.allocate();
 
   // Loop over output grid points
@@ -247,7 +250,9 @@ const Field3D interpolate(const Field2D &f, const Field3D &delta_x, const Field3
 const Field3D interpolate(const Field2D &f, const Field3D &delta_x) {
   TRACE("interpolate(Field2D, Field3D)");
 
-  Field3D result;
+  Mesh *mesh = f.getMesh();
+  ASSERT1(mesh == delta_x.getMesh());
+  Field3D result(mesh);
   result.allocate();
 
   // Loop over output grid points

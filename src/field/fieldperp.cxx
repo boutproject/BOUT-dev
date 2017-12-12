@@ -33,12 +33,12 @@
 #include <boutexception.hxx>
 #include <msg_stack.hxx>
 
-FieldPerp::FieldPerp() {
+FieldPerp::FieldPerp(Mesh *localmesh) {
   // Get mesh size
-
-  if(mesh) {
-    nx = mesh->LocalNx;
-    nz = mesh->LocalNz;
+  fieldmesh = localmesh;
+  if (localmesh) {
+    nx = localmesh->LocalNx;
+    nz = localmesh->LocalNz;
   }
   
 #if CHECK > 0
@@ -166,18 +166,18 @@ void FieldPerp::setZStencil(stencil &fval, const bindex &bx, CELL_LOC UNUSED(loc
 ////////////// NON-MEMBER OVERLOADED OPERATORS //////////////
 
 // Operator on FieldPerp and another field
-#define FPERP_FPERP_OP_FIELD(op, ftype)                     	          \
-  const FieldPerp operator op(const FieldPerp &lhs, const ftype &rhs) {   \
-    FieldPerp result;                                                     \
-    result.allocate();                                                    \
-                                                                          \
-    int y = lhs.getIndex();            		                          \
-    result.setIndex(y);                                                   \
-                                                                          \
-    for(auto i : result)                                                  \
-      result[i] = lhs[i] op rhs[i];                                       \
-                                                                          \
-    return result;                                                        \
+#define FPERP_FPERP_OP_FIELD(op, ftype)                                                  \
+  const FieldPerp operator op(const FieldPerp &lhs, const ftype &rhs) {                  \
+    FieldPerp result(lhs.getMesh());                                                     \
+    result.allocate();                                                                   \
+                                                                                         \
+    int y = lhs.getIndex();                                                              \
+    result.setIndex(y);                                                                  \
+                                                                                         \
+    for (auto i : result)                                                                \
+      result[i] = lhs[i] op rhs[i];                                                      \
+                                                                                         \
+    return result;                                                                       \
   }
 
 FPERP_FPERP_OP_FIELD(+, FieldPerp);
@@ -197,18 +197,18 @@ FPERP_FPERP_OP_FIELD(/, Field3D);
 FPERP_FPERP_OP_FIELD(/, Field2D);
 
 // Operator on FieldPerp and BoutReal
-#define FPERP_FPERP_OP_REAL(op)                     	                   \
-  const FieldPerp operator op(const FieldPerp &lhs, BoutReal rhs) { \
-    FieldPerp result;                                                     \
-    result.allocate();                                                    \
-                                                                          \
-    int y = lhs.getIndex();                                               \
-    result.setIndex(y);                                                   \
-                                                                          \
-    for(auto i : result)                                                  \
-      result[i] = lhs[i] op rhs;                                          \
-                                                                          \
-    return result;                                                        \
+#define FPERP_FPERP_OP_REAL(op)                                                          \
+  const FieldPerp operator op(const FieldPerp &lhs, BoutReal rhs) {                      \
+    FieldPerp result(lhs.getMesh());                                                     \
+    result.allocate();                                                                   \
+                                                                                         \
+    int y = lhs.getIndex();                                                              \
+    result.setIndex(y);                                                                  \
+                                                                                         \
+    for (auto i : result)                                                                \
+      result[i] = lhs[i] op rhs;                                                         \
+                                                                                         \
+    return result;                                                                       \
   }
 
 FPERP_FPERP_OP_REAL(+);
@@ -216,18 +216,18 @@ FPERP_FPERP_OP_REAL(-);
 FPERP_FPERP_OP_REAL(*);
 FPERP_FPERP_OP_REAL(/);
 
-#define FPERP_REAL_OP_FPERP(op)                     	                   \
-  const FieldPerp operator op(BoutReal lhs, const FieldPerp &rhs) { \
-    FieldPerp result;                                                     \
-    result.allocate();                                                    \
-                                                                          \
-    int y = rhs.getIndex();                                               \
-    result.setIndex(y);                                                   \
-                                                                          \
-    for(auto i : result)                                                  \
-      result[i] = lhs op rhs[i];                                          \
-                                                                          \
-    return result;                                                        \
+#define FPERP_REAL_OP_FPERP(op)                                                          \
+  const FieldPerp operator op(BoutReal lhs, const FieldPerp &rhs) {                      \
+    FieldPerp result(rhs.getMesh());                                                     \
+    result.allocate();                                                                   \
+                                                                                         \
+    int y = rhs.getIndex();                                                              \
+    result.setIndex(y);                                                                  \
+                                                                                         \
+    for (auto i : result)                                                                \
+      result[i] = lhs op rhs[i];                                                         \
+                                                                                         \
+    return result;                                                                       \
   }
 
 // Only need the asymmetric operators
@@ -243,8 +243,8 @@ const FieldPerp copy(const FieldPerp &f) {
 const FieldPerp sliceXZ(const Field3D& f, int y) {
   // Source field should be valid
   ASSERT1(f.isAllocated());
-  
-  FieldPerp result;
+
+  FieldPerp result(f.getMesh());
 
   // Allocate memory
   result.allocate();

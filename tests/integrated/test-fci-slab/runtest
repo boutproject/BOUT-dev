@@ -122,34 +122,37 @@ for var,mark,label in zip(varlist, markers, labels):
         print("............ FAIL")
         success = False
 
-try:
-    # Plot using matplotlib if available
-    import matplotlib.pyplot as plt
-    
-    plt.figure()
+if False:
+    try:
+        # Plot using matplotlib if available
+        import matplotlib.pyplot as plt
 
-    for var,mark,label in zip(varlist, markers, labels):
-        plt.plot(dx, error_2[var], '-'+mark, label=label)
-        plt.plot(dx, error_inf[var], '--'+mark)
-    
-    plt.legend(loc="upper left")
-    plt.grid()
+        plt.figure()
 
-    plt.yscale('log')
-    plt.xscale('log')
+        for var,mark,label in zip(varlist, markers, labels):
+            plt.plot(dx, error_2[var], '-'+mark, label=label)
+            plt.plot(dx, error_inf[var], '--'+mark)
 
-    plt.xlabel(r'Mesh spacing $\delta x$')
-    plt.ylabel("Error norm")
+        plt.legend(loc="upper left")
+        plt.grid()
 
-    plt.savefig("fci-norm.pdf")
+        plt.yscale('log')
+        plt.xscale('log')
 
-    print("Plot saved to fci-norm.pdf")
+        plt.xlabel(r'Mesh spacing $\delta x$')
+        plt.ylabel("Error norm")
 
-    if showPlot:
-        plt.show()
-    plt.close()
-except ImportError:
-    print("No matplotlib")
+        plt.savefig("fci-norm.pdf")
+
+        print("Plot saved to fci-norm.pdf")
+
+        if showPlot:
+            plt.show()
+        plt.close()
+    except ImportError:
+        print("No matplotlib")
+else:
+    print("Pltting disabled")
 
 if success:
     exit(0)

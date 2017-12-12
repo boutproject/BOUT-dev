@@ -51,9 +51,11 @@
 
 void initial_profile(const string &name, Field3D &var) {
   TRACE("initial_profile(string, Field3D)");
-  
+
+  Mesh *localmesh = var.getMesh();
+
   CELL_LOC loc = CELL_DEFAULT;
-  if (mesh->StaggerGrids) {
+  if (localmesh->StaggerGrids) {
     loc = var.getLocation();
   }
   
@@ -61,8 +63,8 @@ void initial_profile(const string &name, Field3D &var) {
   Options *varOpts = Options::getRoot()->getSection(name);
   
   // Use FieldFactory to generate values
-    
-  FieldFactory f(mesh);
+
+  FieldFactory f(localmesh);
 
   string function;
   VAROPTION(varOpts, function, "0.0");
@@ -80,14 +82,16 @@ void initial_profile(const string &name, Field3D &var) {
 void initial_profile(const string &name, Field2D &var) {
   
   CELL_LOC loc = var.getLocation();
-  
+
+  Mesh *localmesh = var.getMesh();
+
   // Get the section for this variable
   Options *varOpts = Options::getRoot()->getSection(name);
   output << name;
   
   // Use FieldFactory to generate values
-    
-  FieldFactory f(mesh);
+
+  FieldFactory f(localmesh);
 
   string function;
   VAROPTION(varOpts, function, "0.0");

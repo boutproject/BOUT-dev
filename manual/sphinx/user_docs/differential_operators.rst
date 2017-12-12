@@ -120,6 +120,7 @@ exactly which method to use.
 
 Non-uniform meshes
 ------------------
+.. _sec-diffmethod-nonuniform:
 
 **examples/test-nonuniform seems to not work?** Setting
 ``non_uniform = true`` in the BOUT.inp options file enables corrections
@@ -153,6 +154,9 @@ The correction factor is then calculated from ``d2x`` using
 
    {{\frac{\partial }{\partial i}}}(\frac{1}{\Delta x}) = -\frac{1}{\Delta x^2} {{\frac{\partial \Delta x}{\partial i}}}
 
+**Note**: There is a separate switch in the :ref:`Laplacian inversion code <sec-laplacian>`,
+which enables or disables non-uniform mesh corrections.
+   
 General operators
 -----------------
 
@@ -280,6 +284,173 @@ Setting differencing method
 ---------------------------
 
 
+Finite volume, conservative finite difference methods
+=====================================================
+
+These schemes aim to conserve the integral of the advected quantity
+over the domain. If :math:`f` is being advected, then
+
+.. math::
+
+   \sum_i \left(f J dx dy dz\right)_i = const
+
+is conserved, where the index :math:`i` refers to cell index. This
+is done by calculating fluxes between cells: Whatever leaves one
+cell is added to another. There are several caveats to this:
+
+* Boundary fluxes can still lead to changes in the total, unless
+  no-flow boundary conditions are used
+
+* When using an implicit time integration scheme, such as the default
+  PVODE / CVODE, the total is not guaranteed to be conserved, but
+  may vary depending on the solver tolerances.
+
+* There will always be a small rounding error, even with double
+  precision.
+
+The methods can be used by including the header:
+
+::
+
+   #include <bout/fv_ops.hxx>
+
+
+**Note** The methods are defined in a namespace ``FV``.
+   
+Some methods (those with templates) are defined in the header, but others
+are defined in ``src/mesh/fv_ops.cxx``.
+
+
+Parallel divergence ``Div_par``
+-------------------------------
+
+This function calculates the divergence of a flow in :math:`y` (parallel
+to the magnetic field) by a given velocity.
+
+::
+
+   template<typename CellEdges = MC>
+   const Field3D Div_par(const Field3D &f_in, const Field3D &v_in,
+                         const Field3D &a, bool fixflux=true);
+   
+
+where ``f_in`` is the quantity being advected (e.g. density), ``v_in``
+is the parallel advection velocity. The third input, ``a``, is the maximum
+wave speed, which multiplies the dissipation term in the method.
+
+::
+
+   ddt(n) = -FV::Div_par( n, v, cs );
+
+
+By default the ``MC`` slope limiter is used to calculate cell edges, but this can
+be changed at compile time e.g:
+
+::
+
+   ddt(n) = -FV::Div_par<FV::Fromm>( n, v, cs ); 
+
+A list of available limiters is given in section :ref:`sec-slope-limiters` below.
+
+
+Example and convergence test
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The example code ``examples/finite-volume/fluid/`` solves the Euler equations
+for a 1D adiabatic fluid, using ``FV::Div_par`` for the advection terms. 
+
+.. math::
+
+   \frac{\partial n}{\partial t} + \nabla_{||}\left(n v_{||}\right) = 0
+
+   \frac{\partial p}{\partial t} + \nabla_{||}\left(p v_{||}\right) = -(\gamma-1) p \nabla_{||}v_{||}
+
+   \frac{\partial}{\partial t}\left(nv_{||}\right) + \nabla_{||}\left(nv_{||}v_{||}\right) = -\partial_{||} p
+
+where :math:`n` is the density, :math:`p` is the pressure, and `nv_{||}` is the
+momentum in the direction parallel to the magnetic field.
+The operator :math:`\nabla_{||}` represents the divergence of a parallel flow (``Div_par``),
+and :math:`\partial_{||} = \mathbf{b}\cdot\nabla` is the gradient in the parallel direction.
+
+There is a convergence test using the Method of Manufactured Solutions (MMS) for this example.
+See section :ref:`sec-mms` for details of the testing method. Running the ``runtest``
+script should produce the graph
+
+.. figure:: ../figs/fluid_norm_mc.png
+   :name: fluid_norm_mc
+   :alt: Convergence test of the fluid example using ``FV::Div_par`` operator
+
+   Convergence test, showing :math:`l^2` (RMS) and :math:`l^{\infty}` (maximum) error for
+   the evolving fields `n` (density), `p` (pressure) and `nv` (momentum). All fields are
+   shown to converge at the expected second order accuracy.
+
+Algorithm
+~~~~~~~~~
+
+
+Parallel diffusion
+------------------
+
+The parallel diffusion operator calculates :math:`\nabla_{||}\left[k\partial_||\left(f\right)\right]`
+
+::
+
+   const Field3D Div_par_K_Grad_par(const Field3D &k, const Field3D &f,
+                                    bool bndry_flux=true);
+
+
+This is done by calculating the flux :math:`k\partial_||\left(f\right)` on cell boundaries
+using central differencing.
+
+
+Advection in 3D
+---------------
+
+This operator calculates :math:`\nabla\cdot\left( n \mathbf{v} \right)` where
+:math:`\mathbf{v}` is a 3D vector. It is written in flux form by discretising the expression
+
+.. math::
+   
+   \nabla\cdot\left( \mathbf{A} \right) = \frac{1}{J}\partial_i \left(J A^i\right)
+
+Like the ``Div_par`` operator, a slope limiter is used to calculate the value of
+the field :math:`n` on cell boundaries. By default this is the MC method, but
+this can be set as a template parameter.
+
+::
+   
+   template<typename CellEdges = MC>
+   const Field3D Div_f_v(const Field3D &n, const Vector3D &v, bool bndry_flux)
+
+
+
+
+.. _sec-slope-limiters
+
+Slope limiters
+--------------
+
+Here limiters are implemented as slope limiters: The value of a given
+quantity is calculated at the faces of a cell based on the cell-centre
+values. Several slope limiters are defined in ``fv_ops.hxx``:
+
+* ``Upwind`` - First order upwinding, in which the left and right edges
+  of the cell are the same as the centre (zero slope).
+
+* ``Fromm`` - A second-order scheme which is a fixed weighted average
+  of upwinding and central difference schemes.
+
+* ``MinMod`` - This second order scheme switches between the upwind and
+  downwind gradient, choosing the one with the smallest absolute value.
+  If the gradients have different signs, as at a maximum or minimum,
+  then the method reverts to first order upwinding (zero slope).
+
+* ``MC`` (Monotonised Central) is a second order scheme which switches
+  between central, upwind and downwind differencing in a similar way
+  to ``MinMod``. It has smaller dissipation than ``MinMod`` so is the
+  default.
+
+
 Operators on a single index
 ---------------------------
 
@@ -318,3 +489,4 @@ This is so that the function call does not have to contain logic
 to decide the method to use at runtime. The standard operators only have to decide
 which method to use once, then loop over the entire mesh, but these indexed functions
 would have to decide the method for every index.
+
