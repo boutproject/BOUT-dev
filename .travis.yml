@@ -19,6 +19,7 @@ matrix:
   - env: CONFIGURE_OPTIONS=''
   - env: CONFIGURE_OPTIONS='--enable-openmp' OMP_NUM_THREADS=2
   - env: CONFIGURE_OPTIONS='--enable-debug'
+  - env: CONFIGURE_OPTIONS='--enable-shared' MAIN_TARGET=shared
   - env: CONFIGURE_OPTIONS='--enable-checks=no --enable-optimize=3 --disable-signal --disable-track --disable-backtrace'
   - env: CONFIGURE_OPTIONS='' MPICH_CC=clang MPICH_CXX=clang++ OMPI_CC=clang OMPI_CXX=clang++
     compiler: clang
