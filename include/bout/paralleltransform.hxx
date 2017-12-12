@@ -37,6 +37,8 @@ public:
   /// Convert back from field-aligned coordinates
   /// into standard form
   virtual const Field3D fromFieldAligned(const Field3D &f) = 0;
+
+  virtual bool canToFromFieldAligned() = 0;
 };
 
 
@@ -67,6 +69,10 @@ public:
    */
   const Field3D fromFieldAligned(const Field3D &f) {
     return f;
+  }
+
+  bool canToFromFieldAligned() override{
+    return true;
   }
 };
 
@@ -103,6 +109,10 @@ public:
    * from field aligned coordinates.
    */
   const Field3D fromFieldAligned(const Field3D &f);
+
+  bool canToFromFieldAligned() override{
+    return true;
+  }
 
   /// A 3D array, implemented as nested vectors
   typedef std::vector<std::vector<std::vector<dcomplex>>> arr3Dvec;

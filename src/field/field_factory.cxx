@@ -219,13 +219,10 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt, Mesh *m,
 
   // Don't delete generator
   
-  // Transform from field aligned coordinates, to be compatible with
-  // older BOUT++ inputs. This is not a particularly "nice" solution.
-  try {
+  if (m->canToFromFieldAligned()){ // Ask wheter it is possible
+    // Transform from field aligned coordinates, to be compatible with
+    // older BOUT++ inputs. This is not a particularly "nice" solution.
     result = m->fromFieldAligned(result);
-  }catch(BoutException &e) {
-    // might fail if not possible to shift coordinates
-    // e.g. FCI
   }
 
   return result;
