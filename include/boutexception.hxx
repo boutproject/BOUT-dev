@@ -17,13 +17,20 @@ public:
   BoutException(const std::string);
   virtual ~BoutException();
   
-  const char* what() const noexcept;
+  const char* what();
   void Backtrace();
 protected:
   char *buffer = nullptr;
   static const int BUFFER_LEN = 1024; // Length of char buffer for printing
   int buflen; // Length of char buffer for printing
   string message;
+#ifdef BACKTRACE
+  static const unsigned int TRACE_MAX = 128;
+  void *trace[TRACE_MAX];
+  char **messages;
+  int trace_size;
+#endif
+  void BacktraceGenerate();
 };
 
 class BoutRhsFail : public BoutException {

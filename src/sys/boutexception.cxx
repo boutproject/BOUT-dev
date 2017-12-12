@@ -39,49 +39,55 @@ void BoutException::Backtrace() {
 #endif
   
 #ifdef BACKTRACE
-  void *trace[64];
-  char **messages = (char **)NULL;
-  int i, trace_size = 0;
 
-  trace_size = backtrace(trace, 64);
+  trace_size = backtrace(trace, TRACE_MAX);
   messages = backtrace_symbols(trace, trace_size);
 
-  // skip first stack frame (points here)
-  message += ("====== Exception path ======\n");
-  char buf[1024];
-  for (i = 1; i < trace_size; ++i) {
-    snprintf(buf, sizeof(buf) - 1, "[bt] #%d %s\n", i, messages[i]);
-    message += buf;
-    // find first occurence of '(' or ' ' in message[i] and assume
-    // everything before that is the file name. (Don't go beyond 0 though
-    // (string terminator)
-    int p = 0; // snprintf %.*s expects int
-    while (messages[i][p] != '(' && messages[i][p] != ' ' && messages[i][p] != 0) {
-      ++p;
-    }
-
-    char syscom[256];
-    // Pipe stderr to /dev/null to avoid cluttering output
-    // when addr2line fails or is not installed
-    snprintf(syscom, sizeof(syscom) - 1, "addr2line %p -Cfpie %.*s 2> /dev/null",
-             trace[i], p, messages[i]);
-    // last parameter is the file name of the symbol
-    FILE *fp = popen(syscom, "r");
-    if (fp != NULL) {
-      char out[1024];
-      char *retstr = fgets(out, sizeof(out) - 1, fp);
-      int status = pclose(fp);
-      if ((status == 0) && (retstr != NULL)) {
-        message += out;
-      }
-    } else {
-      message += syscom;
-    }
-  }
 #else // BACKTRACE
   message += "Stacktrace not enabled.\n";
 #endif
 }
+
+void BoutException::BacktraceGenerate(){
+#ifdef BACKTRACE
+  if (trace_size > 0){
+    // skip first stack frame (points here)
+    message += ("====== Exception path ======\n");
+    char buf[1024];
+    for (int i = 1; i < trace_size; ++i) {
+      snprintf(buf, sizeof(buf) - 1, "[bt] #%d %s\n", i, messages[i]);
+      message += buf;
+      // find first occurence of '(' or ' ' in message[i] and assume
+      // everything before that is the file name. (Don't go beyond 0 though
+      // (string terminator)
+      int p = 0; // snprintf %.*s expects int
+      while (messages[i][p] != '(' && messages[i][p] != ' ' && messages[i][p] != 0) {
+        ++p;
+      }
+
+      char syscom[256];
+      // Pipe stderr to /dev/null to avoid cluttering output
+      // when addr2line fails or is not installed
+      snprintf(syscom, sizeof(syscom) - 1, "addr2line %p -Cfpie %.*s 2> /dev/null",
+               trace[i], p, messages[i]);
+      // last parameter is the file name of the symbol
+      FILE *fp = popen(syscom, "r");
+      if (fp != NULL) {
+        char out[1024];
+        char *retstr = fgets(out, sizeof(out) - 1, fp);
+        int status = pclose(fp);
+        if ((status == 0) && (retstr != NULL)) {
+          message += out;
+        }
+      } else {
+        message += syscom;
+      }
+    }
+    trace_size*= -1;
+  }
+#endif
+}
+
 
 #define INIT_EXCEPTION(s)                                                                \
   {                                                                                      \
@@ -118,7 +124,10 @@ BoutException::BoutException(const std::string msg) {
   this->Backtrace();
 }
 
-const char *BoutException::what() const noexcept { return message.c_str(); }
+const char *BoutException::what() {
+  BacktraceGenerate();
+  return message.c_str();
+}
 
 BoutRhsFail::BoutRhsFail(const char *s, ...) : BoutException::BoutException(NULL) {
   INIT_EXCEPTION(s);
