@@ -1,5 +1,13 @@
 #!/bin/python3
 
+ #!##################################################################
+ #
+ #       2D blob simulations
+ #
+ #  Copyright:   NR Walkden, B Dudson, D Schwörer;  2012, , 2017
+ #
+ ###################################################################
+
 import boutcore as bc
 from numpy import sqrt
 from boutcore import bracket,DDZ,Delp2
