@@ -29,7 +29,7 @@ shared: libfast
 ######################################################################
 
 check-unit-tests:
-	@$(MAKE) --no-print-directory -C tests/unit check
+	@export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH}; $(MAKE) --no-print-directory -C tests/unit check
 
 check-mms-tests:
 	@cd tests/MMS; export LD_LIBRARY_PATH=${PWD}/../../lib:${LD_LIBRARY_PATH} ; ./test_suite
