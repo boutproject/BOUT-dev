@@ -206,8 +206,19 @@ class RectangularPoloidalGrid(PoloidalGrid):
         
         # Check that they have the same shape
         assert R.shape == Z.shape
+
+        xind = (R - self.Rmin)/self.dR
+        zind = (Z - self.Zmin)/self.dZ
+
+        # Check if out of domain
+
+        out = np.logical_or( np.logical_or( R < self.Rmin, R > self.Rmin+self.Lx),
+                             np.logical_or( Z < self.Zmin, Z > self.Zmin+self.Lz))
+
+        xind[out] = -1
+        zind[out] = -1
         
-        return (R - self.Rmin)/self.dR, (Z - self.Zmin)/self.dZ
+        return xind, zind
 
     def metric(self):
         """

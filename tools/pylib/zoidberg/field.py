@@ -8,6 +8,8 @@ except:
 import numpy as np
 # from . import grid
 
+from . import boundary
+
 class MagneticField(object):
     """
     Represents a magnetic field in either Cartesian or cylindrical geometry
@@ -18,7 +20,11 @@ class MagneticField(object):
     Bzfunc = Function for magnetic field in z
     Byfunc = Function for magnetic field in y (default = 1.)
     Rfunc = Function for major radius. If None, y is in meters
+
+    boundary = An object with an "outside" function. See boundary.py
     """
+    
+    boundary = boundary.NoBoundary() # An optional Boundary object
     
     def Bxfunc(self, x,z,phi):
         """
@@ -45,6 +51,12 @@ class MagneticField(object):
         Returns None if in Cartesian coordinates
         """
         return None
+
+    def pressure(self, x,z,phi):
+        """
+        Pressure [Pascals]
+        
+        """
     
     def Bmag(self, x,z,phi):
         """
@@ -617,6 +629,13 @@ class GEQDSK(MagneticField):
         psinorm = np.linspace(0.0, 1.0, nr)
         self.f_spl = interpolate.InterpolatedUnivariateSpline(psinorm, self.fpol, ext=3)
         # ext=3 specifies that boundary values are used outside range
+
+        # Set boundary
+        rlim = g.get('rlim')
+        zlim = g.get('zlim')
+        if len(rlim) > 0:
+            # Create a boundary in X-Z with a polygon representation
+            self.boundary = boundary.PolygonBoundaryXZ(rlim,zlim)
         
     def Bxfunc(self, x, z, phi):
         """

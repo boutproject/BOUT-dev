@@ -98,7 +98,14 @@ def make_maps(grid, magnetic_field, quiet=False, **kwargs):
             zind = -1
         else:
             # Find the indices for these new locations on the forward poloidal grid
-            xind, zind = pol_forward.findIndex(coord[:,:,0], coord[:,:,1])
+            xcoord = coord[:,:,0]
+            zcoord = coord[:,:,1]
+            xind, zind = pol_forward.findIndex(xcoord, zcoord)
+
+            # Check boundary defined by the field
+            outside = magnetic_field.boundary.outside(xcoord, y_forward, zcoord)
+            xind[outside] = -1
+            zind[outside] = -1
             
         forward_xt_prime[:,j,:] = xind
         forward_zt_prime[:,j,:] = zind
@@ -119,7 +126,14 @@ def make_maps(grid, magnetic_field, quiet=False, **kwargs):
             zind = -1
         else:
             # Find the indices for these new locations on the backward poloidal grid
-            xind, zind = pol_back.findIndex(coord[:,:,0], coord[:,:,1])
+            xcoord = coord[:,:,0]
+            zcoord = coord[:,:,1]
+            xind, zind = pol_back.findIndex(xcoord, zcoord)
+            
+            # Check boundary defined by the field
+            outside = magnetic_field.boundary.outside(xcoord, y_back, zcoord)
+            xind[outside] = -1
+            zind[outside] = -1
         
         backward_xt_prime[:,j,:] = xind
         backward_zt_prime[:,j,:] = zind
