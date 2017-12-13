@@ -27,3 +27,15 @@ check-integrated-tests:
 
 
 check: check-unit-tests check-integrated-tests check-mms-tests
+
+build-check-unit-tests:
+	@$(MAKE) --no-print-directory -C tests/unit
+
+build-check-mms-tests:
+	$(MAKE) --no-print-directory -C tests/MMS
+
+build-check-integrated-tests:
+	$(MAKE) --no-print-directory -C tests/integrated
+
+
+build-check: build-check-integrated-tests build-check-mms-tests build-check-unit-tests
