@@ -315,7 +315,7 @@ def trace_poincare(magnetic_field, xpos, zpos, yperiod, nplot=3, y_slices=None, 
         
     nover = int(nover) # Over-sample
     y_values_over = np.zeros( ( nplot * revs * nover - (nover-1)) )
-    y_values_over[::nover] = y_valus
+    y_values_over[::nover] = y_values
     for i in range(1,nover):
         y_values_over[i::nover] = (float(i)/float(nover))*y_values[1:] + (float(nover-i)/float(nover))*y_values[:-1]
         
