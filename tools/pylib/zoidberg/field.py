@@ -8,7 +8,10 @@ except:
 import numpy as np
 # from . import grid
 
-from . import boundary
+try:
+    from . import boundary
+except ImportError:
+    import boundary
 
 class MagneticField(object):
     """
