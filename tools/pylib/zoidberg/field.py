@@ -57,6 +57,7 @@ class MagneticField(object):
         Pressure [Pascals]
         
         """
+        return 0.0
     
     def Bmag(self, x,z,phi):
         """
@@ -617,6 +618,9 @@ class GEQDSK(MagneticField):
         
         # Current flux function f = R * Bt
         self.fpol = g.get('fpol')
+
+        # Pressure [Pascals]
+        self.p = g.get('pres')
         
         self.r = np.linspace(self.rmin, self.rmax, nr)
         self.z = np.linspace(self.zmin, self.zmax, nz)
@@ -624,12 +628,34 @@ class GEQDSK(MagneticField):
         # Create a 2D spline interpolation for psi
         from scipy import interpolate
         self.psi_func = interpolate.RectBivariateSpline(self.r, self.z, self.psi)
+
+        # Create a normalised psi array
+        
+        self.psinorm = (self.psi - self.psi_axis) / (self.psi_bndry - self.psi_axis)
+
+        # Need to mark areas outside the core as psinorm = 1
+        # eg. around coils or in the private flux region
+        # Create a boundary 
+
+        rb = g.get('rbbbs')
+        zb = g.get('zbbbs')
+        core_bndry = boundary.PolygonBoundaryXZ(rb, zb)
+
+        # Get the points outside the boundary
+        rxz, zxz = np.meshgrid(self.r, self.z, indexing='ij')
+        outside = core_bndry.outside(rxz, 0.0, zxz)
+        self.psinorm[outside] = 1.0
+        
+        self.psinorm_func = interpolate.RectBivariateSpline(self.r, self.z, self.psinorm)
         
         # Spline for interpolation of f = R*Bt
         psinorm = np.linspace(0.0, 1.0, nr)
         self.f_spl = interpolate.InterpolatedUnivariateSpline(psinorm, self.fpol, ext=3)
         # ext=3 specifies that boundary values are used outside range
 
+        # Spline for interpolation of pressure
+        self.p_spl = interpolate.InterpolatedUnivariateSpline(psinorm, self.p, ext=3)
+        
         # Set boundary
         rlim = g.get('rlim')
         zlim = g.get('zlim')
@@ -657,24 +683,31 @@ class GEQDSK(MagneticField):
         Toroidal magnetic field
         """
 
-        # Interpolate to get flux surface psi
-        psi = self.psi_func(x,z, grid=False)
-        # Normalise
-        psinorm = (psi - self.psi_axis)/(self.psi_bndry - self.psi_axis)
-
-        # NOTE: If in the Private Flux region psinorm < 1
-        # - should handle this case by detecting when inside the LCFS
-        # or perhaps using a different 2D array for psinorm
+        # Interpolate to get flux surface normalised psi
+        psinorm = self.psinorm_func(x,z, grid=False)
         
-        # interpolate fpol array
+        # Interpolate fpol array at values of normalised psi
         if hasattr(psinorm, "shape"):
             return np.reshape(self.f_spl(np.ravel(psinorm)),psinorm.shape)
         
-        return f_spl(psinorm)
+        return f_spl(psinorm) / x  # f = R*Bt
 
     def Rfunc(self, x, z, phi):
         """
         Major radius
         """
         return x
+    
+    def pressure(self, x,z,phi):
+        """
+        Pressure in Pascals
+        """
+        
+        # Interpolate to get flux surface normalised psi
+        psinorm = self.psinorm_func(x,z, grid=False)
+        
+        if hasattr(psinorm, "shape"):
+            return np.reshape(self.p_spl(np.ravel(psinorm)),psinorm.shape)
+        
+        return f_spl(psinorm)
     

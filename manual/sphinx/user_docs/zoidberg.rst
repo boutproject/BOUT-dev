@@ -77,7 +77,7 @@ so that it knows where to put boundaries (if not periodic), or where to wrap the
 difference methods (like FCI) work best if grid point spacing varies smoothly.
 
 A more realistic example is creating a grid for a MAST tokamak equilibrium from a G-Eqdsk
-input file:
+input file (this is in ``examples/zoidberg/tokamak.py``):
 
 .. code:: python
    
@@ -100,17 +100,7 @@ input file:
    zoidberg.write_maps(grid, field, maps, gridfile="grid.fci.nc")
 
    # Plot grid points and the points they map to in the forward direction
-   yslice = 0
-   pol, ycoord = grid.getPoloidalGrid(yslice)
-   pol_next, ycoord_next = grid.getPoloidalGrid(yslice+1)
-
-   # Get forward maps and get their location on yslice = 1
-   R_next, Z_next = pol_next.getCoordinate( maps['forward_xt_prime'][:,yslice,:],
-                                            maps['forward_zt_prime'][:,yslice,:] )
-   
-   import matplotlib.pyplot as plt
-   plt.plot(pol.R, pol.Z, 'x')  # Plot points on y slice 0
-   plt.plot(R_next, Z_next, 'o') # Forward maps onto y slice 1
+   zoidberg.plot.plot_forward_map(grid, maps)
    
    
 In the last example only one poloidal grid was created (a ``RectangularPoloidalGrid``)
