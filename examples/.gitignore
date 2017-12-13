@@ -1,9 +1,16 @@
 *.dmp.*
 *.log.*
 *.restart.*
+
+*.pdf
+
 BOUT.settings
 gas_compress
 mhd
 ue_bmark
 lapd_drift
 jorek_compare
+wave
+cyto
+test
+test_[^.]*
