@@ -58,6 +58,8 @@ EXTRA_LIBS		= @EXTRA_LIBS@ @OPENMP_CXXFLAGS@
 
 PRECON_SOURCE	= @PRECON_SOURCE@
 
+BOUT_VERSION  = @PACKAGE_VERSION@
+
 ####################################################################
 # These are used for compiling physics modules using BOUT++ library
 ####################################################################
