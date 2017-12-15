@@ -9,7 +9,10 @@
 # export MPIRUN="aprun -n"
 
 from __future__ import print_function
-
+import os
+import sys
+import time
+from boututils.run_wrapper import shell
 
 # Get list of directories containing test cases
 tests=[]
@@ -25,11 +28,6 @@ with open('test_suite_list') as testfile:
 
 ##################################################################
 
-import os
-import sys
-import time
-from boututils.run_wrapper import shell
-
 savepath = os.getcwd() # Save current working directory
 npassed = 0
 nfailed = 0
@@ -38,11 +36,13 @@ failed = []
 
 start_time = time.time()
 
-print("======= Starting integrated tests ========")
+print("======= Starting {0} tests ========".format(savepath.split("/")[-1]))
 print("Running {0} tests".format(total))
+
 for t in tests:
     os.chdir(t)
 
+    start_time_ = time.time()
     # Run test, piping stdout so it is not sent to console
     status,out = shell("./runtest", pipe=True)
 
@@ -54,6 +54,8 @@ for t in tests:
         # Passed
         print(".", end='') # No newline
         npassed = npassed + 1
+
+    print(" %7.3f s - %s"%(time.time() - start_time_,t))
     sys.stdout.flush() # Make sure '.' or 'F' is flushed
     os.chdir(savepath)
 
@@ -66,11 +68,10 @@ if nfailed > 0:
     for test, output in failed:
         # Note: need Unicode string in case output contains unicode
         print(u"\n----- {0} -----\n{1}".format(test, output))
-        
+
     print("======= {0} failed in {1:.2f} seconds ========".format(nfailed, elapsed_time))
-    
+
     sys.exit(1)
-    
+
 else:
     print("======= All tests passed in {0:.2f} seconds =======".format(elapsed_time))
-
