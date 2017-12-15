@@ -691,7 +691,7 @@ class GEQDSK(MagneticField):
         
         # Interpolate fpol array at values of normalised psi
         if hasattr(psinorm, "shape"):
-            return np.reshape(self.f_spl(np.ravel(psinorm)),psinorm.shape)
+            return np.reshape(self.f_spl(np.ravel(psinorm)),psinorm.shape) / x
         
         return f_spl(psinorm) / x  # f = R*Bt
 
