@@ -38,6 +38,7 @@ class Field3D; //#include "field3d.hxx"
 #include "stencils.hxx"
 
 #include "bout/dataiterator.hxx"
+#include "bout/singledataiterator.hxx"
 
 #include "bout/deprecated.hxx"
 
@@ -213,7 +214,13 @@ class Field2D : public Field, public FieldData {
   const BoutReal& operator()(int jx, int jy, int UNUSED(jz)) const {
     return operator()(jx, jy);
   }
-  
+
+  BoutReal &operator()(const SIndices &i) { return data[i.i2d()]; }
+  const BoutReal &operator()(const SIndices &i) const { return data[i.i2d()]; }
+
+  BoutReal &operator[](const SIndices &i) { return operator()(i); }
+  const BoutReal &operator[](const SIndices &i) const { return operator()(i); }
+
   Field2D & operator+=(const Field2D &rhs); ///< In-place addition. Copy-on-write used if data is shared
   Field2D & operator+=(BoutReal rhs);       ///< In-place addition. Copy-on-write used if data is shared
   Field2D & operator-=(const Field2D &rhs); ///< In-place subtraction. Copy-on-write used if data is shared
@@ -261,7 +268,7 @@ class Field2D : public Field, public FieldData {
   void setBoundaryTo(const Field2D &f2d); ///< Copy the boundary region
   
  private:
-  int nx, ny;      ///< Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
+  int nx, ny, nz;      ///< Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
   
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;

@@ -294,6 +294,30 @@ const IndexRange Field3D::region(REGION rgn) const {
   };
 }
 
+const SIndexRange Field3D::sdi_region(REGION rgn) const {
+  switch (rgn) {
+  case RGN_ALL: {
+    return SIndexRange(nx, ny, nz, fieldmesh->getRegion("RGN_ALL"));
+    break;
+  }
+  case RGN_NOBNDRY: {
+    return SIndexRange(nx, ny, nz, fieldmesh->getRegion("RGN_NOBNDRY"));
+    break;
+  }
+  case RGN_NOX: {
+    return SIndexRange(nx, ny, nz, fieldmesh->getRegion("RGN_NOX"));
+    break;
+  }
+  case RGN_NOY: {
+    return SIndexRange(nx, ny, nz, fieldmesh->getRegion("RGN_NOY"));
+    break;
+  }
+  default: {
+    throw BoutException("Field3D::region() : Requested region not implemented");
+  }
+  };
+}
+
 /////////////////// ASSIGNMENT ////////////////////
 
 Field3D & Field3D::operator=(const Field3D &rhs) {
@@ -831,8 +855,13 @@ F3D_OP_FPERP(*);
   Field3D operator op(const Field3D &lhs, const ftype &rhs) { \
     Field3D result;                                                 \
     result.allocate();                                              \
-    for(const auto& i : lhs)                                               \
-      result[i] = lhs[i] op rhs[i];                                 \
+    _Pragma("omp parallel")                                         \
+    {                                                               \
+      auto end = result.sdi_region(RGN_ALL).end();                        \
+      for(auto i = result.sdi_region(RGN_ALL).begin(); i != end; ++i){ \
+      result(*i) = lhs(*i) op rhs(*i);                                 \
+    }                                                               \
+    }                                                               \
     result.setLocation( lhs.getLocation() );                        \
     return result;                                                  \
   }
@@ -851,8 +880,13 @@ F3D_OP_FIELD(/, Field2D);   // Field3D / Field2D
   Field3D operator op(const Field3D &lhs, BoutReal rhs) { \
     Field3D result;                                             \
     result.allocate();                                          \
-    for(const auto& i : lhs)                                           \
-      result[i] = lhs[i] op rhs;                                \
+    _Pragma("omp parallel")                                     \
+    {                                                           \
+      auto end = result.sdi_region(RGN_ALL).end();                        \
+      for(auto i = result.sdi_region(RGN_ALL).begin(); i != end; ++i){ \
+        result(*i) = lhs(*i) op rhs;                              \
+      }                                                         \
+    }                                                           \
     result.setLocation( lhs.getLocation() );                    \
     return result;                                              \
   }

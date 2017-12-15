@@ -716,6 +716,36 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
     
     break;
   }
+  case BRACKET_ARAKAWA_SDI: {
+    // Arakawa scheme for perpendicular flow, implemented using SingleDataIterator to
+    // allow OpenMP parallelization
+
+    result.allocate();
+    const BoutReal partialFactor = 1.0 / (12 * metric->dz);
+
+#pragma omp parallel
+    {
+      auto end = result.sdi_region(RGN_NOBNDRY).end();
+      for (auto i = result.sdi_region(RGN_NOBNDRY).begin(); i != end; ++i) {
+        BoutReal Jpp = ((f(i->zp()) - f(i->zm())) * (g(i->xp()) - g(i->xm())));
+        // - (f(i.xp()) - f(i.xm()))*(g(i.zp()) - g(i.zm())) ) ; // this line is zero
+        // J+x
+        BoutReal Jpx = (g(i->xp()) * (f(i->xpzp()) - f(i->xpzm())) -
+                        g(i->xm()) * (f(i->xmzp()) - f(i->xmzm())) -
+                        g(i->zp()) * (f(i->xpzp()) - f(i->xmzp())) +
+                        g(i->zm()) * (f(i->xpzm()) - f(i->xmzm())));
+
+        // Jx+
+        BoutReal Jxp = (g(i->xpzp()) * (f(i->zp()) - f(i->xp())) -
+                        g(i->xmzm()) * (f(i->xm()) - f(i->zm())) -
+                        g(i->xmzp()) * (f(i->zp()) - f(i->xm())) +
+                        g(i->xpzm()) * (f(i->xp()) - f(i->zm())));
+
+        result(*i) = partialFactor * (Jpp + Jpx + Jxp) / metric->dx(*i);
+      }
+    }
+    break;
+  }
   case BRACKET_SIMPLE: {
     // Use a subset of terms for comparison to BOUT-06
     result = VDDX(DDZ(f), g);
@@ -917,6 +947,37 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
 			  
           result(jx, jy, jz) = (Jpp + Jpx + Jxp) * spacingFactor;
         }
+      }
+    }
+    break;
+  }
+  case BRACKET_ARAKAWA_SDI: {
+    // Arakawa scheme for perpendicular flow, implemented using SingleDataIterator to
+    // allow OpenMP parallelization
+
+    result.allocate();
+    const BoutReal partialFactor = 1.0 / (12.0 * metric->dz);
+
+#pragma omp parallel
+    {
+      auto end = result.sdi_region(RGN_NOBNDRY).end();
+      for (auto i = result.sdi_region(RGN_NOBNDRY).begin(); i != end; ++i) {
+        // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
+        BoutReal Jpp = ((f(i->zp()) - f(i->zm())) * (g(i->xp()) - g(i->xm())) -
+                        (f(i->xp()) - f(i->xm())) * (g(i->zp()) - g(i->zm())));
+        // J+x
+        BoutReal Jpx = (g(i->xp()) * (f(i->xpzp()) - f(i->xpzm())) -
+                        g(i->xm()) * (f(i->xmzp()) - f(i->xmzm())) -
+                        g(i->zp()) * (f(i->xpzp()) - f(i->xmzp())) +
+                        g(i->zm()) * (f(i->xpzm()) - f(i->xmzm())));
+
+        // Jx+
+        BoutReal Jxp = (g(i->xpzp()) * (f(i->zp()) - f(i->xp())) -
+                        g(i->xmzm()) * (f(i->xm()) - f(i->zm())) -
+                        g(i->xmzp()) * (f(i->zp()) - f(i->xm())) +
+                        g(i->xpzm()) * (f(i->xp()) - f(i->zm())));
+
+        result(*i) = partialFactor * (Jpp + Jpx + Jxp) / metric->dx(*i);
       }
     }
     break;

@@ -34,6 +34,7 @@ class Mesh;  // #include "bout/mesh.hxx"
 #include "bout_types.hxx"
 
 #include "bout/dataiterator.hxx"
+#include "bout/singledataiterator.hxx"
 
 #include "bout/array.hxx"
 
@@ -291,25 +292,31 @@ class Field3D : public Field, public FieldData {
    */
   const DataIterator begin() const;
   const DataIterator end() const;
-  
+  BoutReal &operator()(const SIndices &i) { return data[i.i]; }
+  const BoutReal &operator()(const SIndices &i) const { return data[i.i]; }
+
+  BoutReal &operator[](const SIndices &i) { return operator()(i); }
+  const BoutReal &operator[](const SIndices &i) const { return operator()(i); }
+
   /*!
    * Returns a range of indices which can be iterated over
    * Uses the REGION flags in bout_types.hxx
-   * 
+   *
    * Example
    * -------
-   * 
+   *
    * This loops over the interior points, not the boundary
    * and inside the loop the index is used to calculate the difference
    * between the point one index up in x (i.xp()) and one index down
    * in x (i.xm()), putting the result into a different field 'g'
-   * 
+   *
    * for(auto i : f.region(RGN_NOBNDRY)) {
    *   g[i] = f[i.xp()] - f[i.xm()];
    * }
-   * 
+   *
    */
   const IndexRange region(REGION rgn) const;
+  const SIndexRange sdi_region(REGION rgn) const;
 
   /*!
    * Direct data access using DataIterator object.
