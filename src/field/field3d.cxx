@@ -882,10 +882,7 @@ REAL_OP_F3D(/); // BoutReal / Field3D
 Field3D pow(const Field3D &lhs, const Field3D &rhs) {
   TRACE("pow(Field3D, Field3D)");
 
-  if(mesh->StaggerGrids && (lhs.getLocation() != rhs.getLocation())) {
-    // Interpolate and call again
-    return pow(lhs, interp_to(rhs, lhs.getLocation()));
-  }
+  ASSERT1(lhs.getLocation() == rhs.getLocation());
 
   ASSERT1(lhs.getMesh() == rhs.getMesh());
   Field3D result(lhs.getMesh());
