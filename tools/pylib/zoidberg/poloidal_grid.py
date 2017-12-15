@@ -210,13 +210,9 @@ class RectangularPoloidalGrid(PoloidalGrid):
         xind = (R - self.Rmin)/self.dR
         zind = (Z - self.Zmin)/self.dZ
 
-        # Check if out of domain
-
-        out = np.logical_or( np.logical_or( R < self.Rmin, R > self.Rmin+self.Lx),
-                             np.logical_or( Z < self.Zmin, Z > self.Zmin+self.Lz))
-
-        xind[out] = -1
-        zind[out] = -1
+        # Note: These indices may be outside the domain,
+        # but this is handled in BOUT++, and useful for periodic
+        # domains.
         
         return xind, zind
 
