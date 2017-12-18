@@ -101,7 +101,7 @@ Field3D::Field3D(const Field3D &f)
 }
 
 Field3D::Field3D(const Field2D &f)
-    : background(nullptr), Field(f.getMesh()), deriv(nullptr), yup_field(nullptr),
+    : Field(f.getMesh()), background(nullptr), deriv(nullptr), yup_field(nullptr),
       ydown_field(nullptr) {
 
   TRACE("Field3D: Copy constructor from Field2D");
@@ -119,7 +119,7 @@ Field3D::Field3D(const Field2D &f)
 }
 
 Field3D::Field3D(const BoutReal val, Mesh *localmesh)
-    : background(nullptr), Field(localmesh), deriv(nullptr), yup_field(nullptr),
+    : Field(localmesh), background(nullptr), deriv(nullptr), yup_field(nullptr),
       ydown_field(nullptr) {
 
   TRACE("Field3D: Copy constructor from value");
