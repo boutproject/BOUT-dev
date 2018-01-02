@@ -242,18 +242,19 @@ def non_compound_low_level_function_generator(operator, operator_name, out,
                                               operator=operator,
                                               rhs=rhs.get(data=elementwise))
 
-    stuff = {'out_type': out.fieldname,
-             'lhs_type': lhs.fieldname,
-             'rhs_type': rhs.fieldname,
-             'operator_name': operator_name,
-             'result_arg': out.getPass(const=False, data=True),
-             'lhs_arg': lhs.getPass(const=True, data=True),
-             'rhs_arg': rhs.getPass(const=True, data=True),
-             'length_arg': length_arg,
-             'for_loop': for_loop,
-             }
+    template_args = {
+        'out_type': out.fieldname,
+        'lhs_type': lhs.fieldname,
+        'rhs_type': rhs.fieldname,
+        'operator_name': operator_name,
+        'result_arg': out.getPass(const=False, data=True),
+        'lhs_arg': lhs.getPass(const=True, data=True),
+        'rhs_arg': rhs.getPass(const=True, data=True),
+        'length_arg': length_arg,
+        'for_loop': for_loop,
+    }
 
-    print(low_level_function_template.format(**stuff))
+    print(low_level_function_template.format(**template_args))
 
 
 def non_compound_high_level_function_generator(operator, operator_name, out,
@@ -307,25 +308,26 @@ def non_compound_high_level_function_generator(operator, operator_name, out,
 
     lhs_or_rhs = "lhs" if lhs != 'real' else "rhs"
 
-    stuff = {'out_type': out.fieldname,
-             'lhs_type': lhs.fieldname,
-             'rhs_type': rhs.fieldname,
-             'operator': operator,
-             'operator_name': operator_name,
-             'out_low_level_arg': out.get(data=False, ptr=True),
-             'lhs_low_level_arg': lhs.get(data=False, ptr=True),
-             'rhs_low_level_arg': rhs.get(data=False, ptr=True),
-             'length_arg': length_arg,
-             'lhs_arg': lhs.getPass(const=True),
-             'rhs_arg': rhs.getPass(const=True),
-             'length_arg': length_arg,
-             'lhs_or_rhs': lhs_or_rhs,
-             'location_check': location_check,
-             'location_set': location_set,
-             'mesh_equality_assert': mesh_equality_assert,
-             }
+    template_args = {
+        'out_type': out.fieldname,
+        'lhs_type': lhs.fieldname,
+        'rhs_type': rhs.fieldname,
+        'operator': operator,
+        'operator_name': operator_name,
+        'out_low_level_arg': out.get(data=False, ptr=True),
+        'lhs_low_level_arg': lhs.get(data=False, ptr=True),
+        'rhs_low_level_arg': rhs.get(data=False, ptr=True),
+        'length_arg': length_arg,
+        'lhs_arg': lhs.getPass(const=True),
+        'rhs_arg': rhs.getPass(const=True),
+        'length_arg': length_arg,
+        'lhs_or_rhs': lhs_or_rhs,
+        'location_check': location_check,
+        'location_set': location_set,
+        'mesh_equality_assert': mesh_equality_assert,
+    }
 
-    print(non_compound_high_level_template.format(**stuff))
+    print(non_compound_high_level_template.format(**template_args))
 
 
 def compound_low_level_function_generator(operator, operator_name, lhs, rhs, elementwise):
@@ -362,17 +364,18 @@ def compound_low_level_function_generator(operator, operator_name, lhs, rhs, ele
                                                     operator=operator,
                                                     rhs=rhs.get(data=elementwise))
 
-    stuff = {'out_type': out.fieldname,
-             'lhs_type': lhs.fieldname,
-             'rhs_type': rhs.fieldname,
-             'operator_name': operator_name,
-             'lhs_arg': lhs.getPass(const=False, data=True),
-             'rhs_arg': rhs.getPass(const=True, data=True),
-             'length_arg': length_arg,
-             'for_loop': for_loop,
-             }
+    template_args = {
+        'out_type': out.fieldname,
+        'lhs_type': lhs.fieldname,
+        'rhs_type': rhs.fieldname,
+        'operator_name': operator_name,
+        'lhs_arg': lhs.getPass(const=False, data=True),
+        'rhs_arg': rhs.getPass(const=True, data=True),
+        'length_arg': length_arg,
+        'for_loop': for_loop,
+    }
 
-    print(low_level_compound_template.format(**stuff))
+    print(low_level_compound_template.format(**template_args))
 
 
 def compound_high_level_function_generator(operator, operator_name, lhs, rhs, elementwise):
@@ -415,25 +418,26 @@ def compound_high_level_function_generator(operator, operator_name, lhs, rhs, el
 
     lhs_or_rhs = "lhs" if lhs != 'real' else "rhs"
 
-    stuff = {'out_type': out.fieldname,
-             'lhs_type': lhs.fieldname,
-             'rhs_type': rhs.fieldname,
-             'operator': operator,
-             'operator_name': operator_name,
-             'out_low_level_arg': out.get(data=False, ptr=True),
-             'lhs_low_level_arg': lhs.get(data=False, ptr=True),
-             'rhs_low_level_arg': rhs.get(data=False, ptr=True),
-             'length_arg': length_arg,
-             'lhs_arg': lhs.getPass(const=True),
-             'rhs_arg': rhs.getPass(const=True),
-             'length_arg': length_arg,
-             'lhs_or_rhs': lhs_or_rhs,
-             'location_check': location_check,
-             'optional_checkData': optional_checkData,
-             'mesh_equality_assert': mesh_equality_assert,
-             }
+    template_args = {
+        'out_type': out.fieldname,
+        'lhs_type': lhs.fieldname,
+        'rhs_type': rhs.fieldname,
+        'operator': operator,
+        'operator_name': operator_name,
+        'out_low_level_arg': out.get(data=False, ptr=True),
+        'lhs_low_level_arg': lhs.get(data=False, ptr=True),
+        'rhs_low_level_arg': rhs.get(data=False, ptr=True),
+        'length_arg': length_arg,
+        'lhs_arg': lhs.getPass(const=True),
+        'rhs_arg': rhs.getPass(const=True),
+        'length_arg': length_arg,
+        'lhs_or_rhs': lhs_or_rhs,
+        'location_check': location_check,
+        'optional_checkData': optional_checkData,
+        'mesh_equality_assert': mesh_equality_assert,
+    }
 
-    print(compound_high_level_template.format(**stuff))
+    print(compound_high_level_template.format(**template_args))
 
 
 if __name__ == "__main__":
