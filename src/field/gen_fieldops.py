@@ -105,17 +105,6 @@ compound_high_level_template = """
 """
 
 
-class braces(object):
-    def __init__(self, string=""):
-        print("%s{" % string)
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        print("}")
-
-
 class Field(object):
     """A class to keep all the data of the different fields
     """
@@ -187,11 +176,6 @@ class Field(object):
         else:
             return ret + "%s[i]" % self.name
 
-    def dims(self):
-        """Return the dimensions
-        """
-        return self.dimensions
-
     def __eq__(self, other):
         try:
             return self.i == other.i
@@ -203,9 +187,6 @@ class Field(object):
 
     def __str__(self):
         return "Name: %s\nfieldname: %s\n" % (self.name, self.fieldname)
-
-    def setName(self, name):
-        self.name = name
 
 
 # Declare what fields we currently support:
@@ -230,16 +211,6 @@ def returnType(f1, f2):
         return copy(f3d)
 
 
-def mymin(f1, f2):
-    """Return which of f1, f2 has the least number of dimensions
-
-    """
-    if (len(f1.dimensions) < len(f2.dimensions)):
-        return f1
-    else:
-        return f2
-
-
 def non_compound_low_level_function_generator(operator, operator_name, out,
                                               lhs, rhs, elementwise):
     """Generate the function that operates on the underlying data
@@ -256,8 +227,8 @@ def non_compound_low_level_function_generator(operator, operator_name, out,
     # Depending on how we loop over the fields, we need to know
     # x, y and z, or just the total number of elements
     if elementwise:
-        length_arg = ",".join(["int n{}".format(d) for d in out.dims()])
-        dims = {"n" + x: x for x in out.dims()}
+        length_arg = ",".join(["int n{}".format(d) for d in out.dimensions])
+        dims = {"n" + x: x for x in out.dimensions}
     else:
         length_arg = " int len"
         dims = {"len": 'i'}
@@ -377,8 +348,8 @@ def compound_low_level_function_generator(operator, operator_name, lhs, rhs, ele
     # Depending on how we loop over the fields, we need to know
     # x, y and z, or just the total number of elements
     if elementwise:
-        length_arg = ",".join(["int n{}".format(d) for d in out.dims()])
-        dims = {"n" + x: x for x in out.dims()}
+        length_arg = ",".join(["int n{}".format(d) for d in out.dimensions])
+        dims = {"n" + x: x for x in out.dimensions}
     else:
         length_arg = " int len"
         dims = {"len": 'i'}
@@ -484,7 +455,7 @@ if __name__ == "__main__":
         # don't need to care what element is stored where, but can
         # just loop directly over everything, using a simple c-style
         # for loop. Otherwise we need x,y,z of the fields.
-        elementwise = lhs != rhs and mymin(lhs, rhs).i != 'real'
+        elementwise = lhs != rhs and lhs != 'real' and rhs != 'real'
 
         # The output of the operation. The `larger` of the two fields.
         out = returnType(rhs, lhs)
