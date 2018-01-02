@@ -60,16 +60,49 @@ non_compound_high_level_template = """
 }}
 """
 
-location_check_template = """
-#if CHECK > 0
+location_check_template = """#if CHECK > 0
   if (lhs.getLocation() != rhs.getLocation()) {{
     throw BoutException(
         "Trying to {operator_name} fields of different locations. lhs is at %s, rhs is at %s!",
         strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
   }}
-#endif
-"""
+#endif"""
+compound_location_check_template = """#if CHECK > 0
+  if (this->getLocation() != rhs.getLocation()) {{
+    throw BoutException("Trying to {operator_name} fields of different locations!");
+  }}
+#endif"""
 location_set_template = "result.setLocation({lhs_or_rhs}.getLocation());"
+
+low_level_compound_template = """
+// Provide the C function to update {lhs_type} by {operator_name} with {rhs_type}
+void autogen_{lhs_type}_{rhs_type}_{operator_name}(
+    {lhs_arg}, {rhs_arg}, {length_arg}) {{
+  {for_loop}
+}}
+
+"""
+
+compound_high_level_template = """
+// Provide the C++ operator to update {lhs_type} by {operator_name} with {rhs_type}
+{lhs_type} &{lhs_type}::operator{operator}=({rhs_arg}) {{
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {{
+    Indices i{{0, 0, 0}};
+    {mesh_equality_assert}
+    checkData(*this);
+    checkData(rhs);
+    autogen_{lhs_type}_{rhs_type}_{operator_name}(&(*this)[i], {rhs_low_level_arg},
+                                  {length_arg});
+    {location_check}
+    {optional_checkData}
+  }} else {{
+    (*this) = (*this) {operator} rhs;
+  }}
+  return *this;
+}}
+"""
 
 
 class braces(object):
@@ -341,36 +374,38 @@ def compound_low_level_function_generator(operator, operator_name, lhs, rhs, ele
     rhs:           Field for the right-hand side input argument
     """
 
-    print("// Provide the C function to update %s by %s with %s" %
-          (lhs.fieldname, operator_name, rhs.fieldname))
-    print('void autogen_%s_%s_%s(' %
-          (lhs.fieldname, rhs.fieldname, operator_name), end=' ')
-    const = False
-    fs = [lhs, rhs]
-    for f in fs:
-        print(f.getPass(data=True, const=const), ",", end=' ')
-        const = True
+    # Depending on how we loop over the fields, we need to know
+    # x, y and z, or just the total number of elements
     if elementwise:
-        c = ''
-        for d in out.dimensions:
-            print('%s int n%s' % (c, d), end=' ')
-            c = ','
+        length_arg = ",".join(["int n{}".format(d) for d in out.dims()])
+        dims = {"n" + x: x for x in out.dims()}
     else:
-        print(' int len', end=' ')
-    print(')')
+        length_arg = " int len"
+        dims = {"len": 'i'}
 
-    with braces():
-        if elementwise:
-            # we need to loop over all dimension of the out file
-            dims = {"n" + x: x for x in out.dims()}
-        else:
-            dims = {"len": 'i'}
-        for d, i in dims.items():
-            print('  for (int %s=0;%s<%s;++%s)' % (i, i, d, i))
-        with braces():
-            print("    %s %s= %s;" % (lhs.get(data=elementwise),
-                                      operator,
-                                      rhs.get(data=elementwise)))
+    for_loop = ""
+
+    # The "for" statements
+    for dimension, index in dims.items():
+        for_loop += for_loop_statement_template.format(dimension=dimension,
+                                                       index=index)
+
+    # The loop body
+    for_loop += compound_assignment_template.format(lhs=lhs.get(data=elementwise),
+                                                    operator=operator,
+                                                    rhs=rhs.get(data=elementwise))
+
+    stuff = {'out_type': out.fieldname,
+             'lhs_type': lhs.fieldname,
+             'rhs_type': rhs.fieldname,
+             'operator_name': operator_name,
+             'lhs_arg': lhs.getPass(const=False, data=True),
+             'rhs_arg': rhs.getPass(const=True, data=True),
+             'length_arg': length_arg,
+             'for_loop': for_loop,
+             }
+
+    print(low_level_compound_template.format(**stuff))
 
 
 def compound_high_level_function_generator(operator, operator_name, lhs, rhs, elementwise):
@@ -393,45 +428,45 @@ def compound_high_level_function_generator(operator, operator_name, lhs, rhs, el
     rhs:           Field for the right-hand side input argument
     """
 
-    print("// Provide the C++ operator to update %s by %s with %s" %
-          (lhs.fieldname, operator_name, rhs.fieldname))
-    print("%s & %s::operator %s=" %
-          (lhs.fieldname, lhs.fieldname, operator), end=' ')
-    print("(%s)" % (rhs.getPass(const=True)))
-    with braces():
-        print("  // only if data is unique we update the field")
-        print("  // otherwise just call the non-inplace version")
-        with braces("  if (data.unique())"):
-            print("    Indices i{0,0,0};")
-            if not rhs.i == 'real':
-                print("    ASSERT1(fieldmesh == rhs.getMesh());")
-            print("    checkData(*this);")
-            print("    checkData(rhs);")
-            print("    autogen_%s_%s_%s(&(*this)[i]," %
-                  (lhs.fieldname, rhs.fieldname, operator_name), end=' ')
-            print(rhs.get(ptr=True, data=False), ',', end=' ')
-            m = ''
-            print('\n             ', end=' ')
-            for d in out.dimensions:
-                print(m, "fieldmesh->LocalN%s" % d, end=' ')
-                if elementwise:
-                    m = ','
-                else:
-                    m = '*'
-            print(");")
-            # if both are f3d, make sure they are in the same location
-            if lhs.i == rhs.i == 'f3d':
-                print("#if CHECK > 0")
-                with braces("  if (this->getLocation() != rhs.getLocation())"):
-                    print('    throw BoutException("Trying to %s fields of different locations!");'
-                          % operator_name)
-                print('#endif')
-                print("    checkData(*this);")
-        with braces(" else "):  # if data is not unique
-            print("    (*this)= (*this) %s rhs;" % operator)
-        print("  return *this;")
-    print()
-    print()
+    if lhs.i != 'real' and rhs.i != 'real':
+        mesh_equality_assert = "ASSERT1(fieldmesh == rhs.getMesh());"
+    else:
+        mesh_equality_assert = ""
+
+    # Either total number of elements, or size of each dimension separately
+    m = ',' if elementwise else '*'
+    dimension_names = ["fieldmesh->LocalN{}".format(d) for d in out.dimensions]
+    length_arg = m.join(dimension_names)
+
+    # hardcode to only check field location for Field 3D
+    if lhs.i == rhs.i == 'f3d':
+        location_check = compound_location_check_template.format(operator_name=operator_name)
+        optional_checkData = "checkData(*this);"
+    else:
+        location_check = ""
+        optional_checkData = ""
+
+    lhs_or_rhs = "lhs" if not lhs.i == 'real' else "rhs"
+
+    stuff = {'out_type': out.fieldname,
+             'lhs_type': lhs.fieldname,
+             'rhs_type': rhs.fieldname,
+             'operator': operator,
+             'operator_name': operator_name,
+             'out_low_level_arg': out.get(data=False, ptr=True),
+             'lhs_low_level_arg': lhs.get(data=False, ptr=True),
+             'rhs_low_level_arg': rhs.get(data=False, ptr=True),
+             'length_arg': length_arg,
+             'lhs_arg': lhs.getPass(const=True),
+             'rhs_arg': rhs.getPass(const=True),
+             'length_arg': length_arg,
+             'lhs_or_rhs': lhs_or_rhs,
+             'location_check': location_check,
+             'optional_checkData': optional_checkData,
+             'mesh_equality_assert': mesh_equality_assert,
+             }
+
+    print(compound_high_level_template.format(**stuff))
 
 
 if __name__ == "__main__":
