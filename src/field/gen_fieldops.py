@@ -41,6 +41,36 @@ for_loop_statement_template = (
 operator_body_template = "{{\n    {result} = {lhs} {operator} {rhs};}}"
 compound_assignment_template = "{{\n    {lhs} {operator}= {rhs};}}"
 
+non_compound_high_level_template = """
+// Provide the C++ wrapper for {operator_name} of {lhs_type} and {rhs_type}
+{out_type} operator{operator}({lhs_arg}, {rhs_arg}) {{
+  Indices i{{0, 0, 0}};
+  Mesh *localmesh = {lhs_or_rhs}.getMesh();
+  {mesh_equality_assert}
+  {out_type} result(localmesh);
+  result.allocate();
+  checkData(lhs);
+  checkData(rhs);
+  autogen_{out_type}_{lhs_type}_{rhs_type}_{operator_name}(
+      {out_low_level_arg}, {lhs_low_level_arg}, {rhs_low_level_arg}, {length_arg});
+  {location_check}
+  {location_set}
+  checkData(result);
+  return result;
+}}
+"""
+
+location_check_template = """
+#if CHECK > 0
+  if (lhs.getLocation() != rhs.getLocation()) {{
+    throw BoutException(
+        "Trying to {operator_name} fields of different locations. lhs is at %s, rhs is at %s!",
+        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
+  }}
+#endif
+"""
+location_set_template = "result.setLocation({lhs_or_rhs}.getLocation());"
+
 
 class braces(object):
     def __init__(self, string=""):
@@ -190,10 +220,6 @@ def non_compound_low_level_function_generator(operator, operator_name, out,
     rhs:           Field for the right-hand side input argument
     """
 
-    result_arg = out.getPass(const=False, data=True)
-    lhs_arg = lhs.getPass(const=True, data=True)
-    rhs_arg = rhs.getPass(const=True, data=True)
-
     # Depending on how we loop over the fields, we need to know
     # x, y and z, or just the total number of elements
     if elementwise:
@@ -220,9 +246,9 @@ def non_compound_low_level_function_generator(operator, operator_name, out,
              'lhs_type': lhs.fieldname,
              'rhs_type': rhs.fieldname,
              'operator_name': operator_name,
-             'result_arg': result_arg,
-             'lhs_arg': lhs_arg,
-             'rhs_arg': rhs_arg,
+             'result_arg': out.getPass(const=False, data=True),
+             'lhs_arg': lhs.getPass(const=True, data=True),
+             'rhs_arg': rhs.getPass(const=True, data=True),
              'length_arg': length_arg,
              'for_loop': for_loop,
              }
@@ -251,56 +277,55 @@ def non_compound_high_level_function_generator(operator, operator_name, out,
     rhs:           Field for the right-hand side input argument
     """
 
-    print("// Provide the C++ wrapper for %s of %s and %s" %
-          (operator_name, lhs.fieldname, rhs.fieldname))
-    print("%s operator%s(%s,%s)" %
-          (out.fieldname, operator, lhs.getPass(), rhs.getPass()))
-    with braces():
-        print("  Indices i{0,0,0};")
-        print("  Mesh *localmesh = %s.getMesh();" %
-              ("lhs" if not lhs.i == 'real' else "rhs"))
-        if lhs.i != 'real' and rhs.i != 'real':
-            print("  ASSERT1(localmesh == rhs.getMesh());")
-        print("  %s result(localmesh);" % out.fieldname)
-        print("  result.allocate();")
-        print("  checkData(lhs);")
-        print("  checkData(rhs);")
-        # call the C function to do the work.
-        print("  autogen_%s_%s_%s_%s("
-              % (out.fieldname, lhs.fieldname, rhs.fieldname,
-                 operator_name), end=' ')
-        for f in [out, lhs, rhs]:
-            print("%s, " % (f.get(data=False, ptr=True)), end=' ')
-        m = ''
-        print('\n             ', end=' ')
-        for d in out.dimensions:
-            print(m, "localmesh->LocalN%s" % d, end=' ')
-            if elementwise:
-                m = ','
-            else:
-                m = '*'
-        print(");")
-        # hardcode to only check field location for Field 3D
-        if lhs.i == rhs.i == 'f3d':
-            print("#if CHECK > 0")
-            with braces("  if (lhs.getLocation() != rhs.getLocation())"):
-                print(
-                    '    throw BoutException("Trying to %s fields of different locations. lhs is at %%s, rhs is at %%s!",strLocation(lhs.getLocation()),strLocation(rhs.getLocation()));' % operator_name)
-            print('#endif')
-        # Set out location (again, only for f3d)
-        if out.i == 'f3d':
-            if rhs.i == 'f3d':
-                src = 'rhs'
-            elif lhs.i != 'real':
-                src = 'lhs'
-            else:
-                src = 'rhs'
-            print("  result.setLocation(%s.getLocation());" % src)
-        # Check result and return
-        print("  checkData(result);")
-        print("  return result;")
-    print()
-    print()
+    if lhs.i != 'real' and rhs.i != 'real':
+        mesh_equality_assert = "ASSERT1(localmesh == rhs.getMesh());"
+    else:
+        mesh_equality_assert = ""
+
+    # Either total number of elements, or size of each dimension separately
+    m = ',' if elementwise else '*'
+    dimension_names = ["localmesh->LocalN{}".format(d) for d in out.dimensions]
+    length_arg = m.join(dimension_names)
+
+    # hardcode to only check field location for Field 3D
+    if lhs.i == rhs.i == 'f3d':
+        location_check = location_check_template.format(operator_name=operator_name)
+    else:
+        location_check = ""
+
+    # Set out location (again, only for f3d)
+    if out.i == 'f3d':
+        if rhs.i == 'f3d':
+            src = 'rhs'
+        elif lhs.i != 'real':
+            src = 'lhs'
+        else:
+            src = 'rhs'
+        location_set = location_set_template.format(lhs_or_rhs=src)
+    else:
+        location_set = ""
+
+    lhs_or_rhs = "lhs" if not lhs.i == 'real' else "rhs"
+
+    stuff = {'out_type': out.fieldname,
+             'lhs_type': lhs.fieldname,
+             'rhs_type': rhs.fieldname,
+             'operator': operator,
+             'operator_name': operator_name,
+             'out_low_level_arg': out.get(data=False, ptr=True),
+             'lhs_low_level_arg': lhs.get(data=False, ptr=True),
+             'rhs_low_level_arg': rhs.get(data=False, ptr=True),
+             'length_arg': length_arg,
+             'lhs_arg': lhs.getPass(const=True),
+             'rhs_arg': rhs.getPass(const=True),
+             'length_arg': length_arg,
+             'lhs_or_rhs': lhs_or_rhs,
+             'location_check': location_check,
+             'location_set': location_set,
+             'mesh_equality_assert': mesh_equality_assert,
+             }
+
+    print(non_compound_high_level_template.format(**stuff))
 
 
 def compound_low_level_function_generator(operator, operator_name, lhs, rhs, elementwise):
