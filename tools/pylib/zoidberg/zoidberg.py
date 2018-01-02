@@ -98,7 +98,14 @@ def make_maps(grid, magnetic_field, quiet=False, **kwargs):
             zind = -1
         else:
             # Find the indices for these new locations on the forward poloidal grid
-            xind, zind = pol_forward.findIndex(coord[:,:,0], coord[:,:,1])
+            xcoord = coord[:,:,0]
+            zcoord = coord[:,:,1]
+            xind, zind = pol_forward.findIndex(xcoord, zcoord)
+
+            # Check boundary defined by the field
+            outside = magnetic_field.boundary.outside(xcoord, y_forward, zcoord)
+            xind[outside] = -1
+            zind[outside] = -1
             
         forward_xt_prime[:,j,:] = xind
         forward_zt_prime[:,j,:] = zind
@@ -119,7 +126,14 @@ def make_maps(grid, magnetic_field, quiet=False, **kwargs):
             zind = -1
         else:
             # Find the indices for these new locations on the backward poloidal grid
-            xind, zind = pol_back.findIndex(coord[:,:,0], coord[:,:,1])
+            xcoord = coord[:,:,0]
+            zcoord = coord[:,:,1]
+            xind, zind = pol_back.findIndex(xcoord, zcoord)
+            
+            # Check boundary defined by the field
+            outside = magnetic_field.boundary.outside(xcoord, y_back, zcoord)
+            xind[outside] = -1
+            zind[outside] = -1
         
         backward_xt_prime[:,j,:] = xind
         backward_zt_prime[:,j,:] = zind
@@ -149,6 +163,12 @@ def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc', new_names=Fal
     new_names      - Write "g_yy" rather than "g_22"
     metric2d       - Output only 2D metrics. 
     
+    Outputs
+    -------
+
+    Writes the following variables to the grid file
+    
+
     """
 
     nx, ny, nz = grid.shape
@@ -168,11 +188,13 @@ def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc', new_names=Fal
         metric["gyy"] = 1./Rmaj**2
         metric["g_yy"] = Rmaj**2
         
-    # Get magnetic field
+    # Get magnetic field and pressure
     Bmag = np.zeros(grid.shape)
+    pressure = np.zeros(grid.shape)
     for yindex in range(grid.numberOfPoloidalGrids()):
         pol_grid,ypos = grid.getPoloidalGrid(yindex)
         Bmag[:,yindex,:] = magnetic_field.Bmag(pol_grid.R, pol_grid.Z, ypos)
+        pressure[:,yindex,:] = magnetic_field.pressure(pol_grid.R, pol_grid.Z, ypos)
         
     # Metric is now 3D
     if metric2d:
@@ -227,6 +249,9 @@ def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc', new_names=Fal
                 
         # Magnetic field
         f.write("B", Bmag)
+
+        # Pressure
+        f.write("pressure", pressure)
         
         # Maps - write everything to file
         for key in maps:
