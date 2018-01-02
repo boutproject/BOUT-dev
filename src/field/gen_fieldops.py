@@ -8,6 +8,7 @@ except ImportError:
     pass
 
 from copy import deepcopy as copy
+import itertools
 
 
 # The arthimetic operators
@@ -177,7 +178,7 @@ def mymin(f1, f2):
 
 
 def non_compound_low_level_function_generator(operator, operator_name, out,
-                                              lhs, rhs):
+                                              lhs, rhs, elementwise):
     """Generate the function that operates on the underlying data
 
     Inputs
@@ -230,7 +231,7 @@ def non_compound_low_level_function_generator(operator, operator_name, out,
 
 
 def non_compound_high_level_function_generator(operator, operator_name, out,
-                                               lhs, rhs):
+                                               lhs, rhs, elementwise):
     """
     It takes the Field objects. This function is doing some high
     level stuff, but does not modify the underlaying data.
@@ -302,7 +303,7 @@ def non_compound_high_level_function_generator(operator, operator_name, out,
     print()
 
 
-def compound_low_level_function_generator(operator, operator_name, lhs, rhs):
+def compound_low_level_function_generator(operator, operator_name, lhs, rhs, elementwise):
     """
     This function operates on the underlying data
 
@@ -347,7 +348,7 @@ def compound_low_level_function_generator(operator, operator_name, lhs, rhs):
                                       rhs.get(data=elementwise)))
 
 
-def compound_high_level_function_generator(operator, operator_name, lhs, rhs):
+def compound_high_level_function_generator(operator, operator_name, lhs, rhs, elementwise):
     """
     It takes the Field objects. This function is doing some high
     level stuff, but does not modify the underlaying data.
@@ -412,35 +413,33 @@ if __name__ == "__main__":
     for_gcc = True
     print(header)
 
-    for lhs in fields:
-        for rhs in fields:
-            # we don't have define real real operations
-            if lhs.i == rhs.i == 'real':
-                continue
-            rhs = copy(rhs)
-            lhs = copy(lhs)
-            # if both fields are the same, or one of them is real, we
-            # don't need to care what element is stored where, but can
-            # just loop directly over everything, using a simple c-style
-            # for loop. Otherwise we need x,y,z of the fields.
-            if (lhs != rhs and mymin(lhs, rhs).i != 'real'):
-                elementwise = True
-            else:
-                elementwise = False
-            # the output of the operation. The `larger` of the two fields.
-            out = returnType(rhs, lhs)
-            out.name = 'result'
-            lhs.name = 'lhs'
-            rhs.name = 'rhs'
+    for lhs, rhs in itertools.product(fields, fields):
+        # We don't have define real real operations
+        if lhs.i == rhs.i == 'real':
+            continue
+        rhs = copy(rhs)
+        lhs = copy(lhs)
 
-            for operator, operator_name in operators.items():
-                non_compound_low_level_function_generator(
-                    operator, operator_name, out, lhs, rhs)
-                non_compound_high_level_function_generator(
-                    operator, operator_name, out, lhs, rhs)
+        # If both fields are the same, or one of them is real, we
+        # don't need to care what element is stored where, but can
+        # just loop directly over everything, using a simple c-style
+        # for loop. Otherwise we need x,y,z of the fields.
+        elementwise = lhs != rhs and mymin(lhs, rhs).i != 'real'
 
-                if out == lhs:
-                    compound_low_level_function_generator(
-                        operator, operator_name, lhs, rhs)
-                    compound_high_level_function_generator(
-                        operator, operator_name, lhs, rhs)
+        # The output of the operation. The `larger` of the two fields.
+        out = returnType(rhs, lhs)
+        out.name = 'result'
+        lhs.name = 'lhs'
+        rhs.name = 'rhs'
+
+        for operator, operator_name in operators.items():
+            non_compound_low_level_function_generator(operator, operator_name, out, lhs, rhs,
+                                                      elementwise)
+            non_compound_high_level_function_generator(operator, operator_name, out, lhs, rhs,
+                                                       elementwise)
+
+            if out == lhs:
+                compound_low_level_function_generator(operator, operator_name, lhs, rhs,
+                                                      elementwise)
+                compound_high_level_function_generator(operator, operator_name, lhs, rhs,
+                                                       elementwise)
