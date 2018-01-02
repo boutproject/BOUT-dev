@@ -172,7 +172,7 @@ class Field(object):
             elif self.i == 'f3d':
                 return ret + '%s[z+nz*(y+ny*x)]' % (self.name)
             else:
-                return NotImplemented
+                raise NotImplementedError
         else:
             return ret + "%s[i]" % self.name
 
