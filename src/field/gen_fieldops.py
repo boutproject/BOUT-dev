@@ -108,19 +108,15 @@ compound_high_level_template = """
 class Field(object):
     """A class to keep all the data of the different fields
     """
-    # name of the field, e.g. Field3D
-    fieldname = ''
-    # array: dimensions of the field
-    dimensions = []
-    # identifier - short version of the field e.g. f3d
-    i = ''
-    # name of this field
-    name = None
 
-    def __init__(self, name, dirs, idn):
+    def __init__(self, name, dimensions, field_type):
+        # name of the field, e.g. Field3D
         self.fieldname = name
-        self.dimensions = dirs
-        self.i = idn
+        # array: dimensions of the field
+        self.dimensions = dimensions
+        # identifier - short version of the field e.g. f3d
+        self.field_type = field_type
+        # name of this field
         self.name = None
 
     def getPass(self, const=True, data=False):
@@ -136,7 +132,7 @@ class Field(object):
         ret = ""
         if const:
             ret += "const "
-        if self.i == 'real':
+        if self.field_type == 'real':
             ret += "BoutReal"
         else:
             if data:
@@ -159,17 +155,17 @@ class Field(object):
 
         """
 
-        if self.i == 'real':
+        if self.field_type == 'real':
             return self.name
         ret = ''
         if ptr:
             ret = "&"
         if data:
-            if self.i == 'f2d':
+            if self.field_type == 'f2d':
                 return ret + '%s[y+x*ny]' % self.name
-            elif self.i == 'fp':
+            elif self.field_type == 'fp':
                 return ret + '%s[z+x*nz]' % self.name
-            elif self.i == 'f3d':
+            elif self.field_type == 'f3d':
                 return ret + '%s[z+nz*(y+ny*x)]' % (self.name)
             else:
                 raise NotImplementedError
@@ -178,9 +174,9 @@ class Field(object):
 
     def __eq__(self, other):
         try:
-            return self.i == other.i
+            return self.field_type == other.field_type
         except AttributeError:
-            return self.i == other
+            return self.field_type == other
 
     def __ne__(self, other):
         return not (self == other)
@@ -203,9 +199,9 @@ def returnType(f1, f2):
     """
     if f1 == f2:
         return copy(f1)
-    elif f1.i == 'real':
+    elif f1 == 'real':
         return copy(f2)
-    elif f2.i == 'real':
+    elif f2 == 'real':
         return copy(f1)
     else:
         return copy(f3d)
@@ -281,7 +277,7 @@ def non_compound_high_level_function_generator(operator, operator_name, out,
     rhs:           Field for the right-hand side input argument
     """
 
-    if lhs.i != 'real' and rhs.i != 'real':
+    if lhs != 'real' and rhs != 'real':
         mesh_equality_assert = "ASSERT1(localmesh == rhs.getMesh());"
     else:
         mesh_equality_assert = ""
@@ -292,16 +288,16 @@ def non_compound_high_level_function_generator(operator, operator_name, out,
     length_arg = m.join(dimension_names)
 
     # hardcode to only check field location for Field 3D
-    if lhs.i == rhs.i == 'f3d':
+    if lhs == rhs == 'f3d':
         location_check = location_check_template.format(operator_name=operator_name)
     else:
         location_check = ""
 
     # Set out location (again, only for f3d)
-    if out.i == 'f3d':
-        if rhs.i == 'f3d':
+    if out == 'f3d':
+        if rhs == 'f3d':
             src = 'rhs'
-        elif lhs.i != 'real':
+        elif lhs != 'real':
             src = 'lhs'
         else:
             src = 'rhs'
@@ -309,7 +305,7 @@ def non_compound_high_level_function_generator(operator, operator_name, out,
     else:
         location_set = ""
 
-    lhs_or_rhs = "lhs" if not lhs.i == 'real' else "rhs"
+    lhs_or_rhs = "lhs" if lhs != 'real' else "rhs"
 
     stuff = {'out_type': out.fieldname,
              'lhs_type': lhs.fieldname,
@@ -399,7 +395,7 @@ def compound_high_level_function_generator(operator, operator_name, lhs, rhs, el
     rhs:           Field for the right-hand side input argument
     """
 
-    if lhs.i != 'real' and rhs.i != 'real':
+    if lhs != 'real' and rhs != 'real':
         mesh_equality_assert = "ASSERT1(fieldmesh == rhs.getMesh());"
     else:
         mesh_equality_assert = ""
@@ -410,14 +406,14 @@ def compound_high_level_function_generator(operator, operator_name, lhs, rhs, el
     length_arg = m.join(dimension_names)
 
     # hardcode to only check field location for Field 3D
-    if lhs.i == rhs.i == 'f3d':
+    if lhs == rhs == 'f3d':
         location_check = compound_location_check_template.format(operator_name=operator_name)
         optional_checkData = "checkData(*this);"
     else:
         location_check = ""
         optional_checkData = ""
 
-    lhs_or_rhs = "lhs" if not lhs.i == 'real' else "rhs"
+    lhs_or_rhs = "lhs" if lhs != 'real' else "rhs"
 
     stuff = {'out_type': out.fieldname,
              'lhs_type': lhs.fieldname,
@@ -446,7 +442,7 @@ if __name__ == "__main__":
 
     for lhs, rhs in itertools.product(fields, fields):
         # We don't have define real real operations
-        if lhs.i == rhs.i == 'real':
+        if lhs == rhs == 'real':
             continue
         rhs = copy(rhs)
         lhs = copy(lhs)
