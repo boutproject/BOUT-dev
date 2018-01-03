@@ -50,7 +50,8 @@ void autogen_{out}_{lhs}_{rhs}_{operator_name}(
   checkData(lhs);
   checkData(rhs);
   autogen_{out}_{lhs}_{rhs}_{operator_name}(
-      {out_low_level_arg}, {lhs_low_level_arg}, {rhs_low_level_arg}, {non_compound_length_arg});
+      {out.getPointerToData}, {lhs.getPointerToData}, {rhs.getPointerToData},
+      {non_compound_length_arg});
   {non_compound_location_check}
   {non_compound_location_set}
   checkData(result);
@@ -85,7 +86,7 @@ void autogen_{lhs}_{rhs}_{operator_name}(
     {compound_mesh_equality_assert}
     checkData(*this);
     checkData(rhs);
-    autogen_{lhs}_{rhs}_{operator_name}(&(*this)[i], {rhs_low_level_arg},
+    autogen_{lhs}_{rhs}_{operator_name}(&(*this)[i], {rhs.getPointerToData},
                                   {compound_length_arg});
     {compound_location_check}
   }} else {{
@@ -118,7 +119,7 @@ class Field(object):
 
     @property
     def passByReference(self):
-        """Returns "Type& name", except if Type is BoutReal,
+        """Returns "Type& name", except if field_type is BoutReal,
         in which case just returns "Type name"
 
         """
@@ -136,32 +137,34 @@ class Field(object):
             self=self, ref="*" if self.field_type != "BoutReal" else "",
             restrict="__restrict__" if for_gcc and self.field_type != "BoutReal" else "")
 
-    def get(self, data=True, ptr=False):
-        """How to get value from field
+    @property
+    def getPointerToData(self):
+        """Returns a pointer to the underlying data, e.g. `&Field3D[i]`,
+        except for plain BoutReals"""
+        if self.field_type == 'BoutReal':
+            return self.name
+        return "&{}[i]".format(self.name)
 
-        Inputs
-        ======
-        data: use x,y,z access on raw data?
-        ptr:  Do return pointer instead of data
+    def getElement(self, data=True):
+        """Get an element in the field, either using C-loop style index (default),
+        or with an `Indices` object
 
         """
 
         if self.field_type == 'BoutReal':
             return self.name
-        ret = ''
-        if ptr:
-            ret = "&"
         if data:
             if self.field_type == 'Field2D':
-                return ret + '%s[y+x*ny]' % self.name
+                index = "y + x*ny"
             elif self.field_type == 'FieldPerp':
-                return ret + '%s[z+x*nz]' % self.name
+                index = "z + x*nz"
             elif self.field_type == 'Field3D':
-                return ret + '%s[z+nz*(y+ny*x)]' % (self.name)
+                index = "z + nz*(y + ny*x)"
             else:
                 raise NotImplementedError
         else:
-            return ret + "%s[i]" % self.name
+            index = "i"
+        return "{name}[{index}]".format(name=self.name, index=index)
 
     def __eq__(self, other):
         try:
@@ -269,10 +272,6 @@ def conext_generator(operator, operator_name, out, lhs, rhs, elementwise):
 
         'for_loop': for_loop,
 
-        'out_low_level_arg': out.get(data=False, ptr=True),
-        'lhs_low_level_arg': lhs.get(data=False, ptr=True),
-        'rhs_low_level_arg': rhs.get(data=False, ptr=True),
-
         'mesh_equality_assert': mesh_equality_assert,
         'compound_mesh_equality_assert': compound_mesh_equality_assert,
 
@@ -281,9 +280,9 @@ def conext_generator(operator, operator_name, out, lhs, rhs, elementwise):
         'non_compound_location_set': non_compound_location_set,
         'compound_location_check': compound_location_check,
 
-        'result_op': out.get(data=elementwise),
-        'lhs_op': lhs.get(data=elementwise),
-        'rhs_op': rhs.get(data=elementwise),
+        'result_op': out.getElement(data=elementwise),
+        'lhs_op': lhs.getElement(data=elementwise),
+        'rhs_op': rhs.getElement(data=elementwise),
     }
 
     return template_args
