@@ -34,7 +34,7 @@ non_compound_template = """
 // Do the actual {operator_name} of {lhs_type} and {rhs_type}
 void autogen_{out_type}_{lhs_type}_{rhs_type}_{operator_name}(
     {non_compound_low_level_result_arg}, {non_compound_low_level_lhs_arg},
-    {non_compound_low_level_rhs_arg}, {non_compound_low_level_length_arg}) {{
+    {non_compound_low_level_rhs_arg}, {low_level_length_arg}) {{
   {for_loop} {{
     {result_op} = {lhs_op} {operator} {rhs_op};
   }}
@@ -43,16 +43,16 @@ void autogen_{out_type}_{lhs_type}_{rhs_type}_{operator_name}(
 // Provide the C++ wrapper for {operator_name} of {lhs_type} and {rhs_type}
 {out_type} operator{operator}({lhs_arg}, {rhs_arg}) {{
   Indices i{{0, 0, 0}};
-  Mesh *localmesh = {lhs_or_rhs}.getMesh();
+  Mesh *localmesh = {mesh_source}.getMesh();
   {mesh_equality_assert}
   {out_type} result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
   autogen_{out_type}_{lhs_type}_{rhs_type}_{operator_name}(
-      {out_low_level_arg}, {lhs_low_level_arg}, {rhs_low_level_arg}, {length_arg});
-  {location_check}
-  {location_set}
+      {out_low_level_arg}, {lhs_low_level_arg}, {rhs_low_level_arg}, {non_compound_length_arg});
+  {non_compound_location_check}
+  {non_compound_location_set}
   checkData(result);
   return result;
 }}
@@ -65,12 +65,12 @@ location_check_template = """#if CHECK > 0
         strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
   }}
 #endif"""
-location_set_template = "result.setLocation({lhs_or_rhs}.getLocation());"
+location_set_template = "result.setLocation({location_source}.getLocation());"
 
 compound_template = """
 // Provide the C function to update {lhs_type} by {operator_name} with {rhs_type}
 void autogen_{lhs_type}_{rhs_type}_{operator_name}(
-    {compound_low_level_lhs_arg}, {compound_low_level_rhs_arg}, {compound_low_level_length_arg}) {{
+    {compound_low_level_lhs_arg}, {compound_low_level_rhs_arg}, {low_level_length_arg}) {{
   {for_loop} {{
        {lhs_op} {operator}= {rhs_op};
     }}
@@ -82,12 +82,12 @@ void autogen_{lhs_type}_{rhs_type}_{operator_name}(
   // otherwise just call the non-inplace version
   if (data.unique()) {{
     Indices i{{0, 0, 0}};
-    {mesh_equality_assert}
+    {compound_mesh_equality_assert}
     checkData(*this);
     checkData(rhs);
     autogen_{lhs_type}_{rhs_type}_{operator_name}(&(*this)[i], {rhs_low_level_arg},
-                                  {length_arg});
-    {location_check}
+                                  {compound_length_arg});
+    {compound_location_check}
   }} else {{
     (*this) = (*this) {operator} rhs;
   }}
@@ -204,16 +204,9 @@ def returnType(f1, f2):
         return copy(field3D)
 
 
-def non_compound_function_generator(operator, operator_name, out, lhs, rhs, elementwise):
+def conext_generator(operator, operator_name, out, lhs, rhs, elementwise):
     """
-    It takes the Field objects. This function is doing some high
-    level stuff, but does not modify the underlaying data.
-    Stuff done here:
-     * conserve the mesh
-     * conserve the field location
-     * check the input & output data
-     * allocate data
-     * get the underlaying data for the low-level operation
+    Generate the context to be substituted into the templates
 
     Inputs
     ======
@@ -227,47 +220,63 @@ def non_compound_function_generator(operator, operator_name, out, lhs, rhs, elem
     # Depending on how we loop over the fields, we need to know
     # x, y and z, or just the total number of elements
     if elementwise:
-        non_compound_low_level_length_arg = ",".join(["int n{}".format(d) for d in out.dimensions])
+        low_level_length_arg = ",".join(["int n{}".format(d) for d in out.dimensions])
         dims = {"n" + x: x for x in out.dimensions}
     else:
-        non_compound_low_level_length_arg = " int len"
+        low_level_length_arg = " int len"
         dims = {"len": 'i'}
 
     for_loop = ""
-
-    # The "for" statements
     for dimension, index in dims.items():
         for_loop += for_loop_statement_template.format(dimension=dimension,
                                                        index=index)
 
     mesh_equality_assert = ""
+    compound_mesh_equality_assert = ""
     if lhs != 'BoutReal' and rhs != 'BoutReal':
         mesh_equality_assert = "ASSERT1(localmesh == rhs.getMesh());"
+        compound_mesh_equality_assert = "ASSERT1(fieldmesh == rhs.getMesh());"
 
     # Either total number of elements, or size of each dimension separately
     m = ',' if elementwise else '*'
-    dimension_names = ["localmesh->LocalN{}".format(d) for d in out.dimensions]
-    length_arg = m.join(dimension_names)
+    non_compound_length_arg = m.join(["localmesh->LocalN{}".format(d) for d in out.dimensions])
+    compound_length_arg = m.join(["fieldmesh->LocalN{}".format(d) for d in out.dimensions])
 
     # hardcode to only check field location for Field 3D
-    location_check = ""
+    non_compound_location_check = ""
+    compound_location_check = ""
     if lhs == rhs == 'Field3D':
-        location_check = location_check_template.format(operator_name=operator_name)
+        non_compound_location_check = location_check_template.format(operator_name=operator_name)
+        compound_location_check = compound_location_check_template.format(
+            operator_name=operator_name)
 
     # Set out location (again, only for field3D)
-    location_set = ""
+    non_compound_location_set = ""
     if out == 'Field3D':
-        src = "rhs" if rhs == "Field3D" else "lhs"
-        location_set = location_set_template.format(lhs_or_rhs=src)
+        source = "rhs" if rhs == "Field3D" else "lhs"
+        non_compound_location_set = location_set_template.format(location_source=source)
 
-    lhs_or_rhs = "lhs" if lhs != 'BoutReal' else "rhs"
+    mesh_source = "lhs" if lhs != 'BoutReal' else "rhs"
 
     template_args = {
         'out_type': out.field_type,
         'lhs_type': lhs.field_type,
         'rhs_type': rhs.field_type,
+
         'operator': operator,
         'operator_name': operator_name,
+
+        'low_level_length_arg': low_level_length_arg,
+        'non_compound_length_arg': non_compound_length_arg,
+        'compound_length_arg': compound_length_arg,
+
+        'for_loop': for_loop,
+
+        'non_compound_low_level_result_arg': out.getPass(const=False, data=True),
+        'non_compound_low_level_lhs_arg': lhs.getPass(const=True, data=True),
+        'non_compound_low_level_rhs_arg': rhs.getPass(const=True, data=True),
+        'compound_low_level_lhs_arg': lhs.getPass(const=False, data=True),
+        'compound_low_level_rhs_arg': rhs.getPass(const=True, data=True),
 
         'out_low_level_arg': out.get(data=False, ptr=True),
         'lhs_low_level_arg': lhs.get(data=False, ptr=True),
@@ -275,109 +284,21 @@ def non_compound_function_generator(operator, operator_name, out, lhs, rhs, elem
 
         'lhs_arg': lhs.getPass(const=True),
         'rhs_arg': rhs.getPass(const=True),
-        'length_arg': length_arg,
-        'lhs_or_rhs': lhs_or_rhs,
-        'location_check': location_check,
-        'location_set': location_set,
+
         'mesh_equality_assert': mesh_equality_assert,
+        'compound_mesh_equality_assert': compound_mesh_equality_assert,
 
-        'non_compound_low_level_result_arg': out.getPass(const=False, data=True),
-        'non_compound_low_level_lhs_arg': lhs.getPass(const=True, data=True),
-        'non_compound_low_level_rhs_arg': rhs.getPass(const=True, data=True),
-        'non_compound_low_level_length_arg': non_compound_low_level_length_arg,
+        'mesh_source': mesh_source,
+        'non_compound_location_check': non_compound_location_check,
+        'non_compound_location_set': non_compound_location_set,
+        'compound_location_check': compound_location_check,
 
-        'length_arg': length_arg,
-        'for_loop': for_loop,
         'result_op': out.get(data=elementwise),
         'lhs_op': lhs.get(data=elementwise),
         'rhs_op': rhs.get(data=elementwise),
     }
 
-    print(non_compound_template.format(**template_args))
-
-
-def compound_function_generator(operator, operator_name, lhs, rhs, elementwise):
-    """
-    It takes the Field objects. This function is doing some high
-    level stuff, but does not modify the underlaying data.
-    Stuff done here:
-     * conserve the mesh
-     * conserve the field location
-     * check the input & output data
-     * allocate data
-     * get the underlaying data for the low-level operation
-
-    Inputs
-    ======
-    operator:      String representation of the operator to apply
-    operator_name: English name of the operator
-    out:           Field for the result
-    lhs:           Field for the left-hand side input argument
-    rhs:           Field for the right-hand side input argument
-    """
-
-    # Depending on how we loop over the fields, we need to know
-    # x, y and z, or just the total number of elements
-    if elementwise:
-        compound_low_level_length_arg = ",".join(["int n{}".format(d) for d in out.dimensions])
-        dims = {"n" + x: x for x in out.dimensions}
-    else:
-        compound_low_level_length_arg = "int len"
-        dims = {"len": 'i'}
-
-    for_loop = ""
-
-    # The "for" statements
-    for dimension, index in dims.items():
-        for_loop += for_loop_statement_template.format(dimension=dimension,
-                                                       index=index)
-
-    mesh_equality_assert = ""
-    if lhs != 'BoutReal' and rhs != 'BoutReal':
-        mesh_equality_assert = "ASSERT1(fieldmesh == rhs.getMesh());"
-
-    # Either total number of elements, or size of each dimension separately
-    m = ',' if elementwise else '*'
-    dimension_names = ["fieldmesh->LocalN{}".format(d) for d in out.dimensions]
-    length_arg = m.join(dimension_names)
-
-    # hardcode to only check field location for Field 3D
-    location_check = ""
-    if lhs == rhs == 'Field3D':
-        location_check = compound_location_check_template.format(operator_name=operator_name)
-
-    lhs_or_rhs = "lhs" if lhs != 'BoutReal' else "rhs"
-
-    template_args = {
-        'out_type': out.field_type,
-        'lhs_type': lhs.field_type,
-        'rhs_type': rhs.field_type,
-
-        'operator': operator,
-        'operator_name': operator_name,
-
-        'compound_low_level_length_arg': compound_low_level_length_arg,
-        'length_arg': length_arg,
-        'for_loop': for_loop,
-
-        'compound_low_level_lhs_arg': lhs.getPass(const=False, data=True),
-        'compound_low_level_rhs_arg': rhs.getPass(const=True, data=True),
-        'out_low_level_arg': out.get(data=False, ptr=True),
-        'lhs_low_level_arg': lhs.get(data=False, ptr=True),
-        'rhs_low_level_arg': rhs.get(data=False, ptr=True),
-
-        'lhs_arg': lhs.getPass(const=True),
-        'rhs_arg': rhs.getPass(const=True),
-
-        'lhs_or_rhs': lhs_or_rhs,
-        'location_check': location_check,
-        'mesh_equality_assert': mesh_equality_assert,
-
-        'lhs_op': lhs.get(data=elementwise),
-        'rhs_op': rhs.get(data=elementwise),
-    }
-
-    print(compound_template.format(**template_args))
+    return template_args
 
 
 if __name__ == "__main__":
@@ -404,7 +325,8 @@ if __name__ == "__main__":
         rhs.name = 'rhs'
 
         for operator, operator_name in operators.items():
-            non_compound_function_generator(operator, operator_name, out, lhs, rhs, elementwise)
+            template_args = conext_generator(operator, operator_name, out, lhs, rhs, elementwise)
+            print(non_compound_template.format(**template_args))
 
             if out == lhs:
-                compound_function_generator(operator, operator_name, lhs, rhs, elementwise)
+                print(compound_template.format(**template_args))
