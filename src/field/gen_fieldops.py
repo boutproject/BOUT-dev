@@ -33,8 +33,8 @@ for_loop_statement_template = (
 non_compound_template = """
 // Do the actual {operator_name} of {lhs} and {rhs}
 void autogen_{out}_{lhs}_{rhs}_{operator_name}(
-    {non_compound_low_level_result_arg}, {non_compound_low_level_lhs_arg},
-    {non_compound_low_level_rhs_arg}, {low_level_length_arg}) {{
+    {out.passBoutRealPointer}, const {lhs.passBoutRealPointer},
+    const {rhs.passBoutRealPointer}, {low_level_length_arg}) {{
   {for_loop} {{
     {result_op} = {lhs_op} {operator} {rhs_op};
   }}
@@ -70,7 +70,7 @@ location_set_template = "result.setLocation({location_source}.getLocation());"
 compound_template = """
 // Provide the C function to update {lhs} by {operator_name} with {rhs}
 void autogen_{lhs}_{rhs}_{operator_name}(
-    {compound_low_level_lhs_arg}, {compound_low_level_rhs_arg}, {low_level_length_arg}) {{
+    {lhs.passBoutRealPointer}, const {rhs.passBoutRealPointer}, {low_level_length_arg}) {{
   {for_loop} {{
        {lhs_op} {operator}= {rhs_op};
     }}
@@ -122,34 +122,19 @@ class Field(object):
         in which case just returns "Type name"
 
         """
-        return "{self.field_type}{ref}{self.name}".format(
+        return "{self.field_type}{ref} {self.name}".format(
             self=self, ref="&" if self.field_type != "BoutReal" else "")
 
-    def getPass(self, const=True, data=False):
-        """How to pass data
+    @property
+    def passBoutRealPointer(self):
+        """Returns "BoutReal* name", except if field_type is BoutReal,
+        in which case just returns "BoutReal name"
 
-        Inputs
-        ======
-        const: Should it be const?
-        data:  Pass the raw data?
-
+        Also adds "__restrict__" attribute if `for_gcc` is True
         """
-
-        ret = ""
-        if const:
-            ret += "const "
-        if self.field_type == 'BoutReal':
-            ret += "BoutReal"
-        else:
-            if data:
-                if for_gcc:  # use restrict gcc extension
-                    ret += 'BoutReal * __restrict__'
-                else:
-                    ret += 'BoutReal *'
-            else:
-                ret += '%s &' % (self.field_type)
-        ret += " %s" % self.name
-        return ret
+        return "BoutReal {ref}{restrict} {self.name}".format(
+            self=self, ref="*" if self.field_type != "BoutReal" else "",
+            restrict="__restrict__" if for_gcc and self.field_type != "BoutReal" else "")
 
     def get(self, data=True, ptr=False):
         """How to get value from field
@@ -283,12 +268,6 @@ def conext_generator(operator, operator_name, out, lhs, rhs, elementwise):
         'compound_length_arg': compound_length_arg,
 
         'for_loop': for_loop,
-
-        'non_compound_low_level_result_arg': out.getPass(const=False, data=True),
-        'non_compound_low_level_lhs_arg': lhs.getPass(const=True, data=True),
-        'non_compound_low_level_rhs_arg': rhs.getPass(const=True, data=True),
-        'compound_low_level_lhs_arg': lhs.getPass(const=False, data=True),
-        'compound_low_level_rhs_arg': rhs.getPass(const=True, data=True),
 
         'out_low_level_arg': out.get(data=False, ptr=True),
         'lhs_low_level_arg': lhs.get(data=False, ptr=True),
