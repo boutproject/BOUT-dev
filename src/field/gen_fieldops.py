@@ -31,8 +31,8 @@ for_loop_statement_template = (
     "  for (int {index}=0; {index} < {dimension}; ++{index})\n")
 
 non_compound_template = """
-// Do the actual {operator_name} of {lhs_type} and {rhs_type}
-void autogen_{out_type}_{lhs_type}_{rhs_type}_{operator_name}(
+// Do the actual {operator_name} of {lhs} and {rhs}
+void autogen_{out}_{lhs}_{rhs}_{operator_name}(
     {non_compound_low_level_result_arg}, {non_compound_low_level_lhs_arg},
     {non_compound_low_level_rhs_arg}, {low_level_length_arg}) {{
   {for_loop} {{
@@ -40,16 +40,16 @@ void autogen_{out_type}_{lhs_type}_{rhs_type}_{operator_name}(
   }}
 }}
 
-// Provide the C++ wrapper for {operator_name} of {lhs_type} and {rhs_type}
-{out_type} operator{operator}(const {lhs.passByReference}, const {rhs.passByReference}) {{
+// Provide the C++ wrapper for {operator_name} of {lhs} and {rhs}
+{out} operator{operator}(const {lhs.passByReference}, const {rhs.passByReference}) {{
   Indices i{{0, 0, 0}};
   Mesh *localmesh = {mesh_source}.getMesh();
   {mesh_equality_assert}
-  {out_type} result(localmesh);
+  {out} result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_{out_type}_{lhs_type}_{rhs_type}_{operator_name}(
+  autogen_{out}_{lhs}_{rhs}_{operator_name}(
       {out_low_level_arg}, {lhs_low_level_arg}, {rhs_low_level_arg}, {non_compound_length_arg});
   {non_compound_location_check}
   {non_compound_location_set}
@@ -68,16 +68,16 @@ location_check_template = """#if CHECK > 0
 location_set_template = "result.setLocation({location_source}.getLocation());"
 
 compound_template = """
-// Provide the C function to update {lhs_type} by {operator_name} with {rhs_type}
-void autogen_{lhs_type}_{rhs_type}_{operator_name}(
+// Provide the C function to update {lhs} by {operator_name} with {rhs}
+void autogen_{lhs}_{rhs}_{operator_name}(
     {compound_low_level_lhs_arg}, {compound_low_level_rhs_arg}, {low_level_length_arg}) {{
   {for_loop} {{
        {lhs_op} {operator}= {rhs_op};
     }}
 }}
 
-// Provide the C++ operator to update {lhs_type} by {operator_name} with {rhs_type}
-{lhs_type} &{lhs_type}::operator{operator}=(const {rhs.passByReference}) {{
+// Provide the C++ operator to update {lhs} by {operator_name} with {rhs}
+{lhs} &{lhs}::operator{operator}=(const {rhs.passByReference}) {{
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {{
@@ -85,7 +85,7 @@ void autogen_{lhs_type}_{rhs_type}_{operator_name}(
     {compound_mesh_equality_assert}
     checkData(*this);
     checkData(rhs);
-    autogen_{lhs_type}_{rhs_type}_{operator_name}(&(*this)[i], {rhs_low_level_arg},
+    autogen_{lhs}_{rhs}_{operator_name}(&(*this)[i], {rhs_low_level_arg},
                                   {compound_length_arg});
     {compound_location_check}
   }} else {{
@@ -108,13 +108,13 @@ class Field(object):
     """A class to keep all the data of the different fields
     """
 
-    def __init__(self, field_type, dimensions):
+    def __init__(self, field_type, dimensions, name=None):
         # C++ type of the field, e.g. Field3D
         self.field_type = field_type
         # array: dimensions of the field
         self.dimensions = dimensions
         # name of this field
-        self.name = None
+        self.name = name
 
     @property
     def passByReference(self):
@@ -187,8 +187,11 @@ class Field(object):
     def __ne__(self, other):
         return not (self == other)
 
+    def __repr__(self):
+        return "Field({}, {}, {})".format(self.field_type, self.dimensions, self.name)
+
     def __str__(self):
-        return "Name: %s\nfield_type: %s\n" % (self.name, self.field_type)
+        return self.field_type
 
 
 # Declare what fields we currently support:
@@ -271,10 +274,6 @@ def conext_generator(operator, operator_name, out, lhs, rhs, elementwise):
         'out': out,
         'lhs': lhs,
         'rhs': rhs,
-
-        'out_type': out.field_type,
-        'lhs_type': lhs.field_type,
-        'rhs_type': rhs.field_type,
 
         'operator': operator,
         'operator_name': operator_name,
