@@ -41,7 +41,7 @@ void autogen_{out_type}_{lhs_type}_{rhs_type}_{operator_name}(
 }}
 
 // Provide the C++ wrapper for {operator_name} of {lhs_type} and {rhs_type}
-{out_type} operator{operator}({lhs_arg}, {rhs_arg}) {{
+{out_type} operator{operator}(const {lhs.passByReference}, const {rhs.passByReference}) {{
   Indices i{{0, 0, 0}};
   Mesh *localmesh = {mesh_source}.getMesh();
   {mesh_equality_assert}
@@ -77,7 +77,7 @@ void autogen_{lhs_type}_{rhs_type}_{operator_name}(
 }}
 
 // Provide the C++ operator to update {lhs_type} by {operator_name} with {rhs_type}
-{lhs_type} &{lhs_type}::operator{operator}=({rhs_arg}) {{
+{lhs_type} &{lhs_type}::operator{operator}=(const {rhs.passByReference}) {{
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {{
@@ -115,6 +115,15 @@ class Field(object):
         self.dimensions = dimensions
         # name of this field
         self.name = None
+
+    @property
+    def passByReference(self):
+        """Returns "Type& name", except if Type is BoutReal,
+        in which case just returns "Type name"
+
+        """
+        return "{self.field_type}{ref}{self.name}".format(
+            self=self, ref="&" if self.field_type != "BoutReal" else "")
 
     def getPass(self, const=True, data=False):
         """How to pass data
@@ -259,6 +268,10 @@ def conext_generator(operator, operator_name, out, lhs, rhs, elementwise):
     mesh_source = "lhs" if lhs != 'BoutReal' else "rhs"
 
     template_args = {
+        'out': out,
+        'lhs': lhs,
+        'rhs': rhs,
+
         'out_type': out.field_type,
         'lhs_type': lhs.field_type,
         'rhs_type': rhs.field_type,
@@ -281,9 +294,6 @@ def conext_generator(operator, operator_name, out, lhs, rhs, elementwise):
         'out_low_level_arg': out.get(data=False, ptr=True),
         'lhs_low_level_arg': lhs.get(data=False, ptr=True),
         'rhs_low_level_arg': rhs.get(data=False, ptr=True),
-
-        'lhs_arg': lhs.getPass(const=True),
-        'rhs_arg': rhs.getPass(const=True),
 
         'mesh_equality_assert': mesh_equality_assert,
         'compound_mesh_equality_assert': compound_mesh_equality_assert,
