@@ -109,13 +109,11 @@ class Field(object):
     """A class to keep all the data of the different fields
     """
 
-    def __init__(self, name, dimensions, field_type):
-        # name of the field, e.g. Field3D
-        self.fieldname = name
+    def __init__(self, field_type, dimensions):
+        # C++ type of the field, e.g. Field3D
+        self.field_type = field_type
         # array: dimensions of the field
         self.dimensions = dimensions
-        # identifier - short version of the field e.g. f3d
-        self.field_type = field_type
         # name of this field
         self.name = None
 
@@ -132,7 +130,7 @@ class Field(object):
         ret = ""
         if const:
             ret += "const "
-        if self.field_type == 'real':
+        if self.field_type == 'BoutReal':
             ret += "BoutReal"
         else:
             if data:
@@ -141,7 +139,7 @@ class Field(object):
                 else:
                     ret += 'BoutReal *'
             else:
-                ret += '%s &' % (self.fieldname)
+                ret += '%s &' % (self.field_type)
         ret += " %s" % self.name
         return ret
 
@@ -155,17 +153,17 @@ class Field(object):
 
         """
 
-        if self.field_type == 'real':
+        if self.field_type == 'BoutReal':
             return self.name
         ret = ''
         if ptr:
             ret = "&"
         if data:
-            if self.field_type == 'f2d':
+            if self.field_type == 'Field2D':
                 return ret + '%s[y+x*ny]' % self.name
-            elif self.field_type == 'fp':
+            elif self.field_type == 'FieldPerp':
                 return ret + '%s[z+x*nz]' % self.name
-            elif self.field_type == 'f3d':
+            elif self.field_type == 'Field3D':
                 return ret + '%s[z+nz*(y+ny*x)]' % (self.name)
             else:
                 raise NotImplementedError
@@ -182,15 +180,15 @@ class Field(object):
         return not (self == other)
 
     def __str__(self):
-        return "Name: %s\nfieldname: %s\n" % (self.name, self.fieldname)
+        return "Name: %s\nfield_type: %s\n" % (self.name, self.field_type)
 
 
 # Declare what fields we currently support:
 # Field perp is currently missing
-f3d = Field('Field3D', ['x', 'y', 'z'], 'f3d')
-f2d = Field('Field2D', ['x', 'y'], 'f2d')
-real = Field('BoutReal', [], 'real')
-fields = [f3d, f2d, real]
+field3D = Field('Field3D', ['x', 'y', 'z'])
+field2D = Field('Field2D', ['x', 'y'])
+boutreal = Field('BoutReal', [])
+fields = [field3D, field2D, boutreal]
 
 
 def returnType(f1, f2):
@@ -199,12 +197,12 @@ def returnType(f1, f2):
     """
     if f1 == f2:
         return copy(f1)
-    elif f1 == 'real':
+    elif f1 == 'BoutReal':
         return copy(f2)
-    elif f2 == 'real':
+    elif f2 == 'BoutReal':
         return copy(f1)
     else:
-        return copy(f3d)
+        return copy(field3D)
 
 
 def non_compound_low_level_function_generator(operator, operator_name, out,
@@ -243,9 +241,9 @@ def non_compound_low_level_function_generator(operator, operator_name, out,
                                               rhs=rhs.get(data=elementwise))
 
     template_args = {
-        'out_type': out.fieldname,
-        'lhs_type': lhs.fieldname,
-        'rhs_type': rhs.fieldname,
+        'out_type': out.field_type,
+        'lhs_type': lhs.field_type,
+        'rhs_type': rhs.field_type,
         'operator_name': operator_name,
         'result_arg': out.getPass(const=False, data=True),
         'lhs_arg': lhs.getPass(const=True, data=True),
@@ -278,7 +276,7 @@ def non_compound_high_level_function_generator(operator, operator_name, out,
     rhs:           Field for the right-hand side input argument
     """
 
-    if lhs != 'real' and rhs != 'real':
+    if lhs != 'BoutReal' and rhs != 'BoutReal':
         mesh_equality_assert = "ASSERT1(localmesh == rhs.getMesh());"
     else:
         mesh_equality_assert = ""
@@ -289,16 +287,16 @@ def non_compound_high_level_function_generator(operator, operator_name, out,
     length_arg = m.join(dimension_names)
 
     # hardcode to only check field location for Field 3D
-    if lhs == rhs == 'f3d':
+    if lhs == rhs == 'Field3D':
         location_check = location_check_template.format(operator_name=operator_name)
     else:
         location_check = ""
 
-    # Set out location (again, only for f3d)
-    if out == 'f3d':
-        if rhs == 'f3d':
+    # Set out location (again, only for field3D)
+    if out == 'Field3D':
+        if rhs == 'Field3D':
             src = 'rhs'
-        elif lhs != 'real':
+        elif lhs != 'BoutReal':
             src = 'lhs'
         else:
             src = 'rhs'
@@ -306,12 +304,12 @@ def non_compound_high_level_function_generator(operator, operator_name, out,
     else:
         location_set = ""
 
-    lhs_or_rhs = "lhs" if lhs != 'real' else "rhs"
+    lhs_or_rhs = "lhs" if lhs != 'BoutReal' else "rhs"
 
     template_args = {
-        'out_type': out.fieldname,
-        'lhs_type': lhs.fieldname,
-        'rhs_type': rhs.fieldname,
+        'out_type': out.field_type,
+        'lhs_type': lhs.field_type,
+        'rhs_type': rhs.field_type,
         'operator': operator,
         'operator_name': operator_name,
         'out_low_level_arg': out.get(data=False, ptr=True),
@@ -365,9 +363,9 @@ def compound_low_level_function_generator(operator, operator_name, lhs, rhs, ele
                                                     rhs=rhs.get(data=elementwise))
 
     template_args = {
-        'out_type': out.fieldname,
-        'lhs_type': lhs.fieldname,
-        'rhs_type': rhs.fieldname,
+        'out_type': out.field_type,
+        'lhs_type': lhs.field_type,
+        'rhs_type': rhs.field_type,
         'operator_name': operator_name,
         'lhs_arg': lhs.getPass(const=False, data=True),
         'rhs_arg': rhs.getPass(const=True, data=True),
@@ -398,7 +396,7 @@ def compound_high_level_function_generator(operator, operator_name, lhs, rhs, el
     rhs:           Field for the right-hand side input argument
     """
 
-    if lhs != 'real' and rhs != 'real':
+    if lhs != 'BoutReal' and rhs != 'BoutReal':
         mesh_equality_assert = "ASSERT1(fieldmesh == rhs.getMesh());"
     else:
         mesh_equality_assert = ""
@@ -409,19 +407,19 @@ def compound_high_level_function_generator(operator, operator_name, lhs, rhs, el
     length_arg = m.join(dimension_names)
 
     # hardcode to only check field location for Field 3D
-    if lhs == rhs == 'f3d':
+    if lhs == rhs == 'Field3D':
         location_check = compound_location_check_template.format(operator_name=operator_name)
         optional_checkData = "checkData(*this);"
     else:
         location_check = ""
         optional_checkData = ""
 
-    lhs_or_rhs = "lhs" if lhs != 'real' else "rhs"
+    lhs_or_rhs = "lhs" if lhs != 'BoutReal' else "rhs"
 
     template_args = {
-        'out_type': out.fieldname,
-        'lhs_type': lhs.fieldname,
-        'rhs_type': rhs.fieldname,
+        'out_type': out.field_type,
+        'lhs_type': lhs.field_type,
+        'rhs_type': rhs.field_type,
         'operator': operator,
         'operator_name': operator_name,
         'out_low_level_arg': out.get(data=False, ptr=True),
@@ -446,7 +444,7 @@ if __name__ == "__main__":
 
     for lhs, rhs in itertools.product(fields, fields):
         # We don't have define real real operations
-        if lhs == rhs == 'real':
+        if lhs == rhs == 'BoutReal':
             continue
         rhs = copy(rhs)
         lhs = copy(lhs)
@@ -455,7 +453,7 @@ if __name__ == "__main__":
         # don't need to care what element is stored where, but can
         # just loop directly over everything, using a simple c-style
         # for loop. Otherwise we need x,y,z of the fields.
-        elementwise = lhs != rhs and lhs != 'real' and rhs != 'real'
+        elementwise = lhs != rhs and lhs != 'BoutReal' and rhs != 'BoutReal'
 
         # The output of the operation. The `larger` of the two fields.
         out = returnType(rhs, lhs)
