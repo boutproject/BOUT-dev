@@ -156,20 +156,20 @@ if __name__ == "__main__":
         lhs.name = 'lhs'
         rhs.name = 'rhs'
 
+        # Depending on how we loop over the fields, we need to know
+        # x, y and z, or just the total number of elements
+        if elementwise:
+            length_arg = ",".join(["int n{}".format(d) for d in out.dimensions])
+            dims = {"n" + x: x for x in out.dimensions}
+        else:
+            length_arg = "int len"
+            dims = {"len": 'i'}
+
+        # Either total number of elements, or size of each dimension separately
+        non_compound_length_dims = ["localmesh->LocalN{}".format(d) for d in out.dimensions]
+        compound_length_dims = ["fieldmesh->LocalN{}".format(d) for d in out.dimensions]
+
         for operator, operator_name in operators.items():
-
-            # Depending on how we loop over the fields, we need to know
-            # x, y and z, or just the total number of elements
-            if elementwise:
-                length_arg = ",".join(["int n{}".format(d) for d in out.dimensions])
-                dims = {"n" + x: x for x in out.dimensions}
-            else:
-                length_arg = " int len"
-                dims = {"len": 'i'}
-
-            # Either total number of elements, or size of each dimension separately
-            non_compound_length_dims = ["localmesh->LocalN{}".format(d) for d in out.dimensions]
-            compound_length_dims = ["fieldmesh->LocalN{}".format(d) for d in out.dimensions]
 
             template_args = {
                 'operator': operator,
