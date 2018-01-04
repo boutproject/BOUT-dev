@@ -104,7 +104,7 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
   int neq;
   {TRACE("Allreduce localN -> GlobalN");
     if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
-      output.write("\tERROR: MPI_Allreduce failed!\n");
+      output_error.write("\tERROR: MPI_Allreduce failed!\n");
       return 1;
     }
   }
@@ -471,7 +471,7 @@ BoutReal ArkodeSolver::run(BoutReal tout) {
       flag = ARKode(arkode_mem, tout, uvec, &internal_time, ARK_ONE_STEP);
       
       if(flag != ARK_SUCCESS) {
-        output.write("ERROR ARKODE solve failed at t = %e, flag = %d\n", internal_time, flag);
+        output_error.write("ERROR ARKODE solve failed at t = %e, flag = %d\n", internal_time, flag);
         return -1.0;
       }
       
@@ -489,7 +489,7 @@ BoutReal ArkodeSolver::run(BoutReal tout) {
   run_rhs(simtime);
   //run_diffusive(simtime);
   if(flag != ARK_SUCCESS) {
-    output.write("ERROR ARKODE solve failed at t = %e, flag = %d\n", simtime, flag);
+    output_error.write("ERROR ARKODE solve failed at t = %e, flag = %d\n", simtime, flag);
     return -1.0;
   }
 
