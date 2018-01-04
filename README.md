@@ -1,16 +1,18 @@
-#BOUT++
+# BOUT++
+
 <!---Build nice shields at shields.io-->
 [![Build Status](https://travis-ci.org/boutproject/BOUT-dev.svg?branch=master)](https://travis-ci.org/boutproject/BOUT-dev)
 [![License](https://img.shields.io/badge/license-LGPL-blue.svg)](https://img.shields.io/badge/license-LGPL-blue.svg)
 [![py3comp](https://img.shields.io/badge/py3-compatible-brightgreen.svg)](https://img.shields.io/badge/py3-compatible-brightgreen.svg)
-> ```
-> .______     ______    __    __  .___________.
-> |   _  \   /  __  \  |  |  |  | |           |  _     _
-> |  |_)  | |  |  |  | |  |  |  | `---|  |----`_| |_ _| |_
-> |   _  <  |  |  |  | |  |  |  |     |  |    |_   _|_   _|
-> |  |_)  | |  `--'  | |  `--'  |     |  |      |_|   |_|
-> |______/   \______/   \______/      |__|
-> ```
+
+```
+.______     ______    __    __  .___________.
+|   _  \   /  __  \  |  |  |  | |           |  _     _
+|  |_)  | |  |  |  | |  |  |  | `---|  |----`_| |_ _| |_
+|   _  <  |  |  |  | |  |  |  |     |  |    |_   _|_   _|
+|  |_)  | |  `--'  | |  `--'  |     |  |      |_|   |_|
+|______/   \______/   \______/      |__|
+```
 
 A modular fluid simulation code written in C++.
 Adapted from the original BOUT 3D 2-fluid simulation code.
