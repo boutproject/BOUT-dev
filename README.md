@@ -26,14 +26,38 @@ Further development by S.Farley (ANL) for coupling to PETSc and FACETS
 Homepage found at [http://boutproject.github.io/](http://boutproject.github.io/)
 
 ## Table of Contents
+* [Requirements](#requirements)
 * [Usage and installation](#usage-and-installation)
 * [Overview of files](#overview-of-files)
 * [Contributing](#contributing)
 * [Terms of use](#terms-of-use)
 * [License](#license)
 
+## Requirements
+
+BOUT++ needs the following:
+
+* A C++11 compiler
+* MPI
+* FFTW3
+* Either NetCDF or HDF5
+
+Note that some of the tests require NetCDF rather than HDF5
+
+BOUT++ has the following optional dependencies:
+
+* OpenMP
+* PETSc
+* SLEPc
+* ARKODE
+* IDA
+* CVODE
+* MUMPS
+* LAPACK
+* Score-p (for performance diagnostics)
+
 ## Usage and installation
-Please see the users manual in the [manual](/manual/) section
+Please see the [users manual](http://bout-dev.readthedocs.io)
 
 ## Overview of files
 
@@ -56,8 +80,8 @@ This directory contains
   * **idllib**                  Analysis codes in IDL. Add this to your IDL_PATH environment variable
   * **line_tracing**            IDL routines for line tracing of field lines
   * **line_tracing_v2**         Newer version of the IDL routines for line tracing of field lines
-  * **mathematicalib**          Library for post processing using mathematica
-  * **matlablib**               Library for post processing using mathlab
+  * **mathematicalib**          Library for post processing using Mathematica
+  * **matlablib**               Library for post processing using MATLAB
   * **numlib**                  Numerical IDL routines
   * **octave**                  Routines for post processing using octave
   * **plasmalib**               IDL routines for calculation of plasma parameters
