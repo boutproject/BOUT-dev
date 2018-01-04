@@ -66,7 +66,9 @@ Installing dependencies
 
 .. _sec-dependencies:
 
-To compile and run BOUT++ needs:
+The bare-minimum requirements for compiling and running BOUT++ are:
+
+#. A C++ compiler that supports C++11
 
 #. An MPI compiler such as OpenMPI (`www.open-mpi.org/ <www.open-mpi.org/>`__),
    MPICH ( `https://www.mpich.org/ <https://www.mpich.org/>`__) or
@@ -76,6 +78,12 @@ To compile and run BOUT++ needs:
    
 #. The NetCDF library ( `https://www.unidata.ucar.edu/downloads/netcdf <https://www.unidata.ucar.edu/downloads/netcdf>`__ )
 
+.. note::
+   If you use an Intel compiler, you must also make sure that you have
+   a version of GCC that supports C++11 (GCC 4.8+).
+
+   On supercomputers, or in other environments that use a module
+   system, you may need to load modules for both Intel and GCC.
 
 On a cluster or supercomputer
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
