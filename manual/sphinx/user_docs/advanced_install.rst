@@ -35,6 +35,25 @@ somewhere on the path. If this is found then configure should have all
 the settings it needs. If this isn’t found then configure will search
 for the NetCDF include and library files.
 
+OpenMP
+------
+
+BOUT++ can make use of Single-Instruction Multiple-Data (SIMD)
+parallelism through OpenMP. To enable OpenMP, use the
+``--enable-openmp`` flag to configure:
+
+.. code-block:: bash
+
+    ./configure --enable-openmp
+
+.. note::
+    If you want to use OpenMP with Clang, you will need Clang 3.7+,
+    and either ``libomp`` or ``libiomp``.
+
+    You will be able to compile BOUT++ with OpenMP with lower versions
+    of Clang, or using the GNU OpenMP library ``libgomp``, but it will
+    only run with a single thread.
+
 SUNDIALS
 --------
 
