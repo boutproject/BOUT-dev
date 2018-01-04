@@ -21,6 +21,7 @@ try:
 except ImportError:
     pass
 
+from collections import OrderedDict
 from copy import deepcopy as copy
 import itertools
 
@@ -243,7 +244,7 @@ def context_generator(out, lhs, rhs):
     # dimension individually, or the total number of elements
     if elementwise:
         low_level_length_arg = ",".join(["int n{}".format(d) for d in out.dimensions])
-        dims = {"n" + x: x for x in out.dimensions}
+        dims = OrderedDict([("n" + x, x) for x in out.dimensions])
     else:
         low_level_length_arg = " int len"
         dims = {"len": 'i'}
