@@ -85,7 +85,7 @@ class Field(object):
             elif self.field_type == 'Field3D':
                 index = "z + nz*(y + ny*x)"
             else:
-                raise NotImplementedError
+                raise ValueError("Unexpected field_type")
         else:
             index = "i"
         return "{name}[{index}]".format(name=self.name, index=index)
