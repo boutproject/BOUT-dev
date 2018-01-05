@@ -6,8 +6,9 @@ and is in ``bout++/src/sys/derivs.cxx``. The main task of this module is
 to map functions on fields like ``DDX`` to direction-independent
 differential methods on stencils such as :math:`4^{th}`-order central
 differencing. This mapping depends on global settings in ``BOUT.inp``
-and is illustrated in figure [fig:diffOverview].
+and is illustrated in :numref:`fig-diffOverview`.
 
+.. _fig-diffOverview:
 .. figure:: ../figs/diffOverview.*
    :alt: Overview of ``derivs`` module
 
@@ -135,10 +136,11 @@ To search this table, there is the function
     DIFF_METHOD lookupFunc(DiffLookup *table, const string &label)
 
 During initialisation, the lookup therefore works in two stages, shown
-in figure [fig:diffLookup]. First the short description is turned into a
+in :numref:`fig-diffLookup`. First the short description is turned into a
 ``DIFF_METHOD`` enum code, then this code is turned into a function
 pointer.
 
+.. _fig-diffLookup:
 .. figure:: ../figs/diffLookup.*
    :alt: Lookup tables for differential method
 

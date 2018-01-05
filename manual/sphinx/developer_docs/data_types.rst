@@ -1,7 +1,7 @@
 Data types
 ==========
 
-The classes outlines in red in figure [fig:layout2] are data types
+The classes outlines in red in :numref:`fig-layout2` are data types
 currently implemented in BOUT++.
 
 ``FieldData``
@@ -103,8 +103,9 @@ eliminates allocation and freeing of memory; and copy-on-change, which
 minimises unnecessary copying of data.
 
 Both of these optimisations are done “behind the scenes”, hidden from
-the remainder of the code, and are illustrated in figure [fig:memory]:
+the remainder of the code, and are illustrated in :numref:`fig-memory`:
 
+.. _fig-memory:
 .. figure:: ../figs/memory.*
    :alt: Memory handling in BOUT++
 
@@ -131,7 +132,7 @@ fast pointer manipulation.
 
 Copy-on-change (reference counting) further reduces memory useage and
 unnecessary copying of data. When one field is set equal to another
-(e.g. ``Field3D A = B`` in figure [fig:memory]), no data is copied, only
+(e.g. ``Field3D A = B`` in :numref:`fig-memory`), no data is copied, only
 the reference to the underlying data (in this case both A and B point to
 data block a). Only when one of these objects is modified is a second
 memory block used to store the different value. This is particularly

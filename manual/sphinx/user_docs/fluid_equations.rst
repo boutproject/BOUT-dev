@@ -572,6 +572,8 @@ Another way to set the boundaries is to copy them from another variable:
       a.setBoundaryTo(b); // Copy b's boundaries into a
       ...
 
+.. _sec-custom-bc:
+
 Custom boundary conditions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 

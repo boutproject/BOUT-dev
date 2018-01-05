@@ -88,9 +88,10 @@ starting on Y=1. This works ok as long as the number of slices to be
 inverted is greater than the number of X processors
 (``MYSUB > mesh->NXPE``). If ``MYSUB < mesh->NXPE`` then not all
 processors can be busy at once, and so efficiency will fall sharply.
-Figure [fig:par\_laplace] shows the useage of 4 processors inverting a
+:numref:`fig-par-laplace` shows the useage of 4 processors inverting a
 set of 3 poloidal slices (i.e. MYSUB=3)
 
+.. _fig-par-laplace:
 .. figure:: ../figs/par_laplace.*
    :alt: Parallel Laplacian inversion
 
