@@ -1,3 +1,6 @@
+.. Use bash as the default language for syntax highlighting in this file
+.. highlight:: console
+
 .. _sec-advancedinstall:
 
 Advanced installation options
@@ -40,9 +43,7 @@ OpenMP
 
 BOUT++ can make use of Single-Instruction Multiple-Data (SIMD)
 parallelism through OpenMP. To enable OpenMP, use the
-``--enable-openmp`` flag to configure:
-
-.. code-block:: bash
+``--enable-openmp`` flag to configure::
 
     ./configure --enable-openmp
 
@@ -73,9 +74,7 @@ https://computation.llnl.gov/casc/sundials/main.html.
   directory. The full installation guide is found in the downloaded
   ``.tar.gz``, but we will provide a step-by-step guide to install it
   and make it compatible with BOUT++ here.
-|  
-
-.. code-block:: bash
+|  ::
 
     $ cd ~
     $ mkdir local
@@ -110,9 +109,7 @@ algebraic constraints on variables to be specified.
 
 To configure BOUT++ with SUNDIALS only (see section [sec:PETSc] on how
 to build PETSc with SUNDIALS), go to the root directory of BOUT++ and
-type
-
-.. code-block:: bash
+type::
 
     $ ./configure --with-sundials
 
@@ -129,9 +126,7 @@ Helmholtz equations.
 Currently, BOUT++ supports PETSc version :math:`3.1`, :math:`3.2`,
 :math:`3.3` and :math:`3.4` (support for newer versions are planned for
 the future). To install PETSc version :math:`3.4.5`, use the following
-steps
-
-.. code-block:: bash
+steps::
 
     $ cd ~
     $ wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.4.5.tar.gz
@@ -140,9 +135,7 @@ steps
     $ # rm petsc-3.4.5.tar.gz
     $ cd petsc-3.4.5
 
-To build PETSc without SUNDIALS, configure with
-
-.. code-block:: bash
+To build PETSc without SUNDIALS, configure with::
 
     $ ./configure \
       --with-clanguage=cxx \
@@ -159,9 +152,7 @@ debugging.
   ``--with-sundials-dir=$HOME/local``
 |  
 | It is also possible to get PETSc to download and install MUMPS (see
-  :ref:`sec-MUMPS`), by adding
-
-.. code-block:: bash
+  :ref:`sec-MUMPS`), by adding::
 
     --download-mumps \
     --download-scalapack \
@@ -171,50 +162,36 @@ debugging.
     --download-ptscotch \
     --download-metis
 
-to ``./configure`` To make PETSc, type
-
-.. code-block:: bash
+to ``./configure`` To make PETSc, type::
 
     $ make PETSC_DIR=$HOME/petsc-3.4.5 PETSC_ARCH=arch-linux2-cxx-debug all
 
 Should blas, lapack or any other packages be missing, you will get an
 error, and a suggestion that you can append
 ``--download-name-of-package`` to the ``./configure`` line. You may want
-to test that everything is configured properly. To do this, type
-
-.. code-block:: bash
+to test that everything is configured properly. To do this, type::
 
     $ make PETSC_DIR=$HOME/petsc-3.4.5 PETSC_ARCH=arch-linux2-cxx-debug test
 
 To configure BOUT++ with PETSc, go to the BOUT++ root directory, and
-type
-
-.. code-block:: bash
+type::
 
     $ ./configure --with-petsc=$HOME/petsc-3.4.5
 
-To configure BOUT++ with PETSc and sundials, type instead
-
-.. code-block:: bash
+To configure BOUT++ with PETSc and sundials, type instead::
 
     $ ./configure --with-petsc=$HOME/petsc-3.4.5 --with-sundials
 
-Finally compile PETSc:
-
-.. code-block:: bash
+Finally compile PETSc::
 
     $ make
 
 To use PETSc, you have to define the variable ``PETSC_DIR`` to point to
-the petsc directory, type
-
-.. code-block:: bash
+the petsc directory, type::
 
     $ export PETSC_DIR=$HOME/petsc-3.4.5
 
-and add to your startup file ``$HOME/.bashrc``
-
-.. code-block:: bash
+and add to your startup file ``$HOME/.bashrc``::
 
     $ export PETSC_DIR=$HOME/petsc-3.4.5
 
@@ -228,15 +205,11 @@ license).
 
 To replace these routines, BOUT++ can use the LAPACK library. This is
 however written in FORTRAN 77, which can cause linking headaches. To
-enable these routines use
-
-.. code-block:: bash
+enable these routines use::
 
     $ ./configure --with-lapack
 
-and to specify a non-standard path
-
-.. code-block:: bash
+and to specify a non-standard path::
 
     $ ./configure --with-lapack=/path/to/lapack
 
@@ -248,9 +221,7 @@ MUMPS
 This is still experimental, but does work on at least some systems at
 York. The PETSc library can be used to call MUMPS for directly solving
 matrices (e.g. for Laplacian inversions), or MUMPS can be used directly.
-To enable MUMPS, configure with
-
-.. code-block:: bash
+To enable MUMPS, configure with::
 
     $ ./configure --with-mumps
 
@@ -264,9 +235,7 @@ MPI compilers
 
 These are usually called something like mpicc and mpiCC (or mpicxx), and
 the configure script will look for several common names. If your
-compilers aren’t recognised then set them using
-
-.. code-block:: bash
+compilers aren’t recognised then set them using::
 
     $ ./configure MPICC=<your C compiler> MPICXX=<your C++ compiler>
 
@@ -283,9 +252,7 @@ Wrong install script
 ~~~~~~~~~~~~~~~~~~~~
 
 Before installing, make sure the correct version of ``install`` is being
-used by running
-
-.. code-block:: bash
+used by running::
 
      $ which install
 
@@ -293,9 +260,7 @@ This should point to a system directory like ``/usr/bin/install``.
 Sometimes when IDL has been installed, this points to the IDL install
 (e.g. something like ``/usr/common/usg/idl/idl70/bin/install`` on
 Franklin). A quick way to fix this is to create a link from your local
-bin to the system install:
-
-.. code-block:: bash
+bin to the system install::
 
      $ ln -s /usr/bin/install $HOME/local/bin/
 
@@ -306,9 +271,7 @@ Compiling cvode.cxx fails
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Occasionally compiling the CVODE solver interface will fail with an
-error similar to:
-
-.. code-block:: bash
+error similar to::
 
     cvode.cxx: In member function ‘virtual int CvodeSolver::init(rhsfunc, bool, int, BoutR...
     cvode.cxx:234:56: error: invalid conversion from ‘int (*)(CVINT...
