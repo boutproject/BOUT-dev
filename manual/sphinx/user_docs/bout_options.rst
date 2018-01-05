@@ -144,18 +144,34 @@ files. Using the option
 saves a copy of the restart files every 20 timesteps, which can then be
 used as a starting point.
 
-The X and Y size of the computational grid is set by the grid file, but
-the number of points in the Z (axisymmetric) direction is specified in
-the options file:
+.. _sec-grid-options:
 
-.. code-block:: bash
+Grids
+~~~~~~~~~
+
+You can set the size of the computational grid in the ``mesh`` section
+of the input file (see :ref:`sec-gridgen` for more information):
+
+.. code-block:: cfg
 
     [mesh]
-    nz = 32
+    nx = 16  # Number of points in X
+    ny = 16  # Number of points in Y
+    nz = 32  # Number of points in Z
 
-It is recommended, but not necessary, that this be :math:`\texttt{nz} = 2^n`, i.e.
-:math:`1,2,4,8,\ldots`. This is because FFTs are usually slightly faster
-with power-of-two length arrays, and FFTs are used quite frequently in many models.
+It is recommended, but not necessary, that this be :math:`\texttt{nz}
+= 2^n`, i.e.  :math:`1,2,4,8,\ldots`. This is because FFTs are usually
+slightly faster with power-of-two length arrays, and FFTs are used
+quite frequently in many models.
+
+.. note:: In previous versions of BOUT++, ``nz`` was constrained to be
+          a power-of-two, and had to be specified as a power-of-two
+          plus one (i.e. a number of the form :math:`2^n + 1` like
+          :math:`2, 3, 5, 9,\ldots`) in order to account for an
+          additional, unused, point in Z. Both of these conditions
+          were relaxed in BOUT++ 4.0. If you use an input file from a
+          previous version, check that this superfluous point is not
+          included in ``nz``.
 
 Since the Z dimension is periodic, the domain size is specified as
 multiples or fractions of :math:`2\pi`. To specify a fraction of
@@ -196,13 +212,20 @@ direction can be specified:
 
     NXPE = 1  # Set number of X processors
 
-The grid file to use is specified relative to the root directory where
-the simulation is run (i.e. running “``ls ./data/BOUT.inp``” gives the
-options file)
+If you need to specify complex input values, e.g. numerical values
+from experiment, you may want to use a grid file. The grid file to use
+is specified relative to the root directory where the simulation is
+run (i.e. running “``ls ./data/BOUT.inp``” gives the options
+file). You can use the global option ``grid``, or ``mesh:file``:
 
 .. code-block:: cfg
 
     grid = "data/cbm18_8_y064_x260.nc"
+
+    # Alternatively:
+    [mesh]
+    file = "data/cbm18_8_y064_x260.nc"
+
 
 Communications
 --------------
