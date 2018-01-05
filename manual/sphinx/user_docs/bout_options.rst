@@ -103,7 +103,7 @@ At the top of the BOUT.inp file (before any section headers), options
 which affect the core code are listed. These are common to all physics
 models, and the most useful of them are:
 
-.. code-block:: bash
+.. code-block:: cfg
 
     NOUT = 100       # number of time-points output
     TIMESTEP = 1.0   # time between outputs
@@ -122,7 +122,7 @@ run for called “wall time”, because it’s the time taken according to a
 clock on the wall, as opposed to the CPU time actually used. If this is
 the case, you can use the option
 
-.. code-block:: bash
+.. code-block:: cfg
 
     wall_limit = 10 # wall clock limit (in hours)
 
@@ -137,7 +137,7 @@ the last simulation. Whilst it is possible to create a restart file from
 the output data afterwards, it’s much easier if you have the restart
 files. Using the option
 
-.. code-block:: bash
+.. code-block:: cfg
 
     archive = 20
 
@@ -161,7 +161,7 @@ Since the Z dimension is periodic, the domain size is specified as
 multiples or fractions of :math:`2\pi`. To specify a fraction of
 :math:`2\pi`, use
 
-.. code-block:: bash
+.. code-block:: cfg
 
     ZPERIOD = 10
 
@@ -171,7 +171,7 @@ tokamaks to make sure that the domain is an integer fraction of a torus.
 If instead you want to specify the Z range directly (for example if Z is
 not an angle), there are the options
 
-.. code-block:: bash
+.. code-block:: cfg
 
     ZMIN = 0.0
     ZMAX = 0.1
@@ -192,7 +192,7 @@ constraints. These constraints are:
 To specify a splitting manually, the number of processors in the X
 direction can be specified:
 
-.. code-block:: bash
+.. code-block:: cfg
 
     NXPE = 1  # Set number of X processors
 
@@ -200,7 +200,7 @@ The grid file to use is specified relative to the root directory where
 the simulation is run (i.e. running “``ls ./data/BOUT.inp``” gives the
 options file)
 
-.. code-block:: bash
+.. code-block:: cfg
 
     grid = "data/cbm18_8_y064_x260.nc"
 
