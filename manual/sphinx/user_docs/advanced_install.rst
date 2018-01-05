@@ -119,10 +119,9 @@ BOUT++ can use PETSc https://www.mcs.anl.gov/petsc/ for time-integration
 and for solving elliptic problems, such as inverting Poisson and
 Helmholtz equations.
 
-Currently, BOUT++ supports PETSc version :math:`3.1`, :math:`3.2`,
-:math:`3.3` and :math:`3.4` (support for newer versions are planned for
-the future). To install PETSc version :math:`3.4.5`, use the following
-steps::
+Currently, BOUT++ supports PETSc versions 3.1, 3.2, 3.3 and 3.4
+(support for newer versions are planned for the future). To install
+PETSc version 3.4.5, use the following steps::
 
     $ cd ~
     $ wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.4.5.tar.gz
@@ -143,53 +142,60 @@ To build PETSc without SUNDIALS, configure with::
 Add ``--with-debugging=yes`` to ``./configure`` in order to allow
 debugging.
 
-| To build PETSc with SUNDIALS, install SUNDIALS as explained in section
-  :ref:`sec-sundials`, and append ``./configure`` with
-  ``--with-sundials-dir=$HOME/local``
-|  
-| It is also possible to get PETSc to download and install MUMPS (see
-  :ref:`sec-MUMPS`), by adding::
+.. note:: To build PETSc with SUNDIALS, install SUNDIALS as explained
+          in section :ref:`sec-sundials`, and append ``./configure``
+          with ``--with-sundials-dir=$HOME/local``
 
-    --download-mumps \
-    --download-scalapack \
-    --download-blacs \
-    --download-f-blas-lapack=1 \
-    --download-parmetis \
-    --download-ptscotch \
-    --download-metis
+.. note:: It is also possible to get PETSc to download and install
+          MUMPS (see :ref:`sec-MUMPS`), by adding::
 
-to ``./configure`` To make PETSc, type::
+              --download-mumps \
+              --download-scalapack \
+              --download-blacs \
+              --download-f-blas-lapack=1 \
+              --download-parmetis \
+              --download-ptscotch \
+              --download-metis
+
+          to ``./configure``.
+
+To make PETSc, type::
 
     $ make PETSC_DIR=$HOME/petsc-3.4.5 PETSC_ARCH=arch-linux2-cxx-debug all
 
-Should blas, lapack or any other packages be missing, you will get an
+Should BLAS, LAPACK, or any other packages be missing, you will get an
 error, and a suggestion that you can append
 ``--download-name-of-package`` to the ``./configure`` line. You may want
 to test that everything is configured properly. To do this, type::
 
     $ make PETSC_DIR=$HOME/petsc-3.4.5 PETSC_ARCH=arch-linux2-cxx-debug test
 
-To configure BOUT++ with PETSc, go to the BOUT++ root directory, and
-type::
-
-    $ ./configure --with-petsc=$HOME/petsc-3.4.5
-
-To configure BOUT++ with PETSc and sundials, type instead::
-
-    $ ./configure --with-petsc=$HOME/petsc-3.4.5 --with-sundials
-
-Finally compile PETSc::
-
-    $ make
-
-To use PETSc, you have to define the variable ``PETSC_DIR`` to point to
-the petsc directory, type::
+To use PETSc, you have to define the ``PETSC_DIR`` and ``PETSC_ARCH``
+environment variables to match how PETSc was built::
 
     $ export PETSC_DIR=$HOME/petsc-3.4.5
+    $ export PETSC_ARCH=arch-linux2-cxx-debug
 
 and add to your startup file ``$HOME/.bashrc``::
 
-    $ export PETSC_DIR=$HOME/petsc-3.4.5
+    export PETSC_DIR=$HOME/petsc-3.4.5
+    export PETSC_ARCH=arch-linux2-cxx-debug
+
+To configure BOUT++ with PETSc, go to the BOUT++ root directory, and
+type::
+
+    $ ./configure --with-petsc
+
+You can configure BOUT++ against different PETSc installations either
+through the ``PETSC_DIR/ARCH`` variables as above, or by giving
+``--with-petsc`` a path::
+
+  $ ./configure --with-petsc=/path/to/other/petsc
+
+To configure BOUT++ with PETSc and SUNDIALS, type instead::
+
+    $ ./configure --with-petsc --with-sundials
+
 
 LAPACK
 ------
