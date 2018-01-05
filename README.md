@@ -14,14 +14,16 @@
 |______/   \______/   \______/      |__|
 ```
 
-A modular fluid simulation code written in C++.
-Adapted from the original BOUT 3D 2-fluid simulation code.
-Aims to be able to solve a wide variety of fluid models in
-almost any curvilinear coordinate system.
+BOUT++ is a framework for writing fluid and plasma simulations in
+curvilinear geometry. It is intended to be quite modular, with a
+variety of numerical methods and time-integration solvers
+available. BOUT++ is primarily designed and tested with reduced plasma
+fluid models in mind, but it can evolve any number of equations, with
+equations appearing in a readable form.
 
-Developed by B.Dudson (University of York) and M.Umansky (LLNL)
-based on the original BOUT code by X.Xu (LLNL)
-Further development by S.Farley (ANL) for coupling to PETSc and FACETS
+Jointly developed by University of York (UK), LLNL, CCFE, DCU, DTU,
+and other international partners.
+
 
 Homepage found at [http://boutproject.github.io/](http://boutproject.github.io/)
 
