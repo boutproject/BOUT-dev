@@ -425,7 +425,7 @@ this can be set as a template parameter.
 
 
 
-.. _sec-slope-limiters
+.. _sec-slope-limiters:
 
 Slope limiters
 --------------

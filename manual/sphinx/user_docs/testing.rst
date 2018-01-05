@@ -23,7 +23,7 @@ desktop, and ideally only a few seconds. If you have a large simulation
 which you want to stop anyone breaking, find starting parameters which
 are as sensitive as possible so that the simulation can be run quickly.
 
-.. _sec-mms
+.. _sec-mms:
 
 Method of Manufactured Solutions
 --------------------------------
