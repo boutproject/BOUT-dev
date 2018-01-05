@@ -67,40 +67,36 @@ solver. Currently, BOUT++ also supports the SUNDIALS solvers CVODE, IDA
 and ARKODE which are available from
 https://computation.llnl.gov/casc/sundials/main.html.
 
-| SUNDIALS is only downloadable from the home page, as submitting your
-  name and e-mail is required for the download. As for the date of this
-  typing, SUNDIALS version :math:`2.6.2` is the newest. In order for a
-  smooth install it is recommended to install SUNDIALS from an install
-  directory. The full installation guide is found in the downloaded
-  ``.tar.gz``, but we will provide a step-by-step guide to install it
-  and make it compatible with BOUT++ here.
-|  ::
+.. note:: SUNDIALS is only downloadable from the home page, as submitting your
+   name and e-mail is required for the download. As for the date of this
+   typing, SUNDIALS version :math:`3.0.0` is the newest. In order for a
+   smooth install it is recommended to install SUNDIALS from an install
+   directory. The full installation guide is found in the downloaded
+   ``.tar.gz``, but we will provide a step-by-step guide to install it
+   and make it compatible with BOUT++ here
 
-    $ cd ~
-    $ mkdir local
-    $ cd local
-    $ mkdir examples
-    $ cd ..
-    $ mkdir install
-    $ cd install
-    $ mkdir sundials-install
-    $ cd sundials-install
-    $ # Move the downloaded sundials-2.6.2.tar.gz to sundials-install
-    $ tar -xzvf sundials-2.6.2.tar.gz
-    $ mkdir build
-    $ cd build
+::
 
-    $ cmake \
-      -DCMAKE_INSTALL_PREFIX=$HOME/local \
-      -DEXAMPLES_INSTALL_PATH=$HOME/local/examples \
-      -DCMAKE_LINKER=$HOME/local/lib \
-      -DLAPACK_ENABLE=ON \
-      -DOPENMP_ENABLE=ON \
-      -DMPI_ENABLE=ON \
-    $ ../sundials-2.6.2
+     $ cd ~
+     $ mkdir -p local/examples
+     $ mkdir -p install/sundials-install
+     $ cd install/sundials-install
+     $ # Move the downloaded sundials-3.0.0.tar.gz to sundials-install
+     $ tar -xzvf sundials-3.0.0.tar.gz
+     $ mkdir build
+     $ cd build
 
-    $ make
-    $ make install
+     $ cmake \
+       -DCMAKE_INSTALL_PREFIX=$HOME/local \
+       -DEXAMPLES_INSTALL_PATH=$HOME/local/examples \
+       -DCMAKE_LINKER=$HOME/local/lib \
+       -DLAPACK_ENABLE=ON \
+       -DOPENMP_ENABLE=ON \
+       -DMPI_ENABLE=ON \
+       ../sundials-3.0.0
+
+     $ make
+     $ make install
 
 The SUNDIALS IDA solver is a Differential-Algebraic Equation (DAE)
 solver, which evolves a system of the form
