@@ -122,8 +122,6 @@ files for tokamaks. These can be used by the ``2fluid`` and
 ``highbeta_reduced`` modules, and are (mostly) compatible with inputs to
 the BOUT-06 code.
 
-Figure [fig:gridgen] shows the routines and file formats used in taking
-output from different codes and converting into input to BOUT++.
 
 BOUT++ Topology
 ---------------
@@ -282,3 +280,10 @@ Generating equilibria
 
 The directory ``tokamak_grids/shifted_circle`` contains IDL code to
 generate shifted circle (large aspect ratio) Grad-Shafranov equilibria.
+
+.. figure:: ../figs/grid_gen.*
+    :alt: IDL routines and file formats used in taking output from
+          different codes and converting into input to BOUT++.
+
+    IDL routines and file formats used in taking output from different
+    codes and converting into input to BOUT++.
