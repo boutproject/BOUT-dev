@@ -315,9 +315,7 @@ Implementation
 To control the behaviour of BOUT++ a set of options is used, with
 options organised into sections which can be nested. To represent this
 tree structure there is the ``Options`` class defined in
-``bout++/include/options.hxx``
-
-.. code:: c++
+``bout++/include/options.hxx``::
 
     class Options {
      public:
@@ -333,49 +331,37 @@ tree structure there is the ``Options`` class defined in
       Options* getSection(const string &name);
     };
 
-To access the options, there is a static function (singleton)
-
-::
+To access the options, there is a static function (singleton)::
 
       Options *options = Options::getRoot();
 
 which gives the top-level (root) options class. Setting options is done
 using the ``set()`` methods which are currently defined for ``int``,
-``BoutReal``, ``bool`` and ``string`` . For example:
-
-::
+``BoutReal``, ``bool`` and ``string`` . For example::
 
       options->set("nout", 10);      // Set an integer
       options->set("restart", true); // A bool
 
 Often it’s useful to see where an option setting has come from e.g. the
 name of the options file or “command line”. To specify a source, pass it
-as a third argument:
-
-::
+as a third argument::
 
       options->set("nout", 10, "manual");
 
 To create a section, just use ``getSection`` : if it doesn’t exist it
-will be created.
-
-::
+will be created::
 
       Options *section = options->getSection("mysection");
       section->set("myswitch", true);
 
 To get options, use the ``get()`` method which take the name of the
-option, the variable to set, and the default value.
-
-.. code:: c++
+option, the variable to set, and the default value::
 
       int nout;
       options->get("nout", nout, 1);
 
 Internally, ``Options`` converts all types to strings and does type
-conversion when needed, so the following code would work:
-
-.. code:: c++
+conversion when needed, so the following code would work::
 
       Options *options = Options::getRoot();
       options->set("test", "123");
@@ -389,17 +375,13 @@ when it’s set, but only when it’s requested.
 If the verbose flag is set (``-v`` on command line) , then ``get`` methods output a
 message to the log files giving the value used and the source of that value.
 This is controlled by the ``log`` member of Options and can be turned on and off
-by calling ``setLogging`` e.g.
-
-.. code:: c++
+by calling ``setLogging`` e.g.::
    
    options->getRoot()->setLogging(false); // Turn off logging of options
 
 Changes to logging propagate to all sub-sections, so setting the logging
 of the root options object sets it for all sections. To see logs from
-a particular subset of the options tree set the logging for that section:
-
-.. code:: c++
+a particular subset of the options tree set the logging for that section::
    
    options->getRoot()->getSection("mesh")->setLogging(true); // Turn on some logging
 
@@ -415,9 +397,7 @@ Reading options
 
 To allow different input file formats, each file parser implements the
 ``OptionParser`` interface defined in
-``bout++/src/sys/options/optionparser.hxx``
-
-::
+``bout++/src/sys/options/optionparser.hxx``::
 
     class OptionParser {
      public:
@@ -429,9 +409,7 @@ and so just needs to implement a single function which reads a given
 file name and inserts the options into the given ``Options`` object.
 
 To use these parsers and read in a file, there is the ``OptionsReader``
-class defined in ``bout++/include/optionsreader.hxx``
-
-::
+class defined in ``bout++/include/optionsreader.hxx``::
 
     class OptionsReader {
      public:
@@ -439,25 +417,19 @@ class defined in ``bout++/include/optionsreader.hxx``
      void parseCommandLine(Options *options, int argc, char **argv);
     };
 
-This is a singleton object which is accessed using
-
-::
+This is a singleton object which is accessed using::
 
       OptionsReader *reader = OptionsReader::getInstance();
 
 so to read a file ``BOUT.inp`` in a directory given in a variable
-``data_dir`` the following code is used in ``bout++.cxx``:
-
-::
+``data_dir`` the following code is used in ``bout++.cxx``::
 
       Options *options = Options::getRoot();
       OptionsReader *reader = OptionsReader::getInstance();
       reader->read(options, "%s/BOUT.inp", data_dir);
 
 To parse command line arguments as options, the ``OptionsReader`` class
-has a method:
-
-::
+has a method::
 
       reader->parseCommandLine(options, argc, argv);
 
