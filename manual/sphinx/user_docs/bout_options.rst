@@ -63,7 +63,7 @@ Command-line switches are:
 ==============  ============================================================
 -h, --help      Prints a help message and quits
 -v, --verbose   Outputs more messages to BOUT.log files
--q, --quiet     Outputs fewer messages to log files 
+-q, --quiet     Outputs fewer messages to log files
 -d <directory>  Look in <directory> for input/output files (default "data")
 -f <file>       Use OPTIONS given in <file>
 -o <file>       Save used OPTIONS given to <file> (default BOUT.settings)
@@ -183,7 +183,7 @@ directions. By default BOUT++ automatically divides the grid in both X and Y,
 finding the decomposition with domains closest to square, whilst satisfying
 constraints. These constraints are:
 
-- Every processor must have the same size and shape domain 
+- Every processor must have the same size and shape domain
 
 - Branch cuts, mostly at X-points, must be on processor boundaries.
   This is because the connection between grid points is modified in BOUT++
@@ -376,13 +376,13 @@ If the verbose flag is set (``-v`` on command line) , then ``get`` methods outpu
 message to the log files giving the value used and the source of that value.
 This is controlled by the ``log`` member of Options and can be turned on and off
 by calling ``setLogging`` e.g.::
-   
+
    options->getRoot()->setLogging(false); // Turn off logging of options
 
 Changes to logging propagate to all sub-sections, so setting the logging
 of the root options object sets it for all sections. To see logs from
 a particular subset of the options tree set the logging for that section::
-   
+
    options->getRoot()->getSection("mesh")->setLogging(true); // Turn on some logging
 
 so the above code turns on logging of options for the "mesh" section and all subsections of mesh.
@@ -434,3 +434,31 @@ has a method::
       reader->parseCommandLine(options, argc, argv);
 
 This is currently quite rudimentary and needs improving.
+
+
+FFT
+---
+
+There is one global option for Fourier transforms, ``fft_measure``
+(default: ``false``). Setting this to true enables the
+``FFTW_MEASURE`` mode when performing FFTs, otherwise
+``FFTW_ESTIMATE`` is used:
+
+.. code-block:: cfg
+
+    [fft]
+    fft_measure = true
+
+In ``FFTW_MEASURE`` mode, FFTW runs and measures how long several
+FFTs take, and tries to find the optimal method.
+
+.. note:: Technically, ``FFTW_MEASURE`` is non-deterministic and
+          enabling ``fft_measure`` may result in slightly different
+          answers from run to run, or be dependent on the number of
+          MPI processes. This may be important if you are trying to
+          benchmark or measure performance of your code.
+
+          See the `FFTW FAQ`_ for more information.
+
+
+.. _FFTW FAQ: http://www.fftw.org/faq/section3.html#nondeterministic
