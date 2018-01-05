@@ -378,11 +378,11 @@ int physics_init(bool restarting) {
 
   // Load metrics
   if(mesh->get(Rxy,  "Rxy")) { // m
-    output.write("Error: Cannot read Rxy from grid\n");
+    output_error.write("Error: Cannot read Rxy from grid\n");
     return 1;
   }
   if(mesh->get(Bpxy, "Bpxy")) { // T
-    output.write("Error: Cannot read Bpxy from grid\n");
+    output_error.write("Error: Cannot read Bpxy from grid\n");
     return 1;
   }
   mesh->get(Btxy, "Btxy"); // T
@@ -778,17 +778,17 @@ int physics_init(bool restarting) {
     N0 = P0/(Ti0+Te0);
   } else {
     if (mesh->get(N0,  "Niexp")) { // N_i0                                          
-      output.write("Error: Cannot read Ni0 from grid\n");
+      output_error.write("Error: Cannot read Ni0 from grid\n");
       return 1;
     } 
     
     if (mesh->get(Ti0,  "Tiexp")) { // T_i0                                         
-      output.write("Error: Cannot read Ti0 from grid\n");
+      output_error.write("Error: Cannot read Ti0 from grid\n");
       return 1;
     }
 
     if (mesh->get(Te0,  "Teexp")) { // T_e0  
-      output.write("Error: Cannot read Te0 from grid\n");
+      output_error.write("Error: Cannot read Te0 from grid\n");
       return 1;
     }
     N0 /= Nbar;
@@ -1058,7 +1058,7 @@ int physics_init(bool restarting) {
     // Implicit Phi solve using IDA
     
     if (!bout_constrain(phi, C_phi, "phi")) {
-      output.write("ERROR: Cannot constrain. Run again with phi_constraint=false\n");
+      output_error.write("ERROR: Cannot constrain. Run again with phi_constraint=false\n");
       throw BoutException("Aborting.\n");
     }
     
