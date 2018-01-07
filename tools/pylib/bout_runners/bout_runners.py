@@ -2225,9 +2225,8 @@ class basic_runner(object):
 
             with DataFile(file_name) as f:
                 # Loop over the variables in the file
-                NPES = f.read("NPES")
+                NYPE = f.read("NYPE")
                 NXPE = f.read("NXPE")
-                NYPE = int(NPES/NXPE)
                 for var in f.list():
                     # Read the data
                     data = f.read(var)
@@ -4405,3 +4404,4 @@ if __name__ == "__main__":
            "manual, or have a look at 'BOUT/examples/bout_runners_example', "\
            "or have a look at the documentation"))
 #}}}
+
