@@ -43,17 +43,17 @@ public:
   ~LaplacePDD() {}
 
   using Laplacian::setCoefA;
-  void setCoefA(const Field2D &val) override { Acoef = val; }
+  void setCoefA(const Field2D &val) final { Acoef = val; }
   using Laplacian::setCoefC;
-  void setCoefC(const Field2D &val) override { Ccoef = val; }
+  void setCoefC(const Field2D &val) final { Ccoef = val; }
   using Laplacian::setCoefD;
-  void setCoefD(const Field2D &val) override { Dcoef = val; }
+  void setCoefD(const Field2D &val) final { Dcoef = val; }
   using Laplacian::setCoefEx;
-  void setCoefEx(const Field2D &UNUSED(val)) override {
+  void setCoefEx(const Field2D &UNUSED(val)) final {
     throw BoutException("LaplacePDD does not have Ex coefficient");
   }
   using Laplacian::setCoefEz;
-  void setCoefEz(const Field2D &UNUSED(val)) override {
+  void setCoefEz(const Field2D &UNUSED(val)) final {
     throw BoutException("LaplacePDD does not have Ez coefficient");
   }
 

@@ -103,15 +103,17 @@ class Field2D : public Field, public FieldData {
   /*!
    * Return the number of nx points
    */
-  int getNx() const override {return nx;};
+  int getNx() const final {return nx;};
   /*!
    * Return the number of ny points
    */
-  int getNy() const override {return ny;};
+  int getNy() const final {return ny;};
   /*!
    * Return the number of nz points
    */
-  int getNz() const override {return 1;};
+  int getNz() const final {return 1;};
+
+  Field* toFieldAligned() const;
 
   // Operators
 
@@ -154,7 +156,7 @@ class Field2D : public Field, public FieldData {
   }
 
   /// Const access to data array
-  inline const BoutReal& operator[](const DataIterator &d) const {
+  inline const BoutReal& operator[](const DataIterator &d) const final {
     return operator()(d.x, d.y);
   }
 
@@ -164,7 +166,7 @@ class Field2D : public Field, public FieldData {
     return operator()(i.x, i.y);
   }
   /// const Indices data access
-  inline const BoutReal& operator[](const Indices &i) const override {
+  inline const BoutReal& operator[](const Indices &i) const final {
     return operator()(i.x, i.y);
   }
 
@@ -223,41 +225,41 @@ class Field2D : public Field, public FieldData {
   Field2D & operator/=(const Field2D &rhs); ///< In-place division. Copy-on-write used if data is shared
   Field2D & operator/=(BoutReal rhs);       ///< In-place division. Copy-on-write used if data is shared
 
-  DEPRECATED(void getXArray(int y, int z, rvec &xv) const override);
-  DEPRECATED(void getYArray(int x, int z, rvec &yv) const override);
-  DEPRECATED(void getZArray(int x, int y, rvec &zv) const override);
+  DEPRECATED(void getXArray(int y, int z, rvec &xv) const final);
+  DEPRECATED(void getYArray(int x, int z, rvec &yv) const final);
+  DEPRECATED(void getZArray(int x, int y, rvec &zv) const final);
 
-  DEPRECATED(void setXArray(int y, int z, const rvec &xv) override);
-  DEPRECATED(void setYArray(int x, int z, const rvec &yv) override);
+  DEPRECATED(void setXArray(int y, int z, const rvec &xv) final);
+  DEPRECATED(void setYArray(int x, int z, const rvec &yv) final);
 
   // Stencils
-  void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const override;
-  void setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const override;
-  void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const override;
+  void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const final;
+  void setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const final;
+  void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const final;
   
   // FieldData virtual functions
 
   /// Visitor pattern support
-  void accept(FieldVisitor &v) override {v.accept(*this);}
+  void accept(FieldVisitor &v) final {v.accept(*this);}
   
-  bool isReal() const override  { return true; }         // Consists of BoutReal values
-  bool is3D() const override    { return false; }        // Field is 2D
-  int  byteSize() const override { return sizeof(BoutReal); } // Just one BoutReal
-  int  BoutRealSize() const override { return 1; }
+  bool isReal() const final  { return true; }         // Consists of BoutReal values
+  bool is3D() const final    { return false; }        // Field is 2D
+  int  byteSize() const final { return sizeof(BoutReal); } // Just one BoutReal
+  int  BoutRealSize() const final { return 1; }
 
 #if CHECK > 0
-  void doneComms() override { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
+  void doneComms() final { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
 #else
-  void doneComms() override {}
+  void doneComms() final {}
 #endif
 
   friend class Vector2D;
   
-  void applyBoundary(bool init=false) override;
+  void applyBoundary(bool init=false) final;
   void applyBoundary(const string &condition);
   void applyBoundary(const char* condition) { applyBoundary(string(condition)); }
   void applyBoundary(const string &region, const string &condition);
-  void applyTDerivBoundary() override;
+  void applyTDerivBoundary() final;
   void setBoundaryTo(const Field2D &f2d); ///< Copy the boundary region
   
  private:

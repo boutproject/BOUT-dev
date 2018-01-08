@@ -65,16 +65,16 @@ class IMEXBDF2 : public Solver {
   ~IMEXBDF2();
 
   /// Returns the current internal timestep
-  BoutReal getCurrentTimestep() override {return timestep; }
+  BoutReal getCurrentTimestep() final {return timestep; }
 
   /// Initialise solver. Must be called once and only once
   ///
   /// @param[in] nout         Number of outputs
   /// @param[in] tstep        Time between outputs. NB: Not internal timestep
-  int init(int nout, BoutReal tstep) override;
+  int init(int nout, BoutReal tstep) final;
 
   /// Run the simulation
-  int run() override;
+  int run() final;
 
   /// Nonlinear function. This is called by PETSc SNES object
   /// via a static C-style function. For implicit

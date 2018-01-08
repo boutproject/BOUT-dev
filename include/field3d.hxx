@@ -212,15 +212,17 @@ class Field3D : public Field, public FieldData {
   /*!
    * Return the number of nx points
    */
-  int getNx() const override {return nx;};
+  int getNx() const final {return nx;};
   /*!
    * Return the number of ny points
    */
-  int getNy() const override {return ny;};
+  int getNy() const final {return ny;};
   /*!
    * Return the number of nz points
    */
-  int getNz() const override {return nz;};
+  int getNz() const final {return nz;};
+
+  Field* toFieldAligned() const;
 
   /*!
    * Ensure that this field has separate fields
@@ -266,8 +268,8 @@ class Field3D : public Field, public FieldData {
   const Field3D& ynext(int dir) const;
 
   // Staggered grids
-  void setLocation(CELL_LOC loc) override; ///< Set variable location
-  CELL_LOC getLocation() const override; ///< Variable location
+  void setLocation(CELL_LOC loc) final; ///< Set variable location
+  CELL_LOC getLocation() const final; ///< Variable location
   
   /////////////////////////////////////////////////////////
   // Data access
@@ -319,13 +321,13 @@ class Field3D : public Field, public FieldData {
   BoutReal& operator[](const DataIterator &d) {
     return operator()(d.x, d.y, d.z);
   }
-  const BoutReal& operator[](const DataIterator &d) const {
+  const BoutReal& operator[](const DataIterator &d) const final {
     return operator()(d.x, d.y, d.z);
   }
   BoutReal& operator[](const Indices &i) {
     return operator()(i.x, i.y, i.z);
   }
-  const BoutReal& operator[](const Indices &i) const override {
+  const BoutReal& operator[](const Indices &i) const final {
     return operator()(i.x, i.y, i.z);
   }
   
@@ -451,35 +453,35 @@ class Field3D : public Field, public FieldData {
   ///@}
 
   // Stencils for differencing
-  void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const override;
-  void setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const override;
-  void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const override;
+  void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const final;
+  void setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const final;
+  void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const final;
   
   // FieldData virtual functions
   
-  bool isReal() const override   { return true; }         // Consists of BoutReal values
-  bool is3D() const override     { return true; }         // Field is 3D
-  int  byteSize() const override { return sizeof(BoutReal); } // Just one BoutReal
-  int  BoutRealSize() const override { return 1; }
+  bool isReal() const final   { return true; }         // Consists of BoutReal values
+  bool is3D() const final     { return true; }         // Field is 3D
+  int  byteSize() const final { return sizeof(BoutReal); } // Just one BoutReal
+  int  BoutRealSize() const final { return 1; }
 
   /// Visitor pattern support
-  void accept(FieldVisitor &v) override { v.accept(*this); }
+  void accept(FieldVisitor &v) final { v.accept(*this); }
   
 #if CHECK > 0
-  void doneComms() override { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
+  void doneComms() final { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
 #else
-  void doneComms() override {}
+  void doneComms() final {}
 #endif
 
   friend class Vector3D;
 
   DEPRECATED(void setBackground(const Field2D &f2d)); ///< Boundary is applied to the total of this and f2d
-  void applyBoundary(bool init=false) override;
+  void applyBoundary(bool init=false) final;
   void applyBoundary(BoutReal t);
   void applyBoundary(const string &condition);
   void applyBoundary(const char* condition) { applyBoundary(string(condition)); }
   void applyBoundary(const string &region, const string &condition);
-  void applyTDerivBoundary() override;
+  void applyTDerivBoundary() final;
   void setBoundaryTo(const Field3D &f3d); ///< Copy the boundary region
 
   void applyParallelBoundary();

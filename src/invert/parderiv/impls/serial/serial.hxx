@@ -50,18 +50,18 @@ public:
   ~InvertParSerial();
 
   using InvertPar::solve;
-  const Field3D solve(const Field3D &f) override;
+  const Field3D solve(const Field3D &f) final;
 
   using InvertPar::setCoefA;
-  void setCoefA(const Field2D &f) override { A = f; }
+  void setCoefA(const Field2D &f) final { A = f; }
   using InvertPar::setCoefB;
-  void setCoefB(const Field2D &f) override { B = f; }
+  void setCoefB(const Field2D &f) final { B = f; }
   using InvertPar::setCoefC;
-  void setCoefC(const Field2D &f) override { C = f; }
+  void setCoefC(const Field2D &f) final { C = f; }
   using InvertPar::setCoefD;
-  void setCoefD(const Field2D &f) override { D = f; }
+  void setCoefD(const Field2D &f) final { D = f; }
   using InvertPar::setCoefE;
-  void setCoefE(const Field2D &f) override { E = f; }
+  void setCoefE(const Field2D &f) final { E = f; }
 
 private:
   Field2D A, B, C, D, E;

@@ -61,9 +61,9 @@ class PetscSolver : public Solver {
   PetscSolver();
   ~PetscSolver();
   
-  int init(int NOUT, BoutReal TIMESTEP) override;
+  int init(int NOUT, BoutReal TIMESTEP) final;
 
-  int run() override;
+  int run() final;
 
   // These functions used internally (but need to be public)
   PetscErrorCode rhs(TS ts,PetscReal t,Vec globalin,Vec globalout);

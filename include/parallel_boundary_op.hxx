@@ -32,10 +32,10 @@ public:
   virtual BoundaryOpPar* clone(BoundaryRegionPar *UNUSED(region), Field3D *UNUSED(f)) {return nullptr; }
 
   using BoundaryOpBase::apply;
-  void apply(Field2D &UNUSED(f)) override {
+  void apply(Field2D &UNUSED(f)) final {
     throw BoutException("Can't apply parallel boundary conditions to Field2D!");
   }
-  void apply(Field2D &UNUSED(f), BoutReal UNUSED(t)) override {
+  void apply(Field2D &UNUSED(f), BoutReal UNUSED(t)) final {
     throw BoutException("Can't apply parallel boundary conditions to Field2D!");
   }
 
@@ -76,8 +76,8 @@ public:
   BoundaryOpPar* clone(BoundaryRegionPar *region, Field3D *f);
 
   using BoundaryOpPar::apply;
-  void apply(Field3D &f) override {return apply(f, 0);}
-  void apply(Field3D &f, BoutReal t) override;
+  void apply(Field3D &f) final {return apply(f, 0);}
+  void apply(Field3D &f, BoutReal t) final;
 
 };
 
@@ -97,8 +97,8 @@ public:
   BoundaryOpPar* clone(BoundaryRegionPar *region, Field3D *f);
 
   using BoundaryOpPar::apply;
-  void apply(Field3D &f) override {return apply(f, 0);}
-  void apply(Field3D &f, BoutReal t) override;
+  void apply(Field3D &f) final {return apply(f, 0);}
+  void apply(Field3D &f, BoutReal t) final;
 
 };
 
@@ -118,8 +118,8 @@ public:
   BoundaryOpPar* clone(BoundaryRegionPar *region, Field3D *f);
 
   using BoundaryOpPar::apply;
-  void apply(Field3D &f) override {return apply(f, 0);}
-  void apply(Field3D &f, BoutReal t) override;
+  void apply(Field3D &f) final {return apply(f, 0);}
+  void apply(Field3D &f, BoutReal t) final;
 
 };
 
@@ -139,8 +139,8 @@ public:
   BoundaryOpPar* clone(BoundaryRegionPar *region, Field3D *f);
 
   using BoundaryOpPar::apply;
-  void apply(Field3D &f) override {return apply(f, 0);}
-  void apply(Field3D &f, BoutReal t) override;
+  void apply(Field3D &f) final {return apply(f, 0);}
+  void apply(Field3D &f, BoutReal t) final;
 
 };
 

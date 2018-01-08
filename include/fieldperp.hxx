@@ -230,7 +230,7 @@ class FieldPerp : public Field {
   void setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
 
-  virtual int getNy() const override{ return 1;};
+  virtual int getNy() const final{ return 1;};
   
  private:
   int yindex; ///< The Y index at which this FieldPerp is defined

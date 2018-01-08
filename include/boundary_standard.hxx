@@ -17,12 +17,12 @@ class BoundaryDirichlet_2ndOrder : public BoundaryOp {
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
 
   using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field3D &f) override;
+  void apply(Field2D &f) final;
+  void apply(Field3D &f) final;
 
   using BoundaryOp::apply_ddt;
-  void apply_ddt(Field2D &f) override;
-  void apply_ddt(Field3D &f) override;
+  void apply_ddt(Field2D &f) final;
+  void apply_ddt(Field3D &f) final;
  private:
   BoutReal val;
 };
@@ -35,14 +35,14 @@ class BoundaryDirichlet : public BoundaryOp {
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
 
   using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field2D &f,BoutReal t) override;
-  void apply(Field3D &f) override;
-  void apply(Field3D &f,BoutReal t) override;
+  void apply(Field2D &f) final;
+  void apply(Field2D &f,BoutReal t) final;
+  void apply(Field3D &f) final;
+  void apply(Field3D &f,BoutReal t) final;
 
   using BoundaryOp::apply_ddt;
-  void apply_ddt(Field2D &f) override;
-  void apply_ddt(Field3D &f) override;
+  void apply_ddt(Field2D &f) final;
+  void apply_ddt(Field3D &f) final;
  private:
   std::shared_ptr<FieldGenerator>  gen; // Generator
 };
@@ -57,14 +57,14 @@ class BoundaryDirichlet_O3 : public BoundaryOp {
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
 
   using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field2D &f,BoutReal t) override;
-  void apply(Field3D &f) override;
-  void apply(Field3D &f,BoutReal t) override;
+  void apply(Field2D &f) final;
+  void apply(Field2D &f,BoutReal t) final;
+  void apply(Field3D &f) final;
+  void apply(Field3D &f,BoutReal t) final;
 
   using BoundaryOp::apply_ddt;
-  void apply_ddt(Field2D &f) override;
-  void apply_ddt(Field3D &f) override;
+  void apply_ddt(Field2D &f) final;
+  void apply_ddt(Field3D &f) final;
  private:
   std::shared_ptr<FieldGenerator>  gen; // Generator
 };
@@ -77,14 +77,14 @@ class BoundaryDirichlet_O4 : public BoundaryOp {
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
 
   using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field2D &f,BoutReal t) override;
-  void apply(Field3D &f) override;
-  void apply(Field3D &f,BoutReal t) override;
+  void apply(Field2D &f) final;
+  void apply(Field2D &f,BoutReal t) final;
+  void apply(Field3D &f) final;
+  void apply(Field3D &f,BoutReal t) final;
 
   using BoundaryOp::apply_ddt;
-  void apply_ddt(Field2D &f) override;
-  void apply_ddt(Field3D &f) override;
+  void apply_ddt(Field2D &f) final;
+  void apply_ddt(Field3D &f) final;
  private:
   std::shared_ptr<FieldGenerator>  gen; // Generator
 };
@@ -98,12 +98,12 @@ class BoundaryDirichlet_4thOrder : public BoundaryOp {
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
 
   using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field3D &f) override;
+  void apply(Field2D &f) final;
+  void apply(Field3D &f) final;
 
   using BoundaryOp::apply_ddt;
-  void apply_ddt(Field2D &f) override;
-  void apply_ddt(Field3D &f) override;
+  void apply_ddt(Field2D &f) final;
+  void apply_ddt(Field3D &f) final;
  private:
   BoutReal val;
 };
@@ -117,8 +117,8 @@ class BoundaryNeumann_NonOrthogonal : public BoundaryOp {
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
 
   using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field3D &f) override;
+  void apply(Field2D &f) final;
+  void apply(Field3D &f) final;
  private:
   BoutReal val;
 };
@@ -131,8 +131,8 @@ class BoundaryNeumann2 : public BoundaryOp {
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
 
   using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field3D &f) override;
+  void apply(Field2D &f) final;
+  void apply(Field3D &f) final;
 };
 
 /// Neumann boundary condition set half way between guard cell and grid cell at 2nd order accuracy
@@ -144,12 +144,12 @@ class BoundaryNeumann_2ndOrder : public BoundaryOp {
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
 
   using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field3D &f) override;
+  void apply(Field2D &f) final;
+  void apply(Field3D &f) final;
 
   using BoundaryOp::apply_ddt;
-  void apply_ddt(Field2D &f) override;
-  void apply_ddt(Field3D &f) override;
+  void apply_ddt(Field2D &f) final;
+  void apply_ddt(Field3D &f) final;
  private:
   BoutReal val;
 };
@@ -162,14 +162,14 @@ class BoundaryNeumann : public BoundaryOp {
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
 
   using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field2D &f, BoutReal t) override;
-  void apply(Field3D &f) override;
-  void apply(Field3D &f,BoutReal t) override;
+  void apply(Field2D &f) final;
+  void apply(Field2D &f, BoutReal t) final;
+  void apply(Field3D &f) final;
+  void apply(Field3D &f,BoutReal t) final;
 
   using BoundaryOp::apply_ddt;
-  void apply_ddt(Field2D &f) override;
-  void apply_ddt(Field3D &f) override;
+  void apply_ddt(Field2D &f) final;
+  void apply_ddt(Field3D &f) final;
  private:
   std::shared_ptr<FieldGenerator> gen;
 };
@@ -183,12 +183,12 @@ class BoundaryNeumann_4thOrder : public BoundaryOp {
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
 
   using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field3D &f) override;
+  void apply(Field2D &f) final;
+  void apply(Field3D &f) final;
 
   using BoundaryOp::apply_ddt;
-  void apply_ddt(Field2D &f) override;
-  void apply_ddt(Field3D &f) override;
+  void apply_ddt(Field2D &f) final;
+  void apply_ddt(Field3D &f) final;
  private:
   BoutReal val;
 };
@@ -201,14 +201,14 @@ class BoundaryNeumann_O4 : public BoundaryOp {
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
 
   using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field2D &f, BoutReal t) override;
-  void apply(Field3D &f) override;
-  void apply(Field3D &f,BoutReal t) override;
+  void apply(Field2D &f) final;
+  void apply(Field2D &f, BoutReal t) final;
+  void apply(Field3D &f) final;
+  void apply(Field3D &f,BoutReal t) final;
 
   using BoundaryOp::apply_ddt;
-  void apply_ddt(Field2D &f) override;
-  void apply_ddt(Field3D &f) override;
+  void apply_ddt(Field2D &f) final;
+  void apply_ddt(Field3D &f) final;
  private:
   std::shared_ptr<FieldGenerator> gen;
 };
@@ -222,8 +222,8 @@ class BoundaryNeumannPar : public BoundaryOp {
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
 
   using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field3D &f) override;
+  void apply(Field2D &f) final;
+  void apply(Field3D &f) final;
 };
 
 /// Robin (mix of Dirichlet and Neumann)
@@ -234,8 +234,8 @@ class BoundaryRobin : public BoundaryOp {
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
 
   using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field3D &f) override;
+  void apply(Field2D &f) final;
+  void apply(Field3D &f) final;
 private:
   BoutReal aval, bval, gval;
 };
@@ -248,8 +248,8 @@ class BoundaryConstGradient : public BoundaryOp {
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
 
   using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field3D &f) override;
+  void apply(Field2D &f) final;
+  void apply(Field3D &f) final;
 };
 
 /// Zero Laplacian, decaying solution
@@ -260,8 +260,8 @@ class BoundaryZeroLaplace : public BoundaryOp {
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
 
   using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field3D &f) override;
+  void apply(Field2D &f) final;
+  void apply(Field3D &f) final;
 };
 
 /// Zero Laplacian
@@ -272,8 +272,8 @@ class BoundaryZeroLaplace2 : public BoundaryOp {
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
 
   using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field3D &f) override;
+  void apply(Field2D &f) final;
+  void apply(Field3D &f) final;
 };
 
 /// Constant Laplacian, decaying solution
@@ -284,8 +284,8 @@ class BoundaryConstLaplace : public BoundaryOp {
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
 
   using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field3D &f) override;
+  void apply(Field2D &f) final;
+  void apply(Field3D &f) final;
 };
 
 /// Vector boundary condition Div(B) = 0, Curl(B) = 0
@@ -296,10 +296,10 @@ class BoundaryDivCurl : public BoundaryOp {
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
 
   using BoundaryOp::apply;
-  void apply(Field2D &UNUSED(f)) override { throw BoutException("ERROR: DivCurl boundary only for vectors"); }
-  void apply(Field3D &UNUSED(f)) override { throw BoutException("ERROR: DivCurl boundary only for vectors"); }
-  void apply(Vector2D &f) override;
-  void apply(Vector3D &f) override;
+  void apply(Field2D &UNUSED(f)) final { throw BoutException("ERROR: DivCurl boundary only for vectors"); }
+  void apply(Field3D &UNUSED(f)) final { throw BoutException("ERROR: DivCurl boundary only for vectors"); }
+  void apply(Vector2D &f) final;
+  void apply(Vector3D &f) final;
 };
 
 /// Free boundary condition (evolve the field in the guard cells, using non-centred derivatives to calculate the ddt)
@@ -311,12 +311,12 @@ class BoundaryFree : public BoundaryOp {
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
 
   using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field3D &f) override;
+  void apply(Field2D &f) final;
+  void apply(Field3D &f) final;
 
   using BoundaryOp::apply_ddt;
-  void apply_ddt(Field2D &f) override;
-  void apply_ddt(Field3D &f) override;
+  void apply_ddt(Field2D &f) final;
+  void apply_ddt(Field3D &f) final;
  private:
   BoutReal val;
 };
@@ -330,12 +330,12 @@ public:
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
 
   using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field3D &f) override;
+  void apply(Field2D &f) final;
+  void apply(Field3D &f) final;
 
   using BoundaryOp::apply_ddt;
-  void apply_ddt(Field2D &f) override;
-  void apply_ddt(Field3D &f) override;
+  void apply_ddt(Field2D &f) final;
+  void apply_ddt(Field3D &f) final;
 };
 
 class BoundaryFree_O3 : public BoundaryOp {
@@ -345,12 +345,12 @@ public:
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
 
   using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field3D &f) override;
+  void apply(Field2D &f) final;
+  void apply(Field3D &f) final;
 
   using BoundaryOp::apply_ddt;
-  void apply_ddt(Field2D &f) override;
-  void apply_ddt(Field3D &f) override;
+  void apply_ddt(Field2D &f) final;
+  void apply_ddt(Field3D &f) final;
 
 };
 // End L.Easy
@@ -366,14 +366,14 @@ class BoundaryRelax : public BoundaryModifier {
   BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
 
   using BoundaryModifier::apply;
-  void apply(Field2D &f) override {apply(f, 0.);};
-  void apply(Field2D &f, BoutReal t) override;
-  void apply(Field3D &f) override {apply(f, 0.);};
-  void apply(Field3D &f, BoutReal t) override;
+  void apply(Field2D &f) final {apply(f, 0.);};
+  void apply(Field2D &f, BoutReal t) final;
+  void apply(Field3D &f) final {apply(f, 0.);};
+  void apply(Field3D &f, BoutReal t) final;
 
   using BoundaryModifier::apply_ddt;
-  void apply_ddt(Field2D &f) override;
-  void apply_ddt(Field3D &f) override;
+  void apply_ddt(Field2D &f) final;
+  void apply_ddt(Field3D &f) final;
  private:
   BoutReal r;
 };
@@ -386,14 +386,14 @@ public:
   BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
 
   using BoundaryModifier::apply;
-  void apply(Field2D &f) override {apply(f, 0.);};
-  void apply(Field2D &f, BoutReal t) override;
-  void apply(Field3D &f) override {apply(f, 0.);};
-  void apply(Field3D &f, BoutReal t) override;
+  void apply(Field2D &f) final {apply(f, 0.);};
+  void apply(Field2D &f, BoutReal t) final;
+  void apply(Field3D &f) final {apply(f, 0.);};
+  void apply(Field3D &f, BoutReal t) final;
 
   using BoundaryModifier::apply_ddt;
-  void apply_ddt(Field2D &f) override;
-  void apply_ddt(Field3D &f) override;
+  void apply_ddt(Field2D &f) final;
+  void apply_ddt(Field3D &f) final;
 private:
   int width;
 };
@@ -407,14 +407,14 @@ public:
   BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
 
   using BoundaryModifier::apply;
-  void apply(Field2D &f) override {apply(f, 0.);};
-  void apply(Field2D &f, BoutReal t) override;
-  void apply(Field3D &f) override {apply(f, 0.);};
-  void apply(Field3D &f, BoutReal t) override;
+  void apply(Field2D &f) final {apply(f, 0.);};
+  void apply(Field2D &f, BoutReal t) final;
+  void apply(Field3D &f) final {apply(f, 0.);};
+  void apply(Field3D &f, BoutReal t) final;
 
   using BoundaryModifier::apply_ddt;
-  void apply_ddt(Field2D &f) override;
-  void apply_ddt(Field3D &f) override;
+  void apply_ddt(Field2D &f) final;
+  void apply_ddt(Field3D &f) final;
 private:
 };
 
@@ -427,14 +427,14 @@ public:
   BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
 
   using BoundaryModifier::apply;
-  void apply(Field2D &f) override {apply(f, 0.);};
-  void apply(Field2D &f, BoutReal t) override;
-  void apply(Field3D &f) override {apply(f, 0.);};
-  void apply(Field3D &f, BoutReal t) override;
+  void apply(Field2D &f) final {apply(f, 0.);};
+  void apply(Field2D &f, BoutReal t) final;
+  void apply(Field3D &f) final {apply(f, 0.);};
+  void apply(Field3D &f, BoutReal t) final;
 
   using BoundaryModifier::apply_ddt;
-  void apply_ddt(Field2D &f) override;
-  void apply_ddt(Field3D &f) override;
+  void apply_ddt(Field2D &f) final;
+  void apply_ddt(Field3D &f) final;
 private:
 };
 

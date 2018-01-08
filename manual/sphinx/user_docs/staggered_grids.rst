@@ -61,6 +61,11 @@ interpolation routines. Include the header file
 then use the ``interp_to(field, location)`` function. Using this,
 ``interp_to(n, CELL_YLOW)*v`` would be ``CELL_YLOW`` as ``n`` would be
 interpolated.
+When there is a physical boundary, the first 'guard cell' at the upper
+boundary is actually on the boundary, and has two CELL_CENTRE guard
+cells above it. The value on this guard cell (xend+1 for CELL_XLOW and
+yend+1 for CELL_YLOW) is therefore calculated (on the final processor in
+the domain) when the domain is not periodic.
 
 Differential operators by default return fields which are defined at the
 same location as their inputs, so here ``Grad_par(v)`` would be

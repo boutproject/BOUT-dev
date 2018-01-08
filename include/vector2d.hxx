@@ -132,18 +132,18 @@ class Vector2D : public FieldData {
   const Vector3D operator^(const Vector3D &rhs) const; ///< Cross product
   
   /// Visitor pattern support
-  void accept(FieldVisitor &v) override;
+  void accept(FieldVisitor &v) final;
   
   // FieldData virtual functions
   
-  bool isReal() const override   { return true; }
-  bool is3D() const override     { return false; }
-  int  byteSize() const override { return 3*sizeof(BoutReal); }
-  int  BoutRealSize() const override { return 3; }
+  bool isReal() const final   { return true; }
+  bool is3D() const final     { return false; }
+  int  byteSize() const final { return 3*sizeof(BoutReal); }
+  int  BoutRealSize() const final { return 3; }
 
   /// Apply boundary condition to all fields
-  void applyBoundary(bool init=false) override;
-  void applyTDerivBoundary() override;
+  void applyBoundary(bool init=false) final;
+  void applyTDerivBoundary() final;
  private:
   
   Vector2D *deriv; ///< Time-derivative, can be NULL

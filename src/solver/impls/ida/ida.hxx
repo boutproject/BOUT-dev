@@ -59,9 +59,9 @@ class IdaSolver : public Solver {
   IdaSolver(Options *opts = NULL);
   ~IdaSolver();
   
-  int init(int nout, BoutReal tstep) override;
+  int init(int nout, BoutReal tstep) final;
   
-  int run() override;
+  int run() final;
   BoutReal run(BoutReal tout);
 
   // These functions used internally (but need to be public)

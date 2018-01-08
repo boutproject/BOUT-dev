@@ -83,9 +83,9 @@ class PetscSolver : public Solver {
   void setPrecon(PhysicsPrecon f) {prefunc = f;}
   void setJacobian(Jacobian j) {jacfunc = j; }
 
-  int init(int NOUT, BoutReal TIMESTEP) override;
+  int init(int NOUT, BoutReal TIMESTEP) final;
 
-  int run() override;
+  int run() final;
 
   // These functions used internally (but need to be public)
 

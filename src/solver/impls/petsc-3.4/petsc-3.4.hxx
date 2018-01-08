@@ -74,9 +74,9 @@ class PetscSolver : public Solver {
   // Can be called from physics initialisation to supply callbacks
   void setJacobian(Jacobian j) {jacfunc = j; }
 
-  int init(int NOUT, BoutReal TIMESTEP) override;
+  int init(int NOUT, BoutReal TIMESTEP) final;
 
-  int run() override;
+  int run() final;
   PetscErrorCode run(MonitorFunc mon);
 
   // These functions used internally (but need to be public)
