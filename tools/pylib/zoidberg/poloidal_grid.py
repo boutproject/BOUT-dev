@@ -206,8 +206,15 @@ class RectangularPoloidalGrid(PoloidalGrid):
         
         # Check that they have the same shape
         assert R.shape == Z.shape
+
+        xind = (R - self.Rmin)/self.dR
+        zind = (Z - self.Zmin)/self.dZ
+
+        # Note: These indices may be outside the domain,
+        # but this is handled in BOUT++, and useful for periodic
+        # domains.
         
-        return (R - self.Rmin)/self.dR, (Z - self.Zmin)/self.dZ
+        return xind, zind
 
     def metric(self):
         """

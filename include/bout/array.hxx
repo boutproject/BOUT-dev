@@ -27,6 +27,15 @@
 
 #include <map>
 #include <vector>
+#include <memory>
+
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
+#ifdef BOUT_ARRAY_WITH_VALARRAY
+#include <valarray>
+#endif
 
 #include <bout/openmpwrap.hxx>
 
@@ -58,7 +67,7 @@ template<typename T>
 class Array {
 public:
   typedef T data_type;
-  
+    
   /*!
    * Create an empty array
    * 
@@ -73,8 +82,6 @@ public:
    */
   Array(int len) {
     ptr = get(len);
-BOUT_OMP(atomic)
-    ptr->refs++;
   }
   
   /*!
@@ -88,9 +95,7 @@ BOUT_OMP(atomic)
    * Copy constructor
    */
   Array(const Array &other) {
-    ptr = other.ptr;
-BOUT_OMP(atomic)
-    ptr->refs++;
+    ptr = other.ptr; 
   }
 
   /*!
@@ -98,15 +103,11 @@ BOUT_OMP(atomic)
    * After this both Arrays share the same ArrayData
    */
   Array& operator=(const Array &other) {
-    ArrayData* const old = ptr;
-
-    // Add reference
-    ptr = other.ptr;
-BOUT_OMP(atomic)
-    ptr->refs++;
-
     // Release the old data
-    release(old);
+    release(ptr);
+    
+    // Add reference to new data
+    ptr = other.ptr;
     
     return *this;
   }
@@ -115,20 +116,15 @@ BOUT_OMP(atomic)
    * Move constructor
    */
   Array(Array&& other) {
-    ptr = other.ptr;
-    other.ptr = nullptr;
+    ptr = std::move(other.ptr);
   }
 
   /*! 
    * Move assignment
    */
   Array& operator=(Array &&other) {
-    ArrayData* const old = ptr;
-
-    ptr = other.ptr;
-    other.ptr = nullptr;
-
-    release(old);
+    release(ptr);
+    ptr = std::move(other.ptr);
     
     return *this;
   }
@@ -158,7 +154,6 @@ BOUT_OMP(atomic)
    */
   void clear() {
     release(ptr);
-    ptr = nullptr;
   }
 
   /*!
@@ -187,8 +182,11 @@ BOUT_OMP(atomic)
   int size() const {
     if(!ptr)
       return 0;
-
+#ifdef BOUT_ARRAY_WITH_VALARRAY
+    return ptr->size();
+#else
     return ptr->len;
+#endif    
   }
   
   /*!
@@ -196,7 +194,7 @@ BOUT_OMP(atomic)
    * 
    */
   bool unique() const {
-    return ptr->refs == 1;
+    return ptr.use_count() == 1;
   }
 
   /*!
@@ -209,25 +207,28 @@ BOUT_OMP(atomic)
       return;
 
     // Get a new (unique) block of data
-    ArrayData* p = get(size());
+    dataPtrType p = get(size());
 
-    // Copy values
+    //Make copy of the underlying data
+#ifdef BOUT_ARRAY_WITH_VALARRAY    
+    p->operator=((*ptr));
+#else
     for(iterator it = begin(), ip = p->begin(); it != end(); ++it, ++ip)
       *ip = *it;
+#endif    
 
-    ArrayData *old = ptr;
-    ptr = p;
-    ptr->refs++;
-    
-    release(old);
+    //Update the local pointer and release old
+    //Can't just do ptr=p as need to try to add to store.
+    release(ptr);
+    ptr = std::move(p);
   }
-  
+
   //////////////////////////////////////////////////////////
   // Iterators
-
   typedef T* iterator;
-
-  iterator begin() {
+  typedef const T* const_iterator;
+#ifndef BOUT_ARRAY_WITH_VALARRAY
+  iterator begin() { 
     return (ptr) ? ptr->data : nullptr;
   }
 
@@ -235,9 +236,7 @@ BOUT_OMP(atomic)
     return (ptr) ? ptr->data + ptr->len : nullptr;
   }
 
-  // Const iterators
-  typedef const T* const_iterator;
-  
+  // Const iterators  
   const_iterator begin() const {
     return (ptr) ? ptr->data : nullptr;
   }
@@ -245,7 +244,24 @@ BOUT_OMP(atomic)
   const_iterator end() const {
     return (ptr) ? ptr->data + ptr->len : nullptr;
   }
+#else
+  iterator begin() { 
+    return (ptr) ? std::begin(*ptr) : nullptr;
+  }
 
+  iterator end() {
+    return (ptr) ? std::end(*ptr) : nullptr;
+  }
+
+  // Const iterators -- should revisit with cbegin and cend in c++14 and greater
+  const_iterator begin() const {
+    return (ptr) ? std::begin(*ptr) : nullptr;
+  }
+
+  const_iterator end() const {
+    return (ptr) ? std::end(*ptr) : nullptr;
+  } 
+#endif
   //////////////////////////////////////////////////////////
   // Element access
 
@@ -255,10 +271,18 @@ BOUT_OMP(atomic)
    * so the user should perform checks.
    */
   T& operator[](int ind) {
+#ifdef BOUT_ARRAY_WITH_VALARRAY
+    return ptr->operator[](ind);
+#else    
     return ptr->data[ind];
+#endif    
   }
   const T& operator[](int ind) const {
+#ifdef BOUT_ARRAY_WITH_VALARRAY
+    return ptr->operator[](ind);
+#else    
     return ptr->data[ind];
+#endif    
   }
 
   /*!
@@ -268,23 +292,21 @@ BOUT_OMP(atomic)
    * This is called by the template function swap(Array&, Array&)
    */
   void swap(Array<T> &other) {
-    ArrayData* tmp_ptr = ptr;
-    ptr = other.ptr;
-    other.ptr = tmp_ptr;
+    std::swap(ptr,other.ptr);
   }
   
 private:
 
+#ifndef BOUT_ARRAY_WITH_VALARRAY  
   /*!
    * ArrayData holds the actual data, and reference count
    * Handles the allocation and deletion of data
    */
   struct ArrayData {
-    int refs;   ///< Number of references to this data
     int len;    ///< Size of the array
     T *data;    ///< Array of data
     
-    ArrayData(int size) : refs(0), len(size) {
+    ArrayData(int size) : len(size) {
       data = new T[len];
     }
     ~ArrayData() {
@@ -297,12 +319,25 @@ private:
       return data + len;
     }
   };
+#endif
+
+    //Type defs to help keep things brief -- which backing do we use
+#ifdef BOUT_ARRAY_WITH_VALARRAY
+  typedef std::valarray<T> dataBlock;
+#else
+  typedef ArrayData dataBlock;
+#endif
+
+  typedef std::shared_ptr<dataBlock>  dataPtrType;
 
   /*!
-   * Pointer to the ArrayData object owned by this Array. 
+   * Pointer to the data container object owned by this Array. 
    * May be null
    */
-  ArrayData* ptr;
+  dataPtrType ptr;
+
+  typedef std::map< int, std::vector<dataPtrType> > storeType;
+  typedef std::vector< storeType > arenaType;
 
   /*!
    * This maps from array size (int) to vectors of pointers to ArrayData objects
@@ -315,65 +350,90 @@ private:
    *
    * @param[in] cleanup   If set to true, deletes all ArrayData and clears the store
    */
-  static std::map< int, std::vector<ArrayData* > > & store(bool cleanup=false) {
-    static std::map< int, std::vector<ArrayData* > > store = {};
+  static storeType& store(bool cleanup=false) {
+#ifdef _OPENMP    
+    static arenaType arena(omp_get_max_threads());
+#else
+    static arenaType arena(1);
+#endif
     
     if (!cleanup) {
-      return store;
+#ifdef _OPENMP 
+      return arena[omp_get_thread_num()];
+#else
+      return arena[0];
+#endif
     }
-    
-    // Clean by deleting all data
-    for (auto &p : store) {
-      auto &v = p.second;
-      for (ArrayData* a : v) {
-        delete a;
+
+    // Clean by deleting all data -- possible that just stores.clear() is
+    // sufficient rather than looping over each entry.
+#pragma omp single
+    {
+      for (auto &stores : arena) {
+	for (auto &p : stores) {
+	  auto &v = p.second;
+	  for (dataPtrType a : v) {
+	    a = nullptr; //Could use a.reset() if clearer
+	  }
+	  v.clear();
+	}
+	stores.clear();
       }
-      v.clear();
+      //Here we ensure there is exactly one empty map still
+      //left in the arena as we have to return one such item
+      arena.resize(1);
     }
-    store.clear();
-    
-    return store;
+
+    //Store should now be empty but we need to return something,
+    //so return an empty storeType from the arena.
+    return arena[0];
   }
   
   /*!
    * Returns a pointer to an ArrayData object with no
    * references. This is either from the store, or newly allocated
    */
-  ArrayData* get(int len) {
-    ArrayData *p;
-BOUT_OMP(critical (store))
-    {
-      std::vector<ArrayData* >& st = store()[len];
-      if (!st.empty()) {
-        p = st.back();
-        st.pop_back();
-      } else {
-        p = new ArrayData(len);
-      }
+  dataPtrType get(int len) {
+    dataPtrType p;
+
+    auto& st = store()[len];
+    
+    if (!st.empty()) {
+      p = st.back();
+      st.pop_back();
+    } else {
+      p = std::make_shared<dataBlock>(len);
     }
+
     return p;
   }
   
   /*!
    * Release an ArrayData object, reducing its reference count by one. 
    * If no more references, then put back into the store.
+   * It's important to pass a reference to the pointer, otherwise we get
+   * a copy of the shared_ptr, which therefore increases the use count
+   * and doesn't allow us to free the pass pointer directly
    */
-  void release(ArrayData *d) {
+  void release(dataPtrType &d) {
     if (!d)
       return;
     
     // Reduce reference count, and if zero return to store
-BOUT_OMP(critical (store))
-    {
-      if (!--d->refs) {
-        if (useStore()) {
-          // Put back into store
-          store()[d->len].push_back(d);
-        } else {
-          delete d;
-        }
+    if(d.use_count()==1) {
+      if (useStore()) {
+	// Put back into store
+#ifdef BOUT_ARRAY_WITH_VALARRAY
+	store()[d->size()].push_back(std::move(d));
+#else	  
+	store()[d->len   ].push_back(std::move(d));
+#endif
+	//Could return here but seems to slow things down a lot
       }
     }
+
+    //Finish by setting pointer to nullptr if not putting on store
+    d=nullptr;
   }
   
 };

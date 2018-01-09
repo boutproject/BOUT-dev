@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #
 # Run the test, compare results against the benchmark
@@ -21,7 +21,7 @@ nproc = 2       # Number of processors to run on
 omega_tol = 1e-2
 gamma_tol = 1e-2
 
-from boututils.run_wrapper import shell, launch, getmpirun
+from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
 from boututils.file_import import file_import
 from boututils.calculus import deriv
 from boututils.linear_regression import linear_regression
@@ -33,7 +33,7 @@ from sys import stdout, exit
 MPIRUN = getmpirun()
 
 print("Making resistive drift instability test")
-shell("make > make.log")
+shell_safe("make > make.log")
 
 zlist          = [2, 32, 256]  # Just test a few
 
@@ -61,7 +61,7 @@ gamma_orig     = {1:0.0784576199501,
 #zlist = map(lambda x:2**x, range(9))
 
 # Create a directory for the data
-shell("mkdir data")
+shell_safe("mkdir -p data")
 
 # Import the grid file
 grid = file_import("uedge.grd_std.cdl")
@@ -69,7 +69,7 @@ grid = file_import("uedge.grd_std.cdl")
 code = 0 # Return code
 for zeff in zlist:
     # Create the input file, setting Zeff
-    shell("sed 's/Zeff = 128.0/Zeff = "+str(zeff)+"/g' BOUT.inp > data/BOUT.inp")
+    shell_safe("sed 's/Zeff = 128.0/Zeff = "+str(zeff)+"/g' BOUT.inp > data/BOUT.inp")
     timestep = 5e3
     if zeff < 128:
         # reduce time-step. At large times these cases produce noise
@@ -81,7 +81,7 @@ for zeff in zlist:
     print("Running drift instability test, zeff = ", zeff)
 
     # Run the case
-    s, out = launch("./2fluid timestep="+str(timestep), runcmd=MPIRUN, nproc=nproc, pipe=True)
+    s, out = launch_safe("./2fluid timestep="+str(timestep), runcmd=MPIRUN, nproc=nproc, pipe=True)
     f = open("run.log."+str(zeff), "w")
     f.write(out)
     f.close()

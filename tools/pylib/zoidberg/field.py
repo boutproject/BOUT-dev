@@ -6,8 +6,12 @@ except:
 # from math import pi, atan, cos, sin
 
 import numpy as np
-
 # from . import grid
+
+try:
+    from . import boundary
+except ImportError:
+    import boundary
 
 class MagneticField(object):
     """
@@ -18,8 +22,12 @@ class MagneticField(object):
     Bxfunc = Function for magnetic field in x
     Bzfunc = Function for magnetic field in z
     Byfunc = Function for magnetic field in y (default = 1.)
-    Rfunc = Function for major radius. If None, z is in meters
+    Rfunc = Function for major radius. If None, y is in meters
+
+    boundary = An object with an "outside" function. See boundary.py
     """
+    
+    boundary = boundary.NoBoundary() # An optional Boundary object
     
     def Bxfunc(self, x,z,phi):
         """
@@ -46,6 +54,13 @@ class MagneticField(object):
         Returns None if in Cartesian coordinates
         """
         return None
+
+    def pressure(self, x,z,phi):
+        """
+        Pressure [Pascals]
+        
+        """
+        return 0.0
     
     def Bmag(self, x,z,phi):
         """
@@ -562,3 +577,140 @@ class SmoothedMagneticField(MagneticField):
         if (P<0.):
             P=0.
         return P
+
+class GEQDSK(MagneticField):
+    """
+    Read a EFIT G-Eqdsk file for a toroidal equilibrium
+
+    This generates a grid in cylindrical geometry
+    """
+    
+    def __init__(self, gfile):
+        """
+        
+        Inputs
+        ------
+        
+        gfile  Name of the file to open
+        """
+
+        # Import utility to read G-Eqdsk files
+        from boututils import geqdsk
+        
+        g = geqdsk.Geqdsk()
+        g.openFile(gfile)
+        
+        # Get the range of major radius 
+        self.rmin = g.get('rleft')
+        self.rmax = g.get('rdim') + self.rmin
+        
+        # Range of height
+        self.zmin = g.get('zmid') - 0.5*g.get('zdim')
+        self.zmax = g.get('zmid') + 0.5*g.get('zdim')
+
+        print("Major radius: {0} -> {1} m".format(self.rmin, self.rmax))
+        print("Height: {0} -> {1} m".format(self.zmin, self.zmax))
+        
+        # Poloidal flux
+        self.psi = np.transpose(g.get('psirz'))
+        nr, nz = self.psi.shape
+
+        # Normalising factors: psi on axis and boundary
+        self.psi_axis = g.get('simag')
+        self.psi_bndry = g.get('sibry')
+        
+        # Current flux function f = R * Bt
+        self.fpol = g.get('fpol')
+
+        # Pressure [Pascals]
+        self.p = g.get('pres')
+        
+        self.r = np.linspace(self.rmin, self.rmax, nr)
+        self.z = np.linspace(self.zmin, self.zmax, nz)
+        
+        # Create a 2D spline interpolation for psi
+        from scipy import interpolate
+        self.psi_func = interpolate.RectBivariateSpline(self.r, self.z, self.psi)
+
+        # Create a normalised psi array
+        
+        self.psinorm = (self.psi - self.psi_axis) / (self.psi_bndry - self.psi_axis)
+
+        # Need to mark areas outside the core as psinorm = 1
+        # eg. around coils or in the private flux region
+        # Create a boundary 
+
+        rb = g.get('rbbbs')
+        zb = g.get('zbbbs')
+        core_bndry = boundary.PolygonBoundaryXZ(rb, zb)
+
+        # Get the points outside the boundary
+        rxz, zxz = np.meshgrid(self.r, self.z, indexing='ij')
+        outside = core_bndry.outside(rxz, 0.0, zxz)
+        self.psinorm[outside] = 1.0
+        
+        self.psinorm_func = interpolate.RectBivariateSpline(self.r, self.z, self.psinorm)
+        
+        # Spline for interpolation of f = R*Bt
+        psinorm = np.linspace(0.0, 1.0, nr)
+        self.f_spl = interpolate.InterpolatedUnivariateSpline(psinorm, self.fpol, ext=3)
+        # ext=3 specifies that boundary values are used outside range
+
+        # Spline for interpolation of pressure
+        self.p_spl = interpolate.InterpolatedUnivariateSpline(psinorm, self.p, ext=3)
+        
+        # Set boundary
+        rlim = g.get('rlim')
+        zlim = g.get('zlim')
+        if len(rlim) > 0:
+            # Create a boundary in X-Z with a polygon representation
+            self.boundary = boundary.PolygonBoundaryXZ(rlim,zlim)
+        
+    def Bxfunc(self, x, z, phi):
+        """
+        Radial magnetic field
+        Br = -1/R dpsi/dZ
+        """
+        return -self.psi_func(x,z,dy=1,grid=False)/x
+
+    def Bzfunc(self, x, z, phi):
+        """
+        Vertical magnetic field
+        Bz = (1/R) dpsi/dR
+        """
+        
+        return self.psi_func(x,z,dx=1,grid=False)/x
+
+    def Byfunc(self, x, z, phi):
+        """
+        Toroidal magnetic field
+        """
+
+        # Interpolate to get flux surface normalised psi
+        psinorm = self.psinorm_func(x,z, grid=False)
+        
+        # Interpolate fpol array at values of normalised psi
+        if hasattr(psinorm, "shape"):
+            return np.reshape(self.f_spl(np.ravel(psinorm)),psinorm.shape) / x
+        
+        return f_spl(psinorm) / x  # f = R*Bt
+
+    def Rfunc(self, x, z, phi):
+        """
+        Major radius
+        """
+        return x
+    
+    def pressure(self, x,z,phi):
+        """
+        Pressure in Pascals
+        """
+        
+        # Interpolate to get flux surface normalised psi
+        psinorm = self.psinorm_func(x,z, grid=False)
+        
+        if hasattr(psinorm, "shape"):
+            return np.reshape(self.p_spl(np.ravel(psinorm)),psinorm.shape)
+        
+        return f_spl(psinorm)
+    

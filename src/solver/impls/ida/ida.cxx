@@ -96,7 +96,7 @@ IdaSolver::~IdaSolver() { }
   // Get total problem size
   int neq;
   if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
-    output.write("\tERROR: MPI_Allreduce failed!\n");
+    output_error.write("\tERROR: MPI_Allreduce failed!\n");
     return 1;
   }
   
@@ -245,7 +245,7 @@ BoutReal IdaSolver::run(BoutReal tout) {
   run_rhs(simtime);
   
   if(flag < 0) {
-    output.write("ERROR IDA solve failed at t = %e, flag = %d\n", simtime, flag);
+    output_error.write("ERROR IDA solve failed at t = %e, flag = %d\n", simtime, flag);
     return -1.0;
   }
 

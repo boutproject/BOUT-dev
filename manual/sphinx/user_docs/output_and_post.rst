@@ -40,6 +40,17 @@ This should correspond to the grid size used in the simulation.
 Since the collected data is a NumPy array, all the useful routines
 in NumPy, SciPy and Matplotlib can be used for further analysis. 
 
+An experimental feature is adding attributes to variables. These can be read using the ``attributes``
+routine:
+
+.. code-block:: python
+
+    from boutdata.collect import attributes
+    
+    attribs = attributes("Ni")
+
+The result is a dictionary (map) of attribute name to attribute value.
+                
 To access both the input options (in the BOUT.inp file) and output data, there
 is the ``BoutData`` class.
 
@@ -150,6 +161,14 @@ or to get the sizes of the dimensions
 
     >>> print(f.size("f3d"))
     [12, 12, 5]
+
+or the dictionary of attributes
+
+.. code-block:: pycon
+
+    >>> print(f.attributes("f3d"))
+    {}
+
 
 To read in all variables in a file into a dictionary there is the
 ``file_import`` function
