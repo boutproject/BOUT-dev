@@ -23,7 +23,7 @@ desktop, and ideally only a few seconds. If you have a large simulation
 which you want to stop anyone breaking, find starting parameters which
 are as sensitive as possible so that the simulation can be run quickly.
 
-.. _sec-mms
+.. _sec-mms:
 
 Method of Manufactured Solutions
 --------------------------------
@@ -47,6 +47,14 @@ This will have the following effect:
 
 #. For each evolving variable, a source function will be read from the input file
    and added to the time derivative.
+
+.. note:: The convergence behaviour of derivatives using FFTs is quite
+          different to the finite difference methods: once the highest
+          frequency in the manufactured solution is resolved, the
+          accuracy will jump enormously, and after that, finer grids
+          will not increase the accuracy. Whereas with finite
+          difference methods, accuracy varies smoothly as the grid is
+          refined.
    
 Choosing manufactured solutions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

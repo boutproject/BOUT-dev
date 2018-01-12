@@ -21,11 +21,17 @@ example illustrates how to use staggered grids in BOUT++.
 
 There are four possible locations in a grid cell where a quantity can be
 defined in BOUT++: centre, lower X, lower Y, and lower Z. These are
-illustrated in figure [fig:stagLocations].
+illustrated in :numref:`staggergrids-location`.
 
-To specify the location of a variable, use the method ``setLocation()``
-with one of the locations ``CELL\_CENTRE``, ``CELL\_XLOW``,
-``CELL\_YLOW`` , or ``CELL\_ZLOW`` .
+.. _staggergrids-location:
+.. figure:: ../figs/stagLocations.*
+   :alt: Staggered grid cell locations
+
+   The four possible cell locations for defining quantities
+
+To specify the location of a variable, use the method
+``setLocation()`` with one of the locations ``CELL_CENTRE``,
+``CELL_XLOW``, ``CELL_YLOW`` , or ``CELL_ZLOW`` .
 
 The key lines in the **test-staggered** example which specify the
 locations of the evolving variables are
@@ -44,7 +50,15 @@ in Y, whilst the density :math:`n` remains cell centred.
 
 Arithmetic operations between staggered quantities are handled by
 interpolating them to the same location according to the algorithm in
-figure [fig:stagArith].
+:numref:`fig-stagArith`.
+
+.. _fig-stagArith:
+.. figure:: ../figs/stagArith.*
+   :alt: How the cell location of an arithmetic operation is decided
+
+   How the cell location of an arithmetic operation (``+, -, *, /,
+   \pow``) is decided
+
 
 If performing an operation between variables defined at two different
 locations, the order of the variables matter: the result will be defined
@@ -83,4 +97,3 @@ and the other staggered then staggered differencing is used, and if both
 are staggered to different locations then the behaviour is less well
 defined (don’t do it). As with other differential operators, the
 required location of the result can be given as an optional argument.
-

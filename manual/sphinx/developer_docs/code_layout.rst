@@ -5,9 +5,10 @@ BOUT++ is organised into classes and groups of functions which operate
 on them: It’s not purely object-oriented, but takes advantage of many of
 C++’s object-oriented features.
 
-Figure [fig:layout1] shows the most important parts of BOUT++ and how
+:numref:`fig-layout1` shows the most important parts of BOUT++ and how
 they fit together.
 
+.. _fig-layout1:
 .. figure:: ../figs/layout1.*
    :alt: Overview of BOUT++ control flow
 
@@ -22,7 +23,7 @@ to specify a variable to be evolved. The main thing ``bout_solve`` does
 is to add these variables to the solver.
 
 The process of running a timestep is shown in blue in
-figure [fig:layout1]: The main loop calls the solver, which in turn
+:numref:`fig-layout1`: The main loop calls the solver, which in turn
 calls PVODE. To evolve the system PVODE makes calls to the RHS function
 inside solver. This moves data between PVODE and BOUT++, and calls the
 user-supplied ``physics_run`` code to calculate time-derivatives. Much
@@ -30,11 +31,12 @@ of the work calculating time-derivatives involves differential
 operators.
 
 Calculation of the RHS function ``physics_run``, and handling of data in
-BOUT++ involves many different components. Figure [fig:layout2] shows
+BOUT++ involves many different components. :numref:`fig-layout2` shows
 (most) of the classes and functions involved, and the relationships
 between them. Some thought was put into how this should be organised,
 but it has also changed over time, so some parts could be cleaner.
 
+.. _fig-layout2:
 .. figure:: ../figs/layout2.*
    :alt: Relationships used in calculating the RHS function
 

@@ -82,25 +82,24 @@ Various sources of documentation are:
 License and terms of use
 ------------------------
 
-::
+Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
 
-    Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+BOUT++ is free software: you can redistribute it and/or modify it
+under the terms of the GNU Lesser General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-    BOUT++ is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+BOUT++ is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+License for more details.
 
-    BOUT++ is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
+You should have received a copy of the GNU Lesser General Public
+License along with BOUT++.  If not, see
+<https://www.gnu.org/licenses/>.
 
-    You should have received a copy of the GNU Lesser General Public License
-    along with BOUT++.  If not, see <https://www.gnu.org/licenses/>.
-
-    A copy of the LGPL license is in COPYING.LESSER. Since this is based
-    on (and refers to) the GPL, this is included in COPYING.
+A copy of the LGPL license is in COPYING.LESSER. Since this is based
+on (and refers to) the GPL, this is included in COPYING.
 
 BOUT++ is free software, but since it is a scientific code we also ask
 that you show professional courtesy when using this code:
@@ -156,4 +155,3 @@ that you show professional courtesy when using this code:
 
 
 .. _B.Dudson et. al. Comp.Phys.Comm 2009: https://www.sciencedirect.com/science/article/B6TJ5-4VTCM95-3/2/ed200cd23916d02f86fda4ce6887d798
-
