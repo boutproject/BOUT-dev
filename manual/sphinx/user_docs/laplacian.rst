@@ -519,7 +519,7 @@ value of the field in the given direction.
          &A_0 = a(x,y_{\text{current}},z)& &A_1 = dg^{xx}&\\ &A_2 = dg^{zz}& &A_3 =
          2dg^{xz}&
 
-   In addition, we have
+In addition, we have
 
 0.45 Second order approximation (5-point stencil)
 

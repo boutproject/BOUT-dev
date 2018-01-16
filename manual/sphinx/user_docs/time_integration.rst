@@ -516,7 +516,7 @@ The second matrix
    \texttt{ddt(u)} \\
    \texttt{ddt(v)}
    \end{array}
-   ) arrow (\begin{array}{cc}
+   ) \rightarrow (\begin{array}{cc}
    1 & 0 \\
    0 & (1 - \gamma^2\partial^2_{||})^{-1}
    \end{array}
@@ -551,7 +551,7 @@ In the preconditioner we then use this solver to update :math:`v`:
       ddt(v) = inv->solve(ddt(v));
 
 which solves
-:math:`ddt(v) arrow (1 - \gamma^2\partial_{||}^2)^{-1} ddt(v)`.
+:math:`ddt(v) \rightarrow (1 - \gamma^2\partial_{||}^2)^{-1} ddt(v)`.
 The final matrix just updates :math:`u` using this new solution for
 :math:`v`
 
