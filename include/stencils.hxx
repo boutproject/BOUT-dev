@@ -33,40 +33,6 @@
 
 #include "bout_types.hxx"
 
-/// Represents a value at a single index
-///
-/// 
-class bvalue {
- public:
-  int jx, jy, jz; ///< The index (jx,jy,jz)
-  BoutReal val;   ///< The value at this index
-
-  // Operators
-  
-  /// Copy value and index from RHS
-  bvalue & operator=(const bvalue &rhs);
-  
- 
-  bvalue & operator+=(const bvalue &rhs);  ///< Add rhs val. Doesn't check or modify indices
-  bvalue & operator-=(const bvalue &rhs);  ///< Subtract rhs val. Doesn't check or modify indices
-  bvalue & operator*=(const bvalue &rhs);  ///< Multiply by rhs val. Doesn't check or modify indices
-  bvalue & operator*=(BoutReal rhs); ///< Multiply by rhs val  
-  bvalue & operator/=(const bvalue &rhs);  ///< Divide by rhs val. Doesn't check or modify indices
-  bvalue & operator/=(BoutReal rhs); ///< Divide by rhs val
-
-  // Binary operators
-  
-  const bvalue operator+(const bvalue &other) const; ///< Add bvalues. Index is taken from the left operand
-  const bvalue operator-(const bvalue &other) const; ///< Subtract bvalues. Index is taken from the left operand
-  const bvalue operator*(const bvalue &other) const; ///< Multiply bvalues. Index is taken from the left operand
-  const bvalue operator*(BoutReal rhs) const;  ///< Multiply by value 
-  const bvalue operator/(const bvalue &other) const; ///< Divide bvalues. Index is taken from the left operand
-  const bvalue operator/(BoutReal rhs) const; ///< Divide by value 
-};
-
-const bvalue operator*(BoutReal lhs, const bvalue &rhs); ///< Multiply a constant by a bvalue
-const bvalue operator/(BoutReal lhs, const bvalue &rhs); ///< Divide a constant by a bvalue
-
 /// Defines a set of values in 1D in the neighbourhood of an index
 /// Used for calculating derivatives
 class stencil {
