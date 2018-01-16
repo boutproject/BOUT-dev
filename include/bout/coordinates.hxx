@@ -106,7 +106,7 @@ public:
   
   /// Advection along magnetic field V*b.Grad(f)
   const Field2D Vpar_Grad_par(const Field2D &v, const Field2D &f, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
-  const Field3D Vpar_Grad_par(const Field &v, const Field &f, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
+  const Field3D Vpar_Grad_par(const Field3D &v, const Field3D &f, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
   
   /// Divergence along magnetic field  Div(b*f) = B.Grad(f/B)
   const Field2D Div_par(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
