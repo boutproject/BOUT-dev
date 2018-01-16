@@ -77,13 +77,14 @@ is possible to submit it to a different queue, using a different amount
 of nodes etc.).
 
 When the function ``self.execute_runs()`` is executed, a folder
-structure like the one presented in figure [fig:folder\_tree] is
+structure like the one presented in :numref:`fig-folder-tree` is
 created. ``BOUT.inp`` is copied to the folder of execution, where the
 ``BOUT.*.dmp`` files are stored. Secondly a list of combination of the
 options specified in the driver is made. Eventually unset options are
 obtained from ``BOUT.inp`` or given a default value if the option is
 nowhere to be found.
 
+.. _fig-folder-tree:
 .. figure:: ../figs/folder_tree.*
    :alt: Longest possible folder tree
 

@@ -42,7 +42,9 @@ const char DEFAULT_LOG[] = "BOUT.log";
 
 #define GLOBALORIGIN
 
-#define INDIRECT0(a) #a
+
+#define INDIRECT1(a) #a
+#define INDIRECT0(...) INDIRECT1(#__VA_ARGS__)
 #define STRINGIFY(a) INDIRECT0(a)
 
 #include "mpi.h"

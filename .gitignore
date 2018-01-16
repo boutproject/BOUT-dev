@@ -24,8 +24,6 @@
 .tmtags
 autom4te.cache/
 aclocal.m4
-data_*
-test*.py
 /bin/bout-config
 /externalpackages/
 /include/pvode

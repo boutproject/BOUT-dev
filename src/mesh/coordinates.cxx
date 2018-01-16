@@ -545,7 +545,7 @@ const Field2D Coordinates::Vpar_Grad_par(const Field2D &v, const Field2D &f,
   return VDDY(v, f) / sqrt(g_22);
 }
 
-const Field3D Coordinates::Vpar_Grad_par(const Field &v, const Field &f, CELL_LOC outloc,
+const Field3D Coordinates::Vpar_Grad_par(const Field3D &v, const Field3D &f, CELL_LOC outloc,
                                          DIFF_METHOD method) {
   return VDDY(v, f, outloc, method) / sqrt(g_22);
 }

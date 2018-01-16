@@ -94,7 +94,7 @@ const Field2D Vpar_Grad_par(const Field2D &v, const Field2D &f);
  * @param[in] method  The numerical method to use. The default is set in the options
  * 
  */
-const Field3D Vpar_Grad_par(const Field &v, const Field &f, 
+const Field3D Vpar_Grad_par(const Field3D &v, const Field3D &f, 
 			    CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
 
 /*!
@@ -110,7 +110,7 @@ const Field3D Vpar_Grad_par(const Field &v, const Field &f,
  * @param[in] method  The numerical method to use. The default is set in the options
  * 
  */
-const Field3D Vpar_Grad_par(const Field &v, const Field &f, DIFF_METHOD method, CELL_LOC outloc=CELL_DEFAULT);
+const Field3D Vpar_Grad_par(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc=CELL_DEFAULT);
 
 
 /*!
