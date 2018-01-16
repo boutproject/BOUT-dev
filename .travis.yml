@@ -42,7 +42,7 @@ matrix:
         sources:
           - ubuntu-toolchain-r-test
         packages:
-          - g++-6
+          - g++-7
           - openmpi-bin
           - libopenmpi-dev
           - libfftw3-dev
