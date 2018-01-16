@@ -1,0 +1,95 @@
+#!/bin/bash
+
+# Compile command-args
+make || exit 1
+
+# Remove directories which may be left from previous run
+rm -rf data
+rm -rf test
+
+# Run without any directory, check that an exception is thrown
+echo "=========== Running without input directory =============="
+if ./command-args 2> stderr.log; then
+    cat stderr.log
+    echo "FAIL: Run should fail when no input directory"
+    exit 1
+fi
+
+# Check that an error message was output
+if ! grep "\"data\" does not exist" stderr.log > output.log ; then
+    cat stderr.log
+    echo "FAIL: Error message not printed when missing input directory"
+    exit 1
+fi
+
+# Run tests in "data" directory
+echo
+echo "=========== Running without args in data directory =============="
+
+mkdir -p data
+cp BOUT.inp data
+./command-args 
+
+# Check that we have a BOUT.settings and BOUT.log.0 file
+
+if ! [ -f "data/BOUT.settings" ] ; then
+    echo "FAIL: No BOUT.settings file in data directory"
+    exit 1
+fi
+
+if ! [ -f "data/BOUT.log.0" ] ; then
+    echo "FAIL: No BOUT.log.0 file in data directory"
+    exit 1
+fi
+
+# Change the log file name
+echo
+echo "=========== Running with -l arg in data directory =============="
+rm -r data
+mkdir -p data
+cp BOUT.inp data
+./command-args -l different.log
+
+if [ -f "data/BOUT.log.0" ] ; then
+    echo "FAIL: BOUT.log.0 file in data directory"
+    exit 1
+fi
+
+if ! [ -f "data/different.log.0" ] ; then
+    echo "FAIL: no different.log.0 file in data directory"
+    exit 1
+fi
+
+# Change the log file name using long option
+echo
+echo "=========== Running with --log arg in data directory =============="
+rm -r data
+mkdir -p data
+cp BOUT.inp data
+./command-args --log log
+
+if [ -f "data/BOUT.log.0" ] ; then
+    echo "FAIL: BOUT.log.0 file in data directory"
+    exit 1
+fi
+
+if ! [ -f "data/log.0" ] ; then
+    echo "FAIL: no log.0 file in data directory"
+    exit 1
+fi
+
+echo
+echo "=========== Running with -d arg in test directory =============="
+rm -r data
+mkdir -p test
+cp BOUT.inp test
+
+if ! ./command-args -d test 2> stderr.log ; then
+    cat stderr.log
+    echo "FAIL: Run fails with '-d test' command-line arg"
+    exit 1
+fi
+
+echo "=> All passed"
+
+exit 0

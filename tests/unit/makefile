@@ -25,6 +25,7 @@ CXXFLAGS += -g -Wall -Wextra -pthread
 GTEST_HEADERS = $(GTEST_DIR)/include/gtest/*.h \
                 $(GTEST_DIR)/include/gtest/internal/*.h
 
+all:  serial_tests
 include $(BOUT_TOP)/make.config
 
 # Existence of this file indicates that GTEST has been downloaded
@@ -56,7 +57,7 @@ gtest-all.o : $(GTEST_SENTINEL)
 	@$(CXX) $(CPPFLAGS) -I$(GTEST_DIR) $(CXXFLAGS) -c \
             $(GTEST_DIR)/src/gtest-all.cc
 
-bout_test_main.o : $(TEST_SENTINEL) $(BOUT_TEST_DIR)/bout_test_main.cxx
+bout_test_main.o : $(GTEST_SENTINEL) $(BOUT_TEST_DIR)/bout_test_main.cxx
 	@echo "  Compiling" $@
 	@$(CXX) $(CPPFLAGS) -I$(GTEST_DIR) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c $(@:.o=.cxx)
 

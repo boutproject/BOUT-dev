@@ -1,3 +1,6 @@
+.. Use python as the default language for syntax highlighting in this file
+.. highlight:: python
+
 .. _sec-zoidberg:
 
 Zoidberg grid generator
@@ -9,9 +12,7 @@ divided into a set of 2D grids in the X-Z coordinates, and the magnetic field is
 along the Y coordinate from each 2D grid to where it either intersects the forward
 and backward grid, or hits a boundary.
 
-The simplest code which creates an output file is:
-
-.. code:: python
+The simplest code which creates an output file is::
 
    import zoidberg
 
@@ -56,10 +57,8 @@ At each of these y locations ``rectangular_grid`` defines a rectangular 2D poloi
 the X-Z coordinates, by default with a length of 1 in each direction and centred on :math:`x=0,z=0`. 
 These 2D poloidal grids are then put together into a 3D ``Grid``. This process can be customised
 by separating step 2 (the ``rectangular_grid`` call) into stages 2a) and 2b). 
-For example, to create a periodic rectangular grid we could use the following:
+For example, to create a periodic rectangular grid we could use the following::
 
-.. code:: python
-   
    import numpy as np
 
    # Create a 10x10 grid in X-Z with sides of length 1
@@ -76,11 +75,33 @@ so that it knows where to put boundaries (if not periodic), or where to wrap the
 (if periodic). The array of y locations ycoords can be arbitrary, but note that finite
 difference methods (like FCI) work best if grid point spacing varies smoothly.
 
+A more realistic example is creating a grid for a MAST tokamak equilibrium from a G-Eqdsk
+input file (this is in ``examples/zoidberg/tokamak.py``)::
+
+   import numpy as np
+   import zoidberg
+   
+   field = zoidberg.field.GEQDSK("g014220.00200") # Read magnetic field
+
+   grid = zoidberg.grid.rectangular_grid(100, 10, 100,
+          1.5-0.1, # Range in R (max - min)
+          2*np.pi, # Toroidal angle
+          3., # Range in Z
+          xcentre=(1.5+0.1)/2, # Middle of grid in R
+          yperiodic=True) # Periodic in toroidal angle
+
+   # Create the forward and backward maps
+   maps = zoidberg.make_maps(grid, field)
+   
+   # Save to file
+   zoidberg.write_maps(grid, field, maps, gridfile="grid.fci.nc")
+
+   # Plot grid points and the points they map to in the forward direction
+   zoidberg.plot.plot_forward_map(grid, maps)
+   
 In the last example only one poloidal grid was created (a ``RectangularPoloidalGrid``)
 and then re-used for each y slice. We can instead define a different grid for each y
-position. For example, to define a grid which expands along y (for some reason) we could do:
-
-.. code:: python
+position. For example, to define a grid which expands along y (for some reason) we could do::
 
    ylength = 10.0
    ycoords = np.linspace(0.0, ylength, 10, endpoint=False)
@@ -104,9 +125,7 @@ The `StructuredPoloidalGrid` class handles quite general geometries,
 but still assumes that the grid is structured and logically rectangular.
 Currently it also assumes that the z index is periodic.
 
-One way to create this grid is to define the grid points manually e.g.:
-
-.. code:: python
+One way to create this grid is to define the grid points manually e.g.::
 
    import numpy as np
    import zoidberg
@@ -123,9 +142,7 @@ One way to create this grid is to define the grid points manually e.g.:
 
 For more complicated shapes than circles, Zoidberg comes with an
 elliptic grid generator which needs to be given only the inner and
-outer boundaries:
-
-.. code:: python
+outer boundaries::
 
    import zoidberg
 
@@ -139,7 +156,6 @@ outer boundaries:
    
    poloidal_grid = zoidberg.poloidal_grid.grid_elliptic(inner, outer,
                                                  100, 100, show=True)
-
 
 which should produce the figure below:
 
@@ -170,9 +186,7 @@ flux surface.
 
 At the moment this will not work correctly for slab geometries, but expects
 closed flux surfaces such as in a stellarator or tokamak. A simple test case
-is a straight stellarator:
-
-.. code:: python
+is a straight stellarator::
    
    import zoidberg
    field = zoidberg.field.StraightStellarator(I_coil=0.4, yperiod=10)
@@ -182,9 +196,7 @@ the axis at a distance :math:`r=0.8` in a classical stellarator configuration. T
 argument is the period in y after which the coils return to their starting locations.
    
 To visualise the Poincare plot for this stellarator field, pass the ``MagneticField`` object
-to ``zoidberg.plot.plot_poincare``, together with start location(s) and periodicity information:
-
-.. code:: python
+to ``zoidberg.plot.plot_poincare``, together with start location(s) and periodicity information::
 
    zoidberg.plot.plot_poincare(field, 0.4, 0.0, 10.0)
 
@@ -210,18 +222,16 @@ we need to find the best fit i.e. the shortest path which passes through all the
 this is a `known hard problem <https://en.wikipedia.org/wiki/Travelling_salesman_problem>`_
 but fortunately in this case the nearest neighbour algorithm seems to be quite robust provided there are enough points.
 
-An example of calculating a Poincare plot on a single y slice (y=0) and producing an ``RZline`` is:
-
-.. code:: python
+An example of calculating a Poincare plot on a single y slice (y=0) and producing an ``RZline`` is::
    
-   rzcoord, ycoords = zoidberg.fieldtracer.trace_poincare(field,
-                            0.4, 0.0, 10.0,
-                            y_slices=[0])
+   from zoidberg.fieldtracer import trace_poincare
+   rzcoord, ycoords = trace_poincare(field, 0.4, 0.0, 10.0,
+                                     y_slices=[0])
    
    R = rzcoord[:,0,0]
    Z = rzcoord[:,0,1]
           
-   line = zoidberg.rzline.line_from_points(R,Z)
+   line = zoidberg.rzline.line_from_points(R, Z)
 
    line.plot()
 
@@ -237,9 +247,7 @@ The elliptic grid generator places grid points on the boundaries
 which are uniform in the index of the ``RZline`` it is given.
 Passing a very uneven set of points will therefore result in
 a poor quality mesh. To avoid this, define a new ``RZline``
-by placing points at equal distances along the line:
-
-.. code:: python
+by placing points at equal distances along the line::
 
    line = line.equallySpaced()
 
@@ -275,9 +283,7 @@ method, which are called by the field line tracer routines (in ``zoidberg.field_
 Slabs and curved slabs
 ~~~~~~~~~~~~~~~~~~~~~~
 
-The simplest magnetic field is a straight slab geometry:
-
-.. code:: python
+The simplest magnetic field is a straight slab geometry::
 
    import zoidberg
    field = zoidberg.field.Slab()
@@ -285,9 +291,7 @@ The simplest magnetic field is a straight slab geometry:
 By default this has a magnetic field :math:`\mathbf{B} = \left(0, 1, 0.1 + x\right)`.
 
 A variant is a curved slab, which is defined in cylindrical coordinates
-and has a given major radius (default 1):
-
-.. code:: python
+and has a given major radius (default 1)::
 
    import zoidberg
    field = zoidberg.field.CurvedSlab()
@@ -299,27 +303,32 @@ Straight stellarator
 ~~~~~~~~~~~~~~~~~~~~
 
 This is generated by four coils with alternating currents arranged
-on the edge of a circle, which spiral around the axis. 
-
-This requires Sympy to generate the magnetic field, so if unavailable
-an exception will be raised. 
-
-.. code:: python
+on the edge of a circle, which spiral around the axis::
    
    import zoidberg
-   field = zoidberg.StraightStellarator()
+   field = zoidberg.field.StraightStellarator()
 
+.. note:: This requires Sympy to generate the magnetic field, so if
+          unavailable an exception will be raised
+
+G-Eqdsk files
+-------------
+
+This format is commonly used for axisymmetric tokamak equilibria, for example output from EFIT equilibrium
+reconstruction. It consists of the poloidal flux psi, describing the magnetic field in R and Z, with the toroidal
+magnetic field Bt given by a 1D function f(psi) = R*Bt which depends only on psi::
+
+   import zoidberg
+   field = zoidberg.field.GEQDSK("gfile.eqdsk")
 
 VMEC files
 ~~~~~~~~~~
 
 The VMEC format describes 3D magnetic fields in toroidal geometry, but only includes closed
-flux surfaces. 
-   
-.. code:: python
+flux surfaces::
 
    import zoidberg
-   field = zoidberg.VMEC("w7x.wout")
+   field = zoidberg.field.VMEC("w7x.wout")
 
 
 Plotting the magnetic field
@@ -327,6 +336,21 @@ Plotting the magnetic field
 
 Routines to plot the magnetic field are in ``zoidberg.plot``. They include Poincare plots
 and 3D field line plots. 
+
+For example, to make a Poincare plot from a MAST equilibrium::
+
+   import numpy as np
+   import zoidberg
+   field = zoidberg.field.GEQDSK("g014220.00200")
+   zoidberg.plot.plot_poincare(field, 1.4, 0.0, 2*np.pi, interactive=True)
+
+This creates a flux surface starting at :math:`R=1.4` and :math:`Z=0.0`. The fourth input (``2*np.pi``) is
+the periodicity in the :math:`y` direction. Since this magnetic field is symmetric in y (toroidal angle),
+this parameter only affects the toroidal planes where the points are plotted.
+
+The ``interactive=True`` argument to ``plot_poincare`` generates a new set of points for every click
+on the plot window.
+
 
 
 Creating poloidal grids
@@ -343,28 +367,25 @@ Two types of poloidal grids can currently be created: Rectangular grids, and
 curvilinear structured grids. All poloidal grids have the following
 methods:
 
-* `getCoordinate()` which returns the real space (R,Z) coordinates
+* ``getCoordinate()`` which returns the real space (R,Z) coordinates
   of a given (x,z) index, or derivatives thereof
-* `findIndex()` which returns the (x,z) index of a given (R,Z) coordinate
+* ``findIndex()`` which returns the (x,z) index of a given (R,Z) coordinate
   which in general is floating point
-* `metric()` which returns the 2D metric tensor
-* `plot()` which plots the grid
+* ``metric()`` which returns the 2D metric tensor
+* ``plot()`` which plots the grid
 
 Rectangular grids
 ~~~~~~~~~~~~~~~~~
 
 To create a rectangular grid, pass the number of points and lengths in the x and z directions
-to ``RectangularPoloidalGrid``:
-
-.. code:: python
+to ``RectangularPoloidalGrid``::
 
    import zoidberg
    
    rect = zoidberg.poloidal_grid.RectangularPoloidalGrid( nx, nz, Lx, Lz )
 
 By default the middle of the rectangle is at :math:`\left(R,Z\right) = \left(0,0\right)`
-but this can be changed with the `Rcentre` and `Zcentre` options.
-
+but this can be changed with the ``Rcentre`` and ``Zcentre`` options.
 
 
 Curvilinear structured grids

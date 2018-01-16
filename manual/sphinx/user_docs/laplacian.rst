@@ -115,33 +115,37 @@ condition on both AC and DC components.
     lap->setOuterBoundaryFlags(Outer_Flags_Value);
     lap->setFlags(Flags_Value);
 
-+--------------------------+-------------------------------------------------------------------------+----------------------------------------+
-| Name                     | Meaning                                                                 | Default value                          |
-+==========================+=========================================================================+========================================+
-| ``type``                 | Which implementation to use                                             | ``tri`` (serial), ``spt`` (parallel)   |
-+--------------------------+-------------------------------------------------------------------------+----------------------------------------+
-| ``filter``               | Filter out modes above :math:`(1-`\ ``filter``\                         | 0                                      |
-|                          | :math:`)\times k_{max}`, if using Fourier solver                        |                                        |
-+--------------------------+-------------------------------------------------------------------------+----------------------------------------+
-| ``maxmode``              | Filter modes with :math:`n >`\ ``maxmode``                              | ``MZ``/2                               |
-+--------------------------+-------------------------------------------------------------------------+----------------------------------------+
-| ``all_terms``            | Include first derivative terms                                          | ``true``                               |
-+--------------------------+-------------------------------------------------------------------------+----------------------------------------+
-| ``global_flags``         | Sets global inversion options See table                                 | ``0``                                  |
-|                          | :ref:`Laplace global flags<tab-laplaceglobalflags>`                     |                                        |
-+--------------------------+-------------------------------------------------------------------------+----------------------------------------+
-| ``inner_boundary_flags`` | Sets boundary conditions on inner boundary. See table                   | ``0``                                  |
-|                          | :ref:`Laplace boundary flags<tab-laplaceBCflags>`                       |                                        |
-+--------------------------+-------------------------------------------------------------------------+----------------------------------------+
-| ``outer_boundary_flags`` | Sets boundary conditions on outer boundary. See table                   | ``0``                                  |
-|                          | :ref:`Laplace boundary flags<tab-laplaceBCflags>`                       |                                        |
-+--------------------------+-------------------------------------------------------------------------+----------------------------------------+
-| ``flags``                | DEPRECATED. Sets global solver options and boundary                     | ``0``                                  |
-|                          | conditions. See :ref:`Laplace flags<tab-laplaceflags>` or               |                                        |
-|                          | :doc:`invert_laplace.cxx<../_breathe_autogen/file/invert__laplace_8cxx>`|                                        |
-+--------------------------+-------------------------------------------------------------------------+----------------------------------------+
-| ``include_yguards``      | Perform inversion in :math:`y`\ -boundary guard cells                   | ``true``                               |
-+--------------------------+-------------------------------------------------------------------------+----------------------------------------+
++--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
+| Name                     | Meaning                                                                 | Default value                                |
++==========================+=========================================================================+==============================================+
+| ``type``                 | Which implementation to use                                             | ``tri`` (serial), ``spt`` (parallel)         |
++--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
+| ``filter``               | Filter out modes above :math:`(1-`\ ``filter``\                         | 0                                            |
+|                          | :math:`)\times k_{max}`, if using Fourier solver                        |                                              |
++--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
+| ``maxmode``              | Filter modes with :math:`n >`\ ``maxmode``                              | ``MZ``/2                                     |
++--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
+| ``all_terms``            | Include first derivative terms                                          | ``true``                                     |
++--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
+| ``nonuniform``           | Include                                                                 | Same as global ``non_uniform``.              |
+|                          | :ref:`corrections for non-uniform meshes <sec-diffmethod-nonuniform>`   | See :ref:`here <sec-diffmethod-nonuniform>`  |
+|                          | (dx not constant)                                                       |                                              |
++--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
+| ``global_flags``         | Sets global inversion options See table                                 | ``0``                                        |
+|                          | :ref:`Laplace global flags<tab-laplaceglobalflags>`                     |                                              |
++--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
+| ``inner_boundary_flags`` | Sets boundary conditions on inner boundary. See table                   | ``0``                                        |
+|                          | :ref:`Laplace boundary flags<tab-laplaceBCflags>`                       |                                              |
++--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
+| ``outer_boundary_flags`` | Sets boundary conditions on outer boundary. See table                   | ``0``                                        |
+|                          | :ref:`Laplace boundary flags<tab-laplaceBCflags>`                       |                                              |
++--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
+| ``flags``                | DEPRECATED. Sets global solver options and boundary                     | ``0``                                        |
+|                          | conditions. See :ref:`Laplace flags<tab-laplaceflags>` or               |                                              |
+|                          | :doc:`invert_laplace.cxx<../_breathe_autogen/file/invert__laplace_8cxx>`|                                              |
++--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
+| ``include_yguards``      | Perform inversion in :math:`y`\ -boundary guard cells                   | ``true``                                     |
++--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
 
 Table: Laplacian inversion options
 
@@ -555,20 +559,63 @@ Let us now consider the 5-point stencil for a mesh with :math:`3` inner
 points in the :math:`x`-direction, and :math:`3` inner points in the
 :math:`z`-direction. The :math:`z` direction will be periodic, and the
 :math:`x` direction will have the boundaries half between the grid-point
-and the first ghost point (see figure [fig:lapl\_inv\_mesh]).
+and the first ghost point (see :numref:`fig-lapl-inv-mesh`).
+
+.. _fig-lapl-inv-mesh:
+.. figure:: ../figs/5PointStencilMesh.*
+   :alt: The mesh
+
+   The mesh: The inner boundary points in :math:`x` are coloured in
+   orange, whilst the outer boundary points in :math:`z` are coloured
+   gray. Inner points are coloured blue.
 
 Applying the :math:`5`-point stencil to point :math:`f_{22}` this mesh
-will result in figure [fig:lapl\_inv\_mesh\_w\_stencil].
+will result in :numref:`fig-lapl-inv-mesh-w-stencil`.
+
+.. _fig-lapl-inv-mesh-w-stencil:
+.. figure:: ../figs/5PointStencilMeshWithStencil.*
+   :alt: The 5-point stencil for the Laplacian
+
+   The mesh with a stencil in point :math:`f_{22}`: The point under
+   consideration is coloured blue. The point located :math:`+1` in
+   :math:`z` direction (``zp``) is coloured yellow and the point
+   located :math:`-1` in :math:`z` direction (``zm``) is coloured
+   green. The point located :math:`+1` in :math:`x` direction (``xp``)
+   is coloured purple and the point located :math:`-1` in :math:`x`
+   direction (``xm``) is coloured red.
 
 We want to solve a problem on the form
-:math:`A{{\boldsymbol{x}}}={{\boldsymbol{b}}}`. We
-will order :math:`{{\boldsymbol{x}}}` in a row-major order
-(so that :math:`z` is varying faster than :math:`x`). Further, we put
-the inner :math:`x` boundary points first in
-:math:`{{\boldsymbol{x}}}`, and the outer :math:`x` boundary
-points last in :math:`{{\boldsymbol{x}}}`. The matrix problem
-for our mesh can then be written like in figure [fig:lapl\_inv\_matrix].
+:math:`A{{\mathbf{x}}}={{\mathbf{b}}}`. We will order
+:math:`{{\mathbf{x}}}` in a row-major order (so that :math:`z` is
+varying faster than :math:`x`). Further, we put the inner :math:`x`
+boundary points first in :math:`{{\mathbf{x}}}`, and the outer
+:math:`x` boundary points last in :math:`{{\mathbf{x}}}`. The matrix
+problem for our mesh can then be written like in
+:numref:`fig-lapl-inv-matrix`.
+
+.. _fig-lapl-inv-matrix:
+.. figure:: ../figs/5PointStencilMatrix.*
+   :alt: The matrix problem for the Laplacian inversion
+
+   Matrix problem for our :math:`3\times3` mesh: The colors follow
+   that of figure :numref:`fig-lapl-inv-mesh` and
+   :numref:`fig-lapl-inv-mesh-w-stencil`.  The first index of the
+   elements refers to the :math:`x`-position in figure
+   :numref:`fig-lapl-inv-mesh`, and the last index of the elements
+   refers to the :math:`z`-position in figure
+   :numref:`fig-lapl-inv-mesh`. ``ig`` refers to "inner ghost point",
+   ``og`` refers to "outer ghost point", and ``c`` refers to the point
+   of consideration. Notice the "wrap-around" in :math:`z`-direction
+   when the point of consideration neighbours the first/last
+   :math:`z`-index.
 
 As we are using a row-major implementation, the global indices of the
-matrix will be as in figure [fig:lapl\_inv\_global]
+matrix will be as in :numref:`fig-lapl-inv-global`
+
+.. _fig-lapl-inv-global:
+.. figure:: ../figs/5PointStencilGlobalIndices.*
+   :alt: Global indices of the matrix in figure
+         :numref:`fig-lapl-inv-matrix`
+
+   Global indices of the matrix in figure :numref:`fig-lapl-inv-matrix`
 

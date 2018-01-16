@@ -28,6 +28,7 @@
 const char DEFAULT_DIR[] = "data";
 const char DEFAULT_OPT[] = "BOUT.inp";
 const char DEFAULT_SET[] = "BOUT.settings";
+const char DEFAULT_LOG[] = "BOUT.log";
 
 // MD5 Checksum passed at compile-time
 #define CHECKSUM1_(x) #x
@@ -40,6 +41,11 @@ const char DEFAULT_SET[] = "BOUT.settings";
 #define REV REV_(REVISION)
 
 #define GLOBALORIGIN
+
+
+#define INDIRECT1(a) #a
+#define INDIRECT0(...) INDIRECT1(#__VA_ARGS__)
+#define STRINGIFY(a) INDIRECT0(a)
 
 #include "mpi.h"
 
@@ -116,6 +122,7 @@ int BoutInitialise(int &argc, char **&argv) {
   const char *data_dir; ///< Directory for data input/output
   const char *opt_file; ///< Filename for the options file
   const char *set_file; ///< Filename for the options file
+  const char *log_file; ///< File name for the log file
 
 #ifdef SIGHANDLE
   /// Set a signal handler for segmentation faults
@@ -133,6 +140,7 @@ int BoutInitialise(int &argc, char **&argv) {
   data_dir = DEFAULT_DIR;
   opt_file = DEFAULT_OPT;
   set_file = DEFAULT_SET;
+  log_file = DEFAULT_LOG;
 
   int verbosity=4;
   /// Check command-line arguments
@@ -147,6 +155,7 @@ int BoutInitialise(int &argc, char **&argv) {
 	      "  -d <data directory>\tLook in <data directory> for input/output files\n"
 	      "  -f <options filename>\tUse OPTIONS given in <options filename>\n"
 	      "  -o <settings filename>\tSave used OPTIONS given to <options filename>\n"
+              "  -l, --log <log filename>\tPrint log to <log filename>\n"
 	      "  -v, --verbose\t\tIncrease verbosity\n"
 	      "  -q, --quiet\t\tDecrease verbosity\n"
 #ifdef LOGCOLOR
@@ -188,6 +197,15 @@ int BoutInitialise(int &argc, char **&argv) {
       }
       i++;
       set_file = argv[i];
+
+    } else if ( (string(argv[i]) == "-l") ||
+                (string(argv[i]) == "--log") ) {
+      if (i+1 >= argc) {
+        fprintf(stderr, "Usage is %s -l <log filename>\n", argv[0]);
+        return 1;
+      }
+      i++;
+      log_file = argv[i];
       
     } else if ( (string(argv[i]) == "-v") ||
                 (string(argv[i]) == "--verbose") ){
@@ -278,7 +296,7 @@ int BoutInitialise(int &argc, char **&argv) {
 
     /// Open an output file to echo everything to
     /// On processor 0 anything written to output will go to stdout and the file
-    if (output.open("%s/BOUT.log.%d", data_dir, MYPE)) {
+    if (output.open("%s/%s.%d", data_dir, log_file, MYPE)) {
       return 1;
     }
   }
@@ -287,7 +305,7 @@ int BoutInitialise(int &argc, char **&argv) {
   output_warn.enable(verbosity>1);
   output_progress.enable(verbosity>2);
   output_info.enable(verbosity>3);
-  output_debug.enable(verbosity>4);
+  output_debug.enable(verbosity>4); //Only actually enabled if also compiled with DEBUG
   
   // The backward-compatible output object same as output_progress
   output.enable(verbosity>2);
@@ -366,6 +384,10 @@ int BoutInitialise(int &argc, char **&argv) {
   output_info.write("\tFloatingPointExceptions enabled\n");
 #endif
 
+  //The stringify is needed here as BOUT_FLAGS_STRING may already contain quoted strings
+  //which could cause problems (e.g. terminate strings).
+  output_info.write("\tCompiled with flags : %s\n",STRINGIFY(BOUT_FLAGS_STRING));
+  
   /// Get the options tree
   Options *options = Options::getRoot();
 

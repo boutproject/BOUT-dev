@@ -792,7 +792,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, CELL_L
 const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc,
                                REGION region) {
   if (var.getNx() == 1) {
-    return 0.;
+    return Field3D(0., var.getMesh());
   }
   // Check that the input variable has data
   ASSERT1(var.isAllocated());
@@ -948,10 +948,9 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, CELL_L
   return result;
 }
 
-const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc,
-                               REGION region) {
-  if (var.getNy() == 1) {
-    return 0.;
+const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc, REGION region) {
+  if (var.getNy() == 1){
+    return Field3D(0., var.getMesh());
   }
 
   // Check that the input variable has data
@@ -1115,10 +1114,9 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 
 // Z derivative
 
-const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc,
-                               REGION region) {
-  if (var.getNz() == 1) {
-    return 0.;
+const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc, REGION region) {
+  if (var.getNz()==1){
+    return Field3D(0., var.getMesh());
   }
 
   ASSERT1(this == var.getMesh());
@@ -1332,9 +1330,11 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
       if ((inloc == CELL_CENTRE) && (diffloc == CELL_ZLOW)) {
         // Shifting down - multiply by exp(-0.5*i*k*dz)
         shift = -1.;
+        throw BoutException("Not tested - probably broken");
       } else if ((inloc == CELL_ZLOW) && (diffloc == CELL_CENTRE)) {
         // Shifting up
         shift = 1.;
+        throw BoutException("Not tested - probably broken");
       }
     }
 
@@ -1374,10 +1374,10 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
             BoutReal kwave = jz * 2.0 * PI / ncz; // wave number is 1/[rad]
 
             cv[jz] *= dcomplex(0.0, kwave);
-            if (mesh->StaggerGrids)
+            if (shift)
               cv[jz] *= exp(Im * (shift * kwave));
           }
-          for (int jz = kmax + 1; jz < ncz / 2; jz++) {
+          for (int jz = kmax + 1; jz <= ncz / 2; jz++) {
             cv[jz] = 0.0;
           }
 
@@ -1649,11 +1649,13 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
     BoutReal shift = 0.; // Shifting result in Z?
     if (StaggerGrids) {
       if ((inloc == CELL_CENTRE) && (diffloc == CELL_ZLOW)) {
-        // Shifting down - multiply by exp(-0.5*i*k*dz)
-        shift = -1.;
-      } else if ((inloc == CELL_ZLOW) && (diffloc == CELL_CENTRE)) {
-        // Shifting up
-        shift = 1.;
+	      // Shifting down - multiply by exp(-0.5*i*k*dz) 
+        throw BoutException("Not tested - probably broken");
+      } else if((inloc == CELL_ZLOW) && (diffloc == CELL_CENTRE)) {
+	      // Shifting up
+        throw BoutException("Not tested - probably broken");
+      } else if (diffloc != CELL_DEFAULT && diffloc != inloc){
+        throw BoutException("Not implemented!");
       }
     }
 
@@ -1672,7 +1674,7 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
       xs = 0;
       xe = mesh->LocalNx - 1;
     }
-
+    
     for (int jx = xs; jx <= xe; jx++) {
       for (int jy = ys; jy <= ye; jy++) {
 
@@ -1682,7 +1684,7 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
           BoutReal kwave = jz * 2.0 * PI / ncz; // wave number is 1/[rad]
 
           cv[jz] *= -SQ(kwave);
-          if (StaggerGrids)
+          if (shift)
             cv[jz] *= exp(0.5 * Im * (shift * kwave));
         }
 

@@ -7,7 +7,7 @@ from __future__ import print_function
 from builtins import zip
 from builtins import str
 
-from boututils.run_wrapper import shell, launch, getmpirun
+from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
 from boututils.datafile import DataFile
 from boutdata.collect import collect
 
@@ -39,7 +39,7 @@ MPIRUN = getmpirun()
 success=True
 
 print("Making fci-slab test")
-shell("make > make.log")
+shell_safe("make > make.log")
 
 error_2 = {}
 error_inf = {}
@@ -79,11 +79,16 @@ for n in nlist:
     print("Running command: "+cmd)
     
     # Launch using MPI
-    s, out = launch(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
+    s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
 
     # Save output to log file
     with open("run.log."+str(n), "w") as f:
         f.write(out)
+
+    if s:
+        print("Run failed!\nOutput was:\n")
+        print(out)
+        exit(s)
 
     for var in varlist:
         # Collect data
@@ -122,34 +127,37 @@ for var,mark,label in zip(varlist, markers, labels):
         print("............ FAIL")
         success = False
 
-try:
-    # Plot using matplotlib if available
-    import matplotlib.pyplot as plt
-    
-    plt.figure()
+if False:
+    try:
+        # Plot using matplotlib if available
+        import matplotlib.pyplot as plt
 
-    for var,mark,label in zip(varlist, markers, labels):
-        plt.plot(dx, error_2[var], '-'+mark, label=label)
-        plt.plot(dx, error_inf[var], '--'+mark)
-    
-    plt.legend(loc="upper left")
-    plt.grid()
+        plt.figure()
 
-    plt.yscale('log')
-    plt.xscale('log')
+        for var,mark,label in zip(varlist, markers, labels):
+            plt.plot(dx, error_2[var], '-'+mark, label=label)
+            plt.plot(dx, error_inf[var], '--'+mark)
 
-    plt.xlabel(r'Mesh spacing $\delta x$')
-    plt.ylabel("Error norm")
+        plt.legend(loc="upper left")
+        plt.grid()
 
-    plt.savefig("fci-norm.pdf")
+        plt.yscale('log')
+        plt.xscale('log')
 
-    print("Plot saved to fci-norm.pdf")
+        plt.xlabel(r'Mesh spacing $\delta x$')
+        plt.ylabel("Error norm")
 
-    if showPlot:
-        plt.show()
-    plt.close()
-except ImportError:
-    print("No matplotlib")
+        plt.savefig("fci-norm.pdf")
+
+        print("Plot saved to fci-norm.pdf")
+
+        if showPlot:
+            plt.show()
+        plt.close()
+    except ImportError:
+        print("No matplotlib")
+else:
+    print("Pltting disabled")
 
 if success:
     exit(0)

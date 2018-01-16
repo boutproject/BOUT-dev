@@ -174,7 +174,7 @@ class Field3D : public Field, public FieldData {
    * Note: the global "mesh" can't be passed here because
    * fields may be created before the mesh is.
    */
-  Field3D(Mesh *msh = nullptr);
+  Field3D(Mesh *localmesh = nullptr);
 
   /*!
    * Copy constructor
@@ -184,7 +184,7 @@ class Field3D : public Field, public FieldData {
   /// Constructor from 2D field
   Field3D(const Field2D& f);
   /// Constructor from value
-  Field3D(BoutReal val);
+  Field3D(BoutReal val ,Mesh * localmesh = nullptr);
   /// Destructor
   ~Field3D();
 
@@ -509,36 +509,36 @@ private:
 // Non-member overloaded operators
 
 // Binary operators
-const FieldPerp operator+(const Field3D &lhs, const FieldPerp &rhs);
-const FieldPerp operator-(const Field3D &lhs, const FieldPerp &rhs);
-const FieldPerp operator*(const Field3D &lhs, const FieldPerp &rhs);
-const FieldPerp operator/(const Field3D &lhs, const FieldPerp &rhs);
+FieldPerp operator+(const Field3D &lhs, const FieldPerp &rhs);
+FieldPerp operator-(const Field3D &lhs, const FieldPerp &rhs);
+FieldPerp operator*(const Field3D &lhs, const FieldPerp &rhs);
+FieldPerp operator/(const Field3D &lhs, const FieldPerp &rhs);
 
-const Field3D operator+(const Field3D &lhs, const Field3D &rhs);
-const Field3D operator-(const Field3D &lhs, const Field3D &rhs);
-const Field3D operator*(const Field3D &lhs, const Field3D &rhs);
-const Field3D operator/(const Field3D &lhs, const Field3D &rhs);
+Field3D operator+(const Field3D &lhs, const Field3D &rhs);
+Field3D operator-(const Field3D &lhs, const Field3D &rhs);
+Field3D operator*(const Field3D &lhs, const Field3D &rhs);
+Field3D operator/(const Field3D &lhs, const Field3D &rhs);
 
-const Field3D operator+(const Field3D &lhs, const Field2D &rhs);
-const Field3D operator-(const Field3D &lhs, const Field2D &rhs);
-const Field3D operator*(const Field3D &lhs, const Field2D &rhs);
-const Field3D operator/(const Field3D &lhs, const Field2D &rhs);
+Field3D operator+(const Field3D &lhs, const Field2D &rhs);
+Field3D operator-(const Field3D &lhs, const Field2D &rhs);
+Field3D operator*(const Field3D &lhs, const Field2D &rhs);
+Field3D operator/(const Field3D &lhs, const Field2D &rhs);
 
-const Field3D operator+(const Field3D &lhs, BoutReal rhs);
-const Field3D operator-(const Field3D &lhs, BoutReal rhs);
-const Field3D operator*(const Field3D &lhs, BoutReal rhs);
-const Field3D operator/(const Field3D &lhs, BoutReal rhs);
+Field3D operator+(const Field3D &lhs, BoutReal rhs);
+Field3D operator-(const Field3D &lhs, BoutReal rhs);
+Field3D operator*(const Field3D &lhs, BoutReal rhs);
+Field3D operator/(const Field3D &lhs, BoutReal rhs);
 
-const Field3D operator+(BoutReal lhs, const Field3D &rhs);
-const Field3D operator-(BoutReal lhs, const Field3D &rhs);
-const Field3D operator*(BoutReal lhs, const Field3D &rhs);
-const Field3D operator/(BoutReal lhs, const Field3D &rhs);
+Field3D operator+(BoutReal lhs, const Field3D &rhs);
+Field3D operator-(BoutReal lhs, const Field3D &rhs);
+Field3D operator*(BoutReal lhs, const Field3D &rhs);
+Field3D operator/(BoutReal lhs, const Field3D &rhs);
 
 /*!
  * Unary minus. Returns the negative of given field,
  * iterates over whole domain including guard/boundary cells.
  */
-const Field3D operator-(const Field3D &f);
+Field3D operator-(const Field3D &f);
 
 // Non-member functions
 

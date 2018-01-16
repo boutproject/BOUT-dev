@@ -51,7 +51,6 @@ class Mesh;
 #include "field3d.hxx"
 #include "datafile.hxx"
 #include "options.hxx"
-#include "dcomplex.hxx" // For poloidal lowpass filter
 
 #include "fieldgroup.hxx"
 
@@ -415,43 +414,6 @@ class Mesh {
   /// Global locator functions
   virtual int XGLOBAL(int xloc) const = 0; ///< Continuous global X index
   virtual int YGLOBAL(int yloc) const = 0; ///< Continuous global Y index
-
-  /// Not sure what this does. Probably should not be part of Mesh
-  /// \todo Make this function standalone
-  virtual void slice_r_y(const BoutReal *, BoutReal *, int , int)=0;
-
-  /// Split a dcomplex array \p ayn of length \p n
-  /// into real part \p r and imaginary part \p i
-  /// All arrays are assumed to be allocated
-  ///
-  /// \todo Make this function standalone
-  virtual void get_ri( dcomplex *ayn, int n, BoutReal *r, BoutReal *i)=0;
-
-  /// Set a dcomplex array \p ayn of length \p n
-  /// taking values from real array \p r and imaginary
-  /// array \p i
-  /// All arrays are assumed to be allocated
-  ///
-  /// \todo Make this function standalone
-  virtual void set_ri( dcomplex *ayn, int n, BoutReal *r, BoutReal *i)=0;
-
-  /// poloidal lowpass filter for n=0 mode
-  /// \todo Make this function standalone
-  virtual const Field2D lowPass_poloidal(const Field2D &,int)=0;
-  
-  /// volume integral
-
-  /// Transpose Y and Z dimensions. Assumes that the
-  /// size of the global Y and Z dimensions are the same
-  ///
-  /// \todo Make this function standalone
-  virtual const Field3D Switch_YZ(const Field3D &var) = 0;
-
-  /// Transpose X and Z dimensions. Assumes that the
-  /// size of the global X and Z dimensions are the same
-  ///
-  /// \todo Make this function standalone
-  virtual const Field3D Switch_XZ(const Field3D &var) = 0;
 
   /// Size of the mesh on this processor including guard/boundary cells
   int LocalNx, LocalNy, LocalNz;
