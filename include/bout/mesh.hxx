@@ -496,6 +496,7 @@ class Mesh {
   /// @param[in] f  The field being advected
   /// @param[in] outloc The cell location where the result is desired. The default is the same as \p f
   /// @param[in] method  The differencing method to use
+  /// @param[in] region  The region of the grid for which the result is calculated.
   const Field2D indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region = RGN_NOX);
   const Field3D indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region = RGN_NOX);
 
@@ -509,6 +510,7 @@ class Mesh {
   /// @param[in] f  The field being advected
   /// @param[in] outloc The cell location where the result is desired. The default is the same as \p f
   /// @param[in] method  The differencing method to use
+  /// @param[in] region  The region of the grid for which the result is calculated.
   const Field2D indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region=RGN_NOY);
   const Field3D indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region=RGN_NOY);
 
@@ -522,6 +524,7 @@ class Mesh {
   /// @param[in] f  The field being advected
   /// @param[in] outloc The cell location where the result is desired. The default is the same as \p f
   /// @param[in] method  The differencing method to use
+  /// @param[in] region  The region of the grid for which the result is calculated.
   const Field3D indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region=RGN_NOZ);
 
   const Field2D indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region=RGN_NOX);
