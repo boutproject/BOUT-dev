@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Creates the grid files and input options for
 # a set of simulations. These can then be submitted

@@ -18,25 +18,25 @@ dirs['p']=['x', 'z']
 # loop over everything and generate code ...
 for f in field:
   for d in dirs[f]:
-    print """
+    print("""
 #pragma omp parallel
   for (auto i: d%s){
     d%s[i]=i.%s;
   }
 
-"""%(f,f,d)
+"""%(f,f,d))
     for diff in offs:
         if d == 'z':
-            print """
+            print("""
 #pragma omp parallel
   for (auto i:d%s){
     auto val=d%s[i.%s%s()];
     myassert(abs(val-((i.z+mesh->LocalNz*2%+d)%smesh->LocalNz))<1e-8);
-  }"""%(f,f,d,offs[diff],diff,'%')
+  }"""%(f,f,d,offs[diff],diff,'%'))
         else:
-            print """
+            print("""
 #pragma omp parallel
   for (auto i:d%s.region(RGN_NO%s)){
     auto zero=d%s[i]%+d-d%s[i.%s%s()];
     myassert(abs(zero)<1e-8);
-  }"""%(f,d.upper(),f,diff,f,d,offs[diff])
+  }"""%(f,d.upper(),f,diff,f,d,offs[diff]))
