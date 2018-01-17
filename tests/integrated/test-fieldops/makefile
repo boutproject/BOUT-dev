@@ -5,7 +5,7 @@ include $(BOUT_TOP)/make.config
 test.o: fieldops.cxx
 
 fieldops.cxx: gen_fieldops.py
-	python $< > $@
+	python3 $< > $@
 	@#touch test.cxx
 
 clean:: clean_log
