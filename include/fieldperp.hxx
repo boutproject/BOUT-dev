@@ -224,11 +224,6 @@ class FieldPerp : public Field {
   FieldPerp & operator/=(const Field3D &rhs);
   FieldPerp & operator/=(const Field2D &rhs);
   FieldPerp & operator/=(BoutReal rhs);
-  
-  // Stencils
-  void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
-  void setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
-  void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
 
   virtual int getNy() const override{ return 1;};
   
