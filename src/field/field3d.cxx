@@ -350,20 +350,6 @@ void Field3D::operator=(const FieldPerp &rhs) {
   }
 }
 
-void Field3D::operator=(const bvalue &bv) {
-  TRACE("Field3D = bvalue");
-  
-  allocate();
-
-#if CHECK > 0
-  if(!finite(bv.val))
-    throw BoutException("Field3D: assignment from non-finite value at (%d,%d,%d)\n", 
-			bv.jx, bv.jy,bv.jz);
-#endif
-
-  operator()(bv.jx, bv.jy,bv.jz) = bv.val;
-}
-
 Field3D & Field3D::operator=(const BoutReal val) {
   TRACE("Field3D = BoutReal");
   allocate();

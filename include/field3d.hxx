@@ -410,8 +410,6 @@ class Field3D : public Field, public FieldData {
   Field3D & operator=(const Field2D &rhs);
   /// return void, as only part initialised
   void      operator=(const FieldPerp &rhs);
-  /// return void, as only part initialised
-  void      operator=(const bvalue &val);
   Field3D & operator=(BoutReal val);
   ///@}
 
