@@ -6,44 +6,57 @@ from collections import OrderedDict
 # read tables
 func_tables=OrderedDict()
 first_entry=OrderedDict()
-cfunc=None
+
 with open("tables_cleaned.cxx","r") as f:
     inFunc=0;
+    current_table=""
     for line in f:
         inFunc+=line.count('{')
         if inFunc:
-            if cfunc is None:
-                cfunc=[]
-            cfunc.append(line);
+            current_table+=line;
         inFunc-=line.count('}')
-        if not inFunc:
-            if not cfunc is None:
-                name=cfunc[0].split(" ")[2].split("[")[0]
+        if inFunc == 0:
+            if not current_table == "":
+                #debug(current_table)
+                name=current_table.split(" ")[2].split("[")[0]
+                #debug("a,",current_table,name,"b")
                 if len(name) > 2:
                     #print name
                     func_tables[name]=OrderedDict()
-                    for e in cfunc:
-                        e=e.split('{')[-1]
-                        e=e.split('}')[0]
-                        e=e.split(',')
-                        en=[]
-                        for diff in e:
-                            en.append(diff.strip())
-                        cn=en[0]
-                        #NI not implemented :
-                        if cn=='DIFF_W3':
-                            continue
-                        if cn=='DIFF_SPLIT':
-                            continue
-                        #print cn
-                        if name not in first_entry:
-                            first_entry[name]=cn
-                        if en[1:4] == ['NULL']*3:
-                            continue
-                        func_tables[name][cn]=en[1:4]
-                cfunc=None
+                    for cchar in current_table:
+                        debug(cchar,inFunc)
+                        if cchar == '}':
+                            inFunc-=1
+                        if inFunc == 2:
+                            current_entry+=cchar
+                        if cchar == '{':
+                            inFunc+=1
+                            current_entry=""
+                        if cchar =='}' and inFunc == 1:
+                            current_entry=current_entry.split(',')
+                            current_entry_cleaned=[]
+                            for diff in current_entry:
+                                current_entry_cleaned.append(diff.strip())
+                            debug(current_entry_cleaned)
+                            current_entry_name=current_entry_cleaned[0]
+                            debug(name,current_entry_name)
+                            #NI not implemented :
+                            if current_entry_name=='DIFF_W3':
+                                continue
+                            if current_entry_name=='DIFF_SPLIT':
+                                continue
+                            if current_entry_name=='DIFF_DEFAULT':
+                                continue
+                            #print cn
+                            if name not in first_entry:
+                                first_entry[name]=current_entry_name
+                            if current_entry_cleaned[1:4] == ['NULL']*3:
+                                continue
+                            debug(name,current_entry_name)
+                            func_tables[name][current_entry_name]=current_entry_cleaned[1:4]
+                current_table=""
+                inFunc=0
 descriptions=func_tables.pop("DiffNameTable")
-descriptions.pop("DIFF_DEFAULT")
 funcname=OrderedDict()
 funcname['FirstDerivTable']='indexDD%s'
 funcname['FirstStagDerivTable']='indexDD%s'
@@ -60,14 +73,7 @@ default_methods=dict()
 duplicates(list(func_tables.keys()))
 
 for t in func_tables:
-    try:
-        func_tables[t].pop('DIFF_DEFAULT')
-    except:
-        pass
-    try:
-        func_tables[t].pop('DIFF_SPLIT')
-    except:
-        pass
+    debug(func_tables[t], func_tables[t].values(),t)
     fu=next(iter(func_tables[t].values()))
     if fu[0] != "NULL": # not a flux/upwind scheeme
         flux=False
@@ -118,6 +124,7 @@ for t in func_tables:
                 default_methods["default_%s_%s"%(d,t[:-5])]=func_tables[t]
                 duplicates(list(func_tables[t].keys()))
                 for method in func_tables[t]:
+                    debug(method)
                     print("  case",method,":")
                     if flux:
                         f="v,f"
@@ -191,10 +198,14 @@ for func in ["indexDD%s", "indexD2D%s2","indexVDD%s","indexFDD%s"]:
                 sig+=", CELL_LOC outloc, DIFF_METHOD method";
             if func%d.upper() in ["indexDDZ", "indexD2DZ2"]:
                 sig+=",bool ignored";
+            elif flux and d in "xy":
+                sig+=",REGION ignored";
+            #else:
+            #    sig+=",REGION region"
             sig+=")"
             function_header="  virtual const "+field+" "+func%d.upper()
             function_header+=sig
-            if  not (field == "Field3D" and func[5]=='V'):
+            if  not (field == "Field3D" and func[5]=='V' and d == 'z'):
                 function_header+=" override;\n"
             else:
                 function_header+=""";
@@ -257,6 +268,7 @@ sys.stdout.flush()
 sys.stdout=open("generated_init.cxx","w")
 
 descriptions_cleaned=dict()
+debug(descriptions)
 for d in descriptions:
     descriptions_cleaned[d]=descriptions[d][1].strip('"');
 for d in dirs['Field3D']:

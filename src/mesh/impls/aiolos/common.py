@@ -3,6 +3,12 @@ from __future__ import print_function
 def warn():
     print("\n// This file is auto-generated - do not edit!")
 
+# simple debug logger - easy to disable in a single point
+def debug(*args,**kwargs):
+    #import sys
+    #print(*args,**kwargs,file=sys.stderr)
+    pass
+
 fields=['Field3D','Field2D']
 dirs=dict()
 dirs['Field3D']=['x', 'y', 'z']

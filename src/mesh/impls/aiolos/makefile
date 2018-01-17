@@ -27,7 +27,7 @@ stencils_cleaned.cxx:../../index_derivs.cxx
 generated.stamp:gen_derivs.py \
 		tables_cleaned.cxx gen_stencils.py stencils_cleaned.cxx \
 		common.py
-	python3 $< > generated_derivs.cxx || ( rm $@ ; exit 1)
+	python3 $< > generated_derivs.cxx || ( rm -f $@ ; exit 1)
 	@(clang-format -i $(generated) || astyle -n $(generated) ) || exit 0 # ignore failure
 
 # Solution from automake
