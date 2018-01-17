@@ -42,6 +42,11 @@ const char DEFAULT_LOG[] = "BOUT.log";
 
 #define GLOBALORIGIN
 
+
+#define INDIRECT1(a) #a
+#define INDIRECT0(...) INDIRECT1(#__VA_ARGS__)
+#define STRINGIFY(a) INDIRECT0(a)
+
 #include "mpi.h"
 
 #include <boutcomm.hxx>
@@ -300,7 +305,7 @@ int BoutInitialise(int &argc, char **&argv) {
   output_warn.enable(verbosity>1);
   output_progress.enable(verbosity>2);
   output_info.enable(verbosity>3);
-  output_debug.enable(verbosity>4);
+  output_debug.enable(verbosity>4); //Only actually enabled if also compiled with DEBUG
   
   // The backward-compatible output object same as output_progress
   output.enable(verbosity>2);
@@ -379,6 +384,10 @@ int BoutInitialise(int &argc, char **&argv) {
   output_info.write("\tFloatingPointExceptions enabled\n");
 #endif
 
+  //The stringify is needed here as BOUT_FLAGS_STRING may already contain quoted strings
+  //which could cause problems (e.g. terminate strings).
+  output_info.write("\tCompiled with flags : %s\n",STRINGIFY(BOUT_FLAGS_STRING));
+  
   /// Get the options tree
   Options *options = Options::getRoot();
 

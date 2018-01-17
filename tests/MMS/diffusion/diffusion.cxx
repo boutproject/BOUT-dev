@@ -183,7 +183,7 @@ int ErrorMonitor::call(Solver *solver, BoutReal simtime, int iter, int NOUT) {
       for (int zk = 0; zk < mesh->LocalNz ; zk++) {
         E_N(xi, yj, zk) = N(xi, yj, zk) - S(xi, yj, zk);
 
-        output.write("Error(%d,%d,%d): %e, %e -> %e\n",
+        output_error.write("Error(%d,%d,%d): %e, %e -> %e\n",
                      xi, yj, zk, 
                      N(xi, yj, zk), S(xi, yj, zk), E_N(xi, yj, zk));
       }

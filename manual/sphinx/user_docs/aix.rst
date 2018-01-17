@@ -1,3 +1,6 @@
+.. Use bash as the default language for syntax highlighting in this file
+.. highlight:: console
+
 Compiling and running under AIX
 ===============================
 
@@ -25,9 +28,7 @@ pain.
 SUNDIALS
 --------
 
-To compile SUNDIALS, use
-
-.. code-block:: bash
+To compile SUNDIALS, use::
 
     $ export CC=cc
     $ export CXX=xlC
@@ -35,63 +36,45 @@ To compile SUNDIALS, use
     $ export OBJECT_MODE=64
     $ ./configure --prefix=$HOME/local/ --with-mpicc=mpcc --with-mpif77=mpxlf CFLAGS=-maix64
 
-You may get an error message like:
-
-.. code-block:: bash
+You may get an error message like::
 
     make: Not a recognized flag: w
 
 This is because the AIX ``make`` is being used, rather than ``gmake``.
 The easiest way to fix this is to make a link to ``gmake`` in your local
-bin directory:
-
-.. code-block:: bash
+bin directory::
 
     $ ln -s /usr/bin/gmake $HOME/local/bin/make
 
 Running ``which make`` should now point to this ``local/bin/make``, and
 if not then you need to make sure that your bin directory appears first
-in the ``PATH``:
-
-.. code-block:: bash
+in the ``PATH``::
 
     $ export PATH=$HOME/local/bin:$PATH
 
-If you see an error like this:
-
-.. code-block:: bash
+If you see an error like this::
 
     ar: 0707-126 ../../src/sundials/sundials_math.o is not valid with the current object file mode.
             Use the -X option to specify the desired object mode.
 
-then you need to set the environment variable ``OBJECT_MODE``
-
-.. code-block:: bash
+then you need to set the environment variable ``OBJECT_MODE``::
 
     $ export OBJECT_MODE=64
 
-Configuring BOUT++, you may get the error:
-
-.. code-block:: bash
+Configuring BOUT++, you may get the error::
 
     configure: error: C compiler cannot create executables
 
-In that case, you can try using:
-
-.. code-block:: bash
+In that case, you can try using::
 
     $ ./configure CFLAGS="-maix64"
 
-When compiling, you may see warnings
-
-.. code-block:: bash
+When compiling, you may see warnings::
 
     xlC_r: 1501-216 (W) command option -64 is not recognized - passed to ld
 
 At this point, the main BOUT++ library should compile, and you can try
-compiling one of the examples.
-
-.. code-block:: bash
+compiling one of the examples.::
 
     ld: 0711-317 ERROR: Undefined symbol: .NcError::NcError(NcError::Behavior)
     ld: 0711-317 ERROR: Undefined symbol: .NcFile::is_valid() const
@@ -99,9 +82,7 @@ compiling one of the examples.
     ld: 0711-317 ERROR: Undefined symbol: .NcFile::get_dim(const char*) const
 
 This is probably because the NetCDF libraries are 32-bit, whilst BOUT++
-has been compiled as 64-bit. You can try compiling BOUT++ as 32-bit:
-
-.. code-block:: bash
+has been compiled as 64-bit. You can try compiling BOUT++ as 32-bit::
 
     $ export OBJECT_MODE=32
     $ ./configure CFLAGS="-maix32"
@@ -109,9 +90,7 @@ has been compiled as 64-bit. You can try compiling BOUT++ as 32-bit:
 
 If you still get undefined symbols, then go back to 64-bit, and edit
 make.config, replacing ``-lnetcdf_c++`` with -lnetcdf64\_c++, and
-``-lnetcdf`` with -lnetcdf64. This can be done by running:
-
-.. code-block:: bash
+``-lnetcdf`` with -lnetcdf64. This can be done by running::
 
     $ sed 's/netcdf/netcdf64/g' make.config > make.config.new
     $ mv make.config.new make.config

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Classes for running one or several mpi-runs with BOUT++ at once.
@@ -4102,7 +4102,7 @@ class PBS_runner(basic_runner):
         python_name = "tmp_{}_{}.py".format(function.__name__, start_time)
 
         # Make the script
-        python_tmp  = "#!/usr/bin/env python\n"
+        python_tmp  = "#!/usr/bin/env python3\n"
         python_tmp += "import os, sys\n"
         # Set the python path
         python_tmp += "sys.path = {}\n".format(sys.path)

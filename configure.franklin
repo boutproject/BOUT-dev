@@ -1,5 +1,0 @@
-##module swap PrgEnv-pgi PrgEnv-gnu
-module load netcdf
-module load fftw
-./configure MPICC=cc MPICXX=CC --with-pdb=no --with-fftw=/opt/fftw/3.2.2.1 --with-netcdf=/opt/cray/netcdf/4.1.1.0/netcdf-gnu
-

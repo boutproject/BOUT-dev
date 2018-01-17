@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Python script to run and analyse MMS test
 #
@@ -9,7 +9,7 @@ from __future__ import division
 from __future__ import print_function
 from builtins import str
 
-from boututils.run_wrapper import shell, launch, getmpirun
+from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
 from boutdata.collect import collect
 
 verbose=False
@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 MPIRUN = getmpirun()
 
 print("Making MMS time integration test")
-shell("make > make.log")
+shell_safe("make > make.log")
 
 # List of options to be passed for each test
 options = [
@@ -36,7 +36,7 @@ options = [
     ]
 #Missing: cvode, ida, slepc, power, arkode, snes
 # Is there a better way to check a certain solver should be enabled?
-s,out=shell("grep DBOUT_HAS_PETSC  ../../../make.config")
+s,out=shell_safe("grep DBOUT_HAS_PETSC  ../../../make.config")
 if s == 0:
     #requires petsc:
     options.append(("solver:type=imexbdf2 -snes_mf", "IMEX-BDF2", "-+",2))# What's the expected order?
@@ -69,7 +69,7 @@ for opts,label,sym,expected_order in options:
         # Command to run
         cmd = "./time "+args
         # Launch using MPI
-        s, out = launch(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
+        s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
         
         # Save output to log file
         f = open("run.log."+label+"."+str(nt), "w")

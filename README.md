@@ -1,37 +1,65 @@
-#BOUT++
+# BOUT++
+
 <!---Build nice shields at shields.io-->
 [![Build Status](https://travis-ci.org/boutproject/BOUT-dev.svg?branch=master)](https://travis-ci.org/boutproject/BOUT-dev)
 [![License](https://img.shields.io/badge/license-LGPL-blue.svg)](https://img.shields.io/badge/license-LGPL-blue.svg)
 [![py3comp](https://img.shields.io/badge/py3-compatible-brightgreen.svg)](https://img.shields.io/badge/py3-compatible-brightgreen.svg)
-> ```
-> .______     ______    __    __  .___________.
-> |   _  \   /  __  \  |  |  |  | |           |  _     _
-> |  |_)  | |  |  |  | |  |  |  | `---|  |----`_| |_ _| |_
-> |   _  <  |  |  |  | |  |  |  |     |  |    |_   _|_   _|
-> |  |_)  | |  `--'  | |  `--'  |     |  |      |_|   |_|
-> |______/   \______/   \______/      |__|
-> ```
 
-A modular fluid simulation code written in C++.
-Adapted from the original BOUT 3D 2-fluid simulation code.
-Aims to be able to solve a wide variety of fluid models in
-almost any curvilinear coordinate system.
+```
+.______     ______    __    __  .___________.
+|   _  \   /  __  \  |  |  |  | |           |  _     _
+|  |_)  | |  |  |  | |  |  |  | `---|  |----`_| |_ _| |_
+|   _  <  |  |  |  | |  |  |  |     |  |    |_   _|_   _|
+|  |_)  | |  `--'  | |  `--'  |     |  |      |_|   |_|
+|______/   \______/   \______/      |__|
+```
 
-Developed by B.Dudson (University of York) and M.Umansky (LLNL)
-based on the original BOUT code by X.Xu (LLNL)
-Further development by S.Farley (ANL) for coupling to PETSc and FACETS
+BOUT++ is a framework for writing fluid and plasma simulations in
+curvilinear geometry. It is intended to be quite modular, with a
+variety of numerical methods and time-integration solvers
+available. BOUT++ is primarily designed and tested with reduced plasma
+fluid models in mind, but it can evolve any number of equations, with
+equations appearing in a readable form.
+
+Jointly developed by University of York (UK), LLNL, CCFE, DCU, DTU,
+and other international partners.
+
 
 Homepage found at [http://boutproject.github.io/](http://boutproject.github.io/)
 
 ## Table of Contents
+* [Requirements](#requirements)
 * [Usage and installation](#usage-and-installation)
 * [Overview of files](#overview-of-files)
 * [Contributing](#contributing)
 * [Terms of use](#terms-of-use)
 * [License](#license)
 
+## Requirements
+
+BOUT++ needs the following:
+
+* A C++11 compiler
+* MPI
+* FFTW3
+* Either NetCDF or HDF5
+
+Note that some of the tests require NetCDF rather than HDF5
+
+BOUT++ has the following optional dependencies:
+
+* OpenMP
+* PETSc
+* SLEPc
+* ARKODE
+* IDA
+* CVODE
+* MUMPS
+* LAPACK
+* Score-p (for performance diagnostics)
+
 ## Usage and installation
-Please see the users manual in the [manual](/manual/) section
+Please see the [users manual](http://bout-dev.readthedocs.io)
 
 ## Overview of files
 
@@ -54,8 +82,8 @@ This directory contains
   * **idllib**                  Analysis codes in IDL. Add this to your IDL_PATH environment variable
   * **line_tracing**            IDL routines for line tracing of field lines
   * **line_tracing_v2**         Newer version of the IDL routines for line tracing of field lines
-  * **mathematicalib**          Library for post processing using mathematica
-  * **matlablib**               Library for post processing using mathlab
+  * **mathematicalib**          Library for post processing using Mathematica
+  * **matlablib**               Library for post processing using MATLAB
   * **numlib**                  Numerical IDL routines
   * **octave**                  Routines for post processing using octave
   * **plasmalib**               IDL routines for calculation of plasma parameters

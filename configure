@@ -775,6 +775,7 @@ enable_debug
 enable_optimize
 enable_sigfpe
 enable_backtrace
+enable_shared
 enable_openmp
 with_gcov
 enable_code_coverage
@@ -1416,6 +1417,7 @@ Optional Features:
   --enable-optimize=1/2/3 Enable optimization
   --enable-sigfpe         Enable FloatingPointExceptions
   --disable-backtrace     Disable function backtrace
+  --enable-shared         Enable building bout++ into an shared object
   --disable-openmp        do not use OpenMP
   --enable-code-coverage  Whether to enable code coverage support
 
@@ -2604,6 +2606,13 @@ if test "${enable_backtrace+set}" = set; then :
   enableval=$enable_backtrace;
 else
   enable_backtrace=yes
+fi
+
+# Check whether --enable-shared was given.
+if test "${enable_shared+set}" = set; then :
+  enableval=$enable_shared;
+else
+  enable_shared=no
 fi
 
 
@@ -5673,13 +5682,30 @@ fi
 fi
 
 #############################################################
+# Build into shared object (pic)
+#############################################################
+
+if test ."$enable_shared" == .yes
+then
+    # compile as position independent code.
+    # -fpic is apparently faster then -fPIC, but -fPIC works always.
+    # From a SO comment (https://stackoverflow.com/a/3544211/3384414):
+    #  What's more: I did a little experiment here (on x86_64
+    #  platform), -fPIC and -fpic appears to have generated the same
+    #  code. It seems they generate a different code only on m68k,
+    #  PowerPC and SPARC.
+    # Therfore use -fPIC for now
+    CXXFLAGS+=" -fPIC"
+fi
+
+#############################################################
 # Git revision number
 #############################################################
 
 rev=`git rev-parse HEAD`
 if test "$?" = "0"
 then
-  # Attach revision info to flags
+  # Revision not needed for build - is checked at compile time.
     echo "Revision ID: $rev"
 fi
 

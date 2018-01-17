@@ -1,3 +1,5 @@
+.. _sec-derivatives-of-fft:
+
 Derivatives of the Fourier transform
 ====================================
 

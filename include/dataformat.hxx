@@ -34,6 +34,8 @@ class DataFormat;
 #define __DATAFORMAT_H__
 
 #include "bout_types.hxx"
+#include "unused.hxx"
+
 #include <string>
 #include <memory>
 using std::string;
@@ -109,7 +111,8 @@ class DataFormat {
   /// @param[in] varname     Variable name. The variable must already exist
   /// @param[in] attrname    Attribute name
   /// @param[in] text        A string attribute to attach to the variable
-  virtual void setAttribute(const string &varname, const string &attrname, const string &text) {}
+  virtual void setAttribute(const string &UNUSED(varname), const string &UNUSED(attrname),
+                            const string &UNUSED(text)) {}
 
   /// Sets an integer attribute
   ///
@@ -119,7 +122,8 @@ class DataFormat {
   /// @param[in] varname     Variable name. The variable must already exist
   /// @param[in] attrname    Attribute name
   /// @param[in] value       A string attribute to attach to the variable
-  virtual void setAttribute(const string &varname, const string &attrname, int value) {}
+  virtual void setAttribute(const string &UNUSED(varname), const string &UNUSED(attrname),
+                            int UNUSED(value)) {}
 };
 
 // For backwards compatability. In formatfactory.cxx

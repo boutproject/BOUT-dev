@@ -360,11 +360,11 @@ const Field2D VDDX(const Field2D &v, const Field2D &f, DIFF_METHOD method) {
 }
 
 /// General version for 2 or 3-D objects
-const Field3D VDDX(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field3D VDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   return f.getMesh()->indexVDDX(v, f, outloc, method) / f.getMesh()->coordinates()->dx;
 }
 
-const Field3D VDDX(const Field &v, const Field &f, DIFF_METHOD method, CELL_LOC outloc) {
+const Field3D VDDX(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
   return VDDX(v, f, outloc, method);
 }
 
@@ -380,11 +380,11 @@ const Field2D VDDY(const Field2D &v, const Field2D &f, DIFF_METHOD method) {
 }
 
 // general case
-const Field3D VDDY(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field3D VDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   return f.getMesh()->indexVDDY(v, f, outloc, method) / f.getMesh()->coordinates()->dy;
 }
 
-const Field3D VDDY(const Field &v, const Field &f, DIFF_METHOD method, CELL_LOC outloc) {
+const Field3D VDDY(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
   return VDDY(v, f, outloc, method);
 }
 

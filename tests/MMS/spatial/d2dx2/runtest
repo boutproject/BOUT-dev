@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from __future__ import division
 from __future__ import print_function
 from builtins import str
 
-from boututils.run_wrapper import shell, launch, getmpirun
+from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
 from boutdata.collect import collect
 
 from numpy import sqrt, max, abs, mean, array, log
@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 MPIRUN = getmpirun()
 
 print("Making MMS d2dx2 test")
-shell("make > make.log")
+shell_safe("make > make.log")
 
 nproc = 1
 
@@ -34,7 +34,7 @@ for nx in nxlist:
   cmd = "./test_d2dx2 "+args
   
   # Launch using MPI
-  s, out = launch(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
+  s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
   
   # Save output to log file
   f = open("run.log."+str(nx), "w")

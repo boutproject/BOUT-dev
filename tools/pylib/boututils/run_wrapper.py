@@ -188,3 +188,27 @@ def launch(command, runcmd="mpirun -np", nproc=None, output=None, pipe=False, ve
          print(cmd)
 
     return shell(cmd, pipe=pipe)
+
+def shell_safe(command,*args, **kwargs):
+    """`Safe` version of shell.
+
+    raises an RuntimeError exception if the command is not successfull.
+    """
+    s, out = shell(command,*args,**kwargs)
+    if s:
+        raise RuntimeError("Run failed with %d.\nCommand was:\n%s\n\n"
+                           "Output was\n\n%s"%
+                           (s,command,out))
+    return s, out
+
+def launch_safe(command,*args, **kwargs):
+    """`Safe` version of launch.
+
+    raises an RuntimeError exception if the command is not successfull.
+    """
+    s, out = launch(command,*args,**kwargs)
+    if s:
+        raise RuntimeError("Run failed with %d.\nCommand was:\n%s\n\n"
+                           "Output was\n\n%s"%
+                           (s,command,out))
+    return s, out

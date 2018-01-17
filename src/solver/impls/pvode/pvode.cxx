@@ -252,7 +252,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
       BoutReal last_time = internal_time;
       flag = CVode(cvode_mem, tout, u, &internal_time, ONE_STEP);
       if(flag < 0) {
-        output.write("ERROR CVODE solve failed at t = %e, flag = %d\n", internal_time, flag);
+        output_error.write("ERROR CVODE solve failed at t = %e, flag = %d\n", internal_time, flag);
         return -1.0;
       }
       
@@ -272,7 +272,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
 
   // Check return flag
   if(flag != SUCCESS) {
-    output.write("ERROR CVODE step failed, flag = %d\n", flag);
+    output_error.write("ERROR CVODE step failed, flag = %d\n", flag);
     return(-1.0);
   }
 
