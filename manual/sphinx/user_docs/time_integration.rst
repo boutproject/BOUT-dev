@@ -25,69 +25,75 @@ or on the command line by adding ``solver:type=pvode`` for example:
     mpirun -np 4 ./2fluid solver:type=rk4
 
 **NB**: Make sure there are no spaces around the “=” sign:
-``solver:type =pvode`` won’t work (probably). Table [tab:solvers] gives
+``solver:type =pvode`` won’t work (probably). Table :numref:`tab-solvers` gives
 a list of time integration solvers, along with any compile-time options
 needed to make the solver available.
 
-+---------------+-----------------------------------------+--------------------+
-| Name          | Description                             | Compile options    |
-+===============+=========================================+====================+
-| euler         | Euler explicit method                   | Always available   |
-+---------------+-----------------------------------------+--------------------+
-| rk4           | Runge-Kutta 4th-order explicit method   | Always available   |
-+---------------+-----------------------------------------+--------------------+
-| karniadakis   | Karniadakis explicit method             | Always available   |
-+---------------+-----------------------------------------+--------------------+
-| pvode         | 1998 PVODE with BDF method              | Always available   |
-+---------------+-----------------------------------------+--------------------+
-| cvode         | SUNDIALS CVODE. BDF and Adams methods   | –with-cvode        |
-+---------------+-----------------------------------------+--------------------+
-| ida           | SUNDIALS IDA. DAE solver                | –with-ida          |
-+---------------+-----------------------------------------+--------------------+
-| petsc         | PETSc TS methods                        | –with-petsc        |
-+---------------+-----------------------------------------+--------------------+
-| imexbdf2      | IMEX-BDF2 scheme                        | –with-petsc        |
-+---------------+-----------------------------------------+--------------------+
+.. _tab-solvers:
+.. table:: Available time integration solvers
+	   
+   +---------------+-----------------------------------------+--------------------+
+   | Name          | Description                             | Compile options    |
+   +===============+=========================================+====================+
+   | euler         | Euler explicit method                   | Always available   |
+   +---------------+-----------------------------------------+--------------------+
+   | rk4           | Runge-Kutta 4th-order explicit method   | Always available   |
+   +---------------+-----------------------------------------+--------------------+
+   | karniadakis   | Karniadakis explicit method             | Always available   |
+   +---------------+-----------------------------------------+--------------------+
+   | pvode         | 1998 PVODE with BDF method              | Always available   |
+   +---------------+-----------------------------------------+--------------------+
+   | cvode         | SUNDIALS CVODE. BDF and Adams methods   | –with-cvode        |
+   +---------------+-----------------------------------------+--------------------+
+   | ida           | SUNDIALS IDA. DAE solver                | –with-ida          |
+   +---------------+-----------------------------------------+--------------------+
+   | petsc         | PETSc TS methods                        | –with-petsc        |
+   +---------------+-----------------------------------------+--------------------+
+   | imexbdf2      | IMEX-BDF2 scheme                        | –with-petsc        |
+   +---------------+-----------------------------------------+--------------------+
 
-Table: Available time integration solvers
+|
 
 Each solver can have its own settings which work in slightly different
 ways, but some common settings and which solvers they are used in are
-given in table [tab:solveropts].
+given in table :numref:`tab-solveropts`.
 
-+------------------+--------------------------------------------+-------------------------------------+
-| Option           | Description                                | Solvers used                        |
-+==================+============================================+=====================================+
-| atol             | Absolute tolerance                         | rk4, pvode, cvode, ida, imexbdf2    |
-+------------------+--------------------------------------------+-------------------------------------+
-| rtol             | Relative tolerance                         | rk4, pvode, cvode, ida, imexbdf2    |
-+------------------+--------------------------------------------+-------------------------------------+
-| mxstep           | Maximum internal steps                     | rk4, imexbdf2                       |
-|                  | per output step                            |                                     |
-+------------------+--------------------------------------------+-------------------------------------+
-| max\_timestep    | Maximum timestep                           | rk4, cvode                          |
-+------------------+--------------------------------------------+-------------------------------------+
-| timestep         | Starting timestep                          | rk4, karniadakis, euler, imexbdf2   |
-+------------------+--------------------------------------------+-------------------------------------+
-| adaptive         | Adapt timestep? (Y/N)                      | rk4, imexbdf2                       |
-+------------------+--------------------------------------------+-------------------------------------+
-| use\_precon      | Use a preconditioner? (Y/N)                | pvode, cvode, ida, imexbdf2         |
-+------------------+--------------------------------------------+-------------------------------------+
-| mudq, mldq       | BBD preconditioner settings                | pvode, cvode, ida                   |
-+------------------+--------------------------------------------+-------------------------------------+
-| mukeep, mlkeep   |                                            |                                     |
-+------------------+--------------------------------------------+-------------------------------------+
-| maxl             | Maximum number of linear iterations        | cvode, imexbdf2                     |
-+------------------+--------------------------------------------+-------------------------------------+
-| use\_jacobian    | Use user-supplied Jacobian? (Y/N)          | cvode                               |
-+------------------+--------------------------------------------+-------------------------------------+
-| adams\_moulton   | Use Adams-Moulton method                   | cvode                               |
-|                  | rather than BDF                            |                                     |
-+------------------+--------------------------------------------+-------------------------------------+
-| diagnose         | Collect and print additional diagnostics   | cvode, imexbdf2                     |
-+------------------+--------------------------------------------+-------------------------------------+
+.. _tab-solveropts:
+.. table:: Time integration solver options
+	   
+   +------------------+--------------------------------------------+-------------------------------------+
+   | Option           | Description                                | Solvers used                        |
+   +==================+============================================+=====================================+
+   | atol             | Absolute tolerance                         | rk4, pvode, cvode, ida, imexbdf2    |
+   +------------------+--------------------------------------------+-------------------------------------+
+   | rtol             | Relative tolerance                         | rk4, pvode, cvode, ida, imexbdf2    |
+   +------------------+--------------------------------------------+-------------------------------------+
+   | mxstep           | Maximum internal steps                     | rk4, imexbdf2                       |
+   |                  | per output step                            |                                     |
+   +------------------+--------------------------------------------+-------------------------------------+
+   | max\_timestep    | Maximum timestep                           | rk4, cvode                          |
+   +------------------+--------------------------------------------+-------------------------------------+
+   | timestep         | Starting timestep                          | rk4, karniadakis, euler, imexbdf2   |
+   +------------------+--------------------------------------------+-------------------------------------+
+   | adaptive         | Adapt timestep? (Y/N)                      | rk4, imexbdf2                       |
+   +------------------+--------------------------------------------+-------------------------------------+
+   | use\_precon      | Use a preconditioner? (Y/N)                | pvode, cvode, ida, imexbdf2         |
+   +------------------+--------------------------------------------+-------------------------------------+
+   | mudq, mldq       | BBD preconditioner settings                | pvode, cvode, ida                   |
+   +------------------+--------------------------------------------+-------------------------------------+
+   | mukeep, mlkeep   |                                            |                                     |
+   +------------------+--------------------------------------------+-------------------------------------+
+   | maxl             | Maximum number of linear iterations        | cvode, imexbdf2                     |
+   +------------------+--------------------------------------------+-------------------------------------+
+   | use\_jacobian    | Use user-supplied Jacobian? (Y/N)          | cvode                               |
+   +------------------+--------------------------------------------+-------------------------------------+
+   | adams\_moulton   | Use Adams-Moulton method                   | cvode                               |
+   |                  | rather than BDF                            |                                     |
+   +------------------+--------------------------------------------+-------------------------------------+
+   | diagnose         | Collect and print additional diagnostics   | cvode, imexbdf2                     |
+   +------------------+--------------------------------------------+-------------------------------------+
 
-Table: Time integration solver options
+|
 
 The most commonly changed options are the absolute and relative solver
 tolerances, ``ATOL`` and ``RTOL`` which should be varied to check

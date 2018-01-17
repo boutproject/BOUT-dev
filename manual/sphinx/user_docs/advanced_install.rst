@@ -103,7 +103,7 @@ solver, which evolves a system of the form
 :math:`\mathbf{f}(\mathbf{u},\dot{\mathbf{u}},t) = 0`. This allows
 algebraic constraints on variables to be specified.
 
-To configure BOUT++ with SUNDIALS only (see section [sec:PETSc] on how
+To configure BOUT++ with SUNDIALS only (see section :ref:`sec-PETSc-install` on how
 to build PETSc with SUNDIALS), go to the root directory of BOUT++ and
 type::
 
@@ -111,6 +111,8 @@ type::
 
 SUNDIALS will allow you to select at run-time which solver to use. See
 :ref:`sec-timeoptions` for more details on how to do this.
+
+.. _sec-PETSc-install:
 
 PETSc
 -----

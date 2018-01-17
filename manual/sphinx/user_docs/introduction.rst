@@ -38,25 +38,25 @@ existing plasma models, or specify a new problem (grid and equations) to
 be solved. In either case, it’s assumed that the user isn’t all that
 interested in the details of the code. For a more detailed descriptions
 of the code internals, see the developer and reference guides. After
-describing how to install BOUT++ (section [sec:install]), run the test
-suite (section [sec:runtestsuite]) and a few examples
-(section [sec:running], more detail in section [sec:examples]),
+describing how to install BOUT++ (section :ref:`sec-install`), run the test
+suite (section :ref:`sec-runtestsuite`) and a few examples
+(section :ref:`sec-running`, more detail in section :ref:`sec-examples`),
 increasingly sophisticated ways to modify the problem being solved are
 introduced. The simplest way to modify a simulation case is by altering
-the input options, described in section [sec:options]. Checking that the
+the input options, described in section :ref:`sec-options`. Checking that the
 options are doing what you think they should be by looking at the output
-logs is described in section [sec:running], and an overview of the IDL
+logs is described in section :ref:`sec-running`, and an overview of the IDL
 analysis routines for data post-processing and visualisation is given in
-section [sec:output]. Generating new grid files, particularly for
-tokamak equilibria, is described in section [sec:gridgen].
+section :ref:`sec-output`. Generating new grid files, particularly for
+tokamak equilibria, is described in section :ref:`sec-gridgen`.
 
 Up to this point, little programming experience has been assumed, but
 performing more drastic alterations to the physics model requires
-modifying C++ code. Section [sec:equations] describes how to write a new
+modifying C++ code. Section :ref:`sec-equations` describes how to write a new
 physics model specifying the equations to be solved, using ideal MHD as
 an example. The remaining sections describe in more detail aspects of
-using BOUT++: section [sec:diffops] describes the differential operators
-and methods available; section [sec:staggergrids] covers the
+using BOUT++: section :ref:`sec-diffops` describes the differential operators
+and methods available; section :ref:`sec-staggergrids` covers the
 experimental staggered grid system.
 
 Various sources of documentation are:

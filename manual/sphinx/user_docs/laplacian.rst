@@ -41,7 +41,7 @@ Usage of the laplacian inversion
 
 The first approach utilizes that it is possible Fourier transform the
 equation in :math:`z` (using some assumptions described in section
-[sec:num\_laplace]), and solve a tridiagonal system for each
+:ref:`sec-num-laplace`), and solve a tridiagonal system for each
 mode. These inversion problems are band-diagonal (tri-diagonal in the
 case of 2nd-order differencing) and so inversions can be very
 efficient: :math:`O(n_z \log n_z)` for the FFTs,
@@ -79,12 +79,12 @@ arguments can be ``Field2D``, ``Field3D`` , or real values.
 Settings for the inversion can be set in the input file under the
 section ``laplace`` (default) or whichever settings section name was
 specified when the ``Laplacian`` class was created. Commonly used
-settings are listed in tables [tab:laplacesettings] to
-[tab:laplaceflags].
+settings are listed in tables :numref:`tab-laplacesettings` to
+:numref:`tab-laplaceflags`.
 
 In particular boundary conditions on the :math:`x` boundaries can be set
 using the and ``outer_boundary_flags`` variables, as detailed in table
-[tab:laplaceBCflags]. Note that DC (‘direct-current’) refers to
+:numref:`tab-laplaceBCflags`. Note that DC (‘direct-current’) refers to
 :math:`k = 0` Fourier component, AC (‘alternating-current’) refers to
 :math:`k
 \neq 0` Fourier components. Non-Fourier solvers use AC options (and
@@ -115,142 +115,146 @@ condition on both AC and DC components.
     lap->setOuterBoundaryFlags(Outer_Flags_Value);
     lap->setFlags(Flags_Value);
 
-+--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
-| Name                     | Meaning                                                                 | Default value                                |
-+==========================+=========================================================================+==============================================+
-| ``type``                 | Which implementation to use                                             | ``tri`` (serial), ``spt`` (parallel)         |
-+--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
-| ``filter``               | Filter out modes above :math:`(1-`\ ``filter``\                         | 0                                            |
-|                          | :math:`)\times k_{max}`, if using Fourier solver                        |                                              |
-+--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
-| ``maxmode``              | Filter modes with :math:`n >`\ ``maxmode``                              | ``MZ``/2                                     |
-+--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
-| ``all_terms``            | Include first derivative terms                                          | ``true``                                     |
-+--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
-| ``nonuniform``           | Include                                                                 | Same as global ``non_uniform``.              |
-|                          | :ref:`corrections for non-uniform meshes <sec-diffmethod-nonuniform>`   | See :ref:`here <sec-diffmethod-nonuniform>`  |
-|                          | (dx not constant)                                                       |                                              |
-+--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
-| ``global_flags``         | Sets global inversion options See table                                 | ``0``                                        |
-|                          | :ref:`Laplace global flags<tab-laplaceglobalflags>`                     |                                              |
-+--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
-| ``inner_boundary_flags`` | Sets boundary conditions on inner boundary. See table                   | ``0``                                        |
-|                          | :ref:`Laplace boundary flags<tab-laplaceBCflags>`                       |                                              |
-+--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
-| ``outer_boundary_flags`` | Sets boundary conditions on outer boundary. See table                   | ``0``                                        |
-|                          | :ref:`Laplace boundary flags<tab-laplaceBCflags>`                       |                                              |
-+--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
-| ``flags``                | DEPRECATED. Sets global solver options and boundary                     | ``0``                                        |
-|                          | conditions. See :ref:`Laplace flags<tab-laplaceflags>` or               |                                              |
-|                          | :doc:`invert_laplace.cxx<../_breathe_autogen/file/invert__laplace_8cxx>`|                                              |
-+--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
-| ``include_yguards``      | Perform inversion in :math:`y`\ -boundary guard cells                   | ``true``                                     |
-+--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
 
-Table: Laplacian inversion options
+|
+
+.. _tab-laplacesettings:
+.. table:: Laplacian inversion options
+
+   +--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
+   | Name                     | Meaning                                                                 | Default value                                |
+   +==========================+=========================================================================+==============================================+
+   | ``type``                 | Which implementation to use                                             | ``tri`` (serial), ``spt`` (parallel)         |
+   +--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
+   | ``filter``               | Filter out modes above :math:`(1-`\ ``filter``\                         | 0                                            |
+   |                          | :math:`)\times k_{max}`, if using Fourier solver                        |                                              |
+   +--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
+   | ``maxmode``              | Filter modes with :math:`n >`\ ``maxmode``                              | ``MZ``/2                                     |
+   +--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
+   | ``all_terms``            | Include first derivative terms                                          | ``true``                                     |
+   +--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
+   | ``nonuniform``           | Include                                                                 | Same as global ``non_uniform``.              |
+   |                          | :ref:`corrections for non-uniform meshes <sec-diffmethod-nonuniform>`   | See :ref:`here <sec-diffmethod-nonuniform>`  |
+   |                          | (dx not constant)                                                       |                                              |
+   +--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
+   | ``global_flags``         | Sets global inversion options See table                                 | ``0``                                        |
+   |                          | :ref:`Laplace global flags<tab-laplaceglobalflags>`                     |                                              |
+   +--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
+   | ``inner_boundary_flags`` | Sets boundary conditions on inner boundary. See table                   | ``0``                                        |
+   |                          | :ref:`Laplace boundary flags<tab-laplaceBCflags>`                       |                                              |
+   +--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
+   | ``outer_boundary_flags`` | Sets boundary conditions on outer boundary. See table                   | ``0``                                        |
+   |                          | :ref:`Laplace boundary flags<tab-laplaceBCflags>`                       |                                              |
+   +--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
+   | ``flags``                | DEPRECATED. Sets global solver options and boundary                     | ``0``                                        |
+   |                          | conditions. See :ref:`Laplace flags<tab-laplaceflags>` or               |                                              |
+   |                          | :doc:`invert_laplace.cxx<../_breathe_autogen/file/invert__laplace_8cxx>`|                                              |
+   +--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
+   | ``include_yguards``      | Perform inversion in :math:`y`\ -boundary guard cells                   | ``true``                                     |
+   +--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
+
+|   
 
 .. _tab-laplaceglobalflags:
+.. table:: Laplacian inversion ``global_flags`` values: add the required quantities together.
+	   
+   +--------+--------------------------------------------------------------------------------+-----------------------------+
+   | Flag   | Meaning                                                                        | Code variable               |
+   +========+================================================================================+=============================+
+   | 0      | No global option set                                                           | :math:`-`                   |
+   +--------+--------------------------------------------------------------------------------+-----------------------------+
+   | 1      | zero DC component (Fourier solvers)                                            | ``INVERT_ZERO_DC``          |
+   +--------+--------------------------------------------------------------------------------+-----------------------------+
+   | 2      | set initial guess to 0 (iterative solvers)                                     | ``INVERT_START_NEW``        |
+   +--------+--------------------------------------------------------------------------------+-----------------------------+
+   | 4      | equivalent to                                                                  | ``INVERT_BOTH_BNDRY_ONE``   |
+   |        | ``outer_boundary_flags = 128``,                                                |                             |
+   |        | ``inner_boundary_flags = 128``                                                 |                             |
+   +--------+--------------------------------------------------------------------------------+-----------------------------+
+   | 8      | Use 4th order differencing (Apparently not actually implemented anywhere!!!)   | ``INVERT_4TH_ORDER``        |
+   +--------+--------------------------------------------------------------------------------+-----------------------------+
+   | 16     | Set constant component (:math:`k_x = k_z = 0`) to zero                         | ``INVERT_KX_ZERO``          |
+   +--------+--------------------------------------------------------------------------------+-----------------------------+
 
-+--------+--------------------------------------------------------------------------------+-----------------------------+
-| Flag   | Meaning                                                                        | Code variable               |
-+========+================================================================================+=============================+
-| 0      | No global option set                                                           | :math:`-`                   |
-+--------+--------------------------------------------------------------------------------+-----------------------------+
-| 1      | zero DC component (Fourier solvers)                                            | ``INVERT_ZERO_DC``          |
-+--------+--------------------------------------------------------------------------------+-----------------------------+
-| 2      | set initial guess to 0 (iterative solvers)                                     | ``INVERT_START_NEW``        |
-+--------+--------------------------------------------------------------------------------+-----------------------------+
-| 4      | equivalent to                                                                  | ``INVERT_BOTH_BNDRY_ONE``   |
-|        | ``outer_boundary_flags = 128``,                                                |                             |
-|        | ``inner_boundary_flags = 128``                                                 |                             |
-+--------+--------------------------------------------------------------------------------+-----------------------------+
-| 8      | Use 4th order differencing (Apparently not actually implemented anywhere!!!)   | ``INVERT_4TH_ORDER``        |
-+--------+--------------------------------------------------------------------------------+-----------------------------+
-| 16     | Set constant component (:math:`k_x = k_z = 0`) to zero                         | ``INVERT_KX_ZERO``          |
-+--------+--------------------------------------------------------------------------------+-----------------------------+
-
-Table: Laplacian inversion ``global_flags`` values: add the required
-quantities together.
+|   
 
 .. _tab-laplaceBCflags:
+.. table:: Laplacian inversion ``outer_boundary_flags`` or ``inner_boundary_flags`` values: add the required quantities together.
+   
+   +--------+----------------------------------------------------------------------+----------------------------+
+   | Flag   | Meaning                                                              | Code variable              |
+   +========+======================================================================+============================+
+   | 0      | Dirichlet (Set boundary to 0)                                        | :math:`-`                  |
+   +--------+----------------------------------------------------------------------+----------------------------+
+   | 1      | Neumann on DC component (set gradient to 0)                          | ``INVERT_DC_GRAD``         |
+   +--------+----------------------------------------------------------------------+----------------------------+
+   | 2      | Neumann on AC component (set gradient to 0)                          | ``INVERT_AC_GRAD``         |
+   +--------+----------------------------------------------------------------------+----------------------------+
+   | 4      | Zero or decaying Laplacian on AC components (                        | ``INVERT_AC_LAP``          |
+   |        | :math:`\frac{\partial^2}{\partial x^2}+k_z^2` vanishes/decays)       |                            |
+   +--------+----------------------------------------------------------------------+----------------------------+
+   | 8      | Use symmetry to enforce zero value or gradient (redundant for 2nd    | ``INVERT_SYM``             |
+   |        | order now)                                                           |                            |
+   +--------+----------------------------------------------------------------------+----------------------------+
+   | 16     | Set boundary condition to values in boundary guard cells of second   | ``INVERT_SET``             |
+   |        | argument, ``x0``, of ``Laplacian::solve(const Field3D &b, const      |                            |
+   |        | Field3D &x0)`` . May be combined with any combination of 0, 1 and 2, |                            |
+   |        | i.e. a Dirichlet or Neumann boundary condition set to values which   |                            |
+   |        | are :math:`\neq 0` or :math:`f(y)`                                   |                            |
+   +--------+----------------------------------------------------------------------+----------------------------+
+   | 32     | Set boundary condition to values in boundary guard cells of RHS,     | ``INVERT_RHS``             |
+   |        | ``b`` in ``Laplacian::solve(const Field3D &b, const Field3D &x0)``   |                            |
+   |        | . May be combined with any combination of 0, 1 and 2, i.e. a         |                            |
+   |        | Dirichlet or Neumann boundary condition set to values which are      |                            |
+   |        | :math:`\neq 0` or :math:`f(y)`                                       |                            |
+   +--------+----------------------------------------------------------------------+----------------------------+
+   | 64     | Zero or decaying Laplacian on DC components                          | ``INVERT_DC_LAP``          |
+   |        | (:math:`\frac{\partial^2}{\partial x^2}` vanishes/decays)            |                            |
+   +--------+----------------------------------------------------------------------+----------------------------+
+   | 128    | Assert that there is only one guard cell in the :math:`x`-boundary   | ``INVERT_BNDRY_ONE``       |
+   +--------+----------------------------------------------------------------------+----------------------------+
+   | 256    | DC value is set to parallel gradient, :math:`\nabla_\parallel f`     | ``INVERT_DC_GRADPAR``      |
+   +--------+----------------------------------------------------------------------+----------------------------+
+   | 512    | DC value is set to inverse of parallel gradient                      | ``INVERT_DC_GRADPARINV``   |
+   |        | :math:`1/\nabla_\parallel f`                                         |                            |
+   +--------+----------------------------------------------------------------------+----------------------------+
+   | 1024   | Boundary condition for inner ‘boundary’ of cylinder                  | ``INVERT_IN_CYLINDER``     |
+   +--------+----------------------------------------------------------------------+----------------------------+
 
-+--------+----------------------------------------------------------------------+----------------------------+
-| Flag   | Meaning                                                              | Code variable              |
-+========+======================================================================+============================+
-| 0      | Dirichlet (Set boundary to 0)                                        | :math:`-`                  |
-+--------+----------------------------------------------------------------------+----------------------------+
-| 1      | Neumann on DC component (set gradient to 0)                          | ``INVERT_DC_GRAD``         |
-+--------+----------------------------------------------------------------------+----------------------------+
-| 2      | Neumann on AC component (set gradient to 0)                          | ``INVERT_AC_GRAD``         |
-+--------+----------------------------------------------------------------------+----------------------------+
-| 4      | Zero or decaying Laplacian on AC components (                        | ``INVERT_AC_LAP``          |
-|        | :math:`\frac{\partial^2}{\partial x^2}+k_z^2` vanishes/decays)       |                            |
-+--------+----------------------------------------------------------------------+----------------------------+
-| 8      | Use symmetry to enforce zero value or gradient (redundant for 2nd    | ``INVERT_SYM``             |
-|        | order now)                                                           |                            |
-+--------+----------------------------------------------------------------------+----------------------------+
-| 16     | Set boundary condition to values in boundary guard cells of second   | ``INVERT_SET``             |
-|        | argument, ``x0``, of ``Laplacian::solve(const Field3D &b, const      |                            |
-|        | Field3D &x0)`` . May be combined with any combination of 0, 1 and 2, |                            |
-|        | i.e. a Dirichlet or Neumann boundary condition set to values which   |                            |
-|        | are :math:`\neq 0` or :math:`f(y)`                                   |                            |
-+--------+----------------------------------------------------------------------+----------------------------+
-| 32     | Set boundary condition to values in boundary guard cells of RHS,     | ``INVERT_RHS``             |
-|        | ``b`` in ``Laplacian::solve(const Field3D &b, const Field3D &x0)``   |                            |
-|        | . May be combined with any combination of 0, 1 and 2, i.e. a         |                            |
-|        | Dirichlet or Neumann boundary condition set to values which are      |                            |
-|        | :math:`\neq 0` or :math:`f(y)`                                       |                            |
-+--------+----------------------------------------------------------------------+----------------------------+
-| 64     | Zero or decaying Laplacian on DC components                          | ``INVERT_DC_LAP``          |
-|        | (:math:`\frac{\partial^2}{\partial x^2}` vanishes/decays)            |                            |
-+--------+----------------------------------------------------------------------+----------------------------+
-| 128    | Assert that there is only one guard cell in the :math:`x`-boundary   | ``INVERT_BNDRY_ONE``       |
-+--------+----------------------------------------------------------------------+----------------------------+
-| 256    | DC value is set to parallel gradient, :math:`\nabla_\parallel f`     | ``INVERT_DC_GRADPAR``      |
-+--------+----------------------------------------------------------------------+----------------------------+
-| 512    | DC value is set to inverse of parallel gradient                      | ``INVERT_DC_GRADPARINV``   |
-|        | :math:`1/\nabla_\parallel f`                                         |                            |
-+--------+----------------------------------------------------------------------+----------------------------+
-| 1024   | Boundary condition for inner ‘boundary’ of cylinder                  | ``INVERT_IN_CYLINDER``     |
-+--------+----------------------------------------------------------------------+----------------------------+
-
-Table: Laplacian inversion ``outer_boundary_flags`` or
-``inner_boundary_flags`` values: add the required quantities together.
+|   
 
 .. _tab-laplaceflags:
-
-+--------+------------------------------------------------------------------------------------------+
-| Flag   | Meaning                                                                                  |
-+========+==========================================================================================+
-| 1      | Zero-gradient DC on inner (X) boundary. Default is zero-value                            |
-+--------+------------------------------------------------------------------------------------------+
-| 2      | Zero-gradient AC on inner boundary                                                       |
-+--------+------------------------------------------------------------------------------------------+
-| 4      | Zero-gradient DC on outer boundary                                                       |
-+--------+------------------------------------------------------------------------------------------+
-| 8      | Zero-gradient AC on outer boundary                                                       |
-+--------+------------------------------------------------------------------------------------------+
-| 16     | Zero DC component everywhere                                                             |
-+--------+------------------------------------------------------------------------------------------+
-| 32     | Not used currently                                                                       |
-+--------+------------------------------------------------------------------------------------------+
-| 64     | Set width of boundary to 1 (default is ``MXG``)                                          |
-+--------+------------------------------------------------------------------------------------------+
-| 128    | Use 4\ :math:`^{th}`-order band solver (default is 2\ :math:`^{nd}` order tridiagonal)   |
-+--------+------------------------------------------------------------------------------------------+
-| 256    | Attempt to set zero laplacian AC component on inner boundary by combining                |
-|        | 2nd and 4th-order differencing at the boundary.                                          |
-|        | Ignored if tridiagonal solver used.                                                      |
-+--------+------------------------------------------------------------------------------------------+
-| 512    | Zero laplacian AC on outer boundary                                                      |
-+--------+------------------------------------------------------------------------------------------+
-| 1024   | Symmetric boundary condition on inner boundary                                           |
-+--------+------------------------------------------------------------------------------------------+
-| 2048   | Symmetric outer boundary condition                                                       |
-+--------+------------------------------------------------------------------------------------------+
-
-Table: Laplacian inversion ``flags`` values (DEPRECATED!): add the
-required quantities together.
+.. table:: Laplacian inversion ``flags`` values (DEPRECATED!): add the required quantities together.
+   
+   +--------+------------------------------------------------------------------------------------------+
+   | Flag   | Meaning                                                                                  |
+   +========+==========================================================================================+
+   | 1      | Zero-gradient DC on inner (X) boundary. Default is zero-value                            |
+   +--------+------------------------------------------------------------------------------------------+
+   | 2      | Zero-gradient AC on inner boundary                                                       |
+   +--------+------------------------------------------------------------------------------------------+
+   | 4      | Zero-gradient DC on outer boundary                                                       |
+   +--------+------------------------------------------------------------------------------------------+
+   | 8      | Zero-gradient AC on outer boundary                                                       |
+   +--------+------------------------------------------------------------------------------------------+
+   | 16     | Zero DC component everywhere                                                             |
+   +--------+------------------------------------------------------------------------------------------+
+   | 32     | Not used currently                                                                       |
+   +--------+------------------------------------------------------------------------------------------+
+   | 64     | Set width of boundary to 1 (default is ``MXG``)                                          |
+   +--------+------------------------------------------------------------------------------------------+
+   | 128    | Use 4\ :math:`^{th}`-order band solver (default is 2\ :math:`^{nd}` order tridiagonal)   |
+   +--------+------------------------------------------------------------------------------------------+
+   | 256    | Attempt to set zero laplacian AC component on inner boundary by combining                |
+   |        | 2nd and 4th-order differencing at the boundary.                                          |
+   |        | Ignored if tridiagonal solver used.                                                      |
+   +--------+------------------------------------------------------------------------------------------+
+   | 512    | Zero laplacian AC on outer boundary                                                      |
+   +--------+------------------------------------------------------------------------------------------+
+   | 1024   | Symmetric boundary condition on inner boundary                                           |
+   +--------+------------------------------------------------------------------------------------------+
+   | 2048   | Symmetric outer boundary condition                                                       |
+   +--------+------------------------------------------------------------------------------------------+
 
 To perform the inversion, there’s the ``solve`` method
 
@@ -275,6 +279,8 @@ and
 The input ``b`` and output ``x`` are 3D fields, and the coefficients
 ``a``, ``c``, and ``d`` are pointers to 2D fields. To omit any of the
 three coefficients, set them to NULL.
+
+.. _sec-num-laplace:
 
 Numerical implementation
 ------------------------
@@ -359,7 +365,7 @@ tridiagonal solvers are solving equations on the form
      +& a(x,y)f(x,y,z) = b(x,y,z)
 
 after using the discrete Fourier transform (see section
-[sec:deriv\_of\_FT]), we get
+:ref:`sec-derivatives-of-fft`), we get
 
 .. math::
 
