@@ -213,6 +213,8 @@ the ``[Ni]`` section for ``bndry_target``, then for ``bndry_all`` in the
 ``[Ni]`` section. This is set to ``relax(dirichlet(0.1))``, not the
 Neumann condition desired.
 
+.. _sec-BoundaryRegion:
+
 Boundary regions
 ----------------
 
