@@ -2455,8 +2455,8 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 ////////////// Z DERIVATIVE /////////////////
 
 // general case
-const Field3D Mesh::indexVDDZ(const Field &v, const Field &f, CELL_LOC outloc,
-                              DIFF_METHOD method) {
+const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc,
+                              DIFF_METHOD method, REGION region) {
   TRACE("Mesh::indexVDDZ");
 
   ASSERT1(this == v.getMesh());
@@ -2501,16 +2501,39 @@ const Field3D Mesh::indexVDDZ(const Field &v, const Field &f, CELL_LOC outloc,
       func = lookupFluxFunc(table, method);
     }
 
-    bindex bx;
-    start_index(&bx);
     stencil vval, fval;
-    do {
-      v.setZStencil(vval, bx, diffloc);
-      f.setZStencil(fval, bx);
+    for (const auto &i : result.region(region)) {
+      fval.mm = f[i.offset(0,0,-2)];
+      fval.m = f[i.zm()];
+      fval.c = f[i];
+      fval.p = f[i.zp()];
+      fval.pp = f[i.offset(0,0,2)];
 
-      result(bx.jx, bx.jy, bx.jz) = func(vval, fval);
-    } while (next_index3(&bx));
+      vval.mm = v[i.offset(0,0,-2)];
+      vval.m = v[i.zm()];
+      vval.c = v[i];
+      vval.p = v[i.zp()];
+      vval.pp = v[i.offset(0,0,2)];
 
+      if((diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
+        // Non-centred stencil
+
+        if((vloc == CELL_CENTRE) && (diffloc == CELL_ZLOW)) {
+          // Producing a stencil centred around a lower Z value
+          vval.pp = vval.p;
+          vval.p  = vval.c;
+
+        }else if(vloc == CELL_ZLOW) {
+          // Stencil centred around a cell centre
+
+          vval.mm = vval.m;
+          vval.m  = vval.c;
+        }
+        // Shifted in one direction -> shift in another
+        // Could produce warning
+      }
+      result[i] = func(vval, fval);
+    }
   } else {
     Mesh::upwind_func func = fVDDZ;
     DiffLookup *table = UpwindTable;
@@ -2520,13 +2543,16 @@ const Field3D Mesh::indexVDDZ(const Field &v, const Field &f, CELL_LOC outloc,
       func = lookupUpwindFunc(table, method);
     }
 
-    bindex bx;
-    start_index(&bx);
-    stencil vval, fval;
-    do {
-      f.setZStencil(fval, bx);
-      result(bx.jx, bx.jy, bx.jz) = func(v[{bx.jx, bx.jy, bx.jz}], fval);
-    } while (next_index3(&bx));
+    stencil fval;
+    for (const auto &i : result.region(region)) {
+      fval.mm = f[i.offset(0,0,-2)];
+      fval.m = f[i.zm()];
+      fval.c = f[i];
+      fval.p = f[i.zp()];
+      fval.pp = f[i.offset(0,0,2)];
+
+      result[i] = func(v[i], fval);
+    }
   }
 
   result.setLocation(inloc);

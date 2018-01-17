@@ -522,7 +522,7 @@ class Mesh {
   /// @param[in] f  The field being advected
   /// @param[in] outloc The cell location where the result is desired. The default is the same as \p f
   /// @param[in] method  The differencing method to use
-  const Field3D indexVDDZ(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method);
+  const Field3D indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region=RGN_NOZ);
 
   const Field2D indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region=RGN_NOX);
   const Field3D indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region=RGN_NOX);
