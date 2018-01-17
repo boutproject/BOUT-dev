@@ -11,6 +11,6 @@ TARGET		= lib
 
 include $(BOUT_TOP)/make.config
 
-generated_fieldops.cxx:gen_fieldops.py
-	python3 $< > $@
+generated_fieldops.cxx: gen_fieldops.py
+	./$< > $@
 	@clang-format -i $@ || echo "Formatting failed"
