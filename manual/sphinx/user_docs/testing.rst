@@ -67,6 +67,8 @@ derivatives. Common mistakes:
    will give strange answers and usually no convergence. Instead use
    ``x * sin(z)`` or similar, which are periodic.
 
+.. _sec-timerclass:
+
 Timing
 ------
 

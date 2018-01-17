@@ -61,13 +61,13 @@ The zero- or constant-Laplacian boundary conditions works as follows:
    \nabla_\perp^2 f =& 0 \\ &\simeq& g^{xx}\frac{\partial^2 f}{\partial x^2} +
        g^{zz}\frac{\partial^2 f}{\partial z^2}
 
- which when Fourier transformed in :math:`z` becomes:
+which when Fourier transformed in :math:`z` becomes:
 
 .. math::
 
    g^{xx}\frac{\partial^2 \hat{f}}{\partial x^2} - g^{zz}k_z^2 \hat{f} = 0
 
- which has the solution
+which has the solution
 
 .. math::
 

@@ -1,6 +1,8 @@
 .. Use bash as the default language for syntax highlighting in this file
 .. highlight:: console
 
+.. _sec-install:
+
 Getting started
 ===============
 

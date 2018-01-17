@@ -671,7 +671,7 @@ perturbations, rounding error and tolerances in the time-integration
 mean that linear dispersion relations are not calculated correctly. The
 solution to this is to write all equations in terms of an initial
 “background” quantity and a time-evolving perturbation, for example
-:math:`\rho(t) arrow \rho_0 +
+:math:`\rho(t) \rightarrow \rho_0 +
 \tilde{\rho}(t)`. For this reason, **the initialisation of all
 variables passed to the ``bout_solve`` function is a combination of
 small-amplitude gaussians and waves; the user is expected to have

@@ -290,26 +290,29 @@ to select HDF5 instead of the default NetCDF format put
 before any section headers. The output (dump) files with time-history
 are controlled by settings in a section called “output”. Restart files
 contain a single time-slice, and are controlled by a section called
-“restart”. The options available are listed in table [tab:outputopts].
+“restart”. The options available are listed in table :numref:`tab-outputopts`.
 
-+-------------+----------------------------------------------------+--------------+
-| Option      | Description                                        | Default      |
-|             |                                                    | value        |
-+-------------+----------------------------------------------------+--------------+
-| enabled     | Writing is enabled                                 | true         |
-+-------------+----------------------------------------------------+--------------+
-| floats      | Write floats rather than doubles                   | true (dmp)   |
-+-------------+----------------------------------------------------+--------------+
-| flush       | Flush the file to disk after each write            | true         |
-+-------------+----------------------------------------------------+--------------+
-| guards      | Output guard cells                                 | true         |
-+-------------+----------------------------------------------------+--------------+
-| openclose   | Re-open the file for each write, and close after   | true         |
-+-------------+----------------------------------------------------+--------------+
-| parallel    | Use parallel I/O                                   | false        |
-+-------------+----------------------------------------------------+--------------+
+.. _tab-outputopts:
+.. table:: Output file options
+	   
+   +-------------+----------------------------------------------------+--------------+
+   | Option      | Description                                        | Default      |
+   |             |                                                    | value        |
+   +-------------+----------------------------------------------------+--------------+
+   | enabled     | Writing is enabled                                 | true         |
+   +-------------+----------------------------------------------------+--------------+
+   | floats      | Write floats rather than doubles                   | true (dmp)   |
+   +-------------+----------------------------------------------------+--------------+
+   | flush       | Flush the file to disk after each write            | true         |
+   +-------------+----------------------------------------------------+--------------+
+   | guards      | Output guard cells                                 | true         |
+   +-------------+----------------------------------------------------+--------------+
+   | openclose   | Re-open the file for each write, and close after   | true         |
+   +-------------+----------------------------------------------------+--------------+
+   | parallel    | Use parallel I/O                                   | false        |
+   +-------------+----------------------------------------------------+--------------+
 
-Table: Output file options
+|
 
 **enabled** is useful mainly for doing performance or scaling tests,
 where you want to exclude I/O from the timings. **floats** is used to

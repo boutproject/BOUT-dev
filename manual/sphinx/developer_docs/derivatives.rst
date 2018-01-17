@@ -1,3 +1,5 @@
+.. _sec-derivatives:
+
 Derivatives
 ===========
 
@@ -196,7 +198,7 @@ Central differencing using 4-point stencil:
 
    \begin{aligned}
    y &=& \left(9y_{-1/2} + 9y_{1/2} - y_{-3/2} - y_{3/2}\right) / 16 \\
-   {\ensuremath{\frac{\partial y}{\partial x}}} &=& \left( 27y_{1/2} - 27y_{-1/2} - y_{3/2} + y_{-3/2}\right) / 24\Delta x \\
+   {{\frac{\partial y}{\partial x}}} &=& \left( 27y_{1/2} - 27y_{-1/2} - y_{3/2} + y_{-3/2}\right) / 24\Delta x \\
    \frac{\partial^2 y}{\partial x^2} &=& \left(y_{3/2} + y_{-3/2} - y_{1/2} - y_{-1/2}\right) / 2\Delta x^2\end{aligned}
 
 +----------+-------------------+----------------------------------------------------------------+

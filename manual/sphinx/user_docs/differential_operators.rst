@@ -179,7 +179,7 @@ system.
 
 .. math::
 
-   \nabla\phi =& {{\frac{\partial \phi}{\partial u^i}}}\nabla u^i arrow (\nabla\phi)_i =
+   \nabla\phi =& {{\frac{\partial \phi}{\partial u^i}}}\nabla u^i \rightarrow (\nabla\phi)_i =
        {{\frac{\partial \phi}{\partial u^i}}} \\ \nabla\cdot A =& =
        \frac{1}{J}{{\frac{\partial }{\partial u^i}}}(Jg^{ij}A_j) \\ \nabla^2\phi =&
        G^j{{\frac{\partial \phi}{\partial u^i}}} + g^{ij}\frac{\partial^2\phi}{\partial u^i\partial

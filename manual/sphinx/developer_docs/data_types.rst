@@ -92,6 +92,8 @@ by PVODE. Several work-arounds were tried, some of which worked on some
 systems, but it was easier in the end to just implement a new class
 ``dcomplex`` to handle complex numbers.
 
+.. _sec-memorymanage:
+
 Memory management
 -----------------
 

@@ -92,7 +92,7 @@ The current source code files are:
      the :cpp:class:`Field3D` class, which varies in :math:`x`,
      :math:`y` and :math:`z`. Since these handle a lot more memory
      than Field2D objects, the memory management is more complicated
-     and includes reference counting. See section [sec:memorymanage]
+     and includes reference counting. See section :ref:`sec-memorymanage`
      for more details.
 
    - :doc:`field_data.cxx<../_breathe_autogen/file/field__data_8cxx>`
@@ -254,12 +254,12 @@ The current source code files are:
 
    - :doc:`boundary_factory.cxx<../_breathe_autogen/file/boundary__factory_8cxx>` creates boundary
      condition operators which can then be applied to
-     fields. Described in section [sec:BoundaryFactory].
+     fields. Described in section :ref:`sec-BoundaryFactory`.
 
    - :doc:`boundary_region.cxx<../_breathe_autogen/file/boundary__region_8cxx>` implements a way
      to describe and iterate over boundary regions. Created by the
      mesh, and then used by boundary conditions. See
-     section [sec:BoundaryRegion] for more details.
+     section :ref:`sec-BoundaryRegion` for more details.
 
    - :doc:`boundary_standard.cxx<../_breathe_autogen/file/boundary__standard_8cxx>` implements some
      standard boundary operations and modifiers such as ``Neumann``
@@ -363,7 +363,7 @@ The current source code files are:
      basic derivative methods such as upwinding, central difference
      and WENO methods. These are then used by
      :doc:`difops.cxx<../_breathe_autogen/file/difops_8cxx>`. Details are
-     given in section [sec:derivatives].
+     given in section :ref:`sec-derivatives`.
 
    - :doc:`msg_stack.cxx<../_breathe_autogen/file/msg__stack_8cxx>` is
      part of the error handling system. It maintains a stack of
@@ -382,7 +382,7 @@ The current source code files are:
 
    - :doc:`range.cxx<../_breathe_autogen/file/range_8cxx>` Provides the
      RangeIterator class, used to iterate over a set of
-     ranges. Described in section [sec:rangeiterator]
+     ranges. Described in section :ref:`sec-rangeiterator`
 
    - :doc:`stencils.cxx<../_breathe_autogen/file/stencils_8cxx>` contains
      methods to operate on stencils which are used by differential
@@ -390,7 +390,7 @@ The current source code files are:
 
    - :doc:`timer.cxx<../_breathe_autogen/file/timer_8cxx>` a class for
      timing parts of the code like communications and file
-     I/O. Described in section [sec:timerclass]
+     I/O. Described in section :ref:`sec-timerclass`
 
    - :doc:`utils.cxx<../_breathe_autogen/file/utils_8cxx>` contains
      miscellaneous small useful routines such as allocating and
