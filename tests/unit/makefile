@@ -28,6 +28,8 @@ GTEST_HEADERS = $(GTEST_DIR)/include/gtest/*.h \
 all:  serial_tests
 include $(BOUT_TOP)/make.config
 
+LDFLAGS += -pthread
+
 # Existence of this file indicates that GTEST has been downloaded
 GTEST_SENTINEL = $(BOUT_TOP)/googletest/README.md
 
