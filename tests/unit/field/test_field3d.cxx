@@ -274,6 +274,8 @@ TEST_F(Field3DTest, ConstYnext) {
 TEST_F(Field3DTest, SetGetLocation) {
   Field3D field;
 
+  field.getMesh()->StaggerGrids = true;
+
   field.setLocation(CELL_XLOW);
   EXPECT_EQ(field.getLocation(), CELL_XLOW);
 
@@ -281,6 +283,17 @@ TEST_F(Field3DTest, SetGetLocation) {
   EXPECT_EQ(field.getLocation(), CELL_CENTRE);
 
   EXPECT_THROW(field.setLocation(CELL_VSHIFT), BoutException);
+
+  field.getMesh()->StaggerGrids = false;
+
+  field.setLocation(CELL_XLOW);
+  EXPECT_EQ(field.getLocation(), CELL_CENTRE);
+
+  field.setLocation(CELL_DEFAULT);
+  EXPECT_EQ(field.getLocation(), CELL_CENTRE);
+
+  field.setLocation(CELL_VSHIFT);
+  EXPECT_EQ(field.getLocation(), CELL_CENTRE);
 }
 
 //-------------------- Iteration tests --------------------
