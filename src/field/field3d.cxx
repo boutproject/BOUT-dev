@@ -229,18 +229,18 @@ const Field3D& Field3D::ynext(int dir) const {
   }
 }
 
-void Field3D::setLocation(CELL_LOC loc) {
-  bool stag = mesh->StaggerGrids;
-  if (this->fieldmesh)
-    stag=this->fieldmesh->StaggerGrids;
-  if (stag){
-    if(loc == CELL_VSHIFT)
-      throw BoutException("Field3D: CELL_VSHIFT cell location only makes sense for vectors");
-    
-    if(loc == CELL_DEFAULT)
-      loc = CELL_CENTRE;
-    
-    location = loc;
+void Field3D::setLocation(CELL_LOC new_location) {
+  bool staggered = this->fieldmesh ? this->fieldmesh->StaggerGrids : mesh->StaggerGrids;
+
+  if (staggered) {
+    if (new_location == CELL_VSHIFT) {
+      throw BoutException(
+          "Field3D: CELL_VSHIFT cell location only makes sense for vectors");
+    }
+    if (new_location == CELL_DEFAULT) {
+      new_location = CELL_CENTRE;
+    }
+    location = new_location;
   } else {
     location = CELL_CENTRE;
   }

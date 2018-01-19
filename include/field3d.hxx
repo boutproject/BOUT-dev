@@ -265,9 +265,10 @@ class Field3D : public Field, public FieldData {
   Field3D& ynext(int dir);
   const Field3D& ynext(int dir) const;
 
-  // Staggered grids
-  void setLocation(CELL_LOC loc) override; ///< Set variable location
-  CELL_LOC getLocation() const override; ///< Variable location
+  /// Set variable location for staggered grids to @param new_location
+  void setLocation(CELL_LOC new_location) override;
+  /// Get variable location
+  CELL_LOC getLocation() const override;
   
   /////////////////////////////////////////////////////////
   // Data access
