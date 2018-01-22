@@ -425,7 +425,7 @@ isInit=False
 def init(args=[]):
     global isInit
     if isInit:
-        raise AssertionError("The BOUT++ library was already initialised - please call boutcore.init(args) only once")
+        raise RuntimeError("The BOUT++ library was already initialised - please call boutcore.init(args) only once")
     args.insert(0,"boutcore")
     cdef char **string_buf = <char **>malloc(len(args) * sizeof(char*))
     fu=[]
@@ -451,10 +451,9 @@ def finalise():
     isInit=False
 
 def checkInit():
-    print(isInit)
     global isInit
     if not isInit:
-       raise AssertionError("The BOUT++ library was not initialised - please call boutcore.init(args) first")
+       raise RuntimeError("The BOUT++ library was not initialised - please call boutcore.init(args) first")
 
 EOF
 for d in Z
