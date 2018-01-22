@@ -78,18 +78,23 @@ cdef class Field3D:
     cdef c.Field3D * cobj
     cdef c.bool isSelfOwned
     @classmethod
-    def fromMesh(cls,mesh):
+    def fromMesh(cls,mesh=None):
+        """ Create a Field3D.
+        mesh: The mesh of the Field3D. If none, use global mesh
+        """
         checkInit()
-        fu=Field3D()
-        fu.cobj=new c.Field3D((<Mesh?>mesh).cobj)
-        return fu
-    #@classmethod
+        f3d=Field3D()
+        if mesh is None:
+            mesh=Mesh.getGlobal()
+        f3d.cobj=new c.Field3D((<Mesh?>mesh).cobj)
+        return f3d
     @classmethod
-    def fromCollect(cls,name,tind=-1,mesh=None, **kwargs):
+    def fromCollect(cls,name,tind=-1,mesh=None,ignoreDataType=False, **kwargs):
         """Create a Field3D from reading in a datafile via collect.
         Options:
             tind: time slice to read
             mesh: if not defined, use global mesh
+            ignoreDataType: Do not fail if data is not float64
         remaining arguments are passed to collect
         """
         checkInit()
@@ -124,7 +129,7 @@ cdef class Field3D:
         data=data.reshape(data.shape[1:])
         if len(data.shape) != 3:
             raise TypeError("expected 3d data")
-        f3d.setAll(data)
+        f3d.setAll(data,ignoreDataType=ignoreDataType)
         return f3d
             
     def __cinit__(self,Field3D obj=None):
@@ -136,10 +141,14 @@ cdef class Field3D:
         #if self.cobj == NULL:
         #    raise MemoryError('Not enough memory, allocation failed.')
 
-    def setAll(self,data):
+    def setAll(self,data,ignoreDataType=False):
+        if data.dtype != np.dtype('float64'):
+            if ignoreDataType:
+                data=data.astype('float64')
+            else:
+                raise TypeError("expected float64 data - add ignoreDataType=True to cast")
         cdef np.ndarray[double, mode="c", ndim=3] data_ = np.ascontiguousarray(data)
         c_set_f3d_all(self.cobj,&data_[0,0,0]);
-        #self.cobj.setData(0,0,0,data[0,0,0])
 
     def getAll(self):
         nx=self.cobj.getNx()
@@ -149,6 +158,7 @@ cdef class Field3D:
         cdef np.ndarray[double, mode="c", ndim=3] data_ = np.ascontiguousarray(np.zeros((nx,ny,nz)))
         c_get_f3d_all(self.cobj,&data_[0,0,0]);
         return data_
+
     def setLocation(self,location):
         cdef benum.CELL_LOC location_ = benum.resolve_cell_loc(location)
         self.cobj[0].setLocation(location_)
