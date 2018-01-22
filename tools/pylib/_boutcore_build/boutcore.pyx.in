@@ -79,6 +79,7 @@ cdef class Field3D:
     cdef c.bool isSelfOwned
     @classmethod
     def fromMesh(cls,mesh):
+        checkInit()
         fu=Field3D()
         fu.cobj=new c.Field3D((<Mesh?>mesh).cobj)
         return fu
@@ -91,6 +92,7 @@ cdef class Field3D:
             mesh: if not defined, use global mesh
         remaining arguments are passed to collect
         """
+        checkInit()
         from boutdata import collect
 
         if mesh is None:
@@ -261,6 +263,7 @@ cdef class Mesh:
     cdef FieldFactory factory
     #factory=FieldFactory()
     def __init__(self, create=True,OptionSection=None):
+        checkInit()
         self.cobj=<c.Mesh*>0
         cdef c.string tmp
         cdef c.Options * opt
@@ -283,6 +286,7 @@ cdef class Mesh:
 
     @classmethod
     def getGlobal(cls):
+        checkInit()
         msh = Mesh(create=False);
         msh.cobj = c_get_global_mesh();
         msh.isGlobal=True
@@ -313,6 +317,7 @@ cdef class Mesh:
 cdef class Laplacian:
     cdef c.Laplacian * cobj
     def __init__(self,section=None):
+        checkInit()
         if section:
            self.cobj = c.Laplacian.create((<Options?>section).cobj)
         else:
@@ -324,6 +329,7 @@ cdef class Laplacian:
 cdef class FieldFactory:
     cdef c.FieldFactory * cobj
     def __init__(self):
+        checkInit()
         cobj=< c.FieldFactory*>0
     def __dealloc__(self):
         if self.cobj != <c.FieldFactory*>0:
@@ -356,11 +362,12 @@ cdef class PythonModelCallback:
         # 'callback' :: The pattern/converter method to fire a Python 
         #               object method from C typed infos
         # 'method'   :: The effective method passed by the Python user 
-       self.cobj = new c.PythonModelCallback(callback, <void*>method)
+        checkInit()
+        self.cobj = new c.PythonModelCallback(callback, <void*>method)
 
     def __dealloc__(self):
-       if self.thisptr:
-           del self.thisptr
+        if self.thisptr:
+            del self.thisptr
 
     cpdef void execute(self, parameter):
         # 'parameter' :: The parameter to be passed to the 'method'
@@ -370,6 +377,7 @@ cdef class PhysicsModel:
     cdef c.PythonModel * cmodel
     cdef c.PythonModelCallback * callback
     def __init__(self):
+        checkInit()
         self.cmodel  = new c.PythonModel()
         self.cmodel.pyinit()
         self.callback= <c.PythonModelCallback*> 0
@@ -404,6 +412,9 @@ cdef extern from "bout.hxx":
     
 isInit=False
 def init(args=[]):
+    global isInit
+    if isInit:
+        raise AssertionError("The BOUT++ library was already initialised - please call boutcore.init(args) only once")
     args.insert(0,"boutcore")
     cdef char **string_buf = <char **>malloc(len(args) * sizeof(char*))
     fu=[]
@@ -423,8 +434,17 @@ def init(args=[]):
     #atexit.register(finalise)
 
 def finalise():
+    checkInit()
     BoutFinalise()
+    global isInit
     isInit=False
+
+def checkInit():
+    print(isInit)
+    global isInit
+    if not isInit:
+       raise AssertionError("The BOUT++ library was not initialised - please call boutcore.init(args) first")
+
 EOF
 for d in Z
 do
@@ -433,6 +453,7 @@ do
         DD=${f/d/$d}
         cat <<EOF
 def $DD(Field3D field, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", inc_xbndry=True):
+    checkInit()
     cdef benum.CELL_LOC outloc_= benum.resolve_cell_loc(outloc)
     cdef benum.DIFF_METHOD method_=benum.resolve_diff_method(method)
     return f3dFromObj(c.$DD(field.cobj[0],outloc_,method_,inc_xbndry))
@@ -443,21 +464,25 @@ done
 cat <<EOF
 
 def Vpar_Grad_par(Field3D V, Field3D f, outloc="CELL_DEFAULT",method="DIFF_DEFAULT"):
+    checkInit()
     cdef benum.CELL_LOC outloc_= benum.resolve_cell_loc(outloc)
     cdef benum.DIFF_METHOD method_=benum.resolve_diff_method(method)
     return f3dFromObj(c.Vpar_Grad_par(V.cobj[0],f.cobj[0],outloc_,method_))
 
 def Div_par(Field3D J, outloc="CELL_DEFAULT",method="DIFF_DEFAULT"):
+    checkInit()
     cdef benum.CELL_LOC outloc_=benum.resolve_cell_loc(outloc)
     cdef benum.DIFF_METHOD method_=benum.resolve_diff_method(method)
     return f3dFromObj(c.Div_par((J.cobj)[0],outloc_,method_))
 
 def Grad_par(Field3D J, outloc="CELL_DEFAULT",method="DIFF_DEFAULT"):
+    checkInit()
     cdef benum.CELL_LOC outloc_=benum.resolve_cell_loc(outloc)
     cdef benum.DIFF_METHOD method_=benum.resolve_diff_method(method)
     return f3dFromObj(c.Grad_par((J.cobj)[0],outloc_,method_))
 
 def bracket(Field3D a, Field3D b, method="BRACKET_STD", outloc="CELL_DEFAULT"):
+    checkInit()
     cdef benum.CELL_LOC outloc_=benum.resolve_cell_loc(outloc)
     cdef benum.BRACKET_METHOD method_=benum.resolve_bracket_method(method)
     return f3dFromObj(c.bracket(a.cobj[0],b.cobj[0],method_,outloc_))
@@ -482,12 +507,15 @@ def min(Field3D a):
     return c.min(a.cobj[0])
 
 def Delp2(Field3D a, zsmooth=-1):
+    checkInit()
     return f3dFromObj(c.Delp2(a.cobj[0],float(zsmooth)))
 
 def Grad_perp_dot_Grad_perp(Field3D a, Field3D b):
+    checkInit()
     return f3dFromObj(c_Grad_perp_dot_Grad_perp(a.cobj[0],b.cobj[0]))
 
 def create3D(string, Mesh msh,outloc="CELL_DEFAULT",time=0):
+    checkInit()
     cdef benum.CELL_LOC outloc_=benum.resolve_cell_loc(outloc)
     cdef FieldFactory fact=msh.getFactory()
     cdef c.string str_=string.encode('ascii')
@@ -496,11 +524,13 @@ def create3D(string, Mesh msh,outloc="CELL_DEFAULT",time=0):
                                            ,outloc_,time))
 
 def interp_to(Field3D f3d,location):
+    checkInit()
     cdef benum.CELL_LOC location_ = benum.resolve_cell_loc(location)
     return f3dFromObj(c.interp_to(f3d.cobj[0],location_))
 
 
 def setOption(name, value):
+    checkInit()
     cdef c.Options * opt = c.Options.getRoot()
     cdef c.string sec_
     for sec in name.split(":")[:-1]:
@@ -515,6 +545,7 @@ cdef class Options:
     cdef c.Options * cobj
 
     def __init__(self,name):
+        checkInit()
         self.cobj = c.Options.getRoot()
         cdef c.string sec_
         for sec in name.split(":"):

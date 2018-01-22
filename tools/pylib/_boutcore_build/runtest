@@ -85,5 +85,4 @@ model=boutcore.PhysicsModel()
 model.setRhs(rhs)
 model.solve_for(n=dens)
 model.solve()
-
 #boutcore.finalise()
