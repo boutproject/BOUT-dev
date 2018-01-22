@@ -63,6 +63,7 @@ cat <<EOF
      void c_laplacian_solve(c.Laplacian *, c.Field3D *, c.Field3D*)
      c.Field3D c_Grad_perp_dot_Grad_perp(c.Field3D,c.Field3D);
      void c_mesh_normalise(c.Mesh* , double)
+     c.Datafile * c_get_global_datafile()
      
 cdef Field3D f3dFromObj(c.Field3D i):
     f3d=Field3D()
@@ -601,6 +602,36 @@ cdef class Options:
             default_= str(default).encode('ascii')
             opt.get(key,ret_str, default_)
             return ret_str
+
+cdef class Datafile:
+     cdef c.Datafile * cobj
+     def __init__(self):
+         self.cobj = c_get_global_datafile()
+     def add(self,save_repeat=False,**kwargs):
+         for key in kwargs:
+             self._add(kwargs[key],key,save_repeat)
+
+     def _add(self,data,name,save_repeat):
+         cdef char * tmp
+         cdef double * dbl
+         cdef c.Field3D * f3d
+         t2=str.encode(name)
+         tmp=t2
+         # import numbers
+         # if isinstance(data,int):
+         #     #c_datafile_add_int(self.cobj,
+         #     self.cobj.add(<int>data,tmp,<c.bool>save_repeat)
+         # elif isinstance(data,numbers.Number):
+         #     self.cobj.add(dbl,tmp,<c.bool>save_repeat)
+         # el
+         if isinstance(data,Field3D):
+             f3d=(<Field3D>data).cobj
+             self.cobj.add(f3d[0],tmp,<c.bool>save_repeat)
+         else:
+             raise TypeError("unsupported datatype")
+     def write(self):
+         self.cobj.write()
+
 
 
 EOF

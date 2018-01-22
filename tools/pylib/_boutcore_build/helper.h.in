@@ -101,5 +101,8 @@ void throw_BoutException(std::string err){
   throw BoutException(err);
 }
 
+Datafile * c_get_global_datafile(){
+  return &dump;
+}
 
 EOF
