@@ -148,9 +148,6 @@ cdef class Field3D:
         cdef np.ndarray[double, mode="c", ndim=3] data_ = np.ascontiguousarray(np.zeros((nx,ny,nz)))
         c_get_f3d_all(self.cobj,&data_[0,0,0]);
         return data_
-    def interp_to(self,location):
-        cdef benum.CELL_LOC location_ = benum.resolve_cell_loc(location)
-        return f3dFromObj(c.interp_to(self.cobj[0],location_))
     def setLocation(self,location):
         cdef benum.CELL_LOC location_ = benum.resolve_cell_loc(location)
         self.cobj[0].setLocation(location_)
@@ -256,7 +253,8 @@ cat <<EOF
         if self.isSelfOwned and self.cobj!=NULL:
             del self.cobj
             self.cobj=NULL
-        
+
+
 cdef class Mesh:
     cdef c.Mesh * cobj;
     cdef c.bool isGlobal
@@ -487,6 +485,10 @@ def create3D(string, Mesh msh,outloc="CELL_DEFAULT",time=0):
     return f3dFromObj(
         (<FieldFactory>fact).cobj.create3D(str_,<c.Options*>0,<c.Mesh*>0
                                            ,outloc_,time))
+
+def interp_to(Field3D f3d,location):
+    cdef benum.CELL_LOC location_ = benum.resolve_cell_loc(location)
+    return f3dFromObj(c.interp_to(f3d.cobj[0],location_))
 
 
 def setOption(name, value):
