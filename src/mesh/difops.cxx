@@ -167,11 +167,11 @@ const Field2D Vpar_Grad_par(const Field2D &v, const Field2D &f) {
   return mesh->coordinates()->Vpar_Grad_par(v, f);
 }
 
-const Field3D Vpar_Grad_par(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field3D Vpar_Grad_par(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   return mesh->coordinates()->Vpar_Grad_par(v, f, outloc, method);
 }
 
-const Field3D Vpar_Grad_par(const Field &v, const Field &f, DIFF_METHOD method, CELL_LOC outloc) {
+const Field3D Vpar_Grad_par(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
   return mesh->coordinates()->Vpar_Grad_par(v, f, outloc, method);
 }
 
@@ -246,6 +246,7 @@ const Field3D Grad_par_CtoL(const Field3D &var) {
   Mesh *mesh = var.getMesh();
   Field3D result(mesh);
   result.allocate();
+  ASSERT1(var.getLocation() == CELL_CENTRE);
   
   Coordinates *metric = mesh->coordinates();
 
@@ -273,6 +274,7 @@ const Field3D Grad_par_CtoL(const Field3D &var) {
     result = mesh->fromFieldAligned(result);
   }
 
+  result.setLocation(CELL_YLOW);
   return result;
 }
 
@@ -280,6 +282,9 @@ const Field3D Vpar_Grad_par_LCtoC(const Field &v, const Field &f) {
   bindex bx;
   stencil fval, vval;
   ASSERT1(v.getMesh() == f.getMesh());
+  ASSERT1(v.getLocation() == CELL_YLOW);
+  ASSERT1(f.getLocation() == CELL_CENTRE);
+  ASSERT1(v.getMesh() == mesh); // start_index uses global mesh
   Field3D result(v.getMesh());
 
   result.allocate();
@@ -296,13 +301,15 @@ const Field3D Vpar_Grad_par_LCtoC(const Field &v, const Field &f) {
 
     
   }while(next_index3(&bx));
-  
+
+  result.setLocation(CELL_CENTRE);
   return result;
 }
 
 const Field3D Grad_par_LtoC(const Field3D &var) {
   Field3D result(var.getMesh());
   result.allocate();
+  ASSERT1(var.getLocation() == CELL_YLOW);
 
   Coordinates *metric = var.getMesh()->coordinates();
 
@@ -320,7 +327,8 @@ const Field3D Grad_par_LtoC(const Field3D &var) {
     }
     result = var.getMesh()->fromFieldAligned(result);
   }
-  
+
+  result.setLocation(CELL_CENTRE);
   return result;
 }
 

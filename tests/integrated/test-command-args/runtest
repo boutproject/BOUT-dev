@@ -26,7 +26,7 @@ fi
 echo
 echo "=========== Running without args in data directory =============="
 
-mkdir data
+mkdir -p data
 cp BOUT.inp data
 ./command-args 
 
@@ -46,7 +46,7 @@ fi
 echo
 echo "=========== Running with -l arg in data directory =============="
 rm -r data
-mkdir data
+mkdir -p data
 cp BOUT.inp data
 ./command-args -l different.log
 
@@ -64,7 +64,7 @@ fi
 echo
 echo "=========== Running with --log arg in data directory =============="
 rm -r data
-mkdir data
+mkdir -p data
 cp BOUT.inp data
 ./command-args --log log
 
@@ -81,7 +81,7 @@ fi
 echo
 echo "=========== Running with -d arg in test directory =============="
 rm -r data
-mkdir test
+mkdir -p test
 cp BOUT.inp test
 
 if ! ./command-args -d test 2> stderr.log ; then

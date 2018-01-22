@@ -233,3 +233,79 @@ class AnimateVectorField(object):
                                             interval=100, blit=False)
         plt.show()
         plt.draw()
+
+
+def plot_forward_map(grid, maps, yslice=0):
+    """
+    Plots the forward map from yslice to yslice+1
+    """
+
+    if not plotting_available:
+        warnings.warning("matplotlib not available, unable to plot")
+        return
+    
+    nx, ny, nz = grid.shape
+    
+    pol, ycoord = grid.getPoloidalGrid(yslice)
+    pol_next, ycoord_next = grid.getPoloidalGrid(yslice+1)
+    
+    # Plot the points on yslice+1 as 'bx'
+    # Note: ravel used here only so multiple labels are not created
+    plt.plot(np.ravel(pol_next.R), np.ravel(pol_next.Z), 'bx', label="Grid points on slice {0}".format(yslice+1))
+    
+    # Plot the forward map from yslice to yslice+1 as red 'o'
+    forward_R = maps['forward_R'][:,yslice,:]
+    forward_Z = maps['forward_Z'][:,yslice,:]
+    plt.plot(np.ravel(forward_R), np.ravel(forward_Z), 'ro', label="Forward map from slice {0}".format(yslice))
+    
+    # Mark the points which hit the inner boundary
+    # These are marked with a negative x index
+    in_boundary = maps['forward_xt_prime'][:,yslice,:] < 0.0
+    plt.plot( np.ravel(forward_R[ in_boundary ]), np.ravel(forward_Z[ in_boundary ]), 'ko', label="Inner boundary points")
+    
+    # Outer boundary marked with x index nx
+    out_boundary = maps['forward_xt_prime'][:,yslice,:] > nx-0.5
+    plt.plot( np.ravel(forward_R[ out_boundary ]), np.ravel(forward_Z[ out_boundary ]), 'bo', label="Outer boundary points")
+    
+    
+    plt.legend()
+    
+    plt.show()
+
+    
+def plot_backward_map(grid, maps, yslice=0):
+    """
+    Plots the backward map from yslice to yslice-1
+    """
+
+    if not plotting_available:
+        warnings.warning("matplotlib not available, unable to plot")
+        return
+
+    nx, ny, nz = grid.shape
+    
+    pol, ycoord = grid.getPoloidalGrid(yslice)
+    pol_last, ycoord_last = grid.getPoloidalGrid(yslice-1)
+    
+    # Plot the points on yslice-1 as 'bx'
+    # Note: ravel used here only so multiple labels are not created
+    plt.plot(np.ravel(pol_last.R), np.ravel(pol_last.Z), 'bx', label="Grid points on slice {0}".format(yslice-1))
+    
+    # Plot the backward map from yslice to yslice-1 as red 'o'
+    backward_R = maps['backward_R'][:,yslice,:]
+    backward_Z = maps['backward_Z'][:,yslice,:]
+    plt.plot(np.ravel(backward_R), np.ravel(backward_Z), 'ro', label="Backward map from slice {0}".format(yslice))
+    
+    # Mark the points which hit the inner boundary
+    # These are marked with a negative x index
+    in_boundary = maps['backward_xt_prime'][:,yslice,:] < 0.0
+    plt.plot( np.ravel(backward_R[ in_boundary ]), np.ravel(backward_Z[ in_boundary ]), 'ko', label="Inner boundary points")
+    
+    # Outer boundary marked with x index nx
+    out_boundary = maps['backward_xt_prime'][:,yslice,:] > nx-0.5
+    plt.plot( np.ravel(backward_R[ out_boundary ]), np.ravel(backward_Z[ out_boundary ]), 'bo', label="Outer boundary points")
+    
+    
+    plt.legend()
+    
+    plt.show()

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #
 # Run the test, check it completed successfully
@@ -9,14 +9,14 @@ try:
   from builtins import str
 except:
   pass
-from boututils.run_wrapper import shell, launch, getmpirun
+from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
 from boutdata.collect import collect
 from sys import stdout, exit
 
 MPIRUN=getmpirun()
 
 print("Making DataIterator test")
-s, out = launch("make > make.log",pipe=True)
+s, out = launch_safe("make > make.log",pipe=True)
 if s:
   print("Failed to run make")
   exit(s);
@@ -37,7 +37,7 @@ for nproc in [1,2,4]:
         shell("rm data/BOUT.dmp.* 2> err.log")
 
         # Run the case
-        s, out = launch(cmd+" "+f, runcmd=MPIRUN, nproc=nproc, pipe=True)
+        s, out = launch_safe(cmd+" "+f, runcmd=MPIRUN, nproc=nproc, pipe=True)
         f = open("run.log."+str(nproc)+"."+str(mproc), "w")
         f.write(out)
         f.close()

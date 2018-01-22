@@ -100,9 +100,9 @@ TEST_F(Field2DTest, GetGridSizes) {
 }
 
 TEST_F(Field2DTest, CreateOnGivenMesh) {
-  int test_nx = 2;
-  int test_ny = 3;
-  int test_nz = 5;
+  int test_nx = Field2DTest::nx + 2;
+  int test_ny = Field2DTest::ny + 2;
+  int test_nz = Field2DTest::nz + 2;
 
   FakeMesh *fieldmesh = new FakeMesh(test_nx, test_ny, test_nz);
 
@@ -115,6 +115,58 @@ TEST_F(Field2DTest, CreateOnGivenMesh) {
   EXPECT_EQ(field.getNz(), 1);
 
   delete fieldmesh;
+}
+
+TEST_F(Field2DTest, CopyCheckFieldmesh) {
+  int test_nx = Field2DTest::nx + 2;
+  int test_ny = Field2DTest::ny + 2;
+  int test_nz = Field2DTest::nz + 2;
+
+  FakeMesh *fieldmesh = new FakeMesh(test_nx, test_ny, test_nz);
+
+  Field2D field(fieldmesh);
+  field.allocate();
+
+  Field2D field2(field);
+
+  EXPECT_EQ(field2.getNx(), test_nx);
+  EXPECT_EQ(field2.getNy(), test_ny);
+  EXPECT_EQ(field2.getNz(), 1);
+
+  delete fieldmesh;
+}
+
+#if CHECK > 0
+TEST_F(Field2DTest, CreateOnNullMesh) {
+  auto old_mesh = mesh;
+  mesh = nullptr;
+
+  Field2D field;
+
+  EXPECT_EQ(field.getNx(), -1);
+  EXPECT_EQ(field.getNy(), -1);
+  EXPECT_EQ(field.getNz(), 1);
+
+  mesh = old_mesh;
+
+  field.allocate();
+
+  EXPECT_EQ(field.getNx(), Field2DTest::nx);
+  EXPECT_EQ(field.getNy(), Field2DTest::ny);
+  EXPECT_EQ(field.getNz(), 1);
+}
+#endif
+
+TEST_F(Field2DTest, TimeDeriv) {
+  Field2D field;
+
+  auto deriv = field.timeDeriv();
+  EXPECT_NE(&field, deriv);
+
+  auto deriv2 = field.timeDeriv();
+  EXPECT_EQ(deriv, deriv2);
+
+  EXPECT_EQ(&(ddt(field)), deriv);
 }
 
 /// This test is split into two parts: a very basic sanity check first
@@ -765,7 +817,7 @@ TEST_F(Field2DTest, Min) {
   // min doesn't include guard cells
   const BoutReal min_value = 40.0;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(min(field, false), min_value));
+  EXPECT_EQ(min(field, false), min_value);
 }
 
 TEST_F(Field2DTest, Max) {
@@ -780,5 +832,5 @@ TEST_F(Field2DTest, Max) {
   // max doesn't include guard cells
   const BoutReal max_value = 60.0;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(max(field, false), max_value));
+  EXPECT_EQ(max(field, false), max_value);
 }

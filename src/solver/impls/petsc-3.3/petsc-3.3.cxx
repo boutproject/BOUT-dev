@@ -121,7 +121,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
 
   /********** Get total problem size **********/
   if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
-    output.write("\tERROR: MPI_Allreduce failed!\n");
+    output_error.write("\tERROR: MPI_Allreduce failed!\n");
     ierr = PetscLogEventEnd(init_event,0,0,0,0);CHKERRQ(ierr);
     PetscFunctionReturn(1);
   }
