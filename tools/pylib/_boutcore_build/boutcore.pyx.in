@@ -425,11 +425,22 @@ def init(args=[]):
 def finalise():
     BoutFinalise()
     isInit=False
-
-def DDZ(Field3D field, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", inc_xbndry=True):
+EOF
+for d in Z
+do
+    for f in DDd
+    do
+        DD=${f/d/$d}
+        cat <<EOF
+def $DD(Field3D field, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", inc_xbndry=True):
     cdef benum.CELL_LOC outloc_= benum.resolve_cell_loc(outloc)
     cdef benum.DIFF_METHOD method_=benum.resolve_diff_method(method)
-    return f3dFromObj(c.DDZ(field.cobj[0],outloc_,method_,inc_xbndry))
+    return f3dFromObj(c.$DD(field.cobj[0],outloc_,method_,inc_xbndry))
+
+EOF
+    done
+done
+cat <<EOF
 
 def Vpar_Grad_par(Field3D V, Field3D f, outloc="CELL_DEFAULT",method="DIFF_DEFAULT"):
     cdef benum.CELL_LOC outloc_= benum.resolve_cell_loc(outloc)
@@ -480,7 +491,6 @@ def create3D(string, Mesh msh,outloc="CELL_DEFAULT",time=0):
     cdef benum.CELL_LOC outloc_=benum.resolve_cell_loc(outloc)
     cdef FieldFactory fact=msh.getFactory()
     cdef c.string str_=string.encode('ascii')
-    #cdef char * func=string_
     return f3dFromObj(
         (<FieldFactory>fact).cobj.create3D(str_,<c.Options*>0,<c.Mesh*>0
                                            ,outloc_,time))
