@@ -1,3 +1,5 @@
+#!/bin/bash
+cat <<EOF
 # distutils: language=c++
 
 from libcpp cimport bool
@@ -15,17 +17,16 @@ cdef extern from "field3d.hxx":
         int getNz()
         bool isAllocated()
         void setLocation(benum.CELL_LOC)
-    Field3D sqrt(Field3D)
-    Field3D exp(Field3D)
-    Field3D log(Field3D)
-    Field3D sin(Field3D)
-    Field3D cos(Field3D)
-    Field3D abs(Field3D)
+EOF
+for f in sqrt exp log sin cos abs
+do
+    echo "    Field3D $f(Field3D)"
+done
+cat <<EOF
     double max(Field3D)
     double min(Field3D)
     Field3D pow(Field3D,double)
     Field3D & ddt(Field3D)
-
 
 cdef extern from "bout/mesh.hxx":
     cppclass Mesh:
@@ -43,8 +44,6 @@ cdef extern from "bout/mesh.hxx":
         int ystart
         int LocalNx
         int LocalNy
-
-
 
 cdef extern from "bout/fieldgroup.hxx":
     cppclass FieldGroup:
@@ -75,13 +74,21 @@ cdef extern from "options.hxx":
         void get(string ,string& ,string)
         void get(string ,double& ,double)
         void get(string ,bool& ,bool)
-    
+
 cdef extern from "derivs.hxx":
-    Field3D DDZ(Field3D, benum.CELL_LOC, benum.DIFF_METHOD,bool)
+EOF
+for f in DDd
+do
+    for d in Z
+    do
+        DD=${f/d/$d}
+        echo "    Field3D $DD(Field3D, benum.CELL_LOC, benum.DIFF_METHOD,bool)"
+    done
+done
+cat <<EOF
 
 cdef extern from "interpolation.hxx":
     Field3D interp_to(Field3D, benum.CELL_LOC)
-
 
 cdef extern from "field_factory.hxx":
     cppclass FieldFactory:
@@ -95,7 +102,6 @@ cdef extern from "bout/solver.hxx":
         void setModel(PhysicsModel *)
         void add(Field3D, char * name)
         void solve()
-        
 
 cdef extern from "bout/physicsmodel.hxx":
     cppclass PhysicsModel:
@@ -113,3 +119,4 @@ cdef extern from "helper.h":
         PythonModelCallback(Method method, void * user_data)
         void cy_execute(void * parameter)
     void throw_BoutException(string)
+EOF

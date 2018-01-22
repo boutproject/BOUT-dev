@@ -7,8 +7,9 @@ setup.py:setup.py.in
 resolve_enum.pxd:resolve_enum.pxd.in
 helper.h:helper.h.in
 helper.cxx:helper.cxx.in
+boutcpp.pxd:boutcpp.pxd.in
 
-TOGEN=setup.py boutcore.pyx resolve_enum.pxd helper.cxx helper.h
+TOGEN=setup.py boutcore.pyx resolve_enum.pxd helper.cxx helper.h boutcpp.pxd
 $(TOGEN): Makefile
 	@echo generating $@
 	@PATH=../../../bin:$$PATH bash $@.in > $@
