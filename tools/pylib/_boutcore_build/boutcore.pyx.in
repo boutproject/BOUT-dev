@@ -60,7 +60,6 @@ done
 cat <<EOF
      c.Field3D c_minus( c.Field3D )
      c.Mesh * c_get_global_mesh()
-     c.Field3D * c_ddz( c.Field3D * ,benum.CELL_LOC,benum.DIFF_METHOD,bool)
      void c_laplacian_solve(c.Laplacian *, c.Field3D *, c.Field3D*)
      c.Field3D c_Grad_perp_dot_Grad_perp(c.Field3D,c.Field3D);
      void c_mesh_normalise(c.Mesh* , double)
@@ -404,7 +403,7 @@ cdef extern from "bout.hxx":
     void BoutFinalise()
     
 isInit=False
-def init(args):
+def init(args=[]):
     args.insert(0,"boutcore")
     cdef char **string_buf = <char **>malloc(len(args) * sizeof(char*))
     fu=[]

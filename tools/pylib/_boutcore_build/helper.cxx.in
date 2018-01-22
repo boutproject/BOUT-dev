@@ -103,12 +103,6 @@ Mesh * c_get_global_mesh(){
   return mesh;
 }
 
-Field3D * c_ddz(Field3D * in, CELL_LOC out,DIFF_METHOD diff, bool inc_x){
-  Field3D * r = new Field3D(*in);
-  *r = DDZ(*in,out,diff,inc_x);
-  return r;
-}
-
 void c_mesh_normalise(Mesh * msh, double norm){
   //printf("%g\n",norm);
   auto coord = msh->coordinates();
