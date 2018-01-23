@@ -15,5 +15,5 @@ conda config --set always_yes yes --set changeps1 no
 conda update -q conda
 # Useful for debugging any issues with conda
 conda info -a
-conda create -q -n test-environment python=3.5 numpy scipy netcdf4
+conda create -q -n test-environment python=3.5 numpy scipy netcdf4 ${EXTRA_CONDA_PACKAGES}
 source activate test-environment

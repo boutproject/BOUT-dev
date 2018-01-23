@@ -24,6 +24,7 @@ matrix:
   - env: CONFIGURE_OPTIONS='' MPICH_CC=clang MPICH_CXX=clang++ OMPI_CC=clang OMPI_CXX=clang++
     compiler: clang
   - env: CONFIGURE_OPTIONS='--enable-debug' MPICH_CC=clang MPICH_CXX=clang++ OMPI_CC=clang OMPI_CXX=clang++
+  - env: CONFIGURE_OPTIONS='--enable-shared' MAIN_TARGET=python EXTRA_CONDA_PACKAGES=cython
     compiler: clang
   - addons:
       apt:

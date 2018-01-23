@@ -376,10 +376,10 @@ manual-html:
 manual-pdf:
 	$(MAKE) -C $(MANUAL_DIR) pdf
 
-python:
+python: libfast
 	$(MAKE) -C tools/pylib python3
 
-python2:
+python2: libfast
 	$(MAKE) -C tools/pylib python2
 
 python-all:python python2
