@@ -16,6 +16,7 @@ CHECKSUM := $(shell cat $(foreach DIR,$(DIRS),$(wildcard $(DIR)/*.cxx $(DIR)/*.h
 # Git revision passed to bout++.cxx
 REVISION := $(shell git rev-parse HEAD 2> /dev/null || hg id -n 2> /dev/null || { echo "Unknown"; } )
 
+# From old build - without libfast:
 # This is a little obscure, so here is an explanation:
 # the first 'all: initial_message' sets the prerequisite 'inital_message'
 # to be the first one called
@@ -25,23 +26,31 @@ all: initial_message
 # Then the config file is included, which has all the other prerequisites for 'all'
 include $(BOUT_TOP)/make.config
 
+# dummy target - must not be PHONY, to prevent unneeded rebuild of bout++.o
+.dummy:$(DIRS)
+	@#empty recipe is needed
 
-.PHONY: bout++.cxx
+bout++.o: $(BOUT_TOP)/lib/.last.o.file .dummy
 
-libfast:
+libfast: .libfast
+
+.libfast: bout++.o
 	@echo "Recreating libbout++.a"
 	@rm -f $(BOUT_TOP)/lib/libbout++.a
 	@$(AR) $(ARFLAGS) $(LIB) $(shell find $(BOUT_TOP)/src -name \*.o -type f -print 2> /dev/null)
+	@touch .libfast
 	@#$(RANLIB) $(LIB)
 
 # Then set the last two preqrequisites for 'all'
 all: lib end_message
 
-checksum:
-	@echo $(CHECKSUM)
-
+ifneq ("$(TARGET)","libfast")
 # This to make sure build time is always printed correctly
 .PHONY: bout++.cxx
+endif
+
+checksum:
+	@echo $(CHECKSUM)
 
 initial_message:
 	@echo ""
