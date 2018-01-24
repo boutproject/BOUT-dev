@@ -143,26 +143,6 @@ FPERP_OP_REAL(-=, -);
 FPERP_OP_REAL(*=, *);
 FPERP_OP_REAL(/=, /);
 
-////////////////////// STENCILS //////////////////////////
-
-void FieldPerp::setXStencil(stencil &fval, const bindex &bx, CELL_LOC UNUSED(loc)) const {
-  fval.p = (*this)(bx.jxp,bx.jz);
-  fval.m = (*this)(bx.jxm,bx.jz);
-  fval.pp = (*this)(bx.jx2p,bx.jz);
-  fval.mm = (*this)(bx.jx2m,bx.jz);
-}
-
-void FieldPerp::setYStencil(stencil &fval, const bindex &bx, CELL_LOC UNUSED(loc)) const {
-  fval = (*this)(bx.jx,bx.jz);
-}
-
-void FieldPerp::setZStencil(stencil &fval, const bindex &bx, CELL_LOC UNUSED(loc)) const {
-  fval.p = (*this)(bx.jx,bx.jzp);
-  fval.m = (*this)(bx.jx,bx.jzm);
-  fval.pp = (*this)(bx.jx,bx.jz2p);
-  fval.mm = (*this)(bx.jx,bx.jz2m);
-}
-
 ////////////// NON-MEMBER OVERLOADED OPERATORS //////////////
 
 // Operator on FieldPerp and another field

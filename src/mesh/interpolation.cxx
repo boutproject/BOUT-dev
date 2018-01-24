@@ -75,9 +75,6 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
 
       switch(dir) {
       case CELL_XLOW: {
-///#pragma omp parallel
-///{
-///	for(SingleDataIterator i = result.sdi_region(RGN_NOX); !i.done(); ++i){
         for(const auto &i : result.region(RGN_NOX)) {
 
 	  // Set stencils
@@ -99,7 +96,6 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
 
 	  result[i] = interp(s);
 	}
-///}
 	break;
 	// Need to communicate in X
       }
@@ -109,11 +105,8 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
 	  // Field "var" has distinct yup and ydown fields which
 	  // will be used to calculate a derivative along 
 	  // the magnetic field
-///#pragma omp parallel
-///{
 	  s.pp = nan("");
 	  s.mm = nan("");
-	  //for(SingleDataIterator i = result.sdi_region(RGN_NOY); !i.done(); ++i){
           for(const auto &i : result.region(RGN_NOY)) {
 	    // Set stencils
 	    s.c = var[i];
@@ -132,7 +125,6 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
 
 	    result[i] = interp(s);
 	  }
-///}
 	}
 	else {
 	  // var has no yup/ydown fields, so we need to shift into field-aligned coordinates
@@ -141,9 +133,6 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
 	  if (mesh->ystart > 1) {
 	  // More than one guard cell, so set pp and mm values
 	  // This allows higher-order methods to be used
-///#pragma omp parallel
-///{
-///	  for(SingleDataIterator i = result.sdi_region(RGN_NOY); !i.done(); ++i){
           for(const auto &i : result.region(RGN_NOY)) {
 	    // Set stencils
 	    s.c = var_fa[i];
@@ -164,14 +153,10 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
 	    
 	    result[i] = interp(s);
 	  }
-///}
 	  } else {
 	    // Only one guard cell, so no pp or mm values
-///#pragma omp parallel
-///  {
 	    s.pp = nan("");
 	    s.mm = nan("");
-///	    for(SingleDataIterator i = result.sdi_region(RGN_NOY); !i.done(); ++i){
             for(const auto &i : result.region(RGN_NOY)) {
 	      // Set stencils
 	      s.c = var_fa[i];
@@ -190,17 +175,12 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
 	      
 	      result[i] = interp(s);
 	    }
-///}
 	  }
 	}
 	break;
 	// Need to communicate in Y
       }
       case CELL_ZLOW: {
-///#pragma omp parallel
-///{
-///	for(SingleDataIterator i = result.sdi_region(RGN_NOZ); !i.done(); ++i){
-//      Does RGN_NOZ exist?
         for(const auto &i : result.region(RGN_NOZ)) {
 	  s.c = var[i];
 	  s.p = var[i.zp()];
@@ -210,7 +190,6 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
 	  
 	  result[i] = interp(s);
 	}
-///}
 	break;
       }
       default: {

@@ -350,20 +350,6 @@ void Field3D::operator=(const FieldPerp &rhs) {
   }
 }
 
-void Field3D::operator=(const bvalue &bv) {
-  TRACE("Field3D = bvalue");
-  
-  allocate();
-
-#if CHECK > 0
-  if(!finite(bv.val))
-    throw BoutException("Field3D: assignment from non-finite value at (%d,%d,%d)\n", 
-			bv.jx, bv.jy,bv.jz);
-#endif
-
-  operator()(bv.jx, bv.jy,bv.jz) = bv.val;
-}
-
 Field3D & Field3D::operator=(const BoutReal val) {
   TRACE("Field3D = BoutReal");
   allocate();
@@ -432,112 +418,6 @@ F3D_UPDATE_REAL(+=,+);    // operator+= BoutReal
 F3D_UPDATE_REAL(-=,-);    // operator-= BoutReal
 F3D_UPDATE_REAL(*=,*);    // operator*= BoutReal
 F3D_UPDATE_REAL(/=,/);    // operator/= BoutReal
-
-/***************************************************************
- *                         STENCILS
- ***************************************************************/
-
-void Field3D::setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const {
-  fval.jx = bx.jx;
-  fval.jy = bx.jy;
-  fval.jz = bx.jz;
-
-  ASSERT1(isAllocated());
-  
-  fval.c  = operator()(bx.jx,  bx.jy, bx.jz);
-  fval.p  = operator()(bx.jxp, bx.jy, bx.jz);
-  fval.m  = operator()(bx.jxm, bx.jy, bx.jz);
-  fval.pp = operator()(bx.jx2p, bx.jy, bx.jz);
-  fval.mm = operator()(bx.jx2m, bx.jy, bx.jz);
-
-  if(fieldmesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
-    // Non-centred stencil
-
-    if((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
-      // Producing a stencil centred around a lower X value
-      fval.pp = fval.p;
-      fval.p  = fval.c;
-      
-    }else if(location == CELL_XLOW) {
-      // Stencil centred around a cell centre
-      
-      fval.mm = fval.m;
-      fval.m  = fval.c;
-    }
-    // Shifted in one direction -> shift in another
-    // Could produce warning
-  }
-}
-
-void Field3D::setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
-{
-  fval.jx = bx.jx;
-  fval.jy = bx.jy;
-  fval.jz = bx.jz;
-
-  ASSERT1(isAllocated());
-  
-  fval.c = (*this)(bx.jx,bx.jy,bx.jz);
-  fval.p = yup()(bx.jx,bx.jyp,bx.jz);
-  fval.m = ydown()(bx.jx,bx.jym,bx.jz);
-  if (yup_field == this && ydown_field == this){
-    fval.pp = (*this)(bx.jx,bx.jy2p,bx.jz);
-    fval.mm = (*this)(bx.jx,bx.jy2m,bx.jz);
-  } else {
-    fval.pp = nan("");
-    fval.mm = nan("");
-  }
-
-  if(fieldmesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
-    // Non-centred stencil
-
-    if((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
-      // Producing a stencil centred around a lower Y value
-      fval.pp = fval.p;
-      fval.p  = fval.c;
-    }else if(location == CELL_YLOW) {
-      // Stencil centred around a cell centre
-      
-      fval.mm = fval.m;
-      fval.m  = fval.c;
-    }
-    // Shifted in one direction -> shift in another
-    // Could produce warning
-  }
-}
-
-void Field3D::setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const {
-  fval.jx = bx.jx;
-  fval.jy = bx.jy;
-  fval.jz = bx.jz;
-
-  ASSERT1(isAllocated());
-
-  fval.c = operator()(bx.jx,bx.jy,bx.jz);
-
-  fval.p = operator()(bx.jx,bx.jy,bx.jzp);
-  fval.m = operator()(bx.jx,bx.jy,bx.jzm);
-  fval.pp = operator()(bx.jx,bx.jy,bx.jz2p);
-  fval.mm = operator()(bx.jx,bx.jy,bx.jz2m);
-
-  if(fieldmesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
-    // Non-centred stencil
-
-    if((location == CELL_CENTRE) && (loc == CELL_ZLOW)) {
-      // Producing a stencil centred around a lower Z value
-      fval.pp = fval.p;
-      fval.p  = fval.c;
-      
-    }else if(location == CELL_ZLOW) {
-      // Stencil centred around a cell centre
-      
-      fval.mm = fval.m;
-      fval.m  = fval.c;
-    }
-    // Shifted in one direction -> shift in another
-    // Could produce warning
-  }
-}
 
 ///////////////////// BOUNDARY CONDITIONS //////////////////
 
