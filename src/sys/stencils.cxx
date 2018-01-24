@@ -92,8 +92,7 @@ stencil & stencil::operator+=(const stencil &s)
 {
 #if CHECK > 0
   if((jx != s.jx) || (jy != s.jy) || (jz != s.jz)) {
-    output_error.write("ERROR: Stencil += not at same location\n");
-    exit(1);
+    throw BoutException("Error: Stencil += not at same location\n");
   }
 #endif
 
@@ -121,8 +120,7 @@ stencil & stencil::operator-=(const stencil &s)
 {
 #if CHECK > 0
   if((jx != s.jx) || (jy != s.jy) || (jz != s.jz)) {
-    output_error.write("ERROR: Stencil -= not at same location\n");
-    exit(1);
+    throw BoutException("Error: Stencil -= not at same location\n");
   }
 #endif
 
@@ -150,8 +148,7 @@ stencil & stencil::operator*=(const stencil &s)
 {
 #if CHECK > 0
   if((jx != s.jx) || (jy != s.jy) || (jz != s.jz)) {
-    output_error.write("ERROR: Stencil *= not at same location\n");
-    exit(1);
+    throw BoutException("Error: Stencil *= not at same location\n");
   }
 #endif
 
@@ -179,8 +176,7 @@ stencil & stencil::operator/=(const stencil &s)
 {
 #if CHECK > 0
   if((jx != s.jx) || (jy != s.jy) || (jz != s.jz)) {
-    output_error.write("ERROR: Stencil /= not at same location\n");
-    exit(1);
+    throw BoutException("Error: Stencil /= not at same location\n");
   }
 #endif
 
