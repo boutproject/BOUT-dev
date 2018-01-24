@@ -1,0 +1,260 @@
+cat <<EOF
+/*!************************************************************************
+ * \file derivs.hxx
+ *
+ * Basic differential functions
+ *
+ **************************************************************************
+ * Copyright 2010,2017
+ *    B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu, D. Schwörer
+ *
+ * Contact: Ben Dudson, bd512@york.ac.uk
+ *
+ * This file is part of BOUT++.
+ *
+ * BOUT++ is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * BOUT++ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ **************************************************************************/
+
+#ifndef __DERIVS_H__
+#define __DERIVS_H__
+
+#include "field3d.hxx"
+#include "field2d.hxx"
+#include "vector3d.hxx"
+#include "vector2d.hxx"
+
+#include "bout_types.hxx" // See this for code
+
+EOF
+
+generate_header() {
+    if test "$flux" = "true"
+    then
+        in_sig="const $f &v, const $f &f"
+        in="v, f"
+    elif test "$flux" = "false"
+    then
+        in_sig="const $f &f"
+        in="f"
+    fi
+    cat <<EOF
+/*!
+ * $desc
+ *
+ *   \$$latex\$
+ *
+EOF
+        if test $flux = "false"
+        then
+            echo " * @param[in] f       The field to be differentiated"
+        else
+            echo " * @param[in] v       The velocity field"
+            echo " * @param[in] f       The field of the advected quantity"
+        fi
+        cat <<EOF
+ * @param[in] outloc  The cell location where the result is desired. If
+ *                    staggered grids is not enabled then this has no effect
+ * @param[in] method  Differencing method to use. This overrides the default
+ * @param[in] region  What region is expected to be calculated
+ *
+ *
+ */
+
+const $f $DD($in_sig, CELL_LOC outloc = CELL_DEFAULT,
+                  DIFF_METHOD method = DIFF_DEFAULT,
+                  REGION region = RGN_NOBNDRY);
+
+inline const $f $DD($in_sig, CELL_LOC outloc,
+                  REGION region,
+                  DIFF_METHOD method = DIFF_DEFAULT) {
+  return $DD($in, outloc, method,region);
+}
+
+inline const $f $DD($in_sig, DIFF_METHOD method,
+                  REGION region = RGN_NOBNDRY,
+                  CELL_LOC outloc = CELL_DEFAULT) {
+  return $DD($in, outloc, method,region);
+}
+
+inline const $f $DD($in_sig, DIFF_METHOD method, CELL_LOC outloc,
+                  REGION region = RGN_NOBNDRY){
+  return $DD($in, outloc, method,region);
+}
+
+inline const $f $DD($in_sig, REGION region, DIFF_METHOD method,
+                  CELL_LOC outloc) {
+  return $DD($in, outloc, method,region);
+}
+
+inline const $f $DD($in_sig, REGION region, CELL_LOC outloc,
+                  DIFF_METHOD method) {
+  return $DD($in, outloc, method,region);
+}
+EOF
+}
+
+for D in DDd D2Dd2 D4Dd4 VDDd FDDd
+do
+    case $D in
+        DDd)
+            echo "////////// FIRST DERIVATIVES //////////"
+            ;;
+        D2Dd2)
+            echo "////////// SECOND DERIVATIVES //////////"
+            ;;
+        D4Dd4)
+            echo "////////// FORTH DERIVATIVES //////////"
+            ;;
+        VDDd)
+            echo "///////// UPWINDING METHODS /////////////"
+            ;;
+        FDDd)
+            echo "///////// FLUX METHODS /////////////"
+            ;;
+        *)
+            echo "Unhandeled case"
+            exit 1
+    esac
+    for d in X Y Z
+    do
+        for f in Field3D Field2D
+        do
+            DD=${D//d/$d}
+            d_lower=$(echo $d |tr [:upper:] [:lower:])
+            case $D in
+                DDd)
+                    desc="Calculate first partial derivative in $d"
+                    latex="\partial / \partial $d_lower"
+                    ;;
+                D2Dd2)
+                    desc="Calculate second partial derivative in $d"
+                    latex="\partial^2 / \partial $d_lower^2"
+                    ;;
+                D4Dd4)
+                    desc="Calculate forth partial derivative in $d"
+                    latex="\partial^4 / \partial $d_lower^4"
+                    ;;
+                VDDd)
+                    desc="For terms of form v * grad(f)"
+                    latex="v \cdot \partial f / \partial $d_lower"
+                    ;;
+                FDDd)
+                    desc="for terms of form div(v * f)"
+                    latex="\partial (v f) / \partial $d_lower"
+                    ;;
+                *)
+                    echo "Unhandeled case"
+                    exit 1
+            esac
+            case $D in
+                DDd|D2Dd2|D4Dd4)
+                    flux=false
+                    ;;
+                VDDd|FDDd)
+                    flux=true
+                    ;;
+                *)
+                    echo "Unhandeled case"
+                    exit 1
+            esac
+            generate_header
+        done
+    done
+done
+
+f="Vector3D"
+desc="Calculate first partial derivative in $d"
+latex="\partial / \partial $d_lower"
+DD=DDZ
+d=Z
+flux=false
+generate_header
+
+
+for DD in D2DXDY D2DXDZ D2DYDZ
+do
+    case $DD in
+        D2DXDY)
+            d1=x
+            d2=y
+            ;;
+        D2DXDZ)
+            d1=x
+            d2=z
+            ;;
+        D2DYDZ)
+            d1=y
+            d2=z
+            ;;
+        *)
+            echo "unhandled case"
+            exit 1
+    esac
+    desc="Calculate mixed partial derivative in $d1 and $d2"
+    latex="\partial^2 / \partial $d1 \partial $d2"
+    flux=false
+    for f in Field2D Field3D
+    do
+        generate_header
+    done
+done
+
+DD=VDDZ
+f=Field2D
+in_sig="const Field3D &v, const $f &f"
+in="v, f"
+desc="For terms of form v * grad(f)"
+latex="v \cdot \partial f / \partial $d_lower"
+flux=nether # hack: don't override in_sig and in
+generate_header
+
+cat <<EOF
+
+// Deprecated methods
+/*
+ * Calculate first partial derivative in Z
+ *
+ *   $\partial / \partial z$
+ *
+ * @param[in] f       The field to be differentiated
+ * @param[in] outloc  The cell location where the result is desired.
+ *                    If staggered grids is not enabled then this has no effect
+ * @param[in] method  Differencing method to use. This overrides the default
+ * @param[in] inc_xbndry  DEPRECATED: use REGION flags
+ *                    Determines whether the derivative should be calculated in
+ *                    the X boundaries. This allows mixed operators (e.g.
+ *                    D2DXDZ) without additional communication
+ *
+ */
+inline const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool inc_xbndry) {
+  return DDZ(f, outloc, method, inc_xbndry ? RGN_NOX : RGN_NOBNDRY);
+}
+
+inline const Field3D DDZ(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc, bool inc_xbndry) {
+  return DDZ(f, outloc, method, inc_xbndry ? RGN_NOX : RGN_NOBNDRY);
+}
+
+inline const Field3D DDZ(const Field3D &f, DIFF_METHOD method, bool inc_xbndry) {
+  return DDZ(f, CELL_DEFAULT, method, inc_xbndry ? RGN_NOX : RGN_NOBNDRY);
+}
+
+inline const Field3D DDZ(const Field3D &f, bool inc_xbndry) {
+  return DDZ(f, CELL_DEFAULT, DIFF_DEFAULT, inc_xbndry ? RGN_NOX : RGN_NOBNDRY);
+}
+
+
+#endif // __DERIVS_H__
+
+EOF
