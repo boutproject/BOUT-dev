@@ -1225,7 +1225,7 @@ then
 		    		    PVODE_FLAGS="$CXXFLAGS $OPENMP_CXXFLAGS $CXX11_FLAGS"
 				    AC_MSG_NOTICE([PVODE being built with OpenMP support])
 		    ],[
-		    		    PVODE_FLAGS="$CXXFLAGS $CXX11_FLAGS
+		    		    PVODE_FLAGS="$CXXFLAGS $CXX11_FLAGS"
 				    AC_MSG_NOTICE([PVODE being built without OpenMP support])
 			])
 
