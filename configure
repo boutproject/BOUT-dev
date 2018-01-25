@@ -15184,14 +15184,22 @@ if ( test "$with_pvode" != "no" )
 then
 	if test "$enable_pvode_omp" != "no"  ; then :
 
-		    		    PVODE_FLAGS="$CXXFLAGS $OPENMP_CXXFLAGS $CXX11_FLAGS"
-				    { $as_echo "$as_me:${as_lineno-$LINENO}: PVODE being built with OpenMP support" >&5
+	      if test "$enable_openmp" != "no" ; then :
+
+    	               PVODE_FLAGS="$CXXFLAGS $OPENMP_CXXFLAGS $CXX11_FLAGS"
+		       { $as_echo "$as_me:${as_lineno-$LINENO}: PVODE being built with OpenMP support" >&5
 $as_echo "$as_me: PVODE being built with OpenMP support" >&6;}
 
 else
 
-		    		    PVODE_FLAGS="$CXXFLAGS $CXX11_FLAGS"
-				    { $as_echo "$as_me:${as_lineno-$LINENO}: PVODE being built without OpenMP support" >&5
+		       as_fn_error $? "Cannot enable openmp in PVODE as configuring with OpenMP disabled" "$LINENO" 5
+
+fi
+
+else
+
+	         PVODE_FLAGS="$CXXFLAGS $CXX11_FLAGS"
+	         { $as_echo "$as_me:${as_lineno-$LINENO}: PVODE being built without OpenMP support" >&5
 $as_echo "$as_me: PVODE being built without OpenMP support" >&6;}
 
 fi

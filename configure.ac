@@ -1222,12 +1222,16 @@ HAS_PVODE="no"
 if ( test "$with_pvode" != "no" )
 then
 	AS_IF([test "$enable_pvode_omp" != "no"  ],[
-		    		    PVODE_FLAGS="$CXXFLAGS $OPENMP_CXXFLAGS $CXX11_FLAGS"
-				    AC_MSG_NOTICE([PVODE being built with OpenMP support])
+	      AS_IF([test "$enable_openmp" != "no" ],[
+    	               PVODE_FLAGS="$CXXFLAGS $OPENMP_CXXFLAGS $CXX11_FLAGS"
+		       AC_MSG_NOTICE([PVODE being built with OpenMP support])
 		    ],[
-		    		    PVODE_FLAGS="$CXXFLAGS $CXX11_FLAGS"
-				    AC_MSG_NOTICE([PVODE being built without OpenMP support])
-			])
+		       AC_MSG_ERROR([Cannot enable openmp in PVODE as configuring with OpenMP disabled])
+		       ])
+	      ],[
+	         PVODE_FLAGS="$CXXFLAGS $CXX11_FLAGS"
+	         AC_MSG_NOTICE([PVODE being built without OpenMP support])
+	])
 
    # Clean PVODE
    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
