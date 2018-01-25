@@ -777,7 +777,7 @@ enable_optimize
 enable_sigfpe
 enable_backtrace
 enable_shared
-enable_pvode_omp
+enable_pvode_openmp
 enable_openmp
 with_gcov
 enable_code_coverage
@@ -1431,7 +1431,7 @@ Optional Features:
   --enable-sigfpe         Enable FloatingPointExceptions
   --disable-backtrace     Disable function backtrace
   --enable-shared         Enable building bout++ into an shared object
-  --enable-pvode-omp      Enable building PVODE with OpenMP support
+  --enable-pvode-openmp   Enable building PVODE with OpenMP support
   --disable-openmp        do not use OpenMP
   --enable-code-coverage  Whether to enable code coverage support
 
@@ -2629,11 +2629,11 @@ else
   enable_shared=no
 fi
 
-# Check whether --enable-pvode_omp was given.
-if test "${enable_pvode_omp+set}" = set; then :
-  enableval=$enable_pvode_omp;
+# Check whether --enable-pvode_openmp was given.
+if test "${enable_pvode_openmp+set}" = set; then :
+  enableval=$enable_pvode_openmp;
 else
-  enable_pvode_omp=no
+  enable_pvode_openmp=no
 fi
 
 
@@ -15182,7 +15182,7 @@ as_dir=include; as_fn_mkdir_p
 HAS_PVODE="no"
 if ( test "$with_pvode" != "no" )
 then
-	if test "$enable_pvode_omp" != "no"  ; then :
+	if test "$enable_pvode_openmp" != "no"  ; then :
 
 	      if test "$enable_openmp" != "no" ; then :
 
