@@ -83,6 +83,8 @@ AC_ARG_ENABLE(backtrace,    [AS_HELP_STRING([--disable-backtrace],
         [Disable function backtrace])],,[enable_backtrace=yes])
 AC_ARG_ENABLE(shared,       [AS_HELP_STRING([--enable-shared],
         [Enable building bout++ into an shared object])],,[enable_shared=no])
+AC_ARG_ENABLE(pvode_omp,       [AS_HELP_STRING([--enable-pvode-omp],
+        [Enable building PVODE with OpenMP support])],,[enable_pvode_omp=no])
 
 AC_ARG_VAR(EXTRA_INCS,[Extra compile flags])
 AC_ARG_VAR(EXTRA_LIBS,[Extra linking flags])
@@ -1219,8 +1221,14 @@ AS_MKDIR_P(include)
 HAS_PVODE="no"
 if ( test "$with_pvode" != "no" )
 then
+	AS_IF([test "$enable_pvode_omp" != "no"  ],[
+		    		    PVODE_FLAGS="$CXXFLAGS $OPENMP_CXXFLAGS $CXX11_FLAGS"
+				    AC_MSG_NOTICE([PVODE being built with OpenMP support])
+		    ],[
+		    		    PVODE_FLAGS="$CXXFLAGS $CXX11_FLAGS
+				    AC_MSG_NOTICE([PVODE being built without OpenMP support])
+			])
 
-   PVODE_FLAGS="$CXXFLAGS $OPENMP_CXXFLAGS $CXX11_FLAGS"
    # Clean PVODE
    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
