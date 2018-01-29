@@ -40,7 +40,7 @@ void autogen_{{out}}_{{lhs}}_{{rhs}}_{{operator_name}}(
 #if CHECK > 0
   if (lhs.getLocation() != rhs.getLocation()) {
     throw BoutException(
-        "Trying to {{operator_name}} fields of different locations. lhs is at %s, rhs is at %s!",
+        "Error in {{operator_name}}: fields at different locations. lhs is at %s, rhs is at %s!",
         strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
   }
 #endif
@@ -93,7 +93,9 @@ void autogen_{{lhs}}_{{rhs}}_{{operator_name}}(
     {% if lhs == rhs == "Field3D" %}
 #if CHECK > 0
     if (this->getLocation() != rhs.getLocation()) {
-      throw BoutException("Trying to {{operator_name}} fields of different locations!");
+      throw BoutException(
+        "Error in {{operator_name}}: fields at different locations. lhs is at %s, rhs is at %s!",
+        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
     }
 #endif
     checkData(*this);
