@@ -95,7 +95,7 @@ void autogen_{{lhs}}_{{rhs}}_{{operator_name}}(
     if (this->getLocation() != rhs.getLocation()) {
       throw BoutException(
         "Error in {{operator_name}}: fields at different locations. lhs is at %s, rhs is at %s!",
-        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
+        strLocation(this->getLocation()), strLocation(rhs.getLocation()));
     }
 #endif
     checkData(*this);

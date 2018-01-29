@@ -75,7 +75,8 @@ Field3D &Field3D::operator*=(const Field3D &rhs) {
     if (this->getLocation() != rhs.getLocation()) {
       throw BoutException("Error in multiplication: fields at different locations. lhs "
                           "is at %s, rhs is at %s!",
-                          strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
+                          strLocation(this->getLocation()),
+                          strLocation(rhs.getLocation()));
     }
 #endif
     checkData(*this);
@@ -155,7 +156,7 @@ Field3D &Field3D::operator/=(const Field3D &rhs) {
     if (this->getLocation() != rhs.getLocation()) {
       throw BoutException(
           "Error in division: fields at different locations. lhs is at %s, rhs is at %s!",
-          strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
+          strLocation(this->getLocation()), strLocation(rhs.getLocation()));
     }
 #endif
     checkData(*this);
@@ -235,7 +236,7 @@ Field3D &Field3D::operator+=(const Field3D &rhs) {
     if (this->getLocation() != rhs.getLocation()) {
       throw BoutException(
           "Error in addition: fields at different locations. lhs is at %s, rhs is at %s!",
-          strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
+          strLocation(this->getLocation()), strLocation(rhs.getLocation()));
     }
 #endif
     checkData(*this);
@@ -316,7 +317,8 @@ Field3D &Field3D::operator-=(const Field3D &rhs) {
     if (this->getLocation() != rhs.getLocation()) {
       throw BoutException("Error in subtraction: fields at different locations. lhs is "
                           "at %s, rhs is at %s!",
-                          strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
+                          strLocation(this->getLocation()),
+                          strLocation(rhs.getLocation()));
     }
 #endif
     checkData(*this);
