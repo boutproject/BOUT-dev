@@ -80,6 +80,24 @@ TEST(NumberUtilitiesTest, MinModInt) {
   EXPECT_EQ(-5, MINMOD(-10, -5));
 }
 
+#if CHECK > 0
+TEST(NumberUtilitiesTest, CheckDataGood) {
+  EXPECT_NO_THROW(checkData(5.0));
+}
+
+TEST(NumberUtilitiesTest, CheckDataBad) {
+  EXPECT_THROW(checkData(nan("")), BoutException);
+}
+#else
+TEST(NumberUtilitiesTest, CheckDataGoodDisabled) {
+  EXPECT_NO_THROW(checkData(5.0));
+}
+
+TEST(NumberUtilitiesTest, CheckDataBadDisabled) {
+  EXPECT_NO_THROW(checkData(nan("")));
+}
+#endif
+
 TEST(StringUtilitiesTest, CopyString) {
   const char hello[] = "Hello, world";
   char* copy = copy_string(hello);
