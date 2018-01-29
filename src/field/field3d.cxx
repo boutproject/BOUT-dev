@@ -1093,16 +1093,16 @@ bool finite(const Field3D &f) {
 }
 
 #if CHECK > 0
-/// Check if the data is valid
-void checkData(const Field3D &f)  {
-  if(!f.isAllocated())
+void checkData(const Field3D &f) {
+  if (!f.isAllocated())
     throw BoutException("Field3D: Operation on empty data\n");
-  
+
 #if CHECK > 2
-  //Do full checks
-  for(const auto& d : f.region(RGN_NOBNDRY)) {
-    if(!finite(f[d])) {
-      throw BoutException("Field3D: Operation on non-finite data at [%d][%d][%d]\n", d.x, d.y, d.z);
+  // Do full checks
+  for (const auto &d : f.region(RGN_NOBNDRY)) {
+    if (!finite(f[d])) {
+      throw BoutException("Field3D: Operation on non-finite data at [%d][%d][%d]\n", d.x,
+                          d.y, d.z);
     }
   }
 #endif

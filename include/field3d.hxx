@@ -662,9 +662,13 @@ bool finite(const Field3D &var);
 
 
 #if CHECK > 0
-void checkData(const Field3D &f); ///< Checks if the data is valid.
+/// Throw an exception if \p f is not allocated or if any
+/// elements are non-finite (for CHECK > 2)
+void checkData(const Field3D &f);
 #else
-inline void checkData(const Field3D &UNUSED(f)){;}; ///< Checks if the data is valid.
+/// Ignored with disabled CHECK; Throw an exception if \p f is not
+/// allocated or if any elements are non-finite (for CHECK > 2)
+inline void checkData(const Field3D &UNUSED(f)){};
 #endif
  
 /*!
