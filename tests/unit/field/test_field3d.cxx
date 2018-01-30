@@ -8,7 +8,9 @@
 #include "unused.hxx"
 
 #include <cmath>
+#include <iostream>
 #include <set>
+#include <sstream>
 #include <vector>
 
 /// Global mesh
@@ -283,8 +285,20 @@ TEST_F(Field3DTest, SetGetLocation) {
   EXPECT_EQ(field.getLocation(), CELL_CENTRE);
 
   EXPECT_THROW(field.setLocation(CELL_VSHIFT), BoutException);
+}
+
+TEST_F(Field3DTest, SetGetLocationNonStaggered) {
+  Field3D field;
 
   field.getMesh()->StaggerGrids = false;
+  // This test will generate some warnings, so we redirect stdout to
+  // capture them first, to make it less noisy
+
+  // Save cout's buffer here
+  std::streambuf *sbuf(std::cout.rdbuf());
+  // Write cout to buffer instead of stdout
+  std::stringstream buffer;
+  std::cout.rdbuf(buffer.rdbuf());
 
   field.setLocation(CELL_XLOW);
   EXPECT_EQ(field.getLocation(), CELL_CENTRE);
@@ -294,6 +308,11 @@ TEST_F(Field3DTest, SetGetLocation) {
 
   field.setLocation(CELL_VSHIFT);
   EXPECT_EQ(field.getLocation(), CELL_CENTRE);
+
+  // Clear buffer
+  buffer.str("");
+  // When done redirect cout to its old self
+  std::cout.rdbuf(sbuf);
 }
 
 //-------------------- Iteration tests --------------------
