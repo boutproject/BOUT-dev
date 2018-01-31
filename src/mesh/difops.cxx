@@ -278,8 +278,7 @@ const Field3D Grad_par_CtoL(const Field3D &var) {
   return result;
 }
 
-const Field3D Vpar_Grad_par_LCtoC(const Field &v, const Field &f) {
-  bindex bx;
+const Field3D Vpar_Grad_par_LCtoC(const Field3D &v, const Field3D &f, REGION region) {
   stencil fval, vval;
   ASSERT1(v.getMesh() == f.getMesh());
   ASSERT1(v.getLocation() == CELL_YLOW);
@@ -288,19 +287,113 @@ const Field3D Vpar_Grad_par_LCtoC(const Field &v, const Field &f) {
   Field3D result(v.getMesh());
 
   result.allocate();
-	
-  start_index(&bx);
-  do {
-    f.setYStencil(fval, bx);
-    v.setYStencil(vval, bx);
-    
-    // Left side
-    result(bx.jx, bx.jy, bx.jz) = (vval.c >= 0.0) ? vval.c * fval.m : vval.c * fval.c;
-    // Right side
-    result(bx.jx, bx.jy, bx.jz) -= (vval.p >= 0.0) ? vval.p * fval.c : vval.p * fval.p;
 
-    
-  }while(next_index3(&bx));
+  bool vUseUpDown = (v.hasYupYdown() && ((&v.yup() != &v) || (&v.ydown() != &v)));
+  bool fUseUpDown = (f.hasYupYdown() && ((&f.yup() != &f) || (&f.ydown() != &f)));
+
+  if (vUseUpDown && fUseUpDown) {
+    // Both v and f have up/down fields
+
+    fval.mm = nan("");
+    fval.pp = nan("");
+    vval.mm = nan("");
+    vval.pp = nan("");
+    for (const auto &i : result.region(region)) {
+
+      vval.m = v.ydown()[i.ym()];
+      vval.c = v[i];
+      vval.p = v.yup()[i.yp()];
+
+      fval.m = f.ydown()[i.ym()];
+      fval.c = f[i];
+      fval.p = f.yup()[i.yp()];
+
+      // Left side
+      result[i] = (vval.c >= 0.0) ? vval.c * fval.m : vval.c * fval.c;
+      // Right side
+      result[i] -= (vval.p >= 0.0) ? vval.p * fval.c : vval.p * fval.p;
+    }
+  }
+  else if (vUseUpDown) {
+    // Only v has up/down fields
+    // f must shift to field aligned coordinates
+    Field3D f_fa = mesh->toFieldAligned(f);
+
+    vval.mm = nan("");
+    vval.pp = nan("");
+
+    for (const auto &i : result.region(region)) {
+
+      fval.mm = f_fa[i.offset(0, -2, 0)];
+      fval.m = f_fa[i.ym()];
+      fval.c = f_fa[i];
+      fval.p = f_fa[i.yp()];
+      fval.pp = f_fa[i.offset(0, 2, 0)];
+
+      vval.m = v.ydown()[i.ym()];
+      vval.c = v[i];
+      vval.p = v.yup()[i.yp()];
+
+      // Left side
+      result[i] = (vval.c >= 0.0) ? vval.c * fval.m : vval.c * fval.c;
+      // Right side
+      result[i] -= (vval.p >= 0.0) ? vval.p * fval.c : vval.p * fval.p;
+    }
+  }
+  else if (fUseUpDown) {
+    // Only f has up/down fields
+    // v must shift to field aligned coordinates
+    Field3D v_fa = mesh->toFieldAligned(v);
+
+    stencil vval;
+
+    stencil fval;
+    fval.mm = nan("");
+    fval.pp = nan("");
+
+    for (const auto &i : result.region(region)) {
+
+      fval.m = f.ydown()[i.ym()];
+      fval.c = f[i];
+      fval.p = f.yup()[i.yp()];
+
+      vval.mm = v_fa[i.offset(0,-2,0)];
+      vval.m = v_fa[i.ym()];
+      vval.c = v_fa[i];
+      vval.p = v_fa[i.yp()];
+      vval.pp = v_fa[i.offset(0,2,0)];
+
+      // Left side
+      result[i] = (vval.c >= 0.0) ? vval.c * fval.m : vval.c * fval.c;
+      // Right side
+      result[i] -= (vval.p >= 0.0) ? vval.p * fval.c : vval.p * fval.p;
+    }
+  }
+  else {
+    // Both must shift to field aligned
+    Field3D v_fa = mesh->toFieldAligned(v);
+    Field3D f_fa = mesh->toFieldAligned(f);
+
+    for (const auto &i : result.region(region)) {
+
+      fval.mm = f_fa[i.offset(0,-2,0)];
+      fval.m = f_fa[i.ym()];
+      fval.c = f_fa[i];
+      fval.p = f_fa[i.yp()];
+      fval.pp = f_fa[i.offset(0,2,0)];
+
+      vval.mm = v_fa[i.offset(0,-2,0)];
+      vval.m = v_fa[i.ym()];
+      vval.c = v_fa[i];
+      vval.p = v_fa[i.yp()];
+      vval.pp = v_fa[i.offset(0,2,0)];
+
+      // Left side
+      result[i] = (vval.c >= 0.0) ? vval.c * fval.m : vval.c * fval.c;
+      // Right side
+      result[i] -= (vval.p >= 0.0) ? vval.p * fval.c : vval.p * fval.p;
+    }
+  }
 
   result.setLocation(CELL_CENTRE);
   return result;

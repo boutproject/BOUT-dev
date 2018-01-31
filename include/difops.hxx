@@ -193,7 +193,7 @@ const Field3D Grad2_par2(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
  * These are a simple way to do staggered differencing
  */
 const Field3D Grad_par_CtoL(const Field3D &var);
-const Field3D Vpar_Grad_par_LCtoC(const Field &v, const Field &f);
+const Field3D Vpar_Grad_par_LCtoC(const Field3D &v, const Field3D &f, REGION region=RGN_NOBNDRY);
 const Field3D Grad_par_LtoC(const Field3D &var);
 const Field3D Div_par_LtoC(const Field2D &var);
 const Field3D Div_par_LtoC(const Field3D &var);
