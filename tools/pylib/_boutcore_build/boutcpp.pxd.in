@@ -77,12 +77,17 @@ cdef extern from "options.hxx":
 
 cdef extern from "derivs.hxx":
 EOF
-for f in DDd
+for d in X Y Z
 do
-    for d in Z
+    for f in DDd D2Dd2 #VDDd FDDd
     do
         DD=${f/d/$d}
-        echo "    Field3D $DD(Field3D, benum.CELL_LOC, benum.DIFF_METHOD,bool)"
+        echo "    Field3D $DD(Field3D, benum.CELL_LOC, benum.DIFF_METHOD, benum.REGION)"
+    done
+    for f in VDDd FDDd
+    do
+        DD=${f/d/$d}
+        echo "    Field3D $DD(Field3D, Field3D, benum.CELL_LOC, benum.DIFF_METHOD, benum.REGION)"
     done
 done
 cat <<EOF

@@ -466,19 +466,31 @@ def checkInit():
        raise RuntimeError("The BOUT++ library was not initialised - please call boutcore.init(args) first")
 
 EOF
-for d in Z
+for d in X Y Z
 do
-    for f in DDd
-    do
+    fun () {
         DD=${f/d/$d}
         cat <<EOF
-def $DD(Field3D field, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", inc_xbndry=True):
+def $DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_ALL"):
     checkInit()
     cdef benum.CELL_LOC outloc_= benum.resolve_cell_loc(outloc)
     cdef benum.DIFF_METHOD method_=benum.resolve_diff_method(method)
-    return f3dFromObj(c.$DD(field.cobj[0],outloc_,method_,inc_xbndry))
+    cdef benum.REGION region_=benum.resolve_region(region)
+    return f3dFromObj(c.$DD($in2,outloc_,method_,region_))
 
 EOF
+    }
+    for f in DDd D2Dd2 # VDDd FDDd
+    do
+        in1="Field3D field"
+        in2="field.cobj[0]"
+        fun
+    done
+    for f in VDDd FDDd
+    do
+        in1="Field3D v, Field3D f"
+        in2="v.cobj[0], f.cobj[0]"
+        fun
     done
 done
 cat <<EOF
