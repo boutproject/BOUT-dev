@@ -1440,6 +1440,11 @@ const Field3D AiolosMesh::indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHO
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
+  if (this->LocalNx == 1) {
+    Field3D result{0., this};
+    result.setLocation(outloc);
+    return result;
+  }
   if ((outloc == CELL_XLOW) != (f.getLocation() == CELL_XLOW)) {
     // we are going onto a staggered grid or coming from one
     return indexDDX_stag(f, outloc, method);
@@ -1453,6 +1458,11 @@ const Field3D AiolosMesh::indexDDY(const Field3D &f, CELL_LOC outloc, DIFF_METHO
                                    REGION ignored) {
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
+  }
+  if (this->LocalNy == 1) {
+    Field3D result{0., this};
+    result.setLocation(outloc);
+    return result;
   }
   if ((outloc == CELL_YLOW) != (f.getLocation() == CELL_YLOW)) {
     // we are going onto a staggered grid or coming from one
@@ -1468,6 +1478,11 @@ const Field3D AiolosMesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHO
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
+  if (this->LocalNz == 1) {
+    Field3D result{0., this};
+    result.setLocation(outloc);
+    return result;
+  }
   if ((outloc == CELL_ZLOW) != (f.getLocation() == CELL_ZLOW)) {
     // we are going onto a staggered grid or coming from one
     return indexDDZ_stag(f, outloc, method);
@@ -1481,6 +1496,11 @@ const Field2D AiolosMesh::indexDDX(const Field2D &f, CELL_LOC outloc, DIFF_METHO
                                    REGION ignored) {
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
+  }
+  if (this->LocalNx == 1) {
+    Field2D result{0., this};
+    result.setLocation(outloc);
+    return result;
   }
   if ((outloc == CELL_XLOW) != (f.getLocation() == CELL_XLOW)) {
     // we are going onto a staggered grid or coming from one
@@ -1496,6 +1516,11 @@ const Field2D AiolosMesh::indexDDY(const Field2D &f, CELL_LOC outloc, DIFF_METHO
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
+  if (this->LocalNy == 1) {
+    Field2D result{0., this};
+    result.setLocation(outloc);
+    return result;
+  }
   if ((outloc == CELL_YLOW) != (f.getLocation() == CELL_YLOW)) {
     // we are going onto a staggered grid or coming from one
     return indexDDY_stag(f, outloc, method);
@@ -1509,6 +1534,11 @@ const Field3D AiolosMesh::indexD2DX2(const Field3D &f, CELL_LOC outloc,
                                      DIFF_METHOD method, REGION ignored) {
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
+  }
+  if (this->LocalNx == 1) {
+    Field3D result{0., this};
+    result.setLocation(outloc);
+    return result;
   }
   if ((outloc == CELL_XLOW) != (f.getLocation() == CELL_XLOW)) {
     // we are going onto a staggered grid or coming from one
@@ -1524,6 +1554,11 @@ const Field3D AiolosMesh::indexD2DY2(const Field3D &f, CELL_LOC outloc,
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
+  if (this->LocalNy == 1) {
+    Field3D result{0., this};
+    result.setLocation(outloc);
+    return result;
+  }
   if ((outloc == CELL_YLOW) != (f.getLocation() == CELL_YLOW)) {
     // we are going onto a staggered grid or coming from one
     return indexD2DY2_stag(f, outloc, method);
@@ -1537,6 +1572,11 @@ const Field3D AiolosMesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc,
                                      DIFF_METHOD method, REGION ignored) {
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
+  }
+  if (this->LocalNz == 1) {
+    Field3D result{0., this};
+    result.setLocation(outloc);
+    return result;
   }
   if ((outloc == CELL_ZLOW) != (f.getLocation() == CELL_ZLOW)) {
     // we are going onto a staggered grid or coming from one
@@ -1552,6 +1592,11 @@ const Field2D AiolosMesh::indexD2DX2(const Field2D &f, CELL_LOC outloc,
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
+  if (this->LocalNx == 1) {
+    Field2D result{0., this};
+    result.setLocation(outloc);
+    return result;
+  }
   if ((outloc == CELL_XLOW) != (f.getLocation() == CELL_XLOW)) {
     // we are going onto a staggered grid or coming from one
     return indexD2DX2_stag(f, outloc, method);
@@ -1565,6 +1610,11 @@ const Field2D AiolosMesh::indexD2DY2(const Field2D &f, CELL_LOC outloc,
                                      DIFF_METHOD method, REGION ignored) {
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
+  }
+  if (this->LocalNy == 1) {
+    Field2D result{0., this};
+    result.setLocation(outloc);
+    return result;
   }
   if ((outloc == CELL_YLOW) != (f.getLocation() == CELL_YLOW)) {
     // we are going onto a staggered grid or coming from one
@@ -1584,6 +1634,11 @@ const Field3D AiolosMesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC
     throw BoutException("AiolosMesh::index?DDX: Unhandled case for "
                         "shifting.\nf.getLocation()==outloc is required!");
   }
+  if (this->LocalNx == 1) {
+    Field3D result{0., this};
+    result.setLocation(outloc);
+    return result;
+  }
   if ((outloc == CELL_XLOW) != (f.getLocation() == CELL_XLOW)) {
     // we are going onto a staggered grid or coming from one
     return indexVDDX_stag(v, f, outloc, method);
@@ -1601,6 +1656,11 @@ const Field3D AiolosMesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC
   if (outloc != f.getLocation()) {
     throw BoutException("AiolosMesh::index?DDX: Unhandled case for "
                         "shifting.\nf.getLocation()==outloc is required!");
+  }
+  if (this->LocalNy == 1) {
+    Field3D result{0., this};
+    result.setLocation(outloc);
+    return result;
   }
   if ((outloc == CELL_YLOW) != (f.getLocation() == CELL_YLOW)) {
     // we are going onto a staggered grid or coming from one
@@ -1620,6 +1680,11 @@ const Field3D AiolosMesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC
     throw BoutException("AiolosMesh::index?DDX: Unhandled case for "
                         "shifting.\nf.getLocation()==outloc is required!");
   }
+  if (this->LocalNz == 1) {
+    Field3D result{0., this};
+    result.setLocation(outloc);
+    return result;
+  }
   if ((outloc == CELL_ZLOW) != (f.getLocation() == CELL_ZLOW)) {
     // we are going onto a staggered grid or coming from one
     return indexVDDZ_stag(v, f, outloc, method);
@@ -1637,6 +1702,11 @@ const Field2D AiolosMesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC
   if (outloc != f.getLocation()) {
     throw BoutException("AiolosMesh::index?DDX: Unhandled case for "
                         "shifting.\nf.getLocation()==outloc is required!");
+  }
+  if (this->LocalNx == 1) {
+    Field2D result{0., this};
+    result.setLocation(outloc);
+    return result;
   }
   if ((outloc == CELL_XLOW) != (f.getLocation() == CELL_XLOW)) {
     // we are going onto a staggered grid or coming from one
@@ -1656,6 +1726,11 @@ const Field2D AiolosMesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC
     throw BoutException("AiolosMesh::index?DDX: Unhandled case for "
                         "shifting.\nf.getLocation()==outloc is required!");
   }
+  if (this->LocalNy == 1) {
+    Field2D result{0., this};
+    result.setLocation(outloc);
+    return result;
+  }
   if ((outloc == CELL_YLOW) != (f.getLocation() == CELL_YLOW)) {
     // we are going onto a staggered grid or coming from one
     return indexVDDY_stag(v, f, outloc, method);
@@ -1673,6 +1748,11 @@ const Field3D AiolosMesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC
   if (outloc != f.getLocation()) {
     throw BoutException("AiolosMesh::index?DDX: Unhandled case for "
                         "shifting.\nf.getLocation()==outloc is required!");
+  }
+  if (this->LocalNx == 1) {
+    Field3D result{0., this};
+    result.setLocation(outloc);
+    return result;
   }
   if ((outloc == CELL_XLOW) != (f.getLocation() == CELL_XLOW)) {
     // we are going onto a staggered grid or coming from one
@@ -1692,6 +1772,11 @@ const Field3D AiolosMesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC
     throw BoutException("AiolosMesh::index?DDX: Unhandled case for "
                         "shifting.\nf.getLocation()==outloc is required!");
   }
+  if (this->LocalNy == 1) {
+    Field3D result{0., this};
+    result.setLocation(outloc);
+    return result;
+  }
   if ((outloc == CELL_YLOW) != (f.getLocation() == CELL_YLOW)) {
     // we are going onto a staggered grid or coming from one
     return indexFDDY_stag(v, f, outloc, method);
@@ -1709,6 +1794,11 @@ const Field3D AiolosMesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC
   if (outloc != f.getLocation()) {
     throw BoutException("AiolosMesh::index?DDX: Unhandled case for "
                         "shifting.\nf.getLocation()==outloc is required!");
+  }
+  if (this->LocalNz == 1) {
+    Field3D result{0., this};
+    result.setLocation(outloc);
+    return result;
   }
   if ((outloc == CELL_ZLOW) != (f.getLocation() == CELL_ZLOW)) {
     // we are going onto a staggered grid or coming from one
@@ -1728,6 +1818,11 @@ const Field2D AiolosMesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC
     throw BoutException("AiolosMesh::index?DDX: Unhandled case for "
                         "shifting.\nf.getLocation()==outloc is required!");
   }
+  if (this->LocalNx == 1) {
+    Field2D result{0., this};
+    result.setLocation(outloc);
+    return result;
+  }
   if ((outloc == CELL_XLOW) != (f.getLocation() == CELL_XLOW)) {
     // we are going onto a staggered grid or coming from one
     return indexFDDX_stag(v, f, outloc, method);
@@ -1745,6 +1840,11 @@ const Field2D AiolosMesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC
   if (outloc != f.getLocation()) {
     throw BoutException("AiolosMesh::index?DDX: Unhandled case for "
                         "shifting.\nf.getLocation()==outloc is required!");
+  }
+  if (this->LocalNy == 1) {
+    Field2D result{0., this};
+    result.setLocation(outloc);
+    return result;
   }
   if ((outloc == CELL_YLOW) != (f.getLocation() == CELL_YLOW)) {
     // we are going onto a staggered grid or coming from one

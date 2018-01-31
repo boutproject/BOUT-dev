@@ -216,6 +216,11 @@ for func in ["indexDD%s", "indexD2D%s2","indexVDD%s","indexFDD%s"]:
                 print('    throw BoutException("AiolosMesh::index?DDX: Unhandled case for shifting.\\n\
 f.getLocation()==outloc is required!");')
                 print("  }")
+            print("  if (this->LocalN%s == 1) {"%d)
+            print("    %s result{0.,this};"%field)
+            print("    result.setLocation(outloc);")
+            print("    return result;")
+            print("  }")
             #print '  output.write("Using aiolos mesh for %s\\n");'%(func%d.upper())
             print("  if ((outloc == CELL_%sLOW) != (f.getLocation() == CELL_%sLOW)){"% \
                 (d.upper(),d.upper()))
