@@ -194,12 +194,8 @@ for func in ["indexDD%s", "indexD2D%s2","indexVDD%s","indexFDD%s"]:
             if flux:
                 sig+="const "+field+" &v,"
             sig += "const "+field+" &f"
-            if field=="Field3D" or flux:
-                sig+=", CELL_LOC outloc, DIFF_METHOD method";
-            if func%d.upper() in ["indexDDZ", "indexD2DZ2"]:
-                sig+=",bool ignored";
-            elif flux and d in "xyz":
-                sig+=",REGION ignored";
+            sig+=", CELL_LOC outloc, DIFF_METHOD method";
+            sig+=",REGION ignored";
             sig+=")"
             function_header="  virtual const "+field+" "+func%d.upper()
             function_header+=sig
@@ -212,9 +208,6 @@ for func in ["indexDD%s", "indexD2D%s2","indexVDD%s","indexFDD%s"]:
             else:
                 f="f"
             print(function_header," {")
-            if field != "Field3D" and not flux:
-                print("  CELL_LOC outloc=CELL_DEFAULT;")
-                print("  DIFF_METHOD method=DIFF_DEFAULT;")
             print("  if (outloc == CELL_DEFAULT) {")
             print("    outloc=f.getLocation();")
             print("  }")

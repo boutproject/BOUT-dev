@@ -1435,8 +1435,8 @@ const Field2D indexFDDY_stag(const Field2D &v, const Field2D &f, CELL_LOC outloc
 }
 
 // This file is auto-generated - do not edit!
-const Field3D AiolosMesh::indexDDX(const Field3D &f, CELL_LOC outloc,
-                                   DIFF_METHOD method) {
+const Field3D AiolosMesh::indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
+                                   REGION ignored) {
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
@@ -1449,8 +1449,8 @@ const Field3D AiolosMesh::indexDDX(const Field3D &f, CELL_LOC outloc,
 }
 
 // This file is auto-generated - do not edit!
-const Field3D AiolosMesh::indexDDY(const Field3D &f, CELL_LOC outloc,
-                                   DIFF_METHOD method) {
+const Field3D AiolosMesh::indexDDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
+                                   REGION ignored) {
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
@@ -1464,7 +1464,7 @@ const Field3D AiolosMesh::indexDDY(const Field3D &f, CELL_LOC outloc,
 
 // This file is auto-generated - do not edit!
 const Field3D AiolosMesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
-                                   bool ignored) {
+                                   REGION ignored) {
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
@@ -1477,9 +1477,8 @@ const Field3D AiolosMesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHO
 }
 
 // This file is auto-generated - do not edit!
-const Field2D AiolosMesh::indexDDX(const Field2D &f) {
-  CELL_LOC outloc = CELL_DEFAULT;
-  DIFF_METHOD method = DIFF_DEFAULT;
+const Field2D AiolosMesh::indexDDX(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method,
+                                   REGION ignored) {
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
@@ -1492,9 +1491,8 @@ const Field2D AiolosMesh::indexDDX(const Field2D &f) {
 }
 
 // This file is auto-generated - do not edit!
-const Field2D AiolosMesh::indexDDY(const Field2D &f) {
-  CELL_LOC outloc = CELL_DEFAULT;
-  DIFF_METHOD method = DIFF_DEFAULT;
+const Field2D AiolosMesh::indexDDY(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method,
+                                   REGION ignored) {
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
@@ -1508,7 +1506,7 @@ const Field2D AiolosMesh::indexDDY(const Field2D &f) {
 
 // This file is auto-generated - do not edit!
 const Field3D AiolosMesh::indexD2DX2(const Field3D &f, CELL_LOC outloc,
-                                     DIFF_METHOD method) {
+                                     DIFF_METHOD method, REGION ignored) {
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
@@ -1522,7 +1520,7 @@ const Field3D AiolosMesh::indexD2DX2(const Field3D &f, CELL_LOC outloc,
 
 // This file is auto-generated - do not edit!
 const Field3D AiolosMesh::indexD2DY2(const Field3D &f, CELL_LOC outloc,
-                                     DIFF_METHOD method) {
+                                     DIFF_METHOD method, REGION ignored) {
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
@@ -1536,7 +1534,7 @@ const Field3D AiolosMesh::indexD2DY2(const Field3D &f, CELL_LOC outloc,
 
 // This file is auto-generated - do not edit!
 const Field3D AiolosMesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc,
-                                     DIFF_METHOD method, bool ignored) {
+                                     DIFF_METHOD method, REGION ignored) {
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
@@ -1549,9 +1547,8 @@ const Field3D AiolosMesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc,
 }
 
 // This file is auto-generated - do not edit!
-const Field2D AiolosMesh::indexD2DX2(const Field2D &f) {
-  CELL_LOC outloc = CELL_DEFAULT;
-  DIFF_METHOD method = DIFF_DEFAULT;
+const Field2D AiolosMesh::indexD2DX2(const Field2D &f, CELL_LOC outloc,
+                                     DIFF_METHOD method, REGION ignored) {
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
@@ -1564,9 +1561,8 @@ const Field2D AiolosMesh::indexD2DX2(const Field2D &f) {
 }
 
 // This file is auto-generated - do not edit!
-const Field2D AiolosMesh::indexD2DY2(const Field2D &f) {
-  CELL_LOC outloc = CELL_DEFAULT;
-  DIFF_METHOD method = DIFF_DEFAULT;
+const Field2D AiolosMesh::indexD2DY2(const Field2D &f, CELL_LOC outloc,
+                                     DIFF_METHOD method, REGION ignored) {
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
