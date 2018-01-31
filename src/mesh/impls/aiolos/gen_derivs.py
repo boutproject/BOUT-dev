@@ -247,7 +247,6 @@ duplicates(tmp)
 # funcs_to_gen=uniq
 guards_=[]
 sys.stdout=open("generated_stencils.cxx","w")
-print("extern BoutReal WENO_SMALL;\n")
 from gen_stencils import gen_functions_normal
 gen_functions_normal(funcs_to_gen)
 sys.stdout.flush()

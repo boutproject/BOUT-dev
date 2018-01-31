@@ -11,6 +11,8 @@ inFunc=0
 with open("stencils_cleaned.cxx","r") as f:
     fi=-1
     for line in f:
+        if line[:5] == 'const':
+            print(line)
         line=line.strip()
         # avoid to overwrite result
         line=line.replace("result","result_")
