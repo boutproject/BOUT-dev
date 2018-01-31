@@ -1,4 +1,5 @@
 #!/bin/bash
+# parse bout-config to extract appropriate flags
 inc_dirs=
 flags=
 libs=
@@ -24,6 +25,15 @@ do
     fi
 done
 
+# needed sometimes to add include dir ...
+python_dirs=$($PY -c "import site; print('\n'.join(site.getsitepackages()))")
+numpyheader=$(for d in $python_dirs
+              do
+                  find $d|grep numpy/arrayobject.h
+              done)
+inc_dirs="${numpyheader%/*/*} $inc_dirs"
+
+# Main file
 cat <<EOF
 # distutils: language=c++
 # distutils: include_dirs = $inc_dirs

@@ -1,7 +1,5 @@
 all: boutcore.so test
-ifndef PY
-PY=python3
-endif
+PY?=python3
 boutcore.pyx: boutcore.pyx.in
 setup.py:setup.py.in
 resolve_enum.pxd:resolve_enum.pxd.in
@@ -12,7 +10,7 @@ boutcpp.pxd:boutcpp.pxd.in
 TOGEN=setup.py boutcore.pyx resolve_enum.pxd helper.cxx helper.h boutcpp.pxd
 $(TOGEN): Makefile
 	@echo generating $@
-	@PATH=../../../bin:$$PATH bash $@.in > $@
+	@PATH=../../../bin:$$PATH PY=$(PY) bash $@.in > $@
 
 boutcore.so: boutcore.pyx setup.py helper.cxx helper.h $(TOGEN)
 	@$(PY) setup.py build_ext --inplace
