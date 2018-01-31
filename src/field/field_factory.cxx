@@ -97,7 +97,13 @@ FieldFactory::~FieldFactory() {
 }
 
 const Field2D FieldFactory::create2D(const string &value, Options *opt, Mesh *m, CELL_LOC loc, BoutReal t) {
-  Field2D result = 0.;
+
+  if(m == NULL)
+    m = fieldmesh;
+  if(m == NULL)
+    throw BoutException("Not a valid mesh");
+
+  Field2D result(0.,m);
 
   if(mesh->StaggerGrids == false){
     loc = CELL_CENTRE ;
