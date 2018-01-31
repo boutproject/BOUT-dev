@@ -213,8 +213,10 @@ class BoutOutputs(object):
     """
     Emulates a map class, represents the contents of a BOUT++
     dmp files. Does not allow writing, only reading of data.
-    Currently there is no cache, so each time a variable
-    is read it is collected.
+    By default there is no cache, so each time a variable
+    is read it is collected; if caching is set to True variables
+    are stored once they are read.
+    Extra keyword arguments are passed through to collect.
     
     Example
     -------
@@ -222,16 +224,30 @@ class BoutOutputs(object):
     d = BoutOutputs(".")  # Current directory
     
     d.keys()     # List all valid keys
+
+    d.dimensions["ne"] # Get the dimensions of the field ne
     
     d["ne"] # Read "ne" from data files
+
+    d = BoutOutputs(".", prefix="BOUT.dmp", caching=True) # Turn on caching
+
+    Options
+    -------
+    prefix - sets the prefix for data files (default "BOUT.dmp")
+
+    caching - switches on caching of data, so it is only read into memory when first accessed (defaulte False)
+    
+    verbose - switches on printing from collect (default True)
     
     """
-    def __init__(self, path=".", prefix="BOUT.dmp"):
+    def __init__(self, path=".", prefix="BOUT.dmp", caching=False, **kwargs):
         """
         Initialise BoutOutputs object
         """
         self._path = path
         self._prefix = prefix
+        self._caching = caching
+        self._kwargs = kwargs
         
         # Label for this data
         self.label = path
@@ -243,16 +259,32 @@ class BoutOutputs(object):
         
         # Available variables
         self.varNames = []
+        self.dimensions = {}
+        self.evolvingVariableNames = []
+
+        # Private variables
+        self._datacache = {}
         
         with DataFile(file_list[0]) as f:
             # Get variable names
             self.varNames = f.keys()
+            for name in f.keys():
+                dimensions = f.dimensions(name)
+                self.dimensions[name] = dimensions
+                if name != "t_array" and "t" in dimensions:
+                    self.evolvingVariableNames.append(name)
         
     def keys(self):
         """
         Return a list of available variable names
         """
         return self.varNames
+
+    def evolvingVariables(self):
+        """
+        Return a list of names of time-evolving variables
+        """
+        return self.evolvingVariableNames
         
     def __len__(self):
         return len(self.varNames)
@@ -260,12 +292,18 @@ class BoutOutputs(object):
     def __getitem__(self, name):
         """
         Reads a variable using collect.
+        Caches result and returns later if called again, if self._caching=True
         
         """
 
-        # Collect the data from the repository
-        data = collect(name, path=self._path, prefix=self._prefix)
-        return data
+        if self._caching:
+            if name not in self._datacache.keys():
+                self._datacache[name] = collect(name, path=self._path, prefix=self._prefix, **self._kwargs)
+            return self._datacache[name]
+        else:
+            # Collect the data from the repository
+            data = collect(name, path=self._path, prefix=self._prefix, **self._kwargs)
+            return data
 
     def __iter__(self):
         """
@@ -286,12 +324,13 @@ class BoutOutputs(object):
         return text
     
 
-def BoutData(path=".", prefix="BOUT.dmp"):
+def BoutData(path=".", prefix="BOUT.dmp", caching=False, **kwargs):
     """
     Returns a dictionary, containing the contents of a BOUT++
     output directory. Does not allow writing, only reading of data.
-    Currently there is no cache, so each time a variable
-    is read it is collected.
+    By default there is no cache, so each time a variable
+    is read it is collected; if caching is set to True variables
+    are stored once they are read.
     
     Example
     -------
@@ -308,6 +347,15 @@ def BoutData(path=".", prefix="BOUT.dmp"):
 
     d["outputs"]["ne"] # Read "ne" from data files
     
+    d = BoutData(".", prefix="BOUT.dmp", caching=True, verbose=False) # Turn on caching and turn off verbosity
+
+    Options
+    -------
+    prefix - sets the prefix for data files (default "BOUT.dmp")
+
+    caching - switches on caching of data, so it is only read into memory when first accessed (defaulte False)
+    
+    verbose - switches on printing from collect (default True)
     """
     
     data = {} # Map for the result
@@ -318,6 +366,6 @@ def BoutData(path=".", prefix="BOUT.dmp"):
     data["options"] = BoutOptionsFile(os.path.join(path, "BOUT.inp"), name="options")
     
     # Output from .dmp.* files
-    data["outputs"] = BoutOutputs(path)
+    data["outputs"] = BoutOutputs(path, prefix=prefix, caching=caching, **kwargs)
     
     return data
