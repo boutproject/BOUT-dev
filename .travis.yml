@@ -30,6 +30,7 @@ matrix:
       apt:
         packages:
           - libmpich-dev
+          - mpich
           - libfftw3-dev
           - libnetcdf-dev
           - libhdf5-serial-dev
