@@ -92,7 +92,7 @@ Laplacian::Laplacian(Options *options) {
     OPTION(options, outer_boundary_flags, 0);
   }
 
-  OPTION(options, include_yguards, true);
+  OPTION(options, include_yguards, false);
 
   OPTION2(options, extra_yguards_lower, extra_yguards_upper, 0);
 }
