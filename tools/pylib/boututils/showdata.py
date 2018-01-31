@@ -20,7 +20,7 @@ except:
 from mpl_toolkits.mplot3d import axes3d
 from matplotlib import pyplot as plt
 from matplotlib import animation, cm
-from numpy import linspace, meshgrid, array, min, max, floor, pi
+from numpy import linspace, meshgrid, array, min, max, floor, pi, float32
 from boutdata.collect import collect
 
 
@@ -377,14 +377,21 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
 
 
         if not (global_colors):
-            clevels.append(linspace(fmin[i], fmax[i], Ncolors))
+            if not float32(fmax[i])>float32(fmin[i]):
+                clevels.append([fmax[i],fmax[i]+1.])
+            else:
+                clevels.append(linspace(fmin[i], fmax[i], Ncolors))
+
     if(global_colors):
         fmaxglobal = max(fmax)
         fminglobal = min(fmin)
         for i in range(0,Nvar):
             fmax[i]  = fmaxglobal
             fmin[i]  = fminglobal
-            clevels.append(linspace(fmin[i], fmax[i], Ncolors))
+            if not float32(fmax[i])>float32(fmin[i]):
+                clevels.append([fmax[i],fmax[i]+1.])
+            else:
+                clevels.append(linspace(fmin[i], fmax[i], Ncolors))
 
     # Create figures for animation plotting
     if (Nvar < 2):
@@ -550,6 +557,9 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
                     lines[j][k].set_data(x[j][k], vars[j][k][index,:])
             elif (contour[j] == 1):
                 plots[j] = ax[j].contourf(x[j][0],y[j],vars[j][0][index,:,:].T, Ncolors, cmap=cmap, lw=0, levels=clevels[j])
+                ax[j].set_xlabel(r'x')
+                ax[j].set_ylabel(r'y')
+                ax[j].set_title(titles[j])
             elif (surf[j] == 1):
                 ax[j] = fig.add_subplot(row,col,j+1, projection='3d')
                 plots[j] = ax[j].plot_wireframe(x[j][0], y[j], vars[j][0][index,:,:].T, rstride=ystride[j], cstride=xstride[j])
@@ -560,6 +570,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
             elif (polar[j] == 1):
                 plots[j] = ax[j].contourf(theta[j], r[j], vars[j][0][index,:,:].T,cmap=cmap, levels=clevels[j])
                 ax[j].set_rmax(Nx[j][0]-1)
+                ax[j].set_title(titles[j])
 
         if (tslice == 0):
             title.set_text('t = %1.2e' % t[index])
