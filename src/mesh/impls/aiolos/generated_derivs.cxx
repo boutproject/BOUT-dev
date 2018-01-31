@@ -1616,7 +1616,7 @@ const Field3D AiolosMesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC
 
 // This file is auto-generated - do not edit!
 const Field3D AiolosMesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                                    DIFF_METHOD method) {
+                                    DIFF_METHOD method, REGION ignored) {
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
@@ -1706,7 +1706,7 @@ const Field3D AiolosMesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC
 
 // This file is auto-generated - do not edit!
 const Field3D AiolosMesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                                    DIFF_METHOD method) {
+                                    DIFF_METHOD method, REGION ignored) {
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }

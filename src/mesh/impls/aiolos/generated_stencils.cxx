@@ -1,3 +1,5 @@
+extern BoutReal WENO_SMALL;
+
 static void interp_to_on_Field3D_x(Field3D &result, const Field3D &in, Mesh *msh) {
   const int Nx = msh->LocalNx;
   const int Ny = msh->LocalNy;

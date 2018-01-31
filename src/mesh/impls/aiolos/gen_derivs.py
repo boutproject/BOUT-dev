@@ -198,20 +198,12 @@ for func in ["indexDD%s", "indexD2D%s2","indexVDD%s","indexFDD%s"]:
                 sig+=", CELL_LOC outloc, DIFF_METHOD method";
             if func%d.upper() in ["indexDDZ", "indexD2DZ2"]:
                 sig+=",bool ignored";
-            elif flux and d in "xy":
+            elif flux and d in "xyz":
                 sig+=",REGION ignored";
-            #else:
-            #    sig+=",REGION region"
             sig+=")"
             function_header="  virtual const "+field+" "+func%d.upper()
             function_header+=sig
-            if  not (field == "Field3D" and func[5]=='V' and d == 'z'):
-                function_header+=" override;\n"
-            else:
-                function_header+=""";
-virtual const Field3D indexVDD%s(const Field &v,const Field &f, CELL_LOC outloc, DIFF_METHOD method) override{
-  return indexVDD%s(dynamic_cast<const Field3D &>(v),dynamic_cast<const Field3D &>(f),outloc,method);
-}"""%(d.upper(),d.upper())
+            function_header+=" override;\n"
             headers+=function_header
             function_header="const "+field+" AiolosMesh::"+func%d.upper()
             function_header+=sig
@@ -262,6 +254,7 @@ duplicates(tmp)
 # funcs_to_gen=uniq
 guards_=[]
 sys.stdout=open("generated_stencils.cxx","w")
+print("extern BoutReal WENO_SMALL;\n")
 from gen_stencils import gen_functions_normal
 gen_functions_normal(funcs_to_gen)
 sys.stdout.flush()

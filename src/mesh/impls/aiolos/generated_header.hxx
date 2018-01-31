@@ -19,12 +19,7 @@ virtual const Field3D indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC out
 virtual const Field3D indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc,
                                 DIFF_METHOD method, REGION ignored) override;
 virtual const Field3D indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                                DIFF_METHOD method);
-virtual const Field3D indexVDDZ(const Field &v, const Field &f, CELL_LOC outloc,
-                                DIFF_METHOD method) override {
-  return indexVDDZ(dynamic_cast<const Field3D &>(v), dynamic_cast<const Field3D &>(f),
-                   outloc, method);
-}
+                                DIFF_METHOD method, REGION ignored) override;
 virtual const Field2D indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc,
                                 DIFF_METHOD method, REGION ignored) override;
 virtual const Field2D indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc,
@@ -34,7 +29,7 @@ virtual const Field3D indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC out
 virtual const Field3D indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc,
                                 DIFF_METHOD method, REGION ignored) override;
 virtual const Field3D indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                                DIFF_METHOD method) override;
+                                DIFF_METHOD method, REGION ignored) override;
 virtual const Field2D indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc,
                                 DIFF_METHOD method, REGION ignored) override;
 virtual const Field2D indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc,
