@@ -335,13 +335,6 @@ class Field3D : public Field, public FieldData {
     return operator()(i.x, i.y, i.z);
   }
   
-  BoutReal& operator[](bindex &bx) {
-    return operator()(bx.jx, bx.jy, bx.jz);
-  }
-  const BoutReal& operator[](bindex &bx) const {
-    return operator()(bx.jx, bx.jy, bx.jz);
-  }
-  
   /*!
    * Direct access to the underlying data array
    *
@@ -423,8 +416,6 @@ class Field3D : public Field, public FieldData {
   Field3D & operator=(const Field2D &rhs);
   /// return void, as only part initialised
   void      operator=(const FieldPerp &rhs);
-  /// return void, as only part initialised
-  void      operator=(const bvalue &val);
   Field3D & operator=(BoutReal val);
   ///@}
 
@@ -455,11 +446,6 @@ class Field3D : public Field, public FieldData {
   Field3D & operator/=(const Field2D &rhs);
   Field3D & operator/=(BoutReal rhs);
   ///@}
-
-  // Stencils for differencing
-  void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const override;
-  void setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const override;
-  void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const override;
   
   // FieldData virtual functions
   
@@ -682,9 +668,13 @@ bool finite(const Field3D &var);
 
 
 #if CHECK > 0
-void checkData(const Field3D &f); ///< Checks if the data is valid.
+/// Throw an exception if \p f is not allocated or if any
+/// elements are non-finite (for CHECK > 2)
+void checkData(const Field3D &f);
 #else
-inline void checkData(const Field3D &UNUSED(f)){;}; ///< Checks if the data is valid.
+/// Ignored with disabled CHECK; Throw an exception if \p f is not
+/// allocated or if any elements are non-finite (for CHECK > 2)
+inline void checkData(const Field3D &UNUSED(f)){};
 #endif
  
 /*!

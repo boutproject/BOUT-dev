@@ -326,9 +326,9 @@ const Field3D VDDY(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_
 
 const Field2D VDDZ(const Field2D &v, const Field2D &f);
 const Field2D VDDZ(const Field3D &v, const Field2D &f);
-const Field3D VDDZ(const Field &v, const Field &f,
+const Field3D VDDZ(const Field3D &v, const Field3D &f,
                    CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT);
-const Field3D VDDZ(const Field &v, const Field &f, DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT);
+const Field3D VDDZ(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT);
 
 ///////// FLUX METHODS /////////////
 // for terms of form div(v * f)

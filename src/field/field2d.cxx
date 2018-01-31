@@ -328,44 +328,6 @@ void Field2D::setYArray(int x, int UNUSED(z), const rvec &yv) {
     operator()(x,y) = yv[y];
 }
 
-void Field2D::setXStencil(stencil &fval, const bindex &bx, CELL_LOC UNUSED(loc)) const {
-  fval.jx = bx.jx;
-  fval.jy = bx.jy;
-  fval.jz = bx.jz;
-
-  ASSERT1(isAllocated());
-
-  fval.mm = operator()(bx.jx2m,bx.jy);
-  fval.m  = operator()(bx.jxm,bx.jy);
-  fval.c  = operator()(bx.jx,bx.jy);
-  fval.p  = operator()(bx.jxp,bx.jy);
-  fval.pp = operator()(bx.jx2p,bx.jy);
-}
-
-void Field2D::setYStencil(stencil &fval, const bindex &bx, CELL_LOC UNUSED(loc)) const {
-  fval.jx = bx.jx;
-  fval.jy = bx.jy;
-  fval.jz = bx.jz;
-
-  ASSERT1(isAllocated());
-
-  fval.mm = operator()(bx.jx,bx.jy2m);
-  fval.m  = operator()(bx.jx,bx.jym);
-  fval.c  = operator()(bx.jx,bx.jy);
-  fval.p  = operator()(bx.jx,bx.jyp);
-  fval.pp = operator()(bx.jx,bx.jy2p);
-}
-
-void Field2D::setZStencil(stencil &fval, const bindex &bx, CELL_LOC UNUSED(loc)) const {
-  fval.jx = bx.jx;
-  fval.jy = bx.jy;
-  fval.jz = bx.jz;
-
-  ASSERT1(isAllocated());
-
-  fval = operator()(bx.jx,bx.jy);
-}
-
 ///////////////////// BOUNDARY CONDITIONS //////////////////
 
 void Field2D::applyBoundary(bool init) {
