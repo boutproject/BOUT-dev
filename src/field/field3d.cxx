@@ -242,8 +242,9 @@ void Field3D::setLocation(CELL_LOC new_location) {
   } else {
 #if CHECK > 0
     if (new_location != CELL_CENTRE && new_location != CELL_DEFAULT) {
-      output_warn.print("WARNING: Trying to set Field3D location on non-staggered grid. "
-                        "Setting to CELL_CENTRE instead\n");
+      throw BoutException("Field3D: Trying to set off-centre location on "
+                          "non-staggered grid\n"
+                          "         Did you mean to enable staggered grids?");
     }
 #endif
     location = CELL_CENTRE;
