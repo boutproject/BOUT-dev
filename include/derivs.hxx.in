@@ -49,7 +49,7 @@ generate_header() {
         in_sig="const $f &f"
         in="f"
     fi
-    cat <<EOF
+    full_desc=$(cat <<EOF
 /*!
  * $desc
  *
@@ -66,38 +66,50 @@ EOF
         cat <<EOF
  * @param[in] outloc  The cell location where the result is desired. If
  *                    staggered grids is not enabled then this has no effect
+ *                    If not given, defaults to CELL_DEFAULT
  * @param[in] method  Differencing method to use. This overrides the default
+ *                    If not given, defaults to DIFF_DEFAULT
  * @param[in] region  What region is expected to be calculated
+ *                    If not given, defaults to RGN_NOBNDRY
  *
  *
  */
+EOF
+             )
+    cat <<EOF
 
+$full_desc
 const $f $DD($in_sig, CELL_LOC outloc = CELL_DEFAULT,
                   DIFF_METHOD method = DIFF_DEFAULT,
                   REGION region = RGN_NOBNDRY);
 
+$full_desc
 inline const $f $DD($in_sig, CELL_LOC outloc,
                   REGION region,
                   DIFF_METHOD method = DIFF_DEFAULT) {
   return $DD($in, outloc, method,region);
 }
 
+$full_desc
 inline const $f $DD($in_sig, DIFF_METHOD method,
                   REGION region = RGN_NOBNDRY,
                   CELL_LOC outloc = CELL_DEFAULT) {
   return $DD($in, outloc, method,region);
 }
 
+$full_desc
 inline const $f $DD($in_sig, DIFF_METHOD method, CELL_LOC outloc,
                   REGION region = RGN_NOBNDRY){
   return $DD($in, outloc, method,region);
 }
 
+$full_desc
 inline const $f $DD($in_sig, REGION region, DIFF_METHOD method,
                   CELL_LOC outloc) {
   return $DD($in, outloc, method,region);
 }
 
+$full_desc
 inline const $f $DD($in_sig, REGION region, CELL_LOC outloc,
                   DIFF_METHOD method) {
   return $DD($in, outloc, method,region);
