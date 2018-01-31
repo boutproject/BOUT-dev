@@ -323,7 +323,7 @@ int Coordinates::geometry() {
   com.add(G2);
   com.add(G3);
 
-  mesh->communicate(com);
+  localmesh->communicate(com);
 
   //////////////////////////////////////////////////////
   /// Non-uniform meshes. Need to use DDX, DDY
@@ -332,16 +332,16 @@ int Coordinates::geometry() {
 
   Field2D d2x, d2y; // d^2 x / d i^2
   // Read correction for non-uniform meshes
-  if (mesh->get(d2x, "d2x")) {
+  if (localmesh->get(d2x, "d2x")) {
     output_warn.write("\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
-    d1_dx = mesh->indexDDX(1. / dx); // d/di(1/dx)
+    d1_dx = localmesh->indexDDX(1. / dx); // d/di(1/dx)
   } else {
     d1_dx = -d2x / (dx * dx);
   }
 
-  if (mesh->get(d2y, "d2y")) {
+  if (localmesh->get(d2y, "d2y")) {
     output_warn.write("\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
-    d1_dy = mesh->indexDDY(1. / dy); // d/di(1/dy)
+    d1_dy = localmesh->indexDDY(1. / dy); // d/di(1/dy)
   } else {
     d1_dy = -d2y / (dy * dy);
   }
@@ -365,8 +365,8 @@ int Coordinates::calcCovariant() {
 
   BoutReal **a = matrix<BoutReal>(3, 3);
 
-  for (int jx = 0; jx < mesh->LocalNx; jx++) {
-    for (int jy = 0; jy < mesh->LocalNy; jy++) {
+  for (int jx = 0; jx < localmesh->LocalNx; jx++) {
+    for (int jy = 0; jy < localmesh->LocalNy; jy++) {
       // set elements of g
       a[0][0] = g11(jx, jy);
       a[1][1] = g22(jx, jy);
@@ -427,8 +427,8 @@ int Coordinates::calcContravariant() {
 
   BoutReal **a = matrix<BoutReal>(3, 3);
 
-  for (int jx = 0; jx < mesh->LocalNx; jx++) {
-    for (int jy = 0; jy < mesh->LocalNy; jy++) {
+  for (int jx = 0; jx < localmesh->LocalNx; jx++) {
+    for (int jy = 0; jy < localmesh->LocalNy; jy++) {
       // set elements of g
       a[0][0] = g_11(jx, jy);
       a[1][1] = g_22(jx, jy);
@@ -608,7 +608,7 @@ const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc) {
   sg = sqrt(g_22);
   sg = DDY(1. / sg) / sg;
   if (sg.getLocation() != outloc) {
-    mesh->communicate(sg);
+    localmesh->communicate(sg);
     sg = interp_to(sg, outloc);
   }
 
@@ -637,7 +637,7 @@ const Field2D Coordinates::Delp2(const Field2D &f) {
 const Field3D Coordinates::Delp2(const Field3D &f) {
   TRACE("Coordinates::Delp2( Field3D )");
 
-  ASSERT2(mesh->xstart > 0); // Need at least one guard cell
+  ASSERT2(localmesh->xstart > 0); // Need at least one guard cell
 
   Field3D result(localmesh);
   result.allocate();
@@ -681,10 +681,10 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
 
     // Boundaries
     for (int jz = 0; jz < ncz; jz++) {
-      for (int jx = 0; jx < mesh->xstart; jx++) {
+      for (int jx = 0; jx < localmesh->xstart; jx++) {
         result(jx, jy, jz) = 0.0;
       }
-      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
+      for (int jx = localmesh->xend + 1; jx < localmesh->LocalNx; jx++) {
         result(jx, jy, jz) = 0.0;
       }
     }
