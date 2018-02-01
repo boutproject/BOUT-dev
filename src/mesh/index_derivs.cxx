@@ -219,7 +219,7 @@ BoutReal FDDX_U1(stencil &v, stencil &f) {
   vs = 0.5*(v.c + v.p);
   result -= (vs >= 0.0) ? vs * f.c : vs * f.p;
 
-  return result;
+  return - result;
 }
 
 BoutReal FDDX_C2(stencil &v, stencil &f) {
