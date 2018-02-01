@@ -37,4 +37,11 @@ To re-generate the code, there is a ``make`` target for
 ``gen_fieldops.cxx`` in ``src/field/makefile``. This also tries to
 apply ``clang-format`` in order to keep to a consistent code style.
 
+.. note:: ``clang-format`` is bundled with ``clang``. This should be
+          available through your system package manager. If you do not
+          have sufficient privileges on your system, you can install
+          it from the source `here`_. One of the BOUT++ maintainers
+          can help apply it for you too.
+
 .. _Jinja: http://jinja.pocoo.org/
+.. _here: https://clang.llvm.org/
