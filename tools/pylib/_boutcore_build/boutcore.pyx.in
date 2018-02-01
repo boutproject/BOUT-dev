@@ -572,6 +572,7 @@ def setOption(name, value):
     cdef c.string value_ = value.encode('ascii')
     cdef c.string source = "PyInterface".encode('ascii')
     opt.set(key,value_, source)
+    opt.cleanCache()
 
 cdef class Options:
     cdef c.Options * cobj
@@ -594,6 +595,7 @@ cdef class Options:
         cdef c.string value_ = value.encode('ascii')
         cdef c.string source_ = source.encode('ascii')
         opt.set(key,value_, source_)
+        opt.cleanCache()
         return self
 
     def get(self,name,default):
