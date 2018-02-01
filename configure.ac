@@ -619,6 +619,10 @@ then
   if test "$with_petsc" != "yes"
   then
     PETSC_DIR="$with_petsc"
+    AC_CHECK_FILE($PETSC_DIR/conf, PETSC_CONFDIR=${PETSC_DIR}/conf,
+      AC_CHECK_FILE($PETSC_DIR/lib/petsc/conf, PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf,
+        AC_MSG_ERROR([*** --with-petsc=$with_petsc was specified but could not find PETSc distribution])
+        ))
 
   else
     AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/conf, PETSC_CONFDIR=${PETSC_DIR}/conf,
