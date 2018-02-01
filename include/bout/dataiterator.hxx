@@ -76,8 +76,8 @@ public:
 #ifndef _OPENMP
     x(xs), y(ys), z(zs),
     xstart(xs),   ystart(ys),   zstart(zs),
-    xmin(xstart), ymin(ystart), zmin(zstart),
     xend(xe),     yend(ye),     zend(ze),
+    xmin(xstart), ymin(ystart), zmin(zstart),
     xmax(xend),   ymax(yend),   zmax(zend),
 #else
     xmin(xs),     ymin(ys),     zmin(zs),
@@ -100,8 +100,8 @@ public:
 #ifndef _OPENMP
     x(xe), y(ye), z(ze),
     xstart(xs),   ystart(ys),   zstart(zs),
-    xmin(xstart), ymin(ystart), zmin(zstart),
     xend(xe),     yend(ye),     zend(ze),
+    xmin(xstart), ymin(ystart), zmin(zstart),
     xmax(xend),   ymax(yend),   zmax(zend),
 #else
     xmin(xs), ymin(ys),   zmin(zs),
@@ -162,16 +162,16 @@ public:
   /*!
    * Add an offset to the index for general stencils
    */
-  const Indices offset(int dx, int dy, int dz) const {
+  const inline Indices offset(int dx, int dy, int dz) const {
     if (dz>0){
       int zp=z;
       for (int j=0;j<dz;++j)
-        zp=(zp == zend ? zstart : zp+1);
+        zp=(zp == zmax ? zmin : zp+1);
       return {x+dx, y+dy, zp };
     } else {
       int zm=z;
       for (;dz!= 0;++dz)
-        zm = (zm == zstart ? zend : zm-1);
+        zm = (zm == zmin ? zmax : zm-1);
       return {x+dx, y+dy, zm };
     }
   }
@@ -218,6 +218,7 @@ public:
     return (x > xend) || (x < xstart);
 #else //_OPENMP
     return (x == xend && y == yend && z > zend)
+      || (x == xend && y > yend)
       || x > xend ||
       (x <= xstart && y <= ystart && z < zstart)  ;
 #endif //_OPENMP
@@ -353,8 +354,8 @@ inline void DataIterator::omp_init(bool end){
     ystart = (begin_index % ny) + ymin;
     end_index   /= ny;
     begin_index /= ny;
-    xend   = end_index;
-    xstart = begin_index;
+    xend   = end_index   + xmin;
+    xstart = begin_index + xmin;
   } else {
     zstart = zmin;
     zend   = zmax;
