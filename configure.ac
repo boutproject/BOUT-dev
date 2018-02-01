@@ -668,6 +668,10 @@ then
   then
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
     AC_MSG_RESULT([dev])
+  elif test "$PETSC_VERSION_MINOR" = "7" && test "$PETSC_VERSION_RELEASE" = "1"
+  then
+    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_7"
+    AC_MSG_RESULT([3.7 "$PETSC_DIR $PETSC_ARCH $PETSC_CONFDIR"])
   else
     AC_MSG_RESULT([unknown])
     echo "***********************************"

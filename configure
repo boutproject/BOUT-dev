@@ -8264,6 +8264,11 @@ $as_echo "3.5" >&6; }
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: dev" >&5
 $as_echo "dev" >&6; }
+  elif test "$PETSC_VERSION_MINOR" = "7" && test "$PETSC_VERSION_RELEASE" = "1"
+  then
+    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_7"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: 3.7 \"$PETSC_DIR $PETSC_ARCH $PETSC_CONFDIR\"" >&5
+$as_echo "3.7 \"$PETSC_DIR $PETSC_ARCH $PETSC_CONFDIR\"" >&6; }
   else
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: unknown" >&5
 $as_echo "unknown" >&6; }
