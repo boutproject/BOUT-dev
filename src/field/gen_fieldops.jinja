@@ -14,6 +14,16 @@ void autogen_{{out}}_{{lhs}}_{{rhs}}_{{operator_name}}(
 
 // Provide the C++ wrapper for {{operator_name}} of {{lhs}} and {{rhs}}
 {{out}} operator{{operator}}(const {{lhs.passByReference}}, const {{rhs.passByReference}}) {
+  {% if lhs == rhs == "Field3D" %}
+#if CHECK > 0
+  if (lhs.getLocation() != rhs.getLocation()) {
+    throw BoutException(
+        "Error in {{operator_name}}: fields at different locations. lhs is at %s, rhs is at %s!",
+        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
+  }
+#endif
+  {% endif %}
+
   Indices i{0, 0, 0};
   Mesh *localmesh = {{"lhs" if lhs.field_type != "BoutReal" else "rhs"}}.getMesh();
 
@@ -35,16 +45,6 @@ void autogen_{{out}}_{{lhs}}_{{rhs}}_{{operator_name}}(
       {{ non_compound_length_dims | join('* ')}}
     {% endif %}
     );
-
-  {% if lhs == rhs == "Field3D" %}
-#if CHECK > 0
-  if (lhs.getLocation() != rhs.getLocation()) {
-    throw BoutException(
-        "Error in {{operator_name}}: fields at different locations. lhs is at %s, rhs is at %s!",
-        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
-  }
-#endif
-  {% endif %}
 
   {% if out == 'Field3D' %}
     result.setLocation({{"rhs" if rhs == "Field3D" else "lhs"}}.getLocation());
@@ -72,6 +72,16 @@ void autogen_{{lhs}}_{{rhs}}_{{operator_name}}(
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
+    {% if lhs == rhs == "Field3D" %}
+#if CHECK > 0
+    if (this->getLocation() != rhs.getLocation()) {
+      throw BoutException(
+        "Error in {{operator_name}}: fields at different locations. lhs is at %s, rhs is at %s!",
+        strLocation(this->getLocation()), strLocation(rhs.getLocation()));
+    }
+#endif
+    {% endif %}
+
     Indices i{0, 0, 0};
 
     {% if lhs != "BoutReal" and rhs != "BoutReal" %}
@@ -90,16 +100,7 @@ void autogen_{{lhs}}_{{rhs}}_{{operator_name}}(
     {% endif %}
     );
 
-    {% if lhs == rhs == "Field3D" %}
-#if CHECK > 0
-    if (this->getLocation() != rhs.getLocation()) {
-      throw BoutException(
-        "Error in {{operator_name}}: fields at different locations. lhs is at %s, rhs is at %s!",
-        strLocation(this->getLocation()), strLocation(rhs.getLocation()));
-    }
-#endif
     checkData(*this);
-    {% endif %}
 
   } else {
     (*this) = (*this) {{operator}} rhs;
