@@ -47,7 +47,7 @@ class Region;
 #define BLOCK_REGION_LOOP_SERIAL(regionStr, index, ...)			\
   {const auto blocks = mesh->getRegion(regionStr).blocks;		\
   for(auto block = blocks.begin(); block < blocks.end() ; ++block){ \
-  for(int index = (*block).first ; index <= (*block).second; ++index){ \
+  for(auto index = (*block).first ; index <= (*block).second; ++index){ \
   __VA_ARGS__ \
     }}}
 
@@ -55,21 +55,51 @@ class Region;
   {const auto blocks = mesh->getRegion(regionStr).blocks;		\
   BOUT_OMP(parallel for) \
   for(auto block = blocks.begin(); block < blocks.end() ; ++block){ \
-  for(int index = (*block).first ; index <= (*block).second; ++index){ \
+  for(auto index = (*block).first ; index <= (*block).second; ++index){ \
   __VA_ARGS__ \
     }}}
 
+
+class specificInd{
+public:
+  int ind;
+  specificInd& operator++(){++ind;return *this;}
+  specificInd& operator++(int){++ind;return *this;}
+  bool operator==(const specificInd &x) const {
+    return ind == x.ind;
+  }
+  bool operator!=(const specificInd &x) const {
+    return ind != x.ind;
+  }
+  bool operator>(const specificInd &x) const {
+    return ind > x.ind;
+  }
+  bool operator>=(const specificInd &x) const {
+    return ind >= x.ind;
+  }
+  bool operator<(const specificInd &x) const {
+    return ind < x.ind;
+  }
+  bool operator<=(const specificInd &x) const {
+    return ind <= x.ind;
+  }
+};
+//Make identical subclasses with different names
+class ind3D: public specificInd{};
+class ind2D: public specificInd{};
 
 //Simple structs to act as "strict typedef" allowing us to overload
 //on ind type and protect against indexing a field with the wrong type
 //of index.
 //Need to define a ++() operator 
-struct ind3D{
-  int ind;
-};
-struct ind2D{
-  int ind;
-};
+// struct ind3D{
+//   int ind;
+//   ind3D operator++(int)
+// };
+
+// struct ind2D{
+//   int ind;
+// };
 
 
 template<typename T>
