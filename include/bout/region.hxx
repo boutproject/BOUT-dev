@@ -84,20 +84,6 @@ public:
 class ind3D: public specificInd{};
 class ind2D: public specificInd{};
 
-//Simple structs to act as "strict typedef" allowing us to overload
-//on ind type and protect against indexing a field with the wrong type
-//of index.
-//Need to define a ++() operator 
-// struct ind3D{
-//   int ind;
-//   ind3D operator++(int)
-// };
-
-// struct ind2D{
-//   int ind;
-// };
-
-
 template<typename T>
 class Region {
   //Following prevents a Region being created with anything other
@@ -136,6 +122,7 @@ class Region {
   ~Region(){};
 
   contiguousBlocks getBlocks(){return blocks;};
+
 private:
   regionIndices indices;  //Flattened indices
   contiguousBlocks blocks;//Contiguous sections of flattened indices
