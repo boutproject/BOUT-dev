@@ -38,21 +38,17 @@ class Region;
 #define MAXREGIONBLOCKSIZE 64
 #endif
 
-//The following loops assume blocks are made up of ints but regions are now
-//ind3D or ind2D to allow care to be taken in indexing fields
-//
-//Currently set up to only use regions stored in a region map, however
-//may want to just pass in a Region instance instead?
-
-#define BLOCK_REGION_LOOP_SERIAL(regionStr, index, ...)			\
-  {const auto blocks = mesh->getRegion(regionStr).blocks;		\
+//The following loops vectorise well well index is type int, needs testing
+//with current approach where index is ind2D or ind3D
+#define BLOCK_REGION_LOOP_SERIAL(region, index, ...)			\
+  {const auto blocks = region.getBlocks();				\
   for(auto block = blocks.begin(); block < blocks.end() ; ++block){ \
   for(auto index = (*block).first ; index <= (*block).second; ++index){ \
   __VA_ARGS__ \
     }}}
 
-#define BLOCK_REGION_LOOP(regionStr, index, ...)			\
-  {const auto blocks = mesh->getRegion(regionStr).blocks;		\
+#define BLOCK_REGION_LOOP(region, index, ...)			\
+  {const auto blocks = region.getBlocks();			\
   BOUT_OMP(parallel for) \
   for(auto block = blocks.begin(); block < blocks.end() ; ++block){ \
   for(auto index = (*block).first ; index <= (*block).second; ++index){ \
@@ -138,6 +134,8 @@ class Region {
 
   /// Destructor
   ~Region(){};
+
+  contiguousBlocks getBlocks(){return blocks;};
 private:
   regionIndices indices;  //Flattened indices
   contiguousBlocks blocks;//Contiguous sections of flattened indices
