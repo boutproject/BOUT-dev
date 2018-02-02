@@ -18,7 +18,7 @@ void autogen_{{out}}_{{lhs}}_{{rhs}}_{{operator_name}}(
 #if CHECK > 0
   if (lhs.getLocation() != rhs.getLocation()) {
     throw BoutException(
-        "Error in {{operator_name}}: fields at different locations. lhs is at %s, rhs is at %s!",
+        "Error in operator{{operator}}({{lhs}}, {{rhs}}): fields at different locations. lhs is at %s, rhs is at %s!",
         strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
   }
 #endif
@@ -76,7 +76,7 @@ void autogen_{{lhs}}_{{rhs}}_{{operator_name}}(
 #if CHECK > 0
     if (this->getLocation() != rhs.getLocation()) {
       throw BoutException(
-        "Error in {{operator_name}}: fields at different locations. lhs is at %s, rhs is at %s!",
+        "Error in {{lhs}}::operator{{operator}}=({{rhs}}): fields at different locations. lhs is at %s, rhs is at %s!",
         strLocation(this->getLocation()), strLocation(rhs.getLocation()));
     }
 #endif

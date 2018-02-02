@@ -20,8 +20,8 @@ void autogen_Field3D_Field3D_Field3D_multiplication(BoutReal *__restrict__ resul
 Field3D operator*(const Field3D &lhs, const Field3D &rhs) {
 #if CHECK > 0
   if (lhs.getLocation() != rhs.getLocation()) {
-    throw BoutException("Error in multiplication: fields at different locations. lhs is "
-                        "at %s, rhs is at %s!",
+    throw BoutException("Error in operator*(Field3D, Field3D): fields at different "
+                        "locations. lhs is at %s, rhs is at %s!",
                         strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
   }
 #endif
@@ -62,8 +62,8 @@ Field3D &Field3D::operator*=(const Field3D &rhs) {
   if (data.unique()) {
 #if CHECK > 0
     if (this->getLocation() != rhs.getLocation()) {
-      throw BoutException("Error in multiplication: fields at different locations. lhs "
-                          "is at %s, rhs is at %s!",
+      throw BoutException("Error in Field3D::operator*=(Field3D): fields at different "
+                          "locations. lhs is at %s, rhs is at %s!",
                           strLocation(this->getLocation()),
                           strLocation(rhs.getLocation()));
     }
@@ -102,9 +102,9 @@ void autogen_Field3D_Field3D_Field3D_division(BoutReal *__restrict__ result,
 Field3D operator/(const Field3D &lhs, const Field3D &rhs) {
 #if CHECK > 0
   if (lhs.getLocation() != rhs.getLocation()) {
-    throw BoutException(
-        "Error in division: fields at different locations. lhs is at %s, rhs is at %s!",
-        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
+    throw BoutException("Error in operator/(Field3D, Field3D): fields at different "
+                        "locations. lhs is at %s, rhs is at %s!",
+                        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
   }
 #endif
 
@@ -144,9 +144,10 @@ Field3D &Field3D::operator/=(const Field3D &rhs) {
   if (data.unique()) {
 #if CHECK > 0
     if (this->getLocation() != rhs.getLocation()) {
-      throw BoutException(
-          "Error in division: fields at different locations. lhs is at %s, rhs is at %s!",
-          strLocation(this->getLocation()), strLocation(rhs.getLocation()));
+      throw BoutException("Error in Field3D::operator/=(Field3D): fields at different "
+                          "locations. lhs is at %s, rhs is at %s!",
+                          strLocation(this->getLocation()),
+                          strLocation(rhs.getLocation()));
     }
 #endif
 
@@ -183,9 +184,9 @@ void autogen_Field3D_Field3D_Field3D_addition(BoutReal *__restrict__ result,
 Field3D operator+(const Field3D &lhs, const Field3D &rhs) {
 #if CHECK > 0
   if (lhs.getLocation() != rhs.getLocation()) {
-    throw BoutException(
-        "Error in addition: fields at different locations. lhs is at %s, rhs is at %s!",
-        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
+    throw BoutException("Error in operator+(Field3D, Field3D): fields at different "
+                        "locations. lhs is at %s, rhs is at %s!",
+                        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
   }
 #endif
 
@@ -225,9 +226,10 @@ Field3D &Field3D::operator+=(const Field3D &rhs) {
   if (data.unique()) {
 #if CHECK > 0
     if (this->getLocation() != rhs.getLocation()) {
-      throw BoutException(
-          "Error in addition: fields at different locations. lhs is at %s, rhs is at %s!",
-          strLocation(this->getLocation()), strLocation(rhs.getLocation()));
+      throw BoutException("Error in Field3D::operator+=(Field3D): fields at different "
+                          "locations. lhs is at %s, rhs is at %s!",
+                          strLocation(this->getLocation()),
+                          strLocation(rhs.getLocation()));
     }
 #endif
 
@@ -265,8 +267,8 @@ void autogen_Field3D_Field3D_Field3D_subtraction(BoutReal *__restrict__ result,
 Field3D operator-(const Field3D &lhs, const Field3D &rhs) {
 #if CHECK > 0
   if (lhs.getLocation() != rhs.getLocation()) {
-    throw BoutException("Error in subtraction: fields at different locations. lhs is at "
-                        "%s, rhs is at %s!",
+    throw BoutException("Error in operator-(Field3D, Field3D): fields at different "
+                        "locations. lhs is at %s, rhs is at %s!",
                         strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
   }
 #endif
@@ -307,8 +309,8 @@ Field3D &Field3D::operator-=(const Field3D &rhs) {
   if (data.unique()) {
 #if CHECK > 0
     if (this->getLocation() != rhs.getLocation()) {
-      throw BoutException("Error in subtraction: fields at different locations. lhs is "
-                          "at %s, rhs is at %s!",
+      throw BoutException("Error in Field3D::operator-=(Field3D): fields at different "
+                          "locations. lhs is at %s, rhs is at %s!",
                           strLocation(this->getLocation()),
                           strLocation(rhs.getLocation()));
     }
