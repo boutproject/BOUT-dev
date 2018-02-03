@@ -69,8 +69,11 @@ class Mesh;
 
 #include "unused.hxx"
 
+#include <bout/region.hxx>
+
 #include <list>
 #include <memory>
+#include <map>
 
 /// Type used to return pointers to handles
 typedef void* comm_handle;
@@ -562,7 +565,32 @@ class Mesh {
    * Set the parallel (y) transform from the options file
    */
   void setParallelTransform();
+
+    //Region related routines
+
+  /// Get the named region from the region_map for the data iterator
+  ///
+  /// Throws if region_name not found
+  Region<> &getRegion(const std::string &region_name){
+    return getRegion3D(region_name);
+  }
+  Region<> &getRegion3D(const std::string &region_name);
+  Region<ind2D> &getRegion2D(const std::string &region_name);
   
+  /// Add a new region to the region_map for the data iterator
+  ///
+  /// Outputs an error message if region_name already exists
+  void addRegion(const std::string &region_name, Region<> region){
+    return addRegion3D(region_name, region);
+  }
+  void addRegion3D(const std::string &region_name, Region<> region);
+  void addRegion2D(const std::string &region_name, Region<ind2D> region);
+ 
+  /// Create the default regions for the data iterator
+  ///
+  /// Creates RGN_{ALL,NOBNDRY,NOX,NOY}
+  void createDefaultRegions();
+
  protected:
   
   GridDataSource *source; ///< Source for grid data
@@ -595,10 +623,15 @@ class Mesh {
   const Field3D applyYdiff(const Field3D &var, deriv_func func, CELL_LOC loc = CELL_DEFAULT, REGION region = RGN_NOBNDRY);
 
   const Field3D applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc = CELL_DEFAULT, REGION region = RGN_NOBNDRY);
-  
+
+
 private:
   /// Allocates a default Coordinates object
   Coordinates *createDefaultCoordinates();
+
+  //Internal region related information
+  std::map<std::string, Region<ind3D>> regionMap3D;
+  std::map<std::string, Region<ind2D>> regionMap2D;
 };
 
 #endif // __MESH_H__

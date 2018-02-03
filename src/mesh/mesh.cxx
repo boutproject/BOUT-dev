@@ -322,3 +322,59 @@ ParallelTransform& Mesh::getParallelTransform() {
 Coordinates *Mesh::createDefaultCoordinates() {
   return new Coordinates(this);
 }
+
+
+Region<> & Mesh::getRegion3D(const std::string &region_name){
+   auto found = regionMap3D.find(region_name);
+   if (found == end(regionMap3D)) {
+     throw BoutException("Couldn't find region %s in regionMap3D", region_name.c_str());
+   }
+   return found->second;
+}
+
+Region<ind2D> & Mesh::getRegion2D(const std::string &region_name){
+   auto found = regionMap2D.find(region_name);
+   if (found == end(regionMap2D)) {
+     throw BoutException("Couldn't find region %s in regionMap2D", region_name.c_str());
+   }
+   return found->second;
+}
+  
+void Mesh::addRegion3D(const std::string &region_name, Region<> region){
+   if (regionMap3D.count(region_name)) {
+     output_warn << "Warning: Trying to add an already existing region: " << region_name << " to regionMap3D\n";
+     return;
+   }
+   regionMap3D[region_name] = region;
+}
+
+void Mesh::addRegion2D(const std::string &region_name, Region<ind2D> region){
+     if (regionMap2D.count(region_name)) {
+     output_warn << "Warning: Trying to add an already existing region: " << region_name << " to regionMap2D\n";
+     return;
+   }
+   regionMap2D[region_name] = region;
+}
+ 
+void Mesh::createDefaultRegions(){
+  //3D regions
+  addRegion3D("RGN_ALL",
+	      Region<ind3D>(0, LocalNx - 1, 0, LocalNy - 1, 0, LocalNz - 1, LocalNy, LocalNz));
+  addRegion3D("RGN_NOBNDRY",
+	      Region<ind3D>(xstart, xend, ystart, yend, 0, LocalNz - 1, LocalNy, LocalNz));
+  addRegion3D("RGN_NOX",
+	      Region<ind3D>(xstart, xend, 0, LocalNy - 1, 0, LocalNz - 1, LocalNy, LocalNz));
+  addRegion3D("RGN_NOY",
+	      Region<ind3D>(0, LocalNx - 1, ystart, yend, 0, LocalNz - 1, LocalNy, LocalNz));
+
+  //2D regions
+  addRegion2D("RGN_ALL",
+	      Region<ind2D>(0, LocalNx - 1, 0, LocalNy - 1, 0, 0, LocalNy, 1));
+  addRegion2D("RGN_NOBNDRY",
+	      Region<ind2D>(xstart, xend, ystart, yend, 0, 0, LocalNy, 1));
+  addRegion2D("RGN_NOX",
+	      Region<ind2D>(xstart, xend, 0, LocalNy - 1, 0, 0, LocalNy, 1));
+  addRegion2D("RGN_NOY",
+	      Region<ind2D>(0, LocalNx - 1, ystart, yend, 0, 0, LocalNy, 1));
+
+}
