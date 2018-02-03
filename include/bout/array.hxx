@@ -367,7 +367,7 @@ private:
 
     // Clean by deleting all data -- possible that just stores.clear() is
     // sufficient rather than looping over each entry.
-#pragma omp single
+    BOUT_OMP(single)
     {
       for (auto &stores : arena) {
 	for (auto &p : stores) {
