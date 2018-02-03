@@ -91,7 +91,7 @@ class Region {
   static_assert(std::is_base_of<ind2D,T>::value || std::is_base_of<ind3D,T>::value, "Region must be templated with either ind2D or ind3D");
 
   
- public:
+public:
   typedef T data_type;
 
   /// Indices to iterate over
@@ -112,11 +112,17 @@ class Region {
 
   //Want to make this private to disable but think it may be needed as we put Regions into
   //maps which seems to need to be able to make "empty" objects.
-  Region(){};
+  Region<T>(){};
+
+  Region<T>(int xstart, int xend, int ystart, int yend,
+	    int zstart, int zend, int ny, int nz){
+    indices = createRegionIndices(xstart, xend, ystart, yend, zstart, zend, ny, nz);
+    blocks  = getContiguousBlocks();
+  };
   
-  Region(int xstart, int xend, int ystart, int yend,
-	 int zstart, int zend, int ny, int nz);
-  Region(regionIndices& indices);
+  Region<T>(regionIndices& indices): indices(indices){
+    blocks = getContiguousBlocks();
+  };
 
   /// Destructor
   ~Region(){};
@@ -130,7 +136,35 @@ private:
   /// Helper function to create a regionIndices, given the start and end
   /// points in x, y, z, and the total y, z lengths
   inline regionIndices createRegionIndices(int xstart, int xend, int ystart, int yend,
-  					   int zstart, int zend, int ny, int nz);
+  					   int zstart, int zend, int ny, int nz){
+    int len = (xend - xstart + 1) * (yend - ystart + 1) * (zend - zstart + 1);
+    regionIndices region(len);
+    int j = 0;
+    int x = xstart;
+    int y = ystart;
+    int z = zstart;
+  
+    bool done = false;
+    j = -1;
+    while (!done) {
+      j++;
+      region[j] = (x * ny + y) * nz + z;
+      if (x == xend && y == yend && z == zend) {
+	done = true;
+      }
+      ++z;
+      if (z > zend) {
+	z = zstart;
+	++y;
+	if (y > yend) {
+	  y = ystart;
+	  ++x;
+	}
+      }
+    }
+    return region;
+  }
+
     
   /* 
    * Returns a vector of all contiguous blocks contained in the passed region.
@@ -138,7 +172,30 @@ private:
    * A contiguous block is described by the inclusive start and the exclusive end
    * of the contiguous block.
    */
-  contiguousBlocks getContiguousBlocks() const;
+  contiguousBlocks getContiguousBlocks() const{
+    const T lastPoint = indices[indices.size()-1];
+    contiguousBlocks result;
+    int index = 0;
+  
+    while (index < lastPoint.ind){
+      const T startIndex = indices[index];
+      int count = 1; //We will always have at least startPair in the block so count starts at 1
+    
+      //Consider if the next point should be added to this block
+      for(index++; count<MAXREGIONBLOCKSIZE; index++){
+  	if((indices[index].ind-indices[index-1].ind)==1){
+  	  count++;
+  	}else{//Reached the end of this block so break
+  	  break;
+  	}
+      }
+    
+      //Add pair to output, denotes inclusive start and exclusive end
+      result.push_back({startIndex, indices[index-1]});
+    }
+  
+    return result;
+  }
 };
 
 #endif /* __REGION_H__ */
