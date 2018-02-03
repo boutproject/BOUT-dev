@@ -36,6 +36,9 @@
 #ifdef BOUT_ARRAY_WITH_VALARRAY
 #include <valarray>
 #endif
+
+#include <bout/openmpwrap.hxx>
+
 /*!
  * Data array type with automatic memory management
  *
