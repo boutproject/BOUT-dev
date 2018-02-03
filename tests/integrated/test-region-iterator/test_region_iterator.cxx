@@ -4,6 +4,8 @@
 #include <bout/region.hxx>
 #include <bout/assert.hxx>
 
+Field3D n;
+
 int physics_init(bool restarting) {
 
   Field3D a=1.0, b=1.0, c=2.0;
@@ -29,9 +31,12 @@ int physics_init(bool restarting) {
     if (b[i] != c[i]) nerr++;
   }
   if(nerr != 0 ) throw BoutException("Unexpected values found in 'b', count %d",nerr);
+
+  SOLVE_FOR(n);
   return 0;
 }
 
 int physics_run(BoutReal t) {
+  ddt(n) = 0.;
   return 0;
 }
