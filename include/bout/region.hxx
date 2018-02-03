@@ -22,9 +22,6 @@
  *
  **************************************************************************/
 
-template<typename T>
-class Region;
-
 #ifndef __REGION_H__
 #define __REGION_H__
 
@@ -98,7 +95,7 @@ public:
   ind2D& operator=(const int& i){ind=i;return *this;}
 };
 
-template<typename T>
+template<typename T = ind3D>
 class Region {
   //Following prevents a Region being created with anything other
   //than ind2D or ind3D as template type
