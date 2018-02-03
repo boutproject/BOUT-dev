@@ -32,8 +32,15 @@ class Region;
 #include <vector>
 #include <utility>
 
-#include "bout/array.hxx"
+#include "bout/openmpwrap.hxx"
 
+/*
+ * The MAXREGIONBLOCKSIZE value can be tuned to try to optimise
+ * performance on specific hardware. It determines what the largest
+ * contiguous block size can be. As we hope the compiler will vectorise
+ * the access to these contiguous blocks, the optimal MAXREGIONBLOCKSIZE 
+ * is likely related to the vector size etc.
+ */
 #ifndef MAXREGIONBLOCKSIZE
 #define MAXREGIONBLOCKSIZE 64
 #endif
@@ -49,12 +56,11 @@ class Region;
 
 #define BLOCK_REGION_LOOP(region, index, ...)			\
   {const auto blocks = region.getBlocks();			\
-  BOUT_OMP(parallel for) \
+  BOUT_OMP(parallel for)				    \
   for(auto block = blocks.begin(); block < blocks.end() ; ++block){ \
   for(auto index = (*block).first ; index <= (*block).second; ++index){ \
   __VA_ARGS__ \
     }}}
-
 
 class specificInd{
 public:
@@ -181,11 +187,11 @@ private:
    * of the contiguous block.
    */
   contiguousBlocks getContiguousBlocks() const{
-    const T lastPoint = indices[indices.size()-1];
+    const int npoints = indices.size();
     contiguousBlocks result;
-    int index = 0;
+    int index = 0; //Index within vector of indices
   
-    while (index < lastPoint.ind){
+    while (index < npoints){
       const T startIndex = indices[index];
       int count = 1; //We will always have at least startPair in the block so count starts at 1
     
