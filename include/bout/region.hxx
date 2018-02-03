@@ -142,6 +142,22 @@ public:
 
   contiguousBlocks getBlocks(){return blocks;};//Setter not appropriate
   regionIndices getIndices(){return indices;};//Setter could be ok
+
+  // TODO: Should be able to add regions (would just require extending
+  // indices and recalculating blocks). This raises question of should
+  // we be able to subtract regions, and if so what does that mean.
+  // Addition could be simple and just extend or we could seek to
+  // remove duplicate points. Former probably mostly ok. Note we do
+  // want to allow duplicate points (one reason we use vector and
+  // not set) but what if we add a region that has some duplicates?
+  // We could retain them but common usage would probably not want
+  // the duplicates.
+
+  // We could sort indices (either forcibly or on request) to try
+  // to ensure most contiguous+ordered access. Probably ok in common
+  // use but would cause problems if order is important, for example
+  // if we could use regions to transpose/reorder data. If regions were
+  // sorted this would prevent this usage.
   
 private:
   regionIndices indices;  //Flattened indices
@@ -153,13 +169,12 @@ private:
   					   int zstart, int zend, int ny, int nz){
     int len = (xend - xstart + 1) * (yend - ystart + 1) * (zend - zstart + 1);
     regionIndices region(len);
-    int j = 0;
     int x = xstart;
     int y = ystart;
     int z = zstart;
   
     bool done = false;
-    j = -1;
+    int j = -1;
     while (!done) {
       j++;
       region[j] = (x * ny + y) * nz + z;
