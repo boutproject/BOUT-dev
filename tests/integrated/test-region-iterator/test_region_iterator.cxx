@@ -16,7 +16,7 @@ int physics_init(bool restarting) {
 		    mesh->LocalNy,
 		    mesh->LocalNz);
 
-  BLOCK_REGION_LOOP_SERIAL(reg,i,
+  BLOCK_REGION_LOOP(reg,i,
 			   a[i] = 3.0;
 			   b[i] = c[i];
 			   );
@@ -27,6 +27,7 @@ int physics_init(bool restarting) {
     if (a[i] != 3.0) nerr++;
   }
   if(nerr != 0 ) throw BoutException("Unexpected values found in 'a', count %d",nerr);
+  nerr=0;
   for (const auto &i: b.region(RGN_ALL)){
     if (b[i] != c[i]) nerr++;
   }
