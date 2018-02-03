@@ -31,7 +31,7 @@ for nproc in [1,2]:#Number of mpi procs
     print("\t{n} processors and {m} threads".format(n=nproc,m=mthread))
 
     for f in flags:
-        print("\tflags '"+f+"'")
+        #print("\tflags '"+f+"'")
 
         # Run the case
         s, out = launch_safe(cmd+" "+f, runcmd=MPIRUN, nproc=nproc, pipe=pipe)
