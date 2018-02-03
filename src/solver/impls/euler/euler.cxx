@@ -5,6 +5,7 @@
 #include <utils.hxx>
 #include <boutexception.hxx>
 #include <msg_stack.hxx>
+#include <bout/openmpwrap.hxx>
 
 #include <cmath>
 
@@ -150,7 +151,7 @@ void EulerSolver::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, Bout
   run_rhs(curtime);
   save_derivs(result);
   
-  #pragma omp parallel for
+  BOUT_OMP(parallel for)
   for(int i=0;i<nlocal;i++)
     result[i] = start[i] + dt*result[i];
 }
