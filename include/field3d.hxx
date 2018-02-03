@@ -36,6 +36,7 @@ class Mesh;  // #include "bout/mesh.hxx"
 #include "bout/dataiterator.hxx"
 
 #include "bout/array.hxx"
+#include "bout/region.hxx"
 
 #include "bout/deprecated.hxx"
 #include "bout/assert.hxx"
@@ -334,6 +335,14 @@ class Field3D : public Field, public FieldData {
     return operator()(i.x, i.y, i.z);
   }
   
+
+  BoutReal& operator[](const ind3D &d) {
+    return data[d.ind];
+  }
+  const BoutReal& operator[](const ind3D &d) const {
+    return data[d.ind];
+  }
+
   /*!
    * Direct access to the underlying data array
    *
