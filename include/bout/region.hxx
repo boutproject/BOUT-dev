@@ -81,8 +81,16 @@ public:
   }
 };
 //Make identical subclasses with different names
-class ind3D: public specificInd{};
-class ind2D: public specificInd{};
+class ind3D: public specificInd{
+public:
+  //Note operator= from base class is always hidden
+  //by implicit method so have to be explicit
+  ind3D& operator=(const int& i){ind=i;return *this;}
+};
+class ind2D: public specificInd{
+public:
+  ind2D& operator=(const int& i){ind=i;return *this;}
+};
 
 template<typename T>
 class Region {
