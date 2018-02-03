@@ -103,7 +103,6 @@ class Region {
   //Following prevents a Region being created with anything other
   //than ind2D or ind3D as template type
   static_assert(std::is_base_of<ind2D,T>::value || std::is_base_of<ind3D,T>::value, "Region must be templated with either ind2D or ind3D");
-
   
 public:
   typedef T data_type;
@@ -141,8 +140,9 @@ public:
   /// Destructor
   ~Region(){};
 
-  contiguousBlocks getBlocks(){return blocks;};
-
+  contiguousBlocks getBlocks(){return blocks;};//Setter not appropriate
+  regionIndices getIndices(){return indices;};//Setter could be ok
+  
 private:
   regionIndices indices;  //Flattened indices
   contiguousBlocks blocks;//Contiguous sections of flattened indices
