@@ -79,9 +79,18 @@ class Field(object):
 
         Also adds "__restrict__" attribute if `for_gcc` is True
         """
-        return "BoutReal {ref}{restrict} {self.name}".format(
-            self=self, ref="*" if self.field_type != "BoutReal" else "",
-            restrict="__restrict__" if for_gcc and self.field_type != "BoutReal" else "")
+        return "BoutReal {ref} {self.name}".format(
+            self=self, ref="*" if self.field_type != "BoutReal" else "")
+
+    @property
+    def passBoutRealPointerC(self):
+        """Returns "BoutReal* restrict name", except if field_type is BoutReal,
+        in which case just returns "BoutReal name"
+
+        Also adds "__restrict__" attribute if `for_gcc` is True
+        """
+        return "BoutReal {ref} {self.name}".format(
+            self=self, ref="* restrict" if self.field_type != "BoutReal" else "")
 
     @property
     def getPointerToData(self):
@@ -151,13 +160,18 @@ def returnType(f1, f2):
 
 
 if __name__ == "__main__":
-    for_gcc = True
-    print(header)
-
     env = jinja2.Environment(loader=jinja2.FileSystemLoader('.'),
                              trim_blocks=True)
 
-    template = env.get_template("gen_fieldops.jinja")
+    template_c = env.get_template("gen_fieldops.c.jinja")
+    template_cxx = env.get_template("gen_fieldops.cxx.jinja")
+
+    generated_c = open("generated_fieldops_c.c","w")
+    generated_c.write("typedef double BoutReal;")
+
+    generated_cxx = open("generated_fieldops.cxx","w")
+    generated_cxx.write(header)
+
 
     for lhs, rhs in itertools.product(fields, fields):
         # We don't have define real real operations
@@ -208,4 +222,7 @@ if __name__ == "__main__":
                 'length_arg': length_arg,
             }
 
-            print(template.render(**template_args))
+            generated_cxx.write(template_cxx.render(**template_args))
+            generated_c.write(template_c.render(**template_args))
+    generated_cxx.close()
+    generated_c.close()

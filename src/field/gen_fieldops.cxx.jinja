@@ -1,15 +1,7 @@
-// Do the actual {{operator_name}} of {{lhs}} and {{rhs}}
+extern "C" {
 void autogen_{{out}}_{{lhs}}_{{rhs}}_{{operator_name}}(
   {{out.passBoutRealPointer}}, const {{lhs.passBoutRealPointer}},
-  const {{rhs.passBoutRealPointer}}, {{length_arg}}) {
-
-  {% for dimension, index in dims.items() %}
-     for (int {{index}}=0; {{index}} < {{dimension}}; ++{{index}})
-  {% endfor %}
-       {
-         {{out.getElement(elementwise)}} =
-           {{lhs.getElement(elementwise)}} {{operator}} {{rhs.getElement(elementwise)}};
-       }
+  const {{rhs.passBoutRealPointer}}, {{length_arg}});
 }
 
 // Provide the C++ wrapper for {{operator_name}} of {{lhs}} and {{rhs}}
@@ -55,16 +47,10 @@ void autogen_{{out}}_{{lhs}}_{{rhs}}_{{operator_name}}(
 }
 
 {% if out.field_type == lhs.field_type %}
+extern "C" {
 // Provide the C function to update {{lhs}} by {{operator_name}} with {{rhs}}
 void autogen_{{lhs}}_{{rhs}}_{{operator_name}}(
-  {{lhs.passBoutRealPointer}}, const {{rhs.passBoutRealPointer}}, {{length_arg}}) {
-
-  {% for dimension, index in dims.items() %}
-     for (int {{index}}=0; {{index}} < {{dimension}}; ++{{index}})
-  {% endfor %}
-      {
-        {{lhs.getElement(elementwise)}} {{operator}}= {{rhs.getElement(elementwise)}};
-      }
+  {{lhs.passBoutRealPointer}}, const {{rhs.passBoutRealPointer}}, {{length_arg}});
 }
 
 // Provide the C++ operator to update {{lhs}} by {{operator_name}} with {{rhs}}
