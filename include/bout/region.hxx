@@ -65,6 +65,8 @@
 class specificInd{
 public:
   int ind;
+  specificInd(){};
+  specificInd(int i): ind(i){};
   specificInd& operator++(){++ind;return *this;}
   specificInd& operator++(int){++ind;return *this;}
   bool operator==(const specificInd &x) const {
@@ -89,12 +91,16 @@ public:
 //Make identical subclasses with different names
 class ind3D: public specificInd{
 public:
+  ind3D(): specificInd(){};
+  ind3D(int i): specificInd(i){};
   //Note operator= from base class is always hidden
   //by implicit method so have to be explicit
   ind3D& operator=(const int& i){ind=i;return *this;}
 };
 class ind2D: public specificInd{
 public:
+  ind2D(): specificInd(){};
+  ind2D(int i): specificInd(i){};
   ind2D& operator=(const int& i){ind=i;return *this;}
 };
 
