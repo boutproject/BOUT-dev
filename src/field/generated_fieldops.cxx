@@ -4,16 +4,9 @@
 #include <field3d.hxx>
 #include <globals.hxx>
 #include <interpolation.hxx>
-
-// Do the actual multiplication of Field3D and Field3D
-void autogen_Field3D_Field3D_Field3D_multiplication(BoutReal *__restrict__ result,
-                                                    const BoutReal *__restrict__ lhs,
-                                                    const BoutReal *__restrict__ rhs,
-                                                    int len) {
-
-  for (int i = 0; i < len; ++i) {
-    result[i] = lhs[i] * rhs[i];
-  }
+extern "C" {
+void autogen_Field3D_Field3D_Field3D_multiplication(BoutReal *result, const BoutReal *lhs,
+                                                    const BoutReal *rhs, int len);
 }
 
 // Provide the C++ wrapper for multiplication of Field3D and Field3D
@@ -46,13 +39,9 @@ Field3D operator*(const Field3D &lhs, const Field3D &rhs) {
   return result;
 }
 
+extern "C" {
 // Provide the C function to update Field3D by multiplication with Field3D
-void autogen_Field3D_Field3D_multiplication(BoutReal *__restrict__ lhs,
-                                            const BoutReal *__restrict__ rhs, int len) {
-
-  for (int i = 0; i < len; ++i) {
-    lhs[i] *= rhs[i];
-  }
+void autogen_Field3D_Field3D_multiplication(BoutReal *lhs, const BoutReal *rhs, int len);
 }
 
 // Provide the C++ operator to update Field3D by multiplication with Field3D
@@ -87,15 +76,9 @@ Field3D &Field3D::operator*=(const Field3D &rhs) {
   }
   return *this;
 }
-
-// Do the actual division of Field3D and Field3D
-void autogen_Field3D_Field3D_Field3D_division(BoutReal *__restrict__ result,
-                                              const BoutReal *__restrict__ lhs,
-                                              const BoutReal *__restrict__ rhs, int len) {
-
-  for (int i = 0; i < len; ++i) {
-    result[i] = lhs[i] / rhs[i];
-  }
+extern "C" {
+void autogen_Field3D_Field3D_Field3D_division(BoutReal *result, const BoutReal *lhs,
+                                              const BoutReal *rhs, int len);
 }
 
 // Provide the C++ wrapper for division of Field3D and Field3D
@@ -128,13 +111,9 @@ Field3D operator/(const Field3D &lhs, const Field3D &rhs) {
   return result;
 }
 
+extern "C" {
 // Provide the C function to update Field3D by division with Field3D
-void autogen_Field3D_Field3D_division(BoutReal *__restrict__ lhs,
-                                      const BoutReal *__restrict__ rhs, int len) {
-
-  for (int i = 0; i < len; ++i) {
-    lhs[i] /= rhs[i];
-  }
+void autogen_Field3D_Field3D_division(BoutReal *lhs, const BoutReal *rhs, int len);
 }
 
 // Provide the C++ operator to update Field3D by division with Field3D
@@ -169,15 +148,9 @@ Field3D &Field3D::operator/=(const Field3D &rhs) {
   }
   return *this;
 }
-
-// Do the actual addition of Field3D and Field3D
-void autogen_Field3D_Field3D_Field3D_addition(BoutReal *__restrict__ result,
-                                              const BoutReal *__restrict__ lhs,
-                                              const BoutReal *__restrict__ rhs, int len) {
-
-  for (int i = 0; i < len; ++i) {
-    result[i] = lhs[i] + rhs[i];
-  }
+extern "C" {
+void autogen_Field3D_Field3D_Field3D_addition(BoutReal *result, const BoutReal *lhs,
+                                              const BoutReal *rhs, int len);
 }
 
 // Provide the C++ wrapper for addition of Field3D and Field3D
@@ -210,13 +183,9 @@ Field3D operator+(const Field3D &lhs, const Field3D &rhs) {
   return result;
 }
 
+extern "C" {
 // Provide the C function to update Field3D by addition with Field3D
-void autogen_Field3D_Field3D_addition(BoutReal *__restrict__ lhs,
-                                      const BoutReal *__restrict__ rhs, int len) {
-
-  for (int i = 0; i < len; ++i) {
-    lhs[i] += rhs[i];
-  }
+void autogen_Field3D_Field3D_addition(BoutReal *lhs, const BoutReal *rhs, int len);
 }
 
 // Provide the C++ operator to update Field3D by addition with Field3D
@@ -251,16 +220,9 @@ Field3D &Field3D::operator+=(const Field3D &rhs) {
   }
   return *this;
 }
-
-// Do the actual subtraction of Field3D and Field3D
-void autogen_Field3D_Field3D_Field3D_subtraction(BoutReal *__restrict__ result,
-                                                 const BoutReal *__restrict__ lhs,
-                                                 const BoutReal *__restrict__ rhs,
-                                                 int len) {
-
-  for (int i = 0; i < len; ++i) {
-    result[i] = lhs[i] - rhs[i];
-  }
+extern "C" {
+void autogen_Field3D_Field3D_Field3D_subtraction(BoutReal *result, const BoutReal *lhs,
+                                                 const BoutReal *rhs, int len);
 }
 
 // Provide the C++ wrapper for subtraction of Field3D and Field3D
@@ -293,13 +255,9 @@ Field3D operator-(const Field3D &lhs, const Field3D &rhs) {
   return result;
 }
 
+extern "C" {
 // Provide the C function to update Field3D by subtraction with Field3D
-void autogen_Field3D_Field3D_subtraction(BoutReal *__restrict__ lhs,
-                                         const BoutReal *__restrict__ rhs, int len) {
-
-  for (int i = 0; i < len; ++i) {
-    lhs[i] -= rhs[i];
-  }
+void autogen_Field3D_Field3D_subtraction(BoutReal *lhs, const BoutReal *rhs, int len);
 }
 
 // Provide the C++ operator to update Field3D by subtraction with Field3D
@@ -334,18 +292,10 @@ Field3D &Field3D::operator-=(const Field3D &rhs) {
   }
   return *this;
 }
-
-// Do the actual multiplication of Field3D and Field2D
-void autogen_Field3D_Field3D_Field2D_multiplication(BoutReal *__restrict__ result,
-                                                    const BoutReal *__restrict__ lhs,
-                                                    const BoutReal *__restrict__ rhs,
-                                                    int nx, int ny, int nz) {
-
-  for (int x = 0; x < nx; ++x)
-    for (int y = 0; y < ny; ++y)
-      for (int z = 0; z < nz; ++z) {
-        result[z + nz * (y + ny * x)] = lhs[z + nz * (y + ny * x)] * rhs[y + x * ny];
-      }
+extern "C" {
+void autogen_Field3D_Field3D_Field2D_multiplication(BoutReal *result, const BoutReal *lhs,
+                                                    const BoutReal *rhs, int nx, int ny,
+                                                    int nz);
 }
 
 // Provide the C++ wrapper for multiplication of Field3D and Field2D
@@ -371,16 +321,10 @@ Field3D operator*(const Field3D &lhs, const Field2D &rhs) {
   return result;
 }
 
+extern "C" {
 // Provide the C function to update Field3D by multiplication with Field2D
-void autogen_Field3D_Field2D_multiplication(BoutReal *__restrict__ lhs,
-                                            const BoutReal *__restrict__ rhs, int nx,
-                                            int ny, int nz) {
-
-  for (int x = 0; x < nx; ++x)
-    for (int y = 0; y < ny; ++y)
-      for (int z = 0; z < nz; ++z) {
-        lhs[z + nz * (y + ny * x)] *= rhs[y + x * ny];
-      }
+void autogen_Field3D_Field2D_multiplication(BoutReal *lhs, const BoutReal *rhs, int nx,
+                                            int ny, int nz);
 }
 
 // Provide the C++ operator to update Field3D by multiplication with Field2D
@@ -406,18 +350,10 @@ Field3D &Field3D::operator*=(const Field2D &rhs) {
   }
   return *this;
 }
-
-// Do the actual division of Field3D and Field2D
-void autogen_Field3D_Field3D_Field2D_division(BoutReal *__restrict__ result,
-                                              const BoutReal *__restrict__ lhs,
-                                              const BoutReal *__restrict__ rhs, int nx,
-                                              int ny, int nz) {
-
-  for (int x = 0; x < nx; ++x)
-    for (int y = 0; y < ny; ++y)
-      for (int z = 0; z < nz; ++z) {
-        result[z + nz * (y + ny * x)] = lhs[z + nz * (y + ny * x)] / rhs[y + x * ny];
-      }
+extern "C" {
+void autogen_Field3D_Field3D_Field2D_division(BoutReal *result, const BoutReal *lhs,
+                                              const BoutReal *rhs, int nx, int ny,
+                                              int nz);
 }
 
 // Provide the C++ wrapper for division of Field3D and Field2D
@@ -443,16 +379,10 @@ Field3D operator/(const Field3D &lhs, const Field2D &rhs) {
   return result;
 }
 
+extern "C" {
 // Provide the C function to update Field3D by division with Field2D
-void autogen_Field3D_Field2D_division(BoutReal *__restrict__ lhs,
-                                      const BoutReal *__restrict__ rhs, int nx, int ny,
-                                      int nz) {
-
-  for (int x = 0; x < nx; ++x)
-    for (int y = 0; y < ny; ++y)
-      for (int z = 0; z < nz; ++z) {
-        lhs[z + nz * (y + ny * x)] /= rhs[y + x * ny];
-      }
+void autogen_Field3D_Field2D_division(BoutReal *lhs, const BoutReal *rhs, int nx, int ny,
+                                      int nz);
 }
 
 // Provide the C++ operator to update Field3D by division with Field2D
@@ -478,18 +408,10 @@ Field3D &Field3D::operator/=(const Field2D &rhs) {
   }
   return *this;
 }
-
-// Do the actual addition of Field3D and Field2D
-void autogen_Field3D_Field3D_Field2D_addition(BoutReal *__restrict__ result,
-                                              const BoutReal *__restrict__ lhs,
-                                              const BoutReal *__restrict__ rhs, int nx,
-                                              int ny, int nz) {
-
-  for (int x = 0; x < nx; ++x)
-    for (int y = 0; y < ny; ++y)
-      for (int z = 0; z < nz; ++z) {
-        result[z + nz * (y + ny * x)] = lhs[z + nz * (y + ny * x)] + rhs[y + x * ny];
-      }
+extern "C" {
+void autogen_Field3D_Field3D_Field2D_addition(BoutReal *result, const BoutReal *lhs,
+                                              const BoutReal *rhs, int nx, int ny,
+                                              int nz);
 }
 
 // Provide the C++ wrapper for addition of Field3D and Field2D
@@ -515,16 +437,10 @@ Field3D operator+(const Field3D &lhs, const Field2D &rhs) {
   return result;
 }
 
+extern "C" {
 // Provide the C function to update Field3D by addition with Field2D
-void autogen_Field3D_Field2D_addition(BoutReal *__restrict__ lhs,
-                                      const BoutReal *__restrict__ rhs, int nx, int ny,
-                                      int nz) {
-
-  for (int x = 0; x < nx; ++x)
-    for (int y = 0; y < ny; ++y)
-      for (int z = 0; z < nz; ++z) {
-        lhs[z + nz * (y + ny * x)] += rhs[y + x * ny];
-      }
+void autogen_Field3D_Field2D_addition(BoutReal *lhs, const BoutReal *rhs, int nx, int ny,
+                                      int nz);
 }
 
 // Provide the C++ operator to update Field3D by addition with Field2D
@@ -550,18 +466,10 @@ Field3D &Field3D::operator+=(const Field2D &rhs) {
   }
   return *this;
 }
-
-// Do the actual subtraction of Field3D and Field2D
-void autogen_Field3D_Field3D_Field2D_subtraction(BoutReal *__restrict__ result,
-                                                 const BoutReal *__restrict__ lhs,
-                                                 const BoutReal *__restrict__ rhs, int nx,
-                                                 int ny, int nz) {
-
-  for (int x = 0; x < nx; ++x)
-    for (int y = 0; y < ny; ++y)
-      for (int z = 0; z < nz; ++z) {
-        result[z + nz * (y + ny * x)] = lhs[z + nz * (y + ny * x)] - rhs[y + x * ny];
-      }
+extern "C" {
+void autogen_Field3D_Field3D_Field2D_subtraction(BoutReal *result, const BoutReal *lhs,
+                                                 const BoutReal *rhs, int nx, int ny,
+                                                 int nz);
 }
 
 // Provide the C++ wrapper for subtraction of Field3D and Field2D
@@ -587,16 +495,10 @@ Field3D operator-(const Field3D &lhs, const Field2D &rhs) {
   return result;
 }
 
+extern "C" {
 // Provide the C function to update Field3D by subtraction with Field2D
-void autogen_Field3D_Field2D_subtraction(BoutReal *__restrict__ lhs,
-                                         const BoutReal *__restrict__ rhs, int nx, int ny,
-                                         int nz) {
-
-  for (int x = 0; x < nx; ++x)
-    for (int y = 0; y < ny; ++y)
-      for (int z = 0; z < nz; ++z) {
-        lhs[z + nz * (y + ny * x)] -= rhs[y + x * ny];
-      }
+void autogen_Field3D_Field2D_subtraction(BoutReal *lhs, const BoutReal *rhs, int nx,
+                                         int ny, int nz);
 }
 
 // Provide the C++ operator to update Field3D by subtraction with Field2D
@@ -622,15 +524,10 @@ Field3D &Field3D::operator-=(const Field2D &rhs) {
   }
   return *this;
 }
-
-// Do the actual multiplication of Field3D and BoutReal
-void autogen_Field3D_Field3D_BoutReal_multiplication(BoutReal *__restrict__ result,
-                                                     const BoutReal *__restrict__ lhs,
-                                                     const BoutReal rhs, int len) {
-
-  for (int i = 0; i < len; ++i) {
-    result[i] = lhs[i] * rhs;
-  }
+extern "C" {
+void autogen_Field3D_Field3D_BoutReal_multiplication(BoutReal *result,
+                                                     const BoutReal *lhs,
+                                                     const BoutReal rhs, int len);
 }
 
 // Provide the C++ wrapper for multiplication of Field3D and BoutReal
@@ -654,13 +551,9 @@ Field3D operator*(const Field3D &lhs, const BoutReal rhs) {
   return result;
 }
 
+extern "C" {
 // Provide the C function to update Field3D by multiplication with BoutReal
-void autogen_Field3D_BoutReal_multiplication(BoutReal *__restrict__ lhs,
-                                             const BoutReal rhs, int len) {
-
-  for (int i = 0; i < len; ++i) {
-    lhs[i] *= rhs;
-  }
+void autogen_Field3D_BoutReal_multiplication(BoutReal *lhs, const BoutReal rhs, int len);
 }
 
 // Provide the C++ operator to update Field3D by multiplication with BoutReal
@@ -684,15 +577,9 @@ Field3D &Field3D::operator*=(const BoutReal rhs) {
   }
   return *this;
 }
-
-// Do the actual division of Field3D and BoutReal
-void autogen_Field3D_Field3D_BoutReal_division(BoutReal *__restrict__ result,
-                                               const BoutReal *__restrict__ lhs,
-                                               const BoutReal rhs, int len) {
-
-  for (int i = 0; i < len; ++i) {
-    result[i] = lhs[i] / rhs;
-  }
+extern "C" {
+void autogen_Field3D_Field3D_BoutReal_division(BoutReal *result, const BoutReal *lhs,
+                                               const BoutReal rhs, int len);
 }
 
 // Provide the C++ wrapper for division of Field3D and BoutReal
@@ -716,13 +603,9 @@ Field3D operator/(const Field3D &lhs, const BoutReal rhs) {
   return result;
 }
 
+extern "C" {
 // Provide the C function to update Field3D by division with BoutReal
-void autogen_Field3D_BoutReal_division(BoutReal *__restrict__ lhs, const BoutReal rhs,
-                                       int len) {
-
-  for (int i = 0; i < len; ++i) {
-    lhs[i] /= rhs;
-  }
+void autogen_Field3D_BoutReal_division(BoutReal *lhs, const BoutReal rhs, int len);
 }
 
 // Provide the C++ operator to update Field3D by division with BoutReal
@@ -746,15 +629,9 @@ Field3D &Field3D::operator/=(const BoutReal rhs) {
   }
   return *this;
 }
-
-// Do the actual addition of Field3D and BoutReal
-void autogen_Field3D_Field3D_BoutReal_addition(BoutReal *__restrict__ result,
-                                               const BoutReal *__restrict__ lhs,
-                                               const BoutReal rhs, int len) {
-
-  for (int i = 0; i < len; ++i) {
-    result[i] = lhs[i] + rhs;
-  }
+extern "C" {
+void autogen_Field3D_Field3D_BoutReal_addition(BoutReal *result, const BoutReal *lhs,
+                                               const BoutReal rhs, int len);
 }
 
 // Provide the C++ wrapper for addition of Field3D and BoutReal
@@ -778,13 +655,9 @@ Field3D operator+(const Field3D &lhs, const BoutReal rhs) {
   return result;
 }
 
+extern "C" {
 // Provide the C function to update Field3D by addition with BoutReal
-void autogen_Field3D_BoutReal_addition(BoutReal *__restrict__ lhs, const BoutReal rhs,
-                                       int len) {
-
-  for (int i = 0; i < len; ++i) {
-    lhs[i] += rhs;
-  }
+void autogen_Field3D_BoutReal_addition(BoutReal *lhs, const BoutReal rhs, int len);
 }
 
 // Provide the C++ operator to update Field3D by addition with BoutReal
@@ -808,15 +681,9 @@ Field3D &Field3D::operator+=(const BoutReal rhs) {
   }
   return *this;
 }
-
-// Do the actual subtraction of Field3D and BoutReal
-void autogen_Field3D_Field3D_BoutReal_subtraction(BoutReal *__restrict__ result,
-                                                  const BoutReal *__restrict__ lhs,
-                                                  const BoutReal rhs, int len) {
-
-  for (int i = 0; i < len; ++i) {
-    result[i] = lhs[i] - rhs;
-  }
+extern "C" {
+void autogen_Field3D_Field3D_BoutReal_subtraction(BoutReal *result, const BoutReal *lhs,
+                                                  const BoutReal rhs, int len);
 }
 
 // Provide the C++ wrapper for subtraction of Field3D and BoutReal
@@ -840,13 +707,9 @@ Field3D operator-(const Field3D &lhs, const BoutReal rhs) {
   return result;
 }
 
+extern "C" {
 // Provide the C function to update Field3D by subtraction with BoutReal
-void autogen_Field3D_BoutReal_subtraction(BoutReal *__restrict__ lhs, const BoutReal rhs,
-                                          int len) {
-
-  for (int i = 0; i < len; ++i) {
-    lhs[i] -= rhs;
-  }
+void autogen_Field3D_BoutReal_subtraction(BoutReal *lhs, const BoutReal rhs, int len);
 }
 
 // Provide the C++ operator to update Field3D by subtraction with BoutReal
@@ -870,18 +733,10 @@ Field3D &Field3D::operator-=(const BoutReal rhs) {
   }
   return *this;
 }
-
-// Do the actual multiplication of Field2D and Field3D
-void autogen_Field3D_Field2D_Field3D_multiplication(BoutReal *__restrict__ result,
-                                                    const BoutReal *__restrict__ lhs,
-                                                    const BoutReal *__restrict__ rhs,
-                                                    int nx, int ny, int nz) {
-
-  for (int x = 0; x < nx; ++x)
-    for (int y = 0; y < ny; ++y)
-      for (int z = 0; z < nz; ++z) {
-        result[z + nz * (y + ny * x)] = lhs[y + x * ny] * rhs[z + nz * (y + ny * x)];
-      }
+extern "C" {
+void autogen_Field3D_Field2D_Field3D_multiplication(BoutReal *result, const BoutReal *lhs,
+                                                    const BoutReal *rhs, int nx, int ny,
+                                                    int nz);
 }
 
 // Provide the C++ wrapper for multiplication of Field2D and Field3D
@@ -907,17 +762,10 @@ Field3D operator*(const Field2D &lhs, const Field3D &rhs) {
   return result;
 }
 
-// Do the actual division of Field2D and Field3D
-void autogen_Field3D_Field2D_Field3D_division(BoutReal *__restrict__ result,
-                                              const BoutReal *__restrict__ lhs,
-                                              const BoutReal *__restrict__ rhs, int nx,
-                                              int ny, int nz) {
-
-  for (int x = 0; x < nx; ++x)
-    for (int y = 0; y < ny; ++y)
-      for (int z = 0; z < nz; ++z) {
-        result[z + nz * (y + ny * x)] = lhs[y + x * ny] / rhs[z + nz * (y + ny * x)];
-      }
+extern "C" {
+void autogen_Field3D_Field2D_Field3D_division(BoutReal *result, const BoutReal *lhs,
+                                              const BoutReal *rhs, int nx, int ny,
+                                              int nz);
 }
 
 // Provide the C++ wrapper for division of Field2D and Field3D
@@ -943,17 +791,10 @@ Field3D operator/(const Field2D &lhs, const Field3D &rhs) {
   return result;
 }
 
-// Do the actual addition of Field2D and Field3D
-void autogen_Field3D_Field2D_Field3D_addition(BoutReal *__restrict__ result,
-                                              const BoutReal *__restrict__ lhs,
-                                              const BoutReal *__restrict__ rhs, int nx,
-                                              int ny, int nz) {
-
-  for (int x = 0; x < nx; ++x)
-    for (int y = 0; y < ny; ++y)
-      for (int z = 0; z < nz; ++z) {
-        result[z + nz * (y + ny * x)] = lhs[y + x * ny] + rhs[z + nz * (y + ny * x)];
-      }
+extern "C" {
+void autogen_Field3D_Field2D_Field3D_addition(BoutReal *result, const BoutReal *lhs,
+                                              const BoutReal *rhs, int nx, int ny,
+                                              int nz);
 }
 
 // Provide the C++ wrapper for addition of Field2D and Field3D
@@ -979,17 +820,10 @@ Field3D operator+(const Field2D &lhs, const Field3D &rhs) {
   return result;
 }
 
-// Do the actual subtraction of Field2D and Field3D
-void autogen_Field3D_Field2D_Field3D_subtraction(BoutReal *__restrict__ result,
-                                                 const BoutReal *__restrict__ lhs,
-                                                 const BoutReal *__restrict__ rhs, int nx,
-                                                 int ny, int nz) {
-
-  for (int x = 0; x < nx; ++x)
-    for (int y = 0; y < ny; ++y)
-      for (int z = 0; z < nz; ++z) {
-        result[z + nz * (y + ny * x)] = lhs[y + x * ny] - rhs[z + nz * (y + ny * x)];
-      }
+extern "C" {
+void autogen_Field3D_Field2D_Field3D_subtraction(BoutReal *result, const BoutReal *lhs,
+                                                 const BoutReal *rhs, int nx, int ny,
+                                                 int nz);
 }
 
 // Provide the C++ wrapper for subtraction of Field2D and Field3D
@@ -1015,15 +849,9 @@ Field3D operator-(const Field2D &lhs, const Field3D &rhs) {
   return result;
 }
 
-// Do the actual multiplication of Field2D and Field2D
-void autogen_Field2D_Field2D_Field2D_multiplication(BoutReal *__restrict__ result,
-                                                    const BoutReal *__restrict__ lhs,
-                                                    const BoutReal *__restrict__ rhs,
-                                                    int len) {
-
-  for (int i = 0; i < len; ++i) {
-    result[i] = lhs[i] * rhs[i];
-  }
+extern "C" {
+void autogen_Field2D_Field2D_Field2D_multiplication(BoutReal *result, const BoutReal *lhs,
+                                                    const BoutReal *rhs, int len);
 }
 
 // Provide the C++ wrapper for multiplication of Field2D and Field2D
@@ -1046,13 +874,9 @@ Field2D operator*(const Field2D &lhs, const Field2D &rhs) {
   return result;
 }
 
+extern "C" {
 // Provide the C function to update Field2D by multiplication with Field2D
-void autogen_Field2D_Field2D_multiplication(BoutReal *__restrict__ lhs,
-                                            const BoutReal *__restrict__ rhs, int len) {
-
-  for (int i = 0; i < len; ++i) {
-    lhs[i] *= rhs[i];
-  }
+void autogen_Field2D_Field2D_multiplication(BoutReal *lhs, const BoutReal *rhs, int len);
 }
 
 // Provide the C++ operator to update Field2D by multiplication with Field2D
@@ -1078,15 +902,9 @@ Field2D &Field2D::operator*=(const Field2D &rhs) {
   }
   return *this;
 }
-
-// Do the actual division of Field2D and Field2D
-void autogen_Field2D_Field2D_Field2D_division(BoutReal *__restrict__ result,
-                                              const BoutReal *__restrict__ lhs,
-                                              const BoutReal *__restrict__ rhs, int len) {
-
-  for (int i = 0; i < len; ++i) {
-    result[i] = lhs[i] / rhs[i];
-  }
+extern "C" {
+void autogen_Field2D_Field2D_Field2D_division(BoutReal *result, const BoutReal *lhs,
+                                              const BoutReal *rhs, int len);
 }
 
 // Provide the C++ wrapper for division of Field2D and Field2D
@@ -1109,13 +927,9 @@ Field2D operator/(const Field2D &lhs, const Field2D &rhs) {
   return result;
 }
 
+extern "C" {
 // Provide the C function to update Field2D by division with Field2D
-void autogen_Field2D_Field2D_division(BoutReal *__restrict__ lhs,
-                                      const BoutReal *__restrict__ rhs, int len) {
-
-  for (int i = 0; i < len; ++i) {
-    lhs[i] /= rhs[i];
-  }
+void autogen_Field2D_Field2D_division(BoutReal *lhs, const BoutReal *rhs, int len);
 }
 
 // Provide the C++ operator to update Field2D by division with Field2D
@@ -1141,15 +955,9 @@ Field2D &Field2D::operator/=(const Field2D &rhs) {
   }
   return *this;
 }
-
-// Do the actual addition of Field2D and Field2D
-void autogen_Field2D_Field2D_Field2D_addition(BoutReal *__restrict__ result,
-                                              const BoutReal *__restrict__ lhs,
-                                              const BoutReal *__restrict__ rhs, int len) {
-
-  for (int i = 0; i < len; ++i) {
-    result[i] = lhs[i] + rhs[i];
-  }
+extern "C" {
+void autogen_Field2D_Field2D_Field2D_addition(BoutReal *result, const BoutReal *lhs,
+                                              const BoutReal *rhs, int len);
 }
 
 // Provide the C++ wrapper for addition of Field2D and Field2D
@@ -1172,13 +980,9 @@ Field2D operator+(const Field2D &lhs, const Field2D &rhs) {
   return result;
 }
 
+extern "C" {
 // Provide the C function to update Field2D by addition with Field2D
-void autogen_Field2D_Field2D_addition(BoutReal *__restrict__ lhs,
-                                      const BoutReal *__restrict__ rhs, int len) {
-
-  for (int i = 0; i < len; ++i) {
-    lhs[i] += rhs[i];
-  }
+void autogen_Field2D_Field2D_addition(BoutReal *lhs, const BoutReal *rhs, int len);
 }
 
 // Provide the C++ operator to update Field2D by addition with Field2D
@@ -1204,16 +1008,9 @@ Field2D &Field2D::operator+=(const Field2D &rhs) {
   }
   return *this;
 }
-
-// Do the actual subtraction of Field2D and Field2D
-void autogen_Field2D_Field2D_Field2D_subtraction(BoutReal *__restrict__ result,
-                                                 const BoutReal *__restrict__ lhs,
-                                                 const BoutReal *__restrict__ rhs,
-                                                 int len) {
-
-  for (int i = 0; i < len; ++i) {
-    result[i] = lhs[i] - rhs[i];
-  }
+extern "C" {
+void autogen_Field2D_Field2D_Field2D_subtraction(BoutReal *result, const BoutReal *lhs,
+                                                 const BoutReal *rhs, int len);
 }
 
 // Provide the C++ wrapper for subtraction of Field2D and Field2D
@@ -1236,13 +1033,9 @@ Field2D operator-(const Field2D &lhs, const Field2D &rhs) {
   return result;
 }
 
+extern "C" {
 // Provide the C function to update Field2D by subtraction with Field2D
-void autogen_Field2D_Field2D_subtraction(BoutReal *__restrict__ lhs,
-                                         const BoutReal *__restrict__ rhs, int len) {
-
-  for (int i = 0; i < len; ++i) {
-    lhs[i] -= rhs[i];
-  }
+void autogen_Field2D_Field2D_subtraction(BoutReal *lhs, const BoutReal *rhs, int len);
 }
 
 // Provide the C++ operator to update Field2D by subtraction with Field2D
@@ -1268,15 +1061,10 @@ Field2D &Field2D::operator-=(const Field2D &rhs) {
   }
   return *this;
 }
-
-// Do the actual multiplication of Field2D and BoutReal
-void autogen_Field2D_Field2D_BoutReal_multiplication(BoutReal *__restrict__ result,
-                                                     const BoutReal *__restrict__ lhs,
-                                                     const BoutReal rhs, int len) {
-
-  for (int i = 0; i < len; ++i) {
-    result[i] = lhs[i] * rhs;
-  }
+extern "C" {
+void autogen_Field2D_Field2D_BoutReal_multiplication(BoutReal *result,
+                                                     const BoutReal *lhs,
+                                                     const BoutReal rhs, int len);
 }
 
 // Provide the C++ wrapper for multiplication of Field2D and BoutReal
@@ -1297,13 +1085,9 @@ Field2D operator*(const Field2D &lhs, const BoutReal rhs) {
   return result;
 }
 
+extern "C" {
 // Provide the C function to update Field2D by multiplication with BoutReal
-void autogen_Field2D_BoutReal_multiplication(BoutReal *__restrict__ lhs,
-                                             const BoutReal rhs, int len) {
-
-  for (int i = 0; i < len; ++i) {
-    lhs[i] *= rhs;
-  }
+void autogen_Field2D_BoutReal_multiplication(BoutReal *lhs, const BoutReal rhs, int len);
 }
 
 // Provide the C++ operator to update Field2D by multiplication with BoutReal
@@ -1327,15 +1111,9 @@ Field2D &Field2D::operator*=(const BoutReal rhs) {
   }
   return *this;
 }
-
-// Do the actual division of Field2D and BoutReal
-void autogen_Field2D_Field2D_BoutReal_division(BoutReal *__restrict__ result,
-                                               const BoutReal *__restrict__ lhs,
-                                               const BoutReal rhs, int len) {
-
-  for (int i = 0; i < len; ++i) {
-    result[i] = lhs[i] / rhs;
-  }
+extern "C" {
+void autogen_Field2D_Field2D_BoutReal_division(BoutReal *result, const BoutReal *lhs,
+                                               const BoutReal rhs, int len);
 }
 
 // Provide the C++ wrapper for division of Field2D and BoutReal
@@ -1356,13 +1134,9 @@ Field2D operator/(const Field2D &lhs, const BoutReal rhs) {
   return result;
 }
 
+extern "C" {
 // Provide the C function to update Field2D by division with BoutReal
-void autogen_Field2D_BoutReal_division(BoutReal *__restrict__ lhs, const BoutReal rhs,
-                                       int len) {
-
-  for (int i = 0; i < len; ++i) {
-    lhs[i] /= rhs;
-  }
+void autogen_Field2D_BoutReal_division(BoutReal *lhs, const BoutReal rhs, int len);
 }
 
 // Provide the C++ operator to update Field2D by division with BoutReal
@@ -1386,15 +1160,9 @@ Field2D &Field2D::operator/=(const BoutReal rhs) {
   }
   return *this;
 }
-
-// Do the actual addition of Field2D and BoutReal
-void autogen_Field2D_Field2D_BoutReal_addition(BoutReal *__restrict__ result,
-                                               const BoutReal *__restrict__ lhs,
-                                               const BoutReal rhs, int len) {
-
-  for (int i = 0; i < len; ++i) {
-    result[i] = lhs[i] + rhs;
-  }
+extern "C" {
+void autogen_Field2D_Field2D_BoutReal_addition(BoutReal *result, const BoutReal *lhs,
+                                               const BoutReal rhs, int len);
 }
 
 // Provide the C++ wrapper for addition of Field2D and BoutReal
@@ -1415,13 +1183,9 @@ Field2D operator+(const Field2D &lhs, const BoutReal rhs) {
   return result;
 }
 
+extern "C" {
 // Provide the C function to update Field2D by addition with BoutReal
-void autogen_Field2D_BoutReal_addition(BoutReal *__restrict__ lhs, const BoutReal rhs,
-                                       int len) {
-
-  for (int i = 0; i < len; ++i) {
-    lhs[i] += rhs;
-  }
+void autogen_Field2D_BoutReal_addition(BoutReal *lhs, const BoutReal rhs, int len);
 }
 
 // Provide the C++ operator to update Field2D by addition with BoutReal
@@ -1445,15 +1209,9 @@ Field2D &Field2D::operator+=(const BoutReal rhs) {
   }
   return *this;
 }
-
-// Do the actual subtraction of Field2D and BoutReal
-void autogen_Field2D_Field2D_BoutReal_subtraction(BoutReal *__restrict__ result,
-                                                  const BoutReal *__restrict__ lhs,
-                                                  const BoutReal rhs, int len) {
-
-  for (int i = 0; i < len; ++i) {
-    result[i] = lhs[i] - rhs;
-  }
+extern "C" {
+void autogen_Field2D_Field2D_BoutReal_subtraction(BoutReal *result, const BoutReal *lhs,
+                                                  const BoutReal rhs, int len);
 }
 
 // Provide the C++ wrapper for subtraction of Field2D and BoutReal
@@ -1474,13 +1232,9 @@ Field2D operator-(const Field2D &lhs, const BoutReal rhs) {
   return result;
 }
 
+extern "C" {
 // Provide the C function to update Field2D by subtraction with BoutReal
-void autogen_Field2D_BoutReal_subtraction(BoutReal *__restrict__ lhs, const BoutReal rhs,
-                                          int len) {
-
-  for (int i = 0; i < len; ++i) {
-    lhs[i] -= rhs;
-  }
+void autogen_Field2D_BoutReal_subtraction(BoutReal *lhs, const BoutReal rhs, int len);
 }
 
 // Provide the C++ operator to update Field2D by subtraction with BoutReal
@@ -1504,16 +1258,9 @@ Field2D &Field2D::operator-=(const BoutReal rhs) {
   }
   return *this;
 }
-
-// Do the actual multiplication of BoutReal and Field3D
-void autogen_Field3D_BoutReal_Field3D_multiplication(BoutReal *__restrict__ result,
-                                                     const BoutReal lhs,
-                                                     const BoutReal *__restrict__ rhs,
-                                                     int len) {
-
-  for (int i = 0; i < len; ++i) {
-    result[i] = lhs * rhs[i];
-  }
+extern "C" {
+void autogen_Field3D_BoutReal_Field3D_multiplication(BoutReal *result, const BoutReal lhs,
+                                                     const BoutReal *rhs, int len);
 }
 
 // Provide the C++ wrapper for multiplication of BoutReal and Field3D
@@ -1537,15 +1284,9 @@ Field3D operator*(const BoutReal lhs, const Field3D &rhs) {
   return result;
 }
 
-// Do the actual division of BoutReal and Field3D
-void autogen_Field3D_BoutReal_Field3D_division(BoutReal *__restrict__ result,
-                                               const BoutReal lhs,
-                                               const BoutReal *__restrict__ rhs,
-                                               int len) {
-
-  for (int i = 0; i < len; ++i) {
-    result[i] = lhs / rhs[i];
-  }
+extern "C" {
+void autogen_Field3D_BoutReal_Field3D_division(BoutReal *result, const BoutReal lhs,
+                                               const BoutReal *rhs, int len);
 }
 
 // Provide the C++ wrapper for division of BoutReal and Field3D
@@ -1569,15 +1310,9 @@ Field3D operator/(const BoutReal lhs, const Field3D &rhs) {
   return result;
 }
 
-// Do the actual addition of BoutReal and Field3D
-void autogen_Field3D_BoutReal_Field3D_addition(BoutReal *__restrict__ result,
-                                               const BoutReal lhs,
-                                               const BoutReal *__restrict__ rhs,
-                                               int len) {
-
-  for (int i = 0; i < len; ++i) {
-    result[i] = lhs + rhs[i];
-  }
+extern "C" {
+void autogen_Field3D_BoutReal_Field3D_addition(BoutReal *result, const BoutReal lhs,
+                                               const BoutReal *rhs, int len);
 }
 
 // Provide the C++ wrapper for addition of BoutReal and Field3D
@@ -1601,15 +1336,9 @@ Field3D operator+(const BoutReal lhs, const Field3D &rhs) {
   return result;
 }
 
-// Do the actual subtraction of BoutReal and Field3D
-void autogen_Field3D_BoutReal_Field3D_subtraction(BoutReal *__restrict__ result,
-                                                  const BoutReal lhs,
-                                                  const BoutReal *__restrict__ rhs,
-                                                  int len) {
-
-  for (int i = 0; i < len; ++i) {
-    result[i] = lhs - rhs[i];
-  }
+extern "C" {
+void autogen_Field3D_BoutReal_Field3D_subtraction(BoutReal *result, const BoutReal lhs,
+                                                  const BoutReal *rhs, int len);
 }
 
 // Provide the C++ wrapper for subtraction of BoutReal and Field3D
@@ -1633,15 +1362,9 @@ Field3D operator-(const BoutReal lhs, const Field3D &rhs) {
   return result;
 }
 
-// Do the actual multiplication of BoutReal and Field2D
-void autogen_Field2D_BoutReal_Field2D_multiplication(BoutReal *__restrict__ result,
-                                                     const BoutReal lhs,
-                                                     const BoutReal *__restrict__ rhs,
-                                                     int len) {
-
-  for (int i = 0; i < len; ++i) {
-    result[i] = lhs * rhs[i];
-  }
+extern "C" {
+void autogen_Field2D_BoutReal_Field2D_multiplication(BoutReal *result, const BoutReal lhs,
+                                                     const BoutReal *rhs, int len);
 }
 
 // Provide the C++ wrapper for multiplication of BoutReal and Field2D
@@ -1662,15 +1385,9 @@ Field2D operator*(const BoutReal lhs, const Field2D &rhs) {
   return result;
 }
 
-// Do the actual division of BoutReal and Field2D
-void autogen_Field2D_BoutReal_Field2D_division(BoutReal *__restrict__ result,
-                                               const BoutReal lhs,
-                                               const BoutReal *__restrict__ rhs,
-                                               int len) {
-
-  for (int i = 0; i < len; ++i) {
-    result[i] = lhs / rhs[i];
-  }
+extern "C" {
+void autogen_Field2D_BoutReal_Field2D_division(BoutReal *result, const BoutReal lhs,
+                                               const BoutReal *rhs, int len);
 }
 
 // Provide the C++ wrapper for division of BoutReal and Field2D
@@ -1691,15 +1408,9 @@ Field2D operator/(const BoutReal lhs, const Field2D &rhs) {
   return result;
 }
 
-// Do the actual addition of BoutReal and Field2D
-void autogen_Field2D_BoutReal_Field2D_addition(BoutReal *__restrict__ result,
-                                               const BoutReal lhs,
-                                               const BoutReal *__restrict__ rhs,
-                                               int len) {
-
-  for (int i = 0; i < len; ++i) {
-    result[i] = lhs + rhs[i];
-  }
+extern "C" {
+void autogen_Field2D_BoutReal_Field2D_addition(BoutReal *result, const BoutReal lhs,
+                                               const BoutReal *rhs, int len);
 }
 
 // Provide the C++ wrapper for addition of BoutReal and Field2D
@@ -1720,15 +1431,9 @@ Field2D operator+(const BoutReal lhs, const Field2D &rhs) {
   return result;
 }
 
-// Do the actual subtraction of BoutReal and Field2D
-void autogen_Field2D_BoutReal_Field2D_subtraction(BoutReal *__restrict__ result,
-                                                  const BoutReal lhs,
-                                                  const BoutReal *__restrict__ rhs,
-                                                  int len) {
-
-  for (int i = 0; i < len; ++i) {
-    result[i] = lhs - rhs[i];
-  }
+extern "C" {
+void autogen_Field2D_BoutReal_Field2D_subtraction(BoutReal *result, const BoutReal lhs,
+                                                  const BoutReal *rhs, int len);
 }
 
 // Provide the C++ wrapper for subtraction of BoutReal and Field2D

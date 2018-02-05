@@ -1,0 +1,29 @@
+// Do the actual {{operator_name}} of {{lhs}} and {{rhs}}
+void autogen_{{out}}_{{lhs}}_{{rhs}}_{{operator_name}}(
+  {{out.passBoutRealPointerC}}, const {{lhs.passBoutRealPointerC}},
+  const {{rhs.passBoutRealPointerC}}, {{length_arg}}) {
+
+  {% for dimension, index in dims.items() %}
+     for (int {{index}}=0; {{index}} < {{dimension}}; ++{{index}})
+  {% endfor %}
+       {
+         {{out.getElement(elementwise)}} =
+           {{lhs.getElement(elementwise)}} {{operator}} {{rhs.getElement(elementwise)}};
+       }
+}
+
+
+
+{% if out.field_type == lhs.field_type %}
+// Provide the C function to update {{lhs}} by {{operator_name}} with {{rhs}}
+void autogen_{{lhs}}_{{rhs}}_{{operator_name}}(
+  {{lhs.passBoutRealPointerC}}, const {{rhs.passBoutRealPointerC}}, {{length_arg}}) {
+
+  {% for dimension, index in dims.items() %}
+     for (int {{index}}=0; {{index}} < {{dimension}}; ++{{index}})
+  {% endfor %}
+      {
+        {{lhs.getElement(elementwise)}} {{operator}}= {{rhs.getElement(elementwise)}};
+      }
+}
+{% endif %}
