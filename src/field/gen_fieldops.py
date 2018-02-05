@@ -23,7 +23,11 @@ from collections import OrderedDict
 from copy import deepcopy as copy
 import itertools
 
-import jinja2
+try:
+    import jinja2
+except ImportError:
+    raise ImportError('Missing Python module "jinja2". See "Field2D/Field3D Arithmetic '
+                      'Operators" in the BOUT++ user manual for more information')
 
 # The arthimetic operators
 # OrderedDict to (try to) ensure consistency between python 2 & 3
