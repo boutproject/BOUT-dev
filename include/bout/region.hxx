@@ -41,6 +41,9 @@
 #ifndef MAXREGIONBLOCKSIZE
 #define MAXREGIONBLOCKSIZE 64
 #endif
+#if MAXREGIONBLOCKSIZE <= 0
+#error "In region.hxx must set MAXREGIONBLOCKSIZE > 0"
+#endif
 
 //The following loops vectorise well well index is type int, needs testing
 //with current approach where index is ind2D or ind3D
