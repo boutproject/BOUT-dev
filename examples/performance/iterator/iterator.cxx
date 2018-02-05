@@ -111,6 +111,14 @@ int main(int argc, char **argv) {
 		      result[d] = a[d] + b[d];
 		    );
 
+  //Raw C loop
+  ITERATOR_TEST_BLOCK("C loop repeat",
+		    for(int j=0;j<len;++j) {
+		      rd[j] = ad[j] + bd[j];
+		    };
+		    );
+
+
   if(profileMode){
     int nthreads=0;
 #ifdef _OPENMP
