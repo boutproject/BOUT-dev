@@ -1463,3 +1463,54 @@ Field3D Coordinates::Laplace(const Field3D& f, CELL_LOC outloc) {
 
   return result;
 }
+
+// Full perpendicular Laplacian, in form of inverse of Laplacian operator in LaplaceXY
+// solver
+Field2D Coordinates::Laplace_perpXY(const Field2D& A, const Field2D& f) {
+  TRACE("Coordinates::Laplace_perpXY( Field2D )");
+
+  Field2D result;
+  result.allocate();
+  BoutReal thisA, thisJ, thisg11, thisdx, thisg_22, thisg23, thisg_23, thisdy, val;
+  for (auto i : result.region(RGN_NOBNDRY)) {
+    result[i] = 0.;
+
+    // outer x boundary
+    thisA = 0.5 * (A[i] + A[i.xp()]);
+    thisJ = 0.5 * (J[i] + J[i.xp()]);
+    thisg11 = 0.5 * (g11[i] + g11[i.xp()]);
+    thisdx = 0.5 * (dx[i] + dx[i.xp()]);
+    val = thisA * thisJ * thisg11 / (J[i] * thisdx * dx[i]);
+    result[i] += val * (f[i.xp()] - f[i]);
+
+    // inner x boundary
+    thisA = 0.5 * (A[i] + A[i.xm()]);
+    thisJ = 0.5 * (J[i] + J[i.xm()]);
+    thisg11 = 0.5 * (g11[i] + g11[i.xm()]);
+    thisdx = 0.5 * (dx[i] + dx[i.xm()]);
+    val = thisA * thisJ * thisg11 / (J[i] * thisdx * dx[i]);
+    result[i] += val * (f[i.xm()] - f[i]);
+
+    // upper y boundary
+    thisA = 0.5 * (A[i] + A[i.yp()]);
+    thisJ = 0.5 * (J[i] + J[i.yp()]);
+    thisg_22 = 0.5 * (g_22[i] + g_22[i.yp()]);
+    thisg23 = 0.5 * (g23[i] + g23[i.yp()]);
+    thisg_23 = 0.5 * (g_23[i] + g_23[i.yp()]);
+    thisdy = 0.5 * (dy[i] + dy[i.yp()]);
+    val = -thisA * thisJ * thisg23 * thisg_23 / (thisg_22 * J[i] * thisdy * dy[i]);
+    result[i] += val * (f[i.yp()] - f[i]);
+
+    // lower y boundary
+    thisA = 0.5 * (A[i] + A[i.ym()]);
+    thisJ = 0.5 * (J[i] + J[i.ym()]);
+    thisg_22 = 0.5 * (g_22[i] + g_22[i.ym()]);
+    thisg23 = 0.5 * (g23[i] + g23[i.ym()]);
+    thisg_23 = 0.5 * (g_23[i] + g_23[i.ym()]);
+    thisdy = 0.5 * (dy[i] + dy[i.ym()]);
+    val = -thisA * thisJ * thisg23 * thisg_23 / (thisg_22 * J[i] * thisdy * dy[i]);
+    result[i] += val * (f[i.ym()] - f[i]);
+  }
+
+  return result;
+}

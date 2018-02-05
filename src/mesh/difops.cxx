@@ -370,6 +370,15 @@ const Field3D Laplace(const Field3D &f, CELL_LOC outloc) {
 }
 
 /*******************************************************************************
+ * Laplace_perpXY
+ * Inverse of Laplacian operator in LaplaceXY solver
+ *******************************************************************************/
+
+const Field2D Laplace_perpXY(const Field2D& A, const Field2D& f) {
+  return mesh->coordinates()->Laplace_perpXY(A, f);
+}
+
+/*******************************************************************************
 * b0xGrad_dot_Grad
 * Terms of form b0 x Grad(phi) dot Grad(A)
 * Used for ExB terms and perturbed B field using A_||
