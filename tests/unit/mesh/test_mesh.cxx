@@ -24,9 +24,7 @@ protected:
       mesh = nullptr;
     }
     mesh = new FakeMesh(nx, ny, nz);
-    //Testing of createDefaultRegions here rather than in standalone test
-    //as can't call this routine again without throwing
-    EXPECT_NO_THROW(mesh->createDefaultRegions());
+    mesh->createDefaultRegions();
   }
 
   static void TearDownTestCase() {
@@ -43,6 +41,12 @@ public:
 const int MeshTest::nx = 3;
 const int MeshTest::ny = 5;
 const int MeshTest::nz = 7;
+
+TEST(MeshTestNoFixture, createDefaultRegions){
+  FakeMesh localmesh(MeshTest::nx, MeshTest::ny, MeshTest::nz);
+  EXPECT_NO_THROW(localmesh.createDefaultRegions());
+  EXPECT_THROW(localmesh.createDefaultRegions(), BoutException);
+}
 
 TEST_F(MeshTest, getRegionFromMesh) {
   EXPECT_NO_THROW(mesh->getRegion("RGN_ALL"));
@@ -68,6 +72,8 @@ TEST_F(MeshTest, addRegionToMesh) {
   Region<ind3D> junk(0,0,0,0,0,0,0,0);
   EXPECT_NO_THROW(mesh->addRegion("RGN_JUNK", junk));
   EXPECT_THROW(mesh->addRegion("RGN_JUNK", junk), BoutException);
+  Region<ind2D> junk2D(0,0,0,0,0,0,0,0);
+  EXPECT_NO_THROW(mesh->addRegion("RGN_JUNK", junk2D));
 }
 
 TEST_F(MeshTest, addRegion3DToMesh) {
