@@ -342,18 +342,16 @@ Region<ind2D> & Mesh::getRegion2D(const std::string &region_name){
   
 void Mesh::addRegion3D(const std::string &region_name, Region<> region){
    if (regionMap3D.count(region_name)) {
-     output_warn << "Warning: Trying to add an already existing region: " << region_name << " to regionMap3D\n";
-     return;
+     throw BoutException("Trying to add an already existing region %s to regionMap3D");
    }
    regionMap3D[region_name] = region;
 }
 
 void Mesh::addRegion2D(const std::string &region_name, Region<ind2D> region){
-     if (regionMap2D.count(region_name)) {
-     output_warn << "Warning: Trying to add an already existing region: " << region_name << " to regionMap2D\n";
-     return;
-   }
-   regionMap2D[region_name] = region;
+  if (regionMap2D.count(region_name)) {
+    throw BoutException("Trying to add an already existing region %s to regionMap2D");
+  }
+  regionMap2D[region_name] = region;
 }
  
 void Mesh::createDefaultRegions(){
