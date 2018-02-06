@@ -80,6 +80,8 @@ class FieldPerp : public Field {
   const DataIterator begin() const;
   const DataIterator end() const;
 
+  const IndexRange region(REGION rgn) const;
+
   /*!
    * Direct data access using DataIterator indexing
    */

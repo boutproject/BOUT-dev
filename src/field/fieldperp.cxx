@@ -236,3 +236,20 @@ const FieldPerp sliceXZ(const Field3D& f, int y) {
   return result;
 }
 
+const IndexRange FieldPerp::region(REGION rgn) const {
+  switch(rgn) {
+  case RGN_ALL:
+    return IndexRange{0, nx-1,
+        0, 0,
+        0, nz-1};
+    break;
+  case RGN_NOX:
+    return IndexRange{getMesh()->xstart, getMesh()->xend,
+        0, 0,
+        0, nz-1};
+    break;
+  default:
+    throw BoutException("Field3D::region() : Requested region not implemented");
+    break;
+  };
+}
