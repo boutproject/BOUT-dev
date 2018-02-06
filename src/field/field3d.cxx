@@ -1165,12 +1165,12 @@ void invalidateGuards(Field3D &var){
   //Inner x -- both y and all z
   for(int ix=0; ix<localmesh->xstart; ix++){
     for(int iy=0; iy<localmesh->ystart; iy++){
-      for(int iz=0; iy<localmesh->LocalNz; iz++){
+      for(int iz=0; iz<localmesh->LocalNz; iz++){
 	var(ix,iy,iz) = nan("");
       }
     }
     for(int iy=localmesh->yend+1; iy<localmesh->LocalNy; iy++){
-      for(int iz=0; iy<localmesh->LocalNz; iz++){
+      for(int iz=0; iz<localmesh->LocalNz; iz++){
 	var(ix,iy,iz) = nan("");
       }
     }
@@ -1179,12 +1179,12 @@ void invalidateGuards(Field3D &var){
   //Outer x -- both y and all z
   for(int ix=localmesh->xend+1; ix<localmesh->LocalNx; ix++){
     for(int iy=0; iy<localmesh->ystart; iy++){
-      for(int iz=0; iy<localmesh->LocalNz; iz++){
+      for(int iz=0; iz<localmesh->LocalNz; iz++){
 	var(ix,iy,iz) = nan("");
       }
     }
     for(int iy=localmesh->yend+1; iy<localmesh->LocalNy; iy++){
-      for(int iz=0; iy<localmesh->LocalNz; iz++){
+      for(int iz=0; iz<localmesh->LocalNz; iz++){
 	var(ix,iy,iz) = nan("");
       }
     }
