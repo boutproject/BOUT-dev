@@ -71,7 +71,7 @@
 class specificInd {
 public:
   int ind;
-  specificInd(){};
+  specificInd() : ind(-1){};
   specificInd(int i) : ind(i){};
   specificInd &operator++() {
     ++ind;
