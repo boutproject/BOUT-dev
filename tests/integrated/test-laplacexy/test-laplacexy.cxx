@@ -34,10 +34,10 @@ int main(int argc, char** argv) {
   Field2D rhs = FieldFactory::get()->create2D("rhs", Options::getRoot(), mesh);
   Field2D x = inv->solve(rhs, 0.0);
   mesh->communicate(x);
-  //Field2D check = A*Laplace_perp(x) + B*x - rhs;
   Field2D check = Laplace_perpXY(A,x) + B*x - rhs;
+  Field2D check_laplaceperp = A*Laplace_perp(x) + B*x - rhs;
 
-  SAVE_ONCE3(rhs, x, check);
+  SAVE_ONCE4(rhs, x, check, check_laplaceperp);
 
   output.write("Second solve\n");
 
@@ -50,9 +50,9 @@ int main(int argc, char** argv) {
   Field2D rhs2 = FieldFactory::get()->create2D("rhs2", Options::getRoot(), mesh);
   Field2D x2 = inv->solve(rhs2, 0.0);
   mesh->communicate(x2);
-  //Field2D check2 = A*Laplace_perp(x2) + B*x2 - rhs2;
   Field2D check2 = Laplace_perpXY(A,x2) + B*x2 - rhs2;
-  SAVE_ONCE3(rhs2, x2, check2);
+  Field2D check2_laplaceperp = A*Laplace_perp(x2) + B*x2 - rhs2;
+  SAVE_ONCE4(rhs2, x2, check2, check2_laplaceperp);
 
   dump.write();
 

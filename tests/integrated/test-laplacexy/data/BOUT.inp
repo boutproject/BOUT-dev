@@ -1,19 +1,24 @@
 
 #rhs = sin(3*x - y)
+#rhs = sin(pi*x - y)
 rhs = mixmode(x,.057847)*mixmode(y,.2136053)
 rhs2 = rhs
+#a1 = 1.
 a1 = 1. + .1*mixmode(x,.78043279854)*mixmode(y,.1750923)
 b1 = 0.
 a2 = 2.*a1
 b2 = .1*mixmode(x*y,.789403270)
 
 grid = "data/d3d_119919.nc"
+#grid = "data/cbm18_dens8.grid_nx68ny64.nc"
 
-mz = 1
+non_uniform = true
+
 #incintshear = true
 
 [mesh]
 paralleltransform = shifted
+nz = true
 
 [laplacexy]
 type = petsc   # Use PETSc implementation

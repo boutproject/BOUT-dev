@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from boutdata import collect
+from boutdata.data import BoutOptionsFile
 from boututils.datafile import DataFile
 from matplotlib import pyplot
 import numpy
@@ -23,7 +24,9 @@ g_22=collect('g_22',path='data',xguards=False,yguards=False)
 g_23=collect('g_23',path='data',xguards=False,yguards=False)
 g_33=collect('g_33',path='data',xguards=False,yguards=False)
 
-grid = DataFile("data/d3d_119919.nc")
+opts = BoutOptionsFile("data/BOUT.inp")
+gridfilename = opts["grid"].replace('"','')
+grid = DataFile(gridfilename)
 R = grid['Rxy'][2:-2,:]
 Z = grid['Zxy'][2:-2,:]
 
