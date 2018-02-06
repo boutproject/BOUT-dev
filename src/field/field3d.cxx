@@ -1159,33 +1159,39 @@ Field2D DC(const Field3D &f) {
 }
 
 void invalidateGuards(Field3D &var){
-#if CHECK > 0  //Strip out if not checking
+#if CHECK > 4 // Strip out if not checking
   Mesh *localmesh = var.getMesh();
-  
-  //Inner x -- both y and all z
+
+  // Inner x -- all y and all z
   for(int ix=0; ix<localmesh->xstart; ix++){
-    for(int iy=0; iy<localmesh->ystart; iy++){
+    for (int iy = 0; iy < localmesh->LocalNy; iy++) {
       for(int iz=0; iz<localmesh->LocalNz; iz++){
-	var(ix,iy,iz) = nan("");
-      }
-    }
-    for(int iy=localmesh->yend+1; iy<localmesh->LocalNy; iy++){
-      for(int iz=0; iz<localmesh->LocalNz; iz++){
-	var(ix,iy,iz) = nan("");
+        var(ix, iy, iz) = std::nan("");
       }
     }
   }
 
-  //Outer x -- both y and all z
-  for(int ix=localmesh->xend+1; ix<localmesh->LocalNx; ix++){
-    for(int iy=0; iy<localmesh->ystart; iy++){
+  // Outer x -- all y and all z
+  for (int ix = localmesh->xend + 1; ix < localmesh->LocalNx; ix++) {
+    for (int iy = 0; iy < localmesh->LocalNy; iy++) {
       for(int iz=0; iz<localmesh->LocalNz; iz++){
-	var(ix,iy,iz) = nan("");
+        var(ix, iy, iz) = std::nan("");
       }
     }
+  }
+
+  // Remaining boundary point
+  for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
+    // Lower y -- non-boundary x and all z (could be all x but already set)
+    for(int iy=0; iy<localmesh->ystart; iy++){
+      for(int iz=0; iz<localmesh->LocalNz; iz++){
+        var(ix, iy, iz) = std::nan("");
+      }
+    }
+    // Lower y -- non-boundary x and all z (could be all x but already set)
     for(int iy=localmesh->yend+1; iy<localmesh->LocalNy; iy++){
       for(int iz=0; iz<localmesh->LocalNz; iz++){
-	var(ix,iy,iz) = nan("");
+        var(ix, iy, iz) = std::nan("");
       }
     }
   }
