@@ -32,11 +32,11 @@
 #include "utils.hxx"
 
 inline const Field3D interp_to(const Field3D &f, CELL_LOC loc){
-  return mesh->interp_to(f,loc);
+  return f.getMesh()->interp_to(f,loc);
 }
 
 inline const Field2D interp_to(const Field2D &f, CELL_LOC loc){
-  return mesh->interp_to(f,loc);
+  return f.getMesh()->interp_to(f,loc);
 }
 /// Print out the cell location (for debugging)
 void printLocation(const Field3D &var);

@@ -52,7 +52,8 @@ BoutReal interp(const stencil &s)
 
 const Field3D Mesh::interp_to(const Field3D &var, CELL_LOC loc) const
 {
-  if(mesh->StaggerGrids && (var.getLocation() != loc)) {
+  ASSERT3(var.getMesh() == this);
+  if(StaggerGrids && (var.getLocation() != loc)) {
 
     // Staggered grids enabled, and need to perform interpolation
     TRACE("Interpolating %s -> %s", strLocation(var.getLocation()), strLocation(loc));
@@ -130,8 +131,8 @@ const Field3D Mesh::interp_to(const Field3D &var, CELL_LOC loc) const
 	else {
 	  // var has no yup/ydown fields, so we need to shift into field-aligned coordinates
 	  
-	  Field3D var_fa = mesh->toFieldAligned(var);
-	  if (mesh->ystart > 1) {
+	  Field3D var_fa = this->toFieldAligned(var);
+	  if (this->ystart > 1) {
 	  // More than one guard cell, so set pp and mm values
 	  // This allows higher-order methods to be used
           for(const auto &i : result.region(RGN_NOY)) {
@@ -202,7 +203,7 @@ const Field3D Mesh::interp_to(const Field3D &var, CELL_LOC loc) const
       if(dir != CELL_ZLOW) {
 	// COMMUNICATION
 	
-	mesh->communicate(result);
+	this->communicate(result);
 
 	// BOUNDARIES
 
