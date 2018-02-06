@@ -51,7 +51,7 @@
   {                                                                                      \
     const auto blocks = region.getBlocks();                                              \
     for (auto block = blocks.begin(); block < blocks.end(); ++block) {                   \
-      for (auto index = (*block).first; index <= (*block).second; ++index) {             \
+      for (auto index = block->first; index <= block->second; ++index) {                 \
         __VA_ARGS__                                                                      \
       }                                                                                  \
     }                                                                                    \
@@ -62,7 +62,7 @@
     const auto blocks = region.getBlocks();                                              \
   BOUT_OMP(parallel for)                                                                 \
     for (auto block = blocks.begin(); block < blocks.end(); ++block) {                   \
-      for (auto index = (*block).first; index <= (*block).second; ++index) {             \
+      for (auto index = block->first; index <= block->second; ++index) {                 \
         __VA_ARGS__                                                                      \
       }                                                                                  \
     }                                                                                    \
