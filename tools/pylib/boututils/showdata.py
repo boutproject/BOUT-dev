@@ -325,6 +325,11 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
 
     # Generate grids for plotting
     # Try to use provided grids where possible 
+    # If x and/or y are not lists, apply to all variables
+    if not isinstance(x, (list,tuple)):
+        x = [x]*Nvar # Make list of x with length Nvar
+    if not isinstance(y, (list,tuple)):
+        y = [y]*Nvar # Make list of x with length Nvar
     xnew = []
     ynew = []
     for i in range(0,Nvar):
@@ -479,7 +484,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
             ax[i].set_title(titles[i])
             if hold_aspect:
                 ax[i].set_aspect('equal')
-            plots.append(ax[i].contourf(x[i][0],y[i],vars[i][0][0,:,:].T, Ncolors, cmap=cmap, lw=0, levels=clevels[i] ))
+            plots.append(ax[i].contourf(x[i][0].T,y[i].T,vars[i][0][0,:,:].T, Ncolors, cmap=cmap, lw=0, levels=clevels[i] ))
             plt.axes(ax[i])
             cbars.append(fig.colorbar(plots[i], format='%1.1e'))
             # Pad out unused list variables with zeros
@@ -556,7 +561,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
                 for k in range(0,Nlines[j]):
                     lines[j][k].set_data(x[j][k], vars[j][k][index,:])
             elif (contour[j] == 1):
-                plots[j] = ax[j].contourf(x[j][0],y[j],vars[j][0][index,:,:].T, Ncolors, cmap=cmap, lw=0, levels=clevels[j])
+                plots[j] = ax[j].contourf(x[j][0].T,y[j].T,vars[j][0][index,:,:].T, Ncolors, cmap=cmap, lw=0, levels=clevels[j])
                 ax[j].set_xlabel(r'x')
                 ax[j].set_ylabel(r'y')
                 ax[j].set_title(titles[j])
