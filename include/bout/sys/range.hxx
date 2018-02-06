@@ -39,8 +39,7 @@ class RangeIterator {
   
   int operator*() {return ind;}
   RangeIterator& operator++() { next(); return *this; }
-  RangeIterator& operator++(int) { next(); return *this; }
-  
+
   bool operator==(const RangeIterator &x) const {
     return cur == x.cur;
   }
