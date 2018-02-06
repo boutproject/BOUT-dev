@@ -17,9 +17,6 @@ MPIRUN=getmpirun()
 
 print("Making DataIterator test")
 s, out = launch_safe("make > make.log",pipe=True)
-if s:
-  print("Failed to run make")
-  exit(s);
 
 flags = [""]
 #, "nsys=2", "nsys=5 periodic", "nsys=7 n=10"]
