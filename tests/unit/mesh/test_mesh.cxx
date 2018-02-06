@@ -69,21 +69,21 @@ TEST_F(MeshTest, getRegion2DFromMesh) {
 }
 
 TEST_F(MeshTest, addRegionToMesh) {
-  Region<ind3D> junk(0,0,0,0,0,0,0,0);
+  Region<ind3D> junk(0,0,0,0,0,0,1,1);
   EXPECT_NO_THROW(mesh->addRegion("RGN_JUNK", junk));
   EXPECT_THROW(mesh->addRegion("RGN_JUNK", junk), BoutException);
-  Region<ind2D> junk2D(0,0,0,0,0,0,0,0);
+  Region<ind2D> junk2D(0,0,0,0,0,0,1,1);
   EXPECT_NO_THROW(mesh->addRegion("RGN_JUNK", junk2D));
 }
 
 TEST_F(MeshTest, addRegion3DToMesh) {
-  Region<ind3D> junk(0,0,0,0,0,0,0,0);
+  Region<ind3D> junk(0,0,0,0,0,0,1,1);
   EXPECT_NO_THROW(mesh->addRegion3D("RGN_JUNK_3D", junk));
   EXPECT_THROW(mesh->addRegion3D("RGN_JUNK_3D", junk), BoutException);
 }
 
 TEST_F(MeshTest, addRegion2DToMesh) {
-  Region<ind2D> junk(0,0,0,0,0,0,0,0);
+  Region<ind2D> junk(0,0,0,0,0,0,1,1);
   EXPECT_NO_THROW(mesh->addRegion2D("RGN_JUNK_2D", junk));
   EXPECT_THROW(mesh->addRegion2D("RGN_JUNK_2D", junk), BoutException);
 }

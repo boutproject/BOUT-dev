@@ -181,6 +181,13 @@ private:
   /// points in x, y, z, and the total y, z lengths
   inline regionIndices createRegionIndices(int xstart, int xend, int ystart, int yend,
                                            int zstart, int zend, int ny, int nz) {
+
+    ASSERT1(xend + 1 > xstart);
+    ASSERT1(yend + 1 > ystart);
+    ASSERT1(zend + 1 > zstart);
+    ASSERT1(ny > 0);
+    ASSERT1(nz > 0);
+
     int len = (xend - xstart + 1) * (yend - ystart + 1) * (zend - zstart + 1);
     regionIndices region(len);
     int x = xstart;
