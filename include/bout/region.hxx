@@ -96,7 +96,7 @@ public:
   ind3D(int i) : specificInd(i){};
   // Note operator= from base class is always hidden
   // by implicit method so have to be explicit
-  ind3D &operator=(const int &i) {
+  ind3D &operator=(int i) {
     ind = i;
     return *this;
   }
@@ -105,7 +105,7 @@ class ind2D : public specificInd {
 public:
   ind2D() : specificInd(){};
   ind2D(int i) : specificInd(i){};
-  ind2D &operator=(const int &i) {
+  ind2D &operator=(int i) {
     ind = i;
     return *this;
   }
