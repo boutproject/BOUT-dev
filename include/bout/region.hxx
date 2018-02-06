@@ -77,9 +77,10 @@ public:
     ++ind;
     return *this;
   }
-  specificInd &operator++(int) {
+  specificInd operator++(int) {
+    specificInd original(*this);
     ++ind;
-    return *this;
+    return original;
   }
   bool operator==(const specificInd &x) const { return ind == x.ind; }
   bool operator!=(const specificInd &x) const { return ind != x.ind; }
