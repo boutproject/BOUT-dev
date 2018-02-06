@@ -137,6 +137,9 @@ class Field {
    * Return the number of nz points
    */
   virtual int getNz() const;
+
+  /// Make region mendatory for all fields
+  virtual const IndexRange region(REGION rgn) const = 0;
  protected:
   Mesh * fieldmesh;
   /// Supplies an error method. Currently just prints and exits, but

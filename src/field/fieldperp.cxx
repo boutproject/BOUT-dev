@@ -249,7 +249,7 @@ const IndexRange FieldPerp::region(REGION rgn) const {
         0, nz-1};
     break;
   default:
-    throw BoutException("Field3D::region() : Requested region not implemented");
+    throw BoutException("FieldPerp::region() : Requested region not implemented");
     break;
   };
 }
