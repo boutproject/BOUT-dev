@@ -147,8 +147,8 @@ public:
   void setCoefC1(const Field2D &val) { C1 = val; }
   void setCoefC2(const Field2D &val) { C2 = val; }
   void setCoefD(const Field2D &val) { D = val; }
-  void setCoefEx(const Field2D &val) { throw BoutException("setCoefEx is not implemented in LaplaceMultigrid"); }
-  void setCoefEz(const Field2D &val) { throw BoutException("setCoefEz is not implemented in LaplaceMultigrid"); }
+  void setCoefEx(const Field2D &UNUSED(val)) { throw BoutException("setCoefEx is not implemented in LaplaceMultigrid"); }
+  void setCoefEz(const Field2D &UNUSED(val)) { throw BoutException("setCoefEz is not implemented in LaplaceMultigrid"); }
   
   void setCoefA(const Field3D &val) { A = val; }
   void setCoefC(const Field3D &val) { C1 = val; C2 = val; }
@@ -156,7 +156,7 @@ public:
   void setCoefC2(const Field3D &val) { C2 = val; }
   void setCoefD(const Field3D &val) { D = val; }
   
-  const FieldPerp solve(const FieldPerp &b) { FieldPerp zero; zero = 0.; return solve(b, zero); }
+  const FieldPerp solve(const FieldPerp &b) { FieldPerp zero(b.getMesh()); zero = 0.; return solve(b, zero); }
   const FieldPerp solve(const FieldPerp &b_in, const FieldPerp &x0);
   
 private:

@@ -127,7 +127,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
 
   /********** Get total problem size **********/
   if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
-    output.write("\tERROR: MPI_Allreduce failed!\n");
+    output_error.write("\tERROR: MPI_Allreduce failed!\n");
     ierr = PetscLogEventEnd(init_event,0,0,0,0);CHKERRQ(ierr);
     PetscFunctionReturn(1);
   }
@@ -401,6 +401,9 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
       ierr = PetscPrintf(PETSC_COMM_WORLD,"compute J by slow fd is done.\n");CHKERRQ(ierr);
       //ierr = MatView(J,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
     } else { // get sparse pattern of the Jacobian
+      throw BoutException("Path followed in PETSc solver not yet implemented in general "
+                          "-- experimental hard coded values here. Sorry\n");
+
       ierr = PetscPrintf(PETSC_COMM_WORLD,"get sparse pattern of the Jacobian...\n");CHKERRQ(ierr);
 
       if(n2Dvars() != 0) throw BoutException("PETSc solver can't handle 2D variables yet. Sorry\n");

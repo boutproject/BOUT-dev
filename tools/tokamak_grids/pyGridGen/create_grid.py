@@ -121,28 +121,27 @@ def poloidal_grid(interp_data, R, Z, ri, zi, n, fpsi=None, parweight=None,
         parweight = 0.0  # Default is poloidal distance
 
     np = numpy.size(ri)
-    
-    if np == 0 :
-    # Calculate poloidal distance along starting line
-        drdi = numpy.gradient(numpy.interp(ri, numpy.arange(R.size).astype(float), R))
-        dzdi = numpy.gradient(numpy.interp(zi, numpy.arange(Z.size).astype(float), Z))
-    
-        dldi = numpy.sqrt(drdi**2 + dzdi**2)
-        poldist = int_func(numpy.arange(0.,np), dldi) # Poloidal distance along line
-    else:
-        rpos = numpy.interp(ri,numpy.arange(R.size).astype(float), R)
-        zpos = numpy.interp(zi,numpy.arange(Z.size).astype(float),Z)
-        
-        dd = numpy.sqrt((zpos[1::] - zpos[0:(np-1)])**2 + (rpos[1::] - rpos[0:(np-1)])**2)
-        dd = numpy.append(dd, numpy.sqrt((zpos[0] - zpos[np-1])**2 + (rpos[0] - rpos[np-1])**2))
-        poldist = numpy.zeros(np)
-        for i in range (1,np) :
-            poldist[i] = poldist[i-1] + dd[i-1]
-                
 
+    #if np == 0 :
+    #    # Calculate poloidal distance along starting line
+    #    drdi = numpy.gradient(numpy.interp(ri, numpy.arange(R.size).astype(float), R))
+    #    dzdi = numpy.gradient(numpy.interp(zi, numpy.arange(Z.size).astype(float), Z))
+    # 
+    #    dldi = numpy.sqrt(drdi**2 + dzdi**2)
+    #    poldist = int_func(numpy.arange(0.,np), dldi) # Poloidal distance along line
+    #else:
+    rpos = numpy.interp(ri,numpy.arange(R.size).astype(float),R)
+    zpos = numpy.interp(zi,numpy.arange(Z.size).astype(float),Z)
+        
+    dd = numpy.sqrt((zpos[1::] - zpos[0:(np-1)])**2 + (rpos[1::] - rpos[0:(np-1)])**2)
+    dd = numpy.append(dd, numpy.sqrt((zpos[0] - zpos[np-1])**2 + (rpos[0] - rpos[np-1])**2))
+    poldist = numpy.zeros(np)
+    for i in range (1,np) :
+        poldist[i] = poldist[i-1] + dd[i-1]
+    
     if numpy.ndim(fpsi) == 2:
-    # Parallel distance along line
-    # Need poloidal and toroidal field
+        # Parallel distance along line
+        # Need poloidal and toroidal field
         ni = numpy.size(ri)
         bp = numpy.zeros(ni)
         bt = numpy.zeros(ni)
@@ -158,11 +157,11 @@ def poloidal_grid(interp_data, R, Z, ri, zi, n, fpsi=None, parweight=None,
             status=out.status
             
 
-     # dfd* are derivatives wrt the indices. Need to multiply by dr/di etc
+            # dfd* are derivatives wrt the indices. Need to multiply by dr/di etc
             dfdr /= numpy.interp(ri[i],numpy.arange(R.size).astype(float),numpy.gradient(R))
             dfdz /= numpy.interp(zi[i],numpy.arange(Z.size).astype(float),numpy.gradient(Z))
       
-            if i == 0 :
+            if i == 0 : # F=Bt*R at primary O-point
                 btr = numpy.interp(f, fpsi[0,:], fpsi[1,:])
     
       
@@ -183,9 +182,8 @@ def poloidal_grid(interp_data, R, Z, ri, zi, n, fpsi=None, parweight=None,
     print("PARWEIGHT: ", parweight)
 
     dist = parweight*pardist + (1. - parweight)*poldist
-
-
-  # Divide up distance. No points at the end (could be x-point)
+    
+    # Divide up distance. No points at the end (could be x-point)
     if n >= 2 :
         if ydown_dist == None :
             ydown_dist = dist[np-1]* 0.5 / numpy.float(n)
@@ -201,13 +199,13 @@ def poloidal_grid(interp_data, R, Z, ri, zi, n, fpsi=None, parweight=None,
         fn = numpy.float(n-1)
         d = (dist[np-1] - ydown_dist - yup_dist) # Distance between first and last
         i = numpy.arange(0.,n)
+        
+        #yd = numpy.min( ydown_space, 0.5*d/fn ) # np.min requires int-type inputs H.SETO
+        #yu = numpy.min( yup_space , 0.5*d/fn )  # np.min requires int-type inputs H.SETO
+        yd = numpy.minimum(ydown_space, 0.5*d/fn )
+        yu = numpy.minimum(yup_space , 0.5*d/fn )
 
-            
-        yd = numpy.min( ydown_space, 0.5*d/fn )
-        yu = numpy.min( yup_space , 0.5*d/fn )
-    # Fit to ai + bi^2 + c[i-sin(2pi*i/(n-1))*(n-1)/(2pi)]
-    
-    
+        # Fit to ai + bi^2 + c[i-sin(2pi*i/(n-1))*(n-1)/(2pi)]
         a = yd*2.
         b = old_div((2.*yu - a), fn)
         c = old_div(d,fn) - a - 0.5*b*fn
@@ -215,20 +213,19 @@ def poloidal_grid(interp_data, R, Z, ri, zi, n, fpsi=None, parweight=None,
         dloc =  ydown_dist + a*i + 0.5*b*i**2 + c*(i - numpy.sin(2.*numpy.pi*i / fn)*fn/(2.*numpy.pi))
         
         ddloc = a  + b*i + c*(1. - numpy.cos(2.*numpy.pi*i / fn))
-        
-    
-    # Fit to dist = a*i^3 + b*i^2 + c*i
-        #c = ydown_dist*2.
-        #b = 3.*(d/fn^2 - c/fn) - 2.*yup_dist/fn + c/fn
-        #a = d/fn^3 - c/fn^2 - b/fn
-        #dloc = ydown_dist + c*i + b*i^2 + a*i^3
+       
+        #; Fit to dist = a*i^3 + b*i^2 + c*i
+        #;c = ydown_dist*2.
+        #;b = 3.*(d/fn^2 - c/fn) - 2.*yup_dist/fn + c/fn
+        #;a = d/fn^3 - c/fn^2 - b/fn
+        #;dloc = ydown_dist + c*i + b*i^2 + a*i^3
     
     else :
         print("SORRY; Need 2 points in each region")
         sys.exit("Error message")
 
 
-  # Get indices in ri, zi
+    # Get indices in ri, zi
     ind = numpy.interp(dloc, dist, numpy.arange(0.,np))
 
     return ind
@@ -246,28 +243,28 @@ def poloidal_grid(interp_data, R, Z, ri, zi, n, fpsi=None, parweight=None,
 #   npar         Number of perpendicular lines to generate
 #   nin, nout    Number of points inside and outside line
 def grid_region ( interp_data, R, Z, 
-                      ri, zi,        # Starting line to grid.
-                      fvals,         # Location of the surfaces
-                      sind,          # Index in fvals of the starting line
-                      npar,          # Number of points along the line
-                      slast=None,   # Index in fvals of last successful point
-                      sfirst=None, 
-                      oplot=None, 
-                      boundary=None, 
-                      ffirst=None, flast=None, 
-                      fpsi=None,  # f(psi) = R*Bt optional current function
-                      parweight=None, # Space equally in parallel (1) or poloidal (0) distance
-                      ydown_dist=None, yup_dist=None, 
-                      ydown_space=None, yup_space=None ):
+                  ri, zi,        # Starting line to grid.
+                  fvals,         # Location of the surfaces
+                  sind,          # Index in fvals of the starting line
+                  npar,          # Number of points along the line
+                  slast=None,    # Index in fvals of last successful point
+                  sfirst=None, 
+                  oplot=None, 
+                  boundary=None, 
+                  ffirst=None, flast=None, 
+                  fpsi=None,  # f(psi) = R*Bt optional current function
+                  parweight=None, # Space equally in parallel (1) or poloidal (0) distance
+                  ydown_dist=None, yup_dist=None, 
+                  ydown_space=None, yup_space=None ):
   
     nsurf = numpy.size(fvals)
   
     if sind >= 0 :
-    # starting position is on one of the output surfaces
+        # starting position is on one of the output surfaces
         f0 = fvals[sind]
         nin = sind
     else:
-    # Starting position between surfaces
+        # Starting position between surfaces
         n = old_div(numpy.size(ri),2)
         out=local_gradient (interp_data, ri[n], zi[n], status=0, f=f0)
         status=out.status
@@ -306,20 +303,20 @@ def grid_region ( interp_data, R, Z,
     #zii = int_func(SMOOTH(deriv(zii), 3)) + zii[0]
     #STOP
   
-  # Refine the location of the starting point
+    # Refine the location of the starting point
     for i in range (npar) :
         ri1=0.
         zi1=0.
         out=follow_gradient( interp_data, R, Z, rii[i], zii[i], f0, ri1, zi1 )
         ri1=out.rinext
         zi1=out.zinext
- 
+        
         rii[i] = ri1
         zii[i] = zi1
-   
+        
 
-  # From each starting point, follow gradient in both directions
-  
+    # From each starting point, follow gradient in both directions
+    
     rixy = numpy.zeros((nsurf, npar))
     zixy = numpy.zeros((nsurf, npar))
     status=0
@@ -334,7 +331,7 @@ def grid_region ( interp_data, R, Z,
             rixy[nin, i] = rii[i]
             zixy[nin, i] = zii[i]
         else:
-      # fvals[nin] should be just outside the starting position
+            # fvals[nin] should be just outside the starting position
             ftarg = fvals[nin]
             
             rinext=0.
@@ -351,13 +348,11 @@ def grid_region ( interp_data, R, Z,
             
             
         for j in range (nout) :
-         #   print nin+j+1
+            #print nin+j+1
             ftarg = fvals[nin+j+1]
       
             rinext=0.
             zinext=0.
-            
-             
 
             out=follow_gradient ( interp_data, R, Z, rixy[nin+j, i], zixy[nin+j, i],  
                                 ftarg, rinext, zinext, status=status,  
@@ -454,8 +449,10 @@ def grid_region ( interp_data, R, Z,
             oplot_contour(rixy[:, i], zixy[:, i] , R, Z)
 
              
-
-    
+    # Set [:,0] to branch cut locations (for core only case) by H.Seto
+    y_in = numpy.argmin(rixy[0,:])
+    rixy = numpy.concatenate((rixy[:,y_in:],rixy[:,:y_in]),axis=1)
+    zixy = numpy.concatenate((zixy[:,y_in:],zixy[:,:y_in]),axis=1)
 
     return Bunch(rixy=rixy, zixy=zixy, rxy=numpy.interp(rixy, numpy.arange(R.size), R), zxy=numpy.interp(zixy, numpy.arange(Z.size), Z))
 
@@ -492,49 +489,48 @@ def create_grid( F, R, Z, in_settings, critical,
                       #single_rad_grid, 
                       #xpt_mindist, xpt_mul, strictbndry,debug):
 
-   # if size(nrad_flexible) == 0 :
+    # if size(nrad_flexible) == 0 :
     #    nrad_flexible = 0
 
     if iter==None:
         iter = 0
+        
     if iter > 3:
         print("ERROR: Too many iterations")
         return #, {error:1}
 
-
-   
-  #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  # Check the settings
-  # If a setting is missing, set a default value
+    #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    # Check the settings
+    # If a setting is missing, set a default value
   
-   # inspect.getargspec(create_grid)
+    # inspect.getargspec(create_grid)
     
- # if N_PARAMS() LT 3 THEN BEGIN
-  #  PRINT, "ERROR: Need at least a 2D array of psi values, R and Z arrays"
-  #  RETURN, {error:1}
-  #ENDIF ELSE IF N_PARAMS() LT 4 THEN BEGIN
-  #  ; Settings omitted. Set defaults
-  #  print "Settings not given -> using default values"
-   # settings = {psi_inner:0.9, 
+    # if N_PARAMS() LT 3 THEN BEGIN
+    #  PRINT, "ERROR: Need at least a 2D array of psi values, R and Z arrays"
+    #  RETURN, {error:1}
+    #ENDIF ELSE IF N_PARAMS() LT 4 THEN BEGIN
+    #  ; Settings omitted. Set defaults
+    #  print "Settings not given -> using default values"
+    # settings = {psi_inner:0.9, 
     #            psi_outer:1.1, 
-     #           nrad:36, 
-      #          npol:64, 
-       #         rad_peaking:0.0, 
-        #        pol_peaking:0.0, 
-         #       parweight:0.0}
- # ENDIF ELSE BEGIN
-  # print "Checking settings"
+    #           nrad:36, 
+    #          npol:64, 
+    #         rad_peaking:0.0, 
+    #        pol_peaking:0.0, 
+    #       parweight:0.0}
+    # ENDIF ELSE BEGIN
+    # print "Checking settings"
     settings = in_settings # So the input isn't changed
-  #  str_check_present, settings, 'psi_inner', 0.9
-  #  str_check_present, settings, 'psi_outer', 1.1
-  #  str_check_present, settings, 'nrad', 36
-  #  str_check_present, settings, 'npol', 64
-  #  str_check_present, settings, 'rad_peaking', 0.0
-  #  str_check_present, settings, 'pol_peaking', 0.0
-  #  str_check_present, settings, 'parweight', 0.0
-  #ENDELSE
+    #  str_check_present, settings, 'psi_inner', 0.9
+    #  str_check_present, settings, 'psi_outer', 1.1
+    #  str_check_present, settings, 'nrad', 36
+    #  str_check_present, settings, 'npol', 64
+    #  str_check_present, settings, 'rad_peaking', 0.0
+    #  str_check_present, settings, 'pol_peaking', 0.0
+    #  str_check_present, settings, 'parweight', 0.0
+    #ENDELSE
 
-    s = numpy.ndim(F)
+    s  = numpy.ndim(F)
     s1 = numpy.shape(F)
     if s != 2:
         print("ERROR: First argument must be 2D array of psi values")
@@ -542,78 +538,85 @@ def create_grid( F, R, Z, in_settings, critical,
     nx = s1[0]
     ny = s1[1]
   
-    s = numpy.ndim(R)
+    s  = numpy.ndim(R)
     s1 = numpy.size(R)
     if s != 1  or s1 != nx :
         print("ERROR: Second argument must be 1D array of major radii")
         return # {error:1}
   
-    s = numpy.ndim(Z)
+    s  = numpy.ndim(Z)
     s1 = numpy.size(Z)
     if s != 1  or s1 != ny:
         print("ERROR: Second argument must be 1D array of heights")
         return # {error:1}
 
 
-  # Get an even number of points for efficient FFTs
+    # Get an even number of points for efficient FFTs
     if nx % 2 == 1:
-    # odd number of points in R. Cut out last point
-        R = R[0:(nx-1)]
-        F = F[0:(nx-1), :]
+        # odd number of points in R. Cut out last point
+        #R = R[0:(nx-1)]    # H.SETO (QST)
+        #F = F[0:(nx-1), :] # H.SETO (QST)
+        R = R[:-1]
+        F = F[:-1, :]
         nx = nx - 1
-  
+
     if ny % 2 == 1:
-    # Same for Z
-        Z = Z[0:(ny-1)]
-        F = F[:,0:(ny-1)]
+        # odd number of points in Z. Cut out last point
+        #Z = Z[0:(ny-1)]   # H.SETO (QST)
+        #F = F[:,0:(ny-1)] # H.SETO (QST)
+        Z = Z[:-1]
+        F = F[:,:-1]
         ny = ny - 1
-  
 
-
-    if boundary != None:
+    #if boundary != None:# for python3 H.SETO (QST)
+    if not boundary is None: 
         s = numpy.ndim(boundary)
         s1= numpy.shape(boundary)
         if s != 2  or s1[0] != 2:
             print("WARNING: boundary must be a 2D array: [2, n]. Ignoring")
             boundary = 0
         else:       
-        # Calculate indices
-            bndryi = numpy.zeros((2,1188))
-            bndryi[0,:] = numpy.interp(bndryi[0,:], R, numpy.arange(0.,nx))
-            bndryi[1,:] = numpy.interp(bndryi[1,:], Z, numpy.arange(0.,ny))
+            # Calculate indices 
+            #bndryi = numpy.zeros((2,1188)) 
+            #bndryi[0,:] = numpy.interp(bndryi[0,:], R, numpy.arange(0.,nx))
+            #bndryi[1,:] = numpy.interp(bndryi[1,:], Z, numpy.arange(0.,ny))
+            bndryi = numpy.zeros(boundary.shape,dtype=float)  # H.SETO (QST)
+            bndryi[0,:] = numpy.interp(boundary[0,:], R, numpy.arange(0.,nx))
+            bndryi[1,:] = numpy.interp(boundary[1,:], Z, numpy.arange(0.,ny))
+            #print(bndryi[0,:]*(R[-1]-R[0])/(nx-1.)+R[0]-boundary[0,:])
+            #print(bndryi[1,:]*(Z[-1]-Z[0])/(ny-1.)+Z[0]-boundary[1,:])
 
-  
-        if bndryi == None :
+        #if bndryi == None : # for python3 H.SETO (QST)
+        if bndryi is None :
             bndryi = numpy.zeros((2,4))
-            bndryi[0,:] = [1, nx-1, nx-1, 1]
-            bndryi[1,:] = [1, 1, ny-1, ny-1]
- 
-  
-  #;;;;;;;;;;;;;; Psi interpolation data ;;;;;;;;;;;;;;
-  
+            #bndryi[0,:] = [1, nx-1, nx-1, 1] # H.SETO (QST)
+            #bndryi[1,:] = [1, 1, ny-1, ny-1] # H.SETO (QST)
+            bndryi[0,:] = [1, nx-2, nx-2, 1]
+            bndryi[1,:] = [1, 1, ny-2, ny-2]
+
+    #;;;;;;;;;;;;;; Psi interpolation data ;;;;;;;;;;;;;;
+    
     interp_data = Bunch(nx=nx, ny=ny, 
-                 method=0, 
-                 f= F)       # Always include function
+                        method=0, 
+                        f= F)       # Always include function
                
     if fast == 'fast':
         print("Using Fast settings")
         interp_data.method = 2
-  
-
-  #;;;;;;;;;;;;;;; First plot ;;;;;;;;;;;;;;;;
-
-    nlev = 100
-    minf = numpy.min(F)
-    maxf = numpy.max(F)
-    levels = numpy.arange(numpy.float(nlev))*(maxf-minf)/numpy.float(nlev-1) + minf
+        
+    #;;;;;;;;;;;;;;; First plot ;;;;;;;;;;;;;;;;
+    
+    #nlev = 100
+    #minf = numpy.min(F)
+    #maxf = numpy.max(F)
+    #levels = numpy.arange(numpy.float(nlev))*(maxf-minf)/numpy.float(nlev-1) + minf
 
     Rr=numpy.tile(R,ny).reshape(ny,nx).T
     Zz=numpy.tile(Z,nx).reshape(nx,ny)
-
-
-    contour( Rr, Zz, F, levels=levels)
+        
+    #contour( Rr, Zz, F, levels=levels)
     
-          #  arrange the plot on the screen      
+    #  arrange the plot on the screen      
     #mngr = get_current_fig_manager()
     #geom = mngr.window.geometry()
     #x,y,dx,dy = geom.getRect()
@@ -621,14 +624,15 @@ def create_grid( F, R, Z, in_settings, critical,
 
 
   
-  #  if boundary != None :
-  #      plot(boundary[0,:],boundary[1,:],'r-')
+    #if boundary != None :
+    #if not boundary is None :
+    #    plot(boundary[0,:],boundary[1,:],'r--')
   
-    show(block=False)  
+    #show(block=False)  
     
-  #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  
-
+    
+    #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    
     n_opoint = critical.n_opoint
     n_xpoint = critical.n_xpoint
     primary_opt = critical.primary_opt
@@ -640,13 +644,13 @@ def create_grid( F, R, Z, in_settings, critical,
     xpt_zi = numpy.array(critical.xpt_zi).flatten()
     xpt_f  = numpy.array(critical.xpt_f).flatten()
     
+    # Refining x-point location is omitted H.SETO (QST)
     
 
+    # Overplot the separatrices, O-points
+    # oplot_critical, F, R, Z, critical
 
-  # Overplot the separatrices, O-points
-  #oplot_critical, F, R, Z, critical
-
-  # Psi normalisation factors
+    # Psi normalisation factors
 
     faxis = opt_f[primary_opt]
     
@@ -654,17 +658,18 @@ def create_grid( F, R, Z, in_settings, critical,
     
 
 
-  # From normalised psi, get range of f
+    # From normalised psi, get range of f
     f_inner = faxis + numpy.min(settings.psi_inner)*fnorm
     f_outer = faxis + numpy.max(settings.psi_outer)*fnorm
     
-  
-  # Check the number of x-points
-    if critical.n_xpoint == 0 :
-    #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    # Grid entirely in the core
+    # Check the number of x-points
+    #if critical.n_xpoint == 0 :
+    if n_xpoint == 0 :
+        #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        # Grid entirely in the core
     	print("Generating grid entirely in the core")
 
+    print("Now pyGridGen can hadle only the core") #H.SETO (QST)
     nrad = numpy.sum(settings.nrad) # Add up all points
     npol = numpy.sum(settings.npol)
     rad_peaking = settings.rad_peaking[0] # Just the first region
@@ -674,17 +679,18 @@ def create_grid( F, R, Z, in_settings, critical,
     fvals = radial_grid(nrad, f_inner, f_outer, 1, 1, [xpt_f[inner_sep]], rad_peaking)
 
     fvals = fvals.flatten()
-    # Create a starting surface
+    # Create a starting surface (midpoint in radial direction)
     sind = numpy.int(old_div(nrad, 2))
     start_f = fvals[sind]
     
 
-  #  contour_lines( F, numpy.arange(nx).astype(float), numpy.arange(ny).astype(float), levels=[start_f])
+    #  contour_lines( F, numpy.arange(nx).astype(float), numpy.arange(ny).astype(float), levels=[start_f])
     cs=contour( Rr, Zz, F,  levels=[start_f])
 
     p = cs.collections[0].get_paths()
- #
- #  You might get more than one contours for the same start_f. We need to keep the closed one  
+
+    #
+    #  You might get more than one contours for the same start_f. We need to keep the closed one  
     vn=numpy.zeros(numpy.size(p))
     
       
@@ -692,7 +698,7 @@ def create_grid( F, R, Z, in_settings, critical,
     vn[0]=numpy.shape(v)[0]
     xx=[v[:,0]]
     yy=[v[:,1]]
-    
+
     if numpy.shape(vn)[0] > 1:
         for i in range(1,numpy.shape(vn)[0]):
             v = p[i].vertices
@@ -701,7 +707,7 @@ def create_grid( F, R, Z, in_settings, critical,
             yy.append(v[:,1])
             #xx = [xx,v[:,0]]
             #yy = [yy,v[:,1]]
-
+    
     print("PRIMARY: ", primary_opt, opt_ri[primary_opt], opt_zi[primary_opt])
 
     if numpy.shape(vn)[0] > 1 :
@@ -713,17 +719,16 @@ def create_grid( F, R, Z, in_settings, critical,
         
         x=xx[ind]
         y=yy[ind]
-        print("Contour: ", ind)
+        print("Contour: ", ind,opt_r,opt_z)
     else:
         ind = 0
         x=xx[0]
         y=yy[0]
           
 
-# plot the start_f line     
+    # plot the start_f line     
     zc = cs.collections[0]
-    setp(zc, linewidth=4)
-
+    setp(zc, linewidth=1)
     clabel(cs, [start_f],  # label the level
            inline=1,
            fmt='%9.6f',
@@ -738,16 +743,16 @@ def create_grid( F, R, Z, in_settings, critical,
     ans=query_yes_no('Press enter to create grid')  
     
     if ans != 1 : 
-        show()
+        #show() # remove unnecessary show() to prevent hang-up H.SETO
 	sys.exit()
-      
+        
     start_ri, start_zi=transform_xy(x,y,R,Z)
-    
+
     ## Make sure that the line goes clockwise
     #
     m = numpy.argmax(numpy.interp(start_zi,numpy.arange(Z.size).astype(float), Z))
     if (numpy.gradient(numpy.interp(start_ri, numpy.arange(R.size).astype(float), R)))[m] < 0.0:
-      # R should be increasing at the top. Need to reverse
+        # R should be increasing at the top. Need to reverse
         start_ri = start_ri[::-1]
         start_zi = start_zi[::-1]
         print('points reversed')
@@ -763,19 +768,24 @@ def create_grid( F, R, Z, in_settings, critical,
     az=numpy.append(numpy.append(start_zi[(np-s-1):(np-1)], start_zi), start_zi[1:s+1])
     start_zi = SMOOTH(az, window_len=s)[s+1:(np+s+1)]
     
-    
+    #r_smooth = numpy.interp(start_ri, numpy.arange(len(R)), R)
+    #z_smooth = numpy.interp(start_zi, numpy.arange(len(Z)), Z)
+    #plot(r_smooth,z_smooth,'r--')
+    #draw()
+    #raw_input()
+
     for i in range (np) :
-        ri1=0.
-        zi1=0.
+        ri1=0. # not used H.SETO 
+        zi1=0. # not used H.SETO 
         out=follow_gradient( interp_data, R, Z, start_ri[i], start_zi[i], start_f, ri1, zi1 )
         status=out.status
-        ri1=out.rinext
-        zi1=out.zinext
+        ri1=out.rinext # rinext = ri + integral of dri/df from start_f to target_f
+        zi1=out.zinext # zinext = zi + integral of dzi/df from start_f to target_f
 
         start_ri[i] = ri1
         start_zi[i] = zi1
-    
-        
+
+    # now start_ri and start_zi on target_f-line
     a = grid_region(interp_data, R, Z,
                     start_ri, start_zi, 
                     fvals, 
@@ -785,19 +795,21 @@ def create_grid( F, R, Z, in_settings, critical,
                     fpsi=fpsi, 
                     parweight=settings.parweight, 
                     oplot='oplot')
-    
-    
+   
+    # H.SETO 
+
     plot( numpy.append(a.rxy[0,:], a.rxy[0,0]), numpy.append(a.zxy[0,:], a.zxy[0,0]), 'r')
     
           
     for i in range (1, nrad) :
         plot( numpy.append(a.rxy[i,:], a.rxy[i,0]), numpy.append(a.zxy[i,:], a.zxy[i,0]), 'r')
-
-
+    
+    
     for i in range (0, npol-1) :
         plot( a.rxy[:,i], a.zxy[:,i], 'r')
     
     draw()
+    
 
     # Get other useful variables
     psixy = numpy.zeros((nrad, npol))
@@ -836,7 +848,8 @@ def create_grid( F, R, Z, in_settings, critical,
 
     result = Bunch(error=0, # Signal success
               psi_inner=settings.psi_inner, psi_outer=settings.psi_outer, # Unchanged psi range
-              nrad=nrad, npol=npol, #Number of points in radial and poloidal direction
+              #nrad=nrad, npol=npol, #Number of points in radial and poloidal direction
+              nrad=[nrad], npol=[npol], # Number of points in radial and poloidal direction (must be array)
               Rixy=a.rixy, Zixy=a.zixy, # Indices into R and Z of each point
               Rxy=a.rxy, Zxy=a.zxy, # Location of each grid point
               psixy=psixy, # Normalised psi for each point

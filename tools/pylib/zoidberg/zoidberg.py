@@ -1,6 +1,8 @@
 from __future__ import division
-from builtins import object
-from past.utils import old_div
+try:
+    from builtins import object
+except ImportError:
+    pass
 
 import numpy as np
 from boututils import datafile as bdata
@@ -15,8 +17,6 @@ except ImportError:
         from evtk.hl import gridToVTK
     except ImportError:
         have_evtk = False
-
-import matplotlib.pyplot as plt
 
 from . import grid
 from . import field
@@ -34,18 +34,34 @@ def make_maps(grid, magnetic_field, quiet=False, **kwargs):
     **kwargs       - Arguments for field line tracing, etc.
     """
 
-    nx, ny, nz = (grid.nx, grid.ny, grid.nz)
+    # Get number of points
+    # Note: Assumes that all poloidal grids have the same number of x and z(y) points
+    ny = grid.numberOfPoloidalGrids()
+    pol, _ = grid.getPoloidalGrid(0)
+    nx = pol.nx
+    nz = pol.nz
 
+    shape = (nx, ny, nz)
+
+    # Coordinates of each grid point
+    R = np.zeros( shape )
+    Z = np.zeros( shape )
+    
     # Arrays to store X index at end of field-line
     # starting from (x,y,z) and going forward in toroidal angle (y)
-    forward_xt_prime = np.zeros( (nx, ny, nz) )
-    forward_zt_prime = np.zeros( (nx, ny, nz) )
+    forward_xt_prime = np.zeros( shape )
+    forward_zt_prime = np.zeros( shape )
 
+    forward_R = np.zeros( shape )
+    forward_Z = np.zeros( shape )
+    
     # Same but going backwards in toroidal angle
-    backward_xt_prime = np.zeros( (nx, ny, nz) )
-    backward_zt_prime = np.zeros( (nx, ny, nz) )
-
-    x2d, z2d = np.meshgrid(grid.xarray, grid.zarray, indexing='ij')
+    backward_xt_prime = np.zeros( shape )
+    backward_zt_prime = np.zeros( shape )
+    
+    backward_R = np.zeros( shape )
+    backward_Z = np.zeros( shape )
+    
     field_tracer = fieldtracer.FieldTracer(magnetic_field)
 
     try:
@@ -58,30 +74,83 @@ def make_maps(grid, magnetic_field, quiet=False, **kwargs):
         if not quiet:
             update_progress(float(j)/float(ny-1), **kwargs)
 
-        # Go forwards from yarray[j] by an angle delta_y
-        y_coords = [grid.yarray[j], grid.yarray[j]+grid.delta_y]
-        # We only want the end point, as [0,...] is the initial position
-        coord = field_tracer.follow_field_lines(x2d, z2d, y_coords, rtol=rtol)[1,...]
-        forward_xt_prime[:,j,:] = (grid.MXG - 0.5) + coord[:,:,0] / grid.delta_x # X index
-        forward_zt_prime[:,j,:] = coord[:,:,1] / grid.delta_z # Z index
+        # Get this poloidal grid
+        pol, ycoord = grid.getPoloidalGrid(j)
 
-        # Go backwards from yarray[j] by an angle -delta_y
-        y_coords = [grid.yarray[j], grid.yarray[j]-grid.delta_y]
+        # Store coordinates
+        R[:,j,:] = pol.R
+        Z[:,j,:] = pol.Z
+        
+        # Get the next (forward) poloidal grid
+        pol_forward, y_forward = grid.getPoloidalGrid(j+1)
+        
         # We only want the end point, as [0,...] is the initial position
-        coord = field_tracer.follow_field_lines(x2d, z2d, y_coords, rtol=rtol)[1,...]
-        backward_xt_prime[:,j,:] = (grid.MXG - 0.5) + coord[:,:,0] / grid.delta_x # X index
-        backward_zt_prime[:,j,:] = coord[:,:,1] / grid.delta_z # Z index
+        coord = field_tracer.follow_field_lines(pol.R, pol.Z, [ycoord, y_forward], rtol=rtol)[1,...]
+
+        # Store the coordinates in real space
+        forward_R[:,j,:] = coord[:,:,0]
+        forward_Z[:,j,:] = coord[:,:,1]
+
+        # Get the indices into the forward poloidal grid
+        if pol_forward is None:
+            # No forward grid, so hit a boundary
+            xind = -1
+            zind = -1
+        else:
+            # Find the indices for these new locations on the forward poloidal grid
+            xcoord = coord[:,:,0]
+            zcoord = coord[:,:,1]
+            xind, zind = pol_forward.findIndex(xcoord, zcoord)
+
+            # Check boundary defined by the field
+            outside = magnetic_field.boundary.outside(xcoord, y_forward, zcoord)
+            xind[outside] = -1
+            zind[outside] = -1
+            
+        forward_xt_prime[:,j,:] = xind
+        forward_zt_prime[:,j,:] = zind
+
+        # Go backwards one poloidal grid
+        pol_back, y_back = grid.getPoloidalGrid(j-1)
+
+        # We only want the end point, as [0,...] is the initial position
+        coord = field_tracer.follow_field_lines(pol.R, pol.Z, [ycoord, y_back], rtol=rtol)[1,...]
+        
+        # Store the coordinates in real space
+        backward_R[:,j,:] = coord[:,:,0]
+        backward_Z[:,j,:] = coord[:,:,1] 
+        
+        if pol_back is None:
+            # Hit boundary
+            xind = -1
+            zind = -1
+        else:
+            # Find the indices for these new locations on the backward poloidal grid
+            xcoord = coord[:,:,0]
+            zcoord = coord[:,:,1]
+            xind, zind = pol_back.findIndex(xcoord, zcoord)
+            
+            # Check boundary defined by the field
+            outside = magnetic_field.boundary.outside(xcoord, y_back, zcoord)
+            xind[outside] = -1
+            zind[outside] = -1
+        
+        backward_xt_prime[:,j,:] = xind
+        backward_zt_prime[:,j,:] = zind
 
     maps = {
+        'R' : R, 'Z':Z,
+        'forward_R':forward_R, 'forward_Z':forward_Z,
         'forward_xt_prime' : forward_xt_prime,
         'forward_zt_prime' : forward_zt_prime,
+        'backward_R':backward_R, 'backward_Z':backward_Z,
         'backward_xt_prime' : backward_xt_prime,
         'backward_zt_prime' : backward_zt_prime
     }
 
     return maps
 
-def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc', legacy=False):
+def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc', new_names=False, metric2d=True):
     """Write FCI maps to BOUT++ grid file
 
     Inputs
@@ -90,49 +159,103 @@ def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc', legacy=False)
     magnetic_field - Zoidberg magnetic field object
     maps           - Dictionary of FCI maps
     gridfile       - Output filename
-    legacy         - If true, write FCI maps using FFTs
+    
+    new_names      - Write "g_yy" rather than "g_22"
+    metric2d       - Output only 2D metrics. 
+    
+    Outputs
+    -------
+
+    Writes the following variables to the grid file
+    
+
     """
 
-    nx, ny, nz = (grid.nx, grid.ny, grid.nz)
-    xarray, yarray, zarray = (grid.xarray, grid.yarray, grid.zarray)
+    nx, ny, nz = grid.shape
+    # Get metric tensor
+    metric = grid.metric()
 
-    g_22 = np.ones((nx,ny))# + 1./grid.Rmaj(grid.xarray,grid.yarray)**2
+    # Check if the magnetic field is in cylindrical coordinates
+    # If so, we need to change the gyy and g_yy metrics
+    pol_grid,ypos = grid.getPoloidalGrid(0)
+    Rmaj = magnetic_field.Rfunc(pol_grid.R, pol_grid.Z, ypos)
+    if Rmaj is not None:
+        # In cylindrical coordinates
+        Rmaj = np.zeros(grid.shape)
+        for yindex in range(grid.numberOfPoloidalGrids()):
+            pol_grid,ypos = grid.getPoloidalGrid(yindex)
+            Rmaj[:,yindex,:] = magnetic_field.Rfunc(pol_grid.R, pol_grid.Z, ypos)
+        metric["gyy"] = 1./Rmaj**2
+        metric["g_yy"] = Rmaj**2
+        
+    # Get magnetic field and pressure
+    Bmag = np.zeros(grid.shape)
+    pressure = np.zeros(grid.shape)
+    for yindex in range(grid.numberOfPoloidalGrids()):
+        pol_grid,ypos = grid.getPoloidalGrid(yindex)
+        Bmag[:,yindex,:] = magnetic_field.Bmag(pol_grid.R, pol_grid.Z, ypos)
+        pressure[:,yindex,:] = magnetic_field.pressure(pol_grid.R, pol_grid.Z, ypos)
+        
+    # Metric is now 3D
+    if metric2d:
+        # Remove the Z dimension from metric components
+        print("WARNING: Outputting 2D metrics, discarding metric information.")
+        for key in metric:
+            try:
+                metric[key] = metric[key][:,:,0]
+            except:
+                pass
+        # Make dz a constant
+        metric["dz"] = metric["dz"][0,0]
+        # Add Rxy, Bxy
+        metric["Rxy"] = maps["R"][:,:,0]
+        metric["Bxy"] = Bmag[:,:,0]
 
     with bdata.DataFile(gridfile, write=True, create=True) as f:
         ixseps = nx+1
-        f.write('nx', grid.nx)
-        f.write('ny', grid.ny)
-        if not legacy:
-            # Legacy files don't need nz
-            f.write('nz', grid.nz)
+        f.write('nx', nx)
+        f.write('ny', ny)
+        f.write('nz', nz)
 
-        f.write("dx", grid.delta_x)
-        f.write("dy", grid.delta_y)
-        f.write("dz", grid.delta_z)
+        f.write("dx", metric["dx"])
+        f.write("dy", metric["dy"])
+        f.write("dz", metric["dz"])
 
         f.write("ixseps1",ixseps)
         f.write("ixseps2",ixseps)
 
-        f.write("g_22", g_22)
-
-        f.write("Bxy", magnetic_field.b_mag[:,:,0])
-        f.write("bx", magnetic_field.bx)
-        f.write("bz", magnetic_field.bz)
-
-        # Legacy grid files need to FFT 3D arrays
-        if legacy:
-            from boutdata.input import transform3D
-            f.write('forward_xt_prime',  transform3D(maps['forward_xt_prime']))
-            f.write('forward_zt_prime',  transform3D(maps['forward_zt_prime']))
-
-            f.write('backward_xt_prime', transform3D(maps['backward_xt_prime']))
-            f.write('backward_zt_prime', transform3D(maps['backward_zt_prime']))
+        # Metric tensor
+        
+        if new_names:
+            for key, val in metric.items():
+                f.write(key, val)
         else:
-            f.write('forward_xt_prime',  maps['forward_xt_prime'])
-            f.write('forward_zt_prime',  maps['forward_zt_prime'])
+            # Translate between output variable names and metric names
+            # Map from new to old names. Anything not in this dict
+            # is output unchanged
+            name_changes = {"g_yy":"g_22",
+                            "gyy":"g22",
+                            "gxx":"g11",
+                            "gxz":"g13",
+                            "gzz":"g33",
+                            "g_xx":"g_11",
+                            "g_xz":"g_13",
+                            "g_zz":"g_33"}
+            for key in metric:
+                name = key
+                if name in name_changes:
+                    name = name_changes[name]
+                f.write(name, metric[key])
+                
+        # Magnetic field
+        f.write("B", Bmag)
 
-            f.write('backward_xt_prime', maps['backward_xt_prime'])
-            f.write('backward_zt_prime', maps['backward_zt_prime'])
+        # Pressure
+        f.write("pressure", pressure)
+        
+        # Maps - write everything to file
+        for key in maps:
+            f.write(key, maps[key])
 
 def write_Bfield_to_vtk(grid, magnetic_field, scale=5, vtkfile="fci_zoidberg", psi=True):
     """Write the magnetic field to a VTK file

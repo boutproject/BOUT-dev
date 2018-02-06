@@ -1,3 +1,6 @@
+
+.. _sec-examples:
+
 Examples
 ========
 
@@ -8,7 +11,7 @@ which needs improving. The examples which were published in
 [Dudson2009]_ were ``drift-instability``, ``interchange-instability``
 and ``orszag-tang``.
 
-.. [Dudson2009] http://www.sciencedirect.com/science/article/B6TJ5-4VTCM95-3/2/ed200cd23916d02f86fda4ce6887d798
+.. [Dudson2009] https://www.sciencedirect.com/science/article/B6TJ5-4VTCM95-3/2/ed200cd23916d02f86fda4ce6887d798
 
 
 advect1d

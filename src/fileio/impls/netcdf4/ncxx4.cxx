@@ -93,28 +93,28 @@ bool Ncxx4::openr(const char *name) {
 
   xDim = dataFile->getDim("x");
   if(xDim.isNull())
-    output.write("WARNING: NetCDF file should have an 'x' dimension\n");
-  
+    output_warn.write("WARNING: NetCDF file should have an 'x' dimension\n");
+
   yDim = dataFile->getDim("y");
   if(yDim.isNull())
-    output.write("WARNING: NetCDF file should have a 'y' dimension\n");
-  
+    output_warn.write("WARNING: NetCDF file should have a 'y' dimension\n");
+
   zDim = dataFile->getDim("z");
   if(zDim.isNull()) {
     // Z dimension optional, and could be any size (Fourier harmonics)
 #ifdef NCDF_VERBOSE
-    output.write("INFO: NetCDF file has no 'z' coordinate\n");
+    output_info.write("INFO: NetCDF file has no 'z' coordinate\n");
 #endif
   }
-  
+
   tDim = dataFile->getDim("t");
   if(tDim.isNull()) {
     // T dimension optional
 #ifdef NCDF_VERBOSE
-    output.write("INFO: NetCDF file has no 't' coordinate\n");
+    output_info.write("INFO: NetCDF file has no 't' coordinate\n");
 #endif
   }
-  
+
   recDimList[0] = &tDim;
   recDimList[1] = &xDim;
   recDimList[2] = &yDim;
@@ -148,7 +148,7 @@ bool Ncxx4::openw(const char *name, bool append) {
 
     xDim = dataFile->getDim("x");
     if(xDim.isNull()) {
-      output.write("ERROR: NetCDF file should have an 'x' dimension\n");
+      output_error.write("ERROR: NetCDF file should have an 'x' dimension\n");
       delete dataFile;
       dataFile = NULL;
       return false;
@@ -156,7 +156,7 @@ bool Ncxx4::openw(const char *name, bool append) {
 
     yDim = dataFile->getDim("y");
     if(yDim.isNull()) {
-      output.write("ERROR: NetCDF file should have a 'y' dimension\n");
+      output_error.write("ERROR: NetCDF file should have a 'y' dimension\n");
       delete dataFile;
       dataFile = NULL;
       return false;
@@ -164,7 +164,7 @@ bool Ncxx4::openw(const char *name, bool append) {
 
     zDim = dataFile->getDim("z");
     if(zDim.isNull()) {
-      output.write("ERROR: NetCDF file should have a 'z' dimension\n");
+      output_error.write("ERROR: NetCDF file should have a 'z' dimension\n");
       delete dataFile;
       dataFile = NULL;
       return false;
@@ -172,7 +172,7 @@ bool Ncxx4::openw(const char *name, bool append) {
 
     tDim = dataFile->getDim("t");
     if(tDim.isNull()) {
-      output.write("ERROR: NetCDF file should have a 't' dimension\n");
+      output_error.write("ERROR: NetCDF file should have a 't' dimension\n");
       delete dataFile;
       dataFile = NULL;
       return false;
@@ -191,7 +191,6 @@ bool Ncxx4::openw(const char *name, bool append) {
     default_rec = tDim.getSize();
     
   }else {
-    //dataFile = new NcFile(name, NcFile::replace, NcFile::classic64); // Broken support for classic64
     dataFile = new NcFile(name, NcFile::replace);
     
     if(dataFile->isNull()) {
@@ -332,7 +331,7 @@ bool Ncxx4::read(int *data, const char *name, int lx, int ly, int lz) {
   NcVar var = dataFile->getVar(name);
   if(var.isNull()) {
 #ifdef NCDF_VERBOSE
-    output.write("INFO: NetCDF variable '%s' not found\n", name);
+    output_info.write("INFO: NetCDF variable '%s' not found\n", name);
 #endif
     return false;
   }
@@ -410,7 +409,7 @@ bool Ncxx4::write(int *data, const char *name, int lx, int ly, int lz) {
     var = dataFile->addVar(name, ncInt, getDimVec(nd));
 
     if(var.isNull()) {
-      output.write("ERROR: NetCDF could not add int '%s' to file '%s'\n", name, fname);
+      output_error.write("ERROR: NetCDF could not add int '%s' to file '%s'\n", name, fname);
       return false;
     }
   }
@@ -463,7 +462,7 @@ bool Ncxx4::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
       var = dataFile->addVar(name, ncDouble, getDimVec(nd));
 
     if(var.isNull()) {
-      output.write("ERROR: NetCDF could not add BoutReal '%s' to file '%s'\n", name, fname);
+      output_error.write("ERROR: NetCDF could not add BoutReal '%s' to file '%s'\n", name, fname);
       return false;
     }
   }  
@@ -599,7 +598,7 @@ bool Ncxx4::write_rec(int *data, const char *name, int lx, int ly, int lz) {
 
     if(var.isNull()) {
 #ifdef NCDF_VERBOSE
-      output.write("ERROR: NetCDF Could not add variable '%s' to file '%s'\n", name, fname);
+      output_error.write("ERROR: NetCDF Could not add variable '%s' to file '%s'\n", name, fname);
 #endif
       return false;
     }
@@ -612,9 +611,9 @@ bool Ncxx4::write_rec(int *data, const char *name, int lx, int ly, int lz) {
   }
   
   vector<size_t> start(1);
-  start[0] = rec_nr[name];// start[1] = x0; start[2] = y0; start[3] = z0;
+  start[0] = rec_nr[name];
   vector<size_t> counts(1);
-  counts[0] = 1; //counts[1] = lx; counts[2] = ly; counts[3] = lz;
+  counts[0] = 1;
 
 #ifdef NCDF_VERBOSE
   output.write("Ncxx4:: write_rec { Writing variable } \n");
@@ -664,7 +663,7 @@ bool Ncxx4::write_rec(BoutReal *data, const char *name, int lx, int ly, int lz) 
 
     if(var.isNull()) {
 #ifdef NCDF_VERBOSE
-      output.write("ERROR: NetCDF Could not add variable '%s' to file '%s'\n", name, fname);
+      output_error.write("ERROR: NetCDF Could not add variable '%s' to file '%s'\n", name, fname);
 #endif
       return false;
     }
@@ -679,7 +678,7 @@ bool Ncxx4::write_rec(BoutReal *data, const char *name, int lx, int ly, int lz) 
   int t = rec_nr[name];
 
 #ifdef NCDF_VERBOSE
-  output.write("INFO: NetCDF writing record %d of '%s' in '%s'\n",t, name, fname); 
+  output_info.write("INFO: NetCDF writing record %d of '%s' in '%s'\n",t, name, fname);
 #endif
 
   if(lowPrecision) {
@@ -717,6 +716,34 @@ bool Ncxx4::write_rec(BoutReal *data, const char *name, int lx, int ly, int lz) 
 bool Ncxx4::write_rec(BoutReal *var, const string &name, int lx, int ly, int lz) {
   return write_rec(var, name.c_str(), lx, ly, lz);
 }
+
+
+/***************************************************************************
+ * Attributes
+ ***************************************************************************/
+
+void Ncxx4::setAttribute(const string &varname, const string &attrname, const string &text) {
+  TRACE("Ncxx4::setAttribute(string)");
+
+  NcVar var = dataFile->getVar(varname);
+  if (var.isNull()) {
+    throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+  }
+  
+  var.putAtt(attrname, text);
+}
+
+void Ncxx4::setAttribute(const string &varname, const string &attrname, int value) {
+  TRACE("Ncxx4::setAttribute(int)");
+
+  NcVar var = dataFile->getVar(varname);
+  if (var.isNull()) {
+    throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+  }
+  
+  var.putAtt(attrname, NcType::nc_INT, value);
+}
+
 
 /***************************************************************************
  * Private functions

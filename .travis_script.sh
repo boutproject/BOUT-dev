@@ -1,5 +1,6 @@
 #!/bin/bash
-./configure $CONFIGURE_OPTIONS
+echo "Configuring with $CONFIGURE_OPTIONS"
+time ./configure $CONFIGURE_OPTIONS
 conf=$?
 if test $conf -gt 0
 then
@@ -15,7 +16,9 @@ then
     cat config-build.log
     exit $conf
 fi
-make || exit
 export PYTHONPATH=$(pwd)/tools/pylib/:$PYTHONPATH
-cd ./examples
-./test_suite_make && ./test_suite
+export MAKEFLAGS="-j 2 -k"
+time make $MAIN_TARGET|| exit
+time make check-unit-tests || exit
+time make check-integrated-tests || exit
+time make check-mms-tests || exit

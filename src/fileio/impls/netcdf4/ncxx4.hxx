@@ -60,8 +60,10 @@ class Ncxx4 : public DataFormat {
   Ncxx4(const std::string &name) : Ncxx4(name.c_str()) {}
   ~Ncxx4();
 
-  bool openr(const char *name);
-  bool openw(const char *name, bool append=false);
+  using DataFormat::openr;
+  bool openr(const char *name) override;
+  using DataFormat::openw;
+  bool openw(const char *name, bool append=false) override;
   
   bool is_valid();
   
@@ -105,6 +107,11 @@ class Ncxx4 : public DataFormat {
   
   void setLowPrecision() { lowPrecision = true; }
 
+  // Attributes
+
+  void setAttribute(const string &varname, const string &attrname, const string &text) override;
+  void setAttribute(const string &varname, const string &attrname, int value) override;
+  
  private:
 
   char *fname; ///< Current file name

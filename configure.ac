@@ -31,10 +31,8 @@
 #    * Searching for libs in lib and lib64
 #
 
-BOUT_VERSION="2.0"
-
 AC_PREREQ(2.59)
-AC_INIT(BOUT++, BOUT_VERSION, bd512@york.ac.uk)
+AC_INIT(BOUT++, 4.1.2, bd512@york.ac.uk)
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -48,8 +46,6 @@ AC_ARG_WITH(cvode,        [AS_HELP_STRING([--with-cvode],
         [Use the SUNDIALS CVODE solver])],,[])
 AC_ARG_WITH(sundials,     [AS_HELP_STRING([--with-sundials],
         [Use CVODE and IDA])],,[])
-AC_ARG_WITH(facets,       [AS_HELP_STRING([--with-facets],
-        [Build the interface to FACETS])],,[])
 AC_ARG_WITH(fftw,         [AS_HELP_STRING([--with-fftw],
         [Set directory of FFTW3 library])],,[])
 AC_ARG_WITH(lapack,       [AS_HELP_STRING([--with-lapack],
@@ -60,14 +56,12 @@ AC_ARG_WITH(slepc,        [AS_HELP_STRING([--with-slepc],
         [Enable SLEPc interface])],,[])
 AC_ARG_WITH(pvode,        [AS_HELP_STRING([--with-pvode],
         [Build and enable PVODE 98 (DEFAULT)])],,[])
-AC_ARG_WITH(hypre,        [AS_HELP_STRING([--with-hypre],
-        [Link to the Hypre library])],,[])
 AC_ARG_WITH(mumps,        [AS_HELP_STRING([--with-mumps],
         [Link with MUMPS library for direct matrix inversions])],,[])
 AC_ARG_WITH(arkode,       [AS_HELP_STRING([--with-arkode],
         [Use the SUNDIALS ARKODE solver])],,[])
 AC_ARG_WITH(scorep,       [AS_HELP_STRING([--with-scorep],
-        [Enable support for scorep based instrumentation])],,[])
+        [Enable support for scorep based instrumentation])],,[with_scorep=no])
 
 dnl --with-hdf5 flags are set in AX_LIB_{PARALLEL}HDF5
 
@@ -75,6 +69,8 @@ AC_ARG_ENABLE(checks,       [AS_HELP_STRING([--enable-checks=no/1/2/3],
         [Set run-time checking level])],,[])
 AC_ARG_ENABLE(signal,       [AS_HELP_STRING([--disable-signal],
         [Disable SEGFAULT handling])],,[])
+AC_ARG_ENABLE(color,        [AS_HELP_STRING([--disable-color],
+        [Disable -c option to color output])],,[])
 AC_ARG_ENABLE(track,        [AS_HELP_STRING([--enable-track],
         [Enable variable tracking])],,[])
 AC_ARG_ENABLE(debug,        [AS_HELP_STRING([--enable-debug],
@@ -85,6 +81,10 @@ AC_ARG_ENABLE(sigfpe,       [AS_HELP_STRING([--enable-sigfpe],
         [Enable FloatingPointExceptions])],,[])
 AC_ARG_ENABLE(backtrace,    [AS_HELP_STRING([--disable-backtrace],
         [Disable function backtrace])],,[enable_backtrace=yes])
+AC_ARG_ENABLE(shared,       [AS_HELP_STRING([--enable-shared],
+        [Enable building bout++ into an shared object])],,[enable_shared=no])
+AC_ARG_ENABLE(pvode_openmp,       [AS_HELP_STRING([--enable-pvode-openmp],
+        [Enable building PVODE with OpenMP support])],,[enable_pvode_openmp=no])
 
 AC_ARG_VAR(EXTRA_INCS,[Extra compile flags])
 AC_ARG_VAR(EXTRA_LIBS,[Extra linking flags])
@@ -104,7 +104,6 @@ AC_SUBST(EXTRA_LIBS)
 
 # Adding variables for additional sources
 AC_SUBST(PRECON_SOURCE)
-AC_SUBST(FACETS_SOURCE)
 
 # We're using C++
 AC_LANG(C++)
@@ -122,6 +121,7 @@ AX_PROG_CXX_MPI([], [], [
 AC_PROG_MKDIR_P
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
+AC_PROG_INSTALL
 
 # Set MAKE to gmake if possible, otherwise make
 AC_CHECK_PROG(MAKE, gmake, gmake, make)
@@ -170,6 +170,27 @@ AC_FUNC_VPRINTF
 AC_OPENMP
 
 #############################################################
+# Code coverage using gcov
+#
+# Mutally exclusive with optimisation, therefore needs to come first
+# so we can turn off optimisation if coverage is enabled
+#############################################################
+
+AX_CODE_COVERAGE()
+AS_IF([test "x$enable_code_coverage" = "xyes"],
+[
+    AS_IF([test "x$enable_optimize"], [
+        AC_MSG_WARN([Code coverage clashes with optimisations, disabling optimisations])
+        enable_optimize="no"
+    ])
+    COVERAGE_FLAGS="--coverage --no-inline"
+    LDFLAGS="$LDFLAGS --coverage"
+], [
+    COVERAGE_FLAGS=
+])
+AC_SUBST([COVERAGE_FLAGS])
+
+#############################################################
 # General Options
 #############################################################
 
@@ -189,7 +210,7 @@ elif test $enable_optimize ; then
       OPT_FLAGS="-O"
     elif test $optimize == "fast"
     then
-      OPT_FLAGS="-Ofast -march=native -funroll-loops"
+      OPT_FLAGS="-Ofast -fno-finite-math-only -march=native -funroll-loops"
       DISABLE_CHECK=probably
     else
       AC_MSG_ERROR([unrecognized option: --enable-optimize=$optimize])
@@ -197,7 +218,7 @@ elif test $enable_optimize ; then
   else
     if test $optimize -gt 3
     then
-      OPT_FLAGS="-Ofast -march=native -funroll-loops"
+      OPT_FLAGS="-Ofast -fno-finite-math-only -march=native -funroll-loops"
       DISABLE_CHECK=probably
     elif test $optimize -gt 2
     then
@@ -261,6 +282,14 @@ else
   echo "Segmentation fault handling disabled"
 fi
 
+if test "$enable_color" != "no"
+then
+  echo "Output coloring enabled"
+  CXXFLAGS="$CXXFLAGS -DLOGCOLOR"
+else
+  echo "Output coloring disabled"
+fi
+
 if test ."$enable_track" == ."yes"
 then
        CXXFLAGS="$CXXFLAGS -DTRACK"
@@ -272,6 +301,12 @@ then
 fi
 
 echo
+
+BOUT_VERSION=$PACKAGE_VERSION
+BOUT_VERSION_MAJOR=${PACKAGE_VERSION%%.*}
+BOUT_VERSION_MINOR=${PACKAGE_VERSION#*.}
+BOUT_VERSION_DOUBLE=${BOUT_VERSION_MAJOR}.${BOUT_VERSION_MINOR/./}
+CXXFLAGS+=" -DBOUT_VERSION_STRING=\"\\\"$BOUT_VERSION\\\"\" -DBOUT_VERSION_DOUBLE=$BOUT_VERSION_DOUBLE "
 
 #############################################################
 # Enable Backtrace if possible
@@ -292,13 +327,30 @@ then
 fi
 
 #############################################################
+# Build into shared object (pic)
+#############################################################
+
+if test ."$enable_shared" == .yes
+then
+    # compile as position independent code.
+    # -fpic is apparently faster then -fPIC, but -fPIC works always.
+    # From a SO comment (https://stackoverflow.com/a/3544211/3384414):
+    #  What's more: I did a little experiment here (on x86_64
+    #  platform), -fPIC and -fpic appears to have generated the same
+    #  code. It seems they generate a different code only on m68k,
+    #  PowerPC and SPARC.
+    # Therfore use -fPIC for now
+    CXXFLAGS+=" -fPIC"
+fi
+
+#############################################################
 # Git revision number
 #############################################################
 
 rev=`git rev-parse HEAD`
 if test "$?" = "0"
 then
-  # Attach revision info to flags
+  dnl Revision not needed for build - is checked at compile time.
   dnl CXXFLAGS="$CXXFLAGS -DREVISION=$rev"
   echo "Revision ID: $rev"
 fi
@@ -340,29 +392,28 @@ AS_IF([test "x$with_netcdf" != "xno"],
   # check the path provided by --with-netcdf, appending "/bin" if need
   # be, then check system path
   # Set NCCONF to the full path of the found scropt
-  AS_CASE([`basename $with_netcdf`],
+  AS_CASE([`basename $with_netcdf 2> /dev/null`],
     ["ncxx4-config"], [NCCONF=$with_netcdf],
     ["nc-config"], [NCCONF=$with_netcdf],
-    [AC_PATH_PROGS([NCCONF], [ncxx4-config nc-config],
-       [AC_MSG_ERROR([No configure script found. Specify path using --with-netcdf option])],
+    [AC_PATH_PROGS([NCCONF], [ncxx4-config nc-config], [],
        [$with_netcdf$PATH_SEPARATOR$with_netcdf/bin$PATH_SEPARATOR$PATH])])
-
-  # If we found nc-config rather than ncxx4-config, we need to check if it supports C++
-  AS_IF([test `basename $NCCONF` = 'nc-config'],
-        [AC_MSG_CHECKING([if $NCCONF has C++4 support])
-         nc_has_cpp4=`$NCCONF --has-c++4`
-         AC_MSG_RESULT([$nc_has_cpp4])
-         AC_MSG_CHECKING([if $NCCONF has C++ support])
-         nc_has_cpp=`$NCCONF --has-c++`
-         AC_MSG_RESULT([$nc_has_cpp])
-        ], [
-         nc_has_cpp4="yes"
-        ])
 
   ##########################################
   # Get configuration
   AS_IF([test "x$NCCONF" != "x" ],
   [
+     # If we found nc-config rather than ncxx4-config, we need to check if it supports C++
+     AS_IF([test `basename $NCCONF` = 'nc-config'],
+           [AC_MSG_CHECKING([if $NCCONF has C++4 support])
+            nc_has_cpp4=`$NCCONF --has-c++4`
+            AC_MSG_RESULT([$nc_has_cpp4])
+            AC_MSG_CHECKING([if $NCCONF has C++ support])
+            nc_has_cpp=`$NCCONF --has-c++`
+            AC_MSG_RESULT([$nc_has_cpp])
+           ], [
+            nc_has_cpp4="yes"
+           ])
+
      NCINC=`$NCCONF --cflags`
      EXTRA_INCS="$EXTRA_INCS $NCINC"
      AS_IF([test "x$nc_has_cpp4" = "xyes"],
@@ -556,30 +607,6 @@ then
         ]	, [ AS_IF( [test .$with_lapack = ".yes"], AC_MSG_ERROR("LAPACK requested but not found.")) ] , $lapack_path)
 
     echo ""
-fi
-
-#############################################################
-# FACETS
-#############################################################
-
-if test "x$with_facets" != "x"
-then
-    FACETS="$with_facets"
-      AC_CHECK_FILE($FACETS/include/FacetsIfc.h, FIFCPATH=$FACETS,
-      AC_CHECK_FILE(/usr/include/FacetsIfc.h, FIFCPATH=/usr,
-      AC_CHECK_FILE(/usr/local/include/FacetsIfc.h, FIFCPATH=/usr/local,
-      AC_CHECK_FILE(/opt/local/include/FacetsIfc.h, FIFCPATH=/opt/local,
-      AC_CHECK_FILE($HOME/local/include/FacetsIfc.h, FIFCPATH=$HOME/local,
-      AC_CHECK_FILE($HOME/software/facetsifc/include/FacetsIfc.h, FIFCPATH=$HOME/software/facetsifc,
-      ))))))
-  if test "x$FIFCPATH" != "x"
-  then
-    echo "Enabling FACETS interface"
-    EXTRA_INCS="$EXTRA_INCS -I$FIFCPATH/include"
-    FACETS_SOURCE="$FACETS_SOURCE bout_facets.cxx"
-  else
-    AC_MSG_ERROR([*** --with-facets was specified but could not find the FACETS interface])
-  fi
 fi
 
 #############################################################
@@ -868,8 +895,10 @@ then
     ] )
     AC_CHECK_FILES( $with_ida/lib/libsundials_nvecparallel.a $with_ida/lib/libsundials_ida.a, IDALIBSLIB='lib',
       AC_CHECK_FILES( $with_ida/lib64/libsundials_nvecparallel.a $with_ida/lib64/libsundials_ida.a, IDALIBSLIB='lib64',
+        AC_CHECK_FILES( $with_ida/lib/libsundials_nvecparallel.so $with_ida/lib/libsundials_ida.so, IDALIBSLIB='lib',
+          AC_CHECK_FILES( $with_ida/lib64/libsundials_nvecparallel.so $with_ida/lib64/libsundials_ida.so, IDALIBSLIB='lib64',
         IDALIBS=""
-    ) )
+    ) ) ) )
     if test "$IDALIBS" != ""
     then
     IDAINCS="-I$IDALIBS/include"
@@ -896,10 +925,12 @@ then
     AC_CHECK_FILES( $IDALIBS/include/ida/ida.h $IDALIBS/include/ida/ida_spgmr.h $IDALIBS/include/ida/ida_bbdpre.h $IDALIBS/include/nvector/nvector_parallel.h $IDALIBS/include/sundials/sundials_types.h , , [
           IDALIBS=""
         ] )
-        AC_CHECK_FILES( $IDALIBS/lib/libsundials_nvecparallel.a $IDALIBS/lib/libsundials_ida.a, IDALIBSLIB='lib',
-          AC_CHECK_FILES( $IDALIBS/lib64/libsundials_nvecparallel.a $IDALIBS/lib64/libsundials_ida.a, IDALIBSLIB='lib64',
-           IDALIBS=""
-    ) )
+    AC_CHECK_FILES( $IDALIBS/lib/libsundials_nvecparallel.a $IDALIBS/lib/libsundials_ida.a, IDALIBSLIB='lib',
+      AC_CHECK_FILES( $IDALIBS/lib64/libsundials_nvecparallel.a $IDALIBS/lib64/libsundials_ida.a, IDALIBSLIB='lib64',
+        AC_CHECK_FILES( $IDALIBS/lib/libsundials_nvecparallel.so $IDALIBS/lib/libsundials_ida.so, IDALIBSLIB='lib',
+          AC_CHECK_FILES( $IDALIBS/lib64/libsundials_nvecparallel.so $IDALIBS/lib64/libsundials_ida.so, IDALIBSLIB='lib64',
+            IDALIBS=""
+    ) ) ) )
     fi
 
     if test "$IDALIBS" != ""
@@ -946,9 +977,11 @@ then
       CVODELIBS=""
     ] )
     AC_CHECK_FILES( $with_cvode/lib/libsundials_cvode.a $with_cvode/lib/libsundials_nvecparallel.a, CVODELIBSLIB='lib',
-      AC_CHECK_FILES( $with_cvode/lib64/libsundials_cvode.a $with_cvode/lib64/libsundials_nvecparallel.a, CVODELIBSLIB='lib64',  [
-      CVODELIBS=""
-    ]) )
+      AC_CHECK_FILES( $with_cvode/lib64/libsundials_cvode.a $with_cvode/lib64/libsundials_nvecparallel.a, CVODELIBSLIB='lib64',
+        AC_CHECK_FILES( $with_cvode/lib/libsundials_cvode.so $with_cvode/lib/libsundials_nvecparallel.so, CVODELIBSLIB='lib',
+          AC_CHECK_FILES( $with_cvode/lib64/libsundials_cvode.so $with_cvode/lib64/libsundials_nvecparallel.so, CVODELIBSLIB='lib64', [
+          CVODELIBS=""
+        ]) ) ) )
 
 
     if test "$CVODELIBS" != ""
@@ -978,9 +1011,11 @@ then
       CVODELIBS=""
     ])
         AC_CHECK_FILES( $CVODELIBS/lib/libsundials_cvode.a $CVODELIBS/lib/libsundials_nvecparallel.a, CVODELIBSLIB='lib',
-          AC_CHECK_FILES( $CVODELIBS/lib64/libsundials_cvode.a $CVODELIBS/lib64/libsundials_nvecparallel.a, CVODELIBSLIB='lib64',  [
+          AC_CHECK_FILES( $CVODELIBS/lib64/libsundials_cvode.a $CVODELIBS/lib64/libsundials_nvecparallel.a, CVODELIBSLIB='lib64',
+            AC_CHECK_FILES( $CVODELIBS/lib/libsundials_cvode.so $CVODELIBS/lib/libsundials_nvecparallel.so, CVODELIBSLIB='lib',
+          AC_CHECK_FILES( $CVODELIBS/lib64/libsundials_cvode.so $CVODELIBS/lib64/libsundials_nvecparallel.so, CVODELIBSLIB='lib64', [
             CVODELIBS=""
-          ]) )
+          ]) ) ) )
     fi
     if test "$CVODELIBS" != ""
     then
@@ -1030,9 +1065,12 @@ then
       ARKODELIBS=""
     ] )
     AC_CHECK_FILES( $ARKODELIBS/lib/libsundials_arkode.a $ARKODELIBS/lib/libsundials_nvecparallel.a, ARKODELIBSLIB='lib',
-      AC_CHECK_FILES( $ARKODELIBS/lib64/libsundials_arkode.a $ARKODELIBS/lib64/libsundials_nvecparallel.a, ARKODELIBSLIB='lib64',  [
-        ARKODELIBS=""
-      ]) )
+      AC_CHECK_FILES( $ARKODELIBS/lib64/libsundials_arkode.a $ARKODELIBS/lib64/libsundials_nvecparallel.a, ARKODELIBSLIB='lib64',
+        AC_CHECK_FILES( $ARKODELIBS/lib/libsundials_arkode.so $ARKODELIBS/lib/libsundials_nvecparallel.so, ARKODELIBSLIB='lib',
+          AC_CHECK_FILES( $ARKODELIBS/lib64/libsundials_arkode.so $ARKODELIBS/lib64/libsundials_nvecparallel.so, ARKODELIBSLIB='lib64',
+          [
+            ARKODELIBS=""
+      ]) ) ) )
 
     if test "$ARKODELIBS" != ""
     then
@@ -1061,9 +1099,12 @@ then
           ARKODELIBS=""
         ])
         AC_CHECK_FILES( $ARKODELIBS/lib/libsundials_arkode.a $ARKODELIBS/lib/libsundials_nvecparallel.a, ARKODELIBSLIB='lib',
-          AC_CHECK_FILES( $ARKODELIBS/lib64/libsundials_arkode.a $ARKODELIBS/lib64/libsundials_nvecparallel.a, ARKODELIBSLIB='lib64',  [
-            ARKODELIBS=""
-          ]) )
+          AC_CHECK_FILES( $ARKODELIBS/lib64/libsundials_arkode.a $ARKODELIBS/lib64/libsundials_nvecparallel.a, ARKODELIBSLIB='lib64',
+            AC_CHECK_FILES( $ARKODELIBS/lib/libsundials_arkode.so $ARKODELIBS/lib/libsundials_nvecparallel.so, ARKODELIBSLIB='lib',
+              AC_CHECK_FILES( $ARKODELIBS/lib64/libsundials_arkode.so $ARKODELIBS/lib64/libsundials_nvecparallel.so, ARKODELIBSLIB='lib64',
+              [
+                ARKODELIBS=""
+          ]) ) ) )
     fi
 
     if test "$ARKODELIBS" != ""
@@ -1086,65 +1127,6 @@ then
 
 
   fi
-fi
-
-#############################################################
-# Hypre
-#############################################################
-
-if test "$with_hypre" != "no"
-then
-  # Try to find a valid Hypre installation
-
-  HYPREPATH=""
-  if test "$with_hypre" != "yes"
-  then
-    # Path specified. Check that needed files exist
-    HYPREPATH=$with_hypre
-    echo "Looking for HYPRE in $HYPREPATH"
-    AC_CHECK_FILES( $HYPREPATH/include/HYPRE.h ,, [
-      echo " -> Given path not correct. Finding..."
-      HYPREPATH=""
-    ] )
-    AC_CHECK_FILES( $HYPREPATH/lib/libHYPRE.a ,   HYPREPATHLIB='lib',
-    AC_CHECK_FILES( $HYPREPATH/lib64/libHYPRE.a , HYPREPATHLIB='lib64', [
-      echo " -> Given path not correct. Finding..."
-      HYPREPATH=""
-    ] ))
-  fi
-
-  if test "$HYPREPATH" = ""
-  then
-    # try some known paths
-    AC_CHECK_FILE(/usr/include/HYPRE.h, HYPREPATH=/usr/,
-    AC_CHECK_FILE(/usr/local/include/HYPRE.h, HYPREPATH=/usr/local/,
-    AC_CHECK_FILE(/opt/local/include/HYPRE.h, HYPREPATH=/opt/local/,
-    AC_CHECK_FILE($HOME/local/include/HYPRE.h, HYPREPATH=$HOME/local,
-    AC_CHECK_FILE($HOME/include/HYPRE.h, HYPREPATH=$HOME,
-    )))))
-
-    if test "$HYPREPATH" = ""
-    then
-      # Check for the other files
-      AC_CHECK_FILES( $HYPREPATH/lib/libHYPRE.a , HYPREPATHLIB='lib',
-        AC_CHECK_FILES( $HYPREPATH/lib64/libHYPRE.a , HYPREPATHLIB='lib64', [
-          HYPREPATH=""
-        ] ))
-    fi
-  fi
-
-  if test "$HYPREPATH" != ""
-  then
-    echo "Support for Hypre enabled"
-    EXTRA_INCS="$EXTRA_INCS -I$HYPREPATH/include"
-    EXTRA_LIBS="$EXTRA_LIBS -L$HYPREPATH/$HYPREPATHLIB -lHYPRE"
-
-    CFLAGS="$CFLAGS -DBOUT_HAS_HYPRE"
-    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_HYPRE"
-  else
-    echo "Support for Hypre disabled"
-  fi
-  echo
 fi
 
 
@@ -1191,7 +1173,7 @@ HAS_SCOREP="no"
 AS_IF([test "$with_scorep" != "no"], [
   AC_MSG_NOTICE(["Searching for Scorep executable"])
 
-  AS_IF([test "$with_scorep" != ""], [
+  AS_IF([test "$with_scorep" != "yes"], [
     # Given a path to the library
     AC_CHECK_FILES($with_scorep/scorep, SCOREPPATH=$with_scorep,)
     AS_IF([test "$SCOREPPATH" == ""],[
@@ -1210,7 +1192,6 @@ AS_IF([test "$with_scorep" != "no"], [
       ], [])
   ],
   [])
-
 
   AS_IF([test "$SCOREPPATH" == ""], [
       AC_MSG_NOTICE(["SCOREP support disabled"])
@@ -1240,8 +1221,18 @@ AS_MKDIR_P(include)
 HAS_PVODE="no"
 if ( test "$with_pvode" != "no" )
 then
+	AS_IF([test "$enable_pvode_openmp" != "no"  ],[
+	      AS_IF([test "$enable_openmp" != "no" ],[
+    	               PVODE_FLAGS="$CXXFLAGS $OPENMP_CXXFLAGS $CXX11_FLAGS"
+		       AC_MSG_NOTICE([PVODE being built with OpenMP support])
+		    ],[
+		       AC_MSG_ERROR([Cannot enable openmp in PVODE as configuring with OpenMP disabled])
+		       ])
+	      ],[
+	         PVODE_FLAGS="$CXXFLAGS $CXX11_FLAGS"
+	         AC_MSG_NOTICE([PVODE being built without OpenMP support])
+	])
 
-   PVODE_FLAGS="$CXXFLAGS $OPENMP_CXXFLAGS $CXX11_FLAGS"
    # Clean PVODE
    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
@@ -1270,7 +1261,7 @@ then
   AS_MKDIR_P(include/pvode)
   cp externalpackages/PVODE/precon/pvbbdpre.h externalpackages/PVODE/include/*.h include/pvode
   cp externalpackages/PVODE/lib/*.a lib/
-  EXTRA_LIBS="$EXTRA_LIBS -L\$(BOUT_TOP)/lib -lpvode -lpvpre"
+  EXTRA_LIBS="$EXTRA_LIBS -L\$(BOUT_LIB_PATH) -lpvode -lpvpre"
   CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PVODE"
   HAS_PVODE="yes"
 fi
@@ -1300,12 +1291,6 @@ EXTRA_INCS="${EXTRA_INCS} ${CPPFLAGS}"
 PREFIX=$PWD
 IDLCONFIGPATH=$PWD/tools/idllib
 PYTHONCONFIGPATH=$PWD/tools/pylib
-
-HAS_FACETS="yes"
-if test "$FACETS_SOURCE" = ""
-then
-  HAS_FACETS="no"
-fi
 
 HAS_IDA="yes"
 if test "$IDALIBS" = ""
@@ -1337,12 +1322,6 @@ then
   HAS_PNETCDF="no"
 fi
 
-HAS_HYPRE="yes"
-if test "$HYPREPATH" = ""
-then
-  HAS_HYPRE="no"
-fi
-
 HAS_MUMPS="yes"
 if test "$MUMPS" = ""
 then
@@ -1369,8 +1348,6 @@ echo
 echo "Configuration summary"  | tee -a config-build.log
 echo
 
-echo "  FACETS support: $HAS_FACETS"   | tee -a config-build.log
-
 if test "$PETSC" = ""
 then
   echo "  PETSc support: no" | tee -a config-build.log
@@ -1392,8 +1369,6 @@ echo "  NetCDF support: $HAS_NETCDF" | tee -a config-build.log
 echo "  Parallel-NetCDF support: $HAS_PNETCDF" | tee -a config-build.log
 
 echo "  HDF5 support: $HAS_HDF5 (parallel: $HAS_PHDF5)" | tee -a config-build.log
-
-echo "  Hypre support: $HAS_HYPRE" | tee -a config-build.log
 
 echo "  MUMPS support: $HAS_MUMPS" | tee -a config-build.log
 
@@ -1445,6 +1420,14 @@ CONFIG_LDFLAGS=`$MAKE ldflags -f output.make`
 AC_SUBST(CONFIG_CFLAGS)
 AC_SUBST(CONFIG_LDFLAGS)
 
+# Set path to lib and include here.
+# If make install is run then that replaces these paths
+BOUT_LIB_PATH=$PWD/lib
+BOUT_INCLUDE_PATH=$PWD/include
+AC_SUBST(BOUT_LIB_PATH)
+AC_SUBST(BOUT_INCLUDE_PATH)
+
+
 AC_SUBST(PREFIX)
 AC_SUBST(IDLCONFIGPATH)
 AC_SUBST(PYTHONCONFIGPATH)
@@ -1460,7 +1443,6 @@ AC_SUBST(HAS_ARKODE)
 AC_SUBST(HAS_NETCDF)
 AC_SUBST(HAS_PNETCDF)
 AC_SUBST(HAS_HDF5)
-AC_SUBST(HAS_HYPRE)
 AC_SUBST(HAS_MUMPS)
 AC_SUBST(HAS_LAPACK)
 AC_SUBST(HAS_PETSC)

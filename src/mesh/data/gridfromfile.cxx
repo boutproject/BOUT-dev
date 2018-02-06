@@ -86,7 +86,7 @@ bool GridFile::get(Mesh *UNUSED(m), int &ival,      const string &name) {
   
   bool success = file->read(&ival, name);
   if (success) {
-    output << "\tOption " << name  << " = " << ival << " (" << filename <<")" << endl;
+    output_info << "\tOption " << name  << " = " << ival << " (" << filename <<")" << endl;
   }
 
   return success;
@@ -106,7 +106,7 @@ bool GridFile::get(Mesh *UNUSED(m), BoutReal &rval, const string &name) {
   }
   bool success = file->read(&rval, name);
   if (success) {
-    output << "\tOption " << name  << " = " << rval << " (" << filename <<")" << endl;
+    output_info << "\tOption " << name  << " = " << rval << " (" << filename <<")" << endl;
   }
 
   return success;
@@ -130,7 +130,7 @@ bool GridFile::get(Mesh *m, Field2D &var,   const string &name, BoutReal def) {
   switch(size.size()) {
   case 0: {
     // Variable not found
-    output.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name.c_str(), def);
+    output_warn.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name.c_str(), def);
     var = def;
     return false;
   }
@@ -151,8 +151,8 @@ bool GridFile::get(Mesh *m, Field2D &var,   const string &name, BoutReal def) {
     break;
   }
   default: {
-    output.write("WARNING: Variable '%s' should be 2D, but has %d dimensions. Ignored\n", 
-                 name.c_str(), size.size());
+    output_warn.write("WARNING: Variable '%s' should be 2D, but has %d dimensions. Ignored\n", 
+                      name.c_str(), size.size());
     var = def;
     return false;
   }
@@ -225,9 +225,6 @@ bool GridFile::get(Mesh *m, Field2D &var,   const string &name, BoutReal def) {
     }
   }
   file->setGlobalOrigin();
-  
-  // Communicate to get guard cell data
-  //m->communicate(var);
 
   return true;
 }
@@ -253,7 +250,7 @@ bool GridFile::get(Mesh *m, Field3D &var,   const string &name, BoutReal def) {
   switch(size.size()) {
   case 0: {
     // Variable not found
-    output.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name.c_str(), def);
+    output_warn.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name.c_str(), def);
     var = def;
     return false;
   }
@@ -271,8 +268,8 @@ bool GridFile::get(Mesh *m, Field3D &var,   const string &name, BoutReal def) {
   }
   case 2: {
     // Read as 2D
-    
-    Field2D var2d;
+
+    Field2D var2d(m);
     if (!get(m, var2d, name, def)) {
       throw BoutException("Couldn't read 2D variable '%s'\n", name.c_str());
     }
@@ -394,7 +391,7 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const string &name,
   vector<int> size = file->getSize(name);
   
   if (size.size() != 3) {
-    output.write("\tWARNING: Number of dimensions of %s incorrect\n", name.c_str());
+    output_warn.write("\tWARNING: Number of dimensions of %s incorrect\n", name.c_str());
     return false;
   }
 
@@ -409,17 +406,17 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const string &name,
   // Print out which modes are going to be read in
   if (zperiod > maxmode) {
     // Domain is too small: Only DC
-    output.write(" => Only reading n = 0 component\n");
+    output_warn.write("zperiod (%d) > maxmode (%d) => Only reading n = 0 component\n", zperiod, maxmode);
   } else {
     // Get maximum mode in the input which is a multiple of zperiod
-    int mm = ((int) (maxmode/zperiod))*zperiod;
+    int mm = static_cast<int>(maxmode / zperiod) * zperiod;
     if ( (ncz/2)*zperiod < mm )
       mm = (ncz/2)*zperiod; // Limited by Z resolution
     
     if (mm == zperiod) {
-      output.write(" => Reading n = 0, %d\n", zperiod);
+      output_info.write(" => Reading n = 0, %d\n", zperiod);
     } else {
-      output.write(" => Reading n = 0, %d ... %d\n", zperiod, mm);
+      output_info.write(" => Reading n = 0, %d ... %d\n", zperiod, mm);
     }
   }
 
@@ -483,7 +480,7 @@ bool GridFile::readgrid_3dvar_real(Mesh *m, const string &name,
   vector<int> size = file->getSize(name);
   
   if (size.size() != 3) {
-    output.write("\tWARNING: Number of dimensions of %s incorrect\n", name.c_str());
+    output_warn.write("\tWARNING: Number of dimensions of %s incorrect\n", name.c_str());
     return false;
   }
   

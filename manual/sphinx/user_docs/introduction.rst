@@ -38,25 +38,25 @@ existing plasma models, or specify a new problem (grid and equations) to
 be solved. In either case, it’s assumed that the user isn’t all that
 interested in the details of the code. For a more detailed descriptions
 of the code internals, see the developer and reference guides. After
-describing how to install BOUT++ (section [sec:install]), run the test
-suite (section [sec:runtestsuite]) and a few examples
-(section [sec:running], more detail in section [sec:examples]),
+describing how to install BOUT++ (section :ref:`sec-install`), run the test
+suite (section :ref:`sec-runtestsuite`) and a few examples
+(section :ref:`sec-running`, more detail in section :ref:`sec-examples`),
 increasingly sophisticated ways to modify the problem being solved are
 introduced. The simplest way to modify a simulation case is by altering
-the input options, described in section [sec:options]. Checking that the
+the input options, described in section :ref:`sec-options`. Checking that the
 options are doing what you think they should be by looking at the output
-logs is described in section [sec:running], and an overview of the IDL
+logs is described in section :ref:`sec-running`, and an overview of the IDL
 analysis routines for data post-processing and visualisation is given in
-section [sec:output]. Generating new grid files, particularly for
-tokamak equilibria, is described in section [sec:gridgen].
+section :ref:`sec-output`. Generating new grid files, particularly for
+tokamak equilibria, is described in section :ref:`sec-gridgen`.
 
 Up to this point, little programming experience has been assumed, but
 performing more drastic alterations to the physics model requires
-modifying C++ code. Section [sec:equations] describes how to write a new
+modifying C++ code. Section :ref:`sec-equations` describes how to write a new
 physics model specifying the equations to be solved, using ideal MHD as
 an example. The remaining sections describe in more detail aspects of
-using BOUT++: section [sec:diffops] describes the differential operators
-and methods available; section [sec:staggergrids] covers the
+using BOUT++: section :ref:`sec-diffops` describes the differential operators
+and methods available; section :ref:`sec-staggergrids` covers the
 experimental staggered grid system.
 
 Various sources of documentation are:
@@ -82,25 +82,24 @@ Various sources of documentation are:
 License and terms of use
 ------------------------
 
-::
+Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
 
-    Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+BOUT++ is free software: you can redistribute it and/or modify it
+under the terms of the GNU Lesser General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-    BOUT++ is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+BOUT++ is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+License for more details.
 
-    BOUT++ is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
+You should have received a copy of the GNU Lesser General Public
+License along with BOUT++.  If not, see
+<https://www.gnu.org/licenses/>.
 
-    You should have received a copy of the GNU Lesser General Public License
-    along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
-
-    A copy of the LGPL license is in COPYING.LESSER. Since this is based
-    on (and refers to) the GPL, this is included in COPYING.
+A copy of the LGPL license is in COPYING.LESSER. Since this is based
+on (and refers to) the GPL, this is included in COPYING.
 
 BOUT++ is free software, but since it is a scientific code we also ask
 that you show professional courtesy when using this code:
@@ -155,5 +154,4 @@ that you show professional courtesy when using this code:
       examples
 
 
-.. _B.Dudson et. al. Comp.Phys.Comm 2009: http://www.sciencedirect.com/science/article/B6TJ5-4VTCM95-3/2/ed200cd23916d02f86fda4ce6887d798
-
+.. _B.Dudson et. al. Comp.Phys.Comm 2009: https://www.sciencedirect.com/science/article/B6TJ5-4VTCM95-3/2/ed200cd23916d02f86fda4ce6887d798

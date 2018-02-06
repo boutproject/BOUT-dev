@@ -2,40 +2,72 @@ sudo: required
 dist: trusty
 language: cpp
 compiler: gcc
+
+addons:
+  apt:
+    packages:
+    - openmpi-bin
+    - libopenmpi-dev
+    - libfftw3-dev
+    - libnetcdf-dev
+    - libhdf5-serial-dev
+    - netcdf-bin
+    - hdf5-tools
+
 matrix:
   include:
-  - env: CONFIGURE_OPTIONS='--enable-openmp'
+  - env: CONFIGURE_OPTIONS=''
+  - env: CONFIGURE_OPTIONS='--enable-openmp' OMP_NUM_THREADS=2
   - env: CONFIGURE_OPTIONS='--enable-debug'
+  - env: CONFIGURE_OPTIONS='--enable-shared' MAIN_TARGET=shared
+  - env: CONFIGURE_OPTIONS='--enable-checks=no --enable-optimize=3 --disable-signal --disable-track --disable-backtrace'
   - env: CONFIGURE_OPTIONS='' MPICH_CC=clang MPICH_CXX=clang++ OMPI_CC=clang OMPI_CXX=clang++
-    compiler: clang
-  - env: CONFIGURE_OPTIONS='--enable-openmp' MPICH_CC=clang MPICH_CXX=clang++ OMPI_CC=clang OMPI_CXX=clang++
     compiler: clang
   - env: CONFIGURE_OPTIONS='--enable-debug' MPICH_CC=clang MPICH_CXX=clang++ OMPI_CC=clang OMPI_CXX=clang++
     compiler: clang
+  - addons:
+      apt:
+        packages:
+          - openmpi-bin
+          - libopenmpi-dev
+          - libfftw3-dev
+          - libnetcdf-dev
+          - libhdf5-serial-dev
+          - netcdf-bin
+          - hdf5-tools
+          - libpetsc3.4.2-dev
+    env: CONFIGURE_OPTIONS='--with-petsc' PETSC_DIR=/usr/lib/petscdir/3.4.2 PETSC_ARCH=linux-gnu-c-opt
+  - addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+        packages:
+          - g++-7
+          - openmpi-bin
+          - libopenmpi-dev
+          - libfftw3-dev
+          - libnetcdf-dev
+          - libhdf5-serial-dev
+          - netcdf-bin
+          - hdf5-tools
+    env: CONFIGURE_OPTIONS='' CC=gcc-7 CXX=g++-7  MATRIX_EVAL="CC=gcc-7 && CXX=g++-7" CXXFLAGS="-Wno-literal-suffix -Wall -Wextra"
+    #The -Wno-literal-suffix flag in CXXFLAGS above is a temporary workaround to
+    #disable a noisy message arising from the relatively old version of openmpi
+    #in use in combination with the relatively new version of gcc. We should be able
+    #to remove this if a newer openmpi version is introduced.
 
 before_install:
   ##################################################
-  # System packages
+  # Job specific setup
   ##################################################
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq openmpi-bin libopenmpi-dev
-                             libfftw3-dev libnetcdf-dev
-                             libhdf5-serial-dev netcdf-bin
-                             hdf5-tools
-
+  # The following eval is the way to force CC/CXX to desired values as travis forces values
+  # for these in the pre-before_install stage, see https://docs.travis-ci.com/user/languages/cpp/#C11-C%2B%2B11-(and-Beyond)-and-Toolchain-Versioning
+  - eval "${MATRIX_EVAL}"
+  - echo "${CC} $(${CC} --version)"
   ##################################################
   # Install Conda for python 3
   ##################################################
-  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-  - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
-  - hash -r
-  - conda config --set always_yes yes --set changeps1 no
-  - conda update -q conda
-  # Useful for debugging any issues with conda
-  - conda info -a
-  - conda create -q -n test-environment python=3.5 numpy scipy netcdf4
-  - source activate test-environment
+  - source .install_miniconda_for_travis.sh
 
   ##################################################
 

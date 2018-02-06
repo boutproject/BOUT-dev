@@ -120,6 +120,7 @@ exactly which method to use.
 
 Non-uniform meshes
 ------------------
+.. _sec-diffmethod-nonuniform:
 
 **examples/test-nonuniform seems to not work?** Setting
 ``non_uniform = true`` in the BOUT.inp options file enables corrections
@@ -153,6 +154,9 @@ The correction factor is then calculated from ``d2x`` using
 
    {{\frac{\partial }{\partial i}}}(\frac{1}{\Delta x}) = -\frac{1}{\Delta x^2} {{\frac{\partial \Delta x}{\partial i}}}
 
+**Note**: There is a separate switch in the :ref:`Laplacian inversion code <sec-laplacian>`,
+which enables or disables non-uniform mesh corrections.
+
 General operators
 -----------------
 
@@ -175,7 +179,7 @@ system.
 
 .. math::
 
-   \nabla\phi =& {{\frac{\partial \phi}{\partial u^i}}}\nabla u^i arrow (\nabla\phi)_i =
+   \nabla\phi =& {{\frac{\partial \phi}{\partial u^i}}}\nabla u^i \rightarrow (\nabla\phi)_i =
        {{\frac{\partial \phi}{\partial u^i}}} \\ \nabla\cdot A =& =
        \frac{1}{J}{{\frac{\partial }{\partial u^i}}}(Jg^{ij}A_j) \\ \nabla^2\phi =&
        G^j{{\frac{\partial \phi}{\partial u^i}}} + g^{ij}\frac{\partial^2\phi}{\partial u^i\partial
@@ -185,7 +189,7 @@ where we have defined
 
 .. math::
 
-   G^j =& \frac{1}{J}{{\frac{\partial }{\partial u^i}}}(Jg^{ij})
+   G^j = \frac{1}{J}{{\frac{\partial }{\partial u^i}}}(Jg^{ij})
 
 **not** to be confused with the Christoffel symbol of the second kind
 (see the coordinates manual for more details).
@@ -200,50 +204,74 @@ written in Clebsch form as
 
    \mathbf{B}_0 = \nabla z\times\nabla x \qquad B_0 = \frac{\sqrt{g_{yy}}}{J}
 
- where
+where
 
 .. math::
 
    \mathbf{B}_0 = |\mathbf{B}_0|\mathbf{b}_0 = B_0 \mathbf{b}_0
 
- is the background *equilibrium* magnetic field.
+is the background *equilibrium* magnetic field.
 
-| l c Function & Formula
-| ``Grad_par`` &
-  :math:`\displaystyle\partial^0_{||} = \mathbf{b}_0\cdot\nabla =
-  \frac{1}{\sqrt{g_{yy}}}{{\frac{\partial }{\partial y}}}`
-| ``Div_par`` & :math:`\displaystyle \nabla^0_{||}f =
-  B_0\partial^0_{||}(\frac{f}{B_0})`
-| ``Grad2_par2`` & :math:`\displaystyle \partial^2_{||}\phi =
-  \partial^0_{||}(\partial^0_{||}\phi) =
-  \frac{1}{\sqrt{g_{yy}}}{{\frac{\partial }{\partial y}}}(\frac{1}{\sqrt{g_{yy}}}){{\frac{\partial 
-  \phi}{\partial y}}} + \frac{1}{g_{yy}}\frac{\partial^2\phi}{\partial y^2}`
-| ``Laplace_par`` & :math:`\displaystyle \nabla_{||}^2\phi =
-  \nabla\cdot\mathbf{b}_0\mathbf{b}_0\cdot\nabla\phi =
-  \frac{1}{J}{{\frac{\partial }{\partial y}}}(\frac{J}{g_{yy}}{{\frac{\partial \phi}{\partial y}}})`
-| ``Laplace_perp`` &
-  :math:`\displaystyle \nabla_\perp^2 = \nabla^2 - \nabla_{||}^2`
-| ``Delp2`` & Perpendicular Laplacian, neglecting all :math:`y`
-  derivatives
-| & The ``Laplacian`` solver performs the inverse operation
-| ``brackets`` & Poisson brackets
-| & The Arakawa option, neglects the parallel :math:`y` derivatives if
-  :math:`g_{xy}` and :math:`g_{yz}` are non-zero
++------------------+--------------------------------------------------+
+| Function         |                     Formula                      |
++------------------+--------------------------------------------------+
+| ``Grad_par``     | |grad_par|                                       |
++------------------+--------------------------------------------------+
+| ``Div_par``      | |div_par|                                        |
++------------------+--------------------------------------------------+
+| ``Grad2_par2``   | |grad2_par2|                                     |
++------------------+--------------------------------------------------+
+| ``Laplace_par``  | |laplace_par|                                    |
++------------------+--------------------------------------------------+
+| ``Laplace_perp`` | |laplace_perp|                                   |
++------------------+--------------------------------------------------+
+| ``Delp2``        | | Perpendicular Laplacian, neglecting all        |
+|                  |   :math:`y` derivatives                          |
+|                  | | The ``Laplacian`` solver performs the inverse  |
+|                  |   operation                                      |
++------------------+--------------------------------------------------+
+| ``brackets``     | | Poisson brackets                               |
+|                  | | The Arakawa option, neglects the parallel      |
+|                  |   :math:`y` derivatives if :math:`g_{xy}` and    |
+|                  |   :math:`g_{yz}` are non-zero                    |
++------------------+--------------------------------------------------+
+
+.. |grad_par| replace:: :math:`\partial^0_{||} =
+   \mathbf{b}_0\cdot\nabla =
+   \frac{1}{\sqrt{g_{yy}}}{{\frac{\partial }{\partial y}}}`
+.. |div_par| replace:: :math:`\nabla^0_{||}f =
+   B_0\partial^0_{||}(\frac{f}{B_0})`
+.. |grad2_par2| replace:: :math:`\partial^2_{||}\phi =
+   \partial^0_{||}(\partial^0_{||}\phi) =
+   \frac{1}{\sqrt{g_{yy}}}{{\frac{\partial}{\partial
+   y}}}(\frac{1}{\sqrt{g_{yy}}}){{\frac{\partial \phi}{\partial y}}} +
+   \frac{1}{g_{yy}}\frac{\partial^2\phi}{\partial y^2}`
+.. |laplace_par| replace:: :math:`\nabla_{||}^2\phi =
+   \nabla\cdot\mathbf{b}_0\mathbf{b}_0\cdot\nabla\phi =
+   \frac{1}{J}{{\frac{\partial}{\partial
+   y}}}(\frac{J}{g_{yy}}{{\frac{\partial \phi}{\partial y}}})`
+.. |laplace_perp| replace:: :math:`\nabla_\perp^2 = \nabla^2 -
+   \nabla_{||}^2`
 
 We have that
 
 .. math::
 
-   \mathbf{b}_0\cdot\nabla\phi\times\nabla A =&
+   \mathbf{b}_0\cdot\nabla\phi\times\nabla A =
        \frac{1}{J\sqrt{g_{yy}}}[(g_{yy}{{\frac{\partial \phi}{\partial z}}} -
-       g_{yz}{{\frac{\partial \phi}{\partial y}}}){{\frac{\partial A}{\partial x}}} + (g_{yz}{{\frac{\partial \phi}{\partial x}}} -
-   g_{xy}{{\frac{\partial \phi}{\partial z}}}){{\frac{\partial A}{\partial y}}} + (g_{xy}{{\frac{\partial \phi}{\partial y}}} -
-   g_{yy}{{\frac{\partial \phi}{\partial x}}}){{\frac{\partial A}{\partial z}}}]
+       g_{yz}{{\frac{\partial \phi}{\partial y}}}){{\frac{\partial A}{\partial x}}}
+       + (g_{yz}{{\frac{\partial \phi}{\partial x}}}
+       - g_{xy}{{\frac{\partial \phi}{\partial z}}}){{\frac{\partial A}{\partial y}}}
+       + (g_{xy}{{\frac{\partial \phi}{\partial y}}}
+       - g_{yy}{{\frac{\partial \phi}{\partial x}}}){{\frac{\partial A}{\partial z}}}]
 
 .. math::
 
-   \nabla_\perp \equiv \nabla - {{\boldsymbol{b}}}({{\boldsymbol{b}}}\cdot\nabla) \qquad
-   {{\boldsymbol{b}}}\cdot\nabla = \frac{1}{JB}\frac{\partial}{\partial y}
+   \nabla_\perp \equiv \nabla - {{\mathbf{b}}}({{\mathbf{b}}}\cdot\nabla)
+
+.. math::
+
+   {{\mathbf{b}}}\cdot\nabla = \frac{1}{JB}\frac{\partial}{\partial y}
 
 .. math::
 
@@ -257,25 +285,232 @@ and so the :math:`\nabla y` term cancels out:
 
 .. math::
 
-   \nabla_\perp =& \nabla x({{\frac{\partial }{\partial x}}} -
+   \nabla_\perp = \nabla x({{\frac{\partial }{\partial x}}} -
        \frac{g_{xy}}{(JB)^2}{{\frac{\partial }{\partial y}}}) + \nabla z({{\frac{\partial }{\partial z}}} -
        \frac{g_{yz}}{(JB)^2}{{\frac{\partial }{\partial y}}})
 
 The bracket operators
 ---------------------
 
-| The bracket operator ``brackets(phi, f, method)`` aims to
-  differentiate equations on the form
+The bracket operator ``brackets(phi, f, method)`` aims to
+differentiate equations on the form
 
-  .. math::
+.. math::
 
-         -\frac{\nabla\phi\times{{\boldsymbol{b}}}}{B}\cdot\nabla f
+   -\frac{\nabla\phi\times{{\boldsymbol{b}}}}{B}\cdot\nabla f
 
-| Notice that when we use the Arakawa scheme, :math:`y`-derivatives are
-  neglected if :math:`g_{xy}` and :math:`g_{yz}` are non-zero. An
-  example of usage of the brackets can be found in for example
-  ``examples/MMS/advection`` or ``examples/blob2d``.
+Notice that when we use the Arakawa scheme, :math:`y`-derivatives are
+neglected if :math:`g_{xy}` and :math:`g_{yz}` are non-zero. An
+example of usage of the brackets can be found in for example
+``examples/MMS/advection`` or ``examples/blob2d``.
 
 Setting differencing method
 ---------------------------
 
+
+Finite volume, conservative finite difference methods
+=====================================================
+
+These schemes aim to conserve the integral of the advected quantity
+over the domain. If :math:`f` is being advected, then
+
+.. math::
+
+   \sum_i \left(f J dx dy dz\right)_i = const
+
+is conserved, where the index :math:`i` refers to cell index. This
+is done by calculating fluxes between cells: Whatever leaves one
+cell is added to another. There are several caveats to this:
+
+* Boundary fluxes can still lead to changes in the total, unless
+  no-flow boundary conditions are used
+
+* When using an implicit time integration scheme, such as the default
+  PVODE / CVODE, the total is not guaranteed to be conserved, but
+  may vary depending on the solver tolerances.
+
+* There will always be a small rounding error, even with double
+  precision.
+
+The methods can be used by including the header:
+
+::
+
+   #include "bout/fv_ops.hxx"
+
+
+**Note** The methods are defined in a namespace ``FV``.
+
+Some methods (those with templates) are defined in the header, but others
+are defined in ``src/mesh/fv_ops.cxx``.
+
+
+Parallel divergence ``Div_par``
+-------------------------------
+
+This function calculates the divergence of a flow in :math:`y` (parallel
+to the magnetic field) by a given velocity.
+
+::
+
+   template<typename CellEdges = MC>
+   const Field3D Div_par(const Field3D &f_in, const Field3D &v_in,
+                         const Field3D &a, bool fixflux=true);
+
+
+where ``f_in`` is the quantity being advected (e.g. density), ``v_in``
+is the parallel advection velocity. The third input, ``a``, is the maximum
+wave speed, which multiplies the dissipation term in the method.
+
+::
+
+   ddt(n) = -FV::Div_par( n, v, cs );
+
+
+By default the ``MC`` slope limiter is used to calculate cell edges, but this can
+be changed at compile time e.g:
+
+::
+
+   ddt(n) = -FV::Div_par<FV::Fromm>( n, v, cs );
+
+
+A list of available limiters is given in section :ref:`sec-slope-limiters` below.
+
+
+Example and convergence test
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The example code ``examples/finite-volume/fluid/`` solves the Euler equations
+for a 1D adiabatic fluid, using ``FV::Div_par`` for the advection terms.
+
+.. math::
+
+   \frac{\partial n}{\partial t} + \nabla_{||}\left(n v_{||}\right) = 0
+
+   \frac{\partial p}{\partial t} + \nabla_{||}\left(p v_{||}\right) = -(\gamma-1) p \nabla_{||}v_{||}
+
+   \frac{\partial}{\partial t}\left(nv_{||}\right) + \nabla_{||}\left(nv_{||}v_{||}\right) = -\partial_{||} p
+
+where :math:`n` is the density, :math:`p` is the pressure, and `nv_{||}` is the
+momentum in the direction parallel to the magnetic field.
+The operator :math:`\nabla_{||}` represents the divergence of a parallel flow (``Div_par``),
+and :math:`\partial_{||} = \mathbf{b}\cdot\nabla` is the gradient in the parallel direction.
+
+There is a convergence test using the Method of Manufactured Solutions (MMS) for this example.
+See section :ref:`sec-mms` for details of the testing method. Running the ``runtest``
+script should produce the graph
+
+.. figure:: ../figs/fluid_norm_mc.png
+   :name: fluid_norm_mc
+   :alt: Convergence test of the fluid example using ``FV::Div_par`` operator
+
+   Convergence test, showing :math:`l^2` (RMS) and :math:`l^{\infty}` (maximum) error for
+   the evolving fields `n` (density), `p` (pressure) and `nv` (momentum). All fields are
+   shown to converge at the expected second order accuracy.
+
+Algorithm
+~~~~~~~~~
+
+
+Parallel diffusion
+------------------
+
+The parallel diffusion operator calculates :math:`\nabla_{||}\left[k\partial_||\left(f\right)\right]`
+
+::
+
+   const Field3D Div_par_K_Grad_par(const Field3D &k, const Field3D &f,
+                                    bool bndry_flux=true);
+
+
+This is done by calculating the flux :math:`k\partial_||\left(f\right)` on cell boundaries
+using central differencing.
+
+
+Advection in 3D
+---------------
+
+This operator calculates :math:`\nabla\cdot\left( n \mathbf{v} \right)` where
+:math:`\mathbf{v}` is a 3D vector. It is written in flux form by discretising the expression
+
+.. math::
+
+   \nabla\cdot\left( \mathbf{A} \right) = \frac{1}{J}\partial_i \left(J A^i\right)
+
+Like the ``Div_par`` operator, a slope limiter is used to calculate the value of
+the field :math:`n` on cell boundaries. By default this is the MC method, but
+this can be set as a template parameter.
+
+::
+
+   template<typename CellEdges = MC>
+   const Field3D Div_f_v(const Field3D &n, const Vector3D &v, bool bndry_flux)
+
+
+
+
+.. _sec-slope-limiters:
+
+Slope limiters
+--------------
+
+Here limiters are implemented as slope limiters: The value of a given
+quantity is calculated at the faces of a cell based on the cell-centre
+values. Several slope limiters are defined in ``fv_ops.hxx``:
+
+* ``Upwind`` - First order upwinding, in which the left and right edges
+  of the cell are the same as the centre (zero slope).
+
+* ``Fromm`` - A second-order scheme which is a fixed weighted average
+  of upwinding and central difference schemes.
+
+* ``MinMod`` - This second order scheme switches between the upwind and
+  downwind gradient, choosing the one with the smallest absolute value.
+  If the gradients have different signs, as at a maximum or minimum,
+  then the method reverts to first order upwinding (zero slope).
+
+* ``MC`` (Monotonised Central) is a second order scheme which switches
+  between central, upwind and downwind differencing in a similar way
+  to ``MinMod``. It has smaller dissipation than ``MinMod`` so is the
+  default.
+
+
+Operators on a single index
+---------------------------
+
+**Note: Experimental**
+
+The standard functions implemented in BOUT++ (such as ``DDX``, or ``bracket``)
+typically operate on a whole field, internally iterating over the entire
+mesh. This is convenient, but leads to many loops over the mesh, which can
+be inefficient due to cache misses. One way to try to improve efficiency
+is to move to a single loop over the mesh. To do this, some operators are implemented
+in ``bout/operators_di.hxx`` which have the same (or similar) names as the standard operators
+but an additional ``DataIterator`` index.
+
+For example, in ``examples/blob2d.cxx``
+
+::
+
+   ddt(n) = - bracket(phi,n,BRACKET_ARAKAWA)
+            + 2 * DDZ(n) * (rho_s / R_c)
+            ;
+
+which in ``examples/blob2d-outerloop.cxx`` becomes:
+
+::
+
+   for(auto &i : n.region(RGN_NOBNDRY)) {
+     ...
+     ddt(n)[i] = - bracket_arakawa(phi, n, i)
+                 + 2 * DDZ_C2(n, i) * (rho_s / R_c)
+                 ;
+   }
+
+Note that in addition to providing an index ``i`` which is of type
+``DataIterator``, the function name includes the method (``arakawa`` or ``C2``).
+This is so that the function call does not have to contain logic
+to decide the method to use at runtime. The standard operators only have to decide
+which method to use once, then loop over the entire mesh, but these indexed functions
+would have to decide the method for every index.

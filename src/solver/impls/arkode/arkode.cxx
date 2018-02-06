@@ -42,6 +42,8 @@
 
 #include <output.hxx>
 
+#include "unused.hxx"
+
 #define ZERO        RCONST(0.)
 #define ONE         RCONST(1.0)
 
@@ -102,7 +104,7 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
   int neq;
   {TRACE("Allreduce localN -> GlobalN");
     if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
-      output.write("\tERROR: MPI_Allreduce failed!\n");
+      output_error.write("\tERROR: MPI_Allreduce failed!\n");
       return 1;
     }
   }
@@ -124,7 +126,8 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
 
   /// Get options
   BoutReal abstol, reltol;
-  N_Vector abstolvec;
+  // Initialise abstolvec to nullptr to avoid compiler maybed-uninitialised warning
+  N_Vector abstolvec = nullptr;
   int maxl;
   int mudq, mldq;
   int mukeep, mlkeep;
@@ -424,11 +427,11 @@ int ArkodeSolver::run() {
                    nsteps, nfe_evals, nfi_evals, nniters, npevals, nliters);
       
       output.write("    -> Newton iterations per step: %e\n", 
-                   ((double) nniters) / ((double) nsteps));
+                   static_cast<BoutReal>(nniters) / static_cast<BoutReal>(nsteps));
       output.write("    -> Linear iterations per Newton iteration: %e\n",
-                   ((double) nliters) / ((double) nniters));
+                   static_cast<BoutReal>(nliters) / static_cast<BoutReal>(nniters));
       output.write("    -> Preconditioner evaluations per Newton: %e\n",
-                   ((double) npevals) / ((double) nniters));
+                   static_cast<BoutReal>(npevals) / static_cast<BoutReal>(nniters));
     }
 
     /// Call the monitor function
@@ -468,7 +471,7 @@ BoutReal ArkodeSolver::run(BoutReal tout) {
       flag = ARKode(arkode_mem, tout, uvec, &internal_time, ARK_ONE_STEP);
       
       if(flag != ARK_SUCCESS) {
-        output.write("ERROR ARKODE solve failed at t = %e, flag = %d\n", internal_time, flag);
+        output_error.write("ERROR ARKODE solve failed at t = %e, flag = %d\n", internal_time, flag);
         return -1.0;
       }
       
@@ -486,7 +489,7 @@ BoutReal ArkodeSolver::run(BoutReal tout) {
   run_rhs(simtime);
   //run_diffusive(simtime);
   if(flag != ARK_SUCCESS) {
-    output.write("ERROR ARKODE solve failed at t = %e, flag = %d\n", simtime, flag);
+    output_error.write("ERROR ARKODE solve failed at t = %e, flag = %d\n", simtime, flag);
     return -1.0;
   }
 
@@ -612,7 +615,7 @@ static int arkode_rhs_e(BoutReal t,
   BoutReal *udata = NV_DATA_P(u);
   BoutReal *dudata = NV_DATA_P(du);
   
-  ArkodeSolver *s = (ArkodeSolver*) user_data;
+  ArkodeSolver *s = static_cast<ArkodeSolver*>(user_data);
   
   // Calculate RHS function
   try {
@@ -633,7 +636,7 @@ static int arkode_rhs_i(BoutReal t,
   BoutReal *udata = NV_DATA_P(u);
   BoutReal *dudata = NV_DATA_P(du);
 
-  ArkodeSolver *s = (ArkodeSolver*) user_data;
+  ArkodeSolver *s = static_cast<ArkodeSolver*>(user_data);
 
   //Calculate RHS function
   try {
@@ -653,7 +656,7 @@ static int arkode_rhs(BoutReal t,
   BoutReal *udata = NV_DATA_P(u);
   BoutReal *dudata = NV_DATA_P(du);
 
-  ArkodeSolver *s = (ArkodeSolver*) user_data;
+  ArkodeSolver *s = static_cast<ArkodeSolver*>(user_data);
 
   //Calculate RHS function
   try {
@@ -663,28 +666,23 @@ static int arkode_rhs(BoutReal t,
     return 1;
       }
     return 0;
-  }
-                            
+}
 
 /// RHS function for BBD preconditioner
-static int arkode_bbd_rhs(ARKODEINT Nlocal, BoutReal t, 
-			 N_Vector u, N_Vector du, 
-			 void *user_data)
-{
+static int arkode_bbd_rhs(ARKODEINT UNUSED(Nlocal), BoutReal t, N_Vector u, N_Vector du,
+                          void *user_data) {
   return arkode_rhs_i(t, u, du, user_data);
 }
 
 /// Preconditioner function
-static int arkode_pre(BoutReal t, N_Vector yy, N_Vector yp,
-		     N_Vector rvec, N_Vector zvec,
-		     BoutReal gamma, BoutReal delta, int lr,
-		     void *user_data, N_Vector tmp)
-{
+static int arkode_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector rvec,
+                      N_Vector zvec, BoutReal gamma, BoutReal delta, int UNUSED(lr),
+                      void *user_data, N_Vector UNUSED(tmp)) {
   BoutReal *udata = NV_DATA_P(yy);
   BoutReal *rdata = NV_DATA_P(rvec);
   BoutReal *zdata = NV_DATA_P(zvec);
   
-  ArkodeSolver *s = (ArkodeSolver*) user_data;
+  ArkodeSolver *s = static_cast<ArkodeSolver*>(user_data);
 
   // Calculate residuals
   s->pre(t, gamma, delta, udata, rdata, zdata);
@@ -693,15 +691,13 @@ static int arkode_pre(BoutReal t, N_Vector yy, N_Vector yp,
 }
 
 /// Jacobian-vector multiplication function
-static int arkode_jac(N_Vector v, N_Vector Jv,
-		     realtype t, N_Vector y, N_Vector fy,
-		     void *user_data, N_Vector tmp)
-{
+static int arkode_jac(N_Vector v, N_Vector Jv, realtype t, N_Vector y,
+                      N_Vector UNUSED(fy), void *user_data, N_Vector UNUSED(tmp)) {
   BoutReal *ydata = NV_DATA_P(y);   ///< System state
   BoutReal *vdata = NV_DATA_P(v);   ///< Input vector
   BoutReal *Jvdata = NV_DATA_P(Jv);  ///< Jacobian*vector output
   
-  ArkodeSolver *s = (ArkodeSolver*) user_data;
+  ArkodeSolver *s = static_cast<ArkodeSolver*>(user_data);
   
   s->jac(t, ydata, vdata, Jvdata);
   
@@ -750,7 +746,10 @@ void ArkodeSolver::set_abstol_values(BoutReal* abstolvec_data, vector<BoutReal> 
   }
 }
 
-void ArkodeSolver::loop_abstol_values_op(int jx, int jy, BoutReal* abstolvec_data, int &p, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols, bool bndry) {
+void ArkodeSolver::loop_abstol_values_op(int UNUSED(jx), int UNUSED(jy),
+                                         BoutReal *abstolvec_data, int &p,
+                                         vector<BoutReal> &f2dtols,
+                                         vector<BoutReal> &f3dtols, bool bndry) {
   // Loop over 2D variables
   for(vector<BoutReal>::size_type i=0; i<f2dtols.size(); i++) {
     if(bndry && !f2d[i].evolve_bndry)

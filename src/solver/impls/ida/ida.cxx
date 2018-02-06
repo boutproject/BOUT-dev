@@ -46,6 +46,8 @@
 
 #include <output.hxx>
 
+#include "unused.hxx"
+
 #define ZERO        RCONST(0.)
 #define ONE         RCONST(1.0)
 
@@ -94,7 +96,7 @@ IdaSolver::~IdaSolver() { }
   // Get total problem size
   int neq;
   if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
-    output.write("\tERROR: MPI_Allreduce failed!\n");
+    output_error.write("\tERROR: MPI_Allreduce failed!\n");
     return 1;
   }
   
@@ -243,7 +245,7 @@ BoutReal IdaSolver::run(BoutReal tout) {
   run_rhs(simtime);
   
   if(flag < 0) {
-    output.write("ERROR IDA solve failed at t = %e, flag = %d\n", simtime, flag);
+    output_error.write("ERROR IDA solve failed at t = %e, flag = %d\n", simtime, flag);
     return -1.0;
   }
 
@@ -320,8 +322,8 @@ static int idares(BoutReal t,
   BoutReal *udata = NV_DATA_P(u);
   BoutReal *dudata = NV_DATA_P(du);
   BoutReal *rdata = NV_DATA_P(rr);
-  
-  IdaSolver *s = (IdaSolver*) user_data;
+
+  IdaSolver *s = static_cast<IdaSolver *>(user_data);
 
   // Calculate residuals
   s->res(t, udata, dudata, rdata);
@@ -330,25 +332,20 @@ static int idares(BoutReal t,
 }
 
 /// Residual function for BBD preconditioner
-static int ida_bbd_res(IDAINT Nlocal, BoutReal t, 
-		       N_Vector u, N_Vector du, N_Vector rr, 
-		       void *user_data)
-{
+static int ida_bbd_res(IDAINT UNUSED(Nlocal), BoutReal t, N_Vector u, N_Vector du,
+                       N_Vector rr, void *user_data) {
   return idares(t, u, du, rr, user_data);
 }
 
 // Preconditioner function
-static int ida_pre(BoutReal t, N_Vector yy, 	 
-		   N_Vector yp, N_Vector rr, 	 
-		   N_Vector rvec, N_Vector zvec, 	 
-		   BoutReal cj, BoutReal delta, 
-		   void *user_data, N_Vector tmp)
-{
+static int ida_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector UNUSED(rr),
+                   N_Vector rvec, N_Vector zvec, BoutReal cj, BoutReal delta,
+                   void *user_data, N_Vector UNUSED(tmp)) {
   BoutReal *udata = NV_DATA_P(yy);
   BoutReal *rdata = NV_DATA_P(rvec);
   BoutReal *zdata = NV_DATA_P(zvec);
-  
-  IdaSolver *s = (IdaSolver*) user_data;
+
+  IdaSolver *s = static_cast<IdaSolver *>(user_data);
 
   // Calculate residuals
   s->pre(t, cj, delta, udata, rdata, zdata);

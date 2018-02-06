@@ -6,9 +6,15 @@
 
 Field2D f;
 
-// Create a function to be called every output step
-int my_output_monitor(Solver *solver, BoutReal simtime, int iter, int NOUT) {
-  output.write("\nOutput monitor, time = %e, step %d of %d\n", 
+// Create a monitor to be called every output step
+class MyOutputMonitor: public Monitor{
+public:
+  MyOutputMonitor(BoutReal timestep=-1):Monitor(timestep){};
+  int call(Solver *solver, BoutReal simtime, int iter, int NOUT) override;
+};
+
+int MyOutputMonitor::call(Solver *solver, BoutReal simtime, int iter, int NOUT) {
+  output.write("Output monitor, time = %e, step %d of %d\n",
                simtime, iter, NOUT);
   return 0;
 }
@@ -20,8 +26,12 @@ int my_timestep_monitor(Solver *solver, BoutReal simtime, BoutReal dt) {
   return 0;
 }
 
+MyOutputMonitor my_output_monitor;
+MyOutputMonitor my_output_monitor_fast(.5);
+
 int physics_init(bool restarting) {
-  solver->addMonitor(my_output_monitor);
+  solver->addMonitor(&my_output_monitor);
+  solver->addMonitor(&my_output_monitor_fast);
   solver->addTimestepMonitor(my_timestep_monitor);
   SOLVE_FOR(f);
   return 0;

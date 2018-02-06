@@ -25,6 +25,8 @@ class Mesh;
  */
 class ParallelTransform {
 public:
+  virtual ~ParallelTransform() {}
+
   /// Given a 3D field, calculate and set the Y up down fields
   virtual void calcYUpDown(Field3D &f) = 0;
   
@@ -125,7 +127,7 @@ private:
    * Shift a 2D field in Z. 
    * Since 2D fields are constant in Z, this has no effect
    */
-  const Field2D shiftZ(Field2D f, const Field2D UNUSED(zangle)){return f;};
+  const Field2D shiftZ(const Field2D &f, const Field2D &UNUSED(zangle)){return f;};
 
   /*!
    * Shift a 3D field \p f in Z by the given \p zangle
@@ -134,7 +136,7 @@ private:
    * @param[in] zangle   Toroidal angle (z)
    *
    */ 
-  const Field3D shiftZ(Field3D f, Field2D zangle);
+  const Field3D shiftZ(const Field3D &f, const Field2D &zangle);
 
   /*!
    * Shift a 3D field \p f by the given phase \p phs in Z
@@ -145,7 +147,7 @@ private:
    * @param[in] f  The field to shift
    * @param[in] phs  The phase to shift by
    */
-  const Field3D shiftZ(Field3D f, const arr3Dvec &phs);
+  const Field3D shiftZ(const Field3D &f, const arr3Dvec &phs);
 
   /*!
    * Shift a given 1D array, assumed to be in Z, by the given \p zangle

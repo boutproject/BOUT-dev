@@ -22,6 +22,8 @@ boututils
 
 -  ``linear_regression()``
 
+-  ``showdata()`` visualises and animates 2D data (time + 1 spatial dimension) or 3D data (time + 2 spatial dimensions). The animation object can be returned, or the animation can be saved to a file or displayed on screen. 
+
 boutdata
 --------
 
@@ -41,8 +43,10 @@ boutdata
 
 -  ``gen_surface()`` is a generator for iterating over flux surfaces
 
-bout\_runners
--------------
+.. _sec-bout_runners:
+
+bout_runners
+------------
 
 ``bout_runners`` contains classes which gives an alternative way of
 running BOUT++ simulations either normally using the class
@@ -73,13 +77,14 @@ is possible to submit it to a different queue, using a different amount
 of nodes etc.).
 
 When the function ``self.execute_runs()`` is executed, a folder
-structure like the one presented in figure [fig:folder\_tree] is
+structure like the one presented in :numref:`fig-folder-tree` is
 created. ``BOUT.inp`` is copied to the folder of execution, where the
 ``BOUT.*.dmp`` files are stored. Secondly a list of combination of the
 options specified in the driver is made. Eventually unset options are
 obtained from ``BOUT.inp`` or given a default value if the option is
 nowhere to be found.
 
+.. _fig-folder-tree:
 .. figure:: ../figs/folder_tree.*
    :alt: Longest possible folder tree
 

@@ -1,1 +1,0 @@
-./configure --with-netcdf=/u/local/apps/netcdf/current --with-fftw=/u/local/apps/fftw3/current --with-cvode=/u/local/apps/sundials/2.4.0 --with-lapack=/u/local/apps/lapack/current

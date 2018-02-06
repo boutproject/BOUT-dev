@@ -123,7 +123,7 @@ const Field2D DDZ(const Field2D &UNUSED(f)) {
 }
 
 const Vector3D DDZ(const Vector3D &v, CELL_LOC outloc, DIFF_METHOD method) {
-  Vector3D result;
+  Vector3D result(v.x.getMesh());
 
   ASSERT2(v.x.getMesh()==v.y.getMesh());
   ASSERT2(v.x.getMesh()==v.z.getMesh());
@@ -152,7 +152,7 @@ const Vector3D DDZ(const Vector3D &v, DIFF_METHOD method, CELL_LOC outloc) {
 }
 
 const Vector2D DDZ(const Vector2D &v) {
-  Vector2D result;
+  Vector2D result(v.x.getMesh());
 
   result.covariant = v.covariant;
 
@@ -312,11 +312,9 @@ const Field2D D2DXDZ(const Field2D &UNUSED(f)) {
 
 /// X-Z mixed derivative
 const Field3D D2DXDZ(const Field3D &f) {
-  Field3D result;
-
   // Take derivative in Z, including in X boundaries. Then take derivative in X
   // Maybe should average results of DDX(DDZ) and DDZ(DDX)?
-  result = DDX(DDZ(f, true));
+  Field3D result = DDX(DDZ(f, true));
 
   return result;
 }
@@ -326,7 +324,7 @@ const Field2D D2DYDZ(const Field2D &UNUSED(f)) {
 }
 
 const Field3D D2DYDZ(const Field3D &f) {
-  Field3D result;
+  Field3D result(f.getMesh());
   result.allocate();
   for(int i=f.getMesh()->xstart;i<=f.getMesh()->xend;i++)
     for(int j=f.getMesh()->ystart;j<=f.getMesh()->yend;j++) 
@@ -358,11 +356,11 @@ const Field2D VDDX(const Field2D &v, const Field2D &f, DIFF_METHOD method) {
 }
 
 /// General version for 2 or 3-D objects
-const Field3D VDDX(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field3D VDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   return f.getMesh()->indexVDDX(v, f, outloc, method) / f.getMesh()->coordinates()->dx;
 }
 
-const Field3D VDDX(const Field &v, const Field &f, DIFF_METHOD method, CELL_LOC outloc) {
+const Field3D VDDX(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
   return VDDX(v, f, outloc, method);
 }
 
@@ -378,11 +376,11 @@ const Field2D VDDY(const Field2D &v, const Field2D &f, DIFF_METHOD method) {
 }
 
 // general case
-const Field3D VDDY(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field3D VDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   return f.getMesh()->indexVDDY(v, f, outloc, method) / f.getMesh()->coordinates()->dy;
 }
 
-const Field3D VDDY(const Field &v, const Field &f, DIFF_METHOD method, CELL_LOC outloc) {
+const Field3D VDDY(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
   return VDDY(v, f, outloc, method);
 }
 
@@ -399,11 +397,11 @@ const Field2D VDDZ(const Field3D &UNUSED(v), const Field2D &UNUSED(f)) {
 }
 
 // general case
-const Field3D VDDZ(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field3D VDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   return f.getMesh()->indexVDDZ(v, f, outloc, method) / f.getMesh()->coordinates()->dz;
 }
 
-const Field3D VDDZ(const Field &v, const Field &f, DIFF_METHOD method, CELL_LOC outloc) {
+const Field3D VDDZ(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
   return VDDZ(v, f, outloc, method);
 }
 

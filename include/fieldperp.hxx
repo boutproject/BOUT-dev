@@ -52,23 +52,28 @@ class FieldPerp : public Field {
   /*!
    * Constructor
    */
-  FieldPerp();
+  FieldPerp(Mesh * fieldmesh = nullptr);
 
   /*!
    * Copy constructor. After this the data
    * will be shared (non unique)
    */
-  FieldPerp(const FieldPerp& f) : yindex(f.yindex),
-				  nx(f.nx), nz(f.nz),
-				  data(f.data) { }
+  FieldPerp(const FieldPerp &f)
+      : Field(f.fieldmesh), yindex(f.yindex), nx(f.nx), nz(f.nz), data(f.data) {}
+
+  /*!
+   * Move constructor
+   */
+  FieldPerp(FieldPerp &&rhs) = default;
   ~FieldPerp() {}
 
   /*!
    * Assignment operators
    */
-  FieldPerp & operator=(const FieldPerp &rhs);
-  FieldPerp & operator=(BoutReal rhs);
-  
+  FieldPerp &operator=(const FieldPerp &rhs);
+  FieldPerp &operator=(FieldPerp &&rhs) = default;
+  FieldPerp &operator=(BoutReal rhs);
+
   /*!
    * Iterators and data access
    */
@@ -219,13 +224,6 @@ class FieldPerp : public Field {
   FieldPerp & operator/=(const Field3D &rhs);
   FieldPerp & operator/=(const Field2D &rhs);
   FieldPerp & operator/=(BoutReal rhs);
-  
-  // Stencils
-
-  //void setStencil(bstencil *fval, bindex *bx) const;
-  void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
-  void setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
-  void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
 
   virtual int getNy() const override{ return 1;};
   

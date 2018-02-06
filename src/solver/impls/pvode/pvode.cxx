@@ -33,6 +33,8 @@
 #include <bout/sys/timer.hxx>
 #include <boutexception.hxx>
 
+#include "unused.hxx"
+
 #include <pvode/iterativ.h>  // contains the enum for types of preconditioning
 #include <pvode/cvspgmr.h>   // use CVSPGMR linear solver each internal step
 #include <pvode/pvbbdpre.h>  // band preconditioner function prototypes
@@ -106,7 +108,7 @@ int PvodeSolver::init(int nout, BoutReal tstep) {
 	       n3d, n2d, neq, local_N);
 
   // Set machEnv block
-  machEnv = (machEnvType) PVecInitMPI(BoutComm::get(), local_N, neq, pargc, pargv);
+  machEnv = static_cast<machEnvType>(PVecInitMPI(BoutComm::get(), local_N, neq, pargc, pargv));
 
   if (machEnv == NULL) {
     throw BoutException("\tError: PVecInitMPI failed\n");
@@ -133,7 +135,7 @@ int PvodeSolver::init(int nout, BoutReal tstep) {
   options->get("mxstep", pvode_mxstep, 500);
 
   pdata = PVBBDAlloc(local_N, mudq, mldq, mukeep, mlkeep, ZERO, 
-                     solver_gloc, solver_cfn, (void*) this);
+                     solver_gloc, solver_cfn, static_cast<void*>(this));
   
   if (pdata == NULL) {
     throw BoutException("\tError: PVBBDAlloc failed.\n");
@@ -230,7 +232,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
 
   BoutReal *udata;
   
-  rhs_ncalls = 0;
+  //rhs_ncalls = 0;
 
   // Set pointer to data array in vector u.
   udata = N_VDATA(u);
@@ -242,7 +244,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
     flag = CVode(cvode_mem, tout, u, &simtime, NORMAL);
   }else {
     // Run in single step mode, to call timestep monitors
-    BoutReal internal_time = ((CVodeMem) cvode_mem)->cv_tn;
+    BoutReal internal_time = static_cast<CVodeMem>(cvode_mem)->cv_tn;
     //CvodeGetCurrentTime(cvode_mem, &internal_time);
     
     while(internal_time < tout) {
@@ -250,7 +252,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
       BoutReal last_time = internal_time;
       flag = CVode(cvode_mem, tout, u, &internal_time, ONE_STEP);
       if(flag < 0) {
-        output.write("ERROR CVODE solve failed at t = %e, flag = %d\n", internal_time, flag);
+        output_error.write("ERROR CVODE solve failed at t = %e, flag = %d\n", internal_time, flag);
         return -1.0;
       }
       
@@ -270,7 +272,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
 
   // Check return flag
   if(flag != SUCCESS) {
-    output.write("ERROR CVODE step failed, flag = %d\n", flag);
+    output_error.write("ERROR CVODE step failed, flag = %d\n", flag);
     return(-1.0);
   }
 
@@ -281,7 +283,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
  * RHS function
  **************************************************************************/
 
-void PvodeSolver::rhs(int N, BoutReal t, BoutReal *udata, BoutReal *dudata) {
+void PvodeSolver::rhs(int UNUSED(N), BoutReal t, BoutReal *udata, BoutReal *dudata) {
   TRACE("Running RHS: PvodeSolver::rhs(%e)", t);
 
   // Get current timestep
@@ -297,7 +299,7 @@ void PvodeSolver::rhs(int N, BoutReal t, BoutReal *udata, BoutReal *dudata) {
   save_derivs(dudata);
 }
 
-void PvodeSolver::gloc(int N, BoutReal t, BoutReal *udata, BoutReal *dudata) {
+void PvodeSolver::gloc(int UNUSED(N), BoutReal t, BoutReal *udata, BoutReal *dudata) {
   TRACE("Running RHS: PvodeSolver::gloc(%e)", t);
 
   Timer timer("rhs");
@@ -318,32 +320,30 @@ void PvodeSolver::gloc(int N, BoutReal t, BoutReal *udata, BoutReal *dudata) {
  * CVODE rhs function
  **************************************************************************/
 
-void solver_f(integer N, BoutReal t, N_Vector u, N_Vector udot, void *f_data)
-{
+void solver_f(integer N, BoutReal t, N_Vector u, N_Vector udot, void *f_data) {
   BoutReal *udata, *dudata;
   PvodeSolver *s;
 
   udata = N_VDATA(u);
   dudata = N_VDATA(udot);
-  
-  s = (PvodeSolver*) f_data;
+
+  s = static_cast<PvodeSolver *>(f_data);
 
   s->rhs(N, t, udata, dudata);
 }
 
 // Preconditioner RHS
-void solver_gloc(integer N, BoutReal t, BoutReal* u, BoutReal* udot, void *f_data)
-{
+void solver_gloc(integer N, BoutReal t, BoutReal *u, BoutReal *udot, void *f_data) {
   PvodeSolver *s;
-  
-  s = (PvodeSolver*) f_data;
+
+  s = static_cast<PvodeSolver *>(f_data);
 
   s->gloc(N, t, u, udot);
 }
 
 // Preconditioner communication function
-void solver_cfn(integer N, BoutReal t, N_Vector u, void *f_data)
-{
+void solver_cfn(integer UNUSED(N), BoutReal UNUSED(t), N_Vector UNUSED(u),
+                void *UNUSED(f_data)) {
   // doesn't do anything at the moment
 }
 

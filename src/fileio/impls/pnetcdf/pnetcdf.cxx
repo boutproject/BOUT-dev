@@ -36,7 +36,7 @@
 #include <output.hxx>
 #include <msg_stack.hxx>
 
-#define CHKERR(ret) { if( ret != NC_NOERR ) throw new BoutException("pnetcdf line %d: %s", __LINE__, ncmpi_strerror(ret)); }
+#define CHKERR(ret) { if( ret != NC_NOERR ) throw BoutException("pnetcdf line %d: %s", __LINE__, ncmpi_strerror(ret)); }
 
 // Define this to see loads of info messages
 //#define NCDF_VERBOSE
@@ -82,25 +82,25 @@ bool PncFormat::openr(const char *name) {
   /// Get the dimensions from the file
   ret = ncmpi_inq_dimid(ncfile, "x", &xDim);
   if(ret != NC_NOERR) {
-    output.write("WARNING: NetCDF file should have an 'x' dimension\n");
+    output_warn.write("WARNING: NetCDF file should have an 'x' dimension\n");
   }
   
   ret = ncmpi_inq_dimid(ncfile, "y", &yDim);
   if(ret != NC_NOERR) {
-    output.write("WARNING: NetCDF file should have an 'y' dimension\n");
+    output_warn.write("WARNING: NetCDF file should have an 'y' dimension\n");
   }
   
   // z and t dimensions less crucial
   ret = ncmpi_inq_dimid(ncfile, "z", &zDim);
   if(ret != NC_NOERR) {
 #ifdef NCDF_VERBOSE
-    output.write("INFO: NetCDF file has no 'z' coordinate\n");
+    output_info.write("INFO: NetCDF file has no 'z' coordinate\n");
 #endif
   }
   ret = ncmpi_inq_dimid(ncfile, "t", &tDim);
   if(ret != NC_NOERR) {
 #ifdef NCDF_VERBOSE
-    output.write("INFO: NetCDF file has no 'z' coordinate\n");
+    output_info.write("INFO: NetCDF file has no 'z' coordinate\n");
 #endif
   }
   
@@ -138,15 +138,15 @@ bool PncFormat::openw(const char *name, bool append) {
     MPI_Offset len;
     ret = ncmpi_inq_dimlen(ncfile, xDim, &len); CHKERR(ret);
     if(len != mesh->GlobalNx)
-      throw new BoutException("ERROR: x dimension length (%d) incompatible with mesh size (%d)", (int) len, mesh->GlobalNx);
+      throw BoutException("ERROR: x dimension length (%d) incompatible with mesh size (%d)", (int) len, mesh->GlobalNx);
 
     ret = ncmpi_inq_dimlen(ncfile, yDim, &len); CHKERR(ret);
     if(len != mesh->GlobalNy)
-      throw new BoutException("ERROR: y dimension length (%d) incompatible with mesh size (%d)", (int) len, mesh->GlobalNy);
+      throw BoutException("ERROR: y dimension length (%d) incompatible with mesh size (%d)", (int) len, mesh->GlobalNy);
     
     ret = ncmpi_inq_dimlen(ncfile, zDim, &len); CHKERR(ret);
     if(len != mesh->GlobalNz)
-      throw new BoutException("ERROR: z dimension length (%d) incompatible with mesh size (%d)", (int) len, mesh->GlobalNz);
+      throw BoutException("ERROR: z dimension length (%d) incompatible with mesh size (%d)", (int) len, mesh->GlobalNz);
     
     // Get the size of the 't' dimension for records
     ret = ncmpi_inq_dimlen(ncfile, tDim, &len); CHKERR(ret);
@@ -269,7 +269,7 @@ bool PncFormat::read(int *data, const char *name, int lx, int ly, int lz) {
   if(ret = ncmpi_inq_varid(ncfile, name, &var)) {
     // Variable not in file
 #ifdef NCDF_VERBOSE
-    output.write("INFO: Parallel NetCDF variable '%s' not found\n", name);
+    output_info.write("INFO: Parallel NetCDF variable '%s' not found\n", name);
 #endif
     return false;
   }
@@ -327,7 +327,7 @@ bool PncFormat::read(BoutReal *data, const char *name, int lx, int ly, int lz) {
   if(ret = ncmpi_inq_varid(ncfile, name, &var)) {
     // Variable not in file
 #ifdef NCDF_VERBOSE
-    output.write("INFO: Parallel NetCDF variable '%s' not found\n", name);
+    output_info.write("INFO: Parallel NetCDF variable '%s' not found\n", name);
 #endif
     return false;
   }
@@ -505,7 +505,7 @@ bool PncFormat::read_rec(int *data, const char *name, int lx, int ly, int lz) {
   if(ret = ncmpi_inq_varid(ncfile, name, &var)) {
     // Variable not in file
 #ifdef NCDF_VERBOSE
-    output.write("INFO: Parallel NetCDF variable '%s' not found\n", name);
+    output_info.write("INFO: Parallel NetCDF variable '%s' not found\n", name);
 #endif
     return false;
   }
@@ -537,7 +537,7 @@ bool PncFormat::read_rec(BoutReal *data, const char *name, int lx, int ly, int l
   if(ret = ncmpi_inq_varid(ncfile, name, &var)) {
     // Variable not in file
 #ifdef NCDF_VERBOSE
-    output.write("INFO: Parallel NetCDF variable '%s' not found\n", name);
+    output_info.write("INFO: Parallel NetCDF variable '%s' not found\n", name);
 #endif
     return false;
   }
@@ -643,7 +643,7 @@ bool PncFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int 
   }
 
 #ifdef NCDF_VERBOSE
-  output.write("INFO: NetCDF writing record %d of '%s' in '%s'\n",t, name, fname); 
+  output_info.write("INFO: NetCDF writing record %d of '%s' in '%s'\n",t, name, fname); 
 #endif
 
   if(lowPrecision) {

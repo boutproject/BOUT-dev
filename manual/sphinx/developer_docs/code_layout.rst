@@ -5,9 +5,10 @@ BOUT++ is organised into classes and groups of functions which operate
 on them: It’s not purely object-oriented, but takes advantage of many of
 C++’s object-oriented features.
 
-Figure [fig:layout1] shows the most important parts of BOUT++ and how
+:numref:`fig-layout1` shows the most important parts of BOUT++ and how
 they fit together.
 
+.. _fig-layout1:
 .. figure:: ../figs/layout1.*
    :alt: Overview of BOUT++ control flow
 
@@ -22,7 +23,7 @@ to specify a variable to be evolved. The main thing ``bout_solve`` does
 is to add these variables to the solver.
 
 The process of running a timestep is shown in blue in
-figure [fig:layout1]: The main loop calls the solver, which in turn
+:numref:`fig-layout1`: The main loop calls the solver, which in turn
 calls PVODE. To evolve the system PVODE makes calls to the RHS function
 inside solver. This moves data between PVODE and BOUT++, and calls the
 user-supplied ``physics_run`` code to calculate time-derivatives. Much
@@ -30,11 +31,12 @@ of the work calculating time-derivatives involves differential
 operators.
 
 Calculation of the RHS function ``physics_run``, and handling of data in
-BOUT++ involves many different components. Figure [fig:layout2] shows
+BOUT++ involves many different components. :numref:`fig-layout2` shows
 (most) of the classes and functions involved, and the relationships
 between them. Some thought was put into how this should be organised,
 but it has also changed over time, so some parts could be cleaner.
 
+.. _fig-layout2:
 .. figure:: ../figs/layout2.*
    :alt: Relationships used in calculating the RHS function
 
@@ -90,7 +92,7 @@ The current source code files are:
      the :cpp:class:`Field3D` class, which varies in :math:`x`,
      :math:`y` and :math:`z`. Since these handle a lot more memory
      than Field2D objects, the memory management is more complicated
-     and includes reference counting. See section [sec:memorymanage]
+     and includes reference counting. See section :ref:`sec-memorymanage`
      for more details.
 
    - :doc:`field_data.cxx<../_breathe_autogen/file/field__data_8cxx>`
@@ -183,20 +185,6 @@ The current source code files are:
      interface by calling the Fastest Fourier Transform in the West
      (FFTW) library.
 
-   - :doc:`full_gmres.cxx<../_breathe_autogen/file/full__gmres_8cxx>`
-
-   - :doc:`inverter.cxx<../_breathe_autogen/file/inverter_8cxx>` is a
-     :cpp:class:`FieldPerp` inversion class currently under
-     development. It is intended to provide a way to solve nonlinear
-     problems using a GMRES iterative method.
-
-   - :doc:`invert_gmres.cxx<../_breathe_autogen/file/invert__gmres_8cxx>`
-
-   - :doc:`invert_laplace_gmres.cxx<../_breathe_autogen/file/invert__laplace__gmres_8cxx>` inherits
-     the :cpp:class:`Inverter` class and will solve more general
-     Laplacian problems, using the :cpp:func:`invert_laplace`
-     routines as preconditioners.
-
 - invert / laplace
 
    - :doc:`invert_laplace.cxx<../_breathe_autogen/file/invert__laplace_8cxx>` uses Fourier
@@ -266,12 +254,12 @@ The current source code files are:
 
    - :doc:`boundary_factory.cxx<../_breathe_autogen/file/boundary__factory_8cxx>` creates boundary
      condition operators which can then be applied to
-     fields. Described in section [sec:BoundaryFactory].
+     fields. Described in section :ref:`sec-BoundaryFactory`.
 
    - :doc:`boundary_region.cxx<../_breathe_autogen/file/boundary__region_8cxx>` implements a way
      to describe and iterate over boundary regions. Created by the
      mesh, and then used by boundary conditions. See
-     section [sec:BoundaryRegion] for more details.
+     section :ref:`sec-BoundaryRegion` for more details.
 
    - :doc:`boundary_standard.cxx<../_breathe_autogen/file/boundary__standard_8cxx>` implements some
      standard boundary operations and modifiers such as ``Neumann``
@@ -290,14 +278,6 @@ The current source code files are:
      for all :cpp:class:`Mesh` implementations.
 
    - impls
-
-      - :doc:`domain.cxx<../_breathe_autogen/file/domain_8cxx>`
-
-      - :doc:`domain.hxx<../_breathe_autogen/file/domain_8hxx>`
-
-      - :doc:`partition.cxx<../_breathe_autogen/file/partition_8cxx>`
-
-      - :doc:`partition.hxx<../_breathe_autogen/file/partition_8hxx>`
 
       - bout
 
@@ -383,7 +363,7 @@ The current source code files are:
      basic derivative methods such as upwinding, central difference
      and WENO methods. These are then used by
      :doc:`difops.cxx<../_breathe_autogen/file/difops_8cxx>`. Details are
-     given in section [sec:derivatives].
+     given in section :ref:`sec-derivatives`.
 
    - :doc:`msg_stack.cxx<../_breathe_autogen/file/msg__stack_8cxx>` is
      part of the error handling system. It maintains a stack of
@@ -402,7 +382,7 @@ The current source code files are:
 
    - :doc:`range.cxx<../_breathe_autogen/file/range_8cxx>` Provides the
      RangeIterator class, used to iterate over a set of
-     ranges. Described in section [sec:rangeiterator]
+     ranges. Described in section :ref:`sec-rangeiterator`
 
    - :doc:`stencils.cxx<../_breathe_autogen/file/stencils_8cxx>` contains
      methods to operate on stencils which are used by differential
@@ -410,7 +390,7 @@ The current source code files are:
 
    - :doc:`timer.cxx<../_breathe_autogen/file/timer_8cxx>` a class for
      timing parts of the code like communications and file
-     I/O. Described in section [sec:timerclass]
+     I/O. Described in section :ref:`sec-timerclass`
 
    - :doc:`utils.cxx<../_breathe_autogen/file/utils_8cxx>` contains
      miscellaneous small useful routines such as allocating and
