@@ -169,6 +169,10 @@ void Field3D::allocate() {
     data = Array<BoutReal>(nx*ny*nz);
   }else
     data.ensureUnique();
+
+#if CHECK>0
+  invalidateGuards(*this);
+#endif  
 }
 
 Field3D* Field3D::timeDeriv() {
