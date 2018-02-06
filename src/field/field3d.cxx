@@ -167,12 +167,18 @@ void Field3D::allocate() {
       nz = fieldmesh->LocalNz;
     }
     data = Array<BoutReal>(nx*ny*nz);
-  }else
-    data.ensureUnique();
-
 #if CHECK>0
-  invalidateGuards(*this);
+    invalidateGuards(*this);
 #endif  
+  }else{
+    if ( !data.unique() ){
+      data.ensureUnique();
+#if CHECK>0
+      invalidateGuards(*this);
+#endif
+    }
+  }
+
 }
 
 Field3D* Field3D::timeDeriv() {
