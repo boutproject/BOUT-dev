@@ -160,7 +160,7 @@ if __name__ == "__main__":
     template = env.get_template("gen_fieldops.jinja")
 
     for lhs, rhs in itertools.product(fields, fields):
-        # We don't have define real real operations
+        # We don't have to define BoutReal BoutReal operations
         if lhs == rhs == 'BoutReal':
             continue
         rhs = copy(rhs)
