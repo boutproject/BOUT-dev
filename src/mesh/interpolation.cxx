@@ -50,7 +50,7 @@ BoutReal interp(const stencil &s)
   @param[in]   loc  Location of output values
 */
 
-const Field3D Mesh::interp_to(const Field3D &var, CELL_LOC loc) const
+const Field3D Mesh::interp_to(const Field3D &var, CELL_LOC loc)
 {
   ASSERT3(var.getMesh() == this);
   if(StaggerGrids && (var.getLocation() != loc)) {
@@ -224,7 +224,7 @@ const Field3D Mesh::interp_to(const Field3D &var, CELL_LOC loc) const
   return var;
 }
 
-const Field2D Mesh::interp_to(const Field2D &var, CELL_LOC UNUSED(loc)) const{
+const Field2D Mesh::interp_to(const Field2D &var, CELL_LOC UNUSED(loc)) {
   // Currently do nothing
   return var;
 }
