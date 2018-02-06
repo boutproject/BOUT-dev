@@ -19,15 +19,40 @@ try:
 except ImportError:
     pass
 
+import argparse
 from collections import OrderedDict
+import contextlib
 from copy import deepcopy as copy
 import itertools
+import sys
 
 try:
     import jinja2
 except ImportError:
     raise ImportError('Missing Python module "jinja2". See "Field2D/Field3D Arithmetic '
                       'Operators" in the BOUT++ user manual for more information')
+
+
+# This allows us to open either a file or stdout with the same code
+@contextlib.contextmanager
+def smart_open(filename, mode='r'):
+    """Open stdin or stdout using a contextmanager
+
+    From: http://stackoverflow.com/a/29824059/2043465
+    """
+    if filename == '-':
+        if mode is None or mode == '' or 'r' in mode:
+            fh = sys.stdin
+        else:
+            fh = sys.stdout
+    else:
+        fh = open(filename, mode)
+    try:
+        yield fh
+    finally:
+        if filename is not '-':
+            fh.close()
+
 
 # The arthimetic operators
 # OrderedDict to (try to) ensure consistency between python 2 & 3
@@ -55,13 +80,15 @@ class Field(object):
 
     """
 
-    def __init__(self, field_type, dimensions, name=None):
+    def __init__(self, field_type, dimensions, name=None, restrict=True):
         # C++ type of the field, e.g. Field3D
         self.field_type = field_type
         # array: dimensions of the field
         self.dimensions = dimensions
         # name of this field
         self.name = name
+        # If True, use __restrict__ attribute for passing pointers
+        self.restrict = restrict
 
     @property
     def passByReference(self):
@@ -77,11 +104,11 @@ class Field(object):
         """Returns "BoutReal* name", except if field_type is BoutReal,
         in which case just returns "BoutReal name"
 
-        Also adds "__restrict__" attribute if `for_gcc` is True
+        Also adds "__restrict__" attribute if enabled
         """
         return "BoutReal {ref}{restrict} {self.name}".format(
             self=self, ref="*" if self.field_type != "BoutReal" else "",
-            restrict="__restrict__" if for_gcc and self.field_type != "BoutReal" else "")
+            restrict="__restrict__" if self.restrict and self.field_type != "BoutReal" else "")
 
     @property
     def getPointerToData(self):
@@ -128,14 +155,6 @@ class Field(object):
         return self.field_type
 
 
-# Declare what fields we currently support:
-# Field perp is currently missing
-field3D = Field('Field3D', ['x', 'y', 'z'])
-field2D = Field('Field2D', ['x', 'y'])
-boutreal = Field('BoutReal', [])
-fields = [field3D, field2D, boutreal]
-
-
 def returnType(f1, f2):
     """Determine a suitable return type, by seeing which field is 'larger'.
 
@@ -151,8 +170,27 @@ def returnType(f1, f2):
 
 
 if __name__ == "__main__":
-    for_gcc = True
-    print(header)
+
+    parser = argparse.ArgumentParser(description="Generate code for the Field arithmetic operators")
+    # By default write to stdout
+    parser.add_argument("--filename", default="-",
+                        help="Write output to FILENAME instead of stdout")
+    # Note that we store the inverse in "restrict"
+    parser.add_argument("--no-restrict", action="store_false", default=True, dest="restrict",
+                        help="Don't use '__restrict__' attribute on pointers")
+
+    args = parser.parse_args()
+
+    # Declare what fields we currently support:
+    # Field perp is currently missing
+    field3D = Field('Field3D', ['x', 'y', 'z'], restrict=args.restrict)
+    field2D = Field('Field2D', ['x', 'y'], restrict=args.restrict)
+    boutreal = Field('BoutReal', [], restrict=args.restrict)
+    fields = [field3D, field2D, boutreal]
+
+    with smart_open(args.filename, "w") as f:
+        f.write(header)
+        f.write("\n")
 
     env = jinja2.Environment(loader=jinja2.FileSystemLoader('.'),
                              trim_blocks=True)
@@ -208,4 +246,6 @@ if __name__ == "__main__":
                 'length_arg': length_arg,
             }
 
-            print(template.render(**template_args))
+            with smart_open(args.filename, "a") as f:
+                f.write(template.render(**template_args))
+                f.write("\n")
