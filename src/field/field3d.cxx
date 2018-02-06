@@ -861,14 +861,14 @@ Field3D pow(BoutReal lhs, const Field3D &rhs) {
   return result;
 }
 
-BoutReal min(const Field3D &f, bool allpe) {
+BoutReal min(const Field3D &f, bool allpe, REGION rgn) {
   TRACE("Field3D::Min() %s",allpe? "over all PEs" : "");
 
   ASSERT2(f.isAllocated());
 
-  BoutReal result = f[f.region(RGN_NOBNDRY).begin()];
+  BoutReal result = f[f.region(rgn).begin()];
   
-  for(const auto& i: f.region(RGN_NOBNDRY))
+  for(const auto& i: f.region(rgn))
     if(f[i] < result)
       result = f[i];
   
@@ -881,14 +881,14 @@ BoutReal min(const Field3D &f, bool allpe) {
   return result;
 }
 
-BoutReal max(const Field3D &f, bool allpe) {
+BoutReal max(const Field3D &f, bool allpe, REGION rgn) {
   TRACE("Field3D::Max() %s",allpe? "over all PEs" : "");
 
   ASSERT2(f.isAllocated());
   
-  BoutReal result = f[f.region(RGN_NOBNDRY).begin()];
+  BoutReal result = f[f.region(rgn).begin()];
   
-  for(const auto& i: f.region(RGN_NOBNDRY))
+  for(const auto& i: f.region(rgn))
     if(f[i] > result)
       result = f[i];
   

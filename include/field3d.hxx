@@ -542,9 +542,10 @@ Field3D operator-(const Field3D &f);
  *
  * @param[in] f  The field to loop over
  * @param[in] allpe  Minimum over all processors?
+ * @param[in] rgn  the boundaries that should be ignored
  * 
  */
-BoutReal min(const Field3D &f, bool allpe=false);
+BoutReal min(const Field3D &f, bool allpe=false, REGION rgn=RGN_NOBNDRY);
 
 /*!
  * Calculates the maximum of a field, excluding
@@ -555,9 +556,10 @@ BoutReal min(const Field3D &f, bool allpe=false);
  *
  * @param[in] f  The field to loop over
  * @param[in] allpe  Minimum over all processors?
+ * @param[in] rgn  the boundaries that should be ignored
  * 
  */
-BoutReal max(const Field3D &f, bool allpe=false);
+BoutReal max(const Field3D &f, bool allpe=false, REGION rgn=RGN_NOBNDRY);
 
 /*!
  * Exponent: pow(a, b) is a raised to the power of b

@@ -302,29 +302,31 @@ const Field2D abs(const Field2D &f);
 
 /*!
  * Calculates the minimum of a field, excluding
- * the boundary/guard cells. 
+ * the boundary/guard cells by default.
  * By default this is only on the local processor,
  * but setting allpe=true does a collective Allreduce
  * over all processors.
  *
  * @param[in] f  The field to loop over
  * @param[in] allpe  Minimum over all processors?
+ * @param[in] rgn  the boundaries that should be ignored
  * 
  */
-BoutReal min(const Field2D &f, bool allpe=false);
+BoutReal min(const Field2D &f, bool allpe=false, REGION rgn=RGN_NOBNDRY);
 
 /*!
  * Calculates the maximum of a field, excluding
- * the boundary/guard cells. 
+ * the boundary/guard cells by default.
  * By default this is only on the local processor,
  * but setting allpe=true does a collective Allreduce
  * over all processors.
  *
  * @param[in] f  The field to loop over
  * @param[in] allpe  Minimum over all processors?
+ * @param[in] rgn  the boundaries that should be ignored
  * 
  */
-BoutReal max(const Field2D &f, bool allpe=false);
+BoutReal max(const Field2D &f, bool allpe=false, REGION rgn=RGN_NOBNDRY);
 
 /*!
  * Test if all values of this field are finite
