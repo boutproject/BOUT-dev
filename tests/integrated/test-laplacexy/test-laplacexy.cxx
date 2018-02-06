@@ -12,13 +12,70 @@
 
 #include <bout/invert/laplacexy.hxx>
 #include <field_factory.hxx>
-#include "loadmetric.hxx"
 
 int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
 
-  LoadMetric(1.,1.);
+  ///////////////////////////////////////
+  bool calc_metric;
+  OPTION(Options::getRoot(), calc_metric, true);
+  if(calc_metric) {
+    // Read metric tensor
+    Field2D Rxy, Btxy, Bpxy, B0, hthe, I;
+    mesh->get(Rxy,  "Rxy");  // m
+    mesh->get(Btxy, "Btxy"); // T
+    mesh->get(Bpxy, "Bpxy"); // T
+    mesh->get(B0,   "Bxy");  // T
+    mesh->get(hthe, "hthe"); // m
+    mesh->get(I,    "sinty");// m^-2 T^-1
 
+    // Checking for dpsi used in BOUT grids
+    Field2D dx;
+    if(!mesh->get(dx,   "dpsi")) {
+      output << "\tUsing dpsi as the x grid spacing\n";
+      mesh->coordinates()->dx = dx; // Only use dpsi if found
+    }else {
+      // dx will have been read already from the grid
+      output << "\tUsing dx as the x grid spacing\n";
+    }
+
+    Coordinates *coord = mesh->coordinates();
+
+    // Calculate metric components
+    string ptstr;
+    Options::getRoot()->getSection("mesh")->get("paralleltransform", ptstr, "identity");
+    // Convert to lower case for comparison
+    ptstr = lowercase(ptstr);
+    if(ptstr == "shifted") {
+      I = 0.0;  // I disappears from metric
+    }
+      
+    BoutReal sbp = 1.0; // Sign of Bp
+    if(min(Bpxy, true) < 0.0)
+      sbp = -1.0;
+
+    // Calculate metrics
+    coord->g11 = SQ(Rxy*Bpxy);
+    coord->g22 = 1.0 / SQ(hthe);
+    coord->g33 = SQ(I)*coord->g11 + SQ(B0)/coord->g11;
+    coord->g12 = 0.0;
+    coord->g13 = -I*coord->g11;
+    coord->g23 = -sbp*Btxy/(hthe*Bpxy*Rxy);
+    
+    coord->J = hthe / Bpxy;
+    coord->Bxy = B0;
+    
+    coord->g_11 = 1.0/coord->g11 + SQ(I*Rxy);
+    coord->g_22 = SQ(B0*hthe/Bpxy);
+    coord->g_33 = Rxy*Rxy;
+    coord->g_12 = sbp*Btxy*hthe*I*Rxy/Bpxy;
+    coord->g_13 = I*Rxy*Rxy;
+    coord->g_23 = Btxy*hthe*Rxy/Bpxy;
+    
+    coord->geometry();
+  }
+  ///////////////////////////////////////
+ 
   LaplaceXY *inv = new LaplaceXY(mesh);
 
   output.write("Setting coefficients\n");

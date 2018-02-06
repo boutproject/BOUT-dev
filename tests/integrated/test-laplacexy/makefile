@@ -1,8 +1,6 @@
 
 BOUT_TOP	= ../../..
 
-SOURCEC		= test-laplacexy.cxx loadmetric.cxx
-
-TARGET          = test-laplacexy
+SOURCEC		= test-laplacexy.cxx
 
 include $(BOUT_TOP)/make.config
