@@ -17,9 +17,6 @@ MPIRUN=getmpirun()
 
 print("Making Region Iterator test")
 s, out = shell_safe("make > make.log",pipe=True)
-if s:
-  print("Failed to run make")
-  exit(s);
 
 flags = [""]
 cmd = "./test_region_iterator"
@@ -40,12 +37,9 @@ for nproc in [1,2]:#Number of mpi procs
           f.write(out)
           f.close()
 
-        #Currently just checks that cmd exits with a non-zero status code
-        if s:
-          code=1
-          print("Failed")
-        else:
-          print("Passed")
+        #If we've got here we know that cmd launched by launch_safe passed
+        #as otherwise it raises.
+        print("Passed")
 
 if code == 0:
     print(" => All range iterator tests passed")
