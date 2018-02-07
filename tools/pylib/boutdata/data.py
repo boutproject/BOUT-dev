@@ -235,7 +235,9 @@ class BoutOutputs(object):
     -------
     prefix - sets the prefix for data files (default "BOUT.dmp")
 
-    caching - switches on caching of data, so it is only read into memory when first accessed (defaulte False)
+    caching - switches on caching of data, so it is only read into memory when first accessed (default False)
+              If caching is set to a number, it gives the maximum size of the cache in GB, after which entries will be discarded in first-in-first-out order to prevent the cache getting too big.
+              If the variable being returned is bigger than the maximum cache size, then the variable will be returned without being added to the cache, and the rest of the cache will be left.
     
     verbose - switches on printing from collect (default True)
     
@@ -263,7 +265,18 @@ class BoutOutputs(object):
         self.evolvingVariableNames = []
 
         # Private variables
-        self._datacache = {}
+        if self._caching:
+            from collections import OrderedDict
+            self._datacache = OrderedDict()
+            if self._caching is not True:
+                # Track the size of _datacache and limit it to a maximum of _caching
+                try:
+                    # Check that _caching is a number of some sort
+                    float(self._caching)
+                except ValueError:
+                    raise ValueError("BoutOutputs: Invalid value for caching argument. Caching should be either a number (giving the maximum size of the cache in GB), True for unlimited size or False for no caching.")
+                self._datacachesize = 0
+                self._datacachemaxsize = self._caching*1.e9
         
         with DataFile(file_list[0]) as f:
             # Get variable names
@@ -295,15 +308,31 @@ class BoutOutputs(object):
         Caches result and returns later if called again, if self._caching=True
         
         """
-
         if self._caching:
             if name not in self._datacache.keys():
-                self._datacache[name] = collect(name, path=self._path, prefix=self._prefix, **self._kwargs)
-            return self._datacache[name]
+                item = collect(name, path=self._path, prefix=self._prefix, **self._kwargs)
+                if self._caching is not True:
+                    itemsize = item.nbytes
+                    if itemsize>self._datacachemaxsize:
+                        return item
+                    self._datacache[name] = item
+                    self._datacachesize += itemsize
+                    while self._datacachesize > self._datacachemaxsize:
+                        self._removeFirstFromCache()
+                else:
+                    self._datacache[name] = item
+                return item
+            else:
+                return self._datacache[name]
         else:
             # Collect the data from the repository
             data = collect(name, path=self._path, prefix=self._prefix, **self._kwargs)
             return data
+    
+    def _removeFirstFromCache(self):
+        # pop the first item from the OrderedDict _datacache
+        item = self._datacache.popitem(last=False)
+        self._datacachesize -= item[1].nbytes
 
     def __iter__(self):
         """
@@ -354,6 +383,8 @@ def BoutData(path=".", prefix="BOUT.dmp", caching=False, **kwargs):
     prefix - sets the prefix for data files (default "BOUT.dmp")
 
     caching - switches on caching of data, so it is only read into memory when first accessed (defaulte False)
+              If caching is set to a number, it gives the maximum size of the cache in GB, after which entries will be discarded in first-in-first-out order to prevent the cache getting too big.
+              If the variable being returned is bigger than the maximum cache size, then the variable will be returned without being added to the cache, and the rest of the cache will be left.
     
     verbose - switches on printing from collect (default True)
     """
