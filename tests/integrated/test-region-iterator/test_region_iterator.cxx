@@ -10,11 +10,8 @@ int physics_init(bool restarting) {
 
   Field3D a=1.0, b=1.0, c=2.0;
 
-  Region<ind3D> reg (0,mesh->LocalNx-1,
-		    0,mesh->LocalNy-1,
-		    0,mesh->LocalNz-1,
-		    mesh->LocalNy,
-		    mesh->LocalNz);
+  Region<Ind3D> reg(0, mesh->LocalNx - 1, 0, mesh->LocalNy - 1, 0, mesh->LocalNz - 1,
+                    mesh->LocalNy, mesh->LocalNz);
 
   BLOCK_REGION_LOOP(reg,i,
 			   a[i] = 3.0;
