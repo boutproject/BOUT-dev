@@ -336,10 +336,10 @@ class Field3D : public Field, public FieldData {
   }
   
 
-  BoutReal& operator[](const ind3D &d) {
+  BoutReal& operator[](const Ind3D &d) {
     return data[d.ind];
   }
-  const BoutReal& operator[](const ind3D &d) const {
+  const BoutReal& operator[](const Ind3D &d) const {
     return data[d.ind];
   }
 
