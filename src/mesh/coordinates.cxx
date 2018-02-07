@@ -343,7 +343,7 @@ int Coordinates::geometry() {
   if (localmesh->get(d2y, "d2y")) {
     output_warn.write(
         "\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
-    d1_dy = mesh->indexDDY(1. / dy); // d/di(1/dy)
+    d1_dy = localmesh->indexDDY(1. / dy); // d/di(1/dy)
   } else {
     d1_dy = -d2y / (dy * dy);
   }
