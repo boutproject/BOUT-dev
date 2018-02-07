@@ -55,6 +55,11 @@ parallelism through OpenMP. To enable OpenMP, use the
     of Clang, or using the GNU OpenMP library ``libgomp``, but it will
     only run with a single thread.
 
+    
+.. note::
+    By default PVODE is built without OpenMP support. To enable this
+    add ``--enable-pvode-openmp`` to the configure command.
+
 SUNDIALS
 --------
 

@@ -30,6 +30,9 @@ aclocal.m4
 /lib/
 /manual/*.pdf
 /tools/vagrant/.vagrant
+\#*#
+.#*
+*.132t.vect
 *.gcda
 *.gcno
 bout-coverage/

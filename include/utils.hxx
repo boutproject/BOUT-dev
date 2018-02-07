@@ -34,6 +34,7 @@
 #include "boutexception.hxx"
 
 #include "bout/deprecated.hxx"
+#include "unused.hxx"
 
 #include <string>
 #include <list>
@@ -261,6 +262,18 @@ T SIGN(T a) { // Return +1 or -1 (0 -> +1)
 inline BoutReal MINMOD(BoutReal a, BoutReal b) {
   return 0.5*(SIGN(a) + SIGN(b)) * BOUTMIN(fabs(a), fabs(b));
 }
+
+#if CHECK > 0
+/// Throw an exception if \p f is not finite
+inline void checkData(const BoutReal &f) {
+  if (!finite(f)) {
+    throw BoutException("BoutReal: Operation on non-finite data");
+  }
+}
+#else
+/// Ignored with disabled CHECK; Throw an exception if \p f is not finite
+inline void checkData(const BoutReal &UNUSED(f)){};
+#endif
 
 /*!
  * Allocate memory and copy string \p s
