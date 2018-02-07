@@ -75,6 +75,10 @@ public:
   const Field3D fromFieldAligned(const Field3D &UNUSED(f)) {
     throw BoutException("FCI method cannot transform into field aligned grid");
   }
+
+  bool canToFromFieldAligned() override{
+    return false;
+  }
 private:
   FCITransform();
 
