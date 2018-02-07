@@ -238,9 +238,8 @@ class BoutOutputs(object):
     caching - switches on caching of data, so it is only read into memory when first accessed (default False)
               If caching is set to a number, it gives the maximum size of the cache in GB, after which entries will be discarded in first-in-first-out order to prevent the cache getting too big.
               If the variable being returned is bigger than the maximum cache size, then the variable will be returned without being added to the cache, and the rest of the cache will be left.
-    
-    verbose - switches on printing from collect (default True)
-    
+
+    **kwargs - keyword arguments that are passed through to collect()
     """
     def __init__(self, path=".", prefix="BOUT.dmp", caching=False, **kwargs):
         """
@@ -386,7 +385,7 @@ def BoutData(path=".", prefix="BOUT.dmp", caching=False, **kwargs):
               If caching is set to a number, it gives the maximum size of the cache in GB, after which entries will be discarded in first-in-first-out order to prevent the cache getting too big.
               If the variable being returned is bigger than the maximum cache size, then the variable will be returned without being added to the cache, and the rest of the cache will be left.
     
-    verbose - switches on printing from collect (default True)
+    **kwargs - keyword arguments that are passed through to collect()
     """
     
     data = {} # Map for the result
