@@ -16,9 +16,7 @@ from sys import stdout, exit
 MPIRUN=getmpirun()
 
 print("Making DataIterator test")
-s, out = shell_safe("make > make.log",pipe=True)
-
-flags = [""]
+shell_safe("make > make.log",pipe=True)
 
 for nproc in [1,2,4]:
     for mproc in [1,2,4,8]:
@@ -26,14 +24,13 @@ for nproc in [1,2,4]:
 
         print("   %d processors...." % (nproc))
 
-        for f in flags:
-            stdout.write("\tflags '"+f+"' ... ")
+        stdout.write("\tflags '"+f+"' ... ")
 
-            shell("rm data/BOUT.dmp.* 2> err.log")
+        shell("rm data/BOUT.dmp.* 2> err.log")
 
-            # Run the case
-            _, out = launch_safe(cmd+" "+f, runcmd=MPIRUN, nproc=nproc, pipe=True)
-            with open("run.log."+str(nproc)+"."+str(mproc), "w") as f:
-                f.write(out)
+        # Run the case
+        _, out = launch_safe(cmd+" "+f, runcmd=MPIRUN, nproc=nproc, pipe=True)
+        with open("run.log."+str(nproc)+"."+str(mproc), "w") as f:
+            f.write(out)
 
 print(" => All data iteration tests passed")
