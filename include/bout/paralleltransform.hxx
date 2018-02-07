@@ -53,13 +53,13 @@ public:
    * Merges the yup and ydown() fields of f, so that
    * f.yup() = f.ydown() = f
    */ 
-  void calcYUpDown(Field3D &f) {f.mergeYupYdown();}
+  void calcYUpDown(Field3D &f) override {f.mergeYupYdown();}
   
   /*!
    * The field is already aligned in Y, so this
    * does nothing
    */ 
-  const Field3D toFieldAligned(const Field3D &f) {
+  const Field3D toFieldAligned(const Field3D &f) override {
     return f;
   }
   
@@ -67,7 +67,7 @@ public:
    * The field is already aligned in Y, so this
    * does nothing
    */
-  const Field3D fromFieldAligned(const Field3D &f) {
+  const Field3D fromFieldAligned(const Field3D &f) override {
     return f;
   }
 
@@ -92,7 +92,7 @@ public:
    * Calculates the yup() and ydown() fields of f
    * by taking FFTs in Z and applying a phase shift.
    */ 
-  void calcYUpDown(Field3D &f);
+  void calcYUpDown(Field3D &f) override;
   
   /*!
    * Uses FFTs and a phase shift to align the grid points
@@ -102,13 +102,13 @@ public:
    * in X-Z, and the metric tensor will need to be changed 
    * if X derivatives are used.
    */
-  const Field3D toFieldAligned(const Field3D &f);
+  const Field3D toFieldAligned(const Field3D &f) override;
 
   /*!
    * Converts a field back to X-Z orthogonal coordinates
    * from field aligned coordinates.
    */
-  const Field3D fromFieldAligned(const Field3D &f);
+  const Field3D fromFieldAligned(const Field3D &f) override;
 
   bool canToFromFieldAligned() override{
     return true;

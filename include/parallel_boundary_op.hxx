@@ -72,8 +72,8 @@ public:
     BoundaryOpPar(region, value) {}
   BoundaryOpPar_dirichlet(BoundaryRegionPar *region, BoutReal value) :
     BoundaryOpPar(region, value) {}
-  BoundaryOpPar* clone(BoundaryRegionPar *region, const list<string> &args);
-  BoundaryOpPar* clone(BoundaryRegionPar *region, Field3D *f);
+  BoundaryOpPar* clone(BoundaryRegionPar *region, const list<string> &args) override;
+  BoundaryOpPar* clone(BoundaryRegionPar *region, Field3D *f) override;
 
   using BoundaryOpPar::apply;
   void apply(Field3D &f) override {return apply(f, 0);}
@@ -93,8 +93,8 @@ public:
     BoundaryOpPar(region, value) {}
   BoundaryOpPar_dirichlet_O3(BoundaryRegionPar *region, BoutReal value) :
     BoundaryOpPar(region, value) {}
-  BoundaryOpPar* clone(BoundaryRegionPar *region, const list<string> &args);
-  BoundaryOpPar* clone(BoundaryRegionPar *region, Field3D *f);
+  BoundaryOpPar* clone(BoundaryRegionPar *region, const list<string> &args) override;
+  BoundaryOpPar* clone(BoundaryRegionPar *region, Field3D *f) override;
 
   using BoundaryOpPar::apply;
   void apply(Field3D &f) override {return apply(f, 0);}
@@ -114,8 +114,8 @@ public:
     BoundaryOpPar(region, value) {}
   BoundaryOpPar_dirichlet_interp(BoundaryRegionPar *region, BoutReal value) :
     BoundaryOpPar(region, value) {}
-  BoundaryOpPar* clone(BoundaryRegionPar *region, const list<string> &args);
-  BoundaryOpPar* clone(BoundaryRegionPar *region, Field3D *f);
+  BoundaryOpPar* clone(BoundaryRegionPar *region, const list<string> &args) override;
+  BoundaryOpPar* clone(BoundaryRegionPar *region, Field3D *f) override;
 
   using BoundaryOpPar::apply;
   void apply(Field3D &f) override {return apply(f, 0);}
@@ -135,8 +135,8 @@ public:
     BoundaryOpPar(region, value) {}
   BoundaryOpPar_neumann(BoundaryRegionPar *region, BoutReal value) :
     BoundaryOpPar(region, value) {}
-  BoundaryOpPar* clone(BoundaryRegionPar *region, const list<string> &args);
-  BoundaryOpPar* clone(BoundaryRegionPar *region, Field3D *f);
+  BoundaryOpPar* clone(BoundaryRegionPar *region, const list<string> &args) override;
+  BoundaryOpPar* clone(BoundaryRegionPar *region, Field3D *f) override;
 
   using BoundaryOpPar::apply;
   void apply(Field3D &f) override {return apply(f, 0);}
