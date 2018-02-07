@@ -211,12 +211,11 @@ class BoutOptionsFile(BoutOptions):
             
 class BoutOutputs(object):
     """
-    Emulates a map class, represents the contents of a BOUT++
-    dmp files. Does not allow writing, only reading of data.
-    By default there is no cache, so each time a variable
-    is read it is collected; if caching is set to True variables
-    are stored once they are read.
-    Extra keyword arguments are passed through to collect.
+    Emulates a map class, represents the contents of a BOUT++ dmp files. Does
+    not allow writing, only reading of data.  By default there is no cache, so
+    each time a variable is read it is collected; if caching is set to True
+    variables are stored once they are read.  Extra keyword arguments are
+    passed through to collect.
     
     Example
     -------
@@ -235,9 +234,14 @@ class BoutOutputs(object):
     -------
     prefix - sets the prefix for data files (default "BOUT.dmp")
 
-    caching - switches on caching of data, so it is only read into memory when first accessed (default False)
-              If caching is set to a number, it gives the maximum size of the cache in GB, after which entries will be discarded in first-in-first-out order to prevent the cache getting too big.
-              If the variable being returned is bigger than the maximum cache size, then the variable will be returned without being added to the cache, and the rest of the cache will be left.
+    caching - switches on caching of data, so it is only read into memory when
+              first accessed (default False) If caching is set to a number, it
+              gives the maximum size of the cache in GB, after which entries
+              will be discarded in first-in-first-out order to prevent the
+              cache getting too big.  If the variable being returned is bigger
+              than the maximum cache size, then the variable will be returned
+              without being added to the cache, and the rest of the cache will
+              be left.
 
     **kwargs - keyword arguments that are passed through to collect()
     """
@@ -354,11 +358,10 @@ class BoutOutputs(object):
 
 def BoutData(path=".", prefix="BOUT.dmp", caching=False, **kwargs):
     """
-    Returns a dictionary, containing the contents of a BOUT++
-    output directory. Does not allow writing, only reading of data.
-    By default there is no cache, so each time a variable
-    is read it is collected; if caching is set to True variables
-    are stored once they are read.
+    Returns a dictionary, containing the contents of a BOUT++ output directory.
+    Does not allow writing, only reading of data.  By default there is no
+    cache, so each time a variable is read it is collected; if caching is set
+    to True variables are stored once they are read.
     
     Example
     -------
@@ -375,15 +378,20 @@ def BoutData(path=".", prefix="BOUT.dmp", caching=False, **kwargs):
 
     d["outputs"]["ne"] # Read "ne" from data files
     
-    d = BoutData(".", prefix="BOUT.dmp", caching=True, verbose=False) # Turn on caching and turn off verbosity
+    d = BoutData(".", prefix="BOUT.dmp", caching=True) # Turn on caching
 
     Options
     -------
     prefix - sets the prefix for data files (default "BOUT.dmp")
 
-    caching - switches on caching of data, so it is only read into memory when first accessed (defaulte False)
-              If caching is set to a number, it gives the maximum size of the cache in GB, after which entries will be discarded in first-in-first-out order to prevent the cache getting too big.
-              If the variable being returned is bigger than the maximum cache size, then the variable will be returned without being added to the cache, and the rest of the cache will be left.
+    caching - switches on caching of data, so it is only read into memory when
+              first accessed (default False) If caching is set to a number, it
+              gives the maximum size of the cache in GB, after which entries
+              will be discarded in first-in-first-out order to prevent the
+              cache getting too big.  If the variable being returned is bigger
+              than the maximum cache size, then the variable will be returned
+              without being added to the cache, and the rest of the cache will
+              be left.
     
     **kwargs - keyword arguments that are passed through to collect()
     """
