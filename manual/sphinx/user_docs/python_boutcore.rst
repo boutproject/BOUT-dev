@@ -9,14 +9,14 @@ Ideally it should be just
 
 .. code-block:: bash
 
-   ./configure CXXFLAGS="-fPIC"
+   ./configure --enable-shared
    make -j 4
    make python
 
 
 but getting all the
 dependencies can be difficult.
-``make python`` creates both the python2 and the python3 module.
+``make python`` creates the python3 module.
 
 If problems arise, it might be worth checking a copy of the bout
 module out, to reduce the risk of causing issues with the old bout
@@ -42,10 +42,12 @@ configured with something like:
 ``./configure CXXFLAGS="-fPIC" MPICC=~/local/mpich/bin/mpicc MPICXX=~/local/mpich/bin/mpicxx --with-fftw=~/local/fftw/``
 
 ``-fPIC`` is required, so that pvode etc is compiles as position
-independend code.
+independend code. This can be achieved by configuring bout with
+``--enable-shared``.
 
-To only build the python2 module, run ``cd tools/pylib;make python2;cd
--``.
+To only build the python2 module, run ``make python2``.
+
+To build both, run ``make python-all``
 
 Purpose
 -------
@@ -57,14 +59,15 @@ It allows to calculate e.g. BOUT++ derivatives in python.
 State
 -----
 It is still incomplete.
-Field3D is partially working. The other fields are not exposed.
-Field3D cannot be accessed directly, first an ``f3d.getAll()`` needs to be
-called, which returns a numpy array. This array can be adressed with
+Field3D is mostly working. The other fields are not exposed.
+Field3D can be accessed directly using the [] operators, and give a list of slice objects.
+The get all data, ``f3d.getAll()`` is equivalent to ``f3d[:,:,]`` and returns a numpy array.
+This array can be adressed with
 e.g. ``[]`` operators, and then the field can be set again with
 ``f3d.setAll(numpyarray)``.
-Addition, multiplication should all be available.
-Part of the derivatives are available, it is easy to expose more
-functions.
+It is also possible to set a part of an Field3D with the ``[]`` operators.
+Addition, multiplication etc should all be available.
+Most of the derivatives are available, if something is missing open a bug.
 
 Functions
 ---------
