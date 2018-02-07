@@ -32,6 +32,7 @@
 #include <fft.hxx>
 #include <lapack_routines.hxx>
 #include <bout/constants.hxx>
+#include <bout/openmpwrap.hxx>
 #include <cmath>
 
 #include <output.hxx>
@@ -132,7 +133,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
   if (outer_boundary_flags & INVERT_BNDRY_ONE)
     outbndry = 1;
 
-  #pragma omp parallel for
+  BOUT_OMP(parallel for)
   for (int ix = 0; ix < mesh->LocalNx; ix++) {
     /* This for loop will set the bk (initialized by the constructor)
      * bk is the z fourier modes of b in z
@@ -159,7 +160,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
    * offset and all the modes up to the Nyquist frequency)
    */
   for (int kz = 0; kz <= maxmode; kz++) {
-    
+
     // set bk1d
     for (int ix = 0; ix <= ncx; ix++) {
       // Get bk of the current fourier mode
@@ -201,7 +202,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
 
       // Copy boundary regions
       for (int ix = 0; ix < xs; ix++) {
-        xk1d[ix] = xk1d[mesh->LocalNx - 2*xs + ix];
+        xk1d[ix] = xk1d[mesh->LocalNx - 2 * xs + ix];
         xk1d[mesh->LocalNx - xs + ix] = xk1d[xs + ix];
       }
     }

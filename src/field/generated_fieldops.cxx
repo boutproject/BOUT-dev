@@ -5,64 +5,81 @@
 #include <globals.hxx>
 #include <interpolation.hxx>
 
-// Do the actual mul of Field3D and Field3D
-void autogen_Field3D_Field3D_Field3D_mul(BoutReal *__restrict__ result,
-                                         const BoutReal *__restrict__ lhs,
-                                         const BoutReal *__restrict__ rhs, int len) {
+// Do the actual multiplication of Field3D and Field3D
+void autogen_Field3D_Field3D_Field3D_multiplication(BoutReal *__restrict__ result,
+                                                    const BoutReal *__restrict__ lhs,
+                                                    const BoutReal *__restrict__ rhs,
+                                                    int len) {
+
   for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] * rhs[i];
   }
 }
 
-// Provide the C++ wrapper for mul of Field3D and Field3D
+// Provide the C++ wrapper for multiplication of Field3D and Field3D
 Field3D operator*(const Field3D &lhs, const Field3D &rhs) {
+#if CHECK > 0
+  if (lhs.getLocation() != rhs.getLocation()) {
+    throw BoutException("Error in operator*(Field3D, Field3D): fields at different "
+                        "locations. lhs is at %s, rhs is at %s!",
+                        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
+  }
+#endif
+
   Indices i{0, 0, 0};
   Mesh *localmesh = lhs.getMesh();
+
   ASSERT1(localmesh == rhs.getMesh());
+
   Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field3D_Field3D_Field3D_mul(&result[i], &lhs[i], &rhs[i],
-                                      localmesh->LocalNx * localmesh->LocalNy *
-                                          localmesh->LocalNz);
-#if CHECK > 0
-  if (lhs.getLocation() != rhs.getLocation()) {
-    throw BoutException(
-        "Trying to mul fields of different locations. lhs is at %s, rhs is at %s!",
-        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
-  }
-#endif
+
+  autogen_Field3D_Field3D_Field3D_multiplication(&result[i], &lhs[i], &rhs[i],
+                                                 localmesh->LocalNx * localmesh->LocalNy *
+                                                     localmesh->LocalNz);
+
   result.setLocation(rhs.getLocation());
+
   checkData(result);
   return result;
 }
 
-// Provide the C function to update Field3D by mul with Field3D
-void autogen_Field3D_Field3D_mul(BoutReal *__restrict__ lhs,
-                                 const BoutReal *__restrict__ rhs, int len) {
+// Provide the C function to update Field3D by multiplication with Field3D
+void autogen_Field3D_Field3D_multiplication(BoutReal *__restrict__ lhs,
+                                            const BoutReal *__restrict__ rhs, int len) {
+
   for (int i = 0; i < len; ++i) {
     lhs[i] *= rhs[i];
   }
 }
 
-// Provide the C++ operator to update Field3D by mul with Field3D
+// Provide the C++ operator to update Field3D by multiplication with Field3D
 Field3D &Field3D::operator*=(const Field3D &rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    Indices i{0, 0, 0};
-    ASSERT1(fieldmesh == rhs.getMesh());
-    checkData(*this);
-    checkData(rhs);
-    autogen_Field3D_Field3D_mul(&(*this)[i], &rhs[i],
-                                fieldmesh->LocalNx * fieldmesh->LocalNy *
-                                    fieldmesh->LocalNz);
 #if CHECK > 0
     if (this->getLocation() != rhs.getLocation()) {
-      throw BoutException("Trying to mul fields of different locations!");
+      throw BoutException("Error in Field3D::operator*=(Field3D): fields at different "
+                          "locations. lhs is at %s, rhs is at %s!",
+                          strLocation(this->getLocation()),
+                          strLocation(rhs.getLocation()));
     }
 #endif
+
+    Indices i{0, 0, 0};
+
+    ASSERT1(fieldmesh == rhs.getMesh());
+
+    checkData(*this);
+    checkData(rhs);
+
+    autogen_Field3D_Field3D_multiplication(&(*this)[i], &rhs[i],
+                                           fieldmesh->LocalNx * fieldmesh->LocalNy *
+                                               fieldmesh->LocalNz);
+
     checkData(*this);
 
   } else {
@@ -71,64 +88,80 @@ Field3D &Field3D::operator*=(const Field3D &rhs) {
   return *this;
 }
 
-// Do the actual div of Field3D and Field3D
-void autogen_Field3D_Field3D_Field3D_div(BoutReal *__restrict__ result,
-                                         const BoutReal *__restrict__ lhs,
-                                         const BoutReal *__restrict__ rhs, int len) {
+// Do the actual division of Field3D and Field3D
+void autogen_Field3D_Field3D_Field3D_division(BoutReal *__restrict__ result,
+                                              const BoutReal *__restrict__ lhs,
+                                              const BoutReal *__restrict__ rhs, int len) {
+
   for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] / rhs[i];
   }
 }
 
-// Provide the C++ wrapper for div of Field3D and Field3D
+// Provide the C++ wrapper for division of Field3D and Field3D
 Field3D operator/(const Field3D &lhs, const Field3D &rhs) {
+#if CHECK > 0
+  if (lhs.getLocation() != rhs.getLocation()) {
+    throw BoutException("Error in operator/(Field3D, Field3D): fields at different "
+                        "locations. lhs is at %s, rhs is at %s!",
+                        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
+  }
+#endif
+
   Indices i{0, 0, 0};
   Mesh *localmesh = lhs.getMesh();
+
   ASSERT1(localmesh == rhs.getMesh());
+
   Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field3D_Field3D_Field3D_div(&result[i], &lhs[i], &rhs[i],
-                                      localmesh->LocalNx * localmesh->LocalNy *
-                                          localmesh->LocalNz);
-#if CHECK > 0
-  if (lhs.getLocation() != rhs.getLocation()) {
-    throw BoutException(
-        "Trying to div fields of different locations. lhs is at %s, rhs is at %s!",
-        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
-  }
-#endif
+
+  autogen_Field3D_Field3D_Field3D_division(&result[i], &lhs[i], &rhs[i],
+                                           localmesh->LocalNx * localmesh->LocalNy *
+                                               localmesh->LocalNz);
+
   result.setLocation(rhs.getLocation());
+
   checkData(result);
   return result;
 }
 
-// Provide the C function to update Field3D by div with Field3D
-void autogen_Field3D_Field3D_div(BoutReal *__restrict__ lhs,
-                                 const BoutReal *__restrict__ rhs, int len) {
+// Provide the C function to update Field3D by division with Field3D
+void autogen_Field3D_Field3D_division(BoutReal *__restrict__ lhs,
+                                      const BoutReal *__restrict__ rhs, int len) {
+
   for (int i = 0; i < len; ++i) {
     lhs[i] /= rhs[i];
   }
 }
 
-// Provide the C++ operator to update Field3D by div with Field3D
+// Provide the C++ operator to update Field3D by division with Field3D
 Field3D &Field3D::operator/=(const Field3D &rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    Indices i{0, 0, 0};
-    ASSERT1(fieldmesh == rhs.getMesh());
-    checkData(*this);
-    checkData(rhs);
-    autogen_Field3D_Field3D_div(&(*this)[i], &rhs[i],
-                                fieldmesh->LocalNx * fieldmesh->LocalNy *
-                                    fieldmesh->LocalNz);
 #if CHECK > 0
     if (this->getLocation() != rhs.getLocation()) {
-      throw BoutException("Trying to div fields of different locations!");
+      throw BoutException("Error in Field3D::operator/=(Field3D): fields at different "
+                          "locations. lhs is at %s, rhs is at %s!",
+                          strLocation(this->getLocation()),
+                          strLocation(rhs.getLocation()));
     }
 #endif
+
+    Indices i{0, 0, 0};
+
+    ASSERT1(fieldmesh == rhs.getMesh());
+
+    checkData(*this);
+    checkData(rhs);
+
+    autogen_Field3D_Field3D_division(&(*this)[i], &rhs[i],
+                                     fieldmesh->LocalNx * fieldmesh->LocalNy *
+                                         fieldmesh->LocalNz);
+
     checkData(*this);
 
   } else {
@@ -137,64 +170,80 @@ Field3D &Field3D::operator/=(const Field3D &rhs) {
   return *this;
 }
 
-// Do the actual plus of Field3D and Field3D
-void autogen_Field3D_Field3D_Field3D_plus(BoutReal *__restrict__ result,
-                                          const BoutReal *__restrict__ lhs,
-                                          const BoutReal *__restrict__ rhs, int len) {
+// Do the actual addition of Field3D and Field3D
+void autogen_Field3D_Field3D_Field3D_addition(BoutReal *__restrict__ result,
+                                              const BoutReal *__restrict__ lhs,
+                                              const BoutReal *__restrict__ rhs, int len) {
+
   for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] + rhs[i];
   }
 }
 
-// Provide the C++ wrapper for plus of Field3D and Field3D
+// Provide the C++ wrapper for addition of Field3D and Field3D
 Field3D operator+(const Field3D &lhs, const Field3D &rhs) {
+#if CHECK > 0
+  if (lhs.getLocation() != rhs.getLocation()) {
+    throw BoutException("Error in operator+(Field3D, Field3D): fields at different "
+                        "locations. lhs is at %s, rhs is at %s!",
+                        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
+  }
+#endif
+
   Indices i{0, 0, 0};
   Mesh *localmesh = lhs.getMesh();
+
   ASSERT1(localmesh == rhs.getMesh());
+
   Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field3D_Field3D_Field3D_plus(&result[i], &lhs[i], &rhs[i],
-                                       localmesh->LocalNx * localmesh->LocalNy *
-                                           localmesh->LocalNz);
-#if CHECK > 0
-  if (lhs.getLocation() != rhs.getLocation()) {
-    throw BoutException(
-        "Trying to plus fields of different locations. lhs is at %s, rhs is at %s!",
-        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
-  }
-#endif
+
+  autogen_Field3D_Field3D_Field3D_addition(&result[i], &lhs[i], &rhs[i],
+                                           localmesh->LocalNx * localmesh->LocalNy *
+                                               localmesh->LocalNz);
+
   result.setLocation(rhs.getLocation());
+
   checkData(result);
   return result;
 }
 
-// Provide the C function to update Field3D by plus with Field3D
-void autogen_Field3D_Field3D_plus(BoutReal *__restrict__ lhs,
-                                  const BoutReal *__restrict__ rhs, int len) {
+// Provide the C function to update Field3D by addition with Field3D
+void autogen_Field3D_Field3D_addition(BoutReal *__restrict__ lhs,
+                                      const BoutReal *__restrict__ rhs, int len) {
+
   for (int i = 0; i < len; ++i) {
     lhs[i] += rhs[i];
   }
 }
 
-// Provide the C++ operator to update Field3D by plus with Field3D
+// Provide the C++ operator to update Field3D by addition with Field3D
 Field3D &Field3D::operator+=(const Field3D &rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    Indices i{0, 0, 0};
-    ASSERT1(fieldmesh == rhs.getMesh());
-    checkData(*this);
-    checkData(rhs);
-    autogen_Field3D_Field3D_plus(&(*this)[i], &rhs[i],
-                                 fieldmesh->LocalNx * fieldmesh->LocalNy *
-                                     fieldmesh->LocalNz);
 #if CHECK > 0
     if (this->getLocation() != rhs.getLocation()) {
-      throw BoutException("Trying to plus fields of different locations!");
+      throw BoutException("Error in Field3D::operator+=(Field3D): fields at different "
+                          "locations. lhs is at %s, rhs is at %s!",
+                          strLocation(this->getLocation()),
+                          strLocation(rhs.getLocation()));
     }
 #endif
+
+    Indices i{0, 0, 0};
+
+    ASSERT1(fieldmesh == rhs.getMesh());
+
+    checkData(*this);
+    checkData(rhs);
+
+    autogen_Field3D_Field3D_addition(&(*this)[i], &rhs[i],
+                                     fieldmesh->LocalNx * fieldmesh->LocalNy *
+                                         fieldmesh->LocalNz);
+
     checkData(*this);
 
   } else {
@@ -203,64 +252,81 @@ Field3D &Field3D::operator+=(const Field3D &rhs) {
   return *this;
 }
 
-// Do the actual minus of Field3D and Field3D
-void autogen_Field3D_Field3D_Field3D_minus(BoutReal *__restrict__ result,
-                                           const BoutReal *__restrict__ lhs,
-                                           const BoutReal *__restrict__ rhs, int len) {
+// Do the actual subtraction of Field3D and Field3D
+void autogen_Field3D_Field3D_Field3D_subtraction(BoutReal *__restrict__ result,
+                                                 const BoutReal *__restrict__ lhs,
+                                                 const BoutReal *__restrict__ rhs,
+                                                 int len) {
+
   for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] - rhs[i];
   }
 }
 
-// Provide the C++ wrapper for minus of Field3D and Field3D
+// Provide the C++ wrapper for subtraction of Field3D and Field3D
 Field3D operator-(const Field3D &lhs, const Field3D &rhs) {
+#if CHECK > 0
+  if (lhs.getLocation() != rhs.getLocation()) {
+    throw BoutException("Error in operator-(Field3D, Field3D): fields at different "
+                        "locations. lhs is at %s, rhs is at %s!",
+                        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
+  }
+#endif
+
   Indices i{0, 0, 0};
   Mesh *localmesh = lhs.getMesh();
+
   ASSERT1(localmesh == rhs.getMesh());
+
   Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field3D_Field3D_Field3D_minus(&result[i], &lhs[i], &rhs[i],
-                                        localmesh->LocalNx * localmesh->LocalNy *
-                                            localmesh->LocalNz);
-#if CHECK > 0
-  if (lhs.getLocation() != rhs.getLocation()) {
-    throw BoutException(
-        "Trying to minus fields of different locations. lhs is at %s, rhs is at %s!",
-        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
-  }
-#endif
+
+  autogen_Field3D_Field3D_Field3D_subtraction(&result[i], &lhs[i], &rhs[i],
+                                              localmesh->LocalNx * localmesh->LocalNy *
+                                                  localmesh->LocalNz);
+
   result.setLocation(rhs.getLocation());
+
   checkData(result);
   return result;
 }
 
-// Provide the C function to update Field3D by minus with Field3D
-void autogen_Field3D_Field3D_minus(BoutReal *__restrict__ lhs,
-                                   const BoutReal *__restrict__ rhs, int len) {
+// Provide the C function to update Field3D by subtraction with Field3D
+void autogen_Field3D_Field3D_subtraction(BoutReal *__restrict__ lhs,
+                                         const BoutReal *__restrict__ rhs, int len) {
+
   for (int i = 0; i < len; ++i) {
     lhs[i] -= rhs[i];
   }
 }
 
-// Provide the C++ operator to update Field3D by minus with Field3D
+// Provide the C++ operator to update Field3D by subtraction with Field3D
 Field3D &Field3D::operator-=(const Field3D &rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    Indices i{0, 0, 0};
-    ASSERT1(fieldmesh == rhs.getMesh());
-    checkData(*this);
-    checkData(rhs);
-    autogen_Field3D_Field3D_minus(&(*this)[i], &rhs[i],
-                                  fieldmesh->LocalNx * fieldmesh->LocalNy *
-                                      fieldmesh->LocalNz);
 #if CHECK > 0
     if (this->getLocation() != rhs.getLocation()) {
-      throw BoutException("Trying to minus fields of different locations!");
+      throw BoutException("Error in Field3D::operator-=(Field3D): fields at different "
+                          "locations. lhs is at %s, rhs is at %s!",
+                          strLocation(this->getLocation()),
+                          strLocation(rhs.getLocation()));
     }
 #endif
+
+    Indices i{0, 0, 0};
+
+    ASSERT1(fieldmesh == rhs.getMesh());
+
+    checkData(*this);
+    checkData(rhs);
+
+    autogen_Field3D_Field3D_subtraction(&(*this)[i], &rhs[i],
+                                        fieldmesh->LocalNx * fieldmesh->LocalNy *
+                                            fieldmesh->LocalNz);
+
     checkData(*this);
 
   } else {
@@ -269,11 +335,12 @@ Field3D &Field3D::operator-=(const Field3D &rhs) {
   return *this;
 }
 
-// Do the actual mul of Field3D and Field2D
-void autogen_Field3D_Field3D_Field2D_mul(BoutReal *__restrict__ result,
-                                         const BoutReal *__restrict__ lhs,
-                                         const BoutReal *__restrict__ rhs, int nx, int ny,
-                                         int nz) {
+// Do the actual multiplication of Field3D and Field2D
+void autogen_Field3D_Field3D_Field2D_multiplication(BoutReal *__restrict__ result,
+                                                    const BoutReal *__restrict__ lhs,
+                                                    const BoutReal *__restrict__ rhs,
+                                                    int nx, int ny, int nz) {
+
   for (int x = 0; x < nx; ++x)
     for (int y = 0; y < ny; ++y)
       for (int z = 0; z < nz; ++z) {
@@ -281,27 +348,34 @@ void autogen_Field3D_Field3D_Field2D_mul(BoutReal *__restrict__ result,
       }
 }
 
-// Provide the C++ wrapper for mul of Field3D and Field2D
+// Provide the C++ wrapper for multiplication of Field3D and Field2D
 Field3D operator*(const Field3D &lhs, const Field2D &rhs) {
+
   Indices i{0, 0, 0};
   Mesh *localmesh = lhs.getMesh();
+
   ASSERT1(localmesh == rhs.getMesh());
+
   Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field3D_Field3D_Field2D_mul(&result[i], &lhs[i], &rhs[i], localmesh->LocalNx,
-                                      localmesh->LocalNy, localmesh->LocalNz);
+
+  autogen_Field3D_Field3D_Field2D_multiplication(&result[i], &lhs[i], &rhs[i],
+                                                 localmesh->LocalNx, localmesh->LocalNy,
+                                                 localmesh->LocalNz);
 
   result.setLocation(lhs.getLocation());
+
   checkData(result);
   return result;
 }
 
-// Provide the C function to update Field3D by mul with Field2D
-void autogen_Field3D_Field2D_mul(BoutReal *__restrict__ lhs,
-                                 const BoutReal *__restrict__ rhs, int nx, int ny,
-                                 int nz) {
+// Provide the C function to update Field3D by multiplication with Field2D
+void autogen_Field3D_Field2D_multiplication(BoutReal *__restrict__ lhs,
+                                            const BoutReal *__restrict__ rhs, int nx,
+                                            int ny, int nz) {
+
   for (int x = 0; x < nx; ++x)
     for (int y = 0; y < ny; ++y)
       for (int z = 0; z < nz; ++z) {
@@ -309,17 +383,23 @@ void autogen_Field3D_Field2D_mul(BoutReal *__restrict__ lhs,
       }
 }
 
-// Provide the C++ operator to update Field3D by mul with Field2D
+// Provide the C++ operator to update Field3D by multiplication with Field2D
 Field3D &Field3D::operator*=(const Field2D &rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
+
     Indices i{0, 0, 0};
+
     ASSERT1(fieldmesh == rhs.getMesh());
+
     checkData(*this);
     checkData(rhs);
-    autogen_Field3D_Field2D_mul(&(*this)[i], &rhs[i], fieldmesh->LocalNx,
-                                fieldmesh->LocalNy, fieldmesh->LocalNz);
+
+    autogen_Field3D_Field2D_multiplication(&(*this)[i], &rhs[i], fieldmesh->LocalNx,
+                                           fieldmesh->LocalNy, fieldmesh->LocalNz);
+
+    checkData(*this);
 
   } else {
     (*this) = (*this) * rhs;
@@ -327,11 +407,12 @@ Field3D &Field3D::operator*=(const Field2D &rhs) {
   return *this;
 }
 
-// Do the actual div of Field3D and Field2D
-void autogen_Field3D_Field3D_Field2D_div(BoutReal *__restrict__ result,
-                                         const BoutReal *__restrict__ lhs,
-                                         const BoutReal *__restrict__ rhs, int nx, int ny,
-                                         int nz) {
+// Do the actual division of Field3D and Field2D
+void autogen_Field3D_Field3D_Field2D_division(BoutReal *__restrict__ result,
+                                              const BoutReal *__restrict__ lhs,
+                                              const BoutReal *__restrict__ rhs, int nx,
+                                              int ny, int nz) {
+
   for (int x = 0; x < nx; ++x)
     for (int y = 0; y < ny; ++y)
       for (int z = 0; z < nz; ++z) {
@@ -339,27 +420,34 @@ void autogen_Field3D_Field3D_Field2D_div(BoutReal *__restrict__ result,
       }
 }
 
-// Provide the C++ wrapper for div of Field3D and Field2D
+// Provide the C++ wrapper for division of Field3D and Field2D
 Field3D operator/(const Field3D &lhs, const Field2D &rhs) {
+
   Indices i{0, 0, 0};
   Mesh *localmesh = lhs.getMesh();
+
   ASSERT1(localmesh == rhs.getMesh());
+
   Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field3D_Field3D_Field2D_div(&result[i], &lhs[i], &rhs[i], localmesh->LocalNx,
-                                      localmesh->LocalNy, localmesh->LocalNz);
+
+  autogen_Field3D_Field3D_Field2D_division(&result[i], &lhs[i], &rhs[i],
+                                           localmesh->LocalNx, localmesh->LocalNy,
+                                           localmesh->LocalNz);
 
   result.setLocation(lhs.getLocation());
+
   checkData(result);
   return result;
 }
 
-// Provide the C function to update Field3D by div with Field2D
-void autogen_Field3D_Field2D_div(BoutReal *__restrict__ lhs,
-                                 const BoutReal *__restrict__ rhs, int nx, int ny,
-                                 int nz) {
+// Provide the C function to update Field3D by division with Field2D
+void autogen_Field3D_Field2D_division(BoutReal *__restrict__ lhs,
+                                      const BoutReal *__restrict__ rhs, int nx, int ny,
+                                      int nz) {
+
   for (int x = 0; x < nx; ++x)
     for (int y = 0; y < ny; ++y)
       for (int z = 0; z < nz; ++z) {
@@ -367,17 +455,23 @@ void autogen_Field3D_Field2D_div(BoutReal *__restrict__ lhs,
       }
 }
 
-// Provide the C++ operator to update Field3D by div with Field2D
+// Provide the C++ operator to update Field3D by division with Field2D
 Field3D &Field3D::operator/=(const Field2D &rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
+
     Indices i{0, 0, 0};
+
     ASSERT1(fieldmesh == rhs.getMesh());
+
     checkData(*this);
     checkData(rhs);
-    autogen_Field3D_Field2D_div(&(*this)[i], &rhs[i], fieldmesh->LocalNx,
-                                fieldmesh->LocalNy, fieldmesh->LocalNz);
+
+    autogen_Field3D_Field2D_division(&(*this)[i], &rhs[i], fieldmesh->LocalNx,
+                                     fieldmesh->LocalNy, fieldmesh->LocalNz);
+
+    checkData(*this);
 
   } else {
     (*this) = (*this) / rhs;
@@ -385,11 +479,12 @@ Field3D &Field3D::operator/=(const Field2D &rhs) {
   return *this;
 }
 
-// Do the actual plus of Field3D and Field2D
-void autogen_Field3D_Field3D_Field2D_plus(BoutReal *__restrict__ result,
-                                          const BoutReal *__restrict__ lhs,
-                                          const BoutReal *__restrict__ rhs, int nx,
-                                          int ny, int nz) {
+// Do the actual addition of Field3D and Field2D
+void autogen_Field3D_Field3D_Field2D_addition(BoutReal *__restrict__ result,
+                                              const BoutReal *__restrict__ lhs,
+                                              const BoutReal *__restrict__ rhs, int nx,
+                                              int ny, int nz) {
+
   for (int x = 0; x < nx; ++x)
     for (int y = 0; y < ny; ++y)
       for (int z = 0; z < nz; ++z) {
@@ -397,27 +492,34 @@ void autogen_Field3D_Field3D_Field2D_plus(BoutReal *__restrict__ result,
       }
 }
 
-// Provide the C++ wrapper for plus of Field3D and Field2D
+// Provide the C++ wrapper for addition of Field3D and Field2D
 Field3D operator+(const Field3D &lhs, const Field2D &rhs) {
+
   Indices i{0, 0, 0};
   Mesh *localmesh = lhs.getMesh();
+
   ASSERT1(localmesh == rhs.getMesh());
+
   Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field3D_Field3D_Field2D_plus(&result[i], &lhs[i], &rhs[i], localmesh->LocalNx,
-                                       localmesh->LocalNy, localmesh->LocalNz);
+
+  autogen_Field3D_Field3D_Field2D_addition(&result[i], &lhs[i], &rhs[i],
+                                           localmesh->LocalNx, localmesh->LocalNy,
+                                           localmesh->LocalNz);
 
   result.setLocation(lhs.getLocation());
+
   checkData(result);
   return result;
 }
 
-// Provide the C function to update Field3D by plus with Field2D
-void autogen_Field3D_Field2D_plus(BoutReal *__restrict__ lhs,
-                                  const BoutReal *__restrict__ rhs, int nx, int ny,
-                                  int nz) {
+// Provide the C function to update Field3D by addition with Field2D
+void autogen_Field3D_Field2D_addition(BoutReal *__restrict__ lhs,
+                                      const BoutReal *__restrict__ rhs, int nx, int ny,
+                                      int nz) {
+
   for (int x = 0; x < nx; ++x)
     for (int y = 0; y < ny; ++y)
       for (int z = 0; z < nz; ++z) {
@@ -425,17 +527,23 @@ void autogen_Field3D_Field2D_plus(BoutReal *__restrict__ lhs,
       }
 }
 
-// Provide the C++ operator to update Field3D by plus with Field2D
+// Provide the C++ operator to update Field3D by addition with Field2D
 Field3D &Field3D::operator+=(const Field2D &rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
+
     Indices i{0, 0, 0};
+
     ASSERT1(fieldmesh == rhs.getMesh());
+
     checkData(*this);
     checkData(rhs);
-    autogen_Field3D_Field2D_plus(&(*this)[i], &rhs[i], fieldmesh->LocalNx,
-                                 fieldmesh->LocalNy, fieldmesh->LocalNz);
+
+    autogen_Field3D_Field2D_addition(&(*this)[i], &rhs[i], fieldmesh->LocalNx,
+                                     fieldmesh->LocalNy, fieldmesh->LocalNz);
+
+    checkData(*this);
 
   } else {
     (*this) = (*this) + rhs;
@@ -443,11 +551,12 @@ Field3D &Field3D::operator+=(const Field2D &rhs) {
   return *this;
 }
 
-// Do the actual minus of Field3D and Field2D
-void autogen_Field3D_Field3D_Field2D_minus(BoutReal *__restrict__ result,
-                                           const BoutReal *__restrict__ lhs,
-                                           const BoutReal *__restrict__ rhs, int nx,
-                                           int ny, int nz) {
+// Do the actual subtraction of Field3D and Field2D
+void autogen_Field3D_Field3D_Field2D_subtraction(BoutReal *__restrict__ result,
+                                                 const BoutReal *__restrict__ lhs,
+                                                 const BoutReal *__restrict__ rhs, int nx,
+                                                 int ny, int nz) {
+
   for (int x = 0; x < nx; ++x)
     for (int y = 0; y < ny; ++y)
       for (int z = 0; z < nz; ++z) {
@@ -455,27 +564,34 @@ void autogen_Field3D_Field3D_Field2D_minus(BoutReal *__restrict__ result,
       }
 }
 
-// Provide the C++ wrapper for minus of Field3D and Field2D
+// Provide the C++ wrapper for subtraction of Field3D and Field2D
 Field3D operator-(const Field3D &lhs, const Field2D &rhs) {
+
   Indices i{0, 0, 0};
   Mesh *localmesh = lhs.getMesh();
+
   ASSERT1(localmesh == rhs.getMesh());
+
   Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field3D_Field3D_Field2D_minus(&result[i], &lhs[i], &rhs[i], localmesh->LocalNx,
-                                        localmesh->LocalNy, localmesh->LocalNz);
+
+  autogen_Field3D_Field3D_Field2D_subtraction(&result[i], &lhs[i], &rhs[i],
+                                              localmesh->LocalNx, localmesh->LocalNy,
+                                              localmesh->LocalNz);
 
   result.setLocation(lhs.getLocation());
+
   checkData(result);
   return result;
 }
 
-// Provide the C function to update Field3D by minus with Field2D
-void autogen_Field3D_Field2D_minus(BoutReal *__restrict__ lhs,
-                                   const BoutReal *__restrict__ rhs, int nx, int ny,
-                                   int nz) {
+// Provide the C function to update Field3D by subtraction with Field2D
+void autogen_Field3D_Field2D_subtraction(BoutReal *__restrict__ lhs,
+                                         const BoutReal *__restrict__ rhs, int nx, int ny,
+                                         int nz) {
+
   for (int x = 0; x < nx; ++x)
     for (int y = 0; y < ny; ++y)
       for (int z = 0; z < nz; ++z) {
@@ -483,17 +599,23 @@ void autogen_Field3D_Field2D_minus(BoutReal *__restrict__ lhs,
       }
 }
 
-// Provide the C++ operator to update Field3D by minus with Field2D
+// Provide the C++ operator to update Field3D by subtraction with Field2D
 Field3D &Field3D::operator-=(const Field2D &rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
+
     Indices i{0, 0, 0};
+
     ASSERT1(fieldmesh == rhs.getMesh());
+
     checkData(*this);
     checkData(rhs);
-    autogen_Field3D_Field2D_minus(&(*this)[i], &rhs[i], fieldmesh->LocalNx,
-                                  fieldmesh->LocalNy, fieldmesh->LocalNz);
+
+    autogen_Field3D_Field2D_subtraction(&(*this)[i], &rhs[i], fieldmesh->LocalNx,
+                                        fieldmesh->LocalNy, fieldmesh->LocalNz);
+
+    checkData(*this);
 
   } else {
     (*this) = (*this) - rhs;
@@ -501,17 +623,19 @@ Field3D &Field3D::operator-=(const Field2D &rhs) {
   return *this;
 }
 
-// Do the actual mul of Field3D and BoutReal
-void autogen_Field3D_Field3D_BoutReal_mul(BoutReal *__restrict__ result,
-                                          const BoutReal *__restrict__ lhs,
-                                          const BoutReal rhs, int len) {
+// Do the actual multiplication of Field3D and BoutReal
+void autogen_Field3D_Field3D_BoutReal_multiplication(BoutReal *__restrict__ result,
+                                                     const BoutReal *__restrict__ lhs,
+                                                     const BoutReal rhs, int len) {
+
   for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] * rhs;
   }
 }
 
-// Provide the C++ wrapper for mul of Field3D and BoutReal
+// Provide the C++ wrapper for multiplication of Field3D and BoutReal
 Field3D operator*(const Field3D &lhs, const BoutReal rhs) {
+
   Indices i{0, 0, 0};
   Mesh *localmesh = lhs.getMesh();
 
@@ -519,34 +643,41 @@ Field3D operator*(const Field3D &lhs, const BoutReal rhs) {
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field3D_Field3D_BoutReal_mul(&result[i], &lhs[i], rhs,
-                                       localmesh->LocalNx * localmesh->LocalNy *
-                                           localmesh->LocalNz);
+
+  autogen_Field3D_Field3D_BoutReal_multiplication(
+      &result[i], &lhs[i], rhs,
+      localmesh->LocalNx * localmesh->LocalNy * localmesh->LocalNz);
 
   result.setLocation(lhs.getLocation());
+
   checkData(result);
   return result;
 }
 
-// Provide the C function to update Field3D by mul with BoutReal
-void autogen_Field3D_BoutReal_mul(BoutReal *__restrict__ lhs, const BoutReal rhs,
-                                  int len) {
+// Provide the C function to update Field3D by multiplication with BoutReal
+void autogen_Field3D_BoutReal_multiplication(BoutReal *__restrict__ lhs,
+                                             const BoutReal rhs, int len) {
+
   for (int i = 0; i < len; ++i) {
     lhs[i] *= rhs;
   }
 }
 
-// Provide the C++ operator to update Field3D by mul with BoutReal
+// Provide the C++ operator to update Field3D by multiplication with BoutReal
 Field3D &Field3D::operator*=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
+
     Indices i{0, 0, 0};
 
     checkData(*this);
     checkData(rhs);
-    autogen_Field3D_BoutReal_mul(
+
+    autogen_Field3D_BoutReal_multiplication(
         &(*this)[i], rhs, fieldmesh->LocalNx * fieldmesh->LocalNy * fieldmesh->LocalNz);
+
+    checkData(*this);
 
   } else {
     (*this) = (*this) * rhs;
@@ -554,17 +685,19 @@ Field3D &Field3D::operator*=(const BoutReal rhs) {
   return *this;
 }
 
-// Do the actual div of Field3D and BoutReal
-void autogen_Field3D_Field3D_BoutReal_div(BoutReal *__restrict__ result,
-                                          const BoutReal *__restrict__ lhs,
-                                          const BoutReal rhs, int len) {
+// Do the actual division of Field3D and BoutReal
+void autogen_Field3D_Field3D_BoutReal_division(BoutReal *__restrict__ result,
+                                               const BoutReal *__restrict__ lhs,
+                                               const BoutReal rhs, int len) {
+
   for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] / rhs;
   }
 }
 
-// Provide the C++ wrapper for div of Field3D and BoutReal
+// Provide the C++ wrapper for division of Field3D and BoutReal
 Field3D operator/(const Field3D &lhs, const BoutReal rhs) {
+
   Indices i{0, 0, 0};
   Mesh *localmesh = lhs.getMesh();
 
@@ -572,34 +705,41 @@ Field3D operator/(const Field3D &lhs, const BoutReal rhs) {
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field3D_Field3D_BoutReal_div(&result[i], &lhs[i], rhs,
-                                       localmesh->LocalNx * localmesh->LocalNy *
-                                           localmesh->LocalNz);
+
+  autogen_Field3D_Field3D_BoutReal_division(&result[i], &lhs[i], rhs,
+                                            localmesh->LocalNx * localmesh->LocalNy *
+                                                localmesh->LocalNz);
 
   result.setLocation(lhs.getLocation());
+
   checkData(result);
   return result;
 }
 
-// Provide the C function to update Field3D by div with BoutReal
-void autogen_Field3D_BoutReal_div(BoutReal *__restrict__ lhs, const BoutReal rhs,
-                                  int len) {
+// Provide the C function to update Field3D by division with BoutReal
+void autogen_Field3D_BoutReal_division(BoutReal *__restrict__ lhs, const BoutReal rhs,
+                                       int len) {
+
   for (int i = 0; i < len; ++i) {
     lhs[i] /= rhs;
   }
 }
 
-// Provide the C++ operator to update Field3D by div with BoutReal
+// Provide the C++ operator to update Field3D by division with BoutReal
 Field3D &Field3D::operator/=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
+
     Indices i{0, 0, 0};
 
     checkData(*this);
     checkData(rhs);
-    autogen_Field3D_BoutReal_div(
+
+    autogen_Field3D_BoutReal_division(
         &(*this)[i], rhs, fieldmesh->LocalNx * fieldmesh->LocalNy * fieldmesh->LocalNz);
+
+    checkData(*this);
 
   } else {
     (*this) = (*this) / rhs;
@@ -607,17 +747,19 @@ Field3D &Field3D::operator/=(const BoutReal rhs) {
   return *this;
 }
 
-// Do the actual plus of Field3D and BoutReal
-void autogen_Field3D_Field3D_BoutReal_plus(BoutReal *__restrict__ result,
-                                           const BoutReal *__restrict__ lhs,
-                                           const BoutReal rhs, int len) {
+// Do the actual addition of Field3D and BoutReal
+void autogen_Field3D_Field3D_BoutReal_addition(BoutReal *__restrict__ result,
+                                               const BoutReal *__restrict__ lhs,
+                                               const BoutReal rhs, int len) {
+
   for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] + rhs;
   }
 }
 
-// Provide the C++ wrapper for plus of Field3D and BoutReal
+// Provide the C++ wrapper for addition of Field3D and BoutReal
 Field3D operator+(const Field3D &lhs, const BoutReal rhs) {
+
   Indices i{0, 0, 0};
   Mesh *localmesh = lhs.getMesh();
 
@@ -625,34 +767,41 @@ Field3D operator+(const Field3D &lhs, const BoutReal rhs) {
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field3D_Field3D_BoutReal_plus(&result[i], &lhs[i], rhs,
-                                        localmesh->LocalNx * localmesh->LocalNy *
-                                            localmesh->LocalNz);
+
+  autogen_Field3D_Field3D_BoutReal_addition(&result[i], &lhs[i], rhs,
+                                            localmesh->LocalNx * localmesh->LocalNy *
+                                                localmesh->LocalNz);
 
   result.setLocation(lhs.getLocation());
+
   checkData(result);
   return result;
 }
 
-// Provide the C function to update Field3D by plus with BoutReal
-void autogen_Field3D_BoutReal_plus(BoutReal *__restrict__ lhs, const BoutReal rhs,
-                                   int len) {
+// Provide the C function to update Field3D by addition with BoutReal
+void autogen_Field3D_BoutReal_addition(BoutReal *__restrict__ lhs, const BoutReal rhs,
+                                       int len) {
+
   for (int i = 0; i < len; ++i) {
     lhs[i] += rhs;
   }
 }
 
-// Provide the C++ operator to update Field3D by plus with BoutReal
+// Provide the C++ operator to update Field3D by addition with BoutReal
 Field3D &Field3D::operator+=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
+
     Indices i{0, 0, 0};
 
     checkData(*this);
     checkData(rhs);
-    autogen_Field3D_BoutReal_plus(
+
+    autogen_Field3D_BoutReal_addition(
         &(*this)[i], rhs, fieldmesh->LocalNx * fieldmesh->LocalNy * fieldmesh->LocalNz);
+
+    checkData(*this);
 
   } else {
     (*this) = (*this) + rhs;
@@ -660,17 +809,19 @@ Field3D &Field3D::operator+=(const BoutReal rhs) {
   return *this;
 }
 
-// Do the actual minus of Field3D and BoutReal
-void autogen_Field3D_Field3D_BoutReal_minus(BoutReal *__restrict__ result,
-                                            const BoutReal *__restrict__ lhs,
-                                            const BoutReal rhs, int len) {
+// Do the actual subtraction of Field3D and BoutReal
+void autogen_Field3D_Field3D_BoutReal_subtraction(BoutReal *__restrict__ result,
+                                                  const BoutReal *__restrict__ lhs,
+                                                  const BoutReal rhs, int len) {
+
   for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] - rhs;
   }
 }
 
-// Provide the C++ wrapper for minus of Field3D and BoutReal
+// Provide the C++ wrapper for subtraction of Field3D and BoutReal
 Field3D operator-(const Field3D &lhs, const BoutReal rhs) {
+
   Indices i{0, 0, 0};
   Mesh *localmesh = lhs.getMesh();
 
@@ -678,34 +829,41 @@ Field3D operator-(const Field3D &lhs, const BoutReal rhs) {
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field3D_Field3D_BoutReal_minus(&result[i], &lhs[i], rhs,
-                                         localmesh->LocalNx * localmesh->LocalNy *
-                                             localmesh->LocalNz);
+
+  autogen_Field3D_Field3D_BoutReal_subtraction(&result[i], &lhs[i], rhs,
+                                               localmesh->LocalNx * localmesh->LocalNy *
+                                                   localmesh->LocalNz);
 
   result.setLocation(lhs.getLocation());
+
   checkData(result);
   return result;
 }
 
-// Provide the C function to update Field3D by minus with BoutReal
-void autogen_Field3D_BoutReal_minus(BoutReal *__restrict__ lhs, const BoutReal rhs,
-                                    int len) {
+// Provide the C function to update Field3D by subtraction with BoutReal
+void autogen_Field3D_BoutReal_subtraction(BoutReal *__restrict__ lhs, const BoutReal rhs,
+                                          int len) {
+
   for (int i = 0; i < len; ++i) {
     lhs[i] -= rhs;
   }
 }
 
-// Provide the C++ operator to update Field3D by minus with BoutReal
+// Provide the C++ operator to update Field3D by subtraction with BoutReal
 Field3D &Field3D::operator-=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
+
     Indices i{0, 0, 0};
 
     checkData(*this);
     checkData(rhs);
-    autogen_Field3D_BoutReal_minus(
+
+    autogen_Field3D_BoutReal_subtraction(
         &(*this)[i], rhs, fieldmesh->LocalNx * fieldmesh->LocalNy * fieldmesh->LocalNz);
+
+    checkData(*this);
 
   } else {
     (*this) = (*this) - rhs;
@@ -713,11 +871,12 @@ Field3D &Field3D::operator-=(const BoutReal rhs) {
   return *this;
 }
 
-// Do the actual mul of Field2D and Field3D
-void autogen_Field3D_Field2D_Field3D_mul(BoutReal *__restrict__ result,
-                                         const BoutReal *__restrict__ lhs,
-                                         const BoutReal *__restrict__ rhs, int nx, int ny,
-                                         int nz) {
+// Do the actual multiplication of Field2D and Field3D
+void autogen_Field3D_Field2D_Field3D_multiplication(BoutReal *__restrict__ result,
+                                                    const BoutReal *__restrict__ lhs,
+                                                    const BoutReal *__restrict__ rhs,
+                                                    int nx, int ny, int nz) {
+
   for (int x = 0; x < nx; ++x)
     for (int y = 0; y < ny; ++y)
       for (int z = 0; z < nz; ++z) {
@@ -725,28 +884,35 @@ void autogen_Field3D_Field2D_Field3D_mul(BoutReal *__restrict__ result,
       }
 }
 
-// Provide the C++ wrapper for mul of Field2D and Field3D
+// Provide the C++ wrapper for multiplication of Field2D and Field3D
 Field3D operator*(const Field2D &lhs, const Field3D &rhs) {
+
   Indices i{0, 0, 0};
   Mesh *localmesh = lhs.getMesh();
+
   ASSERT1(localmesh == rhs.getMesh());
+
   Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field3D_Field2D_Field3D_mul(&result[i], &lhs[i], &rhs[i], localmesh->LocalNx,
-                                      localmesh->LocalNy, localmesh->LocalNz);
+
+  autogen_Field3D_Field2D_Field3D_multiplication(&result[i], &lhs[i], &rhs[i],
+                                                 localmesh->LocalNx, localmesh->LocalNy,
+                                                 localmesh->LocalNz);
 
   result.setLocation(rhs.getLocation());
+
   checkData(result);
   return result;
 }
 
-// Do the actual div of Field2D and Field3D
-void autogen_Field3D_Field2D_Field3D_div(BoutReal *__restrict__ result,
-                                         const BoutReal *__restrict__ lhs,
-                                         const BoutReal *__restrict__ rhs, int nx, int ny,
-                                         int nz) {
+// Do the actual division of Field2D and Field3D
+void autogen_Field3D_Field2D_Field3D_division(BoutReal *__restrict__ result,
+                                              const BoutReal *__restrict__ lhs,
+                                              const BoutReal *__restrict__ rhs, int nx,
+                                              int ny, int nz) {
+
   for (int x = 0; x < nx; ++x)
     for (int y = 0; y < ny; ++y)
       for (int z = 0; z < nz; ++z) {
@@ -754,28 +920,35 @@ void autogen_Field3D_Field2D_Field3D_div(BoutReal *__restrict__ result,
       }
 }
 
-// Provide the C++ wrapper for div of Field2D and Field3D
+// Provide the C++ wrapper for division of Field2D and Field3D
 Field3D operator/(const Field2D &lhs, const Field3D &rhs) {
+
   Indices i{0, 0, 0};
   Mesh *localmesh = lhs.getMesh();
+
   ASSERT1(localmesh == rhs.getMesh());
+
   Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field3D_Field2D_Field3D_div(&result[i], &lhs[i], &rhs[i], localmesh->LocalNx,
-                                      localmesh->LocalNy, localmesh->LocalNz);
+
+  autogen_Field3D_Field2D_Field3D_division(&result[i], &lhs[i], &rhs[i],
+                                           localmesh->LocalNx, localmesh->LocalNy,
+                                           localmesh->LocalNz);
 
   result.setLocation(rhs.getLocation());
+
   checkData(result);
   return result;
 }
 
-// Do the actual plus of Field2D and Field3D
-void autogen_Field3D_Field2D_Field3D_plus(BoutReal *__restrict__ result,
-                                          const BoutReal *__restrict__ lhs,
-                                          const BoutReal *__restrict__ rhs, int nx,
-                                          int ny, int nz) {
+// Do the actual addition of Field2D and Field3D
+void autogen_Field3D_Field2D_Field3D_addition(BoutReal *__restrict__ result,
+                                              const BoutReal *__restrict__ lhs,
+                                              const BoutReal *__restrict__ rhs, int nx,
+                                              int ny, int nz) {
+
   for (int x = 0; x < nx; ++x)
     for (int y = 0; y < ny; ++y)
       for (int z = 0; z < nz; ++z) {
@@ -783,28 +956,35 @@ void autogen_Field3D_Field2D_Field3D_plus(BoutReal *__restrict__ result,
       }
 }
 
-// Provide the C++ wrapper for plus of Field2D and Field3D
+// Provide the C++ wrapper for addition of Field2D and Field3D
 Field3D operator+(const Field2D &lhs, const Field3D &rhs) {
+
   Indices i{0, 0, 0};
   Mesh *localmesh = lhs.getMesh();
+
   ASSERT1(localmesh == rhs.getMesh());
+
   Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field3D_Field2D_Field3D_plus(&result[i], &lhs[i], &rhs[i], localmesh->LocalNx,
-                                       localmesh->LocalNy, localmesh->LocalNz);
+
+  autogen_Field3D_Field2D_Field3D_addition(&result[i], &lhs[i], &rhs[i],
+                                           localmesh->LocalNx, localmesh->LocalNy,
+                                           localmesh->LocalNz);
 
   result.setLocation(rhs.getLocation());
+
   checkData(result);
   return result;
 }
 
-// Do the actual minus of Field2D and Field3D
-void autogen_Field3D_Field2D_Field3D_minus(BoutReal *__restrict__ result,
-                                           const BoutReal *__restrict__ lhs,
-                                           const BoutReal *__restrict__ rhs, int nx,
-                                           int ny, int nz) {
+// Do the actual subtraction of Field2D and Field3D
+void autogen_Field3D_Field2D_Field3D_subtraction(BoutReal *__restrict__ result,
+                                                 const BoutReal *__restrict__ lhs,
+                                                 const BoutReal *__restrict__ rhs, int nx,
+                                                 int ny, int nz) {
+
   for (int x = 0; x < nx; ++x)
     for (int y = 0; y < ny; ++y)
       for (int z = 0; z < nz; ++z) {
@@ -812,67 +992,86 @@ void autogen_Field3D_Field2D_Field3D_minus(BoutReal *__restrict__ result,
       }
 }
 
-// Provide the C++ wrapper for minus of Field2D and Field3D
+// Provide the C++ wrapper for subtraction of Field2D and Field3D
 Field3D operator-(const Field2D &lhs, const Field3D &rhs) {
+
   Indices i{0, 0, 0};
   Mesh *localmesh = lhs.getMesh();
+
   ASSERT1(localmesh == rhs.getMesh());
+
   Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field3D_Field2D_Field3D_minus(&result[i], &lhs[i], &rhs[i], localmesh->LocalNx,
-                                        localmesh->LocalNy, localmesh->LocalNz);
+
+  autogen_Field3D_Field2D_Field3D_subtraction(&result[i], &lhs[i], &rhs[i],
+                                              localmesh->LocalNx, localmesh->LocalNy,
+                                              localmesh->LocalNz);
 
   result.setLocation(rhs.getLocation());
+
   checkData(result);
   return result;
 }
 
-// Do the actual mul of Field2D and Field2D
-void autogen_Field2D_Field2D_Field2D_mul(BoutReal *__restrict__ result,
-                                         const BoutReal *__restrict__ lhs,
-                                         const BoutReal *__restrict__ rhs, int len) {
+// Do the actual multiplication of Field2D and Field2D
+void autogen_Field2D_Field2D_Field2D_multiplication(BoutReal *__restrict__ result,
+                                                    const BoutReal *__restrict__ lhs,
+                                                    const BoutReal *__restrict__ rhs,
+                                                    int len) {
+
   for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] * rhs[i];
   }
 }
 
-// Provide the C++ wrapper for mul of Field2D and Field2D
+// Provide the C++ wrapper for multiplication of Field2D and Field2D
 Field2D operator*(const Field2D &lhs, const Field2D &rhs) {
+
   Indices i{0, 0, 0};
   Mesh *localmesh = lhs.getMesh();
+
   ASSERT1(localmesh == rhs.getMesh());
+
   Field2D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field2D_Field2D_Field2D_mul(&result[i], &lhs[i], &rhs[i],
-                                      localmesh->LocalNx * localmesh->LocalNy);
+
+  autogen_Field2D_Field2D_Field2D_multiplication(&result[i], &lhs[i], &rhs[i],
+                                                 localmesh->LocalNx * localmesh->LocalNy);
 
   checkData(result);
   return result;
 }
 
-// Provide the C function to update Field2D by mul with Field2D
-void autogen_Field2D_Field2D_mul(BoutReal *__restrict__ lhs,
-                                 const BoutReal *__restrict__ rhs, int len) {
+// Provide the C function to update Field2D by multiplication with Field2D
+void autogen_Field2D_Field2D_multiplication(BoutReal *__restrict__ lhs,
+                                            const BoutReal *__restrict__ rhs, int len) {
+
   for (int i = 0; i < len; ++i) {
     lhs[i] *= rhs[i];
   }
 }
 
-// Provide the C++ operator to update Field2D by mul with Field2D
+// Provide the C++ operator to update Field2D by multiplication with Field2D
 Field2D &Field2D::operator*=(const Field2D &rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
+
     Indices i{0, 0, 0};
+
     ASSERT1(fieldmesh == rhs.getMesh());
+
     checkData(*this);
     checkData(rhs);
-    autogen_Field2D_Field2D_mul(&(*this)[i], &rhs[i],
-                                fieldmesh->LocalNx * fieldmesh->LocalNy);
+
+    autogen_Field2D_Field2D_multiplication(&(*this)[i], &rhs[i],
+                                           fieldmesh->LocalNx * fieldmesh->LocalNy);
+
+    checkData(*this);
 
   } else {
     (*this) = (*this) * rhs;
@@ -880,50 +1079,62 @@ Field2D &Field2D::operator*=(const Field2D &rhs) {
   return *this;
 }
 
-// Do the actual div of Field2D and Field2D
-void autogen_Field2D_Field2D_Field2D_div(BoutReal *__restrict__ result,
-                                         const BoutReal *__restrict__ lhs,
-                                         const BoutReal *__restrict__ rhs, int len) {
+// Do the actual division of Field2D and Field2D
+void autogen_Field2D_Field2D_Field2D_division(BoutReal *__restrict__ result,
+                                              const BoutReal *__restrict__ lhs,
+                                              const BoutReal *__restrict__ rhs, int len) {
+
   for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] / rhs[i];
   }
 }
 
-// Provide the C++ wrapper for div of Field2D and Field2D
+// Provide the C++ wrapper for division of Field2D and Field2D
 Field2D operator/(const Field2D &lhs, const Field2D &rhs) {
+
   Indices i{0, 0, 0};
   Mesh *localmesh = lhs.getMesh();
+
   ASSERT1(localmesh == rhs.getMesh());
+
   Field2D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field2D_Field2D_Field2D_div(&result[i], &lhs[i], &rhs[i],
-                                      localmesh->LocalNx * localmesh->LocalNy);
+
+  autogen_Field2D_Field2D_Field2D_division(&result[i], &lhs[i], &rhs[i],
+                                           localmesh->LocalNx * localmesh->LocalNy);
 
   checkData(result);
   return result;
 }
 
-// Provide the C function to update Field2D by div with Field2D
-void autogen_Field2D_Field2D_div(BoutReal *__restrict__ lhs,
-                                 const BoutReal *__restrict__ rhs, int len) {
+// Provide the C function to update Field2D by division with Field2D
+void autogen_Field2D_Field2D_division(BoutReal *__restrict__ lhs,
+                                      const BoutReal *__restrict__ rhs, int len) {
+
   for (int i = 0; i < len; ++i) {
     lhs[i] /= rhs[i];
   }
 }
 
-// Provide the C++ operator to update Field2D by div with Field2D
+// Provide the C++ operator to update Field2D by division with Field2D
 Field2D &Field2D::operator/=(const Field2D &rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
+
     Indices i{0, 0, 0};
+
     ASSERT1(fieldmesh == rhs.getMesh());
+
     checkData(*this);
     checkData(rhs);
-    autogen_Field2D_Field2D_div(&(*this)[i], &rhs[i],
-                                fieldmesh->LocalNx * fieldmesh->LocalNy);
+
+    autogen_Field2D_Field2D_division(&(*this)[i], &rhs[i],
+                                     fieldmesh->LocalNx * fieldmesh->LocalNy);
+
+    checkData(*this);
 
   } else {
     (*this) = (*this) / rhs;
@@ -931,50 +1142,62 @@ Field2D &Field2D::operator/=(const Field2D &rhs) {
   return *this;
 }
 
-// Do the actual plus of Field2D and Field2D
-void autogen_Field2D_Field2D_Field2D_plus(BoutReal *__restrict__ result,
-                                          const BoutReal *__restrict__ lhs,
-                                          const BoutReal *__restrict__ rhs, int len) {
+// Do the actual addition of Field2D and Field2D
+void autogen_Field2D_Field2D_Field2D_addition(BoutReal *__restrict__ result,
+                                              const BoutReal *__restrict__ lhs,
+                                              const BoutReal *__restrict__ rhs, int len) {
+
   for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] + rhs[i];
   }
 }
 
-// Provide the C++ wrapper for plus of Field2D and Field2D
+// Provide the C++ wrapper for addition of Field2D and Field2D
 Field2D operator+(const Field2D &lhs, const Field2D &rhs) {
+
   Indices i{0, 0, 0};
   Mesh *localmesh = lhs.getMesh();
+
   ASSERT1(localmesh == rhs.getMesh());
+
   Field2D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field2D_Field2D_Field2D_plus(&result[i], &lhs[i], &rhs[i],
-                                       localmesh->LocalNx * localmesh->LocalNy);
+
+  autogen_Field2D_Field2D_Field2D_addition(&result[i], &lhs[i], &rhs[i],
+                                           localmesh->LocalNx * localmesh->LocalNy);
 
   checkData(result);
   return result;
 }
 
-// Provide the C function to update Field2D by plus with Field2D
-void autogen_Field2D_Field2D_plus(BoutReal *__restrict__ lhs,
-                                  const BoutReal *__restrict__ rhs, int len) {
+// Provide the C function to update Field2D by addition with Field2D
+void autogen_Field2D_Field2D_addition(BoutReal *__restrict__ lhs,
+                                      const BoutReal *__restrict__ rhs, int len) {
+
   for (int i = 0; i < len; ++i) {
     lhs[i] += rhs[i];
   }
 }
 
-// Provide the C++ operator to update Field2D by plus with Field2D
+// Provide the C++ operator to update Field2D by addition with Field2D
 Field2D &Field2D::operator+=(const Field2D &rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
+
     Indices i{0, 0, 0};
+
     ASSERT1(fieldmesh == rhs.getMesh());
+
     checkData(*this);
     checkData(rhs);
-    autogen_Field2D_Field2D_plus(&(*this)[i], &rhs[i],
-                                 fieldmesh->LocalNx * fieldmesh->LocalNy);
+
+    autogen_Field2D_Field2D_addition(&(*this)[i], &rhs[i],
+                                     fieldmesh->LocalNx * fieldmesh->LocalNy);
+
+    checkData(*this);
 
   } else {
     (*this) = (*this) + rhs;
@@ -982,50 +1205,63 @@ Field2D &Field2D::operator+=(const Field2D &rhs) {
   return *this;
 }
 
-// Do the actual minus of Field2D and Field2D
-void autogen_Field2D_Field2D_Field2D_minus(BoutReal *__restrict__ result,
-                                           const BoutReal *__restrict__ lhs,
-                                           const BoutReal *__restrict__ rhs, int len) {
+// Do the actual subtraction of Field2D and Field2D
+void autogen_Field2D_Field2D_Field2D_subtraction(BoutReal *__restrict__ result,
+                                                 const BoutReal *__restrict__ lhs,
+                                                 const BoutReal *__restrict__ rhs,
+                                                 int len) {
+
   for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] - rhs[i];
   }
 }
 
-// Provide the C++ wrapper for minus of Field2D and Field2D
+// Provide the C++ wrapper for subtraction of Field2D and Field2D
 Field2D operator-(const Field2D &lhs, const Field2D &rhs) {
+
   Indices i{0, 0, 0};
   Mesh *localmesh = lhs.getMesh();
+
   ASSERT1(localmesh == rhs.getMesh());
+
   Field2D result(localmesh);
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field2D_Field2D_Field2D_minus(&result[i], &lhs[i], &rhs[i],
-                                        localmesh->LocalNx * localmesh->LocalNy);
+
+  autogen_Field2D_Field2D_Field2D_subtraction(&result[i], &lhs[i], &rhs[i],
+                                              localmesh->LocalNx * localmesh->LocalNy);
 
   checkData(result);
   return result;
 }
 
-// Provide the C function to update Field2D by minus with Field2D
-void autogen_Field2D_Field2D_minus(BoutReal *__restrict__ lhs,
-                                   const BoutReal *__restrict__ rhs, int len) {
+// Provide the C function to update Field2D by subtraction with Field2D
+void autogen_Field2D_Field2D_subtraction(BoutReal *__restrict__ lhs,
+                                         const BoutReal *__restrict__ rhs, int len) {
+
   for (int i = 0; i < len; ++i) {
     lhs[i] -= rhs[i];
   }
 }
 
-// Provide the C++ operator to update Field2D by minus with Field2D
+// Provide the C++ operator to update Field2D by subtraction with Field2D
 Field2D &Field2D::operator-=(const Field2D &rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
+
     Indices i{0, 0, 0};
+
     ASSERT1(fieldmesh == rhs.getMesh());
+
     checkData(*this);
     checkData(rhs);
-    autogen_Field2D_Field2D_minus(&(*this)[i], &rhs[i],
-                                  fieldmesh->LocalNx * fieldmesh->LocalNy);
+
+    autogen_Field2D_Field2D_subtraction(&(*this)[i], &rhs[i],
+                                        fieldmesh->LocalNx * fieldmesh->LocalNy);
+
+    checkData(*this);
 
   } else {
     (*this) = (*this) - rhs;
@@ -1033,17 +1269,19 @@ Field2D &Field2D::operator-=(const Field2D &rhs) {
   return *this;
 }
 
-// Do the actual mul of Field2D and BoutReal
-void autogen_Field2D_Field2D_BoutReal_mul(BoutReal *__restrict__ result,
-                                          const BoutReal *__restrict__ lhs,
-                                          const BoutReal rhs, int len) {
+// Do the actual multiplication of Field2D and BoutReal
+void autogen_Field2D_Field2D_BoutReal_multiplication(BoutReal *__restrict__ result,
+                                                     const BoutReal *__restrict__ lhs,
+                                                     const BoutReal rhs, int len) {
+
   for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] * rhs;
   }
 }
 
-// Provide the C++ wrapper for mul of Field2D and BoutReal
+// Provide the C++ wrapper for multiplication of Field2D and BoutReal
 Field2D operator*(const Field2D &lhs, const BoutReal rhs) {
+
   Indices i{0, 0, 0};
   Mesh *localmesh = lhs.getMesh();
 
@@ -1051,32 +1289,38 @@ Field2D operator*(const Field2D &lhs, const BoutReal rhs) {
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field2D_Field2D_BoutReal_mul(&result[i], &lhs[i], rhs,
-                                       localmesh->LocalNx * localmesh->LocalNy);
+
+  autogen_Field2D_Field2D_BoutReal_multiplication(
+      &result[i], &lhs[i], rhs, localmesh->LocalNx * localmesh->LocalNy);
 
   checkData(result);
   return result;
 }
 
-// Provide the C function to update Field2D by mul with BoutReal
-void autogen_Field2D_BoutReal_mul(BoutReal *__restrict__ lhs, const BoutReal rhs,
-                                  int len) {
+// Provide the C function to update Field2D by multiplication with BoutReal
+void autogen_Field2D_BoutReal_multiplication(BoutReal *__restrict__ lhs,
+                                             const BoutReal rhs, int len) {
+
   for (int i = 0; i < len; ++i) {
     lhs[i] *= rhs;
   }
 }
 
-// Provide the C++ operator to update Field2D by mul with BoutReal
+// Provide the C++ operator to update Field2D by multiplication with BoutReal
 Field2D &Field2D::operator*=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
+
     Indices i{0, 0, 0};
 
     checkData(*this);
     checkData(rhs);
-    autogen_Field2D_BoutReal_mul(&(*this)[i], rhs,
-                                 fieldmesh->LocalNx * fieldmesh->LocalNy);
+
+    autogen_Field2D_BoutReal_multiplication(&(*this)[i], rhs,
+                                            fieldmesh->LocalNx * fieldmesh->LocalNy);
+
+    checkData(*this);
 
   } else {
     (*this) = (*this) * rhs;
@@ -1084,17 +1328,19 @@ Field2D &Field2D::operator*=(const BoutReal rhs) {
   return *this;
 }
 
-// Do the actual div of Field2D and BoutReal
-void autogen_Field2D_Field2D_BoutReal_div(BoutReal *__restrict__ result,
-                                          const BoutReal *__restrict__ lhs,
-                                          const BoutReal rhs, int len) {
+// Do the actual division of Field2D and BoutReal
+void autogen_Field2D_Field2D_BoutReal_division(BoutReal *__restrict__ result,
+                                               const BoutReal *__restrict__ lhs,
+                                               const BoutReal rhs, int len) {
+
   for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] / rhs;
   }
 }
 
-// Provide the C++ wrapper for div of Field2D and BoutReal
+// Provide the C++ wrapper for division of Field2D and BoutReal
 Field2D operator/(const Field2D &lhs, const BoutReal rhs) {
+
   Indices i{0, 0, 0};
   Mesh *localmesh = lhs.getMesh();
 
@@ -1102,32 +1348,38 @@ Field2D operator/(const Field2D &lhs, const BoutReal rhs) {
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field2D_Field2D_BoutReal_div(&result[i], &lhs[i], rhs,
-                                       localmesh->LocalNx * localmesh->LocalNy);
+
+  autogen_Field2D_Field2D_BoutReal_division(&result[i], &lhs[i], rhs,
+                                            localmesh->LocalNx * localmesh->LocalNy);
 
   checkData(result);
   return result;
 }
 
-// Provide the C function to update Field2D by div with BoutReal
-void autogen_Field2D_BoutReal_div(BoutReal *__restrict__ lhs, const BoutReal rhs,
-                                  int len) {
+// Provide the C function to update Field2D by division with BoutReal
+void autogen_Field2D_BoutReal_division(BoutReal *__restrict__ lhs, const BoutReal rhs,
+                                       int len) {
+
   for (int i = 0; i < len; ++i) {
     lhs[i] /= rhs;
   }
 }
 
-// Provide the C++ operator to update Field2D by div with BoutReal
+// Provide the C++ operator to update Field2D by division with BoutReal
 Field2D &Field2D::operator/=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
+
     Indices i{0, 0, 0};
 
     checkData(*this);
     checkData(rhs);
-    autogen_Field2D_BoutReal_div(&(*this)[i], rhs,
-                                 fieldmesh->LocalNx * fieldmesh->LocalNy);
+
+    autogen_Field2D_BoutReal_division(&(*this)[i], rhs,
+                                      fieldmesh->LocalNx * fieldmesh->LocalNy);
+
+    checkData(*this);
 
   } else {
     (*this) = (*this) / rhs;
@@ -1135,17 +1387,19 @@ Field2D &Field2D::operator/=(const BoutReal rhs) {
   return *this;
 }
 
-// Do the actual plus of Field2D and BoutReal
-void autogen_Field2D_Field2D_BoutReal_plus(BoutReal *__restrict__ result,
-                                           const BoutReal *__restrict__ lhs,
-                                           const BoutReal rhs, int len) {
+// Do the actual addition of Field2D and BoutReal
+void autogen_Field2D_Field2D_BoutReal_addition(BoutReal *__restrict__ result,
+                                               const BoutReal *__restrict__ lhs,
+                                               const BoutReal rhs, int len) {
+
   for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] + rhs;
   }
 }
 
-// Provide the C++ wrapper for plus of Field2D and BoutReal
+// Provide the C++ wrapper for addition of Field2D and BoutReal
 Field2D operator+(const Field2D &lhs, const BoutReal rhs) {
+
   Indices i{0, 0, 0};
   Mesh *localmesh = lhs.getMesh();
 
@@ -1153,32 +1407,38 @@ Field2D operator+(const Field2D &lhs, const BoutReal rhs) {
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field2D_Field2D_BoutReal_plus(&result[i], &lhs[i], rhs,
-                                        localmesh->LocalNx * localmesh->LocalNy);
+
+  autogen_Field2D_Field2D_BoutReal_addition(&result[i], &lhs[i], rhs,
+                                            localmesh->LocalNx * localmesh->LocalNy);
 
   checkData(result);
   return result;
 }
 
-// Provide the C function to update Field2D by plus with BoutReal
-void autogen_Field2D_BoutReal_plus(BoutReal *__restrict__ lhs, const BoutReal rhs,
-                                   int len) {
+// Provide the C function to update Field2D by addition with BoutReal
+void autogen_Field2D_BoutReal_addition(BoutReal *__restrict__ lhs, const BoutReal rhs,
+                                       int len) {
+
   for (int i = 0; i < len; ++i) {
     lhs[i] += rhs;
   }
 }
 
-// Provide the C++ operator to update Field2D by plus with BoutReal
+// Provide the C++ operator to update Field2D by addition with BoutReal
 Field2D &Field2D::operator+=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
+
     Indices i{0, 0, 0};
 
     checkData(*this);
     checkData(rhs);
-    autogen_Field2D_BoutReal_plus(&(*this)[i], rhs,
-                                  fieldmesh->LocalNx * fieldmesh->LocalNy);
+
+    autogen_Field2D_BoutReal_addition(&(*this)[i], rhs,
+                                      fieldmesh->LocalNx * fieldmesh->LocalNy);
+
+    checkData(*this);
 
   } else {
     (*this) = (*this) + rhs;
@@ -1186,17 +1446,19 @@ Field2D &Field2D::operator+=(const BoutReal rhs) {
   return *this;
 }
 
-// Do the actual minus of Field2D and BoutReal
-void autogen_Field2D_Field2D_BoutReal_minus(BoutReal *__restrict__ result,
-                                            const BoutReal *__restrict__ lhs,
-                                            const BoutReal rhs, int len) {
+// Do the actual subtraction of Field2D and BoutReal
+void autogen_Field2D_Field2D_BoutReal_subtraction(BoutReal *__restrict__ result,
+                                                  const BoutReal *__restrict__ lhs,
+                                                  const BoutReal rhs, int len) {
+
   for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] - rhs;
   }
 }
 
-// Provide the C++ wrapper for minus of Field2D and BoutReal
+// Provide the C++ wrapper for subtraction of Field2D and BoutReal
 Field2D operator-(const Field2D &lhs, const BoutReal rhs) {
+
   Indices i{0, 0, 0};
   Mesh *localmesh = lhs.getMesh();
 
@@ -1204,32 +1466,38 @@ Field2D operator-(const Field2D &lhs, const BoutReal rhs) {
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field2D_Field2D_BoutReal_minus(&result[i], &lhs[i], rhs,
-                                         localmesh->LocalNx * localmesh->LocalNy);
+
+  autogen_Field2D_Field2D_BoutReal_subtraction(&result[i], &lhs[i], rhs,
+                                               localmesh->LocalNx * localmesh->LocalNy);
 
   checkData(result);
   return result;
 }
 
-// Provide the C function to update Field2D by minus with BoutReal
-void autogen_Field2D_BoutReal_minus(BoutReal *__restrict__ lhs, const BoutReal rhs,
-                                    int len) {
+// Provide the C function to update Field2D by subtraction with BoutReal
+void autogen_Field2D_BoutReal_subtraction(BoutReal *__restrict__ lhs, const BoutReal rhs,
+                                          int len) {
+
   for (int i = 0; i < len; ++i) {
     lhs[i] -= rhs;
   }
 }
 
-// Provide the C++ operator to update Field2D by minus with BoutReal
+// Provide the C++ operator to update Field2D by subtraction with BoutReal
 Field2D &Field2D::operator-=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
+
     Indices i{0, 0, 0};
 
     checkData(*this);
     checkData(rhs);
-    autogen_Field2D_BoutReal_minus(&(*this)[i], rhs,
-                                   fieldmesh->LocalNx * fieldmesh->LocalNy);
+
+    autogen_Field2D_BoutReal_subtraction(&(*this)[i], rhs,
+                                         fieldmesh->LocalNx * fieldmesh->LocalNy);
+
+    checkData(*this);
 
   } else {
     (*this) = (*this) - rhs;
@@ -1237,17 +1505,20 @@ Field2D &Field2D::operator-=(const BoutReal rhs) {
   return *this;
 }
 
-// Do the actual mul of BoutReal and Field3D
-void autogen_Field3D_BoutReal_Field3D_mul(BoutReal *__restrict__ result,
-                                          const BoutReal lhs,
-                                          const BoutReal *__restrict__ rhs, int len) {
+// Do the actual multiplication of BoutReal and Field3D
+void autogen_Field3D_BoutReal_Field3D_multiplication(BoutReal *__restrict__ result,
+                                                     const BoutReal lhs,
+                                                     const BoutReal *__restrict__ rhs,
+                                                     int len) {
+
   for (int i = 0; i < len; ++i) {
     result[i] = lhs * rhs[i];
   }
 }
 
-// Provide the C++ wrapper for mul of BoutReal and Field3D
+// Provide the C++ wrapper for multiplication of BoutReal and Field3D
 Field3D operator*(const BoutReal lhs, const Field3D &rhs) {
+
   Indices i{0, 0, 0};
   Mesh *localmesh = rhs.getMesh();
 
@@ -1255,26 +1526,31 @@ Field3D operator*(const BoutReal lhs, const Field3D &rhs) {
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field3D_BoutReal_Field3D_mul(&result[i], lhs, &rhs[i],
-                                       localmesh->LocalNx * localmesh->LocalNy *
-                                           localmesh->LocalNz);
+
+  autogen_Field3D_BoutReal_Field3D_multiplication(
+      &result[i], lhs, &rhs[i],
+      localmesh->LocalNx * localmesh->LocalNy * localmesh->LocalNz);
 
   result.setLocation(rhs.getLocation());
+
   checkData(result);
   return result;
 }
 
-// Do the actual div of BoutReal and Field3D
-void autogen_Field3D_BoutReal_Field3D_div(BoutReal *__restrict__ result,
-                                          const BoutReal lhs,
-                                          const BoutReal *__restrict__ rhs, int len) {
+// Do the actual division of BoutReal and Field3D
+void autogen_Field3D_BoutReal_Field3D_division(BoutReal *__restrict__ result,
+                                               const BoutReal lhs,
+                                               const BoutReal *__restrict__ rhs,
+                                               int len) {
+
   for (int i = 0; i < len; ++i) {
     result[i] = lhs / rhs[i];
   }
 }
 
-// Provide the C++ wrapper for div of BoutReal and Field3D
+// Provide the C++ wrapper for division of BoutReal and Field3D
 Field3D operator/(const BoutReal lhs, const Field3D &rhs) {
+
   Indices i{0, 0, 0};
   Mesh *localmesh = rhs.getMesh();
 
@@ -1282,26 +1558,31 @@ Field3D operator/(const BoutReal lhs, const Field3D &rhs) {
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field3D_BoutReal_Field3D_div(&result[i], lhs, &rhs[i],
-                                       localmesh->LocalNx * localmesh->LocalNy *
-                                           localmesh->LocalNz);
+
+  autogen_Field3D_BoutReal_Field3D_division(&result[i], lhs, &rhs[i],
+                                            localmesh->LocalNx * localmesh->LocalNy *
+                                                localmesh->LocalNz);
 
   result.setLocation(rhs.getLocation());
+
   checkData(result);
   return result;
 }
 
-// Do the actual plus of BoutReal and Field3D
-void autogen_Field3D_BoutReal_Field3D_plus(BoutReal *__restrict__ result,
-                                           const BoutReal lhs,
-                                           const BoutReal *__restrict__ rhs, int len) {
+// Do the actual addition of BoutReal and Field3D
+void autogen_Field3D_BoutReal_Field3D_addition(BoutReal *__restrict__ result,
+                                               const BoutReal lhs,
+                                               const BoutReal *__restrict__ rhs,
+                                               int len) {
+
   for (int i = 0; i < len; ++i) {
     result[i] = lhs + rhs[i];
   }
 }
 
-// Provide the C++ wrapper for plus of BoutReal and Field3D
+// Provide the C++ wrapper for addition of BoutReal and Field3D
 Field3D operator+(const BoutReal lhs, const Field3D &rhs) {
+
   Indices i{0, 0, 0};
   Mesh *localmesh = rhs.getMesh();
 
@@ -1309,26 +1590,31 @@ Field3D operator+(const BoutReal lhs, const Field3D &rhs) {
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field3D_BoutReal_Field3D_plus(&result[i], lhs, &rhs[i],
-                                        localmesh->LocalNx * localmesh->LocalNy *
-                                            localmesh->LocalNz);
+
+  autogen_Field3D_BoutReal_Field3D_addition(&result[i], lhs, &rhs[i],
+                                            localmesh->LocalNx * localmesh->LocalNy *
+                                                localmesh->LocalNz);
 
   result.setLocation(rhs.getLocation());
+
   checkData(result);
   return result;
 }
 
-// Do the actual minus of BoutReal and Field3D
-void autogen_Field3D_BoutReal_Field3D_minus(BoutReal *__restrict__ result,
-                                            const BoutReal lhs,
-                                            const BoutReal *__restrict__ rhs, int len) {
+// Do the actual subtraction of BoutReal and Field3D
+void autogen_Field3D_BoutReal_Field3D_subtraction(BoutReal *__restrict__ result,
+                                                  const BoutReal lhs,
+                                                  const BoutReal *__restrict__ rhs,
+                                                  int len) {
+
   for (int i = 0; i < len; ++i) {
     result[i] = lhs - rhs[i];
   }
 }
 
-// Provide the C++ wrapper for minus of BoutReal and Field3D
+// Provide the C++ wrapper for subtraction of BoutReal and Field3D
 Field3D operator-(const BoutReal lhs, const Field3D &rhs) {
+
   Indices i{0, 0, 0};
   Mesh *localmesh = rhs.getMesh();
 
@@ -1336,26 +1622,31 @@ Field3D operator-(const BoutReal lhs, const Field3D &rhs) {
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field3D_BoutReal_Field3D_minus(&result[i], lhs, &rhs[i],
-                                         localmesh->LocalNx * localmesh->LocalNy *
-                                             localmesh->LocalNz);
+
+  autogen_Field3D_BoutReal_Field3D_subtraction(&result[i], lhs, &rhs[i],
+                                               localmesh->LocalNx * localmesh->LocalNy *
+                                                   localmesh->LocalNz);
 
   result.setLocation(rhs.getLocation());
+
   checkData(result);
   return result;
 }
 
-// Do the actual mul of BoutReal and Field2D
-void autogen_Field2D_BoutReal_Field2D_mul(BoutReal *__restrict__ result,
-                                          const BoutReal lhs,
-                                          const BoutReal *__restrict__ rhs, int len) {
+// Do the actual multiplication of BoutReal and Field2D
+void autogen_Field2D_BoutReal_Field2D_multiplication(BoutReal *__restrict__ result,
+                                                     const BoutReal lhs,
+                                                     const BoutReal *__restrict__ rhs,
+                                                     int len) {
+
   for (int i = 0; i < len; ++i) {
     result[i] = lhs * rhs[i];
   }
 }
 
-// Provide the C++ wrapper for mul of BoutReal and Field2D
+// Provide the C++ wrapper for multiplication of BoutReal and Field2D
 Field2D operator*(const BoutReal lhs, const Field2D &rhs) {
+
   Indices i{0, 0, 0};
   Mesh *localmesh = rhs.getMesh();
 
@@ -1363,24 +1654,28 @@ Field2D operator*(const BoutReal lhs, const Field2D &rhs) {
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field2D_BoutReal_Field2D_mul(&result[i], lhs, &rhs[i],
-                                       localmesh->LocalNx * localmesh->LocalNy);
+
+  autogen_Field2D_BoutReal_Field2D_multiplication(
+      &result[i], lhs, &rhs[i], localmesh->LocalNx * localmesh->LocalNy);
 
   checkData(result);
   return result;
 }
 
-// Do the actual div of BoutReal and Field2D
-void autogen_Field2D_BoutReal_Field2D_div(BoutReal *__restrict__ result,
-                                          const BoutReal lhs,
-                                          const BoutReal *__restrict__ rhs, int len) {
+// Do the actual division of BoutReal and Field2D
+void autogen_Field2D_BoutReal_Field2D_division(BoutReal *__restrict__ result,
+                                               const BoutReal lhs,
+                                               const BoutReal *__restrict__ rhs,
+                                               int len) {
+
   for (int i = 0; i < len; ++i) {
     result[i] = lhs / rhs[i];
   }
 }
 
-// Provide the C++ wrapper for div of BoutReal and Field2D
+// Provide the C++ wrapper for division of BoutReal and Field2D
 Field2D operator/(const BoutReal lhs, const Field2D &rhs) {
+
   Indices i{0, 0, 0};
   Mesh *localmesh = rhs.getMesh();
 
@@ -1388,24 +1683,28 @@ Field2D operator/(const BoutReal lhs, const Field2D &rhs) {
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field2D_BoutReal_Field2D_div(&result[i], lhs, &rhs[i],
-                                       localmesh->LocalNx * localmesh->LocalNy);
+
+  autogen_Field2D_BoutReal_Field2D_division(&result[i], lhs, &rhs[i],
+                                            localmesh->LocalNx * localmesh->LocalNy);
 
   checkData(result);
   return result;
 }
 
-// Do the actual plus of BoutReal and Field2D
-void autogen_Field2D_BoutReal_Field2D_plus(BoutReal *__restrict__ result,
-                                           const BoutReal lhs,
-                                           const BoutReal *__restrict__ rhs, int len) {
+// Do the actual addition of BoutReal and Field2D
+void autogen_Field2D_BoutReal_Field2D_addition(BoutReal *__restrict__ result,
+                                               const BoutReal lhs,
+                                               const BoutReal *__restrict__ rhs,
+                                               int len) {
+
   for (int i = 0; i < len; ++i) {
     result[i] = lhs + rhs[i];
   }
 }
 
-// Provide the C++ wrapper for plus of BoutReal and Field2D
+// Provide the C++ wrapper for addition of BoutReal and Field2D
 Field2D operator+(const BoutReal lhs, const Field2D &rhs) {
+
   Indices i{0, 0, 0};
   Mesh *localmesh = rhs.getMesh();
 
@@ -1413,24 +1712,28 @@ Field2D operator+(const BoutReal lhs, const Field2D &rhs) {
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field2D_BoutReal_Field2D_plus(&result[i], lhs, &rhs[i],
-                                        localmesh->LocalNx * localmesh->LocalNy);
+
+  autogen_Field2D_BoutReal_Field2D_addition(&result[i], lhs, &rhs[i],
+                                            localmesh->LocalNx * localmesh->LocalNy);
 
   checkData(result);
   return result;
 }
 
-// Do the actual minus of BoutReal and Field2D
-void autogen_Field2D_BoutReal_Field2D_minus(BoutReal *__restrict__ result,
-                                            const BoutReal lhs,
-                                            const BoutReal *__restrict__ rhs, int len) {
+// Do the actual subtraction of BoutReal and Field2D
+void autogen_Field2D_BoutReal_Field2D_subtraction(BoutReal *__restrict__ result,
+                                                  const BoutReal lhs,
+                                                  const BoutReal *__restrict__ rhs,
+                                                  int len) {
+
   for (int i = 0; i < len; ++i) {
     result[i] = lhs - rhs[i];
   }
 }
 
-// Provide the C++ wrapper for minus of BoutReal and Field2D
+// Provide the C++ wrapper for subtraction of BoutReal and Field2D
 Field2D operator-(const BoutReal lhs, const Field2D &rhs) {
+
   Indices i{0, 0, 0};
   Mesh *localmesh = rhs.getMesh();
 
@@ -1438,8 +1741,9 @@ Field2D operator-(const BoutReal lhs, const Field2D &rhs) {
   result.allocate();
   checkData(lhs);
   checkData(rhs);
-  autogen_Field2D_BoutReal_Field2D_minus(&result[i], lhs, &rhs[i],
-                                         localmesh->LocalNx * localmesh->LocalNy);
+
+  autogen_Field2D_BoutReal_Field2D_subtraction(&result[i], lhs, &rhs[i],
+                                               localmesh->LocalNx * localmesh->LocalNy);
 
   checkData(result);
   return result;

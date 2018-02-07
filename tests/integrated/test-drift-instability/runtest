@@ -30,6 +30,7 @@ from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit
 
+nthreads=1
 MPIRUN = getmpirun()
 
 print("Making resistive drift instability test")
@@ -81,7 +82,7 @@ for zeff in zlist:
     print("Running drift instability test, zeff = ", zeff)
 
     # Run the case
-    s, out = launch_safe("./2fluid timestep="+str(timestep), runcmd=MPIRUN, nproc=nproc, pipe=True)
+    s, out = launch_safe("./2fluid timestep="+str(timestep), runcmd=MPIRUN, nproc=nproc, mthread=nthreads, pipe=True)
     f = open("run.log."+str(zeff), "w")
     f.write(out)
     f.close()

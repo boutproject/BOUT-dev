@@ -648,10 +648,17 @@ void Field3D::applyParallelBoundary(const string &region, const string &conditio
  *               NON-MEMBER OVERLOADED OPERATORS
  ***************************************************************/
 
+Field3D operator-(const Field3D &f) { return -1.0 * f; }
 
-Field3D operator-(const Field3D &f) {
-  return -1.0*f;
-}
+#define F3D_OP_FPERP(op)                                                                 \
+  FieldPerp operator op(const Field3D &lhs, const FieldPerp &rhs) {                      \
+    FieldPerp result;                                                                    \
+    result.allocate();                                                                   \
+    result.setIndex(rhs.getIndex());                                                     \
+    for (const auto &i : rhs)                                                            \
+      result[i] = lhs[i] op rhs[i];                                                      \
+    return result;                                                                       \
+  }
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
@@ -1038,12 +1045,12 @@ Field2D DC(const Field3D &f) {
     for (int j = 0; j < localmesh->LocalNy; j++) {
       result(i,j) = 0.0;
       for (int k = 0; k < localmesh->LocalNz; k++) {
-        result(i,j) += f(i,j,k);
+        result(i, j) += f(i, j, k);
       }
       result(i, j) /= (localmesh->LocalNz);
     }
   }
-  
+
   return result;
 }
 

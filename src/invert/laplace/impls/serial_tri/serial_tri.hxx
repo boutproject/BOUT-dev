@@ -54,8 +54,8 @@ public:
   }
 
   using Laplacian::solve;
-  const FieldPerp solve(const FieldPerp &b);
-  const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0);
+  const FieldPerp solve(const FieldPerp &b) override;
+  const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
 private:
   // The coefficents in
   // D*grad_perp^2(x) + (1/C)*(grad_perp(C))*grad_perp(x) + A*x = b

@@ -11,6 +11,11 @@ TARGET		= lib
 
 include $(BOUT_TOP)/make.config
 
-generated_fieldops.cxx: gen_fieldops.py
-	./$< > $@
+# The C++ source file depends on both the Python driver and the Jinja
+# template files. If either have changed, run the driver (first
+# dependency), dumping the output in the C++ target file. We then try
+# to apply clang-format to this file in-place, but don't worry if the
+# formatting fails
+generated_fieldops.cxx: gen_fieldops.py gen_fieldops.jinja
+	./$< --filename $@
 	@clang-format -i $@ || echo "Formatting failed"

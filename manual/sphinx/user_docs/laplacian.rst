@@ -150,7 +150,7 @@ condition on both AC and DC components.
    |                          | conditions. See :ref:`Laplace flags<tab-laplaceflags>` or               |                                              |
    |                          | :doc:`invert_laplace.cxx<../_breathe_autogen/file/invert__laplace_8cxx>`|                                              |
    +--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
-   | ``include_yguards``      | Perform inversion in :math:`y`\ -boundary guard cells                   | ``true``                                     |
+   | ``include_yguards``      | Perform inversion in :math:`y`\ -boundary guard cells                   | ``false``                                    |
    +--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
 
 |   

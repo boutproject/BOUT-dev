@@ -10,6 +10,7 @@ test-laplace
 test-cyclic
 test-invpar
 test-smooth
+test-region-iterator
 test-gyro
 test-delp2
 test-vec
