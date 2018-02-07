@@ -46,7 +46,7 @@ const int RegionTest::nz = 7;
 TEST_F(RegionTest, maxBlockSize) { EXPECT_TRUE(MAXREGIONBLOCKSIZE > 0); }
 
 TEST_F(RegionTest, regionFromRange) {
-  Region<ind3D> region(0, mesh->LocalNx - 1, 0, mesh->LocalNy - 1, 0, mesh->LocalNz - 1,
+  Region<Ind3D> region(0, mesh->LocalNx - 1, 0, mesh->LocalNy - 1, 0, mesh->LocalNz - 1,
                        mesh->LocalNy, mesh->LocalNz);
 
   int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
@@ -63,7 +63,7 @@ TEST_F(RegionTest, regionFromRange) {
 TEST_F(RegionTest, regionFromIndices) {
   std::vector<std::pair<int, int>> blocksIn = {
       {0, 3}, {5, 7}, {9, 10}, {12, 12}, {14, 20}};
-  std::vector<ind3D> indicesIn;
+  std::vector<Ind3D> indicesIn;
   int maxContiguousSizeUsed = 0;
   for (auto &block : blocksIn) {
     int currBlockSize = 1 + block.second - block.first;
@@ -79,7 +79,7 @@ TEST_F(RegionTest, regionFromIndices) {
     return;
   }
 
-  Region<ind3D> region(indicesIn);
+  Region<Ind3D> region(indicesIn);
 
   auto regionIndices = region.getIndices();
 
@@ -97,12 +97,13 @@ TEST_F(RegionTest, regionFromIndices) {
 
   for (unsigned int i = 0; i < blocksIn.size(); i++) {
     EXPECT_EQ(regionBlocks[i].first.ind, blocksIn[i].first);
-    EXPECT_EQ(regionBlocks[i].second.ind, blocksIn[i].second);
+    // The actual block second is exclusive, blocksIn.second is inclusive
+    EXPECT_EQ(regionBlocks[i].second.ind - 1, blocksIn[i].second);
   }
 }
 
 TEST_F(RegionTest, numberOfBlocks) {
-  Region<ind3D> region(0, mesh->LocalNx - 1, 0, mesh->LocalNy - 1, 0, mesh->LocalNz - 1,
+  Region<Ind3D> region(0, mesh->LocalNx - 1, 0, mesh->LocalNy - 1, 0, mesh->LocalNz - 1,
                        mesh->LocalNy, mesh->LocalNz);
 
   auto blocks = region.getBlocks();
@@ -122,7 +123,7 @@ TEST_F(RegionTest, numberOfBlocks) {
 }
 
 TEST_F(RegionTest, contiguousBlockSize) {
-  Region<ind3D> region(0, mesh->LocalNx - 1, 0, mesh->LocalNy - 1, 0, mesh->LocalNz - 1,
+  Region<Ind3D> region(0, mesh->LocalNx - 1, 0, mesh->LocalNy - 1, 0, mesh->LocalNz - 1,
                        mesh->LocalNy, mesh->LocalNz);
 
   const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
@@ -136,13 +137,13 @@ TEST_F(RegionTest, contiguousBlockSize) {
   // contiguous, as is the case here.
   const int expectedFirstBlockSize =
       nmesh >= MAXREGIONBLOCKSIZE ? MAXREGIONBLOCKSIZE : nmesh;
-  EXPECT_EQ(1 + firstBlock.second.ind - firstBlock.first.ind, expectedFirstBlockSize);
+  EXPECT_EQ(firstBlock.second.ind - firstBlock.first.ind, expectedFirstBlockSize);
   const int expectedLastBlockSize = nmesh % MAXREGIONBLOCKSIZE;
   if (expectedLastBlockSize != 0) {
-    EXPECT_EQ(1 + lastBlock.second.ind - lastBlock.first.ind, expectedLastBlockSize);
+    EXPECT_EQ(lastBlock.second.ind - lastBlock.first.ind, expectedLastBlockSize);
   } else {
     // If no remainder then expect same block size as in first block
-    EXPECT_EQ(1 + lastBlock.second.ind - lastBlock.first.ind, expectedFirstBlockSize);
+    EXPECT_EQ(lastBlock.second.ind - lastBlock.first.ind, expectedFirstBlockSize);
   }
 }
 
