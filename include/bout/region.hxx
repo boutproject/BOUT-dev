@@ -46,7 +46,7 @@
 #endif
 
 // The following loops vectorise well well index is type int, needs testing
-// with current approach where index is ind2D or ind3D
+// with current approach where index is Ind2D or ind3D
 #define BLOCK_REGION_LOOP_SERIAL(region, index, ...)                                     \
   {                                                                                      \
     const auto blocks = region.getBlocks();                                              \
@@ -68,64 +68,64 @@
     }                                                                                    \
   }
 
-class specificInd {
+class SpecificInd {
 public:
   int ind;
-  specificInd() : ind(-1){};
-  specificInd(int i) : ind(i){};
-  specificInd &operator++() {
+  SpecificInd() : ind(-1){};
+  SpecificInd(int i) : ind(i){};
+  SpecificInd &operator++() {
     ++ind;
     return *this;
   }
-  specificInd operator++(int) {
-    specificInd original(*this);
+  SpecificInd operator++(int) {
+    SpecificInd original(*this);
     ++ind;
     return original;
   }
-  bool operator==(const specificInd &x) const { return ind == x.ind; }
-  bool operator!=(const specificInd &x) const { return ind != x.ind; }
-  bool operator>(const specificInd &x) const { return ind > x.ind; }
-  bool operator>=(const specificInd &x) const { return ind >= x.ind; }
-  bool operator<(const specificInd &x) const { return ind < x.ind; }
-  bool operator<=(const specificInd &x) const { return ind <= x.ind; }
+  bool operator==(const SpecificInd &x) const { return ind == x.ind; }
+  bool operator!=(const SpecificInd &x) const { return ind != x.ind; }
+  bool operator>(const SpecificInd &x) const { return ind > x.ind; }
+  bool operator>=(const SpecificInd &x) const { return ind >= x.ind; }
+  bool operator<(const SpecificInd &x) const { return ind < x.ind; }
+  bool operator<=(const SpecificInd &x) const { return ind <= x.ind; }
 };
 // Make identical subclasses with different names
-class ind3D : public specificInd {
+class Ind3D : public SpecificInd {
 public:
-  ind3D() : specificInd(){};
-  ind3D(int i) : specificInd(i){};
+  Ind3D() : SpecificInd(){};
+  Ind3D(int i) : SpecificInd(i){};
   // Note operator= from base class is always hidden
   // by implicit method so have to be explicit
-  ind3D &operator=(int i) {
+  Ind3D &operator=(int i) {
     ind = i;
     return *this;
   }
 };
-class ind2D : public specificInd {
+class Ind2D : public SpecificInd {
 public:
-  ind2D() : specificInd(){};
-  ind2D(int i) : specificInd(i){};
-  ind2D &operator=(int i) {
+  Ind2D() : SpecificInd(){};
+  Ind2D(int i) : SpecificInd(i){};
+  Ind2D &operator=(int i) {
     ind = i;
     return *this;
   }
 };
 
-template <typename T = ind3D> class Region {
+template <typename T = Ind3D> class Region {
   // Following prevents a Region being created with anything other
-  // than ind2D or ind3D as template type
-  static_assert(std::is_base_of<ind2D, T>::value || std::is_base_of<ind3D, T>::value,
-                "Region must be templated with either ind2D or ind3D");
+  // than Ind2D or Ind3D as template type
+  static_assert(std::is_base_of<Ind2D, T>::value || std::is_base_of<Ind3D, T>::value,
+                "Region must be templated with either Ind2D or Ind3D");
 
 public:
   typedef T data_type;
 
   /// Indices to iterate over
-  typedef std::vector<T> regionIndices;
+  typedef std::vector<T> RegionIndices;
   /// Start and end of contiguous region
-  typedef std::pair<T, T> contiguousBlock;
+  typedef std::pair<T, T> ContiguousBlock;
   /// Collection of contiguous regions
-  typedef std::vector<contiguousBlock> contiguousBlocks;
+  typedef std::vector<ContiguousBlock> ContiguousBlocks;
 
   // NOTE::
   // Probably want to require a mesh in constructor, both to know nx/ny/nz o
@@ -147,15 +147,15 @@ public:
     blocks = getContiguousBlocks();
   };
 
-  Region<T>(regionIndices &indices) : indices(indices) {
+  Region<T>(RegionIndices &indices) : indices(indices) {
     blocks = getContiguousBlocks();
   };
 
   /// Destructor
   ~Region(){};
 
-  contiguousBlocks getBlocks() { return blocks; }; // Setter not appropriate
-  regionIndices getIndices() { return indices; };  // Setter could be ok
+  ContiguousBlocks getBlocks() { return blocks; }; // Setter not appropriate
+  RegionIndices getIndices() { return indices; };  // Setter could be ok
 
   // TODO: Should be able to add regions (would just require extending
   // indices and recalculating blocks). This raises question of should
@@ -174,12 +174,12 @@ public:
   // sorted this would prevent this usage.
 
 private:
-  regionIndices indices;   // Flattened indices
-  contiguousBlocks blocks; // Contiguous sections of flattened indices
+  RegionIndices indices;   // Flattened indices
+  ContiguousBlocks blocks; // Contiguous sections of flattened indices
 
-  /// Helper function to create a regionIndices, given the start and end
+  /// Helper function to create a RegionIndices, given the start and end
   /// points in x, y, z, and the total y, z lengths
-  inline regionIndices createRegionIndices(int xstart, int xend, int ystart, int yend,
+  inline RegionIndices createRegionIndices(int xstart, int xend, int ystart, int yend,
                                            int zstart, int zend, int ny, int nz) {
 
     ASSERT1(xend + 1 > xstart);
@@ -189,7 +189,7 @@ private:
     ASSERT1(nz > 0);
 
     int len = (xend - xstart + 1) * (yend - ystart + 1) * (zend - zstart + 1);
-    regionIndices region(len);
+    RegionIndices region(len);
     int x = xstart;
     int y = ystart;
     int z = zstart;
@@ -221,9 +221,9 @@ private:
    * A contiguous block is described by the inclusive start and the exclusive end
    * of the contiguous block.
    */
-  contiguousBlocks getContiguousBlocks() const {
+  ContiguousBlocks getContiguousBlocks() const {
     const int npoints = indices.size();
-    contiguousBlocks result;
+    ContiguousBlocks result;
     int index = 0; // Index within vector of indices
 
     while (index < npoints) {

@@ -332,7 +332,7 @@ Region<> & Mesh::getRegion3D(const std::string &region_name){
    return found->second;
 }
 
-Region<ind2D> & Mesh::getRegion2D(const std::string &region_name){
+Region<Ind2D> & Mesh::getRegion2D(const std::string &region_name){
    auto found = regionMap2D.find(region_name);
    if (found == end(regionMap2D)) {
      throw BoutException("Couldn't find region %s in regionMap2D", region_name.c_str());
@@ -347,7 +347,7 @@ void Mesh::addRegion3D(const std::string &region_name, Region<> region){
    regionMap3D[region_name] = region;
 }
 
-void Mesh::addRegion2D(const std::string &region_name, Region<ind2D> region){
+void Mesh::addRegion2D(const std::string &region_name, Region<Ind2D> region){
   if (regionMap2D.count(region_name)) {
     throw BoutException("Trying to add an already existing region %s to regionMap2D");
   }
@@ -357,22 +357,22 @@ void Mesh::addRegion2D(const std::string &region_name, Region<ind2D> region){
 void Mesh::createDefaultRegions(){
   //3D regions
   addRegion3D("RGN_ALL",
-	      Region<ind3D>(0, LocalNx - 1, 0, LocalNy - 1, 0, LocalNz - 1, LocalNy, LocalNz));
+	      Region<Ind3D>(0, LocalNx - 1, 0, LocalNy - 1, 0, LocalNz - 1, LocalNy, LocalNz));
   addRegion3D("RGN_NOBNDRY",
-	      Region<ind3D>(xstart, xend, ystart, yend, 0, LocalNz - 1, LocalNy, LocalNz));
+	      Region<Ind3D>(xstart, xend, ystart, yend, 0, LocalNz - 1, LocalNy, LocalNz));
   addRegion3D("RGN_NOX",
-	      Region<ind3D>(xstart, xend, 0, LocalNy - 1, 0, LocalNz - 1, LocalNy, LocalNz));
+	      Region<Ind3D>(xstart, xend, 0, LocalNy - 1, 0, LocalNz - 1, LocalNy, LocalNz));
   addRegion3D("RGN_NOY",
-	      Region<ind3D>(0, LocalNx - 1, ystart, yend, 0, LocalNz - 1, LocalNy, LocalNz));
+	      Region<Ind3D>(0, LocalNx - 1, ystart, yend, 0, LocalNz - 1, LocalNy, LocalNz));
 
   //2D regions
   addRegion2D("RGN_ALL",
-	      Region<ind2D>(0, LocalNx - 1, 0, LocalNy - 1, 0, 0, LocalNy, 1));
+	      Region<Ind2D>(0, LocalNx - 1, 0, LocalNy - 1, 0, 0, LocalNy, 1));
   addRegion2D("RGN_NOBNDRY",
-	      Region<ind2D>(xstart, xend, ystart, yend, 0, 0, LocalNy, 1));
+	      Region<Ind2D>(xstart, xend, ystart, yend, 0, 0, LocalNy, 1));
   addRegion2D("RGN_NOX",
-	      Region<ind2D>(xstart, xend, 0, LocalNy - 1, 0, 0, LocalNy, 1));
+	      Region<Ind2D>(xstart, xend, 0, LocalNy - 1, 0, 0, LocalNy, 1));
   addRegion2D("RGN_NOY",
-	      Region<ind2D>(0, LocalNx - 1, ystart, yend, 0, 0, LocalNy, 1));
+	      Region<Ind2D>(0, LocalNx - 1, ystart, yend, 0, 0, LocalNy, 1));
 
 }

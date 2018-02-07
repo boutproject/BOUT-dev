@@ -574,8 +574,8 @@ class Mesh {
   Region<> &getRegion(const std::string &region_name){
     return getRegion3D(region_name);
   }
-  Region<ind3D> &getRegion3D(const std::string &region_name);
-  Region<ind2D> &getRegion2D(const std::string &region_name);
+  Region<Ind3D> &getRegion3D(const std::string &region_name);
+  Region<Ind2D> &getRegion2D(const std::string &region_name);
   
   /// Add a new region to the region_map for the data iterator
   ///
@@ -583,11 +583,11 @@ class Mesh {
   void addRegion(const std::string &region_name, Region<> region){
     return addRegion3D(region_name, region);
   }
-  void addRegion(const std::string &region_name, Region<ind2D> region){
+  void addRegion(const std::string &region_name, Region<Ind2D> region){
     return addRegion2D(region_name, region);
   }
-  void addRegion3D(const std::string &region_name, Region<ind3D> region);
-  void addRegion2D(const std::string &region_name, Region<ind2D> region);
+  void addRegion3D(const std::string &region_name, Region<Ind3D> region);
+  void addRegion2D(const std::string &region_name, Region<Ind2D> region);
  
   /// Create the default regions for the data iterator
   ///
@@ -633,8 +633,8 @@ private:
   Coordinates *createDefaultCoordinates();
 
   //Internal region related information
-  std::map<std::string, Region<ind3D>> regionMap3D;
-  std::map<std::string, Region<ind2D>> regionMap2D;
+  std::map<std::string, Region<Ind3D>> regionMap3D;
+  std::map<std::string, Region<Ind2D>> regionMap2D;
 };
 
 #endif // __MESH_H__
