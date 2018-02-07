@@ -51,7 +51,7 @@
   {                                                                                      \
     const auto blocks = region.getBlocks();                                              \
     for (auto block = blocks.begin(); block < blocks.end(); ++block) {                   \
-      for (auto index = block->first; index <= block->second; ++index) {                 \
+      for (auto index = block->first; index < block->second; ++index) {                 \
         __VA_ARGS__                                                                      \
       }                                                                                  \
     }                                                                                    \
@@ -62,7 +62,7 @@
     const auto blocks = region.getBlocks();                                              \
   BOUT_OMP(parallel for)                                                                 \
     for (auto block = blocks.begin(); block < blocks.end(); ++block) {                   \
-      for (auto index = block->first; index <= block->second; ++index) {                 \
+      for (auto index = block->first; index < block->second; ++index) {                 \
         __VA_ARGS__                                                                      \
       }                                                                                  \
     }                                                                                    \
@@ -122,7 +122,7 @@ public:
 
   /// Indices to iterate over
   typedef std::vector<T> RegionIndices;
-  /// Start and end of contiguous region
+  /// Start and end of contiguous region. This describes a range [block.first,block.second)
   typedef std::pair<T, T> ContiguousBlock;
   /// Collection of contiguous regions
   typedef std::vector<ContiguousBlock> ContiguousBlocks;
@@ -240,8 +240,12 @@ private:
         }
       }
 
+      // This contains the inclusive end currently
+      T lastIndex = indices[index-1];
+      // Increase the index stored by one to get exclusive end
+      lastIndex++;
       // Add pair to output, denotes inclusive start and exclusive end
-      result.push_back({startIndex, indices[index - 1]});
+      result.push_back({startIndex, lastIndex});
     }
 
     return result;
