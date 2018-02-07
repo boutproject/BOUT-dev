@@ -148,7 +148,7 @@ class BoutMesh : public Mesh {
   int getNy() const {return ny;}
 
   BoutReal GlobalX(int jx) const;
-  virtual BoutReal GlobalY(int jy) const;
+  BoutReal GlobalY(int jy) const;
   BoutReal GlobalX(BoutReal jx) const;
   BoutReal GlobalY(BoutReal jy) const;
 

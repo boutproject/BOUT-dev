@@ -89,30 +89,6 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing 
   *this = f; //This line is probably not required as we init data from f.data above.
 }
 
-Field2D::Field2D(Field2D&& f) : Field(f.fieldmesh), // The mesh containing array sizes
-                                     data(f.data), // This handles references to the data array
-                                     deriv(f.deriv) {
-  TRACE("Field2D(Field2D&&)");
-
-#if CHECK > 2
-  checkData(f);
-#endif
-
-  if(fieldmesh) {
-    nx = fieldmesh->LocalNx;
-    ny = fieldmesh->LocalNy;
-  }
-#if CHECK > 0
-  else {
-    nx=-1;
-    ny=-1;
-  }
-#endif
-
-  boundaryIsSet = false;
-  *this = f; //This line is probably not required as we init data from f.data above.
-}
-
 Field2D::Field2D(BoutReal val, Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
   boundaryIsSet = false;
 
@@ -514,7 +490,7 @@ BoutReal min(const Field2D &f, bool allpe, REGION rgn) {
 
   ASSERT2(f.isAllocated());
 
-  BoutReal result = f[f.region(RGN_NOBNDRY).begin()];
+  BoutReal result = f[f.region(rgn).begin()];
 
   for(const auto& i : f.region(rgn))
     if(f[i] < result)
@@ -536,7 +512,7 @@ BoutReal max(const Field2D &f, bool allpe,REGION rgn) {
 
   BoutReal result = f[f.region(rgn).begin()];
 
-  for(const auto& i : f.region(RGN_NOBNDRY))
+  for(const auto& i : f.region(rgn))
     if(f[i] > result)
       result = f[i];
 

@@ -76,7 +76,7 @@ class Field2D : public Field, public FieldData {
   /*!
    * Move constructor
    */
-  Field2D(Field2D&& f);
+  Field2D(Field2D&& f) = default;
 
   /*!
    * Constructor. This creates a Field2D using the global Mesh pointer (mesh)
@@ -122,7 +122,7 @@ class Field2D : public Field, public FieldData {
    * function.
    */
   Field2D & operator=(const Field2D &rhs);
-  //Field2D & operator=(Field2D &&rhs) = delete;
+  Field2D & operator=(Field2D &&rhs) = default;
 
   /*!
    * Allocates data if not already allocated, then

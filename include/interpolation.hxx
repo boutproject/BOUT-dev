@@ -31,11 +31,6 @@
 #include "mask.hxx"
 #include "utils.hxx"
 
-/// Print out the cell location (for debugging)
-void printLocation(const Field3D &var);
-
-const char* strLocation(CELL_LOC loc);
-
 inline const Field3D interp_to(const Field3D &f, CELL_LOC loc){
   return mesh->interp_to(f,loc);
 }
@@ -43,6 +38,11 @@ inline const Field3D interp_to(const Field3D &f, CELL_LOC loc){
 inline const Field2D interp_to(const Field2D &f, CELL_LOC loc){
   return mesh->interp_to(f,loc);
 }
+/// Print out the cell location (for debugging)
+void printLocation(const Field3D &var);
+
+const char* strLocation(CELL_LOC loc);
+
 
 /// Interpolate a field onto a perturbed set of points
 const Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3D &delta_z);

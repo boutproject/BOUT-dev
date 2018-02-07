@@ -33,7 +33,6 @@
 
 #include "bout_types.hxx"
 
-
 /// Defines a set of values in 1D in the neighbourhood of an index
 /// Used for calculating derivatives
 class stencil {
