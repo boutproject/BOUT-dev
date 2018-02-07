@@ -78,7 +78,9 @@ class Ncxx4 : public DataFormat {
   
   // Set the origin for all subsequent calls
   bool setGlobalOrigin(int x = 0, int y = 0, int z = 0) override;
-  bool setLocalOrigin(int x = 0, int y = 0, int z = 0) override { return setGlobalOrigin(x,y,z); }
+  bool setLocalOrigin(int x = 0, int y = 0, int z = 0, int xx=0,int yy=0,int zz=0) override {
+    return setGlobalOrigin(x,y,z);
+  }
   bool setRecord(int t) override; // negative -> latest
   
   // Read / Write simple variables up to 3D
