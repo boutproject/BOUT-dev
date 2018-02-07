@@ -28,22 +28,20 @@ for nproc in [1,2]:#Number of mpi procs
     print("\t{n} processors and {m} threads".format(n=nproc,m=mthread))
 
     for f in flags:
-        #print("\tflags '"+f+"'")
+      # Run the case
+      s, out = launch_safe(cmd+" "+f, runcmd=MPIRUN, nproc=nproc, pipe=pipe)
+      if pipe:
+        f = open("run.log."+str(nproc)+"."+str(mthread), "w")
+        f.write(out)
+        f.close()
 
-        # Run the case
-        s, out = launch_safe(cmd+" "+f, runcmd=MPIRUN, nproc=nproc, pipe=pipe)
-        if pipe:
-          f = open("run.log."+str(nproc)+"."+str(mthread), "w")
-          f.write(out)
-          f.close()
-
-        #If we've got here we know that cmd launched by launch_safe passed
-        #as otherwise it raises.
-        print("Passed")
+      #If we've got here we know that cmd launched by launch_safe passed
+      #as otherwise it raises.
+      print("Passed")
 
 if code == 0:
-    print(" => All range iterator tests passed")
+  print(" => All range iterator tests passed")
 else:
-    print(" => Some failed tests")
+  print(" => Some failed tests")
 
 exit(code)
