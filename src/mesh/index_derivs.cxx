@@ -1362,7 +1362,6 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc,
     int ye = region_index.yend;
     ASSERT2(region_index.zstart == 0);
     int ncz = region_index.zend + 1;
-    int ncz = mesh->LocalNz;
 
     BOUT_OMP(parallel)
     {
