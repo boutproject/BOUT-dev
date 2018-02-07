@@ -346,6 +346,8 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
         xnew.append([])
         try:
             xnew[i].append(x[i])
+            if not (x[i].shape==(Nx[i][0],) or x[i].shape==(Nx[i][0],Ny[i][0]) or x[i].shape==(Nt[i][0],Nx[i][0],Ny[i],[0])):
+                raise ValueError("For variable number "+str(i)+", "+titles[i]+", the shape of x is not compatible with the shape of the variable. Shape of x should be (Nx), (Nx,Ny) or (Nt,Nx,Ny).")
         except: 
             for j in range(0, Nlines[i]):
                 xnew[i].append(linspace(0,Nx[i][j]-1, Nx[i][j]))
@@ -355,6 +357,8 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
         if (Ndims[i][0] == 3):
             try:
                 ynew.append(y[i])
+                if not (y[i].shape==(Ny[i][0],) or y[i].shape==(Nx[i][0],Ny[i][0]) or y[i].shape==(Nt[i][0],Nx[i][0],Ny[i],[0])):
+                    raise ValueError("For variable number "+str(i)+", "+titles[i]+", the shape of y is not compatible with the shape of the variable. Shape of y should be (Ny), (Nx,Ny) or (Nt,Nx,Ny).")
             except:        
                 ynew.append(linspace(0, Ny[i][0]-1, Ny[i][0]))
         else:
@@ -494,7 +498,13 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
             ax[i].set_title(titles[i])
             if hold_aspect:
                 ax[i].set_aspect('equal')
-            plots.append(ax[i].contourf(x[i][0].T,y[i].T,vars[i][0][0,:,:].T, Ncolors, cmap=cmap, lw=0, levels=clevels[i] ))
+            thisx = x[i][0]
+            if len(thisx.shape) == 3:
+                thisx = thisx[0]
+            thisy = y[i]
+            if len(thisy.shape) == 3:
+                thisy = thisy[0]
+            plots.append(ax[i].contourf(thisx.T,thisy.T,vars[i][0][0,:,:].T, Ncolors, cmap=cmap, lw=0, levels=clevels[i] ))
             plt.axes(ax[i])
             cbars.append(fig.colorbar(plots[i], format='%1.1e'))
             # Pad out unused list variables with zeros
@@ -505,7 +515,15 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
             theta.append(0)
 
         elif (surf[i] == 1):
-            x[i][0],y[i] = meshgrid(x[i][0],y[i])
+            if (len(x[i][0].shape)==1 and len(y[i].shape)==1):
+                # plot_wireframe() requires 2d arrays for x and y coordinates
+                x[i][0],y[i] = meshgrid(x[i][0],y[i])
+            thisx = x[i][0]
+            if len(thisx.shape) == 3:
+                thisx = thisx[0]
+            thisy = y[i]
+            if len(thisy.shape) == 3:
+                thisy = thisy[0]
             if (Nx[i][0]<= 20):
                 xstride.append(1)
             else:
@@ -515,7 +533,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
             else:
                 ystride.append(int(floor(Ny[i][0]/20)))
             ax.append(fig.add_subplot(row,col,i+1, projection='3d'))
-            plots.append(ax[i].plot_wireframe(x[i][0], y[i], vars[i][0][0,:,:].T, rstride=ystride[i], cstride=xstride[i]))
+            plots.append(ax[i].plot_wireframe(thisx, thisy, vars[i][0][0,:,:].T, rstride=ystride[i], cstride=xstride[i]))
             title = fig.suptitle(r'', fontsize=14 )
             ax[i].set_xlabel(r'x')
             ax[i].set_ylabel(r'y')
@@ -571,13 +589,25 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
                 for k in range(0,Nlines[j]):
                     lines[j][k].set_data(x[j][k], vars[j][k][index,:])
             elif (contour[j] == 1):
+                thisx = x[j][0]
+                if len(thisx.shape) == 3:
+                    thisx = thisx[index]
+                thisy = y[j]
+                if len(thisy.shape) == 3:
+                    thisy = thisy[index]
                 plots[j] = ax[j].contourf(x[j][0].T,y[j].T,vars[j][0][index,:,:].T, Ncolors, cmap=cmap, lw=0, levels=clevels[j])
                 ax[j].set_xlabel(r'x')
                 ax[j].set_ylabel(r'y')
                 ax[j].set_title(titles[j])
             elif (surf[j] == 1):
+                thisx = x[j][0]
+                if len(thisx.shape) == 3:
+                    thisx = thisx[index]
+                thisy = y[j][0]
+                if len(thisy.shape) == 3:
+                    thisy = thisy[index]
                 ax[j] = fig.add_subplot(row,col,j+1, projection='3d')
-                plots[j] = ax[j].plot_wireframe(x[j][0], y[j], vars[j][0][index,:,:].T, rstride=ystride[j], cstride=xstride[j])
+                plots[j] = ax[j].plot_wireframe(thisx, thisy, vars[j][0][index,:,:].T, rstride=ystride[j], cstride=xstride[j])
                 ax[j].set_zlim(fmin[j],fmax[j])
                 ax[j].set_xlabel(r'x')
                 ax[j].set_ylabel(r'y')
