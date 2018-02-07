@@ -59,32 +59,42 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
     showdata(var, surf = 1)
     showdata(var, polar = 1)
 
-    Can plot different graph types on different axes.  Default graph types will be used depending on the dimensions of the input arrays.  To specify polar/surface plots on different axes:
-    showdata([var1,var2], surf = [1,0], polar = [0,1])
+    Can plot different graph types on different axes.  Default graph types will
+    be used depending on the dimensions of the input arrays.  To specify
+    polar/surface plots on different axes: showdata([var1,var2], surf = [1,0],
+    polar = [0,1])
 
-    Movies require FFmpeg to be installed.
+    Movies require FFmpeg (for .mp4) and/or ImageMagick (for .gif) to be
+    installed.  The 'movie' option can be set to 1 (which will produce an mp4
+    called 'animation.mp4'), to a name with no extension (which will produce an
+    mp4 called '<name>.mp4')
     
     fps sets frames per second in movie, default: 28 fps
 
     dpi sets the resolution of the movie, default: 200 dpi
     
-    The tslice variable is used to control the time value that is printed on each
-    frame of the animation.  If the input data matches the time values found within
-    BOUT++'s dmp data files, then these time values will be used.  Otherwise, an
-    integer counter is used.
+    The tslice variable is used to control the time value that is printed on
+    each frame of the animation.  If the input data matches the time values
+    found within BOUT++'s dmp data files, then these time values will be used.
+    Otherwise, an integer counter is used.
 
     The cmap variable (if specified) will set the colormap used in the plot
-    cmap must be a matplotlib colormap instance, or the name of a registered matplotlib colormap 
+    cmap must be a matplotlib colormap instance, or the name of a registered
+    matplotlib colormap 
 
-    During animation click once to stop in the current frame. Click again to continue.
+    During animation click once to stop in the current frame. Click again to
+    continue.
 
-    global_colors = True: if "vars" is a list the colorlevels are determined from the mximum of the maxima and and the minimum of the  minima in all fields in vars.
+    global_colors = True: if "vars" is a list the colorlevels are determined
+    from the mximum of the maxima and and the minimum of the  minima in all
+    fields in vars.
 
     symmetric_colors = True: colorlevels are symmetric.
 
-    clear_between_frames: None all plots except line plots will clear between frames
-                          True all plots will clear between frames
-                          False no plots will clear between frames
+    clear_between_frames: None  - all plots except line plots will clear between
+                                  frames
+                          True  - all plots will clear between frames
+                          False - no plots will clear between frames
 
     return_animation = True matplotlib animation object will be returned.
     """
@@ -601,19 +611,25 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
 
     #If movie is not passed as a string assign the default filename
     if (movie==1):
-        movie='animation'
+        movie='animation.mp4'
 
     # Save movie with given or default name
     if ((isinstance(movie,str)==1)):
-        try:
-            anim.save(movie+'.mp4',writer = FFwriter, fps=fps, dpi=dpi, extra_args=['-vcodec', 'libx264'])
-        except Exception:
-        #Try specifying writer by string if ffmpeg not found
+        movietype = movie.split('.')[-1]
+        if movietype == 'mp4':
+            try:
+                anim.save(movie,writer = FFwriter, fps=fps, dpi=dpi, extra_args=['-vcodec', 'libx264'])
+            except Exception:
+            #Try specifying writer by string if ffmpeg not found
                 try:
-                    anim.save(movie+'.mp4',writer = 'ffmpeg', fps=fps, dpi=dpi, extra_args=['-vcodec', 'libx264'])
+                    anim.save(movie,writer = 'ffmpeg', fps=fps, dpi=dpi, extra_args=['-vcodec', 'libx264'])
                 except Exception:
                      print('Save failed: Check ffmpeg path')
                      raise
+        elif movietype == 'gif':
+            anim.save(movie+'.gif',writer = 'imagemagick', fps=fps, dpi=dpi, extra_args=['-vcodec', 'libx264'])
+        else:
+            raise ValueError("Unrecognized file type for movie. Supported types are .mp4 and .gif")
 
     # Show animation if not saved or returned, otherwise close the plot
     if (movie==0 and return_animation == 0):
