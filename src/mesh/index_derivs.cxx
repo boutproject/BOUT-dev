@@ -159,6 +159,7 @@ BoutReal VDDX_U2(BoutReal vc, stencil &f) {
 }
 
 /// upwind, 4th order
+BoutReal VDDX_U3(BoutReal vc, stencil &f) {
 BoutReal VDDX_U4(BoutReal vc, stencil &f) {
   return vc >= 0.0 ? vc * (4. * f.p - 12. * f.m + 2. * f.mm + 6. * f.c) / 12.
                    : vc * (-4. * f.m + 12. * f.p - 2. * f.pp - 6. * f.c) / 12.;
@@ -225,7 +226,7 @@ BoutReal FDDX_U1(stencil &v, stencil &f) {
   vs = 0.5 * (v.c + v.p);
   result -= (vs >= 0.0) ? vs * f.c : vs * f.p;
 
-  return result;
+  return - result;
 }
 
 BoutReal FDDX_C2(stencil &v, stencil &f) { return 0.5 * (v.p * f.p - v.m * f.m); }
@@ -237,6 +238,8 @@ BoutReal FDDX_C4(stencil &v, stencil &f) {
 /// Non-oscillatory, containing No free parameters and Dissipative (NND) scheme
 /// http://arxiv.org/abs/1010.4135v1
 BoutReal FDDX_NND(stencil &v, stencil &f) {
+  throw BoutException("This converges only first order.\n"
+                      "It couldn't be verified this code is working as expected - disabled for now");
   // f{+-} i
   BoutReal fp = 0.5 * (v.c + fabs(v.c)) * f.c;
   BoutReal fm = 0.5 * (v.c - fabs(v.c)) * f.c;
@@ -413,19 +416,18 @@ struct DiffNameLookup {
 };
 
 /// Differential function name/code lookup
-static DiffNameLookup DiffNameTable[] = {
-    {DIFF_U1, "U1", "First order upwinding"},
-    {DIFF_U2, "U2", "Second order upwinding"},
-    {DIFF_C2, "C2", "Second order central"},
-    {DIFF_W2, "W2", "Second order WENO"},
-    {DIFF_W3, "W3", "Third order WENO"},
-    {DIFF_C4, "C4", "Fourth order central"},
-    {DIFF_U4, "U4", "Fourth order upwinding"},
-    {DIFF_S2, "S2", "Smoothing 2nd order"},
-    {DIFF_FFT, "FFT", "FFT"},
-    {DIFF_NND, "NND", "NND"},
-    {DIFF_SPLIT, "SPLIT", "Split into upwind and central"},
-    {DIFF_DEFAULT, NULL, NULL}}; // Use to terminate the list
+static DiffNameLookup DiffNameTable[] = { {DIFF_U1, "U1", "First order upwinding"},
+					  {DIFF_U2, "U2", "Second order upwinding"},
+					  {DIFF_C2, "C2", "Second order central"},
+					  {DIFF_W2, "W2", "Second order WENO"},
+					  {DIFF_W3, "W3", "Third order WENO"},
+					  {DIFF_C4, "C4", "Fourth order central"},
+					  {DIFF_U3, "U3", "Third order upwinding"},
+                      {DIFF_S2, "S2", "Smoothing 2nd order"},
+					  {DIFF_FFT, "FFT", "FFT"},
+                      {DIFF_NND, "NND", "NND"},
+                      {DIFF_SPLIT, "SPLIT", "Split into upwind and central"},
+					  {DIFF_DEFAULT, NULL, NULL}}; // Use to terminate the list
 
 /// First derivative lookup table
 static DiffLookup FirstDerivTable[] = {
@@ -441,11 +443,13 @@ static DiffLookup SecondDerivTable[] = {{DIFF_C2, D2DX2_C2, NULL, NULL},
                                         {DIFF_DEFAULT, NULL, NULL, NULL}};
 
 /// Upwinding functions lookup table
-static DiffLookup UpwindTable[] = {
-    {DIFF_U1, NULL, VDDX_U1, NULL},    {DIFF_U2, NULL, VDDX_U2, NULL},
-    {DIFF_C2, NULL, VDDX_C2, NULL},    {DIFF_U4, NULL, VDDX_U4, NULL},
-    {DIFF_W3, NULL, VDDX_WENO3, NULL}, {DIFF_C4, NULL, VDDX_C4, NULL},
-    {DIFF_DEFAULT, NULL, NULL, NULL}};
+static DiffLookup UpwindTable[] = { {DIFF_U1, NULL, VDDX_U1, NULL},
+				    {DIFF_U2, NULL, VDDX_U2, NULL}, 
+				    {DIFF_C2, NULL, VDDX_C2, NULL},
+				    {DIFF_U3, NULL, VDDX_U3, NULL},
+				    {DIFF_W3, NULL, VDDX_WENO3, NULL},
+				    {DIFF_C4, NULL, VDDX_C4, NULL},
+				    {DIFF_DEFAULT, NULL, NULL, NULL}};
 
 /// Flux functions lookup table
 static DiffLookup FluxTable[] = {
