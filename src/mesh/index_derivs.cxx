@@ -233,6 +233,8 @@ BoutReal FDDX_C4(stencil &v, stencil &f) {
 /// Non-oscillatory, containing No free parameters and Dissipative (NND) scheme
 /// http://arxiv.org/abs/1010.4135v1
 BoutReal FDDX_NND(stencil &v, stencil &f) {
+  throw BoutException("This converges only first order.\n"
+                      "It couldn't be verified this code is working as expected - disabled for now");
   // f{+-} i
   BoutReal fp = 0.5*(v.c + fabs(v.c))*f.c;
   BoutReal fm = 0.5*(v.c - fabs(v.c))*f.c;
