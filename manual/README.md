@@ -19,7 +19,7 @@ $ pip install --user recommonmark
 These documents can be built into a PDF using "sphinx-build":
 
 ```bash
-$ make
+$ make old
 ```
 
 To use e.g. "sphinx-build-3" instead of "sphinx-build", run
