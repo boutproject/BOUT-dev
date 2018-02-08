@@ -516,14 +516,17 @@ value of the field in the given direction.
            &+ c_{i+2,j+1} f_{i+2,j+1} + c_{i+2,j+2} f_{i+2,j+2} \\
        =& b_{i,j}
 
-| 
-| To determine the coefficient for each node point, it is convenient to
-  introduce some quantities
 
-  .. math::
+To determine the coefficient for each node point, it is convenient to
+introduce some quantities
 
-         &A_0 = a(x,y_{\text{current}},z)& &A_1 = dg^{xx}&\\ &A_2 = dg^{zz}& &A_3 =
-         2dg^{xz}&
+.. math::
+   :nowrap:
+
+      \begin{align}
+       &A_0 = a(x,y_{\text{current}},z)& &A_1 = dg^{xx}&\\
+       &A_2 = dg^{zz}& &A_3 = 2dg^{xz}&
+      \end{align}
 
 In addition, we have
 
