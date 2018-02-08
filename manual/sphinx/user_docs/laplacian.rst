@@ -58,8 +58,6 @@ The ``Laplacian`` class is defined in ``invert_laplace.hxx`` and solves
 problems formulated like equation (:eq:`full_laplace_inv`) To use
 this class, first create an instance of it:
 
-::
-
     Laplacian *lap = Laplacian::create();
 
 By default, this will use the options in a section called “laplace”, but
