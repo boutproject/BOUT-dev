@@ -163,7 +163,7 @@ BoutReal VDDX_U2(BoutReal vc, stencil &f) {
 }
 
 /// upwind, 4th order
-BoutReal VDDX_U4(BoutReal vc, stencil &f) {
+BoutReal VDDX_U3(BoutReal vc, stencil &f) {
   return vc >= 0.0 ? vc*(4.*f.p - 12.*f.m + 2.*f.mm + 6.*f.c)/12.
     : vc*(-4.*f.m + 12.*f.p - 2.*f.pp - 6.*f.c)/12.;
 }
@@ -419,7 +419,7 @@ static DiffNameLookup DiffNameTable[] = { {DIFF_U1, "U1", "First order upwinding
 					  {DIFF_W2, "W2", "Second order WENO"},
 					  {DIFF_W3, "W3", "Third order WENO"},
 					  {DIFF_C4, "C4", "Fourth order central"},
-					  {DIFF_U4, "U4", "Fourth order upwinding"},
+					  {DIFF_U3, "U3", "Third order upwinding"},
                       {DIFF_S2, "S2", "Smoothing 2nd order"},
 					  {DIFF_FFT, "FFT", "FFT"},
                       {DIFF_NND, "NND", "NND"},
@@ -445,7 +445,7 @@ static DiffLookup SecondDerivTable[] = { {DIFF_C2, D2DX2_C2, NULL, NULL},
 static DiffLookup UpwindTable[] = { {DIFF_U1, NULL, VDDX_U1, NULL},
 				    {DIFF_U2, NULL, VDDX_U2, NULL}, 
 				    {DIFF_C2, NULL, VDDX_C2, NULL},
-				    {DIFF_U4, NULL, VDDX_U4, NULL},
+				    {DIFF_U3, NULL, VDDX_U3, NULL},
 				    {DIFF_W3, NULL, VDDX_WENO3, NULL},
 				    {DIFF_C4, NULL, VDDX_C4, NULL},
 				    {DIFF_DEFAULT, NULL, NULL, NULL}};
