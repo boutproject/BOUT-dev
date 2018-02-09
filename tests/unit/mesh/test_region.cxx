@@ -231,3 +231,38 @@ TEST_F(RegionTest, regionLoopNoBndrySerial) {
   EXPECT_EQ(numNotMatching, numExpectNotMatching);
   EXPECT_EQ(numMatching, ninner);
 }
+
+TEST_F(RegionTest, regionAsSorted) {
+  // Contiguous blocks to insert
+  std::vector<std::pair<int, int>> blocksIn = {
+      {0, 3}, {5, 7}, {9, 10}, {12, 12}, {14, 20}};
+  Region<Ind3D>::RegionIndices indicesIn;
+
+  for (auto &block : blocksIn) {
+    for (int i = block.first; i <= block.second; i++) {
+      indicesIn.push_back(i);
+    }
+  }
+
+  // This is the sorted region and indices
+  Region<Ind3D> regionSortedIn(indicesIn);
+  Region<Ind3D>::RegionIndices regionIndicesSortedIn = regionSortedIn.getIndices();
+
+  // Now shuffle the order and create a new region
+  std::random_shuffle(std::begin(indicesIn), std::end(indicesIn));
+  Region<Ind3D> regionShuffledIn(indicesIn);
+  Region<Ind3D>::RegionIndices regionIndicesShuffledIn = regionShuffledIn.getIndices();
+  // Should we check the shuffle has actually changed the index order?
+  // If it hasn't the test isn't really testing sorted
+
+  // Check index vectors haven't changed length
+  EXPECT_EQ(regionIndicesShuffledIn.size(), regionIndicesSortedIn.size());
+
+  // Now get a sorted verion of the region
+  Region<Ind3D> regionAsSorted = regionShuffledIn.sorted();
+  Region<Ind3D>::RegionIndices regionIndicesAsSorted = regionAsSorted.getIndices();
+
+  for (unsigned int i = 0; i < regionIndicesSortedIn.size(); i++) {
+    EXPECT_EQ(regionIndicesAsSorted[i], regionIndicesSortedIn[i]);
+  }
+}
