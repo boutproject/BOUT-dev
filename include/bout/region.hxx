@@ -318,4 +318,10 @@ Region<T> sort(Region<T> &region) {
   return region.asSorted();
 };
 
+// Return a new region with unique indices
+template<typename T>
+Region<T> unique(Region<T> &region) {
+  return region.asUnique();
+};
+
 #endif /* __REGION_H__ */

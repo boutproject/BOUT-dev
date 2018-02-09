@@ -507,3 +507,32 @@ TEST_F(RegionTest, regionUniqueInPlace) {
     EXPECT_EQ(regionIndices2[i].ind, i);
   }
 }
+
+TEST_F(RegionTest, regionFriendUnique) {
+  // Values to insert
+  std::vector<int> rawIndicesIn1 = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+                                    8, 7, 6, 5, 4, 3, 2, 1, 0};
+
+  Region<Ind3D>::RegionIndices indicesIn1;
+  for (auto i : rawIndicesIn1) {
+    indicesIn1.push_back(i);
+  }
+
+  Region<Ind3D> region(indicesIn1);
+  auto regionIndices = region.getIndices();
+  EXPECT_EQ(regionIndices.size(), 19);
+
+  for (unsigned int i = 0; i < regionIndices.size(); i++) {
+    EXPECT_EQ(regionIndices[i].ind, rawIndicesIn1[i]);
+  }
+
+  // Make unique in place
+  auto region2 = unique(region);
+
+  auto regionIndices2 = region2.getIndices();
+  EXPECT_EQ(regionIndices2.size(), 10);
+
+  for (unsigned int i = 0; i < regionIndices2.size(); i++) {
+    EXPECT_EQ(regionIndices2[i].ind, i);
+  }
+}
