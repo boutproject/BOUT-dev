@@ -151,6 +151,10 @@ public:
     blocks = getContiguousBlocks();
   };
 
+  Region<T>(ContiguousBlocks &blocks) : blocks(blocks) {
+    indices = getRegionIndices();
+  };
+
   /// Destructor
   ~Region(){};
 
@@ -289,6 +293,15 @@ private:
       result.push_back({startIndex, lastIndex});
     }
 
+    return result;
+  }
+
+  /*
+   * Constructs the vector of indices from the stored blocks information
+   */
+  RegionIndices getRegionIndices() {
+    RegionIndices result;
+    BLOCK_REGION_LOOP((*this), curInd, result.push_back(curInd););
     return result;
   }
 };

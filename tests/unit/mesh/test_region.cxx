@@ -102,6 +102,23 @@ TEST_F(RegionTest, regionFromIndices) {
   }
 }
 
+TEST_F(RegionTest, regionFromBlocks) {
+  Region<Ind3D> region(0, mesh->LocalNx - 1, 0, mesh->LocalNy - 1, 0, mesh->LocalNz - 1,
+                       mesh->LocalNy, mesh->LocalNz);
+
+  const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
+
+  auto blocks = region.getBlocks();
+
+  Region<Ind3D> region2(blocks);
+  auto regionIndices = region2.getIndices();
+
+  EXPECT_EQ(regionIndices.size(), nmesh);
+  for (int i = 0; i < nmesh; i++) {
+    EXPECT_EQ(regionIndices[i].ind, i);
+  }
+}
+
 TEST_F(RegionTest, numberOfBlocks) {
   Region<Ind3D> region(0, mesh->LocalNx - 1, 0, mesh->LocalNy - 1, 0, mesh->LocalNz - 1,
                        mesh->LocalNy, mesh->LocalNz);
