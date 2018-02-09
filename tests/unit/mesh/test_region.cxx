@@ -379,6 +379,31 @@ TEST_F(RegionTest, regionSetIndices) {
   }
 }
 
+TEST_F(RegionTest, regionSetBlocks) {
+  const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
+
+  Region<Ind3D> region(0, mesh->LocalNx - 1, 0, mesh->LocalNy - 1, 0, mesh->LocalNz - 1,
+                       mesh->LocalNy, mesh->LocalNz);
+  auto blocks = region.getBlocks();
+  auto indices = region.getIndices();
+
+  EXPECT_EQ(indices.size(), nmesh);
+
+  Region<Ind3D> region2(0, 0, 0, 0, 0, 0, 1, 1);
+  auto blocks2 = region2.getBlocks();
+  auto indices2 = region2.getIndices();
+
+  EXPECT_EQ(indices2.size(), 1);
+
+  region2.setBlocks(blocks);
+  auto indices3 = region2.getIndices();
+
+  EXPECT_EQ(indices3.size(), nmesh);
+  for (int i = 0; i < nmesh; i++) {
+    EXPECT_EQ(indices3[i].ind, i);
+  }
+}
+
 TEST_F(RegionTest, regionSortInPlace) {
   // Values to insert
   std::vector<int> rawIndicesBwd = {9, 8, 7, 6, 5, 4, 3, 2, 1, 0};

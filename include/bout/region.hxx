@@ -158,13 +158,19 @@ public:
   /// Destructor
   ~Region(){};
 
-  ContiguousBlocks getBlocks() { return blocks; }; // Setter not appropriate
-  RegionIndices getIndices() { return indices; };  // Setter could be ok
+  ContiguousBlocks getBlocks() { return blocks; };
+  RegionIndices getIndices() { return indices; };
 
   // Set the indices and ensure blocks updated
   void setIndices (RegionIndices &indicesIn) {
     indices = indicesIn;
     blocks = getContiguousBlocks();
+  };
+
+  // Set the blocks and ensure indices updated
+  void setBlocks (ContiguousBlocks &blocksIn) {
+    blocks = blocksIn;
+    indices = getRegionIndices();
   };
 
   // Return a new Region that has the same indices as this one but
