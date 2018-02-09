@@ -8,8 +8,7 @@
 #include "test_extras.hxx"
 #include "unused.hxx"
 
-#include <cmath>
-#include <set>
+#include <algorithm>
 #include <vector>
 
 /// Global mesh
