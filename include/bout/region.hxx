@@ -241,7 +241,11 @@ private:
     ASSERT1(nz > 0);
 
     int len = (xend - xstart + 1) * (yend - ystart + 1) * (zend - zstart + 1);
-    RegionIndices region(len);
+    ASSERT1(len > 0);
+    RegionIndices region;
+    if (len <= 0 ) return region;
+    region.resize(len);
+    
     int x = xstart;
     int y = ystart;
     int z = zstart;
