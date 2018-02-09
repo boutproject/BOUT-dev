@@ -159,12 +159,12 @@ public:
 
   // Return a new Region that has the same indices as this one but
   // ensures the indices are sorted.
-  Region<T> sorted(){
+  Region<T> asSorted(){
     auto sortedIndices = getIndices();
     std::sort(std::begin(sortedIndices), std::end(sortedIndices));
     return Region<T>(sortedIndices);
   };
-  
+
   // TODO: Should be able to add regions (would just require extending
   // indices and recalculating blocks). This raises question of should
   // we be able to subtract regions, and if so what does that mean.

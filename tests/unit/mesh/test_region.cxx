@@ -259,7 +259,7 @@ TEST_F(RegionTest, regionAsSorted) {
   EXPECT_EQ(regionIndicesShuffledIn.size(), regionIndicesSortedIn.size());
 
   // Now get a sorted verion of the region
-  Region<Ind3D> regionAsSorted = regionShuffledIn.sorted();
+  Region<Ind3D> regionAsSorted = regionShuffledIn.asSorted();
   Region<Ind3D>::RegionIndices regionIndicesAsSorted = regionAsSorted.getIndices();
 
   for (unsigned int i = 0; i < regionIndicesSortedIn.size(); i++) {
