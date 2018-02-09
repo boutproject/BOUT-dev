@@ -13,6 +13,7 @@
 #include <iomanip>
 
 #include "bout/openmpwrap.hxx"
+#include "bout/region.hxx"
 
 typedef std::chrono::time_point<std::chrono::steady_clock> SteadyClock;
 typedef std::chrono::duration<double> Duration;
@@ -118,6 +119,17 @@ int main(int argc, char **argv) {
 		    };
 		    );
 
+  // Region macro
+  ITERATOR_TEST_BLOCK(
+      "Region (serial)",
+      BLOCK_REGION_LOOP_SERIAL(mesh->getRegion("RGN_ALL"), i,
+			       result[i] = a[i] + b[i];);
+		      );
+
+  ITERATOR_TEST_BLOCK("Region (omp)",
+		      BLOCK_REGION_LOOP(mesh->getRegion("RGN_ALL"), i,
+					result[i] = a[i] + b[i];);
+		      );
 
   if(profileMode){
     int nthreads=0;
