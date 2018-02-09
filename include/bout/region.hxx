@@ -165,6 +165,22 @@ public:
     return Region<T>(sortedIndices);
   };
 
+  // Return a new Region that has the same indices as this one but
+  // ensures the indices are sorted and unique (i.e. not duplicate
+  // indices). Note this sorts the input.
+  Region<T> asUnique(){
+    //As we don't really expect a lot of duplicates this approach should be
+    //OK. An alternative is to make a std::set from the indices and then
+    //convert back to a vector, but this is typically more expensive.
+    auto sortedIndices = getIndices();
+    std::sort(std::begin(sortedIndices), std::end(sortedIndices));
+    //Get iterator pointing at the end of the unique points
+    auto newEnd = std::unique(std::begin(sortedIndices), std::end(sortedIndices));
+    //Remove non-unique points from end of vector
+    sortedIndices.erase(newEnd, std::end(sortedIndices));
+    return Region<T>(sortedIndices);
+  }
+  
   // TODO: Should be able to add regions (would just require extending
   // indices and recalculating blocks). This raises question of should
   // we be able to subtract regions, and if so what does that mean.

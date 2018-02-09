@@ -266,3 +266,64 @@ TEST_F(RegionTest, regionAsSorted) {
     EXPECT_EQ(regionIndicesAsSorted[i], regionIndicesSortedIn[i]);
   }
 }
+
+TEST_F(RegionTest, regionAsUnique) {
+  // Values to insert
+  std::vector<int> rawIndicesIn1 = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+                                    8, 7, 6, 5, 4, 3, 2, 1, 0};
+
+  Region<Ind3D>::RegionIndices indicesIn1;
+  for (auto i : rawIndicesIn1) {
+    indicesIn1.push_back(i);
+  }
+
+  // This is the sorted region and indices
+  Region<Ind3D> regionIn1(indicesIn1);
+  Region<Ind3D>::RegionIndices regionIndicesIn1 = regionIn1.getIndices();
+
+  // Now get a unique version of the region
+  Region<Ind3D> regionUnique1 = regionIn1.asUnique();
+  Region<Ind3D>::RegionIndices regionIndicesUnique1 = regionUnique1.getIndices();
+
+  EXPECT_EQ(regionIndicesUnique1.size(), 10);
+  for (unsigned int i = 0; i < regionIndicesUnique1.size(); i++) {
+    EXPECT_EQ(regionIndicesUnique1[i], i);
+  }
+
+  std::vector<int> rawIndicesIn2 = {0, 0, 0, 2, 2, 2, 5, 4, 4, 5, 10, 12, 11, 9};
+
+  Region<Ind3D>::RegionIndices indicesIn2;
+  for (auto i : rawIndicesIn2) {
+    indicesIn2.push_back(i);
+  }
+
+  // This is the sorted region and indices
+  Region<Ind3D> regionIn2(indicesIn2);
+  Region<Ind3D>::RegionIndices regionIndicesIn2 = regionIn2.getIndices();
+
+  // Now get a unique version of the region
+  Region<Ind3D> regionUnique2 = regionIn2.asUnique();
+  Region<Ind3D>::RegionIndices regionIndicesUnique2 = regionUnique2.getIndices();
+
+  EXPECT_EQ(regionIndicesUnique2.size(), 8);
+
+  std::vector<int> rawIndicesIn3 = {9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
+
+  Region<Ind3D>::RegionIndices indicesIn3;
+  for (auto i : rawIndicesIn3) {
+    indicesIn3.push_back(i);
+  }
+
+  // This is the sorted region and indices
+  Region<Ind3D> regionIn3(indicesIn3);
+  Region<Ind3D>::RegionIndices regionIndicesIn3 = regionIn3.getIndices();
+
+  // Now get a unique version of the region
+  Region<Ind3D> regionUnique3 = regionIn3.asUnique();
+  Region<Ind3D>::RegionIndices regionIndicesUnique3 = regionUnique3.getIndices();
+
+  EXPECT_EQ(regionIndicesUnique3.size(), 10);
+  for (unsigned int i = 0; i < regionIndicesUnique3.size(); i++) {
+    EXPECT_EQ(regionIndicesUnique3[i], i);
+  }
+}
