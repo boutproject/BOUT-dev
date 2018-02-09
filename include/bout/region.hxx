@@ -308,7 +308,9 @@ private:
    */
   RegionIndices getRegionIndices() {
     RegionIndices result;
-    BLOCK_REGION_LOOP((*this), curInd, result.push_back(curInd););
+    // This has to be serial unless we can make result large enough in advance
+    // otherwise there will be a race between threads to extend the vector 
+    BLOCK_REGION_LOOP_SERIAL((*this), curInd, result.push_back(curInd););
     return result;
   }
 };
