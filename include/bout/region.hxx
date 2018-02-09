@@ -25,6 +25,7 @@
 #ifndef __REGION_H__
 #define __REGION_H__
 
+#include <algorithm>
 #include <type_traits>
 #include <utility>
 #include <vector>
