@@ -171,6 +171,11 @@ public:
     return Region<T>(sortedIndices);
   };
 
+  // Sort this Region in place
+  void sort(){
+    *this = this->asSorted();
+  }
+  
   // Return a new Region that has the same indices as this one but
   // ensures the indices are sorted and unique (i.e. not duplicate
   // indices). Note this sorts the input.
@@ -187,6 +192,12 @@ public:
     return Region<T>(sortedIndices);
   }
   
+  // Make this Region unique in place
+  void unique(){
+    *this = this->asUnique();
+  }
+  
+
   // TODO: Should be able to add regions (would just require extending
   // indices and recalculating blocks). This raises question of should
   // we be able to subtract regions, and if so what does that mean.
@@ -280,6 +291,12 @@ private:
 
     return result;
   }
+};
+
+// Return a new region with sorted indices
+template<typename T>
+Region<T> sort(Region<T> &region) {
+  return region.asSorted();
 };
 
 #endif /* __REGION_H__ */

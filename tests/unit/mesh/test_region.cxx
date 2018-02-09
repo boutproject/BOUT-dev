@@ -361,3 +361,88 @@ TEST_F(RegionTest, regionSetIndices) {
     EXPECT_EQ(regionIndicesIn2[i], indicesIn2[i]);
   }
 }
+
+TEST_F(RegionTest, regionSortInPlace) {
+  // Values to insert
+  std::vector<int> rawIndicesBwd = {9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
+  std::vector<int> rawIndicesFwd = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+  Region<Ind3D>::RegionIndices indicesIn1;
+  for (auto i : rawIndicesBwd) {
+    indicesIn1.push_back(i);
+  }
+
+  Region<Ind3D> region(indicesIn1);
+
+  // Check initial order
+  auto regionIndices = region.getIndices();
+  for (unsigned int i = 0; i < indicesIn1.size(); i++) {
+    EXPECT_EQ(regionIndices[i].ind, rawIndicesBwd[i]);
+  }
+
+  // Sort in place
+  region.sort();
+
+  // Check new order
+  regionIndices = region.getIndices();
+  for (unsigned int i = 0; i < indicesIn1.size(); i++) {
+    EXPECT_EQ(regionIndices[i].ind, rawIndicesFwd[i]);
+  }
+}
+
+TEST_F(RegionTest, regionFriendSort) {
+  // Values to insert
+  std::vector<int> rawIndicesBwd = {9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
+  std::vector<int> rawIndicesFwd = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+  Region<Ind3D>::RegionIndices indicesIn1;
+  for (auto i : rawIndicesBwd) {
+    indicesIn1.push_back(i);
+  }
+
+  Region<Ind3D> region(indicesIn1);
+
+  // Check initial order
+  auto regionIndices = region.getIndices();
+  for (unsigned int i = 0; i < indicesIn1.size(); i++) {
+    EXPECT_EQ(regionIndices[i].ind, rawIndicesBwd[i]);
+  }
+
+  // Sort with friend
+  auto region2 = sort(region);
+
+  // Check new order
+  regionIndices = region2.getIndices();
+  for (unsigned int i = 0; i < indicesIn1.size(); i++) {
+    EXPECT_EQ(regionIndices[i].ind, rawIndicesFwd[i]);
+  }
+}
+
+TEST_F(RegionTest, regionUniqueInPlace) {
+  // Values to insert
+  std::vector<int> rawIndicesIn1 = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+                                    8, 7, 6, 5, 4, 3, 2, 1, 0};
+
+  Region<Ind3D>::RegionIndices indicesIn1;
+  for (auto i : rawIndicesIn1) {
+    indicesIn1.push_back(i);
+  }
+
+  Region<Ind3D> region(indicesIn1);
+  auto regionIndices = region.getIndices();
+  EXPECT_EQ(regionIndices.size(), 19);
+
+  for (unsigned int i = 0; i < regionIndices.size(); i++) {
+    EXPECT_EQ(regionIndices[i].ind, rawIndicesIn1[i]);
+  }
+
+  // Make unique in place
+  region.unique();
+
+  auto regionIndices2 = region.getIndices();
+  EXPECT_EQ(regionIndices2.size(), 10);
+
+  for (unsigned int i = 0; i < regionIndices2.size(); i++) {
+    EXPECT_EQ(regionIndices2[i].ind, i);
+  }
+}
