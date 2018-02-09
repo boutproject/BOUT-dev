@@ -327,3 +327,37 @@ TEST_F(RegionTest, regionAsUnique) {
     EXPECT_EQ(regionIndicesUnique3[i], i);
   }
 }
+
+TEST_F(RegionTest, regionSetIndices) {
+  // Values to insert
+  std::vector<int> rawIndicesIn1 = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+  std::vector<int> rawIndicesIn2 = {10, 11, 12};
+
+  Region<Ind3D>::RegionIndices indicesIn1;
+  for (auto i : rawIndicesIn1) {
+    indicesIn1.push_back(i);
+  }
+
+  Region<Ind3D>::RegionIndices indicesIn2;
+  for (auto i : rawIndicesIn2) {
+    indicesIn2.push_back(i);
+  }
+
+  // This is the sorted region and indices
+  Region<Ind3D> regionIn1(indicesIn1);
+  Region<Ind3D>::RegionIndices regionIndicesIn1 = regionIn1.getIndices();
+  EXPECT_EQ(regionIndicesIn1.size(), indicesIn1.size());
+
+  for (unsigned int i = 0; i < regionIndicesIn1.size(); i++) {
+    EXPECT_EQ(regionIndicesIn1[i], indicesIn1[i]);
+  }
+
+  regionIn1.setIndices(indicesIn2);
+  Region<Ind3D>::RegionIndices regionIndicesIn2 = regionIn1.getIndices();
+  EXPECT_EQ(regionIndicesIn2.size(), indicesIn2.size());
+
+  for (unsigned int i = 0; i < regionIndicesIn2.size(); i++) {
+    EXPECT_EQ(regionIndicesIn2[i], indicesIn2[i]);
+  }
+}

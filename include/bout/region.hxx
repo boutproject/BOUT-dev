@@ -157,6 +157,12 @@ public:
   ContiguousBlocks getBlocks() { return blocks; }; // Setter not appropriate
   RegionIndices getIndices() { return indices; };  // Setter could be ok
 
+  // Set the indices and ensure blocks updated
+  void setIndices (RegionIndices &indicesIn) {
+    indices = indicesIn;
+    blocks = getContiguousBlocks();
+  };
+
   // Return a new Region that has the same indices as this one but
   // ensures the indices are sorted.
   Region<T> asSorted(){
