@@ -58,6 +58,25 @@ TEST_F(RegionTest, regionFromRange) {
   for (int i = 0; i < nmesh; i++) {
     EXPECT_EQ(regionIndices[i].ind, i);
   }
+
+  // Single point
+  Region<Ind3D> region2(0, 0, 0, 0, 0, 0, 1, 1);
+  EXPECT_EQ(region2.getIndices().size(), 1);
+
+// Invalid range/size
+#if CHECK >= 1
+  EXPECT_THROW(Region<Ind3D> region3(0, -1, 0, 0, 0, 0, 1, 1), BoutException);
+  EXPECT_THROW(Region<Ind3D> region3(0, 0, 1, 0, 0, 0, 1, 1), BoutException);
+  EXPECT_THROW(Region<Ind3D> region3(0, 0, 0, 0, 20, 10, 1, 1), BoutException);
+  EXPECT_THROW(Region<Ind3D> region3(0, 0, 0, 0, 0, 0, 0, 1), BoutException);
+  EXPECT_THROW(Region<Ind3D> region3(0, 0, 0, 0, 0, 0, 1, 0), BoutException);
+#else
+  EXPECT_NO_THROW(Region<Ind3D> region3(0, -1, 0, 0, 0, 0, 1, 1));
+  EXPECT_NO_THROW(Region<Ind3D> region3(0, 0, 1, 0, 0, 0, 1, 1));
+  EXPECT_NO_THROW(Region<Ind3D> region3(0, 0, 0, 0, 20, 10, 1, 1));
+  EXPECT_NO_THROW(Region<Ind3D> region3(0, 0, 0, 0, 0, 0, 0, 1));
+  EXPECT_NO_THROW(Region<Ind3D> region3(0, 0, 0, 0, 0, 0, 1, 0));
+#endif
 }
 
 TEST_F(RegionTest, regionFromIndices) {
