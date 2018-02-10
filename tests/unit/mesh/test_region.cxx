@@ -568,13 +568,23 @@ TEST_F(RegionTest, regionMask) {
   auto masked1Indices = masked1.getIndices();
   EXPECT_EQ(masked1Indices.size(), indicesIn.size() - indicesMask1.size());
 
+  // Check values
+  for (unsigned int i = 0; i < masked1Indices.size(); i++) {
+    EXPECT_EQ(masked1Indices[i].ind % 2, 0);
+  }
+
   // Check size of other regions not changed
   EXPECT_EQ(regionIn.getIndices().size(), indicesIn.size());
   EXPECT_EQ(mask1.getIndices().size(), indicesMask1.size());
 
-  // Check values
-  for (unsigned int i = 0; i < masked1Indices.size(); i++) {
-    EXPECT_EQ(masked1Indices[i].ind % 2, 0);
+  // Check values of mask and region haven't changed
+  auto regionIndices = regionIn.getIndices();
+  for (unsigned int i = 0; i < regionIndices.size(); i++) {
+    EXPECT_EQ(regionIndices[i], indicesIn[i]);
+  }
+  auto mask1Indices = mask1.getIndices();
+  for (unsigned int i = 0; i < mask1Indices.size(); i++) {
+    EXPECT_EQ(mask1Indices[i], indicesMask1[i]);
   }
 
   auto masked2 = regionIn.mask(mask2);
