@@ -360,4 +360,15 @@ Region<T> unique(Region<T> &region) {
   return region.asUnique();
 };
 
+// Return a new region with combined indices from two Regions
+// This doesn't attempt to avoid duplicate elements or enforce
+// any sorting etc. but could be done if desired.
+template<typename T>
+Region<T> operator+(const Region<T> lhs, const Region<T> rhs){
+  auto indices = lhs.getIndices(); // Indices is a copy of the indices
+  auto indicesRhs = rhs.getIndices();
+  indices.insert(std::end(indices), std::begin(indicesRhs), std::end(indicesRhs));
+  return Region<T>(indices);
+}
+
 #endif /* __REGION_H__ */
