@@ -535,3 +535,53 @@ TEST_F(RegionTest, regionFriendUnique) {
     EXPECT_EQ(regionIndices2[i].ind, i);
   }
 }
+
+TEST_F(RegionTest, regionMask) {
+  // Values to insert
+  std::vector<int> rawIndicesIn = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+  Region<Ind3D>::RegionIndices indicesIn;
+  for (auto i : rawIndicesIn) {
+    indicesIn.push_back(i);
+  }
+
+  std::vector<int> rawIndicesMask1 = {1, 3, 5, 7, 9};
+  Region<Ind3D>::RegionIndices indicesMask1;
+  for (auto i : rawIndicesMask1) {
+    indicesMask1.push_back(i);
+  }
+
+  std::vector<int> rawIndicesMask2 = {11, 13, 15, 17, 19};
+  Region<Ind3D>::RegionIndices indicesMask2;
+  for (auto i : rawIndicesMask2) {
+    indicesMask2.push_back(i);
+  }
+
+  // Create base region and two masks
+  Region<Ind3D> regionIn(indicesIn);
+  Region<Ind3D> mask1(indicesMask1);
+  Region<Ind3D> mask2(indicesMask2);
+
+  EXPECT_EQ(regionIn.getIndices().size(), indicesIn.size());
+  EXPECT_EQ(mask1.getIndices().size(), indicesMask1.size());
+
+  auto masked1 = regionIn.mask(mask1);
+  auto masked1Indices = masked1.getIndices();
+  EXPECT_EQ(masked1Indices.size(), indicesIn.size() - indicesMask1.size());
+
+  // Check size of other regions not changed
+  EXPECT_EQ(regionIn.getIndices().size(), indicesIn.size());
+  EXPECT_EQ(mask1.getIndices().size(), indicesMask1.size());
+
+  // Check values
+  for (unsigned int i = 0; i < masked1Indices.size(); i++) {
+    EXPECT_EQ(masked1Indices[i].ind % 2, 0);
+  }
+
+  auto masked2 = regionIn.mask(mask2);
+  auto masked2Indices = masked2.getIndices();
+  EXPECT_EQ(masked2Indices.size(), indicesIn.size());
+
+  // Check size of other regions not changed
+  EXPECT_EQ(regionIn.getIndices().size(), indicesIn.size());
+  EXPECT_EQ(mask2.getIndices().size(), indicesMask2.size());
+}

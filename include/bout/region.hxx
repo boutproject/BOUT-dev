@@ -208,7 +208,35 @@ public:
     *this = this->asUnique();
   }
   
+  // Return a new region equivalent to *this but with indices contained
+  // in mask Region removed
+  Region<T> mask(Region<T> & maskRegion){
+    // Get mask indices and sort as we're going to be searching through
+    // this vector so if it's sorted we can be more efficient 
+    auto maskIndices = maskRegion.getIndices();
+    std::sort(std::begin(maskIndices), std::end(maskIndices));
 
+    // Get the current set of indices that we're going to mask and then
+    // use to create the result region.
+    auto currentIndices = getIndices();
+
+    // Lambda that returns true/false depending if the passed value is in maskIndices
+    // With C++14 T can be auto instead
+    auto isInVector = [&](T val){
+      return std::binary_search(std::begin(maskIndices), std::end(maskIndices), val);
+    };
+    
+    // Erase elements of currentIndices that are in maskIndices
+    currentIndices.erase(
+			 std::remove_if(std::begin(currentIndices), std::end(currentIndices),
+					isInVector),
+			 std::end(currentIndices)
+			 );
+
+    // Create and return new Region based on currentIndices
+    return Region<T>(currentIndices);
+  };
+  
   // TODO: Should be able to add regions (would just require extending
   // indices and recalculating blocks). This raises question of should
   // we be able to subtract regions, and if so what does that mean.
@@ -243,6 +271,7 @@ private:
     int len = (xend - xstart + 1) * (yend - ystart + 1) * (zend - zstart + 1);
     ASSERT1(len > 0);
     RegionIndices region;
+    // Guard against invalid length ranges
     if (len <= 0 ) return region;
     region.resize(len);
     
