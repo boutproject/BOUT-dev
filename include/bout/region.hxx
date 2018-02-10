@@ -159,8 +159,8 @@ public:
   /// Destructor
   ~Region(){};
 
-  ContiguousBlocks getBlocks() { return blocks; };
-  RegionIndices getIndices() { return indices; };
+  ContiguousBlocks getBlocks() const { return blocks; };
+  RegionIndices getIndices() const { return indices; };
 
   // Set the indices and ensure blocks updated
   void setIndices (RegionIndices &indicesIn) {
