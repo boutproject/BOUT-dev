@@ -261,7 +261,7 @@ public:
     }
 
     setIndices(newInd);
-
+    
     return *this;
   }
   
@@ -408,4 +408,11 @@ Region<T> operator+(const Region<T> &lhs, const Region<T> &rhs){
   return Region<T>(indices);
 }
 
+// Returns a new region based on input but with indices offset by
+// a constant
+template<typename T>
+Region<T> offset(const Region<T> &region, const int offsetVal){
+  auto result = region;
+  return result.offset(offsetVal);
+}
 #endif /* __REGION_H__ */
