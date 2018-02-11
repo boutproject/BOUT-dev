@@ -138,8 +138,7 @@ public:
   // * start/stop of each dimension.
 
   // Want to make this private to disable but think it may be needed as we put Regions
-  // into
-  // maps which seems to need to be able to make "empty" objects.
+  // into maps which seems to need to be able to make "empty" objects.
   Region<T>(){};
 
   Region<T>(int xstart, int xend, int ystart, int yend, int zstart, int zend, int ny,
@@ -236,6 +235,11 @@ public:
     // Create and return new Region based on currentIndices
     return Region<T>(currentIndices);
   };
+
+  Region<T> & operator+=(const Region<T> &rhs){
+    (*this) = (*this) + rhs;
+    return *this;
+  }
   
   // TODO: Should be able to add regions (would just require extending
   // indices and recalculating blocks). This raises question of should
