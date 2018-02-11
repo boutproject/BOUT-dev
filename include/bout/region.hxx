@@ -182,8 +182,9 @@ public:
   };
 
   // Sort this Region in place
-  void sort(){
+  Region<T> sort(){
     *this = this->asSorted();
+    return *this;
   }
   
   // Return a new Region that has the same indices as this one but
@@ -203,8 +204,9 @@ public:
   }
   
   // Make this Region unique in place
-  void unique(){
+  Region<T> unique(){
     *this = this->asUnique();
+    return *this;
   }
   
   // Return a new region equivalent to *this but with indices contained
