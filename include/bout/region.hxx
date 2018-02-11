@@ -209,7 +209,7 @@ public:
   
   // Return a new region equivalent to *this but with indices contained
   // in mask Region removed
-  Region<T> mask(Region<T> & maskRegion){
+  Region<T> mask(const Region<T> & maskRegion){
     // Get mask indices and sort as we're going to be searching through
     // this vector so if it's sorted we can be more efficient 
     auto maskIndices = maskRegion.getIndices();
@@ -232,8 +232,10 @@ public:
 			 std::end(currentIndices)
 			 );
 
-    // Create and return new Region based on currentIndices
-    return Region<T>(currentIndices);
+    // Update indices
+    setIndices(currentIndices);
+
+    return *this; // To allow command chaining
   };
 
   Region<T> & operator+=(const Region<T> &rhs){
@@ -362,6 +364,15 @@ Region<T> sort(Region<T> &region) {
 template<typename T>
 Region<T> unique(Region<T> &region) {
   return region.asUnique();
+};
+
+// Return a masked version of a region  
+template<typename T>
+Region<T> mask(const Region<T> &region, const Region<T> &mask) {
+  auto indices = region.getIndices();
+  Region<T> result(indices);
+  result.mask(mask);
+  return result;
 };
 
 // Return a new region with combined indices from two Regions
