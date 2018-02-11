@@ -247,9 +247,9 @@ public:
   }
 
   // Offset all indices by fixed value
-  Region<T> & offset(int offsetVal){
+  Region<T> & offset(int offset){
     // Exit early if possible
-    if ( offsetVal == 0 ){
+    if ( offset == 0 ){
       return *this;
     }
     
@@ -257,7 +257,7 @@ public:
     RegionIndices newInd(oldInd.size());
     
     for (unsigned int i = 0; i < oldInd.size(); i++){
-      newInd[i] = T(oldInd[i].ind + offsetVal);
+      newInd[i] = T(oldInd[i].ind + offset);
     }
 
     setIndices(newInd);
@@ -391,10 +391,8 @@ Region<T> unique(Region<T> &region) {
 // Return a masked version of a region  
 template<typename T>
 Region<T> mask(const Region<T> &region, const Region<T> &mask) {
-  auto indices = region.getIndices();
-  Region<T> result(indices);
-  result.mask(mask);
-  return result;
+  auto result = region;
+  return result.mask(mask);
 };
 
 // Return a new region with combined indices from two Regions
@@ -411,8 +409,8 @@ Region<T> operator+(const Region<T> &lhs, const Region<T> &rhs){
 // Returns a new region based on input but with indices offset by
 // a constant
 template<typename T>
-Region<T> offset(const Region<T> &region, const int offsetVal){
+Region<T> offset(const Region<T> &region, const int offset){
   auto result = region;
-  return result.offset(offsetVal);
+  return result.offset(offset);
 }
 #endif /* __REGION_H__ */
