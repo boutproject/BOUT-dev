@@ -732,3 +732,60 @@ TEST_F(RegionTest, regionOperatorAccumulate) {
   EXPECT_EQ(region1.getIndices().size(), indicesIn1.size());
   EXPECT_EQ(region2.getIndices().size(), indicesIn2.size());
 }
+
+TEST_F(RegionTest, regionOffset) {
+  // Values to insert
+  std::vector<int> rawIndicesIn1 = {0, 1, 2, 3, 4};
+  Region<Ind3D>::RegionIndices indicesIn1;
+  for (auto i : rawIndicesIn1) {
+    indicesIn1.push_back(i);
+  }
+
+  // Create base regions
+  Region<Ind3D> region1(indicesIn1);
+  auto inputInd = region1.getIndices();
+
+  // Check size of region
+  EXPECT_EQ(inputInd.size(), indicesIn1.size());
+
+  // Check values
+  for (unsigned int i = 0; i < inputInd.size(); i++) {
+    EXPECT_EQ(inputInd[i], rawIndicesIn1[i]);
+  }
+
+  // Now offset
+  region1.offset(2);
+  inputInd = region1.getIndices();
+
+  // Check size of region
+  EXPECT_EQ(inputInd.size(), indicesIn1.size());
+
+  // Check values
+  for (unsigned int i = 0; i < inputInd.size(); i++) {
+    EXPECT_EQ(inputInd[i], rawIndicesIn1[i] + 2);
+  }
+
+  region1.offset(-5);
+  inputInd = region1.getIndices();
+
+  // Check size of region
+  EXPECT_EQ(inputInd.size(), indicesIn1.size());
+
+  // Check values
+  for (unsigned int i = 0; i < inputInd.size(); i++) {
+    EXPECT_EQ(inputInd[i], rawIndicesIn1[i] - 3);
+  }
+
+  // Reset
+  region1.setIndices(indicesIn1);
+  region1.offset(0);
+  inputInd = region1.getIndices();
+
+  // Check size of region
+  EXPECT_EQ(inputInd.size(), indicesIn1.size());
+
+  // Check values
+  for (unsigned int i = 0; i < inputInd.size(); i++) {
+    EXPECT_EQ(inputInd[i], rawIndicesIn1[i]);
+  }
+}

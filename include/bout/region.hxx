@@ -240,8 +240,28 @@ public:
     return *this; // To allow command chaining
   };
 
+  // Accumulate operator
   Region<T> & operator+=(const Region<T> &rhs){
     (*this) = (*this) + rhs;
+    return *this;
+  }
+
+  // Offset all indices by fixed value
+  Region<T> & offset(int offsetVal){
+    // Exit early if possible
+    if ( offsetVal == 0 ){
+      return *this;
+    }
+    
+    auto oldInd = getIndices();
+    RegionIndices newInd(oldInd.size());
+    
+    for (unsigned int i = 0; i < oldInd.size(); i++){
+      newInd[i] = T(oldInd[i].ind + offsetVal);
+    }
+
+    setIndices(newInd);
+
     return *this;
   }
   
