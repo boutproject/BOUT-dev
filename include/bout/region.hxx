@@ -75,7 +75,8 @@
     const auto blocks = region.getBlocks();                                              \
   BOUT_OMP(parallel for)                                                                 \
     for (auto block = blocks.begin(); block < blocks.end(); ++block) {                   \
-      for (auto index = block->first.first, auto counter = block->second; \
+      auto counter = block->second;					\
+      for (auto index = block->first.first;	\
 	   index < block->first.second; ++index, ++counter) {			\
         __VA_ARGS__                                                                      \
       }                                                                                  \
