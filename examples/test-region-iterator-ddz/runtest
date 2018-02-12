@@ -1,0 +1,75 @@
+#!/usr/bin/env python3
+
+#
+# Run the test, check it completed successfully
+#
+
+from __future__ import print_function
+try:
+  from builtins import str
+except:
+  pass
+from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
+from boutdata.collect import collect
+import matplotlib.pyplot as plt
+from numpy import polyfit, log, array, exp
+from sys import exit
+
+MPIRUN=getmpirun()
+
+print("Making Region Iterator test")
+s, out = shell_safe("make > make.log",pipe=True)
+
+cmd = "./test_region_iterator -q -q -q -q"
+code = 0 # Return code
+pipe=True
+nproc=1
+mz=[4,8,16,32,64,128,256,512,1024,2048,4096,8192]
+#Uncomment following to see when errors start to rise
+#mz.extend([16384,32768,65536,131072,262144,524288,1048576,2097152])
+errsDDZ=[]
+errsD2DZ2=[]
+print("Running")
+for nz in mz:
+  print("\tnz : {nz}".format(nz=nz))
+  # Run the case
+  s, out = launch_safe(cmd+" MZ={nz}".format(nz=nz), runcmd=MPIRUN, nproc=nproc, pipe=pipe)
+  if pipe:
+    f = open("run.log."+str(nz), "w")
+    f.write(out)
+    f.close()
+
+  # Get the result
+  err = collect("errorDdz", path="data")
+  errsDDZ.append(err[0])
+  err = collect("errorD2dz2", path="data")
+  errsD2DZ2.append(err[0])
+
+npoints=4
+fitvalsDDZ = polyfit(log(mz[-npoints:]),log(errsDDZ[-npoints:]),1)
+if abs(2+fitvalsDDZ[0]) < 1.0e-2:
+  print("DDZ error trend as expected.")
+else:
+  print("DDZ error trend NOT as expected ({val}).".format(val=fitvalsDDZ[0]))
+
+fitvalsD2DZ2 = polyfit(log(mz[-npoints:]),log(errsD2DZ2[-npoints:]),1)
+if abs(2+fitvalsD2DZ2[0]) < 1.0e-2:
+  print("D2DZ2 error trend as expected.")
+else:
+  print("D2DZ2 error trend NOT as expected ({val}).".format(val=fitvalsD2DZ2[0]))
+
+ 
+plt.plot(mz,errsDDZ,'-o',label="Measured error DDZ")
+plt.plot(mz,errsD2DZ2,'-*',label="Measured error D2DZ2")
+plt.plot(mz,exp(fitvalsDDZ[1])*array(mz)**fitvalsDDZ[0],'--',label="Fit DDZ")
+plt.plot(mz,exp(fitvalsD2DZ2[1])*array(mz)**fitvalsD2DZ2[0],'--',label="Fit D2DZ2")
+
+plt.xscale('log')
+plt.yscale('log')
+plt.xlabel("nz")
+plt.ylabel("Max error")
+plt.legend(loc='best')
+plt.savefig("errs.png")
+
+
+exit(code)

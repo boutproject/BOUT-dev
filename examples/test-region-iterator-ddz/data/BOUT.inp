@@ -1,0 +1,28 @@
+# Test of the FieldFactory class 
+#
+# Generates a set of fields and writes them to output file
+#
+
+NOUT = 0  # No timesteps
+
+MZ = 16    # Z size
+
+dump_format = "nc"  # NetCDF format. Alternative is "pdb"
+MXG=0
+MYG=0
+zperiod=1
+zmin=0
+zmax=1
+[mesh]
+nx=1
+ny=1
+
+[input]
+function = cos(z)
+
+[expectedDdz]
+function = -sin(z)
+
+[expectedD2dz2]
+function = -cos(z)
+
