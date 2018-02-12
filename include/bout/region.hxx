@@ -276,7 +276,10 @@ public:
     if ( shift == 0 || period == 1 ){
       return *this;
     }
-    
+    // Handle -ve shifts as a +ve shift
+    if ( shift < 0 ){
+      return periodicShift(period+shift, period);
+    }
     auto newInd = getIndices();
 
     // The calculation of the periodic shifted index is as follows
