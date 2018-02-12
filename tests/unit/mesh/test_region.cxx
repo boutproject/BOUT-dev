@@ -861,27 +861,32 @@ TEST_F(RegionTest, regionPeriodicShift) {
   auto regionReference = mesh->getRegion("RGN_ALL");
 
   auto regionShiftInZ = mesh->getRegion("RGN_ALL");
+  auto regionShiftInZNeg = mesh->getRegion("RGN_ALL");
   auto regionShiftInY = mesh->getRegion("RGN_ALL");
   auto regionShiftInX = mesh->getRegion("RGN_ALL");
 
   regionShiftInZ.periodicShift(1, RegionTest::nz);
+  regionShiftInZNeg.periodicShift(-1, RegionTest::nz);
   regionShiftInY.periodicShift(RegionTest::nz, RegionTest::nz * RegionTest::ny);
   regionShiftInX.periodicShift(RegionTest::nz * RegionTest::ny, nmesh);
 
   auto indicesReg = regionReference.getIndices();
   auto shiftZReg = regionShiftInZ.getIndices();
+  auto shiftZRegNeg = regionShiftInZNeg.getIndices();
   auto shiftYReg = regionShiftInY.getIndices();
   auto shiftXReg = regionShiftInX.getIndices();
 
   // Check size
   EXPECT_EQ(indicesReg.size(), nmesh);
   EXPECT_EQ(shiftZReg.size(), nmesh);
+  EXPECT_EQ(shiftZRegNeg.size(), nmesh);
   EXPECT_EQ(shiftYReg.size(), nmesh);
   EXPECT_EQ(shiftXReg.size(), nmesh);
 
   // Specific values -- first point
   EXPECT_EQ(indicesReg[0].ind, 0);
   EXPECT_EQ(shiftZReg[0].ind, 1);
+  EXPECT_EQ(shiftZRegNeg[0].ind, RegionTest::nz - 1);
   EXPECT_EQ(shiftYReg[0].ind, RegionTest::nz);
   EXPECT_EQ(shiftXReg[0].ind, RegionTest::nz * RegionTest::ny);
 
@@ -889,6 +894,7 @@ TEST_F(RegionTest, regionPeriodicShift) {
   // Note this test could probably be made more robust
   EXPECT_EQ(indicesReg[nmesh - 1].ind, nmesh - 1);
   EXPECT_EQ(shiftZReg[nmesh - 1].ind, (nmesh - RegionTest::nz));
+  EXPECT_EQ(shiftZRegNeg[nmesh - 1].ind, (nmesh - 1 - 1));
   EXPECT_EQ(shiftYReg[nmesh - 1].ind,
             (nmesh - RegionTest::nz * RegionTest::ny) + RegionTest::nz - 1);
   EXPECT_EQ(shiftXReg[nmesh - 1].ind, RegionTest::nz * RegionTest::ny - 1);
@@ -899,6 +905,8 @@ TEST_F(RegionTest, regionPeriodicShift) {
     EXPECT_TRUE(indicesReg[i] >= 0);
     EXPECT_TRUE(shiftZReg[i] < nmesh);
     EXPECT_TRUE(shiftZReg[i] >= 0);
+    EXPECT_TRUE(shiftZRegNeg[i] < nmesh);
+    EXPECT_TRUE(shiftZRegNeg[i] >= 0);
     EXPECT_TRUE(shiftYReg[i] < nmesh);
     EXPECT_TRUE(shiftYReg[i] >= 0);
     EXPECT_TRUE(shiftXReg[i] < nmesh);
