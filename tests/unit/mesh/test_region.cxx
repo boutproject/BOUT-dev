@@ -114,9 +114,9 @@ TEST_F(RegionTest, regionFromIndices) {
   EXPECT_EQ(regionBlocks.size(), blocksIn.size());
 
   for (unsigned int i = 0; i < blocksIn.size(); i++) {
-    EXPECT_EQ(regionBlocks[i].first.ind, blocksIn[i].first);
+    EXPECT_EQ(regionBlocks[i].first.first.ind, blocksIn[i].first);
     // The actual block second is exclusive, blocksIn.second is inclusive
-    EXPECT_EQ(regionBlocks[i].second.ind - 1, blocksIn[i].second);
+    EXPECT_EQ(regionBlocks[i].first.second.ind - 1, blocksIn[i].second);
   }
 }
 
@@ -172,13 +172,13 @@ TEST_F(RegionTest, contiguousBlockSize) {
   // contiguous, as is the case here.
   const int expectedFirstBlockSize =
       nmesh >= MAXREGIONBLOCKSIZE ? MAXREGIONBLOCKSIZE : nmesh;
-  EXPECT_EQ(firstBlock.second.ind - firstBlock.first.ind, expectedFirstBlockSize);
+  EXPECT_EQ(firstBlock.first.second.ind - firstBlock.first.first.ind, expectedFirstBlockSize);
   const int expectedLastBlockSize = nmesh % MAXREGIONBLOCKSIZE;
   if (expectedLastBlockSize != 0) {
-    EXPECT_EQ(lastBlock.second.ind - lastBlock.first.ind, expectedLastBlockSize);
+    EXPECT_EQ(lastBlock.first.second.ind - lastBlock.first.first.ind, expectedLastBlockSize);
   } else {
     // If no remainder then expect same block size as in first block
-    EXPECT_EQ(lastBlock.second.ind - lastBlock.first.ind, expectedFirstBlockSize);
+    EXPECT_EQ(lastBlock.first.second.ind - lastBlock.first.first.ind, expectedFirstBlockSize);
   }
 }
 

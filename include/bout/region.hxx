@@ -52,7 +52,7 @@
   {                                                                                      \
     const auto blocks = region.getBlocks();                                              \
     for (auto block = blocks.begin(); block < blocks.end(); ++block) {                   \
-      for (auto index = block->first; index < block->second; ++index) {                 \
+      for (auto index = block->first.first; index < block->first.second; ++index) {                 \
         __VA_ARGS__                                                                      \
       }                                                                                  \
     }                                                                                    \
@@ -63,7 +63,20 @@
     const auto blocks = region.getBlocks();                                              \
   BOUT_OMP(parallel for)                                                                 \
     for (auto block = blocks.begin(); block < blocks.end(); ++block) {                   \
-      for (auto index = block->first; index < block->second; ++index) {                 \
+      for (auto index = block->first.first; index < block->first.second; ++index) {                 \
+        __VA_ARGS__                                                                      \
+      }                                                                                  \
+    }                                                                                    \
+  }
+
+
+#define BLOCK_REGION_LOOP_COUNTER(region, index, counter, ...)		\
+  {                                                                                      \
+    const auto blocks = region.getBlocks();                                              \
+  BOUT_OMP(parallel for)                                                                 \
+    for (auto block = blocks.begin(); block < blocks.end(); ++block) {                   \
+      for (auto index = block->first.first, auto counter = block->second; \
+	   index < block->first.second; ++index, ++counter) {			\
         __VA_ARGS__                                                                      \
       }                                                                                  \
     }                                                                                    \
@@ -124,7 +137,7 @@ public:
   /// Indices to iterate over
   typedef std::vector<T> RegionIndices;
   /// Start and end of contiguous region. This describes a range [block.first,block.second)
-  typedef std::pair<T, T> ContiguousBlock;
+  typedef std::pair<std::pair<T, T>, int> ContiguousBlock;
   /// Collection of contiguous regions
   typedef std::vector<ContiguousBlock> ContiguousBlocks;
 
@@ -367,7 +380,7 @@ private:
     const int npoints = indices.size();
     ContiguousBlocks result;
     int index = 0; // Index within vector of indices
-
+    int startPos = 0;
     while (index < npoints) {
       const T startIndex = indices[index];
       int count =
@@ -387,7 +400,9 @@ private:
       // Increase the index stored by one to get exclusive end
       lastIndex++;
       // Add pair to output, denotes inclusive start and exclusive end
-      result.push_back({startIndex, lastIndex});
+      std::pair<T, T> tmp = {startIndex, lastIndex};
+      result.push_back({tmp, startPos});
+      startPos += count;
     }
 
     return result;
