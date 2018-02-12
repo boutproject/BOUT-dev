@@ -264,7 +264,36 @@ public:
     
     return *this;
   }
-  
+
+  // Shift all indices by fixed value but wrap around on a given
+  // period. This is intended to act in a similar way as numpy's roll.
+  // It should be helpful to calculate offset arrays for periodic
+  // directions (e.g. z). For example for shift = 1, period = mesh->LocalNz
+  // we would find the zplus indices. For shift = mesh->LocalNy*mesh->LocalNz,
+  // period = mesh->LocalNx*mesh->LocalNy*mesh->LocalNz we find xplus indices.
+  Region<T> & periodicShift(int shift, int period){
+    // Exit early if possible
+    if ( shift == 0 || period == 1 ){
+      return *this;
+    }
+    
+    auto newInd = getIndices();
+
+    // The calculation of the periodic shifted index is as follows
+    //   localPos = index + shift % period;  // Find the shifted position within the period
+    //   globalPos = (index/period) * period; // Find which period block we're in
+    //   newIndex = globalPos + localPos;
+    for (unsigned int i = 0; i < newInd.size(); i++){
+      int index = newInd[i].ind;
+      int whichBlock = index / period;
+      newInd[i] = ((index + shift) % period) + period * whichBlock;
+    };
+    
+    setIndices(newInd);
+    
+    return *this;
+  }
+
   // TODO: Should be able to add regions (would just require extending
   // indices and recalculating blocks). This raises question of should
   // we be able to subtract regions, and if so what does that mean.

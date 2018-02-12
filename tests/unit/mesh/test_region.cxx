@@ -855,3 +855,53 @@ TEST_F(RegionTest, regionFriendOffset) {
     EXPECT_EQ(inputInd[i], rawIndicesIn1[i]);
   }
 }
+
+TEST_F(RegionTest, regionPeriodicShift) {
+  const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
+  auto regionReference = mesh->getRegion("RGN_ALL");
+
+  auto regionShiftInZ = mesh->getRegion("RGN_ALL");
+  auto regionShiftInY = mesh->getRegion("RGN_ALL");
+  auto regionShiftInX = mesh->getRegion("RGN_ALL");
+
+  regionShiftInZ.periodicShift(1, RegionTest::nz);
+  regionShiftInY.periodicShift(RegionTest::nz, RegionTest::nz * RegionTest::ny);
+  regionShiftInX.periodicShift(RegionTest::nz * RegionTest::ny, nmesh);
+
+  auto indicesReg = regionReference.getIndices();
+  auto shiftZReg = regionShiftInZ.getIndices();
+  auto shiftYReg = regionShiftInY.getIndices();
+  auto shiftXReg = regionShiftInX.getIndices();
+
+  // Check size
+  EXPECT_EQ(indicesReg.size(), nmesh);
+  EXPECT_EQ(shiftZReg.size(), nmesh);
+  EXPECT_EQ(shiftYReg.size(), nmesh);
+  EXPECT_EQ(shiftXReg.size(), nmesh);
+
+  // Specific values -- first point
+  EXPECT_EQ(indicesReg[0].ind, 0);
+  EXPECT_EQ(shiftZReg[0].ind, 1);
+  EXPECT_EQ(shiftYReg[0].ind, RegionTest::nz);
+  EXPECT_EQ(shiftXReg[0].ind, RegionTest::nz * RegionTest::ny);
+
+  // Specific values -- last point (nmesh -1 - period) + shift
+  // Note this test could probably be made more robust
+  EXPECT_EQ(indicesReg[nmesh - 1].ind, nmesh - 1);
+  EXPECT_EQ(shiftZReg[nmesh - 1].ind, (nmesh - RegionTest::nz));
+  EXPECT_EQ(shiftYReg[nmesh - 1].ind,
+            (nmesh - RegionTest::nz * RegionTest::ny) + RegionTest::nz - 1);
+  EXPECT_EQ(shiftXReg[nmesh - 1].ind, RegionTest::nz * RegionTest::ny - 1);
+
+  // Value range
+  for (unsigned int i = 0; i < nmesh; i++) {
+    EXPECT_TRUE(indicesReg[i] < nmesh);
+    EXPECT_TRUE(indicesReg[i] >= 0);
+    EXPECT_TRUE(shiftZReg[i] < nmesh);
+    EXPECT_TRUE(shiftZReg[i] >= 0);
+    EXPECT_TRUE(shiftYReg[i] < nmesh);
+    EXPECT_TRUE(shiftYReg[i] >= 0);
+    EXPECT_TRUE(shiftXReg[i] < nmesh);
+    EXPECT_TRUE(shiftXReg[i] >= 0);
+  }
+}
