@@ -664,4 +664,4 @@ EOF
 
 cat helper.py
 
-sh resolve_enum_inv.pyx.in
+bash resolve_enum_inv.pyx.in
