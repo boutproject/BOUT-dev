@@ -35,14 +35,6 @@ with open("stencils_cleaned.cxx","r") as f:
             if line.count("}")>1:
                 raise RuntimeError("More than one } in \"%s\"!"%line)
 
-sten_db=dict()
-
-dir=['x', 'y', 'z']
-
-for d in dir:
-    sten_db[d]=[]
-
-
 class Stencil:
     name=""
     body=[]
@@ -116,22 +108,6 @@ for sten in stencils:
 
 for f in stencils:
     f.setGuards()
-        
-for f in stencils:
-    if not f.flux:
-        if f.stag:
-            for d in dir:
-                tmp="cart_diff_%s_%s_%%s"%(d,f.name)
-                sten_db[d].append([f.name,"NULL",tmp%"off",tmp%"on"])
-        else:
-            #not staggerd
-            for d in dir:
-                tmp="cart_diff_%s_%s_%%s"%(d,f.name)
-                sten_db[d].append([f.name,"cart_diff_%s_%s_norm"%(d,f.name),"NULL","NULL"])
-
-for db in sten_db:
-    sten_db[db].append(["NULL","NULL","NULL","NULL"])
-
 
 def replace_stencil(line,sten,fname,field,mode,sten_mbf,d,update=None,z0=None):
     if update is None:
