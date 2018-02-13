@@ -23,12 +23,29 @@ do
         #echo $enums
     done
     echo
+    same=1
+    continue=yes
+    while test $continue
+    do
+        same=$((same + 1))
+        same_=${shrt::$same}
+        for shrt in $shrts:
+        do
+            if test ${shrt::$same} != $same_
+            then
+                same=$((same - 1))
+                continue=
+                break;
+            fi
+        done
+    done
     lower=$(echo ${name}|tr [:upper:] [:lower:])
     echo "cdef inline $name resolve_${lower}(str):"
     echo "    opts={"
     for shrt in $shrts
     do
         echo "        \"$shrt\":$shrt,"
+        echo "        \"${shrt:$same}\":$shrt,"
     done
     echo "          }"
     echo "    return opts[str]"
