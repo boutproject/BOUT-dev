@@ -16,7 +16,7 @@ tables_cleaned.cxx:../../index_derivs.cxx
 	@grep ' * Lookup tables of functions. Map between names, codes and functions' -B 1 -A 10000 $< |\
 	grep ' * Routines to use the above tables to map between function codes, names' -A 2 -B 10000 |\
 	gcc -E - > $@
-	@echo "create $@"
+	@echo "  Creating $@"
 
 
 stencils_cleaned.cxx:../../index_derivs.cxx
@@ -24,12 +24,13 @@ stencils_cleaned.cxx:../../index_derivs.cxx
 	grep ' * Lookup tables of functions. Map between names, codes and functions' -A 1 -B 10000 |\
 	cat  |\
 	gcc -E - > $@
-	@echo "create $@"
+	@echo "  Creating $@"
 
 .generated.stamp:gen_derivs.py \
 		tables_cleaned.cxx gen_stencils.py stencils_cleaned.cxx \
 		common.py
-	python3 $< > generated_derivs.cxx || ( rm -f $@ ; exit 1)
+	@echo "  Generating code for aiolos mesh"
+	@python3 $< > generated_derivs.cxx || ( rm -f $@ ; exit 1)
 	@(clang-format -i $(generated) || astyle -n $(generated) ) || exit 0 # ignore failure
 	@touch .generated.stamp
 
@@ -52,5 +53,5 @@ $(generated): .generated.stamp
 clean:: clean-generated
 
 clean-generated:
-	rm -f $(generated) generated.stamp stencils_cleaned.cxx tables_cleaned.cxx *.pyc
-	rm -rf __pycache__ generated.lock
+	@rm -f $(generated) generated.stamp stencils_cleaned.cxx tables_cleaned.cxx *.pyc
+	@rm -rf __pycache__ generated.lock
