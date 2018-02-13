@@ -84,12 +84,12 @@ do
     for f in DDd D2Dd2 #VDDd FDDd
     do
         DD=${f/d/$d}
-        echo "    Field3D $DD(Field3D, benum.CELL_LOC, benum.DIFF_METHOD, benum.REGION)"
+        echo "    Field3D $DD(Field3D, benum.CELL_LOC, benum.DIFF_METHOD, benum.REGION) except +"
     done
     for f in VDDd FDDd
     do
         DD=${f/d/$d}
-        echo "    Field3D $DD(Field3D, Field3D, benum.CELL_LOC, benum.DIFF_METHOD, benum.REGION)"
+        echo "    Field3D $DD(Field3D, Field3D, benum.CELL_LOC, benum.DIFF_METHOD, benum.REGION) except +"
     done
 done
 cat <<EOF
