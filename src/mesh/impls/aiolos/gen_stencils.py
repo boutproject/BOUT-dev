@@ -537,9 +537,7 @@ def get_interp_sten(order,pos):
     #debug(ret)
     return ret+" ;"
 
-            
-def debug(txt):
-    print(txt, file=sys.stderr)
+
 interp=['',"return "+get_interp_sten(4,0),'']
 #["return ( 9.*(s.m + s.p) - s.mm - s.pp ) / 16.;"]
 for mode in ['on','off']:

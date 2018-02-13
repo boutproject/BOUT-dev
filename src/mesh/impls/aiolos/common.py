@@ -4,10 +4,14 @@ def warn():
     print("\n// This file is auto-generated - do not edit!")
 
 # simple debug logger - easy to disable in a single point
-def debug(*args,**kwargs):
-    #import sys
-    #print(*args,**kwargs,file=sys.stderr)
-    pass
+debug_enabled = False#True
+def debug(*args,enable=None,**kwargs):
+    global debug_enabled
+    if enable is not None:
+        debug_enabled = enable
+    if debug_enabled:
+        import sys
+        print(*args,**kwargs,file=sys.stderr)
 
 fields=['Field3D','Field2D']
 dirs=dict()
