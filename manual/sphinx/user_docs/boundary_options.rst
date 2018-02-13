@@ -58,8 +58,8 @@ The zero- or constant-Laplacian boundary conditions works as follows:
 
 .. math::
 
-   \nabla_\perp^2 f =& 0 \\ &\simeq& g^{xx}\frac{\partial^2 f}{\partial x^2} +
-       g^{zz}\frac{\partial^2 f}{\partial z^2}
+   \nabla_\perp^2 f &= 0 \\
+   &\simeq g^{xx}\frac{\partial^2 f}{\partial x^2} + g^{zz}\frac{\partial^2 f}{\partial z^2}
 
 which when Fourier transformed in :math:`z` becomes:
 
