@@ -6,7 +6,7 @@ from common import *
 import sys
 
 # Read the stencils
-functions=[]
+stencils_raw=[]
 inFunc=0
 with open("stencils_cleaned.cxx","r") as f:
     fi=-1
@@ -21,34 +21,45 @@ with open("stencils_cleaned.cxx","r") as f:
         # start of function
         if line.find("{") > -1:
             if inFunc==0:
-                functions.append([])
+                stencils_raw.append([])
                 fi+=1
+            else:
+                debug("No func:",line)
             inFunc+=1
+            if line.count("{")>1:
+                raise RuntimeError("More than one { in \"%s\"!"%line)
         if inFunc:
-            functions[fi].append(line);
+            stencils_raw[fi].append(line);
         if line.find("}") > -1:
             inFunc-=1
+            if line.count("}")>1:
+                raise RuntimeError("More than one } in \"%s\"!"%line)
 
-func_db=dict()
+sten_db=dict()
 
 dir=['x', 'y', 'z']
 
 for d in dir:
-    func_db[d]=[]
+    sten_db[d]=[]
 
 
-class function:
+class Stencil:
     name=""
     body=[]
     stag=False
     flux=False
     guards=3
     mbf="main"
+    def setGuards(self):
+        self.guards=1
+        for l in self.body:
+            for off in ['pp','mm','p2','m2']:
+                if l.find(off)>-1:
+                    self.guards=2
 
-functions_=functions
-functions=[]
-for f in functions_:
-    func=function()
+stencils=[]
+for f in stencils_raw:
+    func=Stencil()
     func.body=f
     func.name=f[0].split()[1].split("(")[0]
     if f[0].find("stag") > 0:
@@ -61,7 +72,7 @@ for f in functions_:
         #    print i
         if func.name=='DDX_CWENO3':
             #print << sys.stderr , "Skipping DDX_CWENO3 ..."
-            continue;
+            continue
         #print fname
         if (f[0].find("BoutReal V") == -1 and f[0].find("BoutReal F") == -1 ):
             # They have one stencil
@@ -69,21 +80,20 @@ for f in functions_:
             func.flux=False
         else:
             func.flux=True
-        functions.append(func)
     if f[0].find("Mesh::boundary_derivs_pair") == 0 and f[0].find('stencil') > 0:
         if (f[0].find("Mesh::boundary_derivs_pair V") == -1 and f[0].find("Mesh::boundary_derivs_pair F") == -1 ):
             # not a flux functions - has only on stencil as argument
             func.flux=False
         else:
             func.flux=True
-        functions.append(func)
-null_func=function()
+    stencils.append(func)
+null_func=Stencil()
 null_func.name='NULL'
 null_func.body=["{","result_.inner = 0;","result_.outer = 0;","}"]
-functions.append(null_func)
-for f in functions:
+stencils.append(null_func)
+for sten in stencils:
     ls=""
-    for l in f.body:
+    for l in sten.body:
         ls+=l
     inv=ls[::-1].find("}")+1
     ls=ls[ls.find("{")+1:-inv]
@@ -101,31 +111,26 @@ for f in functions:
                 mymax+=1
             fu[i]=t[-1]
         i+=1
-            
-    f.body=fu
+    sten.body=fu
 
 
-for f in functions:
-    f.guards=1
-    for l in f.body:
-        for off in ['pp','mm','p2','m2']:
-            if l.find(off)>-1:
-                f.guards=2
+for f in stencils:
+    f.setGuards()
         
-for f in functions:
+for f in stencils:
     if not f.flux:
         if f.stag:
             for d in dir:
                 tmp="cart_diff_%s_%s_%%s"%(d,f.name)
-                func_db[d].append([f.name,"NULL",tmp%"off",tmp%"on"])
+                sten_db[d].append([f.name,"NULL",tmp%"off",tmp%"on"])
         else:
             #not staggerd
             for d in dir:
                 tmp="cart_diff_%s_%s_%%s"%(d,f.name)
-                func_db[d].append([f.name,"cart_diff_%s_%s_norm"%(d,f.name),"NULL","NULL"])
+                sten_db[d].append([f.name,"cart_diff_%s_%s_norm"%(d,f.name),"NULL","NULL"])
 
-for db in func_db:
-    func_db[db].append(["NULL","NULL","NULL","NULL"])
+for db in sten_db:
+    sten_db[db].append(["NULL","NULL","NULL","NULL"])
 
 
 def replace_stencil(line,sten,fname,field,mode,sten_mbf,d,update=None,z0=None):
@@ -386,17 +391,17 @@ def gen_functions_normal(to_gen):
     #for f_ar in to_gen:
     #    print >>sys.stderr,f_ar[0],f_ar[1]
     #exit(1)
-    for f_ar in to_gen:
-        mode=f_ar[3]
+    for ftg in to_gen:
+        mode=ftg.stag_mode
         #for d in dir:
-        d=f_ar[2]
-        field=f_ar[1]
+        d=ftg.d
+        field=ftg.field
         #tmp="cart_diff_%s_%s_%%s"%(d,f.name)
         #for mode in modes:
-        name=f_ar[0]
-        flux=f_ar[-1]
+        name=ftg.name
+        flux=ftg.flux
         warn()
-        print("static void "+name+"_"+field.lower()+"(BoutReal * __restrict__ result_ptr,", end=' ')
+        print("static void "+ftg.name+"_"+ftg.field.lower()+"(BoutReal * __restrict__ result_ptr,", end=' ')
         if flux:
             print("const BoutReal * __restrict__ v_in_ptr,", end=' ')
             print("const BoutReal * __restrict__ f_in_ptr,", end=' ')
@@ -405,35 +410,34 @@ def gen_functions_normal(to_gen):
         print("Mesh * msh) {")
         for d2 in dirs[field]:
             print("  const int N%s = msh->LocalN%s;"%(d2,d2))
-        for func in functions:
-            if func.name==f_ar[4]:
-                stencil=func
+        for func in stencils:
+            if func.name==ftg[4]:#.fromsten:
+                ftg.setSten(func)
+                assert(ftg.sten is not None)
         # only reset before main
         global guards_
         guards_=[0,0]
-        if stencil is None:
+        if ftg.sten is None:
             import sys
-            print(f_ar, file=sys.stderr)
-            for func in functions:
+            debug("error!")
+            print(ftg,ftg[:], file=sys.stderr)
+            for func in stencils:
                 print(func.name, file=sys.stderr)
-            print(stencils, file=sys.stderr)
-            print(f_ar, file=sys.stderr)
-            print("#error unexpected: sten is None for sten_name %s !"%sten_name, file=sys.stderr)
-            raise 1
+            print(ftg.sten, file=sys.stderr)
+            print(ftg, file=sys.stderr)
+            raise RuntimeError("#error unexpected: sten is None for sten_name %s !"%sten_name)
         try:
-            guards=stencil.guards #numGuards[f_ar[4]]
+            guards=ftg.sten.guards #numGuards[ftg[4]]
         except:
-            print(stencil, file=sys.stderr)
-            print(sten_name, file=sys.stderr)
-            raise
+            raise RuntimeError(ftg.sten,
+                               sten_name)
         if d=='z':
-            get_for_loop_z(stencil,field,mode)
+            get_for_loop_z(ftg.sten,field,mode)
         else:
-            body, result, result_ = parse_body(stencil,field,mode,d)
+            body, result, result_ = parse_body(ftg.sten,field,mode,d)
             get_for_loop(d,mode,field,guards_,"main")
             if body+result == '':
-                print(stencil.body, file=sys.stderr)
-                raise 1
+                raise RuntimeError(ftg.sten.body)
             print(body)
             print("      "+get_diff('c()',"result",field,d)+"=", end=' ')
             if result:
@@ -559,7 +563,7 @@ for mode in ['on','off']:
         for d2 in dirs[field]:
             print("  const int N%s = msh->LocalN%s;"%(d2,d2))
         if d == 'z':
-            sten=function()
+            sten=Stencil()
             sten.body=['',interp[1],'']
             get_for_loop_z(sten,field,mode)
         else:

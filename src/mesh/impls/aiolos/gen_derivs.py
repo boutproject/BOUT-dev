@@ -68,12 +68,31 @@ funcname['FluxTable']='indexFDD%s'
 funcname['FluxStagTable']='indexFDD%s'
 
 funcs_to_gen=[]
+class FuncToGen(object):
+    def __init__(self,name,field,d,mode,ftype,flux,stag):
+        self.name=name
+        self.field=field
+        self.stag_mode=mode
+        self.fromsten=ftype
+        self.flux=flux
+        self.d=d
+        self.stag=stag
+        self.old=[name,field,d,mstag,ftype,flux]
+        self.sten=None
+    def __getitem__(self,ind):
+        return self.old[ind]
+    def setSten(self,sten):
+        assert(sten.flux == self.flux)
+        assert(sten.stag == self.stag)
+        self.sten=sten
+
 default_methods=dict()
 # Having a duplicate in the list means something is wrong
 duplicates(list(func_tables.keys()))
 
 for t in func_tables:
-    debug(func_tables[t], func_tables[t].values(),t)
+    debug("Func_table:",t,func_tables[t], func_tables[t].values())
+    debug()
     fu=next(iter(func_tables[t].values()))
     if fu[0] != "NULL": # not a flux/upwind scheeme
         flux=False
@@ -166,7 +185,7 @@ for t in func_tables:
                             funcs[0]=funcs[1]
                             if funcs[0]=='NULL':
                                 funcs[0]=funcs[2]
-                        funcs_to_gen.append(["%s_%s_%s"%(funcname[t]%d.upper(),mstag,method),field,d,mstag,funcs[0],flux])
+                        funcs_to_gen.append(FuncToGen("%s_%s_%s"%(funcname[t]%d.upper(),mstag,method),field,d,mstag,funcs[0],flux,stag))
                     print("    break;")
                     #print "    }"
                 print("  default:")
