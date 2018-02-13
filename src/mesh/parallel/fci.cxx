@@ -65,10 +65,6 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool yperiodic, bool zperiodic)
   // z-index of bottom-left grid point
   int ***k_corner = i3tensor(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz);
 
-  bool x_boundary; // has the field line left the domain through the x-sides
-  bool y_boundary; // has the field line left the domain through the y-sides
-  bool z_boundary; // has the field line left the domain through the z-sides
-
   Field3D xt_prime(&mesh), zt_prime(&mesh);
   Field3D R(&mesh), Z(&mesh); // Real-space coordinates of grid points
   Field3D R_prime(&mesh),
@@ -116,20 +112,6 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool yperiodic, bool zperiodic)
   for (int x = mesh.xstart; x <= mesh.xend; x++) {
     for (int y = mesh.ystart; y <= mesh.yend; y++) {
       for (int z = 0; z < ncz; z++) {
-
-        // Dot product of two vectors
-        // Only needed in this function, so use a named lambda
-        // Defined inside loop to capture x, y, z
-        auto dot = [&](const RealVector &lhs, const RealVector &rhs) {
-          BoutReal result;
-          result = lhs.x * rhs.x * coord.g11(x, y) + lhs.y * rhs.y * coord.g22(x, y) +
-                   lhs.z * rhs.z * coord.g33(x, y);
-          result += (lhs.x * rhs.y + lhs.y * rhs.x) * coord.g12(x, y) +
-                    (lhs.x * rhs.z + lhs.z * rhs.x) * coord.g13(x, y) +
-                    (lhs.y * rhs.z + lhs.z * rhs.y) * coord.g23(x, y);
-
-          return result;
-        };
 
         // The integer part of xt_prime, zt_prime are the indices of the cell
         // containing the field line end-point
