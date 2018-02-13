@@ -280,16 +280,6 @@ cat <<EOF
             del self.cobj
             self.cobj=NULL
 
-def resolve_inv_cell_loc(loc):
-    bla={
-         benum.CELL_DEFAULT:"DEFAULT",
-         benum.CELL_CENTRE: "CENTRE",
-         benum.CELL_XLOW:   "XLOW",
-         benum.CELL_YLOW:   "YLOW",
-         benum.CELL_ZLOW:   "ZLOW",
-    }
-    return bla[loc]
-
 cdef class Mesh:
     cdef c.Mesh * cobj;
     cdef c.bool isGlobal
@@ -673,3 +663,5 @@ cdef class Datafile:
 EOF
 
 cat helper.py
+
+sh resolve_enum_inv.pyx.in

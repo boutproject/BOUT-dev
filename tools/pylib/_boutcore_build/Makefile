@@ -1,6 +1,6 @@
 all: boutcore.so test
 PY?=python3
-boutcore.pyx: boutcore.pyx.in
+boutcore.pyx: boutcore.pyx.in helper.py resolve_enum_inv.pyx.in
 setup.py:setup.py.in
 resolve_enum.pxd:resolve_enum.pxd.in
 helper.h:helper.h.in
