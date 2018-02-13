@@ -149,14 +149,21 @@ def replace_stencil(line,sten,fname,field,mode,sten_mbf,d,update=None,z0=None):
             line_=line
             line=line[:pos]+get_diff(off_diff[mode][off],fname,field,d,update,z0)+line[end:]
         except:
-            print(line_,mode,off,sten, file=sys.stderr)
+            debug(enable=True)
+            debug("Encountered error - some infos:")
+            debug(line_,mode,off,sten)
             debug(off_diff)
-            print(off_diff[mode], file=sys.stderr)
+            debug(off_diff[mode])
             raise
         pos=line.find(sten)
     return line
 
 def parse_body(sten,field,mode,d,z0=None):
+    if sten.stag == False and mode != 'norm' and sten.name:
+        debug(enable=True)
+        debug("Found bug - infos:")
+        debug(sten.body,'name: '+sten.name,sten.stag,field,mode,d)
+        assert(mode=='norm')
     body=""
     result=''
     result_=['']*2
@@ -182,23 +189,19 @@ def parse_body(sten,field,mode,d,z0=None):
                         tmp=line[line.index(res)+len(res):]
                         if tmp.find("=") > -1:
                             if result_[resi]!='':
-                                import sys
-                                print("Did not expect another defintion of",res, file=sys.stderr)
-                                print("The last one was %s = %s"%(res,result_[resi]), file=sys.stderr)
-                                print("thise one is ",line, file=sys.stderr)
-                                exit(1)
+                                raise RuntimeError("Did not expect another defintion of",res,
+                                                   "The last one was %s = %s"%(res,result_[resi]),
+                                                   "thise one is ",line)
                             result_[resi]=tmp[tmp.index("=")+1:]
                             toPrint=False
                 if toPrint:
                     if line.find("=") > -1:
-                        import sys
-                        print("While parsing function %s"%sten.name, file=sys.stderr)
-                        print(sten.body, file=sys.stderr)
-                        print(sten.mbf, file=sys.stderr)
-                        print("Failed to parse - unexpected line: ",line, file=sys.stderr)
-                        print(result_, file=sys.stderr)
-                        print(line, file=sys.stderr)
-                        raise "Fuu"
+                        raise RuntimeError("While parsing function %s"%sten.name,"\n",
+                                           sten.body,"\n",
+                                           sten.mbf, "\n",
+                                           "Failed to parse - unexpected line: ",line, "\n",
+                                           result_, "\n",
+                                           line)
 
         else:
             if sten.mbf == 'main':
@@ -289,8 +292,7 @@ def get_for_loop(d,mode,field,guards,sten_name ):
         else:
             print("    "+d,"=N%s"%d,"-%d ;"%(guards_[1]))
             if guards_[1]>2:
-                print(guards_, file=sys.stderr)
-                raise "To many guards"
+                raise RuntimeError(guards_,"To many guards")
         for d2 in perp_dir[field][d]:
             print("    for (int "+d2,"=0; "+d2,"< N"+d2,";++"+d2,") {")
 

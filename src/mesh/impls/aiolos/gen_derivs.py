@@ -24,7 +24,7 @@ with open("tables_cleaned.cxx","r") as f:
                     #print name
                     func_tables[name]=OrderedDict()
                     for cchar in current_table:
-                        debug(cchar,inFunc)
+                        #debug(cchar,inFunc)
                         if cchar == '}':
                             inFunc-=1
                         if inFunc == 2:
@@ -37,22 +37,27 @@ with open("tables_cleaned.cxx","r") as f:
                             current_entry_cleaned=[]
                             for diff in current_entry:
                                 current_entry_cleaned.append(diff.strip())
-                            debug(current_entry_cleaned)
+                            #debug("current_entry_cleaned:",current_entry_cleaned)
                             current_entry_name=current_entry_cleaned[0]
-                            debug(name,current_entry_name)
                             #NI not implemented :
                             if current_entry_name=='DIFF_W3':
+                                debug("Skipping WENO3 - to hard")
                                 continue
                             if current_entry_name=='DIFF_SPLIT':
+                                debug("Skipping SPLIT - to different")
+                                continue
+                            if current_entry_name=='DIFF_NND':
+                                debug("Skipping NND - probably broken")
                                 continue
                             if current_entry_name=='DIFF_DEFAULT':
                                 continue
+                            #debug("name and current_entry_name",name,current_entry_name)
                             #print cn
                             if name not in first_entry:
                                 first_entry[name]=current_entry_name
                             if current_entry_cleaned[1:4] == ['NULL']*3:
                                 continue
-                            debug(name,current_entry_name)
+                            #debug(name,current_entry_name)
                             func_tables[name][current_entry_name]=current_entry_cleaned[1:4]
                 current_table=""
                 inFunc=0
@@ -139,12 +144,12 @@ for t in func_tables:
                 print("  if (outloc == CELL_DEFAULT){")
                 print("    outloc = f.getLocation();")
                 print("  }")
-                print("  switch (method){")
+                print("  switch (method) {")
                 default_methods["default_%s_%s"%(d,t[:-5])]=func_tables[t]
                 duplicates(list(func_tables[t].keys()))
                 for method in func_tables[t]:
-                    debug(method)
-                    print("  case",method,":")
+                    #debug(method)
+                    print("  case",method+":")
                     if flux:
                         f="v,f"
                     else:
