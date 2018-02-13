@@ -247,8 +247,12 @@ f.getLocation()==outloc is required!");')
             print("    return result;")
             print("  }")
             #print '  output.write("Using aiolos mesh for %s\\n");'%(func%d.upper())
-            print("  if ((outloc == CELL_%sLOW) != (f.getLocation() == CELL_%sLOW)){"% \
-                (d.upper(),d.upper()))
+            if flux:
+                print("  if ((outloc == CELL_%sLOW) != (v.getLocation() == CELL_%sLOW)){"% \
+                      (d.upper(),d.upper()))
+            else:
+                print("  if ((outloc == CELL_%sLOW) != (f.getLocation() == CELL_%sLOW)){"% \
+                      (d.upper(),d.upper()))
             print("    // we are going onto a staggered grid or coming from one")
             print("    return",func%d.upper()+"_stag","("+f+",outloc,method);")
             print("  } else {")

@@ -21,8 +21,13 @@ const Field3D indexDDX_non_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD m
     return interp_to(indexDDX_norm_DIFF_S2(f), outloc);
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexDDX_non_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
+    throw BoutException("Field3D AiolosMesh::indexDDX_non_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_C2"
+                        " * DIFF_W2"
+                        " * DIFF_C4"
+                        " * DIFF_S2"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -49,8 +54,13 @@ const Field3D indexDDY_non_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD m
     return interp_to(indexDDY_norm_DIFF_S2(f), outloc);
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexDDY_non_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
+    throw BoutException("Field3D AiolosMesh::indexDDY_non_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_C2"
+                        " * DIFF_W2"
+                        " * DIFF_C4"
+                        " * DIFF_S2"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -77,8 +87,13 @@ const Field3D indexDDZ_non_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD m
     return interp_to(indexDDZ_norm_DIFF_S2(f), outloc);
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexDDZ_non_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
+    throw BoutException("Field3D AiolosMesh::indexDDZ_non_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_C2"
+                        " * DIFF_W2"
+                        " * DIFF_C4"
+                        " * DIFF_S2"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -105,8 +120,13 @@ const Field2D indexDDX_non_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD m
     return interp_to(indexDDX_norm_DIFF_S2(f), outloc);
     break;
   default:
-    throw BoutException("Field2D AiolosMesh::indexDDX_non_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
+    throw BoutException("Field2D AiolosMesh::indexDDX_non_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_C2"
+                        " * DIFF_W2"
+                        " * DIFF_C4"
+                        " * DIFF_S2"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -133,8 +153,13 @@ const Field2D indexDDY_non_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD m
     return interp_to(indexDDY_norm_DIFF_S2(f), outloc);
     break;
   default:
-    throw BoutException("Field2D AiolosMesh::indexDDY_non_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
+    throw BoutException("Field2D AiolosMesh::indexDDY_non_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_C2"
+                        " * DIFF_W2"
+                        " * DIFF_C4"
+                        " * DIFF_S2"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -155,8 +180,11 @@ const Field3D indexD2DX2_non_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD
     return interp_to(indexD2DX2_norm_DIFF_C4(f), outloc);
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexD2DX2_non_stag unknown method "
-                        "%d.\nNote FFTs are not (yet) supported.",
+    throw BoutException("Field3D AiolosMesh::indexD2DX2_non_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_C2"
+                        " * DIFF_C4"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -177,8 +205,11 @@ const Field3D indexD2DY2_non_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD
     return interp_to(indexD2DY2_norm_DIFF_C4(f), outloc);
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexD2DY2_non_stag unknown method "
-                        "%d.\nNote FFTs are not (yet) supported.",
+    throw BoutException("Field3D AiolosMesh::indexD2DY2_non_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_C2"
+                        " * DIFF_C4"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -199,8 +230,11 @@ const Field3D indexD2DZ2_non_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD
     return interp_to(indexD2DZ2_norm_DIFF_C4(f), outloc);
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexD2DZ2_non_stag unknown method "
-                        "%d.\nNote FFTs are not (yet) supported.",
+    throw BoutException("Field3D AiolosMesh::indexD2DZ2_non_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_C2"
+                        " * DIFF_C4"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -221,8 +255,11 @@ const Field2D indexD2DX2_non_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD
     return interp_to(indexD2DX2_norm_DIFF_C4(f), outloc);
     break;
   default:
-    throw BoutException("Field2D AiolosMesh::indexD2DX2_non_stag unknown method "
-                        "%d.\nNote FFTs are not (yet) supported.",
+    throw BoutException("Field2D AiolosMesh::indexD2DX2_non_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_C2"
+                        " * DIFF_C4"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -243,8 +280,11 @@ const Field2D indexD2DY2_non_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD
     return interp_to(indexD2DY2_norm_DIFF_C4(f), outloc);
     break;
   default:
-    throw BoutException("Field2D AiolosMesh::indexD2DY2_non_stag unknown method "
-                        "%d.\nNote FFTs are not (yet) supported.",
+    throw BoutException("Field2D AiolosMesh::indexD2DY2_non_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_C2"
+                        " * DIFF_C4"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -305,8 +345,14 @@ const Field3D indexVDDX_non_stag(const Field3D &v, const Field3D &f, CELL_LOC ou
     }
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexVDDX_non_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
+    throw BoutException("Field3D AiolosMesh::indexVDDX_non_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_U1"
+                        " * DIFF_U2"
+                        " * DIFF_C2"
+                        " * DIFF_U3"
+                        " * DIFF_C4"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -367,8 +413,14 @@ const Field3D indexVDDY_non_stag(const Field3D &v, const Field3D &f, CELL_LOC ou
     }
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexVDDY_non_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
+    throw BoutException("Field3D AiolosMesh::indexVDDY_non_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_U1"
+                        " * DIFF_U2"
+                        " * DIFF_C2"
+                        " * DIFF_U3"
+                        " * DIFF_C4"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -429,8 +481,14 @@ const Field3D indexVDDZ_non_stag(const Field3D &v, const Field3D &f, CELL_LOC ou
     }
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexVDDZ_non_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
+    throw BoutException("Field3D AiolosMesh::indexVDDZ_non_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_U1"
+                        " * DIFF_U2"
+                        " * DIFF_C2"
+                        " * DIFF_U3"
+                        " * DIFF_C4"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -491,8 +549,14 @@ const Field2D indexVDDX_non_stag(const Field2D &v, const Field2D &f, CELL_LOC ou
     }
     break;
   default:
-    throw BoutException("Field2D AiolosMesh::indexVDDX_non_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
+    throw BoutException("Field2D AiolosMesh::indexVDDX_non_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_U1"
+                        " * DIFF_U2"
+                        " * DIFF_C2"
+                        " * DIFF_U3"
+                        " * DIFF_C4"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -553,8 +617,14 @@ const Field2D indexVDDY_non_stag(const Field2D &v, const Field2D &f, CELL_LOC ou
     }
     break;
   default:
-    throw BoutException("Field2D AiolosMesh::indexVDDY_non_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
+    throw BoutException("Field2D AiolosMesh::indexVDDY_non_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_U1"
+                        " * DIFF_U2"
+                        " * DIFF_C2"
+                        " * DIFF_U3"
+                        " * DIFF_C4"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -597,8 +667,12 @@ const Field3D indexFDDX_non_stag(const Field3D &v, const Field3D &f, CELL_LOC ou
     }
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexFDDX_non_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
+    throw BoutException("Field3D AiolosMesh::indexFDDX_non_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_U1"
+                        " * DIFF_C2"
+                        " * DIFF_C4"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -641,8 +715,12 @@ const Field3D indexFDDY_non_stag(const Field3D &v, const Field3D &f, CELL_LOC ou
     }
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexFDDY_non_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
+    throw BoutException("Field3D AiolosMesh::indexFDDY_non_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_U1"
+                        " * DIFF_C2"
+                        " * DIFF_C4"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -685,8 +763,12 @@ const Field3D indexFDDZ_non_stag(const Field3D &v, const Field3D &f, CELL_LOC ou
     }
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexFDDZ_non_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
+    throw BoutException("Field3D AiolosMesh::indexFDDZ_non_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_U1"
+                        " * DIFF_C2"
+                        " * DIFF_C4"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -729,8 +811,12 @@ const Field2D indexFDDX_non_stag(const Field2D &v, const Field2D &f, CELL_LOC ou
     }
     break;
   default:
-    throw BoutException("Field2D AiolosMesh::indexFDDX_non_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
+    throw BoutException("Field2D AiolosMesh::indexFDDX_non_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_U1"
+                        " * DIFF_C2"
+                        " * DIFF_C4"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -773,8 +859,12 @@ const Field2D indexFDDY_non_stag(const Field2D &v, const Field2D &f, CELL_LOC ou
     }
     break;
   default:
-    throw BoutException("Field2D AiolosMesh::indexFDDY_non_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
+    throw BoutException("Field2D AiolosMesh::indexFDDY_non_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_U1"
+                        " * DIFF_C2"
+                        " * DIFF_C4"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -803,8 +893,11 @@ const Field3D indexDDX_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD metho
     }
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexDDX_stag unknown method %d.\nNote FFTs "
-                        "are not (yet) supported.",
+    throw BoutException("Field3D AiolosMesh::indexDDX_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_C2"
+                        " * DIFF_C4"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -833,8 +926,11 @@ const Field3D indexDDY_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD metho
     }
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexDDY_stag unknown method %d.\nNote FFTs "
-                        "are not (yet) supported.",
+    throw BoutException("Field3D AiolosMesh::indexDDY_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_C2"
+                        " * DIFF_C4"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -863,8 +959,11 @@ const Field3D indexDDZ_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD metho
     }
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexDDZ_stag unknown method %d.\nNote FFTs "
-                        "are not (yet) supported.",
+    throw BoutException("Field3D AiolosMesh::indexDDZ_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_C2"
+                        " * DIFF_C4"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -893,8 +992,11 @@ const Field2D indexDDX_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD metho
     }
     break;
   default:
-    throw BoutException("Field2D AiolosMesh::indexDDX_stag unknown method %d.\nNote FFTs "
-                        "are not (yet) supported.",
+    throw BoutException("Field2D AiolosMesh::indexDDX_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_C2"
+                        " * DIFF_C4"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -923,8 +1025,11 @@ const Field2D indexDDY_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD metho
     }
     break;
   default:
-    throw BoutException("Field2D AiolosMesh::indexDDY_stag unknown method %d.\nNote FFTs "
-                        "are not (yet) supported.",
+    throw BoutException("Field2D AiolosMesh::indexDDY_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_C2"
+                        " * DIFF_C4"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -946,8 +1051,10 @@ const Field3D indexD2DX2_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD met
     }
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexD2DX2_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
+    throw BoutException("Field3D AiolosMesh::indexD2DX2_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_C2"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -969,8 +1076,10 @@ const Field3D indexD2DY2_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD met
     }
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexD2DY2_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
+    throw BoutException("Field3D AiolosMesh::indexD2DY2_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_C2"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -992,8 +1101,10 @@ const Field3D indexD2DZ2_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD met
     }
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexD2DZ2_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
+    throw BoutException("Field3D AiolosMesh::indexD2DZ2_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_C2"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -1015,8 +1126,10 @@ const Field2D indexD2DX2_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD met
     }
     break;
   default:
-    throw BoutException("Field2D AiolosMesh::indexD2DX2_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
+    throw BoutException("Field2D AiolosMesh::indexD2DX2_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_C2"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -1038,8 +1151,10 @@ const Field2D indexD2DY2_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD met
     }
     break;
   default:
-    throw BoutException("Field2D AiolosMesh::indexD2DY2_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
+    throw BoutException("Field2D AiolosMesh::indexD2DY2_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_C2"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -1083,8 +1198,13 @@ const Field3D indexVDDX_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc
     }
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexVDDX_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
+    throw BoutException("Field3D AiolosMesh::indexVDDX_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_U1"
+                        " * DIFF_U2"
+                        " * DIFF_C2"
+                        " * DIFF_C4"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -1128,8 +1248,13 @@ const Field3D indexVDDY_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc
     }
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexVDDY_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
+    throw BoutException("Field3D AiolosMesh::indexVDDY_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_U1"
+                        " * DIFF_U2"
+                        " * DIFF_C2"
+                        " * DIFF_C4"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -1173,8 +1298,13 @@ const Field3D indexVDDZ_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc
     }
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexVDDZ_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
+    throw BoutException("Field3D AiolosMesh::indexVDDZ_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_U1"
+                        " * DIFF_U2"
+                        " * DIFF_C2"
+                        " * DIFF_C4"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -1218,8 +1348,13 @@ const Field2D indexVDDX_stag(const Field2D &v, const Field2D &f, CELL_LOC outloc
     }
     break;
   default:
-    throw BoutException("Field2D AiolosMesh::indexVDDX_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
+    throw BoutException("Field2D AiolosMesh::indexVDDX_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_U1"
+                        " * DIFF_U2"
+                        " * DIFF_C2"
+                        " * DIFF_C4"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -1263,8 +1398,13 @@ const Field2D indexVDDY_stag(const Field2D &v, const Field2D &f, CELL_LOC outloc
     }
     break;
   default:
-    throw BoutException("Field2D AiolosMesh::indexVDDY_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
+    throw BoutException("Field2D AiolosMesh::indexVDDY_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_U1"
+                        " * DIFF_U2"
+                        " * DIFF_C2"
+                        " * DIFF_C4"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -1287,8 +1427,10 @@ const Field3D indexFDDX_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc
     }
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexFDDX_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
+    throw BoutException("Field3D AiolosMesh::indexFDDX_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_U1"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -1311,8 +1453,10 @@ const Field3D indexFDDY_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc
     }
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexFDDY_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
+    throw BoutException("Field3D AiolosMesh::indexFDDY_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_U1"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -1335,8 +1479,10 @@ const Field3D indexFDDZ_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc
     }
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexFDDZ_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
+    throw BoutException("Field3D AiolosMesh::indexFDDZ_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_U1"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -1359,8 +1505,10 @@ const Field2D indexFDDX_stag(const Field2D &v, const Field2D &f, CELL_LOC outloc
     }
     break;
   default:
-    throw BoutException("Field2D AiolosMesh::indexFDDX_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
+    throw BoutException("Field2D AiolosMesh::indexFDDX_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_U1"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -1383,8 +1531,10 @@ const Field2D indexFDDY_stag(const Field2D &v, const Field2D &f, CELL_LOC outloc
     }
     break;
   default:
-    throw BoutException("Field2D AiolosMesh::indexFDDY_stag unknown method %d.\nNote "
-                        "FFTs are not (yet) supported.",
+    throw BoutException("Field2D AiolosMesh::indexFDDY_stag unknown method %d.\n"
+                        "Supported methods are"
+                        " * DIFF_U1"
+                        "\nNote FFTs are not (yet) supported.",
                         method);
   }; // end switch
 }
@@ -1594,7 +1744,7 @@ const Field3D AiolosMesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC
     result.setLocation(outloc);
     return result;
   }
-  if ((outloc == CELL_XLOW) != (f.getLocation() == CELL_XLOW)) {
+  if ((outloc == CELL_XLOW) != (v.getLocation() == CELL_XLOW)) {
     // we are going onto a staggered grid or coming from one
     return indexVDDX_stag(v, f, outloc, method);
   } else {
@@ -1617,7 +1767,7 @@ const Field3D AiolosMesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC
     result.setLocation(outloc);
     return result;
   }
-  if ((outloc == CELL_YLOW) != (f.getLocation() == CELL_YLOW)) {
+  if ((outloc == CELL_YLOW) != (v.getLocation() == CELL_YLOW)) {
     // we are going onto a staggered grid or coming from one
     return indexVDDY_stag(v, f, outloc, method);
   } else {
@@ -1640,7 +1790,7 @@ const Field3D AiolosMesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC
     result.setLocation(outloc);
     return result;
   }
-  if ((outloc == CELL_ZLOW) != (f.getLocation() == CELL_ZLOW)) {
+  if ((outloc == CELL_ZLOW) != (v.getLocation() == CELL_ZLOW)) {
     // we are going onto a staggered grid or coming from one
     return indexVDDZ_stag(v, f, outloc, method);
   } else {
@@ -1663,7 +1813,7 @@ const Field2D AiolosMesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC
     result.setLocation(outloc);
     return result;
   }
-  if ((outloc == CELL_XLOW) != (f.getLocation() == CELL_XLOW)) {
+  if ((outloc == CELL_XLOW) != (v.getLocation() == CELL_XLOW)) {
     // we are going onto a staggered grid or coming from one
     return indexVDDX_stag(v, f, outloc, method);
   } else {
@@ -1686,7 +1836,7 @@ const Field2D AiolosMesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC
     result.setLocation(outloc);
     return result;
   }
-  if ((outloc == CELL_YLOW) != (f.getLocation() == CELL_YLOW)) {
+  if ((outloc == CELL_YLOW) != (v.getLocation() == CELL_YLOW)) {
     // we are going onto a staggered grid or coming from one
     return indexVDDY_stag(v, f, outloc, method);
   } else {
@@ -1709,7 +1859,7 @@ const Field3D AiolosMesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC
     result.setLocation(outloc);
     return result;
   }
-  if ((outloc == CELL_XLOW) != (f.getLocation() == CELL_XLOW)) {
+  if ((outloc == CELL_XLOW) != (v.getLocation() == CELL_XLOW)) {
     // we are going onto a staggered grid or coming from one
     return indexFDDX_stag(v, f, outloc, method);
   } else {
@@ -1732,7 +1882,7 @@ const Field3D AiolosMesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC
     result.setLocation(outloc);
     return result;
   }
-  if ((outloc == CELL_YLOW) != (f.getLocation() == CELL_YLOW)) {
+  if ((outloc == CELL_YLOW) != (v.getLocation() == CELL_YLOW)) {
     // we are going onto a staggered grid or coming from one
     return indexFDDY_stag(v, f, outloc, method);
   } else {
@@ -1755,7 +1905,7 @@ const Field3D AiolosMesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC
     result.setLocation(outloc);
     return result;
   }
-  if ((outloc == CELL_ZLOW) != (f.getLocation() == CELL_ZLOW)) {
+  if ((outloc == CELL_ZLOW) != (v.getLocation() == CELL_ZLOW)) {
     // we are going onto a staggered grid or coming from one
     return indexFDDZ_stag(v, f, outloc, method);
   } else {
@@ -1778,7 +1928,7 @@ const Field2D AiolosMesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC
     result.setLocation(outloc);
     return result;
   }
-  if ((outloc == CELL_XLOW) != (f.getLocation() == CELL_XLOW)) {
+  if ((outloc == CELL_XLOW) != (v.getLocation() == CELL_XLOW)) {
     // we are going onto a staggered grid or coming from one
     return indexFDDX_stag(v, f, outloc, method);
   } else {
@@ -1801,7 +1951,7 @@ const Field2D AiolosMesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC
     result.setLocation(outloc);
     return result;
   }
-  if ((outloc == CELL_YLOW) != (f.getLocation() == CELL_YLOW)) {
+  if ((outloc == CELL_YLOW) != (v.getLocation() == CELL_YLOW)) {
     // we are going onto a staggered grid or coming from one
     return indexFDDY_stag(v, f, outloc, method);
   } else {
