@@ -4963,19 +4963,19 @@ inline const Field2D VDDZ(const Field3D &v, const Field2D &f, REGION region, CEL
  *
  */
 inline const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool inc_xbndry) {
-  return DDZ(f, outloc, method, inc_xbndry ? RGN_NOX : RGN_NOBNDRY);
+  return DDZ(f, outloc, method, inc_xbndry ? RGN_NOY : RGN_NOBNDRY);
 }
 
 inline const Field3D DDZ(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc, bool inc_xbndry) {
-  return DDZ(f, outloc, method, inc_xbndry ? RGN_NOX : RGN_NOBNDRY);
+  return DDZ(f, outloc, method, inc_xbndry ? RGN_NOY : RGN_NOBNDRY);
 }
 
 inline const Field3D DDZ(const Field3D &f, DIFF_METHOD method, bool inc_xbndry) {
-  return DDZ(f, CELL_DEFAULT, method, inc_xbndry ? RGN_NOX : RGN_NOBNDRY);
+  return DDZ(f, CELL_DEFAULT, method, inc_xbndry ? RGN_NOY : RGN_NOBNDRY);
 }
 
 inline const Field3D DDZ(const Field3D &f, bool inc_xbndry) {
-  return DDZ(f, CELL_DEFAULT, DIFF_DEFAULT, inc_xbndry ? RGN_NOX : RGN_NOBNDRY);
+  return DDZ(f, CELL_DEFAULT, DIFF_DEFAULT, inc_xbndry ? RGN_NOY : RGN_NOBNDRY);
 }
 
 
