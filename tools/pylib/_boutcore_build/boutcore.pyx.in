@@ -175,6 +175,10 @@ cdef class Field3D:
         self.cobj[0].setLocation(location_)
         return self
 
+    def getLocation(self):
+        cdef benum.CELL_LOC loc = self.cobj[0].getLocation()
+        return resolve_inv_cell_loc(loc)
+
     def ddt(self,val=None):
         if val:
             c_set_f3d_from_f3d(&c.ddt(self.cobj[0]),(<Field3D?>val).cobj)
@@ -276,6 +280,15 @@ cat <<EOF
             del self.cobj
             self.cobj=NULL
 
+def resolve_inv_cell_loc(loc):
+    bla={
+         benum.CELL_DEFAULT:"DEFAULT",
+         benum.CELL_CENTRE: "CENTRE",
+         benum.CELL_XLOW:   "XLOW",
+         benum.CELL_YLOW:   "YLOW",
+         benum.CELL_ZLOW:   "ZLOW",
+    }
+    return bla[loc]
 
 cdef class Mesh:
     cdef c.Mesh * cobj;
@@ -535,8 +548,8 @@ def pow(Field3D a, exponent):
 def min(Field3D a):
     return c.min(a.cobj[0])
 
-def min(Field3D a):
-    return c.min(a.cobj[0])
+def max(Field3D a):
+    return c.max(a.cobj[0])
 
 def Delp2(Field3D a, zsmooth=-1):
     checkInit()
