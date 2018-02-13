@@ -67,12 +67,6 @@ class Stencil:
                 self.flux=False
             else:
                 self.flux=True
-        elif f0.find("Mesh::boundary_derivs_pair") == 0 and f0.find('stencil') > 0:
-            if (f0.find("Mesh::boundary_derivs_pair V") == -1 and f0.find("Mesh::boundary_derivs_pair F") == -1 ):
-                # not a flux functions - has only on stencil as argument
-                self.flux=False
-            else:
-                self.flux=True
         elif f0.find("&fRm") > -1:
             debug(f0,"is invalid")
             self.valid=False
@@ -85,8 +79,6 @@ for f in stencils_raw:
     sten=Stencil(f)
     if sten.valid:
         stencils.append(sten)
-null_func=Stencil(["","result_.inner = 0;","result_.outer = 0;","}"])
-stencils.append(null_func)
 
 # Do some cleaning of the stencils bodies
 for sten in stencils:
@@ -182,9 +174,7 @@ def parse_body(sten,field,mode,d,z0=None):
 
         else:
             if sten.mbf == 'main':
-                #body+= "    "+get_diff('c()',"result",field,d)+"= "+
                 result=line[len("return")+line.index("return"):]+"\n"
-                #print >> sys.stderr,"bla"
             else:
                 returned=line[len("return")+line.index("return"):]
     return [body, result, result_]
@@ -247,9 +237,8 @@ def get_for_loop_z(sten,field,stag):
         if d!=d2:
             print("  }")
     print('  }')
-                                                # if d=='z': # aka z                                                 
+
 def get_for_loop(d,mode,field,guards,sten_name ):
-    #print >> sys.stderr, mode, guards,sten_name
     if sten_name == "main":
         print('#if CHECK > 0')
         print('  if (msh->%sstart < %d){'%(d,max(guards)))
@@ -300,25 +289,20 @@ def get_diff(diff,fname,field,d,update=False,z0=None):
                 ret+=')*N%s + '%d2
         first=False
         if (d2 == d):
-            #do smart stuff
+            #do ugly stuff
             global guards_
             diffd=diff2[diff]
             if update:
                 if abs(diffd) > 2:
-                    # We should never require more than 2 guard cells
-                    sdfadfasdf
+                    raise RuntimeError("We do not expect to have more then 2 guard cells")
                 if diffd > guards_[1]:
                     guards_[1]=diffd
                 elif -diffd > guards_[0]:
                     guards_[0]=-diffd
                 #else:
                     #print diffd,guards_;
-                #print >> sys.stderr , guards_, diffd
-            #    bla
-            #if d != 'z':
             if d=='z' and z0 is not None:
                 # We want to generate code for the interp_to case with wrapping
-                #print >> sys.stderr, z0, diffd
                 if z0 == 'secure':
                     ret+="+(("+d+"%+d"%(diffd)
                     if diffd < 0:
@@ -332,11 +316,6 @@ def get_diff(diff,fname,field,d,update=False,z0=None):
                     ret+=d2+"%+d"%(diffd)
             else:
                 ret+=d2+"%+d"%(diffd)
-            #else:
-            #    if diffd > 0:
-            #        ret+='z'+'p'*(diffd)
-            #    else:
-            #        ret+='z'+'m'*(-diffd)
         else:
             ret+=d2
     if use_field_operator:
@@ -344,10 +323,6 @@ def get_diff(diff,fname,field,d,update=False,z0=None):
     else:
         ret+="]\n    \t\t\t\t"
     return ret
-    # if diff != 'c()':
-    #     return "%s[i.%s%s]"%(fname,d,diff)
-    # else:
-    #     return "%s[i]"%(fname)
 
 def get_pointer(field, field_type,const):
     if const:
@@ -367,16 +342,10 @@ def get_pointer(field, field_type,const):
 
 def gen_functions_normal(to_gen):
     import sys
-    #for f_ar in to_gen:
-    #    print >>sys.stderr,f_ar[0],f_ar[1]
-    #exit(1)
     for ftg in to_gen:
         mode=ftg.stag_mode
-        #for d in dir:
         d=ftg.d
         field=ftg.field
-        #tmp="cart_diff_%s_%s_%%s"%(d,f.name)
-        #for mode in modes:
         name=ftg.name
         flux=ftg.flux
         warn()
@@ -390,7 +359,7 @@ def gen_functions_normal(to_gen):
         for d2 in dirs[field]:
             print("  const int N%s = msh->LocalN%s;"%(d2,d2))
         for func in stencils:
-            if func.name==ftg[4]:#.fromsten:
+            if func.name==ftg[4]:
                 ftg.setSten(func)
                 assert(ftg.sten is not None)
         # only reset before main
@@ -433,10 +402,6 @@ def gen_functions_normal(to_gen):
         print('  output_debug.write("Using method %s!\\n");'%name)
         if d=='z':
             print('  if (msh->LocalN%s == 1) {'%(d))
-            #print('      %s result{msh};'%field)
-            #print('      result=0;')
-            #print('      return result;')
-            # TODO: if constructor exists, better use this:
             print('    return %s(0.,msh);'%field)
             print('  }')
         print('#if CHECK > 0')
@@ -476,7 +441,6 @@ def gen_functions_normal(to_gen):
   return result;
 }
 """)
-#exit(1)
 
 
 field=fields[0]#3d
@@ -491,7 +455,7 @@ def get_interp_vals(order,pos):
         x=x0-i;
         for j in range(order):
             mat[j,i]=x**j*np.math.factorial(j)
-    #debug( mat)
+    #debug(mat)
     facs=np.dot(np.linalg.inv(mat),rhs)
     return facs
 def get_interp_sten(order,pos):
@@ -517,6 +481,7 @@ def get_interp_sten(order,pos):
 
 
 interp=['',"return "+get_interp_sten(4,0),'']
+# Hard coded version:
 #["return ( 9.*(s.m + s.p) - s.mm - s.pp ) / 16.;"]
 for mode in ['on','off']:
   for order in [4]:
@@ -525,9 +490,7 @@ for mode in ['on','off']:
         guards_=[0,0]
         line=interp[1]
         sten_name="main"
-        #debug(line)
         line=replace_stencil(line,'f.',"in",field,mode,sten_name,d)
-        #debug(line)
         print("static void interp_to_%s_%s_%s("%(mode,field,d), end=' ')
         if use_field_operator:
             print(field+"& result, const "+field+" & in,", end=' ')
@@ -538,21 +501,17 @@ for mode in ['on','off']:
             print("  const int N%s = msh->LocalN%s;"%(d2,d2))
         if d == 'z':
             sten=Stencil(['',interp[1],''])
-            #sten.body=
             get_for_loop_z(sten,field,mode)
         else:
             body= "    "+get_diff('c()',"result",field,d,update=True)+"= "+line[len("return")+line.index("return"):]+"\n"
-            #debug(body + line)
             get_for_loop(d,mode,field,guards_,sten_name)
             print(body)
             guards__=guards_
             get_for_end(d,field,sten_name)
-            #if d != 'z':
             sten_names=["forward","backward"]
             for sten_name in sten_names:
                 sten_name_index=sten_names.index(sten_name)
                 sign=-1
-                #print >> sys.stderr , sten_name, d, order, mode
                 if sten_name == "forward":
                     sign=1
                 _sign=sign

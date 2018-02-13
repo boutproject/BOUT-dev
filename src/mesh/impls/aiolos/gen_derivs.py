@@ -52,7 +52,6 @@ with open("tables_cleaned.cxx","r") as f:
                             if current_entry_name=='DIFF_DEFAULT':
                                 continue
                             #debug("name and current_entry_name",name,current_entry_name)
-                            #print cn
                             if name not in first_entry:
                                 first_entry[name]=current_entry_name
                             if current_entry_cleaned[1:4] == ['NULL']*3:
@@ -97,6 +96,7 @@ class FuncToGen(object):
         self.sten=sten
 
 default_methods=dict()
+
 # Having a duplicate in the list means something is wrong
 duplicates(list(func_tables.keys()))
 
@@ -196,19 +196,12 @@ for t in func_tables:
                                 funcs[0]=funcs[2]
                         funcs_to_gen.append(FuncToGen("%s_%s_%s"%(funcname[t]%d.upper(),mstag,method),field,d,mstag,funcs[0],flux,stag))
                     print("    break;")
-                    #print "    }"
                 print("  default:")
                 print("    throw BoutException(\"%s AiolosMesh::"%field +myname,'unknown method %d.\\nNote FFTs are not (yet) supported.",method);')
                 print("  }; // end switch")
                 print("}")
                 print()
 
-    #else:
-    #    print fu
-    #for meth in func_tables[t]:
-    #    print meth
-    #print func_tables[t]
-#print first_entry
 
 headers=""
 for func in ["indexDD%s", "indexD2D%s2","indexVDD%s","indexFDD%s"]:
@@ -265,19 +258,10 @@ with open("generated_header.hxx","w") as f:
 
 
 import sys
-#funcs_to_gen=funcs_to_gen[0:2]
 tmp=[]
 for fu in funcs_to_gen:
     tmp.append(fu[0]+fu[1])
 duplicates(tmp)
-#seen = set()
-#uniq = []
-# for x in funcs_to_gen:
-#     xs=x[0]+x[1]
-#     if xs not in seen:
-#         uniq.append(x)
-#         seen.add(xs)
-# funcs_to_gen=uniq
 guards_=[]
 sys.stdout=open("generated_stencils.cxx","w")
 from gen_stencils import gen_functions_normal
@@ -297,7 +281,6 @@ for d in dirs['Field3D']:
             table="DerivTable"
         else:
             table="Table"
-            #stags=[""]
         for stag in stags:
             print('DIFF_METHOD default_%s_%s%sDeriv;'%(d,i,stag))
 
@@ -315,7 +298,6 @@ for d in dirs['Field3D']:
             table="DerivTable"
         else:
             table="Table"
-            #stags=[""]
         for stag in stags:
             warn()
             print('  // Setting derivatives for dd%s and %s'%(d,i+stag))
@@ -336,7 +318,6 @@ for d in dirs['Field3D']:
                     print('    %s->get("%s",name,"%s");'%(option,name,default_diff))
                     print('  } else', end=' ')
             print('  {')
-            #elif i == ''
             print('    name="%s";'%default_diff)
             print('  }')
             print(' ', end=' ')
@@ -351,5 +332,4 @@ for d in dirs['Field3D']:
             print('    throw BoutException("Dont\'t know what diff method to use for %s (direction %s, tried to use %s)!\\nOptions are:%s",name.c_str());'%(i+stag,d,'%s',options))
             print('  }')
 print("}")
-#exit(1)
 sys.stdout.flush()
