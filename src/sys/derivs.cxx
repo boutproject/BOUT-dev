@@ -276,7 +276,7 @@ const Field3D D2DXDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGI
     region_inner = RGN_NOY;
     break;
   default:
-    throw BoutException("Unhandeld region case in D2DXDZ");
+    throw BoutException("Unhandled region case in D2DXDZ");
   }
 
   return DDX(DDZ(f, outloc,method, region_inner),outloc,method,region);;
