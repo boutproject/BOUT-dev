@@ -392,7 +392,7 @@ BoutReal FDDX_U1_stag(stencil &v, stencil &f) {
   // Upper cell boundary
   result -= (v.p >= 0) ? v.p * f.c : v.p * f.p;
 
-  return result;
+  return - result;
 }
 
 /*******************************************************************************
