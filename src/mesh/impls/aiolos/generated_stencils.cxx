@@ -2518,7 +2518,7 @@ static Field3D indexVDDX_norm_DIFF_C2(const Field3D &v_in, const Field3D &f_in) 
 }
 
 // This file is auto-generated - do not edit!
-static void indexVDDX_norm_DIFF_U4_field3d(BoutReal *__restrict__ result_ptr,
+static void indexVDDX_norm_DIFF_U3_field3d(BoutReal *__restrict__ result_ptr,
                                            const BoutReal *__restrict__ v_in_ptr,
                                            const BoutReal *__restrict__ f_in_ptr,
                                            Mesh *msh) {
@@ -2555,10 +2555,10 @@ static void indexVDDX_norm_DIFF_U4_field3d(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-static Field3D indexVDDX_norm_DIFF_U4(const Field3D &v_in, const Field3D &f_in) {
+static Field3D indexVDDX_norm_DIFF_U3(const Field3D &v_in, const Field3D &f_in) {
   Mesh *msh = v_in.getMesh();
   ASSERT1(msh == f_in.getMesh());
-  output_debug.write("Using method indexVDDX_norm_DIFF_U4!\n");
+  output_debug.write("Using method indexVDDX_norm_DIFF_U3!\n");
 #if CHECK > 0
   if (msh->LocalNx < 5) {
     if (msh->xstart == 0) {
@@ -2567,7 +2567,7 @@ static Field3D indexVDDX_norm_DIFF_U4(const Field3D &v_in, const Field3D &f_in) 
       result = 0;
       return result;
     } else {
-      throw BoutException("AiolosMesh::indexVDDX_norm_DIFF_U4 - Not enough guards cells "
+      throw BoutException("AiolosMesh::indexVDDX_norm_DIFF_U3 - Not enough guards cells "
                           "to take derivative!");
     }
   }
@@ -2579,7 +2579,7 @@ static Field3D indexVDDX_norm_DIFF_U4(const Field3D &v_in, const Field3D &f_in) 
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  indexVDDX_norm_DIFF_U4_field3d(result_ptr, v_in_ptr, f_in_ptr, msh);
+  indexVDDX_norm_DIFF_U3_field3d(result_ptr, v_in_ptr, f_in_ptr, msh);
   result.setLocation(f_in.getLocation());
   checkData(result);
   return result;
@@ -2830,7 +2830,7 @@ static Field3D indexVDDY_norm_DIFF_C2(const Field3D &v_in, const Field3D &f_in) 
 }
 
 // This file is auto-generated - do not edit!
-static void indexVDDY_norm_DIFF_U4_field3d(BoutReal *__restrict__ result_ptr,
+static void indexVDDY_norm_DIFF_U3_field3d(BoutReal *__restrict__ result_ptr,
                                            const BoutReal *__restrict__ v_in_ptr,
                                            const BoutReal *__restrict__ f_in_ptr,
                                            Mesh *msh) {
@@ -2867,10 +2867,10 @@ static void indexVDDY_norm_DIFF_U4_field3d(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-static Field3D indexVDDY_norm_DIFF_U4(const Field3D &v_in, const Field3D &f_in) {
+static Field3D indexVDDY_norm_DIFF_U3(const Field3D &v_in, const Field3D &f_in) {
   Mesh *msh = v_in.getMesh();
   ASSERT1(msh == f_in.getMesh());
-  output_debug.write("Using method indexVDDY_norm_DIFF_U4!\n");
+  output_debug.write("Using method indexVDDY_norm_DIFF_U3!\n");
 #if CHECK > 0
   if (msh->LocalNy < 5) {
     if (msh->xstart == 0) {
@@ -2879,7 +2879,7 @@ static Field3D indexVDDY_norm_DIFF_U4(const Field3D &v_in, const Field3D &f_in) 
       result = 0;
       return result;
     } else {
-      throw BoutException("AiolosMesh::indexVDDY_norm_DIFF_U4 - Not enough guards cells "
+      throw BoutException("AiolosMesh::indexVDDY_norm_DIFF_U3 - Not enough guards cells "
                           "to take derivative!");
     }
   }
@@ -2891,7 +2891,7 @@ static Field3D indexVDDY_norm_DIFF_U4(const Field3D &v_in, const Field3D &f_in) 
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  indexVDDY_norm_DIFF_U4_field3d(result_ptr, v_in_ptr, f_in_ptr, msh);
+  indexVDDY_norm_DIFF_U3_field3d(result_ptr, v_in_ptr, f_in_ptr, msh);
   result.setLocation(f_in.getLocation());
   checkData(result);
   return result;
@@ -3286,7 +3286,7 @@ static Field3D indexVDDZ_norm_DIFF_C2(const Field3D &v_in, const Field3D &f_in) 
 }
 
 // This file is auto-generated - do not edit!
-static void indexVDDZ_norm_DIFF_U4_field3d(BoutReal *__restrict__ result_ptr,
+static void indexVDDZ_norm_DIFF_U3_field3d(BoutReal *__restrict__ result_ptr,
                                            const BoutReal *__restrict__ v_in_ptr,
                                            const BoutReal *__restrict__ f_in_ptr,
                                            Mesh *msh) {
@@ -3413,10 +3413,10 @@ static void indexVDDZ_norm_DIFF_U4_field3d(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-static Field3D indexVDDZ_norm_DIFF_U4(const Field3D &v_in, const Field3D &f_in) {
+static Field3D indexVDDZ_norm_DIFF_U3(const Field3D &v_in, const Field3D &f_in) {
   Mesh *msh = v_in.getMesh();
   ASSERT1(msh == f_in.getMesh());
-  output_debug.write("Using method indexVDDZ_norm_DIFF_U4!\n");
+  output_debug.write("Using method indexVDDZ_norm_DIFF_U3!\n");
   if (msh->LocalNz == 1) {
     Field3D result{msh};
     result = 0;
@@ -3430,7 +3430,7 @@ static Field3D indexVDDZ_norm_DIFF_U4(const Field3D &v_in, const Field3D &f_in) 
       result = 0;
       return result;
     } else {
-      throw BoutException("AiolosMesh::indexVDDZ_norm_DIFF_U4 - Not enough guards cells "
+      throw BoutException("AiolosMesh::indexVDDZ_norm_DIFF_U3 - Not enough guards cells "
                           "to take derivative!");
     }
   }
@@ -3442,7 +3442,7 @@ static Field3D indexVDDZ_norm_DIFF_U4(const Field3D &v_in, const Field3D &f_in) 
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  indexVDDZ_norm_DIFF_U4_field3d(result_ptr, v_in_ptr, f_in_ptr, msh);
+  indexVDDZ_norm_DIFF_U3_field3d(result_ptr, v_in_ptr, f_in_ptr, msh);
   result.setLocation(f_in.getLocation());
   checkData(result);
   return result;
@@ -3740,7 +3740,7 @@ static Field2D indexVDDX_norm_DIFF_C2(const Field2D &v_in, const Field2D &f_in) 
 }
 
 // This file is auto-generated - do not edit!
-static void indexVDDX_norm_DIFF_U4_field2d(BoutReal *__restrict__ result_ptr,
+static void indexVDDX_norm_DIFF_U3_field2d(BoutReal *__restrict__ result_ptr,
                                            const BoutReal *__restrict__ v_in_ptr,
                                            const BoutReal *__restrict__ f_in_ptr,
                                            Mesh *msh) {
@@ -3770,10 +3770,10 @@ static void indexVDDX_norm_DIFF_U4_field2d(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-static Field2D indexVDDX_norm_DIFF_U4(const Field2D &v_in, const Field2D &f_in) {
+static Field2D indexVDDX_norm_DIFF_U3(const Field2D &v_in, const Field2D &f_in) {
   Mesh *msh = v_in.getMesh();
   ASSERT1(msh == f_in.getMesh());
-  output_debug.write("Using method indexVDDX_norm_DIFF_U4!\n");
+  output_debug.write("Using method indexVDDX_norm_DIFF_U3!\n");
 #if CHECK > 0
   if (msh->LocalNx < 5) {
     if (msh->xstart == 0) {
@@ -3782,7 +3782,7 @@ static Field2D indexVDDX_norm_DIFF_U4(const Field2D &v_in, const Field2D &f_in) 
       result = 0;
       return result;
     } else {
-      throw BoutException("AiolosMesh::indexVDDX_norm_DIFF_U4 - Not enough guards cells "
+      throw BoutException("AiolosMesh::indexVDDX_norm_DIFF_U3 - Not enough guards cells "
                           "to take derivative!");
     }
   }
@@ -3794,7 +3794,7 @@ static Field2D indexVDDX_norm_DIFF_U4(const Field2D &v_in, const Field2D &f_in) 
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0);
-  indexVDDX_norm_DIFF_U4_field2d(result_ptr, v_in_ptr, f_in_ptr, msh);
+  indexVDDX_norm_DIFF_U3_field2d(result_ptr, v_in_ptr, f_in_ptr, msh);
   result.setLocation(f_in.getLocation());
   checkData(result);
   return result;
@@ -4026,7 +4026,7 @@ static Field2D indexVDDY_norm_DIFF_C2(const Field2D &v_in, const Field2D &f_in) 
 }
 
 // This file is auto-generated - do not edit!
-static void indexVDDY_norm_DIFF_U4_field2d(BoutReal *__restrict__ result_ptr,
+static void indexVDDY_norm_DIFF_U3_field2d(BoutReal *__restrict__ result_ptr,
                                            const BoutReal *__restrict__ v_in_ptr,
                                            const BoutReal *__restrict__ f_in_ptr,
                                            Mesh *msh) {
@@ -4056,10 +4056,10 @@ static void indexVDDY_norm_DIFF_U4_field2d(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-static Field2D indexVDDY_norm_DIFF_U4(const Field2D &v_in, const Field2D &f_in) {
+static Field2D indexVDDY_norm_DIFF_U3(const Field2D &v_in, const Field2D &f_in) {
   Mesh *msh = v_in.getMesh();
   ASSERT1(msh == f_in.getMesh());
-  output_debug.write("Using method indexVDDY_norm_DIFF_U4!\n");
+  output_debug.write("Using method indexVDDY_norm_DIFF_U3!\n");
 #if CHECK > 0
   if (msh->LocalNy < 5) {
     if (msh->xstart == 0) {
@@ -4068,7 +4068,7 @@ static Field2D indexVDDY_norm_DIFF_U4(const Field2D &v_in, const Field2D &f_in) 
       result = 0;
       return result;
     } else {
-      throw BoutException("AiolosMesh::indexVDDY_norm_DIFF_U4 - Not enough guards cells "
+      throw BoutException("AiolosMesh::indexVDDY_norm_DIFF_U3 - Not enough guards cells "
                           "to take derivative!");
     }
   }
@@ -4080,7 +4080,7 @@ static Field2D indexVDDY_norm_DIFF_U4(const Field2D &v_in, const Field2D &f_in) 
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0);
-  indexVDDY_norm_DIFF_U4_field2d(result_ptr, v_in_ptr, f_in_ptr, msh);
+  indexVDDY_norm_DIFF_U3_field2d(result_ptr, v_in_ptr, f_in_ptr, msh);
   result.setLocation(f_in.getLocation());
   checkData(result);
   return result;
@@ -4168,7 +4168,7 @@ static void indexFDDX_norm_DIFF_U1_field3d(BoutReal *__restrict__ result_ptr,
         result_ -= (vs >= 0.0) ? vs * f_in_ptr[((x + 0) * Ny + y) * Nz + z]
                                : vs * f_in_ptr[((x + 1) * Ny + y) * Nz + z];
 
-        result_ptr[((x + 0) * Ny + y) * Nz + z] = result_;
+        result_ptr[((x + 0) * Ny + y) * Nz + z] = -result_;
       }
     }
   }
@@ -4329,91 +4329,6 @@ static Field3D indexFDDX_norm_DIFF_C4(const Field3D &v_in, const Field3D &f_in) 
 }
 
 // This file is auto-generated - do not edit!
-static void indexFDDX_norm_DIFF_NND_field3d(BoutReal *__restrict__ result_ptr,
-                                            const BoutReal *__restrict__ v_in_ptr,
-                                            const BoutReal *__restrict__ f_in_ptr,
-                                            Mesh *msh) {
-  const int Nx = msh->LocalNx;
-  const int Ny = msh->LocalNy;
-  const int Nz = msh->LocalNz;
-#if CHECK > 0
-  if (msh->xstart < 2) {
-    throw BoutException(
-        "Cannot compute derivative - need at least 2 guard cells in X direction!");
-  }
-#endif
-  for (int x = 2; x < Nx - 2; ++x) {
-    for (int y = 0; y < Ny; ++y) {
-      for (int z = 0; z < Nz; ++z) {
-        BoutReal fp = 0.5 * (v_in_ptr[((x + 0) * Ny + y) * Nz + z] +
-                             fabs(v_in_ptr[((x + 0) * Ny + y) * Nz + z])) *
-                      f_in_ptr[((x + 0) * Ny + y) * Nz + z];
-        BoutReal fm = 0.5 * (v_in_ptr[((x + 0) * Ny + y) * Nz + z] -
-                             fabs(v_in_ptr[((x + 0) * Ny + y) * Nz + z])) *
-                      f_in_ptr[((x + 0) * Ny + y) * Nz + z];
-        BoutReal fp1 = 0.5 * (v_in_ptr[((x + 1) * Ny + y) * Nz + z] +
-                              fabs(v_in_ptr[((x + 1) * Ny + y) * Nz + z])) *
-                       f_in_ptr[((x + 1) * Ny + y) * Nz + z];
-        BoutReal fm1 = 0.5 * (v_in_ptr[((x + 1) * Ny + y) * Nz + z] -
-                              fabs(v_in_ptr[((x + 1) * Ny + y) * Nz + z])) *
-                       f_in_ptr[((x + 1) * Ny + y) * Nz + z];
-        BoutReal fm2 = 0.5 * (v_in_ptr[((x + 2) * Ny + y) * Nz + z] -
-                              fabs(v_in_ptr[((x + 2) * Ny + y) * Nz + z])) *
-                       f_in_ptr[((x + 2) * Ny + y) * Nz + z];
-        BoutReal fp_1 = 0.5 * (v_in_ptr[((x - 1) * Ny + y) * Nz + z] +
-                               fabs(v_in_ptr[((x - 1) * Ny + y) * Nz + z])) *
-                        f_in_ptr[((x - 1) * Ny + y) * Nz + z];
-        BoutReal fm_1 = 0.5 * (v_in_ptr[((x - 1) * Ny + y) * Nz + z] -
-                               fabs(v_in_ptr[((x - 1) * Ny + y) * Nz + z])) *
-                        f_in_ptr[((x - 1) * Ny + y) * Nz + z];
-        BoutReal fp_2 = 0.5 * (v_in_ptr[((x - 2) * Ny + y) * Nz + z] +
-                               fabs(v_in_ptr[((x - 2) * Ny + y) * Nz + z])) *
-                        f_in_ptr[((x - 2) * Ny + y) * Nz + z];
-        BoutReal flp = fp + 0.5 * MINMOD(fp1 - fp, fp - fp_1);
-        BoutReal frp = fm1 - 0.5 * MINMOD(fm1 - fm, fm2 - fm1);
-        BoutReal flm = fp_1 + 0.5 * MINMOD(fp - fp_1, fp_1 - fp_2);
-        BoutReal frm = fm - 0.5 * MINMOD(fm - fm_1, fm1 - fm);
-        BoutReal hp = flp + frp;
-        BoutReal hm = flm + frm;
-
-        result_ptr[((x + 0) * Ny + y) * Nz + z] = hp - hm;
-      }
-    }
-  }
-}
-
-// This file is auto-generated - do not edit!
-static Field3D indexFDDX_norm_DIFF_NND(const Field3D &v_in, const Field3D &f_in) {
-  Mesh *msh = v_in.getMesh();
-  ASSERT1(msh == f_in.getMesh());
-  output_debug.write("Using method indexFDDX_norm_DIFF_NND!\n");
-#if CHECK > 0
-  if (msh->LocalNx < 5) {
-    if (msh->xstart == 0) {
-      // return Field3D(0.,msh);
-      Field3D result{msh};
-      result = 0;
-      return result;
-    } else {
-      throw BoutException("AiolosMesh::indexFDDX_norm_DIFF_NND - Not enough guards cells "
-                          "to take derivative!");
-    }
-  }
-#endif
-  Field3D result(msh);
-  result.allocate();
-  BoutReal *__restrict__ result_ptr = &result(0, 0, 0);
-  checkData(v_in);
-  const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
-  checkData(f_in);
-  const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  indexFDDX_norm_DIFF_NND_field3d(result_ptr, v_in_ptr, f_in_ptr, msh);
-  result.setLocation(f_in.getLocation());
-  checkData(result);
-  return result;
-}
-
-// This file is auto-generated - do not edit!
 static void indexFDDY_norm_DIFF_U1_field3d(BoutReal *__restrict__ result_ptr,
                                            const BoutReal *__restrict__ v_in_ptr,
                                            const BoutReal *__restrict__ f_in_ptr,
@@ -4439,7 +4354,7 @@ static void indexFDDY_norm_DIFF_U1_field3d(BoutReal *__restrict__ result_ptr,
         result_ -= (vs >= 0.0) ? vs * f_in_ptr[((x)*Ny + y + 0) * Nz + z]
                                : vs * f_in_ptr[((x)*Ny + y + 1) * Nz + z];
 
-        result_ptr[((x)*Ny + y + 0) * Nz + z] = result_;
+        result_ptr[((x)*Ny + y + 0) * Nz + z] = -result_;
       }
     }
   }
@@ -4597,91 +4512,6 @@ static Field3D indexFDDY_norm_DIFF_C4(const Field3D &v_in, const Field3D &f_in) 
 }
 
 // This file is auto-generated - do not edit!
-static void indexFDDY_norm_DIFF_NND_field3d(BoutReal *__restrict__ result_ptr,
-                                            const BoutReal *__restrict__ v_in_ptr,
-                                            const BoutReal *__restrict__ f_in_ptr,
-                                            Mesh *msh) {
-  const int Nx = msh->LocalNx;
-  const int Ny = msh->LocalNy;
-  const int Nz = msh->LocalNz;
-#if CHECK > 0
-  if (msh->ystart < 2) {
-    throw BoutException(
-        "Cannot compute derivative - need at least 2 guard cells in Y direction!");
-  }
-#endif
-  for (int x = 0; x < Nx; ++x) {
-    for (int y = 2; y < Ny - 2; ++y) {
-      for (int z = 0; z < Nz; ++z) {
-        BoutReal fp = 0.5 * (v_in_ptr[((x)*Ny + y + 0) * Nz + z] +
-                             fabs(v_in_ptr[((x)*Ny + y + 0) * Nz + z])) *
-                      f_in_ptr[((x)*Ny + y + 0) * Nz + z];
-        BoutReal fm = 0.5 * (v_in_ptr[((x)*Ny + y + 0) * Nz + z] -
-                             fabs(v_in_ptr[((x)*Ny + y + 0) * Nz + z])) *
-                      f_in_ptr[((x)*Ny + y + 0) * Nz + z];
-        BoutReal fp1 = 0.5 * (v_in_ptr[((x)*Ny + y + 1) * Nz + z] +
-                              fabs(v_in_ptr[((x)*Ny + y + 1) * Nz + z])) *
-                       f_in_ptr[((x)*Ny + y + 1) * Nz + z];
-        BoutReal fm1 = 0.5 * (v_in_ptr[((x)*Ny + y + 1) * Nz + z] -
-                              fabs(v_in_ptr[((x)*Ny + y + 1) * Nz + z])) *
-                       f_in_ptr[((x)*Ny + y + 1) * Nz + z];
-        BoutReal fm2 = 0.5 * (v_in_ptr[((x)*Ny + y + 2) * Nz + z] -
-                              fabs(v_in_ptr[((x)*Ny + y + 2) * Nz + z])) *
-                       f_in_ptr[((x)*Ny + y + 2) * Nz + z];
-        BoutReal fp_1 = 0.5 * (v_in_ptr[((x)*Ny + y - 1) * Nz + z] +
-                               fabs(v_in_ptr[((x)*Ny + y - 1) * Nz + z])) *
-                        f_in_ptr[((x)*Ny + y - 1) * Nz + z];
-        BoutReal fm_1 = 0.5 * (v_in_ptr[((x)*Ny + y - 1) * Nz + z] -
-                               fabs(v_in_ptr[((x)*Ny + y - 1) * Nz + z])) *
-                        f_in_ptr[((x)*Ny + y - 1) * Nz + z];
-        BoutReal fp_2 = 0.5 * (v_in_ptr[((x)*Ny + y - 2) * Nz + z] +
-                               fabs(v_in_ptr[((x)*Ny + y - 2) * Nz + z])) *
-                        f_in_ptr[((x)*Ny + y - 2) * Nz + z];
-        BoutReal flp = fp + 0.5 * MINMOD(fp1 - fp, fp - fp_1);
-        BoutReal frp = fm1 - 0.5 * MINMOD(fm1 - fm, fm2 - fm1);
-        BoutReal flm = fp_1 + 0.5 * MINMOD(fp - fp_1, fp_1 - fp_2);
-        BoutReal frm = fm - 0.5 * MINMOD(fm - fm_1, fm1 - fm);
-        BoutReal hp = flp + frp;
-        BoutReal hm = flm + frm;
-
-        result_ptr[((x)*Ny + y + 0) * Nz + z] = hp - hm;
-      }
-    }
-  }
-}
-
-// This file is auto-generated - do not edit!
-static Field3D indexFDDY_norm_DIFF_NND(const Field3D &v_in, const Field3D &f_in) {
-  Mesh *msh = v_in.getMesh();
-  ASSERT1(msh == f_in.getMesh());
-  output_debug.write("Using method indexFDDY_norm_DIFF_NND!\n");
-#if CHECK > 0
-  if (msh->LocalNy < 5) {
-    if (msh->xstart == 0) {
-      // return Field3D(0.,msh);
-      Field3D result{msh};
-      result = 0;
-      return result;
-    } else {
-      throw BoutException("AiolosMesh::indexFDDY_norm_DIFF_NND - Not enough guards cells "
-                          "to take derivative!");
-    }
-  }
-#endif
-  Field3D result(msh);
-  result.allocate();
-  BoutReal *__restrict__ result_ptr = &result(0, 0, 0);
-  checkData(v_in);
-  const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
-  checkData(f_in);
-  const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  indexFDDY_norm_DIFF_NND_field3d(result_ptr, v_in_ptr, f_in_ptr, msh);
-  result.setLocation(f_in.getLocation());
-  checkData(result);
-  return result;
-}
-
-// This file is auto-generated - do not edit!
 static void indexFDDZ_norm_DIFF_U1_field3d(BoutReal *__restrict__ result_ptr,
                                            const BoutReal *__restrict__ v_in_ptr,
                                            const BoutReal *__restrict__ f_in_ptr,
@@ -4703,7 +4533,7 @@ static void indexFDDZ_norm_DIFF_U1_field3d(BoutReal *__restrict__ result_ptr,
           result_ -= (vs >= 0.0) ? vs * f_in_ptr[((x)*Ny + y) * Nz + z + 0]
                                  : vs * f_in_ptr[((x)*Ny + y) * Nz + z + 1];
 
-          result_ptr[((x)*Ny + y) * Nz + z + 0] = result_;
+          result_ptr[((x)*Ny + y) * Nz + z + 0] = -result_;
         }
         for (int z = 1; z < Nz - 1; ++z) {
           BoutReal vs = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z - 1] +
@@ -4715,7 +4545,7 @@ static void indexFDDZ_norm_DIFF_U1_field3d(BoutReal *__restrict__ result_ptr,
           result_ -= (vs >= 0.0) ? vs * f_in_ptr[((x)*Ny + y) * Nz + z + 0]
                                  : vs * f_in_ptr[((x)*Ny + y) * Nz + z + 1];
 
-          result_ptr[((x)*Ny + y) * Nz + z + 0] = result_;
+          result_ptr[((x)*Ny + y) * Nz + z + 0] = -result_;
         }
         {
           int z = Nz - 1;
@@ -4728,7 +4558,7 @@ static void indexFDDZ_norm_DIFF_U1_field3d(BoutReal *__restrict__ result_ptr,
           result_ -= (vs >= 0.0) ? vs * f_in_ptr[((x)*Ny + y) * Nz + z + 0]
                                  : vs * f_in_ptr[((x)*Ny + y) * Nz + z + 1 - Nz];
 
-          result_ptr[((x)*Ny + y) * Nz + z + 0] = result_;
+          result_ptr[((x)*Ny + y) * Nz + z + 0] = -result_;
         }
       }
     }
@@ -4746,7 +4576,7 @@ static void indexFDDZ_norm_DIFF_U1_field3d(BoutReal *__restrict__ result_ptr,
           result_ -= (vs >= 0.0) ? vs * f_in_ptr[((x)*Ny + y) * Nz + +((z + 0) % Nz)]
                                  : vs * f_in_ptr[((x)*Ny + y) * Nz + +((z + 1) % Nz)];
 
-          result_ptr[((x)*Ny + y) * Nz + z + 0] = result_;
+          result_ptr[((x)*Ny + y) * Nz + z + 0] = -result_;
         }
       }
     }
@@ -5016,274 +4846,6 @@ static Field3D indexFDDZ_norm_DIFF_C4(const Field3D &v_in, const Field3D &f_in) 
 }
 
 // This file is auto-generated - do not edit!
-static void indexFDDZ_norm_DIFF_NND_field3d(BoutReal *__restrict__ result_ptr,
-                                            const BoutReal *__restrict__ v_in_ptr,
-                                            const BoutReal *__restrict__ f_in_ptr,
-                                            Mesh *msh) {
-  const int Nx = msh->LocalNx;
-  const int Ny = msh->LocalNy;
-  const int Nz = msh->LocalNz;
-  if (Nz > 3) {
-    for (int x = 0; x < Nx; ++x) {
-      for (int y = 0; y < Ny; ++y) {
-        {
-          int z = 0;
-          BoutReal fp = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z + 0] +
-                               fabs(v_in_ptr[((x)*Ny + y) * Nz + z + 0])) *
-                        f_in_ptr[((x)*Ny + y) * Nz + z + 0];
-          BoutReal fm = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z + 0] -
-                               fabs(v_in_ptr[((x)*Ny + y) * Nz + z + 0])) *
-                        f_in_ptr[((x)*Ny + y) * Nz + z + 0];
-          BoutReal fp1 = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z + 1] +
-                                fabs(v_in_ptr[((x)*Ny + y) * Nz + z + 1])) *
-                         f_in_ptr[((x)*Ny + y) * Nz + z + 1];
-          BoutReal fm1 = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z + 1] -
-                                fabs(v_in_ptr[((x)*Ny + y) * Nz + z + 1])) *
-                         f_in_ptr[((x)*Ny + y) * Nz + z + 1];
-          BoutReal fm2 = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z + 2] -
-                                fabs(v_in_ptr[((x)*Ny + y) * Nz + z + 2])) *
-                         f_in_ptr[((x)*Ny + y) * Nz + z + 2];
-          BoutReal fp_1 = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z - 1 + Nz] +
-                                 fabs(v_in_ptr[((x)*Ny + y) * Nz + z - 1 + Nz])) *
-                          f_in_ptr[((x)*Ny + y) * Nz + z - 1 + Nz];
-          BoutReal fm_1 = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z - 1 + Nz] -
-                                 fabs(v_in_ptr[((x)*Ny + y) * Nz + z - 1 + Nz])) *
-                          f_in_ptr[((x)*Ny + y) * Nz + z - 1 + Nz];
-          BoutReal fp_2 = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z - 2 + Nz] +
-                                 fabs(v_in_ptr[((x)*Ny + y) * Nz + z - 2 + Nz])) *
-                          f_in_ptr[((x)*Ny + y) * Nz + z - 2 + Nz];
-          BoutReal flp = fp + 0.5 * MINMOD(fp1 - fp, fp - fp_1);
-          BoutReal frp = fm1 - 0.5 * MINMOD(fm1 - fm, fm2 - fm1);
-          BoutReal flm = fp_1 + 0.5 * MINMOD(fp - fp_1, fp_1 - fp_2);
-          BoutReal frm = fm - 0.5 * MINMOD(fm - fm_1, fm1 - fm);
-          BoutReal hp = flp + frp;
-          BoutReal hm = flm + frm;
-
-          result_ptr[((x)*Ny + y) * Nz + z + 0] = hp - hm;
-        }
-        {
-          int z = 1;
-          BoutReal fp = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z + 0] +
-                               fabs(v_in_ptr[((x)*Ny + y) * Nz + z + 0])) *
-                        f_in_ptr[((x)*Ny + y) * Nz + z + 0];
-          BoutReal fm = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z + 0] -
-                               fabs(v_in_ptr[((x)*Ny + y) * Nz + z + 0])) *
-                        f_in_ptr[((x)*Ny + y) * Nz + z + 0];
-          BoutReal fp1 = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z + 1] +
-                                fabs(v_in_ptr[((x)*Ny + y) * Nz + z + 1])) *
-                         f_in_ptr[((x)*Ny + y) * Nz + z + 1];
-          BoutReal fm1 = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z + 1] -
-                                fabs(v_in_ptr[((x)*Ny + y) * Nz + z + 1])) *
-                         f_in_ptr[((x)*Ny + y) * Nz + z + 1];
-          BoutReal fm2 = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z + 2] -
-                                fabs(v_in_ptr[((x)*Ny + y) * Nz + z + 2])) *
-                         f_in_ptr[((x)*Ny + y) * Nz + z + 2];
-          BoutReal fp_1 = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z - 1] +
-                                 fabs(v_in_ptr[((x)*Ny + y) * Nz + z - 1])) *
-                          f_in_ptr[((x)*Ny + y) * Nz + z - 1];
-          BoutReal fm_1 = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z - 1] -
-                                 fabs(v_in_ptr[((x)*Ny + y) * Nz + z - 1])) *
-                          f_in_ptr[((x)*Ny + y) * Nz + z - 1];
-          BoutReal fp_2 = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z - 2 + Nz] +
-                                 fabs(v_in_ptr[((x)*Ny + y) * Nz + z - 2 + Nz])) *
-                          f_in_ptr[((x)*Ny + y) * Nz + z - 2 + Nz];
-          BoutReal flp = fp + 0.5 * MINMOD(fp1 - fp, fp - fp_1);
-          BoutReal frp = fm1 - 0.5 * MINMOD(fm1 - fm, fm2 - fm1);
-          BoutReal flm = fp_1 + 0.5 * MINMOD(fp - fp_1, fp_1 - fp_2);
-          BoutReal frm = fm - 0.5 * MINMOD(fm - fm_1, fm1 - fm);
-          BoutReal hp = flp + frp;
-          BoutReal hm = flm + frm;
-
-          result_ptr[((x)*Ny + y) * Nz + z + 0] = hp - hm;
-        }
-        for (int z = 2; z < Nz - 2; ++z) {
-          BoutReal fp = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z + 0] +
-                               fabs(v_in_ptr[((x)*Ny + y) * Nz + z + 0])) *
-                        f_in_ptr[((x)*Ny + y) * Nz + z + 0];
-          BoutReal fm = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z + 0] -
-                               fabs(v_in_ptr[((x)*Ny + y) * Nz + z + 0])) *
-                        f_in_ptr[((x)*Ny + y) * Nz + z + 0];
-          BoutReal fp1 = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z + 1] +
-                                fabs(v_in_ptr[((x)*Ny + y) * Nz + z + 1])) *
-                         f_in_ptr[((x)*Ny + y) * Nz + z + 1];
-          BoutReal fm1 = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z + 1] -
-                                fabs(v_in_ptr[((x)*Ny + y) * Nz + z + 1])) *
-                         f_in_ptr[((x)*Ny + y) * Nz + z + 1];
-          BoutReal fm2 = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z + 2] -
-                                fabs(v_in_ptr[((x)*Ny + y) * Nz + z + 2])) *
-                         f_in_ptr[((x)*Ny + y) * Nz + z + 2];
-          BoutReal fp_1 = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z - 1] +
-                                 fabs(v_in_ptr[((x)*Ny + y) * Nz + z - 1])) *
-                          f_in_ptr[((x)*Ny + y) * Nz + z - 1];
-          BoutReal fm_1 = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z - 1] -
-                                 fabs(v_in_ptr[((x)*Ny + y) * Nz + z - 1])) *
-                          f_in_ptr[((x)*Ny + y) * Nz + z - 1];
-          BoutReal fp_2 = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z - 2] +
-                                 fabs(v_in_ptr[((x)*Ny + y) * Nz + z - 2])) *
-                          f_in_ptr[((x)*Ny + y) * Nz + z - 2];
-          BoutReal flp = fp + 0.5 * MINMOD(fp1 - fp, fp - fp_1);
-          BoutReal frp = fm1 - 0.5 * MINMOD(fm1 - fm, fm2 - fm1);
-          BoutReal flm = fp_1 + 0.5 * MINMOD(fp - fp_1, fp_1 - fp_2);
-          BoutReal frm = fm - 0.5 * MINMOD(fm - fm_1, fm1 - fm);
-          BoutReal hp = flp + frp;
-          BoutReal hm = flm + frm;
-
-          result_ptr[((x)*Ny + y) * Nz + z + 0] = hp - hm;
-        }
-        {
-          int z = Nz - 2;
-          BoutReal fp = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z + 0] +
-                               fabs(v_in_ptr[((x)*Ny + y) * Nz + z + 0])) *
-                        f_in_ptr[((x)*Ny + y) * Nz + z + 0];
-          BoutReal fm = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z + 0] -
-                               fabs(v_in_ptr[((x)*Ny + y) * Nz + z + 0])) *
-                        f_in_ptr[((x)*Ny + y) * Nz + z + 0];
-          BoutReal fp1 = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z + 1] +
-                                fabs(v_in_ptr[((x)*Ny + y) * Nz + z + 1])) *
-                         f_in_ptr[((x)*Ny + y) * Nz + z + 1];
-          BoutReal fm1 = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z + 1] -
-                                fabs(v_in_ptr[((x)*Ny + y) * Nz + z + 1])) *
-                         f_in_ptr[((x)*Ny + y) * Nz + z + 1];
-          BoutReal fm2 = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z + 2 - Nz] -
-                                fabs(v_in_ptr[((x)*Ny + y) * Nz + z + 2 - Nz])) *
-                         f_in_ptr[((x)*Ny + y) * Nz + z + 2 - Nz];
-          BoutReal fp_1 = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z - 1] +
-                                 fabs(v_in_ptr[((x)*Ny + y) * Nz + z - 1])) *
-                          f_in_ptr[((x)*Ny + y) * Nz + z - 1];
-          BoutReal fm_1 = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z - 1] -
-                                 fabs(v_in_ptr[((x)*Ny + y) * Nz + z - 1])) *
-                          f_in_ptr[((x)*Ny + y) * Nz + z - 1];
-          BoutReal fp_2 = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z - 2] +
-                                 fabs(v_in_ptr[((x)*Ny + y) * Nz + z - 2])) *
-                          f_in_ptr[((x)*Ny + y) * Nz + z - 2];
-          BoutReal flp = fp + 0.5 * MINMOD(fp1 - fp, fp - fp_1);
-          BoutReal frp = fm1 - 0.5 * MINMOD(fm1 - fm, fm2 - fm1);
-          BoutReal flm = fp_1 + 0.5 * MINMOD(fp - fp_1, fp_1 - fp_2);
-          BoutReal frm = fm - 0.5 * MINMOD(fm - fm_1, fm1 - fm);
-          BoutReal hp = flp + frp;
-          BoutReal hm = flm + frm;
-
-          result_ptr[((x)*Ny + y) * Nz + z + 0] = hp - hm;
-        }
-        {
-          int z = Nz - 1;
-          BoutReal fp = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z + 0] +
-                               fabs(v_in_ptr[((x)*Ny + y) * Nz + z + 0])) *
-                        f_in_ptr[((x)*Ny + y) * Nz + z + 0];
-          BoutReal fm = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z + 0] -
-                               fabs(v_in_ptr[((x)*Ny + y) * Nz + z + 0])) *
-                        f_in_ptr[((x)*Ny + y) * Nz + z + 0];
-          BoutReal fp1 = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z + 1 - Nz] +
-                                fabs(v_in_ptr[((x)*Ny + y) * Nz + z + 1 - Nz])) *
-                         f_in_ptr[((x)*Ny + y) * Nz + z + 1 - Nz];
-          BoutReal fm1 = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z + 1 - Nz] -
-                                fabs(v_in_ptr[((x)*Ny + y) * Nz + z + 1 - Nz])) *
-                         f_in_ptr[((x)*Ny + y) * Nz + z + 1 - Nz];
-          BoutReal fm2 = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z + 2 - Nz] -
-                                fabs(v_in_ptr[((x)*Ny + y) * Nz + z + 2 - Nz])) *
-                         f_in_ptr[((x)*Ny + y) * Nz + z + 2 - Nz];
-          BoutReal fp_1 = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z - 1] +
-                                 fabs(v_in_ptr[((x)*Ny + y) * Nz + z - 1])) *
-                          f_in_ptr[((x)*Ny + y) * Nz + z - 1];
-          BoutReal fm_1 = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z - 1] -
-                                 fabs(v_in_ptr[((x)*Ny + y) * Nz + z - 1])) *
-                          f_in_ptr[((x)*Ny + y) * Nz + z - 1];
-          BoutReal fp_2 = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + z - 2] +
-                                 fabs(v_in_ptr[((x)*Ny + y) * Nz + z - 2])) *
-                          f_in_ptr[((x)*Ny + y) * Nz + z - 2];
-          BoutReal flp = fp + 0.5 * MINMOD(fp1 - fp, fp - fp_1);
-          BoutReal frp = fm1 - 0.5 * MINMOD(fm1 - fm, fm2 - fm1);
-          BoutReal flm = fp_1 + 0.5 * MINMOD(fp - fp_1, fp_1 - fp_2);
-          BoutReal frm = fm - 0.5 * MINMOD(fm - fm_1, fm1 - fm);
-          BoutReal hp = flp + frp;
-          BoutReal hm = flm + frm;
-
-          result_ptr[((x)*Ny + y) * Nz + z + 0] = hp - hm;
-        }
-      }
-    }
-  } else {
-    for (int x = 0; x < Nx; ++x) {
-      for (int y = 0; y < Ny; ++y) {
-        for (int z = 0; z < Nz; ++z) {
-          BoutReal fp = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + +((z + 0) % Nz)] +
-                               fabs(v_in_ptr[((x)*Ny + y) * Nz + +((z + 0) % Nz)])) *
-                        f_in_ptr[((x)*Ny + y) * Nz + +((z + 0) % Nz)];
-          BoutReal fm = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + +((z + 0) % Nz)] -
-                               fabs(v_in_ptr[((x)*Ny + y) * Nz + +((z + 0) % Nz)])) *
-                        f_in_ptr[((x)*Ny + y) * Nz + +((z + 0) % Nz)];
-          BoutReal fp1 = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + +((z + 1) % Nz)] +
-                                fabs(v_in_ptr[((x)*Ny + y) * Nz + +((z + 1) % Nz)])) *
-                         f_in_ptr[((x)*Ny + y) * Nz + +((z + 1) % Nz)];
-          BoutReal fm1 = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + +((z + 1) % Nz)] -
-                                fabs(v_in_ptr[((x)*Ny + y) * Nz + +((z + 1) % Nz)])) *
-                         f_in_ptr[((x)*Ny + y) * Nz + +((z + 1) % Nz)];
-          BoutReal fm2 = 0.5 * (v_in_ptr[((x)*Ny + y) * Nz + +((z + 2) % Nz)] -
-                                fabs(v_in_ptr[((x)*Ny + y) * Nz + +((z + 2) % Nz)])) *
-                         f_in_ptr[((x)*Ny + y) * Nz + +((z + 2) % Nz)];
-          BoutReal fp_1 = 0.5 *
-                          (v_in_ptr[((x)*Ny + y) * Nz + +((z - 1 + 1 * Nz) % Nz)] +
-                           fabs(v_in_ptr[((x)*Ny + y) * Nz + +((z - 1 + 1 * Nz) % Nz)])) *
-                          f_in_ptr[((x)*Ny + y) * Nz + +((z - 1 + 1 * Nz) % Nz)];
-          BoutReal fm_1 = 0.5 *
-                          (v_in_ptr[((x)*Ny + y) * Nz + +((z - 1 + 1 * Nz) % Nz)] -
-                           fabs(v_in_ptr[((x)*Ny + y) * Nz + +((z - 1 + 1 * Nz) % Nz)])) *
-                          f_in_ptr[((x)*Ny + y) * Nz + +((z - 1 + 1 * Nz) % Nz)];
-          BoutReal fp_2 = 0.5 *
-                          (v_in_ptr[((x)*Ny + y) * Nz + +((z - 2 + 2 * Nz) % Nz)] +
-                           fabs(v_in_ptr[((x)*Ny + y) * Nz + +((z - 2 + 2 * Nz) % Nz)])) *
-                          f_in_ptr[((x)*Ny + y) * Nz + +((z - 2 + 2 * Nz) % Nz)];
-          BoutReal flp = fp + 0.5 * MINMOD(fp1 - fp, fp - fp_1);
-          BoutReal frp = fm1 - 0.5 * MINMOD(fm1 - fm, fm2 - fm1);
-          BoutReal flm = fp_1 + 0.5 * MINMOD(fp - fp_1, fp_1 - fp_2);
-          BoutReal frm = fm - 0.5 * MINMOD(fm - fm_1, fm1 - fm);
-          BoutReal hp = flp + frp;
-          BoutReal hm = flm + frm;
-
-          result_ptr[((x)*Ny + y) * Nz + z + 0] = hp - hm;
-        }
-      }
-    }
-  }
-}
-
-// This file is auto-generated - do not edit!
-static Field3D indexFDDZ_norm_DIFF_NND(const Field3D &v_in, const Field3D &f_in) {
-  Mesh *msh = v_in.getMesh();
-  ASSERT1(msh == f_in.getMesh());
-  output_debug.write("Using method indexFDDZ_norm_DIFF_NND!\n");
-  if (msh->LocalNz == 1) {
-    Field3D result{msh};
-    result = 0;
-    return result;
-  }
-#if CHECK > 0
-  if (msh->LocalNz < 5) {
-    if (msh->xstart == 0) {
-      // return Field3D(0.,msh);
-      Field3D result{msh};
-      result = 0;
-      return result;
-    } else {
-      throw BoutException("AiolosMesh::indexFDDZ_norm_DIFF_NND - Not enough guards cells "
-                          "to take derivative!");
-    }
-  }
-#endif
-  Field3D result(msh);
-  result.allocate();
-  BoutReal *__restrict__ result_ptr = &result(0, 0, 0);
-  checkData(v_in);
-  const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
-  checkData(f_in);
-  const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  indexFDDZ_norm_DIFF_NND_field3d(result_ptr, v_in_ptr, f_in_ptr, msh);
-  result.setLocation(f_in.getLocation());
-  checkData(result);
-  return result;
-}
-
-// This file is auto-generated - do not edit!
 static void indexFDDX_norm_DIFF_U1_field2d(BoutReal *__restrict__ result_ptr,
                                            const BoutReal *__restrict__ v_in_ptr,
                                            const BoutReal *__restrict__ f_in_ptr,
@@ -5305,7 +4867,7 @@ static void indexFDDX_norm_DIFF_U1_field2d(BoutReal *__restrict__ result_ptr,
       result_ -=
           (vs >= 0.0) ? vs * f_in_ptr[(x + 0) * Ny + y] : vs * f_in_ptr[(x + 1) * Ny + y];
 
-      result_ptr[(x + 0) * Ny + y] = result_;
+      result_ptr[(x + 0) * Ny + y] = -result_;
     }
   }
 }
@@ -5453,88 +5015,6 @@ static Field2D indexFDDX_norm_DIFF_C4(const Field2D &v_in, const Field2D &f_in) 
 }
 
 // This file is auto-generated - do not edit!
-static void indexFDDX_norm_DIFF_NND_field2d(BoutReal *__restrict__ result_ptr,
-                                            const BoutReal *__restrict__ v_in_ptr,
-                                            const BoutReal *__restrict__ f_in_ptr,
-                                            Mesh *msh) {
-  const int Nx = msh->LocalNx;
-  const int Ny = msh->LocalNy;
-#if CHECK > 0
-  if (msh->xstart < 2) {
-    throw BoutException(
-        "Cannot compute derivative - need at least 2 guard cells in X direction!");
-  }
-#endif
-  for (int x = 2; x < Nx - 2; ++x) {
-    for (int y = 0; y < Ny; ++y) {
-      BoutReal fp = 0.5 *
-                    (v_in_ptr[(x + 0) * Ny + y] + fabs(v_in_ptr[(x + 0) * Ny + y])) *
-                    f_in_ptr[(x + 0) * Ny + y];
-      BoutReal fm = 0.5 *
-                    (v_in_ptr[(x + 0) * Ny + y] - fabs(v_in_ptr[(x + 0) * Ny + y])) *
-                    f_in_ptr[(x + 0) * Ny + y];
-      BoutReal fp1 = 0.5 *
-                     (v_in_ptr[(x + 1) * Ny + y] + fabs(v_in_ptr[(x + 1) * Ny + y])) *
-                     f_in_ptr[(x + 1) * Ny + y];
-      BoutReal fm1 = 0.5 *
-                     (v_in_ptr[(x + 1) * Ny + y] - fabs(v_in_ptr[(x + 1) * Ny + y])) *
-                     f_in_ptr[(x + 1) * Ny + y];
-      BoutReal fm2 = 0.5 *
-                     (v_in_ptr[(x + 2) * Ny + y] - fabs(v_in_ptr[(x + 2) * Ny + y])) *
-                     f_in_ptr[(x + 2) * Ny + y];
-      BoutReal fp_1 = 0.5 *
-                      (v_in_ptr[(x - 1) * Ny + y] + fabs(v_in_ptr[(x - 1) * Ny + y])) *
-                      f_in_ptr[(x - 1) * Ny + y];
-      BoutReal fm_1 = 0.5 *
-                      (v_in_ptr[(x - 1) * Ny + y] - fabs(v_in_ptr[(x - 1) * Ny + y])) *
-                      f_in_ptr[(x - 1) * Ny + y];
-      BoutReal fp_2 = 0.5 *
-                      (v_in_ptr[(x - 2) * Ny + y] + fabs(v_in_ptr[(x - 2) * Ny + y])) *
-                      f_in_ptr[(x - 2) * Ny + y];
-      BoutReal flp = fp + 0.5 * MINMOD(fp1 - fp, fp - fp_1);
-      BoutReal frp = fm1 - 0.5 * MINMOD(fm1 - fm, fm2 - fm1);
-      BoutReal flm = fp_1 + 0.5 * MINMOD(fp - fp_1, fp_1 - fp_2);
-      BoutReal frm = fm - 0.5 * MINMOD(fm - fm_1, fm1 - fm);
-      BoutReal hp = flp + frp;
-      BoutReal hm = flm + frm;
-
-      result_ptr[(x + 0) * Ny + y] = hp - hm;
-    }
-  }
-}
-
-// This file is auto-generated - do not edit!
-static Field2D indexFDDX_norm_DIFF_NND(const Field2D &v_in, const Field2D &f_in) {
-  Mesh *msh = v_in.getMesh();
-  ASSERT1(msh == f_in.getMesh());
-  output_debug.write("Using method indexFDDX_norm_DIFF_NND!\n");
-#if CHECK > 0
-  if (msh->LocalNx < 5) {
-    if (msh->xstart == 0) {
-      // return Field2D(0.,msh);
-      Field2D result{msh};
-      result = 0;
-      return result;
-    } else {
-      throw BoutException("AiolosMesh::indexFDDX_norm_DIFF_NND - Not enough guards cells "
-                          "to take derivative!");
-    }
-  }
-#endif
-  Field2D result(msh);
-  result.allocate();
-  BoutReal *__restrict__ result_ptr = &result(0, 0);
-  checkData(v_in);
-  const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0);
-  checkData(f_in);
-  const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0);
-  indexFDDX_norm_DIFF_NND_field2d(result_ptr, v_in_ptr, f_in_ptr, msh);
-  result.setLocation(f_in.getLocation());
-  checkData(result);
-  return result;
-}
-
-// This file is auto-generated - do not edit!
 static void indexFDDY_norm_DIFF_U1_field2d(BoutReal *__restrict__ result_ptr,
                                            const BoutReal *__restrict__ v_in_ptr,
                                            const BoutReal *__restrict__ f_in_ptr,
@@ -5556,7 +5036,7 @@ static void indexFDDY_norm_DIFF_U1_field2d(BoutReal *__restrict__ result_ptr,
       result_ -=
           (vs >= 0.0) ? vs * f_in_ptr[(x)*Ny + y + 0] : vs * f_in_ptr[(x)*Ny + y + 1];
 
-      result_ptr[(x)*Ny + y + 0] = result_;
+      result_ptr[(x)*Ny + y + 0] = -result_;
     }
   }
 }
@@ -5698,80 +5178,6 @@ static Field2D indexFDDY_norm_DIFF_C4(const Field2D &v_in, const Field2D &f_in) 
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0);
   indexFDDY_norm_DIFF_C4_field2d(result_ptr, v_in_ptr, f_in_ptr, msh);
-  result.setLocation(f_in.getLocation());
-  checkData(result);
-  return result;
-}
-
-// This file is auto-generated - do not edit!
-static void indexFDDY_norm_DIFF_NND_field2d(BoutReal *__restrict__ result_ptr,
-                                            const BoutReal *__restrict__ v_in_ptr,
-                                            const BoutReal *__restrict__ f_in_ptr,
-                                            Mesh *msh) {
-  const int Nx = msh->LocalNx;
-  const int Ny = msh->LocalNy;
-#if CHECK > 0
-  if (msh->ystart < 2) {
-    throw BoutException(
-        "Cannot compute derivative - need at least 2 guard cells in Y direction!");
-  }
-#endif
-  for (int x = 0; x < Nx; ++x) {
-    for (int y = 2; y < Ny - 2; ++y) {
-      BoutReal fp = 0.5 * (v_in_ptr[(x)*Ny + y + 0] + fabs(v_in_ptr[(x)*Ny + y + 0])) *
-                    f_in_ptr[(x)*Ny + y + 0];
-      BoutReal fm = 0.5 * (v_in_ptr[(x)*Ny + y + 0] - fabs(v_in_ptr[(x)*Ny + y + 0])) *
-                    f_in_ptr[(x)*Ny + y + 0];
-      BoutReal fp1 = 0.5 * (v_in_ptr[(x)*Ny + y + 1] + fabs(v_in_ptr[(x)*Ny + y + 1])) *
-                     f_in_ptr[(x)*Ny + y + 1];
-      BoutReal fm1 = 0.5 * (v_in_ptr[(x)*Ny + y + 1] - fabs(v_in_ptr[(x)*Ny + y + 1])) *
-                     f_in_ptr[(x)*Ny + y + 1];
-      BoutReal fm2 = 0.5 * (v_in_ptr[(x)*Ny + y + 2] - fabs(v_in_ptr[(x)*Ny + y + 2])) *
-                     f_in_ptr[(x)*Ny + y + 2];
-      BoutReal fp_1 = 0.5 * (v_in_ptr[(x)*Ny + y - 1] + fabs(v_in_ptr[(x)*Ny + y - 1])) *
-                      f_in_ptr[(x)*Ny + y - 1];
-      BoutReal fm_1 = 0.5 * (v_in_ptr[(x)*Ny + y - 1] - fabs(v_in_ptr[(x)*Ny + y - 1])) *
-                      f_in_ptr[(x)*Ny + y - 1];
-      BoutReal fp_2 = 0.5 * (v_in_ptr[(x)*Ny + y - 2] + fabs(v_in_ptr[(x)*Ny + y - 2])) *
-                      f_in_ptr[(x)*Ny + y - 2];
-      BoutReal flp = fp + 0.5 * MINMOD(fp1 - fp, fp - fp_1);
-      BoutReal frp = fm1 - 0.5 * MINMOD(fm1 - fm, fm2 - fm1);
-      BoutReal flm = fp_1 + 0.5 * MINMOD(fp - fp_1, fp_1 - fp_2);
-      BoutReal frm = fm - 0.5 * MINMOD(fm - fm_1, fm1 - fm);
-      BoutReal hp = flp + frp;
-      BoutReal hm = flm + frm;
-
-      result_ptr[(x)*Ny + y + 0] = hp - hm;
-    }
-  }
-}
-
-// This file is auto-generated - do not edit!
-static Field2D indexFDDY_norm_DIFF_NND(const Field2D &v_in, const Field2D &f_in) {
-  Mesh *msh = v_in.getMesh();
-  ASSERT1(msh == f_in.getMesh());
-  output_debug.write("Using method indexFDDY_norm_DIFF_NND!\n");
-#if CHECK > 0
-  if (msh->LocalNy < 5) {
-    if (msh->xstart == 0) {
-      // return Field2D(0.,msh);
-      Field2D result{msh};
-      result = 0;
-      return result;
-    } else {
-      throw BoutException("AiolosMesh::indexFDDY_norm_DIFF_NND - Not enough guards cells "
-                          "to take derivative!");
-    }
-  }
-#endif
-  Field2D result(msh);
-  result.allocate();
-  BoutReal *__restrict__ result_ptr = &result(0, 0);
-  checkData(v_in);
-  const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0);
-  checkData(f_in);
-  const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0);
-  indexFDDY_norm_DIFF_NND_field2d(result_ptr, v_in_ptr, f_in_ptr, msh);
   result.setLocation(f_in.getLocation());
   checkData(result);
   return result;

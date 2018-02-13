@@ -157,7 +157,7 @@ for t in func_tables:
                     if flux:
                         # f.getLocation() == outloc guaranteed
                         if stag:
-                            print("    if (outloc == CELL_%sLOW){"%d.upper())
+                            print("    if (outloc == CELL_%sLOW) {"%d.upper())
                             print("      return %s_on_%s(interp_to(v,CELL_CENTRE),f);"% \
                                 (funcname[t]%d.upper(),method))
                             print("    } else {") # inloc must be CELL_%sLOW
@@ -166,7 +166,7 @@ for t in func_tables:
                             print("    }")
                             stags=['on','off']
                         else:
-                            print("    if (v.getLocation() == f.getLocation()){")
+                            print("    if (v.getLocation() == f.getLocation()) {")
                             print("      return interp_to(%s_norm_%s(v,f),outloc);"%(funcname[t]%d.upper(),method))
                             print("    } else {")
                             print("      return interp_to(%s_norm_%s(interp_to(v,CELL_CENTRE),interp_to(f,CELL_CENTRE)),outloc);"%(funcname[t]%d.upper(),method))
