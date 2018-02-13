@@ -130,9 +130,8 @@ for t in func_tables:
                     else:
                         myname=funcname[t]%d.upper()+"_stag"
                 except:
-                    import sys
-                    print(funcname[t], file=sys.stderr)
-                    exit(3)
+                    debug(funcname[t], enable=True)
+                    raise
                 if flux:
                     inp="(const "+field+" &v, const "+field+" &f, "
                 else:

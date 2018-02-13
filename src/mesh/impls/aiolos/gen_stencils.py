@@ -150,8 +150,7 @@ def parse_body(sten,field,mode,d,z0=None):
                 line=replace_stencil(line,'v.',"v_in",field,mode,sten.mbf,d,z0=z0)
                 line=replace_stencil(line,'f.',"f_in",field,"norm",sten.mbf,d,z0=z0)
             except:
-                import sys
-                print(sten.name, sten.mbf, file=sys.stderr)
+                debug("Some infos on error:",sten.name, sten.mbf,enable=True)
                 raise
         else:
             line=replace_stencil(line,'f.',"in",field,mode,sten.mbf,d,z0=z0)
@@ -396,19 +395,14 @@ def gen_functions_normal(to_gen):
         global guards_
         guards_=[0,0]
         if ftg.sten is None:
-            import sys
-            debug("error!")
-            print(ftg,ftg[:], file=sys.stderr)
+            debug("infos on error:",enable=True)
+            debug(ftg,ftg[:])
             for func in stencils:
-                print(func.name, file=sys.stderr)
-            print(ftg.sten, file=sys.stderr)
-            print(ftg, file=sys.stderr)
-            raise RuntimeError("#error unexpected: sten is None for sten_name %s !"%sten_name)
-        try:
-            guards=ftg.sten.guards #numGuards[ftg[4]]
-        except:
-            raise RuntimeError(ftg.sten,
-                               sten_name)
+                debug(func.name)
+            debug(ftg.sten)
+            debug(ftg)
+            raise RuntimeError("error unexpected: sten is None for sten_name %s !"%sten_name)
+        guards=ftg.sten.guards
         if d=='z':
             get_for_loop_z(ftg.sten,field,mode)
         else:
