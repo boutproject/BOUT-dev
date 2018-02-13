@@ -1,10 +1,8 @@
 # Makefile for the reference and user manuals
-TEXDIR=tex_files
-VPATH=$(TEXDIR)
-.PHONY:all clean sphinx html pdf old doxygen breathe-autogen
+.PHONY:all clean sphinx html pdf doxygen breathe-autogen
 
-# some distros may provide sphinx-build-3 and sphinx-build-2 instead
-# of sphinx-build. An automatic check would be helpfull, but at least
+# Some distros may provide sphinx-build-3 and sphinx-build-2 instead
+# of sphinx-build. An automatic check would be helpful, but at least
 # with this, it should be easy to change:
 sphinx-build=sphinx-build
 
@@ -32,26 +30,6 @@ doxygen:
 # Run breathe-apidoc, ignore if it fails (leading '-')
 breathe-autogen: doxygen
 	-breathe-apidoc -f -o sphinx/_breathe_autogen doxygen/bout/xml
-
-old: old-pdf
-old-pdf: user_manual.pdf \
-	developer_manual.pdf \
-	preconditioning.pdf \
-	coordinates.pdf \
-	BOUT_Gradperp_op.pdf
-
-%.pdf: %.tex references.bib
-	@cd $(TEXDIR) &&\
-	pdflatex $(@F:.pdf=) &&\
-	if [ $(@F:.pdf=) != BOUT_Gradperp_op ]; \
-	then bibtex $(@F:.pdf=); \
-	fi &&\
-	makeindex $(@F:.pdf=) &&\
-	pdflatex $(@F:.pdf=) &&\
-	pdflatex $(@F:.pdf=) &&\
-	mv *.pdf ./..
-	@cd $(TEXDIR) &&\
-	rm -f *.dvi *.aux *.out *.log *.toc *.idx *.ilg *.ind *.bbl *.blg
 
 clean:
 	@echo "Cleaning up..."
