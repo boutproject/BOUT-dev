@@ -1,4 +1,4 @@
-MZ=5
+MZ=2
 
 nout=1
 timestep=1
@@ -20,7 +20,7 @@ dx=Lx/(nx-2*MXG)
 Lz=2*pi
 dz=Lz/mz
 nx=5
-ny=6
+ny=2
 
 ixseps1		= -1
 ixseps2		= -1
