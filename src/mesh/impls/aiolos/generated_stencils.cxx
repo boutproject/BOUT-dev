@@ -841,9 +841,7 @@ static Field3D indexDDZ_norm_DIFF_C2(const Field3D &in) {
   Mesh *msh = in.getMesh();
   output_debug.write("Using method indexDDZ_norm_DIFF_C2!\n");
   if (msh->LocalNz == 1) {
-    Field3D result{msh};
-    result = 0;
-    return result;
+    return Field3D(0., msh);
   }
 #if CHECK > 0
   if (msh->LocalNz < 3) {
@@ -986,9 +984,7 @@ static Field3D indexDDZ_norm_DIFF_W2(const Field3D &in) {
   Mesh *msh = in.getMesh();
   output_debug.write("Using method indexDDZ_norm_DIFF_W2!\n");
   if (msh->LocalNz == 1) {
-    Field3D result{msh};
-    result = 0;
-    return result;
+    return Field3D(0., msh);
   }
 #if CHECK > 0
   if (msh->LocalNz < 3) {
@@ -1096,9 +1092,7 @@ static Field3D indexDDZ_norm_DIFF_C4(const Field3D &in) {
   Mesh *msh = in.getMesh();
   output_debug.write("Using method indexDDZ_norm_DIFF_C4!\n");
   if (msh->LocalNz == 1) {
-    Field3D result{msh};
-    result = 0;
-    return result;
+    return Field3D(0., msh);
   }
 #if CHECK > 0
   if (msh->LocalNz < 5) {
@@ -1249,9 +1243,7 @@ static Field3D indexDDZ_norm_DIFF_S2(const Field3D &in) {
   Mesh *msh = in.getMesh();
   output_debug.write("Using method indexDDZ_norm_DIFF_S2!\n");
   if (msh->LocalNz == 1) {
-    Field3D result{msh};
-    result = 0;
-    return result;
+    return Field3D(0., msh);
   }
 #if CHECK > 0
   if (msh->LocalNz < 5) {
@@ -1986,9 +1978,7 @@ static Field3D indexD2DZ2_norm_DIFF_C2(const Field3D &in) {
   Mesh *msh = in.getMesh();
   output_debug.write("Using method indexD2DZ2_norm_DIFF_C2!\n");
   if (msh->LocalNz == 1) {
-    Field3D result{msh};
-    result = 0;
-    return result;
+    return Field3D(0., msh);
   }
 #if CHECK > 0
   if (msh->LocalNz < 3) {
@@ -2103,9 +2093,7 @@ static Field3D indexD2DZ2_norm_DIFF_C4(const Field3D &in) {
   Mesh *msh = in.getMesh();
   output_debug.write("Using method indexD2DZ2_norm_DIFF_C4!\n");
   if (msh->LocalNz == 1) {
-    Field3D result{msh};
-    result = 0;
-    return result;
+    return Field3D(0., msh);
   }
 #if CHECK > 0
   if (msh->LocalNz < 5) {
@@ -3030,9 +3018,7 @@ static Field3D indexVDDZ_norm_DIFF_U1(const Field3D &v_in, const Field3D &f_in) 
   ASSERT1(msh == f_in.getMesh());
   output_debug.write("Using method indexVDDZ_norm_DIFF_U1!\n");
   if (msh->LocalNz == 1) {
-    Field3D result{msh};
-    result = 0;
-    return result;
+    return Field3D(0., msh);
   }
 #if CHECK > 0
   if (msh->LocalNz < 3) {
@@ -3169,9 +3155,7 @@ static Field3D indexVDDZ_norm_DIFF_U2(const Field3D &v_in, const Field3D &f_in) 
   ASSERT1(msh == f_in.getMesh());
   output_debug.write("Using method indexVDDZ_norm_DIFF_U2!\n");
   if (msh->LocalNz == 1) {
-    Field3D result{msh};
-    result = 0;
-    return result;
+    return Field3D(0., msh);
   }
 #if CHECK > 0
   if (msh->LocalNz < 5) {
@@ -3255,9 +3239,7 @@ static Field3D indexVDDZ_norm_DIFF_C2(const Field3D &v_in, const Field3D &f_in) 
   ASSERT1(msh == f_in.getMesh());
   output_debug.write("Using method indexVDDZ_norm_DIFF_C2!\n");
   if (msh->LocalNz == 1) {
-    Field3D result{msh};
-    result = 0;
-    return result;
+    return Field3D(0., msh);
   }
 #if CHECK > 0
   if (msh->LocalNz < 3) {
@@ -3418,9 +3400,7 @@ static Field3D indexVDDZ_norm_DIFF_U3(const Field3D &v_in, const Field3D &f_in) 
   ASSERT1(msh == f_in.getMesh());
   output_debug.write("Using method indexVDDZ_norm_DIFF_U3!\n");
   if (msh->LocalNz == 1) {
-    Field3D result{msh};
-    result = 0;
-    return result;
+    return Field3D(0., msh);
   }
 #if CHECK > 0
   if (msh->LocalNz < 5) {
@@ -3539,9 +3519,7 @@ static Field3D indexVDDZ_norm_DIFF_C4(const Field3D &v_in, const Field3D &f_in) 
   ASSERT1(msh == f_in.getMesh());
   output_debug.write("Using method indexVDDZ_norm_DIFF_C4!\n");
   if (msh->LocalNz == 1) {
-    Field3D result{msh};
-    result = 0;
-    return result;
+    return Field3D(0., msh);
   }
 #if CHECK > 0
   if (msh->LocalNz < 5) {
@@ -4589,9 +4567,7 @@ static Field3D indexFDDZ_norm_DIFF_U1(const Field3D &v_in, const Field3D &f_in) 
   ASSERT1(msh == f_in.getMesh());
   output_debug.write("Using method indexFDDZ_norm_DIFF_U1!\n");
   if (msh->LocalNz == 1) {
-    Field3D result{msh};
-    result = 0;
-    return result;
+    return Field3D(0., msh);
   }
 #if CHECK > 0
   if (msh->LocalNz < 3) {
@@ -4679,9 +4655,7 @@ static Field3D indexFDDZ_norm_DIFF_C2(const Field3D &v_in, const Field3D &f_in) 
   ASSERT1(msh == f_in.getMesh());
   output_debug.write("Using method indexFDDZ_norm_DIFF_C2!\n");
   if (msh->LocalNz == 1) {
-    Field3D result{msh};
-    result = 0;
-    return result;
+    return Field3D(0., msh);
   }
 #if CHECK > 0
   if (msh->LocalNz < 3) {
@@ -4815,9 +4789,7 @@ static Field3D indexFDDZ_norm_DIFF_C4(const Field3D &v_in, const Field3D &f_in) 
   ASSERT1(msh == f_in.getMesh());
   output_debug.write("Using method indexFDDZ_norm_DIFF_C4!\n");
   if (msh->LocalNz == 1) {
-    Field3D result{msh};
-    result = 0;
-    return result;
+    return Field3D(0., msh);
   }
 #if CHECK > 0
   if (msh->LocalNz < 5) {
@@ -5646,9 +5618,7 @@ static Field3D indexDDZ_on_DIFF_C2(const Field3D &in) {
   Mesh *msh = in.getMesh();
   output_debug.write("Using method indexDDZ_on_DIFF_C2!\n");
   if (msh->LocalNz == 1) {
-    Field3D result{msh};
-    result = 0;
-    return result;
+    return Field3D(0., msh);
   }
 #if CHECK > 0
   if (msh->LocalNz < 2) {
@@ -5715,9 +5685,7 @@ static Field3D indexDDZ_off_DIFF_C2(const Field3D &in) {
   Mesh *msh = in.getMesh();
   output_debug.write("Using method indexDDZ_off_DIFF_C2!\n");
   if (msh->LocalNz == 1) {
-    Field3D result{msh};
-    result = 0;
-    return result;
+    return Field3D(0., msh);
   }
 #if CHECK > 0
   if (msh->LocalNz < 2) {
@@ -5814,9 +5782,7 @@ static Field3D indexDDZ_on_DIFF_C4(const Field3D &in) {
   Mesh *msh = in.getMesh();
   output_debug.write("Using method indexDDZ_on_DIFF_C4!\n");
   if (msh->LocalNz == 1) {
-    Field3D result{msh};
-    result = 0;
-    return result;
+    return Field3D(0., msh);
   }
 #if CHECK > 0
   if (msh->LocalNz < 4) {
@@ -5913,9 +5879,7 @@ static Field3D indexDDZ_off_DIFF_C4(const Field3D &in) {
   Mesh *msh = in.getMesh();
   output_debug.write("Using method indexDDZ_off_DIFF_C4!\n");
   if (msh->LocalNz == 1) {
-    Field3D result{msh};
-    result = 0;
-    return result;
+    return Field3D(0., msh);
   }
 #if CHECK > 0
   if (msh->LocalNz < 4) {
@@ -6614,9 +6578,7 @@ static Field3D indexD2DZ2_on_DIFF_C2(const Field3D &in) {
   Mesh *msh = in.getMesh();
   output_debug.write("Using method indexD2DZ2_on_DIFF_C2!\n");
   if (msh->LocalNz == 1) {
-    Field3D result{msh};
-    result = 0;
-    return result;
+    return Field3D(0., msh);
   }
 #if CHECK > 0
   if (msh->LocalNz < 4) {
@@ -6711,9 +6673,7 @@ static Field3D indexD2DZ2_off_DIFF_C2(const Field3D &in) {
   Mesh *msh = in.getMesh();
   output_debug.write("Using method indexD2DZ2_off_DIFF_C2!\n");
   if (msh->LocalNz == 1) {
-    Field3D result{msh};
-    result = 0;
-    return result;
+    return Field3D(0., msh);
   }
 #if CHECK > 0
   if (msh->LocalNz < 4) {
@@ -8113,9 +8073,7 @@ static Field3D indexVDDZ_on_DIFF_U1(const Field3D &v_in, const Field3D &f_in) {
   ASSERT1(msh == f_in.getMesh());
   output_debug.write("Using method indexVDDZ_on_DIFF_U1!\n");
   if (msh->LocalNz == 1) {
-    Field3D result{msh};
-    result = 0;
-    return result;
+    return Field3D(0., msh);
   }
 #if CHECK > 0
   if (msh->LocalNz < 3) {
@@ -8245,9 +8203,7 @@ static Field3D indexVDDZ_off_DIFF_U1(const Field3D &v_in, const Field3D &f_in) {
   ASSERT1(msh == f_in.getMesh());
   output_debug.write("Using method indexVDDZ_off_DIFF_U1!\n");
   if (msh->LocalNz == 1) {
-    Field3D result{msh};
-    result = 0;
-    return result;
+    return Field3D(0., msh);
   }
 #if CHECK > 0
   if (msh->LocalNz < 3) {
@@ -8456,9 +8412,7 @@ static Field3D indexVDDZ_on_DIFF_U2(const Field3D &v_in, const Field3D &f_in) {
   ASSERT1(msh == f_in.getMesh());
   output_debug.write("Using method indexVDDZ_on_DIFF_U2!\n");
   if (msh->LocalNz == 1) {
-    Field3D result{msh};
-    result = 0;
-    return result;
+    return Field3D(0., msh);
   }
 #if CHECK > 0
   if (msh->LocalNz < 5) {
@@ -8667,9 +8621,7 @@ static Field3D indexVDDZ_off_DIFF_U2(const Field3D &v_in, const Field3D &f_in) {
   ASSERT1(msh == f_in.getMesh());
   output_debug.write("Using method indexVDDZ_off_DIFF_U2!\n");
   if (msh->LocalNz == 1) {
-    Field3D result{msh};
-    result = 0;
-    return result;
+    return Field3D(0., msh);
   }
 #if CHECK > 0
   if (msh->LocalNz < 5) {
@@ -8758,9 +8710,7 @@ static Field3D indexVDDZ_on_DIFF_C2(const Field3D &v_in, const Field3D &f_in) {
   ASSERT1(msh == f_in.getMesh());
   output_debug.write("Using method indexVDDZ_on_DIFF_C2!\n");
   if (msh->LocalNz == 1) {
-    Field3D result{msh};
-    result = 0;
-    return result;
+    return Field3D(0., msh);
   }
 #if CHECK > 0
   if (msh->LocalNz < 3) {
@@ -8849,9 +8799,7 @@ static Field3D indexVDDZ_off_DIFF_C2(const Field3D &v_in, const Field3D &f_in) {
   ASSERT1(msh == f_in.getMesh());
   output_debug.write("Using method indexVDDZ_off_DIFF_C2!\n");
   if (msh->LocalNz == 1) {
-    Field3D result{msh};
-    result = 0;
-    return result;
+    return Field3D(0., msh);
   }
 #if CHECK > 0
   if (msh->LocalNz < 3) {
@@ -8988,9 +8936,7 @@ static Field3D indexVDDZ_on_DIFF_C4(const Field3D &v_in, const Field3D &f_in) {
   ASSERT1(msh == f_in.getMesh());
   output_debug.write("Using method indexVDDZ_on_DIFF_C4!\n");
   if (msh->LocalNz == 1) {
-    Field3D result{msh};
-    result = 0;
-    return result;
+    return Field3D(0., msh);
   }
 #if CHECK > 0
   if (msh->LocalNz < 5) {
@@ -9127,9 +9073,7 @@ static Field3D indexVDDZ_off_DIFF_C4(const Field3D &v_in, const Field3D &f_in) {
   ASSERT1(msh == f_in.getMesh());
   output_debug.write("Using method indexVDDZ_off_DIFF_C4!\n");
   if (msh->LocalNz == 1) {
-    Field3D result{msh};
-    result = 0;
-    return result;
+    return Field3D(0., msh);
   }
 #if CHECK > 0
   if (msh->LocalNz < 5) {
@@ -10451,9 +10395,7 @@ static Field3D indexFDDZ_on_DIFF_U1(const Field3D &v_in, const Field3D &f_in) {
   ASSERT1(msh == f_in.getMesh());
   output_debug.write("Using method indexFDDZ_on_DIFF_U1!\n");
   if (msh->LocalNz == 1) {
-    Field3D result{msh};
-    result = 0;
-    return result;
+    return Field3D(0., msh);
   }
 #if CHECK > 0
   if (msh->LocalNz < 3) {
@@ -10567,9 +10509,7 @@ static Field3D indexFDDZ_off_DIFF_U1(const Field3D &v_in, const Field3D &f_in) {
   ASSERT1(msh == f_in.getMesh());
   output_debug.write("Using method indexFDDZ_off_DIFF_U1!\n");
   if (msh->LocalNz == 1) {
-    Field3D result{msh};
-    result = 0;
-    return result;
+    return Field3D(0., msh);
   }
 #if CHECK > 0
   if (msh->LocalNz < 3) {

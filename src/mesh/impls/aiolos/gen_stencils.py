@@ -7,9 +7,8 @@ import sys
 
 # Read the stencils
 stencils_raw=[]
-inFunc=0
 with open("stencils_cleaned.cxx","r") as f:
-    fi=-1
+    inFunc=0
     for line in f:
         if line[:5] == 'const':
             print(line)
@@ -22,67 +21,74 @@ with open("stencils_cleaned.cxx","r") as f:
         if line.find("{") > -1:
             if inFunc==0:
                 stencils_raw.append([])
-                fi+=1
             else:
                 debug("No func:",line)
             inFunc+=1
             if line.count("{")>1:
                 raise RuntimeError("More than one { in \"%s\"!"%line)
         if inFunc:
-            stencils_raw[fi].append(line);
+            stencils_raw[-1].append(line);
         if line.find("}") > -1:
             inFunc-=1
             if line.count("}")>1:
                 raise RuntimeError("More than one } in \"%s\"!"%line)
 
 class Stencil:
-    name=""
-    body=[]
-    stag=False
-    flux=False
-    guards=3
-    mbf="main"
+    def __init__(self,body):
+        self.body=body
+        self.valid=True
+        self.mbf="main"
+        self.guards=3
+        if body[0] != '':
+            self.name=self.body[0].split()[1].split("(")[0]
+            self.checkFlux()
+            self.checkStag()
+        else:
+            self.name=''
+            self.flux=False
+            self.stag=False
+        if self.name == 'DDX_CWENO3':
+            debug("Skipping DDX_CWENO3 ...")
+            self.valid=False
+        self.setGuards()
     def setGuards(self):
         self.guards=1
         for l in self.body:
             for off in ['pp','mm','p2','m2']:
                 if l.find(off)>-1:
                     self.guards=2
+    def checkStag(self):
+        self.stag = ( self.body[0].find("stag") > 0 )
+    def checkFlux(self):
+        f0=self.body[0]
+        if f0.find("BoutReal") == 0 and f0.find('stencil') > 0:
+            if (f0.find("BoutReal V") == -1 and f0.find("BoutReal F") == -1 ):
+                # They have one stencil
+                self.flux=False
+            else:
+                self.flux=True
+        elif f0.find("Mesh::boundary_derivs_pair") == 0 and f0.find('stencil') > 0:
+            if (f0.find("Mesh::boundary_derivs_pair V") == -1 and f0.find("Mesh::boundary_derivs_pair F") == -1 ):
+                # not a flux functions - has only on stencil as argument
+                self.flux=False
+            else:
+                self.flux=True
+        elif f0.find("&fRm") > -1:
+            debug(f0,"is invalid")
+            self.valid=False
+        else:
+            raise RuntimeError(self.body,"We did not set the flux type")
+
 
 stencils=[]
 for f in stencils_raw:
-    func=Stencil()
-    func.body=f
-    func.name=f[0].split()[1].split("(")[0]
-    if f[0].find("stag") > 0:
-        # They are staggered
-        func.stag=True
-    else:
-        func.stag=False
-    if f[0].find("BoutReal") == 0 and f[0].find('stencil') > 0:
-        #for i in f:
-        #    print i
-        if func.name=='DDX_CWENO3':
-            #print << sys.stderr , "Skipping DDX_CWENO3 ..."
-            continue
-        #print fname
-        if (f[0].find("BoutReal V") == -1 and f[0].find("BoutReal F") == -1 ):
-            # They have one stencil
-            #print f[0]
-            func.flux=False
-        else:
-            func.flux=True
-    if f[0].find("Mesh::boundary_derivs_pair") == 0 and f[0].find('stencil') > 0:
-        if (f[0].find("Mesh::boundary_derivs_pair V") == -1 and f[0].find("Mesh::boundary_derivs_pair F") == -1 ):
-            # not a flux functions - has only on stencil as argument
-            func.flux=False
-        else:
-            func.flux=True
-    stencils.append(func)
-null_func=Stencil()
-null_func.name='NULL'
-null_func.body=["{","result_.inner = 0;","result_.outer = 0;","}"]
+    sten=Stencil(f)
+    if sten.valid:
+        stencils.append(sten)
+null_func=Stencil(["","result_.inner = 0;","result_.outer = 0;","}"])
 stencils.append(null_func)
+
+# Do some cleaning of the stencils bodies
 for sten in stencils:
     ls=""
     for l in sten.body:
@@ -104,10 +110,6 @@ for sten in stencils:
             fu[i]=t[-1]
         i+=1
     sten.body=fu
-
-
-for f in stencils:
-    f.setGuards()
 
 def replace_stencil(line,sten,fname,field,mode,sten_mbf,d,update=None,z0=None):
     if update is None:
@@ -431,11 +433,11 @@ def gen_functions_normal(to_gen):
         print('  output_debug.write("Using method %s!\\n");'%name)
         if d=='z':
             print('  if (msh->LocalN%s == 1) {'%(d))
-            print('      %s result{msh};'%field)
-            print('      result=0;')
-            print('      return result;')
+            #print('      %s result{msh};'%field)
+            #print('      result=0;')
+            #print('      return result;')
             # TODO: if constructor exists, better use this:
-            #print '    return %s(0.,msh);'%field
+            print('    return %s(0.,msh);'%field)
             print('  }')
         print('#if CHECK > 0')
         print('  if (msh->LocalN%s < %d) {'%(d,sum(guards_)+1))
@@ -535,8 +537,8 @@ for mode in ['on','off']:
         for d2 in dirs[field]:
             print("  const int N%s = msh->LocalN%s;"%(d2,d2))
         if d == 'z':
-            sten=Stencil()
-            sten.body=['',interp[1],'']
+            sten=Stencil(['',interp[1],''])
+            #sten.body=
             get_for_loop_z(sten,field,mode)
         else:
             body= "    "+get_diff('c()',"result",field,d,update=True)+"= "+line[len("return")+line.index("return"):]+"\n"

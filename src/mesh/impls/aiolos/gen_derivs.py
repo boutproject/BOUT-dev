@@ -87,8 +87,13 @@ class FuncToGen(object):
     def __getitem__(self,ind):
         return self.old[ind]
     def setSten(self,sten):
-        assert(sten.flux == self.flux)
-        assert(sten.stag == self.stag)
+        try:
+            assert(sten.flux == self.flux)
+            assert(sten.stag == self.stag)
+        except:
+            debug(self.name,sten.name,enable=True)
+            debug(self.flux,sten.flux)
+            raise
         self.sten=sten
 
 default_methods=dict()
