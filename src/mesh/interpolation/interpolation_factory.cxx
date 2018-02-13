@@ -52,7 +52,7 @@ void InterpolationFactory::cleanup() {
  *
  * @return A new copy of an Interpolation object
  */
-Interpolation* InterpolationFactory::create(Options *options) {
+Interpolation* InterpolationFactory::create(Options *options, Mesh *mesh) {
   // Get the default interpolation type
   string type = getDefaultInterpType();
 
@@ -66,20 +66,24 @@ Interpolation* InterpolationFactory::create(Options *options) {
 
   if (!interp_option.empty()) type = interp_option.c_str();
 
-  return create(type, options);
+  return create(type, options, mesh);
 }
 
-Interpolation* InterpolationFactory::create(const string &name, Options *options) {
+Interpolation* InterpolationFactory::create(const string &name, Options *options, Mesh *localmesh) {
   // If no options section passed (e.g. for a variable), then use the
   // "interpolation" section
   if (options == nullptr)
     options = Options::getRoot()->getSection("interpolation");
 
-  Interpolation* interp = findInterpolation(name);
+  // Use the global mesh if none passed
+  if (localmesh == nullptr)
+    localmesh = mesh;
+
+  auto interp = findInterpolation(name);
   if (interp == nullptr)
     throw BoutException("Could not find interpolation method '%s'", name.c_str());
 
-  return interp;
+  return interp(localmesh);
 }
 
 void InterpolationFactory::add(CreateInterpCallback interp, const string &name) {
@@ -98,9 +102,9 @@ void InterpolationFactory::add(CreateInterpCallback interp, const string &name) 
  *
  * @return A pointer to the Interpolation object in the map
  */
-Interpolation* InterpolationFactory::findInterpolation(const string &name) {
+InterpolationFactory::CreateInterpCallback InterpolationFactory::findInterpolation(const string &name) {
   auto interp = interp_map.find(lowercase(name));
   if (interp == end(interp_map))
     return nullptr;
-  return (interp->second)();
+  return interp->second;
 }
