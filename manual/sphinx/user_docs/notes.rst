@@ -11,22 +11,28 @@ debugging a code, and can be omitted once bugs have been removed.
 computationally rather expensive ones, while ``--enable-checks=0``
 disables most checks.
 
-To get most checking, both from BOUT and from the compiler
+To get most checking, both from BOUT++ and from the compiler
 ``--enable-debug`` can be used. That enables checks of level 3, as
-well as debug flugs, e.g. ``-g`` for gcc.
+well as debug flags, e.g. ``-g`` for gcc.
 
 For (sometimes) more useful error messages, there is the
 ``--enable-track`` option. This keeps track of the names of variables
 and includes these in error messages.
 
-To enable opimization, configure with ``--enable-optimize=3``.
+To enable optimization, configure with ``--enable-optimize=3``.
+This will try to set appropriate flags, but may not set the best ones.
+This should work well for gcc. Similar to checks, different levels can
+be specified, where 3 is high, and 0 means disabling all
+optimization. ``--enable-optimize=fast`` will set the ``-Ofast`` flag
+for gcc which enables optimization that are not standard conform, so
+proceed at own risk.
 
 Compile options
 ---------------
 
 It is possible to change flags for BOUT++ after running configure, by
-editing the make.config file. Note that this is not recommanded, as
-e.g. pvode will not be build with theses flags.
+editing the make.config file. Note that this is not recommended, as
+e.g. pvode will not be build with these flags.
 
 Adaptive grids
 --------------
