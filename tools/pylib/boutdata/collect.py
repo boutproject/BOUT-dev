@@ -70,7 +70,8 @@ def findFiles(path,prefix):
 
     Netcdf (nc) and HDF5 (hdf5) files are searched.
 
-    Returns the list of files, and also whether they are a parallel dump file or not.
+    Returns the list of files, whether the files are a parallel dump file and
+    the file suffix.
 
     """
 
@@ -85,7 +86,7 @@ def findFiles(path,prefix):
         suffix = ".nc"
         file_list = file_list_nc
     if file_list != []:
-        return file_list,True
+        return file_list,True,suffix
 
     file_list_nc = glob.glob(os.path.join(path, prefix+".*nc"))
     file_list_h5 = glob.glob(os.path.join(path, prefix+".*hdf5"))
@@ -101,7 +102,7 @@ def findFiles(path,prefix):
     file_list.sort()
     if file_list == []:
         raise IOError("ERROR: No data files found in path {0}".format(path) )
-    return file_list,False
+    return file_list,False,suffix
 
 def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguards=False, xguards=True, info=True,prefix="BOUT.dmp",strict=False,tind_auto=False):
     """Collect a variable from a set of BOUT++ outputs.
@@ -130,7 +131,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
     """
 
     # Search for BOUT++ dump files in NetCDF format
-    file_list,parallel=findFiles(path,prefix)
+    file_list,parallel,suffix=findFiles(path,prefix)
     if parallel:
         print("Single (parallel) data file")
         f = DataFile(file_list[0]) # Open the file
@@ -462,7 +463,7 @@ def attributes(varname, path=".", prefix="BOUT.dmp"):
     
     """
     # Search for BOUT++ dump files in NetCDF format
-    file_list,_=findFiles(path,prefix)
+    file_list,_,_=findFiles(path,prefix)
 
     # Read data from the first file
     f = DataFile(file_list[0])
@@ -480,5 +481,5 @@ def dimensions(varname, path=".", prefix="BOUT.dmp"):
     path    = "."          Path to data files
     prefix  = "BOUT.dmp"   File prefix
     """
-    file_list,_=findFiles(path,prefix)
+    file_list,_,_=findFiles(path,prefix)
     return DataFile(file_list[0]).dimensions(varname)
