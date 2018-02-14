@@ -157,7 +157,7 @@ if False:
     except ImportError:
         print("No matplotlib")
 else:
-    print("Pltting disabled")
+    print("Plotting disabled")
 
 if success:
     exit(0)
