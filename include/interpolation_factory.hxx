@@ -36,6 +36,12 @@ public:
   inline string getDefaultInterpType();
 
   /// Create an interpolation object
+  Interpolation *create(Mesh *mesh) {
+    return create(nullptr, mesh);
+  }
+  Interpolation *create(Options *options) {
+    return create(options, nullptr);
+  }
   Interpolation *create(Options *options = nullptr, Mesh *mesh = nullptr);
   Interpolation *create(const string &name, Options *options = nullptr,
                         Mesh *mesh = nullptr);
