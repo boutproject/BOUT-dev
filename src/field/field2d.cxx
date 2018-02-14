@@ -561,14 +561,14 @@ Field2D pow(BoutReal lhs, const Field2D &rhs) {
 
 #if CHECK > 0
 /// Check if the data is valid
-void checkData(const Field2D &f) {
+void checkData(const Field2D &f, REGION region) {
   if(!f.isAllocated()) {
     throw BoutException("Field2D: Operation on empty data\n");
   }
 
 #if CHECK > 2
   // Do full checks
-  for(const auto& i : f.region(RGN_NOBNDRY)){
+  for(const auto& i : f.region(region)){
     if(!::finite(f[i])) {
       throw BoutException("Field2D: Operation on non-finite data at [%d][%d]\n", i.x, i.y);
     }
