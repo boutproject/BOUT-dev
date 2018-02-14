@@ -40,8 +40,8 @@ class EulerSolver : public Solver {
   EulerSolver(Options *options);
   ~EulerSolver();
   
-  void setMaxTimestep(BoutReal dt);
-  BoutReal getCurrentTimestep() {return timestep; }
+  void setMaxTimestep(BoutReal dt) override;
+  BoutReal getCurrentTimestep() override {return timestep; }
   
   int init(int nout, BoutReal tstep) override;
   

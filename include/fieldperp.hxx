@@ -94,7 +94,7 @@ class FieldPerp : public Field {
   BoutReal& operator[](const Indices &i) {
     return operator()(i.x, i.z);
   }
-  const BoutReal& operator[](const Indices &i) const {
+  const BoutReal& operator[](const Indices &i) const override{
     return operator()(i.x, i.z);
   }
   
