@@ -332,7 +332,7 @@ int Coordinates::geometry() {
 
   Field2D d2x, d2y; // d^2 x / d i^2
   // Read correction for non-uniform meshes
-  if (mesh->get(d2x, "d2x")) {
+  if (localmesh->get(d2x, "d2x")) {
     output_warn.write(
         "\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
     d1_dx = localmesh->indexDDX(1. / dx); // d/di(1/dx)

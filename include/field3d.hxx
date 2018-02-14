@@ -678,11 +678,11 @@ bool finite(const Field3D &var);
 #if CHECK > 0
 /// Throw an exception if \p f is not allocated or if any
 /// elements are non-finite (for CHECK > 2)
-void checkData(const Field3D &f);
+void checkData(const Field3D &f, REGION region = RGN_NOBNDRY);
 #else
 /// Ignored with disabled CHECK; Throw an exception if \p f is not
 /// allocated or if any elements are non-finite (for CHECK > 2)
-inline void checkData(const Field3D &UNUSED(f)){};
+inline void checkData(const Field3D &UNUSED(f), REGION UNUSED(region)){};
 #endif
  
 /*!
