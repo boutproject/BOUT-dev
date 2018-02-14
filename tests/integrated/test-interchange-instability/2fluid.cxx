@@ -292,7 +292,9 @@ int physics_init(bool restarting) {
   dump.add(Ni_x,  "Ni_x", 0);
   dump.add(rho_s, "rho_s", 0);
   dump.add(wci,   "wci", 0);
-  
+
+  // Initialise aux fields
+  phi = 0.; Apar = 0.;  
   return(0);
 }
 
