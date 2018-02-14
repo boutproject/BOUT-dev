@@ -337,7 +337,7 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
         }
       }
       else{
-        // Default: Neumann on inner x boundary
+        // Default: Dirichlet on inner x boundary
         /* NOTE: Sign of the elements are opposite of what one might expect,
          *       see note about BC in LaplaceXZ constructor for more details
          */
