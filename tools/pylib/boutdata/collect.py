@@ -64,46 +64,6 @@ def findVar(varname, varlist):
         print("Variable '"+varname+"' not found, and is ambiguous. Could be one of: "+str(v))
     raise ValueError("Variable '"+varname+"' not found")
 
-def findFiles(path,prefix):
-    """
-    Find files matching prefix in path.
-
-    Netcdf (nc) and HDF5 (hdf5) files are searched.
-
-    Returns the list of files, whether the files are a parallel dump file and
-    the file suffix.
-
-    """
-
-    file_list_nc = glob.glob(os.path.join(path, prefix+".nc"))
-    file_list_h5 = glob.glob(os.path.join(path, prefix+".hdf5"))
-    if file_list_nc != [] and file_list_h5 != []:
-        raise IOError("Error: Both NetCDF and HDF5 files are present: do not know which to read.")
-    elif file_list_h5 != []:
-        suffix = ".hdf5"
-        file_list = file_list_h5
-    else:
-        suffix = ".nc"
-        file_list = file_list_nc
-    if file_list != []:
-        return file_list,True,suffix
-
-    file_list_nc = glob.glob(os.path.join(path, prefix+".*nc"))
-    file_list_h5 = glob.glob(os.path.join(path, prefix+".*hdf5"))
-    if file_list_nc != [] and file_list_h5 != []:
-        raise IOError("Error: Both NetCDF and HDF5 files are present: do not know which to read.")
-    elif file_list_h5 != []:
-        suffix = ".hdf5"
-        file_list = file_list_h5
-    else:
-        suffix = ".nc"
-        file_list = file_list_nc
-
-    file_list.sort()
-    if file_list == []:
-        raise IOError("ERROR: No data files found in path {0}".format(path) )
-    return file_list,False,suffix
-
 def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguards=False, xguards=True, info=True,prefix="BOUT.dmp",strict=False,tind_auto=False):
     """Collect a variable from a set of BOUT++ outputs.
 
@@ -129,8 +89,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
     tind_auto = False      Read all files, to get the shortest length of time_indices
                            useful if writing got interrupted.
     """
-
-    # Search for BOUT++ dump files in NetCDF format
+    # Search for BOUT++ dump files
     file_list,parallel,suffix=findFiles(path,prefix)
     if parallel:
         print("Single (parallel) data file")
@@ -470,6 +429,7 @@ def attributes(varname, path=".", prefix="BOUT.dmp"):
 
     return f.attributes(varname)
 
+
 def dimensions(varname, path=".", prefix="BOUT.dmp"):
     """"
     Returns a list of dimensions
@@ -483,3 +443,44 @@ def dimensions(varname, path=".", prefix="BOUT.dmp"):
     """
     file_list,_,_=findFiles(path,prefix)
     return DataFile(file_list[0]).dimensions(varname)
+
+
+def findFiles(path,prefix):
+    """
+    Find files matching prefix in path.
+
+    Netcdf (nc) and HDF5 (hdf5) files are searched.
+
+    Returns the list of files, whether the files are a parallel dump file and
+    the file suffix.
+
+    """
+
+    file_list_nc = glob.glob(os.path.join(path, prefix+".nc"))
+    file_list_h5 = glob.glob(os.path.join(path, prefix+".hdf5"))
+    if file_list_nc != [] and file_list_h5 != []:
+        raise IOError("Error: Both NetCDF and HDF5 files are present: do not know which to read.")
+    elif file_list_h5 != []:
+        suffix = ".hdf5"
+        file_list = file_list_h5
+    else:
+        suffix = ".nc"
+        file_list = file_list_nc
+    if file_list != []:
+        return file_list,True,suffix
+
+    file_list_nc = glob.glob(os.path.join(path, prefix+".*nc"))
+    file_list_h5 = glob.glob(os.path.join(path, prefix+".*hdf5"))
+    if file_list_nc != [] and file_list_h5 != []:
+        raise IOError("Error: Both NetCDF and HDF5 files are present: do not know which to read.")
+    elif file_list_h5 != []:
+        suffix = ".hdf5"
+        file_list = file_list_h5
+    else:
+        suffix = ".nc"
+        file_list = file_list_nc
+
+    file_list.sort()
+    if file_list == []:
+        raise IOError("ERROR: No data files found in path {0}".format(path) )
+    return file_list,False,suffix
