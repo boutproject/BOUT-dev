@@ -1,18 +1,32 @@
 Notes
 =====
 
+Configure options
+-----------------
+
+Configure with ``--enable-checks=3`` enables a lot of checks of
+operations performed by the field objects. This is very useful for
+debugging a code, and can be omitted once bugs have been removed.
+``--enable=checks=2`` enables less checking, especially the
+computationally rather expensive ones, while ``--enable-checks=0``
+disables most checks.
+
+To get most checking, both from BOUT and from the compiler
+``--enable-debug`` can be used. That enables checks of level 3, as
+well as debug flugs, e.g. ``-g`` for gcc.
+
+For (sometimes) more useful error messages, there is the
+``--enable-track`` option. This keeps track of the names of variables
+and includes these in error messages.
+
+To enable opimization, configure with ``--enable-optimize=3``.
+
 Compile options
 ---------------
 
-Compiling with ``-DCHECK=3`` enables a lot of checks of operations
-performed by the field objects. This is very useful for debugging a
-code, and can be omitted once bugs have been removed.
-``-DCHECK=2`` enables less checking, especially the computationally
-rather expensive ones, while ``-DCHECK=0`` disables most checks.
-
-For (sometimes) more useful error messages, there is the ``-DTRACK``
-option. This keeps track of the names of variables and includes these in
-error messages.
+It is possible to change flags for BOUT++ after running configure, by
+editing the make.config file. Note that this is not recommanded, as
+e.g. pvode will not be build with theses flags.
 
 Adaptive grids
 --------------
