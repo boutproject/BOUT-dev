@@ -80,17 +80,17 @@ void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z) 
         if ((t_z < 0.0) || (t_z > 1.0))
           throw BoutException("t_z=%e out of range at (%d,%d,%d)", t_z, x, y, z);
 
-        h00_x(x, y, z) = 2. * t_x * t_x * t_x - 3. * t_x * t_x + 1.;
-        h00_z(x, y, z) = 2. * t_z * t_z * t_z - 3. * t_z * t_z + 1.;
+        h00_x(x, y, z) = (2. * t_x * t_x * t_x) - (3. * t_x * t_x) + 1.;
+        h00_z(x, y, z) = (2. * t_z * t_z * t_z) - (3. * t_z * t_z) + 1.;
 
-        h01_x(x, y, z) = -2. * t_x * t_x * t_x + 3. * t_x * t_x;
-        h01_z(x, y, z) = -2. * t_z * t_z * t_z + 3. * t_z * t_z;
+        h01_x(x, y, z) = (-2. * t_x * t_x * t_x) + (3. * t_x * t_x);
+        h01_z(x, y, z) = (-2. * t_z * t_z * t_z) + (3. * t_z * t_z);
 
         h10_x(x, y, z) = t_x * (1. - t_x) * (1. - t_x);
         h10_z(x, y, z) = t_z * (1. - t_z) * (1. - t_z);
 
-        h11_x(x, y, z) = t_x * t_x * t_x - t_x * t_x;
-        h11_z(x, y, z) = t_z * t_z * t_z - t_z * t_z;
+        h11_x(x, y, z) = (t_x * t_x * t_x) - (t_x * t_x);
+        h11_z(x, y, z) = (t_z * t_z * t_z) - (t_z * t_z);
       }
     }
   }
