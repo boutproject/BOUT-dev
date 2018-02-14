@@ -167,15 +167,11 @@ void Field3D::allocate() {
       nz = fieldmesh->LocalNz;
     }
     data = Array<BoutReal>(nx*ny*nz);
-#if CHECK>0
+#if CHECK > 2
     invalidateGuards(*this);
-#endif  
-  }else{
-    if ( !data.unique() ){
-      data.ensureUnique();
-    }
-  }
-
+#endif
+  } else
+    data.ensureUnique();
 }
 
 Field3D* Field3D::timeDeriv() {
@@ -1056,7 +1052,7 @@ Field2D DC(const Field3D &f) {
 }
 
 void invalidateGuards(Field3D &var){
-#if CHECK > 4 // Strip out if not checking
+#if CHECK > 2 // Strip out if not checking
   Mesh *localmesh = var.getMesh();
 
   // Inner x -- all y and all z

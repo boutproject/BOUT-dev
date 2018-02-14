@@ -112,6 +112,9 @@ void Field2D::allocate() {
       ny = fieldmesh->LocalNy;
     }
     data = Array<BoutReal>(nx*ny);
+#if CHECK > 2
+    invalidateGuards(*this);
+#endif
   }else
     data.ensureUnique();
 }
@@ -578,24 +581,33 @@ void checkData(const Field2D &f, REGION region) {
 #endif
 
 void invalidateGuards(Field2D &var){
-#if CHECK > 0  //Strip out if not checking
-  //Inner x -- both y
-  for(int ix=0; ix<mesh->xstart; ix++){
-    for(int iy=0; iy<mesh->ystart; iy++){
-      var(ix,iy) = nan("");
-    }
-    for(int iy=mesh->yend+1; iy<mesh->LocalNy; iy++){
-      var(ix,iy) = nan("");
+#if CHECK > 2
+  Mesh *localmesh = var.getMesh();
+
+  // Inner x -- all y and all z
+  for (int ix = 0; ix < localmesh->xstart; ix++) {
+    for (int iy = 0; iy < localmesh->LocalNy; iy++) {
+      var(ix, iy) = std::nan("");
     }
   }
 
-  //Outer x -- both y and all z
-  for(int ix=mesh->xend+1; ix<mesh->LocalNx; ix++){
-    for(int iy=0; iy<mesh->ystart; iy++){
-      var(ix,iy) = nan("");
+  // Outer x -- all y and all z
+  for (int ix = localmesh->xend + 1; ix < localmesh->LocalNx; ix++) {
+    for (int iy = 0; iy < localmesh->LocalNy; iy++) {
+      var(ix, iy) = std::nan("");
     }
-    for(int iy=mesh->yend+1; iy<mesh->LocalNy; iy++){
-      var(ix,iy) = nan("");
+  }
+
+  // Remaining boundary point
+  for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
+    // Lower y -- non-boundary x and all z (could be all x but already set)
+    for (int iy = 0; iy < localmesh->ystart; iy++) {
+      var(ix, iy) = std::nan("");
+    }
+
+    // Lower y -- non-boundary x and all z (could be all x but already set)
+    for (int iy = localmesh->yend + 1; iy < localmesh->LocalNy; iy++) {
+      var(ix, iy) = std::nan("");
     }
   }
 #endif  

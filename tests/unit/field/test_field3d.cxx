@@ -625,9 +625,6 @@ TEST_F(Field3DTest, CheckData) {
   EXPECT_THROW(checkData(field), BoutException);
 }
 
-#endif // CHECK > 2
-
-#if CHECK > 4
 TEST_F(Field3DTest, InvalidateGuards) {
   Field3D field;
   field.allocate(); // Calls invalidateGuards
@@ -671,7 +668,7 @@ TEST_F(Field3DTest, InvalidateGuards) {
   EXPECT_EQ(sum, nbndry);
 }
 
-#endif // CHECK > 4
+#endif // CHECK > 2
 
 //-------------------- Assignment tests --------------------
 
