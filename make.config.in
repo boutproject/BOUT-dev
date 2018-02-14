@@ -288,6 +288,7 @@ DIRS_=$(DIRS:%/=%)
 DIRS__=$(shell for f in $(DIRS_) ; do echo $${f\#\#*/};done)
 # now we can generate a list of libraries
 SUB_LIBS=$(DIRS__:%=%.a)
+$(SUB_LIBS):$(DIRS__)
 
 $(SOURCEC): checklib
 $(SOURCEC:%.cxx=%.o): $(LIB)
@@ -320,6 +321,7 @@ endif
 clean::
 	-@$(RM) -rf $(OBJ) $(DEPS) $(TARGET)
 	@for pp in $(DIRS); do echo "  " $$pp cleaned; $(MAKE) --no-print-directory -C $$pp clean; done
+	@rm -f $(SUB_LIBS)
 
 distclean:: clean clean-tests
 	@echo include cleaned
