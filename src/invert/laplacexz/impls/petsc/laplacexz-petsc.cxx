@@ -82,8 +82,7 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt)
    * Defualt behaviour:
    * =================-
    * If the boundary flags are not:
-   * - xin will be set to 2nd order neumann as described above
-   * - xout will be set to 2nd order dirichlet as described above
+   * - xin & xout will be set to 2nd order dirichlet as described above
    *
    * Current implementations:
    * ========================
@@ -343,11 +342,10 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
          *       see note about BC in LaplaceXZ constructor for more details
          */
         for(int z=0; z < mesh->LocalNz; z++) {
-          PetscScalar val = 1.0;
+          PetscScalar val = 0.5;
           MatSetValues(it->MatA,1,&row,1,&row,&val,INSERT_VALUES);
 
           int col = row + (mesh->LocalNz); // +1 in X
-          val = -1.0;
           MatSetValues(it->MatA,1,&row,1,&col,&val,INSERT_VALUES);
 
           row++;
