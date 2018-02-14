@@ -71,7 +71,7 @@ std::string BoutException::BacktraceGenerate() const{
     Dl_info info;
     void * ptr;
     if (dladdr(trace[i],&info)){
-      ptr=trace[i]-(size_t)info.dli_fbase;
+      ptr=(void*) ((size_t)trace[i]-(size_t)info.dli_fbase);
     } else {
       ptr=trace[i];
     }
