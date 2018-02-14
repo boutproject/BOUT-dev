@@ -173,9 +173,6 @@ void Field3D::allocate() {
   }else{
     if ( !data.unique() ){
       data.ensureUnique();
-#if CHECK>0
-      invalidateGuards(*this);
-#endif
     }
   }
 
