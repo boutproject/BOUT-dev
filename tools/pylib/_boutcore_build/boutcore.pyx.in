@@ -152,6 +152,9 @@ cdef class Field3D:
         #if self.cobj == NULL:
         #    raise MemoryError('Not enough memory, allocation failed.')
 
+    def set(self,data,ignoreDataType=False):
+        return self.setAll(data,ignoreDataType)
+
     def setAll(self,data,ignoreDataType=False):
         if data.dtype != np.dtype('float64'):
             if ignoreDataType:
@@ -160,6 +163,9 @@ cdef class Field3D:
                 raise TypeError("expected float64 data - add ignoreDataType=True to cast")
         cdef np.ndarray[double, mode="c", ndim=3] data_ = np.ascontiguousarray(data)
         c_set_f3d_all(self.cobj,&data_[0,0,0]);
+
+    def get(self):
+        return self.getAll()
 
     def getAll(self):
         nx=self.cobj.getNx()
