@@ -439,6 +439,14 @@ def init(args=[]):
     global isInit
     if isInit:
         raise RuntimeError("The BOUT++ library was already initialised - please call boutcore.init(args) only once")
+    try:
+        # python3 version
+        if isinstance(args, str):
+            args=args.split(" ")
+    except:
+        # fallback to python2
+        if isinstance(args, basestring):
+            args=args.split(" ")
     args.insert(0,"boutcore")
     cdef char **string_buf = <char **>malloc(len(args) * sizeof(char*))
     fu=[]

@@ -6,7 +6,7 @@ from boutdata import collect
 
 errorlist=""
 
-boutcore.init(["-d","data"])#,"-f","BOUT.settings"])
+boutcore.init("-d data")#+" -f BOUT.settings")
 n=collect("f2d",path='input',tind=-1,yguards=True)
 print(n.shape)
 T=collect("f3d",path='input',tind=-1,yguards=True)
