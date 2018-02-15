@@ -52,6 +52,8 @@ upwind = W3
 
 [laplace]
 include_yguards = true
+all_terms = false
+
 
 ##################################################
 # Solver settings
