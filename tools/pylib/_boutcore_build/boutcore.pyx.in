@@ -608,9 +608,11 @@ def Grad_perp_dot_Grad_perp(Field3D a, Field3D b):
     checkInit()
     return f3dFromObj(c_Grad_perp_dot_Grad_perp(a.cobj[0],b.cobj[0]))
 
-def create3D(string, Mesh msh,outloc="CELL_DEFAULT",time=0):
+def create3D(string, Mesh msh=None,outloc="CELL_DEFAULT",time=0):
     checkInit()
     cdef benum.CELL_LOC outloc_=benum.resolve_cell_loc(outloc)
+    if msh is None:
+        msh=Mesh.getGlobal()
     cdef FieldFactory fact=msh.getFactory()
     cdef c.string str_=string.encode('ascii')
     return f3dFromObj(
