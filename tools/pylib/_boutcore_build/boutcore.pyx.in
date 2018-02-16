@@ -383,7 +383,6 @@ cdef void callback(void * parameter, void * method) with gil:
 
 
 ctypedef void (*Method)(void *param)
-#, void *user_data)
 
 cdef class PythonModelCallback:
     cdef c.PythonModelCallback * cobj
@@ -403,20 +402,31 @@ cdef class PythonModelCallback:
         # 'parameter' :: The parameter to be passed to the 'method'
         self.cobj.cy_execute(<void*>parameter)
 
-cdef class PhysicsModel:
+
+cdef class PhysicsModelBase(object):
     cdef c.PythonModel * cmodel
     cdef c.PythonModelCallback * callback
+    cdef c.PythonModelCallback * callbackinit
+    cdef c.bool done_pyinit
     def __init__(self):
         checkInit()
         self.cmodel  = new c.PythonModel()
-        self.cmodel.pyinit()
         self.callback= <c.PythonModelCallback*> 0
-
+        self.callbackinit= <c.PythonModelCallback*> 0
+        self.done_pyinit = False
     def solve(self):
+        if not self.done_pyinit:
+            self.cmodel.pyinit()
+            self.done_pyinit = True
+        import sys
+        sys.stdout.flush()
         self.cmodel.solve()
         #self.cmodel.getSolver().solve()
 
     def solve_for(self,**kwargs):
+        if not self.done_pyinit:
+            self.cmodel.pyinit()
+            self.done_pyinit = True
         cdef char * tmp
         cdef c.Field3D * f3d
         for key in kwargs:
@@ -427,14 +437,49 @@ cdef class PhysicsModel:
 
     def setRhs(self,rhs):
         if self.callback != <c.PythonModelCallback*>0:
-           del self.callback
+            del self.callback
         self.callback = new c.PythonModelCallback(callback, <void*> rhs)
         self.cmodel.set_rhs_func(self.callback)
 
+    def setInit(self,init):
+        if self.callbackinit != <c.PythonModelCallback*>0:
+            del self.callbackinit
+        self.callbackinit = new c.PythonModelCallback(callback, <void*> init)
+        self.cmodel.set_init_func(self.callbackinit)
+
     def __dealloc__(self):
-        self.cmodel.free()
-        del self.cmodel
-        del self.callback
+        if self.cmodel != <c.PythonModel *> 0:
+            self.cmodel.free()
+            del self.cmodel
+            del self.callback
+            del self.callbackinit
+
+class PhysicsModel(PhysicsModelBase):
+    def __init__(self):
+        super(PhysicsModel,self).__init__()
+        self._super_is_initialised=True
+    def solve(self):
+        try:
+            self._super_is_initialised
+        except:
+            raise RuntimeError("PhysicsModel is not initialized")
+        def _rhs(time):
+           self.rhs(time)
+        self.myrhs=_rhs
+        self.setRhs(self.myrhs)
+        def _init(restart):
+            self.init(restart)
+        self.myinit=_init
+        self.setInit(self.myinit)
+        super(PhysicsModel,self).solve()
+    def solve_for(self,*args,**kwargs):
+        try:
+            self._super_is_initialised
+        except:
+            raise RuntimeError("PhysicsModel is not initialized")
+        super(PhysicsModel,self).solve_for(*args,**kwargs)
+    def init(self,restart):
+        pass
 
 cdef extern from "bout.hxx":
     int BoutInitialise(int&, char **&)

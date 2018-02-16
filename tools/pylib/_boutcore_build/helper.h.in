@@ -54,8 +54,8 @@ class PythonModelCallback{
 class PythonModel: public PhysicsModel{
 protected:
   int init(bool restarting) override{
-    if (init_func){
-      (*init_func)(restarting);
+    if (_init){
+      _init->cy_execute(&restarting);
     }
     return 0;
   };
@@ -64,7 +64,7 @@ protected:
     return 0;
   };
 public:
-  PythonModel():init_func(nullptr), _rhs(nullptr){};
+  PythonModel():_init(nullptr), _rhs(nullptr){};
   void pyinit(){
     solver = Solver::create();
     solver->setModel(this);
@@ -76,22 +76,23 @@ public:
     delete solver;
     delete bout_monitor;
   };
-  void set_init_func(void (*init_func_)(bool)){
-    init_func=init_func_;
+  void set_init_func(PythonModelCallback * __init){
+    _init=__init;
   };
   void set_rhs_func(PythonModelCallback * __rhs){
     _rhs=__rhs;
   };
   void solve(){
-    solver->outputVars(dump);
+    //solver->outputVars(dump);
     solver->solve();
   }
   Solver * getSolver(){
     return solver;
   };
 private:
-  void (*init_func)(bool);
+  //void (*init_func)(bool);
   //void (*rhs_func)(BoutReal time);
+  PythonModelCallback * _init;
   PythonModelCallback * _rhs;
   Solver * solver;
   Monitor * bout_monitor;

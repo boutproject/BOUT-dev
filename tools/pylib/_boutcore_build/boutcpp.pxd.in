@@ -129,6 +129,7 @@ cdef extern from "helper.h":
         void solve()
         Solver * getSolver()
         void set_rhs_func(PythonModelCallback*)
+        void set_init_func(PythonModelCallback*)
     cppclass PythonModelCallback:
         PythonModelCallback(Method method, void * user_data)
         void cy_execute(void * parameter)
