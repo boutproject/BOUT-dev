@@ -6,7 +6,7 @@ from boutdata import collect
 
 errorlist=""
 
-boutcore.init("-d data")#+" -f BOUT.settings")
+boutcore.init("-d data -q -q -q")#+" -f BOUT.settings")
 n=collect("f2d",path='input',tind=-1,yguards=True)
 print(n.shape)
 T=collect("f3d",path='input',tind=-1,yguards=True)
@@ -81,8 +81,24 @@ def rhs(time):
     n_ddt[:,:,:]=dens*0
     n_ddt+=1
 
-model=boutcore.PhysicsModel()
+model=boutcore.PhysicsModelBase()
 model.setRhs(rhs)
 model.solve_for(n=dens)
 model.solve()
-#boutcore.finalise()
+
+
+# class MyModel(boutcore.PhysicsModel):
+#     def init(self,restart):
+#         print("setting to sin")
+#         self.n=boutcore.create3D("sin(x)")
+#         self.solve_for(dens=self.n)
+#     def rhs(self,time):
+#         self.n.ddt(boutcore.DDX(self.n))
+
+# model=MyModel()
+# #model.myinit(True)
+# model.solve()
+# # model2=MyModel()
+# # model2.init()
+# # model2.solve()
+# #boutcore.finalise()
