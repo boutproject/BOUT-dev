@@ -124,7 +124,7 @@ all()
 }
 
 if test $# -eq 0; then
-    usage 1
+    usage 2
 fi
 
 while test $# -gt 0; do
@@ -252,8 +252,7 @@ while test $# -gt 0; do
 
     *)
         echo "unknown option: $1"
-        usage
-        exit 1
+        usage 2
         ;;
     esac
     shift
