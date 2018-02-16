@@ -36,6 +36,9 @@
 #ifdef BOUT_ARRAY_WITH_VALARRAY
 #include <valarray>
 #endif
+
+#include <bout/openmpwrap.hxx>
+
 /*!
  * Data array type with automatic memory management
  *
@@ -364,20 +367,20 @@ private:
 
     // Clean by deleting all data -- possible that just stores.clear() is
     // sufficient rather than looping over each entry.
-#pragma omp single
+    BOUT_OMP(single)
     {
       for (auto &stores : arena) {
-	for (auto &p : stores) {
-	  auto &v = p.second;
-	  for (dataPtrType a : v) {
-	    a = nullptr; //Could use a.reset() if clearer
-	  }
-	  v.clear();
-	}
-	stores.clear();
+        for (auto &p : stores) {
+          auto &v = p.second;
+          for (dataPtrType a : v) {
+            a.reset();
+          }
+          v.clear();
+        }
+        stores.clear();
       }
-      //Here we ensure there is exactly one empty map still
-      //left in the arena as we have to return one such item
+      // Here we ensure there is exactly one empty map still
+      // left in the arena as we have to return one such item
       arena.resize(1);
     }
 

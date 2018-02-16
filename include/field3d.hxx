@@ -36,6 +36,7 @@ class Mesh;  // #include "bout/mesh.hxx"
 #include "bout/dataiterator.hxx"
 
 #include "bout/array.hxx"
+#include "bout/region.hxx"
 
 #include "bout/deprecated.hxx"
 #include "bout/assert.hxx"
@@ -184,7 +185,7 @@ class Field3D : public Field, public FieldData {
   /// Constructor from 2D field
   Field3D(const Field2D& f);
   /// Constructor from value
-  Field3D(BoutReal val ,Mesh * localmesh = nullptr);
+  Field3D(BoutReal val, Mesh *localmesh = nullptr);
   /// Destructor
   ~Field3D();
 
@@ -265,9 +266,14 @@ class Field3D : public Field, public FieldData {
   Field3D& ynext(int dir);
   const Field3D& ynext(int dir) const;
 
-  // Staggered grids
-  void setLocation(CELL_LOC loc) override; ///< Set variable location
-  CELL_LOC getLocation() const override; ///< Variable location
+  /// Set variable location for staggered grids to @param new_location
+  ///
+  /// Throws BoutException if new_location is not `CELL_CENTRE` and
+  /// staggered grids are turned off and checks are on. If checks are
+  /// off, silently sets location to ``CELL_CENTRE`` instead.
+  void setLocation(CELL_LOC new_location) override;
+  /// Get variable location
+  CELL_LOC getLocation() const override;
   
   /////////////////////////////////////////////////////////
   // Data access
@@ -329,6 +335,14 @@ class Field3D : public Field, public FieldData {
     return operator()(i.x, i.y, i.z);
   }
   
+
+  BoutReal& operator[](const Ind3D &d) {
+    return data[d.ind];
+  }
+  const BoutReal& operator[](const Ind3D &d) const {
+    return data[d.ind];
+  }
+
   /*!
    * Direct access to the underlying data array
    *
@@ -664,11 +678,11 @@ bool finite(const Field3D &var);
 #if CHECK > 0
 /// Throw an exception if \p f is not allocated or if any
 /// elements are non-finite (for CHECK > 2)
-void checkData(const Field3D &f);
+void checkData(const Field3D &f, REGION region = RGN_NOBNDRY);
 #else
 /// Ignored with disabled CHECK; Throw an exception if \p f is not
 /// allocated or if any elements are non-finite (for CHECK > 2)
-inline void checkData(const Field3D &UNUSED(f)){};
+inline void checkData(const Field3D &UNUSED(f), REGION UNUSED(region) = RGN_NOBNDRY){};
 #endif
  
 /*!

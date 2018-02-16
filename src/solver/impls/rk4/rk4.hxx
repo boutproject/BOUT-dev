@@ -40,9 +40,9 @@ class RK4Solver : public Solver {
   RK4Solver(Options *options);
   ~RK4Solver();
 
-  void resetInternalFields();
-  void setMaxTimestep(BoutReal dt);
-  BoutReal getCurrentTimestep() {return timestep; }
+  void resetInternalFields() override;
+  void setMaxTimestep(BoutReal dt) override;
+  BoutReal getCurrentTimestep() override {return timestep; }
   
   int init(int nout, BoutReal tstep) override;
   
