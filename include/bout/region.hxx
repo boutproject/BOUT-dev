@@ -158,6 +158,12 @@ public:
   /// Destructor
   ~Region(){};
 
+  // Revisit cbegin/cend when we adopt C++14 as can use std::cend etc.
+  typename RegionIndices::iterator begin() { return std::begin(indices);};
+  typename RegionIndices::const_iterator cbegin() const { return indices.cbegin();};
+  typename RegionIndices::iterator end() { return std::end(indices);};
+  typename RegionIndices::const_iterator cend() const { return indices.cend();};
+
   ContiguousBlocks getBlocks() const { return blocks; };
   RegionIndices getIndices() const { return indices; };
 

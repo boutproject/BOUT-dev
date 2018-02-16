@@ -913,3 +913,255 @@ TEST_F(RegionTest, regionPeriodicShift) {
     EXPECT_TRUE(shiftXReg[i] >= 0);
   }
 }
+
+TEST_F(RegionTest, Begin) {
+  Region<Ind3D>::RegionIndices region{0, 1, 2, 3, 4, 5, 6, 7, 8};
+  Region<Ind3D> range(region);
+
+  auto iter = range.begin();
+  EXPECT_EQ(iter->ind, 0);
+}
+
+// Dereferencing an end() iterator is an error, so we need to test
+// end() works a little indirectly. If the addition and less-than
+// tests fail, this one is suspect!
+TEST_F(RegionTest, End) {
+  Region<Ind3D>::RegionIndices region{0, 1, 2, 3, 4, 5, 6, 7, 8};
+  Region<Ind3D> range(region);
+
+  auto iter = range.begin() + 8;
+  auto iter_end = range.end();
+  EXPECT_EQ(iter->ind, 8);
+  // iter_end is one-past the last element of region
+  EXPECT_TRUE(iter < iter_end);
+}
+
+TEST_F(RegionTest, PrefixIncrement) {
+  Region<Ind3D>::RegionIndices region{0, 1, 2, 3, 4, 5, 6, 7, 8};
+  Region<Ind3D> range(region);
+
+  auto iter = range.begin();
+  ++iter;
+
+  EXPECT_EQ(iter->ind, 1);
+}
+
+TEST_F(RegionTest, PostfixIncrement) {
+  Region<Ind3D>::RegionIndices region{0, 1, 2, 3, 4, 5, 6, 7, 8};
+  Region<Ind3D> range(region);
+
+  auto iter = range.begin();
+  auto iter2 = iter++;
+
+  EXPECT_EQ(iter->ind, 1);
+  EXPECT_EQ(iter2->ind, 0);
+}
+
+TEST_F(RegionTest, PrefixDecrement) {
+  Region<Ind3D>::RegionIndices region{0, 1, 2, 3, 4, 5, 6, 7, 8};
+  Region<Ind3D> range(region);
+
+  auto iter = range.end();
+  --iter;
+
+  EXPECT_EQ(iter->ind, 8);
+}
+
+TEST_F(RegionTest, PostfixDecrement) {
+  Region<Ind3D>::RegionIndices region{0, 1, 2, 3, 4, 5, 6, 7, 8};
+  Region<Ind3D> range(region);
+
+  // end() is one-past-the-last element, so we need to decrement it in
+  // order to be able to dereference it
+  auto iter = --(range.end());
+  auto iter2 = iter--;
+
+  EXPECT_EQ(iter->ind, 7);
+  EXPECT_EQ(iter2->ind, 8);
+}
+
+TEST_F(RegionTest, NotEquals) {
+  Region<Ind3D>::RegionIndices region{0, 1, 2, 3, 4, 5, 6, 7, 8};
+  Region<Ind3D> range(region);
+
+  auto iter = range.begin();
+  auto iter2 = iter;
+  ++iter2;
+
+  EXPECT_TRUE(iter != iter2);
+  ++iter;
+  EXPECT_FALSE(iter != iter2);
+}
+
+TEST_F(RegionTest, Equals) {
+  Region<Ind3D>::RegionIndices region{0, 1, 2, 3, 4, 5, 6, 7, 8};
+  Region<Ind3D> range(region);
+
+  auto iter = range.begin();
+  auto iter2 = iter;
+  ++iter2;
+  ++iter;
+
+  EXPECT_TRUE(iter == iter2);
+  ++iter;
+  EXPECT_FALSE(iter == iter2);
+}
+
+TEST_F(RegionTest, LessThan) {
+  Region<Ind3D>::RegionIndices region{0, 1, 2, 3, 4, 5, 6, 7, 8};
+  Region<Ind3D> range(region);
+
+  auto iter = range.begin();
+  auto iter2 = iter;
+  ++iter2;
+
+  EXPECT_TRUE(iter < iter2);
+  ++iter;
+  EXPECT_FALSE(iter < iter2);
+  ++iter;
+  EXPECT_FALSE(iter < iter2);
+}
+
+TEST_F(RegionTest, MoreThan) {
+  Region<Ind3D>::RegionIndices region{0, 1, 2, 3, 4, 5, 6, 7, 8};
+  Region<Ind3D> range(region);
+
+  auto iter = range.begin();
+  auto iter2 = iter;
+  ++iter2;
+
+  EXPECT_TRUE(iter2 > iter);
+  ++iter;
+  EXPECT_FALSE(iter2 > iter);
+  ++iter;
+  EXPECT_FALSE(iter2 > iter);
+}
+
+TEST_F(RegionTest, LessThanOrEqualTo) {
+  Region<Ind3D>::RegionIndices region{0, 1, 2, 3, 4, 5, 6, 7, 8};
+  Region<Ind3D> range(region);
+
+  auto iter = range.begin();
+  auto iter2 = iter;
+  ++iter2;
+
+  EXPECT_TRUE(iter <= iter2);
+  ++iter;
+  EXPECT_TRUE(iter <= iter2);
+  ++iter;
+  EXPECT_FALSE(iter <= iter2);
+}
+
+TEST_F(RegionTest, MoreThanOrEqualTo) {
+  Region<Ind3D>::RegionIndices region{0, 1, 2, 3, 4, 5, 6, 7, 8};
+  Region<Ind3D> range(region);
+
+  auto iter = range.begin();
+  auto iter2 = iter;
+  ++iter2;
+
+  EXPECT_TRUE(iter2 >= iter);
+  ++iter;
+  EXPECT_TRUE(iter2 >= iter);
+  ++iter;
+  EXPECT_FALSE(iter2 >= iter);
+}
+
+TEST_F(RegionTest, PlusEqualsInt) {
+  Region<Ind3D>::RegionIndices region{0, 1, 2, 3, 4, 5, 6, 7, 8};
+  Region<Ind3D> range(region);
+
+  auto iter = range.begin();
+
+  iter += 2;
+  EXPECT_EQ(iter->ind, 2);
+}
+
+TEST_F(RegionTest, PlusInt) {
+  Region<Ind3D>::RegionIndices region{0, 1, 2, 3, 4, 5, 6, 7, 8};
+  Region<Ind3D> range(region);
+
+  auto iter = range.begin();
+
+  auto iter2 = iter + 3;
+  EXPECT_EQ(iter2->ind, 3);
+}
+
+TEST_F(RegionTest, IntPlus) {
+  Region<Ind3D>::RegionIndices region{0, 1, 2, 3, 4, 5, 6, 7, 8};
+  Region<Ind3D> range(region);
+
+  auto iter = range.begin();
+
+  auto iter2 = 5 + iter;
+  EXPECT_EQ(iter2->ind, 5);
+}
+
+TEST_F(RegionTest, MinusEqualsInt) {
+  Region<Ind3D>::RegionIndices region{0, 1, 2, 3, 4, 5, 6, 7, 8};
+  Region<Ind3D> range(region);
+
+  auto iter = range.end();
+
+  iter -= 2;
+  EXPECT_EQ(iter->ind, 7);
+}
+
+TEST_F(RegionTest, MinusInt) {
+  Region<Ind3D>::RegionIndices region{0, 1, 2, 3, 4, 5, 6, 7, 8};
+  Region<Ind3D> range(region);
+
+  auto iter = range.end();
+
+  auto iter2 = iter - 3;
+  EXPECT_EQ(iter2->ind, 6);
+}
+
+TEST_F(RegionTest, MinusIterator) {
+  Region<Ind3D>::RegionIndices region{0, 1, 2, 3, 4, 5, 6, 7, 8};
+  Region<Ind3D> range(region);
+
+  auto start = range.begin();
+  auto end = range.end();
+
+  EXPECT_EQ(end - start, region.size());
+}
+
+TEST_F(RegionTest, IndexInt) {
+  Region<Ind3D>::RegionIndices region{0, 1, 2, 3, 4, 5, 6, 7, 8};
+  Region<Ind3D> range(region);
+
+  auto iter = range.begin();
+
+  EXPECT_EQ(iter[4].ind, 4);
+}
+
+TEST_F(RegionTest, Iteration) {
+  Region<Ind3D>::RegionIndices region{0, 1, 2, 3, 4, 5, 6, 7, 8};
+  Region<Ind3D> range(region);
+  Region<Ind3D>::RegionIndices region2;
+
+  int count = 0;
+  for (auto iter2 = range.begin(); iter2 != range.end(); ++iter2) {
+    ++count;
+    region2.push_back(region[iter2->ind]);
+  }
+
+  EXPECT_EQ(count, region.size());
+  EXPECT_EQ(region2, region);
+}
+
+TEST_F(RegionTest, RangeBasedForLoop) {
+  Region<Ind3D>::RegionIndices region{0, 1, 2, 3, 4, 5, 6, 7, 8};
+  Region<Ind3D> range(region);
+  Region<Ind3D>::RegionIndices region2;
+
+  int count = 0;
+  for (const auto &iter : range) {
+    ++count;
+    region2.push_back(region[iter.ind]);
+  }
+
+  EXPECT_EQ(count, region.size());
+  EXPECT_EQ(region2, region);
+}
