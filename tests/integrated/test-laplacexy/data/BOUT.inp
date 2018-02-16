@@ -1,0 +1,29 @@
+
+#rhs = sin(3*x - y)
+rhs = mixmode(x,.057847)*mixmode(y,.2136053)
+rhs2 = rhs
+a1 = 1. + .1*mixmode(x,.78043279854)*mixmode(y,.1750923)
+b1 = 0.
+a2 = 2.*a1
+b2 = .1*mixmode(x*y,.789403270)
+
+grid = "data/d3d_119919.nc"
+
+mz = 1
+#incintshear = true
+
+[mesh]
+paralleltransform = shifted
+
+[laplacexy]
+type = petsc   # Use PETSc implementation
+
+ksptype = gmres   # Linear iterative method
+
+pctype  = lu   # Preconditioner. Direct "lu" or "ilu"; iterative "jacobi", "sor"
+
+# Set package to perform factorisation for direct solves
+# "petsc" built-in solver only serial
+# "superlu", "superlu_dist", "mumps", "cusparse"
+factor_package = superlu_dist
+

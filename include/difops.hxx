@@ -252,6 +252,11 @@ const Field2D Laplace(const Field2D &f);
 const Field3D Laplace(const Field3D &f);
 
 /*!
+ * Inverse of Laplacian operator in LaplaceXY solver
+ */
+const Field2D Laplace_perpXY(const Field2D &A, const Field2D &f);
+
+/*!
  * Terms of form b0 x Grad(phi) dot Grad(A)
  * 
  */

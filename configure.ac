@@ -690,25 +690,9 @@ PETSC_ARCH = ${PETSC_ARCH}
 PETSC_DIR  = ${PETSC_DIR}
 include ${PETSC_CONFDIR}/rules
 include ${PETSC_CONFDIR}/variables
-echo_cxx:
-	-@echo \${CXX}
 echo_sundials:
 	-@echo \${SUNDIALS_LIB}
 MFILE
-
-  #AC_MSG_CHECKING([PETSC has C++ support])
-  #PETSC_HAS_CXX=`make -f petscmake$$ echo_cxx`
-
-  #AS_IF([test -z "$PETSC_HAS_CXX"],
-  #[
-  #  AC_MSG_RESULT([no])
-  #  AC_MSG_ERROR([Warning - PETSc must have C++ support])
-  #], [])
-  #AC_MSG_RESULT([yes])
-
-  #AC_MSG_CHECKING([PETSc C++ compiler used])
-  #PETSC_CXX=`make -f petscmake$$ echo_cxx`
-  #AC_MSG_RESULT([$PETSC_CXX])
 
   AC_MSG_CHECKING([PETSc has SUNDIALS support])
   PETSC_HAS_SUNDIALS=`make -f petscmake$$ echo_sundials | grep -c sundials`

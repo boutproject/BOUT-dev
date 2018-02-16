@@ -131,6 +131,9 @@ public:
   // Full Laplacian operator on scalar field
   const Field2D Laplace(const Field2D &f);
   const Field3D Laplace(const Field3D &f);
+
+  // Full perpendicular Laplacian, in form of inverse of Laplacian operator in LaplaceXY solver
+  const Field2D Laplace_perpXY(const Field2D &A, const Field2D &f);
   
 private:
   /// Matrix inversion by Gauss-Jordan elimination
