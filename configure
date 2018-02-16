@@ -777,8 +777,8 @@ enable_optimize
 enable_sigfpe
 enable_backtrace
 enable_shared
-enable_pvode_openmp
 enable_openmp
+enable_pvode_openmp
 with_gcov
 enable_code_coverage
 with_hdf5
@@ -1431,6 +1431,7 @@ Optional Features:
   --enable-sigfpe         Enable FloatingPointExceptions
   --disable-backtrace     Disable function backtrace
   --enable-shared         Enable building bout++ into an shared object
+  --enable-openmp         Enable building with OpenMP support
   --enable-pvode-openmp   Enable building PVODE with OpenMP support
   --disable-openmp        do not use OpenMP
   --enable-code-coverage  Whether to enable code coverage support
@@ -2627,6 +2628,13 @@ if test "${enable_shared+set}" = set; then :
   enableval=$enable_shared;
 else
   enable_shared=no
+fi
+
+# Check whether --enable-openmp was given.
+if test "${enable_openmp+set}" = set; then :
+  enableval=$enable_openmp;
+else
+  enable_openmp=no
 fi
 
 # Check whether --enable-pvode_openmp was given.
