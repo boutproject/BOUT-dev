@@ -170,6 +170,7 @@ AC_FUNC_VPRINTF
 # Check for OpenMP support
 : ${enable_openmp=no}  # Disable by default
 AC_OPENMP
+HAS_OPENMP=$enable_openmp
 
 #############################################################
 # Code coverage using gcov
@@ -1452,6 +1453,7 @@ AC_SUBST(HAS_SLEPC)
 AC_SUBST(PETSC_VERSION)
 AC_SUBST(PETSC_RELEASE)
 AC_SUBST(PETSC_HAS_SUNDIALS)
+AC_SUBST(HAS_OPENMP)
 
 AC_OUTPUT(bin/bout-config)
 chmod a+x bin/bout-config
