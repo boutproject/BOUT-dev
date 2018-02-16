@@ -12,3 +12,4 @@ BOUT.settings
 BOUT.log.*
 BOUT.restart.*.nc
 data/BOUT.dmp.*.nc
+mini/BOUT.dmp.*.nc
