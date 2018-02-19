@@ -230,27 +230,27 @@ void free_matrix(T **m) {
  
  * Note: Prefer other methods like standard containers
  */ 
-BoutReal ***r3tensor(int nrow, int ncol, int ndep);
+DEPRECATED(BoutReal ***r3tensor(int nrow, int ncol, int ndep));
 
 /*!
  * Free a 3D BoutReal array, assumed to have been created
  * by r3tensor()
  *
  */
-void free_r3tensor(BoutReal ***m);
+DEPRECATED(void free_r3tensor(BoutReal ***m));
 
 /*!
  * Allocate a 3D int array of size \p nrow x \p ncol \p ndep
  
  * Note: Prefer other methods like standard containers
  */ 
-int ***i3tensor(int nrow, int ncol, int ndep);
+DEPRECATED(int ***i3tensor(int nrow, int ncol, int ndep));
 
 /*!
  * Free a 3D int array, assumed to have been created
  * by i3tensor()
  */
-void free_i3tensor(int ***m);
+DEPRECATED(void free_i3tensor(int ***m));
 
 /*!
  * Allocate a 2D array of \p nrow by \p ncol dcomplex objects
