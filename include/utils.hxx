@@ -130,6 +130,37 @@ private:
 template <typename T>
 void free_matrix(Matrix<T> m) {}
 
+template <typename T>
+class Tensor {
+public:
+  typedef T data_type;
+  Tensor() : n1(0), n2(0), n3(0) {};
+  Tensor(unsigned int n1, unsigned int n2, unsigned int n3) : n1(n1), n2(n2), n3(n3) {
+    data = Array<T>(n1*n2*n3);
+  }
+
+  T& operator()(unsigned int i1, unsigned int i2, unsigned int i3) {
+    ASSERT2(0<=i1 && i1<n1);
+    ASSERT2(0<=i2 && i2<n2);
+    ASSERT2(0<=i3 && i3<n3);
+    return data[(i1*n2+i2)*n3 + i3];
+  }
+  const T& operator()(unsigned int i1, unsigned int i2, unsigned int i3) const {
+    ASSERT2(0<=i1 && i1<n1);
+    ASSERT2(0<=i2 && i2<n2);
+    ASSERT2(0<=i3 && i3<n3);
+    return data[(i1*n2+i2)*n3 + i3];
+  }
+
+  bool empty(){
+    return n1*n2*n3 == 0;
+  }
+  
+private:
+  unsigned int n1, n2, n3;
+  Array<T> data;
+};
+
 /*!
  * Create a 2D array of \p xsize by \p ysize 
  * This is allocated as two blocks of data so that
