@@ -128,7 +128,7 @@ private:
 
 // For backwards compatibility with old matrix -- to be removed
 template <typename T>
-DEPRECATED(void free_matrix(Matrix<T> m)) {}
+void free_matrix(Matrix<T> m) {}
 
 /*!
  * Create a 2D array of \p xsize by \p ysize 
