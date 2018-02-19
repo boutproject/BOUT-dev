@@ -30,6 +30,7 @@
 #include <utility>
 #include <vector>
 
+#include "bout/assert.hxx"
 #include "bout/openmpwrap.hxx"
 
 /*
