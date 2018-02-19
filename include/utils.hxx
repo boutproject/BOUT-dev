@@ -117,6 +117,10 @@ public:
     return &(data[i1*n2]);
   }
 
+  T* begin() { return std::begin(data);};
+  const T* begin() const { return std::begin(data);};
+  T* end() { return std::end(data);};
+  const T* end() const { return std::end(data);};
   bool empty(){
     return n1*n2 == 0;
   }
@@ -152,6 +156,10 @@ public:
     return data[(i1*n2+i2)*n3 + i3];
   }
 
+  T* begin() { return std::begin(data);};
+  const T* begin() const { return std::begin(data);};
+  T* end() { return std::end(data);};
+  const T* end() const { return std::end(data);};
   bool empty(){
     return n1*n2*n3 == 0;
   }
