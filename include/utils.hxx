@@ -90,35 +90,35 @@ template <typename T>
 class Matrix {
 public:
   typedef T data_type;
-  Matrix() : n1(-1), n2(-1){};
-  Matrix(int n1, int n2) : n1(n1), n2(n2) {
+  Matrix() : n1(0), n2(0){};
+  Matrix(unsigned int n1, unsigned int n2) : n1(n1), n2(n2) {
     data = Array<T>(n1*n2);
   }
 
-  T& operator()(int i1, int i2) {
+  T& operator()(unsigned int i1, unsigned int i2) {
     ASSERT2(0<=i1 && i1<n1);
     ASSERT2(0<=i2 && i2<n2);
     return data[i1*n2+i2];
   }
-  const T& operator()(int i1, int i2) const {
+  const T& operator()(unsigned int i1, unsigned int i2) const {
     ASSERT2(0<=i1 && i1<n1);
     ASSERT2(0<=i2 && i2<n2);
     return data[i1*n2+i2];
   }
 
   // To provide backwards compatibility with matrix to be removed
-  DEPRECATED(T* operator[](int i1)) {
+  DEPRECATED(T* operator[](unsigned int i1)) {
     ASSERT2(0<=i1 && i1<n1);
     return &(data[i1*n2]);
   }
   // To provide backwards compatibility with matrix to be removed
-  DEPRECATED(const T* operator[](int i1) const) {
+  DEPRECATED(const T* operator[](unsigned int i1) const) {
     ASSERT2(0<=i1 && i1<n1);
     return &(data[i1*n2]);
   }
   
 private:
-  int n1, n2;
+  unsigned int n1, n2;
   Array<T> data;
 };
 
