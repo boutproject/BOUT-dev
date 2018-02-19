@@ -22,6 +22,23 @@
  *
  **************************************************************************/
 
+/// Flexible iterator for Field2D/Field3D
+///
+/// The `Region` class keeps hold of a set of indices which are used
+/// to index a Field. Here, a Field refers to either a Field2D or a
+/// Field3D. These indices can either be used directly, or blocks of
+/// contiguous indices may be used instead, which allows OpenMP
+/// parallelisation.
+///
+/// The BLOCK_REGION_LOOP helper macro is provided as a replacement
+/// for for-loops.
+///
+/// Separate index classes are available for Field2Ds (Ind2D) and
+/// Field3Ds (Ind3D). Note that while an Ind3D can be used to index a
+/// Field2D, an Ind2D cannot be used to index a Field3D. This is
+/// because an Ind2D essentially doesn't keep track of the
+/// z-dimension.
+
 #ifndef __REGION_H__
 #define __REGION_H__
 
@@ -33,13 +50,11 @@
 #include "bout/assert.hxx"
 #include "bout/openmpwrap.hxx"
 
-/*
- * The MAXREGIONBLOCKSIZE value can be tuned to try to optimise
- * performance on specific hardware. It determines what the largest
- * contiguous block size can be. As we hope the compiler will vectorise
- * the access to these contiguous blocks, the optimal MAXREGIONBLOCKSIZE
- * is likely related to the vector size etc.
- */
+/// The MAXREGIONBLOCKSIZE value can be tuned to try to optimise
+/// performance on specific hardware. It determines what the largest
+/// contiguous block size can be. As we hope the compiler will vectorise
+/// the access to these contiguous blocks, the optimal MAXREGIONBLOCKSIZE
+/// is likely related to the vector size etc.
 #ifndef MAXREGIONBLOCKSIZE
 #define MAXREGIONBLOCKSIZE 64
 #endif
@@ -47,13 +62,34 @@
 #error "In region.hxx must set MAXREGIONBLOCKSIZE > 0"
 #endif
 
-// The following loops vectorise well well index is type int, needs testing
-// with current approach where index is Ind2D or ind3D
+/// Helper macros for iterating over a Region making use of the
+/// contiguous blocks of indices
+///
+/// @param[in] region An already existing Region
+/// @param[in] index  The name of the index variable to use in the loop
+/// The rest of the arguments form the loop body.
+///
+/// The following loops vectorise well when index is type int, needs testing
+/// with current approach where index is Ind2D or ind3D
+///
+/// Example
+/// -------
+/// The following for-loop:
+///
+///     for (auto index = begin(region); index < end(region); ++index) {
+///        A[index] = B[index] + C[index];
+///     }
+///
+/// can be converted to a block region loop like so:
+///
+///     BLOCK_REGION_LOOP(region, index,
+///        A[index] = B[index] + C[index];
+///     )
 #define BLOCK_REGION_LOOP_SERIAL(region, index, ...)                                     \
   {                                                                                      \
     const auto blocks = region.getBlocks();                                              \
     for (auto block = blocks.begin(); block < blocks.end(); ++block) {                   \
-      for (auto index = block->first; index < block->second; ++index) {                 \
+      for (auto index = block->first; index < block->second; ++index) {                  \
         __VA_ARGS__                                                                      \
       }                                                                                  \
     }                                                                                    \
@@ -64,21 +100,26 @@
     const auto blocks = region.getBlocks();                                              \
   BOUT_OMP(parallel for)                                                                 \
     for (auto block = blocks.begin(); block < blocks.end(); ++block) {                   \
-      for (auto index = block->first; index < block->second; ++index) {                 \
+      for (auto index = block->first; index < block->second; ++index) {                  \
         __VA_ARGS__                                                                      \
       }                                                                                  \
     }                                                                                    \
   }
 
+/// Indices base class for Fields -- Regions are dereferenced into these
 class SpecificInd {
 public:
-  int ind;
+  int ind; //< 1D index into Field
   SpecificInd() : ind(-1){};
   SpecificInd(int i) : ind(i){};
+
+  /// Pre-increment operator
   SpecificInd &operator++() {
     ++ind;
     return *this;
   }
+
+  /// Post-increment operator
   SpecificInd operator++(int) {
     SpecificInd original(*this);
     ++ind;
@@ -92,10 +133,12 @@ public:
   bool operator<=(const SpecificInd &x) const { return ind <= x.ind; }
 };
 // Make identical subclasses with different names
+/// Index-type for `Field3D`s
 class Ind3D : public SpecificInd {
 public:
   Ind3D() : SpecificInd(){};
   Ind3D(int i) : SpecificInd(i){};
+
   // Note operator= from base class is always hidden
   // by implicit method so have to be explicit
   Ind3D &operator=(int i) {
@@ -103,16 +146,52 @@ public:
     return *this;
   }
 };
+
+/// Index-type for `Field2D`s
 class Ind2D : public SpecificInd {
 public:
   Ind2D() : SpecificInd(){};
   Ind2D(int i) : SpecificInd(i){};
+
   Ind2D &operator=(int i) {
     ind = i;
     return *this;
   }
 };
 
+/// Specifies a set of indices which can be iterated over and begin()
+/// and end() methods for range-based for loops.
+///
+/// `Region` is templated on either `Ind2D` or `Ind3D` for `Field2D`s
+/// or `Field3D`s, respectively. Trying to create a `Region` using any
+/// other type is an error.
+///
+/// The set of indices is also broken down into sets of contiguous
+/// blocks of at most MAXREGIONBLOCKSIZE indices. This allows loops to
+/// be parallelised with OpenMP. Iterating using a "block region" may
+/// be more efficient, although it requires a bit more set up. The
+/// helper macro BLOCK_REGION_LOOP is provided to simplify things.
+///
+/// Example
+/// -------
+///
+/// Index ranges can be defined manually:
+///
+///     Region<Ind3D>::RegionIndices region {0, 2, 4, 8};
+///     Region<Ind3D> range(region);
+///
+/// then iterated over using begin() and end()
+///
+///     Field3D f(0.0);
+///     for (auto i = range.begin(); i < range.end(); i++ ) {
+///       f[i] = 1.0;
+///     }
+///
+/// or the more convenient range for loop:
+///
+///     for (auto &i : r) {
+///       f[i] = a[i] + b[i];
+///     }
 template <typename T = Ind3D> class Region {
   // Following prevents a Region being created with anything other
   // than Ind2D or Ind3D as template type
@@ -130,7 +209,7 @@ public:
   typedef std::vector<ContiguousBlock> ContiguousBlocks;
 
   // NOTE::
-  // Probably want to require a mesh in constructor, both to know nx/ny/nz o
+  // Probably want to require a mesh in constructor, both to know nx/ny/nz
   // but also to ensure consistency etc.
 
   // Want to construct from:
@@ -159,68 +238,72 @@ public:
   /// Destructor
   ~Region(){};
 
-  // Revisit cbegin/cend when we adopt C++14 as can use std::cend etc.
-  typename RegionIndices::iterator begin() { return std::begin(indices);};
-  typename RegionIndices::const_iterator cbegin() const { return indices.cbegin();};
-  typename RegionIndices::iterator end() { return std::end(indices);};
-  typename RegionIndices::const_iterator cend() const { return indices.cend();};
+  /// Expose the iterator over indices for use in range-based
+  /// for-loops or with STL algorithms, etc.
+  ///
+  /// Note that if the indices are altered using these iterators, the
+  /// blocks may become out of sync and will need to manually updated
+  typename RegionIndices::iterator begin() { return std::begin(indices); };
+  typename RegionIndices::const_iterator cbegin() const { return indices.cbegin(); };
+  typename RegionIndices::iterator end() { return std::end(indices); };
+  typename RegionIndices::const_iterator cend() const { return indices.cend(); };
 
   ContiguousBlocks getBlocks() const { return blocks; };
   RegionIndices getIndices() const { return indices; };
 
-  // Set the indices and ensure blocks updated
+  /// Set the indices and ensure blocks updated
   void setIndices (RegionIndices &indicesIn) {
     indices = indicesIn;
     blocks = getContiguousBlocks();
   };
 
-  // Set the blocks and ensure indices updated
+  /// Set the blocks and ensure indices updated
   void setBlocks (ContiguousBlocks &blocksIn) {
     blocks = blocksIn;
     indices = getRegionIndices();
   };
 
-  // Return a new Region that has the same indices as this one but
-  // ensures the indices are sorted.
+  /// Return a new Region that has the same indices as this one but
+  /// ensures the indices are sorted.
   Region<T> asSorted(){
     auto sortedIndices = getIndices();
     std::sort(std::begin(sortedIndices), std::end(sortedIndices));
     return Region<T>(sortedIndices);
   };
 
-  // Sort this Region in place
+  /// Sort this Region in place
   Region<T> sort(){
     *this = this->asSorted();
     return *this;
   }
-  
-  // Return a new Region that has the same indices as this one but
-  // ensures the indices are sorted and unique (i.e. not duplicate
-  // indices). Note this sorts the input.
-  Region<T> asUnique(){
-    //As we don't really expect a lot of duplicates this approach should be
-    //OK. An alternative is to make a std::set from the indices and then
-    //convert back to a vector, but this is typically more expensive.
+
+  /// Return a new Region that has the same indices as this one but
+  /// ensures the indices are sorted and unique (i.e. not duplicate
+  /// indices). Note this sorts the input.
+  Region<T> asUnique() {
+    // As we don't really expect a lot of duplicates this approach should be
+    // OK. An alternative is to make a std::set from the indices and then
+    // convert back to a vector, but this is typically more expensive.
     auto sortedIndices = getIndices();
     std::sort(std::begin(sortedIndices), std::end(sortedIndices));
-    //Get iterator pointing at the end of the unique points
+    // Get iterator pointing at the end of the unique points
     auto newEnd = std::unique(std::begin(sortedIndices), std::end(sortedIndices));
-    //Remove non-unique points from end of vector
+    // Remove non-unique points from end of vector
     sortedIndices.erase(newEnd, std::end(sortedIndices));
     return Region<T>(sortedIndices);
   }
-  
-  // Make this Region unique in place
+
+  /// Make this Region unique in-place
   Region<T> unique(){
     *this = this->asUnique();
     return *this;
   }
-  
-  // Return a new region equivalent to *this but with indices contained
-  // in mask Region removed
+
+  /// Return a new region equivalent to *this but with indices contained
+  /// in mask Region removed
   Region<T> mask(const Region<T> & maskRegion){
     // Get mask indices and sort as we're going to be searching through
-    // this vector so if it's sorted we can be more efficient 
+    // this vector so if it's sorted we can be more efficient
     auto maskIndices = maskRegion.getIndices();
     std::sort(std::begin(maskIndices), std::end(maskIndices));
 
@@ -233,13 +316,13 @@ public:
     auto isInVector = [&](T val){
       return std::binary_search(std::begin(maskIndices), std::end(maskIndices), val);
     };
-    
+
     // Erase elements of currentIndices that are in maskIndices
     currentIndices.erase(
-			 std::remove_if(std::begin(currentIndices), std::end(currentIndices),
-					isInVector),
-			 std::end(currentIndices)
-			 );
+             std::remove_if(std::begin(currentIndices), std::end(currentIndices),
+                    isInVector),
+             std::end(currentIndices)
+             );
 
     // Update indices
     setIndices(currentIndices);
@@ -247,37 +330,37 @@ public:
     return *this; // To allow command chaining
   };
 
-  // Accumulate operator
+  /// Accumulate operator
   Region<T> & operator+=(const Region<T> &rhs){
     (*this) = (*this) + rhs;
     return *this;
   }
 
-  // Offset all indices by fixed value
-  Region<T> & offset(int offset){
+  /// Offset all indices by fixed value
+  Region<T> &offset(int offset) {
     // Exit early if possible
-    if ( offset == 0 ){
+    if (offset == 0) {
       return *this;
     }
-    
+
     auto oldInd = getIndices();
     RegionIndices newInd(oldInd.size());
-    
-    for (unsigned int i = 0; i < oldInd.size(); i++){
+
+    for (unsigned int i = 0; i < oldInd.size(); i++) {
       newInd[i] = T(oldInd[i].ind + offset);
     }
 
     setIndices(newInd);
-    
+
     return *this;
   }
 
-  // Shift all indices by fixed value but wrap around on a given
-  // period. This is intended to act in a similar way as numpy's roll.
-  // It should be helpful to calculate offset arrays for periodic
-  // directions (e.g. z). For example for shift = 1, period = mesh->LocalNz
-  // we would find the zplus indices. For shift = mesh->LocalNy*mesh->LocalNz,
-  // period = mesh->LocalNx*mesh->LocalNy*mesh->LocalNz we find xplus indices.
+  /// Shift all indices by fixed value but wrap around on a given
+  /// period. This is intended to act in a similar way as numpy's roll.
+  /// It should be helpful to calculate offset arrays for periodic
+  /// directions (e.g. z). For example for shift = 1, period = mesh->LocalNz
+  /// we would find the zplus indices. For shift = mesh->LocalNy*mesh->LocalNz,
+  /// period = mesh->LocalNx*mesh->LocalNy*mesh->LocalNz we find xplus indices.
   Region<T> & periodicShift(int shift, int period){
     // Exit early if possible
     if ( shift == 0 || period == 1 ){
@@ -298,9 +381,9 @@ public:
       int whichBlock = index / period;
       newInd[i] = ((index + shift) % period) + period * whichBlock;
     };
-    
+
     setIndices(newInd);
-    
+
     return *this;
   }
 
@@ -321,8 +404,8 @@ public:
   // sorted this would prevent this usage.
 
 private:
-  RegionIndices indices;   // Flattened indices
-  ContiguousBlocks blocks; // Contiguous sections of flattened indices
+  RegionIndices indices;   //< Flattened indices
+  ContiguousBlocks blocks; //< Contiguous sections of flattened indices
 
   /// Helper function to create a RegionIndices, given the start and end
   /// points in x, y, z, and the total y, z lengths
@@ -341,7 +424,7 @@ private:
     // Guard against invalid length ranges
     if (len <= 0 ) return region;
     region.resize(len);
-    
+
     int x = xstart;
     int y = ystart;
     int z = zstart;
@@ -367,12 +450,11 @@ private:
     return region;
   }
 
-  /*
-   * Returns a vector of all contiguous blocks contained in the passed region.
-   * Limits the maximum size of any contiguous block to maxBlockSize.
-   * A contiguous block is described by the inclusive start and the exclusive end
-   * of the contiguous block.
-   */
+
+  /// Returns a vector of all contiguous blocks contained in the passed region.
+  /// Limits the maximum size of any contiguous block to maxBlockSize.
+  /// A contiguous block is described by the inclusive start and the exclusive end
+  /// of the contiguous block.
   ContiguousBlocks getContiguousBlocks() const {
     const int npoints = indices.size();
     ContiguousBlocks result;
@@ -406,40 +488,39 @@ private:
     return result;
   }
 
-  /*
-   * Constructs the vector of indices from the stored blocks information
-   */
+
+  /// Constructs the vector of indices from the stored blocks information
   RegionIndices getRegionIndices() {
     RegionIndices result;
     // This has to be serial unless we can make result large enough in advance
-    // otherwise there will be a race between threads to extend the vector 
+    // otherwise there will be a race between threads to extend the vector
     BLOCK_REGION_LOOP_SERIAL((*this), curInd, result.push_back(curInd););
     return result;
   }
 };
 
-// Return a new region with sorted indices
+/// Return a new region with sorted indices
 template<typename T>
 Region<T> sort(Region<T> &region) {
   return region.asSorted();
 };
 
-// Return a new region with unique indices
+/// Return a new region with unique indices
 template<typename T>
 Region<T> unique(Region<T> &region) {
   return region.asUnique();
 };
 
-// Return a masked version of a region  
+/// Return a masked version of a region
 template<typename T>
 Region<T> mask(const Region<T> &region, const Region<T> &mask) {
   auto result = region;
   return result.mask(mask);
 };
 
-// Return a new region with combined indices from two Regions
-// This doesn't attempt to avoid duplicate elements or enforce
-// any sorting etc. but could be done if desired.
+/// Return a new region with combined indices from two Regions
+/// This doesn't attempt to avoid duplicate elements or enforce
+/// any sorting etc. but could be done if desired.
 template<typename T>
 Region<T> operator+(const Region<T> &lhs, const Region<T> &rhs){
   auto indices = lhs.getIndices(); // Indices is a copy of the indices
@@ -448,8 +529,8 @@ Region<T> operator+(const Region<T> &lhs, const Region<T> &rhs){
   return Region<T>(indices);
 }
 
-// Returns a new region based on input but with indices offset by
-// a constant
+/// Returns a new region based on input but with indices offset by
+/// a constant
 template<typename T>
 Region<T> offset(const Region<T> &region, const int offset){
   auto result = region;
