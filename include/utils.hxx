@@ -33,6 +33,8 @@
 #include "dcomplex.hxx"
 #include "boutexception.hxx"
 
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
 #include "bout/deprecated.hxx"
 #include "unused.hxx"
 
@@ -83,6 +85,46 @@ DEPRECATED(BoutReal **rmatrix(int xsize, int ysize));
  * Allocate a 2D array of \p xsize by \p ysize ints
  */
 DEPRECATED(int **imatrix(int xsize, int ysize));
+
+template <typename T>
+class Matrix {
+public:
+  typedef T data_type;
+  Matrix() : n1(-1), n2(-1){};
+  Matrix(int n1, int n2) : n1(n1), n2(n2) {
+    data = Array<T>(n1*n2);
+  }
+
+  T& operator()(int i1, int i2) {
+    ASSERT2(0<=i1 && i1<n1);
+    ASSERT2(0<=i2 && i2<n2);
+    return data[i1*n2+i2];
+  }
+  const T& operator()(int i1, int i2) const {
+    ASSERT2(0<=i1 && i1<n1);
+    ASSERT2(0<=i2 && i2<n2);
+    return data[i1*n2+i2];
+  }
+
+  // To provide backwards compatibility with matrix to be removed
+  DEPRECATED(T* operator[](int i1)) {
+    ASSERT2(0<=i1 && i1<n1);
+    return &(data[i1*n2]);
+  }
+  // To provide backwards compatibility with matrix to be removed
+  DEPRECATED(const T* operator[](int i1) const) {
+    ASSERT2(0<=i1 && i1<n1);
+    return &(data[i1*n2]);
+  }
+  
+private:
+  int n1, n2;
+  Array<T> data;
+};
+
+// For backwards compatibility with old matrix -- to be removed
+template <typename T>
+DEPRECATED(void free_matrix(Matrix<T> m)) {}
 
 /*!
  * Create a 2D array of \p xsize by \p ysize 
