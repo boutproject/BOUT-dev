@@ -16,6 +16,7 @@
 #include <interpolation.hxx>
 
 #include <globals.hxx>
+#include <bout/scorepwrapper.hxx>
 
 Coordinates::Coordinates(Mesh *mesh)
     : dx(1, mesh), dy(1, mesh), dz(1), d1_dx(mesh), d1_dy(mesh), J(1, mesh), Bxy(1, mesh),
@@ -624,6 +625,7 @@ const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc) {
 #include <invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
 
 const Field2D Coordinates::Delp2(const Field2D &f) {
+  SCOREP0();
   TRACE("Coordinates::Delp2( Field2D )");
 
   Field2D result = G1 * DDX(f) + g11 * D2DX2(f);
@@ -632,6 +634,7 @@ const Field2D Coordinates::Delp2(const Field2D &f) {
 }
 
 const Field3D Coordinates::Delp2(const Field3D &f) {
+  SCOREP0();
   TRACE("Coordinates::Delp2( Field3D )");
 
   ASSERT2(localmesh->xstart > 0); // Need at least one guard cell
@@ -694,6 +697,7 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
 }
 
 const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
+  SCOREP0();
   TRACE("Coordinates::Delp2( FieldPerp )");
 
   FieldPerp result(localmesh);

@@ -42,6 +42,7 @@
 #include <output.hxx>
 #include <msg_stack.hxx>
 #include <bout/constants.hxx>
+#include <bout/scorepwrapper.hxx>
 #include <bout/openmpwrap.hxx>
 
 #include "laplacefactory.hxx"
@@ -128,6 +129,7 @@ void Laplacian::cleanup() {
  **********************************************************************************/
 
 const Field3D Laplacian::solve(const Field3D &b) {
+  SCOREP0();
   TRACE("Laplacian::solve(Field3D)");
   Mesh *mesh = b.getMesh();
 

@@ -39,6 +39,7 @@
 #include <bout/assert.hxx>
 
 #include <bout/array.hxx>
+#include <bout/scorepwrapper.hxx>
 
 // Static member variables
 
@@ -114,6 +115,7 @@ Solver::~Solver(){
  **************************************************************************/
 
 void Solver::setModel(PhysicsModel *m) {
+  SCOREP0()
   if(model)
     throw BoutException("Solver can only evolve one model");
   
@@ -134,6 +136,7 @@ void Solver::setModel(PhysicsModel *m) {
  **************************************************************************/
 
 void Solver::add(Field2D &v, const char* name) {
+  SCOREP0()
   TRACE("Adding 2D field: Solver::add(%s)", name);
   
   if(varAdded(string(name)))
@@ -193,6 +196,7 @@ void Solver::add(Field2D &v, const char* name) {
 }
 
 void Solver::add(Field3D &v, const char* name) {
+  SCOREP0()
   TRACE("Adding 3D field: Solver::add(%s)", name);
 
 #if CHECK > 0  
@@ -255,6 +259,7 @@ void Solver::add(Field3D &v, const char* name) {
 }
 
 void Solver::add(Vector2D &v, const char* name) {
+  SCOREP0()
   TRACE("Adding 2D vector: Solver::add(%s)", name);
   
   if(varAdded(string(name)))
@@ -297,6 +302,7 @@ void Solver::add(Vector2D &v, const char* name) {
 }
 
 void Solver::add(Vector3D &v, const char* name) {
+  SCOREP0()
   TRACE("Adding 3D vector: Solver::add(%s)", name);
   
   if(varAdded(string(name)))
@@ -339,6 +345,7 @@ void Solver::add(Vector3D &v, const char* name) {
  **************************************************************************/
 
 void Solver::constraint(Field2D &v, Field2D &C_v, const char* name) {
+  SCOREP0()
   TRACE("Constrain 2D scalar: Solver::constraint(%s)", name);
 
 #if CHECK > 0  
@@ -366,6 +373,7 @@ void Solver::constraint(Field2D &v, Field2D &C_v, const char* name) {
 }
 
 void Solver::constraint(Field3D &v, Field3D &C_v, const char* name) {
+  SCOREP0()
   TRACE("Constrain 3D scalar: Solver::constraint(%s)", name);
 
 #if CHECK > 0
@@ -477,6 +485,7 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, const char* name) {
 
 int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   
+  SCOREP0()
   Options *globaloptions = Options::getRoot(); // Default from global options
   
   if(NOUT < 0) {
@@ -590,6 +599,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
 
 int Solver::init(int UNUSED(nout), BoutReal UNUSED(tstep)) {
   
+  SCOREP0()
   TRACE("Solver::init()");
 
   if (initialised)
@@ -607,6 +617,7 @@ int Solver::init(int UNUSED(nout), BoutReal UNUSED(tstep)) {
 }
 
 void Solver::outputVars(Datafile &outputfile, bool save_repeat) {
+  SCOREP0()
   /// Add basic variables to the file
   outputfile.addOnce(simtime,  "tt");
   outputfile.addOnce(iteration, "hist_hi");
@@ -676,6 +687,7 @@ void Solver::removeMonitor(Monitor * f) {
 
 extern bool user_requested_exit;
 int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
+  SCOREP0()
   bool abort;
   MPI_Allreduce(&user_requested_exit,&abort,1,MPI_C_BOOL,MPI_LOR,MPI_COMM_WORLD);
   if(abort){
@@ -744,6 +756,7 @@ void Solver::removeTimestepMonitor(TimestepMonitorFunc f) {
 }
 
 int Solver::call_timestep_monitors(BoutReal simtime, BoutReal lastdt) {
+  SCOREP0()
   if(!monitor_timestep)
     return 0;
   
@@ -764,6 +777,7 @@ int Solver::call_timestep_monitors(BoutReal simtime, BoutReal lastdt) {
 }
 
  void Solver::addToRestart(BoutReal &var, const string &name) {
+  SCOREP0()
    if(model)
      model->addToRestart(var, name);
  }
@@ -774,6 +788,7 @@ int Solver::call_timestep_monitors(BoutReal simtime, BoutReal lastdt) {
 
 int Solver::getLocalN() {
 
+  SCOREP0()
   /// Cache the value, so this is not repeatedly called.
   /// This value should not change after initialisation
   static int cacheLocalN = -1;
@@ -852,6 +867,7 @@ Solver* Solver::create(SolverType &type, Options *opts) {
 
 /// Perform an operation at a given (jx,jy) location, moving data between BOUT++ and CVODE
 void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op, bool bndry) {
+  SCOREP0()
   int jz;
  
   switch(op) {
@@ -986,6 +1002,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
 
 /// Loop over variables and domain. Used for all data operations for consistency
 void Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op) {
+  SCOREP0()
   int jx, jy;
   int p = 0; // Counter for location in udata array
 
@@ -1024,6 +1041,7 @@ void Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op) {
 }
 
 void Solver::load_vars(BoutReal *udata) {
+  SCOREP0()
   // Make sure data is allocated
   for(const auto& f : f2d) 
     f.var->allocate();
@@ -1043,6 +1061,7 @@ void Solver::load_vars(BoutReal *udata) {
 }
 
 void Solver::load_derivs(BoutReal *udata) {
+  SCOREP0()
   // Make sure data is allocated
   for(const auto& f : f2d) 
     f.F_var->allocate();
@@ -1063,6 +1082,7 @@ void Solver::load_derivs(BoutReal *udata) {
 
 // This function only called during initialisation
 void Solver::save_vars(BoutReal *udata) {
+  SCOREP0()
   for(const auto& f : f2d) 
     if(!f.var->isAllocated())
       throw BoutException("Variable '%s' not initialised", f.name.c_str());
@@ -1089,6 +1109,7 @@ void Solver::save_vars(BoutReal *udata) {
 }
 
 void Solver::save_derivs(BoutReal *dudata) {
+  SCOREP0()
   // Make sure vectors in correct basis
   for(const auto& v : v2d) {
     if(v.covariant) {
@@ -1115,6 +1136,7 @@ void Solver::save_derivs(BoutReal *dudata) {
 }
 
 void Solver::set_id(BoutReal *udata) {
+  SCOREP0()
   loop_vars(udata, SET_ID);
 }
 
@@ -1124,6 +1146,7 @@ void Solver::set_id(BoutReal *udata) {
  *
  */
 const Field3D Solver::globalIndex(int localStart) {
+  SCOREP0()
   Field3D index(-1, mesh); // Set to -1, indicating out of domain
 
   int n2d = f2d.size();
@@ -1227,12 +1250,14 @@ const Field3D Solver::globalIndex(int localStart) {
  **************************************************************************/
 
 void Solver::setSplitOperator(rhsfunc fC, rhsfunc fD) {
+  SCOREP0()
   split_operator = true;
   phys_conv = fC;
   phys_diff = fD;
 }
 
 int Solver::run_rhs(BoutReal t) {
+  SCOREP0()
   int status;
   
   Timer timer("rhs");
@@ -1285,6 +1310,7 @@ int Solver::run_rhs(BoutReal t) {
 
 /// NOTE: This calls add_mms_sources
 int Solver::run_convective(BoutReal t) {
+  SCOREP0()
   int status;
   
   Timer timer("rhs");
@@ -1313,6 +1339,7 @@ int Solver::run_convective(BoutReal t) {
 }
 
 int Solver::run_diffusive(BoutReal t, bool linear) {
+  SCOREP0()
   int status = 0;
   
   Timer timer("rhs");
@@ -1337,6 +1364,7 @@ int Solver::run_diffusive(BoutReal t, bool linear) {
 
 void Solver::pre_rhs(BoutReal t) {
 
+  SCOREP0()
   // Apply boundary conditions to the values
   for(const auto& f : f2d) {
     if(!f.constraint) // If it's not a constraint
@@ -1351,6 +1379,7 @@ void Solver::pre_rhs(BoutReal t) {
 }
 
 void Solver::post_rhs(BoutReal UNUSED(t)) {
+  SCOREP0()
 #if CHECK > 0
   for(const auto& f : f3d) {
     if(!f.F_var->isAllocated())
@@ -1399,6 +1428,7 @@ void Solver::post_rhs(BoutReal UNUSED(t)) {
 }
 
 bool Solver::varAdded(const string &name) {
+  SCOREP0()
   for(const auto& f : f2d) {
     if(f.name == name)
       return true;
@@ -1430,6 +1460,7 @@ bool Solver::have_user_precon() {
 }
 
 int Solver::run_precon(BoutReal t, BoutReal gamma, BoutReal delta) {
+  SCOREP0()
   if(!have_user_precon())
     return 1;
 

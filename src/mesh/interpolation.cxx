@@ -29,6 +29,7 @@
 #include <output.hxx>
 #include <msg_stack.hxx>
 #include <unused.hxx>
+#include <bout/scorepwrapper.hxx>
 
 /// Perform interpolation between centre -> shifted or vice-versa
 /*!
@@ -51,6 +52,7 @@ BoutReal interp(const stencil &s)
 */
 const Field3D interp_to(const Field3D &var, CELL_LOC loc)
 {
+  SCOREP0();
   if(mesh->StaggerGrids && (var.getLocation() != loc)) {
 
     // Staggered grids enabled, and need to perform interpolation

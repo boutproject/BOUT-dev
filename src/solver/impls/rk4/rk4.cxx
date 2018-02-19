@@ -10,6 +10,7 @@
 #include <cmath>
 
 #include <output.hxx>
+#include <bout/scorepwrapper.hxx>
 
 RK4Solver::RK4Solver(Options *options) : Solver(options), f0(nullptr) {
   canReset = true;
@@ -92,6 +93,7 @@ int RK4Solver::init(int nout, BoutReal tstep) {
 
 int RK4Solver::run() {
   TRACE("RK4Solver::run()");
+  SCOREP0()
   
   for(int s=0;s<nsteps;s++) {
     BoutReal target = simtime + out_timestep;
@@ -190,6 +192,7 @@ void RK4Solver::resetInternalFields(){
 }
 
 void RK4Solver::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutReal *result) {
+  SCOREP0()
   
   load_vars(start);
   run_rhs(curtime);

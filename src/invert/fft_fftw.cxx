@@ -29,6 +29,7 @@
 #include <options.hxx>
 #include <fft.hxx>
 #include <bout/constants.hxx>
+#include <bout/scorepwrapper.hxx>
 #include <bout/openmpwrap.hxx>
 
 #include <fftw3.h>
@@ -61,6 +62,7 @@ void fft_init()
 #ifndef _OPENMP
 // Serial code
 void rfft(const BoutReal *in, int length, dcomplex *out) {
+  SCOREP0();
   // static variables initialized once
   static double *fin;
   static fftw_complex *fout;
@@ -119,6 +121,7 @@ void rfft(const BoutReal *in, int length, dcomplex *out) {
 }
 
 const Array<dcomplex> rfft(const Array<BoutReal> &in) {
+  SCOREP0();
   ASSERT1(!in.empty()); // Check that there is data
   
   int size = in.size();
@@ -129,6 +132,7 @@ const Array<dcomplex> rfft(const Array<BoutReal> &in) {
 }
 
 void irfft(const dcomplex *in, int length, BoutReal *out) {
+  SCOREP0();
   // static variables initialized once
   static fftw_complex *fin;
   static double *fout;
@@ -188,6 +192,7 @@ void irfft(const dcomplex *in, int length, BoutReal *out) {
 #else
 // Parallel thread-safe version of rfft and irfft
 void rfft(const BoutReal *in, int length, dcomplex *out) {
+  SCOREP0();
   static double *finall;
   static fftw_complex *foutall;
   static fftw_plan *p;
@@ -257,6 +262,7 @@ void rfft(const BoutReal *in, int length, dcomplex *out) {
 }
 
 void irfft(const dcomplex *in, int length, BoutReal *out) {
+  SCOREP0();
   static fftw_complex *finall;
   static double *foutall;
   static fftw_plan *p;

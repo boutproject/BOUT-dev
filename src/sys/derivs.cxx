@@ -45,6 +45,7 @@
 #include <fft.hxx>
 #include <interpolation.hxx>
 #include <bout/constants.hxx>
+#include <bout/scorepwrapper.hxx>
 #include <msg_stack.hxx>
 
 #include <cmath>
@@ -103,26 +104,32 @@ const Field2D DDY(const Field2D &f) {
 ////////////// Z DERIVATIVE /////////////////
 
 const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool inc_xbndry) {
+  SCOREP0();
   return f.getMesh()->indexDDZ(f,outloc, method, inc_xbndry) / f.getMesh()->coordinates()->dz;
 }
 
 const Field3D DDZ(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc, bool inc_xbndry) {
+  SCOREP0();
   return DDZ(f, outloc, method, inc_xbndry);
 }
 
 const Field3D DDZ(const Field3D &f, DIFF_METHOD method, bool inc_xbndry) {
+  SCOREP0();
   return DDZ(f, CELL_DEFAULT, method, inc_xbndry);
 }
 
 const Field3D DDZ(const Field3D &f, bool inc_xbndry) {
+  SCOREP0();
   return DDZ(f, CELL_DEFAULT, DIFF_DEFAULT, inc_xbndry);
 }
 
 const Field2D DDZ(const Field2D &UNUSED(f)) {
+  SCOREP0();
   return Field2D(0.0);
 }
 
 const Vector3D DDZ(const Vector3D &v, CELL_LOC outloc, DIFF_METHOD method) {
+  SCOREP0();
   Vector3D result(v.x.getMesh());
 
   ASSERT2(v.x.getMesh()==v.y.getMesh());
@@ -148,10 +155,12 @@ const Vector3D DDZ(const Vector3D &v, CELL_LOC outloc, DIFF_METHOD method) {
 }
 
 const Vector3D DDZ(const Vector3D &v, DIFF_METHOD method, CELL_LOC outloc) {
+  SCOREP0();
   return DDZ(v, outloc, method);
 }
 
 const Vector2D DDZ(const Vector2D &v) {
+  SCOREP0();
   Vector2D result(v.x.getMesh());
 
   result.covariant = v.covariant;

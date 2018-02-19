@@ -32,6 +32,7 @@
 #include <fft.hxx>
 #include <lapack_routines.hxx>
 #include <bout/constants.hxx>
+#include <bout/scorepwrapper.hxx>
 #include <bout/openmpwrap.hxx>
 #include <cmath>
 
@@ -108,6 +109,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b) {
  * \param[out] x    The inverted variable.
  */
 const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0) {
+  SCOREP0();
   Mesh *mesh = b.getMesh();
   FieldPerp x(mesh);
   x.allocate();

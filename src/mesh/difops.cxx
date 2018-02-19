@@ -40,6 +40,7 @@
 
 #include <math.h>
 #include <stdlib.h>
+#include <bout/scorepwrapper.hxx>
 
 /*******************************************************************************
 * Grad_par
@@ -497,14 +498,17 @@ const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field3D &f) {
 *******************************************************************************/
 
 const Field2D Delp2(const Field2D &f) {
+  SCOREP0();
   return mesh->coordinates()->Delp2(f);
 }
 
 const Field3D Delp2(const Field3D &f, BoutReal UNUSED(zsmooth)) {
+  SCOREP0();
   return mesh->coordinates()->Delp2(f);
 }
 
 const FieldPerp Delp2(const FieldPerp &f, BoutReal UNUSED(zsmooth)) {
+  SCOREP0();
   return mesh->coordinates()->Delp2(f);
 }
 
@@ -705,6 +709,7 @@ CELL_LOC bracket_location(const CELL_LOC &f_loc, const CELL_LOC &g_loc, const CE
 }
 
 const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method, CELL_LOC outloc, Solver *UNUSED(solver)) {
+  SCOREP0();
   TRACE("bracket(Field2D, Field2D)");
 
   ASSERT1(f.getMesh() == g.getMesh());
@@ -725,6 +730,7 @@ const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method,
 }
 
 const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method, CELL_LOC outloc, Solver *solver) {
+  SCOREP0();
   TRACE("bracket(Field3D, Field2D)");
 
   Mesh *mesh = f.getMesh();
@@ -832,6 +838,7 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
 }
 
 const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method, CELL_LOC outloc, Solver *solver) {
+  SCOREP0();
   TRACE("bracket(Field2D, Field3D)");
   Mesh *mesh = f.getMesh();
   ASSERT1(mesh == g.getMesh());
@@ -864,6 +871,7 @@ const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method,
 }
 
 const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method, CELL_LOC outloc, Solver *solver) {
+  SCOREP0();
   TRACE("Field3D, Field3D");
 
   Mesh *mesh = f.getMesh();
