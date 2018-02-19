@@ -116,6 +116,10 @@ public:
     ASSERT2(0<=i1 && i1<n1);
     return &(data[i1*n2]);
   }
+
+  bool empty(){
+    return n1*n2 == 0;
+  }
   
 private:
   unsigned int n1, n2;
