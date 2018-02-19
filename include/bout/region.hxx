@@ -125,14 +125,66 @@ public:
     ++ind;
     return original;
   }
-  bool operator==(const SpecificInd &x) const { return ind == x.ind; }
-  bool operator!=(const SpecificInd &x) const { return ind != x.ind; }
-  bool operator>(const SpecificInd &x) const { return ind > x.ind; }
-  bool operator>=(const SpecificInd &x) const { return ind >= x.ind; }
-  bool operator<(const SpecificInd &x) const { return ind < x.ind; }
-  bool operator<=(const SpecificInd &x) const { return ind <= x.ind; }
+
+  /// Pre-decrement operator
+  SpecificInd &operator--() {
+    --ind;
+    return *this;
+  }
+
+  /// Post-decrement operator
+  SpecificInd operator--(int) {
+    SpecificInd original(*this);
+    --ind;
+    return original;
+  }
+
+  /// In-place addition
+  SpecificInd &operator+=(SpecificInd n) {
+    ind += n.ind;
+    return *this;
+  }
+
+  /// In-place subtraction
+  SpecificInd &operator-=(SpecificInd n) {
+    ind -= n.ind;
+    return *this;
+  }
+
+  /// Modulus operator
+  SpecificInd operator%(int n) {
+    SpecificInd new_ind(ind % n);
+    return new_ind;
+  }
 };
-// Make identical subclasses with different names
+
+/// Relational operators
+inline bool operator==(const SpecificInd &lhs, const SpecificInd &rhs) {
+  return lhs.ind == rhs.ind;
+}
+inline bool operator!=(const SpecificInd &lhs, const SpecificInd &rhs) {
+  return !operator==(lhs, rhs);
+}
+inline bool operator<(const SpecificInd &lhs, const SpecificInd &rhs) {
+  return lhs.ind < rhs.ind;
+}
+inline bool operator>(const SpecificInd &lhs, const SpecificInd &rhs) {
+  return operator<(rhs, lhs);
+}
+inline bool operator>=(const SpecificInd &lhs, const SpecificInd &rhs) {
+  return !operator<(lhs, rhs);
+}
+inline bool operator<=(const SpecificInd &lhs, const SpecificInd &rhs) {
+  return !operator>(lhs, rhs);
+}
+
+/// Arithmetic operators with integers
+inline SpecificInd operator+(SpecificInd lhs, const SpecificInd &rhs) { return lhs += rhs; }
+inline SpecificInd operator+(SpecificInd lhs, int n) { return lhs += n; }
+inline SpecificInd operator+(int n, SpecificInd rhs) { return rhs += n; }
+inline SpecificInd operator-(SpecificInd lhs, int n) { return lhs -= n; }
+inline SpecificInd operator-(SpecificInd lhs, const SpecificInd &rhs) { return lhs -= rhs; }
+
 /// Index-type for `Field3D`s
 class Ind3D : public SpecificInd {
 public:
@@ -145,6 +197,11 @@ public:
     ind = i;
     return *this;
   }
+
+  Ind3D &operator=(SpecificInd i) {
+    ind = i.ind;
+    return *this;
+  }
 };
 
 /// Index-type for `Field2D`s
@@ -155,6 +212,11 @@ public:
 
   Ind2D &operator=(int i) {
     ind = i;
+    return *this;
+  }
+
+  Ind2D &operator=(SpecificInd i) {
+    ind = i.ind;
     return *this;
   }
 };

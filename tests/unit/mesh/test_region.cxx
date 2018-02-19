@@ -9,6 +9,7 @@
 #include "unused.hxx"
 
 #include <algorithm>
+#include <list>
 #include <vector>
 
 /// Global mesh
@@ -55,7 +56,7 @@ TEST_F(RegionTest, regionFromRange) {
   EXPECT_EQ(regionIndices.size(), nmesh);
 
   for (int i = 0; i < nmesh; i++) {
-    EXPECT_EQ(regionIndices[i].ind, i);
+    EXPECT_EQ(regionIndices[i], i);
   }
 
   // Single point
@@ -114,9 +115,9 @@ TEST_F(RegionTest, regionFromIndices) {
   EXPECT_EQ(regionBlocks.size(), blocksIn.size());
 
   for (unsigned int i = 0; i < blocksIn.size(); i++) {
-    EXPECT_EQ(regionBlocks[i].first.ind, blocksIn[i].first);
+    EXPECT_EQ(regionBlocks[i].first, blocksIn[i].first);
     // The actual block second is exclusive, blocksIn.second is inclusive
-    EXPECT_EQ(regionBlocks[i].second.ind - 1, blocksIn[i].second);
+    EXPECT_EQ(regionBlocks[i].second - 1, blocksIn[i].second);
   }
 }
 
@@ -133,7 +134,7 @@ TEST_F(RegionTest, regionFromBlocks) {
 
   EXPECT_EQ(regionIndices.size(), nmesh);
   for (int i = 0; i < nmesh; i++) {
-    EXPECT_EQ(regionIndices[i].ind, i);
+    EXPECT_EQ(regionIndices[i], i);
   }
 }
 
@@ -172,13 +173,13 @@ TEST_F(RegionTest, contiguousBlockSize) {
   // contiguous, as is the case here.
   const int expectedFirstBlockSize =
       nmesh >= MAXREGIONBLOCKSIZE ? MAXREGIONBLOCKSIZE : nmesh;
-  EXPECT_EQ(firstBlock.second.ind - firstBlock.first.ind, expectedFirstBlockSize);
+  EXPECT_EQ(firstBlock.second - firstBlock.first, expectedFirstBlockSize);
   const int expectedLastBlockSize = nmesh % MAXREGIONBLOCKSIZE;
   if (expectedLastBlockSize != 0) {
-    EXPECT_EQ(lastBlock.second.ind - lastBlock.first.ind, expectedLastBlockSize);
+    EXPECT_EQ(lastBlock.second - lastBlock.first, expectedLastBlockSize);
   } else {
     // If no remainder then expect same block size as in first block
-    EXPECT_EQ(lastBlock.second.ind - lastBlock.first.ind, expectedFirstBlockSize);
+    EXPECT_EQ(lastBlock.second - lastBlock.first, expectedFirstBlockSize);
   }
 }
 
@@ -418,7 +419,7 @@ TEST_F(RegionTest, regionSetBlocks) {
 
   EXPECT_EQ(indices3.size(), nmesh);
   for (int i = 0; i < nmesh; i++) {
-    EXPECT_EQ(indices3[i].ind, i);
+    EXPECT_EQ(indices3[i], i);
   }
 }
 
@@ -437,7 +438,7 @@ TEST_F(RegionTest, regionSortInPlace) {
   // Check initial order
   auto regionIndices = region.getIndices();
   for (unsigned int i = 0; i < indicesIn1.size(); i++) {
-    EXPECT_EQ(regionIndices[i].ind, rawIndicesBwd[i]);
+    EXPECT_EQ(regionIndices[i], rawIndicesBwd[i]);
   }
 
   // Sort in place
@@ -446,7 +447,7 @@ TEST_F(RegionTest, regionSortInPlace) {
   // Check new order
   regionIndices = region.getIndices();
   for (unsigned int i = 0; i < indicesIn1.size(); i++) {
-    EXPECT_EQ(regionIndices[i].ind, rawIndicesFwd[i]);
+    EXPECT_EQ(regionIndices[i], rawIndicesFwd[i]);
   }
 }
 
@@ -465,7 +466,7 @@ TEST_F(RegionTest, regionFriendSort) {
   // Check initial order
   auto regionIndices = region.getIndices();
   for (unsigned int i = 0; i < indicesIn1.size(); i++) {
-    EXPECT_EQ(regionIndices[i].ind, rawIndicesBwd[i]);
+    EXPECT_EQ(regionIndices[i], rawIndicesBwd[i]);
   }
 
   // Sort with friend
@@ -474,7 +475,7 @@ TEST_F(RegionTest, regionFriendSort) {
   // Check new order
   regionIndices = region2.getIndices();
   for (unsigned int i = 0; i < indicesIn1.size(); i++) {
-    EXPECT_EQ(regionIndices[i].ind, rawIndicesFwd[i]);
+    EXPECT_EQ(regionIndices[i], rawIndicesFwd[i]);
   }
 }
 
@@ -493,7 +494,7 @@ TEST_F(RegionTest, regionUniqueInPlace) {
   EXPECT_EQ(regionIndices.size(), 19);
 
   for (unsigned int i = 0; i < regionIndices.size(); i++) {
-    EXPECT_EQ(regionIndices[i].ind, rawIndicesIn1[i]);
+    EXPECT_EQ(regionIndices[i], rawIndicesIn1[i]);
   }
 
   // Make unique in place
@@ -503,7 +504,7 @@ TEST_F(RegionTest, regionUniqueInPlace) {
   EXPECT_EQ(regionIndices2.size(), 10);
 
   for (unsigned int i = 0; i < regionIndices2.size(); i++) {
-    EXPECT_EQ(regionIndices2[i].ind, i);
+    EXPECT_EQ(regionIndices2[i], i);
   }
 }
 
@@ -522,7 +523,7 @@ TEST_F(RegionTest, regionFriendUnique) {
   EXPECT_EQ(regionIndices.size(), 19);
 
   for (unsigned int i = 0; i < regionIndices.size(); i++) {
-    EXPECT_EQ(regionIndices[i].ind, rawIndicesIn1[i]);
+    EXPECT_EQ(regionIndices[i], rawIndicesIn1[i]);
   }
 
   // Make unique in place
@@ -532,7 +533,7 @@ TEST_F(RegionTest, regionFriendUnique) {
   EXPECT_EQ(regionIndices2.size(), 10);
 
   for (unsigned int i = 0; i < regionIndices2.size(); i++) {
-    EXPECT_EQ(regionIndices2[i].ind, i);
+    EXPECT_EQ(regionIndices2[i], i);
   }
 }
 
@@ -566,10 +567,10 @@ TEST_F(RegionTest, regionMask) {
 
   auto masked1Indices = regionIn.mask(mask1).getIndices();
   EXPECT_EQ(masked1Indices.size(), indicesIn.size() - indicesMask1.size());
-  
+
   // Check values
   for (unsigned int i = 0; i < masked1Indices.size(); i++) {
-    EXPECT_EQ(masked1Indices[i].ind % 2, 0);
+    EXPECT_EQ(masked1Indices[i] % 2, 0);
   }
 
   // Check size of other regions not changed
@@ -577,7 +578,7 @@ TEST_F(RegionTest, regionMask) {
 
   // Reset region
   regionIn.setIndices(indicesIn);
-  
+
   // Check values of mask and region haven't changed
   auto regionIndices = regionIn.getIndices();
   for (unsigned int i = 0; i < regionIndices.size(); i++) {
@@ -629,7 +630,7 @@ TEST_F(RegionTest, regionFriendMask) {
 
   // Check values
   for (unsigned int i = 0; i < masked1Indices.size(); i++) {
-    EXPECT_EQ(masked1Indices[i].ind % 2, 0);
+    EXPECT_EQ(masked1Indices[i] % 2, 0);
   }
 
   // Check size of other regions not changed
@@ -884,20 +885,20 @@ TEST_F(RegionTest, regionPeriodicShift) {
   EXPECT_EQ(shiftXReg.size(), nmesh);
 
   // Specific values -- first point
-  EXPECT_EQ(indicesReg[0].ind, 0);
-  EXPECT_EQ(shiftZReg[0].ind, 1);
-  EXPECT_EQ(shiftZRegNeg[0].ind, RegionTest::nz - 1);
-  EXPECT_EQ(shiftYReg[0].ind, RegionTest::nz);
-  EXPECT_EQ(shiftXReg[0].ind, RegionTest::nz * RegionTest::ny);
+  EXPECT_EQ(indicesReg[0], 0);
+  EXPECT_EQ(shiftZReg[0], 1);
+  EXPECT_EQ(shiftZRegNeg[0], RegionTest::nz - 1);
+  EXPECT_EQ(shiftYReg[0], RegionTest::nz);
+  EXPECT_EQ(shiftXReg[0], RegionTest::nz * RegionTest::ny);
 
   // Specific values -- last point (nmesh -1 - period) + shift
   // Note this test could probably be made more robust
-  EXPECT_EQ(indicesReg[nmesh - 1].ind, nmesh - 1);
-  EXPECT_EQ(shiftZReg[nmesh - 1].ind, (nmesh - RegionTest::nz));
-  EXPECT_EQ(shiftZRegNeg[nmesh - 1].ind, (nmesh - 1 - 1));
-  EXPECT_EQ(shiftYReg[nmesh - 1].ind,
+  EXPECT_EQ(indicesReg[nmesh - 1], nmesh - 1);
+  EXPECT_EQ(shiftZReg[nmesh - 1], (nmesh - RegionTest::nz));
+  EXPECT_EQ(shiftZRegNeg[nmesh - 1], (nmesh - 1 - 1));
+  EXPECT_EQ(shiftYReg[nmesh - 1],
             (nmesh - RegionTest::nz * RegionTest::ny) + RegionTest::nz - 1);
-  EXPECT_EQ(shiftXReg[nmesh - 1].ind, RegionTest::nz * RegionTest::ny - 1);
+  EXPECT_EQ(shiftXReg[nmesh - 1], RegionTest::nz * RegionTest::ny - 1);
 
   // Value range
   for (unsigned int i = 0; i < nmesh; i++) {
@@ -919,7 +920,7 @@ TEST_F(RegionTest, Begin) {
   Region<Ind3D> range(region);
 
   auto iter = range.begin();
-  EXPECT_EQ(iter->ind, 0);
+  EXPECT_EQ(*iter, 0);
 }
 
 // Dereferencing an end() iterator is an error, so we need to test
@@ -931,8 +932,8 @@ TEST_F(RegionTest, End) {
 
   auto iter = range.begin() + 8;
   auto iter_end = range.end();
-  EXPECT_EQ(iter->ind, region[8].ind);
-  EXPECT_EQ(iter->ind, 16);
+  EXPECT_EQ(*iter, region[8]);
+  EXPECT_EQ(*iter, 16);
   // iter_end is one-past the last element of region
   EXPECT_TRUE(iter < iter_end);
 }
@@ -944,8 +945,8 @@ TEST_F(RegionTest, PrefixIncrement) {
   auto iter = range.begin();
   ++iter;
 
-  EXPECT_EQ(iter->ind, region[1].ind);
-  EXPECT_EQ(iter->ind, 2);
+  EXPECT_EQ(*iter, region[1]);
+  EXPECT_EQ(*iter, 2);
 }
 
 TEST_F(RegionTest, PostfixIncrement) {
@@ -955,10 +956,10 @@ TEST_F(RegionTest, PostfixIncrement) {
   auto iter = range.begin();
   auto iter2 = iter++;
 
-  EXPECT_EQ(iter->ind, region[1].ind);
-  EXPECT_EQ(iter->ind, 2);
-  EXPECT_EQ(iter2->ind, region[0].ind);
-  EXPECT_EQ(iter2->ind, 0);
+  EXPECT_EQ(*iter, region[1]);
+  EXPECT_EQ(*iter, 2);
+  EXPECT_EQ(*iter2, region[0]);
+  EXPECT_EQ(*iter2, 0);
 }
 
 TEST_F(RegionTest, PrefixDecrement) {
@@ -968,8 +969,8 @@ TEST_F(RegionTest, PrefixDecrement) {
   auto iter = range.end();
   --iter;
 
-  EXPECT_EQ(iter->ind, region[8].ind);
-  EXPECT_EQ(iter->ind, 16);
+  EXPECT_EQ(*iter, region[8]);
+  EXPECT_EQ(*iter, 16);
 }
 
 TEST_F(RegionTest, PostfixDecrement) {
@@ -981,10 +982,10 @@ TEST_F(RegionTest, PostfixDecrement) {
   auto iter = --(range.end());
   auto iter2 = iter--;
 
-  EXPECT_EQ(iter->ind, region[7].ind);
-  EXPECT_EQ(iter->ind, 14);
-  EXPECT_EQ(iter2->ind, region[8].ind);
-  EXPECT_EQ(iter2->ind, 16);
+  EXPECT_EQ(*iter, region[7]);
+  EXPECT_EQ(*iter, 14);
+  EXPECT_EQ(*iter2, region[8]);
+  EXPECT_EQ(*iter2, 16);
 }
 
 TEST_F(RegionTest, NotEquals) {
@@ -1081,8 +1082,8 @@ TEST_F(RegionTest, PlusEqualsInt) {
   auto iter = range.begin();
 
   iter += 2;
-  EXPECT_EQ(iter->ind, region[2].ind);
-  EXPECT_EQ(iter->ind, 4);
+  EXPECT_EQ(*iter, region[2]);
+  EXPECT_EQ(*iter, 4);
 }
 
 TEST_F(RegionTest, PlusInt) {
@@ -1092,8 +1093,8 @@ TEST_F(RegionTest, PlusInt) {
   auto iter = range.begin();
 
   auto iter2 = iter + 3;
-  EXPECT_EQ(iter2->ind, region[3].ind);
-  EXPECT_EQ(iter2->ind, 6);
+  EXPECT_EQ(*iter2, region[3]);
+  EXPECT_EQ(*iter2, 6);
 }
 
 TEST_F(RegionTest, IntPlus) {
@@ -1103,8 +1104,8 @@ TEST_F(RegionTest, IntPlus) {
   auto iter = range.begin();
 
   auto iter2 = 5 + iter;
-  EXPECT_EQ(iter2->ind, region[5].ind);
-  EXPECT_EQ(iter2->ind, 10);
+  EXPECT_EQ(*iter2, region[5]);
+  EXPECT_EQ(*iter2, 10);
 }
 
 TEST_F(RegionTest, MinusEqualsInt) {
@@ -1114,8 +1115,8 @@ TEST_F(RegionTest, MinusEqualsInt) {
   auto iter = range.end();
 
   iter -= 2;
-  EXPECT_EQ(iter->ind, region[7].ind);
-  EXPECT_EQ(iter->ind, 14);
+  EXPECT_EQ(*iter, region[7]);
+  EXPECT_EQ(*iter, 14);
 }
 
 TEST_F(RegionTest, MinusInt) {
@@ -1125,8 +1126,8 @@ TEST_F(RegionTest, MinusInt) {
   auto iter = range.end();
 
   auto iter2 = iter - 3;
-  EXPECT_EQ(iter2->ind, region[6].ind);
-  EXPECT_EQ(iter2->ind, 12);
+  EXPECT_EQ(*iter2, region[6]);
+  EXPECT_EQ(*iter2, 12);
 }
 
 TEST_F(RegionTest, MinusIterator) {
@@ -1145,8 +1146,8 @@ TEST_F(RegionTest, IndexInt) {
 
   auto iter = range.begin();
 
-  EXPECT_EQ(iter[4].ind, region[4].ind);
-  EXPECT_EQ(iter[4].ind, 8);
+  EXPECT_EQ(iter[4], region[4]);
+  EXPECT_EQ(iter[4], 8);
 }
 
 TEST_F(RegionTest, Iteration) {
@@ -1177,4 +1178,180 @@ TEST_F(RegionTest, RangeBasedForLoop) {
 
   EXPECT_EQ(count, region.size());
   EXPECT_EQ(region2, region);
+}
+
+/////////////////////////////////////////////////////////
+// Type-parameterised tests for SpecificInd, Ind2D, Ind3D
+
+template <typename T>
+class FieldIndexTest : public ::testing::Test {
+ public:
+  typedef std::list<T> List;
+  static T shared_;
+  T value_;
+};
+
+typedef ::testing::Types<SpecificInd, Ind2D, Ind3D> IndexTypes;
+TYPED_TEST_CASE(FieldIndexTest, IndexTypes);
+
+TYPED_TEST(FieldIndexTest, Constructor) {
+  TypeParam index(1);
+  EXPECT_EQ(index, 1);
+}
+
+TYPED_TEST(FieldIndexTest, CopyConstructor) {
+  TypeParam index(2);
+  TypeParam index2(index);
+  EXPECT_EQ(index2, 2);
+}
+
+TYPED_TEST(FieldIndexTest, Assignment) {
+  TypeParam index;
+  index = 3;
+  EXPECT_EQ(index, 3);
+}
+
+TYPED_TEST(FieldIndexTest, CopyAssignment) {
+  TypeParam index(4);
+  TypeParam index2;
+  index2 = index;
+  EXPECT_EQ(index2, 4);
+}
+
+TYPED_TEST(FieldIndexTest, PreIncrement) {
+  TypeParam index(5);
+  TypeParam index2;
+  index2 = ++index;
+  EXPECT_EQ(index2, 6);
+  EXPECT_EQ(index, 6);
+}
+
+TYPED_TEST(FieldIndexTest, PostIncrement) {
+  TypeParam index(7);
+  TypeParam index2;
+  index2 = index++;
+  EXPECT_EQ(index2, 7);
+  EXPECT_EQ(index, 8);
+}
+
+TYPED_TEST(FieldIndexTest, PreDecrement) {
+  TypeParam index(9);
+  TypeParam index2;
+  index2 = --index;
+  EXPECT_EQ(index2, 8);
+  EXPECT_EQ(index, 8);
+}
+
+TYPED_TEST(FieldIndexTest, PostDecrement) {
+  TypeParam index(10);
+  TypeParam index2;
+  index2 = index--;
+  EXPECT_EQ(index2, 10);
+  EXPECT_EQ(index, 9);
+}
+
+TYPED_TEST(FieldIndexTest, Equality) {
+  TypeParam index(11);
+  TypeParam index2(11);
+  EXPECT_EQ(index, index2);
+}
+
+TYPED_TEST(FieldIndexTest, EqualityInt) {
+  TypeParam index(11);
+  EXPECT_EQ(index, 11);
+}
+
+TYPED_TEST(FieldIndexTest, Inequality) {
+  TypeParam index(12);
+  TypeParam index2(13);
+  EXPECT_NE(index, index2);
+}
+
+TYPED_TEST(FieldIndexTest, InequalityInt) {
+  TypeParam index(12);
+  EXPECT_NE(index, 13);
+}
+
+TYPED_TEST(FieldIndexTest, LessThan) {
+  TypeParam index(14);
+  TypeParam index2(15);
+  EXPECT_TRUE(index < index2);
+}
+
+TYPED_TEST(FieldIndexTest, LessThanEqualTo) {
+  TypeParam index(16);
+  TypeParam index2(17);
+  TypeParam index3(16);
+  EXPECT_TRUE(index <= index2);
+  EXPECT_TRUE(index <= index3);
+}
+
+TYPED_TEST(FieldIndexTest, GreaterThan) {
+  TypeParam index(19);
+  TypeParam index2(18);
+  EXPECT_TRUE(index > index2);
+}
+
+TYPED_TEST(FieldIndexTest, GreaterThanEqualTo) {
+  TypeParam index(21);
+  TypeParam index2(20);
+  TypeParam index3(21);
+  EXPECT_TRUE(index >= index2);
+  EXPECT_TRUE(index >= index3);
+}
+
+TYPED_TEST(FieldIndexTest, Addition) {
+  TypeParam index(22);
+  TypeParam index2(3);
+  TypeParam index3;
+  index3 = index + index2;
+  EXPECT_EQ(index, 22);
+  EXPECT_EQ(index2, 3);
+  EXPECT_EQ(index3, 25);
+}
+
+TYPED_TEST(FieldIndexTest, AdditionInt) {
+  TypeParam index(22);
+  TypeParam index2, index3;
+  index2 = index + 1;
+  index3 = 1 + index;
+  EXPECT_EQ(index2, 23);
+  EXPECT_EQ(index3, 23);
+}
+
+TYPED_TEST(FieldIndexTest, Subtraction) {
+  TypeParam index(23);
+  TypeParam index2(3);
+  TypeParam index3;
+  index3 = index - index2;
+  EXPECT_EQ(index, 23);
+  EXPECT_EQ(index2, 3);
+  EXPECT_EQ(index3, 20);
+}
+
+TYPED_TEST(FieldIndexTest, SubtractionInt) {
+  TypeParam index(24);
+  TypeParam index2;
+  index2 = index - 1;
+  EXPECT_EQ(index2, 23);
+}
+
+TYPED_TEST(FieldIndexTest, InPlaceAddition) {
+  TypeParam index(25);
+  index += 1;
+  EXPECT_EQ(index, 26);
+}
+
+TYPED_TEST(FieldIndexTest, InPlaceSubtraction) {
+  TypeParam index(27);
+  index -= 1;
+  EXPECT_EQ(index, 26);
+}
+
+TYPED_TEST(FieldIndexTest, Modulus) {
+  TypeParam index(28);
+  TypeParam index2;
+  index2 = index % 27;
+  EXPECT_EQ(index, 28);
+  EXPECT_EQ(index2, 1);
 }
