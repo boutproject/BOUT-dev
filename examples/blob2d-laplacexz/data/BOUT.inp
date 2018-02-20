@@ -69,6 +69,7 @@ factor_package = superlu_dist
 
 [phiBoussinesq]
 type = petsc
+inner_boundary_flags=2
 
 ##################################################
 # general settings for the model
