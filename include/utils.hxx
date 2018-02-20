@@ -86,6 +86,9 @@ DEPRECATED(BoutReal **rmatrix(int xsize, int ysize));
  */
 DEPRECATED(int **imatrix(int xsize, int ysize));
 
+/// Helper class for 2D arrays
+///
+/// Allows bounds checking through `operator()` with CHECK > 1
 template <typename T>
 class Matrix {
 public:
@@ -144,6 +147,9 @@ private:
 template <typename T>
 void free_matrix(Matrix<T> UNUSED(m)) {}
 
+/// Helper class for 3D arrays
+///
+/// Allows bounds checking through `operator()` with CHECK > 1
 template <typename T>
 class Tensor {
 public:
