@@ -915,9 +915,19 @@ TEST_F(RegionTest, regionPeriodicShift) {
   }
 }
 
-TEST_F(RegionTest, Begin) {
-  Region<Ind3D>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
-  Region<Ind3D> range(region);
+template <typename T> class RegionIndexTest : public ::testing::Test {
+public:
+  typedef std::list<T> List;
+  static T shared_;
+  T value_;
+};
+
+typedef ::testing::Types<Ind2D, Ind3D> RegionIndexTypes;
+TYPED_TEST_CASE(RegionIndexTest, RegionIndexTypes);
+
+TYPED_TEST(RegionIndexTest, Begin) {
+  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  Region<TypeParam> range(region);
 
   auto iter = range.begin();
   EXPECT_EQ(*iter, 0);
@@ -926,9 +936,9 @@ TEST_F(RegionTest, Begin) {
 // Dereferencing an end() iterator is an error, so we need to test
 // end() works a little indirectly. If the addition and less-than
 // tests fail, this one is suspect!
-TEST_F(RegionTest, End) {
-  Region<Ind3D>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
-  Region<Ind3D> range(region);
+TYPED_TEST(RegionIndexTest, End) {
+  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  Region<TypeParam> range(region);
 
   auto iter = range.begin() + 8;
   auto iter_end = range.end();
@@ -938,9 +948,9 @@ TEST_F(RegionTest, End) {
   EXPECT_TRUE(iter < iter_end);
 }
 
-TEST_F(RegionTest, PrefixIncrement) {
-  Region<Ind3D>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
-  Region<Ind3D> range(region);
+TYPED_TEST(RegionIndexTest, PrefixIncrement) {
+  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  Region<TypeParam> range(region);
 
   auto iter = range.begin();
   ++iter;
@@ -949,9 +959,9 @@ TEST_F(RegionTest, PrefixIncrement) {
   EXPECT_EQ(*iter, 2);
 }
 
-TEST_F(RegionTest, PostfixIncrement) {
-  Region<Ind3D>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
-  Region<Ind3D> range(region);
+TYPED_TEST(RegionIndexTest, PostfixIncrement) {
+  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  Region<TypeParam> range(region);
 
   auto iter = range.begin();
   auto iter2 = iter++;
@@ -962,9 +972,9 @@ TEST_F(RegionTest, PostfixIncrement) {
   EXPECT_EQ(*iter2, 0);
 }
 
-TEST_F(RegionTest, PrefixDecrement) {
-  Region<Ind3D>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
-  Region<Ind3D> range(region);
+TYPED_TEST(RegionIndexTest, PrefixDecrement) {
+  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  Region<TypeParam> range(region);
 
   auto iter = range.end();
   --iter;
@@ -973,9 +983,9 @@ TEST_F(RegionTest, PrefixDecrement) {
   EXPECT_EQ(*iter, 16);
 }
 
-TEST_F(RegionTest, PostfixDecrement) {
-  Region<Ind3D>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
-  Region<Ind3D> range(region);
+TYPED_TEST(RegionIndexTest, PostfixDecrement) {
+  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  Region<TypeParam> range(region);
 
   // end() is one-past-the-last element, so we need to decrement it in
   // order to be able to dereference it
@@ -988,9 +998,9 @@ TEST_F(RegionTest, PostfixDecrement) {
   EXPECT_EQ(*iter2, 16);
 }
 
-TEST_F(RegionTest, NotEquals) {
-  Region<Ind3D>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
-  Region<Ind3D> range(region);
+TYPED_TEST(RegionIndexTest, NotEquals) {
+  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  Region<TypeParam> range(region);
 
   auto iter = range.begin();
   auto iter2 = iter;
@@ -1001,9 +1011,9 @@ TEST_F(RegionTest, NotEquals) {
   EXPECT_FALSE(iter != iter2);
 }
 
-TEST_F(RegionTest, Equals) {
-  Region<Ind3D>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
-  Region<Ind3D> range(region);
+TYPED_TEST(RegionIndexTest, Equals) {
+  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  Region<TypeParam> range(region);
 
   auto iter = range.begin();
   auto iter2 = iter;
@@ -1015,9 +1025,9 @@ TEST_F(RegionTest, Equals) {
   EXPECT_FALSE(iter == iter2);
 }
 
-TEST_F(RegionTest, LessThan) {
-  Region<Ind3D>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
-  Region<Ind3D> range(region);
+TYPED_TEST(RegionIndexTest, LessThan) {
+  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  Region<TypeParam> range(region);
 
   auto iter = range.begin();
   auto iter2 = iter;
@@ -1030,9 +1040,9 @@ TEST_F(RegionTest, LessThan) {
   EXPECT_FALSE(iter < iter2);
 }
 
-TEST_F(RegionTest, MoreThan) {
-  Region<Ind3D>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
-  Region<Ind3D> range(region);
+TYPED_TEST(RegionIndexTest, MoreThan) {
+  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  Region<TypeParam> range(region);
 
   auto iter = range.begin();
   auto iter2 = iter;
@@ -1045,9 +1055,9 @@ TEST_F(RegionTest, MoreThan) {
   EXPECT_FALSE(iter2 > iter);
 }
 
-TEST_F(RegionTest, LessThanOrEqualTo) {
-  Region<Ind3D>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
-  Region<Ind3D> range(region);
+TYPED_TEST(RegionIndexTest, LessThanOrEqualTo) {
+  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  Region<TypeParam> range(region);
 
   auto iter = range.begin();
   auto iter2 = iter;
@@ -1060,9 +1070,9 @@ TEST_F(RegionTest, LessThanOrEqualTo) {
   EXPECT_FALSE(iter <= iter2);
 }
 
-TEST_F(RegionTest, MoreThanOrEqualTo) {
-  Region<Ind3D>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
-  Region<Ind3D> range(region);
+TYPED_TEST(RegionIndexTest, MoreThanOrEqualTo) {
+  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  Region<TypeParam> range(region);
 
   auto iter = range.begin();
   auto iter2 = iter;
@@ -1075,9 +1085,9 @@ TEST_F(RegionTest, MoreThanOrEqualTo) {
   EXPECT_FALSE(iter2 >= iter);
 }
 
-TEST_F(RegionTest, PlusEqualsInt) {
-  Region<Ind3D>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
-  Region<Ind3D> range(region);
+TYPED_TEST(RegionIndexTest, PlusEqualsInt) {
+  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  Region<TypeParam> range(region);
 
   auto iter = range.begin();
 
@@ -1086,9 +1096,9 @@ TEST_F(RegionTest, PlusEqualsInt) {
   EXPECT_EQ(*iter, 4);
 }
 
-TEST_F(RegionTest, PlusInt) {
-  Region<Ind3D>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
-  Region<Ind3D> range(region);
+TYPED_TEST(RegionIndexTest, PlusInt) {
+  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  Region<TypeParam> range(region);
 
   auto iter = range.begin();
 
@@ -1097,9 +1107,9 @@ TEST_F(RegionTest, PlusInt) {
   EXPECT_EQ(*iter2, 6);
 }
 
-TEST_F(RegionTest, IntPlus) {
-  Region<Ind3D>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
-  Region<Ind3D> range(region);
+TYPED_TEST(RegionIndexTest, IntPlus) {
+  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  Region<TypeParam> range(region);
 
   auto iter = range.begin();
 
@@ -1108,9 +1118,9 @@ TEST_F(RegionTest, IntPlus) {
   EXPECT_EQ(*iter2, 10);
 }
 
-TEST_F(RegionTest, MinusEqualsInt) {
-  Region<Ind3D>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
-  Region<Ind3D> range(region);
+TYPED_TEST(RegionIndexTest, MinusEqualsInt) {
+  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  Region<TypeParam> range(region);
 
   auto iter = range.end();
 
@@ -1119,9 +1129,9 @@ TEST_F(RegionTest, MinusEqualsInt) {
   EXPECT_EQ(*iter, 14);
 }
 
-TEST_F(RegionTest, MinusInt) {
-  Region<Ind3D>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
-  Region<Ind3D> range(region);
+TYPED_TEST(RegionIndexTest, MinusInt) {
+  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  Region<TypeParam> range(region);
 
   auto iter = range.end();
 
@@ -1130,9 +1140,9 @@ TEST_F(RegionTest, MinusInt) {
   EXPECT_EQ(*iter2, 12);
 }
 
-TEST_F(RegionTest, MinusIterator) {
-  Region<Ind3D>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
-  Region<Ind3D> range(region);
+TYPED_TEST(RegionIndexTest, MinusIterator) {
+  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  Region<TypeParam> range(region);
 
   auto start = range.begin();
   auto end = range.end();
@@ -1140,9 +1150,9 @@ TEST_F(RegionTest, MinusIterator) {
   EXPECT_EQ(end - start, region.size());
 }
 
-TEST_F(RegionTest, IndexInt) {
-  Region<Ind3D>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
-  Region<Ind3D> range(region);
+TYPED_TEST(RegionIndexTest, IndexInt) {
+  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  Region<TypeParam> range(region);
 
   auto iter = range.begin();
 
@@ -1150,10 +1160,10 @@ TEST_F(RegionTest, IndexInt) {
   EXPECT_EQ(iter[4], 8);
 }
 
-TEST_F(RegionTest, Iteration) {
-  Region<Ind3D>::RegionIndices region{0, 2, 4, 6, 8, 10, 12};
-  Region<Ind3D> range(region);
-  Region<Ind3D>::RegionIndices region2;
+TYPED_TEST(RegionIndexTest, Iteration) {
+  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12};
+  Region<TypeParam> range(region);
+  typename Region<TypeParam>::RegionIndices region2;
 
   int count = 0;
   for (auto iter2 = range.begin(); iter2 != range.end(); ++iter2) {
@@ -1165,10 +1175,10 @@ TEST_F(RegionTest, Iteration) {
   EXPECT_EQ(region2, region);
 }
 
-TEST_F(RegionTest, RangeBasedForLoop) {
-  Region<Ind3D>::RegionIndices region{0, 2, 4, 6, 8, 10, 12};
-  Region<Ind3D> range(region);
-  Region<Ind3D>::RegionIndices region2;
+TYPED_TEST(RegionIndexTest, RangeBasedForLoop) {
+  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12};
+  Region<TypeParam> range(region);
+  typename Region<TypeParam>::RegionIndices region2;
 
   int count = 0;
   for (const auto &iter : range) {
@@ -1191,8 +1201,8 @@ class FieldIndexTest : public ::testing::Test {
   T value_;
 };
 
-typedef ::testing::Types<SpecificInd, Ind2D, Ind3D> IndexTypes;
-TYPED_TEST_CASE(FieldIndexTest, IndexTypes);
+typedef ::testing::Types<SpecificInd, Ind2D, Ind3D> FieldIndexTypes;
+TYPED_TEST_CASE(FieldIndexTest, FieldIndexTypes);
 
 TYPED_TEST(FieldIndexTest, Constructor) {
   TypeParam index(1);
