@@ -1372,6 +1372,8 @@ echo "  HDF5 support: $HAS_HDF5 (parallel: $HAS_PHDF5)" | tee -a config-build.lo
 
 echo "  MUMPS support: $HAS_MUMPS" | tee -a config-build.log
 
+echo "  Lapack support: $HAS_LAPACK" | tee -a config-build.log
+
 echo "  Scorep support: $HAS_SCOREP" | tee -a config-build.log
 
 echo ""
