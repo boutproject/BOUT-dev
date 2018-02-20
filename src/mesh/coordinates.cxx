@@ -647,7 +647,7 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
     // Take forward FFT
 
     for (int jx = 0; jx < localmesh->LocalNx; jx++)
-      rfft(&f(jx, jy, 0), ncz, ft[jx]);
+      rfft(&f(jx, jy, 0), ncz, &ft(jx, 0));
 
     // Loop over kz
     for (int jz = 0; jz <= ncz / 2; jz++) {
@@ -666,7 +666,7 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
     // Reverse FFT
     for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
 
-      irfft(delft[jx], ncz, &result(jx, jy, 0));
+      irfft(&delft(jx, 0), ncz, &result(jx, jy, 0));
     }
 
     // Boundaries
@@ -703,7 +703,7 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
 
   // Take forward FFT
   for (int jx = 0; jx < localmesh->LocalNx; jx++)
-    rfft(f[jx], ncz, ft[jx]);
+    rfft(&f(jx, 0), ncz, &ft(jx, 0));
 
   // Loop over kz
   for (int jz = 0; jz <= ncz / 2; jz++) {
@@ -721,7 +721,7 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
 
   // Reverse FFT
   for (int jx = 1; jx < (localmesh->LocalNx - 1); jx++) {
-    irfft(delft[jx], ncz, result[jx]);
+    irfft(&delft(jx, 0), ncz, &result(jx, 0));
   }
 
   // Boundaries
