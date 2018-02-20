@@ -768,7 +768,7 @@ const Field3D Coordinates::Laplace(const Field3D &f) {
  *******************************************************************************/
 
 // Invert an nxn matrix using Gauss-Jordan elimination with full pivoting
-int Coordinates::gaussj(Matrix<BoutReal> a, int n) {
+int Coordinates::gaussj(Matrix<BoutReal> &a, int n) {
   TRACE("Coordinates::gaussj");
 
   int i, icol, irow, j, k, l, ll;

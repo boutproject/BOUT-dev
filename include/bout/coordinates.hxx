@@ -135,7 +135,7 @@ public:
   
 private:
   /// Matrix inversion by Gauss-Jordan elimination
-  int gaussj(Matrix<BoutReal> a, int n);
+  int gaussj(Matrix<BoutReal> &a, int n);
   vector<int> indxc, indxr, ipiv;
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh * localmesh;
