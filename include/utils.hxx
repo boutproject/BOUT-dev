@@ -106,6 +106,13 @@ public:
     return data[i1*n2+i2];
   }
 
+  Matrix& operator=(const T&val){
+    for(auto &i: data){
+      i = val;
+    };
+    return *this;
+  };
+  
   // To provide backwards compatibility with matrix to be removed
   DEPRECATED(T* operator[](unsigned int i1)) {
     ASSERT2(0<=i1 && i1<n1);
@@ -159,6 +166,13 @@ public:
     return data[(i1*n2+i2)*n3 + i3];
   }
 
+  Tensor& operator=(const T&val){
+    for(auto &i: data){
+      i = val;
+    };
+    return *this;
+  };
+  
   T* begin() { return std::begin(data);};
   const T* begin() const { return std::begin(data);};
   T* end() { return std::end(data);};
