@@ -677,11 +677,11 @@ Field3D pow(const Field3D &lhs, const Field3D &rhs) {
   // Iterate over indices
   for(const auto& i : result) {
     result[i] = ::pow(lhs[i], rhs[i]);
-    ASSERT2( ::finite( result[i] ) );
   }
   
   result.setLocation( lhs.getLocation() );
   
+  checkData(result);
   return result;
 }
 
@@ -699,11 +699,11 @@ Field3D pow(const Field3D &lhs, const Field2D &rhs) {
   // Iterate over indices
   for(const auto& i : result) {
     result[i] = ::pow(lhs[i], rhs[i]);
-    ASSERT3( ::finite( result[i] ) );
   }
 
   result.setLocation( lhs.getLocation() );
   
+  checkData(result);
   return result;
 }
 
@@ -717,10 +717,11 @@ Field3D pow(const Field3D &lhs, const FieldPerp &rhs) {
   // Iterate over indices
   for(const auto& i : result) {
     result[i] = ::pow(lhs[i], rhs[i]);
-    ASSERT2( ::finite( result[i] ) );
   }
 
   result.setLocation( lhs.getLocation() );
+
+  checkData(result);
   return result;
 }
 
@@ -733,10 +734,11 @@ Field3D pow(const Field3D &lhs, BoutReal rhs) {
   result.allocate();
   for(const auto& i : result){
     result[i] = ::pow(lhs[i], rhs);
-    ASSERT3(finite(result[i]));
   }
   
   result.setLocation( lhs.getLocation() );
+
+  checkData(result);
   return result;
 }
 
@@ -751,10 +753,11 @@ Field3D pow(BoutReal lhs, const Field3D &rhs) {
 
   for(const auto& i : result){
     result[i] = ::pow(lhs, rhs[i]);
-    ASSERT3(finite(result[i]));
   }
   
   result.setLocation( rhs.getLocation() );
+
+  checkData(result);
   return result;
 }
 
@@ -801,6 +804,22 @@ BoutReal max(const Field3D &f, bool allpe) {
 /////////////////////////////////////////////////////////////////////
 // Friend functions
 
+/*!
+ * This macro takes a function \p func, which is
+ * assumed to operate on a single BoutReal and return
+ * a single BoutReal, and wraps it up into a function
+ * of a Field3D called \p name.
+ *
+ * @param name  The name of the function to define
+ * @param func  The function to apply to each value
+ *
+ * If CHECK >= 1, checks if the Field3D is allocated
+ *
+ * Loops over the entire domain, applies function,
+ * and uses checkData() to, if CHECK >= 3, check
+ * result for non-finite numbers
+ *
+ */
 #define F3D_FUNC(name, func)                                                             \
   const Field3D name(const Field3D &f) {                                                 \
     TRACE(#name "(Field3D)");                                                            \
@@ -812,10 +831,9 @@ BoutReal max(const Field3D &f, bool allpe) {
     /* Loop over domain */                                                               \
     for (const auto &d : result) {                                                       \
       result[d] = func(f[d]);                                                            \
-      /* If checking is set to 3 or higher, test result */                               \
-      ASSERT3(finite(result[d]));                                                        \
     }                                                                                    \
     result.setLocation(f.getLocation());                                                 \
+    checkData(result);                                                                   \
     return result;                                                                       \
   }
 
@@ -869,6 +887,7 @@ const Field3D filter(const Field3D &var, int N0) {
   
   result.setLocation(var.getLocation());
 
+  checkData(result);
   return result;
 }
 
@@ -907,6 +926,7 @@ const Field3D lowPass(const Field3D &var, int zmax) {
   
   result.setLocation(var.getLocation());
 
+  checkData(result);
   return result;
 }
 
@@ -947,6 +967,7 @@ const Field3D lowPass(const Field3D &var, int zmax, int zmin) {
   
   result.setLocation(var.getLocation());
   
+  checkData(result);
   return result;
 }
 
@@ -1048,6 +1069,7 @@ Field2D DC(const Field3D &f) {
     }
   }
 
+  checkData(result);
   return result;
 }
 

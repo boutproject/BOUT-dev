@@ -458,7 +458,8 @@ bool finite(const Field2D &f) {
  * If CHECK >= 1, checks if the Field2D is allocated
  *
  * Loops over the entire domain, applies function,
- * and if CHECK >= 3 then checks result for non-finite numbers
+ * and uses checkData() to, if CHECK >= 3, check
+ * result for non-finite numbers
  *
  */
 #define F2D_FUNC(name, func)                                                             \
@@ -472,9 +473,8 @@ bool finite(const Field2D &f) {
     /* Loop over domain */                                                               \
     for (const auto &d : result) {                                                       \
       result[d] = func(f[d]);                                                            \
-      /* If checking is set to 3 or higher, test result */                               \
-      ASSERT3(finite(result[d]));                                                        \
     }                                                                                    \
+    checkData(result);                                                                   \
     return result;                                                                       \
   }
 
@@ -523,8 +523,9 @@ Field2D pow(const Field2D &lhs, const Field2D &rhs) {
   // Loop over domain
   for(const auto& i: result) {
     result[i] = ::pow(lhs[i], rhs[i]);
-    ASSERT3(finite(result[i]));
   }
+
+  checkData(result);
   return result;
 }
 
@@ -540,8 +541,9 @@ Field2D pow(const Field2D &lhs, BoutReal rhs) {
   // Loop over domain
   for(const auto& i: result) {
     result[i] = ::pow(lhs[i], rhs);
-    ASSERT3(finite(result[i]));
   }
+
+  checkData(result);
   return result;
 }
 
@@ -557,8 +559,9 @@ Field2D pow(BoutReal lhs, const Field2D &rhs) {
   // Loop over domain
   for(const auto& i: result) {
     result[i] = ::pow(lhs, rhs[i]);
-    ASSERT3(finite(result[i]));
   }
+
+  checkData(result);
   return result;
 }
 
