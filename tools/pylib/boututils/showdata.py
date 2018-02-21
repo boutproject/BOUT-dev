@@ -20,7 +20,7 @@ except:
 from mpl_toolkits.mplot3d import axes3d
 from matplotlib import pyplot as plt
 from matplotlib import animation, cm
-from numpy import linspace, meshgrid, array, min, max, floor, pi, float32
+from numpy import linspace, meshgrid, array, min, max, abs, floor, pi
 from boutdata.collect import collect
 
 
@@ -396,8 +396,8 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
 
 
         if not (global_colors):
-            if not float32(fmax[i])>float32(fmin[i]):
-                clevels.append([fmax[i],fmax[i]+1.])
+            if (fmax[i]-fmin[i])/abs(fmax[i]+fmin[i]) <= 2.e-15:
+                clevels.append([fmin[i]-1.e-15*abs(fmin[i]),fmax[i]+1.e-15*abs(fmax[i])])
             else:
                 clevels.append(linspace(fmin[i], fmax[i], Ncolors))
 
@@ -407,8 +407,8 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
         for i in range(0,Nvar):
             fmax[i]  = fmaxglobal
             fmin[i]  = fminglobal
-            if not float32(fmax[i])>float32(fmin[i]):
-                clevels.append([fmax[i],fmax[i]+1.])
+            if (fmax[i]-fmin[i])/abs(fmax[i]+fmin[i]) <= 2.e-15:
+                clevels.append([fmin[i]-1.e-15*abs(fmin[i]),fmax[i]+1.e-15*abs(fmax[i])])
             else:
                 clevels.append(linspace(fmin[i], fmax[i], Ncolors))
 
@@ -657,7 +657,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
                      print('Save failed: Check ffmpeg path')
                      raise
         elif movietype == 'gif':
-            anim.save(movie+'.gif',writer = 'imagemagick', fps=fps, dpi=dpi, extra_args=['-vcodec', 'libx264'])
+            anim.save(movie+'.gif',writer = 'imagemagick', fps=fps, dpi=dpi)
         else:
             raise ValueError("Unrecognized file type for movie. Supported types are .mp4 and .gif")
 
