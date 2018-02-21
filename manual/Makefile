@@ -1,6 +1,8 @@
 # Makefile for the reference and user manuals
 .PHONY:all clean sphinx html pdf doxygen breathe-autogen
 
+BOUT_TOP=..
+
 # Some distros may provide sphinx-build-3 and sphinx-build-2 instead
 # of sphinx-build. An automatic check would be helpful, but at least
 # with this, it should be easy to change:
@@ -20,7 +22,7 @@ sphinx-pdf:
 	@echo "Documentation is available in `pwd`/BOUT.pdf"
 
 sphinx-html:
-	$(sphinx-build) -b html sphinx/ html/
+	PYTHONPATH+=$(BOUT_TOP)/tools/pylib $(sphinx-build) -b html sphinx/ html/
 	@echo "Documentation available in `pwd`/html/"
 
 # Run doxygen, ignore if it fails (leading '-')

@@ -10,8 +10,7 @@ Ideally it should be just
 .. code-block:: bash
 
    ./configure --enable-shared
-   make -j 4
-   make python
+   make -j 4 python
 
 
 but getting all the
@@ -49,6 +48,15 @@ To only build the python2 module, run ``make python2``.
 
 To build both, run ``make python-all``
 
+If you are running fedora - you can install prebuild binaries:
+
+.. code-block:: bash
+
+   sudo dnf copr enable davidsch/bout
+   sudo dnf install python3-bout++-nightly-mpich
+   module load mpi/mpich
+
+
 Purpose
 -------
 
@@ -71,11 +79,115 @@ Most of the derivatives are available, if something is missing open a bug.
 
 Functions
 ---------
-To be added
- - only in boutcore
+.. automodule:: boutcore
+   :members:
 
- - from BOUT++
 
 Examples
 --------
-To be added
+Some trivial post processing:
+
+.. code-block:: python
+
+   import boutcore
+   import numpy as np
+   args="-d data -f BOUT.settings -o BOUT.post".split(" ")
+   boutcore.init(args)
+   dens=boutcore.Field3D.fromCollect("n",path="data")
+   temp=boutcore.Field3D.fromCollect("T",path="data")
+   pres=dens*temp
+   dpdz=boutcore.DDZ(pres,outloc="CELL_ZLOW")
+
+
+   
+A simple MMS test:
+
+.. code-block:: python
+
+   import boutcore
+   import numpy as np
+   boutcore.init("-d data -f BOUT.settings -o BOUT.post")
+   for nz in [64,128,256]:
+       boutcore.setOption("meshz:nz","%d"%nz)
+       mesh=boutcore.Mesh(OptionSection="meshz")
+       f=boutcore.create3D("sin(z)",mesh)
+       sim=boutcore.DDZ(f)
+       ana=boutcore.create3D("cos(z)",mesh)
+       err=sim-ana
+       err=boutcore.max(boutcore.abs(err))
+       errors.append(err)
+
+
+A real example - unstagger data:
+
+.. code-block:: python
+
+   import boutcore
+   boutcore.init("-d data -f BOUT.settings -o BOUT.post")
+   upar=boutcore.Field3D.fromCollect("Upar")
+   # location not part of dump file
+   upar.setLocation("CELL_YLOW")
+   upar=boutcore.interp_to(upar,"CELL_CENTRE")
+   # convert to numpy array
+   upar=upar.getAll()
+
+
+A real example - check derivative contributions:
+
+.. code-block:: python
+   
+   #!/usr/bin/env python
+   
+   from boutcore import *
+   import numpy as np
+   from netCDF4 import Dataset
+   import sys
+   
+   if len(sys.argv)> 1:
+       path=sys.argv[1]
+   else:
+       path="data"
+   
+   times=collect("t_array",path=path)
+   
+   boutcore.init("-d data -f BOUT.settings -o BOUT.post")
+   with Dataset(path+'/vort.nc', 'w', format='NETCDF4') as outdmp:
+      phiSolver=Laplacian()
+      phi=Field3D.fromCollect("n",path=path,tind=0,info=False)
+      zeros=phi.getAll()*0
+      phi.setAll(zeros)
+      outdmp.createDimension('x',zeros.shape[0])
+      outdmp.createDimension('y',zeros.shape[1])
+      outdmp.createDimension('z',zeros.shape[2])
+      outdmp.createDimension('t',None)
+      t_array_=outdmp.createVariable('t_array','f4',('t'))
+      t_array_[:]=times
+      ExB     = outdmp.createVariable('ExB'    ,'f4',('t','x','y','z'))
+      par_adv = outdmp.createVariable('par_adv','f4',('t','x','y','z'))
+      def setXGuards(phi,phi_arr):
+          for z in range(tmp.shape[2]):
+              phi[0,:,z]=phi_arr
+              phi[1,:,z]=phi_arr
+              phi[-2,:,z]=phi_arr
+              phi[-1,:,z]=phi_arr
+      with open(path+"/equilibrium/phi_eq.dat","rb") as inf:
+          phi_arr=np.fromfile(inf,dtype=np.double)
+      bm="BRACKET_ARAKAWA_OLD"
+      
+      for tind in range(len(times)):
+          vort     = Field3D.fromCollect("vort"     ,path=path,tind=tind,info=False)
+          U        = Field3D.fromCollect("U"        ,path=path,tind=tind,info=False)
+          setXGuards(phi,phi_arr)
+          phi=phiSolver.solve(vort,phi)
+          ExB[tind,:,:,:]=(-bracket(phi, vort, bm, "CELL_CENTRE")).getAll()
+          par_adv[tind,:,:,:]=(- Vpar_Grad_par(U, vort)).getAll()
+
+
+
+Functions - complete
+--------------------
+.. automodule:: boutcore
+   :members:
+   :inherited-members:
+   :undoc-members:
+   :special-members:

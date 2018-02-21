@@ -73,7 +73,8 @@ if has_breathe and not on_readthedocs:
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = ['sphinx.ext.coverage',
-              'sphinx.ext.mathjax']
+              'sphinx.ext.mathjax',
+              'sphinx.ext.autodoc']
 
 if has_breathe:
     extensions.append('breathe')
