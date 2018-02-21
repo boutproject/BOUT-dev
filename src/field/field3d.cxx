@@ -309,6 +309,34 @@ const IndexRange Field3D::region(REGION rgn) const {
   };
 }
 
+const IndexRange Field3D::region2D(REGION rgn) const {
+  switch(rgn) {
+  case RGN_ALL: {
+    return IndexRange{0, nx-1,
+        0, ny-1,
+        0, 0};
+  }
+  case RGN_NOBNDRY: {
+    return IndexRange{fieldmesh->xstart, fieldmesh->xend,
+        fieldmesh->ystart, fieldmesh->yend,
+        0, 0};
+  }
+  case RGN_NOX: {
+    return IndexRange{fieldmesh->xstart, fieldmesh->xend,
+        0, ny-1,
+        0, 0};
+  }
+  case RGN_NOY: {
+    return IndexRange{0, nx-1,
+        fieldmesh->ystart, fieldmesh->yend,
+        0, 0};
+  }
+  default: {
+    throw BoutException("Field3D::region() : Requested region not implemented");
+  }
+  };
+}
+
 /////////////////// ASSIGNMENT ////////////////////
 
 Field3D & Field3D::operator=(const Field3D &rhs) {
@@ -851,7 +879,7 @@ F3D_FUNC(sinh, ::sinh);
 F3D_FUNC(cosh, ::cosh);
 F3D_FUNC(tanh, ::tanh);
 
-const Field3D filter(const Field3D &var, int N0) {
+const Field3D filter(const Field3D &var, int N0, REGION rgn) {
   TRACE("filter(Field3D, int)");
   
   ASSERT1(var.isAllocated());
@@ -864,21 +892,19 @@ const Field3D filter(const Field3D &var, int N0) {
   Field3D result(localmesh);
   result.allocate();
 
-  for (int jx = 0; jx < localmesh->LocalNx; jx++) {
-    for (int jy = 0; jy < localmesh->LocalNy; jy++) {
+  for (const auto &i : result.region2D(rgn)) {
 
-      rfft(&(var(jx, jy, 0)), ncz, f.begin()); // Forward FFT
+    rfft(&(var(i.x, i.y, 0)), ncz, f.begin()); // Forward FFT
 
-      for(int jz=0;jz<=ncz/2;jz++) {
-	
-	if(jz != N0) {
-	  // Zero this component
-	  f[jz] = 0.0;
-	}
+    for(int jz=0;jz<=ncz/2;jz++) {
+      
+      if(jz != N0) {
+        // Zero this component
+        f[jz] = 0.0;
       }
-
-      irfft(f.begin(), ncz, &(result(jx, jy, 0))); // Reverse FFT
     }
+
+    irfft(f.begin(), ncz, &(result(i.x, i.y, 0))); // Reverse FFT
   }
   
 #ifdef TRACK
@@ -887,12 +913,12 @@ const Field3D filter(const Field3D &var, int N0) {
   
   result.setLocation(var.getLocation());
 
-  checkData(result);
+  checkData(result, rgn);
   return result;
 }
 
 // Fourier filter in z
-const Field3D lowPass(const Field3D &var, int zmax) {
+const Field3D lowPass(const Field3D &var, int zmax, REGION rgn) {
   TRACE("lowPass(Field3D, %d)", zmax);
 
   ASSERT1(var.isAllocated());
@@ -911,27 +937,25 @@ const Field3D lowPass(const Field3D &var, int zmax) {
   Field3D result(localmesh);
   result.allocate();
 
-  for (int jx = 0; jx < localmesh->LocalNx; jx++) {
-    for (int jy = 0; jy < localmesh->LocalNy; jy++) {
-      // Take FFT in the Z direction
-      rfft(&(var(jx,jy,0)), ncz, f.begin());
-      
-      // Filter in z
-      for(int jz=zmax+1;jz<=ncz/2;jz++)
-	f[jz] = 0.0;
+  for (const auto &i : result.region2D(rgn)) {
+    // Take FFT in the Z direction
+    rfft(&(var(i.x,i.y,0)), ncz, f.begin());
+    
+    // Filter in z
+    for(int jz=zmax+1;jz<=ncz/2;jz++)
+      f[jz] = 0.0;
 
-      irfft(f.begin(), ncz, &(result(jx,jy,0))); // Reverse FFT
-    }
+    irfft(f.begin(), ncz, &(result(i.x,i.y,0))); // Reverse FFT
   }
   
   result.setLocation(var.getLocation());
 
-  checkData(result);
+  checkData(result, rgn);
   return result;
 }
 
 // Fourier filter in z with zmin
-const Field3D lowPass(const Field3D &var, int zmax, int zmin) {
+const Field3D lowPass(const Field3D &var, int zmax, int zmin, REGION rgn) {
   TRACE("lowPass(Field3D, %d, %d)", zmax, zmin);
 
   ASSERT1(var.isAllocated());
@@ -948,26 +972,24 @@ const Field3D lowPass(const Field3D &var, int zmax, int zmin) {
   Field3D result(localmesh);
   result.allocate();
 
-  for (int jx = 0; jx < localmesh->LocalNx; jx++) {
-    for (int jy = 0; jy < localmesh->LocalNy; jy++) {
-      // Take FFT in the Z direction
-      rfft(&(var(jx,jy,0)), ncz, f.begin());
-      
-      // Filter in z
-      for(int jz=zmax+1;jz<=ncz/2;jz++)
-	f[jz] = 0.0;
+  for (const auto &i : result.region2D(rgn)) {
+    // Take FFT in the Z direction
+    rfft(&(var(i.x,i.y,0)), ncz, f.begin());
+    
+    // Filter in z
+    for(int jz=zmax+1;jz<=ncz/2;jz++)
+      f[jz] = 0.0;
 
-      // Filter zonal mode
-      if(zmin==0) {
-	f[0] = 0.0;
-      }
-      irfft(f.begin(), ncz, &(result(jx,jy,0))); // Reverse FFT
+    // Filter zonal mode
+    if(zmin==0) {
+      f[0] = 0.0;
     }
+    irfft(f.begin(), ncz, &(result(i.x,i.y,0))); // Reverse FFT
   }
   
   result.setLocation(var.getLocation());
   
-  checkData(result);
+  checkData(result, rgn);
   return result;
 }
 
@@ -997,10 +1019,9 @@ void shiftZ(Field3D &var, int jx, int jy, double zangle) {
   irfft(v.begin(), ncz, &(var(jx,jy,0))); // Reverse FFT
 }
 
-void shiftZ(Field3D &var, double zangle) {
-  for(int x=0;x<mesh->LocalNx;x++) 
-    for(int y=0;y<mesh->LocalNy;y++)
-      shiftZ(var, x, y, zangle);
+void shiftZ(Field3D &var, double zangle, REGION rgn) {
+  for (const auto &i : var.region2D(rgn))
+    shiftZ(var, i.x, i.y, zangle);
 }
 
 bool finite(const Field3D &f, REGION rgn) {
@@ -1052,24 +1073,22 @@ const Field3D floor(const Field3D &var, BoutReal f, REGION rgn) {
   return result;
 }
 
-Field2D DC(const Field3D &f) {
+Field2D DC(const Field3D &f, REGION rgn) {
   TRACE("DC(Field3D)");
 
   Mesh *localmesh = f.getMesh();
   Field2D result(localmesh);
   result.allocate();
 
-  for (int i = 0; i < localmesh->LocalNx; i++) {
-    for (int j = 0; j < localmesh->LocalNy; j++) {
-      result(i,j) = 0.0;
-      for (int k = 0; k < localmesh->LocalNz; k++) {
-        result(i, j) += f(i, j, k);
-      }
-      result(i, j) /= (localmesh->LocalNz);
+  for (const auto &i : result.region(rgn)) {
+    result(i.x,i.y) = 0.0;
+    for (int k = 0; k < localmesh->LocalNz; k++) {
+      result(i.x, i.y) += f(i.x, i.y, k);
     }
+    result(i.x, i.y) /= (localmesh->LocalNz);
   }
 
-  checkData(result);
+  checkData(result, rgn);
   return result;
 }
 

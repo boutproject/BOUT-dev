@@ -318,6 +318,15 @@ class Field3D : public Field, public FieldData {
   const IndexRange region(REGION rgn) const;
 
   /*!
+   * Like Field3D::region(REGION rgn), but returns range
+   * to iterate over only x-y, not z.
+   * This is useful in the Fourier transform functions
+   * which need an explicit loop in z.
+   *
+   */
+  const IndexRange region2D(REGION rgn) const;
+
+  /*!
    * Direct data access using DataIterator object.
    * This uses operator(x,y,z) so checks will only be
    * performed if CHECK > 2.
@@ -722,18 +731,18 @@ const Field3D floor(const Field3D &var, BoutReal f, REGION rgn = RGN_ALL);
  * @param[in] var Variable to apply filter to
  * @param[in] N0 The component to keep
  */
-const Field3D filter(const Field3D &var, int N0);
+const Field3D filter(const Field3D &var, int N0, REGION rgn=RGN_ALL);
 
 /*!
  * Fourier low pass filtering. Removes modes higher than zmax
  */ 
-const Field3D lowPass(const Field3D &var, int zmax);
+const Field3D lowPass(const Field3D &var, int zmax, REGION rgn=RGN_ALL);
 
 /*!
  * Fourier low pass filtering. Removes modes
  * lower than zmin and higher than zmax
  */
-const Field3D lowPass(const Field3D &var, int zmax, int zmin);
+const Field3D lowPass(const Field3D &var, int zmax, int zmin, REGION rgn=RGN_ALL);
 
 /*!
  * Perform a shift by a given angle in Z
@@ -751,12 +760,12 @@ void shiftZ(Field3D &var, int jx, int jy, double zangle);
  * @param[inout] var  The variable to modify in-place
  * @param[in] zangle  The angle to shift by in Z
  */
-void shiftZ(Field3D &var, double zangle);
+void shiftZ(Field3D &var, double zangle, REGION rgn=RGN_ALL);
 
 /*!
  * Average in the Z direction
  */ 
-Field2D DC(const Field3D &f);
+Field2D DC(const Field3D &f, REGION rgn=RGN_ALL);
 
 /*!
  * Force guard cells of passed field to nan
