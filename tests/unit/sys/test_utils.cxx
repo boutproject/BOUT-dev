@@ -325,6 +325,12 @@ TEST(Invert3x3Test, BadCondition) {
   input(1, 1) = 1.0;
   input(2, 2) = 1.0;
   EXPECT_THROW(invert3x3(input, 1.0e-10), BoutException);
+
+  // Non-default small
+  input = 0.;
+  input(0, 0) = 1.0e-12;
+  input(1, 1) = 1.0; input(2, 2) = 1.0;
+  EXPECT_NO_THROW(invert3x3(input, -1.0e-10));
 }
 
 TEST(NumberUtilitiesTest, SquareInt) {

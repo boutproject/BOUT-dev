@@ -202,6 +202,8 @@ private:
 // Explicit inversion of a 3x3 matrix `a`
 // The input small determines how small the determinant must be for
 // us to throw due to the matrix being singular (ill conditioned);
+// If small is less than zero then instead of throwing we return 1.
+// This is ugly but can be used to support some use cases.
 template <typename T> int invert3x3(Matrix<T> &a, BoutReal small = 1.0e-15) {
   TRACE("invert3x3");
 
@@ -213,8 +215,12 @@ template <typename T> int invert3x3(Matrix<T> &a, BoutReal small = 1.0e-15) {
   // Calculate the determinant
   T det = a(0, 0) * A + a(0, 1) * B + a(0, 2) * C;
 
-  if (abs(det) < small) {
-    throw BoutException("Determinant of matrix < %e --> Poorly conditioned", small);
+  if (abs(det) < abs(small)) {
+    if (small >=0 ){
+      throw BoutException("Determinant of matrix < %e --> Poorly conditioned", small);
+    } else {
+      return 1;
+    }      
   }
 
   // Calculate the rest of the co-factors
