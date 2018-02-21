@@ -1239,3 +1239,36 @@ TEST_F(Field3DTest, DC) {
 
   EXPECT_TRUE(IsField2DEqualBoutReal(DC(field), 3.0));
 }
+
+#ifdef _OPENMP
+TEST_F(Field3DTest, OpenMPIterator) {
+  const int fields=10;
+  Field3D * d3= new Field3D[fields];
+  for (int i=0;i<fields;++i){
+    d3[i]=1;
+  }
+
+  BoutReal exp=1;
+
+  BOUT_OMP(parallel for)
+  for (int j=0;j<fields;++j){
+    BOUT_OMP(parallel)
+    for (auto i: d3[j]){
+      EXPECT_TRUE(d3[j][i] == exp);
+      d3[j][i]=2;
+    }
+  }
+
+  exp=2;
+
+  for (int i=0;i<fields;++i){
+    for (int jx=0;jx<mesh->LocalNx;++jx){
+      for (int jy=0;jy<mesh->LocalNy;++jy){
+        for (int jz=0;jz<mesh->LocalNz;++jz){
+          EXPECT_TRUE(d3[i](jx,jy,jz) == exp);
+        }
+      }
+    }
+  }
+}
+#endif
