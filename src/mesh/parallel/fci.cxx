@@ -53,7 +53,7 @@ inline BoutReal sgn(BoutReal val) { return (BoutReal(0) < val) - (val < BoutReal
 
 // Calculate all the coefficients needed for the spline interpolation
 // dir MUST be either +1 or -1
-FCIMap::FCIMap(Mesh &mesh, int dir, bool yperiodic, bool zperiodic)
+FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
     : dir(dir), boundary_mask(mesh), y_prime(&mesh) {
 
   interp = InterpolationFactory::getInstance()->create();
@@ -101,13 +101,6 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool yperiodic, bool zperiodic)
   BoutReal t_x, t_z;
 
   Coordinates &coord = *(mesh.coordinates());
-
-  // Vector in real space
-  struct RealVector {
-    BoutReal x;
-    BoutReal y;
-    BoutReal z;
-  };
 
   for (int x = mesh.xstart; x <= mesh.xend; x++) {
     for (int y = mesh.ystart; y <= mesh.yend; y++) {
