@@ -17,5 +17,7 @@ include $(BOUT_TOP)/make.config
 # to apply clang-format to this file in-place, but don't worry if the
 # formatting fails
 generated_fieldops.cxx: gen_fieldops.py gen_fieldops.jinja
-	./$< --filename $@
+	@echo "  Generating $@"
+	@./$< --filename $@.tmp || (fail=$?; echo "touch $@ to ignore failed generation" ; exit $fail)
+	@mv $@.tmp $@
 	@clang-format -i $@ || echo "Formatting failed"
