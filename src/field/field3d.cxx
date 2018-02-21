@@ -665,7 +665,7 @@ Field3D operator-(const Field3D &f) { return -1.0 * f; }
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
-Field3D pow(const Field3D &lhs, const Field3D &rhs) {
+Field3D pow(const Field3D &lhs, const Field3D &rhs, REGION rgn) {
   TRACE("pow(Field3D, Field3D)");
 
   ASSERT1(lhs.getLocation() == rhs.getLocation());
@@ -675,17 +675,17 @@ Field3D pow(const Field3D &lhs, const Field3D &rhs) {
   result.allocate();
 
   // Iterate over indices
-  for(const auto& i : result) {
+  for(const auto& i : result.region(rgn)) {
     result[i] = ::pow(lhs[i], rhs[i]);
   }
   
   result.setLocation( lhs.getLocation() );
   
-  checkData(result);
+  checkData(result, rgn);
   return result;
 }
 
-Field3D pow(const Field3D &lhs, const Field2D &rhs) {
+Field3D pow(const Field3D &lhs, const Field2D &rhs, REGION rgn) {
   TRACE("pow(Field3D, Field2D)");
   // Check if the inputs are allocated
   ASSERT1(lhs.isAllocated());
@@ -697,17 +697,17 @@ Field3D pow(const Field3D &lhs, const Field2D &rhs) {
   result.allocate();
 
   // Iterate over indices
-  for(const auto& i : result) {
+  for(const auto& i : result.region(rgn)) {
     result[i] = ::pow(lhs[i], rhs[i]);
   }
 
   result.setLocation( lhs.getLocation() );
   
-  checkData(result);
+  checkData(result, rgn);
   return result;
 }
 
-Field3D pow(const Field3D &lhs, const FieldPerp &rhs) {
+Field3D pow(const Field3D &lhs, const FieldPerp &rhs, REGION rgn) {
   TRACE("pow(Field3D, FieldPerp)");
 
   ASSERT1(lhs.getMesh() == rhs.getMesh());
@@ -715,34 +715,34 @@ Field3D pow(const Field3D &lhs, const FieldPerp &rhs) {
   result.allocate();
 
   // Iterate over indices
-  for(const auto& i : result) {
+  for(const auto& i : result.region(rgn)) {
     result[i] = ::pow(lhs[i], rhs[i]);
   }
 
   result.setLocation( lhs.getLocation() );
 
-  checkData(result);
+  checkData(result, rgn);
   return result;
 }
 
-Field3D pow(const Field3D &lhs, BoutReal rhs) {
+Field3D pow(const Field3D &lhs, BoutReal rhs, REGION rgn) {
   TRACE("pow(Field3D, BoutReal)");
   // Check if the inputs are allocated
   ASSERT1(lhs.isAllocated());
 
   Field3D result(lhs.getMesh());
   result.allocate();
-  for(const auto& i : result){
+  for(const auto& i : result.region(rgn)) {
     result[i] = ::pow(lhs[i], rhs);
   }
   
   result.setLocation( lhs.getLocation() );
 
-  checkData(result);
+  checkData(result, rgn);
   return result;
 }
 
-Field3D pow(BoutReal lhs, const Field3D &rhs) {
+Field3D pow(BoutReal lhs, const Field3D &rhs, REGION rgn) {
   TRACE("pow(lhs, Field3D)");
   // Check if the inputs are allocated
   ASSERT1(rhs.isAllocated());
@@ -751,13 +751,13 @@ Field3D pow(BoutReal lhs, const Field3D &rhs) {
   Field3D result(rhs.getMesh());
   result.allocate();
 
-  for(const auto& i : result){
+  for(const auto& i : result.region(rgn)) {
     result[i] = ::pow(lhs, rhs[i]);
   }
   
   result.setLocation( rhs.getLocation() );
 
-  checkData(result);
+  checkData(result, rgn);
   return result;
 }
 
@@ -821,7 +821,7 @@ BoutReal max(const Field3D &f, bool allpe, REGION rgn) {
  *
  */
 #define F3D_FUNC(name, func)                                                             \
-  const Field3D name(const Field3D &f) {                                                 \
+  const Field3D name(const Field3D &f, REGION rgn) {                                     \
     TRACE(#name "(Field3D)");                                                            \
     /* Check if the input is allocated */                                                \
     ASSERT1(f.isAllocated());                                                            \
@@ -829,11 +829,11 @@ BoutReal max(const Field3D &f, bool allpe, REGION rgn) {
     Field3D result(f.getMesh());                                                         \
     result.allocate();                                                                   \
     /* Loop over domain */                                                               \
-    for (const auto &d : result) {                                                       \
+    for (const auto &d : result.region(rgn)) {                                           \
       result[d] = func(f[d]);                                                            \
     }                                                                                    \
     result.setLocation(f.getLocation());                                                 \
-    checkData(result);                                                                   \
+    checkData(result, rgn);                                                              \
     return result;                                                                       \
   }
 
@@ -1003,14 +1003,14 @@ void shiftZ(Field3D &var, double zangle) {
       shiftZ(var, x, y, zangle);
 }
 
-bool finite(const Field3D &f) {
+bool finite(const Field3D &f, REGION rgn) {
   TRACE("finite( Field3D )");
 
   if (!f.isAllocated()) {
     return false;
   }
 
-  for (const auto &i : f) {
+  for (const auto &i : f.region(rgn)) {
     if (!finite(f[i])) {
       return false;
     }
@@ -1042,10 +1042,10 @@ const Field3D copy(const Field3D &f) {
   return result;
 }
 
-const Field3D floor(const Field3D &var, BoutReal f) {
+const Field3D floor(const Field3D &var, BoutReal f, REGION rgn) {
   Field3D result = copy(var);
   
-  for(const auto& d : result)
+  for(const auto& d : result.region(rgn))
     if(result[d] < f)
       result[d] = f;
   

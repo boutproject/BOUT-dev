@@ -544,7 +544,8 @@ Field3D operator-(const Field3D &f);
 
 /*!
  * Calculates the minimum of a field, excluding
- * the boundary/guard cells. 
+ * the boundary/guard cells by default (can be changed
+ * with rgn argument).
  * By default this is only on the local processor,
  * but setting allpe=true does a collective Allreduce
  * over all processors.
@@ -558,7 +559,8 @@ BoutReal min(const Field3D &f, bool allpe=false, REGION rgn=RGN_NOBNDRY);
 
 /*!
  * Calculates the maximum of a field, excluding
- * the boundary/guard cells. 
+ * the boundary/guard cells by default (can be changed
+ * with rgn argument).
  * By default this is only on the local processor,
  * but setting allpe=true does a collective Allreduce
  * over all processors.
@@ -573,108 +575,119 @@ BoutReal max(const Field3D &f, bool allpe=false, REGION rgn=RGN_NOBNDRY);
 /*!
  * Exponent: pow(a, b) is a raised to the power of b
  *
- * This loops over the entire domain, including guard/boundary cells
+ * This loops over the entire domain, including guard/boundary cells by
+ * default (can be changed using the rgn argument)
  * If CHECK >= 3 then the result will be checked for non-finite numbers
  */
-Field3D pow(const Field3D &lhs, const Field3D &rhs);
-Field3D pow(const Field3D &lhs, const Field2D &rhs);
-Field3D pow(const Field3D &lhs, const FieldPerp &rhs);
-Field3D pow(const Field3D &lhs, BoutReal rhs);
-Field3D pow(BoutReal lhs, const Field3D &rhs);
+Field3D pow(const Field3D &lhs, const Field3D &rhs, REGION rgn = RGN_ALL);
+Field3D pow(const Field3D &lhs, const Field2D &rhs, REGION rgn = RGN_ALL);
+Field3D pow(const Field3D &lhs, const FieldPerp &rhs, REGION rgn = RGN_ALL);
+Field3D pow(const Field3D &lhs, BoutReal rhs, REGION rgn = RGN_ALL);
+Field3D pow(BoutReal lhs, const Field3D &rhs, REGION rgn = RGN_ALL);
 
 /*!
  * Square root
  * 
- * This loops over the entire domain, including guard/boundary cells
+ * This loops over the entire domain, including guard/boundary cells by
+ * default (can be changed using the rgn argument)
  * If CHECK >= 3 then the result will be checked for non-finite numbers
  */
-const Field3D sqrt(const Field3D &f);
+const Field3D sqrt(const Field3D &f, REGION rgn = RGN_ALL);
 
 /*!
  * Absolute value (modulus, |f|)
  *
- * This loops over the entire domain, including guard/boundary cells
+ * This loops over the entire domain, including guard/boundary cells by
+ * default (can be changed using the rgn argument)
  * If CHECK >= 3 then the result will be checked for non-finite numbers
  */
-const Field3D abs(const Field3D &f);
+const Field3D abs(const Field3D &f, REGION rgn = RGN_ALL);
 
 /*!
  * Exponential: exp(f) is e to the power of f
  *
- * This loops over the entire domain, including guard/boundary cells
+ * This loops over the entire domain, including guard/boundary cells by
+ * default (can be changed using the rgn argument)
  * If CHECK >= 3 then the result will be checked for non-finite numbers
  */
-const Field3D exp(const Field3D &f);
+const Field3D exp(const Field3D &f, REGION rgn = RGN_ALL);
 
 /*!
  * Natural logarithm, inverse of exponential
  * 
  *     log(exp(f)) = f
  *
- * This loops over the entire domain, including guard/boundary cells
+ * This loops over the entire domain, including guard/boundary cells by
+ * default (can be changed using the rgn argument)
  * If CHECK >= 3 then the result will be checked for non-finite numbers
  */
-const Field3D log(const Field3D &f);
+const Field3D log(const Field3D &f, REGION rgn = RGN_ALL);
 
 /*!
  * Sine trigonometric function. 
  *
  * @param[in] f  Angle in radians
  *
- * This loops over the entire domain, including guard/boundary cells
+ * This loops over the entire domain, including guard/boundary cells by
+ * default (can be changed using the rgn argument)
  * If CHECK >= 3 then the result will be checked for non-finite numbers
  */
-const Field3D sin(const Field3D &f);
+const Field3D sin(const Field3D &f, REGION rgn = RGN_ALL);
 
 /*!
  * Cosine trigonometric function. 
  *
  * @param[in] f  Angle in radians
  *
- * This loops over the entire domain, including guard/boundary cells
+ * This loops over the entire domain, including guard/boundary cells by
+ * default (can be changed using the rgn argument)
  * If CHECK >= 3 then the result will be checked for non-finite numbers
  */
-const Field3D cos(const Field3D &f);
+const Field3D cos(const Field3D &f, REGION rgn = RGN_ALL);
 
 /*!
  * Tangent trigonometric function. 
  *
  * @param[in] f  Angle in radians
  *
- * This loops over the entire domain, including guard/boundary cells
+ * This loops over the entire domain, including guard/boundary cells by
+ * default (can be changed using the rgn argument)
  * If CHECK >= 3 then the result will be checked for non-finite numbers
  */
-const Field3D tan(const Field3D &f);
+const Field3D tan(const Field3D &f, REGION rgn = RGN_ALL);
 
 /*!
  * Hyperbolic sine function. 
  *
- * This loops over the entire domain, including guard/boundary cells
+ * This loops over the entire domain, including guard/boundary cells by
+ * default (can be changed using the rgn argument)
  * If CHECK >= 3 then the result will be checked for non-finite numbers
  */
-const Field3D sinh(const Field3D &f);
+const Field3D sinh(const Field3D &f, REGION rgn = RGN_ALL);
 
 /*!
  * Hyperbolic cosine function. 
  *
- * This loops over the entire domain, including guard/boundary cells
+ * This loops over the entire domain, including guard/boundary cells by
+ * default (can be changed using the rgn argument)
  * If CHECK >= 3 then the result will be checked for non-finite numbers
  */
-const Field3D cosh(const Field3D &f);
+const Field3D cosh(const Field3D &f, REGION rgn = RGN_ALL);
 
 /*!
  * Hyperbolic tangent function. 
  *
- * This loops over the entire domain, including guard/boundary cells
+ * This loops over the entire domain, including guard/boundary cells by
+ * default (can be changed using the rgn argument)
  * If CHECK >= 3 then the result will be checked for non-finite numbers
  */
-const Field3D tanh(const Field3D &f);
+const Field3D tanh(const Field3D &f, REGION rgn = RGN_ALL);
 
 /*!
  * Check if all values of a field are finite.
  * Loops over all points including the boundaries
  */
-bool finite(const Field3D &var);
+bool finite(const Field3D &var, REGION rgn = RGN_ALL);
 
 
 #if CHECK > 0
@@ -701,7 +714,7 @@ const Field3D copy(const Field3D &f);
  * @param[in] f    The floor value
  *
  */
-const Field3D floor(const Field3D &var, BoutReal f);
+const Field3D floor(const Field3D &var, BoutReal f, REGION rgn = RGN_ALL);
 
 /*!
  * Fourier filtering, removes all except one mode

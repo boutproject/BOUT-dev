@@ -427,14 +427,14 @@ BoutReal max(const Field2D &f, bool allpe,REGION rgn) {
   return result;
 }
 
-bool finite(const Field2D &f) {
+bool finite(const Field2D &f, REGION rgn) {
   TRACE("finite(Field2D)");
 
   if (!f.isAllocated()) {
     return false;
   }
 
-  for (const auto &i : f) {
+  for (const auto &i : f.region(rgn)) {
     if (!::finite(f[i])) {
       return false;
     }
@@ -463,7 +463,7 @@ bool finite(const Field2D &f) {
  *
  */
 #define F2D_FUNC(name, func)                                                             \
-  const Field2D name(const Field2D &f) {                                                 \
+  const Field2D name(const Field2D &f, REGION rgn) {                                     \
     TRACE(#name "(Field2D)");                                                            \
     /* Check if the input is allocated */                                                \
     ASSERT1(f.isAllocated());                                                            \
@@ -471,10 +471,10 @@ bool finite(const Field2D &f) {
     Field2D result(f.getMesh());                                                         \
     result.allocate();                                                                   \
     /* Loop over domain */                                                               \
-    for (const auto &d : result) {                                                       \
+    for (const auto &d : result.region(rgn)) {                                           \
       result[d] = func(f[d]);                                                            \
     }                                                                                    \
-    checkData(result);                                                                   \
+    checkData(result, rgn);                                                              \
     return result;                                                                       \
   }
 
@@ -499,17 +499,17 @@ const Field2D copy(const Field2D &f) {
   return result;
 }
 
-const Field2D floor(const Field2D &var, BoutReal f) {
+const Field2D floor(const Field2D &var, BoutReal f, REGION rgn) {
   Field2D result = copy(var);
 
-  for(const auto& d : result)
+  for(const auto& d : result.region(rgn))
     if(result[d] < f)
       result[d] = f;
 
   return result;
 }
 
-Field2D pow(const Field2D &lhs, const Field2D &rhs) {
+Field2D pow(const Field2D &lhs, const Field2D &rhs, REGION rgn) {
   TRACE("pow(Field2D, Field2D)");
   // Check if the inputs are allocated
   ASSERT1(lhs.isAllocated());
@@ -521,15 +521,15 @@ Field2D pow(const Field2D &lhs, const Field2D &rhs) {
   result.allocate();
 
   // Loop over domain
-  for(const auto& i: result) {
+  for(const auto& i: result.region(rgn)) {
     result[i] = ::pow(lhs[i], rhs[i]);
   }
 
-  checkData(result);
+  checkData(result, rgn);
   return result;
 }
 
-Field2D pow(const Field2D &lhs, BoutReal rhs) {
+Field2D pow(const Field2D &lhs, BoutReal rhs, REGION rgn) {
   TRACE("pow(Field2D, BoutReal)");
   // Check if the inputs are allocated
   ASSERT1(lhs.isAllocated());
@@ -539,15 +539,15 @@ Field2D pow(const Field2D &lhs, BoutReal rhs) {
   result.allocate();
 
   // Loop over domain
-  for(const auto& i: result) {
+  for(const auto& i: result.region(rgn)) {
     result[i] = ::pow(lhs[i], rhs);
   }
 
-  checkData(result);
+  checkData(result, rgn);
   return result;
 }
 
-Field2D pow(BoutReal lhs, const Field2D &rhs) {
+Field2D pow(BoutReal lhs, const Field2D &rhs, REGION rgn) {
   TRACE("pow(lhs, Field2D)");
   // Check if the inputs are allocated
   ASSERT1(rhs.isAllocated());
@@ -557,11 +557,11 @@ Field2D pow(BoutReal lhs, const Field2D &rhs) {
   result.allocate();
 
   // Loop over domain
-  for(const auto& i: result) {
+  for(const auto& i: result.region(rgn)) {
     result[i] = ::pow(lhs, rhs[i]);
   }
 
-  checkData(result);
+  checkData(result, rgn);
   return result;
 }
 
