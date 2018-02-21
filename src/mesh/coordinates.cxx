@@ -379,7 +379,7 @@ int Coordinates::calcCovariant() {
       a(0, 2) = a(2, 0) = g13(jx, jy);
 
       // invert
-      if (invert3x3(a, 3)) {
+      if (invert3x3(a)) {
         output_error.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
         return 1;
       }
@@ -439,7 +439,7 @@ int Coordinates::calcContravariant() {
       a(0, 2) = a(2, 0) = g_13(jx, jy);
 
       // invert
-      if (invert3x3(a, 3)) {
+      if (invert3x3(a)) {
         output_error.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
         return 1;
       }
