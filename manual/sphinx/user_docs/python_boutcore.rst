@@ -184,10 +184,13 @@ A real example - check derivative contributions:
 
 
 
-Functions - complete
+Functions - undocumented
 --------------------
 .. automodule:: boutcore
-   :members:
-   :inherited-members:
    :undoc-members:
+
+Functions - special and inherited
+--------------------
+.. automodule:: boutcore
    :special-members:
+   :inherited-members:
