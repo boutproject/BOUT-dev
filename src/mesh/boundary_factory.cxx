@@ -1,14 +1,14 @@
-#include <globals.hxx>
-#include <boundary_factory.hxx>
-#include <boundary_standard.hxx>
-#include <utils.hxx>
+#include <bout/globals.hxx>
+#include <bout/boundary_factory.hxx>
+#include <bout/boundary_standard.hxx>
+#include <bout/utils.hxx>
 
 #include <list>
 #include <string>
 using std::list;
 using std::string;
 
-#include <output.hxx>
+#include <bout/output.hxx>
 
 BoundaryFactory* BoundaryFactory::instance = NULL;
 

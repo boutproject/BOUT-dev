@@ -20,8 +20,8 @@
  *************************************************************/
 
 #include <bout.hxx>
-#include <boutmain.hxx>
-#include <initialprofiles.hxx>
+#include <bout/boutmain.hxx>
+#include <bout/initialprofiles.hxx>
 
 int reaction(BoutReal time);
 

@@ -32,8 +32,8 @@
  */
 
 #include "shoot_laplace.hxx"
-#include <globals.hxx>
-#include <fft.hxx>
+#include <bout/globals.hxx>
+#include <bout/fft.hxx>
 #include <bout/constants.hxx>
 
 LaplaceShoot::LaplaceShoot(Options *opt)

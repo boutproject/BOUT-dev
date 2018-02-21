@@ -6,7 +6,7 @@
  */
 
 #include <bout/physicsmodel.hxx>
-#include <derivs.hxx>
+#include <bout/derivs.hxx>
 
 class EigenBox : public PhysicsModel {
 protected:

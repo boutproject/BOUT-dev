@@ -28,7 +28,7 @@
  **************************************************************************/
 
 #include "multigrid_laplace.hxx"
-#include "unused.hxx"
+#include "bout/unused.hxx"
 #include <bout/openmpwrap.hxx>
 
 Multigrid1DP::Multigrid1DP(int level,int lx, int lz, int gx, int dl, int merge,

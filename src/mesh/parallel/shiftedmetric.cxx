@@ -8,12 +8,12 @@
 
 #include <bout/paralleltransform.hxx>
 #include <bout/mesh.hxx>
-#include <fft.hxx>
+#include <bout/fft.hxx>
 #include <bout/constants.hxx>
 
 #include <cmath>
 
-#include <output.hxx>
+#include <bout/output.hxx>
 
 ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
   // Read the zShift angle from the mesh

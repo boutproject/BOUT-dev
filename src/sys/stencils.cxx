@@ -27,9 +27,9 @@
 
 typedef double BoutReal;
 
-#include <globals.hxx>
-#include <stencils.hxx>
-#include <output.hxx>
+#include <bout/globals.hxx>
+#include <bout/stencils.hxx>
+#include <bout/output.hxx>
 
 /*******************************************************************************
  * stencil class

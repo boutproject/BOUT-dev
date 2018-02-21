@@ -19,10 +19,10 @@
  ****************************************************************/
 
 #include <bout.hxx>
-#include <boutmain.hxx>
+#include <bout/boutmain.hxx>
 
-#include <utils.hxx>
-#include <invert_laplace.hxx>
+#include <bout/utils.hxx>
+#include <bout/invert_laplace.hxx>
 #include <math.h>
 
 // Constants

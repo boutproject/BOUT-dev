@@ -4,11 +4,11 @@
  *****************************************************************************/
 
 #include <bout.hxx>
-#include <boutmain.hxx>
+#include <bout/boutmain.hxx>
 
-#include <invert_laplace.hxx>
-#include <invert_parderiv.hxx>
-#include <initialprofiles.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/invert_parderiv.hxx>
+#include <bout/initialprofiles.hxx>
 #include <bout/constants.hxx>
 
 #include <math.h>

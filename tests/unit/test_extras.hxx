@@ -6,8 +6,8 @@
 #include <mpi.h>
 
 #include "bout/mesh.hxx"
-#include "field3d.hxx"
-#include "unused.hxx"
+#include "bout/field3d.hxx"
+#include "bout/unused.hxx"
 
 const BoutReal BoutRealTolerance = 1e-15;
 

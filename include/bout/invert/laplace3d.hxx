@@ -16,9 +16,9 @@ class Laplace3D;
 //
 ///////////////////////////////////////////////////////////////////
 
-#include <options.hxx>
-#include <field2d.hxx>
-#include <field3d.hxx>
+#include <bout/options.hxx>
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
 
 class Laplace3D {
 public:

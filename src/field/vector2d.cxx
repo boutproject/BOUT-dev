@@ -28,11 +28,11 @@
  *
  **************************************************************************/
 
-#include <globals.hxx>
+#include <bout/globals.hxx>
 
-#include <vector2d.hxx>
-#include <boundary_op.hxx>
-#include <boutexception.hxx>
+#include <bout/vector2d.hxx>
+#include <bout/boundary_op.hxx>
+#include <bout/boutexception.hxx>
 
 Vector2D::Vector2D(Mesh *localmesh)
     : covariant(true), deriv(NULL), x(localmesh), y(localmesh), z(localmesh) {}

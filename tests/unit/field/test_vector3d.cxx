@@ -2,10 +2,10 @@
 
 #include "bout/constants.hxx"
 #include "bout/mesh.hxx"
-#include "boutexception.hxx"
-#include "vector3d.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/vector3d.hxx"
 #include "test_extras.hxx"
-#include "unused.hxx"
+#include "bout/unused.hxx"
 
 /// Global mesh
 extern Mesh *mesh;

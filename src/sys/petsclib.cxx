@@ -3,7 +3,7 @@
 
 #include <bout/petsclib.hxx>
 
-#include <output.hxx>
+#include <bout/output.hxx>
 
 // Define all the static member variables
 int PetscLib::count = 0;

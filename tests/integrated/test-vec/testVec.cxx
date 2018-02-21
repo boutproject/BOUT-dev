@@ -1,6 +1,6 @@
 
 #include <bout/physicsmodel.hxx>
-#include <vecops.hxx>         // Gives the vec diff options
+#include <bout/vecops.hxx>         // Gives the vec diff options
 
 class VecTest : public PhysicsModel {
 protected:

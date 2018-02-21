@@ -1,11 +1,11 @@
 #ifndef __FIELDGROUP_H__
 #define __FIELDGROUP_H__
 
-#include "field_data.hxx"
-#include <field3d.hxx>
+#include "bout/field_data.hxx"
+#include <bout/field3d.hxx>
 
-#include <vector2d.hxx>
-#include <vector3d.hxx>
+#include <bout/vector2d.hxx>
+#include <bout/vector3d.hxx>
 
 #include <vector>
 

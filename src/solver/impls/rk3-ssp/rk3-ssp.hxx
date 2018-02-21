@@ -38,7 +38,7 @@ class RK3SSP;
 
 #include "mpi.h"
 
-#include <bout_types.hxx>
+#include <bout/bout_types.hxx>
 #include <bout/solver.hxx>
 
 class RK3SSP : public Solver {

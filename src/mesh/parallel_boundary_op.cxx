@@ -1,9 +1,9 @@
 #include "bout/constants.hxx"
 #include "bout/mesh.hxx"
-#include "field_factory.hxx"
-#include "globals.hxx"
-#include "output.hxx"
-#include "parallel_boundary_op.hxx"
+#include "bout/field_factory.hxx"
+#include "bout/globals.hxx"
+#include "bout/output.hxx"
+#include "bout/parallel_boundary_op.hxx"
 
 BoutReal BoundaryOpPar::getValue(int x, int y, int z, BoutReal t) {
 

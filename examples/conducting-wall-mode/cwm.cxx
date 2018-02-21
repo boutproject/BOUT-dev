@@ -6,10 +6,10 @@
  *******************************************************************************/
 #include <bout/physicsmodel.hxx>
 
-#include <initialprofiles.hxx>
-#include <derivs.hxx>
-#include <interpolation.hxx>
-#include <invert_laplace.hxx>
+#include <bout/initialprofiles.hxx>
+#include <bout/derivs.hxx>
+#include <bout/interpolation.hxx>
+#include <bout/invert_laplace.hxx>
 
 class CWM : public PhysicsModel {
 private:

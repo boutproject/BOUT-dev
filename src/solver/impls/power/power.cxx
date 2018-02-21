@@ -2,12 +2,12 @@
 
 #include "power.hxx"
 
-#include <boutcomm.hxx>
-#include <msg_stack.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/msg_stack.hxx>
 
 #include <cmath>
 
-#include <output.hxx>
+#include <bout/output.hxx>
 
 PowerSolver::~PowerSolver(){
   if(f0 != nullptr) delete[] f0;

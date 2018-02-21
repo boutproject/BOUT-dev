@@ -35,13 +35,13 @@
  *
  ************************************************************************/
 
-#include <globals.hxx>
-#include <utils.hxx>
+#include <bout/globals.hxx>
+#include <bout/utils.hxx>
 #include "cyclic.hxx"
-#include <fft.hxx>
-#include <boutexception.hxx>
-#include <cyclic_reduction.hxx>
-#include <msg_stack.hxx>
+#include <bout/fft.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/cyclic_reduction.hxx>
+#include <bout/msg_stack.hxx>
 #include <bout/constants.hxx>
 
 #include <bout/surfaceiter.hxx>

@@ -5,7 +5,7 @@
  */
 
 #include <bout.hxx>
-#include <boutmain.hxx>
+#include <bout/boutmain.hxx>
 #include <bout/globalfield.hxx>
 
 int physics_init(bool restarting) {

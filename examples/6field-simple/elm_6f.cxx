@@ -7,15 +7,15 @@
  *******************************************************************************/
 
 #include "bout.hxx"
-#include "initialprofiles.hxx"
-#include "invert_laplace.hxx"
-#include "invert_parderiv.hxx"
-#include "interpolation.hxx"
-#include "derivs.hxx"
+#include "bout/initialprofiles.hxx"
+#include "bout/invert_laplace.hxx"
+#include "bout/invert_parderiv.hxx"
+#include "bout/interpolation.hxx"
+#include "bout/derivs.hxx"
 #include <math.h>
-#include "sourcex.hxx"
-#include <boutmain.hxx>
-#include <msg_stack.hxx>
+#include "bout/sourcex.hxx"
+#include <bout/boutmain.hxx>
+#include <bout/msg_stack.hxx>
 
 
 BoutReal n0_height, n0_ave, n0_width, n0_center, n0_bottom_x; //the total height, average width and center of profile of N0

@@ -5,7 +5,7 @@
 #include "impls/rk4simple/rk4simple.hxx"
 #include "impls/rkf34/rkf34.hxx"
 
-#include <boutexception.hxx>
+#include <bout/boutexception.hxx>
 
 RKSchemeFactory* RKSchemeFactory::instance = NULL;
 

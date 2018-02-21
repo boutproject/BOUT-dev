@@ -40,11 +40,11 @@ class ArkodeSolver;
 // NOTE: MPI must be included before SUNDIALS, otherwise complains
 #include "mpi.h"
 
-#include "bout_types.hxx"
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "vector2d.hxx"
-#include "vector3d.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include "bout/vector2d.hxx"
+#include "bout/vector3d.hxx"
 
 #include "bout/solver.hxx"
 

@@ -1,5 +1,5 @@
 #include <bout/physicsmodel.hxx>
-#include <utils.hxx>
+#include <bout/utils.hxx>
 #include <bout/mesh.hxx>
 
 class FCISlab : public PhysicsModel {

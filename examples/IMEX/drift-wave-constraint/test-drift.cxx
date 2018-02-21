@@ -1,9 +1,9 @@
 
 #include <bout/physicsmodel.hxx>
 
-#include <derivs.hxx>
+#include <bout/derivs.hxx>
 
-#include <invert_laplace.hxx>
+#include <bout/invert_laplace.hxx>
 
 class DriftWave : public PhysicsModel { 
 protected:

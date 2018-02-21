@@ -23,12 +23,12 @@
  *
  **************************************************************************/
 
-#include <globals.hxx>
-#include <interpolation.hxx>
-#include <stencils.hxx>
-#include <output.hxx>
-#include <msg_stack.hxx>
-#include <unused.hxx>
+#include <bout/globals.hxx>
+#include <bout/interpolation.hxx>
+#include <bout/stencils.hxx>
+#include <bout/output.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/unused.hxx>
 
 /// Perform interpolation between centre -> shifted or vice-versa
 /*!

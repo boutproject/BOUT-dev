@@ -2,7 +2,7 @@
 
 #include <bout/paralleltransform.hxx>
 
-#include <derivs.hxx>
+#include <bout/derivs.hxx>
 
 // Y derivative using yup() and ydown() fields
 const Field3D DDY_yud(const Field3D &f) {

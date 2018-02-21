@@ -25,21 +25,21 @@
  *
  **************************************************************************/
 
-#include <boutcomm.hxx>
-#include <globals.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/globals.hxx>
 
 #include <cmath>
 
-#include <field3d.hxx>
-#include <utils.hxx>
-#include <fft.hxx>
-#include <dcomplex.hxx>
-#include <interpolation.hxx>
-#include <boundary_op.hxx>
-#include <boundary_factory.hxx>
-#include <boutexception.hxx>
-#include <output.hxx>
-#include <msg_stack.hxx>
+#include <bout/field3d.hxx>
+#include <bout/utils.hxx>
+#include <bout/fft.hxx>
+#include <bout/dcomplex.hxx>
+#include <bout/interpolation.hxx>
+#include <bout/boundary_op.hxx>
+#include <bout/boundary_factory.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/output.hxx>
+#include <bout/msg_stack.hxx>
 #include <bout/constants.hxx>
 #include <bout/assert.hxx>
 

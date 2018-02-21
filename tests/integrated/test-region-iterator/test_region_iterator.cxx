@@ -1,5 +1,5 @@
 #include <bout.hxx>
-#include <boutmain.hxx>
+#include <bout/boutmain.hxx>
 
 #include <bout/region.hxx>
 #include <bout/assert.hxx>

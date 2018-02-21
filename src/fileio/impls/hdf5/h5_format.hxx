@@ -45,7 +45,7 @@ class H5Format;
 #ifndef __H5FORMAT_H__
 #define __H5FORMAT_H__
 
-#include "dataformat.hxx"
+#include "bout/dataformat.hxx"
 
 #include <hdf5.h>
 

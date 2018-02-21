@@ -4,7 +4,7 @@ class FormatFactory;
 #ifndef __FORMATFACTORY_H__
 #define __FORMATFACTORY_H__
 
-#include "dataformat.hxx"
+#include "bout/dataformat.hxx"
 
 #include <bout/sys/uncopyable.hxx>
 

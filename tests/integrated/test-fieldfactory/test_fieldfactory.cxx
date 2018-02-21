@@ -6,7 +6,7 @@
  */
 
 #include <bout.hxx>
-#include <field_factory.hxx>
+#include <bout/field_factory.hxx>
 
 int main(int argc, char **argv) {
 

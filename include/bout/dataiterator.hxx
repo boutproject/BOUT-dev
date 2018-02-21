@@ -8,7 +8,7 @@
 
 #include <iterator>
 #include <iostream>
-#include "unused.hxx"
+#include "bout/unused.hxx"
 
 #ifdef _OPENMP
 #include <omp.h>

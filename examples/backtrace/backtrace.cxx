@@ -3,7 +3,7 @@
  */
 
 #include <bout.hxx>
-#include <boutmain.hxx>
+#include <bout/boutmain.hxx>
 
 
 void f1(){

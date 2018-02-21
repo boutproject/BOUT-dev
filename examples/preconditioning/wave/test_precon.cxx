@@ -7,8 +7,8 @@
  */
 
 #include <bout.hxx>
-#include <boutmain.hxx>
-#include <invert_parderiv.hxx>
+#include <bout/boutmain.hxx>
+#include <bout/invert_parderiv.hxx>
 
 int precon(BoutReal t, BoutReal cj, BoutReal delta); // Preconditioner
 int jacobian(BoutReal t); // Jacobian-vector multiply

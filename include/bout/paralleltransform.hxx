@@ -6,10 +6,10 @@
 #ifndef __PARALLELTRANSFORM_H__
 #define __PARALLELTRANSFORM_H__
 
-#include <field3d.hxx>
-#include <boutexception.hxx>
-#include <dcomplex.hxx>
-#include <unused.hxx>
+#include <bout/field3d.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/dcomplex.hxx>
+#include <bout/unused.hxx>
 
 class Mesh;
 

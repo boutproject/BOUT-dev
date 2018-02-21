@@ -39,8 +39,8 @@
 #ifndef __INV_PAR_CR_H__
 #define __INV_PAR_CR_H__
 
-#include "invert_parderiv.hxx"
-#include "dcomplex.hxx"
+#include "bout/invert_parderiv.hxx"
+#include "bout/dcomplex.hxx"
 
 class InvertParCR : public InvertPar {
 public:

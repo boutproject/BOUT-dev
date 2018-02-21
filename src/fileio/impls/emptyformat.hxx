@@ -29,9 +29,9 @@ class EmptyFormat;
 #ifndef __EMPTYSOLVER_H__
 #define __EMPTYSOLVER_H__
 
-#include <dataformat.hxx>
-#include <boutexception.hxx>
-#include <unused.hxx>
+#include <bout/dataformat.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/unused.hxx>
 
 class EmptyFormat {
   EmptyFormat() {throw BoutException("File format not enabled!");}

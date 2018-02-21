@@ -19,15 +19,15 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
  **************************************************************************/
-#include <globals.hxx>
+#include <bout/globals.hxx>
 
-#include <field_factory.hxx>
+#include <bout/field_factory.hxx>
 
 #include <cmath>
 
-#include <output.hxx>
+#include <bout/output.hxx>
 #include <bout/constants.hxx>
-#include <utils.hxx>
+#include <bout/utils.hxx>
 
 #include "bout/constants.hxx"
 

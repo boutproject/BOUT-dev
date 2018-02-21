@@ -38,10 +38,10 @@ class PhysicsModel;
 #define __PHYSICS_MODEL_H__
 
 #include <bout.hxx>
-#include <options.hxx>
-#include <msg_stack.hxx>
+#include <bout/options.hxx>
+#include <bout/msg_stack.hxx>
 #include "solver.hxx"
-#include "unused.hxx"
+#include "bout/unused.hxx"
 
 /*!
   Base class for physics models

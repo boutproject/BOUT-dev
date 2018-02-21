@@ -5,9 +5,9 @@
 
 #include <bout.hxx>
 
-#include <invert_parderiv.hxx>
-#include <field_factory.hxx>
-#include <utils.hxx>
+#include <bout/invert_parderiv.hxx>
+#include <bout/field_factory.hxx>
+#include <bout/utils.hxx>
 
 int main(int argc, char **argv) {
 

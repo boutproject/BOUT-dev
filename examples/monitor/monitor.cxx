@@ -2,7 +2,7 @@
  */
 
 #include <bout.hxx>
-#include <boutmain.hxx>
+#include <bout/boutmain.hxx>
 
 Field2D f;
 

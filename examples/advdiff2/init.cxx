@@ -1,7 +1,7 @@
 #include <bout.hxx>
-#include <derivs.hxx>
-#include <boutmain.hxx>
-#include "globals.hxx"
+#include <bout/derivs.hxx>
+#include <bout/boutmain.hxx>
+#include "bout/globals.hxx"
 
 
 int physics_init(bool restarting)

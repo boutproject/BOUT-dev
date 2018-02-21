@@ -49,9 +49,9 @@
  *
  **************************************************************************/
 
-#include <utils.hxx>
-#include <boutexception.hxx>
-#include <msg_stack.hxx>
+#include <bout/utils.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/msg_stack.hxx>
 #include "options_ini.hxx"
 
 using namespace std;

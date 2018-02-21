@@ -7,15 +7,15 @@
 #include <bout/assert.hxx>
 #include <bout/constants.hxx>
 #include <bout/coordinates.hxx>
-#include <msg_stack.hxx>
-#include <output.hxx>
-#include <utils.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/output.hxx>
+#include <bout/utils.hxx>
 
-#include <derivs.hxx>
-#include <fft.hxx>
-#include <interpolation.hxx>
+#include <bout/derivs.hxx>
+#include <bout/fft.hxx>
+#include <bout/interpolation.hxx>
 
-#include <globals.hxx>
+#include <bout/globals.hxx>
 
 Coordinates::Coordinates(Mesh *mesh)
     : dx(1, mesh), dy(1, mesh), dz(1), d1_dx(mesh), d1_dy(mesh), J(1, mesh), Bxy(1, mesh),
@@ -512,7 +512,7 @@ const Field2D Coordinates::DDZ(const Field2D &UNUSED(f)) {
   return Field2D(0.0, localmesh);
 }
 
-#include <derivs.hxx>
+#include <bout/derivs.hxx>
 
 /////////////////////////////////////////////////////////
 // Parallel gradient
@@ -617,7 +617,7 @@ const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc) {
 /////////////////////////////////////////////////////////
 // perpendicular Laplacian operator
 
-#include <invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
+#include <bout/invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
 
 const Field2D Coordinates::Delp2(const Field2D &f) {
   TRACE("Coordinates::Delp2( Field2D )");

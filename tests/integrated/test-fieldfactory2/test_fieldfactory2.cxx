@@ -4,8 +4,8 @@
  */
 
 #include <bout/physicsmodel.hxx>
-#include <options.hxx>
-#include <field_factory.hxx>
+#include <bout/options.hxx>
+#include <bout/field_factory.hxx>
 
 class TestFieldFactory2 : public PhysicsModel {
 protected:

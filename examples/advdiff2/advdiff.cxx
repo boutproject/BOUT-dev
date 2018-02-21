@@ -5,8 +5,8 @@
  *******************************************************************/
 
 #include <bout.hxx>
-#include <derivs.hxx>
-#include <boutmain.hxx>
+#include <bout/derivs.hxx>
+#include <bout/boutmain.hxx>
 
 // Evolving variables 
 Field3D V;

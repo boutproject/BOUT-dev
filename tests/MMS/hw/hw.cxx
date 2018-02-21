@@ -1,9 +1,9 @@
 
-#include <boutmain.hxx>
-#include <smoothing.hxx>
-#include <invert_laplace.hxx>
-#include <derivs.hxx>
-#include <field_factory.hxx>
+#include <bout/boutmain.hxx>
+#include <bout/smoothing.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/derivs.hxx>
+#include <bout/field_factory.hxx>
 #include <bout/constants.hxx>
 
 Field3D n, vort;  // Evolving density and vorticity

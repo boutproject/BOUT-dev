@@ -5,7 +5,7 @@
  *******************************************************************/
 
 #include <bout.hxx>
-#include <boutmain.hxx>
+#include <bout/boutmain.hxx>
 
 // Evolving variables 
 Field3D N, P; // Density, Pressure

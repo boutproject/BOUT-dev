@@ -20,22 +20,22 @@
  *
  **************************************************************************/
 
-#include <boutcomm.hxx>
+#include <bout/boutcomm.hxx>
 #include <bout/solver.hxx>
 #include <string.h>
 #include <time.h>
 
-#include <initialprofiles.hxx>
-#include <interpolation.hxx>
-#include <boutexception.hxx>
+#include <bout/initialprofiles.hxx>
+#include <bout/interpolation.hxx>
+#include <bout/boutexception.hxx>
 
-#include <field_factory.hxx>
+#include <bout/field_factory.hxx>
 
 #include "solverfactory.hxx"
 
 #include <bout/sys/timer.hxx>
-#include <msg_stack.hxx>
-#include <output.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/output.hxx>
 #include <bout/assert.hxx>
 
 #include <bout/array.hxx>

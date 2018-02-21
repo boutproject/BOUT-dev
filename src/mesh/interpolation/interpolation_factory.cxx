@@ -1,5 +1,5 @@
-#include "interpolation_factory.hxx"
-#include "output.hxx"
+#include "bout/interpolation_factory.hxx"
+#include "bout/output.hxx"
 
 InterpolationFactory* InterpolationFactory::instance = nullptr;
 

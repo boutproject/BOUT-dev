@@ -29,15 +29,15 @@ class GridDataSource;
 #ifndef __GRIDDATA_H__
 #define __GRIDDATA_H__
 
-#include "options.hxx"
+#include "bout/options.hxx"
 
-#include "dataformat.hxx"
-#include "bout_types.hxx"
+#include "bout/dataformat.hxx"
+#include "bout/bout_types.hxx"
 
 #include "mesh.hxx"
 
-#include <field2d.hxx>
-#include <field3d.hxx>
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
 
 #include <list>
 

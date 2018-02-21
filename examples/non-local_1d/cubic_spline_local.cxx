@@ -24,8 +24,8 @@
  *
  **************************************************************************/
 
-#include <globals.hxx>
-#include <bout_types.hxx>
+#include <bout/globals.hxx>
+#include <bout/bout_types.hxx>
 
 #include "cubic_spline_local.hxx"
 

@@ -4,8 +4,8 @@
  */
 
 #include <bout.hxx>
-#include <invert_laplace.hxx>
-#include <field_factory.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/field_factory.hxx>
 
 int main(int argc, char **argv) {
 

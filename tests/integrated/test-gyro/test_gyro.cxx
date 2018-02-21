@@ -4,8 +4,8 @@
  */
 
 #include <bout.hxx>
-#include <field_factory.hxx>
-#include <gyro_average.hxx>
+#include <bout/field_factory.hxx>
+#include <bout/gyro_average.hxx>
 
 int main(int argc, char **argv) {
 

@@ -5,7 +5,7 @@
 #include "mpi.h"
 
 #include <bout/mesh.hxx>
-#include "unused.hxx"
+#include "bout/unused.hxx"
 
 #include <list>
 #include <vector>

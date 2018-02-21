@@ -49,19 +49,19 @@ const char DEFAULT_LOG[] = "BOUT.log";
 
 #include "mpi.h"
 
-#include <boutcomm.hxx>
+#include <bout/boutcomm.hxx>
 #include <bout.hxx>
-#include <datafile.hxx>
+#include <bout/datafile.hxx>
 #include <bout/solver.hxx>
-#include <boutexception.hxx>
-#include <optionsreader.hxx>
-#include <msg_stack.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/optionsreader.hxx>
+#include <bout/msg_stack.hxx>
 
 #include <bout/sys/timer.hxx>
 
-#include <boundary_factory.hxx>
+#include <bout/boundary_factory.hxx>
 
-#include <invert_laplace.hxx>
+#include <bout/invert_laplace.hxx>
 
 #include <bout/slepclib.hxx>
 #include <bout/petsclib.hxx>
@@ -88,7 +88,7 @@ void bout_signal_handler(int sig);  // Handles signals
 #endif
 
 
-#include <output.hxx>
+#include <bout/output.hxx>
 
 BoutReal simtime;
 int iteration;

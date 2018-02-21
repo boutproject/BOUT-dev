@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "boutexception.hxx"
+#include "bout/boutexception.hxx"
 
 #include <iostream>
 #include <string>

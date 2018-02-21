@@ -1,9 +1,9 @@
 // *******  Simulates 3D diffusion  *******
 
 #include <bout.hxx>
-#include <boutmain.hxx>
+#include <bout/boutmain.hxx>
 // This gives the Laplace(f) options
-#include <difops.hxx>
+#include <bout/difops.hxx>
 // Gives PI and TWOPI
 #include <bout/constants.hxx>
 

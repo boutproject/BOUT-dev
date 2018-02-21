@@ -1,8 +1,8 @@
-#include <optionsreader.hxx>
-#include <boutexception.hxx>
-#include <msg_stack.hxx>
+#include <bout/optionsreader.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/msg_stack.hxx>
 #include <bout/assert.hxx>
-#include <utils.hxx>
+#include <bout/utils.hxx>
 
 // Interface for option file parsers
 #include "options/optionparser.hxx"
@@ -10,7 +10,7 @@
 // Individual parsers
 #include "options/options_ini.hxx"
 
-#include <output.hxx>
+#include <bout/output.hxx>
 
 OptionsReader* OptionsReader::instance = NULL;
 

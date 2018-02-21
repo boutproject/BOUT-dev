@@ -1,6 +1,6 @@
 
-#include <options.hxx>
-#include <boutexception.hxx>
+#include <bout/options.hxx>
+#include <bout/boutexception.hxx>
 #include <strings.h>
 
 #include "laplace3d_factory.hxx"

@@ -1,12 +1,12 @@
 #include "laplacexz-cyclic.hxx"
 
-#include <utils.hxx>
-#include <fft.hxx>
+#include <bout/utils.hxx>
+#include <bout/fft.hxx>
 #include <bout/constants.hxx>
 #include <bout/sys/timer.hxx>
-#include <msg_stack.hxx>
+#include <bout/msg_stack.hxx>
 
-#include <output.hxx>
+#include <bout/output.hxx>
 
 LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options) : LaplaceXZ(m, options), mesh(m) {
 

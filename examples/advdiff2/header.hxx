@@ -2,6 +2,6 @@
 #define INCLUDE_GUARD_H
 
 #include <bout.hxx>
-#include <derivs.hxx>
+#include <bout/derivs.hxx>
 
 #endif

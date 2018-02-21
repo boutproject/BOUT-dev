@@ -8,7 +8,7 @@
  */
 
 #include <bout.hxx>
-#include <boutmain.hxx>
+#include <bout/boutmain.hxx>
 
 int physics_init(bool restarting) {
   Field3D input, reference, result;
