@@ -5538,7 +5538,7 @@ elif test $enable_optimize ; then
       OPT_FLAGS="-O"
     elif test $optimize == "fast"
     then
-      OPT_FLAGS="-Ofast -march=native -funroll-loops"
+      OPT_FLAGS="-Ofast -fno-finite-math-only -march=native -funroll-loops"
       DISABLE_CHECK=probably
     else
       as_fn_error $? "unrecognized option: --enable-optimize=$optimize" "$LINENO" 5
@@ -5546,7 +5546,7 @@ elif test $enable_optimize ; then
   else
     if test $optimize -gt 3
     then
-      OPT_FLAGS="-Ofast -march=native -funroll-loops"
+      OPT_FLAGS="-Ofast -fno-finite-math-only -march=native -funroll-loops"
       DISABLE_CHECK=probably
     elif test $optimize -gt 2
     then
@@ -15342,6 +15342,8 @@ echo "  Parallel-NetCDF support: $HAS_PNETCDF" | tee -a config-build.log
 echo "  HDF5 support: $HAS_HDF5 (parallel: $HAS_PHDF5)" | tee -a config-build.log
 
 echo "  MUMPS support: $HAS_MUMPS" | tee -a config-build.log
+
+echo "  Lapack support: $HAS_LAPACK" | tee -a config-build.log
 
 echo "  Scorep support: $HAS_SCOREP" | tee -a config-build.log
 

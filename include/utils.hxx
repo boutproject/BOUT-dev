@@ -33,6 +33,8 @@
 #include "dcomplex.hxx"
 #include "boutexception.hxx"
 
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
 #include "bout/deprecated.hxx"
 #include "unused.hxx"
 
@@ -83,6 +85,115 @@ DEPRECATED(BoutReal **rmatrix(int xsize, int ysize));
  * Allocate a 2D array of \p xsize by \p ysize ints
  */
 DEPRECATED(int **imatrix(int xsize, int ysize));
+
+/// Helper class for 2D arrays
+///
+/// Allows bounds checking through `operator()` with CHECK > 1
+template <typename T>
+class Matrix {
+public:
+  typedef T data_type;
+  Matrix() : n1(0), n2(0){};
+  Matrix(unsigned int n1, unsigned int n2) : n1(n1), n2(n2) {
+    data = Array<T>(n1*n2);
+  }
+
+  T& operator()(unsigned int i1, unsigned int i2) {
+    ASSERT2(0<=i1 && i1<n1);
+    ASSERT2(0<=i2 && i2<n2);
+    return data[i1*n2+i2];
+  }
+  const T& operator()(unsigned int i1, unsigned int i2) const {
+    ASSERT2(0<=i1 && i1<n1);
+    ASSERT2(0<=i2 && i2<n2);
+    return data[i1*n2+i2];
+  }
+
+  Matrix& operator=(const T&val){
+    for(auto &i: data){
+      i = val;
+    };
+    return *this;
+  };
+  
+  // To provide backwards compatibility with matrix to be removed
+  DEPRECATED(T* operator[](unsigned int i1)) {
+    ASSERT2(0<=i1 && i1<n1);
+    return &(data[i1*n2]);
+  }
+  // To provide backwards compatibility with matrix to be removed
+  DEPRECATED(const T* operator[](unsigned int i1) const) {
+    ASSERT2(0<=i1 && i1<n1);
+    return &(data[i1*n2]);
+  }
+
+  T* begin() { return std::begin(data);};
+  const T* begin() const { return std::begin(data);};
+  T* end() { return std::end(data);};
+  const T* end() const { return std::end(data);};
+
+  std::tuple<unsigned int, unsigned int> shape() { return std::make_tuple(n1, n2);};
+
+  bool empty(){
+    return n1*n2 == 0;
+  }
+  
+private:
+  unsigned int n1, n2;
+  Array<T> data;
+};
+
+// For backwards compatibility with old matrix -- to be removed
+template <typename T>
+void free_matrix(Matrix<T> UNUSED(m)) {}
+
+/// Helper class for 3D arrays
+///
+/// Allows bounds checking through `operator()` with CHECK > 1
+template <typename T>
+class Tensor {
+public:
+  typedef T data_type;
+  Tensor() : n1(0), n2(0), n3(0) {};
+  Tensor(unsigned int n1, unsigned int n2, unsigned int n3) : n1(n1), n2(n2), n3(n3) {
+    data = Array<T>(n1*n2*n3);
+  }
+
+  T& operator()(unsigned int i1, unsigned int i2, unsigned int i3) {
+    ASSERT2(0<=i1 && i1<n1);
+    ASSERT2(0<=i2 && i2<n2);
+    ASSERT2(0<=i3 && i3<n3);
+    return data[(i1*n2+i2)*n3 + i3];
+  }
+  const T& operator()(unsigned int i1, unsigned int i2, unsigned int i3) const {
+    ASSERT2(0<=i1 && i1<n1);
+    ASSERT2(0<=i2 && i2<n2);
+    ASSERT2(0<=i3 && i3<n3);
+    return data[(i1*n2+i2)*n3 + i3];
+  }
+
+  Tensor& operator=(const T&val){
+    for(auto &i: data){
+      i = val;
+    };
+    return *this;
+  };
+  
+  T* begin() { return std::begin(data);};
+  const T* begin() const { return std::begin(data);};
+  T* end() { return std::end(data);};
+  const T* end() const { return std::end(data);};
+  
+  std::tuple<unsigned int, unsigned int, unsigned int> shape() { return std::make_tuple(n1, n2, n3);};
+  
+  bool empty(){
+    return n1*n2*n3 == 0;
+  }
+  
+private:
+  unsigned int n1, n2, n3;
+  Array<T> data;
+};
 
 /*!
  * Create a 2D array of \p xsize by \p ysize 
@@ -153,27 +264,27 @@ void free_matrix(T **m) {
  
  * Note: Prefer other methods like standard containers
  */ 
-BoutReal ***r3tensor(int nrow, int ncol, int ndep);
+DEPRECATED(BoutReal ***r3tensor(int nrow, int ncol, int ndep));
 
 /*!
  * Free a 3D BoutReal array, assumed to have been created
  * by r3tensor()
  *
  */
-void free_r3tensor(BoutReal ***m);
+DEPRECATED(void free_r3tensor(BoutReal ***m));
 
 /*!
  * Allocate a 3D int array of size \p nrow x \p ncol \p ndep
  
  * Note: Prefer other methods like standard containers
  */ 
-int ***i3tensor(int nrow, int ncol, int ndep);
+DEPRECATED(int ***i3tensor(int nrow, int ncol, int ndep));
 
 /*!
  * Free a 3D int array, assumed to have been created
  * by i3tensor()
  */
-void free_i3tensor(int ***m);
+DEPRECATED(void free_i3tensor(int ***m));
 
 /*!
  * Allocate a 2D array of \p nrow by \p ncol dcomplex objects

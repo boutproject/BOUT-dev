@@ -112,6 +112,9 @@ void Field2D::allocate() {
       ny = fieldmesh->LocalNy;
     }
     data = Array<BoutReal>(nx*ny);
+#if CHECK > 2
+    invalidateGuards(*this);
+#endif
   }else
     data.ensureUnique();
 }
@@ -170,10 +173,10 @@ const IndexRange Field2D::region(REGION rgn) const {
 
 ///////////// OPERATORS ////////////////
 
-Field2D & Field2D::operator=(const Field2D &rhs) {
+Field2D &Field2D::operator=(const Field2D &rhs) {
   // Check for self-assignment
-  if(this == &rhs)
-    return(*this); // skip this assignment
+  if (this == &rhs)
+    return (*this); // skip this assignment
 
   TRACE("Field2D: Assignment from Field2D");
 
@@ -185,7 +188,8 @@ Field2D & Field2D::operator=(const Field2D &rhs) {
 
   // Copy the data and data sizes
   fieldmesh = rhs.fieldmesh;
-  nx = rhs.nx; ny = rhs.ny;
+  nx = rhs.nx;
+  ny = rhs.ny;
 
   // Copy reference to data
   data = rhs.data;
@@ -193,7 +197,7 @@ Field2D & Field2D::operator=(const Field2D &rhs) {
   return *this;
 }
 
-Field2D & Field2D::operator=(const BoutReal rhs) {
+Field2D &Field2D::operator=(const BoutReal rhs) {
 #ifdef TRACK
   name = "<r2D>";
 #endif
@@ -202,60 +206,14 @@ Field2D & Field2D::operator=(const BoutReal rhs) {
   allocate();
 
 #if CHECK > 0
-  if(!finite(rhs))
+  if (!finite(rhs))
     throw BoutException("Field2D: Assignment from non-finite BoutReal\n");
 #endif
-  for(const auto& i : (*this))
+  for (const auto &i : (*this))
     (*this)[i] = rhs;
 
   return *this;
 }
-
-/////////////////////////////////////////////////////////////////////
-
-#define F2D_UPDATE_FIELD(op,bop,ftype)                       \
-  Field2D & Field2D::operator op(const ftype &rhs) {         \
-    TRACE("Field2D: %s %s", #op, #ftype);           \
-    checkData(rhs) ;                                         \
-    checkData(*this);                                        \
-    if(data.unique()) {                                      \
-      /* This is the only reference to this data */          \
-      for(const auto& i : (*this))                                  \
-        (*this)[i] op rhs[i];                                \
-    }else {                                                  \
-      /* Shared data */                                      \
-      (*this) = (*this) bop rhs;                             \
-    }                                                        \
-    return *this;                                            \
-  }
-
-F2D_UPDATE_FIELD(+=, +, Field2D); // operator+=(const Field2D &rhs)
-F2D_UPDATE_FIELD(-=, -, Field2D); // operator-=(const Field2D &rhs)
-F2D_UPDATE_FIELD(*=, *, Field2D); // operator*=(const Field2D &rhs)
-F2D_UPDATE_FIELD(/=, /, Field2D); // operator/=(const Field2D &rhs)
-
-#define F2D_UPDATE_REAL(op,bop)                              \
-  Field2D & Field2D::operator op(const BoutReal rhs) {       \
-    TRACE("Field2D: %s Field2D", #op);              \
-    if(!finite(rhs))                                         \
-      throw BoutException("Field2D: %s operator passed non-finite BoutReal number", #op); \
-    checkData(*this);                                        \
-                                                             \
-    if(data.unique()) {                                      \
-      /* This is the only reference to this data */          \
-      for(const auto& i : (*this))                                  \
-        (*this)[i] op rhs;                                   \
-    }else {                                                  \
-      /* Need to put result in a new block */                \
-      (*this) = (*this) bop rhs;                             \
-    }                                                        \
-    return *this;                                            \
-  }
-
-F2D_UPDATE_REAL(+=,+);    // operator+= BoutReal
-F2D_UPDATE_REAL(-=,-);    // operator-= BoutReal
-F2D_UPDATE_REAL(*=,*);    // operator*= BoutReal
-F2D_UPDATE_REAL(/=,/);    // operator/= BoutReal
 
 ////////////////////// STENCILS //////////////////////////
 
@@ -423,62 +381,6 @@ void Field2D::setBoundaryTo(const Field2D &f2d) {
 }
 
 ////////////// NON-MEMBER OVERLOADED OPERATORS //////////////
-
-#define F2D_OP_F2D(op)                                                                   \
-  Field2D operator op(const Field2D &lhs, const Field2D &rhs) {                          \
-    Field2D result;                                                                      \
-    result.allocate();                                                                   \
-    for (const auto &i : result)                                                         \
-      result[i] = lhs[i] op rhs[i];                                                      \
-    return result;                                                                       \
-  }
-
-F2D_OP_F2D(+);  // Field2D + Field2D
-F2D_OP_F2D(-);  // Field2D - Field2D
-F2D_OP_F2D(*);  // Field2D * Field2D
-F2D_OP_F2D(/);  // Field2D / Field2D
-
-#define F2D_OP_F3D(op)                                                                   \
-  Field3D operator op(const Field2D &lhs, const Field3D &rhs) {                          \
-    Field3D result;                                                                      \
-    result.allocate();                                                                   \
-    for (const auto &i : result)                                                         \
-      result[i] = lhs[i] op rhs[i];                                                      \
-    return result;                                                                       \
-  }
-
-F2D_OP_F3D(+);  // Field2D + Field3D
-F2D_OP_F3D(-);  // Field2D - Field3D
-F2D_OP_F3D(*);  // Field2D * Field3D
-F2D_OP_F3D(/);  // Field2D / Field3D
-
-#define F2D_OP_REAL(op)                                                                  \
-  Field2D operator op(const Field2D &lhs, BoutReal rhs) {                                \
-    Field2D result;                                                                      \
-    result.allocate();                                                                   \
-    for (const auto &i : result)                                                         \
-      result[i] = lhs[i] op rhs;                                                         \
-    return result;                                                                       \
-  }
-
-F2D_OP_REAL(+);  // Field2D + BoutReal
-F2D_OP_REAL(-);  // Field2D - BoutReal
-F2D_OP_REAL(*);  // Field2D * BoutReal
-F2D_OP_REAL(/);  // Field2D / BoutReal
-
-#define REAL_OP_F2D(op)                                                                  \
-  Field2D operator op(BoutReal lhs, const Field2D &rhs) {                                \
-    Field2D result;                                                                      \
-    result.allocate();                                                                   \
-    for (const auto &i : result)                                                         \
-      result[i] = lhs op rhs[i];                                                         \
-    return result;                                                                       \
-  }
-
-REAL_OP_F2D(+);  // BoutReal + Field2D
-REAL_OP_F2D(-);  // BoutReal - Field2D
-REAL_OP_F2D(*);  // BoutReal * Field2D
-REAL_OP_F2D(/);  // BoutReal / Field2D
 
 // Unary minus
 Field2D operator-(const Field2D &f) { return -1.0 * f; }
@@ -662,14 +564,14 @@ Field2D pow(BoutReal lhs, const Field2D &rhs) {
 
 #if CHECK > 0
 /// Check if the data is valid
-void checkData(const Field2D &f) {
+void checkData(const Field2D &f, REGION region) {
   if(!f.isAllocated()) {
     throw BoutException("Field2D: Operation on empty data\n");
   }
 
 #if CHECK > 2
   // Do full checks
-  for(const auto& i : f.region(RGN_NOBNDRY)){
+  for(const auto& i : f.region(region)){
     if(!::finite(f[i])) {
       throw BoutException("Field2D: Operation on non-finite data at [%d][%d]\n", i.x, i.y);
     }
@@ -677,3 +579,37 @@ void checkData(const Field2D &f) {
 #endif
 }
 #endif
+
+void invalidateGuards(Field2D &var){
+#if CHECK > 2
+  Mesh *localmesh = var.getMesh();
+
+  // Inner x -- all y and all z
+  for (int ix = 0; ix < localmesh->xstart; ix++) {
+    for (int iy = 0; iy < localmesh->LocalNy; iy++) {
+      var(ix, iy) = std::nan("");
+    }
+  }
+
+  // Outer x -- all y and all z
+  for (int ix = localmesh->xend + 1; ix < localmesh->LocalNx; ix++) {
+    for (int iy = 0; iy < localmesh->LocalNy; iy++) {
+      var(ix, iy) = std::nan("");
+    }
+  }
+
+  // Remaining boundary point
+  for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
+    // Lower y -- non-boundary x and all z (could be all x but already set)
+    for (int iy = 0; iy < localmesh->ystart; iy++) {
+      var(ix, iy) = std::nan("");
+    }
+
+    // Lower y -- non-boundary x and all z (could be all x but already set)
+    for (int iy = localmesh->yend + 1; iy < localmesh->LocalNy; iy++) {
+      var(ix, iy) = std::nan("");
+    }
+  }
+#endif  
+  return;
+}

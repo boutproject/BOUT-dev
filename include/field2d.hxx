@@ -406,11 +406,15 @@ Field2D pow(const Field2D &lhs, BoutReal rhs);
 Field2D pow(BoutReal lhs, const Field2D &rhs);
 
 #if CHECK > 0
-void checkData(const Field2D &f);
+void checkData(const Field2D &f, REGION region = RGN_NOBNDRY);
 #else
-inline void checkData(const Field2D &UNUSED(f)) {}
+inline void checkData(const Field2D &UNUSED(f), REGION UNUSED(region) = RGN_NOBNDRY) {}
 #endif
 
+/*!
+ * Force guard cells of passed field to nan
+ */ 
+void invalidateGuards(Field2D &var);
 
 /*!
  * @brief Returns a reference to the time-derivative of a field

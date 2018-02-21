@@ -167,7 +167,10 @@ void Field3D::allocate() {
       nz = fieldmesh->LocalNz;
     }
     data = Array<BoutReal>(nx*ny*nz);
-  }else
+#if CHECK > 2
+    invalidateGuards(*this);
+#endif
+  } else
     data.ensureUnique();
 }
 
@@ -379,57 +382,6 @@ Field3D & Field3D::operator=(const BoutReal val) {
 
   return *this;
 }
-
-/////////////////////////////////////////////////////////////////////
-
-#define F3D_UPDATE_FIELD(op,bop,ftype)                       \
-  Field3D & Field3D::operator op(const ftype &rhs) {         \
-    TRACE("Field3D: %s %s", #op, #ftype);           \
-    checkData(rhs) ;                                         \
-    checkData(*this);                                        \
-    if(data.unique()) {                                      \
-      /* This is the only reference to this data */          \
-      for(const auto& i : (*this))                                  \
-        (*this)[i] op rhs[i];                                \
-    }else {                                                  \
-      /* Shared data */                                      \
-      (*this) = (*this) bop rhs;                             \
-    }                                                        \
-    return *this;                                            \
-  }
-
-F3D_UPDATE_FIELD(+=, +, Field3D);    // operator+= Field3D
-F3D_UPDATE_FIELD(-=, -, Field3D);    // operator-= Field3D
-F3D_UPDATE_FIELD(*=, *, Field3D);    // operator*= Field3D
-F3D_UPDATE_FIELD(/=, /, Field3D);    // operator/= Field3D
-
-F3D_UPDATE_FIELD(+=, +, Field2D);    // operator+= Field2D
-F3D_UPDATE_FIELD(-=, -, Field2D);    // operator-= Field2D
-F3D_UPDATE_FIELD(*=, *, Field2D);    // operator*= Field2D
-F3D_UPDATE_FIELD(/=, /, Field2D);    // operator/= Field2D
-
-#define F3D_UPDATE_REAL(op,bop)                              \
-  Field3D & Field3D::operator op(BoutReal rhs) {      \
-    TRACE("Field3D: %s Field3D", #op);              \
-    if(!finite(rhs))                                         \
-      throw BoutException("Field3D: %s operator passed non-finite BoutReal number", #op); \
-    checkData(*this);                                        \
-                                                             \
-    if(data.unique()) {                                      \
-      /* This is the only reference to this data */          \
-      for(const auto& i : (*this))                                  \
-        (*this)[i] op rhs;                                   \
-    }else {                                                  \
-      /* Need to put result in a new block */                \
-      (*this) = (*this) bop rhs;                             \
-    }                                                        \
-    return *this;                                            \
-  }
-
-F3D_UPDATE_REAL(+=,+);    // operator+= BoutReal
-F3D_UPDATE_REAL(-=,-);    // operator-= BoutReal
-F3D_UPDATE_REAL(*=,*);    // operator*= BoutReal
-F3D_UPDATE_REAL(/=,/);    // operator/= BoutReal
 
 ///////////////////// BOUNDARY CONDITIONS //////////////////
 
@@ -710,61 +662,6 @@ Field3D operator-(const Field3D &f) { return -1.0 * f; }
       result[i] = lhs[i] op rhs[i];                                                      \
     return result;                                                                       \
   }
-
-F3D_OP_FPERP(+);
-F3D_OP_FPERP(-);
-F3D_OP_FPERP(/);
-F3D_OP_FPERP(*);
-
-#define F3D_OP_FIELD(op, ftype)                                                          \
-  Field3D operator op(const Field3D &lhs, const ftype &rhs) {                            \
-    Field3D result;                                                                      \
-    result.allocate();                                                                   \
-    for (const auto &i : lhs)                                                            \
-      result[i] = lhs[i] op rhs[i];                                                      \
-    result.setLocation(lhs.getLocation());                                               \
-    return result;                                                                       \
-  }
-
-F3D_OP_FIELD(+, Field3D);   // Field3D + Field3D
-F3D_OP_FIELD(-, Field3D);   // Field3D - Field3D
-F3D_OP_FIELD(*, Field3D);   // Field3D * Field3D
-F3D_OP_FIELD(/, Field3D);   // Field3D / Field3D
-
-F3D_OP_FIELD(+, Field2D);   // Field3D + Field2D
-F3D_OP_FIELD(-, Field2D);   // Field3D - Field2D
-F3D_OP_FIELD(*, Field2D);   // Field3D * Field2D
-F3D_OP_FIELD(/, Field2D);   // Field3D / Field2D
-
-#define F3D_OP_REAL(op)                                                                  \
-  Field3D operator op(const Field3D &lhs, BoutReal rhs) {                                \
-    Field3D result;                                                                      \
-    result.allocate();                                                                   \
-    for (const auto &i : lhs)                                                            \
-      result[i] = lhs[i] op rhs;                                                         \
-    result.setLocation(lhs.getLocation());                                               \
-    return result;                                                                       \
-  }
-
-F3D_OP_REAL(+); // Field3D + BoutReal
-F3D_OP_REAL(-); // Field3D - BoutReal
-F3D_OP_REAL(*); // Field3D * BoutReal
-F3D_OP_REAL(/); // Field3D / BoutReal
-
-#define REAL_OP_F3D(op)                                                                  \
-  Field3D operator op(BoutReal lhs, const Field3D &rhs) {                                \
-    Field3D result;                                                                      \
-    result.allocate();                                                                   \
-    for (const auto &i : rhs)                                                            \
-      result[i] = lhs op rhs[i];                                                         \
-    result.setLocation(rhs.getLocation());                                               \
-    return result;                                                                       \
-  }
-
-REAL_OP_F3D(+); // BoutReal + Field3D
-REAL_OP_F3D(-); // BoutReal - Field3D
-REAL_OP_F3D(*); // BoutReal * Field3D
-REAL_OP_F3D(/); // BoutReal / Field3D
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
@@ -1102,13 +999,13 @@ bool finite(const Field3D &f) {
 }
 
 #if CHECK > 0
-void checkData(const Field3D &f) {
+void checkData(const Field3D &f, REGION region) {
   if (!f.isAllocated())
     throw BoutException("Field3D: Operation on empty data\n");
 
 #if CHECK > 2
   // Do full checks
-  for (const auto &d : f.region(RGN_NOBNDRY)) {
+  for (const auto &d : f.region(region)) {
     if (!finite(f[d])) {
       throw BoutException("Field3D: Operation on non-finite data at [%d][%d][%d]\n", d.x,
                           d.y, d.z);
@@ -1154,3 +1051,43 @@ Field2D DC(const Field3D &f) {
   return result;
 }
 
+void invalidateGuards(Field3D &var){
+#if CHECK > 2 // Strip out if not checking
+  Mesh *localmesh = var.getMesh();
+
+  // Inner x -- all y and all z
+  for(int ix=0; ix<localmesh->xstart; ix++){
+    for (int iy = 0; iy < localmesh->LocalNy; iy++) {
+      for(int iz=0; iz<localmesh->LocalNz; iz++){
+        var(ix, iy, iz) = std::nan("");
+      }
+    }
+  }
+
+  // Outer x -- all y and all z
+  for (int ix = localmesh->xend + 1; ix < localmesh->LocalNx; ix++) {
+    for (int iy = 0; iy < localmesh->LocalNy; iy++) {
+      for(int iz=0; iz<localmesh->LocalNz; iz++){
+        var(ix, iy, iz) = std::nan("");
+      }
+    }
+  }
+
+  // Remaining boundary point
+  for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
+    // Lower y -- non-boundary x and all z (could be all x but already set)
+    for(int iy=0; iy<localmesh->ystart; iy++){
+      for(int iz=0; iz<localmesh->LocalNz; iz++){
+        var(ix, iy, iz) = std::nan("");
+      }
+    }
+    // Lower y -- non-boundary x and all z (could be all x but already set)
+    for(int iy=localmesh->yend+1; iy<localmesh->LocalNy; iy++){
+      for(int iz=0; iz<localmesh->LocalNz; iz++){
+        var(ix, iy, iz) = std::nan("");
+      }
+    }
+  }
+#endif  
+  return;
+}

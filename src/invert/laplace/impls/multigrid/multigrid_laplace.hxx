@@ -142,22 +142,22 @@ public:
   LaplaceMultigrid(Options *opt = NULL);
   ~LaplaceMultigrid();
   
-  void setCoefA(const Field2D &val) { A = val; }
-  void setCoefC(const Field2D &val) { C1 = val; C2 = val;  }
-  void setCoefC1(const Field2D &val) { C1 = val; }
-  void setCoefC2(const Field2D &val) { C2 = val; }
-  void setCoefD(const Field2D &val) { D = val; }
-  void setCoefEx(const Field2D &UNUSED(val)) { throw BoutException("setCoefEx is not implemented in LaplaceMultigrid"); }
-  void setCoefEz(const Field2D &UNUSED(val)) { throw BoutException("setCoefEz is not implemented in LaplaceMultigrid"); }
+  void setCoefA(const Field2D &val) override { A = val; }
+  void setCoefC(const Field2D &val) override { C1 = val; C2 = val;  }
+  void setCoefC1(const Field2D &val) override { C1 = val; }
+  void setCoefC2(const Field2D &val) override { C2 = val; }
+  void setCoefD(const Field2D &val) override { D = val; }
+  void setCoefEx(const Field2D &UNUSED(val)) override { throw BoutException("setCoefEx is not implemented in LaplaceMultigrid"); }
+  void setCoefEz(const Field2D &UNUSED(val)) override { throw BoutException("setCoefEz is not implemented in LaplaceMultigrid"); }
   
-  void setCoefA(const Field3D &val) { A = val; }
-  void setCoefC(const Field3D &val) { C1 = val; C2 = val; }
-  void setCoefC1(const Field3D &val) { C1 = val; }
-  void setCoefC2(const Field3D &val) { C2 = val; }
-  void setCoefD(const Field3D &val) { D = val; }
+  void setCoefA(const Field3D &val) override { A = val; }
+  void setCoefC(const Field3D &val) override { C1 = val; C2 = val; }
+  void setCoefC1(const Field3D &val) override { C1 = val; }
+  void setCoefC2(const Field3D &val) override { C2 = val; }
+  void setCoefD(const Field3D &val) override { D = val; }
   
-  const FieldPerp solve(const FieldPerp &b) { FieldPerp zero(b.getMesh()); zero = 0.; return solve(b, zero); }
-  const FieldPerp solve(const FieldPerp &b_in, const FieldPerp &x0);
+  const FieldPerp solve(const FieldPerp &b) override { FieldPerp zero(b.getMesh()); zero = 0.; return solve(b, zero); }
+  const FieldPerp solve(const FieldPerp &b_in, const FieldPerp &x0) override;
   
 private:
   Field3D A,C1,C2,D; // ODE Coefficients

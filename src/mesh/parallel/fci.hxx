@@ -66,14 +66,18 @@ public:
     yperiodic(yperiodic),
     zperiodic(zperiodic) {}
 
-  void calcYUpDown(Field3D &f);
+  void calcYUpDown(Field3D &f) override;
 
-  const Field3D toFieldAligned(const Field3D &UNUSED(f)) {
+  const Field3D toFieldAligned(const Field3D &UNUSED(f)) override {
     throw BoutException("FCI method cannot transform into field aligned grid");
   }
 
-  const Field3D fromFieldAligned(const Field3D &UNUSED(f)) {
+  const Field3D fromFieldAligned(const Field3D &UNUSED(f)) override {
     throw BoutException("FCI method cannot transform into field aligned grid");
+  }
+
+  bool canToFromFieldAligned() override{
+    return false;
   }
 private:
   FCITransform();
