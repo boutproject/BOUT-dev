@@ -4,4 +4,7 @@ all: derivs.hxx
 derivs.hxx: derivs.hxx.in.py derivs.hxx.in.function derivs.hxx.in.description
 # run first dependency and write output to target
 # on failure delete output and report error
-	./$< > $@ || (rm $@ ; exit 1)
+	@echo "  Generating $@"
+	@./$< > $@.tmp || (fail=$?; echo "touch $@ to ignore failed generation" ; exit $fail)
+	@mv $@.tmp $@
+	@clang-format -i $@ || echo "Formatting failed"

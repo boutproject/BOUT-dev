@@ -266,17 +266,20 @@ const Field3D D2DXDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGI
   // Take derivative in Z, including in X boundaries. Then take derivative in X
   // Maybe should average results of DDX(DDZ) and DDZ(DDX)?
   ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
+  // region specifies what the combined derivative should return
+  // Therefore we need to add the X boundary to the inner derivative
+  // RGN_NOY and RGN_NOZ include the X boundary, therefore we need to
+  // throw - or add communication code.
   REGION region_inner;
   switch (region){
-  case RGN_NOZ:
-  case RGN_ALL:
-    region_inner = RGN_NOZ;
-    break;
-  case RGN_NOY:
+  case RGN_NOBNDRY:
     region_inner = RGN_NOY;
     break;
+  case RGN_NOX:
+    region_inner = RGN_ALL;
+    break;
   default:
-    throw BoutException("Unhandeld region case in D2DXDZ");
+    throw BoutException("Unhandled region case in D2DXDZ");
   }
 
   return DDX(DDZ(f, outloc,method, region_inner),outloc,method,region);;
