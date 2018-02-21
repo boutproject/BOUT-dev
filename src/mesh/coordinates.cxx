@@ -379,7 +379,7 @@ int Coordinates::calcCovariant() {
       a(0, 2) = a(2, 0) = g13(jx, jy);
 
       // invert
-      if (gaussj(a, 3)) {
+      if (invert3x3(a)) {
         output_error.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
         return 1;
       }
@@ -439,7 +439,7 @@ int Coordinates::calcContravariant() {
       a(0, 2) = a(2, 0) = g_13(jx, jy);
 
       // invert
-      if (gaussj(a, 3)) {
+      if (invert3x3(a)) {
         output_error.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
         return 1;
       }
@@ -760,86 +760,4 @@ const Field3D Coordinates::Laplace(const Field3D &f) {
                    2.0 * (g12 * D2DXDY(f) + g13 * D2DXDZ(f) + g23 * D2DYDZ(f));
 
   return result;
-}
-
-/*******************************************************************************
- * Gauss-Jordan matrix inversion
- * used to invert metric tensor
- *******************************************************************************/
-
-// Invert an nxn matrix using Gauss-Jordan elimination with full pivoting
-int Coordinates::gaussj(Matrix<BoutReal> &a, int n) {
-  TRACE("Coordinates::gaussj");
-
-  int i, icol, irow, j, k, l, ll;
-  BoutReal big, dum, pivinv;
-
-  // Make sure enough temporary memory is allocated
-  indxc.resize(n);
-  indxr.resize(n);
-  ipiv.resize(n);
-
-  for (i = 0; i < n; i++)
-    ipiv[i] = 0;
-
-  for (i = 0; i < n; i++) { // Main loop over columns
-    big = 0.0;
-    irow = icol = -1;
-    for (j = 0; j < n; j++) { // search for pivot element
-      if (ipiv[j] != 1) {
-        for (k = 0; k < n; k++) {
-          if (ipiv[k] == 0) {
-            if (fabs(a(j, k)) >= big) {
-              big = fabs(a(j, k));
-              irow = j;
-              icol = k;
-            }
-          } else if (ipiv[k] > 1) {
-            throw BoutException("Error in GaussJ: Singular matrix-1\n");
-          }
-        }
-      }
-    }
-
-    if (irow == -1) {
-      // All elements zero!!
-      throw BoutException("Error in GaussJ: Singular matrix-3\n");
-    }
-
-    ++(ipiv[icol]);
-    // Now have pivot element, so interchange rows to put pivot
-    // on the diagonal
-    if (irow != icol) {
-      for (l = 0; l < n; l++)
-        swap(a(irow, l), a(icol, l));
-    }
-    indxr[i] = irow;
-    indxc[i] = icol;
-
-    if (a(icol, icol) == 0.0) {
-      throw BoutException("Error in GaussJ: Singular matrix-2\n");
-    }
-    pivinv = 1.0 / a(icol, icol);
-    a(icol, icol) = 1.0;
-    for (l = 0; l < n; l++)
-      a(icol, l) *= pivinv;
-
-    for (ll = 0; ll < n; ll++) { // reduce rows
-      if (ll != icol) {          // except for the pivot one
-        dum = a(ll, icol);
-        a(ll, icol) = 0.0;
-        for (l = 0; l < n; l++)
-          a(ll, l) -= a(icol, l) * dum;
-      }
-    }
-  }
-  // end of main loop. Unscramble solution due to column interchanges
-  for (l = n - 1; l >= 0; l--) {
-    if (indxr[l] != indxc[l])
-      for (k = 0; k < n; k++)
-        swap(a(k, indxr[l]), a(k, indxc[l]));
-  }
-  // done.
-
-  return 0;
 }
