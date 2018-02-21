@@ -165,27 +165,24 @@ const Field2D averageX(const Field2D &f) {
 const Field3D averageX(const Field3D &f) {
   TRACE("averageX(Field3D)");
 
-  static BoutReal **input = NULL, **result;
   Mesh *mesh = f.getMesh();
 
   int ngx = mesh->LocalNx;
   int ngy = mesh->LocalNy;
   int ngz = mesh->LocalNz;
 
-  if(input == NULL) {
-    input = matrix<BoutReal>(ngy, ngz);
-    result = matrix<BoutReal>(ngy, ngz);
-  }
-  
+  auto input = Matrix<BoutReal>(ngy, ngz);
+  auto result = Matrix<BoutReal>(ngy, ngz);
+
   // Average on this processor
   for(int y=0;y<ngy;y++)
     for(int z=0;z<ngz;z++) {
-      input[y][z] = 0.;
+      input(y, z) = 0.;
       // Sum values, not including boundaries
       for(int x=mesh->xstart;x<=mesh->xend;x++) {
-        input[y][z] += f(x,y,z);
+        input(y, z) += f(x, y, z);
       }
-      input[y][z] /= (mesh->xend - mesh->xstart + 1);
+      input(y, z) /= (mesh->xend - mesh->xstart + 1);
     }
 
   Field3D r(mesh);
@@ -196,18 +193,18 @@ const Field3D averageX(const Field3D &f) {
   int np;
   MPI_Comm_size(comm_x, &np);
   if(np > 1) {
-    MPI_Allreduce(*input, *result, ngy*ngz, MPI_DOUBLE, MPI_SUM, comm_x);
+    MPI_Allreduce(std::begin(input), std::begin(result), ngy*ngz, MPI_DOUBLE, MPI_SUM, comm_x);
     
     for(int x=0;x<ngx;x++)
       for(int y=0;y<ngy;y++)
         for(int z=0;z<ngz;z++) {
-          r(x,y,z) = result[y][z] / static_cast<BoutReal>(np);
+          r(x, y, z) = result(y, z) / static_cast<BoutReal>(np);
         }
   }else {
     for(int x=0;x<ngx;x++)
       for(int y=0;y<ngy;y++)
         for(int z=0;z<ngz;z++) {
-          r(x,y,z) = input[y][z];
+          r(x, y, z) = input(y, z);
         }
   }
   
@@ -259,27 +256,24 @@ const Field2D averageY(const Field2D &f) {
 const Field3D averageY(const Field3D &f) {
   TRACE("averageY(Field3D)");
 
-  static BoutReal **input = NULL, **result;
   Mesh *mesh = f.getMesh();
 
   int ngx = mesh->LocalNx;
   int ngy = mesh->LocalNy;
   int ngz = mesh->LocalNz;
-  
-  if(input == NULL) {
-    input = matrix<BoutReal>(ngx, ngz);
-    result = matrix<BoutReal>(ngx, ngz);
-  }
-  
+
+  auto input = Matrix<BoutReal>(ngx, ngz);
+  auto result = Matrix<BoutReal>(ngx, ngz);
+
   // Average on this processor
   for(int x=0;x<ngx;x++)
     for(int z=0;z<ngz;z++) {
-      input[x][z] = 0.;
+      input(x, z) = 0.;
       // Sum values, not including boundaries
       for(int y=mesh->ystart;y<=mesh->yend;y++) {
-        input[x][z] += f(x,y,z);
+        input(x, z) += f(x, y, z);
       }
-      input[x][z] /= (mesh->yend - mesh->ystart + 1);
+      input(x, z) /= (mesh->yend - mesh->ystart + 1);
     }
 
   Field3D r(mesh);
@@ -291,18 +285,18 @@ const Field3D averageY(const Field3D &f) {
   int np;
   MPI_Comm_size(comm_inner, &np);
   if(np > 1) {
-    MPI_Allreduce(*input, *result, ngx*ngz, MPI_DOUBLE, MPI_SUM, comm_inner);
+    MPI_Allreduce(std::begin(input), std::begin(result), ngx*ngz, MPI_DOUBLE, MPI_SUM, comm_inner);
     
     for(int x=0;x<ngx;x++)
       for(int y=0;y<ngy;y++)
         for(int z=0;z<ngz;z++) {
-          r(x,y,z) = result[x][z] / static_cast<BoutReal>(np);
+          r(x, y, z) = result(x, z) / static_cast<BoutReal>(np);
         }
   }else {
     for(int x=0;x<ngx;x++)
       for(int y=0;y<ngy;y++)
         for(int z=0;z<ngz;z++) {
-          r(x,y,z) = input[x][z];
+          r(x, y, z) = input(x, z);
         }
   }
   

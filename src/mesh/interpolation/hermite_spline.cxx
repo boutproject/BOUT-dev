@@ -32,8 +32,8 @@ HermiteSpline::HermiteSpline(int y_offset)
       h10_z(localmesh), h11_z(localmesh) {
 
   // Index arrays contain guard cells in order to get subscripts right
-  i_corner = i3tensor(mesh->LocalNx, mesh->LocalNy, mesh->LocalNz);
-  k_corner = i3tensor(mesh->LocalNx, mesh->LocalNy, mesh->LocalNz);
+  i_corner = Tensor<int>(mesh->LocalNx, mesh->LocalNy, mesh->LocalNz);
+  k_corner = Tensor<int>(mesh->LocalNx, mesh->LocalNy, mesh->LocalNz);
 
   // Allocate Field3D members
   h00_x.allocate();
@@ -59,17 +59,17 @@ void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z) 
 
         // The integer part of xt_prime, zt_prime are the indices of the cell
         // containing the field line end-point
-        i_corner[x][y][z] = static_cast<int>(floor(delta_x(x, y, z)));
-        k_corner[x][y][z] = static_cast<int>(floor(delta_z(x, y, z)));
+        i_corner(x, y, z) = static_cast<int>(floor(delta_x(x, y, z)));
+        k_corner(x, y, z) = static_cast<int>(floor(delta_z(x, y, z)));
 
         // t_x, t_z are the normalised coordinates \in [0,1) within the cell
         // calculated by taking the remainder of the floating point index
-        t_x = delta_x(x, y, z) - static_cast<BoutReal>(i_corner[x][y][z]);
-        t_z = delta_z(x, y, z) - static_cast<BoutReal>(k_corner[x][y][z]);
+        t_x = delta_x(x, y, z) - static_cast<BoutReal>(i_corner(x, y, z));
+        t_z = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
 
         // NOTE: A (small) hack to avoid one-sided differences
-        if (i_corner[x][y][z] >= mesh->xend) {
-          i_corner[x][y][z] = mesh->xend - 1;
+        if (i_corner(x, y, z) >= mesh->xend) {
+          i_corner(x, y, z) = mesh->xend - 1;
           t_x = 1.0;
         }
 
@@ -125,34 +125,34 @@ Field3D HermiteSpline::interpolate(const Field3D &f) const {
         // Due to lack of guard cells in z-direction, we need to ensure z-index
         // wraps around
         int ncz = mesh->LocalNz;
-        int z_mod = ((k_corner[x][y][z] % ncz) + ncz) % ncz;
+        int z_mod = ((k_corner(x, y, z) % ncz) + ncz) % ncz;
         int z_mod_p1 = (z_mod + 1) % ncz;
 
         int y_next = y + y_offset;
 
         // Interpolate f in X at Z
-        BoutReal f_z = f(i_corner[x][y][z], y_next, z_mod) * h00_x(x, y, z) +
-                       f(i_corner[x][y][z] + 1, y_next, z_mod) * h01_x(x, y, z) +
-                       fx(i_corner[x][y][z], y_next, z_mod) * h10_x(x, y, z) +
-                       fx(i_corner[x][y][z] + 1, y_next, z_mod) * h11_x(x, y, z);
+        BoutReal f_z = f(i_corner(x, y, z), y_next, z_mod) * h00_x(x, y, z) +
+                       f(i_corner(x, y, z) + 1, y_next, z_mod) * h01_x(x, y, z) +
+                       fx(i_corner(x, y, z), y_next, z_mod) * h10_x(x, y, z) +
+                       fx(i_corner(x, y, z) + 1, y_next, z_mod) * h11_x(x, y, z);
 
         // Interpolate f in X at Z+1
-        BoutReal f_zp1 = f(i_corner[x][y][z], y_next, z_mod_p1) * h00_x(x, y, z) +
-                         f(i_corner[x][y][z] + 1, y_next, z_mod_p1) * h01_x(x, y, z) +
-                         fx(i_corner[x][y][z], y_next, z_mod_p1) * h10_x(x, y, z) +
-                         fx(i_corner[x][y][z] + 1, y_next, z_mod_p1) * h11_x(x, y, z);
+        BoutReal f_zp1 = f(i_corner(x, y, z), y_next, z_mod_p1) * h00_x(x, y, z) +
+                         f(i_corner(x, y, z) + 1, y_next, z_mod_p1) * h01_x(x, y, z) +
+                         fx(i_corner(x, y, z), y_next, z_mod_p1) * h10_x(x, y, z) +
+                         fx(i_corner(x, y, z) + 1, y_next, z_mod_p1) * h11_x(x, y, z);
 
         // Interpolate fz in X at Z
-        BoutReal fz_z = fz(i_corner[x][y][z], y_next, z_mod) * h00_x(x, y, z) +
-                        fz(i_corner[x][y][z] + 1, y_next, z_mod) * h01_x(x, y, z) +
-                        fxz(i_corner[x][y][z], y_next, z_mod) * h10_x(x, y, z) +
-                        fxz(i_corner[x][y][z] + 1, y_next, z_mod) * h11_x(x, y, z);
+        BoutReal fz_z = fz(i_corner(x, y, z), y_next, z_mod) * h00_x(x, y, z) +
+                        fz(i_corner(x, y, z) + 1, y_next, z_mod) * h01_x(x, y, z) +
+                        fxz(i_corner(x, y, z), y_next, z_mod) * h10_x(x, y, z) +
+                        fxz(i_corner(x, y, z) + 1, y_next, z_mod) * h11_x(x, y, z);
 
         // Interpolate fz in X at Z+1
-        BoutReal fz_zp1 = fz(i_corner[x][y][z], y_next, z_mod_p1) * h00_x(x, y, z) +
-                          fz(i_corner[x][y][z] + 1, y_next, z_mod_p1) * h01_x(x, y, z) +
-                          fxz(i_corner[x][y][z], y_next, z_mod_p1) * h10_x(x, y, z) +
-                          fxz(i_corner[x][y][z] + 1, y_next, z_mod_p1) * h11_x(x, y, z);
+        BoutReal fz_zp1 = fz(i_corner(x, y, z), y_next, z_mod_p1) * h00_x(x, y, z) +
+                          fz(i_corner(x, y, z) + 1, y_next, z_mod_p1) * h01_x(x, y, z) +
+                          fxz(i_corner(x, y, z), y_next, z_mod_p1) * h10_x(x, y, z) +
+                          fxz(i_corner(x, y, z) + 1, y_next, z_mod_p1) * h11_x(x, y, z);
 
         // Interpolate in Z
         f_interp(x, y_next, z) = +f_z * h00_z(x, y, z) + f_zp1 * h01_z(x, y, z) +
