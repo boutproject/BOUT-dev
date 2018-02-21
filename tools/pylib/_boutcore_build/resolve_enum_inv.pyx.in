@@ -35,7 +35,7 @@ do
         done
     done
     lower=$(echo ${name}|tr [:upper:] [:lower:])
-    echo "def resolve_inv_${lower}(benum.$name tores):"
+    echo "def _resolve_inv_${lower}(benum.$name tores):"
     echo "    opts={"
     for shrt in $shrts
     do
