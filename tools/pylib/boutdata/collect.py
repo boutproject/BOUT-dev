@@ -89,40 +89,14 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
     tind_auto = False      Read all files, to get the shortest length of time_indices
                            useful if writing got interrupted.
     """
-
-    # Search for BOUT++ dump files in NetCDF format
-    file_list_nc = glob.glob(os.path.join(path, prefix+".nc"))
-    file_list_h5 = glob.glob(os.path.join(path, prefix+".hdf5"))
-    if file_list_nc != [] and file_list_h5 != []:
-        raise IOError("Error: Both NetCDF and HDF5 files are present: do not know which to read.")
-    elif file_list_h5 != []:
-        suffix = ".hdf5"
-        file_list = file_list_h5
-    else:
-        suffix = ".nc"
-        file_list = file_list_nc
-    if file_list != []:
+    # Search for BOUT++ dump files
+    file_list,parallel,suffix=findFiles(path,prefix)
+    if parallel:
         print("Single (parallel) data file")
         f = DataFile(file_list[0]) # Open the file
 
         data = f.read(varname)
         return data
-
-    file_list_nc = glob.glob(os.path.join(path, prefix+".*nc"))
-    file_list_h5 = glob.glob(os.path.join(path, prefix+".*hdf5"))
-    if file_list_nc != [] and file_list_h5 != []:
-        raise IOError("Error: Both NetCDF and HDF5 files are present: do not know which to read.")
-    elif file_list_h5 != []:
-        suffix = ".hdf5"
-        file_list = file_list_h5
-    else:
-        suffix = ".nc"
-        file_list = file_list_nc
-
-    file_list.sort()
-    if file_list == []:
-        raise IOError("ERROR: No data files found in path {0}".format(path) )
-
     nfiles = len(file_list)
 
     # Read data from the first file
@@ -448,16 +422,65 @@ def attributes(varname, path=".", prefix="BOUT.dmp"):
     
     """
     # Search for BOUT++ dump files in NetCDF format
-    file_list_nc = glob.glob(os.path.join(path, prefix+"*.nc"))
-    file_list_h5 = glob.glob(os.path.join(path, prefix+"*.hdf5"))
-    if file_list_nc != [] and file_list_h5 != []:
-        raise IOError("Error: Both NetCDF and HDF5 files are present: do not know which to read.")
-    elif file_list_h5 != []:
-        file_list = file_list_h5
-    else:
-        file_list = file_list_nc
+    file_list,_,_=findFiles(path,prefix)
 
     # Read data from the first file
     f = DataFile(file_list[0])
 
     return f.attributes(varname)
+
+
+def dimensions(varname, path=".", prefix="BOUT.dmp"):
+    """"
+    Returns a list of dimensions
+
+    varname   Name of the variable (string)
+
+    Optional arguments:
+
+    path    = "."          Path to data files
+    prefix  = "BOUT.dmp"   File prefix
+    """
+    file_list,_,_=findFiles(path,prefix)
+    return DataFile(file_list[0]).dimensions(varname)
+
+
+def findFiles(path,prefix):
+    """
+    Find files matching prefix in path.
+
+    Netcdf (nc) and HDF5 (hdf5) files are searched.
+
+    Returns the list of files, whether the files are a parallel dump file and
+    the file suffix.
+
+    """
+
+    file_list_nc = glob.glob(os.path.join(path, prefix+".nc"))
+    file_list_h5 = glob.glob(os.path.join(path, prefix+".hdf5"))
+    if file_list_nc != [] and file_list_h5 != []:
+        raise IOError("Error: Both NetCDF and HDF5 files are present: do not know which to read.")
+    elif file_list_h5 != []:
+        suffix = ".hdf5"
+        file_list = file_list_h5
+    else:
+        suffix = ".nc"
+        file_list = file_list_nc
+    if file_list != []:
+        return file_list,True,suffix
+
+    file_list_nc = glob.glob(os.path.join(path, prefix+".*nc"))
+    file_list_h5 = glob.glob(os.path.join(path, prefix+".*hdf5"))
+    if file_list_nc != [] and file_list_h5 != []:
+        raise IOError("Error: Both NetCDF and HDF5 files are present: do not know which to read.")
+    elif file_list_h5 != []:
+        suffix = ".hdf5"
+        file_list = file_list_h5
+    else:
+        suffix = ".nc"
+        file_list = file_list_nc
+
+    file_list.sort()
+    if file_list == []:
+        raise IOError("ERROR: No data files found in path {0}".format(path) )
+    return file_list,False,suffix
