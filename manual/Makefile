@@ -13,6 +13,7 @@ manual: all
 # set some shorter names
 pdf: sphinx-pdf
 html: sphinx-html
+man: sphinx-man
 sphinx: sphinx-pdf
 
 sphinx-pdf: 
@@ -23,6 +24,10 @@ sphinx-pdf:
 
 sphinx-html:
 	PYTHONPATH=$(BOUT_TOP)/tools/pylib:$$PYTHONPATH $(sphinx-build) -b html sphinx/ html/
+	@echo "Documentation available in `pwd`/html/"
+
+sphinx-man:
+	PYTHONPATH=$(BOUT_TOP)/tools/pylib:$$PYTHONPATH $(sphinx-build) -b man sphinx/ man/
 	@echo "Documentation available in `pwd`/html/"
 
 # Run doxygen, ignore if it fails (leading '-')
