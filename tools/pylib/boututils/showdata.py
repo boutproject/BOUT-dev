@@ -20,7 +20,7 @@ except:
 from mpl_toolkits.mplot3d import axes3d
 from matplotlib import pyplot as plt
 from matplotlib import animation, cm
-from numpy import linspace, meshgrid, array, min, max, abs, floor, pi
+from numpy import linspace, meshgrid, array, min, max, abs, floor, pi, isclose
 from boutdata.collect import collect
 import warnings
 
@@ -396,8 +396,11 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
 
 
         if not (global_colors):
-            if (fmax[i]-fmin[i])/abs(fmax[i]+fmin[i]) <= 2.e-15:
-                clevels.append([fmin[i]-1.e-15*abs(fmin[i]),fmax[i]+1.e-15*abs(fmax[i])])
+            if isclose(fmin[i], fmax[i]):
+                thiscontourmin = fmin[i]-3.e-15*abs(fmin[i])
+                thiscontourmax = fmax[i]+3.e-15*abs(fmax[i])
+                warnings.warn("Contour levels too close, adding padding to colorbar range")
+                clevels.append(linspace(thiscontourmin, thiscontourmax, Ncolors))
             else:
                 clevels.append(linspace(fmin[i], fmax[i], Ncolors))
 
@@ -407,8 +410,11 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
         for i in range(0,Nvar):
             fmax[i]  = fmaxglobal
             fmin[i]  = fminglobal
-            if (fmax[i]-fmin[i])/abs(fmax[i]+fmin[i]) <= 2.e-15:
-                clevels.append([fmin[i]-1.e-15*abs(fmin[i]),fmax[i]+1.e-15*abs(fmax[i])])
+            if isclose(fmin[i], fmax[i]):
+                thiscontourmin = fmin[i]-3.e-15*abs(fmin[i])
+                thiscontourmax = fmax[i]+3.e-15*abs(fmax[i])
+                warnings.warn("Contour levels too close, adding padding to colorbar range")
+                clevels.append(linspace(thiscontourmin, thiscontourmax, Ncolors))
             else:
                 clevels.append(linspace(fmin[i], fmax[i], Ncolors))
 
