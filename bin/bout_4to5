@@ -1,12 +1,10 @@
 #!/bin/bash
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-version=$($DIR/bout-config --version)
-major=$(echo $version|cut -d. -f1)
 
-if test $major -lt 5
-then
-    echo "The BOUT++ version appears to be $version."
-    echo "This script is intend to update to BOUT++ 5 - are you sure you want to continue? [y/N]"
+function maybe_proceed() {
+    echo $1
+    echo "Are you sure you want to continue? [y/N]"
+    continue=y
     read continue
     continue=$(echo $continue |tr :lower: :upper:)
     if test ".$continue" == .y || test ".$continue" == .yes
@@ -16,6 +14,21 @@ then
         echo "Maybe soon :)"
         exit 0
     fi
+}
+
+version=$($DIR/bout-config --version)
+major=$(echo $version|cut -d. -f1)
+if test $major -lt 5
+then
+    maybe_proceed "The BOUT++ version appears to be $version.
+This script is intend to update to BOUT++ 5"
+fi
+
+if ! git diff --exit-code &>/dev/null
+then
+    maybe_proceed "Git shows that you have uncommited changes."
+else
+    echo git is clean
 fi
 
 if test $# -eq 0
@@ -29,15 +42,24 @@ else
     work=$@
 fi
 
-# Set to true if you don't want to run the script:
-false &&
-    printordo=echo || printordo=
+# Set to false if you don't want to run the script:
+true &&
+    printordo=   || printordo=echo
 
+# Set to false to be quite
+true &&
+    verbose=echo || verbose=\#
+
+
+$verbose "  Renaiming LocalNx  -> local_nx"
+$verbose "  Renaiming GlobalNx -> global_nx"
+$verbose "  Renaiming OffsetNx -> offset_nx"
 for dir in $work
 do
+    allmatches=$(grep -EHr 'LocalN|GlobalN|OffsetN' $dir)
     for d in x y z
     do
-        for f in $(find $dir -type f | grep x\$)
+        for f in $(echo $allmatches|grep 'N$d'|cut -d: -f1|sort -u)
         do
             $printordo sed "s/LocalN$d/local_n$d/g"   $f -i
             $printordo sed "s/GlobalN$d/global_n$d/g" $f -i
@@ -46,6 +68,59 @@ do
     done
 done
 
+headerfilelist="boundary_factory.hxx boundary_op.hxx boundary_region.hxx \
+                               boundary_standard.hxx boutcomm.hxx \
+                               boutexception.hxx boutmain.hxx bout_types.hxx \
+                               comm_group.hxx cyclic_reduction.hxx \
+                               datafile.hxx dataformat.hxx dcomplex.hxx \
+                               derivs.hxx difops.hxx fft.hxx field2d.hxx \
+                               field3d.hxx field_data.hxx field_factory.hxx \
+                               field.hxx fieldperp.hxx globals.hxx \
+                               gyro_average.hxx initialprofiles.hxx \
+                               interpolation_factory.hxx interpolation.hxx \
+                               invert_laplace.hxx invert_parderiv.hxx \
+                               lapack_routines.hxx mask.hxx msg_stack.hxx \
+                               multiostream.hxx options.hxx \
+                               optionsreader.hxx output.hxx \
+                               parallel_boundary_op.hxx \
+                               parallel_boundary_region.hxx smoothing.hxx \
+                               sourcex.hxx stencils.hxx unused.hxx utils.hxx \
+                               vecops.hxx vector2d.hxx vector3d.hxx where.hxx
+                               "
+
+include=$DIR/../include/
+function gen_compat() {
+    for f in $headerfilelist
+    do
+        mv $f bout -i
+        echo "#pragma once
+#warning <$f> has moved to <bout/$f> - this can be fixed with bin/bout_fix_headerlocation.sh
+#include \"bout/$f\"" > $f
+    done
+}
+
+if test $(cat $include/boundary_factory.hxx|wc -l) -gt 20
+then
+    $verbose "  Creating compat headerfiles"
+    (cd $include ; $printordo gen_compat)
+else
+    $verbose "  Compat headerfiles seem to be available"
+fi
+
+$verbose "  Update files to look for headers in bout/ subfolder"
+for dir in $work
+do
+    includes=$(grep "#include" $dir -Hr)
+    for f in  $headerfilelist
+    do
+        matched=$(echo "$includes"|grep [^/]$f)
+        todo=$(echo "$matched"|cut -d: -f1)
+        for doit in $todo
+        do
+            $printordo sed -i "s/\([<\"]\)$f/\1bout\/$f/" $doit
+        done
+    done
+done
 
 #Further changes:
 
