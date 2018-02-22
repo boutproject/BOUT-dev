@@ -48,6 +48,8 @@
 #include <lapack_routines.hxx>
 #include "boutexception.hxx"
 
+#include "output.hxx"
+
 template <class T>
 class CyclicReduce {
 public:
