@@ -96,8 +96,6 @@ public:
   typedef T data_type;
   Matrix() : n1(0), n2(0){};
   Matrix(unsigned int n1, unsigned int n2) : n1(n1), n2(n2) {
-    ASSERT1(n1 > 0);
-    ASSERT1(n2 > 0);
     data = Array<T>(n1*n2);
   }
 
@@ -163,9 +161,6 @@ public:
   typedef T data_type;
   Tensor() : n1(0), n2(0), n3(0) {};
   Tensor(unsigned int n1, unsigned int n2, unsigned int n3) : n1(n1), n2(n2), n3(n3) {
-    ASSERT1(n1 > 0);
-    ASSERT1(n2 > 0);
-    ASSERT1(n3 > 0);
     data = Array<T>(n1*n2*n3);
   }
 
