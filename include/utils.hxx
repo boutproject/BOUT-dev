@@ -96,12 +96,15 @@ public:
   typedef T data_type;
   Matrix() : n1(0), n2(0){};
   Matrix(unsigned int n1, unsigned int n2) : n1(n1), n2(n2) {
+    ASSERT1(n1 > 0);
+    ASSERT1(n2 > 0);
     data = Array<T>(n1*n2);
   }
 
   T& operator()(unsigned int i1, unsigned int i2) {
     ASSERT2(0<=i1 && i1<n1);
     ASSERT2(0<=i2 && i2<n2);
+    data.ensureUnique();
     return data[i1*n2+i2];
   }
   const T& operator()(unsigned int i1, unsigned int i2) const {
@@ -111,6 +114,7 @@ public:
   }
 
   Matrix& operator=(const T&val){
+    data.ensureUnique();
     for(auto &i: data){
       i = val;
     };
@@ -120,11 +124,13 @@ public:
   // To provide backwards compatibility with matrix to be removed
   DEPRECATED(T* operator[](unsigned int i1)) {
     ASSERT2(0<=i1 && i1<n1);
+    data.ensureUnique();
     return &(data[i1*n2]);
   }
   // To provide backwards compatibility with matrix to be removed
   DEPRECATED(const T* operator[](unsigned int i1) const) {
     ASSERT2(0<=i1 && i1<n1);
+    data.ensureUnique();
     return &(data[i1*n2]);
   }
 
@@ -157,6 +163,9 @@ public:
   typedef T data_type;
   Tensor() : n1(0), n2(0), n3(0) {};
   Tensor(unsigned int n1, unsigned int n2, unsigned int n3) : n1(n1), n2(n2), n3(n3) {
+    ASSERT1(n1 > 0);
+    ASSERT1(n2 > 0);
+    ASSERT1(n3 > 0);
     data = Array<T>(n1*n2*n3);
   }
 
@@ -164,6 +173,7 @@ public:
     ASSERT2(0<=i1 && i1<n1);
     ASSERT2(0<=i2 && i2<n2);
     ASSERT2(0<=i3 && i3<n3);
+    data.ensureUnique();
     return data[(i1*n2+i2)*n3 + i3];
   }
   const T& operator()(unsigned int i1, unsigned int i2, unsigned int i3) const {
@@ -174,6 +184,7 @@ public:
   }
 
   Tensor& operator=(const T&val){
+    data.ensureUnique();
     for(auto &i: data){
       i = val;
     };
