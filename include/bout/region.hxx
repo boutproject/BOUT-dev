@@ -233,6 +233,9 @@ private:
 
       // Consider if the next point should be added to this block
       for (index++; count < MAXREGIONBLOCKSIZE; index++) {
+        if (index >= npoints) {
+          break;
+        }
         if ((indices[index].ind - indices[index - 1].ind) == 1) {
           count++;
         } else { // Reached the end of this block so break
