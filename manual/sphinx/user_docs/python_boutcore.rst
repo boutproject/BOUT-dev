@@ -100,7 +100,7 @@ Some trivial post processing:
    dpdz=boutcore.DDZ(pres,outloc="CELL_ZLOW")
 
 
-   
+
 A simple MMS test:
 
 .. code-block:: python
@@ -136,21 +136,21 @@ A real example - unstagger data:
 A real example - check derivative contributions:
 
 .. code-block:: python
-   
+
    #!/usr/bin/env python
-   
+
    from boutcore import *
    import numpy as np
    from netCDF4 import Dataset
    import sys
-   
+
    if len(sys.argv)> 1:
        path=sys.argv[1]
    else:
        path="data"
-   
+
    times=collect("t_array",path=path)
-   
+
    boutcore.init("-d data -f BOUT.settings -o BOUT.post")
    with Dataset(path+'/vort.nc', 'w', format='NETCDF4') as outdmp:
       phiSolver=Laplacian()
@@ -173,15 +173,15 @@ A real example - check derivative contributions:
               phi[-1,:,z]=phi_arr
       with open(path+"/equilibrium/phi_eq.dat","rb") as inf:
           phi_arr=np.fromfile(inf,dtype=np.double)
-      bm="BRACKET_ARAKAWA_OLD"
-      
-      for tind in range(len(times)):
-          vort     = Field3D.fromCollect("vort"     ,path=path,tind=tind,info=False)
-          U        = Field3D.fromCollect("U"        ,path=path,tind=tind,info=False)
-          setXGuards(phi,phi_arr)
-          phi=phiSolver.solve(vort,phi)
-          ExB[tind,:,:,:]=(-bracket(phi, vort, bm, "CELL_CENTRE")).getAll()
-          par_adv[tind,:,:,:]=(- Vpar_Grad_par(U, vort)).getAll()
+          bm="BRACKET_ARAKAWA_OLD"
+
+          for tind in range(len(times)):
+              vort     = Field3D.fromCollect("vort"     ,path=path,tind=tind,info=False)
+              U        = Field3D.fromCollect("U"        ,path=path,tind=tind,info=False)
+              setXGuards(phi,phi_arr)
+              phi=phiSolver.solve(vort,phi)
+              ExB[tind,:,:,:]=(-bracket(phi, vort, bm, "CELL_CENTRE")).getAll()
+              par_adv[tind,:,:,:]=(- Vpar_Grad_par(U, vort)).getAll()
 
 
 
