@@ -319,7 +319,7 @@ public:
                      << ", " << ifp[2*i+1] << " to " << p << endl;
 #endif
             }
-            MPI_Send(ifp,
+            MPI_Send(std::begin(ifp),
                      2*myns*sizeof(T),
                      MPI_BYTE,
                      p,
@@ -385,8 +385,8 @@ private:
   Matrix<T> ifcs;   ///< Coefficients for interface solve
   Matrix<T> if2x2;  ///< 2x2 interface equations on this processor
   Matrix<T> ifx;    ///< Solution of interface equations
-  T *ifp;     ///< Interface equations returned to processor p
-  T *x1, *xn; ///< Interface solutions for back-solving
+  Array<T> ifp;     ///< Interface equations returned to processor p
+  Array<T> x1, xn; ///< Interface solutions for back-solving
 
   /// Allocate memory arrays
   /// @param[in[ np   Number of processors
@@ -428,9 +428,9 @@ private:
     if(nprocs > 1)
       if2x2 = Matrix<T>(my, 2*4);         // 2x2 interface equations on this processor
     ifx  = Matrix<T>(my, 2*nprocs);       // Solution of interface equations
-    ifp = new T[my*2];     // Solution to be sent to processor p
-    x1 = new T[Nsys];
-    xn = new T[Nsys];
+    ifp = Array<T>(my*2);     // Solution to be sent to processor p
+    x1 = Array<T>(Nsys);
+    xn = Array<T>(Nsys);
     
   }
 
@@ -441,10 +441,6 @@ private:
     
     // Free all working memory
     free_matrix(recvbuffer);
-    delete[] ifp;
-    delete[] x1;
-    delete[] xn;
-    
     N = Nsys = 0;
   }
 
@@ -523,28 +519,26 @@ private:
   
   /// Back-solve from x at ends (x1, xn) to obtain remaining values
   /// Coefficients ordered [ns, nloc*(a,b,c,r)]
-  void back_solve(int ns, int nloc, Matrix<T> &co, T *x1, T *xn, Matrix<T> &xa) {
+  void back_solve(int ns, int nloc, Matrix<T> &co, Array<T> &x1, Array<T> &xn, Matrix<T> &xa) {
     // Tridiagonal system, solve using serial Thomas algorithm
-    
-    T *gam = new T[nloc];
+    // xa -- Result for each system
+    // co -- Coefficients & rhs for each system
+    Array<T> gam(nloc);
     for(int i=0;i<ns;i++) { // Loop over systems
-      T *c = co[i]; // Coefficients & rhs for this system
-      T *x = xa[i]; // Result for this system
       T bet = 1.0;
-      x[0] = x1[i]; // Already know the first 
+      xa(i, 0) = x1[i]; // Already know the first 
       gam[1] = 0.;
       for(int j=1;j<nloc-1;j++) {
-        bet = c[4*j+1] - c[4*j]*gam[j]; // bet = b[j]-a[j]*gam[j]
-        x[j] = (c[4*j+3] - c[4*j]*x[j-1])/bet;  // x[j] = (r[j]-a[j]*x[j-1])/bet;
-        gam[j+1] = c[4*j+2] / bet;    // gam[j+1] = c[j]/bet
+        bet = co(i, 4*j+1) - co(i, 4*j)*gam[j]; // bet = b[j]-a[j]*gam[j]
+        xa(i, j) = (co(i, 4*j+3) - co(i, 4*j)*xa(i, j-1))/bet;  // x[j] = (r[j]-a[j]*x[j-1])/bet;
+        gam[j+1] = co(i, 4*j+2) / bet;    // gam[j+1] = c[j]/bet
       }
-      x[nloc-1] = xn[i]; // Know the last value
+      xa(i, nloc-1) = xn[i]; // Know the last value
       
       for(int j=nloc-2;j>0;j--) {
-        x[j] = x[j]-gam[j+1]*x[j+1];
+        xa(i, j) = xa(i, j)-gam[j+1]*xa(i, j+1);
       }
     }
-    delete[] gam;
   }
 };
 
