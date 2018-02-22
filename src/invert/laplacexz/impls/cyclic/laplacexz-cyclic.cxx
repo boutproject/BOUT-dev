@@ -31,11 +31,11 @@ LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options) : LaplaceXZ(m, optio
   // including boundaries but not guard cells
   nloc = xend - xstart + 1;
 
-  acoef  = matrix<dcomplex>(nsys, nloc);
-  bcoef  = matrix<dcomplex>(nsys, nloc);
-  ccoef  = matrix<dcomplex>(nsys, nloc);
-  xcmplx = matrix<dcomplex>(nsys, nloc);
-  rhscmplx = matrix<dcomplex>(nsys, nloc);
+  acoef  = Matrix<dcomplex>(nsys, nloc);
+  bcoef  = Matrix<dcomplex>(nsys, nloc);
+  ccoef  = Matrix<dcomplex>(nsys, nloc);
+  xcmplx = Matrix<dcomplex>(nsys, nloc);
+  rhscmplx = Matrix<dcomplex>(nsys, nloc);
 
   k1d = new dcomplex[(m->LocalNz) / 2 + 1];
   k1d_2 = new dcomplex[(m->LocalNz) / 2 + 1];
@@ -53,11 +53,6 @@ LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options) : LaplaceXZ(m, optio
 
 LaplaceXZcyclic::~LaplaceXZcyclic() {
   // Free coefficient arrays
-  free_matrix(acoef);
-  free_matrix(bcoef);
-  free_matrix(ccoef);
-  free_matrix(xcmplx);
-  free_matrix(rhscmplx);
 
   delete[] k1d;
   delete[] k1d_2;

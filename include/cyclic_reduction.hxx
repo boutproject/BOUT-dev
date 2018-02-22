@@ -89,7 +89,7 @@ public:
   void setPeriodic(bool p=true) {periodic=p;}
   
   /// Set up a single equation to invert
-  void setCoefs(T a[], T b[], T c[]) {
+  void setCoefs(Matrix<T> &a, Matrix<T> &b, Matrix<T> &c) {
     setCoefs(1, &a, &b, &c);
   }
 
@@ -100,30 +100,30 @@ public:
   ///                where N is set in the constructor or setup
   /// @param[in] b   Diagonal values. Should have size [nsys][N]
   /// @param[in] c   Right diagonal. Should have size [nsys][N]
-  void setCoefs(int nsys, T **a, T **b, T **c) {
+  void setCoefs(int nsys, Matrix<T> &a, Matrix<T> &b, Matrix<T> &c) {
     // Make sure correct memory arrays allocated
     allocMemory(nprocs, nsys, N);
 
     // Fill coefficient array
     for(int j=0;j<Nsys;j++)
       for(int i=0;i<N;i++) {
-        coefs[j][4*i] = a[j][i];
-        coefs[j][4*i + 1] = b[j][i];
-        coefs[j][4*i + 2] = c[j][i];
+        coefs[j][4*i] = a(j, i);
+        coefs[j][4*i + 1] = b(j, i);
+        coefs[j][4*i + 2] = c(j, i);
         // 4*i + 3 will contain RHS
       }
   }
 
   /// Solve a single triadiagonal system
   /// 
-  void solve(T rhs[], T x[]) {
+  void solve(Matrix<T> &rhs, Matrix<T> &x) {
     // Solving single system
     solve(1, &rhs, &x);
   }
 
   /// Solve a set of tridiagonal systems
   /// 
-  void solve(int nrhs, T **rhs, T **x) {
+  void solve(int nrhs, Matrix<T> &rhs, Matrix<T> &x) {
     // Multiple RHS
     
     if(nrhs != Nsys)
@@ -133,7 +133,7 @@ public:
     // for MPI send/receives
     for(int j=0;j<Nsys;j++)
       for(int i=0;i<N;i++) {
-        coefs[j][4*i + 3] = rhs[j][i];
+        coefs[j][4*i + 3] = rhs(j, i);
       }
 
     ///////////////////////////////////////
@@ -282,8 +282,8 @@ public:
 	if(p == myproc) {
 	  // Just copy the data
 	  for(int i=0;i<myns; i++) {
-	    x1[sys0+i] = ifx[i][2*p];
-	    xn[sys0+i] = ifx[i][2*p+1];
+	    x1[sys0+i] = ifx(i, 2*p);
+	    xn[sys0+i] = ifx(i, 2*p+1);
 	  }
           req[p] = MPI_REQUEST_NULL;
 	}else if(nsp > 0) {
@@ -306,8 +306,8 @@ public:
         for(int p=0;p<nprocs;p++) { // Loop over processor
           if(p != myproc) {
             for(int i=0;i<myns;i++) {
-              ifp[2*i]   = ifx[i][2*p];
-              ifp[2*i+1] = ifx[i][2*p+1];
+              ifp[2*i]   = ifx(i, 2*p);
+              ifp[2*i+1] = ifx(i, 2*p+1);
 #ifdef DIAGNOSE
               output << "Returning: " << ifp[2*i] 
                      << ", " << ifp[2*i+1] << " to " << p << endl;
@@ -378,7 +378,7 @@ private:
   T **recvbuffer; ///< Buffer for receiving from other processors
   T **ifcs;   ///< Coefficients for interface solve
   T **if2x2;  ///< 2x2 interface equations on this processor
-  T **ifx;    ///< Solution of interface equations
+  Matrix<T> ifx;    ///< Solution of interface equations
   T *ifp;     ///< Interface equations returned to processor p
   T *x1, *xn; ///< Interface solutions for back-solving
 
@@ -421,7 +421,7 @@ private:
     ifcs = matrix<T>(my, 2*4*nprocs);     // Coefficients for interface solve
     if(nprocs > 1)
       if2x2 = matrix<T>(my, 2*4);         // 2x2 interface equations on this processor
-    ifx  = matrix<T>(my, 2*nprocs);       // Solution of interface equations
+    ifx  = Matrix<T>(my, 2*nprocs);       // Solution of interface equations
     ifp = new T[my*2];     // Solution to be sent to processor p
     x1 = new T[Nsys];
     xn = new T[Nsys];
@@ -440,7 +440,6 @@ private:
     free_matrix(ifcs);
     if(nprocs > 1)
       free_matrix(if2x2);
-    free_matrix(ifx);
     delete[] ifp;
     delete[] x1;
     delete[] xn;
@@ -523,7 +522,7 @@ private:
   
   /// Back-solve from x at ends (x1, xn) to obtain remaining values
   /// Coefficients ordered [ns, nloc*(a,b,c,r)]
-  void back_solve(int ns, int nloc, T **co, T *x1, T *xn, T **xa) {
+  void back_solve(int ns, int nloc, T **co, T *x1, T *xn, Matrix<T> xa) {
     // Tridiagonal system, solve using serial Thomas algorithm
     
     T *gam = new T[nloc];

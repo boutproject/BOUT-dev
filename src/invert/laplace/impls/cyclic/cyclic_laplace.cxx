@@ -69,11 +69,11 @@ LaplaceCyclic::LaplaceCyclic(Options *opt)
   int n = xe - xs + 1;  // Number of X points on this processor,
                         // including boundaries but not guard cells
 
-  a   = matrix<dcomplex>(nsys, n);
-  b   = matrix<dcomplex>(nsys, n);
-  c   = matrix<dcomplex>(nsys, n);
-  xcmplx = matrix<dcomplex>(nsys, n);
-  bcmplx = matrix<dcomplex>(nsys, n);
+  a   = Matrix<dcomplex>(nsys, n);
+  b   = Matrix<dcomplex>(nsys, n);
+  c   = Matrix<dcomplex>(nsys, n);
+  xcmplx = Matrix<dcomplex>(nsys, n);
+  bcmplx = Matrix<dcomplex>(nsys, n);
 
   if(dst)
     k1d = new dcomplex[mesh->LocalNz];         // DST has different k space
@@ -86,13 +86,6 @@ LaplaceCyclic::LaplaceCyclic(Options *opt)
 }
 
 LaplaceCyclic::~LaplaceCyclic() {
-  // Free arrays
-
-  free_matrix(a);
-  free_matrix(b);
-  free_matrix(c);
-  free_matrix(xcmplx);
-  free_matrix(bcmplx);
 
   delete[] k1d;
 
