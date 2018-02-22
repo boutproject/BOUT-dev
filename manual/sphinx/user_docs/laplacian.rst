@@ -23,6 +23,36 @@ Alternative formulations and ways to invert equation
 :eq:`full_laplace_inv` can be found in section :ref:`sec-LaplaceXY` and
 :ref:`sec-LaplaceXZ`
 
+Several implementations of the Laplacian solver are available, which
+are selected by changing the "type" setting.The currently available
+implementations are listed in table :numref:`tab-laplacetypes`. 
+
+.. _tab-laplacetypes:
+.. table:: Laplacian implementation types
+
+   +-------------+------------------------------------------------------------+------------------------------------------+
+   | Name        | Description                                                | Requirements                             |
+   +=============+============================================================+==========================================+
+   | cyclic      | Serial/parallel. Gathers boundary rows onto one processor. |                                          |
+   +-------------+------------------------------------------------------------+------------------------------------------+
+   | petsc       | Serial/parallel. Lots of methods, no Boussinesq            | PETSc (section :ref:`sec-PETSc-install`) |
+   +-------------+------------------------------------------------------------+------------------------------------------+
+   | multigrid   | Serial/parallel. Geometric multigrid, no Boussinesq        |                                          |
+   +-------------+------------------------------------------------------------+------------------------------------------+
+   | serial_tri  | Serial only. Thomas algorithm for tridiagonal system.      | Lapack (section :ref:`sec-lapack`)       |
+   +-------------+------------------------------------------------------------+------------------------------------------+
+   | serial_band | Serial only. Enables 4th-order accuracy                    | Lapack (section :ref:`sec-lapack`)       |
+   +-------------+------------------------------------------------------------+------------------------------------------+
+   | spt         | Parallel only (NXPE>1). Thomas algorithm.                  |                                          |
+   +-------------+------------------------------------------------------------+------------------------------------------+
+   | mumps       | Serial/parallel. Direct solver                             | MUMPS (section :ref:`sec-mumps`)         |
+   +-------------+------------------------------------------------------------+------------------------------------------+
+   | pdd         | Parallel Diagnonally Dominant algorithm. Experimental      |                                          |
+   +-------------+------------------------------------------------------------+------------------------------------------+
+   | shoot       | Shooting method. Experimental                              |                                          |
+   +-------------+------------------------------------------------------------+------------------------------------------+
+
+     
 Usage of the laplacian inversion
 --------------------------------
 
@@ -46,13 +76,13 @@ mode. These inversion problems are band-diagonal (tri-diagonal in the
 case of 2nd-order differencing) and so inversions can be very
 efficient: :math:`O(n_z \log n_z)` for the FFTs,
 :math:`O(n_x)` for tridiagonal inversion using the Thomas
-algorithm [1]_, where :math:`n_x` and :math:`n_z` are the number of
+algorithm, where :math:`n_x` and :math:`n_z` are the number of
 grid-points in the :math:`x` and :math:`z` directions respectively.
 
-.. [1] Numerical recipes in C. The art of scientific computing, Press, W H and Teukolsky, S A and Vetterling, W T and Flannery, B P
 
 In the second approach, the full :math:`2`\ -D system is being solved.
 This requires PETSc to be built with BOUT++.
+
 
 The ``Laplacian`` class is defined in ``invert_laplace.hxx`` and solves
 problems formulated like equation :eq:`full_laplace_inv` To use
@@ -79,7 +109,7 @@ section ``laplace`` (default) or whichever settings section name was
 specified when the ``Laplacian`` class was created. Commonly used
 settings are listed in tables :numref:`tab-laplacesettings` to
 :numref:`tab-laplaceflags`.
-
+        
 In particular boundary conditions on the :math:`x` boundaries can be
 set using the and ``outer_boundary_flags`` variables, as detailed in
 table :numref:`tab-laplaceBCflags`. Note that DC (‘direct-current’)
@@ -119,7 +149,7 @@ within the physics module using ``setGlobalFlags``,
    +--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
    | Name                     | Meaning                                                                 | Default value                                |
    +==========================+=========================================================================+==============================================+
-   | ``type``                 | Which implementation to use                                             | ``tri`` (serial), ``spt`` (parallel)         |
+   | ``type``                 | Which implementation to use. See table :numref:`tab-laplacetypes`       | ``cyclic``                                   |
    +--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
    | ``filter``               | Filter out modes above :math:`(1-`\ ``filter``\                         | 0                                            |
    |                          | :math:`)\times k_{max}`, if using Fourier solver                        |                                              |
