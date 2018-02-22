@@ -1,17 +1,52 @@
 #!/bin/bash
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+version=$($DIR/bout-config --version)
+major=$(echo $version|cut -d. -f1)
 
-if ! test -e $1
+if test $major -lt 5
 then
-    echo "Error: folder or file as argument needed"
-    echo "usage:"
-    echo "	$0 <path>"
-    exit 1
+    echo "The BOUT++ version appears to be $version."
+    echo "This script is intend to update to BOUT++ 5 - are you sure you want to continue? [y/N]"
+    read continue
+    continue=$(echo $continue |tr :lower: :upper:)
+    if test ".$continue" == .y || test ".$continue" == .yes
+    then
+        echo "Continuing at your risk ..."
+    else
+        echo "Maybe soon :)"
+        exit 0
+    fi
 fi
 
-for d in x y z; do for f in ` find $1 -type f | grep x\$` ; do sed "s/LocalN$d/local_n$d/g" $f -i ; done;done
-for d in x y z; do for f in ` find $1 -type f | grep x\$` ; do sed "s/GlobalN$d/global_n$d/g" $f -i ; done;done
-for d in x y z; do for f in ` find $1 -type f | grep x\$` ; do sed "s/OffsetN$d/offset_n$d/g" $f -i ; done;done
+if test $# -eq 0
+then
+    for dir in src tools examples tests include
+    do
+        work="$work $DIR/../$dir"
+    done
+else
+    echo x
+    work=$@
+fi
+
+# Set to true if you don't want to run the script:
+false &&
+    printordo=echo || printordo=
+
+for dir in $work
+do
+    for d in x y z
+    do
+        for f in $(find $dir -type f | grep x\$)
+        do
+            $printordo sed "s/LocalN$d/local_n$d/g"   $f -i
+            $printordo sed "s/GlobalN$d/global_n$d/g" $f -i
+            $printordo sed "s/OffsetN$d/offset_n$d/g" $f -i
+        done
+    done
+done
+
 
 #Further changes:
 
-${d}end should be changed to ${d}end+1
+#${d}end should be changed to ${d}end+1
