@@ -77,8 +77,8 @@ public:
 };
 
 class HermiteSpline : public Interpolation {
-  int*** i_corner;      // x-index of bottom-left grid point
-  int*** k_corner;      // z-index of bottom-left grid point
+  Tensor<int> i_corner;      // x-index of bottom-left grid point
+  Tensor<int> k_corner;      // z-index of bottom-left grid point
 
   Mesh * localmesh;
   // Basis functions for cubic Hermite spline interpolation
@@ -101,11 +101,6 @@ public:
   HermiteSpline(BoutMask mask, int y_offset=0) : HermiteSpline(y_offset) {
     skip_mask = mask;}
 
-  ~HermiteSpline() {
-    free_i3tensor(i_corner);
-    free_i3tensor(k_corner);
-  }
-
   /// Callback function for InterpolationFactory
   static Interpolation* CreateHermiteSpline() {
     return new HermiteSpline;
@@ -123,8 +118,8 @@ public:
 };
 
 class Lagrange4pt : public Interpolation {
-  int*** i_corner;      // x-index of bottom-left grid point
-  int*** k_corner;      // z-index of bottom-left grid point
+  Tensor<int> i_corner;      // x-index of bottom-left grid point
+  Tensor<int> k_corner;      // z-index of bottom-left grid point
 
   Field3D t_x, t_z;
 
@@ -132,11 +127,6 @@ public:
   Lagrange4pt(int y_offset=0);
   Lagrange4pt(BoutMask mask, int y_offset=0) : Lagrange4pt(y_offset) {
     skip_mask = mask;}
-
-  ~Lagrange4pt() {
-    free_i3tensor(i_corner);
-    free_i3tensor(k_corner);
-  }
 
   /// Callback function for InterpolationFactory
   static Interpolation* CreateLagrange4pt() {
@@ -156,8 +146,8 @@ public:
 };
 
 class Bilinear : public Interpolation {
-  int*** i_corner;      // x-index of bottom-left grid point
-  int*** k_corner;      // z-index of bottom-left grid point
+  Tensor<int> i_corner;      // x-index of bottom-left grid point
+  Tensor<int> k_corner;      // z-index of bottom-left grid point
 
   Field3D w0, w1, w2, w3;
 
@@ -165,11 +155,6 @@ public:
   Bilinear(int y_offset=0,Mesh * mesh = nullptr);
   Bilinear(BoutMask mask, int y_offset=0) : Bilinear(y_offset) {
     skip_mask = mask;}
-
-  ~Bilinear() {
-    free_i3tensor(i_corner);
-    free_i3tensor(k_corner);
-  }
 
   /// Callback function for InterpolationFactory
   static Interpolation* CreateBilinear() {

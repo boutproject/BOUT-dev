@@ -744,6 +744,11 @@ void shiftZ(Field3D &var, double zangle);
 Field2D DC(const Field3D &f);
 
 /*!
+ * Force guard cells of passed field to nan
+ */ 
+void invalidateGuards(Field3D &var);
+
+/*!
  * @brief Returns a reference to the time-derivative of a field
  * 
  * Wrapper around member function f.timeDeriv()

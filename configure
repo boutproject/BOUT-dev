@@ -732,7 +732,6 @@ infodir
 docdir
 oldincludedir
 includedir
-runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -839,7 +838,6 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
-runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1092,15 +1090,6 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
-  -runstatedir | --runstatedir | --runstatedi | --runstated \
-  | --runstate | --runstat | --runsta | --runst | --runs \
-  | --run | --ru | --r)
-    ac_prev=runstatedir ;;
-  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
-  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
-  | --run=* | --ru=* | --r=*)
-    runstatedir=$ac_optarg ;;
-
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1238,7 +1227,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir runstatedir
+		libdir localedir mandir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1391,7 +1380,6 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
-  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -2619,7 +2607,7 @@ fi
 if test "${enable_backtrace+set}" = set; then :
   enableval=$enable_backtrace;
 else
-  enable_backtrace=yes
+  enable_backtrace=maybe
 fi
 
 # Check whether --enable-shared was given.
@@ -5659,13 +5647,23 @@ CXXFLAGS+=" -DBOUT_VERSION_STRING=\"\\\"$BOUT_VERSION\\\"\" -DBOUT_VERSION_DOUBL
 # Enable Backtrace if possible
 #############################################################
 
-if test ."$enable_backtrace" == .yes
+if test ."$enable_backtrace" == .yes || test ."$enable_backtrace" == .maybe
 then
-    if which addr2line &>/dev/null
+    works=yes
+    if ! which addr2line &>/dev/null
     then
-        ac_fn_cxx_check_func "$LINENO" "popen" "ac_cv_func_popen"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"util addr2line not found\"" >&5
+$as_echo "$as_me: WARNING: \"util addr2line not found\"" >&2;}
+        works=no
+    fi
+    ac_fn_cxx_check_func "$LINENO" "popen" "ac_cv_func_popen"
 if test "x$ac_cv_func_popen" = xyes; then :
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+else
+  works=no
+fi
+
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <execinfo.h>
 int
@@ -5677,10 +5675,17 @@ main ()
 }
 _ACEOF
 if ac_fn_cxx_try_compile "$LINENO"; then :
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"execinfo.h not found\"" >&5
+$as_echo "$as_me: WARNING: \"execinfo.h not found\"" >&2;}
+                    works=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 extern "C"
-                                                    char backtrace();
+                 char backtrace();
 int
 main ()
 {
@@ -5690,15 +5695,44 @@ return backtrace();
 }
 _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
-  CXXFLAGS="$CXXFLAGS -DBACKTRACE"
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"backtrace function not found\"" >&5
+$as_echo "$as_me: WARNING: \"backtrace function not found\"" >&2;}
+                  works=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext;
+    conftest$ac_exeext conftest.$ac_ext
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <dlfcn.h>
+int
+main ()
+{
 
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"dlfcn.h not found\"" >&5
+$as_echo "$as_me: WARNING: \"dlfcn.h not found\"" >&2;}
+                    works=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-
+    if test .$works == .yes
+    then
+        CXXFLAGS="$CXXFLAGS -DBACKTRACE"
+    else
+        if test ."$enable_backtrace" == .yes
+        then
+            as_fn_error $? "backtrace requested, but cannot be enabled" "$LINENO" 5
+        else
+            { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"backtrace disabled\"" >&5
+$as_echo "$as_me: WARNING: \"backtrace disabled\"" >&2;}
+        fi
     fi
 fi
 
@@ -15342,6 +15376,8 @@ echo "  Parallel-NetCDF support: $HAS_PNETCDF" | tee -a config-build.log
 echo "  HDF5 support: $HAS_HDF5 (parallel: $HAS_PHDF5)" | tee -a config-build.log
 
 echo "  MUMPS support: $HAS_MUMPS" | tee -a config-build.log
+
+echo "  Lapack support: $HAS_LAPACK" | tee -a config-build.log
 
 echo "  Scorep support: $HAS_SCOREP" | tee -a config-build.log
 

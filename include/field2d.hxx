@@ -411,6 +411,10 @@ void checkData(const Field2D &f, REGION region = RGN_NOBNDRY);
 inline void checkData(const Field2D &UNUSED(f), REGION UNUSED(region) = RGN_NOBNDRY) {}
 #endif
 
+/*!
+ * Force guard cells of passed field to nan
+ */ 
+void invalidateGuards(Field2D &var);
 
 /*!
  * @brief Returns a reference to the time-derivative of a field
