@@ -451,65 +451,61 @@ private:
       throw BoutException("CyclicReduce::reduce nloc < 2");
 #endif
     for(int j=0;j<ns;j++) {
-      T *c = co[j];    // Coefficients for system j
-      T *ic = ifc[j];  // Interface equations for system j
-        
       // Calculate upper interface equation
       
       // v_l <- v_(k+N-2)
       // b_u <- b_{k+N-2}
       for(int i=0;i<4;i++) {
-        ic[i] = c[4*(nloc-2)+i];
+        ifc(j, i) = co(j, 4*(nloc-2)+i);
       }
       
       for(int i=nloc-3;i>=0;i--) {
 	// Check for zero pivot
-	if(abs(ic[1]) < 1e-10)
+	if(abs(ifc(j, 1)) < 1e-10)
 	  throw BoutException("Zero pivot in CyclicReduce::reduce");
 	
         // beta <- v_{i,i+1} / v_u,i
-        T beta = c[4*i+2] / ic[1];
+        T beta = co(j, 4*i+2) / ifc(j, 1);
           
         // v_u <- v_i - beta * v_u
-        ic[1] = c[4*i + 1] - beta * ic[0];
-        ic[0] = c[4*i];
-	ic[2] *= -beta;
+        ifc(j, 1) = co(j, 4*i + 1) - beta * ifc(j, 0);
+        ifc(j, 0) = co(j, 4*i);
+	ifc(j, 2) *= -beta;
         // ic columns  {i-1, i, N-1}
         
         // b_u <- b_i - beta*b_u
-        ic[3] = c[4*i + 3] - beta*ic[3];
+        ifc(j, 3) = co(j, 4*i + 3) - beta*ifc(j, 3);
       }
       
-      ic += 4;
-      
       // Calculate lower interface equation
-      
+      // Uses next 4 ifc values for this system so have +4 in indexinf
+
       // v_l <- v_(k+1)
       // b_l <- b_{k+1}
       for(int i=0;i<4;i++)
-        ic[i] = c[4+i];
+        ifc(j, 4+i) = co(j, 4+i);
         
       for(int i=2;i<nloc;i++) {
 	
-	if(abs(ic[1]) < 1e-10)
+	if(abs(ifc(j, 4+1)) < 1e-10)
 	  throw BoutException("Zero pivot in CyclicReduce::reduce");
 	
         // alpha <- v_{i,i-1} / v_l,i-1
-        T alpha = c[4*i] / ic[1];
+        T alpha = co(j, 4*i) / ifc(j, 4+1);
           
         // v_l <- v_i - alpha*v_l
-	ic[0] *= -alpha;
-        ic[1] = c[4*i + 1] - alpha*ic[2];
-        ic[2] = c[4*i + 2];
+	ifc(j, 4+0) *= -alpha;
+        ifc(j, 4+1) = co(j, 4*i + 1) - alpha*ifc(j, 4+2);
+        ifc(j, 4+2) = co(j, 4*i + 2);
         // columns of ic are {0, i, i+1}
           
         // b_l <- b_{k+i} - alpha*b_l
-        ic[3] = c[4*i + 3] - alpha * ic[3];   
+        ifc(j, 4+3) = co(j, 4*i + 3) - alpha * ifc(j, 4+3);   
       }
       
 #ifdef DIAGNOSE
-      output << "Lower: " << ic[0] << ", " << ic[1] << ", " << ic[2] << " : " << ic[3] << endl;
-      output << "Upper: " << ic[0] << ", " << ic[1] << ", " << ic[2] << " : " << ic[3] << endl;
+      output << "Lower: " << ifc(j, 4+0) << ", " << ifc(j, 4+1) << ", " << ifc(j, 4+2) << " : " << ifc(j, 4+3) << endl;
+      output << "Upper: " << ifc(j, 0) << ", " << ifc(j, 1) << ", " << ifc(j, 2) << " : " << ifc(j, 3) << endl;
 #endif
     }
 
