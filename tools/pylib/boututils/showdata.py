@@ -22,7 +22,7 @@ from matplotlib import pyplot as plt
 from matplotlib import animation, cm
 from numpy import linspace, meshgrid, array, min, max, abs, floor, pi, isclose
 from boutdata.collect import collect
-import warnings
+from boututils.boutwarnings import alwayswarn
 
 ####################################################################
 # Specify manually ffmpeg path
@@ -139,7 +139,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
                 if len(legendlabels) != Nlines[i]:
                     check = check+1
             if check == 0:
-                warnings.warn("The legendlabels list does not contain a sublist for each variable, but it's length matches the number of lines on each plot. Will apply labels to each plot")
+                alwayswarn("The legendlabels list does not contain a sublist for each variable, but it's length matches the number of lines on each plot. Will apply labels to each plot")
                 legendlabelsdummy = []
                 for i in range(0, Nvar):
                     legendlabelsdummy.append([])
@@ -147,7 +147,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
                         legendlabelsdummy[i].append(legendlabels[j])
                 legendlabels = legendlabelsdummy
             else:
-                warnings.warn("The legendlabels list does not contain a sublist for each variable, and it's length does not match the number of lines on each plot. Will default apply labels to each plot")
+                alwayswarn("The legendlabels list does not contain a sublist for each variable, and it's length does not match the number of lines on each plot. Will default apply labels to each plot")
                 legendlabels = []
                 for i in range(0,Nvar):
                     legendlabels.append([])
@@ -157,7 +157,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
             if (Nlines[0] == len(legendlabels)):
                 legendlabels = [legendlabels]
     elif len(legendlabels) != Nvar:
-        warnings.warn("The length of the legendlabels list does not match the length of the vars list, will continue with default values")
+        alwayswarn("The length of the legendlabels list does not match the length of the vars list, will continue with default values")
         legendlabels = []
         for i in range(0,Nvar):
             legendlabels.append([])
@@ -167,14 +167,14 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
         for i in range(0,Nvar):
             if isinstance(legendlabels[i], list):
                 if len(legendlabels[i]) != Nlines[i]:
-                    warnings.warn('The length of the legendlabel (sub)list for each plot does not match the number of datasets for each plot. Will continue with default values')
+                    alwayswarn('The length of the legendlabel (sub)list for each plot does not match the number of datasets for each plot. Will continue with default values')
                 legendlabels[i] = []
                 for j in range(0,Nlines[i]):
                     legendlabels[i].append(chr(97+j))
             else:
                 legendlabels[i] = [legendlabels[i]]
             if len(legendlabels[i]) != Nlines[i]:
-                warnings.warn('The length of the legendlabel (sub)list for each plot does not match the number of datasets for each plot.  Will continue with default values')
+                alwayswarn('The length of the legendlabel (sub)list for each plot does not match the number of datasets for each plot.  Will continue with default values')
                 legendlabels[i] = []
                 for j in range(0,Nlines[i]):
                     legendlabels[i].append(chr(97+j))
@@ -200,7 +200,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
             for i in range(0,Nvar):
                 surf.append(0)
         else:
-            warnings.warn('Length of surf list does not match number of variables.  Will default to no polar plots')
+            alwayswarn('Length of surf list does not match number of variables.  Will default to no polar plots')
             for i in range(0,Nvar):
                 surf.append(0)
 
@@ -234,7 +234,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
             for i in range(0,Nvar):
                 polar.append(0)
         else:
-            warnings.warn('Length of polar list does not match number of variables.  Will default to no polar plots')
+            alwayswarn('Length of polar list does not match number of variables.  Will default to no polar plots')
             for i in range(0,Nvar):
                 polar.append(0)
     else:
@@ -266,10 +266,10 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
                 raise ValueError('data must be either 2 or 3 dimensional.  Exiting')
 
             if ((Ndims[i][j] == 2) & (polar[i] != 0)):
-                warnings.warn('Data must be  3 dimensional (time, r, theta) for polar plots.  Will plot lineplot instead')
+                alwayswarn('Data must be  3 dimensional (time, r, theta) for polar plots.  Will plot lineplot instead')
 
             if ((Ndims[i][j] == 2) & (surf[i] != 0)):
-                warnings.warn('Data must be  3 dimensional (time, x, y) for surface plots.  Will plot lineplot instead')
+                alwayswarn('Data must be  3 dimensional (time, x, y) for surface plots.  Will plot lineplot instead')
 
             if ((Ndims[i][j] == 3) & (Nlines[i] != 1)):
                 raise ValueError('cannot have multiple sets of 3D (time + 2 spatial dimensions) on each subplot')
@@ -285,7 +285,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
             contour.append(0)
         else:
             if ((polar[i] == 1) & (surf[i] == 1)):
-                warnings.warn('Cannot do polar and surface plots at the same time.  Default to contour plot')
+                alwayswarn('Cannot do polar and surface plots at the same time.  Default to contour plot')
                 contour.append(1)
                 lineplot.append(0)
                 polar[i] = 0
@@ -399,7 +399,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
             if isclose(fmin[i], fmax[i]):
                 thiscontourmin = fmin[i]-3.e-15*abs(fmin[i])
                 thiscontourmax = fmax[i]+3.e-15*abs(fmax[i])
-                warnings.warn("Contour levels too close, adding padding to colorbar range")
+                alwayswarn("Contour levels too close, adding padding to colorbar range")
                 clevels.append(linspace(thiscontourmin, thiscontourmax, Ncolors))
             else:
                 clevels.append(linspace(fmin[i], fmax[i], Ncolors))
@@ -413,7 +413,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
             if isclose(fmin[i], fmax[i]):
                 thiscontourmin = fmin[i]-3.e-15*abs(fmin[i])
                 thiscontourmax = fmax[i]+3.e-15*abs(fmax[i])
-                warnings.warn("Contour levels too close, adding padding to colorbar range")
+                alwayswarn("Contour levels too close, adding padding to colorbar range")
                 clevels.append(linspace(thiscontourmin, thiscontourmax, Ncolors))
             else:
                 clevels.append(linspace(fmin[i], fmax[i], Ncolors))
