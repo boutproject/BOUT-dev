@@ -44,6 +44,7 @@
 
 #include "mpi.h"
 #include "utils.hxx"
+#include "msg_stack.hxx"
 #include <lapack_routines.hxx>
 #include "boutexception.hxx"
 
@@ -101,15 +102,17 @@ public:
   /// @param[in] b   Diagonal values. Should have size [nsys][N]
   /// @param[in] c   Right diagonal. Should have size [nsys][N]
   void setCoefs(int nsys, Matrix<T> &a, Matrix<T> &b, Matrix<T> &c) {
+    TRACE("CyclicReduce::setCoefs");
+    
     // Make sure correct memory arrays allocated
     allocMemory(nprocs, nsys, N);
 
     // Fill coefficient array
     for(int j=0;j<Nsys;j++)
       for(int i=0;i<N;i++) {
-        coefs[j][4*i] = a(j, i);
-        coefs[j][4*i + 1] = b(j, i);
-        coefs[j][4*i + 2] = c(j, i);
+        coefs(j, 4*i) = a(j, i);
+        coefs(j, 4*i + 1) = b(j, i);
+        coefs(j, 4*i + 2) = c(j, i);
         // 4*i + 3 will contain RHS
       }
   }
@@ -124,6 +127,7 @@ public:
   /// Solve a set of tridiagonal systems
   /// 
   void solve(int nrhs, Matrix<T> &rhs, Matrix<T> &x) {
+    TRACE("CyclicReduce::solve");
     // Multiple RHS
     
     if(nrhs != Nsys)
@@ -133,7 +137,7 @@ public:
     // for MPI send/receives
     for(int j=0;j<Nsys;j++)
       for(int i=0;i<N;i++) {
-        coefs[j][4*i + 3] = rhs(j, i);
+        coefs(j, 4*i + 3) = rhs(j, i);
       }
 
     ///////////////////////////////////////
@@ -162,7 +166,7 @@ public:
           // Just copy the data
           for(int i=0;i<myns; i++)
             for(int j=0;j<8;j++)
-              ifcs[i][8*p + j] = myif[sys0+i][j];
+              ifcs(i, 8*p + j) = myif(sys0+i, j);
         }else {
 #ifdef DIAGNOSE
           output << "Expecting to receive " << len << " from " << p << endl;
@@ -188,7 +192,7 @@ public:
 #ifdef DIAGNOSE
         output << "Sending to " << p << endl;
         for(int i=0;i<8;i++)
-          output << "value " << i << " : " << myif[s0][i] << endl;
+          output << "value " << i << " : " << myif(s0, i) << endl;
 #endif
         MPI_Send(myif[s0],        // Data pointer
                  8*nsp*sizeof(T), // Number
@@ -241,16 +245,16 @@ public:
 	//  (c  d) (xn)   (bn)
           
 	T a, b, c, d;
-	a = if2x2[i][1];
-	b = if2x2[i][2];
-	c = if2x2[i][4];
-	d = if2x2[i][5];
+	a = if2x2(i, 1);
+	b = if2x2(i, 2);
+	c = if2x2(i, 4);
+	d = if2x2(i, 5);
 	if(periodic) {
-	  b += if2x2[i][0];
-	  c += if2x2[i][6];
+	  b += if2x2(i, 0);
+	  c += if2x2(i, 6);
 	}
-	T b1 = if2x2[i][3];
-	T bn = if2x2[i][7];
+	T b1 = if2x2(i, 3);
+	T bn = if2x2(i, 7);
           
 	// Solve
 	T det = a*d - b*c; // Determinant
@@ -372,12 +376,12 @@ private:
   
   bool periodic; ///< Is the domain periodic?
 
-  T **coefs;  ///< Starting coefficients, rhs [Nsys, {3*coef,rhs}*N]
-  T **myif;   ///< Interface equations for this processor
+  Matrix<T> coefs;  ///< Starting coefficients, rhs [Nsys, {3*coef,rhs}*N]
+  Matrix<T> myif;   ///< Interface equations for this processor
   
   T **recvbuffer; ///< Buffer for receiving from other processors
-  T **ifcs;   ///< Coefficients for interface solve
-  T **if2x2;  ///< 2x2 interface equations on this processor
+  Matrix<T> ifcs;   ///< Coefficients for interface solve
+  Matrix<T> if2x2;  ///< 2x2 interface equations on this processor
   Matrix<T> ifx;    ///< Solution of interface equations
   T *ifp;     ///< Interface equations returned to processor p
   T *x1, *xn; ///< Interface solutions for back-solving
@@ -413,14 +417,14 @@ private:
     if(my == 0)
       my = 0;
 
-    coefs = matrix<T>(Nsys, 4*N);
+    coefs = Matrix<T>(Nsys, 4*N);
       
-    myif = matrix<T>(Nsys, 8);
+    myif = Matrix<T>(Nsys, 8);
     
     recvbuffer = matrix<T>(nprocs, my*8); // Buffer for receiving from other processors
-    ifcs = matrix<T>(my, 2*4*nprocs);     // Coefficients for interface solve
+    ifcs = Matrix<T>(my, 2*4*nprocs);     // Coefficients for interface solve
     if(nprocs > 1)
-      if2x2 = matrix<T>(my, 2*4);         // 2x2 interface equations on this processor
+      if2x2 = Matrix<T>(my, 2*4);         // 2x2 interface equations on this processor
     ifx  = Matrix<T>(my, 2*nprocs);       // Solution of interface equations
     ifp = new T[my*2];     // Solution to be sent to processor p
     x1 = new T[Nsys];
@@ -434,12 +438,7 @@ private:
       return;
     
     // Free all working memory
-    free_matrix(coefs);
-    free_matrix(myif);
     free_matrix(recvbuffer);
-    free_matrix(ifcs);
-    if(nprocs > 1)
-      free_matrix(if2x2);
     delete[] ifp;
     delete[] x1;
     delete[] xn;
@@ -448,7 +447,7 @@ private:
   }
 
   /// Calculate interface equations
-  void reduce(int ns, int nloc, T **co, T **ifc) {
+  void reduce(int ns, int nloc, Matrix<T> &co, Matrix<T> &ifc) {
 #ifdef DIAGNOSE
     if(nloc < 2)
       throw BoutException("CyclicReduce::reduce nloc < 2");
@@ -522,7 +521,7 @@ private:
   
   /// Back-solve from x at ends (x1, xn) to obtain remaining values
   /// Coefficients ordered [ns, nloc*(a,b,c,r)]
-  void back_solve(int ns, int nloc, T **co, T *x1, T *xn, Matrix<T> xa) {
+  void back_solve(int ns, int nloc, Matrix<T> &co, T *x1, T *xn, Matrix<T> &xa) {
     // Tridiagonal system, solve using serial Thomas algorithm
     
     T *gam = new T[nloc];
