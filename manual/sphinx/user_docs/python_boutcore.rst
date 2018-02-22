@@ -25,36 +25,35 @@ post-processing/login/... nodes.
 
 To use boutcore on the login node, a self compiled version of mpi may be
 required, as the provided one may be only for the compute nodes.
-Further, numpy header files are required, therfore numpy needs to be
+Further, numpy header files are required, therefore numpy needs to be
 compiled as well.
 Further, the header files need to be exposed to the boutcore cython
 compilation, e.g. by adding them to ``_boutcore_build/boutcore.pyx.in``.
 It seems both ``NUMPY/numpy/core/include`` and
 ``NUMPY/build/src.linux-x86_64-2.7/numpy/core/include/numpy`` need to be
 added, where ``NUMPY`` is the path of the numpy directory.
-For running boutcore on the postprocessing nodes, fftw3 needs to be
+For running boutcore on the post processing nodes, fftw3 needs to be
 compiled as well, if certain fftw routines are used. Note, fftw needs
 to be configured with ``--enable-shared``.
 
 After installing mpi e.g. in ``~/local/mpich``, bout needs to be
 configured with something like:
-``./configure CXXFLAGS="-fPIC" MPICC=~/local/mpich/bin/mpicc MPICXX=~/local/mpich/bin/mpicxx --with-fftw=~/local/fftw/``
+``./configure --enable-shared MPICC=~/local/mpich/bin/mpicc MPICXX=~/local/mpich/bin/mpicxx --with-fftw=~/local/fftw/``
 
-``-fPIC`` is required, so that pvode etc is compiles as position
-independend code. This can be achieved by configuring bout with
-``--enable-shared``.
+``--enable-shared`` is required, so that pvode etc. is compiles as position
+independent code.
 
 To only build the python2 module, run ``make python2``.
 
 To build both, run ``make python-all``
 
-If you are running fedora - you can install prebuild binaries:
+If you are running fedora - you can install pre-build binaries:
 
 .. code-block:: bash
 
    sudo dnf copr enable davidsch/bout
    sudo dnf install python3-bout++-nightly-mpich
-   module load mpi/mpich
+   module load mpi/mpich-$(arch)
 
 
 Purpose
@@ -63,22 +62,24 @@ Purpose
 The boutcore module exposes (part) of the BOUT++ C++ library to python.
 It allows to calculate e.g. BOUT++ derivatives in python.
 
-
 State
 -----
-It is still incomplete.
-Field3D is mostly working. The other fields are not exposed.
+This is still in early development, and things might change.
+However, it should still be useful.
+
+Field3D is working. The other fields are not exposed.
 Field3D can be accessed directly using the [] operators, and give a list of slice objects.
 The get all data, ``f3d.getAll()`` is equivalent to ``f3d[:,:,]`` and returns a numpy array.
-This array can be adressed with
+This array can be addressed with
 e.g. ``[]`` operators, and then the field can be set again with
 ``f3d.setAll(numpyarray)``.
 It is also possible to set a part of an Field3D with the ``[]`` operators.
-Addition, multiplication etc should all be available.
+Addition, multiplication etc. should all be available.
 Most of the derivatives are available, if something is missing open a bug.
 
 Functions
 ---------
+
 .. automodule:: boutcore
    :members:
 
@@ -185,12 +186,14 @@ A real example - check derivative contributions:
 
 
 Functions - undocumented
---------------------
+------------------------
+
 .. automodule:: boutcore
    :undoc-members:
 
 Functions - special and inherited
---------------------
+---------------------------------
+
 .. automodule:: boutcore
    :special-members:
    :inherited-members:
