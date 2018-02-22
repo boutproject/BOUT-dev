@@ -28,11 +28,11 @@ class LaplaceMumps;
 #ifndef __MUMPS_LAPLACE_H__
 #define __MUMPS_LAPLACE_H__
 
-#include <invert_laplace.hxx>
+#include <bout/invert_laplace.hxx>
 
 #ifndef BOUT_HAS_MUMPS
  
-#include <boutexception.hxx>
+#include <bout/boutexception.hxx>
  
 class LaplaceMumps : public Laplacian {
  public:
@@ -57,10 +57,10 @@ class LaplaceMumps : public Laplacian {
  
 #else
 
-#include <globals.hxx>
-#include <output.hxx>
-#include <options.hxx>
-#include <boutexception.hxx>
+#include <bout/globals.hxx>
+#include <bout/output.hxx>
+#include <bout/options.hxx>
+#include <bout/boutexception.hxx>
 #include "dmumps_c.h"
 
 #define MUMPS_JOB_INIT -1

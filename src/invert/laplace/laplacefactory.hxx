@@ -4,7 +4,7 @@ class LaplaceFactory;
 #ifndef __LAPLACE_FACTORY_H__
 #define __LAPLACE_FACTORY_H__
 
-#include <invert_laplace.hxx>
+#include <bout/invert_laplace.hxx>
 
 class LaplaceFactory {
  public:

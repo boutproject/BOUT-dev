@@ -38,9 +38,9 @@
 
 #include "karniadakis.hxx"
 
-#include <boutcomm.hxx>
-#include <msg_stack.hxx>
-#include <output.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/output.hxx>
 #include <bout/openmpwrap.hxx>
 
 KarniadakisSolver::KarniadakisSolver(Options *options) : Solver(options), f1(nullptr) {

@@ -12,8 +12,8 @@
 #ifndef __EXPR_H__
 #define __EXPR_H__
 
-#include <field3d.hxx>
-#include <field2d.hxx>
+#include <bout/field3d.hxx>
+#include <bout/field2d.hxx>
 
 /// Literal class to capture BoutReal values in expressions
 class Literal {

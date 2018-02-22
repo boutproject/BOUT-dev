@@ -4,7 +4,7 @@
  */
 
 #include <bout.hxx>
-#include <boutmain.hxx>
+#include <bout/boutmain.hxx>
 
 //#include <fielditerator.hxx>
 #include <assert.h>

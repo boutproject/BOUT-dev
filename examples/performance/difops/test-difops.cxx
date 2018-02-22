@@ -14,7 +14,7 @@
  */
 
 #include <bout.hxx>
-#include <derivs.hxx>
+#include <bout/derivs.hxx>
 
 #include <chrono>
 #include <iostream>

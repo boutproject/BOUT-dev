@@ -30,9 +30,9 @@ class LaplaceShoot;
 #ifndef __LAP_SHOOT_H__
 #define __LAP_SHOOT_H__
 
-#include <invert_laplace.hxx>
-#include <options.hxx>
-#include <boutexception.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/options.hxx>
+#include <bout/boutexception.hxx>
 
 class LaplaceShoot : public Laplacian {
 public:

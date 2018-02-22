@@ -33,11 +33,11 @@
 
 #include <mpi.h>
 
-#include <globals.hxx>
-#include <output.hxx>
-#include <options.hxx>
-#include <invert_laplace.hxx>
-#include <boutexception.hxx>
+#include <bout/globals.hxx>
+#include <bout/output.hxx>
+#include <bout/options.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/boutexception.hxx>
 
 #define MAXGM 15
 

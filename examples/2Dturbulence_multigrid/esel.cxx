@@ -1,8 +1,8 @@
 #include <bout/physicsmodel.hxx>
-#include <smoothing.hxx>
-#include <invert_laplace.hxx>
-#include <initialprofiles.hxx>
-#include <derivs.hxx>
+#include <bout/smoothing.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/initialprofiles.hxx>
+#include <bout/derivs.hxx>
 
 class ESEL : public PhysicsModel {
 private:

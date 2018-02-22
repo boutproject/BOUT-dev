@@ -27,17 +27,17 @@
 
 #include "petsc-3.1.hxx"
 
-#include <globals.hxx>
-#include <boutcomm.hxx>
+#include <bout/globals.hxx>
+#include <bout/boutcomm.hxx>
 
 #include <stdlib.h>
 
-#include <interpolation.hxx> // Cell interpolation
-#include <msg_stack.hxx>
+#include <bout/interpolation.hxx> // Cell interpolation
+#include <bout/msg_stack.hxx>
 
 #include <petsc.h>
 
-#include <output.hxx>
+#include <bout/output.hxx>
 
 EXTERN PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_data);
 

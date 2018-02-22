@@ -27,9 +27,9 @@
 #define __FCITRANSFORM_H__
 
 #include <bout/paralleltransform.hxx>
-#include <interpolation.hxx>
-#include <mask.hxx>
-#include <parallel_boundary_region.hxx>
+#include <bout/interpolation.hxx>
+#include <bout/mask.hxx>
+#include <bout/parallel_boundary_region.hxx>
 
 /*!
  * Field line map - contains the coefficients for interpolation

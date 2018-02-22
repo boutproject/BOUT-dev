@@ -1,5 +1,5 @@
 
-#include <globals.hxx>
+#include <bout/globals.hxx>
 
 #include "formatfactory.hxx"
 
@@ -10,8 +10,8 @@
 #include "impls/hdf5/h5_format.hxx"
 #include "impls/pnetcdf/pnetcdf.hxx"
 
-#include <boutexception.hxx>
-#include <output.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/output.hxx>
 #include <string.h>
 
 FormatFactory* FormatFactory::instance = NULL;

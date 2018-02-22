@@ -11,8 +11,8 @@
  *******************************************************************************/
 
 #include <bout.hxx>
-#include <boutmain.hxx>
-#include <derivs.hxx>
+#include <bout/boutmain.hxx>
+#include <bout/derivs.hxx>
 
 #include <cmath>
 

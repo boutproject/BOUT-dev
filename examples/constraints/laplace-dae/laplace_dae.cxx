@@ -4,10 +4,10 @@
  *************************************************************/
 
 #include <bout.hxx>
-#include <boutmain.hxx>
-#include <initialprofiles.hxx>
-#include <invert_laplace.hxx>
-#include <boutexception.hxx>
+#include <bout/boutmain.hxx>
+#include <bout/initialprofiles.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/boutexception.hxx>
 
 Field3D U, Apar;   // Evolving variables
 

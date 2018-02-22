@@ -29,11 +29,11 @@
  *
  **************************************************************************/
 
-#include <globals.hxx>
-#include <boutexception.hxx>
-#include <utils.hxx>
-#include <fft.hxx>
-#include <lapack_routines.hxx>
+#include <bout/globals.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/utils.hxx>
+#include <bout/fft.hxx>
+#include <bout/lapack_routines.hxx>
 
 #include "pdd.hxx"
 

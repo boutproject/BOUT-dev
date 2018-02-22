@@ -29,9 +29,9 @@ class LaplaceSerialBand;
 #ifndef __SERIAL_BAND_H__
 #define __SERIAL_BAND_H__
 
-#include <invert_laplace.hxx>
-#include <dcomplex.hxx>
-#include <options.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/dcomplex.hxx>
+#include <bout/options.hxx>
 
 class LaplaceSerialBand : public Laplacian {
 public:

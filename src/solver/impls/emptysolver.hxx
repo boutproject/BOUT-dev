@@ -31,7 +31,7 @@ class EmptySolver;
 #define __EMPTY_SOLVER_H__
 
 #include <bout/solver.hxx>
-#include <boutexception.hxx>
+#include <bout/boutexception.hxx>
 
 class EmptySolver : public Solver {
 public:

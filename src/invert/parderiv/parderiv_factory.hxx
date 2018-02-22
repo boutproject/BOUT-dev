@@ -3,8 +3,8 @@ class ParDerivFactory;
 #ifndef __PARDERIV_FACTORY_H__
 #define __PARDERIV_FACTORY_H__
 
-#include <invert_parderiv.hxx>
-#include <options.hxx>
+#include <bout/invert_parderiv.hxx>
+#include <bout/options.hxx>
 
 class ParDerivFactory {
  public:

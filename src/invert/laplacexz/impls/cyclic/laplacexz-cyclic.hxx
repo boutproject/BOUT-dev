@@ -1,7 +1,7 @@
 
 #include <bout/invert/laplacexz.hxx>
-#include <cyclic_reduction.hxx>
-#include <dcomplex.hxx>
+#include <bout/cyclic_reduction.hxx>
+#include <bout/dcomplex.hxx>
 
 class LaplaceXZcyclic : public LaplaceXZ {
 public:

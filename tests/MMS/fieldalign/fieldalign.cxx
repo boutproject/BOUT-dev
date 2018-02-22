@@ -1,5 +1,5 @@
 #include <bout/physicsmodel.hxx>
-#include <derivs.hxx>
+#include <bout/derivs.hxx>
 
 class FieldAlign : public PhysicsModel {
 protected:

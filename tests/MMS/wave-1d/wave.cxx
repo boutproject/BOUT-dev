@@ -1,6 +1,6 @@
 #include <bout/physicsmodel.hxx>
-#include <initialprofiles.hxx>
-#include <derivs.hxx>
+#include <bout/initialprofiles.hxx>
+#include <bout/derivs.hxx>
 #include <math.h>
 #include "mathematica.h"
 #include <bout/constants.hxx>

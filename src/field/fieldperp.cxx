@@ -23,15 +23,15 @@
  *
  **************************************************************************/
 
-#include <globals.hxx>
+#include <bout/globals.hxx>
 
 #include <stdlib.h>
 #include <math.h>
 
-#include <fieldperp.hxx>
-#include <utils.hxx>
-#include <boutexception.hxx>
-#include <msg_stack.hxx>
+#include <bout/fieldperp.hxx>
+#include <bout/utils.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/msg_stack.hxx>
 
 FieldPerp::FieldPerp(Mesh *localmesh) {
   // Get mesh size

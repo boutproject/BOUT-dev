@@ -1,3 +1,3 @@
 #include "header.hxx"
 #define GLOBALORIGIN
-#include "globals.hxx"
+#include "bout/globals.hxx"

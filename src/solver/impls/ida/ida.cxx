@@ -31,10 +31,10 @@
 
 #ifdef BOUT_HAS_IDA
 
-#include <boutcomm.hxx>
-#include <interpolation.hxx> // Cell interpolation
-#include <msg_stack.hxx>
-#include <boutexception.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/interpolation.hxx> // Cell interpolation
+#include <bout/msg_stack.hxx>
+#include <bout/boutexception.hxx>
 
 #include <ida/ida.h>
 #include <ida/ida_spgmr.h>
@@ -44,9 +44,9 @@
 #include <sundials/sundials_types.h>
 #include <sundials/sundials_math.h>
 
-#include <output.hxx>
+#include <bout/output.hxx>
 
-#include "unused.hxx"
+#include "bout/unused.hxx"
 
 #define ZERO        RCONST(0.)
 #define ONE         RCONST(1.0)

@@ -29,7 +29,7 @@ class PowerSolver;
 #ifndef __POWER_SOLVER_H__
 #define __POWER_SOLVER_H__
 
-#include <bout_types.hxx>
+#include <bout/bout_types.hxx>
 #include <bout/solver.hxx>
 
 class PowerSolver : public Solver {

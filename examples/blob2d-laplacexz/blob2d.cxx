@@ -5,8 +5,8 @@
  *******************************************************************/
 
 #include <bout.hxx>                // Commonly used BOUT++ components
-#include <boutmain.hxx>            // Defines a simple main() function
-#include <derivs.hxx>              // To use DDZ()
+#include <bout/boutmain.hxx>            // Defines a simple main() function
+#include <bout/derivs.hxx>              // To use DDZ()
 #include <bout/invert/laplacexz.hxx>      // Laplacian inversion
 
 /********* Global variables***********/

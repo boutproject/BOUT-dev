@@ -30,14 +30,14 @@
 #include <petsc-private/tsimpl.h>
 #include <petsc.h>
 
-#include <globals.hxx>
+#include <bout/globals.hxx>
 
 #include <stdlib.h>
 
-#include <interpolation.hxx> // Cell interpolation
-#include <msg_stack.hxx>
-#include <output.hxx>
-#include <boutcomm.hxx>
+#include <bout/interpolation.hxx> // Cell interpolation
+#include <bout/msg_stack.hxx>
+#include <bout/output.hxx>
+#include <bout/boutcomm.hxx>
 
 static char help[] = "BOUT++: Uses finite difference methods to solve plasma fluid problems in curvilinear coordinates";
 

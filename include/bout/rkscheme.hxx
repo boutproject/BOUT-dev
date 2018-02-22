@@ -35,9 +35,9 @@ class RKScheme;
 #ifndef __RKSCHEME_H__
 #define __RKSCHEME_H__
 
-#include <bout_types.hxx>
-#include <options.hxx>
-#include <utils.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/options.hxx>
+#include <bout/utils.hxx>
 
 #include <iomanip>
 #include <string>

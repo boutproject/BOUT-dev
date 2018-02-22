@@ -9,9 +9,9 @@
 
 
 #include <bout.hxx>
-#include <boutmain.hxx>
-#include <initialprofiles.hxx>
-#include <derivs.hxx>
+#include <bout/boutmain.hxx>
+#include <bout/initialprofiles.hxx>
+#include <bout/derivs.hxx>
 
 
 int diffusive(BoutReal time);

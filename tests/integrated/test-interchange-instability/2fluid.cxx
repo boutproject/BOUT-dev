@@ -4,10 +4,10 @@
  *******************************************************************************/
 
 #include <bout.hxx>
-#include <boutmain.hxx>
+#include <bout/boutmain.hxx>
 
-#include <initialprofiles.hxx>
-#include <derivs.hxx>
+#include <bout/initialprofiles.hxx>
+#include <bout/derivs.hxx>
 
 #include <math.h>
 #include <stdio.h>
@@ -436,7 +436,7 @@ int physics_run(BoutReal t)
  *                       FAST LINEAR FIELD SOLVERS
  *******************************************************************************/
 
-#include <invert_laplace.hxx>
+#include <bout/invert_laplace.hxx>
 
 // Performs inversion of rho (r) to get phi (p)
 int solve_phi_tridag(Field3D &r, Field3D &p, int flags) {

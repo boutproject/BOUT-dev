@@ -7,7 +7,7 @@
  */
 
 #include "bout/physicsmodel.hxx"
-#include "initialprofiles.hxx"
+#include "bout/initialprofiles.hxx"
 
 void create_and_dump(Field3D& field, const char* name) {
   initial_profile(name, field);

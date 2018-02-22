@@ -8,8 +8,8 @@
 ///
 
 #include <bout/physicsmodel.hxx> // Commonly used BOUT++ components
-#include <derivs.hxx>            // To use DDZ()
-#include <invert_laplace.hxx>    // Laplacian inversion
+#include <bout/derivs.hxx>            // To use DDZ()
+#include <bout/invert_laplace.hxx>    // Laplacian inversion
 
 #include <bout/operators_di.hxx> // For DataIterator indexed operators
 

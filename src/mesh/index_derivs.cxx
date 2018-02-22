@@ -45,22 +45,22 @@
  **************************************************************************/
 
 #include <bout/constants.hxx>
-#include <derivs.hxx>
-#include <fft.hxx>
-#include <globals.hxx>
-#include <interpolation.hxx>
+#include <bout/derivs.hxx>
+#include <bout/fft.hxx>
+#include <bout/globals.hxx>
+#include <bout/interpolation.hxx>
 #include <bout/constants.hxx>
 #include <bout/openmpwrap.hxx>
 
-#include <msg_stack.hxx>
-#include <stencils.hxx>
-#include <utils.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/stencils.hxx>
+#include <bout/utils.hxx>
 
 #include <cmath>
 #include <stdlib.h>
 #include <string.h>
 
-#include <output.hxx>
+#include <bout/output.hxx>
 
 #include <bout/mesh.hxx>
 

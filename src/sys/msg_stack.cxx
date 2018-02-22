@@ -24,8 +24,8 @@
  *
  **************************************************************************/
 
-#include <msg_stack.hxx>
-#include <output.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/output.hxx>
 #include <string.h>
 #include <string>
 #include <stdarg.h>

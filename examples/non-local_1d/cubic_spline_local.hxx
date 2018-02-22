@@ -29,7 +29,7 @@
 
 #include <bout/constants.hxx>
 #include <bout.hxx>
-#include <derivs.hxx>
+#include <bout/derivs.hxx>
 #include <cmath>
 
 class CubicSpline {

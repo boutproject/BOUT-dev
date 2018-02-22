@@ -4,10 +4,10 @@
  *****************************************************************************/
 
 #include <bout.hxx>
-#include <boutmain.hxx>
+#include <bout/boutmain.hxx>
 
-#include <invert_laplace.hxx>
-#include <initialprofiles.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/initialprofiles.hxx>
 
 #include <math.h>
 #include <stdio.h>

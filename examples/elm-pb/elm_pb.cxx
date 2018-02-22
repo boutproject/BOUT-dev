@@ -6,16 +6,16 @@
  *******************************************************************************/
  
 #include <bout.hxx>
-#include <initialprofiles.hxx>
-#include <invert_laplace.hxx>
-#include <invert_parderiv.hxx>
-#include <interpolation.hxx>
-#include <derivs.hxx>
-#include <sourcex.hxx>
-#include <boutmain.hxx>
+#include <bout/initialprofiles.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/invert_parderiv.hxx>
+#include <bout/interpolation.hxx>
+#include <bout/derivs.hxx>
+#include <bout/sourcex.hxx>
+#include <bout/boutmain.hxx>
 #include <bout/constants.hxx>
-#include <msg_stack.hxx>
-#include <utils.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/utils.hxx>
 
 #include <math.h>
 

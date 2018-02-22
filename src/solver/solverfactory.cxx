@@ -21,7 +21,7 @@
 #include "impls/snes/snes.hxx"
 #include "impls/rkgeneric/rkgeneric.hxx"
 
-#include <boutexception.hxx>
+#include <bout/boutexception.hxx>
 
 SolverFactory* SolverFactory::instance = NULL;
 

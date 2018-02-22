@@ -37,24 +37,24 @@
 #define DRIVE_GRADV
 #define DRIVE_VEMINUSVI
 
-#include <globals.hxx>
+#include <bout/globals.hxx>
 
 #include <sstream>
 #include <cmath>
 
-#include <bout_types.hxx>
-#include <options.hxx>
-#include <boutexception.hxx>
-#include <utils.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/options.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/utils.hxx>
 #include <bout/sys/timer.hxx>
-#include <output.hxx>
-#include <msg_stack.hxx>
+#include <bout/output.hxx>
+#include <bout/msg_stack.hxx>
 #include <bout/constants.hxx>
-#include <fieldperp.hxx>
-#include <field3d.hxx>
-#include <field2d.hxx>
-#include <stencils.hxx>
-#include <interpolation.hxx>
+#include <bout/fieldperp.hxx>
+#include <bout/field3d.hxx>
+#include <bout/field2d.hxx>
+#include <bout/stencils.hxx>
+#include <bout/interpolation.hxx>
 
 #include "cubic_spline_local.hxx"
 #include "non-local_parallel_integration.hxx"

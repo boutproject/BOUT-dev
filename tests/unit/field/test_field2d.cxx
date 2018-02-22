@@ -2,11 +2,11 @@
 
 #include "bout/constants.hxx"
 #include "bout/mesh.hxx"
-#include "boutexception.hxx"
-#include "field2d.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/field2d.hxx"
 #include "test_extras.hxx"
-#include "unused.hxx"
-#include "utils.hxx"
+#include "bout/unused.hxx"
+#include "bout/utils.hxx"
 
 #include <cmath>
 #include <set>

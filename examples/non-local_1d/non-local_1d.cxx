@@ -4,9 +4,9 @@
  */
 
 #include <bout.hxx>
-#include <boutmain.hxx>
+#include <bout/boutmain.hxx>
 
-#include <interpolation.hxx>
+#include <bout/interpolation.hxx>
 #include <cmath>
 #include <sstream>
 

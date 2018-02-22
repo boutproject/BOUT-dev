@@ -25,9 +25,9 @@
  *
  **************************************************************************/
 
-#include <globals.hxx>
-#include <options.hxx>
-#include <fft.hxx>
+#include <bout/globals.hxx>
+#include <bout/options.hxx>
+#include <bout/fft.hxx>
 #include <bout/constants.hxx>
 #include <bout/openmpwrap.hxx>
 

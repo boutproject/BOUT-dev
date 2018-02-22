@@ -4,9 +4,9 @@
  */
 
 #include <bout.hxx>
-#include <boutmain.hxx>
-#include <invert_laplace.hxx>
-#include <field_factory.hxx>
+#include <bout/boutmain.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/field_factory.hxx>
 
 int physics_init(bool restarting) {
   FieldFactory f(mesh);

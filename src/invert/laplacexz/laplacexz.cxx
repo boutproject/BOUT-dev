@@ -1,7 +1,7 @@
 #include "impls/cyclic/laplacexz-cyclic.hxx"
 #include "impls/petsc/laplacexz-petsc.hxx"
 
-#include <boutexception.hxx>
+#include <bout/boutexception.hxx>
 #include <bout/invert/laplacexz.hxx>
 
 #include <strings.h>

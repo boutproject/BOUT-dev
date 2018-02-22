@@ -27,16 +27,16 @@
 
 #include "petsc-3.2.hxx"
 
-#include <boutcomm.hxx>
+#include <bout/boutcomm.hxx>
 #include <private/tsimpl.h>
 
-#include <globals.hxx>
+#include <bout/globals.hxx>
 
 #include <stdlib.h>
 
-#include <interpolation.hxx> // Cell interpolation
-#include <msg_stack.hxx>
-#include <output.hxx>
+#include <bout/interpolation.hxx> // Cell interpolation
+#include <bout/msg_stack.hxx>
+#include <bout/output.hxx>
 
 extern PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_data);
 extern PetscErrorCode solver_rhsjacobian(TS ts,BoutReal t,Vec globalin,Mat *J,Mat *Jpre,MatStructure *str,void *f_data);

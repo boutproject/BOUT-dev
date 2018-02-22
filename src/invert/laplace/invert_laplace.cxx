@@ -31,16 +31,16 @@
  *
  */
 
-#include <globals.hxx>
-#include <invert_laplace.hxx>
-#include <bout_types.hxx>
-#include <options.hxx>
-#include <boutexception.hxx>
-#include <utils.hxx>
+#include <bout/globals.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/options.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/utils.hxx>
 #include <cmath>
 #include <bout/sys/timer.hxx>
-#include <output.hxx>
-#include <msg_stack.hxx>
+#include <bout/output.hxx>
+#include <bout/msg_stack.hxx>
 #include <bout/constants.hxx>
 #include <bout/openmpwrap.hxx>
 

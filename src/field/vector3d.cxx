@@ -28,11 +28,11 @@
  *
  **************************************************************************/
 
-#include <globals.hxx>
+#include <bout/globals.hxx>
 
-#include <vector3d.hxx>
-#include <boundary_op.hxx>
-#include <boutexception.hxx>
+#include <bout/vector3d.hxx>
+#include <bout/boundary_op.hxx>
+#include <bout/boutexception.hxx>
 
 Vector3D::Vector3D(Mesh *localmesh)
     : covariant(true), deriv(), x(localmesh), y(localmesh), z(localmesh) {}

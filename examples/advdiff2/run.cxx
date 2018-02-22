@@ -1,6 +1,6 @@
 #include <bout.hxx>
-#include <derivs.hxx>
-#include "globals.hxx"
+#include <bout/derivs.hxx>
+#include "bout/globals.hxx"
 
 
 int physics_run(BoutReal t)

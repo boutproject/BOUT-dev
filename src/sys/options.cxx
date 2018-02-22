@@ -1,10 +1,10 @@
-#include <options.hxx>
-#include <boutexception.hxx>
-#include <utils.hxx>
+#include <bout/options.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/utils.hxx>
 #include <sstream>
-#include <output.hxx>
+#include <bout/output.hxx>
 
-#include <field_factory.hxx> // Used for parsing expressions
+#include <bout/field_factory.hxx> // Used for parsing expressions
 
 const string DEFAULT_SOURCE{"default"}; // The source label given to default values
 

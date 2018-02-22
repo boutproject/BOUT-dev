@@ -34,8 +34,8 @@ class LaplacePDD;
 #ifndef __LAPLACE_PDD_H__
 #define __LAPLACE_PDD_H__
 
-#include <invert_laplace.hxx>
-#include <options.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/options.hxx>
 
 class LaplacePDD : public Laplacian {
 public:

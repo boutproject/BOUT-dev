@@ -45,8 +45,8 @@ class NcFormat;
 #ifndef __NCFORMAT_H__
 #define __NCFORMAT_H__
 
-#include "dataformat.hxx"
-#include "unused.hxx"
+#include "bout/dataformat.hxx"
+#include "bout/unused.hxx"
 
 #include <netcdfcpp.h>
 

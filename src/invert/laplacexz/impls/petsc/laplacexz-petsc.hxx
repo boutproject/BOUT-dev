@@ -13,7 +13,7 @@ class LaplaceXZpetsc;
 
 #ifndef BOUT_HAS_PETSC
 
-#include <boutexception.hxx>
+#include <bout/boutexception.hxx>
 class LaplaceXZpetsc : public LaplaceXZ {
 public:
   LaplaceXZpetsc(Mesh *m, Options *options) : LaplaceXZ(m, options) {

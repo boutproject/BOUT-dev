@@ -29,9 +29,9 @@ class LaplaceSerialTri;
 #ifndef __SERIAL_TRI_H__
 #define __SERIAL_TRI_H__
 
-#include <invert_laplace.hxx>
-#include <dcomplex.hxx>
-#include <options.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/dcomplex.hxx>
+#include <bout/options.hxx>
 
 class LaplaceSerialTri : public Laplacian {
 public:
