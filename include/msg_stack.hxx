@@ -29,7 +29,10 @@ class MsgStack;
 #ifndef __MSG_STACK_H__
 #define __MSG_STACK_H__
 
+#include "unused.hxx"
+
 #include <stdio.h>
+#include <stdarg.h>
 #include <string>
 
 /// The maximum length (in chars) of messages, not including terminating '0'
@@ -73,15 +76,16 @@ class MsgStack {
   std::string getDump();    ///< Write out all messages to a string
 #else
   /// Dummy functions which should be optimised out
-  int push(const char *s, ...) {return 0;}
+  int push(const char *UNUSED(s), ...) {return 0;}
   
   int setPoint() {return 0;}
   
   void pop() {}
-  void pop(int id) {}
+  void pop(int UNUSED(id)) {}
   void clear() {}
   
   void dump() {}
+  std::string getDump() { return ""; }
 #endif
   
  private:
@@ -119,11 +123,18 @@ GLOBAL MsgStack msg_stack;
  */
 class MsgStackItem {
 public:
-  MsgStackItem(const char* msg) {
+  MsgStackItem(const char* msg) { //Not currently used anywhere
     point = msg_stack.push(msg);
   }
-  MsgStackItem(const char* msg, const char* file, int line) {
+  MsgStackItem(const char* msg, const char* file, int line) {  //Not currently used anywhere
     point = msg_stack.push("%s on line %d of '%s'", msg, line, file);
+  }
+  MsgStackItem(const char* file, int line, const char* msg, ...) {
+    va_list args;
+    va_start(args, msg);
+    vsnprintf(buffer,MSG_MAX_SIZE, msg, args);
+    point = msg_stack.push("%s on line %d of '%s'", buffer, line, file);
+    va_end(args);
   }
   ~MsgStackItem() {
     // If an exception has occurred, don't pop the message
@@ -132,6 +143,7 @@ public:
   }
 private:
   int point;
+  char buffer[256];
 };
 
 /// To concatenate strings for a variable name
@@ -151,10 +163,19 @@ private:
  * 
  * } // Scope ends, message popped
  */
-#ifdef CHECK
-#define TRACE(message) MsgStackItem CONCATENATE(msgTrace_ , __LINE__) (message, __FILE__, __LINE__)
+#if CHECK > 0
+/* Would like to have something like TRACE(message, ...) so that we can directly refer
+   to the (required) first argument, which is the main message string. However because
+   we want to allow TRACE("Message with no args") we have to deal with the case where
+   __VA_ARGS__ is empty. There's a GCC specific extension such that 
+    //#define TRACE(message, ...) MsgStackItem CONCATENATE(msgTrace_ , __LINE__) (message, __FILE__, __LINE__, ##__VA_ARGS__) //## is non-standard here
+    would achieve this for us. However to be more portable have to instead just reorder
+    the arguments from the original MsgStackItem constructor so that the message is the
+    last of the required arguments and the optional arguments follow from there.
+ */
+#define TRACE(...) MsgStackItem CONCATENATE(msgTrace_ , __LINE__) (__FILE__, __LINE__, __VA_ARGS__)
 #else
-#define TRACE(message)
+#define TRACE(...)
 #endif
 
 #endif // __MSG_STACK_H__

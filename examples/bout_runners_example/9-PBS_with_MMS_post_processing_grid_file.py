@@ -3,25 +3,25 @@
 """Driver which runs 3D_diffusion by submitting a job to a PBS and
 performs a MMS test by specifying the grids by using grid_files."""
 
-from bout_runners.bout_runners import PBS_runner
-from post_processing_MMS import perform_MMS_test
-from grid_generator import  generate_grid
+from bout_runners import PBS_runner
+from pre_and_post_processing.post_processing_MMS import perform_MMS_test
+from pre_and_post_processing.grid_generator import  generate_grid
+import os
 
 # Generate the grids
 # Specify the grid dimensions
-grid_numbers = [8, 16, 32]
+grid_numbers = (8, 16, 32)
 # Make an append able list
 grid_files = []
 for grid_number in grid_numbers:
-    file_name = 'grid_file_' + str(grid_number)
+    file_name = os.path.join("grid_files","grid_file_{}.nc".format(grid_number))
     # Generate the grids
     generate_grid(nx        = grid_number,\
                   ny        = grid_number,\
                   nz        = grid_number,\
                   inp_path  = 'MMS'      ,\
                   file_name = file_name)
-    # Append the grid_files list
-    grid_files.append(file_name + '.nc')
+    grid_files.append(file_name)
 
 my_runs = PBS_runner(\
             # Specify the numbers used for the BOUT runs
@@ -51,8 +51,8 @@ my_runs = PBS_runner(\
             # used
             additional            = ('flags','use_grid','true'),\
             # Add some additional option
-            series_add            = [('cst','D_par',[1,2]),\
-                                     ('cst','D_perp',[0.5,1])],\
+            series_add            = (('cst','D_par' ,(1,2)),\
+                                     ('cst','D_perp',(0.5,1))),\
             # Copy the grid file
             cpy_grid              = True,\
             # Sort the runs by the spatial domain

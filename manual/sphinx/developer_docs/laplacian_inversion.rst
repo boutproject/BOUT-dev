@@ -14,9 +14,7 @@ done using a tridiagonal solver (Thomas algorithm), or a band-solver
 
 To support multiple implementations, a base class ``Laplacian`` is
 defined in ``include/invert_laplace.hxx``. This defines a set of
-functions which all implementations must provide:
-
-.. code-block:: cpp
+functions which all implementations must provide::
 
     class Laplacian {
      public:
@@ -33,26 +31,20 @@ at once. Several other functions are also virtual, so default code
 exists but can be overridden by an implementation.
 
 For convenience, the ``Laplacian`` base class also defines a function to
-calculate coefficients in a Tridiagonal matrix
-
-.. code-block:: cpp
+calculate coefficients in a Tridiagonal matrix::
 
       void tridagCoefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b,
                        dcomplex &c, const Field2D *ccoef = NULL,
                        const Field2D *d=NULL);
 
-For the user of the class, some static functions are defined:
-
-.. code-block:: cpp
+For the user of the class, some static functions are defined::
 
       static Laplacian* create(Options *opt = NULL);
       static Laplacian* defaultInstance();
 
 The create function allows new Laplacian implementations to be created,
 based on options. To use the options in the ``[laplace]`` section, just
-use the default:
-
-.. code-block:: cpp
+use the default::
 
       Laplacian* lap = Laplacian::create();
 
@@ -96,9 +88,10 @@ starting on Y=1. This works ok as long as the number of slices to be
 inverted is greater than the number of X processors
 (``MYSUB > mesh->NXPE``). If ``MYSUB < mesh->NXPE`` then not all
 processors can be busy at once, and so efficiency will fall sharply.
-Figure [fig:par\_laplace] shows the useage of 4 processors inverting a
+:numref:`fig-par-laplace` shows the useage of 4 processors inverting a
 set of 3 poloidal slices (i.e. MYSUB=3)
 
+.. _fig-par-laplace:
 .. figure:: ../figs/par_laplace.*
    :alt: Parallel Laplacian inversion
 

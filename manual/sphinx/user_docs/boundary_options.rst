@@ -58,16 +58,16 @@ The zero- or constant-Laplacian boundary conditions works as follows:
 
 .. math::
 
-   \nabla_\perp^2 f =& 0 \\ &\simeq& g^{xx}\frac{\partial^2 f}{\partial x^2} +
-       g^{zz}\frac{\partial^2 f}{\partial z^2}
+   \nabla_\perp^2 f &= 0 \\
+   &\simeq g^{xx}\frac{\partial^2 f}{\partial x^2} + g^{zz}\frac{\partial^2 f}{\partial z^2}
 
- which when Fourier transformed in :math:`z` becomes:
+which when Fourier transformed in :math:`z` becomes:
 
 .. math::
 
    g^{xx}\frac{\partial^2 \hat{f}}{\partial x^2} - g^{zz}k_z^2 \hat{f} = 0
 
- which has the solution
+which has the solution
 
 .. math::
 
@@ -212,6 +212,8 @@ then the “target” boundary condition for ``Ni`` would first search in
 the ``[Ni]`` section for ``bndry_target``, then for ``bndry_all`` in the
 ``[Ni]`` section. This is set to ``relax(dirichlet(0.1))``, not the
 Neumann condition desired.
+
+.. _sec-BoundaryRegion:
 
 Boundary regions
 ----------------
@@ -395,7 +397,7 @@ and implemented in ``boundary_standard.cxx``
 
     void BoundaryNeumann::apply(Field3D &f) {
       for(bndry->first(); !bndry->isDone(); bndry->next())
-        for(int z=0;z<mesh->ngz;z++)
+        for(int z=0;z<mesh->LocalNz;z++)
           f[bndry->x][bndry->y][z] = f[bndry->x - bndry->bx][bndry->y -
     bndry->by][z];
     }

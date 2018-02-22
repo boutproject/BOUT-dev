@@ -1,0 +1,54 @@
+#!/usr/bin/env python3
+
+#
+# Run the test, check it completed successfully
+#
+
+from __future__ import print_function
+try:
+  from builtins import str
+except:
+  pass
+from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
+from boutdata.collect import collect
+from sys import stdout, exit
+
+MPIRUN=getmpirun()
+
+print("Making Cyclic Reduction test")
+shell_safe("make > make.log")
+
+flags = ["", "nsys=2", "nsys=5 periodic", "nsys=7 n=10"]
+
+code = 0 # Return code
+for nproc in [1,2,4]:
+    cmd = "./test_cyclic"
+
+    print("   %d processors...." % (nproc))
+    r = 0
+    for f in flags:
+        stdout.write("\tflags '"+f+"' ... ")
+
+        shell("rm data/BOUT.dmp.* 2> err.log")
+
+        # Run the case
+        s, out = launch_safe(cmd+" "+f, runcmd=MPIRUN, nproc=nproc, pipe=True)
+        with open("run.log."+str(nproc)+"."+str(r), "w") as f:
+          f.write(out)
+
+        r = r + 1
+
+        # Find out if it worked
+        allpassed = collect("allpassed", path="data", info=False)
+        if allpassed:
+            print("PASSED")
+        else:
+            print("FAILED")
+            code = 1
+
+if code == 0:
+    print(" => All cyclic reduction tests passed")
+else:
+    print(" => Some failed tests")
+
+exit(code)

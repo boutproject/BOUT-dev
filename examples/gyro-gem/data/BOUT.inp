@@ -8,10 +8,9 @@ TIMESTEP = 1e-5	   # time between outputs
 
 archive = 20
 
-ShiftXderivs = true # use shifted radial derivatives?
 TwistShift = true  # use twist-shift condition?
 
-MZ = 33     # number of points in z direction (2^n + 1)
+MZ = 32     # number of points in z direction (2^n)
 ZPERIOD = 10  # Number of periods
 
 MXG = 2
@@ -25,7 +24,8 @@ dump_format = "nc"   # Output format (PDB = "pdb", NetCDF="nc")
 
 periodicX = false  # Make domain periodic in X
 
-NXPE = 1 # Decompose in X direction
+[mesh]
+paralleltransform = shifted # Use shifted metric method
 
 ##################################################
 # derivative methods
@@ -111,21 +111,6 @@ fix_profiles = true
 [All]
 scale = 0.0 # default size of initial perturbations
 
-# form of initial profile:
-# 0 - constant
-# 1 - Gaussian
-# 2 - Sinusoidal
-# 3 - Mix of mode numbers (like original BOUT)
-
-xs_opt = 1
-ys_opt = 1
-ys_wd = 0.5
-xs_wd = 0.2
-zs_opt = 2
-
-zs_mode = 1 # asimuthal mode number
-
-
 # boundary conditions
 # -------------------
 # dirichlet    - Zero value
@@ -138,7 +123,9 @@ zs_mode = 1 # asimuthal mode number
 bndry_all = neumann
 
 [Ni]
-scale = 1.0e1 # only perturbing Ni
+scale = 1e-3 # only perturbing Ni
+
+function = exp(-((x-0.5)/0.2)^2) * exp(-((y/(2*pi) - 0.5)/0.5)^2) * sin(z)
 
 ddt = true # Evolve Ni
 

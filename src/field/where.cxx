@@ -26,7 +26,7 @@
 #include <where.hxx>
 
 const Field3D where(const Field2D &test, const Field3D &gt0, const Field3D &le0) {
-  Field3D result;
+  Field3D result(test.getMesh());
   result.allocate();
   
   for(auto i : result) {
@@ -40,7 +40,7 @@ const Field3D where(const Field2D &test, const Field3D &gt0, const Field3D &le0)
 }
 
 const Field3D where(const Field2D &test, const Field3D &gt0, BoutReal le0) {
-  Field3D result;
+  Field3D result(test.getMesh());
   result.allocate();
   
   for(auto i : result) {
@@ -54,7 +54,7 @@ const Field3D where(const Field2D &test, const Field3D &gt0, BoutReal le0) {
 }
 
 const Field3D where(const Field2D &test, BoutReal gt0, const Field3D &le0) {
-  Field3D result;
+  Field3D result(test.getMesh());
   result.allocate();
   
   for(auto i : result) {
@@ -69,7 +69,7 @@ const Field3D where(const Field2D &test, BoutReal gt0, const Field3D &le0) {
 }
 
 const Field3D where(const Field2D &test, const Field3D &gt0, const Field2D &le0) {
-  Field3D result;
+  Field3D result(test.getMesh());
   result.allocate();
   
   for(auto i : result) {
@@ -84,7 +84,7 @@ const Field3D where(const Field2D &test, const Field3D &gt0, const Field2D &le0)
 }
 
 const Field3D where(const Field2D &test, const Field2D &gt0, const Field3D &le0) {
-  Field3D result;
+  Field3D result(test.getMesh());
   result.allocate();
   
   for(auto i : result) {
@@ -102,7 +102,7 @@ const Field3D where(const Field2D &test, const Field2D &gt0, const Field3D &le0)
 // Versions returning Field2D
 
 const Field2D where(const Field2D &test, const Field2D &gt0, const Field2D &le0) {
-  Field2D result;
+  Field2D result(test.getMesh());
   result.allocate();
   
   for(auto i : result) {
@@ -117,7 +117,7 @@ const Field2D where(const Field2D &test, const Field2D &gt0, const Field2D &le0)
 }
 
 const Field2D where(const Field2D &test, const Field2D &gt0, BoutReal le0) {
-  Field2D result;
+  Field2D result(test.getMesh());
   result.allocate();
   
   for(auto i : result) {
@@ -132,7 +132,7 @@ const Field2D where(const Field2D &test, const Field2D &gt0, BoutReal le0) {
 }
 
 const Field2D where(const Field2D &test, BoutReal gt0, const Field2D &le0) {
-  Field2D result;
+  Field2D result(test.getMesh());
   result.allocate();
   
   for(auto i : result) {
@@ -147,7 +147,7 @@ const Field2D where(const Field2D &test, BoutReal gt0, const Field2D &le0) {
 }
 
 const Field2D where(const Field2D &test, BoutReal gt0, BoutReal le0) {
-  Field2D result;
+  Field2D result(test.getMesh());
   result.allocate();
   
   for(auto i : result) {
@@ -162,7 +162,7 @@ const Field2D where(const Field2D &test, BoutReal gt0, BoutReal le0) {
 }
 
 const Field3D where(const Field3D &test, BoutReal gt0, const Field3D &le0) {
-  Field3D result;
+  Field3D result(test.getMesh());
   result.allocate();
   
   for(auto i : result) {

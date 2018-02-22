@@ -40,14 +40,14 @@ class RKGenericSolver : public Solver {
   ~RKGenericSolver();
   
   //Utilities only used by the CTU bracket approach
-  void setMaxTimestep(BoutReal dt);
-  BoutReal getCurrentTimestep() {return timestep; }
+  void setMaxTimestep(BoutReal dt) override;
+  BoutReal getCurrentTimestep() override {return timestep; }
 
   //Setup solver and scheme
-  int init(bool restarting, int nout, BoutReal tstep);
+  int init(int nout, BoutReal tstep) override;
 
   //Actually evolve
-  int run();
+  int run() override;
 
  private:
   //Take a step using the scheme

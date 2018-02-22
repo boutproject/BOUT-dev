@@ -3,30 +3,38 @@
  * 
  */
 
-#include <bout.hxx>
-#include <boutmain.hxx>
+#include <bout/physicsmodel.hxx>
 
-Field3D T; // Evolving temperature equation only
+class Conduction : public PhysicsModel {
+private:
+  
+  Field3D T; // Evolving temperature equation only
+  
+  BoutReal chi; // Parallel conduction coefficient
 
-BoutReal chi; // Parallel conduction coefficient
+protected:
 
-int physics_init(bool restarting) {
-  
-  // Get the options
-  Options *options = Options::getRoot()->getSection("conduction");
-  
-  OPTION(options, chi, 1.0); // Read from BOUT.inp, setting default to 1.0
+  // This is called once at the start
+  int init(bool restarting) override {
+    
+    // Get the options
+    Options *options = Options::getRoot()->getSection("conduction");
+    
+    OPTION(options, chi, 1.0); // Read from BOUT.inp, setting default to 1.0
 
-  // Tell BOUT++ to solve T
-  SOLVE_FOR(T);
-  
-  return 0;
-}
+    // Tell BOUT++ to solve T
+    SOLVE_FOR(T);
+    
+    return 0;
+  }
 
-int physics_run(BoutReal t) {
-  mesh->communicate(T); // Communicate guard cells
+  int rhs(BoutReal t) override {
+    mesh->communicate(T); // Communicate guard cells
+    
+    ddt(T) = Div_par_K_Grad_par(chi, T); // Parallel diffusion Div_{||}( chi * Grad_{||}(T) )
   
-  ddt(T) = Div_par_K_Grad_par(chi, T); // Parallel diffusion Div_{||}( chi * Grad_{||}(T) )
-  
-  return 0;
-}
+    return 0;
+  }
+};
+
+BOUTMAIN(Conduction);

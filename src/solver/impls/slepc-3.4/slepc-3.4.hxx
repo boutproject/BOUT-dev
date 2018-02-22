@@ -62,8 +62,8 @@ class SlepcSolver : public Solver {
   void monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[], PetscScalar eigi[], PetscReal errest[], PetscInt nest);
 
   //These contain slepc specific code and call the advanceSolver code
-  int init(bool restarting, int NOUT, BoutReal TIMESTEP);
-  int run();
+  int init(int NOUT, BoutReal TIMESTEP) override;
+  int run() override;
 
   ////////////////////////////////////////
   /// OVERRIDE

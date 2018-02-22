@@ -36,7 +36,10 @@
 #include <fft.hxx>
 #include <bout/constants.hxx>
 
-LaplaceShoot::LaplaceShoot(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0) {
+LaplaceShoot::LaplaceShoot(Options *opt)
+    : Laplacian(opt), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
+  throw BoutException("LaplaceShoot is a test implementation and does not currently work. Please select a different implementation.");
+
   if(mesh->periodicX) {
         throw BoutException("LaplaceShoot does not work with periodicity in the x direction (mesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
   }
@@ -72,7 +75,8 @@ LaplaceShoot::~LaplaceShoot() {
 }
 
 const FieldPerp LaplaceShoot::solve(const FieldPerp &rhs) {
-  FieldPerp x;  // Result
+  Mesh *mesh = rhs.getMesh();
+  FieldPerp x(mesh); // Result
   x.allocate();
   
   int jy = rhs.getIndex();  // Get the Y index
@@ -139,9 +143,9 @@ const FieldPerp LaplaceShoot::solve(const FieldPerp &rhs) {
       
       // Get the coefficients
       dcomplex a,b,c;
-      tridagCoefs(ix, jy, kwave, a, b, c, &C, &D);
-      b += A(ix,jy);
-      
+      tridagCoefs(ix, jy, kwave, a, b, c, &Ccoef, &Dcoef);
+      b += Acoef(ix, jy);
+
       // a*km + b*kc + c*kp = rhsk
       
       km[kz] = (rhsk[kz] - b*kc[kz] - c*kp[kz]) / a;

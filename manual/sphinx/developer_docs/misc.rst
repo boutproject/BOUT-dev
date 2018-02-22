@@ -7,6 +7,8 @@ needed.
 Printing messages
 -----------------
 
+.. _sec-rangeiterator:
+
 Iterating over ranges
 ---------------------
 

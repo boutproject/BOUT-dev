@@ -259,8 +259,7 @@ def resize(newNx, newNy, newNz, mxg=2, myg=2,\
             print("Changing {} => {}".format(f, new_f))
 
         # Open the restart file in read mode and create the new file
-        with DataFile(f) as old,\
-             DataFile(new_f, write=True, create=True) as new:
+        with DataFile(f) as old, DataFile(new_f, write=True, create=True) as new:
 
             # Find the dimension
             for var in old.list():
@@ -632,9 +631,9 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
         print("ERROR: No data found")
         return False
 
-    old_npes = f.read('NPES')
     old_nxpe = f.read('NXPE')
-    old_nype = int(old_npes/old_nxpe)
+    old_nype = f.read("NYPE")
+    old_npes = old_nxpe * old_nype
 
     if nfiles != old_npes:
         print("WARNING: Number of restart files inconsistent with NPES")
@@ -891,3 +890,44 @@ def resizeY(newy, path="data", output=".", informat="nc", outformat=None,myg=2):
                 
         infile.close()
         outfile.close()
+
+
+def addvar(var, value, path="."):
+    """Adds a variable with constant value to all restart files.
+
+    This is useful for restarting simulations whilst turning on new
+    equations. By default BOUT++ throws an error if an evolving
+    variable is not in the restart file. By setting an option the
+    variable can be set to zero. This allows it to start with a
+    non-zero value.
+
+    Input
+    -----
+    var      The variable to add
+    value    Constant value for the variable
+    path     Path to directory containing restart files
+    """
+
+    file_list = glob.glob(os.path.join(path, "BOUT.restart.*"))
+    nfiles = len(file_list)
+
+    print("Number of restart files: %d" % (nfiles,))
+    # Loop through all the restart files
+    for filename in file_list:
+        print(filename)
+        # Open the restart file for writing (modification)
+        with DataFile(filename, write=True) as df:
+            size = None
+            # Find a 3D variable and get its size
+            for varname in df.list():
+                size = df.size(varname)
+                if len(size) == 3:
+                    break
+            if size is None:
+                raise Exception("no 3D variables found")
+
+            # Create a new 3D array with input value
+            data = np.zeros(size) + value
+
+            # Set the variable in the NetCDF file
+            df.write(var, data)

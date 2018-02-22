@@ -46,8 +46,8 @@ class FieldFactory;
 
 // Utility routines to create generators from values
 
-FieldGenerator* generator(BoutReal value);
-FieldGenerator* generator(BoutReal *ptr);
+std::shared_ptr<FieldGenerator> generator(BoutReal value);
+std::shared_ptr<FieldGenerator> generator(BoutReal *ptr);
 
 //////////////////////////////////////////////////////////
 // Create a tree of generators from an input string
@@ -61,13 +61,16 @@ public:
   const Field3D create3D(const std::string &value, Options *opt = NULL, Mesh *m = NULL, CELL_LOC loc=CELL_CENTRE, BoutReal t=0.0);
 
   // Parse a string into a tree of generators
-  FieldGenerator* parse(const std::string &input, Options *opt=NULL);
+  std::shared_ptr<FieldGenerator> parse(const std::string &input, Options *opt=NULL);
 
   // Singleton object
   static FieldFactory *get();
+
+  /// clean the cache of parsed strings
+  void cleanCache();
 protected:
   // These functions called by the parser
-  FieldGenerator* resolve(std::string &name);
+  std::shared_ptr<FieldGenerator> resolve(std::string &name);
   
 private:
   Mesh *fieldmesh;  
@@ -76,7 +79,7 @@ private:
   std::list<std::string> lookup; // Names currently being parsed
   
   // Cache parsed strings
-  std::map<std::string, FieldGenerator* > cache;
+  std::map<std::string, std::shared_ptr<FieldGenerator> > cache;
   
   Options* findOption(Options *opt, const std::string &name, std::string &val);
 };
@@ -104,15 +107,15 @@ public:
   double generate(double UNUSED(x), double UNUSED(y), double UNUSED(z), double UNUSED(t)) {
     return 0.0;
   }
-  FieldGenerator* clone(const std::list<FieldGenerator*> UNUSED(args)) {
-    return this;
+  std::shared_ptr<FieldGenerator> clone(const std::list<std::shared_ptr<FieldGenerator> > UNUSED(args)) {
+    return get();
   }
   /// Singeton
-  static FieldGenerator* get() {
-    static FieldNull *instance = 0;
+  static std::shared_ptr<FieldGenerator> get() {
+    static std::shared_ptr<FieldGenerator> instance = 0;
     
     if(!instance)
-      instance = new FieldNull();
+      instance = std::shared_ptr<FieldGenerator>(new FieldNull());
     return instance;
   }
 private:

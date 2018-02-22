@@ -51,23 +51,38 @@ public:
   typedef int (PhysicsModel::*preconfunc)(BoutReal t, BoutReal gamma, BoutReal delta);
   typedef int (PhysicsModel::*jacobianfunc)(BoutReal t);
   
-  PhysicsModel() : solver(0), splitop(false), 
-                   userprecon(0), userjacobian(0), initialised(false) {}
+  PhysicsModel();
   
-  ~PhysicsModel();
+  virtual ~PhysicsModel();
   
   /*!
-   * Initialse the model, calling the init() method
+   * Initialse the model, calling the init() and postInit() methods
    *
    * Note: this is usually only called by the Solver
    */
-  int initialise(Solver *s, bool restarting) {
+  void initialise(Solver *s) {
     if(initialised)
-      return 0; // Ignore second initialisation
+      return; // Ignore second initialisation
     initialised = true;
     
+    // Restart option
+    bool restarting;
+    Options::getRoot()->get("restart", restarting, false);
+    
+    // Set the protected variable, so user code can
+    // call the solver functions
     solver = s;
-    return init(restarting); // Call user code
+
+    // Call user init code to specify evolving variables
+    if ( init(restarting) ) {
+      throw BoutException("Couldn't initialise physics model");
+    }
+    
+    // Post-initialise, which reads restart files
+    // This function can be overridden by the user
+    if (postInit(restarting)) {
+      throw BoutException("Couldn't restart physics model");
+    }
   }
   
   /*!
@@ -131,11 +146,22 @@ public:
    */ 
   int runJacobian(BoutReal t);
 
-  int runOutputMonitor(BoutReal simtime, int iter, int NOUT) {return outputMonitor(simtime, iter, NOUT);}
+  int runOutputMonitor(BoutReal simtime, int iter, int NOUT) {
+    /// Save state to restart file
+    restart.write();
+    // Call user output monitor
+    return outputMonitor(simtime, iter, NOUT);
+  }
   int runTimestepMonitor(BoutReal simtime, BoutReal dt) {return timestepMonitor(simtime, dt);}
+  
+  /// This is here temporarily for backwards compatibility
+  DEPRECATED(void addToRestart(BoutReal &var, const string &name)) {
+    // Add a variable to the restart file
+    restart.add(var, name.c_str(), 0);
+  }
 protected:
-
-  // These two functions implemented by user code to specify problem
+  
+  // The init and rhs functions are implemented by user code to specify problem
   /*!
    * @brief This function is called once by the solver at the start of a simulation.
    * 
@@ -145,6 +171,12 @@ protected:
    * be evolved should be specified.
    */
   virtual int init(bool restarting) = 0;
+  
+  /// Post-initialise. This reads the restart file
+  ///
+  /// @param[in] restarting   If true, will load state from restart file
+  ///
+  virtual int postInit(bool restarting);
   
   /*!
    * @brief This function is called by the time integration solver
@@ -176,13 +208,17 @@ protected:
   /*!
    * Implemented by user code to monitor solution at output times
    */
-  virtual int outputMonitor(BoutReal UNUSED(simtime), int UNUSED(iter), int UNUSED(NOUT)) {return 0;}
+  virtual int outputMonitor(BoutReal UNUSED(simtime), int UNUSED(iter), int UNUSED(NOUT)) {
+    return 0;
+  }
   
   /*!
    * Timestep monitor. If enabled by setting solver:monitor_timestep=true
    * then this function is called every internal timestep.
    */
   virtual int timestepMonitor(BoutReal UNUSED(simtime), BoutReal UNUSED(dt)) {return 0;}
+
+  
 
   // Functions called by the user to set callback functions
 
@@ -214,6 +250,9 @@ protected:
   void bout_solve(Field3D &var, const char *name);
   void bout_solve(Vector2D &var, const char *name);
   void bout_solve(Vector3D &var, const char *name);
+
+  /// Stores the state for restarting
+  Datafile restart; 
 
   /*!
    * Specify a constrained variable \p var, which will be
@@ -260,11 +299,13 @@ private:
       ModelClass *model = new ModelClass();           \
       Solver *solver = Solver::create();              \
       solver->setModel(model);                        \
+      Monitor * bout_monitor = new BoutMonitor();     \
       solver->addMonitor(bout_monitor, Solver::BACK); \
       solver->outputVars(dump);                       \
       solver->solve();                                \
       delete model;                                   \
       delete solver;                                  \
+      delete bout_monitor;                            \
     }catch (BoutException &e) {                       \
       output << "Error encountered\n";                \
       output << e.what() << endl;                     \

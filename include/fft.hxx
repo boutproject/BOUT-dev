@@ -30,9 +30,6 @@
 
 #include "dcomplex.hxx"
 
-/// Complex in-place FFT
-void cfft(dcomplex *cv, int length, int isign);
-
 /*!
  * Returns the fft of a real signal using fftw_forward
  *

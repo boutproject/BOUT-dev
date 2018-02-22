@@ -29,6 +29,7 @@
 #include <options.hxx>
 #include <fft.hxx>
 #include <bout/constants.hxx>
+#include <bout/openmpwrap.hxx>
 
 #include <fftw3.h>
 #include <math.h>
@@ -44,7 +45,7 @@ void fft_init()
 {
   if(fft_options)
     return;
-  //#pragma omp critical
+  //BOUT_OMP(critical)
   {
     Options *opt = Options::getRoot();
     opt = opt->getSection("fft");
@@ -53,133 +54,12 @@ void fft_init()
   }
 }
 
-#ifndef _OPENMP
-// Serial code
-void cfft(dcomplex *cv, int length, int isign)
-{
-  static fftw_complex *in, *out;
-  static fftw_plan pf, pb;
-  static int n = 0;
-
-  if(length != n) {
-    if(n > 0) {
-      fftw_destroy_plan(pf);
-      fftw_destroy_plan(pb);
-      fftw_free(in);
-      fftw_free(out);
-    }
-    fft_init();
-
-    in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * length);
-    out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * length);
-
-    unsigned int flags = FFTW_ESTIMATE;
-    if(fft_measure)
-      flags = FFTW_MEASURE;
-
-    pf = fftw_plan_dft_1d(length, in, out, FFTW_FORWARD, flags);
-    pb = fftw_plan_dft_1d(length, in, out, FFTW_BACKWARD, flags);
-
-    n = length;
-  }
-
-  // Load input data
-  for(int i=0;i<n;i++) {
-    in[i][0] = cv[i].real();
-    in[i][1] = cv[i].imag();
-  }
-
-  if(isign < 0) {
-    // Forward transform
-    fftw_execute(pf);
-    for(int i=0;i<n;i++)
-      cv[i] = dcomplex(out[i][0], out[i][1]) / ((double) n); // Normalise
-  }else {
-    // Backward
-    fftw_execute(pb);
-    for(int i=0;i<n;i++)
-      cv[i] = dcomplex(out[i][0], out[i][1]);
-  }
-}
-#else
-// Parallel thread-safe version of cfft
-void cfft(dcomplex *cv, int length, int isign)
-{
-  static fftw_complex *inall, *outall;
-  static fftw_plan *pf, *pb;
-  static int size = 0, nthreads;
-
-  int th_id = omp_get_thread_num();
-  #pragma omp critical
-  {
-    // Sort out memory. Also, FFTW planning routines not thread safe
-    int n_th = omp_get_num_threads(); // Number of threads
-    if((size != length) || (nthreads < n_th)) {
-      if(size > 0) {
-        // Free all memory
-        for(int i=0;i<nthreads;i++) {
-          fftw_destroy_plan(pf[i]);
-          fftw_destroy_plan(pb[i]);
-        }
-        delete[] pf;
-        delete[] pb;
-        fftw_free(inall);
-        fftw_free(outall);
-      }
-
-      inall = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * length * n_th);
-      outall = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * length * n_th);
-
-      pf = new fftw_plan[n_th];
-      pb = new fftw_plan[n_th];
-
-      unsigned int flags = FFTW_ESTIMATE;
-      if(fft_measure)
-        flags = FFTW_MEASURE;
-
-      for(int i=0;i<n_th;i++) {
-        pf[i] = fftw_plan_dft_1d(length, inall+i*length, outall+i*length,
-                                 FFTW_FORWARD, flags);
-        pb[i] = fftw_plan_dft_1d(length, inall+i*length, outall+i*length,
-                                 FFTW_BACKWARD, flags);
-      }
-
-      nthreads = n_th;
-      size = length;
-    }
-  }
-  // Get working arrays for this thread
-  fftw_complex *in = inall+th_id*length;
-  fftw_complex *out = outall+th_id*length;
-
-  // Load input data
-  for(int i=0;i<length;i++) {
-    in[i][0] = cv[i].real();
-    in[i][1] = cv[i].imag();
-  }
-
-  if(isign < 0) {
-    // Forward transform
-    fftw_execute(pf[th_id]);
-    for(int i=0;i<length;i++)
-      cv[i] = dcomplex(out[i][0], out[i][1]) / ((double) length); // Normalise
-  }else {
-    // Backward
-    fftw_execute(pb[th_id]);
-    for(int i=0;i<length;i++)
-      cv[i] = dcomplex(out[i][0], out[i][1]);
-  }
-}
-#endif
-
 /***********************************************************
  * Real FFTs
  ***********************************************************/
 
 #ifndef _OPENMP
 // Serial code
-
-
 void rfft(const BoutReal *in, int length, dcomplex *out) {
   // static variables initialized once
   static double *fin;
@@ -228,10 +108,24 @@ void rfft(const BoutReal *in, int length, dcomplex *out) {
 
   // fftw call executing the fft
   fftw_execute(p);
+  
+  //Normalising factor
+  const BoutReal fac = 1.0/((double) n);
+  const int nmodes = (n/2) + 1;
 
   // Store the output in out, and normalize
-  for(int i=0;i<(n/2)+1;i++)
-    out[i] = dcomplex(fout[i][0], fout[i][1]) / ((double) n); // Normalise
+  for(int i=0;i<nmodes;i++)
+    out[i] = dcomplex(fout[i][0], fout[i][1]) * fac; // Normalise
+}
+
+const Array<dcomplex> rfft(const Array<BoutReal> &in) {
+  ASSERT1(!in.empty()); // Check that there is data
+  
+  int size = in.size();
+  Array<dcomplex> out(size); // Allocates data array
+  
+  rfft(in.begin(), size, out.begin());
+  return out;
 }
 
 void irfft(const dcomplex *in, int length, BoutReal *out) {
@@ -277,7 +171,8 @@ void irfft(const dcomplex *in, int length, BoutReal *out) {
   }
 
   // Store the real and imaginary parts in the proper way
-  for(int i=0;i<(n/2)+1;i++) {
+  const int nmodes = (n/2) + 1;
+  for(int i=0;i<nmodes;i++) {
     fin[i][0] = in[i].real();
     fin[i][1] = in[i].imag();
   }
@@ -296,15 +191,23 @@ void rfft(const BoutReal *in, int length, dcomplex *out) {
   static double *finall;
   static fftw_complex *foutall;
   static fftw_plan *p;
-  static int size = 0, nthreads;
+  static int size = 0, nthreads = 0;
 
   int th_id = omp_get_thread_num();
-#pragma omp critical(rfft)
-  {
-    // Sort out memory. Also, FFTW planning routines not thread safe
-    int n_th = omp_get_num_threads(); // Number of threads
+  int n_th = omp_get_num_threads(); // Number of threads
 
-    if((size != length) || (nthreads < n_th)) {
+  // Sort out memory. Also, FFTW planning routines not thread safe
+  if ((size != length) || (nthreads < n_th)) {
+    // We make the check to see if the problem size has changed twice
+    // intentionally. The first check ensures we don't pay the cost of
+    // obtaining a lock for the critical section if we don't need to do
+    // any work here. The second check is required to make sure that
+    // only one thread does the actual setup when required. Note we can't
+    // use a `single` block here as that requires all threads to reach the
+    // block (implicit barrier) which may not be true in all cases (e.g.
+    // if there are 8 threads but only 4 call the fft routine).
+    BOUT_OMP(critical(rfft))
+    if ((size != length) || (nthreads < n_th)) {
       if(size > 0) {
         // Free all memory
         for(int i=0;i<nthreads;i++)
@@ -318,7 +221,7 @@ void rfft(const BoutReal *in, int length, dcomplex *out) {
 
       finall = (double*) fftw_malloc(sizeof(double) * length * n_th);
       foutall = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (length/2 + 1) * n_th);
-      p = new fftw_plan[n_th];
+      p = new fftw_plan[n_th]; //Never freed
 
       unsigned int flags = FFTW_ESTIMATE;
       if(fft_measure)
@@ -336,35 +239,47 @@ void rfft(const BoutReal *in, int length, dcomplex *out) {
   }
 
   // Get working arrays for this thread
-  double *fin = finall + th_id * length;
-  fftw_complex *fout = foutall + th_id * (length/2 + 1);
+  double *fin = finall + th_id * size;
+  fftw_complex *fout = foutall + th_id * (size / 2 + 1);
 
-  for(int i=0;i<length;i++)
+  for (int i = 0; i < size; i++)
     fin[i] = in[i];
 
   // fftw call executing the fft
   fftw_execute(p[th_id]);
 
-  for(int i=0;i<(length/2)+1;i++)
-    out[i] = dcomplex(fout[i][0], fout[i][1]) / ((double) length); // Normalise
+  //Normalising factor
+  const BoutReal fac = 1.0 / static_cast<BoutReal>(size);
+  const int nmodes = (size / 2) + 1;
+
+  for(int i=0;i<nmodes;i++)
+    out[i] = dcomplex(fout[i][0], fout[i][1]) * fac; // Normalise
 }
 
 void irfft(const dcomplex *in, int length, BoutReal *out) {
   static fftw_complex *finall;
   static double *foutall;
   static fftw_plan *p;
-  static int size = 0, nthreads;
+  static int size = 0, nthreads = 0;
 
   int th_id = omp_get_thread_num();
   int n_th = omp_get_num_threads(); // Number of threads
-#pragma omp critical(irfft)
-  {
-    // Sort out memory. Also, FFTW planning routines not thread safe
 
-    if((size != length) || (nthreads < n_th)) {
-      if(size > 0) {
+  // Sort out memory. Also, FFTW planning routines not thread safe
+  if ((size != length) || (nthreads < n_th)) {
+    // We make the check to see if the problem size has changed twice
+    // intentionally. The first check ensures we don't pay the cost of
+    // obtaining a lock for the critical section if we don't need to do
+    // any work here. The second check is required to make sure that
+    // only one thread does the actual setup when required. Note we can't
+    // use a `single` block here as that requires all threads to reach the
+    // block (implicit barrier) which may not be true in all cases (e.g.
+    // if there are 8 threads but only 4 call the fft routine).
+    BOUT_OMP(critical(irfft))
+    if ((size != length) || (nthreads < n_th)) {
+      if (size > 0) {
         // Free all memory
-        for(int i=0;i<nthreads;i++)
+        for (int i = 0; i < nthreads; i++)
           fftw_destroy_plan(p[i]);
         delete[] p;
         fftw_free(finall);
@@ -373,28 +288,31 @@ void irfft(const dcomplex *in, int length, BoutReal *out) {
 
       fft_init();
 
-      finall = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (length/2 + 1) * n_th);
-      foutall = (double*) fftw_malloc(sizeof(double) * length * n_th);
+      finall =
+          (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * (length / 2 + 1) * n_th);
+      foutall = (double *)fftw_malloc(sizeof(double) * length * n_th);
 
-      p = new fftw_plan[n_th];
+      p = new fftw_plan[n_th]; // Never freed
 
       unsigned int flags = FFTW_ESTIMATE;
-      if(fft_measure)
+      if (fft_measure)
         flags = FFTW_MEASURE;
 
-      for(int i=0;i<n_th;i++)
-        p[i] = fftw_plan_dft_c2r_1d(length, finall+i*(length/2 + 1),
-                                    foutall+i*length, flags);
+      for (int i = 0; i < n_th; i++)
+        p[i] = fftw_plan_dft_c2r_1d(length, finall + i * (length / 2 + 1),
+                                    foutall + i * length, flags);
       size = length;
       nthreads = n_th;
     }
   }
 
   // Get working arrays for this thread
-  fftw_complex *fin = finall + th_id * (length/2 + 1);
-  double *fout = foutall + th_id * length;
+  fftw_complex *fin = finall + th_id * (size / 2 + 1);
+  double *fout = foutall + th_id * size;
 
-  for(int i=0;i<(length/2)+1;i++) {
+  const int nmodes = (size / 2) + 1;
+
+  for(int i=0;i<nmodes;i++) {
     fin[i][0] = in[i].real();
     fin[i][1] = in[i].imag();
   }
@@ -402,7 +320,7 @@ void irfft(const dcomplex *in, int length, BoutReal *out) {
   // fftw call executing the fft
   fftw_execute(p[th_id]);
 
-  for(int i=0;i<length;i++)
+  for (int i = 0; i < size; i++)
     out[i] = fout[i];
 }
 #endif
@@ -414,6 +332,8 @@ void DST(const BoutReal *in, int length, dcomplex *out) {
   static fftw_complex *fout;
   static fftw_plan p;
   static int n = 0;
+
+  ASSERT1(length > 0);
 
   if(length != n) {
     if(n > 0) {
@@ -458,7 +378,7 @@ void DST(const BoutReal *in, int length, dcomplex *out) {
   out[length-1]=0.0;
 
   for(int i=1;i<length-1;i++)
-    out[i] = -fout[i][1]/ ((double) length-1); // Normalise
+    out[i] = -fout[i][1] / (static_cast<BoutReal>(length) - 1); // Normalise
 }
 
 void DST_rev(dcomplex *in, int length, BoutReal *out) {
@@ -466,6 +386,8 @@ void DST_rev(dcomplex *in, int length, BoutReal *out) {
   static double *fout;
   static fftw_plan p;
   static int n = 0;
+
+  ASSERT1(length > 0);
 
   if(length != n) {
     if(n > 0) {

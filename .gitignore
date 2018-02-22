@@ -24,11 +24,15 @@
 .tmtags
 autom4te.cache/
 aclocal.m4
-data_*
-test*.py
 /bin/bout-config
 /externalpackages/
 /include/pvode
 /lib/
 /manual/*.pdf
 /tools/vagrant/.vagrant
+\#*#
+.#*
+*.132t.vect
+*.gcda
+*.gcno
+bout-coverage/

@@ -46,9 +46,11 @@
 #include <cstring>
 #include "formatfactory.hxx"
 
-Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), floats(false), openclose(true), enabled(true), shiftOutput(false), file(nullptr) {
+Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), floats(false), openclose(true), enabled(true), shiftOutput(false), flushFrequencyCounter(0), flushFrequency(1), file(nullptr) {
   filenamelen=FILENAMELEN;
   filename=new char[filenamelen];
+  filename[0] = 0; // Terminate the string
+  
   if(opt == NULL)
     return; // To allow static initialisation
   // Read options
@@ -61,12 +63,15 @@ Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), f
   OPTION(opt, enabled, true);
   OPTION(opt, init_missing, false); // Initialise missing variables?
   OPTION(opt, shiftOutput, false); //Do we want to write 3D fields in shifted space?
+  OPTION(opt, flushFrequency, 1); //How frequently do we flush the file
+  
 }
 
 Datafile::Datafile(Datafile &&other) :
   parallel(other.parallel), flush(other.flush), guards(other.guards),
   floats(other.floats), openclose(other.openclose), Lx(other.Lx), Ly(other.Ly), Lz(other.Lz),
-  enabled(other.enabled), shiftOutput(other.shiftOutput), file(other.file.release()), int_arr(other.int_arr),
+  enabled(other.enabled), shiftOutput(other.shiftOutput), flushFrequencyCounter(other.flushFrequencyCounter), flushFrequency(other.flushFrequency), 
+  file(other.file.release()), int_arr(other.int_arr),
   BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr),
   f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {
   filenamelen=other.filenamelen;
@@ -79,7 +84,8 @@ Datafile::Datafile(Datafile &&other) :
 Datafile::Datafile(const Datafile &other) :
   parallel(other.parallel), flush(other.flush), guards(other.guards),
   floats(other.floats), openclose(other.openclose), Lx(other.Lx), Ly(other.Ly), Lz(other.Lz),
-  enabled(other.enabled), shiftOutput(other.shiftOutput), file(nullptr), int_arr(other.int_arr),
+  enabled(other.enabled), shiftOutput(other.shiftOutput), flushFrequencyCounter(other.flushFrequencyCounter), flushFrequency(other.flushFrequency), 
+  file(nullptr), int_arr(other.int_arr),
   BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr),
   f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {
   filenamelen=other.filenamelen;
@@ -98,6 +104,8 @@ Datafile& Datafile::operator=(Datafile &&rhs) {
   enabled      = rhs.enabled;
   init_missing = rhs.init_missing;
   shiftOutput  = rhs.shiftOutput;
+  flushFrequencyCounter = 0;
+  flushFrequency = rhs.flushFrequency;
   file         = std::move(rhs.file);
   rhs.file     = nullptr; // not needed?
   int_arr      = rhs.int_arr;
@@ -266,7 +274,7 @@ void Datafile::add(int &i, const char *name, bool save_repeat) {
   if (varAdded(string(name))) {
     // Check if it's the same variable
     if (&i == varPtr(string(name))) {
-      output.write("WARNING: variable '%s' added again to Datafile\n", name);
+      output_warn.write("WARNING: variable '%s' added again to Datafile\n", name);
     } else {
       throw BoutException("Variable '%s' already added to Datafile", name);
     }
@@ -277,7 +285,8 @@ void Datafile::add(int &i, const char *name, bool save_repeat) {
   d.ptr = &i;
   d.name = string(name);
   d.save_repeat = save_repeat;
-
+  d.covar = false;
+  
   int_arr.push_back(d);
 }
 
@@ -286,7 +295,7 @@ void Datafile::add(BoutReal &r, const char *name, bool save_repeat) {
   if (varAdded(string(name))) {
     // Check if it's the same variable
     if (&r == varPtr(string(name))) {
-      output.write("WARNING: variable '%s' added again to Datafile\n", name);
+      output_warn.write("WARNING: variable '%s' added again to Datafile\n", name);
     } else {
       throw BoutException("Variable '%s' already added to Datafile", name);
     }
@@ -297,7 +306,8 @@ void Datafile::add(BoutReal &r, const char *name, bool save_repeat) {
   d.ptr = &r;
   d.name = string(name);
   d.save_repeat = save_repeat;
-
+  d.covar = false;
+  
   BoutReal_arr.push_back(d);
 }
 
@@ -306,7 +316,7 @@ void Datafile::add(Field2D &f, const char *name, bool save_repeat) {
   if (varAdded(string(name))) {
     // Check if it's the same variable
     if (&f == varPtr(string(name))) {
-      output.write("WARNING: variable '%s' added again to Datafile", name);
+      output_warn.write("WARNING: variable '%s' added again to Datafile", name);
     } else {
       throw BoutException("Variable '%s' already added to Datafile", name);
     }
@@ -317,7 +327,8 @@ void Datafile::add(Field2D &f, const char *name, bool save_repeat) {
   d.ptr = &f;
   d.name = string(name);
   d.save_repeat = save_repeat;
-
+  d.covar = false;
+  
   f2d_arr.push_back(d);
 }
 
@@ -326,7 +337,7 @@ void Datafile::add(Field3D &f, const char *name, bool save_repeat) {
   if (varAdded(string(name))) {
     // Check if it's the same variable
     if (&f == varPtr(string(name))) {
-      output.write("WARNING: variable '%s' added again to Datafile\n", name);
+      output_warn.write("WARNING: variable '%s' added again to Datafile\n", name);
     } else {
       throw BoutException("Variable '%s' already added to Datafile", name);
     }
@@ -337,7 +348,8 @@ void Datafile::add(Field3D &f, const char *name, bool save_repeat) {
   d.ptr = &f;
   d.name = string(name);
   d.save_repeat = save_repeat;
-
+  d.covar = false;
+  
   f3d_arr.push_back(d);
 }
 
@@ -346,7 +358,7 @@ void Datafile::add(Vector2D &f, const char *name, bool save_repeat) {
   if (varAdded(string(name))) {
     // Check if it's the same variable
     if (&f == varPtr(string(name))) {
-      output.write("WARNING: variable '%s' added again to Datafile\n", name);
+      output_warn.write("WARNING: variable '%s' added again to Datafile\n", name);
     } else {
       throw BoutException("Variable '%s' already added to Datafile", name);
     }
@@ -367,7 +379,7 @@ void Datafile::add(Vector3D &f, const char *name, bool save_repeat) {
   if (varAdded(string(name))) {
     // Check if it's the same variable
     if (&f == varPtr(string(name))) {
-      output.write("WARNING: variable '%s' added again to Datafile\n", name);
+      output_warn.write("WARNING: variable '%s' added again to Datafile\n", name);
     } else {
       throw BoutException("Variable '%s' already added to Datafile", name);
     }
@@ -406,7 +418,7 @@ bool Datafile::read() {
         if(!init_missing) {
           throw BoutException("Missing data for %s in input. Set init_missing=true to set to zero.", var.name.c_str());
         }
-        output.write("\tWARNING: Could not read integer %s. Setting to zero\n", var.name.c_str());
+        output_warn.write("\tWARNING: Could not read integer %s. Setting to zero\n", var.name.c_str());
         *(var.ptr) = 0;
         continue;
       }
@@ -415,7 +427,7 @@ bool Datafile::read() {
         if(!init_missing) {
           throw BoutException("Missing data for %s in input. Set init_missing=true to set to zero.", var.name.c_str());
         }
-        output.write("\tWARNING: Could not read integer %s. Setting to zero\n", var.name.c_str());
+        output_warn.write("\tWARNING: Could not read integer %s. Setting to zero\n", var.name.c_str());
         *(var.ptr) = 0;
         continue;
       }
@@ -429,7 +441,7 @@ bool Datafile::read() {
         if(!init_missing) {
           throw BoutException("Missing data for %s in input. Set init_missing=true to set to zero.", var.name.c_str());
         }
-        output.write("\tWARNING: Could not read BoutReal %s. Setting to zero\n", var.name.c_str());
+        output_warn.write("\tWARNING: Could not read BoutReal %s. Setting to zero\n", var.name.c_str());
         *(var.ptr) = 0;
         continue;
       }
@@ -438,7 +450,7 @@ bool Datafile::read() {
         if(!init_missing) {
           throw BoutException("Missing data for %s in input. Set init_missing=true to set to zero.", var.name.c_str());
         }
-        output.write("\tWARNING: Could not read BoutReal %s. Setting to zero\n", var.name.c_str());
+        output_warn.write("\tWARNING: Could not read BoutReal %s. Setting to zero\n", var.name.c_str());
         *(var.ptr) = 0;
         continue;
       }
@@ -504,13 +516,14 @@ bool Datafile::write() {
   if(!file)
     throw BoutException("Datafile::write: File is not valid!");
 
-  if(openclose) {
+  if(openclose && (flushFrequencyCounter % flushFrequency == 0)) {
     // Open the file
     int MYPE;
     MPI_Comm_rank(BoutComm::get(), &MYPE);
     if(!file->openw(filename, MYPE, appending))
       throw BoutException("Datafile::write: Failed to open file!");
     appending = true;
+    flushFrequencyCounter = 0;
   }
   
   if(!file->is_valid())
@@ -534,13 +547,59 @@ bool Datafile::write() {
   }
 
   // Write 2D fields
-  for(const auto& var : f2d_arr) {
+  for (const auto& var : f2d_arr) {
     write_f2d(var.name, var.ptr, var.save_repeat);
+
+    // Add string attributes
+    {
+      auto it = attrib_string.find(var.name);
+      if (it != attrib_string.end()) {
+        // Some string attributes are set
+        for (const auto &keyval : it->second) {
+          // keyval->first is the attribute name; second is the value
+          file->setAttribute(var.name, keyval.first, keyval.second);
+        }
+      }
+    }
+    // Add integer attributes
+    {
+      auto it = attrib_int.find(var.name);
+      if (it != attrib_int.end()) {
+        // Some string attributes are set
+        for (const auto &keyval : it->second) {
+          // keyval->first is the attribute name; second is the value
+          file->setAttribute(var.name, keyval.first, keyval.second);
+        }
+      }
+    }
   }
 
   // Write 3D fields
-  for(const auto& var : f3d_arr) {
+  for (const auto& var : f3d_arr) {
     write_f3d(var.name, var.ptr, var.save_repeat);
+
+    // Add string attributes
+    {
+      auto it = attrib_string.find(var.name);
+      if (it != attrib_string.end()) {
+        // Some string attributes are set
+        for (const auto& keyval : it->second) {
+          // keyval->first is the attribute name; second is the value
+          file->setAttribute(var.name, keyval.first, keyval.second);
+        }
+      }
+    }
+    // Add integer attributes
+    {
+      auto it = attrib_int.find(var.name);
+      if (it != attrib_int.end()) {
+        // Some string attributes are set
+        for (const auto &keyval : it->second) {
+          // keyval->first is the attribute name; second is the value
+          file->setAttribute(var.name, keyval.first, keyval.second);
+        }
+      }
+    }
   }
   
   // 2D vectors
@@ -585,9 +644,10 @@ bool Datafile::write() {
     }
   }
   
-  if(openclose)
+  if(openclose  && (flushFrequencyCounter+1 % flushFrequency == 0)){
     file->close();
-
+  }
+  flushFrequencyCounter++;
   return true;
 }
 
@@ -638,7 +698,7 @@ bool Datafile::read_f2d(const string &name, Field2D *f, bool save_repeat) {
   if(save_repeat) {
     if(!file->read_rec(&((*f)(0,0)), name, mesh->LocalNx, mesh->LocalNy)) {
       if(init_missing) {
-        output.write("\tWARNING: Could not read 2D field %s. Setting to zero\n", name.c_str());
+        output_warn.write("\tWARNING: Could not read 2D field %s. Setting to zero\n", name.c_str());
         *f = 0.0;
       } else {
         throw BoutException("Missing 2D evolving field %s in input. Set init_missing=true to set to zero.", name.c_str());
@@ -648,7 +708,7 @@ bool Datafile::read_f2d(const string &name, Field2D *f, bool save_repeat) {
   }else {
     if(!file->read(&((*f)(0,0)), name, mesh->LocalNx, mesh->LocalNy)) {
       if(init_missing) {
-        output.write("\tWARNING: Could not read 2D field %s. Setting to zero\n", name.c_str());
+        output_warn.write("\tWARNING: Could not read 2D field %s. Setting to zero\n", name.c_str());
         *f = 0.0;
       } else {
         throw BoutException("Missing 2D field %s in input. Set init_missing=true to set to zero.", name.c_str());
@@ -665,7 +725,7 @@ bool Datafile::read_f3d(const string &name, Field3D *f, bool save_repeat) {
   if(save_repeat) {
     if(!file->read_rec(&((*f)(0,0,0)), name, mesh->LocalNx, mesh->LocalNy, mesh->LocalNz)) {
       if(init_missing) {
-        output.write("\tWARNING: Could not read 3D field %s. Setting to zero\n", name.c_str());
+        output_warn.write("\tWARNING: Could not read 3D field %s. Setting to zero\n", name.c_str());
         *f = 0.0;
       }else {
         throw BoutException("Missing 3D evolving field %s in input. Set init_missing=true to set to zero.", name.c_str());
@@ -675,7 +735,7 @@ bool Datafile::read_f3d(const string &name, Field3D *f, bool save_repeat) {
   }else {
     if(!file->read(&((*f)(0,0,0)), name, mesh->LocalNx, mesh->LocalNy, mesh->LocalNz)) {
       if(init_missing) {
-        output.write("\tWARNING: Could not read 3D field %s. Setting to zero\n", name.c_str());
+        output_warn.write("\tWARNING: Could not read 3D field %s. Setting to zero\n", name.c_str());
         *f = 0.0;
       }else {
         throw BoutException("Missing 3D field %s in input. Set init_missing=true to set to zero.", name.c_str());
@@ -724,7 +784,7 @@ bool Datafile::write_f3d(const string &name, Field3D *f, bool save_repeat) {
   }
 
   //Deal with shifting the output
-  Field3D f_out;
+  Field3D f_out(f->getMesh());
   if(shiftOutput) {
     f_out = mesh->toFieldAligned(*f);
   }else {

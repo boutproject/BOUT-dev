@@ -5,17 +5,21 @@
 #include <utils.hxx>
 #include <boutexception.hxx>
 #include <msg_stack.hxx>
+#include <bout/openmpwrap.hxx>
 
 #include <cmath>
 
 #include <output.hxx>
 
-EulerSolver::EulerSolver(Options *options) : Solver(options) {
+EulerSolver::EulerSolver(Options *options) : Solver(options), f0(nullptr) {
   
 }
 
 EulerSolver::~EulerSolver() {
-
+  if(f0 != nullptr){
+    delete[] f0;
+    delete[] f1;
+  }
 }
 
 void EulerSolver::setMaxTimestep(BoutReal dt) {
@@ -26,11 +30,11 @@ void EulerSolver::setMaxTimestep(BoutReal dt) {
   timestep_reduced = true;
 }
 
-int EulerSolver::init(bool restarting, int nout, BoutReal tstep) {
-  int msg_point = msg_stack.push("Initialising Euler solver");
+int EulerSolver::init(int nout, BoutReal tstep) {
+  TRACE("Initialising Euler solver");
   
   /// Call the generic initialisation first
-  if(Solver::init(restarting, nout, tstep))
+  if (Solver::init(nout, tstep))
     return 1;
   
   output << "\n\tEuler solver\n";
@@ -62,13 +66,11 @@ int EulerSolver::init(bool restarting, int nout, BoutReal tstep) {
   // Put starting values into f0
   save_vars(f0);
   
-  msg_stack.pop(msg_point);
-
   return 0;
 }
 
 int EulerSolver::run() {
-  int msg_point = msg_stack.push("EulerSolver::run()");
+  TRACE("EulerSolver::run()");
   
   for(int s=0;s<nsteps;s++) {
     BoutReal target = simtime + out_timestep;
@@ -140,8 +142,6 @@ int EulerSolver::run() {
     rhs_ncalls = 0;
   }
   
-  msg_stack.pop(msg_point);
-  
   return 0;
 }
 
@@ -151,7 +151,7 @@ void EulerSolver::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, Bout
   run_rhs(curtime);
   save_derivs(result);
   
-  #pragma omp parallel for
+  BOUT_OMP(parallel for)
   for(int i=0;i<nlocal;i++)
     result[i] = start[i] + dt*result[i];
 }

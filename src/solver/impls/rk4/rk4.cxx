@@ -5,18 +5,18 @@
 #include <utils.hxx>
 #include <boutexception.hxx>
 #include <msg_stack.hxx>
+#include <bout/openmpwrap.hxx>
 
 #include <cmath>
 
 #include <output.hxx>
 
-RK4Solver::RK4Solver(Options *options) : Solver(options) {
-  f0 = 0; // Mark as uninitialised
+RK4Solver::RK4Solver(Options *options) : Solver(options), f0(nullptr) {
   canReset = true;
 }
 
 RK4Solver::~RK4Solver() {
-  if(f0 != 0) {
+  if(f0 != nullptr) {
     delete[] f0;
     delete[] f1;
     delete[] f2;
@@ -37,12 +37,12 @@ void RK4Solver::setMaxTimestep(BoutReal dt) {
     timestep = dt; // Won't be used this time, but next
 }
 
-int RK4Solver::init(bool restarting, int nout, BoutReal tstep) {
+int RK4Solver::init(int nout, BoutReal tstep) {
 
-  int msg_point = msg_stack.push("Initialising RK4 solver");
+  TRACE("Initialising RK4 solver");
   
   /// Call the generic initialisation first
-  if(Solver::init(restarting, nout, tstep))
+  if (Solver::init(nout, tstep))
     return 1;
   
   output << "\n\tRunge-Kutta 4th-order solver\n";
@@ -87,13 +87,11 @@ int RK4Solver::init(bool restarting, int nout, BoutReal tstep) {
   OPTION(options, mxstep, 500); // Maximum number of steps between outputs
   OPTION(options, adaptive, false);
 
-  msg_stack.pop(msg_point);
-
   return 0;
 }
 
 int RK4Solver::run() {
-  int msg_point = msg_stack.push("RK4Solver::run()");
+  TRACE("RK4Solver::run()");
   
   for(int s=0;s<nsteps;s++) {
     BoutReal target = simtime + out_timestep;
@@ -121,7 +119,7 @@ int RK4Solver::run() {
           
           // Check accuracy
           BoutReal local_err = 0.;
-          #pragma omp parallel for reduction(+: local_err)   
+          BOUT_OMP(parallel for reduction(+: local_err)   )
           for(int i=0;i<nlocal;i++) {
             local_err += fabs(f2[i] - f1[i]) / ( fabs(f1[i]) + fabs(f2[i]) + atol );
           }
@@ -132,8 +130,8 @@ int RK4Solver::run() {
             throw BoutException("MPI_Allreduce failed");
           }
 
-          err /= (BoutReal) neq;
-        
+          err /= static_cast<BoutReal>(neq);
+
           internal_steps++;
           if(internal_steps > mxstep)
             throw BoutException("ERROR: MXSTEP exceeded. timestep = %e, err=%e\n", timestep, err);
@@ -178,8 +176,6 @@ int RK4Solver::run() {
     rhs_ncalls = 0;
   }
   
-  msg_stack.pop(msg_point);
-  
   return 0;
 }
 
@@ -199,7 +195,7 @@ void RK4Solver::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutRe
   run_rhs(curtime);
   save_derivs(k1);
   
-  #pragma omp parallel for
+  BOUT_OMP(parallel for)
   for(int i=0;i<nlocal;i++)
     k5[i] = start[i] + 0.5*dt*k1[i];
   
@@ -207,7 +203,7 @@ void RK4Solver::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutRe
   run_rhs(curtime + 0.5*dt);
   save_derivs(k2);
   
-  #pragma omp parallel for 
+  BOUT_OMP(parallel for )
   for(int i=0;i<nlocal;i++)
     k5[i] = start[i] + 0.5*dt*k2[i];
   
@@ -215,7 +211,7 @@ void RK4Solver::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutRe
   run_rhs(curtime + 0.5*dt);
   save_derivs(k3);
  
-  #pragma omp parallel for
+  BOUT_OMP(parallel for)
   for(int i=0;i<nlocal;i++)
     k5[i] = start[i] + dt*k3[i];
   
@@ -223,7 +219,7 @@ void RK4Solver::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutRe
   run_rhs(curtime + dt);
   save_derivs(k4);
   
-  #pragma omp parallel for
+  BOUT_OMP(parallel for)
   for(int i=0;i<nlocal;i++)
     result[i] = start[i] + (1./6.)*dt*(k1[i] + 2.*k2[i] + 2.*k3[i] + k4[i]);
 }

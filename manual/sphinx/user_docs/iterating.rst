@@ -21,7 +21,7 @@ This replaces the C-style triple-nested loop:
    Field3D f(0.0);
    for (int i = mesh->xstart; i < mesh->xend; ++i) {
      for (int j = mesh->ystart; j < mesh->yend; ++j) {
-       for (int k = 0; k < mesh->ngz; ++k) {
+       for (int k = 0; k < mesh->LocalNz; ++k) {
          f[i,j,k] = a[i,j,k] + b[i,j,k]
        }
      }
@@ -55,4 +55,3 @@ Available regions are:
 -  ``RGN_NOX``, which skips the x boundaries
 
 -  ``RGN_NOY``, which skips the y boundaries
-

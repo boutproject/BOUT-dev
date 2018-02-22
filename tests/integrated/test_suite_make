@@ -1,0 +1,74 @@
+#!/usr/bin/env python
+
+#
+# Run the test suite, report failures
+#
+# To set command for running parallel jobs, define environment variable
+# e.g. for bash
+# export MPIRUN="mpirun -np"
+# export MPIRUN="aprun -n"
+
+from __future__ import print_function
+import os
+import sys
+import time
+from boututils.run_wrapper import shell
+
+# Get list of directories containing test cases
+tests=[]
+with open('test_suite_list') as testfile:
+    for test in testfile:
+        test=test.strip()
+        if test.startswith("#"):
+            pass
+        elif test.startswith("!"):
+            pass
+        else:
+            tests.append(test)
+
+##################################################################
+
+savepath = os.getcwd() # Save current working directory
+npassed = 0
+nfailed = 0
+total = len(tests)
+failed = []
+
+start_time = time.time()
+
+print("======= Making {0} tests ========".format(savepath.split("/")[-1]))
+print("Making {0} tests".format(total))
+
+for t in tests:
+    os.chdir(t)
+
+    status,out = shell("make", pipe=True)
+
+    if status != 0:
+        print("F", end='') # No newline
+        nfailed = nfailed + 1
+        failed.append((t, out))
+    else:
+        # Passed
+        print(".", end='') # No newline
+        npassed = npassed + 1
+
+    sys.stdout.flush() # Make sure '.' or 'F' is flushed
+    os.chdir(savepath)
+
+elapsed_time = time.time() - start_time
+
+print("\n")
+
+if nfailed > 0:
+    print("======= FAILURES ========")
+    for test, output in failed:
+        # Note: need Unicode string in case output contains unicode
+        print(u"\n----- {0} -----\n{1}".format(test, output))
+
+    print("======= {0} failed in {1:.2f} seconds ========".format(nfailed, elapsed_time))
+
+    sys.exit(1)
+
+else:
+    print("======= All make tests passed in {0:.2f} seconds =======".format(elapsed_time))

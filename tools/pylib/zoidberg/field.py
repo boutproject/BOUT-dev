@@ -1,80 +1,88 @@
-from builtins import object
-from past.utils import old_div
-
+try:
+    from builtins import object
+except:
+    pass
+    
 # from math import pi, atan, cos, sin
 
 import numpy as np
-from sympy import Symbol, Derivative, atan, atan2, cos, sin, log, pi, sqrt, lambdify
-
 # from . import grid
 
+try:
+    from . import boundary
+except ImportError:
+    import boundary
+
 class MagneticField(object):
-    def __default_Byfunc(self, x,z,phi):
+    """
+    Represents a magnetic field in either Cartesian or cylindrical geometry
+    
+    Functions which can be overridden
+    
+    Bxfunc = Function for magnetic field in x
+    Bzfunc = Function for magnetic field in z
+    Byfunc = Function for magnetic field in y (default = 1.)
+    Rfunc = Function for major radius. If None, y is in meters
+
+    boundary = An object with an "outside" function. See boundary.py
+    """
+    
+    boundary = boundary.NoBoundary() # An optional Boundary object
+    
+    def Bxfunc(self, x,z,phi):
+        """
+        Magnetic field in y direction at given coordinates
+        """
+        return np.zeros(x.shape) 
+        
+    def Byfunc(self, x,z,phi):
+        """
+        Magnetic field in y direction at given coordinates
+        """
         return np.ones(x.shape)
 
-    def __init__(self, grid, Bxfunc, Bzfunc, Byfunc=None, smooth=False, smooth_args={}):
+    def Bzfunc(self, x,z,phi):
         """
-
-        Inputs
-        ------
-        grid = Zoidberg grid
-        Bxfunc = Function for magnetic field in x
-        Bzfunc = Function for magnetic field in z
-        Byfunc = Function for magnetic field in y (default = 1.)
-        smooth = Damp Bx, Bz to 0 at edges of grid (default off)
-        smooth_args = Dict containing arguments to smooth_field_line
+        Magnetic field in z direction at given coordinates
         """
+        return np.zeros(x.shape)
+    
+    def Rfunc(self, x,z,phi):
+        """
+        Major radius [meters]
+        
+        Returns None if in Cartesian coordinates
+        """
+        return None
 
-        if Byfunc is None:
-            Byfunc = self.__default_Byfunc
+    def pressure(self, x,z,phi):
+        """
+        Pressure [Pascals]
+        
+        """
+        return 0.0
+    
+    def Bmag(self, x,z,phi):
+        """
+        Magnitude of the magnetic field
+        Bmag = sqrt(Bx**2 + By**2 + Bz**2)
+        """
+        return np.sqrt( self.Bxfunc(x,z,phi)**2 + self.Byfunc(x,z,phi)**2 + self.Bzfunc(x,z,phi)**2 )
 
-        self.grid = grid
-        self.Bxfunc = Bxfunc
-        self.Byfunc = Byfunc
-        self.Bzfunc = Bzfunc
-
-        self.smooth = smooth
-        self.smooth_args = smooth_args
-
-        if self.smooth:
-            self.smooth_func = np.vectorize(self.smooth_field_line)
-
-            self.x_width = smooth_args["x_width"] if "z_width" in smooth_args else 4
-            self.z_width = smooth_args["z_width"] if "z_width" in smooth_args else 4
-
-            self.xr_inner = smooth_args["xr_inner"] if "xr_inner" in smooth_args else self.grid.xarray[-self.x_width-1]
-            self.xr_outer = smooth_args["xr_outer"] if "xr_outer" in smooth_args else self.grid.xarray[-1]
-            self.xl_inner = smooth_args["xl_inner"] if "xl_inner" in smooth_args else self.grid.xarray[self.x_width]
-            self.xl_outer = smooth_args["xl_outer"] if "xl_outer" in smooth_args else self.grid.xarray[0]
-            self.zt_inner = smooth_args["zt_inner"] if "zt_inner" in smooth_args else self.grid.zarray[-self.z_width-1]
-            self.zt_outer = smooth_args["zt_outer"] if "zt_outer" in smooth_args else self.grid.zarray[-1]
-            self.zb_inner = smooth_args["zb_inner"] if "zb_inner" in smooth_args else self.grid.zarray[self.z_width]
-            self.zb_outer = smooth_args["zb_outer"] if "zb_outer" in smooth_args else self.grid.zarray[0]
-
-        self.bx = self.Bxfunc(self.grid.x_3d, self.grid.z_3d, self.grid.y_3d)
-        self.by = self.Byfunc(self.grid.x_3d, self.grid.z_3d, self.grid.y_3d)
-        self.bz = self.Bzfunc(self.grid.x_3d, self.grid.z_3d, self.grid.y_3d)
-
-        if self.smooth:
-            P = self.smooth_func(self.grid.x_3d, self.grid.z_3d)
-            self.bx *= P
-            self.bz *= P
-
-        self.b_mag = np.sqrt(self.bx**2 + self.by**2 + self.bz**2)
-
-    def field_direction(self, pos, phi, flatten=False):
+    def field_direction(self, pos, ycoord, flatten=False):
         """Calculate the direction of the magnetic field
         Returns the change in x with phi and change in z with phi
 
         Inputs
         ------
         pos = [x,z]  with x and z in meters
-        phi = toroidal angle in radians
+        ycoord = toroidal angle in radians if cylindrical coordinates, meters if Cartesian
 
         Returns
         -------
 
-        (dx/dphi, dz/dphi) = ( R*Bx/Bphi, R*Bz/Bphi )
+        (dx/dy, dz/dy) = ( R*Bx/Bphi, R*Bz/Bphi )  if cylindrical
+                       = ( Bx/By, Bz/By)  if Cartesian
         """
 
         if flatten:
@@ -84,16 +92,30 @@ class MagneticField(object):
         else:
             x,z = pos
 
-        # Rate of change of x location [m] with y angle [radians]
-        dxdphi =  self.grid.Rmaj(x,z,phi) * self.Bxfunc(x,z,phi) / self.Byfunc(x,z,phi)
-        # Rate of change of z location [m] with y angle [radians]
-        dzdphi =  self.grid.Rmaj(x,z,phi) * self.Bzfunc(x,z,phi) / self.Byfunc(x,z,phi)
+        By = self.Byfunc(x,z,ycoord)
+        Rmaj = self.Rfunc(x,z,ycoord) # Major radius. None if Cartesian
+        
+        if Rmaj is not None:
+            # In cylindrical coordinates
 
-        if self.smooth:
-            P = self.smooth_func(x, z, **self.smooth_args)
-            dxdphi *= P
-            dzdphi *= P
+            if np.amin(np.abs(By)) < 1e-8:
+                # Very small By
+                print(x,z,ycoord, By)
+                raise ValueError("Small By")
 
+            R_By = Rmaj / By
+            # Rate of change of x location [m] with y angle [radians]
+            dxdphi =  R_By * self.Bxfunc(x,z,ycoord)
+            # Rate of change of z location [m] with y angle [radians]
+            dzdphi =  R_By * self.Bzfunc(x,z,ycoord)
+        else:
+            # In Cartesian coordinates
+            
+            # Rate of change of x location [m] with y angle [radians]
+            dxdphi =  self.Bxfunc(x,z,ycoord) / By
+            # Rate of change of z location [m] with y angle [radians]
+            dzdphi =  self.Bzfunc(x,z,ycoord) / By
+        
         if flatten:
             result = np.column_stack((dxdphi, dzdphi)).flatten()
         else:
@@ -101,130 +123,197 @@ class MagneticField(object):
 
         return result
 
-    def smooth_field_line(self, xa, za):
-        """Linearly damp the field to be parallel to the edges of the box
-
-        Should take some parameters to adjust rate of smoothing, etc.
-        """
-
-        x_left = (xa - self.xl_inner) / (self.xl_inner - self.xl_outer) + 1
-        x_right = (xa - self.xr_inner) / (self.xr_inner - self.xr_outer) + 1
-        z_top = (za - self.zt_inner) / (self.zt_inner - self.zt_outer) + 1
-        z_bottom = (za - self.zb_inner) / (self.zb_inner - self.zb_outer) + 1
-
-        if (xa < self.xl_inner):
-            if (za < self.zb_inner):
-                P = np.min([x_left, z_bottom])
-            elif (za >= self.zt_inner):
-                P = np.min([x_left, z_top])
-            else:
-                P = x_left
-        elif (xa >= self.xr_inner):
-            if (za < self.zb_inner):
-                P = np.min([x_right, z_bottom])
-            elif (za >= self.zt_inner):
-                P = np.min([x_right, z_top])
-            else:
-                P = x_right
-
-        elif (za < self.zb_inner):
-            P = z_bottom
-        elif (za > self.zt_inner):
-            P = z_top
-        else:
-            P=1.
-        if (P<0.):
-            P=0.
-        return P
 
 
 class Slab(MagneticField):
-    def __init__(self, grid, Bt=1.0, Bp = 0.1, Bpprime = 1.0):
+    """
+    Represents a magnetic field in an infinite flat slab
 
-        self.grid = grid
-        self.Bt = Bt
-        self.Bp = Bp
-        self.Bpprime = Bpprime
-
-        # Effective major radius
-        R = old_div(self.grid.Ly, (2.*np.pi))
-
-        # Set poloidal magnetic field
-        Bpx = self.Bp + (self.grid.xarray-old_div(self.grid.Lx,2)) * self.Bpprime
-
-        self.Bpxy = np.resize(Bpx, (self.grid.nz, self.grid.ny, self.grid.nx))
-        self.Bpxy = np.transpose(self.Bpxy, (2,1,0))
-
-        self.Bxy = np.sqrt(self.Bpxy**2 + self.Bt**2)
-
-        def Bxfunc(x, z, phi):
-            return np.zeros(x.shape)
-        def Bzfunc(x, z, phi):
-            return self.Bp + (x - self.grid.xcentre)*self.Bpprime
-
-        super().__init__(grid, Bxfunc, Bzfunc)
-
-
-class Stellarator(MagneticField):
-    def coil(self, radius, angle, iota, I):
-        """Defines a single coil
-
-        Inputs
-        ------
-        radius - radius to coil
-        angle - initial angle of coil
-        iota - rotational transform of coil
-        I - current through coil
-
-        Returns
-        -------
-        (x, z) - x, z coordinates of coils along phi
+    Coordinates (x,y,z) assumed to be Cartesian, all in meters
+    
+    """
+    def __init__(self, By=1.0, Bz = 0.1, xcentre = 0.0, Bzprime = 1.0):
         """
+        
+        By       Magnetic field in y direction (float)
+        Bz       Magnetic field in z at xcentre (float)
+        xcentre  Reference x coordinate
+        Bzprime  Rate of change of Bz with x
 
-        return (self.grid.xcentre + radius * cos(angle + iota * self.phi),
-                self.grid.zcentre + radius * sin(angle + iota * self.phi), I)
+        Magnetic field in z = Bz + (x-xcentre)*Bzprime
+        
+        """
+        
+        By = float(By)
+        Bz = float(Bz)
+        xcentre = float(xcentre)
+        Bzprime = float(Bzprime)
 
-    def __init__(self, grid, radius=0.8, iota=1, I_coil=0.05, smooth=False, smooth_args={}):
+        self.By = By
+        self.Bz = Bz
+        self.xcentre = xcentre
+        self.Bzprime = Bzprime
+        
+    def Bxfunc(self, x, z, phi):
+        return np.zeros(x.shape)
+        
+    def Byfunc(self, x, z, phi):
+        return np.full(x.shape, self.By)
+    
+    def Bzfunc(self, x, z, phi):
+        return self.Bz + (x - self.xcentre)*self.Bzprime
+        
+    
 
-        self.x = Symbol('x')
-        self.z = Symbol('z')
-        self.y = Symbol('y')
-        self.r = Symbol('r')
-        self.r = (self.x**2 + self.z**2)**(0.5)
-        self.phi = Symbol('phi')
+class CurvedSlab(MagneticField):
+    """
+    Represents a magnetic field in a curved slab geometry
 
-        self.radius = radius * ((grid.Lx + grid.Lz)*0.5)
-        self.grid = grid
+    x  - Distance in radial direction [m]
+    y  - Azimuthal (toroidal) angle
+    z  - Height [m]
+    
+    
+    """
+    def __init__(self, By=1.0, Bz = 0.1, xcentre = 0.0, Bzprime = 1.0, Rmaj=1.0):
+        """
+        
+        By       Magnetic field in toroidal (y) direction (float)
+        Bz       Magnetic field in z at x = xcentre (float)
+        xcentre  Reference x coordinate
+        Bzprime  Rate of change of Bz with x
+        Rmaj     Major radius of the slab
 
-        # Four coils equally spaced, alternating direction for current
-        self.coil_list = [self.coil(self.radius, n*pi, iota, ((-1)**np.mod(i,2))*I_coil)
-                          for i, n in enumerate(np.arange(4)/2.)]
+        Magnetic field in z = Bz + (x-xcentre)*Bzprime
+        
+        """
+        
+        By = float(By)
+        Bz = float(Bz)
+        xcentre = float(xcentre)
+        Bzprime = float(Bzprime)
+        Rmaj = float(Rmaj)
 
-        A = 0.0
-        Bx = 0.0
-        Bz = 0.0
+        self.By = By
+        self.Bz = Bz
+        self.xcentre = xcentre
+        self.Bzprime = Bzprime
+        self.Rmaj = Rmaj
+        
+        # Set poloidal magnetic field
+        #Bpx = self.Bp + (self.grid.xarray-self.grid.Lx/2.) * self.Bpprime
+        #self.Bpxy = np.resize(Bpx, (self.grid.nz, self.grid.ny, self.grid.nx))
+        #self.Bpxy = np.transpose(self.Bpxy, (2,1,0))
+        #self.Bxy = np.sqrt(self.Bpxy**2 + self.Bt**2)
 
-        for c in self.coil_list:
-            xc, zc, Ic = c
-            rc = (xc**2 + zc**2)**(0.5)
-            r2 = (self.x - xc)**2 + (self.z - zc)**2
-            theta = atan2(self.z - zc, self.x - xc) # Angle relative to coil
+    def Bxfunc(self, x, z, phi):
+        return np.zeros(x.shape)
+        
+    def Byfunc(self, x,z,phi):
+        return np.full(x.shape, self.By)
+        
+    def Bzfunc(self, x, z, phi):
+        return self.Bz + (x - self.xcentre)*self.Bzprime
 
-            A -= Ic * 0.1 * log(r2)
+    def Rfunc(self, x,z,phi):
+        return np.full(x.shape, self.Rmaj)
+        
+try:
+    from sympy import Symbol, Derivative, atan, atan2, cos, sin, log, pi, sqrt, lambdify
 
-            B = Ic * 0.2/sqrt(r2)
+    class StraightStellarator(MagneticField):
+        def coil(self, xcentre, zcentre, radius, angle, iota, I):
+            """Defines a single coil
+            
+            Inputs
+            ------
+            radius - radius to coil
+            angle - initial angle of coil
+            iota - rotational transform of coil
+            I - current through coil
+            
+            Returns
+            -------
+            (x, z) - x, z coordinates of coils along phi
+            """
+            
+            return (xcentre + radius * cos(angle + iota * self.phi),
+                    zcentre + radius * sin(angle + iota * self.phi), I)
+            
+        def __init__(self, xcentre=0.0, zcentre=0.0, radius=0.8, yperiod=np.pi, I_coil=0.05, smooth=False, smooth_args={}):
+            """
+            
+            Inputs
+            ------
+            
+            xcentre   Middle of the domain in x [m]
+            zcentre   Middle of the domain in z [m]
+            radius    Radius of coils [meters]
 
-            Bx += B * sin(theta)
-            Bz -= B * cos(theta)
+            yperiod   The period over which the coils return to their original position
+            
+            I_coil    Current in each coil
+            
+            """
+            
+            xcentre = float(xcentre)
+            zcentre = float(zcentre)
+            radius = float(radius)
+            yperiod = float(yperiod)
 
-        self.Afunc  = lambdify((self.x, self.z, self.phi), A, "numpy")
-        self.Bxfunc = lambdify((self.x, self.z, self.phi), Bx, "numpy")
-        self.Bzfunc = lambdify((self.x, self.z, self.phi), Bz, "numpy")
+            iota = 2.*np.pi / yperiod
+            
+            self.x = Symbol('x')
+            self.z = Symbol('z')
+            self.y = Symbol('y')
+            self.r = Symbol('r')
+            self.r = (self.x**2 + self.z**2)**(0.5)
+            self.phi = Symbol('phi')
 
-        super().__init__(self.grid, self.Bxfunc, self.Bzfunc, smooth=smooth, smooth_args=smooth_args)
+            self.xcentre = xcentre
+            self.zcentre = zcentre
+            self.radius = radius
 
+            # Four coils equally spaced, alternating direction for current
+            self.coil_list = [self.coil(xcentre, zcentre, radius, n*pi, iota, ((-1)**np.mod(i,2))*I_coil)
+                              for i, n in enumerate(np.arange(4)/2.)]
 
-class VMEC(object):
+            A = 0.0
+            Bx = 0.0
+            Bz = 0.0
+            
+            for c in self.coil_list:
+                xc, zc, Ic = c
+                rc = (xc**2 + zc**2)**(0.5)
+                r2 = (self.x - xc)**2 + (self.z - zc)**2
+                theta = atan2(self.z - zc, self.x - xc) # Angle relative to coil
+                
+                A -= Ic * 0.1 * log(r2)
+                
+                B = Ic * 0.2/sqrt(r2)
+                
+                Bx += B * sin(theta)
+                Bz -= B * cos(theta)
+                
+            self.Afunc  = lambdify((self.x, self.z, self.phi), A, "numpy")
+
+            self.Bxfunc = lambdify((self.x, self.z, self.phi), Bx, "numpy")
+            self.Bzfunc = lambdify((self.x, self.z, self.phi), Bz, "numpy")
+            
+
+except ImportError:
+    class StraightStellarator(MagneticField):
+        """
+        Invalid StraightStellarator, since no Sympy module.
+
+        Rather than printing an error on startup, which may
+        be missed or ignored, this raises
+        an exception if StraightStellarator is ever used.
+        """
+        def __init__(self, *args, **kwargs):
+            raise ImportError("No Sympy module: Can't generate StraightStellarator fields")
+
+class VMEC(MagneticField):
     """Read a VMEC equilibrium file
     """
 
@@ -353,39 +442,8 @@ class VMEC(object):
         self.br = bu*drdu + bv*drdv
         self.bphi = self.r_stz*bv
         self.bz = bu*dzdu + bv*dzdv
-
-    def adjust_grid(self, grid):
-        """Adjust grid to be consistent with the VMEC grid
-        """
-        grid.nx = self.nr
-        grid.ny = self.nzeta
-        grid.nz = self.nz
-
-        grid.xarray = self.r_1D
-        grid.yarray = self.zeta
-        grid.zarray = self.z_1D
-
-        grid.delta_x = grid.xarray[1] - grid.xarray[0]
-        grid.delta_y = grid.yarray[1] - grid.yarray[0]
-        grid.delta_z = grid.zarray[1] - grid.zarray[0]
-
-        grid.Lx = grid.xarray[-1] - grid.xarray[0]
-        grid.Ly = 2.*np.pi
-        grid.Lz = grid.zarray[-1] - grid.zarray[0]
-
-        grid.xcentre = grid.xarray[0] + 0.5*grid.Lx
-        grid.zcentre = grid.zarray[0] + 0.5*grid.Lz
-
-        grid.x_3d, grid.y_3d, grid.z_3d = np.meshgrid(grid.xarray, grid.yarray, grid.zarray,
-                                                      indexing='ij')
-
-        def Rmaj(x,z,phi):
-            return x
-
-        grid.Rmaj = Rmaj
-
-
-    def __init__(self, grid, vmec_file, ntheta=None, nzeta=None, nr=32, nz=32):
+        
+    def __init__(self, vmec_file, ntheta=None, nzeta=None, nr=32, nz=32):
         # Only needed here
         from scipy.interpolate import griddata, RegularGridInterpolator
         from scipy import ndimage
@@ -397,7 +455,7 @@ class VMEC(object):
 
         # Make a new rectangular grid in (R,Z)
         self.r_1D = np.linspace(self.r_stz.min(), self.r_stz.max(), nr)
-        self.z_1D = np.linspace(self.z_stz.min(), self.z_stz.max(), nr)
+        self.z_1D = np.linspace(self.z_stz.min(), self.z_stz.max(), nz)
         self.R_2D, self.Z_2D = np.meshgrid(self.r_1D, self.z_1D, indexing='ij')
 
         # First, interpolate the magnetic field components onto (R,Z)
@@ -422,25 +480,237 @@ class VMEC(object):
         self.bz_interp = RegularGridInterpolator(points, self.bz_rz, bounds_error=False, fill_value=0.0)
         self.bphi_interp = RegularGridInterpolator(points, self.bphi_rz, bounds_error=False, fill_value=1.0)
 
-        def Bxfunc(x, z, phi):
-            phi = np.mod(phi, 2.*np.pi)
-            return self.br_interp((x, z, phi))
+    def Bxfunc(self, x, z, phi):
+        phi = np.mod(phi, 2.*np.pi)
+        return self.br_interp((x, z, phi))
 
-        def Bzfunc(x, z, phi):
-            phi = np.mod(phi, 2.*np.pi)
-            return self.bz_interp((x, z, phi))
+    def Bzfunc(self, x, z, phi):
+        phi = np.mod(phi, 2.*np.pi)
+        return self.bz_interp((x, z, phi))
 
-        def Byfunc(x, z, phi):
-            phi = np.mod(phi, 2.*np.pi)
-            return self.bphi_interp((x, z, phi))
+    def Byfunc(self, x, z, phi):
+        phi = np.mod(phi, 2.*np.pi)
+        return self.bphi_interp((x, z, phi))
+        
+    def Rfunc(self, x,z,phi):
+        """
+        Major radius
+        """
+        return x
 
-        self.adjust_grid(grid)
 
-        self.magnetic_field = MagneticField(grid, Bxfunc, Bzfunc, Byfunc=Byfunc)
-
-class FieldInterpolator(object):
-    """Given Bx, By, Bz on a grid, interpolate them for zoidberg
-
+class SmoothedMagneticField(MagneticField):
     """
-    def __init__(self, Bx, By, Bz):
+    Represents a magnetic field which is smoothed so it never leaves
+    the boundaries of a given grid.
+    """
+    def __init__(self, field, grid, xboundary=None, zboundary=None):
+        """
+        field       A MagneticField object
+        grid        A Grid object
+        xboundary   Number of grid points in x over which the magnetic field is smoothed
+        zboundary   Number of grid points in x over which the magnetic field is smoothed
+        """
+
+        self.field = field
+        self.grid = grid
+        self.xboundary = xboundary
+        self.zboundary = zboundary
+
+    def Bxfunc(self, x, z, phi):
+        # Get closest y (phi) grid index
+        ind = np.argmin(np.abs( phi - self.grid.ycoords))
+        if phi < self.grid.ycoords[ind]:
+            ind -= 1
+        # phi now between ind and ind+1
+        grid_d, y_d = self.grid.getPoloidalGrid(ind)
+        grid_u, y_u = self.grid.getPoloidalGrid(ind+1)
+
+        # Get x,z indices from poloidal grids
+        x_d, z_d = grid_d.findIndex(x, z)
+        x_u, z_u = grid_d.findIndex(x, z)
+    
+    def Byfunc(self, x, z, phi):
+        """
+        Not modified by smoothing
+        """
+        return self.field.Byfunc(x, z, phi)
+
+    def Bxfunc(self, x, z, phi):
         pass
+    
+    def Rfunc(self, x,z,phi):
+        return self.field.Rfunc(x, z, phi)
+
+    def smooth_field_line(self, xa, za):
+        """Linearly damp the field to be parallel to the edges of the box
+
+        Should take some parameters to adjust rate of smoothing, etc.
+        """
+
+        x_left = (xa - self.xl_inner) / (self.xl_inner - self.xl_outer) + 1
+        x_right = (xa - self.xr_inner) / (self.xr_inner - self.xr_outer) + 1
+        z_top = (za - self.zt_inner) / (self.zt_inner - self.zt_outer) + 1
+        z_bottom = (za - self.zb_inner) / (self.zb_inner - self.zb_outer) + 1
+
+        if (xa < self.xl_inner):
+            if (za < self.zb_inner):
+                P = np.min([x_left, z_bottom])
+            elif (za >= self.zt_inner):
+                P = np.min([x_left, z_top])
+            else:
+                P = x_left
+        elif (xa >= self.xr_inner):
+            if (za < self.zb_inner):
+                P = np.min([x_right, z_bottom])
+            elif (za >= self.zt_inner):
+                P = np.min([x_right, z_top])
+            else:
+                P = x_right
+
+        elif (za < self.zb_inner):
+            P = z_bottom
+        elif (za > self.zt_inner):
+            P = z_top
+        else:
+            P=1.
+        if (P<0.):
+            P=0.
+        return P
+
+class GEQDSK(MagneticField):
+    """
+    Read a EFIT G-Eqdsk file for a toroidal equilibrium
+
+    This generates a grid in cylindrical geometry
+    """
+    
+    def __init__(self, gfile):
+        """
+        
+        Inputs
+        ------
+        
+        gfile  Name of the file to open
+        """
+
+        # Import utility to read G-Eqdsk files
+        from boututils import geqdsk
+        
+        g = geqdsk.Geqdsk()
+        g.openFile(gfile)
+        
+        # Get the range of major radius 
+        self.rmin = g.get('rleft')
+        self.rmax = g.get('rdim') + self.rmin
+        
+        # Range of height
+        self.zmin = g.get('zmid') - 0.5*g.get('zdim')
+        self.zmax = g.get('zmid') + 0.5*g.get('zdim')
+
+        print("Major radius: {0} -> {1} m".format(self.rmin, self.rmax))
+        print("Height: {0} -> {1} m".format(self.zmin, self.zmax))
+        
+        # Poloidal flux
+        self.psi = np.transpose(g.get('psirz'))
+        nr, nz = self.psi.shape
+
+        # Normalising factors: psi on axis and boundary
+        self.psi_axis = g.get('simag')
+        self.psi_bndry = g.get('sibry')
+        
+        # Current flux function f = R * Bt
+        self.fpol = g.get('fpol')
+
+        # Pressure [Pascals]
+        self.p = g.get('pres')
+        
+        self.r = np.linspace(self.rmin, self.rmax, nr)
+        self.z = np.linspace(self.zmin, self.zmax, nz)
+        
+        # Create a 2D spline interpolation for psi
+        from scipy import interpolate
+        self.psi_func = interpolate.RectBivariateSpline(self.r, self.z, self.psi)
+
+        # Create a normalised psi array
+        
+        self.psinorm = (self.psi - self.psi_axis) / (self.psi_bndry - self.psi_axis)
+
+        # Need to mark areas outside the core as psinorm = 1
+        # eg. around coils or in the private flux region
+        # Create a boundary 
+
+        rb = g.get('rbbbs')
+        zb = g.get('zbbbs')
+        core_bndry = boundary.PolygonBoundaryXZ(rb, zb)
+
+        # Get the points outside the boundary
+        rxz, zxz = np.meshgrid(self.r, self.z, indexing='ij')
+        outside = core_bndry.outside(rxz, 0.0, zxz)
+        self.psinorm[outside] = 1.0
+        
+        self.psinorm_func = interpolate.RectBivariateSpline(self.r, self.z, self.psinorm)
+        
+        # Spline for interpolation of f = R*Bt
+        psinorm = np.linspace(0.0, 1.0, nr)
+        self.f_spl = interpolate.InterpolatedUnivariateSpline(psinorm, self.fpol, ext=3)
+        # ext=3 specifies that boundary values are used outside range
+
+        # Spline for interpolation of pressure
+        self.p_spl = interpolate.InterpolatedUnivariateSpline(psinorm, self.p, ext=3)
+        
+        # Set boundary
+        rlim = g.get('rlim')
+        zlim = g.get('zlim')
+        if len(rlim) > 0:
+            # Create a boundary in X-Z with a polygon representation
+            self.boundary = boundary.PolygonBoundaryXZ(rlim,zlim)
+        
+    def Bxfunc(self, x, z, phi):
+        """
+        Radial magnetic field
+        Br = -1/R dpsi/dZ
+        """
+        return -self.psi_func(x,z,dy=1,grid=False)/x
+
+    def Bzfunc(self, x, z, phi):
+        """
+        Vertical magnetic field
+        Bz = (1/R) dpsi/dR
+        """
+        
+        return self.psi_func(x,z,dx=1,grid=False)/x
+
+    def Byfunc(self, x, z, phi):
+        """
+        Toroidal magnetic field
+        """
+
+        # Interpolate to get flux surface normalised psi
+        psinorm = self.psinorm_func(x,z, grid=False)
+        
+        # Interpolate fpol array at values of normalised psi
+        if hasattr(psinorm, "shape"):
+            return np.reshape(self.f_spl(np.ravel(psinorm)),psinorm.shape) / x
+        
+        return f_spl(psinorm) / x  # f = R*Bt
+
+    def Rfunc(self, x, z, phi):
+        """
+        Major radius
+        """
+        return x
+    
+    def pressure(self, x,z,phi):
+        """
+        Pressure in Pascals
+        """
+        
+        # Interpolate to get flux surface normalised psi
+        psinorm = self.psinorm_func(x,z, grid=False)
+        
+        if hasattr(psinorm, "shape"):
+            return np.reshape(self.p_spl(np.ravel(psinorm)),psinorm.shape)
+        
+        return f_spl(psinorm)
+    

@@ -37,6 +37,7 @@ class Coordinates;
 
 #include "mesh.hxx"
 #include "datafile.hxx"
+#include "utils.hxx"
 #include <bout_types.hxx>
 
 /*!
@@ -106,7 +107,7 @@ public:
   
   /// Advection along magnetic field V*b.Grad(f)
   const Field2D Vpar_Grad_par(const Field2D &v, const Field2D &f, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
-  const Field3D Vpar_Grad_par(const Field &v, const Field &f, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
+  const Field3D Vpar_Grad_par(const Field3D &v, const Field3D &f, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
   
   /// Divergence along magnetic field  Div(b*f) = B.Grad(f/B)
   const Field2D Div_par(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
@@ -133,10 +134,8 @@ public:
   const Field3D Laplace(const Field3D &f);
   
 private:
-  /// Matrix inversion by Gauss-Jordan elimination
-  int gaussj(BoutReal **a, int n);
-  vector<int> indxc, indxr, ipiv;
   int nz; // Size of mesh in Z. This is mesh->ngz-1
+  Mesh * localmesh;
 };
 
 /*

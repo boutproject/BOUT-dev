@@ -67,7 +67,7 @@ LaplacePetsc::LaplacePetsc(Options *opt) :
   if (!opt) opts = Options::getRoot()->getSection("laplace");
   else opts=opt;
 
-  #ifdef CHECK
+  #if CHECK > 0
     // These are the implemented flags
     implemented_flags = INVERT_START_NEW;
     implemented_boundary_flags = INVERT_AC_GRAD
@@ -272,104 +272,14 @@ LaplacePetsc::LaplacePetsc(Options *opt) :
   string type;
   opts->get("ksptype", type, KSP_GMRES);
 
-  if(strcasecmp(type.c_str(), KSP_RICHARDSON) == 0) ksptype = KSPRICHARDSON;
-#ifdef KSPCHEBYSHEV
-  else if(strcasecmp(type.c_str(), KSP_CHEBYSHEV) == 0) ksptype = KSPCHEBYSHEV;
-#endif
-  else if(strcasecmp(type.c_str(), KSP_CG) == 0)        ksptype = KSPCG;
-  else if(type == "cgne")                       ksptype = KSPCGNE;
-  else if(type == "nash")                       ksptype = KSPNASH;
-  else if(type == "stcg")                       ksptype = KSPSTCG;
-  else if(type == "gltr")                       ksptype = KSPGLTR;
-  else if(strcasecmp(type.c_str(), KSP_GMRES) == 0)     ksptype = KSPGMRES;
-  else if(type == "fgmres")                     ksptype = KSPFGMRES;
-  else if(type == "lgmres")                     ksptype = KSPLGMRES;
-  else if(type == "dgmres")                     ksptype = KSPDGMRES;
-#ifdef KSPPGMRES
-  else if(type == "pgmres")                     ksptype = KSPPGMRES;
-#endif
-  else if(strcasecmp(type.c_str(), KSP_TCQMR) == 0)     ksptype = KSPTCQMR;
-  else if(strcasecmp(type.c_str(), KSP_BCGS) == 0)      ksptype = KSPBCGS;
-  else if(type == "ibcgs")                      ksptype = KSPIBCGS;
-#ifdef KSPFBCGS
-  else if(type == "fbcgs")                      ksptype = KSPFBCGS;
-#endif
-  else if(type == "bcgsl")                      ksptype = KSPBCGSL;
-  else if(strcasecmp(type.c_str(), KSP_CGS) == 0)       ksptype = KSPCGS;
-  else if(strcasecmp(type.c_str(), KSP_TFQMR) == 0)     ksptype = KSPTFQMR;
-  else if(strcasecmp(type.c_str(), KSP_CR) == 0)        ksptype = KSPCR;
-  else if(strcasecmp(type.c_str(), KSP_LSQR) == 0)      ksptype = KSPLSQR;
-  else if(strcasecmp(type.c_str(), KSP_BICG) == 0)      ksptype = KSPBICG;
-  else if(strcasecmp(type.c_str(), KSP_PREONLY) == 0)   ksptype = KSPPREONLY;
-  else if(type == "qcg")                        ksptype = KSPQCG;
-  else if(type == "bicg")                       ksptype = KSPBICG;
-  else if(type == "minres")                     ksptype = KSPMINRES;
-  else if(type == "symmlq")                     ksptype = KSPSYMMLQ;
-  else if(type == "lcd")                        ksptype = KSPLCD;
-  else if(type == "python")                     ksptype = KSPPYTHON;
-  else if(type == "gcr")                        ksptype = KSPGCR;
-#ifdef KSPSPECEST // Removed 3.6
-  else if(type == "specest")                    ksptype = KSPSPECEST;
-#endif
-  else
-    throw BoutException("Unknown Krylov solver type '%s'", type.c_str());
-
+  ksptype = type.c_str();
+  
   // Get preconditioner type
   // WARNING: only a few of these options actually make sense: see the PETSc documentation to work out which they are (possibly pbjacobi, sor might be useful choices?)
   string pctypeoption;
   opts->get("pctype", pctypeoption, "none", true);
-  if (pctypeoption == "none") pctype = PCNONE;
-  else if (pctypeoption == "user") pctype = PCSHELL;
-  else if (pctypeoption == "jacobi") pctype = PCJACOBI;
-  else if (pctypeoption == "sor") pctype = PCSOR;
-  else if (pctypeoption == "lu") pctype = PCLU;
-  else if (pctypeoption == "shell") pctype = PCSHELL;
-  else if (pctypeoption == "bjacobi") pctype = PCBJACOBI;
-  else if (pctypeoption == "mg") pctype = PCMG;
-  else if (pctypeoption == "eisenstat") pctype = PCEISENSTAT;
-  else if (pctypeoption == "ilu") pctype = PCILU;
-  else if (pctypeoption == "icc") pctype = PCICC;
-  else if (pctypeoption == "asm") pctype = PCASM;
-  else if (pctypeoption == "gasm") pctype = PCGASM;
-  else if (pctypeoption == "ksp") pctype = PCKSP;
-  else if (pctypeoption == "composite") pctype = PCCOMPOSITE;
-  else if (pctypeoption == "redundant") pctype = PCREDUNDANT;
-  else if (pctypeoption == "spai") pctype = PCSPAI;
-  else if (pctypeoption == "nn") pctype = PCNN;
-  else if (pctypeoption == "cholesky") pctype = PCCHOLESKY;
-  else if (pctypeoption == "pbjacobi") pctype = PCPBJACOBI;
-  else if (pctypeoption == "mat") pctype = PCMAT;
-  else if (pctypeoption == "hypre") pctype = PCHYPRE;
-  else if (pctypeoption == "parms") pctype = PCPARMS;
-  else if (pctypeoption == "fieldsplit") pctype = PCFIELDSPLIT;
-  else if (pctypeoption == "tfs") pctype = PCTFS;
-  else if (pctypeoption == "ml") pctype = PCML;
-  else if (pctypeoption == "galerkin") pctype = PCGALERKIN;
-  else if (pctypeoption == "exotic") pctype = PCEXOTIC;
-#if !PETSC_VERSION_GE(3,5,0)
-  else if (pctypeoption == "hmpi") pctype = PCHMPI;
-  else if (pctypeoption == "supportgraph") pctype = PCSUPPORTGRAPH;
-  else if (pctypeoption == "asa") pctype = PCASA;
-#endif
-  else if (pctypeoption == "cp") pctype = PCCP;
-  else if (pctypeoption == "bfbt") pctype = PCBFBT;
-  else if (pctypeoption == "lsc") pctype = PCLSC;
-  else if (pctypeoption == "python") pctype = PCPYTHON;
-  else if (pctypeoption == "pfmg") pctype = PCPFMG;
-  else if (pctypeoption == "syspfmg") pctype = PCSYSPFMG;
-  else if (pctypeoption == "redistribute") pctype = PCREDISTRIBUTE;
-  else if (pctypeoption == "svd") pctype = PCSVD;
-  else if (pctypeoption == "gamg") pctype = PCGAMG;
-  else if (pctypeoption == "sacusp") pctype = PCSACUSP;            /* these four run on NVIDIA GPUs using CUSP */
-  else if (pctypeoption == "sacusppoly") pctype = PCSACUSPPOLY;
-  else if (pctypeoption == "bicgstabcusp") pctype = PCBICGSTABCUSP;
-  else if (pctypeoption == "ainvcusp") pctype = PCAINVCUSP;
-#ifdef PCBDDC
-  else if (pctypeoption == "bddc") pctype = PCBDDC;
-#endif
-  else
-    throw BoutException("Unknown KSP preconditioner type '%s'", pctypeoption.c_str());
-
+  pctype = pctypeoption.c_str();
+  
   // Get Options specific to particular solver types
   opts->get("richardson_damping_factor",richardson_damping_factor,1.0,true);
   opts->get("chebyshev_max",chebyshev_max,100,true);
@@ -426,7 +336,7 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b) {
  * \returns sol     The solution x of the problem Ax=b.
  */
 const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
-  #ifdef CHECK
+  #if CHECK > 0
     // Checking flags are set to something which is not implemented (see
     // constructor for details)
     if ( global_flags & !implemented_flags) {

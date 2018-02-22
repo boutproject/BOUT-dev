@@ -43,7 +43,7 @@ LaplaceMumps::LaplaceMumps(Options *opt) :
   if (!opt) opts = Options::getRoot()->getSection("laplace");
   else opts=opt;
  
-  #ifdef CHECK
+  #if CHECK > 0
     implemented_flags = INVERT_START_NEW;
     implemented_boundary_flags = INVERT_AC_GRAD
 			       + INVERT_RHS
@@ -430,7 +430,7 @@ LaplaceMumps::LaplaceMumps(Options *opt) :
 // 
 // const Field3D LaplaceMumps::solve(const Field3D &b) {
 //   Timer timer("invert");
-// #ifdef CHECK
+// #if CHECK > 0
 //   msg_stack.push("Laplacian::solve(Field3D)");
 // #endif
 //   int ys = mesh->ystart, ye = mesh->yend;
@@ -489,7 +489,7 @@ LaplaceMumps::LaplaceMumps(Options *opt) :
 //   
 //   MPI_Scatterv(rhs,localrhs_size_array,rhs_positions,MPI_DOUBLE,localrhs,localrhssize,MPI_DOUBLE,0,mesh->getXcomm()); // Scatters solution from host back to localrhs (which points to x's data) on all processors
 //   
-// #ifdef CHECK
+// #if CHECK > 0
 //   msg_stack.pop();
 // #endif
 // 
@@ -504,7 +504,7 @@ LaplaceMumps::LaplaceMumps(Options *opt) :
 // 
 // const Field3D LaplaceMumps::solve(const Field3D &b) {
 //   Timer timer("invert");
-// #ifdef CHECK
+// #if CHECK > 0
 //   msg_stack.push("Laplacian::solve(Field3D)");
 // #endif
 //   int ys = mesh->ystart, ye = mesh->yend;
@@ -539,7 +539,7 @@ LaplaceMumps::LaplaceMumps(Options *opt) :
 //     }
 //   }
 //   
-// #ifdef CHECK
+// #if CHECK > 0
 //   msg_stack.pop();
 // #endif
 // 

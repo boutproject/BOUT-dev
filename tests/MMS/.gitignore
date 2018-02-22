@@ -1,0 +1,15 @@
+BOUT.log.*
+run.log.*
+diffusion/cyto
+diffusion/data/BOUT.dmp.*.nc
+diffusion/data/BOUT.restart.*.nc
+diffusion/norm.pdf
+wave-1d-y/data/BOUT.dmp.*.nc
+wave-1d-y/data/BOUT.restart.*.nc
+wave-1d-y/norm.pdf
+wave-1d-y/wave
+wave-1d-y/wave.pkl
+wave-1d/data/BOUT.dmp.*.nc
+wave-1d/data/BOUT.restart.*.nc
+wave-1d/wave
+wave-1d/wave_norm.pdf

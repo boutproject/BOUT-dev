@@ -41,20 +41,31 @@
 #include <boutcomm.hxx>
 #include <msg_stack.hxx>
 #include <output.hxx>
+#include <bout/openmpwrap.hxx>
 
-KarniadakisSolver::KarniadakisSolver(Options *options) : Solver(options) {
+KarniadakisSolver::KarniadakisSolver(Options *options) : Solver(options), f1(nullptr) {
   canReset = true;  
 }
 
 KarniadakisSolver::~KarniadakisSolver() {
-  
+  if(f1 != nullptr){
+    delete[] f1;
+    delete[] f0;
+    delete[] fm1;
+    delete[] fm2;
+    
+    delete[] S0;
+    delete[] Sm1;
+    delete[] Sm2;
+    delete[] D0;
+  }
 }
 
-int KarniadakisSolver::init(bool restarting, int nout, BoutReal tstep) {
-  int msg_point = msg_stack.push("Initialising Karniadakis solver");
+int KarniadakisSolver::init(int nout, BoutReal tstep) {
+  TRACE("Initialising Karniadakis solver");
   
   /// Call the generic initialisation first
-  if(Solver::init(restarting, nout, tstep))
+  if (Solver::init(nout, tstep))
     return 1;
   
   output << "\n\tKarniadakis solver\n";
@@ -68,7 +79,7 @@ int KarniadakisSolver::init(bool restarting, int nout, BoutReal tstep) {
   // Get total problem size
   int neq;
   if(MPI_Allreduce(&nlocal, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
-    output.write("\tERROR: MPI_Allreduce failed!\n");
+    output_error.write("\tERROR: MPI_Allreduce failed!\n");
     return 1;
   }
   
@@ -99,19 +110,17 @@ int KarniadakisSolver::init(bool restarting, int nout, BoutReal tstep) {
   // Make sure timestep divides into tstep
   
   // Number of sub-steps, rounded up
-  nsubsteps = (int) (0.5 + tstep / timestep);
-  
+  nsubsteps = static_cast<int>(0.5 + tstep / timestep);
+
   output.write("\tNumber of substeps: %e / %e -> %d\n", tstep, timestep, nsubsteps);
 
-  timestep = tstep / ((float) nsubsteps);
-  
-  msg_stack.pop(msg_point);
+  timestep = tstep / static_cast<BoutReal>(nsubsteps);
 
   return 0;
 }
 
 int KarniadakisSolver::run() {
-  int msg_point = msg_stack.push("KarniadakisSolver::run()");
+  TRACE("KarniadakisSolver::run()");
   
   for(int i=0;i<nsteps;i++) {
     // Run through a fixed number of steps
@@ -153,8 +162,6 @@ int KarniadakisSolver::run() {
     rhs_ncalls_e = 0;
   }
   
-  msg_stack.pop(msg_point);
-  
   return 0;
 }
 
@@ -175,7 +182,7 @@ void KarniadakisSolver::take_step(BoutReal dt) {
   
   if(first_time) {
     // Initialise values
-    #pragma omp parallel for
+    BOUT_OMP(parallel for)
     for(int i=0;i<nlocal;i++) {
     //fm1[i] = fm2[i] = f0[i];
       fm1[i] = f0[i] - dt*S0[i];
@@ -185,7 +192,7 @@ void KarniadakisSolver::take_step(BoutReal dt) {
     first_time = false;
   }
 
-  #pragma omp parallel for
+  BOUT_OMP(parallel for)
   for(int i=0;i<nlocal;i++)
     f1[i] = (6./11.) * (3.*f0[i] - 1.5*fm1[i] + (1./3.)*fm2[i] + dt*(3.*S0[i] - 3.*Sm1[i] + Sm2[i]));
   
@@ -195,7 +202,7 @@ void KarniadakisSolver::take_step(BoutReal dt) {
   save_derivs(D0);
   
   // f1 = f1 + dt*D0
-  #pragma omp parallel for
+  BOUT_OMP(parallel for)
   for(int i=0;i<nlocal;i++)
     f1[i] += (6./11.) * dt*D0[i];
 }

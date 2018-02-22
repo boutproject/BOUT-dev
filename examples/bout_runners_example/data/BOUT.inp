@@ -51,7 +51,7 @@ second = C2  # d^2/dy^2 (f)
 
 #Methods used for the azimuthal (z) derivative terms
 [mesh:ddz]
-second = FTT # d^2/dz^2 (f)
+second = FFT # d^2/dz^2 (f)
 ###############################################################################
 
 

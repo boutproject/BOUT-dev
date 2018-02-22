@@ -1,7 +1,13 @@
 
-BOUT_TOP=$(PWD)
-
 include make.config
+
+# These expand to literals of the same name, which are then
+# set in the bout.config script. This enables
+# the final paths to the include and lib files to be set
+# in the make/make install targets
+
+BOUT_INCLUDE_PATH="\$$BOUT_INCLUDE_PATH"
+BOUT_LIB_PATH="\$$BOUT_LIB_PATH"
 
 .PHONY: cflags
 cflags:

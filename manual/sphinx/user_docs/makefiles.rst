@@ -119,5 +119,32 @@ so to get the library linking flags, for example
     $ bout-config --libs
 
 This script can be used in makefiles to compile BOUT++ alongside other
-libraries. An example is in ``examples/make-script``.
+libraries. The easiest way is to use ``bout-config`` to find the ``make.config``
+file which contains the settings. For example the heat conduction example can
+be compiled with the following ``makefile``:
+
+.. code-block:: makefile
+
+   SOURCEC         = conduction.cxx
+   include $(shell bout-config --config-file)
+
+This includes the ``make.config`` file installed with ``bout-config``, rather than
+using the ``BOUT_TOP`` variable.
+
+A different way to use ``bout-config`` is to get the compiler and linker flags,
+and use them in your own makefile, for example:
+
+.. code-block:: makefile
+
+   CXX=`bout-config --cxx`
+   CFLAGS=`bout-config --cflags`
+   LD=`bout-config --ld`
+   LDFLAGS=`bout-config --libs
+
+   conduction: conduction.cxx
+       $(CXX) $(CFLAGS) -c conduction.cxx -o conduction.o
+       $(LD) -o conduction conduction.o $(LDFLAGS)
+
+   
+A more general example is in ``examples/make-script``.
 

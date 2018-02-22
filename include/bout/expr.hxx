@@ -32,7 +32,7 @@ public:
   typedef Field3D type;
   
   Field3DExpr(const Field3D &f) : data(&f(0,0,0)) {}
-  const BoutReal& operator()(int x, int y, int z) const { return data[(x*mesh->ngy + y)*mesh->ngy + z]; }
+  const BoutReal& operator()(int x, int y, int z) const { return data[(x*mesh->LocalNy + y)*mesh->LocalNz + z]; }
 private:
   const BoutReal *data;
 };
@@ -42,7 +42,7 @@ public:
   typedef Field2D type;
   
   Field2DExpr(const Field2D &f) : data(&f(0,0)) {}
-  const BoutReal& operator()(int x, int y, int z) const { return data[x*mesh->ngy + y]; }
+  const BoutReal& operator()(int x, int y, int z) const { return data[x*mesh->LocalNy + y]; }
 private:
   const BoutReal *data;
 };
@@ -183,9 +183,9 @@ template<typename Expr>
 const Field3D eval3D(Expr e) {
   Field3D result;
   result.allocate();
-  for(int i=0;i<mesh->ngx;i++)
-    for(int j=0;j<mesh->ngy;j++)
-      for(int k=0;k<mesh->ngz;k++)
+  for(int i=0;i<mesh->LocalNx;i++)
+    for(int j=0;j<mesh->LocalNy;j++)
+      for(int k=0;k<mesh->LocalNz;k++)
 	result(i,j,k) = e(i,j,k);
   return result;
 }

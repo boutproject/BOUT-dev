@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """Collection of functions which can be used to make a BOUT++ run"""
 
 import os
@@ -166,7 +164,7 @@ def  determineNumberOfCPUs():
     raise Exception('Can not determine number of CPUs on this system')
 
 
-def launch(command, runcmd="mpirun -np", nproc=None, output=None, pipe=False, verbose=False):
+def launch(command, runcmd="mpirun -np", nproc=None, mthread=None, output=None, pipe=False, verbose=False):
     """Launch parallel MPI jobs
 
     status = launch(command, nproc, output=None)
@@ -174,6 +172,7 @@ def launch(command, runcmd="mpirun -np", nproc=None, output=None, pipe=False, ve
     runcmd     Command for running parallel job; defaults to "mpirun -np"
     command    The command to run (string)
     nproc      Number of processors (integer)
+    mthread      Number of omp threads (integer)
     output     Optional name of file for output
     """
 
@@ -186,7 +185,34 @@ def launch(command, runcmd="mpirun -np", nproc=None, output=None, pipe=False, ve
     if output is not None:
         cmd = cmd + " > "+output
 
+    if mthread is not None:
+        cmd = "OMP_NUM_THREADS={j} ".format(j=mthread)+cmd
+        
     if verbose == True:
          print(cmd)
 
     return shell(cmd, pipe=pipe)
+
+def shell_safe(command,*args, **kwargs):
+    """`Safe` version of shell.
+
+    raises an RuntimeError exception if the command is not successfull.
+    """
+    s, out = shell(command,*args,**kwargs)
+    if s:
+        raise RuntimeError("Run failed with %d.\nCommand was:\n%s\n\n"
+                           "Output was\n\n%s"%
+                           (s,command,out))
+    return s, out
+
+def launch_safe(command,*args, **kwargs):
+    """`Safe` version of launch.
+
+    raises an RuntimeError exception if the command is not successfull.
+    """
+    s, out = launch(command,*args,**kwargs)
+    if s:
+        raise RuntimeError("Run failed with %d.\nCommand was:\n%s\n\n"
+                           "Output was\n\n%s"%
+                           (s,command,out))
+    return s, out

@@ -1,0 +1,125 @@
+# Test initial conditions in a "slab" grid
+
+# No timesteps
+NOUT = 0
+
+# Z size
+MZ = 4
+
+MXG = 1
+MYG = 1
+
+NXPE = 1
+
+[mesh]
+symmetricGlobalX = true
+symmetricGlobalY = false
+
+nx = 7
+ny = 12
+
+[All]
+scale = 1.0
+
+[var_x]
+function = x
+
+[var_y]
+function = y
+
+[var_z]
+function = z
+
+[abs]
+function = abs(x - 0.5)
+
+[add]
+function = x + 2
+
+[asin]
+function = asin(y/(2*pi))
+
+[acos]
+function = acos(y/(2*pi))
+
+[atan]
+function = atan(y/(2*pi))
+
+[atan_y]
+function = atan(y,x)
+
+[ballooning]
+function = ballooning(x)
+
+[ballooning_n]
+n = 5
+function = ballooning(x,5)
+
+[cos]
+function = cos(x)
+
+[cosh]
+function = cosh(x)
+
+[exp]
+function = exp(x)
+
+[tanh]
+function = tanh(x)
+
+[gauss]
+function = gauss(x)
+
+[gauss_width]
+function = gauss(x, 1.0)
+
+[H]
+function = H(x)
+
+[log]
+function = log(abs(x))
+
+[max]
+function = max(4*x,y-pi,z^3)
+
+[min]
+function = min(4*x,y-pi,z^3)
+
+[minus]
+function = 4 - x
+
+[mixmode]
+function = mixmode(x)
+
+[mixmode_seed]
+function = mixmode(x, 0.5)
+
+[pi]
+function = z - pi
+
+[power]
+function = power(abs(x), y)
+
+[sin]
+function = sin(x)
+
+[sinh]
+function = sinh(x)
+
+[sqrt]
+function = sqrt(abs(x))
+
+[square]
+function = y^2
+
+[tan]
+function = tan(x)
+
+[times]
+function = 4*y
+
+[erf]
+function = erf(x)
+
+[TanhHat]
+function = TanhHat(x, 0.5, 0.4, 0.3)

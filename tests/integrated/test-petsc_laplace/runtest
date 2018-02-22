@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+
+# 
+# Run the test, compare results against the benchmark
+#
+
+# Variables to compare
+from __future__ import print_function
+from builtins import str
+vars = [['max_error1',2.e-4],
+        ['max_error2',2.e-5],
+        ['max_error3',2.e-4],
+        ['max_error4',1.e-5],
+	['max_error5',2.e-4],
+	['max_error6',2.e-5],
+	['max_error7',2.e-4],
+	['max_error8',2.e-5]]  
+#tol = 1e-4                  # Absolute (?) tolerance
+
+from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
+from boutdata.collect import collect
+#import numpy as np
+from sys import stdout, exit
+
+MPIRUN=getmpirun()
+
+print("Making PETSc Laplacian inversion test")
+shell_safe("make > make.log")
+
+print("Running PETSc Laplacian inversion test")
+success = True
+
+for nproc in [1,2,4]:
+#  nxpe = 1
+#  if nproc > 2:
+#    nxpe = 2
+  
+  cmd = "./test_petsc_laplace"
+  
+  shell("rm data/BOUT.dmp.*.nc")
+
+  print("   %d processors...." % nproc)
+  s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True,verbose=True)
+  f = open("run.log."+str(nproc), "w")
+  f.write(out)
+  f.close()
+  
+   # Collect output data
+  for v in vars:
+    stdout.write("      Checking "+v[0]+" ... ")
+    error = collect(v[0], path="data", info=False)
+    if error <= 0:
+      print("Convergence error")
+      success = False
+    elif error > v[1]:
+      print("Fail, maximum error is = "+str(error))
+      success = False
+    else:
+      print("Pass")
+
+if success:
+  print(" => All PETSc Laplacian inversion tests passed")
+  exit(0)
+else:
+  print(" => Some failed tests")
+  exit(1)

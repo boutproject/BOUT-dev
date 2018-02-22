@@ -36,7 +36,7 @@
 #include <output.hxx>
 #include <msg_stack.hxx>
 
-#define CHKERR(ret) { if( ret != NC_NOERR ) throw new BoutException("pnetcdf line %d: %s", __LINE__, ncmpi_strerror(ret)); }
+#define CHKERR(ret) { if( ret != NC_NOERR ) throw BoutException("pnetcdf line %d: %s", __LINE__, ncmpi_strerror(ret)); }
 
 // Define this to see loads of info messages
 //#define NCDF_VERBOSE
@@ -67,9 +67,7 @@ PncFormat::~PncFormat() {
 }
 
 bool PncFormat::openr(const char *name) {
-#ifdef CHECK
-  msg_stack.push("PncFormat::openr");
-#endif
+  TRACE("PncFormat::openr");
 
   if(is_valid()) // Already open. Close then re-open
     close(); 
@@ -84,25 +82,25 @@ bool PncFormat::openr(const char *name) {
   /// Get the dimensions from the file
   ret = ncmpi_inq_dimid(ncfile, "x", &xDim);
   if(ret != NC_NOERR) {
-    output.write("WARNING: NetCDF file should have an 'x' dimension\n");
+    output_warn.write("WARNING: NetCDF file should have an 'x' dimension\n");
   }
   
   ret = ncmpi_inq_dimid(ncfile, "y", &yDim);
   if(ret != NC_NOERR) {
-    output.write("WARNING: NetCDF file should have an 'y' dimension\n");
+    output_warn.write("WARNING: NetCDF file should have an 'y' dimension\n");
   }
   
   // z and t dimensions less crucial
   ret = ncmpi_inq_dimid(ncfile, "z", &zDim);
   if(ret != NC_NOERR) {
 #ifdef NCDF_VERBOSE
-    output.write("INFO: NetCDF file has no 'z' coordinate\n");
+    output_info.write("INFO: NetCDF file has no 'z' coordinate\n");
 #endif
   }
   ret = ncmpi_inq_dimid(ncfile, "t", &tDim);
   if(ret != NC_NOERR) {
 #ifdef NCDF_VERBOSE
-    output.write("INFO: NetCDF file has no 'z' coordinate\n");
+    output_info.write("INFO: NetCDF file has no 'z' coordinate\n");
 #endif
   }
   
@@ -113,17 +111,11 @@ bool PncFormat::openr(const char *name) {
 
   fname = copy_string(name);
 
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-
   return true;
 }
 
 bool PncFormat::openw(const char *name, bool append) {
-#ifdef CHECK
-  msg_stack.push("PncFormat::openw");
-#endif
+  TRACE("PncFormat::openw");
   
   if(is_valid()) // Already open. Close then re-open
     close(); 
@@ -146,15 +138,15 @@ bool PncFormat::openw(const char *name, bool append) {
     MPI_Offset len;
     ret = ncmpi_inq_dimlen(ncfile, xDim, &len); CHKERR(ret);
     if(len != mesh->GlobalNx)
-      throw new BoutException("ERROR: x dimension length (%d) incompatible with mesh size (%d)", (int) len, mesh->GlobalNx);
+      throw BoutException("ERROR: x dimension length (%d) incompatible with mesh size (%d)", (int) len, mesh->GlobalNx);
 
     ret = ncmpi_inq_dimlen(ncfile, yDim, &len); CHKERR(ret);
     if(len != mesh->GlobalNy)
-      throw new BoutException("ERROR: y dimension length (%d) incompatible with mesh size (%d)", (int) len, mesh->GlobalNy);
+      throw BoutException("ERROR: y dimension length (%d) incompatible with mesh size (%d)", (int) len, mesh->GlobalNy);
     
     ret = ncmpi_inq_dimlen(ncfile, zDim, &len); CHKERR(ret);
     if(len != mesh->GlobalNz)
-      throw new BoutException("ERROR: z dimension length (%d) incompatible with mesh size (%d)", (int) len, mesh->GlobalNz);
+      throw BoutException("ERROR: z dimension length (%d) incompatible with mesh size (%d)", (int) len, mesh->GlobalNz);
     
     // Get the size of the 't' dimension for records
     ret = ncmpi_inq_dimlen(ncfile, tDim, &len); CHKERR(ret);
@@ -191,17 +183,11 @@ bool PncFormat::openw(const char *name, bool append) {
 
   fname = copy_string(name);
 
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-
   return true;
 }
 
 void PncFormat::close() {
-#ifdef CHECK
-  msg_stack.push("PncFormat::close");
-#endif
+  TRACE("PncFormat::close");
   
   if(!is_valid())
     return; // Already closed
@@ -209,10 +195,6 @@ void PncFormat::close() {
   int ret = ncmpi_close(ncfile);
   free(fname);
   fname = NULL;
-
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 }
 
 void PncFormat::flush() {
@@ -222,14 +204,12 @@ void PncFormat::flush() {
 }
 
 const vector<int> PncFormat::getSize(const char *name) {
+  TRACE("PncFormat::getSize");
+
   vector<int> size;
 
   if(!is_valid())
     return size;
-
-#ifdef CHECK
-  msg_stack.push("PncFormat::getSize");
-#endif
 
   int ret, var;
   if(ret = ncmpi_inq_varid(ncfile, name, &var)) {
@@ -258,10 +238,6 @@ const vector<int> PncFormat::getSize(const char *name) {
     ret = ncmpi_inq_dimlen(ncfile, dimid[i], &len); CHKERR(ret);
     size.push_back((int) len);
   }
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 
   return size;
 }
@@ -280,25 +256,20 @@ bool PncFormat::setRecord(int t) {
 }
 
 bool PncFormat::read(int *data, const char *name, int lx, int ly, int lz) {
+  TRACE("PncFormat::read(int)");
+
   if(!is_valid())
     return false;
 
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
-  
-#ifdef CHECK
-  msg_stack.push("PncFormat::read(int)");
-#endif
 
   int ret;
   int var;
   if(ret = ncmpi_inq_varid(ncfile, name, &var)) {
     // Variable not in file
 #ifdef NCDF_VERBOSE
-    output.write("INFO: Parallel NetCDF variable '%s' not found\n", name);
-#endif
-#ifdef CHECK
-    msg_stack.pop();
+    output_info.write("INFO: Parallel NetCDF variable '%s' not found\n", name);
 #endif
     return false;
   }
@@ -309,9 +280,6 @@ bool PncFormat::read(int *data, const char *name, int lx, int ly, int lz) {
   
   if(nd == 0) {
     ret = ncmpi_get_var_int_all(ncfile, var, data); CHKERR(ret);
-#ifdef CHECK
-    msg_stack.pop();
-#endif
     return true;
   }
   
@@ -321,10 +289,6 @@ bool PncFormat::read(int *data, const char *name, int lx, int ly, int lz) {
   
   ret = ncmpi_get_vara_int_all(ncfile, var, start, count, data);
   
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-
   return true;
 }
 
@@ -350,25 +314,20 @@ int pnc_get_vara_all(int ncfile, int var, MPI_Offset* start, MPI_Offset* count, 
 }
 
 bool PncFormat::read(BoutReal *data, const char *name, int lx, int ly, int lz) {
+  TRACE("PncFormat::read(BoutReal)");
+
   if(!is_valid())
     return false;
 
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
-
-#ifdef CHECK
-  msg_stack.push("PncFormat::read(BoutReal)");
-#endif
   
   int ret;
   int var;
   if(ret = ncmpi_inq_varid(ncfile, name, &var)) {
     // Variable not in file
 #ifdef NCDF_VERBOSE
-    output.write("INFO: Parallel NetCDF variable '%s' not found\n", name);
-#endif
-#ifdef CHECK
-    msg_stack.pop();
+    output_info.write("INFO: Parallel NetCDF variable '%s' not found\n", name);
 #endif
     return false;
   }
@@ -379,9 +338,6 @@ bool PncFormat::read(BoutReal *data, const char *name, int lx, int ly, int lz) {
   
   if(nd == 0) {
     ret = pnc_get_var_all(ncfile, var, data); CHKERR(ret);
-#ifdef CHECK
-    msg_stack.pop();
-#endif
     return true;
   }
   
@@ -391,10 +347,6 @@ bool PncFormat::read(BoutReal *data, const char *name, int lx, int ly, int lz) {
   count[0] = lx; count[1] = ly; count[2] = lz;
 
   ret = pnc_get_vara_all(ncfile, var, start, count, data); CHKERR(ret);
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 
   return true;
 }
@@ -404,6 +356,8 @@ bool PncFormat::read(BoutReal *var, const string &name, int lx, int ly, int lz) 
 }
 
 bool PncFormat::write(int *data, const char *name, int lx, int ly, int lz) {
+  TRACE("PncFormat::write(int)");
+
   if(!is_valid())
     return false;
 
@@ -414,10 +368,6 @@ bool PncFormat::write(int *data, const char *name, int lx, int ly, int lz) {
   if(lx != 0) nd = 1;
   if(ly != 0) nd = 2;
   if(lz != 0) nd = 3;
-
-#ifdef CHECK
-  msg_stack.push("PncFormat::write(int)");
-#endif
 
   int ret;
   int var;
@@ -435,9 +385,6 @@ bool PncFormat::write(int *data, const char *name, int lx, int ly, int lz) {
   if(nd == 0) {
     // Writing a scalar
     ret = ncmpi_put_var_int_all(ncfile, var, data); CHKERR(ret);
-#ifdef CHECK
-    msg_stack.pop();
-#endif
     return true;
   }
   
@@ -448,10 +395,6 @@ bool PncFormat::write(int *data, const char *name, int lx, int ly, int lz) {
   count[0] = lx; count[1] = ly; count[2] = lz;
   
   ret = ncmpi_put_vara_int_all(ncfile, var, start, count, data); CHKERR(ret);
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 
   return true;
 }
@@ -479,15 +422,13 @@ int pnc_put_vara_all(int ncfile, int var, MPI_Offset* start, MPI_Offset* count, 
 }
 
 bool PncFormat::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
+  TRACE("PncFormat::write(BoutReal)");
+
   if(!is_valid())
     return false;
 
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
-  
-#ifdef CHECK
-  msg_stack.push("PncFormat::write(BoutReal)");
-#endif
 
   int nd = 0; // Number of dimensions
   if(lx != 0) nd = 1;
@@ -513,9 +454,6 @@ bool PncFormat::write(BoutReal *data, const char *name, int lx, int ly, int lz) 
   if(nd == 0) {
     // Writing a scalar
     ret = pnc_put_var_all(ncfile, var, data); CHKERR(ret);
-#ifdef CHECK
-    msg_stack.pop();
-#endif
     return true;
   }
   
@@ -543,10 +481,6 @@ bool PncFormat::write(BoutReal *data, const char *name, int lx, int ly, int lz) 
   count[0] = lx; count[1] = ly; count[2] = lz;
   
   ret = pnc_put_vara_all(ncfile, var, start, count, data); CHKERR(ret);
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 
   return true;
 }
@@ -571,7 +505,7 @@ bool PncFormat::read_rec(int *data, const char *name, int lx, int ly, int lz) {
   if(ret = ncmpi_inq_varid(ncfile, name, &var)) {
     // Variable not in file
 #ifdef NCDF_VERBOSE
-    output.write("INFO: Parallel NetCDF variable '%s' not found\n", name);
+    output_info.write("INFO: Parallel NetCDF variable '%s' not found\n", name);
 #endif
     return false;
   }
@@ -603,7 +537,7 @@ bool PncFormat::read_rec(BoutReal *data, const char *name, int lx, int ly, int l
   if(ret = ncmpi_inq_varid(ncfile, name, &var)) {
     // Variable not in file
 #ifdef NCDF_VERBOSE
-    output.write("INFO: Parallel NetCDF variable '%s' not found\n", name);
+    output_info.write("INFO: Parallel NetCDF variable '%s' not found\n", name);
 #endif
     return false;
   }
@@ -673,15 +607,13 @@ bool PncFormat::write_rec(int *var, const string &name, int lx, int ly, int lz) 
 }
 
 bool PncFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int lz) {
+  TRACE("PncFormat::write_rec(BoutReal)");
+
   if(!is_valid())
     return false;
 
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
-
-#ifdef CHECK
-  msg_stack.push("PncFormat::write_rec(BoutReal)");
-#endif
 
   int nd = 1; // Number of dimensions
   if(lx != 0) nd = 2;
@@ -711,7 +643,7 @@ bool PncFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int 
   }
 
 #ifdef NCDF_VERBOSE
-  output.write("INFO: NetCDF writing record %d of '%s' in '%s'\n",t, name, fname); 
+  output_info.write("INFO: NetCDF writing record %d of '%s' in '%s'\n",t, name, fname); 
 #endif
 
   if(lowPrecision) {
@@ -742,10 +674,6 @@ bool PncFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int 
   
   // Increment record number
   rec_nr[name] += 1;
-
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 
   return true;
 }

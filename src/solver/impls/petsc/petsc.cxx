@@ -66,8 +66,8 @@ PetscSolver::PetscSolver(Options *opts) {
   initialised = false;
   bout_snes_time = .0;
 
-  prefunc = NULL;
-  jacfunc = NULL;
+  prefunc = nullptr;
+  jacfunc = nullptr;
 
   output_flag = PETSC_FALSE;
 }
@@ -90,7 +90,7 @@ PetscSolver::~PetscSolver() {
  * Initialise
  **************************************************************************/
 
-int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
+int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   PetscErrorCode  ierr;
   int             neq;
   int             mudq, mldq, mukeep, mlkeep;
@@ -100,7 +100,7 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
   MPI_Comm        comm = PETSC_COMM_WORLD;
   PetscMPIInt     rank;
 
-  int msg_point = msg_stack.push("Initialising PETSc-dev solver");
+  TRACE("Initialising PETSc-dev solver");
 
   PetscFunctionBegin;
   PetscLogEventRegister("PetscSolver::init",PETSC_VIEWER_CLASSID,&init_event);
@@ -108,7 +108,7 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
   PetscLogEventRegister("solver_f",PETSC_VIEWER_CLASSID,&solver_event);
 
   /// Call the generic initialisation first
-  Solver::init(restarting, NOUT, TIMESTEP);
+  Solver::init(NOUT, TIMESTEP);
 
   ierr = PetscLogEventBegin(init_event,0,0,0,0);CHKERRQ(ierr);
   output.write("Initialising PETSc-dev solver\n");
@@ -127,7 +127,7 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
 
   /********** Get total problem size **********/
   if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
-    output.write("\tERROR: MPI_Allreduce failed!\n");
+    output_error.write("\tERROR: MPI_Allreduce failed!\n");
     ierr = PetscLogEventEnd(init_event,0,0,0,0);CHKERRQ(ierr);
     PetscFunctionReturn(1);
   }
@@ -259,7 +259,7 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
 
   // Matrix free Jacobian
 
-  if(use_jacobian && (jacfunc != NULL)) {
+  if(use_jacobian && (jacfunc != nullptr)) {
     // Use a user-supplied Jacobian function
     ierr = MatCreateShell(comm, local_N, local_N, neq, neq, this, &Jmf);
     ierr = MatShellSetOperation(Jmf, MATOP_MULT, (void (*)(void)) PhysicsJacobianApply); CHKERRQ(ierr);
@@ -276,7 +276,7 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
 
   ierr = KSPGetPC(ksp,&pc);CHKERRQ(ierr);
 
-  if(use_precon && (prefunc != NULL)) {
+  if(use_precon && (prefunc != nullptr)) {
 
 #if PETSC_VERSION_GE(3,5,0)
     ierr = SNESGetNPC(snes,&psnes);CHKERRQ(ierr);
@@ -401,6 +401,9 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
       ierr = PetscPrintf(PETSC_COMM_WORLD,"compute J by slow fd is done.\n");CHKERRQ(ierr);
       //ierr = MatView(J,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
     } else { // get sparse pattern of the Jacobian
+      throw BoutException("Path followed in PETSc solver not yet implemented in general "
+                          "-- experimental hard coded values here. Sorry\n");
+
       ierr = PetscPrintf(PETSC_COMM_WORLD,"get sparse pattern of the Jacobian...\n");CHKERRQ(ierr);
 
       if(n2Dvars() != 0) throw BoutException("PETSc solver can't handle 2D variables yet. Sorry\n");
@@ -606,9 +609,6 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
   }
 
   ierr = PetscLogEventEnd(init_event,0,0,0,0);CHKERRQ(ierr);
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 
   PetscFunctionReturn(0);
 }
@@ -652,13 +652,12 @@ PetscErrorCode PetscSolver::run() {
  **************************************************************************/
 
 PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata) {
+  TRACE("Running RHS: PetscSolver::rhs(%e)", t);
+
   int flag;
   BoutReal *udata_array, *dudata_array;
 
   PetscFunctionBegin;
-#ifdef CHECK
-  int msg_point = msg_stack.push("Running RHS: PetscSolver::rhs(%e)", t);
-#endif
 
   // Load state from PETSc
   VecGetArray(udata, &udata_array);
@@ -673,10 +672,6 @@ PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata) {
   save_derivs(dudata_array);
   VecRestoreArray(dudata, &dudata_array);
 
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
-
   PetscFunctionReturn(0);
 }
 
@@ -685,9 +680,8 @@ PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata) {
  **************************************************************************/
 
 PetscErrorCode PetscSolver::pre(PC pc, Vec x, Vec y) {
-#ifdef CHECK
-  int msg_point = msg_stack.push("PetscSolver::pre()");
-#endif
+  TRACE("PetscSolver::pre()");
+
   BoutReal *data;
 
   if(diagnose)
@@ -714,9 +708,6 @@ PetscErrorCode PetscSolver::pre(PC pc, Vec x, Vec y) {
   // Petsc's definition of Jacobian differs by a factor from Sundials'
   PetscErrorCode ierr = VecScale(y, shift); CHKERRQ(ierr);
 
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
    return 0;
  }
 
@@ -725,9 +716,7 @@ PetscErrorCode PetscSolver::pre(PC pc, Vec x, Vec y) {
  **************************************************************************/
 
 PetscErrorCode PetscSolver::jac(Vec x, Vec y) {
-#ifdef CHECK
-  int msg_point = msg_stack.push("PetscSolver::jac()");
-#endif
+  TRACE("PetscSolver::jac()");
 
   BoutReal *data;
 
@@ -755,9 +744,6 @@ PetscErrorCode PetscSolver::jac(Vec x, Vec y) {
   // y = a * x - y
   int ierr = VecAXPBY(y, shift, -1.0, x);
 
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
   return 0;
 }
 

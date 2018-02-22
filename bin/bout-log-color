@@ -1,0 +1,40 @@
+#!/bin/sh
+
+# http://ascii-table.com/ansi-escape-sequences.php
+
+# Text attributes
+# 0	All attributes off
+# 1	Bold on
+# 4	Underscore (on monochrome display adapter only)
+# 5	Blink on
+# 7	Reverse video on
+# 8	Concealed on
+ 
+# Foreground colors
+# 30	Black
+# 31	Red
+# 32	Green
+# 33	Yellow
+# 34	Blue
+# 35	Magenta
+# 36	Cyan
+# 37	White
+ 
+# Background colors
+# 40	Black
+# 41	Red
+# 42	Green
+# 43	Yellow
+# 44	Blue
+# 45	Magenta
+# 46	Cyan
+# 47	White
+
+# Here \x1B[??m corresponds to the above ANSI escape codes
+# NOTE: The 'I' for case-insensitive is a GNU extension, not available on BSD / OS-X
+
+
+# "Warning" or "error" in any case set to red
+# "(default)" marked in blue
+# "(Command line)" marked in green
+sed "s/\(warning\|error\)/\x1B[31m\1\x1B[0m/Ig ; s/(default)/(\x1B[34mdefault\x1B[0m)/g; s/(Command line)/(\x1B[32mCommand line\x1B[0m)/g" 

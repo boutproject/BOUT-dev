@@ -39,4 +39,9 @@ typedef std::complex<BoutReal> dcomplex;
 
 const dcomplex Im(0,1); // 1i 
 
+/// Complex type for passing data to/from FORTRAN
+struct fcmplx {
+  BoutReal r, i;
+};
+
 #endif // __DCOMPLEX_H__

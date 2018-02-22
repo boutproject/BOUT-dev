@@ -70,11 +70,9 @@ InvertParSerial::~InvertParSerial() {
 }
 
 const Field3D InvertParSerial::solve(const Field3D &f) {
-#ifdef CHECK
-  msg_stack.push("InvertParSerial::solve(Field3D)");
-#endif
-  
-  Field3D result;
+  TRACE("InvertParSerial::solve(Field3D)");
+
+  Field3D result(f.getMesh());
   result.allocate();
   
   Coordinates *coord = mesh->coordinates();
@@ -137,10 +135,6 @@ const Field3D InvertParSerial::solve(const Field3D &f) {
     for(int y=0;y<mesh->LocalNy-4;y++)
       irfft(rhs[y], mesh->LocalNz, result(x,y+2));
   }
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
   
   return result;
 }

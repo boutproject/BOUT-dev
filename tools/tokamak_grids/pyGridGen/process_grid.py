@@ -3,6 +3,7 @@ from __future__ import division
 from builtins import input
 from builtins import range
 from past.utils import old_div
+
 # Takes the original R-Z data (from G-EQDSK), and the flux mesh
 # from create_grid.pro
 #
@@ -441,25 +442,30 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
         settings = Bunch(dummy=0)
 
     # Check settings
-        settings.calcp= -1
-        settings.calcbt= -1
-        settings.calchthe= -1
-        settings.calcjpar= -1
+    #    settings.calcp= -1
+    #    settings.calcbt= -1
+    #    settings.calchthe= -1
+    #    settings.calcjpar= -1
 
-   # ;CATCH, err
-   # ;IF err NE 0 THEN BEGIN
-   # ;  PRINT, "PROCESS_GRID failed"
-        #;  PRINT, "   Error message: "+!ERROR_STATE.MSG
-   # ;  CATCH, /cancel
-   # ;  RETURN
-   # ;ENDIF
+    settings.calcp   = -1# H.Seto (QST) indent is fixed 
+    settings.calcbt  = -1# H.Seto (QST) indent is fixed 
+    settings.calchthe= -1# H.Seto (QST) indent is fixed 
+    settings.calcjpar= -1# H.Seto (QST) indent is fixed 
 
+    # ;CATCH, err
+    # ;IF err NE 0 THEN BEGIN
+    # ;  PRINT, "PROCESS_GRID failed"
+    # ;  PRINT, "   Error message: "+!ERROR_STATE.MSG
+    # ;  CATCH, /cancel
+    # ;  RETURN
+    # ;ENDIF
+    
     MU = 4.e-7*numpy.pi
-
+    
     poorquality = 0
-
+    
     if output==None : output="bout.grd.nc"
-
+    
     # Size of the mesh
     nx = numpy.int(numpy.sum(mesh.nrad))
     ny = numpy.int(numpy.sum(mesh.npol))
@@ -470,6 +476,7 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
 
     while True:
         period, yi, xi, last = gen_surface(period=None, last=None, xi=None)
+
         if period :
             rm = numpy.max(mesh.Rxy[xi,yi])
             ymidindx = numpy.argmax(mesh.Rxy[xi,yi])
@@ -481,25 +488,27 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
 
     Rxy = numpy.asarray(mesh.Rxy)
     Zxy = numpy.asarray(mesh.Zxy)
+
     psixy = mesh.psixy*mesh.fnorm + mesh.faxis # Non-normalised psi
 
     pressure = numpy.zeros((nx, ny))
 
 
-
+    
     # Use splines to interpolate pressure profile
     status = gen_surface(mesh=mesh) # Start generator
     while True:
         # Get the next domain
         period, yi, xi, last = gen_surface(period=period, last=last, xi=xi)
+
         if period :
             # Pressure only given on core surfaces
-           # pressure[xi,yi] = SPLINE(rz_grid.npsigrid, rz_grid.pres, mesh.psixy[xi,yi[0]], /double)
+            # pressure[xi,yi] = SPLINE(rz_grid.npsigrid, rz_grid.pres, mesh.psixy[xi,yi[0]], /double)
             sol=interpolate.UnivariateSpline(rz_grid.npsigrid, rz_grid.pres,s=1)
             pressure[xi,yi] =sol(mesh.psixy[xi,yi[0]])
-
+            
         else:
-
+            # pressure is set to that at LCFS in SOL region H.SETO (QST)
             pressure[xi,yi] = rz_grid.pres[numpy.size(rz_grid.pres)-1]
 
         if last==1 : break
@@ -614,10 +623,10 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
         bpsign = 1.
 
 
-  # Get toroidal field from poloidal current function fpol
+    # Get toroidal field from poloidal current function fpol
     Btxy = numpy.zeros((nx, ny))
     fprime = numpy.zeros((nx, ny))
-    fp = deriv(rz_grid.npsigrid*(rz_grid.sibdry - rz_grid.simagx), rz_grid.fpol)
+    fp = deriv(rz_grid.npsigrid*(rz_grid.sibdry - rz_grid.simagx), rz_grid.fpol) # x= (psi-psia)/(psib-psia)
 
 
     status = gen_surface(mesh=mesh) # Start generator
@@ -650,19 +659,19 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
     Bxy = numpy.sqrt(Btxy**2 + Bpxy**2)
 
 
-  #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  # Go through the domains to get a starting estimate
-  # of hthe
+    #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    # Go through the domains to get a starting estimate
+    # of hthe
     hthe = numpy.zeros((nx, ny))
 
-  #   Pick a midplane index
+    #   Pick a midplane index
     status = gen_surface(mesh=mesh) # Start generator
     while True:
-    # Get the next domain
+        # Get the next domain
         period, yi, xi, last = gen_surface(period=period, last=last, xi=xi)
 
         if period :
-      # In the core
+            # In the core
             rmax = numpy.argmax(Rxy[xi,yi])
             ymidplane = yi[rmax]
             break
@@ -685,7 +694,7 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
             #dzdi = REAL_PART(fft_deriv(Zxy[xi, yi]))
             line=numpy.append(Rxy[xi,yi[n-1::]], Rxy[xi,yi])
             line=numpy.append(line,Rxy[xi,yi[0:1]])
-
+            # evaluate drdi by FDM rather than FFT H.SETO (QST)
             drdi = deriv(line)[1:n+1]
 
             line=numpy.append(Zxy[xi,yi[n-1::]], Zxy[xi,yi])
@@ -693,7 +702,7 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
 
             dzdi = deriv(line)[1:n+1]
         else:
-        # Non-periodic
+            # Non-periodic
             drdi = numpy.gradient(Rxy[xi, yi])
             dzdi = numpy.gradient(Zxy[xi, yi])
 
@@ -701,7 +710,7 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
         dldi = numpy.sqrt(drdi**2 + dzdi**2)
 
 
-        if 0 :
+        if 0 : # always false 
 
         # Need to smooth to get sensible results
             if period :
@@ -726,7 +735,7 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
                 line = dldi
                 dldi = SMOOTH(dldi, 5)[2:n+2]
 
-
+        
         hthe[xi, yi] = old_div(dldi, dtheta) # First estimate of hthe
 
         # Get outboard midplane
@@ -744,14 +753,14 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
 
 
 
-  #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  # Correct pressure using hthe
-
+    #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    # Correct pressure using hthe
+    
     print("Calculating pressure profile from force balance")
-
+    
     try:
-
-    # Calculate force balance
+        
+        # Calculate force balance
         dpdx = old_div(( -Bpxy*DDX(xcoord, Bpxy * hthe) - Btxy*hthe*DDX(xcoord, Btxy) - (Btxy*Btxy*hthe/Rxy)*DDX(xcoord, Rxy) ), (MU*hthe))
 
         # Surface average
@@ -767,7 +776,7 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
 
         status = gen_surface(mesh=mesh) # Start generator
         while True:
-      # Get the next domain
+            # Get the next domain
             period, yi, xi, last = gen_surface(period=None, last=None, xi=None)
 
             ma = numpy.max(pres[xi,yi])
@@ -780,14 +789,14 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
 
         pres = pres - numpy.min(pres)
 
-    # Some sort of smoothing here?
+        # Some sort of smoothing here?
 
 
         fb0 = force_balance(psixy, Rxy, Bpxy, Btxy, hthe, pres)
         print("Force imbalance: ", numpy.mean(numpy.abs(fb0)), numpy.max(numpy.abs(fb0)))
 
 
-       #!P.MULTI=[0,0,2,0,0]
+        #!P.MULTI=[0,0,2,0,0]
         fig=figure(figsize=(7, 11))
         subplots_adjust(left=.07, bottom=.07, right=0.95, top=0.95,
                 wspace=.3, hspace=.25)
@@ -796,12 +805,12 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
         title("Input pressure")
         SURFACE( pres, fig, xtitle="X", ytitle="Y", var='Pa', sub=[2,1,2])
         title("New pressure")
-  #  arrange the plot on the screen
-  #      mngr = get_current_fig_manager()
-  #      geom = mngr.window.geometry()
-  #      x,y,dx,dy = geom.getRect()
-  #      mngr.window.setGeometry(0, 0, dx, dy)
-  #
+        #  arrange the plot on the screen
+        #      mngr = get_current_fig_manager()
+        #      geom = mngr.window.geometry()
+        #      x,y,dx,dy = geom.getRect()
+        #      mngr.window.setGeometry(0, 0, dx, dy)
+        #
         show(block=False)
 
 
@@ -821,8 +830,8 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
 
     #CATCH, /cancel
 
-  #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  # Correct f = RBt using force balance
+    #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    # Correct f = RBt using force balance
 
     calcbt = settings.calcbt
     if calcbt == -1 : calcbt = query_yes_no("Correct f=RBt using force balance?")#, gui=gui, dialog_parent=parent)
@@ -844,7 +853,7 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
         subplot(212)
         SURFACE( new_Btxy, fig, xtitle="X", ytitle="Y", var='T', sub=[2,1,2])
         title("New Bt")
-          #  arrange the plot on the screen
+        #  arrange the plot on the screen
         #mngr = get_current_fig_manager()
         #geom = mngr.window.geometry()
         #x,y,dx,dy = geom.getRect()
@@ -897,40 +906,40 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
 
 
     if smoothhthe != None :
-    # Smooth hthe to prevent large jumps in X or Y. This
-    # should be done by creating a better mesh in the first place
+        # Smooth hthe to prevent large jumps in X or Y. This
+        # should be done by creating a better mesh in the first place
 
-    # Need to smooth in Y and X otherwise smoothing in X
-    # produces discontinuities in Y
+        # Need to smooth in Y and X otherwise smoothing in X
+        # produces discontinuities in Y
         hold = hthe
 
-        if 1 :
-      # Nonlinear smoothing. Tries to smooth only regions with large
-      # changes in gradient
+        if 1 : # always done but not implemented so far H.SETO (QST)
+            # Nonlinear smoothing. Tries to smooth only regions with large
+            # changes in gradient 
 
             hthe =0.# smooth_nl(hthe, mesh)
 
-        else:
-      # Just use smooth in both directions
+        else: # never done wrong indents have been fixed H.SETO (QST)
+            # Just use smooth in both directions
 
             for i in range (ny) :
                 hthe[:,i] = SMOOTH(SMOOTH(hthe[:,i],10),10)
 
 
-        status = gen_surface(mesh=mesh) # Start generator
-        while True:
-        # Get the next domain
-            period, yi, xi, last = gen_surface(period=None, last=None, xi=None)
+            status = gen_surface(mesh=mesh) # Start generator
+            while True:
+                # Get the next domain
+                period, yi, xi, last = gen_surface(period=None, last=None, xi=None)
 
-            n = numpy.size(yi)
+                n = numpy.size(yi)
 
-            if period :
-                hthe[xi,yi] = (SMOOTH([hthe[xi,yi[(n-4):(n-1)]], hthe[xi,yi], hthe[xi,yi[0:3]]], 4))[4:(n+3)]
-            else:
-                hthe[xi,yi] = SMOOTH(hthe[xi,yi], 4)
+                if period :
+                    hthe[xi,yi] = (SMOOTH([hthe[xi,yi[(n-4):(n-1)]], hthe[xi,yi], hthe[xi,yi[0:3]]], 4))[4:(n+3)]
+                else:
+                    hthe[xi,yi] = SMOOTH(hthe[xi,yi], 4)
 
-            if last == 1: break
-
+                if last == 1: break
+    
 
 
     # Calculate field-line pitch
@@ -1020,11 +1029,12 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
         # ( cylindrical coordinates)
 
         print("*** Calculating curvature in cylindrical coordinates")
-
+        print("liner interpolation is use insted of bilinear interpolation: exit")
+        exit()
         bxcv = rz_curvature(rz_grid)
 
         # DCT methods cause spurious oscillations
-        # Linear interpolation seems to be more robust
+        # Linear interpolation seems to be more robust # H.SETO (QST) question
         bxcv_psi = numpy.interp(bxcv.psi, mesh.Rixy, mesh.Zixy)
         bxcv_theta = old_div(numpy.interp(bxcv.theta, mesh.Rixy, mesh.Zixy), hthe)
         bxcv_phi = numpy.interp(bxcv.phi, mesh.Rixy, mesh.Zixy)

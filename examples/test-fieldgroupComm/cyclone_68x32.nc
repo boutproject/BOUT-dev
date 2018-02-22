@@ -1,1 +1,0 @@
-../test-gyro/cyclone_68x32.nc

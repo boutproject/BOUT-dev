@@ -1,0 +1,5 @@
+#!/bin/sh
+
+./runtest1 || exit
+
+./runtest2 || exit

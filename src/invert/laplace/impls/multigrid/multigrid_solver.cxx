@@ -28,6 +28,8 @@
  **************************************************************************/
 
 #include "multigrid_laplace.hxx"
+#include "unused.hxx"
+#include <bout/openmpwrap.hxx>
 
 Multigrid1DP::Multigrid1DP(int level,int lx, int lz, int gx, int dl, int merge,
                     MPI_Comm comm,int check) : 
@@ -67,7 +69,7 @@ Multigrid1DP::Multigrid1DP(int level,int lx, int lz, int gx, int dl, int merge,
     // Find levels for more coarser spaces
     if(numP > merge) {
       int nn = numP;
-      int mm = sqrt(numP);
+      int mm = static_cast<int>(sqrt(numP));
       kk = 1;      
       for(int n = nn; n>1;n--) {
         if(nn%2 != 0) n = 1;
@@ -162,7 +164,7 @@ void Multigrid1DP::cleanS() {
   }
 }
 
-void Multigrid1DP::setMultigridC(int plag) {
+void Multigrid1DP::setMultigridC(int UNUSED(plag)) {
 
   int level = mglevel - 1;
   for(int n = level;n>0;n--) {
@@ -258,15 +260,15 @@ void Multigrid1DP::setPcheck(int check) {
   }
 }
 
-void Multigrid1DP::lowestSolver(BoutReal *x,BoutReal *b,int plag) {
+void Multigrid1DP::lowestSolver(BoutReal *x, BoutReal *b, int UNUSED(plag)) {
 
   if(kflag == 1) {
     int level = rMG->mglevel-1;
     int dim = (rMG->lnx[level]+2)*(rMG->lnz[level]+2);
     BoutReal *y = new BoutReal[dim];
     BoutReal *r = new BoutReal[dim];
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
     for(int i = 0;i<dim;i++) {
       y[i] = 0.0;
       r[i] = 0.0;
@@ -276,8 +278,8 @@ void Multigrid1DP::lowestSolver(BoutReal *x,BoutReal *b,int plag) {
     int dimg = (ggx+2)*(gnz[0]+2);
     BoutReal *yl = new BoutReal[dimg];
     BoutReal *yg = new BoutReal[dimg];  
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
     for(int i = 0;i<dimg;i++) {
       yl[i] = 0.0;
       yg[i] = 0.0;
@@ -285,8 +287,8 @@ void Multigrid1DP::lowestSolver(BoutReal *x,BoutReal *b,int plag) {
 
     int nx = (xProcI%rMG->zNP)*lnx[0];
     for(int ix = 1;ix < lnx[0]+1;ix++) {
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
       for(int iz = 1;iz < lnz[0]+1;iz++) {
         int nn = (nx+ix)*(lnz[0]+2)+iz;
         int mm = ix*(lnz[0]+2)+iz;
@@ -297,8 +299,8 @@ void Multigrid1DP::lowestSolver(BoutReal *x,BoutReal *b,int plag) {
 
     int nz = (xProcI%rMG->zNP)*(rMG->lnz[level]);
     for(int ix = 1;ix < rMG->lnx[level]+1;ix++) {
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
       for(int iz = 1;iz <rMG->lnz[level]+1;iz++) {
         int nn = ix*(lnz[0]+2)+nz+iz;
         int mm = ix*(rMG->lnz[level]+2)+iz;
@@ -308,16 +310,16 @@ void Multigrid1DP::lowestSolver(BoutReal *x,BoutReal *b,int plag) {
 
     rMG->getSolution(y,r,1);
 
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
     for(int i = 0;i<dimg;i++) {
       yl[i] = 0.0;
       yg[i] = 0.0;
     }
     
     for(int ix = 1;ix < rMG->lnx[level]+1;ix++) {
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
       for(int iz = 1;iz < rMG->lnz[level]+1;iz++) {
         int nn = ix*(lnz[0]+2)+nz+iz;
         int mm = ix*(rMG->lnz[level]+2)+iz;
@@ -327,8 +329,8 @@ void Multigrid1DP::lowestSolver(BoutReal *x,BoutReal *b,int plag) {
     MPI_Allreduce(yl,yg,dimg,MPI_DOUBLE,MPI_SUM,comm2D);
 
     for(int ix = 1;ix < lnx[0]+1;ix++) {
-#pragma omp parallel default(shared) 
-#pragma omp for
+BOUT_OMP(parallel default(shared) )
+BOUT_OMP(for)
       for(int iz = 1;iz < lnz[0]+1;iz++) {
         int nn = (nx+ix)*(lnz[0]+2)+iz;
         int mm = ix*(lnz[0]+2)+iz;
@@ -347,16 +349,16 @@ void Multigrid1DP::lowestSolver(BoutReal *x,BoutReal *b,int plag) {
     int dim = (sMG->lnx[level]+2)*(sMG->lnz[level]+2);
     BoutReal *y = new BoutReal[dim];
     BoutReal *r = new BoutReal[dim];
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
     for(int i = 0;i<dim;i++) {
       y[i] = 0.0;
       r[i] = 0.0;
     }
     int nx = xProcI*lnx[0];
     for(int ix = 1;ix < lnx[0]+1;ix++) {
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
       for(int iz = 1;iz <lnz[0]+1;iz++) {
         int nn = (nx+ix)*(lnz[0]+2)+iz;
         int mm = ix*(lnz[0]+2)+iz;
@@ -364,14 +366,14 @@ void Multigrid1DP::lowestSolver(BoutReal *x,BoutReal *b,int plag) {
       }
     }
     MPI_Allreduce(y,r,dim,MPI_DOUBLE,MPI_SUM,commMG);
-#pragma omp parallel default(shared) 
-#pragma omp for
+BOUT_OMP(parallel default(shared) )
+BOUT_OMP(for)
     for(int i = 0;i<dim;i++) y[i] = 0.0;
     sMG->getSolution(y,r,1);
    
     for(int ix = 1;ix < lnx[0]+1;ix++) {
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
       for(int iz = 1;iz <lnz[0]+1;iz++) {
         int nn = (nx+ix)*(lnz[0]+2)+iz;
         int mm = ix*(lnz[0]+2)+iz;
@@ -395,14 +397,14 @@ void Multigrid1DP::convertMatrixF2D(int level) {
   int dim = (ggx+2)*(gnz[0]+2);
   BoutReal *yl = new BoutReal[dim*9];
   BoutReal *yg = new BoutReal[dim*9];
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
   for(int i = 0;i<dim*9;i++) {
     yl[i] = 0.0;
     yg[i] = 0.0;
   }
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
   for(int i = 0;i<(rMG->lnx[level]+2)*(rMG->lnz[level]+2)*9;i++) {
     rMG->matmg[level][i] = 0.0;
   }
@@ -410,8 +412,8 @@ void Multigrid1DP::convertMatrixF2D(int level) {
   int nx = (xProcI%rMG->zNP)*lnx[0];
 
   for(int ix = 1;ix < lnx[0]+1;ix++) {
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
     for(int iz = 1;iz <lnz[0]+1;iz++) {
       int nn = (nx+ix)*(lnz[0]+2)+iz;
       int mm = ix*(lnz[0]+2)+iz;
@@ -455,8 +457,8 @@ void Multigrid1DP::convertMatrixF2D(int level) {
   int nz = (xProcI%rMG->zNP)*(rMG->lnz[level]);
 
   for(int ix = 1;ix < rMG->lnx[level]+1;ix++) {
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
     for(int iz = 1;iz <rMG->lnz[level]+1;iz++) {
       int nn = ix*(lnz[0]+2)+nz+iz;
       int mm = ix*(rMG->lnz[level]+2)+iz;
@@ -474,16 +476,16 @@ void Multigrid1DP::convertMatrixFS(int level) {
   int dim = (gnx[0]+2)*(gnz[0]+2);
   BoutReal *yl = new BoutReal[dim*9];
   BoutReal *yg = sMG->matmg[level];
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
   for(int i = 0;i<dim*9;i++) {
     yl[i] = 0.0;
     yg[i] = 0.0;
   }
   int nx = xProcI*lnx[0];
   for(int ix = 1;ix < lnx[0]+1;ix++) {
-#pragma omp parallel default(shared) 
-#pragma omp for
+BOUT_OMP(parallel default(shared) )
+BOUT_OMP(for)
     for(int iz = 1;iz <lnz[0]+1;iz++) {
       int nn = (nx+ix)*(lnz[0]+2)+iz;
       int mm = ix*(lnz[0]+2)+iz;
@@ -560,7 +562,7 @@ void Multigrid2DPf1D::cleanS() {
 }
 
 
-void Multigrid2DPf1D::setMultigridC(int plag) {
+void Multigrid2DPf1D::setMultigridC(int UNUSED(plag)) {
 
   int level = mglevel - 1;
   for(int n = level;n>0;n--) {
@@ -615,16 +617,15 @@ void Multigrid2DPf1D::setPcheck(int check) {
   }
 }
 
-
-void Multigrid2DPf1D::lowestSolver(BoutReal *x,BoutReal *b,int plag) {
+void Multigrid2DPf1D::lowestSolver(BoutReal *x, BoutReal *b, int UNUSED(plag)) {
 
   if(kflag == 2) {
     int level = sMG->mglevel-1;
     int dim = (sMG->lnx[level]+2)*(sMG->lnz[level]+2);
     BoutReal *y = new BoutReal[dim];
     BoutReal *r = new BoutReal[dim];
-#pragma omp parallel default(shared) 
-#pragma omp for
+BOUT_OMP(parallel default(shared) )
+BOUT_OMP(for)
     for(int i = 0;i<dim;i++) {
       y[i] = 0.0;
       r[i] = 0.0;
@@ -632,8 +633,8 @@ void Multigrid2DPf1D::lowestSolver(BoutReal *x,BoutReal *b,int plag) {
     int nx = xProcI*lnx[0];
     int nz = zProcI*lnz[0];
     for(int ix = 1;ix < lnx[0]+1;ix++) {
-#pragma omp parallel default(shared) 
-#pragma omp for
+BOUT_OMP(parallel default(shared) )
+BOUT_OMP(for)
       for(int iz = 1;iz <lnz[0]+1;iz++) {
         int nn = (nx+ix)*(gnz[0]+2)+nz+iz;
         int mm = ix*(lnz[0]+2)+iz;
@@ -641,13 +642,13 @@ void Multigrid2DPf1D::lowestSolver(BoutReal *x,BoutReal *b,int plag) {
       }
     }
     MPI_Allreduce(y,r,dim,MPI_DOUBLE,MPI_SUM,commMG);
-#pragma omp parallel default(shared) 
-#pragma omp for
+BOUT_OMP(parallel default(shared) )
+BOUT_OMP(for)
     for(int i = 0;i<dim;i++) y[i] = 0.0;
     sMG->getSolution(y,r,1);
     for(int ix = 1;ix < lnx[0]+1;ix++) {
-#pragma omp parallel default(shared) 
-#pragma omp for
+BOUT_OMP(parallel default(shared) )
+BOUT_OMP(for)
       for(int iz = 1;iz <lnz[0]+1;iz++) {
         int nn = (nx+ix)*(gnz[0]+2)+nz+iz;
         int mm = ix*(lnz[0]+2)+iz;
@@ -669,8 +670,8 @@ void Multigrid2DPf1D::convertMatrixFS(int level) {
   int dim = (gnx[0]+2)*(gnz[0]+2);
   BoutReal *yl = new BoutReal[dim*9];
   BoutReal *yg = sMG->matmg[level];
-#pragma omp parallel default(shared) 
-#pragma omp for
+BOUT_OMP(parallel default(shared) )
+BOUT_OMP(for)
   for(int i = 0;i<dim*9;i++) {
     yl[i] = 0.0;
     yg[i] = 0.0;
@@ -678,8 +679,8 @@ void Multigrid2DPf1D::convertMatrixFS(int level) {
   int nx = xProcI*lnx[0];
   int nz = zProcI*lnz[0];
   for(int ix = 1;ix < lnx[0]+1;ix++) {
-#pragma omp parallel default(shared) 
-#pragma omp for
+BOUT_OMP(parallel default(shared) )
+BOUT_OMP(for)
     for(int iz = 1;iz <lnz[0]+1;iz++) {
       int nn = (nx+ix)*(gnz[0]+2)+nz+iz;
       int mm = ix*(lnz[0]+2)+iz;
@@ -692,16 +693,15 @@ void Multigrid2DPf1D::convertMatrixFS(int level) {
   delete [] yl;
 }
 
-
-MultigridSerial::MultigridSerial(int level,int gx,int gz, int px, int pz,
-				 MPI_Comm comm,int check) : 
-  MultigridAlg(level,gx,gz,gx,gz,comm,check) {
+MultigridSerial::MultigridSerial(int level, int gx, int gz, int UNUSED(px),
+                                 int UNUSED(pz), MPI_Comm comm, int check)
+    : MultigridAlg(level, gx, gz, gx, gz, comm, check) {
 
   // find level for Multigrid
 
   mglevel = level;
 
-  /* Momory allocate for Multigrid */
+  /* Memory allocate for Multigrid */
   gnx = new int[mglevel];
   gnz = new int[mglevel];
   lnx = new int[mglevel];

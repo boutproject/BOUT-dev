@@ -30,17 +30,17 @@ std::unique_ptr<DataFormat> FormatFactory::createDataFormat(const char *filename
     // Return default file format
     
 
+    if (parallel) {
 #ifdef PNCDF
-    if(parallel)
       return std::unique_ptr<DataFormat>(new PncFormat);
 #else
+    }
 
 #ifdef NCDF4
     return std::unique_ptr<DataFormat>(new Ncxx4);
 #else
 
 #ifdef NCDF
-    //output.write("\tUsing default format (NetCDF)\n");
     return std::unique_ptr<DataFormat>(new NcFormat);
 #else
 
@@ -54,7 +54,7 @@ std::unique_ptr<DataFormat> FormatFactory::createDataFormat(const char *filename
 #endif // NCDF
 #endif // NCDF4
 #endif // PNCDF
-    throw new BoutException("Parallel I/O disabled, no serial library found");
+    throw BoutException("Parallel I/O disabled, no serial library found");
   }
 
   // Extract the file extension

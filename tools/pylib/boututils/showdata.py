@@ -19,7 +19,7 @@ except:
 #import numpy as np
 from mpl_toolkits.mplot3d import axes3d
 from matplotlib import pyplot as plt
-from matplotlib import animation
+from matplotlib import animation, cm
 from numpy import linspace, meshgrid, array, min, max, floor, pi
 from boutdata.collect import collect
 
@@ -40,7 +40,7 @@ pause = False
 ###################
 
 
-def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice = 0, movie = 0, intv = 1, Ncolors = 25, x = [], y = [], global_colors = False, symmetric_colors = False,hold_aspect=False):
+def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice = 0, movie = 0, fps=28, dpi=200, intv = 1, Ncolors = 25, x = [], y = [], global_colors = False, symmetric_colors = False, hold_aspect=False, cmap=None, clear_between_frames=None, return_animation=False):
     """
     A Function to animate time dependent data from BOUT++
     Requires numpy, mpl_toolkits, matplotlib, boutdata libaries.
@@ -63,17 +63,30 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
     showdata([var1,var2], surf = [1,0], polar = [0,1])
 
     Movies require FFmpeg to be installed.
+    
+    fps sets frames per second in movie, default: 28 fps
 
+    dpi sets the resolution of the movie, default: 200 dpi
+    
     The tslice variable is used to control the time value that is printed on each
     frame of the animation.  If the input data matches the time values found within
     BOUT++'s dmp data files, then these time values will be used.  Otherwise, an
     integer counter is used.
+
+    The cmap variable (if specified) will set the colormap used in the plot
+    cmap must be a matplotlib colormap instance, or the name of a registered matplotlib colormap 
 
     During animation click once to stop in the current frame. Click again to continue.
 
     global_colors = True: if "vars" is a list the colorlevels are determined from the mximum of the maxima and and the minimum of the  minima in all fields in vars.
 
     symmetric_colors = True: colorlevels are symmetric.
+
+    clear_between_frames: None all plots except line plots will clear between frames
+                          True all plots will clear between frames
+                          False no plots will clear between frames
+
+    return_animation = True matplotlib animation object will be returned.
     """
     plt.ioff()
 
@@ -318,7 +331,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
         xnew.append([])
         try:
             xnew[i].append(x[i])
-        except:	
+        except: 
             for j in range(0, Nlines[i]):
                 xnew[i].append(linspace(0,Nx[i][j]-1, Nx[i][j]))
 
@@ -354,7 +367,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
         fmin.append(min(dummymin[i]))
 
         if(symmetric_colors):
-            absmax = max(abs(fmax[i]),abs(fmin[i]))
+            absmax =max(abs(array(fmax[i], fmin[i])))
             fmax[i] = absmax
             fmin[i] = -absmax
 
@@ -418,6 +431,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
     r = []
     theta = []
 
+
     # Initiate figure frame
     for i in range(0,Nvar):
         lines.append([])
@@ -458,7 +472,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
             ax[i].set_title(titles[i])
             if hold_aspect:
                 ax[i].set_aspect('equal')
-            plots.append(ax[i].contourf(x[i][0],y[i],vars[i][0][0,:,:].T, Ncolors, lw=0, levels=clevels[i] ))
+            plots.append(ax[i].contourf(x[i][0],y[i],vars[i][0][0,:,:].T, Ncolors, cmap=cmap, lw=0, levels=clevels[i] ))
             plt.axes(ax[i])
             cbars.append(fig.colorbar(plots[i], format='%1.1e'))
             # Pad out unused list variables with zeros
@@ -495,7 +509,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
             theta.append(linspace(0,2*pi, Ny[i][0]))
             r[i],theta[i] = meshgrid(r[i], theta[i])
             ax.append(fig.add_subplot(row,col,i+1, projection='polar'))
-            plots.append(ax[i].contourf(theta[i], r[i], vars[i][0][0,:,:].T, levels=clevels[i]))
+            plots.append(ax[i].contourf(theta[i], r[i], vars[i][0][0,:,:].T, cmap=cmap, levels=clevels[i]))
             plt.axes(ax[i])
             cbars.append(fig.colorbar(plots[i], format='%1.1e'))
             ax[i].set_rmax(Nx[i][0]-1)
@@ -528,21 +542,24 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
         index = j*intv
 
         for j in range(0,Nvar):
-                if (lineplot[j] == 1):
-                    for k in range(0,Nlines[j]):
-                        lines[j][k].set_data(x[j][k], vars[j][k][index,:])
-                elif (contour[j] == 1):
-                    plots[j] = ax[j].contourf(x[j][0],y[j],vars[j][0][index,:,:].T, Ncolors, lw=0, levels=clevels[j])
-                elif (surf[j] == 1):
-                    ax[j] = fig.add_subplot(row,col,j+1, projection='3d')
-                    plots[j] = ax[j].plot_wireframe(x[j][0], y[j], vars[j][0][index,:,:].T, rstride=ystride[j], cstride=xstride[j])
-                    ax[j].set_zlim(fmin[j],fmax[j])
-                    ax[j].set_xlabel(r'x')
-                    ax[j].set_ylabel(r'y')
-                    ax[j].set_title(titles[j])
-                elif (polar[j] == 1):
-                    plots[j] = ax[j].contourf(theta[j], r[j], vars[j][0][index,:,:].T, levels=clevels[j])
-                    ax[j].set_rmax(Nx[j][0]-1)
+            #Default to clearing axis between frames on all plots except line plots
+            if (clear_between_frames is None and lineplot[j] != 1 ) or clear_between_frames is True:
+                ax[j].cla() #Clear axis between frames so that masked arrays can be plotted
+            if (lineplot[j] == 1):
+                for k in range(0,Nlines[j]):
+                    lines[j][k].set_data(x[j][k], vars[j][k][index,:])
+            elif (contour[j] == 1):
+                plots[j] = ax[j].contourf(x[j][0],y[j],vars[j][0][index,:,:].T, Ncolors, cmap=cmap, lw=0, levels=clevels[j])
+            elif (surf[j] == 1):
+                ax[j] = fig.add_subplot(row,col,j+1, projection='3d')
+                plots[j] = ax[j].plot_wireframe(x[j][0], y[j], vars[j][0][index,:,:].T, rstride=ystride[j], cstride=xstride[j])
+                ax[j].set_zlim(fmin[j],fmax[j])
+                ax[j].set_xlabel(r'x')
+                ax[j].set_ylabel(r'y')
+                ax[j].set_title(titles[j])
+            elif (polar[j] == 1):
+                plots[j] = ax[j].contourf(theta[j], r[j], vars[j][0][index,:,:].T,cmap=cmap, levels=clevels[j])
+                ax[j].set_rmax(Nx[j][0]-1)
 
         if (tslice == 0):
             title.set_text('t = %1.2e' % t[index])
@@ -566,30 +583,36 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
     fig.canvas.mpl_connect('button_press_event', onClick)
     anim = animation.FuncAnimation(fig, animate, init_func=init, frames=Nframes)
 
-    # Save movie with given name
+    #If movie is not passed as a string assign the default filename
+    if (movie==1):
+        movie='animation'
+
+    # Save movie with given or default name
     if ((isinstance(movie,str)==1)):
         try:
-            anim.save(movie+'.mp4',writer = FFwriter, fps=30, extra_args=['-vcodec', 'libx264'])
+            anim.save(movie+'.mp4',writer = FFwriter, fps=fps, dpi=dpi, extra_args=['-vcodec', 'libx264'])
         except Exception:
-            print("Save failed: Check ffmpeg path")
+        #Try specifying writer by string if ffmpeg not found
+                try:
+                    anim.save(movie+'.mp4',writer = 'ffmpeg', fps=fps, dpi=dpi, extra_args=['-vcodec', 'libx264'])
+                except Exception:
+                     print('Save failed: Check ffmpeg path')
+                     raise
 
-    # Save movie with default name
-    if ((isinstance(movie,str)==0)):
-        if (movie != 0):
-            try:
-                anim.save('animation.mp4',writer = FFwriter, fps=28, extra_args=['-vcodec', 'libx264'])
-            except Exception:
-                print("Save failed: Check ffmpeg path")
-
-    # Show animation
-    if (movie == 0):
+    # Show animation if not saved or returned, otherwise close the plot
+    if (movie==0 and return_animation == 0):
         plt.show()
+    else:
+        plt.close()
+    # Return animation object
+    if(return_animation == 1):
+        return(anim)
 
 
 """
 To do list
 1. Speed up animations ????
-2. Look at theta in polar plots - perioidic?!?
+2. Look at theta in polar plots - periodic?!?
 3. Log axes, colorbars
 4. Figureplot
 """

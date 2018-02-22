@@ -45,16 +45,26 @@ public:
   LaplaceCyclic(Options *opt = NULL);
   ~LaplaceCyclic();
   
-  void setCoefA(const Field2D &val) { A = val; }
-  void setCoefC(const Field2D &val) { C = val; }
-  void setCoefD(const Field2D &val) { D = val; }
-  void setCoefEx(const Field2D &UNUSED(val)) { throw BoutException("LaplaceCyclic does not have Ex coefficient"); }
-  void setCoefEz(const Field2D &UNUSED(val)) { throw BoutException("LaplaceCyclic does not have Ez coefficient"); }
-  
-  const FieldPerp solve(const FieldPerp &b) {return solve(b,b);}
-  const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0);
+  using Laplacian::setCoefA;
+  void setCoefA(const Field2D &val) override { Acoef = val; }
+  using Laplacian::setCoefC;
+  void setCoefC(const Field2D &val) override { Ccoef = val; }
+  using Laplacian::setCoefD;
+  void setCoefD(const Field2D &val) override { Dcoef = val; }
+  using Laplacian::setCoefEx;
+  void setCoefEx(const Field2D &UNUSED(val)) override {
+    throw BoutException("LaplaceCyclic does not have Ex coefficient");
+  }
+  using Laplacian::setCoefEz;
+  void setCoefEz(const Field2D &UNUSED(val)) override {
+    throw BoutException("LaplaceCyclic does not have Ez coefficient");
+  }
+
+  using Laplacian::solve;
+  const FieldPerp solve(const FieldPerp &b) override {return solve(b,b);}
+  const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
 private:
-  Field2D A, C, D;
+  Field2D Acoef, Ccoef, Dcoef;
   
   int nmode;  // Number of modes being solved
   int xs, xe; // Start and end X indices

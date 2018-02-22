@@ -23,17 +23,10 @@ ParDerivFactory* ParDerivFactory::getInstance() {
 }
 
 InvertPar* ParDerivFactory::createInvertPar() {
-  int NPES;
-  MPI_Comm_size(BoutComm::get(), &NPES);
-  
+  // Get the default options section
   Options *opt = Options::getRoot()->getSection(default_section);
 
-  if(NPES > 1) {
-    // Need a parallel solver
-    return new InvertParCR(opt);
-  }
-  // Only one processor, so serial solver will do
-  return new InvertParSerial(opt);
+  return createInvertPar( opt );
 }
 
 InvertPar* ParDerivFactory::createInvertPar(const char* type, Options *opt) {

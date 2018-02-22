@@ -70,7 +70,9 @@ PetscSolver::~PetscSolver() {
  * Initialise
  **************************************************************************/
 
-int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
+int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
+  TRACE("Initialising PETSc 3.2 solver");
+
   PetscErrorCode  ierr;
   int             neq;
   int             mudq, mldq, mukeep, mlkeep;
@@ -79,11 +81,9 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
   BoutReal        precon_tol;
   MPI_Comm        comm = PETSC_COMM_WORLD;
   PetscMPIInt     rank;
-
-  int msg_point = msg_stack.push("Initialising PETSc 3.2 solver");
   
   /// Call the generic initialisation first
-  Solver::init(restarting, NOUT, TIMESTEP);
+  Solver::init(NOUT, TIMESTEP);
 
   output.write("Initialising PETSc 3.2 solver\n");
   ierr = MPI_Comm_rank(comm, &rank);CHKERRQ(ierr);
@@ -101,7 +101,7 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
 
   /********** Get total problem size **********/
   if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
-    output.write("\tERROR: MPI_Allreduce failed!\n");
+    output_error.write("\tERROR: MPI_Allreduce failed!\n");
     return 1;
   }
 
@@ -294,6 +294,9 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
       ierr = PetscPrintf(PETSC_COMM_WORLD,"compute J by slow fd is done.\n");CHKERRQ(ierr);
       //ierr = MatView(J,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr); 
     } else { // get sparse pattern of the Jacobian
+      throw BoutException("Path followed in PETSc solver not yet implemented in general "
+                          "-- experimental hard coded values here. Sorry\n");
+
       ierr = PetscPrintf(PETSC_COMM_WORLD,"get sparse pattern of the Jacobian...\n");CHKERRQ(ierr);
 
       ISLocalToGlobalMapping ltog, ltogb;
@@ -471,10 +474,6 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
     ierr = PetscViewerDestroy(&viewer);CHKERRQ(ierr);
   }
 
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
-
   return(0);
 }
 
@@ -498,13 +497,12 @@ PetscErrorCode PetscSolver::run() {
  **************************************************************************/
 
 PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata) {
+  TRACE("Running RHS: Petsc32Solver::rhs(%e)", t);
+
   int flag;
   BoutReal *udata_array, *dudata_array;
 
   PetscFunctionBegin;
-#ifdef CHECK
-  int msg_point = msg_stack.push("Running RHS: Petsc32Solver::rhs(%e)", t);
-#endif
 
   // Load state from PETSc
   VecGetArray(udata, &udata_array);
@@ -518,10 +516,6 @@ PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata) {
   VecGetArray(dudata, &dudata_array);
   save_derivs(dudata_array);
   VecRestoreArray(dudata, &dudata_array);
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 
   PetscFunctionReturn(0);
 }

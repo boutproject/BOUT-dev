@@ -4,10 +4,10 @@
 # settings used by the core code
 
 NOUT = 400       # number of time-steps
-TIMESTEP = 0.1	 # time between outputs
+TIMESTEP = 1	 # time between outputs
 
 MZ = 32     # number of points in z direction (2^n + 1)
-ZPERIOD = 1  # Number of periods
+ZPERIOD = 5  # Number of periods
 
 non_uniform = true
 
@@ -19,11 +19,11 @@ ny = 64        # Number of parallel (Y) grid points
 
 Length = 1     # length of machine in meters
 Rmin = 5e-3    # minimum radius in meters
-Rmax = 2.5e-2  # maximum radius
+Rmax = 5e-2    # maximum radius
 
 Bxy = 0.15     # magnetic field in Tesla
 
-Ni0  = 1e-2*exp(-x^2)  # Density in units of 10^20 m^-3
+Ni0  = 1e-3 + 1e-2*exp(-(x/0.5)^2)  # Density in units of 10^20 m^-3
 Te0  = 5               # Electron temperature in eV
 Ti0  = 0.1             # Ion temperature in eV
 

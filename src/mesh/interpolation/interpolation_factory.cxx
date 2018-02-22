@@ -13,17 +13,6 @@ InterpolationFactory::InterpolationFactory() {
   add(Bilinear::CreateBilinear, "bilinear");
 }
 
-/**
- * Delete the stored Interpolation objects from the internal map
- *
- */
-InterpolationFactory::~InterpolationFactory() {
-  // Free any interpolation objects
-  // for(auto& interp : interp_map) {
-  //   delete interp->second;
-  // }
-}
-
 inline string InterpolationFactory::getDefaultInterpType() {
   return "hermitespline";
 }

@@ -110,7 +110,7 @@ BoutMesh class uses the BOUT indices (which trace back to UEDGE):
 ``ixseps1`` and ``ixseps2`` give the X location of the separatrices, and
 are equal in the case of single-null configurations. The indexing is
 such that all points ``0 <= x < ixseps1`` are inside the separatrix,
-whilst ``ixseps1 <= x < ngx`` are outside.
+whilst ``ixseps1 <= x < LocalNx`` are outside.
 
 Implementation: QuiltMesh
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -124,7 +124,7 @@ of the mesh, and are used all over BOUT++ to loop over variables:
 ::
 
     /// Size of the mesh on this processor including guard/boundary cells
-    int ngx, ngy, ngz;  
+    int LocalNx, LocalNy, LocalNz;
     /// Local ranges of data (inclusive), excluding guard cells
     int xstart, xend, ystart, yend;
 
@@ -222,7 +222,7 @@ In BoutMesh, the communication is controlled by the variables
 
 In the Y direction, each boundary region (**U**\ p and **D**\ own in Y)
 can be split into two, with ``0 <= x < UDATA_XSPLIT`` going to the
-processor index ``UDATA_INDEST``, and ``UDATA_INDEST <= x < ngx`` going
+processor index ``UDATA_INDEST``, and ``UDATA_INDEST <= x < LocalNx`` going
 to ``UDATA_OUTDEST``. Similarly for the Down boundary. Since there are
 no branch-cuts in the X direction, there is just one destination for the
 **I**\ nner and **O**\ uter boundaries. In all cases a negative
@@ -339,9 +339,9 @@ The mesh spacing is given by the public members
 
 ::
 
-    // These used for differential operators 
+    // These used for differential operators
     Field2D dx, dy;
-    Field2D d2x, d2y;    // 2nd-order correction for non-uniform meshes     
+    Field2D d2x, d2y;    // 2nd-order correction for non-uniform meshes
     BoutReal zlength, dz;    // Derived from options (in radians)
 
 Metrics
@@ -381,7 +381,7 @@ quantities:
     Field2D G1_11, G1_22, G1_33, G1_12, G1_13;
     Field2D G2_11, G2_22, G2_33, G2_12, G2_23;
     Field2D G3_11, G3_22, G3_33, G3_13, G3_23;
-      
+
     Field2D G1, G2, G3;
 
 These quantities are public and accessible everywhere, but this is
@@ -405,7 +405,7 @@ public variables are currently used for this:
     bool ShiftXderivs; // Use shifted X derivatives
     int  ShiftOrder;   // Order of shifted X derivative interpolation
     Field2D zShift;    // Z shift for each point (radians)
-      
+
     Field2D ShiftTorsion; // d <pitch angle> / dx. Needed for vector differentials (Curl)
     Field2D IntShiftTorsion; // Integrated shear (I in BOUT notation)
     bool IncIntShear; // Include integrated shear (if shifting X)

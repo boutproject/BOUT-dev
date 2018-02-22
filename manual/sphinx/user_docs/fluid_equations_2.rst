@@ -119,6 +119,8 @@ processor 0, anything written to the output will be written to screen
 reason not to, please use this ``output`` object when writing text
 output.
 
+More details are given in section :ref:`sec-logging`.
+
 Error handling
 --------------
 
@@ -133,26 +135,11 @@ immediately every time you run the code, then the easiest way to hunt
 down the bug is to insert lots of ``output.write`` statements (see
 :ref:`sec-printing`). Things get harder when a bug only occurs after
 a long time of running, and/or only occasionally. For this type of
-problem, a useful tool can be the message stack. At the start of a
-section of code, put a message onto the stack:
-
-::
-
-       msg_stack.push("Some message here");
-
-which can also take arguments in ``printf`` format, as with
-``output.write``. At the end of the section of code, take the message
-off the stack again:
-
-::
-
-       msg_stack.pop();
-
-If an error occurs, the message stack is printed out, and this can then
-help track down where the error originated. An easy way to use this message
+problem, a useful tool can be the message stack. An easy way to use this message
 stack is to use the ``TRACE`` macro:
 
 ::
+
 	{
       	  TRACE("Some message here"); // message pushed
 	
@@ -162,8 +149,14 @@ This will push the message, then pop the message when the current scope ends
 (except when an exception occurs).
 The error message will also have the file name and line number appended, to help find
 where an error occurred. The run-time overhead of this should be small,
-but can be removed entirely if the compile-time flag ``CHECK`` is not defined. This turns off checking,
+but can be removed entirely if the compile-time flag ``-DCHECK`` is not defined or set to ``0``. This turns off checking,
 and ``TRACE`` becomes an empty macro.
+It is possible to use standard ``printf`` like formatting with the trace macro, for example.
  
+::
+
+	{
+      	  TRACE("The value of i is %d and this is an arbitrary %s", i, "string"); // message pushed
+	} // Scope ends, message popped
 
 

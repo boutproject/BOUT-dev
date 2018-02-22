@@ -69,10 +69,9 @@ class IMEXBDF2 : public Solver {
 
   /// Initialise solver. Must be called once and only once
   ///
-  /// @param[in] restarting   True if restarting simulation
   /// @param[in] nout         Number of outputs
   /// @param[in] tstep        Time between outputs. NB: Not internal timestep
-  int init(bool restarting, int nout, BoutReal tstep);
+  int init(int nout, BoutReal tstep) override;
 
   /// Run the simulation
   int run() override;

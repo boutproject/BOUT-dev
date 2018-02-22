@@ -20,7 +20,7 @@ BoutReal BoundaryOpPar::getValue(int x, int y, int z, BoutReal t) {
     // answer. This instead generates the value at the gridpoint
     xnorm = mesh->GlobalX(x);
     ynorm = mesh->GlobalY(y);
-    znorm = ((BoutReal)(z))/(mesh->LocalNz);
+    znorm = static_cast<BoutReal>(z) / (mesh->LocalNz);
     return gen_values->generate(xnorm, TWOPI*ynorm, TWOPI*znorm, t);
   case FIELD:
     value = (*field_values)(x,y,z);
@@ -69,7 +69,7 @@ BoundaryOpPar* BoundaryOpPar_dirichlet::clone(BoundaryRegionPar *region, const l
       real_value = stringToReal(args.front());
       return new BoundaryOpPar_dirichlet(region, real_value);
     } catch (BoutException& e) {
-      FieldGenerator* newgen = 0;
+      std::shared_ptr<FieldGenerator>  newgen = 0;
       // First argument should be an expression
       newgen = FieldFactory::get()->parse(args.front());
       return new BoundaryOpPar_dirichlet(region, newgen);
@@ -114,7 +114,7 @@ BoundaryOpPar* BoundaryOpPar_dirichlet_O3::clone(BoundaryRegionPar *region, cons
       real_value = stringToReal(args.front());
       return new BoundaryOpPar_dirichlet_O3(region, real_value);
     } catch (BoutException& e) {
-      FieldGenerator* newgen = 0;
+      std::shared_ptr<FieldGenerator>  newgen = 0;
       // First argument should be an expression
       newgen = FieldFactory::get()->parse(args.front());
       return new BoundaryOpPar_dirichlet_O3(region, newgen);
@@ -166,7 +166,7 @@ BoundaryOpPar* BoundaryOpPar_dirichlet_interp::clone(BoundaryRegionPar *region, 
       real_value = stringToReal(args.front());
       return new BoundaryOpPar_dirichlet_interp(region, real_value);
     } catch (BoutException& e) {
-      FieldGenerator* newgen = 0;
+      std::shared_ptr<FieldGenerator>  newgen = 0;
       // First argument should be an expression
       newgen = FieldFactory::get()->parse(args.front());
       return new BoundaryOpPar_dirichlet_interp(region, newgen);
@@ -215,7 +215,7 @@ BoundaryOpPar* BoundaryOpPar_neumann::clone(BoundaryRegionPar *region, const lis
       real_value = stringToReal(args.front());
       return new BoundaryOpPar_neumann(region, real_value);
     } catch (BoutException& e) {
-      FieldGenerator* newgen = 0;
+      std::shared_ptr<FieldGenerator>  newgen = 0;
       // First argument should be an expression
       newgen = FieldFactory::get()->parse(args.front());
       return new BoundaryOpPar_neumann(region, newgen);

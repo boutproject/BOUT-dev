@@ -2,6 +2,7 @@
 #include <bout/fv_ops.hxx>
 #include <globals.hxx>
 #include <utils.hxx>
+#include <msg_stack.hxx>
 
 #include <output.hxx>
 
@@ -9,8 +10,10 @@ namespace FV {
 
   // Div ( a Laplace_perp(f) )  -- Vorticity
   const Field3D Div_a_Laplace_perp(const Field3D &a, const Field3D &f) {
-  
-    Field3D result = 0.0;
+    Mesh *mesh = a.getMesh();
+
+    Field3D result(mesh);
+    result = 0.0;
 
     Coordinates *coord = mesh->coordinates();
     
@@ -109,46 +112,275 @@ namespace FV {
     return result;
   }
 
-  const Field3D Div_par_K_Grad_par(const Field3D &K, const Field3D &f, bool bndry_flux) {
-    Field3D result;
-    result = 0.0;
+  const Field3D Div_par_K_Grad_par(const Field3D &Kin, const Field3D &fin, bool bndry_flux) {
+    TRACE("FV::Div_par_K_Grad_par");
+
+    Mesh *mesh = Kin.getMesh();
+    Field3D result(0.0, mesh);
+
+    // K and f fields in yup and ydown directions
+    Field3D Kup(mesh), Kdown(mesh);
+    Field3D fup(mesh), fdown(mesh);
+    Field3D f = fin;
+    Field3D K = Kin;
+    if (K.hasYupYdown() && f.hasYupYdown()) {
+      // Both inputs have yup and ydown
+      Kup = K.yup();
+      Kdown = K.ydown();
+      
+      fup = f.yup();
+      fdown = f.ydown();
+    } else {
+      // At least one input doesn't have yup/ydown fields.
+      // Need to shift to/from field aligned coordinates
+      
+      f = mesh->toFieldAligned(fin);
+      K = mesh->toFieldAligned(Kin);
+      
+      fup = fdown = f;
+      Kup = Kdown = K;
+    }
     
     Coordinates *coord = mesh->coordinates();
     
-    for(int i=mesh->xstart;i<=mesh->xend;i++)
-      for(int j=mesh->ystart;j<=mesh->yend;j++)
-	for(int k=0;k<mesh->LocalNz;k++) {
-          // Calculate flux at upper surface
-        
-	  if(bndry_flux || !mesh->lastY() || (j != mesh->yend)) {
-	    
-            BoutReal c = 0.5*(K(i,j,k) + K.yup()(i,j+1,k)); // K at the upper boundary
-            BoutReal J = 0.5*(coord->J(i,j) + coord->J(i,j+1)); // Jacobian at boundary
-            
-            BoutReal g_22 = 0.5*(coord->g_22(i,j) + coord->g_22(i,j+1));
-            
-            BoutReal gradient = 2.*(f.yup()(i,j+1,k) - f(i,j,k)) / (coord->dy(i,j) + coord->dy(i,j+1));
-        
-            BoutReal flux = c * J * gradient / g_22;
-            
-            result(i,j,k) += flux / (coord->dy(i,j) * coord->J(i,j));
-          }
+    for( auto &i: result ) {
+      // Calculate flux at upper surface
+      
+      auto iyp = i.yp();
+      auto iym = i.ym();
 
-          // Calculate flux at lower surface
-          if(bndry_flux || !mesh->firstY() || (j != mesh->ystart)) {
-            BoutReal c = 0.5*(K(i,j,k) + K.ydown()(i,j-1,k)); // K at the lower boundary
-            BoutReal J = 0.5*(coord->J(i,j) + coord->J(i,j-1)); // Jacobian at boundary
-            
-            BoutReal g_22 = 0.5*(coord->g_22(i,j) + coord->g_22(i,j+1));
-            
-            BoutReal gradient = 2.*(f(i,j,k) - f.ydown()(i,j-1,k)) / (coord->dy(i,j) + coord->dy(i,j-1));
+      if(bndry_flux || !mesh->lastY() || (i.y != mesh->yend)) {
         
-            BoutReal flux = c * J * gradient / g_22;
+        BoutReal c = 0.5*(K[i] + K.yup()[iyp]); // K at the upper boundary
+        BoutReal J = 0.5*(coord->J[i] + coord->J[iyp]); // Jacobian at boundary
+        BoutReal g_22 = 0.5*(coord->g_22[i] + coord->g_22[iyp]);
+        
+        BoutReal gradient = 2.*(f.yup()[iyp] - f[i]) / (coord->dy[i] + coord->dy[iyp]);
+        
+        BoutReal flux = c * J * gradient / g_22;
             
-            result(i,j,k) -= flux / (coord->dy(i,j) * coord->J(i,j));
-	  }
-	}
+        result[i] += flux / (coord->dy[i] * coord->J[i]);
+      }
+      
+      // Calculate flux at lower surface
+      if(bndry_flux || !mesh->firstY() || (i.y != mesh->ystart)) {
+        BoutReal c = 0.5*(K[i] + K.ydown()[iym]); // K at the lower boundary
+        BoutReal J = 0.5*(coord->J[i] + coord->J[iym]); // Jacobian at boundary
+        
+        BoutReal g_22 = 0.5*(coord->g_22[i] + coord->g_22[i]);
+        
+        BoutReal gradient = 2.*(f[i] - f.ydown()[iym]) / (coord->dy[i] + coord->dy[iym]);
+        
+        BoutReal flux = c * J * gradient / g_22;
+        
+        result[i] -= flux / (coord->dy[i] * coord->J[i]);
+      }
+    }
+    
+    if (!(K.hasYupYdown() && f.hasYupYdown())) {
+      // Shifted to field aligned coordinates, so need to shift back
+      result = mesh->fromFieldAligned(result);
+    }
+    
     return result;
   }
 
+  const Field3D D4DY4(const Field3D &d_in, const Field3D &f_in) {
+    Field3D result = 0.0;
+    
+    Coordinates *coord = mesh->coordinates();
+    
+    // Convert to field aligned coordinates
+    Field3D d = mesh->toFieldAligned(d_in);
+    Field3D f = mesh->toFieldAligned(f_in);
+    
+    for(int i=mesh->xstart;i<=mesh->xend;i++)
+      for(int j=mesh->ystart;j<=mesh->yend;j++) {
+        BoutReal dy3 = SQ(coord->dy(i,j))*coord->dy(i,j);
+        for(int k=0;k<mesh->LocalNz;k++) {
+          
+          // 3rd derivative at right boundary
+          
+          BoutReal d3fdx3 = (
+                             f(i,j+2,k)
+                             - 3.*f(i,j+1,k)
+                             + 3.*f(i,j,  k)
+                             -    f(i,j-1,k)
+                             ) / dy3;
+          
+          BoutReal flux = 0.5*(d(i,j,k) + d(i,j+1,k))*(coord->J(i,j) + coord->J(i,j+1)) * d3fdx3;
+          
+          result(i,j,  k) += flux / (coord->J(i,j) * coord->dy(i,j));
+          result(i,j+1,k) -= flux / (coord->J(i,j+1) * coord->dy(i,j+1));
+          
+          if(j == mesh->ystart && (!mesh->firstY())) {
+            // Left cell boundary, no flux through boundaries
+            d3fdx3 = (
+                      f(i,j+1,k)
+                      - 3.*f(i,j,  k)
+                      + 3.*f(i,j-1,k)
+                      -    f(i,j-2,k)
+                      ) / dy3;
+            
+            flux = 0.5*(d(i,j,k) + d(i,j-1,k))*(coord->J(i,j) + coord->J(i,j-1)) * d3fdx3;
+            
+            result(i,j,  k) -= flux / (coord->J(i,j) * coord->dy(i,j));
+            result(i,j-1,k) += flux / (coord->J(i,j-1) * coord->dy(i,j-1));
+          }
+        }
+      }
+    
+    // Convert result back to non-aligned coordinates
+    return mesh->fromFieldAligned(result);
+  }
+
+  const Field3D D4DY4_Index(const Field3D &f_in, bool bndry_flux) {
+    Field3D result = 0.0;
+    
+    // Convert to field aligned coordinates
+    Field3D f = mesh->toFieldAligned(f_in);
+
+    Coordinates *coord = mesh->coordinates();
+    
+    for(int i=mesh->xstart;i<=mesh->xend;i++) {
+      bool yperiodic = mesh->periodicY(i);
+      
+      bool has_upper_boundary = !yperiodic && mesh->lastY(i);
+      bool has_lower_boundary = !yperiodic && mesh->firstY(i);
+      
+      for(int j=mesh->ystart;j<=mesh->yend;j++) {
+        
+        // Right boundary
+        
+        if (bndry_flux || (j != mesh->yend) || !has_upper_boundary) {
+          // Calculate the fluxes
+          
+          // Right boundary common factors
+          BoutReal common_factor = 0.25 *
+            (coord->dy(i, j) + coord->dy(i, j + 1)) *
+            (coord->J(i, j) + coord->J(i, j + 1));
+          
+          BoutReal factor_rc = common_factor / (coord->J(i,j) * coord->dy(i,j));
+          BoutReal factor_rp = common_factor / (coord->J(i,j+1) * coord->dy(i,j+1));
+          if ( j != mesh->yend || !has_upper_boundary ) {
+            for(int k=0;k<mesh->LocalNz;k++) {
+              // Not on domain boundary
+              // 3rd derivative at right cell boundary
+              
+              BoutReal d3fdx3 = (
+                                 f(i,j+2,k)
+                                 - 3.*f(i,j+1,k)
+                                 + 3.*f(i,j,  k)
+                                 -    f(i,j-1,k)
+                                 );
+              
+              result(i,j,  k) += d3fdx3 * factor_rc; 
+              result(i,j+1,k) -= d3fdx3 * factor_rp; 
+            }
+          } else {
+            // At a domain boundary
+            // Use a one-sided difference formula
+            
+            for(int k=0;k<mesh->LocalNz;k++) {
+
+              BoutReal d3fdx3 = -((16. / 5) * 0.5 *
+                                  (f(i, j + 1, k) + f(i, j, k)) // Boundary value f_b
+                                  - 6. * f(i, j, k)                 // f_0
+                                  + 4. * f(i, j - 1, k)             // f_1
+                                  - (6. / 5) * f(i, j - 2, k)       // f_2
+                                  );
+              
+              result(i,j,  k) += d3fdx3 * factor_rc; 
+              result(i,j+1,k) -= d3fdx3 * factor_rp;
+            }
+          }
+        }
+
+        // Left cell boundary
+        
+        if (bndry_flux || (j != mesh->ystart) || !has_lower_boundary) {
+          // Calculate the fluxes
+
+          BoutReal common_factor = 0.25 *
+            (coord->dy(i, j) + coord->dy(i, j + 1)) *
+            (coord->J(i, j) + coord->J(i, j - 1));
+
+          BoutReal factor_lc = common_factor / (coord->J(i, j) * coord->dy(i, j));
+          BoutReal factor_lm = common_factor / (coord->J(i, j - 1) * coord->dy(i, j - 1));
+            
+          if ( j != mesh->ystart || !has_lower_boundary ) {
+            for(int k=0;k<mesh->LocalNz;k++) {
+          
+              // Not on a domain boundary
+              BoutReal d3fdx3 = (f(i, j + 1, k)
+                                 - 3. * f(i, j, k)
+                                 + 3. * f(i, j - 1, k)
+                                 - f(i, j - 2, k));
+              
+              result(i, j    , k) -= d3fdx3 * factor_lc; 
+              result(i, j - 1, k) += d3fdx3 * factor_lm;
+            }
+          } else {
+            // On a domain (Y) boundary
+            for(int k=0;k<mesh->LocalNz;k++) {
+              BoutReal d3fdx3 = -(-(16. / 5) * 0.5 *
+                                  (f(i, j - 1, k) + f(i, j, k)) // Boundary value f_b
+                                  + 6. * f(i, j, k)                 // f_0
+                                  - 4. * f(i, j + 1, k)             // f_1
+                                  + (6. / 5) * f(i, j + 2, k)       // f_2
+                                  );
+
+              result(i, j    , k) -= d3fdx3 * factor_lc; 
+              result(i, j - 1, k) += d3fdx3 * factor_lm;
+            }
+          }
+        }
+      }
+    }
+    
+    // Convert result back to non-aligned coordinates
+    return mesh->fromFieldAligned(result);
+  }
+
+  void communicateFluxes(Field3D &f) {
+    
+    // Use X=0 as temporary buffer 
+    if(mesh->xstart != 2)
+      throw BoutException("communicateFluxes: Sorry!");
+    
+    int size = mesh->LocalNy * mesh->LocalNz;
+    comm_handle xin, xout;
+    if(!mesh->firstX())
+      xin = mesh->irecvXIn(f(0,0), size, 0);
+    
+    if(!mesh->lastX())
+      xout = mesh->irecvXOut(f(mesh->LocalNx-1,0), size, 1);
+    
+    // Send X=1 values
+    if(!mesh->firstX())
+      mesh->sendXIn(f(1,0), size, 1);
+    
+    if(!mesh->lastX())
+      mesh->sendXOut(f(mesh->LocalNx-2,0), size, 0);
+    
+    // Wait
+    if(!mesh->firstX()) {
+      mesh->wait(xin);
+      // Add to cells
+      for(int y=mesh->ystart;y<=mesh->yend;y++) 
+        for(int z=0;z<mesh->LocalNz;z++) {
+          f(2,y,z) += f(0,y,z);
+        }
+    }
+    if(!mesh->lastX()) {
+      mesh->wait(xout);
+      // Add to cells
+      for(int y=mesh->ystart;y<=mesh->yend;y++) 
+        for(int z=0;z<mesh->LocalNz;z++) {
+          f(mesh->LocalNx-3,y,z) += f(mesh->LocalNx-1,y,z);
+        }
+    }
+  }
+
+  
 } // Namespace FV

@@ -98,7 +98,7 @@ int physics_run(BoutReal time) {
   
   for(int y=0;y<5;y++) {
     for(int x=0;x<5;x++)
-      output << phi[x][y][64] << ", ";
+      output << phi(x,y,64) << ", ";
     output << endl;
   }
   

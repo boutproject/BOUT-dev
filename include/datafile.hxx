@@ -75,7 +75,13 @@ class Datafile {
   // Write a variable to the file now
   DEPRECATED(bool writeVar(const int &i, const char *name));
   DEPRECATED(bool writeVar(BoutReal r, const char *name));
-  
+
+  void setAttribute(const string &varname, const string &attrname, const string &text) {
+    attrib_string[varname][attrname] = text;
+  }
+  void setAttribute(const string &varname, const string &attrname, int value) {
+    attrib_int[varname][attrname] = value;
+  }
  private:
   bool parallel; // Use parallel formats?
   bool flush;    // Flush after every write?
@@ -86,6 +92,8 @@ class Datafile {
   bool enabled;  // Enable / Disable writing
   bool init_missing; // Initialise missing variables?
   bool shiftOutput; //Do we want to write out in shifted space?
+  int flushFrequencyCounter; //Counter used in determining when next openclose required
+  int flushFrequency; //How many write calls do we want between openclose
 
   std::unique_ptr<DataFormat> file;
   size_t filenamelen;
@@ -98,12 +106,13 @@ class Datafile {
 
   /// A structure to hold a pointer to a class, and associated name and flags
   template <class T>
-    struct VarStr {
-      T *ptr;
-      string name;
-      bool save_repeat;
-      bool covar;
-    };
+  struct VarStr {
+    T *ptr;             ///< Pointer to the data.
+                        ///< Note that this may be a user object, not a copy, so must not be destroyed
+    string name;        ///< Name as it appears in the output file
+    bool save_repeat;   ///< If true, has a time dimension and is saved every time step
+    bool covar;         ///< For vectors, true if a covariant vector, false if contravariant
+  };
 
   // one set per variable type
   vector< VarStr<int> >      int_arr;
@@ -127,6 +136,17 @@ class Datafile {
   /// Get the pointer to the variable, nullptr if not added
   /// This is used to check if the same variable is being added
   void* varPtr(const string &name);
+  
+  // Metadata (attributes)
+  // Note: These should be stored with each variable, but this would require
+  // a number of changes to the data storage (maps rather than vectors etc).
+  // For now this is a bit of a hack to see if it works
+
+  /// String attributes. Maps variable name to maps of <string name, string value>
+  std::map<std::string, std::map<std::string, std::string>> attrib_string;
+  
+  /// Integer attributes. Maps variable name to maps <string name, int value>
+  std::map<std::string, std::map<std::string, int>> attrib_int; 
 };
 
 /// Write this variable once to the grid file

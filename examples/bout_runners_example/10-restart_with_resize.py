@@ -2,8 +2,8 @@
 
 """Driver which resizes the grid after restart"""
 
-from post_processing_show_the_data import show_the_data
-from bout_runners.bout_runners import basic_runner
+from pre_and_post_processing.post_processing_show_the_data import show_the_data
+from bout_runners import basic_runner
 
 # Initial run
 # ===========================================================================
@@ -29,8 +29,8 @@ dmp_folder, _ =\
 # ===========================================================================
 restart_run = basic_runner(restart      = "overwrite"  ,\
                            restart_from = dmp_folder[0],\
-                           nx           = 20           ,\
-                           ny           = 20           ,\
+                           nx           = 22           ,\
+                           ny           = 22           ,\
                            nz           = 16           ,\
                            )
 

@@ -1,0 +1,4 @@
+html/
+build/
+doxygen/bout/
+sphinx/_breathe_autogen/

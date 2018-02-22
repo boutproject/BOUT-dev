@@ -9,11 +9,15 @@
 
 #include <output.hxx>
 
-int PowerSolver::init(bool restarting, int nout, BoutReal tstep) {
-  int msg_point = msg_stack.push("Initialising Power solver");
+PowerSolver::~PowerSolver(){
+  if(f0 != nullptr) delete[] f0;
+}
+
+int PowerSolver::init(int nout, BoutReal tstep) {
+  TRACE("Initialising Power solver");
   
   /// Call the generic initialisation first
-  if(Solver::init(restarting, nout, tstep))
+  if(Solver::init(nout, tstep))
     return 1;
   
   output << "\n\tPower eigenvalue solver\n";
@@ -43,14 +47,12 @@ int PowerSolver::init(bool restarting, int nout, BoutReal tstep) {
   
   // Put starting values into f0
   save_vars(f0);
-  
-  msg_stack.pop(msg_point);
 
   return 0;
 }
 
 int PowerSolver::run() {
-  int msg_point = msg_stack.push("PowerSolver::run()");
+  TRACE("PowerSolver::run()");
   
   // Make sure that f0 has a norm of 1
   divide(f0, norm(f0));
@@ -66,22 +68,12 @@ int PowerSolver::run() {
     
     // Normalise
     divide(f0, eigenvalue);
-
-    /// Write the restart file
-    restart.write();
-    
-    if((archive_restart > 0) && (iteration % archive_restart == 0)) {
-      restart.write("%s/BOUT.restart_%04d.%d.%s", restartdir.c_str(), iteration, MYPE, restartext.c_str());
-    }
     
     /// Call the monitor function. The eigenvalue
     /// is given rather than time, so it appears
     /// in the output logs
     if(call_monitors(eigenvalue, s, nsteps)) {
       // User signalled to quit
-      
-      // Write restart to a different file
-      restart.write("%s/BOUT.final.%d.%s", restartdir.c_str(), MYPE, restartext.c_str());
       
       output.write("Monitor signalled to quit. Returning\n");
       break;
@@ -91,8 +83,6 @@ int PowerSolver::run() {
     rhs_ncalls = 0;
   }
   
-  msg_stack.pop(msg_point);
-  
   return 0;
 }
 
@@ -101,9 +91,9 @@ BoutReal PowerSolver::norm(BoutReal *state) {
   
   for(int i=0;i<nlocal;i++)
     total += state[i]*state[i];
-  
-  total /= (BoutReal) nglobal;
-  
+
+  total /= static_cast<BoutReal>(nglobal);
+
   MPI_Allreduce(&total, &result, 1, MPI_DOUBLE, MPI_SUM, BoutComm::get());
   
   return sqrt(result);

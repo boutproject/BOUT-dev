@@ -34,82 +34,85 @@
 #include "fieldgenerators.hxx"
 
 /// Helper function to create a FieldValue generator from a BoutReal
-FieldGenerator* generator(BoutReal value) {
-  return new FieldValue(value);
+std::shared_ptr<FieldGenerator> generator(BoutReal value) {
+  return std::shared_ptr<FieldGenerator>( new FieldValue(value));
 }
 
 /// Helper function to create a FieldValuePtr from a pointer to BoutReal
-FieldGenerator* generator(BoutReal *ptr) {
-  return new FieldValuePtr(ptr);
+std::shared_ptr<FieldGenerator> generator(BoutReal *ptr) {
+  return std::shared_ptr<FieldGenerator>( new FieldValuePtr(ptr));
 }
 
 //////////////////////////////////////////////////////////
 // FieldFactory public functions
 
-FieldFactory::FieldFactory(Mesh *m, Options *opt) : fieldmesh(m), options(opt) {
+FieldFactory::FieldFactory(Mesh * localmesh, Options *opt) : fieldmesh(localmesh), options(opt) {
 
   if(options == NULL)
     options = Options::getRoot();
 
   // Useful values
-  addGenerator("pi", new FieldValue(PI));
+  addGenerator("pi", std::shared_ptr<FieldGenerator>( new FieldValue(PI)));
 
   // Some standard functions
-  addGenerator("sin", new FieldSin(NULL));
-  addGenerator("cos", new FieldCos(NULL));
-  addGenerator("tan", new FieldGenOneArg<tan>(NULL));
+  addGenerator("sin", std::shared_ptr<FieldGenerator>( new FieldSin(NULL)));
+  addGenerator("cos", std::shared_ptr<FieldGenerator>( new FieldCos(NULL)));
+  addGenerator("tan", std::shared_ptr<FieldGenerator>( new FieldGenOneArg<tan>(NULL)));
 
-  addGenerator("acos", new FieldGenOneArg<acos>(NULL));
-  addGenerator("asin", new FieldGenOneArg<asin>(NULL));
-  addGenerator("atan", new FieldATan(NULL));
+  addGenerator("acos", std::shared_ptr<FieldGenerator>( new FieldGenOneArg<acos>(NULL)));
+  addGenerator("asin", std::shared_ptr<FieldGenerator>( new FieldGenOneArg<asin>(NULL)));
+  addGenerator("atan", std::shared_ptr<FieldGenerator>( new FieldATan(NULL)));
 
-  addGenerator("sinh", new FieldSinh(NULL));
-  addGenerator("cosh", new FieldCosh(NULL));
-  addGenerator("tanh", new FieldTanh());
+  addGenerator("sinh", std::shared_ptr<FieldGenerator>( new FieldSinh(NULL)));
+  addGenerator("cosh", std::shared_ptr<FieldGenerator>( new FieldCosh(NULL)));
+  addGenerator("tanh", std::shared_ptr<FieldGenerator>( new FieldTanh()));
 
-  addGenerator("exp", new FieldGenOneArg<exp>(NULL));
-  addGenerator("log", new FieldGenOneArg<log>(NULL));
-  addGenerator("gauss", new FieldGaussian(NULL, NULL));
-  addGenerator("abs", new FieldAbs(NULL));
-  addGenerator("sqrt", new FieldSqrt(NULL));
-  addGenerator("h", new FieldHeaviside(NULL));
-  addGenerator("erf", new FieldErf(NULL));
+  addGenerator("exp", std::shared_ptr<FieldGenerator>( new FieldGenOneArg<exp>(NULL)));
+  addGenerator("log", std::shared_ptr<FieldGenerator>( new FieldGenOneArg<log>(NULL)));
+  addGenerator("gauss", std::shared_ptr<FieldGenerator>( new FieldGaussian(NULL, NULL)));
+  addGenerator("abs", std::shared_ptr<FieldGenerator>( new FieldAbs(NULL)));
+  addGenerator("sqrt", std::shared_ptr<FieldGenerator>( new FieldSqrt(NULL)));
+  addGenerator("h", std::shared_ptr<FieldGenerator>( new FieldHeaviside(NULL)));
+  addGenerator("erf", std::shared_ptr<FieldGenerator>( new FieldErf(NULL)));
 
-  addGenerator("min", new FieldMin());
-  addGenerator("max", new FieldMax());
+  addGenerator("min", std::shared_ptr<FieldGenerator>( new FieldMin()));
+  addGenerator("max", std::shared_ptr<FieldGenerator>( new FieldMax()));
 
-  addGenerator("power", new FieldGenTwoArg<pow>(NULL,NULL));
+  addGenerator("power", std::shared_ptr<FieldGenerator>( new FieldGenTwoArg<pow>(NULL,NULL)));
 
-  addGenerator("round", new FieldRound(NULL));
+  addGenerator("round", std::shared_ptr<FieldGenerator>( new FieldRound(NULL)));
   
   // Ballooning transform
-  addGenerator("ballooning", new FieldBallooning(fieldmesh));
+  addGenerator("ballooning", std::shared_ptr<FieldGenerator>( new FieldBallooning(fieldmesh)));
 
   // Mixmode function
-  addGenerator("mixmode", new FieldMixmode());
+  addGenerator("mixmode", std::shared_ptr<FieldGenerator>( new FieldMixmode()));
 
   // TanhHat function
-  addGenerator("tanhhat", new FieldTanhHat(NULL, NULL, NULL, NULL));
+  addGenerator("tanhhat", std::shared_ptr<FieldGenerator>( new FieldTanhHat(NULL, NULL, NULL, NULL)));
 }
 
 FieldFactory::~FieldFactory() {
 
 }
 
-const Field2D FieldFactory::create2D(const string &value, Options *opt, Mesh *m, CELL_LOC loc, BoutReal t) {
-  Field2D result = 0.;
+const Field2D FieldFactory::create2D(const string &value, Options *opt,
+                                     Mesh *localmesh, CELL_LOC loc,
+                                     BoutReal t) {
 
-  if(mesh->StaggerGrids == false){
+  if(localmesh == nullptr)
+    localmesh = fieldmesh;
+  if(localmesh == nullptr)
+    throw BoutException("Not a valid mesh");
+
+  Field2D result(0.,localmesh);
+
+  if(localmesh->StaggerGrids == false){
     loc = CELL_CENTRE ;
   }
   result.setLocation(loc);
 
-  if(m == NULL)
-    m = fieldmesh;
-  if(m == NULL)
-    throw BoutException("Not a valid mesh");
-
-  FieldGenerator* gen = parse(value, opt);
+  std::shared_ptr<FieldGenerator> gen = parse(value, opt);
   if(!gen) {
     output << "FieldFactory error: Couldn't create 2D field from '"
            << value
@@ -120,9 +123,9 @@ const Field2D FieldFactory::create2D(const string &value, Options *opt, Mesh *m,
   switch(loc)  {
   case CELL_XLOW: {
     for(auto i : result) {
-      BoutReal xpos = 0.5*(m->GlobalX(i.x-1) + m->GlobalX(i.x));
+      BoutReal xpos = 0.5*(localmesh->GlobalX(i.x-1) + localmesh->GlobalX(i.x));
       result[i] = gen->generate(xpos,
-                                TWOPI*m->GlobalY(i.y),
+                                TWOPI*localmesh->GlobalY(i.y),
                                 0.0,  // Z
                                 t); // T
     }
@@ -130,8 +133,8 @@ const Field2D FieldFactory::create2D(const string &value, Options *opt, Mesh *m,
   }
   case CELL_YLOW: {
     for(auto i : result) {
-      BoutReal ypos = TWOPI*0.5*(m->GlobalY(i.y-1) + m->GlobalY(i.y));
-      result[i] = gen->generate(m->GlobalX(i.x),
+      BoutReal ypos = TWOPI*0.5*(localmesh->GlobalY(i.y-1) + localmesh->GlobalY(i.y));
+      result[i] = gen->generate(localmesh->GlobalX(i.x),
                                 ypos,
                                 0.0,  // Z
                                 t); // T
@@ -140,8 +143,8 @@ const Field2D FieldFactory::create2D(const string &value, Options *opt, Mesh *m,
   }
   default: {// CELL_CENTRE or CELL_ZLOW
     for(auto i : result) {
-      result[i] = gen->generate(m->GlobalX(i.x),
-                                TWOPI*m->GlobalY(i.y),
+      result[i] = gen->generate(localmesh->GlobalX(i.x),
+                                TWOPI*localmesh->GlobalY(i.y),
                                 0.0,  // Z
                                 t); // T
     }
@@ -153,26 +156,28 @@ const Field2D FieldFactory::create2D(const string &value, Options *opt, Mesh *m,
   return result;
 }
 
-const Field3D FieldFactory::create3D(const string &value, Options *opt, Mesh *m, CELL_LOC loc, BoutReal t) {
-  
-  if(m == NULL)
-    m = fieldmesh;
-  if(m == NULL)
+const Field3D FieldFactory::create3D(const string &value, Options *opt,
+                                     Mesh *localmesh, CELL_LOC loc,
+                                     BoutReal t) {
+
+  if(localmesh == nullptr)
+    localmesh = fieldmesh;
+  if(localmesh == nullptr)
     throw BoutException("Not a valid mesh");
-  
-  // Create a Field3D over mesh "m"
-  Field3D result(m);
+
+  // Create a Field3D over mesh "localmesh"
+  Field3D result(localmesh);
   
   // Ensure that data is allocated and unique
   result.allocate();
   
-  if(mesh->StaggerGrids == false){
+  if(localmesh->StaggerGrids == false){
     loc = CELL_CENTRE ;
   }
   result.setLocation(loc);
 
   // Parse expression to create a tree of generators
-  FieldGenerator* gen = parse(value, opt);
+  std::shared_ptr<FieldGenerator> gen = parse(value, opt);
   if(!gen) {
     throw BoutException("FieldFactory error: Couldn't create 3D field from '%s'", value.c_str());
   }
@@ -180,38 +185,38 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt, Mesh *m,
   switch(loc)  {
   case CELL_XLOW: {
     for(auto i : result) {
-      BoutReal xpos = 0.5*(m->GlobalX(i.x-1) + m->GlobalX(i.x));
+      BoutReal xpos = 0.5*(localmesh->GlobalX(i.x-1) + localmesh->GlobalX(i.x));
       result[i] = gen->generate(xpos,
-                                TWOPI*m->GlobalY(i.y),
-                                TWOPI*((BoutReal) i.z) / ((BoutReal) (m->LocalNz)),  // Z
+                                TWOPI*localmesh->GlobalY(i.y),
+                                TWOPI*static_cast<BoutReal>(i.z) / static_cast<BoutReal>(localmesh->LocalNz),  // Z
                                 t); // T
     }
     break;
   }
   case CELL_YLOW: {
     for(auto i : result) {
-      BoutReal ypos = TWOPI*0.5*(m->GlobalY(i.y-1) + m->GlobalY(i.y));
-      result[i] = gen->generate(m->GlobalX(i.x),
+      BoutReal ypos = TWOPI*0.5*(localmesh->GlobalY(i.y-1) + localmesh->GlobalY(i.y));
+      result[i] = gen->generate(localmesh->GlobalX(i.x),
                                 ypos,
-                                TWOPI*((BoutReal) i.z) / ((BoutReal) (m->LocalNz)),  // Z
+                                TWOPI*static_cast<BoutReal>(i.z) / static_cast<BoutReal>(localmesh->LocalNz),  // Z
                                 t); // T
     }
     break;
   }
   case CELL_ZLOW: {
     for(auto i : result) {
-      result[i] = gen->generate(m->GlobalX(i.x),
-                                TWOPI*m->GlobalY(i.y),
-                                TWOPI*(((BoutReal) i.z) - 0.5) / ((BoutReal) (m->LocalNz)),  // Z
+      result[i] = gen->generate(localmesh->GlobalX(i.x),
+                                TWOPI*localmesh->GlobalY(i.y),
+                                TWOPI*(static_cast<BoutReal>(i.z) - 0.5) / static_cast<BoutReal>(localmesh->LocalNz),  // Z
                                 t); // T
     }
     break;
   }
   default: {// CELL_CENTRE
     for(auto i : result) {
-      result[i] = gen->generate(m->GlobalX(i.x),
-                                TWOPI*m->GlobalY(i.y),
-                                TWOPI*((BoutReal) i.z) / ((BoutReal) (m->LocalNz)),  // Z
+      result[i] = gen->generate(localmesh->GlobalX(i.x),
+                                TWOPI*localmesh->GlobalY(i.y),
+                                TWOPI*static_cast<BoutReal>(i.z) / static_cast<BoutReal>(localmesh->LocalNz),  // Z
                                 t); // T
     }
   }
@@ -219,13 +224,10 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt, Mesh *m,
 
   // Don't delete generator
   
-  // Transform from field aligned coordinates, to be compatible with
-  // older BOUT++ inputs. This is not a particularly "nice" solution.
-  try {
-    result = m->fromFieldAligned(result);
-  }catch(BoutException &e) {
-    // might fail if not possible to shift coordinates
-    // e.g. FCI
+  if (localmesh->canToFromFieldAligned()){ // Ask wheter it is possible
+    // Transform from field aligned coordinates, to be compatible with
+    // older BOUT++ inputs. This is not a particularly "nice" solution.
+    result = localmesh->fromFieldAligned(result);
   }
 
   return result;
@@ -276,7 +278,7 @@ Options* FieldFactory::findOption(Options *opt, const string &name, string &val)
   return result;
 }
 
-FieldGenerator* FieldFactory::resolve(string &name) {
+std::shared_ptr<FieldGenerator> FieldFactory::resolve(string &name) {
   if(options) {
     // Check if in cache
     string key;
@@ -290,27 +292,28 @@ FieldGenerator* FieldFactory::resolve(string &name) {
       key += name;
     }
 
-    map<string, FieldGenerator*>::iterator it = cache.find(key);
-    if(it != cache.end()) {
+    auto cached_value = cache.find(key);
+    if (cached_value != cache.end()) {
       // Found in cache
-      return it->second;
+      return cached_value->second;
     }
 
     // Look up in options
 
     // Check if already looking up this symbol
-    for(const auto& it : lookup) {
-      if( key.compare(it) == 0 ) {
+    for (const auto &lookup_value : lookup) {
+      if (key.compare(lookup_value) == 0) {
         // Name matches, so already looking up
         output << "ExpressionParser lookup stack:\n";
-        for(const auto& it : lookup) {
-          output << it << " -> ";
+        for (const auto &stack_value : lookup) {
+          output << stack_value << " -> ";
         }
         output << name << endl;
-        throw BoutException("ExpressionParser: Infinite recursion in parsing '%s'", name.c_str());
+        throw BoutException("ExpressionParser: Infinite recursion in parsing '%s'",
+                            name.c_str());
       }
     }
-    
+
     // Find the option, including traversing sections.
     // Throws exception if not found
     string value;
@@ -320,7 +323,7 @@ FieldGenerator* FieldFactory::resolve(string &name) {
     lookup.push_back(key);
 
     // Parse
-    FieldGenerator *g = parse(value, section);
+    std::shared_ptr<FieldGenerator> g = parse(value, section);
 
     // Cache
     cache[key] = g;
@@ -334,17 +337,14 @@ FieldGenerator* FieldFactory::resolve(string &name) {
   return NULL;
 }
 
-FieldGenerator* FieldFactory::parse(const string &input, Options *opt) {
-
-  //output.write("FieldFactory::parse('%s')", input.c_str());
+std::shared_ptr<FieldGenerator> FieldFactory::parse(const string &input, Options *opt) {
 
   // Check if in the cache
-
   string key = string("#") + input;
   if(opt)
     key = opt->str()+key; // Include options context in key
 
-  map<string, FieldGenerator*>::iterator it = cache.find(key);
+  auto it = cache.find(key);
   if(it != cache.end()) {
     // Found in cache
     return it->second;
@@ -358,7 +358,7 @@ FieldGenerator* FieldFactory::parse(const string &input, Options *opt) {
     options = opt;
 
   // Parse
-  FieldGenerator *expr = parseString(input);
+  std::shared_ptr<FieldGenerator> expr = parseString(input);
 
   // Add to cache
   cache[key] = expr;
@@ -373,4 +373,8 @@ FieldFactory* FieldFactory::get() {
   static FieldFactory instance(NULL, Options::getRoot());
 
   return &instance;
+}
+
+void FieldFactory::cleanCache() {
+  cache.clear();
 }

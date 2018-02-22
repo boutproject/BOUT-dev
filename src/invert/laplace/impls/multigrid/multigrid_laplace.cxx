@@ -28,6 +28,8 @@
  **************************************************************************/
 
 #include "multigrid_laplace.hxx"
+#include <msg_stack.hxx>
+#include <bout/openmpwrap.hxx>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -35,12 +37,12 @@
 
 BoutReal soltime=0.0,settime=0.0;
 
-
-LaplaceMultigrid::LaplaceMultigrid(Options *opt) : 
+LaplaceMultigrid::LaplaceMultigrid(Options *opt) :
   Laplacian(opt),
-  A(0.0), C1(1.0), C2(1.0), D(1.0)
-{
+  A(0.0), C1(1.0), C2(1.0), D(1.0) {
 
+  TRACE("LaplaceMultigrid::LaplaceMultigrid(Options *opt)");
+  
   // Get Options in Laplace Section
   if (!opt) opts = Options::getRoot()->getSection("laplace");
   else opts=opt;
@@ -80,28 +82,27 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt) :
   Nx_local = mesh->xend - mesh->xstart + 1; // excluding guard cells
   Nx_global = mesh->GlobalNx - 2*mesh->xstart; // excluding guard cells
   
-  if(mgcount == 0) {
+  if (mgcount == 0) {
     output <<"Nx="<<Nx_global<<"("<<Nx_local<<")"<<endl;
   }
-  Nz_global = mesh->GlobalNz - 1;
-           // z-direction has one extra, unused point for historical reasons
+  Nz_global = mesh->GlobalNz;
   Nz_local = Nz_global; // No parallelization in z-direction (for now)
   // 
   //else {
   //  Nz_local = mesh->zend - mesh->zstart + 1; // excluding guard cells
   //  Nz_global = mesh->GlobalNz - 2*mesh->zstart; // excluding guard cells
   // }
-  if(mgcount==0) {
+  if (mgcount==0) {
     output <<"Nz="<<Nz_global<<"("<<Nz_local<<")"<<endl;
   }
 
 
   // Compute available levels along x-direction
   int aclevel,adlevel;
-  if(mglevel >1) {
+  if (mglevel >1) {
     int nn = Nx_local;
     aclevel = mglevel;
-    for(int n = aclevel;n > 1; n--) {
+    for (int n = aclevel;n > 1; n--) {
       if ( nn%2 != 0 )  {
 	output<<"Size of local x-domain is not a power of 2^"<<mglevel<<" mglevel is changed to"<<mglevel-n+1<<endl;
         aclevel = aclevel - n + 1;
@@ -110,7 +111,7 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt) :
       nn = nn/2;
     }
     nn = Nz_local;
-    for(int n = aclevel;n > 1; n--) {
+    for (int n = aclevel;n > 1; n--) {
       if ( nn%2 != 0 )  {
 	output<<"Size of local z-domain is not a power of 2^ "<<aclevel <<" mglevel is changed to "<<aclevel - n + 1<<endl;
         aclevel = aclevel - n + 1;
@@ -123,7 +124,7 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt) :
   adlevel = mglevel - aclevel;
 
   int rcheck = 0;
-  if((pcheck == 1) && (mgcount == 0)) rcheck = 1;
+  if ((pcheck == 1) && (mgcount == 0)) rcheck = 1;
   kMG = new Multigrid1DP(aclevel,Nx_local,Nz_local,Nx_global,adlevel,mgmpi,
             commX,rcheck);
   kMG->mgplag = mgplag;
@@ -140,21 +141,21 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt) :
   x = new BoutReal[(Nx_local+2)*(Nz_local+2)];
   b = new BoutReal[(Nx_local+2)*(Nz_local+2)];
 
-  if(mgcount == 0) {  
+  if (mgcount == 0) {  
     output<<" Smoothing type is ";
-    if(mgsm == 0) {
+    if (mgsm == 0) {
       output<<"Jacobi smoother";
       output<<"with omega = "<<omega<<endl;
     }
     else if(mgsm ==1) output<<" Gauss-Seidel smoother"<<endl;
     else throw BoutException("Undefined smoother");
     output<<"Solver type is ";
-    if(mglevel == 1) output<<"PGMRES with simple Preconditioner"<<endl;
+    if (mglevel == 1) output<<"PGMRES with simple Preconditioner"<<endl;
     else if(mgplag == 1) output<<"PGMRES with multigrid Preconditioner"<<endl;
     else output<<"Multigrid solver with merging "<<mgmpi<<endl;
 #ifdef OPENMP
-#pragma omp parallel
-#pragma omp master
+BOUT_OMP(parallel)
+BOUT_OMP(master)
     {
       output<<"Num threads = "<<omp_get_num_threads()<<endl;
     } 
@@ -173,6 +174,9 @@ LaplaceMultigrid::~LaplaceMultigrid() {
 
 const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &x0) {
 
+  TRACE("LaplaceMultigrid::solve(const FieldPerp, const FieldPerp)");
+
+  Mesh *mesh = b_in.getMesh();
   BoutReal t0,t1;
   
   Coordinates *coords = mesh->coordinates();
@@ -186,19 +190,18 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
   if ( global_flags & INVERT_START_NEW ) {
     // set initial guess to zero
     for (int i=1; i<lxx+1; i++) {
-#pragma omp parallel default(shared) 
-#pragma omp for
+BOUT_OMP(parallel default(shared) )
+BOUT_OMP(for)
       for (int k=1; k<lzz+1; k++) {
         x[i*lz2+k] = 0.;
       }
     }
-  }
-  else {
+  } else {
     // Read initial guess into local array, ignoring guard cells
     for (int i=1; i<lxx+1; i++) {
       int i2 = i-1+mesh->xstart;
-#pragma omp parallel default(shared) 
-#pragma omp for
+BOUT_OMP(parallel default(shared) )
+BOUT_OMP(for)
       for (int k=1; k<lzz+1; k++) {
         int k2 = k-1;
         x[i*lz2+k] = x0[i2][k2];
@@ -224,16 +227,14 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
           int k2 = k-1;
 	  x[k] = -x0(mesh->xstart-1, k2)*sqrt(coords->g_11(mesh->xstart, yindex))*coords->dx(mesh->xstart, yindex); 
         }
-      }
-      else {
+      } else {
         // zero gradient inner boundary condition
         for (int k=1; k<lzz+1; k++) {
           // set inner guard cells
           x[k] = 0.0;
         }
       }
-    }
-    else {
+    } else {
       // Dirichlet boundary condition
       if ( inner_boundary_flags & INVERT_SET ) {
         // guard cells of x0 specify value to set at inner boundary
@@ -311,9 +312,9 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
   t0 = MPI_Wtime();
   generateMatrixF(level);  
 
-  if(kMG->xNP > 1) MPI_Barrier(commX);
+  if (kMG->xNP > 1) MPI_Barrier(commX);
 
-  if((pcheck == 3) && (mgcount == 0)) {
+  if ((pcheck == 3) && (mgcount == 0)) {
     FILE *outf;
     char outfile[256];
     sprintf(outfile,"test_matF_%d.mat",kMG->rProcI);
@@ -330,7 +331,7 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
     fclose(outf);
   }
 
-  if(level > 0) kMG->setMultigridC(0);
+  if (level > 0) kMG->setMultigridC(0);
 
   if((pcheck == 3) && (mgcount == 0)) {
     for(int i = level; i> 0;i--) {
@@ -371,8 +372,8 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
   if(mgcount%300 == 0) {
     output<<"Accumulated execution time at "<<mgcount<<" Sol "<<soltime<<" ( "<<settime<<" )"<<endl;
   }
-  
-  FieldPerp result;
+
+  FieldPerp result(mesh);
   result.allocate();
   #if CHECK>2
     // Make any unused elements NaN so that user does not try to do calculations with them
@@ -431,6 +432,8 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
 
 void LaplaceMultigrid::generateMatrixF(int level) {
 
+  TRACE("LaplaceMultigrid::generateMatrixF(int)");
+  
   // Set (fine-level) matrix entries
 
   Coordinates *coords = mesh->coordinates();
@@ -442,8 +445,8 @@ void LaplaceMultigrid::generateMatrixF(int level) {
 
   for (int i=1; i<llx+1; i++) {
     i2 = i-1+mesh->xstart;
-#pragma omp parallel default(shared) private(k2)
-#pragma omp for
+BOUT_OMP(parallel default(shared) private(k2))
+BOUT_OMP(for)
     for (int k=1; k<llz+1; k++) {
       k2 = k-1;
       int k2p  = (k2+1)%Nz_global;

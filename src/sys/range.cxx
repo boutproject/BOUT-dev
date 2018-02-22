@@ -1,6 +1,3 @@
-
-
-
 #include <bout/sys/range.hxx>
 
 RangeIterator::RangeIterator(int start, int end, RangeIterator* join) 
@@ -24,6 +21,7 @@ RangeIterator::RangeIterator(int start, int end, const RangeIterator& join)
   cur = this;
 
   n = new RangeIterator(join);
+  delete_next = true;
   
   if(start > end) {
     // Null range
@@ -45,6 +43,12 @@ RangeIterator::RangeIterator(const RangeIterator& r) {
   if(cur == &r)
     cur = this;
   curend = r.curend;
+}
+
+RangeIterator::~RangeIterator() {
+  if ((this->n != this) && delete_next) {
+    delete this->n;
+  }
 }
 
 void RangeIterator::first() {
@@ -117,6 +121,7 @@ RangeIterator& RangeIterator::operator+=(const RangeIterator &r) {
     it = it->n;
   }
   it->n = new RangeIterator(r);
+  it->delete_next = true;
   return *this;
 }
 
@@ -142,6 +147,7 @@ RangeIterator& RangeIterator::operator-=(const RangeIterator &r) {
         }else {
           // Removing a chunk from the middle
           it->n = new RangeIterator(itr->ie+1, it->ie, it->n); // Upper piece
+          it->delete_next = true;
           it->ie = itr->is-1; // Truncate lower piece
         }
       }

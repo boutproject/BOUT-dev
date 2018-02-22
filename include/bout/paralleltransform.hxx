@@ -25,6 +25,8 @@ class Mesh;
  */
 class ParallelTransform {
 public:
+  virtual ~ParallelTransform() {}
+
   /// Given a 3D field, calculate and set the Y up down fields
   virtual void calcYUpDown(Field3D &f) = 0;
   
@@ -35,6 +37,8 @@ public:
   /// Convert back from field-aligned coordinates
   /// into standard form
   virtual const Field3D fromFieldAligned(const Field3D &f) = 0;
+
+  virtual bool canToFromFieldAligned() = 0;
 };
 
 
@@ -49,13 +53,13 @@ public:
    * Merges the yup and ydown() fields of f, so that
    * f.yup() = f.ydown() = f
    */ 
-  void calcYUpDown(Field3D &f) {f.mergeYupYdown();}
+  void calcYUpDown(Field3D &f) override {f.mergeYupYdown();}
   
   /*!
    * The field is already aligned in Y, so this
    * does nothing
    */ 
-  const Field3D toFieldAligned(const Field3D &f) {
+  const Field3D toFieldAligned(const Field3D &f) override {
     return f;
   }
   
@@ -63,8 +67,12 @@ public:
    * The field is already aligned in Y, so this
    * does nothing
    */
-  const Field3D fromFieldAligned(const Field3D &f) {
+  const Field3D fromFieldAligned(const Field3D &f) override {
     return f;
+  }
+
+  bool canToFromFieldAligned() override{
+    return true;
   }
 };
 
@@ -84,7 +92,7 @@ public:
    * Calculates the yup() and ydown() fields of f
    * by taking FFTs in Z and applying a phase shift.
    */ 
-  void calcYUpDown(Field3D &f);
+  void calcYUpDown(Field3D &f) override;
   
   /*!
    * Uses FFTs and a phase shift to align the grid points
@@ -94,13 +102,17 @@ public:
    * in X-Z, and the metric tensor will need to be changed 
    * if X derivatives are used.
    */
-  const Field3D toFieldAligned(const Field3D &f);
+  const Field3D toFieldAligned(const Field3D &f) override;
 
   /*!
    * Converts a field back to X-Z orthogonal coordinates
    * from field aligned coordinates.
    */
-  const Field3D fromFieldAligned(const Field3D &f);
+  const Field3D fromFieldAligned(const Field3D &f) override;
+
+  bool canToFromFieldAligned() override{
+    return true;
+  }
 
   /// A 3D array, implemented as nested vectors
   typedef std::vector<std::vector<std::vector<dcomplex>>> arr3Dvec;
@@ -125,7 +137,7 @@ private:
    * Shift a 2D field in Z. 
    * Since 2D fields are constant in Z, this has no effect
    */
-  const Field2D shiftZ(Field2D f, const Field2D UNUSED(zangle)){return f;};
+  const Field2D shiftZ(const Field2D &f, const Field2D &UNUSED(zangle)){return f;};
 
   /*!
    * Shift a 3D field \p f in Z by the given \p zangle
@@ -134,7 +146,7 @@ private:
    * @param[in] zangle   Toroidal angle (z)
    *
    */ 
-  const Field3D shiftZ(Field3D f, Field2D zangle);
+  const Field3D shiftZ(const Field3D &f, const Field2D &zangle);
 
   /*!
    * Shift a 3D field \p f by the given phase \p phs in Z
@@ -145,7 +157,7 @@ private:
    * @param[in] f  The field to shift
    * @param[in] phs  The phase to shift by
    */
-  const Field3D shiftZ(Field3D f, const arr3Dvec &phs);
+  const Field3D shiftZ(const Field3D &f, const arr3Dvec &phs);
 
   /*!
    * Shift a given 1D array, assumed to be in Z, by the given \p zangle

@@ -1,0 +1,22 @@
+
+NOUT = 10
+timestep = 1
+
+MXG=0
+
+[mesh]
+
+nx = 1
+ny = 100
+nz = 1
+
+Ly = 10
+dy = Ly / ny
+
+k = 1 + 0.1*sin(y) # Diffusivity
+
+[f]
+
+function = cos(y)
+
+

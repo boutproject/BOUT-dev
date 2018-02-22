@@ -57,9 +57,7 @@ namespace comm_group {
 			 int root, MPI_Comm comm,
 			 Comm_handle_t *handle)
   {
-#ifdef CHECK
-    msg_stack.push("Comm_gather_start(%d -> %d)", nlocal, root);
-#endif
+    TRACE("Comm_gather_start(%d -> %d)", nlocal, root);
    
     Comm_initialise();
  
@@ -78,10 +76,6 @@ namespace comm_group {
 		 root, comm);
       
       handle->current = true;
-
-#ifdef CHECK
-      msg_stack.pop();
-#endif
       
       return (root == handle->myrank);
     }
@@ -91,8 +85,8 @@ namespace comm_group {
     
     if(root == handle->myrank) {
       // All arriving on this processor. Post receives
-      
-      handle->request = (MPI_Request*) malloc(sizeof(MPI_Request)*(handle->nprocs-1));
+
+      handle->request = (MPI_Request *)malloc(sizeof(MPI_Request) * (handle->nprocs - 1));
       handle->nreq = handle->nprocs-1;
       
       MPI_Request *r = handle->request;
@@ -115,8 +109,8 @@ namespace comm_group {
 	     nlocal*type_size);
     }else {
       // Sending to root processor
-      
-      handle->request = (MPI_Request*) malloc(sizeof(MPI_Request));
+
+      handle->request = (MPI_Request *)malloc(sizeof(MPI_Request));
       handle->nreq = 1;
 
       MPI_Isend(local,
@@ -129,10 +123,6 @@ namespace comm_group {
     }
     
     handle->current = true; // Mark as in progress
-    
-#ifdef CHECK
-    msg_stack.pop();
-#endif
     
     return (root == handle->myrank);
   }
@@ -152,9 +142,8 @@ namespace comm_group {
 			   int root, MPI_Comm comm,
 			   Comm_handle_t *handle)
   {
-#ifdef CHECK
-    msg_stack.push("Comm_scatter_start(%d -> %d)", root, sendcnt);
-#endif
+    TRACE("Comm_scatter_start(%d -> %d)", root, sendcnt);
+
     Comm_initialise();
 
     MPI_Comm_size(comm, &handle->nprocs);
@@ -164,10 +153,6 @@ namespace comm_group {
     if(!nonblock) {
       MPI_Scatter ( sendbuf, sendcnt, type, recvbuf, sendcnt, type, root, comm );
       handle->current = true;
-
-#ifdef CHECK
-      msg_stack.pop();
-#endif
       
       return (root == handle->myrank);
     }
@@ -217,16 +202,14 @@ namespace comm_group {
 
     handle->current = true;
     
-#ifdef CHECK
-    msg_stack.pop();
-#endif
-    
     return (root == handle->myrank);
   }
   
   
   bool Comm_wait(Comm_handle_t *handle)
   {
+    TRACE("Comm_gather_wait(%d)", handle->root);
+
     if(handle == NULL)
       return false;
     if(!handle->current)
@@ -237,10 +220,6 @@ namespace comm_group {
       return (handle->root == handle->myrank);
     }
 
-#ifdef CHECK
-    msg_stack.push("Comm_gather_wait(%d)", handle->root);
-#endif
-
     MPI_Status *s = (MPI_Status*) malloc(sizeof(MPI_Status)*(handle->nreq));
     MPI_Waitall(handle->nreq, 
 		handle->request,
@@ -249,10 +228,6 @@ namespace comm_group {
     free(s); 
     free(handle->request);
     handle->current = false;
-    
-#ifdef CHECK
-    msg_stack.pop();
-#endif
     
     return (handle->root == handle->myrank);
   }

@@ -63,7 +63,7 @@ protected:
     iterator end = streams_.end();
 
     for(; current != end; ++current) {
-      (*current)->put(c);
+      (*current)->put(static_cast<char>(c));
       (*current)->flush();
     }
 

@@ -3,8 +3,10 @@
 # for the (very) rare occasions when autoconf fails
 
 # extra compilation flags:
-# -DCHECK      Enables a host of additional checks on each operation
-#              such as uninitialised data. Helps when debugging
+# -DCHECK=lvl  Enables a host of additional checks on each operation
+#              such as uninitialised data if lvl is > 0. -DCHECK=3
+#              enables all tests, while -DCHECK=0 disables them.
+#              Helps when debugging
 # -DTRACK      Keeps track of variable names.
 #              Enables more useful error messages
 # for SSE2: -msse2 -mfpmath=sse
@@ -18,9 +20,18 @@
 @PETSC@
 @SLEPC_VARS@
 
+# These lines can be replaced in "make install" to point to install directories
+# They are used in the CXXFLAGS variable below rather than hard-coding the directories
+BOUT_INCLUDE_PATH=$(BOUT_TOP)/include
+BOUT_LIB_PATH=$(BOUT_TOP)/lib
+BOUT_CONFIG_FILE=$(BOUT_TOP)/make.config
+
 # Created this variable so that a user won't overwrite the CXXFLAGS variable
 # on the command line, just add to this one
-BOUT_FLAGS		= $(CXXFLAGS) @CXXFLAGS@ @OPENMP_CXXFLAGS@ @CXX11_FLAGS@
+BOUT_FLAGS		= $(CXXFLAGS) @CXXFLAGS@ @OPENMP_CXXFLAGS@ @CXX11_FLAGS@ @COVERAGE_FLAGS@
+#Use := here to force a "static" evaluation of the current state of BOUT_FLAGS to
+#avoid infinite recursion that would arise if BOUT_FLAGS appeared on both sides of =
+BOUT_FLAGS := $(BOUT_FLAGS) -DBOUT_FLAGS_STRING="$(BOUT_FLAGS)"
 
 # Specify the MPI C++ compiler in CXX
 
@@ -49,7 +60,8 @@ EXTRA_INCS		= @EXTRA_INCS@
 EXTRA_LIBS		= @EXTRA_LIBS@ @OPENMP_CXXFLAGS@
 
 PRECON_SOURCE	= @PRECON_SOURCE@
-FACETS_SOURCE   = @FACETS_SOURCE@
+
+BOUT_VERSION  = @PACKAGE_VERSION@
 
 ####################################################################
 # These are used for compiling physics modules using BOUT++ library
@@ -58,10 +70,13 @@ FACETS_SOURCE   = @FACETS_SOURCE@
 # Files that are needed by configure and should be dependencies for 'all'
 
 OBJ						= $(SOURCEC:%.cxx=%.o)
-LIB						= $(BOUT_TOP)/lib/libbout++.a
+ifndef RELEASE
+LIB						= $(BOUT_LIB_PATH)/libbout++.a
+LIB_SO						= $(BOUT_LIB_PATH)/libbout++.so
+endif
 
-BOUT_INCLUDE	= -I$(BOUT_TOP)/include $(CXXINCLUDE) $(EXTRA_INCS)
-BOUT_LIBS			= -lm -L$(BOUT_TOP)/lib -lbout++ $(EXTRA_LIBS)
+BOUT_INCLUDE	= -I$(BOUT_INCLUDE_PATH) $(CXXINCLUDE) $(EXTRA_INCS)
+BOUT_LIBS  = -lm -L$(BOUT_LIB_PATH) -lbout++ $(EXTRA_LIBS)
 
 #DEPS					= $(SOURCEC:.cxx=.d)
 CHANGED				= $(shell find -f $(BOUT_TOP)/include $(BOUT_TOP)/src -type f \( -name \*.cxx -or -name \*.h \) -newer $(LIB) -print 2> /dev/null)
@@ -77,27 +92,45 @@ endif
 ####################################################################
 
 # Phony targets since they are directory names
-.PHONY: $(DIRS) lib install libfast runtest
+.PHONY: $(DIRS) lib install libfast runtest manual sphinx doxygen
 
 ifneq ("$(TARGET)","libfast")
-all: $(BOUT_TOP)/config.status $(BOUT_TOP)/make.config $(DIRS) $(TARGET)
+all: $(BOUT_CONFIG_FILE) $(DIRS) $(TARGET)
 else
-all: $(BOUT_TOP)/config.status $(BOUT_TOP)/make.config $(DIRS)
+all: $(BOUT_TOP)/config.status $(BOUT_CONFIG_FILE) $(DIRS)
 endif
-libfast: $(BOUT_TOP)/config.status $(BOUT_TOP)/make.config $(DIRS)
+libfast: $(BOUT_CONFIG_FILE) $(DIRS)
 
 ####################################################################
 # Recursively run make through subdirs
 ####################################################################
 
-ifneq ("$(TARGET)" , "libfast")
+ifeq ("$(TARGET)" , "lib")
 $(DIRS):
-	@#echo make $@ slowly TARGET $(TARGET)
+# make $@ slowly using the old method where parallel builds can cause
+# race conditions that 
 	@$(MAKE) -s --no-print-directory TARGET=lib -C $@ all
 else
+ifeq ("$(TARGET)","libfast")
 $(DIRS):
-	@#echo make $@ fast
+# make $@ using the libfast method, where all .o files
+# are only created in the end
 	@$(MAKE) -s --no-print-directory TARGET=$(TARGET) -C $@ $(TARGET)
+else
+ifndef MODULE_DIR
+MODULE_DIR=$(shell pwd)
+endif
+$(DIRS):
+# MODULE_DIR: pass the module directory, where the libraries should be
+# created.
+# SUB_NAME is used for creating a library with the expected name.
+# first a potential trailing slash is removed, and after that the
+# directory name is extracted. This allows to e.g. specify a directory
+# as fuu/bar/ and still get an archive named bar.a
+# The # probably doesn't need to be escaped as everything in the
+# recipy is passed to the shell, even lines starting with #
+	@$(MAKE) -s --no-print-directory MODULE_DIR=$(MODULE_DIR) SUB_NAME=$(shell f=$@ ; g=$${f%/} ; echo $${g##*/}) TARGET=sub -C $@
+endif
 endif
 
 # Create 'lib' and 'include' incase they don't exist
@@ -109,14 +142,64 @@ $(BOUT_TOP)/include $(BOUT_TOP)/lib:
 ####################################################################
 prefix = @prefix@
 exec_prefix = @exec_prefix@
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = ${INSTALL}
+INSTALL_DATA = ${INSTALL} -m 644
+
+INSTALL_INCLUDE_PATH = $(DESTDIR)@includedir@/bout++/
+
 install: libfast
-	@$(MKDIR) $(DESTDIR)${prefix}
-	@$(MKDIR) $(DESTDIR)${prefix}/include
-	@$(MKDIR) $(DESTDIR)${prefix}/lib
-	@echo "Installing header files into $(DESTDIR)@includedir@"
-	@cp include/*.hxx $(DESTDIR)@includedir@
-	@echo "Installing library files into $(DESTDIR)@libdir@"
-	@cp lib/*.a $(DESTDIR)@libdir@
+	$(PRE_INSTALL)     # Pre-install commands follow.
+
+	$(NORMAL_INSTALL)  # Normal commands follow.
+
+	$(INSTALL_DATA) -D include/*.hxx -t $(INSTALL_INCLUDE_PATH)
+	$(INSTALL_DATA) -D include/pvode/*.h -t $(INSTALL_INCLUDE_PATH)/pvode/
+	$(INSTALL_DATA) -D include/bout/*.hxx -t $(INSTALL_INCLUDE_PATH)/bout/
+	$(INSTALL_DATA) -D include/bout/sys/*.hxx -t $(INSTALL_INCLUDE_PATH)/bout/sys/
+	$(INSTALL_DATA) -D include/bout/invert/*.hxx -t $(INSTALL_INCLUDE_PATH)/bout/invert/
+	$(INSTALL_DATA) -D lib/libbout++.a -t $(DESTDIR)@libdir@
+	$(INSTALL_DATA) -D lib/libpvode.a -t $(DESTDIR)@libdir@
+	$(INSTALL_DATA) -D lib/libpvpre.a -t $(DESTDIR)@libdir@
+	$(INSTALL_PROGRAM) -D bin/bout-config -t $(DESTDIR)@bindir@
+	$(INSTALL_PROGRAM) -D bin/bout-log-color -t $(DESTDIR)@bindir@
+	$(INSTALL_DATA) -D tools/idllib/*.pro -t $(DESTDIR)@datadir@/bout++/idllib/
+	$(INSTALL_DATA) -D tools/idllib/README -t $(DESTDIR)@datadir@/bout++/idllib/
+	$(INSTALL_DATA) -D tools/pylib/boutdata/*.py -t $(DESTDIR)@datadir@/bout++/pylib/boutdata/
+	$(INSTALL_DATA) -D tools/pylib/boututils/*.py -t $(DESTDIR)@datadir@/bout++/pylib/boututils/
+	$(INSTALL_DATA) -D make.config -t $(DESTDIR)@datadir@/bout++/
+
+	$(POST_INSTALL)    # Post-install commands follow.
+
+	@# Modify paths in the bout-config script 
+	sed -i "s|^BOUT_INCLUDE_PATH=.*|BOUT_INCLUDE_PATH=@includedir@/bout++|" $(DESTDIR)@bindir@/bout-config 
+	sed -i "s|^BOUT_LIB_PATH=.*|BOUT_LIB_PATH=@libdir@|" $(DESTDIR)@bindir@/bout-config
+	sed -i "s|^BOUT_CONFIG_FILE=.*|BOUT_CONFIG_FILE=@datadir@/bout++/make.config|" $(DESTDIR)@bindir@/bout-config
+	sed -i "s|^idlpath=.*|idlpath=@datadir@/bout++/idllib/|" $(DESTDIR)@bindir@/bout-config
+	sed -i "s|^pythonpath=.*|pythonpath=@datadir@/bout++/pylib/|" $(DESTDIR)@bindir@/bout-config
+
+	@# Modify paths in the make.config file
+	sed -i "s|^BOUT_INCLUDE_PATH=.*|BOUT_INCLUDE_PATH=@includedir@/bout++|" $(DESTDIR)@datadir@/bout++/make.config
+	sed -i "s|^BOUT_LIB_PATH=.*|BOUT_LIB_PATH=@libdir@|" $(DESTDIR)@datadir@/bout++/make.config
+	sed -i "s|^BOUT_CONFIG_FILE=.*|BOUT_CONFIG_FILE=@datadir@/bout++/make.config|" $(DESTDIR)@datadir@/bout++/make.config
+
+uninstall:
+	$(PRE_UNINSTALL)     # Pre-uninstall commands follow.
+
+	$(NORMAL_UNINSTALL)  # Normal commands follow.
+	$(RM) $(DESTDIR)@datadir@/bout++/make.config
+	$(RM) -r $(DESTDIR)@datadir@/bout++/pylib/boututils/
+	$(RM) -r $(DESTDIR)@datadir@/bout++/pylib/boutdata/
+	$(RM) -r $(DESTDIR)@datadir@/bout++/idllib/
+	$(RM) $(DESTDIR)@bindir@/bout-config
+	$(RM) $(DESTDIR)@bindir@/bout-log-color
+	$(RM) $(DESTDIR)@libdir@/libbout++.a
+	$(RM) $(DESTDIR)@libdir@/libpvode.a
+	$(RM) $(DESTDIR)@libdir@/libpvpre.a
+	$(RM) -r  $(DESTDIR)@includedir@/bout++/
+
+	$(POST_UNINSTALL)    # Post-uninstall commands follow.
 
 ####################################################################
 # A bit of a clever hack that determines wheter the TARGET variable is 'lib'
@@ -129,7 +212,7 @@ install: libfast
 
 ####################################################################
 # The prerquisites of any .o file should depend on
-# $(BOUT_TOP)/make.config
+# $(BOUT_CONFIG_FILE)
 # $(BOUT_TOP)/makefile
 # which are generated by configuration
 ####################################################################
@@ -153,28 +236,28 @@ install: libfast
 # Builds the library with $(OBJ) which is defined from the SOURCEC variable
 ####################################################################
 
-libfast: makefile $(BOUT_TOP)/make.config $(BOUT_TOP)/include $(OBJ) $(DIRS)
+ifeq ("$(TARGET)", "libfast")
+libfast: makefile $(BOUT_CONFIG_FILE) $(BOUT_TOP)/include $(OBJ) $(DIRS)
+endif
 
-lib: makefile $(BOUT_TOP)/make.config $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ)
+ifeq ("$(TARGET)", "lib")
+lib: makefile $(BOUT_CONFIG_FILE) $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ)
 ifneq ("$(OBJ)foo", "foo")
 	@echo "Adding $(OBJ) to libbout++.a"
 	@$(AR) $(ARFLAGS) $(LIB) $(OBJ)
 	@$(RANLIB) $(LIB)
 endif
-
-#END 'lib'
-#else
-
-ifeq ("$(TARGET)", "sub")
-
-LIB=$(MODULE_DIR)/$(SUB_NAME).a
 endif
 
-sub: makefile $(BOUT_TOP)/make.config $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ)
+
+ifeq ("$(TARGET)", "sub")
+LIB=$(MODULE_DIR)/$(SUB_NAME).a
+sub: makefile $(BOUT_CONFIG_FILE) $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ)
 ifneq ("$(OBJ)foo", "foo")
-	@echo "Adding $(OBJ)"
-	@$(AR) cru $(LIB) $(OBJ)
+	@echo "Adding $(OBJ) to $(LIB)"
+	@$(AR) $(ARFLAGS) $(LIB) $(OBJ)
 	@$(RANLIB) $(LIB)
+endif
 endif
 
 runtest:
@@ -189,18 +272,27 @@ ifneq ("$(TARGET)", "runtest")
 ####################################################################
 # Make libbout++.a if it doesn't exist with the checklib target
 ####################################################################
-%.a:
+libbout++.a:
 	@echo "Rebuilding out-of-date bout++ library"
 	@$(MAKE) --no-print-directory -C $(BOUT_TOP)
  
 ####################################################################
 # Make the target (e.g. gas_compress)
 ####################################################################
-SUB_LIBS=$(DIRS:%=%.a)
+# first we remove a trailing slash, if present. Note that currently we
+# dont support several trailing slashes, as in fuu/bar/// 
+DIRS_=$(DIRS:%/=%)
+# then we extract the directory name, in case it is a longer path
+# We are not in a recipe, so # needs to be escaped
+# $$ is an escaped $
+DIRS__=$(shell for f in $(DIRS_) ; do echo $${f\#\#*/};done)
+# now we can generate a list of libraries
+SUB_LIBS=$(DIRS__:%=%.a)
+$(SUB_LIBS):$(DIRS__)
 
 $(SOURCEC): checklib
 $(SOURCEC:%.cxx=%.o): $(LIB)
-$(TARGET): makefile $(BOUT_TOP)/make.config $(OBJ) $(SUB_LIBS)
+$(TARGET): makefile $(BOUT_CONFIG_FILE) $(OBJ) $(SUB_LIBS)
 	@echo "  Linking" $(TARGET)
 	@$(LD) $(LDFLAGS) -o $(TARGET) $(OBJ) $(BOUT_LIBS) $(SUB_LIBS)
 
@@ -215,7 +307,7 @@ endif
 endif
 endif
 
-%.o: $(BOUT_TOP)/make.config %.cxx
+%.o: $(BOUT_CONFIG_FILE) %.cxx
 	@echo "  Compiling " $(@F:.o=.cxx)
 	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c $(@F:.o=.cxx) -o $@
 
@@ -229,8 +321,9 @@ endif
 clean::
 	-@$(RM) -rf $(OBJ) $(DEPS) $(TARGET)
 	@for pp in $(DIRS); do echo "  " $$pp cleaned; $(MAKE) --no-print-directory -C $$pp clean; done
+	@$(RM) -f $(SUB_LIBS)
 
-distclean: clean
+distclean:: clean clean-tests
 	@echo include cleaned
 # Removing the externalpackage installation. When we have more packages, need a better way
 	@$(RM) -rf $(BOUT_TOP)/include/pvode
@@ -244,6 +337,20 @@ distclean: clean
 	@touch $(BOUT_TOP)/configure
 	@echo autom4te.cache cleaned
 
+clean-tests: clean-unit-tests clean-integrated-tests clean-mms-tests
+
+clean-unit-tests:
+	@echo "   tests/unit cleaned"
+	@$(MAKE) --no-print-directory -C tests/unit clean
+
+clean-integrated-tests:
+	@echo "   tests/integrated cleaned"
+	@$(MAKE) --no-print-directory -C tests/integrated clean
+
+clean-mms-tests:
+	@echo "   tests/MMS cleaned"
+	@$(MAKE) --no-print-directory -C tests/MMS clean
+
 ####################################################################
 # Documentation
 ####################################################################
@@ -251,13 +358,33 @@ distclean: clean
 MANUAL_DIR=$(BOUT_TOP)/manual
 
 doxygen:
-	cd $(MANUAL_DIR)/doxygen && doxygen Doxyfile
+	$(MAKE) -C $(MANUAL_DIR) doxygen
 
-breathe-autogen: doxygen
-	breathe-apidoc -f -o $(MANUAL_DIR)/sphinx/_breathe_autogen $(MANUAL_DIR)/doxygen/bout/xml
+breathe-autogen:
+	$(MAKE) -C $(MANUAL_DIR) breathe_autogen
 
-sphinx-docs-html: breathe-autogen
-	sphinx-build -b html $(MANUAL_DIR)/sphinx/ $(MANUAL_DIR)/sphinx/_build/
+sphinx-docs-html:
+	$(MAKE) -C $(MANUAL_DIR) sphinx-html
 
-sphinx-docs-latex: breathe-autogen
-	sphinx-build -b latex $(MANUAL_DIR)/sphinx/ $(MANUAL_DIR)/sphinx/_build/
+sphinx-docs-latex:
+	$(MAKE) -C $(MANUAL_DIR) sphinx-pdf
+
+manual:
+	$(MAKE) -C $(MANUAL_DIR)
+
+manual-html:
+	$(MAKE) -C $(MANUAL_DIR) html
+
+manual-pdf:
+	$(MAKE) -C $(MANUAL_DIR) pdf
+
+######################################################################
+# Code coverage
+######################################################################
+
+GCOV = @GCOV@
+LCOV = @LCOV@
+GENHTML = @GENHTML@
+abs_builddir = @abs_builddir@
+
+@CODE_COVERAGE_RULES@

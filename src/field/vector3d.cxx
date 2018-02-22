@@ -34,13 +34,11 @@
 #include <boundary_op.hxx>
 #include <boutexception.hxx>
 
-Vector3D::Vector3D() : covariant(true), deriv(NULL) { }
+Vector3D::Vector3D(Mesh *localmesh)
+    : covariant(true), deriv(), x(localmesh), y(localmesh), z(localmesh) {}
 
-Vector3D::Vector3D(const Vector3D &f) : covariant(f.covariant), deriv(NULL) {
-  x = f.x;
-  y = f.y;
-  z = f.z;
-}
+Vector3D::Vector3D(const Vector3D &f)
+    : covariant(f.covariant), deriv(), x(f.x), y(f.y), z(f.y) {}
 
 Vector3D::~Vector3D() {
   if(deriv != NULL) {
@@ -57,10 +55,11 @@ Vector3D::~Vector3D() {
 
 void Vector3D::toCovariant() {  
   if(!covariant) {
-    Field3D gx, gy, gz;
+    Mesh *localmesh = x.getMesh();
+    Field3D gx(localmesh), gy(localmesh), gz(localmesh);
 
-    Coordinates *metric = mesh->coordinates();
-    
+    Coordinates *metric = localmesh->coordinates();
+
     // multiply by g_{ij}
     gx = x*metric->g_11 + metric->g_12*y + metric->g_13*z;
     gy = y*metric->g_22 + metric->g_12*x + metric->g_23*z;
@@ -76,10 +75,10 @@ void Vector3D::toCovariant() {
 void Vector3D::toContravariant() {  
   if(covariant) {
     // multiply by g^{ij}
-    
-    Field3D gx, gy, gz;
+    Mesh *localmesh = x.getMesh();
+    Field3D gx(localmesh), gy(localmesh), gz(localmesh);
 
-    Coordinates *metric = mesh->coordinates();
+    Coordinates *metric = localmesh->coordinates();
 
     gx = x*metric->g11 + metric->g12*y + metric->g13*z;
     gy = y*metric->g22 + metric->g12*x + metric->g23*z;
@@ -95,8 +94,8 @@ void Vector3D::toContravariant() {
 
 Vector3D* Vector3D::timeDeriv() {
   if(deriv == NULL) {
-    deriv = new Vector3D();
-    
+    deriv = new Vector3D(x.getMesh());
+
     // Check if the components have a time-derivative
     // Need to make sure that ddt(v.x) = ddt(v).x
     
@@ -293,15 +292,16 @@ Vector3D & Vector3D::operator/=(const Field3D &rhs)
 ///////////////// CROSS PRODUCT //////////////////
 
 Vector3D & Vector3D::operator^=(const Vector3D &rhs) {
-  Vector3D result;
+  Mesh *localmesh = x.getMesh();
+  Vector3D result(localmesh);
 
   // Make sure both vector components are covariant
   Vector3D rco = rhs;
   rco.toCovariant();
   toCovariant();
 
-  Coordinates *metric = mesh->coordinates();
-  
+  Coordinates *metric = localmesh->coordinates();
+
   // calculate contravariant components of cross-product
   result.x = (y*rco.z - z*rco.y)/metric->J;
   result.y = (z*rco.x - x*rco.z)/metric->J;
@@ -314,15 +314,16 @@ Vector3D & Vector3D::operator^=(const Vector3D &rhs) {
 }
 
 Vector3D & Vector3D::operator^=(const Vector2D &rhs) {
-  Vector3D result;
-  
+  Mesh *localmesh = x.getMesh();
+  Vector3D result(localmesh);
+
   // Make sure both vector components are covariant
   Vector2D rco = rhs;
   rco.toCovariant();
   toCovariant();
-  
-  Coordinates *metric = mesh->coordinates();
- 
+
+  Coordinates *metric = localmesh->coordinates();
+
   // calculate contravariant components of cross-product
   result.x = (y*rco.z - z*rco.y)/metric->J;
   result.y = (z*rco.x - x*rco.z)/metric->J;
@@ -409,7 +410,7 @@ const Vector3D Vector3D::operator/(const Field3D &rhs) const {
 ////////////////// DOT PRODUCT ///////////////////
 
 const Field3D Vector3D::operator*(const Vector3D &rhs) const {
-  Field3D result;
+  Field3D result(x.getMesh());
 
   if(rhs.covariant ^ covariant) {
     // Both different - just multiply components
@@ -439,7 +440,7 @@ const Field3D Vector3D::operator*(const Vector3D &rhs) const {
 
 const Field3D Vector3D::operator*(const Vector2D &rhs) const
 {
-  Field3D result;
+  Field3D result(x.getMesh());
 
   if(rhs.covariant ^ covariant) {
     // Both different - just multiply components
@@ -447,7 +448,7 @@ const Field3D Vector3D::operator*(const Vector2D &rhs) const
   }else {
     // Both are covariant or contravariant
 
-    Coordinates *metric = mesh->coordinates();
+    Coordinates *metric = x.getMesh()->coordinates();
     if(covariant) {
       // Both covariant
       result = x*rhs.x*metric->g11 + y*rhs.y*metric->g22 + z*rhs.z*metric->g33;
@@ -534,70 +535,6 @@ const Field3D abs(const Vector3D &v) {
 // Visitor pattern support
 void Vector3D::accept(FieldVisitor &v) {
   v.accept(*this);
-}
-
-int Vector3D::getData(int jx, int jy, int jz, void *vptr) const
-{
-#ifdef CHECK
-  // check ranges
-  if((jx < 0) || (jx >= mesh->LocalNx) || (jy < 0) || (jy >= mesh->LocalNy) || (jz < 0) || (jz >= mesh->LocalNz)) {
-    throw BoutException("Vector3D: getData (%d,%d,%d) out of bounds\n", jx, jy, jz);
-  }
-#endif
-  BoutReal *ptr = (BoutReal*) vptr;
-  *ptr = x(jx,jy,jz); ptr++;
-  *ptr = y(jx,jy,jz); ptr++;
-  *ptr = z(jx,jy,jz);
-  
-  return 3*sizeof(BoutReal);
-}
-
-int Vector3D::getData(int jx, int jy, int jz, BoutReal *rptr) const
-{
-#ifdef CHECK
-  // check ranges
-  if((jx < 0) || (jx >= mesh->LocalNx) || (jy < 0) || (jy > mesh->LocalNy) || (jz < 0) || (jz >= mesh->LocalNz)) {
-    throw BoutException("Vector3D: getData (%d,%d,%d) out of bounds\n", jx, jy, jz);
-  }
-#endif
-
-  *rptr = x(jx,jy,jz); rptr++;
-  *rptr = y(jx,jy,jz); rptr++;
-  *rptr = z(jx,jy,jz);
-  
-  return 3;
-}
-
-int Vector3D::setData(int jx, int jy, int jz, void *vptr)
-{
-#ifdef CHECK
-  // check ranges
-  if((jx < 0) || (jx >= mesh->LocalNx) || (jy < 0) || (jy >= mesh->LocalNy) || (jz < 0) || (jz >= mesh->LocalNz)) {
-    throw BoutException("Vector3D: setData (%d,%d,%d) out of bounds\n", jx, jy, jz);
-  }
-#endif
-  BoutReal *rptr = (BoutReal*) vptr;
-  x(jx,jy,jz) = *rptr; rptr++;
-  y(jx,jy,jz) = *rptr; rptr++;
-  z(jx,jy,jz) = *rptr;
-
-  return 3*sizeof(BoutReal);
-}
-
-int Vector3D::setData(int jx, int jy, int jz, BoutReal *rptr)
-{
-#ifdef CHECK
-  // check ranges
-  if((jx < 0) || (jx >= mesh->LocalNx) || (jy < 0) || (jy >= mesh->LocalNy) || (jz < 0) || (jz >= mesh->LocalNz)) {
-    throw BoutException("Vector3D: setData (%d,%d,%d) out of bounds\n", jx, jy, jz);
-  }
-#endif
-
-  x(jx,jy,jz) = *rptr; rptr++;
-  y(jx,jy,jz) = *rptr; rptr++;
-  z(jx,jy,jz) = *rptr;
-  
-  return 3;
 }
 
 ///////////////////// BOUNDARY CONDITIONS //////////////////

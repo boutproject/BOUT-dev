@@ -3,7 +3,7 @@
 """Driver which runs 3D_diffusion by submitting a job to a PBS using
 additional options."""
 
-from bout_runners.bout_runners import PBS_runner
+from bout_runners import PBS_runner
 
 my_runs = PBS_runner(\
             # Although nproc is a member of basic_runner, it is used

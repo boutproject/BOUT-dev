@@ -8,9 +8,11 @@ public:
   LaplaceXZcyclic(Mesh *m, Options *options);
   ~LaplaceXZcyclic();
   
-  void setCoefs(const Field2D &A, const Field2D &B);
+  using LaplaceXZ::setCoefs;
+  void setCoefs(const Field2D &A, const Field2D &B) override;
   
-  Field3D solve(const Field3D &b, const Field3D &x0);
+  using LaplaceXZ::solve;
+  Field3D solve(const Field3D &b, const Field3D &x0) override;
 private:
   Mesh *mesh;   ///< The mesh this operates on, provides metrics and communication
 

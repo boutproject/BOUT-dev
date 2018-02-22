@@ -36,11 +36,13 @@
 #include <utils.hxx>
 #include <fft.hxx>
 #include <bout/sys/timer.hxx>
+#include <bout/openmpwrap.hxx>
 
 #include "spt.hxx"
 
-LaplaceSPT::LaplaceSPT(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0) {
-  
+LaplaceSPT::LaplaceSPT(Options *opt)
+    : Laplacian(opt), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
+
   if(mesh->periodicX) {
       throw BoutException("LaplaceSPT does not work with periodicity in the x direction (mesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
     }
@@ -76,7 +78,8 @@ const FieldPerp LaplaceSPT::solve(const FieldPerp &b) {
 }
 
 const FieldPerp LaplaceSPT::solve(const FieldPerp &b, const FieldPerp &x0) {
-  FieldPerp x;
+  Mesh *mesh = b.getMesh();
+  FieldPerp x(mesh);
   x.allocate();
   
   if( (inner_boundary_flags & INVERT_SET) || (outer_boundary_flags & INVERT_SET) ) {
@@ -113,7 +116,8 @@ const FieldPerp LaplaceSPT::solve(const FieldPerp &b, const FieldPerp &x0) {
  */
 const Field3D LaplaceSPT::solve(const Field3D &b) {
   Timer timer("invert");
-  Field3D x;
+  Mesh *mesh = b.getMesh();
+  Field3D x(mesh);
   x.allocate();
   
   for(int jy=ys; jy <= ye; jy++) {
@@ -132,7 +136,7 @@ const Field3D LaplaceSPT::solve(const Field3D &b) {
       running = next(alldata[jy]) == 0;
   }while(running);
 
-  FieldPerp xperp;
+  FieldPerp xperp(mesh);
   xperp.allocate();
   
   // All calculations finished. Get result
@@ -280,14 +284,14 @@ int LaplaceSPT::start(const FieldPerp &b, SPT_data &data) {
   }
   
   /// Set matrix elements
-  tridagMatrix(data.avec, data.bvec, data.cvec,
-               data.bk, data.jy, global_flags, inner_boundary_flags, outer_boundary_flags, &A, &C, &D);
-  
+  tridagMatrix(data.avec, data.bvec, data.cvec, data.bk, data.jy, global_flags,
+               inner_boundary_flags, outer_boundary_flags, &Acoef, &Ccoef, &Dcoef);
+
   data.proc = 0; //< Starts at processor 0
   data.dir = 1;
   
   if(mesh->firstX()) {
-    #pragma omp parallel for
+    BOUT_OMP(parallel for)
     for(int kz = 0; kz <= maxmode; kz++) {
       dcomplex bet, u0;
       // Start tridiagonal solve
@@ -336,7 +340,7 @@ int LaplaceSPT::next(SPT_data &data) {
     if(mesh->lastX()) {
       // Last processor, turn-around
       
-      #pragma omp parallel for
+      BOUT_OMP(parallel for)
       for(int kz = 0; kz <= maxmode; kz++) {
         dcomplex bet, u0;
         dcomplex gp, up;
@@ -364,7 +368,7 @@ int LaplaceSPT::next(SPT_data &data) {
     }else if(data.dir > 0) {
       // In the middle of X, forward direction
 
-      #pragma omp parallel for
+      BOUT_OMP(parallel for)
       for(int kz = 0; kz <= maxmode; kz++) {
 	dcomplex bet, u0;
 	bet = dcomplex(data.buffer[4*kz], data.buffer[4*kz + 1]);
@@ -387,7 +391,7 @@ int LaplaceSPT::next(SPT_data &data) {
     }else if(mesh->firstX()) {
       // Back to the start
 
-#pragma omp parallel for
+BOUT_OMP(parallel for)
       for(int kz = 0; kz <= maxmode; kz++) {
 	dcomplex gp, up;
 	gp = dcomplex(data.buffer[4*kz], data.buffer[4*kz + 1]);
@@ -399,7 +403,7 @@ int LaplaceSPT::next(SPT_data &data) {
     }else {
       // Middle of X, back-substitution stage
 
-      #pragma omp parallel for
+      BOUT_OMP(parallel for)
       for(int kz = 0; kz <= maxmode; kz++) {
 	dcomplex gp = dcomplex(data.buffer[4*kz], data.buffer[4*kz + 1]);
 	dcomplex up = dcomplex(data.buffer[4*kz + 2], data.buffer[4*kz + 3]);

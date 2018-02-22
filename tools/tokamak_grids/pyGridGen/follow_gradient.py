@@ -3,13 +3,7 @@ from __future__ import division
 from builtins import range
 from past.utils import old_div
 from builtins import object
-#;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-# Follow the gradient from a given point to a target f
-#
 
-# Calculate dR/df and dZ/df for use by LSODE
-# Input: pos[0] = R, pos[1] = Z
-# Output [0] = dR/df = -Bz/B^2 , [1] = dZ/df = Br/B^2
 import sys
 import numpy
 from bunch import Bunch
@@ -42,7 +36,13 @@ from saveobject import saveobject
 
 global rd_com, idata, lastgoodf, lastgoodpos, Rpos, Zpos, ood, tol, Ri, Zi, dR, dZ
 
+#;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+# Follow the gradient from a given point to a target f
+#
 
+# Calculate dR/df and dZ/df for use by LSODE
+# Input: pos[0] = R, pos[1] = Z
+# Output [0] = dR/df = -Bz/B^2 , [1] = dZ/df = Br/B^2
 def radial_differential( fcur, pos):
 
 
@@ -56,13 +56,13 @@ def radial_differential( fcur, pos):
     ood = 0
 
     if status ==0 :
-    # No error in localgradient.
+        # No error in localgradient.
         lastgoodf = fcur
         lastgoodpos = pos
 
-    # If status NE 0 then an error occurred.
-    # Allow dfdz to cause an error so escape LSODE
     else:
+        # If status NE 0 then an error occurred.
+        # Allow dfdz to cause an error so escape LSODE
         ood = 1 # Out Of Domain
 
   #if numpy.size(boundary) > 1 :
@@ -124,18 +124,19 @@ def follow_gradient( interp_data, R, Z, ri0, zi0, ftarget, ri, zi, status=0,
 
     idata = interp_data
 
-    if boundary != None :
+    #if boundary != None :
+    if not boundary is None :
         bndry = boundary
         ri0c = ri0
         zi0c = zi0
     else:
         bndry = 0
-
+    
     ood = 0
 
     if ftarget==None : print(ftarget)
 
-  # Get starting f
+    # Get starting f
     out=local_gradient( interp_data, ri0, zi0, status=status, f=0., dfdr=None, dfdz=None)
     status=out.status
     f0=out.f
@@ -157,7 +158,7 @@ def follow_gradient( interp_data, R, Z, ri0, zi0, ftarget, ri, zi, status=0,
     nsteps = solver.steps
 
     lstat=0
-#    print 'nsteps=',nsteps
+    #print 'nsteps=',nsteps
     #print rzold, rznew
     #
     #sys.exit()

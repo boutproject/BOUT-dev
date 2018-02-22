@@ -46,6 +46,8 @@
 
 #include <output.hxx>
 
+#include "unused.hxx"
+
 #define ZERO        RCONST(0.)
 #define ONE         RCONST(1.0)
 
@@ -62,31 +64,22 @@ static int ida_pre(BoutReal t, N_Vector yy,
 		   BoutReal cj, BoutReal delta, 
 		   void *user_data, N_Vector tmp);
 
-IdaSolver::IdaSolver(Options *opts) : Solver(opts)
-{
+IdaSolver::IdaSolver(Options *opts) : Solver(opts) {
   has_constraints = true; ///< This solver has constraints
 }
 
-IdaSolver::~IdaSolver()
-{
-  if(initialised) {
-    // Free IDA memory
-    
-    
-    
-  }
-}
+IdaSolver::~IdaSolver() { }
 
 /**************************************************************************
  * Initialise
  **************************************************************************/
 
- int IdaSolver::init(bool restarting, int nout, BoutReal tstep) {
+ int IdaSolver::init(int nout, BoutReal tstep) {
 
   TRACE("Initialising IDA solver");
 
   /// Call the generic initialisation first
-  if(Solver::init(restarting, nout, tstep))
+  if (Solver::init(nout, tstep))
     return 1;
   
   // Save nout and tstep for use in run
@@ -103,7 +96,7 @@ IdaSolver::~IdaSolver()
   // Get total problem size
   int neq;
   if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
-    output.write("\tERROR: MPI_Allreduce failed!\n");
+    output_error.write("\tERROR: MPI_Allreduce failed!\n");
     return 1;
   }
   
@@ -204,9 +197,7 @@ IdaSolver::~IdaSolver()
  **************************************************************************/
 
 int IdaSolver::run() {
-#ifdef CHECK
-  int msg_point = msg_stack.push("IDA IdaSolver::run()");
-#endif
+  TRACE("IDA IdaSolver::run()");
   
   if(!initialised)
     throw BoutException("IdaSolver not initialised\n");
@@ -231,20 +222,14 @@ int IdaSolver::run() {
     }
   }
 
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
-
   return 0;
 }
 
 BoutReal IdaSolver::run(BoutReal tout) {
+  TRACE("Running solver: solver::run(%e)", tout);
+
   if(!initialised)
     throw BoutException("ERROR: Running IDA solver without initialisation\n");
-
-#ifdef CHECK
-  int msg_point = msg_stack.push("Running solver: solver::run(%e)", tout);
-#endif
   
   rhs_ncalls = 0;
 
@@ -260,13 +245,9 @@ BoutReal IdaSolver::run(BoutReal tout) {
   run_rhs(simtime);
   
   if(flag < 0) {
-    output.write("ERROR IDA solve failed at t = %e, flag = %d\n", simtime, flag);
+    output_error.write("ERROR IDA solve failed at t = %e, flag = %d\n", simtime, flag);
     return -1.0;
   }
-  
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 
   return simtime;
 }
@@ -277,9 +258,7 @@ BoutReal IdaSolver::run(BoutReal tout) {
 
 void IdaSolver::res(BoutReal t, BoutReal *udata, BoutReal *dudata, BoutReal *rdata)
 {
-#ifdef CHECK
-  int msg_point = msg_stack.push("Running RHS: IdaSolver::res(%e)", t);
-#endif
+  TRACE("Running RHS: IdaSolver::res(%e)", t);
   
   // Load state from udata
   load_vars(udata);
@@ -297,10 +276,6 @@ void IdaSolver::res(BoutReal t, BoutReal *udata, BoutReal *dudata, BoutReal *rda
     if(idd[i] > 0.5) // 1 -> differential, 0 -> algebraic
       rdata[i] -= dudata[i];
   }
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 }
 
 /**************************************************************************
@@ -308,9 +283,7 @@ void IdaSolver::res(BoutReal t, BoutReal *udata, BoutReal *dudata, BoutReal *rda
  **************************************************************************/
 
 void IdaSolver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal *udata, BoutReal *rvec, BoutReal *zvec) {
-#ifdef CHECK
-  int msg_point = msg_stack.push("Running preconditioner: IdaSolver::pre(%e)", t);
-#endif
+  TRACE("Running preconditioner: IdaSolver::pre(%e)", t);
 
   BoutReal tstart = MPI_Wtime();
 
@@ -336,10 +309,6 @@ void IdaSolver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal *udata, Bo
 
   pre_Wtime += MPI_Wtime() - tstart;
   pre_ncalls++;
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
 }
 
 /**************************************************************************
@@ -353,8 +322,8 @@ static int idares(BoutReal t,
   BoutReal *udata = NV_DATA_P(u);
   BoutReal *dudata = NV_DATA_P(du);
   BoutReal *rdata = NV_DATA_P(rr);
-  
-  IdaSolver *s = (IdaSolver*) user_data;
+
+  IdaSolver *s = static_cast<IdaSolver *>(user_data);
 
   // Calculate residuals
   s->res(t, udata, dudata, rdata);
@@ -363,25 +332,20 @@ static int idares(BoutReal t,
 }
 
 /// Residual function for BBD preconditioner
-static int ida_bbd_res(IDAINT Nlocal, BoutReal t, 
-		       N_Vector u, N_Vector du, N_Vector rr, 
-		       void *user_data)
-{
+static int ida_bbd_res(IDAINT UNUSED(Nlocal), BoutReal t, N_Vector u, N_Vector du,
+                       N_Vector rr, void *user_data) {
   return idares(t, u, du, rr, user_data);
 }
 
 // Preconditioner function
-static int ida_pre(BoutReal t, N_Vector yy, 	 
-		   N_Vector yp, N_Vector rr, 	 
-		   N_Vector rvec, N_Vector zvec, 	 
-		   BoutReal cj, BoutReal delta, 
-		   void *user_data, N_Vector tmp)
-{
+static int ida_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector UNUSED(rr),
+                   N_Vector rvec, N_Vector zvec, BoutReal cj, BoutReal delta,
+                   void *user_data, N_Vector UNUSED(tmp)) {
   BoutReal *udata = NV_DATA_P(yy);
   BoutReal *rdata = NV_DATA_P(rvec);
   BoutReal *zdata = NV_DATA_P(zvec);
-  
-  IdaSolver *s = (IdaSolver*) user_data;
+
+  IdaSolver *s = static_cast<IdaSolver *>(user_data);
 
   // Calculate residuals
   s->pre(t, cj, delta, udata, rdata, zdata);

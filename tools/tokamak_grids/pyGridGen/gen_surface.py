@@ -29,9 +29,12 @@ def range ( first, last ):
 
 
 def gen_surface ( mesh=None, period=None, last=None, xi=None):
+    
     global m, ys, xind, nd, domain, visited
+    
     if mesh != None :
-        # Starting
+        # initializing gen_surface 
+        # the global patemeters are initialized if mesh is not None
         m = mesh
         xind = 0 # Radial surface
         nd = numpy.size(mesh.npol) # Number of domains
@@ -43,7 +46,6 @@ def gen_surface ( mesh=None, period=None, last=None, xi=None):
         if numpy.size(ys) > 1 :
             for i in range (1, nd+1) : ys[i] = ys[i-1] + mesh.npol[i-1]
         
-    
         # visited marks which domains have been used
         visited = numpy.zeros(nd).astype(int)
     
@@ -57,7 +59,7 @@ def gen_surface ( mesh=None, period=None, last=None, xi=None):
     # Get the next surface
     ny = 0
     period = 0 # Mark as non-periodic
-    last = 0 # mark as not the last
+    last = 0   # mark as not the last
     xi = xind
     while True:
         if visited[domain] == 1 :
@@ -68,14 +70,15 @@ def gen_surface ( mesh=None, period=None, last=None, xi=None):
     
         # Get the range of indices for this domain        
         
-        yi = list(range(ys[domain], ys[domain]+m.npol-1))
-        
+        #yi = list(range(ys[domain], ys[domain]+m.npol-1)) # H.SETO (QST)
+        yi = list(range(ys[domain], ys[domain]+m.npol[domain]-1))
         
         if ny == 0 :
             yinds = yi 
         else: yinds = [yinds, yi]
         
-        ny = ny + m.npol
+        #ny = ny + m.npol # H.SETO (QST)
+        ny = ny + m.npol[domain]
 
         visited[domain] = 1 # Mark domain as visited
     
@@ -90,7 +93,7 @@ def gen_surface ( mesh=None, period=None, last=None, xi=None):
             break
             
             
-  # Find a domain which hasn't been visited
+    # Find a domain which hasn't been visited
     w = numpy.size(numpy.where(visited == 0))
     
     if w != 0 :

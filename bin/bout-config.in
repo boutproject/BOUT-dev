@@ -5,11 +5,19 @@
 # Borrowed idea and some code from NetCDF nc-config
 #
 #
+# Configure sets these variables to the paths as they are
+# at that time. If "make install" is used then the values
+# are replaced with the install paths
+
+
+BOUT_LIB_PATH=@BOUT_LIB_PATH@
+BOUT_INCLUDE_PATH=@BOUT_INCLUDE_PATH@
+
+BOUT_CONFIG_FILE=@PREFIX@/make.config
 
 cc="@MPICXX@"
 cxx="@MPICXX@"
 ld="@MPICXX@"
-fc="none"
 checks="@CHECK_LEVEL@"
 cflags="@CONFIG_CFLAGS@"
 libs="@CONFIG_LDFLAGS@"
@@ -17,7 +25,6 @@ libs="@CONFIG_LDFLAGS@"
 version="@BOUT_VERSION@"
 git="@GIT_REVISION@"
 checks="@CHECK_LEVEL@"
-prefix="@PREFIX@"
 idlpath="@IDLCONFIGPATH@"
 pythonpath="@PYTHONCONFIGPATH@"
 
@@ -30,7 +37,6 @@ has_ida="@HAS_IDA@"
 has_lapack="@HAS_LAPACK@"
 has_petsc="@HAS_PETSC@"
 has_slepc="@HAS_SLEPC@"
-has_hypre="@HAS_HYPRE@"
 has_mumps="@HAS_MUMPS@"
 has_arkode="@HAS_ARKODE@"
 
@@ -46,21 +52,20 @@ Usage: bout-config [OPTION]
 Available values for OPTION include:
 
   --help      display this help message and exit
-  --all       Print all cofiguration
+  --all       Print all configuration
 
   --cc        C compiler
   --cxx       C++ compiler
-  --fc        Fortran compiler
   --ld        Linker
   --cflags    pre-processor and compiler flags
   --libs      library linking flags
   
-  --version   BOUT++ version
-  --git       Git commit
-  --checks    Run-time checking level
-  --prefix    Install prefix
-  --idl       IDL path
-  --python    Python path
+  --version      BOUT++ version
+  --git          Git commit
+  --checks       Run-time checking level
+  --config-file  Full path to the configuration file
+  --idl          IDL path
+  --python       Python path
 
   --has-netcdf  NetCDF file support
   --has-pnetcdf Parallel NetCDF file support
@@ -71,7 +76,6 @@ Available values for OPTION include:
   --has-lapack  LAPACK support
   --has-petsc   PETSc support
   --has-slepc   SLEPc support
-  --has-hypre   Hypre support
   --has-mumps   MUMPS support
 
   --petsc-version
@@ -96,7 +100,7 @@ all()
         echo "  --version     -> $version"
         echo "  --git         -> $git"
         echo "  --checks      -> $checks"
-        echo "  --prefix      -> $prefix"
+        echo "  --config-file -> $BOUT_CONFIG_FILE"
         echo "  --idl         -> $idlpath"
         echo "  --python      -> $pythonpath"
         echo
@@ -109,7 +113,6 @@ all()
         echo "  --has-lapack  -> $has_lapack"
         echo "  --has-petsc   -> $has_petsc"
         echo "  --has-slepc   -> $has_slepc"
-        echo "  --has-hypre   -> $has_hypre"
         echo "  --has-mumps   -> $has_mumps"
 	echo "  --has-arkode  -> $has_arkode"
         echo
@@ -174,8 +177,8 @@ while test $# -gt 0; do
         echo $checks
         ;;
 
-    --prefix)
-        echo $prefix
+    --config-file)
+        echo $BOUT_CONFIG_FILE
         ;;
 
     --idl)
@@ -220,10 +223,6 @@ while test $# -gt 0; do
 
     --has-slepc)
         echo $has_slepc
-        ;;
-
-    --has-hypre)
-        echo $has_hypre
         ;;
 
     --has-mumps)

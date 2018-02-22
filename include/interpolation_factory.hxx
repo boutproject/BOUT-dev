@@ -24,7 +24,7 @@ private:
   /// Look up interpolations in database
   Interpolation* findInterpolation(const string &name);
 public:
-  ~InterpolationFactory();
+  ~InterpolationFactory() {};
 
   /// Return a pointer to the only instance
   static InterpolationFactory* getInstance();

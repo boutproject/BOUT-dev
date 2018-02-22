@@ -5,17 +5,17 @@
 #include <utils.hxx>
 #include <boutexception.hxx>
 #include <msg_stack.hxx>
-
+#include <bout/openmpwrap.hxx>
 #include <cmath>
 
 #include <output.hxx>
 
-RK3SSP::RK3SSP(Options *opt) : Solver(opt), f(0) {
+RK3SSP::RK3SSP(Options *opt) : Solver(opt), f(nullptr) {
   
 }
 
 RK3SSP::~RK3SSP() {
-  if(f != 0) {
+  if(f != nullptr) {
     delete[] f;
     
     delete[] u1;
@@ -32,12 +32,12 @@ void RK3SSP::setMaxTimestep(BoutReal dt) {
   timestep = dt; // Won't be used this time, but next
 }
 
-int RK3SSP::init(bool restarting, int nout, BoutReal tstep) {
+int RK3SSP::init(int nout, BoutReal tstep) {
 
-  int msg_point = msg_stack.push("Initialising RK3 SSP solver");
+  TRACE("Initialising RK3 SSP solver");
   
   /// Call the generic initialisation first
-  if(Solver::init(restarting, nout, tstep))
+  if (Solver::init(nout, tstep))
     return 1;
   
   output << "\n\tRunge-Kutta 3rd-order SSP solver\n";
@@ -76,13 +76,11 @@ int RK3SSP::init(bool restarting, int nout, BoutReal tstep) {
   OPTION(options, timestep, max_timestep); // Starting timestep
   OPTION(options, mxstep, 500); // Maximum number of steps between outputs
 
-  msg_stack.pop(msg_point);
-
   return 0;
 }
 
 int RK3SSP::run() {
-  int msg_point = msg_stack.push("RK3SSP::run()");
+  TRACE("RK3SSP::run()");
   
   for(int s=0;s<nsteps;s++) {
     BoutReal target = simtime + out_timestep;
@@ -124,8 +122,6 @@ int RK3SSP::run() {
     rhs_ncalls = 0;
   }
   
-  msg_stack.pop(msg_point);
-  
   return 0;
 }
 
@@ -135,7 +131,7 @@ void RK3SSP::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutReal 
   run_rhs(curtime);
   save_derivs(L);
   
-  #pragma omp parallel for
+  BOUT_OMP(parallel for)
   for(int i=0;i<nlocal;i++)
     u1[i] = start[i] + dt*L[i];
   
@@ -143,7 +139,7 @@ void RK3SSP::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutReal 
   run_rhs(curtime + dt);
   save_derivs(L);
   
-  #pragma omp parallel for 
+  BOUT_OMP(parallel for )
   for(int i=0;i<nlocal;i++)
     u2[i] = 0.75*start[i] + 0.25*u1[i] + 0.25*dt*L[i];
   
@@ -151,7 +147,7 @@ void RK3SSP::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutReal 
   run_rhs(curtime + 0.5*dt);
   save_derivs(L);
  
-  #pragma omp parallel for
+  BOUT_OMP(parallel for)
   for(int i=0;i<nlocal;i++)
     result[i] = (1./3)*start[i] + (2./3.)*(u2[i] + dt*L[i]);
 }

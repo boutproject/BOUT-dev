@@ -247,10 +247,7 @@ const Field2D N0tanh(BoutReal n0_height, BoutReal n0_ave, BoutReal n0_width, Bou
 
 const Field3D field_larger(const Field3D &f, const BoutReal limit);
 
-const Field2D Invert_laplace2(const Field2D &f, int flags);
-
-const Field2D Invert_laplace2(const Field2D &f, int flags)
-{
+const Field2D Invert_laplace2(const Field2D &f, int flags) {
   Field3D f_tmp, result_tmp;
   Field2D result;
   f_tmp.allocate();
@@ -264,10 +261,10 @@ const Field2D Invert_laplace2(const Field2D &f, int flags)
   result_tmp = smooth_x(result_tmp);
   result_tmp = nl_filter_y(result_tmp, 1);
 
-  for(int jx=0;jx<mesh->LocalNx;jx++)
-    for(int jy=0;jy<mesh->LocalNy;jy++)
-      result[jx][jy] = result_tmp[jx][jy][0];
-
+  for(auto i : result) {
+    result[i] = result_tmp[i];
+  }
+  
   return(result);
 }
 
@@ -290,27 +287,19 @@ const Field3D Grad2_par2new(const Field3D &f) {
    * This function implements d2/dy2 where y is the poloidal coordinate theta
    */
 
-
-#ifdef CHECK
-  int msg_pos = msg_stack.push("Grad2_par2new( Field3D )");
-#endif
-
-
-
+  
+  TRACE("Grad2_par2new( Field3D )");
+  
   Field3D result = D2DY2(f);
   
-
 #ifdef TRACK
   result.name = "Grad2_par2new("+f.name+")";
 #endif
-#ifdef CHECK
-  msg_stack.pop(msg_pos);
-#endif
+  
   return result;
 }
 
-const Field2D N0tanh(BoutReal n0_height, BoutReal n0_ave, BoutReal n0_width, BoutReal n0_center, BoutReal n0_bottom_x)
-{
+const Field2D N0tanh(BoutReal n0_height, BoutReal n0_ave, BoutReal n0_width, BoutReal n0_center, BoutReal n0_bottom_x) {
   Field2D result;
   result.allocate();
 
@@ -321,46 +310,41 @@ const Field2D N0tanh(BoutReal n0_height, BoutReal n0_ave, BoutReal n0_width, Bou
   Grid_NXlimit = n0_bottom_x * Grid_NX; 
   output.write("Jysep1_1 = %i   Grid number = %e\n", int(Jysep), Grid_NX);
   
-  if (Jysep > 0.) //for single null geometry
-    {
-      BoutReal Jxsep, Jysep2;
-      mesh->get(Jxsep, "ixseps1");
-      mesh->get(Jysep2, "jyseps2_2");
-      //output.write("Jysep2_2 = %i   Ixsep1 = %i\n", int(Jysep2), int(Jxsep));
-
-      for(int jx=0;jx<mesh->LocalNx;jx++)
-	{
-	  BoutReal mgx = mesh->GlobalX(jx);
-	  BoutReal xgrid_num = (Jxsep+1.)/Grid_NX;
-	  //output.write("mgx = %e xgrid_num = %e\n", mgx);
-	  for (int jy=0;jy<mesh->LocalNy;jy++)
-	    {
-	      int globaly = mesh->YGLOBAL(jy);
-	      //output.write("local y = %i;   global y: %i\n", jy, globaly);
-	      if ( mgx > xgrid_num || (globaly<=int(Jysep)-4) || (globaly>int(Jysep2)) )
-		mgx = xgrid_num;
-	      BoutReal rlx = mgx - n0_center;
-	      BoutReal temp = exp(rlx/n0_width);
-	      BoutReal dampr = ((temp - 1.0 / temp) / (temp + 1.0 / temp));
-	      result[jx][jy] = 0.5*(1.0 - dampr) * n0_height + n0_ave;  
-	    }
-	}
+  if (Jysep > 0.) { //for single null geometry
+    
+    BoutReal Jxsep, Jysep2;
+    mesh->get(Jxsep, "ixseps1");
+    mesh->get(Jysep2, "jyseps2_2");
+    //output.write("Jysep2_2 = %i   Ixsep1 = %i\n", int(Jysep2), int(Jxsep));
+    
+    for (int jx=0;jx<mesh->LocalNx;jx++) {
+      BoutReal mgx = mesh->GlobalX(jx);
+      BoutReal xgrid_num = (Jxsep+1.)/Grid_NX;
+      //output.write("mgx = %e xgrid_num = %e\n", mgx);
+      for (int jy=0;jy<mesh->LocalNy;jy++) {
+        int globaly = mesh->YGLOBAL(jy);
+        //output.write("local y = %i;   global y: %i\n", jy, globaly);
+        if ( mgx > xgrid_num || (globaly<=int(Jysep)-4) || (globaly>int(Jysep2)) )
+          mgx = xgrid_num;
+        BoutReal rlx = mgx - n0_center;
+        BoutReal temp = exp(rlx/n0_width);
+        BoutReal dampr = ((temp - 1.0 / temp) / (temp + 1.0 / temp));
+        result(jx,jy) = 0.5*(1.0 - dampr) * n0_height + n0_ave;  
+      }
     }
-  else //circular geometry
-    {
-      for(int jx=0;jx<mesh->LocalNx;jx++)
-	{
-	  BoutReal mgx = mesh->GlobalX(jx);
-	  BoutReal xgrid_num = Grid_NXlimit/Grid_NX;
-	  if (mgx > xgrid_num)
-	    mgx = xgrid_num;
-	  BoutReal rlx = mgx - n0_center;
-	  BoutReal temp = exp(rlx/n0_width);
-	  BoutReal dampr = ((temp - 1.0 / temp) / (temp + 1.0 / temp));
-	  for(int jy=0;jy<mesh->LocalNy;jy++)
-	    result[jx][jy] = 0.5*(1.0 - dampr) * n0_height + n0_ave;  
-	}
+  } else { //circular geometry
+    for (int jx=0;jx<mesh->LocalNx;jx++) {
+      BoutReal mgx = mesh->GlobalX(jx);
+      BoutReal xgrid_num = Grid_NXlimit/Grid_NX;
+      if (mgx > xgrid_num)
+        mgx = xgrid_num;
+      BoutReal rlx = mgx - n0_center;
+      BoutReal temp = exp(rlx/n0_width);
+      BoutReal dampr = ((temp - 1.0 / temp) / (temp + 1.0 / temp));
+      for(int jy=0;jy<mesh->LocalNy;jy++)
+        result(jx,jy) = 0.5*(1.0 - dampr) * n0_height + n0_ave;  
     }
+  }
   
   mesh->communicate(result);
 
@@ -368,10 +352,12 @@ const Field2D N0tanh(BoutReal n0_height, BoutReal n0_ave, BoutReal n0_width, Bou
 }
   
   
-int physics_init(bool restarting)
-{
+int physics_init(bool restarting) {
   bool noshear;
   
+  // Get the metric tensor
+  Coordinates *coord = mesh->coordinates();
+
   output.write("Solving high-beta flute reduced equations\n");
   output.write("\tFile    : %s\n", __FILE__);
   output.write("\tCompiled: %s at %s\n", __DATE__, __TIME__);
@@ -392,11 +378,11 @@ int physics_init(bool restarting)
 
   // Load metrics
   if(mesh->get(Rxy,  "Rxy")) { // m
-    output.write("Error: Cannot read Rxy from grid\n");
+    output_error.write("Error: Cannot read Rxy from grid\n");
     return 1;
   }
   if(mesh->get(Bpxy, "Bpxy")) { // T
-    output.write("Error: Cannot read Bpxy from grid\n");
+    output_error.write("Error: Cannot read Bpxy from grid\n");
     return 1;
   }
   mesh->get(Btxy, "Btxy"); // T
@@ -614,26 +600,23 @@ int physics_init(bool restarting)
   if(noshear) {
     if(include_curvature)
       b0xcv.z += I*b0xcv.x;
-    mesh->ShiftXderivs = false;
     I = 0.0;
   }
   
   //////////////////////////////////////////////////////////////
   // SHIFTED RADIAL COORDINATES
 
-  if(mesh->ShiftXderivs) {
-    if(mesh->IncIntShear) {
-      // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
-      mesh->IntShiftTorsion = I;
+  if(mesh->IncIntShear) {
+    // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
+    coord->IntShiftTorsion = I;
       
-    }else {
-      // Dimits style, using local coordinate system
-      if(include_curvature)
-	b0xcv.z += I*b0xcv.x;
-      I = 0.0;  // I disappears from metric
-    }
+  }else {
+    // Dimits style, using local coordinate system
+    if(include_curvature)
+      b0xcv.z += I*b0xcv.x;
+    I = 0.0;  // I disappears from metric
   }
-
+  
   //////////////////////////////////////////////////////////////
   // NORMALISE QUANTITIES
   
@@ -668,100 +651,96 @@ int physics_init(bool restarting)
   Upara1 = KB*Tebar*eV_K/Mi/Va/Va;
   output.write("vorticity cinstant: Upara0 = %e     Upara1 = %e\n", Upara0, Upara1);
   
-  if (diamag)
-    {
-      Nipara1 = KB * Tibar*eV_K/ (Zi*ee*Bbar*Lbar*Va);
-      Tipara2 = Nipara1;
-      Tepara2 = KB * Tebar*eV_K / (ee * Bbar * Lbar * Va);
-      Tepara3 = Bbar / (ee * MU0 * Nbar * density * Lbar * Va);
-      output.write("Nipara1 = %e     Tipara2 = %e\n", Nipara1, Tipara2);    
-      output.write("Tepara2 = %e     Tepara3 = %e\n", Tepara2, Tepara3);
-    }
+  if (diamag) {
+    Nipara1 = KB * Tibar*eV_K/ (Zi*ee*Bbar*Lbar*Va);
+    Tipara2 = Nipara1;
+    Tepara2 = KB * Tebar*eV_K / (ee * Bbar * Lbar * Va);
+    Tepara3 = Bbar / (ee * MU0 * Nbar * density * Lbar * Va);
+    output.write("Nipara1 = %e     Tipara2 = %e\n", Nipara1, Tipara2);    
+    output.write("Tepara2 = %e     Tepara3 = %e\n", Tepara2, Tepara3);
+  }
   
-  if (compress0)
-    {
-      output.write("Including compression (Vipar) effects\n");
-      Vipara = MU0 * KB * Nbar*density * Tebar*eV_K / (Bbar*Bbar);
-      Vepara = Bbar/(MU0*Zi*ee*Nbar*density*Lbar*Va);
-      output.write("Normalized constant for Vipar :   Vipara = %e\n", Vipara);
-      output.write("Normalized constant for Vepar :   Vepara = %e\n", Vepara);
-    }
+  if (compress0) {
+    output.write("Including compression (Vipar) effects\n");
+    Vipara = MU0 * KB * Nbar*density * Tebar*eV_K / (Bbar*Bbar);
+    Vepara = Bbar/(MU0*Zi*ee*Nbar*density*Lbar*Va);
+    output.write("Normalized constant for Vipar :   Vipara = %e\n", Vipara);
+    output.write("Normalized constant for Vepar :   Vepara = %e\n", Vepara);
+  }
 
-  if (diffusion_par >0.0)
-    {
-      Tipara1 = 2.0/ 3.0 / (Lbar * Va);
-      Tepara1 = Tipara1 / Zi;
-    }
-
-  if(vac_lund > 0.0) {
+  if (diffusion_par > 0.0) {
+    Tipara1 = 2.0/ 3.0 / (Lbar * Va);
+    Tepara1 = Tipara1 / Zi;
+  }
+  
+  if (vac_lund > 0.0) {
     output.write("        Vacuum  Tau_R = %e s   eta = %e Ohm m\n", vac_lund * Tbar, 
 		 MU0 * Lbar * Lbar / (vac_lund * Tbar));
     vac_resist = 1. / vac_lund;
-  }else {
+  } else {
     output.write("        Vacuum  - Zero resistivity -\n");
     vac_resist = 0.0;
   }
-  if(core_lund > 0.0) {
+  if (core_lund > 0.0) {
     output.write("        Core    Tau_R = %e s   eta = %e Ohm m\n", core_lund * Tbar,
 		 MU0 * Lbar * Lbar / (core_lund * Tbar));
     core_resist = 1. / core_lund;
-  }else {
+  } else {
     output.write("        Core    - Zero resistivity -\n");
     core_resist = 0.0;
   }
 
-  if(hyperresist > 0.0) {
+  if (hyperresist > 0.0) {
     output.write("    Hyper-resistivity coefficient: %e\n", hyperresist);
     dump.add(hyper_eta_x, "hyper_eta_x", 1);
     dump.add(hyper_eta_z, "hyper_eta_z", 1);
   }
-
-  if(ehyperviscos > 0.0) {
+  
+  if (ehyperviscos > 0.0) {
     output.write("    electron Hyper-viscosity coefficient: %e\n", ehyperviscos);
   }
 
-  if(hyperviscos > 0.0) {
+  if (hyperviscos > 0.0) {
     output.write("    Hyper-viscosity coefficient: %e\n", hyperviscos);
     dump.add(hyper_mu_x, "hyper_mu_x", 1);
   }
 
-  if(diffusion_par > 0.0) {
+  if (diffusion_par > 0.0) {
     output.write("    diffusion_par: %e\n", diffusion_par);
     dump.add(diffusion_par, "diffusion_par", 0);
   }
-
-
+  
   //M: 4th order diffusion of p
-  if(diffusion_n4 > 0.0) {
+  if (diffusion_n4 > 0.0) {
     output.write("    diffusion_n4: %e\n", diffusion_n4);
     dump.add(diffusion_n4, "diffusion_n4", 0);
   }
 
   //M: 4th order diffusion of Ti
-  if(diffusion_ti4 > 0.0) {
+  if (diffusion_ti4 > 0.0) {
     output.write("    diffusion_ti4: %e\n", diffusion_ti4);
     dump.add(diffusion_ti4, "diffusion_ti4", 0);
   }
   
   //M: 4th order diffusion of Te
-  if(diffusion_te4 > 0.0) {
+  if (diffusion_te4 > 0.0) {
     output.write("    diffusion_te4: %e\n", diffusion_te4);
     dump.add(diffusion_te4, "diffusion_te4", 0);
   }
 
   //M: 4th order diffusion of Vipar
-  if(diffusion_v4 > 0.0) {
+  if (diffusion_v4 > 0.0) {
     output.write("    diffusion_v4: %e\n", diffusion_v4);
     dump.add(diffusion_v4, "diffusion_v4", 0);
   }
   
   //xqx: parallel hyper-viscous diffusion for vorticity
-  if(diffusion_u4 > 0.0) {
+  if (diffusion_u4 > 0.0) {
     output.write("    diffusion_u4: %e\n", diffusion_u4);
     dump.add(diffusion_u4, "diffusion_u4", 0);
   }
 
-  if(sink_vp > 0.0) {
+  if (sink_vp > 0.0) {
     output.write("    sink_vp(rate): %e\n", sink_vp);
     dump.add(sink_vp, "sink_vp", 1);
 
@@ -771,7 +750,7 @@ int physics_init(bool restarting)
     output.write("    sp_length(%): %e\n",sp_length);
     dump.add(sp_length, "sp_length", 1);
   }
-
+  
 
   J0 = MU0*Lbar * J0 / B0;
   P0 = P0/(KB * (Tibar+Tebar)*eV_K /2. * Nbar*density);
@@ -785,42 +764,37 @@ int physics_init(bool restarting)
   Btxy /= Bbar;
   B0   /= Bbar;
   hthe /= Lbar;
-  mesh->dx   /= Lbar*Lbar*Bbar;
+  coord->dx   /= Lbar*Lbar*Bbar;
   I    *= Lbar*Lbar*Bbar;
 
-  if( (!T0_fake_prof) && n0_fake_prof )
-    {
-      N0 = N0tanh(n0_height*Nbar, n0_ave*Nbar, n0_width, n0_center, n0_bottom_x);
+  if( (!T0_fake_prof) && n0_fake_prof ) {
+    N0 = N0tanh(n0_height*Nbar, n0_ave*Nbar, n0_width, n0_center, n0_bottom_x);
+    
+    Ti0 = P0/N0/2.0;
+    Te0 = Ti0;
+  } else if (T0_fake_prof) {
+    Ti0 = Tconst;
+    Te0 = Ti0;
+    N0 = P0/(Ti0+Te0);
+  } else {
+    if (mesh->get(N0,  "Niexp")) { // N_i0                                          
+      output_error.write("Error: Cannot read Ni0 from grid\n");
+      return 1;
+    } 
+    
+    if (mesh->get(Ti0,  "Tiexp")) { // T_i0                                         
+      output_error.write("Error: Cannot read Ti0 from grid\n");
+      return 1;
+    }
 
-      Ti0 = P0/N0/2.0;
-      Te0 = Ti0;
+    if (mesh->get(Te0,  "Teexp")) { // T_e0  
+      output_error.write("Error: Cannot read Te0 from grid\n");
+      return 1;
     }
-  else if (T0_fake_prof)
-    {
-      Ti0 = Tconst;
-      Te0 = Ti0;
-      N0 = P0/(Ti0+Te0);
-    }
-  else
-    {
-      if(mesh->get(N0,  "Niexp")) { // N_i0                                          
-	output.write("Error: Cannot read Ni0 from grid\n");
-	return 1;
-	} 
-      
-      if(mesh->get(Ti0,  "Tiexp")) { // T_i0                                         
-	output.write("Error: Cannot read Ti0 from grid\n");
-	return 1;
-      }
-
-      if(mesh->get(Te0,  "Teexp")) { // T_e0  
-	output.write("Error: Cannot read Te0 from grid\n");
-	return 1;
-	}
-      N0 /= Nbar;
-      Ti0 /= Tibar;
-      Te0 /= Tebar;
-    }
+    N0 /= Nbar;
+    Ti0 /= Tibar;
+    Te0 /= Tebar;
+  }
 
   Ne0 = Zi * N0; // quasi-neutral condition
   Pi0 = N0 * Ti0;
@@ -828,41 +802,37 @@ int physics_init(bool restarting)
 
   nu_e.setLocation(CELL_YLOW);  
   nu_e.setBoundary("kappa");     
-  if (spitzer_resist)
-    {
-      eta_spitzer.setLocation(CELL_YLOW); 
-      eta_spitzer.setBoundary("kappa");
-    }
-  if (diffusion_par > 0.0)
-    {
-      nu_i.setLocation(CELL_YLOW);
-      nu_i.setBoundary("kappa");
-      vth_i.setLocation(CELL_YLOW);      
-      vth_e.setLocation(CELL_YLOW);      
-      vth_i.setBoundary("kappa");
-      vth_e.setBoundary("kappa");
-      kappa_par_i.setLocation(CELL_YLOW);
-      kappa_par_e.setLocation(CELL_YLOW);
-      kappa_par_i.setBoundary("kappa");
-      kappa_par_e.setBoundary("kappa");
-      kappa_perp_i.setLocation(CELL_YLOW);
-      kappa_perp_e.setLocation(CELL_YLOW);
-      kappa_perp_i.setBoundary("kappa");
-      kappa_perp_e.setBoundary("kappa");
-    }
-
-  if (compress0)
-    {
-      eta_i0.setLocation(CELL_CENTRE);
-      eta_i0.setBoundary("Ti");
-      pi_ci.setLocation(CELL_CENTRE);
-      pi_ci.setBoundary("Ti");
-
-      //dump.add(eta_i0, "eta_i0", 1);
-      //dump.add(pi_ci, "pi_ci", 1);
-    }
-
-
+  if (spitzer_resist) {
+    eta_spitzer.setLocation(CELL_YLOW); 
+    eta_spitzer.setBoundary("kappa");
+  }
+  if (diffusion_par > 0.0) {
+    nu_i.setLocation(CELL_YLOW);
+    nu_i.setBoundary("kappa");
+    vth_i.setLocation(CELL_YLOW);      
+    vth_e.setLocation(CELL_YLOW);      
+    vth_i.setBoundary("kappa");
+    vth_e.setBoundary("kappa");
+    kappa_par_i.setLocation(CELL_YLOW);
+    kappa_par_e.setLocation(CELL_YLOW);
+    kappa_par_i.setBoundary("kappa");
+    kappa_par_e.setBoundary("kappa");
+    kappa_perp_i.setLocation(CELL_YLOW);
+    kappa_perp_e.setLocation(CELL_YLOW);
+    kappa_perp_i.setBoundary("kappa");
+    kappa_perp_e.setBoundary("kappa");
+  }
+  
+  if (compress0) {
+    eta_i0.setLocation(CELL_CENTRE);
+    eta_i0.setBoundary("Ti");
+    pi_ci.setLocation(CELL_CENTRE);
+    pi_ci.setBoundary("Ti");
+    
+    //dump.add(eta_i0, "eta_i0", 1);
+    //dump.add(pi_ci, "pi_ci", 1);
+  }
+  
   BoutReal pnorm = max(P0, true); // Maximum over all processors
   
   vacuum_pressure *= pnorm; // Get pressure from fraction
@@ -871,139 +841,129 @@ int physics_init(bool restarting)
   // Transitions from 0 in core to 1 in vacuum
   vac_mask = (1.0 - tanh( (P0 - vacuum_pressure) / vacuum_trans )) / 2.0;
 
-  if (diffusion_par >0.0)
-    {
-      if (q95_input >0 )
-	q95 = q95_input;   //use a constant for test
-      else
-	{
-	  if (local_q)
-	    q95 = abs(hthe * Btxy / ( Bpxy)) * q_alpha;
-	  else
-	    {
-	      output.write("\tUsing q profile from grid.\n");
-	      if(mesh->get(q95, "q"))
-		{
-		  output.write("Cannot get q profile from grid!\nPlease run addqprofile.pro first\n");
-		  return 1;
-		}     
-	    }
-	}
-      output.write("\tlocal max q: %e\n", max(q95));
-      output.write("\tlocal min q: %e\n", min(q95));
+  if (diffusion_par > 0.0) {
+    if (q95_input >0 ) {
+      q95 = q95_input;   //use a constant for test
+    } else {
+      if (local_q) {
+        q95 = abs(hthe * Btxy / ( Bpxy)) * q_alpha;
+      } else {
+        output.write("\tUsing q profile from grid.\n");
+        if(mesh->get(q95, "q")) {
+          output.write("Cannot get q profile from grid!\nPlease run addqprofile.pro first\n");
+          return 1;
+        }     
+      }
     }
-  
+    output.write("\tlocal max q: %e\n", max(q95));
+    output.write("\tlocal min q: %e\n", min(q95));
+  }
 
   LnLambda = 24.0 - log(pow(Zi*Nbar*density/1.e6, 0.5) * pow(Tebar, -1.0));       //xia: ln Lambda
   output.write("\tlog Lambda: %e\n", LnLambda);
 
-  nu_e = 2.91e-6*LnLambda*((N0)*Nbar*density/1.e6)*(((Te0)*Tebar)^(-1.5)); // nu_e in 1/S. 
+  nu_e = 2.91e-6*LnLambda*((N0)*Nbar*density/1.e6)*pow(Te0*Tebar,-1.5); // nu_e in 1/S. 
   output.write("\telectron collision rate: %e -> %e [1/s]\n", min(nu_e), max(nu_e));
   //nu_e.applyBoundary();
   //mesh->communicate(nu_e);
 
-  if (diffusion_par >0.0)
-    {
+  if (diffusion_par > 0.0) {
     
-      output.write("\tion thermal noramlized constant: Tipara1 = %e\n",Tipara1); 
-      output.write("\telectron normalized thermal constant: Tepara1 = %e\n",Tepara1);
-      //xqx addition, begin
-      // Use Spitzer thermal conductivities 
-      nu_i = 4.80e-8*(Zi*Zi*Zi*Zi/sqrt(AA))*LnLambda*((N0)*Nbar*density/1.e6)*(((Ti0)*Tibar)^(-1.5)); // nu_i in 1/S. 
-      //output.write("\tCoulomb Logarithm: %e \n", max(LnLambda));
-      output.write("\tion collision rate: %e -> %e [1/s]\n", min(nu_i), max(nu_i));
+    output.write("\tion thermal noramlized constant: Tipara1 = %e\n",Tipara1); 
+    output.write("\telectron normalized thermal constant: Tepara1 = %e\n",Tepara1);
+    //xqx addition, begin
+    // Use Spitzer thermal conductivities 
+    nu_i = 4.80e-8*(Zi*Zi*Zi*Zi/sqrt(AA))*LnLambda*((N0)*Nbar*density/1.e6)*pow(Ti0*Tibar,-1.5); // nu_i in 1/S. 
+    //output.write("\tCoulomb Logarithm: %e \n", max(LnLambda));
+    output.write("\tion collision rate: %e -> %e [1/s]\n", min(nu_i), max(nu_i));
 
-      //nu_i.applyBoundary();
-      //mesh->communicate(nu_i);
+    //nu_i.applyBoundary();
+    //mesh->communicate(nu_i);
+    
+    vth_i = 9.79e3*sqrt((Ti0)*Tibar/AA); // vth_i in m/S. 
+    output.write("\tion thermal velocity: %e -> %e [m/s]\n", min(vth_i), max(vth_i));
+    //vth_i.applyBoundary();
+    //mesh->communicate(vth_i);
+    vth_e = 4.19e5*sqrt((Te0)*Tebar);    // vth_e in m/S. 
+    output.write("\telectron thermal velocity: %e -> %e [m/s]\n", min(vth_e), max(vth_e));
+    //vth_e.applyBoundary();
+    //mesh->communicate(vth_e);
+  }
   
-      vth_i = 9.79e3*sqrt((Ti0)*Tibar/AA); // vth_i in m/S. 
-      output.write("\tion thermal velocity: %e -> %e [m/s]\n", min(vth_i), max(vth_i));
-      //vth_i.applyBoundary();
-      //mesh->communicate(vth_i);
-      vth_e = 4.19e5*sqrt((Te0)*Tebar);    // vth_e in m/S. 
-      output.write("\telectron thermal velocity: %e -> %e [m/s]\n", min(vth_e), max(vth_e));
-      //vth_e.applyBoundary();
-      //mesh->communicate(vth_e);
-    }
+  if (compress0) {
+    eta_i0 = 0.96 * Pi0*Tau_ie * nu_i * Tbar;
+    output.write("\tCoefficients of parallel viscocity: %e -> %e [kg/(m s)]\n", min(eta_i0), max(eta_i0));
+  }
+  
+  if (diffusion_par > 0.0) {
+    kappa_par_i=3.9*vth_i*vth_i/nu_i;// * 1.e4;
+    kappa_par_e=3.2*vth_e*vth_e/nu_e;// * 1.e4;
 
-  if (compress0)
-    {
-      eta_i0 = 0.96 * Pi0*Tau_ie * nu_i * Tbar;
-      output.write("\tCoefficients of parallel viscocity: %e -> %e [kg/(m s)]\n", min(eta_i0), max(eta_i0));
-    }
-
-  if (diffusion_par >0.0)
-    {
-      kappa_par_i=3.9*vth_i*vth_i/nu_i;// * 1.e4;
-      kappa_par_e=3.2*vth_e*vth_e/nu_e;// * 1.e4;
-
-      output.write("\tion thermal conductivity: %e -> %e [m^2/s]\n", min(kappa_par_i), max(kappa_par_i));
-      output.write("\telectron thermal conductivity: %e -> %e [m^2/s]\n", min(kappa_par_e), max(kappa_par_e));
-      
-      output.write("\tnormalized ion thermal conductivity: %e -> %e \n", min(kappa_par_i*Tipara1), max(kappa_par_i*Tipara1));
-      output.write("\tnormalized electron thermal conductivity: %e -> %e \n", min(kappa_par_e*Tepara1), max(kappa_par_e*Tepara1));
-      
-      Field3D kappa_par_i_fl, kappa_par_e_fl;
-
-      kappa_par_i_fl = vth_i * (q95 * Lbar);// * 1.e2;
-      kappa_par_e_fl = vth_e * (q95 * Lbar);// * 1.e2;
-
-      kappa_par_i *= kappa_par_i_fl / (kappa_par_i + kappa_par_i_fl);
-      kappa_par_i *= Tipara1*N0;
-      output.write("\tUsed normalized ion thermal conductivity: %e -> %e \n", min(kappa_par_i), max(kappa_par_i));
-      //kappa_par_i.applyBoundary();
-      //mesh->communicate(kappa_par_i);
-      kappa_par_e *= kappa_par_e_fl / (kappa_par_e + kappa_par_e_fl);
-      kappa_par_e *= Tepara1*N0/Zi;
-      output.write("\tUsed normalized electron thermal conductivity: %e -> %e \n", min(kappa_par_e), max(kappa_par_e));
-      //kappa_par_e.applyBoundary();
-      //mesh->communicate(kappa_par_e);
-      
-      dump.add(kappa_par_i, "kappa_par_i", 1);
-      dump.add(kappa_par_e, "kappa_par_e", 1);
-    }
-
-  if(spitzer_resist) {
+    output.write("\tion thermal conductivity: %e -> %e [m^2/s]\n", min(kappa_par_i), max(kappa_par_i));
+    output.write("\telectron thermal conductivity: %e -> %e [m^2/s]\n", min(kappa_par_e), max(kappa_par_e));
+    
+    output.write("\tnormalized ion thermal conductivity: %e -> %e \n", min(kappa_par_i*Tipara1), max(kappa_par_i*Tipara1));
+    output.write("\tnormalized electron thermal conductivity: %e -> %e \n", min(kappa_par_e*Tepara1), max(kappa_par_e*Tepara1));
+    
+    Field3D kappa_par_i_fl, kappa_par_e_fl;
+    
+    kappa_par_i_fl = vth_i * (q95 * Lbar);// * 1.e2;
+    kappa_par_e_fl = vth_e * (q95 * Lbar);// * 1.e2;
+    
+    kappa_par_i *= kappa_par_i_fl / (kappa_par_i + kappa_par_i_fl);
+    kappa_par_i *= Tipara1*N0;
+    output.write("\tUsed normalized ion thermal conductivity: %e -> %e \n", min(kappa_par_i), max(kappa_par_i));
+    //kappa_par_i.applyBoundary();
+    //mesh->communicate(kappa_par_i);
+    kappa_par_e *= kappa_par_e_fl / (kappa_par_e + kappa_par_e_fl);
+    kappa_par_e *= Tepara1*N0/Zi;
+    output.write("\tUsed normalized electron thermal conductivity: %e -> %e \n", min(kappa_par_e), max(kappa_par_e));
+    //kappa_par_e.applyBoundary();
+    //mesh->communicate(kappa_par_e);
+    
+    dump.add(kappa_par_i, "kappa_par_i", 1);
+    dump.add(kappa_par_e, "kappa_par_e", 1);
+  }
+  
+  if (spitzer_resist) {
     // Use Spitzer resistivity 
     output.write("");
     output.write("\tSpizter parameters");
     //output.write("\tTemperature: %e -> %e [eV]\n", min(Te), max(Te));
-    eta_spitzer = 0.51*1.03e-4*Zi*LnLambda*((Te0*Tebar)^(-1.5)); // eta in Ohm-m. NOTE: ln(Lambda) = 20
+    eta_spitzer = 0.51*1.03e-4*Zi*LnLambda*pow(Te0*Tebar,-1.5); // eta in Ohm-m. NOTE: ln(Lambda) = 20
     output.write("\tSpitzer resistivity: %e -> %e [Ohm m]\n", min(eta_spitzer), max(eta_spitzer));
     eta_spitzer /= MU0 * Va * Lbar;
     //eta_spitzer.applyBoundary();
     //mesh->communicate(eta_spitzer);
     output.write("\t -> Lundquist %e -> %e\n", 1.0/max(eta_spitzer), 1.0/min(eta_spitzer));
     dump.add(eta_spitzer, "eta_spitzer", 1);
-  }
-  else {
+  } else {
     // transition from 0 for large P0 to resistivity for small P0
     eta = core_resist + (vac_resist - core_resist) * vac_mask;
     eta_spitzer = 0.;
     dump.add(eta, "eta", 0);
   }
-
 	
   /**************** CALCULATE METRICS ******************/
 
-  mesh->g11 = (Rxy*Bpxy)^2;
-  mesh->g22 = 1.0 / (hthe^2);
-  mesh->g33 = (I^2)*mesh->g11 + (B0^2)/mesh->g11;
-  mesh->g12 = 0.0;
-  mesh->g13 = -I*mesh->g11;
-  mesh->g23 = -Btxy/(hthe*Bpxy*Rxy);
+  coord->g11 = SQ(Rxy*Bpxy);
+  coord->g22 = 1.0 / SQ(hthe);
+  coord->g33 = SQ(I)*coord->g11 + SQ(B0)/coord->g11;
+  coord->g12 = 0.0;
+  coord->g13 = -I*coord->g11;
+  coord->g23 = -Btxy/(hthe*Bpxy*Rxy);
   
-  mesh->J = hthe / Bpxy;
-  mesh->Bxy = B0;
+  coord->J = hthe / Bpxy;
+  coord->Bxy = B0;
   
-  mesh->g_11 = 1.0/mesh->g11 + ((I*Rxy)^2);
-  mesh->g_22 = (B0*hthe/Bpxy)^2;
-  mesh->g_33 = Rxy*Rxy;
-  mesh->g_12 = Btxy*hthe*I*Rxy/Bpxy;
-  mesh->g_13 = I*Rxy*Rxy;
-  mesh->g_23 = Btxy*hthe*Rxy/Bpxy;
+  coord->g_11 = 1.0/coord->g11 + SQ(I*Rxy);
+  coord->g_22 = SQ(B0*hthe/Bpxy);
+  coord->g_33 = Rxy*Rxy;
+  coord->g_12 = Btxy*hthe*I*Rxy/Bpxy;
+  coord->g_13 = I*Rxy*Rxy;
+  coord->g_23 = Btxy*hthe*Rxy/Bpxy;
   
-  mesh->geometry(); // Calculate quantities from metric tensor
+  coord->geometry(); // Calculate quantities from metric tensor
 
   // Set B field vector
   
@@ -1046,12 +1006,11 @@ int physics_init(bool restarting)
   Pe.setLocation(CELL_CENTRE);
 
   N_tmp.setLocation(CELL_CENTRE);
-  if (nonlinear)
-    {
-      Ti_tmp.setLocation(CELL_CENTRE);
-      Te_tmp.setLocation(CELL_CENTRE);
-    }  
-
+  if (nonlinear) {
+    Ti_tmp.setLocation(CELL_CENTRE);
+    Te_tmp.setLocation(CELL_CENTRE);
+  }
+  
   Pe.setBoundary("P");
   Pi.setBoundary("P");
 
@@ -1069,7 +1028,7 @@ int physics_init(bool restarting)
   dump.add(P, "P", 1);
   dump.add(Vepar, "Vepar", 1);
   
-  if(parallel_lagrange) {
+  if (parallel_lagrange) {
     // Evolving the distortion of the flux surfaces (Ideal-MHD only!)
     
     bout_solve(Xip_x, "Xip_x");
@@ -1079,7 +1038,7 @@ int physics_init(bool restarting)
     bout_solve(Xim_z, "Xim_z");
   }
   
-  if(parallel_project) {
+  if (parallel_project) {
     // Add Xi to the dump file
     dump.add(Xip_x, "Xip_x", 1);
     dump.add(Xip_z, "Xip_z", 1);
@@ -1088,39 +1047,37 @@ int physics_init(bool restarting)
     dump.add(Xim_z, "Xim_z", 1);
   }
 
-  if(compress0) {
+  if (compress0) {
     SOLVE_FOR(Vipar);
-    if (!restarting)
+    if (!restarting) {
       Vipar = 0.0;
+    }
   }
 
-  if(phi_constraint) {
+  if (phi_constraint) {
     // Implicit Phi solve using IDA
     
-    if(!bout_constrain(phi, C_phi, "phi")) {
-      output.write("ERROR: Cannot constrain. Run again with phi_constraint=false\n");
+    if (!bout_constrain(phi, C_phi, "phi")) {
+      output_error.write("ERROR: Cannot constrain. Run again with phi_constraint=false\n");
       throw BoutException("Aborting.\n");
     }
     
-  }else {
+  } else {
     // Phi solved in RHS (explicitly)
     dump.add(phi, "phi", 1);
-
   }
 
   // Diamagnetic phi0
   if(diamag && diamag_phi0) {
-    if(experiment_Er)
-      {          //get phi0 from grid file
-	mesh->get(phi0,"Phi_0"); 
-	phi0 /= B0*Lbar*Va;
-      }
-    else
+    if(experiment_Er) {          //get phi0 from grid file
+      mesh->get(phi0,"Phi_0"); 
+      phi0 /= B0*Lbar*Va;
+    } else {
       // Stationary equilibrium plasma. ExB velocity balances diamagnetic drift
       phi0 = -Upara0*Pi0/B0/N0;
+    }
     SAVE_ONCE(phi0);
   }
-
 
   // Add some equilibrium quantities and normalisations
   // everything needed to recover physical units
@@ -1148,10 +1105,11 @@ int physics_init(bool restarting)
     Ntemp = N0;
     ubyn = U*B0/Ntemp;
     // Phi should be consistent with U
-    if(laplace_alpha <= 0.0)
+    if (laplace_alpha <= 0.0) {
       phi = invert_laplace(ubyn, phi_flags, NULL)/B0;
-    else
+    } else {
       phi = invert_laplace(ubyn, phi_flags, NULL, &logn0, NULL)/B0;
+    }
   }
 
 
@@ -1161,32 +1119,37 @@ int physics_init(bool restarting)
   comms.add(Ni);
   comms.add(Ti);
   comms.add(Te);
-  if (!emass)
+  if (!emass) {
     comms.add(Psi);
-  else
+  } else {
     comms.add(Ajpar);
+  }
 
 
-  if (compress0)
-    {
-      comms.add(Vipar);
-      Vepar.setBoundary("Vipar");
-    }
+  if (compress0) {
+    comms.add(Vipar);
+    Vepar.setBoundary("Vipar");
+  }
 
-  if (diffusion_u4 > 0.0)
+  if (diffusion_u4 > 0.0) {
     tmpA2.setBoundary("J");
+  }
 
-  if (diffusion_n4 > 0.0)
+  if (diffusion_n4 > 0.0) {
     tmpN2.setBoundary("Ni");
-
-  if (diffusion_ti4 > 0.0)
+  }
+  
+  if (diffusion_ti4 > 0.0) {
     tmpTi2.setBoundary("Ti");
+  }
  
-  if (diffusion_te4 > 0.0)
+  if (diffusion_te4 > 0.0) {
     tmpTe2.setBoundary("Te");
+  }
 
-  if (diffusion_v4 > 0.0)
+  if (diffusion_v4 > 0.0) {
     tmpVp2.setBoundary("Vipar");
+  }
 
   phi.setBoundary("phi"); // Set boundary conditions
 
@@ -1198,11 +1161,12 @@ int physics_init(bool restarting)
 }
 
 // Parallel gradient along perturbed field-line
-const Field3D Grad_parP(const Field3D &f, CELL_LOC loc = CELL_DEFAULT)
-{
+const Field3D Grad_parP(const Field3D &f, CELL_LOC loc = CELL_DEFAULT) {
+  TRACE("Grad_parP");
+  
   Field3D result;
   
-  if(parallel_lagrange || parallel_project) {
+  if (parallel_lagrange || parallel_project) {
     // Moving stencil locations
     
     Field3D fp, fm; // Interpolated on + and - y locations
@@ -1210,24 +1174,26 @@ const Field3D Grad_parP(const Field3D &f, CELL_LOC loc = CELL_DEFAULT)
     fp = interpolate(f, Xip_x, Xip_z);
     fm = interpolate(f, Xim_x, Xim_z);
     
-    result.allocate();
-    for(int i=0;i<mesh->LocalNx;i++)
-      for(int j=1;j<mesh->LocalNy-1;j++)
-	for(int k=0;k<mesh->LocalNz;k++) {
-	  result[i][j][k] = (fp[i][j+1][k] - fm[i][j-1][k])/(2.*mesh->dy[i][j]*sqrt(mesh->g_22[i][j]));
-	}
-  }else {
-    if(parallel_lr_diff) {
-      // Use left/right biased stencils. NOTE: First order only!
-      if(loc == CELL_YLOW) {
-	result = Grad_par_CtoL(f);
-      }else
-	result = Grad_par_LtoC(f);
-    }else
-      result = Grad_par(f, loc);
+    Coordinates *coord = mesh->coordinates();
     
-    if(nonlinear) {
-       result -= bracket(Psi, f, bm_mag)*B0;
+    result.allocate();
+    for(auto i : result) {
+      result[i] = (fp[i.yp()] - fm[i.ym()])/(2.*coord->dy[i]*sqrt(coord->g_22[i]));
+    }
+  } else {
+    if (parallel_lr_diff) {
+      // Use left/right biased stencils. NOTE: First order only!
+      if (loc == CELL_YLOW) {
+	result = Grad_par_CtoL(f);
+      } else {
+	result = Grad_par_LtoC(f);
+      }
+    } else {
+      result = Grad_par(f, loc);
+    }
+    
+    if (nonlinear) {
+      result -= bracket(Psi, f, bm_mag)*B0;
     }
   }
 
@@ -1236,22 +1202,25 @@ const Field3D Grad_parP(const Field3D &f, CELL_LOC loc = CELL_DEFAULT)
 
 bool first_run = true; // For printing out some diagnostics first time around
 
-int physics_run(BoutReal t)
-{
+int physics_run(BoutReal t) {
+
+  Coordinates *coord = mesh->coordinates();
 
   // Perform communications
   mesh->communicate(comms);
 
   // Inversion
   Pi = Ni*Ti0 + N0 * Ti;
-  if(nonlinear)
+  if(nonlinear) {
     Pi +=  Ni*Ti;
+  }
   mesh->communicate(Pi);
 
 
   Pe = Zi * (Ni*Te0 + N0 * Te);
-  if(nonlinear)
+  if(nonlinear) {
     Pe +=  Zi * Ni * Te;
+  }
   mesh->communicate(Pe);
 
   P = Tau_ie*Pi + Pe;
@@ -1260,38 +1229,35 @@ int physics_run(BoutReal t)
   //  Field2D lap_temp=0.0;
   Field2D logn0 = laplace_alpha * N0;
   ubyn = U*B0/N0;
-  if (diamag)
-    {
-      ubyn -= Upara0/N0 * Delp2(Pi)/B0;
-      mesh->communicate(ubyn);
-      ubyn.applyBoundary();
-    }
+  if (diamag) {
+    ubyn -= Upara0/N0 * Delp2(Pi)/B0;
+    mesh->communicate(ubyn);
+    ubyn.applyBoundary();
+  }
   // Invert laplacian for phi
-  if(laplace_alpha <= 0.0)
+  if (laplace_alpha <= 0.0) {
     phi = invert_laplace(ubyn, phi_flags, NULL)/B0;
-  else
+  } else {
     phi = invert_laplace(ubyn, phi_flags, NULL, &logn0, NULL)/B0;
+  }
     
   mesh->communicate(phi);
-    // Apply a boundary condition on phi for target plates
-  //phi.applyBoundary();
-    //  }
 
-  if(emass) 
-    {
-      static Field2D acoeff;
-      static bool aset = false;
-      
-      if(!aset) // calculate Apar coefficient
-	acoeff = -delta_e_inv*N0*N0;
-      aset = true;
-      if(compress0) {
-	Psi = invert_laplace(acoeff*Ajpar-gyroAlv*Vipar, apar_flags, &acoeff);
-      } else {
-	Psi = invert_laplace(acoeff*Ajpar, apar_flags, &acoeff);
-      }
-      mesh->communicate(Psi);
+  if (emass) {
+    static Field2D acoeff;
+    static bool aset = false;
+    
+    if (!aset) { // calculate Apar coefficient
+      acoeff = -delta_e_inv*N0*N0;
     }
+    aset = true;
+    if (compress0) {
+      Psi = invert_laplace(acoeff*Ajpar-gyroAlv*Vipar, apar_flags, &acoeff);
+    } else {
+      Psi = invert_laplace(acoeff*Ajpar, apar_flags, &acoeff);
+    }
+    mesh->communicate(Psi);
+  }
 
   BoutReal N_tmp1;
   N_tmp1 = Low_limit;
@@ -1303,79 +1269,69 @@ int physics_run(BoutReal t)
       
   Ti_tmp = field_larger(Ti0+Ti, Ti_tmp1);
   Te_tmp = field_larger(Te0+Te, Te_tmp1);
-  
-  //output.write("I see you 1! \n");//xia
     
-  // Transitions from 0 in core to 1 in vacuum
-  if(nonlinear) 
-    {
-      vac_mask = (1.0 - tanh( ((P0 + P) - vacuum_pressure) / vacuum_trans )) / 2.0;
-      // Update resistivity
-      if(spitzer_resist) {
+  // vac_mask transitions from 0 in core to 1 in vacuum
+  if (nonlinear) {
+    vac_mask = (1.0 - tanh( ((P0 + P) - vacuum_pressure) / vacuum_trans )) / 2.0;
+    // Update resistivity
+    if (spitzer_resist) {
       // Use Spitzer formula
-	eta_spitzer = 0.51*1.03e-4*Zi*LnLambda*((Te_tmp*Tebar)^(-1.5)); // eta in Ohm-m. ln(Lambda) = 20
-	eta_spitzer /= MU0 *Va * Lbar;
-	//eta_spitzer.applyBoundary();
-	//mesh->communicate(eta_spitzer);
-      }
-      else {
-	eta = core_resist + (vac_resist - core_resist) * vac_mask;
-      }
-
-      nu_e = 2.91e-6*LnLambda*(N_tmp*Nbar*density/1.e6)*((Te_tmp*Tebar)^(-1.5)); // nu_e in 1/S.
-      //nu_e.applyBoundary();
-      //mesh->communicate(nu_e);
-
-      if (diffusion_par >0.0)
-	{
-
-	  //xqx addition, begin
-	  // Use Spitzer thermal conductivities
-	  
-	  nu_i = 4.80e-8*(Zi*Zi*Zi*Zi/sqrt(AA))*LnLambda*(N_tmp*Nbar*density/1.e6)*((Ti_tmp*Tibar)^(-1.5)); // nu_i in 1/S.
-	  vth_i = 9.79e3*sqrt(Ti_tmp*Tibar/AA); // vth_i in m/S.
-	  vth_e = 4.19e5*sqrt(Te_tmp*Tebar);    // vth_e in m/S.
-	}
-
-      if (diffusion_par >0.0)
-	{
-	  kappa_par_i=3.9*vth_i*vth_i/nu_i;// * 1.e4;
-	  kappa_par_e=3.2*vth_e*vth_e/nu_e;// * 1.e4;
-	  
-	  Field3D kappa_par_i_fl, kappa_par_e_fl;
-
-	  kappa_par_i_fl = vth_i * (q95 * Lbar);// * 1.e2;
-	  kappa_par_e_fl = vth_e * (q95 * Lbar);// * 1.e2;
-	  
-	  kappa_par_i *= kappa_par_i_fl / (kappa_par_i + kappa_par_i_fl);
-	  kappa_par_i *= Tipara1*N_tmp;
-	  //kappa_par_i.applyBoundary();
-	  //mesh->communicate(kappa_par_i);
-	  kappa_par_e *= kappa_par_e_fl / (kappa_par_e + kappa_par_e_fl);
-	  kappa_par_e *= Tepara1*N_tmp*Zi;
-	  //kappa_par_e.applyBoundary();
-	  //mesh->communicate(kappa_par_e);
-	}
+      eta_spitzer = 0.51*1.03e-4*Zi*LnLambda*pow(Te_tmp*Tebar,-1.5); // eta in Ohm-m. ln(Lambda) = 20
+      eta_spitzer /= MU0 *Va * Lbar;
+      //eta_spitzer.applyBoundary();
+      //mesh->communicate(eta_spitzer);
+    } else {
+      eta = core_resist + (vac_resist - core_resist) * vac_mask;
     }
 
+    nu_e = 2.91e-6*LnLambda*(N_tmp*Nbar*density/1.e6)*pow(Te_tmp*Tebar,-1.5); // nu_e in 1/S.
+    //nu_e.applyBoundary();
+    //mesh->communicate(nu_e);
+    
+    if (diffusion_par >0.0) {
+      //xqx addition, begin
+      // Use Spitzer thermal conductivities
+	  
+      nu_i = 4.80e-8*(Zi*Zi*Zi*Zi/sqrt(AA))*LnLambda*(N_tmp*Nbar*density/1.e6)*pow(Ti_tmp*Tibar,-1.5); // nu_i in 1/S.
+      vth_i = 9.79e3*sqrt(Ti_tmp*Tibar/AA); // vth_i in m/S.
+      vth_e = 4.19e5*sqrt(Te_tmp*Tebar);    // vth_e in m/S.
+    }
 
-  //output.write("I see you 2! \n");//xia
+    if (diffusion_par >0.0) {
+      kappa_par_i=3.9*vth_i*vth_i/nu_i;// * 1.e4;
+      kappa_par_e=3.2*vth_e*vth_e/nu_e;// * 1.e4;
+      
+      Field3D kappa_par_i_fl, kappa_par_e_fl;
+      
+      kappa_par_i_fl = vth_i * (q95 * Lbar);// * 1.e2;
+      kappa_par_e_fl = vth_e * (q95 * Lbar);// * 1.e2;
+      
+      kappa_par_i *= kappa_par_i_fl / (kappa_par_i + kappa_par_i_fl);
+      kappa_par_i *= Tipara1*N_tmp;
+      //kappa_par_i.applyBoundary();
+      //mesh->communicate(kappa_par_i);
+      kappa_par_e *= kappa_par_e_fl / (kappa_par_e + kappa_par_e_fl);
+      kappa_par_e *= Tepara1*N_tmp*Zi;
+      //kappa_par_e.applyBoundary();
+      //mesh->communicate(kappa_par_e);
+    }
+  }
 
   Jpar = -Delp2(Psi);
   Jpar.applyBoundary();
   mesh->communicate(Jpar);
 
   if(jpar_bndry_width > 0) {
-      // Zero j in boundary regions. Prevents vorticity drive
-      // at the boundary
+    // Zero j in boundary regions. Prevents vorticity drive
+    // at the boundary
       
     for(int i=0;i<jpar_bndry_width;i++)
       for(int j=0;j<mesh->LocalNy;j++)
 	for(int k=0;k<mesh->LocalNz;k++) {
-	  if(mesh->firstX())
-	    Jpar[i][j][k] = 0.0;
-	  if(mesh->lastX())
-	    Jpar[mesh->LocalNx-1-i][j][k] = 0.0;
+	  if (mesh->firstX())
+	    Jpar(i,j,k) = 0.0;
+	  if (mesh->lastX())
+	    Jpar(mesh->LocalNx-1-i,j,k) = 0.0;
 	}
   }
 
@@ -1383,253 +1339,261 @@ int physics_run(BoutReal t)
   if(smooth_j_x)
     Jpar = smooth_x(Jpar);
 
-  if (compress0)
-    {
-      if (nonlinear)
-	Vepar = Vipar - B0 * (Jpar) / N_tmp * Vepara;
-      else	
-	Vepar = Vipar - B0 * (Jpar) / N0 * Vepara;
+  if (compress0) {
+    if (nonlinear) {
+      Vepar = Vipar - B0 * (Jpar) / N_tmp * Vepara;
+    } else {
+      Vepar = Vipar - B0 * (Jpar) / N0 * Vepara;
       Vepar.applyBoundary();
       mesh->communicate(Vepar);
     }
-
-    //xqx begin
-    // Get Delp2(J) from J
+  }
+  
+  //xqx begin
+  // Get Delp2(J) from J
   Jpar2 = -Delp2(Jpar);
 
   Jpar2.applyBoundary();
   mesh->communicate(Jpar2);
 
-  if(jpar_bndry_width > 0) 
-    {
-      // Zero jpar2 in boundary regions. Prevents vorticity drive
-      // at the boundary
-      
+  if(jpar_bndry_width > 0)  {
+    // Zero jpar2 in boundary regions. Prevents vorticity drive
+    // at the boundary
+    
     for(int i=0;i<jpar_bndry_width;i++)
       for(int j=0;j<mesh->LocalNy;j++)
 	for(int k=0;k<mesh->LocalNz;k++) {
 	  if(mesh->firstX())
-	    Jpar2[i][j][k] = 0.0;
+	    Jpar2(i,j,k) = 0.0;
 	  if(mesh->lastX())
-	    Jpar2[mesh->LocalNx-1-i][j][k] = 0.0;
+	    Jpar2(mesh->LocalNx-1-i,j,k) = 0.0;
 	}
-    }
-  //output.write("I see you 3! \n");//xia
-
+  }
 
   ////////////////////////////////////////////////////
   // Parallel electric field
-
-  ddt(Psi) = 0.0;
-  
-  if (spitzer_resist)
-    ddt(Psi) = -Grad_parP(B0*phi, CELL_CENTRE) / B0 - eta_spitzer*Jpar;
-  else    
-    ddt(Psi) = -Grad_parP(B0*phi, CELL_CENTRE) / B0 - eta*Jpar;
-      
-  if(diamag){
-    ddt(Psi) -= bracket(B0*phi0, Psi, bm_exb);   // Equilibrium flow
+  {
+    TRACE("ddt(Psi)");
+    
+    ddt(Psi) = 0.0;
+    
+    if (spitzer_resist) {
+      ddt(Psi) = -Grad_parP(B0*phi, CELL_CENTRE) / B0 - eta_spitzer*Jpar;
+    } else {
+      ddt(Psi) = -Grad_parP(B0*phi, CELL_CENTRE) / B0 - eta*Jpar;
+    }
+    
+    if (diamag) {
+      ddt(Psi) -= bracket(B0*phi0, Psi, bm_exb);   // Equilibrium flow
+    }
+    
+    // Hyper-resistivity
+    if (hyperresist > 0.0) {
+      ddt(Psi) += hyperresist * Delp2(Jpar);
+    }
   }
   
-  // Hyper-resistivity
-  if(hyperresist > 0.0) {
-    ddt(Psi) += hyperresist * Delp2(Jpar);
-  }
-  
-  //output.write("I see you 4! \n");//xia
   ////////////////////////////////////////////////////
   // Vorticity equation
-
-  ddt(U) = 0.0;
-
-  ddt(U) = -(B0^2) * bracket(Psi, J0, bm_mag)*B0; // Grad j term
-
-  ddt(U) += 2.0* Upara1 * b0xcv*Grad(P);  // curvature term
-
-  ddt(U) += (B0^2)*Grad_parP(Jpar, CELL_CENTRE); // b dot grad j
-
   
-  if(diamag)
-    ddt(U) -= bracket(B0*phi0, U, bm_exb);   // Equilibrium flow
+  {
+    TRACE("ddt(U)");
+    
+    ddt(U) = 0.0;
 
-  if(nonlinear) 
-    {
+    ddt(U) = -SQ(B0) * bracket(Psi, J0, bm_mag)*B0; // Grad j term
+    
+    ddt(U) += 2.0* Upara1 * b0xcv*Grad(P);  // curvature term
+    
+    ddt(U) += SQ(B0)*Grad_parP(Jpar, CELL_CENTRE); // b dot grad j
+    
+    if (diamag) {
+      ddt(U) -= bracket(B0*phi0, U, bm_exb);   // Equilibrium flow
+    }
+    
+    if (nonlinear) {
       ddt(U) -= bracket(B0*phi, U, bm_exb);    // Advection
       /*if (compress0)
-	//ddt(U) -= Vipar*Grad_par(U);
-	ddt(U) -= Vpar_Grad_par(Vipar, U);*/
+      //ddt(U) -= Vipar*Grad_par(U);
+      ddt(U) -= Vpar_Grad_par(Vipar, U);*/
     }
   
     //xqx: parallel hyper-viscous diffusion for vector potential
-  if(diffusion_u4 > 0.0)
-    {
+    if (diffusion_u4 > 0.0) {
       tmpA2 = Grad2_par2new(Psi);
       mesh->communicate(tmpA2);
       tmpA2.applyBoundary();
       ddt(U) -= diffusion_u4 * Grad2_par2new(tmpA2);
     }
- 
-  // Viscosity terms 
-  if(viscos_par > 0.0)
-    ddt(U) += viscos_par * Grad2_par2(U); // Parallel viscosity
-  
-  if(hyperviscos > 0.0) {
-    // Calculate coefficient.
     
-    hyper_mu_x = hyperviscos * mesh->g_11*SQ(mesh->dx) * abs(mesh->g11*D2DX2(U)) / (abs(U) + 1e-3);
-    hyper_mu_x.applyBoundary("dirichlet"); // Set to zero on all boundaries
+    // Viscosity terms 
+    if (viscos_par > 0.0) {
+      ddt(U) += viscos_par * Grad2_par2(U); // Parallel viscosity
+    }
     
-    ddt(U) += hyper_mu_x * mesh->g11*D2DX2(U);
+    if (hyperviscos > 0.0) {
+      // Calculate coefficient.
+      
+      hyper_mu_x = hyperviscos * coord->g_11*SQ(coord->dx) * abs(coord->g11*D2DX2(U)) / (abs(U) + 1e-3);
+      hyper_mu_x.applyBoundary("dirichlet"); // Set to zero on all boundaries
+      
+      ddt(U) += hyper_mu_x * coord->g11*D2DX2(U);
+      
+      if (first_run) { // Print out maximum values of viscosity used on this processor
+        output.write("   Hyper-viscosity values:\n");
+        output.write("      Max mu_x = %e, Max_DC mu_x = %e\n", max(hyper_mu_x), max(DC(hyper_mu_x)));
+      }
+    }
     
-    if(first_run) { // Print out maximum values of viscosity used on this processor
-      output.write("   Hyper-viscosity values:\n");
-      output.write("      Max mu_x = %e, Max_DC mu_x = %e\n", max(hyper_mu_x), max(hyper_mu_x.DC()));
+    // left edge sink terms 
+    if(sink_Ul > 0.0){
+      ddt(U) -=  sink_Ul*sink_tanhxl(P0,U,su_widthl,su_lengthl); // core sink
+    }
+    
+    // right edge sink terms 
+    if(sink_Ur > 0.0){
+      ddt(U) -=  sink_Ur*sink_tanhxr(P0,U,su_widthr,su_lengthr); //  sol sink
     }
   }
-
-  // left edge sink terms 
-  if(sink_Ul > 0.0){
-    ddt(U) -=  sink_Ul*sink_tanhxl(P0,U,su_widthl,su_lengthl); // core sink
-  }
-
-  // right edge sink terms 
-  if(sink_Ur > 0.0){
-    ddt(U) -=  sink_Ur*sink_tanhxr(P0,U,su_widthr,su_lengthr); //  sol sink
-  }
-
-  //output.write("I see you 5! \n");//xia
-
+  
   ///////////////////////////////////////////////
   // number density equation
 
-  ddt(Ni) = 0.0;
-
-  ddt(Ni) -=  bracket(B0*phi, N0, bm_exb);
-
-  if(diamag)
-    ddt(Ni) -= bracket(B0*phi0, Ni, bm_exb);   // Equilibrium flow
-
-  if(nonlinear) {
-    ddt(Ni) -= bracket(B0*phi, Ni, bm_exb);    // Advection  
-  }
-
-  if (compress0)
-    {
+  {
+    TRACE("ddt(Ni)");
+    
+    ddt(Ni) = 0.0;
+    
+    ddt(Ni) -=  bracket(B0*phi, N0, bm_exb);
+    
+    if (diamag) {
+      ddt(Ni) -= bracket(B0*phi0, Ni, bm_exb);   // Equilibrium flow
+    }
+    
+    if (nonlinear) {
+      ddt(Ni) -= bracket(B0*phi, Ni, bm_exb);    // Advection  
+    }
+    
+    if (compress0) {
       ddt(Ni) -= N0 * B0 * Grad_parP(Vipar/B0, CELL_CENTRE);
     }
-
-  //M: 4th order Parallel diffusion terms 
-  if(diffusion_n4 > 0.0){
-    tmpN2 = Grad2_par2new(Ni);
-    mesh->communicate(tmpN2);
-    tmpN2.applyBoundary();
-    ddt(Ni) -= diffusion_n4 * Grad2_par2new(tmpN2);}
-
-
-  //output.write("I see you 6! \n");//xia
-
-  ///////////////////////////////////////////////                                // ion temperature equation                                                    
-
-  ddt(Ti) = 0.0;
-
-  ddt(Ti) -= bracket(B0*phi, Ti0, bm_exb);
-
-  if(diamag)
-    ddt(Ti) -= bracket(phi0*B0, Ti, bm_exb);   // Equilibrium flow
-
-  if(nonlinear) {
-    ddt(Ti) -= bracket(phi*B0, Ti, bm_exb);    // Advection  
+    
+    //M: 4th order Parallel diffusion terms 
+    if(diffusion_n4 > 0.0) {
+      tmpN2 = Grad2_par2new(Ni);
+      mesh->communicate(tmpN2);
+      tmpN2.applyBoundary();
+      ddt(Ni) -= diffusion_n4 * Grad2_par2new(tmpN2);
+    }
   }
-
-  if (compress0)
-    {
+  
+  ///////////////////////////////////////////////
+  // ion temperature equation
+  {
+    TRACE("ddt(Ti)");
+    
+    ddt(Ti) = 0.0;
+    
+    ddt(Ti) -= bracket(B0*phi, Ti0, bm_exb);
+    
+    if (diamag) {
+      ddt(Ti) -= bracket(phi0*B0, Ti, bm_exb);   // Equilibrium flow
+    }
+    
+    if (nonlinear) {
+      ddt(Ti) -= bracket(phi*B0, Ti, bm_exb);    // Advection  
+    }
+    
+    if (compress0) {
       ddt(Ti) -= 2.0/3.0 * Ti0 * B0 * Grad_parP(Vipar/B0, CELL_CENTRE);
     }
-
-  if(diffusion_par > 0.0)
-    {
+    
+    if (diffusion_par > 0.0) {
       ddt(Ti) += kappa_par_i * Grad2_par2(Ti)/N0; // Parallel diffusion
       ddt(Ti) += Grad_par(kappa_par_i, CELL_CENTRE) * Grad_par(Ti, CELL_YLOW)/N0;
     }
-
-  //M: 4th order Parallel diffusion terms 
-  if(diffusion_ti4 > 0.0){
-    tmpTi2 = Grad2_par2new(Ti);
-    mesh->communicate(tmpTi2);
-    tmpTi2.applyBoundary();
-    ddt(Ti) -= diffusion_ti4 * Grad2_par2new(tmpTi2);}
-
-  //output.write("I see you 7! \n");//xia
-  ///////////////////////////////////////////////                                // electron temperature equation                                                    
-  ddt(Te) = 0.0;
-
-  ddt(Te) -= bracket(B0*phi, Te0, bm_exb);
-
-  if(diamag)
-    ddt(Te) -= bracket(B0*phi0, Te, bm_exb);   // Equilibrium flow
-
-  if(nonlinear) {
-    ddt(Te) -= bracket(B0*phi, Te, bm_exb);    // Advection
+    
+    //M: 4th order Parallel diffusion terms 
+    if (diffusion_ti4 > 0.0) {
+      tmpTi2 = Grad2_par2new(Ti);
+      mesh->communicate(tmpTi2);
+      tmpTi2.applyBoundary();
+      ddt(Ti) -= diffusion_ti4 * Grad2_par2new(tmpTi2);
+    }
   }
-
-  if (compress0)
-    {
+  
+  ///////////////////////////////////////////////
+  // electron temperature equation
+  
+  {
+    TRACE("ddt(Te)");
+    
+    ddt(Te) = 0.0;
+    
+    ddt(Te) -= bracket(B0*phi, Te0, bm_exb);
+    
+    if (diamag) {
+      ddt(Te) -= bracket(B0*phi0, Te, bm_exb);   // Equilibrium flow
+    }
+    
+    if (nonlinear) {
+      ddt(Te) -= bracket(B0*phi, Te, bm_exb);    // Advection
+    }
+    
+    if (compress0) {
       ddt(Te) -= 2.0/3.0 * Te0 * B0 * Grad_parP(Vepar/B0, CELL_CENTRE);
     }
-
-  if(diffusion_par > 0.0)
-    {
+    
+    if (diffusion_par > 0.0) {
       ddt(Te) += kappa_par_e * Grad2_par2(Te)/N0; // Parallel diffusion
       ddt(Te) += Grad_par(kappa_par_e, CELL_CENTRE) * Grad_par(Te, CELL_YLOW)/N0;
     }
-
-  if(diffusion_te4 > 0.0){
-    tmpTe2 = Grad2_par2new(Te);
-    mesh->communicate(tmpTe2);
-    tmpTe2.applyBoundary();
-    ddt(Te) -= diffusion_te4 * Grad2_par2new(tmpTe2);}
-
-
-  //output.write("I see you 8! \n");//xia
-
-  //////////////////////////////////////////////////////////////////////
-  if (compress0)   //parallel velocity equation
-    {
-      ddt(Vipar) = 0.0;
-      
-      ddt(Vipar) -= Vipara * Grad_parP(P, CELL_YLOW) / N0;
-      ddt(Vipar) += Vipara * bracket(Psi, P0, bm_mag) * B0 / N0;
-
-      if (diamag)
-	ddt(Vipar) -= bracket(B0*phi0, Vipar, bm_exb); 
-
-      if (nonlinear)
-	{
-	  ddt(Vipar) -= bracket(B0*phi, Vipar, bm_exb);
-	}
-
-      //output.write("test point 1. \n");
-
-      //xqx: parallel hyper-viscous diffusion for vector potential
-      if(diffusion_v4 > 0.0)
-	{
-	  tmpVp2 = Grad2_par2new(Vipar);
-	  mesh->communicate(tmpVp2);
-	  tmpVp2.applyBoundary();
-	  ddt(Vipar) -= diffusion_v4 * Grad2_par2new(tmpVp2);
-	}
-
-      if(sink_vp > 0.0){
-          Field2D V0tmp = 0.;
-          ddt(Vipar) -= sink_vp*sink_tanhxl(V0tmp,Vipar,sp_width,sp_length); // sink
-      }
+    
+    if (diffusion_te4 > 0.0) {
+      tmpTe2 = Grad2_par2new(Te);
+      mesh->communicate(tmpTe2);
+      tmpTe2.applyBoundary();
+      ddt(Te) -= diffusion_te4 * Grad2_par2new(tmpTe2);
     }
+  }
+  
+  //////////////////////////////////////////////////////////////////////
+  if (compress0) {  //parallel velocity equation
+    TRACE("ddt(Vipar)");
+    
+    ddt(Vipar) = 0.0;
+    
+    ddt(Vipar) -= Vipara * Grad_parP(P, CELL_YLOW) / N0;
+    ddt(Vipar) += Vipara * bracket(Psi, P0, bm_mag) * B0 / N0;
+    
+    if (diamag) {
+      ddt(Vipar) -= bracket(B0*phi0, Vipar, bm_exb); 
+    }
+
+    if (nonlinear) {
+      ddt(Vipar) -= bracket(B0*phi, Vipar, bm_exb);
+    }
+
+    //xqx: parallel hyper-viscous diffusion for vector potential
+    if (diffusion_v4 > 0.0) {
+      tmpVp2 = Grad2_par2new(Vipar);
+      mesh->communicate(tmpVp2);
+      tmpVp2.applyBoundary();
+      ddt(Vipar) -= diffusion_v4 * Grad2_par2new(tmpVp2);
+    }
+    
+    if (sink_vp > 0.0) {
+      Field2D V0tmp = 0.;
+      ddt(Vipar) -= sink_vp*sink_tanhxl(V0tmp,Vipar,sp_width,sp_length); // sink
+    }
+  }
 
 
   ///////////////////////////////////////////////////////////////////////
 
-  if(filter_z) {
+  if (filter_z) {
     // Filter out all except filter_z_mode
+    TRACE("filter_z");
     
     ddt(Psi) = filter(ddt(Psi), filter_z_mode);
     
@@ -1641,23 +1605,22 @@ int physics_run(BoutReal t)
 
     ddt(Te) = filter(ddt(Te), filter_z_mode);
 
-    if(compress0) 
-      {
-	ddt(Vipar) = filter(ddt(Vipar), filter_z_mode);
-      }
-
+    if (compress0) {
+      ddt(Vipar) = filter(ddt(Vipar), filter_z_mode);
+    }
   }
-
-  //output.write("I see you 9! \n");//xia
 
   ///////////////////////////////////////////////////////////////////////
 
-  if(low_pass_z > 0) {
-    //Low-pass filter, keeping n up to low_pass_z
-    if (!emass)
+  if (low_pass_z > 0) {
+    // Low-pass filter, keeping n up to low_pass_z
+    TRACE("low_pass_z");
+    
+    if (!emass) {
       ddt(Psi) = lowPass(ddt(Psi), low_pass_z, zonal_field);
-    else
+    } else {
       ddt(Ajpar) = lowPass(ddt(Ajpar), low_pass_z, zonal_field);
+    }
 
     ddt(U) = lowPass(ddt(U), low_pass_z, zonal_flow);
 
@@ -1665,10 +1628,9 @@ int physics_run(BoutReal t)
     ddt(Te) = lowPass(ddt(Te), low_pass_z, zonal_bkgd);
     ddt(Ni) = lowPass(ddt(Ni), low_pass_z, zonal_bkgd);
 
-    if(compress0) 
-      {
-	ddt(Vipar) = lowPass(ddt(Vipar), low_pass_z, zonal_bkgd);
-      }
+    if(compress0) {
+      ddt(Vipar) = lowPass(ddt(Vipar), low_pass_z, zonal_bkgd);
+    }
   }
 
   if(damp_width > 0) {
@@ -1683,11 +1645,10 @@ int physics_run(BoutReal t)
     }
   }
 
-  if (filter_nl >0)
-    {
-      ddt(Ni) = nl_filter( ddt(Ni), filter_nl);
-    }
-  //output.write("I see you 10! \n");//xia
+  if (filter_nl >0) {
+    TRACE("filter_nl");
+    ddt(Ni) = nl_filter( ddt(Ni), filter_nl);
+  }
 
   first_run = false;
 

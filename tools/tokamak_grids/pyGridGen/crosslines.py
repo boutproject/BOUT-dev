@@ -59,6 +59,9 @@ def linelineintersect(a, b, atol=1e-08):
     -----
     An example of 3 segment line is: a = numpy.array([[0,0],[5.0,3.0],[4.0,1]])
     Function faster when there are no overlapping line segments
+
+
+    add some lines for preventing zero-division 
     """    
 
     def x_y_from_line(line):
@@ -92,10 +95,12 @@ def linelineintersect(a, b, atol=1e-08):
     denom_ = np.empty(ignore.shape, dtype=float)   
     denom = np.ma.array(denom_, mask=ignore)
     denom_[:, :] = ((y22 - y21) * (x12 - x11)) - ((x22 - x21) * (y12 - y11))    
+    #denom_tmp  = ((y22 - y21) * (x12 - x11)) - ((x22 - x21) * (y12 - y11)) # H.SETO
+    denom_[:, :] = np.where(denom_ == 0.0, 1.e-100,denom_)
 
     ua_ = np.empty(ignore.shape, dtype=float)  
     ua = np.ma.array(ua_, mask=ignore)
-    ua_[:, :] = (((x22 - x21) * (y11 - y21)) - ((y22 - y21) * (x11 - x21)))            
+    ua_[:, :] = (((x22 - x21) * (y11 - y21)) - ((y22 - y21) * (x11 - x21)))
     ua_[:, :] /= denom
 
     ignore[ua < 0] = True
@@ -106,9 +111,9 @@ def linelineintersect(a, b, atol=1e-08):
     ub_[:, :] = (((x12 - x11) * (y11 - y21)) - ((y12 - y11) * (x11 - x21)))
     ub_[:, :] /= denom
 
+
     ignore[ub < 0] = True
     ignore[ub > 1] = True
-
 
     nans_ = np.zeros(ignore.shape, dtype = bool)
     nans = np.ma.array(nans_, mask = ignore)    

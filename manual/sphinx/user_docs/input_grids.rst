@@ -122,8 +122,6 @@ files for tokamaks. These can be used by the ``2fluid`` and
 ``highbeta_reduced`` modules, and are (mostly) compatible with inputs to
 the BOUT-06 code.
 
-Figure [fig:gridgen] shows the routines and file formats used in taking
-output from different codes and converting into input to BOUT++.
 
 BOUT++ Topology
 ---------------
@@ -148,7 +146,7 @@ are two separatrices and the inner separatrix is ``ixseps1`` so the
 tokamak is a lower double null.
 
 In other words: Let us for illustrative purposes say that
-``ixseps1 > ixseps2`` (see figure [fig:topology\_cross\_section]). Let
+``ixseps1 > ixseps2`` (see :numref:`fig-topology-cross-section`). Let
 us say that we have a field ``f(x,y,z)`` with a global ``x``-index which
 includes ghost points. ``f(x<=xseps1,y,z)``) will then be periodic in
 the ``y``-direction, ``f(xspes1<x<=xseps2,y,z)``) will have boundary
@@ -157,18 +155,26 @@ condition in the ``y``-direction set by the lowermost ``ydown`` and
 ``y``-direction will be set by the uppermost ``ydown`` and ``yup``. As
 for now, there is no difference between the two sets of upper and lower
 ``ydown`` and ``yup`` boundary conditions (unless manually specified,
-see section [sec:custom\_BC]).
+see :ref:`sec-custom-BC`).
 
-These values are set either in the grid file or in ``BOUT.inp``. Figure
-[fig:topology\_cross\_section] shows schematically how ``ixseps`` is
+These values are set either in the grid file or in ``BOUT.inp``.
+:numref:`fig-topology-cross-section` shows schematically how ``ixseps`` is
 used.
 
 The branch cut locations, ``jyseps1_1``, ``jyseps1_2``, ``jyseps2_1``,
 and ``jyseps2_2``, split the ``y`` domain into logical regions defining
 the SOL, the PFR (private flux region) and the core of the tokamak. This
-is illustrated also in figure [fig:topology\_cross\_section]. If
+is illustrated also in :numref:`fig-topology-cross-section`. If
 ``jyseps1_2 == jyseps2_1`` then the grid is a single null configuration,
 otherwise the grid is a double null configuration.
+
+.. _fig-topology-cross-section:
+.. figure:: ../figs/topology_cross_section.*
+   :alt: Cross-section of the tokamak topology used in BOUT++
+
+   Deconstruction of a poloidal tokamak cross-section into logical
+   domains using the parameters ``ixseps1``, ``ixseps2``,
+   ``jyseps1_1``, ``jyseps1_2``, ``jyseps2_1``, and ``jyseps2_2``
 
 Advanced
 ~~~~~~~~
@@ -180,16 +186,34 @@ processor boundaries so the number of grid points within each sub-domain
 must be an integer multiple of ``ny/nypes`` where ``ny`` is the number
 of grid points in ``y`` and ``nypes`` is the number of processors used
 to split the y domain. Processor communication across the domain
-boundaries is then handled internally. Figure [fig:topology\_schematic]
+boundaries is then handled internally. :numref:`fig-topology-schematic`
 shows schematically how the different regions of a double null tokamak
 with ``ixseps1 = ixseps2`` are connected together via communications.
+
+.. note::
+   To ensure that each subdomain follows logically, the
+   ``jyseps`` indices must adhere to the following conditions:
+
+    - ``jyseps1_1 > -1``
+    - ``jyseps2_1 >= jyseps1_1 + 1``
+    - ``jyseps1_2 >= jyseps2_1``
+    - ``jyseps2_2 <= ny - 1``
+
+   To ensure that communications work branch cuts must align with
+   processor boundaries.
+
+.. _fig-topology-schematic:
+.. figure:: ../figs/topology_schematic.*
+
+   Schematic illustration of domain decomposition and communication in
+   BOUT++ with ``ixseps1 = ixseps2``
 
 Implementations
 ~~~~~~~~~~~~~~~
 
 In BOUT++ each processor has a logically rectangular domain, so any
 branch cuts needed for X-point geometry (see
-figure [fig:topology\_schematic]) must be at processor boundaries.
+:numref:`fig-topology-schematic`) must be at processor boundaries.
 
 In the standard “bout” mesh (``src/mesh/impls/bout/``), the
 communication is controlled by the variables
@@ -201,11 +225,19 @@ communication is controlled by the variables
     int IDATA_DEST, ODATA_DEST;
 
 These control the behavior of the communications as shown in
-figure [fig:boutmesh-comms].
+:numref:`fig-boutmesh-comms`.
+
+.. _fig-boutmesh-comms:
+.. figure:: ../figs/boutmesh-comms.*
+   :alt: Communication of guard cells in BOUT++
+
+   Communication of guard cells in BOUT++. Boundaries in X have only
+   one neighbour each, but boundaries in Y can be split into two,
+   allowing branch cuts
 
 In the Y direction, each boundary region (**U**\ p and **D**\ own in Y)
 can be split into two, with ``0 <= x < UDATA_XSPLIT`` going to the
-processor index ``UDATA_INDEST``, and ``UDATA_INDEST <= x < ngx`` going
+processor index ``UDATA_INDEST``, and ``UDATA_INDEST <= x < LocalNx`` going
 to ``UDATA_OUTDEST``. Similarly for the Down boundary. Since there are
 no branch-cuts in the X direction, there is just one destination for the
 **I**\ nner and **O**\ uter boundaries. In all cases a negative
@@ -282,3 +314,10 @@ Generating equilibria
 
 The directory ``tokamak_grids/shifted_circle`` contains IDL code to
 generate shifted circle (large aspect ratio) Grad-Shafranov equilibria.
+
+.. figure:: ../figs/grid_gen.*
+    :alt: IDL routines and file formats used in taking output from
+          different codes and converting into input to BOUT++.
+
+    IDL routines and file formats used in taking output from different
+    codes and converting into input to BOUT++.

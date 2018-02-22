@@ -108,7 +108,7 @@ NonLocalParallel::~NonLocalParallel() {
 
 void NonLocalParallel::initialise(BoutReal pass_electron_charge, BoutReal pass_electron_mass, BoutReal pass_ion_mass, BoutReal pass_epsilon_0, BoutReal pass_logLambda, const bool pass_fluxes_location_is_ylow, BoutReal pass_gamma_factor) {
   fluxes_location_is_ylow = pass_fluxes_location_is_ylow;
-  #ifdef CHECK
+  #if CHECK > 0
     calculated_before_setting_bcs=false;
   #endif
   is_lower_boundary=mesh->firstY();
@@ -607,7 +607,7 @@ void NonLocalParallel::calculate_nonlocal_closures(const Field3D &n_electron, co
 					      , viscosity_boundary_condition
 					    #endif
 					  );
-  #ifdef CHECK
+  #if CHECK > 0
     calculated_before_setting_bcs=true;
   #endif
 }

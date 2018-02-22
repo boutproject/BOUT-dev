@@ -230,16 +230,14 @@ SlepcSolver::~SlepcSolver(){
   }
 }
 
-int SlepcSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
+int SlepcSolver::init(int NOUT, BoutReal TIMESTEP) {
 
-#ifdef CHECK
-  int msg_point = msg_stack.push("Initialising SLEPc-3.4 solver");
-#endif
+  TRACE("Initialising SLEPc-3.4 solver");
 
   //Report initialisation
   output.write("Initialising SLEPc-3.4 solver\n");
-  if(selfSolve){
-    Solver::init(restarting,NOUT,TIMESTEP);
+  if (selfSolve) {
+    Solver::init(NOUT,TIMESTEP);
 
     //If no advanceSolver then can only advance one step at a time
     NOUT=1;
@@ -286,12 +284,6 @@ int SlepcSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
 
   //Create EPS solver
   createEPS();
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
-
-  dump_on_restart = false; // Disable writing initial time slice
 
   //Return ok
   return 0;

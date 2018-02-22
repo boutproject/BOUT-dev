@@ -62,50 +62,52 @@ class H5Format : public DataFormat {
   H5Format(const string &name, bool parallel_in = false) : H5Format(name.c_str(), parallel_in) {}
   ~H5Format();
 
-  bool openr(const char *name);
-  bool openw(const char *name, bool append=false);
+  using DataFormat::openr;
+  bool openr(const char *name) override;
+  using DataFormat::openw;
+  bool openw(const char *name, bool append=false) override;
   
-  bool is_valid();
+  bool is_valid() override;
   
-  void close();
+  void close() override;
   
-  void flush();
+  void flush() override;
 
   const char* filename() { return fname; };
 
-  const vector<int> getSize(const char *var);
-  const vector<int> getSize(const string &var);
+  const vector<int> getSize(const char *var) override;
+  const vector<int> getSize(const string &var) override;
   
   // Set the origin for all subsequent calls
-  bool setGlobalOrigin(int x = 0, int y = 0, int z = 0);
-  bool setLocalOrigin(int x = 0, int y = 0, int z = 0, int offset_x = 0, int offset_y = 0, int offset_z = 0);
-  bool setRecord(int t); // negative -> latest
+  bool setGlobalOrigin(int x = 0, int y = 0, int z = 0) override;
+  bool setLocalOrigin(int x = 0, int y = 0, int z = 0, int offset_x = 0, int offset_y = 0, int offset_z = 0) override;
+  bool setRecord(int t) override; // negative -> latest
   
   // Read / Write simple variables up to 3D
 
-  bool read(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
-  bool read(int *var, const string &name, int lx = 1, int ly = 0, int lz = 0);
-  bool read(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
-  bool read(BoutReal *var, const string &name, int lx = 1, int ly = 0, int lz = 0);
+  bool read(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read(int *var, const string &name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read(BoutReal *var, const string &name, int lx = 1, int ly = 0, int lz = 0) override;
 
-  bool write(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0);
-  bool write(int *var, const string &name, int lx = 0, int ly = 0, int lz = 0);
-  bool write(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0);
-  bool write(BoutReal *var, const string &name, int lx = 0, int ly = 0, int lz = 0);
+  bool write(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write(int *var, const string &name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write(BoutReal *var, const string &name, int lx = 0, int ly = 0, int lz = 0) override;
 
   // Read / Write record-based variables
 
-  bool read_rec(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
-  bool read_rec(int *var, const string &name, int lx = 1, int ly = 0, int lz = 0);
-  bool read_rec(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
-  bool read_rec(BoutReal *var, const string &name, int lx = 1, int ly = 0, int lz = 0);
+  bool read_rec(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read_rec(int *var, const string &name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read_rec(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read_rec(BoutReal *var, const string &name, int lx = 1, int ly = 0, int lz = 0) override;
 
-  bool write_rec(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0);
-  bool write_rec(int *var, const string &name, int lx = 0, int ly = 0, int lz = 0);
-  bool write_rec(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0);
-  bool write_rec(BoutReal *var, const string &name, int lx = 0, int ly = 0, int lz = 0);
+  bool write_rec(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write_rec(int *var, const string &name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write_rec(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write_rec(BoutReal *var, const string &name, int lx = 0, int ly = 0, int lz = 0) override;
   
-  void setLowPrecision() { lowPrecision = true; }
+  void setLowPrecision() override { lowPrecision = true; }
 
  private:
 
@@ -127,12 +129,6 @@ class H5Format : public DataFormat {
   bool write(void *var, hid_t mem_hdf5_type, hid_t write_hdf5_type, const char *name, int lx = 0, int ly = 0, int lz = 0);
   bool read_rec(void *var, hid_t hdf5_type, const char *name, int lx = 1, int ly = 0, int lz = 0);
   bool write_rec(void *var, hid_t mem_hdf5_type, hid_t write_hdf5_type, const char *name, int lx = 0, int ly = 0, int lz = 0);
-
-//   map<string, int> rec_nr; // Record number for each variable (bit nasty)
-//   int default_rec;  // Starting record. Useful when appending to existing file
-
-//   void checkName(const char* name); ///< Check if a name contains invalid characters
-  
 };
 
 #endif // __H5FORMAT_H__

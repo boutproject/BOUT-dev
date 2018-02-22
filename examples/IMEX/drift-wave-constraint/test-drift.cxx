@@ -25,6 +25,9 @@ protected:
     solver->constraint(phi, ddt(phi), "phi");
     phi = 0.0;
     
+    // Coordinate system
+    coord = mesh->coordinates();
+
     return 0;
   }
   
@@ -79,7 +82,7 @@ protected:
     // ddt(phi) = Delp2(phi) - Vort;
 
     // This version uses central differencing for Delp2
-    ddt(phi) = (mesh->g11*D2DX2(phi) + mesh->g33*D2DZ2(phi)) - Vort;
+    ddt(phi) = (coord->g11*D2DX2(phi) + coord->g33*D2DZ2(phi)) - Vort;
     
     return 0;
   }
@@ -94,6 +97,7 @@ private:
   
   BoutReal nu; // Resistivity parameter
   
+  Coordinates *coord; // Coordinate system metrics
 };
 
 

@@ -15,7 +15,7 @@
 
 #include <output.hxx>
 
-ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m) {
+ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
   // Read the zShift angle from the mesh
   
   if(mesh.get(zShift, "zShift")) {
@@ -132,11 +132,12 @@ const Field3D ShiftedMetric::fromFieldAligned(const Field3D &f) {
   return shiftZ(f, fromAlignedPhs);
 }
 
-const Field3D ShiftedMetric::shiftZ(const Field3D f, const arr3Dvec &phs) {
+const Field3D ShiftedMetric::shiftZ(const Field3D &f, const arr3Dvec &phs) {
+  ASSERT1(&mesh == f.getMesh());
   if(mesh.LocalNz == 1)
     return f; // Shifting makes no difference
-  
-  Field3D result;
+
+  Field3D result(&mesh);
   result.allocate();
   
   for(int jx=0;jx<mesh.LocalNx;jx++) {
@@ -167,11 +168,12 @@ void ShiftedMetric::shiftZ(const BoutReal *in, const std::vector<dcomplex> &phs,
 }
 
 //Old approach retained so we can still specify a general zShift
-const Field3D ShiftedMetric::shiftZ(const Field3D f, const Field2D zangle) {
+const Field3D ShiftedMetric::shiftZ(const Field3D &f, const Field2D &zangle) {
+  ASSERT1(&mesh == f.getMesh());
   if(mesh.LocalNz == 1)
     return f; // Shifting makes no difference
-  
-  Field3D result;
+
+  Field3D result(&mesh);
   result.allocate();
 
   for(int jx=0;jx<mesh.LocalNx;jx++) {

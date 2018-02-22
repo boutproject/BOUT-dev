@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+
+from __future__ import print_function
+from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
+from boutdata.collect import collect
+import numpy as np
+from sys import stdout, exit
+
+MPIRUN=getmpirun()
+
+print("Making test")
+shell_safe("make > make.log")
+shell("rm data/BOUT.dmp.*")  # Delete old output files
+
+print("Running test")
+shell_safe("./test_ballooning")
+
+# Test variables
+var0 = collect("var0", path="data", info=False)
+var1 = collect("var1", path="data", info=False)
+
+if np.max(var1 - var0) > 1e-10:
+    print("Fail, maximum difference = %e" % (np.max(var1 - var0)) )
+    exit(1)
+
+print("Pass")
+exit(0)
+

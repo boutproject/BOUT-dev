@@ -46,12 +46,12 @@ class RK3SSP : public Solver {
   RK3SSP(Options *opt = NULL);
   ~RK3SSP();
   
-  void setMaxTimestep(BoutReal dt);
-  BoutReal getCurrentTimestep() {return timestep; }
+  void setMaxTimestep(BoutReal dt) override;
+  BoutReal getCurrentTimestep() override {return timestep; }
   
-  int init(bool restarting, int nout, BoutReal tstep);
+  int init(int nout, BoutReal tstep) override;
   
-  int run();
+  int run() override;
  private:
 
   BoutReal max_timestep; // Maximum timestep

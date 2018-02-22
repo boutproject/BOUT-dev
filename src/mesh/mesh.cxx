@@ -29,20 +29,16 @@ Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), coords(0), options(opt)
   /// Get mesh options
   OPTION(options, StaggerGrids,   false); // Stagger grids
 
-  // Will be set to true if any variable has a free boundary condition applied to the corresponding boundary
-  freeboundary_xin = false;
-  freeboundary_xout = false;
-  freeboundary_ydown = false;
-  freeboundary_yup = false;
-  
   // Initialise derivatives
   derivs_init(options);  // in index_derivs.cxx for now
 }
 
 Mesh::~Mesh() {
-  delete source;
+  if (source) {
+    delete source;
+  }
 
-  if(coords) {
+  if (coords) {
     delete coords;
   }
 }
@@ -117,7 +113,7 @@ int Mesh::get(Field3D &var, const string &name, BoutReal def, bool communicate) 
  **************************************************************************/
 
 int Mesh::get(Vector2D &var, const string &name) {
-  msg_stack.push("Loading 2D vector: Mesh::get(Vector2D, %s)", name.c_str());
+  TRACE("Loading 2D vector: Mesh::get(Vector2D, %s)", name.c_str());
 
   if(var.covariant) {
     output << "\tReading covariant vector " << name << endl;
@@ -133,14 +129,12 @@ int Mesh::get(Vector2D &var, const string &name) {
     get(var.y, name+"y");
     get(var.z, name+"z");
   }
-
-  msg_stack.pop();
 
   return 0;
 }
 
 int Mesh::get(Vector3D &var, const string &name) {
-  msg_stack.push("Loading 3D vector: Mesh::get(Vector3D, %s)", name.c_str());
+  TRACE("Loading 3D vector: Mesh::get(Vector3D, %s)", name.c_str());
 
   if(var.covariant) {
     output << "\tReading covariant vector " << name << endl;
@@ -156,8 +150,6 @@ int Mesh::get(Vector3D &var, const string &name) {
     get(var.y, name+"y");
     get(var.z, name+"z");
   }
-
-  msg_stack.pop();
 
   return 0;
 }
@@ -249,30 +241,22 @@ bool Mesh::hasBndryLowerY() {
   static bool calc = false, answer;
   if(calc) return answer; // Already calculated
 
-  int mybndry = (int) !(iterateBndryLowerY().isDone());
+  int mybndry = static_cast<int>(!(iterateBndryLowerY().isDone()));
   int allbndry;
   MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(yend));
-  answer = (bool) allbndry;
+  answer = static_cast<bool>(allbndry);
   calc = true;
   return answer;
-}
-
-Coordinates* Mesh::coordinates() {
-  if(!coords) {
-    // No coordinate system set. Create default
-    coords = new Coordinates(this);
-  }
-  return coords;
 }
 
 bool Mesh::hasBndryUpperY() {
   static bool calc = false, answer;
   if(calc) return answer; // Already calculated
 
-  int mybndry = (int) !(iterateBndryUpperY().isDone());
+  int mybndry = static_cast<int>(!(iterateBndryUpperY().isDone()));
   int allbndry;
   MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(ystart));
-  answer = (bool) allbndry;
+  answer = static_cast<bool>(allbndry);
   calc = true;
   return answer;
 }
@@ -333,4 +317,62 @@ ParallelTransform& Mesh::getParallelTransform() {
   
   // Return a reference to the ParallelTransform object
   return *transform;
+}
+
+Coordinates *Mesh::createDefaultCoordinates() {
+  return new Coordinates(this);
+}
+
+
+Region<> & Mesh::getRegion3D(const std::string &region_name){
+   auto found = regionMap3D.find(region_name);
+   if (found == end(regionMap3D)) {
+     throw BoutException("Couldn't find region %s in regionMap3D", region_name.c_str());
+   }
+   return found->second;
+}
+
+Region<Ind2D> & Mesh::getRegion2D(const std::string &region_name){
+   auto found = regionMap2D.find(region_name);
+   if (found == end(regionMap2D)) {
+     throw BoutException("Couldn't find region %s in regionMap2D", region_name.c_str());
+   }
+   return found->second;
+}
+  
+void Mesh::addRegion3D(const std::string &region_name, Region<> region){
+   if (regionMap3D.count(region_name)) {
+     throw BoutException("Trying to add an already existing region %s to regionMap3D");
+   }
+   regionMap3D[region_name] = region;
+}
+
+void Mesh::addRegion2D(const std::string &region_name, Region<Ind2D> region){
+  if (regionMap2D.count(region_name)) {
+    throw BoutException("Trying to add an already existing region %s to regionMap2D");
+  }
+  regionMap2D[region_name] = region;
+}
+ 
+void Mesh::createDefaultRegions(){
+  //3D regions
+  addRegion3D("RGN_ALL",
+	      Region<Ind3D>(0, LocalNx - 1, 0, LocalNy - 1, 0, LocalNz - 1, LocalNy, LocalNz));
+  addRegion3D("RGN_NOBNDRY",
+	      Region<Ind3D>(xstart, xend, ystart, yend, 0, LocalNz - 1, LocalNy, LocalNz));
+  addRegion3D("RGN_NOX",
+	      Region<Ind3D>(xstart, xend, 0, LocalNy - 1, 0, LocalNz - 1, LocalNy, LocalNz));
+  addRegion3D("RGN_NOY",
+	      Region<Ind3D>(0, LocalNx - 1, ystart, yend, 0, LocalNz - 1, LocalNy, LocalNz));
+
+  //2D regions
+  addRegion2D("RGN_ALL",
+	      Region<Ind2D>(0, LocalNx - 1, 0, LocalNy - 1, 0, 0, LocalNy, 1));
+  addRegion2D("RGN_NOBNDRY",
+	      Region<Ind2D>(xstart, xend, ystart, yend, 0, 0, LocalNy, 1));
+  addRegion2D("RGN_NOX",
+	      Region<Ind2D>(xstart, xend, 0, LocalNy - 1, 0, 0, LocalNy, 1));
+  addRegion2D("RGN_NOY",
+	      Region<Ind2D>(0, LocalNx - 1, ystart, yend, 0, 0, LocalNy, 1));
+
 }

@@ -43,6 +43,7 @@
 #include <output.hxx>
 #include <bout/constants.hxx>
 #include <msg_stack.hxx>
+#include "unused.hxx"
 
 #include <math.h>
 #include <string.h>
@@ -50,9 +51,11 @@
 
 void initial_profile(const string &name, Field3D &var) {
   TRACE("initial_profile(string, Field3D)");
-  
+
+  Mesh *localmesh = var.getMesh();
+
   CELL_LOC loc = CELL_DEFAULT;
-  if (mesh->StaggerGrids) {
+  if (localmesh->StaggerGrids) {
     loc = var.getLocation();
   }
   
@@ -60,8 +63,8 @@ void initial_profile(const string &name, Field3D &var) {
   Options *varOpts = Options::getRoot()->getSection(name);
   
   // Use FieldFactory to generate values
-    
-  FieldFactory f(mesh);
+
+  FieldFactory f(localmesh);
 
   string function;
   VAROPTION(varOpts, function, "0.0");
@@ -79,14 +82,16 @@ void initial_profile(const string &name, Field3D &var) {
 void initial_profile(const string &name, Field2D &var) {
   
   CELL_LOC loc = var.getLocation();
-  
+
+  Mesh *localmesh = var.getMesh();
+
   // Get the section for this variable
   Options *varOpts = Options::getRoot()->getSection(name);
   output << name;
   
   // Use FieldFactory to generate values
-    
-  FieldFactory f(mesh);
+
+  FieldFactory f(localmesh);
 
   string function;
   VAROPTION(varOpts, function, "0.0");
@@ -121,27 +126,4 @@ void initial_profile(const string &name, Vector3D &var) {
     initial_profile(name + "y", var.y);
     initial_profile(name + "z", var.z);
   }
-}
-
-/**************************************************************************
- * Routines to generate profiles 
- **************************************************************************/
-
-/// Generate a 3D field with a given Z oscillation
-/*!
-  @param[in] n      Mode number. Note that this is mode-number in the domain
-  @param[in] phase  Phase shift in units of pi
-*/
-const Field3D genZMode(int n, BoutReal phase) {
-  Field3D result;
-
-  result.allocate();
-  
-  for(int jz=0;jz<mesh->LocalNz;jz++) {
-    BoutReal val = sin(phase*PI +  TWOPI * ((BoutReal) jz)/ ((BoutReal) mesh->LocalNz) );
-    for(int jx=0;jx<mesh->LocalNx;jx++)
-      for(int jy=0;jy<mesh->LocalNy;jy++)
-	result(jx,jy,jz) = val;
-  }
-  return result;
 }
