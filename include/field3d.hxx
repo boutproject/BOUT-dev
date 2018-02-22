@@ -678,11 +678,11 @@ bool finite(const Field3D &var);
 #if CHECK > 0
 /// Throw an exception if \p f is not allocated or if any
 /// elements are non-finite (for CHECK > 2)
-void checkData(const Field3D &f);
+void checkData(const Field3D &f, REGION region = RGN_NOBNDRY);
 #else
 /// Ignored with disabled CHECK; Throw an exception if \p f is not
 /// allocated or if any elements are non-finite (for CHECK > 2)
-inline void checkData(const Field3D &UNUSED(f)){};
+inline void checkData(const Field3D &UNUSED(f), REGION UNUSED(region) = RGN_NOBNDRY){};
 #endif
  
 /*!
@@ -742,6 +742,11 @@ void shiftZ(Field3D &var, double zangle);
  * Average in the Z direction
  */ 
 Field2D DC(const Field3D &f);
+
+/*!
+ * Force guard cells of passed field to nan
+ */ 
+void invalidateGuards(Field3D &var);
 
 /*!
  * @brief Returns a reference to the time-derivative of a field

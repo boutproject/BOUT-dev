@@ -182,7 +182,7 @@ BoutReal RKGenericSolver::take_step(const BoutReal timeIn, const BoutReal dt, co
     //Get derivs for this stage
     load_vars(tmpState);
     run_rhs(curTime);
-    save_derivs(scheme->steps[curStage]);
+    save_derivs(&(scheme->steps(curStage,0)));
   }
 
   return scheme->setOutputStates(start, dt, resultFollow);

@@ -80,7 +80,7 @@ AC_ARG_ENABLE(optimize,     [AS_HELP_STRING([--enable-optimize=1/2/3],
 AC_ARG_ENABLE(sigfpe,       [AS_HELP_STRING([--enable-sigfpe],
         [Enable FloatingPointExceptions])],,[])
 AC_ARG_ENABLE(backtrace,    [AS_HELP_STRING([--disable-backtrace],
-        [Disable function backtrace])],,[enable_backtrace=yes])
+        [Disable function backtrace])],,[enable_backtrace=maybe])
 AC_ARG_ENABLE(shared,       [AS_HELP_STRING([--enable-shared],
         [Enable building bout++ into an shared object])],,[enable_shared=no])
 AC_ARG_ENABLE(pvode_openmp,       [AS_HELP_STRING([--enable-pvode-openmp],
@@ -312,17 +312,36 @@ CXXFLAGS+=" -DBOUT_VERSION_STRING=\"\\\"$BOUT_VERSION\\\"\" -DBOUT_VERSION_DOUBL
 # Enable Backtrace if possible
 #############################################################
 
-if test ."$enable_backtrace" == .yes
+if test ."$enable_backtrace" == .yes || test ."$enable_backtrace" == .maybe
 then
-    if which addr2line &>/dev/null
+    works=yes
+    if ! which addr2line &>/dev/null
     then
-        AC_CHECK_FUNC(popen,
-                      [AC_TRY_COMPILE([#include <execinfo.h>] ,,
-                                      [AC_TRY_LINK([extern "C"
-                                                    char backtrace();] ,
-                                                   [return backtrace();],
-                                                   [CXXFLAGS="$CXXFLAGS -DBACKTRACE"]);
-                                      ])])
+        AC_MSG_WARN("util addr2line not found")
+        works=no
+    fi
+    AC_CHECK_FUNC(popen, , [works=no])
+    AC_TRY_COMPILE([#include <execinfo.h>] , , ,
+                   [AC_MSG_WARN("execinfo.h not found")
+                    works=no])
+    AC_TRY_LINK([extern "C"
+                 char backtrace();] ,
+                 [return backtrace();], ,
+                 [AC_MSG_WARN("backtrace function not found")
+                  works=no])
+    AC_TRY_COMPILE([#include <dlfcn.h>] , , ,
+                   [AC_MSG_WARN("dlfcn.h not found")
+                    works=no])
+    if test .$works == .yes
+    then
+        CXXFLAGS="$CXXFLAGS -DBACKTRACE"
+    else
+        if test ."$enable_backtrace" == .yes
+        then
+            AC_MSG_ERROR([backtrace requested, but cannot be enabled])
+        else
+            AC_MSG_WARN("backtrace disabled")
+        fi
     fi
 fi
 
@@ -1371,6 +1390,8 @@ echo "  Parallel-NetCDF support: $HAS_PNETCDF" | tee -a config-build.log
 echo "  HDF5 support: $HAS_HDF5 (parallel: $HAS_PHDF5)" | tee -a config-build.log
 
 echo "  MUMPS support: $HAS_MUMPS" | tee -a config-build.log
+
+echo "  Lapack support: $HAS_LAPACK" | tee -a config-build.log
 
 echo "  Scorep support: $HAS_SCOREP" | tee -a config-build.log
 

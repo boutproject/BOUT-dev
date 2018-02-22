@@ -370,17 +370,17 @@ private:
     BOUT_OMP(single)
     {
       for (auto &stores : arena) {
-	for (auto &p : stores) {
-	  auto &v = p.second;
-	  for (dataPtrType a : v) {
-	    a = nullptr; //Could use a.reset() if clearer
-	  }
-	  v.clear();
-	}
-	stores.clear();
+        for (auto &p : stores) {
+          auto &v = p.second;
+          for (dataPtrType a : v) {
+            a.reset();
+          }
+          v.clear();
+        }
+        stores.clear();
       }
-      //Here we ensure there is exactly one empty map still
-      //left in the arena as we have to return one such item
+      // Here we ensure there is exactly one empty map still
+      // left in the arena as we have to return one such item
       arena.resize(1);
     }
 
