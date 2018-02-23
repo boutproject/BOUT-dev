@@ -433,11 +433,11 @@ private:
     // Some interface systems to be solved on this processor
     // Note that the interface equations are organised by system (myns as first argument)
     // but communication buffers are organised by processor (nprocs first).
-    ifcs = Matrix<T>(my, 2*4*nprocs);     // Coefficients for interface solve
+    ifcs = Matrix<T>(myns, 2*4*nprocs);     // Coefficients for interface solve
     if(nprocs > 1)
-      if2x2 = Matrix<T>(my, 2*4);         // 2x2 interface equations on this processor
-    ifx  = Matrix<T>(my, 2*nprocs);       // Solution of interface equations
-    ifp = Array<T>(my*2);     // Solution to be sent to processor p
+      if2x2 = Matrix<T>(myns, 2*4);         // 2x2 interface equations on this processor
+    ifx = Matrix<T>(myns, 2*nprocs);       // Solution of interface equations
+    ifp = Array<T>(myns*2);     // Solution to be sent to processor p
     // Each system to be solved on this processor has two interface equations from each processor
     
     x1 = Array<T>(Nsys);
