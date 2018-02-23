@@ -120,8 +120,8 @@ const Field3D InvertParCR::solve(const Field3D &f) {
     
     // Take Fourier transform 
     for(int y=0;y<mesh->LocalNy-4;y++)
-      rfft(f(x,y+2), mesh->LocalNz, rhs[y+y0]);
-    
+      rfft(f(x, y + 2), mesh->LocalNz, &rhs(y + y0, 0));
+
     // Set up tridiagonal system
     for(int k=0; k<nsys; k++) {
       BoutReal kwave=k*2.0*PI/coord->zlength(); // wave number is 1/[rad]
@@ -140,11 +140,11 @@ const Field3D InvertParCR::solve(const Field3D &f) {
         
         //           const     d2dy2        d2dydz             d2dz2           ddy
         //           -----     -----        ------             -----           ---
-	a[k][y+y0] =            bcoef - 0.5*Im*kwave*ccoef                  -0.5*ecoef;
-	b[k][y+y0] = acoef - 2.*bcoef                     - SQ(kwave)*dcoef;
-	c[k][y+y0] =            bcoef + 0.5*Im*kwave*ccoef                  +0.5*ecoef;
-	
-	rhsk[k][y+y0] = rhs[y+y0][k]; // Transpose
+        a(k, y + y0) = bcoef - 0.5 * Im * kwave * ccoef - 0.5 * ecoef;
+        b(k, y + y0) = acoef - 2. * bcoef - SQ(kwave) * dcoef;
+        c(k, y + y0) = bcoef + 0.5 * Im * kwave * ccoef + 0.5 * ecoef;
+
+        rhsk(k, y + y0) = rhs(y + y0, k); // Transpose
       }
     }
 
@@ -157,14 +157,14 @@ const Field3D InvertParCR::solve(const Field3D &f) {
         for(int k=0; k<nsys; k++) {
           BoutReal kwave=k*2.0*PI/coord->zlength(); // wave number is 1/[rad]
           dcomplex phase(cos(kwave*ts) , -sin(kwave*ts));
-          a[k][0] *= phase;
+          a(k, 0) *= phase;
         }
       }
       if(rank == np-1) {
         for(int k=0; k<nsys; k++) {
           BoutReal kwave=k*2.0*PI/coord->zlength(); // wave number is 1/[rad]
           dcomplex phase(cos(kwave*ts) , sin(kwave*ts));
-          c[k][mesh->LocalNy-5] *= phase;
+          c(k, mesh->LocalNy - 5) *= phase;
         }
       }
     }else {
@@ -172,22 +172,22 @@ const Field3D InvertParCR::solve(const Field3D &f) {
       if(surf.firstY()) {
         for(int k=0; k<nsys; k++) {
           for(int y=0;y<2;y++) {
-            a[k][y] =  0.;
-            b[k][y] =  1.;
-            c[k][y] = -1.;
-            
-            rhsk[k][y] = 0.;
+            a(k, y) = 0.;
+            b(k, y) = 1.;
+            c(k, y) = -1.;
+
+            rhsk(k, y) = 0.;
           }
         }
       }
       if(surf.lastY()) {
         for(int k=0; k<nsys; k++) {
           for(int y=size-2;y<size;y++) {
-            a[k][y] = -1.;
-            b[k][y] =  1.;
-            c[k][y] =  0.;
-            
-            rhsk[k][y] = 0.;
+            a(k, y) = -1.;
+            b(k, y) = 1.;
+            c(k, y) = 0.;
+
+            rhsk(k, y) = 0.;
           }
         }
       }
@@ -200,13 +200,12 @@ const Field3D InvertParCR::solve(const Field3D &f) {
     // Put back into rhs array
     for(int k=0;k<nsys;k++) {
       for(int y=0;y<size;y++)
-        rhs[y][k] = xk[k][y];
+        rhs(y, k) = xk(k, y);
     }
     
     // Inverse Fourier transform 
     for(int y=0;y<size;y++)
-      irfft(rhs[y], mesh->LocalNz, result(x,y+2-y0));
-    
+      irfft(&rhs(y, 0), mesh->LocalNz, result(x, y + 2 - y0));
   }
   
   // Delete cyclic reduction object
