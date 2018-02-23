@@ -36,6 +36,9 @@ has_breathe = False
 # Are we running on readthedocs?
 on_readthedocs = os.environ.get("READTHEDOCS") == "True"
 
+if on_readthedocs:
+    sys.path.append("../../tools/pylib")
+
 # readthedocs currently runs out of memory if we actually dare to try to do this
 if has_breathe and not on_readthedocs:
     # Run doxygen to generate the XML sources
@@ -73,7 +76,8 @@ if has_breathe and not on_readthedocs:
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = ['sphinx.ext.coverage',
-              'sphinx.ext.mathjax']
+              'sphinx.ext.mathjax',
+              'sphinx.ext.autodoc']
 
 if has_breathe:
     extensions.append('breathe')
