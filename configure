@@ -6480,41 +6480,6 @@ fi
 
     fi
   fi
-
-  # Try locate
-  if test "$PNCPATH" == ""
-  then
-    path=`locate pnetcdf.h | head -n 1`
-    if test "$path" != ""
-    then
-      path=$path/..
-      as_ac_File=`$as_echo "ac_cv_file_$path/include/pnetcdf.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $path/include/pnetcdf.h" >&5
-$as_echo_n "checking for $path/include/pnetcdf.h... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$path/include/pnetcdf.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$path/include/pnetcdf.h" | $as_tr_cpp` 1
-_ACEOF
-PNCPATH=$path
-fi
-
-    fi
-  fi
 fi
 
 if test "$PNCPATH" != ""
