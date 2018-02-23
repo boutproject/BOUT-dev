@@ -30,14 +30,13 @@ import os
 import subprocess
 import sys
 
+sys.path.append("../../tools/pylib")
+
 # Disable breathe
 has_breathe = False
 
 # Are we running on readthedocs?
 on_readthedocs = os.environ.get("READTHEDOCS") == "True"
-
-if on_readthedocs:
-    sys.path.append("../../tools/pylib")
 
 # readthedocs currently runs out of memory if we actually dare to try to do this
 if has_breathe and not on_readthedocs:

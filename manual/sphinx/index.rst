@@ -107,6 +107,14 @@ The documentation is divided into the following sections:
 
 .. toctree::
    :maxdepth: 1
+   :caption: Python routines
+   :name: python-api
+   :glob:
+
+   _apidoc/*
+
+.. toctree::
+   :maxdepth: 1
    :caption: API Reference
    :name: api-ref
    :glob:
