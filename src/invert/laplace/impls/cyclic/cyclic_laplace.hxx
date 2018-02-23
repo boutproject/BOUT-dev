@@ -71,7 +71,7 @@ private:
   int nmode;  // Number of modes being solved
   int xs, xe; // Start and end X indices
   Matrix<dcomplex> a, b, c, bcmplx, xcmplx;
-  dcomplex *k1d;
+  Array<dcomplex> k1d;
   
   bool dst;
   
