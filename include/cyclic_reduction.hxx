@@ -220,9 +220,9 @@ public:
           for(int i=0;i<myns; i++)
             for(int j=0;j<8;j++) {
 #ifdef DIAGNOSE
-              output << "Value " << j << " : " << recvbuffer[p][8*i + j] << endl;
+              output << "Value " << j << " : " << recvbuffer(p, 8*i + j) << endl;
 #endif
-              ifcs[i][8*p + j] = recvbuffer[p][8*i + j];
+              ifcs(i, 8*p + j) = recvbuffer(p, 8*i + j);
             }
           req[p] = MPI_REQUEST_NULL;
         }
@@ -349,8 +349,8 @@ public:
 	    nsp++;
 	  
 	  for(int i=0;i<nsp; i++) {
-	    x1[s0+i] = recvbuffer[fromproc][2*i];
-	    xn[s0+i] = recvbuffer[fromproc][2*i+1];
+	    x1[s0+i] = recvbuffer(fromproc, 2*i);
+	    xn[s0+i] = recvbuffer(fromproc, 2*i+1);
 #ifdef DIAGNOSE
             output << "Received x1,xn[" << s0+i << "] = " << x1[s0+i] << ", "
 		   << xn[s0+i] << " from " << fromproc << endl;
@@ -381,7 +381,7 @@ private:
   Matrix<T> coefs;  ///< Starting coefficients, rhs [Nsys, {3*coef,rhs}*N]
   Matrix<T> myif;   ///< Interface equations for this processor
   
-  T **recvbuffer; ///< Buffer for receiving from other processors
+  Matrix<T> recvbuffer; ///< Buffer for receiving from other processors
   Matrix<T> ifcs;   ///< Coefficients for interface solve
   Matrix<T> if2x2;  ///< 2x2 interface equations on this processor
   Matrix<T> ifx;    ///< Solution of interface equations
@@ -426,9 +426,7 @@ private:
     //     from each processor. The number of systems of equations received will
     //     vary from myns to myns+1 (if myproc >= nsextra).
     // The size of the array reserved is therefore (myns+1)
-    
-    recvbuffer = matrix<T>(nprocs, (myns+1)*8); // Buffer for receiving from other processors
-
+    recvbuffer = Matrix<T>(nprocs, (myns+1)*8); // Buffer for receiving from other processors
     
     // Some interface systems to be solved on this processor
     // Note that the interface equations are organised by system (myns as first argument)
@@ -448,9 +446,6 @@ private:
   void freeMemory() {
     if(Nsys == 0)
       return;
-    
-    // Free all working memory
-    free_matrix(recvbuffer);
 
     N = Nsys = 0;
   }
