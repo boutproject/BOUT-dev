@@ -37,6 +37,7 @@
 #include <valarray>
 #endif
 
+#include <bout/assert.hxx>
 #include <bout/openmpwrap.hxx>
 
 /*!
@@ -271,6 +272,7 @@ public:
    * so the user should perform checks.
    */
   T& operator[](int ind) {
+    ASSERT3(0 <= ind && ind < size());
 #ifdef BOUT_ARRAY_WITH_VALARRAY
     return ptr->operator[](ind);
 #else    
@@ -278,6 +280,7 @@ public:
 #endif    
   }
   const T& operator[](int ind) const {
+    ASSERT3(0 <= ind && ind < size());
 #ifdef BOUT_ARRAY_WITH_VALARRAY
     return ptr->operator[](ind);
 #else    
@@ -370,17 +373,17 @@ private:
     BOUT_OMP(single)
     {
       for (auto &stores : arena) {
-	for (auto &p : stores) {
-	  auto &v = p.second;
-	  for (dataPtrType a : v) {
-	    a = nullptr; //Could use a.reset() if clearer
-	  }
-	  v.clear();
-	}
-	stores.clear();
+        for (auto &p : stores) {
+          auto &v = p.second;
+          for (dataPtrType a : v) {
+            a.reset();
+          }
+          v.clear();
+        }
+        stores.clear();
       }
-      //Here we ensure there is exactly one empty map still
-      //left in the arena as we have to return one such item
+      // Here we ensure there is exactly one empty map still
+      // left in the arena as we have to return one such item
       arena.resize(1);
     }
 

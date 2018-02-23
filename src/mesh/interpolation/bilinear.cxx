@@ -31,8 +31,8 @@ Bilinear::Bilinear(int y_offset, Mesh *mesh)
     : Interpolation(y_offset), w0(mesh), w1(mesh), w2(mesh), w3(mesh) {
 
   // Index arrays contain guard cells in order to get subscripts right
-  i_corner = i3tensor(mesh->LocalNx, mesh->LocalNy, mesh->LocalNz);
-  k_corner = i3tensor(mesh->LocalNx, mesh->LocalNy, mesh->LocalNz);
+  i_corner = Tensor<int>(mesh->LocalNx, mesh->LocalNy, mesh->LocalNz);
+  k_corner = Tensor<int>(mesh->LocalNx, mesh->LocalNy, mesh->LocalNz);
 
   // Allocate Field3D members
   w0.allocate();
@@ -50,13 +50,13 @@ void Bilinear::calcWeights(const Field3D &delta_x, const Field3D &delta_z) {
 
         // The integer part of xt_prime, zt_prime are the indices of the cell
         // containing the field line end-point
-        i_corner[x][y][z] = static_cast<int>(floor(delta_x(x,y,z)));
-        k_corner[x][y][z] = static_cast<int>(floor(delta_z(x,y,z)));
+        i_corner(x, y, z) = static_cast<int>(floor(delta_x(x, y, z)));
+        k_corner(x, y, z) = static_cast<int>(floor(delta_z(x, y, z)));
 
         // t_x, t_z are the normalised coordinates \in [0,1) within the cell
         // calculated by taking the remainder of the floating point index
-        BoutReal t_x = delta_x(x,y,z) - static_cast<BoutReal>(i_corner[x][y][z]);
-        BoutReal t_z = delta_z(x,y,z) - static_cast<BoutReal>(k_corner[x][y][z]);
+        BoutReal t_x = delta_x(x, y, z) - static_cast<BoutReal>(i_corner(x, y, z));
+        BoutReal t_z = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
         BoutReal t_x1 = BoutReal(1.0) - t_x;
         BoutReal t_z1 = BoutReal(1.0) - t_z;
 
@@ -97,14 +97,13 @@ Field3D Bilinear::interpolate(const Field3D& f) const {
         // Due to lack of guard cells in z-direction, we need to ensure z-index
         // wraps around
         int ncz = mesh->LocalNz;
-        int z_mod = ((k_corner[x][y][z] % ncz) + ncz) % ncz;
+        int z_mod = ((k_corner(x, y, z) % ncz) + ncz) % ncz;
         int z_mod_p1 = (z_mod + 1) % ncz;
 
-        f_interp(x,y_next,z) =
-            f(i_corner[x][y][z],   y_next,z_mod) * w0(x,y,z)
-          + f(i_corner[x][y][z]+1, y_next,z_mod) * w1(x,y,z)
-          + f(i_corner[x][y][z],   y_next,z_mod_p1) * w2(x,y,z)
-          + f(i_corner[x][y][z]+1, y_next,z_mod_p1) * w3(x,y,z);
+        f_interp(x, y_next, z) = f(i_corner(x, y, z), y_next, z_mod) * w0(x, y, z) +
+                                 f(i_corner(x, y, z) + 1, y_next, z_mod) * w1(x, y, z) +
+                                 f(i_corner(x, y, z), y_next, z_mod_p1) * w2(x, y, z) +
+                                 f(i_corner(x, y, z) + 1, y_next, z_mod_p1) * w3(x, y, z);
       }
     }
   }
