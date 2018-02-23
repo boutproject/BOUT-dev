@@ -400,6 +400,7 @@ BOUT_OMP(for)
       /* Get r_m and test convergence.*/
       residualVec(level,p,rhs,r);
       error = sqrt(vectorProd(level,r,r));
+if (level>0) output<<"A: "<<num<<" "<<error<<endl;
       num += 1;
       if(error > dtol) {
         throw BoutException("GMRES reached dtol with error %16.10f at iteration %d\n",error,num);
@@ -698,6 +699,7 @@ BOUT_OMP(for)
     for(int i = 0;i<ldim;i++) sol[i] = sol[i]+y[i];
     residualVec(level,sol,rhs,r);
     error = sqrt(vectorProd(level,r,r));
+if (level>0) output<<m<<" "<<error<<endl;
     if((pcheck == 1) && (rProcI == 0)) 
       printf("%d \n  In MGsolve error = %24.18f\n",m,error);
     if(error < rtol*ini_e+atol) break;

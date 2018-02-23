@@ -6,7 +6,8 @@ from sys import exit
 
 Ntests = 4
 
-d = BoutOutputs("data", caching=True, info=False)
+d = BoutOutputs("data")
+#d = BoutOutputs("data", caching=True, info=False)
 
 for i in range(1,Ntests+1):
     pyplot.figure(i)
