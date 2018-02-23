@@ -401,9 +401,14 @@ BOUT_OMP(for)
       residualVec(level,p,rhs,r);
       error = sqrt(vectorProd(level,r,r));
       num += 1;
-      if((error > dtol) || num > MAXIT) {
-        throw BoutException("Error in GMRES %16.10f (%d)\n",error,num);
-        etest = 0; 
+      if(error > dtol) {
+        throw BoutException("GMRES reached dtol with error %16.10f at iteration %d\n",error,num);
+        etest = 0;
+        break;
+      }
+      if(num > MAXIT) {
+        throw BoutException("GMRES reached MAXIT with error %16.10f at iteration %d\n",error,num);
+        etest = 0;
         break;
       }
       if(error <= rtol*ini_e+atol) {
