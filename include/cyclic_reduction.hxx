@@ -173,7 +173,7 @@ public:
 #ifdef DIAGNOSE
           output << "Expecting to receive " << len << " from " << p << endl;
 #endif
-          MPI_Irecv(recvbuffer[p], 
+          MPI_Irecv(&recvbuffer(p, 0), 
                     len, 
                     MPI_BYTE, // Just sending raw data, unknown type
                     p,        // Destination processor
@@ -196,7 +196,7 @@ public:
         for(int i=0;i<8;i++)
           output << "value " << i << " : " << myif(s0, i) << endl;
 #endif
-        MPI_Send(myif[s0],        // Data pointer
+        MPI_Send(&myif(s0, 0),        // Data pointer
                  8*nsp*sizeof(T), // Number
                  MPI_BYTE,        // Type
 		 p,               // Destination
@@ -296,7 +296,7 @@ public:
 #ifdef DIAGNOSE
           output << "Expecting receive from " << p << " of size " << len << endl;
 #endif
-	  MPI_Irecv(recvbuffer[p],
+	  MPI_Irecv(&recvbuffer(p, 0),
 		    len,
 		    MPI_BYTE, // Just sending raw data, unknown type
 		    p,        // Destination processor
