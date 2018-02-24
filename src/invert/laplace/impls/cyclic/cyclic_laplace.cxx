@@ -145,8 +145,8 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
 
     // Solve tridiagonal systems
 
-    cr->setCoefs(nmode, a, b, c);
-    cr->solve(nmode, bcmplx, xcmplx);
+    cr->setCoefs(a, b, c);
+    cr->solve(bcmplx, xcmplx);
 
     // FFT back to real space
     for(int ix=xs; ix <= xe; ix++) {
@@ -193,8 +193,8 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
 
     // Solve tridiagonal systems
 
-    cr->setCoefs(nmode, a, b, c);
-    cr->solve(nmode, bcmplx, xcmplx);
+    cr->setCoefs(a, b, c);
+    cr->solve(bcmplx, xcmplx);
 
     // FFT back to real space
     for(int ix=xs; ix <= xe; ix++) {

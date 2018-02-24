@@ -78,15 +78,15 @@ int main(int argc, char **argv) {
     // Zero x, so that solve has to do something
 
     for (int i = 0; i < n; i++) {
-      x[s][i] = 0.0;
+      x(s, i) = 0.0;
     }
   }
 
   // Solve system
 
   cr->setPeriodic(periodic);
-  cr->setCoefs(nsys, a, b, c);
-  cr->solve(nsys, rhs, x);
+  cr->setCoefs(a, b, c);
+  cr->solve(rhs, x);
 
   // Check result
 

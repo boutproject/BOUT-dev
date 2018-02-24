@@ -151,7 +151,7 @@ void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
     }
   }
   // Set coefficients in tridiagonal solver
-  cr->setCoefs(nsys, acoef, bcoef, ccoef);
+  cr->setCoefs(acoef, bcoef, ccoef);
 }
 
 Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &x0) {
@@ -238,7 +238,7 @@ Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &x0) {
   }
 
   // Solve tridiagonal systems
-  cr->solve(nsys, rhscmplx, xcmplx);
+  cr->solve(rhscmplx, xcmplx);
 
   // FFT back to real space
 

@@ -194,9 +194,9 @@ const Field3D InvertParCR::solve(const Field3D &f) {
     }
     
     // Solve cyclic tridiagonal system for each k
-    cr->setCoefs(nsys, a, b, c);
-    cr->solve(nsys, rhsk, xk);
-    
+    cr->setCoefs(a, b, c);
+    cr->solve(rhsk, xk);
+
     // Put back into rhs array
     for(int k=0;k<nsys;k++) {
       for(int y=0;y<size;y++)

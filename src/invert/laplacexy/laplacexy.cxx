@@ -490,7 +490,7 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
 #endif
   
   // Set coefficients for preconditioner
-  cr->setCoefs(nsys, acoef, bcoef, ccoef);
+  cr->setCoefs(acoef, bcoef, ccoef);
 }
 
 LaplaceXY::~LaplaceXY() {
@@ -729,7 +729,7 @@ int LaplaceXY::precon(Vec input, Vec result) {
   }
   
   // Solve tridiagonal systems using CR solver
-  cr->solve(nsys, bvals, xvals);
+  cr->solve(bvals, xvals);
 
   // Save result xvals into y array
   ind = ind0;

@@ -91,11 +91,6 @@ public:
   /// By default not periodic
   void setPeriodic(bool p=true) {periodic=p;}
   
-  /// Set up a single equation to invert
-  void setCoefs(Matrix<T> &a, Matrix<T> &b, Matrix<T> &c) {
-    setCoefs(1, &a, &b, &c);
-  }
-
   /// Set the entries in the matrix to be inverted
   ///
   /// @param[in] nsys   The number of independent matrices to be solved
@@ -103,8 +98,10 @@ public:
   ///                where N is set in the constructor or setup
   /// @param[in] b   Diagonal values. Should have size [nsys][N]
   /// @param[in] c   Right diagonal. Should have size [nsys][N]
-  void setCoefs(int nsys, Matrix<T> &a, Matrix<T> &b, Matrix<T> &c) {
+  void setCoefs(Matrix<T> &a, Matrix<T> &b, Matrix<T> &c) {
     TRACE("CyclicReduce::setCoefs");
+    
+    int nsys = std::get<0>(a.shape());
     
     // Make sure correct memory arrays allocated
     allocMemory(nprocs, nsys, N);
@@ -119,18 +116,19 @@ public:
       }
   }
 
-  /// Solve a single triadiagonal system
-  /// 
-  void solve(Matrix<T> &rhs, Matrix<T> &x) {
-    // Solving single system
-    solve(1, &rhs, &x);
-  }
+  // /// Solve a single triadiagonal system
+  // /// 
+  // void solve(Matrix<T> &rhs, Matrix<T> &x) {
+  //   // Solving single system
+  //   solve(1, &rhs, &x);
+  // }
 
   /// Solve a set of tridiagonal systems
   /// 
-  void solve(int nrhs, Matrix<T> &rhs, Matrix<T> &x) {
+  void solve(Matrix<T> &rhs, Matrix<T> &x) {
     TRACE("CyclicReduce::solve");
     // Multiple RHS
+    int nrhs = std::get<0>(rhs.shape());
     
     if(nrhs != Nsys)
       throw BoutException("Sorry, can't yet handle nrhs != nsys");
