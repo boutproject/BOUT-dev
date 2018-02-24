@@ -505,7 +505,7 @@ BOUT_OMP(for)
       BoutReal ddz = D(i2, yindex, k2)*coords->g33(i2, yindex)/coords->dz/coords->dz; 
               // coefficient of 2nd derivative stencil (z-direction)
       
-      BoutReal dxdz = D(i2, yindex, k2)*coords->g13(i2, yindex)/coords->dx(i2, yindex)/coords->dz/2.; 
+      BoutReal dxdz = D(i2, yindex, k2)*2.*coords->g13(i2, yindex)/coords->dx(i2, yindex)/coords->dz; 
               // coefficient of mixed derivative stencil (could assume zero, at least initially, 
               // if easier; then check this is true in constructor)
       
