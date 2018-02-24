@@ -16,15 +16,33 @@
 #include "petscsnes.h"
 #include "petscmat.h"
 
-IMEXBDF2::IMEXBDF2(Options *opt) : Solver(opt) {
+IMEXBDF2::IMEXBDF2(Options *opt) : Solver(opt), u(nullptr) {
 
   has_constraints = true; ///< This solver can handle constraints
   
 }
 
 IMEXBDF2::~IMEXBDF2() {
-  VecDestroy(&snes_f);
-  VecDestroy(&snes_x);
+  if (u != nullptr) {
+    delete[] u;
+    for (int i = 0; i < uV.size(); i++) {
+      delete[] uV[i];
+    }
+    for (int i = 0; i < fV.size(); i++) {
+      delete[] fV[i];
+    }
+
+    delete[] rhs;
+
+    VecDestroy(&snes_f);
+    VecDestroy(&snes_x);
+
+    if (have_constraints)
+      delete[] is_dae;
+
+    if (adaptive)
+      delete[] err;
+  }
 }
 
 /*!
@@ -122,10 +140,10 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
   }
   
   if(have_constraints) {
-    is_dae = Array<BoutReal>(nlocal);
+    is_dae = new BoutReal[nlocal];
     // Call the Solver function, which sets the array
     // to zero when not a constraint, one for constraint
-    set_id(std::begin(is_dae));
+    set_id(is_dae);
   }
 
   // Get options
@@ -148,10 +166,10 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
   }
 
   // Allocate memory and initialise structures
-  u = Array<BoutReal>(nlocal);
+  u = new BoutReal[nlocal];
   for(int i=0;i<maxOrder;i++){
-    uV.push_back(Array<BoutReal>(nlocal));
-    fV.push_back(Array<BoutReal>(nlocal));
+    uV.push_back(new BoutReal[nlocal]);
+    fV.push_back(new BoutReal[nlocal]);
     //gV.push_back(new BoutReal[nlocal]);
     timesteps.push_back(timestep);
     uFac.push_back(0.0);
@@ -159,7 +177,7 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
     gFac.push_back(0.0);
   }
 
-  rhs = Array<BoutReal>(nlocal);
+  rhs = new BoutReal[nlocal];
 
   OPTION(options, adaptive, true); //Do we try to estimate the error?
   OPTION(options, nadapt, 4); //How often do we check the error
@@ -167,7 +185,7 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
   OPTION(options, dtMax, out_timestep);
   OPTION(options, dtMin, dtMinFatal);
   if(adaptive){
-    err = Array<BoutReal>(nlocal);
+    err = new BoutReal[nlocal];
     OPTION(options, adaptRtol, 1.0e-3); //Target relative error
     OPTION(options, mxstepAdapt, mxstep); //Maximum no. consecutive times we try to reduce timestep
     OPTION(options, scaleCushUp, 1.5);
@@ -762,9 +780,9 @@ int IMEXBDF2::run() {
 	need to loadVars(u) before doing the monitors. Would need a setup call outside
 	loops however and savings probably minimal.
       */
-      loadVars(std::begin(uV[0]));
+      loadVars(uV[0]);
       run_convective(simtime);
-      saveDerivs(std::begin(fV[0]));
+      saveDerivs(fV[0]);
 
       bool running = true;
       bool checkingErr = adaptive && (internalCounter%nadapt) ==0 && order>1;
@@ -1096,6 +1114,8 @@ void IMEXBDF2::take_step(BoutReal curtime, BoutReal dt, int order) {
  *  Moves the solution histories along one step. Also handles the timesteps.
  */
 void IMEXBDF2::shuffleState(){
+  BoutReal *tmp;
+
   //Note: std::rotate takes the start and end of a range and a third value (2nd arg)
   //which says rotate the elements of the vector such that this element is first.
   //Here we want the last point in history to become the work array for the first
@@ -1112,7 +1132,7 @@ void IMEXBDF2::shuffleState(){
   std::rotate(uV.begin(),uV.end()-1,uV.end()); //Rotate
   //Slight extra handling required as the current state "u" is held externally 
   //from the history vector *for reasons*
-  auto tmp = uV[0];
+  tmp = uV[0];
   uV[0] = u;
   u = tmp;
 
