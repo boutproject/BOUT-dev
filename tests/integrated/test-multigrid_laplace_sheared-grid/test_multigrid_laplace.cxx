@@ -33,7 +33,8 @@
 #include <derivs.hxx>
 
 BoutReal max_error_at_ystart(const Field3D &error);
-Field3D this_Grad_perp2(const Field3D f);
+Field3D this_Grad_perp2(const Field3D &f);
+Field3D this_Grad_perp_dot_Grad_perp(const Field3D &f, const Field3D &g);
 
 int main(int argc, char** argv) {
 
@@ -51,6 +52,9 @@ int main(int argc, char** argv) {
   BoutReal nx = mesh->GlobalNx-2*mesh->xstart;
   BoutReal nz = mesh->GlobalNz;
 
+  dump.add(mesh->coordinates()->G1,"G1");
+  dump.add(mesh->coordinates()->G3,"G3");
+
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Test 1: zero-value Dirichlet boundaries
   f1 = FieldFactory::get()->create3D("f1:function", Options::getRoot(), mesh);
@@ -58,7 +62,8 @@ int main(int argc, char** argv) {
   c1 = FieldFactory::get()->create3D("c1:function", Options::getRoot(), mesh);
   a1 = FieldFactory::get()->create3D("a1:function", Options::getRoot(), mesh);
 
-  b1 = d1*this_Grad_perp2(f1) + Grad_perp(c1)*Grad_perp(f1)/c1 + a1*f1;
+  b1 = d1*this_Grad_perp2(f1) + this_Grad_perp_dot_Grad_perp(c1,f1)/c1 + a1*f1;
+  sol1 = 0.;
 
   invert->setInnerBoundaryFlags(0);
   invert->setOuterBoundaryFlags(0);
@@ -69,7 +74,8 @@ int main(int argc, char** argv) {
   try {
     sol1 = invert->solve(sliceXZ(b1, mesh->ystart));
     mesh->communicate(sol1);
-    bcheck1 = d1*this_Grad_perp2(sol1) + Grad_perp(c1)*Grad_perp(sol1)/c1 + a1*sol1;
+    checkData(sol1);
+    bcheck1 = d1*this_Grad_perp2(sol1) + this_Grad_perp_dot_Grad_perp(c1,sol1)/c1 + a1*sol1;
     error1 = (f1-sol1)/f1;
     absolute_error1 = f1-sol1;
     max_error1 = max_error_at_ystart(abs(absolute_error1, RGN_NOBNDRY));
@@ -82,6 +88,10 @@ int main(int argc, char** argv) {
     error1 = -1.;
     absolute_error1 = -1.;
   }
+
+  d1 = this_Grad_perp2(f1);
+  c1 = this_Grad_perp_dot_Grad_perp(c1,f1)/c1;
+  a1 = a1*f1;
 
   output<<endl<<"Test 1: zero Dirichlet"<<endl;
   output<<"Magnitude of maximum absolute error is "<<max_error1<<endl;
@@ -107,7 +117,8 @@ int main(int argc, char** argv) {
   c2 = FieldFactory::get()->create3D("c2:function", Options::getRoot(), mesh);
   a2 = FieldFactory::get()->create3D("a2:function", Options::getRoot(), mesh);
 
-  b2 = d2*this_Grad_perp2(f2) + Grad_perp(c2)*Grad_perp(f2)/c2 + a2*f2;
+  b2 = d2*this_Grad_perp2(f2) + this_Grad_perp_dot_Grad_perp(c2,f2)/c2 + a2*f2;
+  sol2 = 0.;
 
   invert->setInnerBoundaryFlags(INVERT_AC_GRAD);
   invert->setOuterBoundaryFlags(INVERT_AC_GRAD);
@@ -118,7 +129,7 @@ int main(int argc, char** argv) {
   try {
     sol2 = invert->solve(sliceXZ(b2, mesh->ystart));
     mesh->communicate(sol2);
-    bcheck2 = d2*this_Grad_perp2(sol2) + Grad_perp(c2)*Grad_perp(sol2)/c2 + a2*sol2;
+    bcheck2 = d2*this_Grad_perp2(sol2) + this_Grad_perp_dot_Grad_perp(c2,sol2)/c2 + a2*sol2;
     error2 = (f2-sol2)/f2;
     absolute_error2 = f2-sol2;
     max_error2 = max_error_at_ystart(abs(absolute_error2, RGN_NOBNDRY));
@@ -156,7 +167,8 @@ int main(int argc, char** argv) {
   c3 = FieldFactory::get()->create3D("c3:function", Options::getRoot(), mesh);
   a3 = FieldFactory::get()->create3D("a3:function", Options::getRoot(), mesh);
 
-  b3 = d3*this_Grad_perp2(f3) + Grad_perp(c3)*Grad_perp(f3)/c3 + a3*f3;
+  b3 = d3*this_Grad_perp2(f3) + this_Grad_perp_dot_Grad_perp(c3,f3)/c3 + a3*f3;
+  sol3 = 0.;
 
   invert->setInnerBoundaryFlags(INVERT_SET);
   invert->setOuterBoundaryFlags(INVERT_SET);
@@ -176,7 +188,7 @@ int main(int argc, char** argv) {
   try {
     sol3 = invert->solve(sliceXZ(b3, mesh->ystart), sliceXZ(x0, mesh->ystart));
     mesh->communicate(sol3);
-    bcheck3 = d3*this_Grad_perp2(sol3) + Grad_perp(c3)*Grad_perp(sol3)/c3 + a3*sol3;
+    bcheck3 = d3*this_Grad_perp2(sol3) + this_Grad_perp_dot_Grad_perp(c3,f3)/c3 + a3*sol3;
     error3 = (f3-sol3)/f3;
     absolute_error3 = f3-sol3;
     max_error3 = max_error_at_ystart(abs(absolute_error3, RGN_NOBNDRY));
@@ -214,7 +226,8 @@ int main(int argc, char** argv) {
   c4 = FieldFactory::get()->create3D("c4:function", Options::getRoot(), mesh);
   a4 = FieldFactory::get()->create3D("a4:function", Options::getRoot(), mesh);
 
-  b4 = d4*this_Grad_perp2(f4) + Grad_perp(c4)*Grad_perp(f4)/c4 + a4*f4;
+  b4 = d4*this_Grad_perp2(f4) + this_Grad_perp_dot_Grad_perp(c4,f4)/c4 + a4*f4;
+  sol4 = 0.;
 
   invert->setInnerBoundaryFlags(INVERT_AC_GRAD+INVERT_SET);
   invert->setOuterBoundaryFlags(INVERT_AC_GRAD+INVERT_SET);
@@ -226,19 +239,19 @@ int main(int argc, char** argv) {
   x0 = 0.;
   if (mesh->firstX())
     for (int k=0;k<mesh->LocalNz;k++)
-      x0(mesh->xstart-1,mesh->ystart,k) = (f3(mesh->xstart,mesh->ystart,k)-f3(mesh->xstart-1,mesh->ystart,k))
+      x0(mesh->xstart-1,mesh->ystart,k) = (f4(mesh->xstart,mesh->ystart,k)-f4(mesh->xstart-1,mesh->ystart,k))
                                         /mesh->coordinates()->dx(mesh->xstart,mesh->ystart)
-                                        /mesh->coordinates()->g_11(mesh->xstart,mesh->ystart);
+                                        /sqrt(mesh->coordinates()->g_11(mesh->xstart,mesh->ystart));
   if (mesh->lastX())
     for (int k=0;k<mesh->LocalNz;k++)
-      x0(mesh->xend+1,mesh->ystart,k) = (f3(mesh->xend+1,mesh->ystart,k)-f3(mesh->xend,mesh->ystart,k))
+      x0(mesh->xend+1,mesh->ystart,k) = (f4(mesh->xend+1,mesh->ystart,k)-f4(mesh->xend,mesh->ystart,k))
                                         /mesh->coordinates()->dx(mesh->xend,mesh->ystart)
-                                        /mesh->coordinates()->g_11(mesh->xend,mesh->ystart);
+                                        /sqrt(mesh->coordinates()->g_11(mesh->xend,mesh->ystart));
 
   try {
     sol4 = invert->solve(sliceXZ(b4, mesh->ystart), sliceXZ(x0, mesh->ystart));
     mesh->communicate(sol4);
-    bcheck4 = d4*this_Grad_perp2(sol4) + Grad_perp(c4)*Grad_perp(sol4)/c4 + a4*sol4;
+    bcheck4 = d4*this_Grad_perp2(sol4) + this_Grad_perp_dot_Grad_perp(c4,sol4)/c4 + a4*sol4;
     error4 = (f4-sol4)/f4;
     absolute_error4 = f4-sol4;
     max_error4 = max_error_at_ystart(abs(absolute_error4, RGN_NOBNDRY));
@@ -281,11 +294,18 @@ int main(int argc, char** argv) {
 // Need custom version of perpendicular Laplacian operator, which is the inverse of the multigrid solver
 // Delp2 uses FFT z-derivatives and Laplace includes y-derivatives, so can't use those
 // The function is a copy of Laplace() with the y-derivatives deleted
-Field3D this_Grad_perp2(const Field3D f) {
+Field3D this_Grad_perp2(const Field3D &f) {
   Field3D result = mesh->coordinates()->G1 * ::DDX(f) +  mesh->coordinates()->G3 * ::DDZ(f) +
-                   mesh->coordinates()->g11 * D2DX2(f) + mesh->coordinates()->g33 * D2DZ2(f) +
-                   2.0 * mesh->coordinates()->g13 * D2DXDZ(f);
+                   mesh->coordinates()->g11 * ::D2DX2(f) + mesh->coordinates()->g33 * ::D2DZ2(f) +
+                   2.0 * mesh->coordinates()->g13 * ::D2DXDZ(f);
 
+  return result;
+}
+
+Field3D this_Grad_perp_dot_Grad_perp(const Field3D &f, const Field3D &g) {
+  Field3D result = mesh->coordinates()->g11 * ::DDX(f) * ::DDX(g) + mesh->coordinates()->g33 * ::DDZ(f) * ::DDZ(g)
+                   + mesh->coordinates()->g13 * (DDX(f)*DDZ(g) + DDZ(f)*DDX(g));
+  
   return result;
 }
 
