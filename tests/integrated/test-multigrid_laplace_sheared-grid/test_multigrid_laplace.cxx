@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
     bcheck1 = d1*this_Grad_perp2(sol1) + Grad_perp(c1)*Grad_perp(sol1)/c1 + a1*sol1;
     error1 = (f1-sol1)/f1;
     absolute_error1 = f1-sol1;
-    max_error1 = max_error_at_ystart(abs(absolute_error1));
+    max_error1 = max_error_at_ystart(abs(absolute_error1, RGN_NOBNDRY));
   }
   catch (BoutException err) {
     output<<"BoutException occured in invert->solve(b1): Laplacian inversion failed to converge (probably)"<<endl;
@@ -119,7 +119,7 @@ int main(int argc, char** argv) {
     bcheck2 = d2*this_Grad_perp2(sol2) + Grad_perp(c2)*Grad_perp(sol2)/c2 + a2*sol2;
     error2 = (f2-sol2)/f2;
     absolute_error2 = f2-sol2;
-    max_error2 = max_error_at_ystart(abs(absolute_error2));
+    max_error2 = max_error_at_ystart(abs(absolute_error2, RGN_NOBNDRY));
   }
   catch (BoutException err) {
     output<<"BoutException occured in invert->solve(b2): Laplacian inversion failed to converge (probably)"<<endl;
@@ -176,7 +176,7 @@ int main(int argc, char** argv) {
     bcheck3 = d3*this_Grad_perp2(sol3) + Grad_perp(c3)*Grad_perp(sol3)/c3 + a3*sol3;
     error3 = (f3-sol3)/f3;
     absolute_error3 = f3-sol3;
-    max_error3 = max_error_at_ystart(abs(absolute_error3));
+    max_error3 = max_error_at_ystart(abs(absolute_error3, RGN_NOBNDRY));
   }
   catch (BoutException err) {
     output<<"BoutException occured in invert->solve(b3): Laplacian inversion failed to converge (probably)"<<endl;
@@ -237,7 +237,7 @@ int main(int argc, char** argv) {
     bcheck4 = d4*this_Grad_perp2(sol4) + Grad_perp(c4)*Grad_perp(sol4)/c4 + a4*sol4;
     error4 = (f4-sol4)/f4;
     absolute_error4 = f4-sol4;
-    max_error4 = max_error_at_ystart(abs(absolute_error4));
+    max_error4 = max_error_at_ystart(abs(absolute_error4, RGN_NOBNDRY));
   }
   catch (BoutException err) {
     output<<"BoutException occured in invert->solve(b4): Laplacian inversion failed to converge (probably)"<<endl;
