@@ -402,6 +402,22 @@ TEST_F(Field2DTest, Indexing) {
   EXPECT_DOUBLE_EQ(field(2, 2), 4);
 }
 
+TEST_F(Field2DTest, IndexingAs3D) {
+  Field2D field;
+
+  field.allocate();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+	field(i, j, k) = i + j + k;
+      }
+    }
+  }
+
+  EXPECT_DOUBLE_EQ(field(2, 2), 4 + nz -1);
+}
+
 #if CHECK > 2
 TEST_F(Field2DTest, CheckNotEmpty) {
   Field2D field;
@@ -443,9 +459,17 @@ TEST_F(Field2DTest, CheckData) {
 
   EXPECT_NO_THROW(checkData(field));
 
-  field(1, 1, 1) = std::nan("");
+  field(1, 1) = std::nan("");
 
   EXPECT_THROW(checkData(field), BoutException);
+  
+  field = 1.0;
+  field(0, 0) = std::nan("");
+
+  EXPECT_NO_THROW(checkData(field));
+  EXPECT_NO_THROW(checkData(field, RGN_NOBNDRY));
+  EXPECT_THROW(checkData(field, RGN_ALL), BoutException);
+
 }
 
 TEST_F(Field2DTest, InvalidateGuards) {
@@ -470,18 +494,14 @@ TEST_F(Field2DTest, InvalidateGuards) {
   }
   const int nbndry = nmesh - sum;
 
-#if CHECK > 2
   auto localmesh = field.getMesh();
   EXPECT_NO_THROW(checkData(field(0, 0)));
   EXPECT_NO_THROW(checkData(field(localmesh->xstart, localmesh->ystart)));
-#endif
 
   invalidateGuards(field);
 
-#if CHECK > 2
   EXPECT_THROW(checkData(field(0, 0)), BoutException);
   EXPECT_NO_THROW(checkData(field(localmesh->xstart, localmesh->ystart)));
-#endif
 
   sum = 0;
   for (const auto &i : field.region(RGN_ALL)) {

@@ -623,6 +623,14 @@ TEST_F(Field3DTest, CheckData) {
   field(1, 1, 1) = std::nan("");
 
   EXPECT_THROW(checkData(field), BoutException);
+
+  field = 1.0;
+  field(0, 0, 0) = std::nan("");
+
+  EXPECT_NO_THROW(checkData(field));
+  EXPECT_NO_THROW(checkData(field, RGN_NOBNDRY));
+  EXPECT_THROW(checkData(field, RGN_ALL), BoutException);
+  
 }
 
 TEST_F(Field3DTest, InvalidateGuards) {
@@ -647,18 +655,14 @@ TEST_F(Field3DTest, InvalidateGuards) {
   }
   const int nbndry = nmesh - sum;
 
-#if CHECK > 2
   auto localmesh = field.getMesh();
   EXPECT_NO_THROW(checkData(field(0, 0, 0)));
   EXPECT_NO_THROW(checkData(field(localmesh->xstart, localmesh->ystart, 0)));
-#endif
 
   invalidateGuards(field);
 
-#if CHECK > 2
   EXPECT_THROW(checkData(field(0, 0, 0)), BoutException);
   EXPECT_NO_THROW(checkData(field(localmesh->xstart, localmesh->ystart, 0)));
-#endif
 
   sum = 0;
   for (const auto &i : field.region(RGN_ALL)) {
