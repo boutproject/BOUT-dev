@@ -397,16 +397,10 @@ BOUT_OMP(for)
       residualVec(level,p,rhs,r);
       error = sqrt(vectorProd(level,r,r));
       num += 1;
-      if(error > dtol) {
+      if(error > dtol)
         throw BoutException("GMRES reached dtol with error %16.10f at iteration %d\n",error,num);
-        etest = 0;
-        break;
-      }
-      if(num > MAXIT) {
+      if(num > MAXIT)
         throw BoutException("GMRES reached MAXIT with error %16.10f at iteration %d\n",error,num);
-        etest = 0;
-        break;
-      }
       if(error <= rtol*ini_e+atol) {
         etest = 0;
         break;
@@ -428,10 +422,8 @@ BOUT_OMP(for)
 BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
     for(int i = 0;i<ldim;i++) sol[i] = p[i];
-    if(num>MAXIT) {
+    if(num>MAXIT)
       throw BoutException(" GMRES Iteration limit.\n");
-      etest = 0;
-    }
     //    if((etest == 1) & (xProcI == 0)) 
     //  printf("Restart GMRES  %d | %20.14f\n",num,error/ini_e);    
   } while(etest == 1); 
@@ -671,9 +663,8 @@ BOUT_OMP(for)
 
   communications(rhs,level);
   ini_e = vectorProd(level,rhs,rhs);
-  if(ini_e < 0.0) {
+  if(ini_e < 0.0)
     throw BoutException("In MG Initial Error %10.4e \n",ini_e);
-  }
   ini_e = sqrt(ini_e);
   if((pcheck == 1) && (rProcI == 0)) 
     printf("%d \n  In MGsolve ini = %24.18f\n",numP,ini_e);
@@ -697,11 +688,8 @@ BOUT_OMP(for)
     if((pcheck == 1) && (rProcI == 0)) 
       printf("%d \n  In MGsolve error = %24.18f\n",m,error);
     if(error < rtol*ini_e+atol) break;
-    if((fabs(perror-error)/error <rtol) || (error > dtol)) {
+    if((fabs(perror-error)/error <rtol) || (error > dtol))
       throw BoutException("In MG Limited Error %10.4e \n",error);
-      m-= 1;
-      break;
-    }
     perror = error;
   }
 
