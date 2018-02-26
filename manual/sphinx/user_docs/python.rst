@@ -12,6 +12,9 @@ The Python tools provided with BOUT++ make heavy use of numpy_ and
 scipy_, as well as matplotlib_ for the plotting routines. In order
 to read BOUT++ output in Python, you will need either netcdf4_ or h5py_.
 
+While we try to ensure that the Python tools are compatible with both
+Python 2 and 3, we officially only support Python 3.
+
 If you are developing BOUT++, you may also need Jinja2_ to edit some
 of the generated code(see :ref:`sec-fieldops` for more information).
 
