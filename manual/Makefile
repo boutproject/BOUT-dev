@@ -38,8 +38,6 @@ breathe-autogen: doxygen
 
 clean:
 	@echo "Cleaning up..."
-	@cd $(TEXDIR) &&\
-          $(RM) -f *.pdf *.dvi *.aux *.out *.log *.toc *.idx *.ilg *.ind *.bbl *.blg
 	@$(RM) -f *.pdf
 	@$(RM) -rf html/
 	@$(RM) -rf build/
