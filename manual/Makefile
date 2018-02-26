@@ -22,11 +22,11 @@ sphinx-pdf:
 
 sphinx-html:
 	PYTHONPATH=$(BOUT_TOP)/tools/pylib:$$PYTHONPATH $(sphinx-build) -b html sphinx/ html/
-	@echo "Documentation available in `pwd`/html/"
+	@echo "Documentation available in file://`pwd`/html/index.html"
 
 sphinx-man:
 	PYTHONPATH=$(BOUT_TOP)/tools/pylib:$$PYTHONPATH $(sphinx-build) -b man sphinx/ man/
-	@echo "Documentation available in `pwd`/html/"
+	@echo "Documentation available in `pwd`/man/bout.1"
 
 # Run doxygen, ignore if it fails (leading '-')
 doxygen:
@@ -43,4 +43,5 @@ clean:
 	@rm -f *.pdf
 	@rm -rf html/
 	@rm -rf build/
+	@rm -rf man/
 	@rm -rf sphinx/_breathe_autogen/
