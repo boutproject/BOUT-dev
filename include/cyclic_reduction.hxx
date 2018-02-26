@@ -231,17 +231,10 @@ public:
   /// @param[out] x  Matrix storing the result for each system
   void solve(Matrix<T> &rhs, Matrix<T> &x) {
     TRACE("CyclicReduce::solve");
-<<<<<<< HEAD
     ASSERT2(std::get<0>(rhs.shape() == Nsys);
     ASSERT2(std::get<0>(x.shape() == Nsys);
     ASSERT2(std::get<1>(rhs.shape() == N);
     ASSERT2(std::get<1>(x.shape() == N);
-=======
-    ASSERT2(std::get<0>rhs.shape() == Nsys);
-    ASSERT2(std::get<0>x.shape() == Nsys);
-    ASSERT2(std::get<1>rhs.shape() == N);
-    ASSERT2(std::get<1>x.shape() == N);
->>>>>>> 50c3314774205efd8af00c54054dc4e0632d35cc
 
     // Multiple RHS
     int nrhs = std::get<0>(rhs.shape());
