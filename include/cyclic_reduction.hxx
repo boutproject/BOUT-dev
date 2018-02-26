@@ -78,7 +78,7 @@ public:
     MPI_Comm_size(c, &np);
     MPI_Comm_rank(c, &myp);
     if((size != N) || (np != nprocs) || (myp != myproc))
-      freeMemory(); // Need to re-size
+      Nsys = 0; // Need to re-size
     N = size;
     periodic = false;
     nprocs = np;
@@ -86,7 +86,7 @@ public:
   }
 
   ~CyclicReduce() {
-    freeMemory();
+    N = Nsys = 0;
   }
 
   /// Specify that the tridiagonal system is periodic
@@ -503,9 +503,6 @@ private:
     if( (nsys == Nsys) && (n == N) && (np == nprocs))
       return; // No need to allocate memory
     
-    if(Nsys > 0)
-      freeMemory(); // Free existing memory
-    
     nprocs = np;
     Nsys   = nsys;
     N      = n;
@@ -547,14 +544,6 @@ private:
     
     x1 = Array<T>(Nsys);
     xn = Array<T>(Nsys);
-  }
-
-  /// Free all memory arrays allocated by allocMemory()
-  DEPRECATED(void freeMemory()) {
-    if(Nsys == 0)
-      return;
-
-    N = Nsys = 0;
   }
 
   /// Calculate interface equations
