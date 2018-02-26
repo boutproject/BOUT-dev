@@ -90,10 +90,34 @@ public:
   /// Specify that the tridiagonal system is periodic
   /// By default not periodic
   void setPeriodic(bool p=true) {periodic=p;}
-  
+
+  DEPRECATED(void setCoefs(T a[], T b[], T c[])) {
+    // Set coefficients
+    setCoefs(1, &a, &b, &c);
+  }
+
+  DEPRECATED(void setCoefs(int nsys, T **a, T **b, T **c)) {
+    Matrix<T> aMatrix(nsys, N);
+    Matrix<T> bMatrix(nsys, N);
+    Matrix<T> cMatrix(nsys, N);
+
+    //Copy data into matrices
+    for(int j = 0; j < nsys; ++j){
+      for(int i = 0; i < N; ++i){
+	aMatrix(j, i) = a[j][i];
+	bMatrix(j, i) = b[j][i];
+	cMatrix(j, i) = c[j][i];
+      }
+    }
+
+    setCoefs(aMatrix, bMatrix, cMatrix);
+    // Don't copy ?Matrix back into ? as setCoefs
+    // doesn't modify these. Could copy out if we really wanted.
+
+  }
+
   /// Set the entries in the matrix to be inverted
   ///
-  /// @param[in] nsys   The number of independent matrices to be solved
   /// @param[in] a   Left diagonal. Should have size [nsys][N]
   ///                where N is set in the constructor or setup
   /// @param[in] b   Diagonal values. Should have size [nsys][N]
@@ -116,15 +140,41 @@ public:
       }
   }
 
-  // /// Solve a single triadiagonal system
-  // /// 
-  // void solve(Matrix<T> &rhs, Matrix<T> &x) {
-  //   // Solving single system
-  //   solve(1, &rhs, &x);
-  // }
+  /// Solve a single triadiagonal system
+  /// 
+  DEPRECATED(void solve(T rhs[], T x[])) {
+    // Solving single system
+    solve(1, &rhs, &x);
+  }
 
   /// Solve a set of tridiagonal systems
   /// 
+  DEPRECATED(void solve(int nrhs, T **rhs, T **x)) {
+    Matrix<T> rhsMatrix(nrhs, N);
+    Matrix<T> xMatrix(nrhs, N);
+
+    //Copy input data into matrix
+    for(int j = 0; j < nrhs; ++j){
+      for(int i = 0; i < N; ++i){
+	rhsMatrix(j, i) = rhs[j][i];
+      }
+    }
+    
+    // Solve
+    solve(rhsMatrix, xMatrix);
+
+    //Copy result back into argument
+    for(int j = 0; j < nrhs; ++j){
+      for(int i = 0; i < N; ++i){
+	x[j][i] = xMatrix(j, i);
+      }
+    }    
+  }
+
+  /// Solve a set of tridiagonal systems
+  /// 
+  /// @param[in] rhs Matrix storing Values of the rhs for each system
+  /// @param[out] x  Matrix storing the result for each system
   void solve(Matrix<T> &rhs, Matrix<T> &x) {
     TRACE("CyclicReduce::solve");
     // Multiple RHS
@@ -441,7 +491,7 @@ private:
   }
 
   /// Free all memory arrays allocated by allocMemory()
-  void freeMemory() {
+  DEPRECATED(void freeMemory()) {
     if(Nsys == 0)
       return;
 
@@ -472,13 +522,13 @@ private:
         T beta = co(j, 4*i+2) / ifc(j, 1);
           
         // v_u <- v_i - beta * v_u
-        ifc(j, 1) = co(j, 4*i + 1) - beta * ifc(j, 0);
-        ifc(j, 0) = co(j, 4*i);
+        ifc(j, 1) = co(j, 4 * i + 1) - beta * ifc(j, 0);
+        ifc(j, 0) = co(j, 4 * i);
 	ifc(j, 2) *= -beta;
         // ic columns  {i-1, i, N-1}
         
         // b_u <- b_i - beta*b_u
-        ifc(j, 3) = co(j, 4*i + 3) - beta*ifc(j, 3);
+        ifc(j, 3) = co(j, 4 * i + 3) - beta * ifc(j, 3);
       }
       
       // Calculate lower interface equation
@@ -487,28 +537,28 @@ private:
       // v_l <- v_(k+1)
       // b_l <- b_{k+1}
       for(int i=0;i<4;i++)
-        ifc(j, 4+i) = co(j, 4+i);
+        ifc(j, 4 + i) = co(j, 4 + i);
         
-      for(int i=2;i<nloc;i++) {
+      for(int i = 2; i < nloc; i++) {
 	
-	if(abs(ifc(j, 4+1)) < 1e-10)
+	if(abs(ifc(j, 4 + 1)) < 1e-10)
 	  throw BoutException("Zero pivot in CyclicReduce::reduce");
 	
         // alpha <- v_{i,i-1} / v_l,i-1
-        T alpha = co(j, 4*i) / ifc(j, 4+1);
+        T alpha = co(j, 4 * i) / ifc(j, 4 + 1);
           
         // v_l <- v_i - alpha*v_l
-	ifc(j, 4+0) *= -alpha;
-        ifc(j, 4+1) = co(j, 4*i + 1) - alpha*ifc(j, 4+2);
-        ifc(j, 4+2) = co(j, 4*i + 2);
-        // columns of ic are {0, i, i+1}
+ 	ifc(j, 4 + 0) *= -alpha;
+        ifc(j, 4 + 1) = co(j, 4 * i  +  1) - alpha*ifc(j, 4 + 2);
+        ifc(j, 4 + 2) = co(j, 4 * i  +  2);
+        // columns of ic are {0, i, i + 1}
           
-        // b_l <- b_{k+i} - alpha*b_l
-        ifc(j, 4+3) = co(j, 4*i + 3) - alpha * ifc(j, 4+3);   
+        // b_l <- b_{k + i} - alpha*b_l
+        ifc(j, 4 + 3) = co(j, 4 * i  +  3) - alpha * ifc(j, 4 + 3);   
       }
       
 #ifdef DIAGNOSE
-      output << "Lower: " << ifc(j, 4+0) << ", " << ifc(j, 4+1) << ", " << ifc(j, 4+2) << " : " << ifc(j, 4+3) << endl;
+      output << "Lower: " << ifc(j, 4 + 0) << ", " << ifc(j, 4 + 1) << ", " << ifc(j, 4 + 2) << " : " << ifc(j, 4 + 3) << endl;
       output << "Upper: " << ifc(j, 0) << ", " << ifc(j, 1) << ", " << ifc(j, 2) << " : " << ifc(j, 3) << endl;
 #endif
     }

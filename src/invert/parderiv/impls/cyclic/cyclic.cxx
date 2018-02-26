@@ -138,11 +138,11 @@ const Field3D InvertParCR::solve(const Field3D &f) {
         dcoef /= SQ(coord->dz);
         ecoef /= coord->dy(x,y+2);
         
-        //           const     d2dy2        d2dydz             d2dz2           ddy
-        //           -----     -----        ------             -----           ---
-        a(k, y + y0) = bcoef - 0.5 * Im * kwave * ccoef - 0.5 * ecoef;
-        b(k, y + y0) = acoef - 2. * bcoef - SQ(kwave) * dcoef;
-        c(k, y + y0) = bcoef + 0.5 * Im * kwave * ccoef + 0.5 * ecoef;
+        //           const       d2dy2        d2dydz              d2dz2           ddy
+        //           -----       -----        ------              -----           ---
+        a(k, y + y0) =           bcoef - 0.5 * Im * kwave * ccoef          - 0.5 * ecoef;
+        b(k, y + y0) = acoef - 2. * bcoef           - SQ(kwave) * dcoef;
+        c(k, y + y0) =           bcoef + 0.5 * Im * kwave * ccoef          + 0.5 * ecoef;
 
         rhsk(k, y + y0) = rhs(y + y0, k); // Transpose
       }
