@@ -46,6 +46,8 @@
 #include "utils.hxx"
 #include "msg_stack.hxx"
 #include <lapack_routines.hxx>
+
+#include "bout/assert.hxx"
 #include "boutexception.hxx"
 
 #include "output.hxx"
@@ -116,6 +118,28 @@ public:
 
   }
 
+  void setCoefs(Array<T> &a, Array<T> &b, Array<T> &c) {
+    ASSERT2(a.size() == b.size());
+    ASSERT2(a.size() == c.size());
+    ASSERT2(a.size() == N);
+
+    Matrix<T> aMatrix(1, N);
+    Matrix<T> bMatrix(1, N);
+    Matrix<T> cMatrix(1, N);
+
+    //Copy data into matrices
+    for(int i = 0; i < N; ++i){
+      aMatrix(0, i) = a[i];
+      bMatrix(0, i) = b[i];
+      cMatrix(0, i) = c[i];
+    }
+
+    setCoefs(aMatrix, bMatrix, cMatrix);
+    // Don't copy ?Matrix back into ? as setCoefs
+    // doesn't modify these. Could copy out if we really wanted.
+
+  }
+
   /// Set the entries in the matrix to be inverted
   ///
   /// @param[in] a   Left diagonal. Should have size [nsys][N]
@@ -173,10 +197,45 @@ public:
 
   /// Solve a set of tridiagonal systems
   /// 
+  /// @param[in] rhs Array storing Values of the rhs for a single system
+  /// @param[out] x  Array storing the result for a single system
+  void solve(Array<T> &rhs, Array<T> &x) {
+    ASSERT2(rhs.size() == x.size());
+    ASSERT2(rhs.size() == N);
+    
+    int nrhs = rhs.size();
+    Matrix<T> rhsMatrix(1, N);
+    Matrix<T> xMatrix(1, N);
+
+    //Copy input data into matrix
+    for(int j = 0; j < nrhs; ++j){
+      for(int i = 0; i < N; ++i){
+	rhsMatrix(j, i) = rhs[j][i];
+      }
+    }
+    
+    // Solve
+    solve(rhsMatrix, xMatrix);
+
+    //Copy result back into argument
+    for(int j = 0; j < nrhs; ++j){
+      for(int i = 0; i < N; ++i){
+	x[j][i] = xMatrix(j, i);
+      }
+    }    
+  };
+  
+  /// Solve a set of tridiagonal systems
+  /// 
   /// @param[in] rhs Matrix storing Values of the rhs for each system
   /// @param[out] x  Matrix storing the result for each system
   void solve(Matrix<T> &rhs, Matrix<T> &x) {
     TRACE("CyclicReduce::solve");
+    ASSERT2(std::get<0>(rhs.shape() == Nsys);
+    ASSERT2(std::get<0>(x.shape() == Nsys);
+    ASSERT2(std::get<1>(rhs.shape() == N);
+    ASSERT2(std::get<1>(x.shape() == N);
+
     // Multiple RHS
     int nrhs = std::get<0>(rhs.shape());
     
