@@ -55,6 +55,7 @@
 #include <msg_stack.hxx>
 #include <stencils.hxx>
 #include <utils.hxx>
+#include <unused.hxx>
 
 #include <cmath>
 #include <stdlib.h>
@@ -903,7 +904,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func,
 
 // Y derivative
 
-const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, CELL_LOC loc,
+const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, CELL_LOC UNUSED(loc),
                                REGION region) {
   ASSERT1(this == var.getMesh());
 
