@@ -46,6 +46,7 @@ class Laplacian;
 
 #include "dcomplex.hxx"
 #include "options.hxx"
+#include "utils.hxx"
 
 // Inversion flags for each boundary
 const int INVERT_DC_GRAD  = 1; ///< Zero-gradient for DC (constant in Z) component. Default is zero value
@@ -156,6 +157,8 @@ public:
 
   /// Coefficients in tridiagonal inversion
   void tridagCoefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcomplex &c, const Field2D *ccoef = NULL, const Field2D *d=NULL);
+  void calcLaplaceCoefs(); /// Precompute coefficients for Laplace operator
+  Tensor<dcomplex> a, b, c; 
 
   /*!
    * Create a new Laplacian solver

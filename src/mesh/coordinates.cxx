@@ -16,6 +16,7 @@
 #include <interpolation.hxx>
 
 #include <globals.hxx>
+#include <bout/scorepwrapper.hxx>
 
 Coordinates::Coordinates(Mesh *mesh)
     : dx(1, mesh), dy(1, mesh), dz(1), d1_dx(mesh), d1_dy(mesh), J(1, mesh), Bxy(1, mesh),
@@ -620,6 +621,7 @@ const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc) {
 #include <invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
 
 const Field2D Coordinates::Delp2(const Field2D &f) {
+  SCOREP0();
   TRACE("Coordinates::Delp2( Field2D )");
 
   Field2D result = G1 * DDX(f) + g11 * D2DX2(f);
@@ -628,6 +630,7 @@ const Field2D Coordinates::Delp2(const Field2D &f) {
 }
 
 const Field3D Coordinates::Delp2(const Field3D &f) {
+  SCOREP0();
   TRACE("Coordinates::Delp2( Field3D )");
 
   ASSERT2(localmesh->xstart > 0); // Need at least one guard cell
@@ -638,32 +641,44 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
   int ncz = localmesh->LocalNz;
 
   // Allocate memory
-  auto ft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
-  auto delft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
+  //auto ft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
+  //auto delft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
+  Matrix<dcomplex> delft(localmesh->LocalNx, ncz / 2 + 1);
+  Matrix<dcomplex> ft(localmesh->LocalNx, ncz / 2 + 1);
+
+  Laplacian *d2lap = Laplacian::defaultInstance();
+  
+  d2lap->calcLaplaceCoefs();
 
   // Loop over all y indices
   for (int jy = 0; jy < localmesh->LocalNy; jy++) {
 
     // Take forward FFT
 
+    #pragma omp parallel for
     for (int jx = 0; jx < localmesh->LocalNx; jx++)
       rfft(&f(jx, jy, 0), ncz, &ft(jx, 0));
 
-    // Loop over kz
-    for (int jz = 0; jz <= ncz / 2; jz++) {
-      dcomplex a, b, c;
+    // Perform x derivative
+    // No smoothing in the x direction
+    #pragma omp parallel for
+    for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
 
-      // No smoothing in the x direction
-      for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
-        // Perform x derivative
+      //dcomplex a, b, c;
 
-        laplace_tridag_coefs(jx, jy, jz, a, b, c);
+      for (int jz = 0; jz <= ncz / 2; jz++) {
 
-        delft(jx, jz) = a * ft(jx - 1, jz) + b * ft(jx, jz) + c * ft(jx + 1, jz);
+
+	//output.write("\ta(%i,%i,%i) = %e, %s\n", jy, jx, jz, d2lap->a(jy,jx,jz), typeid( d2lap->a(jy,jx,jz) ).name() );
+        //delft(jx, jz) = a(jy,jx,jz) * ft(jx - 1, jz) + d2lap->b(jy,jx,jz) * ft(jx, jz) + d2lap->c(jy,jx,jz) * ft(jx + 1, jz);
+  	output.write("\t%e\n",d2lap->a(jy,jx,jz));
+  
+        delft(jx, jz) = d2lap->a(jy,jx,jz) * ft(jx - 1, jz) + d2lap->b(jy,jx,jz) * ft(jx, jz) + d2lap->c(jy,jx,jz) * ft(jx + 1, jz);
       }
     }
 
     // Reverse FFT
+    #pragma omp parallel for
     for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
 
       irfft(&delft(jx, 0), ncz, &result(jx, jy, 0));
@@ -687,6 +702,7 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
 }
 
 const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
+  SCOREP0();
   TRACE("Coordinates::Delp2( FieldPerp )");
 
   FieldPerp result(localmesh);
@@ -700,6 +716,8 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
   // Allocate memory
   auto ft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
   auto delft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
+  Laplacian *d2lap = Laplacian::defaultInstance();
+  d2lap->calcLaplaceCoefs();
 
   // Take forward FFT
   for (int jx = 0; jx < localmesh->LocalNx; jx++)
@@ -711,11 +729,7 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
     // No smoothing in the x direction
     for (int jx = 2; jx < (localmesh->LocalNx - 2); jx++) {
       // Perform x derivative
-
-      dcomplex a, b, c;
-      laplace_tridag_coefs(jx, jy, jz, a, b, c);
-
-      delft(jx, jz) = a * ft(jx - 1, jz) + b * ft(jx, jz) + c * ft(jx + 1, jz);
+      //delft(jx, jz) = d2lap->a(jy,jx,jz) * ft(jx - 1, jz) + d2lap->b(jy,jx,jz) * ft(jx, jz) + d2lap->c(jy,jx,jz) * ft(jx + 1, jz);
     }
   }
 

@@ -42,6 +42,7 @@
 #include <output.hxx>
 #include <msg_stack.hxx>
 #include <bout/constants.hxx>
+#include <bout/scorepwrapper.hxx>
 #include <bout/openmpwrap.hxx>
 
 #include "laplacefactory.hxx"
@@ -128,6 +129,7 @@ void Laplacian::cleanup() {
  **********************************************************************************/
 
 const Field3D Laplacian::solve(const Field3D &b) {
+  SCOREP0();
   TRACE("Laplacian::solve(Field3D)");
   Mesh *mesh = b.getMesh();
 
@@ -702,6 +704,35 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
       }
     }
   }
+}
+
+void Laplacian::calcLaplaceCoefs() {
+  TRACE("Laplacian::calcLaplaceCoefs");
+
+  int nx = mesh->LocalNx;
+  int ny = mesh->LocalNy;
+  int nz = mesh->LocalNz;
+  //int nz = mesh->LocalNz/2 + 1;
+
+  // Allocate memory
+///  auto a = Tensor<dcomplex>(ny, nx, nz);
+///  auto b = Tensor<dcomplex>(ny, nx, nz);
+///  auto c = Tensor<dcomplex>(ny, nx, nz);
+  Tensor<dcomplex> a(ny, nx, nz);
+  Tensor<dcomplex> b(ny, nx, nz);
+  Tensor<dcomplex> c(ny, nx, nz);
+  //output << "\t " << a.shape() << "\n";
+  output.write("\t%i,%i,%i\n",ny,nx,nz);
+
+  // compute coefficients
+  for (int jy = 0; jy < ny; jy++) {
+    for (int jx = 0; jx < nx; jx++) {
+      for (int jz = 0; jz < nz; jz++) {
+        laplace_tridag_coefs(jx, jy, jz, a(jy, jx, jz), b(jy, jx, jz), c(jy, jx, jz), NULL, NULL);
+      }
+    }
+  }
+
 }
 
 /**********************************************************************************
