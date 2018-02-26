@@ -35,10 +35,10 @@
 #include <boutexception.hxx>
 
 Vector3D::Vector3D(Mesh *localmesh)
-    : covariant(true), deriv(), x(localmesh), y(localmesh), z(localmesh) {}
+    : x(localmesh), y(localmesh), z(localmesh), covariant(true), deriv(nullptr) {}
 
 Vector3D::Vector3D(const Vector3D &f)
-    : covariant(f.covariant), deriv(), x(f.x), y(f.y), z(f.y) {}
+    : x(f.x), y(f.y), z(f.y), covariant(f.covariant), deriv(nullptr) {}
 
 Vector3D::~Vector3D() {
   if(deriv != NULL) {

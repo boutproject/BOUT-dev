@@ -6,7 +6,7 @@ BOUT_TOP=..
 # Some distros may provide sphinx-build-3 and sphinx-build-2 instead
 # of sphinx-build. An automatic check would be helpful, but at least
 # with this, it should be easy to change:
-sphinx-build?=$(shell which sphinx-build-3 &>/dev/null || echo sphinx-build && echo sphinx-build-3)
+sphinx-build?=$(shell which sphinx-build-3 &>/dev/null && echo sphinx-build-3 || echo sphinx-build)
 
 all: sphinx
 manual: all
@@ -24,11 +24,11 @@ sphinx-pdf:
 
 sphinx-html:
 	PYTHONPATH=$(BOUT_TOP)/tools/pylib:$$PYTHONPATH $(sphinx-build) -b html sphinx/ html/
-	@echo "Documentation available in `pwd`/html/"
+	@echo "Documentation available in file://`pwd`/html/index.html"
 
 sphinx-man:
 	PYTHONPATH=$(BOUT_TOP)/tools/pylib:$$PYTHONPATH $(sphinx-build) -b man sphinx/ man/
-	@echo "Documentation available in `pwd`/html/"
+	@echo "Documentation available in `pwd`/man/bout.1"
 
 # Run doxygen, ignore if it fails (leading '-')
 doxygen:
@@ -40,9 +40,8 @@ breathe-autogen: doxygen
 
 clean:
 	@echo "Cleaning up..."
-	@cd $(TEXDIR) &&\
-	rm -f *.pdf *.dvi *.aux *.out *.log *.toc *.idx *.ilg *.ind *.bbl *.blg
-	@rm -f *.pdf
-	@rm -rf html/
-	@rm -rf build/
-	@rm -rf sphinx/_breathe_autogen/
+	@$(RM) -f *.pdf
+	@$(RM) -rf html/
+	@$(RM) -rf build/
+	@$(RM) -rf man/
+	@$(RM) -rf sphinx/_breathe_autogen/

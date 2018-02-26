@@ -211,10 +211,11 @@ class BoutOptionsFile(BoutOptions):
             
 class BoutOutputs(object):
     """
-    Emulates a map class, represents the contents of a BOUT++
-    dmp files. Does not allow writing, only reading of data.
-    Currently there is no cache, so each time a variable
-    is read it is collected.
+    Emulates a map class, represents the contents of a BOUT++ dmp files. Does
+    not allow writing, only reading of data.  By default there is no cache, so
+    each time a variable is read it is collected; if caching is set to True
+    variables are stored once they are read.  Extra keyword arguments are
+    passed through to collect.
     
     Example
     -------
@@ -222,16 +223,36 @@ class BoutOutputs(object):
     d = BoutOutputs(".")  # Current directory
     
     d.keys()     # List all valid keys
+
+    d.dimensions["ne"] # Get the dimensions of the field ne
     
     d["ne"] # Read "ne" from data files
-    
+
+    d = BoutOutputs(".", prefix="BOUT.dmp", caching=True) # Turn on caching
+
+    Options
+    -------
+    prefix - sets the prefix for data files (default "BOUT.dmp")
+
+    caching - switches on caching of data, so it is only read into memory when
+              first accessed (default False) If caching is set to a number, it
+              gives the maximum size of the cache in GB, after which entries
+              will be discarded in first-in-first-out order to prevent the
+              cache getting too big.  If the variable being returned is bigger
+              than the maximum cache size, then the variable will be returned
+              without being added to the cache, and the rest of the cache will
+              be left.
+
+    **kwargs - keyword arguments that are passed through to collect()
     """
-    def __init__(self, path=".", prefix="BOUT.dmp"):
+    def __init__(self, path=".", prefix="BOUT.dmp", caching=False, **kwargs):
         """
         Initialise BoutOutputs object
         """
         self._path = path
         self._prefix = prefix
+        self._caching = caching
+        self._kwargs = kwargs
         
         # Label for this data
         self.label = path
@@ -243,16 +264,43 @@ class BoutOutputs(object):
         
         # Available variables
         self.varNames = []
+        self.dimensions = {}
+        self.evolvingVariableNames = []
+
+        # Private variables
+        if self._caching:
+            from collections import OrderedDict
+            self._datacache = OrderedDict()
+            if self._caching is not True:
+                # Track the size of _datacache and limit it to a maximum of _caching
+                try:
+                    # Check that _caching is a number of some sort
+                    float(self._caching)
+                except ValueError:
+                    raise ValueError("BoutOutputs: Invalid value for caching argument. Caching should be either a number (giving the maximum size of the cache in GB), True for unlimited size or False for no caching.")
+                self._datacachesize = 0
+                self._datacachemaxsize = self._caching*1.e9
         
         with DataFile(file_list[0]) as f:
             # Get variable names
             self.varNames = f.keys()
+            for name in f.keys():
+                dimensions = f.dimensions(name)
+                self.dimensions[name] = dimensions
+                if name != "t_array" and "t" in dimensions:
+                    self.evolvingVariableNames.append(name)
         
     def keys(self):
         """
         Return a list of available variable names
         """
         return self.varNames
+
+    def evolvingVariables(self):
+        """
+        Return a list of names of time-evolving variables
+        """
+        return self.evolvingVariableNames
         
     def __len__(self):
         return len(self.varNames)
@@ -260,12 +308,34 @@ class BoutOutputs(object):
     def __getitem__(self, name):
         """
         Reads a variable using collect.
+        Caches result and returns later if called again, if self._caching=True
         
         """
-
-        # Collect the data from the repository
-        data = collect(name, path=self._path, prefix=self._prefix)
-        return data
+        if self._caching:
+            if name not in self._datacache.keys():
+                item = collect(name, path=self._path, prefix=self._prefix, **self._kwargs)
+                if self._caching is not True:
+                    itemsize = item.nbytes
+                    if itemsize>self._datacachemaxsize:
+                        return item
+                    self._datacache[name] = item
+                    self._datacachesize += itemsize
+                    while self._datacachesize > self._datacachemaxsize:
+                        self._removeFirstFromCache()
+                else:
+                    self._datacache[name] = item
+                return item
+            else:
+                return self._datacache[name]
+        else:
+            # Collect the data from the repository
+            data = collect(name, path=self._path, prefix=self._prefix, **self._kwargs)
+            return data
+    
+    def _removeFirstFromCache(self):
+        # pop the first item from the OrderedDict _datacache
+        item = self._datacache.popitem(last=False)
+        self._datacachesize -= item[1].nbytes
 
     def __iter__(self):
         """
@@ -286,12 +356,12 @@ class BoutOutputs(object):
         return text
     
 
-def BoutData(path=".", prefix="BOUT.dmp"):
+def BoutData(path=".", prefix="BOUT.dmp", caching=False, **kwargs):
     """
-    Returns a dictionary, containing the contents of a BOUT++
-    output directory. Does not allow writing, only reading of data.
-    Currently there is no cache, so each time a variable
-    is read it is collected.
+    Returns a dictionary, containing the contents of a BOUT++ output directory.
+    Does not allow writing, only reading of data.  By default there is no
+    cache, so each time a variable is read it is collected; if caching is set
+    to True variables are stored once they are read.
     
     Example
     -------
@@ -308,6 +378,22 @@ def BoutData(path=".", prefix="BOUT.dmp"):
 
     d["outputs"]["ne"] # Read "ne" from data files
     
+    d = BoutData(".", prefix="BOUT.dmp", caching=True) # Turn on caching
+
+    Options
+    -------
+    prefix - sets the prefix for data files (default "BOUT.dmp")
+
+    caching - switches on caching of data, so it is only read into memory when
+              first accessed (default False) If caching is set to a number, it
+              gives the maximum size of the cache in GB, after which entries
+              will be discarded in first-in-first-out order to prevent the
+              cache getting too big.  If the variable being returned is bigger
+              than the maximum cache size, then the variable will be returned
+              without being added to the cache, and the rest of the cache will
+              be left.
+    
+    **kwargs - keyword arguments that are passed through to collect()
     """
     
     data = {} # Map for the result
@@ -318,6 +404,6 @@ def BoutData(path=".", prefix="BOUT.dmp"):
     data["options"] = BoutOptionsFile(os.path.join(path, "BOUT.inp"), name="options")
     
     # Output from .dmp.* files
-    data["outputs"] = BoutOutputs(path)
+    data["outputs"] = BoutOutputs(path, prefix=prefix, caching=caching, **kwargs)
     
     return data

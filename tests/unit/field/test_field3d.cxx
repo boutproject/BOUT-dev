@@ -1212,6 +1212,7 @@ TEST_F(Field3DTest, Min) {
   const BoutReal min_value = 40.0;
 
   EXPECT_EQ(min(field, false), min_value);
+  EXPECT_EQ(min(field, false,RGN_ALL), -99.0);
 }
 
 TEST_F(Field3DTest, Max) {
@@ -1227,6 +1228,7 @@ TEST_F(Field3DTest, Max) {
   const BoutReal max_value = 60.0;
 
   EXPECT_EQ(max(field, false), max_value);
+  EXPECT_EQ(max(field, false,RGN_ALL), 99.0);
 }
 
 TEST_F(Field3DTest, DC) {
@@ -1239,3 +1241,36 @@ TEST_F(Field3DTest, DC) {
 
   EXPECT_TRUE(IsField2DEqualBoutReal(DC(field), 3.0));
 }
+
+#ifdef _OPENMP
+TEST_F(Field3DTest, OpenMPIterator) {
+  const int fields = 10;
+  Field3D *d3 = new Field3D[fields];
+  for (int i = 0; i < fields; ++i) {
+    d3[i] = 1;
+  }
+
+  BoutReal expected = 1;
+
+  BOUT_OMP(parallel for)
+  for (int j = 0; j < fields; ++j) {
+    BOUT_OMP(parallel)
+    for (auto i : d3[j]) {
+      EXPECT_DOUBLE_EQ(d3[j][i], expected);
+      d3[j][i] = 2;
+    }
+  }
+
+  expected = 2;
+
+  for (int i = 0; i < fields; ++i) {
+    for (int jx = 0; jx < mesh->LocalNx; ++jx) {
+      for (int jy = 0; jy < mesh->LocalNy; ++jy) {
+        for (int jz = 0; jz < mesh->LocalNz; ++jz) {
+          EXPECT_DOUBLE_EQ(d3[i](jx, jy, jz), expected);
+        }
+      }
+    }
+  }
+}
+#endif

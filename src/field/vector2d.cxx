@@ -35,9 +35,10 @@
 #include <boutexception.hxx>
 
 Vector2D::Vector2D(Mesh *localmesh)
-    : covariant(true), deriv(NULL), x(localmesh), y(localmesh), z(localmesh) {}
+    : x(localmesh), y(localmesh), z(localmesh), covariant(true), deriv(nullptr) {}
 
-Vector2D::Vector2D(const Vector2D &f) : x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(NULL) { }
+Vector2D::Vector2D(const Vector2D &f)
+    : x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(nullptr) {}
 
 Vector2D::~Vector2D() {
   if(deriv != NULL) {

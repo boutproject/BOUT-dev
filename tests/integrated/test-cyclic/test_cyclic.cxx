@@ -73,6 +73,12 @@ int main(int argc, char **argv) {
       T xp = ((pe*n) % 4) - 2.;
       rhs[s][i] = a[s][i]*x[s][i-1] + b[s][i]*x[s][i] + c[s][i]*xp;
     }
+
+    // Zero x, so that solve has to do something
+
+    for (int i = 0; i < n; i++) {
+      x[s][i] = 0.0;
+    }
   }
 
   // Solve system
