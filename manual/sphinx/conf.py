@@ -38,7 +38,7 @@ on_readthedocs = os.environ.get("READTHEDOCS") == "True"
 # readthedocs currently runs out of memory if we actually dare to try to do this
 if has_breathe:
     # Run doxygen to generate the XML sources
-    subprocess.call("cd ../doxygen; doxygen Doxyfile", shell=True)
+    subprocess.call("cd ../doxygen; doxygen Doxyfile_readthedocs", shell=True)
     # Now use breathe.apidoc to autogen rst files for each XML file
     apidoc_args = argparse.Namespace(destdir='_breathe_autogen/',
                                      dryrun=False,
