@@ -243,8 +243,6 @@ BOUT_OMP(for)
   else {
     communications(x,level);    
     for(int i = 1;i<lnx[level]+1;i++)
-BOUT_OMP(parallel default(shared) private(nn,val))
-BOUT_OMP(for)
       for(int k=1;k<lnz[level]+1;k++) {
         nn = i*mm+k;
         val = b[nn] - matmg[level][nn*9+3]*x[nn-1]
@@ -258,8 +256,6 @@ BOUT_OMP(for)
       } 
     communications(x,level);
     for(int i = lnx[level];i>0;i--)
-BOUT_OMP(parallel default(shared) private(nn,val))
-BOUT_OMP(for)
       for(int k= lnz[level];k>0;k--) {
         nn = i*mm+k;
         val = b[nn] - matmg[level][nn*9+3]*x[nn-1]
