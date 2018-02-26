@@ -222,7 +222,7 @@ BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
       for(int i = 0;i<dim;i++) x0[i] = x[i];    
       for(int i = 1;i<lnx[level]+1;i++)
-BOUT_OMP(parallel default(shared) private(nn))
+BOUT_OMP(parallel default(shared) private(nn,val))
 BOUT_OMP(for)
         for(int k=1;k<lnz[level]+1;k++) {
           nn = i*mm+k;
@@ -243,7 +243,7 @@ BOUT_OMP(for)
   else {
     communications(x,level);    
     for(int i = 1;i<lnx[level]+1;i++)
-BOUT_OMP(parallel default(shared) private(nn))
+BOUT_OMP(parallel default(shared) private(nn,val))
 BOUT_OMP(for)
       for(int k=1;k<lnz[level]+1;k++) {
         nn = i*mm+k;
@@ -258,7 +258,7 @@ BOUT_OMP(for)
       } 
     communications(x,level);
     for(int i = lnx[level];i>0;i--)
-BOUT_OMP(parallel default(shared) private(nn))
+BOUT_OMP(parallel default(shared) private(nn,val))
 BOUT_OMP(for)
       for(int k= lnz[level];k>0;k--) {
         nn = i*mm+k;
@@ -534,7 +534,7 @@ BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
   for(int i = 0;i<mm*(lnx[level]+2);i++) r[i] = 0.0;
   for(int i = 1;i<lnx[level]+1;i++)
-BOUT_OMP(parallel default(shared))
+BOUT_OMP(parallel default(shared) private(val))
 BOUT_OMP(for)
     for(int k=1;k<lnz[level]+1;k++) {
       int nn = i*mm+k;
