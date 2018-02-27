@@ -525,17 +525,6 @@ then
       AC_CHECK_FILES($path/include/pnetcdf.h , PNCPATH=$path,)
     fi
   fi
-
-  # Try locate
-  if test "$PNCPATH" == ""
-  then
-    path=`locate pnetcdf.h | head -n 1`
-    if test "$path" != ""
-    then
-      path=$path/..
-      AC_CHECK_FILES($path/include/pnetcdf.h , PNCPATH=$path,)
-    fi
-  fi
 fi
 
 if test "$PNCPATH" != ""

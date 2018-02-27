@@ -102,6 +102,7 @@ public:
   T& operator()(unsigned int i1, unsigned int i2) {
     ASSERT2(0<=i1 && i1<n1);
     ASSERT2(0<=i2 && i2<n2);
+    data.ensureUnique();
     return data[i1*n2+i2];
   }
   const T& operator()(unsigned int i1, unsigned int i2) const {
@@ -111,6 +112,7 @@ public:
   }
 
   Matrix& operator=(const T&val){
+    data.ensureUnique();
     for(auto &i: data){
       i = val;
     };
@@ -120,11 +122,13 @@ public:
   // To provide backwards compatibility with matrix to be removed
   DEPRECATED(T* operator[](unsigned int i1)) {
     ASSERT2(0<=i1 && i1<n1);
+    data.ensureUnique();
     return &(data[i1*n2]);
   }
   // To provide backwards compatibility with matrix to be removed
   DEPRECATED(const T* operator[](unsigned int i1) const) {
     ASSERT2(0<=i1 && i1<n1);
+    data.ensureUnique();
     return &(data[i1*n2]);
   }
 
@@ -164,6 +168,7 @@ public:
     ASSERT2(0<=i1 && i1<n1);
     ASSERT2(0<=i2 && i2<n2);
     ASSERT2(0<=i3 && i3<n3);
+    data.ensureUnique();
     return data[(i1*n2+i2)*n3 + i3];
   }
   const T& operator()(unsigned int i1, unsigned int i2, unsigned int i3) const {
@@ -174,6 +179,7 @@ public:
   }
 
   Tensor& operator=(const T&val){
+    data.ensureUnique();
     for(auto &i: data){
       i = val;
     };

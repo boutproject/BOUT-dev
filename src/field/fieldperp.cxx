@@ -239,6 +239,7 @@ const FieldPerp sliceXZ(const Field3D& f, int y) {
 const IndexRange FieldPerp::region(REGION rgn) const {
   switch(rgn) {
   case RGN_ALL:
+  case RGN_NOZ:
     return IndexRange{0, nx-1,
         0, 0,
         0, nz-1};
@@ -249,7 +250,7 @@ const IndexRange FieldPerp::region(REGION rgn) const {
         0, nz-1};
     break;
   default:
-    throw BoutException("Field3D::region() : Requested region not implemented");
+    throw BoutException("FieldPerp::region() : Requested region not implemented");
     break;
   };
 }

@@ -39,18 +39,31 @@ TEST(MatrixTest, Empty) {
 
 TEST(MatrixTest, CopyConstuctor) {
   Matrix<int> matrix(3, 5);
+  matrix = 0;
   Matrix<int> matrix2(matrix);
 
   int shape0, shape1;
   std::tie(shape0, shape1) = matrix2.shape();
   EXPECT_EQ(shape0, 3);
   EXPECT_EQ(shape1, 5);
+
+  // Now check that matrix and matrix2 are unique
+  for (const auto i : matrix2) {
+    EXPECT_EQ(i, 0);
+  }
+
+  matrix = 2;
+
+  for (const auto i : matrix2) {
+    EXPECT_EQ(i, 0);
+  }
 }
 
 TEST(MatrixTest, CopyAssignment) {
   Matrix<int> matrix(3, 5);
-  Matrix<int> matrix2;
+  matrix = 0;
 
+  Matrix<int> matrix2;
   ASSERT_TRUE(matrix2.empty());
 
   matrix2 = matrix;
@@ -59,6 +72,17 @@ TEST(MatrixTest, CopyAssignment) {
   std::tie(shape0, shape1) = matrix2.shape();
   EXPECT_EQ(shape0, 3);
   EXPECT_EQ(shape1, 5);
+
+  // Now check that matrix and matrix2 are unique
+  for (const auto i : matrix2) {
+    EXPECT_EQ(i, 0);
+  }
+
+  matrix = 2;
+
+  for (const auto i : matrix2) {
+    EXPECT_EQ(i, 0);
+  }
 }
 
 TEST(MatrixTest, Iterator) {
@@ -157,6 +181,8 @@ TEST(TensorTest, Empty) {
 
 TEST(TensorTest, CopyConstuctor) {
   Tensor<int> tensor(3, 5, 7);
+  tensor = 0;
+
   Tensor<int> tensor2(tensor);
 
   int shape0, shape1, shape2;
@@ -164,10 +190,23 @@ TEST(TensorTest, CopyConstuctor) {
   EXPECT_EQ(shape0, 3);
   EXPECT_EQ(shape1, 5);
   EXPECT_EQ(shape2, 7);
+
+  // Now check that matrix and matrix2 are unique
+  for (const auto i : tensor2) {
+    EXPECT_EQ(i, 0);
+  }
+
+  tensor = 2;
+
+  for (const auto i : tensor2) {
+    EXPECT_EQ(i, 0);
+  }
 }
 
 TEST(TensorTest, CopyAssignment) {
   Tensor<int> tensor(3, 5, 7);
+  tensor = 0;
+
   Tensor<int> tensor2;
 
   ASSERT_TRUE(tensor2.empty());
@@ -179,6 +218,17 @@ TEST(TensorTest, CopyAssignment) {
   EXPECT_EQ(shape0, 3);
   EXPECT_EQ(shape1, 5);
   EXPECT_EQ(shape2, 7);
+
+  // Now check that matrix and matrix2 are unique
+  for (const auto i : tensor2) {
+    EXPECT_EQ(i, 0);
+  }
+
+  tensor = 2;
+
+  for (const auto i : tensor2) {
+    EXPECT_EQ(i, 0);
+  }
 }
 
 TEST(TensorTest, Iterator) {
