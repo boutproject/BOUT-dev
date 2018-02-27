@@ -19,7 +19,7 @@ print("Making DataIterator test")
 shell_safe("make > make.log",pipe=True)
 
 for nproc in [1,2,4]:
-    for mproc in [1,2,4,8]:
+    for mproc in [1,2,3,4]:
         cmd = "./test_dataiterator"
 
         print("   %d processors...." % (nproc))
@@ -29,7 +29,7 @@ for nproc in [1,2,4]:
         shell("rm data/BOUT.dmp.* 2> err.log")
 
         # Run the case
-        _, out = launch_safe(cmd+" "+f, runcmd=MPIRUN, nproc=nproc, pipe=True)
+        _, out = launch_safe(cmd+" "+f, runcmd=MPIRUN, nproc=nproc, mthread=mproc pipe=True)
         with open("run.log."+str(nproc)+"."+str(mproc), "w") as f:
             f.write(out)
 
