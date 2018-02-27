@@ -323,7 +323,7 @@ BOUT_OMP(for)
     a1 = vectorProd(level,v[0],v[0]);
     a1 = sqrt(a1);
     if(fabs(a1) < atol*rtol) {
-      output<<num<<"First a1 in GMRES is wrong "<<a1<<":"<<level<<endl;
+      output<<num<<" First a1 in GMRES is wrong at level "<<level<<": "<<a1<<endl;
     }
     a0 = 1.0/a1;
     g[0] = a1;
@@ -351,7 +351,7 @@ BOUT_OMP(for)
       a1 = vectorProd(level,v[it+1],v[it+1]);
       a1 = sqrt(a1);
       if(fabs(a1) < atol*rtol) {
-        output<<num<<"In Second a1 in GMRES is wrong "<<a1<<endl;
+        output<<num<<" Second a1 in GMRES is wrong at level "<<level<<": "<<a1<<endl;
       }
       a0 = 1.0/a1;
       h[it+1][it] = a1;
