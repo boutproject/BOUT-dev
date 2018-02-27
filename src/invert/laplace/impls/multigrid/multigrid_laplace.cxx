@@ -195,20 +195,20 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
 
   if ( global_flags & INVERT_START_NEW ) {
     // set initial guess to zero
-    for (int i=1; i<lxx+1; i++) {
 BOUT_OMP(parallel default(shared) )
-BOUT_OMP(for)
+BOUT_OMP(for collapse(2))
+    for (int i=1; i<lxx+1; i++) {
       for (int k=1; k<lzz+1; k++) {
         x[i*lz2+k] = 0.;
       }
     }
   } else {
     // Read initial guess into local array, ignoring guard cells
-    for (int i=1; i<lxx+1; i++) {
-      int i2 = i-1+mesh->xstart;
 BOUT_OMP(parallel default(shared) )
-BOUT_OMP(for)
+BOUT_OMP(for collapse(2))
+    for (int i=1; i<lxx+1; i++) {
       for (int k=1; k<lzz+1; k++) {
+        int i2 = i-1+mesh->xstart;
         int k2 = k-1;
         x[i*lz2+k] = x0[i2][k2];
       }
@@ -216,9 +216,11 @@ BOUT_OMP(for)
   }
   
   // Read RHS into local array
+BOUT_OMP(parallel default(shared) )
+BOUT_OMP(for collapse(2))
   for (int i=1; i<lxx+1; i++) {
-    int i2 = i-1+mesh->xstart;
     for (int k=1; k<lzz+1; k++) {
+      int i2 = i-1+mesh->xstart;
       int k2 = k-1;
       b[i*lz2+k] = b_in(i2, k2);
     }
@@ -229,12 +231,16 @@ BOUT_OMP(for)
       // Neumann boundary condition
       if ( inner_boundary_flags & INVERT_SET ) {
         // guard cells of x0 specify gradient to set at inner boundary
+BOUT_OMP(parallel default(shared) )
+BOUT_OMP(for)
         for (int k=1; k<lzz+1; k++) {
           int k2 = k-1;
 	  x[k] = -x0(mesh->xstart-1, k2)*sqrt(coords->g_11(mesh->xstart, yindex))*coords->dx(mesh->xstart, yindex); 
         }
       } else {
         // zero gradient inner boundary condition
+BOUT_OMP(parallel default(shared) )
+BOUT_OMP(for)
         for (int k=1; k<lzz+1; k++) {
           // set inner guard cells
           x[k] = 0.0;
@@ -244,6 +250,8 @@ BOUT_OMP(for)
       // Dirichlet boundary condition
       if ( inner_boundary_flags & INVERT_SET ) {
         // guard cells of x0 specify value to set at inner boundary
+BOUT_OMP(parallel default(shared) )
+BOUT_OMP(for)
         for (int k=1; k<lzz+1; k++) {
           int k2 = k-1;
           x[k] = 2.*x0(mesh->xstart-1, k2); 
@@ -252,6 +260,8 @@ BOUT_OMP(for)
       }
       else {
         // zero value inner boundary condition
+BOUT_OMP(parallel default(shared) )
+BOUT_OMP(for)
         for (int k=1; k<lzz+1; k++) {
           // set inner guard cells
           x[k] = 0.;
@@ -264,6 +274,8 @@ BOUT_OMP(for)
       // Neumann boundary condition
       if ( inner_boundary_flags & INVERT_SET ) {
         // guard cells of x0 specify gradient to set at outer boundary
+BOUT_OMP(parallel default(shared) )
+BOUT_OMP(for)
         for (int k=1; k<lzz+1; k++) {
           int k2 = k-1;
         x[(lxx+1)*lz2+k] = x0(mesh->xend+1, k2)*sqrt(coords->g_11(mesh->xend, yindex))*coords->dx(mesh->xend, yindex); 
@@ -272,6 +284,8 @@ BOUT_OMP(for)
       }
       else {
         // zero gradient outer boundary condition
+BOUT_OMP(parallel default(shared) )
+BOUT_OMP(for)
         for (int k=1; k<lzz+1; k++) {
           // set outer guard cells
           x[(lxx+1)*lz2+k] = 0.;
@@ -282,6 +296,8 @@ BOUT_OMP(for)
       // Dirichlet boundary condition
       if ( outer_boundary_flags & INVERT_SET ) {
         // guard cells of x0 specify value to set at outer boundary
+BOUT_OMP(parallel default(shared) )
+BOUT_OMP(for)
         for (int k=1; k<lzz+1; k++) {
           int k2 = k-1;
           x[(lxx+1)*lz2+k]=2.*x0(mesh->xend+1, k2); 
@@ -290,6 +306,8 @@ BOUT_OMP(for)
       }
       else {
         // zero value inner boundary condition
+BOUT_OMP(parallel default(shared) )
+BOUT_OMP(for)
         for (int k=1; k<lzz+1; k++) {
           // set outer guard cells
           x[(lxx+1)*lz2+k] = 0.;
@@ -299,6 +317,8 @@ BOUT_OMP(for)
   }
 
   // Exchange ghost cells of initial guess
+BOUT_OMP(parallel default(shared) )
+BOUT_OMP(for)
   for(int i=0;i<lxx+2;i++) {
     x[i*lz2] = x[(i+1)*lz2-2];
     x[(i+1)*lz2-1] = x[i*lz2+1];
@@ -386,9 +406,11 @@ BOUT_OMP(for)
     result = 1./0.;
   #endif
   // Copy solution into a FieldPerp to return
+BOUT_OMP(parallel default(shared) )
+BOUT_OMP(for collapse(2))
   for (int i=1; i<lxx+1; i++) {
-    int i2 = i-1+mesh->xstart;
     for (int k=1; k<lzz+1; k++) {
+      int i2 = i-1+mesh->xstart;
       int k2 = k-1;
       result(i2, k2) = x[i*lz2+k];
     }
@@ -399,6 +421,8 @@ BOUT_OMP(for)
       if ( inner_boundary_flags & INVERT_SET ) {
         // guard cells of x0 specify gradient to set at inner boundary
         int i2 = -1+mesh->xstart;
+BOUT_OMP(parallel default(shared) )
+BOUT_OMP(for)
         for (int k=1; k<lzz+1; k++) {
           int k2 = k-1;
           result(i2, k2) = x[lz2+k] - x0(mesh->xstart-1, k2)*sqrt(coords->g_11(mesh->xstart, yindex))*coords->dx(mesh->xstart, yindex);
@@ -407,6 +431,8 @@ BOUT_OMP(for)
       else {
         // zero gradient inner boundary condition
         int i2 = -1+mesh->xstart;
+BOUT_OMP(parallel default(shared) )
+BOUT_OMP(for)
         for (int k=1; k<lzz+1; k++) {
           int k2 = k-1;
           result(i2, k2) = x[lz2+k];
@@ -418,6 +444,8 @@ BOUT_OMP(for)
       if ( inner_boundary_flags & INVERT_SET ) {
         // guard cells of x0 specify value to set at inner boundary
         int i2 = -1+mesh->xstart;
+BOUT_OMP(parallel default(shared) )
+BOUT_OMP(for)
         for (int k=1; k<lzz+1; k++) {
           int k2 = k-1;
           result(i2, k2) = 2.*x0(mesh->xstart-1,k2) - x[lz2+k];
@@ -426,6 +454,8 @@ BOUT_OMP(for)
       else {
         // zero value inner boundary condition
         int i2 = -1+mesh->xstart;
+BOUT_OMP(parallel default(shared) )
+BOUT_OMP(for)
         for (int k=1; k<lzz+1; k++) {
           int k2 = k-1;
           result(i2, k2) = -x[lz2+k];
@@ -439,6 +469,8 @@ BOUT_OMP(for)
       if ( inner_boundary_flags & INVERT_SET ) {
         // guard cells of x0 specify gradient to set at outer boundary
         int i2 = lxx+mesh->xstart;
+BOUT_OMP(parallel default(shared) )
+BOUT_OMP(for)
         for (int k=1; k<lzz+1; k++) {
           int k2 = k-1;
           result(i2, k2) = x[lxx*lz2+k] + x0(mesh->xend+1, k2)*sqrt(coords->g_11(mesh->xend, yindex))*coords->dx(mesh->xend, yindex);
@@ -447,6 +479,8 @@ BOUT_OMP(for)
       else {
         // zero gradient outer boundary condition
         int i2 = lxx+mesh->xstart;
+BOUT_OMP(parallel default(shared) )
+BOUT_OMP(for)
         for (int k=1; k<lzz+1; k++) {
           int k2 = k-1;
           result(i2, k2) = x[lxx*lz2+k];
@@ -458,6 +492,8 @@ BOUT_OMP(for)
       if ( outer_boundary_flags & INVERT_SET ) {
         // guard cells of x0 specify value to set at outer boundary
         int i2 = lxx+mesh->xstart;
+BOUT_OMP(parallel default(shared) )
+BOUT_OMP(for)
         for (int k=1; k<lzz+1; k++) {
           int k2 = k-1;
           result(i2, k2) = 2.*x0(mesh->xend+1,k2) - x[lxx*lz2+k];
@@ -466,6 +502,8 @@ BOUT_OMP(for)
       else {
         // zero value inner boundary condition
         int i2 = lxx+mesh->xstart;
+BOUT_OMP(parallel default(shared) )
+BOUT_OMP(for)
         for (int k=1; k<lzz+1; k++) {
           int k2 = k-1;
           result(i2, k2) = -x[lxx*lz2+k];
@@ -487,17 +525,16 @@ void LaplaceMultigrid::generateMatrixF(int level) {
   // Set (fine-level) matrix entries
 
   Coordinates *coords = mesh->coordinates();
-  int i2;
   BoutReal *mat;
   mat = kMG->matmg[level];
   int llx = kMG->lnx[level];
   int llz = kMG->lnz[level];
 
-  for (int i=1; i<llx+1; i++) {
-    i2 = i-1+mesh->xstart;
 BOUT_OMP(parallel default(shared))
-BOUT_OMP(for)
+BOUT_OMP(for collapse(2))
+  for (int i=1; i<llx+1; i++) {
     for (int k=1; k<llz+1; k++) {
+      int i2 = i-1+mesh->xstart;
       int k2 = k-1;
       int k2p  = (k2+1)%Nz_global;
       int k2m  = (k2+Nz_global-1)%Nz_global;
@@ -543,6 +580,8 @@ BOUT_OMP(for)
   if (kMG->rProcI == 0) {
     if ( inner_boundary_flags & INVERT_AC_GRAD ) {
       // Neumann boundary condition
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
       for(int k = 1;k<llz+1; k++) {
         int ic = llz+2 +k;
         mat[ic*9+3] += mat[ic*9];
@@ -558,6 +597,8 @@ BOUT_OMP(for)
     }
     else {
       // Dirichlet boundary condition
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
       for(int k = 1;k<llz+1; k++) {
         int ic = llz+2 +k;
         mat[ic*9+3] -= mat[ic*9];
@@ -575,6 +616,8 @@ BOUT_OMP(for)
   if (kMG->rProcI == kMG->xNP-1) {
     if ( outer_boundary_flags & INVERT_AC_GRAD ) {
       // Neumann boundary condition
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
       for(int k = 1;k<llz+1; k++) {
         int ic = llx*(llz+2)+k;
         mat[ic*9+3] += mat[ic*9+6];
@@ -590,6 +633,8 @@ BOUT_OMP(for)
     }
     else {
       // Dirichlet boundary condition
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
       for(int k = 1;k<llz+1; k++) {
         int ic = llx*(llz+2)+k;
         mat[ic*9+3] -= mat[ic*9+6];

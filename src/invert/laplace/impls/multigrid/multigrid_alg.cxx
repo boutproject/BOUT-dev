@@ -158,19 +158,22 @@ void MultigridAlg::projection(int level,BoutReal *r,BoutReal *pr)
 {
 
   communications(r,level);
-  for(int i=0;i<(lnx[level-1]+2)*(lnz[level-1]+2);i++) pr[i] = 0.;
-  for (int i=1; i<lnx[level-1]+1; i++) {
-    int i2 = 2*i-1;
 BOUT_OMP(parallel default(shared))
+  {
 BOUT_OMP(for)
-    for (int k=1; k<lnz[level-1]+1; k++) {
-      int k2 = 2*k-1;
-      int nn = i*(lnz[level-1]+2)+k;
-      int n0 = i2*(lnz[level]+2)+k2;
-      int n1 = n0 + 1;
-      int n2 = n0 + lnz[level]+2;
-      int n3 = n2 + 1;
-      pr[nn] = (r[n0]+r[n1]+r[n2]+r[n3])/4.0;
+    for(int i=0;i<(lnx[level-1]+2)*(lnz[level-1]+2);i++) pr[i] = 0.;
+BOUT_OMP(for collapse(2))
+    for (int i=1; i<lnx[level-1]+1; i++) {
+      for (int k=1; k<lnz[level-1]+1; k++) {
+        int i2 = 2*i-1;
+        int k2 = 2*k-1;
+        int nn = i*(lnz[level-1]+2)+k;
+        int n0 = i2*(lnz[level]+2)+k2;
+        int n1 = n0 + 1;
+        int n2 = n0 + lnz[level]+2;
+        int n3 = n2 + 1;
+        pr[nn] = (r[n0]+r[n1]+r[n2]+r[n3])/4.0;
+      }
     }
   }
   communications(pr,level-1);
@@ -181,23 +184,24 @@ void MultigridAlg::prolongation(int level,BoutReal *x,BoutReal *ix) {
 
   communications(x,level);
 BOUT_OMP(parallel default(shared))
+  {
 BOUT_OMP(for)
-  for(int i=0;i<(lnx[level+1]+2)*(lnz[level+1]+2);i++) ix[i] = 0.;
-  for (int i=1; i<lnx[level]+1; i++) {
-    int i2 = 2*i-1;
-BOUT_OMP(parallel default(shared))
-BOUT_OMP(for)
-    for (int k=1; k<lnz[level]+1; k++) {
-      int k2 = 2*k-1;
-      int nn = i*(lnz[level]+2)+k;
-      int n0 = i2*(lnz[level+1]+2)+k2;
-      int n1 = n0 + 1;
-      int n2 = n0 + lnz[level+1]+2;
-      int n3 = n2 +1;
-      ix[n0] = x[nn];
-      ix[n1] = x[nn];
-      ix[n2] = x[nn];
-      ix[n3] = x[nn];
+    for(int i=0;i<(lnx[level+1]+2)*(lnz[level+1]+2);i++) ix[i] = 0.;
+BOUT_OMP(for collapse(2))
+    for (int i=1; i<lnx[level]+1; i++) {
+      for (int k=1; k<lnz[level]+1; k++) {
+        int i2 = 2*i-1;
+        int k2 = 2*k-1;
+        int nn = i*(lnz[level]+2)+k;
+        int n0 = i2*(lnz[level+1]+2)+k2;
+        int n1 = n0 + 1;
+        int n2 = n0 + lnz[level+1]+2;
+        int n3 = n2 +1;
+        ix[n0] = x[nn];
+        ix[n1] = x[nn];
+        ix[n2] = x[nn];
+        ix[n3] = x[nn];
+      }
     }
   }
   communications(ix,level+1);
@@ -213,13 +217,12 @@ void MultigridAlg::smoothings(int level, BoutReal *x, BoutReal *b) {
   if(mgsm == 0) {
     x0 = new BoutReal[dim];
     communications(x,level);
-    for(int num =0;num < 2;num++) {
 BOUT_OMP(parallel default(shared))
+    for(int num =0;num < 2;num++) {
 BOUT_OMP(for)
       for(int i = 0;i<dim;i++) x0[i] = x[i];    
+BOUT_OMP(for collapse(2))
       for(int i = 1;i<lnx[level]+1;i++)
-BOUT_OMP(parallel default(shared))
-BOUT_OMP(for)
         for(int k=1;k<lnz[level]+1;k++) {
           int nn = i*mm+k;
           BoutReal val = b[nn] - matmg[level][nn*9+3]*x0[nn-1]
@@ -323,11 +326,14 @@ BOUT_OMP(for)
       output<<num<<"First a1 in GMRES is wrong "<<a1<<":"<<level<<endl;
     }
     a0 = 1.0/a1;
-BOUT_OMP(parallel default(shared))
-BOUT_OMP(for)
-    for(int i=0;i<ldim;i++) v[0][i] *= a0;
     g[0] = a1;
-    for(int i=1;i<MAXGM+1;i++) g[i] = 0.0;
+BOUT_OMP(parallel default(shared))
+    {
+BOUT_OMP(for)
+      for(int i=0;i<ldim;i++) v[0][i] *= a0;
+BOUT_OMP(for)
+      for(int i=1;i<MAXGM+1;i++) g[i] = 0.0;
+    }
     for(it = 0;it<MAXGM;it++) {
       multiAVec(level,v[it],q);
 BOUT_OMP(parallel default(shared))
@@ -348,10 +354,10 @@ BOUT_OMP(for)
         output<<num<<"In Second a1 in GMRES is wrong "<<a1<<endl;
       }
       a0 = 1.0/a1;
+      h[it+1][it] = a1;
 BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
       for(int i=0;i<ldim;i++) v[it+1][i] *= a0;
-      h[it+1][it] = a1;
 
       for(int i=0;i<it;i++) {
         a0 = c[i]*h[i][it] -s[i]*h[i+1][it];
@@ -381,12 +387,13 @@ BOUT_OMP(for)
         y[i] = y[i]/h[i][i];
       }
 BOUT_OMP(parallel default(shared))
+      {
 BOUT_OMP(for)
-      for(int i=0;i<ldim;i++) p[i] = sol[i];
-      for(int i=0;i<=it;i++) { 
-BOUT_OMP(parallel default(shared))
+        for(int i=0;i<ldim;i++) p[i] = sol[i];
 BOUT_OMP(for)
-        for(int k=0;k<ldim;k++) p[k] += y[i]*v[i][k]; 
+        for(int k=0;k<ldim;k++)
+          for(int i=0;i<=it;i++)
+            p[k] += y[i]*v[i][k]; 
       }
 
       /* Get r_m and test convergence.*/
@@ -480,9 +487,9 @@ BoutReal MultigridAlg::vectorProd(int level,BoutReal* x,BoutReal* y) {
   
   BoutReal val;
   BoutReal ini_e = 0.0;
-  for(int i= 1;i<lnx[level]+1;i++)
 BOUT_OMP(parallel default(shared) )
-BOUT_OMP(for reduction(+:ini_e))
+BOUT_OMP(for reduction(+:ini_e) collapse(2))
+  for(int i= 1;i<lnx[level]+1;i++)
     for(int k=1;k<lnz[level]+1;k++) {
       int ii = i*(lnz[level]+2)+k;
       ini_e += x[ii]*y[ii];
@@ -499,19 +506,20 @@ void MultigridAlg::multiAVec(int level, BoutReal *x, BoutReal *b) {
   communications(x,level);
   int mm = lnz[level]+2;
 BOUT_OMP(parallel default(shared))
+  {
 BOUT_OMP(for)
-  for(int i = 0;i<mm*(lnx[level]+2);i++) b[i] = 0.0;
-  for(int i = 1;i<lnx[level]+1;i++)
-BOUT_OMP(parallel default(shared))
-BOUT_OMP(for)
-    for(int k=1;k<lnz[level]+1;k++) {
-      int nn = i*mm+k;
-      b[nn] = matmg[level][nn*9+4]*x[nn] + matmg[level][nn*9+3]*x[nn-1]
-	+matmg[level][nn*9+5]*x[nn+1] + matmg[level][nn*9+1]*x[nn-mm]
-        +matmg[level][nn*9+7]*x[nn+mm] +matmg[level][nn*9]*x[nn-mm-1]
-        +matmg[level][nn*9+2]*x[nn-mm+1] + matmg[level][nn*9+6]*x[nn+mm-1]
-        +matmg[level][nn*9+8]*x[nn+mm+1];
-    } 
+    for(int i = 0;i<mm*(lnx[level]+2);i++) b[i] = 0.0;
+BOUT_OMP(for collapse(2))
+    for(int i = 1;i<lnx[level]+1;i++)
+      for(int k=1;k<lnz[level]+1;k++) {
+        int nn = i*mm+k;
+        b[nn] = matmg[level][nn*9+4]*x[nn] + matmg[level][nn*9+3]*x[nn-1]
+          +matmg[level][nn*9+5]*x[nn+1] + matmg[level][nn*9+1]*x[nn-mm]
+          +matmg[level][nn*9+7]*x[nn+mm] +matmg[level][nn*9]*x[nn-mm-1]
+          +matmg[level][nn*9+2]*x[nn-mm+1] + matmg[level][nn*9+6]*x[nn+mm-1]
+          +matmg[level][nn*9+8]*x[nn+mm+1];
+      } 
+  }
   communications(b,level);
 }
 
@@ -522,20 +530,21 @@ BoutReal *r) {
   communications(x,level);
   mm = lnz[level]+2;
 BOUT_OMP(parallel default(shared))
+  {
 BOUT_OMP(for)
-  for(int i = 0;i<mm*(lnx[level]+2);i++) r[i] = 0.0;
-  for(int i = 1;i<lnx[level]+1;i++)
-BOUT_OMP(parallel default(shared))
-BOUT_OMP(for)
-    for(int k=1;k<lnz[level]+1;k++) {
-      int nn = i*mm+k;
-      BoutReal val = matmg[level][nn*9+4]*x[nn] + matmg[level][nn*9+3]*x[nn-1]
-	+matmg[level][nn*9+5]*x[nn+1] + matmg[level][nn*9+1]*x[nn-mm]
-        +matmg[level][nn*9+7]*x[nn+mm] +matmg[level][nn*9]*x[nn-mm-1]
-        +matmg[level][nn*9+2]*x[nn-mm+1] + matmg[level][nn*9+6]*x[nn+mm-1]
-        +matmg[level][nn*9+8]*x[nn+mm+1];
-      r[nn] = b[nn]-val;
-    } 
+    for(int i = 0;i<mm*(lnx[level]+2);i++) r[i] = 0.0;
+BOUT_OMP(for collapse(2))
+    for(int i = 1;i<lnx[level]+1;i++)
+      for(int k=1;k<lnz[level]+1;k++) {
+        int nn = i*mm+k;
+        BoutReal val = matmg[level][nn*9+4]*x[nn] + matmg[level][nn*9+3]*x[nn-1]
+          +matmg[level][nn*9+5]*x[nn+1] + matmg[level][nn*9+1]*x[nn-mm]
+          +matmg[level][nn*9+7]*x[nn+mm] +matmg[level][nn*9]*x[nn-mm-1]
+          +matmg[level][nn*9+2]*x[nn-mm+1] + matmg[level][nn*9+6]*x[nn+mm-1]
+          +matmg[level][nn*9+8]*x[nn+mm+1];
+        r[nn] = b[nn]-val;
+      } 
+  }
   communications(r,level);
 
 }
@@ -545,46 +554,46 @@ void MultigridAlg::setMatrixC(int level) {
   BoutReal ratio = 8.0; 
 
 BOUT_OMP(parallel default(shared))
+  {
 BOUT_OMP(for)
-  for(int i=0;i<(lnx[level-1]+2)*(lnz[level-1]+2)*9;i++) { 
-    matmg[level-1][i] = 0.0;
-  }
-  for(int i = 1;i<lnx[level-1]+1;i++) {
-    int i2 = 2*i-1;
-BOUT_OMP(parallel default(shared))
-BOUT_OMP(for)
-    for(int k = 1;k<lnz[level-1]+1;k++) {
-      int k2 = 2*k-1;
-      int mm = i*(lnz[level-1]+2)+k;
-      int m0 = i2*(lnz[level]+2)+k2;
-      int m1 = i2*(lnz[level]+2)+k2+1;
-      int m2 = (i2+1)*(lnz[level]+2)+k2;
-      int m3 = (i2+1)*(lnz[level]+2)+k2+1;
-      BoutReal val = matmg[level][m0*9+4]+matmg[level][m1*9+4];
-      val += matmg[level][m2*9+4] + matmg[level][m3*9+4];
-      val += matmg[level][m0*9+5] + matmg[level][m1*9+3];
-      val += matmg[level][m2*9+5] + matmg[level][m3*9+3];
-      val += matmg[level][m0*9+7] + matmg[level][m2*9+1];
-      val += matmg[level][m1*9+7] + matmg[level][m3*9+1];
-      val += matmg[level][m0*9+8] + matmg[level][m3*9];
-      val += matmg[level][m1*9+6] + matmg[level][m2*9+2];
-      matmg[level-1][mm*9+4] = val/ratio;
-      val = matmg[level][m0*9+1]+matmg[level][m1*9+1];
-      val += matmg[level][m0*9+2]+matmg[level][m1*9];
-      matmg[level-1][mm*9+1] = val/ratio;
-      val = matmg[level][m0*9+3]+matmg[level][m2*9+3];
-      val += matmg[level][m0*9+6]+matmg[level][m2*9];
-      matmg[level-1][mm*9+3] = val/ratio;
-      val = matmg[level][m1*9+5]+matmg[level][m3*9+5];
-      val += matmg[level][m1*9+8]+matmg[level][m3*9+2];
-      matmg[level-1][mm*9+5] = val/ratio;
-      val = matmg[level][m2*9+7]+matmg[level][m3*9+7];
-      val += matmg[level][m2*9+8]+matmg[level][m3*9+6];
-      matmg[level-1][mm*9+7] = val/ratio;
-      matmg[level-1][mm*9] = matmg[level][m0*9]/ratio;
-      matmg[level-1][mm*9+2] = matmg[level][m1*9+2]/ratio;
-      matmg[level-1][mm*9+6] = matmg[level][m2*9+6]/ratio;
-      matmg[level-1][mm*9+8] = matmg[level][m3*9+8]/ratio;      
+    for(int i=0;i<(lnx[level-1]+2)*(lnz[level-1]+2)*9;i++)
+      matmg[level-1][i] = 0.0;
+BOUT_OMP(for collapse(2))
+    for(int i = 1;i<lnx[level-1]+1;i++) {
+      for(int k = 1;k<lnz[level-1]+1;k++) {
+        int i2 = 2*i-1;
+        int k2 = 2*k-1;
+        int mm = i*(lnz[level-1]+2)+k;
+        int m0 = i2*(lnz[level]+2)+k2;
+        int m1 = i2*(lnz[level]+2)+k2+1;
+        int m2 = (i2+1)*(lnz[level]+2)+k2;
+        int m3 = (i2+1)*(lnz[level]+2)+k2+1;
+        BoutReal val = matmg[level][m0*9+4]+matmg[level][m1*9+4];
+        val += matmg[level][m2*9+4] + matmg[level][m3*9+4];
+        val += matmg[level][m0*9+5] + matmg[level][m1*9+3];
+        val += matmg[level][m2*9+5] + matmg[level][m3*9+3];
+        val += matmg[level][m0*9+7] + matmg[level][m2*9+1];
+        val += matmg[level][m1*9+7] + matmg[level][m3*9+1];
+        val += matmg[level][m0*9+8] + matmg[level][m3*9];
+        val += matmg[level][m1*9+6] + matmg[level][m2*9+2];
+        matmg[level-1][mm*9+4] = val/ratio;
+        val = matmg[level][m0*9+1]+matmg[level][m1*9+1];
+        val += matmg[level][m0*9+2]+matmg[level][m1*9];
+        matmg[level-1][mm*9+1] = val/ratio;
+        val = matmg[level][m0*9+3]+matmg[level][m2*9+3];
+        val += matmg[level][m0*9+6]+matmg[level][m2*9];
+        matmg[level-1][mm*9+3] = val/ratio;
+        val = matmg[level][m1*9+5]+matmg[level][m3*9+5];
+        val += matmg[level][m1*9+8]+matmg[level][m3*9+2];
+        matmg[level-1][mm*9+5] = val/ratio;
+        val = matmg[level][m2*9+7]+matmg[level][m3*9+7];
+        val += matmg[level][m2*9+8]+matmg[level][m3*9+6];
+        matmg[level-1][mm*9+7] = val/ratio;
+        matmg[level-1][mm*9] = matmg[level][m0*9]/ratio;
+        matmg[level-1][mm*9+2] = matmg[level][m1*9+2]/ratio;
+        matmg[level-1][mm*9+6] = matmg[level][m2*9+6]/ratio;
+        matmg[level-1][mm*9+8] = matmg[level][m3*9+8]/ratio;      
+      }
     }
   }
 
