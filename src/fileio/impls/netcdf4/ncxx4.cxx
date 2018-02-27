@@ -179,9 +179,9 @@ bool Ncxx4::openw(const char *name, bool append) {
     }
 
     /// Test they're the right size (and t is unlimited)
-    
-    if((xDim.getSize() != mesh->LocalNx) || (yDim.getSize() != mesh->LocalNy) || (zDim.getSize() != mesh->LocalNz)
-       || (!tDim.isUnlimited()) ) {
+    if ((xDim.getSize() != static_cast<size_t>(mesh->LocalNx)) ||
+        (yDim.getSize() != static_cast<size_t>(mesh->LocalNy)) ||
+        (zDim.getSize() != static_cast<size_t>(mesh->LocalNz)) || (!tDim.isUnlimited())) {
       delete dataFile;
       dataFile = NULL;
       return false;

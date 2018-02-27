@@ -55,8 +55,8 @@ public:
   }
 
   using Laplacian::solve;
-  const FieldPerp solve(const FieldPerp &b);
-  const FieldPerp solve(const FieldPerp &b, const FieldPerp &UNUSED(x0)) {return solve(b);}
+  const FieldPerp solve(const FieldPerp &b) override;
+  const FieldPerp solve(const FieldPerp &b, const FieldPerp &UNUSED(x0)) override {return solve(b);}
 private:
   Field2D Acoef, Ccoef, Dcoef;
   

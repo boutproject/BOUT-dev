@@ -204,17 +204,17 @@ To configure BOUT++ with PETSc and SUNDIALS, type instead::
     $ ./configure --with-petsc --with-sundials
 
 
+.. _sec-lapack:
+    
 LAPACK
 ------
 
 BOUT++ comes with linear solvers for tridiagonal and band-diagonal
-systems, but these are not particularly optimised and are in any case
-descended from Numerical Recipes code (hence NOT covered by LGPL
-license).
-
-To replace these routines, BOUT++ can use the LAPACK library. This is
-however written in FORTRAN 77, which can cause linking headaches. To
-enable these routines use::
+systems. Some implementations of these solvers (for example Laplacian
+inversion, section :ref:`sec-laplacian`) use LAPACK for efficient
+serial performance. This does not add new features, but may be faster
+in some cases. LAPACK is however written in FORTRAN 77, which can
+cause linking headaches. To enable these routines use:: 
 
     $ ./configure --with-lapack
 

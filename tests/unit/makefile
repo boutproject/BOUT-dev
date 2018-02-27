@@ -79,7 +79,7 @@ TEST_SOURCES = $(shell find $(BOUT_TEST_DIR) -type f -name "test_*.cxx" 2> /dev/
 TEST_OBJECTS = $(TEST_SOURCES:%.cxx=%.o)
 
 $(TEST_SOURCES): checklib
-$(TEST_OBJECTS): $(LIB)
+$(TEST_OBJECTS): $(LIB) $(GTEST_SENTINEL)
 
 serial_tests: makefile $(BOUT_TOP)/make.config $(OBJ) $(LIB) $(SUB_LIBS) $(TEST_OBJECTS) bout_test_main.a
 	@echo "  Linking tests"

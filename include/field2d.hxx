@@ -295,120 +295,135 @@ Field2D operator-(const Field2D &f);
 // Non-member functions
 
 /// Square root
-const Field2D sqrt(const Field2D &f);
+const Field2D sqrt(const Field2D &f, REGION rgn=RGN_ALL);
 
 /// Absolute value
-const Field2D abs(const Field2D &f);
+const Field2D abs(const Field2D &f, REGION rgn=RGN_ALL);
 
 /*!
  * Calculates the minimum of a field, excluding
- * the boundary/guard cells. 
+ * the boundary/guard cells by default (this can be
+ * changed with the rgn argument).
  * By default this is only on the local processor,
  * but setting allpe=true does a collective Allreduce
  * over all processors.
  *
  * @param[in] f  The field to loop over
  * @param[in] allpe  Minimum over all processors?
+ * @param[in] rgn  the boundaries that should be ignored
  * 
  */
-BoutReal min(const Field2D &f, bool allpe=false);
+BoutReal min(const Field2D &f, bool allpe=false, REGION rgn=RGN_NOBNDRY);
 
 /*!
  * Calculates the maximum of a field, excluding
- * the boundary/guard cells. 
+ * the boundary/guard cells by default (this can be
+ * changed with the rgn argument).
  * By default this is only on the local processor,
  * but setting allpe=true does a collective Allreduce
  * over all processors.
  *
  * @param[in] f  The field to loop over
  * @param[in] allpe  Minimum over all processors?
+ * @param[in] rgn  the boundaries that should be ignored
  * 
  */
-BoutReal max(const Field2D &f, bool allpe=false);
+BoutReal max(const Field2D &f, bool allpe=false, REGION rgn=RGN_NOBNDRY);
 
 /*!
  * Test if all values of this field are finite
- * Loops over the entire domain including boundaries
+ * Loops over the entire domain including boundaries by
+ * default (can be changed using the rgn argument)
  */
-bool finite(const Field2D &f);
+bool finite(const Field2D &f, REGION rgn=RGN_ALL);
 
 /// Exponential
-const Field2D exp(const Field2D &f);
+const Field2D exp(const Field2D &f, REGION rgn=RGN_ALL);
 
 /// Natural logarithm
-const Field2D log(const Field2D &f);
+const Field2D log(const Field2D &f, REGION rgn=RGN_ALL);
 
 /*!
  * Sine trigonometric function. 
  *
  * @param[in] f  Angle in radians
  *
- * This loops over the entire domain, including guard/boundary cells
+ * This loops over the entire domain, including guard/boundary cells by
+ * default (can be changed using the rgn argument)
  * If CHECK >= 3 then the result will be checked for non-finite numbers
  */
-const Field2D sin(const Field2D &f);
+const Field2D sin(const Field2D &f, REGION rgn=RGN_ALL);
 
 /*!
  * Cosine trigonometric function. 
  *
  * @param[in] f  Angle in radians
  *
- * This loops over the entire domain, including guard/boundary cells
+ * This loops over the entire domain, including guard/boundary cells by
+ * default (can be changed using the rgn argument)
  * If CHECK >= 3 then the result will be checked for non-finite numbers
  */
-const Field2D cos(const Field2D &f);
+const Field2D cos(const Field2D &f, REGION rgn=RGN_ALL);
 
 /*!
  * Tangent trigonometric function. 
  *
  * @param[in] f  Angle in radians
  *
- * This loops over the entire domain, including guard/boundary cells
+ * This loops over the entire domain, including guard/boundary cells by
+ * default (can be changed using the rgn argument)
  * If CHECK >= 3 then the result will be checked for non-finite numbers
  */
-const Field2D tan(const Field2D &f);
+const Field2D tan(const Field2D &f, REGION rgn=RGN_ALL);
 
 /*!
  * Hyperbolic sine function. 
  *
- * This loops over the entire domain, including guard/boundary cells
+ * This loops over the entire domain, including guard/boundary cells by
+ * default (can be changed using the rgn argument)
  * If CHECK >= 3 then the result will be checked for non-finite numbers
  */
-const Field2D sinh(const Field2D &f);
+const Field2D sinh(const Field2D &f, REGION rgn=RGN_ALL);
 
 /*!
  * Hyperbolic cosine function. 
  *
- * This loops over the entire domain, including guard/boundary cells
+ * This loops over the entire domain, including guard/boundary cells by
+ * default (can be changed using the rgn argument)
  * If CHECK >= 3 then the result will be checked for non-finite numbers
  */
-const Field2D cosh(const Field2D &f);
+const Field2D cosh(const Field2D &f, REGION rgn=RGN_ALL);
 
 /*!
  * Hyperbolic tangent function. 
  *
- * This loops over the entire domain, including guard/boundary cells
+ * This loops over the entire domain, including guard/boundary cells by
+ * default (can be changed using the rgn argument)
  * If CHECK >= 3 then the result will be checked for non-finite numbers
  */
-const Field2D tanh(const Field2D &f);
+const Field2D tanh(const Field2D &f, REGION rgn=RGN_ALL);
 
 /// Make an independent copy of field f
 const Field2D copy(const Field2D &f);
 
 /// Sets a floor on var, so minimum of the return value is >= f
-const Field2D floor(const Field2D &var, BoutReal f);
+const Field2D floor(const Field2D &var, BoutReal f, REGION rgn=RGN_ALL);
 
 /// Power, lhs ** rhs
-Field2D pow(const Field2D &lhs, const Field2D &rhs);
-Field2D pow(const Field2D &lhs, BoutReal rhs);
-Field2D pow(BoutReal lhs, const Field2D &rhs);
+Field2D pow(const Field2D &lhs, const Field2D &rhs, REGION rgn=RGN_ALL);
+Field2D pow(const Field2D &lhs, BoutReal rhs, REGION rgn=RGN_ALL);
+Field2D pow(BoutReal lhs, const Field2D &rhs, REGION rgn=RGN_ALL);
 
 #if CHECK > 0
-void checkData(const Field2D &f);
+void checkData(const Field2D &f, REGION region = RGN_NOBNDRY);
 #else
-inline void checkData(const Field2D &UNUSED(f)) {}
+inline void checkData(const Field2D &UNUSED(f), REGION UNUSED(region) = RGN_NOBNDRY) {}
 #endif
 
+/*!
+ * Force guard cells of passed field to nan
+ */ 
+void invalidateGuards(Field2D &var);
 
 /*!
  * @brief Returns a reference to the time-derivative of a field

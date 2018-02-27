@@ -14,7 +14,7 @@ class BoundaryDirichlet_2ndOrder : public BoundaryOp {
   BoundaryDirichlet_2ndOrder() : val(0.) {}
   BoundaryDirichlet_2ndOrder(BoutReal setval ): val(setval) {}
   BoundaryDirichlet_2ndOrder(BoundaryRegion *region, BoutReal setval=0.):BoundaryOp(region),val(setval) { }
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;
   void apply(Field2D &f) override;
@@ -32,7 +32,7 @@ class BoundaryDirichlet : public BoundaryOp {
  public:
   BoundaryDirichlet() : gen(nullptr) {}
   BoundaryDirichlet(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g) : BoundaryOp(region), gen(g) {}
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;
   void apply(Field2D &f) override;
@@ -54,7 +54,7 @@ class BoundaryDirichlet_O3 : public BoundaryOp {
  public:
   BoundaryDirichlet_O3() : gen(NULL) {}
   BoundaryDirichlet_O3(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g) : BoundaryOp(region), gen(g) {}
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;
   void apply(Field2D &f) override;
@@ -74,7 +74,7 @@ class BoundaryDirichlet_O4 : public BoundaryOp {
  public:
   BoundaryDirichlet_O4() : gen(NULL) {}
   BoundaryDirichlet_O4(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g) : BoundaryOp(region), gen(g) {}
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;
   void apply(Field2D &f) override;
@@ -95,7 +95,7 @@ class BoundaryDirichlet_4thOrder : public BoundaryOp {
   BoundaryDirichlet_4thOrder() : val(0.) {}
   BoundaryDirichlet_4thOrder(BoutReal setval ): val(setval) {}
   BoundaryDirichlet_4thOrder(BoundaryRegion *region, BoutReal setval=0.):BoundaryOp(region),val(setval) { }
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;
   void apply(Field2D &f) override;
@@ -114,7 +114,7 @@ class BoundaryNeumann_NonOrthogonal : public BoundaryOp {
   BoundaryNeumann_NonOrthogonal(): val(0.) {}
   BoundaryNeumann_NonOrthogonal(BoutReal setval ): val(setval) {}
   BoundaryNeumann_NonOrthogonal(BoundaryRegion *region, BoutReal setval=0.):BoundaryOp(region),val(setval) { }
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;
   void apply(Field2D &f) override;
@@ -128,7 +128,7 @@ class BoundaryNeumann2 : public BoundaryOp {
  public:
   BoundaryNeumann2() {}
   BoundaryNeumann2(BoundaryRegion *region):BoundaryOp(region) { }
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;
   void apply(Field2D &f) override;
@@ -141,7 +141,7 @@ class BoundaryNeumann_2ndOrder : public BoundaryOp {
   BoundaryNeumann_2ndOrder() : val(0.) {}
   BoundaryNeumann_2ndOrder(BoutReal setval ): val(setval) {}
   BoundaryNeumann_2ndOrder(BoundaryRegion *region, BoutReal setval=0.):BoundaryOp(region),val(setval) { }
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;
   void apply(Field2D &f) override;
@@ -159,7 +159,7 @@ class BoundaryNeumann : public BoundaryOp {
  public:
   BoundaryNeumann() : gen(NULL) {}
   BoundaryNeumann(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g):BoundaryOp(region), gen(g) {}
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;
   void apply(Field2D &f) override;
@@ -180,7 +180,7 @@ class BoundaryNeumann_4thOrder : public BoundaryOp {
   BoundaryNeumann_4thOrder() : val(0.) {}
   BoundaryNeumann_4thOrder(BoutReal setval ): val(setval) {}
   BoundaryNeumann_4thOrder(BoundaryRegion *region, BoutReal setval=0.):BoundaryOp(region),val(setval) { }
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;
   void apply(Field2D &f) override;
@@ -198,7 +198,7 @@ class BoundaryNeumann_O4 : public BoundaryOp {
  public:
   BoundaryNeumann_O4() : gen(NULL) {}
   BoundaryNeumann_O4(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g):BoundaryOp(region), gen(g) {}
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;
   void apply(Field2D &f) override;
@@ -219,7 +219,7 @@ class BoundaryNeumannPar : public BoundaryOp {
  public:
   BoundaryNeumannPar() {}
   BoundaryNeumannPar(BoundaryRegion *region):BoundaryOp(region) { }
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;
   void apply(Field2D &f) override;
@@ -231,7 +231,7 @@ class BoundaryRobin : public BoundaryOp {
  public:
   BoundaryRobin() : aval(0.), bval(0.), gval(0.) {}
   BoundaryRobin(BoundaryRegion *region, BoutReal a, BoutReal b, BoutReal g):BoundaryOp(region), aval(a), bval(b), gval(g) { }
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;
   void apply(Field2D &f) override;
@@ -245,7 +245,7 @@ class BoundaryConstGradient : public BoundaryOp {
  public:
   BoundaryConstGradient() {}
   BoundaryConstGradient(BoundaryRegion *region):BoundaryOp(region) { }
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;
   void apply(Field2D &f) override;
@@ -257,7 +257,7 @@ class BoundaryZeroLaplace : public BoundaryOp {
  public:
   BoundaryZeroLaplace() {}
   BoundaryZeroLaplace(BoundaryRegion *region):BoundaryOp(region) { }
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;
   void apply(Field2D &f) override;
@@ -269,7 +269,7 @@ class BoundaryZeroLaplace2 : public BoundaryOp {
  public:
   BoundaryZeroLaplace2() {}
   BoundaryZeroLaplace2(BoundaryRegion *region):BoundaryOp(region) { }
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;
   void apply(Field2D &f) override;
@@ -281,7 +281,7 @@ class BoundaryConstLaplace : public BoundaryOp {
  public:
   BoundaryConstLaplace() {}
   BoundaryConstLaplace(BoundaryRegion *region):BoundaryOp(region) { }
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;
   void apply(Field2D &f) override;
@@ -293,7 +293,7 @@ class BoundaryDivCurl : public BoundaryOp {
  public:
   BoundaryDivCurl() {}
   BoundaryDivCurl(BoundaryRegion *region):BoundaryOp(region) { }
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;
   void apply(Field2D &UNUSED(f)) override { throw BoutException("ERROR: DivCurl boundary only for vectors"); }
@@ -308,7 +308,7 @@ class BoundaryFree : public BoundaryOp {
   BoundaryFree() : val(0.) {apply_to_ddt = true;}
   BoundaryFree(BoutReal setval): val(setval) {}
   BoundaryFree(BoundaryRegion *region, BoutReal setval=0.):BoundaryOp(region),val(setval) { }
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;
   void apply(Field2D &f) override;
@@ -327,7 +327,7 @@ class BoundaryFree_O2 : public BoundaryOp {
 public:
   BoundaryFree_O2()  {}
   BoundaryFree_O2(BoundaryRegion *region):BoundaryOp(region) { }
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;
   void apply(Field2D &f) override;
@@ -342,7 +342,7 @@ class BoundaryFree_O3 : public BoundaryOp {
 public:
   BoundaryFree_O3() {}
   BoundaryFree_O3(BoundaryRegion *region):BoundaryOp(region) { }
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;
   void apply(Field2D &f) override;
@@ -363,7 +363,7 @@ class BoundaryRelax : public BoundaryModifier {
  public:
   BoundaryRelax() : r(10.) {apply_to_ddt = true;}  // Set default rate
   BoundaryRelax(BoundaryOp *operation, BoutReal rate) : BoundaryModifier(operation) {r = fabs(rate); apply_to_ddt = true;}
-  BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
+  BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args) override;
 
   using BoundaryModifier::apply;
   void apply(Field2D &f) override {apply(f, 0.);};
@@ -383,7 +383,7 @@ class BoundaryWidth : public BoundaryModifier {
 public:
   BoundaryWidth() : width(2) {}
   BoundaryWidth(BoundaryOp *operation, int wid) : BoundaryModifier(operation), width(wid) {}
-  BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
+  BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args) override;
 
   using BoundaryModifier::apply;
   void apply(Field2D &f) override {apply(f, 0.);};
@@ -404,7 +404,7 @@ class BoundaryToFieldAligned : public BoundaryModifier {
 public:
   BoundaryToFieldAligned(){}
   BoundaryToFieldAligned(BoundaryOp *operation) : BoundaryModifier(operation){}
-  BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
+  BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args) override;
 
   using BoundaryModifier::apply;
   void apply(Field2D &f) override {apply(f, 0.);};
@@ -424,7 +424,7 @@ class BoundaryFromFieldAligned : public BoundaryModifier {
 public:
   BoundaryFromFieldAligned(){}
   BoundaryFromFieldAligned(BoundaryOp *operation) : BoundaryModifier(operation){}
-  BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
+  BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args) override;
 
   using BoundaryModifier::apply;
   void apply(Field2D &f) override {apply(f, 0.);};
