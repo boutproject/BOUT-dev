@@ -44,6 +44,7 @@ class Field3D; //#include "field3d.hxx"
 #include "bout/field_visitor.hxx"
 
 #include "bout/array.hxx"
+#include "bout/region.hxx"
 
 #include "unused.hxx"
 
@@ -144,6 +145,15 @@ class Field2D : public Field, public FieldData {
    * Uses the REGION flags in bout_types.hxx
    */
   const IndexRange region(REGION rgn) const;
+
+  BoutReal& operator[](const Ind2D &d) {
+    return data[d.ind];
+  }
+  const BoutReal& operator[](const Ind2D &d) const {
+    return data[d.ind];
+  }
+  BoutReal& operator[](const Ind3D &d); 
+  const BoutReal& operator[](const Ind3D &d) const;
 
   /*!
    * Direct access to the data array. Since operator() is used

@@ -216,7 +216,7 @@ void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal 
  * info   output status
  *
  */
-void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b) {
+void cband_solve(Matrix<dcomplex> &a, int n, int m1, int m2, Array<dcomplex> &b) {
   int nrhs = 1;
   int kl = m1;
   int ku = m2;
@@ -240,8 +240,8 @@ void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b) {
       // AB(kl + i, j) = A[j - ku + i][kl+ku - i]
 
       if (((j - ku + i) >= 0) && ((j - ku + i) < n)) {
-        AB[j * ldab + kl + i].r = a[j - ku + i][kl + ku - i].real();
-        AB[j * ldab + kl + i].i = a[j - ku + i][kl + ku - i].imag();
+        AB[j * ldab + kl + i].r = a(j - ku + i, kl + ku - i).real();
+        AB[j * ldab + kl + i].i = a(j - ku + i, kl + ku - i).imag();
       }
     }
   }
@@ -274,7 +274,7 @@ void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal 
   throw BoutException("cyclic_tridag function not available. Compile BOUT++ with Lapack support.");
 }
 
-void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b) {
+void cband_solve(Matrix<dcomplex> &a, int n, int m1, int m2, Array<dcomplex> &b) {
   throw BoutException("cband_solve function not available. Compile BOUT++ with Lapack support.");
 }
 
