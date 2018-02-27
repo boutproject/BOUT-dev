@@ -487,7 +487,7 @@ void LaplaceMultigrid::generateMatrixF(int level) {
   // Set (fine-level) matrix entries
 
   Coordinates *coords = mesh->coordinates();
-  int i2,k2;
+  int i2;
   BoutReal *mat;
   mat = kMG->matmg[level];
   int llx = kMG->lnx[level];
@@ -495,10 +495,10 @@ void LaplaceMultigrid::generateMatrixF(int level) {
 
   for (int i=1; i<llx+1; i++) {
     i2 = i-1+mesh->xstart;
-BOUT_OMP(parallel default(shared) private(k2))
+BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
     for (int k=1; k<llz+1; k++) {
-      k2 = k-1;
+      int k2 = k-1;
       int k2p  = (k2+1)%Nz_global;
       int k2m  = (k2+Nz_global-1)%Nz_global;
       
