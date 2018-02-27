@@ -1403,7 +1403,11 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
 
   } else {
     // All other (non-FFT) functions
-    result = applyZdiff(f, func);
+    if(inc_xbndry){
+      result = applyZdiff(f, func, diffloc, RGN_NOY);
+    }else{
+      result = applyZdiff(f, func, diffloc, RGN_NOBNDRY);
+    }
   }
 
   result.setLocation(diffloc);
