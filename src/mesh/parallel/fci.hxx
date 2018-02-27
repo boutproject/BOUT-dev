@@ -27,9 +27,11 @@
 #define __FCITRANSFORM_H__
 
 #include <bout/paralleltransform.hxx>
+#include <bout/deprecated.hxx>
 #include <interpolation.hxx>
 #include <mask.hxx>
 #include <parallel_boundary_region.hxx>
+#include <unused.hxx>
 
 /*!
  * Field line map - contains the coefficients for interpolation
@@ -42,7 +44,9 @@ class FCIMap {
   FCIMap();
 public:
   /// dir MUST be either +1 or -1
-  FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic);
+  FCIMap(Mesh& mesh, int dir, bool zperiodic);
+  DEPRECATED(FCIMap(Mesh &mesh, int dir, bool UNUSED(yperiodic), bool zperiodic))
+      : FCIMap(mesh, dir, zperiodic) {}
 
   int dir;                     /**< Direction of map */
 
@@ -59,12 +63,11 @@ public:
  */
 class FCITransform : public ParallelTransform {
 public:
-  FCITransform(Mesh& mesh, bool yperiodic=true, bool zperiodic=true) :
-    mesh(mesh),
-    forward_map(mesh, +1, yperiodic, zperiodic),
-    backward_map(mesh, -1, yperiodic, zperiodic),
-    yperiodic(yperiodic),
-    zperiodic(zperiodic) {}
+  DEPRECATED(FCITransform(Mesh &mesh, bool UNUSED(yperiodic), bool zperiodic))
+      : FCITransform(mesh, zperiodic) {}
+  FCITransform(Mesh &mesh, bool zperiodic = true)
+      : mesh(mesh), forward_map(mesh, +1, zperiodic), backward_map(mesh, -1, zperiodic),
+        zperiodic(zperiodic) {}
 
   void calcYUpDown(Field3D &f) override;
 
@@ -87,7 +90,6 @@ private:
   FCIMap forward_map;           /**< FCI map for field lines in +ve y */
   FCIMap backward_map;          /**< FCI map for field lines in -ve y */
 
-  bool yperiodic;               /**< Is the y-direction periodic? */
   bool zperiodic;               /**< Is the z-direction periodic? */
 };
 
