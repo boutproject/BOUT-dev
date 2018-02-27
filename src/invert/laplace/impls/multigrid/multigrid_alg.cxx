@@ -377,8 +377,8 @@ BOUT_OMP(for)
       a1 = s[it]*g[it]+c[it]*g[it+1];
       g[it] = a0;
       g[it+1] = a1;
-    
-    /* Get solution y and x_m*/
+
+      /* Get solution y and x_m*/
       for(int i=it;i>=0;i--) {
         y[i] = g[i];
         for(int j=i+1;j<=it;j++) y[i] -= h[i][j]*y[j];
@@ -392,7 +392,7 @@ BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
         for(int k=0;k<ldim;k++) p[k] += y[i]*v[i][k]; 
       }
-    
+
       /* Get r_m and test convergence.*/
       residualVec(level,p,rhs,r);
       error = sqrt(vectorProd(level,r,r));
@@ -405,14 +405,22 @@ BOUT_OMP(for)
         etest = 0;
         break;
       }
-      if(fabs(perror-error)/error <rtol) {
+      // J. Omotani, 27/2/2018: I think this test is intended to check for slow
+      // convergence of the GMRES solve, and 'abort' if it is converging
+      // slowly. This is OK on a coarse level solver, because at worst it means
+      // the top-level iteration will have to continue but the top level
+      // iteration should only be stopped by the previous test against the
+      // tolerance.
+      // Therefore, check that this is not the top-level solver before applying
+      // this test.
+      if( (level < mglevel-1) && (fabs(perror-error)/error < rtol) ) {
         if(it == 0) etest = 0;
         num -= 1;
         break;
       }
       perror = error;
     }
-  /* Restart with new initial */
+    /* Restart with new initial */
 BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
     for(int i = 0;i<ldim;i++) v[0][i] = 0.0;
