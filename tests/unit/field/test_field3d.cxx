@@ -850,7 +850,11 @@ TEST_F(Field3DTest, AddField3DField3DStagger) {
   c.setLocation(CELL_CENTRE);
 
   // Throw as two rhs fields at different locations
+#if CHECK > 0
   EXPECT_THROW(c = a + b, BoutException);
+#else
+  EXPECT_NO_THROW(c = a + b);
+#endif
 
   // No throw as updates location of a
   EXPECT_NO_THROW(a = c + b);
@@ -977,7 +981,11 @@ TEST_F(Field3DTest, MultiplyField3DField3DStagger) {
   c.setLocation(CELL_CENTRE);
 
   // Throw as two rhs fields at different locations
+#if CHECK > 0
   EXPECT_THROW(c = a * b, BoutException);
+#else
+  EXPECT_NO_THROW(c = a * b);
+#endif
 
   // No throw as updates location of a
   EXPECT_NO_THROW(a = c * b);
@@ -1104,7 +1112,11 @@ TEST_F(Field3DTest, SubtractField3DField3DStagger) {
   c.setLocation(CELL_CENTRE);
 
   // Throw as two rhs fields at different locations
+#if CHECK > 0
   EXPECT_THROW(c = a - b, BoutException);
+#else
+  EXPECT_NO_THROW(c = a - b);
+#endif
 
   // No throw as updates location of a
   EXPECT_NO_THROW(a = c - b);
@@ -1231,7 +1243,11 @@ TEST_F(Field3DTest, DivideField3DField3DStagger) {
   c.setLocation(CELL_CENTRE);
 
   // Throw as two rhs fields at different locations
+#if CHECK > 0
   EXPECT_THROW(c = a / b, BoutException);
+#else
+  EXPECT_NO_THROW(c = a / b);
+#endif
 
   // No throw as updates location of a
   EXPECT_NO_THROW(a = c / b);
