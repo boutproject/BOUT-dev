@@ -226,7 +226,7 @@ public:
 ///
 /// `Region` is templated on either `Ind2D` or `Ind3D` for `Field2D`s
 /// or `Field3D`s, respectively. Trying to create a `Region` using any
-/// other type is an error.
+/// other type is a compile time error.
 ///
 /// The set of indices is also broken down into sets of contiguous
 /// blocks of at most MAXREGIONBLOCKSIZE indices. This allows loops to
@@ -237,23 +237,45 @@ public:
 /// Example
 /// -------
 ///
-/// Index ranges can be defined manually:
+/// The indices that form a region can be defined manually:
 ///
-///     Region<Ind3D>::RegionIndices region {0, 2, 4, 8};
-///     Region<Ind3D> range(region);
+///     Region<Ind3D>::RegionIndices indices {0, 2, 4, 8, 3};
+///     Region<Ind3D> region(indices);
 ///
 /// then iterated over using begin() and end()
 ///
 ///     Field3D f(0.0);
-///     for (auto i = range.begin(); i < range.end(); i++ ) {
+///     for (auto i = region.begin(); i < region.end(); i++ ) {
 ///       f[i] = 1.0;
 ///     }
 ///
-/// or the more convenient range for loop:
+/// For the region constructed above the following would display
+/// 0, 2, 4, 8, 3
+///
+///     for (auto i = region.begin(); i < region.end(); i++ ) {
+///       output << i.ind << ",";
+///     }
+///
+/// or the more convenient region for loop:
 ///
 ///     for (auto &i : r) {
 ///       f[i] = a[i] + b[i];
 ///     }
+///
+/// For performance the BLOCK_REGION_LOOP macro should
+/// allow OpenMP parallelisation and hardware vectorisation.
+///
+///     BLOCK_REGION_LOOP(region, i,
+///       f[i] = a[i] + b[i];
+///     );
+///
+/// If you wish to vectorise but can't use OpenMP then
+/// there is a serial verion of the macro:
+///
+///     BoutReal max=0.;
+///     BLOCK_REGION_LOOP_SERIAL(region, i,
+///       max = f[i] > max ? f[i] : max;
+///     );
 template <typename T = Ind3D> class Region {
   // Following prevents a Region being created with anything other
   // than Ind2D or Ind3D as template type
