@@ -350,7 +350,12 @@ BOUT_OMP(for)
       }
       a1 = vectorProd(level,v[it+1],v[it+1]);
       a1 = sqrt(a1);
-      if(fabs(a1) < atol*rtol) {
+
+      // if ldim==9 then there is only one grid point at this level, so the
+      // solution will be exact, the residual will vanish and we will exit this
+      // loop on the first iteration, so the value of a0=1/a1=infinity will
+      // never be used. Therefore this check is not needed in that case
+      if(fabs(a1) < atol*rtol && ldim > 9) {
         output<<num<<" Second a1 in GMRES is wrong at level "<<level<<": "<<a1<<endl;
       }
       a0 = 1.0/a1;
