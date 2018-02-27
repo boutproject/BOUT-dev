@@ -835,6 +835,32 @@ TEST_F(Field3DTest, AddField3DField3D) {
   EXPECT_TRUE(IsField3DEqualBoutReal(c, 3.0));
 }
 
+TEST_F(Field3DTest, AddField3DField3DStagger) {
+  auto backup = mesh->StaggerGrids;
+  mesh->StaggerGrids = true; // Force staggering
+
+  Field3D a, b, c;
+
+  a = 1.0;
+  b = 2.0;
+  c = 3.0;
+
+  a.setLocation(CELL_XLOW);
+  b.setLocation(CELL_CENTRE);
+  c.setLocation(CELL_CENTRE);
+
+  // Throw as two rhs fields at different locations
+  EXPECT_THROW(c = a + b, BoutException);
+
+  // No throw as updates location of a
+  EXPECT_NO_THROW(a = c + b);
+
+  // Hence the first case should now not throw
+  EXPECT_NO_THROW(c = a + b);
+
+  mesh->StaggerGrids = backup;
+}
+
 TEST_F(Field3DTest, MultiplyEqualsBoutReal) {
   Field3D a;
 
@@ -934,6 +960,32 @@ TEST_F(Field3DTest, MultiplyField3DField3D) {
   c = a * b;
 
   EXPECT_TRUE(IsField3DEqualBoutReal(c, 32.0));
+}
+
+TEST_F(Field3DTest, MultiplyField3DField3DStagger) {
+  auto backup = mesh->StaggerGrids;
+  mesh->StaggerGrids = true; // Force staggering
+
+  Field3D a, b, c;
+
+  a = 1.0;
+  b = 2.0;
+  c = 3.0;
+
+  a.setLocation(CELL_XLOW);
+  b.setLocation(CELL_CENTRE);
+  c.setLocation(CELL_CENTRE);
+
+  // Throw as two rhs fields at different locations
+  EXPECT_THROW(c = a * b, BoutException);
+
+  // No throw as updates location of a
+  EXPECT_NO_THROW(a = c * b);
+
+  // Hence the first case should now not throw
+  EXPECT_NO_THROW(c = a * b);
+
+  mesh->StaggerGrids = backup;
 }
 
 TEST_F(Field3DTest, SubtractEqualsBoutReal) {
@@ -1037,6 +1089,32 @@ TEST_F(Field3DTest, SubtractField3DField3D) {
   EXPECT_TRUE(IsField3DEqualBoutReal(c, -10.0));
 }
 
+TEST_F(Field3DTest, SubtractField3DField3DStagger) {
+  auto backup = mesh->StaggerGrids;
+  mesh->StaggerGrids = true; // Force staggering
+
+  Field3D a, b, c;
+
+  a = 1.0;
+  b = 2.0;
+  c = 3.0;
+
+  a.setLocation(CELL_XLOW);
+  b.setLocation(CELL_CENTRE);
+  c.setLocation(CELL_CENTRE);
+
+  // Throw as two rhs fields at different locations
+  EXPECT_THROW(c = a - b, BoutException);
+
+  // No throw as updates location of a
+  EXPECT_NO_THROW(a = c - b);
+
+  // Hence the first case should now not throw
+  EXPECT_NO_THROW(c = a - b);
+
+  mesh->StaggerGrids = backup;
+}
+
 TEST_F(Field3DTest, DivideEqualsBoutReal) {
   Field3D a;
 
@@ -1136,6 +1214,32 @@ TEST_F(Field3DTest, DivideField3DField3D) {
   c = a / b;
 
   EXPECT_TRUE(IsField3DEqualBoutReal(c, 4.0));
+}
+
+TEST_F(Field3DTest, DivideField3DField3DStagger) {
+  auto backup = mesh->StaggerGrids;
+  mesh->StaggerGrids = true; // Force staggering
+
+  Field3D a, b, c;
+
+  a = 1.0;
+  b = 2.0;
+  c = 3.0;
+
+  a.setLocation(CELL_XLOW);
+  b.setLocation(CELL_CENTRE);
+  c.setLocation(CELL_CENTRE);
+
+  // Throw as two rhs fields at different locations
+  EXPECT_THROW(c = a / b, BoutException);
+
+  // No throw as updates location of a
+  EXPECT_NO_THROW(a = c / b);
+
+  // Hence the first case should now not throw
+  EXPECT_NO_THROW(c = a / b);
+
+  mesh->StaggerGrids = backup;
 }
 
 TEST_F(Field3DTest, PowBoutRealField3D) {
