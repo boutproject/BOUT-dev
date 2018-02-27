@@ -62,13 +62,11 @@ BoutReal **rmatrix(int xsize, int ysize) {
   BoutReal **m;
 
   if((m = (BoutReal**) malloc(xsize*sizeof(BoutReal*))) == (BoutReal**) NULL) {
-    printf("Error: could not allocate memory:%d\n", xsize);
-    exit(1);
+    throw BoutException("Error: could not allocate memory:%d\n", xsize);
   }
 
   if((m[0] = (BoutReal*) malloc(xsize*ysize*sizeof(BoutReal))) == (BoutReal*) NULL) {
-    printf("Error: could not allocate memory\n");
-    exit(1);
+    throw BoutException("Error: could not allocate memory\n");
   }
   for(i=1;i<xsize;i++) {
     m[i] = m[i-1] + ysize;
@@ -82,13 +80,11 @@ int **imatrix(int xsize, int ysize) {
   int **m;
 
   if((m = (int**) malloc(xsize*sizeof(int*))) == (int**) NULL) {
-    printf("Error: could not allocate memory:%d\n", xsize);
-    exit(1);
+    throw BoutException("Error: could not allocate memory:%d\n", xsize);
   }
 
   if((m[0] = (int*) malloc(xsize*ysize*sizeof(int))) == (int*) NULL) {
-    printf("Error: could not allocate memory\n");
-    exit(1);
+    throw BoutException("Error: could not allocate memory\n");
   }
   for(i=1;i<xsize;i++) {
     m[i] = m[i-1] + ysize;
@@ -183,8 +179,6 @@ void free_cmatrix(dcomplex** m) {
   delete[] m[0];
   delete[] m;
 }
-
-
 
 /**************************************************************************
  * String routines

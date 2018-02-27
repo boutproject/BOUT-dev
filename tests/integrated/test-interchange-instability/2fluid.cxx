@@ -168,16 +168,6 @@ int physics_init(bool restarting) {
     output.write("    ****NOTE: input from BOUT, Z length needs to be divided by %e\n", hthe0/rho_s);
   }
 
-  /************** SHIFTED GRIDS LOCATION ***************/
-
-  // Velocities defined on cell boundaries
-  Vi.setLocation(CELL_YLOW);
-  Ajpar.setLocation(CELL_YLOW);
-
-  // Apar and jpar too
-  Apar.setLocation(CELL_YLOW); 
-  jpar.setLocation(CELL_YLOW);
-
   /************** NORMALISE QUANTITIES *****************/
 
   output.write("\tNormalising to rho_s = %e\n", rho_s);
@@ -302,7 +292,9 @@ int physics_init(bool restarting) {
   dump.add(Ni_x,  "Ni_x", 0);
   dump.add(rho_s, "rho_s", 0);
   dump.add(wci,   "wci", 0);
-  
+
+  // Initialise aux fields
+  phi = 0.; Apar = 0.;  
   return(0);
 }
 

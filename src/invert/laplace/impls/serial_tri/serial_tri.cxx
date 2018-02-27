@@ -32,6 +32,7 @@
 #include <fft.hxx>
 #include <lapack_routines.hxx>
 #include <bout/constants.hxx>
+#include <bout/openmpwrap.hxx>
 #include <cmath>
 
 #include <output.hxx>
@@ -41,45 +42,6 @@ LaplaceSerialTri::LaplaceSerialTri(Options *opt) : Laplacian(opt), A(0.0), C(1.0
   if(!mesh->firstX() || !mesh->lastX()) {
     throw BoutException("LaplaceSerialTri only works for mesh->NXPE = 1");
   }
-
-  // Allocate memory
-
-  int ncz = mesh->LocalNz;
-
-  bk = matrix<dcomplex>(mesh->LocalNx, ncz/2 + 1);
-  bk1d = new dcomplex[mesh->LocalNx];
-
-  //Initialise bk to 0 as we only visit 0<= kz <= maxmode in solve
-  for(int kz=maxmode+1; kz < ncz/2 + 1; kz++){
-    for (int ix=0; ix<mesh->LocalNx; ix++){
-      bk[ix][kz] = 0.0;
-    }
-  }
-
-  xk = matrix<dcomplex>(mesh->LocalNx, ncz/2 + 1);
-  xk1d = new dcomplex[mesh->LocalNx];
-
-  //Initialise xk to 0 as we only visit 0<= kz <= maxmode in solve
-  for(int kz=maxmode+1; kz < ncz/2 + 1; kz++){
-    for (int ix=0; ix<mesh->LocalNx; ix++){
-      xk[ix][kz] = 0.0;
-    }
-  }
-
-  avec = new dcomplex[mesh->LocalNx];
-  bvec = new dcomplex[mesh->LocalNx];
-  cvec = new dcomplex[mesh->LocalNx];
-}
-
-LaplaceSerialTri::~LaplaceSerialTri() {
-  free_matrix(bk);
-  delete[] bk1d;
-  free_matrix(xk);
-  delete[] xk1d;
-
-  delete[] avec;
-  delete[] bvec;
-  delete[] cvec;
 }
 
 const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b) {
@@ -111,13 +73,13 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
   FieldPerp x(mesh);
   x.allocate();
 
-  Coordinates *coord = mesh->coordinates();
-
   int jy = b.getIndex();
   x.setIndex(jy);
 
-  int ncz = mesh->LocalNz; // No of z pnts (counts from 1 to easily convert to kz)
-  int ncx = mesh->LocalNx-1; // No of x pnts (counts from 0)
+  int ncz = mesh->LocalNz; // No of z pnts
+  int ncx = mesh->LocalNx; // No of x pnts
+
+  BoutReal kwaveFactor = 2.0 * PI / mesh->coordinates()->zlength();
 
   // Setting the width of the boundary.
   // NOTE: The default is a width of 2 guard cells
@@ -132,25 +94,57 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
   if (outer_boundary_flags & INVERT_BNDRY_ONE)
     outbndry = 1;
 
-  #pragma omp parallel for
-  for (int ix = 0; ix < mesh->LocalNx; ix++) {
+  /* Allocation fo
+   * bk   = The fourier transformed of b, where b is one of the inputs in
+   *        LaplaceSerialTri::solve()
+   * bk1d = The 1d array of bk
+   * xk   = The fourier transformed of x, where x the output of
+   *        LaplaceSerialTri::solve()
+   * xk1d = The 1d array of xk
+   */
+  auto bk = Matrix<dcomplex>(ncx, ncz / 2 + 1);
+  auto bk1d = Array<dcomplex>(ncx);
+  auto xk = Matrix<dcomplex>(ncx, ncz / 2 + 1);
+  auto xk1d = Array<dcomplex>(ncx);
+
+  // Initialise xk to 0 as we only visit 0<= kz <= maxmode in solve
+  for (int ix = 0; ix < ncx; ix++) {
+    for (int kz = maxmode + 1; kz < ncz / 2 + 1; kz++) {
+      xk(ix, kz) = 0.0;
+    }
+  }
+
+  /* Coefficents in the tridiagonal solver matrix
+   * Following the notation in "Numerical recipes"
+   * avec is the lower diagonal of the matrix
+   * bvec is the diagonal of the matrix
+   * cvec is the upper diagonal of the matrix
+   * NOTE: Do not confuse avec, bvec and cvec with the A, C, and D coefficients
+   *       above
+   */
+  auto avec = Array<dcomplex>(ncx);
+  auto bvec = Array<dcomplex>(ncx);
+  auto cvec = Array<dcomplex>(ncx);
+
+  BOUT_OMP(parallel for)
+  for (int ix = 0; ix < ncx; ix++) {
     /* This for loop will set the bk (initialized by the constructor)
      * bk is the z fourier modes of b in z
      * If the INVERT_SET flag is set (meaning that x0 will be used to set the
      * bounadry values),
      */
     if (((ix < inbndry) && (inner_boundary_flags & INVERT_SET)) ||
-        ((ncx - ix < outbndry) && (outer_boundary_flags & INVERT_SET))) {
+        ((ncx - 1 - ix < outbndry) && (outer_boundary_flags & INVERT_SET))) {
       // Use the values in x0 in the boundary
 
       // x0 is the input
       // bk is the output
-      rfft(x0[ix], ncz, bk[ix]);
+      rfft(x0[ix], ncz, &bk(ix, 0));
 
     } else {
       // b is the input
       // bk is the output
-      rfft(b[ix], ncz, bk[ix]);
+      rfft(b[ix], ncz, &bk(ix, 0));
     }
   }
 
@@ -159,11 +153,11 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
    * offset and all the modes up to the Nyquist frequency)
    */
   for (int kz = 0; kz <= maxmode; kz++) {
-    
+
     // set bk1d
-    for (int ix = 0; ix <= ncx; ix++) {
+    for (int ix = 0; ix < ncx; ix++) {
       // Get bk of the current fourier mode
-      bk1d[ix] = bk[ix][kz];
+      bk1d[ix] = bk(ix, kz);
     }
 
     /* Set the matrix A used in the inversion of Ax=b
@@ -178,31 +172,31 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
      * bvec - the main diagonal
      * cvec - the upper diagonal
     */
-    tridagMatrix(avec, bvec, cvec, bk1d, jy,
+    tridagMatrix(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(bk1d),
+                 jy,
                  // wave number index
                  kz,
                  // wave number (different from kz only if we are taking a part
                  // of the z-domain [and not from 0 to 2*pi])
-                 kz*2.0*PI/coord->zlength(),
-                 global_flags, inner_boundary_flags, outer_boundary_flags,
-                 &A, &C, &D);
+                 kz * kwaveFactor, global_flags, inner_boundary_flags,
+                 outer_boundary_flags, &A, &C, &D);
 
     ///////// PERFORM INVERSION /////////
     if (!mesh->periodicX) {
       // Call tridiagonal solver
-      tridag(avec, bvec, cvec, bk1d, xk1d, mesh->LocalNx);
+      tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(bk1d),
+             std::begin(xk1d), ncx);
 
     } else {
       // Periodic in X, so cyclic tridiagonal
 
       int xs = mesh->xstart;
-      cyclic_tridag(avec + xs, bvec + xs, cvec + xs, bk1d + xs, xk1d + xs,
-                    mesh->LocalNx - 2 * xs);
+      cyclic_tridag(&avec[xs], &bvec[xs], &cvec[xs], &bk1d[xs], &xk1d[xs], ncx - 2 * xs);
 
       // Copy boundary regions
       for (int ix = 0; ix < xs; ix++) {
-        xk1d[ix] = xk1d[mesh->LocalNx - 2*xs + ix];
-        xk1d[mesh->LocalNx - xs + ix] = xk1d[xs + ix];
+        xk1d[ix] = xk1d[ncx - 2 * xs + ix];
+        xk1d[ncx - xs + ix] = xk1d[xs + ix];
       }
     }
 
@@ -219,18 +213,18 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
     }
 
     // Store the solution xk for the current fourier mode in a 2D array
-    for (int ix=0; ix<=ncx; ix++){
-      xk[ix][kz]=xk1d[ix];
+    for (int ix = 0; ix < ncx; ix++) {
+      xk(ix, kz) = xk1d[ix];
     }
   }
 
   // Done inversion, transform back
-  for(int ix=0; ix<=ncx; ix++){
+  for (int ix = 0; ix < ncx; ix++) {
 
     if(global_flags & INVERT_ZERO_DC)
-      xk[ix][0] = 0.0;
+      xk(ix, 0) = 0.0;
 
-    irfft(xk[ix], ncz, x[ix]);
+    irfft(&xk(ix, 0), ncz, x[ix]);
 
 #if CHECK > 2
     for(int kz=0;kz<ncz;kz++)

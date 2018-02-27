@@ -406,23 +406,41 @@ private:
     if(myproc < nsextra) {
       myns++;
       sys0 += myproc;
-    }else
+    } else {
       sys0 += nsextra;
+    }
     
-    int my = myns;
-    if(my == 0)
-      my = 0;
-
     coefs = matrix<T>(Nsys, 4*N);
       
     myif = matrix<T>(Nsys, 8);
     
-    recvbuffer = matrix<T>(nprocs, my*8); // Buffer for receiving from other processors
-    ifcs = matrix<T>(my, 2*4*nprocs);     // Coefficients for interface solve
-    if(nprocs > 1)
-      if2x2 = matrix<T>(my, 2*4);         // 2x2 interface equations on this processor
-    ifx  = matrix<T>(my, 2*nprocs);       // Solution of interface equations
-    ifp = new T[my*2];     // Solution to be sent to processor p
+    // Note: The recvbuffer is used to receive data in both stages of the solve:
+    //  1. In the gather step, this processor will receive myns interface equations
+    //     from each processor.
+    //  2. In the scatter step, this processor receives the solved interface values
+    //     from each processor. The number of systems of equations received will
+    //     vary from myns to myns+1 (if myproc >= nsextra).
+    // The size of the array reserved is therefore (myns+1)
+    
+    recvbuffer = matrix<T>(nprocs, (myns+1)*8); // Buffer for receiving from other processors
+    
+    if (myns > 0) {
+    
+      // Some interface systems to be solved on this processor
+      // Note that the interface equations are organised by system (myns as first argument)
+      // but communication buffers are organised by processor (nprocs first).
+      
+      ifcs = matrix<T>(myns, 2*4*nprocs);     // Coefficients for interface solve. 
+      if (nprocs > 1) {
+        if2x2 = matrix<T>(myns, 2*4);         // 2x2 interface equations on this processor
+      }
+      ifx  = matrix<T>(myns, 2*nprocs);       // Solution of interface equations.
+      // Each system to be solved on this processor has two interface equations from each processor
+      
+      ifp = new T[myns*2];     // Solution to be sent to processor p
+      
+    }
+    
     x1 = new T[Nsys];
     xn = new T[Nsys];
     
@@ -436,12 +454,17 @@ private:
     // Free all working memory
     free_matrix(coefs);
     free_matrix(myif);
+
     free_matrix(recvbuffer);
-    free_matrix(ifcs);
-    if(nprocs > 1)
-      free_matrix(if2x2);
-    free_matrix(ifx);
-    delete[] ifp;
+    
+    if (myns > 0) {
+      free_matrix(ifcs);
+      if (nprocs > 1) {
+        free_matrix(if2x2);
+      }
+      free_matrix(ifx);
+      delete[] ifp;
+    }
     delete[] x1;
     delete[] xn;
     

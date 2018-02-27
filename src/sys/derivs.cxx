@@ -397,11 +397,11 @@ const Field2D VDDZ(const Field3D &UNUSED(v), const Field2D &UNUSED(f)) {
 }
 
 // general case
-const Field3D VDDZ(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field3D VDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   return f.getMesh()->indexVDDZ(v, f, outloc, method) / f.getMesh()->coordinates()->dz;
 }
 
-const Field3D VDDZ(const Field &v, const Field &f, DIFF_METHOD method, CELL_LOC outloc) {
+const Field3D VDDZ(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
   return VDDZ(v, f, outloc, method);
 }
 

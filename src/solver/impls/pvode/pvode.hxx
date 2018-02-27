@@ -47,7 +47,7 @@ class PvodeSolver : public Solver {
   PvodeSolver(Options *opts);
   ~PvodeSolver();
   
-  BoutReal getCurrentTimestep() { return hcur; }
+  BoutReal getCurrentTimestep() override { return hcur; }
   
   int init(int nout, BoutReal tstep) override;
   

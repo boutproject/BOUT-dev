@@ -49,9 +49,13 @@
 #include <fft.hxx>
 #include <globals.hxx>
 #include <interpolation.hxx>
+#include <bout/constants.hxx>
+#include <bout/openmpwrap.hxx>
+
 #include <msg_stack.hxx>
 #include <stencils.hxx>
 #include <utils.hxx>
+#include <unused.hxx>
 
 #include <cmath>
 #include <stdlib.h>
@@ -896,7 +900,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 
 // Y derivative
 
-const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, CELL_LOC loc,
+const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, CELL_LOC UNUSED(loc),
                                REGION region) {
   if (var.getNy() == 1) {
     return Field2D(0., this);
@@ -1344,7 +1348,7 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
 
     int ncz = mesh->LocalNz;
 
-#pragma omp parallel
+    BOUT_OMP(parallel)
     {
       Array<dcomplex> cv(ncz / 2 + 1);
 
@@ -1367,7 +1371,7 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
         kfilter = ncz / 2;
       int kmax = ncz / 2 - kfilter; // Up to and including this wavenumber index
 
-#pragma omp for
+      BOUT_OMP(for)
       for (int jx = xs; jx <= xe; jx++) {
         for (int jy = ys; jy <= ye; jy++) {
           rfft(f(jx, jy), ncz, cv.begin()); // Forward FFT
@@ -1654,6 +1658,7 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
       } else if((inloc == CELL_ZLOW) && (diffloc == CELL_CENTRE)) {
 	      // Shifting up
         throw BoutException("Not tested - probably broken");
+
       } else if (diffloc != CELL_DEFAULT && diffloc != inloc){
         throw BoutException("Not implemented!");
       }
@@ -1674,7 +1679,7 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
       xs = 0;
       xe = mesh->LocalNx - 1;
     }
-    
+
     for (int jx = xs; jx <= xe; jx++) {
       for (int jy = ys; jy <= ye; jy++) {
 
@@ -2455,8 +2460,8 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 ////////////// Z DERIVATIVE /////////////////
 
 // general case
-const Field3D Mesh::indexVDDZ(const Field &v, const Field &f, CELL_LOC outloc,
-                              DIFF_METHOD method) {
+const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc,
+                              DIFF_METHOD method, REGION region) {
   TRACE("Mesh::indexVDDZ");
 
   ASSERT1(this == v.getMesh());
@@ -2501,16 +2506,39 @@ const Field3D Mesh::indexVDDZ(const Field &v, const Field &f, CELL_LOC outloc,
       func = lookupFluxFunc(table, method);
     }
 
-    bindex bx;
-    start_index(&bx);
     stencil vval, fval;
-    do {
-      v.setZStencil(vval, bx, diffloc);
-      f.setZStencil(fval, bx);
+    for (const auto &i : result.region(region)) {
+      fval.mm = f[i.offset(0,0,-2)];
+      fval.m = f[i.zm()];
+      fval.c = f[i];
+      fval.p = f[i.zp()];
+      fval.pp = f[i.offset(0,0,2)];
 
-      result(bx.jx, bx.jy, bx.jz) = func(vval, fval);
-    } while (next_index3(&bx));
+      vval.mm = v[i.offset(0,0,-2)];
+      vval.m = v[i.zm()];
+      vval.c = v[i];
+      vval.p = v[i.zp()];
+      vval.pp = v[i.offset(0,0,2)];
 
+      if((diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
+        // Non-centred stencil
+
+        if((vloc == CELL_CENTRE) && (diffloc == CELL_ZLOW)) {
+          // Producing a stencil centred around a lower Z value
+          vval.pp = vval.p;
+          vval.p  = vval.c;
+
+        }else if(vloc == CELL_ZLOW) {
+          // Stencil centred around a cell centre
+
+          vval.mm = vval.m;
+          vval.m  = vval.c;
+        }
+        // Shifted in one direction -> shift in another
+        // Could produce warning
+      }
+      result[i] = func(vval, fval);
+    }
   } else {
     Mesh::upwind_func func = fVDDZ;
     DiffLookup *table = UpwindTable;
@@ -2520,13 +2548,16 @@ const Field3D Mesh::indexVDDZ(const Field &v, const Field &f, CELL_LOC outloc,
       func = lookupUpwindFunc(table, method);
     }
 
-    bindex bx;
-    start_index(&bx);
-    stencil vval, fval;
-    do {
-      f.setZStencil(fval, bx);
-      result(bx.jx, bx.jy, bx.jz) = func(v[{bx.jx, bx.jy, bx.jz}], fval);
-    } while (next_index3(&bx));
+    stencil fval;
+    for (const auto &i : result.region(region)) {
+      fval.mm = f[i.offset(0,0,-2)];
+      fval.m = f[i.zm()];
+      fval.c = f[i];
+      fval.p = f[i.zp()];
+      fval.pp = f[i.offset(0,0,2)];
+
+      result[i] = func(v[i], fval);
+    }
   }
 
   result.setLocation(inloc);
@@ -2953,17 +2984,166 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
   Field3D result(this);
   result.allocate(); // Make sure data allocated
 
-  bindex bx;
-  stencil vval, fval;
+  // There are four cases, corresponding to whether or not f and v
+  // have yup, ydown fields.
 
-  start_index(&bx);
-  do {
-    v.setYStencil(vval, bx, diffloc);
-    f.setYStencil(fval, bx); // Location is always the same as input
+  // If vUseUpDown is true, field "v" has distinct yup and ydown fields which
+  // will be used to calculate a derivative along
+  // the magnetic field
+  bool vUseUpDown = (v.hasYupYdown() && ((&v.yup() != &v) || (&v.ydown() != &v)));
+  bool fUseUpDown = (f.hasYupYdown() && ((&f.yup() != &f) || (&f.ydown() != &f)));
 
-    result(bx.jx, bx.jy, bx.jz) = func(vval, fval);
+  if (vUseUpDown && fUseUpDown) {
+    // Both v and f have up/down fields
+    stencil vval, fval;
+    vval.mm = nan("");
+    vval.pp = nan("");
+    fval.mm = nan("");
+    fval.pp = nan("");
+    for (const auto &i : result.region(region)) {
 
-  } while (next_index3(&bx));
+      fval.m = f.ydown()[i.ym()];
+      fval.c = f[i];
+      fval.p = f.yup()[i.yp()];
+
+      vval.m = v.ydown()[i.ym()];
+      vval.c = v[i];
+      vval.p = v.yup()[i.yp()];
+
+      if(StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
+        // Non-centred stencil
+        if((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+          // Producing a stencil centred around a lower Y value
+          vval.pp = vval.p;
+          vval.p  = vval.c;
+        }else if(vloc == CELL_YLOW) {
+          // Stencil centred around a cell centre
+          vval.mm = vval.m;
+          vval.m  = vval.c;
+        }
+        // Shifted in one direction -> shift in another
+        // Could produce warning
+      }
+      result[i] = func(vval, fval);
+    }
+  }
+  else if (vUseUpDown) {
+    // Only v has up/down fields
+    // f must shift to field aligned coordinates
+    Field3D f_fa = mesh->toFieldAligned(f);
+
+    stencil vval;
+    vval.mm = nan("");
+    vval.pp = nan("");
+
+    stencil fval;
+    for (const auto &i : result.region(region)) {
+
+      fval.mm = f_fa[i.offset(0, -2, 0)];
+      fval.m = f_fa[i.ym()];
+      fval.c = f_fa[i];
+      fval.p = f_fa[i.yp()];
+      fval.pp = f_fa[i.offset(0, 2, 0)];
+
+      vval.m = v.ydown()[i.ym()];
+      vval.c = v[i];
+      vval.p = v.yup()[i.yp()];
+
+      if(StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
+        // Non-centred stencil
+        if((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+          // Producing a stencil centred around a lower Y value
+          vval.pp = vval.p;
+          vval.p  = vval.c;
+        }else if(vloc == CELL_YLOW) {
+          // Stencil centred around a cell centre
+          vval.mm = vval.m;
+          vval.m  = vval.c;
+        }
+        // Shifted in one direction -> shift in another
+        // Could produce warning
+      }
+      result[i] = func(vval, fval);
+    }
+  }
+  else if (fUseUpDown) {
+    // Only f has up/down fields
+    // v must shift to field aligned coordinates
+    Field3D v_fa = mesh->toFieldAligned(v);
+
+    stencil vval;
+
+    stencil fval;
+    fval.pp = nan("");
+    fval.mm = nan("");
+
+    for (const auto &i : result.region(region)) {
+
+      fval.m = f.ydown()[i.ym()];
+      fval.c = f[i];
+      fval.p = f.yup()[i.yp()];
+
+      vval.mm = v_fa[i.offset(0,-2,0)];
+      vval.m = v_fa[i.ym()];
+      vval.c = v_fa[i];
+      vval.p = v_fa[i.yp()];
+      vval.pp = v_fa[i.offset(0,2,0)];
+
+      if(StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
+        // Non-centred stencil
+        if((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+          // Producing a stencil centred around a lower Y value
+          vval.pp = vval.p;
+          vval.p  = vval.c;
+        }else if(vloc == CELL_YLOW) {
+          // Stencil centred around a cell centre
+          vval.mm = vval.m;
+          vval.m  = vval.c;
+        }
+        // Shifted in one direction -> shift in another
+        // Could produce warning
+      }
+      result[i] = func(vval, fval);
+    }
+  }
+  else {
+    // Both must shift to field aligned
+    Field3D v_fa = mesh->toFieldAligned(v);
+    Field3D f_fa = mesh->toFieldAligned(f);
+
+    stencil vval, fval;
+
+    for (const auto &i : result.region(region)) {
+
+      fval.mm = f_fa[i.offset(0,-2,0)];
+      fval.m = f_fa[i.ym()];
+      fval.c = f_fa[i];
+      fval.p = f_fa[i.yp()];
+      fval.pp = f_fa[i.offset(0,2,0)];
+
+      vval.mm = v_fa[i.offset(0,-2,0)];
+      vval.m = v_fa[i.ym()];
+      vval.c = v_fa[i];
+      vval.p = v_fa[i.yp()];
+      vval.pp = v_fa[i.offset(0,2,0)];
+
+      if(StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
+        // Non-centred stencil
+        if((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+          // Producing a stencil centred around a lower Y value
+          vval.pp = vval.p;
+          vval.p  = vval.c;
+        }else if(vloc == CELL_YLOW) {
+          // Stencil centred around a cell centre
+          vval.mm = vval.m;
+          vval.m  = vval.c;
+        }
+        // Shifted in one direction -> shift in another
+        // Could produce warning
+      }
+      result[i] = func(vval, fval);
+    }
+  }
 
   result.setLocation(inloc);
 
@@ -2978,7 +3158,7 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 /////////////////////////////////////////////////////////////////////////
 
 const Field3D Mesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                              DIFF_METHOD method) {
+                              DIFF_METHOD method, REGION region) {
   TRACE("Mesh::indexFDDZ(Field3D, Field3D)");
   if ((method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDZ == NULL))) {
     // Split into an upwind and a central differencing part
@@ -3028,16 +3208,40 @@ const Field3D Mesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
   Field3D result(this);
   result.allocate(); // Make sure data allocated
 
-  bindex bx;
   stencil vval, fval;
+  for (const auto &i : result.region(region)) {
 
-  start_index(&bx);
-  do {
-    v.setZStencil(vval, bx, diffloc);
-    f.setZStencil(fval, bx); // Location is always the same as input
+    fval.mm = f[i.offset(0,0,-2)];
+    fval.m = f[i.zm()];
+    fval.c = f[i];
+    fval.p = f[i.zp()];
+    fval.pp = f[i.offset(0,0,2)];
 
-    result(bx.jx, bx.jy, bx.jz) = func(vval, fval);
-  } while (next_index3(&bx));
+    vval.mm = v[i.offset(0,0,-2)];
+    vval.m = v[i.zm()];
+    vval.c = v[i];
+    vval.p = v[i.zp()];
+    vval.pp = v[i.offset(0,0,2)];
+
+    if(StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
+      // Non-centred stencil
+
+      if((vloc == CELL_CENTRE) && (diffloc == CELL_ZLOW)) {
+      // Producing a stencil centred around a lower Z value
+        vval.pp = vval.p;
+        vval.p  = vval.c;
+
+      }else if(vloc == CELL_ZLOW) {
+        // Stencil centred around a cell centre
+
+        vval.mm = vval.m;
+        vval.m  = vval.c;
+      }
+      // Shifted in one direction -> shift in another
+      // Could produce warning
+    }
+    result[i] = func(vval, fval);
+  }
 
   result.setLocation(inloc);
 

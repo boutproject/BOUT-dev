@@ -29,6 +29,7 @@
 
 #include "multigrid_laplace.hxx"
 #include <msg_stack.hxx>
+#include <bout/openmpwrap.hxx>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -153,8 +154,8 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt) :
     else if(mgplag == 1) output<<"PGMRES with multigrid Preconditioner"<<endl;
     else output<<"Multigrid solver with merging "<<mgmpi<<endl;
 #ifdef OPENMP
-#pragma omp parallel
-#pragma omp master
+BOUT_OMP(parallel)
+BOUT_OMP(master)
     {
       output<<"Num threads = "<<omp_get_num_threads()<<endl;
     } 
@@ -189,8 +190,8 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
   if ( global_flags & INVERT_START_NEW ) {
     // set initial guess to zero
     for (int i=1; i<lxx+1; i++) {
-#pragma omp parallel default(shared) 
-#pragma omp for
+BOUT_OMP(parallel default(shared) )
+BOUT_OMP(for)
       for (int k=1; k<lzz+1; k++) {
         x[i*lz2+k] = 0.;
       }
@@ -199,8 +200,8 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
     // Read initial guess into local array, ignoring guard cells
     for (int i=1; i<lxx+1; i++) {
       int i2 = i-1+mesh->xstart;
-#pragma omp parallel default(shared) 
-#pragma omp for
+BOUT_OMP(parallel default(shared) )
+BOUT_OMP(for)
       for (int k=1; k<lzz+1; k++) {
         int k2 = k-1;
         x[i*lz2+k] = x0[i2][k2];
@@ -444,8 +445,8 @@ void LaplaceMultigrid::generateMatrixF(int level) {
 
   for (int i=1; i<llx+1; i++) {
     i2 = i-1+mesh->xstart;
-#pragma omp parallel default(shared) private(k2)
-#pragma omp for
+BOUT_OMP(parallel default(shared) private(k2))
+BOUT_OMP(for)
     for (int k=1; k<llz+1; k++) {
       k2 = k-1;
       int k2p  = (k2+1)%Nz_global;

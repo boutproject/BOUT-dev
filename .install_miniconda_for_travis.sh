@@ -11,9 +11,9 @@ wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ${
 #Install conda
 bash ${DOWNLOAD_TARGET}/miniconda.sh -b -p ${TARGET_DIR} -f
 hash -r
-conda config --set always_yes yes --set changeps1 no
-conda update -q conda
+time conda config --set always_yes yes --set changeps1 no
+time conda update -q conda
 # Useful for debugging any issues with conda
 conda info -a
-conda create -q -n test-environment python=3.5 numpy scipy netcdf4
+time conda create -q -n test-environment nomkl "python>=3.5" numpy scipy netcdf4
 source activate test-environment

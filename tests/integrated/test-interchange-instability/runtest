@@ -14,6 +14,7 @@ from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit
 
+nthreads=1
 MPIRUN = getmpirun()
 
 print("Making interchange instability test")
@@ -27,7 +28,7 @@ def growth_rate(path, nproc, log=False):
     pipe = False
     if log != False:
         pipe = True
-    s, out = launch_safe("./2fluid -d "+path, runcmd=MPIRUN, nproc=nproc, pipe=pipe)
+    s, out = launch_safe("./2fluid -d "+path, runcmd=MPIRUN, nproc=nproc, mthread=nthreads, pipe=pipe)
     if pipe:
         f = open(log, "w")
         f.write(out)

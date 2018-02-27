@@ -6,6 +6,7 @@
 #include "field3d.hxx"
 #include "test_extras.hxx"
 #include "unused.hxx"
+#include "utils.hxx"
 
 #include <cmath>
 #include <set>
@@ -274,6 +275,8 @@ TEST_F(Field3DTest, ConstYnext) {
 TEST_F(Field3DTest, SetGetLocation) {
   Field3D field;
 
+  field.getMesh()->StaggerGrids = true;
+
   field.setLocation(CELL_XLOW);
   EXPECT_EQ(field.getLocation(), CELL_XLOW);
 
@@ -281,6 +284,29 @@ TEST_F(Field3DTest, SetGetLocation) {
   EXPECT_EQ(field.getLocation(), CELL_CENTRE);
 
   EXPECT_THROW(field.setLocation(CELL_VSHIFT), BoutException);
+}
+
+TEST_F(Field3DTest, SetGetLocationNonStaggered) {
+  Field3D field;
+
+  field.getMesh()->StaggerGrids = false;
+
+#if CHECK > 0
+  EXPECT_THROW(field.setLocation(CELL_XLOW), BoutException);
+  EXPECT_THROW(field.setLocation(CELL_VSHIFT), BoutException);
+
+  field.setLocation(CELL_DEFAULT);
+  EXPECT_EQ(field.getLocation(), CELL_CENTRE);
+#else
+  field.setLocation(CELL_XLOW);
+  EXPECT_EQ(field.getLocation(), CELL_CENTRE);
+
+  field.setLocation(CELL_DEFAULT);
+  EXPECT_EQ(field.getLocation(), CELL_CENTRE);
+
+  field.setLocation(CELL_VSHIFT);
+  EXPECT_EQ(field.getLocation(), CELL_CENTRE);
+#endif
 }
 
 //-------------------- Iteration tests --------------------
@@ -597,6 +623,49 @@ TEST_F(Field3DTest, CheckData) {
   field(1, 1, 1) = std::nan("");
 
   EXPECT_THROW(checkData(field), BoutException);
+}
+
+TEST_F(Field3DTest, InvalidateGuards) {
+  Field3D field;
+  field.allocate(); // Calls invalidateGuards
+  field = 1.0;      // Sets everywhere including boundaries
+
+  const int nmesh = nx * ny * nz;
+
+  int sum = 0;
+  for (const auto &i : field.region(RGN_ALL)) {
+    field[i] = 0.0; // Reset field value
+    sum++;
+  }
+  EXPECT_EQ(sum, nmesh); // Field operator= hasn't been broken by invalidateGuards
+
+  // Count the number of non-boundary points
+  sum = 0;
+  for (const auto &i : field.region(RGN_NOBNDRY)) {
+    field[i] = 0.0; // Reset field value
+    sum++;
+  }
+  const int nbndry = nmesh - sum;
+
+#if CHECK > 2
+  auto localmesh = field.getMesh();
+  EXPECT_NO_THROW(checkData(field(0, 0, 0)));
+  EXPECT_NO_THROW(checkData(field(localmesh->xstart, localmesh->ystart, 0)));
+#endif
+
+  invalidateGuards(field);
+
+#if CHECK > 2
+  EXPECT_THROW(checkData(field(0, 0, 0)), BoutException);
+  EXPECT_NO_THROW(checkData(field(localmesh->xstart, localmesh->ystart, 0)));
+#endif
+
+  sum = 0;
+  for (const auto &i : field.region(RGN_ALL)) {
+    if (!finite(field[i]))
+      sum++;
+  }
+  EXPECT_EQ(sum, nbndry);
 }
 
 #endif // CHECK > 2
@@ -1143,6 +1212,7 @@ TEST_F(Field3DTest, Min) {
   const BoutReal min_value = 40.0;
 
   EXPECT_EQ(min(field, false), min_value);
+  EXPECT_EQ(min(field, false,RGN_ALL), -99.0);
 }
 
 TEST_F(Field3DTest, Max) {
@@ -1158,6 +1228,7 @@ TEST_F(Field3DTest, Max) {
   const BoutReal max_value = 60.0;
 
   EXPECT_EQ(max(field, false), max_value);
+  EXPECT_EQ(max(field, false,RGN_ALL), 99.0);
 }
 
 TEST_F(Field3DTest, DC) {
@@ -1170,3 +1241,36 @@ TEST_F(Field3DTest, DC) {
 
   EXPECT_TRUE(IsField2DEqualBoutReal(DC(field), 3.0));
 }
+
+#ifdef _OPENMP
+TEST_F(Field3DTest, OpenMPIterator) {
+  const int fields = 10;
+  Field3D *d3 = new Field3D[fields];
+  for (int i = 0; i < fields; ++i) {
+    d3[i] = 1;
+  }
+
+  BoutReal expected = 1;
+
+  BOUT_OMP(parallel for)
+  for (int j = 0; j < fields; ++j) {
+    BOUT_OMP(parallel)
+    for (auto i : d3[j]) {
+      EXPECT_DOUBLE_EQ(d3[j][i], expected);
+      d3[j][i] = 2;
+    }
+  }
+
+  expected = 2;
+
+  for (int i = 0; i < fields; ++i) {
+    for (int jx = 0; jx < mesh->LocalNx; ++jx) {
+      for (int jy = 0; jy < mesh->LocalNy; ++jy) {
+        for (int jz = 0; jz < mesh->LocalNz; ++jz) {
+          EXPECT_DOUBLE_EQ(d3[i](jx, jy, jz), expected);
+        }
+      }
+    }
+  }
+}
+#endif

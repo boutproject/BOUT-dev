@@ -83,7 +83,7 @@ class RKScheme {
   int getNumOrders(){return numOrders;};
 
   //The intermediate stages
-  BoutReal **steps;
+  Matrix<BoutReal> steps;
 
  protected:
   //Information about scheme
@@ -94,11 +94,11 @@ class RKScheme {
   int order; //Order of scheme
 
   //The Butcher Tableau
-  BoutReal **stageCoeffs;
-  BoutReal **resultCoeffs;
-  BoutReal *timeCoeffs;
+  Matrix<BoutReal> stageCoeffs;
+  Matrix<BoutReal> resultCoeffs;
+  Array<BoutReal> timeCoeffs;
   
-  BoutReal *resultAlt;
+  Array<BoutReal> resultAlt;
 
   int nlocal;
   int neq;

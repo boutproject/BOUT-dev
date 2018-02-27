@@ -32,6 +32,7 @@
 #include <boutexception.hxx>
 #include <lapack_routines.hxx>
 #include <bout/constants.hxx>
+#include <bout/openmpwrap.hxx>
 
 #include <output.hxx>
 
@@ -99,7 +100,7 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
   if(global_flags & INVERT_BOTH_BNDRY_ONE)
     xbndry = 1;
 
-  #pragma omp parallel for
+  BOUT_OMP(parallel for)
   for(int ix=0;ix<mesh->LocalNx;ix++) {
     // for fixed ix,jy set a complex vector rho(z)
     

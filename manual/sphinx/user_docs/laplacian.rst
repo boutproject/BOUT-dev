@@ -20,24 +20,54 @@ For example,
 appears in reduced MHD for the vorticity inversion and :math:`j_{||}`.
 
 Alternative formulations and ways to invert equation
-(:eq:`full_laplace_inv`) can be found in section :ref:`sec-LaplaceXY` and
+:eq:`full_laplace_inv` can be found in section :ref:`sec-LaplaceXY` and
 :ref:`sec-LaplaceXZ`
 
+Several implementations of the Laplacian solver are available, which
+are selected by changing the "type" setting.The currently available
+implementations are listed in table :numref:`tab-laplacetypes`. 
+
+.. _tab-laplacetypes:
+.. table:: Laplacian implementation types
+
+   +-------------+------------------------------------------------------------+------------------------------------------+
+   | Name        | Description                                                | Requirements                             |
+   +=============+============================================================+==========================================+
+   | cyclic      | Serial/parallel. Gathers boundary rows onto one processor. |                                          |
+   +-------------+------------------------------------------------------------+------------------------------------------+
+   | petsc       | Serial/parallel. Lots of methods, no Boussinesq            | PETSc (section :ref:`sec-PETSc-install`) |
+   +-------------+------------------------------------------------------------+------------------------------------------+
+   | multigrid   | Serial/parallel. Geometric multigrid, no Boussinesq        |                                          |
+   +-------------+------------------------------------------------------------+------------------------------------------+
+   | serial_tri  | Serial only. Thomas algorithm for tridiagonal system.      | Lapack (section :ref:`sec-lapack`)       |
+   +-------------+------------------------------------------------------------+------------------------------------------+
+   | serial_band | Serial only. Enables 4th-order accuracy                    | Lapack (section :ref:`sec-lapack`)       |
+   +-------------+------------------------------------------------------------+------------------------------------------+
+   | spt         | Parallel only (NXPE>1). Thomas algorithm.                  |                                          |
+   +-------------+------------------------------------------------------------+------------------------------------------+
+   | mumps       | Serial/parallel. Direct solver                             | MUMPS (section :ref:`sec-mumps`)         |
+   +-------------+------------------------------------------------------------+------------------------------------------+
+   | pdd         | Parallel Diagnonally Dominant algorithm. Experimental      |                                          |
+   +-------------+------------------------------------------------------------+------------------------------------------+
+   | shoot       | Shooting method. Experimental                              |                                          |
+   +-------------+------------------------------------------------------------+------------------------------------------+
+
+     
 Usage of the laplacian inversion
 --------------------------------
 
-| In BOUT++, equation (:eq:`full_laplace_inv`) can be solved in two
-  ways. The first method Fourier transforms in the :math:`z`-direction,
-  whilst the other is solving the full two dimensional problem by matrix
-  inversion. The derivation of :math:`\nabla_\perp^2f` for a general
-  coordinate system can be found in the ``coordinates`` manual. What is
-  important, is to note that if :math:`g_{xy}` and :math:`g_{yz}` are
-  non-zero, BOUT++ is neglecting the :math:`y`-parallel derivatives when
-  using the solvers ``Laplacian`` and ``LaplaceXZ``.
-|  
-| By neglecting the :math:`y`-derivatives (or if
-  :math:`g_{xy}=g_{yz}=0`), one can solve equation
-  (:eq:`full_laplace_inv`) :math:`y` plane by :math:`y` plane.
+In BOUT++, equation :eq:`full_laplace_inv` can be solved in two
+ways. The first method Fourier transforms in the :math:`z`-direction,
+whilst the other is solving the full two dimensional problem by matrix
+inversion. The derivation of :math:`\nabla_\perp^2f` for a general
+coordinate system can be found in the ``coordinates`` manual. What is
+important, is to note that if :math:`g_{xy}` and :math:`g_{yz}` are
+non-zero, BOUT++ is neglecting the :math:`y`-parallel derivatives when
+using the solvers ``Laplacian`` and ``LaplaceXZ``.
+
+By neglecting the :math:`y`-derivatives (or if
+:math:`g_{xy}=g_{yz}=0`), one can solve equation
+:eq:`full_laplace_inv` :math:`y` plane by :math:`y` plane.
 
 The first approach utilizes that it is possible Fourier transform the
 equation in :math:`z` (using some assumptions described in section
@@ -46,19 +76,17 @@ mode. These inversion problems are band-diagonal (tri-diagonal in the
 case of 2nd-order differencing) and so inversions can be very
 efficient: :math:`O(n_z \log n_z)` for the FFTs,
 :math:`O(n_x)` for tridiagonal inversion using the Thomas
-algorithm [1]_, where :math:`n_x` and :math:`n_z` are the number of
+algorithm, where :math:`n_x` and :math:`n_z` are the number of
 grid-points in the :math:`x` and :math:`z` directions respectively.
 
-.. [1] Numerical recipes in C. The art of scientific computing, Press, W H and Teukolsky, S A and Vetterling, W T and Flannery, B P
 
 In the second approach, the full :math:`2`\ -D system is being solved.
 This requires PETSc to be built with BOUT++.
 
-The ``Laplacian`` class is defined in ``invert_laplace.hxx`` and solves
-problems formulated like equation (:eq:`full_laplace_inv`) To use
-this class, first create an instance of it:
 
-::
+The ``Laplacian`` class is defined in ``invert_laplace.hxx`` and solves
+problems formulated like equation :eq:`full_laplace_inv` To use
+this class, first create an instance of it::
 
     Laplacian *lap = Laplacian::create();
 
@@ -74,39 +102,38 @@ these coefficients, there are the ``setCoefA()``, ``setCoefC()``, and
     lap->setCoefA(a);
     lap->setCoefC(0.5);
 
-arguments can be ``Field2D``, ``Field3D`` , or real values.
+arguments can be ``Field2D``, ``Field3D``, or real values.
 
 Settings for the inversion can be set in the input file under the
 section ``laplace`` (default) or whichever settings section name was
 specified when the ``Laplacian`` class was created. Commonly used
 settings are listed in tables :numref:`tab-laplacesettings` to
 :numref:`tab-laplaceflags`.
+        
+In particular boundary conditions on the :math:`x` boundaries can be
+set using the and ``outer_boundary_flags`` variables, as detailed in
+table :numref:`tab-laplaceBCflags`. Note that DC (‘direct-current’)
+refers to :math:`k = 0` Fourier component, AC (‘alternating-current’)
+refers to :math:`k \neq 0` Fourier components. Non-Fourier solvers use
+AC options (and ignore DC ones). Multiple boundary conditions can be
+selected by adding together the required boundary condition flag
+values together. For example, ``inner_boundary_flags = 3`` will set a
+Neumann boundary condition on both AC and DC components.
 
-In particular boundary conditions on the :math:`x` boundaries can be set
-using the and ``outer_boundary_flags`` variables, as detailed in table
-:numref:`tab-laplaceBCflags`. Note that DC (‘direct-current’) refers to
-:math:`k = 0` Fourier component, AC (‘alternating-current’) refers to
-:math:`k
-\neq 0` Fourier components. Non-Fourier solvers use AC options (and
-ignore DC ones). Multiple boundary conditions can be selected by adding
-together the required boundary condition flag values together. For
-example, ``inner_boundary_flags = 3`` will set a Neumann boundary
-condition on both AC and DC components.
+It is pertinent to note here that the boundary in BOUT++ is defined by
+default to be located half way between the first guard point and first
+point inside the domain. For example, when a Dirichlet boundary
+condition is set, using ``inner_boundary_flags = 0`` , ``16``, or
+``32``, then the first guard point, :math:`f_{-}` will be set to
+:math:`f_{-} = 2v - f_+`, where :math:`f_+` is the first grid point
+inside the domain, and :math:`v` is the value to which the boundary is
+being set to.
 
-| It is pertinent to note here that the boundary in BOUT++ is defined by
-  default to be located half way between the first guard point and first
-  point inside the domain. For example, when a Dirichlet boundary
-  condition is set, using ``inner_boundary_flags = 0`` , ``16``, or
-  ``32``, then the first guard point, :math:`f_{-}` will be set to
-  :math:`f_{-} = 2v - f_+`, where :math:`f_+` is the first grid point
-  inside the domain, and :math:`v` is the value to which the boundary is
-  being set to.
-|  
-| The ``global_flags``, ``inner_boundary_flags``,
-  ``outer_boundary_flags`` and ``flags`` values can also be set from
-  within the physics module using ``setGlobalFlags``,
-  ``setInnerBoundaryFlags`` , ``setOuterBoundaryFlags`` and ``setFlags``
-  .
+The ``global_flags``, ``inner_boundary_flags``,
+``outer_boundary_flags`` and ``flags`` values can also be set from
+within the physics module using ``setGlobalFlags``,
+``setInnerBoundaryFlags`` , ``setOuterBoundaryFlags`` and
+``setFlags``.
 
 ::
 
@@ -116,15 +143,13 @@ condition on both AC and DC components.
     lap->setFlags(Flags_Value);
 
 
-|
-
 .. _tab-laplacesettings:
 .. table:: Laplacian inversion options
 
    +--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
    | Name                     | Meaning                                                                 | Default value                                |
    +==========================+=========================================================================+==============================================+
-   | ``type``                 | Which implementation to use                                             | ``tri`` (serial), ``spt`` (parallel)         |
+   | ``type``                 | Which implementation to use. See table :numref:`tab-laplacetypes`       | ``cyclic``                                   |
    +--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
    | ``filter``               | Filter out modes above :math:`(1-`\ ``filter``\                         | 0                                            |
    |                          | :math:`)\times k_{max}`, if using Fourier solver                        |                                              |
@@ -150,14 +175,14 @@ condition on both AC and DC components.
    |                          | conditions. See :ref:`Laplace flags<tab-laplaceflags>` or               |                                              |
    |                          | :doc:`invert_laplace.cxx<../_breathe_autogen/file/invert__laplace_8cxx>`|                                              |
    +--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
-   | ``include_yguards``      | Perform inversion in :math:`y`\ -boundary guard cells                   | ``true``                                     |
+   | ``include_yguards``      | Perform inversion in :math:`y`\ -boundary guard cells                   | ``false``                                    |
    +--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
 
-|   
+|
 
 .. _tab-laplaceglobalflags:
 .. table:: Laplacian inversion ``global_flags`` values: add the required quantities together.
-	   
+
    +--------+--------------------------------------------------------------------------------+-----------------------------+
    | Flag   | Meaning                                                                        | Code variable               |
    +========+================================================================================+=============================+
@@ -176,11 +201,11 @@ condition on both AC and DC components.
    | 16     | Set constant component (:math:`k_x = k_z = 0`) to zero                         | ``INVERT_KX_ZERO``          |
    +--------+--------------------------------------------------------------------------------+-----------------------------+
 
-|   
+|
 
 .. _tab-laplaceBCflags:
 .. table:: Laplacian inversion ``outer_boundary_flags`` or ``inner_boundary_flags`` values: add the required quantities together.
-   
+
    +--------+----------------------------------------------------------------------+----------------------------+
    | Flag   | Meaning                                                              | Code variable              |
    +========+======================================================================+============================+
@@ -221,11 +246,11 @@ condition on both AC and DC components.
    | 1024   | Boundary condition for inner ‘boundary’ of cylinder                  | ``INVERT_IN_CYLINDER``     |
    +--------+----------------------------------------------------------------------+----------------------------+
 
-|   
+|
 
 .. _tab-laplaceflags:
 .. table:: Laplacian inversion ``flags`` values (DEPRECATED!): add the required quantities together.
-   
+
    +--------+------------------------------------------------------------------------------------------+
    | Flag   | Meaning                                                                                  |
    +========+==========================================================================================+
@@ -297,7 +322,7 @@ following equation for :math:`f`
 BOUT++ is neglecting the :math:`y`-parallel derivatives if
 :math:`g_{xy}` and :math:`g_{yz}` are no-zero when using the solvers
 ``Laplacian`` and ``LaplaceXZ``. For these two solvers, equation
-(:eq:`to_invert`) becomes (see ``coordinates`` manual for derivation)
+:eq:`to_invert` becomes (see ``coordinates`` manual for derivation)
 
 .. math::
    :label: invert_expanded
@@ -313,7 +338,7 @@ Using tridiagonal solvers
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When using the tridiagonal solvers, :math:`c_1 = c_2` in equation
-(:eq:`to_invert`), hence, it is rather solving
+:eq:`to_invert`, hence, it is rather solving
 
 .. math::
    :label: to_invert_tri
@@ -322,13 +347,13 @@ When using the tridiagonal solvers, :math:`c_1 = c_2` in equation
 
 Since there are no parallel :math:`y`-derivatives if
 :math:`g_{xy}=g_{yz}=0` (or if they are neglected), equation
-(:eq:`to_invert_tri`) will only contain derivatives of :math:`x` and
+:eq:`to_invert_tri` will only contain derivatives of :math:`x` and
 :math:`z` for the dependent variable. The hope is that the modes in the
 periodic :math:`z` direction will decouple, so that we in the end only
 have to invert for the :math:`x` coordinate.
 
 If the modes decouples when Fourier transforming equation
-(:eq:`invert_expanded`), we can use a tridiagonal solver to solve the
+:eq:`invert_expanded`, we can use a tridiagonal solver to solve the
 equation for each Fourier mode.
 
 Using the discrete Fourier transform
@@ -349,9 +374,9 @@ of two terms which depends on :math:`z`, as this would give terms like
 Thus, in order to use a tridiagonal solver, :math:`a`, :math:`c` and
 :math:`d` cannot be functions of :math:`z`. Because of this, the
 :math:`{{\boldsymbol{e}}}^z \partial_z c` term in equation
-(:eq:`invert_expanded`) is zero. In principle the modes would still
+:eq:`invert_expanded` is zero. In principle the modes would still
 decouple if the :math:`{{\boldsymbol{e}}}^z \partial_z f`
-part of equation (:eq:`invert_expanded`) was kept, but currently this
+part of equation :eq:`invert_expanded` was kept, but currently this
 part is also neglected in solvers using a tridiagonal matrix. Thus the
 tridiagonal solvers are solving equations on the form
 
@@ -385,10 +410,10 @@ which gives
    +& \frac{g^{xx}}{c} (\partial_x c ) \partial_xF_z \\
    +& aF_z = B_z
 
-As nothing in equation (:eq:`FT_laplace_inversion`) couples points in
+As nothing in equation :eq:`FT_laplace_inversion` couples points in
 :math:`y` together (since we neglected the :math:`y`-derivatives if
 :math:`g_{xy}` and :math:`g_{yz}` were non-zero). Also, as the modes are
-decoupled, we may solve equation (:eq:`FT_laplace_inversion`) :math:`k`
+decoupled, we may solve equation :eq:`FT_laplace_inversion` :math:`k`
 mode by :math:`k` mode in addition to :math:`y`\ -plane by
 :math:`y`\ -plane.
 
@@ -441,7 +466,7 @@ We now introduce
 
    c_5 = dG^z
 
-which inserted in equation (:eq:`discretized_laplace`) gives
+which inserted in equation :eq:`discretized_laplace` gives
 
 .. math::
 
@@ -459,14 +484,14 @@ set by setting the first and last rows in :math:`A` and :math:`B_z`.
 Using PETSc solvers
 ~~~~~~~~~~~~~~~~~~~
 
-When using PETSc, all terms of equation (:eq:`invert_expanded`) is being
+When using PETSc, all terms of equation :eq:`invert_expanded` is being
 used when inverting to find :math:`f`. Note that when using PETSc, we
 are not Fourier decomposing in the :math:`z`-direction, so it may take
 substantially longer time to find the solution. As with the tridiagonal
 solver, the fields are being sliced in the :math:`y`-direction, and a
 solution is being found for one :math:`y` plane at the time.
 
-Before solving, equation (:eq:`invert_expanded`) is rewritten to the
+Before solving, equation :eq:`invert_expanded` is rewritten to the
 form
 :math:`A{{\boldsymbol{x}}} ={{\boldsymbol{b}}}`
 (however, the full :math:`A` is not expanded in memory). To do this, a
@@ -481,11 +506,11 @@ dimensional field. This is done in such a way so that a row :math:`i` in
 :math:`\texttt{meshx}` and :math:`\texttt{meshz}` represents the highest
 value of the field in the given direction.
 
-| Similarly to equation (:eq:`discretized_laplace`), the discretised
-  version of equation (:eq:`invert_expanded`) can be written. Doing the
-  same for the full two dimensional case yields
+Similarly to equation :eq:`discretized_laplace`, the discretised
+version of equation :eq:`invert_expanded` can be written. Doing the
+same for the full two dimensional case yields:
 
-0.45 Second order approximation
+Second order approximation
 
 .. math::
 
@@ -496,7 +521,7 @@ value of the field in the given direction.
            &+ c_{i+1,j} f_{i+1,j} + c_{i+1,j+1} f_{i+1,j+1} \\
        =& b_{i,j}
 
-0.45 Fourth order approximation
+Fourth order approximation
 
 .. math::
 
@@ -516,47 +541,47 @@ value of the field in the given direction.
            &+ c_{i+2,j+1} f_{i+2,j+1} + c_{i+2,j+2} f_{i+2,j+2} \\
        =& b_{i,j}
 
-| 
-| To determine the coefficient for each node point, it is convenient to
-  introduce some quantities
 
-  .. math::
+To determine the coefficient for each node point, it is convenient to
+introduce some quantities
 
-         &A_0 = a(x,y_{\text{current}},z)& &A_1 = dg^{xx}&\\ &A_2 = dg^{zz}& &A_3 =
-         2dg^{xz}&
+.. math::
+   :nowrap:
 
-In addition, we have
+      \begin{align}
+       &A_0 = a(x,y_{\text{current}},z)& &A_1 = dg^{xx}&\\
+       &A_2 = dg^{zz}& &A_3 = 2dg^{xz}&
+      \end{align}
 
-0.45 Second order approximation (5-point stencil)
+In addition, we have:
+
+Second order approximation (5-point stencil)
 
 .. math::
 
-       \texttt{ddx\_c} = \frac{\texttt{c2}_{x+1} - \texttt{c2}_{x-1} }{
-       2\texttt{c1}\text{d}x}\\
-           \texttt{ddz\_c} = \frac{\texttt{c2}_{z+1} - \texttt{c2}_{z-1} }{
-       2\texttt{c1}\text{d}z}
+       \texttt{ddx\_c} = \frac{\texttt{c2}_{x+1} - \texttt{c2}_{x-1} }{2\texttt{c1}\text{d}x}
 
-0.45 Fourth order approximation (9-point stencil)
+       \texttt{ddz\_c} = \frac{\texttt{c2}_{z+1} - \texttt{c2}_{z-1} }{2\texttt{c1}\text{d}z}
+
+Fourth order approximation (9-point stencil)
 
 .. math::
 
        \texttt{ddx\_c} = \frac{-\texttt{c2}_{x+2} + 8\texttt{c2}_{x+1} -
-       8\texttt{c2}_{x-1} + \texttt{c2}_{x-1} }{ 12\texttt{c1}\text{d}x}\\
-           \texttt{ddz\_c} = \frac{-\texttt{c2}_{z+2} + 8\texttt{c2}_{z+1} -
+       8\texttt{c2}_{x-1} + \texttt{c2}_{x-1} }{ 12\texttt{c1}\text{d}x} \\
+       \texttt{ddz\_c} = \frac{-\texttt{c2}_{z+2} + 8\texttt{c2}_{z+1} -
        8\texttt{c2}_{z-1} + \texttt{c2}_{z-1} }{ 12\texttt{c1}\text{d}z}
 
-| 
-| This gives
 
-  .. math::
+This gives
 
-     A_4 = dG^x + g^{xx}\texttt{ddx\_c} + g^{xz}\texttt{ddz\_c}
+.. math::
+   A_4 = dG^x + g^{xx}\texttt{ddx\_c} + g^{xz}\texttt{ddz\_c}
+   A_5 = dG^z + g^{xz}\texttt{ddx\_c} + g^{xx}\texttt{ddz\_c}
 
-     A_5 = dG^z + g^{xz}\texttt{ddx\_c} + g^{xx}\texttt{ddz\_c}
-
-  The coefficients :math:`c_{i+m,j+n}` are finally being set according
-  to the appropriate order of discretisation. The coefficients can be
-  found in the file ``petsc_laplace.cxx``.
+The coefficients :math:`c_{i+m,j+n}` are finally being set according
+to the appropriate order of discretisation. The coefficients can be
+found in the file ``petsc_laplace.cxx``.
 
 Example: The 5-point stencil
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -624,4 +649,3 @@ matrix will be as in :numref:`fig-lapl-inv-global`
          :numref:`fig-lapl-inv-matrix`
 
    Global indices of the matrix in figure :numref:`fig-lapl-inv-matrix`
-

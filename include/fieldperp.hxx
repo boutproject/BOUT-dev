@@ -80,6 +80,8 @@ class FieldPerp : public Field {
   const DataIterator begin() const;
   const DataIterator end() const;
 
+  const IndexRange region(REGION rgn) const;
+
   /*!
    * Direct data access using DataIterator indexing
    */
@@ -92,7 +94,7 @@ class FieldPerp : public Field {
   BoutReal& operator[](const Indices &i) {
     return operator()(i.x, i.z);
   }
-  const BoutReal& operator[](const Indices &i) const {
+  const BoutReal& operator[](const Indices &i) const override{
     return operator()(i.x, i.z);
   }
   
@@ -224,11 +226,6 @@ class FieldPerp : public Field {
   FieldPerp & operator/=(const Field3D &rhs);
   FieldPerp & operator/=(const Field2D &rhs);
   FieldPerp & operator/=(BoutReal rhs);
-  
-  // Stencils
-  void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
-  void setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
-  void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
 
   virtual int getNy() const override{ return 1;};
   

@@ -343,44 +343,47 @@ namespace FV {
   }
 
   void communicateFluxes(Field3D &f) {
-    
-    // Use X=0 as temporary buffer 
-    if(mesh->xstart != 2)
+
+    // Use X=0 as temporary buffer
+    if (mesh->xstart != 2)
       throw BoutException("communicateFluxes: Sorry!");
-    
+
     int size = mesh->LocalNy * mesh->LocalNz;
     comm_handle xin, xout;
-    if(!mesh->firstX())
-      xin = mesh->irecvXIn(f(0,0), size, 0);
-    
-    if(!mesh->lastX())
-      xout = mesh->irecvXOut(f(mesh->LocalNx-1,0), size, 1);
-    
+    // Cache results to silence spurious compiler warning about xin,
+    // xout possibly being uninitialised when used
+    bool not_first = !mesh->firstX();
+    bool not_last = !mesh->lastX();
+    if (not_first) {
+      xin = mesh->irecvXIn(f(0, 0), size, 0);
+    }
+    if (not_last) {
+      xout = mesh->irecvXOut(f(mesh->LocalNx - 1, 0), size, 1);
+    }
     // Send X=1 values
-    if(!mesh->firstX())
-      mesh->sendXIn(f(1,0), size, 1);
-    
-    if(!mesh->lastX())
-      mesh->sendXOut(f(mesh->LocalNx-2,0), size, 0);
-    
+    if (not_first) {
+      mesh->sendXIn(f(1, 0), size, 1);
+    }
+    if (not_last) {
+      mesh->sendXOut(f(mesh->LocalNx - 2, 0), size, 0);
+    }
     // Wait
-    if(!mesh->firstX()) {
+    if (not_first) {
       mesh->wait(xin);
       // Add to cells
-      for(int y=mesh->ystart;y<=mesh->yend;y++) 
-        for(int z=0;z<mesh->LocalNz;z++) {
-          f(2,y,z) += f(0,y,z);
+      for (int y = mesh->ystart; y <= mesh->yend; y++)
+        for (int z = 0; z < mesh->LocalNz; z++) {
+          f(2, y, z) += f(0, y, z);
         }
     }
-    if(!mesh->lastX()) {
+    if (not_last) {
       mesh->wait(xout);
       // Add to cells
-      for(int y=mesh->ystart;y<=mesh->yend;y++) 
-        for(int z=0;z<mesh->LocalNz;z++) {
-          f(mesh->LocalNx-3,y,z) += f(mesh->LocalNx-1,y,z);
+      for (int y = mesh->ystart; y <= mesh->yend; y++)
+        for (int z = 0; z < mesh->LocalNz; z++) {
+          f(mesh->LocalNx - 3, y, z) += f(mesh->LocalNx - 1, y, z);
         }
     }
   }
 
-  
 } // Namespace FV

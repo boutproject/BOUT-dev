@@ -50,6 +50,23 @@ locations of the evolving variables are
 which makes the velocity ``v`` staggered to the lower side of the cell
 in Y, whilst the density :math:`n` remains cell centred.
 
+.. note:: If BOUT++ was configued ``--with-checks``,
+          ``Field3D::setLocation`` will throw an exception if you
+          don't have staggered grids turned on and try to set the
+          location to something other than ``CELL_CENTRE``. If you
+          want to be able to run your model with and without staggered
+          grids, you should do something like::
+
+            if (v.getMesh()->StaggerGrids) {
+              v.setLocation(CELL_YLOW);
+            }
+
+          Compiling BOUT++ with checks turned off will instead cause
+          ``Field3D::setLocation`` to silently set the location to
+          ``CELL_CENTRE`` if staggered grids are off, regardless of
+          what you pass it.
+
+
 Arithmetic operations between staggered quantities are handled by
 interpolating them to the same location according to the algorithm in
 :numref:`fig-stagArith`.

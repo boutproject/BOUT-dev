@@ -28,7 +28,7 @@
  **************************************************************************/
 
 #include "multigrid_laplace.hxx"
-
+#include <bout/openmpwrap.hxx>
 
 // Define basic multigrid algorithm
 
@@ -97,12 +97,12 @@ void MultigridAlg::getSolution(BoutReal *x,BoutReal *b,int flag) {
       r = new BoutReal[ldim];
       for(int n = 1;n<flag;n++) {
         residualVec(level,x,b,r);
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
         for(int i = 0;i<ldim;i++) y[i] = 0.0;
         cycleMG(level,y,r);
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
         for(int i = 0;i<ldim;i++) x[i] = x[i]+y[i];
       }
       delete [] r;
@@ -132,15 +132,15 @@ void MultigridAlg::cycleMG(int level,BoutReal *sol,BoutReal *rhs)
     
     projection(level,r,pr);
 
-#pragma omp parallel default(shared) private(i)
-#pragma omp for
+BOUT_OMP(parallel default(shared) private(i))
+BOUT_OMP(for)
     for(i=0;i<(lnx[level-1]+2)*(lnz[level-1]+2);i++) y[i] = 0.0;
   
     cycleMG(level-1,y,pr);
 
     prolongation(level-1,y,iy);
-#pragma omp parallel default(shared) private(i)
-#pragma omp for
+BOUT_OMP(parallel default(shared) private(i))
+BOUT_OMP(for)
     for(i=0;i<(lnx[level]+2)*(lnz[level]+2);i++) 
        sol[i] += iy[i];
 
@@ -164,8 +164,8 @@ void MultigridAlg::projection(int level,BoutReal *r,BoutReal *pr)
   for(int i=0;i<(lnx[level-1]+2)*(lnz[level-1]+2);i++) pr[i] = 0.;
   for (int i=1; i<lnx[level-1]+1; i++) {
     int i2 = 2*i-1;
-#pragma omp parallel default(shared) private(nn,n0,n1,n2,n3)
-#pragma omp for
+BOUT_OMP(parallel default(shared) private(nn,n0,n1,n2,n3))
+BOUT_OMP(for)
     for (int k=1; k<lnz[level-1]+1; k++) {
       int k2 = 2*k-1;
       nn = i*(lnz[level-1]+2)+k;
@@ -184,13 +184,13 @@ void MultigridAlg::prolongation(int level,BoutReal *x,BoutReal *ix) {
 
   int nn,n0,n1,n2,n3;
   communications(x,level);
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
   for(int i=0;i<(lnx[level+1]+2)*(lnz[level+1]+2);i++) ix[i] = 0.;
   for (int i=1; i<lnx[level]+1; i++) {
     int i2 = 2*i-1;
-#pragma omp parallel default(shared) private(nn,n0,n1,n2,n3)
-#pragma omp for
+BOUT_OMP(parallel default(shared) private(nn,n0,n1,n2,n3))
+BOUT_OMP(for)
     for (int k=1; k<lnz[level]+1; k++) {
       int k2 = 2*k-1;
       nn = i*(lnz[level]+2)+k;
@@ -218,12 +218,12 @@ void MultigridAlg::smoothings(int level, BoutReal *x, BoutReal *b) {
     x0 = new BoutReal[dim];
     communications(x,level);
     for(int num =0;num < 2;num++) {
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
       for(int i = 0;i<dim;i++) x0[i] = x[i];    
       for(int i = 1;i<lnx[level]+1;i++)
-#pragma omp parallel default(shared) private(nn)
-#pragma omp for
+BOUT_OMP(parallel default(shared) private(nn))
+BOUT_OMP(for)
         for(int k=1;k<lnz[level]+1;k++) {
           nn = i*mm+k;
           val = b[nn] - matmg[level][nn*9+3]*x0[nn-1]
@@ -243,8 +243,8 @@ void MultigridAlg::smoothings(int level, BoutReal *x, BoutReal *b) {
   else {
     communications(x,level);    
     for(int i = 1;i<lnx[level]+1;i++)
-#pragma omp parallel default(shared) private(nn)
-#pragma omp for
+BOUT_OMP(parallel default(shared) private(nn))
+BOUT_OMP(for)
       for(int k=1;k<lnz[level]+1;k++) {
         nn = i*mm+k;
         val = b[nn] - matmg[level][nn*9+3]*x[nn-1]
@@ -258,8 +258,8 @@ void MultigridAlg::smoothings(int level, BoutReal *x, BoutReal *b) {
       } 
     communications(x,level);
     for(int i = lnx[level];i>0;i--)
-#pragma omp parallel default(shared) private(nn)
-#pragma omp for
+BOUT_OMP(parallel default(shared) private(nn))
+BOUT_OMP(for)
       for(int k= lnz[level];k>0;k--) {
         nn = i*mm+k;
         val = b[nn] - matmg[level][nn*9+3]*x[nn-1]
@@ -291,8 +291,8 @@ void MultigridAlg::pGMRES(BoutReal *sol,BoutReal *rhs,int level,int iplag) {
   p = new BoutReal[ldim];
   q = new BoutReal[ldim];
   r = new BoutReal[ldim];
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
   for(int i = 0;i<ldim;i++) sol[i] = 0.0;
   int num = 0;
 
@@ -315,13 +315,13 @@ void MultigridAlg::pGMRES(BoutReal *sol,BoutReal *rhs,int level,int iplag) {
     delete [] v;
     return;
   }
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
   for(int i = 0;i<ldim;i++) r[i] = 0.0;
   if(iplag ==  0)  smoothings(level,r,rhs);
   else  cycleMG(level,r,rhs); 
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
   for(int i = 0;i < ldim;i++) v[0][i] = r[i];
   perror = ini_e;
   do{
@@ -331,15 +331,15 @@ void MultigridAlg::pGMRES(BoutReal *sol,BoutReal *rhs,int level,int iplag) {
       output<<num<<"First a1 in GMRES is wrong "<<a1<<":"<<level<<endl;
     }
     a0 = 1.0/a1;
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
     for(int i=0;i<ldim;i++) v[0][i] *= a0;
     g[0] = a1;
     for(int i=1;i<MAXGM+1;i++) g[i] = 0.0;
     for(it = 0;it<MAXGM;it++) {
       multiAVec(level,v[it],q);
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
       for(int i=0;i<ldim;i++) v[it+1][i] = 0.0;
 
       if(iplag == 0)  smoothings(level,v[it+1],q);
@@ -356,8 +356,8 @@ void MultigridAlg::pGMRES(BoutReal *sol,BoutReal *rhs,int level,int iplag) {
         output<<num<<"In Second a1 in GMRES is wrong "<<a1<<endl;
       }
       a0 = 1.0/a1;
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
       for(int i=0;i<ldim;i++) v[it+1][i] *= a0;
       h[it+1][it] = a1;
 
@@ -388,12 +388,12 @@ void MultigridAlg::pGMRES(BoutReal *sol,BoutReal *rhs,int level,int iplag) {
         for(int j=i+1;j<=it;j++) y[i] -= h[i][j]*y[j];
         y[i] = y[i]/h[i][i];
       }
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
       for(int i=0;i<ldim;i++) p[i] = sol[i];
       for(int i=0;i<=it;i++) { 
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
         for(int k=0;k<ldim;k++) p[k] += y[i]*v[i][k]; 
       }
     
@@ -418,14 +418,14 @@ void MultigridAlg::pGMRES(BoutReal *sol,BoutReal *rhs,int level,int iplag) {
       perror = error;
     }
   /* Restart with new initial */
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
     for(int i = 0;i<ldim;i++) v[0][i] = 0.0;
     if(iplag ==  0)  smoothings(level,v[0],r);
     else cycleMG(level,v[0],r); 
     
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
     for(int i = 0;i<ldim;i++) sol[i] = p[i];
     if(num>MAXIT) {
       throw BoutException(" GMRES Iteration limit.\n");
@@ -484,8 +484,8 @@ BoutReal MultigridAlg::vectorProd(int level,BoutReal* x,BoutReal* y) {
   BoutReal val;
   BoutReal ini_e = 0.0;
   for(int i= 1;i<lnx[level]+1;i++)
-#pragma omp parallel default(shared) 
-#pragma omp for reduction(+:ini_e)
+BOUT_OMP(parallel default(shared) )
+BOUT_OMP(for reduction(+:ini_e))
     for(int k=1;k<lnz[level]+1;k++) {
       int ii = i*(lnz[level]+2)+k;
       ini_e += x[ii]*y[ii];
@@ -501,12 +501,12 @@ void MultigridAlg::multiAVec(int level, BoutReal *x, BoutReal *b) {
 
   communications(x,level);
   int mm = lnz[level]+2;
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
   for(int i = 0;i<mm*(lnx[level]+2);i++) b[i] = 0.0;
   for(int i = 1;i<lnx[level]+1;i++)
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
     for(int k=1;k<lnz[level]+1;k++) {
       int nn = i*mm+k;
       b[nn] = matmg[level][nn*9+4]*x[nn] + matmg[level][nn*9+3]*x[nn-1]
@@ -525,12 +525,12 @@ BoutReal *r) {
   int mm;
   communications(x,level);
   mm = lnz[level]+2;
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
   for(int i = 0;i<mm*(lnx[level]+2);i++) r[i] = 0.0;
   for(int i = 1;i<lnx[level]+1;i++)
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
     for(int k=1;k<lnz[level]+1;k++) {
       int nn = i*mm+k;
       val = matmg[level][nn*9+4]*x[nn] + matmg[level][nn*9+3]*x[nn-1]
@@ -548,15 +548,15 @@ void MultigridAlg::setMatrixC(int level) {
 
   BoutReal ratio = 8.0; 
 
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
   for(int i=0;i<(lnx[level-1]+2)*(lnz[level-1]+2)*9;i++) { 
     matmg[level-1][i] = 0.0;
   }
   for(int i = 1;i<lnx[level-1]+1;i++) {
     int i2 = 2*i-1;
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
     for(int k = 1;k<lnz[level-1]+1;k++) {
       int k2 = 2*k-1;
       int mm = i*(lnz[level-1]+2)+k;
@@ -664,8 +664,8 @@ void MultigridAlg::solveMG(BoutReal *sol,BoutReal *rhs,int level) {
   
   int ldim = (lnx[level]+2)*(lnz[level]+2);
 
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
   for(int i = 0;i<ldim;i++) sol[i] = 0.0;
 
   communications(rhs,level);
@@ -678,18 +678,18 @@ void MultigridAlg::solveMG(BoutReal *sol,BoutReal *rhs,int level) {
     printf("%d \n  In MGsolve ini = %24.18f\n",numP,ini_e);
   y = new BoutReal[ldim];
   r = new BoutReal[ldim];
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
   for(int i = 0;i<ldim;i++) r[i] = rhs[i];
 
   perror = ini_e;
   for(m=0;m<MAXIT;m++) {
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
     for(int i = 0;i<ldim;i++) y[i] = 0.0;
     cycleMG(level,y,r);
-#pragma omp parallel default(shared)
-#pragma omp for
+BOUT_OMP(parallel default(shared))
+BOUT_OMP(for)
     for(int i = 0;i<ldim;i++) sol[i] = sol[i]+y[i];
     residualVec(level,sol,rhs,r);
     error = sqrt(vectorProd(level,r,r));
