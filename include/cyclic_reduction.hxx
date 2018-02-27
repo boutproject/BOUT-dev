@@ -383,7 +383,7 @@ private:
   T *x1, *xn; ///< Interface solutions for back-solving
 
   /// Allocate memory arrays
-  /// @param[in[ np   Number of processors
+  /// @param[in] np   Number of processors
   /// @param[in] nsys  Number of independent systems to solve
   /// @param[in] n     Size of each system of equations
   void allocMemory(int np, int nsys, int n) {

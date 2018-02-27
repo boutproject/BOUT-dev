@@ -302,7 +302,7 @@ DEPRECATED(void free_imatrix(int **m));
 /*!
  * Free a matrix, assumed to have been allocated using matrix()
  *
- * @param[in] T  The matrix to free
+ * @param[in] m  The matrix to free
  *
  * Example
  * -------
