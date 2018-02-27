@@ -46,7 +46,7 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt) :
   // Get Options in Laplace Section
   if (!opt) opts = Options::getRoot()->getSection("laplace");
   else opts=opt;
-  opts->get("multigridlevel",mglevel,7,true);
+  opts->get("multigridlevel",mglevel,100,true);
   opts->get("rtol",rtol,pow(10.0,-8),true);
   opts->get("atol",atol,pow(10.0,-20),true);
   opts->get("dtol",dtol,pow(10.0,5),true);
