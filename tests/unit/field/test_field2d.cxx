@@ -550,6 +550,13 @@ TEST_F(Field2DTest, AddEqualsBoutReal) {
   a += 5.0;
 
   EXPECT_TRUE(IsField2DEqualBoutReal(a, 6.0));
+
+  // Check case where field is not unique
+  auto c = a;
+  c += 5.0;
+
+  EXPECT_TRUE(IsField2DEqualBoutReal(a, 6.0));
+  EXPECT_TRUE(IsField2DEqualBoutReal(c, 11.0));
 }
 
 TEST_F(Field2DTest, AddEqualsField2D) {
@@ -560,6 +567,13 @@ TEST_F(Field2DTest, AddEqualsField2D) {
   a += b;
 
   EXPECT_TRUE(IsField2DEqualBoutReal(a, 5.0));
+
+  // Check case where field is not unique
+  auto c = a;
+  c += b;
+
+  EXPECT_TRUE(IsField2DEqualBoutReal(a, 5.0));
+  EXPECT_TRUE(IsField2DEqualBoutReal(c, 8.0));
 }
 
 TEST_F(Field2DTest, AddField2DBoutReal) {
@@ -597,6 +611,13 @@ TEST_F(Field2DTest, MultiplyEqualsBoutReal) {
   a *= 1.5;
 
   EXPECT_TRUE(IsField2DEqualBoutReal(a, 3.0));
+
+  // Check case where field is not unique
+  auto c = a;
+  c *= 1.5;
+
+  EXPECT_TRUE(IsField2DEqualBoutReal(a, 3.0));
+  EXPECT_TRUE(IsField2DEqualBoutReal(c, 4.5));
 }
 
 TEST_F(Field2DTest, MultiplyEqualsField2D) {
@@ -607,6 +628,13 @@ TEST_F(Field2DTest, MultiplyEqualsField2D) {
   a *= b;
 
   EXPECT_TRUE(IsField2DEqualBoutReal(a, 10.0));
+
+  // Check case where field is not unique
+  auto c = a;
+  c *= b;
+
+  EXPECT_TRUE(IsField2DEqualBoutReal(a, 10.0));
+  EXPECT_TRUE(IsField2DEqualBoutReal(c, 40.0));
 }
 
 TEST_F(Field2DTest, MultiplyField2DBoutReal) {
@@ -644,6 +672,13 @@ TEST_F(Field2DTest, SubtractEqualsBoutReal) {
   a -= 5.0;
 
   EXPECT_TRUE(IsField2DEqualBoutReal(a, -4.0));
+
+  // Check case where field is not unique
+  auto c = a;
+  c -= 5.0;
+
+  EXPECT_TRUE(IsField2DEqualBoutReal(a, -4.0));
+  EXPECT_TRUE(IsField2DEqualBoutReal(c, -9.0));
 }
 
 TEST_F(Field2DTest, SubtractEqualsField2D) {
@@ -654,6 +689,13 @@ TEST_F(Field2DTest, SubtractEqualsField2D) {
   a -= b;
 
   EXPECT_TRUE(IsField2DEqualBoutReal(a, -5.0));
+
+  // Check case where field is not unique
+  auto c = a;
+  c -= b;
+
+  EXPECT_TRUE(IsField2DEqualBoutReal(a, -5.0));
+  EXPECT_TRUE(IsField2DEqualBoutReal(c, -12.0));
 }
 
 TEST_F(Field2DTest, SubtractField2DBoutReal) {
@@ -691,6 +733,13 @@ TEST_F(Field2DTest, DivideEqualsBoutReal) {
   a /= 5.0;
 
   EXPECT_TRUE(IsField2DEqualBoutReal(a, 0.5));
+
+  // Check case where field is not unique
+  auto c = a;
+  c /= 5.0;
+
+  EXPECT_TRUE(IsField2DEqualBoutReal(a, 0.5));
+  EXPECT_TRUE(IsField2DEqualBoutReal(c, 0.1));
 }
 
 TEST_F(Field2DTest, DivideEqualsField2D) {
@@ -701,6 +750,13 @@ TEST_F(Field2DTest, DivideEqualsField2D) {
   a /= b;
 
   EXPECT_TRUE(IsField2DEqualBoutReal(a, 2.0));
+
+  // Check case where field is not unique
+  auto c = a;
+  c /= b;
+
+  EXPECT_TRUE(IsField2DEqualBoutReal(a, 2.0));
+  EXPECT_TRUE(IsField2DEqualBoutReal(c, 0.8));
 }
 
 TEST_F(Field2DTest, DivideField2DBoutReal) {

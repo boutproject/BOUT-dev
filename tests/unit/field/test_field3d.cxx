@@ -741,6 +741,13 @@ TEST_F(Field3DTest, AddEqualsBoutReal) {
   a += 5.0;
 
   EXPECT_TRUE(IsField3DEqualBoutReal(a, 6.0));
+
+  // Check case where field is not unique
+  auto c = a;
+  c += 5.0;
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(a, 6.0));
+  EXPECT_TRUE(IsField3DEqualBoutReal(c, 11.0));
 }
 
 TEST_F(Field3DTest, AddEqualsField2D) {
@@ -752,6 +759,13 @@ TEST_F(Field3DTest, AddEqualsField2D) {
   a += b;
 
   EXPECT_TRUE(IsField3DEqualBoutReal(a, 5.0));
+
+  // Check case where field is not unique
+  auto c = a;
+  c += b;
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(a, 5.0));
+  EXPECT_TRUE(IsField3DEqualBoutReal(c, 8.0));
 }
 
 TEST_F(Field3DTest, AddEqualsField3D) {
@@ -762,6 +776,13 @@ TEST_F(Field3DTest, AddEqualsField3D) {
   a += b;
 
   EXPECT_TRUE(IsField3DEqualBoutReal(a, 5.0));
+
+  // Check case where field is not unique
+  auto c = a;
+  c += b;
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(a, 5.0));
+  EXPECT_TRUE(IsField3DEqualBoutReal(c, 8.0));
 }
 
 TEST_F(Field3DTest, AddField3DBoutReal) {
@@ -821,6 +842,13 @@ TEST_F(Field3DTest, MultiplyEqualsBoutReal) {
   a *= 1.5;
 
   EXPECT_TRUE(IsField3DEqualBoutReal(a, 3.0));
+
+  // Check case where field is not unique
+  auto c = a;
+  c *= 1.5;
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(a, 3.0));
+  EXPECT_TRUE(IsField3DEqualBoutReal(c, 4.5));
 }
 
 TEST_F(Field3DTest, MultiplyEqualsField2D) {
@@ -832,6 +860,13 @@ TEST_F(Field3DTest, MultiplyEqualsField2D) {
   a *= b;
 
   EXPECT_TRUE(IsField3DEqualBoutReal(a, 10.0));
+
+  // Check case where field is not unique
+  auto c = a;
+  c *= b;
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(a, 10.0));
+  EXPECT_TRUE(IsField3DEqualBoutReal(c, 40.0));
 }
 
 TEST_F(Field3DTest, MultiplyEqualsField3D) {
@@ -842,6 +877,13 @@ TEST_F(Field3DTest, MultiplyEqualsField3D) {
   a *= b;
 
   EXPECT_TRUE(IsField3DEqualBoutReal(a, 10.0));
+
+  // Check case where field is not unique
+  auto c = a;
+  c *= b;
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(a, 10.0));
+  EXPECT_TRUE(IsField3DEqualBoutReal(c, 40.0));
 }
 
 TEST_F(Field3DTest, MultiplyField3DBoutReal) {
@@ -901,6 +943,13 @@ TEST_F(Field3DTest, SubtractEqualsBoutReal) {
   a -= 5.0;
 
   EXPECT_TRUE(IsField3DEqualBoutReal(a, -4.0));
+
+  // Check case where field is not unique
+  auto c = a;
+  c -= 5.0;
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(a, -4.0));
+  EXPECT_TRUE(IsField3DEqualBoutReal(c, -9.0));
 }
 
 TEST_F(Field3DTest, SubtractEqualsField2D) {
@@ -912,6 +961,13 @@ TEST_F(Field3DTest, SubtractEqualsField2D) {
   a -= b;
 
   EXPECT_TRUE(IsField3DEqualBoutReal(a, -5.0));
+
+  // Check case where field is not unique
+  auto c = a;
+  c -= b;
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(a, -5.0));
+  EXPECT_TRUE(IsField3DEqualBoutReal(c, -12.0));
 }
 
 TEST_F(Field3DTest, SubtractEqualsField3D) {
@@ -922,6 +978,13 @@ TEST_F(Field3DTest, SubtractEqualsField3D) {
   a -= b;
 
   EXPECT_TRUE(IsField3DEqualBoutReal(a, -5.0));
+
+  // Check case where field is not unique
+  auto c = a;
+  c -= b;
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(a, -5.0));
+  EXPECT_TRUE(IsField3DEqualBoutReal(c, -12.0));
 }
 
 TEST_F(Field3DTest, SubtractField3DBoutReal) {
@@ -981,6 +1044,13 @@ TEST_F(Field3DTest, DivideEqualsBoutReal) {
   a /= 5.0;
 
   EXPECT_TRUE(IsField3DEqualBoutReal(a, 0.5));
+
+  // Check case where field is not unique
+  auto c = a;
+  c /= 5.0;
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(a, 0.5));
+  EXPECT_TRUE(IsField3DEqualBoutReal(c, 0.1));
 }
 
 TEST_F(Field3DTest, DivideEqualsField2D) {
@@ -992,6 +1062,13 @@ TEST_F(Field3DTest, DivideEqualsField2D) {
   a /= b;
 
   EXPECT_TRUE(IsField3DEqualBoutReal(a, 2.0));
+
+  // Check case where field is not unique
+  auto c = a;
+  c /= b;
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(a, 2.0));
+  EXPECT_TRUE(IsField3DEqualBoutReal(c, 0.8));
 }
 
 TEST_F(Field3DTest, DivideEqualsField3D) {
@@ -1002,6 +1079,13 @@ TEST_F(Field3DTest, DivideEqualsField3D) {
   a /= b;
 
   EXPECT_TRUE(IsField3DEqualBoutReal(a, 2.0));
+
+  // Check case where field is not unique
+  auto c = a;
+  c /= b;
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(a, 2.0));
+  EXPECT_TRUE(IsField3DEqualBoutReal(c, 0.8));
 }
 
 TEST_F(Field3DTest, DivideField3DBoutReal) {
