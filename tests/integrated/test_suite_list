@@ -7,6 +7,7 @@ test-fieldfactory
 test-restarting
 test-laplace
 test-cyclic
+test-multigrid_laplace
 test-invpar
 test-smooth
 test-region-iterator
