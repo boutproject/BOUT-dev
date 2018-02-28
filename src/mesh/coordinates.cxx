@@ -646,8 +646,7 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
   Matrix<dcomplex> delft(localmesh->LocalNx, ncz / 2 + 1);
   Matrix<dcomplex> ft(localmesh->LocalNx, ncz / 2 + 1);
 
-  Laplacian *d2lap = Laplacian::defaultInstance();
-  
+  static Laplacian *d2lap = Laplacian::defaultInstance();
   d2lap->calcLaplaceCoefs();
 
   // Loop over all y indices
@@ -664,11 +663,10 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
     #pragma omp parallel for
     for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
 
-      //dcomplex a, b, c;
-
       for (int jz = 0; jz <= ncz / 2; jz++) {
 
         delft(jx, jz) = d2lap->a[jy][jx][jz] * ft(jx - 1, jz) + d2lap->b[jy][jx][jz] * ft(jx, jz) + d2lap->c[jy][jx][jz] * ft(jx + 1, jz);
+        //delft(jx, jz) = d2lap->a(jy,jx,jz) * ft(jx - 1, jz) + d2lap->b(jy,jx,jz) * ft(jx, jz) + d2lap->c(jy,jx,jz) * ft(jx + 1, jz);
       }
     }
 

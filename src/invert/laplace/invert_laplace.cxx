@@ -112,6 +112,7 @@ Laplacian* Laplacian::create(Options *opts) {
 Laplacian* Laplacian::instance = NULL;
 
 Laplacian* Laplacian::defaultInstance() {
+  SCOREP0();
   if(instance == NULL)
     instance = create();
   return instance;
@@ -707,58 +708,70 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
 }
 
 void Laplacian::calcLaplaceCoefs() {
+  SCOREP0();
   TRACE("Laplacian::calcLaplaceCoefs");
 
-  int nx = mesh->LocalNx;
-  int ny = mesh->LocalNy;
-  int nz = mesh->LocalNz;
-  //int nz = mesh->LocalNz/2 + 1;
+  static bool initialized = false;
+  
+  if( !initialized ){
 
-  // Allocate memory
-///  auto a = Tensor<dcomplex>(ny, nx, nz);
-///  auto b = Tensor<dcomplex>(ny, nx, nz);
-///  auto c = Tensor<dcomplex>(ny, nx, nz);
-///  Tensor<dcomplex> a(ny, nx, nz);
-///  Tensor<dcomplex> b(ny, nx, nz);
-///  Tensor<dcomplex> c(ny, nx, nz);
-///  //output << "\t " << a.shape() << "\n";
-///  output.write("\t%i,%i,%i\n",ny,nx,nz);
-//
-  a.resize(ny);
-  b.resize(ny);
-  c.resize(ny);
+    output.write("\t initializing laplace coeffs\n");
+    int nx = mesh->LocalNx;
+    int ny = mesh->LocalNy;
+    int nz = mesh->LocalNz;
+    //int nz = mesh->LocalNz/2 + 1;
 
-  for(int jy=0;jy<ny;jy++){
-    a[jy].resize(nx);
-    b[jy].resize(nx);
-    c[jy].resize(nx);
+    // Allocate memory
+  ///  auto a = Tensor<dcomplex>(ny, nx, nz);
+  ///  auto b = Tensor<dcomplex>(ny, nx, nz);
+  ///  auto c = Tensor<dcomplex>(ny, nx, nz);
+  ///  //output << "\t " << a.shape() << "\n";
+  ///  output.write("\t%i,%i,%i\n",ny,nx,nz);
+  //
 
-    for(int jx=0;jx<nx;jx++){
-      a[jy][jx].resize(nz);
-      b[jy][jx].resize(nz);
-      c[jy][jx].resize(nz);
-      
-    }
-  }
+    a.resize(ny);
+    b.resize(ny);
+    c.resize(ny);
 
+    for(int jy=0;jy<ny;jy++){
+      a[jy].resize(nx);
+      b[jy].resize(nx);
+      c[jy].resize(nx);
 
-  // compute coefficients
-  for (int jy = 0; jy < ny; jy++) {
-    for (int jx = 0; jx < nx; jx++) {
-      for (int jz = 0; jz < nz; jz++) {
-        laplace_tridag_coefs(jx, jy, jz, a[jy][jx][jz], b[jy][jx][jz], c[jy][jx][jz], NULL, NULL);
+      for(int jx=0;jx<nx;jx++){
+	a[jy][jx].resize(nz);
+	b[jy][jx].resize(nz);
+	c[jy][jx].resize(nz);
+	
       }
     }
-  }
 
-///  // compute coefficients
-///  for (int jy = 0; jy < ny; jy++) {
-///    for (int jx = 0; jx < nx; jx++) {
-///      for (int jz = 0; jz < nz; jz++) {
-///        laplace_tridag_coefs(jx, jy, jz, a(jy, jx, jz), b(jy, jx, jz), c(jy, jx, jz), NULL, NULL);
-///      }
-///    }
-///  }
+    //output.write(typeid(a[0][0][0]).name());
+    // compute coefficients
+    for (int jy = 0; jy < ny; jy++) {
+      for (int jx = 0; jx < nx; jx++) {
+	for (int jz = 0; jz < nz; jz++) {
+	  laplace_tridag_coefs(jx, jy, jz, a[jy][jx][jz], b[jy][jx][jz], c[jy][jx][jz], NULL, NULL);
+	}
+      }
+    }
+
+  ///  Tensor<dcomplex> a(ny, nx, nz);
+  ///  Tensor<dcomplex> b(ny, nx, nz);
+  ///  Tensor<dcomplex> c(ny, nx, nz);
+  ///  output.write(typeid(a(0,0,0)).name());
+  ///  // compute coefficients
+  ///  for (int jy = 0; jy < ny; jy++) {
+  ///    for (int jx = 0; jx < nx; jx++) {
+  ///      for (int jz = 0; jz < nz; jz++) {
+  ///        laplace_tridag_coefs(jx, jy, jz, a(jy, jx, jz), b(jy, jx, jz), c(jy, jx, jz), NULL, NULL);
+  ///      }
+  ///    }
+  ///  }
+  //
+
+  initialized = true;
+  }
 
 }
 
