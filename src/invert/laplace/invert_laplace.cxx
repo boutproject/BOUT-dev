@@ -724,19 +724,19 @@ void Laplacian::calcLaplaceCoefs() {
 ///  //output << "\t " << a.shape() << "\n";
 ///  output.write("\t%i,%i,%i\n",ny,nx,nz);
 //
-  a.resize(nx);
-  b.resize(nx);
-  c.resize(nx);
+  a.resize(ny);
+  b.resize(ny);
+  c.resize(ny);
 
-  for(int jx=0;jx<nx;jx++){
-    a[jx].resize(nx);
-    b[jx].resize(nx);
-    c[jx].resize(nx);
+  for(int jy=0;jy<ny;jy++){
+    a[jy].resize(nx);
+    b[jy].resize(nx);
+    c[jy].resize(nx);
 
-    for(int jy=0;jy<ny;jy++){
-      a[jx][jy].resize(nz);
-      b[jx][jy].resize(nz);
-      c[jx][jy].resize(nz);
+    for(int jx=0;jx<nx;jx++){
+      a[jy][jx].resize(nz);
+      b[jy][jx].resize(nz);
+      c[jy][jx].resize(nz);
       
     }
   }
@@ -746,7 +746,7 @@ void Laplacian::calcLaplaceCoefs() {
   for (int jy = 0; jy < ny; jy++) {
     for (int jx = 0; jx < nx; jx++) {
       for (int jz = 0; jz < nz; jz++) {
-        laplace_tridag_coefs(jx, jy, jz, a[jx][jy][jz], b[jx][jy][jz], c[jx][jy][jz], NULL, NULL);
+        laplace_tridag_coefs(jx, jy, jz, a[jy][jx][jz], b[jy][jx][jz], c[jy][jx][jz], NULL, NULL);
       }
     }
   }
