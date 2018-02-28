@@ -718,20 +718,47 @@ void Laplacian::calcLaplaceCoefs() {
 ///  auto a = Tensor<dcomplex>(ny, nx, nz);
 ///  auto b = Tensor<dcomplex>(ny, nx, nz);
 ///  auto c = Tensor<dcomplex>(ny, nx, nz);
-  Tensor<dcomplex> a(ny, nx, nz);
-  Tensor<dcomplex> b(ny, nx, nz);
-  Tensor<dcomplex> c(ny, nx, nz);
-  //output << "\t " << a.shape() << "\n";
-  output.write("\t%i,%i,%i\n",ny,nx,nz);
+///  Tensor<dcomplex> a(ny, nx, nz);
+///  Tensor<dcomplex> b(ny, nx, nz);
+///  Tensor<dcomplex> c(ny, nx, nz);
+///  //output << "\t " << a.shape() << "\n";
+///  output.write("\t%i,%i,%i\n",ny,nx,nz);
+//
+  a.resize(nx);
+  b.resize(nx);
+  c.resize(nx);
+
+  for(int jx=0;jx<nx;jx++){
+    a[jx].resize(nx);
+    b[jx].resize(nx);
+    c[jx].resize(nx);
+
+    for(int jy=0;jy<ny;jy++){
+      a[jx][jy].resize(nz);
+      b[jx][jy].resize(nz);
+      c[jx][jy].resize(nz);
+      
+    }
+  }
+
 
   // compute coefficients
   for (int jy = 0; jy < ny; jy++) {
     for (int jx = 0; jx < nx; jx++) {
       for (int jz = 0; jz < nz; jz++) {
-        laplace_tridag_coefs(jx, jy, jz, a(jy, jx, jz), b(jy, jx, jz), c(jy, jx, jz), NULL, NULL);
+        laplace_tridag_coefs(jx, jy, jz, a[jx][jy][jz], b[jx][jy][jz], c[jx][jy][jz], NULL, NULL);
       }
     }
   }
+
+///  // compute coefficients
+///  for (int jy = 0; jy < ny; jy++) {
+///    for (int jx = 0; jx < nx; jx++) {
+///      for (int jz = 0; jz < nz; jz++) {
+///        laplace_tridag_coefs(jx, jy, jz, a(jy, jx, jz), b(jy, jx, jz), c(jy, jx, jz), NULL, NULL);
+///      }
+///    }
+///  }
 
 }
 

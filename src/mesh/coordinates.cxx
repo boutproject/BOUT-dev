@@ -668,12 +668,7 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
 
       for (int jz = 0; jz <= ncz / 2; jz++) {
 
-
-	//output.write("\ta(%i,%i,%i) = %e, %s\n", jy, jx, jz, d2lap->a(jy,jx,jz), typeid( d2lap->a(jy,jx,jz) ).name() );
-        //delft(jx, jz) = a(jy,jx,jz) * ft(jx - 1, jz) + d2lap->b(jy,jx,jz) * ft(jx, jz) + d2lap->c(jy,jx,jz) * ft(jx + 1, jz);
-  	output.write("\t%e\n",d2lap->a(jy,jx,jz));
-  
-        delft(jx, jz) = d2lap->a(jy,jx,jz) * ft(jx - 1, jz) + d2lap->b(jy,jx,jz) * ft(jx, jz) + d2lap->c(jy,jx,jz) * ft(jx + 1, jz);
+        delft(jx, jz) = d2lap->a[jx][jy][jz] * ft(jx - 1, jz) + d2lap->b[jx][jy][jz] * ft(jx, jz) + d2lap->c[jx][jy][jz] * ft(jx + 1, jz);
       }
     }
 
