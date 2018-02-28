@@ -173,8 +173,8 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt) :
 
   // Set up Multigrid Cycle
 
-  x = new BoutReal[(Nx_local+2)*(Nz_local+2)];
-  b = new BoutReal[(Nx_local+2)*(Nz_local+2)];
+  x = Array<BoutReal>((Nx_local + 2) * (Nz_local + 2));
+  b = Array<BoutReal>((Nx_local + 2) * (Nz_local + 2));
 
   if (mgcount == 0) {  
     output<<" Smoothing type is ";
@@ -200,8 +200,6 @@ BOUT_OMP(master)
 
 LaplaceMultigrid::~LaplaceMultigrid() {
   // Finalize, deallocate memory, etc.
-  delete [] x;
-  delete [] b;
   kMG->cleanMem();
   kMG->cleanS();
   kMG = NULL;
@@ -419,7 +417,7 @@ BOUT_OMP(for)
   }
   t0 = MPI_Wtime();
 
-  kMG->getSolution(x,b,0);
+  kMG->getSolution(std::begin(x), std::begin(b), 0);
 
   t1 = MPI_Wtime();
   if((mgcount == 300) && (tcheck != pcheck)) tcheck = pcheck;
