@@ -271,18 +271,21 @@ CELL_LOC Field3D::getLocation() const {
  ***************************************************************/
 
 const DataIterator Field3D::iterator() const {
+  SCOREP0();
   return DataIterator(0, nx-1, 
                       0, ny-1,
                       0, nz-1);
 }
 
 const DataIterator Field3D::begin() const {
+  SCOREP0();
   return DataIterator(0, nx-1, 
                       0, ny-1,
                       0, nz-1);
 }
 
 const DataIterator Field3D::end() const {
+  SCOREP0();
   // end() iterator should be one past the last element
   return DataIterator(0, nx-1, 
                       0, ny-1,
@@ -290,6 +293,7 @@ const DataIterator Field3D::end() const {
 }
 
 const IndexRange Field3D::region(REGION rgn) const {
+  SCOREP0();
   switch(rgn) {
   case RGN_ALL: {
     return IndexRange{0, nx-1,
@@ -678,6 +682,7 @@ void Field3D::applyParallelBoundary(const string &region, const string &conditio
 Field3D operator-(const Field3D &f) { return -1.0 * f; }
 
 #define F3D_OP_FPERP(op)                                                                 \
+  SCOREP0();                                                                             \
   FieldPerp operator op(const Field3D &lhs, const FieldPerp &rhs) {                      \
     FieldPerp result;                                                                    \
     result.allocate();                                                                   \
@@ -834,6 +839,7 @@ BoutReal max(const Field3D &f, bool allpe) {
 
 #define F3D_FUNC(name, func)                                                             \
   const Field3D name(const Field3D &f) {                                                 \
+    SCOREP0();                                                                           \
     TRACE(#name "(Field3D)");                                                            \
     /* Check if the input is allocated */                                                \
     ASSERT1(f.isAllocated());                                                            \
@@ -865,8 +871,8 @@ F3D_FUNC(cosh, ::cosh);
 F3D_FUNC(tanh, ::tanh);
 
 const Field3D filter(const Field3D &var, int N0) {
-  TRACE("filter(Field3D, int)");
   SCOREP0();
+  TRACE("filter(Field3D, int)");
   
   ASSERT1(var.isAllocated());
 

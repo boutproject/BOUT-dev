@@ -40,6 +40,7 @@
 
 #include <bout/array.hxx>
 #include <bout/scorepwrapper.hxx>
+#include <scorep/SCOREP_User.h>
 
 // Static member variables
 
@@ -1259,10 +1260,17 @@ void Solver::setSplitOperator(rhsfunc fC, rhsfunc fD) {
 int Solver::run_rhs(BoutReal t) {
   SCOREP0()
   int status;
-  
+
+//SCOREP_USER_REGION_DEFINE(timer_rgn)
+//SCOREP_USER_REGION_BEGIN(timer_rgn, "Timer", SCOREP_USER_REGION_TYPE_COMMON)
   Timer timer("rhs");
+//SCOREP_USER_REGION_END(timer_rgn)
+  
+
   
   if(split_operator) {
+//SCOREP_USER_REGION_DEFINE(split_operator_rgn);
+//SCOREP_USER_REGION_BEGIN(split_operator_rgn, "split_operator",SCOREP_USER_REGION_TYPE_COMMON);
     // Run both parts
     
     int nv = getLocalN();
@@ -1290,21 +1298,31 @@ int Solver::run_rhs(BoutReal t) {
     for(BoutReal *t = tmp.begin(), *t2 = tmp2.begin(); t != tmp.end(); ++t, ++t2)
       *t += *t2;
     load_derivs(tmp.begin()); // Put back time-derivatives
+//SCOREP_USER_REGION_END(split_operator_rgn);
   }else {
+//SCOREP_USER_REGION_DEFINE(not_split_operator_rgn);
+//SCOREP_USER_REGION_BEGIN(not_split_operator_rgn, "split_operator",SCOREP_USER_REGION_TYPE_COMMON);
     pre_rhs(t);
     if(model) {
       status = model->runRHS(t);
     }else
       status = (*phys_run)(t);
     post_rhs(t);
+//SCOREP_USER_REGION_END(not_split_operator_rgn);
   }
 
+//SCOREP_USER_REGION_DEFINE(mms_sources_rgn);
+//SCOREP_USER_REGION_BEGIN(mms_sources_rgn, "add rhs counters",SCOREP_USER_REGION_TYPE_COMMON);
   // If using Method of Manufactured Solutions
   add_mms_sources(t);
+//SCOREP_USER_REGION_END(mms_sources_rgn);
 
+//SCOREP_USER_REGION_DEFINE(rhs_rgn);
+//SCOREP_USER_REGION_BEGIN(rhs_rgn, "add rhs counters",SCOREP_USER_REGION_TYPE_COMMON);
   rhs_ncalls++;
   rhs_ncalls_e++;
   rhs_ncalls_i++;
+//SCOREP_USER_REGION_END(rhs_rgn);
   return status;
 }
 

@@ -32,14 +32,17 @@
 #include "bout/constants.hxx"
 
 #include "fieldgenerators.hxx"
+#include <bout/scorepwrapper.hxx>
 
 /// Helper function to create a FieldValue generator from a BoutReal
 std::shared_ptr<FieldGenerator> generator(BoutReal value) {
+  SCOREP0();
   return std::shared_ptr<FieldGenerator>( new FieldValue(value));
 }
 
 /// Helper function to create a FieldValuePtr from a pointer to BoutReal
 std::shared_ptr<FieldGenerator> generator(BoutReal *ptr) {
+  SCOREP0();
   return std::shared_ptr<FieldGenerator>( new FieldValuePtr(ptr));
 }
 
@@ -48,6 +51,7 @@ std::shared_ptr<FieldGenerator> generator(BoutReal *ptr) {
 
 FieldFactory::FieldFactory(Mesh * localmesh, Options *opt) : fieldmesh(localmesh), options(opt) {
 
+  SCOREP0();
   if(options == NULL)
     options = Options::getRoot();
 
@@ -100,6 +104,7 @@ const Field2D FieldFactory::create2D(const string &value, Options *opt,
                                      Mesh *localmesh, CELL_LOC loc,
                                      BoutReal t) {
 
+  SCOREP0();
   if(localmesh == nullptr)
     localmesh = fieldmesh;
   if(localmesh == nullptr)
@@ -159,6 +164,7 @@ const Field2D FieldFactory::create2D(const string &value, Options *opt,
 const Field3D FieldFactory::create3D(const string &value, Options *opt,
                                      Mesh *localmesh, CELL_LOC loc,
                                      BoutReal t) {
+  SCOREP0();
 
   if(localmesh == nullptr)
     localmesh = fieldmesh;
@@ -234,6 +240,7 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt,
 }
 
 Options* FieldFactory::findOption(Options *opt, const string &name, string &val) {
+  SCOREP0();
   // Find an Options object which contains the given name
 
   Options *result = opt;
@@ -279,6 +286,7 @@ Options* FieldFactory::findOption(Options *opt, const string &name, string &val)
 }
 
 std::shared_ptr<FieldGenerator> FieldFactory::resolve(string &name) {
+  SCOREP0();
   if(options) {
     // Check if in cache
     string key;
@@ -338,6 +346,7 @@ std::shared_ptr<FieldGenerator> FieldFactory::resolve(string &name) {
 }
 
 std::shared_ptr<FieldGenerator> FieldFactory::parse(const string &input, Options *opt) {
+  SCOREP0();
 
   // Check if in the cache
   string key = string("#") + input;
@@ -370,11 +379,13 @@ std::shared_ptr<FieldGenerator> FieldFactory::parse(const string &input, Options
 }
 
 FieldFactory* FieldFactory::get() {
+  SCOREP0();
   static FieldFactory instance(NULL, Options::getRoot());
 
   return &instance;
 }
 
 void FieldFactory::cleanCache() {
+  SCOREP0();
   cache.clear();
 }

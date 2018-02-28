@@ -40,6 +40,7 @@
 #include <bout/sys/timer.hxx>
 #include <bout/constants.hxx>
 #include <output.hxx>
+#include <bout/scorepwrapper.hxx>
 
 #include "cyclic_laplace.hxx"
 
@@ -101,6 +102,8 @@ LaplaceCyclic::~LaplaceCyclic() {
 }
 
 const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) {
+  SCOREP0();
+
   Mesh *mesh = rhs.getMesh();
   FieldPerp x(mesh); // Result
   x.allocate();

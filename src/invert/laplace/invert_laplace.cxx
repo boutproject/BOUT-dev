@@ -106,6 +106,7 @@ Laplacian* Laplacian::create(Options *opts) {
   // 2. createLaplacian() is accessing this instance and returning a Laplacian
   //    form one of the child classes of the Laplacian (the laplace solver
   //    implementations)
+  SCOREP0();
   return LaplaceFactory::getInstance()->createLaplacian(opts);
 }
 

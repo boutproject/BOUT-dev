@@ -509,11 +509,18 @@ int Coordinates::jacobian() {
  *
  *******************************************************************************/
 
-const Field2D Coordinates::DDX(const Field2D &f) { return localmesh->indexDDX(f) / dx; }
+const Field2D Coordinates::DDX(const Field2D &f) { 
+  SCOREP0();
+  return localmesh->indexDDX(f) / dx; 
+}
 
-const Field2D Coordinates::DDY(const Field2D &f) { return localmesh->indexDDY(f) / dy; }
+const Field2D Coordinates::DDY(const Field2D &f) { 
+  SCOREP0();
+  return localmesh->indexDDY(f) / dy; 
+}
 
 const Field2D Coordinates::DDZ(const Field2D &UNUSED(f)) {
+  SCOREP0();
   return Field2D(0.0, localmesh);
 }
 
@@ -524,6 +531,7 @@ const Field2D Coordinates::DDZ(const Field2D &UNUSED(f)) {
 
 const Field2D Coordinates::Grad_par(const Field2D &var, CELL_LOC UNUSED(outloc),
                                     DIFF_METHOD UNUSED(method)) {
+  SCOREP0();
   TRACE("Coordinates::Grad_par( Field2D )");
 
   return DDY(var) / sqrt(g_22);
@@ -531,6 +539,7 @@ const Field2D Coordinates::Grad_par(const Field2D &var, CELL_LOC UNUSED(outloc),
 
 const Field3D Coordinates::Grad_par(const Field3D &var, CELL_LOC outloc,
                                     DIFF_METHOD method) {
+  SCOREP0();
   TRACE("Coordinates::Grad_par( Field3D )");
 
   return ::DDY(var, outloc, method) / sqrt(g_22);
@@ -543,11 +552,13 @@ const Field3D Coordinates::Grad_par(const Field3D &var, CELL_LOC outloc,
 const Field2D Coordinates::Vpar_Grad_par(const Field2D &v, const Field2D &f,
                                          CELL_LOC UNUSED(outloc),
                                          DIFF_METHOD UNUSED(method)) {
+  SCOREP0();
   return VDDY(v, f) / sqrt(g_22);
 }
 
 const Field3D Coordinates::Vpar_Grad_par(const Field3D &v, const Field3D &f, CELL_LOC outloc,
                                          DIFF_METHOD method) {
+  SCOREP0();
   return VDDY(v, f, outloc, method) / sqrt(g_22);
 }
 
@@ -556,12 +567,14 @@ const Field3D Coordinates::Vpar_Grad_par(const Field3D &v, const Field3D &f, CEL
 
 const Field2D Coordinates::Div_par(const Field2D &f, CELL_LOC UNUSED(outloc),
                                    DIFF_METHOD UNUSED(method)) {
+  SCOREP0();
   TRACE("Coordinates::Div_par( Field2D )");
   return Bxy * Grad_par(f / Bxy);
 }
 
 const Field3D Coordinates::Div_par(const Field3D &f, CELL_LOC outloc,
                                    DIFF_METHOD method) {
+  SCOREP0();
   TRACE("Coordinates::Div_par( Field3D )");
 
   if (f.hasYupYdown()) {
@@ -589,6 +602,7 @@ const Field3D Coordinates::Div_par(const Field3D &f, CELL_LOC outloc,
 // Note: For parallel Laplacian use Laplace_par
 
 const Field2D Coordinates::Grad2_par2(const Field2D &f) {
+  SCOREP0();
   TRACE("Coordinates::Grad2_par2( Field2D )");
 
   Field2D sg = sqrt(g_22);
@@ -598,6 +612,7 @@ const Field2D Coordinates::Grad2_par2(const Field2D &f) {
 }
 
 const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc) {
+  SCOREP0();
   TRACE("Coordinates::Grad2_par2( Field3D )");
 
   Field2D sg(localmesh);
@@ -749,16 +764,19 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
 }
 
 const Field2D Coordinates::Laplace_par(const Field2D &f) {
+  SCOREP0();
   return D2DY2(f) / g_22 + DDY(J / g_22) * DDY(f) / J;
 }
 
 const Field3D Coordinates::Laplace_par(const Field3D &f) {
+  SCOREP0();
   return D2DY2(f) / g_22 + DDY(J / g_22) * ::DDY(f) / J;
 }
 
 // Full Laplacian operator on scalar field
 
 const Field2D Coordinates::Laplace(const Field2D &f) {
+  SCOREP0();
   TRACE("Coordinates::Laplace( Field2D )");
 
   Field2D result =
@@ -768,6 +786,7 @@ const Field2D Coordinates::Laplace(const Field2D &f) {
 }
 
 const Field3D Coordinates::Laplace(const Field3D &f) {
+  SCOREP0();
   TRACE("Coordinates::Laplace( Field3D )");
 
   Field3D result = G1 * ::DDX(f) + G2 * ::DDY(f) + G3 * ::DDZ(f) + g11 * D2DX2(f) +

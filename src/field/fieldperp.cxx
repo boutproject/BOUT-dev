@@ -32,8 +32,10 @@
 #include <utils.hxx>
 #include <boutexception.hxx>
 #include <msg_stack.hxx>
+#include <bout/scorepwrapper.hxx>
 
 FieldPerp::FieldPerp(Mesh *localmesh) {
+  SCOREP0();
   // Get mesh size
   fieldmesh = localmesh;
   if (localmesh) {
@@ -56,6 +58,7 @@ FieldPerp::FieldPerp(Mesh *localmesh) {
  ***************************************************************/
 
 FieldPerp & FieldPerp::operator=(const FieldPerp &rhs) {
+  SCOREP0();
   nx = rhs.nx;
   nz = rhs.nz;
   yindex = rhs.yindex;
@@ -64,6 +67,7 @@ FieldPerp & FieldPerp::operator=(const FieldPerp &rhs) {
 }
 
 FieldPerp & FieldPerp::operator=(const BoutReal rhs) {
+  SCOREP0();
   allocate();
 
   for(auto&& d : data) {
@@ -78,12 +82,14 @@ FieldPerp & FieldPerp::operator=(const BoutReal rhs) {
  ***************************************************************/
 
 const DataIterator FieldPerp::begin() const {
+  SCOREP0();
   return DataIterator( 0, nx-1,
                       yindex, yindex,
                       0, nz-1);
 }
 
 const DataIterator FieldPerp::end() const {
+  SCOREP0();
   return DataIterator( 0, nx-1,
                       yindex, yindex,
 		       0, nz-1,DI_GET_END);
@@ -96,6 +102,7 @@ const DataIterator FieldPerp::end() const {
 
 #define FPERP_OP_FIELD(op, bop, ftype)			\
   FieldPerp& FieldPerp::operator op(const ftype &rhs) { \
+    SCOREP0();                                          \
     if(data.unique()) {                                 \
       /* Only reference to the data */			\
       for(int i=0;i<nx;i++)                             \
@@ -126,6 +133,7 @@ FPERP_OP_FIELD(/=, /, Field2D);
 
 #define FPERP_OP_REAL(op, bop)  			\
   FieldPerp& FieldPerp::operator op(BoutReal rhs) { \
+    SCOREP0();                                          \
     if(data.unique()) {                                 \
       /* Only reference to the data */           	\
       for(int i=0;i<nx;i++)                             \
@@ -148,6 +156,7 @@ FPERP_OP_REAL(/=, /);
 // Operator on FieldPerp and another field
 #define FPERP_FPERP_OP_FIELD(op, ftype)                                                  \
   const FieldPerp operator op(const FieldPerp &lhs, const ftype &rhs) {                  \
+    SCOREP0();                                                                           \
     FieldPerp result(lhs.getMesh());                                                     \
     result.allocate();                                                                   \
                                                                                          \
@@ -179,6 +188,7 @@ FPERP_FPERP_OP_FIELD(/, Field2D);
 // Operator on FieldPerp and BoutReal
 #define FPERP_FPERP_OP_REAL(op)                                                          \
   const FieldPerp operator op(const FieldPerp &lhs, BoutReal rhs) {                      \
+    SCOREP0();                                                                           \
     FieldPerp result(lhs.getMesh());                                                     \
     result.allocate();                                                                   \
                                                                                          \
@@ -198,6 +208,7 @@ FPERP_FPERP_OP_REAL(/);
 
 #define FPERP_REAL_OP_FPERP(op)                                                          \
   const FieldPerp operator op(BoutReal lhs, const FieldPerp &rhs) {                      \
+    SCOREP0();                                                                           \
     FieldPerp result(rhs.getMesh());                                                     \
     result.allocate();                                                                   \
                                                                                          \
@@ -215,12 +226,14 @@ FPERP_REAL_OP_FPERP(-);
 FPERP_REAL_OP_FPERP(/);
 
 const FieldPerp copy(const FieldPerp &f) {
+  SCOREP0();
   FieldPerp fcopy = f;
   fcopy.allocate();
   return fcopy;
 }
 
 const FieldPerp sliceXZ(const Field3D& f, int y) {
+  SCOREP0();
   // Source field should be valid
   ASSERT1(f.isAllocated());
 

@@ -44,6 +44,7 @@
 #include <output.hxx>
 
 #include <bout/assert.hxx>
+#include <bout/scorepwrapper.hxx>
 
 Field2D::Field2D(Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
 
@@ -104,6 +105,7 @@ Field2D::~Field2D() {
 }
 
 void Field2D::allocate() {
+  SCOREP0();
   if(data.empty()) {
     if(!fieldmesh) {
       /// If no mesh, use the global
@@ -117,6 +119,7 @@ void Field2D::allocate() {
 }
 
 Field2D* Field2D::timeDeriv() {
+  SCOREP0();
   if(deriv == nullptr)
     deriv = new Field2D(fieldmesh);
   return deriv;
@@ -171,6 +174,7 @@ const IndexRange Field2D::region(REGION rgn) const {
 ///////////// OPERATORS ////////////////
 
 Field2D &Field2D::operator=(const Field2D &rhs) {
+  SCOREP0();
   // Check for self-assignment
   if (this == &rhs)
     return (*this); // skip this assignment
@@ -195,6 +199,7 @@ Field2D &Field2D::operator=(const Field2D &rhs) {
 }
 
 Field2D &Field2D::operator=(const BoutReal rhs) {
+  SCOREP0();
 #ifdef TRACK
   name = "<r2D>";
 #endif
@@ -262,6 +267,7 @@ void Field2D::setYArray(int x, int UNUSED(z), const rvec &yv) {
 ///////////////////// BOUNDARY CONDITIONS //////////////////
 
 void Field2D::applyBoundary(bool init) {
+  SCOREP0();
   TRACE("Field2D::applyBoundary()");
 
 #if CHECK > 0
@@ -280,6 +286,7 @@ void Field2D::applyBoundary(bool init) {
 }
 
 void Field2D::applyBoundary(const string &condition) {
+  SCOREP0();
   TRACE("Field2D::applyBoundary(condition)");
 
   ASSERT1(isAllocated());
@@ -314,6 +321,7 @@ void Field2D::applyBoundary(const string &condition) {
 }
 
 void Field2D::applyBoundary(const string &region, const string &condition) {
+  SCOREP0();
   ASSERT1(isAllocated());
 
   /// Get the boundary factory (singleton)
@@ -349,6 +357,7 @@ void Field2D::applyBoundary(const string &region, const string &condition) {
 }
 
 void Field2D::applyTDerivBoundary() {
+  SCOREP0();
   TRACE("Field2D::applyTDerivBoundary()");
 
   ASSERT1(isAllocated());
@@ -360,6 +369,7 @@ void Field2D::applyTDerivBoundary() {
 }
 
 void Field2D::setBoundaryTo(const Field2D &f2d) {
+  SCOREP0();
   TRACE("Field2D::setBoundary(const Field2D&)");
   allocate(); // Make sure data allocated
 
@@ -380,11 +390,15 @@ void Field2D::setBoundaryTo(const Field2D &f2d) {
 ////////////// NON-MEMBER OVERLOADED OPERATORS //////////////
 
 // Unary minus
-Field2D operator-(const Field2D &f) { return -1.0 * f; }
+Field2D operator-(const Field2D &f) { 
+  SCOREP0();
+  return -1.0 * f; 
+}
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
 BoutReal min(const Field2D &f, bool allpe) {
+  SCOREP0();
   TRACE("Field2D::Min() %s",allpe? "over all PEs" : "");
 
   ASSERT2(f.isAllocated());
@@ -405,6 +419,7 @@ BoutReal min(const Field2D &f, bool allpe) {
 }
 
 BoutReal max(const Field2D &f, bool allpe) {
+  SCOREP0();
   TRACE("Field2D::Max() %s",allpe? "over all PEs" : "");
 
   ASSERT2(f.isAllocated());
@@ -425,6 +440,7 @@ BoutReal max(const Field2D &f, bool allpe) {
 }
 
 bool finite(const Field2D &f) {
+  SCOREP0();
   TRACE("finite(Field2D)");
 
   if (!f.isAllocated()) {
@@ -460,6 +476,7 @@ bool finite(const Field2D &f) {
  */
 #define F2D_FUNC(name, func)                                                             \
   const Field2D name(const Field2D &f) {                                                 \
+    SCOREP0();                                                                           \
     TRACE(#name "(Field2D)");                                                            \
     /* Check if the input is allocated */                                                \
     ASSERT1(f.isAllocated());                                                            \
@@ -491,12 +508,14 @@ F2D_FUNC(cosh, ::cosh);
 F2D_FUNC(tanh, ::tanh);
 
 const Field2D copy(const Field2D &f) {
+  SCOREP0();
   Field2D result = f;
   result.allocate();
   return result;
 }
 
 const Field2D floor(const Field2D &var, BoutReal f) {
+  SCOREP0();
   Field2D result = copy(var);
 
   for(const auto& d : result)
@@ -507,6 +526,7 @@ const Field2D floor(const Field2D &var, BoutReal f) {
 }
 
 Field2D pow(const Field2D &lhs, const Field2D &rhs) {
+  SCOREP0();
   TRACE("pow(Field2D, Field2D)");
   // Check if the inputs are allocated
   ASSERT1(lhs.isAllocated());
@@ -526,6 +546,7 @@ Field2D pow(const Field2D &lhs, const Field2D &rhs) {
 }
 
 Field2D pow(const Field2D &lhs, BoutReal rhs) {
+  SCOREP0();
   TRACE("pow(Field2D, BoutReal)");
   // Check if the inputs are allocated
   ASSERT1(lhs.isAllocated());
@@ -543,6 +564,7 @@ Field2D pow(const Field2D &lhs, BoutReal rhs) {
 }
 
 Field2D pow(BoutReal lhs, const Field2D &rhs) {
+  SCOREP0();
   TRACE("pow(lhs, Field2D)");
   // Check if the inputs are allocated
   ASSERT1(rhs.isAllocated());

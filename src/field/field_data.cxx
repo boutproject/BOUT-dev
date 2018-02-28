@@ -5,6 +5,7 @@
 #include <output.hxx>
 #include <field_factory.hxx>
 #include "unused.hxx"
+#include <bout/scorepwrapper.hxx>
 
 FieldData::FieldData() : boundaryIsCopy(false), boundaryIsSet(true) {
   
@@ -19,6 +20,7 @@ FieldData::~FieldData() {
 }
 
 void FieldData::setBoundary(const string &name) {
+  SCOREP0();
   /// Get the boundary factory (singleton)
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
   
