@@ -45,6 +45,13 @@
 
 #include <bout/assert.hxx>
 
+BoutReal& Field2D::operator[](const Ind3D &d) {
+    return data[d.ind/fieldmesh->LocalNz];
+  }
+const BoutReal& Field2D::operator[](const Ind3D &d) const {
+    return data[d.ind/fieldmesh->LocalNz];
+  }
+
 Field2D::Field2D(Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
 
   boundaryIsSet = false;

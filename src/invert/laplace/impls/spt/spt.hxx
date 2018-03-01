@@ -44,6 +44,7 @@ class LaplaceSPT;
 #include <invert_laplace.hxx>
 #include <dcomplex.hxx>
 #include <options.hxx>
+#include <utils.hxx>
 
 /// Simple parallelisation of the Thomas tridiagonal solver algorithm (serial code)
 /*!
@@ -96,18 +97,18 @@ private:
 
   /// Data structure for SPT algorithm
   struct SPT_data {
-    SPT_data() : bk(NULL), comm_tag(SPT_DATA) {}
+    SPT_data() : comm_tag(SPT_DATA) {}
     void allocate(int mm, int nx); // Allocates memory
-    ~SPT_data(); // Free memory
+    ~SPT_data(){}; // Free memory
     
     int jy; ///< Y index
     
-    dcomplex **bk;  ///< b vector in Fourier space
-    dcomplex **xk;
+    Matrix<dcomplex> bk;  ///< b vector in Fourier space
+    Matrix<dcomplex> xk;
 
-    dcomplex **gam;
+    Matrix<dcomplex> gam;
   
-    dcomplex **avec, **bvec, **cvec; ///< Diagonal bands of matrix
+    Matrix<dcomplex> avec, bvec, cvec; ///< Diagonal bands of matrix
 
     int proc; // Which processor has this reached?
     int dir;  // Which direction is it going?
@@ -116,14 +117,14 @@ private:
   
     int comm_tag; // Tag for communication
   
-    BoutReal *buffer;
+    Array<BoutReal> buffer;
   };
   
   int ys, ye;         // Range of Y indices
   SPT_data slicedata; // Used to solve for a single FieldPerp
   SPT_data* alldata;  // Used to solve a Field3D
 
-  dcomplex *dc1d; ///< 1D in Z for taking FFTs
+  Array<dcomplex> dc1d; ///< 1D in Z for taking FFTs
 
   void tridagForward(dcomplex *a, dcomplex *b, dcomplex *c,
                       dcomplex *r, dcomplex *u, int n,

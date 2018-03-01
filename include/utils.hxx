@@ -253,6 +253,10 @@ template <typename T> int invert3x3(Matrix<T> &a, BoutReal small = 1.0e-15) {
   return 0;
 };
 
+// Give signature here as not able to mark implementation below as DEPRECATED
+template <class T>
+DEPRECATED(T **matrix(int xsize, int ysize));
+
 /*!
  * Create a 2D array of \p xsize by \p ysize 
  * This is allocated as two blocks of data so that
