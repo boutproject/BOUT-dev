@@ -3,6 +3,7 @@ languages:
   cpp:
     extensions:
       - '*.hxx'
+      - '*.cxx'
 engines:
   coverage:
     enabled: true
