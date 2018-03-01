@@ -1,7 +1,7 @@
 # Makefile for the reference and user manuals
 .PHONY:all clean sphinx html pdf doxygen breathe-autogen
 
-BOUT_TOP=..
+BOUT_TOP?=..
 
 # Some distros may provide sphinx-build-3 and sphinx-build-2 instead
 # of sphinx-build. An automatic check would be helpful, but at least

@@ -13,6 +13,7 @@
 #include <iomanip>
 
 #include "bout/openmpwrap.hxx"
+#include "bout/region.hxx"
 
 typedef std::chrono::time_point<std::chrono::steady_clock> SteadyClock;
 typedef std::chrono::duration<double> Duration;
@@ -60,11 +61,19 @@ int main(int argc, char **argv) {
 
   //Raw C loop
   ITERATOR_TEST_BLOCK("C loop",
-		    for(int j=0;j<len;++j) {
-		      rd[j] = ad[j] + bd[j];
-		    };
+		      for(int j=0;j<len;++j) {
+			rd[j] = ad[j] + bd[j];
+		      };
+		      );
+#ifdef _OPENMP  
+  ITERATOR_TEST_BLOCK("C loop (omp)",
+		      BOUT_OMP(parallel for)
+		      for(int j=0;j<len;++j) {
+			rd[j] = ad[j] + bd[j];
+		      };
 		    );
-
+#endif
+  
   // Nested loops over block data
   ITERATOR_TEST_BLOCK("Nested loop",
 		    for(int i=0;i<mesh->LocalNx;++i) {
@@ -76,7 +85,19 @@ int main(int argc, char **argv) {
 		    }
 		    );
 
-
+#ifdef _OPENMP  
+  ITERATOR_TEST_BLOCK("Nested loop (omp)",
+		      BOUT_OMP(parallel for)
+		      for(int i=0;i<mesh->LocalNx;++i) {
+			for(int j=0;j<mesh->LocalNy;++j) {
+			  for(int k=0;k<mesh->LocalNz;++k) {
+			    result(i,j,k) = a(i,j,k) + b(i,j,k);
+			  }
+		      }
+		      }
+		      );
+#endif
+  
   // DataIterator using begin(), end()
   ITERATOR_TEST_BLOCK("DI begin/end",
 		    for(DataIterator i = std::begin(result), rend=std::end(result); i != rend; ++i){
@@ -118,7 +139,21 @@ int main(int argc, char **argv) {
 		    };
 		    );
 
-
+  // Region macro
+  ITERATOR_TEST_BLOCK(
+      "Region (serial)",
+      BLOCK_REGION_LOOP_SERIAL(mesh->getRegion("RGN_ALL"), i,
+			       result[i] = a[i] + b[i];
+			       );
+		      );
+#ifdef _OPENMP
+  ITERATOR_TEST_BLOCK("Region (omp)",
+		      BLOCK_REGION_LOOP(mesh->getRegion("RGN_ALL"), i,
+					result[i] = a[i] + b[i];
+					);
+		      );
+#endif
+  
   if(profileMode){
     int nthreads=0;
 #ifdef _OPENMP
