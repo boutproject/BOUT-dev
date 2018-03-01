@@ -3,8 +3,23 @@ languages:
   cpp:
     extensions:
       - '*.hxx'
-coverage:
-  enabled: true
-  exclude_paths:
-    - tests/**
-    - examples/**
+engines:
+  coverage:
+    enabled: true
+    exclude_paths:
+      - tests/**
+      - examples/**
+  bandit:
+    enabled: true
+    include_paths:
+      - tools/pylib/**
+  cppcheck:
+    enabled: true
+  pylint:
+    enable: true
+    include_paths:
+      - tools/pylib/**
+  prospector:
+    enable: true
+    include_paths:
+      - tools/pylib/**
