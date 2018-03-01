@@ -1596,7 +1596,8 @@ TEST_F(Field3DTest, Min) {
   const BoutReal min_value = 40.0;
 
   EXPECT_EQ(min(field, false), min_value);
-  EXPECT_EQ(min(field, false,RGN_ALL), -99.0);
+  EXPECT_EQ(min(field, false, RGN_ALL), -99.0);
+  EXPECT_EQ(min(field, true, RGN_ALL), -99.0);
 }
 
 TEST_F(Field3DTest, Max) {
@@ -1612,7 +1613,8 @@ TEST_F(Field3DTest, Max) {
   const BoutReal max_value = 60.0;
 
   EXPECT_EQ(max(field, false), max_value);
-  EXPECT_EQ(max(field, false,RGN_ALL), 99.0);
+  EXPECT_EQ(max(field, false, RGN_ALL), 99.0);
+  EXPECT_EQ(max(field, true, RGN_ALL), 99.0);
 }
 
 TEST_F(Field3DTest, DC) {
