@@ -72,7 +72,12 @@ matrix:
           - liblapack-dev
           - libsundials-serial-dev
     env:
-      - CONFIGURE_OPTIONS='--enable-code-coverage --enable-debug --enable-checks=3 --with-petsc --with-lapack --with-sundials --with-slepc --with-mumps --enable-openmp' OMP_NUM_THREADS=2 PETSC_DIR=/usr/lib/petscdir/3.4.2 PETSC_ARCH=linux-gnu-c-opt 
+      - CONFIGURE_OPTIONS='--enable-code-coverage --enable-debug --enable-checks=3 --with-petsc --with-lapack --with-sundials --with-slepc --with-mumps --enable-openmp'
+      - OMP_NUM_THREADS=2
+      - PETSC_DIR=/usr/lib/petscdir/3.4.2
+      - PETSC_ARCH=linux-gnu-c-opt
+      - SLEPC_DIR=/usr/lib/slepcdir/3.4.2
+      - SLEPC_ARCH=linux-gnu-c-opt
     script:
       - ./configure $CONFIGURE_OPTIONS
       - make -j 2 -k && make -j 2 -k check-unit-tests
