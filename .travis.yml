@@ -63,6 +63,7 @@ matrix:
           - libfftw3-dev
           - libnetcdf-dev
           - libhdf5-serial-dev
+          - libhdf5-mpi-dev
           - netcdf-bin
           - hdf5-tools
           - lcov
