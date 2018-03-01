@@ -821,6 +821,16 @@ TEST_F(Field3DTest, AssignFromBoutReal) {
   EXPECT_TRUE(IsField3DEqualBoutReal(field, 2.0));
 }
 
+TEST_F(Field3DTest, AssignFromInvalid) {
+  Field3D field;
+
+#if CHECK > 0
+  EXPECT_THROW(field = std::nan(""), BoutException);
+#else
+  EXPECT_NO_THROW(field = std::nan(""));
+#endif
+}
+
 TEST_F(Field3DTest, AssignFromField2D) {
   Field3D field;
   Field2D field2(2.0);
@@ -828,6 +838,37 @@ TEST_F(Field3DTest, AssignFromField2D) {
   field = field2;
 
   EXPECT_TRUE(IsField3DEqualBoutReal(field, 2.0));
+
+#if CHECK > 0
+  Field2D field3;
+  EXPECT_THROW(field = field3, BoutException);
+#endif
+}
+
+TEST_F(Field3DTest, AssignFromFieldPerp) {
+  Field3D field = 1.0;
+  // Note we have to pass the mesh to the FieldPerp constructor
+  // unlike other fields.
+  FieldPerp field2(mesh);
+  const int yindex = 2;
+  field2.setIndex(yindex);
+  field2 = 2.0;
+  field = field2;
+
+  for (const auto &i : field) {
+    if (i.y == yindex) {
+      EXPECT_EQ(field[i], 2.0);
+    } else {
+      EXPECT_EQ(field[i], 1.0);
+    }
+  }
+
+#if CHECK > 0
+  FieldPerp field3;
+  EXPECT_THROW(field = field3, BoutException);
+  FieldPerp field4(mesh);
+  EXPECT_THROW(field = field4, BoutException);
+#endif
 }
 
 TEST_F(Field3DTest, AssignFromField3D) {
@@ -837,6 +878,11 @@ TEST_F(Field3DTest, AssignFromField3D) {
   field = field2;
 
   EXPECT_TRUE(IsField3DEqualBoutReal(field, -99.0));
+
+#if CHECK > 0
+  Field3D field3;
+  EXPECT_THROW(field = field3, BoutException);
+#endif
 }
 
 //-------------------- Arithmetic tests --------------------
