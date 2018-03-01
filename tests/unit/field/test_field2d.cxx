@@ -388,6 +388,13 @@ TEST_F(Field2DTest, IterateOverRGN_NOY) {
   EXPECT_TRUE(region_indices == result_indices);
 }
 
+TEST_F(Field2DTest, IterateOverRGN_NOZ) {
+  Field2D field = 1.0;
+
+  // This is not a valid region for Field2D
+  EXPECT_THROW(field.region(RGN_NOZ), BoutException);
+}
+
 TEST_F(Field2DTest, Indexing) {
   Field2D field;
 
@@ -532,6 +539,16 @@ TEST_F(Field2DTest, AssignFromBoutReal) {
   field = 2.0;
 
   EXPECT_TRUE(IsField2DEqualBoutReal(field, 2.0));
+}
+
+TEST_F(Field2DTest, AssignFromInvalid) {
+  Field2D field;
+
+#if CHECK > 0
+  EXPECT_THROW(field = std::nan(""), BoutException);
+#else
+  EXPECT_NO_THROW(field = std::nan(""));
+#endif
 }
 
 TEST_F(Field2DTest, UnaryMinus) {
@@ -938,7 +955,8 @@ TEST_F(Field2DTest, Min) {
   const BoutReal min_value = 40.0;
 
   EXPECT_EQ(min(field, false), min_value);
-  EXPECT_EQ(min(field, false,RGN_ALL), -99.0);
+  EXPECT_EQ(min(field, false, RGN_ALL), -99.0);
+  EXPECT_EQ(min(field, true, RGN_ALL), -99.0);
 }
 
 TEST_F(Field2DTest, Max) {
@@ -954,5 +972,6 @@ TEST_F(Field2DTest, Max) {
   const BoutReal max_value = 60.0;
 
   EXPECT_EQ(max(field, false), max_value);
-  EXPECT_EQ(max(field, false,RGN_ALL), 99.0);
+  EXPECT_EQ(max(field, false, RGN_ALL), 99.0);
+  EXPECT_EQ(max(field, true, RGN_ALL), 99.0);
 }
