@@ -154,11 +154,6 @@ public:
   }
   int runTimestepMonitor(BoutReal simtime, BoutReal dt) {return timestepMonitor(simtime, dt);}
   
-  /// This is here temporarily for backwards compatibility
-  DEPRECATED(void addToRestart(BoutReal &var, const string &name)) {
-    // Add a variable to the restart file
-    restart.add(var, name.c_str(), 0);
-  }
 protected:
   
   // The init and rhs functions are implemented by user code to specify problem
