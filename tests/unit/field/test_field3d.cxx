@@ -158,6 +158,39 @@ TEST_F(Field3DTest, CreateOnNullMesh) {
 }
 #endif
 
+#if CHECK > 0 && CHECK <= 2
+// We only want to run this test in a certain range of CHECK as we're
+// checking some behaviour that is only enabled for CHECK above 0
+// but there are checks that will throw before reaching these lines if
+// check is greater than 2, so the test only makes sense in a certain range.
+TEST_F(Field3DTest, CreateCopyOnNullMesh) {
+  // Whilst the declaration of field below looks like it should create a Field2D
+  // without a mesh, it in fact will result in a Field2D associated with the
+  // global mesh as we end up calling the Field constructor that forces this.
+  // Hence, to test the case of copying a field without a mesh we have to
+  // temporarily hide the global mesh, before restoring it later.
+  auto old_mesh = mesh;
+  mesh = nullptr;
+
+  Field3D field;
+  // If CHECK > 2 then the following will throw due to the data
+  // block in field not being allocated. We can't allocate as that
+  // would force field to have a mesh associated with it.
+  Field3D field2(field);
+
+  EXPECT_EQ(field2.getNx(), -1);
+  EXPECT_EQ(field2.getNy(), -1);
+  EXPECT_EQ(field2.getNz(), -1);
+
+  mesh = old_mesh;
+  field2.allocate();
+
+  EXPECT_EQ(field2.getNx(), Field3DTest::nx);
+  EXPECT_EQ(field2.getNy(), Field3DTest::ny);
+  EXPECT_EQ(field2.getNz(), Field3DTest::nz);
+}
+#endif
+
 TEST_F(Field3DTest, TimeDeriv) {
   Field3D field;
 
@@ -555,6 +588,90 @@ TEST_F(Field3DTest, IterateOverRGN_NOY) {
   EXPECT_EQ(found_sentinels, num_sentinels);
   EXPECT_EQ(sum, ((nx * (ny - 2) * nz) - num_sentinels) + (num_sentinels * sentinel));
   EXPECT_TRUE(region_indices == result_indices);
+}
+
+TEST_F(Field3DTest, IterateOverRGN_NOZ) {
+  Field3D field = 1.0;
+
+  // This is not a valid region for Field3D
+  EXPECT_THROW(field.region(RGN_NOZ), BoutException);
+}
+
+TEST_F(Field3DTest, IterateOver2DRGN_ALL) {
+  Field3D field;
+  field.allocate();
+
+  for (const auto &i : field) {
+    field[i] = 1.0 + i.z;
+  }
+
+  BoutReal sum = 0.0;
+  for (const auto &i : field.region2D(RGN_ALL)) {
+    sum += field[i];
+    EXPECT_EQ(field[i], 1.0);
+    EXPECT_EQ(i.z, 0);
+  }
+
+  EXPECT_EQ(sum, nx * ny);
+}
+
+TEST_F(Field3DTest, IterateOver2DRGN_NOBNDRY) {
+  Field3D field;
+  field.allocate();
+
+  for (const auto &i : field) {
+    field[i] = 1.0 + i.z;
+  }
+
+  BoutReal sum = 0.0;
+  for (const auto &i : field.region2D(RGN_NOBNDRY)) {
+    sum += field[i];
+    EXPECT_EQ(field[i], 1.0);
+    EXPECT_EQ(i.z, 0);
+  }
+
+  EXPECT_EQ(sum, nx * ny - 2 * nx - 2 * (ny - 2));
+}
+
+TEST_F(Field3DTest, IterateOver2DRGN_NOX) {
+  Field3D field;
+  field.allocate();
+
+  for (const auto &i : field) {
+    field[i] = 1.0 + i.z;
+  }
+
+  BoutReal sum = 0.0;
+  for (const auto &i : field.region2D(RGN_NOX)) {
+    sum += field[i];
+    EXPECT_EQ(field[i], 1.0);
+    EXPECT_EQ(i.z, 0);
+  }
+
+  EXPECT_EQ(sum, nx * ny - 2 * ny);
+}
+
+TEST_F(Field3DTest, IterateOver2DRGN_NOY) {
+  Field3D field;
+  field.allocate();
+
+  for (const auto &i : field) {
+    field[i] = 1.0 + i.z;
+  }
+
+  BoutReal sum = 0.0;
+  for (const auto &i : field.region2D(RGN_NOY)) {
+    sum += field[i];
+    EXPECT_EQ(field[i], 1.0);
+    EXPECT_EQ(i.z, 0);
+  }
+
+  EXPECT_EQ(sum, nx * ny - 2 * nx);
+}
+
+TEST_F(Field3DTest, IterateOver2DRGN_NOZ) {
+  Field3D field = 1.0;
+  EXPECT_THROW(field.region2D(RGN_NOZ), BoutException);
 }
 
 TEST_F(Field3DTest, Indexing) {
