@@ -70,6 +70,10 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing 
                                      deriv(nullptr) {
   TRACE("Field2D(Field2D&)");
 
+#ifdef TRACK
+  name = rhs.name;
+#endif
+
 #if CHECK > 2
   checkData(f);
 #endif
@@ -86,7 +90,6 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing 
 #endif
 
   boundaryIsSet = false;
-  *this = f; //This line is probably not required as we init data from f.data above.
 }
 
 Field2D::Field2D(BoutReal val, Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
