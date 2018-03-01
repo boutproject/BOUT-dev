@@ -85,13 +85,13 @@ class Field {
   
   virtual bool bndryValid() {
     if(!bndry_xin)
-      error("Inner X guard cells not set\n");
+      throw BoutException("Inner X guard cells not set\n");
     if(!bndry_xout)
-      error("Outer X guard cells not set\n");
+      throw BoutException("Outer X guard cells not set\n");
     if(!bndry_yup)
-      error("Upper y guard cells not set\n");
+      throw BoutException("Upper y guard cells not set\n");
     if(!bndry_ydown)
-      error("Lower y guard cells not set\n");
+      throw BoutException("Lower y guard cells not set\n");
     return true;
   }
   
@@ -124,7 +124,7 @@ class Field {
   Mesh * fieldmesh;
   /// Supplies an error method. Currently just prints and exits, but
   /// should do something more cunning...
-  void error(const char *s, ...) const;
+  DEPRECATED(void error(const char *s, ...) const);
 };
 
 #endif /* __FIELD_H__ */
