@@ -57,15 +57,40 @@ matrix:
     #to remove this if a newer openmpi version is introduced.
   - addons:
       apt:
-        - openmpi-bin
-        - libopenmpi-dev
-        - libfftw3-dev
-        - libnetcdf-dev
-        - libhdf5-serial-dev
-        - netcdf-bin
-        - hdf5-tools
-        - lcov
-    env: CONFIGURE_OPTIONS='--enable-code-coverage --enable-debug --enable-checks=3'
+        packages:
+          - openmpi-bin
+          - libopenmpi-dev
+          - libfftw3-dev
+          - libnetcdf-dev
+          - libhdf5-serial-dev
+          - netcdf-bin
+          - hdf5-tools
+          - lcov
+          - libpetsc3.4.2-dev
+          - libslepc3.4.2-dev
+          - libmumps-dev
+          - liblapack-dev
+          - libsundials-serial-dev
+    env:
+      - CONFIGURE_OPTIONS='--enable-code-coverage --enable-debug --enable-checks=3 --with-petsc --with-lapack --with-sundials --with-slepc --with-mumps --enable-openmp' OMP_NUM_THREADS=2 PETSC_DIR=/usr/lib/petscdir/3.4.2 PETSC_ARCH=linux-gnu-c-opt 
+    script:
+      - ./configure $CONFIGURE_OPTIONS
+      - make -j 2 -k && make -j 2 -k check-unit-tests
+    after_success:
+      - bash <(curl -s https://codecov.io/bash)
+  - addons:
+      apt:
+        packages:
+          - openmpi-bin
+          - libopenmpi-dev
+          - libfftw3-dev
+          - libnetcdf-dev
+          - libhdf5-serial-dev
+          - netcdf-bin
+          - hdf5-tools
+          - lcov
+    env:
+      - CONFIGURE_OPTIONS='--enable-code-coverage --disable-debug --disable-checks'
     script:
       - ./configure $CONFIGURE_OPTIONS
       - make -j 2 -k && make -j 2 -k check-unit-tests
