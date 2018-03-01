@@ -647,7 +647,7 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
   Matrix<dcomplex> ft(localmesh->LocalNx, ncz / 2 + 1);
 
   static Laplacian *d2lap = Laplacian::defaultInstance();
-  d2lap->calcLaplaceCoefs();
+  d2lap->calcDelp2Coefs();
 
   // Loop over all y indices
   for (int jy = 0; jy < localmesh->LocalNy; jy++) {
@@ -665,8 +665,7 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
 
       for (int jz = 0; jz <= ncz / 2; jz++) {
 
-        delft(jx, jz) = d2lap->a[jy][jx][jz] * ft(jx - 1, jz) + d2lap->b[jy][jx][jz] * ft(jx, jz) + d2lap->c[jy][jx][jz] * ft(jx + 1, jz);
-        //delft(jx, jz) = d2lap->a(jy,jx,jz) * ft(jx - 1, jz) + d2lap->b(jy,jx,jz) * ft(jx, jz) + d2lap->c(jy,jx,jz) * ft(jx + 1, jz);
+        delft(jx, jz) = d2lap->a(jy,jx,jz) * ft(jx - 1, jz) + d2lap->b(jy,jx,jz) * ft(jx, jz) + d2lap->c(jy,jx,jz) * ft(jx + 1, jz);
       }
     }
 
@@ -710,7 +709,7 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
   auto ft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
   auto delft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
   Laplacian *d2lap = Laplacian::defaultInstance();
-  d2lap->calcLaplaceCoefs();
+  d2lap->calcDelp2Coefs();
 
   // Take forward FFT
   for (int jx = 0; jx < localmesh->LocalNx; jx++)
@@ -722,7 +721,7 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
     // No smoothing in the x direction
     for (int jx = 2; jx < (localmesh->LocalNx - 2); jx++) {
       // Perform x derivative
-      //delft(jx, jz) = d2lap->a(jy,jx,jz) * ft(jx - 1, jz) + d2lap->b(jy,jx,jz) * ft(jx, jz) + d2lap->c(jy,jx,jz) * ft(jx + 1, jz);
+      delft(jx, jz) = d2lap->a(jy,jx,jz) * ft(jx - 1, jz) + d2lap->b(jy,jx,jz) * ft(jx, jz) + d2lap->c(jy,jx,jz) * ft(jx + 1, jz);
     }
   }
 
