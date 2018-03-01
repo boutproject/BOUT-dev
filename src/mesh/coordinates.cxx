@@ -656,32 +656,34 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
   int ncz = localmesh->LocalNz;
 
   // Allocate memory
-  auto ft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
-  auto delft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
+  Matrix<dcomplex> delft(localmesh->LocalNx, ncz / 2 + 1);
+  Matrix<dcomplex> ft(localmesh->LocalNx, ncz / 2 + 1);
+
+  static Laplacian *d2lap = Laplacian::defaultInstance();
+  d2lap->calcDelp2Coefs();
 
   // Loop over all y indices
   for (int jy = 0; jy < localmesh->LocalNy; jy++) {
 
     // Take forward FFT
 
+    #pragma omp parallel for
     for (int jx = 0; jx < localmesh->LocalNx; jx++)
       rfft(&f(jx, jy, 0), ncz, &ft(jx, 0));
 
-    // Loop over kz
-    for (int jz = 0; jz <= ncz / 2; jz++) {
-      dcomplex a, b, c;
+    // Perform x derivative
+    // No smoothing in the x direction
+    #pragma omp parallel for
+    for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
 
-      // No smoothing in the x direction
-      for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
-        // Perform x derivative
+      for (int jz = 0; jz <= ncz / 2; jz++) {
 
-        laplace_tridag_coefs(jx, jy, jz, a, b, c);
-
-        delft(jx, jz) = a * ft(jx - 1, jz) + b * ft(jx, jz) + c * ft(jx + 1, jz);
+        delft(jx, jz) = d2lap->a(jy,jx,jz) * ft(jx - 1, jz) + d2lap->b(jy,jx,jz) * ft(jx, jz) + d2lap->c(jy,jx,jz) * ft(jx + 1, jz);
       }
     }
 
     // Reverse FFT
+    #pragma omp parallel for
     for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
 
       irfft(&delft(jx, 0), ncz, &result(jx, jy, 0));
@@ -717,8 +719,10 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
   int ncz = localmesh->LocalNz;
 
   // Allocate memory
-  auto ft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
-  auto delft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
+  Matrix<dcomplex> delft(localmesh->LocalNx, ncz / 2 + 1);
+  Matrix<dcomplex> ft(localmesh->LocalNx, ncz / 2 + 1);
+  static Laplacian *d2lap = Laplacian::defaultInstance();
+  d2lap->calcDelp2Coefs();
 
   // Take forward FFT
   for (int jx = 0; jx < localmesh->LocalNx; jx++)
@@ -730,11 +734,7 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
     // No smoothing in the x direction
     for (int jx = 2; jx < (localmesh->LocalNx - 2); jx++) {
       // Perform x derivative
-
-      dcomplex a, b, c;
-      laplace_tridag_coefs(jx, jy, jz, a, b, c);
-
-      delft(jx, jz) = a * ft(jx - 1, jz) + b * ft(jx, jz) + c * ft(jx + 1, jz);
+      delft(jx, jz) = d2lap->a(jy,jx,jz) * ft(jx - 1, jz) + d2lap->b(jy,jx,jz) * ft(jx, jz) + d2lap->c(jy,jx,jz) * ft(jx + 1, jz);
     }
   }
 

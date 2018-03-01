@@ -707,6 +707,34 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
   }
 }
 
+void Laplacian::calcDelp2Coefs() {
+  TRACE("Laplacian::calcDelp2Coefs");
+
+  static bool initializedDelp2Coefs = false ;
+
+  if( !initializedDelp2Coefs ){
+
+    int nx = mesh->LocalNx;
+    int ny = mesh->LocalNy;
+    int nz = mesh->LocalNz;
+
+    a = Tensor<dcomplex>(ny, nx, nz);
+    b = Tensor<dcomplex>(ny, nx, nz);
+    c = Tensor<dcomplex>(ny, nx, nz);
+    // compute coefficients
+    for (int jy = 0; jy < ny; jy++) {
+      for (int jx = 0; jx < nx; jx++) {
+        for (int jz = 0; jz < nz; jz++) {
+          laplace_tridag_coefs(jx, jy, jz, a(jy, jx, jz), b(jy, jx, jz), c(jy, jx, jz), NULL, NULL);
+        }
+      }
+    }
+
+    initializedDelp2Coefs = true;
+  }
+
+}
+
 /**********************************************************************************
  *                              LEGACY INTERFACE
  *
