@@ -413,12 +413,14 @@ LaplaceMumps::LaplaceMumps(Options *opt) :
       }
   
   if ( i!=mumps_struc.nz_loc ) throw BoutException("LaplaceMumps: matrix index error");
-//   if ( j!=localN ) bout_error("LaplaceMumps: vector index error");
-// output<<"matrix indices:"<<endl;for (int k=0; k<mumps_struc.nz; k++) output<<k<<" "<<mumps_struc.irn_loc[k]<<" "<<mumps_struc.jcn_loc[k]<<endl;
-// output<<endl<<"solution vector indices:"<<endl;for (int k=0; k<mumps_struc.n;k++) output<<k<<" "<<mumps_struc.isol_loc[k]<<endl;
-// output<<"nz="<<mumps_struc.nz<<" nz_loc="<<mumps_struc.nz_loc<<endl;
-// MPI_Barrier(BoutComm::get()); exit(13);
-  
+  //   if ( j!=localN ) throw BoutException("LaplaceMumps: vector index error");
+  // output<<"matrix indices:"<<endl;for (int k=0; k<mumps_struc.nz; k++) output<<k<<"
+  // "<<mumps_struc.irn_loc[k]<<" "<<mumps_struc.jcn_loc[k]<<endl;
+  // output<<endl<<"solution vector indices:"<<endl;for (int k=0; k<mumps_struc.n;k++)
+  // output<<k<<" "<<mumps_struc.isol_loc[k]<<endl;
+  // output<<"nz="<<mumps_struc.nz<<" nz_loc="<<mumps_struc.nz_loc<<endl;
+  // MPI_Barrier(BoutComm::get()); exit(13);
+
   mumps_struc.job = MUMPS_JOB_ANALYSIS;
   dmumps_c( &mumps_struc );
   mumps_struc.job = MUMPS_JOB_BOTH;
