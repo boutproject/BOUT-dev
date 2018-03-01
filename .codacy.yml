@@ -1,0 +1,10 @@
+---
+languages:
+  cpp:
+    extensions:
+      - '*.hxx'
+coverage:
+  enabled: true
+  exclude_paths:
+    - tests/**
+    - examples/**
