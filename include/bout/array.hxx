@@ -37,6 +37,7 @@
 #include <valarray>
 #endif
 
+#include <bout/assert.hxx>
 #include <bout/openmpwrap.hxx>
 
 /*!
@@ -271,6 +272,7 @@ public:
    * so the user should perform checks.
    */
   T& operator[](int ind) {
+    ASSERT3(0 <= ind && ind < size());
 #ifdef BOUT_ARRAY_WITH_VALARRAY
     return ptr->operator[](ind);
 #else    
@@ -278,6 +280,7 @@ public:
 #endif    
   }
   const T& operator[](int ind) const {
+    ASSERT3(0 <= ind && ind < size());
 #ifdef BOUT_ARRAY_WITH_VALARRAY
     return ptr->operator[](ind);
 #else    

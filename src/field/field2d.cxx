@@ -46,6 +46,13 @@
 #include <bout/assert.hxx>
 #include <bout/scorepwrapper.hxx>
 
+BoutReal& Field2D::operator[](const Ind3D &d) {
+    return data[d.ind/fieldmesh->LocalNz];
+  }
+const BoutReal& Field2D::operator[](const Ind3D &d) const {
+    return data[d.ind/fieldmesh->LocalNz];
+  }
+
 Field2D::Field2D(Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
 
   boundaryIsSet = false;
@@ -114,6 +121,9 @@ void Field2D::allocate() {
       ny = fieldmesh->LocalNy;
     }
     data = Array<BoutReal>(nx*ny);
+#if CHECK > 2
+    invalidateGuards(*this);
+#endif
   }else
     data.ensureUnique();
 }
@@ -397,15 +407,15 @@ Field2D operator-(const Field2D &f) {
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
-BoutReal min(const Field2D &f, bool allpe) {
+BoutReal min(const Field2D &f, bool allpe, REGION rgn) {
   SCOREP0();
   TRACE("Field2D::Min() %s",allpe? "over all PEs" : "");
 
   ASSERT2(f.isAllocated());
 
-  BoutReal result = f[f.region(RGN_NOBNDRY).begin()];
+  BoutReal result = f[f.region(rgn).begin()];
 
-  for(const auto& i : f.region(RGN_NOBNDRY))
+  for(const auto& i : f.region(rgn))
     if(f[i] < result)
       result = f[i];
 
@@ -418,15 +428,15 @@ BoutReal min(const Field2D &f, bool allpe) {
   return result;
 }
 
-BoutReal max(const Field2D &f, bool allpe) {
+BoutReal max(const Field2D &f, bool allpe,REGION rgn) {
   SCOREP0();
   TRACE("Field2D::Max() %s",allpe? "over all PEs" : "");
 
   ASSERT2(f.isAllocated());
 
-  BoutReal result = f[f.region(RGN_NOBNDRY).begin()];
+  BoutReal result = f[f.region(rgn).begin()];
 
-  for(const auto& i : f.region(RGN_NOBNDRY))
+  for(const auto& i : f.region(rgn))
     if(f[i] > result)
       result = f[i];
 
@@ -439,7 +449,7 @@ BoutReal max(const Field2D &f, bool allpe) {
   return result;
 }
 
-bool finite(const Field2D &f) {
+bool finite(const Field2D &f, REGION rgn) {
   SCOREP0();
   TRACE("finite(Field2D)");
 
@@ -447,7 +457,7 @@ bool finite(const Field2D &f) {
     return false;
   }
 
-  for (const auto &i : f) {
+  for (const auto &i : f.region(rgn)) {
     if (!::finite(f[i])) {
       return false;
     }
@@ -471,11 +481,12 @@ bool finite(const Field2D &f) {
  * If CHECK >= 1, checks if the Field2D is allocated
  *
  * Loops over the entire domain, applies function,
- * and if CHECK >= 3 then checks result for non-finite numbers
+ * and uses checkData() to, if CHECK >= 3, check
+ * result for non-finite numbers
  *
  */
 #define F2D_FUNC(name, func)                                                             \
-  const Field2D name(const Field2D &f) {                                                 \
+  const Field2D name(const Field2D &f, REGION rgn) {                                     \
     SCOREP0();                                                                           \
     TRACE(#name "(Field2D)");                                                            \
     /* Check if the input is allocated */                                                \
@@ -484,11 +495,10 @@ bool finite(const Field2D &f) {
     Field2D result(f.getMesh());                                                         \
     result.allocate();                                                                   \
     /* Loop over domain */                                                               \
-    for (const auto &d : result) {                                                       \
+    for (const auto &d : result.region(rgn)) {                                           \
       result[d] = func(f[d]);                                                            \
-      /* If checking is set to 3 or higher, test result */                               \
-      ASSERT3(finite(result[d]));                                                        \
     }                                                                                    \
+    checkData(result, rgn);                                                              \
     return result;                                                                       \
   }
 
@@ -514,18 +524,18 @@ const Field2D copy(const Field2D &f) {
   return result;
 }
 
-const Field2D floor(const Field2D &var, BoutReal f) {
+const Field2D floor(const Field2D &var, BoutReal f, REGION rgn) {
   SCOREP0();
   Field2D result = copy(var);
 
-  for(const auto& d : result)
+  for(const auto& d : result.region(rgn))
     if(result[d] < f)
       result[d] = f;
 
   return result;
 }
 
-Field2D pow(const Field2D &lhs, const Field2D &rhs) {
+Field2D pow(const Field2D &lhs, const Field2D &rhs, REGION rgn) {
   SCOREP0();
   TRACE("pow(Field2D, Field2D)");
   // Check if the inputs are allocated
@@ -538,14 +548,15 @@ Field2D pow(const Field2D &lhs, const Field2D &rhs) {
   result.allocate();
 
   // Loop over domain
-  for(const auto& i: result) {
+  for(const auto& i: result.region(rgn)) {
     result[i] = ::pow(lhs[i], rhs[i]);
-    ASSERT3(finite(result[i]));
   }
+
+  checkData(result, rgn);
   return result;
 }
 
-Field2D pow(const Field2D &lhs, BoutReal rhs) {
+Field2D pow(const Field2D &lhs, BoutReal rhs, REGION rgn) {
   SCOREP0();
   TRACE("pow(Field2D, BoutReal)");
   // Check if the inputs are allocated
@@ -556,14 +567,15 @@ Field2D pow(const Field2D &lhs, BoutReal rhs) {
   result.allocate();
 
   // Loop over domain
-  for(const auto& i: result) {
+  for(const auto& i: result.region(rgn)) {
     result[i] = ::pow(lhs[i], rhs);
-    ASSERT3(finite(result[i]));
   }
+
+  checkData(result, rgn);
   return result;
 }
 
-Field2D pow(BoutReal lhs, const Field2D &rhs) {
+Field2D pow(BoutReal lhs, const Field2D &rhs, REGION rgn) {
   SCOREP0();
   TRACE("pow(lhs, Field2D)");
   // Check if the inputs are allocated
@@ -574,10 +586,11 @@ Field2D pow(BoutReal lhs, const Field2D &rhs) {
   result.allocate();
 
   // Loop over domain
-  for(const auto& i: result) {
+  for(const auto& i: result.region(rgn)) {
     result[i] = ::pow(lhs, rhs[i]);
-    ASSERT3(finite(result[i]));
   }
+
+  checkData(result, rgn);
   return result;
 }
 
@@ -598,3 +611,37 @@ void checkData(const Field2D &f, REGION region) {
 #endif
 }
 #endif
+
+void invalidateGuards(Field2D &var){
+#if CHECK > 2
+  Mesh *localmesh = var.getMesh();
+
+  // Inner x -- all y and all z
+  for (int ix = 0; ix < localmesh->xstart; ix++) {
+    for (int iy = 0; iy < localmesh->LocalNy; iy++) {
+      var(ix, iy) = std::nan("");
+    }
+  }
+
+  // Outer x -- all y and all z
+  for (int ix = localmesh->xend + 1; ix < localmesh->LocalNx; ix++) {
+    for (int iy = 0; iy < localmesh->LocalNy; iy++) {
+      var(ix, iy) = std::nan("");
+    }
+  }
+
+  // Remaining boundary point
+  for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
+    // Lower y -- non-boundary x and all z (could be all x but already set)
+    for (int iy = 0; iy < localmesh->ystart; iy++) {
+      var(ix, iy) = std::nan("");
+    }
+
+    // Lower y -- non-boundary x and all z (could be all x but already set)
+    for (int iy = localmesh->yend + 1; iy < localmesh->LocalNy; iy++) {
+      var(ix, iy) = std::nan("");
+    }
+  }
+#endif  
+  return;
+}

@@ -299,11 +299,9 @@ void Mesh::setParallelTransform() {
 
     Options *fci_options = Options::getRoot()->getSection("fci");
     // Flux Coordinate Independent method
-    bool fci_yperiodic;
-    fci_options->get("y_periodic", fci_yperiodic, true);
     bool fci_zperiodic;
     fci_options->get("z_periodic", fci_zperiodic, true);
-    transform = std::unique_ptr<ParallelTransform>(new FCITransform(*this, fci_yperiodic, fci_zperiodic));
+    transform = std::unique_ptr<ParallelTransform>(new FCITransform(*this, fci_zperiodic));
       
   }else {
     throw BoutException("Unrecognised paralleltransform option.\n"

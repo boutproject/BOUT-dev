@@ -8,6 +8,7 @@
 
 #ifdef BACKTRACE
 #include <execinfo.h>
+#include <dlfcn.h>
 #endif
 
 #include <utils.hxx>
@@ -66,10 +67,19 @@ std::string BoutException::BacktraceGenerate() const{
     }
 
     char syscom[256];
+    // If we are compiled as PIE, need to get base pointer of .so and substract
+    Dl_info info;
+    void * ptr;
+    if (dladdr(trace[i],&info)){
+      ptr=(void*) ((size_t)trace[i]-(size_t)info.dli_fbase);
+    } else {
+      ptr=trace[i];
+    }
+
     // Pipe stderr to /dev/null to avoid cluttering output
     // when addr2line fails or is not installed
     snprintf(syscom, sizeof(syscom) - 1, "addr2line %p -Cfpie %.*s 2> /dev/null",
-             trace[i], p, messages[i]);
+             ptr, p, messages[i]);
     // last parameter is the file name of the symbol
     FILE *fp = popen(syscom, "r");
     if (fp != NULL) {
@@ -79,8 +89,6 @@ std::string BoutException::BacktraceGenerate() const{
       if ((status == 0) && (retstr != NULL)) {
         message += out;
       }
-    } else {
-      message += syscom;
     }
   }
 #endif

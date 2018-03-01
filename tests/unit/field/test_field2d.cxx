@@ -6,6 +6,7 @@
 #include "field2d.hxx"
 #include "test_extras.hxx"
 #include "unused.hxx"
+#include "utils.hxx"
 
 #include <cmath>
 #include <set>
@@ -24,6 +25,7 @@ protected:
       mesh = nullptr;
     }
     mesh = new FakeMesh(nx, ny, nz);
+    mesh->createDefaultRegions();
   }
 
   static void TearDownTestCase() {
@@ -447,6 +449,49 @@ TEST_F(Field2DTest, CheckData) {
   EXPECT_THROW(checkData(field), BoutException);
 }
 
+TEST_F(Field2DTest, InvalidateGuards) {
+  Field2D field;
+  field.allocate(); // Calls invalidateGuards
+  field = 1.0;      // Sets everywhere including boundaries
+
+  const int nmesh = nx * ny;
+
+  int sum = 0;
+  for (const auto &i : field.region(RGN_ALL)) {
+    field[i] = 0.0; // Reset field value
+    sum++;
+  }
+  EXPECT_EQ(sum, nmesh); // Field operator= hasn't been broken by invalidateGuards
+
+  // Count the number of non-boundary points
+  sum = 0;
+  for (const auto &i : field.region(RGN_NOBNDRY)) {
+    field[i] = 0.0; // Reset field value
+    sum++;
+  }
+  const int nbndry = nmesh - sum;
+
+#if CHECK > 2
+  auto localmesh = field.getMesh();
+  EXPECT_NO_THROW(checkData(field(0, 0)));
+  EXPECT_NO_THROW(checkData(field(localmesh->xstart, localmesh->ystart)));
+#endif
+
+  invalidateGuards(field);
+
+#if CHECK > 2
+  EXPECT_THROW(checkData(field(0, 0)), BoutException);
+  EXPECT_NO_THROW(checkData(field(localmesh->xstart, localmesh->ystart)));
+#endif
+
+  sum = 0;
+  for (const auto &i : field.region(RGN_ALL)) {
+    if (!finite(field[i]))
+      sum++;
+  }
+  EXPECT_EQ(sum, nbndry);
+}
+
 #endif // CHECK > 2
 
 TEST_F(Field2DTest, CreateFromBoutReal) {
@@ -818,6 +863,7 @@ TEST_F(Field2DTest, Min) {
   const BoutReal min_value = 40.0;
 
   EXPECT_EQ(min(field, false), min_value);
+  EXPECT_EQ(min(field, false,RGN_ALL), -99.0);
 }
 
 TEST_F(Field2DTest, Max) {
@@ -833,4 +879,5 @@ TEST_F(Field2DTest, Max) {
   const BoutReal max_value = 60.0;
 
   EXPECT_EQ(max(field, false), max_value);
+  EXPECT_EQ(max(field, false,RGN_ALL), 99.0);
 }
