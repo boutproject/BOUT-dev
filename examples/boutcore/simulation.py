@@ -1,7 +1,7 @@
 #!/bin/python3
 import boutcore
-import numpy as np
-boutcore.init("mesh:n=2".split(" "))
+
+boutcore.init("mesh:n=2")
 mesh=boutcore.Mesh.getGlobal();
 dens=boutcore.Field3D.fromMesh(mesh)
 #dens.set(0)
