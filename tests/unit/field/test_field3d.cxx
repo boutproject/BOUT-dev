@@ -1629,6 +1629,8 @@ TEST_F(Field3DTest, DC) {
 }
 
 #ifdef _OPENMP
+// This test may be more of a DataIterator test so should perhaps
+// be migrated to a separate test file.
 TEST_F(Field3DTest, OpenMPIterator) {
   const int fields = 10;
   Field3D *d3 = new Field3D[fields];
@@ -1658,5 +1660,7 @@ TEST_F(Field3DTest, OpenMPIterator) {
       }
     }
   }
+
+  delete[] d3;
 }
 #endif
