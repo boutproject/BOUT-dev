@@ -277,31 +277,33 @@ else
   echo "Run-time checking disabled"
 fi
 
-if test "$enable_signal" != "no"
-then
-  echo "Segmentation fault handling enabled"
+AS_IF([test "x$enable_signal" != "xno"], [
+  AC_MSG_NOTICE([Segmentation fault handling enabled])
   CXXFLAGS="$CXXFLAGS -DSIGHANDLE"
-else
-  echo "Segmentation fault handling disabled"
-fi
+], [
+  AC_MSG_NOTICE([Segmentation fault handling disabled])
+])
 
-if test "$enable_color" != "no"
-then
-  echo "Output coloring enabled"
+AS_IF([test "x$enable_color" != "xno"], [
+  AC_MSG_NOTICE([Output coloring enabled])
   CXXFLAGS="$CXXFLAGS -DLOGCOLOR"
-else
-  echo "Output coloring disabled"
-fi
+], [
+  AC_MSG_NOTICE([Output coloring disabled])
+])
 
-if test ."$enable_track" == ."yes"
-then
-       CXXFLAGS="$CXXFLAGS -DTRACK"
-fi
+AS_IF([test "x$enable_track" == "xyes"], [
+  AC_MSG_NOTICE([Field name tracking enabled])
+  CXXFLAGS="$CXXFLAGS -DTRACK"
+], [
+  AC_MSG_NOTICE([Field name tracking disabled])
+])
 
-if test ."$enable_sigfpe" == .yes
-then
-    CXXFLAGS="$CXXFLAGS -DBOUT_FPE"
-fi
+AS_IF([test "x$enable_sigfpe" == "xyes"], [
+  AC_MSG_NOTICE([Signaling floating point exceptions enabled])
+  CXXFLAGS="$CXXFLAGS -DBOUT_FPE"
+], [
+  AC_MSG_NOTICE([Signaling floating point exceptions disabled])
+])
 
 echo
 

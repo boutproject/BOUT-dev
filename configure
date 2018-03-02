@@ -5619,30 +5619,56 @@ else
   echo "Run-time checking disabled"
 fi
 
-if test "$enable_signal" != "no"
-then
-  echo "Segmentation fault handling enabled"
+if test "x$enable_signal" != "xno"; then :
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Segmentation fault handling enabled" >&5
+$as_echo "$as_me: Segmentation fault handling enabled" >&6;}
   CXXFLAGS="$CXXFLAGS -DSIGHANDLE"
+
 else
-  echo "Segmentation fault handling disabled"
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Segmentation fault handling disabled" >&5
+$as_echo "$as_me: Segmentation fault handling disabled" >&6;}
+
 fi
 
-if test "$enable_color" != "no"
-then
-  echo "Output coloring enabled"
+if test "x$enable_color" != "xno"; then :
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Output coloring enabled" >&5
+$as_echo "$as_me: Output coloring enabled" >&6;}
   CXXFLAGS="$CXXFLAGS -DLOGCOLOR"
+
 else
-  echo "Output coloring disabled"
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Output coloring disabled" >&5
+$as_echo "$as_me: Output coloring disabled" >&6;}
+
 fi
 
-if test ."$enable_track" == ."yes"
-then
-       CXXFLAGS="$CXXFLAGS -DTRACK"
+if test "x$enable_track" == "xyes"; then :
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Field name tracking enabled" >&5
+$as_echo "$as_me: Field name tracking enabled" >&6;}
+  CXXFLAGS="$CXXFLAGS -DTRACK"
+
+else
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Field name tracking disabled" >&5
+$as_echo "$as_me: Field name tracking disabled" >&6;}
+
 fi
 
-if test ."$enable_sigfpe" == .yes
-then
-    CXXFLAGS="$CXXFLAGS -DBOUT_FPE"
+if test "x$enable_sigfpe" == "xyes"; then :
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Signaling floating point exceptions enabled" >&5
+$as_echo "$as_me: Signaling floating point exceptions enabled" >&6;}
+  CXXFLAGS="$CXXFLAGS -DBOUT_FPE"
+
+else
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Signaling floating point exceptions disabled" >&5
+$as_echo "$as_me: Signaling floating point exceptions disabled" >&6;}
+
 fi
 
 echo
