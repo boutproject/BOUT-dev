@@ -671,6 +671,7 @@ CC
 H5CC
 AWK
 NCCONF
+works
 COVERAGE_FLAGS
 CODE_COVERAGE_RULES
 CODE_COVERAGE_LDFLAGS
@@ -5702,15 +5703,53 @@ CXXFLAGS+=" -DBOUT_VERSION_STRING=\"\\\"$BOUT_VERSION\\\"\" -DBOUT_VERSION_DOUBL
 # Enable Backtrace if possible
 #############################################################
 
-if test ."$enable_backtrace" == .yes || test ."$enable_backtrace" == .maybe
-then
+if test "x$enable_backtrace" == "xyes" || test "x$enable_backtrace" == "xmaybe"; then :
+
     works=yes
-    if ! which addr2line &>/dev/null
-    then
+    # Extract the first word of "addr2line", so it can be a program name with args.
+set dummy addr2line; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_works+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$works"; then
+  ac_cv_prog_works="$works" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_works="yes"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_prog_works" && ac_cv_prog_works="no"
+fi
+fi
+works=$ac_cv_prog_works
+if test -n "$works"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $works" >&5
+$as_echo "$works" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+    if test $works == no; then :
+
         { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"util addr2line not found\"" >&5
 $as_echo "$as_me: WARNING: \"util addr2line not found\"" >&2;}
-        works=no
-    fi
+
+fi
     ac_fn_cxx_check_func "$LINENO" "popen" "ac_cv_func_popen"
 if test "x$ac_cv_func_popen" = xyes; then :
 
@@ -5718,9 +5757,13 @@ else
   works=no
 fi
 
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for execinfo.h" >&5
+$as_echo_n "checking for execinfo.h... " >&6; }
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <execinfo.h>
+
+                    #include <execinfo.h>
+
 int
 main ()
 {
@@ -5732,11 +5775,13 @@ _ACEOF
 if ac_fn_cxx_try_compile "$LINENO"; then :
 
 else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"execinfo.h not found\"" >&5
-$as_echo "$as_me: WARNING: \"execinfo.h not found\"" >&2;}
-                    works=no
+  works=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $works" >&5
+$as_echo "$works" >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for backtrace" >&5
+$as_echo_n "checking for backtrace... " >&6; }
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 extern "C"
@@ -5752,15 +5797,19 @@ _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
 
 else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"backtrace function not found\"" >&5
-$as_echo "$as_me: WARNING: \"backtrace function not found\"" >&2;}
-                  works=no
+  works=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $works" >&5
+$as_echo "$works" >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for dlfcn.h" >&5
+$as_echo_n "checking for dlfcn.h... " >&6; }
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <dlfcn.h>
+
+                    #include <dlfcn.h>
+
 int
 main ()
 {
@@ -5772,23 +5821,32 @@ _ACEOF
 if ac_fn_cxx_try_compile "$LINENO"; then :
 
 else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"dlfcn.h not found\"" >&5
-$as_echo "$as_me: WARNING: \"dlfcn.h not found\"" >&2;}
-                    works=no
+  works=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-    if test .$works == .yes
-    then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $works" >&5
+$as_echo "$works" >&6; }
+    if test $works == yes; then :
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Native backtrace enabled" >&5
+$as_echo "$as_me: Native backtrace enabled" >&6;}
         CXXFLAGS="$CXXFLAGS -DBACKTRACE"
-    else
-        if test ."$enable_backtrace" == .yes
-        then
+
+else
+
+        if test "x$enable_backtrace" == "xyes"; then :
+
             as_fn_error $? "backtrace requested, but cannot be enabled" "$LINENO" 5
-        else
-            { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"backtrace disabled\"" >&5
-$as_echo "$as_me: WARNING: \"backtrace disabled\"" >&2;}
-        fi
-    fi
+
+else
+
+            { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Native backtrace disabled" >&5
+$as_echo "$as_me: WARNING: Native backtrace disabled" >&2;}
+
+fi
+
+fi
+
 fi
 
 #############################################################

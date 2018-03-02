@@ -304,38 +304,39 @@ CXXFLAGS+=" -DBOUT_VERSION_STRING=\"\\\"$BOUT_VERSION\\\"\" -DBOUT_VERSION_DOUBL
 # Enable Backtrace if possible
 #############################################################
 
-if test ."$enable_backtrace" == .yes || test ."$enable_backtrace" == .maybe
-then
+AS_IF([test "x$enable_backtrace" == "xyes" || test "x$enable_backtrace" == "xmaybe"], [
     works=yes
-    if ! which addr2line &>/dev/null
-    then
+    AC_CHECK_PROG(works, addr2line, yes, no)
+    AS_IF([test $works == no], [
         AC_MSG_WARN("util addr2line not found")
-        works=no
-    fi
+    ])
     AC_CHECK_FUNC(popen, , [works=no])
-    AC_TRY_COMPILE([#include <execinfo.h>] , , ,
-                   [AC_MSG_WARN("execinfo.h not found")
-                    works=no])
+    AC_MSG_CHECKING([for execinfo.h])
+    AC_TRY_COMPILE([
+                    #include <execinfo.h>
+                   ], , , [works=no])
+    AC_MSG_RESULT([$works])
+    AC_MSG_CHECKING([for backtrace])
     AC_TRY_LINK([extern "C"
-                 char backtrace();] ,
-                 [return backtrace();], ,
-                 [AC_MSG_WARN("backtrace function not found")
-                  works=no])
-    AC_TRY_COMPILE([#include <dlfcn.h>] , , ,
-                   [AC_MSG_WARN("dlfcn.h not found")
-                    works=no])
-    if test .$works == .yes
-    then
+                 char backtrace();], [return backtrace();], ,
+                 [works=no])
+    AC_MSG_RESULT([$works])
+    AC_MSG_CHECKING([for dlfcn.h])
+    AC_TRY_COMPILE([
+                    #include <dlfcn.h>
+                   ], , , [works=no])
+    AC_MSG_RESULT([$works])
+    AS_IF([test $works == yes], [
+        AC_MSG_NOTICE([Native backtrace enabled])
         CXXFLAGS="$CXXFLAGS -DBACKTRACE"
-    else
-        if test ."$enable_backtrace" == .yes
-        then
+    ], [
+        AS_IF([test "x$enable_backtrace" == "xyes"], [
             AC_MSG_ERROR([backtrace requested, but cannot be enabled])
-        else
-            AC_MSG_WARN("backtrace disabled")
-        fi
-    fi
-fi
+        ], [
+            AC_MSG_WARN([Native backtrace disabled])
+        ])
+    ])
+])
 
 #############################################################
 # Build into shared object (pic)
