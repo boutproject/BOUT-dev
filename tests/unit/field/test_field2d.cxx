@@ -85,7 +85,7 @@ TEST_F(Field2DTest, IsFinite) {
 
   EXPECT_TRUE(finite(field));
 
-  field(1, 1, 1) = std::nan("");
+  field(1, 1) = std::nan("");
 
   EXPECT_FALSE(finite(field));
 }
