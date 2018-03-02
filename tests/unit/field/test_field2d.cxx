@@ -458,6 +458,22 @@ TEST_F(Field2DTest, IndexingAs3D) {
   EXPECT_DOUBLE_EQ(field(2, 2), 4 + nz -1);
 }
 
+TEST_F(Field2DTest, ConstIndexingAs3D) {
+  const Field2D field = 3.0;
+  Field2D field2;
+  field2.allocate();
+  
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        field2(i, j, k) = field(i, j, k) + i + j + k;
+      }
+    }
+  }
+
+  EXPECT_DOUBLE_EQ(field(2, 2), 3 + 4 + nz - 1);
+}
+
 #if CHECK > 2
 TEST_F(Field2DTest, CheckNotEmpty) {
   Field2D field;
