@@ -248,34 +248,27 @@ do
   AC_TRY_COMPILE([],[],[AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no);CXXFLAGS=$CXXFLAGS_save])
 done
 
-# disable checks if optimization > 2 is used
-if test -z $enable_checks && test .$DISABLE_CHECK = ."probably"
-then
+# Disable checks if optimization > 2 is used
+AS_IF([test -z $enable_checks && test "x$DISABLE_CHECK" = "xprobably"], [
   enable_checks=no
-fi
+])
 
 CHECK_LEVEL="0"
-if test ".$enable_checks" != ".no"
-then
-  echo "Run-time checking enabled"
-  if test "$enable_checks" = "1"
-  then
-    echo " -> Level 1 (Basic checking)"
-    CXXFLAGS="$CXXFLAGS -DCHECK=1"
-    CHECK_LEVEL="1"
-  elif test "$enable_checks" = "3"
-  then
-    CXXFLAGS="$CXXFLAGS -DCHECK=3"
-    echo " -> Level 3 (Full checking + stack tracing)"
-    CHECK_LEVEL="3"
-  else
-    echo " -> Level 2 (Basic checking + stack tracing)"
-    CXXFLAGS="$CXXFLAGS -DCHECK=2"
-    CHECK_LEVEL="2"
-  fi
-else
-  echo "Run-time checking disabled"
-fi
+AS_IF([test "x$enable_checks" != "xno" && test "x$enable_checks" != "x0"], [
+  AC_MSG_NOTICE([Run-time checking enabled])
+  AS_CASE([$enable_checks],
+    [1], [AC_MSG_NOTICE([ -> Level 1 (Basic checking)])
+          CXXFLAGS="$CXXFLAGS -DCHECK=1"
+          CHECK_LEVEL="1"],
+    [3], [AC_MSG_NOTICE([ -> Level 3 (Full checking + stack tracing)])
+          CXXFLAGS="$CXXFLAGS -DCHECK=3"
+          CHECK_LEVEL="3"],
+    [AC_MSG_NOTICE([ -> Level 2 (Basic checking + stack tracing)])
+     CXXFLAGS="$CXXFLAGS -DCHECK=2"
+     CHECK_LEVEL="2"])
+], [
+  AC_MSG_NOTICE([Run-time checking disabled])
+])
 
 AS_IF([test "x$enable_signal" != "xno"], [
   AC_MSG_NOTICE([Segmentation fault handling enabled])
