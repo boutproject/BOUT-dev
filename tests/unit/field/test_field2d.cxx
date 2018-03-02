@@ -471,7 +471,7 @@ TEST_F(Field2DTest, ConstIndexingAs3D) {
     }
   }
 
-  EXPECT_DOUBLE_EQ(field(2, 2), 3 + 4 + nz - 1);
+  EXPECT_DOUBLE_EQ(field2(2, 2), 3 + 4 + nz - 1);
 }
 
 #if CHECK > 2
