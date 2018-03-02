@@ -75,7 +75,9 @@ TEST_F(FieldPerpTest, IsFinite) {
 
 TEST_F(FieldPerpTest, SliceXZ) {
   Field3D masterField;
+#if CHECK > 0
   EXPECT_THROW(sliceXZ(masterField, 0), BoutException);
+#endif
   masterField = 1.0;
   EXPECT_NO_THROW(sliceXZ(masterField, 0));
 
@@ -141,7 +143,7 @@ TEST_F(FieldPerpTest, CopyCheckFieldmesh) {
   FakeMesh *fieldmesh = new FakeMesh(test_nx, test_ny, test_nz);
 
   FieldPerp field(fieldmesh);
-  field.allocate();
+  field = 1.0;
 
   FieldPerp field2(field);
 
