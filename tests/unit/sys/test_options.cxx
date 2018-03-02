@@ -1,7 +1,9 @@
 #include "gtest/gtest.h"
 #include "test_extras.hxx"
+
 #include "options.hxx"
 #include "output.hxx"
+#include <boutexception.hxx>
 
 #include <string>
 
@@ -35,11 +37,39 @@ TEST_F(OptionsTest, SetGetInt) {
   EXPECT_EQ(value, 42);
 }
 
+TEST_F(OptionsTest, SetGetIntFromReal) {
+  Options options;
+  options.set("int_key", 42.00001, "code");
+
+  ASSERT_TRUE(options.isSet("int_key"));
+
+  int value;
+  options.get("int_key", value, 99, false);
+
+  EXPECT_EQ(value, 42);
+
+  options.set("int_key2", 12.5, "code");
+  EXPECT_THROW(options.get("int_key2", value, 99, false), BoutException);
+  // Note we expect to get the rounded value despite the throw as we
+  // pass by reference and modify the passed variable in options.get.
+  EXPECT_EQ(value, 13);
+}
+
 TEST_F(OptionsTest, DefaultValueInt) {
   Options options;
 
   int value;
   options.get("int_key", value, 99, false);
+
+  EXPECT_EQ(value, 99);
+}
+
+TEST_F(OptionsTest, InconsistentDefaultValueInt) {
+  Options options;
+
+  int value;
+  options.get("int_key", value, 99, false);
+  EXPECT_THROW(options.get("int_key", value, 98, false), BoutException);
 
   EXPECT_EQ(value, 99);
 }
@@ -63,6 +93,23 @@ TEST_F(OptionsTest, DefaultValueReal) {
   options.get("real_key", value, -78.0, false);
 
   EXPECT_DOUBLE_EQ(value, -78.0);
+}
+
+TEST_F(OptionsTest, InconsistentDefaultValueReal) {
+  Options options;
+
+  BoutReal value;
+  options.get("real_key", value, -78.0, false);
+  EXPECT_THROW(options.get("real_key", value, -68.0, false), BoutException);
+
+  EXPECT_EQ(value, -78.0);
+}
+
+TEST_F(OptionsTest, GetBool) {
+  Options options;
+  bool value;
+  options.get("bool_key", value, true, false);
+  EXPECT_EQ(value, true);
 }
 
 TEST_F(OptionsTest, SetGetBool) {
@@ -102,9 +149,19 @@ TEST_F(OptionsTest, GetBoolFromString) {
   EXPECT_EQ(value, true);
 
   bool value2;
-  options.get("bool_key", value2, false, false);
+  options.get("bool_key2", value2, false, false);
 
   EXPECT_EQ(value2, true);
+
+  bool value3;
+  // Note we only test the first character so "not_a_bool" is treated as
+  // a bool that is false.
+  options.set("bool_key3", "A_bool_starts_with_T_or_N_or_Y_or_F_or_1_or_0", "code");
+  EXPECT_THROW(options.get("bool_key3", value3, false, false), BoutException);
+  // Surprise true
+  options.set("bool_key3", "yes_this_is_a_bool", "code");
+  EXPECT_NO_THROW(options.get("bool_key3", value3, false, false));
+  EXPECT_EQ(value3, true);
 }
 
 TEST_F(OptionsTest, DefaultValueBool) {
@@ -133,6 +190,19 @@ TEST_F(OptionsTest, DefaultValueString) {
 
   std::string value;
   options.get("string_key", value, "ghijkl", false);
+
+  EXPECT_EQ(value, "ghijkl");
+}
+
+TEST_F(OptionsTest, InconsistentDefaultValueString) {
+  Options options;
+
+  std::string value;
+  options.get("string_key", value, "ghijkl", false);
+
+  EXPECT_EQ(value, "ghijkl");
+
+  EXPECT_THROW(options.get("string_key", value, "_ghijkl", false), BoutException);
 
   EXPECT_EQ(value, "ghijkl");
 }
