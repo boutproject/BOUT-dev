@@ -948,6 +948,28 @@ TEST_F(Field3DTest, AddEqualsField3D) {
   EXPECT_TRUE(IsField3DEqualBoutReal(c, 8.0));
 }
 
+TEST_F(Field3DTest, AddEqualsField3DField3DStagger) {
+  auto backup = mesh->StaggerGrids;
+  mesh->StaggerGrids = true; // Force staggering
+
+  Field3D a, b;
+
+  a = 2.0;
+  b = 3.0;
+
+  a.setLocation(CELL_XLOW);
+  b.setLocation(CELL_CENTRE);
+
+// Throw as two rhs fields at different locations
+#if CHECK > 0
+  EXPECT_THROW(a += b, BoutException);
+#else
+  EXPECT_NO_THROW(a += b);
+#endif
+
+  mesh->StaggerGrids = backup;
+}
+
 TEST_F(Field3DTest, AddField3DBoutReal) {
   Field3D a, b;
 
@@ -1077,6 +1099,28 @@ TEST_F(Field3DTest, MultiplyEqualsField3D) {
 
   EXPECT_TRUE(IsField3DEqualBoutReal(a, 10.0));
   EXPECT_TRUE(IsField3DEqualBoutReal(c, 40.0));
+}
+
+TEST_F(Field3DTest, MultiplyEqualsField3DField3DStagger) {
+  auto backup = mesh->StaggerGrids;
+  mesh->StaggerGrids = true; // Force staggering
+
+  Field3D a, b;
+
+  a = 2.5;
+  b = 4.0;
+
+  a.setLocation(CELL_XLOW);
+  b.setLocation(CELL_CENTRE);
+
+// Throw as two rhs fields at different locations
+#if CHECK > 0
+  EXPECT_THROW(a *= b, BoutException);
+#else
+  EXPECT_NO_THROW(a *= b);
+#endif
+
+  mesh->StaggerGrids = backup;
 }
 
 TEST_F(Field3DTest, MultiplyField3DBoutReal) {
@@ -1210,6 +1254,28 @@ TEST_F(Field3DTest, SubtractEqualsField3D) {
   EXPECT_TRUE(IsField3DEqualBoutReal(c, -12.0));
 }
 
+TEST_F(Field3DTest, SubtractEqualsField3DField3DStagger) {
+  auto backup = mesh->StaggerGrids;
+  mesh->StaggerGrids = true; // Force staggering
+
+  Field3D a, b;
+
+  a = 2.0;
+  b = 7.0;
+
+  a.setLocation(CELL_XLOW);
+  b.setLocation(CELL_CENTRE);
+
+// Throw as two rhs fields at different locations
+#if CHECK > 0
+  EXPECT_THROW(a -= b, BoutException);
+#else
+  EXPECT_NO_THROW(a -= b);
+#endif
+
+  mesh->StaggerGrids = backup;
+}
+
 TEST_F(Field3DTest, SubtractField3DBoutReal) {
   Field3D a, b;
 
@@ -1339,6 +1405,28 @@ TEST_F(Field3DTest, DivideEqualsField3D) {
 
   EXPECT_TRUE(IsField3DEqualBoutReal(a, 2.0));
   EXPECT_TRUE(IsField3DEqualBoutReal(c, 0.8));
+}
+
+TEST_F(Field3DTest, DivideEqualsField3DField3DStagger) {
+  auto backup = mesh->StaggerGrids;
+  mesh->StaggerGrids = true; // Force staggering
+
+  Field3D a, b;
+
+  a = 5.0;
+  b = 2.5;
+
+  a.setLocation(CELL_XLOW);
+  b.setLocation(CELL_CENTRE);
+
+// Throw as two rhs fields at different locations
+#if CHECK > 0
+  EXPECT_THROW(a /= b, BoutException);
+#else
+  EXPECT_NO_THROW(a /= b);
+#endif
+
+  mesh->StaggerGrids = backup;
 }
 
 TEST_F(Field3DTest, DivideField3DBoutReal) {
