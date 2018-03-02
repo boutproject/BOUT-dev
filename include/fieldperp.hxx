@@ -30,8 +30,6 @@ class FieldPerp;
 
 #include "field.hxx"
 
-#include "bout/deprecated.hxx"
-
 #include "bout/dataiterator.hxx"
 #include "bout/array.hxx"
 #include "bout/assert.hxx"

@@ -39,8 +39,6 @@ class Field3D; //#include "field3d.hxx"
 
 #include "bout/dataiterator.hxx"
 
-#include "bout/deprecated.hxx"
-
 #include "bout/field_visitor.hxx"
 
 #include "bout/array.hxx"

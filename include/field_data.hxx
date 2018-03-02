@@ -31,7 +31,6 @@ class FieldData;
 #define __FIELD_DATA_H__
 
 #include "bout_types.hxx"
-#include "bout/deprecated.hxx"
 #include "unused.hxx"
 
 #include <memory>
