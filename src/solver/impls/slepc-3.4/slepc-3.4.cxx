@@ -259,8 +259,8 @@ int SlepcSolver::init(int NOUT, BoutReal TIMESTEP) {
   comm=PETSC_COMM_WORLD;
 
   //Initialise advanceSolver if not self
-  if( !selfSolve && !ddtMode ){
-    advanceSolver->init(restarting,NOUT,TIMESTEP);
+  if (!selfSolve && !ddtMode) {
+    advanceSolver->init(NOUT, TIMESTEP);
   }
 
   //Calculate grid sizes
