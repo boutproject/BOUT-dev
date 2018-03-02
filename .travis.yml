@@ -69,6 +69,9 @@ matrix:
           - libpetsc3.4.2-dev
           - libslepc3.4.2-dev
           - libmumps-dev
+          - libscalapack-mpi-dev
+          - libparmetis-dev
+          - libmetis-dev
           - liblapack-dev
     env:
       - CONFIGURE_OPTIONS='--enable-code-coverage --enable-debug --enable-checks=3 --with-petsc --with-lapack --with-slepc --with-mumps --enable-openmp'
