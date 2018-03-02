@@ -292,8 +292,6 @@ AS_IF([test "x$enable_sigfpe" == "xyes"], [
   AC_MSG_NOTICE([Signaling floating point exceptions disabled])
 ])
 
-echo
-
 BOUT_VERSION=$PACKAGE_VERSION
 BOUT_VERSION_MAJOR=${PACKAGE_VERSION%%.*}
 BOUT_VERSION_MINOR=${PACKAGE_VERSION#*.}
@@ -342,8 +340,7 @@ AS_IF([test "x$enable_backtrace" == "xyes" || test "x$enable_backtrace" == "xmay
 # Build into shared object (pic)
 #############################################################
 
-if test ."$enable_shared" == .yes
-then
+AS_IF([test "x$enable_shared" == "xyes"], [
     # compile as position independent code.
     # -fpic is apparently faster then -fPIC, but -fPIC works always.
     # From a SO comment (https://stackoverflow.com/a/3544211/3384414):
@@ -353,7 +350,7 @@ then
     #  PowerPC and SPARC.
     # Therfore use -fPIC for now
     CXXFLAGS+=" -fPIC"
-fi
+])
 
 #############################################################
 # Git revision number
