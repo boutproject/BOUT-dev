@@ -126,7 +126,7 @@ TEST_F(Field2DTest, CopyCheckFieldmesh) {
   FakeMesh *fieldmesh = new FakeMesh(test_nx, test_ny, test_nz);
 
   Field2D field(fieldmesh);
-  field.allocate();
+  field = 1.0;
 
   Field2D field2(field);
 
