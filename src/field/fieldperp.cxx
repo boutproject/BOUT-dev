@@ -35,8 +35,6 @@
 #include <msg_stack.hxx>
 
 FieldPerp::FieldPerp(Mesh *localmesh) : Field(localmesh), yindex(-1) {
-  // Get mesh size
-  fieldmesh = localmesh;
   if (localmesh) {
     nx = localmesh->LocalNx;
     nz = localmesh->LocalNz;
@@ -169,6 +167,23 @@ FPERP_OP_REAL(+=, +);
 FPERP_OP_REAL(-=, -);
 FPERP_OP_REAL(*=, *);
 FPERP_OP_REAL(/=, /);
+
+const IndexRange FieldPerp::region(REGION rgn) const {
+  switch (rgn) {
+  case RGN_ALL:
+  case RGN_NOZ:
+    return IndexRange{0, nx - 1, 0, 0, 0, nz - 1};
+    break;
+  case RGN_NOX:
+    return IndexRange{getMesh()->xstart, getMesh()->xend, 0, 0, 0, nz - 1};
+    break;
+  default:
+    throw BoutException("FieldPerp::region() : Requested region not implemented");
+    break;
+  };
+}
+
+//////////////// NON-MEMBER FUNCTIONS //////////////////
 
 ////////////// NON-MEMBER OVERLOADED OPERATORS //////////////
 
@@ -326,26 +341,6 @@ const FieldPerp sliceXZ(const Field3D& f, int y) {
   return result;
 }
 
-const IndexRange FieldPerp::region(REGION rgn) const {
-  switch(rgn) {
-  case RGN_ALL:
-  case RGN_NOZ:
-    return IndexRange{0, nx-1,
-        0, 0,
-        0, nz-1};
-    break;
-  case RGN_NOX:
-    return IndexRange{getMesh()->xstart, getMesh()->xend,
-        0, 0,
-        0, nz-1};
-    break;
-  default:
-    throw BoutException("FieldPerp::region() : Requested region not implemented");
-    break;
-  };
-}
-
-//////////////// NON-MEMBER FUNCTIONS //////////////////
 BoutReal min(const FieldPerp &f, bool allpe, REGION rgn) {
   TRACE("FieldPerp::Min() %s", allpe ? "over all PEs" : "");
 
