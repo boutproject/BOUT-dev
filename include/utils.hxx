@@ -110,7 +110,9 @@ private:
 
 // For backwards compatibility with old matrix -- to be removed
 template <typename T>
-void free_matrix(Matrix<T> UNUSED(m)) {}
+DEPRECATED(void free_matrix(Matrix<T> UNUSED(m)));
+template <typename T>
+void free_matrix(Matrix<T> UNUSED(m)) {};
 
 /// Helper class for 3D arrays
 ///
@@ -253,6 +255,8 @@ T **matrix(int xsize, int ysize) {
   return m;
 }
 
+template <class T>
+DEPRECATED(void free_matrix(T **m));
 /*!
  * Free a matrix, assumed to have been allocated using matrix()
  *
