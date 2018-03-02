@@ -690,6 +690,67 @@ TEST_F(Field3DTest, Indexing) {
   EXPECT_DOUBLE_EQ(field(2, 2, 2), 6);
 }
 
+TEST_F(Field3DTest, IndexingToZPointer) {
+  Field3D field;
+
+  field.allocate();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        field(i, j, k) = i + j + k;
+      }
+    }
+  }
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      auto tmp = field(i, j);
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(tmp[k], i + j + k);
+        tmp[k] = -1.0;
+      }
+    }
+  }
+
+  for (const auto &i : field) {
+    EXPECT_EQ(field[i], -1.0);
+  }
+
+#if CHECK > 2
+  EXPECT_THROW(field(-1, 0), BoutException);
+  EXPECT_THROW(field(0, -1), BoutException);
+  EXPECT_THROW(field(nx, 0), BoutException);
+  EXPECT_THROW(field(0, ny), BoutException);
+#endif
+}
+
+TEST_F(Field3DTest, ConstIndexingToZPointer) {
+  const Field3D field = 1.0;
+  Field3D field2 = 0.0;
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      auto tmp = field(i, j);
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(tmp[k], 1.0);
+        field2(i, j, k) = tmp[k];
+      }
+    }
+  }
+
+  for (const auto &i : field2) {
+    EXPECT_EQ(field2[i], 1.0);
+  }
+
+#if CHECK > 2
+  EXPECT_THROW(field(-1, 0), BoutException);
+  EXPECT_THROW(field(0, -1), BoutException);
+  EXPECT_THROW(field(nx, 0), BoutException);
+  EXPECT_THROW(field(0, ny), BoutException);
+#endif
+}
+
 //-------------------- Checking tests --------------------
 
 #if CHECK > 2
