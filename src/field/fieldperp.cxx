@@ -35,9 +35,9 @@
 #include <msg_stack.hxx>
 
 FieldPerp::FieldPerp(Mesh *localmesh) : Field(localmesh), yindex(-1) {
-  if (localmesh) {
-    nx = localmesh->LocalNx;
-    nz = localmesh->LocalNz;
+  if (fieldmesh) {
+    nx = fieldmesh->LocalNx;
+    nz = fieldmesh->LocalNz;
   }
   
 #if CHECK > 0
