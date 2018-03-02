@@ -73,6 +73,7 @@ matrix:
           - libparmetis-dev
           - libmetis-dev
           - liblapack-dev
+          - libparpack2-dev
     env:
       - CONFIGURE_OPTIONS='--enable-code-coverage --enable-debug --enable-checks=3 --with-petsc --with-lapack --with-slepc --with-mumps --enable-openmp'
       - OMP_NUM_THREADS=2
