@@ -435,6 +435,26 @@ TEST_F(FieldPerpTest, IndexingAs3D) {
   EXPECT_DOUBLE_EQ(field(2, 2), 4 + ny - 1);
 }
 
+TEST_F(FieldPerpTest, IndexingWithIndices) {
+  FieldPerp field;
+
+  field.allocate();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < nz; ++j) {
+      field(i, j) = i + j;
+    }
+  }
+  Indices ii{2, -1, 2};
+  EXPECT_DOUBLE_EQ(field[ii], 4);
+}
+
+TEST_F(FieldPerpTest, ConstIndexingWithIndices) {
+  const FieldPerp field = 2.0;
+  const Indices ii{2, -1, 2};
+  EXPECT_DOUBLE_EQ(field[ii], 2.0);
+}
+
 TEST_F(FieldPerpTest, IndexingToPointer) {
   FieldPerp field;
 
@@ -461,6 +481,32 @@ TEST_F(FieldPerpTest, IndexingToPointer) {
   EXPECT_DOUBLE_EQ(field(2, 2), 4);
 }
 
+TEST_F(FieldPerpTest, ConstIndexingToPointer) {
+#if CHECK > 2
+  const FieldPerp empty;
+  EXPECT_THROW(empty[0], BoutException);
+#endif
+
+  const FieldPerp field = 2.0;
+
+#if CHECK > 2
+  // Out of bounds
+  EXPECT_THROW(field[-1], BoutException);
+  EXPECT_NO_THROW(field[0]);
+  EXPECT_THROW(field[nx], BoutException);
+#endif
+
+  FieldPerp field2 = 0.0;
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < nz; ++j) {
+      field2[i][j] = field[i][j];
+    }
+  }
+
+  EXPECT_DOUBLE_EQ(field2(2, 2), 2.0);
+}
+
 #if CHECK > 2
 TEST_F(FieldPerpTest, CheckNotEmpty) {
   FieldPerp field;
@@ -478,21 +524,19 @@ TEST_F(FieldPerpTest, BoundsCheck) {
   EXPECT_THROW(field(0, nz), BoutException);
 }
 
-TEST_F(FieldPerpTest, ConstCheckNotEmpty) {
-  const FieldPerp field;
-
-  EXPECT_THROW(field(0, 0), BoutException);
-}
-
 TEST_F(FieldPerpTest, ConstBoundsCheck) {
-  FieldPerp field(mesh);
-  field = 1.0;
-  const FieldPerp field2(field);
+  const FieldPerp field = 1.0;
 
   EXPECT_THROW(field(-1, 0), BoutException);
   EXPECT_THROW(field(0, -1), BoutException);
   EXPECT_THROW(field(nx, 0), BoutException);
   EXPECT_THROW(field(0, nz), BoutException);
+}
+
+TEST_F(FieldPerpTest, ConstCheckNotEmpty) {
+  const FieldPerp field;
+
+  EXPECT_THROW(field(0, 0), BoutException);
 }
 
 TEST_F(FieldPerpTest, CheckData) {
