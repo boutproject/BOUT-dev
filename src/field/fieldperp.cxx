@@ -65,6 +65,9 @@ void FieldPerp::allocate() {
       nz = fieldmesh->LocalNz;
     }
     data = Array<BoutReal>(nx * nz);
+#if CHECK > 2
+    invalidateGuards(*this);
+#endif
   } else
     data.ensureUnique();
 }
