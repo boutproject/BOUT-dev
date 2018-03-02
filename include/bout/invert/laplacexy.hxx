@@ -61,6 +61,7 @@ class LaplaceXY {
 #include <bout/mesh.hxx>
 #include <bout/petsclib.hxx>
 #include <cyclic_reduction.hxx>
+#include "utils.hxx"
 
 class LaplaceXY {
 public:
@@ -117,7 +118,7 @@ private:
   // Preconditioner
   int xstart, xend;
   int nloc, nsys;
-  BoutReal **acoef, **bcoef, **ccoef, **xvals, **bvals;
+  Matrix<BoutReal> acoef, bcoef, ccoef, xvals, bvals;
   CyclicReduce<BoutReal> *cr; ///< Tridiagonal solver
 
   // Y derivatives

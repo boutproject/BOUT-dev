@@ -19,7 +19,7 @@ test-griddata
 !test-initial
 test-stopCheck
 test-subdir
-#next one is broken
+test-interpolate
 test-fci-slab
 # More complex tests
 test-drift-instability

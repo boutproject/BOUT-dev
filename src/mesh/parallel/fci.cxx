@@ -56,7 +56,7 @@ inline BoutReal sgn(BoutReal val) { return (BoutReal(0) < val) - (val < BoutReal
 FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
     : dir(dir), boundary_mask(mesh), y_prime(&mesh) {
 
-  interp = InterpolationFactory::getInstance()->create();
+  interp = InterpolationFactory::getInstance()->create(&mesh);
   interp->setYOffset(dir);
 
   // Index arrays contain guard cells in order to get subscripts right
