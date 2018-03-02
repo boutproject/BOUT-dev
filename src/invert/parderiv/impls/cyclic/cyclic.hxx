@@ -41,6 +41,7 @@
 
 #include "invert_parderiv.hxx"
 #include "dcomplex.hxx"
+#include "utils.hxx"
 
 class InvertParCR : public InvertPar {
 public:
@@ -66,10 +67,10 @@ private:
   
   int nsys;
   
-  dcomplex **rhs;
-  dcomplex **rhsk;
-  dcomplex **xk;
-  dcomplex **a, **b, **c; // Matrix coefficients
+  Matrix<dcomplex>rhs;
+  Matrix<dcomplex>rhsk;
+  Matrix<dcomplex>xk;
+  Matrix<dcomplex> a, b, c; // Matrix coefficients
 };
 
 

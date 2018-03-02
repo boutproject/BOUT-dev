@@ -53,10 +53,20 @@ class Interpolation {
 protected:
   // 3D vector of points to skip (true -> skip this point)
   BoutMask skip_mask;
+
+  Mesh *localmesh;
+
 public:
-  Interpolation(int y_offset=0) : y_offset(y_offset) {}
-  Interpolation(BoutMask mask, int y_offset=0) : Interpolation(y_offset) {
-    skip_mask = mask;}
+  Interpolation(int y_offset = 0, Mesh *mesh = nullptr)
+      : localmesh(mesh), y_offset(y_offset) {
+    if (mesh == nullptr) {
+      localmesh = mesh;
+    }
+  }
+  Interpolation(BoutMask mask, int y_offset = 0, Mesh *mesh = nullptr)
+      : Interpolation(y_offset, mesh) {
+    skip_mask = mask;
+  }
   virtual ~Interpolation() {}
 
   virtual void calcWeights(const Field3D &delta_x, const Field3D &delta_z) = 0;
@@ -77,7 +87,6 @@ class HermiteSpline : public Interpolation {
   Tensor<int> i_corner;      // x-index of bottom-left grid point
   Tensor<int> k_corner;      // z-index of bottom-left grid point
 
-  Mesh * localmesh;
   // Basis functions for cubic Hermite spline interpolation
   //    see http://en.wikipedia.org/wiki/Cubic_Hermite_spline
   // The h00 and h01 basis functions are applied to the function itself
@@ -94,13 +103,14 @@ class HermiteSpline : public Interpolation {
   Field3D h11_z;
 
 public:
-  HermiteSpline(int y_offset=0);
-  HermiteSpline(BoutMask mask, int y_offset=0) : HermiteSpline(y_offset) {
+  HermiteSpline(Mesh *mesh = nullptr) : HermiteSpline(0, mesh) {}
+  HermiteSpline(int y_offset = 0, Mesh *mesh = nullptr);
+  HermiteSpline(BoutMask mask, int y_offset=0, Mesh *mesh = nullptr) : HermiteSpline(y_offset, mesh) {
     skip_mask = mask;}
 
   /// Callback function for InterpolationFactory
-  static Interpolation* CreateHermiteSpline() {
-    return new HermiteSpline;
+  static Interpolation* CreateHermiteSpline(Mesh *mesh) {
+    return new HermiteSpline(mesh);
   }
 
   void calcWeights(const Field3D &delta_x, const Field3D &delta_z);
@@ -121,13 +131,14 @@ class Lagrange4pt : public Interpolation {
   Field3D t_x, t_z;
 
 public:
-  Lagrange4pt(int y_offset=0);
-  Lagrange4pt(BoutMask mask, int y_offset=0) : Lagrange4pt(y_offset) {
+  Lagrange4pt(Mesh *mesh = nullptr) : Lagrange4pt(0, mesh) {}
+  Lagrange4pt(int y_offset = 0, Mesh *mesh = nullptr);
+  Lagrange4pt(BoutMask mask, int y_offset=0, Mesh *mesh = nullptr) : Lagrange4pt(y_offset, mesh) {
     skip_mask = mask;}
 
   /// Callback function for InterpolationFactory
-  static Interpolation* CreateLagrange4pt() {
-    return new Lagrange4pt;
+  static Interpolation* CreateLagrange4pt(Mesh *mesh) {
+    return new Lagrange4pt(mesh);
   }
 
   void calcWeights(const Field3D &delta_x, const Field3D &delta_z);
@@ -149,13 +160,14 @@ class Bilinear : public Interpolation {
   Field3D w0, w1, w2, w3;
 
 public:
-  Bilinear(int y_offset=0,Mesh * mesh = nullptr);
-  Bilinear(BoutMask mask, int y_offset=0) : Bilinear(y_offset) {
+  Bilinear(Mesh *mesh = nullptr) : Bilinear(0, mesh) {}
+  Bilinear(int y_offset = 0, Mesh *mesh = nullptr);
+  Bilinear(BoutMask mask, int y_offset=0, Mesh *mesh = nullptr) : Bilinear(y_offset, mesh) {
     skip_mask = mask;}
 
   /// Callback function for InterpolationFactory
-  static Interpolation* CreateBilinear() {
-    return new Bilinear;
+  static Interpolation* CreateBilinear(Mesh *mesh) {
+    return new Bilinear(mesh);
   }
 
   void calcWeights(const Field3D &delta_x, const Field3D &delta_z);
