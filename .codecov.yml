@@ -2,3 +2,6 @@ comment: false
 
 ignore:
   - "tests"
+
+codecov:
+  branch: next
