@@ -9,10 +9,12 @@
 
 using std::string;
 
+class Mesh;
+
 class InterpolationFactory {
 public:
   /// Callback function definition for creating Interpolation objects
-  typedef Interpolation* (*CreateInterpCallback)();
+  typedef Interpolation* (*CreateInterpCallback)(Mesh*);
 private:
   /// Prevent instantiation of this class
   InterpolationFactory();
@@ -22,7 +24,7 @@ private:
   /// Database of available interpolations
   std::map<string, CreateInterpCallback> interp_map;
   /// Look up interpolations in database
-  Interpolation* findInterpolation(const string &name);
+  CreateInterpCallback findInterpolation(const string &name);
 public:
   ~InterpolationFactory() {};
 
@@ -34,8 +36,15 @@ public:
   inline string getDefaultInterpType();
 
   /// Create an interpolation object
-  Interpolation* create(Options *options = nullptr);
-  Interpolation* create(const string &name, Options *options = nullptr);
+  Interpolation *create(Mesh *mesh) {
+    return create(nullptr, mesh);
+  }
+  Interpolation *create(Options *options) {
+    return create(options, nullptr);
+  }
+  Interpolation *create(Options *options = nullptr, Mesh *mesh = nullptr);
+  Interpolation *create(const string &name, Options *options = nullptr,
+                        Mesh *mesh = nullptr);
 
   /// Add available interpolations to database
   void add(CreateInterpCallback interp, const string &name);
