@@ -630,6 +630,50 @@ TEST_F(FieldPerpTest, AddEqualsFieldPerp) {
   EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 8.0));
 }
 
+TEST_F(FieldPerpTest, AddEqualsField2D) {
+  FieldPerp a;
+  Field2D b;
+
+  a = 2.0;
+  b = 3.0;
+#if CHECK > 2
+  EXPECT_THROW(a += b, BoutException);
+#endif
+  a.setIndex(1);
+  EXPECT_NO_THROW(a += b);
+
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 5.0));
+
+  // Check case where field is not unique
+  auto c = a;
+  c += b;
+
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 5.0));
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 8.0));
+}
+
+TEST_F(FieldPerpTest, AddEqualsField3D) {
+  FieldPerp a;
+  Field3D b;
+
+  a = 2.0;
+  b = 3.0;
+#if CHECK > 2
+  EXPECT_THROW(a += b, BoutException);
+#endif
+  a.setIndex(1);
+  EXPECT_NO_THROW(a += b);
+
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 5.0));
+
+  // Check case where field is not unique
+  auto c = a;
+  c += b;
+
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 5.0));
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 8.0));
+}
+
 TEST_F(FieldPerpTest, AddFieldPerpBoutReal) {
   FieldPerp a, b;
 
@@ -651,6 +695,30 @@ TEST_F(FieldPerpTest, AddBoutRealFieldPerp) {
 TEST_F(FieldPerpTest, AddFieldPerpFieldPerp) {
   FieldPerp a, b, c;
 
+  a = 1.0;
+  b = 2.0;
+  c = a + b;
+
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 3.0));
+}
+
+TEST_F(FieldPerpTest, AddFieldPerpField2D) {
+  FieldPerp a, c;
+  Field2D b;
+
+  a.setIndex(1);
+  a = 1.0;
+  b = 2.0;
+  c = a + b;
+
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 3.0));
+}
+
+TEST_F(FieldPerpTest, AddFieldPerpField3D) {
+  FieldPerp a, c;
+  Field3D b;
+
+  a.setIndex(1);
   a = 1.0;
   b = 2.0;
   c = a + b;
@@ -691,6 +759,50 @@ TEST_F(FieldPerpTest, MultiplyEqualsFieldPerp) {
   EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 40.0));
 }
 
+TEST_F(FieldPerpTest, MultiplyEqualsField2D) {
+  FieldPerp a;
+  Field2D b;
+
+  a = 2.5;
+  b = 4.0;
+#if CHECK > 2
+  EXPECT_THROW(a *= b, BoutException);
+#endif
+  a.setIndex(1);
+  EXPECT_NO_THROW(a *= b);
+
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 10.0));
+
+  // Check case where field is not unique
+  auto c = a;
+  c *= b;
+
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 10.0));
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 40.0));
+}
+
+TEST_F(FieldPerpTest, MultiplyEqualsField3D) {
+  FieldPerp a;
+  Field3D b;
+
+  a = 2.5;
+  b = 4.0;
+#if CHECK > 2
+  EXPECT_THROW(a *= b, BoutException);
+#endif
+  a.setIndex(1);
+  EXPECT_NO_THROW(a *= b);
+
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 10.0));
+
+  // Check case where field is not unique
+  auto c = a;
+  c *= b;
+
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 10.0));
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 40.0));
+}
+
 TEST_F(FieldPerpTest, MultiplyFieldPerpBoutReal) {
   FieldPerp a, b;
 
@@ -712,6 +824,30 @@ TEST_F(FieldPerpTest, MultiplyBoutRealFieldPerp) {
 TEST_F(FieldPerpTest, MultiplyFieldPerpFieldPerp) {
   FieldPerp a, b, c;
 
+  a = 4.0;
+  b = 8.0;
+  c = a * b;
+
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 32.0));
+}
+
+TEST_F(FieldPerpTest, MultiplyFieldPerpField2D) {
+  FieldPerp a, c;
+  Field2D b;
+
+  a.setIndex(1);
+  a = 4.0;
+  b = 8.0;
+  c = a * b;
+
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 32.0));
+}
+
+TEST_F(FieldPerpTest, MultiplyFieldPerpField3D) {
+  FieldPerp a, c;
+  Field3D b;
+
+  a.setIndex(1);
   a = 4.0;
   b = 8.0;
   c = a * b;
@@ -752,6 +888,50 @@ TEST_F(FieldPerpTest, SubtractEqualsFieldPerp) {
   EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, -12.0));
 }
 
+TEST_F(FieldPerpTest, SubtractEqualsField2D) {
+  FieldPerp a;
+  Field2D b;
+
+  a = 2.0;
+  b = 7.0;
+#if CHECK > 2
+  EXPECT_THROW(a -= b, BoutException);
+#endif
+  a.setIndex(1);
+  EXPECT_NO_THROW(a -= b);
+
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, -5.0));
+
+  // Check case where field is not unique
+  auto c = a;
+  c -= b;
+
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, -5.0));
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, -12.0));
+}
+
+TEST_F(FieldPerpTest, SubtractEqualsField3D) {
+  FieldPerp a;
+  Field3D b;
+
+  a = 2.0;
+  b = 7.0;
+#if CHECK > 2
+  EXPECT_THROW(a -= b, BoutException);
+#endif
+  a.setIndex(1);
+  EXPECT_NO_THROW(a -= b);
+
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, -5.0));
+
+  // Check case where field is not unique
+  auto c = a;
+  c -= b;
+
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, -5.0));
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, -12.0));
+}
+
 TEST_F(FieldPerpTest, SubtractFieldPerpBoutReal) {
   FieldPerp a, b;
 
@@ -773,6 +953,30 @@ TEST_F(FieldPerpTest, SubtractBoutRealFieldPerp) {
 TEST_F(FieldPerpTest, SubtractFieldPerpFieldPerp) {
   FieldPerp a, b, c;
 
+  a = 10.0;
+  b = 20.0;
+  c = a - b;
+
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, -10.0));
+}
+
+TEST_F(FieldPerpTest, SubtractFieldPerpField2D) {
+  FieldPerp a, c;
+  Field2D b;
+
+  a.setIndex(1);
+  a = 10.0;
+  b = 20.0;
+  c = a - b;
+
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, -10.0));
+}
+
+TEST_F(FieldPerpTest, SubtractFieldPerpField3D) {
+  FieldPerp a, c;
+  Field3D b;
+
+  a.setIndex(1);
   a = 10.0;
   b = 20.0;
   c = a - b;
@@ -813,6 +1017,50 @@ TEST_F(FieldPerpTest, DivideEqualsFieldPerp) {
   EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 0.8));
 }
 
+TEST_F(FieldPerpTest, DivideEqualsField2D) {
+  FieldPerp a;
+  Field2D b;
+
+  a = 5.0;
+  b = 2.5;
+#if CHECK > 2
+  EXPECT_THROW(a /= b, BoutException);
+#endif
+  a.setIndex(1);
+  EXPECT_NO_THROW(a /= b);
+
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 2.0));
+
+  // Check case where field is not unique
+  auto c = a;
+  c /= b;
+
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 2.0));
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 0.8));
+}
+
+TEST_F(FieldPerpTest, DivideEqualsField3D) {
+  FieldPerp a;
+  Field3D b;
+
+  a = 5.0;
+  b = 2.5;
+#if CHECK > 2
+  EXPECT_THROW(a /= b, BoutException);
+#endif
+  a.setIndex(1);
+  EXPECT_NO_THROW(a /= b);
+
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 2.0));
+
+  // Check case where field is not unique
+  auto c = a;
+  c /= b;
+
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 2.0));
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 0.8));
+}
+
 TEST_F(FieldPerpTest, DivideFieldPerpBoutReal) {
   FieldPerp a, b;
 
@@ -834,6 +1082,30 @@ TEST_F(FieldPerpTest, DivideBoutRealFieldPerp) {
 TEST_F(FieldPerpTest, DivideFieldPerpFieldPerp) {
   FieldPerp a, b, c;
 
+  a = 32.0;
+  b = 8.0;
+  c = a / b;
+
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 4.0));
+}
+
+TEST_F(FieldPerpTest, DivideFieldPerpField2D) {
+  FieldPerp a, c;
+  Field2D b;
+
+  a.setIndex(1);
+  a = 32.0;
+  b = 8.0;
+  c = a / b;
+
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 4.0));
+}
+
+TEST_F(FieldPerpTest, DivideFieldPerpField3D) {
+  FieldPerp a, c;
+  Field3D b;
+
+  a.setIndex(1);
   a = 32.0;
   b = 8.0;
   c = a / b;
