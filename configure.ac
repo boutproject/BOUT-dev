@@ -75,7 +75,7 @@ AC_ARG_ENABLE(track,        [AS_HELP_STRING([--enable-track],
         [Enable variable tracking])],,[])
 AC_ARG_ENABLE(debug,        [AS_HELP_STRING([--enable-debug],
         [Enable all debugging flags])],,[])
-AC_ARG_ENABLE(optimize,     [AS_HELP_STRING([--enable-optimize=1/2/3],
+AC_ARG_ENABLE(optimize,     [AS_HELP_STRING([--enable-optimize=no/1/2/3/4],
         [Enable optimization])],,[])
 AC_ARG_ENABLE(sigfpe,       [AS_HELP_STRING([--enable-sigfpe],
         [Enable FloatingPointExceptions])],,[])
@@ -113,6 +113,11 @@ AC_LANG(C++)
 #############################################################
 # Checks for programs
 #############################################################
+
+# Autoconf inserts "-g -O2" into flags by default
+# Set them to be just "-g", but only if the user hasn't already set CXXFLAGS
+# We then put "-O2" back in later, assuming optimisations aren't explicitly disabled
+: ${CXXFLAGS="-g"}
 
 # Search for MPI compiler; fail if not found
 AX_PROG_CXX_MPI([], [], [
@@ -198,53 +203,42 @@ AC_SUBST([COVERAGE_FLAGS])
 #############################################################
 
 OPT_FLAGS=""
-if test "$enable_debug" != ""
-then
-  echo "Enabling all debug options"
+AS_IF([test "$enable_debug" != ""], [
+  AC_MSG_NOTICE([Enabling all debug options])
   enable_checks="3"
   # use -Og with available, otherwise fall back to -O0
   OPT_FLAGS="-g -O0 -Og -fno-inline -hipa1"
-elif test $enable_optimize ; then
-  optimize=$enable_optimize
-  test $optimize -eq 0 2>/dev/null
-  if test $? -eq 2 ; then
-    if test $optimize == "default"
-    then
-      OPT_FLAGS="-O"
-    elif test $optimize == "fast"
-    then
-      OPT_FLAGS="-Ofast -fno-finite-math-only -march=native -funroll-loops"
-      DISABLE_CHECK=probably
-    else
-      AC_MSG_ERROR([unrecognized option: --enable-optimize=$optimize])
-    fi
-  else
-    if test $optimize -gt 3
-    then
-      OPT_FLAGS="-Ofast -fno-finite-math-only -march=native -funroll-loops"
-      DISABLE_CHECK=probably
-    elif test $optimize -gt 2
-    then
-      OPT_FLAGS="-O3 -march=native -funroll-loops"
-      DISABLE_CHECK=probably
-    elif test $optimize -gt 1
-    then
-      OPT_FLAGS="-O2 -march=native"
-    elif test $optimize -ge 0
-    then
-      OPT_FLAGS="-O$optimize"
-    else
-      AC_MSG_ERROR([unrecognized option: --enable-optimize=$optimize])
-    fi
-  fi
-else
-  OPT_FLAGS="-O"
-fi
+], [
+  AS_IF([test "x$enable_optimize" != "xno"], [
+    AS_CASE(["$enable_optimize"],
+    ["default" | "yes" | ""],
+        [AC_MSG_NOTICE([Enabling default optimisations])
+         OPT_FLAGS="-O2"],
+    ["fast" | "4"],
+        [AC_MSG_NOTICE([Enabling level 4 optimisations])
+         OPT_FLAGS="-Ofast -fno-finite-math-only -march=native -funroll-loops"
+         DISABLE_CHECK=probably],
+    ["3"],
+        [AC_MSG_NOTICE([Enabling level 3 optimisations])
+         OPT_FLAGS="-O3 -march=native -funroll-loops"
+         DISABLE_CHECK=probably],
+    ["2"],
+        [AC_MSG_NOTICE([Enabling level 2 optimisations])
+         OPT_FLAGS="-O2 -march=native"],
+    ["1" | "0"],
+        [AC_MSG_NOTICE([Enabling level $enable_optimize optimisations])
+         OPT_FLAGS="-O$enable_optimize"],
+    [
+      AC_MSG_ERROR([unrecognized option: --enable-optimize=$enable_optimize])
+    ])
+  ], [OPT_FLAGS=""])
+])
+
 for flag in $OPT_FLAGS
 do
   CXXFLAGS_save=$CXXFLAGS
   CXXFLAGS="$CXXFLAGS $flag"
-  AC_MSG_CHECKING([for flag $flag])
+  AC_MSG_CHECKING([flag $flag is supported])
   AC_TRY_COMPILE([],[],[AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no);CXXFLAGS=$CXXFLAGS_save])
 done
 

@@ -1416,7 +1416,8 @@ Optional Features:
   --disable-color         Disable -c option to color output
   --enable-track          Enable variable tracking
   --enable-debug          Enable all debugging flags
-  --enable-optimize=1/2/3 Enable optimization
+  --enable-optimize=no/1/2/3/4
+                          Enable optimization
   --enable-sigfpe         Enable FloatingPointExceptions
   --disable-backtrace     Disable function backtrace
   --enable-shared         Enable building bout++ into an shared object
@@ -2664,6 +2665,11 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 #############################################################
 # Checks for programs
 #############################################################
+
+# Autoconf inserts "-g -O2" into flags by default
+# Set them to be just "-g", but only if the user hasn't already set CXXFLAGS
+# We then put "-O2" back in later, assuming optimisations aren't explicitly disabled
+: ${CXXFLAGS="-g"}
 
 # Search for MPI compiler; fail if not found
 
@@ -5521,54 +5527,59 @@ fi
 #############################################################
 
 OPT_FLAGS=""
-if test "$enable_debug" != ""
-then
-  echo "Enabling all debug options"
+if test "$enable_debug" != ""; then :
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Enabling all debug options" >&5
+$as_echo "$as_me: Enabling all debug options" >&6;}
   enable_checks="3"
   # use -Og with available, otherwise fall back to -O0
   OPT_FLAGS="-g -O0 -Og -fno-inline -hipa1"
-elif test $enable_optimize ; then
-  optimize=$enable_optimize
-  test $optimize -eq 0 2>/dev/null
-  if test $? -eq 2 ; then
-    if test $optimize == "default"
-    then
-      OPT_FLAGS="-O"
-    elif test $optimize == "fast"
-    then
-      OPT_FLAGS="-Ofast -fno-finite-math-only -march=native -funroll-loops"
-      DISABLE_CHECK=probably
-    else
-      as_fn_error $? "unrecognized option: --enable-optimize=$optimize" "$LINENO" 5
-    fi
-  else
-    if test $optimize -gt 3
-    then
-      OPT_FLAGS="-Ofast -fno-finite-math-only -march=native -funroll-loops"
-      DISABLE_CHECK=probably
-    elif test $optimize -gt 2
-    then
-      OPT_FLAGS="-O3 -march=native -funroll-loops"
-      DISABLE_CHECK=probably
-    elif test $optimize -gt 1
-    then
-      OPT_FLAGS="-O2 -march=native"
-    elif test $optimize -ge 0
-    then
-      OPT_FLAGS="-O$optimize"
-    else
-      as_fn_error $? "unrecognized option: --enable-optimize=$optimize" "$LINENO" 5
-    fi
-  fi
+
 else
-  OPT_FLAGS="-O"
+
+  if test "x$enable_optimize" != "xno"; then :
+
+    case "$enable_optimize" in #(
+  "default" | "yes" | "") :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Enabling default optimisations" >&5
+$as_echo "$as_me: Enabling default optimisations" >&6;}
+         OPT_FLAGS="-O2" ;; #(
+  "fast" | "4") :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Enabling level 4 optimisations" >&5
+$as_echo "$as_me: Enabling level 4 optimisations" >&6;}
+         OPT_FLAGS="-Ofast -fno-finite-math-only -march=native -funroll-loops"
+         DISABLE_CHECK=probably ;; #(
+  "3") :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Enabling level 3 optimisations" >&5
+$as_echo "$as_me: Enabling level 3 optimisations" >&6;}
+         OPT_FLAGS="-O3 -march=native -funroll-loops"
+         DISABLE_CHECK=probably ;; #(
+  "2") :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Enabling level 2 optimisations" >&5
+$as_echo "$as_me: Enabling level 2 optimisations" >&6;}
+         OPT_FLAGS="-O2 -march=native" ;; #(
+  "1" | "0") :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Enabling level $enable_optimize optimisations" >&5
+$as_echo "$as_me: Enabling level $enable_optimize optimisations" >&6;}
+         OPT_FLAGS="-O$enable_optimize" ;; #(
+  *) :
+
+      as_fn_error $? "unrecognized option: --enable-optimize=$enable_optimize" "$LINENO" 5
+     ;;
+esac
+
+else
+  OPT_FLAGS=""
 fi
+
+fi
+
 for flag in $OPT_FLAGS
 do
   CXXFLAGS_save=$CXXFLAGS
   CXXFLAGS="$CXXFLAGS $flag"
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for flag $flag" >&5
-$as_echo_n "checking for flag $flag... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking flag $flag is supported" >&5
+$as_echo_n "checking flag $flag is supported... " >&6; }
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -5607,21 +5618,17 @@ $as_echo "$as_me: Run-time checking enabled" >&6;}
     { $as_echo "$as_me:${as_lineno-$LINENO}:  -> Level 1 (Basic checking)" >&5
 $as_echo "$as_me:  -> Level 1 (Basic checking)" >&6;}
           CXXFLAGS="$CXXFLAGS -DCHECK=1"
-          CHECK_LEVEL="1"
-          ;; #(
+          CHECK_LEVEL="1" ;; #(
   3) :
     { $as_echo "$as_me:${as_lineno-$LINENO}:  -> Level 3 (Full checking + stack tracing)" >&5
 $as_echo "$as_me:  -> Level 3 (Full checking + stack tracing)" >&6;}
           CXXFLAGS="$CXXFLAGS -DCHECK=3"
-          CHECK_LEVEL="3"
-          ;; #(
+          CHECK_LEVEL="3" ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}:  -> Level 2 (Basic checking + stack tracing)" >&5
 $as_echo "$as_me:  -> Level 2 (Basic checking + stack tracing)" >&6;}
      CXXFLAGS="$CXXFLAGS -DCHECK=2"
-     CHECK_LEVEL="2"
-
-   ;;
+     CHECK_LEVEL="2" ;;
 esac
 
 else
