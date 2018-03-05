@@ -210,7 +210,7 @@ const Field3D D2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
     result += f.getMesh()->coordinates()->d1_dy * f.getMesh()->indexDDY(f, outloc, DIFF_DEFAULT) / f.getMesh()->coordinates()->dy;
   }
 
-  return interp_to(result, outloc);
+  return result;
 }
 
 const Field3D D2DY2(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {

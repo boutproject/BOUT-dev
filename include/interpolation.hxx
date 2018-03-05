@@ -32,8 +32,8 @@
 #include "utils.hxx"
 
 /// Interpolate to a give cell location
-const Field3D interp_to(const Field3D &var, CELL_LOC loc);
-const Field2D interp_to(const Field2D &var, CELL_LOC loc);
+const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region=RGN_ALL);
+const Field2D interp_to(const Field2D &var, CELL_LOC loc, REGION region=RGN_ALL);
 
 /// Print out the cell location (for debugging)
 void printLocation(const Field3D &var);
