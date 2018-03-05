@@ -13,6 +13,7 @@ void autogen_Field3D_Field3D_Field3D_multiplication(BoutReal *__restrict__ resul
                                                     int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] * rhs[i];
   }
@@ -54,6 +55,7 @@ void autogen_Field3D_Field3D_multiplication(BoutReal *__restrict__ lhs,
                                             const BoutReal *__restrict__ rhs, int len) {
   SCOREP0();
 
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     lhs[i] *= rhs[i];
   }
@@ -99,6 +101,7 @@ void autogen_Field3D_Field3D_Field3D_division(BoutReal *__restrict__ result,
                                               const BoutReal *__restrict__ rhs, int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] / rhs[i];
   }
@@ -140,6 +143,7 @@ void autogen_Field3D_Field3D_division(BoutReal *__restrict__ lhs,
                                       const BoutReal *__restrict__ rhs, int len) {
   SCOREP0();
 
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     lhs[i] /= rhs[i];
   }
@@ -185,6 +189,7 @@ void autogen_Field3D_Field3D_Field3D_addition(BoutReal *__restrict__ result,
                                               const BoutReal *__restrict__ rhs, int len) {
   SCOREP0();
 
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] + rhs[i];
   }
@@ -226,6 +231,7 @@ void autogen_Field3D_Field3D_addition(BoutReal *__restrict__ lhs,
                                       const BoutReal *__restrict__ rhs, int len) {
   SCOREP0();
 
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     lhs[i] += rhs[i];
   }
@@ -272,6 +278,7 @@ void autogen_Field3D_Field3D_Field3D_subtraction(BoutReal *__restrict__ result,
                                                  int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] - rhs[i];
   }
@@ -313,6 +320,7 @@ void autogen_Field3D_Field3D_subtraction(BoutReal *__restrict__ lhs,
                                          const BoutReal *__restrict__ rhs, int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     lhs[i] -= rhs[i];
   }
@@ -359,6 +367,7 @@ void autogen_Field3D_Field3D_Field2D_multiplication(BoutReal *__restrict__ resul
                                                     int nx, int ny, int nz) {
 
   SCOREP0();
+#pragma omp parallel for collapse(3)
   for (int x = 0; x < nx; ++x)
     for (int y = 0; y < ny; ++y)
       for (int z = 0; z < nz; ++z) {
@@ -396,6 +405,7 @@ void autogen_Field3D_Field2D_multiplication(BoutReal *__restrict__ lhs,
                                             int ny, int nz) {
 
   SCOREP0();
+#pragma omp parallel for collapse(3)
   for (int x = 0; x < nx; ++x)
     for (int y = 0; y < ny; ++y)
       for (int z = 0; z < nz; ++z) {
@@ -435,6 +445,7 @@ void autogen_Field3D_Field3D_Field2D_division(BoutReal *__restrict__ result,
                                               int ny, int nz) {
   SCOREP0();
 
+#pragma omp parallel for collapse(3)
   for (int x = 0; x < nx; ++x)
     for (int y = 0; y < ny; ++y)
       for (int z = 0; z < nz; ++z) {
@@ -472,6 +483,7 @@ void autogen_Field3D_Field2D_division(BoutReal *__restrict__ lhs,
                                       int nz) {
 
   SCOREP0();
+#pragma omp parallel for collapse(3)
   for (int x = 0; x < nx; ++x)
     for (int y = 0; y < ny; ++y)
       for (int z = 0; z < nz; ++z) {
@@ -510,6 +522,7 @@ void autogen_Field3D_Field3D_Field2D_addition(BoutReal *__restrict__ result,
                                               int ny, int nz) {
 
   SCOREP0();
+#pragma omp parallel for collapse(3)
   for (int x = 0; x < nx; ++x)
     for (int y = 0; y < ny; ++y)
       for (int z = 0; z < nz; ++z) {
@@ -547,6 +560,7 @@ void autogen_Field3D_Field2D_addition(BoutReal *__restrict__ lhs,
                                       int nz) {
 
   SCOREP0();
+#pragma omp parallel for collapse(3)
   for (int x = 0; x < nx; ++x)
     for (int y = 0; y < ny; ++y)
       for (int z = 0; z < nz; ++z) {
@@ -586,6 +600,7 @@ void autogen_Field3D_Field3D_Field2D_subtraction(BoutReal *__restrict__ result,
                                                  int ny, int nz) {
 
   SCOREP0();
+#pragma omp parallel for collapse(3)
   for (int x = 0; x < nx; ++x)
     for (int y = 0; y < ny; ++y)
       for (int z = 0; z < nz; ++z) {
@@ -623,6 +638,7 @@ void autogen_Field3D_Field2D_subtraction(BoutReal *__restrict__ lhs,
                                          int nz) {
 
   SCOREP0();
+#pragma omp parallel for collapse(3)
   for (int x = 0; x < nx; ++x)
     for (int y = 0; y < ny; ++y)
       for (int z = 0; z < nz; ++z) {
@@ -661,6 +677,7 @@ void autogen_Field3D_Field3D_BoutReal_multiplication(BoutReal *__restrict__ resu
                                                      const BoutReal rhs, int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] * rhs;
   }
@@ -693,6 +710,7 @@ void autogen_Field3D_BoutReal_multiplication(BoutReal *__restrict__ lhs,
                                              const BoutReal rhs, int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     lhs[i] *= rhs;
   }
@@ -727,6 +745,7 @@ void autogen_Field3D_Field3D_BoutReal_division(BoutReal *__restrict__ result,
                                                const BoutReal rhs, int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] / rhs;
   }
@@ -759,6 +778,7 @@ void autogen_Field3D_BoutReal_division(BoutReal *__restrict__ lhs, const BoutRea
                                        int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     lhs[i] /= rhs;
   }
@@ -793,6 +813,7 @@ void autogen_Field3D_Field3D_BoutReal_addition(BoutReal *__restrict__ result,
                                                const BoutReal rhs, int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] + rhs;
   }
@@ -825,6 +846,7 @@ void autogen_Field3D_BoutReal_addition(BoutReal *__restrict__ lhs, const BoutRea
                                        int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     lhs[i] += rhs;
   }
@@ -859,6 +881,7 @@ void autogen_Field3D_Field3D_BoutReal_subtraction(BoutReal *__restrict__ result,
                                                   const BoutReal rhs, int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] - rhs;
   }
@@ -891,6 +914,7 @@ void autogen_Field3D_BoutReal_subtraction(BoutReal *__restrict__ lhs, const Bout
                                           int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     lhs[i] -= rhs;
   }
@@ -926,6 +950,7 @@ void autogen_Field3D_Field2D_Field3D_multiplication(BoutReal *__restrict__ resul
                                                     int nx, int ny, int nz) {
   SCOREP0();
 
+#pragma omp parallel for collapse(3)
   for (int x = 0; x < nx; ++x)
     for (int y = 0; y < ny; ++y)
       for (int z = 0; z < nz; ++z) {
@@ -964,6 +989,7 @@ void autogen_Field3D_Field2D_Field3D_division(BoutReal *__restrict__ result,
                                               int ny, int nz) {
 
   SCOREP0();
+#pragma omp parallel for collapse(3)
   for (int x = 0; x < nx; ++x)
     for (int y = 0; y < ny; ++y)
       for (int z = 0; z < nz; ++z) {
@@ -1002,6 +1028,7 @@ void autogen_Field3D_Field2D_Field3D_addition(BoutReal *__restrict__ result,
                                               int ny, int nz) {
 
   SCOREP0();
+#pragma omp parallel for collapse(3)
   for (int x = 0; x < nx; ++x)
     for (int y = 0; y < ny; ++y)
       for (int z = 0; z < nz; ++z) {
@@ -1040,6 +1067,7 @@ void autogen_Field3D_Field2D_Field3D_subtraction(BoutReal *__restrict__ result,
                                                  int ny, int nz) {
 
   SCOREP0();
+#pragma omp parallel for collapse(3)
   for (int x = 0; x < nx; ++x)
     for (int y = 0; y < ny; ++y)
       for (int z = 0; z < nz; ++z) {
@@ -1078,6 +1106,7 @@ void autogen_Field2D_Field2D_Field2D_multiplication(BoutReal *__restrict__ resul
                                                     int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] * rhs[i];
   }
@@ -1109,6 +1138,7 @@ void autogen_Field2D_Field2D_multiplication(BoutReal *__restrict__ lhs,
                                             const BoutReal *__restrict__ rhs, int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     lhs[i] *= rhs[i];
   }
@@ -1145,6 +1175,7 @@ void autogen_Field2D_Field2D_Field2D_division(BoutReal *__restrict__ result,
                                               const BoutReal *__restrict__ rhs, int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] / rhs[i];
   }
@@ -1176,6 +1207,7 @@ void autogen_Field2D_Field2D_division(BoutReal *__restrict__ lhs,
                                       const BoutReal *__restrict__ rhs, int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     lhs[i] /= rhs[i];
   }
@@ -1212,6 +1244,7 @@ void autogen_Field2D_Field2D_Field2D_addition(BoutReal *__restrict__ result,
                                               const BoutReal *__restrict__ rhs, int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] + rhs[i];
   }
@@ -1243,6 +1276,7 @@ void autogen_Field2D_Field2D_addition(BoutReal *__restrict__ lhs,
                                       const BoutReal *__restrict__ rhs, int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     lhs[i] += rhs[i];
   }
@@ -1280,6 +1314,7 @@ void autogen_Field2D_Field2D_Field2D_subtraction(BoutReal *__restrict__ result,
                                                  int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] - rhs[i];
   }
@@ -1311,6 +1346,7 @@ void autogen_Field2D_Field2D_subtraction(BoutReal *__restrict__ lhs,
                                          const BoutReal *__restrict__ rhs, int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     lhs[i] -= rhs[i];
   }
@@ -1347,6 +1383,7 @@ void autogen_Field2D_Field2D_BoutReal_multiplication(BoutReal *__restrict__ resu
                                                      const BoutReal rhs, int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] * rhs;
   }
@@ -1376,6 +1413,7 @@ void autogen_Field2D_BoutReal_multiplication(BoutReal *__restrict__ lhs,
                                              const BoutReal rhs, int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     lhs[i] *= rhs;
   }
@@ -1410,6 +1448,7 @@ void autogen_Field2D_Field2D_BoutReal_division(BoutReal *__restrict__ result,
                                                const BoutReal rhs, int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] / rhs;
   }
@@ -1439,6 +1478,7 @@ void autogen_Field2D_BoutReal_division(BoutReal *__restrict__ lhs, const BoutRea
                                        int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     lhs[i] /= rhs;
   }
@@ -1473,6 +1513,7 @@ void autogen_Field2D_Field2D_BoutReal_addition(BoutReal *__restrict__ result,
                                                const BoutReal rhs, int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] + rhs;
   }
@@ -1502,6 +1543,7 @@ void autogen_Field2D_BoutReal_addition(BoutReal *__restrict__ lhs, const BoutRea
                                        int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     lhs[i] += rhs;
   }
@@ -1536,6 +1578,7 @@ void autogen_Field2D_Field2D_BoutReal_subtraction(BoutReal *__restrict__ result,
                                                   const BoutReal rhs, int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     result[i] = lhs[i] - rhs;
   }
@@ -1565,6 +1608,7 @@ void autogen_Field2D_BoutReal_subtraction(BoutReal *__restrict__ lhs, const Bout
                                           int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     lhs[i] -= rhs;
   }
@@ -1600,6 +1644,7 @@ void autogen_Field3D_BoutReal_Field3D_multiplication(BoutReal *__restrict__ resu
                                                      int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     result[i] = lhs * rhs[i];
   }
@@ -1634,6 +1679,7 @@ void autogen_Field3D_BoutReal_Field3D_division(BoutReal *__restrict__ result,
                                                int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     result[i] = lhs / rhs[i];
   }
@@ -1668,6 +1714,7 @@ void autogen_Field3D_BoutReal_Field3D_addition(BoutReal *__restrict__ result,
                                                int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     result[i] = lhs + rhs[i];
   }
@@ -1702,6 +1749,7 @@ void autogen_Field3D_BoutReal_Field3D_subtraction(BoutReal *__restrict__ result,
                                                   int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     result[i] = lhs - rhs[i];
   }
@@ -1736,6 +1784,7 @@ void autogen_Field2D_BoutReal_Field2D_multiplication(BoutReal *__restrict__ resu
                                                      int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     result[i] = lhs * rhs[i];
   }
@@ -1767,6 +1816,7 @@ void autogen_Field2D_BoutReal_Field2D_division(BoutReal *__restrict__ result,
                                                int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     result[i] = lhs / rhs[i];
   }
@@ -1798,6 +1848,7 @@ void autogen_Field2D_BoutReal_Field2D_addition(BoutReal *__restrict__ result,
                                                int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     result[i] = lhs + rhs[i];
   }
@@ -1829,6 +1880,7 @@ void autogen_Field2D_BoutReal_Field2D_subtraction(BoutReal *__restrict__ result,
                                                   int len) {
 
   SCOREP0();
+#pragma omp parallel for
   for (int i = 0; i < len; ++i) {
     result[i] = lhs - rhs[i];
   }
