@@ -1,0 +1,21 @@
+# Test of the interp_to functions
+#
+# Generates a set of fields, interpolates them and writes them to output file
+#
+
+NOUT = 0  # No timesteps
+
+[mesh]
+staggergrids = true
+nx = 12
+ny = 16
+nz = 32
+ixseps1 = 6
+ixseps2 = 6
+jyseps1_1 = -1
+jyseps1_2 = 6
+jyseps2_1 = 6
+jyseps2_2 = 15
+
+[output]
+floats=false

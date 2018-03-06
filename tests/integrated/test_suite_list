@@ -5,6 +5,7 @@ test-io
 test-command-args
 test-fieldfactory
 test-restarting
+test-interp_to
 test-laplace
 test-cyclic
 test-multigrid_laplace
