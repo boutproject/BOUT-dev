@@ -387,8 +387,8 @@ const Vector3D operator*(const Field3D &lhs, const Vector2D &rhs) {
  ***************************************************************/
 
 // Return the magnitude of a vector
-const Field2D abs(const Vector2D &v) {
-  return sqrt(v*v);
+const Field2D abs(const Vector2D &v, REGION region) {
+  return sqrt(v*v, region);
 }
 
 /***************************************************************
