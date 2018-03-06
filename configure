@@ -2531,6 +2531,8 @@ fi
 # Check whether --with-lapack was given.
 if test "${with_lapack+set}" = set; then :
   withval=$with_lapack;
+else
+  with_lapack=guess
 fi
 
 
@@ -8114,17 +8116,18 @@ echo
 #############################################################
 
 HAS_LAPACK="no"
-if ( ( test "$with_lapack" != "no" ) )
-then
-    if  test .$with_lapack = .guess || test .$with_lapack = . ; then :
-   lapack_path=""
+if test "x$with_lapack" != "xno"; then :
+
+  if test "x$with_lapack" = "xguess" || test "x$with_lapack" = "x" ; then :
+  lapack_path=""
 else
-   if test .$lapack_path != .yes; then :
+  if test "x$with_lapack" != xyes; then :
   lapack_path=$with_lapack
-                                 with_lapack=yes
+        with_lapack=yes
 else
   lapack_path=""
 fi
+
 fi
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libblas" >&5
@@ -8146,11 +8149,11 @@ fi
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 extern "C"
-    char zgemm_ ();
+    char zgemm_();
 int
 main ()
 {
-return zgemm_ ();
+return zgemm_();
   ;
   return 0;
 }
@@ -8174,11 +8177,11 @@ rm -f core conftest.err conftest.$ac_objext \
                     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 extern "C"
-                        char zgemm_ ();
+                        char zgemm_();
 int
 main ()
 {
-return zgemm_ ();
+return zgemm_();
   ;
   return 0;
 }
@@ -8209,6 +8212,18 @@ $as_echo "no" >&6; }
     fi
     if test .$BACL_found = .yes; then :
   HAS_BLAS=yes
+else
+  if test "x$with_lapack" = "xyes"; then :
+  as_fn_error $? "LAPACK requested but couldn't find BLAS" "$LINENO" 5
+fi
+fi
+    ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for liblapack" >&5
 $as_echo_n "checking for liblapack... " >&6; }
@@ -8221,19 +8236,19 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
     LDFLAGS_save=$LDFLAGS
     LIBS="$EXTRA_LIBS -llapack"
     BACL_found=no
-    if test ."$lapack_path " = .yes; then :
+    if test ."$lapack_path" = .yes; then :
   extra_prefix=""
 else
-  extra_prefix="$lapack_path "
+  extra_prefix="$lapack_path"
 fi
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 extern "C"
-    char zgbsv_ ();
+    char zgbsv_();
 int
 main ()
 {
-return zgbsv_ ();
+return zgbsv_();
   ;
   return 0;
 }
@@ -8257,11 +8272,11 @@ rm -f core conftest.err conftest.$ac_objext \
                     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 extern "C"
-                        char zgbsv_ ();
+                        char zgbsv_();
 int
 main ()
 {
-return zgbsv_ ();
+return zgbsv_();
   ;
   return 0;
 }
@@ -8292,12 +8307,9 @@ $as_echo "no" >&6; }
     fi
     if test .$BACL_found = .yes; then :
   HAS_LAPACK=yes
-            echo "Using LAPACK"
-            CXXFLAGS="$CXXFLAGS -DLAPACK"
-
 else
-   if test .$with_lapack = ".yes"; then :
-  as_fn_error $? "\"LAPACK requested but not found.\"" "$LINENO" 5
+  if test "x$with_lapack" = "xyes"; then :
+  as_fn_error $? "LAPACK requested but not found" "$LINENO" 5
 fi
 fi
     ac_ext=cpp
@@ -8307,21 +8319,10 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Using LAPACK" >&5
+$as_echo "$as_me: Using LAPACK" >&6;}
+  CXXFLAGS="$CXXFLAGS -DLAPACK"
 
-else
-   if test .$with_lapack = ".yes"; then :
-  as_fn_error $? "\"LAPACK requested but not found.\"" "$LINENO" 5
-fi
-fi
-    ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
-
-
-    echo ""
 fi
 
 #############################################################

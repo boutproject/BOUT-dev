@@ -49,7 +49,7 @@ AC_ARG_WITH(sundials,     [AS_HELP_STRING([--with-sundials],
 AC_ARG_WITH(fftw,         [AS_HELP_STRING([--with-fftw],
         [Set directory of FFTW3 library])],,[])
 AC_ARG_WITH(lapack,       [AS_HELP_STRING([--with-lapack],
-        [Use the LAPACK library])],,[])
+        [Use the LAPACK library])],,[with_lapack=guess])
 AC_ARG_WITH(petsc,        [AS_HELP_STRING([--with-petsc],
         [Enable PETSc interface])],,[])
 AC_ARG_WITH(slepc,        [AS_HELP_STRING([--with-slepc],
@@ -588,24 +588,27 @@ echo
 #############################################################
 
 HAS_LAPACK="no"
-if ( ( test "$with_lapack" != "no" ) )
-then
-    AS_IF( [ test .$with_lapack = .guess || test .$with_lapack = . ],
-                 [ lapack_path="" ],
-                 [ AS_IF(test .$lapack_path != .yes, [lapack_path=$with_lapack
-                                 with_lapack=yes], lapack_path="" )])
-    dnl echo "\$with_lapack=$with_lapack"
-    dnl echo "\$lapack_pat=$lapack_path"
-    BOUT_ADDPATH_CHECK_LIB(blas, zgemm_ , [HAS_BLAS=yes
-        BOUT_ADDPATH_CHECK_LIB(lapack, zgbsv_ , HAS_LAPACK=yes
-            echo "Using LAPACK"
-            CXXFLAGS="$CXXFLAGS -DLAPACK"
-            ,
-          [ AS_IF( [test .$with_lapack = ".yes"], AC_MSG_ERROR("LAPACK requested but not found.")) ], $lapack_path )
-        ]	, [ AS_IF( [test .$with_lapack = ".yes"], AC_MSG_ERROR("LAPACK requested but not found.")) ] , $lapack_path)
-
-    echo ""
-fi
+AS_IF([test "x$with_lapack" != "xno"], [
+  AS_IF([test "x$with_lapack" = "xguess" || test "x$with_lapack" = "x" ],
+    [lapack_path=""],
+    [AS_IF([test "x$with_lapack" != xyes],
+       [lapack_path=$with_lapack
+        with_lapack=yes],
+       [lapack_path=""])
+    ])
+  BOUT_ADDPATH_CHECK_LIB(blas, zgemm_,
+    [HAS_BLAS=yes],
+    [AS_IF([test "x$with_lapack" = "xyes"],
+       AC_MSG_ERROR([LAPACK requested but couldn't find BLAS]))],
+    $lapack_path)
+  BOUT_ADDPATH_CHECK_LIB(lapack, zgbsv_,
+    [HAS_LAPACK=yes],
+    [AS_IF([test "x$with_lapack" = "xyes"],
+       AC_MSG_ERROR([LAPACK requested but not found]))],
+    $lapack_path)
+  AC_MSG_NOTICE([Using LAPACK])
+  CXXFLAGS="$CXXFLAGS -DLAPACK"
+])
 
 #############################################################
 # PETSc library
