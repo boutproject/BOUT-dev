@@ -172,7 +172,7 @@ public:
    * @param[in] name  The name of the option
    * @param[in] len   The length of the vector
    * @param[in] offset Not currently used
-   * @paramin] dir  The direction (X,Y,Z) of the array
+   * @param[in] dir  The direction (X,Y,Z) of the array
    */ 
   bool get(Mesh *m, vector<int> &var,      const string &name, int len, int offset=0, GridDataSource::Direction dir = GridDataSource::X);
 
@@ -186,7 +186,7 @@ public:
    * @param[in] name  The name of the option
    * @param[in] len   The length of the vector
    * @param[in] offset The index where this vector starts i.e. var[0] is at x=offset if dir is X.
-   * @paramin] dir  The direction (X,Y,Z) of the array
+   * @param[in] dir  The direction (X,Y,Z) of the array
    */ 
   bool get(Mesh *m, vector<BoutReal> &var, const string &name, int len, int offset=0, GridDataSource::Direction dir = GridDataSource::X);
   
