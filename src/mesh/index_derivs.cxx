@@ -1196,7 +1196,7 @@ const Field3D Mesh::indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
 
       } else if (inloc != CELL_CENTRE) {
         // Interpolate then (centre -> centre) then interpolate
-        return DDX(interp_to(f, CELL_CENTRE), outloc, method);
+        return DDX(interp_to(f, CELL_CENTRE, RGN_NOY), outloc, method);
       }
     }
   }
@@ -1211,7 +1211,7 @@ const Field3D Mesh::indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
   result = applyXdiff(f, func, diffloc);
   result.setLocation(diffloc); // Set the result location
 
-  result = interp_to(result, outloc); // Interpolate if necessary
+  result = interp_to(result, outloc, RGN_NOBNDRY); // Interpolate if necessary
 
   return result;
 }
@@ -1257,7 +1257,7 @@ const Field3D Mesh::indexDDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
 
       } else if (inloc != CELL_CENTRE) {
         // Interpolate to centre then call DDY again
-        return DDY(interp_to(f, CELL_CENTRE), outloc, method);
+        return DDY(interp_to(f, CELL_CENTRE, RGN_NOX), outloc, method);
       }
     }
   }
@@ -1273,7 +1273,7 @@ const Field3D Mesh::indexDDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
 
   result.setLocation(diffloc); // Set the result location
 
-  return interp_to(result, outloc); // Interpolate if necessary
+  return interp_to(result, outloc, RGN_NOBNDRY); // Interpolate if necessary
 }
 
 const Field2D Mesh::indexDDY(const Field2D &f) { return applyYdiff(f, fDDY); }
@@ -1318,7 +1318,7 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
 
       } else if (inloc != CELL_CENTRE) {
         // Interpolate then (centre -> centre) then interpolate
-        return DDZ(interp_to(f, CELL_CENTRE), outloc, method);
+        return DDZ(interp_to(f, CELL_CENTRE, RGN_NOBNDRY), outloc, method);
       }
     }
   }
@@ -1412,7 +1412,7 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
 
   result.setLocation(diffloc);
 
-  return interp_to(result, outloc);
+  return interp_to(result, outloc, RGN_NOBNDRY);
 }
 
 const Field2D Mesh::indexDDZ(const Field2D &f) {
@@ -1478,7 +1478,7 @@ const Field3D Mesh::indexD2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
 
       } else if (inloc != CELL_CENTRE) {
         // Interpolate then (centre -> centre) then interpolate
-        return D2DX2(interp_to(f, CELL_CENTRE), outloc, method);
+        return D2DX2(interp_to(f, CELL_CENTRE, RGN_NOY), outloc, method);
       }
     }
   }
@@ -1493,7 +1493,7 @@ const Field3D Mesh::indexD2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
   result = applyXdiff(f, func);
   result.setLocation(diffloc);
 
-  result = interp_to(result, outloc);
+  result = interp_to(result, outloc, RGN_NOBNDRY);
 
   return result;
 }
@@ -1560,7 +1560,7 @@ const Field3D Mesh::indexD2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
 
       } else if (inloc != CELL_CENTRE) {
         // Interpolate then (centre -> centre) then interpolate
-        return D2DY2(interp_to(f, CELL_CENTRE), outloc, method);
+        return D2DY2(interp_to(f, CELL_CENTRE, RGN_NOX), outloc, method);
       }
     }
   }
@@ -1575,7 +1575,7 @@ const Field3D Mesh::indexD2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
   result = applyYdiff(f, func);
   result.setLocation(diffloc);
 
-  return interp_to(result, outloc);
+  return interp_to(result, outloc, RGN_NOBNDRY);
 }
 
 /*!
@@ -1641,7 +1641,7 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
 
       } else if (inloc != CELL_CENTRE) {
         // Interpolate then (centre -> centre) then interpolate
-        return D2DZ2(interp_to(f, CELL_CENTRE), outloc, method);
+        return D2DZ2(interp_to(f, CELL_CENTRE, RGN_NOBNDRY), outloc, method);
       }
     }
   }
@@ -1716,7 +1716,7 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
 
   result.setLocation(diffloc);
 
-  return interp_to(result, outloc);
+  return interp_to(result, outloc, RGN_NOBNDRY);
 }
 
 /*******************************************************************************
@@ -1998,7 +1998,7 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
 
-  return interp_to(result, outloc);
+  return interp_to(result, outloc, region);
 }
 
 ////////////// Y DERIVATIVE /////////////////
@@ -2189,7 +2189,7 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
 
-  return interp_to(result, outloc);
+  return interp_to(result, outloc, region);
 }
 
 // general case
@@ -2458,7 +2458,7 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
 
-  return interp_to(result, outloc);
+  return interp_to(result, outloc, region);
 }
 
 ////////////// Z DERIVATIVE /////////////////
@@ -2571,7 +2571,7 @@ const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
 
-  return interp_to(result, outloc);
+  return interp_to(result, outloc, region);
 }
 
 /*******************************************************************************
@@ -2853,7 +2853,7 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
 
-  return interp_to(result, outloc);
+  return interp_to(result, outloc, region);
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -3156,7 +3156,7 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
 
-  return interp_to(result, outloc);
+  return interp_to(result, outloc, RGN_NOBNDRY);
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -3254,5 +3254,5 @@ const Field3D Mesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
 
-  return interp_to(result, outloc);
+  return interp_to(result, outloc, RGN_NOBNDRY);
 }

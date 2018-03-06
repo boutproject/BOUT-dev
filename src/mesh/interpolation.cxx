@@ -44,12 +44,16 @@ BoutReal interp(const stencil &s)
 /*!
   Interpolate between different cell locations
   
-  NOTE: This requires communication
+  NOTE: This requires communication if the result is required in guard cells
+  NOTE: Since corner guard cells cannot be communicated, it never makes sense
+  to calculate interpolation in guard cells. If guard cell values are required,
+  we must communicate (unless interpolating in z).
 
   @param[in]   var  Input variable
   @param[in]   loc  Location of output values
+  @param[in]   region  Region where output will be calculated
 */
-const Field3D interp_to(const Field3D &var, CELL_LOC loc)
+const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region)
 {
   if(mesh->StaggerGrids && (var.getLocation() != loc)) {
 
@@ -58,7 +62,10 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
 
     Field3D result(var.getMesh());
 
-    result = var; // NOTE: This is just for boundaries. FIX!
+    if (region != RGN_NOBNDRY) {
+      // result is requested in some boundary region(s)
+      result = var; // NOTE: This is just for boundaries. FIX!
+    }
     result.allocate();
 
     // Cell location of the input field
@@ -75,7 +82,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
 
       switch(dir) {
       case CELL_XLOW: {
-        for(const auto &i : result.region(RGN_NOX)) {
+        for(const auto &i : result.region(RGN_NOBNDRY)) {
 
 	  // Set stencils
 	  s.c = var[i];
@@ -96,8 +103,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
 
 	  result[i] = interp(s);
 	}
-	break;
-	// Need to communicate in X
+        break;
       }
       case CELL_YLOW: {
 	if (var.hasYupYdown() && 
@@ -107,12 +113,13 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
 	  // the magnetic field
 	  s.pp = nan("");
 	  s.mm = nan("");
-          for(const auto &i : result.region(RGN_NOY)) {
+
+          for(const auto &i : result.region(RGN_NOBNDRY)) {
 	    // Set stencils
 	    s.c = var[i];
 	    s.p = var.yup()[i.yp()];
 	    s.m = var.ydown()[i.ym()];
-	    
+
 	    if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
 	      // Producing a stencil centred around a lower Y value
 	      s.pp = s.p;
@@ -131,33 +138,34 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
 	  
 	  Field3D var_fa = mesh->toFieldAligned(var);
 	  if (mesh->ystart > 1) {
-	  // More than one guard cell, so set pp and mm values
-	  // This allows higher-order methods to be used
-          for(const auto &i : result.region(RGN_NOY)) {
-	    // Set stencils
-	    s.c = var_fa[i];
-	    s.p = var_fa[i.yp()];
-	    s.m = var_fa[i.ym()];
-	    s.pp = var_fa[i.offset(0,2,0)];
-	    s.mm = var_fa[i.offset(0,-2,0)];
-	    
-	    if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
-	      // Producing a stencil centred around a lower Y value
-	      s.pp = s.p;
-	      s.p  = s.c;
-	    } else if(location == CELL_YLOW) {
-	      // Stencil centred around a cell centre
-	      s.mm = s.m;
-	      s.m  = s.c;
-	    }
-	    
-	    result[i] = interp(s);
-	  }
+
+            // More than one guard cell, so set pp and mm values
+            // This allows higher-order methods to be used
+            for(const auto &i : result.region(RGN_NOBNDRY)) {
+              // Set stencils
+              s.c = var_fa[i];
+              s.p = var_fa[i.yp()];
+              s.m = var_fa[i.ym()];
+              s.pp = var_fa[i.offset(0,2,0)];
+              s.mm = var_fa[i.offset(0,-2,0)];
+              
+              if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
+                // Producing a stencil centred around a lower Y value
+                s.pp = s.p;
+                s.p  = s.c;
+              } else if(location == CELL_YLOW) {
+                // Stencil centred around a cell centre
+                s.mm = s.m;
+                s.m  = s.c;
+              }
+              
+              result[i] = interp(s);
+            }
 	  } else {
 	    // Only one guard cell, so no pp or mm values
 	    s.pp = nan("");
 	    s.mm = nan("");
-            for(const auto &i : result.region(RGN_NOY)) {
+            for(const auto &i : result.region(RGN_NOBNDRY)) {
 	      // Set stencils
 	      s.c = var_fa[i];
 	      s.p = var_fa[i.yp()];
@@ -178,10 +186,11 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
 	  }
 	}
 	break;
-	// Need to communicate in Y
       }
       case CELL_ZLOW: {
-        for(const auto &i : result.region(RGN_NOZ)) {
+        REGION this_region = region;
+        if ( region==RGN_ALL ) this_region=RGN_NOZ;
+        for(const auto &i : result.region(this_region)) {
 	  s.c = var[i];
 	  s.p = var[i.zp()];
 	  s.m = var[i.zm()];
@@ -199,19 +208,16 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
       };
       
       if(dir != CELL_ZLOW) {
-	// COMMUNICATION
-	
-	mesh->communicate(result);
-
-	// BOUNDARIES
+        // COMMUNICATION
+        if ( region!=RGN_NOBNDRY ) mesh->communicate(result);
+        // BOUNDARIES
 
       }
 
     }else {
       // Shifted -> shifted
       // For now, shift to centre then to shifted
-      
-      result = interp_to( interp_to(var, CELL_CENTRE) , loc);
+      result = interp_to( interp_to(var, CELL_CENTRE) , loc, region);
     }
     result.setLocation(loc);
 
@@ -222,8 +228,134 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
   return var;
 }
 
-const Field2D interp_to(const Field2D &var, CELL_LOC UNUSED(loc)) {
-  // Currently do nothing
+const Field2D interp_to(const Field2D &var, CELL_LOC loc, REGION region)
+{
+  // Note Field2D has no z-variation, so nothing needs to be done for
+  // interpolation in the z-direction
+  if(mesh->StaggerGrids && loc != CELL_ZLOW && (var.getLocation() != loc)) {
+
+    // Staggered grids enabled, and need to perform interpolation
+    TRACE("Interpolating %s -> %s", strLocation(var.getLocation()), strLocation(loc));
+
+    Field2D result(var.getMesh());
+
+    if (region != RGN_NOBNDRY) {
+      // result is requested in some boundary region(s)
+      result = var; // NOTE: This is just for boundaries. FIX!
+    }
+    result.allocate();
+
+    // Cell location of the input field
+    CELL_LOC location = var.getLocation();
+    
+    if((location == CELL_CENTRE) || (loc == CELL_CENTRE)) {
+      // Going between centred and shifted
+      
+      stencil s;
+      CELL_LOC dir; 
+      
+      // Get the non-centre location for interpolation direction
+      dir = (loc == CELL_CENTRE) ? location : loc;
+
+      switch(dir) {
+      case CELL_XLOW: {
+        for(const auto &i : result.region(RGN_NOBNDRY)) {
+
+	  // Set stencils
+	  s.c = var[i];
+	  s.p = var[i.xp()];
+	  s.m = var[i.xm()];
+	  s.pp = var[i.offset(2,0,0)];
+	  s.mm = var[i.offset(-2,0,0)];
+	  
+	  if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
+	    // Producing a stencil centred around a lower X value
+	    s.pp = s.p;
+	    s.p  = s.c;
+	  } else if (location == CELL_XLOW) {
+	    // Stencil centred around a cell centre
+	    s.mm = s.m;
+	    s.m  = s.c;
+	  }
+
+	  result[i] = interp(s);
+	}
+        break;
+      }
+      case CELL_YLOW: {
+        
+        if (mesh->ystart > 1) {
+          // More than one guard cell, so set pp and mm values
+          // This allows higher-order methods to be used
+          for(const auto &i : result.region(RGN_NOBNDRY)) {
+            // Set stencils
+            s.c = var[i];
+            s.p = var[i.yp()];
+            s.m = var[i.ym()];
+            s.pp = var[i.offset(0,2,0)];
+            s.mm = var[i.offset(0,-2,0)];
+            
+            if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
+              // Producing a stencil centred around a lower Y value
+              s.pp = s.p;
+              s.p  = s.c;
+            } else if(location == CELL_YLOW) {
+              // Stencil centred around a cell centre
+              s.mm = s.m;
+              s.m  = s.c;
+            }
+            
+            result[i] = interp(s);
+          }
+        } else {
+          // Only one guard cell, so no pp or mm values
+          s.pp = nan("");
+          s.mm = nan("");
+          for(const auto &i : result.region(RGN_NOBNDRY)) {
+            // Set stencils
+            s.c = var[i];
+            s.p = var[i.yp()];
+            s.m = var[i.ym()];
+            
+            if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
+              // Producing a stencil centred around a lower Y value
+              s.pp = s.p;
+              s.p  = s.c;
+            } else if(location == CELL_YLOW) {
+              // Stencil centred around a cell centre
+              s.mm = s.m;
+              s.m  = s.c;
+            }
+            
+            result[i] = interp(s);
+          }
+        }
+	break;
+      }
+      default: {
+	// This should never happen
+	throw BoutException("Don't know what to do");
+      }
+      };
+      
+      if(dir != CELL_ZLOW) {
+        // COMMUNICATION
+        if ( region!=RGN_NOBNDRY ) mesh->communicate(result);
+        // BOUNDARIES
+
+      }
+
+    }else {
+      // Shifted -> shifted
+      // For now, shift to centre then to shifted
+      result = interp_to( interp_to(var, CELL_CENTRE) , loc, region);
+    }
+    result.setLocation(loc);
+
+    return result;
+  }
+  
+  // Nothing to do - just return unchanged
   return var;
 }
 

@@ -166,7 +166,7 @@ const Vector3D operator*(const Field3D &lhs, const Vector2D &rhs);
  *
  * |v| = sqrt( v dot v )
  */
-const Field2D abs(const Vector2D &v);
+const Field2D abs(const Vector2D &v, REGION region=RGN_ALL);
 
 /*!
  * @brief Time derivative of 2D vector field
