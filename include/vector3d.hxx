@@ -226,7 +226,7 @@ const Vector3D operator*(const Field3D &lhs, const Vector3D &rhs);
  * 
  * sqrt( v.x^2 + v.y^2 + v.z^2 )
  */ 
-const Field3D abs(const Vector3D &v);
+const Field3D abs(const Vector3D &v, REGION region = RGN_ALL);
 
 /*!
  * @brief Time derivative of 3D vector field
