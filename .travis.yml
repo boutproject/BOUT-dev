@@ -55,6 +55,60 @@ matrix:
     #disable a noisy message arising from the relatively old version of openmpi
     #in use in combination with the relatively new version of gcc. We should be able
     #to remove this if a newer openmpi version is introduced.
+  - addons:
+      apt:
+        packages:
+          - openmpi-bin
+          - libopenmpi-dev
+          - libfftw3-dev
+          - libnetcdf-dev
+          - libhdf5-mpi-dev
+          - netcdf-bin
+          - hdf5-tools
+          - lcov
+          - libpetsc3.4.2-dev
+          - libslepc3.4.2-dev
+          - libmumps-dev
+          - libscalapack-mpi-dev
+          - libparmetis-dev
+          - libmetis-dev
+          - liblapack-dev
+          - libparpack2-dev
+    env:
+      - CONFIGURE_OPTIONS='--enable-code-coverage --enable-debug --enable-checks=3 --with-petsc --with-lapack --with-slepc --with-mumps --enable-openmp'
+      - OMP_NUM_THREADS=2
+      - PETSC_DIR=/usr/lib/petscdir/3.4.2
+      - PETSC_ARCH=linux-gnu-c-opt
+      - SLEPC_DIR=/usr/lib/slepcdir/3.4.2
+      - SLEPC_ARCH=linux-gnu-c-opt
+    script:
+      - ./configure $CONFIGURE_OPTIONS
+      - make -j 2 -k && make -j 2 -k check-unit-tests
+    after_success:
+      # Ensure that there is a corresponding .gcda file for every .gcno file
+      # This is to try and make the coverage report slightly more accurate
+      # It still won't include, e.g. any solvers we don't build with though
+      - find . -name "*.gcno" -exec sh -c 'touch -a "${1%.gcno}.gcda"' _ {} \;
+      - bash <(curl -s https://codecov.io/bash)
+  - addons:
+      apt:
+        packages:
+          - openmpi-bin
+          - libopenmpi-dev
+          - libfftw3-dev
+          - libnetcdf-dev
+          - libhdf5-serial-dev
+          - netcdf-bin
+          - hdf5-tools
+          - lcov
+    env:
+      - CONFIGURE_OPTIONS='--enable-code-coverage --disable-debug --disable-checks'
+    script:
+      - ./configure $CONFIGURE_OPTIONS
+      - make -j 2 -k && make -j 2 -k check-unit-tests
+    after_success:
+      - find . -name "*.gcno" -exec sh -c 'touch -a "${1%.gcno}.gcda"' _ {} \;
+      - bash <(curl -s https://codecov.io/bash)
 
 before_install:
   ##################################################
