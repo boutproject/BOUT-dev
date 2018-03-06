@@ -28,11 +28,11 @@
 #include <vector>
 
 Bilinear::Bilinear(int y_offset, Mesh *mesh)
-    : Interpolation(y_offset), w0(mesh), w1(mesh), w2(mesh), w3(mesh) {
+  : Interpolation(y_offset, mesh), w0(localmesh), w1(localmesh), w2(localmesh), w3(localmesh) {
 
   // Index arrays contain guard cells in order to get subscripts right
-  i_corner = Tensor<int>(mesh->LocalNx, mesh->LocalNy, mesh->LocalNz);
-  k_corner = Tensor<int>(mesh->LocalNx, mesh->LocalNy, mesh->LocalNz);
+  i_corner = Tensor<int>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
+  k_corner = Tensor<int>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
 
   // Allocate Field3D members
   w0.allocate();
@@ -42,9 +42,9 @@ Bilinear::Bilinear(int y_offset, Mesh *mesh)
 }
 
 void Bilinear::calcWeights(const Field3D &delta_x, const Field3D &delta_z) {
-  for(int x=mesh->xstart;x<=mesh->xend;x++) {
-    for(int y=mesh->ystart; y<=mesh->yend;y++) {
-      for(int z=0;z<mesh->LocalNz;z++) {
+  for(int x=localmesh->xstart;x<=localmesh->xend;x++) {
+    for(int y=localmesh->ystart; y<=localmesh->yend;y++) {
+      for(int z=0;z<localmesh->LocalNz;z++) {
 
         if (skip_mask(x, y, z)) continue;
 
@@ -83,20 +83,20 @@ void Bilinear::calcWeights(const Field3D &delta_x, const Field3D &delta_z, BoutM
 }
 
 Field3D Bilinear::interpolate(const Field3D& f) const {
-  Mesh *mesh = f.getMesh();
-  Field3D f_interp(mesh);
+  ASSERT1(f.getMesh() == localmesh);
+  Field3D f_interp(f.getMesh());
   f_interp.allocate();
 
-  for(int x=mesh->xstart;x<=mesh->xend;x++) {
-    for(int y=mesh->ystart; y<=mesh->yend;y++) {
-      for(int z=0;z<mesh->LocalNz;z++) {
+  for(int x=localmesh->xstart;x<=localmesh->xend;x++) {
+    for(int y=localmesh->ystart; y<=localmesh->yend;y++) {
+      for(int z=0;z<localmesh->LocalNz;z++) {
 
         if (skip_mask(x, y, z)) continue;
 
         int y_next = y + y_offset;
         // Due to lack of guard cells in z-direction, we need to ensure z-index
         // wraps around
-        int ncz = mesh->LocalNz;
+        int ncz = localmesh->LocalNz;
         int z_mod = ((k_corner(x, y, z) % ncz) + ncz) % ncz;
         int z_mod_p1 = (z_mod + 1) % ncz;
 

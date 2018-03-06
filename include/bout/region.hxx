@@ -616,7 +616,7 @@ Region<T> operator+(const Region<T> &lhs, const Region<T> &rhs){
 /// Returns a new region based on input but with indices offset by
 /// a constant
 template<typename T>
-Region<T> offset(const Region<T> &region, const int offset){
+Region<T> offset(const Region<T> &region, int offset){
   auto result = region;
   return result.offset(offset);
 }

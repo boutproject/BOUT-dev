@@ -71,26 +71,6 @@ class Field {
     return CELL_CENTRE;
   }
 
-  DEPRECATED(virtual void getXArray(int UNUSED(y), int UNUSED(z), rvec &UNUSED(xv)) const) {
-    error("Field: Base class does not implement getXarray");
-  }
-  DEPRECATED(virtual void getYArray(int UNUSED(x), int UNUSED(z), rvec &UNUSED(yv)) const) {
-    error("Field: Base class does not implement getYarray");
-  }
-  DEPRECATED(virtual void getZArray(int UNUSED(x), int UNUSED(y), rvec &UNUSED(zv)) const) {
-    error("Field: Base class does not implement getZarray");
-  }
-
-  DEPRECATED(virtual void setXArray(int UNUSED(y), int UNUSED(z), const rvec &UNUSED(xv))) {
-    error("Field: Base class does not implement setXarray");
-  }
-  DEPRECATED(virtual void setYArray(int UNUSED(x), int UNUSED(z), const rvec &UNUSED(yv))) {
-    error("Field: Base class does not implement setYarray");
-  }
-  DEPRECATED(virtual void setZArray(int UNUSED(x), int UNUSED(y), const rvec &UNUSED(zv))) {
-    error("Field: Base class does not implement setZarray");
-  }
-
 #ifdef TRACK
   std::string getName() const { return name; }
   void setName(std::string s) { name = s; }
@@ -105,13 +85,13 @@ class Field {
   
   virtual bool bndryValid() {
     if(!bndry_xin)
-      error("Inner X guard cells not set\n");
+      throw BoutException("Inner X guard cells not set\n");
     if(!bndry_xout)
-      error("Outer X guard cells not set\n");
+      throw BoutException("Outer X guard cells not set\n");
     if(!bndry_yup)
-      error("Upper y guard cells not set\n");
+      throw BoutException("Upper y guard cells not set\n");
     if(!bndry_ydown)
-      error("Lower y guard cells not set\n");
+      throw BoutException("Lower y guard cells not set\n");
     return true;
   }
   
@@ -144,7 +124,7 @@ class Field {
   Mesh * fieldmesh;
   /// Supplies an error method. Currently just prints and exits, but
   /// should do something more cunning...
-  void error(const char *s, ...) const;
+  DEPRECATED(void error(const char *s, ...) const);
 };
 
 #endif /* __FIELD_H__ */

@@ -39,8 +39,6 @@ class Field3D; //#include "field3d.hxx"
 
 #include "bout/dataiterator.hxx"
 
-#include "bout/deprecated.hxx"
-
 #include "bout/field_visitor.hxx"
 
 #include "bout/array.hxx"
@@ -233,13 +231,6 @@ class Field2D : public Field, public FieldData {
   Field2D & operator/=(const Field2D &rhs); ///< In-place division. Copy-on-write used if data is shared
   Field2D & operator/=(BoutReal rhs);       ///< In-place division. Copy-on-write used if data is shared
 
-  DEPRECATED(void getXArray(int y, int z, rvec &xv) const override);
-  DEPRECATED(void getYArray(int x, int z, rvec &yv) const override);
-  DEPRECATED(void getZArray(int x, int y, rvec &zv) const override);
-
-  DEPRECATED(void setXArray(int y, int z, const rvec &xv) override);
-  DEPRECATED(void setYArray(int x, int z, const rvec &yv) override);
-  
   // FieldData virtual functions
 
   /// Visitor pattern support

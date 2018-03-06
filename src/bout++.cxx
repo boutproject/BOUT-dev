@@ -661,11 +661,6 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
  * Global error handling
  **************************************************************************/
 
-/// Print an error message and exit
-void bout_error(const char *str) {
-  throw BoutException(str);
-}
-
 /// Signal handler - handles all signals
 void bout_signal_handler(int sig) {
   /// Set signal handler back to default to prevent possible infinite loop

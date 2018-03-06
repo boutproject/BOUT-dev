@@ -39,6 +39,7 @@ has_petsc="@HAS_PETSC@"
 has_slepc="@HAS_SLEPC@"
 has_mumps="@HAS_MUMPS@"
 has_arkode="@HAS_ARKODE@"
+has_openmp="@HAS_OPENMP@"
 
 petsc_version="@PETSC_VERSION@"
 petsc_release="@PETSC_RELEASE@"
@@ -123,7 +124,7 @@ all()
 }
 
 if test $# -eq 0; then
-    usage 1
+    usage 2
 fi
 
 while test $# -gt 0; do
@@ -233,6 +234,10 @@ while test $# -gt 0; do
 	echo $has_arkode
 	;;
 
+    --has-openmp)
+	echo $has_openmp
+	;;
+
     --petsc-version)
         echo $petsc_version
         ;;
@@ -247,8 +252,7 @@ while test $# -gt 0; do
 
     *)
         echo "unknown option: $1"
-        usage
-        exit 1
+        usage 2
         ;;
     esac
     shift

@@ -194,9 +194,7 @@ class Solver {
   // Monitors
   
   enum MonitorPosition {BACK, FRONT}; ///< A type to set where in the list monitors are added
-  /// Add a monitor function to be called every output
-  DEPRECATED(void addMonitor(int (&)(Solver *solver, BoutReal simtime, int iter, int NOUT)
-                             , MonitorPosition pos=FRONT));
+
   /// Add a monitor to be called every output
   void addMonitor(Monitor * f, MonitorPosition pos=FRONT);
   void removeMonitor(Monitor * f);  ///< Remove a monitor function previously added
@@ -305,12 +303,6 @@ class Solver {
    */ 
   static void setArgs(int &c, char **&v) { pargc = &c; pargv = &v;}
   
-  /*!
-   * Add extra variables to the restart files, which store
-   * system state. This is now deprecated, since the restart file
-   * is handled by PhysicsModel rather than Solver.
-   */
-  DEPRECATED(void addToRestart(BoutReal &var, const string &name));
 protected:
   
   // Command-line arguments

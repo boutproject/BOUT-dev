@@ -641,13 +641,6 @@ void Solver::outputVars(Datafile &outputfile, bool save_repeat) {
 
 /////////////////////////////////////////////////////
 
-void Solver::addMonitor(int (& MonitorFuncRef )(Solver *solver, BoutReal simtime, int iter, int NOUT)
-                        , MonitorPosition pos) {
-  MonitorFunc * mon = new MonitorFunc(&MonitorFuncRef);
-  mon->timestep=-1;
-  addMonitor(mon,pos);
-}
-
 /// Method to add a Monitor to the Solver
 /// Note that behaviour changes if init() is called,
 /// as the timestep cannot be changed afterwards
@@ -776,12 +769,6 @@ int Solver::call_timestep_monitors(BoutReal simtime, BoutReal lastdt) {
   }
   return 0;
 }
-
- void Solver::addToRestart(BoutReal &var, const string &name) {
-  SCOREP0()
-   if(model)
-     model->addToRestart(var, name);
- }
 
 /**************************************************************************
  * Useful routines (protected)

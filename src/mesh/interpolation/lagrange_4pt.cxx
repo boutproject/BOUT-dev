@@ -26,11 +26,12 @@
 
 #include <vector>
 
-Lagrange4pt::Lagrange4pt(int y_offset) : Interpolation(y_offset), t_x(mesh), t_z(mesh) {
+Lagrange4pt::Lagrange4pt(int y_offset, Mesh *mesh)
+    : Interpolation(y_offset, mesh), t_x(localmesh), t_z(localmesh) {
 
   // Index arrays contain guard cells in order to get subscripts right
-  i_corner = Tensor<int>(mesh->LocalNx, mesh->LocalNy, mesh->LocalNz);
-  k_corner = Tensor<int>(mesh->LocalNx, mesh->LocalNy, mesh->LocalNz);
+  i_corner = Tensor<int>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
+  k_corner = Tensor<int>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
 
   t_x.allocate();
   t_z.allocate();
@@ -38,9 +39,9 @@ Lagrange4pt::Lagrange4pt(int y_offset) : Interpolation(y_offset), t_x(mesh), t_z
 
 void Lagrange4pt::calcWeights(const Field3D &delta_x, const Field3D &delta_z) {
 
-  for (int x = mesh->xstart; x <= mesh->xend; x++) {
-    for (int y = mesh->ystart; y <= mesh->yend; y++) {
-      for (int z = 0; z < mesh->LocalNz; z++) {
+  for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
+    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
+      for (int z = 0; z < localmesh->LocalNz; z++) {
 
         if (skip_mask(x, y, z))
           continue;
@@ -56,7 +57,7 @@ void Lagrange4pt::calcWeights(const Field3D &delta_x, const Field3D &delta_z) {
         t_z(x, y, z) = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
 
         // NOTE: A (small) hack to avoid one-sided differences
-        if (i_corner(x, y, z) == mesh->xend) {
+        if (i_corner(x, y, z) == localmesh->xend) {
           i_corner(x, y, z) -= 1;
           t_x(x, y, z) = 1.0;
         }
@@ -80,12 +81,13 @@ void Lagrange4pt::calcWeights(const Field3D &delta_x, const Field3D &delta_z,
 
 Field3D Lagrange4pt::interpolate(const Field3D &f) const {
 
+  ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp(f.getMesh());
   f_interp.allocate();
 
-  for (int x = mesh->xstart; x <= mesh->xend; x++) {
-    for (int y = mesh->ystart; y <= mesh->yend; y++) {
-      for (int z = 0; z < mesh->LocalNz; z++) {
+  for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
+    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
+      for (int z = 0; z < localmesh->LocalNz; z++) {
 
         if (skip_mask(x, y, z))
           continue;
@@ -93,9 +95,9 @@ Field3D Lagrange4pt::interpolate(const Field3D &f) const {
         int jx = i_corner(x, y, z);
         int jx2mnew = (jx == 0) ? 0 : (jx - 1);
         int jxpnew = jx + 1;
-        int jx2pnew = (jx == (mesh->LocalNx - 2)) ? jxpnew : (jxpnew + 1);
+        int jx2pnew = (jx == (localmesh->LocalNx - 2)) ? jxpnew : (jxpnew + 1);
 
-        int ncz = mesh->LocalNz;
+        int ncz = localmesh->LocalNz;
 
         // Get the 4 Z points
         int jz = ((k_corner(x, y, z) % ncz) + ncz) % ncz;

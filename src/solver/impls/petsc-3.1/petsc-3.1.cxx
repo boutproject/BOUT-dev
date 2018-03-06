@@ -398,7 +398,6 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
 
       ierr = MatAssemblyBegin(J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
       ierr = MatAssemblyEnd(J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-      // bout_error("stopping");
     }
   }
     
