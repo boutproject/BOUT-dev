@@ -87,6 +87,9 @@ int main(int argc, char **argv) {
   cr->setCoefs(nsys, a, b, c);
   cr->solve(nsys, rhs, x);
 
+  // Destroy solver
+  delete cr;
+  
   // Check result
 
   int passed = 1;
