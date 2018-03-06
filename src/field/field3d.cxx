@@ -303,6 +303,12 @@ const IndexRange Field3D::region(REGION rgn) const {
         fieldmesh->ystart, fieldmesh->yend,
         0, nz-1};
   }
+  case RGN_NOZ: {
+    // z-direction is always periodic, so this is the same as RGN_ALL for now
+    return IndexRange{0, nx-1,
+        0, ny-1,
+        0, nz-1};
+  }
   default: {
     throw BoutException("Field3D::region() : Requested region not implemented");
   }
