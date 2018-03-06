@@ -85,6 +85,10 @@ matrix:
       - ./configure $CONFIGURE_OPTIONS
       - make -j 2 -k && make -j 2 -k check-unit-tests
     after_success:
+      # Ensure that there is a corresponding .gcda file for every .gcno file
+      # This is to try and make the coverage report slightly more accurate
+      # It still won't include, e.g. any solvers we don't build with though
+      - find . -name "*.gcno" -exec sh -c 'touch -a "${1%.gcno}.gcda"' _ {} \;
       - bash <(curl -s https://codecov.io/bash)
   - addons:
       apt:
@@ -103,6 +107,7 @@ matrix:
       - ./configure $CONFIGURE_OPTIONS
       - make -j 2 -k && make -j 2 -k check-unit-tests
     after_success:
+      - find . -name "*.gcno" -exec sh -c 'touch -a "${1%.gcno}.gcda"' _ {} \;
       - bash <(curl -s https://codecov.io/bash)
 
 before_install:
