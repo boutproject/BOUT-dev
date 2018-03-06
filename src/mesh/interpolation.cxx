@@ -228,8 +228,134 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region)
   return var;
 }
 
-const Field2D interp_to(const Field2D &var, CELL_LOC UNUSED(loc), REGION UNUSED(region)) {
-  // Currently do nothing
+const Field2D interp_to(const Field2D &var, CELL_LOC loc, REGION region)
+{
+  // Note Field2D has no z-variation, so nothing needs to be done for
+  // interpolation in the z-direction
+  if(mesh->StaggerGrids && loc != CELL_ZLOW && (var.getLocation() != loc)) {
+
+    // Staggered grids enabled, and need to perform interpolation
+    TRACE("Interpolating %s -> %s", strLocation(var.getLocation()), strLocation(loc));
+
+    Field2D result(var.getMesh());
+
+    if (region != RGN_NOBNDRY) {
+      // result is requested in some boundary region(s)
+      result = var; // NOTE: This is just for boundaries. FIX!
+    }
+    result.allocate();
+
+    // Cell location of the input field
+    CELL_LOC location = var.getLocation();
+    
+    if((location == CELL_CENTRE) || (loc == CELL_CENTRE)) {
+      // Going between centred and shifted
+      
+      stencil s;
+      CELL_LOC dir; 
+      
+      // Get the non-centre location for interpolation direction
+      dir = (loc == CELL_CENTRE) ? location : loc;
+
+      switch(dir) {
+      case CELL_XLOW: {
+        for(const auto &i : result.region(RGN_NOBNDRY)) {
+
+	  // Set stencils
+	  s.c = var[i];
+	  s.p = var[i.xp()];
+	  s.m = var[i.xm()];
+	  s.pp = var[i.offset(2,0,0)];
+	  s.mm = var[i.offset(-2,0,0)];
+	  
+	  if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
+	    // Producing a stencil centred around a lower X value
+	    s.pp = s.p;
+	    s.p  = s.c;
+	  } else if (location == CELL_XLOW) {
+	    // Stencil centred around a cell centre
+	    s.mm = s.m;
+	    s.m  = s.c;
+	  }
+
+	  result[i] = interp(s);
+	}
+        break;
+      }
+      case CELL_YLOW: {
+        
+        if (mesh->ystart > 1) {
+          // More than one guard cell, so set pp and mm values
+          // This allows higher-order methods to be used
+          for(const auto &i : result.region(RGN_NOBNDRY)) {
+            // Set stencils
+            s.c = var[i];
+            s.p = var[i.yp()];
+            s.m = var[i.ym()];
+            s.pp = var[i.offset(0,2,0)];
+            s.mm = var[i.offset(0,-2,0)];
+            
+            if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
+              // Producing a stencil centred around a lower Y value
+              s.pp = s.p;
+              s.p  = s.c;
+            } else if(location == CELL_YLOW) {
+              // Stencil centred around a cell centre
+              s.mm = s.m;
+              s.m  = s.c;
+            }
+            
+            result[i] = interp(s);
+          }
+        } else {
+          // Only one guard cell, so no pp or mm values
+          s.pp = nan("");
+          s.mm = nan("");
+          for(const auto &i : result.region(RGN_NOBNDRY)) {
+            // Set stencils
+            s.c = var[i];
+            s.p = var[i.yp()];
+            s.m = var[i.ym()];
+            
+            if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
+              // Producing a stencil centred around a lower Y value
+              s.pp = s.p;
+              s.p  = s.c;
+            } else if(location == CELL_YLOW) {
+              // Stencil centred around a cell centre
+              s.mm = s.m;
+              s.m  = s.c;
+            }
+            
+            result[i] = interp(s);
+          }
+        }
+	break;
+      }
+      default: {
+	// This should never happen
+	throw BoutException("Don't know what to do");
+      }
+      };
+      
+      if(dir != CELL_ZLOW) {
+        // COMMUNICATION
+        if ( region!=RGN_NOBNDRY ) mesh->communicate(result);
+        // BOUNDARIES
+
+      }
+
+    }else {
+      // Shifted -> shifted
+      // For now, shift to centre then to shifted
+      result = interp_to( interp_to(var, CELL_CENTRE) , loc, region);
+    }
+    result.setLocation(loc);
+
+    return result;
+  }
+  
+  // Nothing to do - just return unchanged
   return var;
 }
 
