@@ -178,6 +178,36 @@ const IndexRange Field2D::region(REGION rgn) const {
   };
 }
 
+void Field2D::setLocation(CELL_LOC new_location) {
+  if (getMesh()->StaggerGrids) {
+    if (new_location == CELL_VSHIFT) {
+      throw BoutException(
+          "Field2D: CELL_VSHIFT cell location only makes sense for vectors");
+    }
+    if (new_location == CELL_ZLOW) {
+      throw BoutException(
+          "Field2D: CELL_ZLOW cell location does not make sense for Field2D");
+    }
+    if (new_location == CELL_DEFAULT) {
+      new_location = CELL_CENTRE;
+    }
+    location = new_location;
+  } else {
+#if CHECK > 0
+    if (new_location != CELL_CENTRE && new_location != CELL_DEFAULT) {
+      throw BoutException("Field2D: Trying to set off-centre location on "
+                          "non-staggered grid\n"
+                          "         Did you mean to enable staggered grids?");
+    }
+#endif
+    location = CELL_CENTRE;
+  }
+}
+
+CELL_LOC Field2D::getLocation() const {
+  return location;
+}
+
 ///////////// OPERATORS ////////////////
 
 Field2D &Field2D::operator=(const Field2D &rhs) {
