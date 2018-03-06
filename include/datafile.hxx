@@ -14,6 +14,7 @@ class Datafile;
 #ifndef __DATAFILE_H__
 #define __DATAFILE_H__
 
+#include "bout/deprecated.hxx"
 #include "bout_types.hxx"
 #include "field2d.hxx"
 #include "field3d.hxx"

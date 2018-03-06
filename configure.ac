@@ -83,6 +83,8 @@ AC_ARG_ENABLE(backtrace,    [AS_HELP_STRING([--disable-backtrace],
         [Disable function backtrace])],,[enable_backtrace=maybe])
 AC_ARG_ENABLE(shared,       [AS_HELP_STRING([--enable-shared],
         [Enable building bout++ into an shared object])],,[enable_shared=no])
+AC_ARG_ENABLE(openmp,       [AS_HELP_STRING([--enable-openmp],
+        [Enable building with OpenMP support])],,[enable_openmp=no])
 AC_ARG_ENABLE(pvode_openmp,       [AS_HELP_STRING([--enable-pvode-openmp],
         [Enable building PVODE with OpenMP support])],,[enable_pvode_openmp=no])
 
@@ -168,6 +170,7 @@ AC_FUNC_VPRINTF
 # Check for OpenMP support
 : ${enable_openmp=no}  # Disable by default
 AC_OPENMP
+HAS_OPENMP=$enable_openmp
 
 #############################################################
 # Code coverage using gcov
@@ -1460,6 +1463,7 @@ AC_SUBST(HAS_SLEPC)
 AC_SUBST(PETSC_VERSION)
 AC_SUBST(PETSC_RELEASE)
 AC_SUBST(PETSC_HAS_SUNDIALS)
+AC_SUBST(HAS_OPENMP)
 
 AC_OUTPUT(bin/bout-config)
 chmod a+x bin/bout-config

@@ -1,4 +1,5 @@
 html/
 build/
+man/
 doxygen/bout/
 sphinx/_breathe_autogen/

@@ -52,21 +52,12 @@
 #include <cmath>
 
 InvertParSerial::InvertParSerial(Options *opt) : InvertPar(opt), A(1.0), B(0.0), C(0.0), D(0.0), E(0.0) {
-  rhs = matrix<dcomplex>(mesh->LocalNy, (mesh->LocalNz)/2 + 1);
-  rhsk = new dcomplex[mesh->LocalNy-4];
-  xk = new dcomplex[mesh->LocalNy-4];
-  a = new dcomplex[mesh->LocalNy-4];
-  b = new dcomplex[mesh->LocalNy-4];
-  c = new dcomplex[mesh->LocalNy-4];
-}
-
-InvertParSerial::~InvertParSerial() {
-  free_matrix(rhs);
-  delete[] rhsk;
-  delete[] xk;
-  delete[] a;
-  delete[] b;
-  delete[] c;
+  rhs = Matrix<dcomplex>(mesh->LocalNy, (mesh->LocalNz)/2 + 1);
+  rhsk = Array<dcomplex>(mesh->LocalNy-4);
+  xk = Array<dcomplex>(mesh->LocalNy-4);
+  a = Array<dcomplex>(mesh->LocalNy-4);
+  b = Array<dcomplex>(mesh->LocalNy-4);
+  c = Array<dcomplex>(mesh->LocalNy-4);
 }
 
 const Field3D InvertParSerial::solve(const Field3D &f) {
@@ -87,14 +78,14 @@ const Field3D InvertParSerial::solve(const Field3D &f) {
     
     // Take Fourier transform 
     for(int y=0;y<mesh->LocalNy-4;y++)
-      rfft(f(x,y+2), mesh->LocalNz, rhs[y]);
+      rfft(f(x,y+2), mesh->LocalNz, &rhs(y, 0));
     
     // Solve cyclic tridiagonal system for each k
     int nyq = (mesh->LocalNz)/2;
     for(int k=0;k<=nyq;k++) {
       // Copy component of rhs into 1D array
       for(int y=0;y<mesh->LocalNy-4;y++)
-        rhsk[y] = rhs[y][k];
+        rhsk[y] = rhs(y, k);
       
       BoutReal kwave=k*2.0*PI/coord->zlength(); // wave number is 1/[rad]
       
@@ -124,16 +115,16 @@ const Field3D InvertParSerial::solve(const Field3D &f) {
       c[mesh->LocalNy-5] /= phase;
       
       // Solve cyclic tridiagonal system
-      cyclic_tridag(a, b, c, rhsk, xk, mesh->LocalNy-4);
+      cyclic_tridag(std::begin(a), std::begin(b), std::begin(c), std::begin(rhsk), std::begin(xk), mesh->LocalNy-4);
       
       // Put back into rhs array
       for(int y=0;y<mesh->LocalNy-4;y++)
-        rhs[y][k] = xk[y];
+        rhs(y, k) = xk[y];
     }
     
     // Inverse Fourier transform 
     for(int y=0;y<mesh->LocalNy-4;y++)
-      irfft(rhs[y], mesh->LocalNz, result(x,y+2));
+      irfft(&rhs(y, 0), mesh->LocalNz, result(x,y+2));
   }
   
   return result;

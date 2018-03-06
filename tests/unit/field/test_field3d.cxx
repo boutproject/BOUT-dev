@@ -25,6 +25,7 @@ protected:
       mesh = nullptr;
     }
     mesh = new FakeMesh(nx, ny, nz);
+    mesh->createDefaultRegions();
   }
 
   static void TearDownTestCase() {

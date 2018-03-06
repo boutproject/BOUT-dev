@@ -527,7 +527,6 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
       //J(2585:n-1,:) has no entry !!!
       // ierr = PetscPrintf(PETSC_COMM_WORLD,"Sparse pattern:\n");
       // ierr = MatView(J,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-      // bout_error("stopping");
       ierr = ISLocalToGlobalMappingDestroy(&ltog);CHKERRQ(ierr);
       ierr = ISLocalToGlobalMappingDestroy(&ltogb);CHKERRQ(ierr);
     }
