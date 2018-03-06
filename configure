@@ -671,6 +671,7 @@ CC
 H5CC
 AWK
 NCCONF
+fftw_path
 works
 COVERAGE_FLAGS
 CODE_COVERAGE_RULES
@@ -5881,14 +5882,100 @@ GIT_REVISION=$rev
 # FFT routines
 #############################################################
 
-echo "Searching for FFTW library"
+# Extract the first word of "fftw-wisdom", so it can be a program name with args.
+set dummy fftw-wisdom; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_fftw_path+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $fftw_path in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_fftw_path="$fftw_path" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $with_fftw$PATH_SEPARATOR$PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_fftw_path="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
 
-if type fftw-wisdom > /dev/null 2>&1; then
-  echo " -> Found fftw-wisdom executable"
-  # Path to fftw-wisdom, then remove fft-wisdom and bin/
-  fftw_wisdom=`which fftw-wisdom | xargs -0 dirname | xargs -0 dirname`
-    with_fftw="$with_fftw $fftw_wisdom"
+  test -z "$ac_cv_path_fftw_path" && ac_cv_path_fftw_path="no"
+  ;;
+esac
 fi
+fftw_path=$ac_cv_path_fftw_path
+if test -n "$fftw_path"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $fftw_path" >&5
+$as_echo "$fftw_path" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+
+if test "x$fftw_path" != "xno"; then :
+
+  fftw_wisdom0=`$as_dirname -- "$fftw_path" ||
+$as_expr X"$fftw_path" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
+	 X"$fftw_path" : 'X\(//\)[^/]' \| \
+	 X"$fftw_path" : 'X\(//\)$' \| \
+	 X"$fftw_path" : 'X\(/\)' \| . 2>/dev/null ||
+$as_echo X"$fftw_path" |
+    sed '/^X\(.*[^/]\)\/\/*[^/][^/]*\/*$/{
+	    s//\1/
+	    q
+	  }
+	  /^X\(\/\/\)[^/].*/{
+	    s//\1/
+	    q
+	  }
+	  /^X\(\/\/\)$/{
+	    s//\1/
+	    q
+	  }
+	  /^X\(\/\).*/{
+	    s//\1/
+	    q
+	  }
+	  s/.*/./; q'`
+  fftw_wisdom=`$as_dirname -- "$fftw_wisdom0" ||
+$as_expr X"$fftw_wisdom0" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
+	 X"$fftw_wisdom0" : 'X\(//\)[^/]' \| \
+	 X"$fftw_wisdom0" : 'X\(//\)$' \| \
+	 X"$fftw_wisdom0" : 'X\(/\)' \| . 2>/dev/null ||
+$as_echo X"$fftw_wisdom0" |
+    sed '/^X\(.*[^/]\)\/\/*[^/][^/]*\/*$/{
+	    s//\1/
+	    q
+	  }
+	  /^X\(\/\/\)[^/].*/{
+	    s//\1/
+	    q
+	  }
+	  /^X\(\/\/\)$/{
+	    s//\1/
+	    q
+	  }
+	  /^X\(\/\).*/{
+	    s//\1/
+	    q
+	  }
+	  s/.*/./; q'`
+  with_fftw="$with_fftw $fftw_wisdom"
+
+fi
+
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for fftw3.h" >&5
 $as_echo_n "checking for fftw3.h... " >&6; }
@@ -5961,7 +6048,7 @@ $as_echo "no" >&6; }
     if test .$BACH_found = .yes; then :
 
 else
-  as_fn_error $? "'FFTW3 is needed by BOUT++'" "$LINENO" 5
+  as_fn_error $? "FFTW3 is needed by BOUT++" "$LINENO" 5
 fi
 
 
@@ -6048,7 +6135,7 @@ $as_echo "no" >&6; }
     if test .$BACL_found = .yes; then :
 
 else
-  as_fn_error $? "\"FFTW3 is needed by BOUT++\"" "$LINENO" 5
+  as_fn_error $? "FFTW3 is needed by BOUT++" "$LINENO" 5
 fi
     ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'

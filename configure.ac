@@ -370,16 +370,16 @@ GIT_REVISION=$rev
 # FFT routines
 #############################################################
 
-echo "Searching for FFTW library"
+AC_PATH_PROG([fftw_path], [fftw-wisdom], [no], [$with_fftw$PATH_SEPARATOR$PATH])
 
-if type fftw-wisdom > /dev/null 2>&1; then
-  echo " -> Found fftw-wisdom executable"
-  # Path to fftw-wisdom, then remove fft-wisdom and bin/
-  fftw_wisdom=`which fftw-wisdom | xargs -0 dirname | xargs -0 dirname`
-    with_fftw="$with_fftw $fftw_wisdom"
-fi
-BOUT_ADDPATH_CHECK_HEADER(fftw3.h, ,AC_MSG_ERROR('FFTW3 is needed by BOUT++'), $with_fftw)
-BOUT_ADDPATH_CHECK_LIB(fftw3, fftw_plan_dft_r2c_1d, ,AC_MSG_ERROR("FFTW3 is needed by BOUT++"), $with_fftw)
+AS_IF([test "x$fftw_path" != "xno"], [
+  fftw_wisdom0=`AS_DIRNAME(["$fftw_path"])`
+  fftw_wisdom=`AS_DIRNAME(["$fftw_wisdom0"])`
+  with_fftw="$with_fftw $fftw_wisdom"
+])
+
+BOUT_ADDPATH_CHECK_HEADER(fftw3.h, ,AC_MSG_ERROR([FFTW3 is needed by BOUT++]), $with_fftw)
+BOUT_ADDPATH_CHECK_LIB(fftw3, fftw_plan_dft_r2c_1d, ,AC_MSG_ERROR([FFTW3 is needed by BOUT++]), $with_fftw)
 
 echo ""
 
