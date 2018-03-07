@@ -568,20 +568,15 @@ AS_IF([test "$with_parallelhdf5" = "yes"], [
   AC_MSG_NOTICE([Parallel HDF5 support disabled])
 ])
 
-echo ""
-
 #############################################################
 # Check file formats
 #############################################################
 
-if test "$file_formats" = ""
-then
+AS_IF([test "x$file_formats" = "x"], [
   AC_MSG_ERROR([*** At least one file format must be supported])
-else
-  echo "Supported file formats:$file_formats"
-fi
-
-echo
+], [
+  AC_MSG_NOTICE([Supported file formats:$file_formats])
+])
 
 #############################################################
 # LAPACK routines (Used for tri- and band-diagonal solvers)

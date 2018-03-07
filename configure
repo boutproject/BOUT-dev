@@ -8096,20 +8096,20 @@ $as_echo "$as_me: Parallel HDF5 support disabled" >&6;}
 
 fi
 
-echo ""
-
 #############################################################
 # Check file formats
 #############################################################
 
-if test "$file_formats" = ""
-then
-  as_fn_error $? "*** At least one file format must be supported" "$LINENO" 5
-else
-  echo "Supported file formats:$file_formats"
-fi
+if test "x$file_formats" = "x"; then :
 
-echo
+  as_fn_error $? "*** At least one file format must be supported" "$LINENO" 5
+
+else
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Supported file formats:$file_formats" >&5
+$as_echo "$as_me: Supported file formats:$file_formats" >&6;}
+
+fi
 
 #############################################################
 # LAPACK routines (Used for tri- and band-diagonal solvers)
