@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "bout/array.hxx"
+#include "boutexception.hxx"
 
 #include <iostream>
 
@@ -127,3 +128,12 @@ TEST_F(ArrayTest, Assignment) {
   EXPECT_FALSE(a.unique());
   EXPECT_FALSE(b.unique());
 }
+
+#if CHECK > 2
+TEST_F(ArrayTest, OutOfBoundsThrow) {
+  Array<double> a(34);
+  EXPECT_NO_THROW(a[33] = 1.0);
+  EXPECT_THROW(a[34] = 1.0, BoutException);
+  EXPECT_THROW(a[-1] = 1.0, BoutException);
+}
+#endif

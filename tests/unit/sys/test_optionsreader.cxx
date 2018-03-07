@@ -334,3 +334,18 @@ TEST_F(OptionsReaderTest, WriteFile) {
 
   std::remove(filename);
 }
+
+TEST_F(OptionsReaderTest, WriteBadFile) {
+  std::string filename1 = std::tmpnam(nullptr);
+  std::string filename = filename1 + std::tmpnam(nullptr);
+  OptionsReader reader;
+  Options *options = Options::getRoot();
+
+  options->set("bool_key", true, "test");
+  Options *section1 = options->getSection("section1");
+  section1->set("int_key", 17, "test");
+
+  EXPECT_THROW(reader.write(options, filename.c_str()), BoutException);
+
+  std::remove(filename.c_str());
+}
