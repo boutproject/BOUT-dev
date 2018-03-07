@@ -57,12 +57,13 @@ BoutReal interp(const stencil &s)
 */
 const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region)
 {
+
+  Field3D result(var.getMesh());
+
   if(mesh->StaggerGrids && (var.getLocation() != loc)) {
 
     // Staggered grids enabled, and need to perform interpolation
     TRACE("Interpolating %s -> %s", strLocation(var.getLocation()), strLocation(loc));
-
-    Field3D result(var.getMesh());
 
     if (region != RGN_NOBNDRY) {
       // result is requested in some boundary region(s)
@@ -225,7 +226,8 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region)
   }
   
   // Nothing to do - just return unchanged
-  return var;
+  result = var;
+  return result;
 }
 
 const Field2D interp_to(const Field2D &var, CELL_LOC UNUSED(loc), REGION UNUSED(region)) {
