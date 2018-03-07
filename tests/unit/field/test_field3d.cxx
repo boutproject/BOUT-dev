@@ -7,6 +7,7 @@
 #include "test_extras.hxx"
 #include "unused.hxx"
 #include "utils.hxx"
+#include "interpolation.hxx"
 
 #include <cmath>
 #include <set>
@@ -1776,6 +1777,74 @@ TEST_F(Field3DTest, DC) {
   }
 
   EXPECT_TRUE(IsField2DEqualBoutReal(DC(field), 3.0));
+}
+
+TEST_F(Field3DTest, interp_to) {
+
+  int test_nx = std::max(Field3DTest::nx, 5);
+  int test_ny = std::max(Field3DTest::ny, 5);
+  int test_nz = std::max(Field3DTest::nz, 5);
+
+  FakeMesh *fieldmesh = new FakeMesh(test_nx, test_ny, test_nz);
+  fieldmesh->StaggerGrids = true;
+  fieldmesh->xstart = 2;
+  fieldmesh->ystart = 2;
+  fieldmesh->xend = test_nx - 3;
+  fieldmesh->yend = test_ny - 3;
+
+  Field3D input = Field3D(fieldmesh);
+  Field3D output = Field3D(fieldmesh);
+
+  input = 0.;
+  input(2, 2, 2) = 2.;
+  input(1, 2, 2) = 1.8;
+  input(0, 2, 2) = 1.7;
+  input(3, 2, 2) = 1.3;
+  input(4, 2, 2) = 1.5;
+  input(2, 1, 2) = 3.8;
+  input(2, 0, 2) = 3.7;
+  input(2, 3, 2) = 3.3;
+  input(2, 4, 2) = 3.5;
+  input(2, 2, 1) = 5.8;
+  input(2, 2, 0) = 5.7;
+  input(2, 2, 3) = 5.3;
+  input(2, 2, 4) = 5.5;
+
+  // CELL_CENTRE -> CELL_XLOW
+  input.setLocation(CELL_CENTRE);
+  output = interp_to(input, CELL_XLOW);
+  EXPECT_TRUE(output.getLocation() == CELL_XLOW);
+  EXPECT_NEAR(output(2, 2, 2), 1.95, 1.e-15);
+
+  // CELL_XLOW -> CELL_CENTRE
+  input.setLocation(CELL_XLOW);
+  output = interp_to(input, CELL_CENTRE);
+  EXPECT_TRUE(output.getLocation() == CELL_CENTRE);
+  EXPECT_NEAR(output(2, 2, 2), 1.65, 1.e-15);
+
+  // CELL_CENTRE -> CELL_YLOW
+  input.setLocation(CELL_CENTRE);
+  output = interp_to(input, CELL_YLOW);
+  EXPECT_TRUE(output.getLocation() == CELL_YLOW);
+  EXPECT_NEAR(output(2, 2, 2), 2.825, 1.e-15);
+
+  // CELL_YLOW -> CELL_CENTRE
+  input.setLocation(CELL_YLOW);
+  output = interp_to(input, CELL_CENTRE);
+  EXPECT_TRUE(output.getLocation() == CELL_CENTRE);
+  EXPECT_NEAR(output(2, 2, 2), 2.525, 1.e-15);
+
+  // CELL_CENTRE -> CELL_ZLOW
+  input.setLocation(CELL_CENTRE);
+  output = interp_to(input, CELL_ZLOW);
+  EXPECT_TRUE(output.getLocation() == CELL_ZLOW);
+  EXPECT_NEAR(output(2, 2, 2), 3.7, 1.e-15);
+
+  // CELL_XLOW -> CELL_CENTRE
+  input.setLocation(CELL_ZLOW);
+  output = interp_to(input, CELL_CENTRE);
+  EXPECT_TRUE(output.getLocation() == CELL_CENTRE);
+  EXPECT_NEAR(output(2, 2, 2), 3.4, 1.e-15);
 }
 
 #ifdef _OPENMP

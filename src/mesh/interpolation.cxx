@@ -58,9 +58,10 @@ BoutReal interp(const stencil &s)
 const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region)
 {
 
-  Field3D result(var.getMesh());
+  Mesh *fieldmesh = var.getMesh();
+  Field3D result(fieldmesh);
 
-  if(mesh->StaggerGrids && (var.getLocation() != loc)) {
+  if(fieldmesh->StaggerGrids && (var.getLocation() != loc)) {
 
     // Staggered grids enabled, and need to perform interpolation
     TRACE("Interpolating %s -> %s", strLocation(var.getLocation()), strLocation(loc));
@@ -139,8 +140,8 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region)
 	else {
 	  // var has no yup/ydown fields, so we need to shift into field-aligned coordinates
 	  
-	  Field3D var_fa = mesh->toFieldAligned(var);
-	  if (mesh->ystart > 1) {
+	  Field3D var_fa = fieldmesh->toFieldAligned(var);
+	  if (fieldmesh->ystart > 1) {
 
             // More than one guard cell, so set pp and mm values
             // This allows higher-order methods to be used
@@ -210,7 +211,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region)
       
       if(dir != CELL_ZLOW) {
         // COMMUNICATION
-        if ( region!=RGN_NOBNDRY ) mesh->communicate(result);
+        if ( region!=RGN_NOBNDRY ) fieldmesh->communicate(result);
         // BOUNDARIES
 
       }

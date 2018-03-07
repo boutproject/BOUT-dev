@@ -61,6 +61,7 @@ public:
     PE_XIND = 0;
     StaggerGrids = false;
     IncIntShear = false;
+    transform = std::unique_ptr<ParallelTransform>(new ParallelTransformIdentity());
   }
 
   comm_handle send(FieldGroup &UNUSED(g)) { return nullptr; };
