@@ -14,9 +14,18 @@ typedef std::chrono::duration<double> Duration;
 using namespace std::chrono;
 
 
-#define update(elapsed) diff = steady_clock::now() - start;     \
-  elapsed = diff > elapsed? elapsed : diff
+#define update(elapsed) diff = steady_clock::now() - start;             \
+  elapsed.min = diff > elapsed.min? elapsed.min : diff;                 \
+  elapsed.max = diff < elapsed.max? elapsed.max : diff;                 \
+  elapsed.count++;                                                      \
+  elapsed.avg = elapsed.avg * (1-1./elapsed.count) + diff/elapsed.count;
 
+struct Durations{
+  Duration max;
+  Duration min;
+  Duration avg;
+  int count;
+};
 
 class Arithmetic : public PhysicsModel {
 protected:
@@ -31,8 +40,8 @@ protected:
     // Using Field methods (classic operator overloading)
 
     result1 = 2.*a + b * c;
-    Duration dur_max = Duration::max();
-    Duration elapsed1=dur_max,elapsed2=dur_max,elapsed3=dur_max,elapsed4=dur_max;
+#define dur_init {Duration::min(),Duration::max(),Duration::zero(),0}
+    Durations elapsed1=dur_init,elapsed2=dur_init,elapsed3=dur_init,elapsed4=dur_init;
     SteadyClock start;
     Duration diff;
     for (int ik=0;ik<1e2;++ik){
@@ -72,10 +81,12 @@ protected:
 
     output.enable();
     output << "TIMING\n======\n";
-    output << "Fields:    " << elapsed1.count() << endl;
-    output << "C loop:    " << elapsed2.count() << endl;
-    output << "Templates: " << elapsed3.count() << endl;
-    output << "Range For: " << elapsed4.count() << endl;
+    //#define PRINT(str,elapsed)   output << str << elapsed.min.count()<< elapsed.avg.count()<< elapsed.max.count() << endl;
+#define PRINT(str,elapsed)   output.write("%s %8.3g %8.3g %8.3g\n",str,elapsed.min.count(),elapsed.avg.count(),elapsed.max.count())
+    PRINT("Fields:    ",elapsed1);
+    PRINT("C loop:    ",elapsed2);
+    PRINT("Templates: ",elapsed3);
+    PRINT("Range For: ",elapsed4);
     output.disable();
     SOLVE_FOR(n);
     return 0;
