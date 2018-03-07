@@ -844,103 +844,175 @@ fi
 # Solver choice: SUNDIALS' IDA, SUNDIALS' CVODE, PVODE
 #############################################################
 
-if ( ( test "$with_sundials" != "" ) && ( test "$with_sundials" != "no" ) )
-then
+AS_IF([test "x$with_sundials" != "x" && test "x$with_sundials" != "xno"], [
+
+  # Now follows a few different checks for the version of SUNDIALS.
+  # We need the sundials_config.h header, which comes with all the
+  # versions we care about
+
+  # If we've been given a path, look in there first
+  AS_IF([test "x$with_sundials" != "xyes"], [
+    AC_CHECK_FILE([$with_sundials/include/sundials/sundials_config.h],
+      [SUNDIALS_INC=$with_sundials/include], [SUNDIALS_INC=""])
+  ])
+
+  # If we've got one, add the include dir to the preprocessor flags
+  save_CPPFLAGS=$CPPFLAGS
+  AS_IF([test "x$SUNDIALS_INC" != "x"], [CPPFLAGS="-I$SUNDIALS_INC"])
+
+  AC_MSG_CHECKING([for SUNDIALS config header])
+  AC_COMPILE_IFELSE([
+    AC_LANG_PROGRAM([
+      #include "sundials/sundials_config.h"
+    ], [])],
+    [AC_MSG_RESULT([yes])],
+    [AC_MSG_RESULT([no])
+     AC_MSG_FAILURE([Could not determine SUNDIALS version])])
+
+  # Version 3.0.0 changed the name of this define to just SUNDIALS_VERSION
+  AC_MSG_CHECKING([for SUNDIALS major version])
+  AC_EGREP_CPP([yes], [
+    #include "sundials/sundials_config.h"
+    #ifdef SUNDIALS_PACKAGE_VERSION
+      yes
+    #endif
+  ], [sundials_major_ver=2], [sundials_major_ver=3])
+  AC_MSG_RESULT([$sundials_major_ver])
+
+  AS_IF([test $sundials_major_ver = 3], [
+    AC_MSG_FAILURE([Unsupported SUNDIALS version: Only 2.6-2.7 are supported currently])
+  ])
+
+  AC_MSG_CHECKING([for SUNDIALS minor version])
+  AC_EGREP_CPP([^ *2\.[67]\.], [
+    #include "sundials/sundials_config.h"
+    #ifdef SUNDIALS_PACKAGE_VERSION
+    SUNDIALS_PACKAGE_VERSION
+    #endif
+  ], [sundials_minor_ver=ok], [sundials_minor_ver="too low"])
+  AC_MSG_RESULT([$sundials_minor_ver])
+
+  CPPFLAGS=$save_CPPFLAGS
+
+  AS_IF([test "$sundials_minor_ver" = "too low"], [
+    AC_MSG_FAILURE([Unsupported SUNDIALS version: Only 2.6-2.7 are supported currently])
+  ])
+
   # Set both IDA and CVODE if not set already
-
-  if test "$with_ida" = ""
-  then
+  AS_IF([test "x$with_ida" = "x"], [
     with_ida=$with_sundials
-  fi
+  ])
 
-  if test "$with_cvode" = ""
-  then
+  AS_IF([test "x$with_cvode" = "x"], [
     with_cvode=$with_sundials
-  fi
-fi
+  ])
+])
 
-if ( ( test "$with_ida" != "" ) && ( test "$with_ida" != "no" ) )
-then
-  echo "Searching for SUNDIALS IDA library"
-  if test "$with_ida" = "yes"
-  then
+AS_IF([test "x$with_ida" != "x" && test "x$with_ida" != "xno"], [
+  AC_MSG_NOTICE([Searching for SUNDIALS IDA library])
+  AS_IF([test "$with_ida" = "yes"], [
     # No path specified. Try using sundials-config
-    if type sundials-config > /dev/null 2>&1; then
-       IDAINCS=`sundials-config -m ida -t p -l c -s cppflags`
-       IDALIBS=`sundials-config -m ida -t p -l c -s libs`
-       scr=`which sundials-config`
-       echo "=> Using SUNDIALS IDA solver, configured with $scr"
-    else
+    AC_PATH_PROG([sundials_config], [sundials-config], [no], [$with_sundials$PATH_SEPARATOR$PATH])
+    AS_IF([test "x$sundials_config" != xno], [
+       AC_MSG_WARN(
+         [Found sundials-config, this means your version of SUNDIALS is < 2.6, and probably won't work])
+       IDAINCS=`$sundials_config -m ida -t p -l c -s cppflags`
+       IDALIBS=`$sundials_config -m ida -t p -l c -s libs`
+    ], [
+       AC_MSG_WARN([No sundials-config available, no path given, will try compiling with IDA anyway])
        IDAINCS=""
        IDALIBS=""
-    fi
-  else
+    ])
+    AC_LANG_PUSH([C++])
+    AC_MSG_CHECKING([if we can compile with SUNDIALS IDA])
+    save_LIBS=$LIBS
+    save_CXXFLAGS=$CXXFLAGS
+    LIBS="$save_LIBS $IDALIBS"
+    CXXFLAGS="$save_CXXFLAGS $IDAINCS"
+    AC_LINK_IFELSE(
+      [AC_LANG_PROGRAM([
+         #include <nvector/nvector_parallel.h>
+         #include <ida/ida.h>
+         extern void foo(N_Vector);
+         ], [IDACreate();])],
+      [ida_config_worked=yes],
+      [ida_config_worked=no])
+    AC_MSG_RESULT([$ida_config_worked])
+    AS_IF([test $ida_config_worked = yes], [
+      AC_MSG_NOTICE([Using SUNDIALS IDA solver])
+    ], [
+      AC_MSG_FAILURE([Could not compile SUNDIALS IDA program, check your SUNDIALS version])
+    ])
+    LIBS=$save_LIBS
+    CXXFLAGS="$save_CXXFLAGS"
+    AC_LANG_POP([C++])
+  ], [
     # Specified with path
-    echo "Checking given path to SUNDIALS' IDA solver"
-    IDALIBS=$with_ida
-    AC_CHECK_FILES( $with_ida/include/ida/ida.h $with_ida/include/ida/ida_spgmr.h $with_ida/include/ida/ida_bbdpre.h $with_ida/include/nvector/nvector_parallel.h $with_ida/include/sundials/sundials_types.h , , [
-      IDALIBS=""
-    ] )
-    AC_CHECK_FILES( $with_ida/lib/libsundials_nvecparallel.a $with_ida/lib/libsundials_ida.a, IDALIBSLIB='lib',
-      AC_CHECK_FILES( $with_ida/lib64/libsundials_nvecparallel.a $with_ida/lib64/libsundials_ida.a, IDALIBSLIB='lib64',
-        AC_CHECK_FILES( $with_ida/lib/libsundials_nvecparallel.so $with_ida/lib/libsundials_ida.so, IDALIBSLIB='lib',
-          AC_CHECK_FILES( $with_ida/lib64/libsundials_nvecparallel.so $with_ida/lib64/libsundials_ida.so, IDALIBSLIB='lib64',
-        IDALIBS=""
-    ) ) ) )
-    if test "$IDALIBS" != ""
-    then
-    IDAINCS="-I$IDALIBS/include"
-    IDALIBS="-L$IDALIBS/$IDALIBSLIB -lsundials_ida -lsundials_nvecparallel"
-    echo "=> Using SUNDIALS IDA solver, path $with_ida"
-    else
-      echo " -> Given path not correct. Finding..."
-    fi
-  fi
+    AC_MSG_NOTICE([Checking for IDA header files])
 
-  if test "$IDALIBS" = ""
-  then
-    # Try some known paths
-    AC_CHECK_FILE($HOME/local/include/ida/ida.h, IDALIBS=$HOME/local,
-    AC_CHECK_FILE($HOME/include/ida/ida.h, IDALIBS=$HOME,
-    AC_CHECK_FILE(/usr/include/ida/ida.h, IDALIBS=/usr,
-    AC_CHECK_FILE(/usr/local/include/ida/ida.h, IDALIBS=/usr/local,
-    AC_CHECK_FILE(/opt/local/include/ida/ida.h, IDALIBS=/opt/local,
-    )))))
+    # Check whether user supplied path to IDA install dir...
+    AC_CHECK_FILES([$with_ida/include/ida/ida.h
+                    $with_ida/include/ida/ida_spgmr.h
+                    $with_ida/include/ida/ida_bbdpre.h
+                    $with_ida/include/nvector/nvector_parallel.h
+                    $with_ida/include/sundials/sundials_types.h],
+      [ida_includes_found=yes
+       ida_includes_path=$with_ida/include],
+      [ida_includes_found=no])
+    AS_IF([test $ida_includes_found = no], [
+      # ...or path to IDA lib dir
+      AC_CHECK_FILES([$with_ida/../include/ida/ida.h
+                      $with_ida/../include/ida/ida_spgmr.h
+                      $with_ida/../include/ida/ida_bbdpre.h
+                      $with_ida/../include/nvector/nvector_parallel.h
+                      $with_ida/../include/sundials/sundials_types.h],
+        [ida_includes_found=yes
+         ida_includes_path=$with_ida/../include],
+        [ida_includes_found=no])
+    ])
+    AS_IF([test $ida_includes_found = no], [AC_MSG_FAILURE([Missing one or more IDA headers])])
+    AC_MSG_NOTICE([Found IDA include path: $ida_includes_path])
 
-    if test "$IDALIBS" != ""
-    then
-    # Check the rest of the files
-    AC_CHECK_FILES( $IDALIBS/include/ida/ida.h $IDALIBS/include/ida/ida_spgmr.h $IDALIBS/include/ida/ida_bbdpre.h $IDALIBS/include/nvector/nvector_parallel.h $IDALIBS/include/sundials/sundials_types.h , , [
-          IDALIBS=""
-        ] )
-    AC_CHECK_FILES( $IDALIBS/lib/libsundials_nvecparallel.a $IDALIBS/lib/libsundials_ida.a, IDALIBSLIB='lib',
-      AC_CHECK_FILES( $IDALIBS/lib64/libsundials_nvecparallel.a $IDALIBS/lib64/libsundials_ida.a, IDALIBSLIB='lib64',
-        AC_CHECK_FILES( $IDALIBS/lib/libsundials_nvecparallel.so $IDALIBS/lib/libsundials_ida.so, IDALIBSLIB='lib',
-          AC_CHECK_FILES( $IDALIBS/lib64/libsundials_nvecparallel.so $IDALIBS/lib64/libsundials_ida.so, IDALIBSLIB='lib64',
-            IDALIBS=""
-    ) ) ) )
-    fi
+    IDAINCS="-I$ida_includes_path"
+    IDALIBS="-lsundials_ida -lsundials_nvecparallel"
 
-    if test "$IDALIBS" != ""
-    then
-    IDAINCS="-I$IDALIBS/include"
-    IDALIBS="-L$IDALIBS/$IDALIBSLIB -lsundials_ida -lsundials_nvecparallel"
-    fi
-  fi
+    # Try compiling something simple with a few different common paths
+    save_LIBS=$LIBS
+    save_LDFLAGS=$LDFLAGS
+    save_CPPFLAGS=$CPPFLAGS
+    AC_LANG_PUSH([C++])
+    for ida_lib_path in "$with_ida" "$with_ida/lib" "$with_ida/lib64"
+    do
+      AC_MSG_CHECKING([if SUNDIALS IDA library path is $ida_lib_path])
+      LIBS="$save_LIBS $IDALIBS"
+      LDFLAGS="$save_LDFLAGS -L$ida_lib_path"
+      CPPFLAGS="$save_CPPFLAGS $IDAINCS"
+      AC_LINK_IFELSE(
+        [AC_LANG_PROGRAM([
+           #include <nvector/nvector_parallel.h>
+           #include <ida/ida.h>
+           extern void foo(N_Vector);
+           ], [IDACreate();])],
+        [ida_lib_path_found=yes],
+        [ida_lib_path_found=no])
+      AC_MSG_RESULT([$ida_lib_path_found])
+      AS_IF([test "x$ida_lib_path_found" = "xyes"], [break])
+      LIBS=$save_LIBS
+      LDFLAGS=$save_LDFLAGS
+      CPPFLAGS="$save_CPPFLAGS"
+    done
+    AC_LANG_POP([C++])
 
-  if test "$IDALIBS" = ""
-  then
-    echo "=> IDA solver not available"
-    echo
-  else
-    # Compile in the IDA solver
-    echo "=> IDA solver enabled"
-    echo
-    EXTRA_LIBS="$EXTRA_LIBS $IDALIBS"
-    EXTRA_INCS="$EXTRA_INCS $IDAINCS"
-    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_IDA"
-  fi
-fi
+    IDA_LDFLAGS="-L$ida_lib_path"
+  ])
+  AS_IF([test $ida_lib_path_found = no], [AC_MSG_FAILURE([Cannot compile IDA program])])
+
+  # Compile in the IDA solver
+  AC_MSG_NOTICE([=> IDA solver enabled])
+  EXTRA_LIBS="$EXTRA_LIBS $IDA_LDFLAGS $IDALIBS"
+  EXTRA_INCS="$EXTRA_INCS $IDAINCS"
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_IDA"
+])
 
 if ( ( test "$with_cvode" != "" ) && ( test "$with_cvode" != "no" ) )
 then
