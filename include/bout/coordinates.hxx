@@ -37,6 +37,7 @@ class Coordinates;
 
 #include "mesh.hxx"
 #include "datafile.hxx"
+#include "utils.hxx"
 #include <bout_types.hxx>
 
 /*!
@@ -133,9 +134,6 @@ public:
   const Field3D Laplace(const Field3D &f);
   
 private:
-  /// Matrix inversion by Gauss-Jordan elimination
-  int gaussj(BoutReal **a, int n);
-  vector<int> indxc, indxr, ipiv;
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh * localmesh;
 };

@@ -32,11 +32,12 @@ class LaplaceSerialBand;
 #include <invert_laplace.hxx>
 #include <dcomplex.hxx>
 #include <options.hxx>
+#include <utils.hxx>
 
 class LaplaceSerialBand : public Laplacian {
 public:
   LaplaceSerialBand(Options *opt = NULL);
-  ~LaplaceSerialBand();
+  ~LaplaceSerialBand(){};
   
   using Laplacian::setCoefA;
   void setCoefA(const Field2D &val) override { Acoef = val; }
@@ -54,15 +55,13 @@ public:
   }
 
   using Laplacian::solve;
-  const FieldPerp solve(const FieldPerp &b);
-  const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0);
+  const FieldPerp solve(const FieldPerp &b) override;
+  const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
 private:
   Field2D Acoef, Ccoef, Dcoef;
   
-  dcomplex **bk, *bk1d;
-  dcomplex **xk, *xk1d;
-
-  dcomplex **A;
+  Matrix<dcomplex> bk, xk, A;
+  Array<dcomplex> bk1d, xk1d;
 };
 
 #endif // __SERIAL_BAND_H__

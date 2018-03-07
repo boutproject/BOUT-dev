@@ -1,5 +1,5 @@
 /*
- * Testing performance of an iterator over the mesh
+ * Testing performance of iterators over the mesh
  *
  */
 
@@ -9,177 +9,200 @@
 #include <iostream>
 #include <iterator>
 #include <time.h>
+#include <vector>
+#include <iomanip>
 
-// A simple iterator over a 3D set of indices
-class MeshIterator
-  : public std::iterator< std::forward_iterator_tag, Indices > {
-public:
-  /// Constructor. This would set ranges. Could depend on thread number
-  MeshIterator() : x(0), y(0), z(0), xstart(0), ystart(0), zstart(0) {
-    xend = mesh->LocalNx-1;
-    yend = mesh->LocalNy-1;
-    zend = mesh->LocalNz;
+#include "bout/openmpwrap.hxx"
+#include "bout/region.hxx"
+
+typedef std::chrono::time_point<std::chrono::steady_clock> SteadyClock;
+typedef std::chrono::duration<double> Duration;
+using namespace std::chrono;
+
+#define ITERATOR_TEST_BLOCK(NAME, ...)		\
+  {__VA_ARGS__								\
+      names.push_back(NAME);						\
+    SteadyClock start = steady_clock::now();				\
+    for (int repetitionIndex = 0 ; repetitionIndex < NUM_LOOPS ; repetitionIndex++){ \
+      __VA_ARGS__;							\
+    }									\
+    times.push_back(steady_clock::now()-start);				\
   }
-
-  MeshIterator(int x, int y, int z) : x(x), y(y), z(z), xstart(0), ystart(0), zstart(0) {
-    xend = mesh->LocalNx-1;
-    yend = mesh->LocalNy-1;
-    zend = mesh->LocalNz;
-  }
-
-  /// The index variables, updated during loop
-  int x, y, z;
-
-  /// Increment operators
-  MeshIterator& operator++() { next(); return *this; }
-  MeshIterator& operator++(int) { next(); return *this; }
-
-  // Comparison operator
-  bool operator!=(const MeshIterator& rhs) const {
-    return (x != rhs.x) || (y != rhs.y) || (z != rhs.z);
-  }
-
-  // Dereference operator
-  Indices operator*() {
-    return {x, y, z};
-  }
-
-  /// Checks if finished looping. Is this more efficient than
-  /// using the more idiomatic it != MeshIterator::end() ?
-  bool isDone() const {
-    return x > xend;
-  }
-
-private:
-  int xstart, xend;
-  int ystart, yend;
-  int zstart, zend;
-
-  /// Advance to the next index
-  void next() {
-    z++;
-    if(z > zend) {
-      z = zstart;
-      y++;
-      if(y > yend) {
-        y = ystart;
-        x++;
-      }
-    }
-  }
-};
 
 int main(int argc, char **argv) {
   BoutInitialise(argc, argv);
+  std::vector<std::string> names;
+  std::vector<Duration> times;
+  
+  //Get options root
+  Options *globalOptions = Options::getRoot();
+  Options *modelOpts = globalOptions->getSection("performanceIterator");
+  int NUM_LOOPS;
+  OPTION(modelOpts, NUM_LOOPS, 100);
+  bool profileMode, includeHeader;
+  OPTION(modelOpts, profileMode, false);
+  OPTION(modelOpts, includeHeader, false);
 
+  ConditionalOutput time_output(Output::getInstance());
+  time_output.enable(true);
+  
   Field3D a = 1.0;
   Field3D b = 2.0;
 
   Field3D result;
   result.allocate();
 
-  typedef std::chrono::time_point<std::chrono::steady_clock> SteadyClock;
-  typedef std::chrono::duration<double> Duration;
-  using namespace std::chrono;
-  
-  // A single loop over block data
-  
+  //Some small setup for C loop case
   BoutReal *ad = &a(0,0,0);
   BoutReal *bd = &b(0,0,0);
   BoutReal *rd = &result(0,0,0);
   
-  // Loop over data so first test doesn't have a disadvantage from caching
-  for(int i=0;i<10;++i) {
-    for(int j=0;j<mesh->LocalNx*mesh->LocalNy*mesh->LocalNz;++j) {
-      rd[j] = ad[j] + bd[j];
-    }
-  }
+  const int len = mesh->LocalNx*mesh->LocalNy*mesh->LocalNz;
+
+  //Raw C loop
+  ITERATOR_TEST_BLOCK("C loop",
+		      for(int j=0;j<len;++j) {
+			rd[j] = ad[j] + bd[j];
+		      };
+		      );
+#ifdef _OPENMP  
+  ITERATOR_TEST_BLOCK("C loop (omp)",
+		      BOUT_OMP(parallel for)
+		      for(int j=0;j<len;++j) {
+			rd[j] = ad[j] + bd[j];
+		      };
+		    );
+#endif
   
-  SteadyClock start1 = steady_clock::now();
-  int len = mesh->LocalNx*mesh->LocalNy*mesh->LocalNz;
-  for(int i=0;i<10;++i) {
-    for(int j=0;j<len;++j) {
-      rd[j] = ad[j] + bd[j];
-    }
-  }
-  Duration elapsed1 = steady_clock::now() - start1;
-
   // Nested loops over block data
-  SteadyClock start2 = steady_clock::now();
-  for(int x=0;x<10;x++) {
-    for(int i=0;i<mesh->LocalNx;++i) {
-      for(int j=0;j<mesh->LocalNy;++j) {
-        for(int k=0;k<mesh->LocalNz;++k) {
-          result(i,j,k) = a(i,j,k) + b(i,j,k);
-        }
-      }
-    }
-  }
-  Duration elapsed2 = steady_clock::now() - start2;
+  ITERATOR_TEST_BLOCK("Nested loop",
+		    for(int i=0;i<mesh->LocalNx;++i) {
+		      for(int j=0;j<mesh->LocalNy;++j) {
+			for(int k=0;k<mesh->LocalNz;++k) {
+			  result(i,j,k) = a(i,j,k) + b(i,j,k);
+			}
+		      }
+		    }
+		    );
 
-  // MeshIterator over block data
-  SteadyClock start3 = steady_clock::now();
-  for(int x=0;x<10;x++) {
-    for(MeshIterator i; !i.isDone(); ++i){
-      result(i.x,i.y,i.z) = a(i.x,i.y,i.z) + b(i.x,i.y,i.z);
-    }
-  }
-  Duration elapsed3 = steady_clock::now() - start3;
-
+#ifdef _OPENMP  
+  ITERATOR_TEST_BLOCK("Nested loop (omp)",
+		      BOUT_OMP(parallel for)
+		      for(int i=0;i<mesh->LocalNx;++i) {
+			for(int j=0;j<mesh->LocalNy;++j) {
+			  for(int k=0;k<mesh->LocalNz;++k) {
+			    result(i,j,k) = a(i,j,k) + b(i,j,k);
+			  }
+		      }
+		      }
+		      );
+#endif
+  
   // DataIterator using begin(), end()
-  SteadyClock start4 = steady_clock::now();
-  for(int x=0;x<10;x++) {
-    for(DataIterator i = std::begin(result), rend=std::end(result); i != rend; ++i){
-      result(i.x,i.y,i.z) = a(i.x,i.y,i.z) + b(i.x,i.y,i.z);
-    }
-  }
-  Duration elapsed4 = steady_clock::now() - start4;
+  ITERATOR_TEST_BLOCK("DI begin/end",
+		    for(DataIterator i = std::begin(result), rend=std::end(result); i != rend; ++i){
+		      result(i.x,i.y,i.z) = a(i.x,i.y,i.z) + b(i.x,i.y,i.z);
+		    }
+		    );
 
   // DataIterator with done()
-  SteadyClock start5 = steady_clock::now();
-  for(int x=0;x<10;x++) {
-    for(DataIterator i = std::begin(result); !i.done() ; ++i){
-      result(i.x,i.y,i.z) = a(i.x,i.y,i.z) + b(i.x,i.y,i.z);
-    }
-  }
-  Duration elapsed5 = steady_clock::now() - start5;
-
+  ITERATOR_TEST_BLOCK("DI begin/done",
+		    for(DataIterator i = std::begin(result); !i.done() ; ++i){
+		      result(i.x,i.y,i.z) = a(i.x,i.y,i.z) + b(i.x,i.y,i.z);
+		    }
+		    );
+  
   // Range based for DataIterator with indices
-  SteadyClock start6 = steady_clock::now();
-  for(int x=0;x<10;x++) {
-    for(auto i : result){
-      result(i.x,i.y,i.z) = a(i.x,i.y,i.z) + b(i.x,i.y,i.z);
-    }
-  }
-  Duration elapsed6 = steady_clock::now() - start6;
-  
-  // Range based DataIterator 
-  SteadyClock start9 = steady_clock::now();
-  for (int x=0;x<10;++x) {
-    for (const auto &i : result) {
-      result[i] = a[i] + b[i];
-    }
-  }
-  Duration elapsed9 = steady_clock::now() - start9;
+  ITERATOR_TEST_BLOCK("C++11 range-based for",
+		    for(auto i : result){
+		      result(i.x,i.y,i.z) = a(i.x,i.y,i.z) + b(i.x,i.y,i.z);
+		    }
+		    );
 
-  // DataIterator over fields
-  SteadyClock start10 = steady_clock::now();
-  for(int x=0;x<10;x++)
-    for(DataIterator d = result.iterator(); !d.done(); d++)
-      result[d] = a[d] + b[d];
-  Duration elapsed10 = steady_clock::now() - start10;
+  // Range based DataIterator 
+  ITERATOR_TEST_BLOCK("C++11 range-based for [i]", 
+		    for (const auto &i : result) {
+		      result[i] = a[i] + b[i];
+		    }
+		    );
   
-  output << "TIMING\n======\n";
-  output << "C loop                     : " << elapsed1.count() << std::endl;
-  output << "----- (x,y,z) indexing ----" << std::endl;
-  output << "Nested loops               : " << elapsed2.count() << std::endl;
-  output << "MeshIterator               : " << elapsed3.count() << std::endl;
-  output << "DataIterator (begin/end)   : " << elapsed4.count() << std::endl;
-  output << "DataIterator (begin/done)  : " << elapsed5.count() << std::endl;
-  output << "C++11 range-based for      : " << elapsed6.count() << std::endl;
-  output << "------ [i] indexing -------" << std::endl;
-  output << "C++11 Range-based for      : " << elapsed9.count() << std::endl;
-  output << "DataIterator (done)        : " << elapsed10.count() << std::endl;
+  // DataIterator over fields
+  ITERATOR_TEST_BLOCK("DI (done) [i]",
+		    for(DataIterator d = result.iterator(); !d.done(); d++)
+		      result[d] = a[d] + b[d];
+		    );
+
+  //Raw C loop
+  ITERATOR_TEST_BLOCK("C loop repeat",
+		    for(int j=0;j<len;++j) {
+		      rd[j] = ad[j] + bd[j];
+		    };
+		    );
+
+  // Region macro
+  ITERATOR_TEST_BLOCK(
+      "Region (serial)",
+      BLOCK_REGION_LOOP_SERIAL(mesh->getRegion("RGN_ALL"), i,
+			       result[i] = a[i] + b[i];
+			       );
+		      );
+#ifdef _OPENMP
+  ITERATOR_TEST_BLOCK("Region (omp)",
+		      BLOCK_REGION_LOOP(mesh->getRegion("RGN_ALL"), i,
+					result[i] = a[i] + b[i];
+					);
+		      );
+#endif
+  
+  if(profileMode){
+    int nthreads=0;
+#ifdef _OPENMP
+    nthreads = omp_get_max_threads();
+#endif
+
+    int width = 12;
+    if(includeHeader){
+      time_output << "\n------------------------------------------------\n";
+      time_output << "Case legend";
+      time_output <<"\n------------------------------------------------\n";
+      
+      for (int i = 0 ; i < names.size(); i++){	
+	time_output << std::setw(width) << "Case " << i << ".\t" << names[i] << "\n";
+      }
+      time_output << "\n";
+      time_output << std::setw(width) << "Nprocs" << "\t";
+      time_output << std::setw(width) << "Nthreads" << "\t";
+      time_output << std::setw(width) << "Num_loops" << "\t";
+      time_output << std::setw(width) << "Local grid" << "\t";
+      time_output << std::setw(width) << "Nx (global)" << "\t";
+      time_output << std::setw(width) << "Ny (global)" << "\t";
+      time_output << std::setw(width) << "Nz (global)" << "\t";
+      for (int i = 0 ; i < names.size(); i++){	
+	time_output << std::setw(width) << "Case " << i << "\t";
+      }
+      time_output << "\n";
+    }
+
+    time_output << std::setw(width) << BoutComm::size() << "\t";
+    time_output << std::setw(width) << nthreads << "\t";
+    time_output << std::setw(width) << NUM_LOOPS << "\t";
+    time_output << std::setw(width) << len << "\t";
+    time_output << std::setw(width) << mesh->GlobalNx << "\t";
+    time_output << std::setw(width) << mesh->GlobalNy << "\t";
+    time_output << std::setw(width) << mesh->GlobalNz << "\t";
+    for (int i = 0 ; i < names.size(); i++){	
+      time_output << std::setw(width) << times[i].count()/NUM_LOOPS << "\t";
+    }
+    time_output << "\n";
+  }else{
+    int width = 0;
+    for (const auto i: names){ width = i.size() > width ? i.size() : width;};
+    width = width + 5;
+    time_output << std::setw(width) << "Case name" << "\t" << "Time per iteration (s)" << "\n";
+    for(int i = 0 ; i < names.size(); i++){
+      time_output <<  std::setw(width) << names[i] << "\t" << times[i].count()/NUM_LOOPS << "\n";
+    }
+  };
 
   BoutFinalise();
   return 0;

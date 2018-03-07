@@ -43,9 +43,9 @@ const char DEFAULT_LOG[] = "BOUT.log";
 #define GLOBALORIGIN
 
 
-#define INDIRECT1(a) #a
-#define INDIRECT0(...) INDIRECT1(#__VA_ARGS__)
-#define STRINGIFY(a) INDIRECT0(a)
+#define INDIRECT1_BOUTMAIN(a) #a
+#define INDIRECT0_BOUTMAIN(...) INDIRECT1_BOUTMAIN(#__VA_ARGS__)
+#define STRINGIFY(a) INDIRECT0_BOUTMAIN(a)
 
 #include "mpi.h"
 
@@ -151,20 +151,24 @@ int BoutInitialise(int &argc, char **&argv) {
     	string(argv[i]) == "--help") {
       // Print help message -- note this will be displayed once per processor as we've not started MPI yet.
       fprintf(stdout, "Usage: %s [-d <data directory>] [-f <options filename>] [restart [append]] [VAR=VALUE]\n", argv[0]);
-      fprintf(stdout, "\n"
-	      "  -d <data directory>\tLook in <data directory> for input/output files\n"
-	      "  -f <options filename>\tUse OPTIONS given in <options filename>\n"
-	      "  -o <settings filename>\tSave used OPTIONS given to <options filename>\n"
+      fprintf(stdout,
+              "\n"
+              "  -d <data directory>\tLook in <data directory> for input/output files\n"
+              "  -f <options filename>\tUse OPTIONS given in <options filename>\n"
+              "  -o <settings filename>\tSave used OPTIONS given to <options filename>\n"
               "  -l, --log <log filename>\tPrint log to <log filename>\n"
-	      "  -v, --verbose\t\tIncrease verbosity\n"
-	      "  -q, --quiet\t\tDecrease verbosity\n"
+              "  -v, --verbose\t\tIncrease verbosity\n"
+              "  -q, --quiet\t\tDecrease verbosity\n"
 #ifdef LOGCOLOR
               "  -c, --color\t\tColor output using bout-log-color\n"
 #endif
-	      "  -h, --help\t\tThis message\n"
-	      "  restart [append]\tRestart the simulation. If append is specified, append to the existing output files, otherwise overwrite them\n"
-	      "  VAR=VALUE\t\tSpecify a VALUE for input parameter VAR\n"
-	      "\nFor all possible input parameters, see the user manual and/or the physics model source (e.g. %s.cxx)\n", argv[0]);
+              "  -h, --help\t\tThis message\n"
+              "  restart [append]\tRestart the simulation. If append is specified, "
+              "append to the existing output files, otherwise overwrite them\n"
+              "  VAR=VALUE\t\tSpecify a VALUE for input parameter VAR\n"
+              "\nFor all possible input parameters, see the user manual and/or the "
+              "physics model source (e.g. %s.cxx)\n",
+              argv[0]);
 
       return -1;
     }
@@ -198,15 +202,14 @@ int BoutInitialise(int &argc, char **&argv) {
       i++;
       set_file = argv[i];
 
-    } else if ( (string(argv[i]) == "-l") ||
-                (string(argv[i]) == "--log") ) {
-      if (i+1 >= argc) {
+    } else if ((string(argv[i]) == "-l") || (string(argv[i]) == "--log")) {
+      if (i + 1 >= argc) {
         fprintf(stderr, "Usage is %s -l <log filename>\n", argv[0]);
         return 1;
       }
       i++;
       log_file = argv[i];
-      
+
     } else if ( (string(argv[i]) == "-v") ||
                 (string(argv[i]) == "--verbose") ){
       verbosity++;

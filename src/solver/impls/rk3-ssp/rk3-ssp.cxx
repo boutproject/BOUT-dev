@@ -5,7 +5,7 @@
 #include <utils.hxx>
 #include <boutexception.hxx>
 #include <msg_stack.hxx>
-
+#include <bout/openmpwrap.hxx>
 #include <cmath>
 
 #include <output.hxx>
@@ -131,7 +131,7 @@ void RK3SSP::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutReal 
   run_rhs(curtime);
   save_derivs(L);
   
-  #pragma omp parallel for
+  BOUT_OMP(parallel for)
   for(int i=0;i<nlocal;i++)
     u1[i] = start[i] + dt*L[i];
   
@@ -139,7 +139,7 @@ void RK3SSP::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutReal 
   run_rhs(curtime + dt);
   save_derivs(L);
   
-  #pragma omp parallel for 
+  BOUT_OMP(parallel for )
   for(int i=0;i<nlocal;i++)
     u2[i] = 0.75*start[i] + 0.25*u1[i] + 0.25*dt*L[i];
   
@@ -147,7 +147,7 @@ void RK3SSP::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutReal 
   run_rhs(curtime + 0.5*dt);
   save_derivs(L);
  
-  #pragma omp parallel for
+  BOUT_OMP(parallel for)
   for(int i=0;i<nlocal;i++)
     result[i] = (1./3)*start[i] + (2./3.)*(u2[i] + dt*L[i]);
 }

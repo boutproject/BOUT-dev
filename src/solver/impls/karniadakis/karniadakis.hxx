@@ -45,12 +45,12 @@ class KarniadakisSolver : public Solver {
   KarniadakisSolver(Options *options);
   ~KarniadakisSolver();
 
-  BoutReal getCurrentTimestep() {return timestep; }
+  BoutReal getCurrentTimestep() override {return timestep; }
 
   int init(int nout, BoutReal tstep) override;
   
   int run() override;
-  void resetInternalFields();
+  void resetInternalFields() override;
 
  private:
   

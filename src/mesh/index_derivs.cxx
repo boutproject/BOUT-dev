@@ -49,9 +49,13 @@
 #include <fft.hxx>
 #include <globals.hxx>
 #include <interpolation.hxx>
+#include <bout/constants.hxx>
+#include <bout/openmpwrap.hxx>
+
 #include <msg_stack.hxx>
 #include <stencils.hxx>
 #include <utils.hxx>
+#include <unused.hxx>
 
 #include <cmath>
 #include <stdlib.h>
@@ -896,7 +900,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 
 // Y derivative
 
-const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, CELL_LOC loc,
+const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, CELL_LOC UNUSED(loc),
                                REGION region) {
   if (var.getNy() == 1) {
     return Field2D(0., this);
@@ -1344,7 +1348,7 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
 
     int ncz = mesh->LocalNz;
 
-#pragma omp parallel
+    BOUT_OMP(parallel)
     {
       Array<dcomplex> cv(ncz / 2 + 1);
 
@@ -1367,7 +1371,7 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
         kfilter = ncz / 2;
       int kmax = ncz / 2 - kfilter; // Up to and including this wavenumber index
 
-#pragma omp for
+      BOUT_OMP(for)
       for (int jx = xs; jx <= xe; jx++) {
         for (int jy = ys; jy <= ye; jy++) {
           rfft(f(jx, jy), ncz, cv.begin()); // Forward FFT
@@ -1399,7 +1403,11 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
 
   } else {
     // All other (non-FFT) functions
-    result = applyZdiff(f, func);
+    if(inc_xbndry){
+      result = applyZdiff(f, func, diffloc, RGN_NOY);
+    }else{
+      result = applyZdiff(f, func, diffloc, RGN_NOBNDRY);
+    }
   }
 
   result.setLocation(diffloc);
@@ -1654,6 +1662,7 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
       } else if((inloc == CELL_ZLOW) && (diffloc == CELL_CENTRE)) {
 	      // Shifting up
         throw BoutException("Not tested - probably broken");
+
       } else if (diffloc != CELL_DEFAULT && diffloc != inloc){
         throw BoutException("Not implemented!");
       }
@@ -1674,7 +1683,7 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
       xs = 0;
       xe = mesh->LocalNx - 1;
     }
-    
+
     for (int jx = xs; jx <= xe; jx++) {
       for (int jy = ys; jy <= ye; jy++) {
 

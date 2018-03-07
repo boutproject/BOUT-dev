@@ -36,6 +36,8 @@ class LaplaceCyclic;
 #include <dcomplex.hxx>
 #include <options.hxx>
 
+#include "utils.hxx"
+
 /// Solves the 2D Laplacian equation using the CyclicReduce class
 /*!
  * 
@@ -61,15 +63,15 @@ public:
   }
 
   using Laplacian::solve;
-  const FieldPerp solve(const FieldPerp &b) {return solve(b,b);}
-  const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0);
+  const FieldPerp solve(const FieldPerp &b) override {return solve(b,b);}
+  const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
 private:
   Field2D Acoef, Ccoef, Dcoef;
   
   int nmode;  // Number of modes being solved
   int xs, xe; // Start and end X indices
-  dcomplex **a, **b, **c, **bcmplx, **xcmplx;
-  dcomplex *k1d;
+  Matrix<dcomplex> a, b, c, bcmplx, xcmplx;
+  Array<dcomplex> k1d;
   
   bool dst;
   

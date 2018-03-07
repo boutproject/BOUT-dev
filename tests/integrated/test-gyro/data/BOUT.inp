@@ -21,3 +21,6 @@ symmetricGlobalY = false
 
 [output]
 floats = true
+
+[laplace]
+all_terms = false

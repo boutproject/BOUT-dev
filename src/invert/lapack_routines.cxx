@@ -51,7 +51,7 @@ extern "C" {
   void zgbsv_(int *n, int *kl, int *ku, int *nrhs, fcmplx *ab, int *ldab, int *ipiv, fcmplx *b, int *ldb, int *info);
 }
 
-/// Use LAPACK routine ZGTSV. About 25% slower than the simple NR routine for 260 points
+/// Use LAPACK routine ZGTSV
 int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcomplex *r, dcomplex *u, int n) {
   
   // Lapack routines overwrite their inputs, so need to copy
@@ -215,10 +215,8 @@ void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal 
  * ldb    length of b (= n)
  * info   output status
  *
- * This code is about 25% faster than NR
- * Timing for 260 points (s): NR: 5.698204e-05, LAPACK: 4.410744e-05
  */
-void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b) {
+void cband_solve(Matrix<dcomplex> &a, int n, int m1, int m2, Array<dcomplex> &b) {
   int nrhs = 1;
   int kl = m1;
   int ku = m2;
@@ -242,8 +240,8 @@ void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b) {
       // AB(kl + i, j) = A[j - ku + i][kl+ku - i]
 
       if (((j - ku + i) >= 0) && ((j - ku + i) < n)) {
-        AB[j * ldab + kl + i].r = a[j - ku + i][kl + ku - i].real();
-        AB[j * ldab + kl + i].i = a[j - ku + i][kl + ku - i].imag();
+        AB[j * ldab + kl + i].r = a(j - ku + i, kl + ku - i).real();
+        AB[j * ldab + kl + i].i = a(j - ku + i, kl + ku - i).imag();
       }
     }
   }
@@ -258,209 +256,26 @@ void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b) {
 }
 
 #else
-///////////////////////////////////////////////////////////////////////
-// No LAPACK used. Instead fall back on Numerical Recipes routine.
-//
-// NOTE: THESE MUST BE REMOVED FOR PUBLIC RELEASE
-///////////////////////////////////////////////////////////////////////
+// No LAPACK available. Routines throw exceptions
 
-#include <utils.hxx>
-
-/// Tri-diagonal complex matrix inversion (from Numerical Recipes)
+/// Tri-diagonal complex matrix inversion
 int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcomplex *r,
            dcomplex *u, int n) {
-  dcomplex bet;
-  Array<dcomplex> gam(n);
-
-  if (b[0] == 0.0) {
-    throw BoutException("Tridag: Rewrite equations\n");
-  }
-
-  bet = b[0];
-  u[0] = r[0] / bet;
-
-  for (int j = 1; j < n; j++) {
-    gam[j] = c[j - 1] / bet;
-    bet = b[j] - a[j] * gam[j];
-    if (bet == 0.0) {
-      throw BoutException("Tridag: Zero pivot\n");
-    }
-    u[j] = (r[j] - a[j] * u[j - 1]) / bet;
-  }
-
-  for (int j = n - 2; j >= 0; j--) {
-    u[j] = u[j] - gam[j + 1] * u[j + 1];
-  }
-
-  return 0;
+  throw BoutException("complex tridag function not available. Compile BOUT++ with Lapack support.");
 }
 
 /// Tri-diagonal matrix inversion (BoutReal)
 bool tridag(const BoutReal *a, const BoutReal *b, const BoutReal *c, const BoutReal *r, BoutReal *x, int n) {
-  int j;  
-  
-  BoutReal bet;
-  Array<BoutReal> gam(n);
-  
-  if(b[0] == 0.0) {
-    throw BoutException("Tridag: Rewrite equations\n");
-  }
-  
-  bet = b[0];
-  x[0] = r[0] / bet;
-  
-  for(j=1;j<n;j++) {
-    gam[j] = c[j-1]/bet;
-    bet = b[j]-a[j]*gam[j];
-    if(bet == 0.0) {
-      throw BoutException("Tridag: Zero pivot\n");
-    }
-    x[j] = (r[j]-a[j]*x[j-1])/bet;
-  }
-  
-  for(j=n-2;j>=0;j--) {
-    x[j] = x[j]-gam[j+1]*x[j+1];
-  }
-  
-  return true;
+  throw BoutException("tridag function not available. Compile BOUT++ with Lapack support.");
 }
 
 /// Solve a cyclic tridiagonal matrix
 void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal *x, int n) {
-  if (n <= 2)
-    throw BoutException("ERROR: n too small in cyclic_tridag(BoutReal)");
-  
-  Array<BoutReal> u(n), z(n);
-  
-  BoutReal gamma = -b[0];
-  
-  // Save original values of b (restore after)
-  BoutReal b0 = b[0];
-  BoutReal bn = b[n-1];
-  
-  // Modify b
-  b[0] = b[0] - gamma;
-  b[n-1] = b[n-1] - c[n-1]*a[0]/gamma;
-  
-  // Solve tridiagonal system Ax=r
-  if(!tridag(a, b, c, r, x, n))
-    throw BoutException("First tridag call failed in cyclic_tridag(BoutReal)");
-  
-  u[0] = gamma;
-  u[n-1] = c[n-1];
-  for(int i=1;i<(n-1);i++)
-    u[i] = 0.;
-  
-  // Solve Az = u
-  if(!tridag(a, b, c, u.begin(), z.begin(), n))
-    throw BoutException("ERROR: second tridag call failed in cyclic_tridag(BoutReal)\n");
-  
-  BoutReal fact = (x[0] + a[0]*x[n-1]/gamma) / // v.x / (1 + v.z)
-    (1.0 + z[0] + a[0]*z[n-1]/gamma); 
-  
-  for(int i=0;i<n;i++)
-    x[i] -= fact*z[i];
-  
-  // Restore coefficients
-  b[0] = b0;
-  b[n-1] = bn;
+  throw BoutException("cyclic_tridag function not available. Compile BOUT++ with Lapack support.");
 }
 
-
-const BoutReal TINY = 1.0e-20;
-
-void cbandec(dcomplex **a, unsigned long n, unsigned int m1, unsigned int m2,
-	     dcomplex **al, unsigned long indx[], dcomplex *d) {
-  unsigned long i,j,k,l;
-  unsigned int mm;
-  dcomplex dum;
-
-  mm=m1+m2+1;
-  l=m1;
-
-  for (i=0;i<m1;i++) {
-    for (j=m1-i;j<mm;j++) a[i][j-l]=a[i][j];
-    l--;
-    for (j=mm-l-1;j<mm;j++) a[i][j]=0.0;
-  }
-  *d = 1.0;
-  l=m1;
-  for (k=1;k<=n;k++) {
-    dum=a[k-1][0];
-    i=k;
-    if (l < n) l++;
-    for (j=k+1;j<=l;j++) {
-      if (abs(a[j-1][0]) > abs(dum)) {
-	dum=a[j-1][0];
-	i=j;
-      }
-    }
-    indx[k-1]=i;
-    if (dum == 0.0) a[k-1][0]=TINY;
-    if (i != k) {
-      *d = -(*d);
-      for (j=0;j<mm;j++) swap(a[k-1][j],a[i-1][j]);
-    }
-    for (i=k;i<l;i++) {
-      dum=a[i][0]/a[k-1][0];
-      al[k-1][i-k]=dum;
-      for (j=1;j<mm;j++) a[i][j-1]=a[i][j]-dum*a[k-1][j];
-      a[i][mm-1]=0.0;
-    }
-  }
-}
-
-void cbanbks(dcomplex **a, unsigned long n, unsigned int m1, unsigned int m2,
-	     dcomplex **al, unsigned long indx[], dcomplex b[]) {
-  unsigned long i,k,l;
-  unsigned int mm;
-  dcomplex dum;
-  
-  mm=m1+m2+1;
-  l=m1;
-  for (k=1;k<=n;k++) {
-    i=indx[k-1];
-    if (i != k) swap(b[k-1],b[i-1]);
-    if (l < n) l++;
-    for (i=k+1;i<=l;i++) b[i-1] -= al[k-1][i-k-1]*b[k-1];
-  }
-  l=1;
-  for (i=n;i>=1;i--) {
-    dum=b[i-1];
-    for (k=2;k<=l;k++) dum -= a[i-1][k-1]*b[k+i-2];
-    b[i-1]=dum/a[i-1][0];
-    if (l < mm) l++;
-  }
-}
-
-void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b) {
-  static dcomplex **al;
-  static int an = 0, am1 = 0; // Allocated sizes
-  dcomplex d;
-  
-  if(an < n) {
-    if(an != 0) {
-      free_matrix(al);
-    }
-    al = matrix<dcomplex>(n, m1); //Never freed
-    an = n;
-    am1 = m1;
-  }
-  
-  if(am1 < m1) {
-    if(am1 != 0)
-      free_matrix(al);
-    al =  matrix<dcomplex>(an, m1);
-    am1 = m1;
-  }
-
-  Array<unsigned long> indx(n);
-  
-  // LU decompose matrix
-  cbandec(a, n, m1, m2, al, indx.begin(), &d);
-
-  // Solve
-  cbanbks(a, n, m1, m2, al, indx.begin(), b);
+void cband_solve(Matrix<dcomplex> &a, int n, int m1, int m2, Array<dcomplex> &b) {
+  throw BoutException("cband_solve function not available. Compile BOUT++ with Lapack support.");
 }
 
 #endif // LAPACK

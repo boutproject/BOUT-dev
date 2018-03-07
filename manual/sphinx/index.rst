@@ -95,6 +95,7 @@ The documentation is divided into the following sections:
    developer_docs/git_basics
    developer_docs/code_layout
    developer_docs/data_types
+   developer_docs/code_generation
    developer_docs/derivatives
    developer_docs/laplacian_inversion
    developer_docs/mesh

@@ -51,7 +51,7 @@ public:
   void setCoefEz(const Field2D &UNUSED(val)) override {}
 
   using Laplacian::solve;
-  const FieldPerp solve(const FieldPerp &UNUSED(b)) {throw BoutException("PETSc not available");}
+  const FieldPerp solve(const FieldPerp &UNUSED(b)) override {throw BoutException("PETSc not available");}
 };
 
 #else
@@ -76,24 +76,24 @@ public:
     delete [] pctype;
   }
 
-  void setCoefA(const Field2D &val) { A = val; /*Acoefchanged = true;*/ if(pcsolve) pcsolve->setCoefA(val); }
-  void setCoefC(const Field2D &val) { C1 = val; C2 = val; issetC = true; /*coefchanged = true;*/ if(pcsolve) pcsolve->setCoefC(val);  }
-  void setCoefC1(const Field2D &val) { C1 = val; issetC = true;}
-  void setCoefC2(const Field2D &val) { C2 = val; issetC = true;}
-  void setCoefD(const Field2D &val) { D = val; issetD = true; /*coefchanged = true;*/ if(pcsolve) pcsolve->setCoefD(val); }
-  void setCoefEx(const Field2D &val) { Ex = val; issetE = true; /*coefchanged = true;*/ if(pcsolve) pcsolve->setCoefEx(val); }
-  void setCoefEz(const Field2D &val) { Ez = val; issetE = true; /*coefchanged = true;*/ if(pcsolve) pcsolve->setCoefEz(val); }
+  void setCoefA(const Field2D &val) override { A = val; /*Acoefchanged = true;*/ if(pcsolve) pcsolve->setCoefA(val); }
+  void setCoefC(const Field2D &val) override { C1 = val; C2 = val; issetC = true; /*coefchanged = true;*/ if(pcsolve) pcsolve->setCoefC(val);  }
+  void setCoefC1(const Field2D &val) override { C1 = val; issetC = true;}
+  void setCoefC2(const Field2D &val) override { C2 = val; issetC = true;}
+  void setCoefD(const Field2D &val) override { D = val; issetD = true; /*coefchanged = true;*/ if(pcsolve) pcsolve->setCoefD(val); }
+  void setCoefEx(const Field2D &val) override { Ex = val; issetE = true; /*coefchanged = true;*/ if(pcsolve) pcsolve->setCoefEx(val); }
+  void setCoefEz(const Field2D &val) override { Ez = val; issetE = true; /*coefchanged = true;*/ if(pcsolve) pcsolve->setCoefEz(val); }
 
-  void setCoefA(const Field3D &val) { A = val; /*Acoefchanged = true;*/ if(pcsolve) pcsolve->setCoefA(val);}
-  void setCoefC(const Field3D &val) { C1 = val; C2 = val; issetC = true; /*coefchanged = true;*/ if(pcsolve) pcsolve->setCoefC(val); }
-  void setCoefC1(const Field3D &val) { C1 = val; issetC = true;}
-  void setCoefC2(const Field3D &val) { C2 = val; issetC = true;}
-  void setCoefD(const Field3D &val) { D = val; issetD = true; /*coefchanged = true;*/ if(pcsolve) pcsolve->setCoefD(val); }
-  void setCoefEx(const Field3D &val) { Ex = val; issetE = true; /*coefchanged = true;*/ if(pcsolve) pcsolve->setCoefEx(val); }
-  void setCoefEz(const Field3D &val) { Ez = val; issetE = true; /*coefchanged = true;*/ if(pcsolve) pcsolve->setCoefEz(val); }
+  void setCoefA(const Field3D &val) override { A = val; /*Acoefchanged = true;*/ if(pcsolve) pcsolve->setCoefA(val);}
+  void setCoefC(const Field3D &val) override { C1 = val; C2 = val; issetC = true; /*coefchanged = true;*/ if(pcsolve) pcsolve->setCoefC(val); }
+  void setCoefC1(const Field3D &val) override { C1 = val; issetC = true;}
+  void setCoefC2(const Field3D &val) override { C2 = val; issetC = true;}
+  void setCoefD(const Field3D &val) override { D = val; issetD = true; /*coefchanged = true;*/ if(pcsolve) pcsolve->setCoefD(val); }
+  void setCoefEx(const Field3D &val) override { Ex = val; issetE = true; /*coefchanged = true;*/ if(pcsolve) pcsolve->setCoefEx(val); }
+  void setCoefEz(const Field3D &val) override { Ez = val; issetE = true; /*coefchanged = true;*/ if(pcsolve) pcsolve->setCoefEz(val); }
 
-  const FieldPerp solve(const FieldPerp &b);
-  const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0);
+  const FieldPerp solve(const FieldPerp &b) override;
+  const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
 
   int precon(Vec x, Vec y); ///< Preconditioner function
 

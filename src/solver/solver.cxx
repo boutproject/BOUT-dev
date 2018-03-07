@@ -1373,8 +1373,8 @@ void Solver::post_rhs(BoutReal UNUSED(t)) {
 
   // Make sure 3D fields are at the correct cell location
   for(const auto& f : f3d) {
-    ASSERT1(f.var->getLocation()==f.F_var->getLocation());
-    ASSERT1(f.var->getMesh()==f.F_var->getMesh());
+    ASSERT1(f.var->getLocation() == f.F_var->getLocation());
+    ASSERT1(f.var->getMesh() == f.F_var->getMesh());
   }
 
   // Apply boundary conditions to the time-derivatives

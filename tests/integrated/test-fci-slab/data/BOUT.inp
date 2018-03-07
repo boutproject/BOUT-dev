@@ -11,6 +11,9 @@ paralleltransform = fci
 
 symmetricglobalx = true
 
+[interpolation]
+type=lagrange4pt
+
 [fci]
 y_periodic = false
 z_periodic = false
