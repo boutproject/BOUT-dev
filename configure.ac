@@ -127,6 +127,10 @@ AC_PROG_INSTALL
 
 # Set MAKE to gmake if possible, otherwise make
 AC_CHECK_PROG(MAKE, gmake, gmake, make)
+if test $MAKE == 'gmake'
+then
+  MAKE=$(if diff $(which make) $(which gmake); then echo make; else echo gmake; fi)
+fi
 
 AC_PROG_RANLIB
 

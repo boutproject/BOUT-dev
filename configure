@@ -3617,6 +3617,10 @@ $as_echo "no" >&6; }
 fi
 
 
+if test $MAKE == 'gmake'
+then
+  MAKE=$(if diff $(which make) $(which gmake); then echo make; else echo gmake; fi)
+fi
 
 if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}ranlib", so it can be a program name with args.
