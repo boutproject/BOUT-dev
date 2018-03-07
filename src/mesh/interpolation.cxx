@@ -199,7 +199,17 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region)
 	  s.pp = var[i.offset(0,0,2)];
 	  s.mm = var[i.offset(0,0,-2)];
 	  
-	  result[i] = interp(s);
+          if ((location == CELL_CENTRE) && (loc == CELL_ZLOW)) {
+            // Producing a stencil centred around a lower Z value
+            s.pp = s.p;
+            s.p  = s.c;
+          } else if(location == CELL_ZLOW) {
+            // Stencil centred around a cell centre
+            s.mm = s.m;
+            s.m  = s.c;
+          }
+          
+ 	  result[i] = interp(s);
 	}
 	break;
       }
