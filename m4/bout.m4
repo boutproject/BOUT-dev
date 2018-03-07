@@ -156,3 +156,115 @@ AC_DEFUN([BOUT_CHECK_PRETTYFUNCTION], [
     [AC_MSG_RESULT(no)])
   AC_LANG_POP([C++])
 ])
+
+dnl First argument is $with_module variable
+dnl Second argument is lower case module name
+dnl Third argument is upper case module name
+dnl Fourth argument is test program includes
+dnl Fifth argument is test program main body
+AC_DEFUN([BOUT_FIND_SUNDIALS_MODULE],[
+
+  with_module=AS_TR_SH([with_$2])
+  AC_MSG_NOTICE([Searching for SUNDIALS $3 library])
+  AS_IF([test "$1" = "yes"], [
+    # No path specified. Try using sundials-config
+    AC_PATH_PROG([sundials_config], [sundials-config], [no], [$with_sundials$PATH_SEPARATOR$PATH])
+    AS_IF([test "x$sundials_config" != xno], [
+       AC_MSG_WARN(
+         [Found sundials-config, this means your version of SUNDIALS is < 2.6, and probably won't work])
+       sundials_module_includes=`$sundials_config -m $2 -t p -l c -s cppflags`
+       sundials_module_libs=`$sundials_config -m $2 -t p -l c -s libs`
+    ], [
+       AC_MSG_WARN([No sundials-config available, no path given, will try compiling with $3 anyway])
+       sundials_module_includes=""
+       sundials_module_libs=""
+    ])
+    AC_LANG_PUSH([C++])
+    AC_MSG_CHECKING([if we can compile with SUNDIALS $3])
+    save_LIBS=$LIBS
+    save_CXXFLAGS=$CXXFLAGS
+    LIBS="$save_LIBS $sundials_module_libs"
+    CXXFLAGS="$save_CXXFLAGS $sundials_module_includes"
+    AC_LINK_IFELSE(
+      [AC_LANG_PROGRAM([
+$4
+         ], [$5])],
+      [sundials_config_worked=yes],
+      [sundials_config_worked=no])
+    AC_MSG_RESULT([$sundials_config_worked])
+    AS_IF([test $sundials_config_worked = yes], [
+      AC_MSG_NOTICE([Using SUNDIALS $3 solver])
+    ], [
+      AC_MSG_FAILURE([Could not compile SUNDIALS $3 program, check your SUNDIALS version])
+    ])
+    LIBS=$save_LIBS
+    CXXFLAGS="$save_CXXFLAGS"
+    AC_LANG_POP([C++])
+  ], [
+    # Specified with path
+    AC_MSG_NOTICE([Checking for $3 header files])
+
+    # Check whether user supplied path to $3 install dir...
+    AC_CHECK_FILES([$1/include/$2/$2.h
+                    $1/include/$2/$2_spgmr.h
+                    $1/include/$2/$2_bbdpre.h
+                    $1/include/nvector/nvector_parallel.h
+                    $1/include/sundials/sundials_types.h],
+      [sundials_module_includes_found=yes
+       sundials_module_includes_path=$1/include],
+      [sundials_module_includes_found=no])
+    AS_IF([test $sundials_module_includes_found = no], [
+      # ...or path to $3 lib dir
+      AC_CHECK_FILES([$1/../include/$2/$2.h
+                      $1/../include/$2/$2_spgmr.h
+                      $1/../include/$2/$2_bbdpre.h
+                      $1/../include/nvector/nvector_parallel.h
+                      $1/../include/sundials/sundials_types.h],
+        [sundials_module_includes_found=yes
+         sundials_module_includes_path=$1/../include],
+        [sundials_module_includes_found=no])
+    ])
+    AS_IF([test $sundials_module_includes_found = no], [AC_MSG_FAILURE([Missing one or more $3 headers])])
+    AC_MSG_NOTICE([Found $3 include path: $sundials_module_includes_path])
+
+    sundials_module_includes="-I$sundials_module_includes_path"
+    sundials_module_libs="-lsundials_$2 -lsundials_nvecparallel"
+
+    # Try compiling something simple with a few different common paths
+    save_LIBS=$LIBS
+    save_LDFLAGS=$LDFLAGS
+    save_CPPFLAGS=$CPPFLAGS
+    AC_LANG_PUSH([C++])
+    for sundials_module_lib_path in "$1" "$1/lib" "$1/lib64"
+    do
+      AC_MSG_CHECKING([if SUNDIALS $3 library path is $sundials_module_lib_path])
+      LIBS="$save_LIBS $sundials_module_libs"
+      LDFLAGS="$save_LDFLAGS -L$sundials_module_lib_path"
+      CPPFLAGS="$save_CPPFLAGS $sundials_module_includes"
+      AC_LINK_IFELSE(
+        [AC_LANG_PROGRAM([
+$4
+           ], [$5])],
+        [sundials_module_lib_path_found=yes],
+        [sundials_module_lib_path_found=no])
+      AC_MSG_RESULT([$sundials_module_lib_path_found])
+      AS_IF([test "x$sundials_module_lib_path_found" = "xyes"], [break])
+      LIBS=$save_LIBS
+      LDFLAGS=$save_LDFLAGS
+      CPPFLAGS="$save_CPPFLAGS"
+    done
+    AC_LANG_POP([C++])
+
+    SUNDIALS_MODULE_LDFLAGS="-L$sundials_module_lib_path"
+  ])
+  AS_IF([test $sundials_module_lib_path_found = no], [AC_MSG_FAILURE([Cannot compile $3 program])])
+
+  # Compile in the $3 solver
+  AC_MSG_NOTICE([=> $3 solver enabled])
+  EXTRA_LIBS="$EXTRA_LIBS $SUNDIALS_MODULE_LDFLAGS $sundials_module_libs"
+  EXTRA_INCS="$EXTRA_INCS $sundials_module_includes"
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_$3"
+  AS_TR_SH([BOUT_HAS_$3])=yes
+  AS_TR_SH([$3LIBS])="$SUNDIALS_MODULE_LDFLAGS $sundials_module_libs"
+  AS_TR_SH([$3INCS])="$sundials_module_includes"
+])

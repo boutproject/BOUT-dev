@@ -906,324 +906,56 @@ AS_IF([test "x$with_sundials" != "x" && test "x$with_sundials" != "xno"], [
   AS_IF([test "x$with_cvode" = "x"], [
     with_cvode=$with_sundials
   ])
+
+  AS_IF([test "x$with_arkode" = "x"], [
+    with_arkode=$with_sundials
+  ])
 ])
 
 AS_IF([test "x$with_ida" != "x" && test "x$with_ida" != "xno"], [
-  AC_MSG_NOTICE([Searching for SUNDIALS IDA library])
-  AS_IF([test "$with_ida" = "yes"], [
-    # No path specified. Try using sundials-config
-    AC_PATH_PROG([sundials_config], [sundials-config], [no], [$with_sundials$PATH_SEPARATOR$PATH])
-    AS_IF([test "x$sundials_config" != xno], [
-       AC_MSG_WARN(
-         [Found sundials-config, this means your version of SUNDIALS is < 2.6, and probably won't work])
-       IDAINCS=`$sundials_config -m ida -t p -l c -s cppflags`
-       IDALIBS=`$sundials_config -m ida -t p -l c -s libs`
-    ], [
-       AC_MSG_WARN([No sundials-config available, no path given, will try compiling with IDA anyway])
-       IDAINCS=""
-       IDALIBS=""
-    ])
-    AC_LANG_PUSH([C++])
-    AC_MSG_CHECKING([if we can compile with SUNDIALS IDA])
-    save_LIBS=$LIBS
-    save_CXXFLAGS=$CXXFLAGS
-    LIBS="$save_LIBS $IDALIBS"
-    CXXFLAGS="$save_CXXFLAGS $IDAINCS"
-    AC_LINK_IFELSE(
-      [AC_LANG_PROGRAM([
-         #include <nvector/nvector_parallel.h>
-         #include <ida/ida.h>
-         extern void foo(N_Vector);
-         ], [IDACreate();])],
-      [ida_config_worked=yes],
-      [ida_config_worked=no])
-    AC_MSG_RESULT([$ida_config_worked])
-    AS_IF([test $ida_config_worked = yes], [
-      AC_MSG_NOTICE([Using SUNDIALS IDA solver])
-    ], [
-      AC_MSG_FAILURE([Could not compile SUNDIALS IDA program, check your SUNDIALS version])
-    ])
-    LIBS=$save_LIBS
-    CXXFLAGS="$save_CXXFLAGS"
-    AC_LANG_POP([C++])
-  ], [
-    # Specified with path
-    AC_MSG_NOTICE([Checking for IDA header files])
+  BOUT_FIND_SUNDIALS_MODULE([$with_ida], [ida], [IDA], [
+    #include <nvector/nvector_parallel.h>
+    #include <ida/ida.h>
+    extern void foo(N_Vector);
+  ], [IDACreate();])
 
-    # Check whether user supplied path to IDA install dir...
-    AC_CHECK_FILES([$with_ida/include/ida/ida.h
-                    $with_ida/include/ida/ida_spgmr.h
-                    $with_ida/include/ida/ida_bbdpre.h
-                    $with_ida/include/nvector/nvector_parallel.h
-                    $with_ida/include/sundials/sundials_types.h],
-      [ida_includes_found=yes
-       ida_includes_path=$with_ida/include],
-      [ida_includes_found=no])
-    AS_IF([test $ida_includes_found = no], [
-      # ...or path to IDA lib dir
-      AC_CHECK_FILES([$with_ida/../include/ida/ida.h
-                      $with_ida/../include/ida/ida_spgmr.h
-                      $with_ida/../include/ida/ida_bbdpre.h
-                      $with_ida/../include/nvector/nvector_parallel.h
-                      $with_ida/../include/sundials/sundials_types.h],
-        [ida_includes_found=yes
-         ida_includes_path=$with_ida/../include],
-        [ida_includes_found=no])
-    ])
-    AS_IF([test $ida_includes_found = no], [AC_MSG_FAILURE([Missing one or more IDA headers])])
-    AC_MSG_NOTICE([Found IDA include path: $ida_includes_path])
-
-    IDAINCS="-I$ida_includes_path"
-    IDALIBS="-lsundials_ida -lsundials_nvecparallel"
-
-    # Try compiling something simple with a few different common paths
-    save_LIBS=$LIBS
-    save_LDFLAGS=$LDFLAGS
-    save_CPPFLAGS=$CPPFLAGS
-    AC_LANG_PUSH([C++])
-    for ida_lib_path in "$with_ida" "$with_ida/lib" "$with_ida/lib64"
-    do
-      AC_MSG_CHECKING([if SUNDIALS IDA library path is $ida_lib_path])
-      LIBS="$save_LIBS $IDALIBS"
-      LDFLAGS="$save_LDFLAGS -L$ida_lib_path"
-      CPPFLAGS="$save_CPPFLAGS $IDAINCS"
-      AC_LINK_IFELSE(
-        [AC_LANG_PROGRAM([
-           #include <nvector/nvector_parallel.h>
-           #include <ida/ida.h>
-           extern void foo(N_Vector);
-           ], [IDACreate();])],
-        [ida_lib_path_found=yes],
-        [ida_lib_path_found=no])
-      AC_MSG_RESULT([$ida_lib_path_found])
-      AS_IF([test "x$ida_lib_path_found" = "xyes"], [break])
-      LIBS=$save_LIBS
-      LDFLAGS=$save_LDFLAGS
-      CPPFLAGS="$save_CPPFLAGS"
-    done
-    AC_LANG_POP([C++])
-
-    IDA_LDFLAGS="-L$ida_lib_path"
+  AS_IF([test "x$IDALIBS" != "x"], [
+    BOUT_CHECK_SUNDIALS_TYPE([IDA],[$IDAINCS],[IDAINT],[
+      #include <ida/ida_bbdpre.h>
+      extern int ida_bbd_rhs(IDAINT, double, N_Vector, N_Vector, N_Vector, void *);
+    ], [IDABBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, ida_bbd_rhs, nullptr);])
   ])
-  AS_IF([test $ida_lib_path_found = no], [AC_MSG_FAILURE([Cannot compile IDA program])])
-
-  # Compile in the IDA solver
-  AC_MSG_NOTICE([=> IDA solver enabled])
-  EXTRA_LIBS="$EXTRA_LIBS $IDA_LDFLAGS $IDALIBS"
-  EXTRA_INCS="$EXTRA_INCS $IDAINCS"
-  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_IDA"
 ])
 
-if ( ( test "$with_cvode" != "" ) && ( test "$with_cvode" != "no" ) )
-then
-  echo "Searching for SUNDIALS' CVODE library"
-  if test "$with_cvode" = "yes"
-  then
-    # No path specified. Try using sundials-config
-    if type sundials-config > /dev/null 2>&1; then
-       CVODEINCS=`sundials-config -m cvode -t p -l c -s cppflags`
-       CVODELIBS=`sundials-config -m cvode -t p -l c -s libs`
-       scr=`which sundials-config`
-       echo "=> Using SUNDIALS CVODE solver, configured with $scr"
-    else
-       CVODEINCS=""
-       CVODELIBS=""
-    fi
-  else
-    # Specified with path
-    echo "Checking given path to SUNDIALS' CVODE solver"
-    CVODELIBS=$with_cvode
-    AC_CHECK_FILES( $with_cvode/include/cvode/cvode.h $with_cvode/include/cvode/cvode_spgmr.h $with_cvode/include/cvode/cvode_bbdpre.h $with_cvode/include/nvector/nvector_parallel.h, , [
-      CVODELIBS=""
-    ] )
-    AC_CHECK_FILES( $with_cvode/lib/libsundials_cvode.a $with_cvode/lib/libsundials_nvecparallel.a, CVODELIBSLIB='lib',
-      AC_CHECK_FILES( $with_cvode/lib64/libsundials_cvode.a $with_cvode/lib64/libsundials_nvecparallel.a, CVODELIBSLIB='lib64',
-        AC_CHECK_FILES( $with_cvode/lib/libsundials_cvode.so $with_cvode/lib/libsundials_nvecparallel.so, CVODELIBSLIB='lib',
-          AC_CHECK_FILES( $with_cvode/lib64/libsundials_cvode.so $with_cvode/lib64/libsundials_nvecparallel.so, CVODELIBSLIB='lib64', [
-          CVODELIBS=""
-        ]) ) ) )
+AS_IF([test "x$with_cvode" != "x" && test "x$with_cvode" != "xno"], [
+  BOUT_FIND_SUNDIALS_MODULE([$with_cvode], [cvode], [CVODE], [
+    #include <nvector/nvector_parallel.h>
+    #include <cvode/cvode.h>
+    extern void foo(N_Vector);
+  ], [CVodeCreate(0, 0);])
 
-
-    if test "$CVODELIBS" != ""
-    then
-      CVODEINCS="-I$with_cvode/include"
-      CVODELIBS="-L$with_cvode/$CVODELIBSLIB -lsundials_cvode -lsundials_nvecparallel"
-      echo "=> Using SUNDIALS CVODE solver, path $with_cvode"
-    else
-      echo " -> Given path not correct. Finding..."
-    fi
-  fi
-
-  if test "$CVODELIBS" = ""
-  then
-    # Try some known paths
-    AC_CHECK_FILE($HOME/local/include/cvode/cvode_spgmr.h, CVODELIBS=$HOME/local,
-    AC_CHECK_FILE($HOME/include/cvode/cvode_spgmr.h, CVODELIBS=$HOME,
-    AC_CHECK_FILE(/usr/include/cvode/cvode_spgmr.h, CVODELIBS=/usr,
-    AC_CHECK_FILE(/usr/local/include/cvode/cvode_spgmr.h, CVODELIBS=/usr/local,
-    AC_CHECK_FILE(/opt/local/include/cvode/cvode_spgmr.h, CVODELIBS=/opt/local,
-    )))))
-
-    if test "$CVODELIBS" != ""
-    then
-    # Check the rest of the files
-    AC_CHECK_FILES( $CVODELIBS/include/cvode/cvode.h $CVODELIBS/include/cvode/cvode_bbdpre.h $CVODELIBS/include/nvector/nvector_parallel.h , , [
-      CVODELIBS=""
-    ])
-        AC_CHECK_FILES( $CVODELIBS/lib/libsundials_cvode.a $CVODELIBS/lib/libsundials_nvecparallel.a, CVODELIBSLIB='lib',
-          AC_CHECK_FILES( $CVODELIBS/lib64/libsundials_cvode.a $CVODELIBS/lib64/libsundials_nvecparallel.a, CVODELIBSLIB='lib64',
-            AC_CHECK_FILES( $CVODELIBS/lib/libsundials_cvode.so $CVODELIBS/lib/libsundials_nvecparallel.so, CVODELIBSLIB='lib',
-          AC_CHECK_FILES( $CVODELIBS/lib64/libsundials_cvode.so $CVODELIBS/lib64/libsundials_nvecparallel.so, CVODELIBSLIB='lib64', [
-            CVODELIBS=""
-          ]) ) ) )
-    fi
-    if test "$CVODELIBS" != ""
-    then
-      CVODEINCS="-I$CVODELIBS/include"
-      CVODELIBS="-L$CVODELIBS/$CVODELIBSLIB -lsundials_cvode -lsundials_nvecparallel"
-    fi
-  fi
-
-  if test "$CVODELIBS" = ""
-  then
-    echo "=> CVODE solver not available"
-    echo
-  else
-    # Compile in the CVODE solver
-    echo "=> CVODE solver enabled"
-    echo
-    EXTRA_LIBS="$EXTRA_LIBS $CVODELIBS"
-    EXTRA_INCS="$EXTRA_INCS $CVODEINCS"
-    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_CVODE"
-
-
-  fi
-fi
-
-############## ARKode ####################
-
-if ( ( test "$with_arkode" != "" ) && ( test "$with_arkode" != "no" ) )
-then
-  echo "Searching for SUNDIALS' ARKODE library"
-  if test "$with_arkode" = "yes"
-  then
-    # No path specified. Try using sundials-config (not currently available in SUNDIALS, but include here for the future)
-    if type sundials-config > /dev/null 2>&1; then
-       ARKODEINCS=`sundials-config -m arkode -t p -l c -s cppflags`
-       ARKODELIBS=`sundials-config -m arkode -t p -l c -s libs`
-       scr=`which sundials-config`
-       echo "=> Using SUNDIALS ARKODE solver, configured with $scr"
-    else
-       ARKODEINCS=""
-       ARKODELIBS=""
-    fi
-  else
-    # Specified with path
-    echo "Checking given path to SUNDIALS' ARKODE solver"
-    ARKODELIBS=$with_arkode
-    AC_CHECK_FILES( $with_arkode/include/arkode/arkode.h $with_arkode/include/arkode/arkode_spgmr.h $with_arkode/include/arkode/arkode_bbdpre.h $with_arkode/include/nvector/nvector_parallel.h , , [
-      ARKODELIBS=""
-    ] )
-    AC_CHECK_FILES( $ARKODELIBS/lib/libsundials_arkode.a $ARKODELIBS/lib/libsundials_nvecparallel.a, ARKODELIBSLIB='lib',
-      AC_CHECK_FILES( $ARKODELIBS/lib64/libsundials_arkode.a $ARKODELIBS/lib64/libsundials_nvecparallel.a, ARKODELIBSLIB='lib64',
-        AC_CHECK_FILES( $ARKODELIBS/lib/libsundials_arkode.so $ARKODELIBS/lib/libsundials_nvecparallel.so, ARKODELIBSLIB='lib',
-          AC_CHECK_FILES( $ARKODELIBS/lib64/libsundials_arkode.so $ARKODELIBS/lib64/libsundials_nvecparallel.so, ARKODELIBSLIB='lib64',
-          [
-            ARKODELIBS=""
-      ]) ) ) )
-
-    if test "$ARKODELIBS" != ""
-    then
-      ARKODEINCS="-I$with_arkode/include"
-      ARKODELIBS="-L$with_arkode/$ARKODELIBSLIB -lsundials_arkode -lsundials_nvecparallel"
-      echo "=> Using SUNDIALS ARKODE solver, path $with_arkode"
-    else
-      echo " -> Given path not correct. Finding..."
-    fi
-  fi
-
-  if test "$ARKODELIBS" = ""
-  then
-    # Try some known paths
-    AC_CHECK_FILE($HOME/local/include/arkode/arkode_spgmr.h, ARKODELIBS=$HOME/local,
-    AC_CHECK_FILE($HOME/include/arkode/arkode_spgmr.h, ARKODELIBS=$HOME,
-    AC_CHECK_FILE(/usr/include/arkode/arkode_spgmr.h, ARKODELIBS=/usr,
-    AC_CHECK_FILE(/usr/local/include/arkode/arkode_spgmr.h, ARKODELIBS=/usr/local,
-    AC_CHECK_FILE(/opt/local/include/arkode/arkode_spgmr.h, ARKODELIBS=/opt/local,
-    )))))
-
-    if test "$ARKODELIBS" != ""
-    then
-        # Check the rest of the files
-        AC_CHECK_FILES( $ARKODELIBS/include/arkode/arkode.h $ARKODELIBS/include/arkode/arkode_bbdpre.h $ARKODELIBS/include/nvector/nvector_parallel.h, , [
-          ARKODELIBS=""
-        ])
-        AC_CHECK_FILES( $ARKODELIBS/lib/libsundials_arkode.a $ARKODELIBS/lib/libsundials_nvecparallel.a, ARKODELIBSLIB='lib',
-          AC_CHECK_FILES( $ARKODELIBS/lib64/libsundials_arkode.a $ARKODELIBS/lib64/libsundials_nvecparallel.a, ARKODELIBSLIB='lib64',
-            AC_CHECK_FILES( $ARKODELIBS/lib/libsundials_arkode.so $ARKODELIBS/lib/libsundials_nvecparallel.so, ARKODELIBSLIB='lib',
-              AC_CHECK_FILES( $ARKODELIBS/lib64/libsundials_arkode.so $ARKODELIBS/lib64/libsundials_nvecparallel.so, ARKODELIBSLIB='lib64',
-              [
-                ARKODELIBS=""
-          ]) ) ) )
-    fi
-
-    if test "$ARKODELIBS" != ""
-    then
-      ARKODEINCS="-I$ARKODELIBS/include"
-      ARKODELIBS="-L$ARKODELIBS/$ARKODELIBSLIB -lsundials_arkode -lsundials_nvecparallel"
-    fi
-  fi
-  if test "$ARKODELIBS" = ""
-  then
-    echo "=> ARKODE solver not available"
-    echo
-  else
-    # Compile in the ARKODE solver
-    echo "=> ARKODE solver enabled"
-    echo
-    EXTRA_LIBS="$EXTRA_LIBS $ARKODELIBS"
-    EXTRA_INCS="$EXTRA_INCS $ARKODEINCS"
-    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_ARKODE"
-
-
-  fi
-fi
-
-
-#############################################################
-# Check types for SUNDIALS
-#############################################################
-
-AS_IF([test "x$CVODELIBS" != "x"],
-[
+  AS_IF([test "x$CVODELIBS" != "x"], [
     BOUT_CHECK_SUNDIALS_TYPE([CVODE],[$CVODEINCS],[CVODEINT],[
-#include <cvode/cvode_bbdpre.h>
-extern int cvode_bbd_rhs(CVODEINT Nlocal,
-               double, N_Vector u, N_Vector du,
-               void *user_data);
+      #include <cvode/cvode_bbdpre.h>
+      extern int cvode_bbd_rhs(CVODEINT, double, N_Vector, N_Vector, void *);
     ], [CVBBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, cvode_bbd_rhs, nullptr);])
-], [])
+  ])
+])
 
-AS_IF([test "x$IDALIBS" != "x"],
-[
-    BOUT_CHECK_SUNDIALS_TYPE([IDA],[$IDAINCS],[IDAINT],[
-#include <ida/ida_bbdpre.h>
-extern int ida_bbd_rhs(IDAINT Nlocal,
-               double, N_Vector u, N_Vector du, N_Vector rr,
-               void *user_data);
-      ], [IDABBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, ida_bbd_rhs, nullptr);])
-], [])
+AS_IF([test "x$with_arkode" != "x" && test "x$with_arkode" != "xno"], [
+  BOUT_FIND_SUNDIALS_MODULE([$with_arkode], [arkode], [ARKODE], [
+    #include <nvector/nvector_parallel.h>
+    #include <arkode/arkode.h>
+    extern void foo(N_Vector);
+  ], [ARKodeCreate();])
 
-AS_IF([test "x$ARKODELIBS" != "x"],
-[
+  AS_IF([test "x$ARKODELIBS" != "x"], [
     BOUT_CHECK_SUNDIALS_TYPE([ARKODE],[$ARKODEINCS],[ARKODEINT],[
-#include <arkode/arkode_bbdpre.h>
-extern int arkode_bbd_rhs(ARKODEINT Nlocal,
-               double, N_Vector u, N_Vector du,
-               void *user_data);
-      ], [ARKBBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, arkode_bbd_rhs, nullptr);])
-], [])
-
+      #include <arkode/arkode_bbdpre.h>
+      extern int arkode_bbd_rhs(ARKODEINT, double, N_Vector, N_Vector, void *);
+    ], [ARKBBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, arkode_bbd_rhs, nullptr);])
+  ])
+])
 
 #############################################################
 # Scorep setup
