@@ -11,6 +11,12 @@ endif
 
 include make.config
 
+# make sure the headers are up to date before we start compiling
+include_dir:
+	@$(MAKE) -C include --no-print-directory -s
+
+src:include_dir
+
 shared: libfast
 	@echo "Creating libbout++.so"
 	@echo $(BOUT_FLAGS) | grep -i pic &>/dev/null || (echo "not compiled with PIC support - reconfigure with --enable-shared" ;exit 1)

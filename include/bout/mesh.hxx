@@ -49,6 +49,7 @@ class Mesh;
 #include "bout_types.hxx"
 #include "field2d.hxx"
 #include "field3d.hxx"
+#include "flexible.hxx"
 #include "datafile.hxx"
 #include "options.hxx"
 
@@ -147,6 +148,14 @@ class Mesh {
   ///
   /// @returns zero if successful, non-zero on failure
   int get(Field2D &var, const string &name, BoutReal def=0.0);
+
+  template <typename F>
+  int get(Flexible<F> &var, const string &name, BoutReal def=0.0){
+    F var_=var;
+    int ret=get(var_,name,def);
+    var.set(var_);
+    return ret;
+  }
 
   /// Get a Field3D from the input source
   ///
