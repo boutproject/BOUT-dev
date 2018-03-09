@@ -590,7 +590,12 @@ class Mesh {
   }
   void addRegion3D(const std::string &region_name, Region<Ind3D> region);
   void addRegion2D(const std::string &region_name, Region<Ind2D> region);
- 
+
+  int ind3Das2D(const Ind3D &i3d){
+    // Get 2D index value from lookup table
+    return ind3Dto2D[i3d.ind];
+  }
+  
   /// Create the default regions for the data iterator
   ///
   /// Creates RGN_{ALL,NOBNDRY,NOX,NOY}
@@ -637,6 +642,8 @@ private:
   //Internal region related information
   std::map<std::string, Region<Ind3D>> regionMap3D;
   std::map<std::string, Region<Ind2D>> regionMap2D;
+
+  Array<int> ind3Dto2D;
 };
 
 #endif // __MESH_H__
