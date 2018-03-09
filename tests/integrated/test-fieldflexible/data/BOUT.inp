@@ -1,0 +1,14 @@
+NOUT = 0  # No timesteps
+
+MZ = 5    # Z size
+
+[mesh]
+symmetricGlobalX = false
+nx=16
+ny=3
+staggerGrids=True
+
+[laplace]
+all_terms = false
+filter = 0.2
+
