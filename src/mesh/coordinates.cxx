@@ -28,6 +28,7 @@ Coordinates::Coordinates(Mesh *mesh)
       G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
       IntShiftTorsion(mesh), localmesh(mesh) {
 
+
   if (mesh->get(dx, "dx")) {
     output_warn.write("\tWARNING: differencing quantity 'dx' not found. Set to 1.0\n");
     dx = 1.0;
@@ -354,6 +355,13 @@ int Coordinates::geometry() {
 int Coordinates::calcCovariant() {
   TRACE("Coordinates::calcCovariant");
 
+  // Get a writeable Field2D
+  Field2D g_11=this->g_11;
+  Field2D g_22=this->g_22;
+  Field2D g_33=this->g_33;
+  Field2D g_12=this->g_12;
+  Field2D g_13=this->g_13;
+  Field2D g_23=this->g_23;
   // Make sure metric elements are allocated
   g_11.allocate();
   g_22.allocate();
@@ -408,11 +416,25 @@ int Coordinates::calcCovariant() {
 
   output_info.write("\tLocal maximum error in off-diagonal inversion is %e\n", maxerr);
 
+  this->g_11.set(g_11);
+  this->g_22.set(g_22);
+  this->g_33.set(g_33);
+  this->g_12.set(g_12);
+  this->g_13.set(g_13);
+  this->g_23.set(g_23);
   return 0;
 }
 
 int Coordinates::calcContravariant() {
   TRACE("Coordinates::calcContravariant");
+
+  // Get a writeable Field2D
+  Field2D g11=this->g11;
+  Field2D g22=this->g22;
+  Field2D g33=this->g33;
+  Field2D g12=this->g12;
+  Field2D g13=this->g13;
+  Field2D g23=this->g23;
 
   // Make sure metric elements are allocated
   g11.allocate();
@@ -467,6 +489,12 @@ int Coordinates::calcContravariant() {
                    max(abs(g_12 * g13 + g_22 * g23 + g_23 * g33)));
 
   output_info.write("\tMaximum error in off-diagonal inversion is %e\n", maxerr);
+  this->g11.set(g11);
+  this->g22.set(g22);
+  this->g33.set(g33);
+  this->g12.set(g12);
+  this->g13.set(g13);
+  this->g23.set(g23);
   return 0;
 }
 
