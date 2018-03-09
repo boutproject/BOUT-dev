@@ -61,6 +61,7 @@ public:
     PE_XIND = 0;
     StaggerGrids = false;
     IncIntShear = false;
+    maxregionblocksize = MAXREGIONBLOCKSIZE;
   }
 
   comm_handle send(FieldGroup &UNUSED(g)) { return nullptr; };
