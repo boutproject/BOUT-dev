@@ -54,6 +54,8 @@ protected:
     mesh->ystart = 2;
     mesh->xend = nx - 3;
     mesh->yend = ny - 3;
+    mesh->setParallelTransform(
+        std::unique_ptr<ParallelTransform>(new ParallelTransformIdentity()));
   }
 
   static void TearDownTestCase() {
