@@ -47,10 +47,10 @@
 #include <bout/scorepwrapper.hxx>
 
 BoutReal& Field2D::operator[](const Ind3D &d) {
-    return data[d.ind/fieldmesh->LocalNz];
+    return data[fieldmesh->ind3Das2D(d)];
   }
 const BoutReal& Field2D::operator[](const Ind3D &d) const {
-    return data[d.ind/fieldmesh->LocalNz];
+    return data[fieldmesh->ind3Das2D(d)];
   }
 
 Field2D::Field2D(Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
