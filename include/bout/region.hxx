@@ -190,7 +190,8 @@ class Ind3D : public SpecificInd {
 public:
   Ind3D() : SpecificInd(){};
   Ind3D(int i) : SpecificInd(i){};
-
+  Ind3D(SpecificInd baseIn) : SpecificInd(baseIn){};
+  
   // Note operator= from base class is always hidden
   // by implicit method so have to be explicit
   Ind3D &operator=(int i) {
@@ -209,7 +210,8 @@ class Ind2D : public SpecificInd {
 public:
   Ind2D() : SpecificInd(){};
   Ind2D(int i) : SpecificInd(i){};
-
+  Ind2D(SpecificInd baseIn) : SpecificInd(baseIn){};
+  
   Ind2D &operator=(int i) {
     ind = i;
     return *this;
