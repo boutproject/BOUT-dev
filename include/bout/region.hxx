@@ -178,6 +178,13 @@ inline bool operator<=(const SpecificInd &lhs, const SpecificInd &rhs) {
   return !operator>(lhs, rhs);
 }
 
+/// Arithmetic operators with integers
+inline SpecificInd operator+(SpecificInd lhs, const SpecificInd &rhs) { return lhs += rhs; }
+inline SpecificInd operator+(SpecificInd lhs, int n) { return lhs += n; }
+inline SpecificInd operator+(int n, SpecificInd rhs) { return rhs += n; }
+inline SpecificInd operator-(SpecificInd lhs, int n) { return lhs -= n; }
+inline SpecificInd operator-(SpecificInd lhs, const SpecificInd &rhs) { return lhs -= rhs; }
+
 /// Index-type for `Field3D`s
 class Ind3D : public SpecificInd {
 public:
