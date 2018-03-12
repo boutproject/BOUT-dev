@@ -45,13 +45,6 @@
 
 #include <bout/assert.hxx>
 
-BoutReal& Field2D::operator[](const Ind3D &d) {
-    return data[d.ind/fieldmesh->LocalNz];
-  }
-const BoutReal& Field2D::operator[](const Ind3D &d) const {
-    return data[d.ind/fieldmesh->LocalNz];
-  }
-
 Field2D::Field2D(Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
 
   boundaryIsSet = false;
@@ -179,6 +172,14 @@ const IndexRange Field2D::region(REGION rgn) const {
     throw BoutException("Field2D::region() : Requested region not implemented");
   }
   };
+}
+
+BoutReal& Field2D::operator[](const Ind3D &d) {
+  return data[fieldmesh->map3Dto2D(d)];
+}
+
+const BoutReal& Field2D::operator[](const Ind3D &d) const {
+  return data[fieldmesh->map3Dto2D(d)];
 }
 
 ///////////// OPERATORS ////////////////
