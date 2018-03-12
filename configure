@@ -5874,12 +5874,17 @@ fi
 #############################################################
 
 rev=`git rev-parse HEAD`
-if test "$?" = "0"
-then
-      echo "Revision ID: $rev"
-fi
+if test $? = 0; then :
 
-GIT_REVISION=$rev
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Git revision: $rev" >&5
+$as_echo "$as_me: Git revision: $rev" >&6;}
+  GIT_REVISION=$rev
+
+else
+
+  GIT_REVISION=
+
+fi
 
 #############################################################
 # FFT routines

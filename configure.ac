@@ -357,14 +357,12 @@ AS_IF([test "x$enable_shared" == "xyes"], [
 #############################################################
 
 rev=`git rev-parse HEAD`
-if test "$?" = "0"
-then
-  dnl Revision not needed for build - is checked at compile time.
-  dnl CXXFLAGS="$CXXFLAGS -DREVISION=$rev"
-  echo "Revision ID: $rev"
-fi
-
-GIT_REVISION=$rev
+AS_IF([test $? = 0], [
+  AC_MSG_NOTICE([Git revision: $rev])
+  GIT_REVISION=$rev
+], [
+  GIT_REVISION=
+])
 
 #############################################################
 # FFT routines
