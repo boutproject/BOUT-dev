@@ -274,8 +274,10 @@ Field3D &Field3D::operator*=(const Field2D &rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BLOCK_REGION_LOOP(fieldmesh->getRegion3D("RGN_ALL"), index,
-                      (*this)[index] *= rhs[index];);
+    BLOCK_REGION_LOOP(fieldmesh->getRegion2D("RGN_ALL"), index,
+                      auto mixed_base_ind = fieldmesh->ind2Dto3D(index);
+                      for (int jz = 0; jz < fieldmesh->LocalNz;
+                           ++jz) { (*this)[mixed_base_ind + jz] *= rhs[index]; });
 
     checkData(*this);
 
@@ -320,8 +322,10 @@ Field3D &Field3D::operator/=(const Field2D &rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BLOCK_REGION_LOOP(fieldmesh->getRegion3D("RGN_ALL"), index,
-                      (*this)[index] /= rhs[index];);
+    BLOCK_REGION_LOOP(fieldmesh->getRegion2D("RGN_ALL"), index,
+                      auto mixed_base_ind = fieldmesh->ind2Dto3D(index);
+                      for (int jz = 0; jz < fieldmesh->LocalNz;
+                           ++jz) { (*this)[mixed_base_ind + jz] /= rhs[index]; });
 
     checkData(*this);
 
@@ -366,8 +370,10 @@ Field3D &Field3D::operator+=(const Field2D &rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BLOCK_REGION_LOOP(fieldmesh->getRegion3D("RGN_ALL"), index,
-                      (*this)[index] += rhs[index];);
+    BLOCK_REGION_LOOP(fieldmesh->getRegion2D("RGN_ALL"), index,
+                      auto mixed_base_ind = fieldmesh->ind2Dto3D(index);
+                      for (int jz = 0; jz < fieldmesh->LocalNz;
+                           ++jz) { (*this)[mixed_base_ind + jz] += rhs[index]; });
 
     checkData(*this);
 
@@ -412,8 +418,10 @@ Field3D &Field3D::operator-=(const Field2D &rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BLOCK_REGION_LOOP(fieldmesh->getRegion3D("RGN_ALL"), index,
-                      (*this)[index] -= rhs[index];);
+    BLOCK_REGION_LOOP(fieldmesh->getRegion2D("RGN_ALL"), index,
+                      auto mixed_base_ind = fieldmesh->ind2Dto3D(index);
+                      for (int jz = 0; jz < fieldmesh->LocalNz;
+                           ++jz) { (*this)[mixed_base_ind + jz] -= rhs[index]; });
 
     checkData(*this);
 

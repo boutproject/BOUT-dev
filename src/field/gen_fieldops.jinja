@@ -65,9 +65,18 @@
     checkData(*this);
     checkData({{rhs.name}});
 
-      {{region_loop}}(fieldmesh->getRegion{{lhs.region_type}}({{region_name}}),{{index_var}},
-	(*this)[{{index_var}}] {{operator}}= {{rhs.index}};
+  {% if mixed != 'no' %}
+    {{region_loop}}(fieldmesh->getRegion{{region_type}}({{region_name}}),{{index_var}},
+	auto {{mixed_base_ind}} = fieldmesh->ind2Dto3D({{index_var}});
+	for (int {{jz_var}} = 0; {{jz_var}} < fieldmesh->LocalNz; ++{{jz_var}}){
+	(*this)[{{mixed_base_ind}} + {{jz_var}}] {{operator}}= {{rhs.index}};
+	}
+	);
+  {% else %}
+    {{region_loop}}(fieldmesh->getRegion{{lhs.region_type}}({{region_name}}),{{index_var}},
+      (*this)[{{index_var}}] {{operator}}= {{rhs.index}};
 	);			 
+  {% endif %}
 
     checkData(*this);
 
