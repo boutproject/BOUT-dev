@@ -222,12 +222,129 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
   return var;
 }
 
-const Field2D interp_to(const Field2D &var, CELL_LOC UNUSED(loc)) {
-  // Currently do nothing
+const Field2D interp_to(const Field2D &var, CELL_LOC loc) {
+
+  Mesh * mesh = var.getMesh();
+  if(mesh->StaggerGrids && (var.getLocation() != loc)) {
+
+    // Staggered grids enabled, and need to perform interpolation
+    TRACE("Interpolating %s -> %s", strLocation(var.getLocation()), strLocation(loc));
+
+    Field2D result(var.getMesh());
+
+    result = var; // NOTE: This is just for boundaries. FIX!
+    result.allocate();
+
+    // Cell location of the input field
+    CELL_LOC location = var.getLocation();
+
+    if((location == CELL_CENTRE) || (loc == CELL_CENTRE)) {
+      // Going between centred and shifted
+
+      stencil s;
+      CELL_LOC dir;
+
+      // Get the non-centre location for interpolation direction
+      dir = (loc == CELL_CENTRE) ? location : loc;
+
+      switch(dir) {
+      case CELL_XLOW: {
+        for(const auto &i : result.region(RGN_NOX)) {
+
+          // Set stencils
+          s.c = var[i];
+          s.p = var[i.xp()];
+          s.m = var[i.xm()];
+          s.pp = var[i.offset(2,0,0)];
+          s.mm = var[i.offset(-2,0,0)];
+
+          if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
+            // Producing a stencil centred around a lower X value
+            s.pp = s.p;
+            s.p  = s.c;
+          } else if (location == CELL_XLOW) {
+            // Stencil centred around a cell centre
+            s.mm = s.m;
+            s.m  = s.c;
+          }
+
+          result[i] = interp(s);
+        }
+        break;
+        // Need to communicate in X
+      }
+      case CELL_YLOW: {
+        if (mesh->ystart > 1) {
+          // More than one guard cell, so set pp and mm values
+          // This allows higher-order methods to be used
+          for(const auto &i : result.region(RGN_NOY)) {
+            // Set stencils
+            s.c = var[i];
+            s.p = var[i.yp()];
+            s.m = var[i.ym()];
+            s.pp = var[i.offset(0,2,0)];
+            s.mm = var[i.offset(0,-2,0)];
+
+            if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
+              // Producing a stencil centred around a lower Y value
+              s.pp = s.p;
+              s.p  = s.c;
+            } else if(location == CELL_YLOW) {
+              // Stencil centred around a cell centre
+              s.mm = s.m;
+              s.m  = s.c;
+            }
+
+            result[i] = interp(s);
+          }
+        } else {
+          // Only one guard cell, so no pp or mm values
+          throw BoutException("Not enough boundary cells!");
+        }
+
+        break;
+        // Need to communicate in Y
+      }
+      case CELL_ZLOW:
+        // Is the same
+        break;
+
+      default: {
+        // This should never happen
+        throw BoutException("Don't know what to do");
+      }
+      };
+
+      if(dir != CELL_ZLOW) {
+        // COMMUNICATION
+
+        mesh->communicate(result);
+
+        // BOUNDARIES
+
+      }
+
+    }else {
+      // Shifted -> shifted
+      // For now, shift to centre then to loc
+
+      result = interp_to( interp_to(var, CELL_CENTRE) , loc);
+    }
+    result.setLocation(loc);
+
+    return result;
+  }
+  if ((loc != CELL_CENTRE || loc != CELL_DEFAULT) && (mesh->StaggerGrids == false)) {
+    throw BoutException("Asked to interpolate, but StaggerGrids is disabled!");
+  }
+  // Nothing to do - just return unchanged
   return var;
 }
 
 void printLocation(const Field3D &var) {
+  output.write(strLocation(var.getLocation()));
+}
+void printLocation(const Field2D &var) {
   output.write(strLocation(var.getLocation()));
 }
 
