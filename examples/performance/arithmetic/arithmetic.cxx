@@ -16,7 +16,9 @@ using namespace std::chrono;
 #define TIMEIT(elapsed, ...)                                                             \
   {                                                                                      \
     SteadyClock start = steady_clock::now();                                             \
-    __VA_ARGS__                                                                          \
+    {                                                                                    \
+      __VA_ARGS__ ;                                                                      \
+    }                                                                                    \
     Duration diff = steady_clock::now() - start;                                         \
     elapsed.min = diff > elapsed.min ? elapsed.min : diff;                               \
     elapsed.max = diff < elapsed.max ? elapsed.max : diff;                               \
