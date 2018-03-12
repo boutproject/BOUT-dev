@@ -178,13 +178,6 @@ inline bool operator<=(const SpecificInd &lhs, const SpecificInd &rhs) {
   return !operator>(lhs, rhs);
 }
 
-/// Arithmetic operators with integers
-inline SpecificInd operator+(SpecificInd lhs, const SpecificInd &rhs) { return lhs += rhs; }
-inline SpecificInd operator+(SpecificInd lhs, int n) { return lhs += n; }
-inline SpecificInd operator+(int n, SpecificInd rhs) { return rhs += n; }
-inline SpecificInd operator-(SpecificInd lhs, int n) { return lhs -= n; }
-inline SpecificInd operator-(SpecificInd lhs, const SpecificInd &rhs) { return lhs -= rhs; }
-
 /// Index-type for `Field3D`s
 class Ind3D : public SpecificInd {
 public:
@@ -205,6 +198,13 @@ public:
   }
 };
 
+/// Arithmetic operators with integers
+inline Ind3D operator+(Ind3D lhs, const Ind3D &rhs) { return lhs += rhs; }
+inline Ind3D operator+(Ind3D lhs, int n) { return lhs += n; }
+inline Ind3D operator+(int n, Ind3D rhs) { return rhs += n; }
+inline Ind3D operator-(Ind3D lhs, int n) { return lhs -= n; }
+inline Ind3D operator-(Ind3D lhs, const Ind3D &rhs) { return lhs -= rhs; }
+
 /// Index-type for `Field2D`s
 class Ind2D : public SpecificInd {
 public:
@@ -222,6 +222,13 @@ public:
     return *this;
   }
 };
+
+/// Arithmetic operators with integers
+inline Ind2D operator+(Ind2D lhs, const Ind2D &rhs) { return lhs += rhs; }
+inline Ind2D operator+(Ind2D lhs, int n) { return lhs += n; }
+inline Ind2D operator+(int n, Ind2D rhs) { return rhs += n; }
+inline Ind2D operator-(Ind2D lhs, int n) { return lhs -= n; }
+inline Ind2D operator-(Ind2D lhs, const Ind2D &rhs) { return lhs -= rhs; }
 
 /// Specifies a set of indices which can be iterated over and begin()
 /// and end() methods for range-based for loops.
