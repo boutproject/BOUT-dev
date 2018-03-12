@@ -590,7 +590,15 @@ class Mesh {
   }
   void addRegion3D(const std::string &region_name, Region<Ind3D> region);
   void addRegion2D(const std::string &region_name, Region<Ind2D> region);
- 
+
+  Ind3D ind2Dto3D(const Ind2D &ind2D, int jz = 0){
+    return Ind3D(ind2D.ind * LocalNz + jz);
+  }
+
+  Ind2D ind3Dto2D(const Ind3D &ind3D){
+    return Ind2D(ind3D.ind / LocalNz);
+  }
+
   /// Create the default regions for the data iterator
   ///
   /// Creates RGN_{ALL,NOBNDRY,NOX,NOY}
