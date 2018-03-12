@@ -211,7 +211,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
 
     }else {
       // Shifted -> shifted
-      // For now, shift to centre then to shifted
+      // For now, shift to centre then to loc
 
       result = interp_to( interp_to(var, CELL_CENTRE) , loc);
     }
