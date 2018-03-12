@@ -123,6 +123,87 @@ public:
   void allocate(){
     ((F*)fields[mainid])->allocate();
   }
+  Flexible<F>& operator*=(const Field3D & rhs) {
+    if (mainid == getId(rhs.getLocation())){
+      ((F*)fields[mainid])->operator*=(rhs);
+    } else {
+      throw BoutException("Not yet implemtented!");
+    }
+    clean(false);
+  };
+  Flexible<F>& operator*=(const Field2D & rhs) {
+    if (mainid == getId(rhs.getLocation())){
+      ((F*)fields[mainid])->operator*=(rhs);
+    } else {
+      throw BoutException("Not yet implemtented!");
+    }
+    clean(false);
+  };
+  Flexible<F>& operator*=(BoutReal rhs) {
+    ((F*)fields[mainid])->operator*=(rhs);
+    clean(false);
+  };
+  Flexible<F>& operator/=(const Field3D & rhs) {
+    if (mainid == getId(rhs.getLocation())){
+      ((F*)fields[mainid])->operator/=(rhs);
+    } else {
+      throw BoutException("Not yet implemtented!");
+    }
+    clean(false);
+  };
+  Flexible<F>& operator/=(const Field2D & rhs) {
+    if (mainid == getId(rhs.getLocation())){
+      ((F*)fields[mainid])->operator/=(rhs);
+    } else {
+      throw BoutException("Not yet implemtented!");
+    }
+    clean(false);
+  };
+  Flexible<F>& operator/=(BoutReal rhs) {
+    ((F*)fields[mainid])->operator/=(rhs);
+    clean(false);
+  };
+  Flexible<F>& operator+=(const Field3D & rhs) {
+    if (mainid == getId(rhs.getLocation())){
+      ((F*)fields[mainid])->operator+=(rhs);
+    } else {
+      throw BoutException("Not yet implemtented!");
+    }
+    clean(false);
+  };
+  Flexible<F>& operator+=(const Field2D & rhs) {
+    if (mainid == getId(rhs.getLocation())){
+      ((F*)fields[mainid])->operator+=(rhs);
+    } else {
+      throw BoutException("Not yet implemtented!");
+    }
+    clean(false);
+  };
+  Flexible<F>& operator+=(BoutReal rhs) {
+    ((F*)fields[mainid])->operator+=(rhs);
+    clean(false);
+  };
+  Flexible<F>& operator-=(const Field3D & rhs) {
+    if (mainid == getId(rhs.getLocation())){
+      ((F*)fields[mainid])->operator-=(rhs);
+    } else {
+      throw BoutException("Not yet implemtented!");
+    }
+    clean(false);
+  };
+  Flexible<F>& operator-=(const Field2D & rhs) {
+    if (mainid == getId(rhs.getLocation())){
+      ((F*)fields[mainid])->operator-=(rhs);
+    } else {
+      throw BoutException("Not yet implemtented!");
+    }
+    clean(false);
+  };
+  Flexible<F>& operator-=(BoutReal rhs) {
+    ((F*)fields[mainid])->operator-=(rhs);
+    clean(false);
+  };
+
 private:
   // Helper function to get index of location.
   uint getId(CELL_LOC loc_){
