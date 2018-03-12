@@ -12,7 +12,7 @@ class RK4SIMPLEScheme : public RKScheme{
   RK4SIMPLEScheme(Options *options);
   ~RK4SIMPLEScheme();
   
-  BoutReal setOutputStates(const BoutReal *start,BoutReal dt, BoutReal *resultFollow);
+  BoutReal setOutputStates(const Array<BoutReal> &start,BoutReal dt, Array<BoutReal> &resultFollow);
  private:
   
 };

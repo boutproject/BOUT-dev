@@ -45,7 +45,7 @@ public:
    *
    * Stored as a 1D array [x*ny*nz + y*nz + z]
    */ 
-  BoutReal* getData() {return data;}
+  Array<BoutReal>& getData() {return data;}
 protected:
   GlobalField(Mesh *m, int proc, int xsize, int ysize, int zsize);
   
@@ -53,7 +53,7 @@ protected:
 
   int data_on_proc; ///< Which processor is this data on?  
   int nx, ny, nz; ///< Global field sizes
-  BoutReal *data; ///< The global data, if on this processor
+  Array<BoutReal> data; ///< The global data, if on this processor
 
   MPI_Comm comm; ///< Communicator for all mesh
   int npes, mype; ///< Number of MPI processes, this processor index

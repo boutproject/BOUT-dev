@@ -52,7 +52,7 @@ class RK4Solver : public Solver {
   BoutReal max_timestep; // Maximum timestep
   int mxstep; // Maximum number of internal steps between outputs
   
-  BoutReal *f0, *f1, *f2;
+  Array<BoutReal> f0, f1, f2;
   
   BoutReal out_timestep; // The output timestep
   int nsteps; // Number of output steps
@@ -64,9 +64,9 @@ class RK4Solver : public Solver {
   int nlocal, neq; // Number of variables on local processor and in total
   
   void take_step(BoutReal curtime, BoutReal dt, 
-                 BoutReal *start, BoutReal *result); // Take a single step to calculate f1
+                 Array<BoutReal> &start, Array<BoutReal> &result); // Take a single step to calculate f1
   
-  BoutReal *k1, *k2, *k3, *k4, *k5; // Time-stepping arrays
+  Array<BoutReal> k1, k2, k3, k4, k5; // Time-stepping arrays
   
 };
 

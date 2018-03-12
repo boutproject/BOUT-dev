@@ -75,11 +75,16 @@ public:
 	       int zs, int ze) : 
 #ifndef _OPENMP
     x(xs), y(ys), z(zs),
+    // start / end : start and end point of the iterator
     xstart(xs),   ystart(ys),   zstart(zs),
-    xmin(xstart), ymin(ystart), zmin(zstart),
     xend(xe),     yend(ye),     zend(ze),
+    // Min / Max are the values of the domain we iterate over
+    xmin(xstart), ymin(ystart), zmin(zstart),
     xmax(xend),   ymax(yend),   zmax(zend),
 #else
+    // In the case of OpenMP each processor has a subset.
+    // Therefore we initiallise here only the common ones, i.e. the
+    // total size of the domain, not what this processor is doing
     xmin(xs),     ymin(ys),     zmin(zs),
     xmax(xe),     ymax(ye),     zmax(ze),
 #endif
@@ -100,8 +105,8 @@ public:
 #ifndef _OPENMP
     x(xe), y(ye), z(ze),
     xstart(xs),   ystart(ys),   zstart(zs),
-    xmin(xstart), ymin(ystart), zmin(zstart),
     xend(xe),     yend(ye),     zend(ze),
+    xmin(xstart), ymin(ystart), zmin(zstart),
     xmax(xend),   ymax(yend),   zmax(zend),
 #else
     xmin(xs), ymin(ys),   zmin(zs),
@@ -162,16 +167,16 @@ public:
   /*!
    * Add an offset to the index for general stencils
    */
-  const Indices offset(int dx, int dy, int dz) const {
+  const inline Indices offset(int dx, int dy, int dz) const {
     if (dz>0){
       int zp=z;
       for (int j=0;j<dz;++j)
-        zp=(zp == zend ? zstart : zp+1);
+        zp=(zp == zmax ? zmin : zp+1);
       return {x+dx, y+dy, zp };
     } else {
       int zm=z;
       for (;dz!= 0;++dz)
-        zm = (zm == zstart ? zend : zm-1);
+        zm = (zm == zmin ? zmax : zm-1);
       return {x+dx, y+dy, zm };
     }
   }
@@ -180,20 +185,36 @@ public:
    * Shortcuts for common offsets, one cell
    * in each direction.
    */
-  
+  // general implementation for an abitrary number of cells
+  // which defaults to one if used as .xp();
   /// The index one point +1 in x
-  const Indices xp() const { return {x+1, y, z}; }
+  const inline Indices xp(int i=1) const { return {x+i, y, z}; }
   /// The index one point -1 in x
-  const Indices xm() const { return {x-1, y, z}; }
+  const inline Indices xm(int i=1) const { return {x-i, y, z}; }
   /// The index one point +1 in y
-  const Indices yp() const { return {x, y+1, z}; }
+  const inline Indices yp(int i=1) const { return {x, y+i, z}; }
   /// The index one point -1 in y
-  const Indices ym() const { return {x, y-1, z}; }
+  const inline Indices ym(int i=1) const { return {x, y-i, z}; }
   /// The index one point +1 in z. Wraps around zend to zstart
-  const Indices zp() const { return {x, y, z == zend ? zstart : z+1}; }
+  const inline Indices zp(int i=1) const {
+    int zp=z;
+    for (int j=0;j<i;++j)
+      zp=(zp == zmax ? zmin : zp+1);
+    return {x, y, zp }; }
   /// The index one point -1 in z. Wraps around zstart to zend
-  const Indices zm() const { return {x, y, z == zstart ? zend : z-1}; }
-
+  const inline Indices zm(int i=1) const {
+    int zm=z;
+    for (;i!= 0;--i)
+      zm = (zm == zmin ? zmax : zm-1);
+    return {x, y, zm }; }
+  // and for 2 cells
+  const inline Indices xpp() const { return xp(2); }
+  const inline Indices xmm() const { return xm(2); }
+  const inline Indices ypp() const { return yp(2); }
+  const inline Indices ymm() const { return ym(2); }
+  const inline Indices zpp() const { return zp(2); }
+  const inline Indices zmm() const { return zm(2); }
+  
   /*!
    * Resets DataIterator to the start of the range
    */
@@ -218,6 +239,7 @@ public:
     return (x > xend) || (x < xstart);
 #else //_OPENMP
     return (x == xend && y == yend && z > zend)
+      || (x == xend && y > yend)
       || x > xend ||
       (x <= xstart && y <= ystart && z < zstart)  ;
 #endif //_OPENMP
@@ -226,12 +248,15 @@ public:
 private:
   DataIterator(); // Disable null constructor
 
+  /// start / end : start and end point of THIS iterator
 #ifndef _OPENMP
   const int xstart, ystart, zstart;
 #else
+  /// start / end : local to THIS processor
   int xstart, ystart, zstart;
 #endif
-
+  /// min / max : size of the domain
+  /// same for all processors
   int xmin, ymin, zmin;
 
 #ifndef _OPENMP
@@ -353,8 +378,8 @@ inline void DataIterator::omp_init(bool end){
     ystart = (begin_index % ny) + ymin;
     end_index   /= ny;
     begin_index /= ny;
-    xend   = end_index;
-    xstart = begin_index;
+    xend   = end_index   + xmin;
+    xstart = begin_index + xmin;
   } else {
     zstart = zmin;
     zend   = zmax;

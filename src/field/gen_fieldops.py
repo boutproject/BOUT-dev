@@ -82,7 +82,8 @@ class Field(object):
 
     """
 
-    def __init__(self, field_type, dimensions, name=None, index_var=None):
+    def __init__(self, field_type, dimensions, name=None, index_var=None,
+                 jz_var="jz", mixed_base_ind = "mixed_base_ind"):
         # C++ type of the field, e.g. Field3D
         self.field_type = field_type
         # array: dimensions of the field
@@ -91,6 +92,9 @@ class Field(object):
         self.name = name
         # Name of the indexing variable
         self.index_var = index_var
+        # Name of jz variable
+        self.jz_var = jz_var
+        self.mixed_base_ind = mixed_base_ind
         if self.field_type == "Field3D":
             self.region_type="3D"
         elif self.field_type == "Field2D":
@@ -116,6 +120,19 @@ class Field(object):
         if self.field_type == "BoutReal":
             return "{self.name}".format(self=self)
         else:
+            return "{self.name}[{self.index_var}]".format(self=self)
+
+    @property
+    def mixed_index(self):
+        """Returns "[{index_var} + {jz_var}]" if field_type is Field3D,
+        self.index if Field2D or just returns "" for BoutReal
+
+        """
+        if self.field_type == "BoutReal":
+            return "{self.name}".format(self=self)
+        elif self.field_type == "Field3D":
+            return "{self.name}[{self.mixed_base_ind} + {self.jz_var}]".format(self=self)
+        else:  # Field2D
             return "{self.name}[{self.index_var}]".format(self=self)
 
     def __eq__(self, other):
@@ -147,7 +164,6 @@ def returnType(f1, f2):
     else:
         return copy(field3D)
 
-
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Generate code for the Field arithmetic operators")
@@ -162,7 +178,7 @@ if __name__ == "__main__":
 
     #Setup
     index_var = 'index'
-
+    jz_var = 'jz'
     region_name = '"RGN_ALL"'
     
     if args.noOpenMP:
@@ -194,24 +210,41 @@ if __name__ == "__main__":
         lhs = copy(lhs)
 
         # The output of the operation. The `larger` of the two fields.
-        out = returnType(rhs, lhs)
+        out = returnType(rhs, lhs)         
         out.name = 'result'
         lhs.name = 'lhs'
         rhs.name = 'rhs'
 
+        mixed = 'no'
+        region_type = out.region_type
+
+        # Determine if we have 3D/2D or 2D/3D
+        if out.field_type == "Field3D":
+            if lhs.field_type == "Field2D":
+                mixed = '2d3d'
+                region_type = lhs.region_type
+            elif rhs.field_type == "Field2D":
+                mixed = '3d2d'
+                region_type = rhs.region_type
+                
         for operator, operator_name in operators.items():
 
             template_args = {
                 'operator': operator,
                 'operator_name': operator_name,
-
+                
                 'out': out,
                 'lhs': lhs,
                 'rhs': rhs,
 
+                'mixed': mixed,
+                'mixed_base_ind': 'mixed_base_ind',
+                
                 'region_loop': region_loop,
                 'region_name': region_name,
-                'index_var': index_var
+                'region_type': region_type,
+                'index_var': index_var,
+                'jz_var': jz_var
                 
             }
 

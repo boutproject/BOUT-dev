@@ -261,8 +261,11 @@ Field3D operator*(const Field3D &lhs, const Field2D &rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion3D("RGN_ALL"), index,
-                    result[index] = lhs[index] * rhs[index];);
+  BLOCK_REGION_LOOP(localmesh->getRegion2D("RGN_ALL"), index,
+                    auto mixed_base_ind = localmesh->ind2Dto3D(index);
+                    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
+                      result[mixed_base_ind + jz] = lhs[mixed_base_ind + jz] * rhs[index];
+                    });
 
   result.setLocation(lhs.getLocation());
 
@@ -282,8 +285,10 @@ Field3D &Field3D::operator*=(const Field2D &rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BLOCK_REGION_LOOP(fieldmesh->getRegion3D("RGN_ALL"), index,
-                      (*this)[index] *= rhs[index];);
+    BLOCK_REGION_LOOP(fieldmesh->getRegion2D("RGN_ALL"), index,
+                      auto mixed_base_ind = fieldmesh->ind2Dto3D(index);
+                      for (int jz = 0; jz < fieldmesh->LocalNz;
+                           ++jz) { (*this)[mixed_base_ind + jz] *= rhs[index]; });
 
     checkData(*this);
 
@@ -306,8 +311,11 @@ Field3D operator/(const Field3D &lhs, const Field2D &rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion3D("RGN_ALL"), index,
-                    result[index] = lhs[index] / rhs[index];);
+  BLOCK_REGION_LOOP(localmesh->getRegion2D("RGN_ALL"), index,
+                    auto mixed_base_ind = localmesh->ind2Dto3D(index);
+                    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
+                      result[mixed_base_ind + jz] = lhs[mixed_base_ind + jz] / rhs[index];
+                    });
 
   result.setLocation(lhs.getLocation());
 
@@ -326,8 +334,10 @@ Field3D &Field3D::operator/=(const Field2D &rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BLOCK_REGION_LOOP(fieldmesh->getRegion3D("RGN_ALL"), index,
-                      (*this)[index] /= rhs[index];);
+    BLOCK_REGION_LOOP(fieldmesh->getRegion2D("RGN_ALL"), index,
+                      auto mixed_base_ind = fieldmesh->ind2Dto3D(index);
+                      for (int jz = 0; jz < fieldmesh->LocalNz;
+                           ++jz) { (*this)[mixed_base_ind + jz] /= rhs[index]; });
 
     checkData(*this);
 
@@ -350,8 +360,11 @@ Field3D operator+(const Field3D &lhs, const Field2D &rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion3D("RGN_ALL"), index,
-                    result[index] = lhs[index] + rhs[index];);
+  BLOCK_REGION_LOOP(localmesh->getRegion2D("RGN_ALL"), index,
+                    auto mixed_base_ind = localmesh->ind2Dto3D(index);
+                    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
+                      result[mixed_base_ind + jz] = lhs[mixed_base_ind + jz] + rhs[index];
+                    });
 
   result.setLocation(lhs.getLocation());
 
@@ -371,8 +384,10 @@ Field3D &Field3D::operator+=(const Field2D &rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BLOCK_REGION_LOOP(fieldmesh->getRegion3D("RGN_ALL"), index,
-                      (*this)[index] += rhs[index];);
+    BLOCK_REGION_LOOP(fieldmesh->getRegion2D("RGN_ALL"), index,
+                      auto mixed_base_ind = fieldmesh->ind2Dto3D(index);
+                      for (int jz = 0; jz < fieldmesh->LocalNz;
+                           ++jz) { (*this)[mixed_base_ind + jz] += rhs[index]; });
 
     checkData(*this);
 
@@ -395,8 +410,11 @@ Field3D operator-(const Field3D &lhs, const Field2D &rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion3D("RGN_ALL"), index,
-                    result[index] = lhs[index] - rhs[index];);
+  BLOCK_REGION_LOOP(localmesh->getRegion2D("RGN_ALL"), index,
+                    auto mixed_base_ind = localmesh->ind2Dto3D(index);
+                    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
+                      result[mixed_base_ind + jz] = lhs[mixed_base_ind + jz] - rhs[index];
+                    });
 
   result.setLocation(lhs.getLocation());
 
@@ -416,8 +434,10 @@ Field3D &Field3D::operator-=(const Field2D &rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BLOCK_REGION_LOOP(fieldmesh->getRegion3D("RGN_ALL"), index,
-                      (*this)[index] -= rhs[index];);
+    BLOCK_REGION_LOOP(fieldmesh->getRegion2D("RGN_ALL"), index,
+                      auto mixed_base_ind = fieldmesh->ind2Dto3D(index);
+                      for (int jz = 0; jz < fieldmesh->LocalNz;
+                           ++jz) { (*this)[mixed_base_ind + jz] -= rhs[index]; });
 
     checkData(*this);
 
@@ -600,8 +620,11 @@ Field3D operator*(const Field2D &lhs, const Field3D &rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion3D("RGN_ALL"), index,
-                    result[index] = lhs[index] * rhs[index];);
+  BLOCK_REGION_LOOP(localmesh->getRegion2D("RGN_ALL"), index,
+                    auto mixed_base_ind = localmesh->ind2Dto3D(index);
+                    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
+                      result[mixed_base_ind + jz] = lhs[index] * rhs[mixed_base_ind + jz];
+                    });
 
   result.setLocation(rhs.getLocation());
 
@@ -622,8 +645,11 @@ Field3D operator/(const Field2D &lhs, const Field3D &rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion3D("RGN_ALL"), index,
-                    result[index] = lhs[index] / rhs[index];);
+  BLOCK_REGION_LOOP(localmesh->getRegion2D("RGN_ALL"), index,
+                    auto mixed_base_ind = localmesh->ind2Dto3D(index);
+                    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
+                      result[mixed_base_ind + jz] = lhs[index] / rhs[mixed_base_ind + jz];
+                    });
 
   result.setLocation(rhs.getLocation());
 
@@ -644,8 +670,11 @@ Field3D operator+(const Field2D &lhs, const Field3D &rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion3D("RGN_ALL"), index,
-                    result[index] = lhs[index] + rhs[index];);
+  BLOCK_REGION_LOOP(localmesh->getRegion2D("RGN_ALL"), index,
+                    auto mixed_base_ind = localmesh->ind2Dto3D(index);
+                    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
+                      result[mixed_base_ind + jz] = lhs[index] + rhs[mixed_base_ind + jz];
+                    });
 
   result.setLocation(rhs.getLocation());
 
@@ -666,8 +695,11 @@ Field3D operator-(const Field2D &lhs, const Field3D &rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion3D("RGN_ALL"), index,
-                    result[index] = lhs[index] - rhs[index];);
+  BLOCK_REGION_LOOP(localmesh->getRegion2D("RGN_ALL"), index,
+                    auto mixed_base_ind = localmesh->ind2Dto3D(index);
+                    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
+                      result[mixed_base_ind + jz] = lhs[index] - rhs[mixed_base_ind + jz];
+                    });
 
   result.setLocation(rhs.getLocation());
 
