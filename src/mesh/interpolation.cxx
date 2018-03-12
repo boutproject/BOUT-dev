@@ -108,6 +108,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
           // the magnetic field
           s.pp = nan("");
           s.mm = nan("");
+          throw BoutException("This is wrong!");
           for(const auto &i : result.region(RGN_NOY)) {
             // Set stencils
             s.c = var[i];
@@ -158,6 +159,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
             // Only one guard cell, so no pp or mm values
             s.pp = nan("");
             s.mm = nan("");
+            throw BoutException("This is wrong!");
             for(const auto &i : result.region(RGN_NOY)) {
               // Set stencils
               s.c = var_fa[i];
@@ -219,7 +221,9 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
 
     return result;
   }
-  
+  if ((loc != CELL_CENTRE || loc != CELL_DEFAULT) && (mesh->StaggerGrids == false)) {
+    throw BoutException("Asked to interpolate, but StaggerGrids is disabled!");
+  }
   // Nothing to do - just return unchanged
   return var;
 }
