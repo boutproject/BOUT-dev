@@ -58,11 +58,22 @@ public:
   Matrix(unsigned int n1, unsigned int n2) : n1(n1), n2(n2) {
     data = Array<T>(n1*n2);
   }
+  Matrix(const Matrix &other) : n1(other.n1), n2(other.n2), data(other.data) {
+    // Prevent copy on write for Matrix
+    data.ensureUnique();
+  }
 
+  Matrix& operator=(const Matrix &other) {
+    n1 = other.n1;
+    n2 = other.n2;
+    data = other.data;
+    // Prevent copy on write for Matrix
+    data.ensureUnique();
+  }
+  
   T& operator()(unsigned int i1, unsigned int i2) {
     ASSERT2(0<=i1 && i1<n1);
     ASSERT2(0<=i2 && i2<n2);
-    data.ensureUnique();
     return data[i1*n2+i2];
   }
   const T& operator()(unsigned int i1, unsigned int i2) const {
@@ -72,7 +83,6 @@ public:
   }
 
   Matrix& operator=(const T&val){
-    data.ensureUnique();
     for(auto &i: data){
       i = val;
     };
@@ -82,13 +92,11 @@ public:
   // To provide backwards compatibility with matrix to be removed
   DEPRECATED(T* operator[](unsigned int i1)) {
     ASSERT2(0<=i1 && i1<n1);
-    data.ensureUnique();
     return &(data[i1*n2]);
   }
   // To provide backwards compatibility with matrix to be removed
   DEPRECATED(const T* operator[](unsigned int i1) const) {
     ASSERT2(0<=i1 && i1<n1);
-    data.ensureUnique();
     return &(data[i1*n2]);
   }
 
@@ -125,12 +133,24 @@ public:
   Tensor(unsigned int n1, unsigned int n2, unsigned int n3) : n1(n1), n2(n2), n3(n3) {
     data = Array<T>(n1*n2*n3);
   }
+  Tensor(const Tensor &other) : n1(other.n1), n2(other.n2), n3(other.n3), data(other.data) {
+    // Prevent copy on write for Tensor
+    data.ensureUnique();
+  }
+
+  Tensor& operator=(const Tensor &other) {
+    n1 = other.n1;
+    n2 = other.n2;
+    n3 = other.n3;
+    data = other.data;
+    // Prevent copy on write for Tensor
+    data.ensureUnique();
+  }
 
   T& operator()(unsigned int i1, unsigned int i2, unsigned int i3) {
     ASSERT2(0<=i1 && i1<n1);
     ASSERT2(0<=i2 && i2<n2);
     ASSERT2(0<=i3 && i3<n3);
-    data.ensureUnique();
     return data[(i1*n2+i2)*n3 + i3];
   }
   const T& operator()(unsigned int i1, unsigned int i2, unsigned int i3) const {
@@ -141,7 +161,6 @@ public:
   }
 
   Tensor& operator=(const T&val){
-    data.ensureUnique();
     for(auto &i: data){
       i = val;
     };
@@ -158,7 +177,6 @@ public:
   bool empty(){
     return n1*n2*n3 == 0;
   }
-  
 private:
   unsigned int n1, n2, n3;
   Array<T> data;
