@@ -45,7 +45,7 @@
 
 #include <bout/assert.hxx>
 
-Field2D::Field2D(Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
+Field2D::Field2D(Mesh *localmesh) : Field(localmesh), location(CELL_CENTRE), deriv(nullptr) {
 
   boundaryIsSet = false;
 
@@ -67,6 +67,7 @@ Field2D::Field2D(Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
 
 Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing array sizes
                                      data(f.data), // This handles references to the data array
+                                     location(f.location),
                                      deriv(nullptr) {
   TRACE("Field2D(Field2D&)");
 
@@ -92,7 +93,7 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing 
   boundaryIsSet = false;
 }
 
-Field2D::Field2D(BoutReal val, Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
+Field2D::Field2D(BoutReal val, Mesh *localmesh) : Field(localmesh), location(CELL_CENTRE), deriv(nullptr) {
   boundaryIsSet = false;
 
   nx = fieldmesh->LocalNx;
@@ -172,6 +173,32 @@ const IndexRange Field2D::region(REGION rgn) const {
     throw BoutException("Field2D::region() : Requested region not implemented");
   }
   };
+}
+
+void Field2D::setLocation(CELL_LOC new_location) {
+  if (getMesh()->StaggerGrids) {
+    if (new_location == CELL_VSHIFT) {
+      throw BoutException(
+          "Field3D: CELL_VSHIFT cell location only makes sense for vectors");
+    }
+    if (new_location == CELL_DEFAULT) {
+      new_location = CELL_CENTRE;
+    }
+    location = new_location;
+  } else {
+#if CHECK > 0
+    if (new_location != CELL_CENTRE && new_location != CELL_DEFAULT) {
+      throw BoutException("Field2D: Trying to set off-centre location on "
+                          "non-staggered grid\n"
+                          "         Did you mean to enable staggerGrids?");
+    }
+#endif
+    location = CELL_CENTRE;
+  }
+}
+
+CELL_LOC Field2D::getLocation() const {
+  return location;
 }
 
 // Not in header because we need to access fieldmesh
