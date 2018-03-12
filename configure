@@ -8308,6 +8308,10 @@ $as_echo "no" >&6; }
     fi
     if test .$BACL_found = .yes; then :
   HAS_LAPACK=yes
+     { $as_echo "$as_me:${as_lineno-$LINENO}: Using LAPACK" >&5
+$as_echo "$as_me: Using LAPACK" >&6;}
+     CXXFLAGS="$CXXFLAGS -DLAPACK"
+
 else
   if test "x$with_lapack" = "xyes"; then :
   as_fn_error $? "LAPACK requested but not found" "$LINENO" 5
@@ -8320,9 +8324,6 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: Using LAPACK" >&5
-$as_echo "$as_me: Using LAPACK" >&6;}
-  CXXFLAGS="$CXXFLAGS -DLAPACK"
 
 fi
 

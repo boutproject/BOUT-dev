@@ -597,12 +597,13 @@ AS_IF([test "x$with_lapack" != "xno"], [
        AC_MSG_ERROR([LAPACK requested but couldn't find BLAS]))],
     $lapack_path)
   BOUT_ADDPATH_CHECK_LIB(lapack, zgbsv_,
-    [HAS_LAPACK=yes],
+    [HAS_LAPACK=yes
+     AC_MSG_NOTICE([Using LAPACK])
+     CXXFLAGS="$CXXFLAGS -DLAPACK"
+    ],
     [AS_IF([test "x$with_lapack" = "xyes"],
        AC_MSG_ERROR([LAPACK requested but not found]))],
     $lapack_path)
-  AC_MSG_NOTICE([Using LAPACK])
-  CXXFLAGS="$CXXFLAGS -DLAPACK"
 ])
 
 #############################################################
