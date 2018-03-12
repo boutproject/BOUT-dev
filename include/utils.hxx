@@ -69,6 +69,7 @@ public:
     data = other.data;
     // Prevent copy on write for Matrix
     data.ensureUnique();
+    return *this;
   }
   
   T& operator()(unsigned int i1, unsigned int i2) {
@@ -145,6 +146,7 @@ public:
     data = other.data;
     // Prevent copy on write for Tensor
     data.ensureUnique();
+    return *this;
   }
 
   T& operator()(unsigned int i1, unsigned int i2, unsigned int i3) {
