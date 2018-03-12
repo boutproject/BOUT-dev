@@ -385,7 +385,6 @@ static DiffNameLookup DiffNameTable[] = {
     {DIFF_C4, "C4", "Fourth order central"},
     {DIFF_U3, "U3", "Third order upwinding"},
     {DIFF_U3, "U4", "Third order upwinding (Can't do 4th order yet)."},
-    {DIFF_U4, "U4", "Fourth order upwinding"},
     {DIFF_S2, "S2", "Smoothing 2nd order"},
     {DIFF_FFT, "FFT", "FFT"},
     {DIFF_SPLIT, "SPLIT", "Split into upwind and central"},
