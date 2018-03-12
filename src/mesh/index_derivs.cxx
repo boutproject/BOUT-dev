@@ -157,7 +157,7 @@ BoutReal VDDX_U2(BoutReal vc, stencil &f) {
                    : vc * (-0.5 * f.pp + 2.0 * f.p - 1.5 * f.c);
 }
 
-/// upwind, 3th order
+/// upwind, 3rd order
 BoutReal VDDX_U3(BoutReal vc, stencil &f) {
   return vc >= 0.0 ? vc*(4.*f.p - 12.*f.m + 2.*f.mm + 6.*f.c)/12.
     : vc*(-4.*f.m + 12.*f.p - 2.*f.pp - 6.*f.c)/12.;
