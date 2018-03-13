@@ -912,48 +912,36 @@ AS_IF([test "x$with_sundials" != "x" && test "x$with_sundials" != "xno"], [
 ])
 
 AS_IF([test "x$with_ida" != "x" && test "x$with_ida" != "xno"], [
-  BOUT_FIND_SUNDIALS_MODULE([$with_ida], [ida], [IDA], [
+  BOUT_FIND_SUNDIALS_MODULE([ida], [
     #include <nvector/nvector_parallel.h>
     #include <ida/ida.h>
     extern void foo(N_Vector);
-  ], [IDACreate();])
-
-  AS_IF([test "x$IDALIBS" != "x"], [
-    BOUT_CHECK_SUNDIALS_TYPE([IDA],[$IDAINCS],[IDAINT],[
-      #include <ida/ida_bbdpre.h>
-      extern int ida_bbd_rhs(IDAINT, double, N_Vector, N_Vector, N_Vector, void *);
-    ], [IDABBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, ida_bbd_rhs, nullptr);])
-  ])
+  ], [IDACreate();], [
+    #include <ida/ida_bbdpre.h>
+    extern int ida_bbd_rhs(IDAINT, double, N_Vector, N_Vector, N_Vector, void *);
+  ], [IDABBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, ida_bbd_rhs, nullptr);])
 ])
 
 AS_IF([test "x$with_cvode" != "x" && test "x$with_cvode" != "xno"], [
-  BOUT_FIND_SUNDIALS_MODULE([$with_cvode], [cvode], [CVODE], [
+  BOUT_FIND_SUNDIALS_MODULE([cvode], [
     #include <nvector/nvector_parallel.h>
     #include <cvode/cvode.h>
     extern void foo(N_Vector);
-  ], [CVodeCreate(0, 0);])
-
-  AS_IF([test "x$CVODELIBS" != "x"], [
-    BOUT_CHECK_SUNDIALS_TYPE([CVODE],[$CVODEINCS],[CVODEINT],[
-      #include <cvode/cvode_bbdpre.h>
-      extern int cvode_bbd_rhs(CVODEINT, double, N_Vector, N_Vector, void *);
-    ], [CVBBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, cvode_bbd_rhs, nullptr);])
-  ])
+  ], [CVodeCreate(0, 0);], [
+    #include <cvode/cvode_bbdpre.h>
+    extern int cvode_bbd_rhs(CVODEINT, double, N_Vector, N_Vector, void *);
+  ], [CVBBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, cvode_bbd_rhs, nullptr);])
 ])
 
 AS_IF([test "x$with_arkode" != "x" && test "x$with_arkode" != "xno"], [
-  BOUT_FIND_SUNDIALS_MODULE([$with_arkode], [arkode], [ARKODE], [
+  BOUT_FIND_SUNDIALS_MODULE([arkode], [
     #include <nvector/nvector_parallel.h>
     #include <arkode/arkode.h>
     extern void foo(N_Vector);
-  ], [ARKodeCreate();])
-
-  AS_IF([test "x$ARKODELIBS" != "x"], [
-    BOUT_CHECK_SUNDIALS_TYPE([ARKODE],[$ARKODEINCS],[ARKODEINT],[
-      #include <arkode/arkode_bbdpre.h>
-      extern int arkode_bbd_rhs(ARKODEINT, double, N_Vector, N_Vector, void *);
-    ], [ARKBBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, arkode_bbd_rhs, nullptr);])
-  ])
+  ], [ARKodeCreate();], [
+    #include <arkode/arkode_bbdpre.h>
+    extern int arkode_bbd_rhs(ARKODEINT, double, N_Vector, N_Vector, void *);
+  ], [ARKBBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, arkode_bbd_rhs, nullptr);])
 ])
 
 #############################################################

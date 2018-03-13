@@ -110,21 +110,154 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_HEADER],[
     AS_IF([test .$BACH_found = .yes], [$2],[$3])
 ])
 
-dnl Check the int type of packages in SUNDIALS
-dnl First argument is name of the package (e.g. CVODE)
-dnl Second argument is include path (e.g. $CVODEINCS)
-dnl Third argument is macro definition (e.g. CVODEINT)
-dnl Fourth argument is header and rhs function declaration
-dnl Fifth argument is PrecInit function call
-AC_DEFUN([BOUT_CHECK_SUNDIALS_TYPE],[
-  # Try to compile a simple program to check whether $1 uses int or long
+AC_DEFUN([BOUT_CHECK_PRETTYFUNCTION], [
+  AC_LANG_PUSH([C++])
+  AC_MSG_CHECKING([does C++ compiler support __PRETTY_FUNCTION__])
+  AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM([[]],
+                 [[const char* name = __PRETTY_FUNCTION__;]])],
+    [AC_MSG_RESULT(yes)
+     CXXFLAGS="$CXXFLAGS -DHAS_PRETTY_FUNCTION"],
+    [AC_MSG_RESULT(no)])
+  AC_LANG_POP([C++])
+])
+
+dnl First argument is lower case module name
+dnl Second argument is test program includes
+dnl Third argument is test program main body
+dnl Fourth argument is includes for test program to determine the integer type
+dnl Fifth argument is main body for test program to determine the integer type 
+AC_DEFUN([BOUT_FIND_SUNDIALS_MODULE],[
+
+  dnl Slightly complicated as we have to deal with shell indirection
+  AS_VAR_COPY([with_module], [with_$1])
+  module_upper=m4_toupper($1)
+
+  AC_MSG_NOTICE([Searching for SUNDIALS $module_upper library])
+  AS_IF([test "$with_module" = "yes"], [
+    # No path specified. Try using sundials-config
+    AC_PATH_PROG([sundials_config], [sundials-config], [no], [$with_sundials$PATH_SEPARATOR$PATH])
+    AS_IF([test "x$sundials_config" != xno], [
+       AC_MSG_WARN(
+         [Found sundials-config, this means your version of SUNDIALS is < 2.6, and probably won't work])
+       sundials_module_includes=`$sundials_config -m $1 -t p -l c -s cppflags`
+       sundials_module_libs=`$sundials_config -m $1 -t p -l c -s libs`
+    ], [
+       AC_MSG_WARN([No sundials-config available, no path given, will try compiling with $module_upper anyway])
+       sundials_module_includes=""
+       sundials_module_libs=""
+    ])
+    AC_LANG_PUSH([C++])
+    AC_MSG_CHECKING([if we can compile with SUNDIALS $module_upper])
+    save_LIBS=$LIBS
+    save_CXXFLAGS=$CXXFLAGS
+    LIBS="$save_LIBS $sundials_module_libs"
+    CXXFLAGS="$save_CXXFLAGS $sundials_module_includes"
+    AC_LINK_IFELSE(
+      [AC_LANG_PROGRAM([
+$2
+         ], [$3])],
+      [sundials_config_worked=yes],
+      [sundials_config_worked=no])
+    AC_MSG_RESULT([$sundials_config_worked])
+    AS_IF([test $sundials_config_worked = yes], [
+      AC_MSG_NOTICE([Using SUNDIALS $module_upper solver])
+    ], [
+      AC_MSG_FAILURE([Could not compile SUNDIALS $module_upper program, check your SUNDIALS version])
+    ])
+    LIBS=$save_LIBS
+    CXXFLAGS="$save_CXXFLAGS"
+    AC_LANG_POP([C++])
+  ], [
+    # Specified with path
+    AC_MSG_NOTICE([Checking for $module_upper header files])
+
+    # Check whether user supplied path to $module_upper install dir...
+    AC_CHECK_FILES([$with_module/include/$1/$1.h
+                    $with_module/include/$1/$1_spgmr.h
+                    $with_module/include/$1/$1_bbdpre.h
+                    $with_module/include/nvector/nvector_parallel.h
+                    $with_module/include/sundials/sundials_types.h],
+      [sundials_module_includes_found=yes
+       sundials_module_includes_path=$with_module/include],
+      [sundials_module_includes_found=no])
+    AS_IF([test $sundials_module_includes_found = no], [
+      # ...or path to $module_upper lib dir
+      AC_CHECK_FILES([$with_module/../include/$1/$1.h
+                      $with_module/../include/$1/$1_spgmr.h
+                      $with_module/../include/$1/$1_bbdpre.h
+                      $with_module/../include/nvector/nvector_parallel.h
+                      $with_module/../include/sundials/sundials_types.h],
+        [sundials_module_includes_found=yes
+         sundials_module_includes_path=$with_module/../include],
+        [sundials_module_includes_found=no])
+    ])
+
+    AS_IF([test $sundials_module_includes_found = no],
+      [AC_MSG_FAILURE([Missing one or more $module_upper headers])])
+
+    AC_MSG_NOTICE([Found $module_upper include path: $sundials_module_includes_path])
+
+    # We've now got the include directory and can specify what libraries we need
+    sundials_module_includes="-I$sundials_module_includes_path"
+    sundials_module_libs="-lsundials_$1 -lsundials_nvecparallel"
+
+    # Try compiling something simple with a few different common paths
+    save_LIBS=$LIBS
+    save_LDFLAGS=$LDFLAGS
+    save_CPPFLAGS=$CPPFLAGS
+    AC_LANG_PUSH([C++])
+    for sundials_module_lib_path in "$with_module" "$with_module/lib" "$with_module/lib64"
+    do
+      AC_MSG_CHECKING([if SUNDIALS $module_upper library path is $sundials_module_lib_path])
+      LIBS="$save_LIBS $sundials_module_libs"
+      LDFLAGS="$save_LDFLAGS -L$sundials_module_lib_path"
+      CPPFLAGS="$save_CPPFLAGS $sundials_module_includes"
+      AC_LINK_IFELSE(
+        [AC_LANG_PROGRAM([
+$2
+           ], [$3])],
+        [sundials_module_lib_path_found=yes],
+        [sundials_module_lib_path_found=no])
+      AC_MSG_RESULT([$sundials_module_lib_path_found])
+      AS_IF([test "x$sundials_module_lib_path_found" = "xyes"], [break])
+      LIBS=$save_LIBS
+      LDFLAGS=$save_LDFLAGS
+      CPPFLAGS="$save_CPPFLAGS"
+    done
+    AC_LANG_POP([C++])
+
+    SUNDIALS_MODULE_LDFLAGS="-L$sundials_module_lib_path"
+  ])
+
+  AS_IF([test $sundials_module_lib_path_found = no],
+    [AC_MSG_FAILURE([Cannot compile $module_upper program])])
+
+  # Compile in the $module_upper solver
+  AC_MSG_NOTICE([=> $module_upper solver enabled])
+  EXTRA_LIBS="$EXTRA_LIBS $SUNDIALS_MODULE_LDFLAGS $sundials_module_libs"
+  EXTRA_INCS="$EXTRA_INCS $sundials_module_includes"
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_$module_upper"
+
+  dnl The following is slightly complicated, but basically we use
+  dnl AS_TR_SH to construct a shell variable from the variable
+  dnl module_upper. This causes some shell indirection though, so we
+  dnl then use AS_VAR_SET to actually assign the value we want to it
+  AS_VAR_SET([AS_TR_SH([BOUT_HAS_$module_upper])], [yes])
+  AS_VAR_SET([AS_TR_SH([${module_upper}LIBS])], ["$SUNDIALS_MODULE_LDFLAGS $sundials_module_libs"])
+  AS_VAR_SET([AS_TR_SH([${module_upper}INCS])], ["$sundials_module_includes"])
+
+  # Now we have successfully found the library, we need to determine
+  # whether $module_upper uses int or long. Try to compile a simple
+  # program to check
   save_CXXFLAGS=$CXXFLAGS
-  AC_MSG_NOTICE(["checking $1 types..."])
+  AC_MSG_NOTICE(["checking $module_upper types..."])
   AC_LANG_PUSH([C++])
 
   for sundials_int_type in int long; do
     AC_MSG_CHECKING([$sundials_int_type])
-    CXXFLAGS="$CXXFLAGS $2 -D$3=$sundials_int_type"
+    eval sundials_type_name=AS_TR_SH([${module_upper}INT])
+    CXXFLAGS="$CXXFLAGS $sundials_module_includes -D$sundials_type_name=$sundials_int_type"
     AC_COMPILE_IFELSE([
       AC_LANG_PROGRAM([
 $4
@@ -139,132 +272,10 @@ $4
   done
 
   AS_IF([test "x$sundials_int_type_found" = "xno"], [
-      AC_MSG_FAILURE([*** Cannot compile $1 with either long or int])
+      AC_MSG_FAILURE([*** Cannot compile $module_upper with either long or int])
       ])
   AC_LANG_POP([C++])
-  CXXFLAGS="$save_CXXFLAGS -D$3=$sundials_int_type"
-])
 
-AC_DEFUN([BOUT_CHECK_PRETTYFUNCTION], [
-  AC_LANG_PUSH([C++])
-  AC_MSG_CHECKING([does C++ compiler support __PRETTY_FUNCTION__])
-  AC_COMPILE_IFELSE(
-    [AC_LANG_PROGRAM([[]],
-                 [[const char* name = __PRETTY_FUNCTION__;]])],
-    [AC_MSG_RESULT(yes)
-     CXXFLAGS="$CXXFLAGS -DHAS_PRETTY_FUNCTION"],
-    [AC_MSG_RESULT(no)])
-  AC_LANG_POP([C++])
-])
-
-dnl First argument is $with_module variable
-dnl Second argument is lower case module name
-dnl Third argument is upper case module name
-dnl Fourth argument is test program includes
-dnl Fifth argument is test program main body
-AC_DEFUN([BOUT_FIND_SUNDIALS_MODULE],[
-
-  with_module=AS_TR_SH([with_$2])
-  AC_MSG_NOTICE([Searching for SUNDIALS $3 library])
-  AS_IF([test "$1" = "yes"], [
-    # No path specified. Try using sundials-config
-    AC_PATH_PROG([sundials_config], [sundials-config], [no], [$with_sundials$PATH_SEPARATOR$PATH])
-    AS_IF([test "x$sundials_config" != xno], [
-       AC_MSG_WARN(
-         [Found sundials-config, this means your version of SUNDIALS is < 2.6, and probably won't work])
-       sundials_module_includes=`$sundials_config -m $2 -t p -l c -s cppflags`
-       sundials_module_libs=`$sundials_config -m $2 -t p -l c -s libs`
-    ], [
-       AC_MSG_WARN([No sundials-config available, no path given, will try compiling with $3 anyway])
-       sundials_module_includes=""
-       sundials_module_libs=""
-    ])
-    AC_LANG_PUSH([C++])
-    AC_MSG_CHECKING([if we can compile with SUNDIALS $3])
-    save_LIBS=$LIBS
-    save_CXXFLAGS=$CXXFLAGS
-    LIBS="$save_LIBS $sundials_module_libs"
-    CXXFLAGS="$save_CXXFLAGS $sundials_module_includes"
-    AC_LINK_IFELSE(
-      [AC_LANG_PROGRAM([
-$4
-         ], [$5])],
-      [sundials_config_worked=yes],
-      [sundials_config_worked=no])
-    AC_MSG_RESULT([$sundials_config_worked])
-    AS_IF([test $sundials_config_worked = yes], [
-      AC_MSG_NOTICE([Using SUNDIALS $3 solver])
-    ], [
-      AC_MSG_FAILURE([Could not compile SUNDIALS $3 program, check your SUNDIALS version])
-    ])
-    LIBS=$save_LIBS
-    CXXFLAGS="$save_CXXFLAGS"
-    AC_LANG_POP([C++])
-  ], [
-    # Specified with path
-    AC_MSG_NOTICE([Checking for $3 header files])
-
-    # Check whether user supplied path to $3 install dir...
-    AC_CHECK_FILES([$1/include/$2/$2.h
-                    $1/include/$2/$2_spgmr.h
-                    $1/include/$2/$2_bbdpre.h
-                    $1/include/nvector/nvector_parallel.h
-                    $1/include/sundials/sundials_types.h],
-      [sundials_module_includes_found=yes
-       sundials_module_includes_path=$1/include],
-      [sundials_module_includes_found=no])
-    AS_IF([test $sundials_module_includes_found = no], [
-      # ...or path to $3 lib dir
-      AC_CHECK_FILES([$1/../include/$2/$2.h
-                      $1/../include/$2/$2_spgmr.h
-                      $1/../include/$2/$2_bbdpre.h
-                      $1/../include/nvector/nvector_parallel.h
-                      $1/../include/sundials/sundials_types.h],
-        [sundials_module_includes_found=yes
-         sundials_module_includes_path=$1/../include],
-        [sundials_module_includes_found=no])
-    ])
-    AS_IF([test $sundials_module_includes_found = no], [AC_MSG_FAILURE([Missing one or more $3 headers])])
-    AC_MSG_NOTICE([Found $3 include path: $sundials_module_includes_path])
-
-    sundials_module_includes="-I$sundials_module_includes_path"
-    sundials_module_libs="-lsundials_$2 -lsundials_nvecparallel"
-
-    # Try compiling something simple with a few different common paths
-    save_LIBS=$LIBS
-    save_LDFLAGS=$LDFLAGS
-    save_CPPFLAGS=$CPPFLAGS
-    AC_LANG_PUSH([C++])
-    for sundials_module_lib_path in "$1" "$1/lib" "$1/lib64"
-    do
-      AC_MSG_CHECKING([if SUNDIALS $3 library path is $sundials_module_lib_path])
-      LIBS="$save_LIBS $sundials_module_libs"
-      LDFLAGS="$save_LDFLAGS -L$sundials_module_lib_path"
-      CPPFLAGS="$save_CPPFLAGS $sundials_module_includes"
-      AC_LINK_IFELSE(
-        [AC_LANG_PROGRAM([
-$4
-           ], [$5])],
-        [sundials_module_lib_path_found=yes],
-        [sundials_module_lib_path_found=no])
-      AC_MSG_RESULT([$sundials_module_lib_path_found])
-      AS_IF([test "x$sundials_module_lib_path_found" = "xyes"], [break])
-      LIBS=$save_LIBS
-      LDFLAGS=$save_LDFLAGS
-      CPPFLAGS="$save_CPPFLAGS"
-    done
-    AC_LANG_POP([C++])
-
-    SUNDIALS_MODULE_LDFLAGS="-L$sundials_module_lib_path"
-  ])
-  AS_IF([test $sundials_module_lib_path_found = no], [AC_MSG_FAILURE([Cannot compile $3 program])])
-
-  # Compile in the $3 solver
-  AC_MSG_NOTICE([=> $3 solver enabled])
-  EXTRA_LIBS="$EXTRA_LIBS $SUNDIALS_MODULE_LDFLAGS $sundials_module_libs"
-  EXTRA_INCS="$EXTRA_INCS $sundials_module_includes"
-  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_$3"
-  AS_TR_SH([BOUT_HAS_$3])=yes
-  AS_TR_SH([$3LIBS])="$SUNDIALS_MODULE_LDFLAGS $sundials_module_libs"
-  AS_TR_SH([$3INCS])="$sundials_module_includes"
+  # We can now add that macro definition to the compilation flags
+  CXXFLAGS="$save_CXXFLAGS -D$sundials_type_name=$sundials_int_type"
 ])

@@ -9172,10 +9172,12 @@ if test "x$with_ida" != "x" && test "x$with_ida" != "xno"; then :
 
 
 
-  with_module=with_ida
-  { $as_echo "$as_me:${as_lineno-$LINENO}: Searching for SUNDIALS IDA library" >&5
-$as_echo "$as_me: Searching for SUNDIALS IDA library" >&6;}
-  if test "$with_ida" = "yes"; then :
+    with_module=$with_ida
+  module_upper=IDA
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Searching for SUNDIALS $module_upper library" >&5
+$as_echo "$as_me: Searching for SUNDIALS $module_upper library" >&6;}
+  if test "$with_module" = "yes"; then :
 
     # No path specified. Try using sundials-config
     # Extract the first word of "sundials-config", so it can be a program name with args.
@@ -9228,8 +9230,8 @@ $as_echo "$as_me: WARNING: Found sundials-config, this means your version of SUN
 
 else
 
-       { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: No sundials-config available, no path given, will try compiling with IDA anyway" >&5
-$as_echo "$as_me: WARNING: No sundials-config available, no path given, will try compiling with IDA anyway" >&2;}
+       { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: No sundials-config available, no path given, will try compiling with $module_upper anyway" >&5
+$as_echo "$as_me: WARNING: No sundials-config available, no path given, will try compiling with $module_upper anyway" >&2;}
        sundials_module_includes=""
        sundials_module_libs=""
 
@@ -9240,8 +9242,8 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can compile with SUNDIALS IDA" >&5
-$as_echo_n "checking if we can compile with SUNDIALS IDA... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can compile with SUNDIALS $module_upper" >&5
+$as_echo_n "checking if we can compile with SUNDIALS $module_upper... " >&6; }
     save_LIBS=$LIBS
     save_CXXFLAGS=$CXXFLAGS
     LIBS="$save_LIBS $sundials_module_libs"
@@ -9274,14 +9276,14 @@ rm -f core conftest.err conftest.$ac_objext \
 $as_echo "$sundials_config_worked" >&6; }
     if test $sundials_config_worked = yes; then :
 
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Using SUNDIALS IDA solver" >&5
-$as_echo "$as_me: Using SUNDIALS IDA solver" >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Using SUNDIALS $module_upper solver" >&5
+$as_echo "$as_me: Using SUNDIALS $module_upper solver" >&6;}
 
 else
 
       { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "Could not compile SUNDIALS IDA program, check your SUNDIALS version
+as_fn_error $? "Could not compile SUNDIALS $module_upper program, check your SUNDIALS version
 See \`config.log' for more details" "$LINENO" 5; }
 
 fi
@@ -9297,19 +9299,19 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 else
 
     # Specified with path
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Checking for IDA header files" >&5
-$as_echo "$as_me: Checking for IDA header files" >&6;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Checking for $module_upper header files" >&5
+$as_echo "$as_me: Checking for $module_upper header files" >&6;}
 
-    # Check whether user supplied path to IDA install dir...
-    as_ac_File=`$as_echo "ac_cv_file_$with_ida/include/ida/ida.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/include/ida/ida.h" >&5
-$as_echo_n "checking for $with_ida/include/ida/ida.h... " >&6; }
+    # Check whether user supplied path to $module_upper install dir...
+    as_ac_File=`$as_echo "ac_cv_file_$with_module/include/ida/ida.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_module/include/ida/ida.h" >&5
+$as_echo_n "checking for $with_module/include/ida/ida.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$with_ida/include/ida/ida.h"; then
+if test -r "$with_module/include/ida/ida.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -9321,22 +9323,22 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$with_ida/include/ida/ida.h" | $as_tr_cpp` 1
+#define `$as_echo "HAVE_$with_module/include/ida/ida.h" | $as_tr_cpp` 1
 _ACEOF
 sundials_module_includes_found=yes
-       sundials_module_includes_path=$with_ida/include
+       sundials_module_includes_path=$with_module/include
 else
   sundials_module_includes_found=no
 fi
-as_ac_File=`$as_echo "ac_cv_file_$with_ida/include/ida/ida_spgmr.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/include/ida/ida_spgmr.h" >&5
-$as_echo_n "checking for $with_ida/include/ida/ida_spgmr.h... " >&6; }
+as_ac_File=`$as_echo "ac_cv_file_$with_module/include/ida/ida_spgmr.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_module/include/ida/ida_spgmr.h" >&5
+$as_echo_n "checking for $with_module/include/ida/ida_spgmr.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$with_ida/include/ida/ida_spgmr.h"; then
+if test -r "$with_module/include/ida/ida_spgmr.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -9348,22 +9350,22 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$with_ida/include/ida/ida_spgmr.h" | $as_tr_cpp` 1
+#define `$as_echo "HAVE_$with_module/include/ida/ida_spgmr.h" | $as_tr_cpp` 1
 _ACEOF
 sundials_module_includes_found=yes
-       sundials_module_includes_path=$with_ida/include
+       sundials_module_includes_path=$with_module/include
 else
   sundials_module_includes_found=no
 fi
-as_ac_File=`$as_echo "ac_cv_file_$with_ida/include/ida/ida_bbdpre.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/include/ida/ida_bbdpre.h" >&5
-$as_echo_n "checking for $with_ida/include/ida/ida_bbdpre.h... " >&6; }
+as_ac_File=`$as_echo "ac_cv_file_$with_module/include/ida/ida_bbdpre.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_module/include/ida/ida_bbdpre.h" >&5
+$as_echo_n "checking for $with_module/include/ida/ida_bbdpre.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$with_ida/include/ida/ida_bbdpre.h"; then
+if test -r "$with_module/include/ida/ida_bbdpre.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -9375,22 +9377,22 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$with_ida/include/ida/ida_bbdpre.h" | $as_tr_cpp` 1
+#define `$as_echo "HAVE_$with_module/include/ida/ida_bbdpre.h" | $as_tr_cpp` 1
 _ACEOF
 sundials_module_includes_found=yes
-       sundials_module_includes_path=$with_ida/include
+       sundials_module_includes_path=$with_module/include
 else
   sundials_module_includes_found=no
 fi
-as_ac_File=`$as_echo "ac_cv_file_$with_ida/include/nvector/nvector_parallel.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/include/nvector/nvector_parallel.h" >&5
-$as_echo_n "checking for $with_ida/include/nvector/nvector_parallel.h... " >&6; }
+as_ac_File=`$as_echo "ac_cv_file_$with_module/include/nvector/nvector_parallel.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_module/include/nvector/nvector_parallel.h" >&5
+$as_echo_n "checking for $with_module/include/nvector/nvector_parallel.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$with_ida/include/nvector/nvector_parallel.h"; then
+if test -r "$with_module/include/nvector/nvector_parallel.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -9402,22 +9404,22 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$with_ida/include/nvector/nvector_parallel.h" | $as_tr_cpp` 1
+#define `$as_echo "HAVE_$with_module/include/nvector/nvector_parallel.h" | $as_tr_cpp` 1
 _ACEOF
 sundials_module_includes_found=yes
-       sundials_module_includes_path=$with_ida/include
+       sundials_module_includes_path=$with_module/include
 else
   sundials_module_includes_found=no
 fi
-as_ac_File=`$as_echo "ac_cv_file_$with_ida/include/sundials/sundials_types.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/include/sundials/sundials_types.h" >&5
-$as_echo_n "checking for $with_ida/include/sundials/sundials_types.h... " >&6; }
+as_ac_File=`$as_echo "ac_cv_file_$with_module/include/sundials/sundials_types.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_module/include/sundials/sundials_types.h" >&5
+$as_echo_n "checking for $with_module/include/sundials/sundials_types.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$with_ida/include/sundials/sundials_types.h"; then
+if test -r "$with_module/include/sundials/sundials_types.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -9429,26 +9431,26 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$with_ida/include/sundials/sundials_types.h" | $as_tr_cpp` 1
+#define `$as_echo "HAVE_$with_module/include/sundials/sundials_types.h" | $as_tr_cpp` 1
 _ACEOF
 sundials_module_includes_found=yes
-       sundials_module_includes_path=$with_ida/include
+       sundials_module_includes_path=$with_module/include
 else
   sundials_module_includes_found=no
 fi
 
     if test $sundials_module_includes_found = no; then :
 
-      # ...or path to IDA lib dir
-      as_ac_File=`$as_echo "ac_cv_file_$with_ida/../include/ida/ida.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/../include/ida/ida.h" >&5
-$as_echo_n "checking for $with_ida/../include/ida/ida.h... " >&6; }
+      # ...or path to $module_upper lib dir
+      as_ac_File=`$as_echo "ac_cv_file_$with_module/../include/ida/ida.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_module/../include/ida/ida.h" >&5
+$as_echo_n "checking for $with_module/../include/ida/ida.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$with_ida/../include/ida/ida.h"; then
+if test -r "$with_module/../include/ida/ida.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -9460,22 +9462,22 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$with_ida/../include/ida/ida.h" | $as_tr_cpp` 1
+#define `$as_echo "HAVE_$with_module/../include/ida/ida.h" | $as_tr_cpp` 1
 _ACEOF
 sundials_module_includes_found=yes
-         sundials_module_includes_path=$with_ida/../include
+         sundials_module_includes_path=$with_module/../include
 else
   sundials_module_includes_found=no
 fi
-as_ac_File=`$as_echo "ac_cv_file_$with_ida/../include/ida/ida_spgmr.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/../include/ida/ida_spgmr.h" >&5
-$as_echo_n "checking for $with_ida/../include/ida/ida_spgmr.h... " >&6; }
+as_ac_File=`$as_echo "ac_cv_file_$with_module/../include/ida/ida_spgmr.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_module/../include/ida/ida_spgmr.h" >&5
+$as_echo_n "checking for $with_module/../include/ida/ida_spgmr.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$with_ida/../include/ida/ida_spgmr.h"; then
+if test -r "$with_module/../include/ida/ida_spgmr.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -9487,22 +9489,22 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$with_ida/../include/ida/ida_spgmr.h" | $as_tr_cpp` 1
+#define `$as_echo "HAVE_$with_module/../include/ida/ida_spgmr.h" | $as_tr_cpp` 1
 _ACEOF
 sundials_module_includes_found=yes
-         sundials_module_includes_path=$with_ida/../include
+         sundials_module_includes_path=$with_module/../include
 else
   sundials_module_includes_found=no
 fi
-as_ac_File=`$as_echo "ac_cv_file_$with_ida/../include/ida/ida_bbdpre.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/../include/ida/ida_bbdpre.h" >&5
-$as_echo_n "checking for $with_ida/../include/ida/ida_bbdpre.h... " >&6; }
+as_ac_File=`$as_echo "ac_cv_file_$with_module/../include/ida/ida_bbdpre.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_module/../include/ida/ida_bbdpre.h" >&5
+$as_echo_n "checking for $with_module/../include/ida/ida_bbdpre.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$with_ida/../include/ida/ida_bbdpre.h"; then
+if test -r "$with_module/../include/ida/ida_bbdpre.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -9514,22 +9516,22 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$with_ida/../include/ida/ida_bbdpre.h" | $as_tr_cpp` 1
+#define `$as_echo "HAVE_$with_module/../include/ida/ida_bbdpre.h" | $as_tr_cpp` 1
 _ACEOF
 sundials_module_includes_found=yes
-         sundials_module_includes_path=$with_ida/../include
+         sundials_module_includes_path=$with_module/../include
 else
   sundials_module_includes_found=no
 fi
-as_ac_File=`$as_echo "ac_cv_file_$with_ida/../include/nvector/nvector_parallel.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/../include/nvector/nvector_parallel.h" >&5
-$as_echo_n "checking for $with_ida/../include/nvector/nvector_parallel.h... " >&6; }
+as_ac_File=`$as_echo "ac_cv_file_$with_module/../include/nvector/nvector_parallel.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_module/../include/nvector/nvector_parallel.h" >&5
+$as_echo_n "checking for $with_module/../include/nvector/nvector_parallel.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$with_ida/../include/nvector/nvector_parallel.h"; then
+if test -r "$with_module/../include/nvector/nvector_parallel.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -9541,22 +9543,22 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$with_ida/../include/nvector/nvector_parallel.h" | $as_tr_cpp` 1
+#define `$as_echo "HAVE_$with_module/../include/nvector/nvector_parallel.h" | $as_tr_cpp` 1
 _ACEOF
 sundials_module_includes_found=yes
-         sundials_module_includes_path=$with_ida/../include
+         sundials_module_includes_path=$with_module/../include
 else
   sundials_module_includes_found=no
 fi
-as_ac_File=`$as_echo "ac_cv_file_$with_ida/../include/sundials/sundials_types.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/../include/sundials/sundials_types.h" >&5
-$as_echo_n "checking for $with_ida/../include/sundials/sundials_types.h... " >&6; }
+as_ac_File=`$as_echo "ac_cv_file_$with_module/../include/sundials/sundials_types.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_module/../include/sundials/sundials_types.h" >&5
+$as_echo_n "checking for $with_module/../include/sundials/sundials_types.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$with_ida/../include/sundials/sundials_types.h"; then
+if test -r "$with_module/../include/sundials/sundials_types.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -9568,25 +9570,28 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$with_ida/../include/sundials/sundials_types.h" | $as_tr_cpp` 1
+#define `$as_echo "HAVE_$with_module/../include/sundials/sundials_types.h" | $as_tr_cpp` 1
 _ACEOF
 sundials_module_includes_found=yes
-         sundials_module_includes_path=$with_ida/../include
+         sundials_module_includes_path=$with_module/../include
 else
   sundials_module_includes_found=no
 fi
 
 
 fi
+
     if test $sundials_module_includes_found = no; then :
   { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "Missing one or more IDA headers
+as_fn_error $? "Missing one or more $module_upper headers
 See \`config.log' for more details" "$LINENO" 5; }
 fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Found IDA include path: $sundials_module_includes_path" >&5
-$as_echo "$as_me: Found IDA include path: $sundials_module_includes_path" >&6;}
 
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $module_upper include path: $sundials_module_includes_path" >&5
+$as_echo "$as_me: Found $module_upper include path: $sundials_module_includes_path" >&6;}
+
+    # We've now got the include directory and can specify what libraries we need
     sundials_module_includes="-I$sundials_module_includes_path"
     sundials_module_libs="-lsundials_ida -lsundials_nvecparallel"
 
@@ -9600,10 +9605,10 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-    for sundials_module_lib_path in "$with_ida" "$with_ida/lib" "$with_ida/lib64"
+    for sundials_module_lib_path in "$with_module" "$with_module/lib" "$with_module/lib64"
     do
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if SUNDIALS IDA library path is $sundials_module_lib_path" >&5
-$as_echo_n "checking if SUNDIALS IDA library path is $sundials_module_lib_path... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if SUNDIALS $module_upper library path is $sundials_module_lib_path" >&5
+$as_echo_n "checking if SUNDIALS $module_upper library path is $sundials_module_lib_path... " >&6; }
       LIBS="$save_LIBS $sundials_module_libs"
       LDFLAGS="$save_LDFLAGS -L$sundials_module_lib_path"
       CPPFLAGS="$save_CPPFLAGS $sundials_module_includes"
@@ -9650,31 +9655,31 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
     SUNDIALS_MODULE_LDFLAGS="-L$sundials_module_lib_path"
 
 fi
+
   if test $sundials_module_lib_path_found = no; then :
   { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "Cannot compile IDA program
+as_fn_error $? "Cannot compile $module_upper program
 See \`config.log' for more details" "$LINENO" 5; }
 fi
 
-  # Compile in the IDA solver
-  { $as_echo "$as_me:${as_lineno-$LINENO}: => IDA solver enabled" >&5
-$as_echo "$as_me: => IDA solver enabled" >&6;}
+  # Compile in the $module_upper solver
+  { $as_echo "$as_me:${as_lineno-$LINENO}: => $module_upper solver enabled" >&5
+$as_echo "$as_me: => $module_upper solver enabled" >&6;}
   EXTRA_LIBS="$EXTRA_LIBS $SUNDIALS_MODULE_LDFLAGS $sundials_module_libs"
   EXTRA_INCS="$EXTRA_INCS $sundials_module_includes"
-  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_IDA"
-  BOUT_HAS_IDA=yes
-  IDALIBS="$SUNDIALS_MODULE_LDFLAGS $sundials_module_libs"
-  IDAINCS="$sundials_module_includes"
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_$module_upper"
 
+          eval "`$as_echo "BOUT_HAS_$module_upper" | $as_tr_sh`=yes"
+  eval "`$as_echo "${module_upper}LIBS" | $as_tr_sh`=\"\$SUNDIALS_MODULE_LDFLAGS \$sundials_module_libs\""
+  eval "`$as_echo "${module_upper}INCS" | $as_tr_sh`=\"\$sundials_module_includes\""
 
-  if test "x$IDALIBS" != "x"; then :
-
-
-  # Try to compile a simple program to check whether IDA uses int or long
+  # Now we have successfully found the library, we need to determine
+  # whether $module_upper uses int or long. Try to compile a simple
+  # program to check
   save_CXXFLAGS=$CXXFLAGS
-  { $as_echo "$as_me:${as_lineno-$LINENO}: \"checking IDA types...\"" >&5
-$as_echo "$as_me: \"checking IDA types...\"" >&6;}
+  { $as_echo "$as_me:${as_lineno-$LINENO}: \"checking $module_upper types...\"" >&5
+$as_echo "$as_me: \"checking $module_upper types...\"" >&6;}
   ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -9685,14 +9690,15 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
   for sundials_int_type in int long; do
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking $sundials_int_type" >&5
 $as_echo_n "checking $sundials_int_type... " >&6; }
-    CXXFLAGS="$CXXFLAGS $IDAINCS -DIDAINT=$sundials_int_type"
+    eval sundials_type_name=`$as_echo "${module_upper}INT" | $as_tr_sh`
+    CXXFLAGS="$CXXFLAGS $sundials_module_includes -D$sundials_type_name=$sundials_int_type"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 
 
-      #include <ida/ida_bbdpre.h>
-      extern int ida_bbd_rhs(IDAINT, double, N_Vector, N_Vector, N_Vector, void *);
+    #include <ida/ida_bbdpre.h>
+    extern int ida_bbd_rhs(IDAINT, double, N_Vector, N_Vector, N_Vector, void *);
 
 
 int
@@ -9721,7 +9727,7 @@ $as_echo "$sundials_int_type_found" >&6; }
 
       { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "*** Cannot compile IDA with either long or int
+as_fn_error $? "*** Cannot compile $module_upper with either long or int
 See \`config.log' for more details" "$LINENO" 5; }
 
 fi
@@ -9731,10 +9737,10 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-  CXXFLAGS="$save_CXXFLAGS -DIDAINT=$sundials_int_type"
 
+  # We can now add that macro definition to the compilation flags
+  CXXFLAGS="$save_CXXFLAGS -D$sundials_type_name=$sundials_int_type"
 
-fi
 
 fi
 
@@ -9742,10 +9748,12 @@ if test "x$with_cvode" != "x" && test "x$with_cvode" != "xno"; then :
 
 
 
-  with_module=with_cvode
-  { $as_echo "$as_me:${as_lineno-$LINENO}: Searching for SUNDIALS CVODE library" >&5
-$as_echo "$as_me: Searching for SUNDIALS CVODE library" >&6;}
-  if test "$with_cvode" = "yes"; then :
+    with_module=$with_cvode
+  module_upper=CVODE
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Searching for SUNDIALS $module_upper library" >&5
+$as_echo "$as_me: Searching for SUNDIALS $module_upper library" >&6;}
+  if test "$with_module" = "yes"; then :
 
     # No path specified. Try using sundials-config
     # Extract the first word of "sundials-config", so it can be a program name with args.
@@ -9798,8 +9806,8 @@ $as_echo "$as_me: WARNING: Found sundials-config, this means your version of SUN
 
 else
 
-       { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: No sundials-config available, no path given, will try compiling with CVODE anyway" >&5
-$as_echo "$as_me: WARNING: No sundials-config available, no path given, will try compiling with CVODE anyway" >&2;}
+       { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: No sundials-config available, no path given, will try compiling with $module_upper anyway" >&5
+$as_echo "$as_me: WARNING: No sundials-config available, no path given, will try compiling with $module_upper anyway" >&2;}
        sundials_module_includes=""
        sundials_module_libs=""
 
@@ -9810,8 +9818,8 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can compile with SUNDIALS CVODE" >&5
-$as_echo_n "checking if we can compile with SUNDIALS CVODE... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can compile with SUNDIALS $module_upper" >&5
+$as_echo_n "checking if we can compile with SUNDIALS $module_upper... " >&6; }
     save_LIBS=$LIBS
     save_CXXFLAGS=$CXXFLAGS
     LIBS="$save_LIBS $sundials_module_libs"
@@ -9844,14 +9852,14 @@ rm -f core conftest.err conftest.$ac_objext \
 $as_echo "$sundials_config_worked" >&6; }
     if test $sundials_config_worked = yes; then :
 
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Using SUNDIALS CVODE solver" >&5
-$as_echo "$as_me: Using SUNDIALS CVODE solver" >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Using SUNDIALS $module_upper solver" >&5
+$as_echo "$as_me: Using SUNDIALS $module_upper solver" >&6;}
 
 else
 
       { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "Could not compile SUNDIALS CVODE program, check your SUNDIALS version
+as_fn_error $? "Could not compile SUNDIALS $module_upper program, check your SUNDIALS version
 See \`config.log' for more details" "$LINENO" 5; }
 
 fi
@@ -9867,19 +9875,19 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 else
 
     # Specified with path
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Checking for CVODE header files" >&5
-$as_echo "$as_me: Checking for CVODE header files" >&6;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Checking for $module_upper header files" >&5
+$as_echo "$as_me: Checking for $module_upper header files" >&6;}
 
-    # Check whether user supplied path to CVODE install dir...
-    as_ac_File=`$as_echo "ac_cv_file_$with_cvode/include/cvode/cvode.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_cvode/include/cvode/cvode.h" >&5
-$as_echo_n "checking for $with_cvode/include/cvode/cvode.h... " >&6; }
+    # Check whether user supplied path to $module_upper install dir...
+    as_ac_File=`$as_echo "ac_cv_file_$with_module/include/cvode/cvode.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_module/include/cvode/cvode.h" >&5
+$as_echo_n "checking for $with_module/include/cvode/cvode.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$with_cvode/include/cvode/cvode.h"; then
+if test -r "$with_module/include/cvode/cvode.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -9891,22 +9899,22 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$with_cvode/include/cvode/cvode.h" | $as_tr_cpp` 1
+#define `$as_echo "HAVE_$with_module/include/cvode/cvode.h" | $as_tr_cpp` 1
 _ACEOF
 sundials_module_includes_found=yes
-       sundials_module_includes_path=$with_cvode/include
+       sundials_module_includes_path=$with_module/include
 else
   sundials_module_includes_found=no
 fi
-as_ac_File=`$as_echo "ac_cv_file_$with_cvode/include/cvode/cvode_spgmr.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_cvode/include/cvode/cvode_spgmr.h" >&5
-$as_echo_n "checking for $with_cvode/include/cvode/cvode_spgmr.h... " >&6; }
+as_ac_File=`$as_echo "ac_cv_file_$with_module/include/cvode/cvode_spgmr.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_module/include/cvode/cvode_spgmr.h" >&5
+$as_echo_n "checking for $with_module/include/cvode/cvode_spgmr.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$with_cvode/include/cvode/cvode_spgmr.h"; then
+if test -r "$with_module/include/cvode/cvode_spgmr.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -9918,22 +9926,22 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$with_cvode/include/cvode/cvode_spgmr.h" | $as_tr_cpp` 1
+#define `$as_echo "HAVE_$with_module/include/cvode/cvode_spgmr.h" | $as_tr_cpp` 1
 _ACEOF
 sundials_module_includes_found=yes
-       sundials_module_includes_path=$with_cvode/include
+       sundials_module_includes_path=$with_module/include
 else
   sundials_module_includes_found=no
 fi
-as_ac_File=`$as_echo "ac_cv_file_$with_cvode/include/cvode/cvode_bbdpre.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_cvode/include/cvode/cvode_bbdpre.h" >&5
-$as_echo_n "checking for $with_cvode/include/cvode/cvode_bbdpre.h... " >&6; }
+as_ac_File=`$as_echo "ac_cv_file_$with_module/include/cvode/cvode_bbdpre.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_module/include/cvode/cvode_bbdpre.h" >&5
+$as_echo_n "checking for $with_module/include/cvode/cvode_bbdpre.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$with_cvode/include/cvode/cvode_bbdpre.h"; then
+if test -r "$with_module/include/cvode/cvode_bbdpre.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -9945,22 +9953,22 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$with_cvode/include/cvode/cvode_bbdpre.h" | $as_tr_cpp` 1
+#define `$as_echo "HAVE_$with_module/include/cvode/cvode_bbdpre.h" | $as_tr_cpp` 1
 _ACEOF
 sundials_module_includes_found=yes
-       sundials_module_includes_path=$with_cvode/include
+       sundials_module_includes_path=$with_module/include
 else
   sundials_module_includes_found=no
 fi
-as_ac_File=`$as_echo "ac_cv_file_$with_cvode/include/nvector/nvector_parallel.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_cvode/include/nvector/nvector_parallel.h" >&5
-$as_echo_n "checking for $with_cvode/include/nvector/nvector_parallel.h... " >&6; }
+as_ac_File=`$as_echo "ac_cv_file_$with_module/include/nvector/nvector_parallel.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_module/include/nvector/nvector_parallel.h" >&5
+$as_echo_n "checking for $with_module/include/nvector/nvector_parallel.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$with_cvode/include/nvector/nvector_parallel.h"; then
+if test -r "$with_module/include/nvector/nvector_parallel.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -9972,22 +9980,22 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$with_cvode/include/nvector/nvector_parallel.h" | $as_tr_cpp` 1
+#define `$as_echo "HAVE_$with_module/include/nvector/nvector_parallel.h" | $as_tr_cpp` 1
 _ACEOF
 sundials_module_includes_found=yes
-       sundials_module_includes_path=$with_cvode/include
+       sundials_module_includes_path=$with_module/include
 else
   sundials_module_includes_found=no
 fi
-as_ac_File=`$as_echo "ac_cv_file_$with_cvode/include/sundials/sundials_types.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_cvode/include/sundials/sundials_types.h" >&5
-$as_echo_n "checking for $with_cvode/include/sundials/sundials_types.h... " >&6; }
+as_ac_File=`$as_echo "ac_cv_file_$with_module/include/sundials/sundials_types.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_module/include/sundials/sundials_types.h" >&5
+$as_echo_n "checking for $with_module/include/sundials/sundials_types.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$with_cvode/include/sundials/sundials_types.h"; then
+if test -r "$with_module/include/sundials/sundials_types.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -9999,26 +10007,26 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$with_cvode/include/sundials/sundials_types.h" | $as_tr_cpp` 1
+#define `$as_echo "HAVE_$with_module/include/sundials/sundials_types.h" | $as_tr_cpp` 1
 _ACEOF
 sundials_module_includes_found=yes
-       sundials_module_includes_path=$with_cvode/include
+       sundials_module_includes_path=$with_module/include
 else
   sundials_module_includes_found=no
 fi
 
     if test $sundials_module_includes_found = no; then :
 
-      # ...or path to CVODE lib dir
-      as_ac_File=`$as_echo "ac_cv_file_$with_cvode/../include/cvode/cvode.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_cvode/../include/cvode/cvode.h" >&5
-$as_echo_n "checking for $with_cvode/../include/cvode/cvode.h... " >&6; }
+      # ...or path to $module_upper lib dir
+      as_ac_File=`$as_echo "ac_cv_file_$with_module/../include/cvode/cvode.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_module/../include/cvode/cvode.h" >&5
+$as_echo_n "checking for $with_module/../include/cvode/cvode.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$with_cvode/../include/cvode/cvode.h"; then
+if test -r "$with_module/../include/cvode/cvode.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -10030,22 +10038,22 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$with_cvode/../include/cvode/cvode.h" | $as_tr_cpp` 1
+#define `$as_echo "HAVE_$with_module/../include/cvode/cvode.h" | $as_tr_cpp` 1
 _ACEOF
 sundials_module_includes_found=yes
-         sundials_module_includes_path=$with_cvode/../include
+         sundials_module_includes_path=$with_module/../include
 else
   sundials_module_includes_found=no
 fi
-as_ac_File=`$as_echo "ac_cv_file_$with_cvode/../include/cvode/cvode_spgmr.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_cvode/../include/cvode/cvode_spgmr.h" >&5
-$as_echo_n "checking for $with_cvode/../include/cvode/cvode_spgmr.h... " >&6; }
+as_ac_File=`$as_echo "ac_cv_file_$with_module/../include/cvode/cvode_spgmr.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_module/../include/cvode/cvode_spgmr.h" >&5
+$as_echo_n "checking for $with_module/../include/cvode/cvode_spgmr.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$with_cvode/../include/cvode/cvode_spgmr.h"; then
+if test -r "$with_module/../include/cvode/cvode_spgmr.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -10057,22 +10065,22 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$with_cvode/../include/cvode/cvode_spgmr.h" | $as_tr_cpp` 1
+#define `$as_echo "HAVE_$with_module/../include/cvode/cvode_spgmr.h" | $as_tr_cpp` 1
 _ACEOF
 sundials_module_includes_found=yes
-         sundials_module_includes_path=$with_cvode/../include
+         sundials_module_includes_path=$with_module/../include
 else
   sundials_module_includes_found=no
 fi
-as_ac_File=`$as_echo "ac_cv_file_$with_cvode/../include/cvode/cvode_bbdpre.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_cvode/../include/cvode/cvode_bbdpre.h" >&5
-$as_echo_n "checking for $with_cvode/../include/cvode/cvode_bbdpre.h... " >&6; }
+as_ac_File=`$as_echo "ac_cv_file_$with_module/../include/cvode/cvode_bbdpre.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_module/../include/cvode/cvode_bbdpre.h" >&5
+$as_echo_n "checking for $with_module/../include/cvode/cvode_bbdpre.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$with_cvode/../include/cvode/cvode_bbdpre.h"; then
+if test -r "$with_module/../include/cvode/cvode_bbdpre.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -10084,22 +10092,22 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$with_cvode/../include/cvode/cvode_bbdpre.h" | $as_tr_cpp` 1
+#define `$as_echo "HAVE_$with_module/../include/cvode/cvode_bbdpre.h" | $as_tr_cpp` 1
 _ACEOF
 sundials_module_includes_found=yes
-         sundials_module_includes_path=$with_cvode/../include
+         sundials_module_includes_path=$with_module/../include
 else
   sundials_module_includes_found=no
 fi
-as_ac_File=`$as_echo "ac_cv_file_$with_cvode/../include/nvector/nvector_parallel.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_cvode/../include/nvector/nvector_parallel.h" >&5
-$as_echo_n "checking for $with_cvode/../include/nvector/nvector_parallel.h... " >&6; }
+as_ac_File=`$as_echo "ac_cv_file_$with_module/../include/nvector/nvector_parallel.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_module/../include/nvector/nvector_parallel.h" >&5
+$as_echo_n "checking for $with_module/../include/nvector/nvector_parallel.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$with_cvode/../include/nvector/nvector_parallel.h"; then
+if test -r "$with_module/../include/nvector/nvector_parallel.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -10111,22 +10119,22 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$with_cvode/../include/nvector/nvector_parallel.h" | $as_tr_cpp` 1
+#define `$as_echo "HAVE_$with_module/../include/nvector/nvector_parallel.h" | $as_tr_cpp` 1
 _ACEOF
 sundials_module_includes_found=yes
-         sundials_module_includes_path=$with_cvode/../include
+         sundials_module_includes_path=$with_module/../include
 else
   sundials_module_includes_found=no
 fi
-as_ac_File=`$as_echo "ac_cv_file_$with_cvode/../include/sundials/sundials_types.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_cvode/../include/sundials/sundials_types.h" >&5
-$as_echo_n "checking for $with_cvode/../include/sundials/sundials_types.h... " >&6; }
+as_ac_File=`$as_echo "ac_cv_file_$with_module/../include/sundials/sundials_types.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_module/../include/sundials/sundials_types.h" >&5
+$as_echo_n "checking for $with_module/../include/sundials/sundials_types.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$with_cvode/../include/sundials/sundials_types.h"; then
+if test -r "$with_module/../include/sundials/sundials_types.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -10138,25 +10146,28 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$with_cvode/../include/sundials/sundials_types.h" | $as_tr_cpp` 1
+#define `$as_echo "HAVE_$with_module/../include/sundials/sundials_types.h" | $as_tr_cpp` 1
 _ACEOF
 sundials_module_includes_found=yes
-         sundials_module_includes_path=$with_cvode/../include
+         sundials_module_includes_path=$with_module/../include
 else
   sundials_module_includes_found=no
 fi
 
 
 fi
+
     if test $sundials_module_includes_found = no; then :
   { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "Missing one or more CVODE headers
+as_fn_error $? "Missing one or more $module_upper headers
 See \`config.log' for more details" "$LINENO" 5; }
 fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Found CVODE include path: $sundials_module_includes_path" >&5
-$as_echo "$as_me: Found CVODE include path: $sundials_module_includes_path" >&6;}
 
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $module_upper include path: $sundials_module_includes_path" >&5
+$as_echo "$as_me: Found $module_upper include path: $sundials_module_includes_path" >&6;}
+
+    # We've now got the include directory and can specify what libraries we need
     sundials_module_includes="-I$sundials_module_includes_path"
     sundials_module_libs="-lsundials_cvode -lsundials_nvecparallel"
 
@@ -10170,10 +10181,10 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-    for sundials_module_lib_path in "$with_cvode" "$with_cvode/lib" "$with_cvode/lib64"
+    for sundials_module_lib_path in "$with_module" "$with_module/lib" "$with_module/lib64"
     do
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if SUNDIALS CVODE library path is $sundials_module_lib_path" >&5
-$as_echo_n "checking if SUNDIALS CVODE library path is $sundials_module_lib_path... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if SUNDIALS $module_upper library path is $sundials_module_lib_path" >&5
+$as_echo_n "checking if SUNDIALS $module_upper library path is $sundials_module_lib_path... " >&6; }
       LIBS="$save_LIBS $sundials_module_libs"
       LDFLAGS="$save_LDFLAGS -L$sundials_module_lib_path"
       CPPFLAGS="$save_CPPFLAGS $sundials_module_includes"
@@ -10220,31 +10231,31 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
     SUNDIALS_MODULE_LDFLAGS="-L$sundials_module_lib_path"
 
 fi
+
   if test $sundials_module_lib_path_found = no; then :
   { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "Cannot compile CVODE program
+as_fn_error $? "Cannot compile $module_upper program
 See \`config.log' for more details" "$LINENO" 5; }
 fi
 
-  # Compile in the CVODE solver
-  { $as_echo "$as_me:${as_lineno-$LINENO}: => CVODE solver enabled" >&5
-$as_echo "$as_me: => CVODE solver enabled" >&6;}
+  # Compile in the $module_upper solver
+  { $as_echo "$as_me:${as_lineno-$LINENO}: => $module_upper solver enabled" >&5
+$as_echo "$as_me: => $module_upper solver enabled" >&6;}
   EXTRA_LIBS="$EXTRA_LIBS $SUNDIALS_MODULE_LDFLAGS $sundials_module_libs"
   EXTRA_INCS="$EXTRA_INCS $sundials_module_includes"
-  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_CVODE"
-  BOUT_HAS_CVODE=yes
-  CVODELIBS="$SUNDIALS_MODULE_LDFLAGS $sundials_module_libs"
-  CVODEINCS="$sundials_module_includes"
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_$module_upper"
 
+          eval "`$as_echo "BOUT_HAS_$module_upper" | $as_tr_sh`=yes"
+  eval "`$as_echo "${module_upper}LIBS" | $as_tr_sh`=\"\$SUNDIALS_MODULE_LDFLAGS \$sundials_module_libs\""
+  eval "`$as_echo "${module_upper}INCS" | $as_tr_sh`=\"\$sundials_module_includes\""
 
-  if test "x$CVODELIBS" != "x"; then :
-
-
-  # Try to compile a simple program to check whether CVODE uses int or long
+  # Now we have successfully found the library, we need to determine
+  # whether $module_upper uses int or long. Try to compile a simple
+  # program to check
   save_CXXFLAGS=$CXXFLAGS
-  { $as_echo "$as_me:${as_lineno-$LINENO}: \"checking CVODE types...\"" >&5
-$as_echo "$as_me: \"checking CVODE types...\"" >&6;}
+  { $as_echo "$as_me:${as_lineno-$LINENO}: \"checking $module_upper types...\"" >&5
+$as_echo "$as_me: \"checking $module_upper types...\"" >&6;}
   ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -10255,14 +10266,15 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
   for sundials_int_type in int long; do
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking $sundials_int_type" >&5
 $as_echo_n "checking $sundials_int_type... " >&6; }
-    CXXFLAGS="$CXXFLAGS $CVODEINCS -DCVODEINT=$sundials_int_type"
+    eval sundials_type_name=`$as_echo "${module_upper}INT" | $as_tr_sh`
+    CXXFLAGS="$CXXFLAGS $sundials_module_includes -D$sundials_type_name=$sundials_int_type"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 
 
-      #include <cvode/cvode_bbdpre.h>
-      extern int cvode_bbd_rhs(CVODEINT, double, N_Vector, N_Vector, void *);
+    #include <cvode/cvode_bbdpre.h>
+    extern int cvode_bbd_rhs(CVODEINT, double, N_Vector, N_Vector, void *);
 
 
 int
@@ -10291,7 +10303,7 @@ $as_echo "$sundials_int_type_found" >&6; }
 
       { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "*** Cannot compile CVODE with either long or int
+as_fn_error $? "*** Cannot compile $module_upper with either long or int
 See \`config.log' for more details" "$LINENO" 5; }
 
 fi
@@ -10301,10 +10313,10 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-  CXXFLAGS="$save_CXXFLAGS -DCVODEINT=$sundials_int_type"
 
+  # We can now add that macro definition to the compilation flags
+  CXXFLAGS="$save_CXXFLAGS -D$sundials_type_name=$sundials_int_type"
 
-fi
 
 fi
 
@@ -10312,10 +10324,12 @@ if test "x$with_arkode" != "x" && test "x$with_arkode" != "xno"; then :
 
 
 
-  with_module=with_arkode
-  { $as_echo "$as_me:${as_lineno-$LINENO}: Searching for SUNDIALS ARKODE library" >&5
-$as_echo "$as_me: Searching for SUNDIALS ARKODE library" >&6;}
-  if test "$with_arkode" = "yes"; then :
+    with_module=$with_arkode
+  module_upper=ARKODE
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Searching for SUNDIALS $module_upper library" >&5
+$as_echo "$as_me: Searching for SUNDIALS $module_upper library" >&6;}
+  if test "$with_module" = "yes"; then :
 
     # No path specified. Try using sundials-config
     # Extract the first word of "sundials-config", so it can be a program name with args.
@@ -10368,8 +10382,8 @@ $as_echo "$as_me: WARNING: Found sundials-config, this means your version of SUN
 
 else
 
-       { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: No sundials-config available, no path given, will try compiling with ARKODE anyway" >&5
-$as_echo "$as_me: WARNING: No sundials-config available, no path given, will try compiling with ARKODE anyway" >&2;}
+       { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: No sundials-config available, no path given, will try compiling with $module_upper anyway" >&5
+$as_echo "$as_me: WARNING: No sundials-config available, no path given, will try compiling with $module_upper anyway" >&2;}
        sundials_module_includes=""
        sundials_module_libs=""
 
@@ -10380,8 +10394,8 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can compile with SUNDIALS ARKODE" >&5
-$as_echo_n "checking if we can compile with SUNDIALS ARKODE... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can compile with SUNDIALS $module_upper" >&5
+$as_echo_n "checking if we can compile with SUNDIALS $module_upper... " >&6; }
     save_LIBS=$LIBS
     save_CXXFLAGS=$CXXFLAGS
     LIBS="$save_LIBS $sundials_module_libs"
@@ -10414,14 +10428,14 @@ rm -f core conftest.err conftest.$ac_objext \
 $as_echo "$sundials_config_worked" >&6; }
     if test $sundials_config_worked = yes; then :
 
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Using SUNDIALS ARKODE solver" >&5
-$as_echo "$as_me: Using SUNDIALS ARKODE solver" >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Using SUNDIALS $module_upper solver" >&5
+$as_echo "$as_me: Using SUNDIALS $module_upper solver" >&6;}
 
 else
 
       { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "Could not compile SUNDIALS ARKODE program, check your SUNDIALS version
+as_fn_error $? "Could not compile SUNDIALS $module_upper program, check your SUNDIALS version
 See \`config.log' for more details" "$LINENO" 5; }
 
 fi
@@ -10437,19 +10451,19 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 else
 
     # Specified with path
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Checking for ARKODE header files" >&5
-$as_echo "$as_me: Checking for ARKODE header files" >&6;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Checking for $module_upper header files" >&5
+$as_echo "$as_me: Checking for $module_upper header files" >&6;}
 
-    # Check whether user supplied path to ARKODE install dir...
-    as_ac_File=`$as_echo "ac_cv_file_$with_arkode/include/arkode/arkode.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_arkode/include/arkode/arkode.h" >&5
-$as_echo_n "checking for $with_arkode/include/arkode/arkode.h... " >&6; }
+    # Check whether user supplied path to $module_upper install dir...
+    as_ac_File=`$as_echo "ac_cv_file_$with_module/include/arkode/arkode.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_module/include/arkode/arkode.h" >&5
+$as_echo_n "checking for $with_module/include/arkode/arkode.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$with_arkode/include/arkode/arkode.h"; then
+if test -r "$with_module/include/arkode/arkode.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -10461,22 +10475,22 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$with_arkode/include/arkode/arkode.h" | $as_tr_cpp` 1
+#define `$as_echo "HAVE_$with_module/include/arkode/arkode.h" | $as_tr_cpp` 1
 _ACEOF
 sundials_module_includes_found=yes
-       sundials_module_includes_path=$with_arkode/include
+       sundials_module_includes_path=$with_module/include
 else
   sundials_module_includes_found=no
 fi
-as_ac_File=`$as_echo "ac_cv_file_$with_arkode/include/arkode/arkode_spgmr.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_arkode/include/arkode/arkode_spgmr.h" >&5
-$as_echo_n "checking for $with_arkode/include/arkode/arkode_spgmr.h... " >&6; }
+as_ac_File=`$as_echo "ac_cv_file_$with_module/include/arkode/arkode_spgmr.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_module/include/arkode/arkode_spgmr.h" >&5
+$as_echo_n "checking for $with_module/include/arkode/arkode_spgmr.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$with_arkode/include/arkode/arkode_spgmr.h"; then
+if test -r "$with_module/include/arkode/arkode_spgmr.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -10488,22 +10502,22 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$with_arkode/include/arkode/arkode_spgmr.h" | $as_tr_cpp` 1
+#define `$as_echo "HAVE_$with_module/include/arkode/arkode_spgmr.h" | $as_tr_cpp` 1
 _ACEOF
 sundials_module_includes_found=yes
-       sundials_module_includes_path=$with_arkode/include
+       sundials_module_includes_path=$with_module/include
 else
   sundials_module_includes_found=no
 fi
-as_ac_File=`$as_echo "ac_cv_file_$with_arkode/include/arkode/arkode_bbdpre.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_arkode/include/arkode/arkode_bbdpre.h" >&5
-$as_echo_n "checking for $with_arkode/include/arkode/arkode_bbdpre.h... " >&6; }
+as_ac_File=`$as_echo "ac_cv_file_$with_module/include/arkode/arkode_bbdpre.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_module/include/arkode/arkode_bbdpre.h" >&5
+$as_echo_n "checking for $with_module/include/arkode/arkode_bbdpre.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$with_arkode/include/arkode/arkode_bbdpre.h"; then
+if test -r "$with_module/include/arkode/arkode_bbdpre.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -10515,22 +10529,22 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$with_arkode/include/arkode/arkode_bbdpre.h" | $as_tr_cpp` 1
+#define `$as_echo "HAVE_$with_module/include/arkode/arkode_bbdpre.h" | $as_tr_cpp` 1
 _ACEOF
 sundials_module_includes_found=yes
-       sundials_module_includes_path=$with_arkode/include
+       sundials_module_includes_path=$with_module/include
 else
   sundials_module_includes_found=no
 fi
-as_ac_File=`$as_echo "ac_cv_file_$with_arkode/include/nvector/nvector_parallel.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_arkode/include/nvector/nvector_parallel.h" >&5
-$as_echo_n "checking for $with_arkode/include/nvector/nvector_parallel.h... " >&6; }
+as_ac_File=`$as_echo "ac_cv_file_$with_module/include/nvector/nvector_parallel.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_module/include/nvector/nvector_parallel.h" >&5
+$as_echo_n "checking for $with_module/include/nvector/nvector_parallel.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$with_arkode/include/nvector/nvector_parallel.h"; then
+if test -r "$with_module/include/nvector/nvector_parallel.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -10542,22 +10556,22 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$with_arkode/include/nvector/nvector_parallel.h" | $as_tr_cpp` 1
+#define `$as_echo "HAVE_$with_module/include/nvector/nvector_parallel.h" | $as_tr_cpp` 1
 _ACEOF
 sundials_module_includes_found=yes
-       sundials_module_includes_path=$with_arkode/include
+       sundials_module_includes_path=$with_module/include
 else
   sundials_module_includes_found=no
 fi
-as_ac_File=`$as_echo "ac_cv_file_$with_arkode/include/sundials/sundials_types.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_arkode/include/sundials/sundials_types.h" >&5
-$as_echo_n "checking for $with_arkode/include/sundials/sundials_types.h... " >&6; }
+as_ac_File=`$as_echo "ac_cv_file_$with_module/include/sundials/sundials_types.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_module/include/sundials/sundials_types.h" >&5
+$as_echo_n "checking for $with_module/include/sundials/sundials_types.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$with_arkode/include/sundials/sundials_types.h"; then
+if test -r "$with_module/include/sundials/sundials_types.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -10569,26 +10583,26 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$with_arkode/include/sundials/sundials_types.h" | $as_tr_cpp` 1
+#define `$as_echo "HAVE_$with_module/include/sundials/sundials_types.h" | $as_tr_cpp` 1
 _ACEOF
 sundials_module_includes_found=yes
-       sundials_module_includes_path=$with_arkode/include
+       sundials_module_includes_path=$with_module/include
 else
   sundials_module_includes_found=no
 fi
 
     if test $sundials_module_includes_found = no; then :
 
-      # ...or path to ARKODE lib dir
-      as_ac_File=`$as_echo "ac_cv_file_$with_arkode/../include/arkode/arkode.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_arkode/../include/arkode/arkode.h" >&5
-$as_echo_n "checking for $with_arkode/../include/arkode/arkode.h... " >&6; }
+      # ...or path to $module_upper lib dir
+      as_ac_File=`$as_echo "ac_cv_file_$with_module/../include/arkode/arkode.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_module/../include/arkode/arkode.h" >&5
+$as_echo_n "checking for $with_module/../include/arkode/arkode.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$with_arkode/../include/arkode/arkode.h"; then
+if test -r "$with_module/../include/arkode/arkode.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -10600,22 +10614,22 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$with_arkode/../include/arkode/arkode.h" | $as_tr_cpp` 1
+#define `$as_echo "HAVE_$with_module/../include/arkode/arkode.h" | $as_tr_cpp` 1
 _ACEOF
 sundials_module_includes_found=yes
-         sundials_module_includes_path=$with_arkode/../include
+         sundials_module_includes_path=$with_module/../include
 else
   sundials_module_includes_found=no
 fi
-as_ac_File=`$as_echo "ac_cv_file_$with_arkode/../include/arkode/arkode_spgmr.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_arkode/../include/arkode/arkode_spgmr.h" >&5
-$as_echo_n "checking for $with_arkode/../include/arkode/arkode_spgmr.h... " >&6; }
+as_ac_File=`$as_echo "ac_cv_file_$with_module/../include/arkode/arkode_spgmr.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_module/../include/arkode/arkode_spgmr.h" >&5
+$as_echo_n "checking for $with_module/../include/arkode/arkode_spgmr.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$with_arkode/../include/arkode/arkode_spgmr.h"; then
+if test -r "$with_module/../include/arkode/arkode_spgmr.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -10627,22 +10641,22 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$with_arkode/../include/arkode/arkode_spgmr.h" | $as_tr_cpp` 1
+#define `$as_echo "HAVE_$with_module/../include/arkode/arkode_spgmr.h" | $as_tr_cpp` 1
 _ACEOF
 sundials_module_includes_found=yes
-         sundials_module_includes_path=$with_arkode/../include
+         sundials_module_includes_path=$with_module/../include
 else
   sundials_module_includes_found=no
 fi
-as_ac_File=`$as_echo "ac_cv_file_$with_arkode/../include/arkode/arkode_bbdpre.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_arkode/../include/arkode/arkode_bbdpre.h" >&5
-$as_echo_n "checking for $with_arkode/../include/arkode/arkode_bbdpre.h... " >&6; }
+as_ac_File=`$as_echo "ac_cv_file_$with_module/../include/arkode/arkode_bbdpre.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_module/../include/arkode/arkode_bbdpre.h" >&5
+$as_echo_n "checking for $with_module/../include/arkode/arkode_bbdpre.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$with_arkode/../include/arkode/arkode_bbdpre.h"; then
+if test -r "$with_module/../include/arkode/arkode_bbdpre.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -10654,22 +10668,22 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$with_arkode/../include/arkode/arkode_bbdpre.h" | $as_tr_cpp` 1
+#define `$as_echo "HAVE_$with_module/../include/arkode/arkode_bbdpre.h" | $as_tr_cpp` 1
 _ACEOF
 sundials_module_includes_found=yes
-         sundials_module_includes_path=$with_arkode/../include
+         sundials_module_includes_path=$with_module/../include
 else
   sundials_module_includes_found=no
 fi
-as_ac_File=`$as_echo "ac_cv_file_$with_arkode/../include/nvector/nvector_parallel.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_arkode/../include/nvector/nvector_parallel.h" >&5
-$as_echo_n "checking for $with_arkode/../include/nvector/nvector_parallel.h... " >&6; }
+as_ac_File=`$as_echo "ac_cv_file_$with_module/../include/nvector/nvector_parallel.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_module/../include/nvector/nvector_parallel.h" >&5
+$as_echo_n "checking for $with_module/../include/nvector/nvector_parallel.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$with_arkode/../include/nvector/nvector_parallel.h"; then
+if test -r "$with_module/../include/nvector/nvector_parallel.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -10681,22 +10695,22 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$with_arkode/../include/nvector/nvector_parallel.h" | $as_tr_cpp` 1
+#define `$as_echo "HAVE_$with_module/../include/nvector/nvector_parallel.h" | $as_tr_cpp` 1
 _ACEOF
 sundials_module_includes_found=yes
-         sundials_module_includes_path=$with_arkode/../include
+         sundials_module_includes_path=$with_module/../include
 else
   sundials_module_includes_found=no
 fi
-as_ac_File=`$as_echo "ac_cv_file_$with_arkode/../include/sundials/sundials_types.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_arkode/../include/sundials/sundials_types.h" >&5
-$as_echo_n "checking for $with_arkode/../include/sundials/sundials_types.h... " >&6; }
+as_ac_File=`$as_echo "ac_cv_file_$with_module/../include/sundials/sundials_types.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_module/../include/sundials/sundials_types.h" >&5
+$as_echo_n "checking for $with_module/../include/sundials/sundials_types.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$with_arkode/../include/sundials/sundials_types.h"; then
+if test -r "$with_module/../include/sundials/sundials_types.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -10708,25 +10722,28 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$with_arkode/../include/sundials/sundials_types.h" | $as_tr_cpp` 1
+#define `$as_echo "HAVE_$with_module/../include/sundials/sundials_types.h" | $as_tr_cpp` 1
 _ACEOF
 sundials_module_includes_found=yes
-         sundials_module_includes_path=$with_arkode/../include
+         sundials_module_includes_path=$with_module/../include
 else
   sundials_module_includes_found=no
 fi
 
 
 fi
+
     if test $sundials_module_includes_found = no; then :
   { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "Missing one or more ARKODE headers
+as_fn_error $? "Missing one or more $module_upper headers
 See \`config.log' for more details" "$LINENO" 5; }
 fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Found ARKODE include path: $sundials_module_includes_path" >&5
-$as_echo "$as_me: Found ARKODE include path: $sundials_module_includes_path" >&6;}
 
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $module_upper include path: $sundials_module_includes_path" >&5
+$as_echo "$as_me: Found $module_upper include path: $sundials_module_includes_path" >&6;}
+
+    # We've now got the include directory and can specify what libraries we need
     sundials_module_includes="-I$sundials_module_includes_path"
     sundials_module_libs="-lsundials_arkode -lsundials_nvecparallel"
 
@@ -10740,10 +10757,10 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-    for sundials_module_lib_path in "$with_arkode" "$with_arkode/lib" "$with_arkode/lib64"
+    for sundials_module_lib_path in "$with_module" "$with_module/lib" "$with_module/lib64"
     do
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if SUNDIALS ARKODE library path is $sundials_module_lib_path" >&5
-$as_echo_n "checking if SUNDIALS ARKODE library path is $sundials_module_lib_path... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if SUNDIALS $module_upper library path is $sundials_module_lib_path" >&5
+$as_echo_n "checking if SUNDIALS $module_upper library path is $sundials_module_lib_path... " >&6; }
       LIBS="$save_LIBS $sundials_module_libs"
       LDFLAGS="$save_LDFLAGS -L$sundials_module_lib_path"
       CPPFLAGS="$save_CPPFLAGS $sundials_module_includes"
@@ -10790,31 +10807,31 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
     SUNDIALS_MODULE_LDFLAGS="-L$sundials_module_lib_path"
 
 fi
+
   if test $sundials_module_lib_path_found = no; then :
   { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "Cannot compile ARKODE program
+as_fn_error $? "Cannot compile $module_upper program
 See \`config.log' for more details" "$LINENO" 5; }
 fi
 
-  # Compile in the ARKODE solver
-  { $as_echo "$as_me:${as_lineno-$LINENO}: => ARKODE solver enabled" >&5
-$as_echo "$as_me: => ARKODE solver enabled" >&6;}
+  # Compile in the $module_upper solver
+  { $as_echo "$as_me:${as_lineno-$LINENO}: => $module_upper solver enabled" >&5
+$as_echo "$as_me: => $module_upper solver enabled" >&6;}
   EXTRA_LIBS="$EXTRA_LIBS $SUNDIALS_MODULE_LDFLAGS $sundials_module_libs"
   EXTRA_INCS="$EXTRA_INCS $sundials_module_includes"
-  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_ARKODE"
-  BOUT_HAS_ARKODE=yes
-  ARKODELIBS="$SUNDIALS_MODULE_LDFLAGS $sundials_module_libs"
-  ARKODEINCS="$sundials_module_includes"
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_$module_upper"
 
+          eval "`$as_echo "BOUT_HAS_$module_upper" | $as_tr_sh`=yes"
+  eval "`$as_echo "${module_upper}LIBS" | $as_tr_sh`=\"\$SUNDIALS_MODULE_LDFLAGS \$sundials_module_libs\""
+  eval "`$as_echo "${module_upper}INCS" | $as_tr_sh`=\"\$sundials_module_includes\""
 
-  if test "x$ARKODELIBS" != "x"; then :
-
-
-  # Try to compile a simple program to check whether ARKODE uses int or long
+  # Now we have successfully found the library, we need to determine
+  # whether $module_upper uses int or long. Try to compile a simple
+  # program to check
   save_CXXFLAGS=$CXXFLAGS
-  { $as_echo "$as_me:${as_lineno-$LINENO}: \"checking ARKODE types...\"" >&5
-$as_echo "$as_me: \"checking ARKODE types...\"" >&6;}
+  { $as_echo "$as_me:${as_lineno-$LINENO}: \"checking $module_upper types...\"" >&5
+$as_echo "$as_me: \"checking $module_upper types...\"" >&6;}
   ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -10825,14 +10842,15 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
   for sundials_int_type in int long; do
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking $sundials_int_type" >&5
 $as_echo_n "checking $sundials_int_type... " >&6; }
-    CXXFLAGS="$CXXFLAGS $ARKODEINCS -DARKODEINT=$sundials_int_type"
+    eval sundials_type_name=`$as_echo "${module_upper}INT" | $as_tr_sh`
+    CXXFLAGS="$CXXFLAGS $sundials_module_includes -D$sundials_type_name=$sundials_int_type"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 
 
-      #include <arkode/arkode_bbdpre.h>
-      extern int arkode_bbd_rhs(ARKODEINT, double, N_Vector, N_Vector, void *);
+    #include <arkode/arkode_bbdpre.h>
+    extern int arkode_bbd_rhs(ARKODEINT, double, N_Vector, N_Vector, void *);
 
 
 int
@@ -10861,7 +10879,7 @@ $as_echo "$sundials_int_type_found" >&6; }
 
       { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "*** Cannot compile ARKODE with either long or int
+as_fn_error $? "*** Cannot compile $module_upper with either long or int
 See \`config.log' for more details" "$LINENO" 5; }
 
 fi
@@ -10871,10 +10889,10 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-  CXXFLAGS="$save_CXXFLAGS -DARKODEINT=$sundials_int_type"
 
+  # We can now add that macro definition to the compilation flags
+  CXXFLAGS="$save_CXXFLAGS -D$sundials_type_name=$sundials_int_type"
 
-fi
 
 fi
 
