@@ -83,7 +83,7 @@ class Field(object):
     """
 
     def __init__(self, field_type, dimensions, name=None, index_var=None,
-                 jz_var="jz", mixed_base_ind = "mixed_base_ind"):
+                 jz_var='jz', mixed_base_ind_var='base_ind'):
         # C++ type of the field, e.g. Field3D
         self.field_type = field_type
         # array: dimensions of the field
@@ -94,7 +94,7 @@ class Field(object):
         self.index_var = index_var
         # Name of jz variable
         self.jz_var = jz_var
-        self.mixed_base_ind = mixed_base_ind
+        self.mixed_base_ind_var = mixed_base_ind_var
         if self.field_type == "Field3D":
             self.region_type="3D"
         elif self.field_type == "Field2D":
@@ -131,7 +131,7 @@ class Field(object):
         if self.field_type == "BoutReal":
             return "{self.name}".format(self=self)
         elif self.field_type == "Field3D":
-            return "{self.name}[{self.mixed_base_ind} + {self.jz_var}]".format(self=self)
+            return "{self.name}[{self.mixed_base_ind_var} + {self.jz_var}]".format(self=self)
         else:  # Field2D
             return "{self.name}[{self.index_var}]".format(self=self)
 
@@ -179,6 +179,7 @@ if __name__ == "__main__":
     #Setup
     index_var = 'index'
     jz_var = 'jz'
+    mixed_base_ind_var = "base_ind"
     region_name = '"RGN_ALL"'
     
     if args.noOpenMP:
@@ -188,9 +189,13 @@ if __name__ == "__main__":
         
     # Declare what fields we currently support:
     # Field perp is currently missing
-    field3D = Field('Field3D', ['x', 'y', 'z'], index_var=index_var)
-    field2D = Field('Field2D', ['x', 'y'], index_var=index_var)
-    boutreal = Field('BoutReal', [], index_var=index_var)
+    field3D = Field('Field3D', ['x', 'y', 'z'], index_var=index_var,
+                    jz_var = jz_var, mixed_base_ind_var = mixed_base_ind_var)
+    field2D = Field('Field2D', ['x', 'y'], index_var=index_var,
+                    jz_var = jz_var, mixed_base_ind_var = mixed_base_ind_var)
+    boutreal = Field('BoutReal', [], index_var=index_var,
+                     jz_var = jz_var, mixed_base_ind_var = mixed_base_ind_var)
+    
     fields = [field3D, field2D, boutreal]
 
     with smart_open(args.filename, "w") as f:
@@ -214,18 +219,6 @@ if __name__ == "__main__":
         out.name = 'result'
         lhs.name = 'lhs'
         rhs.name = 'rhs'
-
-        mixed = 'no'
-        region_type = out.region_type
-
-        # Determine if we have 3D/2D or 2D/3D
-        if out.field_type == "Field3D":
-            if lhs.field_type == "Field2D":
-                mixed = '2d3d'
-                region_type = lhs.region_type
-            elif rhs.field_type == "Field2D":
-                mixed = '3d2d'
-                region_type = rhs.region_type
                 
         for operator, operator_name in operators.items():
 
@@ -236,15 +229,13 @@ if __name__ == "__main__":
                 'out': out,
                 'lhs': lhs,
                 'rhs': rhs,
-
-                'mixed': mixed,
-                'mixed_base_ind': 'mixed_base_ind',
-                
+               
                 'region_loop': region_loop,
                 'region_name': region_name,
-                'region_type': region_type,
+
                 'index_var': index_var,
-                'jz_var': jz_var
+                'mixed_base_ind': mixed_base_ind_var,
+                'jz_var': jz_var,
                 
             }
 

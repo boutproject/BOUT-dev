@@ -568,7 +568,7 @@ class Mesh {
    */
   void setParallelTransform();
 
-    //Region related routines
+  //Region related routines
 
   /// Get the named region from the region_map for the data iterator
   ///
@@ -599,6 +599,10 @@ class Mesh {
     return Ind2D(ind3D.ind / LocalNz);
   }
 
+  int map3Dto2D(const Ind3D &ind3D){
+    return indexLookup3Dto2D[ind3D.ind];
+  }
+  
   /// Create the default regions for the data iterator
   ///
   /// Creates RGN_{ALL,NOBNDRY,NOX,NOY}
@@ -645,7 +649,7 @@ private:
   //Internal region related information
   std::map<std::string, Region<Ind3D>> regionMap3D;
   std::map<std::string, Region<Ind2D>> regionMap2D;
-
+  Array<int> indexLookup3Dto2D;
 };
 
 #endif // __MESH_H__

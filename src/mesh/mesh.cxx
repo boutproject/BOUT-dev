@@ -375,9 +375,9 @@ void Mesh::createDefaultRegions(){
   addRegion2D("RGN_NOY",
 	      Region<Ind2D>(0, LocalNx - 1, ystart, yend, 0, 0, LocalNy, 1));
 
-  //Construct lookup table for 3D->2D conversion
-  ind3Dto2D = Array<int>(LocalNx*LocalNy*LocalNz);
-  for(const auto &i3d: getRegion3D("RGN_ALL")){
-    ind3Dto2D[i3d.ind] = i3d.ind/LocalNz;
+  // Construct index lookup for 3D-->2D
+  indexLookup3Dto2D = Array<int>(LocalNx*LocalNy*LocalNz);
+  for (const auto &ind3D: getRegion3D("RGN_ALL")){
+    indexLookup3Dto2D[ind3D.ind] = ind3Dto2D(ind3D).ind;
   }
 }
