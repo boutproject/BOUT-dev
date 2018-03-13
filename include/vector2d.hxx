@@ -150,6 +150,12 @@ class Vector2D : public FieldData {
   }
   void applyBoundary(const char* condition) { applyBoundary(string(condition)); }
   void applyTDerivBoundary() override;
+  virtual inline const BoutReal& operator[](const Indices &i) const {
+    throw BoutException("Indices cannot be handled ...");
+  }
+  virtual inline BoutReal& operator[](const Indices &i) {
+    throw BoutException("Indices cannot be handled ...");
+  }
  private:
   
   Vector2D *deriv; ///< Time-derivative, can be NULL

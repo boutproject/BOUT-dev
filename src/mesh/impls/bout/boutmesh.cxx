@@ -1891,20 +1891,22 @@ int BoutMesh::pack_data(const vector<FieldData *> &var_list, int xge, int xlt, i
   for (const auto &var : var_list) {
     if (var->is3D()) {
       // 3D variable
-      ASSERT2(static_cast<Field3D *>(var)->isAllocated());
-      for (int jx = xge; jx != xlt; jx++) {
-        for (int jy = yge; jy < ylt; jy++) {
-          for (int jz = 0; jz < LocalNz; jz++, len++) {
-            buffer[len] = (*static_cast<Field3D *>(var))(jx, jy, jz);
+      ASSERT2(var->isAllocated());
+      Indices j;
+      for (j.x = xge; j.x != xlt; j.x++) {
+        for (j.y = yge; j.y < ylt; j.y++) {
+          for (j.z = 0; j.z < LocalNz; j.z++, len++) {
+            buffer[len] = var->operator[](j);
           }
         }
       }
     } else {
       // 2D variable
-      ASSERT2(static_cast<Field2D *>(var)->isAllocated());
-      for (int jx = xge; jx != xlt; jx++) {
-        for (int jy = yge; jy < ylt; jy++, len++) {
-          buffer[len] = (*static_cast<Field2D *>(var))(jx, jy);
+      ASSERT2(var->isAllocated());
+      Indices j;
+      for (j.x = xge; j.x != xlt; j.x++) {
+        for (j.y = yge; j.y < ylt; j.y++, len++) {
+          buffer[len] = (*var)[j];
         }
       }
     }
@@ -1922,18 +1924,20 @@ int BoutMesh::unpack_data(const vector<FieldData *> &var_list, int xge, int xlt,
   for (const auto &var : var_list) {
     if (var->is3D()) {
       // 3D variable
-      for (int jx = xge; jx != xlt; jx++) {
-        for (int jy = yge; jy < ylt; jy++) {
-          for (int jz = 0; jz < LocalNz; jz++, len++) {
-            (*static_cast<Field3D *>(var))(jx, jy, jz) = buffer[len];
+      Indices j;
+      for (j.x = xge; j.x != xlt; j.x++) {
+        for (j.y = yge; j.y < ylt; j.y++) {
+          for (j.z = 0; j.z < LocalNz; j.z++, len++) {
+            (*var)[j] = buffer[len];
           }
         }
       }
     } else {
       // 2D variable
-      for (int jx = xge; jx != xlt; jx++) {
-        for (int jy = yge; jy < ylt; jy++, len++) {
-          (*static_cast<Field2D *>(var))(jx, jy) = buffer[len];
+      Indices j;
+      for (j.x = xge; j.x != xlt; j.x++) {
+        for (j.y = yge; j.y < ylt; j.y++, len++) {
+          (*var)[j] = buffer[len];
         }
       }
     }

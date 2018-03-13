@@ -51,6 +51,7 @@ using std::map;
 
 #include "boundary_region.hxx"
 #include "parallel_boundary_region.hxx"
+#include "bout/dataiterator.hxx"
 
 class FieldGenerator; // Forward declaration
 
@@ -91,6 +92,10 @@ public:
   void addBndryGenerator(std::shared_ptr<FieldGenerator> gen, BndryLoc location);
   
   std::shared_ptr<FieldGenerator> getBndryGenerator(BndryLoc location);
+
+  virtual bool isAllocated() {return true;};
+  virtual inline const BoutReal& operator[](const Indices &i) const = 0;
+  virtual inline BoutReal& operator[](const Indices &i) = 0;
 
 protected:
   vector<BoundaryOp*> bndry_op; // Boundary conditions
