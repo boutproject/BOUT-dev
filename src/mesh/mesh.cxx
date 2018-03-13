@@ -29,7 +29,7 @@ Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), coords(0), options(opt)
   
   /// Get mesh options
   OPTION(options, StaggerGrids,   false); // Stagger grids
-
+  OPTION(options, maxregionblocksize, MAXREGIONBLOCKSIZE);
   // Initialise derivatives
   derivs_init(options);  // in index_derivs.cxx for now
 }
@@ -356,25 +356,24 @@ void Mesh::addRegion2D(const std::string &region_name, Region<Ind2D> region){
  
 void Mesh::createDefaultRegions(){
   //3D regions
-  addRegion3D("RGN_ALL",
-	      Region<Ind3D>(0, LocalNx - 1, 0, LocalNy - 1, 0, LocalNz - 1, LocalNy, LocalNz));
-  addRegion3D("RGN_NOBNDRY",
-	      Region<Ind3D>(xstart, xend, ystart, yend, 0, LocalNz - 1, LocalNy, LocalNz));
-  addRegion3D("RGN_NOX",
-	      Region<Ind3D>(xstart, xend, 0, LocalNy - 1, 0, LocalNz - 1, LocalNy, LocalNz));
-  addRegion3D("RGN_NOY",
-	      Region<Ind3D>(0, LocalNx - 1, ystart, yend, 0, LocalNz - 1, LocalNy, LocalNz));
+  addRegion3D("RGN_ALL", Region<Ind3D>(0, LocalNx - 1, 0, LocalNy - 1, 0, LocalNz - 1,
+                                       LocalNy, LocalNz, maxregionblocksize));
+  addRegion3D("RGN_NOBNDRY", Region<Ind3D>(xstart, xend, ystart, yend, 0, LocalNz - 1,
+                                           LocalNy, LocalNz, maxregionblocksize));
+  addRegion3D("RGN_NOX", Region<Ind3D>(xstart, xend, 0, LocalNy - 1, 0, LocalNz - 1,
+                                       LocalNy, LocalNz, maxregionblocksize));
+  addRegion3D("RGN_NOY", Region<Ind3D>(0, LocalNx - 1, ystart, yend, 0, LocalNz - 1,
+                                       LocalNy, LocalNz, maxregionblocksize));
 
   //2D regions
-  addRegion2D("RGN_ALL",
-	      Region<Ind2D>(0, LocalNx - 1, 0, LocalNy - 1, 0, 0, LocalNy, 1));
-  addRegion2D("RGN_NOBNDRY",
-	      Region<Ind2D>(xstart, xend, ystart, yend, 0, 0, LocalNy, 1));
-  addRegion2D("RGN_NOX",
-	      Region<Ind2D>(xstart, xend, 0, LocalNy - 1, 0, 0, LocalNy, 1));
-  addRegion2D("RGN_NOY",
-	      Region<Ind2D>(0, LocalNx - 1, ystart, yend, 0, 0, LocalNy, 1));
-
+  addRegion2D("RGN_ALL", Region<Ind2D>(0, LocalNx - 1, 0, LocalNy - 1, 0, 0, LocalNy, 1,
+                                       maxregionblocksize));
+  addRegion2D("RGN_NOBNDRY", Region<Ind2D>(xstart, xend, ystart, yend, 0, 0, LocalNy, 1,
+                                           maxregionblocksize));
+  addRegion2D("RGN_NOX", Region<Ind2D>(xstart, xend, 0, LocalNy - 1, 0, 0, LocalNy, 1,
+                                       maxregionblocksize));
+  addRegion2D("RGN_NOY", Region<Ind2D>(0, LocalNx - 1, ystart, yend, 0, 0, LocalNy, 1,
+                                       maxregionblocksize));
   // Construct index lookup for 3D-->2D
   indexLookup3Dto2D = Array<int>(LocalNx*LocalNy*LocalNz);
   for (const auto &ind3D: getRegion3D("RGN_ALL")){

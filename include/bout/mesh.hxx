@@ -569,7 +569,8 @@ class Mesh {
   void setParallelTransform();
 
   //Region related routines
-
+  int maxregionblocksize;
+  
   /// Get the named region from the region_map for the data iterator
   ///
   /// Throws if region_name not found

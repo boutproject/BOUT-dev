@@ -322,13 +322,13 @@ public:
   Region<T>(){};
 
   Region<T>(int xstart, int xend, int ystart, int yend, int zstart, int zend, int ny,
-            int nz) {
+            int nz, int maxregionblocksize = MAXREGIONBLOCKSIZE) {
     indices = createRegionIndices(xstart, xend, ystart, yend, zstart, zend, ny, nz);
-    blocks = getContiguousBlocks();
+    blocks = getContiguousBlocks(maxregionblocksize);
   };
 
-  Region<T>(RegionIndices &indices) : indices(indices) {
-    blocks = getContiguousBlocks();
+  Region<T>(RegionIndices &indices, int maxregionblocksize = MAXREGIONBLOCKSIZE) : indices(indices) {
+    blocks = getContiguousBlocks(maxregionblocksize);
   };
 
   Region<T>(ContiguousBlocks &blocks) : blocks(blocks) {
@@ -352,9 +352,9 @@ public:
   RegionIndices getIndices() const { return indices; };
 
   /// Set the indices and ensure blocks updated
-  void setIndices (RegionIndices &indicesIn) {
+  void setIndices (RegionIndices &indicesIn, int maxregionblocksize = MAXREGIONBLOCKSIZE) {
     indices = indicesIn;
-    blocks = getContiguousBlocks();
+    blocks = getContiguousBlocks(maxregionblocksize);
   };
 
   /// Set the blocks and ensure indices updated
@@ -555,7 +555,8 @@ private:
   /// Limits the maximum size of any contiguous block to maxBlockSize.
   /// A contiguous block is described by the inclusive start and the exclusive end
   /// of the contiguous block.
-  ContiguousBlocks getContiguousBlocks() const {
+  ContiguousBlocks getContiguousBlocks(int maxregionblocksize) const {
+    ASSERT1(maxregionblocksize>0);
     const int npoints = indices.size();
     ContiguousBlocks result;
     int index = 0; // Index within vector of indices
@@ -566,7 +567,7 @@ private:
           1; // We will always have at least startPair in the block so count starts at 1
 
       // Consider if the next point should be added to this block
-      for (index++; count < MAXREGIONBLOCKSIZE; index++) {
+      for (index++; count < maxregionblocksize; index++) {
         if (index >= npoints) {
           break;
         }
