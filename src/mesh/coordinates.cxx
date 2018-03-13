@@ -626,6 +626,9 @@ const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc) {
   Field2D sg(localmesh);
   Field3D result(localmesh), r2(localmesh);
 
+  if (outloc == CELL_DEFAULT){
+    outloc = f.getLocation();
+  }
   sg = sqrt(g_22);
   sg = DDY(1. / sg) / sg;
   if (sg.getLocation() != outloc) {
@@ -635,7 +638,7 @@ const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc) {
 
   result = ::DDY(f, outloc);
 
-  r2 = D2DY2(f, outloc) / interp_to(g_22, outloc);
+  r2 = D2DY2(f, outloc) / g_22;
 
   result = sg * result + r2;
 
