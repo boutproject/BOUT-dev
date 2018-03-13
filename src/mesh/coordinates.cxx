@@ -416,12 +416,12 @@ int Coordinates::calcCovariant() {
 
   output_info.write("\tLocal maximum error in off-diagonal inversion is %e\n", maxerr);
 
-  this->g_11.set(g_11);
-  this->g_22.set(g_22);
-  this->g_33.set(g_33);
-  this->g_12.set(g_12);
-  this->g_13.set(g_13);
-  this->g_23.set(g_23);
+  this->g_11.set(g_11,true);
+  this->g_22.set(g_22,true);
+  this->g_33.set(g_33,true);
+  this->g_12.set(g_12,true);
+  this->g_13.set(g_13,true);
+  this->g_23.set(g_23,true);
   return 0;
 }
 
@@ -489,12 +489,12 @@ int Coordinates::calcContravariant() {
                    max(abs(g_12 * g13 + g_22 * g23 + g_23 * g33)));
 
   output_info.write("\tMaximum error in off-diagonal inversion is %e\n", maxerr);
-  this->g11.set(g11);
-  this->g22.set(g22);
-  this->g33.set(g33);
-  this->g12.set(g12);
-  this->g13.set(g13);
-  this->g23.set(g23);
+  this->g11.set(g11,true);
+  this->g22.set(g22,true);
+  this->g33.set(g33,true);
+  this->g12.set(g12,true);
+  this->g13.set(g13,true);
+  this->g23.set(g23,true);
   return 0;
 }
 
@@ -509,7 +509,7 @@ int Coordinates::jacobian() {
   if (min(g) < 0.0) {
     throw BoutException("The determinant of g^ij is somewhere less than 0.0");
   }
-  J = 1. / sqrt(g);
+  J.set(1. / sqrt(g),true);
 
   // Check jacobian
   if (!finite(J)) {
@@ -522,7 +522,7 @@ int Coordinates::jacobian() {
   if (min(g_22) < 0.0) {
     throw BoutException("g_22 is somewhere less than 0.0");
   }
-  Bxy = sqrt(g_22) / J;
+  Bxy.set(sqrt(g_22) / J,true);
 
   return 0;
 }
