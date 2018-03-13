@@ -149,10 +149,7 @@ class Mesh {
 
   template <typename F>
   int get(Flexible<F> &var, const string &name, BoutReal def=0.0){
-    F var_=var;
-    int ret=get(var_,name,def);
-    var.set(var_);
-    return ret;
+    return get(var.getNonConst(CELL_DEFAULT),name,def);
   }
 
   /// Get a Field3D from the input source

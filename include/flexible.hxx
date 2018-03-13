@@ -31,38 +31,40 @@ class Flexible: public FieldData{
   typedef unsigned int uint;
 public:
   Flexible(const F & main){
-    init(main);
+    init(new F(main));
   };
   template <typename... Args>
   Flexible(Args... args) {
     F * main = new F(args...);
-    init(*main);
-    owner[mainid]=true;
+    init(main);
+  }
+  F & getNonConst(CELL_LOC loc){
+    return *((F*)geti(loc));
   }
   /// Get a const reference of the field at the specific location. If
   /// the CELL_LOC is CELL_DEFAULT the mainlocation will be returned.
-  const F & get(CELL_LOC loc_){
-    if (loc_ == CELL_DEFAULT){
-      return *fields[mainid];
-    }
-    uint loc=getId(loc_);
-    if (fields[loc] == nullptr){
-      if (fields[0] == nullptr){
-	fields[0]=new F(interp_to((*fields[mainid]),CELL_CENTRE));
-	owner[mainid]=true;
-      }
-      if (loc != mainid) {
-	fields[loc]=new F(interp_to(*fields[mainid],loc_));
-	owner[mainid]=true;
-      }
-    }
-    return *fields[loc];
+  const F & get(CELL_LOC loc){
+    return * geti(loc);
   };
+  Flexible<F> & operator=(const F& f) {
+    // maybe this should be false?
+    set(f,true);
+    ASSERT1(fields[mainid]!=nullptr);
+  }
+  Flexible<F> & operator=(F&& f) {
+    set(f,true);
+    ASSERT1(fields[mainid]!=nullptr);
+  }
+  Flexible<F> & operator=(BoutReal d) {
+    (*((F*)fields[mainid]))=d;
+    clean(false);
+    ASSERT1(fields[mainid]!=nullptr);
+  }
   /// Set a part of the Flexible Field.
   /// If the main field is set, then, all other fields are
   /// invalidated. If an other location is set, then, it is assumed
   /// that the this is in sync with the main field.
-  const F & set(const F & field){
+  const F & set(const F & field, bool copy=true){
     uint loc = getId(field.getLocation());
     if (loc == mainid){
       clean(true);
@@ -70,8 +72,12 @@ public:
       if (fields[loc] != nullptr && owner[loc])
 	delete fields[loc];
     }
-    fields[loc]=&field;
-    owner[loc]=false;
+    if (copy) {
+      fields[loc]=new F(field);
+    } else {
+      fields[loc]=&field;
+    }
+    owner[loc]=copy; // did we just copy?
   };
   //DEPRECATED(operator const F &() ) {
   operator const F &() {
@@ -85,8 +91,11 @@ public:
   const BoutReal & operator[](const DataIterator & i) {
     return fields[mainid]->operator[](i);
   };
-  const BoutReal & operator[](const Indices & i) {
+  virtual inline const BoutReal & operator[](const Indices & i) const {
     return fields[mainid]->operator[](i);
+  };
+  virtual inline BoutReal & operator[](const Indices & i) {
+    return ((F*)fields[mainid])->operator[](i);
   };
   // FieldData stuff
   virtual void accept(FieldVisitor &v){
@@ -213,18 +222,18 @@ private:
     }
     return loc;
   };
-  void init(const F&main){
-    mainloc=main.getLocation();
+  void init(const F * main){
+    mainloc=main->getLocation();
     mainid = getId(mainloc);
     for (uint i=0;i<num_fields;++i){
       fields[i]=nullptr;
     }
-    fields[mainid]=&main;
-    owner[mainid]=false;
-  }
+    fields[mainid]=main;
+    owner[mainid]=true;
+  };
   void clean(bool include_main){
     for (uint i=0;i<num_fields;++i){
-      if (include_main && i == mainid)
+      if ((include_main == false) && i == mainid)
 	continue;
       if (fields[i] != nullptr){
 	if (owner[i]){
@@ -233,7 +242,25 @@ private:
 	fields[i]=nullptr;
       }
     }
-  }
+  };
+  const F * geti(CELL_LOC loc_) {
+    if (loc_ == CELL_DEFAULT){
+      return fields[mainid];
+    }
+    uint loc=getId(loc_);
+    if (fields[loc] == nullptr){
+      if (fields[0] == nullptr){
+	fields[0]=new F(interp_to((*fields[mainid]),CELL_CENTRE));
+	owner[mainid]=true;
+      }
+      if (loc != mainid) {
+	fields[loc]=new F(interp_to(*fields[mainid],loc_));
+	owner[mainid]=true;
+      }
+    }
+    ASSERT1(fields[mainid]!=nullptr);
+    return fields[loc];
+  };
   // Number of field locations we support
   static const uint num_fields=4;
   // The pointers to the fields. Some may be null
