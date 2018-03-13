@@ -15,8 +15,10 @@ protected:
     Field3D b = af.get(CELL_CENTRE);
     b = af.get(CELL_YLOW);
     output << strLocation(b.getLocation());
-    n.setLocation(CELL_ZLOW);
-    n *= af;
+    n.setLocation(CELL_YLOW);
+    n = n * af;
+    // This is currently broken
+    //n*= af;
     // Test of cast
     Field3D ai = af;
     return 0;
