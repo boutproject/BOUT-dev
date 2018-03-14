@@ -1,8 +1,10 @@
 #!/usr/bin/python3
-""" Code generator for derivs.hxx
 
+# License of this file. This is also the license of the generated
+# file.
+
+print("""
 /*!************************************************************************
- * \\file flexible.hxx.in.py
  *
  * Wrapper for fields for different stagger locations
  *
@@ -29,19 +31,18 @@
  *
  **************************************************************************/
 
-"""
+""")
 
 import jinja2
 import itertools
-from copy import deepcopy as copy
 
 # Get data from fieldops
 import gen_fieldops as field
 
-field3D = field.Field('Field3D', ['x', 'y', 'z'])
-field2D = field.Field('Field2D', ['x', 'y'])
-fieldperp = field.Field('FieldPerp', ['x', 'z'])
-boutreal = field.Field('BoutReal', [])
+field3D = field.field3D
+field2D = field.field2D
+fieldperp = field.fieldperp
+boutreal = field.boutreal
 
 fields = [field3D, field2D, boutreal] ## fieldperp,
 
@@ -192,7 +193,7 @@ public:
     }
   }
   virtual void applyTDerivBoundary() override {
-    throw BoutException("Not implemented");
+    throw BoutException("Flexible<F>: applyTDerivBoundary(): Not implemented");
   };
   void allocate() {
     fields[mainid]->allocate();
@@ -209,7 +210,10 @@ template_inplace = jinja2.Template("""\
     if (mainid == getId(rhs.getLocation())){
       fields[mainid]->operator{{operator}}=(rhs);
     } else {
-      throw BoutException("Not yet implemtented!");
+      throw BoutException("Trying to update a Flexible<F>, but the\
+main location of Flexible<F> is different to the location of the rhs.\\n\
+Flexible<F> is at %s, but rhs is at %s",strLocation(mainLocation()),
+strLocation(rhs.getLocation()));
     }
     clean(false);
     return *this;
@@ -224,14 +228,13 @@ private:
   // Helper function to get index of location.
   uint getId(CELL_LOC loc_){
     uint loc = static_cast<uint>(loc_)-1;
-    if ( loc > num_fields || loc < 0){
-      throw BoutException("Unexpeted Fieldlocation! (Info: I got %d - %s)",loc,strLocation(loc_));
+    if ( loc > num_fields || loc_ == 0){
+      throw BoutException("Unexpected Fieldlocation!\\n (Info: I got %d - %s)",loc,strLocation(loc_));
     }
     return loc;
   };
   void init(F * main){
-    mainloc=main->getLocation();
-    mainid = getId(mainloc);
+    mainid = getId(main->getLocation());
     for (uint i=0;i<num_fields;++i){
       fields[i]=nullptr;
     }
@@ -250,14 +253,16 @@ private:
       }
     }
   };
+  // get the mainlocation
+  CELL_LOC mainLocation(){
+    return (CELL_LOC)(mainid+1);
+  };
   // Number of field locations we support
   static const uint num_fields=4;
   // The pointers to the fields. Some may be null
   F * fields[num_fields];
   // Are we the owner of the fields?
   bool owner[num_fields];
-  // The mainlocation
-  CELL_LOC mainloc;
   // The id of the mainlocation
   uint mainid;
 };
@@ -265,6 +270,10 @@ private:
 
 """)
 
+# Code-Template in the case the the flexible field is on the rhs of the operation.
+# The case of a BoutReal needs to be handled separately.
+# Note the case to update a lhs inplace is not supported yet - this
+# needs to be declared int the specific fields.
 template_rhs = jinja2.Template("""\
 {% if lhs == 'BoutReal' %}\
 
@@ -283,6 +292,8 @@ template_rhs = jinja2.Template("""\
 };
 {% endif %}\
 """)
+# Same as above for the flexible field being the lhs of the operation
+# inplace operations are handeled above
 template_lhs = jinja2.Template("""\
 {% if rhs == 'BoutReal' %}\
 
@@ -297,6 +308,7 @@ template_lhs = jinja2.Template("""\
 {% endif %}\
 """);
 
+# If everything is the same, we can use C++ templates
 for operator, operator_name in field.operators.items():
     template_args = {
         'template': 'template <typename F>\n',
@@ -309,11 +321,10 @@ for operator, operator_name in field.operators.items():
     print(template_rhs.render(**template_args),end='')
 
 for lhs, rhs in itertools.product(fields, fields):
-    # We don't have to define F F operations - done via template
+    # We don't have to define F F operations - done above via C++
+    # templates
     if lhs == rhs :
         continue
-    rhs = copy(rhs)
-    lhs = copy(lhs)
     out = field.returnType(rhs, lhs)
 
     for operator, operator_name in field.operators.items():
@@ -325,13 +336,14 @@ for lhs, rhs in itertools.product(fields, fields):
             'lhs': lhs,
             'rhs': rhs,
         }
+        # only render templates if we are not wrapping a BoutReal
         if lhs != "BoutReal":
             print(template_lhs.render(**template_args),end='')
         if rhs != "BoutReal":
             print(template_rhs.render(**template_args),end='')
 
 
-
+# end of header file
 print("""
 
 #endif""")
