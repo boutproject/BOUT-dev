@@ -98,21 +98,24 @@ public:
     // maybe this should be false?
     set(f,true);
     ASSERT1(fields[mainid]!=nullptr);
+    return *this;
   }
   Flexible<F> & operator=(F&& f) {
     set(f,true);
     ASSERT1(fields[mainid]!=nullptr);
+    return *this;
   }
   Flexible<F> & operator=(BoutReal d) {
     (*((F*)fields[mainid]))=d;
     clean(false);
     ASSERT1(fields[mainid]!=nullptr);
+    return *this;
   }
   /// Set a part of the Flexible Field.
   /// If the main field is set, then, all other fields are
   /// invalidated. If an other location is set, then, it is assumed
   /// that the this is in sync with the main field.
-  const F & set(const F & field, bool copy=true){
+  Flexible<F> & set(const F & field, bool copy=true){
     uint loc = getId(field.getLocation());
     if (loc == mainid){
       clean(true);
@@ -126,6 +129,7 @@ public:
       fields[loc]=&field;
     }
     owner[loc]=copy; // did we just copy?
+    return *this;
   };
   //DEPRECATED(operator const F &() ) {
   operator const F &() {
@@ -185,6 +189,7 @@ template_inplace = jinja2.Template("""\
   Flexible<F>& operator{{operator}}=({{field}} rhs) {
     ((F*)fields[mainid])->operator{{operator}}=(rhs);
     clean(false);
+    return *this;
   };
 {% else %}\
   Flexible<F>& operator{{operator}}=(const {{field}} & rhs) {
@@ -194,6 +199,7 @@ template_inplace = jinja2.Template("""\
       throw BoutException("Not yet implemtented!");
     }
     clean(false);
+    return *this;
   };
 {% endif %}\
 """)
