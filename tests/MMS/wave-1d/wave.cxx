@@ -62,7 +62,11 @@ protected:
     
     /*this assumes equidistant grid*/
     int nguard = mesh->xstart;
-    coord->dx = Lx/(mesh->GlobalNx - 2*nguard);
+
+    Field2D dx=Lx/(mesh->GlobalNx - 2*nguard);
+    coord->dx = dx;
+    dx.setLocation(CELL_XLOW);
+    coord->dx = dx;
     coord->dy = Ly/(mesh->GlobalNy - 2*nguard);
     
     SAVE_ONCE2(Lx,Ly);
