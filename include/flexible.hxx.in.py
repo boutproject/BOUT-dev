@@ -220,14 +220,14 @@ private:
     owner[mainid]=true;
   };
   void clean(bool include_main){
-    for (uint i=0;i<num_fields;++i){
-      if ((include_main == false) && i == mainid)
-	continue;
-      if (fields[i] != nullptr){
-	if (owner[i]){
-	  delete fields[i];
-	}
-	fields[i]=nullptr;
+    for (uint i=0;i<num_fields;i++){
+      if (i != mainid || include_main) {
+        if (fields[i] != nullptr){
+	  if (owner[i]){
+	    delete fields[i];
+	  }
+	  fields[i]=nullptr;
+        }
       }
     }
   };
