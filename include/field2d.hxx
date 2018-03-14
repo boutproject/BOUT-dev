@@ -142,7 +142,7 @@ class Field2D : public Field, public FieldData {
    * Returns a range of indices which can be iterated over
    * Uses the REGION flags in bout_types.hxx
    */
-  const IndexRange region(REGION rgn) const;
+  const IndexRange region(REGION rgn) const override;
 
   BoutReal& operator[](const Ind2D &d) {
     return data[d.ind];
