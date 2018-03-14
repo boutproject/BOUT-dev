@@ -22,6 +22,7 @@ addons:
     - python3-scipy
 
 matrix:
+  fast_finish: true
   include:
   - env: CONFIGURE_OPTIONS=''
   - env: CONFIGURE_OPTIONS='--enable-openmp' OMP_NUM_THREADS=2
