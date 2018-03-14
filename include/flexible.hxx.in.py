@@ -58,8 +58,6 @@ print("""
 
 #include <bout_types.hxx>
 #include <bout/deprecated.hxx>
-//class Field2D;
-//class Field3D;
 #include <field2d.hxx>
 #include <field3d.hxx>
 #include <field_data.hxx>
@@ -78,7 +76,7 @@ template <typename F>
 class Flexible: public FieldData{
   typedef unsigned int uint;
 public:
-  Flexible(const F & main){
+  Flexible(F & main){
     init(new F(main));
   };
   template <typename... Args>
@@ -86,16 +84,31 @@ public:
     F * main = new F(args...);
     init(main);
   }
-  F & getNonConst(CELL_LOC loc){
-    return *((F*)geti(loc));
-  }
+  F & getNonConst(CELL_LOC loc_){
+    if (loc_ == CELL_DEFAULT){
+      return *fields[mainid];
+    }
+    uint loc=getId(loc_);
+    if (fields[loc] == nullptr){
+      // fields[0] is the field at CELL_CENTRE
+      if (fields[0] == nullptr){
+	fields[0]=new F(interp_to((*fields[mainid]),CELL_CENTRE));
+	owner[mainid]=true;
+      }
+      if (loc != mainid) {
+	fields[loc]=new F(interp_to(*fields[mainid],loc_));
+	owner[mainid]=true;
+      }
+    }
+    ASSERT1(fields[mainid]!=nullptr);
+    return *fields[loc];
+  };
   /// Get a const reference of the field at the specific location. If
   /// the CELL_LOC is CELL_DEFAULT the mainlocation will be returned.
   const F & get(CELL_LOC loc){
-    return * geti(loc);
+    return getNonConst(loc);
   };
-  Flexible<F> & operator=(const F& f) {
-    // maybe this should be false?
+  Flexible<F> & operator=(F& f) {
     set(f,true);
     ASSERT1(fields[mainid]!=nullptr);
     return *this;
@@ -106,7 +119,7 @@ public:
     return *this;
   }
   Flexible<F> & operator=(BoutReal d) {
-    (*((F*)fields[mainid]))=d;
+    (*fields[mainid])=d;
     clean(false);
     ASSERT1(fields[mainid]!=nullptr);
     return *this;
@@ -115,7 +128,7 @@ public:
   /// If the main field is set, then, all other fields are
   /// invalidated. If an other location is set, then, it is assumed
   /// that the this is in sync with the main field.
-  Flexible<F> & set(const F & field, bool copy=true){
+  Flexible<F> & set(F & field, bool copy=true){
     uint loc = getId(field.getLocation());
     if (loc == mainid){
       clean(true);
@@ -131,70 +144,70 @@ public:
     owner[loc]=copy; // did we just copy?
     return *this;
   };
-  //DEPRECATED(operator const F &() ) {
+  // Fallback to F - return the main field
   operator const F &() {
     return *fields[mainid];
   };
-  // DEPRECATED
+  // DEPRECATED? - do not know which stagger location
   const BoutReal & operator()(int x, int y) {
     return fields[mainid]->operator()(x,y);
   };
-  // DEPRECATED
+  // DEPRECATED? - do not know which stagger location
   const BoutReal & operator[](const DataIterator & i) {
     return fields[mainid]->operator[](i);
   };
-  virtual inline const BoutReal & operator[](const Indices & i) const {
+  // DEPRECATED? - do not know which stagger location
+  virtual inline const BoutReal & operator[](const Indices & i) const override {
     return fields[mainid]->operator[](i);
   };
-  virtual inline BoutReal & operator[](const Indices & i) {
-    return ((F*)fields[mainid])->operator[](i);
+  // DEPRECATED? - do not know which stagger location
+  virtual inline BoutReal & operator[](const Indices & i) override {
+    return fields[mainid]->operator[](i);
   };
   // FieldData stuff
-  virtual void accept(FieldVisitor &v){
-    //#warning // Using workaround for const
-    ((F*)fields[mainid])->accept(v);
+  virtual void accept(FieldVisitor &v) override {
+    fields[mainid]->accept(v);
   }
-  virtual bool isReal() const{
+  virtual bool isReal() const override {
     return fields[mainid]->isReal();
   }
-  virtual bool is3D() const {
+  virtual bool is3D() const override {
     return fields[mainid]->is3D();
   }
-  virtual int byteSize() const {
+  virtual int byteSize() const override {
     return fields[mainid]->byteSize();
   }
-  virtual int BoutRealSize() const {
+  virtual int BoutRealSize() const override {
     return fields[mainid]->BoutRealSize();
   }
-  virtual void doneComms() {
-    ((F*)fields[mainid])->doneComms();
+  virtual void doneComms() override {
+    fields[mainid]->doneComms();
     clean(false);
   }; // Notifies that communications done
-  virtual void applyBoundary(bool init=false) {
-    //#warning //Using workaround for const
+  virtual void applyBoundary(bool init=false) override {
     for (uint i=0;i<num_fields;++i){
       if (fields[i]){
-	((F*)fields[i])->applyBoundary(init);
+	fields[i]->applyBoundary(init);
       }
     }
   }
-  virtual void applyTDerivBoundary() {
+  virtual void applyTDerivBoundary() override {
     throw BoutException("Not implemented");
   };
-  void allocate(){
-    ((F*)fields[mainid])->allocate();
+  void allocate() {
+    fields[mainid]->allocate();
   }""")
 template_inplace = jinja2.Template("""\
 {% if field == 'BoutReal' %}\
   Flexible<F>& operator{{operator}}=({{field}} rhs) {
-    ((F*)fields[mainid])->operator{{operator}}=(rhs);
+    fields[mainid]->operator{{operator}}=(rhs);
     clean(false);
     return *this;
   };
 {% else %}\
   Flexible<F>& operator{{operator}}=(const {{field}} & rhs) {
     if (mainid == getId(rhs.getLocation())){
-      ((F*)fields[mainid])->operator{{operator}}=(rhs);
+      fields[mainid]->operator{{operator}}=(rhs);
     } else {
       throw BoutException("Not yet implemtented!");
     }
@@ -216,7 +229,7 @@ private:
     }
     return loc;
   };
-  void init(const F * main){
+  void init(F * main){
     mainloc=main->getLocation();
     mainid = getId(mainloc);
     for (uint i=0;i<num_fields;++i){
@@ -237,28 +250,10 @@ private:
       }
     }
   };
-  const F * geti(CELL_LOC loc_) {
-    if (loc_ == CELL_DEFAULT){
-      return fields[mainid];
-    }
-    uint loc=getId(loc_);
-    if (fields[loc] == nullptr){
-      if (fields[0] == nullptr){
-	fields[0]=new F(interp_to((*fields[mainid]),CELL_CENTRE));
-	owner[mainid]=true;
-      }
-      if (loc != mainid) {
-	fields[loc]=new F(interp_to(*fields[mainid],loc_));
-	owner[mainid]=true;
-      }
-    }
-    ASSERT1(fields[mainid]!=nullptr);
-    return fields[loc];
-  };
   // Number of field locations we support
   static const uint num_fields=4;
   // The pointers to the fields. Some may be null
-  const F * fields[num_fields];
+  F * fields[num_fields];
   // Are we the owner of the fields?
   bool owner[num_fields];
   // The mainlocation
