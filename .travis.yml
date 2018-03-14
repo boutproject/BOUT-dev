@@ -5,7 +5,7 @@ compiler: gcc
 
 git:
   depth: 3
-  
+
 addons:
   apt:
     # Note &<name> creates a reference that we can refer to later using
@@ -23,7 +23,7 @@ addons:
     - python3-numpy
     - python3-scipy
     - lcov
-    
+
 matrix:
   fast_finish: true
   include:
@@ -44,17 +44,6 @@ matrix:
   - env:
       - *default_env
       - CONFIGURE_OPTIONS='--enable-checks=no --enable-optimize=3 --disable-signal --disable-track --disable-backtrace'
-  - env:
-      - *default_env
-      - MPICH_CC=clang MPICH_CXX=clang++
-      - OMPI_CC=clang OMPI_CXX=clang++
-    compiler: clang
-  - env:
-      - *default_env
-      - CONFIGURE_OPTIONS='--enable-debug'
-      - MPICH_CC=clang MPICH_CXX=clang++
-      - OMPI_CC=clang OMPI_CXX=clang++
-    compiler: clang
   - addons:
       apt:
         sources:
@@ -67,11 +56,24 @@ matrix:
       - CONFIGURE_OPTIONS=''
       - CC=gcc-7 CXX=g++-7
       - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
+      #The -Wno-literal-suffix flag in CXXFLAGS above is a temporary workaround to
+      #disable a noisy message arising from the relatively old version of openmpi
+      #in use in combination with the relatively new version of gcc. We should be able
+      #to remove this if a newer openmpi version is introduced.
       - CXXFLAGS="-Wno-literal-suffix -Wall -Wextra"
-    #The -Wno-literal-suffix flag in CXXFLAGS above is a temporary workaround to
-    #disable a noisy message arising from the relatively old version of openmpi
-    #in use in combination with the relatively new version of gcc. We should be able
-    #to remove this if a newer openmpi version is introduced.
+#CLANG
+  - env:
+      - *default_env
+      - MPICH_CC=clang MPICH_CXX=clang++
+      - OMPI_CC=clang OMPI_CXX=clang++
+    compiler: clang
+  - env:
+      - *default_env
+      - CONFIGURE_OPTIONS='--enable-debug'
+      - MPICH_CC=clang MPICH_CXX=clang++
+      - OMPI_CC=clang OMPI_CXX=clang++
+    compiler: clang
+#COVERAGE
   - addons:
       apt:
         packages:
@@ -96,6 +98,7 @@ matrix:
   - env:
       - CONFIGURE_OPTIONS='--enable-code-coverage --disable-debug --disable-checks'
       - SCRIPT_FLAGS='-cu'
+
 before_install:
   ##################################################
   # Job specific setup
