@@ -13,6 +13,10 @@ addons:
     - libhdf5-serial-dev
     - netcdf-bin
     - hdf5-tools
+    - python3
+    - python3-pip
+    - python3-numpy
+    - python3-scipy
 
 matrix:
   include:
@@ -119,15 +123,9 @@ before_install:
   - eval "${MATRIX_EVAL}"
   - echo "${CC} $(${CC} --version)"
   ##################################################
-  # Install Conda for python 3
+  # Install remaining python3 packages using pip
   ##################################################
-  - source .install_miniconda_for_travis.sh
-
-  ##################################################
-
-  # Make sure to use the system NetCDF/HDF5 libraries, or we end up
-  # using the Conda libraries, which causes no end of headaches
-  - export CONFIGURE_OPTIONS="--with-netcdf=/usr/bin/nc-config --with-hdf5=/usr/bin/h5cc $CONFIGURE_OPTIONS"
+  - source .pip_install_for_travis.sh
 
 script:
   # Configure, compile and run test_suite
