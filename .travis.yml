@@ -81,6 +81,7 @@ matrix:
           - *standard_packages
           - libpetsc3.4.2-dev
           - libslepc3.4.2-dev
+          - libhdf5-openmpi-dev
           - libhdf5-mpi-dev
           - libmumps-dev
           - libscalapack-mpi-dev
