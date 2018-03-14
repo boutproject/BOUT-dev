@@ -177,7 +177,7 @@ class Field2D : public Field, public FieldData {
 
   /// Indices are also used as a lightweight way to specify indexing
   /// for example DataIterator offsets (xp, xm, yp etc.) return Indices
-  inline BoutReal& operator[](const Indices &i) {
+  inline BoutReal& operator[](const Indices &i) override {
     return operator()(i.x, i.y);
   }
   /// const Indices data access
