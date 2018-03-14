@@ -509,7 +509,7 @@ int Coordinates::jacobian() {
   if (min(g) < 0.0) {
     throw BoutException("The determinant of g^ij is somewhere less than 0.0");
   }
-  J.set(1. / sqrt(g),true);
+  J = 1. / sqrt(g);
 
   // Check jacobian
   if (!finite(J)) {
@@ -522,7 +522,7 @@ int Coordinates::jacobian() {
   if (min(g_22) < 0.0) {
     throw BoutException("g_22 is somewhere less than 0.0");
   }
-  Bxy.set(sqrt(g_22) / J,true);
+  Bxy = sqrt(g_22) / J;
 
   return 0;
 }
