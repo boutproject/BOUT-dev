@@ -282,7 +282,7 @@ const Field2D interp_to(const Field2D &var, CELL_LOC loc, REGION UNUSED(region))
 
       switch(dir) {
       case CELL_XLOW: {
-        if (mesh->startx < 2)
+        if (mesh->xstart < 2){
           throw BoutException("Cannot interpolate in X direction\n"
                               " - Not enough boundary cells\n"
                               " - at least 2 are needed!");
