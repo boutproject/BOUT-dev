@@ -25,21 +25,44 @@ addons:
 matrix:
   fast_finish: true
   include:
-  - env: CONFIGURE_OPTIONS=''
-  - env: CONFIGURE_OPTIONS='--enable-openmp' OMP_NUM_THREADS=2
-  - env: CONFIGURE_OPTIONS='--enable-debug'
-  - env: CONFIGURE_OPTIONS='--enable-shared' MAIN_TARGET=shared
-  - env: CONFIGURE_OPTIONS='--enable-checks=no --enable-optimize=3 --disable-signal --disable-track --disable-backtrace'
-  - env: CONFIGURE_OPTIONS='' MPICH_CC=clang MPICH_CXX=clang++ OMPI_CC=clang OMPI_CXX=clang++
+  - env: &default_env
+      - CONFIGURE_OPTIONS=''
+      - SCRIPT_FLAGS='-uim'
+  - env:
+      - *default_env
+      - CONFIGURE_OPTIONS='--enable-openmp'
+      - OMP_NUM_THREADS=2
+  - env:
+      - *default_env
+      - CONFIGURE_OPTIONS='--enable-debug'
+  - env:
+      - *default_env
+      - CONFIGURE_OPTIONS='--enable-shared'
+      - MAIN_TARGET=shared
+  - env:
+      - *default_env
+      - CONFIGURE_OPTIONS='--enable-checks=no --enable-optimize=3 --disable-signal --disable-track --disable-backtrace'
+  - env:
+      - *default_env
+      - MPICH_CC=clang MPICH_CXX=clang++
+      - OMPI_CC=clang OMPI_CXX=clang++
     compiler: clang
-  - env: CONFIGURE_OPTIONS='--enable-debug' MPICH_CC=clang MPICH_CXX=clang++ OMPI_CC=clang OMPI_CXX=clang++
+  - env:
+      - *default_env
+      - CONFIGURE_OPTIONS='--enable-debug'
+      - MPICH_CC=clang MPICH_CXX=clang++
+      - OMPI_CC=clang OMPI_CXX=clang++
     compiler: clang
   - addons:
       apt:
         packages:
           - *standard_packages
           - libpetsc3.4.2-dev
-    env: CONFIGURE_OPTIONS='--with-petsc' PETSC_DIR=/usr/lib/petscdir/3.4.2 PETSC_ARCH=linux-gnu-c-opt
+    env:
+      - *default_env
+      - CONFIGURE_OPTIONS='--with-petsc'
+      - PETSC_DIR=/usr/lib/petscdir/3.4.2
+      - PETSC_ARCH=linux-gnu-c-opt
   - addons:
       apt:
         sources:
@@ -47,7 +70,12 @@ matrix:
         packages:
           - g++-7
           - *standard_packages
-    env: CONFIGURE_OPTIONS='' CC=gcc-7 CXX=g++-7  MATRIX_EVAL="CC=gcc-7 && CXX=g++-7" CXXFLAGS="-Wno-literal-suffix -Wall -Wextra"
+    env:
+      - *default_env
+      - CONFIGURE_OPTIONS=''
+      - CC=gcc-7 CXX=g++-7
+      - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
+      - CXXFLAGS="-Wno-literal-suffix -Wall -Wextra"
     #The -Wno-literal-suffix flag in CXXFLAGS above is a temporary workaround to
     #disable a noisy message arising from the relatively old version of openmpi
     #in use in combination with the relatively new version of gcc. We should be able
@@ -72,24 +100,10 @@ matrix:
       - PETSC_ARCH=linux-gnu-c-opt
       - SLEPC_DIR=/usr/lib/slepcdir/3.4.2
       - SLEPC_ARCH=linux-gnu-c-opt
-    script:
-      - ./configure $CONFIGURE_OPTIONS
-      - make -j 2 -k && make -j 2 -k check-unit-tests
-    after_success:
-      # Ensure that there is a corresponding .gcda file for every .gcno file
-      # This is to try and make the coverage report slightly more accurate
-      # It still won't include, e.g. any solvers we don't build with though
-      - find . -name "*.gcno" -exec sh -c 'touch -a "${1%.gcno}.gcda"' _ {} \;
-      - bash <(curl -s https://codecov.io/bash)
+      - SCRIPT_FLAGS='-cu'
   - env:
       - CONFIGURE_OPTIONS='--enable-code-coverage --disable-debug --disable-checks'
-    script:
-      - ./configure $CONFIGURE_OPTIONS
-      - make -j 2 -k && make -j 2 -k check-unit-tests
-    after_success:
-      - find . -name "*.gcno" -exec sh -c 'touch -a "${1%.gcno}.gcda"' _ {} \;
-      - bash <(curl -s https://codecov.io/bash)
-
+      - SCRIPT_FLAGS='-cu'
 before_install:
   ##################################################
   # Job specific setup
@@ -105,7 +119,7 @@ before_install:
 
 script:
   # Configure, compile and run test_suite
-  - "./.travis_script.sh"
+  - "./.travis_script.sh ${SCRIPT_FLAGS}"
 
 notifications:
   # Send a notification to the BOUT++ Slack team
