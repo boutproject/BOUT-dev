@@ -1,4 +1,49 @@
 #!/bin/bash
+
+#Default flags
+COVERAGE=0
+UNIT=0
+INTEGRATED=0
+MMS=0
+TESTS=0
+MAIN_TARGET=
+
+usage() {
+    echo "$0 options are: "
+    #Just pull out special comments from this file
+    grep "\#\#\#" $0
+    exit 1
+}
+
+#Handle input flags
+while getopts "cuimt:" arg;
+do
+    case $arg in
+	c) ### Run the coverage-post job tasks
+	    COVERAGE=1
+	    ;;
+	u) ### Run the unit tests
+	    UNIT=1
+	    TESTS=1
+	    ;;
+	i) ### Run the integrated tests
+	    INTEGRATED=1
+	    TESTS=1
+	    ;;
+	m) ### Run the mms tests
+	    MMS=1
+	    TESTS=1
+	    ;;
+        t) ### Set target to build
+            MAIN_TARGET="$OPTARG"
+            ;;
+	*) ### Show usage message
+	    usage
+	    ;;
+    esac
+done
+
+
 echo "Configuring with $CONFIGURE_OPTIONS"
 time ./configure $CONFIGURE_OPTIONS
 conf=$?
@@ -18,43 +63,6 @@ then
 fi
 export PYTHONPATH=$(pwd)/tools/pylib/:$PYTHONPATH
 export MAKEFLAGS="-j 2 -k"
-
-#Default flags
-COVERAGE=0
-UNIT=0
-INTEGRATED=0
-MMS=0
-TESTS=0
-
-usage() {
-    echo "$0 options are: "
-    #Just pull out special comments from this file
-    grep "\#\#\#" $0}
-}
-#Handle input flags
-while getopts "cuim" arg;
-do
-    case $arg in
-	c) ### Run the coverage-post job tasks
-	    COVERAGE=1
-	    ;;
-	u) ### Run the unit tests
-	    UNIT=1
-	    TESTS=1
-	    ;;
-	i) ### Run the integrated tests
-	    INTEGRATED=1
-	    TESTS=1
-	    ;;
-	m) ### Run the mms tests
-	    MMS=1
-	    TESTS=1
-	    ;;
-	*) ### Show usage message
-	    usage
-	    ;;
-    esac
-done
 
 time make $MAIN_TARGET|| exit
 if [[ ${TESTS} == 1 ]]
