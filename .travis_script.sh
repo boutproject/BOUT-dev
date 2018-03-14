@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "Configuring with $CONFIGURE_OPTIONS"
-time ./configure $CONFIGURE_OPTIONS
+#time ./configure $CONFIGURE_OPTIONS
 conf=$?
 if test $conf -gt 0
 then
@@ -57,30 +57,31 @@ do
 done
 
 time make $MAIN_TARGET|| exit
-if [ ${TEST} == 1 ]
+if [[ ${TESTS} == 1 ]]
 then
     time make build-check || exit
 fi
 
-if [ ${UNIT} == 1]
+if [[ ${UNIT} == 1 ]]
 then
     time make check-unit-tests || exit
 fi
 
-if [ ${INTEGRATED} == 1]
+if [[ ${INTEGRATED} == 1 ]]
 then
     time make check-integrated-tests || exit
 fi
 
-if [ ${MMS} == 1]
+if [[ ${MMS} == 1 ]]
 then
    time make check-mms-tests || exit
 fi
 
-if [ ${COVERAGE} == 1]
+if [[ ${COVERAGE} == 1 ]]
+then
    # Ensure that there is a corresponding .gcda file for every .gcno file
    # This is to try and make the coverage report slightly more accurate
    # It still won't include, e.g. any solvers we don't build with though
    find . -name "*.gcno" -exec sh -c 'touch -a "${1%.gcno}.gcda"' _ {} \;
    bash <(curl -s https://codecov.io/bash)
-then
+fi
