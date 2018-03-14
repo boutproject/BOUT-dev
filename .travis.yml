@@ -41,6 +41,7 @@ matrix:
       - *default_env
       - CONFIGURE_OPTIONS='--enable-shared'
       - MAIN_TARGET=shared
+      - SCRIPT_FLAGS="-u"
   - env:
       - *default_env
       - CONFIGURE_OPTIONS='--enable-checks=no --enable-optimize=3 --disable-signal --disable-track --disable-backtrace'
