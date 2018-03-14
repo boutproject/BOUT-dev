@@ -5996,7 +5996,9 @@ else
 fi
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <fftw3.h>
+
+      #include <fftw3.h>
+
 int
 main ()
 {
@@ -6007,7 +6009,6 @@ main ()
 _ACEOF
 if ac_fn_cxx_try_compile "$LINENO"; then :
   BACH_found=yes ; break;
-
 
 
 fi
@@ -6069,8 +6070,9 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
     LDFLAGS_save=$LDFLAGS
-    LIBS="$EXTRA_LIBS -lfftw3"
     BACL_found=no
+
+    # Try with no extra libraries first
     if test ."$with_fftw" = .yes; then :
   extra_prefix=""
 else
@@ -6079,7 +6081,7 @@ fi
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 extern "C"
-    char fftw_plan_dft_r2c_1d();
+                 char fftw_plan_dft_r2c_1d();
 int
 main ()
 {
@@ -6089,25 +6091,26 @@ return fftw_plan_dft_r2c_1d();
 }
 _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
-  BACL_found=yes ; break;
-
+  BACL_found=yes
 
 
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-    if test $BACL_found != yes ; then
-        for search_prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
-            for path in $search_prefix $search_prefix/lib $search_prefix/lib64 $search_prefix/x86_64-linux-gnu ; do
-                if test -d $path
-                then
-                    LDFLAGS="-L$path $LDFLAGS_save"
 
+    # Now try with explicitly linking library
+    if test $BACL_found != yes; then :
 
-                    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+      LIBS="$EXTRA_LIBS -lfftw3"
+      if test ."$with_fftw" = .yes; then :
+  extra_prefix=""
+else
+  extra_prefix="$with_fftw"
+fi
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 extern "C"
-                        char fftw_plan_dft_r2c_1d();
+                   char fftw_plan_dft_r2c_1d();
 int
 main ()
 {
@@ -6117,34 +6120,75 @@ return fftw_plan_dft_r2c_1d();
 }
 _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
-  BACL_found=yes ; break;
-
+  BACL_found=yes
 
 
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-                fi
+
+fi
+
+    if test $BACL_found != yes; then :
+
+        for search_prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
+            for path in $search_prefix $search_prefix/lib $search_prefix/lib64 $search_prefix/x86_64-linux-gnu
+            do
+                if test -d $path; then :
+
+                  LDFLAGS="-L$path $LDFLAGS_save"
+
+
+                  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+extern "C"
+                              char fftw_plan_dft_r2c_1d();
+int
+main ()
+{
+return fftw_plan_dft_r2c_1d();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  BACL_found=yes
+
+
+                               break
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
             done
             if test .$BACL_found = .yes; then :
   break;
 fi
         done
-    fi
-    if test $BACL_found = yes ; then
+
+fi
+
+    if test $BACL_found = yes; then :
+
         EXTRA_LIBS=$LIBS
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-    else
-        LDFLAGS=$LDFLAGS_save
+
+else
+
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-    fi
-    if test .$BACL_found = .yes; then :
+
+fi
+
+    if test $BACL_found = yes; then :
 
 else
   as_fn_error $? "FFTW3 is needed by BOUT++" "$LINENO" 5
 fi
+
+    LDFLAGS=$LDFLAGS_save
     ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -6338,7 +6382,9 @@ else
 fi
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <netcdfcpp.h>
+
+      #include <netcdfcpp.h>
+
 int
 main ()
 {
@@ -6349,7 +6395,6 @@ main ()
 _ACEOF
 if ac_fn_cxx_try_compile "$LINENO"; then :
   BACH_found=yes ; break;
-
 
 
 fi
@@ -6406,8 +6451,9 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
     LDFLAGS_save=$LDFLAGS
-    LIBS="$EXTRA_LIBS -lnetcdf"
     BACL_found=no
+
+    # Try with no extra libraries first
     if test ."$with_netcdf" = .yes; then :
   extra_prefix=""
 else
@@ -6416,7 +6462,7 @@ fi
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 extern "C"
-    char nc_get_att();
+                 char nc_get_att();
 int
 main ()
 {
@@ -6426,25 +6472,26 @@ return nc_get_att();
 }
 _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
-  BACL_found=yes ; break;
-
+  BACL_found=yes
 
 
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-    if test $BACL_found != yes ; then
-        for search_prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
-            for path in $search_prefix $search_prefix/lib $search_prefix/lib64 $search_prefix/x86_64-linux-gnu ; do
-                if test -d $path
-                then
-                    LDFLAGS="-L$path $LDFLAGS_save"
 
+    # Now try with explicitly linking library
+    if test $BACL_found != yes; then :
 
-                    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+      LIBS="$EXTRA_LIBS -lnetcdf"
+      if test ."$with_netcdf" = .yes; then :
+  extra_prefix=""
+else
+  extra_prefix="$with_netcdf"
+fi
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 extern "C"
-                        char nc_get_att();
+                   char nc_get_att();
 int
 main ()
 {
@@ -6454,30 +6501,69 @@ return nc_get_att();
 }
 _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
-  BACL_found=yes ; break;
-
+  BACL_found=yes
 
 
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-                fi
+
+fi
+
+    if test $BACL_found != yes; then :
+
+        for search_prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
+            for path in $search_prefix $search_prefix/lib $search_prefix/lib64 $search_prefix/x86_64-linux-gnu
+            do
+                if test -d $path; then :
+
+                  LDFLAGS="-L$path $LDFLAGS_save"
+
+
+                  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+extern "C"
+                              char nc_get_att();
+int
+main ()
+{
+return nc_get_att();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  BACL_found=yes
+
+
+                               break
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
             done
             if test .$BACL_found = .yes; then :
   break;
 fi
         done
-    fi
-    if test $BACL_found = yes ; then
+
+fi
+
+    if test $BACL_found = yes; then :
+
         EXTRA_LIBS=$LIBS
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-    else
-        LDFLAGS=$LDFLAGS_save
+
+else
+
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-    fi
-    if test .$BACL_found = .yes; then :
+
+fi
+
+    if test $BACL_found = yes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libnetcdf_c++" >&5
 $as_echo_n "checking for libnetcdf_c++... " >&6; }
@@ -6488,8 +6574,9 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
     LDFLAGS_save=$LDFLAGS
-    LIBS="$EXTRA_LIBS -lnetcdf_c++"
     BACL_found=no
+
+    # Try with no extra libraries first
     if test ."$with_netcdf" = .yes; then :
   extra_prefix=""
 else
@@ -6498,7 +6585,7 @@ fi
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 extern "C"
-    char nc_close();
+                 char nc_close();
 int
 main ()
 {
@@ -6508,25 +6595,26 @@ return nc_close();
 }
 _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
-  BACL_found=yes ; break;
-
+  BACL_found=yes
 
 
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-    if test $BACL_found != yes ; then
-        for search_prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
-            for path in $search_prefix $search_prefix/lib $search_prefix/lib64 $search_prefix/x86_64-linux-gnu ; do
-                if test -d $path
-                then
-                    LDFLAGS="-L$path $LDFLAGS_save"
 
+    # Now try with explicitly linking library
+    if test $BACL_found != yes; then :
 
-                    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+      LIBS="$EXTRA_LIBS -lnetcdf_c++"
+      if test ."$with_netcdf" = .yes; then :
+  extra_prefix=""
+else
+  extra_prefix="$with_netcdf"
+fi
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 extern "C"
-                        char nc_close();
+                   char nc_close();
 int
 main ()
 {
@@ -6536,34 +6624,75 @@ return nc_close();
 }
 _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
-  BACL_found=yes ; break;
-
+  BACL_found=yes
 
 
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-                fi
+
+fi
+
+    if test $BACL_found != yes; then :
+
+        for search_prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
+            for path in $search_prefix $search_prefix/lib $search_prefix/lib64 $search_prefix/x86_64-linux-gnu
+            do
+                if test -d $path; then :
+
+                  LDFLAGS="-L$path $LDFLAGS_save"
+
+
+                  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+extern "C"
+                              char nc_close();
+int
+main ()
+{
+return nc_close();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  BACL_found=yes
+
+
+                               break
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
             done
             if test .$BACL_found = .yes; then :
   break;
 fi
         done
-    fi
-    if test $BACL_found = yes ; then
+
+fi
+
+    if test $BACL_found = yes; then :
+
         EXTRA_LIBS=$LIBS
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-    else
-        LDFLAGS=$LDFLAGS_save
+
+else
+
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-    fi
-    if test .$BACL_found = .yes; then :
+
+fi
+
+    if test $BACL_found = yes; then :
   NCFOUND=yes
 else
   NCFOUND=no
 fi
+
+    LDFLAGS=$LDFLAGS_save
     ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -6574,6 +6703,8 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 else
   NCFOUND=no
 fi
+
+    LDFLAGS=$LDFLAGS_save
     ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -8145,8 +8276,9 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
     LDFLAGS_save=$LDFLAGS
-    LIBS="$EXTRA_LIBS -lblas"
     BACL_found=no
+
+    # Try with no extra libraries first
     if test ."$lapack_path" = .yes; then :
   extra_prefix=""
 else
@@ -8155,7 +8287,7 @@ fi
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 extern "C"
-    char zgemm_();
+                 char zgemm_();
 int
 main ()
 {
@@ -8165,25 +8297,26 @@ return zgemm_();
 }
 _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
-  BACL_found=yes ; break;
-
+  BACL_found=yes
 
 
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-    if test $BACL_found != yes ; then
-        for search_prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
-            for path in $search_prefix $search_prefix/lib $search_prefix/lib64 $search_prefix/x86_64-linux-gnu ; do
-                if test -d $path
-                then
-                    LDFLAGS="-L$path $LDFLAGS_save"
 
+    # Now try with explicitly linking library
+    if test $BACL_found != yes; then :
 
-                    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+      LIBS="$EXTRA_LIBS -lblas"
+      if test ."$lapack_path" = .yes; then :
+  extra_prefix=""
+else
+  extra_prefix="$lapack_path"
+fi
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 extern "C"
-                        char zgemm_();
+                   char zgemm_();
 int
 main ()
 {
@@ -8193,36 +8326,77 @@ return zgemm_();
 }
 _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
-  BACL_found=yes ; break;
-
+  BACL_found=yes
 
 
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-                fi
+
+fi
+
+    if test $BACL_found != yes; then :
+
+        for search_prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
+            for path in $search_prefix $search_prefix/lib $search_prefix/lib64 $search_prefix/x86_64-linux-gnu
+            do
+                if test -d $path; then :
+
+                  LDFLAGS="-L$path $LDFLAGS_save"
+
+
+                  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+extern "C"
+                              char zgemm_();
+int
+main ()
+{
+return zgemm_();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  BACL_found=yes
+
+
+                               break
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
             done
             if test .$BACL_found = .yes; then :
   break;
 fi
         done
-    fi
-    if test $BACL_found = yes ; then
+
+fi
+
+    if test $BACL_found = yes; then :
+
         EXTRA_LIBS=$LIBS
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-    else
-        LDFLAGS=$LDFLAGS_save
+
+else
+
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-    fi
-    if test .$BACL_found = .yes; then :
+
+fi
+
+    if test $BACL_found = yes; then :
   HAS_BLAS=yes
 else
   if test "x$with_lapack" = "xyes"; then :
   as_fn_error $? "LAPACK requested but couldn't find BLAS" "$LINENO" 5
 fi
 fi
+
+    LDFLAGS=$LDFLAGS_save
     ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -8240,8 +8414,9 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
     LDFLAGS_save=$LDFLAGS
-    LIBS="$EXTRA_LIBS -llapack"
     BACL_found=no
+
+    # Try with no extra libraries first
     if test ."$lapack_path" = .yes; then :
   extra_prefix=""
 else
@@ -8250,7 +8425,7 @@ fi
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 extern "C"
-    char zgbsv_();
+                 char zgbsv_();
 int
 main ()
 {
@@ -8260,25 +8435,26 @@ return zgbsv_();
 }
 _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
-  BACL_found=yes ; break;
-
+  BACL_found=yes
 
 
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-    if test $BACL_found != yes ; then
-        for search_prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
-            for path in $search_prefix $search_prefix/lib $search_prefix/lib64 $search_prefix/x86_64-linux-gnu ; do
-                if test -d $path
-                then
-                    LDFLAGS="-L$path $LDFLAGS_save"
 
+    # Now try with explicitly linking library
+    if test $BACL_found != yes; then :
 
-                    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+      LIBS="$EXTRA_LIBS -llapack"
+      if test ."$lapack_path" = .yes; then :
+  extra_prefix=""
+else
+  extra_prefix="$lapack_path"
+fi
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 extern "C"
-                        char zgbsv_();
+                   char zgbsv_();
 int
 main ()
 {
@@ -8288,30 +8464,69 @@ return zgbsv_();
 }
 _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
-  BACL_found=yes ; break;
-
+  BACL_found=yes
 
 
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-                fi
+
+fi
+
+    if test $BACL_found != yes; then :
+
+        for search_prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
+            for path in $search_prefix $search_prefix/lib $search_prefix/lib64 $search_prefix/x86_64-linux-gnu
+            do
+                if test -d $path; then :
+
+                  LDFLAGS="-L$path $LDFLAGS_save"
+
+
+                  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+extern "C"
+                              char zgbsv_();
+int
+main ()
+{
+return zgbsv_();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  BACL_found=yes
+
+
+                               break
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
             done
             if test .$BACL_found = .yes; then :
   break;
 fi
         done
-    fi
-    if test $BACL_found = yes ; then
+
+fi
+
+    if test $BACL_found = yes; then :
+
         EXTRA_LIBS=$LIBS
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-    else
-        LDFLAGS=$LDFLAGS_save
+
+else
+
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-    fi
-    if test .$BACL_found = .yes; then :
+
+fi
+
+    if test $BACL_found = yes; then :
   HAS_LAPACK=yes
      { $as_echo "$as_me:${as_lineno-$LINENO}: Using LAPACK" >&5
 $as_echo "$as_me: Using LAPACK" >&6;}
@@ -8322,6 +8537,8 @@ else
   as_fn_error $? "LAPACK requested but not found" "$LINENO" 5
 fi
 fi
+
+    LDFLAGS=$LDFLAGS_save
     ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'

@@ -38,37 +38,53 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
     AC_MSG_CHECKING([for lib$1])
     AC_LANG_PUSH([C++])
     LDFLAGS_save=$LDFLAGS
-    LIBS="$EXTRA_LIBS -l$1"
     BACL_found=no
-    AS_IF([test ."$5" = .yes], [extra_prefix=""],[extra_prefix="$5"])
+
+    # Try with no extra libraries first
+    AS_IF([test ."$5" = .yes], [extra_prefix=""], [extra_prefix="$5"])
     AC_TRY_LINK([extern "C"
-    char $2();] ,[return $2();], [BACL_found=yes ; break;
-              BOUT_MSG_DEBUG([found $1 without path])
-        ],)
-    if test $BACL_found != yes ; then
+                 char $2();], [return $2();],
+                [BACL_found=yes
+                 BOUT_MSG_DEBUG([found $1 without path or library flag])])
+
+    # Now try with explicitly linking library
+    AS_IF([test $BACL_found != yes], [
+      LIBS="$EXTRA_LIBS -l$1"
+      AS_IF([test ."$5" = .yes], [extra_prefix=""], [extra_prefix="$5"])
+      AC_TRY_LINK([extern "C"
+                   char $2();], [return $2();],
+                  [BACL_found=yes
+                   BOUT_MSG_DEBUG([found $1 without path])])
+    ])
+
+    AS_IF([test $BACL_found != yes], [
         for search_prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
-            for path in $search_prefix $search_prefix/lib $search_prefix/lib64 $search_prefix/x86_64-linux-gnu ; do
-                if test -d $path
-                then
-                    LDFLAGS="-L$path $LDFLAGS_save"
-                    BOUT_MSG_DEBUG([try link $1 with $path])
-                    AC_TRY_LINK([extern "C"
-                        char $2();] ,[return $2();], [BACL_found=yes ; break;
-                            BOUT_MSG_DEBUG([found $1 with $path])
-                            ],)
-                fi
+            for path in $search_prefix $search_prefix/lib $search_prefix/lib64 $search_prefix/x86_64-linux-gnu
+            do
+                AS_IF([test -d $path], [
+                  LDFLAGS="-L$path $LDFLAGS_save"
+                  BOUT_MSG_DEBUG([try link $1 with $path])
+                  AC_TRY_LINK([extern "C"
+                              char $2();], [return $2();],
+                              [BACL_found=yes
+                               BOUT_MSG_DEBUG([found $1 with $path])
+                               break])
+                ])
             done
             AS_IF([test .$BACL_found = .yes],break;)
         done
-    fi
-    if test $BACL_found = yes ; then
+    ])
+
+    AS_IF([test $BACL_found = yes], [
         EXTRA_LIBS=$LIBS
         AC_MSG_RESULT(yes)
-    else
-        LDFLAGS=$LDFLAGS_save
+    ], [
         AC_MSG_RESULT(no)
-    fi
-    AS_IF([test .$BACL_found = .yes], [$3],[$4])
+    ])
+
+    AS_IF([test $BACL_found = yes], [$3],[$4])
+
+    LDFLAGS=$LDFLAGS_save
     AC_LANG_POP([C++])
 ])
 
@@ -82,10 +98,11 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_HEADER],[
     AC_MSG_CHECKING([for $1])
     CPPFLAGS_save=$CPPFLAGS
     BACH_found=no
-    AS_IF([test ."$4" != .yes], [extra_prefix="$4"],[extra_prefix=""])
-    AC_TRY_COMPILE([#include <$1>] ,, [BACH_found=yes ; break;
-            BOUT_MSG_DEBUG([found $1 without path])
-        ],)
+    AS_IF([test ."$4" != .yes], [extra_prefix="$4"], [extra_prefix=""])
+    AC_TRY_COMPILE([
+      #include <$1>
+    ], , [BACH_found=yes ; break;
+            BOUT_MSG_DEBUG([found $1 without path])])
     if test $BACH_found != yes ; then
         for search_prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
             for path in $search_prefix $search_prefix/include ; do
@@ -98,7 +115,7 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_HEADER],[
                             ],)
                 fi
             done
-            AS_IF([test .$BACH_found = .yes],break;)
+            AS_IF([test .$BACH_found = .yes], [break;])
         done
     fi
     if test $BACH_found = yes ; then
@@ -107,7 +124,7 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_HEADER],[
         CPPFLAGS=$CPPFLAGS_save
         AC_MSG_RESULT(no)
     fi
-    AS_IF([test .$BACH_found = .yes], [$2],[$3])
+    AS_IF([test .$BACH_found = .yes], [$2], [$3])
 ])
 
 AC_DEFUN([BOUT_CHECK_PRETTYFUNCTION], [
