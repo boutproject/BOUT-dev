@@ -19,6 +19,7 @@ fi
 export PYTHONPATH=$(pwd)/tools/pylib/:$PYTHONPATH
 export MAKEFLAGS="-j 2 -k"
 time make $MAIN_TARGET|| exit
+time make build-check || exit
 time make check-unit-tests || exit
 time make check-integrated-tests || exit
 time make check-mms-tests || exit
