@@ -159,7 +159,9 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
             // Only one guard cell, so no pp or mm values
             s.pp = nan("");
             s.mm = nan("");
-            throw BoutException("This is wrong!");
+            throw BoutException("Cannot interpolate in Y direction\n"
+                                " - Not enough boundary cells\n"
+                                " - at least 2 are needed!");
             for(const auto &i : result.region(RGN_NOY)) {
               // Set stencils
               s.c = var_fa[i];
@@ -174,6 +176,9 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
                 // Stencil centred around a cell centre
                 s.mm = s.m;
                 s.m  = s.c;
+              } else {
+                // We should never be here
+                throw BoutException("Please report this bug!");
               }
 
               result[i] = interp(s);
@@ -190,7 +195,19 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
           s.m = var[i.zm()];
           s.pp = var[i.offset(0,0,2)];
           s.mm = var[i.offset(0,0,-2)];
-          throw BoutException("This is wrong!");
+
+          if ((location == CELL_CENTRE) && (loc == CELL_ZLOW)) {
+            // Producing a stencil centred around a lower Z value
+            s.pp = s.p;
+            s.p  = s.c;
+          } else if(location == CELL_ZLOW) {
+            // Stencil centred around a cell centre
+            s.mm = s.m;
+            s.m  = s.c;
+          } else {
+            // We should never be here
+            throw BoutException("Please report this bug!");
+          }
 
           result[i] = interp(s);
         }
@@ -198,22 +215,18 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
       }
       default: {
         // This should never happen
-        throw BoutException("Don't know what to do");
+        throw BoutException("Unsupported method of interpolation\n"
+                            " - don't know how to interpolate to %s",strLocation(loc));
       }
       };
 
       if(dir != CELL_ZLOW) {
-        // COMMUNICATION
-
         mesh->communicate(result);
-
-        // BOUNDARIES
-
       }
 
     }else {
       // Shifted -> shifted
-      // For now, shift to centre then to loc
+      // For now, shift to centre then to final location loc
 
       result = interp_to( interp_to(var, CELL_CENTRE) , loc);
     }
@@ -221,7 +234,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
 
     return result;
   }
-  if ((loc != CELL_CENTRE || loc != CELL_DEFAULT) && (mesh->StaggerGrids == false)) {
+  if ((loc != CELL_CENTRE && loc != CELL_DEFAULT) && (mesh->StaggerGrids == false)) {
     throw BoutException("Asked to interpolate, but StaggerGrids is disabled!");
   }
   // Nothing to do - just return unchanged

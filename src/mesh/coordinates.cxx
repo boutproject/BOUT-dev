@@ -600,6 +600,11 @@ const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc) {
 
   sg = sqrt(g_22);
   sg = DDY(1. / sg) / sg;
+
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+
   if (sg.getLocation() != outloc) {
     localmesh->communicate(sg);
     sg = interp_to(sg, outloc);
