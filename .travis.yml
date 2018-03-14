@@ -8,6 +8,8 @@ git:
   
 addons:
   apt:
+    # Note &<name> creates a reference that we can refer to later using
+    # *<name>, see https://en.wikipedia.org/wiki/YAML#Syntax
     packages: &standard_packages
     - openmpi-bin
     - libopenmpi-dev
