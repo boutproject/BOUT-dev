@@ -59,8 +59,6 @@ class Mesh;
 
 #include "sys/range.hxx" // RangeIterator
 
-#include "bout/deprecated.hxx"
-
 #include <bout/griddata.hxx>
 
 #include "coordinates.hxx"    // Coordinates class

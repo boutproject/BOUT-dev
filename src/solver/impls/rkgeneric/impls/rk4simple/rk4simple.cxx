@@ -114,7 +114,8 @@ RK4SIMPLEScheme::~RK4SIMPLEScheme(){
   
 }
 
-BoutReal RK4SIMPLEScheme::setOutputStates(const BoutReal *start, const BoutReal dt, BoutReal *resultFollow){
+BoutReal RK4SIMPLEScheme::setOutputStates(const Array<BoutReal> &start, const BoutReal dt,
+                                          Array<BoutReal> &resultFollow) {
   //return RKScheme::setOutputStates(start,dt,resultFollow);
   if(followHighOrder){
     for(int i=0;i<nlocal;i++){
@@ -157,5 +158,5 @@ BoutReal RK4SIMPLEScheme::setOutputStates(const BoutReal *start, const BoutReal 
     }
   }
 
-  return getErr(resultFollow, std::begin(resultAlt));
+  return getErr(resultFollow, resultAlt);
 }

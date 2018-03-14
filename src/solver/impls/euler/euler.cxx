@@ -11,17 +11,6 @@
 
 #include <output.hxx>
 
-EulerSolver::EulerSolver(Options *options) : Solver(options), f0(nullptr) {
-  
-}
-
-EulerSolver::~EulerSolver() {
-  if(f0 != nullptr){
-    delete[] f0;
-    delete[] f1;
-  }
-}
-
 void EulerSolver::setMaxTimestep(BoutReal dt) {
   if(dt >= cfl_factor*timestep)
     return; // Already less than this
@@ -60,12 +49,12 @@ int EulerSolver::init(int nout, BoutReal tstep) {
 	       n3Dvars(), n2Dvars(), neq, nlocal);
   
   // Allocate memory
-  f0 = new BoutReal[nlocal];
-  f1 = new BoutReal[nlocal];
-  
+  f0 = Array<BoutReal>(nlocal);
+  f1 = Array<BoutReal>(nlocal);
+
   // Put starting values into f0
-  save_vars(f0);
-  
+  save_vars(std::begin(f0));
+
   return 0;
 }
 
@@ -124,8 +113,8 @@ int EulerSolver::run() {
       
       timestep = dt_limit; // Change back to limiting timestep
     }while(running);
-    
-    load_vars(f0); // Put result into variables
+
+    load_vars(std::begin(f0)); // Put result into variables
     // Call rhs function to get extra variables at this time
     run_rhs(simtime);
     
@@ -145,12 +134,13 @@ int EulerSolver::run() {
   return 0;
 }
 
-void EulerSolver::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutReal *result) {
-  
-  load_vars(start);
+void EulerSolver::take_step(BoutReal curtime, BoutReal dt, Array<BoutReal> &start,
+                            Array<BoutReal> &result) {
+
+  load_vars(std::begin(start));
   run_rhs(curtime);
-  save_derivs(result);
-  
+  save_derivs(std::begin(result));
+
   BOUT_OMP(parallel for)
   for(int i=0;i<nlocal;i++)
     result[i] = start[i] + dt*result[i];

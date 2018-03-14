@@ -51,12 +51,11 @@ class RKGenericSolver : public Solver {
 
  private:
   //Take a step using the scheme
-  BoutReal take_step(BoutReal timeIn,BoutReal dt, const BoutReal *start, 
-		     BoutReal *resultFollow);
+  BoutReal take_step(BoutReal timeIn,BoutReal dt, const Array<BoutReal> &start, 
+		     Array<BoutReal> &resultFollow);
 
   //Used for storing current state and next step
-  BoutReal *f0, *f2;
-  BoutReal *tmpState;
+  Array<BoutReal> f0, f2, tmpState;
 
   //Inputs
   BoutReal atol, rtol;   // Tolerances for adaptive timestepping

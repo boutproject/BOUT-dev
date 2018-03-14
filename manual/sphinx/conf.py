@@ -30,16 +30,15 @@ import os
 import subprocess
 import sys
 
-# Disable breathe
-has_breathe = False
+sys.path.append("../../tools/pylib")
 
 # Are we running on readthedocs?
 on_readthedocs = os.environ.get("READTHEDOCS") == "True"
 
 # readthedocs currently runs out of memory if we actually dare to try to do this
-if has_breathe and not on_readthedocs:
+if has_breathe:
     # Run doxygen to generate the XML sources
-    subprocess.call("cd ../doxygen; doxygen Doxyfile", shell=True)
+    subprocess.call("cd ../doxygen; doxygen Doxyfile_readthedocs", shell=True)
     # Now use breathe.apidoc to autogen rst files for each XML file
     apidoc_args = argparse.Namespace(destdir='_breathe_autogen/',
                                      dryrun=False,
@@ -61,7 +60,7 @@ if has_breathe and not on_readthedocs:
 
     breathe_projects = { "BOUT++": "../doxygen/bout/xml" }
     breathe_default_project = "BOUT++"
-    breathe_default_members = ("members", "protected-members", "private-members", "undoc-members")
+    breathe_default_members = ("members",)
 
 # -- General configuration ------------------------------------------------
 
