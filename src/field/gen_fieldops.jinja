@@ -1,72 +1,39 @@
-// Do the actual {{operator_name}} of {{lhs}} and {{rhs}}
-void autogen_{{out}}_{{lhs}}_{{rhs}}_{{operator_name}}(
-  {{out.passBoutRealPointer}}, const {{lhs.passBoutRealPointer}},
-  const {{rhs.passBoutRealPointer}}, {{length_arg}}) {
-
-  {% for dimension, index in dims.items() %}
-     for (int {{index}}=0; {{index}} < {{dimension}}; ++{{index}})
-  {% endfor %}
-       {
-         {{out.getElement(elementwise)}} =
-           {{lhs.getElement(elementwise)}} {{operator}} {{rhs.getElement(elementwise)}};
-       }
-}
-
 // Provide the C++ wrapper for {{operator_name}} of {{lhs}} and {{rhs}}
 {{out}} operator{{operator}}(const {{lhs.passByReference}}, const {{rhs.passByReference}}) {
   {% if lhs in ["Field3D", "Field2D"] and rhs in ["Field3D", "Field2D"] %}
 #if CHECK > 0
-  if (lhs.getLocation() != rhs.getLocation()) {
+  if ({{lhs.name}}.getLocation() != {{rhs.name}}.getLocation()) {
     throw BoutException(
         "Error in operator{{operator}}({{lhs}}, {{rhs}}): fields at different locations. lhs is at %s, rhs is at %s!",
-        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
+        strLocation({{lhs.name}}.getLocation()), strLocation({{rhs.name}}.getLocation()));
   }
 #endif
   {% endif %}
 
-  Indices i{0, 0, 0};
-  Mesh *localmesh = {{"lhs" if lhs.field_type != "BoutReal" else "rhs"}}.getMesh();
+  Mesh *localmesh = {{lhs.name if lhs.field_type != "BoutReal" else rhs.name}}.getMesh();
 
   {% if lhs != "BoutReal" and rhs != "BoutReal" %}
-    ASSERT1(localmesh == rhs.getMesh());
+    ASSERT1(localmesh == {{rhs.name}}.getMesh());
   {% endif %}
 
-  {{out.field_type}} result(localmesh);
-  result.allocate();
-  checkData(lhs);
-  checkData(rhs);
+  {{out.field_type}} {{out.name}}(localmesh);
+  {{out.name}}.allocate();
+  checkData({{lhs.name}});
+  checkData({{rhs.name}});
 
-  autogen_{{out}}_{{lhs}}_{{rhs}}_{{operator_name}}(
-    {{out.getPointerToData}}, {{lhs.getPointerToData}},
-    {{rhs.getPointerToData}},
-    {% if elementwise %}
-      {{ non_compound_length_dims | join(', ')}}
-    {% else %}
-      {{ non_compound_length_dims | join('* ')}}
-    {% endif %}
-    );
+  {{region_loop}}(localmesh->getRegion{{out.region_type}}({{region_name}}),{{index_var}},
+	{{out.index}} = {{lhs.index}} {{operator}} {{rhs.index}};
+	);
 
   {% if out in ["Field3D", "Field2D"] %}
-    result.setLocation({{"rhs" if rhs in ["Field3D","Field2D"] else "lhs"}}.getLocation());
+    {{out.name}}.setLocation({{rhs.name if rhs in ["Field3D","Field2D"] else lhs.name}}.getLocation());
   {% endif %}
 
-  checkData(result);
-  return result;
+  checkData({{out.name}});
+  return {{out.name}};
 }
 
 {% if out.field_type == lhs.field_type %}
-// Provide the C function to update {{lhs}} by {{operator_name}} with {{rhs}}
-void autogen_{{lhs}}_{{rhs}}_{{operator_name}}(
-  {{lhs.passBoutRealPointer}}, const {{rhs.passBoutRealPointer}}, {{length_arg}}) {
-
-  {% for dimension, index in dims.items() %}
-     for (int {{index}}=0; {{index}} < {{dimension}}; ++{{index}})
-  {% endfor %}
-      {
-        {{lhs.getElement(elementwise)}} {{operator}}= {{rhs.getElement(elementwise)}};
-      }
-}
-
 // Provide the C++ operator to update {{lhs}} by {{operator_name}} with {{rhs}}
 {{lhs}} &{{lhs}}::operator{{operator}}=(const {{rhs.passByReference}}) {
   // only if data is unique we update the field
@@ -77,33 +44,26 @@ void autogen_{{lhs}}_{{rhs}}_{{operator_name}}(
     if (this->getLocation() != rhs.getLocation()) {
       throw BoutException(
         "Error in {{lhs}}::operator{{operator}}=({{rhs}}): fields at different locations. lhs is at %s, rhs is at %s!",
-        strLocation(this->getLocation()), strLocation(rhs.getLocation()));
+        strLocation(this->getLocation()), strLocation({{rhs.name}}.getLocation()));
     }
 #endif
     {% endif %}
 
-    Indices i{0, 0, 0};
-
     {% if lhs != "BoutReal" and rhs != "BoutReal" %}
-      ASSERT1(fieldmesh == rhs.getMesh());
+      ASSERT1(fieldmesh == {{rhs.name}}.getMesh());
     {% endif %}
 
     checkData(*this);
-    checkData(rhs);
+    checkData({{rhs.name}});
 
-    autogen_{{lhs}}_{{rhs}}_{{operator_name}}(&(*this)[i],
-      {{rhs.getPointerToData}},
-    {% if elementwise %}
-      {{ compound_length_dims | join(', ')}}
-    {% else %}
-      {{ compound_length_dims | join('* ')}}
-    {% endif %}
-    );
+      {{region_loop}}(fieldmesh->getRegion{{lhs.region_type}}({{region_name}}),{{index_var}},
+	(*this)[{{index_var}}] {{operator}}= {{rhs.index}};
+	);			 
 
     checkData(*this);
 
   } else {
-    (*this) = (*this) {{operator}} rhs;
+    (*this) = (*this) {{operator}} {{rhs.name}};
   }
   return *this;
 }

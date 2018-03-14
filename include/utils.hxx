@@ -47,46 +47,6 @@
 using std::abs;
 using std::swap;
 
-/*!
- * Allocates an array of \p size BoutReals
- */
-DEPRECATED(BoutReal *rvector(int size));
-
-/*!
- * Resizes an array of BoutReals to \p newsize
- */ 
-DEPRECATED(BoutReal *rvresize(BoutReal *v, int newsize));
-
-/*!
- * Frees an array of BoutReals
- */
-DEPRECATED(void rvfree(BoutReal *r));
-
-/*!
- * Allocates an array of \p size ints
- */
-DEPRECATED(int *ivector(int size));
-
-/*!
- * Resizes an array of ints to \p newsize
- */
-DEPRECATED(int *ivresize(int *v, int newsize));
-
-/*!
- * Frees an array of ints
- */
-DEPRECATED(void ivfree(int *v));
-
-/*!
- * Allocate a 2D array of \p xsize by \p ysize BoutReals
- */
-DEPRECATED(BoutReal **rmatrix(int xsize, int ysize));
-
-/*!
- * Allocate a 2D array of \p xsize by \p ysize ints
- */
-DEPRECATED(int **imatrix(int xsize, int ysize));
-
 /// Helper class for 2D arrays
 ///
 /// Allows bounds checking through `operator()` with CHECK > 1
@@ -150,7 +110,9 @@ private:
 
 // For backwards compatibility with old matrix -- to be removed
 template <typename T>
-void free_matrix(Matrix<T> UNUSED(m)) {}
+DEPRECATED(void free_matrix(Matrix<T> UNUSED(m)));
+template <typename T>
+void free_matrix(Matrix<T> UNUSED(m)) {};
 
 /// Helper class for 3D arrays
 ///
@@ -293,20 +255,12 @@ T **matrix(int xsize, int ysize) {
   return m;
 }
 
-/*!
- * Free a 2D array of BoutReals, assumed to have been allocated using rmatrix()
- */
-DEPRECATED(void free_rmatrix(BoutReal **m));
-
-/*!
- * Free a 2D array of ints, assumed to have been allocated using imatrix()
- */
-DEPRECATED(void free_imatrix(int **m));
-
+template <class T>
+DEPRECATED(void free_matrix(T **m));
 /*!
  * Free a matrix, assumed to have been allocated using matrix()
  *
- * @param[in] T  The matrix to free
+ * @param[in] m  The matrix to free
  *
  * Example
  * -------
@@ -347,16 +301,6 @@ DEPRECATED(int ***i3tensor(int nrow, int ncol, int ndep));
  * by i3tensor()
  */
 DEPRECATED(void free_i3tensor(int ***m));
-
-/*!
- * Allocate a 2D array of \p nrow by \p ncol dcomplex objects
- */
-DEPRECATED(dcomplex **cmatrix(int nrow, int ncol));
-
-/*!
- * Free a 2D array, assumed to have been allocated using cmatrix
- */
-DEPRECATED(void free_cmatrix(dcomplex** cm));
 
 /*!
  * Get Random number between 0 and 1

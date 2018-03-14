@@ -173,8 +173,8 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt) :
 
   // Set up Multigrid Cycle
 
-  x = new BoutReal[(Nx_local+2)*(Nz_local+2)];
-  b = new BoutReal[(Nx_local+2)*(Nz_local+2)];
+  x = Array<BoutReal>((Nx_local + 2) * (Nz_local + 2));
+  b = Array<BoutReal>((Nx_local + 2) * (Nz_local + 2));
 
   if (mgcount == 0) {  
     output<<" Smoothing type is ";
@@ -200,8 +200,6 @@ BOUT_OMP(master)
 
 LaplaceMultigrid::~LaplaceMultigrid() {
   // Finalize, deallocate memory, etc.
-  delete [] x;
-  delete [] b;
   kMG->cleanMem();
   kMG->cleanS();
   kMG = NULL;
@@ -210,6 +208,11 @@ LaplaceMultigrid::~LaplaceMultigrid() {
 const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &x0) {
 
   TRACE("LaplaceMultigrid::solve(const FieldPerp, const FieldPerp)");
+
+#if CHECK > 2
+  checkData(b_in);
+  checkData(x0);
+#endif
 
   Mesh *mesh = b_in.getMesh();
   BoutReal t0,t1;
@@ -419,7 +422,7 @@ BOUT_OMP(for)
   }
   t0 = MPI_Wtime();
 
-  kMG->getSolution(x,b,0);
+  kMG->getSolution(std::begin(x), std::begin(b), 0);
 
   t1 = MPI_Wtime();
   if((mgcount == 300) && (tcheck != pcheck)) tcheck = pcheck;
@@ -432,7 +435,9 @@ BOUT_OMP(for)
   result.allocate();
   #if CHECK>2
     // Make any unused elements NaN so that user does not try to do calculations with them
-    result = 1./0.;
+  for (const auto &i : result) {
+    result[i] = std::nan("");
+  }
   #endif
   // Copy solution into a FieldPerp to return
 BOUT_OMP(parallel default(shared) )
@@ -541,9 +546,12 @@ BOUT_OMP(for)
     }
   }
   result.setIndex(yindex); // Set the index of the FieldPerp to be returned
-  
+
+#if CHECK > 2
+  checkData(result);
+#endif
+
   return result;
-  
 }
 
 

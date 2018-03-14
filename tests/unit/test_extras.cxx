@@ -37,3 +37,16 @@
 
   return ::testing::AssertionSuccess();
 }
+
+::testing::AssertionResult IsFieldPerpEqualBoutReal(const FieldPerp &field,
+                                                    BoutReal number, BoutReal tolerance) {
+  for (const auto &i : field) {
+    if (fabs(field[i] - number) > tolerance) {
+      return ::testing::AssertionFailure() << "FieldPerp(" << i.x << ", " << i.z
+                                           << ") == " << field[i]
+                                           << "; Expected: " << number;
+    }
+  }
+
+  return ::testing::AssertionSuccess();
+}
