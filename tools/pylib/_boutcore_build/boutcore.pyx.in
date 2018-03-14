@@ -277,8 +277,21 @@ cdef class Field3D:
             raise TypeError("Expected a Field3D or a numpy array")
         for i in inds:
             dims.append((i[1]-i[0])//i[2])
-        if len(dims_in) != 3:
+        if len(dims_in) > 3:
             raise IndexError("This is a 3D object, but got %d dimensions"%len(dims_in))
+        if len(dims_in) < 3:
+            len_dims=len([1 for d in dims if d>1])
+            if len(dims_in) != len_dims:
+                raise IndexError("This is a 3D object, but got %d dimensions"%len(dims_in))
+            dims_in_new=[]
+            k=0
+            for i in range(3):
+                if (dims[i]==1):
+                    dims_in_new.append(1)
+                else:
+                    dims_in_new.append(dims_in[k])
+                    k+=1
+            dims_in=dims_in_new
         for i in range(3):
             if dims[i] != dims_in[i]:
                 raise IndexError("Expected %s but got %s."%(dims,dims_in))
