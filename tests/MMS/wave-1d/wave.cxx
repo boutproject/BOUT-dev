@@ -64,8 +64,13 @@ protected:
     int nguard = mesh->xstart;
 
     Field2D dx=Lx/(mesh->GlobalNx - 2*nguard);
+    // Set dx for the CELL_CENTRE location
     coord->dx = dx;
+    // As dx is constant, we can just change the location, without interp_to
     dx.setLocation(CELL_XLOW);
+    // Set dx for the CELL_XLOW location
+    // If this would not be set, interp_to would be called.
+    // As we have only 1 guard cell, that could fail.
     coord->dx = dx;
     coord->dy = Ly/(mesh->GlobalNy - 2*nguard);
     

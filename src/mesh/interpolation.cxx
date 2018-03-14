@@ -249,6 +249,11 @@ const Field2D interp_to(const Field2D &var, CELL_LOC loc) {
 
       switch(dir) {
       case CELL_XLOW: {
+        if (mesh->startx < 2)
+          throw BoutException("Cannot interpolate in X direction\n"
+                              " - Not enough boundary cells\n"
+                              " - at least 2 are needed!");
+        }
         for(const auto &i : result.region(RGN_NOX)) {
 
           // Set stencils
@@ -299,11 +304,12 @@ const Field2D interp_to(const Field2D &var, CELL_LOC loc) {
           }
         } else {
           // Only one guard cell, so no pp or mm values
-          throw BoutException("Not enough boundary cells!");
+          throw BoutException("Cannot interpolate in Y direction\n"
+                              " - Not enough boundary cells\n"
+                              " - at least 2 are needed!");
         }
 
         break;
-        // Need to communicate in Y
       }
       case CELL_ZLOW:
         // Is the same
@@ -311,23 +317,18 @@ const Field2D interp_to(const Field2D &var, CELL_LOC loc) {
 
       default: {
         // This should never happen
-        throw BoutException("Don't know what to do");
+        throw BoutException("Unsupported method of interpolation\n"
+                            " - don't know how to interpolate to %s",strLocation(loc));
       }
       };
 
       if(dir != CELL_ZLOW) {
-        // COMMUNICATION
-
         mesh->communicate(result);
-
-        // BOUNDARIES
-
       }
 
     }else {
       // Shifted -> shifted
-      // For now, shift to centre then to loc
-
+      // For now, shift to centre then to final location loc
       result = interp_to( interp_to(var, CELL_CENTRE) , loc);
     }
     result.setLocation(loc);
