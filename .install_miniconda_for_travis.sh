@@ -15,5 +15,5 @@ time conda config --set always_yes yes --set changeps1 no
 time conda update -q conda
 # Useful for debugging any issues with conda
 conda info -a
-time conda create -q -n test-environment nomkl "python>=3.5" numpy scipy netcdf4
+time conda create -q -n test-environment nomkl "python>=3.5" numpy scipy netcdf4 jinja2
 source activate test-environment
