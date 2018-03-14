@@ -154,7 +154,7 @@ public:
     return fields[mainid]->isReal();
   }
   virtual bool is3D() const {
-    return fields[mainid]->isReal();
+    return fields[mainid]->is3D();
   }
   virtual int byteSize() const {
     return fields[mainid]->byteSize();
