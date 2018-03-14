@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "Configuring with $CONFIGURE_OPTIONS"
-#time ./configure $CONFIGURE_OPTIONS
+time ./configure $CONFIGURE_OPTIONS
 conf=$?
 if test $conf -gt 0
 then
