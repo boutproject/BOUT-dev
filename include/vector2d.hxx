@@ -155,10 +155,10 @@ class Vector2D : public FieldData {
   }
   void applyBoundary(const char* condition) { applyBoundary(string(condition)); }
   void applyTDerivBoundary() override;
-  virtual inline const BoutReal& operator[](const Indices &i) const {
+  virtual inline const BoutReal& operator[](const Indices &i) const override {
     throw BoutException("Indices cannot be handled ...");
   }
-  virtual inline BoutReal& operator[](const Indices &i) {
+  virtual inline BoutReal& operator[](const Indices &i) override {
     throw BoutException("Indices cannot be handled ...");
   }
  private:
