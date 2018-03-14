@@ -12,7 +12,7 @@ derivs.hxx: derivs.hxx.in.py derivs.hxx.in.jinja
 
 flexible.hxx:flexible.hxx.in.py
 	@echo "  Generating $@"
-	@PYTHONPATH+=$(BOUT_TOP)/src/field:$$PYTHONPATH ./$< > $@.tmp || \
-               (ex=$? ; echo "  touch $@ to ignore error and use old version" ; exit $ex)
+	@PYTHONPATH=$(BOUT_TOP)/src/field:$$PYTHONPATH ./$< > $@.tmp || \
+               (ex=$$? ; echo "  touch $@ to ignore error and use old version" ; exit $$ex)
 	@clang-format -i $@.tmp || echo "Warning: Formatting failed - please do not add file to repository!"
 	@mv $@.tmp $@
