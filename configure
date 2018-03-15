@@ -8950,14 +8950,16 @@ fi
 HAS_SLEPC="no"
 SLEPC_VARS=""
 
-if test "$with_slepc" != "" && test "$with_slepc" != "no"
-then
-  echo "Searching for SLEPc"
+if test "$with_slepc" != "" && test "$with_slepc" != "no"; then :
 
-  if test "$SLEPC_DIR" == ""
-  then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Searching for SLEPc" >&5
+$as_echo "$as_me: Searching for SLEPc" >&6;}
+
+  if test "$SLEPC_DIR" == ""; then :
+
     as_fn_error $? "*** --with-slepc specified but SLEPC_DIR not set" "$LINENO" 5
-  fi
+
+fi
 
   # Check that the config directory exists
   as_ac_File=`$as_echo "ac_cv_file_$SLEPC_DIR/$PETSC_ARCH/conf" | $as_tr_sh`
@@ -8985,7 +8987,8 @@ else
 fi
 
 
-  echo " -> using SLEPC_DIR=$SLEPC_DIR"
+  { $as_echo "$as_me:${as_lineno-$LINENO}:  -> using SLEPC_DIR=$SLEPC_DIR" >&5
+$as_echo "$as_me:  -> using SLEPC_DIR=$SLEPC_DIR" >&6;}
 
   # Find version number
   as_ac_File=`$as_echo "ac_cv_file_${SLEPC_DIR}/include/slepcversion.h" | $as_tr_sh`
@@ -9018,25 +9021,30 @@ fi
   SLEPC_VERSION_MINOR="0"
   SLEPC_VERSION_MINOR=`grep 'define SLEPC_VERSION_MINOR' $SLEPC_DIR/include/slepcversion.h | awk '{print \$3;}'`
 
-  if test "$SLEPC_VERSION_MAJOR" = "3" && test "$SLEPC_VERSION_MINOR" = "4"
-  then
+  if test "$SLEPC_VERSION_MAJOR" = "3" && test "$SLEPC_VERSION_MINOR" = "4"; then :
+
     # Version 3.4
-    echo " -> Using interface for SLEPc 3.4"
+    { $as_echo "$as_me:${as_lineno-$LINENO}:  -> Using interface for SLEPc 3.4" >&5
+$as_echo "$as_me:  -> Using interface for SLEPc 3.4" >&6;}
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SLEPC -DBOUT_HAS_SLEPC_3_4"
     HAS_SLEPC="yes"
 
     EXTRA_INCS="$EXTRA_INCS \$(SLEPC_INCLUDE)"
     EXTRA_LIBS="$EXTRA_LIBS \$(SLEPC_LIB)"
     SLEPC_VARS="include $SLEPC_DIR/conf/slepc_variables"
-  else
+
+else
+
     { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Error - Unknown SLEPc version" >&5
 $as_echo "$as_me: WARNING: Error - Unknown SLEPc version" >&2;}
-    echo "  -> No SLEPc support"
+    { $as_echo "$as_me:${as_lineno-$LINENO}:   -> No SLEPc support" >&5
+$as_echo "$as_me:   -> No SLEPc support" >&6;}
     HAS_SLEPC="no"
-  fi
-  echo
+
 fi
-SLEPC_VARS=$SLEPC_VARS
+
+fi
+
 
 
 #############################################################

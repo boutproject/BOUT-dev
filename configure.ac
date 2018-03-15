@@ -698,21 +698,19 @@ AS_IF([test "$PETSC" != ""], [
 HAS_SLEPC="no"
 SLEPC_VARS=""
 
-if test "$with_slepc" != "" && test "$with_slepc" != "no"
-then
-  echo "Searching for SLEPc"
+AS_IF([test "$with_slepc" != "" && test "$with_slepc" != "no"], [
+  AC_MSG_NOTICE([Searching for SLEPc])
 
-  if test "$SLEPC_DIR" == ""
-  then
+  AS_IF([test "$SLEPC_DIR" == ""], [
     AC_MSG_ERROR([*** --with-slepc specified but SLEPC_DIR not set])
-  fi
+  ])
 
   # Check that the config directory exists
   AC_CHECK_FILE($SLEPC_DIR/$PETSC_ARCH/conf, ,
     AC_MSG_ERROR([*** --with-slepc specified but could not find SLEPc distribution])
     )
 
-  echo " -> using SLEPC_DIR=$SLEPC_DIR"
+  AC_MSG_NOTICE([ -> using SLEPC_DIR=$SLEPC_DIR])
 
   # Find version number
   AC_CHECK_FILE(${SLEPC_DIR}/include/slepcversion.h, ,
@@ -724,24 +722,23 @@ then
   SLEPC_VERSION_MINOR="0"
   SLEPC_VERSION_MINOR=`grep 'define SLEPC_VERSION_MINOR' $SLEPC_DIR/include/slepcversion.h | awk '{print \$3;}'`
 
-  if test "$SLEPC_VERSION_MAJOR" = "3" && test "$SLEPC_VERSION_MINOR" = "4"
-  then
+  AS_IF([test "$SLEPC_VERSION_MAJOR" = "3" && test "$SLEPC_VERSION_MINOR" = "4"], [
     # Version 3.4
-    echo " -> Using interface for SLEPc 3.4"
+    AC_MSG_NOTICE([ -> Using interface for SLEPc 3.4])
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SLEPC -DBOUT_HAS_SLEPC_3_4"
     HAS_SLEPC="yes"
 
     EXTRA_INCS="$EXTRA_INCS \$(SLEPC_INCLUDE)"
     EXTRA_LIBS="$EXTRA_LIBS \$(SLEPC_LIB)"
     SLEPC_VARS="include $SLEPC_DIR/conf/slepc_variables"
-  else
+  ], [
     AC_MSG_WARN([Error - Unknown SLEPc version])
-    echo "  -> No SLEPc support"
+    AC_MSG_NOTICE([  -> No SLEPc support])
     HAS_SLEPC="no"
-  fi
-  echo
-fi
-AC_SUBST(SLEPC_VARS, $SLEPC_VARS)
+  ])
+])
+
+AC_SUBST(SLEPC_VARS)
 
 #############################################################
 # MUMPS library
