@@ -38,7 +38,7 @@ matrix:
       - SCRIPT_FLAGS='-uimt python'
       - PIP_PACKAGES='netcdf4 cython'
     apt:
-      packages: & mpich
+      packages: &mpich
        - libmpich-dev
        - mpich
        - *non-mpi
