@@ -39,6 +39,7 @@ matrix:
       - SCRIPT_FLAGS='-uim'
       - PIP_PACKAGES='netcdf4'
   - env:
+      - CONFIGURE_OPTIONS='--enable-shared'
       - SCRIPT_FLAGS='-uimt python'
       - PIP_PACKAGES='netcdf4 cython'
     apt:
