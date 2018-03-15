@@ -13,7 +13,6 @@ addons:
     packages: &non-mpi
     - libfftw3-dev
     - libnetcdf-dev
-    - libhdf5-mpi-dev
     - netcdf-bin
     - hdf5-tools
     - python3
@@ -23,13 +22,14 @@ addons:
     - lcov
     packages: &standard_packages
     - *non-mpi
+    - libhdf5-mpi-dev
     - openmpi-bin
     - libopenmpi-dev
     packages: &mpich
-    - *non-mpi
     - libmpich-dev
     - mpich
-    
+    - *non-mpi
+    - libhdf5-serial-dev
 
 matrix:
   fast_finish: true
