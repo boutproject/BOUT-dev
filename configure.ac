@@ -944,37 +944,25 @@ AS_IF([test "x$with_arkode" != "x" && test "x$with_arkode" != "xno"], [
 
 HAS_SCOREP="no"
 AS_IF([test "$with_scorep" != "no"], [
-  AC_MSG_NOTICE(["Searching for Scorep executable"])
 
   AS_IF([test "$with_scorep" != "yes"], [
-    # Given a path to the library
-    AC_CHECK_FILES($with_scorep/scorep, SCOREPPATH=$with_scorep,)
-    AS_IF([test "$SCOREPPATH" == ""],[
-      AC_MSG_NOTICE(["scorep not found in given directory"])
-    ],[])
-  ], 
-  [])
-
-  # Find the scorep binary
-  AS_IF([test "$SCOREPPATH" == ""], [
-    path=`which scorep`
-    AS_IF([test "$path" != ""], [
-      path=`dirname $path`
-      path=$path/..
-      AC_CHECK_FILES($path/bin/scorep , SCOREPPATH=$path,)
-      ], [])
-  ],
-  [])
+    AC_MSG_NOTICE([Searching for Scorep executable in $with_scorep])
+    AC_PATH_PROG([SCOREPPATH], [scorep], [], [$with_scorep])
+  ], [
+    AC_MSG_NOTICE([Searching for Scorep executable])
+    AC_PATH_PROG([SCOREPPATH], [scorep], [])
+  ])
 
   AS_IF([test "$SCOREPPATH" == ""], [
-      AC_MSG_NOTICE(["SCOREP support disabled"])
+      AC_MSG_FAILURE([Scorep requested, but executable not found.
+Please supply the path using --with-scorep=/path/to/scorep])
   ],[
       # Set a compile-time flag
       CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SCOREP"
-      MPICXX="scorep --user --nocompiler $MPICXX"
+      MPICXX="$SCOREPPATH --user --nocompiler $MPICXX"
       BOUT_CHECK_PRETTYFUNCTION
       HAS_SCOREP="yes"
-      AC_MSG_NOTICE(["Scorep support enabled"])
+      AC_MSG_NOTICE([Scorep support enabled])
   ])
 
   ],[
