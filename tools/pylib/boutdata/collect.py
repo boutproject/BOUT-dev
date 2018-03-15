@@ -431,7 +431,7 @@ def attributes(varname, path=".", prefix="BOUT.dmp"):
 
 
 def dimensions(varname, path=".", prefix="BOUT.dmp"):
-    """"
+    """
     Returns a list of dimensions
 
     varname   Name of the variable (string)

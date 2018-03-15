@@ -9,7 +9,7 @@ class BoutException;
 
 using std::string;
 
-void BoutParallelThrowRhsFail(int &status, const char* message);
+void BoutParallelThrowRhsFail(int status, const char* message);
 
 class BoutException : public std::exception {
 public:

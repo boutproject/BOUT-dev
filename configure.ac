@@ -83,6 +83,8 @@ AC_ARG_ENABLE(backtrace,    [AS_HELP_STRING([--disable-backtrace],
         [Disable function backtrace])],,[enable_backtrace=maybe])
 AC_ARG_ENABLE(shared,       [AS_HELP_STRING([--enable-shared],
         [Enable building bout++ into an shared object])],,[enable_shared=no])
+AC_ARG_ENABLE(openmp,       [AS_HELP_STRING([--enable-openmp],
+        [Enable building with OpenMP support])],,[enable_openmp=no])
 AC_ARG_ENABLE(pvode_openmp,       [AS_HELP_STRING([--enable-pvode-openmp],
         [Enable building PVODE with OpenMP support])],,[enable_pvode_openmp=no])
 
@@ -168,6 +170,7 @@ AC_FUNC_VPRINTF
 # Check for OpenMP support
 : ${enable_openmp=no}  # Disable by default
 AC_OPENMP
+HAS_OPENMP=$enable_openmp
 
 #############################################################
 # Code coverage using gcov
@@ -627,6 +630,10 @@ then
   if test "$with_petsc" != "yes"
   then
     PETSC_DIR="$with_petsc"
+    AC_CHECK_FILE($PETSC_DIR/conf, PETSC_CONFDIR=${PETSC_DIR}/conf,
+      AC_CHECK_FILE($PETSC_DIR/lib/petsc/conf, PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf,
+        AC_MSG_ERROR([*** --with-petsc=$with_petsc was specified but could not find PETSc distribution])
+        ))
 
   else
     AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/conf, PETSC_CONFDIR=${PETSC_DIR}/conf,
@@ -672,6 +679,10 @@ then
   then
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
     AC_MSG_RESULT([dev])
+  elif test "$PETSC_VERSION_MINOR" = "7" && test "$PETSC_VERSION_RELEASE" = "1"
+  then
+    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_7"
+    AC_MSG_RESULT([3.7 "$PETSC_DIR $PETSC_ARCH $PETSC_CONFDIR"])
   else
     AC_MSG_RESULT([unknown])
     echo "***********************************"
@@ -690,25 +701,9 @@ PETSC_ARCH = ${PETSC_ARCH}
 PETSC_DIR  = ${PETSC_DIR}
 include ${PETSC_CONFDIR}/rules
 include ${PETSC_CONFDIR}/variables
-echo_cxx:
-	-@echo \${CXX}
 echo_sundials:
 	-@echo \${SUNDIALS_LIB}
 MFILE
-
-  AC_MSG_CHECKING([PETSC has C++ support])
-  PETSC_HAS_CXX=`make -f petscmake$$ echo_cxx`
-
-  AS_IF([test -z "$PETSC_HAS_CXX"],
-  [
-    AC_MSG_RESULT([no])
-    AC_MSG_ERROR([Warning - PETSc must have C++ support])
-  ], [])
-  AC_MSG_RESULT([yes])
-
-  AC_MSG_CHECKING([PETSc C++ compiler used])
-  PETSC_CXX=`make -f petscmake$$ echo_cxx`
-  AC_MSG_RESULT([$PETSC_CXX])
 
   AC_MSG_CHECKING([PETSc has SUNDIALS support])
   PETSC_HAS_SUNDIALS=`make -f petscmake$$ echo_sundials | grep -c sundials`
@@ -1460,6 +1455,7 @@ AC_SUBST(HAS_SLEPC)
 AC_SUBST(PETSC_VERSION)
 AC_SUBST(PETSC_RELEASE)
 AC_SUBST(PETSC_HAS_SUNDIALS)
+AC_SUBST(HAS_OPENMP)
 
 AC_OUTPUT(bin/bout-config)
 chmod a+x bin/bout-config

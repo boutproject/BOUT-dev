@@ -4,13 +4,13 @@ Output and post-processing
 ==========================
 
 The majority of the existing analysis and post-processing code is
-written in Python and IDL. Routines to read BOUT++ output data,
-usually called "collect" because it collects data from multiple files,
-are also available in Matlab, Mathematica and Octave. All these
+written in Python. Routines to read BOUT++ output data, usually called
+"collect" because it collects data from multiple files, are also
+available in IDL, Matlab, Mathematica and Octave. All these
 post-processing routines are in the ``tools`` directory, with Python
-modules in ``pylib`` and IDL routines in ``idllib``. A summary of available IDL
-routines is given in Appendix [apx:idl\_routines], and Python routines
-in Appendix [apx:py\_routines].
+modules in ``tools/pylib``. A summary of available routines is in
+:ref:`sec-python-routines-list`, along with how to :ref:`install the
+requirements <sec-python-requirements>`.
 
 .. _sec-pythonroutines:
 
@@ -221,8 +221,9 @@ drawn at each time, with the scale being kept constant.
 Reading BOUT++ output into IDL
 ------------------------------
 
-There are several routines provided for reading data from BOUT++ output
-into IDL. In the directory containing the BOUT++ output files (usually
+There are several routines provided for reading data from BOUT++
+output into IDL (see :ref:`sec-idl-routines` for a more complete
+list). In the directory containing the BOUT++ output files (usually
 ``data/``), you can list the variables available using
 
 .. code-block:: idl

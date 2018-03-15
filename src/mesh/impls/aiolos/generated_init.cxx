@@ -148,7 +148,8 @@ void AiolosMesh::derivs_init(Options *option) {
     output.write("	         Upwind : Second order central\n");
   } else if (strcasecmp(name.c_str(), "U3") == 0) {
     default_x_UpwindDeriv = DIFF_U3;
-    output.write("	         Upwind : Third order upwinding\n");
+    output.write(
+        "	         Upwind : Third order upwinding (Can't do 4th order yet).\n");
   } else if (strcasecmp(name.c_str(), "C4") == 0) {
     default_x_UpwindDeriv = DIFF_C4;
     output.write("	         Upwind : Fourth order central\n");
@@ -346,7 +347,8 @@ void AiolosMesh::derivs_init(Options *option) {
     output.write("	         Upwind : Second order central\n");
   } else if (strcasecmp(name.c_str(), "U3") == 0) {
     default_y_UpwindDeriv = DIFF_U3;
-    output.write("	         Upwind : Third order upwinding\n");
+    output.write(
+        "	         Upwind : Third order upwinding (Can't do 4th order yet).\n");
   } else if (strcasecmp(name.c_str(), "C4") == 0) {
     default_y_UpwindDeriv = DIFF_C4;
     output.write("	         Upwind : Fourth order central\n");
@@ -544,7 +546,8 @@ void AiolosMesh::derivs_init(Options *option) {
     output.write("	         Upwind : Second order central\n");
   } else if (strcasecmp(name.c_str(), "U3") == 0) {
     default_z_UpwindDeriv = DIFF_U3;
-    output.write("	         Upwind : Third order upwinding\n");
+    output.write(
+        "	         Upwind : Third order upwinding (Can't do 4th order yet).\n");
   } else if (strcasecmp(name.c_str(), "C4") == 0) {
     default_z_UpwindDeriv = DIFF_C4;
     output.write("	         Upwind : Fourth order central\n");

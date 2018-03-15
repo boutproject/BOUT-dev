@@ -10077,7 +10077,7 @@ static void indexFDDX_on_DIFF_U1_field3d(BoutReal *__restrict__ result_ptr,
                        : v_in_ptr[((x + 0) * Ny + y) * Nz + z] *
                              f_in_ptr[((x + 1) * Ny + y) * Nz + z];
 
-        result_ptr[((x + 0) * Ny + y) * Nz + z] = result_;
+        result_ptr[((x + 0) * Ny + y) * Nz + z] = -result_;
       }
     }
   }
@@ -10142,7 +10142,7 @@ static void indexFDDX_off_DIFF_U1_field3d(BoutReal *__restrict__ result_ptr,
                        : v_in_ptr[((x + 1) * Ny + y) * Nz + z] *
                              f_in_ptr[((x + 1) * Ny + y) * Nz + z];
 
-        result_ptr[((x + 0) * Ny + y) * Nz + z] = result_;
+        result_ptr[((x + 0) * Ny + y) * Nz + z] = -result_;
       }
     }
   }
@@ -10207,7 +10207,7 @@ static void indexFDDY_on_DIFF_U1_field3d(BoutReal *__restrict__ result_ptr,
                        : v_in_ptr[((x)*Ny + y + 0) * Nz + z] *
                              f_in_ptr[((x)*Ny + y + 1) * Nz + z];
 
-        result_ptr[((x)*Ny + y + 0) * Nz + z] = result_;
+        result_ptr[((x)*Ny + y + 0) * Nz + z] = -result_;
       }
     }
   }
@@ -10272,7 +10272,7 @@ static void indexFDDY_off_DIFF_U1_field3d(BoutReal *__restrict__ result_ptr,
                        : v_in_ptr[((x)*Ny + y + 1) * Nz + z] *
                              f_in_ptr[((x)*Ny + y + 1) * Nz + z];
 
-        result_ptr[((x)*Ny + y + 0) * Nz + z] = result_;
+        result_ptr[((x)*Ny + y + 0) * Nz + z] = -result_;
       }
     }
   }
@@ -10333,7 +10333,7 @@ static void indexFDDZ_on_DIFF_U1_field3d(BoutReal *__restrict__ result_ptr,
                          : v_in_ptr[((x)*Ny + y) * Nz + z + 0] *
                                f_in_ptr[((x)*Ny + y) * Nz + z + 1];
 
-          result_ptr[((x)*Ny + y) * Nz + z + 0] = result_;
+          result_ptr[((x)*Ny + y) * Nz + z + 0] = -result_;
         }
         for (int z = 1; z < Nz - 1; ++z) {
           BoutReal result_ = (v_in_ptr[((x)*Ny + y) * Nz + z - 1] >= 0)
@@ -10347,7 +10347,7 @@ static void indexFDDZ_on_DIFF_U1_field3d(BoutReal *__restrict__ result_ptr,
                          : v_in_ptr[((x)*Ny + y) * Nz + z + 0] *
                                f_in_ptr[((x)*Ny + y) * Nz + z + 1];
 
-          result_ptr[((x)*Ny + y) * Nz + z + 0] = result_;
+          result_ptr[((x)*Ny + y) * Nz + z + 0] = -result_;
         }
         {
           int z = Nz - 1;
@@ -10362,7 +10362,7 @@ static void indexFDDZ_on_DIFF_U1_field3d(BoutReal *__restrict__ result_ptr,
                          : v_in_ptr[((x)*Ny + y) * Nz + z + 0] *
                                f_in_ptr[((x)*Ny + y) * Nz + z + 1 - Nz];
 
-          result_ptr[((x)*Ny + y) * Nz + z + 0] = result_;
+          result_ptr[((x)*Ny + y) * Nz + z + 0] = -result_;
         }
       }
     }
@@ -10382,7 +10382,7 @@ static void indexFDDZ_on_DIFF_U1_field3d(BoutReal *__restrict__ result_ptr,
                          : v_in_ptr[((x)*Ny + y) * Nz + +((z + 0) % Nz)] *
                                f_in_ptr[((x)*Ny + y) * Nz + +((z + 1) % Nz)];
 
-          result_ptr[((x)*Ny + y) * Nz + z + 0] = result_;
+          result_ptr[((x)*Ny + y) * Nz + z + 0] = -result_;
         }
       }
     }
@@ -10447,7 +10447,7 @@ static void indexFDDZ_off_DIFF_U1_field3d(BoutReal *__restrict__ result_ptr,
                          : v_in_ptr[((x)*Ny + y) * Nz + z + 1] *
                                f_in_ptr[((x)*Ny + y) * Nz + z + 1];
 
-          result_ptr[((x)*Ny + y) * Nz + z + 0] = result_;
+          result_ptr[((x)*Ny + y) * Nz + z + 0] = -result_;
         }
         for (int z = 1; z < Nz - 1; ++z) {
           BoutReal result_ = (v_in_ptr[((x)*Ny + y) * Nz + z + 0] >= 0)
@@ -10461,7 +10461,7 @@ static void indexFDDZ_off_DIFF_U1_field3d(BoutReal *__restrict__ result_ptr,
                          : v_in_ptr[((x)*Ny + y) * Nz + z + 1] *
                                f_in_ptr[((x)*Ny + y) * Nz + z + 1];
 
-          result_ptr[((x)*Ny + y) * Nz + z + 0] = result_;
+          result_ptr[((x)*Ny + y) * Nz + z + 0] = -result_;
         }
         {
           int z = Nz - 1;
@@ -10476,7 +10476,7 @@ static void indexFDDZ_off_DIFF_U1_field3d(BoutReal *__restrict__ result_ptr,
                          : v_in_ptr[((x)*Ny + y) * Nz + z + 1 - Nz] *
                                f_in_ptr[((x)*Ny + y) * Nz + z + 1 - Nz];
 
-          result_ptr[((x)*Ny + y) * Nz + z + 0] = result_;
+          result_ptr[((x)*Ny + y) * Nz + z + 0] = -result_;
         }
       }
     }
@@ -10496,7 +10496,7 @@ static void indexFDDZ_off_DIFF_U1_field3d(BoutReal *__restrict__ result_ptr,
                          : v_in_ptr[((x)*Ny + y) * Nz + +((z + 1) % Nz)] *
                                f_in_ptr[((x)*Ny + y) * Nz + +((z + 1) % Nz)];
 
-          result_ptr[((x)*Ny + y) * Nz + z + 0] = result_;
+          result_ptr[((x)*Ny + y) * Nz + z + 0] = -result_;
         }
       }
     }
@@ -10559,7 +10559,7 @@ static void indexFDDX_on_DIFF_U1_field2d(BoutReal *__restrict__ result_ptr,
                      ? v_in_ptr[(x + 0) * Ny + y] * f_in_ptr[(x + 0) * Ny + y]
                      : v_in_ptr[(x + 0) * Ny + y] * f_in_ptr[(x + 1) * Ny + y];
 
-      result_ptr[(x + 0) * Ny + y] = result_;
+      result_ptr[(x + 0) * Ny + y] = -result_;
     }
   }
 }
@@ -10617,7 +10617,7 @@ static void indexFDDX_off_DIFF_U1_field2d(BoutReal *__restrict__ result_ptr,
                      ? v_in_ptr[(x + 1) * Ny + y] * f_in_ptr[(x + 0) * Ny + y]
                      : v_in_ptr[(x + 1) * Ny + y] * f_in_ptr[(x + 1) * Ny + y];
 
-      result_ptr[(x + 0) * Ny + y] = result_;
+      result_ptr[(x + 0) * Ny + y] = -result_;
     }
   }
 }
@@ -10675,7 +10675,7 @@ static void indexFDDY_on_DIFF_U1_field2d(BoutReal *__restrict__ result_ptr,
                      ? v_in_ptr[(x)*Ny + y + 0] * f_in_ptr[(x)*Ny + y + 0]
                      : v_in_ptr[(x)*Ny + y + 0] * f_in_ptr[(x)*Ny + y + 1];
 
-      result_ptr[(x)*Ny + y + 0] = result_;
+      result_ptr[(x)*Ny + y + 0] = -result_;
     }
   }
 }
@@ -10733,7 +10733,7 @@ static void indexFDDY_off_DIFF_U1_field2d(BoutReal *__restrict__ result_ptr,
                      ? v_in_ptr[(x)*Ny + y + 1] * f_in_ptr[(x)*Ny + y + 0]
                      : v_in_ptr[(x)*Ny + y + 1] * f_in_ptr[(x)*Ny + y + 1];
 
-      result_ptr[(x)*Ny + y + 0] = result_;
+      result_ptr[(x)*Ny + y + 0] = -result_;
     }
   }
 }

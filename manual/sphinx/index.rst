@@ -18,6 +18,8 @@ The documentation is divided into the following sections:
   
 * :ref:`developer-docs`
 
+* :ref:`python-api`
+
 * :ref:`api-ref`
 
      
@@ -63,8 +65,8 @@ The documentation is divided into the following sections:
    :name: model-outputs
    
    user_docs/output_and_post
-   user_docs/idl
    user_docs/python
+   user_docs/idl
    user_docs/logging
    
 .. toctree::
@@ -104,6 +106,14 @@ The documentation is divided into the following sections:
    developer_docs/file_io
    developer_docs/misc
 
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Python routines
+   :name: python-api
+   :glob:
+
+   _apidoc/*
 
 .. toctree::
    :maxdepth: 1

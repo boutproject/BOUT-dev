@@ -26,14 +26,14 @@
 
 #include <vector>
 
-HermiteSpline::HermiteSpline(int y_offset)
-    : Interpolation(y_offset), localmesh(nullptr), h00_x(localmesh), h01_x(localmesh),
-      h10_x(localmesh), h11_x(localmesh), h00_z(localmesh), h01_z(localmesh),
-      h10_z(localmesh), h11_z(localmesh) {
+HermiteSpline::HermiteSpline(int y_offset, Mesh *mesh)
+    : Interpolation(y_offset, mesh), h00_x(localmesh), h01_x(localmesh), h10_x(localmesh),
+      h11_x(localmesh), h00_z(localmesh), h01_z(localmesh), h10_z(localmesh),
+      h11_z(localmesh) {
 
   // Index arrays contain guard cells in order to get subscripts right
-  i_corner = Tensor<int>(mesh->LocalNx, mesh->LocalNy, mesh->LocalNz);
-  k_corner = Tensor<int>(mesh->LocalNx, mesh->LocalNy, mesh->LocalNz);
+  i_corner = Tensor<int>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
+  k_corner = Tensor<int>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
 
   // Allocate Field3D members
   h00_x.allocate();
@@ -50,9 +50,9 @@ void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z) 
 
   BoutReal t_x, t_z;
 
-  for (int x = mesh->xstart; x <= mesh->xend; x++) {
-    for (int y = mesh->ystart; y <= mesh->yend; y++) {
-      for (int z = 0; z < mesh->LocalNz; z++) {
+  for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
+    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
+      for (int z = 0; z < localmesh->LocalNz; z++) {
 
         if (skip_mask(x, y, z))
           continue;
@@ -68,8 +68,8 @@ void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z) 
         t_z = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
 
         // NOTE: A (small) hack to avoid one-sided differences
-        if (i_corner(x, y, z) >= mesh->xend) {
-          i_corner(x, y, z) = mesh->xend - 1;
+        if (i_corner(x, y, z) >= localmesh->xend) {
+          i_corner(x, y, z) = localmesh->xend - 1;
           t_x = 1.0;
         }
 
@@ -80,17 +80,17 @@ void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z) 
         if ((t_z < 0.0) || (t_z > 1.0))
           throw BoutException("t_z=%e out of range at (%d,%d,%d)", t_z, x, y, z);
 
-        h00_x(x, y, z) = 2. * t_x * t_x * t_x - 3. * t_x * t_x + 1.;
-        h00_z(x, y, z) = 2. * t_z * t_z * t_z - 3. * t_z * t_z + 1.;
+        h00_x(x, y, z) = (2. * t_x * t_x * t_x) - (3. * t_x * t_x) + 1.;
+        h00_z(x, y, z) = (2. * t_z * t_z * t_z) - (3. * t_z * t_z) + 1.;
 
-        h01_x(x, y, z) = -2. * t_x * t_x * t_x + 3. * t_x * t_x;
-        h01_z(x, y, z) = -2. * t_z * t_z * t_z + 3. * t_z * t_z;
+        h01_x(x, y, z) = (-2. * t_x * t_x * t_x) + (3. * t_x * t_x);
+        h01_z(x, y, z) = (-2. * t_z * t_z * t_z) + (3. * t_z * t_z);
 
         h10_x(x, y, z) = t_x * (1. - t_x) * (1. - t_x);
         h10_z(x, y, z) = t_z * (1. - t_z) * (1. - t_z);
 
-        h11_x(x, y, z) = t_x * t_x * t_x - t_x * t_x;
-        h11_z(x, y, z) = t_z * t_z * t_z - t_z * t_z;
+        h11_x(x, y, z) = (t_x * t_x * t_x) - (t_x * t_x);
+        h11_z(x, y, z) = (t_z * t_z * t_z) - (t_z * t_z);
       }
     }
   }
@@ -103,28 +103,29 @@ void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z, 
 
 Field3D HermiteSpline::interpolate(const Field3D &f) const {
 
+  ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp(f.getMesh());
   f_interp.allocate();
 
   // Derivatives are used for tension and need to be on dimensionless
   // coordinates
-  Field3D fx = mesh->indexDDX(f, CELL_DEFAULT, DIFF_DEFAULT);
-  mesh->communicateXZ(fx);
-  Field3D fz = mesh->indexDDZ(f, CELL_DEFAULT, DIFF_DEFAULT, true);
-  mesh->communicateXZ(fz);
-  Field3D fxz = mesh->indexDDX(fz, CELL_DEFAULT, DIFF_DEFAULT);
-  mesh->communicateXZ(fxz);
+  Field3D fx = localmesh->indexDDX(f, CELL_DEFAULT, DIFF_DEFAULT);
+  localmesh->communicateXZ(fx);
+  Field3D fz = localmesh->indexDDZ(f, CELL_DEFAULT, DIFF_DEFAULT, true);
+  localmesh->communicateXZ(fz);
+  Field3D fxz = localmesh->indexDDX(fz, CELL_DEFAULT, DIFF_DEFAULT);
+  localmesh->communicateXZ(fxz);
 
-  for (int x = mesh->xstart; x <= mesh->xend; x++) {
-    for (int y = mesh->ystart; y <= mesh->yend; y++) {
-      for (int z = 0; z < mesh->LocalNz; z++) {
+  for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
+    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
+      for (int z = 0; z < localmesh->LocalNz; z++) {
 
         if (skip_mask(x, y, z))
           continue;
 
         // Due to lack of guard cells in z-direction, we need to ensure z-index
         // wraps around
-        int ncz = mesh->LocalNz;
+        int ncz = localmesh->LocalNz;
         int z_mod = ((k_corner(x, y, z) % ncz) + ncz) % ncz;
         int z_mod_p1 = (z_mod + 1) % ncz;
 
