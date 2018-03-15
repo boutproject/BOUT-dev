@@ -11601,50 +11601,59 @@ as_dir=lib; as_fn_mkdir_p
 as_dir=include; as_fn_mkdir_p
 
 HAS_PVODE="no"
-if ( test "$with_pvode" != "no" )
-then
-    if test "$enable_pvode_openmp" != "no"  ; then :
+if test "$with_pvode" != "no"; then :
 
-          if test "$enable_openmp" != "no" ; then :
+  if test "$enable_pvode_openmp" != "no"  ; then :
 
-                       PVODE_FLAGS="$CXXFLAGS $OPENMP_CXXFLAGS $CXX11_FLAGS"
-               { $as_echo "$as_me:${as_lineno-$LINENO}: PVODE being built with OpenMP support" >&5
+    if test "$enable_openmp" != "no" ; then :
+
+      PVODE_FLAGS="$CXXFLAGS $OPENMP_CXXFLAGS $CXX11_FLAGS"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: PVODE being built with OpenMP support" >&5
 $as_echo "$as_me: PVODE being built with OpenMP support" >&6;}
 
 else
 
-               as_fn_error $? "Cannot enable openmp in PVODE as configuring with OpenMP disabled" "$LINENO" 5
+      as_fn_error $? "Cannot enable openmp in PVODE as configuring with OpenMP disabled" "$LINENO" 5
 
 fi
 
 else
 
-             PVODE_FLAGS="$CXXFLAGS $CXX11_FLAGS"
-             { $as_echo "$as_me:${as_lineno-$LINENO}: PVODE being built without OpenMP support" >&5
+    PVODE_FLAGS="$CXXFLAGS $CXX11_FLAGS"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: PVODE being built without OpenMP support" >&5
 $as_echo "$as_me: PVODE being built without OpenMP support" >&6;}
 
 fi
+  # Clean PVODE
+  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
-   # Clean PVODE
-   CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-   CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Building PVODE" >&5
+$as_echo "$as_me: Building PVODE" >&6;}
+  echo "* Building PVODE" >> config-build.log
+  echo "*************************************************************" >> config-build.log
 
-    echo "* Building PVODE" | tee -a config-build.log
-    echo "*************************************************************" | tee -a config-build.log
+  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
-    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+  if test -f externalpackages/PVODE/lib/libpvode.a ; then :
 
-    if [ -f externalpackages/PVODE/lib/libpvode.a ]
-    then
-      echo "*************************************************************" | tee -a config-build.log
-      echo "* Successfully built PVODE" | tee -a config-build.log
-      echo "*************************************************************" | tee -a config-build.log
-      echo "* Installing PVODE into BOUT++ sourcetree" | tee -a config-build.log
-      echo "*************************************************************" | tee -a config-build.log
-    else
-      as_fn_error $? "Could not build PVODE. See config-build.log for errors" "$LINENO" 5
-    fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Successfully built PVODE" >&5
+$as_echo "$as_me: Successfully built PVODE" >&6;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Installing PVODE into BOUT++ sourcetree" >&5
+$as_echo "$as_me: Installing PVODE into BOUT++ sourcetree" >&6;}
+
+    echo "*************************************************************" >> config-build.log
+    echo "* Successfully built PVODE" >> config-build.log
+    echo "*************************************************************" >> config-build.log
+    echo "* Installing PVODE into BOUT++ sourcetree" >> config-build.log
+    echo "*************************************************************" >> config-build.log
+
+else
+
+    as_fn_error $? "Could not build PVODE. See config-build.log for errors" "$LINENO" 5
+
+fi
 
   # Set the correct libraries and copy them to bout
   as_dir=include/pvode; as_fn_mkdir_p
@@ -11653,6 +11662,7 @@ fi
   EXTRA_LIBS="$EXTRA_LIBS -L\$(BOUT_LIB_PATH) -lpvode -lpvpre"
   CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PVODE"
   HAS_PVODE="yes"
+
 fi
 
 #############################################################

@@ -933,40 +933,41 @@ AS_MKDIR_P(lib)
 AS_MKDIR_P(include)
 
 HAS_PVODE="no"
-if ( test "$with_pvode" != "no" )
-then
-    AS_IF([test "$enable_pvode_openmp" != "no"  ],[
-          AS_IF([test "$enable_openmp" != "no" ],[
-                       PVODE_FLAGS="$CXXFLAGS $OPENMP_CXXFLAGS $CXX11_FLAGS"
-               AC_MSG_NOTICE([PVODE being built with OpenMP support])
-            ],[
-               AC_MSG_ERROR([Cannot enable openmp in PVODE as configuring with OpenMP disabled])
-               ])
-          ],[
-             PVODE_FLAGS="$CXXFLAGS $CXX11_FLAGS"
-             AC_MSG_NOTICE([PVODE being built without OpenMP support])
+AS_IF([test "$with_pvode" != "no"], [
+  AS_IF([test "$enable_pvode_openmp" != "no"  ], [
+    AS_IF([test "$enable_openmp" != "no" ], [
+      PVODE_FLAGS="$CXXFLAGS $OPENMP_CXXFLAGS $CXX11_FLAGS"
+      AC_MSG_NOTICE([PVODE being built with OpenMP support])
+    ], [
+      AC_MSG_ERROR([Cannot enable openmp in PVODE as configuring with OpenMP disabled])
     ])
+  ], [
+    PVODE_FLAGS="$CXXFLAGS $CXX11_FLAGS"
+    AC_MSG_NOTICE([PVODE being built without OpenMP support])
+  ])
+  # Clean PVODE
+  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
-   # Clean PVODE
-   CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-   CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+  AC_MSG_NOTICE([Building PVODE])
+  echo "* Building PVODE" >> config-build.log
+  echo "*************************************************************" >> config-build.log
 
-    echo "* Building PVODE" | tee -a config-build.log
-    echo "*************************************************************" | tee -a config-build.log
+  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
-    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+  AS_IF([test -f externalpackages/PVODE/lib/libpvode.a ], [
+    AC_MSG_NOTICE([Successfully built PVODE])
+    AC_MSG_NOTICE([Installing PVODE into BOUT++ sourcetree])
 
-    if [[ -f externalpackages/PVODE/lib/libpvode.a ]]
-    then
-      echo "*************************************************************" | tee -a config-build.log
-      echo "* Successfully built PVODE" | tee -a config-build.log
-      echo "*************************************************************" | tee -a config-build.log
-      echo "* Installing PVODE into BOUT++ sourcetree" | tee -a config-build.log
-      echo "*************************************************************" | tee -a config-build.log
-    else
-      AC_MSG_ERROR(Could not build PVODE. See config-build.log for errors)
-    fi
+    echo "*************************************************************" >> config-build.log
+    echo "* Successfully built PVODE" >> config-build.log
+    echo "*************************************************************" >> config-build.log
+    echo "* Installing PVODE into BOUT++ sourcetree" >> config-build.log
+    echo "*************************************************************" >> config-build.log
+  ], [
+    AC_MSG_ERROR(Could not build PVODE. See config-build.log for errors)
+  ])
 
   # Set the correct libraries and copy them to bout
   AS_MKDIR_P(include/pvode)
@@ -975,7 +976,7 @@ then
   EXTRA_LIBS="$EXTRA_LIBS -L\$(BOUT_LIB_PATH) -lpvode -lpvpre"
   CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PVODE"
   HAS_PVODE="yes"
-fi
+])
 
 #############################################################
 # Check environment
