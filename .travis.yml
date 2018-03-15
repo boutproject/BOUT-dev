@@ -25,11 +25,6 @@ addons:
     - libhdf5-mpi-dev
     - openmpi-bin
     - libopenmpi-dev
-    packages: &mpich
-    - libmpich-dev
-    - mpich
-    - *non-mpi
-    - libhdf5-serial-dev
 
 matrix:
   fast_finish: true
@@ -43,8 +38,11 @@ matrix:
       - SCRIPT_FLAGS='-uimt python'
       - PIP_PACKAGES='netcdf4 cython'
     apt:
-      packages:
-        - *mpich
+      packages: & mpich
+       - libmpich-dev
+       - mpich
+       - *non-mpi
+       - libhdf5-serial-dev
   - env:
       - *default_env
       - CONFIGURE_OPTIONS='--enable-openmp'
