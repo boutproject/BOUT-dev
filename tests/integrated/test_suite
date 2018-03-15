@@ -32,8 +32,8 @@ savepath = os.getcwd() # Save current working directory
 npassed = 0
 nfailed = 0
 total = len(tests)
-failed = []
-
+failed  = []
+skipped = []
 start_time = time.time()
 
 print("======= Starting {0} tests ========".format(savepath.split("/")[-1]))
@@ -46,7 +46,10 @@ for t in tests:
     # Run test, piping stdout so it is not sent to console
     status,out = shell("./runtest", pipe=True)
 
-    if status != 0:
+    if status == 42:
+        print("S", end='') # No newline
+        skipped.append((t,out))
+    elif status != 0:
         print("F", end='') # No newline
         nfailed = nfailed + 1
         failed.append((t, out))
@@ -62,7 +65,10 @@ for t in tests:
 elapsed_time = time.time() - start_time
 
 print("\n")
-
+if skipped:
+    print("======= SKIPPED  ========")
+    for test, output in skipped:
+        print(u"\n----- {0} -----\n{1}".format(test, output))
 if nfailed > 0:
     print("======= FAILURES ========")
     for test, output in failed:
