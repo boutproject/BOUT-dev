@@ -167,7 +167,7 @@ if test "$with_hdf5" = "yes" || test "$with_hdf5" = "guess"; then
     if test ! -f "$H5CC" || test ! -x "$H5CC"; then
 
         AC_MSG_CHECKING([if we can compile HDF5 program without helper script])
-        AC_LANG_PUSH([C])
+        AC_LANG_PUSH([C++])
         AC_LINK_IFELSE(
           [AC_LANG_PROGRAM([
             #include <hdf5.h>
@@ -177,7 +177,7 @@ if test "$with_hdf5" = "yes" || test "$with_hdf5" = "guess"; then
             [ac_cv_hdf5_h=no
              ac_cv_libhdf5=no])
         AC_MSG_RESULT([$ac_cv_libhdf5])
-        AC_LANG_POP([C])
+        AC_LANG_POP([C++])
 
         if test "$ac_cv_libhdf5" = "no" ; then
           AC_MSG_WARN([Unable to compile HDF5 test program])

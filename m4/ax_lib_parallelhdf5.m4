@@ -146,7 +146,7 @@ if test "$with_parallelhdf5" = "yes"; then
     if test ! -f "$PARALLELH5CC" || test ! -x "$PARALLELH5CC"; then
 
         AC_MSG_CHECKING([if we can compile parallel HDF5 program without helper script])
-        AC_LANG_PUSH([C])
+        AC_LANG_PUSH([C++])
         AC_LINK_IFELSE(
           [AC_LANG_PROGRAM([
             #include <hdf5.h>
@@ -167,7 +167,7 @@ if test "$with_parallelhdf5" = "yes"; then
           ], [ac_cv_parallelhdf5_h=yes], [ac_cv_parallelhdf5_h=no])
           AC_MSG_RESULT([$ac_cv_parallelhdf5_h])
         fi
-        AC_LANG_POP([C])
+        AC_LANG_POP([C++])
 
         if test "$ac_cv_parallelhdf5_h" = "no" ; then
           AC_MSG_FAILURE([
