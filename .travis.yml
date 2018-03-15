@@ -33,16 +33,18 @@ matrix:
       - CONFIGURE_OPTIONS=''
       - SCRIPT_FLAGS='-uim'
       - PIP_PACKAGES='netcdf4'
-  - env:
+  - addons:
+      apt:
+        packages: &mpich
+         - libmpich-dev
+         - mpich
+         - *non-mpi
+         - libhdf5-serial-dev
+    env:
       - CONFIGURE_OPTIONS='--enable-shared'
       - SCRIPT_FLAGS='-uimt python'
       - PIP_PACKAGES='netcdf4 cython'
-    apt:
-      packages: &mpich
-       - libmpich-dev
-       - mpich
-       - *non-mpi
-       - libhdf5-serial-dev
+
   - env:
       - *default_env
       - CONFIGURE_OPTIONS='--enable-openmp'
