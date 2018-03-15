@@ -19,6 +19,11 @@ from sys import exit
 
 MPIRUN = getmpirun()
 
+s,mpich=shell("which %s|grep mpich"%(MPIRUN.split()[0]),pipe=True)
+if s==0:
+    print("Skipping test-multigrid_laplace with mpich - to slow")
+    exit(42)
+
 print("Making multigrid Laplacian inversion test")
 shell("rm test_multigrid_laplace")
 shell_safe("make > make.log")
