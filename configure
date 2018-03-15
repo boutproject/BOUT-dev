@@ -8950,7 +8950,7 @@ $as_echo "dev" >&6; }
   1) :
 
     case "$PETSC_VERSION_MINOR" in #(
-   1 | 2 | 3 | 4 | 5 | 6 | 7 ) :
+       [1-7] ) :
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_$PETSC_VERSION_MINOR"
        { $as_echo "$as_me:${as_lineno-$LINENO}: result: 3.$PETSC_VERSION_MINOR" >&5
 $as_echo "3.$PETSC_VERSION_MINOR" >&6; }

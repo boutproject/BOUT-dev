@@ -635,7 +635,8 @@ AS_IF([test "x$with_petsc" != "x" && test "$with_petsc" != "no"], [
   ],
   [1], [
     AS_CASE(["$PETSC_VERSION_MINOR"],
-    [ 1 | 2 | 3 | 4 | 5 | 6 | 7 ],
+    dnl Note double brackets! This is escaping them to leave just "[1-7]"
+    [ [[1-7]] ],
       [CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_$PETSC_VERSION_MINOR"
        AC_MSG_RESULT([3.$PETSC_VERSION_MINOR])
        AC_MSG_NOTICE([PETSC_DIR="$PETSC_DIR"])
