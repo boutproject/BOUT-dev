@@ -9051,23 +9051,20 @@ fi
 # MUMPS library
 #############################################################
 
-if test "$with_mumps" != "" && test "$with_mumps" != "no"
-then
+if test "$with_mumps" != "" && test "$with_mumps" != "no"; then :
+
   MUMPS=""
-  echo "Searching for MUMPS"
-  if test "$with_mumps" != "yes"
-  then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Searching for MUMPS" >&5
+$as_echo "$as_me: Searching for MUMPS" >&6;}
+  if test "$with_mumps" != "yes"; then :
+
     # User specified a directory
     MUMPS="$with_mumps"
 
-    # Check for libraries
+fi
 
-    MUMPS_INC=$MUMPS/include
-    MUMPS_LIB=$MUMPS/lib
-  fi
+  if test "$MUMPS" == ""; then :
 
-  if test "$MUMPS" == ""
-  then
     # Look in some standard locations
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /usr/include/dmumps_c.h" >&5
 $as_echo_n "checking for /usr/include/dmumps_c.h... " >&6; }
@@ -9085,8 +9082,9 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_file__usr_include_dmumps_c_h" >&5
 $as_echo "$ac_cv_file__usr_include_dmumps_c_h" >&6; }
 if test "x$ac_cv_file__usr_include_dmumps_c_h" = xyes; then :
-  MUMPS="/usr/".
-    as_ac_File=`$as_echo "ac_cv_file_$HOME/local/include/dmumps_c.h" | $as_tr_sh`
+  MUMPS="/usr/"
+else
+  as_ac_File=`$as_echo "ac_cv_file_$HOME/local/include/dmumps_c.h" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $HOME/local/include/dmumps_c.h" >&5
 $as_echo_n "checking for $HOME/local/include/dmumps_c.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
@@ -9110,30 +9108,39 @@ fi
 fi
 
 
-    # Check for libraries
+fi
 
+  if test "$MUMPS" == "" && test "$PETSC_DIR" != ""; then :
+
+    as_ac_File=`$as_echo "ac_cv_file_$PETSC_DIR/$PETSC_ARCH/include/dmumps_c.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PETSC_DIR/$PETSC_ARCH/include/dmumps_c.h" >&5
+$as_echo_n "checking for $PETSC_DIR/$PETSC_ARCH/include/dmumps_c.h... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$PETSC_DIR/$PETSC_ARCH/include/dmumps_c.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+  MUMPS=$PETSC_DIR/$PETSC_ARCH
+fi
+
+
+fi
+
+  if test "$MUMPS" != ""; then :
+
+    # Check all files needed
     MUMPS_INC=$MUMPS/include
     MUMPS_LIB=$MUMPS/lib
-  fi
-
-  if test "$MUMPS" == "" && test "$PETSC_DIR" != ""
-  then
-    # Try PETSc installation
-
-    mumps_dir=`ls $PETSC_DIR/externalpackages/ | grep MUMPS`
-
-    if test "$mumps_dir" != ""
-    then
-      # PETSc has a MUMPS installation
-      MUMPS_INC=$PETSC_DIR/externalpackages/$mumps_dir/include
-      MUMPS_LIB=$PETSC_DIR/$PETSC_ARCH/lib
-      MUMPS=$PETSC_DIR/externalpackages/$mumps_dir
-    fi
-  fi
-
-  if test "$MUMPS" != ""
-  then
-    # Check all files needed
     as_ac_File=`$as_echo "ac_cv_file_$MUMPS_INC/dmumps_c.h" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $MUMPS_INC/dmumps_c.h" >&5
 $as_echo_n "checking for $MUMPS_INC/dmumps_c.h... " >&6; }
@@ -9395,21 +9402,40 @@ else
    MUMPS=""
 fi
 
-  fi
 
-  if test "$MUMPS" == ""
-  then
-    echo " -> MUMPS not found"
-  else
-    echo " -> MUMPS support enabled"
-    echo "   Includes : $MUMPS_INC"
-    echo "   Libraries: $MUMPS_LIB"
+fi
+
+  if test "$MUMPS" == ""; then :
+
+    if test "x$with_mumps" = "xyes"; then :
+
+      { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "MUMPS requested, but not found
+See \`config.log' for more details" "$LINENO" 5; }
+
+else
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}:  -> MUMPS not found" >&5
+$as_echo "$as_me:  -> MUMPS not found" >&6;}
+
+fi
+
+else
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}:  -> MUMPS support enabled" >&5
+$as_echo "$as_me:  -> MUMPS support enabled" >&6;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}:    Includes : $MUMPS_INC" >&5
+$as_echo "$as_me:    Includes : $MUMPS_INC" >&6;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}:    Libraries: $MUMPS_LIB" >&5
+$as_echo "$as_me:    Libraries: $MUMPS_LIB" >&6;}
 
     EXTRA_INCS="$EXTRA_INCS -I$MUMPS_INC"
     EXTRA_LIBS="$EXTRA_LIBS -L$MUMPS_LIB -ldmumps -lmumps_common -lpord -lscalapack -lblacs -lparmetis -lmetis -lptscotch -lptesmumps"
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_MUMPS"
-  fi
-  echo
+
+fi
+
 fi
 
 #############################################################
@@ -11475,24 +11501,24 @@ as_dir=include; as_fn_mkdir_p
 HAS_PVODE="no"
 if ( test "$with_pvode" != "no" )
 then
-	if test "$enable_pvode_openmp" != "no"  ; then :
+    if test "$enable_pvode_openmp" != "no"  ; then :
 
-	      if test "$enable_openmp" != "no" ; then :
+          if test "$enable_openmp" != "no" ; then :
 
-    	               PVODE_FLAGS="$CXXFLAGS $OPENMP_CXXFLAGS $CXX11_FLAGS"
-		       { $as_echo "$as_me:${as_lineno-$LINENO}: PVODE being built with OpenMP support" >&5
+                       PVODE_FLAGS="$CXXFLAGS $OPENMP_CXXFLAGS $CXX11_FLAGS"
+               { $as_echo "$as_me:${as_lineno-$LINENO}: PVODE being built with OpenMP support" >&5
 $as_echo "$as_me: PVODE being built with OpenMP support" >&6;}
 
 else
 
-		       as_fn_error $? "Cannot enable openmp in PVODE as configuring with OpenMP disabled" "$LINENO" 5
+               as_fn_error $? "Cannot enable openmp in PVODE as configuring with OpenMP disabled" "$LINENO" 5
 
 fi
 
 else
 
-	         PVODE_FLAGS="$CXXFLAGS $CXX11_FLAGS"
-	         { $as_echo "$as_me:${as_lineno-$LINENO}: PVODE being built without OpenMP support" >&5
+             PVODE_FLAGS="$CXXFLAGS $CXX11_FLAGS"
+             { $as_echo "$as_me:${as_lineno-$LINENO}: PVODE being built without OpenMP support" >&5
 $as_echo "$as_me: PVODE being built without OpenMP support" >&6;}
 
 fi
@@ -11501,21 +11527,18 @@ fi
    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
-   #make -C externalpackages/PVODE/ clean
-
     echo "* Building PVODE" | tee -a config-build.log
-    echo "*************************************************************" >> config-build.log
+    echo "*************************************************************" | tee -a config-build.log
 
     CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
     CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
     if [ -f externalpackages/PVODE/lib/libpvode.a ]
     then
-      echo "*************************************************************" >> config-build.log
+      echo "*************************************************************" | tee -a config-build.log
       echo "* Successfully built PVODE" | tee -a config-build.log
-      echo "*	************************************************************" >> config-build.log
-      echo "* Installing PVODE into bout++ sourcetree" | tee -a config-build.log
-
+      echo "*************************************************************" | tee -a config-build.log
+      echo "* Installing PVODE into BOUT++ sourcetree" | tee -a config-build.log
       echo "*************************************************************" | tee -a config-build.log
     else
       as_fn_error $? "Could not build PVODE. See config-build.log for errors" "$LINENO" 5

@@ -21,7 +21,7 @@
 #
 # Process this file with autoreconf to produce a configure script.
 #
-#     $ autoreconf -if 
+#     $ autoreconf -if
 #
 # Changelog:
 #
@@ -617,7 +617,7 @@ AS_IF([test "x$with_petsc" != "x" && test "$with_petsc" != "no"], [
         AC_MSG_ERROR([*** --with-petsc was specified but could not find PETSc distribution])
         ))
   ])
-  
+
   PETSC_VERSION_MAJOR="0"
   PETSC_VERSION_MAJOR=`grep 'define PETSC_VERSION_MAJOR' $PETSC_DIR/include/petscversion.h | awk '{print \$3;}'`
   PETSC_VERSION_MINOR="0"
@@ -744,68 +744,51 @@ AC_SUBST(SLEPC_VARS)
 # MUMPS library
 #############################################################
 
-if test "$with_mumps" != "" && test "$with_mumps" != "no"
-then
+AS_IF([test "$with_mumps" != "" && test "$with_mumps" != "no"], [
   MUMPS=""
-  echo "Searching for MUMPS"
-  if test "$with_mumps" != "yes"
-  then
+  AC_MSG_NOTICE([Searching for MUMPS])
+  AS_IF([test "$with_mumps" != "yes"], [
     # User specified a directory
     MUMPS="$with_mumps"
+  ])
 
-    # Check for libraries
-
-    MUMPS_INC=$MUMPS/include
-    MUMPS_LIB=$MUMPS/lib
-  fi
-
-  if test "$MUMPS" == ""
-  then
+  AS_IF([test "$MUMPS" == ""], [
     # Look in some standard locations
-    AC_CHECK_FILE(/usr/include/dmumps_c.h, MUMPS="/usr/".
-    AC_CHECK_FILE($HOME/local/include/dmumps_c.h, MUMPS="$HOME/local/",))
+    AC_CHECK_FILE(/usr/include/dmumps_c.h, MUMPS="/usr/",
+      AC_CHECK_FILE($HOME/local/include/dmumps_c.h, MUMPS="$HOME/local/",))
+  ])
 
-    # Check for libraries
+  AS_IF([test "$MUMPS" == "" && test "$PETSC_DIR" != ""], [
+    AC_CHECK_FILE([$PETSC_DIR/$PETSC_ARCH/include/dmumps_c.h], [MUMPS=$PETSC_DIR/$PETSC_ARCH])
+  ])
 
+  AS_IF([test "$MUMPS" != ""], [
+    # Check all files needed
     MUMPS_INC=$MUMPS/include
     MUMPS_LIB=$MUMPS/lib
-  fi
+    AC_CHECK_FILES([$MUMPS_INC/dmumps_c.h $MUMPS_LIB/libdmumps.a
+      $MUMPS_LIB/libmumps_common.a $MUMPS_LIB/libpord.a
+      $MUMPS_LIB/libscalapack.a $MUMPS_LIB/libblacs.a
+      $MUMPS_LIB/libparmetis.a $MUMPS_LIB/libmetis.a
+      $MUMPS_LIB/libptscotch.a $MUMPS_LIB/libptesmumps.a], ,[ MUMPS="" ])
+  ])
 
-  if test "$MUMPS" == "" && test "$PETSC_DIR" != ""
-  then
-    # Try PETSc installation
-
-    mumps_dir=`ls $PETSC_DIR/externalpackages/ | grep MUMPS`
-
-    if test "$mumps_dir" != ""
-    then
-      # PETSc has a MUMPS installation
-      MUMPS_INC=$PETSC_DIR/externalpackages/$mumps_dir/include
-      MUMPS_LIB=$PETSC_DIR/$PETSC_ARCH/lib
-      MUMPS=$PETSC_DIR/externalpackages/$mumps_dir
-    fi
-  fi
-
-  if test "$MUMPS" != ""
-  then
-    # Check all files needed
-    AC_CHECK_FILES( $MUMPS_INC/dmumps_c.h $MUMPS_LIB/libdmumps.a $MUMPS_LIB/libmumps_common.a $MUMPS_LIB/libpord.a $MUMPS_LIB/libscalapack.a $MUMPS_LIB/libblacs.a $MUMPS_LIB/libparmetis.a $MUMPS_LIB/libmetis.a $MUMPS_LIB/libptscotch.a $MUMPS_LIB/libptesmumps.a, ,[ MUMPS="" ])
-  fi
-
-  if test "$MUMPS" == ""
-  then
-    echo " -> MUMPS not found"
-  else
-    echo " -> MUMPS support enabled"
-    echo "   Includes : $MUMPS_INC"
-    echo "   Libraries: $MUMPS_LIB"
+  AS_IF([test "$MUMPS" == ""], [
+    AS_IF([test "x$with_mumps" = "xyes"], [
+      AC_MSG_FAILURE([MUMPS requested, but not found])
+    ], [
+      AC_MSG_NOTICE([ -> MUMPS not found])
+    ])
+  ], [
+    AC_MSG_NOTICE([ -> MUMPS support enabled])
+    AC_MSG_NOTICE([   Includes : $MUMPS_INC])
+    AC_MSG_NOTICE([   Libraries: $MUMPS_LIB])
 
     EXTRA_INCS="$EXTRA_INCS -I$MUMPS_INC"
     EXTRA_LIBS="$EXTRA_LIBS -L$MUMPS_LIB -ldmumps -lmumps_common -lpord -lscalapack -lblacs -lparmetis -lmetis -lptscotch -lptesmumps"
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_MUMPS"
-  fi
-  echo
-fi
+  ])
+])
 
 #############################################################
 # Solver choice: SUNDIALS' IDA, SUNDIALS' CVODE, PVODE
@@ -954,37 +937,34 @@ AS_MKDIR_P(include)
 HAS_PVODE="no"
 if ( test "$with_pvode" != "no" )
 then
-	AS_IF([test "$enable_pvode_openmp" != "no"  ],[
-	      AS_IF([test "$enable_openmp" != "no" ],[
-    	               PVODE_FLAGS="$CXXFLAGS $OPENMP_CXXFLAGS $CXX11_FLAGS"
-		       AC_MSG_NOTICE([PVODE being built with OpenMP support])
-		    ],[
-		       AC_MSG_ERROR([Cannot enable openmp in PVODE as configuring with OpenMP disabled])
-		       ])
-	      ],[
-	         PVODE_FLAGS="$CXXFLAGS $CXX11_FLAGS"
-	         AC_MSG_NOTICE([PVODE being built without OpenMP support])
-	])
+    AS_IF([test "$enable_pvode_openmp" != "no"  ],[
+          AS_IF([test "$enable_openmp" != "no" ],[
+                       PVODE_FLAGS="$CXXFLAGS $OPENMP_CXXFLAGS $CXX11_FLAGS"
+               AC_MSG_NOTICE([PVODE being built with OpenMP support])
+            ],[
+               AC_MSG_ERROR([Cannot enable openmp in PVODE as configuring with OpenMP disabled])
+               ])
+          ],[
+             PVODE_FLAGS="$CXXFLAGS $CXX11_FLAGS"
+             AC_MSG_NOTICE([PVODE being built without OpenMP support])
+    ])
 
    # Clean PVODE
    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
-   #make -C externalpackages/PVODE/ clean
-
     echo "* Building PVODE" | tee -a config-build.log
-    echo "*************************************************************" >> config-build.log
+    echo "*************************************************************" | tee -a config-build.log
 
     CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
     CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
     if [[ -f externalpackages/PVODE/lib/libpvode.a ]]
     then
-      echo "*************************************************************" >> config-build.log
+      echo "*************************************************************" | tee -a config-build.log
       echo "* Successfully built PVODE" | tee -a config-build.log
-      echo "*	************************************************************" >> config-build.log
-      echo "* Installing PVODE into bout++ sourcetree" | tee -a config-build.log
-
+      echo "*************************************************************" | tee -a config-build.log
+      echo "* Installing PVODE into BOUT++ sourcetree" | tee -a config-build.log
       echo "*************************************************************" | tee -a config-build.log
     else
       AC_MSG_ERROR(Could not build PVODE. See config-build.log for errors)
