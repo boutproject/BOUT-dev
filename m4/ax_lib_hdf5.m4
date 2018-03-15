@@ -199,6 +199,8 @@ HDF5 support is being disabled (equivalent to --with-hdf5=no).
             AC_MSG_FAILURE([HDF5 was requested, but could not be compiled])
           fi
           with_hdf5="no"
+        else
+          with_hdf5="yes"
         fi
     else
         AC_MSG_CHECKING([for HDF5 libraries])

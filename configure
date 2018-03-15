@@ -7790,6 +7790,8 @@ as_fn_error $? "HDF5 was requested, but could not be compiled
 See \`config.log' for more details" "$LINENO" 5; }
           fi
           with_hdf5="no"
+        else
+          with_hdf5="yes"
         fi
     else
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for HDF5 libraries" >&5
