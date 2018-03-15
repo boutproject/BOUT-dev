@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+# -*- coding: utf-8 -*-
 #
 # Run the test suite, report failures
 #
@@ -68,16 +68,17 @@ for t in tests:
     status,out = shell("make", pipe=True)
 
     if status != 0:
-        print("F", end='') # No newline
+        # ❌ Failed
+        print(u"\u274C", end='') # No newline
         nfailed = nfailed + 1
         failed.append((t, out))
     else:
-        # Passed
-        print(".", end='') # No newline
+        # ✓ Passed
+        print(u"\u2713", end='') # No newline
         npassed = npassed + 1
 
     print(" %7.3f s - %s"%(time.time() - start_time_,t))
-    sys.stdout.flush() # Make sure '.' or 'F' is flushed
+    sys.stdout.flush() # Make sure '✓' or '❌' is flushed
     os.chdir(savepath)
 
 elapsed_time = time.time() - start_time
