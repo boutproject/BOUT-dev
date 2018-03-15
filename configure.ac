@@ -484,43 +484,41 @@ AS_IF([test "x$with_netcdf" != "xno"],
 #############################################################
 
 PNCPATH=""
-if test "$with_pnetcdf" != "no"
-then
+AS_IF([test "$with_pnetcdf" != "no"], [
   AC_MSG_NOTICE([Searching for Parallel-NetCDF library])
 
-  if test "$with_pnetcdf" != ""
-  then
+  AS_IF([test "x$with_pnetcdf" != "xyes"], [
     # Given a path to the library
-    AC_CHECK_FILES($with_pnetcdf/include/pnetcdf.h, PNCPATH=$with_pnetcdf,)
-    if test "$PNCPATH" == ""
-    then
+    AC_CHECK_FILES([$with_pnetcdf/include/pnetcdf.h], [PNCPATH=$with_pnetcdf],
       AC_MSG_NOTICE([parallel-netcdf not found in given directory])
-    fi
-  fi
+    )
+  ])
 
   # Find the utilities included with pnetcdf
-  if test "$PNCPATH" == ""
-  then
-    path=`which ncmpidump`
-    if test "$path" != ""
-    then
-      path=`dirname $path`
-      path=$path/..
-      AC_CHECK_FILES($path/include/pnetcdf.h , PNCPATH=$path,)
-    fi
-  fi
-fi
+  AS_IF([test "x$PNCPATH" == "x"], [
+    AS_IF([test "x$with_pnetcdf" = "xyes"], [
+      AC_PATH_PROG([NCMPIDUMP_PATH], [ncmpidump])
+    ], [
+      AC_PATH_PROG([NCMPIDUMP_PATH], [ncmpidump], [$with_pnetcdf$PATH_SEPARATOR$PATH])
+    ])
+    AS_IF([test "$NCMPIDUMP_PATH" != ""], [
+      AC_CHECK_FILES([$NCMPIDUMP_PATH/../include/pnetcdf.h], [PNCPATH=$NCMPIDUMP_PATH/../])
+    ])
+  ])
 
-if test "$PNCPATH" != ""
-then
-  AC_CHECK_FILES($path/lib/libpnetcdf.a, PNCPATHLIB='lib',
-    AC_CHECK_FILES($path/lib64/libpnetcdf.a, PNCPATHLIB='lib64', PNCPATH=''))
-fi
+  AS_IF([test "x$PNCPATH" != "x"], [
+    AC_CHECK_FILES($path/lib/libpnetcdf.a, PNCPATHLIB='lib',
+      AC_CHECK_FILES($path/lib64/libpnetcdf.a, PNCPATHLIB='lib64', PNCPATH=''))
+  ])
 
-if test "$PNCPATH" == ""
-then
+  AS_IF([test "x$PNCPATH" = "x" && test "x$with_pnetcdf" != "x"], [
+    AC_MSG_FAILURE([Parallel-NetCDF requested but not found])
+  ])
+])
+
+AS_IF([test "x$PNCPATH" = "x"], [
   AC_MSG_NOTICE([Parallel-NetCDF support disabled])
-else
+], [
   # Set a compile-time flag
   CXXFLAGS="$CXXFLAGS -DPNCDF"
   EXTRA_INCS="$EXTRA_INCS -I$PNCPATH/include"
@@ -528,7 +526,7 @@ else
 
   file_formats="$file_formats Parallel-NetCDF"
   AC_MSG_NOTICE([Parallel-NetCDF support enabled])
-fi
+])
 
 #############################################################
 # HDF5 library

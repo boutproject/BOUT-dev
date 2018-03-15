@@ -672,6 +672,7 @@ CFLAGS
 CC
 H5CC
 AWK
+NCMPIDUMP_PATH
 NCCONF
 fftw_path
 works
@@ -6745,13 +6746,13 @@ fi
 #############################################################
 
 PNCPATH=""
-if test "$with_pnetcdf" != "no"
-then
+if test "$with_pnetcdf" != "no"; then :
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: Searching for Parallel-NetCDF library" >&5
 $as_echo "$as_me: Searching for Parallel-NetCDF library" >&6;}
 
-  if test "$with_pnetcdf" != ""
-  then
+  if test "x$with_pnetcdf" != "xyes"; then :
+
     # Given a path to the library
     as_ac_File=`$as_echo "ac_cv_file_$with_pnetcdf/include/pnetcdf.h" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_pnetcdf/include/pnetcdf.h" >&5
@@ -6776,32 +6777,117 @@ cat >>confdefs.h <<_ACEOF
 #define `$as_echo "HAVE_$with_pnetcdf/include/pnetcdf.h" | $as_tr_cpp` 1
 _ACEOF
 PNCPATH=$with_pnetcdf
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: parallel-netcdf not found in given directory" >&5
+$as_echo "$as_me: parallel-netcdf not found in given directory" >&6;}
+
 fi
 
-    if test "$PNCPATH" == ""
-    then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: parallel-netcdf not found in given directory" >&5
-$as_echo "$as_me: parallel-netcdf not found in given directory" >&6;}
-    fi
-  fi
+
+fi
 
   # Find the utilities included with pnetcdf
-  if test "$PNCPATH" == ""
-  then
-    path=`which ncmpidump`
-    if test "$path" != ""
-    then
-      path=`dirname $path`
-      path=$path/..
-      as_ac_File=`$as_echo "ac_cv_file_$path/include/pnetcdf.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $path/include/pnetcdf.h" >&5
-$as_echo_n "checking for $path/include/pnetcdf.h... " >&6; }
+  if test "x$PNCPATH" == "x"; then :
+
+    if test "x$with_pnetcdf" = "xyes"; then :
+
+      # Extract the first word of "ncmpidump", so it can be a program name with args.
+set dummy ncmpidump; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_NCMPIDUMP_PATH+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $NCMPIDUMP_PATH in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_NCMPIDUMP_PATH="$NCMPIDUMP_PATH" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_NCMPIDUMP_PATH="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+NCMPIDUMP_PATH=$ac_cv_path_NCMPIDUMP_PATH
+if test -n "$NCMPIDUMP_PATH"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $NCMPIDUMP_PATH" >&5
+$as_echo "$NCMPIDUMP_PATH" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+
+else
+
+      # Extract the first word of "ncmpidump", so it can be a program name with args.
+set dummy ncmpidump; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_NCMPIDUMP_PATH+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $NCMPIDUMP_PATH in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_NCMPIDUMP_PATH="$NCMPIDUMP_PATH" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_NCMPIDUMP_PATH="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_path_NCMPIDUMP_PATH" && ac_cv_path_NCMPIDUMP_PATH="$with_pnetcdf$PATH_SEPARATOR$PATH"
+  ;;
+esac
+fi
+NCMPIDUMP_PATH=$ac_cv_path_NCMPIDUMP_PATH
+if test -n "$NCMPIDUMP_PATH"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $NCMPIDUMP_PATH" >&5
+$as_echo "$NCMPIDUMP_PATH" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+
+fi
+    if test "$NCMPIDUMP_PATH" != ""; then :
+
+      as_ac_File=`$as_echo "ac_cv_file_$NCMPIDUMP_PATH/../include/pnetcdf.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $NCMPIDUMP_PATH/../include/pnetcdf.h" >&5
+$as_echo_n "checking for $NCMPIDUMP_PATH/../include/pnetcdf.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$path/include/pnetcdf.h"; then
+if test -r "$NCMPIDUMP_PATH/../include/pnetcdf.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -6813,18 +6899,19 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$path/include/pnetcdf.h" | $as_tr_cpp` 1
+#define `$as_echo "HAVE_$NCMPIDUMP_PATH/../include/pnetcdf.h" | $as_tr_cpp` 1
 _ACEOF
-PNCPATH=$path
+PNCPATH=$NCMPIDUMP_PATH/../
 fi
 
-    fi
-  fi
+
 fi
 
-if test "$PNCPATH" != ""
-then
-  as_ac_File=`$as_echo "ac_cv_file_$path/lib/libpnetcdf.a" | $as_tr_sh`
+fi
+
+  if test "x$PNCPATH" != "x"; then :
+
+    as_ac_File=`$as_echo "ac_cv_file_$path/lib/libpnetcdf.a" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $path/lib/libpnetcdf.a" >&5
 $as_echo_n "checking for $path/lib/libpnetcdf.a... " >&6; }
 if eval \${$as_ac_File+:} false; then :
@@ -6877,13 +6964,27 @@ fi
 
 fi
 
+
 fi
 
-if test "$PNCPATH" == ""
-then
+  if test "x$PNCPATH" = "x" && test "x$with_pnetcdf" != "x"; then :
+
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "Parallel-NetCDF requested but not found
+See \`config.log' for more details" "$LINENO" 5; }
+
+fi
+
+fi
+
+if test "x$PNCPATH" = "x"; then :
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: Parallel-NetCDF support disabled" >&5
 $as_echo "$as_me: Parallel-NetCDF support disabled" >&6;}
+
 else
+
   # Set a compile-time flag
   CXXFLAGS="$CXXFLAGS -DPNCDF"
   EXTRA_INCS="$EXTRA_INCS -I$PNCPATH/include"
@@ -6892,6 +6993,7 @@ else
   file_formats="$file_formats Parallel-NetCDF"
   { $as_echo "$as_me:${as_lineno-$LINENO}: Parallel-NetCDF support enabled" >&5
 $as_echo "$as_me: Parallel-NetCDF support enabled" >&6;}
+
 fi
 
 #############################################################
