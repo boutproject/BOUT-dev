@@ -11,7 +11,7 @@ def debug(*args,enable=None,**kwargs):
         debug_enabled = enable
     if debug_enabled:
         import sys
-        print(*args,**kwargs,file=sys.stderr)
+        print(*args,file=sys.stderr,**kwargs)
 
 fields=['Field3D','Field2D']
 dirs=dict()
