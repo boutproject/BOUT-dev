@@ -602,23 +602,21 @@ AS_IF([test "x$with_lapack" != "xno"], [
 # PETSc library
 #############################################################
 
-if test "x$with_petsc" != "x" && test "$with_petsc" != "no"
-then
+AS_IF([test "x$with_petsc" != "x" && test "$with_petsc" != "no"], [
+  AC_PROG_AWK
 ### This still needs to check for PETSC_ARCH
-  if test "$with_petsc" != "yes"
-  then
+  AS_IF([test "$with_petsc" != "yes"], [
     PETSC_DIR="$with_petsc"
     AC_CHECK_FILE($PETSC_DIR/conf, PETSC_CONFDIR=${PETSC_DIR}/conf,
       AC_CHECK_FILE($PETSC_DIR/lib/petsc/conf, PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf,
         AC_MSG_ERROR([*** --with-petsc=$with_petsc was specified but could not find PETSc distribution])
         ))
-
-  else
+  ], [
     AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/conf, PETSC_CONFDIR=${PETSC_DIR}/conf,
       AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/lib/petsc/conf, PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf,
         AC_MSG_ERROR([*** --with-petsc was specified but could not find PETSc distribution])
         ))
-  fi
+  ])
   
   PETSC_VERSION_MAJOR="0"
   PETSC_VERSION_MAJOR=`grep 'define PETSC_VERSION_MAJOR' $PETSC_DIR/include/petscversion.h | awk '{print \$3;}'`
@@ -627,93 +625,72 @@ then
   PETSC_VERSION_RELEASE="0"
   PETSC_VERSION_RELEASE=`grep 'define PETSC_VERSION_RELEASE' $PETSC_DIR/include/petscversion.h | awk '{print \$3;}'`
 
-  if test $PETSC_VERSION_MAJOR != "3"
-  then
+  AS_IF([test $PETSC_VERSION_MAJOR != "3"], [
     AC_MSG_ERROR([PETSc must be version 3, found $PETSC_VERSION_MAJOR])
-  fi
+  ])
 
   AC_MSG_CHECKING([PETSc interface version])
-  if test "$PETSC_VERSION_MINOR" = "1"
-  then
-    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_1"
-    AC_MSG_RESULT([3.1])
-  elif test "$PETSC_VERSION_MINOR" = "2"
-  then
-    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_2"
-    AC_MSG_RESULT([3.2])
-  elif test "$PETSC_VERSION_MINOR" = "3" && test "$PETSC_VERSION_RELEASE" = "1"
-  then
-    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_3"
-    AC_MSG_RESULT([3.3])
-  elif test "$PETSC_VERSION_MINOR" = "4" && test "$PETSC_VERSION_RELEASE" = "1"
-  then
-    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_4"
-    AC_MSG_RESULT([3.4])
-  elif test "$PETSC_VERSION_MINOR" = "5" && test "$PETSC_VERSION_RELEASE" = "1"
-  then
-    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_5"
-    AC_MSG_RESULT([3.5])
-  elif test "$PETSC_VERSION_MINOR" = "5" && test "$PETSC_VERSION_RELEASE" = "0"
-  then
+  AS_CASE(["$PETSC_VERSION_RELEASE"],
+  [0], [
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
     AC_MSG_RESULT([dev])
-  elif test "$PETSC_VERSION_MINOR" = "7" && test "$PETSC_VERSION_RELEASE" = "1"
-  then
-    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_7"
-    AC_MSG_RESULT([3.7 "$PETSC_DIR $PETSC_ARCH $PETSC_CONFDIR"])
-  else
-    AC_MSG_RESULT([unknown])
-    echo "***********************************"
-    echo "WARNING: Unrecognised PETSc version"
-    echo "MAJOR VERSION: $PETSC_VERSION_MAJOR"
-    echo "MINOR VERSION: $PETSC_VERSION_MINOR"
-    echo "RELEASE      : $PETSC_VERSION_RELEASE"
-    echo ""
-    echo "Trying PETSc-dev interface"
-    echo "***********************************"
-    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
-  fi
+  ],
+  [1], [
+    AS_CASE(["$PETSC_VERSION_MINOR"],
+    [ 1 | 2 | 3 | 4 | 5 | 6 | 7 ],
+      [CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_$PETSC_VERSION_MINOR"
+       AC_MSG_RESULT([3.$PETSC_VERSION_MINOR])
+       AC_MSG_NOTICE([PETSC_DIR="$PETSC_DIR"])
+       AC_MSG_NOTICE([PETSC_ARCH="$PETSC_ARCH"])
+       AC_MSG_NOTICE([PETSC_CONFDIR="$PETSC_CONFDIR"])
+      ],
+    [
+      AC_MSG_RESULT([unknown])
+      AC_MSG_NOTICE([PETSC_DIR="$PETSC_DIR"])
+      AC_MSG_NOTICE([PETSC_ARCH="$PETSC_ARCH"])
+      AC_MSG_NOTICE([PETSC_CONFDIR="$PETSC_CONFDIR"])
+      AC_MSG_NOTICE([***********************************])
+      AC_MSG_WARN([Unrecognised PETSc version])
+      AC_MSG_NOTICE([MAJOR VERSION: $PETSC_VERSION_MAJOR])
+      AC_MSG_NOTICE([MINOR VERSION: $PETSC_VERSION_MINOR])
+      AC_MSG_NOTICE([RELEASE      : $PETSC_VERSION_RELEASE])
+      AC_MSG_NOTICE([])
+      AC_MSG_NOTICE([Trying PETSc-dev interface])
+      AC_MSG_NOTICE([***********************************])
+      CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
+    ])
+  ])
 
-cat <<MFILE > petscmake$$
-PETSC_ARCH = ${PETSC_ARCH}
-PETSC_DIR  = ${PETSC_DIR}
-include ${PETSC_CONFDIR}/rules
-include ${PETSC_CONFDIR}/variables
-echo_sundials:
-	-@echo \${SUNDIALS_LIB}
-MFILE
-
+  save_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS -I$PETSC_DIR/$PETSC_ARCH/include"
   AC_MSG_CHECKING([PETSc has SUNDIALS support])
-  PETSC_HAS_SUNDIALS=`make -f petscmake$$ echo_sundials | grep -c sundials`
-
-  AS_IF([test "$PETSC_HAS_SUNDIALS" == "0"],
-        [PETSC_HAS_SUNDIALS="no"],
-        [PETSC_HAS_SUNDIALS="yes"])
+  AC_EGREP_CPP([yes], [
+    #include <petscconf.h>
+    #ifdef PETSC_HAVE_SUNDIALS
+      yes
+    #endif
+  ], [PETSC_HAS_SUNDIALS="yes"],
+     [PETSC_HAS_SUNDIALS="no"])
   AC_MSG_RESULT([$PETSC_HAS_SUNDIALS])
-
-  rm petscmake$$
+  CPPFLAGS="$save_CPPFLAGS"
 
   # Set the line to be included in the make.conf file
   PETSC="include ${PETSC_CONFDIR}/variables"
-else
+], [
   PETSC=
-fi
+])
+
 AC_SUBST(PETSC, $PETSC)
 
-if test "$PETSC" != ""
-then
-  echo "Using PETSC_DIR = $PETSC_DIR"
-  echo "Using PETSC_ARCH = $PETSC_ARCH"
+AS_IF([test "$PETSC" != ""], [
   PRECON_SOURCE="$PRECON_SOURCE jstruc.cxx"
   EXTRA_INCS="$EXTRA_INCS \$(PETSC_CC_INCLUDES)"
   EXTRA_LIBS="$EXTRA_LIBS \$(PETSC_LIB)"
 
-  if test "$PETSC_HAS_SUNDIALS" == "yes"
-  then
+  AS_IF([test "$PETSC_HAS_SUNDIALS" == "yes"], [
     CXXFLAGS="$CXXFLAGS -DPETSC_HAS_SUNDIALS "
-  fi
-  echo
-fi
+  ])
+])
 
 #############################################################
 # SLEPc library
