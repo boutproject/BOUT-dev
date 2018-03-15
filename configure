@@ -11534,16 +11534,25 @@ fi
 # Check environment
 #############################################################
 
-if ( test "$CXXINCLUDE" != "" )
-then
-  echo "================================================"
-  echo " WARNING: CXXINCLUDE environment variable set to:"
-  echo $CXXINCLUDE
-  echo " => This will be added to compile commands"
-  echo " If this is not intended, then run"
-  echo "   export CXXINCLUDE=''"
-  echo " before making BOUT++"
-  echo "================================================"
+if test "$CXXINCLUDE" != ""; then :
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: ================================================" >&5
+$as_echo "$as_me: ================================================" >&6;}
+  { $as_echo "$as_me:${as_lineno-$LINENO}:  WARNING: CXXINCLUDE environment variable set to:" >&5
+$as_echo "$as_me:  WARNING: CXXINCLUDE environment variable set to:" >&6;}
+  { $as_echo "$as_me:${as_lineno-$LINENO}: $CXXINCLUDE" >&5
+$as_echo "$as_me: $CXXINCLUDE" >&6;}
+  { $as_echo "$as_me:${as_lineno-$LINENO}:  => This will be added to compile commands" >&5
+$as_echo "$as_me:  => This will be added to compile commands" >&6;}
+  { $as_echo "$as_me:${as_lineno-$LINENO}:  If this is not intended, then run" >&5
+$as_echo "$as_me:  If this is not intended, then run" >&6;}
+  { $as_echo "$as_me:${as_lineno-$LINENO}:    export CXXINCLUDE=''" >&5
+$as_echo "$as_me:    export CXXINCLUDE=''" >&6;}
+  { $as_echo "$as_me:${as_lineno-$LINENO}:  before making BOUT++" >&5
+$as_echo "$as_me:  before making BOUT++" >&6;}
+  { $as_echo "$as_me:${as_lineno-$LINENO}: ================================================" >&5
+$as_echo "$as_me: ================================================" >&6;}
+
 fi
 
 #############################################################
@@ -11603,68 +11612,6 @@ else
   PETSC_VERSION="$PETSC_VERSION_MAJOR.$PETSC_VERSION_MINOR"
   PETSC_RELEASE="$PETSC_VERSION_RELEASE"
 fi
-
-#############################################################
-# Print configuration info
-#############################################################
-
-echo
-echo "Configuration summary"  | tee -a config-build.log
-echo
-
-if test "$PETSC" = ""
-then
-  echo "  PETSc support: no" | tee -a config-build.log
-else
-  echo "  PETSc support: yes (version $PETSC_VERSION_MAJOR.$PETSC_VERSION_MINOR, release = $PETSC_VERSION_RELEASE)" | tee -a config-build.log
-  echo "  PETSc has SUNDIALS support: $PETSC_HAS_SUNDIALS" | tee -a config-build.log
-fi
-
-echo "  SLEPc support: $HAS_SLEPC" | tee -a config-build.log
-
-echo "  IDA support: $HAS_IDA" | tee -a config-build.log
-
-echo "  CVODE support: $HAS_CVODE" | tee -a config-build.log
-
-echo "  ARKODE support: $HAS_ARKODE" | tee -a config-build.log
-
-echo "  NetCDF support: $HAS_NETCDF" | tee -a config-build.log
-
-echo "  Parallel-NetCDF support: $HAS_PNETCDF" | tee -a config-build.log
-
-echo "  HDF5 support: $HAS_HDF5 (parallel: $HAS_PHDF5)" | tee -a config-build.log
-
-echo "  MUMPS support: $HAS_MUMPS" | tee -a config-build.log
-
-echo "  Lapack support: $HAS_LAPACK" | tee -a config-build.log
-
-echo "  Scorep support: $HAS_SCOREP" | tee -a config-build.log
-
-echo ""
-echo
-echo "Data analysis configuration"
-echo
-echo "=== IDL ==="
-echo
-echo "Make sure that the tools/idllib directory is in your IDL_PATH"
-echo "e.g. by adding to your ~/.bashrc file"
-echo
-echo "    export IDL_PATH=+$PWD/tools/idllib:'<IDL_DEFAULT>':\$IDL_PATH"
-echo
-echo "=== Python ==="
-echo
-echo "Make sure that the tools/pylib directory is in your PYTHONPATH"
-echo "e.g. by adding to your ~/.bashrc file"
-echo
-echo "   export PYTHONPATH=$PWD/tools/pylib/:\$PYTHONPATH"
-echo
-echo "=== Octave ==="
-echo
-echo "Add the following to ~/.octaverc"
-echo "   addpath('$PWD/tools/octave')"
-echo
-echo "*** Now run '$MAKE' to compile BOUT++ ***"
-echo
 
 # Only make.config is altered by configure
 ac_config_files="$ac_config_files make.config"
@@ -12891,7 +12838,6 @@ BOUT_INCLUDE_PATH=$PWD/include
 
 
 
-
 ac_config_files="$ac_config_files bin/bout-config"
 
 cat >confcache <<\_ACEOF
@@ -14069,3 +14015,99 @@ $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
 chmod a+x bin/bout-config
+
+#############################################################
+# Print configuration info
+#############################################################
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: -------------------------" >&5
+$as_echo "$as_me: -------------------------" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}:   Configuration summary  " >&5
+$as_echo "$as_me:   Configuration summary  " >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: -------------------------" >&5
+$as_echo "$as_me: -------------------------" >&6;}
+
+if test "x$PETSC" = "x"; then :
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}:   PETSc support           : no" >&5
+$as_echo "$as_me:   PETSc support           : no" >&6;}
+
+else
+
+  case "$PETSC_VERSION_RELEASE" in #(
+  0) :
+    PETSC_RELEASE_TYPE="dev" ;; #(
+  1) :
+    PETSC_RELEASE_TYPE="release"
+   ;; #(
+  *) :
+     ;;
+esac
+  { $as_echo "$as_me:${as_lineno-$LINENO}:   PETSc support           : yes (version $PETSC_VERSION, $PETSC_RELEASE_TYPE version)" >&5
+$as_echo "$as_me:   PETSc support           : yes (version $PETSC_VERSION, $PETSC_RELEASE_TYPE version)" >&6;}
+  { $as_echo "$as_me:${as_lineno-$LINENO}:   PETSc has SUNDIALS      : $PETSC_HAS_SUNDIALS" >&5
+$as_echo "$as_me:   PETSc has SUNDIALS      : $PETSC_HAS_SUNDIALS" >&6;}
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}:   SLEPc support           : $HAS_SLEPC" >&5
+$as_echo "$as_me:   SLEPc support           : $HAS_SLEPC" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}:   IDA support             : $HAS_IDA" >&5
+$as_echo "$as_me:   IDA support             : $HAS_IDA" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}:   CVODE support           : $HAS_CVODE" >&5
+$as_echo "$as_me:   CVODE support           : $HAS_CVODE" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}:   ARKODE support          : $HAS_ARKODE" >&5
+$as_echo "$as_me:   ARKODE support          : $HAS_ARKODE" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}:   NetCDF support          : $HAS_NETCDF" >&5
+$as_echo "$as_me:   NetCDF support          : $HAS_NETCDF" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}:   Parallel-NetCDF support : $HAS_PNETCDF" >&5
+$as_echo "$as_me:   Parallel-NetCDF support : $HAS_PNETCDF" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}:   HDF5 support            : $HAS_HDF5 (parallel: $HAS_PHDF5)" >&5
+$as_echo "$as_me:   HDF5 support            : $HAS_HDF5 (parallel: $HAS_PHDF5)" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}:   MUMPS support           : $HAS_MUMPS" >&5
+$as_echo "$as_me:   MUMPS support           : $HAS_MUMPS" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}:   Lapack support          : $HAS_LAPACK" >&5
+$as_echo "$as_me:   Lapack support          : $HAS_LAPACK" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}:   Scorep support          : $HAS_SCOREP" >&5
+$as_echo "$as_me:   Scorep support          : $HAS_SCOREP" >&6;}
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: " >&5
+$as_echo "$as_me: " >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: -------------------------------" >&5
+$as_echo "$as_me: -------------------------------" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}:   Data analysis configuration  " >&5
+$as_echo "$as_me:   Data analysis configuration  " >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: -------------------------------" >&5
+$as_echo "$as_me: -------------------------------" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: " >&5
+$as_echo "$as_me: " >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: === IDL ===" >&5
+$as_echo "$as_me: === IDL ===" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: " >&5
+$as_echo "$as_me: " >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: Make sure that the tools/idllib directory is in your IDL_PATH" >&5
+$as_echo "$as_me: Make sure that the tools/idllib directory is in your IDL_PATH" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: e.g. by adding to your ~/.bashrc file" >&5
+$as_echo "$as_me: e.g. by adding to your ~/.bashrc file" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: " >&5
+$as_echo "$as_me: " >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}:     export IDL_PATH=+$PWD/tools/idllib:'<IDL_DEFAULT>':\$IDL_PATH" >&5
+$as_echo "$as_me:     export IDL_PATH=+$PWD/tools/idllib:'<IDL_DEFAULT>':\$IDL_PATH" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: " >&5
+$as_echo "$as_me: " >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: === Python ===" >&5
+$as_echo "$as_me: === Python ===" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: " >&5
+$as_echo "$as_me: " >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: Make sure that the tools/pylib directory is in your PYTHONPATH" >&5
+$as_echo "$as_me: Make sure that the tools/pylib directory is in your PYTHONPATH" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: e.g. by adding to your ~/.bashrc file" >&5
+$as_echo "$as_me: e.g. by adding to your ~/.bashrc file" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: " >&5
+$as_echo "$as_me: " >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}:    export PYTHONPATH=$PWD/tools/pylib/:\$PYTHONPATH" >&5
+$as_echo "$as_me:    export PYTHONPATH=$PWD/tools/pylib/:\$PYTHONPATH" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: " >&5
+$as_echo "$as_me: " >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: *** Now run '$MAKE' to compile BOUT++ ***" >&5
+$as_echo "$as_me: *** Now run '$MAKE' to compile BOUT++ ***" >&6;}

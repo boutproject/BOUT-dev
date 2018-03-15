@@ -1003,17 +1003,16 @@ fi
 # Check environment
 #############################################################
 
-if ( test "$CXXINCLUDE" != "" )
-then
-  echo "================================================"
-  echo " WARNING: CXXINCLUDE environment variable set to:"
-  echo $CXXINCLUDE
-  echo " => This will be added to compile commands"
-  echo " If this is not intended, then run"
-  echo "   export CXXINCLUDE=''"
-  echo " before making BOUT++"
-  echo "================================================"
-fi
+AS_IF([test "$CXXINCLUDE" != ""], [
+  AC_MSG_NOTICE([================================================])
+  AC_MSG_NOTICE([ WARNING: CXXINCLUDE environment variable set to:])
+  AC_MSG_NOTICE([$CXXINCLUDE])
+  AC_MSG_NOTICE([ => This will be added to compile commands])
+  AC_MSG_NOTICE([ If this is not intended, then run])
+  AC_MSG_NOTICE([   export CXXINCLUDE=''])
+  AC_MSG_NOTICE([ before making BOUT++])
+  AC_MSG_NOTICE([================================================])
+])
 
 #############################################################
 # Gather configuration info for bout-config
@@ -1073,68 +1072,6 @@ else
   PETSC_RELEASE="$PETSC_VERSION_RELEASE"
 fi
 
-#############################################################
-# Print configuration info
-#############################################################
-
-echo
-echo "Configuration summary"  | tee -a config-build.log
-echo
-
-if test "$PETSC" = ""
-then
-  echo "  PETSc support: no" | tee -a config-build.log
-else
-  echo "  PETSc support: yes (version $PETSC_VERSION_MAJOR.$PETSC_VERSION_MINOR, release = $PETSC_VERSION_RELEASE)" | tee -a config-build.log
-  echo "  PETSc has SUNDIALS support: $PETSC_HAS_SUNDIALS" | tee -a config-build.log
-fi
-
-echo "  SLEPc support: $HAS_SLEPC" | tee -a config-build.log
-
-echo "  IDA support: $HAS_IDA" | tee -a config-build.log
-
-echo "  CVODE support: $HAS_CVODE" | tee -a config-build.log
-
-echo "  ARKODE support: $HAS_ARKODE" | tee -a config-build.log
-
-echo "  NetCDF support: $HAS_NETCDF" | tee -a config-build.log
-
-echo "  Parallel-NetCDF support: $HAS_PNETCDF" | tee -a config-build.log
-
-echo "  HDF5 support: $HAS_HDF5 (parallel: $HAS_PHDF5)" | tee -a config-build.log
-
-echo "  MUMPS support: $HAS_MUMPS" | tee -a config-build.log
-
-echo "  Lapack support: $HAS_LAPACK" | tee -a config-build.log
-
-echo "  Scorep support: $HAS_SCOREP" | tee -a config-build.log
-
-echo ""
-echo
-echo "Data analysis configuration"
-echo
-echo "=== IDL ==="
-echo
-echo "Make sure that the tools/idllib directory is in your IDL_PATH"
-echo "e.g. by adding to your ~/.bashrc file"
-echo
-echo "    export IDL_PATH=+$PWD/tools/idllib:'<IDL_DEFAULT>':\$IDL_PATH"
-echo
-echo "=== Python ==="
-echo
-echo "Make sure that the tools/pylib directory is in your PYTHONPATH"
-echo "e.g. by adding to your ~/.bashrc file"
-echo
-echo "   export PYTHONPATH=$PWD/tools/pylib/:\$PYTHONPATH"
-echo
-echo "=== Octave ==="
-echo
-echo "Add the following to ~/.octaverc"
-echo "   addpath('$PWD/tools/octave')"
-echo
-echo "*** Now run '$MAKE' to compile BOUT++ ***"
-echo
-
 # Only make.config is altered by configure
 AC_OUTPUT(make.config)
 
@@ -1162,7 +1099,6 @@ BOUT_INCLUDE_PATH=$PWD/include
 AC_SUBST(BOUT_LIB_PATH)
 AC_SUBST(BOUT_INCLUDE_PATH)
 
-
 AC_SUBST(PREFIX)
 AC_SUBST(IDLCONFIGPATH)
 AC_SUBST(PYTHONCONFIGPATH)
@@ -1189,3 +1125,54 @@ AC_SUBST(HAS_OPENMP)
 
 AC_OUTPUT(bin/bout-config)
 chmod a+x bin/bout-config
+
+#############################################################
+# Print configuration info
+#############################################################
+
+AC_MSG_NOTICE([-------------------------])
+AC_MSG_NOTICE([  Configuration summary  ])
+AC_MSG_NOTICE([-------------------------])
+
+AS_IF([test "x$PETSC" = "x"], [
+  AC_MSG_NOTICE([  PETSc support           : no])
+], [
+  AS_CASE(["$PETSC_VERSION_RELEASE"],
+    [0], [PETSC_RELEASE_TYPE="dev"],
+    [1], [PETSC_RELEASE_TYPE="release"]
+  )
+  AC_MSG_NOTICE([  PETSc support           : yes (version $PETSC_VERSION, $PETSC_RELEASE_TYPE version)])
+  AC_MSG_NOTICE([  PETSc has SUNDIALS      : $PETSC_HAS_SUNDIALS])
+])
+
+AC_MSG_NOTICE([  SLEPc support           : $HAS_SLEPC])
+AC_MSG_NOTICE([  IDA support             : $HAS_IDA])
+AC_MSG_NOTICE([  CVODE support           : $HAS_CVODE])
+AC_MSG_NOTICE([  ARKODE support          : $HAS_ARKODE])
+AC_MSG_NOTICE([  NetCDF support          : $HAS_NETCDF])
+AC_MSG_NOTICE([  Parallel-NetCDF support : $HAS_PNETCDF])
+AC_MSG_NOTICE([  HDF5 support            : $HAS_HDF5 (parallel: $HAS_PHDF5)])
+AC_MSG_NOTICE([  MUMPS support           : $HAS_MUMPS])
+AC_MSG_NOTICE([  Lapack support          : $HAS_LAPACK])
+AC_MSG_NOTICE([  Scorep support          : $HAS_SCOREP])
+
+AC_MSG_NOTICE([])
+AC_MSG_NOTICE([-------------------------------])
+AC_MSG_NOTICE([  Data analysis configuration  ])
+AC_MSG_NOTICE([-------------------------------])
+AC_MSG_NOTICE([])
+AC_MSG_NOTICE([=== IDL ===])
+AC_MSG_NOTICE([])
+AC_MSG_NOTICE([Make sure that the tools/idllib directory is in your IDL_PATH])
+AC_MSG_NOTICE([e.g. by adding to your ~/.bashrc file])
+AC_MSG_NOTICE([])
+AC_MSG_NOTICE([    export IDL_PATH=+$PWD/tools/idllib:'<IDL_DEFAULT>':\$IDL_PATH])
+AC_MSG_NOTICE([])
+AC_MSG_NOTICE([=== Python ===])
+AC_MSG_NOTICE([])
+AC_MSG_NOTICE([Make sure that the tools/pylib directory is in your PYTHONPATH])
+AC_MSG_NOTICE([e.g. by adding to your ~/.bashrc file])
+AC_MSG_NOTICE([])
+AC_MSG_NOTICE([   export PYTHONPATH=$PWD/tools/pylib/:\$PYTHONPATH])
+AC_MSG_NOTICE([])
+AC_MSG_NOTICE([*** Now run '$MAKE' to compile BOUT++ ***])
