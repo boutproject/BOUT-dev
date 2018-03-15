@@ -94,7 +94,7 @@ AC_ARG_VAR(EXTRA_LIBS,[Extra linking flags])
 file_formats=""  # Record which file formats are being supported
 
 # Delete the build log from last time
-rm config-build.log
+rm -f config-build.log
 
 AC_ARG_VAR(CXXFLAGS,[Extra compile flags])
 AC_ARG_VAR(LDFLAGS,[Extra linking flags])

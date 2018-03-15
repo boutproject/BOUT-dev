@@ -2647,7 +2647,7 @@ fi
 file_formats=""  # Record which file formats are being supported
 
 # Delete the build log from last time
-rm config-build.log
+rm -f config-build.log
 
 
 
