@@ -123,7 +123,7 @@ before_install:
   ##################################################
   # Install remaining python3 packages using pip
   ##################################################
-  - source .pip_install_for_travis.sh
+  - source .pip_install_for_travis.sh ${PIP_PACKAGES}
 
 script:
   # Configure, compile and run test_suite
