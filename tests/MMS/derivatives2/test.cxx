@@ -64,10 +64,10 @@ void save_diff(Field3D a, Field3D b,CELL_LOC in,CELL_LOC out){
   error= a-b;
   
   checkData(error);
-  std::string name="error_";
-  name+=in;//strLocation(in);
-  name+="_";
-  name+=out;//strLocation(out);
+  // std::string name="error_";
+  // name+=in;//strLocation(in);
+  // name+="_";
+  // name+=out;//strLocation(out);
   //dump.addOnce(error,name.c_str());
   dump.write();
 }

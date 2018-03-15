@@ -338,10 +338,9 @@ def get_pointer(field, field_type,const):
         first=False
         print("0", end=' ')
     print(");")
-        
+
 
 def gen_functions_normal(to_gen):
-    import sys
     for ftg in to_gen:
         mode=ftg.stag_mode
         d=ftg.d

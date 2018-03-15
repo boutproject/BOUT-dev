@@ -265,7 +265,6 @@ with open("generated_header.hxx","w") as f:
     f.write(headers)
 
 
-import sys
 tmp=[]
 for fu in funcs_to_gen:
     tmp.append(fu[0]+fu[1])
