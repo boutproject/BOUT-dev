@@ -71,7 +71,7 @@ void compare( Field3D diff, Field3D exp){
 		       ,diff(x,y,z),n(x,y,z));
   
   }
-  auto error=max(abs(diff-exp)); 
+  auto error=max(abs(diff-exp,RGN_NOBNDRY),false,RGN_NOBNDRY);
   output.write("\nerror: %g\n",error);
   if (error > 1e-8){
     //int x=mesh->xend-1;
