@@ -799,8 +799,8 @@ void BoutMesh::post_receive(CommHandle &ch) {
   len = 0;
   if (UDATA_INDEST != -1) {
     len = msg_len(ch.var_list.get(), 0, UDATA_XSPLIT, 0, MYG);
-    MPI_Irecv(ch.umsg_recvbuff, len, PVEC_REAL_MPI_TYPE, UDATA_INDEST, IN_SENT_DOWN,
-              BoutComm::get(), &ch.request[0]);
+    MPI_Irecv(std::begin(ch.umsg_recvbuff), len, PVEC_REAL_MPI_TYPE, UDATA_INDEST,
+              IN_SENT_DOWN, BoutComm::get(), &ch.request[0]);
   }
   if (UDATA_OUTDEST != -1) {
     inbuff = &ch.umsg_recvbuff[len]; // pointer to second half of the buffer
@@ -815,8 +815,8 @@ void BoutMesh::post_receive(CommHandle &ch) {
 
   if (DDATA_INDEST != -1) { // If sending & recieving data from a processor
     len = msg_len(ch.var_list.get(), 0, DDATA_XSPLIT, 0, MYG);
-    MPI_Irecv(ch.dmsg_recvbuff, len, PVEC_REAL_MPI_TYPE, DDATA_INDEST, IN_SENT_UP,
-              BoutComm::get(), &ch.request[2]);
+    MPI_Irecv(std::begin(ch.dmsg_recvbuff), len, PVEC_REAL_MPI_TYPE, DDATA_INDEST,
+              IN_SENT_UP, BoutComm::get(), &ch.request[2]);
   }
   if (DDATA_OUTDEST != -1) {
     inbuff = &ch.dmsg_recvbuff[len];
@@ -828,7 +828,7 @@ void BoutMesh::post_receive(CommHandle &ch) {
   /// Post receive data from left (x-1)
 
   if (IDATA_DEST != -1) {
-    MPI_Irecv(ch.imsg_recvbuff, msg_len(ch.var_list.get(), 0, MXG, 0, MYSUB),
+    MPI_Irecv(std::begin(ch.imsg_recvbuff), msg_len(ch.var_list.get(), 0, MXG, 0, MYSUB),
               PVEC_REAL_MPI_TYPE, IDATA_DEST, OUT_SENT_IN, BoutComm::get(),
               &ch.request[4]);
   }
@@ -836,7 +836,7 @@ void BoutMesh::post_receive(CommHandle &ch) {
   // Post receive data from right (x+1)
 
   if (ODATA_DEST != -1) {
-    MPI_Irecv(ch.omsg_recvbuff, msg_len(ch.var_list.get(), 0, MXG, 0, MYSUB),
+    MPI_Irecv(std::begin(ch.omsg_recvbuff), msg_len(ch.var_list.get(), 0, MXG, 0, MYSUB),
               PVEC_REAL_MPI_TYPE, ODATA_DEST, IN_SENT_OUT, BoutComm::get(),
               &ch.request[5]);
   }
@@ -866,19 +866,19 @@ comm_handle BoutMesh::send(FieldGroup &g) {
 
   if (UDATA_INDEST != -1) { // If there is a destination for inner x data
     len = pack_data(ch->var_list.get(), 0, UDATA_XSPLIT, MYSUB, MYSUB + MYG,
-                    ch->umsg_sendbuff);
+                    std::begin(ch->umsg_sendbuff));
     // Send the data to processor UDATA_INDEST
 
     if (async_send) {
-      MPI_Isend(ch->umsg_sendbuff,  // Buffer to send
-                len,                // Length of buffer in BoutReals
-                PVEC_REAL_MPI_TYPE, // Real variable type
-                UDATA_INDEST,       // Destination processor
-                IN_SENT_UP,         // Label (tag) for the message
+      MPI_Isend(std::begin(ch->umsg_sendbuff), // Buffer to send
+                len,                           // Length of buffer in BoutReals
+                PVEC_REAL_MPI_TYPE,            // Real variable type
+                UDATA_INDEST,                  // Destination processor
+                IN_SENT_UP,                    // Label (tag) for the message
                 BoutComm::get(), &(ch->sendreq[0]));
     } else
-      MPI_Send(ch->umsg_sendbuff, len, PVEC_REAL_MPI_TYPE, UDATA_INDEST, IN_SENT_UP,
-               BoutComm::get());
+      MPI_Send(std::begin(ch->umsg_sendbuff), len, PVEC_REAL_MPI_TYPE, UDATA_INDEST,
+               IN_SENT_UP, BoutComm::get());
   }
   if (UDATA_OUTDEST != -1) {             // if destination for outer x data
     outbuff = &(ch->umsg_sendbuff[len]); // A pointer to the start of the second part
@@ -898,14 +898,15 @@ comm_handle BoutMesh::send(FieldGroup &g) {
 
   len = 0;
   if (DDATA_INDEST != -1) { // If there is a destination for inner x data
-    len = pack_data(ch->var_list.get(), 0, DDATA_XSPLIT, MYG, 2 * MYG, ch->dmsg_sendbuff);
+    len = pack_data(ch->var_list.get(), 0, DDATA_XSPLIT, MYG, 2 * MYG,
+                    std::begin(ch->dmsg_sendbuff));
     // Send the data to processor DDATA_INDEST
     if (async_send) {
-      MPI_Isend(ch->dmsg_sendbuff, len, PVEC_REAL_MPI_TYPE, DDATA_INDEST, IN_SENT_DOWN,
-                BoutComm::get(), &(ch->sendreq[2]));
+      MPI_Isend(std::begin(ch->dmsg_sendbuff), len, PVEC_REAL_MPI_TYPE, DDATA_INDEST,
+                IN_SENT_DOWN, BoutComm::get(), &(ch->sendreq[2]));
     } else
-      MPI_Send(ch->dmsg_sendbuff, len, PVEC_REAL_MPI_TYPE, DDATA_INDEST, IN_SENT_DOWN,
-               BoutComm::get());
+      MPI_Send(std::begin(ch->dmsg_sendbuff), len, PVEC_REAL_MPI_TYPE, DDATA_INDEST,
+               IN_SENT_DOWN, BoutComm::get());
   }
   if (DDATA_OUTDEST != -1) {             // if destination for outer x data
     outbuff = &(ch->dmsg_sendbuff[len]); // A pointer to the start of the second part
@@ -924,27 +925,27 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   /// Send to the left (x-1)
 
   if (IDATA_DEST != -1) {
-    len =
-        pack_data(ch->var_list.get(), MXG, 2 * MXG, MYG, MYG + MYSUB, ch->imsg_sendbuff);
+    len = pack_data(ch->var_list.get(), MXG, 2 * MXG, MYG, MYG + MYSUB,
+                    std::begin(ch->imsg_sendbuff));
     if (async_send) {
-      MPI_Isend(ch->imsg_sendbuff, len, PVEC_REAL_MPI_TYPE, IDATA_DEST, IN_SENT_OUT,
-                BoutComm::get(), &(ch->sendreq[4]));
+      MPI_Isend(std::begin(ch->imsg_sendbuff), len, PVEC_REAL_MPI_TYPE, IDATA_DEST,
+                IN_SENT_OUT, BoutComm::get(), &(ch->sendreq[4]));
     } else
-      MPI_Send(ch->imsg_sendbuff, len, PVEC_REAL_MPI_TYPE, IDATA_DEST, IN_SENT_OUT,
-               BoutComm::get());
+      MPI_Send(std::begin(ch->imsg_sendbuff), len, PVEC_REAL_MPI_TYPE, IDATA_DEST,
+               IN_SENT_OUT, BoutComm::get());
   }
 
   /// Send to the right (x+1)
 
   if (ODATA_DEST != -1) {
     len = pack_data(ch->var_list.get(), MXSUB, MXSUB + MXG, MYG, MYG + MYSUB,
-                    ch->omsg_sendbuff);
+                    std::begin(ch->omsg_sendbuff));
     if (async_send) {
-      MPI_Isend(ch->omsg_sendbuff, len, PVEC_REAL_MPI_TYPE, ODATA_DEST, OUT_SENT_IN,
-                BoutComm::get(), &(ch->sendreq[5]));
+      MPI_Isend(std::begin(ch->omsg_sendbuff), len, PVEC_REAL_MPI_TYPE, ODATA_DEST,
+                OUT_SENT_IN, BoutComm::get(), &(ch->sendreq[5]));
     } else
-      MPI_Send(ch->omsg_sendbuff, len, PVEC_REAL_MPI_TYPE, ODATA_DEST, OUT_SENT_IN,
-               BoutComm::get());
+      MPI_Send(std::begin(ch->omsg_sendbuff), len, PVEC_REAL_MPI_TYPE, ODATA_DEST,
+               OUT_SENT_IN, BoutComm::get());
   }
 
   /// Mark communication handle as in progress
@@ -986,7 +987,7 @@ int BoutMesh::wait(comm_handle handle) {
     switch (ind) {
     case 0: { // Up, inner
       unpack_data(ch->var_list.get(), 0, UDATA_XSPLIT, MYSUB + MYG, MYSUB + 2 * MYG,
-                  ch->umsg_recvbuff);
+                  std::begin(ch->umsg_recvbuff));
       break;
     }
     case 1: { // Up, outer
@@ -996,7 +997,8 @@ int BoutMesh::wait(comm_handle handle) {
       break;
     }
     case 2: { // Down, inner
-      unpack_data(ch->var_list.get(), 0, DDATA_XSPLIT, 0, MYG, ch->dmsg_recvbuff);
+      unpack_data(ch->var_list.get(), 0, DDATA_XSPLIT, 0, MYG,
+                  std::begin(ch->dmsg_recvbuff));
       break;
     }
     case 3: { // Down, outer
@@ -1006,12 +1008,13 @@ int BoutMesh::wait(comm_handle handle) {
       break;
     }
     case 4: { // inner
-      unpack_data(ch->var_list.get(), 0, MXG, MYG, MYG + MYSUB, ch->imsg_recvbuff);
+      unpack_data(ch->var_list.get(), 0, MXG, MYG, MYG + MYSUB,
+                  std::begin(ch->imsg_recvbuff));
       break;
     }
     case 5: { // outer
       unpack_data(ch->var_list.get(), MXSUB + MXG, MXSUB + 2 * MXG, MYG, MYG + MYSUB,
-                  ch->omsg_recvbuff);
+                  std::begin(ch->omsg_recvbuff));
       break;
     }
     }
@@ -1787,17 +1790,17 @@ BoutMesh::CommHandle *BoutMesh::get_handle(int xlen, int ylen) {
       ch->request[i] = MPI_REQUEST_NULL;
 
     if (ylen > 0) {
-      ch->umsg_sendbuff = new BoutReal[ylen];
-      ch->dmsg_sendbuff = new BoutReal[ylen];
-      ch->umsg_recvbuff = new BoutReal[ylen];
-      ch->dmsg_recvbuff = new BoutReal[ylen];
+      ch->umsg_sendbuff = Array<BoutReal>(ylen);
+      ch->dmsg_sendbuff = Array<BoutReal>(ylen);
+      ch->umsg_recvbuff = Array<BoutReal>(ylen);
+      ch->dmsg_recvbuff = Array<BoutReal>(ylen);
     }
 
     if (xlen > 0) {
-      ch->imsg_sendbuff = new BoutReal[xlen];
-      ch->omsg_sendbuff = new BoutReal[xlen];
-      ch->imsg_recvbuff = new BoutReal[xlen];
-      ch->omsg_recvbuff = new BoutReal[xlen];
+      ch->imsg_sendbuff = Array<BoutReal>(xlen);
+      ch->omsg_sendbuff = Array<BoutReal>(xlen);
+      ch->imsg_recvbuff = Array<BoutReal>(xlen);
+      ch->omsg_recvbuff = Array<BoutReal>(xlen);
     }
 
     ch->xbufflen = xlen;
@@ -1814,32 +1817,18 @@ BoutMesh::CommHandle *BoutMesh::get_handle(int xlen, int ylen) {
 
   // Check that the buffers are big enough (NOTE: Could search list for bigger buffers)
   if (ch->ybufflen < ylen) {
-    if (ch->ybufflen > 0) {
-      delete[] ch->umsg_sendbuff;
-      delete[] ch->umsg_recvbuff;
-      delete[] ch->dmsg_sendbuff;
-      delete[] ch->dmsg_recvbuff;
-    }
-
-    ch->umsg_sendbuff = new BoutReal[ylen];
-    ch->dmsg_sendbuff = new BoutReal[ylen];
-    ch->umsg_recvbuff = new BoutReal[ylen];
-    ch->dmsg_recvbuff = new BoutReal[ylen];
+    ch->umsg_sendbuff = Array<BoutReal>(ylen);
+    ch->dmsg_sendbuff = Array<BoutReal>(ylen);
+    ch->umsg_recvbuff = Array<BoutReal>(ylen);
+    ch->dmsg_recvbuff = Array<BoutReal>(ylen);
 
     ch->ybufflen = ylen;
   }
   if (ch->xbufflen < xlen) {
-    if (ch->xbufflen > 0) {
-      delete[] ch->imsg_sendbuff;
-      delete[] ch->imsg_recvbuff;
-      delete[] ch->omsg_sendbuff;
-      delete[] ch->omsg_recvbuff;
-    }
-
-    ch->imsg_sendbuff = new BoutReal[xlen];
-    ch->omsg_sendbuff = new BoutReal[xlen];
-    ch->imsg_recvbuff = new BoutReal[xlen];
-    ch->omsg_recvbuff = new BoutReal[xlen];
+    ch->imsg_sendbuff = Array<BoutReal>(xlen);
+    ch->omsg_sendbuff = Array<BoutReal>(xlen);
+    ch->imsg_recvbuff = Array<BoutReal>(xlen);
+    ch->omsg_recvbuff = Array<BoutReal>(xlen);
 
     ch->xbufflen = xlen;
   }
@@ -1859,18 +1848,6 @@ void BoutMesh::free_handle(CommHandle *h) {
 void BoutMesh::clear_handles() {
   while (!comm_list.empty()) {
     CommHandle *ch = comm_list.front();
-    if (ch->ybufflen > 0) {
-      delete[] ch->umsg_sendbuff;
-      delete[] ch->umsg_recvbuff;
-      delete[] ch->dmsg_sendbuff;
-      delete[] ch->dmsg_recvbuff;
-    }
-    if (ch->xbufflen > 0) {
-      delete[] ch->imsg_sendbuff;
-      delete[] ch->imsg_recvbuff;
-      delete[] ch->omsg_sendbuff;
-      delete[] ch->omsg_recvbuff;
-    }
 
     delete ch;
 

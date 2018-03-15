@@ -147,8 +147,6 @@ string formatEig(BoutReal reEig, BoutReal imEig){
 SlepcSolver::SlepcSolver(Options *options){
   has_constraints = false;
   initialised = false;
-  f0=NULL;
-  f1=NULL;
   stIsShell=PETSC_FALSE;
 
   // Slepc settings in the Solver section
@@ -224,8 +222,6 @@ SlepcSolver::~SlepcSolver(){
     if(eps){EPSDestroy(&eps);};
     if(shellMat){MatDestroy(&shellMat);};
     if(advanceSolver){delete advanceSolver;};
-    if(f0){delete[] f0;};
-    if(f1){delete[] f1;};
     initialised = false;
   }
 }
@@ -259,8 +255,8 @@ int SlepcSolver::init(int NOUT, BoutReal TIMESTEP) {
   comm=PETSC_COMM_WORLD;
 
   //Initialise advanceSolver if not self
-  if( !selfSolve && !ddtMode ){
-    advanceSolver->init(restarting,NOUT,TIMESTEP);
+  if (!selfSolve && !ddtMode) {
+    advanceSolver->init(NOUT, TIMESTEP);
   }
 
   //Calculate grid sizes
@@ -269,8 +265,8 @@ int SlepcSolver::init(int NOUT, BoutReal TIMESTEP) {
   //Also create vector for derivs etc. if SLEPc in charge of solving
   if(selfSolve && !ddtMode){
     // Allocate memory
-    f0 = new BoutReal[localSize];
-    f1 = new BoutReal[localSize];
+    f0 = Array<BoutReal>(localSize);
+    f1 = Array<BoutReal>(localSize);
   }
 
   // Get total problem size
@@ -507,12 +503,12 @@ int SlepcSolver::advanceStep(Mat &matOperator, Vec &inData, Vec &outData){
       //Not recommended!
       retVal=run_rhs(0.0);
       //Here we add dt*ddt(Fields) to fields to advance solution (cf. Euler)
-      save_vars(f0);
-      save_derivs(f1);
+      save_vars(std::begin(f0));
+      save_derivs(std::begin(f1));
       for(int iVec=0;iVec<localSize;iVec++){
         f0[iVec]+=f1[iVec]*tstep;
       }
-      load_vars(f0);
+      load_vars(std::begin(f0));
     }else{
       //Here we exploit one of the built in solver implementations to advance the
       //prescribed fields by a big (tstep*nstep) step.

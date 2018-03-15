@@ -16,15 +16,11 @@ GlobalField::GlobalField(Mesh *m, int proc, int xsize, int ysize, int zsize)
 
   if(mype == proc) {
     // Allocate memory
-    data = new BoutReal[nx*ny*nz];
-  }else {
-    data = NULL;
+    data = Array<BoutReal>(nx * ny * nz);
   }
 }
 
 GlobalField::~GlobalField() {
-  if(data)
-    delete[] data;
 }
 
 void GlobalField::proc_local_origin(int proc, int *x, int *y, int *z) const {

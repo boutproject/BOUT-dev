@@ -1,21 +1,83 @@
 Testing
 =======
 
-Two types of tests are currently used in BOUT++ to catch bugs as early
-as possible: Unit tests, which check a small piece of the code
-separately, and a test suite which runs the entire code on a short
-problem. Unit tests can be run using the ``src/unit_tests`` Python
-script. This searches through the directories looking for an executable
-script called ``unit_test``, runs them, and collates the results. Not
-many tests are currently available as much of the code is too tightly
-coupled. If done correctly, the unit tests should describe and check the
-behaviour of each part of the code, and hopefully the number of these
-will increase over time. The test suite is in the ``examples``
-directory, and is run using the ``test_suite`` python script. At the top
-of this file is a list of the subdirectories to run (e.g. ``test-io``,
-``test-laplace``, and ``interchange-instability``). In each of those
-subdirectories the script ``runtest`` is executed, and the return value
-used to determine if the test passed or failed.
+There are three types of test used in BOUT++, in order of complexity:
+unit tests, integrated tests, and "method of manufactured solutions"
+(MMS) tests. Unit tests are very short, quick tests that test a single
+"unit" -- usually a single function or method. Integrated tests are
+longer tests that range from tests that need a lot of set up and check
+multiple conditions, to full physics model tests. MMS tests check the
+numerical properties of operators, such as the error scaling of
+derivatives.
+
+There is a test suite that runs through all of the unit tests, and
+selected integrated and MMS tests. The easiest way to run this is
+with:
+
+.. code-block:: console
+   $ make check
+
+We expect that any new feature or function implemented in BOUT++ also
+has some corresponding tests, and *strongly* prefer unit tests.
+
+.. _sec-automated-testing:
+
+Automated tests and code coverage
+---------------------------------
+
+BOUT++ uses `Travis CI`_ to automatically run the test suite on every
+push to the GitHub repository, as well as on every submitted Pull
+Request. The Travis settings are in ``.travis.yml``. Pull requests
+that fail the tests will not be merged.
+
+We also gather information from how well the unit tests cover the
+library using `CodeCov`_, the settings for which are stored in
+``.codecov.yml``.
+
+.. _Travis CI: https://travis-ci.org/boutproject/BOUT-dev/
+.. _CodeCov: https://codecov.io/gh/boutproject/BOUT-dev
+
+
+.. _sec-unit-tests:
+
+Unit tests
+----------
+
+The unit test suits aims to be a comprehensive set of tests that run
+*very* fast and ensure the basic functionality of BOUT++ is
+correct. At the time of writing, we have around 500 tests that run in
+less than a second. Because these tests run very quickly, they should
+be run on every commit (or even more often!). For more information on
+the unit tests, see ``tests/unit/README.md``.
+
+You can run the unit tests with:
+
+.. code-block:: console
+   $ make check-unit-tests
+
+
+.. _sec-integrated-tests:
+
+Integrated tests
+----------------
+
+This set of tests are designed to test that different components of
+the BOUT++ library work together. These tests are more expensive than
+the unit tests, but are expected to be run on at least every pull
+request, and the majority on every commit.
+
+You can run the integrated tests with:
+
+.. code-block:: console
+   $ make check-integrated-tests
+
+The test suite is in the ``tests/integrated`` directory, and is run
+using the ``test_suite`` python
+script. ``tests/integrated/test_suite_list`` contains a list of the
+subdirectories to run (e.g. ``test-io``, ``test-laplace``,
+``interchange-instability``). In each of those subdirectories the
+script ``runtest`` is executed, and the return value used to determine
+if the test passed or failed.
 
 All tests should be short, otherwise it discourages people from running
 the tests before committing changes. A few minutes or less on a typical

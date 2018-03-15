@@ -139,12 +139,12 @@ public:
 ///
 class ConditionalOutput : public Output {
 public:
-  /// @params[in] base    The Output object which will be written to if enabled
+  /// @param[in] base    The Output object which will be written to if enabled
   ConditionalOutput(Output *base) : base(base), enabled(true), base_is_cond(false) {};
 
   /// Constuctor taking ConditionalOutput. This allows several layers of conditions
   /// 
-  /// @params[in] base    A ConditionalOutput which will be written to if enabled
+  /// @param[in] base    A ConditionalOutput which will be written to if enabled
   /// 
   ConditionalOutput(ConditionalOutput *base)
       : base(base), enabled(base->enabled), base_is_cond(true) {};

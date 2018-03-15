@@ -39,6 +39,7 @@ class SlepcSolver;
 #include <vector3d.hxx>
 #include "../../solverfactory.hxx"
 #include <bout/solver.hxx>
+#include <utils.hxx>
 
 #include <vector>
 #include <bout/slepclib.hxx>
@@ -176,8 +177,7 @@ private:
   bool eigenValOnly;
 
   //For selfSolve=true
-  BoutReal *f0;
-  BoutReal *f1;
+  Array<BoutReal> f0, f1;
 
   //Timestep details
   int nout;

@@ -34,8 +34,8 @@ class PowerSolver;
 
 class PowerSolver : public Solver {
  public:
-  PowerSolver() : Solver(), f0(nullptr) {}
-  ~PowerSolver();
+  PowerSolver() : Solver() {}
+  ~PowerSolver(){};
   
   int init(int nout, BoutReal tstep) override;
   
@@ -47,12 +47,12 @@ class PowerSolver : public Solver {
   BoutReal eigenvalue;
 
   int nlocal, nglobal; // Number of variables
-  BoutReal *f0;  // The system state
+  Array<BoutReal> f0;  // The system state
   
   int nsteps; // Number of output steps
   
-  BoutReal norm(BoutReal *state);
-  void divide(BoutReal *in, BoutReal value);
+  BoutReal norm(Array<BoutReal> &state);
+  void divide(Array<BoutReal> &in, BoutReal value);
 };
 
 #endif // __KARNIADAKIS_SOLVER_H__
