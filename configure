@@ -7648,7 +7648,7 @@ if test "${with_hdf5+set}" = set; then :
      H5CC="$withval"
    fi
 else
-  with_hdf5="yes"
+  with_hdf5="guess"
 
 fi
 
@@ -7664,7 +7664,7 @@ HDF5_FFLAGS=""
 HDF5_FLIBS=""
 HDF5_TYPE=""
 
-if test "$with_hdf5" = "yes"; then
+if test "$with_hdf5" = "yes" || test "$with_hdf5" = "guess"; then
     if test -z "$H5CC"; then
                 for ac_prog in h5cc
 do
@@ -7729,12 +7729,51 @@ $as_echo_n "checking for HDF5 type... " >&6; }
 esac
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HDF5_TYPE" >&5
 $as_echo "$HDF5_TYPE" >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for HDF5 libraries" >&5
-$as_echo_n "checking for HDF5 libraries... " >&6; }
     if test ! -f "$H5CC" || test ! -x "$H5CC"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING:
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can compile HDF5 program without helper script" >&5
+$as_echo_n "checking if we can compile HDF5 program without helper script... " >&6; }
+        ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+            #include <hdf5.h>
+
+int
+main ()
+{
+H5Fcreate(0, 0, 0, 0);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_hdf5_h=yes
+             ac_cv_libhdf5=yes
+else
+  ac_cv_hdf5_h=no
+             ac_cv_libhdf5=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_libhdf5" >&5
+$as_echo "$ac_cv_libhdf5" >&6; }
+        ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+
+        if test "$ac_cv_libhdf5" = "no" ; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Unable to compile HDF5 test program" >&5
+$as_echo "$as_me: WARNING: Unable to compile HDF5 test program" >&2;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING:
 Unable to locate serial HDF5 compilation helper script 'h5cc'.
 Please specify --with-hdf5=<LOCATION> as the full path to h5cc.
 HDF5 support is being disabled (equivalent to --with-hdf5=no).
@@ -7744,9 +7783,17 @@ Unable to locate serial HDF5 compilation helper script 'h5cc'.
 Please specify --with-hdf5=<LOCATION> as the full path to h5cc.
 HDF5 support is being disabled (equivalent to --with-hdf5=no).
 " >&2;}
-        with_hdf5="no"
-        # with_hdf5_fortran="no"
+          if test "$with_hdf5" = "yes"; then
+            { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "HDF5 was requested, but could not be compiled
+See \`config.log' for more details" "$LINENO" 5; }
+          fi
+          with_hdf5="no"
+        fi
     else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for HDF5 libraries" >&5
+$as_echo_n "checking for HDF5 libraries... " >&6; }
                 HDF5_SHOW=$(eval $H5CC -show)
 
                 HDF5_CC=$(eval $H5CC -show | $AWK '{print $1}')
@@ -7802,9 +7849,9 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
         LDFLAGS=$HDF5_LDFLAGS
         ac_fn_c_check_header_mongrel "$LINENO" "hdf5.h" "ac_cv_header_hdf5_h" "$ac_includes_default"
 if test "x$ac_cv_header_hdf5_h" = xyes; then :
-  ac_cv_hadf5_h=yes
+  ac_cv_hdf5_h=yes
 else
-  ac_cv_hadf5_h=no
+  ac_cv_hdf5_h=no
 fi
 
 
@@ -7850,10 +7897,18 @@ else
   ac_cv_libhdf5=no
 fi
 
-        if test "$ac_cv_hadf5_h" = "no" && test "$ac_cv_libhdf5" = "no" ; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Unable to compile HDF5 test program" >&5
+        if test "$ac_cv_hdf5_h" = "no" && test "$ac_cv_libhdf5" = "no" ; then
+          if test "$with_hdf5" = "yes"; then
+            { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "Unable to compile HDF5 test program
+See \`config.log' for more details" "$LINENO" 5; }
+          else
+            { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Unable to compile HDF5 test program" >&5
 $as_echo "$as_me: WARNING: Unable to compile HDF5 test program" >&2;}
+          fi
         fi
+        with_hdf5=yes
                 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lhdf5_hl" >&5
 $as_echo_n "checking for main in -lhdf5_hl... " >&6; }
 if ${ac_cv_lib_hdf5_hl_main+:} false; then :
@@ -8032,23 +8087,86 @@ $as_echo_n "checking for HDF5 type... " >&6; }
 esac
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PARALLELHDF5_TYPE" >&5
 $as_echo "$PARALLELHDF5_TYPE" >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for HDF5 libraries" >&5
-$as_echo_n "checking for HDF5 libraries... " >&6; }
+
     if test ! -f "$PARALLELH5CC" || test ! -x "$PARALLELH5CC"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING:
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can compile parallel HDF5 program without helper script" >&5
+$as_echo_n "checking if we can compile parallel HDF5 program without helper script... " >&6; }
+        ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+            #include <hdf5.h>
+
+int
+main ()
+{
+H5Fcreate(0, 0, 0, 0);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_parallelhdf5_h=yes
+             ac_cv_libparallelhdf5=yes
+else
+  ac_cv_parallelhdf5_h=no
+             ac_cv_libparallelhdf5=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_parallelhdf5_h" >&5
+$as_echo "$ac_cv_parallelhdf5_h" >&6; }
+
+        if test "$ac_cv_parallelhdf5_h" = "yes"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking if found HDF5 is parallel" >&5
+$as_echo_n "checking if found HDF5 is parallel... " >&6; }
+          cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+            #include <H5pubconf.h>
+            #ifdef H5_HAVE_PARALLEL
+              yes
+            #endif
+
+_ACEOF
+if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
+  $EGREP "yes" >/dev/null 2>&1; then :
+  ac_cv_parallelhdf5_h=yes
+else
+  ac_cv_parallelhdf5_h=no
+fi
+rm -f conftest*
+
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_parallelhdf5_h" >&5
+$as_echo "$ac_cv_parallelhdf5_h" >&6; }
+        fi
+        ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+
+        if test "$ac_cv_parallelhdf5_h" = "no" ; then
+          { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "
 Unable to locate parallel HDF5 compilation helper script 'h5pcc'.
 Please specify --with-parallelhdf5=<LOCATION> as the full path to h5pcc.
 HDF5 support is being disabled (equivalent to --with-parallelhdf5=no).
-" >&5
-$as_echo "$as_me: WARNING:
-Unable to locate parallel HDF5 compilation helper script 'h5pcc'.
-Please specify --with-parallelhdf5=<LOCATION> as the full path to h5pcc.
-HDF5 support is being disabled (equivalent to --with-parallelhdf5=no).
-" >&2;}
-        with_parallelhdf5="no"
+
+See \`config.log' for more details" "$LINENO" 5; }
+          with_parallelhdf5="no"
+        fi
     else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for HDF5 libraries" >&5
+$as_echo_n "checking for HDF5 libraries... " >&6; }
                 PARALLELHDF5_SHOW=$(eval $PARALLELH5CC -show)
 
                 PARALLELHDF5_CC=$(eval $PARALLELH5CC -show | $AWK '{print $1}')
@@ -8104,9 +8222,9 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
         LDFLAGS=$PARALLELHDF5_LDFLAGS
         ac_fn_c_check_header_mongrel "$LINENO" "hdf5.h" "ac_cv_header_hdf5_h" "$ac_includes_default"
 if test "x$ac_cv_header_hdf5_h" = xyes; then :
-  ac_cv_hadf5_h=yes
+  ac_cv_parallelhdf5_h=yes
 else
-  ac_cv_hadf5_h=no
+  ac_cv_parallelhdf5_h=no
 fi
 
 
@@ -8152,9 +8270,11 @@ else
   ac_cv_libparallelhdf5=no
 fi
 
-        if test "$ac_cv_hadf5_h" = "no" && test "$ac_cv_libparallelhdf5" = "no" ; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Unable to compile HDF5 test program" >&5
-$as_echo "$as_me: WARNING: Unable to compile HDF5 test program" >&2;}
+        if test "$ac_cv_parallelhdf5_h" = "no" && test "$ac_cv_libparallelhdf5" = "no" ; then
+          { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "Unable to compile HDF5 test program
+See \`config.log' for more details" "$LINENO" 5; }
         fi
                 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lhdf5_hl" >&5
 $as_echo_n "checking for main in -lhdf5_hl... " >&6; }
