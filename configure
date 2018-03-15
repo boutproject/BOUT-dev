@@ -6197,8 +6197,6 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
 
-echo ""
-
 #############################################################
 # netCDF support
 #############################################################
@@ -6299,7 +6297,8 @@ fi
 
         NCLIB=`$NCCONF --libs`
         CXXFLAGS="$CXXFLAGS -DNCDF4"
-        echo " -> NetCDF-4 support enabled"
+        { $as_echo "$as_me:${as_lineno-$LINENO}:  -> NetCDF-4 support enabled" >&5
+$as_echo "$as_me:  -> NetCDF-4 support enabled" >&6;}
 
 else
 
@@ -6337,7 +6336,8 @@ _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-           echo " -> Legacy NetCDF support enabled"
+           { $as_echo "$as_me:${as_lineno-$LINENO}:  -> Legacy NetCDF support enabled" >&5
+$as_echo "$as_me:  -> Legacy NetCDF support enabled" >&6;}
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -6720,7 +6720,8 @@ fi
       if test "x$NCFOUND" = "xyes"; then :
 
          file_formats="$file_formats netCDF"
-         echo " -> Legacy NetCDF support enabled"
+         { $as_echo "$as_me:${as_lineno-$LINENO}:  -> Legacy NetCDF support enabled" >&5
+$as_echo "$as_me:  -> Legacy NetCDF support enabled" >&6;}
          NCPATH="found"
          CXXFLAGS="$CXXFLAGS -DNCDF"
 
@@ -6738,8 +6739,6 @@ fi
 
 fi
 
-echo ""
-
 #############################################################
 # Parallel NetCDF support
 #############################################################
@@ -6747,7 +6746,8 @@ echo ""
 PNCPATH=""
 if test "$with_pnetcdf" != "no"
 then
-  echo "Searching for Parallel-NetCDF library"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Searching for Parallel-NetCDF library" >&5
+$as_echo "$as_me: Searching for Parallel-NetCDF library" >&6;}
 
   if test "$with_pnetcdf" != ""
   then
@@ -6779,7 +6779,8 @@ fi
 
     if test "$PNCPATH" == ""
     then
-      echo "parallel-netcdf not found in given directory"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: parallel-netcdf not found in given directory" >&5
+$as_echo "$as_me: parallel-netcdf not found in given directory" >&6;}
     fi
   fi
 
@@ -6879,7 +6880,8 @@ fi
 
 if test "$PNCPATH" == ""
 then
-  echo "Parallel-NetCDF support disabled"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Parallel-NetCDF support disabled" >&5
+$as_echo "$as_me: Parallel-NetCDF support disabled" >&6;}
 else
   # Set a compile-time flag
   CXXFLAGS="$CXXFLAGS -DPNCDF"
@@ -6887,10 +6889,9 @@ else
   EXTRA_LIBS="$EXTRA_LIBS -L$PNCPATH/$PNCPATHLIB -lpnetcdf"
 
   file_formats="$file_formats Parallel-NetCDF"
-  echo "Parallel-NetCDF support enabled"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Parallel-NetCDF support enabled" >&5
+$as_echo "$as_me: Parallel-NetCDF support enabled" >&6;}
 fi
-
-echo ""
 
 #############################################################
 # HDF5 library
@@ -8094,11 +8095,11 @@ $as_echo "$PARALLELHDF5_TYPE" >&6; }
 
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can compile parallel HDF5 program without helper script" >&5
 $as_echo_n "checking if we can compile parallel HDF5 program without helper script... " >&6; }
-        ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
+        ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
         cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -8113,7 +8114,7 @@ H5Fcreate(0, 0, 0, 0);
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
+if ac_fn_cxx_try_link "$LINENO"; then :
   ac_cv_parallelhdf5_h=yes
              ac_cv_libparallelhdf5=yes
 else
@@ -11379,8 +11380,6 @@ else
 $as_echo "$as_me: Scorep support disabled" >&6;}
 
 fi
-
-echo ""
 
 #############################################################
 # Download + Build PVODE '98

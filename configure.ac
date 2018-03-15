@@ -379,8 +379,6 @@ AS_IF([test "x$fftw_path" != "xno"], [
 BOUT_ADDPATH_CHECK_HEADER(fftw3.h, ,AC_MSG_ERROR([FFTW3 is needed by BOUT++]), $with_fftw)
 BOUT_ADDPATH_CHECK_LIB(fftw3, fftw_plan_dft_r2c_1d, ,AC_MSG_ERROR([FFTW3 is needed by BOUT++]), $with_fftw)
 
-echo ""
-
 #############################################################
 # netCDF support
 #############################################################
@@ -427,7 +425,7 @@ AS_IF([test "x$with_netcdf" != "xno"],
        [
         NCLIB=`$NCCONF --libs`
         CXXFLAGS="$CXXFLAGS -DNCDF4"
-        echo " -> NetCDF-4 support enabled"
+        AC_MSG_NOTICE([ -> NetCDF-4 support enabled])
        ], [
         # nc-config might not *say* it has C++ support, but we can try anyway
         AC_MSG_CHECKING([if we can compile NetCDF with C++])
@@ -446,7 +444,7 @@ AS_IF([test "x$with_netcdf" != "xno"],
              #include <netcdfcpp.h>
              ], [NcFile file("foo.nc");])],
           [AC_MSG_RESULT([yes])
-           echo " -> Legacy NetCDF support enabled"],
+           AC_MSG_NOTICE([ -> Legacy NetCDF support enabled])],
           [AC_MSG_RESULT([no])
            AC_MSG_FAILURE([Could not compile NetCDF C++ program!])])
         AC_LANG_POP([C++])
@@ -471,7 +469,7 @@ AS_IF([test "x$with_netcdf" != "xno"],
       AS_IF([test "x$NCFOUND" = "xyes"],
         [
          file_formats="$file_formats netCDF"
-         echo " -> Legacy NetCDF support enabled"
+         AC_MSG_NOTICE([ -> Legacy NetCDF support enabled])
          NCPATH="found"
          CXXFLAGS="$CXXFLAGS -DNCDF"
         ], [])
@@ -481,8 +479,6 @@ AS_IF([test "x$with_netcdf" != "xno"],
   AS_IF([test "x$NCFOUND" != "xyes"], [AC_MSG_NOTICE([ -> NetCDF support disabled])], [])
 ], [])
 
-echo ""
-
 #############################################################
 # Parallel NetCDF support
 #############################################################
@@ -490,7 +486,7 @@ echo ""
 PNCPATH=""
 if test "$with_pnetcdf" != "no"
 then
-  echo "Searching for Parallel-NetCDF library"
+  AC_MSG_NOTICE([Searching for Parallel-NetCDF library])
 
   if test "$with_pnetcdf" != ""
   then
@@ -498,7 +494,7 @@ then
     AC_CHECK_FILES($with_pnetcdf/include/pnetcdf.h, PNCPATH=$with_pnetcdf,)
     if test "$PNCPATH" == ""
     then
-      echo "parallel-netcdf not found in given directory"
+      AC_MSG_NOTICE([parallel-netcdf not found in given directory])
     fi
   fi
 
@@ -523,7 +519,7 @@ fi
 
 if test "$PNCPATH" == ""
 then
-  echo "Parallel-NetCDF support disabled"
+  AC_MSG_NOTICE([Parallel-NetCDF support disabled])
 else
   # Set a compile-time flag
   CXXFLAGS="$CXXFLAGS -DPNCDF"
@@ -531,10 +527,8 @@ else
   EXTRA_LIBS="$EXTRA_LIBS -L$PNCPATH/$PNCPATHLIB -lpnetcdf"
 
   file_formats="$file_formats Parallel-NetCDF"
-  echo "Parallel-NetCDF support enabled"
+  AC_MSG_NOTICE([Parallel-NetCDF support enabled])
 fi
-
-echo ""
 
 #############################################################
 # HDF5 library
@@ -986,8 +980,6 @@ AS_IF([test "$with_scorep" != "no"], [
   ],[
   AC_MSG_NOTICE([Scorep support disabled])
 ])
-
-echo ""
 
 #############################################################
 # Download + Build PVODE '98
