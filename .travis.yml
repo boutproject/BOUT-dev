@@ -93,6 +93,7 @@ matrix:
       - PETSC_ARCH=linux-gnu-c-opt
       - SLEPC_DIR=/usr/lib/slepcdir/3.4.2
       - SLEPC_ARCH=linux-gnu-c-opt
+      - LIBS="-ldmumps -lmumps_common -lpord -lscalapack-openmpi -lblacs-openmpi -llapack -lblas"
       - SCRIPT_FLAGS='-cu'
   - env:
       - CONFIGURE_OPTIONS='--enable-code-coverage --disable-debug --disable-checks'
