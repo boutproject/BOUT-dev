@@ -36,7 +36,7 @@ class LaplaceMumps;
  
 class LaplaceMumps : public Laplacian {
  public:
-  LaplaceMumps(Options *UNUSED(opt) = NULL) { throw BoutException("Mumps library not available"); }
+  LaplaceMumps(Options *UNUSED(opt) = NULL, Mesh *UNUSED(passmesh) = mesh) { throw BoutException("Mumps library not available"); }
   
   using Laplacian::setCoefA;
   void setCoefA(const Field2D &UNUSED(val)) override {}
@@ -50,7 +50,7 @@ class LaplaceMumps : public Laplacian {
   void setCoefEz(const Field2D &UNUSED(val)) override {}
 
   using Laplacian::solve;
-  const FieldPerp solve(const FieldPerp &UNUSED(b)) override{
+  const FieldPerp solve(const FieldPerp &UNUSED(b_in)) override{
     throw BoutException("Mumps library not available");
   }
 };
@@ -74,7 +74,7 @@ class LaplaceMumps : public Laplacian {
 
 class LaplaceMumps : public Laplacian {
 public:
-  LaplaceMumps(Options *opt = NULL);
+  LaplaceMumps(Options *opt = NULL, Mesh *passmesh = mesh);
   ~LaplaceMumps() {
     mumps_struc.job = -2;
     dmumps_c(&mumps_struc);
@@ -82,11 +82,6 @@ public:
     delete [] mumps_struc.jcn_loc;
     delete [] mumps_struc.a_loc;
     delete [] mumps_struc.isol_loc;
-    delete [] rhs;
-//     delete [] rhs_slice;
-    delete [] localrhs;
-    delete [] localrhs_size_array;
-    delete [] rhs_positions;
   }
   
   void setCoefA(const Field2D &val) override { A = val; }
@@ -107,13 +102,13 @@ public:
   
   void setFlags(int f) {throw BoutException("May not change the value of flags during run in LaplaceMumps as it might change the number of non-zero matrix elements: flags may only be set in the options file.");}
   
-  const FieldPerp solve(const FieldPerp &b) override;
-  const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
-//   const Field3D solve(const Field3D &b);
-//   const Field3D solve(const Field3D &b, const Field3D &x0);
+  const FieldPerp solve(const FieldPerp &b_in) override;
+  const FieldPerp solve(const FieldPerp &b_in, const FieldPerp &x0) override;
+//   const Field3D solve(const Field3D &b_in);
+//   const Field3D solve(const Field3D &b_in, const Field3D &x0);
 
 private:
-  void solve(BoutReal* rhs, int y);
+  void solve(Array<BoutReal> rhs, int y);
   void Coeffs( int x, int y, int z, BoutReal &A1, BoutReal &A2, BoutReal &A3, BoutReal &A4, BoutReal &A5 );
   
   Field3D A, C1, C2, D, Ex, Ez;
@@ -124,13 +119,12 @@ private:
 //   int repeat_analysis; // Repeat analysis step after this many iterations
 //   int iteration_count; // Use this to count the number of iterations since last analysis
   
-  BoutReal* rhs; // Array to collect rhs field onto host processor
-//   BoutReal* rhs_slice; // Array to pass xz-slice of rhs to solve
-  BoutReal* localrhs;
+  Mesh * localmesh;
+  Array<BoutReal> rhs; // Array to collect rhs field onto host processor
+  Array<BoutReal> localrhs;
   int localrhssize;
-  int* localrhs_size_array;
-  int* rhs_positions;
-  FieldPerp sol;              // solution Field
+  Array<int> localrhs_size_array;
+  Array<int> rhs_positions;
   
   // Istart is the first row of MatA owned by the process, Iend is 1 greater than the last row.
   int Istart, Iend; 
