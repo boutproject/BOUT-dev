@@ -9,7 +9,6 @@
 
 from __future__ import division
 from __future__ import print_function
-from builtins import str
 
 from boututils.run_wrapper import shell, launch, getmpirun
 from boutdata.collect import collect
@@ -101,7 +100,7 @@ for dir,sizes in inputs:
             for nx in nxlist:
                 args = ""
                 for s in sizes:
-                    args += " "+s+"="+str(nx)
+                    args += " "+s+"=%d"%nx
                 args += " v:func="+funs[0].replace('x',dir)
                 args += " f:func="+funs[1].replace('x',dir)
                 args += " diff_"+dir+":function="+diff.replace('x',dir)
@@ -121,7 +120,7 @@ for dir,sizes in inputs:
                 s, out = shell(cmd, pipe=True)
 
                 # Save output to log file
-                fname="run.log."+str(nx)
+                fname="run.log.%d"%nx
                 f = open(fname, "w")
                 f.write(out)
                 f.close()
