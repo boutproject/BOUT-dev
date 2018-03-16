@@ -98,7 +98,8 @@ rm -f config-build.log
 
 AC_ARG_VAR(CXXFLAGS,[Extra compile flags])
 AC_ARG_VAR(LDFLAGS,[Extra linking flags])
-AC_ARG_VAR(LDLIBS,[Extra linking libraries])
+AC_ARG_VAR(LIBS,[Extra linking libraries])
+LIBS="$LIBS $LDLIBS"
 
 AC_SUBST(MKDIR_P)
 AC_SUBST(EXTRA_INCS)

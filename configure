@@ -714,7 +714,6 @@ ac_ct_MPICXX
 MPICXX
 PRECON_SOURCE
 MKDIR_P
-LDLIBS
 LDFLAGS
 CXXFLAGS
 EXTRA_LIBS
@@ -796,10 +795,9 @@ EXTRA_INCS
 EXTRA_LIBS
 CXXFLAGS
 LDFLAGS
-LDLIBS
+LIBS
 MPICXX
 CXX
-LIBS
 CPPFLAGS
 CCC
 CXXCPP
@@ -1457,10 +1455,9 @@ Some influential environment variables:
   EXTRA_LIBS  Extra linking flags
   CXXFLAGS    Extra compile flags
   LDFLAGS     Extra linking flags
-  LDLIBS      Extra linking libraries
+  LIBS        Extra linking libraries
   MPICXX      MPI C++ compiler command
   CXX         C++ compiler command
-  LIBS        libraries to pass to the linker, e.g. -l<library>
   CPPFLAGS    (Objective) C/C++ preprocessor flags, e.g. -I<include dir> if
               you have headers in a nonstandard directory <include dir>
   CXXCPP      C++ preprocessor
@@ -2653,6 +2650,7 @@ rm -f config-build.log
 
 
 
+LIBS="$LIBS $LDLIBS"
 
 
 
