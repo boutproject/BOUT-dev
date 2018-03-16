@@ -758,10 +758,6 @@ AS_IF([test "$with_mumps" != "" && test "$with_mumps" != "no"], [
       AC_CHECK_FILE($HOME/local/include/dmumps_c.h, MUMPS="$HOME/local/",))
   ])
 
-  AS_IF([test "$MUMPS" == "" && test "$PETSC_DIR" != ""], [
-    AC_CHECK_FILE([$PETSC_DIR/$PETSC_ARCH/include/dmumps_c.h], [MUMPS=$PETSC_DIR/$PETSC_ARCH])
-  ])
-
   AS_IF([test "$MUMPS" != ""], [
     # Check all files needed
     MUMPS_INC=$MUMPS/include
