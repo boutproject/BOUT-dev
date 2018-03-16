@@ -768,25 +768,52 @@ AS_IF([test "$with_mumps" != "" && test "$with_mumps" != "no"], [
     MUMPS_LIB=$MUMPS/lib
     AC_CHECK_FILES([$MUMPS_INC/dmumps_c.h $MUMPS_LIB/libdmumps.a
       $MUMPS_LIB/libmumps_common.a $MUMPS_LIB/libpord.a
-      $MUMPS_LIB/libscalapack.a $MUMPS_LIB/libblacs.a
+      $MUMPS_LIB/libscalapack.a
       $MUMPS_LIB/libparmetis.a $MUMPS_LIB/libmetis.a
       $MUMPS_LIB/libptscotch.a $MUMPS_LIB/libptesmumps.a], ,[ MUMPS="" ])
   ])
 
-  AS_IF([test "$MUMPS" == ""], [
-    AS_IF([test "x$with_mumps" = "xyes"], [
-      AC_MSG_FAILURE([*** MUMPS requested, but not found])
-    ], [
-      AC_MSG_NOTICE([ -> MUMPS not found])
-    ])
+  save_LIBS=$LIBS
+  save_LDFLAGS=$LDFLAGS
+  save_CPPFLAGS=$CPPFLAGS
+
+  AS_IF([test "x$MUMPS_INC" != "x"], [
+    LIBS="$save_LIBS -ldmumps -lmumps_common -lpord -lscalapack -lparmetis -lmetis -lptscotch -lptesmumps"
+    LDFLAGS="$LDFLAGS -L$MUMPS_LIB"
+    CPPFLAGS="$CPPFLAGS -I$MUMPS_INC"
+    AC_MSG_NOTICE([Trying the following flags for MUMPS:])
+    AC_MSG_NOTICE([   Includes : $CPPFLAGS])
+    AC_MSG_NOTICE([   Libraries: $LDFLAGS $LIBS])
   ], [
-    AC_MSG_NOTICE([ -> MUMPS support enabled])
+    AC_MSG_NOTICE([Using user supplied flags for MUMPS])
+  ])
+
+  AC_LANG_PUSH([C++])
+  AC_MSG_CHECKING([if we can compiler MUMPS program])
+  AC_LINK_IFELSE(
+    [AC_LANG_PROGRAM([
+       #include <dmumps_c.h>
+       ], [
+       DMUMPS_STRUC_C mumps_struc;
+       dmumps_c(&mumps_struc);])],
+    [AC_MSG_RESULT([yes])
+     AC_MSG_NOTICE([ -> MUMPS support enabled])
+     MUMPS=yes
+     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_MUMPS"],
+    [AC_MSG_RESULT([no])
+     AC_MSG_FAILURE([*** Could not compile MUMPS program! You may need to supply LIBS, LDFLAGS and CPPFLAGS ])])
+  AC_LANG_POP([C++])
+
+  LIBS=$save_LIBS
+  LDFLAGS=$save_LDFLAGS
+  CPPFLAGS=$save_CPPFLAGS
+
+  AS_IF([test "x$MUMPS_INC" != "x"], [
     AC_MSG_NOTICE([   Includes : $MUMPS_INC])
     AC_MSG_NOTICE([   Libraries: $MUMPS_LIB])
 
     EXTRA_INCS="$EXTRA_INCS -I$MUMPS_INC"
-    EXTRA_LIBS="$EXTRA_LIBS -L$MUMPS_LIB -ldmumps -lmumps_common -lpord -lscalapack -lblacs -lparmetis -lmetis -lptscotch -lptesmumps"
-    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_MUMPS"
+    EXTRA_LIBS="$EXTRA_LIBS -L$MUMPS_LIB -ldmumps -lmumps_common -lpord -lscalapack -lparmetis -lmetis -lptscotch -lptesmumps"
   ])
 ])
 
