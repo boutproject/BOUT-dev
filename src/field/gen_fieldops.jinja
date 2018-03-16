@@ -1,5 +1,6 @@
 // Provide the C++ wrapper for {{operator_name}} of {{lhs}} and {{rhs}}
 {{out}} operator{{operator}}(const {{lhs.passByReference}}, const {{rhs.passByReference}}) {
+  SCOREP0();
   {% if lhs == rhs == "Field3D" %}
 #if CHECK > 0
   if ({{lhs.name}}.getLocation() != {{rhs.name}}.getLocation()) {
@@ -24,12 +25,15 @@
   {% if (out == "Field3D") and ((lhs == "Field2D") or (rhs =="Field2D")) %}
     {{region_loop}}(localmesh->getRegion2D({{region_name}}),{{index_var}},
 	const auto {{mixed_base_ind}} = localmesh->ind2Dto3D({{index_var}});
+	const int jz_max = localmesh->LocalNz;
 	{% if (operator == "/") and (rhs == "Field2D") %}
            const auto tmp = 1.0 / {{rhs.mixed_index}};
-	   for (int {{jz_var}} = 0; {{jz_var}} < localmesh->LocalNz; ++{{jz_var}}){
+           _Pragma("ivdep")
+	   for (int {{jz_var}} = 0; {{jz_var}} < jz_max; ++{{jz_var}}){
          	   {{out.mixed_index}} = {{lhs.mixed_index}} * tmp;
         {% else %}
-	   for (int {{jz_var}} = 0; {{jz_var}} < localmesh->LocalNz; ++{{jz_var}}){
+           _Pragma("ivdep")
+	   for (int {{jz_var}} = 0; {{jz_var}} < jz_max; ++{{jz_var}}){
 	           {{out.mixed_index}} = {{lhs.mixed_index}} {{operator}} {{rhs.mixed_index}};
         {% endif %}
 	}
@@ -51,6 +55,7 @@
 {% if out.field_type == lhs.field_type %}
 // Provide the C++ operator to update {{lhs}} by {{operator_name}} with {{rhs}}
 {{lhs}} &{{lhs}}::operator{{operator}}=(const {{rhs.passByReference}}) {
+  SCOREP0();
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -74,12 +79,15 @@
   {% if (out == "Field3D") and (rhs =="Field2D") %}  
     {{region_loop}}(fieldmesh->getRegion2D({{region_name}}),{{index_var}},
 	const auto {{mixed_base_ind}} = fieldmesh->ind2Dto3D({{index_var}});
+	const int jz_max = fieldmesh->LocalNz;
 	{% if (operator == "/") and (rhs == "Field2D") %}
            const auto tmp = 1.0 / {{rhs.mixed_index}};
-	   for (int {{jz_var}} = 0; {{jz_var}} < fieldmesh->LocalNz; ++{{jz_var}}){
+           _Pragma("ivdep")
+	   for (int {{jz_var}} = 0; {{jz_var}} < jz_max; ++{{jz_var}}){
 		   (*this)[{{mixed_base_ind}} + {{jz_var}}] *= tmp;
         {% else %}
-           for (int {{jz_var}} = 0; {{jz_var}} < fieldmesh->LocalNz; ++{{jz_var}}){
+           _Pragma("ivdep")
+           for (int {{jz_var}} = 0; {{jz_var}} < jz_max; ++{{jz_var}}){
 	           (*this)[{{mixed_base_ind}} + {{jz_var}}] {{operator}}= {{rhs.index}};
         {% endif %}
 	}
