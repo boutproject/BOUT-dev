@@ -9305,7 +9305,10 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 else
-   MUMPS=""
+  MUMPS=""
+     MUMPS_INC=""
+     MUMPS_LIB=""
+
 fi
 as_ac_File=`$as_echo "ac_cv_file_$MUMPS_LIB/libdmumps.a" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $MUMPS_LIB/libdmumps.a" >&5
@@ -9331,7 +9334,10 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 else
-   MUMPS=""
+  MUMPS=""
+     MUMPS_INC=""
+     MUMPS_LIB=""
+
 fi
 as_ac_File=`$as_echo "ac_cv_file_$MUMPS_LIB/libmumps_common.a" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $MUMPS_LIB/libmumps_common.a" >&5
@@ -9357,7 +9363,10 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 else
-   MUMPS=""
+  MUMPS=""
+     MUMPS_INC=""
+     MUMPS_LIB=""
+
 fi
 as_ac_File=`$as_echo "ac_cv_file_$MUMPS_LIB/libpord.a" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $MUMPS_LIB/libpord.a" >&5
@@ -9383,7 +9392,10 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 else
-   MUMPS=""
+  MUMPS=""
+     MUMPS_INC=""
+     MUMPS_LIB=""
+
 fi
 as_ac_File=`$as_echo "ac_cv_file_$MUMPS_LIB/libscalapack.a" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $MUMPS_LIB/libscalapack.a" >&5
@@ -9409,7 +9421,10 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 else
-   MUMPS=""
+  MUMPS=""
+     MUMPS_INC=""
+     MUMPS_LIB=""
+
 fi
 as_ac_File=`$as_echo "ac_cv_file_$MUMPS_LIB/libparmetis.a" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $MUMPS_LIB/libparmetis.a" >&5
@@ -9435,7 +9450,10 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 else
-   MUMPS=""
+  MUMPS=""
+     MUMPS_INC=""
+     MUMPS_LIB=""
+
 fi
 as_ac_File=`$as_echo "ac_cv_file_$MUMPS_LIB/libmetis.a" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $MUMPS_LIB/libmetis.a" >&5
@@ -9461,7 +9479,10 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 else
-   MUMPS=""
+  MUMPS=""
+     MUMPS_INC=""
+     MUMPS_LIB=""
+
 fi
 as_ac_File=`$as_echo "ac_cv_file_$MUMPS_LIB/libptscotch.a" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $MUMPS_LIB/libptscotch.a" >&5
@@ -9487,7 +9508,10 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 else
-   MUMPS=""
+  MUMPS=""
+     MUMPS_INC=""
+     MUMPS_LIB=""
+
 fi
 as_ac_File=`$as_echo "ac_cv_file_$MUMPS_LIB/libptesmumps.a" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $MUMPS_LIB/libptesmumps.a" >&5
@@ -9513,7 +9537,10 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 else
-   MUMPS=""
+  MUMPS=""
+     MUMPS_INC=""
+     MUMPS_LIB=""
+
 fi
 
 

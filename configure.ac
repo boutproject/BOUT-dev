@@ -766,7 +766,11 @@ AS_IF([test "$with_mumps" != "" && test "$with_mumps" != "no"], [
       $MUMPS_LIB/libmumps_common.a $MUMPS_LIB/libpord.a
       $MUMPS_LIB/libscalapack.a
       $MUMPS_LIB/libparmetis.a $MUMPS_LIB/libmetis.a
-      $MUMPS_LIB/libptscotch.a $MUMPS_LIB/libptesmumps.a], ,[ MUMPS="" ])
+      $MUMPS_LIB/libptscotch.a $MUMPS_LIB/libptesmumps.a], ,
+    [MUMPS=""
+     MUMPS_INC=""
+     MUMPS_LIB=""
+    ])
   ])
 
   save_LIBS=$LIBS
