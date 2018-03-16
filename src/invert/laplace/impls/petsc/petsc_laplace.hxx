@@ -37,7 +37,7 @@ class LaplacePetsc;
 
 class LaplacePetsc : public Laplacian {
 public:
-  LaplacePetsc(Options *UNUSED(opt) = NULL) { throw BoutException("No PETSc solver available"); }
+  LaplacePetsc(Options *UNUSED(opt) = NULL, Mesh* UNUSED(passmesh) = mesh) { throw BoutException("No PETSc solver available"); }
 
   using Laplacian::setCoefA;
   void setCoefA(const Field2D &UNUSED(val)) override {}
@@ -66,7 +66,7 @@ public:
 
 class LaplacePetsc : public Laplacian {
 public:
-  LaplacePetsc(Options *opt = NULL);
+  LaplacePetsc(Options *opt = NULL, Mesh *passmesh = mesh);
   ~LaplacePetsc() {
     KSPDestroy( &ksp );
     VecDestroy( &xs );
@@ -122,6 +122,7 @@ private:
   // Istart is the first row of MatA owned by the process, Iend is 1 greater than the last row.
   int Istart, Iend;
 
+  Mesh* localmesh;
   int meshx, meshz, size, localN; // Mesh sizes, total size, no of points on this processor
   MPI_Comm comm;
   Mat MatA;
