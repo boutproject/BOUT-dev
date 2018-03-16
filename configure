@@ -6345,7 +6345,7 @@ else
 $as_echo "no" >&6; }
            { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "Could not compile NetCDF C++ program!
+as_fn_error $? "*** Could not compile NetCDF C++ program!
 See \`config.log' for more details" "$LINENO" 5; }
 fi
 rm -f core conftest.err conftest.$ac_objext \
@@ -6971,7 +6971,7 @@ fi
 
     { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "Parallel-NetCDF requested but not found
+as_fn_error $? "*** Parallel-NetCDF requested but not found
 See \`config.log' for more details" "$LINENO" 5; }
 
 fi
@@ -9513,7 +9513,7 @@ fi
 
       { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "MUMPS requested, but not found
+as_fn_error $? "*** MUMPS requested, but not found
 See \`config.log' for more details" "$LINENO" 5; }
 
 else
@@ -9610,7 +9610,7 @@ else
 $as_echo "no" >&6; }
      { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "Could not determine SUNDIALS version
+as_fn_error $? "*** Could not determine SUNDIALS version
 See \`config.log' for more details" "$LINENO" 5; }
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
@@ -9642,7 +9642,7 @@ $as_echo "$sundials_major_ver" >&6; }
 
     { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "Unsupported SUNDIALS version: Only 2.6-2.7 are supported currently
+as_fn_error $? "*** Unsupported SUNDIALS version: Only 2.6-2.7 are supported currently
 See \`config.log' for more details" "$LINENO" 5; }
 
 fi
@@ -9675,7 +9675,7 @@ $as_echo "$sundials_minor_ver" >&6; }
 
     { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "Unsupported SUNDIALS version: Only 2.6-2.7 are supported currently
+as_fn_error $? "*** Unsupported SUNDIALS version: Only 2.6-2.7 are supported currently
 See \`config.log' for more details" "$LINENO" 5; }
 
 fi
@@ -11533,7 +11533,7 @@ fi
 
       { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "Scorep requested, but executable not found.
+as_fn_error $? "*** Scorep requested, but executable not found.
 Please supply the path using --with-scorep=/path/to/scorep
 See \`config.log' for more details" "$LINENO" 5; }
 

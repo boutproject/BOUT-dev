@@ -446,7 +446,7 @@ AS_IF([test "x$with_netcdf" != "xno"],
           [AC_MSG_RESULT([yes])
            AC_MSG_NOTICE([ -> Legacy NetCDF support enabled])],
           [AC_MSG_RESULT([no])
-           AC_MSG_FAILURE([Could not compile NetCDF C++ program!])])
+           AC_MSG_FAILURE([*** Could not compile NetCDF C++ program!])])
         AC_LANG_POP([C++])
         LIBS=$save_LIBS
         LDFLAGS=$save_LDFLAGS
@@ -512,7 +512,7 @@ AS_IF([test "$with_pnetcdf" != "no"], [
   ])
 
   AS_IF([test "x$PNCPATH" = "x" && test "x$with_pnetcdf" != "x"], [
-    AC_MSG_FAILURE([Parallel-NetCDF requested but not found])
+    AC_MSG_FAILURE([*** Parallel-NetCDF requested but not found])
   ])
 ])
 
@@ -774,7 +774,7 @@ AS_IF([test "$with_mumps" != "" && test "$with_mumps" != "no"], [
 
   AS_IF([test "$MUMPS" == ""], [
     AS_IF([test "x$with_mumps" = "xyes"], [
-      AC_MSG_FAILURE([MUMPS requested, but not found])
+      AC_MSG_FAILURE([*** MUMPS requested, but not found])
     ], [
       AC_MSG_NOTICE([ -> MUMPS not found])
     ])
@@ -816,7 +816,7 @@ AS_IF([test "x$with_sundials" != "x" && test "x$with_sundials" != "xno"], [
     ], [])],
     [AC_MSG_RESULT([yes])],
     [AC_MSG_RESULT([no])
-     AC_MSG_FAILURE([Could not determine SUNDIALS version])])
+     AC_MSG_FAILURE([*** Could not determine SUNDIALS version])])
 
   # Version 3.0.0 changed the name of this define to just SUNDIALS_VERSION
   AC_MSG_CHECKING([for SUNDIALS major version])
@@ -829,7 +829,7 @@ AS_IF([test "x$with_sundials" != "x" && test "x$with_sundials" != "xno"], [
   AC_MSG_RESULT([$sundials_major_ver])
 
   AS_IF([test $sundials_major_ver = 3], [
-    AC_MSG_FAILURE([Unsupported SUNDIALS version: Only 2.6-2.7 are supported currently])
+    AC_MSG_FAILURE([*** Unsupported SUNDIALS version: Only 2.6-2.7 are supported currently])
   ])
 
   AC_MSG_CHECKING([for SUNDIALS minor version])
@@ -844,7 +844,7 @@ AS_IF([test "x$with_sundials" != "x" && test "x$with_sundials" != "xno"], [
   CPPFLAGS=$save_CPPFLAGS
 
   AS_IF([test "$sundials_minor_ver" = "too low"], [
-    AC_MSG_FAILURE([Unsupported SUNDIALS version: Only 2.6-2.7 are supported currently])
+    AC_MSG_FAILURE([*** Unsupported SUNDIALS version: Only 2.6-2.7 are supported currently])
   ])
 
   # Set both IDA and CVODE if not set already
@@ -910,7 +910,7 @@ AS_IF([test "$with_scorep" != "no"], [
   ])
 
   AS_IF([test "$SCOREPPATH" == ""], [
-      AC_MSG_FAILURE([Scorep requested, but executable not found.
+      AC_MSG_FAILURE([*** Scorep requested, but executable not found.
 Please supply the path using --with-scorep=/path/to/scorep])
   ],[
       # Set a compile-time flag
