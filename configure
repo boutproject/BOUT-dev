@@ -15350,6 +15350,34 @@ else
 fi
 
 #############################################################
+# Gather configuration info for include/bout/settings.hxx
+#############################################################
+
+file=include/bout/settings.hxx
+echo "// This file is auto genereted during configure. Do not edit!" > $file
+echo "// It contains flags used to compile BOUT++" > $file
+for i in $CXXFLAGS
+do
+  if test ${i:0:2} == "-D"
+  then
+    t=${i:2}
+    case "$t" in
+      *=*)
+        t1=${t%=*}
+        t2=${t#*=}
+        echo $t2
+        t2=$(echo $t2 |sed 's/"\\"/"/g')
+        t2=$(echo $t2 |sed 's/\\""/"/g')
+        echo "#define $t1 $t2" >> $file
+        ;;
+      *)
+        echo "#define $t" >> $file
+        ;;
+    esac
+  fi
+done
+
+#############################################################
 # Print configuration info
 #############################################################
 
