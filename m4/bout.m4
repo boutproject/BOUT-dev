@@ -56,7 +56,7 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
     AC_TRY_LINK([extern "C"
                  char $2();], [return $2();],
                 [BACL_found=yes
-                 EXTRA_LIBS="-l$1"
+                 EXTRA_LIBS="$EXTRA_LIBS -l$1"
                  BOUT_MSG_DEBUG([found $1 without path])])
   ])
 
@@ -71,7 +71,7 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
           AC_TRY_LINK([extern "C"
                       char $2();], [return $2();],
                       [BACL_found=yes
-                       EXTRA_LIBS="-L$path -l$1"
+                       EXTRA_LIBS="$EXTRA_LIBS -L$path -l$1"
                        BOUT_MSG_DEBUG([found $1 with $path])
                        break])
         ])
@@ -127,7 +127,7 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_HEADER],[
               #include <$1>
               ], [])],
             [BACH_found=yes
-             EXTRA_INCS="-I$path"
+             EXTRA_INCS="$EXTRA_INCS -I$path"
              BOUT_MSG_DEBUG([found $1 with $path])
              break])
         ])
