@@ -40,7 +40,6 @@
 
 #include <bout/array.hxx>
 #include <bout/scorepwrapper.hxx>
-#include <scorep/SCOREP_User.h>
 
 // Static member variables
 
