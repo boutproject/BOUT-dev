@@ -17,6 +17,7 @@ MPIRUN=getmpirun()
 
 print("Making DataIterator test")
 shell_safe("make > make.log",pipe=True)
+errors=[]
 
 for nproc in [1,2,4]:
     for mproc in [1,2,3,4]:
@@ -29,8 +30,20 @@ for nproc in [1,2,4]:
         shell("rm data/BOUT.dmp.* 2> err.log")
 
         # Run the case
-        _, out = launch_safe(cmd+" "+f, runcmd=MPIRUN, nproc=nproc, mthread=mproc pipe=True)
+        s, out = launch(cmd+" "+f, runcmd=MPIRUN, nproc=nproc, mthread=mproc, pipe=True)
         with open("run.log."+str(nproc)+"."+str(mproc), "w") as f:
             f.write(out)
+        if s:
+            errors.append([n,m,s,out])
 
-print(" => All data iteration tests passed")
+if errors:
+    print(" => Some data iteration tests failed")
+    for n,m,s,out in errors:
+        print("Run with n=%d mpi threads and m=%d openmp threads failed.",n,m)
+    print()
+    for n,m,s,out in errors:
+        print(" * Run n=%d m=%d - exit %d\nError was:\n\n%s\n\n",n,m,s,out)
+    print()
+    exit(1)
+else:
+    print(" => All data iteration tests passed")
