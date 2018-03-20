@@ -64,7 +64,7 @@ public:
       localmesh = mesh;
     }
   }
-  Interpolation(BoutMask mask, int y_offset = 0, Mesh *mesh = nullptr)
+  Interpolation(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
       : Interpolation(y_offset, mesh) {
     skip_mask = mask;
   }
@@ -72,15 +72,15 @@ public:
 
   virtual void calcWeights(const Field3D &delta_x, const Field3D &delta_z) = 0;
   virtual void calcWeights(const Field3D &delta_x, const Field3D &delta_z,
-                           BoutMask mask) = 0;
+                           const BoutMask &mask) = 0;
 
   virtual Field3D interpolate(const Field3D &f) const = 0;
   virtual Field3D interpolate(const Field3D &f, const Field3D &delta_x,
                               const Field3D &delta_z) = 0;
   virtual Field3D interpolate(const Field3D &f, const Field3D &delta_x,
-                              const Field3D &delta_z, BoutMask mask) = 0;
+                              const Field3D &delta_z, const BoutMask &mask) = 0;
 
-  void setMask(BoutMask mask) { skip_mask = mask; }
+  void setMask(const BoutMask &mask) { skip_mask = mask; }
 
   // Interpolate using the field at (x,y+y_offset,z), rather than (x,y,z)
   int y_offset;
@@ -109,7 +109,7 @@ class HermiteSpline : public Interpolation {
 public:
   HermiteSpline(Mesh *mesh = nullptr) : HermiteSpline(0, mesh) {}
   HermiteSpline(int y_offset = 0, Mesh *mesh = nullptr);
-  HermiteSpline(BoutMask mask, int y_offset = 0, Mesh *mesh = nullptr)
+  HermiteSpline(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
       : HermiteSpline(y_offset, mesh) {
     skip_mask = mask;
   }
@@ -120,14 +120,14 @@ public:
   }
 
   void calcWeights(const Field3D &delta_x, const Field3D &delta_z);
-  void calcWeights(const Field3D &delta_x, const Field3D &delta_z, BoutMask mask);
+  void calcWeights(const Field3D &delta_x, const Field3D &delta_z, const BoutMask &mask);
 
   // Use precalculated weights
   Field3D interpolate(const Field3D &f) const;
   // Calculate weights and interpolate
   Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3D &delta_z);
   Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3D &delta_z,
-                      BoutMask mask);
+                      const BoutMask &mask);
 };
 
 class Lagrange4pt : public Interpolation {
@@ -139,7 +139,7 @@ class Lagrange4pt : public Interpolation {
 public:
   Lagrange4pt(Mesh *mesh = nullptr) : Lagrange4pt(0, mesh) {}
   Lagrange4pt(int y_offset = 0, Mesh *mesh = nullptr);
-  Lagrange4pt(BoutMask mask, int y_offset = 0, Mesh *mesh = nullptr)
+  Lagrange4pt(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
       : Lagrange4pt(y_offset, mesh) {
     skip_mask = mask;
   }
@@ -148,14 +148,14 @@ public:
   static Interpolation *CreateLagrange4pt(Mesh *mesh) { return new Lagrange4pt(mesh); }
 
   void calcWeights(const Field3D &delta_x, const Field3D &delta_z);
-  void calcWeights(const Field3D &delta_x, const Field3D &delta_z, BoutMask mask);
+  void calcWeights(const Field3D &delta_x, const Field3D &delta_z, const BoutMask &mask);
 
   // Use precalculated weights
   Field3D interpolate(const Field3D &f) const;
   // Calculate weights and interpolate
   Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3D &delta_z);
   Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3D &delta_z,
-                      BoutMask mask);
+                      const BoutMask &mask);
   BoutReal lagrange_4pt(BoutReal v2m, BoutReal vm, BoutReal vp, BoutReal v2p,
                         BoutReal offset) const;
   BoutReal lagrange_4pt(const BoutReal v[], BoutReal offset) const;
@@ -170,7 +170,7 @@ class Bilinear : public Interpolation {
 public:
   Bilinear(Mesh *mesh = nullptr) : Bilinear(0, mesh) {}
   Bilinear(int y_offset = 0, Mesh *mesh = nullptr);
-  Bilinear(BoutMask mask, int y_offset = 0, Mesh *mesh = nullptr)
+  Bilinear(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
       : Bilinear(y_offset, mesh) {
     skip_mask = mask;
   }
@@ -179,14 +179,14 @@ public:
   static Interpolation *CreateBilinear(Mesh *mesh) { return new Bilinear(mesh); }
 
   void calcWeights(const Field3D &delta_x, const Field3D &delta_z);
-  void calcWeights(const Field3D &delta_x, const Field3D &delta_z, BoutMask mask);
+  void calcWeights(const Field3D &delta_x, const Field3D &delta_z, const BoutMask &mask);
 
   // Use precalculated weights
   Field3D interpolate(const Field3D &f) const;
   // Calculate weights and interpolate
   Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3D &delta_z);
   Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3D &delta_z,
-                      BoutMask mask);
+                      const BoutMask &mask);
 };
 
 #endif // __INTERP_H__

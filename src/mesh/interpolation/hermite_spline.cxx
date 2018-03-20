@@ -96,7 +96,7 @@ void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z) 
   }
 }
 
-void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z, BoutMask mask) {
+void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z, const BoutMask &mask) {
   skip_mask = mask;
   calcWeights(delta_x, delta_z);
 }
@@ -169,7 +169,7 @@ Field3D HermiteSpline::interpolate(const Field3D& f, const Field3D &delta_x, con
   return interpolate(f);
 }
 
-Field3D HermiteSpline::interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z, BoutMask mask) {
+Field3D HermiteSpline::interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z, const BoutMask &mask) {
   calcWeights(delta_x, delta_z, mask);
   return interpolate(f);
 }
