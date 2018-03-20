@@ -5708,7 +5708,7 @@ CXXFLAGS+=" -DBOUT_VERSION_STRING=\"\\\"$BOUT_VERSION\\\"\" -DBOUT_VERSION_DOUBL
 
 if test "x$enable_backtrace" == "xyes" || test "x$enable_backtrace" == "xmaybe"; then :
 
-    # Extract the first word of "addr2line", so it can be a program name with args.
+  # Extract the first word of "addr2line", so it can be a program name with args.
 set dummy addr2line; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -5746,105 +5746,61 @@ $as_echo "no" >&6; }
 fi
 
 
-    if test $works == no; then :
 
-      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"util addr2line not found\"" >&5
-$as_echo "$as_me: WARNING: \"util addr2line not found\"" >&2;}
+  if test $works == yes; then :
 
-fi
-    ac_fn_cxx_check_func "$LINENO" "popen" "ac_cv_func_popen"
-if test "x$ac_cv_func_popen" = xyes; then :
-  works=yes
-else
-  works=no
-fi
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for execinfo.h" >&5
-$as_echo_n "checking for execinfo.h... " >&6; }
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-      #include <execinfo.h>
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
+    for ac_func in popen backtrace
+do :
+  as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
+ac_fn_cxx_check_func "$LINENO" "$ac_func" "$as_ac_var"
+if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
 _ACEOF
-if ac_fn_cxx_try_compile "$LINENO"; then :
-  works=yes
+ works=yes
 else
-  works=no
+  works=no; break
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $works" >&5
-$as_echo "$works" >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for backtrace" >&5
-$as_echo_n "checking for backtrace... " >&6; }
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
+done
 
-      extern "C"
-      char backtrace();
 
-int
-main ()
-{
-return backtrace();
-  ;
-  return 0;
-}
+fi
+
+  if test $works == yes; then :
+
+    for ac_header in execinfo.h dlfcn.h
+do :
+  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+ac_fn_cxx_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
 _ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
-  works=yes
+ works=yes
 else
-  works=no
+  works=no; break
 fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $works" >&5
-$as_echo "$works" >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for dlfcn.h" >&5
-$as_echo_n "checking for dlfcn.h... " >&6; }
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
 
-      #include <dlfcn.h>
+done
 
-int
-main ()
-{
 
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_compile "$LINENO"; then :
-  works=yes
-else
-  works=no
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $works" >&5
-$as_echo "$works" >&6; }
-    if test $works == yes; then :
 
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Native backtrace enabled" >&5
+  if test $works == yes; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Native backtrace enabled" >&5
 $as_echo "$as_me: Native backtrace enabled" >&6;}
-      CXXFLAGS="$CXXFLAGS -DBACKTRACE"
+    CXXFLAGS="$CXXFLAGS -DBACKTRACE"
 
 else
 
-      if test "x$enable_backtrace" == "xyes"; then :
+    if test "x$enable_backtrace" == "xyes"; then :
 
-        as_fn_error $? "backtrace requested, but cannot be enabled" "$LINENO" 5
+      as_fn_error $? "backtrace requested, but cannot be enabled" "$LINENO" 5
 
 else
 
-        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Native backtrace disabled" >&5
+      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Native backtrace disabled" >&5
 $as_echo "$as_me: WARNING: Native backtrace disabled" >&2;}
 
 fi

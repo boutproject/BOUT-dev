@@ -307,37 +307,26 @@ CXXFLAGS+=" -DBOUT_VERSION_STRING=\"\\\"$BOUT_VERSION\\\"\" -DBOUT_VERSION_DOUBL
 #############################################################
 
 AS_IF([test "x$enable_backtrace" == "xyes" || test "x$enable_backtrace" == "xmaybe"], [
-    AC_CHECK_PROG([works], [addr2line], [yes], [no])
-    AS_IF([test $works == no], [
-      AC_MSG_WARN("util addr2line not found")
-    ])
-    AC_CHECK_FUNC(popen, [works=yes], [works=no])
-    AC_MSG_CHECKING([for execinfo.h])
-    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-      #include <execinfo.h>
-    ]], [[]])], [works=yes], [works=no])
-    AC_MSG_RESULT([$works])
-    AC_MSG_CHECKING([for backtrace])
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-      extern "C"
-      char backtrace();
-    ]], [[return backtrace();]])], [works=yes], [works=no])
-    AC_MSG_RESULT([$works])
-    AC_MSG_CHECKING([for dlfcn.h])
-    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-      #include <dlfcn.h>
-    ]], [[]])], [works=yes], [works=no])
-    AC_MSG_RESULT([$works])
-    AS_IF([test $works == yes], [
-      AC_MSG_NOTICE([Native backtrace enabled])
-      CXXFLAGS="$CXXFLAGS -DBACKTRACE"
+  AC_CHECK_PROG([works], [addr2line], [yes], [no])
+
+  AS_IF([test $works == yes], [
+    AC_CHECK_FUNCS([popen backtrace], [works=yes], [works=no; break])
+  ])
+
+  AS_IF([test $works == yes], [
+    AC_CHECK_HEADERS([execinfo.h dlfcn.h], [works=yes], [works=no; break])
+  ])
+
+  AS_IF([test $works == yes], [
+    AC_MSG_NOTICE([Native backtrace enabled])
+    CXXFLAGS="$CXXFLAGS -DBACKTRACE"
+  ], [
+    AS_IF([test "x$enable_backtrace" == "xyes"], [
+      AC_MSG_ERROR([backtrace requested, but cannot be enabled])
     ], [
-      AS_IF([test "x$enable_backtrace" == "xyes"], [
-        AC_MSG_ERROR([backtrace requested, but cannot be enabled])
-      ], [
-        AC_MSG_WARN([Native backtrace disabled])
-      ])
+      AC_MSG_WARN([Native backtrace disabled])
     ])
+  ])
 ])
 
 #############################################################
