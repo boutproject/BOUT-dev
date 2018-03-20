@@ -70,10 +70,10 @@ class Function(object):
             self.desc=name.desc
             self.latex=name.latex
         if flux:
-            self.in_field_desc = " * @param[in] v       The velocity field\n"
-            self.in_field_desc+= " * @param[in] f       The field of the advected quantity"
+            self.in_field_desc = "/// @param[in] v       The velocity field\n"
+            self.in_field_desc+= "/// @param[in] f       The field of the advected quantity"
         else:
-            self.in_field_desc = " * @param[in] f       The field to be differentiated"
+            self.in_field_desc = "/// @param[in] f       The field to be differentiated"
         if flux:
             self.in_sig="const $f &v, const $f &f"
             self.in_field="v, f"
@@ -157,21 +157,21 @@ cur.render()
 
 print("""
 // Deprecated methods
-/*
- * Calculate first partial derivative in Z
- *
- *   $\partial / \partial z$
- *
- * @param[in] f       The field to be differentiated
- * @param[in] outloc  The cell location where the result is desired.
- *                    If staggered grids is not enabled then this has no effect
- * @param[in] method  Differencing method to use. This overrides the default
- * @param[in] inc_xbndry  DEPRECATED: use REGION flags
- *                    Determines whether the derivative should be calculated in
- *                    the X boundaries. This allows mixed operators (e.g.
- *                    D2DXDZ) without additional communication
- *
- */
+//
+// Calculate first partial derivative in Z
+//
+//   $\partial / \partial z$
+//
+// @param[in] f       The field to be differentiated
+// @param[in] outloc  The cell location where the result is desired.
+//                    If staggered grids is not enabled then this has no effect
+// @param[in] method  Differencing method to use. This overrides the default
+// @param[in] inc_xbndry  DEPRECATED: use REGION flags
+//                    Determines whether the derivative should be calculated in
+//                    the X boundaries. This allows mixed operators (e.g.
+//                    D2DXDZ) without additional communication
+
+
 inline const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool inc_xbndry) {
   return DDZ(f, outloc, inc_xbndry ? RGN_NOY : RGN_NOBNDRY, method);
 }
