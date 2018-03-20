@@ -47,8 +47,10 @@ MKDIR	= @MKDIR_P@
 # Do not need to alter anything below
 ####################################################################
 
-LD		= $(CXX)
-LDFLAGS = $(LDFLAGS) @LDFLAGS@
+LD       = $(CXX)
+LDFLAGS  = @LDFLAGS@
+LIBS     = @LIBS@
+CPPFLAGS = @CPPFLAGS@
 
 ####################################################################
 # Extra (optional) source files, includes and libs
@@ -56,8 +58,8 @@ LDFLAGS = $(LDFLAGS) @LDFLAGS@
 #       and a file format (nc_format.cxx or pdb_format.cxx)
 ####################################################################
 
-EXTRA_INCS	  = $(CPPFLAGS) @CPPFLAGS@ @EXTRA_INCS@
-EXTRA_LIBS	  = $(LIBS) @LIBS@ @EXTRA_LIBS@ @OPENMP_CXXFLAGS@
+EXTRA_INCS	  = $(CPPFLAGS) @EXTRA_INCS@
+EXTRA_LIBS	  = $(LIBS) @EXTRA_LIBS@ @OPENMP_CXXFLAGS@
 
 PRECON_SOURCE = @PRECON_SOURCE@
 
