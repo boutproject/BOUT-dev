@@ -44,20 +44,26 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
 
   # Try with no extra libraries first
   AS_IF([test ."$5" = .yes], [extra_prefix=""], [extra_prefix="$5"])
-  AC_TRY_LINK([extern "C"
-               char $2();], [return $2();],
-              [BACL_found=yes
-               BOUT_MSG_DEBUG([found $1 without path or library flag])])
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+    extern "C"
+    char $2();
+  ]], [[return $2();]])],
+  [BACL_found=yes
+   BOUT_MSG_DEBUG([found $1 without path or library flag])],
+  [])
 
   # Now try with explicitly linking library
   AS_IF([test $BACL_found != yes], [
     LIBS="$save_LIBS -l$1"
     AS_IF([test ."$5" = .yes], [extra_prefix=""], [extra_prefix="$5"])
-    AC_TRY_LINK([extern "C"
-                 char $2();], [return $2();],
-                [BACL_found=yes
-                 EXTRA_LIBS="$EXTRA_LIBS -l$1"
-                 BOUT_MSG_DEBUG([found $1 without path])])
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+      extern "C"
+      char $2();
+    ]], [[return $2();]])],
+    [BACL_found=yes
+     EXTRA_LIBS="$EXTRA_LIBS -l$1"
+     BOUT_MSG_DEBUG([found $1 without path])],
+    [])
   ])
 
   AS_IF([test $BACL_found != yes], [
@@ -68,12 +74,15 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
           LIBS="$save_LIBS -l$1"
           LDFLAGS="$save_LDFLAGS -L$path"
           BOUT_MSG_DEBUG([try link $1 with $path])
-          AC_TRY_LINK([extern "C"
-                      char $2();], [return $2();],
-                      [BACL_found=yes
-                       EXTRA_LIBS="$EXTRA_LIBS -L$path -l$1"
-                       BOUT_MSG_DEBUG([found $1 with $path])
-                       break])
+          AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+            extern "C"
+            char $2();
+          ]], [[return $2();]])],
+          [BACL_found=yes
+           EXTRA_LIBS="$EXTRA_LIBS -L$path -l$1"
+           BOUT_MSG_DEBUG([found $1 with $path])
+           break],
+          [])
         ])
       done
       AS_IF([test .$BACL_found = .yes],break;)

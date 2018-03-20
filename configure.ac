@@ -31,8 +31,8 @@
 #    * Searching for libs in lib and lib64
 #
 
-AC_PREREQ(2.69)
-AC_INIT(BOUT++, 4.1.2, bd512@york.ac.uk)
+AC_PREREQ([2.69])
+AC_INIT([BOUT++],[4.1.2],[bd512@york.ac.uk])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -240,7 +240,10 @@ do
   CXXFLAGS_save=$CXXFLAGS
   CXXFLAGS="$CXXFLAGS $flag"
   AC_MSG_CHECKING([flag $flag is supported])
-  AC_TRY_COMPILE([],[],[AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no);CXXFLAGS=$CXXFLAGS_save])
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+    [AC_MSG_RESULT(yes)],
+    [AC_MSG_RESULT(no)
+     CXXFLAGS=$CXXFLAGS_save])
 done
 
 # Disable checks if optimization > 2 is used
@@ -304,36 +307,36 @@ CXXFLAGS+=" -DBOUT_VERSION_STRING=\"\\\"$BOUT_VERSION\\\"\" -DBOUT_VERSION_DOUBL
 #############################################################
 
 AS_IF([test "x$enable_backtrace" == "xyes" || test "x$enable_backtrace" == "xmaybe"], [
-    works=yes
-    AC_CHECK_PROG(works, addr2line, yes, no)
+    AC_CHECK_PROG([works], [addr2line], [yes], [no])
     AS_IF([test $works == no], [
-        AC_MSG_WARN("util addr2line not found")
+      AC_MSG_WARN("util addr2line not found")
     ])
-    AC_CHECK_FUNC(popen, , [works=no])
+    AC_CHECK_FUNC(popen, [works=yes], [works=no])
     AC_MSG_CHECKING([for execinfo.h])
-    AC_TRY_COMPILE([
-                    #include <execinfo.h>
-                   ], , , [works=no])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+      #include <execinfo.h>
+    ]], [[]])], [works=yes], [works=no])
     AC_MSG_RESULT([$works])
     AC_MSG_CHECKING([for backtrace])
-    AC_TRY_LINK([extern "C"
-                 char backtrace();], [return backtrace();], ,
-                 [works=no])
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+      extern "C"
+      char backtrace();
+    ]], [[return backtrace();]])], [works=yes], [works=no])
     AC_MSG_RESULT([$works])
     AC_MSG_CHECKING([for dlfcn.h])
-    AC_TRY_COMPILE([
-                    #include <dlfcn.h>
-                   ], , , [works=no])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+      #include <dlfcn.h>
+    ]], [[]])], [works=yes], [works=no])
     AC_MSG_RESULT([$works])
     AS_IF([test $works == yes], [
-        AC_MSG_NOTICE([Native backtrace enabled])
-        CXXFLAGS="$CXXFLAGS -DBACKTRACE"
+      AC_MSG_NOTICE([Native backtrace enabled])
+      CXXFLAGS="$CXXFLAGS -DBACKTRACE"
     ], [
-        AS_IF([test "x$enable_backtrace" == "xyes"], [
-            AC_MSG_ERROR([backtrace requested, but cannot be enabled])
-        ], [
-            AC_MSG_WARN([Native backtrace disabled])
-        ])
+      AS_IF([test "x$enable_backtrace" == "xyes"], [
+        AC_MSG_ERROR([backtrace requested, but cannot be enabled])
+      ], [
+        AC_MSG_WARN([Native backtrace disabled])
+      ])
     ])
 ])
 
@@ -1081,7 +1084,8 @@ else
 fi
 
 # Only make.config is altered by configure
-AC_OUTPUT(make.config)
+AC_CONFIG_FILES([make.config])
+AC_OUTPUT
 
 #############################################################
 # Use a dummy Makefile to get the cflags and ldflags
@@ -1131,7 +1135,8 @@ AC_SUBST(PETSC_RELEASE)
 AC_SUBST(PETSC_HAS_SUNDIALS)
 AC_SUBST(HAS_OPENMP)
 
-AC_OUTPUT(bin/bout-config)
+AC_CONFIG_FILES([bin/bout-config])
+AC_OUTPUT
 chmod a+x bin/bout-config
 
 #############################################################
