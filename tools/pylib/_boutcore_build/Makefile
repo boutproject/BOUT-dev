@@ -18,8 +18,8 @@ boutcore.so: boutcore.pyx setup.py helper.cxx helper.h $(TOGEN)
 	@$(PY) setup.py build_ext --inplace
 
 test: boutcore.so
-	@PYTHONPATH=..:$$PYTHONPATH $(PY) ./runtest 2>&1 > run.log || (ex=$? ; cat run.log ; exit $ex)
-	@PYTHONPATH=..:$$PYTHONPATH $(PY) mini.py 2>&1 > run.log || (ex=$? ; cat run.log ; exit $ex)
+	@PYTHONPATH=..:$$PYTHONPATH $(PY) ./runtest 2>&1 > run.log || (ex=$$? ; cat run.log ; exit $$ex)
+	@PYTHONPATH=..:$$PYTHONPATH $(PY) mini.py 2>&1 > run.log || (ex=$$? ; cat run.log ; exit $$ex)
 
 check: test
 .PHONY:
@@ -31,3 +31,7 @@ clean: .PHONY
 
 pseudoinstall: check
 	cp boutcore*.so ..
+
+.PHONY: input
+input:
+	@PYTHONPATH=..:$$PYTHONPATH $(PY) geninput.py
