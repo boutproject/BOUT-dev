@@ -18,21 +18,18 @@ mesh=boutcore.Mesh.getGlobal();
 print("initialized mesh")
 
 dens=boutcore.Field3D.fromMesh(mesh)
-dens[:,:,:]=n.reshape((1,1,1))
+dens[:,:,:]=n
 #temp=boutcore.Field3D.fromMesh(mesh)
 #temp.setAll(T.reshape(T.shape[1:]))
 temp=boutcore.Field3D.fromCollect("f3d",path="input")
 pres=dens+temp
-print(slice(None,None,-2).indices(5))
-p=pres[::5,0,::-2]
+p=pres.get()
 pn=(n+T)
-pn=pn.reshape(p.shape)
-#print(p [::50,::10,::20])
-#print(pn[::50,::10,::20])
 if not ((p==pn).all()):
     errorlist+="addition not working\n"
 pres=dens*temp*1
 p=pres.getAll()
+print(n,T)
 pn=n*T
 pn=pn.reshape(p.shape)
 if not ((p==pn).all()):

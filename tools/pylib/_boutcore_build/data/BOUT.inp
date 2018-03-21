@@ -5,12 +5,13 @@ mxg = 1
 myg = 1
 
 [mesh]
-n=1
+staggerGrids=true
+n=2
 nx=n+2*mxg
 ny=n
 nz=n
-mxg=0
-myg=0
+mxg=2
+myg=2
 dy=1/n/2/pi
 
 [solver]
