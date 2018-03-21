@@ -6,9 +6,7 @@ DIRS			= field fileio invert mesh physics precon solver sys
 SOURCEC		= bout++.cxx
 SOURCEH		= bout.hxx
 CXXFLAGS       += -DMD5SUM=$(CHECKSUM) -DREVISION="$(REVISION)"
-ifndef TARGET
-TARGET		= lib
-endif
+TARGET	       ?= lib
 
 # Checksum passed to bout++.cxx
 CHECKSUM := $(shell cat $(foreach DIR,$(DIRS),$(wildcard $(DIR)/*.cxx $(DIR)/*.hxx)) | md5sum | head -c 32 )
