@@ -60,6 +60,8 @@ FieldGroup comms; // Group of variables for communications
 
 Coordinates *coord; // Coordinate system
 
+CELL_LOC ylow;
+
 int physics_init(bool restarting) {
   Field2D I; // Shear factor 
   
@@ -292,6 +294,8 @@ int physics_init(bool restarting) {
   dump.add(rho_s, "rho_s", 0);
   dump.add(wci,   "wci", 0);
 
+  ylow=mesh->StaggerGrids?CELL_YLOW:CELL_CENTRE;
+
   return(0);
 }
 
@@ -331,7 +335,7 @@ int physics_run(BoutReal t) {
   
   if(ZeroElMass) {
     // Set jpar,Ve,Ajpar neglecting the electron inertia term
-    jpar = ((Te0*Grad_par(Ni, CELL_YLOW)) - (Ni0*Grad_par(phi, CELL_YLOW)))/(fmei*0.51*nu);
+    jpar = ((Te0*Grad_par(Ni, ylow)) - (Ni0*Grad_par(phi, ylow)))/(fmei*0.51*nu);
     
     // Set boundary conditions on jpar (in BOUT.inp)
     jpar.applyBoundary();
@@ -399,10 +403,10 @@ int physics_run(BoutReal t) {
 
   ddt(Ajpar) = 0.0;
   if(evolve_ajpar) {
-    ddt(Ajpar) += (1./fmei)*Grad_par(phi, CELL_YLOW);
-    ddt(Ajpar) -= (1./fmei)*(Te0/Ni0)*Grad_par(Ni, CELL_YLOW);
+    ddt(Ajpar) += (1./fmei)*Grad_par(phi, ylow);
+    ddt(Ajpar) -= (1./fmei)*(Te0/Ni0)*Grad_par(Ni, ylow);
     //ddt(Ajpar) -= (1./fmei)*1.71*Grad_par(Te);
-    ddt(Ajpar) += 0.51*interp_to(nu, CELL_YLOW)*jpar/Ni0;
+    ddt(Ajpar) += 0.51*interp_to(nu, ylow)*jpar/Ni0;
   }
 
   return(0);

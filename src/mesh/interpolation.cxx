@@ -51,6 +51,7 @@ BoutReal interp(const stencil &s)
 */
 const Field3D interp_to(const Field3D &var, CELL_LOC loc)
 {
+  Mesh * mesh = var.getMesh();
   if(mesh->StaggerGrids && (var.getLocation() != loc)) {
 
     // Staggered grids enabled, and need to perform interpolation
@@ -63,13 +64,13 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
 
     // Cell location of the input field
     CELL_LOC location = var.getLocation();
-    
+
     if((location == CELL_CENTRE) || (loc == CELL_CENTRE)) {
       // Going between centred and shifted
-      
+
       stencil s;
-      CELL_LOC dir; 
-      
+      CELL_LOC dir;
+
       // Get the non-centre location for interpolation direction
       dir = (loc == CELL_CENTRE) ? location : loc;
 
@@ -77,147 +78,165 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
       case CELL_XLOW: {
         for(const auto &i : result.region(RGN_NOX)) {
 
-	  // Set stencils
-	  s.c = var[i];
-	  s.p = var[i.xp()];
-	  s.m = var[i.xm()];
-	  s.pp = var[i.offset(2,0,0)];
-	  s.mm = var[i.offset(-2,0,0)];
-	  
-	  if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
-	    // Producing a stencil centred around a lower X value
-	    s.pp = s.p;
-	    s.p  = s.c;
-	  } else if (location == CELL_XLOW) {
-	    // Stencil centred around a cell centre
-	    s.mm = s.m;
-	    s.m  = s.c;
-	  }
+          // Set stencils
+          s.c = var[i];
+          s.p = var[i.xp()];
+          s.m = var[i.xm()];
+          s.pp = var[i.offset(2,0,0)];
+          s.mm = var[i.offset(-2,0,0)];
 
-	  result[i] = interp(s);
-	}
-	break;
-	// Need to communicate in X
+          if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
+            // Producing a stencil centred around a lower X value
+            s.pp = s.p;
+            s.p  = s.c;
+          } else if (location == CELL_XLOW) {
+            // Stencil centred around a cell centre
+            s.mm = s.m;
+            s.m  = s.c;
+          }
+
+          result[i] = interp(s);
+        }
+        break;
+        // Need to communicate in X
       }
       case CELL_YLOW: {
-	if (var.hasYupYdown() && 
-	    ( (&var.yup() != &var) || (&var.ydown() != &var))) {
-	  // Field "var" has distinct yup and ydown fields which
-	  // will be used to calculate a derivative along 
-	  // the magnetic field
-	  s.pp = nan("");
-	  s.mm = nan("");
+        if (var.hasYupYdown() &&
+            ( (&var.yup() != &var) || (&var.ydown() != &var))) {
+          // Field "var" has distinct yup and ydown fields which
+          // will be used to calculate a derivative along
+          // the magnetic field
+          s.pp = nan("");
+          s.mm = nan("");
+          throw BoutException("This is wrong!");
           for(const auto &i : result.region(RGN_NOY)) {
-	    // Set stencils
-	    s.c = var[i];
-	    s.p = var.yup()[i.yp()];
-	    s.m = var.ydown()[i.ym()];
-	    
-	    if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
-	      // Producing a stencil centred around a lower Y value
-	      s.pp = s.p;
-	      s.p  = s.c;
-	    } else if(location == CELL_YLOW) {
-	      // Stencil centred around a cell centre
-	      s.mm = s.m;
-	      s.m  = s.c;
-	    }
+            // Set stencils
+            s.c = var[i];
+            s.p = var.yup()[i.yp()];
+            s.m = var.ydown()[i.ym()];
 
-	    result[i] = interp(s);
-	  }
-	}
-	else {
-	  // var has no yup/ydown fields, so we need to shift into field-aligned coordinates
-	  
-	  Field3D var_fa = mesh->toFieldAligned(var);
-	  if (mesh->ystart > 1) {
-	  // More than one guard cell, so set pp and mm values
-	  // This allows higher-order methods to be used
+            if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
+              // Producing a stencil centred around a lower Y value
+              s.pp = s.p;
+              s.p  = s.c;
+            } else if(location == CELL_YLOW) {
+              // Stencil centred around a cell centre
+              s.mm = s.m;
+              s.m  = s.c;
+            }
+
+            result[i] = interp(s);
+          }
+        }
+        else {
+          // var has no yup/ydown fields, so we need to shift into field-aligned coordinates
+
+          Field3D var_fa = mesh->toFieldAligned(var);
+          if (mesh->ystart > 1) {
+          // More than one guard cell, so set pp and mm values
+          // This allows higher-order methods to be used
           for(const auto &i : result.region(RGN_NOY)) {
-	    // Set stencils
-	    s.c = var_fa[i];
-	    s.p = var_fa[i.yp()];
-	    s.m = var_fa[i.ym()];
-	    s.pp = var_fa[i.offset(0,2,0)];
-	    s.mm = var_fa[i.offset(0,-2,0)];
-	    
-	    if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
-	      // Producing a stencil centred around a lower Y value
-	      s.pp = s.p;
-	      s.p  = s.c;
-	    } else if(location == CELL_YLOW) {
-	      // Stencil centred around a cell centre
-	      s.mm = s.m;
-	      s.m  = s.c;
-	    }
-	    
-	    result[i] = interp(s);
-	  }
-	  } else {
-	    // Only one guard cell, so no pp or mm values
-	    s.pp = nan("");
-	    s.mm = nan("");
+            // Set stencils
+            s.c = var_fa[i];
+            s.p = var_fa[i.yp()];
+            s.m = var_fa[i.ym()];
+            s.pp = var_fa[i.offset(0,2,0)];
+            s.mm = var_fa[i.offset(0,-2,0)];
+
+            if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
+              // Producing a stencil centred around a lower Y value
+              s.pp = s.p;
+              s.p  = s.c;
+            } else if(location == CELL_YLOW) {
+              // Stencil centred around a cell centre
+              s.mm = s.m;
+              s.m  = s.c;
+            }
+
+            result[i] = interp(s);
+          }
+          } else {
+            // Only one guard cell, so no pp or mm values
+            s.pp = nan("");
+            s.mm = nan("");
+            throw BoutException("Cannot interpolate in Y direction\n"
+                                " - Not enough boundary cells\n"
+                                " - at least 2 are needed!");
             for(const auto &i : result.region(RGN_NOY)) {
-	      // Set stencils
-	      s.c = var_fa[i];
-	      s.p = var_fa[i.yp()];
-	      s.m = var_fa[i.ym()];
-	      
-	      if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
-		// Producing a stencil centred around a lower Y value
-		s.pp = s.p;
-		s.p  = s.c;
-	      } else if(location == CELL_YLOW) {
-		// Stencil centred around a cell centre
-		s.mm = s.m;
-		s.m  = s.c;
-	      }
-	      
-	      result[i] = interp(s);
-	    }
-	  }
-	}
-	break;
-	// Need to communicate in Y
+              // Set stencils
+              s.c = var_fa[i];
+              s.p = var_fa[i.yp()];
+              s.m = var_fa[i.ym()];
+
+              if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
+                // Producing a stencil centred around a lower Y value
+                s.pp = s.p;
+                s.p  = s.c;
+              } else if(location == CELL_YLOW) {
+                // Stencil centred around a cell centre
+                s.mm = s.m;
+                s.m  = s.c;
+              } else {
+                // We should never be here
+                throw BoutException("Please report this bug!");
+              }
+
+              result[i] = interp(s);
+            }
+          }
+        }
+        break;
+        // Need to communicate in Y
       }
       case CELL_ZLOW: {
         for(const auto &i : result.region(RGN_NOZ)) {
-	  s.c = var[i];
-	  s.p = var[i.zp()];
-	  s.m = var[i.zm()];
-	  s.pp = var[i.offset(0,0,2)];
-	  s.mm = var[i.offset(0,0,-2)];
-	  
-	  result[i] = interp(s);
-	}
-	break;
+          s.c = var[i];
+          s.p = var[i.zp()];
+          s.m = var[i.zm()];
+          s.pp = var[i.offset(0,0,2)];
+          s.mm = var[i.offset(0,0,-2)];
+
+          if ((location == CELL_CENTRE) && (loc == CELL_ZLOW)) {
+            // Producing a stencil centred around a lower Z value
+            s.pp = s.p;
+            s.p  = s.c;
+          } else if(location == CELL_ZLOW) {
+            // Stencil centred around a cell centre
+            s.mm = s.m;
+            s.m  = s.c;
+          } else {
+            // We should never be here
+            throw BoutException("Please report this bug!");
+          }
+
+          result[i] = interp(s);
+        }
+        break;
       }
       default: {
-	// This should never happen
-	throw BoutException("Don't know what to do");
+        // This should never happen
+        throw BoutException("Unsupported method of interpolation\n"
+                            " - don't know how to interpolate to %s",strLocation(loc));
       }
       };
-      
+
       if(dir != CELL_ZLOW) {
-	// COMMUNICATION
-	
-	mesh->communicate(result);
-
-	// BOUNDARIES
-
+        mesh->communicate(result);
       }
 
     }else {
       // Shifted -> shifted
-      // For now, shift to centre then to shifted
-      
+      // For now, shift to centre then to final location loc
+
       result = interp_to( interp_to(var, CELL_CENTRE) , loc);
     }
     result.setLocation(loc);
 
     return result;
   }
-  
+  if ((loc != CELL_CENTRE && loc != CELL_DEFAULT) && (mesh->StaggerGrids == false)) {
+    throw BoutException("Asked to interpolate, but StaggerGrids is disabled!");
+  }
   // Nothing to do - just return unchanged
   return var;
 }
