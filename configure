@@ -5398,7 +5398,7 @@ fi
 	@$(LCOV) --quiet $(addprefix --directory ,$(CODE_COVERAGE_DIRECTORY)) --remove "$(CODE_COVERAGE_OUTPUT_FILE).tmp" "/tmp/*" $(CODE_COVERAGE_IGNORE_PATTERN) --output-file "$(CODE_COVERAGE_OUTPUT_FILE)" $(CODE_COVERAGE_LCOV_SHOPTS) $(CODE_COVERAGE_LCOV_RMOPTS)
 	-@rm -f $(CODE_COVERAGE_OUTPUT_FILE).tmp
 	@LANG=C $(GENHTML) --quiet $(addprefix --prefix ,$(CODE_COVERAGE_DIRECTORY)) --demangle-cpp --output-directory "$(CODE_COVERAGE_OUTPUT_DIRECTORY)" --title "BOUT++ Code Coverage" --legend --show-details "$(CODE_COVERAGE_OUTPUT_FILE)" $(CODE_COVERAGE_GENHTML_OPTIONS)
-	@$(LCOV) --summary $(CODE_COVERAGE_OUTPUT_FILE)
+	@$(LCOV) --summary $(CODE_COVERAGE_OUTPUT_FILE) $(CODE_COVERAGE_LCOV_OPTIONS)
 	@echo "file://$(abs_builddir)/$(CODE_COVERAGE_OUTPUT_DIRECTORY)/index.html"
 '
 		CODE_COVERAGE_RULES_CLEAN='
@@ -5531,10 +5531,10 @@ elif test $enable_optimize ; then
   optimize=$enable_optimize
   test $optimize -eq 0 2>/dev/null
   if test $? -eq 2 ; then
-    if test $optimize == "default"
+    if test $optimize = "default"
     then
       OPT_FLAGS="-O"
-    elif test $optimize == "fast"
+    elif test $optimize = "fast"
     then
       OPT_FLAGS="-Ofast -fno-finite-math-only -march=native -funroll-loops"
       DISABLE_CHECK=probably
@@ -5635,12 +5635,12 @@ else
   echo "Output coloring disabled"
 fi
 
-if test ."$enable_track" == ."yes"
+if test ."$enable_track" = ."yes"
 then
        CXXFLAGS="$CXXFLAGS -DTRACK"
 fi
 
-if test ."$enable_sigfpe" == .yes
+if test ."$enable_sigfpe" = .yes
 then
     CXXFLAGS="$CXXFLAGS -DBOUT_FPE"
 fi
@@ -5650,14 +5650,14 @@ echo
 BOUT_VERSION=$PACKAGE_VERSION
 BOUT_VERSION_MAJOR=${PACKAGE_VERSION%%.*}
 BOUT_VERSION_MINOR=${PACKAGE_VERSION#*.}
-BOUT_VERSION_DOUBLE=${BOUT_VERSION_MAJOR}.${BOUT_VERSION_MINOR/./}
+BOUT_VERSION_DOUBLE=${BOUT_VERSION_MAJOR}.$(echo ${BOUT_VERSION_MINOR}|tr -d .)
 CXXFLAGS+=" -DBOUT_VERSION_STRING=\"\\\"$BOUT_VERSION\\\"\" -DBOUT_VERSION_DOUBLE=$BOUT_VERSION_DOUBLE "
 
 #############################################################
 # Enable Backtrace if possible
 #############################################################
 
-if test ."$enable_backtrace" == .yes || test ."$enable_backtrace" == .maybe
+if test ."$enable_backtrace" = .yes || test ."$enable_backtrace" = .maybe
 then
     works=yes
     if ! which addr2line &>/dev/null
@@ -5732,11 +5732,11 @@ $as_echo "$as_me: WARNING: \"dlfcn.h not found\"" >&2;}
                     works=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-    if test .$works == .yes
+    if test .$works = .yes
     then
         CXXFLAGS="$CXXFLAGS -DBACKTRACE"
     else
-        if test ."$enable_backtrace" == .yes
+        if test ."$enable_backtrace" = .yes
         then
             as_fn_error $? "backtrace requested, but cannot be enabled" "$LINENO" 5
         else
@@ -5750,7 +5750,7 @@ fi
 # Build into shared object (pic)
 #############################################################
 
-if test ."$enable_shared" == .yes
+if test ."$enable_shared" = .yes
 then
     # compile as position independent code.
     # -fpic is apparently faster then -fPIC, but -fPIC works always.
@@ -6449,14 +6449,14 @@ _ACEOF
 PNCPATH=$with_pnetcdf
 fi
 
-    if test "$PNCPATH" == ""
+    if test "$PNCPATH" = ""
     then
       echo "parallel-netcdf not found in given directory"
     fi
   fi
 
   # Find the utilities included with pnetcdf
-  if test "$PNCPATH" == ""
+  if test "$PNCPATH" = ""
   then
     path=`which ncmpidump`
     if test "$path" != ""
@@ -6549,7 +6549,7 @@ fi
 
 fi
 
-if test "$PNCPATH" == ""
+if test "$PNCPATH" = ""
 then
   echo "Parallel-NetCDF support disabled"
 else
@@ -8317,7 +8317,7 @@ MFILE
 $as_echo_n "checking PETSc has SUNDIALS support... " >&6; }
   PETSC_HAS_SUNDIALS=`make -f petscmake$$ echo_sundials | grep -c sundials`
 
-  if test "$PETSC_HAS_SUNDIALS" == "0"; then :
+  if test "$PETSC_HAS_SUNDIALS" = "0"; then :
   PETSC_HAS_SUNDIALS="no"
 else
   PETSC_HAS_SUNDIALS="yes"
@@ -8343,7 +8343,7 @@ then
   EXTRA_INCS="$EXTRA_INCS \$(PETSC_CC_INCLUDES)"
   EXTRA_LIBS="$EXTRA_LIBS \$(PETSC_LIB)"
 
-  if test "$PETSC_HAS_SUNDIALS" == "yes"
+  if test "$PETSC_HAS_SUNDIALS" = "yes"
   then
     CXXFLAGS="$CXXFLAGS -DPETSC_HAS_SUNDIALS "
   fi
@@ -8360,7 +8360,7 @@ if test "$with_slepc" != "" && test "$with_slepc" != "no"
 then
   echo "Searching for SLEPc"
 
-  if test "$SLEPC_DIR" == ""
+  if test "$SLEPC_DIR" = ""
   then
     as_fn_error $? "*** --with-slepc specified but SLEPC_DIR not set" "$LINENO" 5
   fi
@@ -8464,7 +8464,7 @@ then
     MUMPS_LIB=$MUMPS/lib
   fi
 
-  if test "$MUMPS" == ""
+  if test "$MUMPS" = ""
   then
     # Look in some standard locations
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /usr/include/dmumps_c.h" >&5
@@ -8514,7 +8514,7 @@ fi
     MUMPS_LIB=$MUMPS/lib
   fi
 
-  if test "$MUMPS" == "" && test "$PETSC_DIR" != ""
+  if test "$MUMPS" = "" && test "$PETSC_DIR" != ""
   then
     # Try PETSc installation
 
@@ -8795,7 +8795,7 @@ fi
 
   fi
 
-  if test "$MUMPS" == ""
+  if test "$MUMPS" = ""
   then
     echo " -> MUMPS not found"
   else
@@ -15100,7 +15100,7 @@ _ACEOF
 SCOREPPATH=$with_scorep
 fi
 
-    if test "$SCOREPPATH" == ""; then :
+    if test "$SCOREPPATH" = ""; then :
 
       { $as_echo "$as_me:${as_lineno-$LINENO}: \"scorep not found in given directory\"" >&5
 $as_echo "$as_me: \"scorep not found in given directory\"" >&6;}
@@ -15110,7 +15110,7 @@ fi
 fi
 
   # Find the scorep binary
-  if test "$SCOREPPATH" == ""; then :
+  if test "$SCOREPPATH" = ""; then :
 
     path=`which scorep`
     if test "$path" != ""; then :
@@ -15147,7 +15147,7 @@ fi
 
 fi
 
-  if test "$SCOREPPATH" == ""; then :
+  if test "$SCOREPPATH" = ""; then :
 
       { $as_echo "$as_me:${as_lineno-$LINENO}: \"SCOREP support disabled\"" >&5
 $as_echo "$as_me: \"SCOREP support disabled\"" >&6;}
