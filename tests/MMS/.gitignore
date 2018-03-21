@@ -1,4 +1,5 @@
 BOUT.log.*
+BOUT.settings
 run.log.*
 diffusion/cyto
 diffusion/data/BOUT.dmp.*.nc
