@@ -1237,18 +1237,19 @@ then
 	])
 
    # Clean PVODE
-   CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-   CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+   CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE \
+       clean -C externalpackages/PVODE/ >> config-build.log 2>&1
 
    #make -C externalpackages/PVODE/ clean
 
     echo "* Building PVODE" | tee -a config-build.log
     echo "*************************************************************" >> config-build.log
 
-    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" \
+      AR="$AR" ARFLAGS="$ARFLAGS" $MAKE -C externalpackages/PVODE/ >> config-build.log 2>&1
 
-    if [[ -f externalpackages/PVODE/lib/libpvode.a ]]
+    ex=$?
+    if [[ -f externalpackages/PVODE/lib/libpvode.a ]] && test $ex -eq 0
     then
       echo "*************************************************************" >> config-build.log
       echo "* Successfully built PVODE" | tee -a config-build.log
