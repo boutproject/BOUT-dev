@@ -283,7 +283,8 @@ const DataIterator Field3D::end() const {
 
 const IndexRange Field3D::region(REGION rgn) const {
   switch(rgn) {
-  case RGN_ALL: {
+  case RGN_ALL:
+  case RGN_NOZ:{
     return IndexRange{0, nx-1,
         0, ny-1,
         0, nz-1};
