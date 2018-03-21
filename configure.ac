@@ -1246,7 +1246,7 @@ then
     echo "*************************************************************" >> config-build.log
 
     CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" \
-      AR="$AR" ARFLAGS="$ARFLAGS" $MAKE -C externalpackages/PVODE/ >> config-build.log 2>&1
+      AR="ar" ARFLAGS="$ARFLAGS" $MAKE -C externalpackages/PVODE/ >> config-build.log 2>&1
 
     ex=$?
     if [[ -f externalpackages/PVODE/lib/libpvode.a ]] && test $ex -eq 0
