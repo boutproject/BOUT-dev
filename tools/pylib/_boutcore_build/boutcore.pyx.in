@@ -114,7 +114,7 @@ cdef class Field3D:
         :param **kwargs: remaining arguments are passed to collect
         """
         checkInit()
-        from boutdata import collect
+        from boutdata.collect import collect, dimensions
 
         if mesh is None:
             mesh=Mesh.getGlobal()
@@ -142,7 +142,9 @@ cdef class Field3D:
             ystart=ny_*nyi
             kwargs['yind']=[ystart,ystart+ny]
         data=collect(name,yguards=True,tind=tind,**kwargs)
-        data=data.reshape(data.shape[1:])
+        dims=dimensions(name,**{k:v for k,v in kwargs.items() if k in ['path','prefix']})
+        if dims[0] == 't':
+            data=data.reshape(data.shape[1:])
         if len(data.shape) != 3:
             raise TypeError("expected 3d data")
         f3d.setAll(data,ignoreDataType=ignoreDataType)
