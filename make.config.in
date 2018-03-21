@@ -311,10 +311,18 @@ endif
 -include .*.mk
 
 # If it is a libfast target, track changes to rebuild library if needed
+#
+# Further track dependencies using gcc's -M feature:
+# -MF  write the generated dependency rule to a file
+# -MG  assume missing headers will be generated and don't stop with an error
+# -MM  generate dependency rule for prerequisite, skipping system headers
+# -MP  add phony target for each header to prevent errors when header is missing
+# -MT  add a target to the generated dependency
+# Ignore failure, in case some compiler does not support this
 %.o: $(BOUT_CONFIG_FILE) %.cxx
 	@echo "  Compiling " $(@F:.o=.cxx)
 	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c $(@F:.o=.cxx) -o $@
-	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -MF.$(@F:.o=.mk) -MM -c $(@F:.o=.cxx)
+	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -MF.$(@F:.o=.mk) -MM -c $(@F:.o=.cxx) || exit 0
 ifeq ("$(TARGET)","libfast")
 	test "$@" = "bout++.o" || touch $(BOUT_TOP)/lib/.last.o.file
 endif
