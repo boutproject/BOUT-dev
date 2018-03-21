@@ -22,9 +22,9 @@ test: boutcore.so
 	@PYTHONPATH=..:$$PYTHONPATH $(PY) mini.py 2>&1 > run.log || (ex=$$? ; cat run.log ; exit $$ex)
 
 check: test
-.PHONY:
+.PHONY: clean
 
-clean: .PHONY
+clean:
 	rm -f boutcore.cpp boutcore.so
 	rm -f $(TOGEN)
 	rm -rf build
