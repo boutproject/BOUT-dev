@@ -310,16 +310,13 @@ endif
 # Ignore missing requirement files
 -include .*.mk
 
-ifeq ("$(TARGET)","libfast")
 # If it is a libfast target, track changes to rebuild library if needed
 %.o: $(BOUT_CONFIG_FILE) %.cxx
 	@echo "  Compiling " $(@F:.o=.cxx)
-	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -MF.$(@F:.o=.mk) -MM -c $(@F:.o=.cxx) -o $@
+	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c $(@F:.o=.cxx) -o $@
+	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -MF.$(@F:.o=.mk) -MM -c $(@F:.o=.cxx)
+ifeq ("$(TARGET)","libfast")
 	test "$@" = "bout++.o" || touch $(BOUT_TOP)/lib/.last.o.file
-else
-%.o: $(BOUT_CONFIG_FILE) %.cxx
-	@echo "  Compiling " $(@F:.o=.cxx)
-	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -MF.$(@F:.o=.mk) -MM -c $(@F:.o=.cxx) -o $@
 endif
 
 ####################################################################
