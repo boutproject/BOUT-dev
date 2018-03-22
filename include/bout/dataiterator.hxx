@@ -100,8 +100,8 @@ public:
    * use as DataIterator(int,int,int,int,int,int,DI_GET_END);
    */
   DataIterator(int xs, int xe,
-	       int ys, int ye,
-	       int zs, int ze, void* UNUSED(dummy)) :
+               int ys, int ye,
+               int zs, int ze, void* UNUSED(dummy)) :
 #ifndef _OPENMP
     x(xe), y(ye), z(ze),
     xstart(xs),   ystart(ys),   zstart(zs),
@@ -251,20 +251,15 @@ private:
   /// start / end : start and end point of THIS iterator
 #ifndef _OPENMP
   const int xstart, ystart, zstart;
+  const int xend, yend, zend;
 #else
   /// start / end : local to THIS processor
   int xstart, ystart, zstart;
+  int xend, yend, zend;
 #endif
   /// min / max : size of the domain
   /// same for all processors
   int xmin, ymin, zmin;
-
-#ifndef _OPENMP
-  const int xend, yend, zend;
-#else
-  int xend, yend, zend;
-#endif
-
   int xmax, ymax, zmax;
 
   const bool isEnd;
