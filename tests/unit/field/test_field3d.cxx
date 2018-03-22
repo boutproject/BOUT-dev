@@ -591,11 +591,12 @@ TEST_F(Field3DTest, IterateOverRGN_NOY) {
   EXPECT_TRUE(region_indices == result_indices);
 }
 
-TEST_F(Field3DTest, IterateOverRGN_NOZ) {
+TEST_F(Field3DTest, IterateOverInvalid) {
   Field3D field = 1.0;
+  REGION invalid = (REGION) 99999;
 
   // This is not a valid region for Field3D
-  EXPECT_THROW(field.region(RGN_NOZ), BoutException);
+  EXPECT_THROW(field.region(invalid), BoutException);
 }
 
 TEST_F(Field3DTest, IterateOver2DRGN_ALL) {
