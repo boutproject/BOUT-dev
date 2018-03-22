@@ -52,6 +52,8 @@
 
 #include "output.hxx"
 
+#include "bout/openmpwrap.hxx"
+
 template <class T> class CyclicReduce {
 public:
   CyclicReduce() {
@@ -357,6 +359,7 @@ public:
       ///////////////////////////////////////
       // Solve the 2x2 system directly
 
+      BOUT_OMP(parallel for)
       for (int i = 0; i < myns; i++) {
         //  (a  b) (x1) = (b1)
         //  (c  d) (xn)   (bn)
@@ -569,6 +572,7 @@ private:
       throw BoutException("CyclicReduce::reduce nloc < 2");
 #endif
     
+    BOUT_OMP(parallel for)
     for (int j = 0; j < ns; j++) {
       // Calculate upper interface equation
 
@@ -641,8 +645,9 @@ private:
     // Tridiagonal system, solve using serial Thomas algorithm
     // xa -- Result for each system
     // co -- Coefficients & rhs for each system
-    Array<T> gam(nloc);
+    BOUT_OMP(parallel for)
     for (int i = 0; i < ns; i++) { // Loop over systems
+      Array<T> gam(nloc);
       T bet = 1.0;
       xa(i, 0) = x1[i]; // Already know the first
       gam[1] = 0.;
