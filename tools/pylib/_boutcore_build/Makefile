@@ -35,3 +35,13 @@ pseudoinstall: check
 .PHONY: input
 input:
 	@PYTHONPATH=..:$$PYTHONPATH $(PY) geninput.py
+
+.PHONY: debug
+debug: debug.so
+	$(PY) ./debug.py
+	! ./debug.py
+	! mpirun -np 1 $(PY) ./debug.py
+	! mpirun -np 1 ./debug.py
+
+debug.so: debug.pyx debug.pxd setup_debug.py
+	$(PY) ./setup_debug.py build_ext --inplace

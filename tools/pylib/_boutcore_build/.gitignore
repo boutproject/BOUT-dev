@@ -1,4 +1,3 @@
-debug* 
 boutcore.pyx
 helper.cxx
 helper.h
@@ -13,3 +12,6 @@ BOUT.log.*
 BOUT.restart.*.nc
 data/BOUT.dmp.*.nc
 mini/BOUT.dmp.*.nc
+
+*so
+debug.cpp
