@@ -6,9 +6,7 @@ SOURCEC = test.cxx
 ############
 
 OBJ = $(SOURCEC:%.cxx=%.o)
-ifndef TARGET
-TARGET                          = $(SOURCEC:%.cxx=%)
-endif
+TARGET ?= $(SOURCEC:%.cxx=%)
 
 # Use the bout-config script to get compiler, flags
 CXX=`bout-config --cxx`

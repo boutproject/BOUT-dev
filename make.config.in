@@ -81,11 +81,8 @@ BOUT_LIBS  = -lm -L$(BOUT_LIB_PATH) -lbout++ $(EXTRA_LIBS)
 #DEPS					= $(SOURCEC:.cxx=.d)
 CHANGED				= $(shell find -f $(BOUT_TOP)/include $(BOUT_TOP)/src -type f \( -name \*.cxx -or -name \*.h \) -newer $(LIB) -print 2> /dev/null)
 
-# Need to use ifndef because TARGET could be set in a file (as opposed to the command line or environment variable)
 # This will set a default if no TARGET is provided
-ifndef TARGET
-TARGET				= $(SOURCEC:%.cxx=%)
-endif
+TARGET				?= $(SOURCEC:%.cxx=%)
 
 ####################################################################
 # Definining stuff for recursive make
@@ -117,9 +114,7 @@ $(DIRS):
 # are only created in the end
 	@$(MAKE) -s --no-print-directory TARGET=$(TARGET) -C $@ $(TARGET)
 else
-ifndef MODULE_DIR
-MODULE_DIR=$(shell pwd)
-endif
+MODULE_DIR?=$(shell pwd)
 $(DIRS):
 # MODULE_DIR: pass the module directory, where the libraries should be
 # created.
