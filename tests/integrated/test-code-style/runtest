@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BOUT_TOP=../..
+BOUT_TOP=../../..
 error=
 
 for i in BoutReal # double float int char size_t
