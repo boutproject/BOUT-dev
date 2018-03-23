@@ -29,7 +29,7 @@ with open("stencils_cleaned.cxx", "r") as f:
         ASSERT(inFunc >= 0)
 
 
-class Stencil:
+class Stencil(object):
 
     def __init__(self, body):
         self.body = body

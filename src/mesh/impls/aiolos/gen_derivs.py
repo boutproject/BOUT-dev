@@ -3,11 +3,8 @@ from common import *
 import sys
 from collections import OrderedDict
 
-# read tables
-func_tables = OrderedDict()
 
-
-class FuncTableEntry:
+class FuncTableEntry(object):
     """Contains the enum-name and the appropiate stencil"""
 
     def __init__(self, name, normal, upwind, flux):
@@ -39,7 +36,7 @@ class FuncTableEntry:
                     self.isUpwind, self.isFlux, self.parent])
 
 
-class FuncTable:
+class FuncTable(object):
     """Contains all entries for a given type, e.g. UpwindStagTable
 
     funcname is the template for the C++ function, e.g. indexVDD%s
@@ -47,8 +44,18 @@ class FuncTable:
 
     def __init__(self, name, table):
         self.name = name
-        self.entries = []
-        self.funcname = None
+        self.entries = UniqueList()
+        if name[:5] == 'First':
+            self.funcname = 'indexDD%s'
+        elif name[:6] == 'Second':
+            self.funcname = 'indexD2D%s2'
+        elif name[:6] == 'Upwind':
+            self.funcname = 'indexVDD%s'
+        elif name[:4] == 'Flux':
+            self.funcname = 'indexFDD%s'
+        else:
+            raise RuntimeError("Unexpected differencing method: %s" % name)
+
         inBlock = 0
         for cchar in table:
             # debug(cchar,inBlock)
@@ -81,11 +88,7 @@ class FuncTable:
                 # debug(name,current_entry_name)
                 self.entries.append(FuncTableEntry(*current_entry_cleaned))
         for entry in self.entries:
-            # entry.setStag(self.isStag())
             entry.parent = self.name
-
-    def setFuncName(self, funcname):
-        self.funcname = funcname
 
     def getFullName(self, direction):
         fullname = self.funcname % direction.upper()
@@ -129,10 +132,46 @@ def parse_descriptions(text):
                 entry[-1] += c
     return descriptions
 
+
+class FuncToGen(object):
+
+    def __init__(self, name, field, d, mode, ftype):
+        self.name = name
+        self.field = field
+        self.stag_mode = mode
+        self.fromsten = ftype
+        self.d = d
+        self.stag = ftype.isStag()
+        self.flux = ftype.isFlow()
+        self.old = [name, field, d, mode, ftype.func_name, self.flux]
+        self.sten = None
+
+    def __eq__(self, other):
+        return other[0] == self[0] and other[1] == self[1]
+
+    def __getitem__(self, ind):
+        return self.old[ind]
+
+    def __repr__(self):
+        return str(self.old)
+
+    def setSten(self, sten):
+        try:
+            assert(sten.flux == self.flux)
+            assert(sten.stag == self.stag)
+        except:
+            debug(self.name, sten.name, enable=True)
+            debug(self.flux, sten.flux)
+            raise
+        self.sten = sten
+
 ########################################################################
 #  Parse the table that contains the list of what function belongs to
 #  what type of differentiation
 ########################################################################
+
+func_tables = OrderedDict()
+
 with open("tables_cleaned.cxx", "r") as f:
     inBlock = 0
     current_table = ""
@@ -155,71 +194,10 @@ with open("tables_cleaned.cxx", "r") as f:
                 current_table = ""
 
 
-func_tables['FirstDerivTable'].setFuncName('indexDD%s')
-func_tables['FirstStagDerivTable'].setFuncName('indexDD%s')
-func_tables['SecondDerivTable'].setFuncName('indexD2D%s2')
-func_tables['SecondStagDerivTable'].setFuncName('indexD2D%s2')
-func_tables['UpwindTable'].setFuncName('indexVDD%s')
-func_tables['UpwindStagTable'].setFuncName('indexVDD%s')
-func_tables['FluxTable'].setFuncName('indexFDD%s')
-func_tables['FluxStagTable'].setFuncName('indexFDD%s')
-
-funcs_to_gen = []
-
-
-class FuncToGen(object):
-
-    def __init__(self, name, field, d, mode, ftype, ftg):
-        self.name = name
-        self.field = field
-        self.stag_mode = mode
-        self.fromsten = ftype
-        self.d = d
-        self.stag = ftype.isStag()
-        self.flux = ftype.isFlow()
-        self.old = [name, field, d, mstag, ftype.func_name, self.flux]
-        self.sten = None
-        for old in ftg:
-            if old[0] == self[0]:
-                if old[1] == self[1]:
-                    debug(self, enable=True)
-                    debug(old)
-                    raise RuntimeError(
-                        "Trying to add FuncToGen which already exists!")
-
-    def __getitem__(self, ind):
-        return self.old[ind]
-
-    def __repr__(self):
-        return str(self.old)
-
-    def setSten(self, sten):
-        try:
-            assert(sten.flux == self.flux)
-            assert(sten.stag == self.stag)
-        except:
-            debug(self.name, sten.name, enable=True)
-            debug(self.flux, sten.flux)
-            raise
-        self.sten = sten
-
-default_methods = dict()
-
-# Having a duplicate in the list means something is wrong
-duplicates(list(func_tables.keys()))
-
-debug(func_tables, enable=True)
-for name in func_tables:
-    debug(name)
-for name in func_tables:
-    table = func_tables[name]
-    #debug("Func_table:", t, func_tables[t], func_tables[t].values())
-    debug()
-    #fu = next(iter(func_tables[t].values()))
-    if True:
-        duplicates(fields)
+def generate_index_functions(func_tables):
+    funcs_to_gen = UniqueList()
+    for name, table in func_tables.items():
         for field in fields:
-            duplicates(dirs[field])
             for d in dirs[field]:
                 warn()
                 myname = table.getFullName(d)
@@ -238,9 +216,6 @@ for name in func_tables:
                 print("    outloc = f.getLocation();")
                 print("  }")
                 print("  switch (method) {")
-                default_methods["default_%s_%s" %
-                                (d, name[:-5])] = table.entries[0]
-                duplicates(list(table.entries))
                 for method_full in table.entries:
                     method = method_full.name
                     # debug(method)
@@ -288,7 +263,7 @@ for name in func_tables:
                     for mstag in stags:
                         funcs_to_gen.append(FuncToGen("%s_%s_%s" % (
                             table.funcname % d.upper(), mstag, method),
-                            field, d, mstag, method_full, funcs_to_gen))
+                            field, d, mstag, method_full))
                     print("    break;")
                 print("  default:")
                 print("    throw BoutException(\"%s AiolosMesh::" %
@@ -300,6 +275,8 @@ for name in func_tables:
                 print("  }; // end switch")
                 print("}")
                 print()
+    return funcs_to_gen
+funcs_to_gen = generate_index_functions(func_tables)
 
 
 headers = ""
@@ -363,10 +340,6 @@ with open("generated_header.hxx", "w") as f:
     f.write(headers)
 
 
-tmp = []
-for fu in funcs_to_gen:
-    tmp.append(fu[0] + fu[1])
-duplicates(tmp)
 guards_ = []
 sys.stdout = open("generated_stencils.cxx", "w")
 from gen_stencils import gen_functions_normal

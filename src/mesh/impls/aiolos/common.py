@@ -135,3 +135,13 @@ def duplicates(a):
 def ASSERT(a):
     if a != True:
         raise AssertionError("Assertion failed")
+
+
+class UniqueList(list):
+
+    def append(self, item):
+        for old in self:
+            if (item == old):
+                raise RuntimeError("Trying to insert an item that exists"
+                                   "\nOld items: %s\nNew item: %s" % (old, item))
+        super().append(item)

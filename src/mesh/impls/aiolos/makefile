@@ -26,9 +26,15 @@ stencils_cleaned.cxx:../../index_derivs.cxx
 	gcc -E - > $@
 	@echo "  Creating $@"
 
+.PHONY: mini_test
+# Run some basic tests
+mini_test:
+	@python3 common_test.py &> test.log || ( cat test.log ; exit 1 )
+	@python3 test_interp.py &> test.log || ( cat test.log ; exit 1 )
+
 .generated.stamp:gen_derivs.py \
 		tables_cleaned.cxx gen_stencils.py stencils_cleaned.cxx \
-		common.py
+		common.py mini_test
 	@echo "  Generating code for aiolos mesh"
 	@python3 $< > generated_derivs.cxx || ( rm -f $@ ; exit 1)
 	@(clang-format -i $(generated) || astyle -n $(generated) ) || exit 0 # ignore failure
