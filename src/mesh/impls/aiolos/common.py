@@ -130,3 +130,8 @@ def duplicates(a):
         print("in", file=sys.stderr)
         print(a, file=sys.stderr)
         raise "Exit"
+
+
+def ASSERT(a):
+    if a != True:
+        raise AssertionError("Assertion failed")

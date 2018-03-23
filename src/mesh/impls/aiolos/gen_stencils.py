@@ -9,6 +9,7 @@ import sys
 stencils_raw = []
 with open("stencils_cleaned.cxx", "r") as f:
     inFunc = 0
+    curr_func = []
     for line in f:
         if line[:5] == 'const':
             print(line)
@@ -18,20 +19,14 @@ with open("stencils_cleaned.cxx", "r") as f:
         if line == '':
             continue
         # start of function
-        if line.find("{") > -1:
-            if inFunc == 0:
-                stencils_raw.append([])
-            else:
-                debug("No func:", line)
-            inFunc += 1
-            if line.count("{") > 1:
-                raise RuntimeError("More than one { in \"%s\"!" % line)
+        inFunc += line.count("{")
         if inFunc:
-            stencils_raw[-1].append(line)
-        if line.find("}") > -1:
-            inFunc -= 1
-            if line.count("}") > 1:
-                raise RuntimeError("More than one } in \"%s\"!" % line)
+            curr_func.append(line)
+        inFunc -= line.count("}")
+        if inFunc == 0 and curr_func:
+            stencils_raw.append(curr_func)
+            curr_func = []
+        ASSERT(inFunc >= 0)
 
 
 class Stencil:
@@ -382,7 +377,7 @@ def gen_functions_normal(to_gen):
         for func in stencils:
             if func.name == ftg[4]:
                 ftg.setSten(func)
-                assert(ftg.sten is not None)
+                ASSERT(ftg.sten is not None)
         # only reset before main
         global guards_
         guards_ = [0, 0]

@@ -5,91 +5,193 @@ from collections import OrderedDict
 
 # read tables
 func_tables = OrderedDict()
-first_entry = OrderedDict()
 
+
+class FuncTableEntry:
+    """Contains the enum-name and the appropiate stencil"""
+
+    def __init__(self, name, normal, upwind, flux):
+        self.name = name
+        self.isNormal = False
+        self.isUpwind = False
+        self.isFlux = False
+        self.func_name = None
+        if normal != 'NULL':
+            self.isNormal = True
+            self.func_name = normal
+        if upwind != 'NULL':
+            self.isUpwind = True
+            ASSERT(self.func_name == None)
+            self.func_name = upwind
+        if flux != 'NULL':
+            self.isFlux = True
+            ASSERT(self.func_name == None)
+            self.func_name = flux
+
+    def isStag(self):
+        return self.func_name[-4:] == "stag"
+
+    def isFlow(self):
+        return self.isFlux or self.isUpwind
+
+    def __repr__(self):
+        return str([self.name, self.func_name, self.isNormal,
+                    self.isUpwind, self.isFlux, self.parent])
+
+
+class FuncTable:
+    """Contains all entries for a given type, e.g. UpwindStagTable
+
+    funcname is the template for the C++ function, e.g. indexVDD%s
+    """
+
+    def __init__(self, name, table):
+        self.name = name
+        self.entries = []
+        self.funcname = None
+        inBlock = 0
+        for cchar in table:
+            # debug(cchar,inBlock)
+            if cchar == '}':
+                inBlock -= 1
+            if inBlock == 2:
+                current_entry += cchar
+            if cchar == '{':
+                inBlock += 1
+                current_entry = ""
+            if cchar == '}' and inBlock == 1:
+                current_entry = current_entry.split(',')
+                current_entry_cleaned = []
+                for diff in current_entry:
+                    current_entry_cleaned.append(diff.strip())
+                # debug("current_entry_cleaned:",current_entry_cleaned)
+                current_entry_name = current_entry_cleaned[0]
+                # NI not implemented :
+                to_skip = {
+                    'DIFF_W3': "WENO3 - to hard",
+                    'DIFF_SPLIT': "SPLIT - to different",
+                    'DIFF_NND': "NND - probably broken",
+                    'DIFF_DEFAULT': "DEFAULT - just a limiter"}
+                if current_entry_name in to_skip:
+                    debug("Skipping %s - %s" %
+                          (current_entry_name, to_skip[current_entry_name]))
+                    continue
+                if current_entry_cleaned[1:4] == ['NULL'] * 3:
+                    continue
+                # debug(name,current_entry_name)
+                self.entries.append(FuncTableEntry(*current_entry_cleaned))
+        for entry in self.entries:
+            # entry.setStag(self.isStag())
+            entry.parent = self.name
+
+    def setFuncName(self, funcname):
+        self.funcname = funcname
+
+    def getFullName(self, direction):
+        fullname = self.funcname % direction.upper()
+        if self.isStag():
+            fullname += "_stag"
+        else:
+            fullname += "_non_stag"
+        return fullname
+
+    def isFlux(self):
+        return self.entries[0].isFlux
+
+    def isUpwind(self):
+        return self.entries[0].isUpwind
+
+    def isFlow(self):
+        return self.isFlux() or self.isUpwind()
+
+    def isStag(self):
+        return self.entries[0].isStag()
+
+
+def parse_descriptions(text):
+    inBlock = 0
+    descriptions = []
+    entry = [""]
+    for c in text:
+        if c == '{':
+            inBlock += 1
+        elif c == '}':
+            inBlock -= 1
+            if inBlock == 1:
+                descriptions.append([i.strip() for i in entry])
+                entry = [""]
+        elif inBlock == 2:
+            if c == ',':
+                entry.append("")
+            elif c == '"':
+                pass
+            else:
+                entry[-1] += c
+    return descriptions
+
+########################################################################
+#  Parse the table that contains the list of what function belongs to
+#  what type of differentiation
+########################################################################
 with open("tables_cleaned.cxx", "r") as f:
-    inFunc = 0
+    inBlock = 0
     current_table = ""
     for line in f:
-        inFunc += line.count('{')
-        if inFunc:
+        inBlock += line.count('{')
+        if inBlock:
             current_table += line
-        inFunc -= line.count('}')
-        if inFunc == 0:
+        inBlock -= line.count('}')
+        if inBlock == 0:
             if not current_table == "":
                 # debug(current_table)
                 name = current_table.split(" ")[2].split("[")[0]
                 # debug("a,",current_table,name,"b")
                 if len(name) > 2:
                     # print name
-                    func_tables[name] = OrderedDict()
-                    for cchar in current_table:
-                        # debug(cchar,inFunc)
-                        if cchar == '}':
-                            inFunc -= 1
-                        if inFunc == 2:
-                            current_entry += cchar
-                        if cchar == '{':
-                            inFunc += 1
-                            current_entry = ""
-                        if cchar == '}' and inFunc == 1:
-                            current_entry = current_entry.split(',')
-                            current_entry_cleaned = []
-                            for diff in current_entry:
-                                current_entry_cleaned.append(diff.strip())
-                            # debug("current_entry_cleaned:",current_entry_cleaned)
-                            current_entry_name = current_entry_cleaned[0]
-                            # NI not implemented :
-                            if current_entry_name == 'DIFF_W3':
-                                debug("Skipping WENO3 - to hard")
-                                continue
-                            if current_entry_name == 'DIFF_SPLIT':
-                                debug("Skipping SPLIT - to different")
-                                continue
-                            if current_entry_name == 'DIFF_NND':
-                                debug("Skipping NND - probably broken")
-                                continue
-                            if current_entry_name == 'DIFF_DEFAULT':
-                                continue
-                            #debug("name and current_entry_name",name,current_entry_name)
-                            if name not in first_entry:
-                                first_entry[name] = current_entry_name
-                            if current_entry_cleaned[1:4] == ['NULL'] * 3:
-                                continue
-                            # debug(name,current_entry_name)
-                            func_tables[name][
-                                current_entry_name] = current_entry_cleaned[1:4]
+                    if name == "DiffNameTable":
+                        descriptions = parse_descriptions(current_table)
+                    else:
+                        func_tables[name] = FuncTable(name, current_table)
                 current_table = ""
-                inFunc = 0
-descriptions = func_tables.pop("DiffNameTable")
-funcname = OrderedDict()
-funcname['FirstDerivTable'] = 'indexDD%s'
-funcname['FirstStagDerivTable'] = 'indexDD%s'
-funcname['SecondDerivTable'] = 'indexD2D%s2'
-funcname['SecondStagDerivTable'] = 'indexD2D%s2'
-funcname['UpwindTable'] = 'indexVDD%s'
-funcname['UpwindStagTable'] = 'indexVDD%s'
-funcname['FluxTable'] = 'indexFDD%s'
-funcname['FluxStagTable'] = 'indexFDD%s'
+
+
+func_tables['FirstDerivTable'].setFuncName('indexDD%s')
+func_tables['FirstStagDerivTable'].setFuncName('indexDD%s')
+func_tables['SecondDerivTable'].setFuncName('indexD2D%s2')
+func_tables['SecondStagDerivTable'].setFuncName('indexD2D%s2')
+func_tables['UpwindTable'].setFuncName('indexVDD%s')
+func_tables['UpwindStagTable'].setFuncName('indexVDD%s')
+func_tables['FluxTable'].setFuncName('indexFDD%s')
+func_tables['FluxStagTable'].setFuncName('indexFDD%s')
 
 funcs_to_gen = []
 
 
 class FuncToGen(object):
 
-    def __init__(self, name, field, d, mode, ftype, flux, stag):
+    def __init__(self, name, field, d, mode, ftype, ftg):
         self.name = name
         self.field = field
         self.stag_mode = mode
         self.fromsten = ftype
-        self.flux = flux
         self.d = d
-        self.stag = stag
-        self.old = [name, field, d, mstag, ftype, flux]
+        self.stag = ftype.isStag()
+        self.flux = ftype.isFlow()
+        self.old = [name, field, d, mstag, ftype.func_name, self.flux]
         self.sten = None
+        for old in ftg:
+            if old[0] == self[0]:
+                if old[1] == self[1]:
+                    debug(self, enable=True)
+                    debug(old)
+                    raise RuntimeError(
+                        "Trying to add FuncToGen which already exists!")
 
     def __getitem__(self, ind):
         return self.old[ind]
+
+    def __repr__(self):
+        return str(self.old)
 
     def setSten(self, sten):
         try:
@@ -106,117 +208,94 @@ default_methods = dict()
 # Having a duplicate in the list means something is wrong
 duplicates(list(func_tables.keys()))
 
-for t in func_tables:
-    debug("Func_table:", t, func_tables[t], func_tables[t].values())
+debug(func_tables, enable=True)
+for name in func_tables:
+    debug(name)
+for name in func_tables:
+    table = func_tables[name]
+    #debug("Func_table:", t, func_tables[t], func_tables[t].values())
     debug()
-    fu = next(iter(func_tables[t].values()))
-    if fu[0] != "NULL":  # not a flux/upwind scheeme
-        flux = False
-        upwind = False
-    else:
-        if fu[1] != "NULL":
-            upwind = True
-        else:
-            upwind = False
-        flux = True
-    if upwind:
-        pos = 1
-    elif flux:
-        pos = 2
-    else:
-        pos = 0
-    if fu[pos][-4:] == "stag":
-        stag = True
-    else:
-        stag = False
+    #fu = next(iter(func_tables[t].values()))
     if True:
         duplicates(fields)
         for field in fields:
             duplicates(dirs[field])
             for d in dirs[field]:
                 warn()
-                try:
-                    if not stag:
-                        myname = funcname[t] % d.upper() + "_non_stag"
-                    else:
-                        myname = funcname[t] % d.upper() + "_stag"
-                except:
-                    debug(funcname[t], enable=True)
-                    raise
-                if flux:
-                    inp = "(const " + field + " &v, const " + field + " &f, "
-                else:
-                    inp = "(const " + field + " &f, "
+                myname = table.getFullName(d)
+                inp = "("
+                if table.isFlow():
+                    inp += "const " + field + " &v, "
+                inp += "const " + field + " &f, "
                 print("const", field, myname, inp,
                       "CELL_LOC outloc, DIFF_METHOD method) {")
                 print("  if (method == DIFF_DEFAULT){")
                 print("    method = default_%s_%s;" %
-                      (d, t[:-5] + ("Deriv" if flux else "")))  # drop 'Table'
+                      # drop 'Table' at end of string
+                      (d, name[:-5] + ("Deriv" if table.isFlow() else "")))
                 print("  }")
                 print("  if (outloc == CELL_DEFAULT){")
                 print("    outloc = f.getLocation();")
                 print("  }")
                 print("  switch (method) {")
-                default_methods["default_%s_%s" % (d, t[:-5])] = func_tables[t]
-                duplicates(list(func_tables[t].keys()))
-                for method in func_tables[t]:
+                default_methods["default_%s_%s" %
+                                (d, name[:-5])] = table.entries[0]
+                duplicates(list(table.entries))
+                for method_full in table.entries:
+                    method = method_full.name
                     # debug(method)
                     print("  case", method + ":")
-                    if flux:
+                    if table.isFlow():
                         f = "v,f"
                     else:
                         f = "f"
-                    if flux:
+                    if table.isFlow():
                         # f.getLocation() == outloc guaranteed
-                        if stag:
+                        if table.isStag():
                             print(
                                 "    if (outloc == CELL_%sLOW) {" % d.upper())
                             print("      return %s_on_%s(interp_to(v,CELL_CENTRE),f);" %
-                                  (funcname[t] % d.upper(), method))
+                                  (table.funcname % d.upper(), method))
                             print("    } else {")  # inloc must be CELL_%sLOW
                             print("      return interp_to(%s_off_%s(v,interp_to(f,CELL_CENTRE)),outloc);" %
-                                  (funcname[t] % d.upper(), method))
+                                  (table.funcname % d.upper(), method))
                             print("    }")
                             stags = ['on', 'off']
                         else:
                             print(
                                 "    if (v.getLocation() == f.getLocation()) {")
                             print("      return interp_to(%s_norm_%s(v,f),outloc);" % (
-                                funcname[t] % d.upper(), method))
+                                table.funcname % d.upper(), method))
                             print("    } else {")
                             print("      return interp_to(%s_norm_%s(interp_to(v,CELL_CENTRE),interp_to(f,CELL_CENTRE)),outloc);" % (
-                                funcname[t] % d.upper(), method))
+                                table.funcname % d.upper(), method))
                             print("    }")
                             stags = ['norm']
-                    else:  # not flux
-                        if stag:
+                    else:  # not Flow
+                        if table.isStag():
                             print("    if (outloc == CELL_%sLOW){" % d.upper())
                             print("      return %s_on_%s(interp_to(%s,CELL_CENTRE));" % (
-                                funcname[t] % d.upper(), method, f))
+                                table.funcname % d.upper(), method, f))
                             print("    } else {")  # inloc must be CELL_%sLOW
                             print("      return interp_to(%s_off_%s(%s),outloc);" %
-                                  (funcname[t] % d.upper(), method, f))
+                                  (table.funcname % d.upper(), method, f))
                             print("    }")
                             stags = ['on', 'off']
                         else:
                             print("    return interp_to(%s_norm_%s(%s),outloc);" % (
-                                funcname[t] % d.upper(), method, f))
+                                table.funcname % d.upper(), method, f))
                             stags = ['norm']
                     for mstag in stags:
-                        funcs = func_tables[t][method]
-                        if funcs[0] == 'NULL':
-                            funcs[0] = funcs[1]
-                            if funcs[0] == 'NULL':
-                                funcs[0] = funcs[2]
                         funcs_to_gen.append(FuncToGen("%s_%s_%s" % (
-                            funcname[t] % d.upper(), mstag, method), field, d, mstag, funcs[0], flux, stag))
+                            table.funcname % d.upper(), mstag, method),
+                            field, d, mstag, method_full, funcs_to_gen))
                     print("    break;")
                 print("  default:")
                 print("    throw BoutException(\"%s AiolosMesh::" %
                       field + myname, 'unknown method %d.\\n"')
                 print('      "Supported methods are"')
-                for method in func_tables[t]:
-                    print('      " * ' + method + '"')
+                for method in table.entries:
+                    print('      " * ' + method.name + '"')
                 print('      "\\nNote FFTs are not (yet) supported.",method);')
                 print("  }; // end switch")
                 print("}")
@@ -295,19 +374,10 @@ gen_functions_normal(funcs_to_gen)
 sys.stdout.flush()
 sys.stdout = open("generated_init.cxx", "w")
 
-descriptions_cleaned = dict()
-debug(descriptions)
-for d in descriptions:
-    descriptions_cleaned[d] = descriptions[d][1].strip('"')
 for d in dirs['Field3D']:
     warn()
     for i in ['First', 'Second', 'Upwind', 'Flux']:
-        stags = ['', 'Stag']
-        if i in ['First', 'Second']:
-            table = "DerivTable"
-        else:
-            table = "Table"
-        for stag in stags:
+        for stag in ['', 'Stag']:
             print('DIFF_METHOD default_%s_%s%sDeriv;' % (d, i, stag))
 
 warn()
@@ -319,12 +389,11 @@ for d in dirs['Field3D']:
     print('  dirOption = option->getSection("dd%s");' % d)
     print()
     for i in ['First', 'Second', 'Upwind', 'Flux']:
-        stags = ['', 'Stag']
         if i in ['First', 'Second']:
             table = "DerivTable"
         else:
             table = "Table"
-        for stag in stags:
+        for stag in ['', 'Stag']:
             warn()
             print('  // Setting derivatives for dd%s and %s' % (d, i + stag))
             print(' ', end=' ')
@@ -349,13 +418,16 @@ for d in dirs['Field3D']:
             print('  }')
             print(' ', end=' ')
             options = ""
-            for avail in func_tables[i + stag + table]:
-                print('if (strcasecmp(name.c_str(),"%s")==0) {' % avail[5:])
-                print('    default_%s_%s%sDeriv = %s;' % (d, i, stag, avail))
-                print('    output.write("\t%15s : %s\\n");' %
-                      (i + stag, descriptions_cleaned[avail]))
-                print('  } else', end=' ')
-                options += "\\n * %s" % avail[5:]
+            for method in func_tables[i + stag + table].entries:
+                for method_, key, description in descriptions:
+                    if method.name == method_:
+                        print('if (strcasecmp(name.c_str(),"%s")==0) {' % key)
+                        print('    default_%s_%s%sDeriv = %s;' %
+                              (d, i, stag, method.name))
+                        print('    output.write("\t%15s : %s\\n");' %
+                              (i + stag, description))
+                        print('  } else', end=' ')
+                        options += "\\n * %s: %s" % (key, description)
             print('{')
             print('    throw BoutException("Dont\'t know what diff method to use for %s (direction %s, tried to use %s)!\\nOptions are:%s",name.c_str());' % (
                 i + stag, d, '%s', options))
