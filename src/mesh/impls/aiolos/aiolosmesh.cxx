@@ -40,9 +40,10 @@
 #include <strings.h>
 
 // Include the auto generated files
-#include "generated_derivs.cxx"
+// Note: They MUST be included in this order. clang-format does break this
 #include "generated_init.cxx"
 #include "generated_stencils.cxx"
+#include "generated_derivs.cxx"
 
 AiolosMesh::AiolosMesh(GridDataSource *s, Options *options) : BoutMesh(s, options) {
   output_info.write("  Using Aiolos Mesh!\n");
