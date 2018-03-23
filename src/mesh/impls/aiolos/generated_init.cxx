@@ -113,7 +113,6 @@ void AiolosMesh::derivs_init(Options *option) {
 
   // This file is auto-generated - do not edit!
   // Setting derivatives for ddx and SecondStag
-  name = "C2";
   if (dirOption->isSet("SecondStag")) {
     dirOption->get("SecondStag", name, "C2");
   } else if (dirOption->isSet("Second")) {
@@ -324,7 +323,6 @@ void AiolosMesh::derivs_init(Options *option) {
 
   // This file is auto-generated - do not edit!
   // Setting derivatives for ddy and SecondStag
-  name = "C2";
   if (dirOption->isSet("SecondStag")) {
     dirOption->get("SecondStag", name, "C2");
   } else if (dirOption->isSet("Second")) {
@@ -535,7 +533,6 @@ void AiolosMesh::derivs_init(Options *option) {
 
   // This file is auto-generated - do not edit!
   // Setting derivatives for ddz and SecondStag
-  name = "C2";
   if (dirOption->isSet("SecondStag")) {
     dirOption->get("SecondStag", name, "C2");
   } else if (dirOption->isSet("Second")) {

@@ -194,7 +194,7 @@ with open("tables_cleaned.cxx", "r") as f:
                 current_table = ""
 
 
-def generate_index_functions(func_tables):
+def generate_index_functions_stag(func_tables):
     funcs_to_gen = UniqueList()
     for name, table in func_tables.items():
         for field in fields:
@@ -276,75 +276,81 @@ def generate_index_functions(func_tables):
                 print("}")
                 print()
     return funcs_to_gen
-funcs_to_gen = generate_index_functions(func_tables)
 
-
-headers = ""
-for func in ["indexDD%s", "indexD2D%s2", "indexVDD%s", "indexFDD%s"]:
-    flux = True
-    if func.find("indexD") > -1:
-        flux = False
-    for field in fields:
-        for d in dirs[field]:
-            warn()
-            sig = "("
-            if flux:
-                sig += "const " + field + " &v,"
-            sig += "const " + field + " &f"
-            sig += ", CELL_LOC outloc, DIFF_METHOD method"
-            sig += ",REGION ignored"
-            sig += ")"
-            function_header = "  virtual const " + field + " " + func % d.upper()
-            function_header += sig
-            function_header += " override;\n"
-            headers += function_header
-            function_header = "const " + field + " AiolosMesh::" + func % d.upper()
-            function_header += sig
-            if flux:
-                f = "v, f"
-            else:
-                f = "f"
-            print(function_header, " {")
-            print("  if (outloc == CELL_DEFAULT) {")
-            print("    outloc=f.getLocation();")
-            print("  }")
-            if flux:
-                print("  if (outloc != f.getLocation()) {")
-                print('    throw BoutException("AiolosMesh::index?DDX: Unhandled case for shifting.\\n\
-f.getLocation()==outloc is required!");')
+# Returns the headers
+def generate_index_functions():
+    headers = ""
+    for func_ in ["indexDD%s", "indexD2D%s2", "indexVDD%s", "indexFDD%s"]:
+        flow = func_.find("indexD") < 0
+        for field in fields:
+            for d in dirs[field]:
+                func = func_ % d.upper()
+                warn()
+                sig = "("
+                if flow:
+                    sig += "const " + field + " &v,"
+                sig += "const " + field + " &f"
+                sig += ", CELL_LOC outloc, DIFF_METHOD method"
+                sig += ",REGION ignored"
+                sig += ")"
+                function_header = "  virtual const " + field + " " + func
+                function_header += sig
+                function_header += " override;\n"
+                headers += function_header
+                function_header = "const " + field + " AiolosMesh::" + func
+                function_header += sig
+                if flow:
+                    f = "v, f"
+                else:
+                    f = "f"
+                print("// Do check the input parameters. "
+                      "Further decide on whether or not we are doing a "
+                      "staggered derivative or a non-staaggered derivative")
+                print(function_header, " {")
+                print("  if (outloc == CELL_DEFAULT) {")
+                print("    outloc=f.getLocation();")
                 print("  }")
-            print("  if (this->LocalN%s == 1) {" % d)
-            print("    %s result{0.,this};" % field)
-            print("    result.setLocation(outloc);")
-            print("    return result;")
-            print("  }")
-            # print '  output.write("Using aiolos mesh for
-            # %s\\n");'%(func%d.upper())
-            if flux:
-                print("  if ((outloc == CELL_%sLOW) != (v.getLocation() == CELL_%sLOW)){" %
-                      (d.upper(), d.upper()))
-            else:
-                print("  if ((outloc == CELL_%sLOW) != (f.getLocation() == CELL_%sLOW)){" %
-                      (d.upper(), d.upper()))
-            print("    // we are going onto a staggered grid or coming from one")
-            print("    return", func % d.upper() +
-                  "_stag", "(" + f + ",outloc,method);")
-            print("  } else {")
-            print("    return", func % d.upper() +
-                  "_non_stag", "(" + f + ",outloc,method);")
-            print("  }")
-            print("}")
-            print()
+                if flow:
+                    print("  if (outloc != f.getLocation()) {")
+                    print('    throw BoutException("AiolosMesh::index?DDX: '
+                          'Unhandled case for shifting.\\n'
+                          'f.getLocation()==outloc is required!");')
+                    print("  }")
+                print("  if (this->LocalN%s == 1) {" % d)
+                print("    %s result{0.,this};" % field)
+                print("    result.setLocation(outloc);")
+                print("    return result;")
+                print("  }")
+                if flow:
+                    print("  if ((outloc == CELL_%sLOW) != (v.getLocation() == CELL_%sLOW)){" %
+                          (d.upper(), d.upper()))
+                else:
+                    print("  if ((outloc == CELL_%sLOW) != (f.getLocation() == CELL_%sLOW)){" %
+                          (d.upper(), d.upper()))
+                print("    // we are going onto a staggered grid or coming from one")
+                print("    return", func + "_stag(" +
+                      f + ",outloc,method);")
+                print("  } else {")
+                print("    return", func + "_non_stag(" +
+                      f + ",outloc,method);")
+                print("  }")
+                print("}")
+                print()
+    return headers
+if __name__ == '__main__':
+    funcs_to_gen = generate_index_functions_stag(func_tables)
+    headers=generate_index_functions()
+    with open("generated_header.hxx", "w") as f:
+        f.write(headers)
 
-with open("generated_header.hxx", "w") as f:
-    f.write(headers)
 
 
-guards_ = []
-sys.stdout = open("generated_stencils.cxx", "w")
-from gen_stencils import gen_functions_normal
-gen_functions_normal(funcs_to_gen)
-sys.stdout.flush()
+    guards_ = []
+    sys.stdout = open("generated_stencils.cxx", "w")
+    from gen_stencils import gen_functions_normal
+    gen_functions_normal(funcs_to_gen)
+    sys.stdout.flush()
+
 sys.stdout = open("generated_init.cxx", "w")
 
 for d in dirs['Field3D']:
@@ -370,18 +376,12 @@ for d in dirs['Field3D']:
             warn()
             print('  // Setting derivatives for dd%s and %s' % (d, i + stag))
             print(' ', end=' ')
-            if i == 'Second' and stag == "Stag":
-                print('    name="C2";')
             if i == 'Flux' or i == 'Upwind':
                 default_diff = "U1"
             else:
                 default_diff = "C2"
             for option in ['dirOption']:
-                if stag == "Stag":
-                    names = [i + stag, i, "all"]
-                else:
-                    names = [i, "all"]
-                for name in names:
+                for name in [i + stag, i, "all"] if stag else [i, "all"]:
                     print('if (%s->isSet("%s")){' % (option, name))
                     print('    %s->get("%s",name,"%s");' %
                           (option, name, default_diff))
