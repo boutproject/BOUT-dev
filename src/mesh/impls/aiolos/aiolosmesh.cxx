@@ -33,32 +33,28 @@
 #include "aiolosmesh.hxx"
 
 #include <boutexception.hxx>
-#include <utils.hxx>
-#include <output.hxx>
 #include <interpolation.hxx>
+#include <output.hxx>
+#include <utils.hxx>
 
 #include <strings.h>
 
 // Include the auto generated files
+#include "generated_derivs.cxx"
 #include "generated_init.cxx"
 #include "generated_stencils.cxx"
-#include "generated_derivs.cxx"
 
-
-
-AiolosMesh::AiolosMesh(GridDataSource *s, Options *options): BoutMesh(s,options){
-  output.write("  Using Aiolos Mesh!\n");
+AiolosMesh::AiolosMesh(GridDataSource *s, Options *options) : BoutMesh(s, options) {
+  output_info.write("  Using Aiolos Mesh!\n");
   derivs_init(options);
 }
-AiolosMesh::~AiolosMesh(){
+AiolosMesh::~AiolosMesh() {}
+
+BoutReal AiolosMesh::GlobalY(int jy) const {
+  int gjy = BoutMesh::YGLOBAL(jy);
+  output_debug.write(" %d->%d ", jy, gjy);
+
+  return ((BoutReal)gjy) / ((BoutReal)(this->GlobalNy - 2 * this->ystart));
 }
 
-BoutReal AiolosMesh::GlobalY(int jy) const{
-  int gjy=BoutMesh::YGLOBAL(jy);
-  //output.write(" %d->%d ",jy,gjy);
-	       
-  return ((BoutReal) gjy ) / ((BoutReal)(this->GlobalNy-2*this->ystart));
-}
-
-
-//Field3D AiolosMesh::
+// Field3D AiolosMesh::

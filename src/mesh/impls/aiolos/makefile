@@ -37,7 +37,7 @@ mini_test:
 		common.py mini_test
 	@echo "  Generating code for aiolos mesh"
 	@python3 $< > generated_derivs.cxx || ( rm -f $@ ; exit 1)
-	@(clang-format -i $(generated) || astyle -n $(generated) ) || exit 0 # ignore failure
+	@(clang-format -i *xx || astyle -n $(generated) ) || exit 0 # ignore failure
 	@touch .generated.stamp
 
 # Solution from automake

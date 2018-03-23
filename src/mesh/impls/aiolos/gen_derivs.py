@@ -364,7 +364,7 @@ print("void AiolosMesh::derivs_init(Options * option) {")
 print("  std::string name;")
 print("  Options * dirOption;")
 for d in dirs['Field3D']:
-    print("  output.write(\"\\tSetting derivatives for direction %s:\\n\");" % d)
+    print("  output_info.write(\"\\tSetting derivatives for direction %s:\\n\");" % d)
     print('  dirOption = option->getSection("dd%s");' % d)
     print()
     for i in ['First', 'Second', 'Upwind', 'Flux']:
@@ -397,7 +397,7 @@ for d in dirs['Field3D']:
                         print('if (strcasecmp(name.c_str(),"%s")==0) {' % key)
                         print('    default_%s_%s%sDeriv = %s;' %
                               (d, i, stag, method.name))
-                        print('    output.write("\t%15s : %s\\n");' %
+                        print('    output_info.write("\t%15s : %s\\n");' %
                               (i + stag, description))
                         print('  } else', end=' ')
                         options += "\\n * %s: %s" % (key, description)
