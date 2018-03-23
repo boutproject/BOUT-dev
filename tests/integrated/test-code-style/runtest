@@ -14,6 +14,23 @@ grep [\(,][[:space:]]*const[[:space:]][[:alnum:]]*[[:space:]][[:alnum:]]*[[:spac
     error=yes &&
     echo "Declaration of functions shouldn't declare pass-by-value as const"
 
+
+# Check that exceptions are caught by reference
+paths="src include examples tests"
+for path in $paths
+do
+    catch_errors=$(grep catch[^\(]*\([^\(]*Bout $BOUT_TOP/$path --include=*xx -r|grep -v '&')
+    ex=$?
+    if test $ex -eq 0
+    then
+        error=yes
+        echo "Found catch by value - not by reference:"
+        echo "$catch_errors"
+    fi
+done
+
+
+# Return
 if test $error
 then
     echo "-> Errors listed above"
