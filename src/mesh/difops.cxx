@@ -724,11 +724,14 @@ const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method,
   return result;
 }
 
-const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method, CELL_LOC outloc, Solver *solver) {
+const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
+                      CELL_LOC outloc, Solver *solver) {
   TRACE("bracket(Field3D, Field2D)");
 
+  ASSERT1(f.getMesh() == g.getMesh());
+
   Mesh *mesh = f.getMesh();
-  ASSERT1(mesh = g.getMesh());
+
   Field3D result(mesh);
 
   Coordinates *metric = mesh->coordinates();
