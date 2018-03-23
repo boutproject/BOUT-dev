@@ -221,18 +221,18 @@ HDF5 support is being disabled (equivalent to --with-parallelhdf5=no).
         for arg in $PARALLELHDF5_SHOW $PARALLELHDF5_tmp_flags ; do
           case "$arg" in
             -I*) echo $PARALLELHDF5_CPPFLAGS | $GREP -e "$arg" 2>&1 >/dev/null \
-                  || PARALLELHDF5_CPPFLAGS="$arg $PARALLELHDF5_CPPFLAGS"
+                  || PARALLELHDF5_CPPFLAGS="$PARALLELHDF5_CPPFLAGS $arg"
               ;;
             -L*) echo $PARALLELHDF5_LDFLAGS | $GREP -e "$arg" 2>&1 >/dev/null \
-                  || PARALLELHDF5_LDFLAGS="$arg $PARALLELHDF5_LDFLAGS"
+                  || PARALLELHDF5_LDFLAGS="$PARALLELHDF5_LDFLAGS $arg"
               ;;
             -l*) echo $PARALLELHDF5_LIBS | $GREP -e "$arg" 2>&1 >/dev/null \
-                  || PARALLELHDF5_LIBS="$arg $PARALLELHDF5_LIBS"
+                  || PARALLELHDF5_LIBS="$PARALLELHDF5_LIBS $arg"
               ;;
           esac
         done
 
-        PARALLELHDF5_LIBS="$PARALLELHDF5_LIBS -lhdf5"
+        PARALLELHDF5_LIBS="-lhdf5 $PARALLELHDF5_LIBS"
         AC_MSG_RESULT([yes (version $[PARALLELHDF5_VERSION])])
 
         dnl See if we can compile
@@ -252,7 +252,7 @@ HDF5 support is being disabled (equivalent to --with-parallelhdf5=no).
           AC_MSG_FAILURE([Unable to compile HDF5 test program])
         fi
         dnl Look for HDF5's high level library
-        AC_HAVE_LIBRARY([hdf5_hl], [PARALLELHDF5_LIBS="$PARALLELHDF5_LIBS -lhdf5_hl"], [], [])
+        AC_HAVE_LIBRARY([hdf5_hl], [PARALLELHDF5_LIBS="-lhdf5_hl $PARALLELHDF5_LIBS"], [], [])
 
         CC=$ax_lib_parallelhdf5_save_CC
         CPPFLAGS=$ax_lib_parallelhdf5_save_CPPFLAGS

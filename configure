@@ -7952,18 +7952,18 @@ $as_echo_n "checking for HDF5 libraries... " >&6; }
                 for arg in $HDF5_SHOW $HDF5_tmp_flags ; do
           case "$arg" in
             -I*) echo $HDF5_CPPFLAGS | $GREP -e "$arg" 2>&1 >/dev/null \
-                  || HDF5_CPPFLAGS="$arg $HDF5_CPPFLAGS"
+                  || HDF5_CPPFLAGS="$HDF5_CPPFLAGS $arg"
               ;;
             -L*) echo $HDF5_LDFLAGS | $GREP -e "$arg" 2>&1 >/dev/null \
-                  || HDF5_LDFLAGS="$arg $HDF5_LDFLAGS"
+                  || HDF5_LDFLAGS="$HDF5_LDFLAGS $arg"
               ;;
             -l*) echo $HDF5_LIBS | $GREP -e "$arg" 2>&1 >/dev/null \
-                  || HDF5_LIBS="$arg $HDF5_LIBS"
+                  || HDF5_LIBS="$HDF5_LIBS $arg"
               ;;
           esac
         done
 
-        HDF5_LIBS="$HDF5_LIBS -lhdf5"
+        HDF5_LIBS="-lhdf5 $HDF5_LIBS"
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes (version $HDF5_VERSION)" >&5
 $as_echo "yes (version $HDF5_VERSION)" >&6; }
 
@@ -8074,7 +8074,7 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_hdf5_hl_main" >&5
 $as_echo "$ac_cv_lib_hdf5_hl_main" >&6; }
 if test "x$ac_cv_lib_hdf5_hl_main" = xyes; then :
-  HDF5_LIBS="$HDF5_LIBS -lhdf5_hl"
+  HDF5_LIBS="-lhdf5_hl $HDF5_LIBS"
 fi
 ac_cv_lib_hdf5_hl=ac_cv_lib_hdf5_hl_main
 
@@ -8325,18 +8325,18 @@ $as_echo_n "checking for HDF5 libraries... " >&6; }
                 for arg in $PARALLELHDF5_SHOW $PARALLELHDF5_tmp_flags ; do
           case "$arg" in
             -I*) echo $PARALLELHDF5_CPPFLAGS | $GREP -e "$arg" 2>&1 >/dev/null \
-                  || PARALLELHDF5_CPPFLAGS="$arg $PARALLELHDF5_CPPFLAGS"
+                  || PARALLELHDF5_CPPFLAGS="$PARALLELHDF5_CPPFLAGS $arg"
               ;;
             -L*) echo $PARALLELHDF5_LDFLAGS | $GREP -e "$arg" 2>&1 >/dev/null \
-                  || PARALLELHDF5_LDFLAGS="$arg $PARALLELHDF5_LDFLAGS"
+                  || PARALLELHDF5_LDFLAGS="$PARALLELHDF5_LDFLAGS $arg"
               ;;
             -l*) echo $PARALLELHDF5_LIBS | $GREP -e "$arg" 2>&1 >/dev/null \
-                  || PARALLELHDF5_LIBS="$arg $PARALLELHDF5_LIBS"
+                  || PARALLELHDF5_LIBS="$PARALLELHDF5_LIBS $arg"
               ;;
           esac
         done
 
-        PARALLELHDF5_LIBS="$PARALLELHDF5_LIBS -lhdf5"
+        PARALLELHDF5_LIBS="-lhdf5 $PARALLELHDF5_LIBS"
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes (version $PARALLELHDF5_VERSION)" >&5
 $as_echo "yes (version $PARALLELHDF5_VERSION)" >&6; }
 
@@ -8441,7 +8441,7 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_hdf5_hl_main" >&5
 $as_echo "$ac_cv_lib_hdf5_hl_main" >&6; }
 if test "x$ac_cv_lib_hdf5_hl_main" = xyes; then :
-  PARALLELHDF5_LIBS="$PARALLELHDF5_LIBS -lhdf5_hl"
+  PARALLELHDF5_LIBS="-lhdf5_hl $PARALLELHDF5_LIBS"
 fi
 ac_cv_lib_hdf5_hl=ac_cv_lib_hdf5_hl_main
 
