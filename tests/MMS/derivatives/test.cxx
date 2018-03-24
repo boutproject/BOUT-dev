@@ -17,12 +17,13 @@ void save_diff(Field3D a, Field3D b,CELL_LOC in,CELL_LOC out=CELL_CENTRE);
       for (auto in : {CELL_CENTRE, CELL_ ##x ## LOW} ){                 \
         auto inf = ff->create3D("all:function",oo,mesh,in,0);           \
         for (auto out : {CELL_CENTRE, CELL_ ##x ## LOW} ){              \
-          save_diff(DD##x(inf,out),                                     \
+          save_diff(DD##x(inf,out,method),                              \
                     ff->create3D(                                       \
                                  "diff_" #x ":function",                \
                                  oo,                                    \
                                  mesh, out, 0),in,out);                 \
-          save_diff(D2D##x ##2(inf,out),                                \
+          DIFF_METHOD method2= in ==out?method : DIFF_C2;               \
+          save_diff(D2D##x ##2(inf,out,method2),                        \
                     ff->create3D(                                       \
                                  "diff2_" #x ":function",               \
                                  oo,                                    \
@@ -45,6 +46,9 @@ int physics_init(bool restart) {
   SAVE_REPEAT(error);
   SAVE_REPEAT(diff);
   SAVE_REPEAT(exact);
+  int order;
+  OPTION(Options::getRoot(),order,5);
+  DIFF_METHOD method = order==2? DIFF_C2 : DIFF_C4;
   test(X);
   
   test(Y);

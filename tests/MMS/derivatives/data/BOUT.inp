@@ -29,18 +29,18 @@ StaggerGrids=true
 
 [MESH:ddx]
 all=c4
-Second=C4
+Second=C2
 SecondStag=C2
 FluxStag=U1
 [MESH:ddy]
 first=c4
-Second=C4
+Second=C2
 SecondStag=C2
 FluxStag=U1
 
 [MESH:ddz]
 first=c4
-Second=C4
+Second=C2
 SecondStag=C2
 FluxStag=U1
 

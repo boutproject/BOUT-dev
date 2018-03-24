@@ -28,7 +28,7 @@ stencils_cleaned.cxx:../../index_derivs.cxx
 
 .generated.stamp:gen_derivs.py \
 		tables_cleaned.cxx gen_stencils.py stencils_cleaned.cxx \
-		common.py .mini_test
+		common.py
 	@echo "  Generating code for aiolos mesh"
 # Testing scripts
 	@python3 common_test.py &> test.log || ( cat test.log ; exit 1 )
