@@ -488,8 +488,7 @@ int physics_run(BoutReal t) {
   #ifndef LOCALHEATFLUX
     try {
       ratio = (-3.16*interp_to(n_ion*T_electron*tau_ei/electron_mass,CELL_YLOW)*Grad_par(T_electron,CELL_YLOW))/nonlocal_parallel.electron_heat_flux;
-    }
-    catch (BoutException error) {
+    } catch (BoutException &error) {
       // Don't really care if there are errors in the calculation of ratio as it is only a diagnostic variable: IGNORE
     }
   #endif

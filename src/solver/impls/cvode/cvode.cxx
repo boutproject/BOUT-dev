@@ -533,8 +533,7 @@ static int cvode_rhs(BoutReal t,
   // Calculate RHS function
   try {
     s->rhs(t, udata, dudata);
-  }
-  catch (BoutRhsFail error) {
+  } catch (BoutRhsFail &error) {
     return 1;
   }
   return 0;

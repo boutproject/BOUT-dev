@@ -1,13 +1,9 @@
 
-BOUT_TOP	= .
+BOUT_TOP  = .
 
-DIRS			= src
+DIRS      = src
 
-ifndef TARGET
-TARGET=libfast
-endif
-# Add this to DIRS to have examples compiled
-#examples
+TARGET   ?= libfast
 
 include make.config
 
