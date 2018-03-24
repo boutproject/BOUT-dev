@@ -43,5 +43,5 @@ debug: debug.so
 	! mpirun -np 1 $(PY) ./debug.py
 	! mpirun -np 1 ./debug.py
 
-debug.so: debug.pyx debug.pxd setup_debug.py
-	$(PY) ./setup_debug.py build_ext --inplace
+debug.so: debug.pyx debug.pxd debug_setup.py
+	$(PY) ./debug_setup.py build_ext --inplace

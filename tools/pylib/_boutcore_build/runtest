@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-
+print("trying to import")
 import boutcore
 import numpy as np
 from boutdata import collect
 
 errorlist=""
-
+print("Trying to init")
 boutcore.init("-d data -q -q -q")#+" -f BOUT.settings")
 n=collect("f2d",path='input',tind=-1,yguards=True)
 print(n.shape)
