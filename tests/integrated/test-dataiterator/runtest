@@ -9,7 +9,7 @@ try:
     from builtins import str
 except:
     pass
-from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
+from boututils.run_wrapper import shell, shell_safe, launch, getmpirun
 from boutdata.collect import collect
 from sys import stdout, exit
 
@@ -23,14 +23,12 @@ for nproc in [1,2,4]:
     for mproc in [1,2,3,4]:
         cmd = "./test_dataiterator"
 
-        print("   %d processors...." % (nproc))
-
-        stdout.write("\tflags '"+f+"' ... ")
+        print("   %d x %d threads...." % (nproc,mproc))
 
         shell("rm data/BOUT.dmp.* 2> err.log")
 
         # Run the case
-        s, out = launch(cmd+" "+f, runcmd=MPIRUN, nproc=nproc, mthread=mproc, pipe=True)
+        s, out = launch(cmd, runcmd=MPIRUN, nproc=nproc, mthread=mproc, pipe=True)
         with open("run.log."+str(nproc)+"."+str(mproc), "w") as f:
             f.write(out)
         if s:
