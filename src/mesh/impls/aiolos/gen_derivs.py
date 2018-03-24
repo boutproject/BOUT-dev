@@ -208,9 +208,9 @@ def generate_index_functions_stag(func_tables):
                 print("const", field, myname, inp,
                       "CELL_LOC outloc, DIFF_METHOD method) {")
                 print("  if (method == DIFF_DEFAULT){")
-                print("    method = default_%s_%s;" %
-                      # drop 'Table' at end of string
-                      (d, name[:-5] + ("Deriv" if table.isFlow() else "")))
+                print("    method = default_stencil[AIOLOS_%s][%d];" %
+                      # drop 'Table' or 'DerivTable' at end of string
+                      ((name[:-5] if table.isFlow() else name[:-10]), dir_number[d]))
                 print("  }")
                 print("  if (outloc == CELL_DEFAULT){")
                 print("    outloc = f.getLocation();")
@@ -278,6 +278,8 @@ def generate_index_functions_stag(func_tables):
     return funcs_to_gen
 
 # Returns the headers
+
+
 def generate_index_functions():
     headers = ""
     for func_ in ["indexDD%s", "indexD2D%s2", "indexVDD%s", "indexFDD%s"]:
@@ -339,11 +341,9 @@ def generate_index_functions():
     return headers
 if __name__ == '__main__':
     funcs_to_gen = generate_index_functions_stag(func_tables)
-    headers=generate_index_functions()
+    headers = generate_index_functions()
     with open("generated_header.hxx", "w") as f:
         f.write(headers)
-
-
 
     guards_ = []
     sys.stdout = open("generated_stencils.cxx", "w")
@@ -353,57 +353,112 @@ if __name__ == '__main__':
 
 sys.stdout = open("generated_init.cxx", "w")
 
-for d in dirs['Field3D']:
-    warn()
+# for d in dirs['Field3D']:
+warn()
+print('DIFF_METHOD default_stencil[8][3];')
+with braces("enum AIOLOS_DIFF_TYPE ", end=";"):
+    count = 0
     for i in ['First', 'Second', 'Upwind', 'Flux']:
         for stag in ['', 'Stag']:
-            print('DIFF_METHOD default_%s_%s%sDeriv;' % (d, i, stag))
+            print("AIOLOS_%s%s=%d, " % (i, stag, count))
+            count += 1
 
 warn()
-print("void AiolosMesh::derivs_init(Options * option) {")
-print("  std::string name;")
-print("  Options * dirOption;")
+print("""
+struct available_stencils {
+const char * key;
+const char * desc;
+DIFF_METHOD method;
+};
+
+struct stencils_to_check {
+int id;
+const char * desc;
+const char * default_;
+std::vector<available_stencils> available;
+const char * error;
+std::vector<const char *> option_names;
+};
+
+void AiolosMesh::derivs_init(Options * option) {
+  std::string name;
+  Options * dirOption;
+  Options * defOption = option->getSection("diff");
+  for (int di : {0,1,2}){
+    const char *dds, *d_str;
+    bool found;
+""")
+
 for d in dirs['Field3D']:
-    print("  output_info.write(\"\\tSetting derivatives for direction %s:\\n\");" % d)
-    print('  dirOption = option->getSection("dd%s");' % d)
-    print()
-    for i in ['First', 'Second', 'Upwind', 'Flux']:
-        if i in ['First', 'Second']:
-            table = "DerivTable"
+    with braces("  if (di == %d)" % dir_number[d]):
+        print('    dds = "dd%s";' % d)
+        print('    d_str = "%s";' % d)
+
+print('  output_info.write("\\tSetting derivatives for direction %s:\\n",d_str);')
+print('  dirOption = option->getSection(dds);')
+print()
+print("std::vector<stencils_to_check> diff_types {")
+counter = 0
+for i in ['First', 'Second', 'Upwind', 'Flux']:
+    if i in ['First', 'Second']:
+        table = "DerivTable"
+    else:
+        table = "Table"
+    for stag in ['', 'Stag']:
+        print("// " + i + stag)
+        if i == 'Flux' or i == 'Upwind':
+            default_diff = "U1"
         else:
-            table = "Table"
-        for stag in ['', 'Stag']:
-            warn()
-            print('  // Setting derivatives for dd%s and %s' % (d, i + stag))
-            print(' ', end=' ')
-            if i == 'Flux' or i == 'Upwind':
-                default_diff = "U1"
-            else:
-                default_diff = "C2"
-            for option in ['dirOption']:
-                for name in [i + stag, i, "all"] if stag else [i, "all"]:
-                    print('if (%s->isSet("%s")){' % (option, name))
-                    print('    %s->get("%s",name,"%s");' %
-                          (option, name, default_diff))
-                    print('  } else', end=' ')
-            print('  {')
-            print('    name="%s";' % default_diff)
-            print('  }')
-            print(' ', end=' ')
-            options = ""
+            default_diff = "C2"
+        print("{// id")
+        print("%d," % counter)
+        print("// desc")
+        print('"%s",' % (i + stag))
+        counter += 1
+        print("// default")
+        print('"%s",' % default_diff)
+        print("// list of all available stencils")
+        options = ""
+        with braces():
             for method in func_tables[i + stag + table].entries:
                 for method_, key, description in descriptions:
                     if method.name == method_:
-                        print('if (strcasecmp(name.c_str(),"%s")==0) {' % key)
-                        print('    default_%s_%s%sDeriv = %s;' %
-                              (d, i, stag, method.name))
-                        print('    output_info.write("\t%15s : %s\\n");' %
-                              (i + stag, description))
-                        print('  } else', end=' ')
+                        print('{"%s","%s",%s},' %
+                              (key, description, method.name))
                         options += "\\n * %s: %s" % (key, description)
-            print('{')
-            print('    throw BoutException("Dont\'t know what diff method to use for %s (direction %s, tried to use %s)!\\nOptions are:%s",name.c_str());' % (
-                i + stag, d, '%s', options))
-            print('  }')
+        print(",")
+        print("// string for error")
+        print('"%s",' % options)
+        print("// list of names to check")
+        names = [i + stag, i, "all"] if stag else [i, "all"]
+        print("{" + ", ".join(['"%s"' % s for s in names]) + "},")
+        print("},")
+print("};")
+# Do some init
+warn()
+with braces("  for(const auto & diff_type: diff_types)"):
+    print('  output_debug.write("Setting derivative for %s and %s",dds,diff_type.desc);')
+    print('    name=diff_type.default_;')
+    print('    found=false;')
+    with braces("for (auto opt : {dirOption , defOption})"):
+        with braces("for (const auto & strf : diff_type.option_names)"):
+            with braces('if (opt->isSet(strf))'):
+                print('    opt->get(strf,name,diff_type.default_);')
+                print("   found=true;")
+                print("   break;")
+        print("  if (found) break;")
+    print('    found=false;')
+    with braces("for (const auto & stencil: diff_type.available)"):
+        with braces("if (!found)"):
+            with braces('if (strcasecmp(name.c_str(),stencil.key)==0)'):
+                print(
+                    '    default_stencil[diff_type.id][di] = stencil.method;')
+                print(
+                    '    output_info.write("\\t%15s : %s\\n",stencil.key,stencil.desc);')
+                print('    found=true;')
+
+    with braces("if (!found)"):
+        print('    throw BoutException("Dont\'t know what diff method to use for %s (direction %s, tried to use %s)!\\nOptions are:%s",diff_type.desc,d_str,name.c_str(),diff_type.error);')
+print("}")
 print("}")
 sys.stdout.flush()

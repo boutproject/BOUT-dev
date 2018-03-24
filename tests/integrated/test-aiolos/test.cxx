@@ -80,6 +80,7 @@ void compare( Field3D diff, Field3D exp){
     auto err=exp-diff;
     
     //for (int x=mesh->xstart;x<=mesh->xend;++x)
+    output.write("\t x  y  z   expected\tdiff\tn\n");
     for (int x=0;x<mesh->LocalNx;++x)
       //for (int y=mesh->ystart;y<=mesh->yend;++y)
       for (int y=0;y<mesh->LocalNy;++y)

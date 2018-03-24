@@ -21,6 +21,7 @@ fields = ['Field3D', 'Field2D']
 dirs = dict()
 dirs['Field3D'] = ['x', 'y', 'z']
 dirs['Field2D'] = ['x', 'y']
+dir_number = {'x': 0, 'y': 1, "z": 2}
 perp_dir = dict()
 for field in fields:
     perp_dir[field] = dict()
@@ -145,3 +146,16 @@ class UniqueList(list):
                 raise RuntimeError("Trying to insert an item that exists"
                                    "\nOld items: %s\nNew item: %s" % (old, item))
         super().append(item)
+
+
+class braces(object):
+
+    def __init__(self, string="", end=""):
+        self.end = end
+        print("%s {" % string)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        print("}" + self.end)

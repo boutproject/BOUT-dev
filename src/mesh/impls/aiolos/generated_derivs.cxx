@@ -2,7 +2,7 @@
 // This file is auto-generated - do not edit!
 const Field3D indexDDX_non_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_x_FirstDeriv;
+    method = default_stencil[AIOLOS_First][0];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -35,7 +35,7 @@ const Field3D indexDDX_non_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD m
 // This file is auto-generated - do not edit!
 const Field3D indexDDY_non_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_y_FirstDeriv;
+    method = default_stencil[AIOLOS_First][1];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -68,7 +68,7 @@ const Field3D indexDDY_non_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD m
 // This file is auto-generated - do not edit!
 const Field3D indexDDZ_non_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_z_FirstDeriv;
+    method = default_stencil[AIOLOS_First][2];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -101,7 +101,7 @@ const Field3D indexDDZ_non_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD m
 // This file is auto-generated - do not edit!
 const Field2D indexDDX_non_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_x_FirstDeriv;
+    method = default_stencil[AIOLOS_First][0];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -134,7 +134,7 @@ const Field2D indexDDX_non_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD m
 // This file is auto-generated - do not edit!
 const Field2D indexDDY_non_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_y_FirstDeriv;
+    method = default_stencil[AIOLOS_First][1];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -167,7 +167,7 @@ const Field2D indexDDY_non_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD m
 // This file is auto-generated - do not edit!
 const Field3D indexD2DX2_non_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_x_SecondDeriv;
+    method = default_stencil[AIOLOS_Second][0];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -192,7 +192,7 @@ const Field3D indexD2DX2_non_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD
 // This file is auto-generated - do not edit!
 const Field3D indexD2DY2_non_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_y_SecondDeriv;
+    method = default_stencil[AIOLOS_Second][1];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -217,7 +217,7 @@ const Field3D indexD2DY2_non_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD
 // This file is auto-generated - do not edit!
 const Field3D indexD2DZ2_non_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_z_SecondDeriv;
+    method = default_stencil[AIOLOS_Second][2];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -242,7 +242,7 @@ const Field3D indexD2DZ2_non_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD
 // This file is auto-generated - do not edit!
 const Field2D indexD2DX2_non_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_x_SecondDeriv;
+    method = default_stencil[AIOLOS_Second][0];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -267,7 +267,7 @@ const Field2D indexD2DX2_non_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD
 // This file is auto-generated - do not edit!
 const Field2D indexD2DY2_non_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_y_SecondDeriv;
+    method = default_stencil[AIOLOS_Second][1];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -293,7 +293,7 @@ const Field2D indexD2DY2_non_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD
 const Field3D indexVDDX_non_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc,
                                  DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_x_UpwindDeriv;
+    method = default_stencil[AIOLOS_Upwind][0];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -361,7 +361,7 @@ const Field3D indexVDDX_non_stag(const Field3D &v, const Field3D &f, CELL_LOC ou
 const Field3D indexVDDY_non_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc,
                                  DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_y_UpwindDeriv;
+    method = default_stencil[AIOLOS_Upwind][1];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -429,7 +429,7 @@ const Field3D indexVDDY_non_stag(const Field3D &v, const Field3D &f, CELL_LOC ou
 const Field3D indexVDDZ_non_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc,
                                  DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_z_UpwindDeriv;
+    method = default_stencil[AIOLOS_Upwind][2];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -497,7 +497,7 @@ const Field3D indexVDDZ_non_stag(const Field3D &v, const Field3D &f, CELL_LOC ou
 const Field2D indexVDDX_non_stag(const Field2D &v, const Field2D &f, CELL_LOC outloc,
                                  DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_x_UpwindDeriv;
+    method = default_stencil[AIOLOS_Upwind][0];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -565,7 +565,7 @@ const Field2D indexVDDX_non_stag(const Field2D &v, const Field2D &f, CELL_LOC ou
 const Field2D indexVDDY_non_stag(const Field2D &v, const Field2D &f, CELL_LOC outloc,
                                  DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_y_UpwindDeriv;
+    method = default_stencil[AIOLOS_Upwind][1];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -633,7 +633,7 @@ const Field2D indexVDDY_non_stag(const Field2D &v, const Field2D &f, CELL_LOC ou
 const Field3D indexFDDX_non_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc,
                                  DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_x_FluxDeriv;
+    method = default_stencil[AIOLOS_Flux][0];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -681,7 +681,7 @@ const Field3D indexFDDX_non_stag(const Field3D &v, const Field3D &f, CELL_LOC ou
 const Field3D indexFDDY_non_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc,
                                  DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_y_FluxDeriv;
+    method = default_stencil[AIOLOS_Flux][1];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -729,7 +729,7 @@ const Field3D indexFDDY_non_stag(const Field3D &v, const Field3D &f, CELL_LOC ou
 const Field3D indexFDDZ_non_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc,
                                  DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_z_FluxDeriv;
+    method = default_stencil[AIOLOS_Flux][2];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -777,7 +777,7 @@ const Field3D indexFDDZ_non_stag(const Field3D &v, const Field3D &f, CELL_LOC ou
 const Field2D indexFDDX_non_stag(const Field2D &v, const Field2D &f, CELL_LOC outloc,
                                  DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_x_FluxDeriv;
+    method = default_stencil[AIOLOS_Flux][0];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -825,7 +825,7 @@ const Field2D indexFDDX_non_stag(const Field2D &v, const Field2D &f, CELL_LOC ou
 const Field2D indexFDDY_non_stag(const Field2D &v, const Field2D &f, CELL_LOC outloc,
                                  DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_y_FluxDeriv;
+    method = default_stencil[AIOLOS_Flux][1];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -872,7 +872,7 @@ const Field2D indexFDDY_non_stag(const Field2D &v, const Field2D &f, CELL_LOC ou
 // This file is auto-generated - do not edit!
 const Field3D indexDDX_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_x_FirstStagDeriv;
+    method = default_stencil[AIOLOS_FirstStag][0];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -905,7 +905,7 @@ const Field3D indexDDX_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD metho
 // This file is auto-generated - do not edit!
 const Field3D indexDDY_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_y_FirstStagDeriv;
+    method = default_stencil[AIOLOS_FirstStag][1];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -938,7 +938,7 @@ const Field3D indexDDY_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD metho
 // This file is auto-generated - do not edit!
 const Field3D indexDDZ_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_z_FirstStagDeriv;
+    method = default_stencil[AIOLOS_FirstStag][2];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -971,7 +971,7 @@ const Field3D indexDDZ_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD metho
 // This file is auto-generated - do not edit!
 const Field2D indexDDX_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_x_FirstStagDeriv;
+    method = default_stencil[AIOLOS_FirstStag][0];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -1004,7 +1004,7 @@ const Field2D indexDDX_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD metho
 // This file is auto-generated - do not edit!
 const Field2D indexDDY_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_y_FirstStagDeriv;
+    method = default_stencil[AIOLOS_FirstStag][1];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -1037,7 +1037,7 @@ const Field2D indexDDY_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD metho
 // This file is auto-generated - do not edit!
 const Field3D indexD2DX2_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_x_SecondStagDeriv;
+    method = default_stencil[AIOLOS_SecondStag][0];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -1062,7 +1062,7 @@ const Field3D indexD2DX2_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD met
 // This file is auto-generated - do not edit!
 const Field3D indexD2DY2_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_y_SecondStagDeriv;
+    method = default_stencil[AIOLOS_SecondStag][1];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -1087,7 +1087,7 @@ const Field3D indexD2DY2_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD met
 // This file is auto-generated - do not edit!
 const Field3D indexD2DZ2_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_z_SecondStagDeriv;
+    method = default_stencil[AIOLOS_SecondStag][2];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -1112,7 +1112,7 @@ const Field3D indexD2DZ2_stag(const Field3D &f, CELL_LOC outloc, DIFF_METHOD met
 // This file is auto-generated - do not edit!
 const Field2D indexD2DX2_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_x_SecondStagDeriv;
+    method = default_stencil[AIOLOS_SecondStag][0];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -1137,7 +1137,7 @@ const Field2D indexD2DX2_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD met
 // This file is auto-generated - do not edit!
 const Field2D indexD2DY2_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_y_SecondStagDeriv;
+    method = default_stencil[AIOLOS_SecondStag][1];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -1163,7 +1163,7 @@ const Field2D indexD2DY2_stag(const Field2D &f, CELL_LOC outloc, DIFF_METHOD met
 const Field3D indexVDDX_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc,
                              DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_x_UpwindStagDeriv;
+    method = default_stencil[AIOLOS_UpwindStag][0];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -1213,7 +1213,7 @@ const Field3D indexVDDX_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc
 const Field3D indexVDDY_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc,
                              DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_y_UpwindStagDeriv;
+    method = default_stencil[AIOLOS_UpwindStag][1];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -1263,7 +1263,7 @@ const Field3D indexVDDY_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc
 const Field3D indexVDDZ_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc,
                              DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_z_UpwindStagDeriv;
+    method = default_stencil[AIOLOS_UpwindStag][2];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -1313,7 +1313,7 @@ const Field3D indexVDDZ_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc
 const Field2D indexVDDX_stag(const Field2D &v, const Field2D &f, CELL_LOC outloc,
                              DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_x_UpwindStagDeriv;
+    method = default_stencil[AIOLOS_UpwindStag][0];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -1363,7 +1363,7 @@ const Field2D indexVDDX_stag(const Field2D &v, const Field2D &f, CELL_LOC outloc
 const Field2D indexVDDY_stag(const Field2D &v, const Field2D &f, CELL_LOC outloc,
                              DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_y_UpwindStagDeriv;
+    method = default_stencil[AIOLOS_UpwindStag][1];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -1413,7 +1413,7 @@ const Field2D indexVDDY_stag(const Field2D &v, const Field2D &f, CELL_LOC outloc
 const Field3D indexFDDX_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc,
                              DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_x_FluxStagDeriv;
+    method = default_stencil[AIOLOS_FluxStag][0];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -1439,7 +1439,7 @@ const Field3D indexFDDX_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc
 const Field3D indexFDDY_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc,
                              DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_y_FluxStagDeriv;
+    method = default_stencil[AIOLOS_FluxStag][1];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -1465,7 +1465,7 @@ const Field3D indexFDDY_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc
 const Field3D indexFDDZ_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc,
                              DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_z_FluxStagDeriv;
+    method = default_stencil[AIOLOS_FluxStag][2];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -1491,7 +1491,7 @@ const Field3D indexFDDZ_stag(const Field3D &v, const Field3D &f, CELL_LOC outloc
 const Field2D indexFDDX_stag(const Field2D &v, const Field2D &f, CELL_LOC outloc,
                              DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_x_FluxStagDeriv;
+    method = default_stencil[AIOLOS_FluxStag][0];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -1517,7 +1517,7 @@ const Field2D indexFDDX_stag(const Field2D &v, const Field2D &f, CELL_LOC outloc
 const Field2D indexFDDY_stag(const Field2D &v, const Field2D &f, CELL_LOC outloc,
                              DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
-    method = default_y_FluxStagDeriv;
+    method = default_stencil[AIOLOS_FluxStag][1];
   }
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
