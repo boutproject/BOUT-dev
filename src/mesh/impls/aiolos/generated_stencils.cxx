@@ -1,4 +1,5 @@
-static void interp_to_on_Field3D_x(Field3D &result, const Field3D &in, Mesh *msh) {
+static void interp_to_on_Field3D_x(BoutReal *__restrict__ result_ptr,
+                                   const BoutReal *__restrict__ in_ptr, Mesh *msh) {
   const int Nx = msh->LocalNx;
   const int Ny = msh->LocalNy;
   const int Nz = msh->LocalNz;
@@ -11,33 +12,42 @@ static void interp_to_on_Field3D_x(Field3D &result, const Field3D &in, Mesh *msh
   for (int x = 2; x < Nx - 1; ++x) {
     for (int y = 0; y < Ny; ++y) {
       for (int z = 0; z < Nz; ++z) {
-        result(x + 0, y, z) =
-            -6.25000e-02 * in(x - 2, y, z) + 5.62500e-01 * in(x - 1, y, z) +
-            5.62500e-01 * in(x + 0, y, z) - 6.25000e-02 * in(x + 1, y, z);
+        result_ptr[((x + 0) * Ny + y) * Nz + z] =
+            -static_cast<const BoutReal>(1. / 16.) * in_ptr[((x - 2) * Ny + y) * Nz + z] +
+            static_cast<const BoutReal>(9. / 16.) * in_ptr[((x - 1) * Ny + y) * Nz + z] +
+            static_cast<const BoutReal>(9. / 16.) * in_ptr[((x + 0) * Ny + y) * Nz + z] -
+            static_cast<const BoutReal>(1. / 16.) * in_ptr[((x + 1) * Ny + y) * Nz + z];
       }
     }
   }
   int x = 1;
   for (int y = 0; y < Ny; ++y) {
     for (int z = 0; z < Nz; ++z) {
-      result(x + 0, y, z) = +3.12500e-01 * in(x - 1, y, z) +
-                            9.37500e-01 * in(x + 0, y, z) -
-                            3.12500e-01 * in(x + 1, y, z) + 6.25000e-02 * in(x + 2, y, z);
-      result(x - 1, y, z) = +2.18750e+00 * in(x - 1, y, z) -
-                            2.18750e+00 * in(x + 0, y, z) +
-                            1.31250e+00 * in(x + 1, y, z) - 3.12500e-01 * in(x + 2, y, z);
+      result_ptr[((x + 0) * Ny + y) * Nz + z] =
+          +static_cast<const BoutReal>(5. / 16.) * in_ptr[((x - 1) * Ny + y) * Nz + z] +
+          static_cast<const BoutReal>(15. / 16.) * in_ptr[((x + 0) * Ny + y) * Nz + z] -
+          static_cast<const BoutReal>(5. / 16.) * in_ptr[((x + 1) * Ny + y) * Nz + z] +
+          static_cast<const BoutReal>(1. / 16.) * in_ptr[((x + 2) * Ny + y) * Nz + z];
+      result_ptr[((x - 1) * Ny + y) * Nz + z] =
+          +static_cast<const BoutReal>(35. / 16.) * in_ptr[((x - 1) * Ny + y) * Nz + z] -
+          static_cast<const BoutReal>(35. / 16.) * in_ptr[((x + 0) * Ny + y) * Nz + z] +
+          static_cast<const BoutReal>(21. / 16.) * in_ptr[((x + 1) * Ny + y) * Nz + z] -
+          static_cast<const BoutReal>(5. / 16.) * in_ptr[((x + 2) * Ny + y) * Nz + z];
     }
   }
   x = Nx - 1;
   for (int y = 0; y < Ny; ++y) {
     for (int z = 0; z < Nz; ++z) {
-      result(x + 0, y, z) = +6.25000e-02 * in(x - 3, y, z) -
-                            3.12500e-01 * in(x - 2, y, z) +
-                            9.37500e-01 * in(x - 1, y, z) + 3.12500e-01 * in(x + 0, y, z);
+      result_ptr[((x + 0) * Ny + y) * Nz + z] =
+          +static_cast<const BoutReal>(1. / 16.) * in_ptr[((x - 3) * Ny + y) * Nz + z] -
+          static_cast<const BoutReal>(5. / 16.) * in_ptr[((x - 2) * Ny + y) * Nz + z] +
+          static_cast<const BoutReal>(15. / 16.) * in_ptr[((x - 1) * Ny + y) * Nz + z] +
+          static_cast<const BoutReal>(5. / 16.) * in_ptr[((x + 0) * Ny + y) * Nz + z];
     }
   }
 }
-static void interp_to_on_Field3D_y(Field3D &result, const Field3D &in, Mesh *msh) {
+static void interp_to_on_Field3D_y(BoutReal *__restrict__ result_ptr,
+                                   const BoutReal *__restrict__ in_ptr, Mesh *msh) {
   const int Nx = msh->LocalNx;
   const int Ny = msh->LocalNy;
   const int Nz = msh->LocalNz;
@@ -50,33 +60,42 @@ static void interp_to_on_Field3D_y(Field3D &result, const Field3D &in, Mesh *msh
   for (int x = 0; x < Nx; ++x) {
     for (int y = 2; y < Ny - 1; ++y) {
       for (int z = 0; z < Nz; ++z) {
-        result(x, y + 0, z) =
-            -6.25000e-02 * in(x, y - 2, z) + 5.62500e-01 * in(x, y - 1, z) +
-            5.62500e-01 * in(x, y + 0, z) - 6.25000e-02 * in(x, y + 1, z);
+        result_ptr[((x)*Ny + y + 0) * Nz + z] =
+            -static_cast<const BoutReal>(1. / 16.) * in_ptr[((x)*Ny + y - 2) * Nz + z] +
+            static_cast<const BoutReal>(9. / 16.) * in_ptr[((x)*Ny + y - 1) * Nz + z] +
+            static_cast<const BoutReal>(9. / 16.) * in_ptr[((x)*Ny + y + 0) * Nz + z] -
+            static_cast<const BoutReal>(1. / 16.) * in_ptr[((x)*Ny + y + 1) * Nz + z];
       }
     }
   }
   int y = 1;
   for (int x = 0; x < Nx; ++x) {
     for (int z = 0; z < Nz; ++z) {
-      result(x, y + 0, z) = +3.12500e-01 * in(x, y - 1, z) +
-                            9.37500e-01 * in(x, y + 0, z) -
-                            3.12500e-01 * in(x, y + 1, z) + 6.25000e-02 * in(x, y + 2, z);
-      result(x, y - 1, z) = +2.18750e+00 * in(x, y - 1, z) -
-                            2.18750e+00 * in(x, y + 0, z) +
-                            1.31250e+00 * in(x, y + 1, z) - 3.12500e-01 * in(x, y + 2, z);
+      result_ptr[((x)*Ny + y + 0) * Nz + z] =
+          +static_cast<const BoutReal>(5. / 16.) * in_ptr[((x)*Ny + y - 1) * Nz + z] +
+          static_cast<const BoutReal>(15. / 16.) * in_ptr[((x)*Ny + y + 0) * Nz + z] -
+          static_cast<const BoutReal>(5. / 16.) * in_ptr[((x)*Ny + y + 1) * Nz + z] +
+          static_cast<const BoutReal>(1. / 16.) * in_ptr[((x)*Ny + y + 2) * Nz + z];
+      result_ptr[((x)*Ny + y - 1) * Nz + z] =
+          +static_cast<const BoutReal>(35. / 16.) * in_ptr[((x)*Ny + y - 1) * Nz + z] -
+          static_cast<const BoutReal>(35. / 16.) * in_ptr[((x)*Ny + y + 0) * Nz + z] +
+          static_cast<const BoutReal>(21. / 16.) * in_ptr[((x)*Ny + y + 1) * Nz + z] -
+          static_cast<const BoutReal>(5. / 16.) * in_ptr[((x)*Ny + y + 2) * Nz + z];
     }
   }
   y = Ny - 1;
   for (int x = 0; x < Nx; ++x) {
     for (int z = 0; z < Nz; ++z) {
-      result(x, y + 0, z) = +6.25000e-02 * in(x, y - 3, z) -
-                            3.12500e-01 * in(x, y - 2, z) +
-                            9.37500e-01 * in(x, y - 1, z) + 3.12500e-01 * in(x, y + 0, z);
+      result_ptr[((x)*Ny + y + 0) * Nz + z] =
+          +static_cast<const BoutReal>(1. / 16.) * in_ptr[((x)*Ny + y - 3) * Nz + z] -
+          static_cast<const BoutReal>(5. / 16.) * in_ptr[((x)*Ny + y - 2) * Nz + z] +
+          static_cast<const BoutReal>(15. / 16.) * in_ptr[((x)*Ny + y - 1) * Nz + z] +
+          static_cast<const BoutReal>(5. / 16.) * in_ptr[((x)*Ny + y + 0) * Nz + z];
     }
   }
 }
-static void interp_to_on_Field3D_z(Field3D &result, const Field3D &in, Mesh *msh) {
+static void interp_to_on_Field3D_z(BoutReal *__restrict__ result_ptr,
+                                   const BoutReal *__restrict__ in_ptr, Mesh *msh) {
   const int Nx = msh->LocalNx;
   const int Ny = msh->LocalNy;
   const int Nz = msh->LocalNz;
@@ -86,29 +105,41 @@ static void interp_to_on_Field3D_z(Field3D &result, const Field3D &in, Mesh *msh
         {
           int z = 0;
 
-          result(x, y, z + 0) =
-              -6.25000e-02 * in(x, y, z - 2 + Nz) + 5.62500e-01 * in(x, y, z - 1 + Nz) +
-              5.62500e-01 * in(x, y, z + 0) - 6.25000e-02 * in(x, y, z + 1);
+          result_ptr[((x)*Ny + y) * Nz + z + 0] =
+              -static_cast<const BoutReal>(1. / 16.) *
+                  in_ptr[((x)*Ny + y) * Nz + z - 2 + Nz] +
+              static_cast<const BoutReal>(9. / 16.) *
+                  in_ptr[((x)*Ny + y) * Nz + z - 1 + Nz] +
+              static_cast<const BoutReal>(9. / 16.) * in_ptr[((x)*Ny + y) * Nz + z + 0] -
+              static_cast<const BoutReal>(1. / 16.) * in_ptr[((x)*Ny + y) * Nz + z + 1];
         }
         {
           int z = 1;
 
-          result(x, y, z + 0) =
-              -6.25000e-02 * in(x, y, z - 2 + Nz) + 5.62500e-01 * in(x, y, z - 1) +
-              5.62500e-01 * in(x, y, z + 0) - 6.25000e-02 * in(x, y, z + 1);
+          result_ptr[((x)*Ny + y) * Nz + z + 0] =
+              -static_cast<const BoutReal>(1. / 16.) *
+                  in_ptr[((x)*Ny + y) * Nz + z - 2 + Nz] +
+              static_cast<const BoutReal>(9. / 16.) * in_ptr[((x)*Ny + y) * Nz + z - 1] +
+              static_cast<const BoutReal>(9. / 16.) * in_ptr[((x)*Ny + y) * Nz + z + 0] -
+              static_cast<const BoutReal>(1. / 16.) * in_ptr[((x)*Ny + y) * Nz + z + 1];
         }
         for (int z = 2; z < Nz - 1; ++z) {
 
-          result(x, y, z + 0) =
-              -6.25000e-02 * in(x, y, z - 2) + 5.62500e-01 * in(x, y, z - 1) +
-              5.62500e-01 * in(x, y, z + 0) - 6.25000e-02 * in(x, y, z + 1);
+          result_ptr[((x)*Ny + y) * Nz + z + 0] =
+              -static_cast<const BoutReal>(1. / 16.) * in_ptr[((x)*Ny + y) * Nz + z - 2] +
+              static_cast<const BoutReal>(9. / 16.) * in_ptr[((x)*Ny + y) * Nz + z - 1] +
+              static_cast<const BoutReal>(9. / 16.) * in_ptr[((x)*Ny + y) * Nz + z + 0] -
+              static_cast<const BoutReal>(1. / 16.) * in_ptr[((x)*Ny + y) * Nz + z + 1];
         }
         {
           int z = Nz - 1;
 
-          result(x, y, z + 0) =
-              -6.25000e-02 * in(x, y, z - 2) + 5.62500e-01 * in(x, y, z - 1) +
-              5.62500e-01 * in(x, y, z + 0) - 6.25000e-02 * in(x, y, z + 1 - Nz);
+          result_ptr[((x)*Ny + y) * Nz + z + 0] =
+              -static_cast<const BoutReal>(1. / 16.) * in_ptr[((x)*Ny + y) * Nz + z - 2] +
+              static_cast<const BoutReal>(9. / 16.) * in_ptr[((x)*Ny + y) * Nz + z - 1] +
+              static_cast<const BoutReal>(9. / 16.) * in_ptr[((x)*Ny + y) * Nz + z + 0] -
+              static_cast<const BoutReal>(1. / 16.) *
+                  in_ptr[((x)*Ny + y) * Nz + z + 1 - Nz];
         }
       }
     }
@@ -117,16 +148,22 @@ static void interp_to_on_Field3D_z(Field3D &result, const Field3D &in, Mesh *msh
       for (int y = 0; y < Ny; ++y) {
         for (int z = 0; z < Nz; ++z) {
 
-          result(x, y, z + 0) = -6.25000e-02 * in(x, y, +((z - 2 + 2 * Nz) % Nz)) +
-                                5.62500e-01 * in(x, y, +((z - 1 + 1 * Nz) % Nz)) +
-                                5.62500e-01 * in(x, y, +((z + 0) % Nz)) -
-                                6.25000e-02 * in(x, y, +((z + 1) % Nz));
+          result_ptr[((x)*Ny + y) * Nz + z + 0] =
+              -static_cast<const BoutReal>(1. / 16.) *
+                  in_ptr[((x)*Ny + y) * Nz + +((z - 2 + 2 * Nz) % Nz)] +
+              static_cast<const BoutReal>(9. / 16.) *
+                  in_ptr[((x)*Ny + y) * Nz + +((z - 1 + 1 * Nz) % Nz)] +
+              static_cast<const BoutReal>(9. / 16.) *
+                  in_ptr[((x)*Ny + y) * Nz + +((z + 0) % Nz)] -
+              static_cast<const BoutReal>(1. / 16.) *
+                  in_ptr[((x)*Ny + y) * Nz + +((z + 1) % Nz)];
         }
       }
     }
   }
 }
-static void interp_to_off_Field3D_x(Field3D &result, const Field3D &in, Mesh *msh) {
+static void interp_to_off_Field3D_x(BoutReal *__restrict__ result_ptr,
+                                    const BoutReal *__restrict__ in_ptr, Mesh *msh) {
   const int Nx = msh->LocalNx;
   const int Ny = msh->LocalNy;
   const int Nz = msh->LocalNz;
@@ -139,33 +176,42 @@ static void interp_to_off_Field3D_x(Field3D &result, const Field3D &in, Mesh *ms
   for (int x = 1; x < Nx - 2; ++x) {
     for (int y = 0; y < Ny; ++y) {
       for (int z = 0; z < Nz; ++z) {
-        result(x + 0, y, z) =
-            -6.25000e-02 * in(x - 1, y, z) + 5.62500e-01 * in(x + 0, y, z) +
-            5.62500e-01 * in(x + 1, y, z) - 6.25000e-02 * in(x + 2, y, z);
+        result_ptr[((x + 0) * Ny + y) * Nz + z] =
+            -static_cast<const BoutReal>(1. / 16.) * in_ptr[((x - 1) * Ny + y) * Nz + z] +
+            static_cast<const BoutReal>(9. / 16.) * in_ptr[((x + 0) * Ny + y) * Nz + z] +
+            static_cast<const BoutReal>(9. / 16.) * in_ptr[((x + 1) * Ny + y) * Nz + z] -
+            static_cast<const BoutReal>(1. / 16.) * in_ptr[((x + 2) * Ny + y) * Nz + z];
       }
     }
   }
   int x = 0;
   for (int y = 0; y < Ny; ++y) {
     for (int z = 0; z < Nz; ++z) {
-      result(x + 0, y, z) = +3.12500e-01 * in(x + 0, y, z) +
-                            9.37500e-01 * in(x + 1, y, z) -
-                            3.12500e-01 * in(x + 2, y, z) + 6.25000e-02 * in(x + 3, y, z);
+      result_ptr[((x + 0) * Ny + y) * Nz + z] =
+          +static_cast<const BoutReal>(5. / 16.) * in_ptr[((x + 0) * Ny + y) * Nz + z] +
+          static_cast<const BoutReal>(15. / 16.) * in_ptr[((x + 1) * Ny + y) * Nz + z] -
+          static_cast<const BoutReal>(5. / 16.) * in_ptr[((x + 2) * Ny + y) * Nz + z] +
+          static_cast<const BoutReal>(1. / 16.) * in_ptr[((x + 3) * Ny + y) * Nz + z];
     }
   }
   x = Nx - 2;
   for (int y = 0; y < Ny; ++y) {
     for (int z = 0; z < Nz; ++z) {
-      result(x + 0, y, z) = +6.25000e-02 * in(x - 2, y, z) -
-                            3.12500e-01 * in(x - 1, y, z) +
-                            9.37500e-01 * in(x + 0, y, z) + 3.12500e-01 * in(x + 1, y, z);
-      result(x + 1, y, z) = -3.12500e-01 * in(x - 2, y, z) +
-                            1.31250e+00 * in(x - 1, y, z) -
-                            2.18750e+00 * in(x + 0, y, z) + 2.18750e+00 * in(x + 1, y, z);
+      result_ptr[((x + 0) * Ny + y) * Nz + z] =
+          +static_cast<const BoutReal>(1. / 16.) * in_ptr[((x - 2) * Ny + y) * Nz + z] -
+          static_cast<const BoutReal>(5. / 16.) * in_ptr[((x - 1) * Ny + y) * Nz + z] +
+          static_cast<const BoutReal>(15. / 16.) * in_ptr[((x + 0) * Ny + y) * Nz + z] +
+          static_cast<const BoutReal>(5. / 16.) * in_ptr[((x + 1) * Ny + y) * Nz + z];
+      result_ptr[((x + 1) * Ny + y) * Nz + z] =
+          -static_cast<const BoutReal>(5. / 16.) * in_ptr[((x - 2) * Ny + y) * Nz + z] +
+          static_cast<const BoutReal>(21. / 16.) * in_ptr[((x - 1) * Ny + y) * Nz + z] -
+          static_cast<const BoutReal>(35. / 16.) * in_ptr[((x + 0) * Ny + y) * Nz + z] +
+          static_cast<const BoutReal>(35. / 16.) * in_ptr[((x + 1) * Ny + y) * Nz + z];
     }
   }
 }
-static void interp_to_off_Field3D_y(Field3D &result, const Field3D &in, Mesh *msh) {
+static void interp_to_off_Field3D_y(BoutReal *__restrict__ result_ptr,
+                                    const BoutReal *__restrict__ in_ptr, Mesh *msh) {
   const int Nx = msh->LocalNx;
   const int Ny = msh->LocalNy;
   const int Nz = msh->LocalNz;
@@ -178,33 +224,42 @@ static void interp_to_off_Field3D_y(Field3D &result, const Field3D &in, Mesh *ms
   for (int x = 0; x < Nx; ++x) {
     for (int y = 1; y < Ny - 2; ++y) {
       for (int z = 0; z < Nz; ++z) {
-        result(x, y + 0, z) =
-            -6.25000e-02 * in(x, y - 1, z) + 5.62500e-01 * in(x, y + 0, z) +
-            5.62500e-01 * in(x, y + 1, z) - 6.25000e-02 * in(x, y + 2, z);
+        result_ptr[((x)*Ny + y + 0) * Nz + z] =
+            -static_cast<const BoutReal>(1. / 16.) * in_ptr[((x)*Ny + y - 1) * Nz + z] +
+            static_cast<const BoutReal>(9. / 16.) * in_ptr[((x)*Ny + y + 0) * Nz + z] +
+            static_cast<const BoutReal>(9. / 16.) * in_ptr[((x)*Ny + y + 1) * Nz + z] -
+            static_cast<const BoutReal>(1. / 16.) * in_ptr[((x)*Ny + y + 2) * Nz + z];
       }
     }
   }
   int y = 0;
   for (int x = 0; x < Nx; ++x) {
     for (int z = 0; z < Nz; ++z) {
-      result(x, y + 0, z) = +3.12500e-01 * in(x, y + 0, z) +
-                            9.37500e-01 * in(x, y + 1, z) -
-                            3.12500e-01 * in(x, y + 2, z) + 6.25000e-02 * in(x, y + 3, z);
+      result_ptr[((x)*Ny + y + 0) * Nz + z] =
+          +static_cast<const BoutReal>(5. / 16.) * in_ptr[((x)*Ny + y + 0) * Nz + z] +
+          static_cast<const BoutReal>(15. / 16.) * in_ptr[((x)*Ny + y + 1) * Nz + z] -
+          static_cast<const BoutReal>(5. / 16.) * in_ptr[((x)*Ny + y + 2) * Nz + z] +
+          static_cast<const BoutReal>(1. / 16.) * in_ptr[((x)*Ny + y + 3) * Nz + z];
     }
   }
   y = Ny - 2;
   for (int x = 0; x < Nx; ++x) {
     for (int z = 0; z < Nz; ++z) {
-      result(x, y + 0, z) = +6.25000e-02 * in(x, y - 2, z) -
-                            3.12500e-01 * in(x, y - 1, z) +
-                            9.37500e-01 * in(x, y + 0, z) + 3.12500e-01 * in(x, y + 1, z);
-      result(x, y + 1, z) = -3.12500e-01 * in(x, y - 2, z) +
-                            1.31250e+00 * in(x, y - 1, z) -
-                            2.18750e+00 * in(x, y + 0, z) + 2.18750e+00 * in(x, y + 1, z);
+      result_ptr[((x)*Ny + y + 0) * Nz + z] =
+          +static_cast<const BoutReal>(1. / 16.) * in_ptr[((x)*Ny + y - 2) * Nz + z] -
+          static_cast<const BoutReal>(5. / 16.) * in_ptr[((x)*Ny + y - 1) * Nz + z] +
+          static_cast<const BoutReal>(15. / 16.) * in_ptr[((x)*Ny + y + 0) * Nz + z] +
+          static_cast<const BoutReal>(5. / 16.) * in_ptr[((x)*Ny + y + 1) * Nz + z];
+      result_ptr[((x)*Ny + y + 1) * Nz + z] =
+          -static_cast<const BoutReal>(5. / 16.) * in_ptr[((x)*Ny + y - 2) * Nz + z] +
+          static_cast<const BoutReal>(21. / 16.) * in_ptr[((x)*Ny + y - 1) * Nz + z] -
+          static_cast<const BoutReal>(35. / 16.) * in_ptr[((x)*Ny + y + 0) * Nz + z] +
+          static_cast<const BoutReal>(35. / 16.) * in_ptr[((x)*Ny + y + 1) * Nz + z];
     }
   }
 }
-static void interp_to_off_Field3D_z(Field3D &result, const Field3D &in, Mesh *msh) {
+static void interp_to_off_Field3D_z(BoutReal *__restrict__ result_ptr,
+                                    const BoutReal *__restrict__ in_ptr, Mesh *msh) {
   const int Nx = msh->LocalNx;
   const int Ny = msh->LocalNy;
   const int Nz = msh->LocalNz;
@@ -214,29 +269,41 @@ static void interp_to_off_Field3D_z(Field3D &result, const Field3D &in, Mesh *ms
         {
           int z = 0;
 
-          result(x, y, z + 0) =
-              -6.25000e-02 * in(x, y, z - 1 + Nz) + 5.62500e-01 * in(x, y, z + 0) +
-              5.62500e-01 * in(x, y, z + 1) - 6.25000e-02 * in(x, y, z + 2);
+          result_ptr[((x)*Ny + y) * Nz + z + 0] =
+              -static_cast<const BoutReal>(1. / 16.) *
+                  in_ptr[((x)*Ny + y) * Nz + z - 1 + Nz] +
+              static_cast<const BoutReal>(9. / 16.) * in_ptr[((x)*Ny + y) * Nz + z + 0] +
+              static_cast<const BoutReal>(9. / 16.) * in_ptr[((x)*Ny + y) * Nz + z + 1] -
+              static_cast<const BoutReal>(1. / 16.) * in_ptr[((x)*Ny + y) * Nz + z + 2];
         }
         for (int z = 1; z < Nz - 2; ++z) {
 
-          result(x, y, z + 0) =
-              -6.25000e-02 * in(x, y, z - 1) + 5.62500e-01 * in(x, y, z + 0) +
-              5.62500e-01 * in(x, y, z + 1) - 6.25000e-02 * in(x, y, z + 2);
+          result_ptr[((x)*Ny + y) * Nz + z + 0] =
+              -static_cast<const BoutReal>(1. / 16.) * in_ptr[((x)*Ny + y) * Nz + z - 1] +
+              static_cast<const BoutReal>(9. / 16.) * in_ptr[((x)*Ny + y) * Nz + z + 0] +
+              static_cast<const BoutReal>(9. / 16.) * in_ptr[((x)*Ny + y) * Nz + z + 1] -
+              static_cast<const BoutReal>(1. / 16.) * in_ptr[((x)*Ny + y) * Nz + z + 2];
         }
         {
           int z = Nz - 2;
 
-          result(x, y, z + 0) =
-              -6.25000e-02 * in(x, y, z - 1) + 5.62500e-01 * in(x, y, z + 0) +
-              5.62500e-01 * in(x, y, z + 1) - 6.25000e-02 * in(x, y, z + 2 - Nz);
+          result_ptr[((x)*Ny + y) * Nz + z + 0] =
+              -static_cast<const BoutReal>(1. / 16.) * in_ptr[((x)*Ny + y) * Nz + z - 1] +
+              static_cast<const BoutReal>(9. / 16.) * in_ptr[((x)*Ny + y) * Nz + z + 0] +
+              static_cast<const BoutReal>(9. / 16.) * in_ptr[((x)*Ny + y) * Nz + z + 1] -
+              static_cast<const BoutReal>(1. / 16.) *
+                  in_ptr[((x)*Ny + y) * Nz + z + 2 - Nz];
         }
         {
           int z = Nz - 1;
 
-          result(x, y, z + 0) =
-              -6.25000e-02 * in(x, y, z - 1) + 5.62500e-01 * in(x, y, z + 0) +
-              5.62500e-01 * in(x, y, z + 1 - Nz) - 6.25000e-02 * in(x, y, z + 2 - Nz);
+          result_ptr[((x)*Ny + y) * Nz + z + 0] =
+              -static_cast<const BoutReal>(1. / 16.) * in_ptr[((x)*Ny + y) * Nz + z - 1] +
+              static_cast<const BoutReal>(9. / 16.) * in_ptr[((x)*Ny + y) * Nz + z + 0] +
+              static_cast<const BoutReal>(9. / 16.) *
+                  in_ptr[((x)*Ny + y) * Nz + z + 1 - Nz] -
+              static_cast<const BoutReal>(1. / 16.) *
+                  in_ptr[((x)*Ny + y) * Nz + z + 2 - Nz];
         }
       }
     }
@@ -245,10 +312,15 @@ static void interp_to_off_Field3D_z(Field3D &result, const Field3D &in, Mesh *ms
       for (int y = 0; y < Ny; ++y) {
         for (int z = 0; z < Nz; ++z) {
 
-          result(x, y, z + 0) = -6.25000e-02 * in(x, y, +((z - 1 + 1 * Nz) % Nz)) +
-                                5.62500e-01 * in(x, y, +((z + 0) % Nz)) +
-                                5.62500e-01 * in(x, y, +((z + 1) % Nz)) -
-                                6.25000e-02 * in(x, y, +((z + 2) % Nz));
+          result_ptr[((x)*Ny + y) * Nz + z + 0] =
+              -static_cast<const BoutReal>(1. / 16.) *
+                  in_ptr[((x)*Ny + y) * Nz + +((z - 1 + 1 * Nz) % Nz)] +
+              static_cast<const BoutReal>(9. / 16.) *
+                  in_ptr[((x)*Ny + y) * Nz + +((z + 0) % Nz)] +
+              static_cast<const BoutReal>(9. / 16.) *
+                  in_ptr[((x)*Ny + y) * Nz + +((z + 1) % Nz)] -
+              static_cast<const BoutReal>(1. / 16.) *
+                  in_ptr[((x)*Ny + y) * Nz + +((z + 2) % Nz)];
         }
       }
     }
@@ -262,19 +334,19 @@ const Field3D AiolosMesh::interp_to_do(const Field3D &f, CELL_LOC loc) const {
     // we first need to go back to centre before we can go anywhere else
     switch (f.getLocation()) {
     case CELL_XLOW:
-      interp_to_off_Field3D_x(result, f, msh);
+      interp_to_off_Field3D_x(&result(0, 0, 0), &f(0, 0, 0), msh);
       result.setLocation(CELL_CENTRE);
       // return or interpolate again
       return interp_to(result, loc);
       break;
     case CELL_YLOW:
-      interp_to_off_Field3D_y(result, f, msh);
+      interp_to_off_Field3D_y(&result(0, 0, 0), &f(0, 0, 0), msh);
       result.setLocation(CELL_CENTRE);
       // return or interpolate again
       return interp_to(result, loc);
       break;
     case CELL_ZLOW:
-      interp_to_off_Field3D_z(result, f, msh);
+      interp_to_off_Field3D_z(&result(0, 0, 0), &f(0, 0, 0), msh);
       result.setLocation(CELL_CENTRE);
       // return or interpolate again
       return interp_to(result, loc);
@@ -287,19 +359,19 @@ const Field3D AiolosMesh::interp_to_do(const Field3D &f, CELL_LOC loc) const {
   // we are in CELL_CENTRE and need to go somewhere else ...
   switch (loc) {
   case CELL_XLOW:
-    interp_to_on_Field3D_x(result, f, msh);
+    interp_to_on_Field3D_x(&result(0, 0, 0), &f(0, 0, 0), msh);
     result.setLocation(CELL_XLOW);
     // return or interpolate again
     return interp_to(result, loc);
     break;
   case CELL_YLOW:
-    interp_to_on_Field3D_y(result, f, msh);
+    interp_to_on_Field3D_y(&result(0, 0, 0), &f(0, 0, 0), msh);
     result.setLocation(CELL_YLOW);
     // return or interpolate again
     return interp_to(result, loc);
     break;
   case CELL_ZLOW:
-    interp_to_on_Field3D_z(result, f, msh);
+    interp_to_on_Field3D_z(&result(0, 0, 0), &f(0, 0, 0), msh);
     result.setLocation(CELL_ZLOW);
     // return or interpolate again
     return interp_to(result, loc);

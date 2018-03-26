@@ -348,9 +348,14 @@ if __name__ == '__main__':
     guards_ = []
     sys.stdout = open("generated_stencils.cxx", "w")
     import gen_stencils
-    gen_stencils.use_field_operator=True
-    gen_stencils.useFloat=True
+    # Should we generate using the raw pointers or field operators?
+    gen_stencils.use_field_operator=False
+    # Should the numbers be printed as fraction or as floating numbers?
+    gen_stencils.useFloat=False
+    # Should the fractions be casted to floats to force compile time evaluation?
+    gen_stencils.staticCastFloat=True
     gen_stencils.print_interp_to_code()
+    # Same as above for the functions - but does currently not work with field operator
     gen_stencils.use_field_operator=False
     gen_stencils.gen_functions_normal(funcs_to_gen)
     sys.stdout.flush()
