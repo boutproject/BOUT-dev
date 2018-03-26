@@ -359,7 +359,12 @@ public:
       ///////////////////////////////////////
       // Solve the 2x2 system directly
 
-      //BOUT_OMP(parallel for) // Causes segfault
+      // For OpenMP, ensure that memory won't be modified inside parallel loop
+      if2x2.ensureUnique();
+      x1.ensureUnique();
+      xn.ensureUnique();
+      
+      BOUT_OMP(parallel for)
       for (int i = 0; i < myns; ++i) {
         //output << i << "\n";
         //  (a  b) (x1) = (b1)

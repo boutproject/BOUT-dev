@@ -102,6 +102,15 @@ public:
   bool empty(){
     return n1*n2 == 0;
   }
+
+  /*!
+   * Ensures that this Matrix does not share data with another
+   * This should be called before performing any write operations
+   * on the data.
+   */
+  void ensureUnique() {
+    data.ensureUnique();
+  }
   
 private:
   unsigned int n1, n2;
