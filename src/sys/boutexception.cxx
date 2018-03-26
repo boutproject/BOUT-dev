@@ -84,10 +84,16 @@ std::string BoutException::BacktraceGenerate() const{
     FILE *fp = popen(syscom, "r");
     if (fp != NULL) {
       char out[1024];
-      char *retstr = fgets(out, sizeof(out) - 1, fp);
+      char *retstr;
+      std::string buf;
+      do {
+        retstr = fgets(out, sizeof(out) - 1, fp);
+        if (retstr != nullptr)
+          buf+=retstr;
+      } while (retstr != NULL);
       int status = pclose(fp);
-      if ((status == 0) && (retstr != NULL)) {
-        message += out;
+      if (status == 0) {
+        message += buf;
       }
     }
   }
