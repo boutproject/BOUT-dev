@@ -359,8 +359,9 @@ public:
       ///////////////////////////////////////
       // Solve the 2x2 system directly
 
-      BOUT_OMP(parallel for)
-      for (int i = 0; i < myns; i++) {
+      //BOUT_OMP(parallel for) // Causes segfault
+      for (int i = 0; i < myns; ++i) {
+        //output << i << "\n";
         //  (a  b) (x1) = (b1)
         //  (c  d) (xn)   (bn)
 
