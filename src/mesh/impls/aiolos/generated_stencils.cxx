@@ -1,3 +1,25 @@
+/********************************************************
+ * BOUT++ Library - Write fluid simulations in curviilinear geometry
+ * Copyright (C) 2016, 2017, 2018 David Schwörer
+ *
+ * Contact: Ben Dudson, bd512@york.ac.uk
+ *
+ * This file is part of BOUT++.
+ *
+ * BOUT++ is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * BOUT++ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
+ *****************************************************************/
+
 static void interp_to_on_Field3D_x(BoutReal *__restrict__ result_ptr,
                                    const BoutReal *__restrict__ in_ptr, Mesh *msh) {
   const int Nx = msh->LocalNx;

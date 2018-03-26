@@ -1,9 +1,36 @@
 from __future__ import print_function
 
-from common import *
-# Define some constants, functions
+# BOUT++ Library - Write fluid simulations in curviilinear geometry
+# Copyright (C) 2016, 2017, 2018 David Schwörer
+#
+# Contact: Ben Dudson, bd512@york.ac.uk
+#
+# This file is part of BOUT++.
+#
+# BOUT++ is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# BOUT++ is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
+# Code to read the stencils from BOUT++ and generate a more efficient
+# version for the different directions and fields. Also generate the
+# interp_to code including forward and backword interpolation assuming
+# free boundaries.
+# This code has to be called from gen_derivs.py with what functions
+# are to be generated, and some informations on what stencils are to
+# be used for what.
+
+
+# Define some constants, functions
+from common import *
 
 
 class Stencil(object):
@@ -509,8 +536,7 @@ def float_to_string_with_sign(val):
 
 def get_interp_sten(order, pos):
     if order % 2:
-        print("Cannot handle uneven order!", file=sys.stderr)
-        exit(4)
+        raise RuntimeError("Cannot handle uneven order!")
     oh = order / 2
     if pos:
         oh -= pos / abs(pos)

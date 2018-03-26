@@ -3,6 +3,58 @@ from common import *
 import sys
 from collections import OrderedDict
 
+# BOUT++ Library - Write fluid simulations in curviilinear geometry
+# Copyright (C) 2016, 2017, 2018 David Schwörer
+#
+# Contact: Ben Dudson, bd512@york.ac.uk
+#
+# This file is part of BOUT++.
+#
+# BOUT++ is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# BOUT++ is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
+
+
+# This file reads what stencils are supported for what methods, and
+# creates the wrapper functions to call the appropiate function to
+# calculate the derivative.
+# There are various levels in the C++ side, to make the final function
+# rather simple, compared to the old BOUT code.
+# The user calls e.g. `DDX`, which then calls `mesh->indexDDX`.
+# In the AiolosMesh indexDDX checks on whether we are calling a
+# staggered derivative, i.e if we go from a staggered in x direction
+# to cell centre, or from cell centre to staggered in x
+# direction. Or wheter we are going from the same location, in which
+# case to call the non-staggered case.
+# After that we are in indexDDX_{non_,}_stag
+# Here we check on what method we should be using, e.g. DIFF_C2 or
+# DIFF_C4. In the case of staggered derivatives we need to decide if
+# we are going onto the staggered grid (in x direction) or are coming
+# from a staggered grid (in x direction). If we are going onto the
+# staggered grid, the in-location must be interpolated to CELL_CENTRE
+# and if we are coming from one, the result must be interpolated onto
+# whereever it is requested. If the location is CELL_CENTRE, nothing
+# needs to be done and interp_to returns fast.
+# The next function to be called is  e.g. `indexDDX_on_DIFF_C2` -
+# which makes sure there are enough guard cells, allocates the result
+# field, and passes to the pointer of the fields to
+# `indexDDX_on_DIFF_C2_field3d` which then calculates the derivatives.
+#
+# While having all the functions makes the call tree more complicated,
+# it makes the function itself much easier, each level does only a
+# limited part of the work for a significant reduced subset, thus it
+# they are easier to maintain, as it is not needed to remember every
+# possible combination of in and outfields location, differencing
+# scheemes and so on.
 
 class FuncTableEntry(object):
     """Contains the enum-name and the appropiate stencil"""
@@ -164,6 +216,8 @@ class FuncToGen(object):
             debug(self.flux, sten.flux)
             raise
         self.sten = sten
+
+print(license())
 
 ########################################################################
 #  Parse the table that contains the list of what function belongs to
@@ -343,10 +397,12 @@ if __name__ == '__main__':
     funcs_to_gen = generate_index_functions_stag(func_tables)
     headers = generate_index_functions()
     with open("generated_header.hxx", "w") as f:
+        f.write(license())
         f.write(headers)
 
     guards_ = []
     sys.stdout = open("generated_stencils.cxx", "w")
+    print(license())
     import gen_stencils
     # Should we generate using the raw pointers or field operators?
     gen_stencils.use_field_operator=False
@@ -361,6 +417,7 @@ if __name__ == '__main__':
     sys.stdout.flush()
 
 sys.stdout = open("generated_init.cxx", "w")
+print(license())
 
 # for d in dirs['Field3D']:
 warn()
