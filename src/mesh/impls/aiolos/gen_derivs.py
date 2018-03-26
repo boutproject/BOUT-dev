@@ -347,8 +347,12 @@ if __name__ == '__main__':
 
     guards_ = []
     sys.stdout = open("generated_stencils.cxx", "w")
-    from gen_stencils import gen_functions_normal
-    gen_functions_normal(funcs_to_gen)
+    import gen_stencils
+    gen_stencils.use_field_operator=True
+    gen_stencils.useFloat=True
+    gen_stencils.print_interp_to_code()
+    gen_stencils.use_field_operator=False
+    gen_stencils.gen_functions_normal(funcs_to_gen)
     sys.stdout.flush()
 
 sys.stdout = open("generated_init.cxx", "w")

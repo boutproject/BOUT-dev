@@ -5,29 +5,6 @@ from common import *
 
 import sys
 
-# Read the stencils
-stencils_raw = []
-with open("stencils_cleaned.cxx", "r") as f:
-    inFunc = 0
-    curr_func = []
-    for line in f:
-        if line[:5] == 'const':
-            print(line)
-        line = line.strip()
-        # avoid to overwrite result
-        line = line.replace("result", "result_")
-        if line == '':
-            continue
-        # start of function
-        inFunc += line.count("{")
-        if inFunc:
-            curr_func.append(line)
-        inFunc -= line.count("}")
-        if inFunc == 0 and curr_func:
-            stencils_raw.append(curr_func)
-            curr_func = []
-        ASSERT(inFunc >= 0)
-
 
 class Stencil(object):
 
@@ -74,34 +51,55 @@ class Stencil(object):
             raise RuntimeError(self.body, "We did not set the flux type")
 
 
-stencils = []
-for f in stencils_raw:
-    sten = Stencil(f)
-    if sten.valid:
-        stencils.append(sten)
+def read_and_parse_stencils():
+    # Read the stencils
+    stencils = []
+    with open("stencils_cleaned.cxx", "r") as f:
+        inFunc = 0
+        curr_func = []
+        for line in f:
+            if line[:5] == 'const':
+                print(line)
+            line = line.strip()
+            # avoid to overwrite result
+            line = line.replace("result", "result_")
+            if line == '':
+                continue
+            # start of function
+            inFunc += line.count("{")
+            if inFunc:
+                curr_func.append(line)
+            inFunc -= line.count("}")
+            if inFunc == 0 and curr_func:
+                sten = Stencil(curr_func)
+                if sten.valid:
+                    stencils.append(sten)
+                curr_func = []
+            ASSERT(inFunc >= 0)
 
-# Do some cleaning of the stencils bodies
-for sten in stencils:
-    ls = ""
-    for l in sten.body:
-        ls += l
-    inv = ls[::-1].find("}") + 1
-    ls = ls[ls.find("{") + 1:-inv]
-    fu = ls.split(";")
-    mymax = len(fu)
-    i = 0
-    while i < mymax:
-        fu[i] += ';'
-        if fu[i].find("}") > -1:
-            l = fu[i]
-            t = l.split("}")
-            for ti in t[:-1]:
-                fu.insert(i, ti + "}")
-                i += 1
-                mymax += 1
-            fu[i] = t[-1]
-        i += 1
-    sten.body = fu
+    # Do some cleaning of the stencils bodies
+    for sten in stencils:
+        ls = ""
+        for l in sten.body:
+            ls += l
+        inv = ls[::-1].find("}") + 1
+        ls = ls[ls.find("{") + 1:-inv]
+        fu = ls.split(";")
+        mymax = len(fu)
+        i = 0
+        while i < mymax:
+            fu[i] += ';'
+            if fu[i].find("}") > -1:
+                l = fu[i]
+                t = l.split("}")
+                for ti in t[:-1]:
+                    fu.insert(i, ti + "}")
+                    i += 1
+                    mymax += 1
+                fu[i] = t[-1]
+            i += 1
+        sten.body = fu
+    return stencils
 
 
 def replace_stencil(line, sten, fname, field, mode, sten_mbf, d, update=None, z0=None):
@@ -357,6 +355,7 @@ def get_pointer(field, field_type, const):
 
 
 def gen_functions_normal(to_gen):
+    stencils = read_and_parse_stencils()
     for ftg in to_gen:
         mode = ftg.stag_mode
         d = ftg.d
@@ -463,7 +462,7 @@ def gen_functions_normal(to_gen):
 
 
 field = fields[0]  # 3d
-use_field_operator = True
+use_field_operator = False
 
 
 def get_interp_vals(order, pos):
@@ -480,6 +479,33 @@ def get_interp_vals(order, pos):
     facs = np.dot(np.linalg.inv(mat), rhs)
     return facs
 
+useFloat=False
+staticCastFloat=False
+def float_to_string_with_sign(val):
+    global useFloat
+    if useFloat:
+        return "%+.5e" % val
+    else:
+        from fractions import Fraction
+        val = Fraction(val).limit_denominator()
+        ret = ""
+        if val > 0:
+            ret += "+"
+        else:
+            val *= -1
+            ret += "-"
+        if staticCastFloat:
+            ret += "static_cast<const BoutReal>"
+        ret += "("
+        ret += "%d." % val.numerator
+        ret += "/%d." % val.denominator
+        ret += ")"
+        # ret+="std::ratio<"
+        # ret+="%d,"%val.numerator
+        # ret+="%d"%val.denominator
+        # ret+=">"
+        return ret
+
 
 def get_interp_sten(order, pos):
     if order % 2:
@@ -492,7 +518,8 @@ def get_interp_sten(order, pos):
     ret = ""
     first = True
     for i in range(order):
-        ret += "%+.5e*" % vals[i]
+        ret += float_to_string_with_sign(vals[i])
+        ret += "*"
         # debug(ret)
         if i < oh:
             ret += 'f.m' + (str(int(oh - i)) if oh - i > 1 else "")
@@ -503,106 +530,109 @@ def get_interp_sten(order, pos):
     return ret + " ;"
 
 
-interp = ['', "return " + get_interp_sten(4, 0), '']
-# Hard coded version:
-#["return ( 9.*(s.m + s.p) - s.mm - s.pp ) / 16.;"]
-for mode in ['on', 'off']:
-    for order in [4]:
-        for d in dirs[field]:
-            global guards_
-            guards_ = [0, 0]
-            line = interp[1]
-            sten_name = "main"
-            line = replace_stencil(line, 'f.', "in", field, mode, sten_name, d)
-            print("static void interp_to_%s_%s_%s(" %
-                  (mode, field, d), end=' ')
-            if use_field_operator:
-                print(field + "& result, const " + field + " & in,", end=' ')
-            else:
-                print(
-                    "BoutReal * __restrict__ result_ptr, const BoutReal * __restrict__ in_ptr,", end=' ')
-            print(" Mesh * msh ){")
-            for d2 in dirs[field]:
-                print("  const int N%s = msh->LocalN%s;" % (d2, d2))
-            if d == 'z':
-                sten = Stencil(['', interp[1], ''])
-                get_for_loop_z(sten, field, mode)
-            else:
-                body = "    " + get_diff('c()', "result", field, d, update=True) + "= " + line[
-                    len("return") + line.index("return"):] + "\n"
-                get_for_loop(d, mode, field, guards_, sten_name)
-                print(body)
-                guards__ = guards_
-                get_for_end(d, field, sten_name)
-                sten_names = ["forward", "backward"]
-                for sten_name in sten_names:
-                    sten_name_index = sten_names.index(sten_name)
-                    sign = -1
-                    if sten_name == "forward":
-                        sign = 1
-                    _sign = sign
-                    if d == 'z':
-                        sign = 0
+def print_interp_to_code():
+    interp = ['', "return " + get_interp_sten(4, 0), '']
+    # Hard coded version:
+    #["return ( 9.*(s.m + s.p) - s.mm - s.pp ) / 16.;"]
+    for mode in ['on', 'off']:
+        for order in [4]:
+            for d in dirs[field]:
+                global guards_
+                guards_ = [0, 0]
+                line = interp[1]
+                sten_name = "main"
+                line = replace_stencil(
+                    line, 'f.', "in", field, mode, sten_name, d)
+                print("static void interp_to_%s_%s_%s(" %
+                      (mode, field, d), end=' ')
+                if use_field_operator:
+                    print(field + "& result, const " +
+                          field + " & in,", end=' ')
+                else:
+                    print(
+                        "BoutReal * __restrict__ result_ptr, const BoutReal * __restrict__ in_ptr,", end=' ')
+                print(" Mesh * msh ){")
+                for d2 in dirs[field]:
+                    print("  const int N%s = msh->LocalN%s;" % (d2, d2))
+                if d == 'z':
+                    sten = Stencil(['', interp[1], ''])
+                    get_for_loop_z(sten, field, mode)
+                else:
+                    body = "    " + get_diff('c()', "result", field, d, update=True) + "= " + line[
+                        len("return") + line.index("return"):] + "\n"
                     get_for_loop(d, mode, field, guards_, sten_name)
-                    print("      " + get_diff('c()',
-                                              "result", field, d) + "=", end=' ')
-                    print(replace_stencil(get_interp_sten(4, sign), 'f.', "in", field,
-                                          mode, sten_name, d, False, z0=((guards_[sten_name_index]) * _sign)))
-                    guards_ = guards__
-                    if order / 2 > 1:
-                        if (sten_name == 'backward' and mode == 'on') or \
-                           (sten_name == 'forward' and mode == 'off'):
-                            pass  # dont do anything ...
-                        else:
-                            if sten_name == 'forward':
-                                print("        " + get_diff('m()',
-                                                            "result", field, d) + "=", end=' ')
-                            else:
-                                print("        " + get_diff('p()',
-                                                            "result", field, d) + "=", end=' ')
-                            print(replace_stencil(get_interp_sten(4, sign * 2), 'f.', "in", field,
-                                                  mode, sten_name, d, False, z0=((guards_[sten_name_index]) * _sign)))
-                            guards_ = guards__
+                    print(body)
+                    guards__ = guards_
                     get_for_end(d, field, sten_name)
-            print("}")
+                    sten_names = ["forward", "backward"]
+                    for sten_name in sten_names:
+                        sten_name_index = sten_names.index(sten_name)
+                        sign = -1
+                        if sten_name == "forward":
+                            sign = 1
+                        _sign = sign
+                        if d == 'z':
+                            sign = 0
+                        get_for_loop(d, mode, field, guards_, sten_name)
+                        print("      " + get_diff('c()',
+                                                  "result", field, d) + "=", end=' ')
+                        print(replace_stencil(get_interp_sten(4, sign), 'f.', "in", field,
+                                              mode, sten_name, d, False, z0=((guards_[sten_name_index]) * _sign)))
+                        guards_ = guards__
+                        if order / 2 > 1:
+                            if (sten_name == 'backward' and mode == 'on') or \
+                               (sten_name == 'forward' and mode == 'off'):
+                                pass  # dont do anything ...
+                            else:
+                                if sten_name == 'forward':
+                                    print("        " + get_diff('m()',
+                                                                "result", field, d) + "=", end=' ')
+                                else:
+                                    print("        " + get_diff('p()',
+                                                                "result", field, d) + "=", end=' ')
+                                print(replace_stencil(get_interp_sten(4, sign * 2), 'f.', "in", field,
+                                                      mode, sten_name, d, False, z0=((guards_[sten_name_index]) * _sign)))
+                                guards_ = guards__
+                        get_for_end(d, field, sten_name)
+                print("}")
 
-print(
-    "const Field3D AiolosMesh::interp_to_do(const Field3D &f, CELL_LOC loc) const {")
-print("  Mesh * msh = f.getMesh();")
-print("  Field3D result(msh);")
-print("  result.allocate();")
-print("  if (f.getLocation() != CELL_CENTRE){")
-print("    // we first need to go back to centre before we can go anywhere else")
-print("    switch (f.getLocation()){")
-for d in dirs[field]:
-    print("    case CELL_%sLOW:" % d.upper())
-    if use_field_operator:
-        print("      interp_to_off_%s_%s(result,f,msh);" % (field, d))
-    else:
-        print("      interp_to_off_%s_%s(&result(0,0,0),&f(0,0,0),msh);" % (field, d))
-    print("      result.setLocation(CELL_CENTRE);")
-    print("      // return or interpolate again")
-    print("      return interp_to(result,loc);")
-    print("      break;")
-print("    default:")
-print('      throw BoutException("AiolosMesh::interp_to: Cannot interpolate to %s!",strLocation(loc));')
-print("    }")
-print("  }")
-print("  // we are in CELL_CENTRE and need to go somewhere else ...")
-print("  switch (loc){")
-for d in dirs[field]:
-    print("    case CELL_%sLOW:" % d.upper())
-    if use_field_operator:
-        print("      interp_to_on_%s_%s(result,f,msh);" % (field, d))
-    else:
-        print("      interp_to_on_%s_%s(&result(0,0,0),&f(0,0,0),msh);" % (field, d))
-    print("      result.setLocation(CELL_%sLOW);" % d.upper())
-    print("      // return or interpolate again")
-    print("      return interp_to(result,loc);")
-    print("      break;")
-print("    default:")
-print('      throw BoutException("AiolosMesh::interp_to: Cannot interpolate to %s!",strLocation(loc));')
-print("    }")
-print("}")
+    print(
+        "const Field3D AiolosMesh::interp_to_do(const Field3D &f, CELL_LOC loc) const {")
+    print("  Mesh * msh = f.getMesh();")
+    print("  Field3D result(msh);")
+    print("  result.allocate();")
+    print("  if (f.getLocation() != CELL_CENTRE){")
+    print("    // we first need to go back to centre before we can go anywhere else")
+    print("    switch (f.getLocation()){")
+    for d in dirs[field]:
+        print("    case CELL_%sLOW:" % d.upper())
+        if use_field_operator:
+            print("      interp_to_off_%s_%s(result,f,msh);" % (field, d))
+        else:
+            print("      interp_to_off_%s_%s(&result(0,0,0),&f(0,0,0),msh);" % (field, d))
+        print("      result.setLocation(CELL_CENTRE);")
+        print("      // return or interpolate again")
+        print("      return interp_to(result,loc);")
+        print("      break;")
+    print("    default:")
+    print('      throw BoutException("AiolosMesh::interp_to: Cannot interpolate to %s!",strLocation(loc));')
+    print("    }")
+    print("  }")
+    print("  // we are in CELL_CENTRE and need to go somewhere else ...")
+    print("  switch (loc){")
+    for d in dirs[field]:
+        print("    case CELL_%sLOW:" % d.upper())
+        if use_field_operator:
+            print("      interp_to_on_%s_%s(result,f,msh);" % (field, d))
+        else:
+            print("      interp_to_on_%s_%s(&result(0,0,0),&f(0,0,0),msh);" % (field, d))
+        print("      result.setLocation(CELL_%sLOW);" % d.upper())
+        print("      // return or interpolate again")
+        print("      return interp_to(result,loc);")
+        print("      break;")
+    print("    default:")
+    print('      throw BoutException("AiolosMesh::interp_to: Cannot interpolate to %s!",strLocation(loc));')
+    print("    }")
+    print("}")
 
 use_field_operator = False

@@ -1,5 +1,3 @@
-const BoutReal WENO_SMALL = 1.0e-8;
-
 static void interp_to_on_Field3D_x(Field3D &result, const Field3D &in, Mesh *msh) {
   const int Nx = msh->LocalNx;
   const int Ny = msh->LocalNy;
@@ -311,6 +309,7 @@ const Field3D AiolosMesh::interp_to_do(const Field3D &f, CELL_LOC loc) const {
                         strLocation(loc));
   }
 }
+const BoutReal WENO_SMALL = 1.0e-8;
 
 // This file is auto-generated - do not edit!
 static void indexDDX_norm_DIFF_C2_field3d(BoutReal *__restrict__ result_ptr,
