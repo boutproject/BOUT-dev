@@ -69,11 +69,11 @@ std::string BoutException::BacktraceGenerate() const{
     char syscom[256];
     // If we are compiled as PIE, need to get base pointer of .so and substract
     Dl_info info;
-    void * ptr;
+    void * ptr=trace[i];
     if (dladdr(trace[i],&info)){
-      ptr=(void*) ((size_t)trace[i]-(size_t)info.dli_fbase);
-    } else {
-      ptr=trace[i];
+      // Additionally, check whether this is the default offset for an executable
+      if (info.dli_fbase != (void*)0x400000)
+        ptr=(void*) ((size_t)trace[i]-(size_t)info.dli_fbase);
     }
 
     // Pipe stderr to /dev/null to avoid cluttering output
