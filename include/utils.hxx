@@ -168,6 +168,15 @@ public:
     return n1*n2*n3 == 0;
   }
   
+  /*!
+   * Ensures that this Tensor does not share data with another
+   * This should be called before performing any write operations
+   * on the data.
+   */
+  void ensureUnique() {
+    data.ensureUnique();
+  }
+  
 private:
   unsigned int n1, n2, n3;
   Array<T> data;
