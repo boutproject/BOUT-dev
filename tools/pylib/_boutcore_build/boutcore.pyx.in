@@ -459,8 +459,9 @@ cdef void callback(void * parameter, void * method) with gil:
     try:
         (<object?>method)(time)
     except BaseException, e:
-        str__="Exception in Python callback: type:%s info:%s %s"%(str(type(e)),str(e),str(e.args))
-        print(str__)
+        str__="Exception in Python callback: type:%s\nInfo:%s %s\n"%(str(type(e)),str(e),str(e.args))
+        import traceback
+        str__ += traceback.format_exc()
         str_=str__.encode('ascii')
         c.throw_BoutException(str_)
 
