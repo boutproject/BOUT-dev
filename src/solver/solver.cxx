@@ -39,6 +39,7 @@
 #include <bout/assert.hxx>
 
 #include <bout/array.hxx>
+#include "bout/region.hxx"
 
 // Static member variables
 
@@ -796,26 +797,10 @@ int Solver::getLocalN() {
 
   //////////// Find boundary regions ////////////
   
-  // Y up
-  for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); xi++) {
-    local_N +=  (mesh->LocalNy - mesh->yend - 1) * (n2dbndry + ncz * n3dbndry);
-  }
-  
-  // Y down
-  for(RangeIterator xi = mesh->iterateBndryLowerY(); !xi.isDone(); xi++) {
-    local_N +=  mesh->ystart * (n2dbndry + ncz * n3dbndry);
-  }
-  
-  // X inner
-  if(mesh->firstX() && !mesh->periodicX) {
-    local_N += mesh->xstart * MYSUB * (n2dbndry + ncz * n3dbndry);
-    output_info.write("\tBoundary region inner X\n");
-  }
-
-  // X outer
-  if(mesh->lastX() && !mesh->periodicX) {
-    local_N += (mesh->LocalNx - mesh->xend - 1) * MYSUB * (n2dbndry + ncz * n3dbndry);
-    output_info.write("\tBoundary region outer X\n");
+  // For each boundary region add the points which will be evolved
+  for(auto region : {"RGN_UPPER_Y", "RGN_LOWER_Y", "RGN_INNER_X", "RGN_OUTER_X"}) {
+    local_N += size(mesh->getRegion2D("RGN_UPPER_Y")) * n2dbndry
+      + size(mesh->getRegion3D("RGN_UPPER_Y")) * n3dbndry;
   }
   
   cacheLocalN = local_N;

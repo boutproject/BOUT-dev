@@ -773,6 +773,10 @@ int BoutMesh::load() {
   
   output_info << "Constructing default regions" << endl;
   createDefaultRegions();
+
+  // Add boundary regions
+  addBoundaryRegions();
+
   output_info.write("\tdone\n");
 
   return 0;
@@ -1990,6 +1994,185 @@ MPI_Comm BoutMesh::getYcomm(int xpos) const {
 /****************************************************************
  *                 Range iteration
  ****************************************************************/
+
+void BoutMesh::addBoundaryRegions() {
+  // Lower Inner Y
+  int xs = 0;
+  int xe = LocalNx - 1;
+
+  if (!firstY()) {
+    xs = -1;
+    xe = -2;
+  } else {
+    if ((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart))
+      xs = DDATA_XSPLIT;
+    if ((DDATA_OUTDEST >= 0) && (DDATA_XSPLIT < xend + 1))
+      xe = DDATA_XSPLIT - 1;
+
+    if (xs < xstart)
+      xs = xstart;
+    if (xe > xend)
+      xe = xend;
+  }
+  
+  addRegion3D("RGN_LOWER_INNER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
+                                                 LocalNy, LocalNz, maxregionblocksize));
+  addRegion2D("RGN_LOWER_INNER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
+                                                 LocalNy, 1, maxregionblocksize));
+
+  addBoundaryRegionName("RGN_LOWER_INNER_Y");
+
+  // Lower Outer Y
+  
+  xs = 0;
+  xe = LocalNx - 1;
+  if (!firstY()) {
+    if ((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart))
+      xs = DDATA_XSPLIT;
+    if ((DDATA_OUTDEST >= 0) && (DDATA_XSPLIT < xend + 1))
+      xe = DDATA_XSPLIT - 1;
+
+    if (xs < xstart)
+      xs = xstart;
+    if (xe > xend)
+      xe = xend;
+  } else {
+    xs = -1;
+    xe = -2;
+  }
+
+  addRegion3D("RGN_LOWER_OUTER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
+                                                 LocalNy, LocalNz, maxregionblocksize));
+  addRegion2D("RGN_LOWER_OUTER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
+                                                 LocalNy, 1, maxregionblocksize));
+  addBoundaryRegionName("RGN_LOWER_OUTER_Y");
+  
+  // Lower Y
+
+  xs = 0;
+  xe = LocalNx - 1;
+  if ((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart))
+    xs = DDATA_XSPLIT;
+  if ((DDATA_OUTDEST >= 0) && (DDATA_XSPLIT < xend + 1))
+    xe = DDATA_XSPLIT - 1;
+
+  if (xs < xstart)
+    xs = xstart;
+  if (xe > xend)
+    xe = xend;
+
+  addRegion3D("RGN_LOWER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
+                                           LocalNy, LocalNz, maxregionblocksize));
+  addRegion2D("RGN_LOWER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
+                                           LocalNy, 1, maxregionblocksize));
+  addBoundaryRegionName("RGN_LOWER_Y");
+  
+  // Upper Inner Y
+
+  xs = 0;
+  xe = LocalNx - 1;
+
+  if (!lastY()) {
+    if ((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart))
+      xs = UDATA_XSPLIT;
+    if ((UDATA_OUTDEST >= 0) && (UDATA_XSPLIT < xend + 1))
+      xe = UDATA_XSPLIT - 1;
+
+    if (xs < xstart)
+      xs = xstart;
+    if (xe > xend)
+      xe = xend;
+  } else {
+    xs = -1;
+    xe = -2;
+  }
+  
+  addRegion3D("RGN_UPPER_INNER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
+                                                 LocalNy, LocalNz, maxregionblocksize));
+  addRegion2D("RGN_UPPER_INNER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
+                                                 LocalNy, 1, maxregionblocksize));
+  addBoundaryRegionName("RGN_UPPER_INNER_Y");
+
+  // Upper Outer Y
+  
+  xs = 0;
+  xe = LocalNx - 1;
+
+  if (!lastY()) {
+    xs = -1;
+    xe = -2;
+  } else {
+    if ((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart))
+      xs = UDATA_XSPLIT;
+    if ((UDATA_OUTDEST >= 0) && (UDATA_XSPLIT < xend + 1))
+      xe = UDATA_XSPLIT - 1;
+
+    if (xs < xstart)
+      xs = xstart;
+    if (xe > xend)
+      xe = xend;
+  }
+
+  addRegion3D("RGN_UPPER_OUTER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
+                                                 LocalNy, LocalNz, maxregionblocksize));
+  addRegion2D("RGN_UPPER_OUTER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
+                                                 LocalNy, 1, maxregionblocksize));
+  addBoundaryRegionName("RGN_UPPER_OUTER_Y");
+
+  // Upper Y
+
+  xs = 0;
+  xe = LocalNx - 1;
+  if ((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart))
+    xs = UDATA_XSPLIT;
+  if ((UDATA_OUTDEST >= 0) && (UDATA_XSPLIT < xend + 1))
+    xe = UDATA_XSPLIT - 1;
+
+  if (xs < xstart)
+    xs = xstart;
+  if (xe > xend)
+    xe = xend;
+
+  addRegion3D("RGN_UPPER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
+                                           LocalNy, LocalNz, maxregionblocksize));
+  addRegion2D("RGN_UPPER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
+                                           LocalNy, 1, maxregionblocksize));
+  addBoundaryRegionName("RGN_UPPER_Y");
+  
+  // Inner X
+  if(mesh->firstX() && !mesh->periodicX) {
+    addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart-1, ystart, yend, 0, LocalNz-1,
+                                             LocalNy, LocalNz, maxregionblocksize));
+    addRegion2D("RGN_INNER_X", Region<Ind2D>(0, xstart-1, ystart, yend, 0, 0,
+                                             LocalNy, 1, maxregionblocksize));
+    addBoundaryRegionName("RGN_INNER_X");
+    
+    output_info.write("\tBoundary region inner X\n");
+  } else {
+    // Empty region
+    addRegion3D("RGN_INNER_X", Region<Ind3D>(0, -1, 0, 0, 0, 0,
+                                             LocalNy, LocalNz, maxregionblocksize));
+    addRegion2D("RGN_INNER_X", Region<Ind2D>(0, -1, 0, 0, 0, 0,
+                                             LocalNy, 1, maxregionblocksize));
+  }
+
+  // Outer X
+  if(mesh->firstX() && !mesh->periodicX) {
+    addRegion3D("RGN_OUTER_X", Region<Ind3D>(xend+1, LocalNx-1, ystart, yend, 0, LocalNz-1,
+                                             LocalNy, LocalNz, maxregionblocksize));
+    addRegion2D("RGN_OUTER_X", Region<Ind2D>(xend+1, LocalNx-1, ystart, yend, 0, 0,
+                                             LocalNy, 1, maxregionblocksize));
+    addBoundaryRegionName("RGN_OUTER_X");
+    
+    output_info.write("\tBoundary region outer X\n");
+  } else {
+    // Empty region
+    addRegion3D("RGN_OUTER_X", Region<Ind3D>(0, -1, 0, 0, 0, 0,
+                                             LocalNy, LocalNz, maxregionblocksize));
+    addRegion2D("RGN_OUTER_X", Region<Ind2D>(0, -1, 0, 0, 0, 0,
+                                             LocalNy, 1, maxregionblocksize));
+  }
+}
 
 const RangeIterator BoutMesh::iterateBndryLowerInnerY() const {
 

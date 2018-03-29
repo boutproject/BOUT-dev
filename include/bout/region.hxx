@@ -471,6 +471,11 @@ public:
     return *this;
   }
 
+  /// Number of indices (possibly repeated)
+  unsigned int size() const {
+    return indices.size();
+  }
+  
   // TODO: Should be able to add regions (would just require extending
   // indices and recalculating blocks). This raises question of should
   // we be able to subtract regions, and if so what does that mean.
@@ -621,4 +626,11 @@ Region<T> offset(const Region<T> &region, int offset){
   auto result = region;
   return result.offset(offset);
 }
+
+/// Return the number of indices in a Region
+template<typename T>
+unsigned int size(const Region<T> &region){
+  return region.size();
+}
+
 #endif /* __REGION_H__ */
