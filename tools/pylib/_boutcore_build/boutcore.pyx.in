@@ -177,11 +177,17 @@ cdef class Field3D:
         :param data: The data to be set
         :param ignoreDataType: Ignore if data is off different type to BoutReal
         """
+        dims=[self.cobj.getNx()
+              ,self.cobj.getNy()
+              ,self.cobj.getNz()]
+        if isinstance(data, (int, float)):
+            data=np.zeros(dims)+data
         if data.dtype != np.dtype('float64'):
             if ignoreDataType:
                 data=data.astype('float64')
             else:
                 raise TypeError("expected float64 data - add ignoreDataType=True to cast")
+        dims_in=self._checkDims(dims,data.shape)
         cdef np.ndarray[double, mode="c", ndim=3] data_ = np.ascontiguousarray(data)
         c_set_f3d_all(self.cobj,&data_[0,0,0]);
 
@@ -279,6 +285,10 @@ cdef class Field3D:
             raise TypeError("Expected a Field3D or a numpy array")
         for i in inds:
             dims.append((i[1]-i[0])//i[2])
+        dims_in=self._checkDims(dims,dims_in)
+        cdef np.ndarray[double, mode="c", ndim=3] data__ = np.ascontiguousarray(data_)
+        c_set_f3d_part(self.cobj,&data__[0,0,0],inds[0][0],inds[0][1],inds[0][2],inds[1][0],inds[1][1],inds[1][2],inds[2][0],inds[2][1],inds[2][2]);
+    def _checkDims(self,dims,dims_in):
         if len(dims_in) > 3:
             raise IndexError("This is a 3D object, but got %d dimensions"%len(dims_in))
         if len(dims_in) < 3:
@@ -297,8 +307,7 @@ cdef class Field3D:
         for i in range(3):
             if dims[i] != dims_in[i]:
                 raise IndexError("Expected %s but got %s."%(dims,dims_in))
-        cdef np.ndarray[double, mode="c", ndim=3] data__ = np.ascontiguousarray(data_)
-        c_set_f3d_part(self.cobj,&data__[0,0,0],inds[0][0],inds[0][1],inds[0][2],inds[1][0],inds[1][1],inds[1][2],inds[2][0],inds[2][1],inds[2][2]);
+
 EOF
 for f in "add:+" "mul:*" "truediv:/" "div:/" "sub:-"
 do
