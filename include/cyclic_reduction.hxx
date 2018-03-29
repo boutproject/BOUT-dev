@@ -366,7 +366,6 @@ public:
       
       BOUT_OMP(parallel for)
       for (int i = 0; i < myns; ++i) {
-        //output << i << "\n";
         //  (a  b) (x1) = (b1)
         //  (c  d) (xn)   (bn)
 
@@ -648,12 +647,15 @@ private:
   /// Coefficients ordered [ns, nloc*(a,b,c,r)]
   void back_solve(int ns, int nloc, Matrix<T> &co, Array<T> &x1, Array<T> &xn,
                   Matrix<T> &xa) {
+
+    xa.ensureUnique(); // Going to be modified, so call this outside parallel region
+    
     // Tridiagonal system, solve using serial Thomas algorithm
     // xa -- Result for each system
     // co -- Coefficients & rhs for each system
     BOUT_OMP(parallel for)
     for (int i = 0; i < ns; i++) { // Loop over systems
-      Array<T> gam(nloc);
+      Array<T> gam(nloc); // Thread-local array
       T bet = 1.0;
       xa(i, 0) = x1[i]; // Already know the first
       gam[1] = 0.;
