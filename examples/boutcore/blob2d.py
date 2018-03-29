@@ -5,139 +5,155 @@
  #
  #       2D blob simulations
  #
- #  Copyright:   NR Walkden, B Dudson, D Schwörer;  2012, , 2017
+ #  Copyright:   NR Walkden, B Dudson, D Schwörer;  2012, 2017, 2018
  #
  ###################################################################
 
+# from boutcore import *
+# init("-d mini -q -q -q")
+
+# class MyModel(PhysicsModel):
+#          def init(self,restart):
+#                      self.n=create3D("dens:function")
+#                              self.solve_for(dens=self.n)
+#                                  def rhs(self,time):
+#                                              self.n.ddt(DDX(self.n))
+
+#                                              model=MyModel()
+#                                              model.solve()
+                                             
 import boutcore as bc
-from numpy import sqrt
-from boutcore import bracket,DDZ,Delp2
+from numpy import sqrt, zeros
+from boutcore import bracket,DDZ,Delp2, PhysicsModel
 import sys
-
 bc.init("-d blob".split(" ")+sys.argv[1:])
-mesh=bc.Mesh.getGlobal()
-n=bc.Field3D.fromMesh(mesh)
-omega=bc.Field3D.fromMesh(mesh)
-phi=bc.Field3D.fromMesh(mesh)
 
-phiSolver = bc.Laplacian()
+class Blob2D(PhysicsModel):
+    def init(self,restart):
+        self.mesh=bc.Mesh.getGlobal()
+        self.n=bc.Field3D.fromMesh(self.mesh)
+        self.omega=bc.Field3D.fromMesh(self.mesh)
 
-options = bc.Options("model")
-# Temperature in eV
-Te0   =    options.get("Te0", 30)
-e     =    options.get("e", 1.602e-19);
-m_i   =    options.get("m_i",2*1.667e-27);
-m_e   =    options.get("m_e",9.11e-31);
+        self.phiSolver = bc.Laplacian()
 
-# Background density in cubic m
-n0    =    options.get("n0",1e19);
-# Viscous diffusion coefficient
-D_vort=    options.get("D_vort",0);
-# Density diffusion coefficient
-D_n   =    options.get("D_n", 0);
+        options = bc.Options("model")
+        # Temperature in eV
+        Te0   =    options.get("Te0", 30)
+        e     =    options.get("e", 1.602e-19);
+        m_i   =    options.get("m_i",2*1.667e-27);
+        m_e   =    options.get("m_e",9.11e-31);
 
-# Radius of curvature [m]
-R_c   =    options.get("R_c",   1.5);
-# Parallel connection length [m]
-L_par =    options.get("L_par", 10);
+        # Viscous diffusion coefficient
+        self.D_vort=    options.get("D_vort",0);
+        # Density diffusion coefficient
+        self.D_n   =    options.get("D_n", 0);
 
-# Value of magnetic field strength [T]
-B0    =    options.get("B0", 0.35);
+        # Radius of curvature [m]
+        self.R_c   =    options.get("R_c",   1.5);
+        # Parallel connection length [m]
+        self.L_par =    options.get("L_par", 10);
 
-
-# System option switches
-
-# Include compressible ExB term in density equation
-compressible =    options.get("compressible",False);
-# Use Boussinesq approximation in vorticity
-boussinesq   =    options.get("boussinesq",True);
-# Sheath closure
-sheath       =    options.get("sheath", True);
+        # Value of magnetic field strength [T]
+        B0    =    options.get("B0", 0.35);
 
 
-Omega_i = e*B0/m_i;           # Cyclotron Frequency
-c_s = sqrt(e * Te0/m_i);      # Bohm sound speed
-rho_s = c_s/Omega_i;          # Bohm gyro-radius
+        # System option switches
 
-print("\n\n\t----------Parameters: ------------ \n\tOmega_i = %e /s,\n\t"
-      "c_s = %e m/s,\n\trho_s = %e m\n" %( Omega_i, c_s, rho_s))
+        # Include compressible ExB term in density equation
+        self.compressible =    options.get("compressible",False);
+        # Use Boussinesq approximation in vorticity
+        self.boussinesq   =    options.get("boussinesq",True);
+        # Sheath closure
+        self.sheath       =    options.get("sheath", True);
 
-# Calculate delta_*, blob size scaling
-print("\tdelta_* = rho_s * (dn/n) * %e "
-       %( pow( L_par*L_par / (R_c * rho_s), 1./5) ))
 
-# /************ Create a solver for potential ********/
+        Omega_i = e*B0/m_i;           # Cyclotron Frequency
+        c_s = sqrt(e * Te0/m_i);      # Bohm sound speed
+        self.rho_s = c_s/Omega_i;          # Bohm gyro-radius
 
-if boussinesq:
-    # BOUT.inp section "phiBoussinesq"
-    phiSolver = bc.Laplacian(bc.Options("phiBoussinesq"))
-else:
-        # BOUT.inp section "phiSolver"
-    phiSolver = bc.Laplacian(bc.Options("phiSolver"))
+        print("\n\n\t----------Parameters: ------------ \n\tOmega_i = %e /s,\n\t"
+              "c_s = %e m/s,\n\trho_s = %e m\n" %( Omega_i, c_s, self.rho_s))
 
-phi = bc.Field3D.fromMesh(mesh)
-phi.set(0.0) # Starting guess for first solve (if iterative)
+        # Calculate delta_*, blob size scaling
+        print("\tdelta_* = rho_s * (dn/n) * %e "
+              %( pow( self.L_par*self.L_par / (self.R_c * self.rho_s), 1./5) ))
 
-# /************ Tell BOUT++ what to solve ************/
+        # /************ Create a solver for potential ********/
 
-model=bc.PhysicsModel()
-model.solve_for(n=n,omega=omega)
-# model.save_repeat(phi=phi)
-# model.save_once(rho_s=rho_s,c_s=c_s,Omega_i=Omega_i)
+        if self.boussinesq:
+            # BOUT.inp section "phiBoussinesq"
+            self.phiSolver = bc.Laplacian(bc.Options("phiBoussinesq"))
+        else:
+            # BOUT.inp section "phiSolver"
+            self.phiSolver = bc.Laplacian(bc.Options("phiSolver"))
 
-def rhs(time):
-    global n,omega,phi
-    # Run communications
-    ######################################
-    mesh.communicate(n,omega);
+        # Starting guess for first solve (if iterative)
+        self.phi = bc.create3D("0")
 
-    # Invert div(n grad(phi)) = grad(n) grad(phi) + n Delp_perp^2(phi) = omega
-    ######################################
-    # Set the time derivative by adding/... to it
-    # make sure to never overwrite it
-    # ddt_n = bla does NOT set the time derivative
-    ddt_n = n.ddt()
-    ddt_n.set(0)
-    if not boussinesq:
-      # Including full density in vorticit inversion
-          # Update the 'C' coefficient. See invert_laplace.hxx
-      phiSolver.setCoefC(n);
-          # Use previous solution as guess
-      phi = phiSolver.solve(omega / n, phi);
-    else :
-      # Background density only (1 in normalised units)
-      phi = phiSolver.solve(omega,phi);
+        # /************ Tell BOUT++ what to solve ************/
 
-    mesh.communicate(phi);
+        self.solve_for(n=self.n,omega=self.omega)
+        # model.save_repeat(phi=phi)
+        # model.save_once(rho_s=rho_s,c_s=c_s,Omega_i=Omega_i)
 
-    # Density Evolution
-    ######################################/
+    def rhs(self,time):
+        # Run communications
+        ######################################
+        self.mesh.communicate(self.n,self.omega);
 
-    ddt_n += -bracket(phi,n,"BRACKET_SIMPLE")    # ExB term
-    ddt_n +=  2*DDZ(n)*(rho_s/R_c)               # Curvature term
-    ddt_n +=  D_n*Delp2(n)                       # Diffusion term
+        # Invert div(n grad(phi)) = grad(n) grad(phi) + n Delp_perp^2(phi) = omega
+        ######################################
+        # Set the time derivative by adding/... to it
+        # make sure to never overwrite it
+        # ddt_n = bla does NOT set the time derivative
+        ddt_n = self.n.ddt()
+        ddt_n.set(0)
+        if not self.boussinesq:
+            # Including full density in vorticit inversion
+            # Update the 'C' coefficient. See invert_laplace.hxx
+            self.phiSolver.setCoefC(n);
+            # Use previous solution as guess
+            self.phi = self.phiSolver.solve(omega / n, self.phi);
+        else :
+            # Background density only (1 in normalised units)
+            self.phi = self.phiSolver.solve(self.omega,self.phi);
 
-    if compressible:
-      ddt_n -= 2*n*DDZ(phi)*(rho_s/R_c);       # ExB Compression term
+        self.mesh.communicate(self.phi);
 
-    if sheath :
-      # Sheath closure
-      ddt_n += n*phi*(rho_s/L_par); # - (n - 1)*(rho_s/L_par);
+        # Density Evolution
+        ######################################/
 
-    # Vorticity evolution
-    ######################################/
         # ExB term
-    ddt_omega = -bracket(phi,omega, "BRACKET_SIMPLE")
-    ddt_omega += 2*DDZ(n)*(rho_s/R_c)/n
-    # Viscous diffusion term
-    ddt_omega += D_vort*Delp2(omega)/n
+        ddt_n += -bracket(self.phi,self.n,"BRACKET_SIMPLE")  
+        # Curvature term
+        ddt_n +=  2*DDZ(self.n)*(self.rho_s/self.R_c)           
+        # Diffusion term
+        ddt_n +=  self.D_n*Delp2(self.n)                     
 
-    if sheath:
-      ddt_omega += phi * (rho_s/L_par);
-    # other option to set time derivaitve:
-    # create a field and set it in the end
-    omega.ddt(ddt_omega)
+        if self.compressible:
+            # ExB Compression term
+            ddt_n -= 2*self.n*DDZ(self.phi)*(self.rho_s/self.R_c);
 
+        if self.sheath :
+            # Sheath closure
+            ddt_n += self.n*self.phi*(self.rho_s/self.L_par); # - (n - 1)*(rho_s/L_par);
+
+        # Vorticity evolution
+        ######################################/
+        # ExB term
+        ddt_omega = -bracket(self.phi,self.omega, "BRACKET_SIMPLE")
+        ddt_omega += 2*DDZ(self.n)*(self.rho_s/self.R_c)/self.n
+        # Viscous diffusion term
+        ddt_omega += self.D_vort*Delp2(self.omega)/self.n
+
+        if self.sheath:
+            ddt_omega += self.phi * (self.rho_s/self.L_par);
+        # other option to set time derivaitve:
+        # create a field and set it in the end
+        self.omega.ddt(ddt_omega)
+
+
+# Create an instance
+blob2d= Blob2D()
 # Start the simulation
-model.setRhs(rhs)
-model.solve()
+blob2d.solve()
