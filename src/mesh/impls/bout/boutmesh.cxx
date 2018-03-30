@@ -1996,6 +1996,8 @@ MPI_Comm BoutMesh::getYcomm(int xpos) const {
  ****************************************************************/
 
 void BoutMesh::addBoundaryRegions() {
+  std::list<std::string> all_boundaries; ///< Keep track of all boundary regions
+  
   // Lower Inner Y
   int xs = 0;
   int xe = LocalNx - 1;
@@ -2020,7 +2022,7 @@ void BoutMesh::addBoundaryRegions() {
   addRegion2D("RGN_LOWER_INNER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
                                                  LocalNy, 1, maxregionblocksize));
 
-  addBoundaryRegionName("RGN_LOWER_INNER_Y");
+  all_boundaries.push_back("RGN_LOWER_INNER_Y");
 
   // Lower Outer Y
   
@@ -2045,7 +2047,7 @@ void BoutMesh::addBoundaryRegions() {
                                                  LocalNy, LocalNz, maxregionblocksize));
   addRegion2D("RGN_LOWER_OUTER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
                                                  LocalNy, 1, maxregionblocksize));
-  addBoundaryRegionName("RGN_LOWER_OUTER_Y");
+  all_boundaries.push_back("RGN_LOWER_OUTER_Y");
   
   // Lower Y
 
@@ -2065,7 +2067,7 @@ void BoutMesh::addBoundaryRegions() {
                                            LocalNy, LocalNz, maxregionblocksize));
   addRegion2D("RGN_LOWER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
                                            LocalNy, 1, maxregionblocksize));
-  addBoundaryRegionName("RGN_LOWER_Y");
+  all_boundaries.push_back("RGN_LOWER_Y");
   
   // Upper Inner Y
 
@@ -2091,7 +2093,7 @@ void BoutMesh::addBoundaryRegions() {
                                                  LocalNy, LocalNz, maxregionblocksize));
   addRegion2D("RGN_UPPER_INNER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
                                                  LocalNy, 1, maxregionblocksize));
-  addBoundaryRegionName("RGN_UPPER_INNER_Y");
+  all_boundaries.push_back("RGN_UPPER_INNER_Y");
 
   // Upper Outer Y
   
@@ -2117,7 +2119,7 @@ void BoutMesh::addBoundaryRegions() {
                                                  LocalNy, LocalNz, maxregionblocksize));
   addRegion2D("RGN_UPPER_OUTER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
                                                  LocalNy, 1, maxregionblocksize));
-  addBoundaryRegionName("RGN_UPPER_OUTER_Y");
+  all_boundaries.push_back("RGN_UPPER_OUTER_Y");
 
   // Upper Y
 
@@ -2137,7 +2139,7 @@ void BoutMesh::addBoundaryRegions() {
                                            LocalNy, LocalNz, maxregionblocksize));
   addRegion2D("RGN_UPPER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
                                            LocalNy, 1, maxregionblocksize));
-  addBoundaryRegionName("RGN_UPPER_Y");
+  all_boundaries.push_back("RGN_UPPER_Y");
   
   // Inner X
   if(mesh->firstX() && !mesh->periodicX) {
@@ -2145,7 +2147,7 @@ void BoutMesh::addBoundaryRegions() {
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_INNER_X", Region<Ind2D>(0, xstart-1, ystart, yend, 0, 0,
                                              LocalNy, 1, maxregionblocksize));
-    addBoundaryRegionName("RGN_INNER_X");
+    all_boundaries.push_back("RGN_INNER_X");
     
     output_info.write("\tBoundary region inner X\n");
   } else {
@@ -2162,7 +2164,7 @@ void BoutMesh::addBoundaryRegions() {
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_OUTER_X", Region<Ind2D>(xend+1, LocalNx-1, ystart, yend, 0, 0,
                                              LocalNy, 1, maxregionblocksize));
-    addBoundaryRegionName("RGN_OUTER_X");
+    all_boundaries.push_back("RGN_OUTER_X");
     
     output_info.write("\tBoundary region outer X\n");
   } else {
@@ -2172,6 +2174,26 @@ void BoutMesh::addBoundaryRegions() {
     addRegion2D("RGN_OUTER_X", Region<Ind2D>(0, -1, 0, 0, 0, 0,
                                              LocalNy, 1, maxregionblocksize));
   }
+
+  // Join boundary regions together
+  
+  Region<Ind3D> bndry3d; // Empty
+  for(auto region_name : all_boundaries) {
+    bndry3d += getRegion3D(region_name);
+  }
+  bndry3d.unique(); // Ensure that the points are unique
+  
+  // Create a region which is all boundaries
+  addRegion3D("RGN_ALL_BOUNDARIES", bndry3d);
+
+  Region<Ind2D> bndry2d; // Empty
+  for(auto region_name : all_boundaries) {
+    bndry2d += getRegion2D(region_name);
+  }
+  bndry2d.unique(); // Ensure that the points are unique
+  
+  // Create a region which is all boundaries
+  addRegion2D("RGN_ALL_BOUNDARIES", bndry2d);
 }
 
 const RangeIterator BoutMesh::iterateBndryLowerInnerY() const {

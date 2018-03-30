@@ -775,12 +775,8 @@ int Solver::getLocalN() {
   int n2d = n2Dvars();
   int n3d = n3Dvars();
   
-  int ncz = mesh->LocalNz;
-  int MYSUB = mesh->yend - mesh->ystart + 1;
-
-  int local_N = (mesh->xend - mesh->xstart + 1) *
-    (mesh->yend - mesh->ystart + 1)*(n2d + ncz*n3d); // NOTE: Not including extra toroidal point
-
+  int local_N = mesh->getRegion2D("RGN_NO_BNDRY") * (n2d + mesh->LocalNz*n3d);
+  
   //////////// How many variables have evolving boundaries?
   
   int n2dbndry = 0;
@@ -797,11 +793,9 @@ int Solver::getLocalN() {
 
   //////////// Find boundary regions ////////////
   
-  // For each boundary region add the points which will be evolved
-  for(auto region : {"RGN_UPPER_Y", "RGN_LOWER_Y", "RGN_INNER_X", "RGN_OUTER_X"}) {
-    local_N += size(mesh->getRegion2D("RGN_UPPER_Y")) * n2dbndry
-      + size(mesh->getRegion3D("RGN_UPPER_Y")) * n3dbndry;
-  }
+  // Add the points which will be evolved in the boundaries
+  local_N += size(mesh->getRegion2D("RGN_ALL_BOUNDARIES")) * n2dbndry
+      + size(mesh->getRegion3D("RGN_ALL_BOUNDARIES")) * n3dbndry;
   
   cacheLocalN = local_N;
 
@@ -823,8 +817,8 @@ Solver* Solver::create(SolverType &type, Options *opts) {
  * Is the interleaving of variables needed or helpful to the solver?
  **************************************************************************/
 
-/// Perform an operation at a given (jx,jy) location, moving data between BOUT++ and CVODE
-void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op, bool bndry) {
+/// Perform an operation at a given Ind2D (jx,jy) location, moving data between BOUT++ and CVODE
+void Solver::loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, bool bndry) {
   int jz;
  
   switch(op) {
@@ -835,7 +829,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
     for(const auto& f : f2d) {
       if(bndry && !f.evolve_bndry)
         continue;
-      (*f.var)(jx, jy) = udata[p];
+      (*f.var)[i2d] = udata[p];
       p++;
     }
     
@@ -845,7 +839,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
       for(const auto& f : f3d) {
         if(bndry && !f.evolve_bndry)
           continue;
-        (*f.var)(jx, jy, jz) = udata[p];
+        (*f.var)[i2d + jz] = udata[p];
         p++;
       }  
     }
@@ -859,7 +853,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
     for(const auto& f : f2d) {
       if(bndry && !f.evolve_bndry)
         continue;
-      (*f.F_var)(jx, jy) = udata[p];
+      (*f.F_var)[i2d] = udata[p];
       p++;
     }
     
@@ -869,7 +863,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
       for(const auto& f : f3d) {
         if(bndry && !f.evolve_bndry)
           continue;
-        (*f.F_var)(jx, jy, jz) = udata[p];
+        (*f.F_var)[i2d + jz] = udata[p];
         p++;
       }  
     }
@@ -915,7 +909,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
     for(const auto& f : f2d) {
       if(bndry && !f.evolve_bndry)
         continue;
-      udata[p] = (*f.var)(jx, jy);
+      udata[p] = (*f.var)[i2d];
       p++;
     }
     
@@ -925,7 +919,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
       for(const auto& f : f3d) {
         if(bndry && !f.evolve_bndry)
           continue;
-        udata[p] = (*f.var)(jx, jy, jz);
+        udata[p] = (*f.var)[i2d+jz];
         p++;
       }  
     }
@@ -938,7 +932,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
     for(const auto& f : f2d) {
       if(bndry && !f.evolve_bndry)
         continue;
-      udata[p] = (*f.F_var)(jx, jy);
+      udata[p] = (*f.F_var)[i2d];
       p++;
     }
     
@@ -948,7 +942,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
       for(const auto& f : f3d) {
         if(bndry && !f.evolve_bndry)
           continue;
-        udata[p] = (*f.F_var)(jx, jy, jz);
+        udata[p] = (*f.F_var)[i2d + jz];
         p++;
       }
     }
@@ -959,40 +953,16 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
 
 /// Loop over variables and domain. Used for all data operations for consistency
 void Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op) {
-  int jx, jy;
   int p = 0; // Counter for location in udata array
-
-  int MYSUB = mesh->yend - mesh->ystart + 1;
-
-  // Inner X boundary
-  if(mesh->firstX() && !mesh->periodicX) {
-    for(jx=0;jx<mesh->xstart;jx++)
-      for(jy=0;jy<MYSUB;jy++)
-	loop_vars_op(jx, jy+mesh->ystart, udata, p, op, true);
-  }
-
-  // Lower Y boundary region
-  for(RangeIterator xi = mesh->iterateBndryLowerY(); !xi.isDone(); xi++) {
-    for(jy=0;jy<mesh->ystart;jy++)
-      loop_vars_op(*xi, jy, udata, p, op, true);
-  }
-
-  // Bulk of points
-  for (jx=mesh->xstart; jx <= mesh->xend; jx++)
-    for (jy=mesh->ystart; jy <= mesh->yend; jy++)
-      loop_vars_op(jx, jy, udata, p, op, false);
   
-  // Upper Y boundary condition
-  for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); xi++) {
-    for(jy=mesh->yend+1;jy<mesh->LocalNy;jy++)
-      loop_vars_op(*xi, jy, udata, p, op, true);
+  // All boundaries
+  for(auto &i2d : mesh->getRegion2D("RGN_ALL_BOUNDARIES")) {
+    loop_vars_op(i2d, udata, p, op, true);
   }
-
-  // Outer X boundary
-  if(mesh->lastX() && !mesh->periodicX) {
-    for(jx=mesh->xend+1;jx<mesh->LocalNx;jx++)
-      for(jy=mesh->ystart;jy<=mesh->yend;jy++)
-	loop_vars_op(jx, jy, udata, p, op, true);
+  
+  // Bulk of points
+  for(auto &i2d : mesh->getRegion2D("RGN_NO_BNDRY")) {
+    loop_vars_op(i2d, udata, p, op, false);
   }
 }
 
@@ -1106,83 +1076,40 @@ const Field3D Solver::globalIndex(int localStart) {
 
   // Find how many boundary cells are evolving
   int n2dbndry = 0;
-  for(const auto& f : f2d) {
-    if(f.evolve_bndry)
+  for (const auto &f : f2d) {
+    if (f.evolve_bndry)
       ++n2dbndry;
   }
   int n3dbndry = 0;
-  for(const auto& f : f3d) {
-    if(f.evolve_bndry)
-      n3dbndry++;
-  }
-
-  if(n2dbndry + n3dbndry > 0) {
-    // Some boundary points evolving
-    
-    // Inner X boundary
-    if(mesh->firstX() && !mesh->periodicX) {
-      for(int jx=0;jx<mesh->xstart;jx++)
-        for(int jy=mesh->ystart;jy<=mesh->yend;jy++) {
-          // Zero index contains 2D and 3D variables
-          index(jx, jy, 0) = ind;
-          ind += n2dbndry + n3dbndry;
-          for(int jz=1;jz<mesh->LocalNz; jz++) {
-            index(jx, jy, jz) = ind;
-            ind += n3dbndry;
-          }
-        }
-    }
-    
-    // Lower Y boundary region
-    for(RangeIterator xi = mesh->iterateBndryLowerY(); !xi.isDone(); xi++) {
-      for(int jy=0;jy<mesh->ystart;jy++) {
-        index(*xi, jy, 0) = ind;
-        ind += n2dbndry + n3dbndry;
-        for(int jz=1;jz<mesh->LocalNz; jz++) {
-          index(*xi, jy, jz) = ind;
-          ind += n3dbndry;
-        }
-      }
-    }
+  for (const auto &f : f3d) {
+    if (f.evolve_bndry)
+      ++n3dbndry;
   }
   
-  // Bulk of points
-  for (int jx=mesh->xstart; jx <= mesh->xend; jx++)
-    for (int jy=mesh->ystart; jy <= mesh->yend; jy++) {
-      index(jx, jy, 0) = ind;
-      ind += n2d + n3d;
-      for(int jz=1;jz<mesh->LocalNz; jz++) {
-        index(jx, jy, jz) = ind;
-        ind += n3d;
-      }
-    }
-
-  if(n2dbndry + n3dbndry > 0) {
+  if (n2dbndry + n3dbndry > 0) {
     // Some boundary points evolving
-    
-    // Upper Y boundary condition
-    for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); xi++) {
-      for(int jy=mesh->yend+1;jy<mesh->LocalNy;jy++) {
-        index(*xi, jy, 0) = ind;
-        ind += n2dbndry + n3dbndry;
-        for(int jz=1;jz<mesh->LocalNz; jz++) {
-          index(*xi, jy, jz) = ind;
-          ind += n3dbndry;
-        }
+
+    for (auto &i2d : mesh->getRegion2D("RGN_ALL_BOUNDARIES")) {
+      // Zero index contains 2D and 3D variables
+      index[i2d] = ind;
+      ind += n2dbndry + n3dbndry;
+
+      for (int jz = 1; jz < mesh->LocalNz; jz++) {
+        index[i2d + jz] = ind;
+        ind += n3dbndry;
       }
     }
-    
-    // Outer X boundary
-    if(mesh->lastX() && !mesh->periodicX) {
-      for(int jx=mesh->xend+1;jx<mesh->LocalNx;jx++)
-        for(int jy=mesh->ystart;jy<=mesh->yend;jy++) {
-          index(jx, jy, 0) = ind;
-          ind += n2dbndry + n3dbndry;
-          for(int jz=1;jz<mesh->LocalNz; jz++) {
-            index(jx, jy, jz) = ind;
-            ind += n3dbndry;
-          }
-        }
+  }
+
+  // Bulk of points
+  for (auto &i2d : mesh->getRegion2D("RGN_NO_BNDRY")) {
+    // Zero index contains 2D and 3D variables
+    index[i2d] = ind;
+    ind += n2d + n3d;
+
+    for (int jz = 1; jz < mesh->LocalNz; jz++) {
+      index[i2d + jz] = ind;
+      ind += n3d;
     }
   }
   
