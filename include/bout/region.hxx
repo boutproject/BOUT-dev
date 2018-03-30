@@ -502,9 +502,13 @@ private:
   inline RegionIndices createRegionIndices(int xstart, int xend, int ystart, int yend,
                                            int zstart, int zend, int ny, int nz) {
 
-    ASSERT1(xend + 1 > xstart);
-    ASSERT1(yend + 1 > ystart);
-    ASSERT1(zend + 1 > zstart);
+    if ( (xend + 1 <= xstart) ||
+         (yend + 1 <= ystart) ||
+         (zend + 1 <= zstart) ) {
+      // Empty region
+      return {};
+    }
+    
     ASSERT1(ny > 0);
     ASSERT1(nz > 0);
 

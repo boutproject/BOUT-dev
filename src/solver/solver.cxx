@@ -775,7 +775,7 @@ int Solver::getLocalN() {
   int n2d = n2Dvars();
   int n3d = n3Dvars();
   
-  int local_N = mesh->getRegion2D("RGN_NO_BNDRY") * (n2d + mesh->LocalNz*n3d);
+  int local_N = size(mesh->getRegion2D("RGN_NOBNDRY")) * (n2d + mesh->LocalNz*n3d);
   
   //////////// How many variables have evolving boundaries?
   
@@ -961,7 +961,7 @@ void Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op) {
   }
   
   // Bulk of points
-  for(auto &i2d : mesh->getRegion2D("RGN_NO_BNDRY")) {
+  for(auto &i2d : mesh->getRegion2D("RGN_NOBNDRY")) {
     loop_vars_op(i2d, udata, p, op, false);
   }
 }
@@ -1102,7 +1102,7 @@ const Field3D Solver::globalIndex(int localStart) {
   }
 
   // Bulk of points
-  for (auto &i2d : mesh->getRegion2D("RGN_NO_BNDRY")) {
+  for (auto &i2d : mesh->getRegion2D("RGN_NOBNDRY")) {
     // Zero index contains 2D and 3D variables
     index[i2d] = ind;
     ind += n2d + n3d;
