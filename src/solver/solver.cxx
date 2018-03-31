@@ -794,8 +794,8 @@ int Solver::getLocalN() {
   //////////// Find boundary regions ////////////
   
   // Add the points which will be evolved in the boundaries
-  local_N += size(mesh->getRegion2D("RGN_ALL_BOUNDARIES")) * n2dbndry
-      + size(mesh->getRegion3D("RGN_ALL_BOUNDARIES")) * n3dbndry;
+  local_N += size(mesh->getRegion2D("RGN_BNDRY")) * n2dbndry
+      + size(mesh->getRegion3D("RGN_BNDRY")) * n3dbndry;
   
   cacheLocalN = local_N;
 
@@ -956,7 +956,7 @@ void Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op) {
   int p = 0; // Counter for location in udata array
   
   // All boundaries
-  for(auto &i2d : mesh->getRegion2D("RGN_ALL_BOUNDARIES")) {
+  for(auto &i2d : mesh->getRegion2D("RGN_BNDRY")) {
     loop_vars_op(i2d, udata, p, op, true);
   }
   
@@ -1091,7 +1091,7 @@ const Field3D Solver::globalIndex(int localStart) {
   if (n2dbndry + n3dbndry > 0) {
     // Some boundary points evolving
 
-    for (auto &i2d : mesh->getRegion2D("RGN_ALL_BOUNDARIES")) {
+    for (auto &i2d : mesh->getRegion2D("RGN_BNDRY")) {
       // Zero index contains 2D and 3D variables
       index[Ind3D(i2d.ind*nz)] = ind;
       ind += n2dbndry + n3dbndry;

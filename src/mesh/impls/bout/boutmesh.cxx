@@ -2184,7 +2184,7 @@ void BoutMesh::addBoundaryRegions() {
   bndry3d.unique(); // Ensure that the points are unique
   
   // Create a region which is all boundaries
-  addRegion3D("RGN_ALL_BOUNDARIES", bndry3d);
+  addRegion3D("RGN_BNDRY", bndry3d);
 
   Region<Ind2D> bndry2d; // Empty
   for(auto region_name : all_boundaries) {
@@ -2193,7 +2193,7 @@ void BoutMesh::addBoundaryRegions() {
   bndry2d.unique(); // Ensure that the points are unique
   
   // Create a region which is all boundaries
-  addRegion2D("RGN_ALL_BOUNDARIES", bndry2d);
+  addRegion2D("RGN_BNDRY", bndry2d);
 }
 
 const RangeIterator BoutMesh::iterateBndryLowerInnerY() const {
