@@ -190,7 +190,6 @@ class Ind3D : public SpecificInd {
 public:
   Ind3D() : SpecificInd(){};
   Ind3D(int i) : SpecificInd(i){};
-  Ind3D(const SpecificInd &other) : SpecificInd(other.ind) {}
   
   // Note operator= from base class is always hidden
   // by implicit method so have to be explicit

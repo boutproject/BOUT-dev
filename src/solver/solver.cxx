@@ -819,8 +819,8 @@ Solver* Solver::create(SolverType &type, Options *opts) {
 
 /// Perform an operation at a given Ind2D (jx,jy) location, moving data between BOUT++ and CVODE
 void Solver::loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, bool bndry) {
-  int jz;
- 
+  int nz = mesh->LocalNz;
+  
   switch(op) {
   case LOAD_VARS: {
     /// Load variables from IDA into BOUT++
@@ -833,13 +833,13 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, 
       p++;
     }
     
-    for (jz=0; jz < mesh->LocalNz; jz++) {
+    for (int jz=0; jz < nz; jz++) {
       
       // Loop over 3D variables
       for(const auto& f : f3d) {
         if(bndry && !f.evolve_bndry)
           continue;
-        (*f.var)[i2d + jz] = udata[p];
+        (*f.var)[Ind3D(i2d.ind*nz + jz)] = udata[p];
         p++;
       }  
     }
@@ -857,13 +857,13 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, 
       p++;
     }
     
-    for (jz=0; jz < mesh->LocalNz; jz++) {
+    for (int jz=0; jz < nz; jz++) {
       
       // Loop over 3D variables
       for(const auto& f : f3d) {
         if(bndry && !f.evolve_bndry)
           continue;
-        (*f.F_var)[i2d + jz] = udata[p];
+        (*f.F_var)[Ind3D(i2d.ind*nz + jz)] = udata[p];
         p++;
       }  
     }
@@ -885,7 +885,7 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, 
       p++;
     }
     
-    for (jz=0; jz < mesh->LocalNz; jz++) {
+    for (int jz=0; jz < nz; jz++) {
       
       // Loop over 3D variables
       for(const auto& f : f3d) {
@@ -913,13 +913,13 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, 
       p++;
     }
     
-    for (jz=0; jz < mesh->LocalNz; jz++) {
+    for (int jz=0; jz < nz; jz++) {
       
       // Loop over 3D variables
       for(const auto& f : f3d) {
         if(bndry && !f.evolve_bndry)
           continue;
-        udata[p] = (*f.var)[i2d+jz];
+        udata[p] = (*f.var)[Ind3D(i2d.ind*nz + jz)];
         p++;
       }  
     }
@@ -936,13 +936,13 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, 
       p++;
     }
     
-    for (jz=0; jz < mesh->LocalNz; jz++) {
+    for (int jz=0; jz < nz; jz++) {
       
       // Loop over 3D variables
       for(const auto& f : f3d) {
         if(bndry && !f.evolve_bndry)
           continue;
-        udata[p] = (*f.F_var)[i2d + jz];
+        udata[p] = (*f.F_var)[Ind3D(i2d.ind*nz + jz)];
         p++;
       }
     }
@@ -1074,6 +1074,8 @@ const Field3D Solver::globalIndex(int localStart) {
 
   int ind = localStart;
 
+  int nz = mesh->LocalNz;
+  
   // Find how many boundary cells are evolving
   int n2dbndry = 0;
   for (const auto &f : f2d) {
@@ -1091,11 +1093,11 @@ const Field3D Solver::globalIndex(int localStart) {
 
     for (auto &i2d : mesh->getRegion2D("RGN_ALL_BOUNDARIES")) {
       // Zero index contains 2D and 3D variables
-      index[i2d] = ind;
+      index[Ind3D(i2d.ind*nz)] = ind;
       ind += n2dbndry + n3dbndry;
 
-      for (int jz = 1; jz < mesh->LocalNz; jz++) {
-        index[i2d + jz] = ind;
+      for (int jz = 1; jz < nz; jz++) {
+        index[Ind3D(i2d.ind*nz + jz)] = ind;
         ind += n3dbndry;
       }
     }
@@ -1104,11 +1106,11 @@ const Field3D Solver::globalIndex(int localStart) {
   // Bulk of points
   for (auto &i2d : mesh->getRegion2D("RGN_NOBNDRY")) {
     // Zero index contains 2D and 3D variables
-    index[i2d] = ind;
+    index[Ind3D(i2d.ind*nz)] = ind;
     ind += n2d + n3d;
 
-    for (int jz = 1; jz < mesh->LocalNz; jz++) {
-      index[i2d + jz] = ind;
+    for (int jz = 1; jz < nz; jz++) {
+      index[Ind3D(i2d.ind*nz + jz)] = ind;
       ind += n3d;
     }
   }
