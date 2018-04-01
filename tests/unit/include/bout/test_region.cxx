@@ -63,17 +63,22 @@ TEST_F(RegionTest, regionFromRange) {
   Region<Ind3D> region2(0, 0, 0, 0, 0, 0, 1, 1);
   EXPECT_EQ(region2.getIndices().size(), 1);
 
-  // Invalid range/size
+  // Invalid range results in empty region
   { Region<Ind3D> region3(0, -1, 0, 0, 0, 0, 1, 1);
     EXPECT_EQ(region3.size(), 0);}
   { Region<Ind3D> region3(0, 0, 1, 0, 0, 0, 1, 1);
     EXPECT_EQ(region3.size(), 0);}
   { Region<Ind3D> region3(0, 0, 0, 0, 20, 10, 1, 1);
     EXPECT_EQ(region3.size(), 0);}
-  { Region<Ind3D> region3(0, 0, 0, 0, 0, 0, 0, 1);
-    EXPECT_EQ(region3.size(), 0);}
-  { Region<Ind3D> region3(0, 0, 0, 0, 0, 0, 1, 0);
-    EXPECT_EQ(region3.size(), 0);}
+
+  // Invalid size throws if CHECK >= 1
+#if CHECK >= 1
+  EXPECT_THROW(Region<Ind3D> region3(0, 0, 0, 0, 0, 0, 0, 1), BoutException);
+  EXPECT_THROW(Region<Ind3D> region3(0, 0, 0, 0, 0, 0, 1, 0), BoutException);
+#else
+  EXPECT_NO_THROW(Region<Ind3D> region3(0, 0, 0, 0, 0, 0, 0, 1));
+  EXPECT_NO_THROW(Region<Ind3D> region3(0, 0, 0, 0, 0, 0, 1, 0));
+#endif
 }
 
 TEST_F(RegionTest, regionFromIndices) {
