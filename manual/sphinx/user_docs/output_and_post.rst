@@ -27,7 +27,7 @@ layout.
 
     Ni = collect("Ni")  # Collect the variable "Ni"
 
-The result is a 4D NumPy array, ``Ni`` in this case. This is ordered
+The result is an up to 4D NumPy array, ``Ni`` in this case. This is ordered
 ``[t,x,y,z]``:
 
 .. code-block:: pycon
@@ -38,7 +38,21 @@ The result is a 4D NumPy array, ``Ni`` in this case. This is ordered
 so ``Ni`` would have 10 time slices, 1 point in x, 2 in y, and 3 in z.
 This should correspond to the grid size used in the simulation.
 Since the collected data is a NumPy array, all the useful routines
-in NumPy, SciPy and Matplotlib can be used for further analysis. 
+in NumPy, SciPy and Matplotlib can be used for further analysis.
+
+If the data has less then 4 dimension, it can be checked with
+``dimension`` what dimensions are available:
+
+.. code-block:: python
+
+    from boutdata.collect import dimension
+
+    print(dimension("Ni"))
+    print(dimension("dx"))
+
+The first will print as expected ``[t, x, y, z]`` - while the second
+will print ``[x, y]`` as dx is nether evolved in time, nor does it has
+a ``z`` dependency.
 
 An experimental feature is adding attributes to variables. These can be read using the ``attributes``
 routine:
