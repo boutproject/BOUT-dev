@@ -25,8 +25,7 @@ OBJS = $(SRC.C:%.cpp=obj/%.o) $(OBJ.IL)
 all: $(LIBF)
 
 $(LIBF): $(OBJS)
-	$(AR) rcv $(LIBF) $(OBJS)
-	$(RANLIB) $(LIBF)
+	$(AR) $(ARFLAGS) $(LIBF) $(OBJS)
 
 obj:
 	$(MKDIR) obj
