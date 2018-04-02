@@ -10,8 +10,8 @@ print("""
 
 print(license())
 
-import gen_stencils
+import stencils
 # Should we generate using the raw pointers or field operators?
 # Does currently not work with field operator
-gen_stencils.use_field_operator = False
-gen_stencils.gen_functions_normal()
+stencils.use_field_operator = False
+stencils.gen_functions_normal()

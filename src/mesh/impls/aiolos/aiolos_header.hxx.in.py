@@ -1,6 +1,6 @@
 #!/bin/python3
 
-from gen_derivs import generate_index_functions
+from derivs import generate_index_functions
 from common import license
 
 print(license())

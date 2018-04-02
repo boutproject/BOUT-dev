@@ -1,6 +1,6 @@
 #!/bin/python3
 
-from gen_derivs import print_init_header
+from derivs import print_init_header
 from common import license
 
 print(license())

@@ -9,5 +9,5 @@ print("""
 
 print(license())
 
-import gen_stencils
-gen_stencils.gen_functions_normal(header_only=True)
+import stencils
+stencils.gen_functions_normal(header_only=True)

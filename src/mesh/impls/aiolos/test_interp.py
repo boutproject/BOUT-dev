@@ -2,7 +2,7 @@
 # Copyright (C) 2016, 2017, 2018 David Schwörer
 #
 
-from gen_stencils import get_interp_vals
+from stencils import get_interp_vals
 import numpy as np
 x = np.linspace(-5, 5, 9)
 xx = x * x

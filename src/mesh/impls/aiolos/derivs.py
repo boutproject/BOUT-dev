@@ -79,7 +79,7 @@ class DiffFuncTableEntry(object):
             self.func_name = flux
 
     def getFullName(self, direction, mode, field):
-        from gen_stencils import stencils
+        from stencils import stencils
         for stencil in stencils:
             if stencil.name == self.func_name:
                 return stencil.getFullName(direction=direction, mode=mode, field=None)

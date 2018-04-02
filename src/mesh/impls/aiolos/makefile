@@ -11,8 +11,8 @@ include $(BOUT_TOP)/make.config
 
 
 
-%xx: %xx.in.py gen_derivs.py \
-               tables_cleaned.cxx gen_stencils.py stencils_cleaned.cxx \
+%xx: %xx.in.py derivs.py \
+               tables_cleaned.cxx stencils.py stencils_cleaned.cxx \
                common.py
 	@python3 common_test.py &> test.log || ( cat test.log ; exit 1 )
 	@python3 test_interp.py &> test.log || ( cat test.log ; exit 1 )
