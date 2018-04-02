@@ -6,7 +6,7 @@
 import jinja2
 
 
-print("""\
+file_header="""\
 /*!************************************************************************
  * \\file derivs.hxx
  *
@@ -47,15 +47,6 @@ print("""\
 """)
 
 
-
-
-env = jinja2.Environment(loader=jinja2.FileSystemLoader('.'),
-                         trim_blocks=True)
-
-description_template = env.get_template("derivs.hxx.in.description")
-
-function_template = env.get_template("derivs.hxx.in.function")
-
 class Function(object):
     def __init__(self,name,flux=None,desc=None,latex=None):
         if flux is not None:
@@ -92,8 +83,7 @@ class Function(object):
     def render(self):
         args=vars(self)
         args['DD']=self.name
-        global description_template, function_template
-        args['full_desc']=description_template.render(**args)
+        global function_template
         print(function_template.render(**args))
 
 
@@ -116,46 +106,7 @@ funcs=[first,
                 desc="for terms of form div(v * f)",
                 latex="\partial (v f) / \partial $d_lower")]
 
-
-for fun in funcs:
-    if fun.name == 'DDd':
-        print("////////// FIRST DERIVATIVES //////////")
-    elif fun.name == 'D2Dd2':
-        print("////////// SECOND DERIVATIVES //////////")
-    elif fun.name == 'D4Dd4':
-        print("////////// FORTH DERIVATIVES //////////")
-    elif fun.name == 'VDDd':
-        print("///////// UPWINDING METHODS /////////////")
-    elif fun.name == 'FDDd':
-        print("///////// FLUX METHODS /////////////")
-    else:
-        print("Unhandeled case")
-        exit(1)
-    for d in ['X', 'Y', 'Z']:
-        for field in ['Field3D', 'Field2D']:
-            # get copy
-            fun.set(d,field).render()
-
-
-
-first.set('Z',"Vector3D").render()
-x='x'
-y='y'
-z='z'
-for DD in [[x,y],[x,z],[y,z]]:
-    for field in ['Field2D', 'Field3D']:
-        cur=second.set('error',field)
-        cur.name="D2D%sD%s"%(DD[0].upper(),DD[1].upper())
-        cur.desc="Calculate mixed partial derivative in %s and %s"%(DD[0],DD[1])
-        cur.latex="\partial^2 / \partial %s \partial %s"%(DD[0],DD[1])
-        cur.render()
-
-
-cur=upwind.set('Z','Field2D')
-cur.in_sig="const Field3D &v, const Field2D &f"
-cur.render()
-
-print("""
+deprecated_methods="""
 // Deprecated methods
 //
 // Calculate first partial derivative in Z
@@ -188,6 +139,56 @@ inline const Field3D DDZ(const Field3D &f, bool inc_xbndry) {
   return DDZ(f, CELL_DEFAULT, DIFF_DEFAULT, inc_xbndry ? RGN_NOY : RGN_NOBNDRY);
 }
 
+"""
 
-#endif // __DERIVS_H__
-""")
+end_of_file="#endif // __DERIVS_H__"
+
+if __name__ == "__main__":
+    print(file_header)
+
+    # Generate normal derivatives for Field3D and Field2D for the
+    # various directions
+    for fun in funcs:
+        if fun.name == 'DDd':
+            print("////////// FIRST DERIVATIVES //////////")
+        elif fun.name == 'D2Dd2':
+            print("////////// SECOND DERIVATIVES //////////")
+        elif fun.name == 'D4Dd4':
+            print("////////// FORTH DERIVATIVES //////////")
+        elif fun.name == 'VDDd':
+            print("///////// UPWINDING METHODS /////////////")
+        elif fun.name == 'FDDd':
+            print("///////// FLUX METHODS /////////////")
+        else:
+            print("Unhandeled case")
+            exit(1)
+        for d in ['X', 'Y', 'Z']:
+            for field in ['Field3D', 'Field2D']:
+                # get copy
+                fun.set(d,field).render()
+
+
+    # Generate header file for the Z derivative of Vector 3D
+    first.set('Z',"Vector3D").render()
+
+    # Generate the mixed derivative
+    x='x'
+    y='y'
+    z='z'
+    for DD in [[x,y],[x,z],[y,z]]:
+        for field in ['Field2D', 'Field3D']:
+            cur=second.set('error',field)
+            cur.name="D2D%sD%s"%(DD[0].upper(),DD[1].upper())
+            cur.desc="Calculate mixed partial derivative in %s and %s"%(DD[0],DD[1])
+            cur.latex="\partial^2 / \partial %s \partial %s"%(DD[0],DD[1])
+            cur.render()
+
+    # Generate a case of mixed Field2D and Field3D for Z upwinding
+    # scheeme
+    cur=upwind.set('Z','Field2D')
+    cur.in_sig="const Field3D &v, const Field2D &f"
+    cur.render()
+
+    print(deprecated_methods)
+
+    print(end_of_file)
