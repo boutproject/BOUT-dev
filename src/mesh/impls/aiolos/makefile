@@ -17,7 +17,7 @@ include $(BOUT_TOP)/make.config
 	@python3 common_test.py &> test.log || ( cat test.log ; exit 1 )
 	@python3 test_interp.py &> test.log || ( cat test.log ; exit 1 )
 	@echo "  Generating $@"
-	@./$< > $@.tmp
+	@python3 $< > $@.tmp
 	@clang-format -i $@.tmp || echo "  Formatting failed - do not git commit this file"
 	@mv $@.tmp $@
 
