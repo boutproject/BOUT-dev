@@ -44,7 +44,7 @@ bout++.o: $(BOUT_TOP)/lib/.last.o.file .dummy
 # out-of-date make.config
 # The rest is needed to tell make that .last.o.file will be created
 $(BOUT_TOP)/lib/.last.o.file: .dummy
-	@echo "make.config is out ouf date - run ./configure"
+	@echo "make.config is out of date - run ./configure"
 	@exit 1
 
 # make .libfast a real target - similar to .dummy to avoid that a
