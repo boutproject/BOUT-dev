@@ -90,7 +90,7 @@ class ArkodeSolver : public Solver {
     BoutReal pre_ncalls; // Number of calls to preconditioner
     
     void set_abstol_values(BoutReal* abstolvec_data, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols);
-    void loop_abstol_values_op(int jx, int jy, BoutReal* abstolvec_data, int &p, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols, bool bndry);
+    void loop_abstol_values_op(Ind2D i2d, BoutReal* abstolvec_data, int &p, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols, bool bndry);
 };
 
 #endif // __ARKODE_SOLVER_H__
