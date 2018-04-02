@@ -173,19 +173,19 @@ print("""
 
 
 inline const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool inc_xbndry) {
-  return DDZ(f, outloc, inc_xbndry ? RGN_NOY : RGN_NOBNDRY, method);
+  return DDZ(f, outloc, method, inc_xbndry ? RGN_NOY : RGN_NOBNDRY);
 }
 
 inline const Field3D DDZ(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc, bool inc_xbndry) {
-  return DDZ(f, outloc, inc_xbndry ? RGN_NOY : RGN_NOBNDRY, method);
+  return DDZ(f, outloc, method, inc_xbndry ? RGN_NOY : RGN_NOBNDRY);
 }
 
 inline const Field3D DDZ(const Field3D &f, DIFF_METHOD method, bool inc_xbndry) {
-  return DDZ(f, CELL_DEFAULT, inc_xbndry ? RGN_NOY : RGN_NOBNDRY, method);
+  return DDZ(f, CELL_DEFAULT, method, inc_xbndry ? RGN_NOY : RGN_NOBNDRY);
 }
 
 inline const Field3D DDZ(const Field3D &f, bool inc_xbndry) {
-  return DDZ(f, CELL_DEFAULT, inc_xbndry ? RGN_NOY : RGN_NOBNDRY,DIFF_DEFAULT);
+  return DDZ(f, CELL_DEFAULT, DIFF_DEFAULT, inc_xbndry ? RGN_NOY : RGN_NOBNDRY);
 }
 
 
