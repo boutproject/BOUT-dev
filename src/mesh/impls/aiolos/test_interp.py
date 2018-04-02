@@ -16,4 +16,4 @@ for f in [xx, x * x * x]:
         err = interp - fs[i]
         rel_err = err / np.max(fn)
         assert(rel_err < 1e-10)
-        print(vals)
+        #print(vals)
