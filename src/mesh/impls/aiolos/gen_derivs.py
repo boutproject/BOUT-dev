@@ -32,22 +32,16 @@ from collections import OrderedDict
 # The user calls e.g. `DDX`, which then calls `mesh->indexDDX`.
 # In the AiolosMesh indexDDX checks on whether we are calling a
 # staggered derivative, i.e if we go from a staggered in x direction
-# to cell centre, or from cell centre to staggered in x
-# direction. Or wheter we are going from the same location, in which
+# to cell centre or from cell centre to staggered in x
+# direction or wheter we are going from the same location, in which
 # case to call the non-staggered case.
-# After that we are in indexDDX_{non_,}_stag
+# After that we are in indexDDX_{off,on,norm}
 # Here we check on what method we should be using, e.g. DIFF_C2 or
-# DIFF_C4. In the case of staggered derivatives we need to decide if
-# we are going onto the staggered grid (in x direction) or are coming
-# from a staggered grid (in x direction). If we are going onto the
-# staggered grid, the in-location must be interpolated to CELL_CENTRE
-# and if we are coming from one, the result must be interpolated onto
-# whereever it is requested. If the location is CELL_CENTRE, nothing
-# needs to be done and interp_to returns fast.
-# The next function to be called is  e.g. `indexDDX_on_DIFF_C2` -
+# DIFF_C4.
+# The next function to be called is  e.g. `DDX_C2_stag_x_off` -
 # which makes sure there are enough guard cells, allocates the result
 # field, and passes to the pointer of the fields to
-# `indexDDX_on_DIFF_C2_field3d` which then calculates the derivatives.
+# `DDX_C2_stag_x_Field3D_off` which then calculates the derivatives.
 #
 # While having all the functions makes the call tree more complicated,
 # it makes the function itself much easier, each level does only a
@@ -55,8 +49,15 @@ from collections import OrderedDict
 # they are easier to maintain, as it is not needed to remember every
 # possible combination of in and outfields location, differencing
 # scheemes and so on.
+#
+# To make live easier, a dictionary:
+#  * StencilType: e.g. C2 - and the enum name, DIFF_C2
+#  * StencilName: e.g. DDX_C2
+#  * Stencil: Code+Name+more info about the Stencil
+#  * StencilFunction: e.g. DDX_C2 implementation for Field3D
+#  * DiffFunction: indexDDX
 
-class FuncTableEntry(object):
+class DiffFuncTableEntry(object):
     """Contains the enum-name and the appropiate stencil"""
 
     def __init__(self, name, normal, upwind, flux):
@@ -77,6 +78,12 @@ class FuncTableEntry(object):
             ASSERT(self.func_name == None)
             self.func_name = flux
 
+    def getFullName(self, direction, mode, field):
+        from gen_stencils import stencils
+        for stencil in stencils:
+            if stencil.name == self.func_name:
+                return stencil.getFullName(direction=direction, mode=mode, field=None)
+
     def isStag(self):
         return self.func_name[-4:] == "stag"
 
@@ -88,7 +95,7 @@ class FuncTableEntry(object):
                     self.isUpwind, self.isFlux, self.parent])
 
 
-class FuncTable(object):
+class DiffFuncTable(object):
     """Contains all entries for a given type, e.g. UpwindStagTable
 
     funcname is the template for the C++ function, e.g. indexVDD%s
@@ -138,16 +145,13 @@ class FuncTable(object):
                 if current_entry_cleaned[1:4] == ['NULL'] * 3:
                     continue
                 # debug(name,current_entry_name)
-                self.entries.append(FuncTableEntry(*current_entry_cleaned))
+                self.entries.append(DiffFuncTableEntry(*current_entry_cleaned))
         for entry in self.entries:
             entry.parent = self.name
 
-    def getFullName(self, direction):
+    def getFullName(self, direction, mode):
         fullname = self.funcname % direction.upper()
-        if self.isStag():
-            fullname += "_stag"
-        else:
-            fullname += "_non_stag"
+        fullname += "_" + mode
         return fullname
 
     def isFlux(self):
@@ -217,7 +221,6 @@ class FuncToGen(object):
             raise
         self.sten = sten
 
-print(license())
 
 ########################################################################
 #  Parse the table that contains the list of what function belongs to
@@ -244,104 +247,66 @@ with open("tables_cleaned.cxx", "r") as f:
                     if name == "DiffNameTable":
                         descriptions = parse_descriptions(current_table)
                     else:
-                        func_tables[name] = FuncTable(name, current_table)
+                        func_tables[name] = DiffFuncTable(name, current_table)
                 current_table = ""
 
 
 def generate_index_functions_stag(func_tables):
-    funcs_to_gen = UniqueList()
     for name, table in func_tables.items():
+        if table.isStag():
+            modes = ['on', 'off']
+        else:
+            modes = ['norm']
         for field in fields:
             for d in dirs[field]:
-                warn()
-                myname = table.getFullName(d)
-                inp = "("
-                if table.isFlow():
-                    inp += "const " + field + " &v, "
-                inp += "const " + field + " &f, "
-                print("const", field, myname, inp,
-                      "CELL_LOC outloc, DIFF_METHOD method) {")
-                print("  if (method == DIFF_DEFAULT){")
-                print("    method = default_stencil[AIOLOS_%s][%d];" %
-                      # drop 'Table' or 'DerivTable' at end of string
-                      ((name[:-5] if table.isFlow() else name[:-10]), dir_number[d]))
-                print("  }")
-                print("  if (outloc == CELL_DEFAULT){")
-                print("    outloc = f.getLocation();")
-                print("  }")
-                print("  switch (method) {")
-                for method_full in table.entries:
-                    method = method_full.name
-                    # debug(method)
-                    print("  case", method + ":")
+                for mode in modes:
+                    warn()
+                    myname = table.getFullName(direction=d, mode=mode)
+                    inp = "("
                     if table.isFlow():
-                        f = "v,f"
-                    else:
-                        f = "f"
-                    if table.isFlow():
-                        # f.getLocation() == outloc guaranteed
-                        if table.isStag():
-                            print(
-                                "    if (outloc == CELL_%sLOW) {" % d.upper())
-                            print("      return %s_on_%s(interp_to(v,CELL_CENTRE),f);" %
-                                  (table.funcname % d.upper(), method))
-                            print("    } else {")  # inloc must be CELL_%sLOW
-                            print("      return interp_to(%s_off_%s(v,interp_to(f,CELL_CENTRE)),outloc);" %
-                                  (table.funcname % d.upper(), method))
-                            print("    }")
-                            stags = ['on', 'off']
+                        inp += "const " + field + " &v, "
+                    inp += "const " + field + " &f, "
+                    print("const", field, myname, inp,
+                          "CELL_LOC outloc, DIFF_METHOD method) {")
+                    print("  if (method == DIFF_DEFAULT){")
+                    print("    method = default_stencil[AIOLOS_%s][%d];" %
+                          # drop 'Table' or 'DerivTable' at end of string
+                          ((name[:-5] if table.isFlow() else name[:-10]), dir_number[d]))
+                    print("  }")
+                    print("  switch (method) {")
+                    for method_full in table.entries:
+                        method = method_full.name
+                        # debug(method)
+                        print("  case", method + ":")
+                        if table.isFlow():
+                            f = "v,f"
                         else:
-                            print(
-                                "    if (v.getLocation() == f.getLocation()) {")
-                            print("      return interp_to(%s_norm_%s(v,f),outloc);" % (
-                                table.funcname % d.upper(), method))
-                            print("    } else {")
-                            print("      return interp_to(%s_norm_%s(interp_to(v,CELL_CENTRE),interp_to(f,CELL_CENTRE)),outloc);" % (
-                                table.funcname % d.upper(), method))
-                            print("    }")
-                            stags = ['norm']
-                    else:  # not Flow
-                        if table.isStag():
-                            print("    if (outloc == CELL_%sLOW){" % d.upper())
-                            print("      return %s_on_%s(interp_to(%s,CELL_CENTRE));" % (
-                                table.funcname % d.upper(), method, f))
-                            print("    } else {")  # inloc must be CELL_%sLOW
-                            print("      return interp_to(%s_off_%s(%s),outloc);" %
-                                  (table.funcname % d.upper(), method, f))
-                            print("    }")
-                            stags = ['on', 'off']
-                        else:
-                            print("    return interp_to(%s_norm_%s(%s),outloc);" % (
-                                table.funcname % d.upper(), method, f))
-                            stags = ['norm']
-                    for mstag in stags:
-                        funcs_to_gen.append(FuncToGen("%s_%s_%s" % (
-                            table.funcname % d.upper(), mstag, method),
-                            field, d, mstag, method_full))
-                    print("    break;")
-                print("  default:")
-                print("    throw BoutException(\"%s AiolosMesh::" %
-                      field + myname, 'unknown method %d.\\n"')
-                print('      "Supported methods are"')
-                for method in table.entries:
-                    print('      " * ' + method.name + '"')
-                print('      "\\nNote FFTs are not (yet) supported.",method);')
-                print("  }; // end switch")
-                print("}")
-                print()
-    return funcs_to_gen
+                            f = "f"
+                        print("    return %s(%s);" % (
+                            method_full.getFullName(direction=d, mode=mode, field=field), f))
+
+                        print("    break;")
+                    print("  default:")
+                    print("    throw BoutException(\"%s AiolosMesh::" %
+                          field + myname, 'unknown method %d.\\n"')
+                    print('      "Supported methods are"')
+                    for method in table.entries:
+                        print('      " * ' + method.name + '"')
+                    print('      "\\nNote FFTs are not (yet) supported.",method);')
+                    print("  }; // end switch")
+                    print("}")
+                    print()
 
 # Returns the headers
 
 
-def generate_index_functions():
+def generate_index_functions(header_only=False):
     headers = ""
     for func_ in ["indexDD%s", "indexD2D%s2", "indexVDD%s", "indexFDD%s"]:
         flow = func_.find("indexD") < 0
         for field in fields:
             for d in dirs[field]:
                 func = func_ % d.upper()
-                warn()
                 sig = "("
                 if flow:
                     sig += "const " + field + " &v,"
@@ -349,11 +314,15 @@ def generate_index_functions():
                 sig += ", CELL_LOC outloc, DIFF_METHOD method"
                 sig += ",REGION ignored"
                 sig += ")"
-                function_header = "  virtual const " + field + " " + func
+                function_header  = warn(False)
+                function_header += "  virtual const " + field + " " + func
                 function_header += sig
                 function_header += " override;\n"
                 headers += function_header
-                function_header = "const " + field + " AiolosMesh::" + func
+                if header_only:
+                    continue
+                function_header  = warn(False)
+                function_header += "const " + field + " AiolosMesh::" + func
                 function_header += sig
                 if flow:
                     f = "v, f"
@@ -366,165 +335,155 @@ def generate_index_functions():
                 print("  if (outloc == CELL_DEFAULT) {")
                 print("    outloc=f.getLocation();")
                 print("  }")
-                if flow:
-                    print("  if (outloc != f.getLocation()) {")
-                    print('    throw BoutException("AiolosMesh::index?DDX: '
-                          'Unhandled case for shifting.\\n'
-                          'f.getLocation()==outloc is required!");')
-                    print("  }")
                 print("  if (this->LocalN%s == 1) {" % d)
                 print("    %s result{0.,this};" % field)
                 print("    result.setLocation(outloc);")
                 print("    return result;")
                 print("  }")
                 if flow:
-                    print("  if ((outloc == CELL_%sLOW) != (v.getLocation() == CELL_%sLOW)){" %
-                          (d.upper(), d.upper()))
+                    print("  if (outloc != f.getLocation()) {")
+                    print('    throw BoutException("AiolosMesh::index?DDX: '
+                          'Unhandled case for shifting.\\n'
+                          'f.getLocation()==outloc is required!");')
+                    print("  }")
+                if flow:
+                    checkField = 'v'
                 else:
-                    print("  if ((outloc == CELL_%sLOW) != (f.getLocation() == CELL_%sLOW)){" %
-                          (d.upper(), d.upper()))
-                print("    // we are going onto a staggered grid or coming from one")
-                print("    return", func + "_stag(" +
+                    checkField = 'f'
+                print("  if ((outloc == CELL_%sLOW) && (%s.getLocation() != CELL_%sLOW)){" %
+                      (d.upper(), checkField, d.upper()))
+                print("    // we are going onto a staggered grid")
+                print("    ASSERT1(%s.getLocation() == CELL_CENTRE);" %
+                      checkField)
+                print("    return ", func + "_on(" +
+                      f + ",outloc,method);")
+                print("  } else if ((outloc != CELL_%sLOW) && (%s.getLocation() == CELL_%sLOW)){" %
+                      (d.upper(), checkField, d.upper()))
+                print("    // we are coming from a staggered grid")
+                print("    ASSERT1(outloc == CELL_CENTRE);")
+                print("    return ", func + "_off(" +
                       f + ",outloc,method);")
                 print("  } else {")
-                print("    return", func + "_non_stag(" +
+                print("    ASSERT1(outloc == %s.getLocation());" % checkField)
+                print("    return", func + "_norm(" +
                       f + ",outloc,method);")
                 print("  }")
                 print("}")
                 print()
+
     return headers
-if __name__ == '__main__':
-    funcs_to_gen = generate_index_functions_stag(func_tables)
-    headers = generate_index_functions()
-    with open("generated_header.hxx", "w") as f:
-        f.write(license())
-        f.write(headers)
 
-    guards_ = []
-    sys.stdout = open("generated_stencils.cxx", "w")
-    print(license())
-    import gen_stencils
-    # Should we generate using the raw pointers or field operators?
-    gen_stencils.use_field_operator=False
-    # Should the numbers be printed as fraction or as floating numbers?
-    gen_stencils.useFloat=False
-    # Should the fractions be casted to floats to force compile time evaluation?
-    gen_stencils.staticCastFloat=True
-    gen_stencils.print_interp_to_code()
-    # Same as above for the functions - but does currently not work with field operator
-    gen_stencils.use_field_operator=False
-    gen_stencils.gen_functions_normal(funcs_to_gen)
-    sys.stdout.flush()
 
-sys.stdout = open("generated_init.cxx", "w")
-print(license())
+def print_init_header():
+    warn()
+    print('extern DIFF_METHOD default_stencil[8][3];')
+    with braces("enum AIOLOS_DIFF_TYPE ", end=";"):
+        count = 0
+        for i in ['First', 'Second', 'Upwind', 'Flux']:
+            for stag in ['', 'Stag']:
+                print("AIOLOS_%s%s=%d, " % (i, stag, count))
+                count += 1
 
-# for d in dirs['Field3D']:
-warn()
-print('DIFF_METHOD default_stencil[8][3];')
-with braces("enum AIOLOS_DIFF_TYPE ", end=";"):
-    count = 0
+
+def print_init():
+
+    warn()
+    print('DIFF_METHOD default_stencil[8][3];')
+    print("""
+    struct available_stencils {
+    const char * key;
+    const char * desc;
+    DIFF_METHOD method;
+    };
+
+    struct stencils_to_check {
+    int id;
+    const char * desc;
+    const char * default_;
+    std::vector<available_stencils> available;
+    const char * error;
+    std::vector<const char *> option_names;
+    };
+
+    void AiolosMesh::derivs_init(Options * option) {
+      std::string name;
+      Options * dirOption;
+      Options * defOption = option->getSection("diff");
+      for (int di : {0,1,2}){
+        const char *dds, *d_str;
+        bool found;
+    """)
+
+    for d in dirs['Field3D']:
+        with braces("  if (di == %d)" % dir_number[d]):
+            print('    dds = "dd%s";' % d)
+            print('    d_str = "%s";' % d)
+
+    print('  output_info.write("\\tSetting derivatives for direction %s:\\n",d_str);')
+    print('  dirOption = option->getSection(dds);')
+    print()
+    print("std::vector<stencils_to_check> diff_types {")
+    counter = 0
     for i in ['First', 'Second', 'Upwind', 'Flux']:
-        for stag in ['', 'Stag']:
-            print("AIOLOS_%s%s=%d, " % (i, stag, count))
-            count += 1
-
-warn()
-print("""
-struct available_stencils {
-const char * key;
-const char * desc;
-DIFF_METHOD method;
-};
-
-struct stencils_to_check {
-int id;
-const char * desc;
-const char * default_;
-std::vector<available_stencils> available;
-const char * error;
-std::vector<const char *> option_names;
-};
-
-void AiolosMesh::derivs_init(Options * option) {
-  std::string name;
-  Options * dirOption;
-  Options * defOption = option->getSection("diff");
-  for (int di : {0,1,2}){
-    const char *dds, *d_str;
-    bool found;
-""")
-
-for d in dirs['Field3D']:
-    with braces("  if (di == %d)" % dir_number[d]):
-        print('    dds = "dd%s";' % d)
-        print('    d_str = "%s";' % d)
-
-print('  output_info.write("\\tSetting derivatives for direction %s:\\n",d_str);')
-print('  dirOption = option->getSection(dds);')
-print()
-print("std::vector<stencils_to_check> diff_types {")
-counter = 0
-for i in ['First', 'Second', 'Upwind', 'Flux']:
-    if i in ['First', 'Second']:
-        table = "DerivTable"
-    else:
-        table = "Table"
-    for stag in ['', 'Stag']:
-        print("// " + i + stag)
-        if i == 'Flux' or i == 'Upwind':
-            default_diff = "U1"
+        if i in ['First', 'Second']:
+            table = "DerivTable"
         else:
-            default_diff = "C2"
-        print("{// id")
-        print("%d," % counter)
-        print("// desc")
-        print('"%s",' % (i + stag))
-        counter += 1
-        print("// default")
-        print('"%s",' % default_diff)
-        print("// list of all available stencils")
-        options = ""
-        with braces():
-            for method in func_tables[i + stag + table].entries:
-                for method_, key, description in descriptions:
-                    if method.name == method_:
-                        print('{"%s","%s",%s},' %
-                              (key, description, method.name))
-                        options += "\\n * %s: %s" % (key, description)
-        print(",")
-        print("// string for error")
-        print('"%s",' % options)
-        print("// list of names to check")
-        names = [i + stag, i, "all"] if stag else [i, "all"]
-        print("{" + ", ".join(['"%s"' % s for s in names]) + "},")
-        print("},")
-print("};")
-# Do some init
-warn()
-with braces("  for(const auto & diff_type: diff_types)"):
-    print('  output_debug.write("Setting derivative for %s and %s",dds,diff_type.desc);')
-    print('    name=diff_type.default_;')
-    print('    found=false;')
-    with braces("for (auto opt : {dirOption , defOption})"):
-        with braces("for (const auto & strf : diff_type.option_names)"):
-            with braces('if (opt->isSet(strf))'):
-                print('    opt->get(strf,name,diff_type.default_);')
-                print("   found=true;")
-                print("   break;")
-        print("  if (found) break;")
-    print('    found=false;')
-    with braces("for (const auto & stencil: diff_type.available)"):
-        with braces("if (!found)"):
-            with braces('if (strcasecmp(name.c_str(),stencil.key)==0)'):
-                print(
-                    '    default_stencil[diff_type.id][di] = stencil.method;')
-                print(
-                    '    output_info.write("\\t%15s : %s\\n",stencil.key,stencil.desc);')
-                print('    found=true;')
+            table = "Table"
+        for stag in ['', 'Stag']:
+            print("// " + i + stag)
+            if i == 'Flux' or i == 'Upwind':
+                default_diff = "U1"
+            else:
+                default_diff = "C2"
+            print("{// id")
+            print("%d," % counter)
+            print("// desc")
+            print('"%s",' % (i + stag))
+            counter += 1
+            print("// default")
+            print('"%s",' % default_diff)
+            print("// list of all available stencils")
+            options = ""
+            with braces():
+                for method in func_tables[i + stag + table].entries:
+                    for method_, key, description in descriptions:
+                        if method.name == method_:
+                            print('{"%s","%s",%s},' %
+                                  (key, description, method.name))
+                            options += "\\n * %s: %s" % (key, description)
+            print(",")
+            print("// string for error")
+            print('"%s",' % options)
+            print("// list of names to check")
+            names = [i + stag, i, "all"] if stag else [i, "all"]
+            print("{" + ", ".join(['"%s"' % s for s in names]) + "},")
+            print("},")
+    print("};")
+    # Do some init
+    warn()
+    with braces("  for(const auto & diff_type: diff_types)"):
+        print(
+            '  output_debug.write("Setting derivative for %s and %s",dds,diff_type.desc);')
+        print('    name=diff_type.default_;')
+        print('    found=false;')
+        with braces("for (auto opt : {dirOption , defOption})"):
+            with braces("for (const auto & strf : diff_type.option_names)"):
+                with braces('if (opt->isSet(strf))'):
+                    print('    opt->get(strf,name,diff_type.default_);')
+                    print("   found=true;")
+                    print("   break;")
+            print("  if (found) break;")
+        print('    found=false;')
+        with braces("for (const auto & stencil: diff_type.available)"):
+            with braces("if (!found)"):
+                with braces('if (strcasecmp(name.c_str(),stencil.key)==0)'):
+                    print(
+                        '    default_stencil[diff_type.id][di] = stencil.method;')
+                    print(
+                        '    output_info.write("\\t%15s : %s\\n",stencil.key,stencil.desc);')
+                    print('    found=true;')
 
-    with braces("if (!found)"):
-        print('    throw BoutException("Dont\'t know what diff method to use for %s (direction %s, tried to use %s)!\\nOptions are:%s",diff_type.desc,d_str,name.c_str(),diff_type.error);')
-print("}")
-print("}")
-sys.stdout.flush()
+        with braces("if (!found)"):
+            print('    throw BoutException("Dont\'t know what diff method to use for %s (direction %s, tried to use %s)!\\nOptions are:%s",diff_type.desc,d_str,name.c_str(),diff_type.error);')
+    print("}")
+    print("}")

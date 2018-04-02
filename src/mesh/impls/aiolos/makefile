@@ -1,16 +1,38 @@
 
 BOUT_TOP = ../../../..
 
-SOURCEC         = aiolosmesh.cxx
-SOURCEH         = aiolosmesh.hxx
+SOURCEC         = aiolosmesh.cxx aiolos_interp_to.cxx aiolos_stencils.cxx \
+		  aiolos_init.cxx aiolos_derivs.cxx
+SOURCEH         = aiolosmesh.hxx aiolos_header.hxx aiolos_init.hxx aiolos_stencils.hxx
+
 TARGET          = lib
 
 include $(BOUT_TOP)/make.config
 
-generated=generated_header.hxx generated_derivs.cxx generated_stencils.cxx generated_init.cxx
-#lib: makefile $(BOUT_TOP)/make.config $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ) generated_stencils.cxx
 
-aiolosmesh.o: $(generated)
+
+%xx: %xx.in.py gen_derivs.py \
+               tables_cleaned.cxx gen_stencils.py stencils_cleaned.cxx \
+               common.py
+	@python3 common_test.py &> test.log || ( cat test.log ; exit 1 )
+	@python3 test_interp.py &> test.log || ( cat test.log ; exit 1 )
+	@echo "  Generating $@"
+	@./$< > $@.tmp
+	@clang-format -i $@.tmp || echo "  Formatting failed - do not git commit this file"
+	@mv $@.tmp $@
+
+# Explicitly list cxx files, to prevent make from removing
+# intermediate targets.
+
+aiolos_init.o: aiolos_init.hxx aiolos_init.cxx
+
+aiolos_derivs.o: aiolos_init.hxx aiolos_stencils.hxx aiolos_derivs.cxx
+
+aiolosmesh.o: aiolos_header.hxx aiolosmesh.hxx
+
+aiolos_interp_to.o: aiolos_interp_to.cxx
+
+aiolos_stencils.o: aiolos_stencils.cxx
 
 tables_cleaned.cxx:../../index_derivs.cxx
 	@grep ' * Lookup tables of functions. Map between names, codes and functions' -B 1 -A 10000 $< |\
@@ -26,36 +48,9 @@ stencils_cleaned.cxx:../../index_derivs.cxx
 	gcc -E - > $@
 	@echo "  Creating $@"
 
-.generated.stamp:gen_derivs.py \
-		tables_cleaned.cxx gen_stencils.py stencils_cleaned.cxx \
-		common.py
-	@echo "  Generating code for aiolos mesh"
-# Testing scripts
-	@python3 common_test.py &> test.log || ( cat test.log ; exit 1 )
-	@python3 test_interp.py &> test.log || ( cat test.log ; exit 1 )
-# Generating
-	@python3 $< > generated_derivs.cxx || ( rm -f $@ ; exit 1)
-	@(clang-format -i $(generated) || astyle -n $(generated) ) || exit 0 # ignore failure
-	@touch .generated.stamp
-
-# Solution from automake
-# https://www.gnu.org/savannah-checkouts/gnu/automake/manual/html_node/Multiple-Outputs.html
-$(generated): .generated.stamp
-## Recover from the removal of $@
-	@ if test -f $@; then :; else \
-	  trap 'rm -rf generated.lock .generated.stamp' 1 2 13 15; \
-	  if mkdir generated.lock 2>/dev/null; then \
-	    rm -f .generated.stamp; \
-	    $(MAKE) .generated.stamp; \
-	    result=$$?; rm -rf generated.lock; exit $$result; \
-	  else \
-	    while test -d generated.lock; do sleep 1; done; \
-	    test -f .generated.stamp; \
-	  fi; \
-	fi
 
 clean:: clean-generated
 
 clean-generated:
-	@rm -f $(generated) generated.stamp stencils_cleaned.cxx tables_cleaned.cxx *.pyc
-	@rm -rf __pycache__ generated.lock
+	@rm -f stencils_cleaned.cxx tables_cleaned.cxx *.pyc aiolos_*xx
+	@rm -rf __pycache__

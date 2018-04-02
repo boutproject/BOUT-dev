@@ -55,7 +55,7 @@ public:
     deriv_func off;
   };
 
-#include "generated_header.hxx"
+#include "aiolos_header.hxx"
 
   // virtual const Field3D interp_to(const Field3D &var, CELL_LOC loc) const;
 
@@ -71,11 +71,10 @@ public:
     return f;
   }
 
-  virtual BoutReal GlobalY(int y) const;
-  virtual void derivs_init(Options *option);
+  virtual void derivs_init(Options *option) override;
 
 // to check in debugger we have the right mesh
-#ifdef CHECK
+#if CHECK > 1
   bool isAiolos = true;
 #endif
 private:

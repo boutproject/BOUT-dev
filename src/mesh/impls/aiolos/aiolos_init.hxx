@@ -1,15 +1,6 @@
-/**************************************************************************
- * Implementation of the Mesh class, handling input files compatible with
- * BOUT++.
- *
- * Changelog
- * ---------
- *
- * 2016-09 David Schwörer
- *           based on the BoutMesh
- *
- **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+/********************************************************
+ * BOUT++ Library - Write fluid simulations in curviilinear geometry
+ * Copyright (C) 2016, 2017, 2018 David Schwörer
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
  *
@@ -27,15 +18,21 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
- *
- **************************************************************************/
+ *****************************************************************/
+
+#pragma once
 
 #include "aiolosmesh.hxx"
 
-#include <output.hxx>
-
-AiolosMesh::AiolosMesh(GridDataSource *s, Options *options) : BoutMesh(s, options) {
-  output_info.write("  Using Aiolos Mesh!\n");
-  derivs_init(options);
-}
-AiolosMesh::~AiolosMesh() {}
+// This file is auto-generated - do not edit!
+extern DIFF_METHOD default_stencil[8][3];
+enum AIOLOS_DIFF_TYPE {
+  AIOLOS_First = 0,
+  AIOLOS_FirstStag = 1,
+  AIOLOS_Second = 2,
+  AIOLOS_SecondStag = 3,
+  AIOLOS_Upwind = 4,
+  AIOLOS_UpwindStag = 5,
+  AIOLOS_Flux = 6,
+  AIOLOS_FluxStag = 7,
+};

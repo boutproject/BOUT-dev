@@ -20,20 +20,13 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************/
 
-// This file is auto-generated - do not edit!
-DIFF_METHOD default_stencil[8][3];
-enum AIOLOS_DIFF_TYPE {
-  AIOLOS_First = 0,
-  AIOLOS_FirstStag = 1,
-  AIOLOS_Second = 2,
-  AIOLOS_SecondStag = 3,
-  AIOLOS_Upwind = 4,
-  AIOLOS_UpwindStag = 5,
-  AIOLOS_Flux = 6,
-  AIOLOS_FluxStag = 7,
-};
+#include "aiolos_init.hxx"
+#include "aiolosmesh.hxx"
+#include <output.hxx>
+#include <strings.h>
 
 // This file is auto-generated - do not edit!
+DIFF_METHOD default_stencil[8][3];
 
 struct available_stencils {
   const char *key;

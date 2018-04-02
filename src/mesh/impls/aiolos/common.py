@@ -23,8 +23,13 @@ from __future__ import print_function
 
 # Define some general constants, functions, ...
 
-def warn():
-    print("\n// This file is auto-generated - do not edit!")
+def warn(doPrint=True):
+    msg="\n// This file is auto-generated - do not edit!"
+    if doPrint:
+        print(msg)
+    else:
+        return msg+"\n"
+
 
 def license():
     return """/********************************************************
