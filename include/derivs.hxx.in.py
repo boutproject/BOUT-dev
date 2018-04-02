@@ -55,7 +55,7 @@ class Function(object):
             self.desc=desc
             self.latex=latex
         else:
-            # Copy init
+            # Copy constructor
             self.name=name.name
             self.flux=name.flux
             self.desc=name.desc
@@ -86,6 +86,10 @@ class Function(object):
         global function_template
         print(function_template.render(**args))
 
+env = jinja2.Environment(loader=jinja2.FileSystemLoader('.'),
+                         trim_blocks=True)
+
+function_template = env.get_template("derivs.hxx.in.jinja")
 
 first=Function('DDd',False,
                 desc="Calculate first partial derivative in $d",
