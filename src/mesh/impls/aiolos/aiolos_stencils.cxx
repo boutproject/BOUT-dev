@@ -4801,9 +4801,9 @@ Field2D FDDX_C4_y_norm(const Field2D &v_in, const Field2D &f_in) {
   return result;
 }
 
-static void DDX_C2_stag_x_Field3D_on(BoutReal *__restrict__ result_ptr,
-                                     const BoutReal *__restrict__ in_ptr,
-                                     Mesh *localmesh) {
+static void DDX_C2_stag_x_Field3D_CtoL(BoutReal *__restrict__ result_ptr,
+                                       const BoutReal *__restrict__ in_ptr,
+                                       Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -4825,13 +4825,13 @@ static void DDX_C2_stag_x_Field3D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D DDX_C2_stag_x_on(const Field3D &in) {
+Field3D DDX_C2_stag_x_CtoL(const Field3D &in) {
   Mesh *localmesh = in.getMesh();
-  output_debug.write("Using method DDX_C2_stag_x_Field3D_on!\n");
+  output_debug.write("Using method DDX_C2_stag_x_Field3D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNx < 2) {
-    throw BoutException("Field3D AiolosMesh::DDX_C2_stag_x_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field3D AiolosMesh::DDX_C2_stag_x_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field3D result(localmesh);
@@ -4839,15 +4839,15 @@ Field3D DDX_C2_stag_x_on(const Field3D &in) {
   BoutReal *__restrict__ result_ptr = &result(0, 0, 0);
   checkData(in);
   const BoutReal *__restrict__ in_ptr = &in(0, 0, 0);
-  DDX_C2_stag_x_Field3D_on(result_ptr, in_ptr, localmesh);
+  DDX_C2_stag_x_Field3D_CtoL(result_ptr, in_ptr, localmesh);
   result.setLocation(CELL_XLOW);
   checkData(result);
   return result;
 }
 
-static void DDX_C2_stag_y_Field3D_on(BoutReal *__restrict__ result_ptr,
-                                     const BoutReal *__restrict__ in_ptr,
-                                     Mesh *localmesh) {
+static void DDX_C2_stag_y_Field3D_CtoL(BoutReal *__restrict__ result_ptr,
+                                       const BoutReal *__restrict__ in_ptr,
+                                       Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -4869,13 +4869,13 @@ static void DDX_C2_stag_y_Field3D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D DDX_C2_stag_y_on(const Field3D &in) {
+Field3D DDX_C2_stag_y_CtoL(const Field3D &in) {
   Mesh *localmesh = in.getMesh();
-  output_debug.write("Using method DDX_C2_stag_y_Field3D_on!\n");
+  output_debug.write("Using method DDX_C2_stag_y_Field3D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNy < 2) {
-    throw BoutException("Field3D AiolosMesh::DDX_C2_stag_y_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field3D AiolosMesh::DDX_C2_stag_y_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field3D result(localmesh);
@@ -4883,15 +4883,15 @@ Field3D DDX_C2_stag_y_on(const Field3D &in) {
   BoutReal *__restrict__ result_ptr = &result(0, 0, 0);
   checkData(in);
   const BoutReal *__restrict__ in_ptr = &in(0, 0, 0);
-  DDX_C2_stag_y_Field3D_on(result_ptr, in_ptr, localmesh);
+  DDX_C2_stag_y_Field3D_CtoL(result_ptr, in_ptr, localmesh);
   result.setLocation(CELL_YLOW);
   checkData(result);
   return result;
 }
 
-static void DDX_C2_stag_z_Field3D_on(BoutReal *__restrict__ result_ptr,
-                                     const BoutReal *__restrict__ in_ptr,
-                                     Mesh *localmesh) {
+static void DDX_C2_stag_z_Field3D_CtoL(BoutReal *__restrict__ result_ptr,
+                                       const BoutReal *__restrict__ in_ptr,
+                                       Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -4926,13 +4926,13 @@ static void DDX_C2_stag_z_Field3D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D DDX_C2_stag_z_on(const Field3D &in) {
+Field3D DDX_C2_stag_z_CtoL(const Field3D &in) {
   Mesh *localmesh = in.getMesh();
-  output_debug.write("Using method DDX_C2_stag_z_Field3D_on!\n");
+  output_debug.write("Using method DDX_C2_stag_z_Field3D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNz < 2) {
-    throw BoutException("Field3D AiolosMesh::DDX_C2_stag_z_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field3D AiolosMesh::DDX_C2_stag_z_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field3D result(localmesh);
@@ -4940,15 +4940,15 @@ Field3D DDX_C2_stag_z_on(const Field3D &in) {
   BoutReal *__restrict__ result_ptr = &result(0, 0, 0);
   checkData(in);
   const BoutReal *__restrict__ in_ptr = &in(0, 0, 0);
-  DDX_C2_stag_z_Field3D_on(result_ptr, in_ptr, localmesh);
+  DDX_C2_stag_z_Field3D_CtoL(result_ptr, in_ptr, localmesh);
   result.setLocation(CELL_ZLOW);
   checkData(result);
   return result;
 }
 
-static void DDX_C2_stag_x_Field2D_on(BoutReal *__restrict__ result_ptr,
-                                     const BoutReal *__restrict__ in_ptr,
-                                     Mesh *localmesh) {
+static void DDX_C2_stag_x_Field2D_CtoL(BoutReal *__restrict__ result_ptr,
+                                       const BoutReal *__restrict__ in_ptr,
+                                       Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
 #if CHECK > 0
@@ -4966,13 +4966,13 @@ static void DDX_C2_stag_x_Field2D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field2D DDX_C2_stag_x_on(const Field2D &in) {
+Field2D DDX_C2_stag_x_CtoL(const Field2D &in) {
   Mesh *localmesh = in.getMesh();
-  output_debug.write("Using method DDX_C2_stag_x_Field2D_on!\n");
+  output_debug.write("Using method DDX_C2_stag_x_Field2D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNx < 2) {
-    throw BoutException("Field2D AiolosMesh::DDX_C2_stag_x_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field2D AiolosMesh::DDX_C2_stag_x_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field2D result(localmesh);
@@ -4980,15 +4980,15 @@ Field2D DDX_C2_stag_x_on(const Field2D &in) {
   BoutReal *__restrict__ result_ptr = &result(0, 0);
   checkData(in);
   const BoutReal *__restrict__ in_ptr = &in(0, 0);
-  DDX_C2_stag_x_Field2D_on(result_ptr, in_ptr, localmesh);
+  DDX_C2_stag_x_Field2D_CtoL(result_ptr, in_ptr, localmesh);
   result.setLocation(CELL_XLOW);
   checkData(result);
   return result;
 }
 
-static void DDX_C2_stag_y_Field2D_on(BoutReal *__restrict__ result_ptr,
-                                     const BoutReal *__restrict__ in_ptr,
-                                     Mesh *localmesh) {
+static void DDX_C2_stag_y_Field2D_CtoL(BoutReal *__restrict__ result_ptr,
+                                       const BoutReal *__restrict__ in_ptr,
+                                       Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
 #if CHECK > 0
@@ -5006,13 +5006,13 @@ static void DDX_C2_stag_y_Field2D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field2D DDX_C2_stag_y_on(const Field2D &in) {
+Field2D DDX_C2_stag_y_CtoL(const Field2D &in) {
   Mesh *localmesh = in.getMesh();
-  output_debug.write("Using method DDX_C2_stag_y_Field2D_on!\n");
+  output_debug.write("Using method DDX_C2_stag_y_Field2D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNy < 2) {
-    throw BoutException("Field2D AiolosMesh::DDX_C2_stag_y_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field2D AiolosMesh::DDX_C2_stag_y_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field2D result(localmesh);
@@ -5020,15 +5020,15 @@ Field2D DDX_C2_stag_y_on(const Field2D &in) {
   BoutReal *__restrict__ result_ptr = &result(0, 0);
   checkData(in);
   const BoutReal *__restrict__ in_ptr = &in(0, 0);
-  DDX_C2_stag_y_Field2D_on(result_ptr, in_ptr, localmesh);
+  DDX_C2_stag_y_Field2D_CtoL(result_ptr, in_ptr, localmesh);
   result.setLocation(CELL_YLOW);
   checkData(result);
   return result;
 }
 
-static void DDX_C2_stag_x_Field3D_off(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ in_ptr,
-                                      Mesh *localmesh) {
+static void DDX_C2_stag_x_Field3D_LtoC(BoutReal *__restrict__ result_ptr,
+                                       const BoutReal *__restrict__ in_ptr,
+                                       Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -5050,13 +5050,13 @@ static void DDX_C2_stag_x_Field3D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D DDX_C2_stag_x_off(const Field3D &in) {
+Field3D DDX_C2_stag_x_LtoC(const Field3D &in) {
   Mesh *localmesh = in.getMesh();
-  output_debug.write("Using method DDX_C2_stag_x_Field3D_off!\n");
+  output_debug.write("Using method DDX_C2_stag_x_Field3D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNx < 2) {
-    throw BoutException("Field3D AiolosMesh::DDX_C2_stag_x_off - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field3D AiolosMesh::DDX_C2_stag_x_LtoC - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field3D result(localmesh);
@@ -5064,15 +5064,15 @@ Field3D DDX_C2_stag_x_off(const Field3D &in) {
   BoutReal *__restrict__ result_ptr = &result(0, 0, 0);
   checkData(in);
   const BoutReal *__restrict__ in_ptr = &in(0, 0, 0);
-  DDX_C2_stag_x_Field3D_off(result_ptr, in_ptr, localmesh);
+  DDX_C2_stag_x_Field3D_LtoC(result_ptr, in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void DDX_C2_stag_y_Field3D_off(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ in_ptr,
-                                      Mesh *localmesh) {
+static void DDX_C2_stag_y_Field3D_LtoC(BoutReal *__restrict__ result_ptr,
+                                       const BoutReal *__restrict__ in_ptr,
+                                       Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -5094,13 +5094,13 @@ static void DDX_C2_stag_y_Field3D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D DDX_C2_stag_y_off(const Field3D &in) {
+Field3D DDX_C2_stag_y_LtoC(const Field3D &in) {
   Mesh *localmesh = in.getMesh();
-  output_debug.write("Using method DDX_C2_stag_y_Field3D_off!\n");
+  output_debug.write("Using method DDX_C2_stag_y_Field3D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNy < 2) {
-    throw BoutException("Field3D AiolosMesh::DDX_C2_stag_y_off - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field3D AiolosMesh::DDX_C2_stag_y_LtoC - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field3D result(localmesh);
@@ -5108,15 +5108,15 @@ Field3D DDX_C2_stag_y_off(const Field3D &in) {
   BoutReal *__restrict__ result_ptr = &result(0, 0, 0);
   checkData(in);
   const BoutReal *__restrict__ in_ptr = &in(0, 0, 0);
-  DDX_C2_stag_y_Field3D_off(result_ptr, in_ptr, localmesh);
+  DDX_C2_stag_y_Field3D_LtoC(result_ptr, in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void DDX_C2_stag_z_Field3D_off(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ in_ptr,
-                                      Mesh *localmesh) {
+static void DDX_C2_stag_z_Field3D_LtoC(BoutReal *__restrict__ result_ptr,
+                                       const BoutReal *__restrict__ in_ptr,
+                                       Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -5151,13 +5151,13 @@ static void DDX_C2_stag_z_Field3D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D DDX_C2_stag_z_off(const Field3D &in) {
+Field3D DDX_C2_stag_z_LtoC(const Field3D &in) {
   Mesh *localmesh = in.getMesh();
-  output_debug.write("Using method DDX_C2_stag_z_Field3D_off!\n");
+  output_debug.write("Using method DDX_C2_stag_z_Field3D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNz < 2) {
-    throw BoutException("Field3D AiolosMesh::DDX_C2_stag_z_off - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field3D AiolosMesh::DDX_C2_stag_z_LtoC - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field3D result(localmesh);
@@ -5165,15 +5165,15 @@ Field3D DDX_C2_stag_z_off(const Field3D &in) {
   BoutReal *__restrict__ result_ptr = &result(0, 0, 0);
   checkData(in);
   const BoutReal *__restrict__ in_ptr = &in(0, 0, 0);
-  DDX_C2_stag_z_Field3D_off(result_ptr, in_ptr, localmesh);
+  DDX_C2_stag_z_Field3D_LtoC(result_ptr, in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void DDX_C2_stag_x_Field2D_off(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ in_ptr,
-                                      Mesh *localmesh) {
+static void DDX_C2_stag_x_Field2D_LtoC(BoutReal *__restrict__ result_ptr,
+                                       const BoutReal *__restrict__ in_ptr,
+                                       Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
 #if CHECK > 0
@@ -5191,13 +5191,13 @@ static void DDX_C2_stag_x_Field2D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field2D DDX_C2_stag_x_off(const Field2D &in) {
+Field2D DDX_C2_stag_x_LtoC(const Field2D &in) {
   Mesh *localmesh = in.getMesh();
-  output_debug.write("Using method DDX_C2_stag_x_Field2D_off!\n");
+  output_debug.write("Using method DDX_C2_stag_x_Field2D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNx < 2) {
-    throw BoutException("Field2D AiolosMesh::DDX_C2_stag_x_off - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field2D AiolosMesh::DDX_C2_stag_x_LtoC - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field2D result(localmesh);
@@ -5205,15 +5205,15 @@ Field2D DDX_C2_stag_x_off(const Field2D &in) {
   BoutReal *__restrict__ result_ptr = &result(0, 0);
   checkData(in);
   const BoutReal *__restrict__ in_ptr = &in(0, 0);
-  DDX_C2_stag_x_Field2D_off(result_ptr, in_ptr, localmesh);
+  DDX_C2_stag_x_Field2D_LtoC(result_ptr, in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void DDX_C2_stag_y_Field2D_off(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ in_ptr,
-                                      Mesh *localmesh) {
+static void DDX_C2_stag_y_Field2D_LtoC(BoutReal *__restrict__ result_ptr,
+                                       const BoutReal *__restrict__ in_ptr,
+                                       Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
 #if CHECK > 0
@@ -5231,13 +5231,13 @@ static void DDX_C2_stag_y_Field2D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field2D DDX_C2_stag_y_off(const Field2D &in) {
+Field2D DDX_C2_stag_y_LtoC(const Field2D &in) {
   Mesh *localmesh = in.getMesh();
-  output_debug.write("Using method DDX_C2_stag_y_Field2D_off!\n");
+  output_debug.write("Using method DDX_C2_stag_y_Field2D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNy < 2) {
-    throw BoutException("Field2D AiolosMesh::DDX_C2_stag_y_off - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field2D AiolosMesh::DDX_C2_stag_y_LtoC - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field2D result(localmesh);
@@ -5245,15 +5245,15 @@ Field2D DDX_C2_stag_y_off(const Field2D &in) {
   BoutReal *__restrict__ result_ptr = &result(0, 0);
   checkData(in);
   const BoutReal *__restrict__ in_ptr = &in(0, 0);
-  DDX_C2_stag_y_Field2D_off(result_ptr, in_ptr, localmesh);
+  DDX_C2_stag_y_Field2D_LtoC(result_ptr, in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void DDX_C4_stag_x_Field3D_on(BoutReal *__restrict__ result_ptr,
-                                     const BoutReal *__restrict__ in_ptr,
-                                     Mesh *localmesh) {
+static void DDX_C4_stag_x_Field3D_CtoL(BoutReal *__restrict__ result_ptr,
+                                       const BoutReal *__restrict__ in_ptr,
+                                       Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -5279,13 +5279,13 @@ static void DDX_C4_stag_x_Field3D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D DDX_C4_stag_x_on(const Field3D &in) {
+Field3D DDX_C4_stag_x_CtoL(const Field3D &in) {
   Mesh *localmesh = in.getMesh();
-  output_debug.write("Using method DDX_C4_stag_x_Field3D_on!\n");
+  output_debug.write("Using method DDX_C4_stag_x_Field3D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNx < 4) {
-    throw BoutException("Field3D AiolosMesh::DDX_C4_stag_x_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field3D AiolosMesh::DDX_C4_stag_x_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field3D result(localmesh);
@@ -5293,15 +5293,15 @@ Field3D DDX_C4_stag_x_on(const Field3D &in) {
   BoutReal *__restrict__ result_ptr = &result(0, 0, 0);
   checkData(in);
   const BoutReal *__restrict__ in_ptr = &in(0, 0, 0);
-  DDX_C4_stag_x_Field3D_on(result_ptr, in_ptr, localmesh);
+  DDX_C4_stag_x_Field3D_CtoL(result_ptr, in_ptr, localmesh);
   result.setLocation(CELL_XLOW);
   checkData(result);
   return result;
 }
 
-static void DDX_C4_stag_y_Field3D_on(BoutReal *__restrict__ result_ptr,
-                                     const BoutReal *__restrict__ in_ptr,
-                                     Mesh *localmesh) {
+static void DDX_C4_stag_y_Field3D_CtoL(BoutReal *__restrict__ result_ptr,
+                                       const BoutReal *__restrict__ in_ptr,
+                                       Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -5326,13 +5326,13 @@ static void DDX_C4_stag_y_Field3D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D DDX_C4_stag_y_on(const Field3D &in) {
+Field3D DDX_C4_stag_y_CtoL(const Field3D &in) {
   Mesh *localmesh = in.getMesh();
-  output_debug.write("Using method DDX_C4_stag_y_Field3D_on!\n");
+  output_debug.write("Using method DDX_C4_stag_y_Field3D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNy < 4) {
-    throw BoutException("Field3D AiolosMesh::DDX_C4_stag_y_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field3D AiolosMesh::DDX_C4_stag_y_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field3D result(localmesh);
@@ -5340,15 +5340,15 @@ Field3D DDX_C4_stag_y_on(const Field3D &in) {
   BoutReal *__restrict__ result_ptr = &result(0, 0, 0);
   checkData(in);
   const BoutReal *__restrict__ in_ptr = &in(0, 0, 0);
-  DDX_C4_stag_y_Field3D_on(result_ptr, in_ptr, localmesh);
+  DDX_C4_stag_y_Field3D_CtoL(result_ptr, in_ptr, localmesh);
   result.setLocation(CELL_YLOW);
   checkData(result);
   return result;
 }
 
-static void DDX_C4_stag_z_Field3D_on(BoutReal *__restrict__ result_ptr,
-                                     const BoutReal *__restrict__ in_ptr,
-                                     Mesh *localmesh) {
+static void DDX_C4_stag_z_Field3D_CtoL(BoutReal *__restrict__ result_ptr,
+                                       const BoutReal *__restrict__ in_ptr,
+                                       Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -5413,13 +5413,13 @@ static void DDX_C4_stag_z_Field3D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D DDX_C4_stag_z_on(const Field3D &in) {
+Field3D DDX_C4_stag_z_CtoL(const Field3D &in) {
   Mesh *localmesh = in.getMesh();
-  output_debug.write("Using method DDX_C4_stag_z_Field3D_on!\n");
+  output_debug.write("Using method DDX_C4_stag_z_Field3D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNz < 4) {
-    throw BoutException("Field3D AiolosMesh::DDX_C4_stag_z_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field3D AiolosMesh::DDX_C4_stag_z_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field3D result(localmesh);
@@ -5427,15 +5427,15 @@ Field3D DDX_C4_stag_z_on(const Field3D &in) {
   BoutReal *__restrict__ result_ptr = &result(0, 0, 0);
   checkData(in);
   const BoutReal *__restrict__ in_ptr = &in(0, 0, 0);
-  DDX_C4_stag_z_Field3D_on(result_ptr, in_ptr, localmesh);
+  DDX_C4_stag_z_Field3D_CtoL(result_ptr, in_ptr, localmesh);
   result.setLocation(CELL_ZLOW);
   checkData(result);
   return result;
 }
 
-static void DDX_C4_stag_x_Field2D_on(BoutReal *__restrict__ result_ptr,
-                                     const BoutReal *__restrict__ in_ptr,
-                                     Mesh *localmesh) {
+static void DDX_C4_stag_x_Field2D_CtoL(BoutReal *__restrict__ result_ptr,
+                                       const BoutReal *__restrict__ in_ptr,
+                                       Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
 #if CHECK > 0
@@ -5456,13 +5456,13 @@ static void DDX_C4_stag_x_Field2D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field2D DDX_C4_stag_x_on(const Field2D &in) {
+Field2D DDX_C4_stag_x_CtoL(const Field2D &in) {
   Mesh *localmesh = in.getMesh();
-  output_debug.write("Using method DDX_C4_stag_x_Field2D_on!\n");
+  output_debug.write("Using method DDX_C4_stag_x_Field2D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNx < 4) {
-    throw BoutException("Field2D AiolosMesh::DDX_C4_stag_x_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field2D AiolosMesh::DDX_C4_stag_x_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field2D result(localmesh);
@@ -5470,15 +5470,15 @@ Field2D DDX_C4_stag_x_on(const Field2D &in) {
   BoutReal *__restrict__ result_ptr = &result(0, 0);
   checkData(in);
   const BoutReal *__restrict__ in_ptr = &in(0, 0);
-  DDX_C4_stag_x_Field2D_on(result_ptr, in_ptr, localmesh);
+  DDX_C4_stag_x_Field2D_CtoL(result_ptr, in_ptr, localmesh);
   result.setLocation(CELL_XLOW);
   checkData(result);
   return result;
 }
 
-static void DDX_C4_stag_y_Field2D_on(BoutReal *__restrict__ result_ptr,
-                                     const BoutReal *__restrict__ in_ptr,
-                                     Mesh *localmesh) {
+static void DDX_C4_stag_y_Field2D_CtoL(BoutReal *__restrict__ result_ptr,
+                                       const BoutReal *__restrict__ in_ptr,
+                                       Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
 #if CHECK > 0
@@ -5499,13 +5499,13 @@ static void DDX_C4_stag_y_Field2D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field2D DDX_C4_stag_y_on(const Field2D &in) {
+Field2D DDX_C4_stag_y_CtoL(const Field2D &in) {
   Mesh *localmesh = in.getMesh();
-  output_debug.write("Using method DDX_C4_stag_y_Field2D_on!\n");
+  output_debug.write("Using method DDX_C4_stag_y_Field2D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNy < 4) {
-    throw BoutException("Field2D AiolosMesh::DDX_C4_stag_y_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field2D AiolosMesh::DDX_C4_stag_y_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field2D result(localmesh);
@@ -5513,15 +5513,15 @@ Field2D DDX_C4_stag_y_on(const Field2D &in) {
   BoutReal *__restrict__ result_ptr = &result(0, 0);
   checkData(in);
   const BoutReal *__restrict__ in_ptr = &in(0, 0);
-  DDX_C4_stag_y_Field2D_on(result_ptr, in_ptr, localmesh);
+  DDX_C4_stag_y_Field2D_CtoL(result_ptr, in_ptr, localmesh);
   result.setLocation(CELL_YLOW);
   checkData(result);
   return result;
 }
 
-static void DDX_C4_stag_x_Field3D_off(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ in_ptr,
-                                      Mesh *localmesh) {
+static void DDX_C4_stag_x_Field3D_LtoC(BoutReal *__restrict__ result_ptr,
+                                       const BoutReal *__restrict__ in_ptr,
+                                       Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -5547,13 +5547,13 @@ static void DDX_C4_stag_x_Field3D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D DDX_C4_stag_x_off(const Field3D &in) {
+Field3D DDX_C4_stag_x_LtoC(const Field3D &in) {
   Mesh *localmesh = in.getMesh();
-  output_debug.write("Using method DDX_C4_stag_x_Field3D_off!\n");
+  output_debug.write("Using method DDX_C4_stag_x_Field3D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNx < 4) {
-    throw BoutException("Field3D AiolosMesh::DDX_C4_stag_x_off - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field3D AiolosMesh::DDX_C4_stag_x_LtoC - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field3D result(localmesh);
@@ -5561,15 +5561,15 @@ Field3D DDX_C4_stag_x_off(const Field3D &in) {
   BoutReal *__restrict__ result_ptr = &result(0, 0, 0);
   checkData(in);
   const BoutReal *__restrict__ in_ptr = &in(0, 0, 0);
-  DDX_C4_stag_x_Field3D_off(result_ptr, in_ptr, localmesh);
+  DDX_C4_stag_x_Field3D_LtoC(result_ptr, in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void DDX_C4_stag_y_Field3D_off(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ in_ptr,
-                                      Mesh *localmesh) {
+static void DDX_C4_stag_y_Field3D_LtoC(BoutReal *__restrict__ result_ptr,
+                                       const BoutReal *__restrict__ in_ptr,
+                                       Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -5594,13 +5594,13 @@ static void DDX_C4_stag_y_Field3D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D DDX_C4_stag_y_off(const Field3D &in) {
+Field3D DDX_C4_stag_y_LtoC(const Field3D &in) {
   Mesh *localmesh = in.getMesh();
-  output_debug.write("Using method DDX_C4_stag_y_Field3D_off!\n");
+  output_debug.write("Using method DDX_C4_stag_y_Field3D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNy < 4) {
-    throw BoutException("Field3D AiolosMesh::DDX_C4_stag_y_off - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field3D AiolosMesh::DDX_C4_stag_y_LtoC - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field3D result(localmesh);
@@ -5608,15 +5608,15 @@ Field3D DDX_C4_stag_y_off(const Field3D &in) {
   BoutReal *__restrict__ result_ptr = &result(0, 0, 0);
   checkData(in);
   const BoutReal *__restrict__ in_ptr = &in(0, 0, 0);
-  DDX_C4_stag_y_Field3D_off(result_ptr, in_ptr, localmesh);
+  DDX_C4_stag_y_Field3D_LtoC(result_ptr, in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void DDX_C4_stag_z_Field3D_off(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ in_ptr,
-                                      Mesh *localmesh) {
+static void DDX_C4_stag_z_Field3D_LtoC(BoutReal *__restrict__ result_ptr,
+                                       const BoutReal *__restrict__ in_ptr,
+                                       Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -5681,13 +5681,13 @@ static void DDX_C4_stag_z_Field3D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D DDX_C4_stag_z_off(const Field3D &in) {
+Field3D DDX_C4_stag_z_LtoC(const Field3D &in) {
   Mesh *localmesh = in.getMesh();
-  output_debug.write("Using method DDX_C4_stag_z_Field3D_off!\n");
+  output_debug.write("Using method DDX_C4_stag_z_Field3D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNz < 4) {
-    throw BoutException("Field3D AiolosMesh::DDX_C4_stag_z_off - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field3D AiolosMesh::DDX_C4_stag_z_LtoC - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field3D result(localmesh);
@@ -5695,15 +5695,15 @@ Field3D DDX_C4_stag_z_off(const Field3D &in) {
   BoutReal *__restrict__ result_ptr = &result(0, 0, 0);
   checkData(in);
   const BoutReal *__restrict__ in_ptr = &in(0, 0, 0);
-  DDX_C4_stag_z_Field3D_off(result_ptr, in_ptr, localmesh);
+  DDX_C4_stag_z_Field3D_LtoC(result_ptr, in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void DDX_C4_stag_x_Field2D_off(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ in_ptr,
-                                      Mesh *localmesh) {
+static void DDX_C4_stag_x_Field2D_LtoC(BoutReal *__restrict__ result_ptr,
+                                       const BoutReal *__restrict__ in_ptr,
+                                       Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
 #if CHECK > 0
@@ -5724,13 +5724,13 @@ static void DDX_C4_stag_x_Field2D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field2D DDX_C4_stag_x_off(const Field2D &in) {
+Field2D DDX_C4_stag_x_LtoC(const Field2D &in) {
   Mesh *localmesh = in.getMesh();
-  output_debug.write("Using method DDX_C4_stag_x_Field2D_off!\n");
+  output_debug.write("Using method DDX_C4_stag_x_Field2D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNx < 4) {
-    throw BoutException("Field2D AiolosMesh::DDX_C4_stag_x_off - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field2D AiolosMesh::DDX_C4_stag_x_LtoC - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field2D result(localmesh);
@@ -5738,15 +5738,15 @@ Field2D DDX_C4_stag_x_off(const Field2D &in) {
   BoutReal *__restrict__ result_ptr = &result(0, 0);
   checkData(in);
   const BoutReal *__restrict__ in_ptr = &in(0, 0);
-  DDX_C4_stag_x_Field2D_off(result_ptr, in_ptr, localmesh);
+  DDX_C4_stag_x_Field2D_LtoC(result_ptr, in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void DDX_C4_stag_y_Field2D_off(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ in_ptr,
-                                      Mesh *localmesh) {
+static void DDX_C4_stag_y_Field2D_LtoC(BoutReal *__restrict__ result_ptr,
+                                       const BoutReal *__restrict__ in_ptr,
+                                       Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
 #if CHECK > 0
@@ -5767,13 +5767,13 @@ static void DDX_C4_stag_y_Field2D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field2D DDX_C4_stag_y_off(const Field2D &in) {
+Field2D DDX_C4_stag_y_LtoC(const Field2D &in) {
   Mesh *localmesh = in.getMesh();
-  output_debug.write("Using method DDX_C4_stag_y_Field2D_off!\n");
+  output_debug.write("Using method DDX_C4_stag_y_Field2D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNy < 4) {
-    throw BoutException("Field2D AiolosMesh::DDX_C4_stag_y_off - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field2D AiolosMesh::DDX_C4_stag_y_LtoC - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field2D result(localmesh);
@@ -5781,15 +5781,15 @@ Field2D DDX_C4_stag_y_off(const Field2D &in) {
   BoutReal *__restrict__ result_ptr = &result(0, 0);
   checkData(in);
   const BoutReal *__restrict__ in_ptr = &in(0, 0);
-  DDX_C4_stag_y_Field2D_off(result_ptr, in_ptr, localmesh);
+  DDX_C4_stag_y_Field2D_LtoC(result_ptr, in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void D2DX2_C2_stag_x_Field3D_on(BoutReal *__restrict__ result_ptr,
-                                       const BoutReal *__restrict__ in_ptr,
-                                       Mesh *localmesh) {
+static void D2DX2_C2_stag_x_Field3D_CtoL(BoutReal *__restrict__ result_ptr,
+                                         const BoutReal *__restrict__ in_ptr,
+                                         Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -5813,12 +5813,12 @@ static void D2DX2_C2_stag_x_Field3D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D D2DX2_C2_stag_x_on(const Field3D &in) {
+Field3D D2DX2_C2_stag_x_CtoL(const Field3D &in) {
   Mesh *localmesh = in.getMesh();
-  output_debug.write("Using method D2DX2_C2_stag_x_Field3D_on!\n");
+  output_debug.write("Using method D2DX2_C2_stag_x_Field3D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNx < 4) {
-    throw BoutException("Field3D AiolosMesh::D2DX2_C2_stag_x_on - Not enough guards "
+    throw BoutException("Field3D AiolosMesh::D2DX2_C2_stag_x_CtoL - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -5827,15 +5827,15 @@ Field3D D2DX2_C2_stag_x_on(const Field3D &in) {
   BoutReal *__restrict__ result_ptr = &result(0, 0, 0);
   checkData(in);
   const BoutReal *__restrict__ in_ptr = &in(0, 0, 0);
-  D2DX2_C2_stag_x_Field3D_on(result_ptr, in_ptr, localmesh);
+  D2DX2_C2_stag_x_Field3D_CtoL(result_ptr, in_ptr, localmesh);
   result.setLocation(CELL_XLOW);
   checkData(result);
   return result;
 }
 
-static void D2DX2_C2_stag_y_Field3D_on(BoutReal *__restrict__ result_ptr,
-                                       const BoutReal *__restrict__ in_ptr,
-                                       Mesh *localmesh) {
+static void D2DX2_C2_stag_y_Field3D_CtoL(BoutReal *__restrict__ result_ptr,
+                                         const BoutReal *__restrict__ in_ptr,
+                                         Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -5859,12 +5859,12 @@ static void D2DX2_C2_stag_y_Field3D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D D2DX2_C2_stag_y_on(const Field3D &in) {
+Field3D D2DX2_C2_stag_y_CtoL(const Field3D &in) {
   Mesh *localmesh = in.getMesh();
-  output_debug.write("Using method D2DX2_C2_stag_y_Field3D_on!\n");
+  output_debug.write("Using method D2DX2_C2_stag_y_Field3D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNy < 4) {
-    throw BoutException("Field3D AiolosMesh::D2DX2_C2_stag_y_on - Not enough guards "
+    throw BoutException("Field3D AiolosMesh::D2DX2_C2_stag_y_CtoL - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -5873,15 +5873,15 @@ Field3D D2DX2_C2_stag_y_on(const Field3D &in) {
   BoutReal *__restrict__ result_ptr = &result(0, 0, 0);
   checkData(in);
   const BoutReal *__restrict__ in_ptr = &in(0, 0, 0);
-  D2DX2_C2_stag_y_Field3D_on(result_ptr, in_ptr, localmesh);
+  D2DX2_C2_stag_y_Field3D_CtoL(result_ptr, in_ptr, localmesh);
   result.setLocation(CELL_YLOW);
   checkData(result);
   return result;
 }
 
-static void D2DX2_C2_stag_z_Field3D_on(BoutReal *__restrict__ result_ptr,
-                                       const BoutReal *__restrict__ in_ptr,
-                                       Mesh *localmesh) {
+static void D2DX2_C2_stag_z_Field3D_CtoL(BoutReal *__restrict__ result_ptr,
+                                         const BoutReal *__restrict__ in_ptr,
+                                         Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -5943,12 +5943,12 @@ static void D2DX2_C2_stag_z_Field3D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D D2DX2_C2_stag_z_on(const Field3D &in) {
+Field3D D2DX2_C2_stag_z_CtoL(const Field3D &in) {
   Mesh *localmesh = in.getMesh();
-  output_debug.write("Using method D2DX2_C2_stag_z_Field3D_on!\n");
+  output_debug.write("Using method D2DX2_C2_stag_z_Field3D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNz < 4) {
-    throw BoutException("Field3D AiolosMesh::D2DX2_C2_stag_z_on - Not enough guards "
+    throw BoutException("Field3D AiolosMesh::D2DX2_C2_stag_z_CtoL - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -5957,15 +5957,15 @@ Field3D D2DX2_C2_stag_z_on(const Field3D &in) {
   BoutReal *__restrict__ result_ptr = &result(0, 0, 0);
   checkData(in);
   const BoutReal *__restrict__ in_ptr = &in(0, 0, 0);
-  D2DX2_C2_stag_z_Field3D_on(result_ptr, in_ptr, localmesh);
+  D2DX2_C2_stag_z_Field3D_CtoL(result_ptr, in_ptr, localmesh);
   result.setLocation(CELL_ZLOW);
   checkData(result);
   return result;
 }
 
-static void D2DX2_C2_stag_x_Field2D_on(BoutReal *__restrict__ result_ptr,
-                                       const BoutReal *__restrict__ in_ptr,
-                                       Mesh *localmesh) {
+static void D2DX2_C2_stag_x_Field2D_CtoL(BoutReal *__restrict__ result_ptr,
+                                         const BoutReal *__restrict__ in_ptr,
+                                         Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
 #if CHECK > 0
@@ -5986,12 +5986,12 @@ static void D2DX2_C2_stag_x_Field2D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field2D D2DX2_C2_stag_x_on(const Field2D &in) {
+Field2D D2DX2_C2_stag_x_CtoL(const Field2D &in) {
   Mesh *localmesh = in.getMesh();
-  output_debug.write("Using method D2DX2_C2_stag_x_Field2D_on!\n");
+  output_debug.write("Using method D2DX2_C2_stag_x_Field2D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNx < 4) {
-    throw BoutException("Field2D AiolosMesh::D2DX2_C2_stag_x_on - Not enough guards "
+    throw BoutException("Field2D AiolosMesh::D2DX2_C2_stag_x_CtoL - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -6000,15 +6000,15 @@ Field2D D2DX2_C2_stag_x_on(const Field2D &in) {
   BoutReal *__restrict__ result_ptr = &result(0, 0);
   checkData(in);
   const BoutReal *__restrict__ in_ptr = &in(0, 0);
-  D2DX2_C2_stag_x_Field2D_on(result_ptr, in_ptr, localmesh);
+  D2DX2_C2_stag_x_Field2D_CtoL(result_ptr, in_ptr, localmesh);
   result.setLocation(CELL_XLOW);
   checkData(result);
   return result;
 }
 
-static void D2DX2_C2_stag_y_Field2D_on(BoutReal *__restrict__ result_ptr,
-                                       const BoutReal *__restrict__ in_ptr,
-                                       Mesh *localmesh) {
+static void D2DX2_C2_stag_y_Field2D_CtoL(BoutReal *__restrict__ result_ptr,
+                                         const BoutReal *__restrict__ in_ptr,
+                                         Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
 #if CHECK > 0
@@ -6028,12 +6028,12 @@ static void D2DX2_C2_stag_y_Field2D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field2D D2DX2_C2_stag_y_on(const Field2D &in) {
+Field2D D2DX2_C2_stag_y_CtoL(const Field2D &in) {
   Mesh *localmesh = in.getMesh();
-  output_debug.write("Using method D2DX2_C2_stag_y_Field2D_on!\n");
+  output_debug.write("Using method D2DX2_C2_stag_y_Field2D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNy < 4) {
-    throw BoutException("Field2D AiolosMesh::D2DX2_C2_stag_y_on - Not enough guards "
+    throw BoutException("Field2D AiolosMesh::D2DX2_C2_stag_y_CtoL - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -6042,15 +6042,15 @@ Field2D D2DX2_C2_stag_y_on(const Field2D &in) {
   BoutReal *__restrict__ result_ptr = &result(0, 0);
   checkData(in);
   const BoutReal *__restrict__ in_ptr = &in(0, 0);
-  D2DX2_C2_stag_y_Field2D_on(result_ptr, in_ptr, localmesh);
+  D2DX2_C2_stag_y_Field2D_CtoL(result_ptr, in_ptr, localmesh);
   result.setLocation(CELL_YLOW);
   checkData(result);
   return result;
 }
 
-static void D2DX2_C2_stag_x_Field3D_off(BoutReal *__restrict__ result_ptr,
-                                        const BoutReal *__restrict__ in_ptr,
-                                        Mesh *localmesh) {
+static void D2DX2_C2_stag_x_Field3D_LtoC(BoutReal *__restrict__ result_ptr,
+                                         const BoutReal *__restrict__ in_ptr,
+                                         Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -6074,12 +6074,12 @@ static void D2DX2_C2_stag_x_Field3D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D D2DX2_C2_stag_x_off(const Field3D &in) {
+Field3D D2DX2_C2_stag_x_LtoC(const Field3D &in) {
   Mesh *localmesh = in.getMesh();
-  output_debug.write("Using method D2DX2_C2_stag_x_Field3D_off!\n");
+  output_debug.write("Using method D2DX2_C2_stag_x_Field3D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNx < 4) {
-    throw BoutException("Field3D AiolosMesh::D2DX2_C2_stag_x_off - Not enough guards "
+    throw BoutException("Field3D AiolosMesh::D2DX2_C2_stag_x_LtoC - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -6088,15 +6088,15 @@ Field3D D2DX2_C2_stag_x_off(const Field3D &in) {
   BoutReal *__restrict__ result_ptr = &result(0, 0, 0);
   checkData(in);
   const BoutReal *__restrict__ in_ptr = &in(0, 0, 0);
-  D2DX2_C2_stag_x_Field3D_off(result_ptr, in_ptr, localmesh);
+  D2DX2_C2_stag_x_Field3D_LtoC(result_ptr, in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void D2DX2_C2_stag_y_Field3D_off(BoutReal *__restrict__ result_ptr,
-                                        const BoutReal *__restrict__ in_ptr,
-                                        Mesh *localmesh) {
+static void D2DX2_C2_stag_y_Field3D_LtoC(BoutReal *__restrict__ result_ptr,
+                                         const BoutReal *__restrict__ in_ptr,
+                                         Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -6120,12 +6120,12 @@ static void D2DX2_C2_stag_y_Field3D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D D2DX2_C2_stag_y_off(const Field3D &in) {
+Field3D D2DX2_C2_stag_y_LtoC(const Field3D &in) {
   Mesh *localmesh = in.getMesh();
-  output_debug.write("Using method D2DX2_C2_stag_y_Field3D_off!\n");
+  output_debug.write("Using method D2DX2_C2_stag_y_Field3D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNy < 4) {
-    throw BoutException("Field3D AiolosMesh::D2DX2_C2_stag_y_off - Not enough guards "
+    throw BoutException("Field3D AiolosMesh::D2DX2_C2_stag_y_LtoC - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -6134,15 +6134,15 @@ Field3D D2DX2_C2_stag_y_off(const Field3D &in) {
   BoutReal *__restrict__ result_ptr = &result(0, 0, 0);
   checkData(in);
   const BoutReal *__restrict__ in_ptr = &in(0, 0, 0);
-  D2DX2_C2_stag_y_Field3D_off(result_ptr, in_ptr, localmesh);
+  D2DX2_C2_stag_y_Field3D_LtoC(result_ptr, in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void D2DX2_C2_stag_z_Field3D_off(BoutReal *__restrict__ result_ptr,
-                                        const BoutReal *__restrict__ in_ptr,
-                                        Mesh *localmesh) {
+static void D2DX2_C2_stag_z_Field3D_LtoC(BoutReal *__restrict__ result_ptr,
+                                         const BoutReal *__restrict__ in_ptr,
+                                         Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -6204,12 +6204,12 @@ static void D2DX2_C2_stag_z_Field3D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D D2DX2_C2_stag_z_off(const Field3D &in) {
+Field3D D2DX2_C2_stag_z_LtoC(const Field3D &in) {
   Mesh *localmesh = in.getMesh();
-  output_debug.write("Using method D2DX2_C2_stag_z_Field3D_off!\n");
+  output_debug.write("Using method D2DX2_C2_stag_z_Field3D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNz < 4) {
-    throw BoutException("Field3D AiolosMesh::D2DX2_C2_stag_z_off - Not enough guards "
+    throw BoutException("Field3D AiolosMesh::D2DX2_C2_stag_z_LtoC - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -6218,15 +6218,15 @@ Field3D D2DX2_C2_stag_z_off(const Field3D &in) {
   BoutReal *__restrict__ result_ptr = &result(0, 0, 0);
   checkData(in);
   const BoutReal *__restrict__ in_ptr = &in(0, 0, 0);
-  D2DX2_C2_stag_z_Field3D_off(result_ptr, in_ptr, localmesh);
+  D2DX2_C2_stag_z_Field3D_LtoC(result_ptr, in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void D2DX2_C2_stag_x_Field2D_off(BoutReal *__restrict__ result_ptr,
-                                        const BoutReal *__restrict__ in_ptr,
-                                        Mesh *localmesh) {
+static void D2DX2_C2_stag_x_Field2D_LtoC(BoutReal *__restrict__ result_ptr,
+                                         const BoutReal *__restrict__ in_ptr,
+                                         Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
 #if CHECK > 0
@@ -6247,12 +6247,12 @@ static void D2DX2_C2_stag_x_Field2D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field2D D2DX2_C2_stag_x_off(const Field2D &in) {
+Field2D D2DX2_C2_stag_x_LtoC(const Field2D &in) {
   Mesh *localmesh = in.getMesh();
-  output_debug.write("Using method D2DX2_C2_stag_x_Field2D_off!\n");
+  output_debug.write("Using method D2DX2_C2_stag_x_Field2D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNx < 4) {
-    throw BoutException("Field2D AiolosMesh::D2DX2_C2_stag_x_off - Not enough guards "
+    throw BoutException("Field2D AiolosMesh::D2DX2_C2_stag_x_LtoC - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -6261,15 +6261,15 @@ Field2D D2DX2_C2_stag_x_off(const Field2D &in) {
   BoutReal *__restrict__ result_ptr = &result(0, 0);
   checkData(in);
   const BoutReal *__restrict__ in_ptr = &in(0, 0);
-  D2DX2_C2_stag_x_Field2D_off(result_ptr, in_ptr, localmesh);
+  D2DX2_C2_stag_x_Field2D_LtoC(result_ptr, in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void D2DX2_C2_stag_y_Field2D_off(BoutReal *__restrict__ result_ptr,
-                                        const BoutReal *__restrict__ in_ptr,
-                                        Mesh *localmesh) {
+static void D2DX2_C2_stag_y_Field2D_LtoC(BoutReal *__restrict__ result_ptr,
+                                         const BoutReal *__restrict__ in_ptr,
+                                         Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
 #if CHECK > 0
@@ -6289,12 +6289,12 @@ static void D2DX2_C2_stag_y_Field2D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field2D D2DX2_C2_stag_y_off(const Field2D &in) {
+Field2D D2DX2_C2_stag_y_LtoC(const Field2D &in) {
   Mesh *localmesh = in.getMesh();
-  output_debug.write("Using method D2DX2_C2_stag_y_Field2D_off!\n");
+  output_debug.write("Using method D2DX2_C2_stag_y_Field2D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNy < 4) {
-    throw BoutException("Field2D AiolosMesh::D2DX2_C2_stag_y_off - Not enough guards "
+    throw BoutException("Field2D AiolosMesh::D2DX2_C2_stag_y_LtoC - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -6303,16 +6303,16 @@ Field2D D2DX2_C2_stag_y_off(const Field2D &in) {
   BoutReal *__restrict__ result_ptr = &result(0, 0);
   checkData(in);
   const BoutReal *__restrict__ in_ptr = &in(0, 0);
-  D2DX2_C2_stag_y_Field2D_off(result_ptr, in_ptr, localmesh);
+  D2DX2_C2_stag_y_Field2D_LtoC(result_ptr, in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void VDDX_U1_stag_x_Field3D_on(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ v_in_ptr,
-                                      const BoutReal *__restrict__ f_in_ptr,
-                                      Mesh *localmesh) {
+static void VDDX_U1_stag_x_Field3D_CtoL(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -6347,14 +6347,14 @@ static void VDDX_U1_stag_x_Field3D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D VDDX_U1_stag_x_on(const Field3D &v_in, const Field3D &f_in) {
+Field3D VDDX_U1_stag_x_CtoL(const Field3D &v_in, const Field3D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_U1_stag_x_Field3D_on!\n");
+  output_debug.write("Using method VDDX_U1_stag_x_Field3D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNx < 3) {
-    throw BoutException("Field3D AiolosMesh::VDDX_U1_stag_x_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field3D AiolosMesh::VDDX_U1_stag_x_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field3D result(localmesh);
@@ -6364,16 +6364,16 @@ Field3D VDDX_U1_stag_x_on(const Field3D &v_in, const Field3D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  VDDX_U1_stag_x_Field3D_on(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_U1_stag_x_Field3D_CtoL(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_XLOW);
   checkData(result);
   return result;
 }
 
-static void VDDX_U1_stag_y_Field3D_on(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ v_in_ptr,
-                                      const BoutReal *__restrict__ f_in_ptr,
-                                      Mesh *localmesh) {
+static void VDDX_U1_stag_y_Field3D_CtoL(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -6408,14 +6408,14 @@ static void VDDX_U1_stag_y_Field3D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D VDDX_U1_stag_y_on(const Field3D &v_in, const Field3D &f_in) {
+Field3D VDDX_U1_stag_y_CtoL(const Field3D &v_in, const Field3D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_U1_stag_y_Field3D_on!\n");
+  output_debug.write("Using method VDDX_U1_stag_y_Field3D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNy < 3) {
-    throw BoutException("Field3D AiolosMesh::VDDX_U1_stag_y_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field3D AiolosMesh::VDDX_U1_stag_y_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field3D result(localmesh);
@@ -6425,16 +6425,16 @@ Field3D VDDX_U1_stag_y_on(const Field3D &v_in, const Field3D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  VDDX_U1_stag_y_Field3D_on(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_U1_stag_y_Field3D_CtoL(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_YLOW);
   checkData(result);
   return result;
 }
 
-static void VDDX_U1_stag_z_Field3D_on(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ v_in_ptr,
-                                      const BoutReal *__restrict__ f_in_ptr,
-                                      Mesh *localmesh) {
+static void VDDX_U1_stag_z_Field3D_CtoL(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -6527,14 +6527,14 @@ static void VDDX_U1_stag_z_Field3D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D VDDX_U1_stag_z_on(const Field3D &v_in, const Field3D &f_in) {
+Field3D VDDX_U1_stag_z_CtoL(const Field3D &v_in, const Field3D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_U1_stag_z_Field3D_on!\n");
+  output_debug.write("Using method VDDX_U1_stag_z_Field3D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNz < 3) {
-    throw BoutException("Field3D AiolosMesh::VDDX_U1_stag_z_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field3D AiolosMesh::VDDX_U1_stag_z_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field3D result(localmesh);
@@ -6544,16 +6544,16 @@ Field3D VDDX_U1_stag_z_on(const Field3D &v_in, const Field3D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  VDDX_U1_stag_z_Field3D_on(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_U1_stag_z_Field3D_CtoL(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_ZLOW);
   checkData(result);
   return result;
 }
 
-static void VDDX_U1_stag_x_Field2D_on(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ v_in_ptr,
-                                      const BoutReal *__restrict__ f_in_ptr,
-                                      Mesh *localmesh) {
+static void VDDX_U1_stag_x_Field2D_CtoL(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
 #if CHECK > 0
@@ -6580,14 +6580,14 @@ static void VDDX_U1_stag_x_Field2D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field2D VDDX_U1_stag_x_on(const Field2D &v_in, const Field2D &f_in) {
+Field2D VDDX_U1_stag_x_CtoL(const Field2D &v_in, const Field2D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_U1_stag_x_Field2D_on!\n");
+  output_debug.write("Using method VDDX_U1_stag_x_Field2D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNx < 3) {
-    throw BoutException("Field2D AiolosMesh::VDDX_U1_stag_x_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field2D AiolosMesh::VDDX_U1_stag_x_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field2D result(localmesh);
@@ -6597,16 +6597,16 @@ Field2D VDDX_U1_stag_x_on(const Field2D &v_in, const Field2D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0);
-  VDDX_U1_stag_x_Field2D_on(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_U1_stag_x_Field2D_CtoL(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_XLOW);
   checkData(result);
   return result;
 }
 
-static void VDDX_U1_stag_y_Field2D_on(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ v_in_ptr,
-                                      const BoutReal *__restrict__ f_in_ptr,
-                                      Mesh *localmesh) {
+static void VDDX_U1_stag_y_Field2D_CtoL(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
 #if CHECK > 0
@@ -6633,14 +6633,14 @@ static void VDDX_U1_stag_y_Field2D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field2D VDDX_U1_stag_y_on(const Field2D &v_in, const Field2D &f_in) {
+Field2D VDDX_U1_stag_y_CtoL(const Field2D &v_in, const Field2D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_U1_stag_y_Field2D_on!\n");
+  output_debug.write("Using method VDDX_U1_stag_y_Field2D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNy < 3) {
-    throw BoutException("Field2D AiolosMesh::VDDX_U1_stag_y_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field2D AiolosMesh::VDDX_U1_stag_y_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field2D result(localmesh);
@@ -6650,16 +6650,16 @@ Field2D VDDX_U1_stag_y_on(const Field2D &v_in, const Field2D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0);
-  VDDX_U1_stag_y_Field2D_on(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_U1_stag_y_Field2D_CtoL(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_YLOW);
   checkData(result);
   return result;
 }
 
-static void VDDX_U1_stag_x_Field3D_off(BoutReal *__restrict__ result_ptr,
-                                       const BoutReal *__restrict__ v_in_ptr,
-                                       const BoutReal *__restrict__ f_in_ptr,
-                                       Mesh *localmesh) {
+static void VDDX_U1_stag_x_Field3D_LtoC(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -6694,13 +6694,13 @@ static void VDDX_U1_stag_x_Field3D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D VDDX_U1_stag_x_off(const Field3D &v_in, const Field3D &f_in) {
+Field3D VDDX_U1_stag_x_LtoC(const Field3D &v_in, const Field3D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_U1_stag_x_Field3D_off!\n");
+  output_debug.write("Using method VDDX_U1_stag_x_Field3D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNx < 3) {
-    throw BoutException("Field3D AiolosMesh::VDDX_U1_stag_x_off - Not enough guards "
+    throw BoutException("Field3D AiolosMesh::VDDX_U1_stag_x_LtoC - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -6711,16 +6711,16 @@ Field3D VDDX_U1_stag_x_off(const Field3D &v_in, const Field3D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  VDDX_U1_stag_x_Field3D_off(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_U1_stag_x_Field3D_LtoC(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void VDDX_U1_stag_y_Field3D_off(BoutReal *__restrict__ result_ptr,
-                                       const BoutReal *__restrict__ v_in_ptr,
-                                       const BoutReal *__restrict__ f_in_ptr,
-                                       Mesh *localmesh) {
+static void VDDX_U1_stag_y_Field3D_LtoC(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -6755,13 +6755,13 @@ static void VDDX_U1_stag_y_Field3D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D VDDX_U1_stag_y_off(const Field3D &v_in, const Field3D &f_in) {
+Field3D VDDX_U1_stag_y_LtoC(const Field3D &v_in, const Field3D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_U1_stag_y_Field3D_off!\n");
+  output_debug.write("Using method VDDX_U1_stag_y_Field3D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNy < 3) {
-    throw BoutException("Field3D AiolosMesh::VDDX_U1_stag_y_off - Not enough guards "
+    throw BoutException("Field3D AiolosMesh::VDDX_U1_stag_y_LtoC - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -6772,16 +6772,16 @@ Field3D VDDX_U1_stag_y_off(const Field3D &v_in, const Field3D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  VDDX_U1_stag_y_Field3D_off(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_U1_stag_y_Field3D_LtoC(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void VDDX_U1_stag_z_Field3D_off(BoutReal *__restrict__ result_ptr,
-                                       const BoutReal *__restrict__ v_in_ptr,
-                                       const BoutReal *__restrict__ f_in_ptr,
-                                       Mesh *localmesh) {
+static void VDDX_U1_stag_z_Field3D_LtoC(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -6874,13 +6874,13 @@ static void VDDX_U1_stag_z_Field3D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D VDDX_U1_stag_z_off(const Field3D &v_in, const Field3D &f_in) {
+Field3D VDDX_U1_stag_z_LtoC(const Field3D &v_in, const Field3D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_U1_stag_z_Field3D_off!\n");
+  output_debug.write("Using method VDDX_U1_stag_z_Field3D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNz < 3) {
-    throw BoutException("Field3D AiolosMesh::VDDX_U1_stag_z_off - Not enough guards "
+    throw BoutException("Field3D AiolosMesh::VDDX_U1_stag_z_LtoC - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -6891,16 +6891,16 @@ Field3D VDDX_U1_stag_z_off(const Field3D &v_in, const Field3D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  VDDX_U1_stag_z_Field3D_off(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_U1_stag_z_Field3D_LtoC(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void VDDX_U1_stag_x_Field2D_off(BoutReal *__restrict__ result_ptr,
-                                       const BoutReal *__restrict__ v_in_ptr,
-                                       const BoutReal *__restrict__ f_in_ptr,
-                                       Mesh *localmesh) {
+static void VDDX_U1_stag_x_Field2D_LtoC(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
 #if CHECK > 0
@@ -6927,13 +6927,13 @@ static void VDDX_U1_stag_x_Field2D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field2D VDDX_U1_stag_x_off(const Field2D &v_in, const Field2D &f_in) {
+Field2D VDDX_U1_stag_x_LtoC(const Field2D &v_in, const Field2D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_U1_stag_x_Field2D_off!\n");
+  output_debug.write("Using method VDDX_U1_stag_x_Field2D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNx < 3) {
-    throw BoutException("Field2D AiolosMesh::VDDX_U1_stag_x_off - Not enough guards "
+    throw BoutException("Field2D AiolosMesh::VDDX_U1_stag_x_LtoC - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -6944,16 +6944,16 @@ Field2D VDDX_U1_stag_x_off(const Field2D &v_in, const Field2D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0);
-  VDDX_U1_stag_x_Field2D_off(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_U1_stag_x_Field2D_LtoC(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void VDDX_U1_stag_y_Field2D_off(BoutReal *__restrict__ result_ptr,
-                                       const BoutReal *__restrict__ v_in_ptr,
-                                       const BoutReal *__restrict__ f_in_ptr,
-                                       Mesh *localmesh) {
+static void VDDX_U1_stag_y_Field2D_LtoC(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
 #if CHECK > 0
@@ -6980,13 +6980,13 @@ static void VDDX_U1_stag_y_Field2D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field2D VDDX_U1_stag_y_off(const Field2D &v_in, const Field2D &f_in) {
+Field2D VDDX_U1_stag_y_LtoC(const Field2D &v_in, const Field2D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_U1_stag_y_Field2D_off!\n");
+  output_debug.write("Using method VDDX_U1_stag_y_Field2D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNy < 3) {
-    throw BoutException("Field2D AiolosMesh::VDDX_U1_stag_y_off - Not enough guards "
+    throw BoutException("Field2D AiolosMesh::VDDX_U1_stag_y_LtoC - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -6997,16 +6997,16 @@ Field2D VDDX_U1_stag_y_off(const Field2D &v_in, const Field2D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0);
-  VDDX_U1_stag_y_Field2D_off(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_U1_stag_y_Field2D_LtoC(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void VDDX_U2_stag_x_Field3D_on(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ v_in_ptr,
-                                      const BoutReal *__restrict__ f_in_ptr,
-                                      Mesh *localmesh) {
+static void VDDX_U2_stag_x_Field3D_CtoL(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -7048,14 +7048,14 @@ static void VDDX_U2_stag_x_Field3D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D VDDX_U2_stag_x_on(const Field3D &v_in, const Field3D &f_in) {
+Field3D VDDX_U2_stag_x_CtoL(const Field3D &v_in, const Field3D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_U2_stag_x_Field3D_on!\n");
+  output_debug.write("Using method VDDX_U2_stag_x_Field3D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNx < 5) {
-    throw BoutException("Field3D AiolosMesh::VDDX_U2_stag_x_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field3D AiolosMesh::VDDX_U2_stag_x_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field3D result(localmesh);
@@ -7065,16 +7065,16 @@ Field3D VDDX_U2_stag_x_on(const Field3D &v_in, const Field3D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  VDDX_U2_stag_x_Field3D_on(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_U2_stag_x_Field3D_CtoL(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_XLOW);
   checkData(result);
   return result;
 }
 
-static void VDDX_U2_stag_y_Field3D_on(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ v_in_ptr,
-                                      const BoutReal *__restrict__ f_in_ptr,
-                                      Mesh *localmesh) {
+static void VDDX_U2_stag_y_Field3D_CtoL(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -7116,14 +7116,14 @@ static void VDDX_U2_stag_y_Field3D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D VDDX_U2_stag_y_on(const Field3D &v_in, const Field3D &f_in) {
+Field3D VDDX_U2_stag_y_CtoL(const Field3D &v_in, const Field3D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_U2_stag_y_Field3D_on!\n");
+  output_debug.write("Using method VDDX_U2_stag_y_Field3D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNy < 5) {
-    throw BoutException("Field3D AiolosMesh::VDDX_U2_stag_y_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field3D AiolosMesh::VDDX_U2_stag_y_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field3D result(localmesh);
@@ -7133,16 +7133,16 @@ Field3D VDDX_U2_stag_y_on(const Field3D &v_in, const Field3D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  VDDX_U2_stag_y_Field3D_on(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_U2_stag_y_Field3D_CtoL(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_YLOW);
   checkData(result);
   return result;
 }
 
-static void VDDX_U2_stag_z_Field3D_on(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ v_in_ptr,
-                                      const BoutReal *__restrict__ f_in_ptr,
-                                      Mesh *localmesh) {
+static void VDDX_U2_stag_z_Field3D_CtoL(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -7314,14 +7314,14 @@ static void VDDX_U2_stag_z_Field3D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D VDDX_U2_stag_z_on(const Field3D &v_in, const Field3D &f_in) {
+Field3D VDDX_U2_stag_z_CtoL(const Field3D &v_in, const Field3D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_U2_stag_z_Field3D_on!\n");
+  output_debug.write("Using method VDDX_U2_stag_z_Field3D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNz < 5) {
-    throw BoutException("Field3D AiolosMesh::VDDX_U2_stag_z_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field3D AiolosMesh::VDDX_U2_stag_z_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field3D result(localmesh);
@@ -7331,16 +7331,16 @@ Field3D VDDX_U2_stag_z_on(const Field3D &v_in, const Field3D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  VDDX_U2_stag_z_Field3D_on(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_U2_stag_z_Field3D_CtoL(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_ZLOW);
   checkData(result);
   return result;
 }
 
-static void VDDX_U2_stag_x_Field2D_on(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ v_in_ptr,
-                                      const BoutReal *__restrict__ f_in_ptr,
-                                      Mesh *localmesh) {
+static void VDDX_U2_stag_x_Field2D_CtoL(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
 #if CHECK > 0
@@ -7371,14 +7371,14 @@ static void VDDX_U2_stag_x_Field2D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field2D VDDX_U2_stag_x_on(const Field2D &v_in, const Field2D &f_in) {
+Field2D VDDX_U2_stag_x_CtoL(const Field2D &v_in, const Field2D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_U2_stag_x_Field2D_on!\n");
+  output_debug.write("Using method VDDX_U2_stag_x_Field2D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNx < 5) {
-    throw BoutException("Field2D AiolosMesh::VDDX_U2_stag_x_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field2D AiolosMesh::VDDX_U2_stag_x_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field2D result(localmesh);
@@ -7388,16 +7388,16 @@ Field2D VDDX_U2_stag_x_on(const Field2D &v_in, const Field2D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0);
-  VDDX_U2_stag_x_Field2D_on(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_U2_stag_x_Field2D_CtoL(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_XLOW);
   checkData(result);
   return result;
 }
 
-static void VDDX_U2_stag_y_Field2D_on(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ v_in_ptr,
-                                      const BoutReal *__restrict__ f_in_ptr,
-                                      Mesh *localmesh) {
+static void VDDX_U2_stag_y_Field2D_CtoL(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
 #if CHECK > 0
@@ -7428,14 +7428,14 @@ static void VDDX_U2_stag_y_Field2D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field2D VDDX_U2_stag_y_on(const Field2D &v_in, const Field2D &f_in) {
+Field2D VDDX_U2_stag_y_CtoL(const Field2D &v_in, const Field2D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_U2_stag_y_Field2D_on!\n");
+  output_debug.write("Using method VDDX_U2_stag_y_Field2D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNy < 5) {
-    throw BoutException("Field2D AiolosMesh::VDDX_U2_stag_y_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field2D AiolosMesh::VDDX_U2_stag_y_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field2D result(localmesh);
@@ -7445,16 +7445,16 @@ Field2D VDDX_U2_stag_y_on(const Field2D &v_in, const Field2D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0);
-  VDDX_U2_stag_y_Field2D_on(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_U2_stag_y_Field2D_CtoL(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_YLOW);
   checkData(result);
   return result;
 }
 
-static void VDDX_U2_stag_x_Field3D_off(BoutReal *__restrict__ result_ptr,
-                                       const BoutReal *__restrict__ v_in_ptr,
-                                       const BoutReal *__restrict__ f_in_ptr,
-                                       Mesh *localmesh) {
+static void VDDX_U2_stag_x_Field3D_LtoC(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -7496,13 +7496,13 @@ static void VDDX_U2_stag_x_Field3D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D VDDX_U2_stag_x_off(const Field3D &v_in, const Field3D &f_in) {
+Field3D VDDX_U2_stag_x_LtoC(const Field3D &v_in, const Field3D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_U2_stag_x_Field3D_off!\n");
+  output_debug.write("Using method VDDX_U2_stag_x_Field3D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNx < 5) {
-    throw BoutException("Field3D AiolosMesh::VDDX_U2_stag_x_off - Not enough guards "
+    throw BoutException("Field3D AiolosMesh::VDDX_U2_stag_x_LtoC - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -7513,16 +7513,16 @@ Field3D VDDX_U2_stag_x_off(const Field3D &v_in, const Field3D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  VDDX_U2_stag_x_Field3D_off(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_U2_stag_x_Field3D_LtoC(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void VDDX_U2_stag_y_Field3D_off(BoutReal *__restrict__ result_ptr,
-                                       const BoutReal *__restrict__ v_in_ptr,
-                                       const BoutReal *__restrict__ f_in_ptr,
-                                       Mesh *localmesh) {
+static void VDDX_U2_stag_y_Field3D_LtoC(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -7564,13 +7564,13 @@ static void VDDX_U2_stag_y_Field3D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D VDDX_U2_stag_y_off(const Field3D &v_in, const Field3D &f_in) {
+Field3D VDDX_U2_stag_y_LtoC(const Field3D &v_in, const Field3D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_U2_stag_y_Field3D_off!\n");
+  output_debug.write("Using method VDDX_U2_stag_y_Field3D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNy < 5) {
-    throw BoutException("Field3D AiolosMesh::VDDX_U2_stag_y_off - Not enough guards "
+    throw BoutException("Field3D AiolosMesh::VDDX_U2_stag_y_LtoC - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -7581,16 +7581,16 @@ Field3D VDDX_U2_stag_y_off(const Field3D &v_in, const Field3D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  VDDX_U2_stag_y_Field3D_off(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_U2_stag_y_Field3D_LtoC(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void VDDX_U2_stag_z_Field3D_off(BoutReal *__restrict__ result_ptr,
-                                       const BoutReal *__restrict__ v_in_ptr,
-                                       const BoutReal *__restrict__ f_in_ptr,
-                                       Mesh *localmesh) {
+static void VDDX_U2_stag_z_Field3D_LtoC(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -7762,13 +7762,13 @@ static void VDDX_U2_stag_z_Field3D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D VDDX_U2_stag_z_off(const Field3D &v_in, const Field3D &f_in) {
+Field3D VDDX_U2_stag_z_LtoC(const Field3D &v_in, const Field3D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_U2_stag_z_Field3D_off!\n");
+  output_debug.write("Using method VDDX_U2_stag_z_Field3D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNz < 5) {
-    throw BoutException("Field3D AiolosMesh::VDDX_U2_stag_z_off - Not enough guards "
+    throw BoutException("Field3D AiolosMesh::VDDX_U2_stag_z_LtoC - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -7779,16 +7779,16 @@ Field3D VDDX_U2_stag_z_off(const Field3D &v_in, const Field3D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  VDDX_U2_stag_z_Field3D_off(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_U2_stag_z_Field3D_LtoC(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void VDDX_U2_stag_x_Field2D_off(BoutReal *__restrict__ result_ptr,
-                                       const BoutReal *__restrict__ v_in_ptr,
-                                       const BoutReal *__restrict__ f_in_ptr,
-                                       Mesh *localmesh) {
+static void VDDX_U2_stag_x_Field2D_LtoC(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
 #if CHECK > 0
@@ -7819,13 +7819,13 @@ static void VDDX_U2_stag_x_Field2D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field2D VDDX_U2_stag_x_off(const Field2D &v_in, const Field2D &f_in) {
+Field2D VDDX_U2_stag_x_LtoC(const Field2D &v_in, const Field2D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_U2_stag_x_Field2D_off!\n");
+  output_debug.write("Using method VDDX_U2_stag_x_Field2D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNx < 5) {
-    throw BoutException("Field2D AiolosMesh::VDDX_U2_stag_x_off - Not enough guards "
+    throw BoutException("Field2D AiolosMesh::VDDX_U2_stag_x_LtoC - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -7836,16 +7836,16 @@ Field2D VDDX_U2_stag_x_off(const Field2D &v_in, const Field2D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0);
-  VDDX_U2_stag_x_Field2D_off(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_U2_stag_x_Field2D_LtoC(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void VDDX_U2_stag_y_Field2D_off(BoutReal *__restrict__ result_ptr,
-                                       const BoutReal *__restrict__ v_in_ptr,
-                                       const BoutReal *__restrict__ f_in_ptr,
-                                       Mesh *localmesh) {
+static void VDDX_U2_stag_y_Field2D_LtoC(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
 #if CHECK > 0
@@ -7876,13 +7876,13 @@ static void VDDX_U2_stag_y_Field2D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field2D VDDX_U2_stag_y_off(const Field2D &v_in, const Field2D &f_in) {
+Field2D VDDX_U2_stag_y_LtoC(const Field2D &v_in, const Field2D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_U2_stag_y_Field2D_off!\n");
+  output_debug.write("Using method VDDX_U2_stag_y_Field2D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNy < 5) {
-    throw BoutException("Field2D AiolosMesh::VDDX_U2_stag_y_off - Not enough guards "
+    throw BoutException("Field2D AiolosMesh::VDDX_U2_stag_y_LtoC - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -7893,16 +7893,16 @@ Field2D VDDX_U2_stag_y_off(const Field2D &v_in, const Field2D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0);
-  VDDX_U2_stag_y_Field2D_off(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_U2_stag_y_Field2D_LtoC(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void VDDX_C2_stag_x_Field3D_on(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ v_in_ptr,
-                                      const BoutReal *__restrict__ f_in_ptr,
-                                      Mesh *localmesh) {
+static void VDDX_C2_stag_x_Field3D_CtoL(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -7927,14 +7927,14 @@ static void VDDX_C2_stag_x_Field3D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D VDDX_C2_stag_x_on(const Field3D &v_in, const Field3D &f_in) {
+Field3D VDDX_C2_stag_x_CtoL(const Field3D &v_in, const Field3D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_C2_stag_x_Field3D_on!\n");
+  output_debug.write("Using method VDDX_C2_stag_x_Field3D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNx < 3) {
-    throw BoutException("Field3D AiolosMesh::VDDX_C2_stag_x_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field3D AiolosMesh::VDDX_C2_stag_x_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field3D result(localmesh);
@@ -7944,16 +7944,16 @@ Field3D VDDX_C2_stag_x_on(const Field3D &v_in, const Field3D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  VDDX_C2_stag_x_Field3D_on(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_C2_stag_x_Field3D_CtoL(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_XLOW);
   checkData(result);
   return result;
 }
 
-static void VDDX_C2_stag_y_Field3D_on(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ v_in_ptr,
-                                      const BoutReal *__restrict__ f_in_ptr,
-                                      Mesh *localmesh) {
+static void VDDX_C2_stag_y_Field3D_CtoL(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -7978,14 +7978,14 @@ static void VDDX_C2_stag_y_Field3D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D VDDX_C2_stag_y_on(const Field3D &v_in, const Field3D &f_in) {
+Field3D VDDX_C2_stag_y_CtoL(const Field3D &v_in, const Field3D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_C2_stag_y_Field3D_on!\n");
+  output_debug.write("Using method VDDX_C2_stag_y_Field3D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNy < 3) {
-    throw BoutException("Field3D AiolosMesh::VDDX_C2_stag_y_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field3D AiolosMesh::VDDX_C2_stag_y_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field3D result(localmesh);
@@ -7995,16 +7995,16 @@ Field3D VDDX_C2_stag_y_on(const Field3D &v_in, const Field3D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  VDDX_C2_stag_y_Field3D_on(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_C2_stag_y_Field3D_CtoL(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_YLOW);
   checkData(result);
   return result;
 }
 
-static void VDDX_C2_stag_z_Field3D_on(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ v_in_ptr,
-                                      const BoutReal *__restrict__ f_in_ptr,
-                                      Mesh *localmesh) {
+static void VDDX_C2_stag_z_Field3D_CtoL(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -8056,14 +8056,14 @@ static void VDDX_C2_stag_z_Field3D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D VDDX_C2_stag_z_on(const Field3D &v_in, const Field3D &f_in) {
+Field3D VDDX_C2_stag_z_CtoL(const Field3D &v_in, const Field3D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_C2_stag_z_Field3D_on!\n");
+  output_debug.write("Using method VDDX_C2_stag_z_Field3D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNz < 3) {
-    throw BoutException("Field3D AiolosMesh::VDDX_C2_stag_z_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field3D AiolosMesh::VDDX_C2_stag_z_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field3D result(localmesh);
@@ -8073,16 +8073,16 @@ Field3D VDDX_C2_stag_z_on(const Field3D &v_in, const Field3D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  VDDX_C2_stag_z_Field3D_on(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_C2_stag_z_Field3D_CtoL(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_ZLOW);
   checkData(result);
   return result;
 }
 
-static void VDDX_C2_stag_x_Field2D_on(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ v_in_ptr,
-                                      const BoutReal *__restrict__ f_in_ptr,
-                                      Mesh *localmesh) {
+static void VDDX_C2_stag_x_Field2D_CtoL(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
 #if CHECK > 0
@@ -8102,14 +8102,14 @@ static void VDDX_C2_stag_x_Field2D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field2D VDDX_C2_stag_x_on(const Field2D &v_in, const Field2D &f_in) {
+Field2D VDDX_C2_stag_x_CtoL(const Field2D &v_in, const Field2D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_C2_stag_x_Field2D_on!\n");
+  output_debug.write("Using method VDDX_C2_stag_x_Field2D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNx < 3) {
-    throw BoutException("Field2D AiolosMesh::VDDX_C2_stag_x_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field2D AiolosMesh::VDDX_C2_stag_x_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field2D result(localmesh);
@@ -8119,16 +8119,16 @@ Field2D VDDX_C2_stag_x_on(const Field2D &v_in, const Field2D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0);
-  VDDX_C2_stag_x_Field2D_on(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_C2_stag_x_Field2D_CtoL(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_XLOW);
   checkData(result);
   return result;
 }
 
-static void VDDX_C2_stag_y_Field2D_on(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ v_in_ptr,
-                                      const BoutReal *__restrict__ f_in_ptr,
-                                      Mesh *localmesh) {
+static void VDDX_C2_stag_y_Field2D_CtoL(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
 #if CHECK > 0
@@ -8148,14 +8148,14 @@ static void VDDX_C2_stag_y_Field2D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field2D VDDX_C2_stag_y_on(const Field2D &v_in, const Field2D &f_in) {
+Field2D VDDX_C2_stag_y_CtoL(const Field2D &v_in, const Field2D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_C2_stag_y_Field2D_on!\n");
+  output_debug.write("Using method VDDX_C2_stag_y_Field2D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNy < 3) {
-    throw BoutException("Field2D AiolosMesh::VDDX_C2_stag_y_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field2D AiolosMesh::VDDX_C2_stag_y_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field2D result(localmesh);
@@ -8165,16 +8165,16 @@ Field2D VDDX_C2_stag_y_on(const Field2D &v_in, const Field2D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0);
-  VDDX_C2_stag_y_Field2D_on(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_C2_stag_y_Field2D_CtoL(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_YLOW);
   checkData(result);
   return result;
 }
 
-static void VDDX_C2_stag_x_Field3D_off(BoutReal *__restrict__ result_ptr,
-                                       const BoutReal *__restrict__ v_in_ptr,
-                                       const BoutReal *__restrict__ f_in_ptr,
-                                       Mesh *localmesh) {
+static void VDDX_C2_stag_x_Field3D_LtoC(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -8199,13 +8199,13 @@ static void VDDX_C2_stag_x_Field3D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D VDDX_C2_stag_x_off(const Field3D &v_in, const Field3D &f_in) {
+Field3D VDDX_C2_stag_x_LtoC(const Field3D &v_in, const Field3D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_C2_stag_x_Field3D_off!\n");
+  output_debug.write("Using method VDDX_C2_stag_x_Field3D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNx < 3) {
-    throw BoutException("Field3D AiolosMesh::VDDX_C2_stag_x_off - Not enough guards "
+    throw BoutException("Field3D AiolosMesh::VDDX_C2_stag_x_LtoC - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -8216,16 +8216,16 @@ Field3D VDDX_C2_stag_x_off(const Field3D &v_in, const Field3D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  VDDX_C2_stag_x_Field3D_off(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_C2_stag_x_Field3D_LtoC(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void VDDX_C2_stag_y_Field3D_off(BoutReal *__restrict__ result_ptr,
-                                       const BoutReal *__restrict__ v_in_ptr,
-                                       const BoutReal *__restrict__ f_in_ptr,
-                                       Mesh *localmesh) {
+static void VDDX_C2_stag_y_Field3D_LtoC(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -8250,13 +8250,13 @@ static void VDDX_C2_stag_y_Field3D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D VDDX_C2_stag_y_off(const Field3D &v_in, const Field3D &f_in) {
+Field3D VDDX_C2_stag_y_LtoC(const Field3D &v_in, const Field3D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_C2_stag_y_Field3D_off!\n");
+  output_debug.write("Using method VDDX_C2_stag_y_Field3D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNy < 3) {
-    throw BoutException("Field3D AiolosMesh::VDDX_C2_stag_y_off - Not enough guards "
+    throw BoutException("Field3D AiolosMesh::VDDX_C2_stag_y_LtoC - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -8267,16 +8267,16 @@ Field3D VDDX_C2_stag_y_off(const Field3D &v_in, const Field3D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  VDDX_C2_stag_y_Field3D_off(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_C2_stag_y_Field3D_LtoC(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void VDDX_C2_stag_z_Field3D_off(BoutReal *__restrict__ result_ptr,
-                                       const BoutReal *__restrict__ v_in_ptr,
-                                       const BoutReal *__restrict__ f_in_ptr,
-                                       Mesh *localmesh) {
+static void VDDX_C2_stag_z_Field3D_LtoC(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -8328,13 +8328,13 @@ static void VDDX_C2_stag_z_Field3D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D VDDX_C2_stag_z_off(const Field3D &v_in, const Field3D &f_in) {
+Field3D VDDX_C2_stag_z_LtoC(const Field3D &v_in, const Field3D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_C2_stag_z_Field3D_off!\n");
+  output_debug.write("Using method VDDX_C2_stag_z_Field3D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNz < 3) {
-    throw BoutException("Field3D AiolosMesh::VDDX_C2_stag_z_off - Not enough guards "
+    throw BoutException("Field3D AiolosMesh::VDDX_C2_stag_z_LtoC - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -8345,16 +8345,16 @@ Field3D VDDX_C2_stag_z_off(const Field3D &v_in, const Field3D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  VDDX_C2_stag_z_Field3D_off(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_C2_stag_z_Field3D_LtoC(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void VDDX_C2_stag_x_Field2D_off(BoutReal *__restrict__ result_ptr,
-                                       const BoutReal *__restrict__ v_in_ptr,
-                                       const BoutReal *__restrict__ f_in_ptr,
-                                       Mesh *localmesh) {
+static void VDDX_C2_stag_x_Field2D_LtoC(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
 #if CHECK > 0
@@ -8374,13 +8374,13 @@ static void VDDX_C2_stag_x_Field2D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field2D VDDX_C2_stag_x_off(const Field2D &v_in, const Field2D &f_in) {
+Field2D VDDX_C2_stag_x_LtoC(const Field2D &v_in, const Field2D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_C2_stag_x_Field2D_off!\n");
+  output_debug.write("Using method VDDX_C2_stag_x_Field2D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNx < 3) {
-    throw BoutException("Field2D AiolosMesh::VDDX_C2_stag_x_off - Not enough guards "
+    throw BoutException("Field2D AiolosMesh::VDDX_C2_stag_x_LtoC - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -8391,16 +8391,16 @@ Field2D VDDX_C2_stag_x_off(const Field2D &v_in, const Field2D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0);
-  VDDX_C2_stag_x_Field2D_off(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_C2_stag_x_Field2D_LtoC(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void VDDX_C2_stag_y_Field2D_off(BoutReal *__restrict__ result_ptr,
-                                       const BoutReal *__restrict__ v_in_ptr,
-                                       const BoutReal *__restrict__ f_in_ptr,
-                                       Mesh *localmesh) {
+static void VDDX_C2_stag_y_Field2D_LtoC(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
 #if CHECK > 0
@@ -8420,13 +8420,13 @@ static void VDDX_C2_stag_y_Field2D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field2D VDDX_C2_stag_y_off(const Field2D &v_in, const Field2D &f_in) {
+Field2D VDDX_C2_stag_y_LtoC(const Field2D &v_in, const Field2D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_C2_stag_y_Field2D_off!\n");
+  output_debug.write("Using method VDDX_C2_stag_y_Field2D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNy < 3) {
-    throw BoutException("Field2D AiolosMesh::VDDX_C2_stag_y_off - Not enough guards "
+    throw BoutException("Field2D AiolosMesh::VDDX_C2_stag_y_LtoC - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -8437,16 +8437,16 @@ Field2D VDDX_C2_stag_y_off(const Field2D &v_in, const Field2D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0);
-  VDDX_C2_stag_y_Field2D_off(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_C2_stag_y_Field2D_LtoC(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void VDDX_C4_stag_x_Field3D_on(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ v_in_ptr,
-                                      const BoutReal *__restrict__ f_in_ptr,
-                                      Mesh *localmesh) {
+static void VDDX_C4_stag_x_Field3D_CtoL(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -8476,14 +8476,14 @@ static void VDDX_C4_stag_x_Field3D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D VDDX_C4_stag_x_on(const Field3D &v_in, const Field3D &f_in) {
+Field3D VDDX_C4_stag_x_CtoL(const Field3D &v_in, const Field3D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_C4_stag_x_Field3D_on!\n");
+  output_debug.write("Using method VDDX_C4_stag_x_Field3D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNx < 5) {
-    throw BoutException("Field3D AiolosMesh::VDDX_C4_stag_x_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field3D AiolosMesh::VDDX_C4_stag_x_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field3D result(localmesh);
@@ -8493,16 +8493,16 @@ Field3D VDDX_C4_stag_x_on(const Field3D &v_in, const Field3D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  VDDX_C4_stag_x_Field3D_on(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_C4_stag_x_Field3D_CtoL(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_XLOW);
   checkData(result);
   return result;
 }
 
-static void VDDX_C4_stag_y_Field3D_on(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ v_in_ptr,
-                                      const BoutReal *__restrict__ f_in_ptr,
-                                      Mesh *localmesh) {
+static void VDDX_C4_stag_y_Field3D_CtoL(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -8531,14 +8531,14 @@ static void VDDX_C4_stag_y_Field3D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D VDDX_C4_stag_y_on(const Field3D &v_in, const Field3D &f_in) {
+Field3D VDDX_C4_stag_y_CtoL(const Field3D &v_in, const Field3D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_C4_stag_y_Field3D_on!\n");
+  output_debug.write("Using method VDDX_C4_stag_y_Field3D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNy < 5) {
-    throw BoutException("Field3D AiolosMesh::VDDX_C4_stag_y_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field3D AiolosMesh::VDDX_C4_stag_y_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field3D result(localmesh);
@@ -8548,16 +8548,16 @@ Field3D VDDX_C4_stag_y_on(const Field3D &v_in, const Field3D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  VDDX_C4_stag_y_Field3D_on(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_C4_stag_y_Field3D_CtoL(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_YLOW);
   checkData(result);
   return result;
 }
 
-static void VDDX_C4_stag_z_Field3D_on(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ v_in_ptr,
-                                      const BoutReal *__restrict__ f_in_ptr,
-                                      Mesh *localmesh) {
+static void VDDX_C4_stag_z_Field3D_CtoL(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -8657,14 +8657,14 @@ static void VDDX_C4_stag_z_Field3D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D VDDX_C4_stag_z_on(const Field3D &v_in, const Field3D &f_in) {
+Field3D VDDX_C4_stag_z_CtoL(const Field3D &v_in, const Field3D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_C4_stag_z_Field3D_on!\n");
+  output_debug.write("Using method VDDX_C4_stag_z_Field3D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNz < 5) {
-    throw BoutException("Field3D AiolosMesh::VDDX_C4_stag_z_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field3D AiolosMesh::VDDX_C4_stag_z_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field3D result(localmesh);
@@ -8674,16 +8674,16 @@ Field3D VDDX_C4_stag_z_on(const Field3D &v_in, const Field3D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  VDDX_C4_stag_z_Field3D_on(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_C4_stag_z_Field3D_CtoL(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_ZLOW);
   checkData(result);
   return result;
 }
 
-static void VDDX_C4_stag_x_Field2D_on(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ v_in_ptr,
-                                      const BoutReal *__restrict__ f_in_ptr,
-                                      Mesh *localmesh) {
+static void VDDX_C4_stag_x_Field2D_CtoL(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
 #if CHECK > 0
@@ -8706,14 +8706,14 @@ static void VDDX_C4_stag_x_Field2D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field2D VDDX_C4_stag_x_on(const Field2D &v_in, const Field2D &f_in) {
+Field2D VDDX_C4_stag_x_CtoL(const Field2D &v_in, const Field2D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_C4_stag_x_Field2D_on!\n");
+  output_debug.write("Using method VDDX_C4_stag_x_Field2D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNx < 5) {
-    throw BoutException("Field2D AiolosMesh::VDDX_C4_stag_x_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field2D AiolosMesh::VDDX_C4_stag_x_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field2D result(localmesh);
@@ -8723,16 +8723,16 @@ Field2D VDDX_C4_stag_x_on(const Field2D &v_in, const Field2D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0);
-  VDDX_C4_stag_x_Field2D_on(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_C4_stag_x_Field2D_CtoL(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_XLOW);
   checkData(result);
   return result;
 }
 
-static void VDDX_C4_stag_y_Field2D_on(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ v_in_ptr,
-                                      const BoutReal *__restrict__ f_in_ptr,
-                                      Mesh *localmesh) {
+static void VDDX_C4_stag_y_Field2D_CtoL(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
 #if CHECK > 0
@@ -8755,14 +8755,14 @@ static void VDDX_C4_stag_y_Field2D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field2D VDDX_C4_stag_y_on(const Field2D &v_in, const Field2D &f_in) {
+Field2D VDDX_C4_stag_y_CtoL(const Field2D &v_in, const Field2D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_C4_stag_y_Field2D_on!\n");
+  output_debug.write("Using method VDDX_C4_stag_y_Field2D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNy < 5) {
-    throw BoutException("Field2D AiolosMesh::VDDX_C4_stag_y_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field2D AiolosMesh::VDDX_C4_stag_y_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field2D result(localmesh);
@@ -8772,16 +8772,16 @@ Field2D VDDX_C4_stag_y_on(const Field2D &v_in, const Field2D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0);
-  VDDX_C4_stag_y_Field2D_on(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_C4_stag_y_Field2D_CtoL(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_YLOW);
   checkData(result);
   return result;
 }
 
-static void VDDX_C4_stag_x_Field3D_off(BoutReal *__restrict__ result_ptr,
-                                       const BoutReal *__restrict__ v_in_ptr,
-                                       const BoutReal *__restrict__ f_in_ptr,
-                                       Mesh *localmesh) {
+static void VDDX_C4_stag_x_Field3D_LtoC(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -8811,13 +8811,13 @@ static void VDDX_C4_stag_x_Field3D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D VDDX_C4_stag_x_off(const Field3D &v_in, const Field3D &f_in) {
+Field3D VDDX_C4_stag_x_LtoC(const Field3D &v_in, const Field3D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_C4_stag_x_Field3D_off!\n");
+  output_debug.write("Using method VDDX_C4_stag_x_Field3D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNx < 5) {
-    throw BoutException("Field3D AiolosMesh::VDDX_C4_stag_x_off - Not enough guards "
+    throw BoutException("Field3D AiolosMesh::VDDX_C4_stag_x_LtoC - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -8828,16 +8828,16 @@ Field3D VDDX_C4_stag_x_off(const Field3D &v_in, const Field3D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  VDDX_C4_stag_x_Field3D_off(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_C4_stag_x_Field3D_LtoC(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void VDDX_C4_stag_y_Field3D_off(BoutReal *__restrict__ result_ptr,
-                                       const BoutReal *__restrict__ v_in_ptr,
-                                       const BoutReal *__restrict__ f_in_ptr,
-                                       Mesh *localmesh) {
+static void VDDX_C4_stag_y_Field3D_LtoC(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -8866,13 +8866,13 @@ static void VDDX_C4_stag_y_Field3D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D VDDX_C4_stag_y_off(const Field3D &v_in, const Field3D &f_in) {
+Field3D VDDX_C4_stag_y_LtoC(const Field3D &v_in, const Field3D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_C4_stag_y_Field3D_off!\n");
+  output_debug.write("Using method VDDX_C4_stag_y_Field3D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNy < 5) {
-    throw BoutException("Field3D AiolosMesh::VDDX_C4_stag_y_off - Not enough guards "
+    throw BoutException("Field3D AiolosMesh::VDDX_C4_stag_y_LtoC - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -8883,16 +8883,16 @@ Field3D VDDX_C4_stag_y_off(const Field3D &v_in, const Field3D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  VDDX_C4_stag_y_Field3D_off(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_C4_stag_y_Field3D_LtoC(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void VDDX_C4_stag_z_Field3D_off(BoutReal *__restrict__ result_ptr,
-                                       const BoutReal *__restrict__ v_in_ptr,
-                                       const BoutReal *__restrict__ f_in_ptr,
-                                       Mesh *localmesh) {
+static void VDDX_C4_stag_z_Field3D_LtoC(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -8992,13 +8992,13 @@ static void VDDX_C4_stag_z_Field3D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D VDDX_C4_stag_z_off(const Field3D &v_in, const Field3D &f_in) {
+Field3D VDDX_C4_stag_z_LtoC(const Field3D &v_in, const Field3D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_C4_stag_z_Field3D_off!\n");
+  output_debug.write("Using method VDDX_C4_stag_z_Field3D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNz < 5) {
-    throw BoutException("Field3D AiolosMesh::VDDX_C4_stag_z_off - Not enough guards "
+    throw BoutException("Field3D AiolosMesh::VDDX_C4_stag_z_LtoC - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -9009,16 +9009,16 @@ Field3D VDDX_C4_stag_z_off(const Field3D &v_in, const Field3D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  VDDX_C4_stag_z_Field3D_off(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_C4_stag_z_Field3D_LtoC(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void VDDX_C4_stag_x_Field2D_off(BoutReal *__restrict__ result_ptr,
-                                       const BoutReal *__restrict__ v_in_ptr,
-                                       const BoutReal *__restrict__ f_in_ptr,
-                                       Mesh *localmesh) {
+static void VDDX_C4_stag_x_Field2D_LtoC(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
 #if CHECK > 0
@@ -9041,13 +9041,13 @@ static void VDDX_C4_stag_x_Field2D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field2D VDDX_C4_stag_x_off(const Field2D &v_in, const Field2D &f_in) {
+Field2D VDDX_C4_stag_x_LtoC(const Field2D &v_in, const Field2D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_C4_stag_x_Field2D_off!\n");
+  output_debug.write("Using method VDDX_C4_stag_x_Field2D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNx < 5) {
-    throw BoutException("Field2D AiolosMesh::VDDX_C4_stag_x_off - Not enough guards "
+    throw BoutException("Field2D AiolosMesh::VDDX_C4_stag_x_LtoC - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -9058,16 +9058,16 @@ Field2D VDDX_C4_stag_x_off(const Field2D &v_in, const Field2D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0);
-  VDDX_C4_stag_x_Field2D_off(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_C4_stag_x_Field2D_LtoC(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void VDDX_C4_stag_y_Field2D_off(BoutReal *__restrict__ result_ptr,
-                                       const BoutReal *__restrict__ v_in_ptr,
-                                       const BoutReal *__restrict__ f_in_ptr,
-                                       Mesh *localmesh) {
+static void VDDX_C4_stag_y_Field2D_LtoC(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
 #if CHECK > 0
@@ -9090,13 +9090,13 @@ static void VDDX_C4_stag_y_Field2D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field2D VDDX_C4_stag_y_off(const Field2D &v_in, const Field2D &f_in) {
+Field2D VDDX_C4_stag_y_LtoC(const Field2D &v_in, const Field2D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method VDDX_C4_stag_y_Field2D_off!\n");
+  output_debug.write("Using method VDDX_C4_stag_y_Field2D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNy < 5) {
-    throw BoutException("Field2D AiolosMesh::VDDX_C4_stag_y_off - Not enough guards "
+    throw BoutException("Field2D AiolosMesh::VDDX_C4_stag_y_LtoC - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -9107,16 +9107,16 @@ Field2D VDDX_C4_stag_y_off(const Field2D &v_in, const Field2D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0);
-  VDDX_C4_stag_y_Field2D_off(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  VDDX_C4_stag_y_Field2D_LtoC(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void FDDX_U1_stag_x_Field3D_on(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ v_in_ptr,
-                                      const BoutReal *__restrict__ f_in_ptr,
-                                      Mesh *localmesh) {
+static void FDDX_U1_stag_x_Field3D_CtoL(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -9147,14 +9147,14 @@ static void FDDX_U1_stag_x_Field3D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D FDDX_U1_stag_x_on(const Field3D &v_in, const Field3D &f_in) {
+Field3D FDDX_U1_stag_x_CtoL(const Field3D &v_in, const Field3D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method FDDX_U1_stag_x_Field3D_on!\n");
+  output_debug.write("Using method FDDX_U1_stag_x_Field3D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNx < 3) {
-    throw BoutException("Field3D AiolosMesh::FDDX_U1_stag_x_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field3D AiolosMesh::FDDX_U1_stag_x_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field3D result(localmesh);
@@ -9164,16 +9164,16 @@ Field3D FDDX_U1_stag_x_on(const Field3D &v_in, const Field3D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  FDDX_U1_stag_x_Field3D_on(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  FDDX_U1_stag_x_Field3D_CtoL(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_XLOW);
   checkData(result);
   return result;
 }
 
-static void FDDX_U1_stag_y_Field3D_on(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ v_in_ptr,
-                                      const BoutReal *__restrict__ f_in_ptr,
-                                      Mesh *localmesh) {
+static void FDDX_U1_stag_y_Field3D_CtoL(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -9204,14 +9204,14 @@ static void FDDX_U1_stag_y_Field3D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D FDDX_U1_stag_y_on(const Field3D &v_in, const Field3D &f_in) {
+Field3D FDDX_U1_stag_y_CtoL(const Field3D &v_in, const Field3D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method FDDX_U1_stag_y_Field3D_on!\n");
+  output_debug.write("Using method FDDX_U1_stag_y_Field3D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNy < 3) {
-    throw BoutException("Field3D AiolosMesh::FDDX_U1_stag_y_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field3D AiolosMesh::FDDX_U1_stag_y_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field3D result(localmesh);
@@ -9221,16 +9221,16 @@ Field3D FDDX_U1_stag_y_on(const Field3D &v_in, const Field3D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  FDDX_U1_stag_y_Field3D_on(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  FDDX_U1_stag_y_Field3D_CtoL(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_YLOW);
   checkData(result);
   return result;
 }
 
-static void FDDX_U1_stag_z_Field3D_on(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ v_in_ptr,
-                                      const BoutReal *__restrict__ f_in_ptr,
-                                      Mesh *localmesh) {
+static void FDDX_U1_stag_z_Field3D_CtoL(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -9307,14 +9307,14 @@ static void FDDX_U1_stag_z_Field3D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D FDDX_U1_stag_z_on(const Field3D &v_in, const Field3D &f_in) {
+Field3D FDDX_U1_stag_z_CtoL(const Field3D &v_in, const Field3D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method FDDX_U1_stag_z_Field3D_on!\n");
+  output_debug.write("Using method FDDX_U1_stag_z_Field3D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNz < 3) {
-    throw BoutException("Field3D AiolosMesh::FDDX_U1_stag_z_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field3D AiolosMesh::FDDX_U1_stag_z_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field3D result(localmesh);
@@ -9324,16 +9324,16 @@ Field3D FDDX_U1_stag_z_on(const Field3D &v_in, const Field3D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  FDDX_U1_stag_z_Field3D_on(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  FDDX_U1_stag_z_Field3D_CtoL(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_ZLOW);
   checkData(result);
   return result;
 }
 
-static void FDDX_U1_stag_x_Field2D_on(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ v_in_ptr,
-                                      const BoutReal *__restrict__ f_in_ptr,
-                                      Mesh *localmesh) {
+static void FDDX_U1_stag_x_Field2D_CtoL(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
 #if CHECK > 0
@@ -9357,14 +9357,14 @@ static void FDDX_U1_stag_x_Field2D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field2D FDDX_U1_stag_x_on(const Field2D &v_in, const Field2D &f_in) {
+Field2D FDDX_U1_stag_x_CtoL(const Field2D &v_in, const Field2D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method FDDX_U1_stag_x_Field2D_on!\n");
+  output_debug.write("Using method FDDX_U1_stag_x_Field2D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNx < 3) {
-    throw BoutException("Field2D AiolosMesh::FDDX_U1_stag_x_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field2D AiolosMesh::FDDX_U1_stag_x_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field2D result(localmesh);
@@ -9374,16 +9374,16 @@ Field2D FDDX_U1_stag_x_on(const Field2D &v_in, const Field2D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0);
-  FDDX_U1_stag_x_Field2D_on(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  FDDX_U1_stag_x_Field2D_CtoL(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_XLOW);
   checkData(result);
   return result;
 }
 
-static void FDDX_U1_stag_y_Field2D_on(BoutReal *__restrict__ result_ptr,
-                                      const BoutReal *__restrict__ v_in_ptr,
-                                      const BoutReal *__restrict__ f_in_ptr,
-                                      Mesh *localmesh) {
+static void FDDX_U1_stag_y_Field2D_CtoL(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
 #if CHECK > 0
@@ -9407,14 +9407,14 @@ static void FDDX_U1_stag_y_Field2D_on(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field2D FDDX_U1_stag_y_on(const Field2D &v_in, const Field2D &f_in) {
+Field2D FDDX_U1_stag_y_CtoL(const Field2D &v_in, const Field2D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method FDDX_U1_stag_y_Field2D_on!\n");
+  output_debug.write("Using method FDDX_U1_stag_y_Field2D_CtoL!\n");
 #if CHECK > 0
   if (localmesh->LocalNy < 3) {
-    throw BoutException("Field2D AiolosMesh::FDDX_U1_stag_y_on - Not enough guards cells "
-                        "to take derivative!");
+    throw BoutException("Field2D AiolosMesh::FDDX_U1_stag_y_CtoL - Not enough guards "
+                        "cells to take derivative!");
   }
 #endif
   Field2D result(localmesh);
@@ -9424,16 +9424,16 @@ Field2D FDDX_U1_stag_y_on(const Field2D &v_in, const Field2D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0);
-  FDDX_U1_stag_y_Field2D_on(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  FDDX_U1_stag_y_Field2D_CtoL(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_YLOW);
   checkData(result);
   return result;
 }
 
-static void FDDX_U1_stag_x_Field3D_off(BoutReal *__restrict__ result_ptr,
-                                       const BoutReal *__restrict__ v_in_ptr,
-                                       const BoutReal *__restrict__ f_in_ptr,
-                                       Mesh *localmesh) {
+static void FDDX_U1_stag_x_Field3D_LtoC(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -9464,13 +9464,13 @@ static void FDDX_U1_stag_x_Field3D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D FDDX_U1_stag_x_off(const Field3D &v_in, const Field3D &f_in) {
+Field3D FDDX_U1_stag_x_LtoC(const Field3D &v_in, const Field3D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method FDDX_U1_stag_x_Field3D_off!\n");
+  output_debug.write("Using method FDDX_U1_stag_x_Field3D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNx < 3) {
-    throw BoutException("Field3D AiolosMesh::FDDX_U1_stag_x_off - Not enough guards "
+    throw BoutException("Field3D AiolosMesh::FDDX_U1_stag_x_LtoC - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -9481,16 +9481,16 @@ Field3D FDDX_U1_stag_x_off(const Field3D &v_in, const Field3D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  FDDX_U1_stag_x_Field3D_off(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  FDDX_U1_stag_x_Field3D_LtoC(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void FDDX_U1_stag_y_Field3D_off(BoutReal *__restrict__ result_ptr,
-                                       const BoutReal *__restrict__ v_in_ptr,
-                                       const BoutReal *__restrict__ f_in_ptr,
-                                       Mesh *localmesh) {
+static void FDDX_U1_stag_y_Field3D_LtoC(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -9521,13 +9521,13 @@ static void FDDX_U1_stag_y_Field3D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D FDDX_U1_stag_y_off(const Field3D &v_in, const Field3D &f_in) {
+Field3D FDDX_U1_stag_y_LtoC(const Field3D &v_in, const Field3D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method FDDX_U1_stag_y_Field3D_off!\n");
+  output_debug.write("Using method FDDX_U1_stag_y_Field3D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNy < 3) {
-    throw BoutException("Field3D AiolosMesh::FDDX_U1_stag_y_off - Not enough guards "
+    throw BoutException("Field3D AiolosMesh::FDDX_U1_stag_y_LtoC - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -9538,16 +9538,16 @@ Field3D FDDX_U1_stag_y_off(const Field3D &v_in, const Field3D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  FDDX_U1_stag_y_Field3D_off(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  FDDX_U1_stag_y_Field3D_LtoC(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void FDDX_U1_stag_z_Field3D_off(BoutReal *__restrict__ result_ptr,
-                                       const BoutReal *__restrict__ v_in_ptr,
-                                       const BoutReal *__restrict__ f_in_ptr,
-                                       Mesh *localmesh) {
+static void FDDX_U1_stag_z_Field3D_LtoC(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -9624,13 +9624,13 @@ static void FDDX_U1_stag_z_Field3D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field3D FDDX_U1_stag_z_off(const Field3D &v_in, const Field3D &f_in) {
+Field3D FDDX_U1_stag_z_LtoC(const Field3D &v_in, const Field3D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method FDDX_U1_stag_z_Field3D_off!\n");
+  output_debug.write("Using method FDDX_U1_stag_z_Field3D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNz < 3) {
-    throw BoutException("Field3D AiolosMesh::FDDX_U1_stag_z_off - Not enough guards "
+    throw BoutException("Field3D AiolosMesh::FDDX_U1_stag_z_LtoC - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -9641,16 +9641,16 @@ Field3D FDDX_U1_stag_z_off(const Field3D &v_in, const Field3D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0, 0);
-  FDDX_U1_stag_z_Field3D_off(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  FDDX_U1_stag_z_Field3D_LtoC(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void FDDX_U1_stag_x_Field2D_off(BoutReal *__restrict__ result_ptr,
-                                       const BoutReal *__restrict__ v_in_ptr,
-                                       const BoutReal *__restrict__ f_in_ptr,
-                                       Mesh *localmesh) {
+static void FDDX_U1_stag_x_Field2D_LtoC(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
 #if CHECK > 0
@@ -9674,13 +9674,13 @@ static void FDDX_U1_stag_x_Field2D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field2D FDDX_U1_stag_x_off(const Field2D &v_in, const Field2D &f_in) {
+Field2D FDDX_U1_stag_x_LtoC(const Field2D &v_in, const Field2D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method FDDX_U1_stag_x_Field2D_off!\n");
+  output_debug.write("Using method FDDX_U1_stag_x_Field2D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNx < 3) {
-    throw BoutException("Field2D AiolosMesh::FDDX_U1_stag_x_off - Not enough guards "
+    throw BoutException("Field2D AiolosMesh::FDDX_U1_stag_x_LtoC - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -9691,16 +9691,16 @@ Field2D FDDX_U1_stag_x_off(const Field2D &v_in, const Field2D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0);
-  FDDX_U1_stag_x_Field2D_off(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  FDDX_U1_stag_x_Field2D_LtoC(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;
 }
 
-static void FDDX_U1_stag_y_Field2D_off(BoutReal *__restrict__ result_ptr,
-                                       const BoutReal *__restrict__ v_in_ptr,
-                                       const BoutReal *__restrict__ f_in_ptr,
-                                       Mesh *localmesh) {
+static void FDDX_U1_stag_y_Field2D_LtoC(BoutReal *__restrict__ result_ptr,
+                                        const BoutReal *__restrict__ v_in_ptr,
+                                        const BoutReal *__restrict__ f_in_ptr,
+                                        Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
 #if CHECK > 0
@@ -9724,13 +9724,13 @@ static void FDDX_U1_stag_y_Field2D_off(BoutReal *__restrict__ result_ptr,
 }
 
 // This file is auto-generated - do not edit!
-Field2D FDDX_U1_stag_y_off(const Field2D &v_in, const Field2D &f_in) {
+Field2D FDDX_U1_stag_y_LtoC(const Field2D &v_in, const Field2D &f_in) {
   Mesh *localmesh = v_in.getMesh();
   ASSERT1(localmesh == f_in.getMesh());
-  output_debug.write("Using method FDDX_U1_stag_y_Field2D_off!\n");
+  output_debug.write("Using method FDDX_U1_stag_y_Field2D_LtoC!\n");
 #if CHECK > 0
   if (localmesh->LocalNy < 3) {
-    throw BoutException("Field2D AiolosMesh::FDDX_U1_stag_y_off - Not enough guards "
+    throw BoutException("Field2D AiolosMesh::FDDX_U1_stag_y_LtoC - Not enough guards "
                         "cells to take derivative!");
   }
 #endif
@@ -9741,7 +9741,7 @@ Field2D FDDX_U1_stag_y_off(const Field2D &v_in, const Field2D &f_in) {
   const BoutReal *__restrict__ v_in_ptr = &v_in(0, 0);
   checkData(f_in);
   const BoutReal *__restrict__ f_in_ptr = &f_in(0, 0);
-  FDDX_U1_stag_y_Field2D_off(result_ptr, v_in_ptr, f_in_ptr, localmesh);
+  FDDX_U1_stag_y_Field2D_LtoC(result_ptr, v_in_ptr, f_in_ptr, localmesh);
   result.setLocation(CELL_CENTRE);
   checkData(result);
   return result;

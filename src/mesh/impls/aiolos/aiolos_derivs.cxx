@@ -595,19 +595,19 @@ const Field2D indexFDDY_norm(const Field2D &v, const Field2D &f, CELL_LOC outloc
 }
 
 // This file is auto-generated - do not edit!
-const Field3D indexDDX_on(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field3D indexDDX_CtoL(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_FirstStag][0];
   }
   switch (method) {
   case DIFF_C2:
-    return DDX_C2_stag_x_on(f);
+    return DDX_C2_stag_x_CtoL(f);
     break;
   case DIFF_C4:
-    return DDX_C4_stag_x_on(f);
+    return DDX_C4_stag_x_CtoL(f);
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexDDX_on unknown method %d.\n"
+    throw BoutException("Field3D AiolosMesh::indexDDX_CtoL unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_C2"
                         " * DIFF_C4"
@@ -617,19 +617,19 @@ const Field3D indexDDX_on(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
 }
 
 // This file is auto-generated - do not edit!
-const Field3D indexDDX_off(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field3D indexDDX_LtoC(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_FirstStag][0];
   }
   switch (method) {
   case DIFF_C2:
-    return DDX_C2_stag_x_off(f);
+    return DDX_C2_stag_x_LtoC(f);
     break;
   case DIFF_C4:
-    return DDX_C4_stag_x_off(f);
+    return DDX_C4_stag_x_LtoC(f);
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexDDX_off unknown method %d.\n"
+    throw BoutException("Field3D AiolosMesh::indexDDX_LtoC unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_C2"
                         " * DIFF_C4"
@@ -639,19 +639,19 @@ const Field3D indexDDX_off(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method
 }
 
 // This file is auto-generated - do not edit!
-const Field3D indexDDY_on(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field3D indexDDY_CtoL(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_FirstStag][1];
   }
   switch (method) {
   case DIFF_C2:
-    return DDX_C2_stag_y_on(f);
+    return DDX_C2_stag_y_CtoL(f);
     break;
   case DIFF_C4:
-    return DDX_C4_stag_y_on(f);
+    return DDX_C4_stag_y_CtoL(f);
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexDDY_on unknown method %d.\n"
+    throw BoutException("Field3D AiolosMesh::indexDDY_CtoL unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_C2"
                         " * DIFF_C4"
@@ -661,19 +661,19 @@ const Field3D indexDDY_on(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
 }
 
 // This file is auto-generated - do not edit!
-const Field3D indexDDY_off(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field3D indexDDY_LtoC(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_FirstStag][1];
   }
   switch (method) {
   case DIFF_C2:
-    return DDX_C2_stag_y_off(f);
+    return DDX_C2_stag_y_LtoC(f);
     break;
   case DIFF_C4:
-    return DDX_C4_stag_y_off(f);
+    return DDX_C4_stag_y_LtoC(f);
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexDDY_off unknown method %d.\n"
+    throw BoutException("Field3D AiolosMesh::indexDDY_LtoC unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_C2"
                         " * DIFF_C4"
@@ -683,19 +683,19 @@ const Field3D indexDDY_off(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method
 }
 
 // This file is auto-generated - do not edit!
-const Field3D indexDDZ_on(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field3D indexDDZ_CtoL(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_FirstStag][2];
   }
   switch (method) {
   case DIFF_C2:
-    return DDX_C2_stag_z_on(f);
+    return DDX_C2_stag_z_CtoL(f);
     break;
   case DIFF_C4:
-    return DDX_C4_stag_z_on(f);
+    return DDX_C4_stag_z_CtoL(f);
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexDDZ_on unknown method %d.\n"
+    throw BoutException("Field3D AiolosMesh::indexDDZ_CtoL unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_C2"
                         " * DIFF_C4"
@@ -705,19 +705,19 @@ const Field3D indexDDZ_on(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
 }
 
 // This file is auto-generated - do not edit!
-const Field3D indexDDZ_off(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field3D indexDDZ_LtoC(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_FirstStag][2];
   }
   switch (method) {
   case DIFF_C2:
-    return DDX_C2_stag_z_off(f);
+    return DDX_C2_stag_z_LtoC(f);
     break;
   case DIFF_C4:
-    return DDX_C4_stag_z_off(f);
+    return DDX_C4_stag_z_LtoC(f);
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexDDZ_off unknown method %d.\n"
+    throw BoutException("Field3D AiolosMesh::indexDDZ_LtoC unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_C2"
                         " * DIFF_C4"
@@ -727,19 +727,19 @@ const Field3D indexDDZ_off(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method
 }
 
 // This file is auto-generated - do not edit!
-const Field2D indexDDX_on(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field2D indexDDX_CtoL(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_FirstStag][0];
   }
   switch (method) {
   case DIFF_C2:
-    return DDX_C2_stag_x_on(f);
+    return DDX_C2_stag_x_CtoL(f);
     break;
   case DIFF_C4:
-    return DDX_C4_stag_x_on(f);
+    return DDX_C4_stag_x_CtoL(f);
     break;
   default:
-    throw BoutException("Field2D AiolosMesh::indexDDX_on unknown method %d.\n"
+    throw BoutException("Field2D AiolosMesh::indexDDX_CtoL unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_C2"
                         " * DIFF_C4"
@@ -749,19 +749,19 @@ const Field2D indexDDX_on(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method)
 }
 
 // This file is auto-generated - do not edit!
-const Field2D indexDDX_off(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field2D indexDDX_LtoC(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_FirstStag][0];
   }
   switch (method) {
   case DIFF_C2:
-    return DDX_C2_stag_x_off(f);
+    return DDX_C2_stag_x_LtoC(f);
     break;
   case DIFF_C4:
-    return DDX_C4_stag_x_off(f);
+    return DDX_C4_stag_x_LtoC(f);
     break;
   default:
-    throw BoutException("Field2D AiolosMesh::indexDDX_off unknown method %d.\n"
+    throw BoutException("Field2D AiolosMesh::indexDDX_LtoC unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_C2"
                         " * DIFF_C4"
@@ -771,19 +771,19 @@ const Field2D indexDDX_off(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method
 }
 
 // This file is auto-generated - do not edit!
-const Field2D indexDDY_on(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field2D indexDDY_CtoL(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_FirstStag][1];
   }
   switch (method) {
   case DIFF_C2:
-    return DDX_C2_stag_y_on(f);
+    return DDX_C2_stag_y_CtoL(f);
     break;
   case DIFF_C4:
-    return DDX_C4_stag_y_on(f);
+    return DDX_C4_stag_y_CtoL(f);
     break;
   default:
-    throw BoutException("Field2D AiolosMesh::indexDDY_on unknown method %d.\n"
+    throw BoutException("Field2D AiolosMesh::indexDDY_CtoL unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_C2"
                         " * DIFF_C4"
@@ -793,19 +793,19 @@ const Field2D indexDDY_on(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method)
 }
 
 // This file is auto-generated - do not edit!
-const Field2D indexDDY_off(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field2D indexDDY_LtoC(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_FirstStag][1];
   }
   switch (method) {
   case DIFF_C2:
-    return DDX_C2_stag_y_off(f);
+    return DDX_C2_stag_y_LtoC(f);
     break;
   case DIFF_C4:
-    return DDX_C4_stag_y_off(f);
+    return DDX_C4_stag_y_LtoC(f);
     break;
   default:
-    throw BoutException("Field2D AiolosMesh::indexDDY_off unknown method %d.\n"
+    throw BoutException("Field2D AiolosMesh::indexDDY_LtoC unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_C2"
                         " * DIFF_C4"
@@ -815,16 +815,16 @@ const Field2D indexDDY_off(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method
 }
 
 // This file is auto-generated - do not edit!
-const Field3D indexD2DX2_on(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field3D indexD2DX2_CtoL(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_SecondStag][0];
   }
   switch (method) {
   case DIFF_C2:
-    return D2DX2_C2_stag_x_on(f);
+    return D2DX2_C2_stag_x_CtoL(f);
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexD2DX2_on unknown method %d.\n"
+    throw BoutException("Field3D AiolosMesh::indexD2DX2_CtoL unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_C2"
                         "\nNote FFTs are not (yet) supported.",
@@ -833,16 +833,16 @@ const Field3D indexD2DX2_on(const Field3D &f, CELL_LOC outloc, DIFF_METHOD metho
 }
 
 // This file is auto-generated - do not edit!
-const Field3D indexD2DX2_off(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field3D indexD2DX2_LtoC(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_SecondStag][0];
   }
   switch (method) {
   case DIFF_C2:
-    return D2DX2_C2_stag_x_off(f);
+    return D2DX2_C2_stag_x_LtoC(f);
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexD2DX2_off unknown method %d.\n"
+    throw BoutException("Field3D AiolosMesh::indexD2DX2_LtoC unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_C2"
                         "\nNote FFTs are not (yet) supported.",
@@ -851,16 +851,16 @@ const Field3D indexD2DX2_off(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
 }
 
 // This file is auto-generated - do not edit!
-const Field3D indexD2DY2_on(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field3D indexD2DY2_CtoL(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_SecondStag][1];
   }
   switch (method) {
   case DIFF_C2:
-    return D2DX2_C2_stag_y_on(f);
+    return D2DX2_C2_stag_y_CtoL(f);
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexD2DY2_on unknown method %d.\n"
+    throw BoutException("Field3D AiolosMesh::indexD2DY2_CtoL unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_C2"
                         "\nNote FFTs are not (yet) supported.",
@@ -869,16 +869,16 @@ const Field3D indexD2DY2_on(const Field3D &f, CELL_LOC outloc, DIFF_METHOD metho
 }
 
 // This file is auto-generated - do not edit!
-const Field3D indexD2DY2_off(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field3D indexD2DY2_LtoC(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_SecondStag][1];
   }
   switch (method) {
   case DIFF_C2:
-    return D2DX2_C2_stag_y_off(f);
+    return D2DX2_C2_stag_y_LtoC(f);
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexD2DY2_off unknown method %d.\n"
+    throw BoutException("Field3D AiolosMesh::indexD2DY2_LtoC unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_C2"
                         "\nNote FFTs are not (yet) supported.",
@@ -887,16 +887,16 @@ const Field3D indexD2DY2_off(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
 }
 
 // This file is auto-generated - do not edit!
-const Field3D indexD2DZ2_on(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field3D indexD2DZ2_CtoL(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_SecondStag][2];
   }
   switch (method) {
   case DIFF_C2:
-    return D2DX2_C2_stag_z_on(f);
+    return D2DX2_C2_stag_z_CtoL(f);
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexD2DZ2_on unknown method %d.\n"
+    throw BoutException("Field3D AiolosMesh::indexD2DZ2_CtoL unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_C2"
                         "\nNote FFTs are not (yet) supported.",
@@ -905,16 +905,16 @@ const Field3D indexD2DZ2_on(const Field3D &f, CELL_LOC outloc, DIFF_METHOD metho
 }
 
 // This file is auto-generated - do not edit!
-const Field3D indexD2DZ2_off(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field3D indexD2DZ2_LtoC(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_SecondStag][2];
   }
   switch (method) {
   case DIFF_C2:
-    return D2DX2_C2_stag_z_off(f);
+    return D2DX2_C2_stag_z_LtoC(f);
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexD2DZ2_off unknown method %d.\n"
+    throw BoutException("Field3D AiolosMesh::indexD2DZ2_LtoC unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_C2"
                         "\nNote FFTs are not (yet) supported.",
@@ -923,16 +923,16 @@ const Field3D indexD2DZ2_off(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
 }
 
 // This file is auto-generated - do not edit!
-const Field2D indexD2DX2_on(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field2D indexD2DX2_CtoL(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_SecondStag][0];
   }
   switch (method) {
   case DIFF_C2:
-    return D2DX2_C2_stag_x_on(f);
+    return D2DX2_C2_stag_x_CtoL(f);
     break;
   default:
-    throw BoutException("Field2D AiolosMesh::indexD2DX2_on unknown method %d.\n"
+    throw BoutException("Field2D AiolosMesh::indexD2DX2_CtoL unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_C2"
                         "\nNote FFTs are not (yet) supported.",
@@ -941,16 +941,16 @@ const Field2D indexD2DX2_on(const Field2D &f, CELL_LOC outloc, DIFF_METHOD metho
 }
 
 // This file is auto-generated - do not edit!
-const Field2D indexD2DX2_off(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field2D indexD2DX2_LtoC(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_SecondStag][0];
   }
   switch (method) {
   case DIFF_C2:
-    return D2DX2_C2_stag_x_off(f);
+    return D2DX2_C2_stag_x_LtoC(f);
     break;
   default:
-    throw BoutException("Field2D AiolosMesh::indexD2DX2_off unknown method %d.\n"
+    throw BoutException("Field2D AiolosMesh::indexD2DX2_LtoC unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_C2"
                         "\nNote FFTs are not (yet) supported.",
@@ -959,16 +959,16 @@ const Field2D indexD2DX2_off(const Field2D &f, CELL_LOC outloc, DIFF_METHOD meth
 }
 
 // This file is auto-generated - do not edit!
-const Field2D indexD2DY2_on(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field2D indexD2DY2_CtoL(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_SecondStag][1];
   }
   switch (method) {
   case DIFF_C2:
-    return D2DX2_C2_stag_y_on(f);
+    return D2DX2_C2_stag_y_CtoL(f);
     break;
   default:
-    throw BoutException("Field2D AiolosMesh::indexD2DY2_on unknown method %d.\n"
+    throw BoutException("Field2D AiolosMesh::indexD2DY2_CtoL unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_C2"
                         "\nNote FFTs are not (yet) supported.",
@@ -977,16 +977,16 @@ const Field2D indexD2DY2_on(const Field2D &f, CELL_LOC outloc, DIFF_METHOD metho
 }
 
 // This file is auto-generated - do not edit!
-const Field2D indexD2DY2_off(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field2D indexD2DY2_LtoC(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_SecondStag][1];
   }
   switch (method) {
   case DIFF_C2:
-    return D2DX2_C2_stag_y_off(f);
+    return D2DX2_C2_stag_y_LtoC(f);
     break;
   default:
-    throw BoutException("Field2D AiolosMesh::indexD2DY2_off unknown method %d.\n"
+    throw BoutException("Field2D AiolosMesh::indexD2DY2_LtoC unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_C2"
                         "\nNote FFTs are not (yet) supported.",
@@ -995,26 +995,26 @@ const Field2D indexD2DY2_off(const Field2D &f, CELL_LOC outloc, DIFF_METHOD meth
 }
 
 // This file is auto-generated - do not edit!
-const Field3D indexVDDX_on(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                           DIFF_METHOD method) {
+const Field3D indexVDDX_CtoL(const Field3D &v, const Field3D &f, CELL_LOC outloc,
+                             DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_UpwindStag][0];
   }
   switch (method) {
   case DIFF_U1:
-    return VDDX_U1_stag_x_on(v, f);
+    return VDDX_U1_stag_x_CtoL(v, f);
     break;
   case DIFF_U2:
-    return VDDX_U2_stag_x_on(v, f);
+    return VDDX_U2_stag_x_CtoL(v, f);
     break;
   case DIFF_C2:
-    return VDDX_C2_stag_x_on(v, f);
+    return VDDX_C2_stag_x_CtoL(v, f);
     break;
   case DIFF_C4:
-    return VDDX_C4_stag_x_on(v, f);
+    return VDDX_C4_stag_x_CtoL(v, f);
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexVDDX_on unknown method %d.\n"
+    throw BoutException("Field3D AiolosMesh::indexVDDX_CtoL unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_U1"
                         " * DIFF_U2"
@@ -1026,26 +1026,26 @@ const Field3D indexVDDX_on(const Field3D &v, const Field3D &f, CELL_LOC outloc,
 }
 
 // This file is auto-generated - do not edit!
-const Field3D indexVDDX_off(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                            DIFF_METHOD method) {
+const Field3D indexVDDX_LtoC(const Field3D &v, const Field3D &f, CELL_LOC outloc,
+                             DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_UpwindStag][0];
   }
   switch (method) {
   case DIFF_U1:
-    return VDDX_U1_stag_x_off(v, f);
+    return VDDX_U1_stag_x_LtoC(v, f);
     break;
   case DIFF_U2:
-    return VDDX_U2_stag_x_off(v, f);
+    return VDDX_U2_stag_x_LtoC(v, f);
     break;
   case DIFF_C2:
-    return VDDX_C2_stag_x_off(v, f);
+    return VDDX_C2_stag_x_LtoC(v, f);
     break;
   case DIFF_C4:
-    return VDDX_C4_stag_x_off(v, f);
+    return VDDX_C4_stag_x_LtoC(v, f);
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexVDDX_off unknown method %d.\n"
+    throw BoutException("Field3D AiolosMesh::indexVDDX_LtoC unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_U1"
                         " * DIFF_U2"
@@ -1057,26 +1057,26 @@ const Field3D indexVDDX_off(const Field3D &v, const Field3D &f, CELL_LOC outloc,
 }
 
 // This file is auto-generated - do not edit!
-const Field3D indexVDDY_on(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                           DIFF_METHOD method) {
+const Field3D indexVDDY_CtoL(const Field3D &v, const Field3D &f, CELL_LOC outloc,
+                             DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_UpwindStag][1];
   }
   switch (method) {
   case DIFF_U1:
-    return VDDX_U1_stag_y_on(v, f);
+    return VDDX_U1_stag_y_CtoL(v, f);
     break;
   case DIFF_U2:
-    return VDDX_U2_stag_y_on(v, f);
+    return VDDX_U2_stag_y_CtoL(v, f);
     break;
   case DIFF_C2:
-    return VDDX_C2_stag_y_on(v, f);
+    return VDDX_C2_stag_y_CtoL(v, f);
     break;
   case DIFF_C4:
-    return VDDX_C4_stag_y_on(v, f);
+    return VDDX_C4_stag_y_CtoL(v, f);
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexVDDY_on unknown method %d.\n"
+    throw BoutException("Field3D AiolosMesh::indexVDDY_CtoL unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_U1"
                         " * DIFF_U2"
@@ -1088,26 +1088,26 @@ const Field3D indexVDDY_on(const Field3D &v, const Field3D &f, CELL_LOC outloc,
 }
 
 // This file is auto-generated - do not edit!
-const Field3D indexVDDY_off(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                            DIFF_METHOD method) {
+const Field3D indexVDDY_LtoC(const Field3D &v, const Field3D &f, CELL_LOC outloc,
+                             DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_UpwindStag][1];
   }
   switch (method) {
   case DIFF_U1:
-    return VDDX_U1_stag_y_off(v, f);
+    return VDDX_U1_stag_y_LtoC(v, f);
     break;
   case DIFF_U2:
-    return VDDX_U2_stag_y_off(v, f);
+    return VDDX_U2_stag_y_LtoC(v, f);
     break;
   case DIFF_C2:
-    return VDDX_C2_stag_y_off(v, f);
+    return VDDX_C2_stag_y_LtoC(v, f);
     break;
   case DIFF_C4:
-    return VDDX_C4_stag_y_off(v, f);
+    return VDDX_C4_stag_y_LtoC(v, f);
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexVDDY_off unknown method %d.\n"
+    throw BoutException("Field3D AiolosMesh::indexVDDY_LtoC unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_U1"
                         " * DIFF_U2"
@@ -1119,26 +1119,26 @@ const Field3D indexVDDY_off(const Field3D &v, const Field3D &f, CELL_LOC outloc,
 }
 
 // This file is auto-generated - do not edit!
-const Field3D indexVDDZ_on(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                           DIFF_METHOD method) {
+const Field3D indexVDDZ_CtoL(const Field3D &v, const Field3D &f, CELL_LOC outloc,
+                             DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_UpwindStag][2];
   }
   switch (method) {
   case DIFF_U1:
-    return VDDX_U1_stag_z_on(v, f);
+    return VDDX_U1_stag_z_CtoL(v, f);
     break;
   case DIFF_U2:
-    return VDDX_U2_stag_z_on(v, f);
+    return VDDX_U2_stag_z_CtoL(v, f);
     break;
   case DIFF_C2:
-    return VDDX_C2_stag_z_on(v, f);
+    return VDDX_C2_stag_z_CtoL(v, f);
     break;
   case DIFF_C4:
-    return VDDX_C4_stag_z_on(v, f);
+    return VDDX_C4_stag_z_CtoL(v, f);
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexVDDZ_on unknown method %d.\n"
+    throw BoutException("Field3D AiolosMesh::indexVDDZ_CtoL unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_U1"
                         " * DIFF_U2"
@@ -1150,26 +1150,26 @@ const Field3D indexVDDZ_on(const Field3D &v, const Field3D &f, CELL_LOC outloc,
 }
 
 // This file is auto-generated - do not edit!
-const Field3D indexVDDZ_off(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                            DIFF_METHOD method) {
+const Field3D indexVDDZ_LtoC(const Field3D &v, const Field3D &f, CELL_LOC outloc,
+                             DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_UpwindStag][2];
   }
   switch (method) {
   case DIFF_U1:
-    return VDDX_U1_stag_z_off(v, f);
+    return VDDX_U1_stag_z_LtoC(v, f);
     break;
   case DIFF_U2:
-    return VDDX_U2_stag_z_off(v, f);
+    return VDDX_U2_stag_z_LtoC(v, f);
     break;
   case DIFF_C2:
-    return VDDX_C2_stag_z_off(v, f);
+    return VDDX_C2_stag_z_LtoC(v, f);
     break;
   case DIFF_C4:
-    return VDDX_C4_stag_z_off(v, f);
+    return VDDX_C4_stag_z_LtoC(v, f);
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexVDDZ_off unknown method %d.\n"
+    throw BoutException("Field3D AiolosMesh::indexVDDZ_LtoC unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_U1"
                         " * DIFF_U2"
@@ -1181,26 +1181,26 @@ const Field3D indexVDDZ_off(const Field3D &v, const Field3D &f, CELL_LOC outloc,
 }
 
 // This file is auto-generated - do not edit!
-const Field2D indexVDDX_on(const Field2D &v, const Field2D &f, CELL_LOC outloc,
-                           DIFF_METHOD method) {
+const Field2D indexVDDX_CtoL(const Field2D &v, const Field2D &f, CELL_LOC outloc,
+                             DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_UpwindStag][0];
   }
   switch (method) {
   case DIFF_U1:
-    return VDDX_U1_stag_x_on(v, f);
+    return VDDX_U1_stag_x_CtoL(v, f);
     break;
   case DIFF_U2:
-    return VDDX_U2_stag_x_on(v, f);
+    return VDDX_U2_stag_x_CtoL(v, f);
     break;
   case DIFF_C2:
-    return VDDX_C2_stag_x_on(v, f);
+    return VDDX_C2_stag_x_CtoL(v, f);
     break;
   case DIFF_C4:
-    return VDDX_C4_stag_x_on(v, f);
+    return VDDX_C4_stag_x_CtoL(v, f);
     break;
   default:
-    throw BoutException("Field2D AiolosMesh::indexVDDX_on unknown method %d.\n"
+    throw BoutException("Field2D AiolosMesh::indexVDDX_CtoL unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_U1"
                         " * DIFF_U2"
@@ -1212,26 +1212,26 @@ const Field2D indexVDDX_on(const Field2D &v, const Field2D &f, CELL_LOC outloc,
 }
 
 // This file is auto-generated - do not edit!
-const Field2D indexVDDX_off(const Field2D &v, const Field2D &f, CELL_LOC outloc,
-                            DIFF_METHOD method) {
+const Field2D indexVDDX_LtoC(const Field2D &v, const Field2D &f, CELL_LOC outloc,
+                             DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_UpwindStag][0];
   }
   switch (method) {
   case DIFF_U1:
-    return VDDX_U1_stag_x_off(v, f);
+    return VDDX_U1_stag_x_LtoC(v, f);
     break;
   case DIFF_U2:
-    return VDDX_U2_stag_x_off(v, f);
+    return VDDX_U2_stag_x_LtoC(v, f);
     break;
   case DIFF_C2:
-    return VDDX_C2_stag_x_off(v, f);
+    return VDDX_C2_stag_x_LtoC(v, f);
     break;
   case DIFF_C4:
-    return VDDX_C4_stag_x_off(v, f);
+    return VDDX_C4_stag_x_LtoC(v, f);
     break;
   default:
-    throw BoutException("Field2D AiolosMesh::indexVDDX_off unknown method %d.\n"
+    throw BoutException("Field2D AiolosMesh::indexVDDX_LtoC unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_U1"
                         " * DIFF_U2"
@@ -1243,26 +1243,26 @@ const Field2D indexVDDX_off(const Field2D &v, const Field2D &f, CELL_LOC outloc,
 }
 
 // This file is auto-generated - do not edit!
-const Field2D indexVDDY_on(const Field2D &v, const Field2D &f, CELL_LOC outloc,
-                           DIFF_METHOD method) {
+const Field2D indexVDDY_CtoL(const Field2D &v, const Field2D &f, CELL_LOC outloc,
+                             DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_UpwindStag][1];
   }
   switch (method) {
   case DIFF_U1:
-    return VDDX_U1_stag_y_on(v, f);
+    return VDDX_U1_stag_y_CtoL(v, f);
     break;
   case DIFF_U2:
-    return VDDX_U2_stag_y_on(v, f);
+    return VDDX_U2_stag_y_CtoL(v, f);
     break;
   case DIFF_C2:
-    return VDDX_C2_stag_y_on(v, f);
+    return VDDX_C2_stag_y_CtoL(v, f);
     break;
   case DIFF_C4:
-    return VDDX_C4_stag_y_on(v, f);
+    return VDDX_C4_stag_y_CtoL(v, f);
     break;
   default:
-    throw BoutException("Field2D AiolosMesh::indexVDDY_on unknown method %d.\n"
+    throw BoutException("Field2D AiolosMesh::indexVDDY_CtoL unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_U1"
                         " * DIFF_U2"
@@ -1274,26 +1274,26 @@ const Field2D indexVDDY_on(const Field2D &v, const Field2D &f, CELL_LOC outloc,
 }
 
 // This file is auto-generated - do not edit!
-const Field2D indexVDDY_off(const Field2D &v, const Field2D &f, CELL_LOC outloc,
-                            DIFF_METHOD method) {
+const Field2D indexVDDY_LtoC(const Field2D &v, const Field2D &f, CELL_LOC outloc,
+                             DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_UpwindStag][1];
   }
   switch (method) {
   case DIFF_U1:
-    return VDDX_U1_stag_y_off(v, f);
+    return VDDX_U1_stag_y_LtoC(v, f);
     break;
   case DIFF_U2:
-    return VDDX_U2_stag_y_off(v, f);
+    return VDDX_U2_stag_y_LtoC(v, f);
     break;
   case DIFF_C2:
-    return VDDX_C2_stag_y_off(v, f);
+    return VDDX_C2_stag_y_LtoC(v, f);
     break;
   case DIFF_C4:
-    return VDDX_C4_stag_y_off(v, f);
+    return VDDX_C4_stag_y_LtoC(v, f);
     break;
   default:
-    throw BoutException("Field2D AiolosMesh::indexVDDY_off unknown method %d.\n"
+    throw BoutException("Field2D AiolosMesh::indexVDDY_LtoC unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_U1"
                         " * DIFF_U2"
@@ -1305,17 +1305,17 @@ const Field2D indexVDDY_off(const Field2D &v, const Field2D &f, CELL_LOC outloc,
 }
 
 // This file is auto-generated - do not edit!
-const Field3D indexFDDX_on(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                           DIFF_METHOD method) {
+const Field3D indexFDDX_CtoL(const Field3D &v, const Field3D &f, CELL_LOC outloc,
+                             DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_FluxStag][0];
   }
   switch (method) {
   case DIFF_U1:
-    return FDDX_U1_stag_x_on(v, f);
+    return FDDX_U1_stag_x_CtoL(v, f);
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexFDDX_on unknown method %d.\n"
+    throw BoutException("Field3D AiolosMesh::indexFDDX_CtoL unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_U1"
                         "\nNote FFTs are not (yet) supported.",
@@ -1324,17 +1324,17 @@ const Field3D indexFDDX_on(const Field3D &v, const Field3D &f, CELL_LOC outloc,
 }
 
 // This file is auto-generated - do not edit!
-const Field3D indexFDDX_off(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                            DIFF_METHOD method) {
+const Field3D indexFDDX_LtoC(const Field3D &v, const Field3D &f, CELL_LOC outloc,
+                             DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_FluxStag][0];
   }
   switch (method) {
   case DIFF_U1:
-    return FDDX_U1_stag_x_off(v, f);
+    return FDDX_U1_stag_x_LtoC(v, f);
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexFDDX_off unknown method %d.\n"
+    throw BoutException("Field3D AiolosMesh::indexFDDX_LtoC unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_U1"
                         "\nNote FFTs are not (yet) supported.",
@@ -1343,17 +1343,17 @@ const Field3D indexFDDX_off(const Field3D &v, const Field3D &f, CELL_LOC outloc,
 }
 
 // This file is auto-generated - do not edit!
-const Field3D indexFDDY_on(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                           DIFF_METHOD method) {
+const Field3D indexFDDY_CtoL(const Field3D &v, const Field3D &f, CELL_LOC outloc,
+                             DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_FluxStag][1];
   }
   switch (method) {
   case DIFF_U1:
-    return FDDX_U1_stag_y_on(v, f);
+    return FDDX_U1_stag_y_CtoL(v, f);
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexFDDY_on unknown method %d.\n"
+    throw BoutException("Field3D AiolosMesh::indexFDDY_CtoL unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_U1"
                         "\nNote FFTs are not (yet) supported.",
@@ -1362,17 +1362,17 @@ const Field3D indexFDDY_on(const Field3D &v, const Field3D &f, CELL_LOC outloc,
 }
 
 // This file is auto-generated - do not edit!
-const Field3D indexFDDY_off(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                            DIFF_METHOD method) {
+const Field3D indexFDDY_LtoC(const Field3D &v, const Field3D &f, CELL_LOC outloc,
+                             DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_FluxStag][1];
   }
   switch (method) {
   case DIFF_U1:
-    return FDDX_U1_stag_y_off(v, f);
+    return FDDX_U1_stag_y_LtoC(v, f);
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexFDDY_off unknown method %d.\n"
+    throw BoutException("Field3D AiolosMesh::indexFDDY_LtoC unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_U1"
                         "\nNote FFTs are not (yet) supported.",
@@ -1381,17 +1381,17 @@ const Field3D indexFDDY_off(const Field3D &v, const Field3D &f, CELL_LOC outloc,
 }
 
 // This file is auto-generated - do not edit!
-const Field3D indexFDDZ_on(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                           DIFF_METHOD method) {
+const Field3D indexFDDZ_CtoL(const Field3D &v, const Field3D &f, CELL_LOC outloc,
+                             DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_FluxStag][2];
   }
   switch (method) {
   case DIFF_U1:
-    return FDDX_U1_stag_z_on(v, f);
+    return FDDX_U1_stag_z_CtoL(v, f);
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexFDDZ_on unknown method %d.\n"
+    throw BoutException("Field3D AiolosMesh::indexFDDZ_CtoL unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_U1"
                         "\nNote FFTs are not (yet) supported.",
@@ -1400,17 +1400,17 @@ const Field3D indexFDDZ_on(const Field3D &v, const Field3D &f, CELL_LOC outloc,
 }
 
 // This file is auto-generated - do not edit!
-const Field3D indexFDDZ_off(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                            DIFF_METHOD method) {
+const Field3D indexFDDZ_LtoC(const Field3D &v, const Field3D &f, CELL_LOC outloc,
+                             DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_FluxStag][2];
   }
   switch (method) {
   case DIFF_U1:
-    return FDDX_U1_stag_z_off(v, f);
+    return FDDX_U1_stag_z_LtoC(v, f);
     break;
   default:
-    throw BoutException("Field3D AiolosMesh::indexFDDZ_off unknown method %d.\n"
+    throw BoutException("Field3D AiolosMesh::indexFDDZ_LtoC unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_U1"
                         "\nNote FFTs are not (yet) supported.",
@@ -1419,17 +1419,17 @@ const Field3D indexFDDZ_off(const Field3D &v, const Field3D &f, CELL_LOC outloc,
 }
 
 // This file is auto-generated - do not edit!
-const Field2D indexFDDX_on(const Field2D &v, const Field2D &f, CELL_LOC outloc,
-                           DIFF_METHOD method) {
+const Field2D indexFDDX_CtoL(const Field2D &v, const Field2D &f, CELL_LOC outloc,
+                             DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_FluxStag][0];
   }
   switch (method) {
   case DIFF_U1:
-    return FDDX_U1_stag_x_on(v, f);
+    return FDDX_U1_stag_x_CtoL(v, f);
     break;
   default:
-    throw BoutException("Field2D AiolosMesh::indexFDDX_on unknown method %d.\n"
+    throw BoutException("Field2D AiolosMesh::indexFDDX_CtoL unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_U1"
                         "\nNote FFTs are not (yet) supported.",
@@ -1438,17 +1438,17 @@ const Field2D indexFDDX_on(const Field2D &v, const Field2D &f, CELL_LOC outloc,
 }
 
 // This file is auto-generated - do not edit!
-const Field2D indexFDDX_off(const Field2D &v, const Field2D &f, CELL_LOC outloc,
-                            DIFF_METHOD method) {
+const Field2D indexFDDX_LtoC(const Field2D &v, const Field2D &f, CELL_LOC outloc,
+                             DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_FluxStag][0];
   }
   switch (method) {
   case DIFF_U1:
-    return FDDX_U1_stag_x_off(v, f);
+    return FDDX_U1_stag_x_LtoC(v, f);
     break;
   default:
-    throw BoutException("Field2D AiolosMesh::indexFDDX_off unknown method %d.\n"
+    throw BoutException("Field2D AiolosMesh::indexFDDX_LtoC unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_U1"
                         "\nNote FFTs are not (yet) supported.",
@@ -1457,17 +1457,17 @@ const Field2D indexFDDX_off(const Field2D &v, const Field2D &f, CELL_LOC outloc,
 }
 
 // This file is auto-generated - do not edit!
-const Field2D indexFDDY_on(const Field2D &v, const Field2D &f, CELL_LOC outloc,
-                           DIFF_METHOD method) {
+const Field2D indexFDDY_CtoL(const Field2D &v, const Field2D &f, CELL_LOC outloc,
+                             DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_FluxStag][1];
   }
   switch (method) {
   case DIFF_U1:
-    return FDDX_U1_stag_y_on(v, f);
+    return FDDX_U1_stag_y_CtoL(v, f);
     break;
   default:
-    throw BoutException("Field2D AiolosMesh::indexFDDY_on unknown method %d.\n"
+    throw BoutException("Field2D AiolosMesh::indexFDDY_CtoL unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_U1"
                         "\nNote FFTs are not (yet) supported.",
@@ -1476,17 +1476,17 @@ const Field2D indexFDDY_on(const Field2D &v, const Field2D &f, CELL_LOC outloc,
 }
 
 // This file is auto-generated - do not edit!
-const Field2D indexFDDY_off(const Field2D &v, const Field2D &f, CELL_LOC outloc,
-                            DIFF_METHOD method) {
+const Field2D indexFDDY_LtoC(const Field2D &v, const Field2D &f, CELL_LOC outloc,
+                             DIFF_METHOD method) {
   if (method == DIFF_DEFAULT) {
     method = default_stencil[AIOLOS_FluxStag][1];
   }
   switch (method) {
   case DIFF_U1:
-    return FDDX_U1_stag_y_off(v, f);
+    return FDDX_U1_stag_y_LtoC(v, f);
     break;
   default:
-    throw BoutException("Field2D AiolosMesh::indexFDDY_off unknown method %d.\n"
+    throw BoutException("Field2D AiolosMesh::indexFDDY_LtoC unknown method %d.\n"
                         "Supported methods are"
                         " * DIFF_U1"
                         "\nNote FFTs are not (yet) supported.",
@@ -1511,11 +1511,11 @@ const Field3D AiolosMesh::indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHO
   if ((outloc == CELL_XLOW) && (f.getLocation() != CELL_XLOW)) {
     // we are going onto a staggered grid
     ASSERT1(f.getLocation() == CELL_CENTRE);
-    return indexDDX_on(f, outloc, method);
+    return indexDDX_CtoL(f, outloc, method);
   } else if ((outloc != CELL_XLOW) && (f.getLocation() == CELL_XLOW)) {
     // we are coming from a staggered grid
     ASSERT1(outloc == CELL_CENTRE);
-    return indexDDX_off(f, outloc, method);
+    return indexDDX_LtoC(f, outloc, method);
   } else {
     ASSERT1(outloc == f.getLocation());
     return indexDDX_norm(f, outloc, method);
@@ -1539,11 +1539,11 @@ const Field3D AiolosMesh::indexDDY(const Field3D &f, CELL_LOC outloc, DIFF_METHO
   if ((outloc == CELL_YLOW) && (f.getLocation() != CELL_YLOW)) {
     // we are going onto a staggered grid
     ASSERT1(f.getLocation() == CELL_CENTRE);
-    return indexDDY_on(f, outloc, method);
+    return indexDDY_CtoL(f, outloc, method);
   } else if ((outloc != CELL_YLOW) && (f.getLocation() == CELL_YLOW)) {
     // we are coming from a staggered grid
     ASSERT1(outloc == CELL_CENTRE);
-    return indexDDY_off(f, outloc, method);
+    return indexDDY_LtoC(f, outloc, method);
   } else {
     ASSERT1(outloc == f.getLocation());
     return indexDDY_norm(f, outloc, method);
@@ -1567,11 +1567,11 @@ const Field3D AiolosMesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHO
   if ((outloc == CELL_ZLOW) && (f.getLocation() != CELL_ZLOW)) {
     // we are going onto a staggered grid
     ASSERT1(f.getLocation() == CELL_CENTRE);
-    return indexDDZ_on(f, outloc, method);
+    return indexDDZ_CtoL(f, outloc, method);
   } else if ((outloc != CELL_ZLOW) && (f.getLocation() == CELL_ZLOW)) {
     // we are coming from a staggered grid
     ASSERT1(outloc == CELL_CENTRE);
-    return indexDDZ_off(f, outloc, method);
+    return indexDDZ_LtoC(f, outloc, method);
   } else {
     ASSERT1(outloc == f.getLocation());
     return indexDDZ_norm(f, outloc, method);
@@ -1595,11 +1595,11 @@ const Field2D AiolosMesh::indexDDX(const Field2D &f, CELL_LOC outloc, DIFF_METHO
   if ((outloc == CELL_XLOW) && (f.getLocation() != CELL_XLOW)) {
     // we are going onto a staggered grid
     ASSERT1(f.getLocation() == CELL_CENTRE);
-    return indexDDX_on(f, outloc, method);
+    return indexDDX_CtoL(f, outloc, method);
   } else if ((outloc != CELL_XLOW) && (f.getLocation() == CELL_XLOW)) {
     // we are coming from a staggered grid
     ASSERT1(outloc == CELL_CENTRE);
-    return indexDDX_off(f, outloc, method);
+    return indexDDX_LtoC(f, outloc, method);
   } else {
     ASSERT1(outloc == f.getLocation());
     return indexDDX_norm(f, outloc, method);
@@ -1623,11 +1623,11 @@ const Field2D AiolosMesh::indexDDY(const Field2D &f, CELL_LOC outloc, DIFF_METHO
   if ((outloc == CELL_YLOW) && (f.getLocation() != CELL_YLOW)) {
     // we are going onto a staggered grid
     ASSERT1(f.getLocation() == CELL_CENTRE);
-    return indexDDY_on(f, outloc, method);
+    return indexDDY_CtoL(f, outloc, method);
   } else if ((outloc != CELL_YLOW) && (f.getLocation() == CELL_YLOW)) {
     // we are coming from a staggered grid
     ASSERT1(outloc == CELL_CENTRE);
-    return indexDDY_off(f, outloc, method);
+    return indexDDY_LtoC(f, outloc, method);
   } else {
     ASSERT1(outloc == f.getLocation());
     return indexDDY_norm(f, outloc, method);
@@ -1651,11 +1651,11 @@ const Field3D AiolosMesh::indexD2DX2(const Field3D &f, CELL_LOC outloc,
   if ((outloc == CELL_XLOW) && (f.getLocation() != CELL_XLOW)) {
     // we are going onto a staggered grid
     ASSERT1(f.getLocation() == CELL_CENTRE);
-    return indexD2DX2_on(f, outloc, method);
+    return indexD2DX2_CtoL(f, outloc, method);
   } else if ((outloc != CELL_XLOW) && (f.getLocation() == CELL_XLOW)) {
     // we are coming from a staggered grid
     ASSERT1(outloc == CELL_CENTRE);
-    return indexD2DX2_off(f, outloc, method);
+    return indexD2DX2_LtoC(f, outloc, method);
   } else {
     ASSERT1(outloc == f.getLocation());
     return indexD2DX2_norm(f, outloc, method);
@@ -1679,11 +1679,11 @@ const Field3D AiolosMesh::indexD2DY2(const Field3D &f, CELL_LOC outloc,
   if ((outloc == CELL_YLOW) && (f.getLocation() != CELL_YLOW)) {
     // we are going onto a staggered grid
     ASSERT1(f.getLocation() == CELL_CENTRE);
-    return indexD2DY2_on(f, outloc, method);
+    return indexD2DY2_CtoL(f, outloc, method);
   } else if ((outloc != CELL_YLOW) && (f.getLocation() == CELL_YLOW)) {
     // we are coming from a staggered grid
     ASSERT1(outloc == CELL_CENTRE);
-    return indexD2DY2_off(f, outloc, method);
+    return indexD2DY2_LtoC(f, outloc, method);
   } else {
     ASSERT1(outloc == f.getLocation());
     return indexD2DY2_norm(f, outloc, method);
@@ -1707,11 +1707,11 @@ const Field3D AiolosMesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc,
   if ((outloc == CELL_ZLOW) && (f.getLocation() != CELL_ZLOW)) {
     // we are going onto a staggered grid
     ASSERT1(f.getLocation() == CELL_CENTRE);
-    return indexD2DZ2_on(f, outloc, method);
+    return indexD2DZ2_CtoL(f, outloc, method);
   } else if ((outloc != CELL_ZLOW) && (f.getLocation() == CELL_ZLOW)) {
     // we are coming from a staggered grid
     ASSERT1(outloc == CELL_CENTRE);
-    return indexD2DZ2_off(f, outloc, method);
+    return indexD2DZ2_LtoC(f, outloc, method);
   } else {
     ASSERT1(outloc == f.getLocation());
     return indexD2DZ2_norm(f, outloc, method);
@@ -1735,11 +1735,11 @@ const Field2D AiolosMesh::indexD2DX2(const Field2D &f, CELL_LOC outloc,
   if ((outloc == CELL_XLOW) && (f.getLocation() != CELL_XLOW)) {
     // we are going onto a staggered grid
     ASSERT1(f.getLocation() == CELL_CENTRE);
-    return indexD2DX2_on(f, outloc, method);
+    return indexD2DX2_CtoL(f, outloc, method);
   } else if ((outloc != CELL_XLOW) && (f.getLocation() == CELL_XLOW)) {
     // we are coming from a staggered grid
     ASSERT1(outloc == CELL_CENTRE);
-    return indexD2DX2_off(f, outloc, method);
+    return indexD2DX2_LtoC(f, outloc, method);
   } else {
     ASSERT1(outloc == f.getLocation());
     return indexD2DX2_norm(f, outloc, method);
@@ -1763,11 +1763,11 @@ const Field2D AiolosMesh::indexD2DY2(const Field2D &f, CELL_LOC outloc,
   if ((outloc == CELL_YLOW) && (f.getLocation() != CELL_YLOW)) {
     // we are going onto a staggered grid
     ASSERT1(f.getLocation() == CELL_CENTRE);
-    return indexD2DY2_on(f, outloc, method);
+    return indexD2DY2_CtoL(f, outloc, method);
   } else if ((outloc != CELL_YLOW) && (f.getLocation() == CELL_YLOW)) {
     // we are coming from a staggered grid
     ASSERT1(outloc == CELL_CENTRE);
-    return indexD2DY2_off(f, outloc, method);
+    return indexD2DY2_LtoC(f, outloc, method);
   } else {
     ASSERT1(outloc == f.getLocation());
     return indexD2DY2_norm(f, outloc, method);
@@ -1795,11 +1795,11 @@ const Field3D AiolosMesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC
   if ((outloc == CELL_XLOW) && (v.getLocation() != CELL_XLOW)) {
     // we are going onto a staggered grid
     ASSERT1(v.getLocation() == CELL_CENTRE);
-    return indexVDDX_on(v, f, outloc, method);
+    return indexVDDX_CtoL(v, f, outloc, method);
   } else if ((outloc != CELL_XLOW) && (v.getLocation() == CELL_XLOW)) {
     // we are coming from a staggered grid
     ASSERT1(outloc == CELL_CENTRE);
-    return indexVDDX_off(v, f, outloc, method);
+    return indexVDDX_LtoC(v, f, outloc, method);
   } else {
     ASSERT1(outloc == v.getLocation());
     return indexVDDX_norm(v, f, outloc, method);
@@ -1827,11 +1827,11 @@ const Field3D AiolosMesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC
   if ((outloc == CELL_YLOW) && (v.getLocation() != CELL_YLOW)) {
     // we are going onto a staggered grid
     ASSERT1(v.getLocation() == CELL_CENTRE);
-    return indexVDDY_on(v, f, outloc, method);
+    return indexVDDY_CtoL(v, f, outloc, method);
   } else if ((outloc != CELL_YLOW) && (v.getLocation() == CELL_YLOW)) {
     // we are coming from a staggered grid
     ASSERT1(outloc == CELL_CENTRE);
-    return indexVDDY_off(v, f, outloc, method);
+    return indexVDDY_LtoC(v, f, outloc, method);
   } else {
     ASSERT1(outloc == v.getLocation());
     return indexVDDY_norm(v, f, outloc, method);
@@ -1859,11 +1859,11 @@ const Field3D AiolosMesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC
   if ((outloc == CELL_ZLOW) && (v.getLocation() != CELL_ZLOW)) {
     // we are going onto a staggered grid
     ASSERT1(v.getLocation() == CELL_CENTRE);
-    return indexVDDZ_on(v, f, outloc, method);
+    return indexVDDZ_CtoL(v, f, outloc, method);
   } else if ((outloc != CELL_ZLOW) && (v.getLocation() == CELL_ZLOW)) {
     // we are coming from a staggered grid
     ASSERT1(outloc == CELL_CENTRE);
-    return indexVDDZ_off(v, f, outloc, method);
+    return indexVDDZ_LtoC(v, f, outloc, method);
   } else {
     ASSERT1(outloc == v.getLocation());
     return indexVDDZ_norm(v, f, outloc, method);
@@ -1891,11 +1891,11 @@ const Field2D AiolosMesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC
   if ((outloc == CELL_XLOW) && (v.getLocation() != CELL_XLOW)) {
     // we are going onto a staggered grid
     ASSERT1(v.getLocation() == CELL_CENTRE);
-    return indexVDDX_on(v, f, outloc, method);
+    return indexVDDX_CtoL(v, f, outloc, method);
   } else if ((outloc != CELL_XLOW) && (v.getLocation() == CELL_XLOW)) {
     // we are coming from a staggered grid
     ASSERT1(outloc == CELL_CENTRE);
-    return indexVDDX_off(v, f, outloc, method);
+    return indexVDDX_LtoC(v, f, outloc, method);
   } else {
     ASSERT1(outloc == v.getLocation());
     return indexVDDX_norm(v, f, outloc, method);
@@ -1923,11 +1923,11 @@ const Field2D AiolosMesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC
   if ((outloc == CELL_YLOW) && (v.getLocation() != CELL_YLOW)) {
     // we are going onto a staggered grid
     ASSERT1(v.getLocation() == CELL_CENTRE);
-    return indexVDDY_on(v, f, outloc, method);
+    return indexVDDY_CtoL(v, f, outloc, method);
   } else if ((outloc != CELL_YLOW) && (v.getLocation() == CELL_YLOW)) {
     // we are coming from a staggered grid
     ASSERT1(outloc == CELL_CENTRE);
-    return indexVDDY_off(v, f, outloc, method);
+    return indexVDDY_LtoC(v, f, outloc, method);
   } else {
     ASSERT1(outloc == v.getLocation());
     return indexVDDY_norm(v, f, outloc, method);
@@ -1955,11 +1955,11 @@ const Field3D AiolosMesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC
   if ((outloc == CELL_XLOW) && (v.getLocation() != CELL_XLOW)) {
     // we are going onto a staggered grid
     ASSERT1(v.getLocation() == CELL_CENTRE);
-    return indexFDDX_on(v, f, outloc, method);
+    return indexFDDX_CtoL(v, f, outloc, method);
   } else if ((outloc != CELL_XLOW) && (v.getLocation() == CELL_XLOW)) {
     // we are coming from a staggered grid
     ASSERT1(outloc == CELL_CENTRE);
-    return indexFDDX_off(v, f, outloc, method);
+    return indexFDDX_LtoC(v, f, outloc, method);
   } else {
     ASSERT1(outloc == v.getLocation());
     return indexFDDX_norm(v, f, outloc, method);
@@ -1987,11 +1987,11 @@ const Field3D AiolosMesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC
   if ((outloc == CELL_YLOW) && (v.getLocation() != CELL_YLOW)) {
     // we are going onto a staggered grid
     ASSERT1(v.getLocation() == CELL_CENTRE);
-    return indexFDDY_on(v, f, outloc, method);
+    return indexFDDY_CtoL(v, f, outloc, method);
   } else if ((outloc != CELL_YLOW) && (v.getLocation() == CELL_YLOW)) {
     // we are coming from a staggered grid
     ASSERT1(outloc == CELL_CENTRE);
-    return indexFDDY_off(v, f, outloc, method);
+    return indexFDDY_LtoC(v, f, outloc, method);
   } else {
     ASSERT1(outloc == v.getLocation());
     return indexFDDY_norm(v, f, outloc, method);
@@ -2019,11 +2019,11 @@ const Field3D AiolosMesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC
   if ((outloc == CELL_ZLOW) && (v.getLocation() != CELL_ZLOW)) {
     // we are going onto a staggered grid
     ASSERT1(v.getLocation() == CELL_CENTRE);
-    return indexFDDZ_on(v, f, outloc, method);
+    return indexFDDZ_CtoL(v, f, outloc, method);
   } else if ((outloc != CELL_ZLOW) && (v.getLocation() == CELL_ZLOW)) {
     // we are coming from a staggered grid
     ASSERT1(outloc == CELL_CENTRE);
-    return indexFDDZ_off(v, f, outloc, method);
+    return indexFDDZ_LtoC(v, f, outloc, method);
   } else {
     ASSERT1(outloc == v.getLocation());
     return indexFDDZ_norm(v, f, outloc, method);
@@ -2051,11 +2051,11 @@ const Field2D AiolosMesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC
   if ((outloc == CELL_XLOW) && (v.getLocation() != CELL_XLOW)) {
     // we are going onto a staggered grid
     ASSERT1(v.getLocation() == CELL_CENTRE);
-    return indexFDDX_on(v, f, outloc, method);
+    return indexFDDX_CtoL(v, f, outloc, method);
   } else if ((outloc != CELL_XLOW) && (v.getLocation() == CELL_XLOW)) {
     // we are coming from a staggered grid
     ASSERT1(outloc == CELL_CENTRE);
-    return indexFDDX_off(v, f, outloc, method);
+    return indexFDDX_LtoC(v, f, outloc, method);
   } else {
     ASSERT1(outloc == v.getLocation());
     return indexFDDX_norm(v, f, outloc, method);
@@ -2083,11 +2083,11 @@ const Field2D AiolosMesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC
   if ((outloc == CELL_YLOW) && (v.getLocation() != CELL_YLOW)) {
     // we are going onto a staggered grid
     ASSERT1(v.getLocation() == CELL_CENTRE);
-    return indexFDDY_on(v, f, outloc, method);
+    return indexFDDY_CtoL(v, f, outloc, method);
   } else if ((outloc != CELL_YLOW) && (v.getLocation() == CELL_YLOW)) {
     // we are coming from a staggered grid
     ASSERT1(outloc == CELL_CENTRE);
-    return indexFDDY_off(v, f, outloc, method);
+    return indexFDDY_LtoC(v, f, outloc, method);
   } else {
     ASSERT1(outloc == v.getLocation());
     return indexFDDY_norm(v, f, outloc, method);

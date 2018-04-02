@@ -24,8 +24,9 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************/
 
-static void interp_to_on_Field3D_x(BoutReal *__restrict__ result_ptr,
-                                   const BoutReal *__restrict__ in_ptr, Mesh *localmesh) {
+static void interp_to_CtoL_Field3D_x(BoutReal *__restrict__ result_ptr,
+                                     const BoutReal *__restrict__ in_ptr,
+                                     Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -72,8 +73,9 @@ static void interp_to_on_Field3D_x(BoutReal *__restrict__ result_ptr,
     }
   }
 }
-static void interp_to_on_Field3D_y(BoutReal *__restrict__ result_ptr,
-                                   const BoutReal *__restrict__ in_ptr, Mesh *localmesh) {
+static void interp_to_CtoL_Field3D_y(BoutReal *__restrict__ result_ptr,
+                                     const BoutReal *__restrict__ in_ptr,
+                                     Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -120,8 +122,9 @@ static void interp_to_on_Field3D_y(BoutReal *__restrict__ result_ptr,
     }
   }
 }
-static void interp_to_on_Field3D_z(BoutReal *__restrict__ result_ptr,
-                                   const BoutReal *__restrict__ in_ptr, Mesh *localmesh) {
+static void interp_to_CtoL_Field3D_z(BoutReal *__restrict__ result_ptr,
+                                     const BoutReal *__restrict__ in_ptr,
+                                     Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -188,9 +191,9 @@ static void interp_to_on_Field3D_z(BoutReal *__restrict__ result_ptr,
     }
   }
 }
-static void interp_to_off_Field3D_x(BoutReal *__restrict__ result_ptr,
-                                    const BoutReal *__restrict__ in_ptr,
-                                    Mesh *localmesh) {
+static void interp_to_LtoC_Field3D_x(BoutReal *__restrict__ result_ptr,
+                                     const BoutReal *__restrict__ in_ptr,
+                                     Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -237,9 +240,9 @@ static void interp_to_off_Field3D_x(BoutReal *__restrict__ result_ptr,
     }
   }
 }
-static void interp_to_off_Field3D_y(BoutReal *__restrict__ result_ptr,
-                                    const BoutReal *__restrict__ in_ptr,
-                                    Mesh *localmesh) {
+static void interp_to_LtoC_Field3D_y(BoutReal *__restrict__ result_ptr,
+                                     const BoutReal *__restrict__ in_ptr,
+                                     Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -286,9 +289,9 @@ static void interp_to_off_Field3D_y(BoutReal *__restrict__ result_ptr,
     }
   }
 }
-static void interp_to_off_Field3D_z(BoutReal *__restrict__ result_ptr,
-                                    const BoutReal *__restrict__ in_ptr,
-                                    Mesh *localmesh) {
+static void interp_to_LtoC_Field3D_z(BoutReal *__restrict__ result_ptr,
+                                     const BoutReal *__restrict__ in_ptr,
+                                     Mesh *localmesh) {
   const int Nx = localmesh->LocalNx;
   const int Ny = localmesh->LocalNy;
   const int Nz = localmesh->LocalNz;
@@ -364,19 +367,19 @@ const Field3D AiolosMesh::interp_to_do(const Field3D &f, CELL_LOC loc) const {
     // we first need to go back to centre before we can go anywhere else
     switch (f.getLocation()) {
     case CELL_XLOW:
-      interp_to_off_Field3D_x(&result[i0], &f[i0], localmesh);
+      interp_to_LtoC_Field3D_x(&result[i0], &f[i0], localmesh);
       result.setLocation(CELL_CENTRE);
       // return or interpolate again
       return interp_to(result, loc);
       break;
     case CELL_YLOW:
-      interp_to_off_Field3D_y(&result[i0], &f[i0], localmesh);
+      interp_to_LtoC_Field3D_y(&result[i0], &f[i0], localmesh);
       result.setLocation(CELL_CENTRE);
       // return or interpolate again
       return interp_to(result, loc);
       break;
     case CELL_ZLOW:
-      interp_to_off_Field3D_z(&result[i0], &f[i0], localmesh);
+      interp_to_LtoC_Field3D_z(&result[i0], &f[i0], localmesh);
       result.setLocation(CELL_CENTRE);
       // return or interpolate again
       return interp_to(result, loc);
@@ -389,19 +392,19 @@ const Field3D AiolosMesh::interp_to_do(const Field3D &f, CELL_LOC loc) const {
   // we are in CELL_CENTRE and need to go somewhere else ...
   switch (loc) {
   case CELL_XLOW:
-    interp_to_on_Field3D_x(&result[i0], &f[i0], localmesh);
+    interp_to_CtoL_Field3D_x(&result[i0], &f[i0], localmesh);
     result.setLocation(CELL_XLOW);
     // return or interpolate again
     return interp_to(result, loc);
     break;
   case CELL_YLOW:
-    interp_to_on_Field3D_y(&result[i0], &f[i0], localmesh);
+    interp_to_CtoL_Field3D_y(&result[i0], &f[i0], localmesh);
     result.setLocation(CELL_YLOW);
     // return or interpolate again
     return interp_to(result, loc);
     break;
   case CELL_ZLOW:
-    interp_to_on_Field3D_z(&result[i0], &f[i0], localmesh);
+    interp_to_CtoL_Field3D_z(&result[i0], &f[i0], localmesh);
     result.setLocation(CELL_ZLOW);
     // return or interpolate again
     return interp_to(result, loc);

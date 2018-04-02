@@ -402,7 +402,7 @@ def gen_functions_normal(header_only=False):
         ASSERT(stencil.valid)
         flow = stencil.flow
         if stencil.stag:
-            modes = ['on', 'off']
+            modes = ['CtoL', 'LtoC']
         else:
             modes = ['norm']
         for mode in modes:
@@ -486,10 +486,10 @@ def gen_functions_normal(header_only=False):
                         else:
                             print("in_ptr")
                         print(", localmesh);")
-                        if mode == "on":
+                        if mode == "CtoL":
                             print("  result.setLocation(CELL_%sLOW);" %
                                   d.upper())
-                        elif mode == "off":
+                        elif mode == "LtoC":
                             print("  result.setLocation(CELL_CENTRE);")
                         else:
                             if flow:
@@ -575,7 +575,7 @@ def print_interp_to_code():
     # Hard coded version:
     #["return ( 9.*(s.m + s.p) - s.mm - s.pp ) / 16.;"]
     field = fields[0]  # 3d
-    for mode in ['on', 'off']:
+    for mode in ['CtoL', 'LtoC']:
         for order in [4]:
             for d in dirs[field]:
                 global guards_
@@ -621,8 +621,8 @@ def print_interp_to_code():
                                               mode, sten_name, d, False, z0=((guards_[sten_name_index]) * _sign)))
                         guards_ = guards__
                         if order / 2 > 1:
-                            if (sten_name == 'backward' and mode == 'on') or \
-                               (sten_name == 'forward' and mode == 'off'):
+                            if (sten_name == 'backward' and mode == 'CtoL') or \
+                               (sten_name == 'forward' and mode == 'LtoC'):
                                 pass  # dont do anything ...
                             else:
                                 if sten_name == 'forward':
@@ -650,10 +650,10 @@ def print_interp_to_code():
     for d in dirs[field]:
         print("    case CELL_%sLOW:" % d.upper())
         if use_field_operator:
-            print("      interp_to_off_%s_%s(result,f,localmesh);" % (field, d))
+            print("      interp_to_LtoC_%s_%s(result,f,localmesh);" % (field, d))
         else:
             print(
-                "      interp_to_off_%s_%s(&result[i0],&f[i0],localmesh);" % (field, d))
+                "      interp_to_LtoC_%s_%s(&result[i0],&f[i0],localmesh);" % (field, d))
         print("      result.setLocation(CELL_CENTRE);")
         print("      // return or interpolate again")
         print("      return interp_to(result,loc);")
@@ -667,10 +667,10 @@ def print_interp_to_code():
     for d in dirs[field]:
         print("    case CELL_%sLOW:" % d.upper())
         if use_field_operator:
-            print("      interp_to_on_%s_%s(result,f,localmesh);" % (field, d))
+            print("      interp_to_CtoL_%s_%s(result,f,localmesh);" % (field, d))
         else:
             print(
-                "      interp_to_on_%s_%s(&result[i0],&f[i0],localmesh);" % (field, d))
+                "      interp_to_CtoL_%s_%s(&result[i0],&f[i0],localmesh);" % (field, d))
         print("      result.setLocation(CELL_%sLOW);" % d.upper())
         print("      // return or interpolate again")
         print("      return interp_to(result,loc);")

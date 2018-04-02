@@ -35,13 +35,13 @@ from collections import OrderedDict
 # to cell centre or from cell centre to staggered in x
 # direction or wheter we are going from the same location, in which
 # case to call the non-staggered case.
-# After that we are in indexDDX_{off,on,norm}
+# After that we are in indexDDX_{CtoL,LtoC,norm}
 # Here we check on what method we should be using, e.g. DIFF_C2 or
 # DIFF_C4.
-# The next function to be called is  e.g. `DDX_C2_stag_x_off` -
+# The next function to be called is  e.g. `DDX_C2_stag_x_LtoC` -
 # which makes sure there are enough guard cells, allocates the result
 # field, and passes to the pointer of the fields to
-# `DDX_C2_stag_x_Field3D_off` which then calculates the derivatives.
+# `DDX_C2_stag_x_Field3D_LtoC` which then calculates the derivatives.
 #
 # While having all the functions makes the call tree more complicated,
 # it makes the function itself much easier, each level does only a
@@ -254,7 +254,7 @@ with open("tables_cleaned.cxx", "r") as f:
 def generate_index_functions_stag(func_tables):
     for name, table in func_tables.items():
         if table.isStag():
-            modes = ['on', 'off']
+            modes = ['CtoL', 'LtoC']
         else:
             modes = ['norm']
         for field in fields:
@@ -355,13 +355,13 @@ def generate_index_functions(header_only=False):
                 print("    // we are going onto a staggered grid")
                 print("    ASSERT1(%s.getLocation() == CELL_CENTRE);" %
                       checkField)
-                print("    return ", func + "_on(" +
+                print("    return ", func + "_CtoL(" +
                       f + ",outloc,method);")
                 print("  } else if ((outloc != CELL_%sLOW) && (%s.getLocation() == CELL_%sLOW)){" %
                       (d.upper(), checkField, d.upper()))
                 print("    // we are coming from a staggered grid")
                 print("    ASSERT1(outloc == CELL_CENTRE);")
-                print("    return ", func + "_off(" +
+                print("    return ", func + "_LtoC(" +
                       f + ",outloc,method);")
                 print("  } else {")
                 print("    ASSERT1(outloc == %s.getLocation());" % checkField)

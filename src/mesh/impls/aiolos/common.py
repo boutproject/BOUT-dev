@@ -82,16 +82,16 @@ for field in fields:
                 perp_dir[field][d].append(d2)
 
 off_diff = dict()
-for stag in ['on', 'off', 'norm']:
+for stag in ['CtoL', 'LtoC', 'norm']:
     curr = dict()
-    if stag == 'off':
+    if stag == 'LtoC':
         curr = {'ppp': 'ppp',
                 'pp': 'pp',
                 'p': 'p',
                 'm': 'c',
                 'mm': 'm',
                 'mmm': 'mm'}
-    elif stag == 'on':
+    elif stag == 'CtoL':
         curr = {'ppp': 'pp',
                 'pp': 'p',
                 'p': 'c',
@@ -112,11 +112,11 @@ for stag in ['on', 'off', 'norm']:
             curr[d] = 'm(3)'
             if curr[d] == 'ppp()':
                 curr[d] = 'p(3)'
-    if stag == 'on':
+    if stag == 'CtoL':
         for i in range(1, 6):
             curr['m%d' % i] = 'm(%d)' % i
             curr['p%d' % i] = 'p(%d)' % (i - 1)
-    if stag == 'off':
+    if stag == 'LtoC':
         for i in range(1, 6):
             curr['m%d' % i] = 'm(%d)' % (i - 1)
             curr['p%d' % i] = 'p(%d)' % (i)
