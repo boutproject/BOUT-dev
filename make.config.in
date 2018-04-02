@@ -238,7 +238,7 @@ endif
 ifeq ("$(TARGET)", "lib")
 lib: makefile $(BOUT_CONFIG_FILE) $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ)
 ifneq ("$(OBJ)foo", "foo")
-	@echo "Adding $(OBJ) to libbout++.a"
+	@echo "  Adding $(OBJ) to libbout++.a"
 	@$(AR) $(ARFLAGS) $(LIB) $(OBJ)
 	@$(RANLIB) $(LIB)
 endif
@@ -249,7 +249,7 @@ ifeq ("$(TARGET)", "sub")
 LIB=$(MODULE_DIR)/$(SUB_NAME).a
 sub: makefile $(BOUT_CONFIG_FILE) $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ)
 ifneq ("$(OBJ)foo", "foo")
-	@echo "Adding $(OBJ) to $(LIB)"
+	@echo "  Adding $(OBJ) to $(LIB)"
 	@$(AR) $(ARFLAGS) $(LIB) $(OBJ)
 	@$(RANLIB) $(LIB)
 endif
