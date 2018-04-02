@@ -34,7 +34,12 @@
 #include "vector2d.hxx"
 #include "vector3d.hxx"
 
-#include "bout_types.hxx" // See this for code
+#include "bout_types.hxx"
+
+// Feel free to edit this file (derivs.hxx) rather then the generating
+// files. If this is easier then changing derivx.hxx.in.py or
+// derivs.hxx.in.jinja do so, but please remove the derivs.hxx.in.*
+// files to make clear the file is not auto-generated anymore.
 
 ////////// FIRST DERIVATIVES //////////
 
