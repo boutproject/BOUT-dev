@@ -227,10 +227,10 @@ def parse_body(sten, field, mode, d, z0=None):
 
 def get_for_loop_z(sten, field, stag):
     d = 'z'
-    print('  if (Nz > 3) {')
+    print('  if (LocalNz > 3) {')
     for d2 in dirs[field]:
         if d != d2:
-            print("  for (int %s = 0 ; %s < N%s; ++%s ){" % (d2, d2, d2, d2))
+            print("  for (int %s = 0 ; %s < LocalN%s; ++%s ){" % (d2, d2, d2, d2))
     body, result, _ = parse_body(sten, field, stag, d)
     for i in range(guards_[0]):
         print('    {')
@@ -243,7 +243,7 @@ def get_for_loop_z(sten, field, stag):
         else:
             print('result_;')
         print('    }')
-    print('    for (int z=%d;z<Nz-%d;++z) {' % (guards_[0], guards_[1]))
+    print('    for (int z=%d;z<LocalNz-%d;++z) {' % (guards_[0], guards_[1]))
     body, result, _ = parse_body(sten, field, stag, d)
     print(body)
     print("      " + get_diff('c()', "result", field, d) + "=", end=' ')
@@ -254,7 +254,7 @@ def get_for_loop_z(sten, field, stag):
     print('    }')
     for i in range(guards_[1], 0, -1):
         print('    {')
-        print('      int z=Nz-%d;' % i)
+        print('      int z=LocalNz-%d;' % i)
         body, result, _ = parse_body(sten, field, stag, d, z0=-i)
         print(body)
         print("      " + get_diff('c()', "result", field, d) + "=", end=' ')
@@ -269,8 +269,8 @@ def get_for_loop_z(sten, field, stag):
     print('  } else {')
     for d2 in dirs[field]:
         if d != d2:
-            print("  for (int %s = 0 ; %s < N%s; ++%s ){" % (d2, d2, d2, d2))
-    print('    for (int z=0;z<Nz;++z) {')
+            print("  for (int %s = 0 ; %s < LocalN%s; ++%s ){" % (d2, d2, d2, d2))
+    print('    for (int z=0;z<LocalNz;++z) {')
     body, result, _ = parse_body(sten, field, stag, d, z0='secure')
     print(body)
     print("      " + get_diff('c()', "result", field, d) + "=", end=' ')
@@ -288,7 +288,7 @@ def get_for_loop_z(sten, field, stag):
 def get_for_loop(d, mode, field, guards, sten_name):
     if sten_name == "main":
         print('#if CHECK > 0')
-        print('  if (localmesh->%sstart < %d){' % (d, max(guards)))
+        print('  if (%sstart < %d){' % (d, max(guards)))
         print('    throw BoutException("Cannot compute derivative - need at least %d guard cells in %s direction!");' %
               (max(guards), d.upper()))
         print('  }')
@@ -298,20 +298,20 @@ def get_for_loop(d, mode, field, guards, sten_name):
         for d2 in dirs[field]:
             if d == d2:
                 print(
-                    "  for (int %s = %d; %s < N%s%+d; ++%s ){" % (d, dp, d, d, dm, d))
+                    "  for (int %s = %d; %s < LocalN%s%+d; ++%s ){" % (d, dp, d, d, dm, d))
             else:
                 print(
-                    "  for (int %s = 0 ; %s < N%s; ++%s ){" % (d2, d2, d2, d2))
+                    "  for (int %s = 0 ; %s < LocalN%s; ++%s ){" % (d2, d2, d2, d2))
     else:
         if sten_name == 'forward':
             print("    int " + d, "=%d ;" % (guards_[0] - 1))
         else:
-            print("    " + d, "=N%s" % d, "-%d ;" % (guards_[1]))
+            print("    " + d, "=LocalN%s" % d, "-%d ;" % (guards_[1]))
             if guards_[1] > 2:
                 raise RuntimeError(guards_, "To many guards")
         for d2 in perp_dir[field][d]:
             print("    for (int " + d2, "=0; " +
-                  d2, "< N" + d2, ";++" + d2, ") {")
+                  d2, "< LocalN" + d2, ";++" + d2, ") {")
 
 
 def get_for_end(d, field, sten_name):
@@ -338,7 +338,7 @@ def get_diff(diff, fname, field, d, update=False, z0=None):
             if use_field_operator:
                 ret += ','
             else:
-                ret += ')*N%s + ' % d2
+                ret += ')*LocalN%s + ' % d2
         first = False
         if (d2 == d):
             # do ugly stuff
@@ -359,12 +359,12 @@ def get_diff(diff, fname, field, d, update=False, z0=None):
                 if z0 == 'secure':
                     ret += "+((" + d + "%+d" % (diffd)
                     if diffd < 0:
-                        ret += '+%d*Nz' % (-diffd)
-                    ret += ')%Nz)'
+                        ret += '+%d*LocalNz' % (-diffd)
+                    ret += ')%LocalNz)'
                 elif z0 > 0 and -diffd >= z0:
-                    ret += d2 + "%+d+Nz" % (diffd)
+                    ret += d2 + "%+d+LocalNz" % (diffd)
                 elif z0 < 0 and -diffd <= z0:
-                    ret += d2 + "%+d-Nz" % (diffd)
+                    ret += d2 + "%+d-LocalNz" % (diffd)
                 else:
                     ret += d2 + "%+d" % (diffd)
             else:
@@ -396,7 +396,7 @@ def get_pointer(field, field_type, const):
 stencils = read_and_parse_stencils()
 
 
-def gen_functions_normal(header_only=False):
+def print_stencil_implementations(header_only=False):
     print(start_of_file)
     for stencil in stencils:
         ASSERT(stencil.valid)
@@ -408,23 +408,22 @@ def gen_functions_normal(header_only=False):
         for mode in modes:
             for field in fields:
                 for d in dirs[field]:
-                    print("static void " + stencil.getFullName(
-                        direction=d, field=field, mode=mode) +
-                        "(BoutReal * __restrict__ result_ptr,", end=' ')
+                    if not header_only:
+                        text="void AiolosMesh::"
+                    else:
+                        text="void "
+                    text += stencil.getFullName(direction=d, field=field, mode=mode)
+                    text += "(BoutReal * __restrict__ result_ptr"
                     if flow:
-                        print("const BoutReal * __restrict__ v_in_ptr,", end=' ')
-                        print("const BoutReal * __restrict__ f_in_ptr,", end=' ')
+                        text += ", const BoutReal * __restrict__ v_in_ptr"
+                        text += ", const BoutReal * __restrict__ f_in_ptr"
                     else:
-                        print("const BoutReal * __restrict__ in_ptr,", end=' ')
-                    print("Mesh * localmesh)")
+                        text += ", const BoutReal * __restrict__ in_ptr"
+                    text+=") const"
                     if header_only:
-                        print(";")
+                        print(text+";")
                     else:
-                        print("{")
-                        for d2 in dirs[field]:
-                            print("  const int N%s = localmesh->LocalN%s;" %
-                                  (d2, d2))
-
+                        print(text+"{")
                         global guards_
                         guards_ = [0, 0]
                         if d == 'z':
@@ -446,32 +445,35 @@ def gen_functions_normal(header_only=False):
 
                         print("}")
                     warn()
-                    print("", field, stencil.getFullName(
-                        direction=d, mode=mode), "(const", field, end=' ')
+                    text=field+" "
+                    if not header_only:
+                        text+="AiolosMesh::"
+                    text += stencil.getFullName(direction=d, mode=mode)
+                    text += "(const " + field
                     if flow:
-                        print("&v_in, const", field, "&f_in)")
+                        text += " &v_in, const " + field + " &f_in) const"
                     else:
-                        print("&in)")
+                        text += " &in) const"
                     if header_only:
-                        print(";")
+                        print(text+";")
                     else:
-                        print("{")
+                        print(text+"{")
                         if flow:
-                            print("  Mesh * localmesh = v_in.getMesh();")
-                            print("  ASSERT1(localmesh == f_in.getMesh());")
+                            print("  ASSERT1(this == v_in.getMesh());")
+                            print("  ASSERT1(this == f_in.getMesh());")
                         else:
-                            print("  Mesh * localmesh = in.getMesh();")
+                            print("  ASSERT1(this == in.getMesh());")
                         print('  output_debug.write("Using method %s!\\n");' % stencil.getFullName(
                             direction=d, field=field, mode=mode))
                         print('#if CHECK > 0')
                         print(
-                            'if (localmesh->LocalN%s < %d) {' % (d, sum(guards_) + 1))
+                            'if (LocalN%s < %d) {' % (d, sum(guards_) + 1))
                         print('  throw BoutException("%s AiolosMesh::%s'
                               ' - Not enough guards cells to take derivative!");' % (
                                   field, stencil.getFullName(direction=d, mode=mode)))
                         print('}')
                         print('#endif')
-                        print(" ", field, "result(localmesh);")
+                        print(" ", field, "result((AiolosMesh*)this);")
                         print("  result.allocate();")
                         get_pointer("result", field, False)
                         if flow:
@@ -485,7 +487,7 @@ def gen_functions_normal(header_only=False):
                             print("v_in_ptr,f_in_ptr")
                         else:
                             print("in_ptr")
-                        print(", localmesh);")
+                        print(");")
                         if mode == "CtoL":
                             print("  result.setLocation(CELL_%sLOW);" %
                                   d.upper())
@@ -570,7 +572,7 @@ def get_interp_sten(order, pos):
     return ret + " ;"
 
 
-def print_interp_to_code():
+def print_interp_to_code(header_only=False):
     interp = ['', "return " + get_interp_sten(4, 0), '']
     # Hard coded version:
     #["return ( 9.*(s.m + s.p) - s.mm - s.pp ) / 16.;"]
@@ -584,17 +586,20 @@ def print_interp_to_code():
                 sten_name = "main"
                 line = replace_stencil(
                     line, 'f.', "in", field, mode, sten_name, d)
-                print("static void interp_to_%s_%s_%s(" %
-                      (mode, field, d), end=' ')
+                text="void "
+                if not header_only:
+                    text+="AiolosMesh::"
+                text+="interp_to_%s_%s_%s(" % (mode, field, d)
                 if use_field_operator:
-                    print(field + "& result, const " +
-                          field + " & in,", end=' ')
+                    text+=field + "& result, const " + field + " & in"
                 else:
-                    print(
-                        "BoutReal * __restrict__ result_ptr, const BoutReal * __restrict__ in_ptr,", end=' ')
-                print(" Mesh * localmesh ){")
-                for d2 in dirs[field]:
-                    print("  const int N%s = localmesh->LocalN%s;" % (d2, d2))
+                    text+="BoutReal * __restrict__ result_ptr, const BoutReal * __restrict__ in_ptr"
+                text+=") const"
+                print(text)
+                if header_only:
+                    print(";")
+                    continue
+                print("{")
                 if d == 'z':
                     sten = Stencil(['', interp[1], ''])
                     get_for_loop_z(sten, field, mode)
@@ -636,11 +641,11 @@ def print_interp_to_code():
                                 guards_ = guards__
                         get_for_end(d, field, sten_name)
                 print("}")
-
+    if header_only:
+        return
     print(
         "const Field3D AiolosMesh::interp_to_do(const Field3D &f, CELL_LOC loc) const {")
-    print("  Mesh * localmesh = f.getMesh();")
-    print("  Field3D result(localmesh);")
+    print("  Field3D result((AiolosMesh*)this);")
     print("  result.allocate();")
     if not use_field_operator:
         print("  Indices i0{0,0,0};")
@@ -650,10 +655,10 @@ def print_interp_to_code():
     for d in dirs[field]:
         print("    case CELL_%sLOW:" % d.upper())
         if use_field_operator:
-            print("      interp_to_LtoC_%s_%s(result,f,localmesh);" % (field, d))
+            print("      interp_to_LtoC_%s_%s(result,f,this);" % (field, d))
         else:
             print(
-                "      interp_to_LtoC_%s_%s(&result[i0],&f[i0],localmesh);" % (field, d))
+                "      interp_to_LtoC_%s_%s(&result[i0],&f[i0]);" % (field, d))
         print("      result.setLocation(CELL_CENTRE);")
         print("      // return or interpolate again")
         print("      return interp_to(result,loc);")
@@ -667,10 +672,10 @@ def print_interp_to_code():
     for d in dirs[field]:
         print("    case CELL_%sLOW:" % d.upper())
         if use_field_operator:
-            print("      interp_to_CtoL_%s_%s(result,f,localmesh);" % (field, d))
+            print("      interp_to_CtoL_%s_%s(result,f);" % (field, d))
         else:
             print(
-                "      interp_to_CtoL_%s_%s(&result[i0],&f[i0],localmesh);" % (field, d))
+                "      interp_to_CtoL_%s_%s(&result[i0],&f[i0]);" % (field, d))
         print("      result.setLocation(CELL_%sLOW);" % d.upper())
         print("      // return or interpolate again")
         print("      return interp_to(result,loc);")

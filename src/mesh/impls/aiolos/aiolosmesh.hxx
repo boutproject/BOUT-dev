@@ -79,4 +79,11 @@ public:
 #endif
 private:
   const Field3D interp_to_do(const Field3D &f, CELL_LOC loc) const;
+
+#include "aiolos_derivs.hxx"
+
+#include "aiolos_stencils.hxx"
+
+#include "aiolos_interp_to.hxx"
+
 };

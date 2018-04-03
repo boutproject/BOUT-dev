@@ -26,13 +26,17 @@ include $(BOUT_TOP)/make.config
 
 aiolos_init.o: aiolos_init.hxx aiolos_init.cxx
 
-aiolos_derivs.o: aiolos_init.hxx aiolos_stencils.hxx aiolos_derivs.cxx
+aiolos_derivs.o: aiolos_init.hxx aiolos_derivs.cxx
 
 aiolosmesh.o: aiolos_header.hxx aiolosmesh.hxx
 
 aiolos_interp_to.o: aiolos_interp_to.cxx
 
 aiolos_stencils.o: aiolos_stencils.cxx
+
+aiolosmesh.hxx: aiolos_stencils.hxx aiolos_interp_to.hxx
+
+%.o: aiolosmesh.hxx
 
 tables_cleaned.cxx:../../index_derivs.cxx
 	@grep ' * Lookup tables of functions. Map between names, codes and functions' -B 1 -A 10000 $< |\

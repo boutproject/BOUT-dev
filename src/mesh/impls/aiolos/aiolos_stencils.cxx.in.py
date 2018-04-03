@@ -14,4 +14,4 @@ import stencils
 # Should we generate using the raw pointers or field operators?
 # Does currently not work with field operator
 stencils.use_field_operator = False
-stencils.gen_functions_normal()
+stencils.print_stencil_implementations()

@@ -1,13 +1,8 @@
 #!/bin/python3
 
-from common import license
-
 print("""
-#pragma once
-#include "aiolosmesh.hxx"
+// To be included from aiolosmesh.hxx
 """)
 
-print(license())
-
 import stencils
-stencils.gen_functions_normal(header_only=True)
+stencils.print_stencil_implementations(header_only=True)

@@ -9,7 +9,6 @@ print(license())
 print("""
 #include "aiolosmesh.hxx"
 #include "aiolos_init.hxx"
-#include "aiolos_stencils.hxx"
 
 """)
 

@@ -251,7 +251,7 @@ with open("tables_cleaned.cxx", "r") as f:
                 current_table = ""
 
 
-def generate_index_functions_stag(func_tables):
+def generate_index_functions_stag(func_tables,header_only=False):
     for name, table in func_tables.items():
         if table.isStag():
             modes = ['CtoL', 'LtoC']
@@ -266,8 +266,13 @@ def generate_index_functions_stag(func_tables):
                     if table.isFlow():
                         inp += "const " + field + " &v, "
                     inp += "const " + field + " &f, "
-                    print("const", field, myname, inp,
-                          "CELL_LOC outloc, DIFF_METHOD method) {")
+                    if header_only:
+                        print("const", field, myname, inp,
+                              "CELL_LOC outloc, DIFF_METHOD method) const;")
+                        continue
+                    else:
+                        print("const", field,"AiolosMesh::", myname, inp,
+                              "CELL_LOC outloc, DIFF_METHOD method) const {")
                     print("  if (method == DIFF_DEFAULT){")
                     print("    method = default_stencil[AIOLOS_%s][%d];" %
                           # drop 'Table' or 'DerivTable' at end of string
