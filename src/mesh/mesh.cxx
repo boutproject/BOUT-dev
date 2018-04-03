@@ -22,8 +22,8 @@ Mesh* Mesh::create(Options *opt) {
   return create(NULL, opt);
 }
 
-Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), coords(0), options(opt) {
-  if(s == NULL)
+Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), coords(nullptr), options(opt) {
+  if(s == nullptr)
     throw BoutException("GridDataSource passed to Mesh::Mesh() is NULL");
   
   /// Get mesh options
