@@ -1,5 +1,8 @@
 #pragma once
 
+#include "bout_types.hxx"
+#include "bout/solver.hxx"
+
 template <typename t>
 t bout_abs(t a){
   return a>0? a:-1;

@@ -39,6 +39,8 @@ class Solver;
 #include <boutexception.hxx>
 #include <unused.hxx>
 #include "bout/monitor.hxx"
+#include "options.hxx"
+#include "datafile.hxx"
 
 ///////////////////////////////////////////////////////////////////
 // C function pointer types
