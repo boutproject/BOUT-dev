@@ -200,9 +200,10 @@ int physics_init(bool restarting) {
     absolute_error1 = f1-sol1;
 //     max_error1 = max_error_at_ystart(abs(error1));
     max_error1 = max_error_at_ystart(abs(absolute_error1));
-  }
-  catch (BoutException err) {
-    output<<"BoutException occured in invert->solve(b1): Laplacian inversion failed to converge (probably)"<<endl;
+  } catch (BoutException &err) {
+    output << "BoutException occured in invert->solve(b1): Laplacian inversion failed to "
+              "converge (probably)"
+           << endl;
     max_error1 = -1;
   }
 
@@ -244,9 +245,10 @@ int physics_init(bool restarting) {
     absolute_error2 = f1-sol2;
 //     max_error2 = max_error_at_ystart(abs(error2));
     max_error2 = max_error_at_ystart(abs(absolute_error2));
-  }
-  catch (BoutException err) {
-    output<<"BoutException occured in invert->solve(b1): Laplacian inversion failed to converge (probably)"<<endl;
+  } catch (BoutException &err) {
+    output << "BoutException occured in invert->solve(b1): Laplacian inversion failed to "
+              "converge (probably)"
+           << endl;
     max_error2 = -1;
   }
 
@@ -304,9 +306,10 @@ int physics_init(bool restarting) {
     absolute_error3 = f1-sol3;
 //     max_error3 = max_error_at_ystart(abs(error3));
     max_error3 = max_error_at_ystart(abs(absolute_error3));
-  }
-  catch (BoutException err) {
-    output<<"BoutException occured in invert->solve(b3): Laplacian inversion failed to converge (probably)"<<endl;
+  } catch (BoutException &err) {
+    output << "BoutException occured in invert->solve(b3): Laplacian inversion failed to "
+              "converge (probably)"
+           << endl;
     max_error3 = -1;
   }
 
@@ -504,9 +507,10 @@ int physics_init(bool restarting) {
     absolute_error5 = f5-sol5;
 //     max_error5 = max_error_at_ystart(abs(error5));
     max_error5 = max_error_at_ystart(abs(absolute_error5));
-    }
-  catch (BoutException err) {
-    output<<"BoutException occured in invert->solve(b5): Laplacian inversion failed to converge (probably)"<<endl;
+  } catch (BoutException &err) {
+    output << "BoutException occured in invert->solve(b5): Laplacian inversion failed to "
+              "converge (probably)"
+           << endl;
     max_error5 = -1;
   }
 
@@ -545,9 +549,10 @@ int physics_init(bool restarting) {
     absolute_error6 = f5-sol6;
 //     max_error6 = max_error_at_ystart(abs(error6));
     max_error6 = max_error_at_ystart(abs(absolute_error6));
-    }
-  catch (BoutException err) {
-    output<<"BoutException occured in invert->solve(b6): Laplacian inversion failed to converge (probably)"<<endl;
+  } catch (BoutException &err) {
+    output << "BoutException occured in invert->solve(b6): Laplacian inversion failed to "
+              "converge (probably)"
+           << endl;
     max_error6 = -1;
   }
 
@@ -605,9 +610,10 @@ int physics_init(bool restarting) {
     absolute_error7 = f5-sol7;
 //     max_error7 = max_error_at_ystart(abs(error7));
     max_error7 = max_error_at_ystart(abs(absolute_error7));
-    }
-  catch (BoutException err) {
-    output<<"BoutException occured in invert->solve(b7): Laplacian inversion failed to converge (probably)"<<endl;
+  } catch (BoutException &err) {
+    output << "BoutException occured in invert->solve(b7): Laplacian inversion failed to "
+              "converge (probably)"
+           << endl;
     max_error7 = -1;
   }
 

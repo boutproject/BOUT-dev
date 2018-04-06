@@ -620,8 +620,7 @@ static int arkode_rhs_e(BoutReal t,
   // Calculate RHS function
   try {
     s->rhs_e(t, udata, dudata);
-  }
-  catch (BoutRhsFail error) {
+  } catch (BoutRhsFail &error) {
     return 1;
   }
   return 0;
@@ -641,10 +640,9 @@ static int arkode_rhs_i(BoutReal t,
   //Calculate RHS function
   try {
      s->rhs_i(t, udata, dudata);
-    }
-  catch (BoutRhsFail error) {               
-     return 1;
-    } 
+  } catch (BoutRhsFail &error) {
+    return 1;
+  }
   return 0;
   }
   
@@ -660,12 +658,11 @@ static int arkode_rhs(BoutReal t,
 
   //Calculate RHS function
   try {
-   s->rhs(t, udata, dudata);
-      }
-  catch (BoutRhsFail error) {
+    s->rhs(t, udata, dudata);
+  } catch (BoutRhsFail &error) {
     return 1;
-      }
-    return 0;
+  }
+  return 0;
 }
 
 /// RHS function for BBD preconditioner

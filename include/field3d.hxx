@@ -315,7 +315,7 @@ class Field3D : public Field, public FieldData {
    * }
    * 
    */
-  const IndexRange region(REGION rgn) const;
+  const IndexRange region(REGION rgn) const override;
 
   /*!
    * Like Field3D::region(REGION rgn), but returns range
