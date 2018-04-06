@@ -7,6 +7,7 @@ INTEGRATED=0
 MMS=0
 TESTS=0
 MAIN_TARGET=
+UPDATE_SCRIPT=0
 
 usage() {
     echo "$0 options are: "
@@ -16,7 +17,7 @@ usage() {
 }
 
 #Handle input flags
-while getopts "cuimt:" arg;
+while getopts "cuimt:5" arg;
 do
     case $arg in
 	c) ### Run the coverage-post job tasks
@@ -37,11 +38,19 @@ do
         t) ### Set target to build
             MAIN_TARGET="$OPTARG"
             ;;
-	*) ### Show usage message
+        5) ### Run the update to version 5 script
+            UPDATE_SCRIPT=1
+            ;;
+        *) ### Show usage message
 	    usage
 	    ;;
     esac
 done
+
+if test $UPDATE_SCRIPT -gt 0
+then
+    bin/bout_4to5 -f
+fi
 
 export MAKEFLAGS="-j 2 -k"
 echo "Configuring with $CONFIGURE_OPTIONS"

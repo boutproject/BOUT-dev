@@ -43,6 +43,9 @@ matrix:
       - SCRIPT_FLAGS="-ut shared"
   - env:
       - *default_env
+      - SCRIPT_FLAGS='-uim5'
+  - env:
+      - *default_env
       - CONFIGURE_OPTIONS='--enable-checks=no --enable-optimize=3 --disable-signal --disable-track --disable-backtrace'
   - addons:
       apt:

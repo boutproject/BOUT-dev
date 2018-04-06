@@ -1,27 +1,97 @@
 #!/bin/bash
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+VERBOSE=1
+FORCE=0
+
+usage() {
+    echo "$0 options are: "
+    #Just pull out special comments from this file
+    grep "\#\#\#" $0
+    exit 1
+}
+
+while getopts "fvqd" arg;
+do
+    case $arg in
+	f) ### Force mode - run without asking
+	    FORCE=1
+	    ;;
+        v) ### Enable verbose mode
+            VERBOSE=1
+            ;;
+        q) ### Enable quite mode
+            VERBOSE=0
+            ;;
+        d) ### Debug mode - print everything before doing it
+            set -v
+            ;;
+        *) ### Show usage
+            usage
+	    ;;
+    esac
+done
+
+# remove the processed options from the input arguments
+shift $((OPTIND-1))
+
 function maybe_proceed() {
     echo $1
-    echo "Are you sure you want to continue? [y/N]"
-    continue=y
-    read continue
-    continue=$(echo $continue |tr :lower: :upper:)
-    if test ".$continue" == .y || test ".$continue" == .yes
+    if test $FORCE -gt 0
     then
-        echo "Continuing at your risk ..."
+        verbose "Runing in force mode - continuing"
     else
-        echo "Maybe soon :)"
-        exit 0
+           echo "Are you sure you want to continue? [y/N]"
+           continue=y
+           read continue
+           continue=$(echo $continue |tr :lower: :upper:)
+           if test ".$continue" == .y || test ".$continue" == .yes
+           then
+               echo "Continuing at your risk ..."
+           else
+               echo "Maybe soon :)"
+               exit 0
+           fi
     fi
 }
 
-version=$($DIR/bout-config --version)
-major=$(echo $version|cut -d. -f1)
-if test $major -lt 5
+GREP=$(which grep)
+# Wrapper for grep to detect errors
+function grep () {
+    ex=0
+    $GREP "$@" || ex=$?
+    if test $ex -eq 2
+    then
+        echo "grep failed for $@" > /dev/stderr
+        exit 2
+    fi
+}
+
+# Set to false to be quiet
+function verbose() {
+    if test $VERBOSE -gt 0
+    then
+        echo $@
+    fi
+}
+
+# If there is any error - we don't want to continue
+set -e
+
+version=
+
+test -f $DIR/bout-config && version=$($DIR/bout-config --version )
+if test -z $version
 then
-    maybe_proceed "The BOUT++ version appears to be $version.
+    maybe_proceed "The BOUT++ version could not be detected.
 This script is intend to update to BOUT++ 5"
+else
+    major=$(echo $version|cut -d. -f1)
+    if test $major -lt 5
+    then
+        maybe_proceed "The BOUT++ version appears to be $version.
+This script is intend to update to BOUT++ 5"
+    fi
 fi
 
 if ! git diff --exit-code &>/dev/null
@@ -38,25 +108,21 @@ then
         work="$work $DIR/../$dir"
     done
 else
-    echo x
     work=$@
 fi
+echo $work
 
 # Set to false if you don't want to run the script:
 true &&
     printordo=   || printordo=echo
 
-# Set to false to be quite
-true &&
-    verbose=echo || verbose=\#
 
-
-$verbose "  Renaiming LocalNx  -> local_nx"
-$verbose "  Renaiming GlobalNx -> global_nx"
-$verbose "  Renaiming OffsetNx -> offset_nx"
+verbose "  Renaming LocalNx  -> local_nx"
+verbose "  Renaming GlobalNx -> global_nx"
+verbose "  Renaming OffsetNx -> offset_nx"
 for dir in $work
 do
-    allmatches=$(grep -EHr 'LocalN|GlobalN|OffsetN' $dir)
+    allmatches=$(grep -EHr 'LocalN|GlobalN|OffsetN' $dir )
     for d in x y z
     do
         for f in $(echo $allmatches|grep 'N$d'|cut -d: -f1|sort -u)
@@ -101,20 +167,20 @@ function gen_compat() {
 
 if test $(cat $include/boundary_factory.hxx|wc -l) -gt 20
 then
-    $verbose "  Creating compat headerfiles"
+    verbose "  Creating compat headerfiles"
     (cd $include ; $printordo gen_compat)
 else
-    $verbose "  Compat headerfiles seem to be available"
+    verbose "  Compat headerfiles seem to be available"
 fi
 
-$verbose "  Update files to look for headers in bout/ subfolder"
+verbose "  Update files to look for headers in bout/ subfolder"
 for dir in $work
 do
-    includes=$(grep "#include" $dir -Hr)
+    includes=$(grep "#include" $dir -Hr )
     for f in  $headerfilelist
     do
-        matched=$(echo "$includes"|grep [^/]$f)
-        todo=$(echo "$matched"|cut -d: -f1)
+        matched=$(echo "$includes"|grep [^/]$f )
+        todo=$(echo "$matched"|cut -d: -f1 )
         for doit in $todo
         do
             $printordo sed -i "s/\([<\"]\)$f/\1bout\/$f/" $doit
