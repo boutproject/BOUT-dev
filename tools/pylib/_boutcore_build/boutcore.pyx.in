@@ -648,8 +648,8 @@ f_desc_vf=":param field: The Field3D object of which to calculate the derivative
     :param velocity: The Field3D object of which the field is advected"
 fun () {
     cat <<EOF
-def $DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_ALL"):
-    """$DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_ALL")
+def $DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY"):
+    """$DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY")
     Compute the derivative $DD
 
     $f_desc
@@ -686,8 +686,8 @@ done
 
 funbad () {
     cat <<EOF
-def $DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_ALL"):
-    """$DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_ALL")
+def $DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY"):
+    """$DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY")
     Compute the derivative $DD
 
     $f_desc
