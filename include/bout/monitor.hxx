@@ -1,7 +1,8 @@
 #pragma once
 
 #include "bout_types.hxx"
-#include "bout/solver.hxx"
+
+class Solver;
 
 template <typename t>
 t bout_abs(t a){
