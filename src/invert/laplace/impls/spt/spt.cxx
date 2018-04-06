@@ -31,12 +31,13 @@
  *
  */
 
-#include <globals.hxx>
-#include <boutexception.hxx>
-#include <utils.hxx>
-#include <fft.hxx>
-#include <bout/sys/timer.hxx>
+#include <bout/constants.hxx>
 #include <bout/openmpwrap.hxx>
+#include <bout/sys/timer.hxx>
+#include <boutexception.hxx>
+#include <fft.hxx>
+#include <globals.hxx>
+#include <utils.hxx>
 
 #include "spt.hxx"
 
@@ -63,14 +64,12 @@ LaplaceSPT::LaplaceSPT(Options *opt)
 
   // Temporary array for taking FFTs
   int ncz = mesh->LocalNz;
-  dc1d = new dcomplex[ncz/2 + 1];
+  dc1d = Array<dcomplex>(ncz / 2 + 1);
 }
 
 LaplaceSPT::~LaplaceSPT() {
   alldata += ys; // Return to index from 0
   delete[] alldata;
-  
-  delete[] dc1d;
 }
 
 const FieldPerp LaplaceSPT::solve(const FieldPerp &b) {
@@ -278,14 +277,19 @@ int LaplaceSPT::start(const FieldPerp &b, SPT_data &data) {
   int ncz = mesh->LocalNz;
   
   for(int ix=0; ix < mesh->LocalNx; ix++) {
-    rfft(b[ix], ncz, dc1d);
+    rfft(b[ix], ncz, std::begin(dc1d));
     for(int kz = 0; kz <= maxmode; kz++)
-      data.bk[kz][ix] = dc1d[kz];
+      data.bk(kz, ix) = dc1d[kz];
   }
-  
+
+  BoutReal kwaveFactor = 2.0 * PI / mesh->coordinates()->zlength();
+
   /// Set matrix elements
-  tridagMatrix(data.avec, data.bvec, data.cvec, data.bk, data.jy, global_flags,
-               inner_boundary_flags, outer_boundary_flags, &Acoef, &Ccoef, &Dcoef);
+  for (int kz = 0; kz <= maxmode; kz++) {
+    tridagMatrix(&data.avec(kz, 0), &data.bvec(kz, 0), &data.cvec(kz, 0), &data.bk(kz, 0),
+                 kz, kz * kwaveFactor, data.jy, global_flags, inner_boundary_flags,
+                 outer_boundary_flags, &Acoef, &Ccoef, &Dcoef);
+  }
 
   data.proc = 0; //< Starts at processor 0
   data.dir = 1;
@@ -295,9 +299,8 @@ int LaplaceSPT::start(const FieldPerp &b, SPT_data &data) {
     for(int kz = 0; kz <= maxmode; kz++) {
       dcomplex bet, u0;
       // Start tridiagonal solve
-      tridagForward(data.avec[kz], data.bvec[kz], data.cvec[kz],
-                    data.bk[kz], data.xk[kz], mesh->xend+1,
-                    data.gam[kz],
+      tridagForward(&data.avec(kz, 0), &data.bvec(kz, 0), &data.cvec(kz, 0),
+                    &data.bk(kz, 0), &data.xk(kz, 0), mesh->xend + 1, &data.gam(kz, 0),
                     bet, u0, true);
       // Load intermediate values into buffers
       data.buffer[4*kz]     = bet.real();
@@ -307,11 +310,12 @@ int LaplaceSPT::start(const FieldPerp &b, SPT_data &data) {
     }
     
     // Send data
-    mesh->sendXOut(data.buffer, 4*(maxmode+1), data.comm_tag);
-    
+    mesh->sendXOut(std::begin(data.buffer), 4 * (maxmode + 1), data.comm_tag);
+
   }else if(mesh->PE_XIND == 1) {
     // Post a receive
-    data.recv_handle = mesh->irecvXIn(data.buffer, 4*(maxmode+1), data.comm_tag);
+    data.recv_handle =
+        mesh->irecvXIn(std::begin(data.buffer), 4 * (maxmode + 1), data.comm_tag);
   }
   
   data.proc++; // Now moved onto the next processor
@@ -346,20 +350,17 @@ int LaplaceSPT::next(SPT_data &data) {
         dcomplex gp, up;
 	bet = dcomplex(data.buffer[4*kz], data.buffer[4*kz + 1]);
 	u0 = dcomplex(data.buffer[4*kz + 2], data.buffer[4*kz + 3]);
-	tridagForward(data.avec[kz]+mesh->xstart,
-                      data.bvec[kz]+mesh->xstart, 
-                      data.cvec[kz]+mesh->xstart,
-                      data.bk[kz]+mesh->xstart, 
-                      data.xk[kz]+mesh->xstart, mesh->xend+1,
-                      data.gam[kz]+mesh->xstart,
-                      bet, u0);
-	
-	// Back-substitute
+        tridagForward(&data.avec(kz, mesh->xstart), &data.bvec(kz, mesh->xstart),
+                      &data.cvec(kz, mesh->xstart), &data.bk(kz, mesh->xstart),
+                      &data.xk(kz, mesh->xstart), mesh->xend + 1,
+                      &data.gam(kz, mesh->xstart), bet, u0);
+
+        // Back-substitute
 	gp = 0.0;
 	up = 0.0;
-	tridagBack(data.xk[kz]+mesh->xstart, mesh->LocalNx-mesh->xstart, 
-                   data.gam[kz]+mesh->xstart, gp, up);
-	data.buffer[4*kz]     = gp.real();
+        tridagBack(&data.xk(kz, mesh->xstart), mesh->LocalNx - mesh->xstart,
+                   &data.gam(kz, mesh->xstart), gp, up);
+        data.buffer[4*kz]     = gp.real();
 	data.buffer[4*kz + 1] = gp.imag();
 	data.buffer[4*kz + 2] = up.real();
 	data.buffer[4*kz + 3] = up.imag();
@@ -373,15 +374,11 @@ int LaplaceSPT::next(SPT_data &data) {
 	dcomplex bet, u0;
 	bet = dcomplex(data.buffer[4*kz], data.buffer[4*kz + 1]);
 	u0 = dcomplex(data.buffer[4*kz + 2], data.buffer[4*kz + 3]);
-	tridagForward(data.avec[kz]+mesh->xstart, 
-                      data.bvec[kz]+mesh->xstart, 
-                      data.cvec[kz]+mesh->xstart,
-                      data.bk[kz]+mesh->xstart, 
-                      data.xk[kz]+mesh->xstart, 
-                      mesh->xend - mesh->xstart+1,
-                      data.gam[kz]+mesh->xstart,
-                      bet, u0);
-	// Load intermediate values into buffers
+        tridagForward(&data.avec(kz, mesh->xstart), &data.bvec(kz, mesh->xstart),
+                      &data.cvec(kz, mesh->xstart), &data.bk(kz, mesh->xstart),
+                      &data.xk(kz, mesh->xstart), mesh->xend - mesh->xstart + 1,
+                      &data.gam(kz, mesh->xstart), bet, u0);
+        // Load intermediate values into buffers
 	data.buffer[4*kz]     = bet.real();
 	data.buffer[4*kz + 1] = bet.imag();
 	data.buffer[4*kz + 2] = u0.real();
@@ -397,7 +394,7 @@ BOUT_OMP(parallel for)
 	gp = dcomplex(data.buffer[4*kz], data.buffer[4*kz + 1]);
 	up = dcomplex(data.buffer[4*kz + 2], data.buffer[4*kz + 3]);
 
-	tridagBack(data.xk[kz], mesh->xend+1, data.gam[kz], gp, up);
+        tridagBack(&data.xk(kz, 0), mesh->xend + 1, &data.gam(kz, 0), gp, up);
       }
 
     }else {
@@ -408,11 +405,10 @@ BOUT_OMP(parallel for)
 	dcomplex gp = dcomplex(data.buffer[4*kz], data.buffer[4*kz + 1]);
 	dcomplex up = dcomplex(data.buffer[4*kz + 2], data.buffer[4*kz + 3]);
 
-	tridagBack(data.xk[kz]+mesh->xstart, 
-                   mesh->xend-mesh->xstart+1, 
-                   data.gam[kz]+mesh->xstart, gp, up);
-	
-	data.buffer[4*kz]     = gp.real();
+        tridagBack(&data.xk(kz, mesh->xstart), mesh->xend - mesh->xstart + 1,
+                   &data.gam(kz, mesh->xstart), gp, up);
+
+        data.buffer[4*kz]     = gp.real();
 	data.buffer[4*kz + 1] = gp.imag();
 	data.buffer[4*kz + 2] = up.real();
 	data.buffer[4*kz + 3] = up.imag();
@@ -423,18 +419,20 @@ BOUT_OMP(parallel for)
       /// Send data
       
       if(data.dir > 0) {
-	mesh->sendXOut(data.buffer, 4*(maxmode+1), data.comm_tag);
+        mesh->sendXOut(std::begin(data.buffer), 4 * (maxmode + 1), data.comm_tag);
       }else
-	mesh->sendXIn(data.buffer, 4*(maxmode+1), data.comm_tag);
+        mesh->sendXIn(std::begin(data.buffer), 4 * (maxmode + 1), data.comm_tag);
     }
 
   }else if(mesh->PE_XIND == data.proc + data.dir) {
     // This processor is next, post receive
     
     if(data.dir > 0) {
-      data.recv_handle = mesh->irecvXIn(data.buffer, 4*(maxmode+1), data.comm_tag);
+      data.recv_handle =
+          mesh->irecvXIn(std::begin(data.buffer), 4 * (maxmode + 1), data.comm_tag);
     }else
-      data.recv_handle = mesh->irecvXOut(data.buffer, 4*(maxmode+1), data.comm_tag);
+      data.recv_handle =
+          mesh->irecvXOut(std::begin(data.buffer), 4 * (maxmode + 1), data.comm_tag);
   }
   
   data.proc += data.dir;
@@ -468,15 +466,15 @@ void LaplaceSPT::finish(SPT_data &data, FieldPerp &x) {
   for(int ix=0; ix<=ncx; ix++){
     
     for(int kz = 0; kz<= maxmode; kz++) {
-      dc1d[kz] = data.xk[kz][ix];
+      dc1d[kz] = data.xk(kz, ix);
     }
     for(int kz = maxmode + 1; kz <= ncz/2; kz++)
       dc1d[kz] = 0.0;
 
     if(global_flags & INVERT_ZERO_DC)
       dc1d[0] = 0.0;
-    
-    irfft(dc1d, ncz, x[ix]);
+
+    irfft(std::begin(dc1d), ncz, x[ix]);
   }
 
   if(!mesh->firstX()) {
@@ -499,35 +497,16 @@ void LaplaceSPT::finish(SPT_data &data, FieldPerp &x) {
 // SPT_data helper class
 
 void LaplaceSPT::SPT_data::allocate(int mm, int nx) {
-  if(bk != NULL)
-    return; // Already allocated
-  
-  bk = matrix<dcomplex>(mm, nx);
-  xk = matrix<dcomplex>(mm, nx);
-  
-  gam = matrix<dcomplex>(mm, nx);
-  
-  // Matrix to be solved
-  avec = matrix<dcomplex>(mm, nx);
-  bvec = matrix<dcomplex>(mm, nx);
-  cvec = matrix<dcomplex>(mm, nx);
-  
-  buffer  = new BoutReal[4*mm];
-}
+  bk = Matrix<dcomplex>(mm, nx);
+  xk = Matrix<dcomplex>(mm, nx);
 
-LaplaceSPT::SPT_data::~SPT_data() {
-  if( bk == NULL )
-    return;
-    
-  free_matrix(bk);
-  free_matrix(xk);
-  
-  free_matrix(gam);
-  
-  free_matrix(avec);
-  free_matrix(bvec);
-  free_matrix(cvec);
-  
-  delete[] buffer;
+  gam = Matrix<dcomplex>(mm, nx);
+
+  // Matrix to be solved
+  avec = Matrix<dcomplex>(mm, nx);
+  bvec = Matrix<dcomplex>(mm, nx);
+  cvec = Matrix<dcomplex>(mm, nx);
+
+  buffer = Array<BoutReal>(4 * mm);
 }
 

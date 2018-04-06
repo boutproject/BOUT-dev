@@ -7,6 +7,7 @@
 
 #include <cyclic_reduction.hxx>
 #include <dcomplex.hxx>
+#include "utils.hxx"
 
 // Change this to dcomplex to test complex matrix inversion
 typedef BoutReal T;
@@ -16,7 +17,7 @@ int main(int argc, char **argv) {
   // Initialise BOUT++, setting up mesh
   BoutInitialise(argc, argv);
 
-  T **a, **b, **c, **rhs, **x;
+  Matrix<T> a, b, c, rhs, x;
 
   int nsys;
   int n;
@@ -36,51 +37,60 @@ int main(int argc, char **argv) {
   MPI_Comm_rank(BoutComm::get(), &mype);
   MPI_Comm_size(BoutComm::get(), &npe);
 
-  a   = matrix<T>(nsys, n);
-  b   = matrix<T>(nsys, n);
-  c   = matrix<T>(nsys, n);
-  rhs = matrix<T>(nsys, n);
-  x   = matrix<T>(nsys, n);
+  a   = Matrix<T>(nsys, n);
+  b   = Matrix<T>(nsys, n);
+  c   = Matrix<T>(nsys, n);
+  rhs = Matrix<T>(nsys, n);
+  x   = Matrix<T>(nsys, n);
 
   // Set coefficients to some random numbers
   for(int s=0;s<nsys;s++) {
     for(int i=0;i<n;i++) {
-      a[s][i] = randomu();
-      b[s][i] = 2. + randomu(); // So always diagonally dominant
-      c[s][i] = randomu();
+      a(s, i) = randomu();
+      b(s, i) = 2. + randomu(); // So always diagonally dominant
+      c(s, i) = randomu();
 
-      x[s][i] = ((mype*n + i) % 4) - 2.; // deterministic, so don't need to communicate
+      x(s, i) = ((mype*n + i) % 4) - 2.; // deterministic, so don't need to communicate
     }
 
     // Calculate RHS
 
     int i = 0;
     if((mype == 0) && (!periodic)) {
-      rhs[s][i] = b[s][i]*x[s][i] + c[s][i]*x[s][i+1];
+      rhs(s, i) = b(s, i)*x(s, i) + c(s, i)*x(s, i+1);
     }else {
       int pe = (mype - 1 + npe) % npe;
       T xm = ((pe*n + (n-1)) % 4) - 2.;
-      rhs[s][i] = a[s][i]*xm + b[s][i]*x[s][i] + c[s][i]*x[s][i+1];
+      rhs(s, i) = a(s, i)*xm + b(s, i)*x(s, i) + c(s, i)*x(s, i+1);
     }
 
     for(i=1;i<n-1;i++)
-      rhs[s][i] = a[s][i]*x[s][i-1] + b[s][i]*x[s][i] + c[s][i]*x[s][i+1];
+      rhs(s, i) = a(s, i)*x(s, i-1) + b(s, i)*x(s, i) + c(s, i)*x(s, i+1);
 
     if((mype == (npe-1)) && !periodic) {
-      rhs[s][i] = a[s][i]*x[s][i-1] + b[s][i]*x[s][i];
+      rhs(s, i) = a(s, i)*x(s, i-1) + b(s, i)*x(s, i);
     }else {
       int pe = (mype + 1) % npe;
       T xp = ((pe*n) % 4) - 2.;
-      rhs[s][i] = a[s][i]*x[s][i-1] + b[s][i]*x[s][i] + c[s][i]*xp;
+      rhs(s, i) = a(s, i)*x(s, i-1) + b(s, i)*x(s, i) + c(s, i)*xp;
+    }
+
+    // Zero x, so that solve has to do something
+
+    for (int i = 0; i < n; i++) {
+      x(s, i) = 0.0;
     }
   }
 
   // Solve system
 
   cr->setPeriodic(periodic);
-  cr->setCoefs(nsys, a, b, c);
-  cr->solve(nsys, rhs, x);
+  cr->setCoefs(a, b, c);
+  cr->solve(rhs, x);
 
+  // Destroy solver
+  delete cr;
+  
   // Check result
 
   int passed = 1;
@@ -88,8 +98,8 @@ int main(int argc, char **argv) {
     output << "System " << s << endl;
     for(int i=0;i<n;i++) {
       T val = ((mype*n + i) % 4) - 2.;
-      output << "\t" << i << " : " << val << " ?= " << x[s][i] << endl;
-      if(abs(val - x[s][i]) > tol) {
+      output << "\t" << i << " : " << val << " ?= " << x(s, i) << endl;
+      if(abs(val - x(s, i)) > tol) {
         passed = 0;
       }
     }

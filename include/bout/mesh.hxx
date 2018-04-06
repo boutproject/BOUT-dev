@@ -59,8 +59,6 @@ class Mesh;
 
 #include "sys/range.hxx" // RangeIterator
 
-#include "bout/deprecated.hxx"
-
 #include <bout/griddata.hxx>
 
 #include "coordinates.hxx"    // Coordinates class
@@ -570,8 +568,15 @@ class Mesh {
    */
   void setParallelTransform();
 
-    //Region related routines
+  /////////////////////////
+  // Region related routines
+  /////////////////////////
 
+  // The maxregionblocksize to use when creating the default regions.
+  // Can be set in the input file and the global default is set by,
+  // MAXREGIONBLOCKSIZE in include/bout/region.hxx
+  int maxregionblocksize;
+  
   /// Get the named region from the region_map for the data iterator
   ///
   /// Throws if region_name not found

@@ -83,6 +83,8 @@ AC_ARG_ENABLE(backtrace,    [AS_HELP_STRING([--disable-backtrace],
         [Disable function backtrace])],,[enable_backtrace=maybe])
 AC_ARG_ENABLE(shared,       [AS_HELP_STRING([--enable-shared],
         [Enable building bout++ into an shared object])],,[enable_shared=no])
+AC_ARG_ENABLE(openmp,       [AS_HELP_STRING([--enable-openmp],
+        [Enable building with OpenMP support])],,[enable_openmp=no])
 AC_ARG_ENABLE(pvode_openmp,       [AS_HELP_STRING([--enable-pvode-openmp],
         [Enable building PVODE with OpenMP support])],,[enable_pvode_openmp=no])
 
@@ -168,6 +170,7 @@ AC_FUNC_VPRINTF
 # Check for OpenMP support
 : ${enable_openmp=no}  # Disable by default
 AC_OPENMP
+HAS_OPENMP=$enable_openmp
 
 #############################################################
 # Code coverage using gcov
@@ -205,10 +208,10 @@ elif test $enable_optimize ; then
   optimize=$enable_optimize
   test $optimize -eq 0 2>/dev/null
   if test $? -eq 2 ; then
-    if test $optimize == "default"
+    if test $optimize = "default"
     then
       OPT_FLAGS="-O"
-    elif test $optimize == "fast"
+    elif test $optimize = "fast"
     then
       OPT_FLAGS="-Ofast -fno-finite-math-only -march=native -funroll-loops"
       DISABLE_CHECK=probably
@@ -290,12 +293,12 @@ else
   echo "Output coloring disabled"
 fi
 
-if test ."$enable_track" == ."yes"
+if test ."$enable_track" = ."yes"
 then
        CXXFLAGS="$CXXFLAGS -DTRACK"
 fi
 
-if test ."$enable_sigfpe" == .yes
+if test ."$enable_sigfpe" = .yes
 then
     CXXFLAGS="$CXXFLAGS -DBOUT_FPE"
 fi
@@ -305,14 +308,14 @@ echo
 BOUT_VERSION=$PACKAGE_VERSION
 BOUT_VERSION_MAJOR=${PACKAGE_VERSION%%.*}
 BOUT_VERSION_MINOR=${PACKAGE_VERSION#*.}
-BOUT_VERSION_DOUBLE=${BOUT_VERSION_MAJOR}.${BOUT_VERSION_MINOR/./}
+BOUT_VERSION_DOUBLE=${BOUT_VERSION_MAJOR}.$(echo ${BOUT_VERSION_MINOR}|tr -d .)
 CXXFLAGS+=" -DBOUT_VERSION_STRING=\"\\\"$BOUT_VERSION\\\"\" -DBOUT_VERSION_DOUBLE=$BOUT_VERSION_DOUBLE "
 
 #############################################################
 # Enable Backtrace if possible
 #############################################################
 
-if test ."$enable_backtrace" == .yes || test ."$enable_backtrace" == .maybe
+if test ."$enable_backtrace" = .yes || test ."$enable_backtrace" = .maybe
 then
     works=yes
     if ! which addr2line &>/dev/null
@@ -332,11 +335,11 @@ then
     AC_TRY_COMPILE([#include <dlfcn.h>] , , ,
                    [AC_MSG_WARN("dlfcn.h not found")
                     works=no])
-    if test .$works == .yes
+    if test .$works = .yes
     then
         CXXFLAGS="$CXXFLAGS -DBACKTRACE"
     else
-        if test ."$enable_backtrace" == .yes
+        if test ."$enable_backtrace" = .yes
         then
             AC_MSG_ERROR([backtrace requested, but cannot be enabled])
         else
@@ -349,7 +352,7 @@ fi
 # Build into shared object (pic)
 #############################################################
 
-if test ."$enable_shared" == .yes
+if test ."$enable_shared" = .yes
 then
     # compile as position independent code.
     # -fpic is apparently faster then -fPIC, but -fPIC works always.
@@ -508,30 +511,19 @@ then
   then
     # Given a path to the library
     AC_CHECK_FILES($with_pnetcdf/include/pnetcdf.h, PNCPATH=$with_pnetcdf,)
-    if test "$PNCPATH" == ""
+    if test "$PNCPATH" = ""
     then
       echo "parallel-netcdf not found in given directory"
     fi
   fi
 
   # Find the utilities included with pnetcdf
-  if test "$PNCPATH" == ""
+  if test "$PNCPATH" = ""
   then
     path=`which ncmpidump`
     if test "$path" != ""
     then
       path=`dirname $path`
-      path=$path/..
-      AC_CHECK_FILES($path/include/pnetcdf.h , PNCPATH=$path,)
-    fi
-  fi
-
-  # Try locate
-  if test "$PNCPATH" == ""
-  then
-    path=`locate pnetcdf.h | head -n 1`
-    if test "$path" != ""
-    then
       path=$path/..
       AC_CHECK_FILES($path/include/pnetcdf.h , PNCPATH=$path,)
     fi
@@ -544,7 +536,7 @@ then
     AC_CHECK_FILES($path/lib64/libpnetcdf.a, PNCPATHLIB='lib64', PNCPATH=''))
 fi
 
-if test "$PNCPATH" == ""
+if test "$PNCPATH" = ""
 then
   echo "Parallel-NetCDF support disabled"
 else
@@ -638,6 +630,10 @@ then
   if test "$with_petsc" != "yes"
   then
     PETSC_DIR="$with_petsc"
+    AC_CHECK_FILE($PETSC_DIR/conf, PETSC_CONFDIR=${PETSC_DIR}/conf,
+      AC_CHECK_FILE($PETSC_DIR/lib/petsc/conf, PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf,
+        AC_MSG_ERROR([*** --with-petsc=$with_petsc was specified but could not find PETSc distribution])
+        ))
 
   else
     AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/conf, PETSC_CONFDIR=${PETSC_DIR}/conf,
@@ -683,6 +679,10 @@ then
   then
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
     AC_MSG_RESULT([dev])
+  elif test "$PETSC_VERSION_MINOR" = "7" && test "$PETSC_VERSION_RELEASE" = "1"
+  then
+    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_7"
+    AC_MSG_RESULT([3.7 "$PETSC_DIR $PETSC_ARCH $PETSC_CONFDIR"])
   else
     AC_MSG_RESULT([unknown])
     echo "***********************************"
@@ -701,30 +701,14 @@ PETSC_ARCH = ${PETSC_ARCH}
 PETSC_DIR  = ${PETSC_DIR}
 include ${PETSC_CONFDIR}/rules
 include ${PETSC_CONFDIR}/variables
-echo_cxx:
-	-@echo \${CXX}
 echo_sundials:
 	-@echo \${SUNDIALS_LIB}
 MFILE
 
-  AC_MSG_CHECKING([PETSC has C++ support])
-  PETSC_HAS_CXX=`make -f petscmake$$ echo_cxx`
-
-  AS_IF([test -z "$PETSC_HAS_CXX"],
-  [
-    AC_MSG_RESULT([no])
-    AC_MSG_ERROR([Warning - PETSc must have C++ support])
-  ], [])
-  AC_MSG_RESULT([yes])
-
-  AC_MSG_CHECKING([PETSc C++ compiler used])
-  PETSC_CXX=`make -f petscmake$$ echo_cxx`
-  AC_MSG_RESULT([$PETSC_CXX])
-
   AC_MSG_CHECKING([PETSc has SUNDIALS support])
   PETSC_HAS_SUNDIALS=`make -f petscmake$$ echo_sundials | grep -c sundials`
 
-  AS_IF([test "$PETSC_HAS_SUNDIALS" == "0"],
+  AS_IF([test "$PETSC_HAS_SUNDIALS" = "0"],
         [PETSC_HAS_SUNDIALS="no"],
         [PETSC_HAS_SUNDIALS="yes"])
   AC_MSG_RESULT([$PETSC_HAS_SUNDIALS])
@@ -746,7 +730,7 @@ then
   EXTRA_INCS="$EXTRA_INCS \$(PETSC_CC_INCLUDES)"
   EXTRA_LIBS="$EXTRA_LIBS \$(PETSC_LIB)"
 
-  if test "$PETSC_HAS_SUNDIALS" == "yes"
+  if test "$PETSC_HAS_SUNDIALS" = "yes"
   then
     CXXFLAGS="$CXXFLAGS -DPETSC_HAS_SUNDIALS "
   fi
@@ -763,7 +747,7 @@ if test "$with_slepc" != "" && test "$with_slepc" != "no"
 then
   echo "Searching for SLEPc"
 
-  if test "$SLEPC_DIR" == ""
+  if test "$SLEPC_DIR" = ""
   then
     AC_MSG_ERROR([*** --with-slepc specified but SLEPC_DIR not set])
   fi
@@ -823,7 +807,7 @@ then
     MUMPS_LIB=$MUMPS/lib
   fi
 
-  if test "$MUMPS" == ""
+  if test "$MUMPS" = ""
   then
     # Look in some standard locations
     AC_CHECK_FILE(/usr/include/dmumps_c.h, MUMPS="/usr/".
@@ -835,7 +819,7 @@ then
     MUMPS_LIB=$MUMPS/lib
   fi
 
-  if test "$MUMPS" == "" && test "$PETSC_DIR" != ""
+  if test "$MUMPS" = "" && test "$PETSC_DIR" != ""
   then
     # Try PETSc installation
 
@@ -856,7 +840,7 @@ then
     AC_CHECK_FILES( $MUMPS_INC/dmumps_c.h $MUMPS_LIB/libdmumps.a $MUMPS_LIB/libmumps_common.a $MUMPS_LIB/libpord.a $MUMPS_LIB/libscalapack.a $MUMPS_LIB/libblacs.a $MUMPS_LIB/libparmetis.a $MUMPS_LIB/libmetis.a $MUMPS_LIB/libptscotch.a $MUMPS_LIB/libptesmumps.a, ,[ MUMPS="" ])
   fi
 
-  if test "$MUMPS" == ""
+  if test "$MUMPS" = ""
   then
     echo " -> MUMPS not found"
   else
@@ -1195,14 +1179,14 @@ AS_IF([test "$with_scorep" != "no"], [
   AS_IF([test "$with_scorep" != "yes"], [
     # Given a path to the library
     AC_CHECK_FILES($with_scorep/scorep, SCOREPPATH=$with_scorep,)
-    AS_IF([test "$SCOREPPATH" == ""],[
+    AS_IF([test "$SCOREPPATH" = ""],[
       AC_MSG_NOTICE(["scorep not found in given directory"])
     ],[])
   ], 
   [])
 
   # Find the scorep binary
-  AS_IF([test "$SCOREPPATH" == ""], [
+  AS_IF([test "$SCOREPPATH" = ""], [
     path=`which scorep`
     AS_IF([test "$path" != ""], [
       path=`dirname $path`
@@ -1212,7 +1196,7 @@ AS_IF([test "$with_scorep" != "no"], [
   ],
   [])
 
-  AS_IF([test "$SCOREPPATH" == ""], [
+  AS_IF([test "$SCOREPPATH" = ""], [
       AC_MSG_NOTICE(["SCOREP support disabled"])
   ],[
       # Set a compile-time flag
@@ -1253,18 +1237,19 @@ then
 	])
 
    # Clean PVODE
-   CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-   CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+   CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE \
+       clean -C externalpackages/PVODE/ >> config-build.log 2>&1
 
    #make -C externalpackages/PVODE/ clean
 
     echo "* Building PVODE" | tee -a config-build.log
     echo "*************************************************************" >> config-build.log
 
-    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" \
+      AR="ar" ARFLAGS="$ARFLAGS" $MAKE -C externalpackages/PVODE/ >> config-build.log 2>&1
 
-    if [[ -f externalpackages/PVODE/lib/libpvode.a ]]
+    ex=$?
+    if [[ -f externalpackages/PVODE/lib/libpvode.a ]] && test $ex -eq 0
     then
       echo "*************************************************************" >> config-build.log
       echo "* Successfully built PVODE" | tee -a config-build.log
@@ -1471,6 +1456,7 @@ AC_SUBST(HAS_SLEPC)
 AC_SUBST(PETSC_VERSION)
 AC_SUBST(PETSC_RELEASE)
 AC_SUBST(PETSC_HAS_SUNDIALS)
+AC_SUBST(HAS_OPENMP)
 
 AC_OUTPUT(bin/bout-config)
 chmod a+x bin/bout-config

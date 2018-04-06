@@ -36,6 +36,7 @@ class LaplacePDD;
 
 #include <invert_laplace.hxx>
 #include <options.hxx>
+#include <utils.hxx>
 
 class LaplacePDD : public Laplacian {
 public:
@@ -68,21 +69,21 @@ private:
   
   /// Data structure for PDD algorithm
   typedef struct {
-    dcomplex **bk;  ///< b vector in Fourier space
+    Matrix<dcomplex> bk;  ///< b vector in Fourier space
 
-    dcomplex **avec, **bvec, **cvec; ///< Diagonal bands of matrix
+    Matrix<dcomplex> avec, bvec, cvec; ///< Diagonal bands of matrix
   
     int jy; ///< Y index
   
-    dcomplex **xk;
-    dcomplex **v, **w;
+    Matrix<dcomplex> xk;
+    Matrix<dcomplex> v, w;
 
-    BoutReal *snd; // send buffer
-    BoutReal *rcv; // receive buffer
+    Array<BoutReal> snd; // send buffer
+    Array<BoutReal> rcv; // receive buffer
   
     comm_handle recv_handle;
 
-    dcomplex *y2i;
+    Array<dcomplex> y2i;
   }PDD_data;
   
   void start(const FieldPerp &b, PDD_data &data);

@@ -45,6 +45,13 @@
 
 #include <bout/assert.hxx>
 
+BoutReal& Field2D::operator[](const Ind3D &d) {
+    return data[d.ind/fieldmesh->LocalNz];
+  }
+const BoutReal& Field2D::operator[](const Ind3D &d) const {
+    return data[d.ind/fieldmesh->LocalNz];
+  }
+
 Field2D::Field2D(Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
 
   boundaryIsSet = false;
@@ -70,6 +77,10 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing 
                                      deriv(nullptr) {
   TRACE("Field2D(Field2D&)");
 
+#ifdef TRACK
+  name = f.name;
+#endif
+
 #if CHECK > 2
   checkData(f);
 #endif
@@ -86,7 +97,6 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing 
 #endif
 
   boundaryIsSet = false;
-  *this = f; //This line is probably not required as we init data from f.data above.
 }
 
 Field2D::Field2D(BoutReal val, Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
@@ -215,53 +225,6 @@ Field2D &Field2D::operator=(const BoutReal rhs) {
   return *this;
 }
 
-////////////////////// STENCILS //////////////////////////
-
-void Field2D::getXArray(int y, int UNUSED(z), rvec &xv) const {
-  ASSERT1(isAllocated());
-
-  xv.resize(nx);
-
-  for(int x=0;x<nx;x++)
-    xv[x] = operator()(x,y);
-}
-
-void Field2D::getYArray(int x, int UNUSED(z), rvec &yv) const {
-  ASSERT1(isAllocated());
-
-  yv.resize(ny);
-
-  for(int y=0;y<ny;y++)
-    yv[y] = operator()(x,y);
-}
-
-void Field2D::getZArray(int x, int y, rvec &zv) const {
-  ASSERT1(isAllocated());
-
-  zv.resize(fieldmesh->LocalNz);
-
-  for(int z=0;z<fieldmesh->LocalNz;z++)
-    zv[z] = operator()(x,y);
-}
-
-void Field2D::setXArray(int y, int UNUSED(z), const rvec &xv) {
-  allocate();
-
-  ASSERT0(xv.capacity() == static_cast<unsigned int>(nx));
-
-  for(int x=0;x<nx;x++)
-    operator()(x,y) = xv[x];
-}
-
-void Field2D::setYArray(int x, int UNUSED(z), const rvec &yv) {
-  allocate();
-
-  ASSERT0(yv.capacity() == static_cast<unsigned int>(fieldmesh->LocalNy));
-
-  for(int y=0;y<fieldmesh->LocalNy;y++)
-    operator()(x,y) = yv[y];
-}
-
 ///////////////////// BOUNDARY CONDITIONS //////////////////
 
 void Field2D::applyBoundary(bool init) {
@@ -387,14 +350,14 @@ Field2D operator-(const Field2D &f) { return -1.0 * f; }
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
-BoutReal min(const Field2D &f, bool allpe) {
+BoutReal min(const Field2D &f, bool allpe, REGION rgn) {
   TRACE("Field2D::Min() %s",allpe? "over all PEs" : "");
 
   ASSERT2(f.isAllocated());
 
-  BoutReal result = f[f.region(RGN_NOBNDRY).begin()];
+  BoutReal result = f[f.region(rgn).begin()];
 
-  for(const auto& i : f.region(RGN_NOBNDRY))
+  for(const auto& i : f.region(rgn))
     if(f[i] < result)
       result = f[i];
 
@@ -407,14 +370,14 @@ BoutReal min(const Field2D &f, bool allpe) {
   return result;
 }
 
-BoutReal max(const Field2D &f, bool allpe) {
+BoutReal max(const Field2D &f, bool allpe,REGION rgn) {
   TRACE("Field2D::Max() %s",allpe? "over all PEs" : "");
 
   ASSERT2(f.isAllocated());
 
-  BoutReal result = f[f.region(RGN_NOBNDRY).begin()];
+  BoutReal result = f[f.region(rgn).begin()];
 
-  for(const auto& i : f.region(RGN_NOBNDRY))
+  for(const auto& i : f.region(rgn))
     if(f[i] > result)
       result = f[i];
 
@@ -427,14 +390,14 @@ BoutReal max(const Field2D &f, bool allpe) {
   return result;
 }
 
-bool finite(const Field2D &f) {
+bool finite(const Field2D &f, REGION rgn) {
   TRACE("finite(Field2D)");
 
   if (!f.isAllocated()) {
     return false;
   }
 
-  for (const auto &i : f) {
+  for (const auto &i : f.region(rgn)) {
     if (!::finite(f[i])) {
       return false;
     }
@@ -458,11 +421,12 @@ bool finite(const Field2D &f) {
  * If CHECK >= 1, checks if the Field2D is allocated
  *
  * Loops over the entire domain, applies function,
- * and if CHECK >= 3 then checks result for non-finite numbers
+ * and uses checkData() to, if CHECK >= 3, check
+ * result for non-finite numbers
  *
  */
 #define F2D_FUNC(name, func)                                                             \
-  const Field2D name(const Field2D &f) {                                                 \
+  const Field2D name(const Field2D &f, REGION rgn) {                                     \
     TRACE(#name "(Field2D)");                                                            \
     /* Check if the input is allocated */                                                \
     ASSERT1(f.isAllocated());                                                            \
@@ -470,11 +434,10 @@ bool finite(const Field2D &f) {
     Field2D result(f.getMesh());                                                         \
     result.allocate();                                                                   \
     /* Loop over domain */                                                               \
-    for (const auto &d : result) {                                                       \
+    for (const auto &d : result.region(rgn)) {                                           \
       result[d] = func(f[d]);                                                            \
-      /* If checking is set to 3 or higher, test result */                               \
-      ASSERT3(finite(result[d]));                                                        \
     }                                                                                    \
+    checkData(result, rgn);                                                              \
     return result;                                                                       \
   }
 
@@ -499,17 +462,17 @@ const Field2D copy(const Field2D &f) {
   return result;
 }
 
-const Field2D floor(const Field2D &var, BoutReal f) {
+const Field2D floor(const Field2D &var, BoutReal f, REGION rgn) {
   Field2D result = copy(var);
 
-  for(const auto& d : result)
+  for(const auto& d : result.region(rgn))
     if(result[d] < f)
       result[d] = f;
 
   return result;
 }
 
-Field2D pow(const Field2D &lhs, const Field2D &rhs) {
+Field2D pow(const Field2D &lhs, const Field2D &rhs, REGION rgn) {
   TRACE("pow(Field2D, Field2D)");
   // Check if the inputs are allocated
   ASSERT1(lhs.isAllocated());
@@ -521,14 +484,15 @@ Field2D pow(const Field2D &lhs, const Field2D &rhs) {
   result.allocate();
 
   // Loop over domain
-  for(const auto& i: result) {
+  for(const auto& i: result.region(rgn)) {
     result[i] = ::pow(lhs[i], rhs[i]);
-    ASSERT3(finite(result[i]));
   }
+
+  checkData(result, rgn);
   return result;
 }
 
-Field2D pow(const Field2D &lhs, BoutReal rhs) {
+Field2D pow(const Field2D &lhs, BoutReal rhs, REGION rgn) {
   TRACE("pow(Field2D, BoutReal)");
   // Check if the inputs are allocated
   ASSERT1(lhs.isAllocated());
@@ -538,14 +502,15 @@ Field2D pow(const Field2D &lhs, BoutReal rhs) {
   result.allocate();
 
   // Loop over domain
-  for(const auto& i: result) {
+  for(const auto& i: result.region(rgn)) {
     result[i] = ::pow(lhs[i], rhs);
-    ASSERT3(finite(result[i]));
   }
+
+  checkData(result, rgn);
   return result;
 }
 
-Field2D pow(BoutReal lhs, const Field2D &rhs) {
+Field2D pow(BoutReal lhs, const Field2D &rhs, REGION rgn) {
   TRACE("pow(lhs, Field2D)");
   // Check if the inputs are allocated
   ASSERT1(rhs.isAllocated());
@@ -555,10 +520,11 @@ Field2D pow(BoutReal lhs, const Field2D &rhs) {
   result.allocate();
 
   // Loop over domain
-  for(const auto& i: result) {
+  for(const auto& i: result.region(rgn)) {
     result[i] = ::pow(lhs, rhs[i]);
-    ASSERT3(finite(result[i]));
   }
+
+  checkData(result, rgn);
   return result;
 }
 

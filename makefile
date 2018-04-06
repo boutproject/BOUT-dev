@@ -1,13 +1,9 @@
 
-BOUT_TOP	= .
+BOUT_TOP  = .
 
-DIRS			= src
+DIRS      = src
 
-ifndef TARGET
-TARGET=libfast
-endif
-# Add this to DIRS to have examples compiled
-#examples
+TARGET   ?= libfast
 
 include make.config
 
@@ -30,13 +26,13 @@ shared: libfast
 # Tests
 ######################################################################
 
-check-unit-tests:
+check-unit-tests: libfast
 	@export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH}; $(MAKE) --no-print-directory -C tests/unit check
 
-check-mms-tests:
+check-mms-tests: libfast
 	@cd tests/MMS; export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH} ; ./test_suite
 
-check-integrated-tests:
+check-integrated-tests: libfast
 	@cd tests/integrated; LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH}./test_suite_make
 	@cd tests/integrated; export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH} ; \
 		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} ./test_suite
@@ -44,13 +40,13 @@ check-integrated-tests:
 
 check: check-unit-tests check-integrated-tests check-mms-tests
 
-build-check-unit-tests:
+build-check-unit-tests: libfast
 	@$(MAKE) --no-print-directory -C tests/unit
 
-build-check-mms-tests:
+build-check-mms-tests: libfast
 	$(MAKE) --no-print-directory -C tests/MMS
 
-build-check-integrated-tests:
+build-check-integrated-tests: libfast
 	$(MAKE) --no-print-directory -C tests/integrated
 
 

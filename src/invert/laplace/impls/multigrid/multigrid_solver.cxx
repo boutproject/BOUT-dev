@@ -265,42 +265,45 @@ void Multigrid1DP::lowestSolver(BoutReal *x, BoutReal *b, int UNUSED(plag)) {
   if(kflag == 1) {
     int level = rMG->mglevel-1;
     int dim = (rMG->lnx[level]+2)*(rMG->lnz[level]+2);
-    BoutReal *y = new BoutReal[dim];
-    BoutReal *r = new BoutReal[dim];
-BOUT_OMP(parallel default(shared))
-BOUT_OMP(for)
-    for(int i = 0;i<dim;i++) {
-      y[i] = 0.0;
-      r[i] = 0.0;
-    }
+    Array<BoutReal> y(dim);
+    Array<BoutReal> r(dim);
 
     int ggx = rMG->lnx[level];
     int dimg = (ggx+2)*(gnz[0]+2);
-    BoutReal *yl = new BoutReal[dimg];
-    BoutReal *yg = new BoutReal[dimg];  
-BOUT_OMP(parallel default(shared))
-BOUT_OMP(for)
-    for(int i = 0;i<dimg;i++) {
-      yl[i] = 0.0;
-      yg[i] = 0.0;
-    }
+    Array<BoutReal> yl(dimg);
+    Array<BoutReal> yg(dimg);
 
     int nx = (xProcI%rMG->zNP)*lnx[0];
-    for(int ix = 1;ix < lnx[0]+1;ix++) {
+
 BOUT_OMP(parallel default(shared))
+    {
 BOUT_OMP(for)
-      for(int iz = 1;iz < lnz[0]+1;iz++) {
-        int nn = (nx+ix)*(lnz[0]+2)+iz;
-        int mm = ix*(lnz[0]+2)+iz;
-        yl[nn] = b[mm];
+      for(int i = 0;i<dim;i++) {
+        y[i] = 0.0;
+        r[i] = 0.0;
+      }
+
+BOUT_OMP(for)
+      for(int i = 0;i<dimg;i++) {
+        yl[i] = 0.0;
+        yg[i] = 0.0;
+      }
+
+BOUT_OMP(for collapse(2))
+      for(int ix = 1;ix < lnx[0]+1;ix++) {
+        for(int iz = 1;iz < lnz[0]+1;iz++) {
+          int nn = (nx+ix)*(lnz[0]+2)+iz;
+          int mm = ix*(lnz[0]+2)+iz;
+          yl[nn] = b[mm];
+        }
       }
     }
-    MPI_Allreduce(yl,yg,dimg,MPI_DOUBLE,MPI_SUM,comm2D);
+    MPI_Allreduce(std::begin(yl), std::begin(yg), dimg, MPI_DOUBLE, MPI_SUM, comm2D);
 
     int nz = (xProcI%rMG->zNP)*(rMG->lnz[level]);
-    for(int ix = 1;ix < rMG->lnx[level]+1;ix++) {
 BOUT_OMP(parallel default(shared))
-BOUT_OMP(for)
+BOUT_OMP(for collapse(2))
+    for(int ix = 1;ix < rMG->lnx[level]+1;ix++) {
       for(int iz = 1;iz <rMG->lnz[level]+1;iz++) {
         int nn = ix*(lnz[0]+2)+nz+iz;
         int mm = ix*(rMG->lnz[level]+2)+iz;
@@ -308,29 +311,29 @@ BOUT_OMP(for)
       }
     }
 
-    rMG->getSolution(y,r,1);
+    rMG->getSolution(std::begin(y), std::begin(r), 1);
 
-BOUT_OMP(parallel default(shared))
+    BOUT_OMP(parallel default(shared)) {
 BOUT_OMP(for)
-    for(int i = 0;i<dimg;i++) {
-      yl[i] = 0.0;
-      yg[i] = 0.0;
-    }
-    
-    for(int ix = 1;ix < rMG->lnx[level]+1;ix++) {
-BOUT_OMP(parallel default(shared))
-BOUT_OMP(for)
-      for(int iz = 1;iz < rMG->lnz[level]+1;iz++) {
-        int nn = ix*(lnz[0]+2)+nz+iz;
-        int mm = ix*(rMG->lnz[level]+2)+iz;
-        yl[nn] = y[mm];
+      for(int i = 0;i<dimg;i++) {
+        yl[i] = 0.0;
+        yg[i] = 0.0;
+      }
+      
+BOUT_OMP(for collapse(2))
+      for(int ix = 1;ix < rMG->lnx[level]+1;ix++) {
+        for(int iz = 1;iz < rMG->lnz[level]+1;iz++) {
+          int nn = ix*(lnz[0]+2)+nz+iz;
+          int mm = ix*(rMG->lnz[level]+2)+iz;
+          yl[nn] = y[mm];
+        }
       }
     }
-    MPI_Allreduce(yl,yg,dimg,MPI_DOUBLE,MPI_SUM,comm2D);
+    MPI_Allreduce(std::begin(yl), std::begin(yg), dimg, MPI_DOUBLE, MPI_SUM, comm2D);
 
+    BOUT_OMP(parallel default(shared))
+BOUT_OMP(for collapse(2))
     for(int ix = 1;ix < lnx[0]+1;ix++) {
-BOUT_OMP(parallel default(shared) )
-BOUT_OMP(for)
       for(int iz = 1;iz < lnz[0]+1;iz++) {
         int nn = (nx+ix)*(lnz[0]+2)+iz;
         int mm = ix*(lnz[0]+2)+iz;
@@ -338,42 +341,38 @@ BOUT_OMP(for)
       }
     }
     communications(x,0);
-     
-    delete [] yg;
-    delete [] yl;
-    delete [] y;
-    delete [] r;  
   }
   else if(kflag == 2) {
     int level = sMG->mglevel-1;
     int dim = (sMG->lnx[level]+2)*(sMG->lnz[level]+2);
-    BoutReal *y = new BoutReal[dim];
-    BoutReal *r = new BoutReal[dim];
-BOUT_OMP(parallel default(shared))
-BOUT_OMP(for)
-    for(int i = 0;i<dim;i++) {
-      y[i] = 0.0;
-      r[i] = 0.0;
-    }
+    Array<BoutReal> y(dim);
+    Array<BoutReal> r(dim);
     int nx = xProcI*lnx[0];
-    for(int ix = 1;ix < lnx[0]+1;ix++) {
 BOUT_OMP(parallel default(shared))
+    {
 BOUT_OMP(for)
-      for(int iz = 1;iz <lnz[0]+1;iz++) {
-        int nn = (nx+ix)*(lnz[0]+2)+iz;
-        int mm = ix*(lnz[0]+2)+iz;
-        y[nn] = b[mm];
+      for(int i = 0;i<dim;i++) {
+        y[i] = 0.0;
+        r[i] = 0.0;
+      }
+BOUT_OMP(for collapse(2))
+      for(int ix = 1;ix < lnx[0]+1;ix++) {
+        for(int iz = 1;iz <lnz[0]+1;iz++) {
+          int nn = (nx+ix)*(lnz[0]+2)+iz;
+          int mm = ix*(lnz[0]+2)+iz;
+          y[nn] = b[mm];
+        }
       }
     }
-    MPI_Allreduce(y,r,dim,MPI_DOUBLE,MPI_SUM,commMG);
-BOUT_OMP(parallel default(shared) )
+    MPI_Allreduce(std::begin(y), std::begin(r), dim, MPI_DOUBLE, MPI_SUM, commMG);
+    BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
     for(int i = 0;i<dim;i++) y[i] = 0.0;
-    sMG->getSolution(y,r,1);
-   
+    sMG->getSolution(std::begin(y), std::begin(r), 1);
+
+    BOUT_OMP(parallel default(shared))
+BOUT_OMP(for collapse(2))
     for(int ix = 1;ix < lnx[0]+1;ix++) {
-BOUT_OMP(parallel default(shared))
-BOUT_OMP(for)
       for(int iz = 1;iz <lnz[0]+1;iz++) {
         int nn = (nx+ix)*(lnz[0]+2)+iz;
         int mm = ix*(lnz[0]+2)+iz;
@@ -381,8 +380,6 @@ BOUT_OMP(for)
       }
     }
     communications(x,0); 
-    delete [] y;
-    delete [] r;   
   }
   else {
     pGMRES(x,b,0,0);
@@ -395,30 +392,29 @@ void Multigrid1DP::convertMatrixF2D(int level) {
 
   int ggx = rMG->lnx[level];
   int dim = (ggx+2)*(gnz[0]+2);
-  BoutReal *yl = new BoutReal[dim*9];
-  BoutReal *yg = new BoutReal[dim*9];
-BOUT_OMP(parallel default(shared))
-BOUT_OMP(for)
-  for(int i = 0;i<dim*9;i++) {
-    yl[i] = 0.0;
-    yg[i] = 0.0;
-  }
-BOUT_OMP(parallel default(shared))
-BOUT_OMP(for)
-  for(int i = 0;i<(rMG->lnx[level]+2)*(rMG->lnz[level]+2)*9;i++) {
-    rMG->matmg[level][i] = 0.0;
-  }
-  
+  Array<BoutReal> yl(dim * 9);
+  Array<BoutReal> yg(dim * 9);
   int nx = (xProcI%rMG->zNP)*lnx[0];
-
-  for(int ix = 1;ix < lnx[0]+1;ix++) {
 BOUT_OMP(parallel default(shared))
+  {
 BOUT_OMP(for)
-    for(int iz = 1;iz <lnz[0]+1;iz++) {
-      int nn = (nx+ix)*(lnz[0]+2)+iz;
-      int mm = ix*(lnz[0]+2)+iz;
-      for(int k = 0;k<9;k++) {
-        yl[nn*9+k] = matmg[0][mm*9+k];
+    for(int i = 0;i<dim*9;i++) {
+      yl[i] = 0.0;
+      yg[i] = 0.0;
+    }
+BOUT_OMP(for)
+    for(int i = 0;i<(rMG->lnx[level]+2)*(rMG->lnz[level]+2)*9;i++) {
+      rMG->matmg[level][i] = 0.0;
+    }
+  
+BOUT_OMP(for collapse(2))
+    for(int ix = 1;ix < lnx[0]+1;ix++) {
+      for(int iz = 1;iz <lnz[0]+1;iz++) {
+        int nn = (nx+ix)*(lnz[0]+2)+iz;
+        int mm = ix*(lnz[0]+2)+iz;
+        for(int k = 0;k<9;k++) {
+          yl[nn*9+k] = matmg[0][mm*9+k];
+        }
       }
     }
   }
@@ -437,7 +433,7 @@ BOUT_OMP(for)
     }  
     fclose(outf);
   }
-  MPI_Allreduce(yl,yg,dim*9,MPI_DOUBLE,MPI_SUM,comm2D);
+  MPI_Allreduce(std::begin(yl), std::begin(yg), dim * 9, MPI_DOUBLE, MPI_SUM, comm2D);
 
   if(pcheck == 3) {
     FILE *outf;
@@ -456,9 +452,9 @@ BOUT_OMP(for)
   }
   int nz = (xProcI%rMG->zNP)*(rMG->lnz[level]);
 
-  for(int ix = 1;ix < rMG->lnx[level]+1;ix++) {
 BOUT_OMP(parallel default(shared))
-BOUT_OMP(for)
+BOUT_OMP(for collapse(2))
+  for(int ix = 1;ix < rMG->lnx[level]+1;ix++) {
     for(int iz = 1;iz <rMG->lnz[level]+1;iz++) {
       int nn = ix*(lnz[0]+2)+nz+iz;
       int mm = ix*(rMG->lnz[level]+2)+iz;
@@ -467,35 +463,33 @@ BOUT_OMP(for)
       }
     }
   }
-  delete [] yg;
-  delete [] yl;
 }
 
 void Multigrid1DP::convertMatrixFS(int level) {
 
   int dim = (gnx[0]+2)*(gnz[0]+2);
-  BoutReal *yl = new BoutReal[dim*9];
+  Array<BoutReal> yl(dim * 9);
   BoutReal *yg = sMG->matmg[level];
-BOUT_OMP(parallel default(shared))
-BOUT_OMP(for)
-  for(int i = 0;i<dim*9;i++) {
-    yl[i] = 0.0;
-    yg[i] = 0.0;
-  }
   int nx = xProcI*lnx[0];
-  for(int ix = 1;ix < lnx[0]+1;ix++) {
-BOUT_OMP(parallel default(shared) )
+BOUT_OMP(parallel default(shared))
+  {
 BOUT_OMP(for)
-    for(int iz = 1;iz <lnz[0]+1;iz++) {
-      int nn = (nx+ix)*(lnz[0]+2)+iz;
-      int mm = ix*(lnz[0]+2)+iz;
-      for(int k = 0;k<9;k++) {
-        yl[nn*9+k] = matmg[0][mm*9+k];
+    for(int i = 0;i<dim*9;i++) {
+      yl[i] = 0.0;
+      yg[i] = 0.0;
+    }
+BOUT_OMP(for collapse(2))
+    for(int ix = 1;ix < lnx[0]+1;ix++) {
+      for(int iz = 1;iz <lnz[0]+1;iz++) {
+        int nn = (nx+ix)*(lnz[0]+2)+iz;
+        int mm = ix*(lnz[0]+2)+iz;
+        for(int k = 0;k<9;k++) {
+          yl[nn*9+k] = matmg[0][mm*9+k];
+        }
       }
     }
   }
-  MPI_Allreduce(yl,yg,dim*9,MPI_DOUBLE,MPI_SUM,commMG);
-  delete [] yl;
+  MPI_Allreduce(std::begin(yl), yg, dim * 9, MPI_DOUBLE, MPI_SUM, commMG);
 }
 
 Multigrid2DPf1D::Multigrid2DPf1D(int level,int lx,int lz, int gx, int gz,
@@ -622,33 +616,34 @@ void Multigrid2DPf1D::lowestSolver(BoutReal *x, BoutReal *b, int UNUSED(plag)) {
   if(kflag == 2) {
     int level = sMG->mglevel-1;
     int dim = (sMG->lnx[level]+2)*(sMG->lnz[level]+2);
-    BoutReal *y = new BoutReal[dim];
-    BoutReal *r = new BoutReal[dim];
-BOUT_OMP(parallel default(shared) )
-BOUT_OMP(for)
-    for(int i = 0;i<dim;i++) {
-      y[i] = 0.0;
-      r[i] = 0.0;
-    }
+    Array<BoutReal> y(dim);
+    Array<BoutReal> r(dim);
     int nx = xProcI*lnx[0];
     int nz = zProcI*lnz[0];
-    for(int ix = 1;ix < lnx[0]+1;ix++) {
 BOUT_OMP(parallel default(shared) )
+    {
 BOUT_OMP(for)
-      for(int iz = 1;iz <lnz[0]+1;iz++) {
-        int nn = (nx+ix)*(gnz[0]+2)+nz+iz;
-        int mm = ix*(lnz[0]+2)+iz;
-        y[nn] = b[mm];
+      for(int i = 0;i<dim;i++) {
+        y[i] = 0.0;
+        r[i] = 0.0;
+      }
+BOUT_OMP(for collapse(2))
+      for(int ix = 1;ix < lnx[0]+1;ix++) {
+        for(int iz = 1;iz <lnz[0]+1;iz++) {
+          int nn = (nx+ix)*(gnz[0]+2)+nz+iz;
+          int mm = ix*(lnz[0]+2)+iz;
+          y[nn] = b[mm];
+        }
       }
     }
-    MPI_Allreduce(y,r,dim,MPI_DOUBLE,MPI_SUM,commMG);
-BOUT_OMP(parallel default(shared) )
+    MPI_Allreduce(std::begin(y), std::begin(r), dim, MPI_DOUBLE, MPI_SUM, commMG);
+    BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
     for(int i = 0;i<dim;i++) y[i] = 0.0;
-    sMG->getSolution(y,r,1);
+    sMG->getSolution(std::begin(y), std::begin(r), 1);
+    BOUT_OMP(parallel default(shared))
+BOUT_OMP(for collapse(2))
     for(int ix = 1;ix < lnx[0]+1;ix++) {
-BOUT_OMP(parallel default(shared) )
-BOUT_OMP(for)
       for(int iz = 1;iz <lnz[0]+1;iz++) {
         int nn = (nx+ix)*(gnz[0]+2)+nz+iz;
         int mm = ix*(lnz[0]+2)+iz;
@@ -656,8 +651,6 @@ BOUT_OMP(for)
       }
     }
     communications(x,0); 
-    delete [] y;
-    delete [] r;   
   }
   else {
     pGMRES(x,b,0,0);
@@ -668,29 +661,29 @@ BOUT_OMP(for)
 void Multigrid2DPf1D::convertMatrixFS(int level) {
 
   int dim = (gnx[0]+2)*(gnz[0]+2);
-  BoutReal *yl = new BoutReal[dim*9];
+  Array<BoutReal> yl(dim * 9);
   BoutReal *yg = sMG->matmg[level];
-BOUT_OMP(parallel default(shared) )
-BOUT_OMP(for)
-  for(int i = 0;i<dim*9;i++) {
-    yl[i] = 0.0;
-    yg[i] = 0.0;
-  }
   int nx = xProcI*lnx[0];
   int nz = zProcI*lnz[0];
-  for(int ix = 1;ix < lnx[0]+1;ix++) {
 BOUT_OMP(parallel default(shared) )
+  {
 BOUT_OMP(for)
-    for(int iz = 1;iz <lnz[0]+1;iz++) {
-      int nn = (nx+ix)*(gnz[0]+2)+nz+iz;
-      int mm = ix*(lnz[0]+2)+iz;
-      for(int k = 0;k<9;k++) {
-        yl[nn*9+k] = matmg[0][mm*9+k];
+    for(int i = 0;i<dim*9;i++) {
+      yl[i] = 0.0;
+      yg[i] = 0.0;
+    }
+BOUT_OMP(for collapse(2))
+    for(int ix = 1;ix < lnx[0]+1;ix++) {
+      for(int iz = 1;iz <lnz[0]+1;iz++) {
+        int nn = (nx+ix)*(gnz[0]+2)+nz+iz;
+        int mm = ix*(lnz[0]+2)+iz;
+        for(int k = 0;k<9;k++) {
+          yl[nn*9+k] = matmg[0][mm*9+k];
+        }
       }
     }
   }
-  MPI_Allreduce(yl,yg,dim*9,MPI_DOUBLE,MPI_SUM,commMG);
-  delete [] yl;
+  MPI_Allreduce(std::begin(yl), yg, dim * 9, MPI_DOUBLE, MPI_SUM, commMG);
 }
 
 MultigridSerial::MultigridSerial(int level, int gx, int gz, int UNUSED(px),
@@ -702,10 +695,10 @@ MultigridSerial::MultigridSerial(int level, int gx, int gz, int UNUSED(px),
   mglevel = level;
 
   /* Memory allocate for Multigrid */
-  gnx = new int[mglevel];
-  gnz = new int[mglevel];
-  lnx = new int[mglevel];
-  lnz = new int[mglevel];
+  gnx = Array<int>(mglevel);
+  gnz = Array<int>(mglevel);
+  lnx = Array<int>(mglevel);
+  lnz = Array<int>(mglevel);
   gnx[mglevel-1] = gx;
   gnz[mglevel-1] = gz;
   lnx[mglevel-1] = gx;
@@ -737,6 +730,7 @@ MultigridSerial::MultigridSerial(int level, int gx, int gz, int UNUSED(px),
     }    
   }
 
+  // This could use a Matrix
   matmg = new BoutReal *[mglevel];
   for(int i = 0;i<mglevel;i++) {
     matmg[i] = new BoutReal[(lnx[i]+2)*(lnz[i]+2)*9];

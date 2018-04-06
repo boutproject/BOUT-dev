@@ -621,7 +621,8 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='PETSC_HAS_SUNDIALS
+ac_subst_vars='HAS_OPENMP
+PETSC_HAS_SUNDIALS
 PETSC_RELEASE
 PETSC_VERSION
 HAS_SLEPC
@@ -776,8 +777,8 @@ enable_optimize
 enable_sigfpe
 enable_backtrace
 enable_shared
-enable_pvode_openmp
 enable_openmp
+enable_pvode_openmp
 with_gcov
 enable_code_coverage
 with_hdf5
@@ -1419,6 +1420,7 @@ Optional Features:
   --enable-sigfpe         Enable FloatingPointExceptions
   --disable-backtrace     Disable function backtrace
   --enable-shared         Enable building bout++ into an shared object
+  --enable-openmp         Enable building with OpenMP support
   --enable-pvode-openmp   Enable building PVODE with OpenMP support
   --disable-openmp        do not use OpenMP
   --enable-code-coverage  Whether to enable code coverage support
@@ -2615,6 +2617,13 @@ if test "${enable_shared+set}" = set; then :
   enableval=$enable_shared;
 else
   enable_shared=no
+fi
+
+# Check whether --enable-openmp was given.
+if test "${enable_openmp+set}" = set; then :
+  enableval=$enable_openmp;
+else
+  enable_openmp=no
 fi
 
 # Check whether --enable-pvode_openmp was given.
@@ -5065,6 +5074,7 @@ $as_echo "$ac_cv_prog_cxx_openmp" >&6; }
   fi
 
 
+HAS_OPENMP=$enable_openmp
 
 #############################################################
 # Code coverage using gcov
@@ -5388,7 +5398,7 @@ fi
 	@$(LCOV) --quiet $(addprefix --directory ,$(CODE_COVERAGE_DIRECTORY)) --remove "$(CODE_COVERAGE_OUTPUT_FILE).tmp" "/tmp/*" $(CODE_COVERAGE_IGNORE_PATTERN) --output-file "$(CODE_COVERAGE_OUTPUT_FILE)" $(CODE_COVERAGE_LCOV_SHOPTS) $(CODE_COVERAGE_LCOV_RMOPTS)
 	-@rm -f $(CODE_COVERAGE_OUTPUT_FILE).tmp
 	@LANG=C $(GENHTML) --quiet $(addprefix --prefix ,$(CODE_COVERAGE_DIRECTORY)) --demangle-cpp --output-directory "$(CODE_COVERAGE_OUTPUT_DIRECTORY)" --title "BOUT++ Code Coverage" --legend --show-details "$(CODE_COVERAGE_OUTPUT_FILE)" $(CODE_COVERAGE_GENHTML_OPTIONS)
-	@$(LCOV) --summary $(CODE_COVERAGE_OUTPUT_FILE)
+	@$(LCOV) --summary $(CODE_COVERAGE_OUTPUT_FILE) $(CODE_COVERAGE_LCOV_OPTIONS)
 	@echo "file://$(abs_builddir)/$(CODE_COVERAGE_OUTPUT_DIRECTORY)/index.html"
 '
 		CODE_COVERAGE_RULES_CLEAN='
@@ -5521,10 +5531,10 @@ elif test $enable_optimize ; then
   optimize=$enable_optimize
   test $optimize -eq 0 2>/dev/null
   if test $? -eq 2 ; then
-    if test $optimize == "default"
+    if test $optimize = "default"
     then
       OPT_FLAGS="-O"
-    elif test $optimize == "fast"
+    elif test $optimize = "fast"
     then
       OPT_FLAGS="-Ofast -fno-finite-math-only -march=native -funroll-loops"
       DISABLE_CHECK=probably
@@ -5625,12 +5635,12 @@ else
   echo "Output coloring disabled"
 fi
 
-if test ."$enable_track" == ."yes"
+if test ."$enable_track" = ."yes"
 then
        CXXFLAGS="$CXXFLAGS -DTRACK"
 fi
 
-if test ."$enable_sigfpe" == .yes
+if test ."$enable_sigfpe" = .yes
 then
     CXXFLAGS="$CXXFLAGS -DBOUT_FPE"
 fi
@@ -5640,14 +5650,14 @@ echo
 BOUT_VERSION=$PACKAGE_VERSION
 BOUT_VERSION_MAJOR=${PACKAGE_VERSION%%.*}
 BOUT_VERSION_MINOR=${PACKAGE_VERSION#*.}
-BOUT_VERSION_DOUBLE=${BOUT_VERSION_MAJOR}.${BOUT_VERSION_MINOR/./}
+BOUT_VERSION_DOUBLE=${BOUT_VERSION_MAJOR}.$(echo ${BOUT_VERSION_MINOR}|tr -d .)
 CXXFLAGS+=" -DBOUT_VERSION_STRING=\"\\\"$BOUT_VERSION\\\"\" -DBOUT_VERSION_DOUBLE=$BOUT_VERSION_DOUBLE "
 
 #############################################################
 # Enable Backtrace if possible
 #############################################################
 
-if test ."$enable_backtrace" == .yes || test ."$enable_backtrace" == .maybe
+if test ."$enable_backtrace" = .yes || test ."$enable_backtrace" = .maybe
 then
     works=yes
     if ! which addr2line &>/dev/null
@@ -5722,11 +5732,11 @@ $as_echo "$as_me: WARNING: \"dlfcn.h not found\"" >&2;}
                     works=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-    if test .$works == .yes
+    if test .$works = .yes
     then
         CXXFLAGS="$CXXFLAGS -DBACKTRACE"
     else
-        if test ."$enable_backtrace" == .yes
+        if test ."$enable_backtrace" = .yes
         then
             as_fn_error $? "backtrace requested, but cannot be enabled" "$LINENO" 5
         else
@@ -5740,7 +5750,7 @@ fi
 # Build into shared object (pic)
 #############################################################
 
-if test ."$enable_shared" == .yes
+if test ."$enable_shared" = .yes
 then
     # compile as position independent code.
     # -fpic is apparently faster then -fPIC, but -fPIC works always.
@@ -6439,54 +6449,19 @@ _ACEOF
 PNCPATH=$with_pnetcdf
 fi
 
-    if test "$PNCPATH" == ""
+    if test "$PNCPATH" = ""
     then
       echo "parallel-netcdf not found in given directory"
     fi
   fi
 
   # Find the utilities included with pnetcdf
-  if test "$PNCPATH" == ""
+  if test "$PNCPATH" = ""
   then
     path=`which ncmpidump`
     if test "$path" != ""
     then
       path=`dirname $path`
-      path=$path/..
-      as_ac_File=`$as_echo "ac_cv_file_$path/include/pnetcdf.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $path/include/pnetcdf.h" >&5
-$as_echo_n "checking for $path/include/pnetcdf.h... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$path/include/pnetcdf.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$path/include/pnetcdf.h" | $as_tr_cpp` 1
-_ACEOF
-PNCPATH=$path
-fi
-
-    fi
-  fi
-
-  # Try locate
-  if test "$PNCPATH" == ""
-  then
-    path=`locate pnetcdf.h | head -n 1`
-    if test "$path" != ""
-    then
       path=$path/..
       as_ac_File=`$as_echo "ac_cv_file_$path/include/pnetcdf.h" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $path/include/pnetcdf.h" >&5
@@ -6574,7 +6549,7 @@ fi
 
 fi
 
-if test "$PNCPATH" == ""
+if test "$PNCPATH" = ""
 then
   echo "Parallel-NetCDF support disabled"
 else
@@ -8170,6 +8145,52 @@ then
   if test "$with_petsc" != "yes"
   then
     PETSC_DIR="$with_petsc"
+    as_ac_File=`$as_echo "ac_cv_file_$PETSC_DIR/conf" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PETSC_DIR/conf" >&5
+$as_echo_n "checking for $PETSC_DIR/conf... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$PETSC_DIR/conf"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+  PETSC_CONFDIR=${PETSC_DIR}/conf
+else
+  as_ac_File=`$as_echo "ac_cv_file_$PETSC_DIR/lib/petsc/conf" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PETSC_DIR/lib/petsc/conf" >&5
+$as_echo_n "checking for $PETSC_DIR/lib/petsc/conf... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$PETSC_DIR/lib/petsc/conf"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+  PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf
+else
+  as_fn_error $? "*** --with-petsc=$with_petsc was specified but could not find PETSc distribution" "$LINENO" 5
+
+fi
+
+fi
+
 
   else
     as_ac_File=`$as_echo "ac_cv_file_$PETSC_DIR/$PETSC_ARCH/conf" | $as_tr_sh`
@@ -8264,6 +8285,11 @@ $as_echo "3.5" >&6; }
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: dev" >&5
 $as_echo "dev" >&6; }
+  elif test "$PETSC_VERSION_MINOR" = "7" && test "$PETSC_VERSION_RELEASE" = "1"
+  then
+    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_7"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: 3.7 \"$PETSC_DIR $PETSC_ARCH $PETSC_CONFDIR\"" >&5
+$as_echo "3.7 \"$PETSC_DIR $PETSC_ARCH $PETSC_CONFDIR\"" >&6; }
   else
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: unknown" >&5
 $as_echo "unknown" >&6; }
@@ -8283,37 +8309,15 @@ PETSC_ARCH = ${PETSC_ARCH}
 PETSC_DIR  = ${PETSC_DIR}
 include ${PETSC_CONFDIR}/rules
 include ${PETSC_CONFDIR}/variables
-echo_cxx:
-	-@echo \${CXX}
 echo_sundials:
 	-@echo \${SUNDIALS_LIB}
 MFILE
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking PETSC has C++ support" >&5
-$as_echo_n "checking PETSC has C++ support... " >&6; }
-  PETSC_HAS_CXX=`make -f petscmake$$ echo_cxx`
-
-  if test -z "$PETSC_HAS_CXX"; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-    as_fn_error $? "Warning - PETSc must have C++ support" "$LINENO" 5
-
-fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking PETSc C++ compiler used" >&5
-$as_echo_n "checking PETSc C++ compiler used... " >&6; }
-  PETSC_CXX=`make -f petscmake$$ echo_cxx`
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PETSC_CXX" >&5
-$as_echo "$PETSC_CXX" >&6; }
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking PETSc has SUNDIALS support" >&5
 $as_echo_n "checking PETSc has SUNDIALS support... " >&6; }
   PETSC_HAS_SUNDIALS=`make -f petscmake$$ echo_sundials | grep -c sundials`
 
-  if test "$PETSC_HAS_SUNDIALS" == "0"; then :
+  if test "$PETSC_HAS_SUNDIALS" = "0"; then :
   PETSC_HAS_SUNDIALS="no"
 else
   PETSC_HAS_SUNDIALS="yes"
@@ -8339,7 +8343,7 @@ then
   EXTRA_INCS="$EXTRA_INCS \$(PETSC_CC_INCLUDES)"
   EXTRA_LIBS="$EXTRA_LIBS \$(PETSC_LIB)"
 
-  if test "$PETSC_HAS_SUNDIALS" == "yes"
+  if test "$PETSC_HAS_SUNDIALS" = "yes"
   then
     CXXFLAGS="$CXXFLAGS -DPETSC_HAS_SUNDIALS "
   fi
@@ -8356,7 +8360,7 @@ if test "$with_slepc" != "" && test "$with_slepc" != "no"
 then
   echo "Searching for SLEPc"
 
-  if test "$SLEPC_DIR" == ""
+  if test "$SLEPC_DIR" = ""
   then
     as_fn_error $? "*** --with-slepc specified but SLEPC_DIR not set" "$LINENO" 5
   fi
@@ -8460,7 +8464,7 @@ then
     MUMPS_LIB=$MUMPS/lib
   fi
 
-  if test "$MUMPS" == ""
+  if test "$MUMPS" = ""
   then
     # Look in some standard locations
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /usr/include/dmumps_c.h" >&5
@@ -8510,7 +8514,7 @@ fi
     MUMPS_LIB=$MUMPS/lib
   fi
 
-  if test "$MUMPS" == "" && test "$PETSC_DIR" != ""
+  if test "$MUMPS" = "" && test "$PETSC_DIR" != ""
   then
     # Try PETSc installation
 
@@ -8791,7 +8795,7 @@ fi
 
   fi
 
-  if test "$MUMPS" == ""
+  if test "$MUMPS" = ""
   then
     echo " -> MUMPS not found"
   else
@@ -15096,7 +15100,7 @@ _ACEOF
 SCOREPPATH=$with_scorep
 fi
 
-    if test "$SCOREPPATH" == ""; then :
+    if test "$SCOREPPATH" = ""; then :
 
       { $as_echo "$as_me:${as_lineno-$LINENO}: \"scorep not found in given directory\"" >&5
 $as_echo "$as_me: \"scorep not found in given directory\"" >&6;}
@@ -15106,7 +15110,7 @@ fi
 fi
 
   # Find the scorep binary
-  if test "$SCOREPPATH" == ""; then :
+  if test "$SCOREPPATH" = ""; then :
 
     path=`which scorep`
     if test "$path" != ""; then :
@@ -15143,7 +15147,7 @@ fi
 
 fi
 
-  if test "$SCOREPPATH" == ""; then :
+  if test "$SCOREPPATH" = ""; then :
 
       { $as_echo "$as_me:${as_lineno-$LINENO}: \"SCOREP support disabled\"" >&5
 $as_echo "$as_me: \"SCOREP support disabled\"" >&6;}
@@ -15239,18 +15243,19 @@ $as_echo "$as_me: PVODE being built without OpenMP support" >&6;}
 fi
 
    # Clean PVODE
-   CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-   CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+   CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE \
+       clean -C externalpackages/PVODE/ >> config-build.log 2>&1
 
    #make -C externalpackages/PVODE/ clean
 
     echo "* Building PVODE" | tee -a config-build.log
     echo "*************************************************************" >> config-build.log
 
-    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" \
+      AR="ar" ARFLAGS="$ARFLAGS" $MAKE -C externalpackages/PVODE/ >> config-build.log 2>&1
 
-    if [ -f externalpackages/PVODE/lib/libpvode.a ]
+    ex=$?
+    if [ -f externalpackages/PVODE/lib/libpvode.a ] && test $ex -eq 0
     then
       echo "*************************************************************" >> config-build.log
       echo "* Successfully built PVODE" | tee -a config-build.log
@@ -16605,6 +16610,7 @@ CONFIG_LDFLAGS=`$MAKE ldflags -f output.make`
 # If make install is run then that replaces these paths
 BOUT_LIB_PATH=$PWD/lib
 BOUT_INCLUDE_PATH=$PWD/include
+
 
 
 

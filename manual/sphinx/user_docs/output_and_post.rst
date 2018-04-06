@@ -4,13 +4,13 @@ Output and post-processing
 ==========================
 
 The majority of the existing analysis and post-processing code is
-written in Python and IDL. Routines to read BOUT++ output data,
-usually called "collect" because it collects data from multiple files,
-are also available in Matlab, Mathematica and Octave. All these
+written in Python. Routines to read BOUT++ output data, usually called
+"collect" because it collects data from multiple files, are also
+available in IDL, Matlab, Mathematica and Octave. All these
 post-processing routines are in the ``tools`` directory, with Python
-modules in ``pylib`` and IDL routines in ``idllib``. A summary of available IDL
-routines is given in Appendix [apx:idl\_routines], and Python routines
-in Appendix [apx:py\_routines].
+modules in ``tools/pylib``. A summary of available routines is in
+:ref:`sec-python-routines-list`, along with how to :ref:`install the
+requirements <sec-python-requirements>`.
 
 .. _sec-pythonroutines:
 
@@ -27,7 +27,7 @@ layout.
 
     Ni = collect("Ni")  # Collect the variable "Ni"
 
-The result is a 4D NumPy array, ``Ni`` in this case. This is ordered
+The result is an up to 4D NumPy array, ``Ni`` in this case. This is ordered
 ``[t,x,y,z]``:
 
 .. code-block:: pycon
@@ -38,7 +38,21 @@ The result is a 4D NumPy array, ``Ni`` in this case. This is ordered
 so ``Ni`` would have 10 time slices, 1 point in x, 2 in y, and 3 in z.
 This should correspond to the grid size used in the simulation.
 Since the collected data is a NumPy array, all the useful routines
-in NumPy, SciPy and Matplotlib can be used for further analysis. 
+in NumPy, SciPy and Matplotlib can be used for further analysis.
+
+If the data has less then 4 dimension, it can be checked with
+``dimension`` what dimensions are available:
+
+.. code-block:: python
+
+    from boutdata.collect import dimension
+
+    print(dimension("Ni"))
+    print(dimension("dx"))
+
+The first will print as expected ``[t, x, y, z]`` - while the second
+will print ``[x, y]`` as dx is nether evolved in time, nor does it has
+a ``z`` dependency.
 
 An experimental feature is adding attributes to variables. These can be read using the ``attributes``
 routine:
@@ -221,8 +235,9 @@ drawn at each time, with the scale being kept constant.
 Reading BOUT++ output into IDL
 ------------------------------
 
-There are several routines provided for reading data from BOUT++ output
-into IDL. In the directory containing the BOUT++ output files (usually
+There are several routines provided for reading data from BOUT++
+output into IDL (see :ref:`sec-idl-routines` for a more complete
+list). In the directory containing the BOUT++ output files (usually
 ``data/``), you can list the variables available using
 
 .. code-block:: idl

@@ -57,8 +57,8 @@ BoutReal RKScheme::setCurTime(const BoutReal timeIn, const BoutReal dt, const in
 }
 
 //Get the state vector at given stage
-void RKScheme::setCurState(const BoutReal *start, BoutReal *out, const int curStage, 
-			   const BoutReal dt){
+void RKScheme::setCurState(const Array<BoutReal> &start, Array<BoutReal> &out,
+                           const int curStage, const BoutReal dt) {
 
   //Set the initial stage
   for(int i=0;i<nlocal;i++){
@@ -80,7 +80,8 @@ void RKScheme::setCurState(const BoutReal *start, BoutReal *out, const int curSt
 }
 
 //Construct the system state at the next time
-BoutReal RKScheme::setOutputStates(const BoutReal *start, const BoutReal dt, BoutReal *resultFollow){
+BoutReal RKScheme::setOutputStates(const Array<BoutReal> &start, const BoutReal dt,
+                                   Array<BoutReal> &resultFollow) {
   //Only really need resultAlt in order to calculate the error, so if not adaptive could avoid it
   //*and* technically we can write resultFollow-resultAlt in terms of resultCoeffs and steps.
 
@@ -109,11 +110,11 @@ BoutReal RKScheme::setOutputStates(const BoutReal *start, const BoutReal dt, Bou
 
   //If adaptive get the second state
   if(adaptive){
-    constructOutput(start, dt, altInd, std::begin(resultAlt));
+    constructOutput(start, dt, altInd, resultAlt);
   }
 
   //Get the error coefficient
-  return getErr(resultFollow, std::begin(resultAlt));
+  return getErr(resultFollow, resultAlt);
 }
 
 BoutReal RKScheme::updateTimestep(const BoutReal dt, const BoutReal err){
@@ -125,7 +126,7 @@ BoutReal RKScheme::updateTimestep(const BoutReal dt, const BoutReal err){
 ////////////////////
 
 //Estimate the error, given two solutions
-BoutReal RKScheme::getErr(BoutReal *solA, BoutReal *solB){
+BoutReal RKScheme::getErr(Array<BoutReal> &solA, Array<BoutReal> &solB) {
   BoutReal err=0.;
 
   //If not adaptive don't care about the error
@@ -146,8 +147,8 @@ BoutReal RKScheme::getErr(BoutReal *solA, BoutReal *solB){
   return err;
 }
 
-void RKScheme::constructOutput(const BoutReal *start, const BoutReal dt, 
-			       const int index, BoutReal *sol){
+void RKScheme::constructOutput(const Array<BoutReal> &start, const BoutReal dt,
+                               const int index, Array<BoutReal> &sol) {
   //Initialise the return data
   for(int i=0;i<nlocal;i++){
     sol[i]=start[i];
@@ -165,9 +166,9 @@ void RKScheme::constructOutput(const BoutReal *start, const BoutReal dt,
   
 }
 
-void RKScheme::constructOutputs(const BoutReal *start, const BoutReal dt, 
-				const int indexFollow, const int indexAlt, 
-				BoutReal *solFollow, BoutReal *solAlt){
+void RKScheme::constructOutputs(const Array<BoutReal> &start, const BoutReal dt,
+                                const int indexFollow, const int indexAlt,
+                                Array<BoutReal> &solFollow, Array<BoutReal> &solAlt) {
   //Initialise the return data
   for(int i=0;i<nlocal;i++){
     solFollow[i]=start[i];

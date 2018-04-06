@@ -200,12 +200,13 @@ int physics_init(bool restarting) {
     absolute_error1 = f1-sol1;
 //     max_error1 = max_error_at_ystart(abs(error1));
     max_error1 = max_error_at_ystart(abs(absolute_error1));
-  }
-  catch (BoutException err) {
-    output<<"BoutException occured in invert->solve(b1): Laplacian inversion failed to converge (probably)"<<endl;
+  } catch (BoutException &err) {
+    output << "BoutException occured in invert->solve(b1): Laplacian inversion failed to "
+              "converge (probably)"
+           << endl;
     max_error1 = -1;
   }
-  
+
   output<<endl<<"Test 1: PETSc 2nd order"<<endl;
 //   output<<"Time to set up is "<<Timer::getTime("petscsetup")<<". Time to solve is "<<Timer::getTime("petscsolve")<<endl;
 //   output<<"Magnitude of maximum relative error is "<<max_error1<<endl;
@@ -243,12 +244,13 @@ int physics_init(bool restarting) {
     absolute_error2 = f1-sol2;
 //     max_error2 = max_error_at_ystart(abs(error2));
     max_error2 = max_error_at_ystart(abs(absolute_error2));
-  }
-  catch (BoutException err) {
-    output<<"BoutException occured in invert->solve(b1): Laplacian inversion failed to converge (probably)"<<endl;
+  } catch (BoutException &err) {
+    output << "BoutException occured in invert->solve(b1): Laplacian inversion failed to "
+              "converge (probably)"
+           << endl;
     max_error2 = -1;
   }
-  
+
   output<<endl<<"Test 2: PETSc 4th order"<<endl;
 //   output<<"Time to set up is "<<Timer::getTime("petscsetup")<<". Time to solve is "<<Timer::getTime("petscsolve")<<endl;
 //   output<<"Magnitude of maximum relative error is "<<max_error2<<endl;
@@ -303,12 +305,13 @@ int physics_init(bool restarting) {
     absolute_error3 = f1-sol3;
 //     max_error3 = max_error_at_ystart(abs(error3));
     max_error3 = max_error_at_ystart(abs(absolute_error3));
-  }
-  catch (BoutException err) {
-    output<<"BoutException occured in invert->solve(b3): Laplacian inversion failed to converge (probably)"<<endl;
+  } catch (BoutException &err) {
+    output << "BoutException occured in invert->solve(b3): Laplacian inversion failed to "
+              "converge (probably)"
+           << endl;
     max_error3 = -1;
   }
-  
+
   output<<endl<<"Test 3: with coefficients constant in z, PETSc 2nd order"<<endl;
 //   output<<"Time to set up is "<<Timer::getTime("petscsetup")<<". Time to solve is "<<Timer::getTime("petscsolve")<<endl;
 //   output<<"Magnitude of maximum relative error is "<<max_error3<<endl;
@@ -503,12 +506,13 @@ int physics_init(bool restarting) {
     absolute_error5 = f5-sol5;
 //     max_error5 = max_error_at_ystart(abs(error5));
     max_error5 = max_error_at_ystart(abs(absolute_error5));
-    }
-  catch (BoutException err) {
-    output<<"BoutException occured in invert->solve(b5): Laplacian inversion failed to converge (probably)"<<endl;
+  } catch (BoutException &err) {
+    output << "BoutException occured in invert->solve(b5): Laplacian inversion failed to "
+              "converge (probably)"
+           << endl;
     max_error5 = -1;
   }
-  
+
   output<<endl<<"Test 5: different profiles, PETSc 2nd order"<<endl;
 //   output<<"Time to set up is "<<Timer::getTime("petscsetup")<<". Time to solve is "<<Timer::getTime("petscsolve")<<endl;
 //   output<<"Magnitude of maximum relative error is "<<max_error5<<endl;
@@ -544,12 +548,13 @@ int physics_init(bool restarting) {
     absolute_error6 = f5-sol6;
 //     max_error6 = max_error_at_ystart(abs(error6));
     max_error6 = max_error_at_ystart(abs(absolute_error6));
-    }
-  catch (BoutException err) {
-    output<<"BoutException occured in invert->solve(b6): Laplacian inversion failed to converge (probably)"<<endl;
+  } catch (BoutException &err) {
+    output << "BoutException occured in invert->solve(b6): Laplacian inversion failed to "
+              "converge (probably)"
+           << endl;
     max_error6 = -1;
   }
-  
+
   output<<endl<<"Test 6: different profiles, PETSc 4th order"<<endl;
 //   output<<"Time to set up is "<<Timer::getTime("petscsetup")<<". Time to solve is "<<Timer::getTime("petscsolve")<<endl;
 //   output<<"Magnitude of maximum relative error is "<<max_error6<<endl;
@@ -604,12 +609,13 @@ int physics_init(bool restarting) {
     absolute_error7 = f5-sol7;
 //     max_error7 = max_error_at_ystart(abs(error7));
     max_error7 = max_error_at_ystart(abs(absolute_error7));
-    }
-  catch (BoutException err) {
-    output<<"BoutException occured in invert->solve(b7): Laplacian inversion failed to converge (probably)"<<endl;
+  } catch (BoutException &err) {
+    output << "BoutException occured in invert->solve(b7): Laplacian inversion failed to "
+              "converge (probably)"
+           << endl;
     max_error7 = -1;
   }
-  
+
   output<<endl<<"Test 7: different profiles, with coefficients constant in z, PETSc 2nd order"<<endl;
 //   output<<"Time to set up is "<<Timer::getTime("petscsetup")<<". Time to solve is "<<Timer::getTime("petscsolve")<<endl;
 //   output<<"Magnitude of maximum relative error is "<<max_error7<<endl;

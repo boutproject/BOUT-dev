@@ -14,6 +14,7 @@ class Datafile;
 #ifndef __DATAFILE_H__
 #define __DATAFILE_H__
 
+#include "bout/deprecated.hxx"
 #include "bout_types.hxx"
 #include "field2d.hxx"
 #include "field3d.hxx"
@@ -91,7 +92,8 @@ class Datafile {
   int Lx,Ly,Lz; // The sizes in the x-, y- and z-directions of the arrays to be written
   bool enabled;  // Enable / Disable writing
   bool init_missing; // Initialise missing variables?
-  bool shiftOutput; //Do we want to write out in shifted space?
+  bool shiftOutput; // Do we want to write out in shifted space?
+  bool shiftInput;  // Read in shifted space?
   int flushFrequencyCounter; //Counter used in determining when next openclose required
   int flushFrequency; //How many write calls do we want between openclose
 

@@ -23,6 +23,10 @@ const BoutReal BoutRealTolerance = 1e-15;
 ::testing::AssertionResult IsField2DEqualBoutReal(const Field2D &field, BoutReal number,
                                                   BoutReal tolerance = BoutRealTolerance);
 
+/// Is \p field equal to \p number, with a tolerance of \p tolerance?
+::testing::AssertionResult IsFieldPerpEqualBoutReal(const FieldPerp &field, BoutReal number,
+                                                  BoutReal tolerance = BoutRealTolerance);
+
 /// FakeMesh has just enough information to create fields
 ///
 /// Notes:
@@ -57,6 +61,7 @@ public:
     PE_XIND = 0;
     StaggerGrids = false;
     IncIntShear = false;
+    maxregionblocksize = MAXREGIONBLOCKSIZE;
   }
 
   comm_handle send(FieldGroup &UNUSED(g)) { return nullptr; };

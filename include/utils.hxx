@@ -47,46 +47,6 @@
 using std::abs;
 using std::swap;
 
-/*!
- * Allocates an array of \p size BoutReals
- */
-DEPRECATED(BoutReal *rvector(int size));
-
-/*!
- * Resizes an array of BoutReals to \p newsize
- */ 
-DEPRECATED(BoutReal *rvresize(BoutReal *v, int newsize));
-
-/*!
- * Frees an array of BoutReals
- */
-DEPRECATED(void rvfree(BoutReal *r));
-
-/*!
- * Allocates an array of \p size ints
- */
-DEPRECATED(int *ivector(int size));
-
-/*!
- * Resizes an array of ints to \p newsize
- */
-DEPRECATED(int *ivresize(int *v, int newsize));
-
-/*!
- * Frees an array of ints
- */
-DEPRECATED(void ivfree(int *v));
-
-/*!
- * Allocate a 2D array of \p xsize by \p ysize BoutReals
- */
-DEPRECATED(BoutReal **rmatrix(int xsize, int ysize));
-
-/*!
- * Allocate a 2D array of \p xsize by \p ysize ints
- */
-DEPRECATED(int **imatrix(int xsize, int ysize));
-
 /// Helper class for 2D arrays
 ///
 /// Allows bounds checking through `operator()` with CHECK > 1
@@ -102,6 +62,7 @@ public:
   T& operator()(unsigned int i1, unsigned int i2) {
     ASSERT2(0<=i1 && i1<n1);
     ASSERT2(0<=i2 && i2<n2);
+    data.ensureUnique();
     return data[i1*n2+i2];
   }
   const T& operator()(unsigned int i1, unsigned int i2) const {
@@ -111,6 +72,7 @@ public:
   }
 
   Matrix& operator=(const T&val){
+    data.ensureUnique();
     for(auto &i: data){
       i = val;
     };
@@ -120,11 +82,13 @@ public:
   // To provide backwards compatibility with matrix to be removed
   DEPRECATED(T* operator[](unsigned int i1)) {
     ASSERT2(0<=i1 && i1<n1);
+    data.ensureUnique();
     return &(data[i1*n2]);
   }
   // To provide backwards compatibility with matrix to be removed
   DEPRECATED(const T* operator[](unsigned int i1) const) {
     ASSERT2(0<=i1 && i1<n1);
+    data.ensureUnique();
     return &(data[i1*n2]);
   }
 
@@ -138,6 +102,15 @@ public:
   bool empty(){
     return n1*n2 == 0;
   }
+
+  /*!
+   * Ensures that this Matrix does not share data with another
+   * This should be called before performing any write operations
+   * on the data.
+   */
+  void ensureUnique() {
+    data.ensureUnique();
+  }
   
 private:
   unsigned int n1, n2;
@@ -146,7 +119,9 @@ private:
 
 // For backwards compatibility with old matrix -- to be removed
 template <typename T>
-void free_matrix(Matrix<T> UNUSED(m)) {}
+DEPRECATED(void free_matrix(Matrix<T> UNUSED(m)));
+template <typename T>
+void free_matrix(Matrix<T> UNUSED(m)) {};
 
 /// Helper class for 3D arrays
 ///
@@ -164,6 +139,7 @@ public:
     ASSERT2(0<=i1 && i1<n1);
     ASSERT2(0<=i2 && i2<n2);
     ASSERT2(0<=i3 && i3<n3);
+    data.ensureUnique();
     return data[(i1*n2+i2)*n3 + i3];
   }
   const T& operator()(unsigned int i1, unsigned int i2, unsigned int i3) const {
@@ -174,6 +150,7 @@ public:
   }
 
   Tensor& operator=(const T&val){
+    data.ensureUnique();
     for(auto &i: data){
       i = val;
     };
@@ -189,6 +166,15 @@ public:
   
   bool empty(){
     return n1*n2*n3 == 0;
+  }
+  
+  /*!
+   * Ensures that this Tensor does not share data with another
+   * This should be called before performing any write operations
+   * on the data.
+   */
+  void ensureUnique() {
+    data.ensureUnique();
   }
   
 private:
@@ -247,6 +233,10 @@ template <typename T> int invert3x3(Matrix<T> &a, BoutReal small = 1.0e-15) {
   return 0;
 };
 
+// Give signature here as not able to mark implementation below as DEPRECATED
+template <class T>
+DEPRECATED(T **matrix(int xsize, int ysize));
+
 /*!
  * Create a 2D array of \p xsize by \p ysize 
  * This is allocated as two blocks of data so that
@@ -283,20 +273,12 @@ T **matrix(int xsize, int ysize) {
   return m;
 }
 
-/*!
- * Free a 2D array of BoutReals, assumed to have been allocated using rmatrix()
- */
-DEPRECATED(void free_rmatrix(BoutReal **m));
-
-/*!
- * Free a 2D array of ints, assumed to have been allocated using imatrix()
- */
-DEPRECATED(void free_imatrix(int **m));
-
+template <class T>
+DEPRECATED(void free_matrix(T **m));
 /*!
  * Free a matrix, assumed to have been allocated using matrix()
  *
- * @param[in] T  The matrix to free
+ * @param[in] m  The matrix to free
  *
  * Example
  * -------
@@ -337,16 +319,6 @@ DEPRECATED(int ***i3tensor(int nrow, int ncol, int ndep));
  * by i3tensor()
  */
 DEPRECATED(void free_i3tensor(int ***m));
-
-/*!
- * Allocate a 2D array of \p nrow by \p ncol dcomplex objects
- */
-DEPRECATED(dcomplex **cmatrix(int nrow, int ncol));
-
-/*!
- * Free a 2D array, assumed to have been allocated using cmatrix
- */
-DEPRECATED(void free_cmatrix(dcomplex** cm));
 
 /*!
  * Get Random number between 0 and 1
