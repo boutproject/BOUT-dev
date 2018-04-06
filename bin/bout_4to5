@@ -188,6 +188,22 @@ do
     done
 done
 
+
+# clang-format everything
+if test $# -eq 0
+then
+    for dir in $work
+    do
+        files=$(find $dir|grep xx\$ )
+        if test "$files"
+        then
+            verbose "  Running clang-format on all files in $dir"
+            clang-format -i $files
+        fi
+    done
+fi
+
+
 #Further changes:
 
 #${d}end should be changed to ${d}end+1
