@@ -426,13 +426,13 @@ public:
   bool isReal() const { return real; }
   int byteSize() const { return bs; }
   int BoutRealSize() const { return brs; }
-  virtual const IndexRange region(REGION rgn) const {
+  virtual const IndexRange region(REGION UNUSED(rgn)) const {
     return IndexRange{0, 0, 0, 0, 0, 0};
   }
   virtual const BoutReal &operator[](const Indices &) const override { return val; }
   virtual BoutReal &operator[](const Indices &) { return val; }
   void allocate() { alloc = true; };
-  void accept(FieldVisitor &v){};
+  void accept(FieldVisitor &UNUSED(v)){};
   void doneComms() { coms = true; };
   void applyBoundary(bool) { bndry = true; };
   bool accepted, real, dim;
