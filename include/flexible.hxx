@@ -55,11 +55,16 @@ template <typename F> class Flexible : public FieldData {
   typedef unsigned int uint;
 
 public:
+  /// Constructor from a Field
   Flexible(F &main) { init(new F(main)); };
+  /// Can also be constructed the same way as the Field F itself.
+  /// Passes all the arguments to the constructor, and stores the
+  /// created F.
   template <typename... Args> Flexible(Args... args) {
     F *main = new F(args...);
     init(main);
   }
+  /// Get a reference of the Field at location F
   F &getNonConst(CELL_LOC loc_) {
     if (loc_ == CELL_DEFAULT) {
       return *fields[mainid];
@@ -82,16 +87,22 @@ public:
   /// Get a const reference of the field at the specific location. If
   /// the CELL_LOC is CELL_DEFAULT the mainlocation will be returned.
   const F &get(CELL_LOC loc) { return getNonConst(loc); };
+  /// Assignment from a Field f
+  /// This is a wrapper for set(f)
   Flexible<F> &operator=(F &f) {
     set(f, true);
     ASSERT1(fields[mainid] != nullptr);
     return *this;
   }
+  /// Assignment from a Field f
+  /// This is a wrapper for set(f)
   Flexible<F> &operator=(F &&f) {
     set(f, true);
     ASSERT1(fields[mainid] != nullptr);
     return *this;
   }
+  /// Assignment from a BoutReal
+  /// This sets only the field at the mainlocation
   Flexible<F> &operator=(BoutReal d) {
     (*fields[mainid]) = d;
     clean(false);
@@ -102,6 +113,12 @@ public:
   /// If the main field is set, then, all other fields are
   /// invalidated. If an other location is set, then, it is assumed
   /// that the this is in sync with the main field.
+  /// If `copy` is set to false, only a pointer to the field is
+  /// stored. In that case care must be taken that the field does not
+  /// go out of scope. All later changes to the field will influence
+  /// the Flexible field. As Flexible<Field> does not know when Field
+  /// changes, the staggered location will not automatically be
+  /// updated.
   Flexible<F> &set(F &field, bool copy = true) {
     uint loc = getId(field.getLocation());
     if (loc == mainid) {
@@ -134,16 +151,36 @@ public:
   virtual inline BoutReal &operator[](const Indices &i) override {
     return fields[mainid]->operator[](i);
   };
-  // FieldData stuff
+  /// Various functions needed to be FieldData compatible.
+  /// We are just forwarding the the various functions to the main
+  /// field.
   virtual void accept(FieldVisitor &v) override { fields[mainid]->accept(v); }
+  /// Various functions needed to be FieldData compatible.
+  /// We are just forwarding the the various functions to the main
+  /// field.
   virtual bool isReal() const override { return fields[mainid]->isReal(); }
+  /// Various functions needed to be FieldData compatible.
+  /// We are just forwarding the the various functions to the main
+  /// field.
   virtual bool is3D() const override { return fields[mainid]->is3D(); }
+  /// Various functions needed to be FieldData compatible.
+  /// We are just forwarding the the various functions to the main
+  /// field.
   virtual int byteSize() const override { return fields[mainid]->byteSize(); }
+  /// Various functions needed to be FieldData compatible.
+  /// We are just forwarding the the various functions to the main
+  /// field.
   virtual int BoutRealSize() const override { return fields[mainid]->BoutRealSize(); }
+  /// Various functions needed to be FieldData compatible.
+  /// We are just forwarding the the various functions to the main
+  /// field.
   virtual void doneComms() override {
     fields[mainid]->doneComms();
     clean(false);
   }; // Notifies that communications done
+  /// Various functions needed to be FieldData compatible.
+  /// We are just forwarding the the various functions to the main
+  /// field.
   virtual void applyBoundary(bool init = false) override {
     for (uint i = 0; i < num_fields; ++i) {
       if (fields[i]) {
@@ -151,9 +188,12 @@ public:
       }
     }
   }
+  /// There is currently no support to evolve a Flexible<Field>
+  /// Thus this function is currently not implemented (i.e. it throws)
   virtual void applyTDerivBoundary() override {
     throw BoutException("Flexible<F>: applyTDerivBoundary(): Not implemented");
   };
+  /// Forward allocate call to the main field.
   void allocate() { fields[mainid]->allocate(); }
   Flexible<F> &operator*=(const Field3D &rhs) {
     if (mainid == getId(rhs.getLocation())) {
@@ -282,6 +322,7 @@ private:
     }
     return loc;
   };
+  // internal constructor - set all fields to nullptr etc
   void init(F *main) {
     mainid = getId(main->getLocation());
     for (uint i = 0; i < num_fields; ++i) {
@@ -290,6 +331,8 @@ private:
     fields[mainid] = main;
     owner[mainid] = true;
   };
+  // delete the fields
+  // include_main - should the main field be removed or kept?
   void clean(bool include_main) {
     for (uint i = 0; i < num_fields; i++) {
       if (i != mainid || include_main) {
