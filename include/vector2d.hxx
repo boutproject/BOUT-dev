@@ -38,6 +38,7 @@ class Vector2D;
 #define __VECTOR2D_H__
 
 #include "field2d.hxx"
+#include "unused.hxx"
 class Field3D;  //#include "field3d.hxx"
 class Vector3D; //#include "vector3d.hxx"
 
@@ -150,10 +151,10 @@ class Vector2D : public FieldData {
   }
   void applyBoundary(const char* condition) { applyBoundary(string(condition)); }
   void applyTDerivBoundary() override;
-  virtual inline const BoutReal& operator[](const Indices &i) const override {
+  virtual inline const BoutReal& operator[](const Indices &UNUSED(i)) const override {
     throw BoutException("Indices cannot be handled ...");
   }
-  virtual inline BoutReal& operator[](const Indices &i) override {
+  virtual inline BoutReal& operator[](const Indices &UNUSED(i)) override {
     throw BoutException("Indices cannot be handled ...");
   }
  private:
