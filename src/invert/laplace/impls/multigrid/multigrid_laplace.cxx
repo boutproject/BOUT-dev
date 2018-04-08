@@ -417,18 +417,17 @@ BOUT_OMP(for)
   // Compute solution.
 
   mgcount++;
-  if((mgcount == 300) && (pcheck == 0)) {
-    tcheck = 1;
-  }
-  t0 = MPI_Wtime();
+  if (pcheck > 0) t0 = MPI_Wtime();
 
   kMG->getSolution(std::begin(x), std::begin(b), 0);
 
-  t1 = MPI_Wtime();
-  if((mgcount == 300) && (tcheck != pcheck)) tcheck = pcheck;
-  soltime += t1-t0;
-  if(mgcount%300 == 0) {
-    output<<"Accumulated execution time at "<<mgcount<<" Sol "<<soltime<<" ( "<<settime<<" )"<<endl;
+  if (pcheck > 0) {
+    t1 = MPI_Wtime();
+    if((mgcount == 300) && (tcheck != pcheck)) tcheck = pcheck;
+    soltime += t1-t0;
+    if(mgcount%300 == 0) {
+      output<<"Accumulated execution time at "<<mgcount<<" Sol "<<soltime<<" ( "<<settime<<" )"<<endl;
+    }
   }
 
   FieldPerp result(mesh);
