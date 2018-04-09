@@ -165,6 +165,29 @@ TYPED_TEST(FlexibleFieldTest, AssignReal) {
   }
 }
 
+TYPED_TEST(FlexibleFieldTest, set) {
+  TypeParam src;
+  Flexible<TypeParam> flex;
+  src = 1;
+  // Take copy
+  flex.set(src, true);
+  // Changing the source should not change the flexible field
+  src = 2;
+  TypeParam copy = flex;
+  for (auto i : copy) {
+    EXPECT_DOUBLE_EQ(1., copy[i]);
+  }
+  src = 3;
+  // Take reference
+  flex.set(src, false);
+  // Changing the source should change the flexible field
+  src = 4;
+  copy = flex;
+  for (auto i : copy) {
+    EXPECT_DOUBLE_EQ(4., copy[i]);
+  }
+}
+
 // Skip Z - as fix for interpolation hasn't been merged
 #define ALL_CELL_LOCS                                                                    \
   { CELL_CENTRE, CELL_XLOW, CELL_YLOW } //,CELL_ZLOW}
@@ -225,6 +248,13 @@ TYPED_TEST(FlexibleFieldTest, InterpolationY) {
   for (auto i : test.region(RGN_NOY)) {
     EXPECT_DOUBLE_EQ(test[i], i.y - .5);
   }
+}
+
+TYPED_TEST(FlexibleFieldTest, applyTDerivBoundary) {
+  Flexible<TypeParam> flex(1);
+  // Is not implemented yet - thus it should throw
+  // If someone implemnts it, a matching test should be written.
+  EXPECT_THROW(flex.applyTDerivBoundary(), BoutException);
 }
 
 TYPED_TEST(FlexibleFieldTest, InterpolationXY) {
@@ -347,6 +377,43 @@ TYPED_TEST(FlexibleFieldTest, MultiplactionLhsField3D) {
     }                                                                                    \
   }
 
+#define FlexTestFieldUpdate(name, op, field, in1, in2, res1, res2)                       \
+  TYPED_TEST(FlexibleFieldTest, name) {                                                  \
+    for (CELL_LOC loc1 : ALL_CELL_LOCS) {                                                \
+      TypeParam input((BoutReal)in1);                                                    \
+      input.setLocation(loc1);                                                           \
+      Flexible<TypeParam> flex(input);                                                   \
+      for (CELL_LOC loc2 : ALL_CELL_LOCS) {                                              \
+        input = in2;                                                                     \
+        input.setLocation(loc2);                                                         \
+        if (loc1 == loc2) {                                                              \
+          flex op input;                                                                 \
+          TypeParam tmp = flex;                                                          \
+          EXPECT_EQ(tmp.getLocation(), loc1);                                            \
+          for (auto i : tmp) {                                                           \
+            EXPECT_DOUBLE_EQ(tmp[i], res1);                                              \
+          }                                                                              \
+        } else {                                                                         \
+          EXPECT_THROW(flex op input, BoutException);                                    \
+        }                                                                                \
+      }                                                                                  \
+    }                                                                                    \
+  }
+
+#define FlexTestFieldUpdateReal(name, op, in1, in2, res1, res2)                          \
+  TYPED_TEST(FlexibleFieldTest, name) {                                                  \
+    for (CELL_LOC loc1 : ALL_CELL_LOCS) {                                                \
+      TypeParam input((BoutReal)in1);                                                    \
+      input.setLocation(loc1);                                                           \
+      Flexible<TypeParam> flex(input);                                                   \
+      BoutReal tmp(in2);                                                                 \
+      flex op tmp;                                                                       \
+      for (auto i : input) {                                                             \
+        EXPECT_DOUBLE_EQ(flex[i], res1);                                                 \
+      }                                                                                  \
+    }                                                                                    \
+  }
+
 FlexTestFieldOp(MultiplicationField2D, *, Field2D, 1, 0, 0, 0);
 FlexTestFieldOp(MultiplicationField3D, *, Field3D, 1, 0, 0, 0);
 FlexTestFieldOpReal(MultiplicationReal, *, 1, 0, 0, 0);
@@ -359,6 +426,19 @@ FlexTestFieldOpReal(AdditionReal, +, 2, 1, 3, 3);
 FlexTestFieldOp(SubstructionField2D, -, Field2D, 2, 1, 1, -1);
 FlexTestFieldOp(SubstructionField3D, -, Field3D, 2, 1, 1, -1);
 FlexTestFieldOpReal(SubstructionReal, -, 2, 1, 1, -1);
+
+FlexTestFieldUpdate(UpdateMultiplicationField2D, *=, Field2D, 1, 2, 2, 2);
+FlexTestFieldUpdate(UpdateMultiplicationField3D, *=, Field3D, 1, 2, 2, 2);
+FlexTestFieldUpdateReal(UpdateMultiplicationReal, *=, 1, 2, 2, 2);
+FlexTestFieldUpdate(UpdateDivisionField2D, /=, Field2D, 2, 1, 2, .5);
+FlexTestFieldUpdate(UpdateDivisionField3D, /=, Field3D, 2, 1, 2, .5);
+FlexTestFieldUpdateReal(UpdateDivisionReal, /=, 2, 1, 2, .5);
+FlexTestFieldUpdate(UpdateAdditionField2D, +=, Field2D, 2, 1, 3, 3);
+FlexTestFieldUpdate(UpdateAdditionField3D, +=, Field3D, 2, 1, 3, 3);
+FlexTestFieldUpdateReal(UpdateAdditionReal, +=, 2, 1, 3, 3);
+FlexTestFieldUpdate(UpdateSubstructionField2D, -=, Field2D, 2, 1, 1, -1);
+FlexTestFieldUpdate(UpdateSubstructionField3D, -=, Field3D, 2, 1, 1, -1);
+FlexTestFieldUpdateReal(UpdateSubstructionReal, -=, 2, 1, 1, -1);
 
 TYPED_TEST(FlexibleFieldTest, AccessDataIterator) {
   Flexible<TypeParam> flex(3.);
