@@ -34,7 +34,7 @@ aiolos_interp_to.o: aiolos_interp_to.cxx
 
 aiolos_stencils.o: aiolos_stencils.cxx
 
-aiolosmesh.hxx: aiolos_stencils.hxx aiolos_interp_to.hxx
+aiolosmesh.hxx: aiolos_stencils.hxx aiolos_interp_to.hxx aiolos_derivs.hxx
 
 %.o: aiolosmesh.hxx
 
