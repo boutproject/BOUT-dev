@@ -13,6 +13,15 @@ C and C++, but I’d recommend online tutorials over books because there
 are a lot more of them, they’re quicker to scan through, and they’re
 cheaper.
 
+Many of the examples which come with BOUT++ are physics models, and can
+be used as a starting point. Some relatively simple examples are ``blob2d``
+(2D plasma filament/blob propagation), ``hasegawa-wakatani`` (2D turbulence),
+``finite-volume/fluid`` (1D compressible fluid) and ``gas-compress``
+(up to 3D compressible fluid). Some of the integrated tests (under ``tests/integrated``)
+use either physics models (e.g. ``test-delp2`` and ``test-drift-instability``), or
+define their own ``main`` function (e.g. ``test-io`` and ``test-cyclic``).
+
+.. _sec-heat-conduction-model:
 
 Heat conduction
 ---------------
@@ -43,12 +52,37 @@ and then defines a standard main() function using a macro:
 
     BOUTMAIN(Conduction);
 
-You can define your own main() function, but for most cases this is enough.
+You can define your own ``main()`` function, but for most cases this is enough.
 The two methods defined in Conduction, ``init`` and ``rhs``, are both needed to define
 a BOUT++ physics model. The ``init`` function is run once at the start,
 and should set up the simulation and specify which variables are evolving in time. 
 The ``rhs`` function should calculate the time derivative, and is called at least once
 per output timestep, depending on the time integration method used.
+
+To define your own ``main()`` function, see the definition of ``BOUTMAIN``
+in ``include/bout/physicsmodel.hxx``. It expands to something like:
+
+::
+
+      int main(int argc, char **argv) {
+        BoutInitialise(argc, argv); // Initialise BOUT++
+
+        Conduction *model = new Conduction(); // Create a model
+
+        Solver *solver = Solver::create(); // Create a solver
+        solver->setModel(model); // Specify the model to solve
+        solver->addMonitor(bout_monitor); // Monitor the solver
+
+        solver->solve(); // Run the solver
+
+        delete model;
+        delete solver;
+        BoutFinalise(); // Finished with BOUT++
+        return 0;
+      }
+
+where ``Conduction`` was given as an argument to ``BOUTMAIN``. Customising this
+may make combining BOUT++ with other libraries easier.
 
 Initialisation
 ~~~~~~~~~~~~~~
@@ -152,7 +186,7 @@ Magnetohydrodynamics (MHD)
 
 When going through this section, it may help to refer to the finished
 code, which is given in the file ``mhd.cxx`` in the BOUT++ examples
-directory. The equations to be solved are:
+directory under ``orszag-tang``. The equations to be solved are:
 
 .. math::
 
@@ -163,35 +197,37 @@ directory. The equations to be solved are:
        (\nabla\times\mathbf{B})\times\mathbf{B}) \\ {{\frac{\partial \mathbf{B}}{\partial t}}} =&
        \nabla\times(\mathbf{v}\times\mathbf{B})
 
-There are two ways to specify a set of equations to solve in BOUT++.
-For advanced users, an object-oriented interface is available and
-described in :ref:`sec-newapi`. The simplest way to start is to use a
-C-like interface and define two functions:
+As in the :ref:`heat conduction example <sec-heat-conduction-model>`, a class
+is created which inherits from ``PhysicsModel`` and defines ``init``
+and ``rhs`` functions:
 
 ::
 
-    int physics_init(bool restarting) {
-      return 0;
-    }
+    class MHD : public PhysicsModel {
+      private:
+      int init(bool restarting) override {
+        ...
+      }
+      int rhs(BoutReal t) override {
+        ...
+      }
+    };
 
-    int physics_run(BoutReal t) {
-      return 0;
-    }
 
-The first of these is called once at the start of the simulation, and
+The ``init`` function is called once at the start of the simulation, and
 should set up the problem, specifying which variables are to be evolved.
 The argument ``restarting`` is false the first time a problem is run,
 and true if loading the state from a restart file.
 
-The second function ``physics_run`` is called every time-step, and
+The ``rhs`` function is called every time-step, and
 should calculate the time-derivatives for a given state. In both cases
 returning non-zero tells BOUT++ that an error occurred.
 
 Variables
----------
+~~~~~~~~~
 
 We need to define the variables to evolve as global variables (so they
-can be used in ``physics_init`` and ``physics_run``.
+can be used in ``init`` and ``rhs``.
 
 For ideal MHD, we need two 3D scalar fields density :math:`\rho` and
 pressure :math:`p`, and two 3D vector fields velocity :math:`v`, and
@@ -199,14 +235,15 @@ magnetic field :math:`B`:
 
 ::
 
-    Field3D rho, p; // 3D scalar fields
-    Vector3D v, B;  // 3D vector fields
-
-    int physics_init(bool restarting) {
-    }
+    class MHD : public PhysicsModel {
+      private:
+      Field3D rho, p; // 3D scalar fields
+      Vector3D v, B;  // 3D vector fields
+      ...
+    };
 
 Scalar and vector fields behave much as you would expect: ``Field3D``
-objects can be added, subtracted, multiplied, divided and exponentiated,
+objects can be added, subtracted, multiplied and divided,
 so the following examples are all valid operations:
 
 ::
@@ -217,7 +254,6 @@ so the following examples are all valid operations:
     a = b + c; a = b - c;
     a = b * c; a = r * b;
     a = b / c; a = b / r; a = r / b;
-    a = b ^ c; a = b ^ r; a = r ^ b;
 
 Similarly, vector objects can be added/subtracted from each other,
 multiplied/divided by scalar fields and real numbers, for example:
@@ -255,8 +291,12 @@ be used:
     a += b; v *= a; v -= w; v ^= w; // valid
     v *= w; // NOT valid: result of dot-product is a scalar
 
+**Note**: The operator precedence for :math:`\wedge` is lower than
+``+``, ``*`` and ``/`` so it is recommended to surround ``a ^ b`` with
+braces. 
+    
 Evolution equations
--------------------
+~~~~~~~~~~~~~~~~~~~
 
 At this point we can tell BOUT++ which variables to evolve, and where
 the state and time-derivatives will be stored. This is done using the
@@ -267,7 +307,9 @@ the state and time-derivatives will be stored. This is done using the
     int physics_init(bool restarting) {
       bout_solve(rho, "density");
       bout_solve(p,   "pressure");
+      v.covariant = true; // evolve covariant components
       bout_solve(v,   "v");
+      B.covariant = false; // evolve contravariant components
       bout_solve(B,   "B");
 
       return 0;
@@ -293,15 +335,23 @@ to
 
 ::
 
-    int physics_init(bool restarting) {
+    int init(bool restarting) override {
+      ...
       bout_solve(rho, "density");
       bout_solve(p,   "pressure");
+      v.covariant = true; // evolve covariant components
+      B.covariant = false; // evolve contravariant components
       SOLVE_FOR2(v, B);
-
+      ...
       return 0;
     }
 
-The equations to be solved can now be written in the ``physics_run``
+Vector quantities can be stored in either covariant or contravariant
+form. The value of the ``covariant`` property when ``bout_solve`` (or
+``SOLVE_FOR``) is called is the form which is evolved in time and
+saved to the output file.
+    
+The equations to be solved can now be written in the ``rhs``
 function. The value passed to the function (``BoutReal t``) is the
 simulation time - only needed if your equations contain time-dependent
 sources or similar terms. To refer to the time-derivative of a variable
@@ -309,9 +359,10 @@ sources or similar terms. To refer to the time-derivative of a variable
 
 ::
 
-    int physics_run(BoutReal t) {
+    
+    int rhs(BoutReal t) override {
       ddt(rho) = -V_dot_Grad(v, rho) - rho*Div(v);
-      ddt(p) = -V_dot_Grad(v, p) - gamma*p*Div(v);
+      ddt(p) = -V_dot_Grad(v, p) - g*p*Div(v);
       ddt(v) = -V_dot_Grad(v, v) + ( (Curl(B)^B) - Grad(p) ) / rho;
       ddt(B) = Curl(v^B);
     }
@@ -330,74 +381,65 @@ written as ``v*Grad(v)``.
 .. _sec-inputopts:
 
 Input options
--------------
+~~~~~~~~~~~~~
 
-Note that in the above equations the extra parameter ``gamma`` has been
-used. To enable this to be set in the input options file (see
-:ref:`sec-options`), we use the ``options`` object in the
+Note that in the above equations the extra parameter ``g`` has been
+used for the ratio of specific heats. To enable this to be set in the
+input options file (see :ref:`sec-options`), we use the ``options`` object in the
 initialisation function:
 
 ::
 
-    BoutReal gamma;
 
-    int physics_init(bool restarting) {
-      Options *globalOptions = Options::getRoot();
-      Options *options = globalOptions->getSection("mhd");
+    class MHD : public PhysicsModel {
+      private:
+      BoutReal gamma;
 
-      options->get("gamma", gamma, 5.0/3.0);
+      int init(bool restarting) override {
+        Options *globalOptions = Options::getRoot();
+        Options *options = globalOptions->getSection("mhd");
 
-This specifies that an option called “gamma” in a section called “mhd”
+        options->get("g", g, 5.0/3.0);
+        ...
+
+This specifies that an option called “g” in a section called “mhd”
 should be put into the variable ``gamma``. If the option could not be
 found, or was of the wrong type, the variable should be set to a default
 value of :math:`5/3`. The value used will be printed to the output file,
-so if gamma is not set in the input file the following line will appear:
+so if ``g`` is not set in the input file the following line will appear:
 
 ::
 
-          Option mhd / gamma = 1.66667 (default)
+          Option mhd:g = 1.66667 (default)
 
 This function can be used to get integers and booleans. To get strings,
 there is the function (``char* options.getString(section, name)``. To
 separate options specific to the physics model, these options should be
 put in a separate section, for example here the “mhd” section has been
-specified. To save having to write the section name for every option,
-there is the ``setSection`` function:
+specified. 
 
-::
-
-    BoutReal gamma;
-    int someint;
-
-    int physics_init(bool restarting) {
-      Options *globalOptions = Options::getRoot();
-      Options *options = globalOptions->getSection("mhd");
-
-      options->get("gamma", gamma, 5.0/3.0);
-      options->get("someint", someint, 0);
-
-Most of the time, the name of the variable (e.g. ``gamma``) will be the
-same as the identifier in the options file (“gamma”). In this case,
+Most of the time, the name of the variable (e.g. ``g``) will be the
+same as the identifier in the options file (“g”). In this case,
 there is the macro
 
 ::
 
-    OPTION(options, gamma, 5.0/3.0);
+    OPTION(options, g, 5.0/3.0);
 
 which is equivalent to
 
 ::
 
-    options->get("gamma", gamma, 5.0/3.0);
+    options->get("g", g, 5.0/3.0);
 
 See :ref:`sec-options` for more details of how to use the input
 options.
 
 Communication
--------------
+~~~~~~~~~~~~~
 
 If you plan to run BOUT++ on more than one processor, any operations
-involving y derivatives will require knowledge of data stored on other
+involving derivatives will require knowledge of data stored on other
 processors. To handle the necessary parallel communication, there is the
 ``mesh->communicate`` function. This takes care of where the data needs
 to go to/from, and only needs to be told which variables to transfer.
@@ -410,7 +452,7 @@ calculated:
 
 ::
 
-    int physics_run(BoutReal t) {
+    int rhs(BoutReal t) override {
       mesh->communicate(rho, p, v, B);
 
 If you need to communicate lots of variables, or want to change at
@@ -423,45 +465,35 @@ later.
 
 ::
 
-    FieldGroup comms;
+    class MHD : public PhysicsModel {
+      private:
+      FieldGroup comms;
 
-    int physics_init() {
-      .
-      .
-      .
-      comms.add(rho);
-      comms.add(p);
-      comms.add(v);
-      comms.add(B);
+      int init(bool restarting) override {
+        ...
+        comms.add(rho);
+        comms.add(p);
+        comms.add(v);
+        comms.add(B);
+        ...
 
-      return 0;
-    }
-
-The ``comms.add()`` routine can be given up to 6 variables at once
+The ``comms.add()`` routine can be given any number of variables at once
 (there’s no practical limit on the total number of variables which are
 added to a ``FieldGroup`` ), so this can be shortened to
 
 ::
 
-    FieldGroup comms;
-
-    int physics_init() {
-      .
-      .
-      .
-      comms.add(rho, p, v, B);
-
-      return 0;
-    }
+    
+     comms.add(rho, p, v, B);
 
 To perform the actual communication, call the ``mesh->communicate``
 function with the group. In this case we need to communicate all these
 variables before performing any calculations, so call this function at
-the start of the ``physics_run`` routine:
+the start of the ``rhs`` routine:
 
 ::
 
-    int physics_run(BoutReal t) {
+    int rhs(BoutReal t) override {
       mesh->communicate(comms);
       .
       .
@@ -481,7 +513,7 @@ performed:
 
 ::
 
-    int physics_run(BoutReal t) {
+    int rhs(BoutReal t) override {
       mesh->communicate(rho, p, v); // sends and receives rho, p and v
       comm_handle ch = mesh->send(B);// only send B
 
@@ -508,12 +540,62 @@ Therefore, if you take the output of one differential operator and use
 it as input to another differential operator, you must perform
 communications (and set boundary conditions) first. See
 :ref:`sec-diffops`.
+Error handling
+~~~~~~~~~~~~~~
+
+Finding where bugs have occurred in a (fairly large) parallel code is a
+difficult problem. This is more of a concern for developers of BOUT++
+(see the developers manual), but it is still useful for the user to be
+able to hunt down bug in their own code, or help narrow down where a bug
+could be occurring.
+
+If you have a bug which is easily reproduceable i.e. it occurs almost
+immediately every time you run the code, then the easiest way to hunt
+down the bug is to insert lots of ``output.write`` statements (see
+:ref:`sec-printing`). Things get harder when a bug only occurs after
+a long time of running, and/or only occasionally. For this type of
+problem, a useful tool can be the message stack. An easy way to use this message
+stack is to use the ``TRACE`` macro:
+
+::
+
+	{
+      	  TRACE("Some message here"); // message pushed
+	
+	} // Scope ends, message popped
+
+This will push the message, then pop the message when the current scope ends
+(except when an exception occurs).
+The error message will also have the file name and line number appended, to help find
+where an error occurred. The run-time overhead of this should be small,
+but can be removed entirely if the compile-time flag ``-DCHECK`` is not defined or set to ``0``. This turns off checking,
+and ``TRACE`` becomes an empty macro.
+It is possible to use standard ``printf`` like formatting with the trace macro, for example.
+ 
+::
+
+	{
+      	  TRACE("The value of i is %d and this is an arbitrary %s", i, "string"); // message pushed
+	} // Scope ends, message popped
+
+In the ``mhd.cxx`` example each part of the ``rhs`` function is
+trace'd. If an error occurs then at least the equation where it
+happened will be printed:
+
+::
+
+    {
+      TRACE("ddt(rho)");
+      ddt(rho) = -V_dot_Grad(v, rho) - rho*Div(v);
+    }
+
 
 Boundary conditions
--------------------
+~~~~~~~~~~~~~~~~~~~
 
 All evolving variables have boundary conditions applied automatically
-after the ``physics_run`` has finished. Which condition is applied
+before the ``rhs`` function is called (or afterwards if the boundaries
+are being evolved in time). Which condition is applied
 depends on the options file settings (see :ref:`sec-bndryopts`). If
 you want to disable this and apply your own boundary conditions then set
 boundary condition to ``none`` in the ``BOUT.inp`` options file.
@@ -535,19 +617,19 @@ The format is exactly the same as in the options file. Each time this is
 called it must parse the text, create and destroy boundary objects. To
 avoid this overhead and have different boundary conditions for each
 region, it’s better to set the boundary conditions you want to use first
-in ``physics_init``, then just apply them every time:
+in ``init``, then just apply them every time:
 
 ::
 
     Field3D var;
 
-    int physics_init() {
+    int init(bool restarting) override {
       ...
       var.setBoundary("myVar");
       ...
     }
 
-    int physics_run(BoutReal t) {
+    int rhs(BoutReal t) override {
       ...
       var.applyBoundary();
       ...
@@ -557,7 +639,7 @@ This will look in the options file for a section called ``[myvar]``
 (upper or lower case doesn’t matter) in the same way that evolving
 variables are handled. In fact this is precisely what is done: inside
 ``bout_solve`` (or ``SOLVE_FOR``) the ``setBoundary`` method is called,
-and then after ``physics_run`` the applyBoundary() method is called on
+and then after ``rhs`` the ``applyBoundary()`` method is called on
 each evolving variable. This method also gives you the flexibility to
 apply different boundary conditions on different boundary regions (e.g.
 radial boundaries and target plates); the first method just applies the
@@ -610,7 +692,7 @@ Note that it might be both if ``NXPE = 1``, or neither if ``NXPE > 2``.
         for(int x=0; x < 2; x++)
           for(int y=0; y < mesh->LocalNy; y++)
             for(int z=0; z < mesh->LocalNz; z++) {
-              f[x][y][z] = ...
+              f(x,y,z) = ...
             }
       }
       if(mesh->lastX()) {
@@ -619,7 +701,7 @@ Note that it might be both if ``NXPE = 1``, or neither if ``NXPE > 2``.
         for(int x=mesh->LocalNx-2; x < mesh->LocalNx; x++)
           for(int y=0; y < mesh->LocalNy; y++)
             for(int z=0; z < mesh->LocalNz; z++) {
-              f[x][y][z] = ...
+              f(x,y,z) = ...
             }
       }
 
@@ -642,11 +724,11 @@ the boundary, we need to use a more general iterator:
         // it.ind contains the x index
         for(int y=2;y>=0;y--)  // Boundary width 3 points
           for(int z=0;z<mesh->LocalNz;z++) {
-            ddt(f)[it.ind][y][z] = 0.;  // Set time-derivative to zero in boundary
+            ddt(f)(it.ind,y,z) = 0.;  // Set time-derivative to zero in boundary
           }
       }
 
-This would set the time-derivative of f to zero in a boundary of width 3
+This would set the time-derivative of ``f`` to zero in a boundary of width 3
 in Y (from 0 to 2 inclusive). In the same way
 ``mesh->iterateBndryUpperY()`` can be used to iterate over the upper
 boundary:
@@ -658,12 +740,12 @@ boundary:
         // it.ind contains the x index
         for(int y=mesh->LocalNy-3;y<mesh->LocalNy;y--)  // Boundary width 3 points
           for(int z=0;z<mesh->LocalNz;z++) {
-            ddt(f)[it.ind][y][z] = 0.;  // Set time-derivative to zero in boundary
+            ddt(f)(it.ind,y,z) = 0.;  // Set time-derivative to zero in boundary
           }
       }
 
 Initial profiles
-----------------
+~~~~~~~~~~~~~~~~
 
 Up to this point the code is evolving total density, pressure etc. This
 has advantages for clarity, but has problems numerically: For small
@@ -677,14 +759,14 @@ variables passed to the ``bout_solve`` function is a combination of
 small-amplitude gaussians and waves; the user is expected to have
 performed this separation into background and perturbed quantities.**
 
-To read in a quantity from a grid file, there is the ``grid.get``
+To read in a quantity from a grid file, there is the ``mesh->get``
 function:
 
 ::
 
     Field2D Ni0; // Background density
 
-    int physics_init(bool restarting) {
+    int init(bool restarting) override {
       ...
       mesh->get(Ni0, "Ni0");
       ...
@@ -705,7 +787,7 @@ which is equivalent to
     mesh->get(Ni0, "Ni0");
 
 Output variables
-----------------
+~~~~~~~~~~~~~~~~
 
 BOUT++ always writes the evolving variables to file, but often it’s
 useful to add other variables to the output. For convenience you might
@@ -740,7 +822,7 @@ file. To do this, create a Datafile object:
 
     Datafile mydata;
 
-in physics\_init, you then:
+in ``init``, you then:
 
 #. (optional) Initialise the file, passing it the options to use. If you
    skip this step, default (sane) options will be used. This just allows
@@ -779,7 +861,7 @@ in physics\_init, you then:
        mydata.add(variable2, "name2", 1); // Evolving. Will output a sequence of values
 
 Whenever you want to write values to the file, for example in
-physics\_run or a monitor, just call
+``rhs`` or a monitor, just call
 
 ::
 
@@ -801,7 +883,7 @@ or in IDL:
 By default the prefix is “BOUT.dmp”.
 
 Variable attributes
--------------------
+~~~~~~~~~~~~~~~~~~~
 
 An experimental feature is the ability to add attributes to output variables. Do this using::
 
@@ -812,5 +894,134 @@ either a string or an integer. For example::
 
 
    dump.setAttribute("Ni0", "units", "m^-3"); 
+
+
+
+Reduced MHD
+-----------
+
+The MHD example presented previously covered some of the functions
+available in BOUT++, which can be used for a wide variety of models.
+There are however several other significant functions and classes which
+are commonly used, which will be illustrated using the
+``reconnect-2field`` example. This is solving equations for
+:math:`A_{||}` and vorticity :math:`U`
+
+.. math::
+
+   {{\frac{\partial U}{\partial t}}} =& -\frac{1}{B}\mathbf{b}_0\times\nabla\phi\cdot\nabla U + B^2
+       \nabla_{||}(j_{||} / B) \\ {{\frac{\partial A_{||}}{\partial t}}} =&
+       -\frac{1}{\hat{\beta}}\nabla_{||}\phi - \eta\frac{1}{\hat{\beta}} j_{||}
+
+with :math:`\phi` and :math:`j_{||}` given by
+
+.. math::
+
+   U =& \frac{1}{B}\nabla_\perp^2\phi \\ j_{||} =& -\nabla_\perp^2 A_{||}
+
+First create the variables which are going to be evolved, ensure
+they’re communicated
+
+::
+
+    class TwoField : public PhysicsModel {
+      private:
+      Field3D U, Apar; // Evolving variables
+      
+      int init(bool restarting) override {
+
+        SOLVE_FOR2(U, Apar);
+      }
+
+      int rhs(BoutReal t) override {
+        mesh->communicate(U, Apar);
+      }
+    };
+
+In order to calculate the time derivatives, we need the auxiliary
+variables :math:`\phi` and :math:`j_{||}`. Calculating :math:`j_{||}`
+from :math:`A_{||}` is a straightforward differential operation, but
+getting :math:`\phi` from :math:`U` means inverting a Laplacian.
+
+::
+
+    Field3D U, Apar;
+    Field3D phi, jpar; // Auxilliary variables
+
+    int init(bool restarting) override {
+      SOLVE_FOR2(U, Apar);
+      SAVE_REPEAT2(phi, jpar); // Save variables in output file
+      return 0;
+    }
+
+    int rhs(BoutReal t) override {
+      phi = invert_laplace(mesh->Bxy*U, phi_flags); // Solve for phi
+      mesh->communicate(U, Apar, phi);  // Communicate phi
+      jpar = -Delp2(Apar);     // Calculate jpar
+      mesh->communicate(jpar); // Communicate jpar
+      return 0;
+    }
+
+Note that the Laplacian inversion code takes care of boundary regions,
+so ``U`` doesn’t need to be communicated first. The differential
+operator ``Delp2`` , like all differential operators, needs the values
+in the guard cells and so ``Apar`` needs to be communicated before
+calculating ``jpar`` . Since we will need to take derivatives of
+``jpar`` later, this needs to be communicated as well.
+
+::
+
+    int rhs(BoutReal t) override {
+      ...
+      mesh->communicate(jpar);
+
+      ddt(U) = -b0xGrad_dot_Grad(phi, U) + SQ(mesh->Bxy)*Grad_par(Jpar / mesh->Bxy)
+      ddt(Apar) = -Grad_par(phi) / beta_hat - eta*jpar / beta_hat; }
+
+.. _sec-printing:
+
+Printing messages/warnings
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In order to print to screen and/or a log file, the object ``output`` is
+provided. This provides two different ways to write output: the C
+(``printf``) way, and the C++ stream way. This is because each method
+can be clearer in different circumstances, and people have different
+tastes in these matters.
+
+The C-like way (which is the dominant way in BOUT++) is to use the
+``write`` function, which works just like ``printf``, and takes all the
+same codes (it uses ``sprintf`` internally).
+
+::
+
+    output.write(const char *format, ...)
+
+For example:
+
+::
+
+    output.write("This is an integer: %d, and this a real: %e\n", 5, 2.0)
+
+For those who prefer the C++ way of doing things, a completely
+equivalent way is to treat ``output`` as you would ``cout``:
+
+::
+
+    output << "This is an integer: " << 5 << ", and this a real: " << 2.0 << endl;
+
+which will produce the same result as the ``output.write`` call
+above.
+
+On all processors, anything sent to ``output`` will be written to a log
+file called ``BOUT.log.#`` with # replaced by the processor number. On
+processor 0, anything written to the output will be written to screen
+(stdout), in addition to the log file. Unless there is a really good
+reason not to, please use this ``output`` object when writing text
+output.
+
+More details are given in section :ref:`sec-logging`.
+
+
 
 

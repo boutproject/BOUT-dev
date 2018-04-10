@@ -39,10 +39,8 @@ The documentation is divided into the following sections:
    :maxdepth: 2
    :caption: BOUT++ models
    :name: bout-models
-          
-   user_docs/object_orientated_interface
+      
    user_docs/fluid_equations
-   user_docs/fluid_equations_2
    user_docs/examples
    user_docs/makefiles
    user_docs/variable_init
