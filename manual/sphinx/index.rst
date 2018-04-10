@@ -32,7 +32,6 @@ The documentation is divided into the following sections:
    user_docs/installing
    user_docs/advanced_install
    user_docs/machine_install
-   user_docs/aix
    user_docs/running_bout
    
 .. toctree::
