@@ -22,10 +22,39 @@ directions. By default the coordinate system is Cartesian (metric tensor
 is the identity matrix), but this can be changed by specifying the
 metric tensor components.
 
-Integer quantities such as ``nx`` must be numbers (like “260”), not
-expressions (like “256 + 2\*MXG”). Real (floating-point) values can be
-expressions, allowing quite complicated analytic inputs. For example in
-the example ``test-griddata``:
+Integer quantities such as ``nx`` can be numbers (like “260”), or
+expressions (like “256 + 2\*MXG”). 
+A common use is to make ``x`` and ``z`` dimensions have the same
+number of points, when ``x`` has ``mxg`` boundary cells on each
+boundary but ``z`` does not (since it is usually periodic):
+
+.. code-block:: bash
+
+    [mesh]
+    nx = nz + 2*mxg  # X grid size
+    nz = 256         # Z grid size            
+    mxg = 2            
+
+
+Note that the variable ``nz`` can be used before its definition; all
+variables are first read, and then processed afterwards.
+    
+All expressions are calculated in floating point and then
+converted to an integer. The conversion is 
+done by rounding to the nearest integer, but throws an error if the
+floating point value is not within 1e-3 of an integer. This is to minimise
+unexpected behaviour. If you want to round any result to an integer,
+use the ``round`` function:
+
+.. code-block:: bash
+
+    [mesh]
+    nx = 256.4   # Error!
+    nx = round(256.4) # ok
+
+    
+Real (floating-point) values can also be expressions, allowing quite
+complicated analytic inputs. For example in the example ``test-griddata``:
 
 .. code-block:: bash
 
