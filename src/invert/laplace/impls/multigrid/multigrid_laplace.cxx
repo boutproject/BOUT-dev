@@ -424,6 +424,8 @@ BOUT_OMP(for)
     soltime += t1-t0;
     if(mgcount%300 == 0) {
       output<<"Accumulated execution time at "<<mgcount<<" Sol "<<soltime<<" ( "<<settime<<" )"<<endl;
+      settime = 0.;
+      soltime = 0.;
     }
   }
 
