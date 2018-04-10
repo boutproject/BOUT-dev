@@ -400,14 +400,14 @@ inline BoutReal MINMOD(BoutReal a, BoutReal b) {
 
 #if CHECK > 0
 /// Throw an exception if \p f is not finite
-inline void checkData(const BoutReal &f) {
+inline void checkData(BoutReal f) {
   if (!finite(f)) {
     throw BoutException("BoutReal: Operation on non-finite data");
   }
 }
 #else
 /// Ignored with disabled CHECK; Throw an exception if \p f is not finite
-inline void checkData(const BoutReal &UNUSED(f)){};
+inline void checkData(BoutReal UNUSED(f)){};
 #endif
 
 /*!
