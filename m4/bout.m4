@@ -189,7 +189,8 @@ AC_DEFUN([BOUT_FIND_SUNDIALS_MODULE],[
     ], [
        AC_MSG_WARN([No sundials-config available, no path given, will try compiling with $module_upper anyway])
        sundials_module_includes=""
-       sundials_module_libs=""
+       # Need to link to libsundials_ida, libsundials_cvode or libsundials_arkode
+       sundials_module_libs="-lsundials_$1 -lsundials_nvecparallel"
     ])
     AC_LANG_PUSH([C++])
     AC_MSG_CHECKING([if we can compile with SUNDIALS $module_upper])
@@ -274,7 +275,7 @@ $2
     SUNDIALS_MODULE_LDFLAGS="-L$sundials_module_lib_path"
   ])
 
-  AS_IF([test $sundials_module_lib_path_found = no],
+  AS_IF([test "x$sundials_module_lib_path_found" = "xno"],
     [AC_MSG_FAILURE([Cannot compile $module_upper program])])
 
   # Compile in the $module_upper solver

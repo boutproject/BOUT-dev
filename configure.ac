@@ -853,7 +853,7 @@ AS_IF([test "x$with_sundials" != "x" && test "x$with_sundials" != "xno"], [
   ])
 
   AC_MSG_CHECKING([for SUNDIALS minor version])
-  AC_EGREP_CPP([^ *2\.[67]\.], [
+  AC_EGREP_CPP([^ *\"? *2\.[67]\.], [
     #include "sundials/sundials_config.h"
     #ifdef SUNDIALS_PACKAGE_VERSION
     SUNDIALS_PACKAGE_VERSION
