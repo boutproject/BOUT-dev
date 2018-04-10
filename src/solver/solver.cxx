@@ -341,7 +341,7 @@ void Solver::add(Vector3D &v, const char* name) {
 void Solver::constraint(Field2D &v, Field2D &C_v, const char* name) {
 
   if (name == nullptr) {
-    throw BoutException("WARNING: Constraint requested for variable with NULL name\n");
+    throw BoutException("ERROR: Constraint requested for variable with NULL name\n");
   }
 
   TRACE("Constrain 2D scalar: Solver::constraint(%s)", name);
@@ -370,7 +370,7 @@ void Solver::constraint(Field2D &v, Field2D &C_v, const char* name) {
 void Solver::constraint(Field3D &v, Field3D &C_v, const char* name) {
 
   if (name == nullptr) {
-    throw BoutException("WARNING: Constraint requested for variable with NULL name\n");
+    throw BoutException("ERROR: Constraint requested for variable with NULL name\n");
   }
 
   TRACE("Constrain 3D scalar: Solver::constraint(%s)", name);
@@ -400,7 +400,7 @@ void Solver::constraint(Field3D &v, Field3D &C_v, const char* name) {
 void Solver::constraint(Vector2D &v, Vector2D &C_v, const char* name) {
 
   if (name == nullptr) {
-    throw BoutException("WARNING: Constraint requested for variable with NULL name\n");
+    throw BoutException("ERROR: Constraint requested for variable with NULL name\n");
   }
 
   TRACE("Constrain 2D vector: Solver::constraint(%s)", name);
@@ -441,7 +441,7 @@ void Solver::constraint(Vector2D &v, Vector2D &C_v, const char* name) {
 void Solver::constraint(Vector3D &v, Vector3D &C_v, const char* name) {
 
   if (name == nullptr) {
-    throw BoutException("WARNING: Constraint requested for variable with NULL name\n");
+    throw BoutException("ERROR: Constraint requested for variable with NULL name\n");
   }
 
   TRACE("Constrain 3D vector: Solver::constraint(%s)", name);
