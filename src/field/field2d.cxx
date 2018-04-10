@@ -437,7 +437,7 @@ bool finite(const Field2D &f, REGION rgn) {
     for (const auto &d : result.region(rgn)) {                                           \
       result[d] = func(f[d]);                                                            \
     }                                                                                    \
-    checkData(result, rgn);                                                              \
+    checkData(result);                                                                   \
     return result;                                                                       \
   }
 
@@ -488,7 +488,7 @@ Field2D pow(const Field2D &lhs, const Field2D &rhs, REGION rgn) {
     result[i] = ::pow(lhs[i], rhs[i]);
   }
 
-  checkData(result, rgn);
+  checkData(result);
   return result;
 }
 
@@ -506,7 +506,7 @@ Field2D pow(const Field2D &lhs, BoutReal rhs, REGION rgn) {
     result[i] = ::pow(lhs[i], rhs);
   }
 
-  checkData(result, rgn);
+  checkData(result);
   return result;
 }
 
@@ -524,7 +524,7 @@ Field2D pow(BoutReal lhs, const Field2D &rhs, REGION rgn) {
     result[i] = ::pow(lhs, rhs[i]);
   }
 
-  checkData(result, rgn);
+  checkData(result);
   return result;
 }
 
