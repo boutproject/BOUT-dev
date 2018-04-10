@@ -299,7 +299,7 @@ AS_IF([test "x$enable_sigfpe" == "xyes"], [
 BOUT_VERSION=$PACKAGE_VERSION
 BOUT_VERSION_MAJOR=${PACKAGE_VERSION%%.*}
 BOUT_VERSION_MINOR=${PACKAGE_VERSION#*.}
-BOUT_VERSION_DOUBLE=${BOUT_VERSION_MAJOR}.${BOUT_VERSION_MINOR/./}
+BOUT_VERSION_DOUBLE=${BOUT_VERSION_MAJOR}.$(echo ${BOUT_VERSION_MINOR}|tr -d .)
 CXXFLAGS+=" -DBOUT_VERSION_STRING=\"\\\"$BOUT_VERSION\\\"\" -DBOUT_VERSION_DOUBLE=$BOUT_VERSION_DOUBLE "
 
 #############################################################
@@ -781,7 +781,7 @@ AS_IF([test "$with_mumps" != "" && test "$with_mumps" != "no"], [
   ])
 
   AC_LANG_PUSH([C++])
-  AC_MSG_CHECKING([if we can compiler MUMPS program])
+  AC_MSG_CHECKING([if we can compile MUMPS program])
   AC_LINK_IFELSE(
     [AC_LANG_PROGRAM([
        #include <dmumps_c.h>
@@ -803,6 +803,7 @@ AS_IF([test "$with_mumps" != "" && test "$with_mumps" != "no"], [
   AS_IF([test "x$MUMPS_INC" != "x"], [
     AC_MSG_NOTICE([   Includes : $MUMPS_INC])
     AC_MSG_NOTICE([   Libraries: $MUMPS_LIB])
+
 
     EXTRA_INCS="$EXTRA_INCS -I$MUMPS_INC"
     EXTRA_LIBS="$EXTRA_LIBS -L$MUMPS_LIB -ldmumps -lmumps_common -lpord -lscalapack -lparmetis -lmetis -lptscotch -lptesmumps"

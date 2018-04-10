@@ -43,9 +43,9 @@ do
     esac
 done
 
-
+export MAKEFLAGS="-j 2 -k"
 echo "Configuring with $CONFIGURE_OPTIONS"
-time ./configure $CONFIGURE_OPTIONS
+time ./configure $CONFIGURE_OPTIONS MAKEFLAGS="$MAKEFLAGS"
 conf=$?
 if test $conf -gt 0
 then
@@ -69,7 +69,6 @@ then
     exit $conf
 fi
 export PYTHONPATH=$(pwd)/tools/pylib/:$PYTHONPATH
-export MAKEFLAGS="-j 2 -k"
 
 time make $MAIN_TARGET|| exit
 if [[ ${TESTS} == 1 ]]

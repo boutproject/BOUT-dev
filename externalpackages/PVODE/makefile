@@ -1,8 +1,16 @@
 # Makefile for example codes
 # Works in the same way as the root Makefile
 
-BOUT_TOP	= ../..
+TARGET?=all
 
 DIRS		= source precon
 
-include $(BOUT_TOP)/make.config
+all: $(DIRS)
+
+.PHONY: $(DIRS)
+
+$(DIRS):
+	@$(MAKE) -s --no-print-directory TARGET=$(TARGET) -C $@ $(TARGET)
+
+clean::
+	@for pp in $(DIRS); do echo "  " $$pp cleaned; $(MAKE) --no-print-directory -C $$pp clean; done
