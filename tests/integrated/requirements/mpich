@@ -1,0 +1,14 @@
+#!/usr/bin/env python
+
+# Tests if mpich is being used
+# NOTE: A more robust method is needed!
+
+from boututils.run_wrapper import shell
+from sys import exit
+
+s,mpich=shell("diff /usr/bin/mpirun /usr/bin/mpirun.mpich &>/dev/null",pipe=True)
+
+if s == 0:
+   exit(0)  # True
+
+exit(1) # False
