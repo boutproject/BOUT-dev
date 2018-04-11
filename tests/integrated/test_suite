@@ -15,39 +15,10 @@ import time
 import re
 from boututils.run_wrapper import shell
 
-# Check requirements
-
-requirements_path = "../requirements"
-
-# Get list of files in subdirectory, excluding common temporaries
-requirements = [ x for x in os.listdir(requirements_path)
-                 if not (("#" in x) or ("~" in x) or (x[0] == ".")) ]
-
-print("======= Requirement checks ========")
-
-requirement_dict = {}
-for requirement in requirements:
-    status,out = shell(os.path.join(requirements_path, requirement), pipe=True)
-    requirement_dict[requirement] = (status == 0)
-    print("{0} => {1}".format(requirement, (status == 0)))
-
-# Now have dictionary of requirements, true/false.
-
-def check_requirements(script):
-    """Tests if the requirements of the given script (file name) are met.
-    Returns the result (True/False) and the requirements expression.
-    """
-
-    with open(script, "r") as filein:
-        contents = filein.read()
-        
-        # Find a string starting with '#requires"        
-        match = re.search("\#requires(.*)", contents)
-        if match:
-            expr = match.groups()[0] # Expression to evaluate
-            return eval(expr, requirement_dict), expr # requirements as global variables
-        
-    return True, "" # Default, if no requirements specified
+sys.path.append('..')
+from requirements import Requirements
+requirements = Requirements();
+requirements.add('make',False)
 
 
 ##################################################################
@@ -81,7 +52,7 @@ for t in tests:
     os.chdir(t)
 
     # Check requirements
-    req_met, req_expr = check_requirements("./runtest")
+    req_met, req_expr = requirements.check("./runtest")
     if not req_met:
         print("S - {0} - {1} => False".format(t, req_expr))
         sys.stdout.flush()
