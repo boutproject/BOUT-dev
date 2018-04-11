@@ -1,5 +1,7 @@
 #!/bin/bash
 
+#requires not make
+
 BOUT_TOP=../../..
 error=
 

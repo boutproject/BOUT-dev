@@ -14,6 +14,14 @@ import sys
 import time
 from boututils.run_wrapper import shell
 
+sys.path.append('..')
+from requirements import Requirements
+requirements = Requirements();
+requirements.add('make',True)
+
+
+##################################################################
+
 # Get list of directories containing test cases
 tests=[]
 with open('test_suite_list') as testfile:
@@ -21,12 +29,17 @@ with open('test_suite_list') as testfile:
         test=test.strip()
         if test.startswith("#"):
             pass
-        elif test.startswith("!"):
-            pass
         else:
             tests.append(test)
 
 ##################################################################
+
+if "--get-list" in sys.argv:
+    for test in tests:
+        req_met, req_expr = requirements.check(test+"/runtest")
+        if req_met:
+            print(test)
+    exit(0)
 
 savepath = os.getcwd() # Save current working directory
 npassed = 0
@@ -42,6 +55,16 @@ print("Making {0} tests".format(total))
 for t in tests:
     os.chdir(t)
 
+    # Check requirements
+    req_met, req_expr = requirements.check("./runtest")
+    if not req_met:
+        print("S - {0} - {1} => False".format(t, req_expr))
+        sys.stdout.flush()
+        os.chdir(savepath)
+        continue
+
+    start_time_ = time.time()
+    # Run test, piping stdout so it is not sent to console
     status,out = shell("make", pipe=True)
 
     if status != 0:
@@ -53,6 +76,7 @@ for t in tests:
         print(".", end='') # No newline
         npassed = npassed + 1
 
+    print(" %7.3f s - %s"%(time.time() - start_time_,t))
     sys.stdout.flush() # Make sure '.' or 'F' is flushed
     os.chdir(savepath)
 
