@@ -17,21 +17,18 @@ from boututils.run_wrapper import shell
 
 # Check requirements
 
-requirements_path = "requirements"
+requirements_path = "../requirements"
 
 # Get list of files in subdirectory, excluding common temporaries
 requirements = [ x for x in os.listdir(requirements_path)
                  if not (("#" in x) or ("~" in x) or (x[0] == ".")) ]
-
 
 print("======= Requirement checks ========")
 
 requirement_dict = {}
 for requirement in requirements:
     status,out = shell(os.path.join(requirements_path, requirement), pipe=True)
-    
     requirement_dict[requirement] = (status == 0)
-    
     print("{0} => {1}".format(requirement, (status == 0)))
 
 # Now have dictionary of requirements, true/false.
@@ -44,8 +41,7 @@ def check_requirements(script):
     with open(script, "r") as filein:
         contents = filein.read()
         
-        # Find a string starting with '#requires"
-        
+        # Find a string starting with '#requires"        
         match = re.search("\#requires(.*)", contents)
         if match:
             expr = match.groups()[0] # Expression to evaluate
