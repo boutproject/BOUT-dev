@@ -245,12 +245,13 @@ class BoutOutputs(object):
 
     **kwargs - keyword arguments that are passed through to collect()
     """
-    def __init__(self, path=".", prefix="BOUT.dmp", caching=False, **kwargs):
+    def __init__(self, path=".", prefix="BOUT.dmp", suffix="nc", caching=False, **kwargs):
         """
         Initialise BoutOutputs object
         """
         self._path = path
         self._prefix = prefix
+        self._suffix = suffix
         self._caching = caching
         self._kwargs = kwargs
         
@@ -258,8 +259,8 @@ class BoutOutputs(object):
         self.label = path
 
         # Check that the path contains some data
-        file_list = glob.glob(os.path.join(path, prefix+"*.nc"))
-        if len(file_list) == 0:
+        self._file_list = glob.glob(os.path.join(path, self._prefix+"*"+self._suffix))
+        if len(self._file_list) == 0:
             raise ValueError("ERROR: No data files found")
         
         # Available variables
@@ -281,7 +282,7 @@ class BoutOutputs(object):
                 self._datacachesize = 0
                 self._datacachemaxsize = self._caching*1.e9
         
-        with DataFile(file_list[0]) as f:
+        with DataFile(self._file_list[0]) as f:
             # Get variable names
             self.varNames = f.keys()
             for name in f.keys():
@@ -301,7 +302,117 @@ class BoutOutputs(object):
         Return a list of names of time-evolving variables
         """
         return self.evolvingVariableNames
+
+    def redistribute(self, npes, nxpe=None, mxg=2, myg=2, include_restarts=True):
+        """
+        Create a new set of dump files for npes processors.
+        Useful for restarting simulations using more or fewer processors.
+
+        If nxpe==None, then an 'optimal' number will be selected automatically
+
+        If include_restarts==True, then restart.redistribute will be used to redistribute the restart files also.
+
+        Existing data and restart files are kept in the directory "redistribution_backups"
+        redistribute() will fail if this directory already exists, to avoid overwriting anything
+        """
+        from boutdata.processor_rearrange import get_processor_layout, create_processor_layout
+        from os import rename, path, mkdir
+
+        # use get_processor_layout to get nx, ny
+        old_nxpe, old_nype, old_npes, old_mxsub, old_mysub, nx, ny, mz, mxg, myg = get_processor_layout(DataFile(self._file_list[0]), has_t_dimension=True, mxg=mxg, myg=myg)
+
+        # calculate new processor layout
+        nxpe, nype, mxsub, mysub = create_processor_layout(npes, nx=nx, ny=ny, nxpe=nxpe, mxg=mxg, myg=myg)
         
+        # move existing files to backup directory
+        # don't overwrite backup: os.mkdir will raise exception if directory already exists
+        backupdir = path.join(self._path,"redistribution_backups")
+        mkdir(backupdir)
+        for f in self._file_list:
+            rename(path.join(self._path,f), path.join(backupdir,f))
+
+        # create new output files
+        outfile_list = []
+        this_prefix = self._prefix
+        if not this_prefix[-1] == '.':
+            # ensure prefix ends with a '.'
+            this_prefix = this_prefix + "."
+        for i in range(npes):
+            outpath = os.path.join(self._path, this_prefix+str(i)+"."+self._suffix)
+            if self._suffix.split(".")[-1] == "nc":
+                # set format option to DataFile explicitly to avoid creating netCDF3 files, which can only contain up to 2GB of data
+                outfile_list.append(DataFile(outpath, write=True, create=True, format='NETCDF4'))
+            else:
+                outfile_list.append(DataFile(outpath, write=True, create=True))
+
+        # read and write the data
+        # move t_array to the end of the variable list so that it gets processed last, and can find the correct dimension
+        thisvarlist = self.varNames
+        t_array_index = thisvarlist.index("t_array")
+        del(thisvarlist[t_array_index])
+        thisvarlist.append("t_array")
+        for v in thisvarlist:
+            print("processing "+v)
+            data = collect(v, path=backupdir, prefix=self._prefix, xguards=True, yguards=True, info=False)
+            ndims = len(data.shape)
+
+            # write data
+            for i in range(npes):
+                ix = i%nxpe
+                iy = int(i/nxpe)
+                outfile = outfile_list[i]
+                if v == "NPES":
+                    outfile.write(v,npes)
+                elif v == "NXPE":
+                    outfile.write(v,nxpe)
+                elif v == "NYPE":
+                    outfile.write(v,nype)
+                elif v == "MXSUB":
+                    outfile.write(v,mxsub)
+                elif v == "MYSUB":
+                    outfile.write(v,mysub)
+                elif ndims == 0:
+                    # scalar
+                    outfile.write(v,data)
+                elif ndims == 1:
+                    # time evolving scalar
+                    outfile.write(v,data)
+                elif ndims == 2:
+                    # Field2D
+                    if data.shape != (nx + 2*mxg, ny + 2*myg):
+                        # FieldPerp?
+                        # check is not perfect, fails if ny=nz
+                        raise ValueError("Error: Found FieldPerp '"+v+"'. This case is not currently handled by BoutOutputs.redistribute().")
+                    outfile.write(v,data[ix*mxsub:(ix+1)*mxsub+2*mxg, iy*mysub:(iy+1)*mysub+2*myg])
+                elif ndims == 3:
+                    # Field3D
+                    if data.shape[:2] != (nx + 2*mxg, ny + 2*myg):
+                        # evolving Field2D, but this case is not handled
+                        # check is not perfect, fails if ny=nx and nx=nt
+                        raise ValueError("Error: Found evolving Field2D '"+v+"'. This case is not currently handled by BoutOutputs.redistribute().")
+                    outfile.write(v,data[ix*mxsub:(ix+1)*mxsub+2*mxg, iy*mysub:(iy+1)*mysub+2*myg, :])
+                elif ndims == 4:
+                    outfile.write(v,data[:, ix*mxsub:(ix+1)*mxsub+2*mxg, iy*mysub:(iy+1)*mysub+2*myg, :])
+                else:
+                    print("ERROR: variable found with unexpected number of dimensions,",f.ndims(v))
+
+        for outfile in outfile_list:
+            outfile.close()
+
+        if include_restarts:
+            print("processing restarts")
+            from boutdata import restart
+            from glob import glob
+            restart_prefix = "BOUT.restart"
+            restarts_list = glob(path.join(self._path,restart_prefix+"*"))
+
+            # Move existing restart files to backup directory
+            for f in restarts_list:
+                rename(f, path.join(backupdir, path.basename(f)))
+
+            # Redistribute restarts
+            restart.redistribute(npes, path=backupdir, nxpe=nxpe, output=self._path, mxg=mxg, myg=myg)
+
     def __len__(self):
         return len(self.varNames)
             

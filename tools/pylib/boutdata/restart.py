@@ -607,6 +607,11 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
     True on success
     """
 
+    try:
+        from boutdata.processor_rearrange import get_processor_layout, create_processor_layout
+    except ImportError:
+        raise ImportError("ERROR: restart.redistribute needs boutdata.processor_rearrange")
+
     if npes <= 0:
         print("ERROR: Negative or zero number of processors")
         return False
@@ -631,9 +636,8 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
         print("ERROR: No data found")
         return False
 
-    old_nxpe = f.read('NXPE')
-    old_nype = f.read("NYPE")
-    old_npes = old_nxpe * old_nype
+    old_nxpe, old_nype, old_npes, old_mxsub, old_mysub, nx, ny, mz, mxg, myg = get_processor_layout(f, has_t_dimension=False)
+    print("Grid sizes: ", nx, ny, mz)
 
     if nfiles != old_npes:
         print("WARNING: Number of restart files inconsistent with NPES")
@@ -648,61 +652,10 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
     if outformat is None:
         outformat = informat
 
-    old_mxsub = 0
-    old_mysub = 0
-    mz = 0
-
-    for v in var_list:
-        if f.ndims(v) == 3:
-            s = f.size(v)
-            old_mxsub = s[0] - 2*mxg
-            if old_mxsub < 0:
-                if s[0] == 1:
-                    old_mxsub = 1
-                    mxg = 0
-                elif s[0] == 3:
-                    old_mxsub = 1
-                    mxg = 1
-                else:
-                    print("Number of x points is wrong?")
-                    return False
-
-            old_mysub = s[1] - 2*myg
-            if old_mysub < 0:
-                if s[1] == 1:
-                    old_mysub = 1
-                    myg = 0
-                elif s[1] == 3:
-                    old_mysub = 1
-                    myg = 1
-                else:
-                    print("Number of y points is wrong?")
-                    return False
-
-            mz = s[2]
-            break
-
-    # Calculate total size of the grid
-    nx = old_mxsub * old_nxpe
-    ny = old_mysub * old_nype
-    print("Grid sizes: ", nx, ny, mz)
-
-    if nxpe is None: # Copy algorithm from BoutMesh for selecting nxpe
-        ideal = sqrt(float(nx) * float(npes) / float(ny)) # Results in square domain
-
-        for i in range(1,npes+1):
-            if npes%i == 0 and nx%i == 0 and int(nx/i) >= mxg and ny%(npes/i) == 0:
-                # Found an acceptable value
-                # Warning: does not check branch cuts!
-
-                if nxpe is None or abs(ideal - i) < abs(ideal - nxpe):
-                    nxpe = i # Keep value nearest to the ideal
-
-        if nxpe is None:
-            print("ERROR: could not find a valid value for nxpe")
-            return False
-
-    nype = int(npes/nxpe)
+    try:
+        nxpe, nype, mxsub, mysub = create_processor_layout(npes, nx=nx, ny=ny, nxpe=nxpe, mxg=mxg, myg=myg)
+    except ValueError as e:
+        print("Could not find valid processor split. " + e.what())
 
     outfile_list = []
     for i in range(npes):
@@ -713,10 +666,6 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
         inpath = os.path.join(path, "BOUT.restart."+str(i)+"."+outformat)
         infile_list.append(DataFile(inpath))
 
-    old_mxsub = int(nx/old_nxpe)
-    old_mysub = int(ny/old_nype)
-    mxsub = int(nx/nxpe)
-    mysub = int(ny/nype)
     for v in var_list:
           ndims = f.ndims(v)
 
@@ -773,6 +722,8 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
                   outfile.write(v,npes)
               elif v == "NXPE":
                   outfile.write(v,nxpe)
+              elif v == "NYPE":
+                  outfile.write(v,nype)
               elif ndims == 0:
                   # scalar
                   outfile.write(v,data)
