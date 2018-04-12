@@ -7,8 +7,109 @@ Advanced installation options
 =============================
 
 This section describes some common issues encountered when configuring
-and compiling BOUT++, and how to configure optional libraries like
+and compiling BOUT++, how to manually install dependencies if they are
+not available, and how to configure optional libraries like
 SUNDIALS and PETSc.
+
+.. _sec-machine-specific:
+
+Machine-specific installation
+-----------------------------
+
+These are some configurations which have been found to work on
+particular machines.
+
+Archer
+~~~~~~
+
+As of 30th April 2014, the following configuration should work
+
+.. code-block:: bash
+
+    $ module swap PrgEnv-cray PrgEnv-gnu/5.1.29
+    $ module load fftw
+    $ module load netcdf/4.1.3
+
+KNL @ Archer
+~~~~~~~~~~~~
+
+To use the KNL system, configure BOUT++ as follows:
+
+.. code-block:: bash
+
+    ./configure MPICXX=CC --host=knl --with-netcdf --with-pnetcdf=no --with-hypre=no CXXFLAGS="-xMIC-AVX512 -D_GLIBCXX_USE_CXX11_ABI=0"
+
+Atlas
+~~~~~
+
+.. code-block:: bash
+
+   ./configure --with-netcdf=/usr/local/tools/hdf5-gnu-serial-1.8.1/lib --with-fftw=/usr/local --with-pdb=/usr/gapps/pact/new/lnx-2.5-ib/gnu
+
+
+Cab
+~~~
+
+.. code-block:: bash
+
+   ./configure --with-netcdf=/usr/local/tools/hdf5-gnu-serial-1.8.1/lib --with-fftw=/usr/local/tools/fftw3-3.2 --with-pdb=/usr/gapps/pact/new/lnx-2.5-ib/gnu
+
+
+
+Edison
+~~~~~~
+
+.. code-block:: bash
+
+   module swap PrgEnv-intel PrgEnv-gnu
+   module load fftw
+   ./configure MPICC=cc MPICXX=CC --with-netcdf=/global/u2/c/chma/PUBLIC/netcdf_edison/netcdf --with-fftw=/opt/fftw/3.3.0.1/x86_64
+
+
+Hoffman2
+~~~~~~~~
+
+.. code-block:: bash
+
+   ./configure --with-netcdf=/u/local/apps/netcdf/current --with-fftw=/u/local/apps/fftw3/current --with-cvode=/u/local/apps/sundials/2.4.0 --with-lapack=/u/local/apps/lapack/current
+
+Hopper
+~~~~~~
+
+.. code-block:: bash
+
+    module swap PrgEnv-pgi PrgEnv-gnu
+    module load netcdf
+    module swap netcdf netcdf/4.1.3
+    module swap gcc gcc/4.6.3
+    ./configure MPICC=cc MPICXX=CC --with-fftw=/opt/fftw/3.2.2.1 --with-pdb=/global/homes/u/umansky/PUBLIC/PACT_HOPP2/pact
+
+Hyperion
+~~~~~~~~
+
+With the bash shell use
+
+.. code-block:: bash
+
+   export PETSC_DIR=~farley9/projects/petsc/petsc-3.2-p1
+   export PETSC_ARCH=arch-c
+   ./configure --with-netcdf=/usr/local/tools/netcdf-gnu-4.1 --with-fftw=/usr/local MPICXX=mpiCC EXTRA_LIBS=-lcurl --with-petsc --with-cvode=~farley9/local --with-ida=~farley9/local
+
+With the tcsh shell use
+
+.. code-block:: tcsh
+
+   setenv PETSC_DIR ~farley9/projects/petsc/petsc-3.2-p1
+   setenv PETSC_ARCH arch-c
+   ./configure --with-netcdf=/usr/local/tools/netcdf-gnu-4.1 --with-fftw=/usr/local MPICXX=mpiCC EXTRA_LIBS=-lcurl --with-petsc --with-cvode=~farley9/local --with-ida=~farley9/local
+
+Ubgl
+~~~~
+
+.. code-block:: bash
+
+   ./configure --with-netcdf CXXFLAGS=-DMPICH_IGNORE_CXX_SEEK CFLAGS=-DMPICH_IGNORE_CXX_SEEK --with-pdb=/usr/gapps/pact/new_s/lnx-2.5-ib --with-netcdf=/usr/local/tools/netcdf/netcdf-4.1_c++
+
 
 File formats
 ------------
@@ -37,6 +138,52 @@ When NetCDF is installed, a script ``nc-config`` should be put into
 somewhere on the path. If this is found then configure should have all
 the settings it needs. If this isn’t found then configure will search
 for the NetCDF include and library files.
+
+.. _sec-netcdf-from-source:
+
+Installing NetCDF from source
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The latest versions of NetCDF have separated out the C++ API from the
+main C library. As a result, you will need to download and install both.
+Download the latest versions of the NetCDF-C and NetCDF-4 C++ libraries
+from https://www.unidata.ucar.edu/downloads/netcdf. As of
+January 2017, these are versions 4.4.1.1 and 4.3.0 respectively.
+
+Untar the file and ’cd’ into the resulting directory::
+
+    $ tar -xzvf netcdf-4.4.1.1.tar.gz
+    $ cd netcdf-4.4.1.1
+
+Then run ``configure``, ``make`` and ``make install``::
+
+    $ ./configure --prefix=$HOME/local
+    $ make
+    $ make install
+
+Sometimes configure can fail, in which case try disabling Fortran::
+
+    $ ./configure --prefix=$HOME/local --disable-fortran
+    $ make
+    $ make install
+
+Similarly for the C++ API::
+
+    $ tar -xzvf netcdf-cxx4-4.3.0.tar.gz
+    $ cd netcdf-cxx4-4.3.0
+    $ ./configure --prefix=$HOME/local
+    $ make
+    $ make install
+
+You may need to set a couple of environment variables as well::
+
+    $ export PATH=$HOME/local/bin:$PATH
+    $ export LD_LIBRARY_PATH=$HOME/local/lib:$LD_LIBRARY_PATH
+
+You should check where NetCDF actually installed its libraries. On some
+systems this will be ``$HOME/local/lib``, but on others it may be, e.g.
+``$HOME/local/lib64``. Check which it is, and set ``$LD_LIBRARY_PATH``
+appropriately.
 
 OpenMP
 ------
@@ -254,6 +401,198 @@ NOTES:
    “MPICXX=mpiCC” to configure. Also need to specify this to NetCDF
    library by passing “CXX=mpiCC” to NetCDF configure.
 
+.. _sec-mpi-from-source:
+
+Installing MPICH from source
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In your home directory, create
+two subdirectories: One called “install” where we’ll put the source
+code, and one called “local” where we’ll install the MPI compiler::
+
+    $ cd
+    $ mkdir install
+    $ mkdir local
+
+Download the latest stable version of MPICH from https://www.mpich.org/ and put the
+file in the “install” subdirectory created above. At the time of writing
+(January 2018), the file was called ``mpich-3.2.1.tar.gz``. Untar the file::
+
+    $ tar -xzvf mpich-3.2.1.tar.gz
+
+which will create a directory containing the source code. ’cd’ into this
+directory and run::
+
+    $ ./configure --prefix=$HOME/local
+    $ make
+    $ make install
+
+Each of which might take a while. This is the standard way of installing
+software from source, and will also be used for installing libraries
+later. The ``–prefix=`` option specifies where the software should be
+installed. Since we don’t have permission to write in the system
+directories (e.g. ``/usr/bin``), we just use a subdirectory of our home
+directory. The ``configure`` command configures the install, finding the
+libraries and commands it needs. ``make`` compiles everything using the
+options found by ``configure``. The final ``make install`` step copies
+the compiled code into the correct places under ``$HOME/local``.
+
+To be able to use the MPI compiler, you need to modify the ``PATH``
+environment variable. To do this, run::
+
+    $ export PATH=$PATH:$HOME/local/bin
+
+and add this to the end of your startup file ``$HOME/.bashrc``. If
+you’re using CSH rather than BASH, the command is::
+
+    % setenv PATH ${PATH}:${HOME}/local/bin
+
+and the startup file is ``$HOME/.cshrc``. You should now be able to run
+``mpicc`` and so have a working MPI compiler.
+
+.. _sec-fftw-from-source:
+
+Installing FFTW from source
+---------------------------
+
+If you haven’t already, create directories “install” and “local”
+in your home directory::
+
+    $ cd
+    $ mkdir install
+    $ mkdir local
+
+Download the latest stable version from
+http://www.fftw.org/download.html into the “install” directory. At the
+time of writing, this was called ``fftw-3.3.2.tar.gz``. Untar this file,
+and ’cd’ into the resulting directory. As with the MPI compiler,
+configure and install the FFTW library into ``$HOME/local`` by running::
+
+    $ ./configure --prefix=$HOME/local
+    $ make
+    $ make install
+
+    
+Compiling and running under AIX
+-------------------------------
+
+Most development and running of BOUT++ is done under Linux, with the
+occasional FreeBSD and OSX. The configuration scripts are therefore
+heavily tested on these architectures. IBM’s POWER architecture however
+runs AIX, which has some crucial differences which make compiling a
+pain.
+
+-  Under Linux/BSD, it’s usual for a Fortran routine ``foo`` to appear
+   under C as ``foo_``, whilst under AIX the name is unchanged
+
+-  MPI compiler scripts are usually given the names ``mpicc`` and either
+   ``mpiCC`` or ``mpicxx``. AIX uses ``mpcc`` and ``mpCC``.
+
+-  Like BSD, the ``make`` command isn’t compatible with GNU make, so you
+   have to run ``gmake`` to compile everything.
+
+-  The POWER architecture is big-endian, different to the little endian
+   Intel and AMD chips. This can cause problems with binary file
+   formats.
+
+SUNDIALS under AIX
+~~~~~~~~~~~~~~~~~~
+
+To compile SUNDIALS, use:
+
+.. code-block:: bash
+
+    export CC=cc
+    export CXX=xlC
+    export F77=xlf
+    export OBJECT_MODE=64
+    ./configure --prefix=$HOME/local/ --with-mpicc=mpcc --with-mpif77=mpxlf CFLAGS=-maix64
+
+You may get an error message like
+
+.. code-block:: bash
+
+    make: Not a recognized flag: w
+
+This is because the AIX ``make`` is being used, rather than ``gmake``.
+The easiest way to fix this is to make a link to ``gmake`` in your local
+bin directory
+
+.. code-block:: bash
+
+    ln -s /usr/bin/gmake $HOME/local/bin/make
+
+Running ``which make`` should now point to this ``local/bin/make``, and
+if not then you need to make sure that your bin directory appears first
+in the ``PATH``
+
+.. code-block:: bash
+
+    export PATH=$HOME/local/bin:$PATH
+
+If you see an error like this
+
+.. code-block:: bash
+
+    ar: 0707-126 ../../src/sundials/sundials_math.o is not valid with the current object file mode.
+            Use the -X option to specify the desired object mode.
+
+
+then you need to set the environment variable ``OBJECT_MODE``
+  
+.. code-block:: bash
+
+    export OBJECT_MODE=64
+
+Configuring BOUT++, you may get the error
+
+.. code-block:: bash
+
+    configure: error: C compiler cannot create executables
+
+In that case, you can try using:
+
+.. code-block:: bash
+
+    ./configure CFLAGS="-maix64"
+
+When compiling, you may see warnings:
+
+.. code-block:: bash
+
+    xlC_r: 1501-216 (W) command option -64 is not recognized - passed to ld
+
+At this point, the main BOUT++ library should compile, and you can try
+compiling one of the examples.
+
+.. code-block:: bash
+
+    ld: 0711-317 ERROR: Undefined symbol: .NcError::NcError(NcError::Behavior)
+    ld: 0711-317 ERROR: Undefined symbol: .NcFile::is_valid() const
+    ld: 0711-317 ERROR: Undefined symbol: .NcError::~NcError()
+    ld: 0711-317 ERROR: Undefined symbol: .NcFile::get_dim(const char*) const
+
+This is probably because the NetCDF libraries are 32-bit, whilst BOUT++
+has been compiled as 64-bit. You can try compiling BOUT++ as 32-bit
+
+.. code-block:: bash
+
+    export OBJECT_MODE=32
+    ./configure CFLAGS="-maix32"
+    gmake
+
+If you still get undefined symbols, then go back to 64-bit, and edit
+make.config, replacing ``-lnetcdf_c++`` with -lnetcdf64\_c++, and
+``-lnetcdf`` with -lnetcdf64. This can be done by running
+
+.. code-block:: bash
+
+     sed 's/netcdf/netcdf64/g' make.config > make.config.new
+     mv make.config.new make.config
+
+
+    
+   
 Issues
 ------
 

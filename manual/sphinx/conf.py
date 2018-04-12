@@ -195,7 +195,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'BOUT.tex', 'BOUT++ Documentation',
-     'B. Dudson', 'manual'),
+     'The BOUT++ team', 'manual'),
 ]
 
 

@@ -31,7 +31,6 @@ The documentation is divided into the following sections:
    user_docs/introduction
    user_docs/installing
    user_docs/advanced_install
-   user_docs/machine_install
    user_docs/running_bout
    
 .. toctree::
@@ -44,7 +43,6 @@ The documentation is divided into the following sections:
    user_docs/makefiles
    user_docs/variable_init
    user_docs/boundary_options
-   user_docs/updating_to_4
    user_docs/testing
    
 .. toctree::
@@ -71,7 +69,6 @@ The documentation is divided into the following sections:
    :caption: BOUT++ interfaces
    :name: bout-interfaces
    
-   user_docs/overview
    user_docs/time_integration
    user_docs/iterating
    user_docs/parallel-transforms
