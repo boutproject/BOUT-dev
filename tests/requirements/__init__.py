@@ -55,7 +55,16 @@ class Requirements(object):
             match = re.findall("^\s*\#[Rr]equires:?(.*)", contents,re.MULTILINE)
             # Iterate over all expressions to evaluate
             for expr in match:
+                try:
                     ret=eval(expr, self._requirements)
+                except:
+                    print("Parsing '%s' from file %s failed."%(expr,script))
+                    print("A list of known variable follows:")
+                    for key,value in self._requirements.items():
+                        if not "_" in key:
+                            print("  %s => %s"%(key,value))
+                    raise
+                else:
                     # Only return if this one causes the test to skip
                     if ret == False:
                         return ret, expr

@@ -621,7 +621,8 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='HAS_OPENMP
+ac_subst_vars='HAS_SLOW_TESTS
+HAS_OPENMP
 PETSC_HAS_SUNDIALS
 PETSC_RELEASE
 PETSC_VERSION
@@ -779,6 +780,7 @@ enable_backtrace
 enable_shared
 enable_openmp
 enable_pvode_openmp
+enable_slow_tests
 with_gcov
 enable_code_coverage
 with_hdf5
@@ -1422,6 +1424,8 @@ Optional Features:
   --enable-shared         Enable building bout++ into an shared object
   --enable-openmp         Enable building with OpenMP support
   --enable-pvode-openmp   Enable building PVODE with OpenMP support
+  --enable-slow-tests=no  Enable some extra (slow) tests to run with make
+                          check
   --disable-openmp        do not use OpenMP
   --enable-code-coverage  Whether to enable code coverage support
 
@@ -2631,6 +2635,13 @@ if test "${enable_pvode_openmp+set}" = set; then :
   enableval=$enable_pvode_openmp;
 else
   enable_pvode_openmp=no
+fi
+
+# Check whether --enable-slow-tests was given.
+if test "${enable_slow_tests+set}" = set; then :
+  enableval=$enable_slow_tests;
+else
+  enable_slow_tests=no
 fi
 
 
@@ -15210,6 +15221,12 @@ fi
 echo ""
 
 #############################################################
+# Are slow tests enabled?
+#############################################################
+
+HAS_SLOW_TESTS=$enable_slow_tests
+
+#############################################################
 # Download + Build PVODE '98
 #############################################################
 
@@ -16610,6 +16627,7 @@ CONFIG_LDFLAGS=`$MAKE ldflags -f output.make`
 # If make install is run then that replaces these paths
 BOUT_LIB_PATH=$PWD/lib
 BOUT_INCLUDE_PATH=$PWD/include
+
 
 
 

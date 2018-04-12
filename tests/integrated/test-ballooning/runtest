@@ -6,6 +6,8 @@ from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit
 
+#requires slow_tests
+
 MPIRUN=getmpirun()
 
 print("Making test")

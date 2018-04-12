@@ -39,6 +39,7 @@ has_slepc="@HAS_SLEPC@"
 has_mumps="@HAS_MUMPS@"
 has_arkode="@HAS_ARKODE@"
 has_openmp="@HAS_OPENMP@"
+has_slow_tests="@HAS_SLOW_TESTS@"
 
 petsc_version="@PETSC_VERSION@"
 petsc_release="@PETSC_RELEASE@"

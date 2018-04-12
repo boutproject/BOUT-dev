@@ -4,6 +4,8 @@
 # Run the test, compare results
 #
 
+#requires: slow_tests
+
 # Variables to compare
 from __future__ import print_function
 try:

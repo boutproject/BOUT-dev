@@ -30,10 +30,14 @@ check-unit-tests: libfast
 	@export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH}; $(MAKE) --no-print-directory -C tests/unit check
 
 check-mms-tests: libfast
-	@cd tests/MMS; export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH} ; ./test_suite
+	@cd tests/MMS; export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH} ; \
+		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} ./test_suite_make
+	@cd tests/MMS; export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH} ; \
+		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} ./test_suite
 
 check-integrated-tests: libfast
-	@cd tests/integrated; LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH}./test_suite_make
+	@cd tests/integrated; export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH} ; \
+		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} ./test_suite_make
 	@cd tests/integrated; export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH} ; \
 		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} ./test_suite
 

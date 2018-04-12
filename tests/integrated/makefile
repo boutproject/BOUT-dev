@@ -5,9 +5,9 @@ BOUT_TOP = ../..
 
 LIST = test_suite_list
 
-BUILD = $(shell ./test_suite_make --get-list)
+BUILD = $(shell PYTHONPATH=../../tools/pylib:$$PYTHONPATH ./test_suite_make --get-list)
 
-CHECKING = $(shell ./test_suite --get-list)
+CHECKING = $(shell PYTHONPATH=../../tools/pylib:$$PYTHONPATH ./test_suite --get-list)
 
 
 include $(BOUT_TOP)/make.config

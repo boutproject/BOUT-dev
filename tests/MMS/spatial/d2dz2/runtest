@@ -9,6 +9,8 @@ from boutdata.collect import collect
 
 from numpy import sqrt, max, abs, mean, array, log
 
+#requires: slow_tests
+
 MPIRUN = getmpirun()
 
 print("Making MMS d2dz2 test")

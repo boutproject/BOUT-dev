@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+#requires: slow_tests
+
 from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
 from boutdata.collect import collect
 from sys import stdout, exit

@@ -12,6 +12,7 @@ from __future__ import print_function
 import os
 import sys
 import time
+import glob
 from boututils.run_wrapper import shell
 
 sys.path.append('..')
@@ -23,14 +24,16 @@ requirements.add('make',False)
 ##################################################################
 
 # Get list of directories containing test cases
-tests=[]
-with open('test_suite_list') as testfile:
-    for test in testfile:
-        test=test.strip()
-        if test.startswith("#"):
-            pass
-        else:
-            tests.append(test)
+try:
+    # Requires python >= 3.5
+    tests=glob.iglob('**/runtest', recursive=True)
+except:
+    # Fall back - check only a few folders ...
+    tests=glob.glob('*/runtest')
+    tests+=glob.glob('*/*/runtest')
+    tests+=glob.glob('*/*/*/runtest')
+
+tests=[x.rsplit('/',1)[0] for x in tests]
 
 ##################################################################
 

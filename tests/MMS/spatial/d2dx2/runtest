@@ -11,6 +11,8 @@ from numpy import sqrt, max, abs, mean, array, log
 
 import matplotlib.pyplot as plt
 
+#requires: slow_tests
+
 MPIRUN = getmpirun()
 
 print("Making MMS d2dx2 test")

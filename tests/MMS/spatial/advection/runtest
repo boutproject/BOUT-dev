@@ -5,6 +5,8 @@
 # Tests a range of different schemes
 #
 
+#requires: slow_tests
+
 from __future__ import division
 from __future__ import print_function
 from builtins import str

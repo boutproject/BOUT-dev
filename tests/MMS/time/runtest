@@ -12,6 +12,8 @@ from builtins import str
 from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
 from boutdata.collect import collect
 
+#requires: slow_tests
+
 verbose=False
 
 from numpy import sqrt, max, abs, mean, array, log, pi
@@ -38,7 +40,7 @@ options = [
 # Is there a better way to check a certain solver should be enabled?
 s,out=shell_safe("grep DBOUT_HAS_PETSC  ../../../make.config")
 if s == 0:
-    #requires petsc:
+    # this requires petsc:
     options.append(("solver:type=imexbdf2 -snes_mf", "IMEX-BDF2", "-+",2))# What's the expected order?
     # should petsc solver also be added?
     #options.append(("solver:type=petsc",    "petsc",     "-+",2))# What's the expected order?
