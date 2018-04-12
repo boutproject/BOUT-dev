@@ -92,9 +92,9 @@ for dir,sizes in inputs:
     order = log(error_2[-1] / error_2[-2]) / log(dx[-1] / dx[-2])
     print("Convergence order = %f" % (order))
 
-    if order < 1.5:
-        print("=> FAILED\n")
+    if order < 1.8 or order > 2.2:
         success = False
+        print("=> FAILED\n")
     
     # plot errors
 

@@ -34,7 +34,8 @@ options = [
     ]
 
 # List of NX values to use
-nxlist = [16, 32, 64, 128, 256, 512, 1024]
+#[16, 32, 64, 128, 256, 512, 1024]
+nxlist = [64, 128]
 
 nproc = 8
 
@@ -97,15 +98,15 @@ for opts,label,sym in options:
     print("Convergence order = %f" % (order))
     
     if (label == "1st order upwind"):
-        if order < 0.75: # Should be first order accurate
+        if order < 0.75 or order > 1.25: # Should be first order accurate
+            success = False
             print("............ FAIL")
-            success = False 
         else:
             print("............ PASS")
     else:
-        if order < 1.75: # Should be second order accurate
+        if order < 1.75 or order > 2.25: # Should be second order accurate
+            success = False
             print("............ FAIL")
-            success = False 
         else:
             print("............ PASS")
     

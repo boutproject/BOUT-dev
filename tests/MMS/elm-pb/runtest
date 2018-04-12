@@ -148,9 +148,9 @@ for var,mark,label in zip(varlist, markers, labels):
     order = log(error_2[var][-1] / error_2[var][-2]) / log(dx[-1] / dx[-2])
     stdout.write("%s Convergence order = %f" % (var, order))
     
-    if order < 1.5: # Should be second order accurate
-        print("............ FAIL")
+    if order < 1.8 or order > 2.2: # Should be second order accurate
         success = False 
+        print("............ FAIL")
     else:
         print("............ PASS")
 

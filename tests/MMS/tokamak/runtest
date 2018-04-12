@@ -35,7 +35,7 @@ print("Making MMS tokamak geometry test")
 shell_safe("make > make.log")
 
 # List of NX values to use
-nxlist = [4, 8, 16, 32, 64]#, 128]#, 256]
+nxlist = [4, 8, 16, 32]#, 64]#, 128]#, 256]
 nprocs = [2, 4,  4,  8,  8,  8, 8] 
 
 success = True
@@ -109,11 +109,11 @@ for var,mark,label in zip(varlist, markers, labels):
     order = log(error_2[var][-1] / error_2[var][-2]) / log(dx[-1] / dx[-2])
     stdout.write("%s Convergence order = %f" % (var, order))
     
-    if order < 1.5: # Should be second order accurate
-        print("............ FAIL")
-        success = False 
-    else:
+    if 1.8 < order < 2.2: # Should be second order accurate
         print("............ PASS")
+    else:
+        success = False
+        print("............ FAIL")
     
 # plot errors
 try:
