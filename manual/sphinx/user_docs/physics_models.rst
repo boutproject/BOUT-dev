@@ -540,6 +540,7 @@ Therefore, if you take the output of one differential operator and use
 it as input to another differential operator, you must perform
 communications (and set boundary conditions) first. See
 :ref:`sec-diffops`.
+
 Error handling
 ~~~~~~~~~~~~~~
 
@@ -552,7 +553,7 @@ could be occurring.
 If you have a bug which is easily reproduceable i.e. it occurs almost
 immediately every time you run the code, then the easiest way to hunt
 down the bug is to insert lots of ``output.write`` statements (see
-:ref:`sec-printing`). Things get harder when a bug only occurs after
+:ref:`sec-logging`). Things get harder when a bug only occurs after
 a long time of running, and/or only occasionally. For this type of
 problem, a useful tool can be the message stack. An easy way to use this message
 stack is to use the ``TRACE`` macro:
@@ -978,49 +979,68 @@ calculating ``jpar`` . Since we will need to take derivatives of
       ddt(U) = -b0xGrad_dot_Grad(phi, U) + SQ(mesh->Bxy)*Grad_par(Jpar / mesh->Bxy)
       ddt(Apar) = -Grad_par(phi) / beta_hat - eta*jpar / beta_hat; }
 
-.. _sec-printing:
+.. _sec-logging:
 
-Printing messages/warnings
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+Logging output
+--------------
 
-In order to print to screen and/or a log file, the object ``output`` is
-provided. This provides two different ways to write output: the C
-(``printf``) way, and the C++ stream way. This is because each method
-can be clearer in different circumstances, and people have different
-tastes in these matters.
-
-The C-like way (which is the dominant way in BOUT++) is to use the
-``write`` function, which works just like ``printf``, and takes all the
-same codes (it uses ``sprintf`` internally).
+Logging should be used to report simulation progress, record information,
+and warn about potential problems. BOUT++ includes a simple logging facility
+which supports both C printf and C++ iostream styles. For example:
 
 ::
 
-    output.write(const char *format, ...)
+   output.write("This is an integer: %d, and this a real: %e\n", 5, 2.0)
+   
+   output << "This is an integer: " << 5 << ", and this a real: " << 2.0 << endl;
 
-For example:
+Messages sent to ``output`` on processor 0 will be printed to console and saved to
+``BOUT.log.0``. Messages from all other processors will only go to their log files,
+``BOUT.log.#`` where ``#`` is the processor number.
 
-::
+**Note**: If an error occurs on a processor other than processor 0, then the
+error message will usually only be in the log file, not printed to console. If BOUT++
+crashes but no error message is printed, try looking at the ends of all log files:
 
-    output.write("This is an integer: %d, and this a real: %e\n", 5, 2.0)
+.. code-block:: bash
 
-For those who prefer the C++ way of doing things, a completely
-equivalent way is to treat ``output`` as you would ``cout``:
+   $ tail BOUT.log.*
 
-::
 
-    output << "This is an integer: " << 5 << ", and this a real: " << 2.0 << endl;
+For finer control over which messages are printed, several outputs are available,
+listed in the table below.
 
-which will produce the same result as the ``output.write`` call
-above.
+===================   =================================================================
+Name                  Useage
+===================   =================================================================
+``output_debug``      For highly verbose output messages, that are normally not needed.
+                      Needs to be enabled with a compile switch
+``output_info``       For infos like what options are used
+``output_progress``   For infos about the current progress
+``output_warn``       For warnings
+``output_error``      For errors
+===================   =================================================================
 
-On all processors, anything sent to ``output`` will be written to a log
-file called ``BOUT.log.#`` with # replaced by the processor number. On
-processor 0, anything written to the output will be written to screen
-(stdout), in addition to the log file. Unless there is a really good
-reason not to, please use this ``output`` object when writing text
-output.
 
-More details are given in section :ref:`sec-logging`.
+Controlling logging level
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+By default all of the outputs except ``output_debug`` are saved to log and printed
+to console (processor 0 only).
+
+To reduce the volume of outputs the command line argument ``-q`` (quiet) reduces
+the output level by one, and ``-v`` (verbose) increases it by one. Running with ``-q``
+in the command line arguments suppresses the ``output_info`` messages, so that they
+will not appear in the console or log file. Running with ``-q -q`` suppresses everything
+except ``output_warn`` and ``output_error``. 
+
+To enable the ``output_debug`` messages, first configure BOUT++ with debug messages enabled
+by adding ``-DDEBUG_ENABLED`` to ``BOUT_FLAGS`` in ``make.config`` and then recompiling
+with ``make clean; make``. When running BOUT++ add a "-v" flag to see ``output_debug`` messages.
+
+
+
+
 
 
 .. _sec-3to4:

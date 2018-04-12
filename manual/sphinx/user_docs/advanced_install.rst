@@ -11,6 +11,39 @@ and compiling BOUT++, how to manually install dependencies if they are
 not available, and how to configure optional libraries like
 SUNDIALS and PETSc.
 
+Optimisation and run-time checking
+----------------------------------
+
+Configure with ``--enable-checks=3`` enables a lot of checks of
+operations performed by the field objects. This is very useful for
+debugging a code, and can be omitted once bugs have been removed.
+``--enable=checks=2`` enables less checking, especially the
+computationally rather expensive ones, while ``--enable-checks=0``
+disables most checks.
+
+To get most checking, both from BOUT++ and from the compiler
+``--enable-debug`` can be used. That enables checks of level 3, as
+well as debug flags, e.g. ``-g`` for gcc.
+
+For (sometimes) more useful error messages, there is the
+``--enable-track`` option. This keeps track of the names of variables
+and includes these in error messages.
+
+To enable optimization, configure with ``--enable-optimize=3``.
+This will try to set appropriate flags, but may not set the best ones.
+This should work well for gcc. Similar to checks, different levels can
+be specified, where 3 is high, and 0 means disabling all
+optimization. ``--enable-optimize=fast`` will set the ``-Ofast`` flag
+for gcc which enables optimization that are not standard conform, so
+proceed at own risk.
+
+Manually set compilation flags
+------------------------------
+
+It is possible to change flags for BOUT++ after running configure, by
+editing the make.config file. Note that this is not recommended, as
+e.g. pvode will not be build with these flags.
+
 .. _sec-machine-specific:
 
 Machine-specific installation

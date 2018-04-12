@@ -142,6 +142,92 @@ useful when returning objects from a routine. Usually this would involve
 copying data from one object to another, and then destroying the
 original copy. Using reference counting this copying is eliminated.
 
+Global field gather / scatter
+-----------------------------
+
+In BOUT++ each processor performs calculations on a sub-set of the mesh,
+and communicates with other processors primarily through exchange of
+guard cells (the ``mesh->commmunicate`` function). If you need to gather
+data from the entire mesh onto a single processor, then this can be done
+using either 2D or 3D ``GlobalFields`` .
+
+First include the header file
+
+::
+
+    #include <bout/globalfield.hxx>
+
+which defines both ``GlobalField2D`` and ``GlobalField3D`` . To create a
+3D global field, pass it the mesh pointer:
+
+::
+
+      GlobalField3D g3d(mesh);
+
+By default all data will be gathered onto processor 0. To change this,
+specify which processor the data should go to as the second input
+
+::
+
+      GlobalField3D g3d(mesh, processor);
+
+Gather and scatter methods are defined:
+
+::
+
+      Field3D localData;
+      // Set local data to some value
+
+      g3d.gather(localData);  // Gathers all data onto one processor
+
+      localData = g3d.scatter(); // Scatter data back
+
+**Note:** Boundary guard cells are **not** handled by the scatter step,
+as this would mean handling branch-cuts etc. To obtain valid data in the
+guard and Y boundary cells, you will need to communicate and set Y
+boundaries.
+
+**Note:** Gather and Scatter are global operations, so all processors
+must call these functions.
+
+Once data has been gathered, it can be used on one processor. To check
+if the data is available, call the method ``dataIsLocal()``, which will
+return ``true`` only on one processor
+
+::
+
+      if(g3d.dataIsLocal()) {
+        // Data is available on this processor
+
+      }
+
+The sizes of the global array are available through ``xSize()``,
+``ySize()`` and ``zSize()`` methods. The data itself can be accessed
+indirectly using ``(x,y,z)`` operators:
+
+::
+
+      for(int x=0; x<g3d.xSize(); x++)
+        for(int y=0; y<g3d.ySize(); y++)
+          for(int z=0; z<g3d.zSize(); z++)
+            output.write("Value at (%d,%d,%d) is %e\n",
+            x,y,z,
+            g3d(x,y,z) );
+
+or by getting a pointer to the underlying data, which is stored as a 1D
+array:
+
+::
+
+      BoutReal *data = g3d.getData();
+      nx = g3d.xSize();
+      ny = g3d.ySize();
+      nz = g3d.zSize();
+
+      data[x*ny*nz + y*nz + z]; // Value at g3d(x,y,z)
+
+See the example ``examples/test-globalfield`` for more examples.
+
 .. _sec-iterating:
 
 Iterating over fields

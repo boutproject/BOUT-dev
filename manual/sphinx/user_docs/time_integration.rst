@@ -567,7 +567,7 @@ The final matrix just updates :math:`u` using this new solution for
    \texttt{ddt(u)} \\
    \texttt{ddt(v)}
    \end{array}
-   ) arrow (\begin{array}{cc}
+   ) \rightarrow (\begin{array}{cc}
    1 & \gamma\partial_{||} \\
    0 & 1
    \end{array}

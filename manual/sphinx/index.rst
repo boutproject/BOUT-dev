@@ -58,7 +58,6 @@ The documentation is divided into the following sections:
    :name: model-outputs
    
    user_docs/output_and_post
-   user_docs/logging
    
 .. toctree::
    :maxdepth: 2
@@ -70,10 +69,7 @@ The documentation is divided into the following sections:
    user_docs/laplacian
    user_docs/differential_operators
    user_docs/staggered_grids
-   user_docs/advanced_methods
    user_docs/eigenvalue_solver
-   user_docs/notes
-   user_docs/fourier_transform_derivatives
 
 .. toctree::
    :maxdepth: 1
@@ -84,8 +80,6 @@ The documentation is divided into the following sections:
    developer_docs/git_basics
    developer_docs/code_layout
    developer_docs/data_types
-   developer_docs/derivatives
-   developer_docs/laplacian_inversion
    developer_docs/mesh
    developer_docs/file_io
 

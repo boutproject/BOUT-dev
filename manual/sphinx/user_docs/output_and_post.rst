@@ -1,7 +1,7 @@
 .. _sec-output:
 
-Output and post-processing
-==========================
+Post-processing
+===============
 
 The majority of the existing analysis and post-processing code is
 written in Python. Routines to read BOUT++ output data, usually called
