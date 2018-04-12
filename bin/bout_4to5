@@ -107,8 +107,10 @@ then
     do
         work="$work $DIR/../$dir"
     done
+    WORK=default
 else
     work=$@
+    WORK=other
 fi
 echo $work
 
@@ -187,6 +189,16 @@ do
         done
     done
 done
+if test $WORK == default
+then
+    for f in $DIR/../include/bout/*
+    do
+        if test -f $f
+        then
+            $printordo sed -i "s|\.\./||" $f
+        fi
+    done
+fi
 
 
 # clang-format everything
