@@ -113,6 +113,13 @@ subdirectory and start python or IDL (skip to :ref:`Using IDL <sec-intro-using-i
 Analysing the output Using python
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+In order to analyse the output of the simulation using Python, you
+will first need to have set up python to use the BOUT++ libraries
+``boutdata`` and ``boututils``; see section
+:ref:`sec-config-python` for how to do this. The analysis routines have
+some requirements such as SciPy; see section
+:ref:`sec-python-requirements` for details. 
+
 To print a list of variables in the output files, one way is to use the ``DataFile``
 class. This is a wrapper around the various NetCDF and HDF5 libraries for python:
 

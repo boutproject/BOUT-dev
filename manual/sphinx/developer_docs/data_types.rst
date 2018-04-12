@@ -1,5 +1,5 @@
-Data types
-==========
+Arrays, scalar and vector field types
+=====================================
 
 The classes outlines in red in :numref:`fig-layout2` are data types
 currently implemented in BOUT++.
@@ -141,4 +141,162 @@ memory block used to store the different value. This is particularly
 useful when returning objects from a routine. Usually this would involve
 copying data from one object to another, and then destroying the
 original copy. Using reference counting this copying is eliminated.
+
+.. _sec-iterating:
+
+Iterating over fields
+---------------------
+
+As of BOUT++ 4.0.0, we now have the ability to use C++ range-based
+for-loops. This means that it is possible to iterate over a whole field
+using a single loop:
+
+::
+
+    Field3D f(0.0);
+    for (auto i : f) {
+       f[i] = a[i] + b[i];
+    }
+
+This replaces the C-style triple-nested loop:
+
+::
+
+   Field3D f(0.0);
+   for (int i = mesh->xstart; i < mesh->xend; ++i) {
+     for (int j = mesh->ystart; j < mesh->yend; ++j) {
+       for (int k = 0; k < mesh->LocalNz; ++k) {
+         f[i,j,k] = a[i,j,k] + b[i,j,k]
+       }
+     }
+   }
+
+The iterator provides access to the x, y, z indices:
+
+::
+
+    Field3D f(0.0);
+    for (auto i : f) {
+       f[i] = i.x + i.y + i.z;
+    }
+
+It is also possible to specify regions to iterate over using this
+syntax:
+
+::
+
+    Field3D f(0.0);
+    for (auto i : f.region(RGN_NOBNDRY)) {
+       f[i] = 1.0;
+    }
+
+Available regions are:
+
+-  ``RGN_ALL``, which is the whole mesh;
+
+-  ``RGN_NOBNDRY``, which skips all boundaries;
+
+-  ``RGN_NOX``, which skips the x boundaries
+
+-  ``RGN_NOY``, which skips the y boundaries
+
+.. _sec-rangeiterator:
+
+Iterating over ranges
+---------------------
+
+The boundary of a processor’s domain may consist of a set of disjoint
+ranges, so the mesh needs a clean way to tell any code which depends on
+the boundary how to iterate over it. The ``RangeIterator`` class in
+``include/bout/sys/range.hxx`` and ``src/sys/range.cxx`` provides this.
+
+RangeIterator can represent a single continuous range, constructed by
+passing the minimum and maximum values.
+
+::
+
+    RangeIterator it(1,4);  // Range includes both end points
+    for(it.first(); !it.isDone(); it.next())
+      cout << it.ind; // Prints 1234
+
+A more canonical C++ style is also supported, using overloaded ``++``,
+``*``, and ``!=`` operators:
+
+::
+
+    for(it.first(); it != RangeIterator::end(); it++)
+      cout << *it; // Prints 1234
+
+where ``it++`` is the same as ``it.next()``, and ``*it`` the same as
+``it.ind``.
+
+To iterate over several ranges, ``RangeIterator`` can be constructed
+with the next range as an argument:
+
+::
+
+    RangeIterator it(1,4, RangeIterator(6,9));
+    for(it.first(); it != RangeIterator::end(); it++)
+      cout << *it; // Prints 12346789
+
+and these can be chained together to an arbitrary depth.
+
+To support statements like
+
+::
+
+    for(RangeIterator it = mesh->iterateBndryLowerY(); !it.isDone(); it++)
+      ...
+
+the initial call to ``first()`` is optional, and everything is
+initialised in the constructor.
+
+.. _sec-fieldops:
+
+Field2D/Field3D Arithmetic Operators
+------------------------------------
+
+The arithmetic operators (``+``, ``-``, ``/``, ``*``) for ``Field2D``
+and ``Field3D`` are generated automatically using the `Jinja`_
+templating system. This requires Python 3 (2.7 may work, but only 3 is
+supported).
+
+Because this is fairly low-level code, and we don't expect it to
+change very much, the generated code is kept in the git
+repository. This has the benefit that Python and Jinja are not needed
+to build BOUT++, only to change the ``Field`` operator code.
+
+.. warning:: You should not modify the generated code
+             directly. Instead, modify the template and re-generate
+             the code. If you commit changes to the template and/or
+             driver, make sure to re-generate the code and commit it
+             as well
+
+The Jinja template is in ``src/field/gen_fieldops.jinja``, and the
+driver is ``src/field/gen_fieldops.py``. The driver loops over every
+combination of ``BoutReal``, ``Field2D``, ``Field3D`` (collectively
+just "fields" here) with the arithmetic operators, and uses the
+template to generate the appropriate code. There is some logic in the
+template to handle certain combinations of the input fields: for
+example, for the binary infix operators, only check the two arguments
+are on identical meshes if neither is ``BoutReal``.
+
+To install Jinja:
+
+.. code-block:: console
+
+   $ pip3 install --user Jinja2
+
+To re-generate the code, there is a ``make`` target for
+``gen_fieldops.cxx`` in ``src/field/makefile``. This also tries to
+apply ``clang-format`` in order to keep to a consistent code style.
+
+.. note:: ``clang-format`` is bundled with ``clang``. This should be
+          available through your system package manager. If you do not
+          have sufficient privileges on your system, you can install
+          it from the source `clang`_. One of the BOUT++ maintainers
+          can help apply it for you too.
+
+.. _Jinja: http://jinja.pocoo.org/
+.. _clang: https://clang.llvm.org/
 

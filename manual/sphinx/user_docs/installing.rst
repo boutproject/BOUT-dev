@@ -193,11 +193,11 @@ get IDL, Python, and Octave analysis routines working. If you
 just want to compile BOUT++ then you can skip to the next section, but
 make a note of what configure printed out.
 
-Python
-~~~~~~
 
 .. _sec-config-python:
 
+Python configuration
+~~~~~~~~~~~~~~~~~~~~
 
 To use Python, you will need the NumPy and SciPy libraries. On Debian or
 Ubuntu these can be installed with::
@@ -228,10 +228,10 @@ To test if this command has worked, try running::
 If this doesn’t produce any error messages then Python is configured
 correctly.
 
-IDL
-~~~
-
 .. _sec-config-idl:
+
+IDL configuration
+~~~~~~~~~~~~~~~~~
 
 If you want to use `IDL <https://en.wikipedia.org/wiki/IDL_(programming_language)>`__ to analyse
 BOUT++ outputs, then the ``IDL_PATH`` environment variable should include the
