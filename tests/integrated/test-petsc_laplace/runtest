@@ -4,6 +4,8 @@
 # Run the test, compare results against the benchmark
 #
 
+#requires: petsc
+
 # Variables to compare
 from __future__ import print_function
 from builtins import str
