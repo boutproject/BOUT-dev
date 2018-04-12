@@ -5,9 +5,11 @@
 # 
 
 import os
+import sys
 import glob
+import numpy
 
-from boutdata import collect
+from boutdata.collect import collect, create_cache
 from boututils.boutwarnings import alwayswarn
 
 try:
@@ -243,10 +245,16 @@ class BoutOutputs(object):
               than the maximum cache size, then the variable will be returned
               without being added to the cache, and the rest of the cache will
               be left.
+              Default: False
 
-    **kwargs - keyword arguments that are passed through to collect()
+    DataFileCaching - switch for creation of a cache of DataFile objects to be
+                      passed to collect so that DataFiles do not need to be
+                      re-opened to read each variable.
+                      Default: True
+
+    **kwargs - keyword arguments that are passed through to _caching_collect()
     """
-    def __init__(self, path=".", prefix="BOUT.dmp", suffix=None, caching=False, **kwargs):
+    def __init__(self, path=".", prefix="BOUT.dmp", suffix=None, caching=False, DataFileCaching=True, **kwargs):
         """
         Initialise BoutOutputs object
         """
@@ -259,6 +267,7 @@ class BoutOutputs(object):
         else:
             self._suffix = suffix.lstrip('.') # normalize suffix by removing leading '.' if present
         self._caching = caching
+        self._DataFileCaching = DataFileCaching
         self._kwargs = kwargs
         
         # Label for this data
@@ -310,7 +319,10 @@ class BoutOutputs(object):
                     raise ValueError("BoutOutputs: Invalid value for caching argument. Caching should be either a number (giving the maximum size of the cache in GB), True for unlimited size or False for no caching.")
                 self._datacachesize = 0
                 self._datacachemaxsize = self._caching*1.e9
-        
+
+        if self._DataFileCaching:
+            self._DataFileCache = None
+
     def keys(self):
         """
         Return a list of available variable names
@@ -379,10 +391,15 @@ class BoutOutputs(object):
             else:
                 outfile_list.append(DataFile(outpath, write=True, create=True))
 
+        # Create a DataFileCache, if needed
+        if self._DataFileCaching:
+            DataFileCache = create_cache(backupdir, self._prefix)
+        else:
+            DataFileCache = None
         # read and write the data
         for v in self.varNames:
             print("processing "+v)
-            data = collect(v, path=backupdir, prefix=self._prefix, xguards=True, yguards=True, info=False)
+            data = collect(v, path=backupdir, prefix=self._prefix, xguards=True, yguards=True, info=False, datafile_cache=DataFileCache)
             ndims = len(data.shape)
 
             # write data
@@ -442,18 +459,27 @@ class BoutOutputs(object):
             # Redistribute restarts
             restart.redistribute(npes, path=backupdir, nxpe=nxpe, output=self._path, mxg=mxg, myg=myg)
 
+    def _collect(self, *args, **kwargs):
+        """
+        Wrapper for collect to pass self._DataFileCache if necessary.
+        """
+        if self._DataFileCaching and self._DataFileCache is None:
+            # Need to create the cache
+            self._DataFileCache = create_cache(self._path, self._prefix)
+        return collect(*args, datafile_cache=self._DataFileCache, **kwargs)
+
     def __len__(self):
         return len(self.varNames)
             
     def __getitem__(self, name):
         """
-        Reads a variable using collect.
+        Reads a variable using _caching_collect.
         Caches result and returns later if called again, if self._caching=True
-        
         """
+
         if self._caching:
             if name not in self._datacache.keys():
-                item = collect(name, path=self._path, prefix=self._prefix, **self._kwargs)
+                item = self._collect(name, path=self._path, prefix=self._prefix, **self._kwargs)
                 if self._caching is not True:
                     itemsize = item.nbytes
                     if itemsize > self._datacachemaxsize:
@@ -469,7 +495,7 @@ class BoutOutputs(object):
                 return self._datacache[name]
         else:
             # Collect the data from the repository
-            data = collect(name, path=self._path, prefix=self._prefix, **self._kwargs)
+            data = self._collect(name, path=self._path, prefix=self._prefix, **self._kwargs)
             return data
     
     def _removeFirstFromCache(self):
@@ -480,7 +506,7 @@ class BoutOutputs(object):
     def __iter__(self):
         """
         Iterate through all keys, starting with "options"
-        then going through all variables for collect
+        then going through all variables for _caching_collect
         """
         for k in self.varNames:
             yield k
@@ -494,7 +520,7 @@ class BoutOutputs(object):
             text += indent+k+"\n"
         
         return text
-    
+
 
 def BoutData(path=".", prefix="BOUT.dmp", caching=False, **kwargs):
     """

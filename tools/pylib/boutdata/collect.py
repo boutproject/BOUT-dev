@@ -64,7 +64,7 @@ def findVar(varname, varlist):
         print("Variable '"+varname+"' not found, and is ambiguous. Could be one of: "+str(v))
     raise ValueError("Variable '"+varname+"' not found")
 
-def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguards=False, xguards=True, info=True, prefix="BOUT.dmp", strict=False, tind_auto=False):
+def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguards=False, xguards=True, info=True, prefix="BOUT.dmp", strict=False, tind_auto=False, datafile_cache=None):
     """Collect a variable from a set of BOUT++ outputs.
 
     data = collect(name)
@@ -88,13 +88,31 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
     strict  = False        Fail if the exact variable name is not found?
     tind_auto = False      Read all files, to get the shortest length of time_indices
                            useful if writing got interrupted.
+    datafile_cache = None  Optional cache of open DataFile instances:
+                           namedtuple as returned by create_cache. Used by
+                           BoutOutputs to pass in a cache so that we do not
+                           have to re-open the dump files to read another
+                           variable.
     """
-    # Search for BOUT++ dump files
-    file_list, parallel, suffix = findFiles(path, prefix)
+
+    if datafile_cache is None:
+        # Search for BOUT++ dump files
+        file_list, parallel, suffix = findFiles(path, prefix)
+    else:
+        parallel = datafile_cache.parallel
+        suffix = datafile_cache.suffix
+        file_list = datafile_cache.file_list
+
+    # Get the DataFile from the cache, if present, otherwise open the DataFile
+    def getDataFile(i):
+        if datafile_cache is not None:
+            return datafile_cache.datafile_list[i]
+        else:
+            return DataFile(file_list[i])
 
     if parallel:
         print("Single (parallel) data file")
-        f = DataFile(file_list[0]) # Open the file
+        f = getDataFile(0) # Get the file
         dimens = f.dimensions(varname)
         ndims = f.ndims(varname)
         try:
@@ -146,7 +164,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
     nfiles = len(file_list)
 
     # Read data from the first file
-    f = DataFile(file_list[0])
+    f = getDataFile(0)
 
     try:
         dimens = f.dimensions(varname)
@@ -165,7 +183,9 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
     if ndims == 0:
         # Just read from file
         data = f.read(varname)
-        f.close()
+        if datafile_cache is None:
+            # close the DataFile if we are not keeping it in a cache
+            f.close()
         return data
 
     if ndims > 4:
@@ -187,10 +207,15 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
         nt = 1
         t_array = np.zeros(1)
     else:
-        nt = len(t_array)
+        try:
+            nt = len(t_array)
+        except TypeError:
+            # t_array is not an array here, which probably means it was a
+            # one-element array and has been read as a scalar.
+            nt = 1
         if tind_auto:
-            for file in file_list:
-                t_array_ = DataFile(file).read("t_array")
+            for i in range(nfiles):
+                t_array_ = getDataFile(i).read("t_array")
                 nt = min(len(t_array_), nt)
 
     if info:
@@ -289,10 +314,14 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
             data = f.read(varname)
         else:
             data = f.read(varname, ranges=[tind[0], tind[1]+1])
-        f.close()
+        if datafile_cache is None:
+            # close the DataFile if we are not keeping it in a cache
+            f.close()
         return data
 
-    f.close();
+    if datafile_cache is None:
+        # close the DataFile if we are not keeping it in a cache
+        f.close();
 
     # Map between dimension names and output size
     sizes = {'x': xsize, 'y': ysize, 'z': zsize, 't': tsize}
@@ -422,15 +451,14 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
         if not inrange:
             continue # Don't need this file
 
-        filename = os.path.join(path, prefix+"." + str(i) + suffix)
         if info:
-            sys.stdout.write("\rReading from " + filename + ": [" + \
+            sys.stdout.write("\rReading from " + file_list[i] + ": [" + \
                                  str(xmin) + "-" + str(xmax) + "][" + \
                                  str(ymin) + "-" + str(ymax) + "] -> [" + \
                                  str(xgmin) + "-" + str(xgmax) + "][" + \
                                  str(ygmin) + "-" + str(ygmax) + "]")
 
-        f = DataFile(filename)
+        f = getDataFile(i)
 
         if ndims == 4:
             d = f.read(varname, ranges=[tind[0], tind[1]+1,
@@ -457,7 +485,9 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
                                         ymin, ymax+1])
             data[(xgmin-xind[0]):(xgmin-xind[0]+nx_loc), (ygmin-yind[0]):(ygmin-yind[0]+ny_loc)] = d
 
-        f.close()
+        if datafile_cache is None:
+            # close the DataFile if we are not keeping it in a cache
+            f.close()
 
     # Force the precision of arrays of dimension>1
     if ndims > 1:
@@ -519,6 +549,10 @@ def findFiles(path, prefix):
 
     """
 
+    # Make sure prefix does not have a trailing .
+    if prefix[-1] == ".":
+        prefix = prefix[:-1]
+
     # Look for parallel dump files
     suffixes = [".nc", ".hdf5", ".ncdf", ".cdl", ".h5", ".hdf5", ".hdf"]
     file_list_parallel = None
@@ -546,7 +580,28 @@ def findFiles(path, prefix):
     elif file_list_parallel:
         return file_list_parallel, True, suffix_parallel
     elif file_list:
-        file_list.sort()
+        # make sure files are in the right order
+        nfiles = len(file_list)
+        file_list = [os.path.join(path,prefix+"."+str(i)+suffix) for i in range(nfiles)]
         return file_list, False, suffix
     else:
         raise IOError("ERROR: No data files found in path {0}".format(path) )
+
+def create_cache(path, prefix):
+    """
+    Create a list of DataFile objects to be passed repeatedly to collect.
+
+    Stores the cache in a namedtuple along with the file_list, and parallel and suffix attributes
+    """
+
+    # define namedtuple to return as the result
+    from collections import namedtuple
+    datafile_cache_tuple = namedtuple("datafile_cache", ["file_list", "parallel", "suffix", "datafile_list"])
+
+    file_list, parallel, suffix = findFiles(path, prefix)
+
+    cache = []
+    for f in file_list:
+        cache.append(DataFile(f))
+
+    return datafile_cache_tuple(file_list = file_list, parallel=parallel, suffix=suffix, datafile_list=cache)
