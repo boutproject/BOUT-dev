@@ -289,9 +289,11 @@ BOUT_OMP(for)
         yg[i] = 0.0;
       }
 
+      int xend = lnx[0]+1;
+      int zend = lnz[0]+1;
 BOUT_OMP(for collapse(2))
-      for(int ix = 1;ix < lnx[0]+1;ix++) {
-        for(int iz = 1;iz < lnz[0]+1;iz++) {
+      for(int ix = 1;ix < xend;ix++) {
+        for(int iz = 1;iz < zend;iz++) {
           int nn = (nx+ix)*(lnz[0]+2)+iz;
           int mm = ix*(lnz[0]+2)+iz;
           yl[nn] = b[mm];
@@ -302,12 +304,16 @@ BOUT_OMP(for collapse(2))
 
     int nz = (xProcI%rMG->zNP)*(rMG->lnz[level]);
 BOUT_OMP(parallel default(shared))
+    {
+      int xend = rMG->lnx[level]+1;
+      int zend = rMG->lnz[level]+1;
 BOUT_OMP(for collapse(2))
-    for(int ix = 1;ix < rMG->lnx[level]+1;ix++) {
-      for(int iz = 1;iz <rMG->lnz[level]+1;iz++) {
-        int nn = ix*(lnz[0]+2)+nz+iz;
-        int mm = ix*(rMG->lnz[level]+2)+iz;
-        r[mm] = yg[nn];
+      for(int ix = 1;ix < xend;ix++) {
+        for(int iz = 1;iz < zend;iz++) {
+          int nn = ix*(lnz[0]+2)+nz+iz;
+          int mm = ix*(rMG->lnz[level]+2)+iz;
+          r[mm] = yg[nn];
+        }
       }
     }
 
@@ -320,9 +326,11 @@ BOUT_OMP(for)
         yg[i] = 0.0;
       }
       
+      int xend = rMG->lnx[level]+1;
+      int zend = rMG->lnz[level]+1;
 BOUT_OMP(for collapse(2))
-      for(int ix = 1;ix < rMG->lnx[level]+1;ix++) {
-        for(int iz = 1;iz < rMG->lnz[level]+1;iz++) {
+      for(int ix = 1;ix < xend;ix++) {
+        for(int iz = 1;iz < zend;iz++) {
           int nn = ix*(lnz[0]+2)+nz+iz;
           int mm = ix*(rMG->lnz[level]+2)+iz;
           yl[nn] = y[mm];
@@ -332,12 +340,16 @@ BOUT_OMP(for collapse(2))
     MPI_Allreduce(std::begin(yl), std::begin(yg), dimg, MPI_DOUBLE, MPI_SUM, comm2D);
 
     BOUT_OMP(parallel default(shared))
+    {
+      int xend = lnx[0]+1;
+      int zend = lnz[0]+1;
 BOUT_OMP(for collapse(2))
-    for(int ix = 1;ix < lnx[0]+1;ix++) {
-      for(int iz = 1;iz < lnz[0]+1;iz++) {
-        int nn = (nx+ix)*(lnz[0]+2)+iz;
-        int mm = ix*(lnz[0]+2)+iz;
-        x[mm] = yg[nn];
+      for(int ix = 1;ix < xend;ix++) {
+        for(int iz = 1;iz < zend;iz++) {
+          int nn = (nx+ix)*(lnz[0]+2)+iz;
+          int mm = ix*(lnz[0]+2)+iz;
+          x[mm] = yg[nn];
+        }
       }
     }
     communications(x,0);
@@ -355,9 +367,11 @@ BOUT_OMP(for)
         y[i] = 0.0;
         r[i] = 0.0;
       }
+      int xend = lnx[0]+1;
+      int zend = lnz[0]+1;
 BOUT_OMP(for collapse(2))
-      for(int ix = 1;ix < lnx[0]+1;ix++) {
-        for(int iz = 1;iz <lnz[0]+1;iz++) {
+      for(int ix = 1;ix < xend;ix++) {
+        for(int iz = 1;iz < zend;iz++) {
           int nn = (nx+ix)*(lnz[0]+2)+iz;
           int mm = ix*(lnz[0]+2)+iz;
           y[nn] = b[mm];
@@ -371,12 +385,16 @@ BOUT_OMP(for)
     sMG->getSolution(std::begin(y), std::begin(r), 1);
 
     BOUT_OMP(parallel default(shared))
+    {
+      int xend = lnx[0]+1;
+      int zend = lnz[0]+1;
 BOUT_OMP(for collapse(2))
-    for(int ix = 1;ix < lnx[0]+1;ix++) {
-      for(int iz = 1;iz <lnz[0]+1;iz++) {
-        int nn = (nx+ix)*(lnz[0]+2)+iz;
-        int mm = ix*(lnz[0]+2)+iz;
-        x[mm] = y[nn];
+      for(int ix = 1;ix < xend;ix++) {
+        for(int iz = 1;iz < zend;iz++) {
+          int nn = (nx+ix)*(lnz[0]+2)+iz;
+          int mm = ix*(lnz[0]+2)+iz;
+          x[mm] = y[nn];
+        }
       }
     }
     communications(x,0); 
@@ -407,9 +425,11 @@ BOUT_OMP(for)
       rMG->matmg[level][i] = 0.0;
     }
   
+    int xend = lnx[0]+1;
+    int zend = lnz[0]+1;
 BOUT_OMP(for collapse(2))
-    for(int ix = 1;ix < lnx[0]+1;ix++) {
-      for(int iz = 1;iz <lnz[0]+1;iz++) {
+    for(int ix = 1;ix < xend;ix++) {
+      for(int iz = 1;iz < zend;iz++) {
         int nn = (nx+ix)*(lnz[0]+2)+iz;
         int mm = ix*(lnz[0]+2)+iz;
         for(int k = 0;k<9;k++) {
@@ -453,13 +473,17 @@ BOUT_OMP(for collapse(2))
   int nz = (xProcI%rMG->zNP)*(rMG->lnz[level]);
 
 BOUT_OMP(parallel default(shared))
+  {
+    int xend = rMG->lnx[level]+1;
+    int zend = rMG->lnz[level]+1;
 BOUT_OMP(for collapse(2))
-  for(int ix = 1;ix < rMG->lnx[level]+1;ix++) {
-    for(int iz = 1;iz <rMG->lnz[level]+1;iz++) {
-      int nn = ix*(lnz[0]+2)+nz+iz;
-      int mm = ix*(rMG->lnz[level]+2)+iz;
-      for(int k = 0;k<9;k++) {
-        rMG->matmg[level][mm*9+k] = yg[nn*9+k];
+    for(int ix = 1;ix < xend;ix++) {
+      for(int iz = 1;iz < zend;iz++) {
+        int nn = ix*(lnz[0]+2)+nz+iz;
+        int mm = ix*(rMG->lnz[level]+2)+iz;
+        for(int k = 0;k<9;k++) {
+          rMG->matmg[level][mm*9+k] = yg[nn*9+k];
+        }
       }
     }
   }
@@ -478,9 +502,11 @@ BOUT_OMP(for)
       yl[i] = 0.0;
       yg[i] = 0.0;
     }
+    int xend = lnx[0]+1;
+    int zend = lnz[0]+1;
 BOUT_OMP(for collapse(2))
-    for(int ix = 1;ix < lnx[0]+1;ix++) {
-      for(int iz = 1;iz <lnz[0]+1;iz++) {
+    for(int ix = 1;ix < xend;ix++) {
+      for(int iz = 1;iz < zend;iz++) {
         int nn = (nx+ix)*(lnz[0]+2)+iz;
         int mm = ix*(lnz[0]+2)+iz;
         for(int k = 0;k<9;k++) {
@@ -627,9 +653,12 @@ BOUT_OMP(for)
         y[i] = 0.0;
         r[i] = 0.0;
       }
+
+      int xend = lnx[0]+1;
+      int zend = lnz[0]+1;
 BOUT_OMP(for collapse(2))
-      for(int ix = 1;ix < lnx[0]+1;ix++) {
-        for(int iz = 1;iz <lnz[0]+1;iz++) {
+      for(int ix = 1;ix < xend;ix++) {
+        for(int iz = 1;iz < zend;iz++) {
           int nn = (nx+ix)*(gnz[0]+2)+nz+iz;
           int mm = ix*(lnz[0]+2)+iz;
           y[nn] = b[mm];
@@ -641,13 +670,18 @@ BOUT_OMP(for collapse(2))
 BOUT_OMP(for)
     for(int i = 0;i<dim;i++) y[i] = 0.0;
     sMG->getSolution(std::begin(y), std::begin(r), 1);
+
     BOUT_OMP(parallel default(shared))
+    {
+      int xend = lnx[0]+1;
+      int zend = lnz[0]+1;
 BOUT_OMP(for collapse(2))
-    for(int ix = 1;ix < lnx[0]+1;ix++) {
-      for(int iz = 1;iz <lnz[0]+1;iz++) {
-        int nn = (nx+ix)*(gnz[0]+2)+nz+iz;
-        int mm = ix*(lnz[0]+2)+iz;
-        x[mm] = y[nn];
+      for(int ix = 1;ix < xend ;ix++) {
+        for(int iz = 1;iz < zend;iz++) {
+          int nn = (nx+ix)*(gnz[0]+2)+nz+iz;
+          int mm = ix*(lnz[0]+2)+iz;
+          x[mm] = y[nn];
+        }
       }
     }
     communications(x,0); 
@@ -672,9 +706,11 @@ BOUT_OMP(for)
       yl[i] = 0.0;
       yg[i] = 0.0;
     }
+    int xend=lnx[0]+1;
+    int zend=lnz[0]+1;
 BOUT_OMP(for collapse(2))
-    for(int ix = 1;ix < lnx[0]+1;ix++) {
-      for(int iz = 1;iz <lnz[0]+1;iz++) {
+    for(int ix = 1;ix < xend;ix++) {
+      for(int iz = 1;iz < zend;iz++) {
         int nn = (nx+ix)*(gnz[0]+2)+nz+iz;
         int mm = ix*(lnz[0]+2)+iz;
         for(int k = 0;k<9;k++) {
@@ -732,6 +768,7 @@ MultigridSerial::MultigridSerial(int level, int gx, int gz, int UNUSED(px),
 
   // This could use a Matrix
   matmg = new BoutReal *[mglevel];
+  //matmg = Array<BoutReal>(mglevel);
   for(int i = 0;i<mglevel;i++) {
     matmg[i] = new BoutReal[(lnx[i]+2)*(lnz[i]+2)*9];
   }
