@@ -344,7 +344,7 @@ class DataFile_netCDF(DataFile):
 
             # Get dimensions
             defdims = [(),
-                       ('x',),
+                       ('t',),
                        ('x','y'),
                        ('x','y','z'),
                        ('t','x','y','z')]
