@@ -457,28 +457,66 @@ def findFiles(path,prefix):
     """
 
     file_list_nc = glob.glob(os.path.join(path, prefix+".nc"))
-    file_list_h5 = glob.glob(os.path.join(path, prefix+".hdf5"))
-    if file_list_nc != [] and file_list_h5 != []:
+    file_list_ncdf = glob.glob(os.path.join(path, prefix+".ncdf"))
+    file_list_cdl = glob.glob(os.path.join(path, prefix+".cdl"))
+    file_list_h5 = glob.glob(os.path.join(path, prefix+".h5"))
+    file_list_hdf5 = glob.glob(os.path.join(path, prefix+".hdf5"))
+    file_list_hdf = glob.glob(os.path.join(path, prefix+".hdf"))
+    n_file_types = sum([x != [] for x in [file_list_nc, file_list_ncdf, file_list_cdl, file_list_hdf5, file_list_h5, file_list_hdf]])
+    if n_file_types>1:
         raise IOError("Error: Both NetCDF and HDF5 files are present: do not know which to read.")
     elif file_list_h5 != []:
-        suffix = ".hdf5"
+        suffix = ".h5"
         file_list = file_list_h5
-    else:
+    elif file_list_hdf5 != []:
+        suffix = ".hdf5"
+        file_list = file_list_hdf5
+    elif file_list_hdf != []:
+        suffix = ".hdf"
+        file_list = file_list_hdf
+    elif file_list_nc != []:
         suffix = ".nc"
         file_list = file_list_nc
+    elif file_list_ncdf != []:
+        suffix = ".ncdf"
+        file_list = file_list_ncdf
+    elif file_list_cdl != []:
+        suffix = ".cdl"
+        file_list = file_list_cdl
+    else:
+        file_list = []
     if file_list != []:
         return file_list,True,suffix
 
     file_list_nc = glob.glob(os.path.join(path, prefix+".*nc"))
-    file_list_h5 = glob.glob(os.path.join(path, prefix+".*hdf5"))
-    if file_list_nc != [] and file_list_h5 != []:
+    file_list_ncdf = glob.glob(os.path.join(path, prefix+".*ncdf"))
+    file_list_cdl = glob.glob(os.path.join(path, prefix+".*cdl"))
+    file_list_h5 = glob.glob(os.path.join(path, prefix+".*h5"))
+    file_list_hdf5 = glob.glob(os.path.join(path, prefix+".*hdf5"))
+    file_list_hdf = glob.glob(os.path.join(path, prefix+".*hdf"))
+    n_file_types = sum([x != [] for x in [file_list_nc, file_list_ncdf, file_list_cdl, file_list_hdf5, file_list_h5, file_list_hdf]])
+    if n_file_types>1:
         raise IOError("Error: Both NetCDF and HDF5 files are present: do not know which to read.")
     elif file_list_h5 != []:
-        suffix = ".hdf5"
+        suffix = ".h5"
         file_list = file_list_h5
-    else:
+    elif file_list_hdf5 != []:
+        suffix = ".hdf5"
+        file_list = file_list_hdf5
+    elif file_list_hdf != []:
+        suffix = ".hdf"
+        file_list = file_list_hdf
+    elif file_list_nc != []:
         suffix = ".nc"
         file_list = file_list_nc
+    elif file_list_ncdf != []:
+        suffix = ".ncdf"
+        file_list = file_list_ncdf
+    elif file_list_cdl != []:
+        suffix = ".cdl"
+        file_list = file_list_cdl
+    else:
+        file_list = []
 
     file_list.sort()
     if file_list == []:
