@@ -245,13 +245,18 @@ class BoutOutputs(object):
 
     **kwargs - keyword arguments that are passed through to collect()
     """
-    def __init__(self, path=".", prefix="BOUT.dmp", suffix="nc", caching=False, **kwargs):
+    def __init__(self, path=".", prefix="BOUT.dmp", suffix=None, caching=False, **kwargs):
         """
         Initialise BoutOutputs object
         """
         self._path = path
         self._prefix = prefix
-        self._suffix = suffix
+        if suffix==None:
+            temp_file_list = glob.glob(os.path.join(self._path,self._prefix+"*"))
+            latest_file = max(temp_file_list, key=os.path.getctime)
+            self._suffix = latest_file.split(".")[-1]
+        else:
+            self._suffix = suffix
         self._caching = caching
         self._kwargs = kwargs
         
