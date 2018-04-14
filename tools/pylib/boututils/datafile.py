@@ -480,7 +480,7 @@ class DataFile_HDF5(DataFile):
         elif create:
             self.handle = h5py.File(filename,mode="w")
         else:
-            self.handl = h5py.File(filename,mode="a")
+            self.handle = h5py.File(filename,mode="a")
         # Record if writing
         self.writeable = write or create
 
