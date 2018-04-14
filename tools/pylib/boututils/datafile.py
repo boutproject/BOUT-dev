@@ -598,18 +598,18 @@ class DataFile_HDF5(DataFile):
     def dimensions(self, varname):
         """Array of dimension names"""
         var = self.handle[varname]
-        vartype = str(var.attrs['type'],encoding='utf-8')
-        if vartype == b'Field3D_t':
+        vartype = str(var.attrs['type'], encoding='utf-8')
+        if vartype == 'Field3D_t':
             return ('t', 'x', 'y', 'z')
-        elif vartype == b'Field2D_t':
+        elif vartype == 'Field2D_t':
             return ('t', 'x', 'y')
-        elif vartype == b'scalar_t':
+        elif vartype == 'scalar_t':
             return ('t')
-        elif vartype == b'Field3D':
+        elif vartype == 'Field3D':
             return ('x', 'y', 'z')
-        elif vartype == b'Field2D':
+        elif vartype == 'Field2D':
             return ('x', 'y')
-        elif vartype == b'scalar':
+        elif vartype == 'scalar':
             return ()
         else:
             raise ValueError("Variable type not recognized")
@@ -620,17 +620,17 @@ class DataFile_HDF5(DataFile):
         except AttributeError:
             ndim = 0
         if ndim == 4:
-            return b'Field3D_t'
+            return 'Field3D_t'
         elif ndim == 3:
             # not ideal, 3d field might be time-evolving 2d field,
-            # b'Field2D_t', but can't think of a good way to distinguish
-            return b'Field3D'
+            # 'Field2D_t', but can't think of a good way to distinguish
+            return 'Field3D'
         elif ndim == 2:
-            return b'Field2D'
+            return 'Field2D'
         elif ndim == 1:
-            return b'scalar_t'
+            return 'scalar_t'
         elif ndim == 0:
-            return b'scalar'
+            return 'scalar'
         else:
             raise ValueError("Unrecognized variable type, ndims=" + str(ndim))
 
@@ -667,20 +667,14 @@ class DataFile_HDF5(DataFile):
 
         if vartype is None:
             vartype = self.vartype_from_array(data)
-        else:
-            try:
-                # convert to bytes if vartype is a string
-                vartype.encode()
-            except:
-                pass
 
-        if vartype in [b"Field3D_t", b"Field2D_t", b"scalar_t"]:
+        if vartype in ["Field3D_t", "Field2D_t", "scalar_t"]:
             # time evolving fields
             shape = list(data.shape)
             # set time dimension to None to make unlimited
             shape[0] = None
             self.handle.create_dataset(name, data=data, maxshape=shape)
-        elif vartype == b'scalar':
+        elif vartype == 'scalar':
             # Need to create scalars as one element arrays to be compatible
             # with BOUT++ assumptions (maybe it would be better to read/write
             # scalars in BOUT++?)
@@ -688,7 +682,10 @@ class DataFile_HDF5(DataFile):
         else:
             self.handle.create_dataset(name, data=data)
 
-        self.handle[name].attrs.create('type', vartype)
+        # Need encode here to make sure we pass a byte-string to attrs and not
+        # a regular python string.
+        self.handle[name].attrs.create(
+            'type', vartype.encode(encoding='utf-8'))
 
     def attributes(self, varname):
         """Return a map of variable attributes"""
