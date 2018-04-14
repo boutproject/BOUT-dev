@@ -329,7 +329,7 @@ class BoutOutputs(object):
         backupdir = path.join(self._path,"redistribution_backups")
         mkdir(backupdir)
         for f in self._file_list:
-            rename(path.join(self._path,f), path.join(backupdir,f))
+            rename(f, path.join(backupdir,path.basename(f)))
 
         # create new output files
         outfile_list = []
@@ -346,12 +346,7 @@ class BoutOutputs(object):
                 outfile_list.append(DataFile(outpath, write=True, create=True))
 
         # read and write the data
-        # move t_array to the end of the variable list so that it gets processed last, and can find the correct dimension
-        thisvarlist = self.varNames
-        t_array_index = thisvarlist.index("t_array")
-        del(thisvarlist[t_array_index])
-        thisvarlist.append("t_array")
-        for v in thisvarlist:
+        for v in self.varNames:
             print("processing "+v)
             data = collect(v, path=backupdir, prefix=self._prefix, xguards=True, yguards=True, info=False)
             ndims = len(data.shape)
@@ -394,7 +389,7 @@ class BoutOutputs(object):
                 elif ndims == 4:
                     outfile.write(v,data[:, ix*mxsub:(ix+1)*mxsub+2*mxg, iy*mysub:(iy+1)*mysub+2*myg, :])
                 else:
-                    print("ERROR: variable found with unexpected number of dimensions,",f.ndims(v))
+                    print("ERROR: variable found with unexpected number of dimensions,",ndims)
 
         for outfile in outfile_list:
             outfile.close()
