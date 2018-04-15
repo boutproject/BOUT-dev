@@ -31,7 +31,8 @@ except:
     pass
 
 import numpy as np
-import time, getpass
+import time
+import getpass
 
 # Record which library to use
 library = None
@@ -52,7 +53,8 @@ except ImportError:
             library = "scipy"
             has_netCDF = True
         except:
-            raise ImportError("DataFile: No supported NetCDF modules available")
+            raise ImportError(
+                "DataFile: No supported NetCDF modules available")
 
 try:
     import h5py
@@ -60,23 +62,31 @@ try:
 except ImportError:
     has_h5py = False
 
+
 class DataFile:
     impl = None
+
     def __init__(self, filename=None, write=False, create=False, format='NETCDF3_CLASSIC'):
         if filename is not None:
-            if filename.split('.')[-1] in ('hdf5','hdf','h5'):
-                self.impl = DataFile_HDF5(filename=filename, write=write, create=create, format=format)
+            if filename.split('.')[-1] in ('hdf5', 'hdf', 'h5'):
+                self.impl = DataFile_HDF5(
+                    filename=filename, write=write, create=create, format=format)
             else:
-                self.impl = DataFile_netCDF(filename=filename, write=write, create=create, format=format)
+                self.impl = DataFile_netCDF(
+                    filename=filename, write=write, create=create, format=format)
         elif format == 'HDF5':
-            self.impl = DataFile_HDF5(filename=filename, write=write, create=create, format=format)
+            self.impl = DataFile_HDF5(
+                filename=filename, write=write, create=create,
+                                      format=format)
         else:
-            self.impl = DataFile_netCDF(filename=filename, write=write, create=create, format=format)
+            self.impl = DataFile_netCDF(
+                filename=filename, write=write, create=create, format=format)
 
     def open(self, filename, write=False, create=False,
              format='NETCDF3_CLASSIC'):
-      self.impl.open(filename, write=write, create=create,
-                  format=format)
+        self.impl.open(filename, write=write, create=create,
+                       format=format)
+
     def close(self):
         self.impl.close()
 
@@ -125,8 +135,9 @@ class DataFile:
 
     def attributes(self, varname):
         """Return a dictionary of attributes"""
-        return self.impl.attributes(varname);
-        
+        return self.impl.attributes(varname)
+
+
 class DataFile_netCDF(DataFile):
     handle = None
     # Print warning if netcdf is used without the netcdf library
@@ -137,7 +148,6 @@ class DataFile_netCDF(DataFile):
             print("  => Using Scientific.IO.NetCDF instead")
         elif library == "scipy":
             print("  => Using scipy.io.netcdf instead")
-
 
     def open(self, filename, write=False, create=False,
              format='NETCDF3_CLASSIC'):
@@ -157,7 +167,7 @@ class DataFile_netCDF(DataFile):
                 self.handle = Dataset(filename, "w", format=format)
         else:
             if library == "scipy":
-                raise Exception("scipy.io.netcdf doesn't support appending");
+                raise Exception("scipy.io.netcdf doesn't support appending")
             else:
                 self.handle = Dataset(filename, "a")
         # Record if writing
@@ -187,7 +197,8 @@ class DataFile_netCDF(DataFile):
 
     def read(self, name, ranges=None):
         """Read a variable from the file."""
-        if self.handle is None: return None
+        if self.handle is None:
+            return None
 
         try:
             var = self.handle.variables[name]
@@ -196,17 +207,18 @@ class DataFile_netCDF(DataFile):
             var = None
             for n in list(self.handle.variables.keys()):
                 if n.lower() == name.lower():
-                    print("WARNING: Reading '"+n+"' instead of '"+name+"'")
+                    print(
+                        "WARNING: Reading '" + n + "' instead of '" + name + "'")
                     var = self.handle.variables[n]
             if var is None:
                 return None
         ndims = len(var.dimensions)
         if ndims == 0:
             data = var.getValue()
-            return data #[0]
+            return data  # [0]
         else:
             if ranges is not None:
-                if len(ranges) != 2*ndims:
+                if len(ranges) != 2 * ndims:
                     print("Incorrect number of elements in ranges argument")
                     return None
 
@@ -249,7 +261,7 @@ class DataFile_netCDF(DataFile):
     def __getitem__(self, name):
         var = self.read(name)
         if var is None:
-            raise KeyError("No variable found: "+name)
+            raise KeyError("No variable found: " + name)
         return var
 
     def __setitem__(self, key, value):
@@ -257,7 +269,8 @@ class DataFile_netCDF(DataFile):
 
     def list(self):
         """List all variables in the file."""
-        if self.handle is None: return []
+        if self.handle is None:
+            return []
         return list(self.handle.variables.keys())
 
     def keys(self):
@@ -266,7 +279,8 @@ class DataFile_netCDF(DataFile):
 
     def dimensions(self, varname):
         """Array of dimension names"""
-        if self.handle is None: return None
+        if self.handle is None:
+            return None
         try:
             var = self.handle.variables[varname]
         except KeyError:
@@ -276,7 +290,7 @@ class DataFile_netCDF(DataFile):
     def ndims(self, varname):
         """Number of dimensions for a variable."""
         if self.handle is None:
-           raise ValueError("File not open")
+            raise ValueError("File not open")
         try:
             var = self.handle.variables[varname]
         except KeyError:
@@ -285,7 +299,8 @@ class DataFile_netCDF(DataFile):
 
     def size(self, varname):
         """List of dimension sizes for a variable."""
-        if self.handle is None: return []
+        if self.handle is None:
+            return []
         try:
             var = self.handle.variables[varname]
         except KeyError:
@@ -301,7 +316,7 @@ class DataFile_netCDF(DataFile):
             return 0
         return [dimlen(d) for d in var.dimensions]
 
-    def write(self, name, data, info = False):
+    def write(self, name, data, info=False):
         """Writes a variable to file, making guesses for the dimensions"""
 
         if not self.writeable:
@@ -325,7 +340,7 @@ class DataFile_netCDF(DataFile):
             data = np.array(data)
             t = data.dtype.str
 
-        if (t == 'int') or (t == '<i8') or (t == 'int64') :
+        if (t == 'int') or (t == '<i8') or (t == 'int64'):
             # NetCDF 3 does not support type int64
             data = np.int32(data)
             t = data.dtype.str
@@ -336,7 +351,8 @@ class DataFile_netCDF(DataFile):
 
             # Check the shape of the variable
             if var.shape != s:
-                print("DataFile: Variable already exists with different size: "+ name)
+                print(
+                    "DataFile: Variable already exists with different size: " + name)
                 # Fallthrough to the exception
                 raise
         except:
@@ -345,9 +361,9 @@ class DataFile_netCDF(DataFile):
             # Get dimensions
             defdims = [(),
                        ('t',),
-                       ('x','y'),
-                       ('x','y','z'),
-                       ('t','x','y','z')]
+                       ('x', 'y'),
+                       ('x', 'y', 'z'),
+                       ('t', 'x', 'y', 'z')]
 
             def find_dim(dim):
                 # Find a dimension with given name and size
@@ -360,7 +376,7 @@ class DataFile_netCDF(DataFile):
                     # Check if it's the correct size
                     if type(d).__name__ == 'int':
                         if d == size:
-                            return name;
+                            return name
                     else:
                         if len(d) == size:
                             return name
@@ -385,7 +401,8 @@ class DataFile_netCDF(DataFile):
                         except KeyError:
                             # Not found. Create
                             if info:
-                                print("Defining dimension "+ dn + " of size %d" % size)
+                                print(
+                                    "Defining dimension " + dn + " of size %d" % size)
                             try:
                                 self.handle.createDimension(dn, size)
                             except AttributeError:
@@ -397,7 +414,8 @@ class DataFile_netCDF(DataFile):
                 except KeyError:
                     # Doesn't exist, so add
                     if info:
-                        print("Defining dimension "+ name + " of size %d" % size)
+                        print(
+                            "Defining dimension " + name + " of size %d" % size)
                     if name == 't':
                         size = None
                     try:
@@ -410,13 +428,13 @@ class DataFile_netCDF(DataFile):
             # List of (size, 'name') tuples
             dlist = list(zip(s, defdims[len(s)]))
             # Get new list of variables, and turn into a tuple
-            dims = tuple( map(find_dim, dlist) )
+            dims = tuple(map(find_dim, dlist))
 
             # Create the variable
             if library == "Scientific":
                 if t == 'int' or t == '<i4' or t == 'int32':
                     tc = Int
-                elif t=='<f4':
+                elif t == '<f4':
                     tc = Float32
                 else:
                     tc = Float
@@ -446,7 +464,8 @@ class DataFile_netCDF(DataFile):
 
     def attributes(self, varname):
         """Return a dictionary of variable attributes"""
-        if self.handle is None: return None
+        if self.handle is None:
+            return None
         try:
             var = self.handle.variables[varname]
         except KeyError:
@@ -454,35 +473,37 @@ class DataFile_netCDF(DataFile):
             var = None
             for n in list(self.handle.variables.keys()):
                 if n.lower() == varname.lower():
-                    print("WARNING: Reading '"+n+"' instead of '"+varname+"'")
+                    print(
+                        "WARNING: Reading '" + n + "' instead of '" + varname + "'")
                     var = self.handle.variables[n]
             if var is None:
                 return None
-            
-        result = {} # Map of attribute names to values
-        
+
+        result = {}  # Map of attribute names to values
+
         try:
             # This code tested with NetCDF4 library
-            attribs = var.ncattrs() # List of attributes
+            attribs = var.ncattrs()  # List of attributes
             for attrname in attribs:
-                result[attrname] = var.getncattr(attrname) # Get all values and insert into map
+                result[attrname] = var.getncattr(
+                    attrname)  # Get all values and insert into map
         except:
             print("Error reading attributes")
             # Result will be an empty map
-            
+
         return result
-        
+
 
 class DataFile_HDF5(DataFile):
     handle = None
 
     def open(self, filename, write=False, create=False, format=None):
         if (not write) and (not create):
-            self.handle = h5py.File(filename,mode="r")
+            self.handle = h5py.File(filename, mode="r")
         elif create:
-            self.handle = h5py.File(filename,mode="w")
+            self.handle = h5py.File(filename, mode="w")
         else:
-            self.handle = h5py.File(filename,mode="a")
+            self.handle = h5py.File(filename, mode="a")
         # Record if writing
         self.writeable = write or create
 
@@ -510,7 +531,8 @@ class DataFile_HDF5(DataFile):
 
     def read(self, name, ranges=None):
         """Read a variable from the file."""
-        if self.handle is None: return None
+        if self.handle is None:
+            return None
 
         try:
             var = self.handle[name]
@@ -519,7 +541,8 @@ class DataFile_HDF5(DataFile):
             var = None
             for n in self.handle:
                 if n.lower() == name.lower():
-                    print("WARNING: Reading '"+n+"' instead of '"+name+"'")
+                    print(
+                        "WARNING: Reading '" + n + "' instead of '" + name + "'")
                     var = self.handle[n]
             if var is None:
                 return None
@@ -529,7 +552,7 @@ class DataFile_HDF5(DataFile):
             return data[0]
         else:
             if ranges is not None:
-                if len(ranges) != 2*ndims:
+                if len(ranges) != 2 * ndims:
                     print("Incorrect number of elements in ranges argument")
                     return None
 
@@ -537,16 +560,16 @@ class DataFile_HDF5(DataFile):
                     data = var[ranges[0]:ranges[1]]
                 elif ndims == 2:
                     data = var[ranges[0]:ranges[1],
-                                ranges[2]:ranges[3]]
+                               ranges[2]:ranges[3]]
                 elif ndims == 3:
                     data = var[ranges[0]:ranges[1],
-                                ranges[2]:ranges[3],
-                                ranges[4]:ranges[5]]
+                               ranges[2]:ranges[3],
+                               ranges[4]:ranges[5]]
                 elif ndims == 4:
                     data = var[(ranges[0]):(ranges[1]),
-                                (ranges[2]):(ranges[3]),
-                                (ranges[4]):(ranges[5]),
-                                (ranges[6]):(ranges[7])]
+                               (ranges[2]):(ranges[3]),
+                               (ranges[4]):(ranges[5]),
+                               (ranges[6]):(ranges[7])]
                 return data
             else:
                 return var[...]
@@ -554,15 +577,16 @@ class DataFile_HDF5(DataFile):
     def __getitem__(self, name):
         var = self.read(name)
         if var is None:
-            raise KeyError("No variable found: "+name)
+            raise KeyError("No variable found: " + name)
         return var
 
     def __setitem__(self, key, value):
         self.write(key, value)
-    
+
     def list(self):
         """List all variables in the file."""
-        if self.handle is None: return []
+        if self.handle is None:
+            return []
         names = []
         self.handle.visit(names.append)
         return names
@@ -576,15 +600,15 @@ class DataFile_HDF5(DataFile):
         var = self.handle[varname]
         vartype = str(var.attrs['type'],encoding='utf-8')
         if vartype == b'Field3D_t':
-            return ('t','x','y','z')
+            return ('t', 'x', 'y', 'z')
         elif vartype == b'Field2D_t':
-            return ('t','x','y')
+            return ('t', 'x', 'y')
         elif vartype == b'scalar_t':
             return ('t')
         elif vartype == b'Field3D':
-            return ('x','y','z')
+            return ('x', 'y', 'z')
         elif vartype == b'Field2D':
-            return ('x','y')
+            return ('x', 'y')
         elif vartype == b'scalar':
             return ()
         else:
@@ -598,7 +622,8 @@ class DataFile_HDF5(DataFile):
         if ndim == 4:
             return b'Field3D_t'
         elif ndim == 3:
-            # not ideal, 3d field might be time-evolving 2d field, b'Field2D_t', but can't think of a good way to distinguish
+            # not ideal, 3d field might be time-evolving 2d field,
+            # b'Field2D_t', but can't think of a good way to distinguish
             return b'Field3D'
         elif ndim == 2:
             return b'Field2D'
@@ -607,24 +632,27 @@ class DataFile_HDF5(DataFile):
         elif ndim == 0:
             return b'scalar'
         else:
-            raise ValueError("Unrecognized variable type, ndims="+str(ndim))
+            raise ValueError("Unrecognized variable type, ndims=" + str(ndim))
 
     def ndims(self, varname):
         """Number of dimensions for a variable."""
-        if self.handle is None: return None
+        if self.handle is None:
+            return None
         try:
             var = self.handle[varname]
         except KeyError:
             raise ValueError("Variable not found")
         if var.size == 1:
-            # variable is a scalar, but h5py always (?) returns numpy.ndarray, so var.shape=(1,)
+            # variable is a scalar, but h5py always (?) returns numpy.ndarray,
+            # so var.shape=(1,)
             return 0
         else:
             return len(var.shape)
 
     def size(self, varname):
         """List of dimension sizes for a variable."""
-        if self.handle is None: return None
+        if self.handle is None:
+            return None
         try:
             var = self.handle[varname]
         except KeyError:
@@ -661,8 +689,7 @@ class DataFile_HDF5(DataFile):
             self.handle.create_dataset(name, data=data)
 
         self.handle[name].attrs.create('type', vartype)
-        
+
     def attributes(self, varname):
         """Return a map of variable attributes"""
-        return {} # Empty for now
-    
+        return {}  # Empty for now

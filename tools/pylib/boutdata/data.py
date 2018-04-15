@@ -251,8 +251,8 @@ class BoutOutputs(object):
         """
         self._path = path
         self._prefix = prefix
-        if suffix==None:
-            temp_file_list = glob.glob(os.path.join(self._path,self._prefix+"*"))
+        if suffix == None:
+            temp_file_list = glob.glob(os.path.join(self._path, self._prefix+"*"))
             latest_file = max(temp_file_list, key=os.path.getctime)
             self._suffix = latest_file.split(".")[-1]
         else:
@@ -331,10 +331,10 @@ class BoutOutputs(object):
         
         # move existing files to backup directory
         # don't overwrite backup: os.mkdir will raise exception if directory already exists
-        backupdir = path.join(self._path,"redistribution_backups")
+        backupdir = path.join(self._path, "redistribution_backups")
         mkdir(backupdir)
         for f in self._file_list:
-            rename(f, path.join(backupdir,path.basename(f)))
+            rename(f, path.join(backupdir, path.basename(f)))
 
         # create new output files
         outfile_list = []
@@ -362,39 +362,39 @@ class BoutOutputs(object):
                 iy = int(i/nxpe)
                 outfile = outfile_list[i]
                 if v == "NPES":
-                    outfile.write(v,npes)
+                    outfile.write(v, npes)
                 elif v == "NXPE":
-                    outfile.write(v,nxpe)
+                    outfile.write(v, nxpe)
                 elif v == "NYPE":
-                    outfile.write(v,nype)
+                    outfile.write(v, nype)
                 elif v == "MXSUB":
-                    outfile.write(v,mxsub)
+                    outfile.write(v, mxsub)
                 elif v == "MYSUB":
-                    outfile.write(v,mysub)
+                    outfile.write(v, mysub)
                 elif ndims == 0:
                     # scalar
-                    outfile.write(v,data)
+                    outfile.write(v, data)
                 elif ndims == 1:
                     # time evolving scalar
-                    outfile.write(v,data)
+                    outfile.write(v, data)
                 elif ndims == 2:
                     # Field2D
                     if data.shape != (nx + 2*mxg, ny + 2*myg):
                         # FieldPerp?
                         # check is not perfect, fails if ny=nz
                         raise ValueError("Error: Found FieldPerp '"+v+"'. This case is not currently handled by BoutOutputs.redistribute().")
-                    outfile.write(v,data[ix*mxsub:(ix+1)*mxsub+2*mxg, iy*mysub:(iy+1)*mysub+2*myg])
+                    outfile.write(v, data[ix*mxsub:(ix+1)*mxsub+2*mxg, iy*mysub:(iy+1)*mysub+2*myg])
                 elif ndims == 3:
                     # Field3D
                     if data.shape[:2] != (nx + 2*mxg, ny + 2*myg):
                         # evolving Field2D, but this case is not handled
                         # check is not perfect, fails if ny=nx and nx=nt
                         raise ValueError("Error: Found evolving Field2D '"+v+"'. This case is not currently handled by BoutOutputs.redistribute().")
-                    outfile.write(v,data[ix*mxsub:(ix+1)*mxsub+2*mxg, iy*mysub:(iy+1)*mysub+2*myg, :])
+                    outfile.write(v, data[ix*mxsub:(ix+1)*mxsub+2*mxg, iy*mysub:(iy+1)*mysub+2*myg,:])
                 elif ndims == 4:
-                    outfile.write(v,data[:, ix*mxsub:(ix+1)*mxsub+2*mxg, iy*mysub:(iy+1)*mysub+2*myg, :])
+                    outfile.write(v, data[:, ix*mxsub:(ix+1)*mxsub+2*mxg, iy*mysub:(iy+1)*mysub+2*myg,:])
                 else:
-                    print("ERROR: variable found with unexpected number of dimensions,",ndims)
+                    print("ERROR: variable found with unexpected number of dimensions,", ndims)
 
         for outfile in outfile_list:
             outfile.close()
@@ -404,7 +404,7 @@ class BoutOutputs(object):
             from boutdata import restart
             from glob import glob
             restart_prefix = "BOUT.restart"
-            restarts_list = glob(path.join(self._path,restart_prefix+"*"))
+            restarts_list = glob(path.join(self._path, restart_prefix+"*"))
 
             # Move existing restart files to backup directory
             for f in restarts_list:
@@ -427,7 +427,7 @@ class BoutOutputs(object):
                 item = collect(name, path=self._path, prefix=self._prefix, **self._kwargs)
                 if self._caching is not True:
                     itemsize = item.nbytes
-                    if itemsize>self._datacachemaxsize:
+                    if itemsize > self._datacachemaxsize:
                         return item
                     self._datacache[name] = item
                     self._datacachesize += itemsize

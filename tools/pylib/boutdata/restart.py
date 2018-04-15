@@ -21,9 +21,9 @@ from numpy.random import normal
 
 from scipy.interpolate import interp1d
 try:
-  from scipy.interpolate import RegularGridInterpolator
+    from scipy.interpolate import RegularGridInterpolator
 except:
-  pass
+    pass
 
 
 try:
@@ -41,7 +41,7 @@ def split(nxpe, nype, path="data", output="./", informat="nc", outformat=None, m
 
     if outformat is None:
         outformat = informat
-    
+
     npes = nxpe * nype
 
     if npes <= 0:
@@ -80,7 +80,7 @@ def split(nxpe, nype, path="data", output="./", informat="nc", outformat=None, m
         print("ERROR: Old NPES is not a multiple of old NXPE")
         return False
 
-    old_nype =int(old_npes/old_nxpe)
+    old_nype = int(old_npes/old_nxpe)
 
     if nype % old_nype != 0:
         print("SORRY: New nype must be a multiple of old nype")
@@ -115,7 +115,7 @@ def split(nxpe, nype, path="data", output="./", informat="nc", outformat=None, m
     for mype in range(npes):
         # Calculate X and Y processor numbers
         pex = mype % nxpe
-        pey = int(mype/ nxpe)
+        pey = int(mype / nxpe)
 
         old_pex = int(pex / xs)
         old_pey = int(pey / ys)
@@ -156,8 +156,8 @@ def resize3DField(var, data, coordsAndSizesTuple, method, mute):
     newNx, newNy, newNz = coordsAndSizesTuple
 
     if not(mute):
-        print("    Resizing "+var + ' to (nx,ny,nz) = ({},{},{})'.format(newNx,newNy,newNz) )
-        
+        print("    Resizing "+var + ' to (nx,ny,nz) = ({},{},{})'.format(newNx, newNy, newNz) )
+
 
     # Make the regular grid function (see examples in
     # http://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.RegularGridInterpolator.html
@@ -174,9 +174,9 @@ def resize3DField(var, data, coordsAndSizesTuple, method, mute):
                 newData[xInd, yInd, zInd] = gridInterpolator([x, y, z])
 
     return var, newData
-    
-    
-    
+
+
+
 def resize(newNx, newNy, newNz, mxg=2, myg=2,\
            path="data", output="./", informat="nc", outformat=None,\
            method='linear', maxProc=None, mute=False):
@@ -241,7 +241,7 @@ def resize(newNx, newNy, newNz, mxg=2, myg=2,\
     if not is_pow2(newNz):
         print("ERROR: New Z size {} must be a power of 2".format(newNz))
         return False
-    
+
     file_list = glob.glob(os.path.join(path, "BOUT.restart.*."+informat))
     file_list.sort()
     nfiles = len(file_list)
@@ -299,12 +299,12 @@ def resize(newNx, newNy, newNz, mxg=2, myg=2,\
                 data = old.read(var)
 
                 # Find 3D variables
-                if old.ndims(var) == 3:             
+                if old.ndims(var) == 3:
 
                     # Asynchronous call (locks first at .get())
                     jobs.append(pool.apply_async(resize3DField,\
                                args = (var, data, coordsAndSizesTuple, method, mute, )))
-                    
+
                 else:
                     if not(mute):
                         print("    Copying "+var)
@@ -312,8 +312,8 @@ def resize(newNx, newNy, newNz, mxg=2, myg=2,\
                     if not(mute):
                         print("Writing "+var)
                     new.write(var, newData)
-            
-            for job in jobs:                
+
+            for job in jobs:
                 var, newData = job.get()
                 if not(mute):
                     print("Writing "+var)
@@ -397,7 +397,7 @@ def resizeZ(newNz, path="data", output="./", informat="nc", outformat=None):
                     newdata = np.zeros((nx, ny, newNz))
                     for x in range(nx):
                         for y in range(ny):
-                            f_old = np.fft.fft(data[x, y, :])
+                            f_old = np.fft.fft(data[x, y,:])
 
                             # Number of points in f is power of 2
                             f_new = np.zeros(newNz )
@@ -411,8 +411,8 @@ def resizeZ(newNz, path="data", output="./", informat="nc", outformat=None):
                                 f_new[newNz-m] = f_old[nz-m]
 
                             # Invert fft
-                            newdata[x,y,:] = np.fft.ifft(f_new).real
-                            newdata[x,y,:] = newdata[x,y,0]
+                            newdata[x, y,:] = np.fft.ifft(f_new).real
+                            newdata[x, y,:] = newdata[x, y, 0]
 
                     # Multiply with the ratio of newNz/nz
                     # This is not needed in the IDL routine as the
@@ -550,7 +550,7 @@ def create(averagelast=1, final=-1, path="data", output="./", informat="nc", out
 
         tind = final
         if tind < 0.0:
-          tind = len(t_array) + final
+            tind = len(t_array) + final
 
         NXPE = infile.read("NXPE")
         NYPE = infile.read("NYPE")
@@ -667,74 +667,74 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
         infile_list.append(DataFile(inpath))
 
     for v in var_list:
-          ndims = f.ndims(v)
+        ndims = f.ndims(v)
 
-          #collect data
-          if ndims == 0:
-              #scalar
-              data = f.read(v)
-          elif ndims == 2:
-              data = np.zeros( (nx+2*mxg,ny+2*myg) )
-              for i in range(old_npes):
-                  ix = i%old_nxpe
-                  iy = int(i/old_nxpe)
-                  ixstart = mxg
-                  if ix == 0:
-                      ixstart = 0
-                  ixend = -mxg
-                  if ix == old_nxpe-1:
-                      ixend = 0
-                  iystart = myg
-                  if iy == 0:
-                      iystart = 0
-                  iyend = -myg
-                  if iy == old_nype-1:
-                      iyend = 0
-                  data[ix*old_mxsub+ixstart:(ix+1)*old_mxsub+2*mxg+ixend, iy*old_mysub+iystart:(iy+1)*old_mysub+2*myg+iyend] = infile_list[i].read(v)[ixstart:old_mxsub+2*mxg+ixend, iystart:old_mysub+2*myg+iyend]
-          elif ndims == 3:
-              data = np.zeros( (nx+2*mxg,ny+2*myg,mz) )
-              for i in range(old_npes):
-                  ix = i%old_nxpe
-                  iy = int(i/old_nxpe)
-                  ixstart = mxg
-                  if ix == 0:
-                      ixstart = 0
-                  ixend = -mxg
-                  if ix == old_nxpe-1:
-                      ixend = 0
-                  iystart = myg
-                  if iy == 0:
-                      iystart = 0
-                  iyend = -myg
-                  if iy == old_nype-1:
-                      iyend = 0
-                  data[ix*old_mxsub+ixstart:(ix+1)*old_mxsub+2*mxg+ixend, iy*old_mysub+iystart:(iy+1)*old_mysub+2*myg+iyend, :] = infile_list[i].read(v)[ixstart:old_mxsub+2*mxg+ixend, iystart:old_mysub+2*myg+iyend, :]
-          else:
-              print("ERROR: variable found with unexpected number of dimensions,",ndims,v)
-              return False
+        # collect data
+        if ndims == 0:
+            # scalar
+            data = f.read(v)
+        elif ndims == 2:
+            data = np.zeros( (nx+2*mxg, ny+2*myg) )
+            for i in range(old_npes):
+                ix = i%old_nxpe
+                iy = int(i/old_nxpe)
+                ixstart = mxg
+                if ix == 0:
+                    ixstart = 0
+                ixend = -mxg
+                if ix == old_nxpe-1:
+                    ixend = 0
+                iystart = myg
+                if iy == 0:
+                    iystart = 0
+                iyend = -myg
+                if iy == old_nype-1:
+                    iyend = 0
+                data[ix*old_mxsub+ixstart:(ix+1)*old_mxsub+2*mxg+ixend, iy*old_mysub+iystart:(iy+1)*old_mysub+2*myg+iyend] = infile_list[i].read(v)[ixstart:old_mxsub+2*mxg+ixend, iystart:old_mysub+2*myg+iyend]
+        elif ndims == 3:
+            data = np.zeros( (nx+2*mxg, ny+2*myg, mz) )
+            for i in range(old_npes):
+                ix = i%old_nxpe
+                iy = int(i/old_nxpe)
+                ixstart = mxg
+                if ix == 0:
+                    ixstart = 0
+                ixend = -mxg
+                if ix == old_nxpe-1:
+                    ixend = 0
+                iystart = myg
+                if iy == 0:
+                    iystart = 0
+                iyend = -myg
+                if iy == old_nype-1:
+                    iyend = 0
+                data[ix*old_mxsub+ixstart:(ix+1)*old_mxsub+2*mxg+ixend, iy*old_mysub+iystart:(iy+1)*old_mysub+2*myg+iyend,:] = infile_list[i].read(v)[ixstart:old_mxsub+2*mxg+ixend, iystart:old_mysub+2*myg+iyend,:]
+        else:
+            print("ERROR: variable found with unexpected number of dimensions,", ndims, v)
+            return False
 
-          # write data
-          for i in range(npes):
-              ix = i%nxpe
-              iy = int(i/nxpe)
-              outfile = outfile_list[i]
-              if v == "NPES":
-                  outfile.write(v,npes)
-              elif v == "NXPE":
-                  outfile.write(v,nxpe)
-              elif v == "NYPE":
-                  outfile.write(v,nype)
-              elif ndims == 0:
-                  # scalar
-                  outfile.write(v,data)
-              elif ndims == 2:
-                  # Field2D
-                  outfile.write(v,data[ix*mxsub:(ix+1)*mxsub+2*mxg, iy*mysub:(iy+1)*mysub+2*myg])
-              elif ndims == 3:
-                  # Field3D
-                  outfile.write(v,data[ix*mxsub:(ix+1)*mxsub+2*mxg, iy*mysub:(iy+1)*mysub+2*myg, :])
-              else:
-                  print("ERROR: variable found with unexpected number of dimensions,",f.ndims(v))
+        # write data
+        for i in range(npes):
+            ix = i%nxpe
+            iy = int(i/nxpe)
+            outfile = outfile_list[i]
+            if v == "NPES":
+                outfile.write(v, npes)
+            elif v == "NXPE":
+                outfile.write(v, nxpe)
+            elif v == "NYPE":
+                outfile.write(v, nype)
+            elif ndims == 0:
+                # scalar
+                outfile.write(v, data)
+            elif ndims == 2:
+                # Field2D
+                outfile.write(v, data[ix*mxsub:(ix+1)*mxsub+2*mxg, iy*mysub:(iy+1)*mysub+2*myg])
+            elif ndims == 3:
+                # Field3D
+                outfile.write(v, data[ix*mxsub:(ix+1)*mxsub+2*mxg, iy*mysub:(iy+1)*mysub+2*myg,:])
+            else:
+                print("ERROR: variable found with unexpected number of dimensions,", f.ndims(v))
 
     f.close()
     for infile in infile_list:
@@ -792,7 +792,7 @@ def resizeY(newy, path="data", output=".", informat="nc", outformat=None,myg=2):
                 # Read variable from input
                 indata = infile.read(var)
 
-                nx,ny,nz = indata.shape
+                nx, ny, nz = indata.shape
 
                 # y coordinate in input and output data
                 iny = (arange(ny) - myg + 0.5) / (ny - 2*myg)
@@ -802,8 +802,8 @@ def resizeY(newy, path="data", output=".", informat="nc", outformat=None,myg=2):
 
                 for x in range(nx):
                     for z in range(nz):
-                        f = interp1d(iny, indata[x,:,z], bounds_error=False, fill_value=0.0)
-                        outdata[x,:,z] = f(outy)
+                        f = interp1d(iny, indata[x,:, z], bounds_error=False, fill_value=0.0)
+                        outdata[x,:, z] = f(outy)
 
                 outfile.write(var, outdata)
             elif infile.ndims(var) == 2:
@@ -813,7 +813,7 @@ def resizeY(newy, path="data", output=".", informat="nc", outformat=None,myg=2):
                 # Read variable from input
                 indata = infile.read(var)
 
-                nx,ny = indata.shape
+                nx, ny = indata.shape
 
                 # y coordinate in input and output data
                 iny = (arange(ny) - myg + 0.5) / (ny - 2*myg)
@@ -829,7 +829,7 @@ def resizeY(newy, path="data", output=".", informat="nc", outformat=None,myg=2):
             else:
                 # Copy variable
                 print(" -> Copying " + var)
-                
+
                 # Read variable from input
                 data = infile.read(var)
                 try:
@@ -838,7 +838,7 @@ def resizeY(newy, path="data", output=".", informat="nc", outformat=None,myg=2):
                 except:
                     pass
                 outfile.write(var, data)
-                
+
         infile.close()
         outfile.close()
 

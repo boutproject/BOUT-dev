@@ -64,7 +64,7 @@ def findVar(varname, varlist):
         print("Variable '"+varname+"' not found, and is ambiguous. Could be one of: "+str(v))
     raise ValueError("Variable '"+varname+"' not found")
 
-def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguards=False, xguards=True, info=True,prefix="BOUT.dmp",strict=False,tind_auto=False):
+def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguards=False, xguards=True, info=True, prefix="BOUT.dmp", strict=False, tind_auto=False):
     """Collect a variable from a set of BOUT++ outputs.
 
     data = collect(name)
@@ -90,7 +90,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
                            useful if writing got interrupted.
     """
     # Search for BOUT++ dump files
-    file_list,parallel,suffix=findFiles(path,prefix)
+    file_list, parallel, suffix = findFiles(path, prefix)
     if parallel:
         print("Single (parallel) data file")
         f = DataFile(file_list[0]) # Open the file
@@ -104,7 +104,6 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
 
     try:
         dimens = f.dimensions(varname)
-        #ndims = len(dimens)
         ndims = f.ndims(varname)
     except:
         if strict:
@@ -114,7 +113,6 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
             varname = findVar(varname, f.list())
 
             dimens = f.dimensions(varname)
-            #ndims = len(dimens)
             ndims = f.ndims(varname)
 
     # ndims is 0 for reals, and 1 for f.ex. t_array
@@ -125,7 +123,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
         elif (varname == 't_array') and (tind is None):
             data = f.read(varname)
         elif (varname == 't_array') and (tind is not None):
-            data = f.read(varname, ranges=[tind[0],tind[1]+1])
+            data = f.read(varname, ranges=[tind[0], tind[1]+1])
         f.close()
         return data
 
@@ -146,8 +144,8 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
         nt = len(t_array)
         if tind_auto:
             for file in file_list:
-                t_array_=DataFile(file).read("t_array")
-                nt = min(len(t_array_),nt)
+                t_array_ = DataFile(file).read("t_array")
+                nt = min(len(t_array_), nt)
 
     if info:
         print("mxsub = %d mysub = %d mz = %d\n" % (mxsub, mysub, mz))
@@ -210,17 +208,17 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
                 n = len(r2)
             except:
                 # No len attribute, so probably a single number
-                r2 = [r2,r2]
+                r2 = [r2, r2]
             if (len(r2) < 1) or (len(r2) > 2):
                 print("WARNING: "+name+" must be [min, max]")
                 r2 = None
             else:
                 if len(r2) == 1:
-                    r2 = [r2,r2]
+                    r2 = [r2, r2]
                 if r2[0] < 0 and low >= 0:
-                    r2[0]+=(up-low+1)
+                    r2[0] += (up-low+1)
                 if r2[1] < 0 and low >= 0:
-                    r2[1]+=(up-low+1)
+                    r2[1] += (up-low+1)
                 if r2[0] < low:
                     r2[0] = low
                 if r2[0] > up:
@@ -248,7 +246,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
     tsize = tind[1] - tind[0] + 1
 
     # Map between dimension names and output size
-    sizes = {'x':xsize, 'y':ysize, 'z':zsize, 't':tsize}
+    sizes = {'x': xsize, 'y': ysize, 'z': zsize, 't': tsize}
 
     # Create a list with size of each dimension
     ddims = [sizes[d] for d in dimens]
@@ -271,20 +269,28 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
             # Check lower y boundary
             if pe_yind == 0:
                 # Keeping inner boundary
-                if ymax < 0: inrange = False
-                if ymin < 0: ymin = 0
+                if ymax < 0:
+                    inrange = False
+                if ymin < 0:
+                    ymin = 0
             else:
-                if ymax < myg: inrange = False
-                if ymin < myg: ymin = myg
+                if ymax < myg:
+                    inrange = False
+                if ymin < myg:
+                    ymin = myg
 
             # Upper y boundary
             if pe_yind == (nype - 1):
                 # Keeping outer boundary
-                if ymin >= (mysub + 2*myg): inrange = False
-                if ymax > (mysub + 2*myg - 1): ymax = (mysub + 2*myg - 1)
+                if ymin >= (mysub + 2*myg):
+                    inrange = False
+                if ymax > (mysub + 2*myg - 1):
+                    ymax = (mysub + 2*myg - 1)
             else:
-                if ymin >= (mysub + myg): inrange = False
-                if ymax >= (mysub + myg): ymax = (mysub+myg-1)
+                if ymin >= (mysub + myg):
+                    inrange = False
+                if ymax >= (mysub + myg):
+                    ymax = (mysub+myg-1)
 
             # Calculate global indices
             ygmin = ymin + pe_yind * mysub
@@ -315,20 +321,28 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
             # Check lower x boundary
             if pe_xind == 0:
                 # Keeping inner boundary
-                if xmax < 0: inrange = False
-                if xmin < 0: xmin = 0
+                if xmax < 0:
+                    inrange = False
+                if xmin < 0:
+                    xmin = 0
             else:
-                if xmax < mxg: inrange = False
-                if xmin < mxg: xmin = mxg
+                if xmax < mxg:
+                    inrange = False
+                if xmin < mxg:
+                    xmin = mxg
 
             # Upper x boundary
             if pe_xind == (nxpe - 1):
                 # Keeping outer boundary
-                if xmin >= (mxsub + 2*mxg): inrange = False
-                if xmax > (mxsub + 2*mxg - 1): xmax = (mxsub + 2*mxg - 1)
+                if xmin >= (mxsub + 2*mxg):
+                    inrange = False
+                if xmax > (mxsub + 2*mxg - 1):
+                    xmax = (mxsub + 2*mxg - 1)
             else:
-                if xmin >= (mxsub + mxg): inrange = False
-                if xmax >= (mxsub + mxg): xmax = (mxsub+mxg-1)
+                if xmin >= (mxsub + mxg):
+                    inrange = False
+                if xmax >= (mxsub + mxg):
+                    xmax = (mxsub+mxg-1)
 
             # Calculate global indices
             xgmin = xmin + pe_xind * mxsub
@@ -370,21 +384,21 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
         f = DataFile(filename)
 
         if ndims == 4:
-            d = f.read(varname, ranges=[tind[0],tind[1]+1,
+            d = f.read(varname, ranges=[tind[0], tind[1]+1,
                                         xmin, xmax+1,
                                         ymin, ymax+1,
-                                        zind[0],zind[1]+1])
-            data[:, (xgmin-xind[0]):(xgmin-xind[0]+nx_loc), (ygmin-yind[0]):(ygmin-yind[0]+ny_loc), :] = d
+                                        zind[0], zind[1]+1])
+            data[:, (xgmin-xind[0]):(xgmin-xind[0]+nx_loc), (ygmin-yind[0]):(ygmin-yind[0]+ny_loc),:] = d
         elif ndims == 3:
             # Could be xyz or txy
 
             if dimens[2] == 'z': # xyz
                 d = f.read(varname, ranges=[xmin, xmax+1,
                                             ymin, ymax+1,
-                                            zind[0],zind[1]+1])
-                data[(xgmin-xind[0]):(xgmin-xind[0]+nx_loc), (ygmin-yind[0]):(ygmin-yind[0]+ny_loc), :] = d
+                                            zind[0], zind[1]+1])
+                data[(xgmin-xind[0]):(xgmin-xind[0]+nx_loc), (ygmin-yind[0]):(ygmin-yind[0]+ny_loc),:] = d
             else: # txy
-                d = f.read(varname, ranges=[tind[0],tind[1]+1,
+                d = f.read(varname, ranges=[tind[0], tind[1]+1,
                                             xmin, xmax+1,
                                             ymin, ymax+1])
                 data[:, (xgmin-xind[0]):(xgmin-xind[0]+nx_loc), (ygmin-yind[0]):(ygmin-yind[0]+ny_loc)] = d
@@ -397,7 +411,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
         f.close()
 
     # Force the precision of arrays of dimension>1
-    if ndims>1:
+    if ndims > 1:
         try:
             data = data.astype(t_array.dtype, copy=False)
         except TypeError:
@@ -422,7 +436,7 @@ def attributes(varname, path=".", prefix="BOUT.dmp"):
     
     """
     # Search for BOUT++ dump files in NetCDF format
-    file_list,_,_=findFiles(path,prefix)
+    file_list, _, _ = findFiles(path, prefix)
 
     # Read data from the first file
     f = DataFile(file_list[0])
@@ -441,11 +455,11 @@ def dimensions(varname, path=".", prefix="BOUT.dmp"):
     path    = "."          Path to data files
     prefix  = "BOUT.dmp"   File prefix
     """
-    file_list,_,_=findFiles(path,prefix)
+    file_list, _, _ = findFiles(path, prefix)
     return DataFile(file_list[0]).dimensions(varname)
 
 
-def findFiles(path,prefix):
+def findFiles(path, prefix):
     """
     Find files matching prefix in path.
 
@@ -463,7 +477,7 @@ def findFiles(path,prefix):
     file_list_hdf5 = glob.glob(os.path.join(path, prefix+".hdf5"))
     file_list_hdf = glob.glob(os.path.join(path, prefix+".hdf"))
     n_file_types = sum([x != [] for x in [file_list_nc, file_list_ncdf, file_list_cdl, file_list_hdf5, file_list_h5, file_list_hdf]])
-    if n_file_types>1:
+    if n_file_types > 1:
         raise IOError("Error: Both NetCDF and HDF5 files are present: do not know which to read.")
     elif file_list_h5 != []:
         suffix = ".h5"
@@ -486,7 +500,7 @@ def findFiles(path,prefix):
     else:
         file_list = []
     if file_list != []:
-        return file_list,True,suffix
+        return file_list, True, suffix
 
     file_list_nc = glob.glob(os.path.join(path, prefix+".*nc"))
     file_list_ncdf = glob.glob(os.path.join(path, prefix+".*ncdf"))
@@ -495,7 +509,7 @@ def findFiles(path,prefix):
     file_list_hdf5 = glob.glob(os.path.join(path, prefix+".*hdf5"))
     file_list_hdf = glob.glob(os.path.join(path, prefix+".*hdf"))
     n_file_types = sum([x != [] for x in [file_list_nc, file_list_ncdf, file_list_cdl, file_list_hdf5, file_list_h5, file_list_hdf]])
-    if n_file_types>1:
+    if n_file_types > 1:
         raise IOError("Error: Both NetCDF and HDF5 files are present: do not know which to read.")
     elif file_list_h5 != []:
         suffix = ".h5"
@@ -521,4 +535,4 @@ def findFiles(path,prefix):
     file_list.sort()
     if file_list == []:
         raise IOError("ERROR: No data files found in path {0}".format(path) )
-    return file_list,False,suffix
+    return file_list, False, suffix
