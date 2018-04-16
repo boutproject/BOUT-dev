@@ -270,15 +270,11 @@ LaplacePetsc::LaplacePetsc(Options *opt) :
 
   // Get KSP Solver Type (Generalizes Minimal RESidual is the default)
   string type;
-  opts->get("ksptype", type, KSP_GMRES);
-
-  ksptype = type.c_str();
+  opts->get("ksptype", ksptype, KSP_GMRES);
   
   // Get preconditioner type
   // WARNING: only a few of these options actually make sense: see the PETSc documentation to work out which they are (possibly pbjacobi, sor might be useful choices?)
-  string pctypeoption;
-  opts->get("pctype", pctypeoption, "none", true);
-  pctype = pctypeoption.c_str();
+  opts->get("pctype", pctype, "none", true);
   
   // Get Options specific to particular solver types
   opts->get("richardson_damping_factor",richardson_damping_factor,1.0,true);
@@ -294,14 +290,12 @@ LaplacePetsc::LaplacePetsc(Options *opt) :
 
   // Get direct solver switch
   opts->get("direct", direct, false);
-  if(direct)
-    {
-      output << endl << "Using LU decompostion for direct solution of system" << endl << endl;
-    }
+  if (direct) {
+    output << endl << "Using LU decompostion for direct solution of system" << endl << endl;
+  }
 
   pcsolve = NULL;
-  if(pctype == PCSHELL) {
-    // User-supplied preconditioner
+  if (pctype == PCSHELL) {
 
     OPTION(opts, rightprec, true); // Right preconditioning by default
 
@@ -725,7 +719,7 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
     // Set the solver type
     PCFactorSetMatSolverPackage(pc,"mumps");
   }else { // If a iterative solver has been chosen
-    KSPSetType( ksp, ksptype ); // Set the type of the solver
+    KSPSetType( ksp, ksptype.c_str() ); // Set the type of the solver
 
     if( ksptype == KSPRICHARDSON )     KSPRichardsonSetScale( ksp, richardson_damping_factor );
 #ifdef KSPCHEBYSHEV
@@ -743,11 +737,11 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
     KSPGetPC(ksp,&pc);
 
     // Set the type of the preconditioner
-    PCSetType(pc, pctype);
+    PCSetType(pc, pctype.c_str());
 
     // If pctype = user in BOUT.inp, it will be translated to PCSHELL upon
     // construction of the object
-    if(pctype == PCSHELL) {
+    if (pctype == PCSHELL) {
       // User-supplied preconditioner function
       PCShellSetApply(pc,laplacePCapply);
       PCShellSetContext(pc,this);

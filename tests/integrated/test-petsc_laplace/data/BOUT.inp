@@ -27,7 +27,7 @@ maxits=1000
 
 gmres_max_steps = 300
 
-pctype = user    # Supply a second solver as a preconditioner
+pctype = shell    # Supply a second solver as a preconditioner
 rightprec=true   # Right precondition
 
 [petsc2nd:precon] # Options for the preconditioning solver
@@ -50,7 +50,7 @@ fourth_order=true
 
 gmres_max_steps = 30
 
-pctype = user
+pctype = shell
 rightprec=true
 
 [petsc4th:precon]
