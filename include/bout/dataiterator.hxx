@@ -251,20 +251,15 @@ private:
   /// start / end : start and end point of THIS iterator
 #ifndef _OPENMP
   const int xstart, ystart, zstart;
+  const int xend, yend, zend;
 #else
   /// start / end : local to THIS processor
   int xstart, ystart, zstart;
+  int xend, yend, zend;
 #endif
   /// min / max : size of the domain
   /// same for all processors
   int xmin, ymin, zmin;
-
-#ifndef _OPENMP
-  const int xend, yend, zend;
-#else
-  int xend, yend, zend;
-#endif
-
   int xmax, ymax, zmax;
 
   const bool isEnd;
