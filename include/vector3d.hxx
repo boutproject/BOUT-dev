@@ -193,6 +193,9 @@ class Vector3D : public FieldData {
    */ 
   void setLocation(CELL_LOC loc); 
 
+  // Get variable cell location
+  CELL_LOC getLocation() const { return location; }
+
   /// Visitor pattern support
   void accept(FieldVisitor &v) override;
   
@@ -213,6 +216,7 @@ class Vector3D : public FieldData {
   void applyTDerivBoundary() override;
  private:
   Vector3D *deriv; ///< Time-derivative, can be NULL
+  CELL_LOC location; ///< Location of the variable in the cell
 };
 
 // Non-member overloaded operators
