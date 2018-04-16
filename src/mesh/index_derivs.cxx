@@ -873,6 +873,8 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
 
+  result.setLocation(loc);
+
   return result;
 }
 
@@ -1092,6 +1094,8 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
 
+  result.setLocation(loc);
+
   return result;
 }
 
@@ -1126,6 +1130,8 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 
     result[i] = func(s);
   }
+
+  result.setLocation(loc);
 
   return result;
 }
