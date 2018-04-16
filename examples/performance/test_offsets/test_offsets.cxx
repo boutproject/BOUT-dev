@@ -82,8 +82,13 @@ int main(int argc, char **argv) {
   ITERATOR_TEST_BLOCK("Nested loop",
 		    for(int i=0;i<mesh->LocalNx;++i) {
 		      for(int j=0;j<mesh->LocalNy;++j) {
-			for(int k=0;k<mesh->LocalNz;++k) {
-			  result(i,j,k) = a(i,j,k) + b(i,j,k);
+			for(int k=2;k<mesh->LocalNz-2;++k) {
+                          s.mm = a(i,j,k-2);
+                          s.m = a(i,j,k-1);
+                          s.c = a(i,j,k);
+                          s.p = a(i,j,k+1);
+                          s.pp = a(i,j,k+2);
+			  //result(i,j,k) = func(s);
 			}
 		      }
 		    }
@@ -94,8 +99,13 @@ int main(int argc, char **argv) {
 		      BOUT_OMP(parallel for)
 		      for(int i=0;i<mesh->LocalNx;++i) {
 			for(int j=0;j<mesh->LocalNy;++j) {
-			  for(int k=0;k<mesh->LocalNz;++k) {
-			    result(i,j,k) = a(i,j,k) + b(i,j,k);
+			  for(int k=2;k<mesh->LocalNz-2;++k) {
+                            s.mm = a(i,j,k-2);
+                            s.m = a(i,j,k-1);
+                            s.c = a(i,j,k);
+                            s.p = a(i,j,k+1);
+                            s.pp = a(i,j,k+2);
+			    //result(i,j,k) = func(s);
 			  }
 		      }
 		      }
