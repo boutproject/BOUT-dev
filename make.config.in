@@ -81,11 +81,8 @@ BOUT_LIBS  = -lm -L$(BOUT_LIB_PATH) -lbout++ $(EXTRA_LIBS)
 #DEPS					= $(SOURCEC:.cxx=.d)
 CHANGED				= $(shell find -f $(BOUT_TOP)/include $(BOUT_TOP)/src -type f \( -name \*.cxx -or -name \*.h \) -newer $(LIB) -print 2> /dev/null)
 
-# Need to use ifndef because TARGET could be set in a file (as opposed to the command line or environment variable)
 # This will set a default if no TARGET is provided
-ifndef TARGET
-TARGET				= $(SOURCEC:%.cxx=%)
-endif
+TARGET				?= $(SOURCEC:%.cxx=%)
 
 ####################################################################
 # Definining stuff for recursive make
@@ -117,9 +114,7 @@ $(DIRS):
 # are only created in the end
 	@$(MAKE) -s --no-print-directory TARGET=$(TARGET) -C $@ $(TARGET)
 else
-ifndef MODULE_DIR
-MODULE_DIR=$(shell pwd)
-endif
+MODULE_DIR?=$(shell pwd)
 $(DIRS):
 # MODULE_DIR: pass the module directory, where the libraries should be
 # created.
@@ -243,7 +238,7 @@ endif
 ifeq ("$(TARGET)", "lib")
 lib: makefile $(BOUT_CONFIG_FILE) $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ)
 ifneq ("$(OBJ)foo", "foo")
-	@echo "Adding $(OBJ) to libbout++.a"
+	@echo "  Adding $(OBJ) to libbout++.a"
 	@$(AR) $(ARFLAGS) $(LIB) $(OBJ)
 	@$(RANLIB) $(LIB)
 endif
@@ -254,7 +249,7 @@ ifeq ("$(TARGET)", "sub")
 LIB=$(MODULE_DIR)/$(SUB_NAME).a
 sub: makefile $(BOUT_CONFIG_FILE) $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ)
 ifneq ("$(OBJ)foo", "foo")
-	@echo "Adding $(OBJ) to $(LIB)"
+	@echo "  Adding $(OBJ) to $(LIB)"
 	@$(AR) $(ARFLAGS) $(LIB) $(OBJ)
 	@$(RANLIB) $(LIB)
 endif
@@ -307,16 +302,24 @@ endif
 endif
 endif
 
-ifeq ("$(TARGET)","libfast")
+# Ignore missing requirement files
+-include .*.mk
+
 # If it is a libfast target, track changes to rebuild library if needed
+#
+# Further track dependencies using gcc's -M feature:
+# -MF  write the generated dependency rule to a file
+# -MG  assume missing headers will be generated and don't stop with an error
+# -MM  generate dependency rule for prerequisite, skipping system headers
+# -MP  add phony target for each header to prevent errors when header is missing
+# -MT  add a target to the generated dependency
+# Ignore failure, in case some compiler does not support this
 %.o: $(BOUT_CONFIG_FILE) %.cxx
 	@echo "  Compiling " $(@F:.o=.cxx)
 	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c $(@F:.o=.cxx) -o $@
+	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -MF.$(@F:.o=.mk) -MM -c $(@F:.o=.cxx) || exit 0
+ifeq ("$(TARGET)","libfast")
 	test "$@" = "bout++.o" || touch $(BOUT_TOP)/lib/.last.o.file
-else
-%.o: $(BOUT_CONFIG_FILE) %.cxx
-	@echo "  Compiling " $(@F:.o=.cxx)
-	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c $(@F:.o=.cxx) -o $@
 endif
 
 ####################################################################

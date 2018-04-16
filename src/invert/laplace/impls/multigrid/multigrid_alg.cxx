@@ -149,10 +149,7 @@ void MultigridAlg::projection(int level,BoutReal *r,BoutReal *pr)
 BOUT_OMP(parallel default(shared))
   {
 BOUT_OMP(for)
-    for(int i=0;i<(lnx[level-1]+2)*(lnz[level-1]+2);i++)
-      {
-        pr[i] = 0.;
-      }
+    for(int i=0;i<(lnx[level-1]+2)*(lnz[level-1]+2);i++) pr[i] = 0.;
     int xend = lnx[level-1]+1;
     int zend = lnz[level-1]+1;
 BOUT_OMP(for collapse(2))

@@ -100,8 +100,8 @@ public:
    * use as DataIterator(int,int,int,int,int,int,DI_GET_END);
    */
   DataIterator(int xs, int xe,
-	       int ys, int ye,
-	       int zs, int ze, void* UNUSED(dummy)) :
+               int ys, int ye,
+               int zs, int ze, void* UNUSED(dummy)) :
 #ifndef _OPENMP
     x(xe), y(ye), z(ze),
     xstart(xs),   ystart(ys),   zstart(zs),

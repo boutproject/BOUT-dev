@@ -571,7 +571,7 @@ class DataFile_HDF5(DataFile):
     def dimensions(self, varname):
         """Array of dimension names"""
         var = self.handle[varname]
-        vartype = var.attrs['type']
+        vartype = str(var.attrs['type'],encoding='utf-8')
         if vartype == 'Field3D_t':
             return ('t','x','y','z')
         elif vartype == 'Field2D_t':
