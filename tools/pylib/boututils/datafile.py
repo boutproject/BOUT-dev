@@ -81,7 +81,8 @@ class DataFile:
         self.impl.close()
 
     def __del__(self):
-        self.impl.__del__()
+        if self.impl is not None:
+            self.impl.__del__()
 
     def __enter__(self):
         return self.impl.__enter__()
