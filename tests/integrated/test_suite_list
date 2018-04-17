@@ -22,7 +22,7 @@ test-subdir
 test-interpolate
 test-fci-slab
 # More complex tests
-test-drift-instability
+test-drift-instability-staggered
 test-interchange-instability
 # test coding style
 !test-code-style
