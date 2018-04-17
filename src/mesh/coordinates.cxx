@@ -611,7 +611,8 @@ const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc) {
 
   result = sg * result + r2;
 
-  ASSERT2((outloc == CELL_DEFAULT && result.getLocation() == f.getLocation()) || result.getLocation() == outloc);
+  ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == f.getLocation())) ||
+          (result.getLocation() == outloc));
 
   return result;
 }

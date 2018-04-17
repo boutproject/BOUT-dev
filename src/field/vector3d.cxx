@@ -492,10 +492,10 @@ const Vector3D Vector3D::operator^(const Vector2D &rhs) const {
 
 CELL_LOC Vector3D::getLocation() const {
 
-  ASSERT1((location == CELL_VSHIFT && x.getLocation() == CELL_XLOW &&
-          y.getLocation() == CELL_YLOW && z.getLocation() == CELL_ZLOW) ||
-         (location == x.getLocation() && location == y.getLocation() &&
-          location == z.getLocation()));
+  ASSERT1(((location == CELL_VSHIFT) && (x.getLocation() == CELL_XLOW) &&
+           (y.getLocation() == CELL_YLOW) && (z.getLocation() == CELL_ZLOW)) ||
+          ((location == x.getLocation()) && (location == y.getLocation()) &&
+           (location == z.getLocation())));
 
   return location;
 }

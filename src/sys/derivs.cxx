@@ -67,7 +67,8 @@ const Field3D DDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
     result += f.getMesh()->coordinates()->IntShiftTorsion * DDZ(f, outloc);
   }
 
-  ASSERT2((outloc == CELL_DEFAULT && result.getLocation() == f.getLocation()) || result.getLocation() == outloc);
+  ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == f.getLocation())) ||
+          (result.getLocation() == outloc));
 
   return result;
 }
@@ -146,7 +147,8 @@ const Vector3D DDZ(const Vector3D &v, CELL_LOC outloc, DIFF_METHOD method) {
     result.covariant = false;
   }
 
-  ASSERT2((outloc == CELL_DEFAULT && result.getLocation() == v.getLocation()) || result.getLocation() == outloc);
+  ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == v.getLocation())) ||
+          (result.getLocation() == outloc));
 
   return result;
 }
@@ -185,7 +187,8 @@ const Field3D D2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
     result += f.getMesh()->coordinates()->d1_dx * f.getMesh()->indexDDX(f, outloc, DIFF_DEFAULT)/f.getMesh()->coordinates()->dx;
   }
 
-  ASSERT2((outloc == CELL_DEFAULT && result.getLocation() == f.getLocation()) || result.getLocation() == outloc);
+  ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == f.getLocation())) ||
+          (result.getLocation() == outloc));
 
   return result;
 }
@@ -216,7 +219,8 @@ const Field3D D2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
     result += f.getMesh()->coordinates()->d1_dy * f.getMesh()->indexDDY(f, outloc, DIFF_DEFAULT) / f.getMesh()->coordinates()->dy;
   }
 
-  ASSERT2((outloc == CELL_DEFAULT && result.getLocation() == f.getLocation()) || result.getLocation() == outloc);
+  ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == f.getLocation())) ||
+          (result.getLocation() == outloc));
 
   return result;
 }
