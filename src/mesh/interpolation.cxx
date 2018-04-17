@@ -138,17 +138,14 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
             s.pp = var_fa[i.offset(0,2,0)];
             s.mm = var_fa[i.offset(0,-2,0)];
 
-            if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
+            if (location == CELL_CENTRE) {
               // Producing a stencil centred around a lower Y value
               s.pp = s.p;
               s.p  = s.c;
-            } else if(location == CELL_YLOW) {
+            } else {
               // Stencil centred around a cell centre
               s.mm = s.m;
               s.m  = s.c;
-            } else {
-              // We should never be here
-              throw BoutException("If you end up here, the code needs to be properly checked, as it is severely broken.\nIf that ever happens - I don't think it matters what the error message is.\nA message that invites to work around this bug is not helpful, imho.\n\nThe problem is not simply that loc and location is not consistent - which can be fixed quite easy - it is that the whole code is terribly broken, and needs much attention.");
             }
 
             result[i] = interp(s);
@@ -165,17 +162,14 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
           s.pp = var[i.offset(0,0,2)];
           s.mm = var[i.offset(0,0,-2)];
 
-          if ((location == CELL_CENTRE) && (loc == CELL_ZLOW)) {
+          if (location == CELL_CENTRE) {
             // Producing a stencil centred around a lower Z value
             s.pp = s.p;
             s.p  = s.c;
-          } else if(location == CELL_ZLOW) {
+          } else {
             // Stencil centred around a cell centre
             s.mm = s.m;
             s.m  = s.c;
-          } else {
-            // We should never be here
-            throw BoutException("If you end up here, the code needs to be properly checked, as it is severely broken.\nIf that ever happens - I don't think it matters what the error message is.\nA message that invites to work around this bug is not helpful, imho.\n\nThe problem is not simply that loc and location is not consistent - which can be fixed quite easy - it is that the whole code is terribly broken, and needs much attention.");
           }
 
           result[i] = interp(s);
