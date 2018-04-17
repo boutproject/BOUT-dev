@@ -148,7 +148,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
               s.m  = s.c;
             } else {
               // We should never be here
-              throw BoutException("Maybe a butterfly defracted an X-ray?");
+              throw BoutException("If you end up here, the code needs to be properly checked, as it is severely broken.\nIf that ever happens - I don't think it matters what the error message is.\nA message that invites to work around this bug is not helpful, imho.\n\nThe problem is not simply that loc and location is not consistent - which can be fixed quite easy - it is that the whole code is terribly broken, and needs much attention.");
             }
 
             result[i] = interp(s);
@@ -175,7 +175,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
             s.m  = s.c;
           } else {
             // We should never be here
-            throw BoutException("Those damn butterflies again!");
+            throw BoutException("If you end up here, the code needs to be properly checked, as it is severely broken.\nIf that ever happens - I don't think it matters what the error message is.\nA message that invites to work around this bug is not helpful, imho.\n\nThe problem is not simply that loc and location is not consistent - which can be fixed quite easy - it is that the whole code is terribly broken, and needs much attention.");
           }
 
           result[i] = interp(s);
