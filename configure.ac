@@ -184,7 +184,7 @@ AS_IF([test "x$enable_code_coverage" = "xyes"],
 [
     AS_IF([test "x$enable_optimize"], [
         AC_MSG_WARN([Code coverage clashes with optimisations, disabling optimisations])
-        enable_optimize="no"
+        enable_optimize="0"
     ])
     COVERAGE_FLAGS="--coverage --no-inline"
     LDFLAGS="$LDFLAGS --coverage"
