@@ -128,7 +128,7 @@ AC_ARG_WITH([hdf5],
      with_hdf5="yes"
      H5CC="$withval"
    fi],
-   [with_hdf5="yes"]
+   [with_hdf5="guess"]
 )
 
 dnl Set defaults to blank
@@ -144,7 +144,7 @@ HDF5_FLIBS=""
 HDF5_TYPE=""
 
 dnl Try and find hdf5 compiler tools and options.
-if test "$with_hdf5" = "yes"; then
+if test "$with_hdf5" = "yes" || test "$with_hdf5" = "guess"; then
     if test -z "$H5CC"; then
         dnl Check to see if H5CC is in the path.
         AC_PATH_PROGS(
@@ -164,11 +164,25 @@ if test "$with_hdf5" = "yes"; then
         [*h5cc], [HDF5_TYPE=serial],
         [HDF5_TYPE=neither])
     AC_MSG_RESULT([$HDF5_TYPE])
-    AC_MSG_CHECKING([for HDF5 libraries])
     if test ! -f "$H5CC" || test ! -x "$H5CC"; then
-        AC_MSG_RESULT([no])
-        AC_MSG_WARN(m4_case(m4_normalize([$1]),
-            [serial],  [
+
+        AC_MSG_CHECKING([if we can compile HDF5 program without helper script])
+        AC_LANG_PUSH([C++])
+        AC_LINK_IFELSE(
+          [AC_LANG_PROGRAM([
+            #include <hdf5.h>
+            ], [H5Fcreate(0, 0, 0, 0);])],
+            [ac_cv_hdf5_h=yes
+             ac_cv_libhdf5=yes],
+            [ac_cv_hdf5_h=no
+             ac_cv_libhdf5=no])
+        AC_MSG_RESULT([$ac_cv_libhdf5])
+        AC_LANG_POP([C++])
+
+        if test "$ac_cv_libhdf5" = "no" ; then
+          AC_MSG_WARN([Unable to compile HDF5 test program])
+          AC_MSG_WARN(m4_case(m4_normalize([$1]),
+              [serial],  [
 Unable to locate serial HDF5 compilation helper script 'h5cc'.
 Please specify --with-hdf5=<LOCATION> as the full path to h5cc.
 HDF5 support is being disabled (equivalent to --with-hdf5=no).
@@ -181,9 +195,15 @@ Unable to locate HDF5 compilation helper scripts 'h5cc' or 'h5pcc'.
 Please specify --with-hdf5=<LOCATION> as the full path to h5cc or h5pcc.
 HDF5 support is being disabled (equivalent to --with-hdf5=no).
 ]))
-        with_hdf5="no"
-        # with_hdf5_fortran="no"
+          if test "$with_hdf5" = "yes"; then
+            AC_MSG_FAILURE([HDF5 was requested, but could not be compiled])
+          fi
+          with_hdf5="no"
+        else
+          with_hdf5="yes"
+        fi
     else
+        AC_MSG_CHECKING([for HDF5 libraries])
         dnl Get the h5cc output
         HDF5_SHOW=$(eval $H5CC -show)
 
@@ -226,18 +246,18 @@ HDF5 support is being disabled (equivalent to --with-hdf5=no).
         for arg in $HDF5_SHOW $HDF5_tmp_flags ; do
           case "$arg" in
             -I*) echo $HDF5_CPPFLAGS | $GREP -e "$arg" 2>&1 >/dev/null \
-                  || HDF5_CPPFLAGS="$arg $HDF5_CPPFLAGS"
+                  || HDF5_CPPFLAGS="$HDF5_CPPFLAGS $arg"
               ;;
             -L*) echo $HDF5_LDFLAGS | $GREP -e "$arg" 2>&1 >/dev/null \
-                  || HDF5_LDFLAGS="$arg $HDF5_LDFLAGS"
+                  || HDF5_LDFLAGS="$HDF5_LDFLAGS $arg"
               ;;
             -l*) echo $HDF5_LIBS | $GREP -e "$arg" 2>&1 >/dev/null \
-                  || HDF5_LIBS="$arg $HDF5_LIBS"
+                  || HDF5_LIBS="$HDF5_LIBS $arg"
               ;;
           esac
         done
 
-        HDF5_LIBS="$HDF5_LIBS -lhdf5"
+        HDF5_LIBS="-lhdf5 $HDF5_LIBS"
         AC_MSG_RESULT([yes (version $[HDF5_VERSION])])
 
         dnl See if we can compile
@@ -250,14 +270,19 @@ HDF5 support is being disabled (equivalent to --with-hdf5=no).
         CPPFLAGS=$HDF5_CPPFLAGS
         LIBS=$HDF5_LIBS
         LDFLAGS=$HDF5_LDFLAGS
-        AC_CHECK_HEADER([hdf5.h], [ac_cv_hadf5_h=yes], [ac_cv_hadf5_h=no])
+        AC_CHECK_HEADER([hdf5.h], [ac_cv_hdf5_h=yes], [ac_cv_hdf5_h=no])
         AC_CHECK_LIB([hdf5], [H5Fcreate], [ac_cv_libhdf5=yes],
                      [ac_cv_libhdf5=no])
-        if test "$ac_cv_hadf5_h" = "no" && test "$ac_cv_libhdf5" = "no" ; then
-          AC_MSG_WARN([Unable to compile HDF5 test program])
+        if test "$ac_cv_hdf5_h" = "no" && test "$ac_cv_libhdf5" = "no" ; then
+          if test "$with_hdf5" = "yes"; then
+            AC_MSG_FAILURE([Unable to compile HDF5 test program])
+          else
+            AC_MSG_WARN([Unable to compile HDF5 test program])
+          fi
         fi
+        with_hdf5=yes
         dnl Look for HDF5's high level library
-        AC_HAVE_LIBRARY([hdf5_hl], [HDF5_LIBS="$HDF5_LIBS -lhdf5_hl"], [], [])
+        AC_HAVE_LIBRARY([hdf5_hl], [HDF5_LIBS="-lhdf5_hl $HDF5_LIBS"], [], [])
 
         CC=$ax_lib_hdf5_save_CC
         CPPFLAGS=$ax_lib_hdf5_save_CPPFLAGS
