@@ -194,7 +194,7 @@ class Vector3D : public FieldData {
   void setLocation(CELL_LOC loc); 
 
   // Get variable cell location
-  CELL_LOC getLocation() const { return location; }
+  CELL_LOC getLocation() const;
 
   /// Visitor pattern support
   void accept(FieldVisitor &v) override;

@@ -33,6 +33,7 @@
 #include <vector3d.hxx>
 #include <boundary_op.hxx>
 #include <boutexception.hxx>
+#include <bout/assert.hxx>
 
 Vector3D::Vector3D(Mesh *localmesh)
     : x(localmesh), y(localmesh), z(localmesh), covariant(true), deriv(nullptr), location(CELL_CENTRE) {}
@@ -486,8 +487,18 @@ const Vector3D Vector3D::operator^(const Vector2D &rhs) const {
 }
 
 /***************************************************************
- *       Set variable location for staggered meshes
+ *       Get/set variable location for staggered meshes
  ***************************************************************/
+
+CELL_LOC Vector3D::getLocation() const {
+
+  ASSERT1((location == CELL_VSHIFT && x.getLocation() == CELL_XLOW &&
+          y.getLocation() == CELL_YLOW && z.getLocation() == CELL_ZLOW) ||
+         (location == x.getLocation() && location == y.getLocation() &&
+          location == z.getLocation()));
+
+  return location;
+}
 
 void Vector3D::setLocation(CELL_LOC loc) {
   location = loc;
