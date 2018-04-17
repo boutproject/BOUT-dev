@@ -8,6 +8,7 @@ import os
 import glob
 
 from boutdata import collect
+from boututils.boutwarnings import alwayswarn
 
 try:
     from boututils.datafile import DataFile
@@ -250,28 +251,51 @@ class BoutOutputs(object):
         Initialise BoutOutputs object
         """
         self._path = path
-        self._prefix = prefix
+        self._prefix = prefix.rstrip('.') # normalize prefix by removing trailing '.' if present
         if suffix == None:
-            temp_file_list = glob.glob(os.path.join(self._path, self._prefix+"*"))
+            temp_file_list = glob.glob(os.path.join(self._path, self._prefix + "*"))
             latest_file = max(temp_file_list, key=os.path.getctime)
             self._suffix = latest_file.split(".")[-1]
         else:
-            self._suffix = suffix
+            self._suffix = suffix.lstrip('.') # normalize suffix by removing leading '.' if present
         self._caching = caching
         self._kwargs = kwargs
         
         # Label for this data
         self.label = path
 
+        self._file_list = glob.glob(os.path.join(path, self._prefix + "*" + self._suffix))
+        if not suffix == None:
+            latest_file = max(self._file_list, key=os.path.getctime)
+            # if suffix==None we already found latest_file
+
         # Check that the path contains some data
-        self._file_list = glob.glob(os.path.join(path, self._prefix+"*"+self._suffix))
         if len(self._file_list) == 0:
             raise ValueError("ERROR: No data files found")
-        
+
         # Available variables
         self.varNames = []
         self.dimensions = {}
         self.evolvingVariableNames = []
+
+        with DataFile(latest_file) as f:
+            npes = f.read("NXPE")*f.read("NYPE")
+            if len(self._file_list) != npes:
+                alwayswarn("Too many data files, reading most recent ones")
+                if npes == 1:
+                    # single output file
+                    # do like this to catch, e.g. either 'BOUT.dmp.nc' or 'BOUT.dmp.0.nc'
+                    self._file_list = [latest_file]
+                else:
+                    self._file_list = [os.path.join(path, self._prefix + "." + str(i) + "." + self._suffix) for i in range(npes)]
+
+            # Get variable names
+            self.varNames = f.keys()
+            for name in f.keys():
+                dimensions = f.dimensions(name)
+                self.dimensions[name] = dimensions
+                if name != "t_array" and "t" in dimensions:
+                    self.evolvingVariableNames.append(name)
 
         # Private variables
         if self._caching:
@@ -286,15 +310,6 @@ class BoutOutputs(object):
                     raise ValueError("BoutOutputs: Invalid value for caching argument. Caching should be either a number (giving the maximum size of the cache in GB), True for unlimited size or False for no caching.")
                 self._datacachesize = 0
                 self._datacachemaxsize = self._caching*1.e9
-        
-        with DataFile(self._file_list[0]) as f:
-            # Get variable names
-            self.varNames = f.keys()
-            for name in f.keys():
-                dimensions = f.dimensions(name)
-                self.dimensions[name] = dimensions
-                if name != "t_array" and "t" in dimensions:
-                    self.evolvingVariableNames.append(name)
         
     def keys(self):
         """
@@ -344,7 +359,7 @@ class BoutOutputs(object):
             this_prefix = this_prefix + "."
         for i in range(npes):
             outpath = os.path.join(self._path, this_prefix+str(i)+"."+self._suffix)
-            if self._suffix.split(".")[-1] == "nc":
+            if self._suffix.split(".")[-1] in ["nc", "ncdf", "cdl"]:
                 # set format option to DataFile explicitly to avoid creating netCDF3 files, which can only contain up to 2GB of data
                 outfile_list.append(DataFile(outpath, write=True, create=True, format='NETCDF4'))
             else:
