@@ -689,4 +689,9 @@ class DataFile_HDF5(DataFile):
 
     def attributes(self, varname):
         """Return a map of variable attributes"""
-        return {}  # Empty for now
+        result = {}
+        var = self.handle[varname]
+        for attrname in var.attrs:
+            result[attrname] = var.attrs[attrname]
+        
+        return result
