@@ -31,10 +31,13 @@
 #include "mask.hxx"
 #include "utils.hxx"
 
-/// Interpolate to a give cell location
-const Field3D interp_to(const Field3D &var, CELL_LOC loc);
-const Field2D interp_to(const Field2D &var, CELL_LOC loc);
+inline const Field3D interp_to(const Field3D &f, CELL_LOC loc){
+  return f.getMesh()->interp_to(f,loc);
+}
 
+inline const Field2D interp_to(const Field2D &f, CELL_LOC loc){
+  return f.getMesh()->interp_to(f,loc);
+}
 /// Print out the cell location (for debugging)
 void printLocation(const Field3D &var);
 

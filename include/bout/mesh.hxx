@@ -538,6 +538,12 @@ class Mesh {
   typedef BoutReal (*upwind_func)(BoutReal, stencil &); ///< Derivative functions of a BoutReal velocity, and field stencil
   typedef BoutReal (*flux_func)(stencil&, stencil &); ///< ///< Derivative functions of a velocity field, and field stencil v, f
 
+  /// Interpolate to a give cell location
+  /// @param[in] var  The field
+  /// @param[in] loc  The wanted location of the field
+  virtual const Field3D interp_to(const Field3D &var, CELL_LOC loc);
+  virtual const Field2D interp_to(const Field2D &var, CELL_LOC loc);
+
   /// Transform a field into field-aligned coordinates
   const Field3D toFieldAligned(const Field3D &f) {
     return getParallelTransform().toFieldAligned(f);
